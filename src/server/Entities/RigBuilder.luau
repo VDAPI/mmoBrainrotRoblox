@@ -426,6 +426,8 @@ function RigBuilder.build(def: Monsters.MonsterDef, variant: string, variantScal
 		aura(root, Color3.fromHex("#D64A3E"), 6)
 	elseif variant == "elite2" then
 		aura(root, Color3.fromHex("#B455FF"), 14)
+	elseif variant == "boss" then
+		aura(root, Color3.fromHex(def.colors.secondary), 24)
 	end
 	return model
 end

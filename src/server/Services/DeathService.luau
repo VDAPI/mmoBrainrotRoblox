@@ -12,6 +12,7 @@ local Shared = ReplicatedStorage.Shared
 
 local Config = require(Shared.Config)
 local Log = require(Shared.Util.Log)
+local Maps = require(Shared.Data.Maps)
 local Net = require(Shared.Net)
 local Signal = require(ReplicatedStorage.Packages.Signal)
 local Types = require(Shared.Types)
@@ -60,6 +61,11 @@ end
 
 -- Nearest spawn point of the map to `position` (falls back to the map's default spawn).
 function DeathService.SpawnCFrame(mapId: string, position: Vector3?): CFrame
+	-- Death in a boss dungeon: back in front of the dungeon entrance (DESIGN §3.4, §16).
+	local map = Maps.get(mapId)
+	if map and map.biome == "dungeon" then
+		return WorldService.ResolveLocation(mapId, 0, 0, 0)
+	end
 	local best: BasePart? = nil
 	local bestDistance = math.huge
 	for _, instance in CollectionService:GetTagged(SPAWN_TAG) do

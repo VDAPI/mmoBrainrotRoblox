@@ -24,6 +24,7 @@ local Log = require(Shared.Util.Log)
 local MonsterAbilities = require(Shared.Data.MonsterAbilities)
 local MonsterStats = require(Shared.Logic.MonsterStats)
 local Net = require(Shared.Net)
+local PartyLoot = require(Shared.Logic.PartyLoot)
 local Rng = require(Shared.Logic.Rng)
 local Signal = require(ReplicatedStorage.Packages.Signal)
 local Types = require(Shared.Types)
@@ -44,6 +45,7 @@ local CombatService = {
 		"ZoneService",
 		"EquipmentService",
 		"StatusEffectService",
+		"PartyService",
 	},
 	-- (info: KillInfo, credit: { Player }, killer: Player?) after a monster died.
 	MonsterKilled = Signal.new(),
@@ -56,6 +58,7 @@ export type KillInfo = {
 	position: Vector3,
 	mapId: string?,
 	entityId: string,
+	boss: boolean?, -- dungeon bosses: DungeonService hands out the rewards
 }
 
 type FxEvent = { [string]: any }
@@ -79,6 +82,7 @@ local PvpService: any
 local ZoneService: any
 local EquipmentService: any
 local StatusEffectService: any
+local PartyService: any
 
 type Attacker = {
 	target: string?,
@@ -231,22 +235,35 @@ end
 
 -- Kill credit and rewards ----------------------------------------------------------------------------
 
--- Players who get EXP/gold/loot for a monster (top damage dealer; parties extend this in S09).
+-- Players who get EXP/gold/loot for a monster (DESIGN §15.1, §17): the top damage dealer, or their party
+-- members within PARTY_RANGE of the monster. The top damage dealer comes first.
+local PARTY_RANGE = 80
+
 function CombatService.ResolveKillCredit(monster: any): { Player }
 	local top = monster:TopDamager()
-	return if top then { top } else {}
+	if not top then
+		return {}
+	end
+	local credit = { top }
+	for _, member in PartyService.MembersInRange(top, monster:Position(), PARTY_RANGE) do
+		if member ~= top then
+			table.insert(credit, member)
+		end
+	end
+	return credit
 end
 
-local function reward(player: Player, monster: any)
+-- EXP and gold for one credited player; `share` = number of credited players, `goldShare` = their gold.
+local function reward(player: Player, monster: any, share: number, goldShare: number)
 	local character: Types.CharacterData? = PlayerStateService.GetCharacter(player)
 	if not character then
 		return
 	end
 	local level = monster.stats.level
-	local exp =
-		math.floor(Exp.monsterExp(level, monster.variant) * Exp.levelDiffMultiplier(character.level, level) + 0.5)
+	local baseExp = PartyLoot.splitExp(Exp.monsterExp(level, monster.variant), share)
+	local exp = math.floor(baseExp * Exp.levelDiffMultiplier(character.level, level) + 0.5)
 	local goldBonus = StatService.GetValue(player, "goldBonus")
-	local gold = math.floor(MonsterStats.gold(level, monster.variant, rng:next()) * (1 + goldBonus / 100) + 0.5)
+	local gold = math.floor(goldShare * (1 + goldBonus / 100) + 0.5)
 	local expBonus = StatService.GetValue(player, "expBonus")
 	LevelService.GiveExp(player, exp, "monster")
 	PlayerStateService.Update(player, { "character", "gold" }, function(current: number)
@@ -262,8 +279,12 @@ end
 
 local function onMonsterDied(monster: any)
 	local credit = CombatService.ResolveKillCredit(monster)
-	for _, player in credit do
-		reward(player, monster)
+	if not monster.isBoss then
+		local total = MonsterStats.gold(monster.stats.level, monster.variant, rng:next())
+		local shares = PartyLoot.splitGold(total, #credit, rng)
+		for i, player in credit do
+			reward(player, monster, #credit, shares[i])
+		end
 	end
 	local position = monster:Position()
 	local zone = ZoneService.ZoneAt(position, "city")
@@ -274,6 +295,7 @@ local function onMonsterDied(monster: any)
 		position = position,
 		mapId = zone.map,
 		entityId = if monster.entity then monster.entity.id else "",
+		boss = monster.isBoss == true,
 	}
 	CombatService.MonsterKilled:Fire(info, credit, credit[1])
 	-- Clear player targets pointing at the corpse.
@@ -520,6 +542,9 @@ local function insideArea(ability: MonsterAbilities.Ability, area: CFrame, posit
 	elseif ability.shape == "line" then
 		local length, width = ability.length or 15, ability.width or 5
 		return localPos.Z <= 0 and localPos.Z >= -length and math.abs(localPos.X) <= width / 2
+	elseif ability.shape == "ring" then
+		local distance = flatLocal.Magnitude
+		return distance <= (ability.radius or 20) and distance > (ability.inner or 5)
 	end
 	return false
 end
@@ -531,6 +556,7 @@ local function telegraph(monster: any, ability: MonsterAbilities.Ability, area: 
 		sh = ability.shape,
 		cf = area,
 		r = ability.radius,
+		ir = ability.inner,
 		an = ability.angle,
 		l = ability.length,
 		w = ability.width,
@@ -554,6 +580,15 @@ local function resolveAbility(monster: any, ability: MonsterAbilities.Ability, a
 			monsterHitsPlayer(monster, player, params, nil)
 		end
 	end
+end
+
+-- Boss attacks (DungeonService): the same telegraph and area damage as Elite II abilities.
+function CombatService.MonsterTelegraph(monster: any, ability: MonsterAbilities.Ability, area: CFrame)
+	telegraph(monster, ability, area)
+end
+
+function CombatService.MonsterResolve(monster: any, ability: MonsterAbilities.Ability, area: CFrame)
+	resolveAbility(monster, ability, area)
 end
 
 -- Lets skills draw damage numbers / heals / swings with the same batching.
@@ -611,6 +646,7 @@ function CombatService.Init(registry)
 	ZoneService = registry.Get("ZoneService")
 	EquipmentService = registry.Get("EquipmentService")
 	StatusEffectService = registry.Get("StatusEffectService")
+	PartyService = registry.Get("PartyService")
 
 	MonsterService.SetCombatHandlers({
 		basicAttack = monsterBasicAttack,

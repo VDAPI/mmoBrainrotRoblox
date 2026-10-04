@@ -96,6 +96,18 @@ local Definitions: { [string]: Definition } = {
 	MapTransition = { kind = "event", dir = "s2c" }, -- (mapId) shows the loading screen, (nil) hides it
 	UseMapStone = { kind = "function", dir = "c2s", rate = 1, args = { "integer", "string" } }, -- (inv index, target id)
 
+	-- Parties and dungeons (S09)
+	PartyInvite = { kind = "function", dir = "c2s", rate = 1, args = { "string" } }, -- (character or player name)
+	PartyInviteUser = { kind = "function", dir = "c2s", rate = 1, args = { "integer" } }, -- (userId)
+	PartyInvited = { kind = "event", dir = "s2c" }, -- (fromName, seconds)
+	PartyRespond = { kind = "function", dir = "c2s", rate = 2, args = { "boolean" } },
+	PartyLeave = { kind = "function", dir = "c2s", rate = 1, args = {} },
+	PartyKick = { kind = "function", dir = "c2s", rate = 2, args = { "integer" } },
+	PartyPromote = { kind = "function", dir = "c2s", rate = 2, args = { "integer" } },
+	DungeonInfo = { kind = "function", dir = "c2s", rate = 2, args = { "string" } }, -- (region) -> info
+	EnterDungeon = { kind = "function", dir = "c2s", rate = 1, args = { "string" } }, -- (region)
+	BossAnnounce = { kind = "event", dir = "s2c" }, -- (key, args) big centred message during a boss fight
+
 	-- PvP and death
 	SetPvp = { kind = "function", dir = "c2s", rate = 1, args = { "boolean" } },
 	RespawnNow = { kind = "function", dir = "c2s", rate = 1, args = {} },

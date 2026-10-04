@@ -186,6 +186,17 @@ function MonsterService.SpawnAt(
 	return monster
 end
 
+-- Spawns a monster from a custom kind definition (dungeon bosses). Not tied to a spawner; ignores the budget.
+function MonsterService.SpawnCustom(def: Monsters.MonsterDef, variant: any, level: number, at: CFrame): Monster.Monster
+	local ground = groundAt(at.Position)
+	local monster = Monster.new(def, variant, level, CFrame.new(ground) * at.Rotation, context, folder)
+	monster.entity = EntityService.RegisterMonster(monster, monster.model)
+	table.insert(monsters, monster)
+	nextTick[monster] = os.clock()
+	MonsterService.Spawned:Fire(monster)
+	return monster
+end
+
 local function removeFrom(list: { any }, value: any)
 	local index = table.find(list, value)
 	if index then

@@ -106,8 +106,8 @@ local function registerWindows()
 					})
 				end,
 			})
-		elseif entry.id == "map" then
-			-- The world map is registered by WorldController.
+		elseif entry.id == "map" or entry.id == "party" then
+			-- Registered by WorldController / PartyController.
 			continue
 		elseif entry.id == "menu" then
 			WindowManager.Register({

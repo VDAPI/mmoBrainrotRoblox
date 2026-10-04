@@ -111,6 +111,10 @@ local function usePortal(player: Player, portalId: string): (boolean, string?)
 end
 
 function TravelService.MarkVisited(player: Player, mapId: string)
+	local map = Maps.get(mapId)
+	if not map or map.biome == "dungeon" then
+		return
+	end
 	local char = PlayerStateService.GetCharacter(player)
 	if char and not (char.visitedMaps or {})[mapId] then
 		PlayerStateService.Set(player, { "character", "visitedMaps", mapId }, true)
@@ -179,7 +183,7 @@ local function toMap(player: Player, itemId: string, mapId: string): (boolean, s
 	if not map or not char then
 		return false, "error.badRequest"
 	end
-	if not (char.visitedMaps or {})[mapId] then
+	if not (char.visitedMaps or {})[mapId] or map.biome == "dungeon" then
 		return false, "teleport.notVisited"
 	end
 	if char.location.map == mapId and mapId ~= Config.StartingMap then

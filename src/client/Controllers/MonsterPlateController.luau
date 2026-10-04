@@ -25,6 +25,7 @@ local VARIANT_COLORS: { [string]: Color3 } = {
 	normal = Color3.fromHex("#E8E4DA"),
 	elite = Color3.fromHex("#E05A4A"),
 	elite2 = Color3.fromHex("#C77BFF"),
+	boss = Color3.fromHex("#FF9F1C"),
 }
 
 MonsterPlateController.VariantColors = VARIANT_COLORS
@@ -100,7 +101,11 @@ local function build(model: Model)
 				Size = UDim2.new(1, 0, 0, 24),
 				Text = scope:Computed(function(use): string
 					local v = use(variant) or "normal"
-					local name = if def then Text.get(use, def.nameKeys[v] or def.nameKeys.normal) else monsterId
+					local key = model:GetAttribute("NameKey")
+					local name = if type(key) == "string"
+						then Text.get(use, key)
+						elseif def then Text.get(use, def.nameKeys[v] or def.nameKeys.normal)
+						else monsterId
 					return Text.get(use, "monsterPlate.label", { name = name, level = use(level) or 1 })
 				end),
 				FontFace = Theme.Fonts.BodyBold,

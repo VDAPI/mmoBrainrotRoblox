@@ -70,6 +70,9 @@ export type Monster = typeof(setmetatable(
 		spawnerId: string?,
 		damageOverride: number?,
 		speedFactor: number,
+		-- Bosses: own leash range (arena) and no rewards through CombatService.
+		leashRange: number?,
+		isBoss: boolean?,
 	},
 	Monster
 ))
@@ -91,6 +94,7 @@ function Monster.new(
 
 	model:SetAttribute("MonsterId", def.id)
 	model:SetAttribute("Variant", variant)
+	model:SetAttribute("NameKey", (def.nameKeys :: any)[variant] or def.nameKeys.normal)
 	model:SetAttribute("Level", stats.level)
 	model:SetAttribute("MaxHp", stats.maxHp)
 	model:SetAttribute("Hp", stats.maxHp)
@@ -127,6 +131,8 @@ function Monster.new(
 		spawnerId = nil,
 		damageOverride = nil,
 		speedFactor = 1,
+		leashRange = nil,
+		isBoss = nil,
 	}, Monster)
 	return self
 end
@@ -140,7 +146,7 @@ function Monster.Position(self: Monster): Vector3
 end
 
 function Monster.Name(self: Monster): string
-	return self.def.nameKeys[self.variant]
+	return (self.def.nameKeys :: any)[self.variant] or self.def.nameKeys.normal
 end
 
 local function flat(v: Vector3): Vector3
@@ -292,7 +298,7 @@ end
 
 local function stepChase(self: Monster, now: number)
 	local position = self.root.Position
-	if distanceFlat(position, self.spawnCFrame.Position) > Combat.leashRange then
+	if distanceFlat(position, self.spawnCFrame.Position) > (self.leashRange or Combat.leashRange) then
 		self:StartReturn()
 		return
 	end

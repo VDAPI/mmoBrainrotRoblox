@@ -16,6 +16,7 @@ local ItemRoll = require(Shared.Logic.ItemRoll)
 local Items = require(Shared.Data.Items)
 local Loot = require(Shared.Logic.Loot)
 local Net = require(Shared.Net)
+local PartyLoot = require(Shared.Logic.PartyLoot)
 local Rarities = require(Shared.Data.Rarities)
 local Rng = require(Shared.Logic.Rng)
 local Types = require(Shared.Types)
@@ -32,6 +33,7 @@ local LootService = {
 		"StatService",
 		"MonetizationService",
 		"AnnounceService",
+		"PartyService",
 	},
 }
 
@@ -51,6 +53,7 @@ local InventoryService: any
 local StatService: any
 local MonetizationService: any
 local AnnounceService: any
+local PartyService: any
 
 local PICKUP_TOLERANCE = 4
 
@@ -180,20 +183,74 @@ function LootService.Pickup(player: Player, bagId: string, ignoreDistance: boole
 	return true, nil
 end
 
-local function onMonsterKilled(info: any, credit: { Player })
-	for _, player in credit do
-		local character: Types.CharacterData? = PlayerStateService.GetCharacter(player)
+-- Splits `items` between party members (DESIGN §17) and drops one bag per member. Equipment is announced
+-- in the party chat.
+function LootService.DistributeToParty(members: { Player }, position: Vector3, items: { ItemInstance })
+	if #members == 0 or #items == 0 then
+		return
+	end
+	if #members == 1 then
+		LootService.SpawnBag(members[1], position, items)
+		return
+	end
+	local candidates: { PartyLoot.Candidate } = {}
+	local byId: { [number]: Player } = {}
+	for _, member in members do
+		local character: Types.CharacterData? = PlayerStateService.GetCharacter(member)
 		if character then
-			local loot = Loot.rollMonsterLoot(info.monsterId, info.variant, info.level, rng, {
-				dropBonus = StatService.GetValue(player, "dropBonus"),
-				classId = character.class :: string,
-			})
-			local items = instancesFrom(loot)
-			if #items > 0 then
-				LootService.SpawnBag(player, info.position, items)
+			table.insert(candidates, { id = member.UserId, classId = character.class :: string })
+			byId[member.UserId] = member
+		end
+	end
+	local lootItems: { PartyLoot.LootItem } = {}
+	for _, item in items do
+		local def = Items.get(item.id)
+		table.insert(lootItems, { uid = item.uid, classes = if def then def.classes else nil })
+	end
+	local assigned = PartyLoot.distribute(lootItems, candidates, rng)
+	local perMember: { [Player]: { ItemInstance } } = {}
+	for _, item in items do
+		local owner = byId[assigned[item.uid] or 0]
+		if owner then
+			local list = perMember[owner] or {}
+			table.insert(list, item)
+			perMember[owner] = list
+			local def = Items.get(item.id)
+			local party = PartyService.Get(owner)
+			if party and def and def.category == "equipment" then
+				local character: Types.CharacterData? = PlayerStateService.GetCharacter(owner)
+				PartyService.Notify(party, "party.lootItem", {
+					name = if character then character.name else owner.DisplayName,
+					item = `#item:{item.id}:{item.up}`,
+				})
 			end
 		end
 	end
+	for member, list in perMember do
+		LootService.SpawnBag(member, position, list)
+	end
+end
+
+local function onMonsterKilled(info: any, credit: { Player })
+	if info.boss or #credit == 0 then
+		return
+	end
+	-- One roll per monster with the top damage dealer's bonuses; parties share it.
+	local killer = credit[1]
+	local character: Types.CharacterData? = PlayerStateService.GetCharacter(killer)
+	if not character then
+		return
+	end
+	local loot = Loot.rollMonsterLoot(info.monsterId, info.variant, info.level, rng, {
+		dropBonus = StatService.GetValue(killer, "dropBonus"),
+		classId = if #credit == 1 then character.class :: string else nil,
+	})
+	LootService.DistributeToParty(credit, info.position, instancesFrom(loot))
+end
+
+-- Rolls items for a loot result (used by DungeonService for boss loot).
+function LootService.InstancesFrom(loot: Loot.LootResult): { ItemInstance }
+	return instancesFrom(loot)
 end
 
 -- Admin: rolls a legendary for the player's class and drops it in front of them.
@@ -253,6 +310,7 @@ function LootService.Init(registry)
 	StatService = registry.Get("StatService")
 	MonetizationService = registry.Get("MonetizationService")
 	AnnounceService = registry.Get("AnnounceService")
+	PartyService = registry.Get("PartyService")
 end
 
 function LootService.Start()

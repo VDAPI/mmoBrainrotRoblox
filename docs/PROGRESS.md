@@ -14,7 +14,7 @@
 | S06 | Miasto, sklepy, kowal, ulepszanie | ● |
 | S07 | Alchemik, błogosławieństwa, zbieractwo | ● |
 | S08 | Świat: miasto, regiony 1–2 | ● |
-| S09 | Grupa, lochy, bossy 20 i 45 | ○ |
+| S09 | Grupa, lochy, bossy 20 i 45 | ● |
 | S10 | PvP, arena, handel | ○ |
 | S11 | Questy, regiony 3–4, bossy 70 i 100 | ○ |
 | S12 | Gildie | ○ |
@@ -212,12 +212,40 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
   W jaskiniach mieszkają też elitarne odmiany potworów z powierzchni regionu (DESIGN §15.2: E/E II każdego rodzaju).
 - **S08** Rozmieszczenie NPC przeniesione do dzielnic miasta (rzemieślnicza NW, handlowa NE, świątynia i gildia SW, Arena SE).
 
+- **S09** Kredyt za zabójstwo: najwięcej obrażeń → jeśli w grupie, wszyscy żywi członkowie w promieniu 80 st. od potwora.
+  EXP dzielony równo (każdy potem przez własny mnożnik różnicy poziomów), złoto dzielone równo z resztą dla losowej osoby
+  (premia złota liczona od własnej części). Łup losowany **raz** na potwora (premia do dropu zabójcy), potem rozdzielany
+  przez `PartyLoot` (klasa → kandydaci tej klasy → losowanie; brak klasy/brak chętnych → wszyscy); każdy dostaje własny worek.
+  Solo: łup z preferencją klasy jak dotąd; w grupie bez preferencji klasy (żeby rozdział miał sens).
+- **S09** Grupy: zaproszenie 30 s, max 5, lider zaprasza/wyrzuca/przekazuje; wyjście lidera → lider = następny; grupa 1-osobowa
+  się rozwiązuje. Stan `party` (HP/mana/pozycja członków) odświeżany co 0.5 s, tylko przy zmianie. Ochrona PvP w grupie przez `PvpRules`.
+- **S09** Czat grupy: `TextChannel` per grupa (`VaelthornParty_<id>`); w oknie grupy przełącznik „Czat: Ogólny / Grupa”
+  zmienia kanał paska czatu. Komunikaty systemowe grupy (dołączył, łup) idą przez `SystemMessage` do członków.
+- **S09** Menu kontekstowe gracza: prawy przycisk myszy na postaci (Zaproś / Handel / Profil — dwa ostatnie „wkrótce”).
+  Na telefonie zaprasza się po nazwie w oknie grupy.
+- **S09** Boss to `Monster` z wariantem `boss` (HP = 30 × zwykły × (1 + 0.6 × (gracze − 1)) przez `hpMul` rodzaju) +
+  `Entities/Boss` (fazy, harmonogram ataków, przyzwania, tarcza, przyspieszenie, szał po 10 min ×1.6 obrażeń) + skrypty
+  `Entities/BossScripts/<id>` (dodatki wizualne). Ataki bossa używają tych samych telegrafów co Elity II, doszedł kształt
+  „ring” (pierścień z bezpiecznym środkiem). Odstęp między atakami min. 2.2 s po windupie.
+- **S09** Loch: jedna grupa naraz na loch na serwerze; wejście tylko lider (solo = lider), członkowie ≤ 20 st. od lidera,
+  warunki per osoba (poziom ≥ boss − 5, brak dziennej blokady, żywy). Kto nie spełnia — zostaje z komunikatem dlaczego.
+  Boss pojawia się po 5 s odliczania. Porażka: wszyscy martwi/poza areną albo 15 min → wyrzucenie przed wejście, reset.
+  Blokada dzienna i nagrody tylko dla obecnych na arenie przy zabiciu. Portal wyjścia działa cały czas (wyjście = rezygnacja).
+  Loch zwalnia się 60 s po zabiciu albo gdy wszyscy wyjdą. Śmierć w lochu → odrodzenie przed wejściem do lochu.
+- **S09** Łup bossa: `Loot.rollBossLoot` (3–4 + 1 na gracza powyżej 3, 25 % unikat, materiały) + 20 % szansy na losowe
+  legendarne błogosławieństwo; rozdział przez `PartyLoot`. EXP bossa = `monsterExp(poziom, "boss")` (×60), złoto ×40.
+- **S09** Areny `dungeon_meadows` i `dungeon_duskwood`: okrągła komora wydrążona w skale z kolumnami i pochodniami w klimacie
+  regionu (`World/Layouts/DungeonArena`). Areny Azgora i Vaelgratha + ich dane walk są, budowa w S11.
+- **S09** Kamień Mapy nie zapisuje ani nie celuje w mapy lochów.
+
 ## Niedokończone
 (Rzeczy z zakresu sesji, które nie zostały zrobione. Następna sesja zaczyna od nich.)
 
 - **S01** Dźwięki UI to placeholdery (`UI/Sounds.luau`), do podmiany na prawdziwe.
 - **S03** Potwory nie mają animacji (placeholdery z Partów poruszają się bez ruchu kończyn); zamach i pociski są efektami klienta.
-- **S08 → S09** Wejścia do lochów stoją w jaskiniach (tag `DungeonEntrance`), ale nie da się wejść — DungeonService w S09.
+- **S09 → S11** Lochy Azgora (70) i Vaelgratha (100): dane bossów gotowe, areny i jaskinie w S11.
+- **S09 → S10** „Handel” w menu kontekstowym gracza mówi „wkrótce”.
+- **S09** Menu kontekstowe gracza tylko pod prawym przyciskiem myszy (brak odpowiednika dotykowego poza zaproszeniem po nazwie).
 - **S08 → S11** Spalone Pustkowia, Lodowe Szczyty i ich jaskinie mają dane, ale nie mają layoutów (portale „nieotwarte”).
 - **S08 → S14** Muzyka map (crossfade gotowy, brak ścieżek), tryb obracającej się minimapy.
 - **S08** Arena w mieście to na razie tylko żółta strefa z trybunami — zapisy i walki areny w S10.
@@ -652,3 +680,48 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
 12. Wyjdź z gry na Łąkach i wejdź ponownie → pojawiasz się w tym samym miejscu (zapis co 30 s i przy wyjściu).
 13. Kamień Mapy → lista odwiedzonych map (miasto, Łąki, …).
 14. `/rebuild meadows` → mapa przebudowana (komunikat z czasem). `/maps` → ✔ przy zbudowanych.
+
+### S09: Grupa, lochy, bossy 20 i 45
+
+**Zrobione**
+- Logika (Lune): `Logic/PartyLoot` (rozdział przedmiotów wg klas, podział złota z resztą, podział EXP),
+  `Logic/BossScaling` (HP wg graczy, dodatkowe przedmioty, fazy wg HP, dzienna blokada, czas do resetu, wymagany poziom).
+- Dane: `Data/Bosses` — Grimrok i Morvane w pełni (fazy, ataki z telegrafami, przyzwania, tarcza, szał), Azgor i Vaelgrath z danymi.
+- Serwer: `PartyService` (zaproszenia, lider, wyrzucanie, przekazanie, kanał czatu, stan grupy), kredyt i łup grupowy w
+  `CombatService`/`LootService`, `Entities/Boss` + `BossScripts`, `DungeonService` (wejście, przebieg, porażka, nagrody, blokady,
+  ogłoszenie), areny dwóch lochów, kształt telegrafu „ring”, odrodzenie po śmierci w lochu przed wejściem.
+- Klient: ramki grupy pod portretem (klik = cel), okno Grupy (P) z zaproszeniem po nazwie, lider/wyrzuć, czat grupy, zasady
+  łupu; popup zaproszenia z odliczaniem; menu kontekstowe gracza (PPM); okno wrót lochu (stan, członkowie ✓/✗ z powodem i czasem
+  do resetu, „Wejdź”); pasek HP bossa z fazą, licznikiem 15 min, szałem i tarczą; duże komunikaty walki; członkowie grupy na minimapie.
+- Admin: `/boss reset`, `/boss spawn <id>`, `/phase <n>`, `/partyloot [n]`.
+- Testy: 245 (nowe: rozdział łupu — 1 osoba, jedyny z klasą, kilku z klasą, nikt z klasą, biżuteria; podział złota/EXP;
+  skalowanie bossa; fazy; blokady; spójność danych bossów).
+
+**Najważniejsze pliki**: `src/shared/Logic/{PartyLoot,BossScaling}.luau`, `src/shared/Data/Bosses.luau`,
+`src/server/Services/{Party,Dungeon}Service.luau`, `src/server/Entities/{Boss.luau,BossScripts/*}`,
+`src/server/World/Layouts/{DungeonArena,dungeon_meadows,dungeon_duskwood}.luau`,
+`src/client/Controllers/{Party,Dungeon}Controller.luau`, `src/client/UI/Screens/{PartyWindow,PartyFrames,DungeonWindow}.luau`.
+
+#### Instrukcja testu S09
+
+Grupa (Studio → Test → Clients and Servers: 2 graczy):
+1. Gracz A: P → wpisz nazwę postaci B → „Zaproś”. Albo PPM na postaci B → „Zaproś do grupy”.
+2. Gracz B: u góry okienko „A zaprasza Cię do grupy (30 s)” → „Akceptuj”. Obaj widzą ramki drugiego pod portretem (HP, mana, ♛ lidera).
+3. Zabijcie razem potwora: EXP i złoto po połowie (każdy widzi swoją nagrodę), worki z łupem osobno; w czacie „X otrzymał …”.
+4. Odejdź > 80 st. — ramka „daleko”, nie dostajesz EXP z potworów zabitych przez drugiego.
+5. Kapłan leczy członka grupy (klik w ramkę = cel). Atak na członka grupy w czerwonej strefie → zablokowany.
+6. „Czat: Grupa” w oknie grupy → wiadomości tylko do grupy. Lider: „Lider” / „Wyrzuć”; wyjście lidera przekazuje przewodnictwo.
+
+Loch (wystarczy 1 gracz):
+7. `/lvl 20`, `/tp meadows_cave`, idź na wschód do czerwonych wrót → **E** → okno: Grimrok poziom 20, wejście od 15, „Wolny”, ty ✓.
+8. „Wejdź” → teleport na arenę, „Grimrok budzi się za 5 s…”, pojawia się boss z koroną i paskiem HP u góry (faza 1/3, licznik 15:00).
+9. Faza 1: czerwony stożek przed nim (zamach) i koło pod losowym graczem (skok — boss ląduje w kole). Zejdź z telegrafu = brak obrażeń.
+10. `/phase 2` → „Grimrok wzywa swoich wojowników!”, 4 gobliny co 20 s. `/phase 3` → „Grimrok wpada w szał!”, czerwony,
+    szybszy, wir dookoła siebie (uciekaj z koła).
+11. Zabij (np. `/dmg 999999`): „Grimrok pokonany!”, ogłoszenie na serwerze, worek z łupem (3–4 przedmioty, czasem unikat
+    Grimroka), EXP i złoto. Okno wrót: twoja postać ✗ „już pokonany dzisiaj (hh:mm:ss)”.
+12. Drugi gracz w tym czasie przy wrotach: „Zajęty przez grupę gracza X (mm:ss)”.
+13. Śmierć na arenie → odrodzenie przed wrotami; gdy nikt nie walczy → „Twoja grupa poległa…”, boss się resetuje.
+14. `/boss reset` czyści blokady. Morvane: `/lvl 45`, `/boss spawn morvane` → pociski cienia w 3 osoby, pole klątwy;
+    `/phase 2` → 2 szkielety i tarcza (pasek niebieski, „nietykalna”) aż padną; `/phase 3` → pierścień z zielonym środkiem co 15 s.
+15. `/partyloot 4` → symulacja rozdziału łupu bossa między 4 klasy.

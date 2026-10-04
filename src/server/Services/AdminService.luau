@@ -22,6 +22,9 @@ local Maps = require(Shared.Data.Maps)
 local Monsters = require(Shared.Data.Monsters)
 local Npcs = require(Shared.Data.Npcs)
 local Net = require(Shared.Net)
+local Rng = require(Shared.Logic.Rng)
+local PartyLoot = require(Shared.Logic.PartyLoot)
+local Loot = require(Shared.Logic.Loot)
 
 local log = Log.new("AdminService")
 
@@ -51,6 +54,7 @@ local AdminService = {
 		"FishingService",
 		"WorldService",
 		"TravelService",
+		"DungeonService",
 	},
 }
 
@@ -77,6 +81,7 @@ local GatherService: any
 local FishingService: any
 local WorldService: any
 local TravelService: any
+local DungeonService: any
 
 type Command = {
 	usageKey: string,
@@ -884,6 +889,67 @@ COMMANDS.nearby = {
 	end,
 }
 
+COMMANDS.boss = {
+	usageKey = "admin.usage.boss",
+	run = function(player, args)
+		if args[1] == "reset" then
+			withCharacter(player, function()
+				DungeonService.ResetAll(player)
+				reply(player, "admin.boss.reset")
+			end)
+		elseif args[1] == "spawn" and args[2] then
+			withCharacter(player, function()
+				if DungeonService.ForceStart(player, args[2]) then
+					reply(player, "admin.boss.spawn", { boss = args[2] })
+				else
+					reply(player, "admin.usage.boss")
+				end
+			end)
+		else
+			reply(player, "admin.usage.boss")
+		end
+	end,
+}
+
+COMMANDS.phase = {
+	usageKey = "admin.usage.phase",
+	run = function(player, args)
+		local phase = tonumber(args[1])
+		if not phase or not DungeonService.ForcePhase(player, math.floor(phase)) then
+			reply(player, "admin.usage.phase")
+			return
+		end
+		reply(player, "admin.phase.ok", { phase = phase })
+	end,
+}
+
+-- Simulates party loot distribution among fake members of every class (solo testing of DESIGN §17).
+COMMANDS.partyloot = {
+	usageKey = "admin.usage.partyloot",
+	run = function(player, args)
+		local n = math.clamp(tonumber(args[1]) or 4, 1, 5)
+		local classes = { "Warrior", "Mage", "Hunter", "Cleric", "Warrior" }
+		local candidates = {}
+		for i = 1, n do
+			table.insert(candidates, { id = i, classId = classes[i] })
+		end
+		local rng = Rng.new()
+		local loot = Loot.rollBossLoot("grimrok", n, rng, {})
+		local items = {}
+		for i, drop in loot.items do
+			local def = Items.get(drop.defId)
+			table.insert(items, { uid = tostring(i), classes = if def then def.classes else nil, id = drop.defId })
+		end
+		local assigned = PartyLoot.distribute(items :: any, candidates, rng)
+		local lines = {}
+		for _, item in items do
+			local owner = assigned[item.uid]
+			table.insert(lines, `{item.id} -> #{owner or 0} {classes[owner or 1]}`)
+		end
+		reply(player, "admin.partyloot.result", { list = table.concat(lines, "; ") })
+	end,
+}
+
 local function onCommand(name: string, textSource: TextSource, message: string)
 	local player = Players:GetPlayerByUserId(textSource.UserId)
 	if not player then
@@ -932,6 +998,7 @@ function AdminService.Init(registry)
 	FishingService = registry.Get("FishingService")
 	WorldService = registry.Get("WorldService")
 	TravelService = registry.Get("TravelService")
+	DungeonService = registry.Get("DungeonService")
 end
 
 function AdminService.Start()

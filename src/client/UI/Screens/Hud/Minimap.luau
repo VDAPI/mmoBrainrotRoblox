@@ -146,6 +146,17 @@ local function Minimap(scope: Scope): Instance
 			end
 			accumulator = 0
 			dynamic:ClearAllChildren()
+			-- Party members (blue dots)
+			local party = State.Get({ "party" })
+			if type(party) == "table" then
+				for _, member in party.members do
+					if member.id ~= Players.LocalPlayer.UserId and member.map == currentMap then
+						local p =
+							MapSketch.toPixel(sketch, currentScale, member.x - map.offset.x, member.z - map.offset.z)
+						glyph(dynamic, "●", "#4A8FE7", p, 14, 5)
+					end
+				end
+			end
 			local monsters = Workspace:FindFirstChild("Monsters")
 			if monsters then
 				for _, model in monsters:GetChildren() do

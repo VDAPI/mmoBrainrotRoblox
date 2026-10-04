@@ -288,7 +288,7 @@ map({
 	dungeonRegion = "frostpeak",
 })
 
--- Boss chambers (S09 builds the arenas).
+-- Boss chambers (DESIGN §16).
 for i, dungeon in
 	{
 		{ region = "meadows", level = 20 },
@@ -305,11 +305,12 @@ do
 		maxLevel = dungeon.level,
 		offset = { x = 4000 * i, y = 0, z = 8000 },
 		size = { x = 300, z = 300 },
-		spawn = { x = 0, y = 4, z = 100 },
+		spawn = { x = 0, y = 4, z = 60 },
 		biome = "dungeon",
 		lighting = if dungeon.region == "duskwood" then LIGHT.crypt else LIGHT.cave,
 		music = "",
-		buildMode = "none",
+		-- S09 builds the chambers of regions 1–2; S11 the others.
+		buildMode = if i <= 2 then "generated" else "none",
 		worldMap = { x = 0, y = 0 },
 		links = {},
 	})

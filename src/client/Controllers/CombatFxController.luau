@@ -278,6 +278,21 @@ local function telegraph(event: { [string]: any })
 			table.insert(parts, slice)
 			table.insert(parts, fill)
 		end
+	elseif event.sh == "ring" then
+		-- Ring with a safe centre (bosses): red outer disc filling up, green safe zone in the middle.
+		local radius = tonumber(event.r) or 20
+		local inner = tonumber(event.ir) or 5
+		local outline = groundDisc("TelegraphOuter", radius, area, 0.7)
+		local fill = groundDisc("TelegraphFill", inner, area, 0.45)
+		local safe = groundDisc("TelegraphSafe", inner, area, 0.35)
+		outline.Color = color
+		fill.Color = color
+		safe.Color = Theme.Colors.Success
+		safe.CFrame = safe.CFrame + Vector3.new(0, 0.05, 0)
+		TweenService:Create(fill, info, { Size = Vector3.new(0.14, radius * 2, radius * 2) }):Play()
+		table.insert(parts, outline)
+		table.insert(parts, fill)
+		table.insert(parts, safe)
 	elseif event.sh == "line" then
 		local length = tonumber(event.l) or 15
 		local width = tonumber(event.w) or 5

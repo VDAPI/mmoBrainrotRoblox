@@ -43,6 +43,8 @@ return table.freeze({
 		normal = table.freeze({ levelAdd = 0, hpMul = 1, dmgMul = 1, scale = 1, aggroRange = 18 }),
 		elite = table.freeze({ levelAdd = 2, hpMul = 4, dmgMul = 1.5, scale = 1.25, aggroRange = 25 }),
 		elite2 = table.freeze({ levelAdd = 4, hpMul = 12, dmgMul = 2, scale = 1.5, aggroRange = 25 }),
+		-- Dungeon bosses (DESIGN §16): HP is 30 x normal x players (Logic/BossScaling via the kind's hpMul).
+		boss = table.freeze({ levelAdd = 0, hpMul = 1, dmgMul = 2.2, scale = 1, aggroRange = 70 }),
 	}),
 
 	-- AI (DESIGN §15.1).

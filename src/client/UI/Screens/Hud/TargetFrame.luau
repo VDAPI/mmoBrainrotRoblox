@@ -38,9 +38,10 @@ local VARIANT_COLORS: { [string]: Color3 } = {
 	normal = Color3.fromHex("#E8E4DA"),
 	elite = Color3.fromHex("#E05A4A"),
 	elite2 = Color3.fromHex("#C77BFF"),
+	boss = Color3.fromHex("#FF9F1C"),
 }
 
-local BADGES: { [string]: string } = { elite = "★", elite2 = "★★" }
+local BADGES: { [string]: string } = { elite = "★", elite2 = "★★", boss = "♛" }
 
 -- Attribute values are untyped; the server writes them, so read them as `any`.
 local function attr(model: Model, name: string): any
@@ -59,7 +60,7 @@ local function read(model: Model): Info?
 		local def = Monsters.get(monsterId)
 		local variant = attr(model, "Variant") or "normal"
 		return {
-			nameKey = if def then def.nameKeys[variant] or def.nameKeys.normal else nil,
+			nameKey = attr(model, "NameKey") or (if def then def.nameKeys[variant] or def.nameKeys.normal else nil),
 			variant = variant,
 			level = attr(model, "Level") or 1,
 			hp = attr(model, "Hp") or 0,

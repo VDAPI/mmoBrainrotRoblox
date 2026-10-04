@@ -8,9 +8,10 @@
 
 export type Ability = {
 	id: string,
-	shape: "circle" | "cone" | "line",
+	shape: "circle" | "cone" | "line" | "ring",
 	origin: "self" | "target",
 	radius: number?,
+	inner: number?, -- ring: radius of the safe centre
 	angle: number?,
 	length: number?,
 	width: number?,

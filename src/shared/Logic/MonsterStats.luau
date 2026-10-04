@@ -4,7 +4,7 @@
 local Combat = require("../Data/Combat")
 local Damage = require("./Damage")
 
-export type Variant = "normal" | "elite" | "elite2"
+export type Variant = "normal" | "elite" | "elite2" | "boss"
 
 -- Kind multipliers (subset of a Data/Monsters entry).
 export type Kind = {

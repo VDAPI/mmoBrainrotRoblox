@@ -17,12 +17,13 @@ local Types = require(Shared.Types)
 
 local PvpService = {
 	Name = "PvpService",
-	Deps = { "PlayerStateService", "CharacterService", "ZoneService" },
+	Deps = { "PlayerStateService", "CharacterService", "ZoneService", "PartyService" },
 }
 
 local PlayerStateService: any
 local CharacterService: any
 local ZoneService: any
+local PartyService: any
 
 type Runtime = { token: number, pendingTarget: boolean?, lastPvpCombat: number? }
 
@@ -105,7 +106,11 @@ function PvpService.CanAttack(attacker: Player, target: Player): (boolean, strin
 	return PvpRules.canAttack(
 		{ pvpEnabled = PvpService.IsEnabled(attacker) },
 		{ pvpEnabled = PvpService.IsEnabled(target) },
-		{ zone = ZoneService.GetPvpZone(target), sameParty = false, sameGuild = false }
+		{
+			zone = ZoneService.GetPvpZone(target),
+			sameParty = PartyService.SameParty(attacker, target),
+			sameGuild = false,
+		}
 	)
 end
 
@@ -150,6 +155,7 @@ function PvpService.Init(registry)
 	PlayerStateService = registry.Get("PlayerStateService")
 	CharacterService = registry.Get("CharacterService")
 	ZoneService = registry.Get("ZoneService")
+	PartyService = registry.Get("PartyService")
 end
 
 function PvpService.Start()
