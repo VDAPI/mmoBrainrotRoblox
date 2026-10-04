@@ -53,6 +53,7 @@ export type Props = {
 	SkillUsable: (skillId: string) -> (boolean, boolean),
 	SkillColor: (skillId: string) -> Color3,
 	SelectTarget: () -> (),
+	OnPlayerMenu: ((player: Player, at: Vector2) -> ())?,
 }
 
 local SKILL_SLOTS = 10
@@ -355,7 +356,7 @@ local function Hud(scope: Scope, props: Props): Instance
 			menu(scope, props),
 			actionBar(scope, props),
 			expBar(scope),
-			TargetFrame(scope, { Target = props.Target }),
+			TargetFrame(scope, { Target = props.Target, OnPlayerMenu = props.OnPlayerMenu }),
 			ZoneBanner(scope),
 			AttackButton(scope, { OnAttack = props.OnAttack }),
 			PvpToggle(scope),

@@ -169,6 +169,9 @@ local Definitions: { [string]: Definition } = {
 	CosmeticEquip = { kind = "function", dir = "c2s", rate = 4, args = { "string", "string?" } }, -- (kind, id | nil)
 	GuideDone = { kind = "event", dir = "c2s", rate = 0.5, args = {} },
 
+	-- Profiles (S15)
+	PlayerProfile = { kind = "function", dir = "c2s", rate = 2, args = { "integer" } }, -- (userId) same server
+
 	-- PvP and death
 	SetPvp = { kind = "function", dir = "c2s", rate = 1, args = { "boolean" } },
 	RespawnNow = { kind = "function", dir = "c2s", rate = 1, args = {} },

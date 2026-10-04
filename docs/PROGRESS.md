@@ -20,6 +20,7 @@
 | S12 | Gildie | ● |
 | S13 | Aukcja, poczta, czat | ● |
 | S14 | Monetyzacja, kosmetyki, jakość | ● |
+| S15 | Poprawki z „Niedokończone” (mobile, profil) | ● |
 
 Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana przez właściciela
 
@@ -363,14 +364,10 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
 
 - **S01** Dźwięki UI to placeholdery (`UI/Sounds.luau`), do podmiany na prawdziwe.
 - **S03** Potwory nie mają animacji (placeholdery z Partów poruszają się bez ruchu kończyn); zamach i pociski są efektami klienta.
-- **S10** Statystyki PvP i pojedynków są zapisywane, ale nie ma okna profilu („Profil” mówi „wkrótce”) — poza zakresem planu.
-- **S10** Handel i pojedynek tylko z menu PPM — na telefonie brak wejścia (do dodania przyciskiem w ramce celu).
-- **S09** Menu kontekstowe gracza tylko pod prawym przyciskiem myszy (brak odpowiednika dotykowego poza zaproszeniem po nazwie).
 - **S11** Questy nie były grane od początku do końca (brak testu w Studio); EXP z nagród dobrany wzorem, do strojenia.
 - **S08** Muzyka map: crossfade i głośność z opcji gotowe, ale brak ścieżek (pole `music` w `Data/Maps.luau` puste — wkleić
   id dźwięków z Creator Store).
 - **S08** Arena w mieście to na razie tylko żółta strefa z trybunami — zapisy i walki areny w S10.
-- **S07** Tooltip przedmiotu-błogosławieństwa nie wypisuje jego statystyk (są w tooltipie ikony w HUD po użyciu).
 - **S14** Kosmetyki i pety to placeholdery z Partów; zmiana klawiszy (rebinding) nie powstała — okno opcji tylko je pokazuje.
   „Kody nagród” (opcjonalne) pominięte.
 - **S13** Aukcja i poczta między serwerami (MessagingService, MemoryStore, DataStore) sprawdzalne tylko w opublikowanej grze;
@@ -380,7 +377,6 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
 - **S13** Etykieta kanału handlu (`⚖ Trade`) nie jest tłumaczona (nazwa kanału = etykieta zakładki).
 - **S06** Sprzedaż przez przeciągnięcie na okno sklepu nie istnieje — sprzedaje się w zakładce „Sprzedaj” (zaznaczanie).
 - **S04** Broń w dłoni to placeholder z jednego Partu (bez modeli z assetów).
-- **S04 → S09** Łup z bossów (`Loot.rollBossLoot`) jest gotowy, ale bossów jeszcze nie ma.
 - **S05** Efekty wizualne umiejętności to placeholdery z Partów (`VfxController`), bez animacji postaci.
 - **S05 → S09** Leczenie, buffy grupowe, Krąg Światła, Aura, Boska Interwencja i Wskrzeszenie działają na innych graczy dopiero
   z grupami (S09). Obrażenia skilli w graczy tylko przez `PvpService.CanAttack` (pełne PvP w S10).
@@ -1131,3 +1127,25 @@ kilku sekund); dystans do NPC liczony od pozycji postaci kontrolowanej przez kli
 9. Sprawdź `/auction list` i gildie na dwóch serwerach (dwie przeglądarki / dwa konta) — tryb `global`.
 10. Prywatność: gra nie zbiera danych poza Roblox (analityka Roblox, DataStore). Brak linków zewnętrznych.
 11. Publikacja jako **Private** → test z kilkoma osobami → **Public**.
+
+### S15: Poprawki z listy „Niedokończone”
+
+**Zrobione**
+- Akcje na innym graczu dotykiem: przycisk „⋯” obok ramki celu (gdy celem jest inny gracz) otwiera to samo menu co PPM:
+  grupa, handel, pojedynek, gildia, profil.
+- Okno profilu gracza (`PlayerProfile`, `ProfileService`, `ProfileWindow`): imię, klasa, poziom, gildia, PvP (zabójstwa,
+  śmierci, K/D), pojedynki, założony ekwipunek z tooltipami (podgląd jak w Margonem). Tylko gracze z tego samego serwera.
+- Tooltip przedmiotu-błogosławieństwa wypisuje jego statystyki i czas działania.
+- Koperta poczty przesunięta na lewo od ramki celu (nie zasłaniają się).
+
+**Pliki**: `src/server/Services/ProfileService.luau`, `src/client/UI/Screens/ProfileWindow.luau`, `Hud/TargetFrame.luau`,
+`Hud/init.luau`, `ScreenController`, `PartyController`, `ItemTooltip`, `MarketController`.
+
+#### Instrukcja testu S15
+
+1. Dwóch graczy. Gracz 1 klika (lub tapie) Gracza 2 → ramka celu u góry, obok przycisk „⋯” → menu: Zaproś, Handel,
+   Pojedynek, Zaproś do gildii (gdy masz uprawnienie), Profil.
+2. „Profil” → okno z imieniem, klasą, poziomem, gildią, statystykami PvP i pojedynków oraz ekwipunkiem (najedź/tapnij
+   przedmiot → tooltip z bonusami).
+3. Emulator telefonu (Test → Device): to samo działa dotykiem.
+4. `/bless` (albo błogosławieństwo z alchemika) → najedź na przedmiot błogosławieństwa w plecaku → lista statystyk i czas.

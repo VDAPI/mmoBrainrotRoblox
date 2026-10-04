@@ -1928,4 +1928,12 @@ return {
 	["duel.error.combat"] = "Duels are not possible during combat.",
 	["premium.error.notConfigured"] = "This product is not available yet.",
 	["smith.dismantle.mailed"] = "Your backpack is full: the rest of the materials went to your mail.",
+	-- S15: profiles
+	["window.profile.title"] = "Profile",
+	["profile.guild"] = "Guild: {guild}",
+	["profile.noGuild"] = "none",
+	["profile.pvp"] = "PvP: {kills} kills, {deaths} deaths (K/D {ratio})",
+	["profile.duels"] = "Duels: {won} won, {lost} lost",
+	["profile.error.notFound"] = "This player is not on this server any more.",
+	["tooltip.blessingDuration"] = "Lasts {time} of real time.",
 }

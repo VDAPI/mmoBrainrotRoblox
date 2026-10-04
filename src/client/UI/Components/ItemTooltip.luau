@@ -7,6 +7,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 
+local Blessings = require(ReplicatedStorage.Shared.Data.Blessings)
 local Bonuses = require(ReplicatedStorage.Shared.Data.Bonuses)
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local Device = require(script.Parent.Parent.Device)
@@ -232,6 +233,22 @@ local function build(s: Scope, item: ItemInstance, lang: string): { Instance }
 			Locale.T(`tooltip.restores.{def.use.resource}`, { amount = Format.number(def.use.amount or 0) }, lang),
 			DARK
 		)
+	end
+
+	-- Blessings list what they give while active (S15).
+	if def.use and def.use.kind == "blessing" and def.use.target then
+		local blessing = Blessings.get(def.use.target)
+		if blessing then
+			local ids = {}
+			for stat in blessing.stats do
+				table.insert(ids, stat)
+			end
+			table.sort(ids)
+			for _, stat in ids do
+				addLine(`{statName(lang, stat)}: <b>+{formatStat(stat, blessing.stats[stat])}</b>`, DARK)
+			end
+			addLine(Locale.T("tooltip.blessingDuration", { time = Format.timeLong(Blessings.DURATION) }, lang), MUTED)
+		end
 	end
 
 	-- Bonuses with roll quality

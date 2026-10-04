@@ -50,8 +50,8 @@ local function envelope(): Instance
 	end)
 	return scope:New("TextButton")({
 		Name = "MailEnvelope",
-		AnchorPoint = Vector2.new(0.5, 0),
-		Position = UDim2.new(0.5, 0, 0, Theme.Padding.Large),
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.new(0.5, -230, 0, Theme.Padding.Large), -- left of the target frame
 		Size = UDim2.fromOffset(84, 52),
 		AutoButtonColor = false,
 		BackgroundColor3 = Theme.Colors.Panel,

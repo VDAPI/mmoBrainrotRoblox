@@ -1,7 +1,7 @@
 --!strict
 -- Parties on the client (DESIGN §17): the party window (P), member frames under the portrait, the invite
 -- popup with Accept / Decline and a countdown, and the context menu on other players (right click):
--- Invite to party, Trade and Duel (S10), Invite to guild (S12), Profile (later).
+-- Invite to party, Trade and Duel (S10), Invite to guild (S12), Profile (S15).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -13,6 +13,7 @@ local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Net = require(ReplicatedStorage.Shared.Net)
 local PartyFrames = require(script.Parent.Parent.UI.Screens.PartyFrames)
 local PartyWindow = require(script.Parent.Parent.UI.Screens.PartyWindow)
+local ProfileWindow = require(script.Parent.Parent.UI.Screens.ProfileWindow)
 local Sounds = require(script.Parent.Parent.UI.Sounds)
 local State = require(script.Parent.Parent.UI.State)
 local Text = require(script.Parent.Parent.UI.Text)
@@ -187,8 +188,8 @@ local function contextMenu(): Instance
 					return rank == "leader" or rank == "officer"
 				end)
 			),
-			entry(5, "party.menu.profile", function()
-				Toast.push(Text.now("npc.service.soon"), "info")
+			entry(5, "party.menu.profile", function(target)
+				PartyController.OpenProfile(target.UserId)
 			end),
 		},
 	})
@@ -207,6 +208,23 @@ local function playerAt(position: Vector2): Player?
 	local hit = Workspace:Raycast(ray.Origin, ray.Direction * 300, params)
 	local model = hit and hit.Instance:FindFirstAncestorOfClass("Model")
 	return if model then Players:GetPlayerFromCharacter(model) else nil
+end
+
+local profileData = scope:Value(nil :: any)
+
+-- Loads another player's profile and opens the profile window (S15).
+function PartyController.OpenProfile(userId: number)
+	profileData:set(nil)
+	WindowManager.Open("profile")
+	task.spawn(function()
+		local ok, data = Net.Invoke("PlayerProfile", userId)
+		if ok then
+			profileData:set(data)
+		else
+			WindowManager.Close("profile")
+			Toast.push(Text.now(data or "error.internal"), "error")
+		end
+	end)
 end
 
 function PartyController.OpenMenu(target: Player, at: Vector2)
@@ -228,6 +246,14 @@ function PartyController.Init(registry)
 		size = Vector2.new(640, 560),
 		hotkey = Enum.KeyCode.P,
 		build = PartyWindow,
+	})
+	WindowManager.Register({
+		id = "profile",
+		titleKey = "window.profile.title",
+		size = Vector2.new(560, 560),
+		build = function(s)
+			return ProfileWindow(s, profileData)
+		end,
 	})
 	local layer = UIController.GetLayer("Screens")
 	PartyFrames(scope, function(userId: number)

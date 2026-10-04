@@ -1928,4 +1928,12 @@ return {
 	["duel.error.combat"] = "Pojedynek jest niemożliwy w trakcie walki.",
 	["premium.error.notConfigured"] = "Ten produkt nie jest jeszcze dostępny.",
 	["smith.dismantle.mailed"] = "Plecak pełny: reszta materiałów trafiła na pocztę.",
+	-- S15: profiles
+	["window.profile.title"] = "Profil",
+	["profile.guild"] = "Gildia: {guild}",
+	["profile.noGuild"] = "brak",
+	["profile.pvp"] = "PvP: {kills} zabójstw, {deaths} śmierci (K/D {ratio})",
+	["profile.duels"] = "Pojedynki: {won} wygranych, {lost} przegranych",
+	["profile.error.notFound"] = "Tego gracza nie ma już na serwerze.",
+	["tooltip.blessingDuration"] = "Działa {time} czasu rzeczywistego.",
 }

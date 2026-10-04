@@ -20,6 +20,9 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 
 export type Props = {
 	Target: Fusion.Value<Model?>,
+	-- Opens the player actions (party, trade, duel, guild, profile) for another player's character; the "⋯"
+	-- button next to the frame makes them reachable by touch (S15).
+	OnPlayerMenu: ((player: Player, at: Vector2) -> ())?,
 }
 
 type Info = {
@@ -120,6 +123,42 @@ local function TargetFrame(scope: Scope, props: Props): Instance
 		end),
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
+			scope:New("TextButton")({
+				Name = "PlayerMenu",
+				AnchorPoint = Vector2.new(0, 0),
+				Position = UDim2.new(1, Theme.Padding.Medium + 8, 0, -8),
+				Size = UDim2.fromOffset(Theme.Size.MinTouch + 8, Theme.Size.MinTouch + 8),
+				BackgroundColor3 = Theme.Colors.Panel,
+				BackgroundTransparency = 0.12,
+				Text = "⋯",
+				FontFace = Theme.Fonts.BodyBold,
+				TextSize = 30,
+				TextColor3 = Theme.Colors.GoldBright,
+				Visible = scope:Computed(function(use): boolean
+					local i = use(info)
+					local model = use(props.Target)
+					return props.OnPlayerMenu ~= nil
+						and i ~= nil
+						and i.isPlayer
+						and model ~= nil
+						and model ~= Players.LocalPlayer.Character
+				end),
+				[Fusion.OnEvent("Activated")] = function()
+					local model = Fusion.peek(props.Target)
+					local player = model and Players:GetPlayerFromCharacter(model)
+					local open = props.OnPlayerMenu
+					local camera = workspace.CurrentCamera
+					if player and open and camera then
+						-- The menu lives in an unscaled ScreenGui: open it just right of the frame.
+						local size = camera.ViewportSize
+						open(player, Vector2.new(size.X / 2 + size.X * 0.14, size.Y * 0.1))
+					end
+				end,
+				[Children] = {
+					scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
+					scope:New("UIStroke")({ Color = Theme.Colors.GoldDim }),
+				},
+			}),
 			scope:New("UIStroke")({
 				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
 				Thickness = Theme.Stroke.Normal,
