@@ -48,6 +48,8 @@ local DEFS: { StatDef } = {
 	{ id = "expBonus", group = "other", format = "pct", decimals = 0 },
 	{ id = "dropBonus", group = "other", format = "pct", decimals = 0 },
 	{ id = "goldBonus", group = "other", format = "pct", decimals = 0 },
+	-- Cheaper potions at shops (guild skill "healer", S12).
+	{ id = "potionDiscount", group = "other", format = "pct", decimals = 0, cap = 50 },
 } :: any
 
 local byId: { [string]: StatDef } = {}

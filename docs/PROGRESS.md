@@ -17,7 +17,7 @@
 | S09 | Grupa, lochy, bossy 20 i 45 | ● |
 | S10 | PvP, arena, handel | ● |
 | S11 | Questy, regiony 3–4, bossy 70 i 100 | ● |
-| S12 | Gildie | ○ |
+| S12 | Gildie | ● |
 | S13 | Aukcja, poczta, czat | ○ |
 | S14 | Monetyzacja, kosmetyki, jakość | ○ |
 
@@ -274,6 +274,35 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
 - **S11** Strzałka w trackerze wskazuje NPC/miejsce na tej samej mapie, a gdy cel jest na innej mapie — portal prowadzący
   wprost tam, w ostateczności portal do stolicy. Cel zaznaczony też gwiazdką na minimapie.
 
+- **S12** Gildia należy do **postaci** (klucz członka `"<userId>:<idPostaci>"`), nie do konta — zgodnie z `character.guildId`.
+  Usunięcie postaci usuwa ją z gildii (przywództwo przechodzi na najwyższą rangę, potem najstarszy staż; ostatni członek →
+  gildia rozwiązana).
+- **S12** Rangi: przywódca (wszystko), oficer (zaproś, wyrzuć niższą rangę, ulepszaj, wiadomość dnia), członek (wpłata).
+  Awans/degradacja, przekazanie przywództwa, ustawienia i rozwiązanie — tylko przywódca. Przywódca nie może odejść bez
+  przekazania przywództwa (gdy jest sam — rozwiązuje).
+- **S12** Umiejętności bez poziomu gildii, tylko koszt ze skarbca: bazowo 20k/50k/120k/250k/500k × mnożnik umiejętności
+  (Mądrość i Szczęście ×1.2, Fortuna ×1, Rozbudowa ×0.8, Łaska ×0.6) — `Data/GuildSkills.luau`.
+- **S12** Łaska Uzdrowiciela to nowa statystyka pochodna `potionDiscount` (limit 50%), która obniża cenę **mikstur** w każdym
+  sklepie (`Logic/ShopPrice`, wspólne dla serwera i okna sklepu). Leczenie u lekarki i tak jest darmowe.
+- **S12** Zapis: rekord `Guild_<id>` w `Vaelthorn_Guilds_v1`, każda zmiana to jedno `UpdateAsync` z regułami `Logic/Guild`
+  w callbacku; nazwy i tagi w `Vaelthorn_GuildNames_v1` (`n:<nazwa>`, `t:<TAG>`; zwolnienie = pusty napis). Rozwiązana
+  gildia zostaje jako nagrobek `disbanded = true`, żeby członkowie offline dowiedzieli się o tym przy wejściu. Bez dostępu
+  do DataStore działa magazyn w pamięci (jak nazwy postaci).
+- **S12** Złoto przy wpłacie/zakładaniu schodzi z postaci przed zapisem gildii (bez yieldu między sprawdzeniem a zmianą),
+  a przy nieudanym zapisie wraca; potem `DataService.Save`.
+- **S12** Synchronizacja: serwer, który zmienił gildię, od razu aktualizuje swój cache i publikuje `changed` (wersja) na
+  temacie `Guild_<id>`; inne serwery czytają rekord ponownie. Dodatkowo co 90 s odczyt kontrolny (MessagingService bywa
+  stratny). Cache tylko dla gildii z członkami online na serwerze.
+- **S12** Obecność: jeden wpis MemoryStore na gildię (`{ [klucz członka] = { jobId, czas } }`, wpis starszy niż 120 s = offline),
+  odświeżany co 45 s + natychmiastowe komunikaty `presence` przy wejściu/wyjściu. Lista pokazuje „ten serwer” albo
+  „serwer <8 znaków JobId>”.
+- **S12** Czat gildii: lokalny `TextChannel` na serwer (nazwa `⚑ TAG` = etykieta zakładki czatu, atrybut `GuildId`), zakładki
+  czatu włączone (`ChannelTabsConfiguration`). Klient, wysyłając linię w kanale gildii, wysyła ją też `GuildChatSend`; serwer
+  filtruje (`GetNonChatStringForBroadcastAsync`, limit 1/s, 200 znaków) i publikuje na inne serwery, gdzie trafia do tego
+  samego kanału jako linia systemowa. Komunikaty systemowe (dołączył, awans, wpłata, ulepszenie) tak samo.
+- **S12** Zaproszenia tylko na tym samym serwerze (z menu PPM gracza lub po imieniu w zakładce Członkowie), 60 s, popup jak
+  przy handlu/pojedynku. Tag gildii nad głową jako `[TAG]` przed imieniem (atrybut modelu `GuildTag`).
+
 ## Niedokończone
 (Rzeczy z zakresu sesji, które nie zostały zrobione. Następna sesja zaczyna od nich.)
 
@@ -287,14 +316,16 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
 - **S08** Arena w mieście to na razie tylko żółta strefa z trybunami — zapisy i walki areny w S10.
 - **S07** Tooltip przedmiotu-błogosławieństwa nie wypisuje jego statystyk (są w tooltipie ikony w HUD po użyciu).
 - **S07 → S14** Dodatkowe miejsce w kolejce alchemika za VIP działa tylko przez `/pass vip` (brak MarketplaceService).
-- **S06 → S11/S12/S13** Mistrz gildii, aukcjoner/poczta i tablica zleceń mają dialog, ale usługi „wkrótce”.
+- **S06 → S13** Aukcjoner i poczta mają dialog, ale usługi „wkrótce”.
 - **S06** Sprzedaż przez przeciągnięcie na okno sklepu nie istnieje — sprzedaje się w zakładce „Sprzedaj” (zaznaczanie).
 - **S04** Broń w dłoni to placeholder z jednego Partu (bez modeli z assetów).
 - **S04 → S09** Łup z bossów (`Loot.rollBossLoot`) jest gotowy, ale bossów jeszcze nie ma.
 - **S05** Efekty wizualne umiejętności to placeholdery z Partów (`VfxController`), bez animacji postaci.
 - **S05 → S09** Leczenie, buffy grupowe, Krąg Światła, Aura, Boska Interwencja i Wskrzeszenie działają na innych graczy dopiero
   z grupami (S09). Obrażenia skilli w graczy tylko przez `PvpService.CanAttack` (pełne PvP w S10).
-- **S02 → S09/S12** `PvpService.CanAttack` przekazuje `sameParty = false`, `sameGuild = false` — podpiąć grupę i gildię.
+- **S12** Gildie między serwerami (MessagingService, MemoryStore) da się sprawdzić tylko w opublikowanej grze; w Studio
+  działa jeden serwer (czat i obecność lokalnie). Etykieta zakładki czatu (`⚑ TAG`) niesprawdzona w Studio.
+- **S12** Zaproszenia do gildii między serwerami pominięte (zgodnie z zakresem); brak teleportu do serwera członka.
 
 ## Zgłoszone błędy
 (Właściciel wpisuje tu błędy po testach albo przekazuje je przez sesję poprawek.)
@@ -834,3 +865,65 @@ Loch (wystarczy 1 gracz):
 8. `/lvl 100`, `/boss spawn vaelgrath` → zionięcie, ogon; `/phase 2` → smok w powietrzu 12 s (nie da się trafić);
    `/phase 3` → burza: stój przy ognisku, inaczej obrażenia co 3 s.
 9. `/tp frostpeak`, `/tp frostpeak_cave` → śnieg, lód, kryształy; potwory 70–100.
+
+### S12: Gildie
+
+**Zrobione**
+- Dane i logika: `Data/GuildSkills` (5 umiejętności × 5 poziomów, koszty, zasady zakładania), `Logic/Guild` (uprawnienia
+  rang, walidacja nazwy i tagu, limit członków 20–45, bonusy, wszystkie zmiany rekordu jako czyste funkcje dla `UpdateAsync`),
+  `Logic/ShopPrice` (cena w sklepie z rabatem na mikstury), nowa statystyka `potionDiscount`.
+- Serwer: `GuildService` (zakładanie u Mistrza Gildii za 50 000 złota od poziomu 20, zaproszenia, akceptacja, odejście,
+  wyrzucanie, awans/degradacja, przekazanie przywództwa, rozwiązanie z potwierdzeniem nazwą, wpłaty, ulepszanie umiejętności,
+  wiadomość dnia, ochrona PvP), `Guild/Store` (DataStore + unikalne nazwy/tagi + magazyn w pamięci), `Guild/Bus`
+  (MessagingService + obecność w MemoryStore), `Guild/Runtime` (cache, stan `guild`, tag nad głową, kanał czatu).
+  Sprawdzanie członkostwa przy wejściu postaci (wyrzucony/rozwiązana offline → `guildId` czyszczone), aktualizacja poziomu
+  członka w rekordzie, usunięcie postaci = wyjście z gildii.
+- Bonusy: Mądrość (EXP), Fortuna (złoto), Szczęście (drop) przez źródło modyfikatorów „guild” w `StatService`; Łaska
+  Uzdrowiciela (tańsze mikstury), Rozbudowa (limit). Ochrona PvP gildii w `PvpService.CanAttack`.
+- Klient: okno Gildii (G) z zakładkami Przegląd / Członkowie / Umiejętności / Ustawienia, okno zakładania z walidacją
+  na żywo, zaproszenie jako popup z odliczaniem, „Zaproś do gildii” w menu PPM gracza, kanał gildii jako zakładka czatu
+  (z przekazywaniem między serwerami), tag `[TAG]` przed imieniem nad głową.
+- Admin: `/guild info`, `/guild treasury n`, `/guild skills max`, `/guild bots n` (członkowie-manekiny offline do testów
+  listy, rang i wyrzucania w pojedynkę), `/guild disband`.
+- Testy: 287 (nowe: uprawnienia, nazwy/tagi, koszty i bonusy umiejętności, limit, dołączanie, odejście przywódcy, wyrzucanie,
+  przekazanie, następca po usunięciu postaci, wpłaty, rozwiązanie, wersje, rabat na mikstury).
+
+**Najważniejsze pliki**: `src/shared/Data/GuildSkills.luau`, `src/shared/Logic/{Guild,ShopPrice}.luau`,
+`src/server/Services/GuildService.luau`, `src/server/Guild/{Store,Bus,Runtime}.luau`, `src/client/Controllers/GuildController.luau`,
+`src/client/UI/Screens/GuildWindow/*`, `src/client/UI/Screens/GuildFound.luau`, zmiany w `PvpService`, `ShopService`,
+`ShopWindow`, `CharacterService` (sygnał `CharacterDeleted`), `SocialController`, `PartyController`, `NameplateController`,
+`NpcController`, `AdminService`, `tests/guild.spec.luau`.
+
+#### Instrukcja testu S12
+
+1. `/lvl 25`, `/gold 2000000`. W stolicy podejdź do Mistrza Gildii → **E** → „Gildia” → okno „Załóż gildię”.
+2. Wpisz nazwę „ab” → czerwony błąd „za krótka”; tag „ab” → błąd (muszą być wielkie litery). Popraw na np. „Zakon Świtu”
+   i „ZS” → podgląd „[ZS] Zakon Świtu”, wymagania na zielono → „Załóż gildię”.
+3. Złoto spada o 50 000, otwiera się okno Gildii (G), nad głową `[ZS] Imię`, w czacie linia o założeniu gildii.
+4. Zakładka Przegląd: przywódca, 1 / 20, skarbiec 0, data. Wpisz 100000 → „Wpłać” → skarbiec 100 000, złoto mniejsze.
+5. „Edytuj” wiadomość dnia → wpisz tekst → pojawia się na pergaminie.
+6. Zakładka Umiejętności: „Mądrość” → „Ulepsz” → poziom 1/5, skarbiec mniejszy, w czacie „ulepsza Mądrość do poziomu 1”.
+7. Okno Postaci (C) → grupa „Inne”: „Bonus EXP +2%” (najedź → źródło „Gildia”). Zabij potwora → EXP wyższy niż bez gildii.
+8. `/guild treasury 5000000`, `/guild skills max` → wszystkie 5/5, limit 1 / 45; w sklepie lekarki mikstury tańsze o 20%,
+   Charakter → „Zniżka na mikstury 20%”.
+9. `/guild bots 5` → w zakładce Członkowie 5 manekinów (offline, szare). U jednego „Awansuj” → ranga Oficer (w czacie komunikat),
+   „Degraduj” → Członek, „Wyrzuć” → potwierdzenie → znika.
+10. `/guild info` → podsumowanie w czacie (członkowie, skarbiec, wersja).
+11. Zakładka Ustawienia: „Ochrona: WŁĄCZONA” → kliknij → WYŁĄCZONA (tylko przywódca może zmienić).
+12. „Opuść gildię” jako przywódca z manekinami → błąd „przekaż przywództwo”. W Członkach „Przywódca” przy manekinie →
+    potwierdź → jesteś Oficerem (przycisk rozwiązania znika). `/guild disband` sprząta.
+13. **Dwóch graczy** (Test → Clients and Servers, 2 graczy): Gracz 1 zakłada gildię (kroki 1–2). PPM na Graczu 2 →
+    „Zaproś do gildii” → u Gracza 2 popup z nazwą gildii i odliczaniem → „Akceptuj”.
+14. Obaj widzą siebie na liście „online (ten serwer)” (zielona kropka); nad Graczem 2 tag gildii; Gracz 2 widzi bonusy gildii.
+15. Czat: wybierz zakładkę `⚑ ZS` w oknie czatu i napisz — widzi tylko członek gildii; zakładka ogólna dalej działa.
+16. PvP: obaj `/pvp on` w żółtej strefie → atak na członka gildii odrzucony („członek gildii”). Przywódca wyłącza ochronę →
+    atak działa.
+17. Gracz 1 awansuje Gracza 2 na Oficera → Gracz 2 może zapraszać (zakładka Członkowie ma pole zaproszenia), ale nie
+    awansować.
+18. Gracz 1 wyrzuca Gracza 2 → u Gracza 2 toast „nie jesteś już członkiem”, tag znika, okno Gildii pokazuje informację
+    o zakładaniu.
+19. Zaproś ponownie, potem Gracz 2 „Opuść gildię” → bez toastu o wyrzuceniu, w czacie gildii „opuszcza gildię”.
+20. Trwałość (opublikowane miejsce z API DataStore): wyjdź i wejdź tą samą postacią → gildia, skarbiec, umiejętności
+    i ranga bez zmian. Inna postać na tym samym koncie nie jest w gildii.
+21. Rozwiąż gildię: Ustawienia → „Rozwiąż gildię” → przycisk aktywny dopiero po wpisaniu dokładnej nazwy → gildia znika
+    u wszystkich online; nazwę i tag da się użyć ponownie przy zakładaniu.

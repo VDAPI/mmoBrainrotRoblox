@@ -106,8 +106,8 @@ local function registerWindows()
 					})
 				end,
 			})
-		elseif entry.id == "map" or entry.id == "party" or entry.id == "quests" then
-			-- Registered by WorldController / PartyController.
+		elseif entry.id == "map" or entry.id == "party" or entry.id == "quests" or entry.id == "guild" then
+			-- Registered by WorldController / PartyController / QuestController / GuildController.
 			continue
 		elseif entry.id == "menu" then
 			WindowManager.Register({

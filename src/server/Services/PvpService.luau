@@ -19,7 +19,14 @@ local Types = require(Shared.Types)
 
 local PvpService = {
 	Name = "PvpService",
-	Deps = { "PlayerStateService", "CharacterService", "ZoneService", "PartyService", "ResourceService" },
+	Deps = {
+		"PlayerStateService",
+		"CharacterService",
+		"ZoneService",
+		"PartyService",
+		"ResourceService",
+		"GuildService",
+	},
 }
 
 local PlayerStateService: any
@@ -27,6 +34,7 @@ local CharacterService: any
 local ZoneService: any
 local PartyService: any
 local ResourceService: any
+local GuildService: any
 
 local ARENA_ZONE = "zone.arena"
 
@@ -133,7 +141,7 @@ function PvpService.MarkPvpCombat(player: Player)
 	publish(player, nil)
 end
 
--- Whether `attacker` may hit `target` right now (zone of the target). Party/guild arrive in S09/S12.
+-- Whether `attacker` may hit `target` right now (zone of the target, party and guild protection).
 function PvpService.CanAttack(attacker: Player, target: Player): (boolean, string?)
 	if attacker == target then
 		return false, "pvp.deny.self"
@@ -152,7 +160,8 @@ function PvpService.CanAttack(attacker: Player, target: Player): (boolean, strin
 		{
 			zone = ZoneService.GetPvpZone(target),
 			sameParty = PartyService.SameParty(attacker, target),
-			sameGuild = false,
+			sameGuild = GuildService.SameGuild(attacker, target),
+			guildProtection = GuildService.Protection(attacker),
 		}
 	)
 end
@@ -200,6 +209,7 @@ function PvpService.Init(registry)
 	ZoneService = registry.Get("ZoneService")
 	PartyService = registry.Get("PartyService")
 	ResourceService = registry.Get("ResourceService")
+	GuildService = registry.Get("GuildService")
 end
 
 local function nameOf(player: Player): string

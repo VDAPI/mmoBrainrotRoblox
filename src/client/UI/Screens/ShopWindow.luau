@@ -15,6 +15,7 @@ local Net = require(ReplicatedStorage.Shared.Net)
 local Npcs = require(ReplicatedStorage.Shared.Data.Npcs)
 local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
 local SelectableSlot = require(script.Parent.Parent.Components.SelectableSlot)
+local ShopPrice = require(ReplicatedStorage.Shared.Logic.ShopPrice)
 local Shops = require(ReplicatedStorage.Shared.Data.Shops)
 local Sounds = require(script.Parent.Parent.Sounds)
 local State = require(script.Parent.Parent.State)
@@ -49,11 +50,11 @@ local function invoke(name: string, ...: any): (boolean, any)
 end
 
 local function priceOf(entry: Shops.Entry): number
-	local def = Items.get(entry.item)
-	if entry.pricePerLevel then
-		return entry.pricePerLevel * (State.Get({ "character", "level" }) or 1)
-	end
-	return entry.price or (if def then def.buyPrice else 0) or 0
+	return ShopPrice.unit(
+		entry,
+		State.Get({ "character", "level" }) or 1,
+		State.Get({ "derived", "values", "potionDiscount" }) or 0
+	)
 end
 
 local function buyRow(scope: Scope, npcId: string, entry: Shops.Entry, order: number): Instance

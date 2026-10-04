@@ -16,6 +16,14 @@ local Config = {
 	-- DataStore names. Bump the profile store suffix only together with a migration plan.
 	ProfileStoreName = "Vaelthorn_v1",
 	NameStoreName = "Vaelthorn_Names_v1",
+	-- Guilds (S12): records keyed "Guild_<id>", unique names/tags, presence across servers.
+	GuildStoreName = "Vaelthorn_Guilds_v1",
+	GuildNamesStoreName = "Vaelthorn_GuildNames_v1",
+	GuildPresenceMap = "Vaelthorn_GuildPresence_v1",
+	GuildPresenceTtl = 120, -- seconds an online entry stays without a refresh
+	GuildPresenceRefresh = 45, -- how often a server refreshes its members' presence
+	GuildCacheRefresh = 90, -- safety re-read of cached guilds (MessagingService is best effort)
+	GuildChatMaxLength = 200,
 
 	CharacterName = {
 		MinLength = 3,

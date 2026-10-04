@@ -220,6 +220,7 @@ function StatCalc.compute(input: Input): Result
 	finish("expBonus", 0, {})
 	finish("dropBonus", 0, {})
 	finish("goldBonus", 0, {})
+	finish("potionDiscount", 0, {})
 
 	return {
 		primary = primary,

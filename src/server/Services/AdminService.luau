@@ -26,6 +26,8 @@ local Net = require(Shared.Net)
 local Rng = require(Shared.Logic.Rng)
 local PartyLoot = require(Shared.Logic.PartyLoot)
 local Loot = require(Shared.Logic.Loot)
+local GuildLogic = require(Shared.Logic.Guild)
+local GuildSkills = require(Shared.Data.GuildSkills)
 
 local log = Log.new("AdminService")
 
@@ -58,6 +60,7 @@ local AdminService = {
 		"DungeonService",
 		"TradeService",
 		"QuestService",
+		"GuildService",
 	},
 }
 
@@ -87,6 +90,7 @@ local TravelService: any
 local DungeonService: any
 local TradeService: any
 local QuestService: any
+local GuildService: any
 
 type Command = {
 	usageKey: string,
@@ -1024,6 +1028,89 @@ COMMANDS.daily = {
 	end,
 }
 
+COMMANDS.guild = {
+	usageKey = "admin.usage.guild",
+	run = function(player, args)
+		withCharacter(player, function()
+			local data = GuildService.Data(player)
+			if not data then
+				reply(player, "admin.guild.none")
+				return
+			end
+			local sub = args[1]
+			if sub == "info" then
+				local skills = {}
+				for id, level in data.skills do
+					table.insert(skills, `{id} {level}`)
+				end
+				local count = 0
+				for _ in data.members do
+					count += 1
+				end
+				reply(player, "admin.guild.info", {
+					name = data.name,
+					tag = data.tag,
+					members = count,
+					treasury = data.treasury,
+					skills = if #skills > 0 then table.concat(skills, ", ") else "-",
+					version = data.version,
+					id = data.id,
+				})
+			elseif sub == "treasury" and parseAmount(args[2]) then
+				local amount = math.max(0, parseAmount(args[2]) :: number)
+				if GuildService.AdminMutate(player, function(guild)
+					guild.treasury = amount
+				end) then
+					reply(player, "admin.guild.done")
+				end
+			elseif sub == "skills" and args[2] == "max" then
+				if
+					GuildService.AdminMutate(player, function(guild)
+						for _, def in GuildSkills.list do
+							guild.skills[def.id] = GuildSkills.MAX_LEVEL
+						end
+					end)
+				then
+					reply(player, "admin.guild.done")
+				end
+			elseif sub == "bots" and parseAmount(args[2]) then
+				-- Offline dummy members to test the member list, ranks and kicking alone.
+				local n = math.clamp(parseAmount(args[2]) :: number, 1, 40)
+				local classes = { "Warrior", "Hunter", "Mage", "Cleric" }
+				if
+					GuildService.AdminMutate(player, function(guild)
+						local limit = GuildLogic.memberLimit(guild.skills)
+						for i = 1, n do
+							if GuildLogic.memberCount(guild) >= limit then
+								break
+							end
+							local charId = `bot{guild.version}_{i}`
+							guild.members[GuildLogic.memberKey(-i, charId)] = {
+								userId = -i,
+								charId = charId,
+								name = `Bot{i}`,
+								class = classes[(i - 1) % 4 + 1],
+								level = 10 + i * 2,
+								rank = "member",
+								joinedAt = os.time(),
+								contributed = 0,
+							}
+						end
+					end)
+				then
+					reply(player, "admin.guild.done")
+				end
+			elseif sub == "disband" then
+				if GuildService.AdminDisband(player) then
+					reply(player, "admin.guild.done")
+				end
+			else
+				reply(player, "admin.usage.guild")
+			end
+		end)
+	end,
+}
+
 local function onCommand(name: string, textSource: TextSource, message: string)
 	local player = Players:GetPlayerByUserId(textSource.UserId)
 	if not player then
@@ -1075,6 +1162,7 @@ function AdminService.Init(registry)
 	DungeonService = registry.Get("DungeonService")
 	TradeService = registry.Get("TradeService")
 	QuestService = registry.Get("QuestService")
+	GuildService = registry.Get("GuildService")
 end
 
 function AdminService.Start()

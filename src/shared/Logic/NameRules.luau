@@ -38,6 +38,11 @@ local function isAllowedCodepoint(cp: number): boolean
 	return POLISH_LETTERS[cp] == true
 end
 
+-- A-Z, a-z or a Polish letter (guild names reuse this).
+function NameRules.isLetter(cp: number): boolean
+	return (cp >= 65 and cp <= 90) or (cp >= 97 and cp <= 122) or POLISH_LETTERS[cp] == true
+end
+
 -- Error keys map to Localization entries "error.name.<reason>".
 export type NameError = "invalidUtf8" | "tooShort" | "tooLong" | "invalidChars" | "noLetter"
 

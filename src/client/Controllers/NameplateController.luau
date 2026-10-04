@@ -1,6 +1,6 @@
 --!strict
 -- Name, level and class above every player character. Built client-side from model attributes set by the
--- server (CharName, Level, ClassId; later GuildName), so each viewer sees it in their own language.
+-- server (CharName, Level, ClassId, GuildTag), so each viewer sees it in their own language.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -51,6 +51,7 @@ local function build(model: Model)
 	)
 
 	local charName = attributeValue(scope, model, "CharName")
+	local guildTag = attributeValue(scope, model, "GuildTag")
 	local level = attributeValue(scope, model, "Level")
 	local classId = attributeValue(scope, model, "ClassId")
 	local className = scope:Computed(function(use): string
@@ -92,10 +93,15 @@ local function build(model: Model)
 			scope:New("TextLabel")({
 				Name = "CharName",
 				LayoutOrder = 1,
+				RichText = true,
 				BackgroundTransparency = 1,
 				Size = UDim2.new(1, 0, 0, 28),
 				Text = scope:Computed(function(use): string
 					local name = use(charName) or ""
+					local tag = use(guildTag)
+					if type(tag) == "string" and tag ~= "" then
+						name = `<font color="#{Theme.Colors.Gold:ToHex()}">[{tag}]</font> {name}`
+					end
 					return if use(hostile) then `⚔ {name}` else name
 				end),
 				FontFace = Theme.Fonts.BodyBold,

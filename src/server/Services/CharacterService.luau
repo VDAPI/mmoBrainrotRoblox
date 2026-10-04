@@ -25,6 +25,8 @@ local CharacterService = {
 	CharacterEntered = Signal.new(),
 	-- (player, characterData) before the player leaves the world (switch, leave, wipe).
 	CharacterLeaving = Signal.new(),
+	-- (player, characterData) after a character was deleted (guild membership cleanup).
+	CharacterDeleted = Signal.new(),
 	-- (player, model) every time a Roblox character model is spawned for the active character.
 	ModelSpawned = Signal.new(),
 }
@@ -277,6 +279,7 @@ local function deleteCharacter(player: Player, slot: number, confirmName: string
 	end
 	refreshSlot(player, slotKey)
 	NameService.Release(character.name, NameService.OwnerKey(player.UserId, character.id))
+	CharacterService.CharacterDeleted:Fire(player, character)
 	log:info("%s deleted '%s' from slot %s", player.Name, character.name, slotKey)
 	return true, nil
 end

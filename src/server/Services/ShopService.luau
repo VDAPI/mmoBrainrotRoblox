@@ -16,6 +16,7 @@ local Log = require(Shared.Util.Log)
 local Net = require(Shared.Net)
 local Npcs = require(Shared.Data.Npcs)
 local Rarities = require(Shared.Data.Rarities)
+local ShopPrice = require(Shared.Logic.ShopPrice)
 local Shops = require(Shared.Data.Shops)
 local Types = require(Shared.Types)
 
@@ -40,6 +41,7 @@ local CharacterService: any
 local InventoryService: any
 local NpcService: any
 local ResourceService: any
+local StatService: any
 
 -- Last sold items per player (newest first): { item, price }.
 local buyback: { [Player]: { { item: ItemInstance, price: number } } } = {}
@@ -63,13 +65,9 @@ local function publishBuyback(player: Player)
 	PlayerStateService.Set(player, { "buyback" }, list)
 end
 
--- Unit price of a shop entry for this character.
-function ShopService.Price(entry: Shops.Entry, char: Types.CharacterData): number
-	if entry.pricePerLevel then
-		return entry.pricePerLevel * char.level
-	end
-	local def = Items.get(entry.item)
-	return entry.price or (if def then def.buyPrice else nil) or 0
+-- Unit price of a shop entry for this character (guild potion discount included).
+function ShopService.Price(player: Player, entry: Shops.Entry, char: Types.CharacterData): number
+	return ShopPrice.unit(entry, char.level, StatService.GetValue(player, "potionDiscount"))
 end
 
 local function shopOf(npcId: string): Shops.ShopDef?
@@ -97,7 +95,7 @@ local function buy(player: Player, npcId: string, itemId: string, n: number): (b
 		return false, "shop.error.notSold"
 	end
 	local count = math.clamp(n, 1, def.maxStack)
-	local total = ShopService.Price(entry, char) * count
+	local total = ShopService.Price(player, entry, char) * count
 	if char.gold < total then
 		return false, "shop.error.gold"
 	end
@@ -237,6 +235,7 @@ function ShopService.Init(registry)
 	InventoryService = registry.Get("InventoryService")
 	NpcService = registry.Get("NpcService")
 	ResourceService = registry.Get("ResourceService")
+	StatService = registry.Get("StatService")
 end
 
 function ShopService.Start()

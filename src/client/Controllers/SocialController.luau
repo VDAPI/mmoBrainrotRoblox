@@ -1,5 +1,5 @@
 --!strict
--- Player-to-player on the client (S10): duel and trade invitations (popup with Accept / Decline and a
+-- Player-to-player on the client (S10): duel, trade and guild (S12) invitations (popup with Accept / Decline and a
 -- countdown), the trade window (opens with state `trade`, closing it cancels the trade) and the kill feed
 -- (right side, map-local, 5 s per line).
 
@@ -30,7 +30,7 @@ local FEED_MAX = 5
 local scope = Fusion.scoped(Fusion)
 local WindowManager: any
 
-type Invite = { kind: "duel" | "trade", from: string, left: number }
+type Invite = { kind: "duel" | "trade" | "guild", from: string, left: number, guild: string? }
 local invite = scope:Value(nil :: Invite?)
 local feed = scope:Value({} :: { { text: string, at: number } })
 
@@ -63,13 +63,17 @@ local function respond(accept: boolean)
 	local current = Fusion.peek(invite)
 	invite:set(nil)
 	if current then
-		task.spawn(invoke, if current.kind == "duel" then "DuelRespond" else "TradeRespond", accept)
+		local remote = if current.kind == "duel"
+			then "DuelRespond"
+			elseif current.kind == "guild" then "GuildRespond"
+			else "TradeRespond"
+		task.spawn(invoke, remote, accept)
 	end
 end
 
-local function showInvite(kind: "duel" | "trade", from: string, seconds: number)
+local function showInvite(kind: "duel" | "trade" | "guild", from: string, seconds: number, guild: string?)
 	Sounds.play("levelUp")
-	local entry: Invite = { kind = kind, from = from, left = seconds }
+	local entry: Invite = { kind = kind, from = from, left = seconds, guild = guild }
 	invite:set(entry)
 	task.spawn(function()
 		while Fusion.peek(invite) == entry and entry.left > 0 do
@@ -111,10 +115,11 @@ local function invitePopup(): Instance
 					if not i then
 						return ""
 					end
-					return Text.get(use, if i.kind == "duel" then "duel.invited" else "trade.invited", {
-						name = i.from,
-						seconds = i.left,
-					})
+					local key = if i.kind == "duel"
+						then "duel.invited"
+						elseif i.kind == "guild" then "guild.invited"
+						else "trade.invited"
+					return Text.get(use, key, { name = i.from, seconds = i.left, guild = i.guild or "" })
 				end),
 				FontFace = Theme.Fonts.BodyBold,
 				TextSize = Theme.TextSize.Body,
@@ -203,6 +208,9 @@ function SocialController.Start()
 	end)
 	Net.On("TradeInvited", function(from: string, seconds: number)
 		showInvite("trade", from, seconds)
+	end)
+	Net.On("GuildInvited", function(guildName: string, tag: string, from: string, seconds: number)
+		showInvite("guild", from, seconds, `[{tag}] {guildName}`)
 	end)
 	Net.On("KillFeed", function(killer: string, victim: string)
 		local list = table.clone(Fusion.peek(feed))

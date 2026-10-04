@@ -1,7 +1,7 @@
 --!strict
 -- Parties on the client (DESIGN §17): the party window (P), member frames under the portrait, the invite
 -- popup with Accept / Decline and a countdown, and the context menu on other players (right click):
--- Invite to party, Trade (S10), Profile (later).
+-- Invite to party, Trade and Duel (S10), Invite to guild (S12), Profile (later).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -14,6 +14,7 @@ local Net = require(ReplicatedStorage.Shared.Net)
 local PartyFrames = require(script.Parent.Parent.UI.Screens.PartyFrames)
 local PartyWindow = require(script.Parent.Parent.UI.Screens.PartyWindow)
 local Sounds = require(script.Parent.Parent.UI.Sounds)
+local State = require(script.Parent.Parent.UI.State)
 local Text = require(script.Parent.Parent.UI.Text)
 local Theme = require(script.Parent.Parent.UI.Theme)
 local Toast = require(script.Parent.Parent.UI.Components.Toast)
@@ -97,9 +98,15 @@ local function invitePopup(): Instance
 end
 
 local function contextMenu(): Instance
-	local function entry(order: number, key: string, action: (target: Player) -> ()): Instance
+	local function entry(
+		order: number,
+		key: string,
+		action: (target: Player) -> (),
+		visible: Fusion.UsedAs<boolean>?
+	): Instance
 		return Button(scope, {
 			LayoutOrder = order,
+			Visible = visible,
 			Size = UDim2.new(1, 0, 0, 40),
 			TextSize = Theme.TextSize.Small,
 			Text = Text.T(scope, key),
@@ -165,7 +172,22 @@ local function contextMenu(): Instance
 			entry(3, "party.menu.duel", function(target)
 				SocialController.Challenge(target.UserId)
 			end),
-			entry(4, "party.menu.profile", function()
+			entry(
+				4,
+				"guild.menu.invite",
+				function(target)
+					task.spawn(function()
+						if invoke("GuildInvite", target.UserId) then
+							Toast.push(Text.now("guild.inviteSent", { name = target.DisplayName }), "success")
+						end
+					end)
+				end,
+				scope:Computed(function(use): boolean
+					local rank = use(State.Value({ "guild", "myRank" }))
+					return rank == "leader" or rank == "officer"
+				end)
+			),
+			entry(5, "party.menu.profile", function()
 				Toast.push(Text.now("npc.service.soon"), "info")
 			end),
 		},

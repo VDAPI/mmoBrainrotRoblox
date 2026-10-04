@@ -130,6 +130,24 @@ local Definitions: { [string]: Definition } = {
 	TradeConfirm = { kind = "function", dir = "c2s", rate = 2, args = {} },
 	TradeCancel = { kind = "event", dir = "c2s", rate = 2, args = {} },
 
+	-- Guilds (S12). Member keys are "<userId>:<characterId>".
+	GuildCreate = { kind = "function", dir = "c2s", rate = 0.5, args = { "string", "string" } }, -- (name, tag) at the guild master
+	GuildInvite = { kind = "function", dir = "c2s", rate = 1, args = { "integer" } }, -- (userId)
+	GuildInviteName = { kind = "function", dir = "c2s", rate = 1, args = { "string" } }, -- (character name)
+	GuildInvited = { kind = "event", dir = "s2c" }, -- (guildName, tag, fromName, seconds)
+	GuildRespond = { kind = "function", dir = "c2s", rate = 2, args = { "boolean" } },
+	GuildLeave = { kind = "function", dir = "c2s", rate = 0.5, args = {} },
+	GuildKick = { kind = "function", dir = "c2s", rate = 1, args = { "string" } }, -- (member key)
+	GuildSetRank = { kind = "function", dir = "c2s", rate = 1, args = { "string", "string" } }, -- (member key, "officer"|"member")
+	GuildTransfer = { kind = "function", dir = "c2s", rate = 0.5, args = { "string" } }, -- (member key)
+	GuildDisband = { kind = "function", dir = "c2s", rate = 0.5, args = { "string" } }, -- (guild name as confirmation)
+	GuildDeposit = { kind = "function", dir = "c2s", rate = 1, args = { "integer" } }, -- (gold)
+	GuildUpgrade = { kind = "function", dir = "c2s", rate = 1, args = { "string" } }, -- (skillId)
+	GuildSetMotd = { kind = "function", dir = "c2s", rate = 0.5, args = { "string" } },
+	GuildSetting = { kind = "function", dir = "c2s", rate = 1, args = { "string", "any" } }, -- (name, value), whitelisted
+	GuildChatSend = { kind = "event", dir = "c2s", rate = 1, args = { "string" } }, -- relay of a guild channel line
+	GuildChatLine = { kind = "event", dir = "s2c" }, -- (name?, text | key, args?) from other servers / system
+
 	-- PvP and death
 	SetPvp = { kind = "function", dir = "c2s", rate = 1, args = { "boolean" } },
 	RespawnNow = { kind = "function", dir = "c2s", rate = 1, args = {} },
