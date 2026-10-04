@@ -17,6 +17,7 @@ local GatherNodes = require(Shared.Data.GatherNodes)
 local ItemRoll = require(Shared.Logic.ItemRoll)
 local Log = require(Shared.Util.Log)
 local Net = require(Shared.Net)
+local QuestEvents = require(script.Parent.Parent.QuestEvents)
 local Rng = require(Shared.Logic.Rng)
 
 local log = Log.new("FishingService")
@@ -96,6 +97,7 @@ local function catch(player: Player, session: Session): (boolean, string?, any)
 		end)
 	end
 	log:info("%s caught %s%s", player.Name, session.fish.id, if chest then " + chest" else "")
+	QuestEvents.fire(player, "fish", { fishId = session.fish.id })
 	return true, nil, { fish = session.fish.id, rarity = session.fish.rarity, chest = chest, gold = gold }
 end
 

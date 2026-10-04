@@ -59,7 +59,12 @@ export type CharacterData = {
 	blessing: { id: string, expiresAt: number }?,
 	bossLockouts: { [string]: number },
 	alchemy: { { recipeId: string, readyAt: number } },
-	quests: { main: { id: string, progress: { any } }?, daily: { day: number, list: { any } } },
+	-- S11: main = the accepted story quest, mainDone = completed story quests (in order), daily = contracts.
+	quests: {
+		main: { id: string, progress: { number } }?,
+		mainDone: number,
+		daily: { day: number, list: { any }, rerolls: number },
+	},
 	guildId: string?,
 	pvpEnabled: boolean,
 	elixirs: { [string]: number }, -- resistance stat -> expiresAt (Clock time)

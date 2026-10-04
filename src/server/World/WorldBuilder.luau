@@ -40,6 +40,9 @@ local MATERIAL_COLORS: { [Enum.Material]: string } = {
 	[Enum.Material.Basalt] = "#2F2B30",
 	[Enum.Material.Sand] = "#C2A878",
 	[Enum.Material.Snow] = "#EEF3F7",
+	[Enum.Material.Glacier] = "#A8D8F0",
+	[Enum.Material.Ice] = "#C9E8F7",
+	[Enum.Material.CrackedLava] = "#D6542A",
 }
 
 local function layoutModule(mapId: string): ModuleScript?

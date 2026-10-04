@@ -106,7 +106,7 @@ local function registerWindows()
 					})
 				end,
 			})
-		elseif entry.id == "map" or entry.id == "party" then
+		elseif entry.id == "map" or entry.id == "party" or entry.id == "quests" then
 			-- Registered by WorldController / PartyController.
 			continue
 		elseif entry.id == "menu" then

@@ -54,7 +54,7 @@ function AccountSchema.characterTemplate(): CharacterData
 		blessing = nil,
 		bossLockouts = {},
 		alchemy = {},
-		quests = { main = nil, daily = { day = 0, list = {} } },
+		quests = { main = nil, mainDone = 0, daily = { day = 0, list = {}, rerolls = 0 } },
 		guildId = nil,
 		pvpEnabled = false,
 		elixirs = {},

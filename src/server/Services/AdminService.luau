@@ -16,6 +16,7 @@ local Log = require(Shared.Util.Log)
 local Inventory = require(Shared.Logic.Inventory)
 local ItemRoll = require(Shared.Logic.ItemRoll)
 local Blessings = require(Shared.Data.Blessings)
+local Bosses = require(Shared.Data.Bosses)
 local Clock = require(Shared.Util.Clock)
 local Items = require(Shared.Data.Items)
 local Maps = require(Shared.Data.Maps)
@@ -56,6 +57,7 @@ local AdminService = {
 		"TravelService",
 		"DungeonService",
 		"TradeService",
+		"QuestService",
 	},
 }
 
@@ -84,6 +86,7 @@ local WorldService: any
 local TravelService: any
 local DungeonService: any
 local TradeService: any
+local QuestService: any
 
 type Command = {
 	usageKey: string,
@@ -335,6 +338,31 @@ COMMANDS.tp = {
 	usageKey = "admin.usage.tp",
 	run = function(player, args)
 		local mapId = args[1]
+		if mapId == "boss" and args[2] then
+			-- /tp boss <id>: in front of that boss's dungeon gate.
+			local def = Bosses.get(args[2])
+			local cave = nil
+			for _, map in Maps.byId do
+				if def and map.dungeonRegion == def.region and map.dungeonEntrance then
+					cave = map
+				end
+			end
+			if not cave or not cave.dungeonEntrance or not WorldService.IsBuilt(cave.id) then
+				reply(player, "admin.usage.tp")
+				return
+			end
+			local e = cave.dungeonEntrance
+			withCharacter(player, function()
+				task.spawn(
+					TravelService.TeleportToMap,
+					player,
+					cave.id,
+					WorldService.GroundCFrame(cave.id, e.x - 22, e.z)
+				)
+				reply(player, "admin.tp.map", { map = cave.id })
+			end)
+			return
+		end
 		if mapId and Maps.get(mapId) then
 			if not WorldService.IsBuilt(mapId) then
 				reply(player, "admin.maps.notBuilt", { map = mapId })
@@ -967,6 +995,35 @@ COMMANDS.tradetest = {
 	end,
 }
 
+COMMANDS.quest = {
+	usageKey = "admin.usage.quest",
+	run = function(player, args)
+		withCharacter(player, function()
+			if args[1] == "set" and args[2] and QuestService.SetMain(player, args[2]) then
+				reply(player, "admin.quest.set", { id = args[2] })
+			elseif args[1] == "complete" and QuestService.CompleteMain(player) then
+				reply(player, "admin.quest.complete")
+			else
+				reply(player, "admin.usage.quest")
+			end
+		end)
+	end,
+}
+
+COMMANDS.daily = {
+	usageKey = "admin.usage.daily",
+	run = function(player, args)
+		if args[1] ~= "reroll" then
+			reply(player, "admin.usage.daily")
+			return
+		end
+		withCharacter(player, function()
+			QuestService.RerollDaily(player)
+			reply(player, "admin.daily.reroll")
+		end)
+	end,
+}
+
 local function onCommand(name: string, textSource: TextSource, message: string)
 	local player = Players:GetPlayerByUserId(textSource.UserId)
 	if not player then
@@ -1017,6 +1074,7 @@ function AdminService.Init(registry)
 	TravelService = registry.Get("TravelService")
 	DungeonService = registry.Get("DungeonService")
 	TradeService = registry.Get("TradeService")
+	QuestService = registry.Get("QuestService")
 end
 
 function AdminService.Start()

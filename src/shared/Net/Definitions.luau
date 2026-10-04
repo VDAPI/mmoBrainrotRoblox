@@ -108,6 +108,13 @@ local Definitions: { [string]: Definition } = {
 	EnterDungeon = { kind = "function", dir = "c2s", rate = 1, args = { "string" } }, -- (region)
 	BossAnnounce = { kind = "event", dir = "s2c" }, -- (key, args) big centred message (boss fights, duels)
 
+	-- Quests (S11)
+	QuestTalk = { kind = "function", dir = "c2s", rate = 4, args = { "string" } }, -- (npcId) counts "talk" objectives
+	QuestAccept = { kind = "function", dir = "c2s", rate = 2, args = { "string" } }, -- (npcId)
+	QuestTurnIn = { kind = "function", dir = "c2s", rate = 2, args = { "string" } }, -- (npcId)
+	DailyClaim = { kind = "function", dir = "c2s", rate = 2, args = { "integer" } }, -- (contract index)
+	QuestCompleted = { kind = "event", dir = "s2c" }, -- (titleKey) big message + sound
+
 	-- PvP, duels and trade (S10)
 	KillFeed = { kind = "event", dir = "s2c" }, -- (killerName, victimName)
 	DuelChallenge = { kind = "function", dir = "c2s", rate = 1, args = { "integer" } }, -- (userId)

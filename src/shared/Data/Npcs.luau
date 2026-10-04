@@ -12,7 +12,8 @@ export type Service =
 	| "guild" -- S12
 	| "auction" -- S13
 	| "mail" -- S13
-	| "quests" -- S11
+	| "quests" -- S11: daily contracts board
+	| "story" -- S11: main story quests
 
 export type NpcDef = {
 	id: string,
@@ -148,6 +149,31 @@ npc({
 	colors = { body = "#6B4A2B", accent = "#EADDBE" },
 	icon = "✎",
 })
+-- Main story (S11): the captain of the guard on the plaza and a scout at the entrance of every region.
+npc({
+	id = "captain",
+	map = "city",
+	nameKey = "npc.captain.name",
+	greetingKey = "npc.captain.greeting",
+	services = { "story" },
+	position = { x = -22, z = 46 },
+	facing = 270,
+	colors = { body = "#7A1F2B", accent = "#C9A45C" },
+	icon = "⚑",
+})
+for _, region in { "meadows", "duskwood", "ashen", "frostpeak" } do
+	npc({
+		id = `scout_{region}`,
+		map = region,
+		nameKey = `npc.scout_{region}.name`,
+		greetingKey = `npc.scout_{region}.greeting`,
+		services = { "story" },
+		position = { x = -690, z = -36 },
+		facing = 0,
+		colors = { body = "#4F6B2E", accent = "#C9A45C" },
+		icon = "⚑",
+	})
+end
 for i, position in { { x = 272, z = -16 }, { x = 272, z = 16 } } do
 	npc({
 		id = `guard{i}`,

@@ -16,6 +16,7 @@ local ItemRoll = require(Shared.Logic.ItemRoll)
 local Items = require(Shared.Data.Items)
 local Loot = require(Shared.Logic.Loot)
 local Net = require(Shared.Net)
+local QuestEvents = require(script.Parent.Parent.QuestEvents)
 local PartyLoot = require(Shared.Logic.PartyLoot)
 local Rarities = require(Shared.Data.Rarities)
 local Rng = require(Shared.Logic.Rng)
@@ -172,6 +173,7 @@ function LootService.Pickup(player: Player, bagId: string, ignoreDistance: boole
 	end
 	if #picked > 0 then
 		Net.Fire(player, "LootPicked", picked)
+		QuestEvents.fire(player, "loot", nil)
 	end
 	if #remaining > 0 then
 		bag.items = remaining

@@ -14,6 +14,7 @@ local ItemRoll = require(Shared.Logic.ItemRoll)
 local Items = require(Shared.Data.Items)
 local Log = require(Shared.Util.Log)
 local Net = require(Shared.Net)
+local QuestEvents = require(script.Parent.Parent.QuestEvents)
 local Rarities = require(Shared.Data.Rarities)
 local Rng = require(Shared.Logic.Rng)
 local Types = require(Shared.Types)
@@ -162,6 +163,9 @@ local function upgrade(player: Player, location: string, key: string, protect: b
 	local result = Upgrade.attempt(item, useProtection, rng)
 	item.up = result.to
 	commit()
+	if result.success then
+		QuestEvents.fire(player, "upgrade", { to = result.to })
+	end
 	if result.success and result.to >= 7 then
 		local args = { player = char.name, item = `#item:{item.id}:0`, up = result.to }
 		if result.to >= 9 and item.rarity == Rarities.LEGENDARY then

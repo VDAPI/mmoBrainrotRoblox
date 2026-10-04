@@ -24,11 +24,12 @@ local UnbindPicker = require(script.Parent.Parent.UI.Screens.UnbindPicker)
 
 local NpcController = {
 	Name = "NpcController",
-	Deps = { "WindowManager", "UIController" },
+	Deps = { "WindowManager", "UIController", "QuestController" },
 }
 
 local scope = Fusion.scoped(Fusion)
 NpcController.Current = scope:Value(nil :: string?)
+NpcController.Quests = nil :: any
 -- Target of the forge's upgrade tab ({ location, key }), set by dropping an item on the anvil.
 NpcController.UpgradeTarget = scope:Value(nil :: any)
 NpcController.SmithTab = scope:Value("craft")
@@ -66,6 +67,15 @@ function NpcController.OpenService(service: string)
 		heal(npcId)
 		return
 	end
+	if service == "story" then
+		WindowManager.Close("npc")
+		NpcController.Quests.OpenNpc(npcId)
+		return
+	elseif service == "quests" then
+		WindowManager.Close("npc")
+		NpcController.Quests.OpenBoard()
+		return
+	end
 	local window = SERVICE_TO_WINDOW[service]
 	if not window then
 		Toast.push(Text.now("npc.service.soon"), "info")
@@ -84,6 +94,10 @@ function NpcController.Talk(npcId: string)
 	for _, id in SERVICE_WINDOWS do
 		WindowManager.Close(id)
 	end
+	-- Talking counts for "talk to X" quest objectives.
+	task.spawn(function()
+		Net.Invoke("QuestTalk", npcId)
+	end)
 	WindowManager.Open("npc")
 end
 
@@ -161,7 +175,13 @@ local function registerWindows()
 		titleKey = "window.npc.title",
 		size = Vector2.new(560, 460),
 		build = function(s)
-			return NpcDialog(s, { NpcId = NpcController.Current, OnService = NpcController.OpenService })
+			return NpcDialog(s, {
+				NpcId = NpcController.Current,
+				OnService = NpcController.OpenService,
+				HasStory = function(npcId: string): boolean
+					return NpcController.Quests.HasStory(npcId)
+				end,
+			})
 		end,
 	})
 	WindowManager.Register({
@@ -218,6 +238,7 @@ end
 
 function NpcController.Init(registry)
 	WindowManager = registry.Get("WindowManager")
+	NpcController.Quests = registry.Get("QuestController")
 	registerWindows()
 end
 

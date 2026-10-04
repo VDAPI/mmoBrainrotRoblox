@@ -6,6 +6,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Button = require(script.Parent.Parent.Components.Button)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Npcs = require(ReplicatedStorage.Shared.Data.Npcs)
+local State = require(script.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
 
@@ -16,6 +17,8 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 export type Props = {
 	NpcId: Fusion.UsedAs<string?>,
 	OnService: (service: string) -> (),
+	-- S11: adds the "Quest" button when the story involves this NPC.
+	HasStory: ((npcId: string) -> boolean)?,
 }
 
 local function NpcDialog(scope: Scope, props: Props): Fusion.Child
@@ -98,7 +101,12 @@ local function NpcDialog(scope: Scope, props: Props): Fusion.Child
 					local d = use(def)
 					local list = {}
 					if d then
-						for i, service in d.services do
+						local services = table.clone(d.services) :: any
+						use(State.Value({ "character", "quests" }))
+						if props.HasStory and props.HasStory(d.id) and not table.find(services, "story") then
+							table.insert(services, 1, "story")
+						end
+						for i, service in services do
 							table.insert(
 								list,
 								Button(s, {

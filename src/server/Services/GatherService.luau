@@ -18,6 +18,7 @@ local GatherNodes = require(Shared.Data.GatherNodes)
 local ItemRoll = require(Shared.Logic.ItemRoll)
 local Maps = require(Shared.Data.Maps)
 local Net = require(Shared.Net)
+local QuestEvents = require(script.Parent.Parent.QuestEvents)
 local Rng = require(Shared.Logic.Rng)
 
 local GatherService = {
@@ -269,6 +270,11 @@ local function finish(player: Player, node: Node)
 	for _, drop in loot do
 		InventoryService.GiveNew(player, drop.id, drop.n)
 		Net.Fire(player, "Toast", "gather.got", { name = `#item:{drop.id}:0`, n = drop.n }, "success")
+		QuestEvents.fire(
+			player,
+			"gather",
+			{ kind = node.kind.id, category = node.kind.category, itemId = drop.id, n = drop.n }
+		)
 	end
 	setVisible(node, false)
 	task.delay(node.kind.respawn, function()

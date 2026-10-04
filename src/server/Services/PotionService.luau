@@ -12,6 +12,7 @@ local Shared = ReplicatedStorage.Shared
 local Config = require(Shared.Config)
 local Items = require(Shared.Data.Items)
 local Net = require(Shared.Net)
+local QuestEvents = require(script.Parent.Parent.QuestEvents)
 local Types = require(Shared.Types)
 
 local PotionService = {
@@ -62,6 +63,7 @@ local function drink(player: Player, index: number): (boolean, string?)
 	ResourceService.Add(player, resource, use.amount or 0)
 	timers[resource] = t + Config.PotionCooldown
 	PlayerStateService.Set(player, { "potions", resource }, timers[resource])
+	QuestEvents.fire(player, "potion", nil)
 	return true, nil
 end
 

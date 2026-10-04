@@ -12,6 +12,7 @@ local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local MapSketch = require(script.Parent.Parent.Parent.MapSketch)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local Npcs = require(ReplicatedStorage.Shared.Data.Npcs)
+local QuestTrack = require(script.Parent.Parent.Parent.QuestTrack)
 local State = require(script.Parent.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
@@ -146,6 +147,11 @@ local function Minimap(scope: Scope): Instance
 			end
 			accumulator = 0
 			dynamic:ClearAllChildren()
+			-- Quest target (S11)
+			local target = Fusion.peek(QuestTrack.Target)
+			if target and target.map == currentMap and target.x and target.z and Fusion.peek(QuestTrack.Tracked) then
+				glyph(dynamic, "★", "#E8C25A", MapSketch.toPixel(sketch, currentScale, target.x, target.z), 20, 6)
+			end
 			-- Party members (blue dots)
 			local party = State.Get({ "party" })
 			if type(party) == "table" then

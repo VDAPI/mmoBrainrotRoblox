@@ -16,7 +16,7 @@
 | S08 | Świat: miasto, regiony 1–2 | ● |
 | S09 | Grupa, lochy, bossy 20 i 45 | ● |
 | S10 | PvP, arena, handel | ● |
-| S11 | Questy, regiony 3–4, bossy 70 i 100 | ○ |
+| S11 | Questy, regiony 3–4, bossy 70 i 100 | ● |
 | S12 | Gildie | ○ |
 | S13 | Aukcja, poczta, czat | ○ |
 | S14 | Monetyzacja, kosmetyki, jakość | ○ |
@@ -257,16 +257,32 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
 - **S10** Handel zaczyna się z menu kontekstowego gracza (PPM). Zamknięcie okna handlu = anulowanie. Dwuklik na przedmiocie
   w plecaku przy otwartym handlu kładzie go na stół; klik na przedmiocie na stole go zdejmuje.
 
+- **S11** Regiony 3–4 tym samym generatorem co S08 (layouty `ashen`, `ashen_cave`, `frostpeak`, `frostpeak_cave`,
+  areny `dungeon_ashen`, `dungeon_frostpeak`). Lawa to teren CrackedLava (dekoracja, nie zadaje obrażeń poza walką z Azgorem).
+  Zdolności Elit II regionów 3–4, tabele łupu, receptury i plecaki do 100 już istniały (S04–S06) — bez zmian.
+- **S11** Skrypty bossów dostały `onTick`/`onDestroy` i `Boss:Hazard` (obrażenia obszarowe bez telegrafu). Azgor faza 3:
+  pole lawy poza kurczącym się bezpiecznym kołem (50 → 20 st. w 2 min, obrażenia co 1 s). Vaelgrath faza 2: 12 s w powietrzu
+  (nietykalny), faza 3: burza mrozu co 3 s rani każdego dalej niż 9 st. od jednego z 4 palenisk na arenie.
+  Odrzut skrzydłami pominięty (tylko obrażenia) — fizyczny odrzut gracza z serwera jest zawodny przy własności sieciowej.
+- **S11** Questy: zdarzenia idą przez moduł `server/QuestEvents` (nie serwis), żeby serwisy nie zależały od QuestService.
+  Główna linia: jedno aktywne zadanie naraz, kolejność stała (`quests.mainDone`), można przyjąć 2 poziomy przed zalecanym.
+  NPC fabularni: Kapitan Aldric na placu + zwiadowcy przy portalach wejściowych każdego regionu (usługa „story”); przycisk
+  „Zadanie” pojawia się też u zwykłych NPC (lekarka, kowal), gdy fabuła ich dotyczy.
+- **S11** Cel `collect` to przedmioty wirtualne (licznik w zadaniu z szansą przy zabiciu), nie lądują w plecaku.
+- **S11** Zlecenia dzienne: aktywne od razu (bez przyjmowania), nagrody odbiera się przy tablicy na placu; losowanie z ziarna
+  (userId, id postaci, dzień UTC). `/daily reroll` dokleja licznik do ziarna.
+- **S11** Strzałka w trackerze wskazuje NPC/miejsce na tej samej mapie, a gdy cel jest na innej mapie — portal prowadzący
+  wprost tam, w ostateczności portal do stolicy. Cel zaznaczony też gwiazdką na minimapie.
+
 ## Niedokończone
 (Rzeczy z zakresu sesji, które nie zostały zrobione. Następna sesja zaczyna od nich.)
 
 - **S01** Dźwięki UI to placeholdery (`UI/Sounds.luau`), do podmiany na prawdziwe.
 - **S03** Potwory nie mają animacji (placeholdery z Partów poruszają się bez ruchu kończyn); zamach i pociski są efektami klienta.
-- **S09 → S11** Lochy Azgora (70) i Vaelgratha (100): dane bossów gotowe, areny i jaskinie w S11.
 - **S10 → S14** Statystyki PvP i pojedynków są zapisywane, ale nie ma jeszcze okna profilu („Profil” mówi „wkrótce”).
 - **S10** Handel i pojedynek tylko z menu PPM — na telefonie brak wejścia (do dodania przyciskiem w ramce celu).
 - **S09** Menu kontekstowe gracza tylko pod prawym przyciskiem myszy (brak odpowiednika dotykowego poza zaproszeniem po nazwie).
-- **S08 → S11** Spalone Pustkowia, Lodowe Szczyty i ich jaskinie mają dane, ale nie mają layoutów (portale „nieotwarte”).
+- **S11** Questy nie były grane od początku do końca (brak testu w Studio); EXP z nagród dobrany wzorem, do strojenia.
 - **S08 → S14** Muzyka map (crossfade gotowy, brak ścieżek), tryb obracającej się minimapy.
 - **S08** Arena w mieście to na razie tylko żółta strefa z trybunami — zapisy i walki areny w S10.
 - **S07** Tooltip przedmiotu-błogosławieństwa nie wypisuje jego statystyk (są w tooltipie ikony w HUD po użyciu).
@@ -780,3 +796,41 @@ Loch (wystarczy 1 gracz):
    Każda zmiana oferty kasuje akceptacje. W trakcie handlu sprzedaż/zakładanie/depozyt → „Najpierw zakończ handel”.
 8. Oddal się > 20 st. albo zamknij okno → „Handel anulowany”. Pełny plecak partnera → „Brak miejsca w plecaku”, nic nie znika.
 9. `/tradetest` (Studio) → podgląd okna handlu samemu.
+
+### S11: Questy, regiony 3–4, bossy 70 i 100
+
+**Zrobione**
+- Świat: Spalone Pustkowia (równiny, obóz orków z wieżami, lawowe pola, wydmy, turnie, oaza z łowiskiem), Kuźnia Głębin
+  (kuźnie, mosty nad magmą), Lodowe Szczyty (dolina, zbocza yeti, przełęcz, zamarznięte jezioro z przeręblą, ruiny smoczej
+  świątyni), Serce Lodowca (kryształowe korytarze), areny Azgora i Vaelgratha (z paleniskami). Spawny 45–100 dla 4 map,
+  węzły srebra/mithrilu/adamantytu, ogniokwiat, szronolist.
+- Bossy: Azgor (fala ognia, cięcie, meteory na wszystkich, golemy, pierścień piekła, pole lawy) i Vaelgrath (zionięcie, uderzenie
+  skrzydłami, ogon, zamieć, lot, lodowy pierścień, burza mrozu przy paleniskach).
+- Questy: `Data/Quests` (32 zadania głównej linii z tutorialem, 8 szablonów dziennych), `Logic/QuestLogic` (dopasowanie zdarzeń,
+  postęp, kolejne zadanie, dzienne z ziarna), `QuestService` (przyjmowanie/oddawanie u NPC, nagrody z kontrolą miejsca, dzienne,
+  reset UTC), `QuestEvents` z hakami w 10 serwisach, NPC fabularni.
+- Klient: dziennik (L), dialog zadania u NPC, tablica zleceń, znaczniki ! / ? nad NPC, tracker w HUD ze strzałką kierunku,
+  cel na minimapie, komunikat ukończenia.
+- Admin: `/quest set <id>`, `/quest complete`, `/daily reroll`, `/tp boss <id>`.
+- Testy: 269 (nowe: dane questów i ich spójność, tutorial, dopasowanie zdarzeń, postęp, dzienne, teksty; spawny regionów 3–4).
+
+**Najważniejsze pliki**: `src/server/World/Layouts/{ashen,ashen_cave,frostpeak,frostpeak_cave,dungeon_ashen,dungeon_frostpeak}.luau`,
+`src/server/Entities/BossScripts/{azgor,vaelgrath}.luau`, `src/shared/Data/Quests/*`, `src/shared/Logic/QuestLogic.luau`,
+`src/server/{QuestEvents.luau,Services/QuestService.luau}`, `src/client/Controllers/QuestController.luau`,
+`src/client/UI/{QuestText,QuestTrack}.luau`, `src/client/UI/Screens/{QuestDialog,QuestJournal,QuestBoard}.luau`, `Hud/QuestTracker.luau`.
+
+#### Instrukcja testu S11
+
+1. Nowa postać: nad Kapitanem Aldricem na placu złoty „!”, w trackerze po prawej „! Przybycie”. **E** → „Zadanie” → „Przyjmij”
+   → od razu „gotowe” (rozmowa) → „Oddaj” → nagroda, „Zadanie ukończone”.
+2. Tutorial dalej: mikstura (Z) + lekarka, ulepszenie +1 u kowala, portal na Łąki (strzałka w trackerze wskazuje portal),
+   Zwiadowczyni Mira przy portalu: króliki + łup, założenie przedmiotu + punkt statystyk, wilki + umiejętność, kły wilków
+   (licznik „Kieł wilka 3/6” w toastach).
+3. L → dziennik: zakładka Główne (cele z postępem, „Śledź”), Dzienne (3 zlecenia, licznik do resetu).
+4. Tablica zleceń na placu → zlecenia z nagrodami; wykonaj (np. złów rybę, zbierz zioła) → „Odbierz”. `/daily reroll` → nowe.
+5. `/quest set grimrok`, `/quest complete` → „?” nad kapitanem → oddaj.
+6. `/lvl 70`, `/tp ashen` → Spalone Pustkowia: popękana ziemia, lawa, obóz orków, wydmy; potwory 45–66; `/tp ashen_cave` → Kuźnia Głębin.
+7. `/boss spawn azgor` → fale ognia, meteory pod każdym; `/phase 3` → podłoga zmienia się w lawę, bezpieczne koło się kurczy.
+8. `/lvl 100`, `/boss spawn vaelgrath` → zionięcie, ogon; `/phase 2` → smok w powietrzu 12 s (nie da się trafić);
+   `/phase 3` → burza: stój przy ognisku, inaczej obrażenia co 3 s.
+9. `/tp frostpeak`, `/tp frostpeak_cave` → śnieg, lód, kryształy; potwory 70–100.

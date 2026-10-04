@@ -17,6 +17,7 @@ local Shared = ReplicatedStorage.Shared
 local Classes = require(Shared.Data.Classes)
 local Log = require(Shared.Util.Log)
 local Net = require(Shared.Net)
+local QuestEvents = require(script.Parent.Parent.QuestEvents)
 local Signal = require(ReplicatedStorage.Packages.Signal)
 local StatCalc = require(Shared.Logic.StatCalc)
 local Stats = require(Shared.Data.Stats)
@@ -169,6 +170,7 @@ local function allocate(player: Player, request: { [any]: any }): (boolean, stri
 	end
 	PlayerStateService.Set(player, { "character", "statPoints" }, character.statPoints - total)
 	StatService.Recompute(player)
+	QuestEvents.fire(player, "stats", nil)
 	return true, nil
 end
 

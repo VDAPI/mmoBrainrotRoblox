@@ -74,7 +74,18 @@ end)
 
 describe("World spawns", function()
 	it("cover the four built region maps", function()
-		for _, id in { "meadows", "meadows_cave", "duskwood", "duskwood_cave" } do
+		for _, id in
+			{
+				"meadows",
+				"meadows_cave",
+				"duskwood",
+				"duskwood_cave",
+				"ashen",
+				"ashen_cave",
+				"frostpeak",
+				"frostpeak_cave",
+			}
+		do
 			expect(#(Spawns.byMap[id] or {}) > 0).toBe(true)
 		end
 	end)
@@ -108,7 +119,16 @@ describe("World spawns", function()
 	end)
 
 	it("use monsters of the map's region within the map's levels", function()
-		local regionOf = { meadows = 1, meadows_cave = 1, duskwood = 2, duskwood_cave = 2 }
+		local regionOf = {
+			meadows = 1,
+			meadows_cave = 1,
+			duskwood = 2,
+			duskwood_cave = 2,
+			ashen = 3,
+			ashen_cave = 3,
+			frostpeak = 4,
+			frostpeak_cave = 4,
+		}
 		for mapId, list in Spawns.byMap do
 			local map = Maps.get(mapId)
 			assert(map, mapId)
@@ -134,11 +154,18 @@ describe("World spawns", function()
 	end)
 end)
 
-describe("City NPCs", function()
-	it("stand inside the city walls", function()
+describe("NPCs", function()
+	it("stand inside the city walls or inside their map", function()
 		for _, npc in Npcs.list do
-			expect(npc.map).toBe("city")
-			expect(math.abs(npc.position.x) < 290 and math.abs(npc.position.z) < 290).toBe(true)
+			local map = Maps.get(npc.map)
+			assert(map, npc.map)
+			if npc.map == "city" then
+				expect(math.abs(npc.position.x) < 290 and math.abs(npc.position.z) < 290).toBe(true)
+			else
+				expect(math.abs(npc.position.x) < map.size.x / 2 and math.abs(npc.position.z) < map.size.z / 2).toBe(
+					true
+				)
+			end
 		end
 	end)
 end)

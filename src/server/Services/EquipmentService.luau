@@ -12,6 +12,7 @@ local Inventory = require(Shared.Logic.Inventory)
 local ItemRoll = require(Shared.Logic.ItemRoll)
 local Items = require(Shared.Data.Items)
 local Net = require(Shared.Net)
+local QuestEvents = require(script.Parent.Parent.QuestEvents)
 local Rarities = require(Shared.Data.Rarities)
 local Signal = require(ReplicatedStorage.Packages.Signal)
 local Types = require(Shared.Types)
@@ -271,6 +272,7 @@ function EquipmentService.Equip(player: Player, index: number, requested: string
 	equipment[slot] = item
 	InventoryService.SetSlot(player, index, inventory[key])
 	changed(player, touched)
+	QuestEvents.fire(player, "equip", { rarity = item.rarity })
 	return true, nil
 end
 

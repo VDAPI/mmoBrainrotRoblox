@@ -33,6 +33,7 @@ local COLORS: { [string]: { color: string, transparency: number } } = {
 	arena = { color = "#C2A878", transparency = 0.1 },
 	ruins = { color = "#7A7468", transparency = 0.2 },
 	floor = { color = "#5A5650", transparency = 0 },
+	lava = { color = "#E8541A", transparency = 0 },
 }
 
 local BACKGROUND: { [string]: string } = {

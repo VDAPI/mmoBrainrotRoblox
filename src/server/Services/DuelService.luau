@@ -14,6 +14,7 @@ local Shared = ReplicatedStorage.Shared
 local Config = require(Shared.Config)
 local Log = require(Shared.Util.Log)
 local Net = require(Shared.Net)
+local QuestEvents = require(script.Parent.Parent.QuestEvents)
 local Types = require(Shared.Types)
 
 local log = Log.new("DuelService")
@@ -107,6 +108,11 @@ local function finish(duel: Duel, winner: Player?, reason: string)
 	end
 	duel.phase = "done"
 	local loser = if winner == duel.a then duel.b elseif winner == duel.b then duel.a else nil
+	for _, fighter in { duel.a, duel.b } do
+		if fighter.Parent then
+			QuestEvents.fire(fighter, "duel", { won = fighter == winner })
+		end
+	end
 	if winner and loser then
 		PvpService.CountDuel(winner, loser)
 		AnnounceService.Server("duel.result", { winner = nameOf(winner), loser = nameOf(loser) })

@@ -32,6 +32,10 @@ export type Services = {
 export type Script = {
 	onPhase: ((boss: any, phase: number) -> ())?,
 	onEnrage: ((boss: any) -> ())?,
+	-- Every boss tick (arena hazards); `now` is os.clock().
+	onTick: ((boss: any, now: number) -> ())?,
+	-- Cleanup of script-made objects when the boss is removed.
+	onDestroy: ((boss: any) -> ())?,
 }
 
 export type Boss = typeof(setmetatable(
@@ -348,6 +352,9 @@ function Boss.Step(self: Boss, now: number)
 			self.script.onEnrage(self)
 		end
 	end
+	if self.script.onTick then
+		self.script.onTick(self, now)
+	end
 	-- Attacks (only while chasing and not already casting)
 	if monster.state ~= "chase" or now < self.nextGlobal then
 		return
@@ -362,8 +369,16 @@ function Boss.Step(self: Boss, now: number)
 	end
 end
 
+-- Hits every fighter standing in `area` with a telegraph-less attack (scripted hazards).
+function Boss.Hazard(self: Boss, ability: any, area: CFrame)
+	self.services.resolve(self.monster, ability, area)
+end
+
 -- Removes the boss and every summon (reset or cleanup after the kill).
 function Boss.Destroy(self: Boss)
+	if self.script.onDestroy then
+		self.script.onDestroy(self)
+	end
 	for _, summon in self.summons do
 		if summon:IsAlive() then
 			self.services.despawn(summon)

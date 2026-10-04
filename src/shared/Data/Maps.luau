@@ -220,7 +220,7 @@ map({
 	dungeonRegion = "duskwood",
 })
 
--- Region 3 and 4: listed for portals and the world map; layouts arrive in S11.
+-- Region 3 and 4 (S11).
 map({
 	id = "ashen",
 	nameKey = "map.ashen.name",
@@ -233,7 +233,7 @@ map({
 	biome = "desert",
 	lighting = LIGHT.ashen,
 	music = "",
-	buildMode = "none",
+	buildMode = "generated",
 	worldMap = { x = 0.76, y = 0.6 },
 	links = { "duskwood", "city", "ashen_cave", "frostpeak" },
 })
@@ -249,9 +249,10 @@ map({
 	biome = "cave",
 	lighting = LIGHT.cave,
 	music = "",
-	buildMode = "none",
+	buildMode = "generated",
 	worldMap = { x = 0.76, y = 0.84 },
 	links = { "ashen" },
+	dungeonEntrance = { x = 250, y = 0, z = 0 },
 	dungeonRegion = "ashen",
 })
 map({
@@ -266,7 +267,7 @@ map({
 	biome = "snow",
 	lighting = LIGHT.frostpeak,
 	music = "",
-	buildMode = "none",
+	buildMode = "generated",
 	worldMap = { x = 0.9, y = 0.34 },
 	links = { "ashen", "city", "frostpeak_cave" },
 })
@@ -282,9 +283,10 @@ map({
 	biome = "cave",
 	lighting = LIGHT.cave,
 	music = "",
-	buildMode = "none",
+	buildMode = "generated",
 	worldMap = { x = 0.9, y = 0.1 },
 	links = { "frostpeak" },
+	dungeonEntrance = { x = 250, y = 0, z = 0 },
 	dungeonRegion = "frostpeak",
 })
 
@@ -309,8 +311,7 @@ do
 		biome = "dungeon",
 		lighting = if dungeon.region == "duskwood" then LIGHT.crypt else LIGHT.cave,
 		music = "",
-		-- S09 builds the chambers of regions 1–2; S11 the others.
-		buildMode = if i <= 2 then "generated" else "none",
+		buildMode = "generated",
 		worldMap = { x = 0, y = 0 },
 		links = {},
 	})

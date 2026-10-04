@@ -17,6 +17,7 @@ local Context = require(script.Parent.Parent.Skills.Context)
 local Log = require(Shared.Util.Log)
 local Movement = require(script.Parent.Parent.Skills.Types.Movement)
 local Net = require(Shared.Net)
+local QuestEvents = require(script.Parent.Parent.QuestEvents)
 local Offense = require(script.Parent.Parent.Skills.Types.Offense)
 local SkillData = require(Shared.Data.Skills)
 local Skills = require(Shared.Logic.Skills)
@@ -155,6 +156,7 @@ local function learn(player: Player, skillId: string): (boolean, string?, any)
 	if skill and skill.type == "passive" then
 		passivesChanged(player)
 	end
+	QuestEvents.fire(player, "learn", { skillId = skillId })
 	return true, nil
 end
 

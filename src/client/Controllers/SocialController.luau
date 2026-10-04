@@ -170,7 +170,7 @@ local function killFeed(): Instance
 	return scope:New("Frame")({
 		Name = "KillFeed",
 		AnchorPoint = Vector2.new(1, 0),
-		Position = UDim2.new(1, -Theme.Padding.Large, 0, 380),
+		Position = UDim2.new(1, -Theme.Padding.Large - 320, 0, 300),
 		Size = UDim2.fromOffset(340, FEED_MAX * 30),
 		BackgroundTransparency = 1,
 		[Children] = {
