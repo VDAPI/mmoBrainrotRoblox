@@ -16,7 +16,7 @@ local NotificationController = {
 
 local KINDS = { info = true, success = true, warning = true, error = true }
 
--- Player-provided values (names) must not inject rich text tags.
+-- Player-provided values (names) must not inject rich text tags. Values starting with "@" are localization keys.
 local function escapeArgs(args: any): { [string]: any }?
 	if type(args) ~= "table" then
 		return nil
@@ -24,7 +24,12 @@ local function escapeArgs(args: any): { [string]: any }?
 	local out = {}
 	for key, value in args do
 		if type(value) == "string" then
-			value = string.gsub(value, "[<>&]", { ["<"] = "&lt;", [">"] = "&gt;", ["&"] = "&amp;" })
+			if string.sub(value, 1, 1) == "@" then
+				-- "@monster.wolf.normal" = a localization key, translated in the viewer's language.
+				value = Text.now(string.sub(value, 2))
+			else
+				value = string.gsub(value, "[<>&]", { ["<"] = "&lt;", [">"] = "&gt;", ["&"] = "&amp;" })
+			end
 		end
 		out[key] = value
 	end

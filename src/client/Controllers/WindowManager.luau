@@ -209,6 +209,14 @@ function WindowManager.SetHotkeysEnabled(enabled: boolean)
 	hotkeysEnabled = enabled
 end
 
+-- Extra Escape step between "close the top window" and "open the menu" (e.g. clear the combat target).
+-- Returns true when it consumed the key.
+local escapeHandler: (() -> boolean)? = nil
+
+function WindowManager.SetEscapeHandler(handler: () -> boolean)
+	escapeHandler = handler
+end
+
 local function onEscape()
 	if modalScope then
 		-- Escape on a modal behaves like Cancel; a modal without Cancel stays.
@@ -218,6 +226,9 @@ local function onEscape()
 		return
 	end
 	if WindowManager.CloseTop() then
+		return
+	end
+	if escapeHandler and escapeHandler() then
 		return
 	end
 	if hotkeysEnabled and defs[WindowManager.MenuWindowId] then

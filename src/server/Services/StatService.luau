@@ -14,6 +14,7 @@ local RunService = game:GetService("RunService")
 
 local Shared = ReplicatedStorage.Shared
 
+local Classes = require(Shared.Data.Classes)
 local Log = require(Shared.Util.Log)
 local Net = require(Shared.Net)
 local Signal = require(ReplicatedStorage.Packages.Signal)
@@ -100,6 +101,17 @@ function StatService.Recompute(player: Player): StatCalc.Result?
 	if weaponProvider then
 		local ok, value = pcall(weaponProvider, player, character)
 		weapon = if ok then value else nil
+	end
+	if not weapon then
+		-- Bare hands, but ranged classes still scale their basic attack with DEX.
+		local class = Classes.get(character.class)
+		local unarmed = Stats.Formula.unarmed
+		weapon = {
+			dmg = unarmed.dmg,
+			mdmg = unarmed.mdmg,
+			speed = unarmed.speed,
+			ranged = if class then class.basicAttack.ranged else false,
+		}
 	end
 	local result = StatCalc.compute({
 		level = character.level,

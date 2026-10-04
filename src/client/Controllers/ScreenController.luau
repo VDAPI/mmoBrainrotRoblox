@@ -23,11 +23,12 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 
 local ScreenController = {
 	Name = "ScreenController",
-	Deps = { "UIController", "WindowManager", "StateController" },
+	Deps = { "UIController", "WindowManager", "StateController", "TargetController" },
 }
 
 local UIController: any
 local WindowManager: any
+local TargetController: any
 
 -- HUD menu (DESIGN §23). Windows without their system yet show a "coming soon" body.
 local MENU: { Hud.MenuEntry } = {
@@ -71,7 +72,7 @@ local function registerWindows()
 			WindowManager.Register({
 				id = "menu",
 				titleKey = "window.menu.title",
-				size = Vector2.new(420, 380),
+				size = Vector2.new(440, 440),
 				build = GameMenu,
 			})
 		else
@@ -150,6 +151,8 @@ local function show(screen: "select" | "hud")
 			Menu = MENU,
 			OpenWindow = WindowManager.Toggle,
 			IsOpen = WindowManager.IsOpen,
+			Target = TargetController.Target,
+			OnAttack = TargetController.AttackNearest,
 		}).Parent =
 			layer
 		local name = State.Get({ "character", "name" })
@@ -162,6 +165,7 @@ end
 function ScreenController.Init(registry)
 	UIController = registry.Get("UIController")
 	WindowManager = registry.Get("WindowManager")
+	TargetController = registry.Get("TargetController")
 	blur = Instance.new("BlurEffect")
 	blur.Name = "Vaelthorn_SelectBlur"
 	blur.Enabled = false

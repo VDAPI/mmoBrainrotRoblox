@@ -1,0 +1,522 @@
+--!strict
+-- Basic combat (DESIGN §4.5, §15, §24). Server-driven auto-attack: the client only selects a target
+-- (SetTarget); the server attacks at the player's attack speed whenever the target is in range
+-- (melee 7 / ranged 35 studs + lag tolerance). Fewer remotes and nothing to forge.
+--
+-- Also resolves monster attacks and Elite II abilities (MonsterService handlers), grants EXP/gold on kills,
+-- and batches visual events (damage numbers, attack swings/projectiles, telegraphs) to nearby clients
+-- through one "CombatFx" remote per frame.
+--
+-- Later systems: skills (S05) call CombatService.DealDamage; loot (S04) and quests (S11) listen to
+-- MonsterKilled; parties (S09) extend ResolveKillCredit.
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+
+local Shared = ReplicatedStorage.Shared
+
+local Classes = require(Shared.Data.Classes)
+local Combat = require(Shared.Data.Combat)
+local Damage = require(Shared.Logic.Damage)
+local Exp = require(Shared.Logic.Exp)
+local Log = require(Shared.Util.Log)
+local MonsterAbilities = require(Shared.Data.MonsterAbilities)
+local MonsterStats = require(Shared.Logic.MonsterStats)
+local Net = require(Shared.Net)
+local Rng = require(Shared.Logic.Rng)
+local Signal = require(ReplicatedStorage.Packages.Signal)
+local Types = require(Shared.Types)
+
+local log = Log.new("CombatService")
+
+local CombatService = {
+	Name = "CombatService",
+	Deps = {
+		"PlayerStateService",
+		"CharacterService",
+		"EntityService",
+		"MonsterService",
+		"StatService",
+		"ResourceService",
+		"LevelService",
+		"PvpService",
+		"ZoneService",
+	},
+	-- (info: KillInfo, credit: { Player }, killer: Player?) after a monster died.
+	MonsterKilled = Signal.new(),
+}
+
+export type KillInfo = {
+	monsterId: string,
+	variant: string,
+	level: number,
+	position: Vector3,
+	mapId: string?,
+	entityId: string,
+}
+
+type FxEvent = { [string]: any }
+
+type Entity = {
+	id: string,
+	kind: "player" | "monster",
+	model: Model?,
+	player: Player?,
+	monster: any?,
+}
+
+local PlayerStateService: any
+local CharacterService: any
+local EntityService: any
+local MonsterService: any
+local StatService: any
+local ResourceService: any
+local LevelService: any
+local PvpService: any
+local ZoneService: any
+
+type Attacker = {
+	target: string?,
+	nextAttack: number,
+	damageOverride: number?,
+}
+
+local attackers: { [Player]: Attacker } = {}
+local rng = Rng.new()
+local fxQueue: { { position: Vector3, event: FxEvent } } = {}
+
+local function attackerState(player: Player): Attacker
+	local state = attackers[player]
+	if not state then
+		state = { target = nil, nextAttack = 0, damageOverride = nil }
+		attackers[player] = state
+	end
+	return state
+end
+
+-- Visual events --------------------------------------------------------------------------------------
+
+local function queueFx(position: Vector3?, event: FxEvent)
+	if position then
+		table.insert(fxQueue, { position = position, event = event })
+	end
+end
+
+local function flushFx()
+	if #fxQueue == 0 then
+		return
+	end
+	local queue = fxQueue
+	fxQueue = {}
+	for _, player in Players:GetPlayers() do
+		local model = player.Character
+		local root = model and model:FindFirstChild("HumanoidRootPart") :: BasePart?
+		if root then
+			local batch = {}
+			for _, item in queue do
+				if (item.position - root.Position).Magnitude <= Combat.fxRadius then
+					table.insert(batch, item.event)
+				end
+			end
+			if #batch > 0 then
+				Net.Fire(player, "CombatFx", batch)
+			end
+		end
+	end
+end
+
+-- Helpers ----------------------------------------------------------------------------------------------
+
+local function rootOf(model: Model?): BasePart?
+	return if model then model:FindFirstChild("HumanoidRootPart") :: BasePart? else nil
+end
+
+local function flatDistance(a: Vector3, b: Vector3): number
+	return (Vector3.new(a.X, 0, a.Z) - Vector3.new(b.X, 0, b.Z)).Magnitude
+end
+
+local function playerAlive(player: Player): boolean
+	return PlayerStateService.GetPhase(player) == "playing"
+		and player.Character ~= nil
+		and not ResourceService.IsDead(player)
+end
+
+local function playerCombat(player: Player): (Damage.Attacker?, Damage.Defender?)
+	local character: Types.CharacterData? = PlayerStateService.GetCharacter(player)
+	local result = StatService.Get(player)
+	if not character or not result then
+		return nil, nil
+	end
+	return Damage.fromStats(character.level, result.values)
+end
+
+local function basicAttackProfile(player: Player): ("phys" | "magic", boolean, string)
+	local character: Types.CharacterData? = PlayerStateService.GetCharacter(player)
+	local class = character and Classes.get(character.class)
+	local derived = PlayerStateService.Get(player, { "derived" })
+	local ranged = if derived and derived.weapon
+		then derived.weapon.ranged == true
+		elseif class then class.basicAttack.ranged
+		else false
+	local kind: "phys" | "magic" = if class then class.basicAttack.kind else "phys"
+	local style: string = if class then class.basicAttack.style else "melee"
+	if ranged and style == "melee" then
+		style = "arrow"
+	end
+	return kind, ranged, style
+end
+
+local function entityRadius(entity: Entity): number
+	local root = rootOf(entity.model)
+	return if root then math.max(root.Size.X, root.Size.Z) / 2 else 1
+end
+
+-- Kill credit and rewards ----------------------------------------------------------------------------
+
+-- Players who get EXP/gold/loot for a monster (top damage dealer; parties extend this in S09).
+function CombatService.ResolveKillCredit(monster: any): { Player }
+	local top = monster:TopDamager()
+	return if top then { top } else {}
+end
+
+local function reward(player: Player, monster: any)
+	local character: Types.CharacterData? = PlayerStateService.GetCharacter(player)
+	if not character then
+		return
+	end
+	local level = monster.stats.level
+	local exp =
+		math.floor(Exp.monsterExp(level, monster.variant) * Exp.levelDiffMultiplier(character.level, level) + 0.5)
+	local goldBonus = StatService.GetValue(player, "goldBonus")
+	local gold = math.floor(MonsterStats.gold(level, monster.variant, rng:next()) * (1 + goldBonus / 100) + 0.5)
+	local expBonus = StatService.GetValue(player, "expBonus")
+	LevelService.GiveExp(player, exp, "monster")
+	PlayerStateService.Update(player, { "character", "gold" }, function(current: number)
+		return current + gold
+	end)
+	local shownExp = if character.level >= 100 then 0 else math.floor(exp * (1 + expBonus / 100))
+	Net.Fire(player, "CombatFx", { { k = "reward", exp = shownExp, gold = gold } })
+end
+
+local function onMonsterDied(monster: any)
+	local credit = CombatService.ResolveKillCredit(monster)
+	for _, player in credit do
+		reward(player, monster)
+	end
+	local position = monster:Position()
+	local zone = ZoneService.ZoneAt(position, "city")
+	local info: KillInfo = {
+		monsterId = monster.def.id,
+		variant = monster.variant,
+		level = monster.stats.level,
+		position = position,
+		mapId = zone.map,
+		entityId = if monster.entity then monster.entity.id else "",
+	}
+	CombatService.MonsterKilled:Fire(info, credit, credit[1])
+	-- Clear player targets pointing at the corpse.
+	for _, state in attackers do
+		if state.target == info.entityId then
+			state.target = nil
+		end
+	end
+end
+
+-- Damage pipeline --------------------------------------------------------------------------------------
+
+-- Deals damage from a player to an entity with the given params. Returns the Damage.Result or nil when the
+-- hit was not allowed. Skills (S05) use this too.
+function CombatService.DealDamage(
+	player: Player,
+	targetEntity: any,
+	params: Damage.Params,
+	style: string?
+): Damage.Result?
+	local attacker = playerCombat(player)
+	if not attacker then
+		return nil
+	end
+	local selfEntity = EntityService.GetPlayerEntity(player)
+	local targetPosition = EntityService.Position(targetEntity)
+	local result: Damage.Result
+
+	if targetEntity.kind == "monster" then
+		local monster = targetEntity.monster
+		if not monster or not monster:IsAlive() then
+			return nil
+		end
+		result = Damage.computeDamage(attacker, MonsterStats.asDefender(monster.stats), params, rng)
+		local override = attackerState(player).damageOverride
+		if override and not result.dodged then
+			result.amount = override
+		end
+		if monster.invulnerable then
+			result.amount = 0
+		end
+		if style and selfEntity then
+			queueFx(targetPosition, { k = "atk", s = selfEntity.id, t = targetEntity.id, st = style })
+		end
+		queueFx(
+			targetPosition,
+			{ k = "dmg", e = targetEntity.id, a = result.amount, c = result.crit, d = result.dodged }
+		)
+		if result.amount > 0 then
+			monster:TakeDamage(result.amount, player)
+		end
+	else
+		local target = targetEntity.player :: Player
+		local allowed = PvpService.CanAttack(player, target)
+		if not allowed or not playerAlive(target) then
+			return nil
+		end
+		local _, defender = playerCombat(target)
+		if not defender then
+			return nil
+		end
+		local pvpParams = table.clone(params)
+		pvpParams.pvp = true
+		result = Damage.computeDamage(attacker, defender, pvpParams, rng)
+		local override = attackerState(player).damageOverride
+		if override and not result.dodged then
+			result.amount = math.floor(override * Combat.pvpModifier)
+		end
+		if style and selfEntity then
+			queueFx(targetPosition, { k = "atk", s = selfEntity.id, t = targetEntity.id, st = style })
+		end
+		queueFx(
+			targetPosition,
+			{ k = "dmg", e = targetEntity.id, a = result.amount, c = result.crit, d = result.dodged }
+		)
+		PvpService.MarkPvpCombat(player)
+		PvpService.MarkPvpCombat(target)
+		if result.amount > 0 then
+			ResourceService.Damage(target, result.amount, "pvp")
+		end
+	end
+
+	ResourceService.MarkCombat(player)
+	if result.lifesteal > 0 then
+		local healed = ResourceService.Heal(player, result.lifesteal)
+		if healed > 0 and selfEntity then
+			queueFx(EntityService.Position(selfEntity), { k = "heal", e = selfEntity.id, a = math.floor(healed) })
+		end
+	end
+	return result
+end
+
+local function tryBasicAttack(player: Player, state: Attacker, now: number)
+	local targetId = state.target
+	if not targetId or now < state.nextAttack or not playerAlive(player) then
+		return
+	end
+	local target = EntityService.Get(targetId)
+	if not target then
+		state.target = nil
+		return
+	end
+	if target.kind == "monster" and (not target.monster or not target.monster:IsAlive()) then
+		state.target = nil
+		return
+	end
+	local myRoot = rootOf(player.Character)
+	local targetPosition = EntityService.Position(target)
+	if not myRoot or not targetPosition then
+		return
+	end
+	-- No fighting from inside a safe zone.
+	if ZoneService.GetPvpZone(player) == "green" then
+		return
+	end
+	local kind, ranged, style = basicAttackProfile(player)
+	local range = (if ranged then Combat.rangedRange else Combat.meleeRange) + Combat.rangeTolerance
+	if flatDistance(myRoot.Position, targetPosition) - entityRadius(target) > range then
+		return
+	end
+	local speed = math.max(0.2, StatService.GetValue(player, "atkSpeed"))
+	state.nextAttack = now + 1 / speed
+	local params: Damage.Params = { kind = if kind == "magic" then "magic" else "phys" }
+	CombatService.DealDamage(player, target, params, style)
+end
+
+-- Monster -> player ------------------------------------------------------------------------------------
+
+local function monsterHitsPlayer(monster: any, player: Player, params: Damage.Params, style: string?)
+	if not playerAlive(player) then
+		return
+	end
+	local _, defender = playerCombat(player)
+	if not defender then
+		return
+	end
+	local result = Damage.computeDamage(MonsterStats.asAttacker(monster.stats), defender, params, rng)
+	local playerEntity = EntityService.GetPlayerEntity(player)
+	local position = EntityService.Position(playerEntity or { model = player.Character } :: any)
+	if style and monster.entity and playerEntity then
+		queueFx(position, { k = "atk", s = monster.entity.id, t = playerEntity.id, st = style })
+	end
+	if playerEntity then
+		queueFx(position, { k = "dmg", e = playerEntity.id, a = result.amount, c = result.crit, d = result.dodged })
+	end
+	if result.amount > 0 then
+		ResourceService.Damage(player, result.amount, "monster")
+	else
+		ResourceService.MarkCombat(player)
+	end
+end
+
+local function monsterBasicAttack(monster: any, player: Player)
+	local style = if monster.def.attack == "ranged"
+		then (if monster.def.damageKind == "magic" then "bolt" else "arrow")
+		else "melee"
+	monsterHitsPlayer(monster, player, { kind = monster.stats.damageKind, element = monster.def.element }, style)
+end
+
+local function insideArea(ability: MonsterAbilities.Ability, area: CFrame, position: Vector3): boolean
+	local localPos = area:PointToObjectSpace(position)
+	local flatLocal = Vector3.new(localPos.X, 0, localPos.Z)
+	if math.abs(localPos.Y) > 12 then
+		return false
+	end
+	if ability.shape == "circle" then
+		return flatLocal.Magnitude <= (ability.radius or 8)
+	elseif ability.shape == "cone" then
+		local radius = ability.radius or 10
+		if flatLocal.Magnitude > radius then
+			return false
+		end
+		if flatLocal.Magnitude < 1 then
+			return true
+		end
+		-- Forward is -Z in CFrame.lookAt space.
+		local angle = math.deg(math.acos(math.clamp(flatLocal.Unit:Dot(Vector3.new(0, 0, -1)), -1, 1)))
+		return angle <= (ability.angle or 90) / 2
+	elseif ability.shape == "line" then
+		local length, width = ability.length or 15, ability.width or 5
+		return localPos.Z <= 0 and localPos.Z >= -length and math.abs(localPos.X) <= width / 2
+	end
+	return false
+end
+
+local function telegraph(monster: any, ability: MonsterAbilities.Ability, area: CFrame)
+	queueFx(area.Position, {
+		k = "tele",
+		e = if monster.entity then monster.entity.id else nil,
+		sh = ability.shape,
+		cf = area,
+		r = ability.radius,
+		an = ability.angle,
+		l = ability.length,
+		w = ability.width,
+		t = ability.windup,
+		el = ability.element,
+	})
+end
+
+local function resolveAbility(monster: any, ability: MonsterAbilities.Ability, area: CFrame)
+	local params: Damage.Params = {
+		kind = ability.damageKind or monster.stats.damageKind,
+		multiplier = ability.damage,
+		element = ability.element,
+		canDodge = false, -- telegraphed attacks are dodged by moving out of the area
+	}
+	local reach = (ability.radius or 0) + (ability.length or 0) + 10
+	for _, entity in EntityService.QueryPlayers(area.Position, reach) do
+		local player = entity.player :: Player
+		local position = EntityService.Position(entity)
+		if position and insideArea(ability, area, position) then
+			monsterHitsPlayer(monster, player, params, nil)
+		end
+	end
+end
+
+-- Admin and queries --------------------------------------------------------------------------------------
+
+function CombatService.GetTarget(player: Player): any
+	local state = attackers[player]
+	return if state and state.target then EntityService.Get(state.target) else nil
+end
+
+function CombatService.SetDamageOverride(player: Player, amount: number?)
+	attackerState(player).damageOverride = amount
+end
+
+-- Remote --------------------------------------------------------------------------------------------------
+
+local function onSetTarget(player: Player, entityId: string?)
+	local state = attackerState(player)
+	if entityId == nil then
+		state.target = nil
+		return
+	end
+	local entity = EntityService.Get(entityId)
+	if not entity or entity.player == player then
+		state.target = nil
+		return
+	end
+	-- Ignore targets far away (client sends what it sees; streaming radius is the natural bound).
+	local myRoot = rootOf(player.Character)
+	local position = EntityService.Position(entity)
+	if not myRoot or not position or (position - myRoot.Position).Magnitude > 250 then
+		state.target = nil
+		return
+	end
+	if state.target ~= entityId then
+		state.target = entityId
+		-- Switching targets never makes the next swing come sooner.
+		state.nextAttack = math.max(state.nextAttack, os.clock())
+	end
+end
+
+function CombatService.Init(registry)
+	PlayerStateService = registry.Get("PlayerStateService")
+	CharacterService = registry.Get("CharacterService")
+	EntityService = registry.Get("EntityService")
+	MonsterService = registry.Get("MonsterService")
+	StatService = registry.Get("StatService")
+	ResourceService = registry.Get("ResourceService")
+	LevelService = registry.Get("LevelService")
+	PvpService = registry.Get("PvpService")
+	ZoneService = registry.Get("ZoneService")
+
+	MonsterService.SetCombatHandlers({
+		basicAttack = monsterBasicAttack,
+		telegraph = telegraph,
+		resolveAbility = resolveAbility,
+		died = onMonsterDied,
+	})
+end
+
+function CombatService.Start()
+	Net.On("SetTarget", onSetTarget)
+
+	ResourceService.Died:Connect(function(player: Player)
+		local state = attackers[player]
+		if state then
+			state.target = nil
+		end
+	end)
+	CharacterService.CharacterLeaving:Connect(function(player: Player)
+		attackers[player] = nil
+	end)
+	Players.PlayerRemoving:Connect(function(player)
+		attackers[player] = nil
+	end)
+
+	RunService.Heartbeat:Connect(function()
+		local now = os.clock()
+		for player, state in attackers do
+			if state.target then
+				local ok, err = pcall(function()
+					tryBasicAttack(player, state, now)
+				end)
+				if not ok then
+					log:error("attack failed for %s: %s", player.Name, tostring(err))
+				end
+			end
+		end
+		flushFx()
+	end)
+end
+
+return CombatService

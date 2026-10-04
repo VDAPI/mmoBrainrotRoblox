@@ -5,6 +5,9 @@ local fs = require("@lune/fs")
 local Classes = require("../src/shared/Data/Classes")
 local Config = require("../src/shared/Config")
 local Maps = require("../src/shared/Data/Maps")
+local MonsterAbilities = require("../src/shared/Data/MonsterAbilities")
+local Monsters = require("../src/shared/Data/Monsters")
+local Spawns = require("../src/shared/Data/Spawns")
 local T = require("./Test")
 local en = require("../src/shared/Data/Localization/en")
 local pl = require("../src/shared/Data/Localization/pl")
@@ -52,6 +55,10 @@ local NAMESPACES = {
 	"zone",
 	"pvp",
 	"death",
+	"monster",
+	"monsterPlate",
+	"variant",
+	"combat",
 }
 
 T.describe("Data: Classes", function()
@@ -112,6 +119,76 @@ T.describe("Data: Maps", function()
 				local a, b = list[i].offset, list[j].offset
 				local dist = math.sqrt((a.x - b.x) ^ 2 + (a.y - b.y) ^ 2 + (a.z - b.z) ^ 2)
 				T.expect(dist >= 3000).toBe(true)
+			end
+		end
+	end)
+end)
+
+T.describe("Data: Monsters", function()
+	T.it("has every kind from DESIGN §15.2 (7 + 8 + 8 + 7)", function()
+		local perRegion = { 0, 0, 0, 0 }
+		for _, def in Monsters.list do
+			perRegion[def.region] += 1
+		end
+		T.expect(perRegion).toEqual({ 7, 8, 8, 7 })
+	end)
+
+	T.it("every kind is complete, localized and consistent", function()
+		local shapes = { quadruped = true, humanoid = true, spider = true, golem = true, flyer = true, dragon = true }
+		for _, def in Monsters.list do
+			local function check(ok: boolean, what: string)
+				if not ok then
+					error(`{def.id}: {what}`)
+				end
+			end
+			for _, variant in Monsters.variants do
+				check(hasKey(def.nameKeys[variant]), `missing name {def.nameKeys[variant]}`)
+			end
+			check(shapes[def.shape] == true, "unknown shape")
+			check(def.levels.min >= 1 and def.levels.max <= 100 and def.levels.min <= def.levels.max, "levels")
+			check(def.hpMul > 0 and def.atkMul > 0 and def.defMul > 0 and def.speed > 0, "multipliers")
+			check(def.attack == "melee" or def.attack == "ranged", "attack type")
+			check(string.match(def.colors.primary, "^#%x%x%x%x%x%x$") ~= nil, "primary colour")
+			check(string.match(def.colors.secondary, "^#%x%x%x%x%x%x$") ~= nil, "secondary colour")
+			if def.elites then
+				check(def.ability ~= nil and MonsterAbilities.get(def.ability :: string) ~= nil, "Elite II ability")
+			end
+			check(def.lootTable ~= "", "loot table id")
+		end
+	end)
+
+	T.it("abilities are well formed", function()
+		for id, ability in MonsterAbilities.byId do
+			T.expect(ability.id).toBe(id)
+			T.expect(ability.windup > 0 and ability.cooldown > ability.windup).toBe(true)
+			if ability.shape == "line" then
+				T.expect((ability.length or 0) > 0 and (ability.width or 0) > 0).toBe(true)
+			else
+				T.expect((ability.radius or 0) > 0).toBe(true)
+			end
+		end
+	end)
+
+	T.it("spawners reference valid monsters and maps", function()
+		for mapId, list in Spawns.byMap do
+			T.expect(Maps.get(mapId) ~= nil).toBe(true)
+			local ids = {}
+			for _, spawner in list do
+				local def = Monsters.get(spawner.monster)
+				if not def then
+					error(`spawner {spawner.id}: unknown monster {spawner.monster}`)
+				end
+				T.expect(ids[spawner.id]).toBeNil()
+				ids[spawner.id] = true
+				T.expect(spawner.count >= 1 and spawner.radius >= 0).toBe(true)
+				T.expect(spawner.respawn.min > 0 and spawner.respawn.min <= spawner.respawn.max).toBe(true)
+				if spawner.variant ~= "normal" then
+					T.expect(def.elites).toBe(true)
+				end
+				if spawner.variant == "elite2" then
+					-- DESIGN §15.1: Elite II respawn 10–20 min
+					T.expect(spawner.respawn.min >= 600 and spawner.respawn.max <= 1200).toBe(true)
+				end
 			end
 		end
 	end)

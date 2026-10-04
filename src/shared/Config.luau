@@ -57,6 +57,9 @@ local Config = {
 	-- Players within this radius see someone's level-up effect.
 	EffectRadius = 150,
 
+	-- Live monsters allowed on one server (spawners stop when reached).
+	MaxActiveMonsters = 400,
+
 	-- How often (s) the server flushes batched state diffs. 0 = every Heartbeat.
 	StateFlushInterval = 0,
 }

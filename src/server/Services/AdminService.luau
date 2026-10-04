@@ -13,6 +13,7 @@ local Shared = ReplicatedStorage.Shared
 local AccountSchema = require(Shared.Logic.AccountSchema)
 local Config = require(Shared.Config)
 local Log = require(Shared.Util.Log)
+local Monsters = require(Shared.Data.Monsters)
 local Net = require(Shared.Net)
 
 local log = Log.new("AdminService")
@@ -29,6 +30,9 @@ local AdminService = {
 		"DeathService",
 		"PvpService",
 		"MonetizationService",
+		"MonsterService",
+		"CombatService",
+		"EntityService",
 	},
 }
 
@@ -41,6 +45,9 @@ local ResourceService: any
 local DeathService: any
 local PvpService: any
 local MonetizationService: any
+local MonsterService: any
+local CombatService: any
+local EntityService: any
 
 type Command = {
 	usageKey: string,
@@ -255,14 +262,20 @@ COMMANDS.hurt = {
 
 COMMANDS.kill = {
 	usageKey = "admin.usage.kill",
-	run = function(player, args)
-		if args[1] ~= "me" then
-			-- Killing a selected target arrives with combat targeting (S03).
-			reply(player, "admin.usage.kill")
-			return
-		end
+	run = function(player, args: { string })
 		withCharacter(player, function()
-			DeathService.Kill(player)
+			if args[1] == "me" then
+				DeathService.Kill(player)
+				return
+			end
+			local target = CombatService.GetTarget(player)
+			if not target then
+				reply(player, "admin.kill.noTarget")
+			elseif target.kind == "monster" then
+				target.monster:TakeDamage(target.monster.hp + 1, player)
+			elseif target.player then
+				DeathService.Kill(target.player)
+			end
 		end)
 	end,
 }
@@ -313,6 +326,132 @@ COMMANDS.pass = {
 	end,
 }
 
+local VARIANTS = { [0] = "normal", [1] = "elite", [2] = "elite2" }
+
+COMMANDS.spawn = {
+	usageKey = "admin.usage.spawn",
+	run = function(player, args)
+		local monsterId = args[1]
+		if not monsterId then
+			reply(player, "admin.usage.spawn")
+			return
+		end
+		local def = Monsters.get(monsterId)
+		if not def then
+			reply(player, "admin.spawn.unknown", { id = monsterId })
+			return
+		end
+		local variant = VARIANTS[tonumber(args[2]) or 0] or "normal"
+		local level = math.clamp(parseAmount(args[3]) or def.levels.min, 1, Config.MaxLevel)
+		withCharacter(player, function()
+			local model = player.Character
+			if not model then
+				return
+			end
+			local at = model:GetPivot() * CFrame.new(0, 0, -12)
+			local monster = MonsterService.SpawnAt(monsterId, variant, level, CFrame.new(at.Position))
+			if monster then
+				reply(player, "admin.spawn.ok", { name = "@" .. monster:Name(), level = monster.stats.level })
+			end
+		end)
+	end,
+}
+
+COMMANDS.killall = {
+	usageKey = "admin.usage.killall",
+	run = function(player, args)
+		local radius = math.clamp(parseAmount(args[1]) or 100, 1, 2000)
+		withCharacter(player, function()
+			local model = player.Character
+			if not model then
+				return
+			end
+			local count = 0
+			for _, entity in EntityService.QueryMonsters(model:GetPivot().Position, radius) do
+				local monster = entity.monster
+				if monster and monster:IsAlive() then
+					monster.invulnerable = false
+					monster:TakeDamage(monster.hp + 1, player)
+					count += 1
+				end
+			end
+			reply(player, "admin.killall.ok", { count = count })
+		end)
+	end,
+}
+
+COMMANDS.target = {
+	usageKey = "admin.usage.target",
+	run = function(player, args)
+		if args[1] ~= "info" then
+			reply(player, "admin.usage.target")
+			return
+		end
+		local target = CombatService.GetTarget(player)
+		if not target then
+			reply(player, "admin.target.none")
+			return
+		end
+		if target.kind == "monster" then
+			local m = target.monster
+			reply(player, "admin.target.info", {
+				name = "@" .. m:Name(),
+				level = m.stats.level,
+				hp = math.ceil(m.hp),
+				maxHp = m.stats.maxHp,
+				atk = math.floor(m.stats.attack),
+				armor = math.floor(m.stats.armor),
+				mres = math.floor(m.stats.mres),
+			})
+		else
+			local other = target.player
+			local character = other and PlayerStateService.GetCharacter(other)
+			local derived = other and PlayerStateService.Get(other, { "derived", "values" })
+			if character and derived then
+				reply(player, "admin.target.info", {
+					name = character.name,
+					level = character.level,
+					hp = character.hp,
+					maxHp = math.floor(derived.maxHp),
+					atk = math.floor(derived.physAtk),
+					armor = math.floor(derived.armor),
+					mres = math.floor(derived.mres),
+				})
+			end
+		end
+	end,
+}
+
+COMMANDS.dmg = {
+	usageKey = "admin.usage.dmg",
+	run = function(player, args)
+		if args[1] == "off" then
+			CombatService.SetDamageOverride(player, nil)
+			reply(player, "admin.dmg.off")
+			return
+		end
+		local amount = parseAmount(args[1])
+		if amount == nil or amount <= 0 then
+			reply(player, "admin.usage.dmg")
+			return
+		end
+		CombatService.SetDamageOverride(player, amount)
+		reply(player, "admin.dmg.on", { amount = amount })
+	end,
+}
+
+COMMANDS.monsters = {
+	usageKey = "admin.usage.monsters",
+	run = function(player)
+		local active, sleeping, spawners, awake = MonsterService.Stats()
+		reply(
+			player,
+			"admin.monsters.info",
+			{ active = active, sleeping = sleeping, spawners = spawners, awake = awake }
+		)
+	end,
+}
+
 local function onCommand(name: string, textSource: TextSource, message: string)
 	local player = Players:GetPlayerByUserId(textSource.UserId)
 	if not player then
@@ -347,6 +486,9 @@ function AdminService.Init(registry)
 	DeathService = registry.Get("DeathService")
 	PvpService = registry.Get("PvpService")
 	MonetizationService = registry.Get("MonetizationService")
+	MonsterService = registry.Get("MonsterService")
+	CombatService = registry.Get("CombatService")
+	EntityService = registry.Get("EntityService")
 end
 
 function AdminService.Start()

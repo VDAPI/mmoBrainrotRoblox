@@ -11,6 +11,8 @@ local DEFS: { [string]: { id: string, volume: number, speed: number? } } = {
 	open = { id = "rbxasset://sounds/volume_slider.ogg", volume = 0.25, speed = 0.8 },
 	error = { id = "rbxasset://sounds/volume_slider.ogg", volume = 0.45, speed = 0.55 },
 	levelUp = { id = "rbxasset://sounds/action_jump_land.mp3", volume = 0.7, speed = 0.6 },
+	-- Hit sound for basic attacks; swap per weapon type once real sounds exist.
+	hit = { id = "rbxasset://sounds/action_jump_land.mp3", volume = 0.3, speed = 1.7 },
 }
 
 local master = 0.8

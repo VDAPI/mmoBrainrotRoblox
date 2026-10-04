@@ -5,6 +5,7 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local AttackButton = require(script.AttackButton)
 local Bar = require(script.Parent.Parent.Components.Bar)
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local Config = require(ReplicatedStorage.Shared.Config)
@@ -19,6 +20,7 @@ local State = require(script.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
 local Tooltip = require(script.Parent.Parent.Components.Tooltip)
+local TargetFrame = require(script.TargetFrame)
 local ZoneBanner = require(script.ZoneBanner)
 
 local Children = Fusion.Children
@@ -36,6 +38,8 @@ export type Props = {
 	Menu: { MenuEntry },
 	OpenWindow: (id: string) -> (),
 	IsOpen: (id: string) -> Fusion.Value<boolean>,
+	Target: Fusion.Value<Model?>,
+	OnAttack: () -> (),
 }
 
 local SKILL_SLOTS = 10
@@ -389,7 +393,9 @@ local function Hud(scope: Scope, props: Props): Instance
 			menu(scope, props),
 			actionBar(scope),
 			expBar(scope),
+			TargetFrame(scope, { Target = props.Target }),
 			ZoneBanner(scope),
+			AttackButton(scope, { OnAttack = props.OnAttack }),
 			PvpToggle(scope),
 			DeathScreen(scope),
 		},

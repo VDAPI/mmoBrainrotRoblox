@@ -1,0 +1,433 @@
+--!strict
+-- Placeholder monster models built from Parts (ARCHITECTURE §7). Decision (S03): every monster is a Model
+-- with an invisible HumanoidRootPart, an R15-type Humanoid (HipHeight keeps it standing, MoveTo walks it)
+-- and decorative parts welded to the root. A real model in ReplicatedStorage.Assets.Monsters.<id> replaces
+-- the placeholder automatically (it must contain a Humanoid and a HumanoidRootPart).
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local Monsters = require(ReplicatedStorage.Shared.Data.Monsters)
+
+local RigBuilder = {}
+
+type PartSpec = {
+	name: string,
+	size: Vector3,
+	offset: Vector3, -- from the root centre, before scaling
+	color: "primary" | "secondary" | "eye" | "dark",
+	shape: Enum.PartType?,
+	rotation: Vector3?, -- degrees
+	material: Enum.Material?,
+	transparency: number?,
+}
+
+local EYE = Color3.fromHex("#F2E6B0")
+local DARK = Color3.fromHex("#1A1A1E")
+
+-- Root size per shape (studs at scale 1); parts are positioned around its centre.
+local ROOT_SIZE: { [string]: Vector3 } = {
+	quadruped = Vector3.new(2, 2, 3),
+	humanoid = Vector3.new(2, 2, 1),
+	spider = Vector3.new(2.4, 1.4, 2.6),
+	golem = Vector3.new(3, 3, 2),
+	flyer = Vector3.new(2, 2, 2),
+	dragon = Vector3.new(3, 2.4, 5),
+}
+
+local function legsQuad(length: number, depth: number, width: number, height: number): { PartSpec }
+	local legs: { PartSpec } = {}
+	for i, pos in { Vector3.new(-1, 0, -1), Vector3.new(1, 0, -1), Vector3.new(-1, 0, 1), Vector3.new(1, 0, 1) } do
+		table.insert(legs, {
+			name = `Leg{i}`,
+			size = Vector3.new(0.55, height, 0.55),
+			offset = Vector3.new(pos.X * width, depth - height / 2, pos.Z * length),
+			color = "primary" :: "primary",
+		})
+	end
+	return legs
+end
+
+local SHAPES: { [string]: { PartSpec } } = {
+	quadruped = {
+		{ name = "Body", size = Vector3.new(2, 1.6, 3.6), offset = Vector3.zero, color = "primary" },
+		{ name = "Belly", size = Vector3.new(1.6, 0.4, 3), offset = Vector3.new(0, -0.75, 0), color = "secondary" },
+		{ name = "Head", size = Vector3.new(1.4, 1.3, 1.4), offset = Vector3.new(0, 0.5, -2.3), color = "primary" },
+		{ name = "Snout", size = Vector3.new(0.8, 0.6, 0.7), offset = Vector3.new(0, 0.25, -3.2), color = "secondary" },
+		{ name = "EyeL", size = Vector3.new(0.2, 0.2, 0.1), offset = Vector3.new(-0.4, 0.75, -3.0), color = "eye" },
+		{ name = "EyeR", size = Vector3.new(0.2, 0.2, 0.1), offset = Vector3.new(0.4, 0.75, -3.0), color = "eye" },
+		{
+			name = "EarL",
+			size = Vector3.new(0.3, 0.5, 0.2),
+			offset = Vector3.new(-0.45, 1.35, -2.2),
+			color = "primary",
+		},
+		{ name = "EarR", size = Vector3.new(0.3, 0.5, 0.2), offset = Vector3.new(0.45, 1.35, -2.2), color = "primary" },
+		{
+			name = "Tail",
+			size = Vector3.new(0.3, 0.3, 1.2),
+			offset = Vector3.new(0, 0.4, 2.2),
+			color = "primary",
+			rotation = Vector3.new(30, 0, 0),
+		},
+	},
+	humanoid = {
+		{ name = "Torso", size = Vector3.new(2, 2, 1), offset = Vector3.zero, color = "primary" },
+		{ name = "Belt", size = Vector3.new(2.05, 0.3, 1.05), offset = Vector3.new(0, -0.8, 0), color = "dark" },
+		{ name = "Head", size = Vector3.new(1.2, 1.2, 1.2), offset = Vector3.new(0, 1.65, 0), color = "secondary" },
+		{ name = "EyeL", size = Vector3.new(0.2, 0.15, 0.1), offset = Vector3.new(-0.25, 1.75, -0.62), color = "eye" },
+		{ name = "EyeR", size = Vector3.new(0.2, 0.15, 0.1), offset = Vector3.new(0.25, 1.75, -0.62), color = "eye" },
+		{ name = "ArmL", size = Vector3.new(0.8, 2, 0.8), offset = Vector3.new(-1.45, 0, 0), color = "primary" },
+		{ name = "ArmR", size = Vector3.new(0.8, 2, 0.8), offset = Vector3.new(1.45, 0, 0), color = "primary" },
+		{ name = "LegL", size = Vector3.new(0.9, 2, 0.9), offset = Vector3.new(-0.5, -2, 0), color = "dark" },
+		{ name = "LegR", size = Vector3.new(0.9, 2, 0.9), offset = Vector3.new(0.5, -2, 0), color = "dark" },
+		{
+			name = "Weapon",
+			size = Vector3.new(0.25, 0.25, 2.4),
+			offset = Vector3.new(1.45, -0.9, -1),
+			color = "dark",
+			material = Enum.Material.Metal,
+		},
+	},
+	spider = {
+		{
+			name = "Abdomen",
+			size = Vector3.new(2.4, 1.6, 2.6),
+			offset = Vector3.new(0, 0.2, 1),
+			color = "primary",
+			shape = Enum.PartType.Ball,
+		},
+		{ name = "Thorax", size = Vector3.new(1.6, 1.1, 1.4), offset = Vector3.new(0, 0, -0.9), color = "primary" },
+		{ name = "Marking", size = Vector3.new(0.9, 0.2, 1.2), offset = Vector3.new(0, 1, 1), color = "secondary" },
+		{ name = "EyeL", size = Vector3.new(0.2, 0.2, 0.1), offset = Vector3.new(-0.3, 0.2, -1.65), color = "eye" },
+		{ name = "EyeR", size = Vector3.new(0.2, 0.2, 0.1), offset = Vector3.new(0.3, 0.2, -1.65), color = "eye" },
+	},
+	golem = {
+		{
+			name = "Torso",
+			size = Vector3.new(3, 3, 2),
+			offset = Vector3.zero,
+			color = "primary",
+			material = Enum.Material.Slate,
+		},
+		{
+			name = "Core",
+			size = Vector3.new(1, 1, 0.3),
+			offset = Vector3.new(0, 0.3, -1.05),
+			color = "secondary",
+			material = Enum.Material.Neon,
+		},
+		{
+			name = "Head",
+			size = Vector3.new(1.6, 1.3, 1.5),
+			offset = Vector3.new(0, 2.2, -0.2),
+			color = "primary",
+			material = Enum.Material.Slate,
+		},
+		{
+			name = "EyeL",
+			size = Vector3.new(0.3, 0.2, 0.1),
+			offset = Vector3.new(-0.35, 2.3, -0.98),
+			color = "secondary",
+			material = Enum.Material.Neon,
+		},
+		{
+			name = "EyeR",
+			size = Vector3.new(0.3, 0.2, 0.1),
+			offset = Vector3.new(0.35, 2.3, -0.98),
+			color = "secondary",
+			material = Enum.Material.Neon,
+		},
+		{
+			name = "ArmL",
+			size = Vector3.new(1.2, 3, 1.2),
+			offset = Vector3.new(-2.2, -0.4, 0),
+			color = "primary",
+			material = Enum.Material.Slate,
+		},
+		{
+			name = "ArmR",
+			size = Vector3.new(1.2, 3, 1.2),
+			offset = Vector3.new(2.2, -0.4, 0),
+			color = "primary",
+			material = Enum.Material.Slate,
+		},
+		{
+			name = "LegL",
+			size = Vector3.new(1.2, 1.6, 1.2),
+			offset = Vector3.new(-0.8, -2.3, 0),
+			color = "primary",
+			material = Enum.Material.Slate,
+		},
+		{
+			name = "LegR",
+			size = Vector3.new(1.2, 1.6, 1.2),
+			offset = Vector3.new(0.8, -2.3, 0),
+			color = "primary",
+			material = Enum.Material.Slate,
+		},
+	},
+	flyer = {
+		{
+			name = "Body",
+			size = Vector3.new(2, 2.2, 2),
+			offset = Vector3.zero,
+			color = "primary",
+			shape = Enum.PartType.Ball,
+			transparency = 0.25,
+		},
+		{
+			name = "Robe",
+			size = Vector3.new(1.6, 2.4, 1.6),
+			offset = Vector3.new(0, -1.6, 0),
+			color = "primary",
+			transparency = 0.45,
+		},
+		{
+			name = "Glow",
+			size = Vector3.new(1, 1, 1),
+			offset = Vector3.new(0, 0.2, 0),
+			color = "secondary",
+			shape = Enum.PartType.Ball,
+			material = Enum.Material.Neon,
+		},
+		{
+			name = "EyeL",
+			size = Vector3.new(0.25, 0.25, 0.1),
+			offset = Vector3.new(-0.35, 0.35, -1.0),
+			color = "eye",
+			material = Enum.Material.Neon,
+		},
+		{
+			name = "EyeR",
+			size = Vector3.new(0.25, 0.25, 0.1),
+			offset = Vector3.new(0.35, 0.35, -1.0),
+			color = "eye",
+			material = Enum.Material.Neon,
+		},
+	},
+	dragon = {
+		{ name = "Body", size = Vector3.new(2.6, 2, 4.6), offset = Vector3.zero, color = "primary" },
+		{ name = "Belly", size = Vector3.new(2, 0.4, 3.8), offset = Vector3.new(0, -0.95, 0), color = "secondary" },
+		{
+			name = "Neck",
+			size = Vector3.new(0.9, 0.9, 2),
+			offset = Vector3.new(0, 1.2, -2.8),
+			color = "primary",
+			rotation = Vector3.new(-35, 0, 0),
+		},
+		{ name = "Head", size = Vector3.new(1.3, 1.1, 1.8), offset = Vector3.new(0, 2, -3.9), color = "primary" },
+		{
+			name = "EyeL",
+			size = Vector3.new(0.2, 0.2, 0.1),
+			offset = Vector3.new(-0.4, 2.25, -4.82),
+			color = "eye",
+			material = Enum.Material.Neon,
+		},
+		{
+			name = "EyeR",
+			size = Vector3.new(0.2, 0.2, 0.1),
+			offset = Vector3.new(0.4, 2.25, -4.82),
+			color = "eye",
+			material = Enum.Material.Neon,
+		},
+		{
+			name = "WingL",
+			size = Vector3.new(4, 0.2, 2.6),
+			offset = Vector3.new(-3, 1.2, -0.3),
+			color = "secondary",
+			rotation = Vector3.new(0, 0, 18),
+		},
+		{
+			name = "WingR",
+			size = Vector3.new(4, 0.2, 2.6),
+			offset = Vector3.new(3, 1.2, -0.3),
+			color = "secondary",
+			rotation = Vector3.new(0, 0, -18),
+		},
+		{
+			name = "Tail",
+			size = Vector3.new(0.6, 0.6, 3),
+			offset = Vector3.new(0, 0.3, 3.6),
+			color = "primary",
+			rotation = Vector3.new(15, 0, 0),
+		},
+	},
+}
+
+-- Spider legs, quadruped and dragon legs are generated (symmetrical).
+do
+	local quadruped = SHAPES.quadruped :: { PartSpec }
+	local dragon = SHAPES.dragon :: { PartSpec }
+	local spider = SHAPES.spider :: { PartSpec }
+	for _, leg in legsQuad(1.3, -0.8, 0.75, 1.4) do
+		table.insert(quadruped, leg)
+	end
+	for _, leg in legsQuad(1.6, -0.9, 1.0, 1.4) do
+		table.insert(dragon, leg)
+	end
+	for side = -1, 1, 2 do
+		for i = 1, 4 do
+			local z = -1.4 + (i - 1) * 0.75
+			table.insert(spider, {
+				name = `Leg{side}{i}`,
+				size = Vector3.new(2.4, 0.25, 0.25),
+				offset = Vector3.new(side * 1.6, -0.35, z - 0.4),
+				color = "dark",
+				rotation = Vector3.new(0, (i - 2.5) * -12 * side, side * -32),
+			})
+		end
+	end
+end
+
+local function colorFor(spec: PartSpec, def: Monsters.MonsterDef): Color3
+	if spec.color == "primary" then
+		return Color3.fromHex(def.colors.primary)
+	elseif spec.color == "secondary" then
+		return Color3.fromHex(def.colors.secondary)
+	elseif spec.color == "eye" then
+		return EYE
+	end
+	return DARK
+end
+
+local function newPart(name: string, size: Vector3): Part
+	local part = Instance.new("Part")
+	part.Name = name
+	part.Size = size
+	part.Anchored = false
+	part.CanCollide = false
+	part.CanTouch = false
+	part.Massless = true
+	part.TopSurface = Enum.SurfaceType.Smooth
+	part.BottomSurface = Enum.SurfaceType.Smooth
+	part.CastShadow = true
+	return part
+end
+
+local function aura(root: BasePart, color: Color3, rate: number)
+	local emitter = Instance.new("ParticleEmitter")
+	emitter.Name = "Aura"
+	emitter.Color = ColorSequence.new(color)
+	emitter.LightEmission = 0.8
+	emitter.Rate = rate
+	emitter.Lifetime = NumberRange.new(0.8, 1.4)
+	emitter.Speed = NumberRange.new(1, 2.5)
+	emitter.SpreadAngle = Vector2.new(180, 180)
+	emitter.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.6), NumberSequenceKeypoint.new(1, 0) })
+	emitter.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.3), NumberSequenceKeypoint.new(1, 1) })
+	emitter.Parent = root
+	local light = Instance.new("PointLight")
+	light.Color = color
+	light.Range = 12
+	light.Brightness = 1.2
+	light.Parent = root
+end
+
+local function configureHumanoid(humanoid: Humanoid)
+	humanoid.RigType = Enum.HumanoidRigType.R15
+	humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+	humanoid.HealthDisplayType = Enum.HumanoidHealthDisplayType.AlwaysOff
+	humanoid.BreakJointsOnDeath = false
+	humanoid.RequiresNeck = false
+	humanoid.AutoJumpEnabled = false
+	humanoid.MaxHealth = 1e9
+	humanoid.Health = 1e9
+	for _, state in
+		{
+			Enum.HumanoidStateType.Climbing,
+			Enum.HumanoidStateType.Swimming,
+			Enum.HumanoidStateType.FallingDown,
+			Enum.HumanoidStateType.Ragdoll,
+			Enum.HumanoidStateType.Seated,
+			Enum.HumanoidStateType.Dead,
+			Enum.HumanoidStateType.Jumping,
+		}
+	do
+		humanoid:SetStateEnabled(state, false)
+	end
+end
+
+local function fromAsset(def: Monsters.MonsterDef, scale: number): Model?
+	local assets = ReplicatedStorage:FindFirstChild("Assets")
+	local folder = assets and assets:FindFirstChild("Monsters")
+	local template = folder and folder:FindFirstChild(def.id)
+	if not template or not template:IsA("Model") then
+		return nil
+	end
+	local model = template:Clone()
+	if not model:FindFirstChildOfClass("Humanoid") or not model:FindFirstChild("HumanoidRootPart") then
+		warn(`[RigBuilder] Assets.Monsters.{def.id} needs a Humanoid and a HumanoidRootPart; using a placeholder`)
+		model:Destroy()
+		return nil
+	end
+	if scale ~= 1 then
+		model:ScaleTo(model:GetScale() * scale)
+	end
+	return model
+end
+
+-- Builds the model for a monster kind at `scale` (kind size x variant scale). Not parented.
+function RigBuilder.build(def: Monsters.MonsterDef, variant: string, variantScale: number): Model
+	local scale = def.size * variantScale
+	local model: Model
+	local asset = fromAsset(def, variantScale)
+	if asset then
+		model = asset
+		model.Name = def.id
+	else
+		model = Instance.new("Model")
+		model.Name = def.id
+		local rootSize = (ROOT_SIZE[def.shape] or ROOT_SIZE.humanoid) * scale
+		local root = newPart("HumanoidRootPart", rootSize)
+		root.Transparency = 1
+		root.Massless = false
+		-- The root is the only colliding part, so the humanoid always has something to stand with.
+		root.CanCollide = true
+		root.Parent = model
+		model.PrimaryPart = root
+
+		local lowest = rootSize.Y / 2
+		for _, spec in SHAPES[def.shape] or SHAPES.humanoid do
+			local part = newPart(spec.name, spec.size * scale)
+			part.Color = colorFor(spec, def)
+			part.Material = spec.material or Enum.Material.SmoothPlastic
+			part.Transparency = spec.transparency or 0
+			if spec.shape then
+				part.Shape = spec.shape
+			end
+			local rot = spec.rotation or Vector3.zero
+			part.CFrame = root.CFrame
+				* CFrame.new(spec.offset * scale)
+				* CFrame.Angles(math.rad(rot.X), math.rad(rot.Y), math.rad(rot.Z))
+			local weld = Instance.new("WeldConstraint")
+			weld.Part0 = root
+			weld.Part1 = part
+			weld.Parent = part
+			part.Parent = model
+			lowest = math.max(lowest, -(spec.offset.Y * scale) + spec.size.Y * scale / 2)
+		end
+
+		local humanoid = Instance.new("Humanoid")
+		configureHumanoid(humanoid)
+		-- Flyers hover; everything else stands on its lowest part.
+		local hover = if def.shape == "flyer" then 2.5 * scale else 0
+		humanoid.HipHeight = math.max(0.1, lowest - rootSize.Y / 2 + hover)
+		humanoid.Parent = model
+	end
+
+	local humanoid = model:FindFirstChildOfClass("Humanoid") :: Humanoid
+	configureHumanoid(humanoid)
+	humanoid.WalkSpeed = def.moveSpeed
+	-- Stream the whole model at once so clients never see half a monster.
+	model.ModelStreamingMode = Enum.ModelStreamingMode.Atomic
+
+	local root = model:FindFirstChild("HumanoidRootPart") :: BasePart
+	if variant == "elite" then
+		aura(root, Color3.fromHex("#D64A3E"), 6)
+	elseif variant == "elite2" then
+		aura(root, Color3.fromHex("#B455FF"), 14)
+	end
+	return model
+end
+
+return RigBuilder
