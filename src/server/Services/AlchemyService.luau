@@ -9,6 +9,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage.Shared
 
+local Analytics = require(script.Parent.Parent.Analytics)
+
 local Clock = require(Shared.Util.Clock)
 local ItemRoll = require(Shared.Logic.ItemRoll)
 local Log = require(Shared.Util.Log)
@@ -79,9 +81,10 @@ local function startRecipe(player: Player, npcId: string, recipeId: string): (bo
 	for _, ingredient in recipe.ingredients do
 		InventoryService.Remove(player, ingredient.id, ingredient.n)
 	end
-	PlayerStateService.Update(player, { "character", "gold" }, function(gold: number)
+	local balance = PlayerStateService.Update(player, { "character", "gold" }, function(gold: number)
 		return gold - recipe.gold
 	end)
+	Analytics.gold(player, -recipe.gold, balance, "alchemy")
 	PlayerStateService.ArrayInsert(player, { "character", "alchemy" }, {
 		recipeId = recipe.id,
 		readyAt = Clock.now() + recipe.time,

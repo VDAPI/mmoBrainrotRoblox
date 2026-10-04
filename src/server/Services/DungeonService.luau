@@ -15,6 +15,8 @@ local Workspace = game:GetService("Workspace")
 
 local Shared = ReplicatedStorage.Shared
 
+local Analytics = require(script.Parent.Parent.Analytics)
+
 local Blessings = require(Shared.Data.Blessings)
 local Boss = require(script.Parent.Parent.Entities.Boss)
 local BossScaling = require(Shared.Logic.BossScaling)
@@ -204,9 +206,11 @@ local function reward(run: Run, position: Vector3)
 			LevelService.GiveExp(player, exp, "boss")
 			QuestEvents.fire(player, "boss", { bossId = def.id })
 			local gold = math.floor(shares[i] * (1 + StatService.GetValue(player, "goldBonus") / 100) + 0.5)
-			PlayerStateService.Update(player, { "character", "gold" }, function(current: number)
+			local balance = PlayerStateService.Update(player, { "character", "gold" }, function(current: number)
 				return current + gold
 			end)
+			Analytics.gold(player, gold, balance, "boss")
+			Analytics.progression(player, "Bosses", def.level, def.id)
 			Net.Fire(player, "CombatFx", { { k = "reward", exp = exp, gold = gold } })
 		end
 	end

@@ -28,6 +28,7 @@ local PartyLoot = require(Shared.Logic.PartyLoot)
 local Loot = require(Shared.Logic.Loot)
 local GuildLogic = require(Shared.Logic.Guild)
 local GuildSkills = require(Shared.Data.GuildSkills)
+local Products = require(Shared.Data.Products)
 
 local log = Log.new("AdminService")
 
@@ -63,6 +64,7 @@ local AdminService = {
 		"GuildService",
 		"MailService",
 		"AuctionService",
+		"CosmeticService",
 	},
 }
 
@@ -95,6 +97,7 @@ local QuestService: any
 local GuildService: any
 local MailService: any
 local AuctionService: any
+local CosmeticService: any
 
 type Command = {
 	usageKey: string,
@@ -1172,6 +1175,53 @@ COMMANDS.auction = {
 	end,
 }
 
+COMMANDS.premium = {
+	usageKey = "admin.usage.premium",
+	run = function(player, args)
+		local pass = args[2] and Products.getPass(args[2])
+		if args[1] ~= "grant" or not pass then
+			reply(player, "admin.usage.premium")
+			return
+		end
+		MonetizationService.SetTestPass(player, pass.key, true)
+		reply(player, "admin.pass.ok", { pass = pass.key, state = "on" })
+	end,
+}
+
+COMMANDS.cosmetic = {
+	usageKey = "admin.usage.cosmetic",
+	run = function(player, args)
+		if args[1] ~= "all" then
+			reply(player, "admin.usage.cosmetic")
+			return
+		end
+		CosmeticService.GrantAll(player)
+		reply(player, "admin.cosmetic.all")
+	end,
+}
+
+COMMANDS.perf = {
+	usageKey = "admin.usage.perf",
+	run = function(player)
+		local stats = game:GetService("Stats")
+		local heartbeat = 0
+		pcall(function()
+			heartbeat = (stats :: any).HeartbeatTimeMs
+		end)
+		local active, sleeping = MonsterService.Stats()
+		reply(player, "admin.perf", {
+			players = #Players:GetPlayers(),
+			monsters = EntityService.CountMonsters(),
+			active = active,
+			sleeping = sleeping,
+			bags = LootService.BagCount(),
+			memory = math.floor(stats:GetTotalMemoryUsageMb()),
+			heartbeat = string.format("%.1f", heartbeat),
+			fps = math.floor(workspace:GetRealPhysicsFPS()),
+		})
+	end,
+}
+
 local function onCommand(name: string, textSource: TextSource, message: string)
 	local player = Players:GetPlayerByUserId(textSource.UserId)
 	if not player then
@@ -1226,6 +1276,7 @@ function AdminService.Init(registry)
 	GuildService = registry.Get("GuildService")
 	MailService = registry.Get("MailService")
 	AuctionService = registry.Get("AuctionService")
+	CosmeticService = registry.Get("CosmeticService")
 end
 
 function AdminService.Start()

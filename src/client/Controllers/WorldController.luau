@@ -27,7 +27,7 @@ local WorldMapWindow = require(script.Parent.Parent.UI.Screens.WorldMapWindow)
 
 local WorldController = {
 	Name = "WorldController",
-	Deps = { "WindowManager" },
+	Deps = { "WindowManager", "SettingsController" },
 }
 
 local TIP_COUNT = 10
@@ -298,6 +298,8 @@ function WorldController.Start()
 	music.Name = "VaelthornMusic"
 	music.Looped = true
 	music.Volume = 0
+	-- The options window's music volume scales this group (SettingsController).
+	music.SoundGroup = SoundService:FindFirstChild("VaelthornMusicGroup") :: SoundGroup?
 	music.Parent = SoundService
 	buildLoading()
 

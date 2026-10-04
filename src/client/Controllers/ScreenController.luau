@@ -50,6 +50,8 @@ local MENU: { Hud.MenuEntry } = {
 	{ id = "quests", icon = "✎", hotkey = "L", tooltipKey = "hud.menu.quests" },
 	{ id = "guild", icon = "⚑", hotkey = "G", tooltipKey = "hud.menu.guild" },
 	{ id = "party", icon = "☍", hotkey = "P", tooltipKey = "hud.menu.party" },
+	{ id = "wardrobe", icon = "♛", hotkey = nil, tooltipKey = "hud.menu.wardrobe" },
+	{ id = "premium", icon = "◆", hotkey = nil, tooltipKey = "hud.menu.shop" },
 	{ id = "menu", icon = "☰", hotkey = nil, tooltipKey = "hud.menu.menu" },
 }
 
@@ -106,14 +108,21 @@ local function registerWindows()
 					})
 				end,
 			})
-		elseif entry.id == "map" or entry.id == "party" or entry.id == "quests" or entry.id == "guild" then
-			-- Registered by WorldController / PartyController / QuestController / GuildController.
+		elseif
+			entry.id == "map"
+			or entry.id == "party"
+			or entry.id == "quests"
+			or entry.id == "guild"
+			or entry.id == "premium"
+			or entry.id == "wardrobe"
+		then
+			-- Registered by WorldController / PartyController / QuestController / GuildController / PremiumController.
 			continue
 		elseif entry.id == "menu" then
 			WindowManager.Register({
 				id = "menu",
 				titleKey = "window.menu.title",
-				size = Vector2.new(480, 560),
+				size = Vector2.new(640, 700),
 				build = GameMenu,
 			})
 		else

@@ -13,6 +13,7 @@ local Shared = ReplicatedStorage.Shared
 
 local Config = require(Shared.Config)
 local Log = require(Shared.Util.Log)
+local Maps = require(Shared.Data.Maps)
 local Net = require(Shared.Net)
 local QuestEvents = require(script.Parent.Parent.QuestEvents)
 local Types = require(Shared.Types)
@@ -162,6 +163,22 @@ local function start(a: Player, b: Player)
 	end)
 end
 
+-- A duel heals and teleports, so it must not rescue anyone from a fight or a dungeon (S14 security pass).
+local function blockedReason(player: Player): string?
+	local char = character(player)
+	if not char or ResourceService.IsDead(player) then
+		return "duel.error.state"
+	end
+	if ResourceService.InCombat(player) then
+		return "duel.error.combat"
+	end
+	local map = Maps.get(char.location.map)
+	if map and map.biome == "dungeon" then
+		return "duel.error.state"
+	end
+	return nil
+end
+
 startNext = function()
 	if current then
 		return
@@ -169,8 +186,15 @@ startNext = function()
 	while #queue > 0 do
 		local pair = table.remove(queue, 1) :: { a: Player, b: Player }
 		if pair.a.Parent and pair.b.Parent and character(pair.a) and character(pair.b) then
-			start(pair.a, pair.b)
-			return
+			local reason = blockedReason(pair.a) or blockedReason(pair.b)
+			if reason then
+				for _, p in { pair.a, pair.b } do
+					Net.Fire(p, "Toast", reason, nil, "warning")
+				end
+			else
+				start(pair.a, pair.b)
+				return
+			end
 		end
 	end
 end
@@ -205,6 +229,10 @@ local function respond(player: Player, accept: boolean): (boolean, string?)
 	end
 	if inDuel(player) or inDuel(challenger) then
 		return false, "duel.error.busy"
+	end
+	local blocked = blockedReason(player) or blockedReason(challenger)
+	if blocked then
+		return false, blocked
 	end
 	table.insert(queue, { a = challenger, b = player })
 	if current then

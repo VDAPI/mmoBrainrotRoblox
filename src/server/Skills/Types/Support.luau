@@ -10,7 +10,9 @@ type Handler = (ctx: Ctx) -> (boolean, string?)
 
 local Support: { [string]: Handler } = {}
 
--- The ally to help: the selected player when allied, otherwise the caster.
+local RANGE_TOLERANCE = 6
+
+-- The ally to help: the selected player when allied and within the skill's range, otherwise the caster.
 local function allyTarget(ctx: Ctx): (Player, any)
 	local target = ctx.target
 	if
@@ -19,7 +21,12 @@ local function allyTarget(ctx: Ctx): (Player, any)
 		and target.player
 		and ctx.services.Party.AreAllies(ctx.player, target.player)
 	then
-		return target.player, target
+		local model = target.player.Character
+		local root = model and model:FindFirstChild("HumanoidRootPart") :: BasePart?
+		local range = (ctx.skill :: any).range or 30
+		if root and (root.Position - ctx.root.Position).Magnitude <= range + RANGE_TOLERANCE then
+			return target.player, target
+		end
 	end
 	return ctx.player, ctx.caster
 end

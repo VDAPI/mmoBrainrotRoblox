@@ -67,6 +67,7 @@ export type CharacterData = {
 	},
 	guildId: string?,
 	auctions: { [string]: boolean }, -- S13: ids of this character's auction listings
+	guideDone: boolean, -- S14: the HUD guide was shown (or skipped)
 	pvpEnabled: boolean,
 	elixirs: { [string]: number }, -- resistance stat -> expiresAt (Clock time)
 	pvp: { kills: number, deaths: number, duelsWon: number, duelsLost: number },
@@ -81,6 +82,12 @@ export type Settings = {
 	dmgNumbers: boolean,
 	bindConfirm: boolean, -- ask before an item binds on equip
 	quickCast: boolean, -- area skills cast on key press instead of on release
+	-- S14 options window
+	musicVolume: number,
+	quality: string, -- "high" | "low" (fewer particles)
+	minimapRotate: boolean,
+	cameraSens: number, -- mouse/touch camera sensitivity multiplier
+	sellConfirm: boolean, -- ask before selling valuable items
 }
 
 export type AccountData = {

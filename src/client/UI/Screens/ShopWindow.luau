@@ -233,7 +233,7 @@ local function ShopWindow(scope: Scope, props: Props): Fusion.Child
 			end
 			return false, Text.now(err or "error.internal")
 		end
-		if valuable then
+		if valuable and State.Get({ "account", "settings", "sellConfirm" }) ~= false then
 			props.ShowModal({
 				Title = Text.now("shop.confirm.title"),
 				Message = Text.now("shop.confirm.message", { gold = Format.number(Fusion.peek(sellTotal)) }),

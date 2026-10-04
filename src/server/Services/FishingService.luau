@@ -12,6 +12,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage.Shared
 
+local Analytics = require(script.Parent.Parent.Analytics)
+
 local Fish = require(Shared.Data.Fish)
 local GatherNodes = require(Shared.Data.GatherNodes)
 local ItemRoll = require(Shared.Logic.ItemRoll)
@@ -92,9 +94,10 @@ local function catch(player: Player, session: Session): (boolean, string?, any)
 	local gold = 0
 	if chest then
 		gold = char.level * Fish.CHEST_GOLD
-		PlayerStateService.Update(player, { "character", "gold" }, function(value: number)
+		local balance = PlayerStateService.Update(player, { "character", "gold" }, function(value: number)
 			return value + gold
 		end)
+		Analytics.gold(player, gold, balance, "fishing")
 	end
 	log:info("%s caught %s%s", player.Name, session.fish.id, if chest then " + chest" else "")
 	QuestEvents.fire(player, "fish", { fishId = session.fish.id })

@@ -16,6 +16,8 @@ local RunService = game:GetService("RunService")
 
 local Shared = ReplicatedStorage.Shared
 
+local Analytics = require(script.Parent.Parent.Analytics)
+
 local Classes = require(Shared.Data.Classes)
 local Combat = require(Shared.Data.Combat)
 local Damage = require(Shared.Logic.Damage)
@@ -266,9 +268,10 @@ local function reward(player: Player, monster: any, share: number, goldShare: nu
 	local gold = math.floor(goldShare * (1 + goldBonus / 100) + 0.5)
 	local expBonus = StatService.GetValue(player, "expBonus")
 	LevelService.GiveExp(player, exp, "monster")
-	PlayerStateService.Update(player, { "character", "gold" }, function(current: number)
+	local balance = PlayerStateService.Update(player, { "character", "gold" }, function(current: number)
 		return current + gold
 	end)
+	Analytics.gold(player, gold, balance, "monster")
 	local killHeal = hook(player, "killHeal")
 	if killHeal > 0 then
 		ResourceService.Heal(player, StatService.GetValue(player, "maxHp") * killHeal / 100)

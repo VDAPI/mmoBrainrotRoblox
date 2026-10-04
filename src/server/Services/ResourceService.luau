@@ -308,7 +308,19 @@ function ResourceService.Init(registry)
 	StatService = registry.Get("StatService")
 end
 
+-- Switching characters is not a way out of a fight.
+local function switchGuard(player: Player): string?
+	if ResourceService.IsDead(player) then
+		return "death.error.switchDead"
+	end
+	if ResourceService.InCombat(player) then
+		return "error.inCombat"
+	end
+	return nil
+end
+
 function ResourceService.Start()
+	CharacterService.SetSwitchGuard(switchGuard)
 	CharacterService.CharacterEntered:Connect(onEntered)
 	CharacterService.CharacterLeaving:Connect(function(player: Player)
 		local pool = pools[player]

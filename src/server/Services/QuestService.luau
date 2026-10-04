@@ -10,6 +10,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage.Shared
 
+local Analytics = require(script.Parent.Parent.Analytics)
+
 local Clock = require(Shared.Util.Clock)
 local ItemRoll = require(Shared.Logic.ItemRoll)
 local Log = require(Shared.Util.Log)
@@ -23,6 +25,9 @@ local Time = require(Shared.Logic.Time)
 local Types = require(Shared.Types)
 
 local log = Log.new("QuestService")
+
+-- The first story quests form the tutorial (Data/Quests/Main); reported as the onboarding funnel.
+local TUTORIAL_STEPS = 10
 
 local QuestService = {
 	Name = "QuestService",
@@ -83,9 +88,10 @@ end
 
 local function give(player: Player, reward: Quests.Reward)
 	LevelService.GiveExp(player, reward.exp, "quest")
-	PlayerStateService.Update(player, { "character", "gold" }, function(gold: number)
+	local balance = PlayerStateService.Update(player, { "character", "gold" }, function(gold: number)
 		return gold + reward.gold
 	end)
+	Analytics.gold(player, reward.gold, balance, "quest")
 	local items: { { id: string, n: number } } = reward.items or {}
 	for _, item in items do
 		InventoryService.GiveNew(player, item.id, item.n)
@@ -219,6 +225,10 @@ local function turnIn(player: Player, npcId: string): (boolean, string?)
 	end
 	PlayerStateService.Set(player, { "character", "quests", "main" }, nil)
 	PlayerStateService.Set(player, { "character", "quests", "mainDone" }, char.quests.mainDone + 1)
+	-- The first story quests are the tutorial: report them as the onboarding funnel.
+	if char.quests.mainDone <= TUTORIAL_STEPS then
+		Analytics.onboarding(player, char.quests.mainDone, quest.id)
+	end
 	give(player, quest.reward)
 	Net.Fire(player, "QuestCompleted", `quest.{quest.id}.title`)
 	log:info("%s completed %s", player.Name, quest.id)

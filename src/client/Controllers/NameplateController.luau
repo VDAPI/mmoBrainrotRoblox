@@ -59,6 +59,16 @@ local function build(model: Model)
 		return if class then Text.get(use, class.nameKey) else ""
 	end)
 	local isLocal = model == Players.LocalPlayer.Character
+	local owner = Players:GetPlayerFromCharacter(model)
+	local vip = scope:Value(if owner then owner:GetAttribute("Vip") else nil)
+	if owner then
+		table.insert(
+			scope,
+			owner:GetAttributeChangedSignal("Vip"):Connect(function()
+				vip:set(owner:GetAttribute("Vip"))
+			end)
+		)
+	end
 	-- PvP (S10): red name with a crossed-swords icon when PvP is on or the player stands in a red zone.
 	local pvpEnabled = attributeValue(scope, model, "PvpEnabled")
 	local pvpZone = attributeValue(scope, model, "PvpZone")
@@ -109,6 +119,9 @@ local function build(model: Model)
 				TextColor3 = scope:Computed(function(use): Color3
 					if use(hostile) then
 						return Theme.Colors.ZoneRed
+					end
+					if use(vip) == true then
+						return Theme.Colors.GoldBright -- VIP pass: coloured name (DESIGN §21)
 					end
 					return if isLocal then Theme.Colors.GoldBright else Theme.Colors.Text
 				end),

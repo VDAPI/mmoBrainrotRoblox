@@ -10,6 +10,9 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage.Shared
 
+local Analytics = require(script.Parent.Parent.Analytics)
+local Products = require(Shared.Data.Products)
+
 local Config = require(Shared.Config)
 local Inventory = require(Shared.Logic.Inventory)
 local ItemRoll = require(Shared.Logic.ItemRoll)
@@ -81,6 +84,7 @@ end
 local function announceLegendary(player: Player, item: ItemInstance)
 	local character: Types.CharacterData? = PlayerStateService.GetCharacter(player)
 	local name = if character then character.name else player.Name
+	Analytics.custom(player, "LegendaryDrop", item.ilvl)
 	AnnounceService.Global(
 		"loot.announce",
 		"loot.announceGlobal",
@@ -117,12 +121,6 @@ function LootService.SpawnBag(owner: Player, position: Vector3, items: { ItemIns
 				announceLegendary(owner, item)
 			end
 		end
-	end
-	-- "Auto-loot" gamepass picks everything up at once (S14 makes the pass purchasable).
-	if MonetizationService.HasPass(owner, "autoLoot") then
-		task.defer(function()
-			LootService.Pickup(owner, bag.id, true)
-		end)
 	end
 	return bag.id
 end
@@ -304,6 +302,15 @@ function LootService.Simulate(monsterId: string, variant: string, level: number,
 	return counts, items, mats, gold
 end
 
+-- Number of loot bags on the server (/perf).
+function LootService.BagCount(): number
+	local n = 0
+	for _ in bags do
+		n += 1
+	end
+	return n
+end
+
 function LootService.Init(registry)
 	PlayerStateService = registry.Get("PlayerStateService")
 	CharacterService = registry.Get("CharacterService")
@@ -331,6 +338,31 @@ function LootService.Start()
 	end
 	CharacterService.CharacterLeaving:Connect(dropBagsOf)
 	Players.PlayerRemoving:Connect(dropBagsOf)
+
+	-- "Auto-loot" gamepass: bags within Products.AUTO_LOOT_RANGE studs are picked up on their own
+	-- (as much as fits; a full backpack leaves the rest in the bag).
+	task.spawn(function()
+		while true do
+			task.wait(0.5)
+			for _, bag in table.clone(bags) do
+				local owner = bag.owner
+				if owner.Parent and MonetizationService.HasPass(owner, "autoLoot") then
+					local root = owner.Character and owner.Character:FindFirstChild("HumanoidRootPart") :: BasePart?
+					local retryAt = (bag :: any).autoRetryAt or 0
+					if
+						root
+						and os.clock() >= retryAt
+						and (root.Position - bag.position).Magnitude <= Products.AUTO_LOOT_RANGE
+					then
+						local _, err = LootService.Pickup(owner, bag.id, true)
+						if err == "loot.partial" then
+							(bag :: any).autoRetryAt = os.clock() + 5 -- full backpack: do not spam
+						end
+					end
+				end
+			end
+		end
+	end)
 
 	task.spawn(function()
 		while true do

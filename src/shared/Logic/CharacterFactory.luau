@@ -31,6 +31,7 @@ function CharacterFactory.create(classId: Types.ClassId, name: string, ids: Ids)
 	character.equipment = {}
 	StarterGear.apply(character, ids.newId)
 	character.createdAt = ids.now
+	character.guideDone = false
 	return character
 end
 

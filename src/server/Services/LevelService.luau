@@ -8,6 +8,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage.Shared
 
+local Analytics = require(script.Parent.Parent.Analytics)
+
 local Classes = require(Shared.Data.Classes)
 local Config = require(Shared.Config)
 local Exp = require(Shared.Logic.Exp)
@@ -63,6 +65,7 @@ local function onLevelsGained(player: Player, character: Types.CharacterData, fr
 	ResourceService.Restore(player)
 	Net.FireList(nearbyPlayers(player), "LevelUp", player, to, statPts, skillPts)
 	LevelService.LeveledUp:Fire(player, to, to - from)
+	Analytics.progression(player, "Level", to, nil)
 	log:info("%s reached level %d", player.Name, to)
 end
 

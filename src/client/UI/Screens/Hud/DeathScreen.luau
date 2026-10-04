@@ -10,6 +10,7 @@ local Button = require(script.Parent.Parent.Parent.Components.Button)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Net = require(ReplicatedStorage.Shared.Net)
+local Products = require(ReplicatedStorage.Shared.Data.Products)
 local State = require(script.Parent.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
@@ -72,7 +73,7 @@ local function DeathScreen(scope: Scope): Instance
 				Name = "Content",
 				AnchorPoint = Vector2.new(0.5, 0.5),
 				Position = UDim2.fromScale(0.5, 0.45),
-				Size = UDim2.fromOffset(560, 260),
+				Size = UDim2.fromOffset(560, 320),
 				BackgroundTransparency = 1,
 				ZIndex = 51,
 				[Children] = {
@@ -131,9 +132,26 @@ local function DeathScreen(scope: Scope): Instance
 						end),
 						OnClick = respawnNow,
 					}),
+					Button(scope, {
+						Name = "RespawnRobux",
+						LayoutOrder = 5,
+						Size = UDim2.fromOffset(420, Theme.Size.ButtonHeightSmall),
+						Text = Text.T(scope, "death.respawnRobux", { robux = Products.respawn.robux }),
+						Disabled = busy,
+						OnClick = function()
+							busy:set(true)
+							task.spawn(function()
+								local ok, err = Net.Invoke("BuyProduct", Products.respawn.key)
+								busy:set(false)
+								if not ok then
+									Toast.push(Text.now(err or "error.internal"), "error")
+								end
+							end)
+						end,
+					}),
 					scope:New("TextLabel")({
 						Name = "Shards",
-						LayoutOrder = 5,
+						LayoutOrder = 6,
 						Size = UDim2.new(1, 0, 0, 22),
 						BackgroundTransparency = 1,
 						Text = scope:Computed(function(use): string

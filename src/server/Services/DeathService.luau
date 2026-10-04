@@ -10,6 +10,8 @@ local Workspace = game:GetService("Workspace")
 
 local Shared = ReplicatedStorage.Shared
 
+local Analytics = require(script.Parent.Parent.Analytics)
+
 local Config = require(Shared.Config)
 local Log = require(Shared.Util.Log)
 local Maps = require(Shared.Data.Maps)
@@ -176,8 +178,19 @@ local function respawnNow(player: Player): (boolean, string?)
 		return false, "error.notEnoughShards"
 	end
 	PlayerStateService.Set(player, { "account", "dragonShards" }, account.dragonShards - Config.RespawnNowCost)
+	Analytics.shards(player, -Config.RespawnNowCost, account.dragonShards - Config.RespawnNowCost, "respawn")
 	task.spawn(respawn, player, state.token)
 	return true, nil
+end
+
+-- Developer Product "instant respawn" (Robux): only granted while the player is dead.
+local function respawnProduct(player: Player): boolean
+	local state = pending[player]
+	if not state then
+		return false
+	end
+	task.spawn(respawn, player, state.token)
+	return true
 end
 
 function DeathService.Init(registry)
@@ -187,6 +200,7 @@ function DeathService.Init(registry)
 	ZoneService = registry.Get("ZoneService")
 	WorldService = registry.Get("WorldService")
 	MonetizationService = registry.Get("MonetizationService")
+	MonetizationService.RegisterProduct("respawn", respawnProduct)
 end
 
 function DeathService.Start()

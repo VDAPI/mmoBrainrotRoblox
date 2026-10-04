@@ -11,6 +11,7 @@ local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local ItemSlot = require(script.Parent.Parent.Components.ItemSlot)
 local Items = require(ReplicatedStorage.Shared.Data.Items)
 local Net = require(ReplicatedStorage.Shared.Net)
+local Products = require(ReplicatedStorage.Shared.Data.Products)
 local State = require(script.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
@@ -75,9 +76,11 @@ local function DepositWindow(scope: Scope): Fusion.Child
 		local def = item and Items.get(item.id)
 		return if def and def.capacity then def.capacity else Config.DefaultCapacity
 	end)
+	local vaultPass = State.Value({ "passes", "vault" })
 	local size = scope:Computed(function(use): number
 		local value = use(depositSize)
-		return if type(value) == "number" then value else 60
+		local base = if type(value) == "number" then value else 60
+		return base + (if use(vaultPass) == true then Products.VAULT_PASS_SLOTS else 0)
 	end)
 	local used = scope:Computed(function(use): number
 		local n = 0

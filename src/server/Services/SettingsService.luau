@@ -1,5 +1,5 @@
 --!strict
--- Account-wide player settings: language, damage numbers, volume (quality etc. arrive with the options window).
+-- Account-wide player settings (options window, S14) and the per-character HUD guide flag.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -32,6 +32,21 @@ local SETTINGS: { [string]: (value: any) -> boolean } = {
 	volume = function(value)
 		return type(value) == "number" and value == value and value >= 0 and value <= 1
 	end,
+	musicVolume = function(value)
+		return type(value) == "number" and value == value and value >= 0 and value <= 1
+	end,
+	quality = function(value)
+		return value == "high" or value == "low"
+	end,
+	minimapRotate = function(value)
+		return type(value) == "boolean"
+	end,
+	cameraSens = function(value)
+		return type(value) == "number" and value == value and value >= 0.2 and value <= 3
+	end,
+	sellConfirm = function(value)
+		return type(value) == "boolean"
+	end,
 }
 
 function SettingsService.Start()
@@ -41,6 +56,13 @@ function SettingsService.Start()
 			return
 		end
 		PlayerStateService.Set(player, { "account", "settings", name }, value)
+	end)
+
+	-- The HUD guide of a new character was finished or skipped.
+	Net.On("GuideDone", function(player: Player)
+		if PlayerStateService.GetCharacter(player) then
+			PlayerStateService.Set(player, { "character", "guideDone" }, true)
+		end
 	end)
 
 	Net.On("SetLanguage", function(player: Player, lang: string)

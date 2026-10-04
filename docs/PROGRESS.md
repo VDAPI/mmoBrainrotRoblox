@@ -19,7 +19,7 @@
 | S11 | Questy, regiony 3–4, bossy 70 i 100 | ● |
 | S12 | Gildie | ● |
 | S13 | Aukcja, poczta, czat | ● |
-| S14 | Monetyzacja, kosmetyki, jakość | ○ |
+| S14 | Monetyzacja, kosmetyki, jakość | ● |
 
 Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana przez właściciela
 
@@ -332,25 +332,52 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
   zamiast nicku Roblox, tag gildii, gwiazdka VIP z atrybutu gracza `Vip` (do ustawienia w S14), złote linie systemowe.
   Filtrowanie i ochrona przed floodem — domyślne TextChatService.
 
+- **S14** Id produktów i gamepassów w `Data/Products.luau` to placeholdery (0). **Tylko w Studio** `BuyProduct`/`BuyPass`
+  symulują zakup na serwerze (ta sama ścieżka przyznania co `ProcessReceipt`); na żywym serwerze id 0 jest odrzucane
+  („produkt niedostępny”), więc przed publikacją trzeba wkleić prawdziwe id.
+- **S14** `ProcessReceipt`: `NotProcessedYet` gdy profil niewczytany albo produkt nieznany; przyznanie → zapis
+  `purchases[receiptId]` → `DataService.Save` → `PurchaseGranted`. Paragony starsze niż 90 dni są usuwane z profilu.
+  Natychmiastowe odrodzenie za Robux przyznaje się tylko martwemu graczowi (inaczej `NotProcessedYet`, Roblox ponowi).
+- **S14** Gamepassy w cache serwera (sprawdzenie przy wejściu + `PromptGamePassPurchaseFinished`), replikowane jako gałąź
+  stanu `passes` i atrybut gracza `Vip` (gwiazdka w czacie, złoty nick nad głową). Skarbiec: +60 miejsc liczone na serwerze
+  i w oknie depozytu.
+- **S14** Ceny w Smoczej Walucie: Zwój Zapomnienia/Odrodzenia 120, Rozwiązania 150, Ochrony 60 (limit 5 dziennie na konto,
+  licznik `dailyLimits`), zmiana imienia 400, kosmetyki 250–900, pety 400–1200. Zmiana imienia: filtr + rezerwacja nowej
+  nazwy, zwolnienie starej, aktualizacja slotu i tabliczki.
+- **S14** Kosmetyki i pety są kontowe (`cosmetics.owned/equipped`, `pets.owned/equipped`). Wygląd to placeholdery z Partów i
+  cząstek (`Util/CosmeticLook`, wspólne dla serwera i podglądu w garderobie): strój = kolory ciała + akcesoria (ubrania
+  Roblox chowane na czas stroju), aura/ślad/efekt broni = cząstki/Trail. Pety: model zakotwiczony na serwerze, ruch tylko
+  lokalnie na każdym kliencie (płynnie, bez kosztu sieci).
+- **S14** Jakość „niska” mnoży `Rate` każdego `ParticleEmitter` w świecie przez 1/3 (lokalnie u gracza). Czułość kamery =
+  `UserInputService.MouseDeltaSensitivity`. Muzyka idzie przez `SoundGroup` z głośnością z opcji.
+- **S14** Przewodnik po HUD: 9 dymków przy pierwszym wejściu nowej postaci (`character.guideDone = false` tylko dla postaci
+  tworzonych od S14), pomijalny. Lejek onboardingu w analityce = 10 pierwszych zadań fabuły (tutorial S11).
+- **S14** Analityka (`server/Analytics.luau`, moduł bez zależności): złoto (potwory, bossy, questy, łowienie, sklep, kowal,
+  alchemik), Smocza Waluta (zakupy, sklep premium, odrodzenie), postęp (poziomy, bossy), zdarzenia własne (legenda,
+  ulepszenie +7..+9, wydatki premium).
+- **S14** HUD (warstwa Screens) używa `ScreenInsets = CoreUISafeInsets`, więc nie wchodzi pod przyciski Roblox i notch; okna
+  i modale `DeviceSafeInsets`.
+
 ## Niedokończone
 (Rzeczy z zakresu sesji, które nie zostały zrobione. Następna sesja zaczyna od nich.)
 
 - **S01** Dźwięki UI to placeholdery (`UI/Sounds.luau`), do podmiany na prawdziwe.
 - **S03** Potwory nie mają animacji (placeholdery z Partów poruszają się bez ruchu kończyn); zamach i pociski są efektami klienta.
-- **S10 → S14** Statystyki PvP i pojedynków są zapisywane, ale nie ma jeszcze okna profilu („Profil” mówi „wkrótce”).
+- **S10** Statystyki PvP i pojedynków są zapisywane, ale nie ma okna profilu („Profil” mówi „wkrótce”) — poza zakresem planu.
 - **S10** Handel i pojedynek tylko z menu PPM — na telefonie brak wejścia (do dodania przyciskiem w ramce celu).
 - **S09** Menu kontekstowe gracza tylko pod prawym przyciskiem myszy (brak odpowiednika dotykowego poza zaproszeniem po nazwie).
 - **S11** Questy nie były grane od początku do końca (brak testu w Studio); EXP z nagród dobrany wzorem, do strojenia.
-- **S08 → S14** Muzyka map (crossfade gotowy, brak ścieżek), tryb obracającej się minimapy.
+- **S08** Muzyka map: crossfade i głośność z opcji gotowe, ale brak ścieżek (pole `music` w `Data/Maps.luau` puste — wkleić
+  id dźwięków z Creator Store).
 - **S08** Arena w mieście to na razie tylko żółta strefa z trybunami — zapisy i walki areny w S10.
 - **S07** Tooltip przedmiotu-błogosławieństwa nie wypisuje jego statystyk (są w tooltipie ikony w HUD po użyciu).
-- **S07 → S14** Dodatkowe miejsce w kolejce alchemika za VIP działa tylko przez `/pass vip` (brak MarketplaceService).
+- **S14** Kosmetyki i pety to placeholdery z Partów; zmiana klawiszy (rebinding) nie powstała — okno opcji tylko je pokazuje.
+  „Kody nagród” (opcjonalne) pominięte.
 - **S13** Aukcja i poczta między serwerami (MessagingService, MemoryStore, DataStore) sprawdzalne tylko w opublikowanej grze;
   w Studio działają magazyny w pamięci jednego serwera.
 - **S13** Wygasanie skanuje 200 najtańszych ofert kategorii — przy bardzo dużym rynku droższe przeterminowane oferty
   wygasną dopiero, gdy sprzedający otworzy „Moje oferty” (w wyszukiwaniu i tak są ukryte).
-- **S13 → S14** Gwiazdka VIP w czacie czeka na atrybut `Vip` z monetyzacji. Etykieta kanału handlu (`⚖ Trade`) nie jest
-  tłumaczona (nazwa kanału = etykieta zakładki).
+- **S13** Etykieta kanału handlu (`⚖ Trade`) nie jest tłumaczona (nazwa kanału = etykieta zakładki).
 - **S06** Sprzedaż przez przeciągnięcie na okno sklepu nie istnieje — sprzedaje się w zakładce „Sprzedaj” (zaznaczanie).
 - **S04** Broń w dłoni to placeholder z jednego Partu (bez modeli z assetów).
 - **S04 → S09** Łup z bossów (`Loot.rollBossLoot`) jest gotowy, ale bossów jeszcze nie ma.
@@ -1017,3 +1044,90 @@ Loch (wystarczy 1 gracz):
 19. Komunikaty systemowe (np. odpowiedzi komend admina) są złote.
 20. Trwałość (opublikowane miejsce z API): wystaw przedmiot, wyjdź, wejdź na inny serwer → oferta w Moje oferty i w wyszukiwaniu;
     poczta wysłana, gdy byłeś offline, czeka po wejściu.
+
+### S14: Monetyzacja, kosmetyki, ustawienia, jakość
+
+**Zrobione**
+- Dane i logika: `Data/Products` (5 pakietów Smoczej Waluty, odrodzenie za Robux, 4 gamepassy, sklep premium),
+  `Data/Cosmetics` (8 strojów, 4 aury, 2 ślady, 3 efekty broni, 6 petów), `Logic/Premium` (limit dzienny, zakup i zakładanie
+  kosmetyków, idempotencja paragonów, czyszczenie starych paragonów).
+- Serwer: `MonetizationService` (prawdziwe `ProcessReceipt`, `HasPass` z `UserOwnsGamePassAsync` i
+  `PromptGamePassPurchaseFinished`, tryb testowy), `PremiumShopService` (zwoje, zmiana imienia, kosmetyki),
+  `CosmeticService` (wygląd na postaci, efekt broni po zmianie broni, pety), auto-łup w promieniu 15 st., odrodzenie
+  za Robux, `server/Analytics.luau` + podpięcia.
+- Klient: Smoczy Sklep (◆), Garderoba (♛) z obracanym podglądem 3D i przymierzaniem, `PetController` (płynne podążanie),
+  pełne okno Opcji (język, głośność efektów i muzyki, czułość kamery, jakość, liczby obrażeń, obracana minimapa, szybkie
+  rzucanie, potwierdzenia, lista skrótów, zmiana postaci), `SettingsController`, przewodnik po HUD (`GuideController`),
+  złoty nick VIP, przycisk odrodzenia za Robux na ekranie śmierci, skarbiec +60 w oknie depozytu.
+- Jakość: HUD poza przyciskami Roblox i notchem, test lokalizacji wszystkich tabel danych (każde pole `*Key` w PL i EN),
+  przegląd bezpieczeństwa handlerów (poniżej), `/perf`.
+- Admin: `/premium grant <pass>`, `/cosmetic all`, `/perf` (+ istniejące `/shards n`, `/pass`).
+- Testy: 323 (nowe: limit dzienny, zakupy i zakładanie kosmetyków, paragony, dane premium, lokalizacja 17 tabel danych).
+
+**Najważniejsze pliki**: `src/shared/Data/{Products,Cosmetics}.luau`, `src/shared/Logic/Premium.luau`,
+`src/shared/Util/CosmeticLook.luau`, `src/server/Analytics.luau`,
+`src/server/Services/{MonetizationService,PremiumShopService,CosmeticService}.luau`,
+`src/client/Controllers/{PremiumController,PetController,SettingsController,GuideController}.luau`,
+`src/client/UI/Screens/{PremiumShop,Wardrobe,GameMenu}.luau`, `Hud/Minimap.luau`, `Hud/DeathScreen.luau`,
+`tests/{premium,localization}.spec.luau`.
+
+#### Instrukcja testu S14
+
+1. Nowa postać → po wejściu dymki „Pierwsze kroki 1/9” przy kolejnych częściach HUD; „Dalej” do końca albo „Pomiń”.
+   Po ponownym wejściu tą postacią przewodnika już nie ma.
+2. HUD: nic nie wchodzi pod przyciski Roblox w lewym górnym rogu (sprawdź też w emulatorze telefonu, Test → Device).
+3. Menu HUD → ◆ Smoczy Sklep → „Waluta i przepustki” → „R$ 99” przy 100 Smoczej Waluty → w Studio zakup symulowany:
+   toast „+100 Smoczej Waluty”, saldo u góry okna rośnie.
+4. Kup gamepass „Auto-łup” (symulacja) → „Posiadane”. Zabij potwora i stań przy worku → łup wchodzi sam (do 15 st.).
+5. Kup „Skarbiec” → u bankiera depozyt ma 120 miejsc. Kup „VIP” → nick nad głową złoty, w czacie ★ przed imieniem.
+6. `/shards 5000`. Zakładka „Usługi” → kup Zwój Ochrony 5 razy → szósty: „Dzienny limit wyczerpany”, licznik „5 / 5”.
+7. „Zmiana imienia” → wpisz zajęte imię innej postaci → błąd; wpisz nowe → imię zmienia się nad głową, na liście postaci
+   i w oknie Postaci; stare imię da się znowu użyć przy tworzeniu postaci.
+8. ♛ Garderoba → „Stroje” → kliknij strój → podgląd 3D obraca się w nowych kolorach z akcesoriami (bez kupowania).
+9. „Kup” → Smocza Waluta spada → „Załóż” → postać w świecie zmienia wygląd (ubrania Roblox schowane); „Zdejmij” przywraca.
+10. Aury / Ślady / Efekty broni: załóż każdy → cząstki wokół postaci, smuga przy biegu, cząstki na broni (zostają po
+    zmianie broni).
+11. `/cosmetic all` → Pety → „Załóż” Liska → idzie za postacią; Sowa/Smoczek/Duszek latają. Drugi gracz też widzi peta.
+12. Esc → Opcje: zmień język (UI przełącza się od razu), głośność efektów i muzyki (−/+), czułość kamery (obracanie
+    myszą wolniej/szybciej), jakość „Niska” (mniej cząstek przy aurach i efektach).
+13. „Obracana minimapa: Wł.” → mapa obraca się z kamerą, „N” wędruje po obwodzie.
+14. „Pytaj przed sprzedażą cennych: Wył.” → sprzedaż epickiego przedmiotu bez potwierdzenia.
+15. Zgiń (`/kill me`) → na ekranie śmierci przycisk „Odródź się teraz (R$ 15)” → w Studio od razu odrodzenie.
+16. `/perf` → gracze, potwory (aktywne/uśpione), worki, pamięć, heartbeat.
+17. Analityka: w opublikowanej grze Creator Hub → Analytics → Economy/Funnels/Custom (dane pojawiają się z opóźnieniem).
+
+#### Przegląd bezpieczeństwa (S14)
+
+Sprawdzono wszystkie remote'y klient → serwer z `Net/Definitions.luau` (typy argumentów, rate-limit, dystans do NPC/celu,
+stany: martwy / w handlu / w lochu / zła faza, blokady przy operacjach z yieldem, kolejność „sprawdź → zapisz” bez yieldu
+i zwroty przy porażce). Warstwa bazowa (`Net` + `ArgCheck`) odrzuca NaN/inf, wymusza liczby całkowite i limit 200 bajtów
+na napis; każdy remote ma rate-limit. Naprawione w S14:
+1. Zakupy symulowane tylko w Studio (wcześniej id 0 = darmowa waluta na żywym serwerze).
+2. Handel: każda zmiana plecaka uczestnika (podział stosu, użycie, wytwarzanie…) resetuje akceptacje i odświeża okno
+   drugiej strony — nie da się podmienić zawartości oferowanego stosu między „Akceptuj” a „Potwierdź”.
+3. Pojedynki: odrzucane w walce, po śmierci i w lochu (pojedynek leczy i teleportuje — nie może być ucieczką).
+4. Zmiana postaci zablokowana w walce i po śmierci.
+5. Umiejętności: celowanie NaN/nieskończone odrzucane; leczenie i tarcze na sojusznika tylko w zasięgu umiejętności.
+6. Rozbijanie przy pełnym plecaku: nadmiar materiałów idzie pocztą zamiast przepadać.
+7. `AuctionDetails` tylko przy Aukcjonerze, z cache 30 s i niższym limitem; `CheckName` tylko na ekranie wyboru postaci.
+
+Świadomie zostawione: łowienie ufa liczbie trafień z klienta (sprawdzany jest czas; wpływ: materiały); przy awarii serwera
+dokładnie między zapisem oferty aukcji/wpłaty do gildii a zapisem profilu możliwa jest duplikacja (wymaga crasha w oknie
+kilku sekund); dystans do NPC liczony od pozycji postaci kontrolowanej przez klienta (standard Roblox).
+
+#### Przed publikacją (checklista właściciela)
+
+1. Creator Hub → gra → **Monetization → Developer Products**: utwórz 5 pakietów Smoczej Waluty (100/550/1200/2600/7000)
+   i „Natychmiastowe odrodzenie”; **Passes**: Auto-łup, Skarbiec, Szybki Powrót, VIP. Wklej id do
+   `src/shared/Data/Products.luau` (pola `productId`/`passId`), ceny w Robux tam też zaktualizuj.
+2. Wpisz swoje UserId w `Config.AdminUserIds` (komendy admina na żywych serwerach).
+3. Game Settings → Security: **Enable Studio Access to API Services**, **Allow HTTP**: niepotrzebne; DataStore i
+   MemoryStore działają po publikacji.
+4. Places → Server size: **50** graczy (gildie/aukcja są między serwerami, więc mniejsze serwery też są OK).
+5. Ikona gry (512×512), 3–5 miniatur (1920×1080), opis PL/EN, gatunek RPG.
+6. Questionnaire „Experience Guidelines” (wiek/treść): walka fantasy bez krwi → zwykle 9+; czat tekstowy włączony.
+7. Communication → Chat: TextChatService (już ustawione w projekcie), filtrowanie domyślne.
+8. Muzyka map: id ścieżek z Creator Store do pola `music` w `Data/Maps.luau`; dźwięki UI w `UI/Sounds.luau`.
+9. Sprawdź `/auction list` i gildie na dwóch serwerach (dwie przeglądarki / dwa konta) — tryb `global`.
+10. Prywatność: gra nie zbiera danych poza Roblox (analityka Roblox, DataStore). Brak linków zewnętrznych.
+11. Publikacja jako **Private** → test z kilkoma osobami → **Public**.

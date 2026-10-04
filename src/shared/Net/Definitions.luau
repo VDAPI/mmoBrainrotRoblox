@@ -24,7 +24,7 @@ local Definitions: { [string]: Definition } = {
 	SystemMessage = { kind = "event", dir = "s2c" }, -- (key, args?) shown in the chat system channel
 
 	-- Character selection
-	CheckName = { kind = "function", dir = "c2s", rate = 2, args = { "string" } },
+	CheckName = { kind = "function", dir = "c2s", rate = 1, args = { "string" } },
 	CreateCharacter = { kind = "function", dir = "c2s", rate = 0.5, args = { "integer", "string", "string" } },
 	DeleteCharacter = { kind = "function", dir = "c2s", rate = 0.5, args = { "integer", "string" } },
 	PlayCharacter = { kind = "function", dir = "c2s", rate = 0.5, args = { "integer" } },
@@ -153,12 +153,21 @@ local Definitions: { [string]: Definition } = {
 	MailClaimAll = { kind = "function", dir = "c2s", rate = 0.5, args = {} }, -- -> (ok, err, count)
 	MailRefresh = { kind = "function", dir = "c2s", rate = 0.2, args = {} },
 	AuctionSearch = { kind = "function", dir = "c2s", rate = 2, args = { "table", "integer", "boolean" } }, -- (filter, page, descending)
-	AuctionDetails = { kind = "function", dir = "c2s", rate = 4, args = { "string" } }, -- (listing id) -> full item
+	AuctionDetails = { kind = "function", dir = "c2s", rate = 2, args = { "string" } }, -- (listing id) -> full item
 	AuctionList = { kind = "function", dir = "c2s", rate = 1, args = { "integer", "integer", "integer" } }, -- (inv index, price, hours)
 	AuctionBuy = { kind = "function", dir = "c2s", rate = 1, args = { "string", "integer" } }, -- (listing id, expected price)
 	AuctionCancel = { kind = "function", dir = "c2s", rate = 1, args = { "string" } },
 	AuctionMine = { kind = "function", dir = "c2s", rate = 0.5, args = {} },
 	AuctionPrice = { kind = "function", dir = "c2s", rate = 2, args = { "string" } }, -- (item id) -> average unit price?
+
+	-- Monetisation, premium shop, cosmetics (S14)
+	BuyProduct = { kind = "function", dir = "c2s", rate = 1, args = { "string" } }, -- (product key) prompt or simulated grant
+	BuyPass = { kind = "function", dir = "c2s", rate = 1, args = { "string" } }, -- (pass key)
+	PremiumBuy = { kind = "function", dir = "c2s", rate = 2, args = { "string" } }, -- (shop key) for Dragon Shards
+	PremiumBuyCosmetic = { kind = "function", dir = "c2s", rate = 2, args = { "string" } }, -- (cosmetic id)
+	PremiumRename = { kind = "function", dir = "c2s", rate = 0.5, args = { "string" } }, -- (new character name)
+	CosmeticEquip = { kind = "function", dir = "c2s", rate = 4, args = { "string", "string?" } }, -- (kind, id | nil)
+	GuideDone = { kind = "event", dir = "c2s", rate = 0.5, args = {} },
 
 	-- PvP and death
 	SetPvp = { kind = "function", dir = "c2s", rate = 1, args = { "boolean" } },

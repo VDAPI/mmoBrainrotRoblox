@@ -8,14 +8,13 @@ local Shared = ReplicatedStorage.Shared
 
 local Inventory = require(Shared.Logic.Inventory)
 local Net = require(Shared.Net)
+local Products = require(Shared.Data.Products)
 local Types = require(Shared.Types)
 
 local DepositService = {
 	Name = "DepositService",
 	Deps = { "PlayerStateService", "DataService", "InventoryService", "NpcService", "MonetizationService" },
 }
-
-local VAULT_PASS_SLOTS = 60
 
 local PlayerStateService: any
 local DataService: any
@@ -30,7 +29,7 @@ end
 function DepositService.Size(player: Player): number
 	local data = account(player)
 	local base = if data then data.deposit.size else 60
-	return base + (if MonetizationService.HasPass(player, "vault") then VAULT_PASS_SLOTS else 0)
+	return base + (if MonetizationService.HasPass(player, "vault") then Products.VAULT_PASS_SLOTS else 0)
 end
 
 local function syncSlots(player: Player, indices: { number })

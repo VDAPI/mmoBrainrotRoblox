@@ -263,7 +263,16 @@ local function search(player: Player, raw: { [any]: any }, page: number, descend
 end
 
 -- Full listing for the tooltip (bonuses are not in the index).
-local function details(_player: Player, id: string): (boolean, any)
+local detailCache: { [string]: { at: number, item: any } } = {}
+
+local function details(player: Player, id: string): (boolean, any)
+	if not NpcService.NearService(player, "auction") then
+		return false, "npc.error.tooFar"
+	end
+	local cached = detailCache[id]
+	if cached and os.clock() - cached.at < 30 then
+		return true, cached.item
+	end
 	local ok, listing = store:get(key(id))
 	if not ok then
 		return false, "market.error.store"
@@ -271,6 +280,7 @@ local function details(_player: Player, id: string): (boolean, any)
 	if not listing or listing.status ~= "active" then
 		return false, "auction.error.gone"
 	end
+	detailCache[id] = { at = os.clock(), item = listing.item }
 	return true, listing.item
 end
 

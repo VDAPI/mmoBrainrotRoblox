@@ -441,6 +441,16 @@ function TradeService.Start()
 		cancel(player, "trade.cancelled")
 	end)
 
+	-- Any backpack change (split, merge, use, craft...) while trading resets both acceptances, so an
+	-- offered stack cannot shrink between "Accept" and "Confirm" (S14 security pass).
+	InventoryService.Changed:Connect(function(player: Player)
+		local session = sessions[player]
+		if session then
+			resetAccepts(session)
+			publish(session)
+		end
+	end)
+
 	ResourceService.Died:Connect(function(player: Player)
 		cancel(player, "trade.cancelled")
 	end)

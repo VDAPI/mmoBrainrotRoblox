@@ -371,7 +371,15 @@ local function cast(player: Player, skillId: string, targetId: string?, aim: any
 
 	-- Target / point resolution and range.
 	local target = resolveTarget(player, skill, targetId)
-	local point: Vector3? = if typeof(aim) == "Vector3" then aim :: Vector3 else nil
+	local point: Vector3? = nil
+	if typeof(aim) == "Vector3" then
+		local v = aim :: Vector3
+		-- Reject NaN / infinite aims (they would teleport blinks into nowhere).
+		if v.X ~= v.X or v.Y ~= v.Y or v.Z ~= v.Z or v.Magnitude > 1e6 then
+			return false, "error.badRequest"
+		end
+		point = v
+	end
 	local offensive = skill.target == "enemy"
 		or skill.type == "cone"
 		or skill.type == "circleSelf"

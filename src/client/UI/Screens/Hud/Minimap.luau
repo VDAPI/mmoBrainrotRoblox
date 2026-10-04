@@ -64,6 +64,17 @@ local function Minimap(scope: Scope): Instance
 		Name = "Canvas",
 		BackgroundTransparency = 1,
 	}) :: Frame
+	-- Rotating mode (option "minimapRotate", S14) turns this holder so the camera direction points up.
+	local holder = scope:New("Frame")({
+		Name = "Holder",
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5),
+		Size = UDim2.fromOffset(SIZE, SIZE),
+		BackgroundTransparency = 1,
+	}) :: Frame
+	canvas.Parent = holder
+	local rotating = State.Value({ "account", "settings", "minimapRotate" })
+	local northPosition = scope:Value(UDim2.new(0.5, 0, 0, 12))
 	local dynamic = scope:New("Frame")({
 		Name = "Dynamic",
 		BackgroundTransparency = 1,
@@ -139,7 +150,18 @@ local function Minimap(scope: Scope): Instance
 			local camera = Workspace.CurrentCamera
 			if camera then
 				local look = camera.CFrame.LookVector
-				arrowRotation:set(math.deg(math.atan2(look.X, -look.Z)))
+				local heading = math.deg(math.atan2(look.X, -look.Z))
+				if Fusion.peek(rotating) == true then
+					holder.Rotation = -heading
+					arrowRotation:set(0)
+					local angle = math.rad(-heading)
+					local r = SIZE / 2 - 12
+					northPosition:set(UDim2.new(0.5, math.sin(angle) * r, 0.5, -math.cos(angle) * r))
+				else
+					holder.Rotation = 0
+					arrowRotation:set(heading)
+					northPosition:set(UDim2.new(0.5, 0, 0, 12))
+				end
 			end
 			accumulator += dt
 			if accumulator < 0.4 then
@@ -230,7 +252,7 @@ local function Minimap(scope: Scope): Instance
 				end),
 				[Children] = {
 					scope:New("UICorner")({ CornerRadius = UDim.new(0.5, 0) }),
-					canvas,
+					holder,
 					scope:New("TextLabel")({
 						Name = "Player",
 						AnchorPoint = Vector2.new(0.5, 0.5),
@@ -246,8 +268,8 @@ local function Minimap(scope: Scope): Instance
 					}),
 					scope:New("TextLabel")({
 						Name = "North",
-						AnchorPoint = Vector2.new(0.5, 0),
-						Position = UDim2.new(0.5, 0, 0, 4),
+						AnchorPoint = Vector2.new(0.5, 0.5),
+						Position = northPosition,
 						Size = UDim2.fromOffset(16, 16),
 						BackgroundTransparency = 1,
 						Text = "N",

@@ -113,6 +113,11 @@ function UIController.Init()
 			Name = `Vaelthorn_{layer.name}`,
 			DisplayOrder = layer.order,
 			IgnoreGuiInset = true,
+			-- S14 mobile pass: the HUD keeps clear of Roblox's top bar buttons and phone notches;
+			-- windows, modals and toasts still use the whole screen.
+			ScreenInsets = if layer.name == "Screens"
+				then Enum.ScreenInsets.CoreUISafeInsets
+				else Enum.ScreenInsets.DeviceSafeInsets,
 			ResetOnSpawn = false,
 			ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
 			Parent = playerGui,

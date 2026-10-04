@@ -9,6 +9,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage.Shared
 
+local Analytics = require(script.Parent.Parent.Analytics)
+
 local Inventory = require(Shared.Logic.Inventory)
 local ItemRoll = require(Shared.Logic.ItemRoll)
 local Items = require(Shared.Data.Items)
@@ -51,9 +53,10 @@ local function character(player: Player): Types.CharacterData?
 end
 
 local function addGold(player: Player, delta: number)
-	PlayerStateService.Update(player, { "character", "gold" }, function(gold: number)
+	local balance = PlayerStateService.Update(player, { "character", "gold" }, function(gold: number)
 		return math.max(0, gold + delta)
 	end)
+	Analytics.gold(player, delta, balance, "shop")
 end
 
 local function publishBuyback(player: Player)

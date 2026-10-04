@@ -191,7 +191,10 @@ end
 
 -- Handlers ---------------------------------------------------------------------------------------
 
-local function checkName(_player: Player, name: string): (boolean, string?)
+local function checkName(player: Player, name: string): (boolean, string?)
+	if PlayerStateService.GetPhase(player) ~= "select" then
+		return false, "error.wrongPhase"
+	end
 	local ok, reason = NameRules.validate(name)
 	if not ok then
 		return false, NameRules.errorKey(reason :: string)
@@ -312,9 +315,20 @@ local function playCharacter(player: Player, slot: number): (boolean, string?)
 	return true, nil
 end
 
+-- Set by ResourceService: refuses switching while dead or in combat (no escaping a fight, S14).
+local switchGuard: ((player: Player) -> string?)? = nil
+
+function CharacterService.SetSwitchGuard(guard: (player: Player) -> string?)
+	switchGuard = guard
+end
+
 local function switchCharacter(player: Player): (boolean, string?)
 	if PlayerStateService.GetPhase(player) ~= "playing" then
 		return false, "error.wrongPhase"
+	end
+	local blocked = switchGuard and switchGuard(player)
+	if blocked then
+		return false, blocked
 	end
 	CharacterService.ReturnToSelect(player)
 	DataService.Save(player)

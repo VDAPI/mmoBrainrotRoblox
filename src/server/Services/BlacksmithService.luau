@@ -8,6 +8,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage.Shared
 
+local Analytics = require(script.Parent.Parent.Analytics)
+
 local Crafting = require(Shared.Data.Crafting)
 local Dismantle = require(Shared.Logic.Dismantle)
 local ItemRoll = require(Shared.Logic.ItemRoll)
@@ -33,12 +35,14 @@ local BlacksmithService = {
 		"StatService",
 		"AnnounceService",
 		"EquipmentService",
+		"MailService",
 	},
 }
 
 local PlayerStateService: any
 local InventoryService: any
 local NpcService: any
+local MailService: any
 local StatService: any
 local AnnounceService: any
 
@@ -68,9 +72,10 @@ local function takeMaterials(player: Player, materials: { { id: string, n: numbe
 end
 
 local function addGold(player: Player, delta: number)
-	PlayerStateService.Update(player, { "character", "gold" }, function(gold: number)
+	local balance = PlayerStateService.Update(player, { "character", "gold" }, function(gold: number)
 		return math.max(0, gold + delta)
 	end)
+	Analytics.gold(player, delta, balance, "blacksmith")
 end
 
 -- Crafting ----------------------------------------------------------------------------------------------------
@@ -167,6 +172,7 @@ local function upgrade(player: Player, location: string, key: string, protect: b
 		QuestEvents.fire(player, "upgrade", { to = result.to })
 	end
 	if result.success and result.to >= 7 then
+		Analytics.custom(player, `Upgrade+{result.to}`, item.rarity)
 		local args = { player = char.name, item = `#item:{item.id}:0`, up = result.to }
 		if result.to >= 9 and item.rarity == Rarities.LEGENDARY then
 			AnnounceService.Global("announce.upgrade", "announce.upgradeGlobal", args)
@@ -200,9 +206,27 @@ local function dismantleIndices(player: Player, indices: { number }): (boolean, 
 		return false, "shop.error.nothing"
 	end
 	local list = {}
+	local overflow = {}
 	for id, n in gained do
-		InventoryService.GiveNew(player, id, n)
+		local leftover, item = InventoryService.GiveNew(player, id, n)
 		table.insert(list, { id = id, n = n })
+		if leftover > 0 and item then
+			-- Full backpack: the rest goes to the mail instead of disappearing.
+			local rest = table.clone(item)
+			rest.n = leftover
+			rest.uid = InventoryService.NewUid()
+			table.insert(overflow, rest)
+		end
+	end
+	if #overflow > 0 then
+		local char = character(player)
+		task.spawn(MailService.Send, player.UserId, {
+			from = "system",
+			subjectKey = "mail.subject.returned",
+			items = overflow,
+			charId = if char then char.id else nil,
+		})
+		Net.Fire(player, "Toast", "smith.dismantle.mailed", nil, "info")
 	end
 	return true, nil, list
 end
@@ -254,6 +278,7 @@ function BlacksmithService.Init(registry)
 	PlayerStateService = registry.Get("PlayerStateService")
 	InventoryService = registry.Get("InventoryService")
 	NpcService = registry.Get("NpcService")
+	MailService = registry.Get("MailService")
 	StatService = registry.Get("StatService")
 	AnnounceService = registry.Get("AnnounceService")
 end
