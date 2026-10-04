@@ -51,7 +51,12 @@ function Index.isMock(): boolean
 	return useMock()
 end
 
-function Index.set(category: string, key: string, summary: Auction.Summary, seconds: number): boolean
+function Index.set(
+	category: string,
+	key: string,
+	summary: Auction.Summary | { [string]: any },
+	seconds: number
+): boolean
 	if useMock() then
 		mockMaps[category] = mockMaps[category] or {}
 		mockMaps[category][key] = table.clone(summary)

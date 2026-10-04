@@ -364,22 +364,18 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
 
 - **S01** Dźwięki UI to placeholdery (`UI/Sounds.luau`), do podmiany na prawdziwe.
 - **S03** Potwory nie mają animacji (placeholdery z Partów poruszają się bez ruchu kończyn); zamach i pociski są efektami klienta.
-- **S11** Questy nie były grane od początku do końca (brak testu w Studio); EXP z nagród dobrany wzorem, do strojenia.
+- **S11** Questy nie były grane w Studio od początku do końca (test `questpath.spec` sprawdza wykonalność celów i ciągłość
+  poziomów); EXP z nagród dobrany wzorem, do strojenia.
 - **S08** Muzyka map: crossfade i głośność z opcji gotowe, ale brak ścieżek (pole `music` w `Data/Maps.luau` puste — wkleić
   id dźwięków z Creator Store).
-- **S08** Arena w mieście to na razie tylko żółta strefa z trybunami — zapisy i walki areny w S10.
 - **S14** Kosmetyki i pety to placeholdery z Partów; zmiana klawiszy (rebinding) nie powstała — okno opcji tylko je pokazuje.
   „Kody nagród” (opcjonalne) pominięte.
 - **S13** Aukcja i poczta między serwerami (MessagingService, MemoryStore, DataStore) sprawdzalne tylko w opublikowanej grze;
   w Studio działają magazyny w pamięci jednego serwera.
-- **S13** Wygasanie skanuje 200 najtańszych ofert kategorii — przy bardzo dużym rynku droższe przeterminowane oferty
-  wygasną dopiero, gdy sprzedający otworzy „Moje oferty” (w wyszukiwaniu i tak są ukryte).
 - **S13** Etykieta kanału handlu (`⚖ Trade`) nie jest tłumaczona (nazwa kanału = etykieta zakładki).
 - **S06** Sprzedaż przez przeciągnięcie na okno sklepu nie istnieje — sprzedaje się w zakładce „Sprzedaj” (zaznaczanie).
 - **S04** Broń w dłoni to placeholder z jednego Partu (bez modeli z assetów).
 - **S05** Efekty wizualne umiejętności to placeholdery z Partów (`VfxController`), bez animacji postaci.
-- **S05 → S09** Leczenie, buffy grupowe, Krąg Światła, Aura, Boska Interwencja i Wskrzeszenie działają na innych graczy dopiero
-  z grupami (S09). Obrażenia skilli w graczy tylko przez `PvpService.CanAttack` (pełne PvP w S10).
 - **S12** Gildie między serwerami (MessagingService, MemoryStore) da się sprawdzić tylko w opublikowanej grze; w Studio
   działa jeden serwer (czat i obecność lokalnie). Etykieta zakładki czatu (`⚑ TAG`) niesprawdzona w Studio.
 - **S12** Zaproszenia do gildii między serwerami pominięte (zgodnie z zakresem); brak teleportu do serwera członka.
@@ -1137,6 +1133,11 @@ kilku sekund); dystans do NPC liczony od pozycji postaci kontrolowanej przez kli
   śmierci, K/D), pojedynki, założony ekwipunek z tooltipami (podgląd jak w Margonem). Tylko gracze z tego samego serwera.
 - Tooltip przedmiotu-błogosławieństwa wypisuje jego statystyki i czas działania.
 - Koperta poczty przesunięta na lewo od ramki celu (nie zasłaniają się).
+- Aukcja: drugi posortowany indeks wygasania (`expiry` w MemoryStore) — sweep czyta najwcześniej wygasające oferty, więc
+  przeterminowane wygasają niezależnie od wielkości rynku (wcześniej tylko 200 najtańszych w kategorii). Oferty sprzed
+  zmiany nie istnieją (gra niepublikowana), więc bez migracji.
+- Test `questpath.spec`: każdy cel głównej linii questów ma spawner tego potwora w pobliżu poziomu questa, a linia idzie
+  od poziomu 1 do 100 po kolei (zastępuje „przejście questów w Studio” w sensie wykonalności).
 
 **Pliki**: `src/server/Services/ProfileService.luau`, `src/client/UI/Screens/ProfileWindow.luau`, `Hud/TargetFrame.luau`,
 `Hud/init.luau`, `ScreenController`, `PartyController`, `ItemTooltip`, `MarketController`.

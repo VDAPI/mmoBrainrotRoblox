@@ -101,8 +101,17 @@ local function activeCount(char: Types.CharacterData): number
 	return n
 end
 
+-- Second sorted index by expiry time (S15): the sweep reads the earliest entries instead of scanning
+-- every category, so expired listings are found no matter how big the market is.
+local EXPIRY = "expiry"
+
+local function expiryKey(listing: Listing): string
+	return Auction.indexKey(listing.expiresAt, listing.id)
+end
+
 local function dropFromIndex(listing: Listing)
 	Index.remove(listing.category, Auction.indexKey(listing.price, listing.id))
+	Index.remove(EXPIRY, expiryKey(listing))
 	searchCache[listing.category .. "a"] = nil
 	searchCache[listing.category .. "d"] = nil
 end
@@ -175,6 +184,7 @@ local function list(player: Player, index: number, price: number, hours: number)
 	if not Index.set(listing.category, Auction.indexKey(price, listing.id), summary, hours * 3600 + 3600) then
 		log:warn("listing %s written but not indexed", listing.id)
 	end
+	Index.set(EXPIRY, expiryKey(listing), { id = listing.id, e = listing.expiresAt }, hours * 3600 + 86400)
 	searchCache[listing.category .. "a"] = nil
 	searchCache[listing.category .. "d"] = nil
 	log:info("%s listed %s x%d for %d (%s)", player.Name, listed.id, listed.n, price, listing.id)
@@ -409,20 +419,21 @@ end
 local function sweep(): number
 	local now = os.time()
 	local expired = 0
-	for _, category in Market.categories do
-		local ok, range = Index.range(category.id, false, Rules.scanLimit)
-		if ok then
-			for _, entry in range do
-				local summary = entry.value
-				if type(summary) == "table" and type(summary.e) == "number" and summary.e <= now then
-					if expireListing(summary.id) then
-						expired += 1
-					else
-						-- Already sold/cancelled/expired elsewhere: just drop the stale index entry.
-						Index.remove(category.id, entry.key)
-					end
-				end
-			end
+	local ok, range = Index.range(EXPIRY, false, Rules.scanLimit)
+	if not ok then
+		return 0
+	end
+	for _, entry in range do
+		local value = entry.value
+		local valid = type(value) == "table" and type(value.e) == "number"
+		if valid and value.e > now then
+			break -- sorted by time: everything after this is still running
+		end
+		if valid and expireListing(value.id) then
+			expired += 1
+		else
+			-- Malformed, or already sold / cancelled / expired elsewhere: drop the stale entry.
+			Index.remove(EXPIRY, entry.key)
 		end
 	end
 	return expired
@@ -499,6 +510,7 @@ function AuctionService.AdminExpireAll(): number
 					end)
 					summary.e = os.time() - 1
 					Index.set(category.id, entry.key, summary, 600)
+					Index.set(EXPIRY, Auction.indexKey(0, summary.id), { id = summary.id, e = 0 }, 600)
 				end
 			end
 		end
