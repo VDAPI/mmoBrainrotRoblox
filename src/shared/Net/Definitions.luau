@@ -32,6 +32,14 @@ local Definitions: { [string]: Definition } = {
 
 	-- Settings
 	SetLanguage = { kind = "event", dir = "c2s", rate = 1, args = { "string" } },
+
+	-- Stats and progression
+	AllocateStats = { kind = "function", dir = "c2s", rate = 2, args = { "table" } }, -- ({ str, dex, int, vit })
+	LevelUp = { kind = "event", dir = "s2c" }, -- (player, newLevel, statPoints, skillPoints) to nearby players
+
+	-- PvP and death
+	SetPvp = { kind = "function", dir = "c2s", rate = 1, args = { "boolean" } },
+	RespawnNow = { kind = "function", dir = "c2s", rate = 1, args = {} },
 }
 
 return table.freeze(Definitions)

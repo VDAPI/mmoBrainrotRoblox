@@ -10,7 +10,6 @@ local Shared = ReplicatedStorage.Shared
 
 local CharacterFactory = require(Shared.Logic.CharacterFactory)
 local Classes = require(Shared.Data.Classes)
-local Config = require(Shared.Config)
 local Log = require(Shared.Util.Log)
 local NameRules = require(Shared.Logic.NameRules)
 local Net = require(Shared.Net)
@@ -152,18 +151,14 @@ local function spawnModel(player: Player, at: CFrame?)
 	model:PivotTo(cframe)
 	setNameplate(model, character)
 
-	local humanoid = model:FindFirstChildOfClass("Humanoid")
-	if humanoid then
-		-- Temporary death handling until the death system lands (S02): respawn at the map spawn.
-		humanoid.Died:Connect(function()
-			task.delay(Config.TempRespawnSeconds, function()
-				if rt.spawnToken == token and PlayerStateService.GetPhase(player) == "playing" then
-					spawnModel(player, WorldService.GetSpawnCFrame(character.location.map))
-				end
-			end)
-		end)
-	end
 	CharacterService.ModelSpawned:Fire(player, model)
+end
+
+-- Spawns a fresh model for the active character (death respawn, /tp fallback). Yields.
+function CharacterService.Respawn(player: Player, at: CFrame?)
+	if PlayerStateService.GetPhase(player) == "playing" then
+		spawnModel(player, at)
+	end
 end
 
 -- Leaves the world back to the selection screen. Safe to call in any phase.

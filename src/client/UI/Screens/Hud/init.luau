@@ -1,18 +1,25 @@
 --!strict
 -- In-game HUD skeleton (DESIGN §23): portrait with name/level and HP/Mana/Energy bars (top left), menu
 -- buttons and map name (top right), skill + potion slots and the EXP bar (bottom).
--- Bar values arrive with the stat system (S02); until then the bars render empty.
+-- Also hosts the zone banner, PvP toggle and death screen (sub-modules of this folder).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Bar = require(script.Parent.Parent.Components.Bar)
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
+local Config = require(ReplicatedStorage.Shared.Config)
+local DeathScreen = require(script.DeathScreen)
+local Exp = require(ReplicatedStorage.Shared.Logic.Exp)
+local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local IconButton = require(script.Parent.Parent.Components.IconButton)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
+local PvpToggle = require(script.PvpToggle)
 local State = require(script.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
+local Tooltip = require(script.Parent.Parent.Components.Tooltip)
+local ZoneBanner = require(script.ZoneBanner)
 
 local Children = Fusion.Children
 
@@ -147,28 +154,28 @@ local function portrait(scope: Scope): Instance
 						Name = "Hp",
 						LayoutOrder = 1,
 						Value = number(scope, { "character", "hp" }),
-						Max = number(scope, { "character", "maxHp" }),
+						Max = number(scope, { "derived", "values", "maxHp" }),
 						Color = Theme.Colors.Hp,
 						Label = Text.T(scope, "hud.hp"),
-						ShowNumbers = false,
+						ShowNumbers = true,
 					}),
 					Bar(scope, {
 						Name = "Mana",
 						LayoutOrder = 2,
 						Value = number(scope, { "character", "mana" }),
-						Max = number(scope, { "character", "maxMana" }),
+						Max = number(scope, { "derived", "values", "maxMana" }),
 						Color = Theme.Colors.Mana,
 						Label = Text.T(scope, "hud.mana"),
-						ShowNumbers = false,
+						ShowNumbers = true,
 					}),
 					Bar(scope, {
 						Name = "Energy",
 						LayoutOrder = 3,
 						Value = number(scope, { "character", "energy" }),
-						Max = number(scope, { "character", "maxEnergy" }),
+						Max = number(scope, { "derived", "values", "maxEnergy" }),
 						Color = Theme.Colors.Energy,
 						Label = Text.T(scope, "hud.energy"),
-						ShowNumbers = false,
+						ShowNumbers = true,
 					}),
 				},
 			}),
@@ -335,6 +342,43 @@ local function actionBar(scope: Scope): Instance
 	})
 end
 
+local function expBar(scope: Scope): Instance
+	local level = number(scope, { "character", "level" })
+	local exp = number(scope, { "character", "exp" })
+	local need = scope:Computed(function(use): number
+		local l = use(level)
+		return if l >= Config.MaxLevel then 0 else Exp.expToNext(math.max(1, l))
+	end)
+	local bar = Bar(scope, {
+		Name = "Exp",
+		AnchorPoint = Vector2.new(0.5, 1),
+		Position = UDim2.new(0.5, 0, 1, -4),
+		Size = UDim2.new(1, -8, 0, 16),
+		Value = exp,
+		Max = need,
+		Color = Theme.Colors.Exp,
+		ShowNumbers = false,
+		Label = scope:Computed(function(use): string
+			if use(level) >= Config.MaxLevel then
+				return Text.get(use, "hud.expMax")
+			end
+			local pct = Exp.progress(use(level), use(exp), Config.MaxLevel) * 100
+			return Text.get(use, "hud.expPct", { pct = string.format("%.1f", pct) })
+		end),
+	})
+	Tooltip.attach(
+		scope,
+		bar :: GuiObject,
+		scope:Computed(function(use): string
+			return Text.get(use, "hud.expTooltip", {
+				exp = Format.number(use(exp)),
+				need = Format.number(use(need)),
+			})
+		end)
+	)
+	return bar
+end
+
 local function Hud(scope: Scope, props: Props): Instance
 	return scope:New("Frame")({
 		Name = "Hud",
@@ -344,16 +388,10 @@ local function Hud(scope: Scope, props: Props): Instance
 			portrait(scope),
 			menu(scope, props),
 			actionBar(scope),
-			Bar(scope, {
-				Name = "Exp",
-				AnchorPoint = Vector2.new(0.5, 1),
-				Position = UDim2.new(0.5, 0, 1, -4),
-				Size = UDim2.new(1, -8, 0, 14),
-				Value = number(scope, { "character", "exp" }),
-				Max = number(scope, { "character", "expMax" }),
-				Color = Theme.Colors.Exp,
-				ShowNumbers = false,
-			}),
+			expBar(scope),
+			ZoneBanner(scope),
+			PvpToggle(scope),
+			DeathScreen(scope),
 		},
 	})
 end

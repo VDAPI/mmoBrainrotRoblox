@@ -1,0 +1,3 @@
+--!strict
+-- Intentionally empty: replaces Roblox's default Health script so the humanoid does not regenerate on its
+-- own. HP lives on the server (ResourceService) and Humanoid.Health only mirrors its percentage.

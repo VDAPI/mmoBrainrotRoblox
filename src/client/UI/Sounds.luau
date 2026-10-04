@@ -1,14 +1,16 @@
 --!strict
--- UI sound effects. Ids are built-in Studio assets until real sounds are uploaded (swap ids here only).
+-- UI sound effects. Placeholders until real sounds are uploaded (swap ids here only).
 
 local SoundService = game:GetService("SoundService")
 
 local Sounds = {}
 
-local DEFS: { [string]: { id: string, volume: number } } = {
-	click = { id = "rbxasset://sounds/electronicpingshort.wav", volume = 0.25 },
-	open = { id = "rbxasset://sounds/electronicpingshort.wav", volume = 0.15 },
-	error = { id = "rbxasset://sounds/electronicpingshort.wav", volume = 0.35 },
+-- Only files shipped with the Roblox client (content/sounds) are used, varied by pitch.
+local DEFS: { [string]: { id: string, volume: number, speed: number? } } = {
+	click = { id = "rbxasset://sounds/volume_slider.ogg", volume = 0.35 },
+	open = { id = "rbxasset://sounds/volume_slider.ogg", volume = 0.25, speed = 0.8 },
+	error = { id = "rbxasset://sounds/volume_slider.ogg", volume = 0.45, speed = 0.55 },
+	levelUp = { id = "rbxasset://sounds/action_jump_land.mp3", volume = 0.7, speed = 0.6 },
 }
 
 local master = 0.8
@@ -26,6 +28,7 @@ local function getSound(name: string): Sound?
 	local sound = Instance.new("Sound")
 	sound.Name = `UI_{name}`
 	sound.SoundId = def.id
+	sound.PlaybackSpeed = def.speed or 1
 	sound.Parent = SoundService
 	instances[name] = sound
 	return sound

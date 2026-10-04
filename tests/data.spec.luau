@@ -42,6 +42,16 @@ local NAMESPACES = {
 	"nameplate",
 	"toast",
 	"window",
+	"stat",
+	"statGroup",
+	"breakdown",
+	"source",
+	"character",
+	"slot",
+	"item",
+	"zone",
+	"pvp",
+	"death",
 }
 
 T.describe("Data: Classes", function()

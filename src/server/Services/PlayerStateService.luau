@@ -2,7 +2,8 @@
 -- Owns each player's replicated state tree (ARCHITECTURE §6) and streams changes to the owner.
 --
 -- Tree: { account = profile.Data (sent without .characters), slots = summaries,
---         character = profile.Data.characters[slot] (same table!), session = {...} }
+--         character = profile.Data.characters[slot] (same table!), session = {...},
+--         derived/zone/death/pvp = runtime-only branches owned by their services }
 -- Writes through Set/Update/ArrayInsert/ArrayRemove mutate profile data directly and queue a diff;
 -- diffs are batched and flushed once per Heartbeat.
 
@@ -49,14 +50,11 @@ local function assertReplicable(path: Path)
 end
 
 local function buildSnapshot(root: any): any
+	local snapshot = table.clone(root)
 	local account = table.clone(root.account)
 	account.characters = nil
-	return {
-		account = account,
-		slots = root.slots,
-		character = root.character,
-		session = root.session,
-	}
+	snapshot.account = account
+	return snapshot
 end
 
 local function queue(player: Player, entry: Entry, diff: Diff)
@@ -132,6 +130,12 @@ function PlayerStateService.Reset(player: Player)
 		slots = CharacterFactory.summaries(data.characters),
 		character = nil,
 		session = { phase = "select", slot = nil, dataMock = DataService.IsMock() },
+		-- Filled while playing: derived stats (StatService), zone (ZoneService), death (DeathService),
+		-- pvp toggle state (PvpService).
+		derived = nil,
+		zone = nil,
+		death = nil,
+		pvp = nil,
 	}
 	entries[player] = { root = root, pending = {} }
 	Net.Fire(player, "StateSnapshot", buildSnapshot(root))

@@ -98,11 +98,34 @@ export type SessionPhase = "loading" | "select" | "playing"
 
 -- Root of the replicated per-player state tree (what the client sees).
 -- `account` is replicated without `characters`; the active character lives in `character`.
+-- Replicated result of StatService (values/breakdown from Logic/StatCalc).
+export type DerivedState = {
+	primary: Stats,
+	values: { [string]: number },
+	breakdown: { [string]: { { key: string, value: number, pct: boolean? } } },
+	-- Merged modifier totals and weapon, so the client can preview stat allocation.
+	mods: { key: string, flat: { [string]: number }?, pct: { [string]: number }? },
+	weapon: { dmg: number, mdmg: number, speed: number, ranged: boolean }?,
+}
+
+export type PvpZone = "green" | "yellow" | "red"
+
+export type ZoneState = { map: string, pvp: PvpZone, nameKey: string }
+
+-- Server time (workspace:GetServerTimeNow()) based timers.
+export type DeathState = { diedAt: number, respawnAt: number, cost: number }
+
+export type PvpState = { pendingTarget: boolean?, switchAt: number?, lockedUntil: number? }
+
 export type ClientState = {
 	account: AccountData?,
 	slots: { [string]: SlotSummary },
 	character: CharacterData?,
 	session: { phase: SessionPhase, slot: number?, dataMock: boolean },
+	derived: DerivedState?,
+	zone: ZoneState?,
+	death: DeathState?,
+	pvp: PvpState?,
 }
 
 export type PathKey = string | number

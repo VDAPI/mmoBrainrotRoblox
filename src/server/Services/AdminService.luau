@@ -19,13 +19,28 @@ local log = Log.new("AdminService")
 
 local AdminService = {
 	Name = "AdminService",
-	Deps = { "DataService", "PlayerStateService", "CharacterService", "NameService" },
+	Deps = {
+		"DataService",
+		"PlayerStateService",
+		"CharacterService",
+		"NameService",
+		"LevelService",
+		"ResourceService",
+		"DeathService",
+		"PvpService",
+		"MonetizationService",
+	},
 }
 
 local DataService: any
 local PlayerStateService: any
 local CharacterService: any
 local NameService: any
+local LevelService: any
+local ResourceService: any
+local DeathService: any
+local PvpService: any
+local MonetizationService: any
 
 type Command = {
 	usageKey: string,
@@ -145,6 +160,159 @@ COMMANDS.wipe = {
 	end,
 }
 
+-- Runs `fn` only when the caller is in the world with a character.
+local function withCharacter(player: Player, fn: () -> ())
+	if PlayerStateService.GetCharacter(player) == nil then
+		reply(player, "admin.needCharacter")
+		return
+	end
+	fn()
+end
+
+COMMANDS.lvl = {
+	usageKey = "admin.usage.lvl",
+	run = function(player, args)
+		local level = parseAmount(args[1])
+		if level == nil or level < 1 then
+			reply(player, "admin.usage.lvl")
+			return
+		end
+		withCharacter(player, function()
+			LevelService.SetLevel(player, level)
+			reply(player, "admin.lvl.ok", { level = PlayerStateService.Get(player, { "character", "level" }) })
+		end)
+	end,
+}
+
+COMMANDS.exp = {
+	usageKey = "admin.usage.exp",
+	run = function(player, args)
+		local amount = parseAmount(args[1])
+		if amount == nil or amount <= 0 then
+			reply(player, "admin.usage.exp")
+			return
+		end
+		withCharacter(player, function()
+			local levels = LevelService.GiveExp(player, amount, "admin")
+			reply(player, "admin.exp.ok", { amount = amount, levels = levels })
+		end)
+	end,
+}
+
+COMMANDS.stats = {
+	usageKey = "admin.usage.stats",
+	run = function(player, args)
+		if args[1] ~= "reset" then
+			reply(player, "admin.usage.stats")
+			return
+		end
+		withCharacter(player, function()
+			LevelService.ResetStats(player)
+			reply(player, "admin.stats.ok")
+		end)
+	end,
+}
+
+COMMANDS.heal = {
+	usageKey = "admin.usage.heal",
+	run = function(player)
+		withCharacter(player, function()
+			if ResourceService.IsDead(player) then
+				reply(player, "admin.heal.dead")
+				return
+			end
+			ResourceService.Restore(player)
+			reply(player, "admin.heal.ok")
+		end)
+	end,
+}
+
+COMMANDS.god = {
+	usageKey = "admin.usage.god",
+	run = function(player)
+		withCharacter(player, function()
+			local enabled = not ResourceService.IsGod(player)
+			ResourceService.SetGod(player, enabled)
+			reply(player, if enabled then "admin.god.on" else "admin.god.off")
+		end)
+	end,
+}
+
+COMMANDS.hurt = {
+	usageKey = "admin.usage.hurt",
+	run = function(player, args)
+		local amount = parseAmount(args[1])
+		if amount == nil or amount <= 0 then
+			reply(player, "admin.usage.hurt")
+			return
+		end
+		withCharacter(player, function()
+			local dealt = ResourceService.Damage(player, amount, "admin")
+			reply(player, "admin.hurt.ok", { amount = math.floor(dealt) })
+		end)
+	end,
+}
+
+COMMANDS.kill = {
+	usageKey = "admin.usage.kill",
+	run = function(player, args)
+		if args[1] ~= "me" then
+			-- Killing a selected target arrives with combat targeting (S03).
+			reply(player, "admin.usage.kill")
+			return
+		end
+		withCharacter(player, function()
+			DeathService.Kill(player)
+		end)
+	end,
+}
+
+COMMANDS.pvp = {
+	usageKey = "admin.usage.pvp",
+	run = function(player, args)
+		local mode = args[1]
+		if mode ~= "on" and mode ~= "off" then
+			reply(player, "admin.usage.pvp")
+			return
+		end
+		withCharacter(player, function()
+			PvpService.Force(player, mode == "on")
+			reply(player, if mode == "on" then "admin.pvp.on" else "admin.pvp.off")
+		end)
+	end,
+}
+
+COMMANDS.tp = {
+	usageKey = "admin.usage.tp",
+	run = function(player, args)
+		local x, y, z = tonumber(args[1]), tonumber(args[2]), tonumber(args[3])
+		if x == nil or y == nil or z == nil then
+			reply(player, "admin.usage.tp")
+			return
+		end
+		withCharacter(player, function()
+			local model = player.Character
+			if model then
+				model:PivotTo(CFrame.new(x :: number, y :: number, z :: number))
+				reply(player, "admin.tp.ok", { x = x, y = y, z = z })
+			end
+		end)
+	end,
+}
+
+COMMANDS.pass = {
+	usageKey = "admin.usage.pass",
+	run = function(player, args)
+		local passId = args[1]
+		if passId == nil or (args[2] ~= "on" and args[2] ~= "off") then
+			reply(player, "admin.usage.pass")
+			return
+		end
+		MonetizationService.SetTestPass(player, passId, args[2] == "on")
+		reply(player, "admin.pass.ok", { pass = passId, state = args[2] })
+	end,
+}
+
 local function onCommand(name: string, textSource: TextSource, message: string)
 	local player = Players:GetPlayerByUserId(textSource.UserId)
 	if not player then
@@ -174,6 +342,11 @@ function AdminService.Init(registry)
 	PlayerStateService = registry.Get("PlayerStateService")
 	CharacterService = registry.Get("CharacterService")
 	NameService = registry.Get("NameService")
+	LevelService = registry.Get("LevelService")
+	ResourceService = registry.Get("ResourceService")
+	DeathService = registry.Get("DeathService")
+	PvpService = registry.Get("PvpService")
+	MonetizationService = registry.Get("MonetizationService")
 end
 
 function AdminService.Start()

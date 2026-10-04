@@ -8,6 +8,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 
 local CharacterSelect = require(script.Parent.Parent.UI.Screens.CharacterSelect)
+local CharacterWindow = require(script.Parent.Parent.UI.Screens.CharacterWindow)
 local ComingSoon = require(script.Parent.Parent.UI.Screens.ComingSoon)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
@@ -58,7 +59,15 @@ local blur: BlurEffect
 
 local function registerWindows()
 	for _, entry in MENU do
-		if entry.id == "menu" then
+		if entry.id == "character" then
+			WindowManager.Register({
+				id = "character",
+				titleKey = "window.character.title",
+				size = Vector2.new(900, 640),
+				hotkey = HOTKEYS.character,
+				build = CharacterWindow,
+			})
+		elseif entry.id == "menu" then
 			WindowManager.Register({
 				id = "menu",
 				titleKey = "window.menu.title",

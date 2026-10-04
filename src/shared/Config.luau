@@ -37,8 +37,25 @@ local Config = {
 		LogStateDiffs = false,
 	},
 
-	-- Temporary respawn delay used until the death system lands (S02).
-	TempRespawnSeconds = 5,
+	-- Combat state: seconds after the last damage dealt/taken (DESIGN §4.4 regen, §3.3 PvP lock).
+	CombatTimeout = 5,
+	-- Resource regeneration tick (s). Replication is throttled to whole-number changes.
+	ResourceTick = 0.25,
+
+	-- Death (DESIGN §3.4): respawn delay = RespawnBase + RespawnPerLevel x level.
+	RespawnBase = 5,
+	RespawnPerLevel = 0.3,
+	FastRespawnMultiplier = 0.5, -- "Fast Return" gamepass
+	RespawnNowCost = 10, -- Dragon Shards
+
+	-- PvP toggle (DESIGN §3.3).
+	PvpToggleDelay = 10,
+	PvpCombatLock = 15,
+
+	-- Zone detection interval (s).
+	ZoneCheckInterval = 0.5,
+	-- Players within this radius see someone's level-up effect.
+	EffectRadius = 150,
 
 	-- How often (s) the server flushes batched state diffs. 0 = every Heartbeat.
 	StateFlushInterval = 0,

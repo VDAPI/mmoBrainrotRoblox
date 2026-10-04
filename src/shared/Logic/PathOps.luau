@@ -88,7 +88,7 @@ function PathOps.startsWith(path: Path, prefix: Path): boolean
 	return true
 end
 
--- Stable string form used as a cache key ("character.stats.str").
+-- Stable string form used as a cache key, e.g. character.stats.str
 function PathOps.key(path: Path): string
 	local parts = table.create(#path)
 	for i, key in path do

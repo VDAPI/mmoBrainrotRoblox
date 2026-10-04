@@ -26,7 +26,8 @@ local Maps: { [string]: MapDef } = {
 		minLevel = 1,
 		maxLevel = 100,
 		offset = { x = 0, y = 0, z = 0 },
-		size = { x = 512, z = 512 },
+		-- 1200 wide: the 512 x 512 city plus the S02 test strip to the east (training meadow + cave).
+		size = { x = 1200, z = 512 },
 		spawn = { x = 0, y = 4, z = 40 },
 	},
 }
