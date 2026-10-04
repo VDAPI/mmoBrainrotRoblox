@@ -12,6 +12,7 @@ local BackpackShop = require(script.Parent.Parent.UI.Screens.BackpackShop)
 local BlacksmithWindow = require(script.Parent.Parent.UI.Screens.BlacksmithWindow)
 local DepositWindow = require(script.Parent.Parent.UI.Screens.DepositWindow)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local Keybinds = require(script.Parent.Parent.UI.Keybinds)
 local Net = require(ReplicatedStorage.Shared.Net)
 local NpcDialog = require(script.Parent.Parent.UI.Screens.NpcDialog)
 local Npcs = require(ReplicatedStorage.Shared.Data.Npcs)
@@ -166,7 +167,7 @@ local function decorate(model: Model)
 	local prompt = Instance.new("ProximityPrompt")
 	prompt.ActionText = Text.now("npc.talk")
 	prompt.ObjectText = Text.now(def.nameKey)
-	prompt.KeyboardKeyCode = Enum.KeyCode.E
+	Keybinds.bindPrompt(prompt, "interact")
 	prompt.MaxActivationDistance = Npcs.INTERACT_RANGE
 	prompt.RequiresLineOfSight = false
 	prompt.HoldDuration = 0

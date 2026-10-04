@@ -13,6 +13,7 @@ local Workspace = game:GetService("Workspace")
 local Config = require(ReplicatedStorage.Shared.Config)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local ItemText = require(script.Parent.Parent.UI.ItemText)
+local Keybinds = require(script.Parent.Parent.UI.Keybinds)
 local LegendReveal = require(script.Parent.Parent.UI.Screens.LegendReveal)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
@@ -196,7 +197,7 @@ local function spawnBag(data: { [string]: any })
 	local prompt = Instance.new("ProximityPrompt")
 	prompt.ActionText = Text.now("loot.pickup")
 	prompt.ObjectText = ""
-	prompt.KeyboardKeyCode = Enum.KeyCode.F
+	Keybinds.bindPrompt(prompt, "pickup")
 	prompt.MaxActivationDistance = Config.LootPickupRange
 	prompt.RequiresLineOfSight = false
 	prompt.HoldDuration = 0
@@ -313,7 +314,7 @@ function LootController.Start()
 	Net.On("LootPicked", onPicked)
 
 	UserInputService.InputBegan:Connect(function(input, processed)
-		if not processed and input.KeyCode == Enum.KeyCode.E then
+		if not processed and Keybinds.is(input.KeyCode, "interact") then
 			local id = nearestBag()
 			if id then
 				pickup(id)

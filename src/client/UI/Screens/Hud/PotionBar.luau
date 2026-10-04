@@ -10,6 +10,7 @@ local Workspace = game:GetService("Workspace")
 local Config = require(ReplicatedStorage.Shared.Config)
 local DragDrop = require(script.Parent.Parent.Parent.DragDrop)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local Keybinds = require(script.Parent.Parent.Parent.Keybinds)
 local ItemText = require(script.Parent.Parent.Parent.ItemText)
 local Items = require(ReplicatedStorage.Shared.Data.Items)
 local State = require(script.Parent.Parent.Parent.State)
@@ -31,10 +32,10 @@ local SIZE = 56
 local ROMAN = { "I", "II", "III", "IV", "V" }
 local LONG_PRESS = 0.5
 
-local KINDS: { { kind: string, key: string, color: Color3 } } = {
-	{ kind = "hp", key = "Z", color = Theme.Colors.Hp },
-	{ kind = "mana", key = "X", color = Theme.Colors.Mana },
-	{ kind = "energy", key = "V", color = Theme.Colors.Energy },
+local KINDS: { { kind: string, color: Color3 } } = {
+	{ kind = "hp", color = Theme.Colors.Hp },
+	{ kind = "mana", color = Theme.Colors.Mana },
+	{ kind = "energy", color = Theme.Colors.Energy },
 }
 
 local function PotionBar(scope: Scope, props: Props): Instance
@@ -174,7 +175,7 @@ local function PotionBar(scope: Scope, props: Props): Instance
 					Position = UDim2.new(1, -4, 0, 2),
 					Size = UDim2.fromOffset(16, 14),
 					BackgroundTransparency = 1,
-					Text = entry.key,
+					Text = Keybinds.Label(scope, `potion_{entry.kind}`),
 					FontFace = Theme.Fonts.BodyBold,
 					TextSize = 12,
 					TextColor3 = Theme.Colors.TextMuted,

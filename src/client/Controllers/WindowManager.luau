@@ -10,6 +10,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local KeybindData = require(ReplicatedStorage.Shared.Data.Keybinds)
+local Keybinds = require(script.Parent.Parent.UI.Keybinds)
 local Log = require(ReplicatedStorage.Shared.Util.Log)
 local Modal = require(script.Parent.Parent.UI.Components.Modal)
 local Sounds = require(script.Parent.Parent.UI.Sounds)
@@ -246,6 +248,9 @@ function WindowManager.Start()
 		if input.UserInputType ~= Enum.UserInputType.Keyboard then
 			return
 		end
+		if Keybinds.isCapturing() then
+			return -- the options window is waiting for a new key (Esc there only cancels)
+		end
 		if input.KeyCode == Enum.KeyCode.Escape then
 			onEscape()
 			return
@@ -254,7 +259,12 @@ function WindowManager.Start()
 			return
 		end
 		for id, def in defs do
-			if def.hotkey == input.KeyCode then
+			-- Rebindable windows (S17) follow Data/Keybinds; others keep their registered key.
+			local action = `win_{id}`
+			local matches = if KeybindData.get(action)
+				then Keybinds.is(input.KeyCode, action)
+				else def.hotkey == input.KeyCode
+			if matches then
 				WindowManager.Toggle(id)
 				return
 			end

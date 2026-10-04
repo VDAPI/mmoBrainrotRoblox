@@ -14,6 +14,7 @@ local FishingGame = require(script.Parent.Parent.UI.Screens.FishingGame)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local GatherNodes = require(ReplicatedStorage.Shared.Data.GatherNodes)
 local ItemText = require(script.Parent.Parent.UI.ItemText)
+local Keybinds = require(script.Parent.Parent.UI.Keybinds)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Sounds = require(script.Parent.Parent.UI.Sounds)
 local State = require(script.Parent.Parent.UI.State)
@@ -182,7 +183,7 @@ local function decorate(model: Instance)
 	end
 	local prompt = Instance.new("ProximityPrompt")
 	prompt.Name = "VaelthornGather"
-	prompt.KeyboardKeyCode = Enum.KeyCode.E
+	Keybinds.bindPrompt(prompt, "interact")
 	prompt.HoldDuration = 0
 	prompt.RequiresLineOfSight = false
 	prompt.MaxActivationDistance = GatherNodes.RANGE + (if kind.category == "fishing" then 12 else 0)

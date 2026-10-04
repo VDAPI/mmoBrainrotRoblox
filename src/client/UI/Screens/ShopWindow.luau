@@ -5,6 +5,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Button = require(script.Parent.Parent.Components.Button)
+local DragDrop = require(script.Parent.Parent.DragDrop)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local ItemRoll = require(ReplicatedStorage.Shared.Logic.ItemRoll)
@@ -205,15 +206,18 @@ local function ShopWindow(scope: Scope, props: Props): Fusion.Child
 		return total
 	end)
 
-	local function sellSelected()
+	-- Sells backpack slots (keys "1".."N"): the selection, or one item dropped on the window (S17).
+	local function sellKeys(keys: { string })
 		local id = Fusion.peek(npcId)
 		local inv = Fusion.peek(inventory) or {}
 		local indices = {}
 		local valuable = false
-		for key in Fusion.peek(selected) do
+		local total = 0
+		for _, key in keys do
 			local item = inv[key]
 			if item then
 				table.insert(indices, tonumber(key))
+				total += ItemRoll.sellPrice(item)
 				if item.rarity >= Rarities.EPIC then
 					valuable = true
 				end
@@ -226,7 +230,7 @@ local function ShopWindow(scope: Scope, props: Props): Fusion.Child
 		local function doSell(): (boolean, string?)
 			local ok, err, total = Net.Invoke("Sell", id, indices)
 			if ok then
-				selected:set({})
+				selected:set({}) -- slots shift after a sale, so the old selection would be wrong
 				Sounds.play("click")
 				Toast.push(Text.now("shop.sold", { gold = Format.number(total or 0) }), "success")
 				return true, nil
@@ -236,7 +240,7 @@ local function ShopWindow(scope: Scope, props: Props): Fusion.Child
 		if valuable and State.Get({ "account", "settings", "sellConfirm" }) ~= false then
 			props.ShowModal({
 				Title = Text.now("shop.confirm.title"),
-				Message = Text.now("shop.confirm.message", { gold = Format.number(Fusion.peek(sellTotal)) }),
+				Message = Text.now("shop.confirm.message", { gold = Format.number(total) }),
 				ConfirmText = Text.now("shop.sell"),
 				CancelText = Text.now("common.cancel"),
 				Variant = "danger",
@@ -251,6 +255,45 @@ local function ShopWindow(scope: Scope, props: Props): Fusion.Child
 			end)
 		end
 	end
+
+	local function sellSelected()
+		local keys = {}
+		for key in Fusion.peek(selected) do
+			table.insert(keys, key)
+		end
+		sellKeys(keys)
+	end
+
+	-- Dragging (or tapping, after selecting it) a backpack item onto the drop zone sells it.
+	DragDrop.SellHandler = function(index: number)
+		sellKeys({ tostring(index) })
+	end
+	table.insert(scope, function()
+		DragDrop.SellHandler = nil
+	end)
+
+	local dropZone = scope:New("TextLabel")({
+		Name = "SellDrop",
+		AnchorPoint = Vector2.new(0, 1),
+		Position = UDim2.fromScale(0, 1),
+		Size = UDim2.new(1, 0, 0, 44),
+		Visible = scope:Computed(function(use): boolean
+			return use(tab) ~= "sell"
+		end),
+		BackgroundColor3 = scope:Computed(function(use): Color3
+			return if use(DragDrop.Dragging) ~= nil then Theme.Colors.GoldDim else Theme.Colors.Panel
+		end),
+		BackgroundTransparency = 0.3,
+		Text = Text.T(scope, "shop.dropToSell"),
+		FontFace = Theme.Fonts.BodyMedium,
+		TextSize = Theme.TextSize.Small,
+		TextColor3 = Theme.Colors.Parchment,
+		[Children] = {
+			scope:New("UICorner")({ CornerRadius = UDim.new(0, 6) }),
+			scope:New("UIStroke")({ Color = Theme.Colors.GoldDim, Thickness = 1, Transparency = 0.3 }),
+		},
+	})
+	DragDrop.register(scope, dropZone :: any, "shopsell:zone")
 
 	local content = scope:Computed(function(use, s: Scope): { Instance }
 		local current = use(tab)
@@ -423,7 +466,7 @@ local function ShopWindow(scope: Scope, props: Props): Fusion.Child
 			Name = "List",
 			Position = UDim2.fromOffset(0, 50),
 			Size = scope:Computed(function(use): UDim2
-				return UDim2.new(1, 0, 1, if use(tab) == "sell" then -110 else -50)
+				return UDim2.new(1, 0, 1, if use(tab) == "sell" then -110 else -100)
 			end),
 			CanvasSize = UDim2.new(),
 			AutomaticCanvasSize = Enum.AutomaticSize.Y,
@@ -440,6 +483,7 @@ local function ShopWindow(scope: Scope, props: Props): Fusion.Child
 				content :: any,
 			},
 		}),
+		dropZone,
 		scope:New("Frame")({
 			Name = "SellBar",
 			AnchorPoint = Vector2.new(0, 1),

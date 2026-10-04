@@ -11,6 +11,7 @@ local Workspace = game:GetService("Workspace")
 local Bosses = require(ReplicatedStorage.Shared.Data.Bosses)
 local DungeonWindow = require(script.Parent.Parent.UI.Screens.DungeonWindow)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local Keybinds = require(script.Parent.Parent.UI.Keybinds)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Sounds = require(script.Parent.Parent.UI.Sounds)
 local State = require(script.Parent.Parent.UI.State)
@@ -211,7 +212,7 @@ local function decorate(instance: Instance)
 	sub.TextStrokeTransparency = 0.3
 	sub.Parent = gui
 	local prompt = Instance.new("ProximityPrompt")
-	prompt.KeyboardKeyCode = Enum.KeyCode.E
+	Keybinds.bindPrompt(prompt, "interact")
 	prompt.HoldDuration = 0
 	prompt.MaxActivationDistance = 16
 	prompt.RequiresLineOfSight = false

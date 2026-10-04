@@ -7,10 +7,13 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Button = require(script.Parent.Parent.Components.Button)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local KeybindData = require(ReplicatedStorage.Shared.Data.Keybinds)
+local Keybinds = require(script.Parent.Parent.Keybinds)
 local LanguageToggle = require(script.Parent.Parent.Components.LanguageToggle)
 local Net = require(ReplicatedStorage.Shared.Net)
 local State = require(script.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Text)
+local TextInput = require(script.Parent.Parent.Components.TextInput)
 local Theme = require(script.Parent.Parent.Theme)
 local Toast = require(script.Parent.Parent.Components.Toast)
 
@@ -18,19 +21,9 @@ local Children = Fusion.Children
 
 type Scope = Fusion.Scope<typeof(Fusion)>
 
-local HOTKEYS = {
-	{ "C", "hud.menu.character" },
-	{ "B", "hud.menu.inventory" },
-	{ "K", "hud.menu.skills" },
-	{ "M", "hud.menu.map" },
-	{ "L", "hud.menu.quests" },
-	{ "G", "hud.menu.guild" },
-	{ "P", "hud.menu.party" },
-	{ "1-0", "menu.keys.skills" },
-	{ "Z X V", "menu.keys.potions" },
-	{ "LMB", "menu.keys.attack" },
-	{ "Tab", "menu.keys.target" },
-	{ "E / F", "menu.keys.interact" },
+-- Fixed keys listed under the rebindable ones (S17).
+local FIXED_KEYS = {
+	{ "menu.keys.lmb", "menu.keys.attack" },
 	{ "Esc", "menu.keys.close" },
 }
 
@@ -126,6 +119,65 @@ local function stepper(scope: Scope, name: string, default: number, step: number
 	})
 end
 
+-- Reward code field (S17): the reward is mailed to the active character.
+local function codeRow(scope: Scope): Instance
+	local code = scope:Value("")
+	local busy = scope:Value(false)
+	local function redeem()
+		local text = Fusion.peek(code)
+		if Fusion.peek(busy) or text == "" then
+			return
+		end
+		busy:set(true)
+		task.spawn(function()
+			local ok, err = Net.Invoke("RedeemCode", text)
+			busy:set(false)
+			if ok then
+				code:set("")
+				Toast.push(Text.now("codes.success"), "success")
+			else
+				Toast.push(Text.now(err or "error.internal"), "error")
+			end
+		end)
+	end
+	return scope:New("Frame")({
+		LayoutOrder = 14,
+		BackgroundTransparency = 1,
+		Size = UDim2.new(1, 0, 0, 46),
+		[Children] = {
+			scope:New("TextLabel")({
+				BackgroundTransparency = 1,
+				Size = UDim2.fromScale(0.35, 1),
+				Text = Text.T(scope, "codes.title"),
+				FontFace = Theme.Fonts.BodyBold,
+				TextSize = Theme.TextSize.Body,
+				TextColor3 = Theme.Colors.Text,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				TextWrapped = true,
+			}),
+			TextInput(scope, {
+				Text = code,
+				Placeholder = Text.T(scope, "codes.placeholder"),
+				MaxLength = 24,
+				Position = UDim2.fromScale(0.35, 0),
+				Size = UDim2.new(0.65, -136, 0, 44),
+				OnSubmit = function()
+					redeem()
+				end,
+			}),
+			Button(scope, {
+				AnchorPoint = Vector2.new(1, 0),
+				Position = UDim2.fromScale(1, 0),
+				Size = UDim2.fromOffset(128, 44),
+				Variant = "primary",
+				Text = Text.T(scope, "codes.redeem"),
+				Disabled = busy,
+				OnClick = redeem,
+			}),
+		},
+	})
+end
+
 local function GameMenu(scope: Scope, close: () -> ()): Fusion.Child
 	local busy = scope:Value(false)
 	local dataMock = State.Value({ "session", "dataMock" })
@@ -147,17 +199,67 @@ local function GameMenu(scope: Scope, close: () -> ()): Fusion.Child
 		end)
 	end
 
+	-- Rebinding (S17): one row per action, click the key then press the new one.
 	local hotkeyRows = {}
-	for i, entry in HOTKEYS do
+	local order = 0
+	for _, action in KeybindData.actions do
+		order += 1
+		local capturing = scope:Computed(function(use): boolean
+			return use(Keybinds.Capturing) == action.id
+		end)
+		local label = Keybinds.Label(scope, action.id)
+		table.insert(
+			hotkeyRows,
+			scope:New("Frame")({
+				LayoutOrder = order,
+				Size = UDim2.new(1, 0, 0, 38),
+				BackgroundTransparency = 1,
+				[Children] = {
+					scope:New("TextLabel")({
+						Size = UDim2.new(1, -170, 1, 0),
+						BackgroundTransparency = 1,
+						Text = Text.T(scope, action.labelKey),
+						FontFace = Theme.Fonts.Body,
+						TextSize = Theme.TextSize.Small,
+						TextColor3 = Theme.Colors.TextMuted,
+						TextXAlignment = Enum.TextXAlignment.Left,
+						TextTruncate = Enum.TextTruncate.AtEnd,
+					}),
+					Button(scope, {
+						AnchorPoint = Vector2.new(1, 0),
+						Position = UDim2.new(1, 0, 0, 2),
+						Size = UDim2.fromOffset(160, 34),
+						TextSize = Theme.TextSize.Small,
+						Variant = scope:Computed(function(use): any
+							return if use(capturing) then "primary" else "secondary"
+						end),
+						Text = scope:Computed(function(use): string
+							return if use(capturing) then Text.get(use, "keys.press") else use(label)
+						end),
+						OnClick = function()
+							Keybinds.capture(action.id, function(ok, err)
+								if not ok then
+									Toast.push(Text.now(err or "keys.reserved"), "error")
+								end
+							end)
+						end,
+					}),
+				},
+			})
+		)
+	end
+	for _, entry in FIXED_KEYS do
+		order += 1
 		table.insert(
 			hotkeyRows,
 			scope:New("TextLabel")({
-				LayoutOrder = i,
-				Size = UDim2.new(1, 0, 0, 24),
+				LayoutOrder = order,
+				Size = UDim2.new(1, 0, 0, 26),
 				BackgroundTransparency = 1,
 				RichText = true,
 				Text = scope:Computed(function(use): string
-					return `<font color="#{Theme.Colors.GoldBright:ToHex()}"><b>{entry[1]}</b></font>   {Text.get(
+					local key = if string.find(entry[1], ".", 1, true) then Text.get(use, entry[1]) else entry[1]
+					return `<font color="#{Theme.Colors.GoldBright:ToHex()}"><b>{key}</b></font>   {Text.get(
 						use,
 						entry[2]
 					)}`
@@ -169,6 +271,37 @@ local function GameMenu(scope: Scope, close: () -> ()): Fusion.Child
 			})
 		)
 	end
+	order += 1
+	table.insert(
+		hotkeyRows,
+		scope:New("TextLabel")({
+			LayoutOrder = order,
+			Size = UDim2.fromScale(1, 0),
+			AutomaticSize = Enum.AutomaticSize.Y,
+			BackgroundTransparency = 1,
+			Text = Text.T(scope, "keys.hint"),
+			FontFace = Theme.Fonts.Body,
+			TextSize = Theme.TextSize.Small,
+			TextColor3 = Theme.Colors.TextMuted,
+			TextWrapped = true,
+			TextXAlignment = Enum.TextXAlignment.Left,
+		})
+	)
+	order += 1
+	table.insert(
+		hotkeyRows,
+		Button(scope, {
+			LayoutOrder = order,
+			Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeight),
+			Variant = "ghost",
+			Text = Text.T(scope, "keys.resetAll"),
+			OnClick = function()
+				task.spawn(function()
+					Net.Invoke("SetKeybind", "*", nil)
+				end)
+			end,
+		})
+	)
 
 	return scope:New("ScrollingFrame")({
 		Size = UDim2.fromScale(1, 1),
@@ -230,8 +363,9 @@ local function GameMenu(scope: Scope, close: () -> ()): Fusion.Child
 			row(scope, 11, "menu.bindConfirm", toggle(scope, "bindConfirm", true)),
 			row(scope, 12, "menu.sellConfirm", toggle(scope, "sellConfirm", true)),
 			row(scope, 13, "menu.autoTarget", toggle(scope, "autoTarget", true)),
+			codeRow(scope),
 			scope:New("TextLabel")({
-				LayoutOrder = 14,
+				LayoutOrder = 15,
 				Size = UDim2.new(1, 0, 0, 34),
 				BackgroundTransparency = 1,
 				Text = Text.T(scope, "menu.hotkeys"),
@@ -241,18 +375,21 @@ local function GameMenu(scope: Scope, close: () -> ()): Fusion.Child
 				TextXAlignment = Enum.TextXAlignment.Left,
 			}),
 			scope:New("Frame")({
-				LayoutOrder = 15,
+				LayoutOrder = 16,
 				Size = UDim2.fromScale(1, 0),
 				AutomaticSize = Enum.AutomaticSize.Y,
 				BackgroundTransparency = 1,
 				[Children] = {
-					scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder }),
+					scope:New("UIListLayout")({
+						SortOrder = Enum.SortOrder.LayoutOrder,
+						Padding = UDim.new(0, 4),
+					}),
 					hotkeyRows :: any,
 				},
 			}),
 			scope:New("TextLabel")({
 				Name = "MockWarning",
-				LayoutOrder = 16,
+				LayoutOrder = 17,
 				BackgroundTransparency = 1,
 				Size = UDim2.fromScale(1, 0),
 				AutomaticSize = Enum.AutomaticSize.Y,

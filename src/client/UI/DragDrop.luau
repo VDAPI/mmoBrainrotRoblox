@@ -20,6 +20,8 @@ local DOUBLE_CLICK = 0.35
 local scope = Fusion.scoped(Fusion)
 -- Currently selected slot id (highlighted; the inventory action bar acts on it).
 DragDrop.Selected = scope:Value(nil :: string?)
+-- Set by an open shop window (S17): a backpack item dropped on "shopsell:*" is sold through it.
+DragDrop.SellHandler = nil :: ((index: number) -> ())?
 -- Slot id being dragged and the ghost position (virtual pixels) for the drag preview.
 DragDrop.Dragging = scope:Value(nil :: string?)
 DragDrop.GhostPosition = scope:Value(Vector2.zero)

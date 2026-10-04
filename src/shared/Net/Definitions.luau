@@ -33,6 +33,8 @@ local Definitions: { [string]: Definition } = {
 	-- Settings
 	SetLanguage = { kind = "event", dir = "c2s", rate = 1, args = { "string" } },
 	SetSetting = { kind = "event", dir = "c2s", rate = 2, args = { "string", "any" } }, -- (name, value), whitelisted
+	RedeemCode = { kind = "function", dir = "c2s", rate = 0.5, args = { "string" } }, -- (code), S17
+	SetKeybind = { kind = "function", dir = "c2s", rate = 4, args = { "string", "string?" } }, -- (action | "*", key?), S17
 
 	-- Stats and progression
 	AllocateStats = { kind = "function", dir = "c2s", rate = 2, args = { "table" } }, -- ({ str, dex, int, vit })

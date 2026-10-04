@@ -15,6 +15,7 @@ local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local Device = require(script.Parent.Parent.UI.Device)
 local DragDrop = require(script.Parent.Parent.UI.DragDrop)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local Keybinds = require(script.Parent.Parent.UI.Keybinds)
 local Net = require(ReplicatedStorage.Shared.Net)
 local SkillData = require(ReplicatedStorage.Shared.Data.Skills)
 local Skills = require(ReplicatedStorage.Shared.Logic.Skills)
@@ -32,18 +33,12 @@ local SkillController = {
 local TargetController: any
 local player = Players.LocalPlayer
 
-local KEYS: { [Enum.KeyCode]: number } = {
-	[Enum.KeyCode.One] = 1,
-	[Enum.KeyCode.Two] = 2,
-	[Enum.KeyCode.Three] = 3,
-	[Enum.KeyCode.Four] = 4,
-	[Enum.KeyCode.Five] = 5,
-	[Enum.KeyCode.Six] = 6,
-	[Enum.KeyCode.Seven] = 7,
-	[Enum.KeyCode.Eight] = 8,
-	[Enum.KeyCode.Nine] = 9,
-	[Enum.KeyCode.Zero] = 10,
-}
+-- Hotbar slot of a key press (rebindable, S17: actions skill_1 .. skill_10).
+local function slotFor(keyCode: Enum.KeyCode): number?
+	local action = Keybinds.actionFor(keyCode)
+	local slot = if action then string.match(action, "^skill_(%d+)$") else nil
+	return if slot then tonumber(slot) else nil
+end
 
 -- Silent errors (spamming a key on cooldown should not flood toasts).
 local QUIET: { [string]: boolean } = { ["cast.error.cooldown"] = true }
@@ -320,13 +315,13 @@ function SkillController.Start()
 		if processed or State.Get({ "session", "phase" }) ~= "playing" then
 			return
 		end
-		local slot = KEYS[input.KeyCode]
+		local slot = slotFor(input.KeyCode)
 		if slot then
 			onKeyDown(slot)
 		end
 	end)
 	UserInputService.InputEnded:Connect(function(input)
-		local slot = KEYS[input.KeyCode]
+		local slot = slotFor(input.KeyCode)
 		if slot then
 			onKeyUp(slot)
 		end

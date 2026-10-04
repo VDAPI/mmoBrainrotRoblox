@@ -9,6 +9,7 @@ local Workspace = game:GetService("Workspace")
 
 local DragDrop = require(script.Parent.Parent.Parent.DragDrop)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local Keybinds = require(script.Parent.Parent.Parent.Keybinds)
 local SkillData = require(ReplicatedStorage.Shared.Data.Skills)
 local Skills = require(ReplicatedStorage.Shared.Logic.Skills)
 local State = require(script.Parent.Parent.Parent.State)
@@ -89,7 +90,7 @@ local function SkillBar(scope: Scope, props: Props): { Instance }
 			return { resource = resource, range = range }
 		end)
 
-		local key = if index == 10 then "0" else tostring(index)
+		local key = Keybinds.Label(scope, `skill_{index}`)
 		local slot = scope:New("TextButton")({
 			Name = `Skill{index}`,
 			LayoutOrder = index,

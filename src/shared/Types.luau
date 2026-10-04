@@ -90,6 +90,7 @@ export type Settings = {
 	cameraSens: number, -- mouse/touch camera sensitivity multiplier
 	sellConfirm: boolean, -- ask before selling valuable items
 	autoTarget: boolean, -- S16: after a kill, target the next monster fighting us
+	keys: { [string]: string }, -- S17: rebound keys, action -> Enum.KeyCode name (Data/Keybinds)
 }
 
 export type AccountData = {
@@ -104,6 +105,7 @@ export type AccountData = {
 	purchases: { [string]: number },
 	dailyLimits: { day: number, protectScrolls: number },
 	stats: { createdAt: number, playtime: number },
+	redeemed: { [string]: number }, -- S17: reward code -> os.time() of redemption
 }
 
 -- Character summary shown on the selection screen.

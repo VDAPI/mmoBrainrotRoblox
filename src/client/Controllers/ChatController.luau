@@ -4,10 +4,14 @@
 -- (S14, player attribute "Vip"). System lines without their own colour are drawn in gold.
 -- Channels: RBXGeneral (server), Trade (ChatService), party (PartyService), guild (GuildService),
 -- whispers through Roblox's /w name.
+-- S17: the tab labels of the trade and party channels are renamed locally to the player's language (the
+-- server names are "⚖ Trade" and "VaelthornParty_<id>"); the tab follows TextChannel.Name.
 
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TextChatService = game:GetService("TextChatService")
 
+local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Text = require(script.Parent.Parent.UI.Text)
 local Theme = require(script.Parent.Parent.UI.Theme)
 
@@ -77,8 +81,36 @@ local function onIncoming(message: TextChatMessage): TextChatMessageProperties?
 	return properties
 end
 
+local TAB_ICONS: { [string]: string } = { trade = "⚖", party = "☍" }
+
+local function relabel(channel: Instance)
+	if not channel:IsA("TextChannel") then
+		return
+	end
+	local kind = channel:GetAttribute("VaelthornChannel")
+	local icon = if type(kind) == "string" then TAB_ICONS[kind] else nil
+	if icon then
+		pcall(function()
+			channel.Name = `{icon} {Text.now(`chat.channel.{kind}`)}`
+		end)
+	end
+end
+
 function ChatController.Start()
 	TextChatService.OnIncomingMessage = onIncoming
+	for _, child in TextChatService:GetChildren() do
+		relabel(child)
+	end
+	TextChatService.ChildAdded:Connect(function(child)
+		-- Attributes arrive with the instance; wait a frame so the tab is created first.
+		task.defer(relabel, child)
+	end)
+	local scope = Fusion.scoped(Fusion)
+	scope:Observer(Text.Lang):onChange(function()
+		for _, child in TextChatService:GetChildren() do
+			relabel(child)
+		end
+	end)
 end
 
 return ChatController

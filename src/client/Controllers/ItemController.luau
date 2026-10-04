@@ -13,6 +13,7 @@ local Clock = require(ReplicatedStorage.Shared.Util.Clock)
 local DragDrop = require(script.Parent.Parent.UI.DragDrop)
 local ItemText = require(script.Parent.Parent.UI.ItemText)
 local Items = require(ReplicatedStorage.Shared.Data.Items)
+local Keybinds = require(script.Parent.Parent.UI.Keybinds)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Sounds = require(script.Parent.Parent.UI.Sounds)
 local State = require(script.Parent.Parent.UI.State)
@@ -236,6 +237,11 @@ local function onDrop(from: string, to: string)
 		invoke("WithdrawItem", tonumber(fromRest), tonumber(toRest))
 	elseif fromKind == "dep" and toKind == "dep" then
 		invoke("MoveDeposit", tonumber(fromRest), tonumber(toRest))
+	elseif fromKind == "inv" and toKind == "shopsell" then
+		local sell = DragDrop.SellHandler
+		if sell then
+			sell(tonumber(fromRest) :: number)
+		end
 	elseif fromKind == "inv" and toKind == "trade" then
 		invoke("TradeAddItem", tonumber(fromRest))
 	elseif (fromKind == "inv" or fromKind == "eq") and toKind == "smith" then
@@ -278,11 +284,11 @@ function ItemController.Init(registry)
 	})
 end
 
--- Potion hotkeys (DESIGN §9 uses Z/X/C; C opens the character window, so energy is on V).
-local POTION_KEYS: { [Enum.KeyCode]: string } = {
-	[Enum.KeyCode.Z] = "hp",
-	[Enum.KeyCode.X] = "mana",
-	[Enum.KeyCode.V] = "energy",
+-- Potion hotkeys (DESIGN §9 uses Z/X/C; C opens the character window, so energy is on V). Rebindable (S17).
+local POTION_ACTIONS: { [string]: string } = {
+	potion_hp = "hp",
+	potion_mana = "mana",
+	potion_energy = "energy",
 }
 
 function ItemController.Start()
@@ -290,7 +296,8 @@ function ItemController.Start()
 		if processed or State.Get({ "session", "phase" }) ~= "playing" then
 			return
 		end
-		local kind = POTION_KEYS[input.KeyCode]
+		local action = Keybinds.actionFor(input.KeyCode)
+		local kind = if action then POTION_ACTIONS[action] else nil
 		if kind then
 			ItemController.UsePotion(kind)
 		end

@@ -37,7 +37,7 @@ local function setChat(party: boolean): boolean
 	end
 	if party then
 		for _, channel in TextChatService:GetDescendants() do
-			if channel:IsA("TextChannel") and string.find(channel.Name, "^VaelthornParty_") then
+			if channel:IsA("TextChannel") and channel:GetAttribute("VaelthornChannel") == "party" then
 				config.TargetTextChannel = channel
 				return true
 			end

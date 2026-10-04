@@ -15,6 +15,7 @@ local SoundService = game:GetService("SoundService")
 local TweenService = game:GetService("TweenService")
 
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local Keybinds = require(script.Parent.Parent.UI.Keybinds)
 local MapSketch = require(script.Parent.Parent.UI.MapSketch)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local Net = require(ReplicatedStorage.Shared.Net)
@@ -252,7 +253,7 @@ local function decoratePortal(instance: Instance)
 		else Theme.Colors.ZoneGreen
 	sub.Parent = gui
 	local prompt = Instance.new("ProximityPrompt")
-	prompt.KeyboardKeyCode = Enum.KeyCode.E
+	Keybinds.bindPrompt(prompt, "interact")
 	prompt.HoldDuration = 0
 	prompt.MaxActivationDistance = 14
 	prompt.RequiresLineOfSight = false

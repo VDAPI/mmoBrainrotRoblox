@@ -241,6 +241,15 @@ COMMANDS.lvl = {
 	end,
 }
 
+-- S17: lets the same account redeem the reward codes again (testing).
+COMMANDS.resetcodes = {
+	usageKey = "admin.usage.resetcodes",
+	run = function(player)
+		PlayerStateService.Set(player, { "account", "redeemed" }, {})
+		reply(player, "admin.resetcodes.ok")
+	end,
+}
+
 COMMANDS.exp = {
 	usageKey = "admin.usage.exp",
 	run = function(player, args)

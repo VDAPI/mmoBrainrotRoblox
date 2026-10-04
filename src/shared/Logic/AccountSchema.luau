@@ -35,10 +35,12 @@ function AccountSchema.accountTemplate(): AccountData
 			cameraSens = 1,
 			sellConfirm = true,
 			autoTarget = true,
+			keys = {},
 		},
 		purchases = {},
 		dailyLimits = { day = 0, protectScrolls = 0 },
 		stats = { createdAt = 0, playtime = 0 },
+		redeemed = {},
 	}
 end
 

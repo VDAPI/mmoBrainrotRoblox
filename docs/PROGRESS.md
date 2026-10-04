@@ -22,6 +22,7 @@
 | S14 | Monetyzacja, kosmetyki, jakość | ● |
 | S15 | Poprawki z „Niedokończone” (mobile, profil) | ● |
 | S16 | Walka na LPM, paski HP nad głowami, tytuły | ● |
+| S17 | Zmiana klawiszy, sprzedaż przeciąganiem, kanały czatu, kody nagród | ● |
 
 Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana przez właściciela
 
@@ -375,6 +376,16 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
   `character.title`, atrybut modelu `Title`. Tytuł niespełniający warunku nie jest pokazywany.
 - **S16** Animacja ataku: proceduralny zamach ramieniem (obrót `RightShoulder.C0`) u każdego widza, błysk trafienia,
   wybuch iskry (wyłączony przy niskiej jakości) i lekki wstrząs kamery przy krytyku w nas. Do podmiany na animacje.
+- **S17** Klawisze: akcje w `Data/Keybinds` (okna, 10 umiejętności, 3 mikstury, następny cel, interakcja, podnoszenie),
+  nadpisania w `account.settings.keys` (akcja → nazwa `Enum.KeyCode`). Zajęty klawisz zamienia się miejscami
+  (`Logic/Keybinds.assign`, test losowy: nigdy dwa razy ten sam klawisz). Zarezerwowane: WASD, strzałki, spacja, Shift,
+  I/O, `/`, Esc, F9/F11/F12. ProximityPrompty śledzą zmianę (`Keybinds.bindPrompt`). LPM i Esc są stałe.
+- **S17** Sprzedaż przeciąganiem: pasek „Przeciągnij tu…” na dole zakładek Kup/Odkup; upuszczenie (lub tap po zaznaczeniu
+  przedmiotu na telefonie) sprzedaje ten przedmiot tym samym `Sell` co zakładka Sprzedaj, z potwierdzeniem dla Epickich+.
+- **S17** Kody nagród: `Data/Codes` (VAELTHORN, WITAJ, WELCOME — złoto i mikstury), raz na konto (`account.redeemed`),
+  nagroda pocztą do aktywnej postaci (pełny plecak nic nie traci). Najpierw zapis „użyty”, przy błędzie poczty cofnięcie.
+  Smocza Waluta z kodów ograniczona testem do ≤ 100.
+- **S17** Kanał grupy w `PartyWindow` szukany po atrybucie `VaelthornChannel`, nie po nazwie (nazwa jest teraz lokalna).
 
 ## Niedokończone
 (Rzeczy z zakresu sesji, które nie zostały zrobione. Następna sesja zaczyna od nich.)
@@ -385,12 +396,11 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
   poziomów); EXP z nagród dobrany wzorem, do strojenia.
 - **S08** Muzyka map: crossfade i głośność z opcji gotowe, ale brak ścieżek (pole `music` w `Data/Maps.luau` puste — wkleić
   id dźwięków z Creator Store).
-- **S14** Kosmetyki i pety to placeholdery z Partów; zmiana klawiszy (rebinding) nie powstała — okno opcji tylko je pokazuje.
-  „Kody nagród” (opcjonalne) pominięte.
+- **S14** Kosmetyki i pety to placeholdery z Partów.
 - **S13** Aukcja i poczta między serwerami (MessagingService, MemoryStore, DataStore) sprawdzalne tylko w opublikowanej grze;
   w Studio działają magazyny w pamięci jednego serwera.
-- **S13** Etykieta kanału handlu (`⚖ Trade`) nie jest tłumaczona (nazwa kanału = etykieta zakładki).
-- **S06** Sprzedaż przez przeciągnięcie na okno sklepu nie istnieje — sprzedaje się w zakładce „Sprzedaj” (zaznaczanie).
+- **S17** Tłumaczenie zakładek czatu (handel, grupa) zmienia lokalnie `TextChannel.Name` — niesprawdzone w Studio, czy
+  zakładka Roblox odświeża nazwę (jeśli nie, zostanie nazwa serwera `⚖ Trade`).
 - **S04** Broń w dłoni to placeholder z jednego Partu (bez modeli z assetów).
 - **S05** Efekty wizualne umiejętności to placeholdery z Partów (`VfxController`), bez animacji postaci.
 - **S12** Gildie między serwerami (MessagingService, MemoryStore) da się sprawdzić tylko w opublikowanej grze; w Studio
@@ -1201,3 +1211,33 @@ kilku sekund); dystans do NPC liczony od pozycji postaci kontrolowanej przez kli
 9. Daj się trafić → nad twoją głową zielony pasek HP; drugi gracz widzi u ciebie czerwony; znika po ~4 s przy pełnym HP.
 10. `/lvl 50` → okno postaci (C) → „◀ ▶” pod klasą → wybierz „Weteran” → tytuł nad imieniem
     widzą wszyscy; w profilu gracza (menu „⋯” → Profil) też.
+
+### S17: Zmiana klawiszy, sprzedaż przeciąganiem, kanały czatu, kody nagród
+
+**Zrobione**
+- Zmiana klawiszy w opcjach (Esc → „Klawisze”): klik na klawisz → „Wciśnij klawisz…” → nowy klawisz; zajęty zamienia się
+  miejscami; „Przywróć domyślne”. Działa dla okien, umiejętności 1–10, mikstur, następnego celu, interakcji (E) i łupu (F).
+  Etykiety na HUD (menu, pasek umiejętności, mikstury) i podpowiedzi E/F przy NPC/węzłach/łupie pokazują nowe klawisze.
+- Sprzedaż przez przeciągnięcie przedmiotu z plecaka na pasek na dole okna sklepu (telefon: zaznacz przedmiot, tapnij pasek).
+- Zakładki czatu „⚖ Handel” / „☍ Grupa” w języku gracza (wcześniej „⚖ Trade” i „VaelthornParty_…”).
+- Kody nagród w opcjach (pole + „Odbierz”), nagroda na poczcie. Admin: `/resetcodes`.
+- Testy: `keybinds.spec`, `codes.spec`.
+
+**Pliki**: `Data/Keybinds.luau`, `Logic/Keybinds.luau`, `UI/Keybinds.luau`, `Data/Codes.luau`, `Logic/Codes.luau`,
+`Services/CodeService.luau`, `SettingsService`, `AdminService`, `GameMenu`, `ShopWindow`, `DragDrop`, `ItemController`,
+`SkillController`, `WindowManager`, `TargetController`, `LootController`, `NpcController`, `GatherController`,
+`DungeonController`, `WorldController`, `ChatController`, `PartyWindow`, `Hud/init`, `SkillBar`, `PotionBar`.
+
+#### Instrukcja testu S17
+
+1. Esc → przewiń do „Klawisze”. Kliknij klawisz przy „Plecak” → „Wciśnij klawisz…” → `W` → komunikat „nie można
+   przypisać”. Kliknij jeszcze raz → `J` → Plecak otwiera się pod `J`, ikona menu na HUD pokazuje `J`.
+2. Przypisz „Umiejętność 1” na `Q` → pasek umiejętności pokazuje `Q`, `Q` rzuca skill, `1` już nie.
+3. Przypisz „Interakcja” na `F` → „Podnieś łup” samo przechodzi na `E`; podpowiedź przy NPC pokazuje `F`.
+4. Podczas „Wciśnij klawisz…” wciśnij Esc → anuluje, menu zostaje otwarte. „Przywróć domyślne” → wszystko wraca.
+5. Wyjdź i wejdź ponownie → zmienione klawisze zostają (zapis na koncie).
+6. Sklep u kupca → zakładka „Kup” → przeciągnij przedmiot z plecaka na pasek „Przeciągnij tu…” → sprzedany, złoto rośnie.
+   Epicki przedmiot → najpierw potwierdzenie. Telefon: tapnij przedmiot w plecaku, potem pasek.
+7. Czat: zakładka handlu nazywa się „⚖ Handel” (PL) / „⚖ Trade” (EN); po założeniu grupy „☍ Grupa”. Zmień język → nazwy też.
+8. Esc → „Kod nagrody” → wpisz `vaelthorn` → „Kod przyjęty” → poczta (koperta) z 500 złota i miksturami. Drugi raz →
+   „już użyty”. `/resetcodes` → znów działa.

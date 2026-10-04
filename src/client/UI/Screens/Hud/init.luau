@@ -14,6 +14,7 @@ local Exp = require(ReplicatedStorage.Shared.Logic.Exp)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local IconButton = require(script.Parent.Parent.Components.IconButton)
+local Keybinds = require(script.Parent.Parent.Keybinds)
 local PotionBar = require(script.PotionBar)
 local SkillBar = require(script.SkillBar)
 local BlessingIcon = require(script.BlessingIcon)
@@ -203,7 +204,7 @@ local function menu(scope: Scope, props: Props): Instance
 				Name = entry.id,
 				LayoutOrder = index,
 				Icon = entry.icon,
-				Hotkey = entry.hotkey,
+				Hotkey = if entry.hotkey then Keybinds.Label(scope, `win_{entry.id}`) else nil,
 				Tooltip = Text.T(scope, entry.tooltipKey),
 				Active = props.IsOpen(entry.id),
 				OnClick = function()

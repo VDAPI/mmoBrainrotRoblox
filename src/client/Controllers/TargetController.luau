@@ -21,6 +21,7 @@ local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local Combat = require(ReplicatedStorage.Shared.Data.Combat)
 local Device = require(script.Parent.Parent.UI.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local Keybinds = require(script.Parent.Parent.UI.Keybinds)
 local Net = require(ReplicatedStorage.Shared.Net)
 local State = require(script.Parent.Parent.UI.State)
 local Text = require(script.Parent.Parent.UI.Text)
@@ -447,7 +448,7 @@ function TargetController.Start()
 				end
 				pressedAt = nil
 			end
-		elseif input.KeyCode == Enum.KeyCode.Tab then
+		elseif input.UserInputType == Enum.UserInputType.Keyboard and Keybinds.is(input.KeyCode, "target_next") then
 			local found = TargetController.FindNearest(TAB_RANGE, true, true)
 			if found then
 				TargetController.SetTarget(found)
