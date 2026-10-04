@@ -9,6 +9,7 @@ local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local ItemSlot = require(script.Parent.Parent.Components.ItemSlot)
 local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
+local TitleData = require(ReplicatedStorage.Shared.Data.Titles)
 
 local Children = Fusion.Children
 
@@ -88,7 +89,9 @@ local function ProfileWindow(scope: Scope, data: Fusion.Value<any>): Fusion.Chil
 					2,
 					`{Text.get(use, "hud.level", { level = p.level })}  ·  {if class
 						then Text.get(use, class.nameKey)
-						else p.class}`,
+						else p.class}{if p.title and TitleData.get(p.title)
+						then "  ·  « " .. Text.get(use, (TitleData.get(p.title) :: any).nameKey) .. " »"
+						else ""}`,
 					Theme.Colors.Parchment
 				),
 				line(3, Text.get(use, "profile.guild", { guild = p.guild or Text.get(use, "profile.noGuild") })),

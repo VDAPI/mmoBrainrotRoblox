@@ -479,7 +479,8 @@ Leczenie/buffy kapłana działają tylko na członków grupy i na siebie.
 ## 24. Sterowanie i kamera
 
 - Klasyczna kamera Roblox (3. osoba, zoom 8–30).
-- Klik/tap na potwora lub gracza = wybór celu (obrys podświetlony). Tab = następny najbliższy cel. Esc = brak celu.
-- Atak podstawowy: automatyczny, gdy cel wybrany i w zasięgu (wręcz 7 st., dystans 35 st.); jeśli poza zasięgiem, postać idzie do celu (pathfinding prosty: MoveTo).
+- **LPM / tap na wroga = cel i atak** (obrys podświetlony; wróg pod kursorem ma delikatny obrys). Klik obok cienkiego modelu też się liczy. Przytrzymanie LPM = po śmierci celu następny wróg przy kursorze. Opcja „automatyczny następny cel”: po zabiciu cel przechodzi na potwora, który nas atakuje. Tab (opcjonalnie) = następny najbliższy cel. Esc = brak celu.
+- Atak podstawowy: automatyczny, gdy cel wybrany i w zasięgu (wręcz 7 st., dystans 35 st.); jeśli poza zasięgiem, postać idzie do celu i go śledzi (MoveTo), stojąc przy celu obraca się do niego. Ruch WASD przerywa podchodzenie (cel zostaje).
+- Nad potworami zawsze imię, poziom i pasek HP; nad graczami tytuł, imię, poziom i klasa oraz pasek HP po obrażeniach.
 - Skille: na cel, a umiejętności obszarowe bez celu w kierunku patrzenia/kursora.
 - E = interakcja (NPC, łup, węzły), F = podnieś łup.

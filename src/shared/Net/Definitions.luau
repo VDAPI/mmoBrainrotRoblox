@@ -40,6 +40,7 @@ local Definitions: { [string]: Definition } = {
 
 	-- Combat
 	SetTarget = { kind = "event", dir = "c2s", rate = 8, args = { "string?" } }, -- entityId or nil to clear
+	SetTitle = { kind = "function", dir = "c2s", rate = 2, args = { "string?" } }, -- (titleId or nil), S16
 	CombatFx = { kind = "event", dir = "s2c" }, -- batched { k = "dmg" | "heal" | "atk" | "tele" | "reward", ... }
 
 	-- Items (S04). Functions answer (ok, errorKey?).

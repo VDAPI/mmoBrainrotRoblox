@@ -28,6 +28,7 @@ local HOTKEYS = {
 	{ "P", "hud.menu.party" },
 	{ "1-0", "menu.keys.skills" },
 	{ "Z X V", "menu.keys.potions" },
+	{ "LMB", "menu.keys.attack" },
 	{ "Tab", "menu.keys.target" },
 	{ "E / F", "menu.keys.interact" },
 	{ "Esc", "menu.keys.close" },
@@ -228,8 +229,9 @@ local function GameMenu(scope: Scope, close: () -> ()): Fusion.Child
 			row(scope, 10, "menu.quickCast", toggle(scope, "quickCast", false)),
 			row(scope, 11, "menu.bindConfirm", toggle(scope, "bindConfirm", true)),
 			row(scope, 12, "menu.sellConfirm", toggle(scope, "sellConfirm", true)),
+			row(scope, 13, "menu.autoTarget", toggle(scope, "autoTarget", true)),
 			scope:New("TextLabel")({
-				LayoutOrder = 13,
+				LayoutOrder = 14,
 				Size = UDim2.new(1, 0, 0, 34),
 				BackgroundTransparency = 1,
 				Text = Text.T(scope, "menu.hotkeys"),
@@ -239,7 +241,7 @@ local function GameMenu(scope: Scope, close: () -> ()): Fusion.Child
 				TextXAlignment = Enum.TextXAlignment.Left,
 			}),
 			scope:New("Frame")({
-				LayoutOrder = 14,
+				LayoutOrder = 15,
 				Size = UDim2.fromScale(1, 0),
 				AutomaticSize = Enum.AutomaticSize.Y,
 				BackgroundTransparency = 1,
@@ -250,7 +252,7 @@ local function GameMenu(scope: Scope, close: () -> ()): Fusion.Child
 			}),
 			scope:New("TextLabel")({
 				Name = "MockWarning",
-				LayoutOrder = 15,
+				LayoutOrder = 16,
 				BackgroundTransparency = 1,
 				Size = UDim2.fromScale(1, 0),
 				AutomaticSize = Enum.AutomaticSize.Y,

@@ -1,11 +1,13 @@
 --!strict
--- Name, level and class above every player character. Built client-side from model attributes set by the
--- server (CharName, Level, ClassId, GuildTag), so each viewer sees it in their own language.
+-- Title, name, level and class above every player character, plus an HP bar that appears while the player
+-- is hurt (S16). Built client-side from model attributes set by the server (CharName, Level, ClassId,
+-- GuildTag, Title) and Humanoid.Health (the HP percentage mirror), so each viewer sees their own language.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
+local TitleData = require(ReplicatedStorage.Shared.Data.Titles)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Text = require(script.Parent.Parent.UI.Text)
 local Theme = require(script.Parent.Parent.UI.Theme)
@@ -19,6 +21,7 @@ local NameplateController = {
 }
 
 local MAX_DISTANCE = 80
+local HP_LINGER = 4 -- seconds the bar stays after the last hit at full HP
 local rootScope: Scope = Fusion.scoped(Fusion)
 local folder: Folder
 
@@ -76,11 +79,49 @@ local function build(model: Model)
 		return use(pvpEnabled) == true or use(pvpZone) == "red"
 	end)
 
+	local title = attributeValue(scope, model, "Title")
+	local titleDef = scope:Computed(function(use): any
+		local id = use(title)
+		return if type(id) == "string" then TitleData.get(id) else nil
+	end)
+
 	local head = model:WaitForChild("Head", 10)
+	local humanoid = model:FindFirstChildOfClass("Humanoid") or model:WaitForChild("Humanoid", 5)
 	if not head or not model:IsDescendantOf(game) then
 		Fusion.doCleanup(scope)
 		return
 	end
+
+	-- HP: visible while below full, and for a moment after a hit; hidden for dead characters.
+	local ratio = scope:Value(1)
+	local recentHit = scope:Value(false)
+	local hitToken = 0
+	if humanoid and humanoid:IsA("Humanoid") then
+		local function refresh()
+			local max = humanoid.MaxHealth
+			local newRatio = if max > 0 then math.clamp(humanoid.Health / max, 0, 1) else 1
+			if newRatio < Fusion.peek(ratio) - 0.001 then
+				hitToken += 1
+				local token = hitToken
+				recentHit:set(true)
+				task.delay(HP_LINGER, function()
+					if token == hitToken then
+						recentHit:set(false)
+					end
+				end)
+			end
+			ratio:set(newRatio)
+		end
+		refresh()
+		table.insert(scope, humanoid.HealthChanged:Connect(refresh))
+		table.insert(scope, humanoid:GetPropertyChangedSignal("MaxHealth"):Connect(refresh))
+	end
+	local showHp = scope:Computed(function(use): boolean
+		local r = use(ratio)
+		return r > 0.002 and (r < 0.999 or use(recentHit))
+	end)
+	local trail =
+		scope:Tween(ratio, TweenInfo.new(0.45, Enum.EasingStyle.Quad, Enum.EasingDirection.In, 0, false, 0.15))
 
 	scope:New("BillboardGui")({
 		Name = `Nameplate_{model.Name}`,
@@ -89,8 +130,9 @@ local function build(model: Model)
 		AlwaysOnTop = false,
 		LightInfluence = 0,
 		MaxDistance = MAX_DISTANCE,
-		Size = UDim2.fromOffset(240, 56),
-		StudsOffsetWorldSpace = Vector3.new(0, 2.6, 0),
+		Size = UDim2.fromOffset(260, 92),
+		ResetOnSpawn = false,
+		StudsOffsetWorldSpace = Vector3.new(0, 3.1, 0),
 		Enabled = scope:Computed(function(use): boolean
 			return use(charName) ~= nil
 		end),
@@ -99,6 +141,26 @@ local function build(model: Model)
 				SortOrder = Enum.SortOrder.LayoutOrder,
 				HorizontalAlignment = Enum.HorizontalAlignment.Center,
 				VerticalAlignment = Enum.VerticalAlignment.Bottom,
+			}),
+			scope:New("TextLabel")({
+				Name = "Title",
+				LayoutOrder = 0,
+				BackgroundTransparency = 1,
+				Size = UDim2.new(1, 0, 0, 18),
+				Visible = scope:Computed(function(use): boolean
+					return use(titleDef) ~= nil
+				end),
+				Text = scope:Computed(function(use): string
+					local def = use(titleDef)
+					return if def then `« {Text.get(use, def.nameKey)} »` else ""
+				end),
+				FontFace = Theme.Fonts.BodyMedium,
+				TextSize = 15,
+				TextColor3 = scope:Computed(function(use): Color3
+					local def = use(titleDef)
+					return if def then Color3.fromHex(def.color) else Theme.Colors.Parchment
+				end),
+				TextStrokeTransparency = 0.4,
 			}),
 			scope:New("TextLabel")({
 				Name = "CharName",
@@ -137,6 +199,34 @@ local function build(model: Model)
 				TextSize = 17,
 				TextColor3 = Theme.Colors.Parchment,
 				TextStrokeTransparency = 0.45,
+			}),
+			scope:New("Frame")({
+				Name = "HpBar",
+				LayoutOrder = 3,
+				Size = UDim2.fromOffset(110, 8),
+				BackgroundColor3 = Theme.Colors.Background,
+				BackgroundTransparency = 0.15,
+				Visible = showHp,
+				[Children] = {
+					scope:New("UICorner")({ CornerRadius = UDim.new(0, 3) }),
+					scope:New("UIStroke")({ Color = Theme.Colors.Background, Thickness = 1 }),
+					scope:New("Frame")({
+						Name = "Trail",
+						BackgroundColor3 = Color3.fromHex("#F2E6C9"),
+						Size = scope:Computed(function(use): UDim2
+							return UDim2.fromScale(math.max(use(trail), use(ratio)), 1)
+						end),
+						[Children] = { scope:New("UICorner")({ CornerRadius = UDim.new(0, 3) }) },
+					}),
+					scope:New("Frame")({
+						Name = "Fill",
+						BackgroundColor3 = if isLocal then Theme.Colors.Success else Theme.Colors.Hp,
+						Size = scope:Computed(function(use): UDim2
+							return UDim2.fromScale(use(ratio), 1)
+						end),
+						[Children] = { scope:New("UICorner")({ CornerRadius = UDim.new(0, 3) }) },
+					}),
+				},
 			}),
 		},
 	})

@@ -6,6 +6,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Net = require(ReplicatedStorage.Shared.Net)
+local Titles = require(ReplicatedStorage.Shared.Logic.Titles)
 local Types = require(ReplicatedStorage.Shared.Types)
 
 local ProfileService = {
@@ -33,6 +34,7 @@ local function profile(_viewer: Player, userId: number): (boolean, any)
 			pvp = table.clone(char.pvp),
 			equipment = table.clone(char.equipment),
 			createdAt = char.createdAt,
+			title = Titles.shown(char),
 		}
 end
 

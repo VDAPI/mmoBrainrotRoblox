@@ -186,6 +186,84 @@ local function effectPart(name: string, size: Vector3, color: Color3, shape: Enu
 	return part
 end
 
+-- Procedural arm swing on character rigs (no animation assets yet): the right shoulder joint is rotated
+-- forward and back. Runs on every viewer, so other players' attacks are visible too.
+local shoulderRest: { [Motor6D]: CFrame } = {}
+
+local function armSwing(attacker: Model, ranged: boolean)
+	local motor = attacker:FindFirstChild("RightShoulder", true) or attacker:FindFirstChild("Right Shoulder", true)
+	if not motor or not motor:IsA("Motor6D") then
+		return
+	end
+	local rest = shoulderRest[motor]
+	if not rest then
+		rest = motor.C0
+		shoulderRest[motor] = rest
+		motor.Destroying:Connect(function()
+			shoulderRest[motor] = nil
+		end)
+	end
+	local raised = if ranged
+		then rest * CFrame.Angles(math.rad(80), 0, 0)
+		else rest * CFrame.Angles(math.rad(110), 0, math.rad(-25))
+	local strike = if ranged
+		then rest * CFrame.Angles(math.rad(90), 0, 0)
+		else rest * CFrame.Angles(math.rad(-20), 0, math.rad(25))
+	motor.C0 = raised
+	local down = TweenService:Create(
+		motor,
+		TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+		{ C0 = strike }
+	)
+	down:Play()
+	down.Completed:Once(function()
+		TweenService:Create(motor, TweenInfo.new(0.18, Enum.EasingStyle.Quad), { C0 = rest }):Play()
+	end)
+end
+
+local function lowQuality(): boolean
+	return State.Get({ "account", "settings", "quality" }) == "low"
+end
+
+-- Small burst at the point of impact.
+local function impact(model: Model, crit: boolean)
+	if lowQuality() then
+		return
+	end
+	local at = centre(model)
+	local size = if crit then 3.2 else 2
+	local ball = effectPart(
+		"Impact",
+		Vector3.one * 0.4,
+		if crit then Theme.Colors.GoldBright else Color3.new(1, 1, 1),
+		Enum.PartType.Ball
+	)
+	ball.Transparency = 0.2
+	ball.CFrame = CFrame.new(at + Vector3.new((math.random() - 0.5) * 0.8, 0.5, (math.random() - 0.5) * 0.8))
+	TweenService:Create(ball, TweenInfo.new(0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+		Size = Vector3.one * size,
+		Transparency = 1,
+	}):Play()
+	Debris:AddItem(ball, 0.2)
+end
+
+-- Short camera kick when we take a heavy (critical) hit.
+local function shake(strength: number)
+	local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+	if not humanoid then
+		return
+	end
+	task.spawn(function()
+		for i = 1, 4 do
+			local fade = 1 - (i - 1) / 4
+			humanoid.CameraOffset =
+				Vector3.new((math.random() - 0.5) * strength * fade, (math.random() - 0.5) * strength * fade, 0)
+			task.wait(0.03)
+		end
+		humanoid.CameraOffset = Vector3.zero
+	end)
+end
+
 local function swing(attacker: Model, target: Model)
 	local from = centre(attacker)
 	local to = centre(target)
@@ -339,6 +417,10 @@ local function onDamage(event: { [string]: any })
 		return
 	end
 	flash(model)
+	impact(model, event.c == true)
+	if isMe and event.c then
+		shake(0.35)
+	end
 	if numbersEnabled() then
 		local text = Format.number(amount)
 		local color = Color3.new(1, 1, 1)
@@ -369,6 +451,7 @@ local function handle(event: { [string]: any })
 		local attacker = findModel(event.s)
 		local target = findModel(event.t)
 		if attacker and target then
+			armSwing(attacker, event.st ~= "melee")
 			if event.st == "melee" then
 				swing(attacker, target)
 			else

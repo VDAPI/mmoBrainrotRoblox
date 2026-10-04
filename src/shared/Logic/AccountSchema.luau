@@ -34,6 +34,7 @@ function AccountSchema.accountTemplate(): AccountData
 			minimapRotate = false,
 			cameraSens = 1,
 			sellConfirm = true,
+			autoTarget = true,
 		},
 		purchases = {},
 		dailyLimits = { day = 0, protectScrolls = 0 },

@@ -170,6 +170,14 @@ local function face(self: Monster, position: Vector3)
 	end
 end
 
+-- Who the monster is fighting, mirrored as "AggroUserId" so clients can pick their next target (S16).
+local function setTarget(self: Monster, player: Player?)
+	if self.target ~= player then
+		self.target = player
+		self.model:SetAttribute("AggroUserId", if player then player.UserId else nil)
+	end
+end
+
 local function stop(self: Monster)
 	self.humanoid:MoveTo(self.root.Position)
 end
@@ -186,7 +194,7 @@ end
 
 function Monster.StartReturn(self: Monster)
 	self.state = "return"
-	self.target = nil
+	setTarget(self, nil)
 	self.invulnerable = true
 	table.clear(self.threat)
 	table.clear(self.damageBy)
@@ -256,7 +264,7 @@ local function engage(self: Monster, player: Player)
 	end
 	if self.state == "idle" then
 		self.state = "chase"
-		self.target = player
+		setTarget(self, player)
 		local now = os.clock()
 		self.nextAttack = math.max(self.nextAttack, now + 0.4)
 		if self.ability then
@@ -307,7 +315,7 @@ local function stepChase(self: Monster, now: number)
 		self:StartReturn()
 		return
 	end
-	self.target = target
+	setTarget(self, target)
 	local targetPosition = self.ctx.playerPosition(target)
 	if not targetPosition then
 		self.threat[target] = nil
@@ -423,7 +431,7 @@ function Monster.TakeDamage(self: Monster, amount: number, source: Player?): num
 	end
 	if self.hp <= 0 then
 		self.state = "dead"
-		self.target = nil
+		setTarget(self, nil)
 		self.model:SetAttribute("Dead", true)
 		stop(self)
 		self.ctx.died(self)

@@ -47,6 +47,9 @@ local SETTINGS: { [string]: (value: any) -> boolean } = {
 	sellConfirm = function(value)
 		return type(value) == "boolean"
 	end,
+	autoTarget = function(value)
+		return type(value) == "boolean"
+	end,
 }
 
 function SettingsService.Start()

@@ -21,6 +21,7 @@
 | S13 | Aukcja, poczta, czat | ● |
 | S14 | Monetyzacja, kosmetyki, jakość | ● |
 | S15 | Poprawki z „Niedokończone” (mobile, profil) | ● |
+| S16 | Walka na LPM, paski HP nad głowami, tytuły | ● |
 
 Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana przez właściciela
 
@@ -358,6 +359,22 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
   ulepszenie +7..+9, wydatki premium).
 - **S14** HUD (warstwa Screens) używa `ScreenInsets = CoreUISafeInsets`, więc nie wchodzi pod przyciski Roblox i notch; okna
   i modale `DeviceSafeInsets`.
+- **S16** Walka: LPM zastępuje Tab jako główny sposób walki (Tab zostaje jako opcja). Klik na wroga = cel + podejście +
+  auto-atak serwera (bez zmian po stronie serwera — serwer dalej liczy tempo i zasięg). Wybór jest „wybaczający”: gdy
+  promień nie trafi w model, liczy się wróg narysowany najbliżej kursora (70 px + pół wysokości modelu na ekranie).
+  Przytrzymanie LPM po śmierci celu wybiera następnego wroga przy kursorze; opcja „Automatyczny następny cel” (domyślnie
+  włączona) wybiera potwora, który nas atakuje (atrybut `AggroUserId` na modelu potwora). Postać stojąca przy wrogu
+  obraca się do niego (lokalnie, nie przy shift-locku). Podejście co 0,1 s i śledzi ruchomy cel.
+- **S16** Poprawiony błąd klikania: wcześniej `input.Position` (bez paska Roblox) szło do `ViewportPointToRay` (z paskiem),
+  więc klik celował ~36 px za wysoko. Teraz `GetMouseLocation()`, a dotyk dodaje `GetGuiInset()`.
+- **S16** Pasek HP potwora zawsze widoczny (wcześniej tylko po obrażeniach/zaznaczeniu), z białym „ogonem” obrażeń;
+  zaznaczony potwór ma grubszy pasek z liczbami. Gracze: pasek HP pod poziomem/klasą, widoczny gdy HP < 100% i 4 s po
+  trafieniu (z `Humanoid.Health`, który i tak odbija procent HP).
+- **S16** Tytuły: 11 tytułów za poziom (10/25/50/75/100), fabułę (10 i 32 zadania), wygrane pojedynki (10/50) i zabójstwa
+  PvP (10/100) — liczniki, które postać już ma, więc bez nowych statystyk. Wybór „◀ ▶” w oknie postaci, pole
+  `character.title`, atrybut modelu `Title`. Tytuł niespełniający warunku nie jest pokazywany.
+- **S16** Animacja ataku: proceduralny zamach ramieniem (obrót `RightShoulder.C0`) u każdego widza, błysk trafienia,
+  wybuch iskry (wyłączony przy niskiej jakości) i lekki wstrząs kamery przy krytyku w nas. Do podmiany na animacje.
 
 ## Niedokończone
 (Rzeczy z zakresu sesji, które nie zostały zrobione. Następna sesja zaczyna od nich.)
@@ -1150,3 +1167,37 @@ kilku sekund); dystans do NPC liczony od pozycji postaci kontrolowanej przez kli
    przedmiot → tooltip z bonusami).
 3. Emulator telefonu (Test → Device): to samo działa dotykiem.
 4. `/bless` (albo błogosławieństwo z alchemika) → najedź na przedmiot błogosławieństwa w plecaku → lista statystyk i czas.
+
+### S16: Walka na LPM, paski HP nad głowami, tytuły
+
+**Zrobione**
+- Walka na LPM (`TargetController` przepisany): klik/tap na wroga = cel, podejście i atak; łatwiejsze trafianie (wróg przy
+  kursorze też się liczy); poprawione przesunięcie kliku o pasek Roblox; obrys wroga pod kursorem (widać, co kliknięcie
+  trafi); przytrzymanie LPM = walka dalej z kolejnym wrogiem; „Automatyczny następny cel” po zabiciu (opcja w menu);
+  postać obraca się do celu; podejście śledzi uciekający cel; shift-lock: LPM atakuje to, co na środku ekranu.
+- Przycisk ataku na telefonie najpierw bierze potwora, który nas atakuje.
+- Zaznaczenie sojusznika (np. z ramek grupy) nie każe już do niego podchodzić.
+- Potwory: pasek HP zawsze nad głową, „ogon” obrażeń, liczby HP przy celu.
+- Gracze: tytuł nad imieniem, imię (z tagiem gildii), poziom i klasa, pasek HP widoczny po obrażeniach.
+- Tytuły (`Data/Titles`, `Logic/Titles`, `TitleService`, wybór w oknie postaci, tytuł w profilu gracza), test `titles.spec`.
+- Efekty ataku: zamach ramieniem, iskra trafienia, wstrząs kamery przy krytyku.
+
+**Pliki**: `Controllers/TargetController.luau`, `MonsterPlateController.luau`, `NameplateController.luau`,
+`CombatFxController.luau`, `Entities/Monster.luau`, `Services/TitleService.luau`, `SettingsService`, `ProfileService`,
+`Data/Titles.luau`, `Logic/Titles.luau`, `CharacterWindow/init.luau`, `ProfileWindow`, `GameMenu`, lokalizacje.
+
+#### Instrukcja testu S16
+
+1. Wejdź na mapę z potworami. Nad każdym potworem: imię, poziom i pasek HP (także przy pełnym HP).
+2. Najedź kursorem na potwora → delikatny złoty obrys. Kliknij LPM (nawet trochę obok cienkiego modelu) → czerwony obrys,
+   postać podchodzi i atakuje, pasek celu robi się grubszy z liczbami HP, przy trafieniu biały „ogon” na pasku.
+3. Stój przy potworze → postać obraca się do niego, przy każdym ataku zamach ramieniem i iskra.
+4. Odejdź WASD → podchodzenie się przerywa (cel zostaje); kliknij potwora jeszcze raz → wraca do walki.
+5. Zaatakuj potwora, gdy drugi też cię bije → po zabiciu pierwszego cel sam przechodzi na drugiego.
+   Menu (Esc) → „Automatyczny następny cel: Wył.” → po zabiciu cel znika.
+6. Przytrzymaj LPM z kursorem przy grupie potworów → po każdym zabiciu postać bierze kolejnego przy kursorze.
+7. Shift-lock: LPM atakuje potwora na środku ekranu.
+8. Telefon (emulator): tap w potwora = atak; przycisk ataku bierze najpierw potwora, który cię atakuje.
+9. Daj się trafić → nad twoją głową zielony pasek HP; drugi gracz widzi u ciebie czerwony; znika po ~4 s przy pełnym HP.
+10. `/lvl 50` → okno postaci (C) → „◀ ▶” pod klasą → wybierz „Weteran” → tytuł nad imieniem
+    widzą wszyscy; w profilu gracza (menu „⋯” → Profil) też.
