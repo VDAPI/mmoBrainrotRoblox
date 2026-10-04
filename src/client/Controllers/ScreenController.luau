@@ -14,6 +14,7 @@ local Config = require(ReplicatedStorage.Shared.Config)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local GameMenu = require(script.Parent.Parent.UI.Screens.GameMenu)
 local InventoryWindow = require(script.Parent.Parent.UI.Screens.InventoryWindow)
+local SkillsWindow = require(script.Parent.Parent.UI.Screens.SkillsWindow)
 local Hud = require(script.Parent.Parent.UI.Screens.Hud)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local State = require(script.Parent.Parent.UI.State)
@@ -24,13 +25,21 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 
 local ScreenController = {
 	Name = "ScreenController",
-	Deps = { "UIController", "WindowManager", "StateController", "TargetController", "ItemController" },
+	Deps = {
+		"UIController",
+		"WindowManager",
+		"StateController",
+		"TargetController",
+		"ItemController",
+		"SkillController",
+	},
 }
 
 local UIController: any
 local WindowManager: any
 local TargetController: any
 local ItemController: any
+local SkillController: any
 
 -- HUD menu (DESIGN §23). Windows without their system yet show a "coming soon" body.
 local MENU: { Hud.MenuEntry } = {
@@ -70,6 +79,16 @@ local function registerWindows()
 				hotkey = HOTKEYS.character,
 				build = CharacterWindow,
 			})
+		elseif entry.id == "skills" then
+			WindowManager.Register({
+				id = "skills",
+				titleKey = "window.skills.title",
+				size = Vector2.new(780, 640),
+				hotkey = HOTKEYS.skills,
+				build = function(scope: Scope)
+					return SkillsWindow(scope, WindowManager.ShowModal)
+				end,
+			})
 		elseif entry.id == "inventory" then
 			WindowManager.Register({
 				id = "inventory",
@@ -91,7 +110,7 @@ local function registerWindows()
 			WindowManager.Register({
 				id = "menu",
 				titleKey = "window.menu.title",
-				size = Vector2.new(440, 500),
+				size = Vector2.new(480, 560),
 				build = GameMenu,
 			})
 		else
@@ -174,6 +193,16 @@ local function show(screen: "select" | "hud")
 			OnAttack = TargetController.AttackNearest,
 			UsePotion = ItemController.UsePotion,
 			AssignPotion = ItemController.SetPotion,
+			CastSlot = SkillController.CastSlot,
+			ClearSlot = SkillController.ClearSlot,
+			SkillUsable = SkillController.Usable,
+			SkillColor = SkillController.Color,
+			SelectTarget = function()
+				local found = TargetController.FindNearest(60, true, false)
+				if found then
+					TargetController.SetTarget(found)
+				end
+			end,
 		}).Parent =
 			layer
 		local name = State.Get({ "character", "name" })
@@ -188,6 +217,7 @@ function ScreenController.Init(registry)
 	WindowManager = registry.Get("WindowManager")
 	TargetController = registry.Get("TargetController")
 	ItemController = registry.Get("ItemController")
+	SkillController = registry.Get("SkillController")
 	blur = Instance.new("BlurEffect")
 	blur.Name = "Vaelthorn_SelectBlur"
 	blur.Enabled = false

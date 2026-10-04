@@ -25,18 +25,30 @@ DragDrop.Dragging = scope:Value(nil :: string?)
 DragDrop.GhostPosition = scope:Value(Vector2.zero)
 
 export type Handlers = {
+	-- Whether this handler set owns a slot id (by prefix, e.g. "inv:" / "eq:").
+	owns: (slotId: string) -> boolean,
 	drop: (from: string, to: string) -> (),
 	activate: (slotId: string) -> (),
 	hasItem: (slotId: string) -> boolean,
 }
 
-local handlers: Handlers? = nil
+local handlerSets: { Handlers } = {}
+
+local function ownerOf(slotId: string): Handlers?
+	for _, set in handlerSets do
+		if set.owns(slotId) then
+			return set
+		end
+	end
+	return nil
+end
 local slots: { [GuiObject]: string } = {}
 local pressed: { slotId: string, at: Vector2 }? = nil
 local lastClick: { slotId: string, time: number }? = nil
 
-function DragDrop.SetHandlers(h: Handlers)
-	handlers = h
+-- Adds a handler set (ItemController: items; SkillController: skills and the hotbar).
+function DragDrop.AddHandlers(h: Handlers)
+	table.insert(handlerSets, h)
 end
 
 local function slotAt(position: Vector2): string?
@@ -54,24 +66,28 @@ local function slotAt(position: Vector2): string?
 end
 
 local function activate(slotId: string)
-	if handlers then
+	local owner = ownerOf(slotId)
+	if owner then
 		Sounds.play("click")
-		handlers.activate(slotId)
+		owner.activate(slotId)
 	end
 end
 
 -- os.clock() of the last drop, so a slot's own click handler can ignore the tap that completed a drop.
 DragDrop.LastDropAt = 0
 
+-- The handler owning the source slot decides what a drop means.
 local function drop(from: string, to: string)
-	if handlers and from ~= to then
+	local owner = ownerOf(from)
+	if owner and from ~= to then
 		DragDrop.LastDropAt = os.clock()
-		handlers.drop(from, to)
+		owner.drop(from, to)
 	end
 end
 
 local function hasItem(slotId: string): boolean
-	return handlers ~= nil and handlers.hasItem(slotId)
+	local owner = ownerOf(slotId)
+	return owner ~= nil and owner.hasItem(slotId)
 end
 
 -- Called by ItemSlot. The registration lives as long as `ownerScope`.

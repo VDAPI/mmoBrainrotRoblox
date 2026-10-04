@@ -39,6 +39,7 @@ local AdminService = {
 		"InventoryService",
 		"LootService",
 		"StatService",
+		"SkillService",
 	},
 }
 
@@ -57,6 +58,7 @@ local EntityService: any
 local InventoryService: any
 local LootService: any
 local StatService: any
+local SkillService: any
 
 type Command = {
 	usageKey: string,
@@ -577,6 +579,67 @@ COMMANDS.bag = {
 	end,
 }
 
+COMMANDS.skillpoints = {
+	usageKey = "admin.usage.skillpoints",
+	run = function(player, args)
+		local n = parseAmount(args[1])
+		if n == nil then
+			reply(player, "admin.usage.skillpoints")
+			return
+		end
+		withCharacter(player, function()
+			PlayerStateService.Update(player, { "character", "skillPoints" }, function(current: number)
+				return math.max(0, current + n)
+			end)
+			reply(player, "admin.skillpoints.ok", { n = n })
+		end)
+	end,
+}
+
+COMMANDS.skills = {
+	usageKey = "admin.usage.skills",
+	run = function(player, args)
+		if args[1] == "reset" then
+			withCharacter(player, function()
+				SkillService.Reset(player, true)
+				reply(player, "skills.reset.done")
+			end)
+			return
+		end
+		if args[1] ~= "max" then
+			reply(player, "admin.usage.skills")
+			return
+		end
+		withCharacter(player, function()
+			reply(player, "admin.skills.ok", { points = SkillService.LearnAll(player) })
+		end)
+	end,
+}
+
+COMMANDS.cd = {
+	usageKey = "admin.usage.cd",
+	run = function(player, args)
+		if args[1] ~= "off" and args[1] ~= "on" then
+			reply(player, "admin.usage.cd")
+			return
+		end
+		SkillService.SetNoCooldowns(player, args[1] == "off")
+		reply(player, if args[1] == "off" then "admin.cd.off" else "admin.cd.on")
+	end,
+}
+
+COMMANDS.res = {
+	usageKey = "admin.usage.res",
+	run = function(player, args)
+		if args[1] ~= "inf" and args[1] ~= "off" then
+			reply(player, "admin.usage.res")
+			return
+		end
+		SkillService.SetInfiniteResources(player, args[1] == "inf")
+		reply(player, if args[1] == "inf" then "admin.res.on" else "admin.res.off")
+	end,
+}
+
 local function onCommand(name: string, textSource: TextSource, message: string)
 	local player = Players:GetPlayerByUserId(textSource.UserId)
 	if not player then
@@ -617,6 +680,7 @@ function AdminService.Init(registry)
 	InventoryService = registry.Get("InventoryService")
 	LootService = registry.Get("LootService")
 	StatService = registry.Get("StatService")
+	SkillService = registry.Get("SkillService")
 end
 
 function AdminService.Start()

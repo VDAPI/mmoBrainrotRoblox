@@ -205,11 +205,19 @@ end
 function ItemController.Init(registry)
 	WindowManager = registry.Get("WindowManager")
 	local UIController = registry.Get("UIController")
-	UIController.DragItemId = function(slotId: string): string?
+	UIController.AddDragVisual(function(slotId: string): (string?, string?)
 		local item = ItemController.ItemAt(slotId)
-		return if item then item.id else nil
-	end
-	DragDrop.SetHandlers({
+		local def = item and Items.get(item.id)
+		if def then
+			return def.icon.glyph, def.icon.color
+		end
+		return nil, nil
+	end)
+	DragDrop.AddHandlers({
+		owns = function(slotId: string): boolean
+			local kind = parse(slotId)
+			return kind == "inv" or kind == "eq" or kind == "pot"
+		end,
 		drop = onDrop,
 		activate = ItemController.Activate,
 		hasItem = function(slotId: string): boolean

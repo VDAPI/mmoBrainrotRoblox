@@ -71,6 +71,7 @@ export type Settings = {
 	volume: number,
 	dmgNumbers: boolean,
 	bindConfirm: boolean, -- ask before an item binds on equip
+	quickCast: boolean, -- area skills cast on key press instead of on release
 }
 
 export type AccountData = {

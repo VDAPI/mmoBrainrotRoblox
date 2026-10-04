@@ -43,6 +43,7 @@ local CombatService = {
 		"PvpService",
 		"ZoneService",
 		"EquipmentService",
+		"StatusEffectService",
 	},
 	-- (info: KillInfo, credit: { Player }, killer: Player?) after a monster died.
 	MonsterKilled = Signal.new(),
@@ -77,6 +78,7 @@ local LevelService: any
 local PvpService: any
 local ZoneService: any
 local EquipmentService: any
+local StatusEffectService: any
 
 type Attacker = {
 	target: string?,
@@ -176,9 +178,22 @@ end
 
 -- Legendary effects (Data/Bonuses hooks) ---------------------------------------------------------------
 
-local function hook(player: Player, id: string): number
-	return EquipmentService.GetHook(player, id)
+-- Other systems (skill passives) add hook values through providers.
+local hookProviders: { (player: Player, id: string) -> number } = {}
+
+function CombatService.RegisterHookProvider(provider: (player: Player, id: string) -> number)
+	table.insert(hookProviders, provider)
 end
+
+local function hook(player: Player, id: string): number
+	local total = EquipmentService.GetHook(player, id)
+	for _, provider in hookProviders do
+		total += provider(player, id)
+	end
+	return total
+end
+
+CombatService.Hook = hook
 
 local function hpFraction(player: Player): number
 	local hp = ResourceService.Get(player)
@@ -273,17 +288,38 @@ end
 
 -- Deals damage from a player to an entity with the given params. Returns the Damage.Result or nil when the
 -- hit was not allowed. Skills (S05) use this too.
+export type DealOptions = {
+	multiplier: number?, -- extra multiplier (skill passives: elementalist, divine wrath)
+	consumeShot: boolean?, -- default true: consumes "nextShot" / "guaranteedCrit"
+}
+
 function CombatService.DealDamage(
 	player: Player,
 	targetEntity: any,
-	params: Damage.Params,
-	style: string?
+	baseParams: Damage.Params,
+	style: string?,
+	options: DealOptions?
 ): Damage.Result?
 	local attacker = playerCombat(player)
 	if not attacker then
 		return nil
 	end
 	local selfEntity = EntityService.GetPlayerEntity(player)
+	local params = table.clone(baseParams)
+	local extra = if options and options.multiplier then options.multiplier else 1
+	-- One-shot buffs from the Hunter tree.
+	if selfEntity and not (options and options.consumeShot == false) then
+		if StatusEffectService.Has(selfEntity, "guaranteedCrit") then
+			params.forceCrit = true
+			StatusEffectService.Remove(selfEntity, "guaranteedCrit")
+		end
+		local bonus = StatusEffectService.Consume(selfEntity, "nextShot")
+		if bonus then
+			extra *= 1 + bonus / 100
+		end
+	end
+	-- Hunter's Mark and other vulnerabilities on the target.
+	extra *= 1 + StatusEffectService.Max(targetEntity, "vulnerability") / 100
 	local targetPosition = EntityService.Position(targetEntity)
 	local result: Damage.Result
 
@@ -292,9 +328,14 @@ function CombatService.DealDamage(
 		if not monster or not monster:IsAlive() then
 			return nil
 		end
-		result = Damage.computeDamage(attacker, MonsterStats.asDefender(monster.stats), params, rng)
+		local defender = MonsterStats.asDefender(monster.stats)
+		local armorBreak = StatusEffectService.Max(targetEntity, "armorBreak")
+		if armorBreak > 0 then
+			defender.armor *= 1 - math.clamp(armorBreak, 0, 90) / 100
+		end
+		result = Damage.computeDamage(attacker, defender, params, rng)
 		if not result.dodged then
-			result.amount = math.max(1, math.floor(result.amount * offensiveMultiplier(player, targetEntity)))
+			result.amount = math.max(1, math.floor(result.amount * offensiveMultiplier(player, targetEntity) * extra))
 		end
 		local override = attackerState(player).damageOverride
 		if override and not result.dodged then
@@ -327,7 +368,7 @@ function CombatService.DealDamage(
 		pvpParams.pvp = true
 		result = Damage.computeDamage(attacker, defender, pvpParams, rng)
 		if not result.dodged then
-			local amount = math.floor(result.amount * offensiveMultiplier(player, targetEntity))
+			local amount = math.floor(result.amount * offensiveMultiplier(player, targetEntity) * extra)
 			result.amount = defensiveAmount(target, math.max(1, amount))
 		end
 		local override = attackerState(player).damageOverride
@@ -381,8 +422,12 @@ local function tryBasicAttack(player: Player, state: Attacker, now: number)
 	if not myRoot or not targetPosition then
 		return
 	end
-	-- No fighting from inside a safe zone.
+	-- No fighting from inside a safe zone, or while stunned / frozen.
 	if ZoneService.GetPvpZone(player) == "green" then
+		return
+	end
+	local selfEntity = EntityService.GetPlayerEntity(player)
+	if selfEntity and StatusEffectService.IsDisabled(selfEntity) then
 		return
 	end
 	local kind, ranged, style = basicAttackProfile(player)
@@ -426,6 +471,10 @@ local function monsterHitsPlayer(monster: any, player: Player, params: Damage.Pa
 	end
 	if result.amount > 0 then
 		ResourceService.Damage(player, result.amount, "monster")
+		local riposte = hook(player, "riposte")
+		if riposte > 0 and monster:IsAlive() and monster.entity and rng:chance(riposte / 100) then
+			CombatService.DealDamage(player, monster.entity, { kind = "phys" }, "melee", { consumeShot = false })
+		end
 		local thorns = hook(player, "thorns")
 		if thorns > 0 and monster:IsAlive() then
 			local reflected = math.max(1, math.floor(result.amount * thorns / 100))
@@ -507,6 +556,11 @@ local function resolveAbility(monster: any, ability: MonsterAbilities.Ability, a
 	end
 end
 
+-- Lets skills draw damage numbers / heals / swings with the same batching.
+function CombatService.QueueFx(position: Vector3?, event: { [string]: any })
+	queueFx(position, event)
+end
+
 -- Admin and queries --------------------------------------------------------------------------------------
 
 function CombatService.GetTarget(player: Player): any
@@ -556,6 +610,7 @@ function CombatService.Init(registry)
 	PvpService = registry.Get("PvpService")
 	ZoneService = registry.Get("ZoneService")
 	EquipmentService = registry.Get("EquipmentService")
+	StatusEffectService = registry.Get("StatusEffectService")
 
 	MonsterService.SetCombatHandlers({
 		basicAttack = monsterBasicAttack,
@@ -567,6 +622,14 @@ end
 
 function CombatService.Start()
 	Net.On("SetTarget", onSetTarget)
+
+	-- Bleed / poison ticks show as numbers too.
+	StatusEffectService.Ticked:Connect(function(entity, effect)
+		queueFx(
+			EntityService.Position(entity),
+			{ k = "dmg", e = entity.id, a = math.floor(effect.tickAmount or 0), c = false, d = false }
+		)
+	end)
 
 	ResourceService.Died:Connect(function(player: Player)
 		local state = attackers[player]

@@ -74,6 +74,10 @@ local NAMESPACES = {
 	"potion",
 	"itemTier",
 	"itemBase",
+	"skill",
+	"skills",
+	"effect",
+	"cast",
 }
 
 T.describe("Data: Classes", function()

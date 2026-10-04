@@ -40,6 +40,13 @@ type Pool = {
 
 local pools: { [Player]: Pool } = {}
 
+-- Optional filter applied to incoming damage (StatusEffectService: invulnerability, shields, reductions).
+local damageFilter: ((player: Player, amount: number, source: string) -> number)? = nil
+
+function ResourceService.SetDamageFilter(filter: (player: Player, amount: number, source: string) -> number)
+	damageFilter = filter
+end
+
 local function maxOf(player: Player, id: string): number
 	return math.max(1, StatService.GetValue(player, id))
 end
@@ -126,6 +133,12 @@ function ResourceService.Damage(player: Player, amount: number, source: string?)
 	pool.lastCombat = os.clock()
 	if pool.god then
 		return 0
+	end
+	if damageFilter then
+		amount = damageFilter(player, amount, source or "unknown")
+		if amount <= 0 then
+			return 0
+		end
 	end
 	local dealt = math.min(pool.hp, amount)
 	pool.hp -= dealt

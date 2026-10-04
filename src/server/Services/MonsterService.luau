@@ -30,7 +30,7 @@ local log = Log.new("MonsterService")
 
 local MonsterService = {
 	Name = "MonsterService",
-	Deps = { "EntityService", "ZoneService", "ResourceService", "PlayerStateService" },
+	Deps = { "EntityService", "ZoneService", "ResourceService", "PlayerStateService", "StatusEffectService" },
 	-- (monster) after a monster appeared in the world.
 	Spawned = Signal.new(),
 }
@@ -55,6 +55,7 @@ local EntityService: any
 local ZoneService: any
 local ResourceService: any
 local PlayerStateService: any
+local StatusEffectService: any
 
 local handlers: Handlers? = nil
 local folder: Folder
@@ -110,7 +111,20 @@ local context: Monster.Context = {
 		if not player.Character then
 			return false
 		end
+		-- Camouflaged players are invisible to monsters (Hunter skill).
+		if StatusEffectService.PlayerHas(player, "camouflage") then
+			return false
+		end
 		return ZoneService.GetPvpZone(player) ~= "green"
+	end,
+	isDisabled = function(monster): boolean
+		return monster.entity ~= nil and StatusEffectService.IsDisabled(monster.entity)
+	end,
+	isRooted = function(monster): boolean
+		return monster.entity ~= nil and StatusEffectService.IsRooted(monster.entity)
+	end,
+	taunter = function(monster): Player?
+		return if monster.entity then StatusEffectService.Taunter(monster.entity) else nil
 	end,
 	isSafePosition = function(position: Vector3): boolean
 		return ZoneService.ZoneAt(position, Config.StartingMap).pvp == "green"
@@ -317,6 +331,7 @@ function MonsterService.Init(registry)
 	ZoneService = registry.Get("ZoneService")
 	ResourceService = registry.Get("ResourceService")
 	PlayerStateService = registry.Get("PlayerStateService")
+	StatusEffectService = registry.Get("StatusEffectService")
 
 	folder = Instance.new("Folder")
 	folder.Name = "Monsters"

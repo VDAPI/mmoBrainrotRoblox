@@ -32,6 +32,11 @@ export type Context = {
 	resolveAbility: (monster: any, ability: MonsterAbilities.Ability, area: CFrame) -> (),
 	died: (monster: any) -> (),
 	moved: (monster: any) -> (),
+	-- Status effects (StatusEffectService): stunned/frozen monsters do nothing, rooted ones cannot move,
+	-- a taunting player overrides the threat table.
+	isDisabled: (monster: any) -> boolean,
+	isRooted: (monster: any) -> boolean,
+	taunter: (monster: any) -> Player?,
 }
 
 local Monster = {}
@@ -64,6 +69,7 @@ export type Monster = typeof(setmetatable(
 		entity: any, -- EntityService entity (set by MonsterService)
 		spawnerId: string?,
 		damageOverride: number?,
+		speedFactor: number,
 	},
 	Monster
 ))
@@ -120,6 +126,7 @@ function Monster.new(
 		entity = nil,
 		spawnerId = nil,
 		damageOverride = nil,
+		speedFactor = 1,
 	}, Monster)
 	return self
 end
@@ -161,6 +168,16 @@ local function stop(self: Monster)
 	self.humanoid:MoveTo(self.root.Position)
 end
 
+-- Applies the slow/root factor from status effects (1 = normal speed).
+function Monster.RefreshSpeed(self: Monster, factor: number)
+	self.speedFactor = factor
+	local base = self.def.moveSpeed * (if self.state == "return" then Combat.returnSpeedMultiplier else 1)
+	self.humanoid.WalkSpeed = base * factor
+	if factor <= 0 then
+		stop(self)
+	end
+end
+
 function Monster.StartReturn(self: Monster)
 	self.state = "return"
 	self.target = nil
@@ -169,7 +186,7 @@ function Monster.StartReturn(self: Monster)
 	table.clear(self.damageBy)
 	setHp(self, self.stats.maxHp)
 	self.model:SetAttribute("Returning", true)
-	self.humanoid.WalkSpeed = self.def.moveSpeed * Combat.returnSpeedMultiplier
+	self.humanoid.WalkSpeed = self.def.moveSpeed * Combat.returnSpeedMultiplier * self.speedFactor
 	self.returnStarted = os.clock()
 	self.humanoid:MoveTo(self.spawnCFrame.Position)
 end
@@ -178,12 +195,19 @@ local function finishReturn(self: Monster)
 	self.state = "idle"
 	self.invulnerable = false
 	self.model:SetAttribute("Returning", nil)
-	self.humanoid.WalkSpeed = self.def.moveSpeed
+	self.humanoid.WalkSpeed = self.def.moveSpeed * self.speedFactor
 	self.nextWander = os.clock() + 2 + self.random:NextNumber() * 4
 end
 
--- Highest-threat valid target, or nil.
+-- Highest-threat valid target, or nil. A taunting player always wins.
 local function pickTarget(self: Monster): Player?
+	local taunter = self.ctx.taunter(self)
+	if taunter and taunter.Parent ~= nil and self.ctx.canTarget(self, taunter) then
+		if self.threat[taunter] == nil then
+			self.threat[taunter] = 0
+		end
+		return taunter
+	end
 	local best: Player? = nil
 	local bestThreat = -1
 	for player, value in self.threat do
@@ -255,7 +279,7 @@ local function stepIdle(self: Monster, now: number)
 		engage(self, found)
 		return
 	end
-	if now >= self.nextWander then
+	if now >= self.nextWander and not self.ctx.isRooted(self) then
 		self.nextWander = now + 4 + self.random:NextNumber() * 5
 		local angle = self.random:NextNumber() * math.pi * 2
 		local radius = self.random:NextNumber() * Combat.wanderRadius
@@ -318,7 +342,9 @@ local function stepChase(self: Monster, now: number)
 		self.threat[target] = nil
 		return
 	end
-	self.humanoid:MoveTo(targetPosition)
+	if not self.ctx.isRooted(self) then
+		self.humanoid:MoveTo(targetPosition)
+	end
 end
 
 local function stepCast(self: Monster, now: number)
@@ -355,7 +381,17 @@ function Monster.Step(self: Monster, now: number)
 	local state = self.state
 	if state == "dead" then
 		return
-	elseif state == "idle" then
+	end
+	-- Stunned or frozen: no movement, no attacks, casts are interrupted.
+	if state ~= "return" and self.ctx.isDisabled(self) then
+		if state == "cast" then
+			self.state = "chase"
+			self.castArea = nil
+		end
+		stop(self)
+		return
+	end
+	if state == "idle" then
 		stepIdle(self, now)
 	elseif state == "chase" then
 		stepChase(self, now)

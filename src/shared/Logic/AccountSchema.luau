@@ -23,7 +23,7 @@ function AccountSchema.accountTemplate(): AccountData
 		deposit = { size = 60, items = {} },
 		cosmetics = { owned = {}, equipped = {} },
 		pets = { owned = {}, equipped = nil },
-		settings = { lang = "", volume = 0.8, dmgNumbers = true, bindConfirm = true },
+		settings = { lang = "", volume = 0.8, dmgNumbers = true, bindConfirm = true, quickCast = false },
 		purchases = {},
 		dailyLimits = { day = 0, protectScrolls = 0 },
 		stats = { createdAt = 0, playtime = 0 },

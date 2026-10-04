@@ -126,6 +126,31 @@ local function onDied(player: Player, source: string)
 	task.delay(delay, respawn, player, token)
 end
 
+-- Revives a dead player where they fell with `hpPct` % health (Cleric Resurrection). Skips the timer.
+function DeathService.Revive(player: Player, hpPct: number): boolean
+	local state = pending[player]
+	if not state then
+		return false
+	end
+	pending[player] = nil
+	if PlayerStateService.HasState(player) then
+		PlayerStateService.Set(player, { "death" }, nil)
+	end
+	ResourceService.Revive(player)
+	local at = if state.position then CFrame.new(state.position + Vector3.new(0, 3, 0)) else nil
+	task.spawn(function()
+		CharacterService.Respawn(player, at or DeathService.SpawnCFrame(state.mapId, nil))
+		-- Revive restores everything; bring HP down to the resurrection percentage.
+		local hp = ResourceService.Get(player)
+		local keep = hp * math.clamp(hpPct, 1, 100) / 100
+		if keep < hp then
+			ResourceService.Damage(player, hp - keep, "resurrection")
+		end
+		DeathService.Respawned:Fire(player)
+	end)
+	return true
+end
+
 -- Kills the active character through the normal death flow (/kill me).
 function DeathService.Kill(player: Player)
 	local hp = ResourceService.Get(player)

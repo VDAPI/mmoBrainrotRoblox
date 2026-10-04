@@ -9,7 +9,6 @@ local Announcement = require(script.Parent.Parent.UI.Components.Announcement)
 local DragDrop = require(script.Parent.Parent.UI.DragDrop)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local ItemTooltip = require(script.Parent.Parent.UI.Components.ItemTooltip)
-local Items = require(ReplicatedStorage.Shared.Data.Items)
 local Theme = require(script.Parent.Parent.UI.Theme)
 local Scale = require(script.Parent.Parent.UI.Scale)
 local Sounds = require(script.Parent.Parent.UI.Sounds)
@@ -40,17 +39,32 @@ function UIController.GetLayer(name: LayerName): Frame
 	return root
 end
 
--- Icon following the mouse while an item is dragged (UI/DragDrop).
--- `getItemId(slotId)` is provided by ItemController.
-UIController.DragItemId = function(_slotId: string): string?
-	return nil
+-- Icon following the mouse while something is dragged (UI/DragDrop). Controllers register providers that
+-- return (glyph, colour hex) for slot ids they own.
+local dragVisuals: { (slotId: string) -> (string?, string?) } = {}
+
+function UIController.AddDragVisual(provider: (slotId: string) -> (string?, string?))
+	table.insert(dragVisuals, provider)
+end
+
+local function dragVisual(slotId: string): (string?, string?)
+	for _, provider in dragVisuals do
+		local glyph, color = provider(slotId)
+		if glyph then
+			return glyph, color
+		end
+	end
+	return nil, nil
 end
 
 function UIController.MountDragGhost(scope: Fusion.Scope<typeof(Fusion)>, parent: Instance)
-	local def = scope:Computed(function(use): Items.ItemDef?
+	local visual = scope:Computed(function(use): { glyph: string, color: string }?
 		local dragging = use(DragDrop.Dragging)
-		local id = dragging and UIController.DragItemId(dragging)
-		return if id then Items.get(id) else nil
+		if not dragging then
+			return nil
+		end
+		local glyph, color = dragVisual(dragging)
+		return if glyph then { glyph = glyph, color = color or "#252832" } else nil
 	end)
 	scope:New("TextLabel")({
 		Name = "DragGhost",
@@ -62,16 +76,16 @@ function UIController.MountDragGhost(scope: Fusion.Scope<typeof(Fusion)>, parent
 			return UDim2.fromOffset(p.X, p.Y)
 		end),
 		Visible = scope:Computed(function(use): boolean
-			return use(def) ~= nil
+			return use(visual) ~= nil
 		end),
 		BackgroundColor3 = scope:Computed(function(use): Color3
-			local d = use(def)
-			return if d then Color3.fromHex(d.icon.color) else Theme.Colors.Panel
+			local v = use(visual)
+			return if v then Color3.fromHex(v.color) else Theme.Colors.Panel
 		end),
 		BackgroundTransparency = 0.3,
 		Text = scope:Computed(function(use): string
-			local d = use(def)
-			return if d then d.icon.glyph else ""
+			local v = use(visual)
+			return if v then v.glyph else ""
 		end),
 		TextScaled = true,
 		FontFace = Theme.Fonts.BodyBold,
@@ -86,6 +100,12 @@ end
 
 function UIController.Init()
 	local scope = UIController.Scope
+	-- Our own HUD replaces Roblox's backpack (keys 1–0 are the skill bar) and health bar.
+	local StarterGui = game:GetService("StarterGui")
+	pcall(function()
+		StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Backpack, false)
+		StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Health, false)
+	end)
 	-- PlayerGui exists before PlayerScripts run in practice; the wait is a safety net.
 	local playerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
 	for _, layer in LAYERS do

@@ -16,6 +16,9 @@ local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local IconButton = require(script.Parent.Parent.Components.IconButton)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local PotionBar = require(script.PotionBar)
+local SkillBar = require(script.SkillBar)
+local EffectIcons = require(script.EffectIcons)
+local MobileSkills = require(script.MobileSkills)
 local PvpToggle = require(script.PvpToggle)
 local State = require(script.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Text)
@@ -43,6 +46,11 @@ export type Props = {
 	OnAttack: () -> (),
 	UsePotion: (kind: string) -> (),
 	AssignPotion: (kind: string, itemId: string?) -> (),
+	CastSlot: (slot: number) -> (),
+	ClearSlot: (slot: number) -> (),
+	SkillUsable: (skillId: string) -> (boolean, boolean),
+	SkillColor: (skillId: string) -> Color3,
+	SelectTarget: () -> (),
 }
 
 local SKILL_SLOTS = 10
@@ -280,41 +288,14 @@ local function menu(scope: Scope, props: Props): Instance
 	})
 end
 
-local function slot(scope: Scope, index: number, label: string, border: Color3): Instance
-	return scope:New("Frame")({
-		Name = `Slot{label}`,
-		LayoutOrder = index,
-		Size = UDim2.fromOffset(SLOT_SIZE, SLOT_SIZE),
-		BackgroundColor3 = Theme.Colors.Panel,
-		BackgroundTransparency = 0.2,
-		[Children] = {
-			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
-			scope:New("UIStroke")({
-				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-				Thickness = Theme.Stroke.Normal,
-				Color = border,
-				Transparency = 0.3,
-			}),
-			scope:New("TextLabel")({
-				BackgroundTransparency = 1,
-				AnchorPoint = Vector2.new(1, 1),
-				Position = UDim2.new(1, -4, 1, -2),
-				Size = UDim2.fromOffset(24, 16),
-				Text = label,
-				FontFace = Theme.Fonts.BodyBold,
-				TextSize = 13,
-				TextColor3 = Theme.Colors.TextMuted,
-				TextXAlignment = Enum.TextXAlignment.Right,
-			}),
-		},
-	})
-end
-
 local function actionBar(scope: Scope, props: Props): Instance
-	local slots = {}
-	for i = 1, SKILL_SLOTS do
-		table.insert(slots, slot(scope, i, tostring(i % 10), Theme.Colors.GoldDim))
-	end
+	local slots: { Instance } = SkillBar(scope, {
+		Cast = props.CastSlot,
+		Clear = props.ClearSlot,
+		Usable = props.SkillUsable,
+		Color = props.SkillColor,
+		SlotSize = SLOT_SIZE,
+	})
 	table.insert(
 		slots,
 		scope:New("Frame")({
@@ -389,12 +370,29 @@ local function expBar(scope: Scope): Instance
 end
 
 local function Hud(scope: Scope, props: Props): Instance
+	local localPlayer = game:GetService("Players").LocalPlayer
+	local myModel = scope:Value(localPlayer.Character)
+	table.insert(
+		scope,
+		localPlayer.CharacterAdded:Connect(function(model)
+			myModel:set(model)
+		end)
+	)
 	return scope:New("Frame")({
 		Name = "Hud",
 		Size = UDim2.fromScale(1, 1),
 		BackgroundTransparency = 1,
 		[Children] = {
 			portrait(scope),
+			EffectIcons(scope, {
+				Model = myModel,
+				Position = UDim2.fromOffset(Theme.Padding.Large, Theme.Padding.Large + 136 + 6),
+			}),
+			MobileSkills(scope, {
+				Cast = props.CastSlot,
+				Color = props.SkillColor,
+				SelectTarget = props.SelectTarget,
+			}),
 			menu(scope, props),
 			actionBar(scope, props),
 			expBar(scope),

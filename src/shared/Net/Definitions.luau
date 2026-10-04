@@ -59,6 +59,13 @@ local Definitions: { [string]: Definition } = {
 	LootPicked = { kind = "event", dir = "s2c" }, -- (items) what went into the backpack (legendary reveal)
 	Announce = { kind = "event", dir = "s2c" }, -- (key, args) banner + system chat for everyone
 
+	-- Skills (S05)
+	LearnSkill = { kind = "function", dir = "c2s", rate = 6, args = { "string" } },
+	SetHotbar = { kind = "function", dir = "c2s", rate = 10, args = { "integer", "string?" } }, -- (slot 1..10, skillId?)
+	ResetSkills = { kind = "function", dir = "c2s", rate = 1, args = {} },
+	CastSkill = { kind = "function", dir = "c2s", rate = 8, args = { "string", "string?", "any" } }, -- (skillId, targetId?, aim: Vector3?)
+	SkillFx = { kind = "event", dir = "s2c" }, -- skill visuals for players nearby
+
 	-- PvP and death
 	SetPvp = { kind = "function", dir = "c2s", rate = 1, args = { "boolean" } },
 	RespawnNow = { kind = "function", dir = "c2s", rate = 1, args = {} },

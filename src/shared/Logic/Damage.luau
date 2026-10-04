@@ -38,6 +38,7 @@ export type Params = {
 	pvp: boolean?,
 	canCrit: boolean?, -- default true
 	canDodge: boolean?, -- default true
+	forceCrit: boolean?, -- always crit (Hunter's Camouflage)
 }
 
 export type Result = {
@@ -88,7 +89,7 @@ function Damage.computeDamage(attacker: Attacker, defender: Defender, params: Pa
 	amount *= rng:float(Combat.randomMin, Combat.randomMax)
 
 	local crit = false
-	if params.canCrit ~= false and rng:chance(math.clamp(attacker.critChance, 0, 100) / 100) then
+	if params.forceCrit or (params.canCrit ~= false and rng:chance(math.clamp(attacker.critChance, 0, 100) / 100)) then
 		crit = true
 		amount *= math.max(1, attacker.critDmg / 100)
 	end

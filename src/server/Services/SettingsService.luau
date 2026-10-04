@@ -23,6 +23,9 @@ local SETTINGS: { [string]: (value: any) -> boolean } = {
 	dmgNumbers = function(value)
 		return type(value) == "boolean"
 	end,
+	quickCast = function(value)
+		return type(value) == "boolean"
+	end,
 	bindConfirm = function(value)
 		return type(value) == "boolean"
 	end,

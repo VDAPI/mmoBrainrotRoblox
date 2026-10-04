@@ -7,6 +7,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local Bar = require(script.Parent.Parent.Parent.Components.Bar)
+local EffectIcons = require(script.Parent.EffectIcons)
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Monsters = require(ReplicatedStorage.Shared.Data.Monsters)
@@ -191,6 +192,11 @@ local function TargetFrame(scope: Scope, props: Props): Instance
 				TextSize = Theme.TextSize.Small,
 				TextColor3 = Theme.Colors.Parchment,
 				TextXAlignment = Enum.TextXAlignment.Left,
+			}),
+			EffectIcons(scope, {
+				Model = props.Target,
+				Position = UDim2.new(0, 0, 1, 10),
+				Size = 26,
 			}),
 			Bar(scope, {
 				Name = "Hp",
