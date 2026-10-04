@@ -7,6 +7,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 
+local AlchemyWindow = require(script.Parent.Parent.UI.Screens.AlchemyWindow)
 local BackpackShop = require(script.Parent.Parent.UI.Screens.BackpackShop)
 local BlacksmithWindow = require(script.Parent.Parent.UI.Screens.BlacksmithWindow)
 local DepositWindow = require(script.Parent.Parent.UI.Screens.DepositWindow)
@@ -34,13 +35,14 @@ NpcController.SmithTab = scope:Value("craft")
 
 local WindowManager: any
 local CLOSE_DISTANCE = 20
-local SERVICE_WINDOWS = { "npc", "shop", "deposit", "blacksmith", "backpacks" }
+local SERVICE_WINDOWS = { "npc", "shop", "deposit", "blacksmith", "backpacks", "alchemy" }
 
 local SERVICE_TO_WINDOW: { [string]: string } = {
 	shop = "shop",
 	deposit = "deposit",
 	blacksmith = "blacksmith",
 	backpacks = "backpacks",
+	alchemy = "alchemy",
 }
 
 local function heal(npcId: string)
@@ -196,6 +198,14 @@ local function registerWindows()
 		size = Vector2.new(640, 640),
 		build = function(s)
 			return BackpackShop(s, NpcController.Current)
+		end,
+	})
+	WindowManager.Register({
+		id = "alchemy",
+		titleKey = "window.alchemy.title",
+		size = Vector2.new(1000, 680),
+		build = function(s)
+			return AlchemyWindow(s, { NpcId = NpcController.Current })
 		end,
 	})
 	WindowManager.Register({

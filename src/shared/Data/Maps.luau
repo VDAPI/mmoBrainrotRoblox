@@ -16,6 +16,10 @@ export type MapDef = {
 	size: { x: number, z: number },
 	-- Default spawn point relative to offset.
 	spawn: { x: number, y: number, z: number },
+	-- Caves: the point in front of the boss dungeon entrance (Dungeon Stones, S09 respawn), relative to offset.
+	dungeonEntrance: { x: number, y: number, z: number }?,
+	-- Boss dungeon region served by this cave ("meadows", ...), matches stone_dungeon_<region>.
+	dungeonRegion: string?,
 }
 
 local Maps: { [string]: MapDef } = {

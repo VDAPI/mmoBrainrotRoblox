@@ -9,6 +9,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 
+local Clock = require(ReplicatedStorage.Shared.Util.Clock)
 local DragDrop = require(script.Parent.Parent.UI.DragDrop)
 local ItemText = require(script.Parent.Parent.UI.ItemText)
 local Items = require(ReplicatedStorage.Shared.Data.Items)
@@ -23,11 +24,12 @@ type ItemInstance = Types.ItemInstance
 
 local ItemController = {
 	Name = "ItemController",
-	Deps = { "WindowManager", "UIController", "NpcController" },
+	Deps = { "WindowManager", "UIController", "NpcController", "GatherController" },
 }
 
 local WindowManager: any
 local NpcController: any
+local GatherController: any
 
 local function parse(slotId: string): (string, string)
 	local kind, rest = string.match(slotId, "^(%a+):(.+)$")
@@ -106,6 +108,27 @@ function ItemController.Use(index: number)
 	if item and item.id == "scroll_unbind" then
 		-- The scroll needs a target: pick a bound item first.
 		NpcController.OpenUnbind()
+		return
+	end
+	local def = item and Items.get(item.id)
+	local use = def and def.use
+	if use and use.kind == "teleport" and (use.target == "map" or use.target == "dungeon") then
+		GatherController.OpenStonePicker(index, use.target)
+		return
+	end
+	local blessing = State.Get({ "character", "blessing" })
+	if use and use.kind == "blessing" and type(blessing) == "table" and blessing.expiresAt > Clock.now() then
+		-- One blessing at a time (DESIGN §11): ask before replacing the active one.
+		WindowManager.ShowModal({
+			Title = Text.now("blessing.replace.title"),
+			Message = Text.now("blessing.replace.message"),
+			ConfirmText = Text.now("blessing.replace.confirm"),
+			CancelText = Text.now("common.cancel"),
+			OnConfirm = function(): (boolean, string?)
+				local ok, err = Net.Invoke("UseBlessing", index)
+				return ok, if ok then nil else Text.now(err or "error.internal")
+			end,
+		})
 		return
 	end
 	invoke("UseItem", index)
@@ -224,6 +247,7 @@ end
 function ItemController.Init(registry)
 	WindowManager = registry.Get("WindowManager")
 	NpcController = registry.Get("NpcController")
+	GatherController = registry.Get("GatherController")
 	local UIController = registry.Get("UIController")
 	UIController.AddDragVisual(function(slotId: string): (string?, string?)
 		local item = ItemController.ItemAt(slotId)

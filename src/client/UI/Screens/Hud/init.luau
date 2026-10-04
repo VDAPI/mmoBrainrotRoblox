@@ -17,6 +17,7 @@ local IconButton = require(script.Parent.Parent.Components.IconButton)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local PotionBar = require(script.PotionBar)
 local SkillBar = require(script.SkillBar)
+local BlessingIcon = require(script.BlessingIcon)
 local CastBar = require(script.CastBar)
 local EffectIcons = require(script.EffectIcons)
 local MobileSkills = require(script.MobileSkills)
@@ -385,6 +386,7 @@ local function Hud(scope: Scope, props: Props): Instance
 		BackgroundTransparency = 1,
 		[Children] = {
 			portrait(scope),
+			BlessingIcon(scope, UDim2.fromOffset(Theme.Padding.Large + 400 + 12, Theme.Padding.Large + 4)),
 			CastBar(scope),
 			EffectIcons(scope, {
 				Model = myModel,

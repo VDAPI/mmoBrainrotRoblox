@@ -57,6 +57,8 @@ function AccountSchema.characterTemplate(): CharacterData
 		quests = { main = nil, daily = { day = 0, list = {} } },
 		guildId = nil,
 		pvpEnabled = false,
+		elixirs = {},
+		visitedMaps = { [Config.StartingMap] = true },
 		createdAt = 0,
 		playtime = 0,
 	}

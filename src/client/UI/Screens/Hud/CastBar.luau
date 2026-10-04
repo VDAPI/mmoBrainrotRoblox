@@ -1,6 +1,6 @@
 --!strict
 -- Channel bar above the skill bar: channelled skills (Evocation, Prayer — state `skills.channel`) and the
--- Stone of Return (state `travel`). Fills over the channel time; disappears when done or interrupted.
+-- teleport stones (state `travel`) and gathering (state `gather`). Fills over the channel time; disappears when done or interrupted.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -21,6 +21,7 @@ type Channel = { label: string, endsAt: number, duration: number }
 local function CastBar(scope: Scope): Instance
 	local skillChannel = State.Value({ "skills", "channel" })
 	local travel = State.Value({ "travel" })
+	local gather = State.Value({ "gather" })
 	local now = scope:Value(Workspace:GetServerTimeNow())
 	table.insert(
 		scope,
@@ -32,7 +33,19 @@ local function CastBar(scope: Scope): Instance
 	local channel = scope:Computed(function(use): Channel?
 		local t = use(travel)
 		if type(t) == "table" and t.endsAt then
-			return { label = Text.get(use, "teleport.channel"), endsAt = t.endsAt, duration = t.duration or 5 }
+			return {
+				label = Text.get(use, if type(t.label) == "string" then t.label else "teleport.channel"),
+				endsAt = t.endsAt,
+				duration = t.duration or 5,
+			}
+		end
+		local g = use(gather)
+		if type(g) == "table" and g.endsAt then
+			return {
+				label = Text.get(use, if g.category == "ore" then "gather.mining" else "gather.picking"),
+				endsAt = g.endsAt,
+				duration = g.duration or 2,
+			}
 		end
 		local c = use(skillChannel)
 		if type(c) == "table" and c.endsAt then

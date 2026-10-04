@@ -82,6 +82,18 @@ local Definitions: { [string]: Definition } = {
 	DismantleAll = { kind = "function", dir = "c2s", rate = 1, args = { "integer" } }, -- (max rarity)
 	UnbindItem = { kind = "function", dir = "c2s", rate = 2, args = { "string", "string" } }, -- ("inv"|"eq", key)
 
+	-- Alchemy, blessings, gathering, fishing, stones (S07)
+	StartRecipe = { kind = "function", dir = "c2s", rate = 3, args = { "string", "string" } }, -- (npcId, recipeId)
+	CollectAlchemy = { kind = "function", dir = "c2s", rate = 3, args = { "string" } }, -- (npcId) -> collected count
+	UseBlessing = { kind = "function", dir = "c2s", rate = 2, args = { "integer" } }, -- (inv index), replaces active
+	StartGather = { kind = "function", dir = "c2s", rate = 3, args = { "string" } }, -- (node uid) -> (ok, err, seconds)
+	CancelGather = { kind = "event", dir = "c2s", rate = 4, args = {} },
+	StartFishing = { kind = "function", dir = "c2s", rate = 1, args = { "string" } }, -- (node uid) -> (ok, err, sessionId)
+	FishingBite = { kind = "event", dir = "s2c" }, -- (sessionId, { zone, speed, hits, timeLimit })
+	FishingResult = { kind = "function", dir = "c2s", rate = 2, args = { "string", "integer" } }, -- (sessionId, hits)
+	CancelFishing = { kind = "event", dir = "c2s", rate = 2, args = {} },
+	UseMapStone = { kind = "function", dir = "c2s", rate = 1, args = { "integer", "string" } }, -- (inv index, target id)
+
 	-- PvP and death
 	SetPvp = { kind = "function", dir = "c2s", rate = 1, args = { "boolean" } },
 	RespawnNow = { kind = "function", dir = "c2s", rate = 1, args = {} },

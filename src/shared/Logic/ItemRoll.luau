@@ -80,7 +80,7 @@ function ItemRoll.makeStack(defId: string, n: number, uid: string): ItemInstance
 	return {
 		uid = uid,
 		id = defId,
-		rarity = Rarities.COMMON,
+		rarity = def.rarity or Rarities.COMMON,
 		ilvl = def.level,
 		bonuses = {},
 		up = 0,

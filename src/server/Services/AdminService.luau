@@ -15,6 +15,8 @@ local Config = require(Shared.Config)
 local Log = require(Shared.Util.Log)
 local Inventory = require(Shared.Logic.Inventory)
 local ItemRoll = require(Shared.Logic.ItemRoll)
+local Blessings = require(Shared.Data.Blessings)
+local Clock = require(Shared.Util.Clock)
 local Items = require(Shared.Data.Items)
 local Monsters = require(Shared.Data.Monsters)
 local Npcs = require(Shared.Data.Npcs)
@@ -42,6 +44,10 @@ local AdminService = {
 		"StatService",
 		"SkillService",
 		"NpcService",
+		"AlchemyService",
+		"BlessingService",
+		"GatherService",
+		"FishingService",
 	},
 }
 
@@ -62,6 +68,10 @@ local LootService: any
 local StatService: any
 local SkillService: any
 local NpcService: any
+local AlchemyService: any
+local BlessingService: any
+local GatherService: any
+local FishingService: any
 
 type Command = {
 	usageKey: string,
@@ -736,6 +746,68 @@ COMMANDS.npc = {
 	end,
 }
 
+COMMANDS.time = {
+	usageKey = "admin.usage.time",
+	run = function(player, args)
+		local text = args[1]
+		local seconds = text and tonumber((string.gsub(text, "^%+", "")))
+		if not seconds then
+			reply(player, "admin.usage.time")
+			return
+		end
+		Clock.shift(seconds)
+		AlchemyService.CheckAll()
+		BlessingService.CheckAll()
+		reply(player, "admin.time.ok", { seconds = seconds, offset = Clock.offset() })
+	end,
+}
+
+COMMANDS.bless = {
+	usageKey = "admin.usage.bless",
+	run = function(player, args)
+		local id = args[1]
+		if not id then
+			local ids = {}
+			for _, blessing in Blessings.list do
+				table.insert(ids, blessing.id)
+			end
+			reply(player, "admin.bless.list", { list = table.concat(ids, ", ") })
+			return
+		end
+		withCharacter(player, function()
+			if BlessingService.Grant(player, id) then
+				reply(player, "admin.bless.ok", { id = id })
+			else
+				reply(player, "admin.usage.bless")
+			end
+		end)
+	end,
+}
+
+COMMANDS.nodes = {
+	usageKey = "admin.usage.nodes",
+	run = function(player, args)
+		if args[1] ~= "respawn" then
+			reply(player, "admin.usage.nodes")
+			return
+		end
+		reply(player, "admin.nodes.ok", { n = GatherService.RespawnAll() })
+	end,
+}
+
+COMMANDS.fish = {
+	usageKey = "admin.usage.fish",
+	run = function(player, args)
+		if args[1] ~= "auto" then
+			reply(player, "admin.usage.fish")
+			return
+		end
+		local enabled = not FishingService.IsAuto(player)
+		FishingService.SetAuto(player, enabled)
+		reply(player, if enabled then "admin.fish.on" else "admin.fish.off")
+	end,
+}
+
 local function onCommand(name: string, textSource: TextSource, message: string)
 	local player = Players:GetPlayerByUserId(textSource.UserId)
 	if not player then
@@ -778,6 +850,10 @@ function AdminService.Init(registry)
 	StatService = registry.Get("StatService")
 	SkillService = registry.Get("SkillService")
 	NpcService = registry.Get("NpcService")
+	AlchemyService = registry.Get("AlchemyService")
+	BlessingService = registry.Get("BlessingService")
+	GatherService = registry.Get("GatherService")
+	FishingService = registry.Get("FishingService")
 end
 
 function AdminService.Start()

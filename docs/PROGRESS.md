@@ -12,7 +12,7 @@
 | S04 | Przedmioty, plecak, drop, legendy | ● |
 | S05 | Umiejętności | ● |
 | S06 | Miasto, sklepy, kowal, ulepszanie | ● |
-| S07 | Alchemik, błogosławieństwa, zbieractwo | ○ |
+| S07 | Alchemik, błogosławieństwa, zbieractwo | ● |
 | S08 | Świat: miasto, regiony 1–2 | ○ |
 | S09 | Grupa, lochy, bossy 20 i 45 | ○ |
 | S10 | PvP, arena, handel | ○ |
@@ -164,12 +164,37 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
   dopiero po udanym teleporcie. Kamienie Mapy i Lochu: „zadziała po otwarciu kolejnych map” (S08/S09).
 - **S06** Lekarz leczy za darmo do pełna („Ulecz mnie”) — tylko przy nim (miasto).
 
+- **S07** Czas rzeczywisty (alchemia, błogosławieństwa, eliksiry) = `Util/Clock.now()` = `workspace:GetServerTimeNow()`
+  + przesunięcie z `/time`. Przesunięcie trzyma atrybut `ReplicatedStorage.ClockOffset`, więc liczniki klienta widzą ten sam
+  zegar. Przesunięcie żyje do restartu serwera. Czasy w zapisie to sekundy Unix, więc liczą się też offline.
+- **S07** Zamówienia u alchemika biegną **równolegle** (3 miejsca, VIP 4), każde ze swoim czasem; odbiór tylko przy alchemiku,
+  gotowe wyniki, które nie mieszczą się w plecaku, zostają w kolejce. Toast przy ukończeniu i po wejściu do gry.
+- **S07** Receptury błogosławieństw: zioło wg rzadkości + składnik linii (Wojownik: skóra wilka, Łowca: jedwab pajęczy,
+  Mędrzec: Księżycowy Płatek, Strażnik: ruda żelaza, Fortuna: złotopłetwa) + odłamki od Rzadkich. Legendarne tylko z dropu.
+  Linie poza Wojownikiem (DESIGN §11 ma tylko jego wartości) dobrane analogicznie; Fortuna: EXP/złoto/drop + trochę HP.
+- **S07** Błogosławieństwo i eliksiry to źródło modyfikatorów `blessing` w StatService (opis „source.blessing”); bonusy EXP/złota/
+  dropu to zwykłe staty, więc działają w istniejących Combat/Level/Loot. Wygaśnięcie sprawdzane co 5 s i przy wejściu.
+  Zastąpienie aktywnego błogosławieństwa: klient pyta modalem, potem remote `UseBlessing` (UseItem odmawia, gdy aktywne).
+- **S07** Eliksiry odporności: 1 h, +15 pkt % do jednego żywiołu, mogą działać równolegle z błogosławieństwem i ze sobą.
+- **S07** Węzły zbieractwa to modele z tagiem `GatherNode` (atrybuty Kind, Uid, Available). Czas zbierania liczy serwer
+  (stan `gather` napędza pasek w HUD), ruch > 3 st. w poziomie lub obrażenia przerywają. Jeden zbierający na węzeł; łowisk to nie dotyczy.
+  S07 stawia testowe węzły na łące treningowej (`GatherNodes.testPlacements`), S08 rozmieści je na mapach.
+- **S07** Łowienie: serwer losuje czas brania (3–8 s) i rybę przy zarzuceniu; klient dostaje tylko parametry minigry.
+  Wynik przyjmowany dla bieżącej sesji, ≥ 0.6 s i ≤ 16 s od brania, z 3 trafieniami. Skrzynia: złoto = poziom × 15 + esencje.
+  Spacja w minigrze jest przechwycona (bez skoku).
+- **S07** Kamień Mapy: wybór z odwiedzonych map (`character.visitedMaps`, uzupełniane przy wejściu i każdym teleporcie).
+  Kamienie Lochu: 4 osobne przedmioty (`stone_dungeon_<region>`, od alchemika) + stary ogólny `stone_dungeon` z wyborem lochu.
+  Cel lochu to pole `dungeonEntrance` mapy jaskini (`Maps`), które dodadzą S08/S09 — do tego czasu „zadziała po otwarciu map”.
+
 ## Niedokończone
 (Rzeczy z zakresu sesji, które nie zostały zrobione. Następna sesja zaczyna od nich.)
 
 - **S01** Dźwięki UI to placeholdery (`UI/Sounds.luau`), do podmiany na prawdziwe.
 - **S03** Potwory nie mają animacji (placeholdery z Partów poruszają się bez ruchu kończyn); zamach i pociski są efektami klienta.
-- **S06 → S07/S08** Kamień Mapy i Kamień Lochu nie działają (brak map i lochów); Alchemik ma tylko dialog (S07).
+- **S07 → S08/S09** Kamień Lochu czeka na `dungeonEntrance` w mapach jaskiń; Kamień Mapy ma na razie tylko miasto.
+- **S07 → S08** Węzły zbieractwa stoją tylko na łące testowej; rozmieszczenie na mapach regionów w S08.
+- **S07** Tooltip przedmiotu-błogosławieństwa nie wypisuje jego statystyk (są w tooltipie ikony w HUD po użyciu).
+- **S07 → S14** Dodatkowe miejsce w kolejce alchemika za VIP działa tylko przez `/pass vip` (brak MarketplaceService).
 - **S06 → S11/S12/S13** Mistrz gildii, aukcjoner/poczta i tablica zleceń mają dialog, ale usługi „wkrótce”.
 - **S06** Sprzedaż przez przeciągnięcie na okno sklepu nie istnieje — sprzedaje się w zakładce „Sprzedaj” (zaznaczanie).
 - **S04** Broń w dłoni to placeholder z jednego Partu (bez modeli z assetów).
@@ -177,7 +202,6 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
 - **S05** Efekty wizualne umiejętności to placeholdery z Partów (`VfxController`), bez animacji postaci.
 - **S05 → S09** Leczenie, buffy grupowe, Krąg Światła, Aura, Boska Interwencja i Wskrzeszenie działają na innych graczy dopiero
   z grupami (S09). Obrażenia skilli w graczy tylko przez `PvpService.CanAttack` (pełne PvP w S10).
-- **S02 → S07** Ikona błogosławieństwa w portrecie HUD jeszcze nie istnieje.
 - **S02 → S09/S12** `PvpService.CanAttack` przekazuje `sameParty = false`, `sameGuild = false` — podpiąć grupę i gildię.
 
 ## Zgłoszone błędy
@@ -513,3 +537,46 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
 17. Kamień Powrotu (`/give stone_return`) na Polanie: użyj → pasek „Powrót do miasta…” 5 s → teleport na plac.
     Ruch albo `/hurt 10` w trakcie → „Teleport przerwany”, kamień zostaje w plecaku.
 18. Alchemik, Mistrz Gildii, Aukcjonerka, Tablica Zleceń: dialog działa, usługi mówią „wkrótce”.
+
+### S07: Alchemik, błogosławieństwa, zbieractwo
+
+**Zrobione**
+- Dane: `Data/Blessings` (5 linii × 5 rzadkości, przedmioty `blessing_<linia>_<rzadkość>`, eliksiry), `Data/Recipes`
+  (36 receptur: 20 błogosławieństw, Zwój Ochrony, Kamień Mapy, 4 Kamienie Lochu, 2 przemiany esencji, 4 eliksiry),
+  `Data/GatherNodes` (5 żył, 5 krzaków, 4 łowiska), `Data/Fish` (ryby per łowisko, trudność minigry, skrzynia).
+- Logika: `Logic/Time` (dzień UTC, odliczanie, format, kolejka alchemii), `Util/Clock` (zegar z przesunięciem `/time`).
+- Serwer: `AlchemyService` (zlecanie, odbiór, powiadomienia), `BlessingService` (błogosławieństwa + eliksiry, wygasanie),
+  `GatherService` (węzły, zbieranie z czasem serwera, odnawianie), `FishingService` (sesje łowienia, weryfikacja wyniku),
+  `TravelService` (Kamień Mapy, Kamienie Lochu, wspólny kanał 5 s), `visitedMaps` w postaci.
+- Klient: okno Alchemika (zakładki, receptury z posiadane/wymagane, kolejka z paskami i licznikami, „Odbierz wszystko”),
+  ikony błogosławieństwa i eliksirów przy portrecie (licznik, tooltip), `GatherController` (podpowiedzi Kop/Zbieraj/Łów,
+  kilof w dłoni, spławik), minigra łowienia, okno wyboru celu kamienia, pasek kopania/zbierania w HUD.
+- Admin: `/time +s`, `/bless [id]`, `/nodes respawn`, `/fish auto`.
+- Testy: 217 (nowe: czas, kolejka, receptury, błogosławieństwa, węzły, ryby).
+
+**Najważniejsze pliki**: `src/shared/Data/{Blessings,Recipes,GatherNodes,Fish}.luau`, `src/shared/Logic/Time.luau`,
+`src/shared/Util/Clock.luau`, `src/server/Services/{Alchemy,Blessing,Gather,Fishing,Travel}Service.luau`,
+`src/client/Controllers/GatherController.luau`, `src/client/UI/Screens/{AlchemyWindow,FishingGame,StonePicker}.luau`,
+`src/client/UI/Screens/Hud/BlessingIcon.luau`.
+
+#### Instrukcja testu S07
+
+1. `git pull`, `rojo serve`, Connect, Play, wejdź postacią. `/lvl 60`, `/gold 1000000`, `/mats 50`.
+2. Alchemiczka (`/npc alchemist`) → **E** → „Alchemia”. Zakładki: Błogosławieństwa / Zwoje i kamienie / Materiały / Eliksiry.
+   Receptury z wyższym poziomem są wyszarzone z „Wymaga poziomu X”. Składniki: zielone mam / czerwone brakuje.
+3. Zleć 3 receptury → kolejka po prawej: paski, liczniki. Czwarta → „Wszystkie miejsca są zajęte”. `/pass vip` → 4. miejsce.
+4. `/time +3600` → paski pełne, „Gotowe!”, toast „Alchemik skończył: …”. „Odbierz wszystko” → przedmioty w plecaku.
+5. Zleć coś, wyjdź z gry (Stop), wejdź ponownie, `/time +3600` → toast; po ponownym wejściu z gotowym zamówieniem →
+   „Alchemik ma dla Ciebie gotowe zamówienia”.
+6. Użyj błogosławieństwa (podwójny klik w plecaku) → ikona ✶ przy portrecie w kolorze rzadkości, licznik 59:59, tooltip ze statami;
+   okno Postaci (C) pokazuje wzrost HP/SIŁ (źródło „Błogosławieństwo”). Drugie błogosławieństwo → pytanie o zastąpienie.
+7. `/bless fortune_5` → wyższe EXP/złoto z potworów. `/time +3600` → „Twoje błogosławieństwo wygasło”, ikona znika.
+8. Eliksir odporności → ikona ⚱ obok, odporność +15 w oknie Postaci.
+9. Łąka treningowa (na wschód od miasta): po północnej stronie żyły rud, po południowej krzaki ziół, dalej staw (łowisko).
+10. Kopanie bez kilofa → „Potrzebujesz Kilofa”. Kup kilof i wędkę u kupca. **E** przy żyle → pasek „Kopanie…” 2.5 s,
+    kilof w dłoni, ruda w plecaku, żyła znika na 90 s. Ruch w trakcie → „Zbieranie przerwane”. `/nodes respawn` przywraca.
+11. Krzak: 1.5 s, bez narzędzia, odnowienie 60 s.
+12. Staw → **E** „Łów” → spławik na wodzie, „Czekasz na branie…”. Po 3–8 s „Bierze!”: pasek ze strefą i wskaźnikiem.
+    Klik/Spacja/dotyk w zielonej strefie ×3 (strefa się zwęża, wskaźnik przyspiesza) → „Złowiono: …”. Pudło → „Ryba uciekła”.
+    `/fish auto` → kolejne branie kończy się samo sukcesem.
+13. Kamień Mapy (`/scrolls 3`, użyj) → okno z odwiedzonymi mapami (na razie miasto). Kamień Lochu → „zadziała po otwarciu map”.

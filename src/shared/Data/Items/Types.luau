@@ -25,7 +25,7 @@ export type WeaponStats = {
 }
 
 export type UseEffect = {
-	kind: "potion" | "teleport" | "scroll" | "none",
+	kind: "potion" | "teleport" | "scroll" | "blessing" | "elixir" | "none",
 	resource: ("hp" | "mana" | "energy")?,
 	amount: number?,
 	target: string?, -- teleport / scroll specifics (S06–S07)
@@ -59,6 +59,8 @@ export type ItemDef = {
 	fixedBonuses: { { stat: string, v: number } }?,
 	bossId: string?,
 	bindOnPickup: boolean?,
+	-- Fixed rarity of stackable items (blessings); equipment rolls its rarity.
+	rarity: number?,
 }
 
 return nil

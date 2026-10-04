@@ -62,6 +62,8 @@ export type CharacterData = {
 	quests: { main: { id: string, progress: { any } }?, daily: { day: number, list: { any } } },
 	guildId: string?,
 	pvpEnabled: boolean,
+	elixirs: { [string]: number }, -- resistance stat -> expiresAt (Clock time)
+	visitedMaps: { [string]: boolean },
 	createdAt: number,
 	playtime: number,
 }
