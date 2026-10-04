@@ -76,6 +76,7 @@ local function channelFor(entry: Cache): TextChannel?
 		-- The name is the chat tab label; clients find the channel by the GuildId attribute.
 		c.Name = `⚑ {entry.data.tag}`
 		c:SetAttribute("GuildId", entry.data.id)
+		c:SetAttribute("VaelthornChannel", "guild")
 		c.Parent = TextChatService
 		return c
 	end)

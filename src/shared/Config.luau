@@ -24,6 +24,9 @@ local Config = {
 	GuildPresenceRefresh = 45, -- how often a server refreshes its members' presence
 	GuildCacheRefresh = 90, -- safety re-read of cached guilds (MessagingService is best effort)
 	GuildChatMaxLength = 200,
+	-- Mail and auction house (S13).
+	MailStoreName = "Vaelthorn_Mail_v1",
+	AuctionStoreName = "Vaelthorn_Auction_v1",
 
 	CharacterName = {
 		MinLength = 3,

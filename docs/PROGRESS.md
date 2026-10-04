@@ -18,7 +18,7 @@
 | S10 | PvP, arena, handel | ● |
 | S11 | Questy, regiony 3–4, bossy 70 i 100 | ● |
 | S12 | Gildie | ● |
-| S13 | Aukcja, poczta, czat | ○ |
+| S13 | Aukcja, poczta, czat | ● |
 | S14 | Monetyzacja, kosmetyki, jakość | ○ |
 
 Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana przez właściciela
@@ -303,6 +303,35 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
 - **S12** Zaproszenia tylko na tym samym serwerze (z menu PPM gracza lub po imieniu w zakładce Członkowie), 60 s, popup jak
   przy handlu/pojedynku. Tag gildii nad głową jako `[TAG]` przed imieniem (atrybut modelu `GuildTag`).
 
+- **S13** Poczta jest kontowa (`Mail_<userId>` w `Vaelthorn_Mail_v1`), przesyłka z `charId` widoczna tylko dla tej postaci.
+  Limity: 100 przesyłek, 10 przedmiotów w przesyłce, 30 dni (potem przepada). Odbiór: najpierw `UpdateAsync` zdejmuje
+  przesyłkę, potem trafia do postaci; co się nie zmieści (np. plecak zapełnił się w międzyczasie), wraca jako nowa
+  przesyłka „Zwrócone przedmioty” — nic nie ginie i nic się nie podwaja. Odbiór tylko przy Aukcjonerze (usługa „mail”),
+  podgląd listy wszędzie (koperta z liczbą w HUD u góry na środku).
+- **S13** Aukcja: wolno wystawiać stacki (cena za cały stos, średnia rynkowa liczona na sztukę). Oferta = rekord
+  `Listing_<id>` w `Vaelthorn_Auction_v1` z pełnym przedmiotem + wpis w MemoryStore SortedMap `AuctionIndex_<kategoria>`
+  (klucz `%012d_<id>` = sortowanie po cenie). Kategorie: broń, druga ręka, zbroje, biżuteria, materiały, zużywalne, inne.
+- **S13** Kaucja 1% (min. 1) pobierana przy wystawieniu, zwracana razem z zapłatą (zapłata = cena − 5% + kaucja), przepada
+  przy anulowaniu i przy wygaśnięciu. Nie można kupić oferty z własnego konta.
+- **S13** Zakup podaje oczekiwaną cenę; `UpdateAsync` zmienia `active → sold` tylko gdy oferta aktywna, niewygasła i w tej
+  cenie. Złoto kupującego schodzi przed zapisem i wraca przy porażce. Przedmiot do plecaka albo pocztą, gdy się nie mieści.
+- **S13** Wyszukiwanie czyta do 200 wpisów na kategorię i kierunek sortowania (cache 10 s na serwerze), filtruje po stronie
+  serwera (klasa, poziom, rzadkość, nazwa w obu językach) i stronicuje po 20. Pełny przedmiot (bonusy) dociąga się po
+  kliknięciu w wiersz (`AuctionDetails`), bo indeks trzyma tylko skrót.
+- **S13** Wystawianie: zamiast przeciągania przedmiot wybiera się kliknięciem/tapnięciem w siatce plecaka w zakładce
+  „Wystaw” (działa tak samo na telefonie).
+- **S13** Wygasanie: każdy serwer co 5 min (z losowym przesunięciem) przegląda 200 najtańszych wpisów każdej kategorii;
+  `active → expired` robi tylko jeden serwer (UpdateAsync), on wysyła przedmiot pocztą. Dodatkowo „Moje oferty”
+  wygasza przeterminowane oferty przy otwarciu.
+- **S13** Powiadomienia między serwerami (nowa poczta, sprzedano) na jednym temacie MessagingService
+  `Vaelthorn_PlayerNotice`; bez MessagingService działają tylko lokalnie (poczta i tak jest w DataStore).
+- **S13** Wywołania DataStore/MemoryStore przez `Market/Retry` (sprawdzenie budżetu + 3 ponowienia z backoffem); bez dostępu
+  do DataStore/MemoryStore działają magazyny w pamięci serwera (`/auction list` pokazuje tryb local/global).
+- **S13** Czat: Ogólny (RBXGeneral), Handel (kanał `⚖ Trade` dla wszystkich na serwerze), Grupa, Gildia, Szept (wbudowane
+  `/w nazwa`). Zakładki kanałów włączone. `ChatController` (`OnIncomingMessage`): etykieta i kolor kanału, imię postaci
+  zamiast nicku Roblox, tag gildii, gwiazdka VIP z atrybutu gracza `Vip` (do ustawienia w S14), złote linie systemowe.
+  Filtrowanie i ochrona przed floodem — domyślne TextChatService.
+
 ## Niedokończone
 (Rzeczy z zakresu sesji, które nie zostały zrobione. Następna sesja zaczyna od nich.)
 
@@ -316,7 +345,12 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
 - **S08** Arena w mieście to na razie tylko żółta strefa z trybunami — zapisy i walki areny w S10.
 - **S07** Tooltip przedmiotu-błogosławieństwa nie wypisuje jego statystyk (są w tooltipie ikony w HUD po użyciu).
 - **S07 → S14** Dodatkowe miejsce w kolejce alchemika za VIP działa tylko przez `/pass vip` (brak MarketplaceService).
-- **S06 → S13** Aukcjoner i poczta mają dialog, ale usługi „wkrótce”.
+- **S13** Aukcja i poczta między serwerami (MessagingService, MemoryStore, DataStore) sprawdzalne tylko w opublikowanej grze;
+  w Studio działają magazyny w pamięci jednego serwera.
+- **S13** Wygasanie skanuje 200 najtańszych ofert kategorii — przy bardzo dużym rynku droższe przeterminowane oferty
+  wygasną dopiero, gdy sprzedający otworzy „Moje oferty” (w wyszukiwaniu i tak są ukryte).
+- **S13 → S14** Gwiazdka VIP w czacie czeka na atrybut `Vip` z monetyzacji. Etykieta kanału handlu (`⚖ Trade`) nie jest
+  tłumaczona (nazwa kanału = etykieta zakładki).
 - **S06** Sprzedaż przez przeciągnięcie na okno sklepu nie istnieje — sprzedaje się w zakładce „Sprzedaj” (zaznaczanie).
 - **S04** Broń w dłoni to placeholder z jednego Partu (bez modeli z assetów).
 - **S04 → S09** Łup z bossów (`Loot.rollBossLoot`) jest gotowy, ale bossów jeszcze nie ma.
@@ -927,3 +961,59 @@ Loch (wystarczy 1 gracz):
     i ranga bez zmian. Inna postać na tym samym koncie nie jest w gildii.
 21. Rozwiąż gildię: Ustawienia → „Rozwiąż gildię” → przycisk aktywny dopiero po wpisaniu dokładnej nazwy → gildia znika
     u wszystkich online; nazwę i tag da się użyć ponownie przy zakładaniu.
+
+### S13: Dom aukcyjny, poczta i kanały czatu
+
+**Zrobione**
+- Dane i logika: `Data/Market` (kategorie, kaucja 1%, opłata 5%, 24/48 h, 20 ofert, limity poczty), `Logic/Auction`
+  (walidacja wystawienia, kaucja/opłata/wypłata, klucz indeksu, skrót, filtry, stany oferty, historia cen),
+  `Logic/Mail` (dodawanie z limitami, wygasanie, widoczność dla postaci, odbiór raz), `Logic/ItemName` (nazwy przedmiotów
+  wspólne dla klienta i indeksu wyszukiwania).
+- Serwer: `MailService` (wysyłka do konta online/offline, odbiór atomowy, „Odbierz wszystko”), `AuctionService`
+  (wystawianie, wyszukiwanie z cache, szczegóły, zakup z ochroną przed podwójnym kupnem, anulowanie, wygasanie co 5 min,
+  moje oferty, średnia cena), `Market/{KeyStore,Index,Retry,Notify}` (DataStore z fallbackiem, indeks MemoryStore,
+  ponawianie z budżetem, powiadomienia między serwerami), `ChatService` (kanał Handel, zakładki czatu).
+- Klient: okno Domu Aukcyjnego (Przeglądaj z filtrami i stronami / Wystaw z kaucją, opłatą, wypłatą i średnią rynkową /
+  Moje oferty z anulowaniem), okno Poczty (lista, podgląd z przedmiotami, Odbierz / Odbierz wszystko), koperta z liczbą
+  przesyłek w HUD, `ChatController` (kolory i etykiety kanałów, imię postaci, tag gildii).
+- Admin: `/mail gold n`, `/mail item id [n] [rzadkość]`, `/auction list`, `/auction expireall` (Studio).
+- Testy: 300 (nowe: kaucja/opłata/wypłata, walidacja, kategorie wszystkich przedmiotów, sortowanie kluczy, filtry i wyszukiwanie
+  po nazwie, jednokrotny zakup, wygasanie, anulowanie, historia cen, limity i prywatność poczty).
+
+**Najważniejsze pliki**: `src/shared/Data/Market.luau`, `src/shared/Logic/{Auction,Mail,ItemName}.luau`,
+`src/server/Services/{MailService,AuctionService,ChatService}.luau`, `src/server/Market/*`,
+`src/client/Controllers/{MarketController,ChatController}.luau`, `src/client/UI/Screens/AuctionWindow/*`,
+`src/client/UI/Screens/MailWindow.luau`, zmiany w `NpcController`, `AdminService`, `PartyService`, `Guild/Runtime`,
+`ItemText`, `Types`/`AccountSchema` (`character.auctions`), `tests/market.spec.luau`.
+
+#### Instrukcja testu S13
+
+1. `/mail gold 500` → toast „Masz nową pocztę”, u góry na środku koperta „✉ 1”. Kliknij → okno Poczty, przycisk „Odbierz”
+   nieaktywny, podpowiedź „odbierzesz u Aukcjonera”.
+2. Podejdź do Aukcjonera w stolicy → **E** → „Poczta” → „Odbierz” → +500 złota, koperta znika.
+3. `/mail item sword1h_1 1 4` i `/mail item ore_copper 20` → dwie przesyłki → „Odbierz wszystko” → oba w plecaku.
+4. Zapełnij plecak (np. kilka razy `/legend`), `/mail item potion_hp_1 5` → „Odbierz” → błąd „Plecak pełny”,
+   przesyłka zostaje.
+5. `/give sword1h_10 4`, `/gold 100000`. Aukcjoner → „Dom Aukcyjny” → zakładka **Wystaw** → kliknij miecz (złoty znacznik),
+   cena 1000 → kaucja 10, opłata 50, „dostaniesz pocztą 960”; wybierz 48 h → „Wystaw przedmiot”.
+6. Miecz znika z plecaka, złoto −10. Zakładka **Moje oferty** → „Aktywna”, czas do końca, przycisk „Anuluj”.
+7. Przedmioty związane (z kłódką) nie pojawiają się w siatce „Wystaw”.
+8. **Przeglądaj** → „Broń” → oferta z nazwą w kolorze rzadkości, ceną, czasem, sprzedawcą; przycisk „Twoja” nieaktywny.
+   Kliknij wiersz → tooltip miecza pokazuje bonusy. Wpisz fragment nazwy w filtrze → „Szukaj” → nadal widoczna;
+   wpisz „zzz” → „Brak ofert”.
+9. `/auction list` → liczba wpisów w kategoriach i tryb (`local` w Studio bez API, `global` w opublikowanej grze).
+10. Anuluj ofertę (Moje oferty → „Anuluj” → potwierdź) → toast, w poczcie „Anulowana oferta” z mieczem; kaucja nie wraca.
+11. Wystaw ponownie, `/auction expireall` → „Wygaszono ofert: 1”, w poczcie „Niesprzedane: …”.
+12. **Dwóch graczy** (Test → Clients and Servers, 2): Gracz 1 wystawia przedmiot za 1000. Gracz 2 (`/gold 5000`) u Aukcjonera
+    → Przeglądaj → „Kup” → potwierdź → przedmiot w plecaku, złoto −1000.
+13. Gracz 1: toast „Sprzedano … zapłata na poczcie”, koperta → przesyłka „Sprzedano … (opłata 50)” z 960 złota → odbierz.
+14. Podwójny zakup (3 graczy): Gracz 1 wystawia, Gracze 2 i 3 otwierają potwierdzenie zakupu i klikają „Kup” prawie
+    jednocześnie — tylko jeden dostaje przedmiot, drugi widzi „Ktoś kupił to pierwszy”, a jego złoto wraca.
+15. Gracz 2 z pełnym plecakiem kupuje → „Plecak jest pełny, przedmiot trafił na pocztę”.
+16. Średnia rynkowa: po sprzedaży w zakładce Wystaw wybierz ten sam typ przedmiotu → „Średnia rynkowa: … za sztukę”.
+17. Czat: zakładki u góry okna czatu (Ogólny, `⚖ Trade`, po założeniu grupy/gildii także ich kanały). Linia w Handlu ma
+    pomarańczową etykietę `[Handel]`, nad imieniem postaci (nie nick Roblox) tag gildii `[TAG]`.
+18. Szept: `/w ImięGraczaRoblox cześć` → fioletowa etykieta `[Szept]` u obu.
+19. Komunikaty systemowe (np. odpowiedzi komend admina) są złote.
+20. Trwałość (opublikowane miejsce z API): wystaw przedmiot, wyjdź, wejdź na inny serwer → oferta w Moje oferty i w wyszukiwaniu;
+    poczta wysłana, gdy byłeś offline, czeka po wejściu.

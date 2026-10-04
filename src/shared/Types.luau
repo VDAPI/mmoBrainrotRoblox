@@ -66,6 +66,7 @@ export type CharacterData = {
 		daily: { day: number, list: { any }, rerolls: number },
 	},
 	guildId: string?,
+	auctions: { [string]: boolean }, -- S13: ids of this character's auction listings
 	pvpEnabled: boolean,
 	elixirs: { [string]: number }, -- resistance stat -> expiresAt (Clock time)
 	pvp: { kills: number, deaths: number, duelsWon: number, duelsLost: number },

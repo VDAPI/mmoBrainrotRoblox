@@ -5,29 +5,14 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
-local Items = require(ReplicatedStorage.Shared.Data.Items)
-local Locale = require(ReplicatedStorage.Shared.Util.Locale)
+local ItemName = require(ReplicatedStorage.Shared.Logic.ItemName)
 local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
 local Text = require(script.Parent.Text)
 
 local ItemText = {}
 
 function ItemText.nameIn(lang: string, itemId: string, up: number?): string
-	local def = Items.get(itemId)
-	if not def then
-		return Locale.T("item.unknown", nil, lang)
-	end
-	local name
-	if def.nameKey then
-		name = Locale.T(def.nameKey, nil, lang)
-	else
-		local prefix = Locale.T(`{def.namePrefix}.{def.gender or "m"}`, nil, lang)
-		name = `{prefix} {Locale.T(def.nameBase or "", nil, lang)}`
-	end
-	if up and up > 0 then
-		name ..= ` +{up}`
-	end
-	return name
+	return ItemName.get(lang, itemId, up)
 end
 
 -- Name in the current UI language (non-reactive).

@@ -150,6 +150,7 @@ local function ensureChannel(party: Party)
 	local ok, channel = pcall(function()
 		local c = Instance.new("TextChannel")
 		c.Name = `VaelthornParty_{party.id}`
+		c:SetAttribute("VaelthornChannel", "party")
 		c.Parent = TextChatService
 		return c
 	end)

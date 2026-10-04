@@ -56,6 +56,7 @@ function AccountSchema.characterTemplate(): CharacterData
 		alchemy = {},
 		quests = { main = nil, mainDone = 0, daily = { day = 0, list = {}, rerolls = 0 } },
 		guildId = nil,
+		auctions = {},
 		pvpEnabled = false,
 		elixirs = {},
 		pvp = { kills = 0, deaths = 0, duelsWon = 0, duelsLost = 0 },

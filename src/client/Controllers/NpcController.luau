@@ -24,20 +24,21 @@ local UnbindPicker = require(script.Parent.Parent.UI.Screens.UnbindPicker)
 
 local NpcController = {
 	Name = "NpcController",
-	Deps = { "WindowManager", "UIController", "QuestController", "GuildController" },
+	Deps = { "WindowManager", "UIController", "QuestController", "GuildController", "MarketController" },
 }
 
 local scope = Fusion.scoped(Fusion)
 NpcController.Current = scope:Value(nil :: string?)
 NpcController.Quests = nil :: any
 NpcController.Guild = nil :: any
+NpcController.Market = nil :: any
 -- Target of the forge's upgrade tab ({ location, key }), set by dropping an item on the anvil.
 NpcController.UpgradeTarget = scope:Value(nil :: any)
 NpcController.SmithTab = scope:Value("craft")
 
 local WindowManager: any
 local CLOSE_DISTANCE = 20
-local SERVICE_WINDOWS = { "npc", "shop", "deposit", "blacksmith", "backpacks", "alchemy", "guildfound" }
+local SERVICE_WINDOWS = { "npc", "shop", "deposit", "blacksmith", "backpacks", "alchemy", "guildfound", "auction" }
 
 local SERVICE_TO_WINDOW: { [string]: string } = {
 	shop = "shop",
@@ -78,6 +79,12 @@ function NpcController.OpenService(service: string)
 		return
 	elseif service == "guild" then
 		NpcController.Guild.OpenFromNpc()
+		return
+	elseif service == "auction" then
+		NpcController.Market.OpenAuction()
+		return
+	elseif service == "mail" then
+		NpcController.Market.OpenMail()
 		return
 	end
 	local window = SERVICE_TO_WINDOW[service]
@@ -244,6 +251,7 @@ function NpcController.Init(registry)
 	WindowManager = registry.Get("WindowManager")
 	NpcController.Quests = registry.Get("QuestController")
 	NpcController.Guild = registry.Get("GuildController")
+	NpcController.Market = registry.Get("MarketController")
 	registerWindows()
 end
 

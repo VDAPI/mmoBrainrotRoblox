@@ -61,6 +61,8 @@ local AdminService = {
 		"TradeService",
 		"QuestService",
 		"GuildService",
+		"MailService",
+		"AuctionService",
 	},
 }
 
@@ -91,6 +93,8 @@ local DungeonService: any
 local TradeService: any
 local QuestService: any
 local GuildService: any
+local MailService: any
+local AuctionService: any
 
 type Command = {
 	usageKey: string,
@@ -1111,6 +1115,63 @@ COMMANDS.guild = {
 	end,
 }
 
+COMMANDS.mail = {
+	usageKey = "admin.usage.mail",
+	run = function(player, args)
+		withCharacter(player, function()
+			local char = PlayerStateService.GetCharacter(player)
+			local outgoing: any = { from = "admin", subjectKey = "mail.subject.admin", charId = nil }
+			if args[1] == "gold" and parseAmount(args[2]) then
+				outgoing.gold = math.max(1, parseAmount(args[2]) :: number)
+			elseif args[1] == "item" and args[2] and Items.get(args[2]) then
+				local def = Items.get(args[2]) :: any
+				local n = math.clamp(parseAmount(args[3]) or 1, 1, def.maxStack)
+				local item = if def.category == "equipment"
+					then ItemRoll.rollItem(
+						args[2],
+						def.level,
+						math.clamp(parseAmount(args[4]) or 1, 1, 5),
+						Rng.new(),
+						InventoryService.NewUid()
+					)
+					else ItemRoll.makeStack(args[2], n, InventoryService.NewUid())
+				outgoing.items = { item }
+			else
+				reply(player, "admin.usage.mail")
+				return
+			end
+			outgoing.charId = if char then char.id else nil
+			local ok, err = MailService.Send(player.UserId, outgoing)
+			reply(player, if ok then "admin.mail.sent" else (err or "error.internal"))
+		end)
+	end,
+}
+
+COMMANDS.auction = {
+	usageKey = "admin.usage.auction",
+	run = function(player, args)
+		if args[1] == "list" then
+			local parts = {}
+			for category, n in AuctionService.AdminStats() do
+				table.insert(parts, `{category} {n}`)
+			end
+			table.sort(parts)
+			reply(player, "admin.auction.list", {
+				list = table.concat(parts, ", "),
+				mode = if AuctionService.IndexIsLocal() then "local" else "global",
+			})
+		elseif args[1] == "expireall" then
+			if not RunService:IsStudio() then
+				reply(player, "admin.studioOnly")
+				return
+			end
+			reply(player, "admin.auction.expired", { n = AuctionService.AdminExpireAll() })
+		else
+			reply(player, "admin.usage.auction")
+		end
+	end,
+}
+
 local function onCommand(name: string, textSource: TextSource, message: string)
 	local player = Players:GetPlayerByUserId(textSource.UserId)
 	if not player then
@@ -1163,6 +1224,8 @@ function AdminService.Init(registry)
 	TradeService = registry.Get("TradeService")
 	QuestService = registry.Get("QuestService")
 	GuildService = registry.Get("GuildService")
+	MailService = registry.Get("MailService")
+	AuctionService = registry.Get("AuctionService")
 end
 
 function AdminService.Start()
