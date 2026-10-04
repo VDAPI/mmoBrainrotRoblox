@@ -92,6 +92,8 @@ local Definitions: { [string]: Definition } = {
 	FishingBite = { kind = "event", dir = "s2c" }, -- (sessionId, { zone, speed, hits, timeLimit })
 	FishingResult = { kind = "function", dir = "c2s", rate = 2, args = { "string", "integer" } }, -- (sessionId, hits)
 	CancelFishing = { kind = "event", dir = "c2s", rate = 2, args = {} },
+	UsePortal = { kind = "function", dir = "c2s", rate = 1, args = { "string" } }, -- (portal id)
+	MapTransition = { kind = "event", dir = "s2c" }, -- (mapId) shows the loading screen, (nil) hides it
 	UseMapStone = { kind = "function", dir = "c2s", rate = 1, args = { "integer", "string" } }, -- (inv index, target id)
 
 	-- PvP and death

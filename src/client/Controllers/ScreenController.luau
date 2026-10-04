@@ -106,6 +106,9 @@ local function registerWindows()
 					})
 				end,
 			})
+		elseif entry.id == "map" then
+			-- The world map is registered by WorldController.
+			continue
 		elseif entry.id == "menu" then
 			WindowManager.Register({
 				id = "menu",

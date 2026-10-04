@@ -358,6 +358,18 @@ function CharacterService.Start()
 		end
 	end)
 
+	-- Position and playtime are written into the save every 30 s (DESIGN: login on the saved map).
+	task.spawn(function()
+		while true do
+			task.wait(30)
+			for _, player in Players:GetPlayers() do
+				if PlayerStateService.GetPhase(player) == "playing" then
+					saveRuntime(player)
+				end
+			end
+		end
+	end)
+
 	Players.PlayerRemoving:Connect(function(player)
 		-- Deferred: ProfileReleasing (also on PlayerRemoving) still needs the runtime for playtime.
 		task.defer(function()

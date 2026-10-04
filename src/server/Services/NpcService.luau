@@ -78,6 +78,7 @@ local function build(def: Npcs.NpcDef, parent: Instance)
 	local height = if root and humanoid then humanoid.HipHeight + root.Size.Y / 2 else 3
 	npc:PivotTo(CFrame.new(position + Vector3.new(0, 1 + height, 0)) * CFrame.Angles(0, math.rad(def.facing), 0))
 	npc:SetAttribute("NpcId", def.id)
+	npc.ModelStreamingMode = Enum.ModelStreamingMode.Atomic
 	npc.Parent = parent
 	positions[def.id] = position
 end

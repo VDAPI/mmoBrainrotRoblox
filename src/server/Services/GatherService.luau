@@ -41,6 +41,7 @@ local PlayerStateService: any
 local InventoryService: any
 local ResourceService: any
 local CharacterService: any
+local WorldService: any
 
 local rng = Rng.new()
 local nodes: { [string]: Node } = {}
@@ -135,27 +136,48 @@ local function buildModel(kind: GatherNodes.NodeKind, at: Vector3): Model
 			})
 		end
 	else
-		local pond = part(model, {
-			Name = "Water",
-			Shape = Enum.PartType.Cylinder,
-			Size = Vector3.new(0.4, 22, 22),
-			CFrame = CFrame.new(at + Vector3.new(0, 0.25, 0)) * CFrame.Angles(0, 0, math.rad(90)),
-			Color = color,
-			Material = Enum.Material.Glass,
-			Transparency = 0.25,
+		-- Fishing spot marker at the water's edge (the layout provides the lake): sign post and buoys.
+		local post = part(model, {
+			Name = "Post",
+			Size = Vector3.new(0.6, 6, 0.6),
+			CFrame = CFrame.new(at + Vector3.new(0, 3, 0)),
+			Color = Color3.fromHex("#5A4632"),
+			Material = Enum.Material.Wood,
 			CanCollide = false,
 		})
-		model.PrimaryPart = pond
+		model.PrimaryPart = post
 		part(model, {
-			Name = "Jetty",
-			Size = Vector3.new(3, 0.6, 8),
-			CFrame = CFrame.new(at + Vector3.new(0, 0.6, -12)),
-			Color = Color3.fromHex("#8A6B4A"),
+			Name = "Sign",
+			Size = Vector3.new(3, 1.6, 0.3),
+			CFrame = CFrame.new(at + Vector3.new(0, 5.4, 0)),
+			Color = color,
 			Material = Enum.Material.WoodPlanks,
-			CanCollide = true,
+			CanCollide = false,
 		})
+		for i = 1, 3 do
+			local angle = i * 2.1
+			part(model, {
+				Name = "Buoy",
+				Shape = Enum.PartType.Ball,
+				Size = Vector3.new(1, 1, 1),
+				CFrame = CFrame.new(at + Vector3.new(math.cos(angle) * 9, -0.2, 8 + math.sin(angle) * 5)),
+				Color = accent,
+				Material = Enum.Material.Neon,
+				CanCollide = false,
+			})
+		end
 	end
 	return model
+end
+
+-- Ground below a map point (terrain and map geometry; starts low so cave roofs are not hit).
+local function groundAt(position: Vector3): Vector3
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Include
+	params.FilterDescendantsInstances = { Workspace.Terrain }
+	params.IgnoreWater = true
+	local hit = Workspace:Raycast(position + Vector3.new(0, 14, 0), Vector3.new(0, -60, 0), params)
+	return if hit then hit.Position else position + Vector3.new(0, FLOOR_TOP, 0)
 end
 
 function GatherService.Spawn(kindId: string, mapId: string, x: number, z: number): Node?
@@ -168,9 +190,10 @@ function GatherService.Spawn(kindId: string, mapId: string, x: number, z: number
 	if not folder then
 		return nil
 	end
-	local at = Vector3.new(map.offset.x + x, map.offset.y + FLOOR_TOP, map.offset.z + z)
+	local at = groundAt(Vector3.new(map.offset.x + x, map.offset.y, map.offset.z + z))
 	local uid = HttpService:GenerateGUID(false)
 	local model = buildModel(kind, at)
+	model.ModelStreamingMode = Enum.ModelStreamingMode.Atomic
 	model:SetAttribute("Kind", kind.id)
 	model:SetAttribute("Uid", uid)
 	model:SetAttribute("Available", true)
@@ -342,6 +365,7 @@ function GatherService.Init(registry)
 	InventoryService = registry.Get("InventoryService")
 	ResourceService = registry.Get("ResourceService")
 	CharacterService = registry.Get("CharacterService")
+	WorldService = registry.Get("WorldService")
 end
 
 function GatherService.Start()
@@ -349,7 +373,7 @@ function GatherService.Start()
 	local folder = Instance.new("Folder")
 	folder.Name = "GatherNodes"
 	folder.Parent = world
-	for _, placement in GatherNodes.testPlacements do
+	for _, placement in WorldService.GetNodePlacements() do
 		GatherService.Spawn(placement.kind, placement.map, placement.x, placement.z)
 	end
 

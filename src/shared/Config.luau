@@ -51,6 +51,9 @@ local Config = {
 	PvpToggleDelay = 10,
 	PvpCombatLock = 15,
 
+	-- World generation (S08): warn when a generated map exceeds this many parts.
+	MaxPartsPerMap = 8000,
+
 	-- Zone detection interval (s).
 	ZoneCheckInterval = 0.5,
 	-- Players within this radius see someone's level-up effect.

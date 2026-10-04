@@ -76,7 +76,8 @@ function MonsterService.All(): { Monster.Monster }
 	return monsters
 end
 
--- Ground position below `position` (ignores monsters and characters).
+-- Ground position below `position` (ignores monsters and characters). The ray starts only a little above
+-- the point so spawners inside caves (terrain roof overhead) land on the cave floor.
 local function groundAt(position: Vector3): Vector3
 	local params = RaycastParams.new()
 	params.FilterType = Enum.RaycastFilterType.Exclude
@@ -87,7 +88,7 @@ local function groundAt(position: Vector3): Vector3
 		end
 	end
 	params.FilterDescendantsInstances = exclude
-	local hit = Workspace:Raycast(position + Vector3.new(0, 60, 0), Vector3.new(0, -200, 0), params)
+	local hit = Workspace:Raycast(position + Vector3.new(0, 14, 0), Vector3.new(0, -200, 0), params)
 	return if hit then hit.Position else position
 end
 
@@ -362,6 +363,40 @@ function MonsterService.Init(registry)
 			})
 		end
 	end
+end
+
+-- Spawners within `radius` of a position, nearest first (admin /nearby).
+function MonsterService.SpawnersNear(
+	position: Vector3,
+	radius: number
+): {
+	{
+		id: string,
+		monster: string,
+		variant: string,
+		alive: number,
+		count: number,
+		distance: number,
+	}
+}
+	local result = {}
+	for _, spawner in spawners do
+		local distance = (spawner.origin - position).Magnitude
+		if distance <= radius then
+			table.insert(result, {
+				id = spawner.data.id,
+				monster = spawner.data.monster,
+				variant = spawner.data.variant,
+				alive = #spawner.alive,
+				count = spawner.data.count,
+				distance = math.floor(distance),
+			})
+		end
+	end
+	table.sort(result, function(a, b)
+		return a.distance < b.distance
+	end)
+	return result :: any
 end
 
 function MonsterService.Start()

@@ -18,6 +18,7 @@ local ItemRoll = require(Shared.Logic.ItemRoll)
 local Blessings = require(Shared.Data.Blessings)
 local Clock = require(Shared.Util.Clock)
 local Items = require(Shared.Data.Items)
+local Maps = require(Shared.Data.Maps)
 local Monsters = require(Shared.Data.Monsters)
 local Npcs = require(Shared.Data.Npcs)
 local Net = require(Shared.Net)
@@ -48,6 +49,8 @@ local AdminService = {
 		"BlessingService",
 		"GatherService",
 		"FishingService",
+		"WorldService",
+		"TravelService",
 	},
 }
 
@@ -72,6 +75,8 @@ local AlchemyService: any
 local BlessingService: any
 local GatherService: any
 local FishingService: any
+local WorldService: any
+local TravelService: any
 
 type Command = {
 	usageKey: string,
@@ -322,6 +327,20 @@ COMMANDS.pvp = {
 COMMANDS.tp = {
 	usageKey = "admin.usage.tp",
 	run = function(player, args)
+		local mapId = args[1]
+		if mapId and Maps.get(mapId) then
+			if not WorldService.IsBuilt(mapId) then
+				reply(player, "admin.maps.notBuilt", { map = mapId })
+				return
+			end
+			withCharacter(player, function()
+				local px, pz = tonumber(args[2]), tonumber(args[3])
+				local at = if px and pz then WorldService.GroundCFrame(mapId, px, pz) else nil
+				task.spawn(TravelService.TeleportToMap, player, mapId, at)
+				reply(player, "admin.tp.map", { map = mapId })
+			end)
+			return
+		end
 		local x, y, z = tonumber(args[1]), tonumber(args[2]), tonumber(args[3])
 		if x == nil or y == nil or z == nil then
 			reply(player, "admin.usage.tp")
@@ -808,6 +827,63 @@ COMMANDS.fish = {
 	end,
 }
 
+COMMANDS.maps = {
+	usageKey = "admin.usage.maps",
+	run = function(player)
+		local ids = {}
+		for id in Maps.byId do
+			table.insert(ids, id)
+		end
+		table.sort(ids)
+		local parts = {}
+		for _, id in ids do
+			table.insert(parts, if WorldService.IsBuilt(id) then `{id} ✔` else id)
+		end
+		reply(player, "admin.maps.list", { list = table.concat(parts, ", ") })
+	end,
+}
+
+COMMANDS.rebuild = {
+	usageKey = "admin.usage.rebuild",
+	run = function(player, args)
+		local mapId = args[1]
+		if not mapId or not Maps.get(mapId) then
+			reply(player, "admin.usage.rebuild")
+			return
+		end
+		local started = os.clock()
+		if WorldService.Rebuild(mapId) then
+			reply(player, "admin.rebuild.ok", { map = mapId, seconds = math.floor((os.clock() - started) * 10) / 10 })
+		else
+			reply(player, "admin.maps.notBuilt", { map = mapId })
+		end
+	end,
+}
+
+COMMANDS.nearby = {
+	usageKey = "admin.usage.nearby",
+	run = function(player, args)
+		local radius = math.clamp(tonumber(args[1]) or 150, 10, 2000)
+		local model = player.Character
+		local root = model and model:FindFirstChild("HumanoidRootPart") :: BasePart?
+		if not root then
+			return
+		end
+		local lines = {}
+		for i, s in MonsterService.SpawnersNear(root.Position, radius) do
+			if i > 12 then
+				break
+			end
+			table.insert(lines, `{s.id} ({s.monster} {s.variant}) {s.alive}/{s.count} · {s.distance}`)
+		end
+		if #lines == 0 then
+			reply(player, "admin.nearby.none")
+		else
+			reply(player, "admin.nearby.list", { list = table.concat(lines, "; ") })
+		end
+	end,
+}
+
 local function onCommand(name: string, textSource: TextSource, message: string)
 	local player = Players:GetPlayerByUserId(textSource.UserId)
 	if not player then
@@ -854,6 +930,8 @@ function AdminService.Init(registry)
 	BlessingService = registry.Get("BlessingService")
 	GatherService = registry.Get("GatherService")
 	FishingService = registry.Get("FishingService")
+	WorldService = registry.Get("WorldService")
+	TravelService = registry.Get("TravelService")
 end
 
 function AdminService.Start()

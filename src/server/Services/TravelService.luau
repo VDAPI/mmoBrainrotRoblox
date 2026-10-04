@@ -18,7 +18,14 @@ local Types = require(Shared.Types)
 
 local TravelService = {
 	Name = "TravelService",
-	Deps = { "PlayerStateService", "InventoryService", "ResourceService", "CharacterService", "DeathService" },
+	Deps = {
+		"PlayerStateService",
+		"InventoryService",
+		"ResourceService",
+		"CharacterService",
+		"DeathService",
+		"WorldService",
+	},
 }
 
 local CHANNEL_SECONDS = 5
@@ -29,6 +36,7 @@ local InventoryService: any
 local ResourceService: any
 local CharacterService: any
 local DeathService: any
+local WorldService: any
 
 local tokens: { [Player]: number } = {}
 
@@ -44,15 +52,62 @@ local function interrupt(player: Player, notify: boolean)
 	end
 end
 
--- Moves the character to a map's respawn point (also used by S08 portals and map stones).
+-- Moves the character to a map (respawn point unless `at` is given) behind the client's loading screen:
+-- MapTransition(mapId) shows it, the target area is streamed in, then MapTransition(nil) hides it. Yields.
 function TravelService.TeleportToMap(player: Player, mapId: string, at: CFrame?)
 	local model = player.Character
 	if not model then
 		return
 	end
-	model:PivotTo(at or DeathService.SpawnCFrame(mapId, nil))
+	local target = at or DeathService.SpawnCFrame(mapId, nil)
+	Net.Fire(player, "MapTransition", mapId)
+	task.wait(0.4)
+	pcall(function()
+		player:RequestStreamAroundAsync(target.Position, 8)
+	end)
+	model = player.Character
+	if not model or player.Parent == nil then
+		return
+	end
+	model:PivotTo(target)
 	PlayerStateService.Set(player, { "character", "location", "map" }, mapId)
 	TravelService.MarkVisited(player, mapId)
+	task.delay(0.6, function()
+		if player.Parent then
+			Net.Fire(player, "MapTransition", nil)
+		end
+	end)
+end
+
+-- Portals (S08): walk up and press E; the client warns before red zones and maps above your level.
+local PORTAL_RANGE = 20
+local portalBusy: { [Player]: boolean } = {}
+
+local function usePortal(player: Player, portalId: string): (boolean, string?)
+	local portal = WorldService.GetPortal(portalId)
+	if not portal or not PlayerStateService.GetCharacter(player) then
+		return false, "error.badRequest"
+	end
+	if ResourceService.IsDead(player) or portalBusy[player] then
+		return false, "error.wrongPhase"
+	end
+	local model = player.Character
+	local root = model and model:FindFirstChild("HumanoidRootPart") :: BasePart?
+	if not root or (root.Position - portal.position).Magnitude > PORTAL_RANGE then
+		return false, "npc.error.tooFar"
+	end
+	if not WorldService.IsBuilt(portal.target) then
+		return false, "portal.closed"
+	end
+	interrupt(player, false)
+	local arrive = portal.arrive
+	local at = if arrive then WorldService.GroundCFrame(portal.target, arrive.x, arrive.z) else nil
+	portalBusy[player] = true
+	task.spawn(function()
+		TravelService.TeleportToMap(player, portal.target, at)
+		portalBusy[player] = nil
+	end)
+	return true, nil
 end
 
 function TravelService.MarkVisited(player: Player, mapId: string)
@@ -189,11 +244,13 @@ function TravelService.Init(registry)
 	ResourceService = registry.Get("ResourceService")
 	CharacterService = registry.Get("CharacterService")
 	DeathService = registry.Get("DeathService")
+	WorldService = registry.Get("WorldService")
 	InventoryService.UseHandlers.teleport = useStone
 end
 
 function TravelService.Start()
 	Net.Handle("UseMapStone", useMapStone)
+	Net.Handle("UsePortal", usePortal)
 	CharacterService.CharacterEntered:Connect(function(player: Player, char: Types.CharacterData)
 		TravelService.MarkVisited(player, char.location.map)
 	end)
@@ -206,6 +263,7 @@ function TravelService.Start()
 		interrupt(player, false)
 	end)
 	Players.PlayerRemoving:Connect(function(player)
+		portalBusy[player] = nil
 		tokens[player] = nil
 	end)
 end

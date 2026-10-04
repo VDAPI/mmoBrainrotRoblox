@@ -13,7 +13,7 @@
 | S05 | Umiejętności | ● |
 | S06 | Miasto, sklepy, kowal, ulepszanie | ● |
 | S07 | Alchemik, błogosławieństwa, zbieractwo | ● |
-| S08 | Świat: miasto, regiony 1–2 | ○ |
+| S08 | Świat: miasto, regiony 1–2 | ● |
 | S09 | Grupa, lochy, bossy 20 i 45 | ○ |
 | S10 | PvP, arena, handel | ○ |
 | S11 | Questy, regiony 3–4, bossy 70 i 100 | ○ |
@@ -186,13 +186,41 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
   Kamienie Lochu: 4 osobne przedmioty (`stone_dungeon_<region>`, od alchemika) + stary ogólny `stone_dungeon` z wyborem lochu.
   Cel lochu to pole `dungeonEntrance` mapy jaskini (`Maps`), które dodadzą S08/S09 — do tego czasu „zadziała po otwarciu map”.
 
+- **S08** Świat generowany przy starcie serwera: `World/WorldBuilder` buduje każdą mapę z `buildMode = "generated"`, która ma
+  moduł w `World/Layouts`. Teren Roblox (FillBlock/FillBall/FillCylinder), powierzchnia gruntu każdej mapy na y = 0,
+  wysokości odczytywane raycastem po terenie. Wzgórza to zakopane kule terenu (bez szumu) — przewidywalne i omijające ścieżki.
+  Budowanie jest synchroniczne w `WorldService.Init` (NPC, węzły i portale zależą od gotowego świata), z logiem czasu i liczby części.
+- **S08** Mapa testowa z S02 (łąka + jaskinia prób na wschód od miasta) usunięta zamiast trzymania jako `dev` — wszystkie jej
+  testy da się zrobić na Szepczących Łąkach / w Jaskini Mchów; `/tp meadows`, `/tp meadows_cave`.
+- **S08** Jaskinie to osobne mapy: blok skały z wydrążonymi komorami i korytarzami (FillBall/FillBlock Air). Promień „od góry”
+  przy osadzaniu (potwory, węzły, przybycie) startuje nisko (+14 st.), żeby nie trafić w sufit jaskini.
+- **S08** Portale: modele z tagiem `Portal` (atrybuty PortalId, TargetMap, ArriveX/Z), podpowiedź „Przejdź [E]” po stronie
+  klienta, serwer `UsePortal` sprawdza dystans (20 st.) i czy cel jest zbudowany. Ostrzeżenia (czerwona strefa, poziom poniżej
+  minimum mapy) to modal po stronie klienta — ostrzeżenie zamiast blokady. Portale do Spalonych Pustkowi i Lodowych Szczytów
+  stoją, ale mówią „Ta kraina nie jest jeszcze otwarta” (S11).
+- **S08** Teleport między mapami (portale, kamienie, `/tp`) idzie przez `TravelService.TeleportToMap`: event `MapTransition`
+  pokazuje ekran ładowania (nazwa, poziomy, strefa, porada), serwer woła `RequestStreamAroundAsync`, przenosi postać, po 0.6 s
+  chowa ekran. `visitedMaps` uzupełniane przy każdym teleporcie.
+- **S08** Pozycja zapisywana co 30 s i przy wyjściu (jak wcześniej). Zapisana pozycja w lochu → przed wejściem do lochu;
+  na mapie niezbudowanej → stolica.
+- **S08** Minimapa 2D (nie ViewportFrame): szkic mapy (ścieżki, woda, budynki, mury) generowany przez layout i publikowany jako
+  JSON w `ReplicatedStorage.MapSketches.<mapId>`. Zawsze północ u góry, strzałka gracza obraca się z kamerą — tryb obracania
+  całej mapy pominięty (obrót dzieci GuiObject w Roblox jest kłopotliwy), do rozważenia w S14.
+- **S08** Oświetlenie per mapa (Lighting, Atmosphere, korekcja kolorów) ustawia klient (`WorldController`) z tweenem 1.5 s;
+  muzyka: mechanizm crossfade jest, ale `music = ""` dla wszystkich map do S14 (brak własnych assetów).
+- **S08** Gęstość: 6–10 zwykłych potworów na spawner, elity 3–6 na spawner w jaskiniach, Elita II pojedynczo (10–20 min).
+  W jaskiniach mieszkają też elitarne odmiany potworów z powierzchni regionu (DESIGN §15.2: E/E II każdego rodzaju).
+- **S08** Rozmieszczenie NPC przeniesione do dzielnic miasta (rzemieślnicza NW, handlowa NE, świątynia i gildia SW, Arena SE).
+
 ## Niedokończone
 (Rzeczy z zakresu sesji, które nie zostały zrobione. Następna sesja zaczyna od nich.)
 
 - **S01** Dźwięki UI to placeholdery (`UI/Sounds.luau`), do podmiany na prawdziwe.
 - **S03** Potwory nie mają animacji (placeholdery z Partów poruszają się bez ruchu kończyn); zamach i pociski są efektami klienta.
-- **S07 → S08/S09** Kamień Lochu czeka na `dungeonEntrance` w mapach jaskiń; Kamień Mapy ma na razie tylko miasto.
-- **S07 → S08** Węzły zbieractwa stoją tylko na łące testowej; rozmieszczenie na mapach regionów w S08.
+- **S08 → S09** Wejścia do lochów stoją w jaskiniach (tag `DungeonEntrance`), ale nie da się wejść — DungeonService w S09.
+- **S08 → S11** Spalone Pustkowia, Lodowe Szczyty i ich jaskinie mają dane, ale nie mają layoutów (portale „nieotwarte”).
+- **S08 → S14** Muzyka map (crossfade gotowy, brak ścieżek), tryb obracającej się minimapy.
+- **S08** Arena w mieście to na razie tylko żółta strefa z trybunami — zapisy i walki areny w S10.
 - **S07** Tooltip przedmiotu-błogosławieństwa nie wypisuje jego statystyk (są w tooltipie ikony w HUD po użyciu).
 - **S07 → S14** Dodatkowe miejsce w kolejce alchemika za VIP działa tylko przez `/pass vip` (brak MarketplaceService).
 - **S06 → S11/S12/S13** Mistrz gildii, aukcjoner/poczta i tablica zleceń mają dialog, ale usługi „wkrótce”.
@@ -580,3 +608,47 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
     Klik/Spacja/dotyk w zielonej strefie ×3 (strefa się zwęża, wskaźnik przyspiesza) → „Złowiono: …”. Pudło → „Ryba uciekła”.
     `/fish auto` → kolejne branie kończy się samo sukcesem.
 13. Kamień Mapy (`/scrolls 3`, użyj) → okno z odwiedzonymi mapami (na razie miasto). Kamień Lochu → „zadziała po otwarciu map”.
+
+### S08: Świat: miasto, regiony 1–2
+
+**Zrobione**
+- Dane: `Data/Maps` — wszystkie 13 map z DESIGN §3.2 (offsety ≥ 3000 st., biom, oświetlenie/atmosfera, muzyka, buildMode,
+  pozycja i połączenia na mapie świata, wejścia do lochów), spawny `Data/Spawns/{meadows,meadows_cave,duskwood,duskwood_cave}`.
+- Generator: `World/Build` (teren, ścieżki, jeziora, wzgórza, granice mapy, skorupa jaskini i drążenie komór, strefy, punkty
+  odrodzenia, szkic mapy), `World/Prefabs` (drzewa 6 rodzajów, skały, krzaki, kwiaty, dom, wieża, mur, brama, kuźnia, świątynia,
+  namiot, ruiny, palisada, most, pomost, latarnia, pochodnia, ognisko, kryształ, kolumna, nagrobek, flaga, stragan, fontanna,
+  arena, portal, wrota lochu), `World/WorldBuilder` (budowa map, rejestr portali, węzły, szkice, `/rebuild`).
+- Layouty: Vaelthorn (mury, 4 bramy z portalami, plac z fontanną, dzielnice, Arena), Szepczące Łąki (pola, las, trakt z obozem
+  bandytów, obóz goblinów, jezioro z łowiskiem, farma), Jaskinia Mchów (8 komór, wrota lochu Grimroka), Mroczny Bór (wilkołaczy
+  las, ruiny, gnijące serce, wioska kultystów, bagno z łowiskiem), Krypta Zapomnianych (9 komór, wrota lochu Morvane).
+- Serwer: portale z ekranem ładowania i streamingiem, `GroundCFrame`, zapis pozycji co 30 s, węzły zbieractwa z layoutów.
+- Klient: `WorldController` (oświetlenie map, ekran ładowania z poradami, portale z tabliczką i ostrzeżeniami), minimapa
+  (szkic, gracz, potwory, NPC, portale, węzły, zoom, kolor strefy, nazwa podstrefy), mapa świata (M) z grafem połączeń i podglądem mapy.
+- Admin: `/tp mapId [x z]`, `/maps`, `/rebuild mapId`, `/nearby [promień]`.
+- Testy: 227 (nowe: kompletność map, połączenia w obie strony, jaskinie czerwone z wejściem do lochu, spawny w granicach map,
+  elity tylko w czerwonych strefach, poziomy i regiony potworów, NPC w murach miasta).
+
+**Najważniejsze pliki**: `src/shared/Data/Maps.luau`, `src/shared/Data/Spawns/*`, `src/server/World/{Build,Prefabs,WorldBuilder}.luau`,
+`src/server/World/Layouts/*`, `src/server/Services/{Travel,World,Gather}Service.luau`, `src/client/Controllers/WorldController.luau`,
+`src/client/UI/MapSketch.luau`, `src/client/UI/Screens/Hud/Minimap.luau`, `src/client/UI/Screens/WorldMapWindow.luau`.
+
+#### Instrukcja testu S08
+
+1. `git pull`, `rojo serve`, Connect, Play. W Output: „built city …”, „built meadows …” itd. z czasem i liczbą części (bez ostrzeżeń).
+2. Wejdź postacią: pojawiasz się na placu Vaelthornu z fontanną; widać mury, bramy, dzielnice, Arenę na południowym wschodzie.
+   NPC stoją przy swoich budynkach (kowal przy kuźni, lekarka i nauczyciel przed świątynią, kupcy przy straganach).
+3. Minimapa w prawym górnym rogu: ulice, budynki, ikony NPC, portale ◎; +/− zmienia zoom; pod spodem nazwa strefy w jej kolorze.
+   Wejście na Arenę → nazwa „Arena”, żółty kolor.
+4. M → mapa świata: graf map z poziomami, „Jesteś tutaj” na Vaelthornie; kliknij Szepczące Łąki → podgląd mapy.
+5. Wschodnia brama → portal „Szepczące Łąki 1–20”. **E** → ekran ładowania z nazwą i poradą → Łąki, inne światło i mgła.
+6. Na Łąkach: króliki i wilki przy polach, dziki w lesie na północy, bandyci w obozie na trakcie (południowy wschód), gobliny
+   w obozie na wschodzie. `/nearby` wypisuje spawnery. Jezioro z pomostem i łowiskiem (SW), żyły miedzi i żelaza, zioła.
+7. Portal do Jaskini Mchów (wschód): z postacią < 12 lvl → ostrzeżenie o poziomie i o strefie PvP; „Idź” → ciemna jaskinia,
+   pochodnie, kryształy; tylko elity i Elity II; na końcu czerwone wrota lochu Grimroka (wejście w S09).
+8. Śmierć w jaskini → odrodzenie przy wejściu do jaskini.
+9. Portal NE na Łąkach → Mroczny Bór: ciemniej, fioletowa mgła, gęsty las, ruiny, bagno, wioska kultystów; portal do Krypty na wschodzie.
+10. `/tp duskwood_cave` → Krypta: korytarze, kolumny, nagrobki, wrota lochu Morvane.
+11. Portal „Spalone Pustkowia” w mieście → „Ta kraina nie jest jeszcze otwarta”.
+12. Wyjdź z gry na Łąkach i wejdź ponownie → pojawiasz się w tym samym miejscu (zapis co 30 s i przy wyjściu).
+13. Kamień Mapy → lista odwiedzonych map (miasto, Łąki, …).
+14. `/rebuild meadows` → mapa przebudowana (komunikat z czasem). `/maps` → ✔ przy zbudowanych.

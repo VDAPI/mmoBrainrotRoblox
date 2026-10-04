@@ -14,10 +14,10 @@ local Exp = require(ReplicatedStorage.Shared.Logic.Exp)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local IconButton = require(script.Parent.Parent.Components.IconButton)
-local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local PotionBar = require(script.PotionBar)
 local SkillBar = require(script.SkillBar)
 local BlessingIcon = require(script.BlessingIcon)
+local Minimap = require(script.Minimap)
 local CastBar = require(script.CastBar)
 local EffectIcons = require(script.EffectIcons)
 local MobileSkills = require(script.MobileSkills)
@@ -57,12 +57,6 @@ export type Props = {
 
 local SKILL_SLOTS = 10
 local SLOT_SIZE = 56
-
-local ZONE_COLORS = {
-	green = Theme.Colors.ZoneGreen,
-	yellow = Theme.Colors.ZoneYellow,
-	red = Theme.Colors.ZoneRed,
-}
 
 local function number(scope: Scope, path: { string }): Fusion.Computed<number>
 	local value = State.Value(path)
@@ -200,11 +194,6 @@ local function portrait(scope: Scope): Instance
 end
 
 local function menu(scope: Scope, props: Props): Instance
-	local mapId = State.Value({ "character", "location", "map" })
-	local map = scope:Computed(function(use): Maps.MapDef?
-		return Maps.get(use(mapId) or "")
-	end)
-
 	local buttons = {}
 	for index, entry in props.Menu do
 		table.insert(
@@ -251,41 +240,7 @@ local function menu(scope: Scope, props: Props): Instance
 					buttons :: any,
 				},
 			}),
-			scope:New("Frame")({
-				Name = "MapName",
-				LayoutOrder = 2,
-				Size = UDim2.fromOffset(0, 36),
-				AutomaticSize = Enum.AutomaticSize.X,
-				BackgroundColor3 = Theme.Colors.Panel,
-				BackgroundTransparency = 0.15,
-				[Children] = {
-					scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
-					scope:New("UIStroke")({
-						ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-						Thickness = Theme.Stroke.Normal,
-						Color = scope:Computed(function(use): Color3
-							local m = use(map)
-							return if m then ZONE_COLORS[m.zone] else Theme.Colors.Border
-						end),
-					}),
-					scope:New("UIPadding")({
-						PaddingLeft = UDim.new(0, Theme.Padding.Medium),
-						PaddingRight = UDim.new(0, Theme.Padding.Medium),
-					}),
-					scope:New("TextLabel")({
-						BackgroundTransparency = 1,
-						Size = UDim2.fromScale(0, 1),
-						AutomaticSize = Enum.AutomaticSize.X,
-						Text = scope:Computed(function(use): string
-							local m = use(map)
-							return if m then Text.get(use, m.nameKey) else ""
-						end),
-						FontFace = Theme.Fonts.Heading,
-						TextSize = Theme.TextSize.Body,
-						TextColor3 = Theme.Colors.Parchment,
-					}),
-				},
-			}),
+			Minimap(scope),
 		},
 	})
 end

@@ -94,25 +94,9 @@ for _, spot in SPOTS do
 	})
 end
 
--- S07 test placement on the training meadow east of the city (map-relative x/z). S08 places nodes from
--- the map layouts with the same kinds.
-export type Placement = { kind: string, map: string, x: number, z: number }
-local TEST_PLACEMENTS: { Placement } = {
-	{ kind = "vein_copper", map = "city", x = 300, z = 150 },
-	{ kind = "vein_copper", map = "city", x = 320, z = 175 },
-	{ kind = "vein_iron", map = "city", x = 345, z = 150 },
-	{ kind = "vein_silver", map = "city", x = 370, z = 170 },
-	{ kind = "bush_meadowsweet", map = "city", x = 290, z = -150 },
-	{ kind = "bush_meadowsweet", map = "city", x = 310, z = -170 },
-	{ kind = "bush_nightshade", map = "city", x = 335, z = -150 },
-	{ kind = "bush_moonpetal", map = "city", x = 360, z = -170 },
-	{ kind = "fishing_meadows", map = "city", x = 420, z = 200 },
-}
-
 return table.freeze({
 	kinds = kinds,
 	list = list,
-	testPlacements = TEST_PLACEMENTS,
 	get = function(id: string): NodeKind?
 		return kinds[id]
 	end,

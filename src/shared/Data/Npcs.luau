@@ -1,5 +1,5 @@
 --!strict
--- City NPCs (DESIGN §3.2). Positions are relative to the map offset; S08 moves them into the real city layout.
+-- City NPCs (DESIGN §3.2). Positions are relative to the map offset and match World/Layouts/city.
 -- `services` are the buttons of the dialog window; their windows live on the client (NpcController).
 
 export type Service =
@@ -41,8 +41,8 @@ npc({
 	greetingKey = "npc.healer.greeting",
 	services = { "shop", "heal" },
 	shop = "healer",
-	position = { x = 70, z = -48 },
-	facing = 180,
+	position = { x = -142, z = 50 },
+	facing = 0,
 	colors = { body = "#EADDBE", accent = "#C2352E" },
 	icon = "⚕",
 })
@@ -53,7 +53,7 @@ npc({
 	greetingKey = "npc.blacksmith.greeting",
 	services = { "blacksmith", "shop" },
 	shop = "blacksmith",
-	position = { x = -70, z = -48 },
+	position = { x = -100, z = -26 },
 	facing = 180,
 	colors = { body = "#5A4636", accent = "#8E8E93" },
 	icon = "⚒",
@@ -64,8 +64,8 @@ npc({
 	nameKey = "npc.alchemist.name",
 	greetingKey = "npc.alchemist.greeting",
 	services = { "alchemy" },
-	position = { x = -70, z = 94 },
-	facing = 0,
+	position = { x = -190, z = -28 },
+	facing = 180,
 	colors = { body = "#3E5A3A", accent = "#7ACB3A" },
 	icon = "⚗",
 })
@@ -76,8 +76,8 @@ npc({
 	greetingKey = "npc.merchant.greeting",
 	services = { "shop" },
 	shop = "merchant",
-	position = { x = 70, z = 94 },
-	facing = 0,
+	position = { x = 92, z = -48 },
+	facing = 180,
 	colors = { body = "#6B4A2B", accent = "#E8C25A" },
 	icon = "⚖",
 })
@@ -87,8 +87,8 @@ npc({
 	nameKey = "npc.backpacker.name",
 	greetingKey = "npc.backpacker.greeting",
 	services = { "backpacks" },
-	position = { x = 42, z = 34 },
-	facing = 225,
+	position = { x = 130, z = -48 },
+	facing = 180,
 	colors = { body = "#8A6B4A", accent = "#4FA35A" },
 	icon = "▣",
 })
@@ -98,8 +98,8 @@ npc({
 	nameKey = "npc.banker.name",
 	greetingKey = "npc.banker.greeting",
 	services = { "deposit" },
-	position = { x = -36, z = -24 },
-	facing = 135,
+	position = { x = 240, z = -36 },
+	facing = 180,
 	colors = { body = "#2F3540", accent = "#C9A45C" },
 	icon = "⛃",
 })
@@ -110,8 +110,8 @@ npc({
 	greetingKey = "npc.teacher.greeting",
 	services = { "shop" },
 	shop = "teacher",
-	position = { x = -42, z = 34 },
-	facing = 135,
+	position = { x = -118, z = 50 },
+	facing = 0,
 	colors = { body = "#4A3B6B", accent = "#B455FF" },
 	icon = "📜",
 })
@@ -121,7 +121,7 @@ npc({
 	nameKey = "npc.guildmaster.name",
 	greetingKey = "npc.guildmaster.greeting",
 	services = { "guild" },
-	position = { x = 0, z = -108 },
+	position = { x = -225, z = 42 },
 	facing = 0,
 	colors = { body = "#6B2F2A", accent = "#C9A45C" },
 	icon = "⚑",
@@ -132,8 +132,8 @@ npc({
 	nameKey = "npc.auctioneer.name",
 	greetingKey = "npc.auctioneer.greeting",
 	services = { "auction", "mail" },
-	position = { x = 36, z = -24 },
-	facing = 225,
+	position = { x = 185, z = -32 },
+	facing = 180,
 	colors = { body = "#2A3A5A", accent = "#4A8FE7" },
 	icon = "⚱",
 })
@@ -143,12 +143,12 @@ npc({
 	nameKey = "npc.questboard.name",
 	greetingKey = "npc.questboard.greeting",
 	services = { "quests" },
-	position = { x = 0, z = 52 },
-	facing = 0,
+	position = { x = 28, z = -36 },
+	facing = 160,
 	colors = { body = "#6B4A2B", accent = "#EADDBE" },
 	icon = "✎",
 })
-for i, position in { { x = 250, z = -10 }, { x = 250, z = 10 } } do
+for i, position in { { x = 272, z = -16 }, { x = 272, z = 16 } } do
 	npc({
 		id = `guard{i}`,
 		map = "city",

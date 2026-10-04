@@ -1,295 +1,157 @@
 --!strict
--- Builds placeholder map geometry at server start. S01: the capital (plaza, block buildings, title sign).
--- S02: zone volumes (tag "ZoneVolume") and spawn points (tag "SpawnPoint") plus a test strip east of the
--- city: a yellow training meadow and a small walled red cave. S08 replaces this with layout-driven
--- generation (World/Layouts) using the same tags and attributes.
+-- Builds the world at server start (ARCHITECTURE §8): every map with buildMode "generated" and a module in
+-- World/Layouts is built into Workspace.World.<mapId> plus Roblox terrain. The layouts use World/Build
+-- (terrain, zones, spawn points, sketch) and World/Prefabs (placeholder props). Collected per map:
+--   * portals (registry for TravelService), gathering node placements (GatherService),
+--   * a sketch (paths, water, buildings, icons) published as JSON in ReplicatedStorage.MapSketches.<mapId>
+--     for the minimap and the world map.
+-- `rebuild(mapId)` clears the map's terrain region and builds it again (admin /rebuild).
 
-local CollectionService = game:GetService("CollectionService")
+local HttpService = game:GetService("HttpService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 
-local Maps = require(game:GetService("ReplicatedStorage").Shared.Data.Maps)
+local Build = require(script.Parent.Build)
+local Config = require(ReplicatedStorage.Shared.Config)
+local Log = require(ReplicatedStorage.Shared.Util.Log)
+local Maps = require(ReplicatedStorage.Shared.Data.Maps)
+
+local log = Log.new("WorldBuilder")
 
 local WorldBuilder = {}
 
-local FLOOR_TOP = 1 -- sits 1 stud above Studio's default Baseplate (top at y=0) to avoid z-fighting
+export type Placement = { map: string, kind: string, x: number, z: number }
+export type Portal = { id: string, map: string, target: string, position: Vector3, arrive: { x: number, z: number }? }
 
-local function part(props: { [string]: any }, parent: Instance): Part
-	local p = Instance.new("Part")
-	p.Anchored = true
-	p.TopSurface = Enum.SurfaceType.Smooth
-	p.BottomSurface = Enum.SurfaceType.Smooth
-	for key, value in props do
-		(p :: any)[key] = value
-	end
-	p.Parent = parent
-	return p
+WorldBuilder.FLOOR_TOP = 0
+WorldBuilder.built = {} :: { [string]: boolean }
+WorldBuilder.placements = {} :: { Placement }
+WorldBuilder.portals = {} :: { [string]: Portal }
+
+local MATERIAL_COLORS: { [Enum.Material]: string } = {
+	[Enum.Material.Grass] = "#5C7A3A",
+	[Enum.Material.LeafyGrass] = "#34452A",
+	[Enum.Material.Ground] = "#7A6A4E",
+	[Enum.Material.Mud] = "#3F3A2E",
+	[Enum.Material.Cobblestone] = "#8A8070",
+	[Enum.Material.Pavement] = "#7A7468",
+	[Enum.Material.Rock] = "#5A5650",
+	[Enum.Material.Slate] = "#4A4744",
+	[Enum.Material.Basalt] = "#2F2B30",
+	[Enum.Material.Sand] = "#C2A878",
+	[Enum.Material.Snow] = "#EEF3F7",
+}
+
+local function layoutModule(mapId: string): ModuleScript?
+	local folder = script.Parent:FindFirstChild("Layouts")
+	local module = folder and folder:FindFirstChild(mapId)
+	return if module and module:IsA("ModuleScript") then module else nil
 end
 
-local function building(parent: Instance, origin: Vector3, size: Vector3, wall: Color3, roof: Color3, name: string)
-	local model = Instance.new("Model")
-	model.Name = name
-	part({
-		Name = "Walls",
-		Size = size,
-		CFrame = CFrame.new(origin + Vector3.new(0, FLOOR_TOP + size.Y / 2, 0)),
-		Color = wall,
-		Material = Enum.Material.Brick,
-	}, model)
-	part({
-		Name = "Roof",
-		Size = Vector3.new(size.X + 2, 2, size.Z + 2),
-		CFrame = CFrame.new(origin + Vector3.new(0, FLOOR_TOP + size.Y + 1, 0)),
-		Color = roof,
-		Material = Enum.Material.Slate,
-	}, model)
-	part({
-		Name = "Door",
-		Size = Vector3.new(4, 7, 0.4),
-		CFrame = CFrame.new(origin + Vector3.new(0, FLOOR_TOP + 3.5, size.Z / 2 + 0.2)),
-		Color = Color3.fromHex("#3B2A1E"),
-		Material = Enum.Material.Wood,
-	}, model)
-	model.Parent = parent
+local function sketchFolder(): Folder
+	local folder = ReplicatedStorage:FindFirstChild("MapSketches")
+	if not folder then
+		folder = Instance.new("Folder")
+		folder.Name = "MapSketches"
+		folder.Parent = ReplicatedStorage
+	end
+	return folder :: Folder
 end
 
-local function sign(parent: Instance, position: Vector3, title: string, subtitle: string)
-	local board = part({
-		Name = "TitleSign",
-		Size = Vector3.new(28, 8, 1),
-		CFrame = CFrame.new(position),
-		Color = Color3.fromHex("#252832"),
-		Material = Enum.Material.Wood,
-	}, parent)
-	for _, offsetX in { -12, 12 } do
-		part({
-			Name = "Post",
-			Size = Vector3.new(1, position.Y - FLOOR_TOP, 1),
-			CFrame = CFrame.new(position.X + offsetX, (position.Y + FLOOR_TOP) / 2, position.Z),
-			Color = Color3.fromHex("#3B2A1E"),
-			Material = Enum.Material.Wood,
-		}, parent)
+local function round(n: number): number
+	return math.floor(n + 0.5)
+end
+
+-- Compacts the sketch (whole studs) and publishes it.
+local function publishSketch(ctx: Build.Context)
+	local shapes = {}
+	for _, shape in ctx.sketch.shapes do
+		local s = table.clone(shape) :: any
+		for key, value in s do
+			if type(value) == "number" then
+				s[key] = round(value)
+			end
+		end
+		if s.p then
+			local points = {}
+			for i, v in s.p do
+				points[i] = round(v)
+			end
+			s.p = points
+		end
+		table.insert(shapes, s)
 	end
-	for _, face in { Enum.NormalId.Front, Enum.NormalId.Back } do
-		local gui = Instance.new("SurfaceGui")
-		gui.Face = face
-		gui.PixelsPerStud = 40
-		gui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
-		gui.Parent = board
-		local titleLabel = Instance.new("TextLabel")
-		titleLabel.BackgroundTransparency = 1
-		titleLabel.Size = UDim2.fromScale(1, 0.65)
-		titleLabel.Text = title
-		titleLabel.TextScaled = true
-		titleLabel.FontFace = Font.fromEnum(Enum.Font.Fondamento)
-		titleLabel.TextColor3 = Color3.fromHex("#C9A45C")
-		titleLabel.Parent = gui
-		local subLabel = Instance.new("TextLabel")
-		subLabel.BackgroundTransparency = 1
-		subLabel.Position = UDim2.fromScale(0, 0.62)
-		subLabel.Size = UDim2.fromScale(1, 0.3)
-		subLabel.Text = subtitle
-		subLabel.TextScaled = true
-		subLabel.FontFace = Font.fromEnum(Enum.Font.BuilderSans)
-		subLabel.TextColor3 = Color3.fromHex("#EADDBE")
-		subLabel.Parent = gui
+	local icons = {}
+	for _, icon in ctx.sketch.icons do
+		table.insert(icons, { t = icon.t, x = round(icon.x), z = round(icon.z), id = icon.id })
+	end
+	for _, node in ctx.nodes do
+		table.insert(icons, { t = "node", x = round(node.x), z = round(node.z), id = node.kind })
+	end
+	local value = sketchFolder():FindFirstChild(ctx.map.id) :: StringValue?
+	if not value then
+		local created = Instance.new("StringValue")
+		created.Name = ctx.map.id
+		created.Parent = sketchFolder()
+		value = created
+	end
+	assert(value, "sketch value missing")
+	value.Value = HttpService:JSONEncode({ size = ctx.map.size, shapes = shapes, icons = icons })
+end
+
+local function collect(ctx: Build.Context, nodes: boolean)
+	if nodes then
+		for _, node in ctx.nodes do
+			table.insert(WorldBuilder.placements, { map = ctx.map.id, kind = node.kind, x = node.x, z = node.z })
+		end
+	end
+	for _, model in ctx.folder:GetChildren() do
+		if model:IsA("Model") then
+			local id = model:GetAttribute("PortalId")
+			local target = model:GetAttribute("TargetMap")
+			if type(id) == "string" and type(target) == "string" and model.PrimaryPart then
+				local ax, az = model:GetAttribute("ArriveX"), model:GetAttribute("ArriveZ")
+				WorldBuilder.portals[id] = {
+					id = id,
+					map = ctx.map.id,
+					target = target,
+					position = model.PrimaryPart.Position,
+					arrive = if type(ax) == "number" and type(az) == "number" then { x = ax, z = az } else nil,
+				}
+			end
+		end
 	end
 end
 
--- Invisible, non-colliding volume read by ZoneService.
-local function zoneVolume(
-	parent: Instance,
-	mapId: string,
-	pvp: string,
-	nameKey: string?,
-	minX: number,
-	maxX: number,
-	o: Vector3,
-	depth: number
-)
-	local volume = part({
-		Name = `Zone_{pvp}_{nameKey or mapId}`,
-		Size = Vector3.new(maxX - minX, 400, depth),
-		CFrame = CFrame.new(o + Vector3.new((minX + maxX) / 2, 150, 0)),
-		Transparency = 1,
-		CanCollide = false,
-		CanQuery = false,
-		CanTouch = false,
-	}, parent)
-	volume:SetAttribute("MapId", mapId)
-	volume:SetAttribute("PvpZone", pvp)
-	if nameKey then
-		volume:SetAttribute("NameKey", nameKey)
+local function buildMap(map: Maps.MapDef, root: Instance, nodes: boolean): boolean
+	local module = layoutModule(map.id)
+	if map.buildMode ~= "generated" or not module then
+		return false
 	end
-	CollectionService:AddTag(volume, "ZoneVolume")
+	local started = os.clock()
+	local ctx = Build.new(map, root)
+	local layout = (require :: any)(module) :: (Build.Context) -> ()
+	local ok, err = pcall(function()
+		layout(ctx)
+	end)
+	if not ok then
+		log:error("layout %s failed: %s", map.id, tostring(err))
+		return false
+	end
+	collect(ctx, nodes)
+	publishSketch(ctx)
+	WorldBuilder.built[map.id] = true
+	log:info("built %s in %.2f s (%d parts, %d nodes)", map.id, os.clock() - started, ctx.parts, #ctx.nodes)
+	if ctx.parts > Config.MaxPartsPerMap then
+		log:warn("map %s has %d parts (limit %d)", map.id, ctx.parts, Config.MaxPartsPerMap)
+	end
+	return true
 end
 
--- Visible gold marker where characters respawn (DeathService picks the nearest one of the map).
-local function spawnPoint(parent: Instance, mapId: string, at: Vector3, lookAt: Vector3)
-	local marker = part({
-		Name = "SpawnPoint",
-		Size = Vector3.new(6, 0.2, 6),
-		CFrame = CFrame.lookAt(
-			Vector3.new(at.X, FLOOR_TOP + 0.2, at.Z),
-			Vector3.new(lookAt.X, FLOOR_TOP + 0.2, lookAt.Z + 0.001)
-		),
-		Color = Color3.fromHex("#C9A45C"),
-		Material = Enum.Material.Neon,
-		CanCollide = false,
-		Transparency = 0.6,
-	}, parent)
-	marker:SetAttribute("MapId", mapId)
-	CollectionService:AddTag(marker, "SpawnPoint")
-end
-
--- S02 test strip: green city (west part), yellow meadow, red cave at the east edge.
-local function buildTestStrip(parent: Instance, map: Maps.MapDef, o: Vector3)
-	local halfX, depth = map.size.x / 2, map.size.z
-	local cityEdge, caveStart = 256, halfX - 90
-
-	zoneVolume(parent, map.id, "green", nil, -halfX, cityEdge, o, depth)
-	zoneVolume(parent, map.id, "yellow", "zone.trainingMeadow", cityEdge, halfX, o, depth)
-	zoneVolume(parent, map.id, "red", "zone.trialCave", caveStart, halfX, o, 120)
-
-	-- Low fence marking the city border, with a gap for the road.
-	for _, z in { -150, 150 } do
-		part({
-			Name = "CityFence",
-			Size = Vector3.new(1.5, 4, 200),
-			CFrame = CFrame.new(o + Vector3.new(cityEdge, FLOOR_TOP + 2, z + (if z < 0 then -56 else 56))),
-			Color = Color3.fromHex("#5A4632"),
-			Material = Enum.Material.WoodPlanks,
-		}, parent)
-	end
-	part({
-		Name = "Road",
-		Size = Vector3.new(caveStart - 60, 0.2, 14),
-		CFrame = CFrame.new(o + Vector3.new(30 + (caveStart - 60) / 2, FLOOR_TOP + 0.1, 0)),
-		Color = Color3.fromHex("#8A7A5C"),
-		Material = Enum.Material.Ground,
-	}, parent)
-	-- Meadow dressing: a few placeholder trees.
-	for i, offset in
-		{ Vector3.new(330, 0, -80), Vector3.new(380, 0, 90), Vector3.new(450, 0, -130), Vector3.new(300, 0, 160) }
-	do
-		part({
-			Name = `Trunk{i}`,
-			Size = Vector3.new(2, 10, 2),
-			CFrame = CFrame.new(o + offset + Vector3.new(0, FLOOR_TOP + 5, 0)),
-			Color = Color3.fromHex("#5A4632"),
-			Material = Enum.Material.Wood,
-		}, parent)
-		part({
-			Name = `Crown{i}`,
-			Shape = Enum.PartType.Ball,
-			Size = Vector3.new(12, 12, 12),
-			CFrame = CFrame.new(o + offset + Vector3.new(0, FLOOR_TOP + 13, 0)),
-			Color = Color3.fromHex("#3F6B2E"),
-			Material = Enum.Material.Grass,
-		}, parent)
-	end
-
-	-- Cave: three rock walls and a roof, open towards the city.
-	local rock = Color3.fromHex("#4A4744")
-	local caveCentre = o + Vector3.new((caveStart + halfX) / 2, 0, 0)
-	local caveLength = halfX - caveStart
-	for _, z in { -60, 60 } do
-		part({
-			Name = "CaveWall",
-			Size = Vector3.new(caveLength, 24, 4),
-			CFrame = CFrame.new(caveCentre + Vector3.new(0, FLOOR_TOP + 12, z)),
-			Color = rock,
-			Material = Enum.Material.Slate,
-		}, parent)
-	end
-	part({
-		Name = "CaveBack",
-		Size = Vector3.new(4, 24, 124),
-		CFrame = CFrame.new(o + Vector3.new(halfX - 2, FLOOR_TOP + 12, 0)),
-		Color = rock,
-		Material = Enum.Material.Slate,
-	}, parent)
-	local roof = part({
-		Name = "CaveRoof",
-		Size = Vector3.new(caveLength, 4, 124),
-		CFrame = CFrame.new(caveCentre + Vector3.new(0, FLOOR_TOP + 26, 0)),
-		Color = rock,
-		Material = Enum.Material.Slate,
-	}, parent)
-	part({
-		Name = "CaveFloor",
-		Size = Vector3.new(caveLength, 0.2, 116),
-		CFrame = CFrame.new(caveCentre + Vector3.new(0, FLOOR_TOP + 0.1, 0)),
-		Color = Color3.fromHex("#2F2B28"),
-		Material = Enum.Material.Rock,
-	}, parent)
-	local light = Instance.new("PointLight")
-	light.Color = Color3.fromHex("#D64A3E")
-	light.Range = 40
-	light.Brightness = 1.5
-	light.Parent = roof
-
-	-- Respawn points: meadow, and just outside the cave entrance (DESIGN §3.4).
-	spawnPoint(parent, map.id, o + Vector3.new(cityEdge + 50, 0, 20), o)
-	spawnPoint(parent, map.id, o + Vector3.new(caveStart - 14, 0, 0), o)
-end
-
-local function buildCity(root: Instance, map: Maps.MapDef)
-	local folder = Instance.new("Folder")
-	folder.Name = map.id
-	local o = Vector3.new(map.offset.x, map.offset.y, map.offset.z)
-
-	part({
-		Name = "Ground",
-		Size = Vector3.new(map.size.x, 1, map.size.z),
-		CFrame = CFrame.new(o + Vector3.new(0, FLOOR_TOP - 0.5, 0)),
-		Color = Color3.fromHex("#5C7A3A"),
-		Material = Enum.Material.Grass,
-	}, folder)
-	part({
-		Name = "Plaza",
-		Size = Vector3.new(120, 0.2, 120),
-		CFrame = CFrame.new(o + Vector3.new(0, FLOOR_TOP + 0.1, 0)),
-		Color = Color3.fromHex("#8A8070"),
-		Material = Enum.Material.Cobblestone,
-	}, folder)
-	part({
-		Name = "Fountain",
-		Shape = Enum.PartType.Cylinder,
-		Size = Vector3.new(3, 22, 22),
-		CFrame = CFrame.new(o + Vector3.new(0, FLOOR_TOP + 1.5, 0)) * CFrame.Angles(0, 0, math.rad(90)),
-		Color = Color3.fromHex("#A8A39A"),
-		Material = Enum.Material.Marble,
-	}, folder)
-	part({
-		Name = "FountainWater",
-		Shape = Enum.PartType.Cylinder,
-		Size = Vector3.new(0.4, 18, 18),
-		CFrame = CFrame.new(o + Vector3.new(0, FLOOR_TOP + 3.1, 0)) * CFrame.Angles(0, 0, math.rad(90)),
-		Color = Color3.fromHex("#4A8FE7"),
-		Material = Enum.Material.Glass,
-		Transparency = 0.3,
-		CanCollide = false,
-	}, folder)
-
-	local wall = Color3.fromHex("#9C8A72")
-	local roof = Color3.fromHex("#6B2F2A")
-	local layout = {
-		{ name = "Blacksmith", pos = Vector3.new(-70, 0, -70), size = Vector3.new(30, 16, 24) },
-		{ name = "Healer", pos = Vector3.new(70, 0, -70), size = Vector3.new(24, 14, 22) },
-		{ name = "Alchemist", pos = Vector3.new(-70, 0, 70), size = Vector3.new(24, 18, 24) },
-		{ name = "Merchant", pos = Vector3.new(70, 0, 70), size = Vector3.new(28, 14, 22) },
-		{ name = "GuildHall", pos = Vector3.new(0, 0, -130), size = Vector3.new(48, 24, 30) },
-	}
-	for _, b in layout do
-		building(folder, o + b.pos, b.size, wall, roof, b.name)
-	end
-
-	sign(folder, o + Vector3.new(0, FLOOR_TOP + 10, 70), "Vaelthorn", "Capital  ·  Stolica")
-
-	spawnPoint(folder, map.id, o + Vector3.new(map.spawn.x, 0, map.spawn.z), o)
-	buildTestStrip(folder, map, o)
-
-	folder.Parent = root
+local function clearTerrain(map: Maps.MapDef)
+	local size = Vector3.new(map.size.x + 400, 400, map.size.z + 400)
+	local centre = Vector3.new(map.offset.x, map.offset.y + 120, map.offset.z)
+	Workspace.Terrain:FillBlock(CFrame.new(centre), size, Enum.Material.Air)
 end
 
 -- Builds every map into Workspace.World (idempotent: rebuilds if already present).
@@ -298,16 +160,49 @@ function WorldBuilder.build(): Folder
 	if existing then
 		existing:Destroy()
 	end
+	for material, color in MATERIAL_COLORS do
+		Workspace.Terrain:SetMaterialColor(material, Color3.fromHex(color))
+	end
 	local root = Instance.new("Folder")
 	root.Name = "World"
-	local city = Maps.get("city")
-	if city then
-		buildCity(root, city)
-	end
 	root.Parent = Workspace
+	local started = os.clock()
+	local ids = {}
+	for id in Maps.byId do
+		table.insert(ids, id)
+	end
+	table.sort(ids)
+	for _, id in ids do
+		local map = Maps.get(id)
+		if map then
+			buildMap(map, root, true)
+		end
+	end
+	log:info("world built in %.2f s", os.clock() - started)
 	return root
 end
 
-WorldBuilder.FLOOR_TOP = FLOOR_TOP
+-- Rebuilds one map in place (admin). Gathering nodes and NPCs are owned by their services and stay.
+function WorldBuilder.rebuild(mapId: string): boolean
+	local map = Maps.get(mapId)
+	local root = Workspace:FindFirstChild("World")
+	if not map or not root then
+		return false
+	end
+	local old = root:FindFirstChild(mapId)
+	if old then
+		old:Destroy()
+	end
+	clearTerrain(map)
+	local portals = {}
+	for id, portal in WorldBuilder.portals do
+		if portal.map ~= mapId then
+			portals[id] = portal
+		end
+	end
+	WorldBuilder.portals = portals
+	-- Gathering node models are owned by GatherService and stay in place.
+	return buildMap(map, root, false)
+end
 
 return WorldBuilder

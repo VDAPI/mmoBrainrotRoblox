@@ -1,0 +1,953 @@
+--!strict
+-- Placeholder props built from Parts (S08). Every prefab takes the build context and a map-relative
+-- position on the ground and returns a Model, so real assets can replace them one by one later
+-- (buildMode = "asset"). Decorations are anchored, not queryable and small ones cast no shadow.
+
+local CollectionService = game:GetService("CollectionService")
+
+local Build = require(script.Parent.Build)
+
+local Prefabs = {}
+
+type Context = Build.Context
+
+local function hex(value: string): Color3
+	return Color3.fromHex(value)
+end
+
+-- Creates an anchored part in `model`. `props` may set any Part property.
+local function part(ctx: Context, model: Instance, props: { [string]: any }): Part
+	local p = Instance.new("Part")
+	p.Anchored = true
+	p.TopSurface = Enum.SurfaceType.Smooth
+	p.BottomSurface = Enum.SurfaceType.Smooth
+	p.CanQuery = false
+	for key, value in props do
+		(p :: any)[key] = value
+	end
+	if p.Size.Magnitude < 6 then
+		p.CastShadow = false
+	end
+	p.Parent = model
+	ctx.parts += 1
+	return p
+end
+
+local function wedge(ctx: Context, model: Instance, props: { [string]: any }): WedgePart
+	local p = Instance.new("WedgePart")
+	p.Anchored = true
+	p.CanQuery = false
+	for key, value in props do
+		(p :: any)[key] = value
+	end
+	p.Parent = model
+	ctx.parts += 1
+	return p
+end
+
+local function newModel(ctx: Context, name: string, parent: Instance?): Model
+	local model = Instance.new("Model")
+	model.Name = name
+	model.ModelStreamingMode = Enum.ModelStreamingMode.Atomic
+	model.Parent = parent or ctx.decor
+	return model
+end
+
+local function light(parentPart: BasePart, color: string, range: number, brightness: number)
+	local l = Instance.new("PointLight")
+	l.Color = hex(color)
+	l.Range = range
+	l.Brightness = brightness
+	l.Shadows = false
+	l.Parent = parentPart
+end
+
+-- Base CFrame on the ground at x/z, rotated by `rot` degrees.
+local function baseAt(ctx: Context, x: number, z: number, rot: number?): CFrame
+	return CFrame.new(Build.ground(ctx, x, z)) * CFrame.Angles(0, math.rad(rot or 0), 0)
+end
+
+-- Nature -----------------------------------------------------------------------------------------
+
+export type TreeKind = "oak" | "pine" | "birch" | "dead" | "dark" | "willow"
+
+function Prefabs.tree(ctx: Context, x: number, z: number, kind: TreeKind?, scale: number?): Model
+	local k = kind or "oak"
+	local s = (scale or 1) * ctx.rng:float(0.8, 1.25)
+	local base = baseAt(ctx, x, z, ctx.rng:float(0, 360))
+	local model = newModel(ctx, `Tree_{k}`)
+	local trunkColor = if k == "birch" then "#D8D2C2" elseif k == "dead" or k == "dark" then "#3A3028" else "#5A4632"
+	local height = (if k == "pine" then 14 elseif k == "dead" then 12 else 10) * s
+	part(ctx, model, {
+		Name = "Trunk",
+		Size = Vector3.new(1.8 * s, height, 1.8 * s),
+		CFrame = base * CFrame.new(0, height / 2, 0),
+		Color = hex(trunkColor),
+		Material = Enum.Material.Wood,
+		CanQuery = true,
+	})
+	if k == "pine" then
+		for i = 0, 2 do
+			local w = (10 - i * 2.8) * s
+			part(ctx, model, {
+				Name = "Needles",
+				Shape = Enum.PartType.Ball,
+				Size = Vector3.new(w, w * 0.8, w),
+				CFrame = base * CFrame.new(0, height * (0.45 + i * 0.22), 0),
+				Color = hex("#2F4F2A"),
+				Material = Enum.Material.Grass,
+			})
+		end
+	elseif k == "dead" then
+		for i = 1, 3 do
+			part(ctx, model, {
+				Name = "Branch",
+				Size = Vector3.new(0.7 * s, 5 * s, 0.7 * s),
+				CFrame = base * CFrame.new(0, height * (0.55 + i * 0.12), 0) * CFrame.Angles(0, i * 2.1, math.rad(50)),
+				Color = hex("#3A3028"),
+				Material = Enum.Material.Wood,
+			})
+		end
+	else
+		local crown = if k == "birch"
+			then "#8FAF4A"
+			elseif k == "dark" then "#26331F"
+			elseif k == "willow" then "#5F7D3A"
+			else "#3F6B2E"
+		local size = (if k == "dark" then 15 else 12) * s
+		part(ctx, model, {
+			Name = "Crown",
+			Shape = Enum.PartType.Ball,
+			Size = Vector3.new(size, size * 0.85, size),
+			CFrame = base * CFrame.new(0, height + size * 0.25, 0),
+			Color = hex(crown),
+			Material = Enum.Material.Grass,
+		})
+		part(ctx, model, {
+			Name = "Crown2",
+			Shape = Enum.PartType.Ball,
+			Size = Vector3.new(size * 0.7, size * 0.6, size * 0.7),
+			CFrame = base * CFrame.new(size * 0.3, height + size * 0.05, size * 0.15),
+			Color = hex(crown),
+			Material = Enum.Material.Grass,
+		})
+	end
+	return model
+end
+
+function Prefabs.rock(ctx: Context, x: number, z: number, scale: number?, color: string?): Model
+	local s = (scale or 1) * ctx.rng:float(0.7, 1.4)
+	local base = baseAt(ctx, x, z, ctx.rng:float(0, 360))
+	local model = newModel(ctx, "Rock")
+	for i = 1, ctx.rng:int(1, 3) do
+		local size = Vector3.new(ctx.rng:float(3, 7), ctx.rng:float(2, 5), ctx.rng:float(3, 6)) * s
+		part(ctx, model, {
+			Name = "Stone",
+			Size = size,
+			CFrame = base
+				* CFrame.new((i - 1) * 2.5 * s, size.Y * 0.35, (i % 2) * 2 * s)
+				* CFrame.Angles(ctx.rng:float(-0.3, 0.3), ctx.rng:float(0, 6), ctx.rng:float(-0.3, 0.3)),
+			Color = hex(color or "#6B6660"),
+			Material = Enum.Material.Slate,
+			CanQuery = true,
+		})
+	end
+	return model
+end
+
+function Prefabs.bush(ctx: Context, x: number, z: number, color: string?): Model
+	local base = baseAt(ctx, x, z)
+	local model = newModel(ctx, "Bush")
+	local s = ctx.rng:float(0.7, 1.3)
+	part(ctx, model, {
+		Name = "Leaves",
+		Shape = Enum.PartType.Ball,
+		Size = Vector3.new(4, 3, 4) * s,
+		CFrame = base * CFrame.new(0, 1 * s, 0),
+		Color = hex(color or "#4A7A35"),
+		Material = Enum.Material.Grass,
+		CanCollide = false,
+	})
+	return model
+end
+
+function Prefabs.flowers(ctx: Context, x: number, z: number, color: string): Model
+	local model = newModel(ctx, "Flowers")
+	for _ = 1, 5 do
+		local fx, fz = x + ctx.rng:float(-3, 3), z + ctx.rng:float(-3, 3)
+		part(ctx, model, {
+			Name = "Flower",
+			Shape = Enum.PartType.Ball,
+			Size = Vector3.new(0.7, 0.7, 0.7),
+			CFrame = CFrame.new(Build.ground(ctx, fx, fz) + Vector3.new(0, 0.5, 0)),
+			Color = hex(color),
+			Material = Enum.Material.SmoothPlastic,
+			CanCollide = false,
+		})
+	end
+	return model
+end
+
+-- Scatters a prefab over a rectangle, skipping points closer than `clear` to any listed {x, z, r} circle
+-- and points where `allow` returns false.
+function Prefabs.scatter(
+	ctx: Context,
+	count: number,
+	x1: number,
+	z1: number,
+	x2: number,
+	z2: number,
+	place: (x: number, z: number) -> (),
+	clear: { { number } }?,
+	allow: ((x: number, z: number) -> boolean)?
+)
+	local placed = 0
+	local tries = 0
+	while placed < count and tries < count * 6 do
+		tries += 1
+		local x, z = ctx.rng:float(x1, x2), ctx.rng:float(z1, z2)
+		local ok = true
+		local circles: { { number } } = clear or {}
+		for _, c in circles do
+			local dx, dz = x - c[1], z - c[2]
+			if dx * dx + dz * dz < c[3] * c[3] then
+				ok = false
+				break
+			end
+		end
+		if ok and allow and not allow(x, z) then
+			ok = false
+		end
+		if ok then
+			place(x, z)
+			placed += 1
+		end
+	end
+end
+
+-- Buildings --------------------------------------------------------------------------------------
+
+export type HouseOptions = {
+	w: number?,
+	d: number?,
+	h: number?,
+	wall: string?,
+	roof: string?,
+	rot: number?,
+	name: string?,
+}
+
+function Prefabs.house(ctx: Context, x: number, z: number, o: HouseOptions?): Model
+	local opts: HouseOptions = o or {}
+	local w, d, h = opts.w or 22, opts.d or 18, opts.h or 12
+	local base = baseAt(ctx, x, z, opts.rot)
+	local model = newModel(ctx, opts.name or "House", ctx.folder)
+	local wall = hex(opts.wall or "#9C8A72")
+	local roof = hex(opts.roof or "#6B2F2A")
+	part(ctx, model, {
+		Name = "Foundation",
+		Size = Vector3.new(w + 2, 2, d + 2),
+		CFrame = base * CFrame.new(0, 0, 0),
+		Color = hex("#6E675C"),
+		Material = Enum.Material.Cobblestone,
+		CanQuery = true,
+	})
+	part(ctx, model, {
+		Name = "Walls",
+		Size = Vector3.new(w, h, d),
+		CFrame = base * CFrame.new(0, h / 2 + 1, 0),
+		Color = wall,
+		Material = Enum.Material.Plaster,
+		CanQuery = true,
+	})
+	-- Timber frame strips
+	for _, sx in { -1, 1 } do
+		part(ctx, model, {
+			Name = "Beam",
+			Size = Vector3.new(1, h, d + 0.4),
+			CFrame = base * CFrame.new(sx * (w / 2 - 0.4), h / 2 + 1, 0),
+			Color = hex("#4A3828"),
+			Material = Enum.Material.Wood,
+		})
+	end
+	-- Gable roof from two wedges
+	local roofH = h * 0.6
+	for _, side in { -1, 1 } do
+		wedge(ctx, model, {
+			Name = "Roof",
+			Size = Vector3.new(w + 3, roofH, d / 2 + 1.5),
+			CFrame = base
+				* CFrame.new(0, h + 1 + roofH / 2, side * (d / 4 + 0.75))
+				* CFrame.Angles(0, if side > 0 then math.pi else 0, 0),
+			Color = roof,
+			Material = Enum.Material.Slate,
+		})
+	end
+	-- Door and windows on the front (-Z) side
+	part(ctx, model, {
+		Name = "Door",
+		Size = Vector3.new(4, 7, 0.4),
+		CFrame = base * CFrame.new(0, 4.5, -d / 2 - 0.2),
+		Color = hex("#3E2A1E"),
+		Material = Enum.Material.Wood,
+	})
+	for _, sx in { -1, 1 } do
+		local window = part(ctx, model, {
+			Name = "Window",
+			Size = Vector3.new(3, 3, 0.3),
+			CFrame = base * CFrame.new(sx * w / 4, h * 0.6 + 1, -d / 2 - 0.2),
+			Color = hex("#F2C46B"),
+			Material = Enum.Material.Neon,
+			Transparency = 0.2,
+		})
+		if sx == 1 then
+			light(window, "#F2C46B", 14, 0.6)
+		end
+	end
+	Build.rect(ctx, x, z, w, d, "building", opts.rot)
+	return model
+end
+
+function Prefabs.tower(ctx: Context, x: number, z: number, radius: number?, height: number?, color: string?): Model
+	local r, h = radius or 6, height or 28
+	local base = baseAt(ctx, x, z)
+	local model = newModel(ctx, "Tower", ctx.folder)
+	part(ctx, model, {
+		Name = "Body",
+		Shape = Enum.PartType.Cylinder,
+		Size = Vector3.new(h, r * 2, r * 2),
+		CFrame = base * CFrame.new(0, h / 2, 0) * CFrame.Angles(0, 0, math.rad(90)),
+		Color = hex(color or "#8A8278"),
+		Material = Enum.Material.Cobblestone,
+		CanQuery = true,
+	})
+	part(ctx, model, {
+		Name = "Top",
+		Shape = Enum.PartType.Cylinder,
+		Size = Vector3.new(3, r * 2 + 3, r * 2 + 3),
+		CFrame = base * CFrame.new(0, h + 1.5, 0) * CFrame.Angles(0, 0, math.rad(90)),
+		Color = hex("#6E675C"),
+		Material = Enum.Material.Cobblestone,
+	})
+	Build.rect(ctx, x, z, r * 2, r * 2, "building")
+	return model
+end
+
+-- Straight wall from (ax, az) to (bx, bz) with crenellations.
+function Prefabs.wall(
+	ctx: Context,
+	ax: number,
+	az: number,
+	bx: number,
+	bz: number,
+	height: number?,
+	color: string?
+): Model
+	local h = height or 14
+	local dx, dz = bx - ax, bz - az
+	local length = math.sqrt(dx * dx + dz * dz)
+	local angle = math.atan2(-dz, dx)
+	local cx, cz = (ax + bx) / 2, (az + bz) / 2
+	local base = CFrame.new(Build.at(ctx, cx, Build.groundY(ctx, cx, cz), cz)) * CFrame.Angles(0, angle, 0)
+	local model = newModel(ctx, "Wall", ctx.folder)
+	part(ctx, model, {
+		Name = "Body",
+		Size = Vector3.new(length, h, 4),
+		CFrame = base * CFrame.new(0, h / 2 - 1, 0),
+		Color = hex(color or "#8A8278"),
+		Material = Enum.Material.Cobblestone,
+		CanQuery = true,
+	})
+	local count = math.floor(length / 6)
+	for i = 0, count - 1 do
+		part(ctx, model, {
+			Name = "Merlon",
+			Size = Vector3.new(3, 2.5, 4.4),
+			CFrame = base * CFrame.new(-length / 2 + 3 + i * 6, h + 0.2, 0),
+			Color = hex(color or "#8A8278"),
+			Material = Enum.Material.Cobblestone,
+		})
+	end
+	table.insert(ctx.sketch.shapes, { t = "line", p = { ax, az, bx, bz }, w = 4, c = "wall" })
+	return model
+end
+
+-- Gate: two towers and an arch, opening along the local X axis.
+function Prefabs.gate(ctx: Context, x: number, z: number, rot: number?, width: number?): Model
+	local w = width or 24
+	local base = baseAt(ctx, x, z, rot)
+	local model = newModel(ctx, "Gate", ctx.folder)
+	for _, side in { -1, 1 } do
+		local p = base * CFrame.new(side * (w / 2 + 5), 0, 0)
+		part(ctx, model, {
+			Name = "GateTower",
+			Size = Vector3.new(10, 22, 10),
+			CFrame = p * CFrame.new(0, 10, 0),
+			Color = hex("#7E776C"),
+			Material = Enum.Material.Cobblestone,
+			CanQuery = true,
+		})
+		local banner = part(ctx, model, {
+			Name = "Banner",
+			Size = Vector3.new(4, 8, 0.3),
+			CFrame = p * CFrame.new(0, 14, -5.3),
+			Color = hex("#7A1F2B"),
+			Material = Enum.Material.Fabric,
+		})
+		banner.CanCollide = false
+	end
+	part(ctx, model, {
+		Name = "Arch",
+		Size = Vector3.new(w + 2, 5, 10),
+		CFrame = base * CFrame.new(0, 19, 0),
+		Color = hex("#7E776C"),
+		Material = Enum.Material.Cobblestone,
+	})
+	return model
+end
+
+function Prefabs.forge(ctx: Context, x: number, z: number, rot: number?): Model
+	local model = Prefabs.house(
+		ctx,
+		x,
+		z,
+		{ w = 28, d = 22, h = 13, wall = "#7A6A58", roof = "#3A3430", rot = rot, name = "Forge" }
+	)
+	local base = baseAt(ctx, x, z, rot)
+	part(ctx, model, {
+		Name = "Chimney",
+		Size = Vector3.new(4, 14, 4),
+		CFrame = base * CFrame.new(9, 18, 5),
+		Color = hex("#4A4440"),
+		Material = Enum.Material.Brick,
+	})
+	local anvil = part(ctx, model, {
+		Name = "Anvil",
+		Size = Vector3.new(3, 2.4, 1.6),
+		CFrame = base * CFrame.new(-6, 1.2, -15),
+		Color = hex("#3A3A3E"),
+		Material = Enum.Material.Metal,
+	})
+	local coals = part(ctx, model, {
+		Name = "Coals",
+		Size = Vector3.new(4, 1, 4),
+		CFrame = base * CFrame.new(6, 1, -15),
+		Color = hex("#FF6A1A"),
+		Material = Enum.Material.Neon,
+	})
+	light(coals, "#FF7A2A", 18, 1.4)
+	local _ = anvil
+	return model
+end
+
+function Prefabs.temple(ctx: Context, x: number, z: number, rot: number?): Model
+	local base = baseAt(ctx, x, z, rot)
+	local model = newModel(ctx, "Temple", ctx.folder)
+	part(ctx, model, {
+		Name = "Steps",
+		Size = Vector3.new(44, 3, 34),
+		CFrame = base * CFrame.new(0, 1, 0),
+		Color = hex("#D8D2C2"),
+		Material = Enum.Material.Marble,
+		CanQuery = true,
+	})
+	for ix = -2, 2 do
+		for _, iz in { -1, 1 } do
+			part(ctx, model, {
+				Name = "Column",
+				Shape = Enum.PartType.Cylinder,
+				Size = Vector3.new(16, 3, 3),
+				CFrame = base * CFrame.new(ix * 9, 10.5, iz * 13) * CFrame.Angles(0, 0, math.rad(90)),
+				Color = hex("#EAE4D6"),
+				Material = Enum.Material.Marble,
+				CanQuery = true,
+			})
+		end
+	end
+	part(ctx, model, {
+		Name = "Cella",
+		Size = Vector3.new(30, 16, 18),
+		CFrame = base * CFrame.new(0, 10.5, 2),
+		Color = hex("#CFC6B2"),
+		Material = Enum.Material.Marble,
+		CanQuery = true,
+	})
+	for _, side in { -1, 1 } do
+		wedge(ctx, model, {
+			Name = "Roof",
+			Size = Vector3.new(48, 6, 19),
+			CFrame = base * CFrame.new(0, 21.5, side * 9.5) * CFrame.Angles(0, if side > 0 then math.pi else 0, 0),
+			Color = hex("#B8AE98"),
+			Material = Enum.Material.Marble,
+		})
+	end
+	local glow = part(ctx, model, {
+		Name = "Brazier",
+		Shape = Enum.PartType.Ball,
+		Size = Vector3.new(2, 2, 2),
+		CFrame = base * CFrame.new(0, 4.5, -16),
+		Color = hex("#9FD0FF"),
+		Material = Enum.Material.Neon,
+	})
+	light(glow, "#9FD0FF", 22, 1)
+	Build.rect(ctx, x, z, 44, 34, "building", rot)
+	return model
+end
+
+function Prefabs.tent(ctx: Context, x: number, z: number, color: string?, rot: number?): Model
+	local base = baseAt(ctx, x, z, rot or ctx.rng:float(0, 360))
+	local model = newModel(ctx, "Tent", ctx.folder)
+	for _, side in { -1, 1 } do
+		wedge(ctx, model, {
+			Name = "Cloth",
+			Size = Vector3.new(10, 7, 5),
+			CFrame = base * CFrame.new(0, 3.5, side * 2.5) * CFrame.Angles(0, if side > 0 then math.pi else 0, 0),
+			Color = hex(color or "#8A6B4A"),
+			Material = Enum.Material.Fabric,
+			CanQuery = true,
+		})
+	end
+	Build.rect(ctx, x, z, 10, 10, "building")
+	return model
+end
+
+function Prefabs.ruins(ctx: Context, x: number, z: number, color: string?): Model
+	local base = baseAt(ctx, x, z, ctx.rng:float(0, 360))
+	local model = newModel(ctx, "Ruins", ctx.folder)
+	local c = hex(color or "#7A7468")
+	for i = 1, 5 do
+		local h = ctx.rng:float(3, 14)
+		part(ctx, model, {
+			Name = "Pillar",
+			Size = Vector3.new(3, h, 3),
+			CFrame = base
+				* CFrame.new(math.cos(i * 1.25) * 12, h / 2, math.sin(i * 1.25) * 12)
+				* CFrame.Angles(ctx.rng:float(-0.1, 0.1), 0, ctx.rng:float(-0.12, 0.12)),
+			Color = c,
+			Material = Enum.Material.Cobblestone,
+			CanQuery = true,
+		})
+	end
+	part(ctx, model, {
+		Name = "BrokenWall",
+		Size = Vector3.new(16, 6, 2.5),
+		CFrame = base * CFrame.new(0, 3, -12),
+		Color = c,
+		Material = Enum.Material.Cobblestone,
+		CanQuery = true,
+	})
+	Build.rect(ctx, x, z, 26, 26, "ruins")
+	return model
+end
+
+function Prefabs.palisade(ctx: Context, ax: number, az: number, bx: number, bz: number): Model
+	local model = newModel(ctx, "Palisade", ctx.folder)
+	local dx, dz = bx - ax, bz - az
+	local length = math.sqrt(dx * dx + dz * dz)
+	local n = math.floor(length / 2.2)
+	for i = 0, n do
+		local t = i / math.max(1, n)
+		local px, pz = ax + dx * t, az + dz * t
+		local h = 9 + (i % 3)
+		part(ctx, model, {
+			Name = "Log",
+			Shape = Enum.PartType.Cylinder,
+			Size = Vector3.new(h, 2, 2),
+			CFrame = CFrame.new(Build.ground(ctx, px, pz) + Vector3.new(0, h / 2 - 0.5, 0))
+				* CFrame.Angles(0, 0, math.rad(90)),
+			Color = hex("#5A4632"),
+			Material = Enum.Material.Wood,
+			CanQuery = true,
+		})
+	end
+	table.insert(ctx.sketch.shapes, { t = "line", p = { ax, az, bx, bz }, w = 2, c = "wall" })
+	return model
+end
+
+function Prefabs.bridge(ctx: Context, x: number, z: number, length: number, rot: number?): Model
+	local base = CFrame.new(Build.at(ctx, x, 0.6, z)) * CFrame.Angles(0, math.rad(rot or 0), 0)
+	local model = newModel(ctx, "Bridge", ctx.folder)
+	part(ctx, model, {
+		Name = "Deck",
+		Size = Vector3.new(length, 1, 10),
+		CFrame = base,
+		Color = hex("#7A5A3E"),
+		Material = Enum.Material.WoodPlanks,
+		CanQuery = true,
+	})
+	for _, side in { -1, 1 } do
+		part(ctx, model, {
+			Name = "Rail",
+			Size = Vector3.new(length, 0.6, 0.6),
+			CFrame = base * CFrame.new(0, 3, side * 4.7),
+			Color = hex("#5A4632"),
+			Material = Enum.Material.Wood,
+		})
+	end
+	return model
+end
+
+function Prefabs.jetty(ctx: Context, x: number, z: number, rot: number?): Model
+	local base = CFrame.new(Build.at(ctx, x, 0.4, z)) * CFrame.Angles(0, math.rad(rot or 0), 0)
+	local model = newModel(ctx, "Jetty", ctx.folder)
+	part(ctx, model, {
+		Name = "Deck",
+		Size = Vector3.new(5, 0.8, 18),
+		CFrame = base,
+		Color = hex("#8A6B4A"),
+		Material = Enum.Material.WoodPlanks,
+		CanQuery = true,
+	})
+	return model
+end
+
+function Prefabs.lantern(ctx: Context, x: number, z: number, color: string?): Model
+	local base = baseAt(ctx, x, z)
+	local model = newModel(ctx, "Lantern")
+	part(ctx, model, {
+		Name = "Post",
+		Size = Vector3.new(0.6, 9, 0.6),
+		CFrame = base * CFrame.new(0, 4.5, 0),
+		Color = hex("#2E2E32"),
+		Material = Enum.Material.Metal,
+	})
+	local lamp = part(ctx, model, {
+		Name = "Lamp",
+		Size = Vector3.new(1.4, 1.6, 1.4),
+		CFrame = base * CFrame.new(0, 9.4, 0),
+		Color = hex(color or "#FFD27A"),
+		Material = Enum.Material.Neon,
+	})
+	light(lamp, color or "#FFD27A", 22, 1.2)
+	return model
+end
+
+function Prefabs.torch(ctx: Context, x: number, z: number, color: string?): Model
+	local base = baseAt(ctx, x, z)
+	local model = newModel(ctx, "Torch")
+	part(ctx, model, {
+		Name = "Stick",
+		Size = Vector3.new(0.5, 5, 0.5),
+		CFrame = base * CFrame.new(0, 2.5, 0),
+		Color = hex("#4A3828"),
+		Material = Enum.Material.Wood,
+	})
+	local flame = part(ctx, model, {
+		Name = "Flame",
+		Shape = Enum.PartType.Ball,
+		Size = Vector3.new(1.2, 1.2, 1.2),
+		CFrame = base * CFrame.new(0, 5.4, 0),
+		Color = hex(color or "#FF9A3A"),
+		Material = Enum.Material.Neon,
+		CanCollide = false,
+	})
+	light(flame, color or "#FF9A3A", 26, 1.6)
+	local fire = Instance.new("Fire")
+	fire.Size = 2
+	fire.Heat = 4
+	fire.Parent = flame
+	return model
+end
+
+function Prefabs.campfire(ctx: Context, x: number, z: number): Model
+	local base = baseAt(ctx, x, z)
+	local model = newModel(ctx, "Campfire")
+	for i = 1, 3 do
+		part(ctx, model, {
+			Name = "Log",
+			Size = Vector3.new(4, 0.8, 0.8),
+			CFrame = base * CFrame.new(0, 0.4, 0) * CFrame.Angles(0, i * 1.05, 0),
+			Color = hex("#4A3828"),
+			Material = Enum.Material.Wood,
+		})
+	end
+	local core = part(ctx, model, {
+		Name = "Embers",
+		Size = Vector3.new(1.5, 0.5, 1.5),
+		CFrame = base * CFrame.new(0, 0.7, 0),
+		Color = hex("#FF6A1A"),
+		Material = Enum.Material.Neon,
+		CanCollide = false,
+	})
+	light(core, "#FF8A3A", 24, 1.5)
+	local fire = Instance.new("Fire")
+	fire.Size = 4
+	fire.Parent = core
+	return model
+end
+
+function Prefabs.crystal(ctx: Context, x: number, z: number, color: string, scale: number?): Model
+	local s = (scale or 1) * ctx.rng:float(0.7, 1.3)
+	local base = baseAt(ctx, x, z, ctx.rng:float(0, 360))
+	local model = newModel(ctx, "Crystal")
+	for i = 1, 3 do
+		local h = ctx.rng:float(3, 7) * s
+		local p = part(ctx, model, {
+			Name = "Shard",
+			Size = Vector3.new(1.4 * s, h, 1.4 * s),
+			CFrame = base
+				* CFrame.new(i - 2, h / 2 - 0.5, (i % 2) - 0.5)
+				* CFrame.Angles(ctx.rng:float(-0.4, 0.4), 0, ctx.rng:float(-0.4, 0.4)),
+			Color = hex(color),
+			Material = Enum.Material.Neon,
+			Transparency = 0.15,
+		})
+		if i == 2 then
+			light(p, color, 20, 1)
+		end
+	end
+	return model
+end
+
+function Prefabs.column(ctx: Context, x: number, z: number, height: number, color: string?): Model
+	local base = baseAt(ctx, x, z)
+	local model = newModel(ctx, "Column", ctx.folder)
+	part(ctx, model, {
+		Name = "Shaft",
+		Shape = Enum.PartType.Cylinder,
+		Size = Vector3.new(height, 4, 4),
+		CFrame = base * CFrame.new(0, height / 2, 0) * CFrame.Angles(0, 0, math.rad(90)),
+		Color = hex(color or "#6E6878"),
+		Material = Enum.Material.Cobblestone,
+		CanQuery = true,
+	})
+	return model
+end
+
+function Prefabs.tombstone(ctx: Context, x: number, z: number): Model
+	local base = baseAt(ctx, x, z, ctx.rng:float(-15, 15))
+	local model = newModel(ctx, "Tombstone")
+	part(ctx, model, {
+		Name = "Stone",
+		Size = Vector3.new(2.6, 3.6, 0.8),
+		CFrame = base * CFrame.new(0, 1.6, 0) * CFrame.Angles(ctx.rng:float(-0.15, 0.15), 0, ctx.rng:float(-0.1, 0.1)),
+		Color = hex("#5E5A64"),
+		Material = Enum.Material.Slate,
+	})
+	return model
+end
+
+function Prefabs.flag(ctx: Context, x: number, z: number, color: string): Model
+	local base = baseAt(ctx, x, z)
+	local model = newModel(ctx, "Flag")
+	part(ctx, model, {
+		Name = "Pole",
+		Size = Vector3.new(0.5, 16, 0.5),
+		CFrame = base * CFrame.new(0, 8, 0),
+		Color = hex("#C9A45C"),
+		Material = Enum.Material.Metal,
+	})
+	local cloth = part(ctx, model, {
+		Name = "Cloth",
+		Size = Vector3.new(5, 3.2, 0.2),
+		CFrame = base * CFrame.new(2.7, 14, 0),
+		Color = hex(color),
+		Material = Enum.Material.Fabric,
+	})
+	cloth.CanCollide = false
+	return model
+end
+
+function Prefabs.stall(ctx: Context, x: number, z: number, color: string, rot: number?): Model
+	local base = baseAt(ctx, x, z, rot)
+	local model = newModel(ctx, "Stall", ctx.folder)
+	part(ctx, model, {
+		Name = "Counter",
+		Size = Vector3.new(10, 3.5, 4),
+		CFrame = base * CFrame.new(0, 1.75, 0),
+		Color = hex("#7A5A3E"),
+		Material = Enum.Material.WoodPlanks,
+		CanQuery = true,
+	})
+	for _, sx in { -1, 1 } do
+		part(ctx, model, {
+			Name = "Post",
+			Size = Vector3.new(0.6, 9, 0.6),
+			CFrame = base * CFrame.new(sx * 4.6, 4.5, 1.6),
+			Color = hex("#5A4632"),
+			Material = Enum.Material.Wood,
+		})
+	end
+	part(ctx, model, {
+		Name = "Awning",
+		Size = Vector3.new(11, 0.4, 6),
+		CFrame = base * CFrame.new(0, 9, 0.5) * CFrame.Angles(math.rad(-12), 0, 0),
+		Color = hex(color),
+		Material = Enum.Material.Fabric,
+	})
+	Build.rect(ctx, x, z, 10, 5, "building", rot)
+	return model
+end
+
+function Prefabs.fountain(ctx: Context, x: number, z: number, radius: number?): Model
+	local r = radius or 11
+	local base = baseAt(ctx, x, z)
+	local model = newModel(ctx, "Fountain", ctx.folder)
+	part(ctx, model, {
+		Name = "Basin",
+		Shape = Enum.PartType.Cylinder,
+		Size = Vector3.new(3, r * 2, r * 2),
+		CFrame = base * CFrame.new(0, 1.5, 0) * CFrame.Angles(0, 0, math.rad(90)),
+		Color = hex("#A8A39A"),
+		Material = Enum.Material.Marble,
+		CanQuery = true,
+	})
+	part(ctx, model, {
+		Name = "Water",
+		Shape = Enum.PartType.Cylinder,
+		Size = Vector3.new(0.4, r * 2 - 3, r * 2 - 3),
+		CFrame = base * CFrame.new(0, 3.1, 0) * CFrame.Angles(0, 0, math.rad(90)),
+		Color = hex("#4A8FE7"),
+		Material = Enum.Material.Glass,
+		Transparency = 0.3,
+		CanCollide = false,
+	})
+	local spout = part(ctx, model, {
+		Name = "Statue",
+		Size = Vector3.new(2.5, 9, 2.5),
+		CFrame = base * CFrame.new(0, 7, 0),
+		Color = hex("#C9C2B2"),
+		Material = Enum.Material.Marble,
+	})
+	local spray = Instance.new("ParticleEmitter")
+	spray.Color = ColorSequence.new(hex("#CFE6FF"))
+	spray.Size = NumberSequence.new(0.6, 0.1)
+	spray.Speed = NumberRange.new(10, 14)
+	spray.SpreadAngle = Vector2.new(12, 12)
+	spray.Acceleration = Vector3.new(0, -30, 0)
+	spray.Lifetime = NumberRange.new(0.8, 1.1)
+	spray.Rate = 40
+	spray.Transparency = NumberSequence.new(0.2, 1)
+	spray.Parent = spout
+	table.insert(ctx.sketch.shapes, { t = "circle", x = x, z = z, r = r, c = "water" })
+	return model
+end
+
+-- Arena stands: stepped seating on four sides of a square floor.
+function Prefabs.arena(ctx: Context, x: number, z: number, half: number): Model
+	local base = baseAt(ctx, x, z)
+	local model = newModel(ctx, "Arena", ctx.folder)
+	part(ctx, model, {
+		Name = "Floor",
+		Size = Vector3.new(half * 2, 0.6, half * 2),
+		CFrame = base * CFrame.new(0, 0.3, 0),
+		Color = hex("#C2A878"),
+		Material = Enum.Material.Sand,
+		CanQuery = true,
+	})
+	for side = 0, 3 do
+		local rot = CFrame.Angles(0, side * math.pi / 2, 0)
+		for step = 0, 3 do
+			local p = part(ctx, model, {
+				Name = "Stand",
+				Size = Vector3.new(half * 2 - 14, 2 + step * 2, 4),
+				CFrame = base * rot * CFrame.new(0, 1 + step, half + 2 + step * 4),
+				Color = hex("#8A8278"),
+				Material = Enum.Material.Cobblestone,
+				CanQuery = true,
+			})
+			local _ = p
+		end
+	end
+	table.insert(ctx.sketch.shapes, { t = "rect", x = x, z = z, w = half * 2, h = half * 2, c = "arena" })
+	return model
+end
+
+-- Portals and gates -------------------------------------------------------------------------------
+
+-- Portal arch (tag "Portal", attributes PortalId, TargetMap, ArriveX/ArriveZ = arrival point on the
+-- target map, map-relative; defaults to the target map's spawn).
+function Prefabs.portal(
+	ctx: Context,
+	id: string,
+	target: string,
+	x: number,
+	z: number,
+	rot: number?,
+	arrive: { x: number, z: number }?
+): Model
+	local base = baseAt(ctx, x, z, rot)
+	local model = newModel(ctx, `Portal_{id}`, ctx.folder)
+	local stone = hex("#5E5A64")
+	for _, side in { -1, 1 } do
+		part(ctx, model, {
+			Name = "Pillar",
+			Size = Vector3.new(2.5, 15, 2.5),
+			CFrame = base * CFrame.new(side * 6, 7.5, 0),
+			Color = stone,
+			Material = Enum.Material.Slate,
+			CanQuery = true,
+		})
+	end
+	part(ctx, model, {
+		Name = "Lintel",
+		Size = Vector3.new(15, 2.5, 3),
+		CFrame = base * CFrame.new(0, 16, 0),
+		Color = stone,
+		Material = Enum.Material.Slate,
+	})
+	local field = part(ctx, model, {
+		Name = "Field",
+		Size = Vector3.new(9.5, 13.5, 0.4),
+		CFrame = base * CFrame.new(0, 7.5, 0),
+		Color = hex("#7A5CFF"),
+		Material = Enum.Material.Neon,
+		Transparency = 0.35,
+		CanCollide = false,
+	})
+	field.CanQuery = true
+	light(field, "#8A6CFF", 20, 1.2)
+	local sparkles = Instance.new("ParticleEmitter")
+	sparkles.Color = ColorSequence.new(hex("#B9A8FF"))
+	sparkles.Size = NumberSequence.new(0.4, 0)
+	sparkles.Speed = NumberRange.new(1, 3)
+	sparkles.Lifetime = NumberRange.new(1, 2)
+	sparkles.Rate = 18
+	sparkles.LightEmission = 1
+	sparkles.Parent = field
+	model.PrimaryPart = field
+	model:SetAttribute("PortalId", id)
+	model:SetAttribute("TargetMap", target)
+	if arrive then
+		model:SetAttribute("ArriveX", arrive.x)
+		model:SetAttribute("ArriveZ", arrive.z)
+	end
+	CollectionService:AddTag(model, "Portal")
+	Build.icon(ctx, "portal", x, z, target)
+	return model
+end
+
+-- Boss dungeon entrance (S09 handles entering; tag "DungeonEntrance", attribute DungeonRegion).
+function Prefabs.dungeonGate(ctx: Context, region: string, x: number, z: number, rot: number?): Model
+	local base = baseAt(ctx, x, z, rot)
+	local model = newModel(ctx, `Dungeon_{region}`, ctx.folder)
+	for _, side in { -1, 1 } do
+		local horn = part(ctx, model, {
+			Name = "Horn",
+			Size = Vector3.new(3, 18, 3),
+			CFrame = base * CFrame.new(side * 8, 8, 0) * CFrame.Angles(0, 0, math.rad(-side * 12)),
+			Color = hex("#2A2428"),
+			Material = Enum.Material.Basalt,
+			CanQuery = true,
+		})
+		local _ = horn
+	end
+	local door = part(ctx, model, {
+		Name = "Door",
+		Size = Vector3.new(12, 15, 0.6),
+		CFrame = base * CFrame.new(0, 7.5, 0),
+		Color = hex("#D64A3E"),
+		Material = Enum.Material.Neon,
+		Transparency = 0.25,
+		CanCollide = true,
+	})
+	door.CanQuery = true
+	light(door, "#D64A3E", 26, 1.6)
+	model.PrimaryPart = door
+	model:SetAttribute("DungeonRegion", region)
+	CollectionService:AddTag(model, "DungeonEntrance")
+	Build.icon(ctx, "dungeon", x, z, region)
+	return model
+end
+
+return Prefabs

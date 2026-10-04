@@ -38,6 +38,11 @@ end
 -- Namespaces whose string literals are localization keys.
 local NAMESPACES = {
 	"admin",
+	"loading",
+	"portal",
+	"tip",
+	"worldmap",
+	"zone",
 	"alchemy",
 	"blessing",
 	"dungeon",
