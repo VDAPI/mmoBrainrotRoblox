@@ -200,6 +200,13 @@ T.describe("MonsterStats", function()
 		end).toThrow("unknown variant")
 	end)
 
+	T.it("gold follows DESIGN §5.5", function()
+		T.expect(MonsterStats.gold(10, "normal", 0)).toBe(21) -- 10 x 3 x 0.7
+		T.expect(MonsterStats.gold(10, "normal", 1)).toBe(39) -- 10 x 3 x 1.3
+		T.expect(MonsterStats.gold(10, "elite", 0.5)).toBe(120)
+		T.expect(MonsterStats.gold(10, "elite2", 0.5)).toBe(360)
+	end)
+
 	T.it("gold scales with variant and roll", function()
 		local low = MonsterStats.gold(10, "normal", 0)
 		local high = MonsterStats.gold(10, "normal", 1)

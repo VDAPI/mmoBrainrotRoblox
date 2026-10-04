@@ -42,6 +42,7 @@ local CombatService = {
 		"LevelService",
 		"PvpService",
 		"ZoneService",
+		"EquipmentService",
 	},
 	-- (info: KillInfo, credit: { Player }, killer: Player?) after a monster died.
 	MonsterKilled = Signal.new(),
@@ -75,6 +76,7 @@ local ResourceService: any
 local LevelService: any
 local PvpService: any
 local ZoneService: any
+local EquipmentService: any
 
 type Attacker = {
 	target: string?,
@@ -172,6 +174,46 @@ local function entityRadius(entity: Entity): number
 	return if root then math.max(root.Size.X, root.Size.Z) / 2 else 1
 end
 
+-- Legendary effects (Data/Bonuses hooks) ---------------------------------------------------------------
+
+local function hook(player: Player, id: string): number
+	return EquipmentService.GetHook(player, id)
+end
+
+local function hpFraction(player: Player): number
+	local hp = ResourceService.Get(player)
+	local maxHp = math.max(1, StatService.GetValue(player, "maxHp"))
+	return hp / maxHp
+end
+
+-- Damage multiplier from the attacker's legendary effects against this target.
+local function offensiveMultiplier(player: Player, targetEntity: any): number
+	local mult = 1
+	if targetEntity.kind == "monster" then
+		local monster = targetEntity.monster
+		if monster.variant == "elite" or monster.variant == "elite2" then
+			mult += hook(player, "eliteDamage") / 100
+		elseif monster.variant == "boss" then
+			mult += hook(player, "bossDamage") / 100
+		end
+		if monster.hp / math.max(1, monster.stats.maxHp) < 0.3 then
+			mult += hook(player, "executioner") / 100
+		end
+	elseif targetEntity.player and hpFraction(targetEntity.player) < 0.3 then
+		mult += hook(player, "executioner") / 100
+	end
+	return mult
+end
+
+-- Damage taken after the defender's "last stand" effect.
+local function defensiveAmount(player: Player, amount: number): number
+	local lastStand = hook(player, "lastStand")
+	if lastStand > 0 and hpFraction(player) < 0.3 then
+		return math.max(1, math.floor(amount * (1 - math.min(lastStand, 80) / 100)))
+	end
+	return amount
+end
+
 -- Kill credit and rewards ----------------------------------------------------------------------------
 
 -- Players who get EXP/gold/loot for a monster (top damage dealer; parties extend this in S09).
@@ -195,6 +237,10 @@ local function reward(player: Player, monster: any)
 	PlayerStateService.Update(player, { "character", "gold" }, function(current: number)
 		return current + gold
 	end)
+	local killHeal = hook(player, "killHeal")
+	if killHeal > 0 then
+		ResourceService.Heal(player, StatService.GetValue(player, "maxHp") * killHeal / 100)
+	end
 	local shownExp = if character.level >= 100 then 0 else math.floor(exp * (1 + expBonus / 100))
 	Net.Fire(player, "CombatFx", { { k = "reward", exp = shownExp, gold = gold } })
 end
@@ -247,6 +293,9 @@ function CombatService.DealDamage(
 			return nil
 		end
 		result = Damage.computeDamage(attacker, MonsterStats.asDefender(monster.stats), params, rng)
+		if not result.dodged then
+			result.amount = math.max(1, math.floor(result.amount * offensiveMultiplier(player, targetEntity)))
+		end
 		local override = attackerState(player).damageOverride
 		if override and not result.dodged then
 			result.amount = override
@@ -277,6 +326,10 @@ function CombatService.DealDamage(
 		local pvpParams = table.clone(params)
 		pvpParams.pvp = true
 		result = Damage.computeDamage(attacker, defender, pvpParams, rng)
+		if not result.dodged then
+			local amount = math.floor(result.amount * offensiveMultiplier(player, targetEntity))
+			result.amount = defensiveAmount(target, math.max(1, amount))
+		end
 		local override = attackerState(player).damageOverride
 		if override and not result.dodged then
 			result.amount = math.floor(override * Combat.pvpModifier)
@@ -296,6 +349,10 @@ function CombatService.DealDamage(
 	end
 
 	ResourceService.MarkCombat(player)
+	local manaOnHit = hook(player, "manaOnHit")
+	if manaOnHit > 0 and result.amount > 0 then
+		ResourceService.Add(player, "mana", StatService.GetValue(player, "maxMana") * manaOnHit / 100)
+	end
 	if result.lifesteal > 0 then
 		local healed = ResourceService.Heal(player, result.lifesteal)
 		if healed > 0 and selfEntity then
@@ -337,6 +394,12 @@ local function tryBasicAttack(player: Player, state: Attacker, now: number)
 	state.nextAttack = now + 1 / speed
 	local params: Damage.Params = { kind = if kind == "magic" then "magic" else "phys" }
 	CombatService.DealDamage(player, target, params, style)
+	local double = hook(player, "doubleAttack")
+	if double > 0 and rng:chance(double / 100) then
+		if target.kind ~= "monster" or (target.monster and target.monster:IsAlive()) then
+			CombatService.DealDamage(player, target, params, style)
+		end
+	end
 end
 
 -- Monster -> player ------------------------------------------------------------------------------------
@@ -350,6 +413,9 @@ local function monsterHitsPlayer(monster: any, player: Player, params: Damage.Pa
 		return
 	end
 	local result = Damage.computeDamage(MonsterStats.asAttacker(monster.stats), defender, params, rng)
+	if not result.dodged then
+		result.amount = defensiveAmount(player, result.amount)
+	end
 	local playerEntity = EntityService.GetPlayerEntity(player)
 	local position = EntityService.Position(playerEntity or { model = player.Character } :: any)
 	if style and monster.entity and playerEntity then
@@ -360,6 +426,17 @@ local function monsterHitsPlayer(monster: any, player: Player, params: Damage.Pa
 	end
 	if result.amount > 0 then
 		ResourceService.Damage(player, result.amount, "monster")
+		local thorns = hook(player, "thorns")
+		if thorns > 0 and monster:IsAlive() then
+			local reflected = math.max(1, math.floor(result.amount * thorns / 100))
+			local dealt = monster:TakeDamage(reflected, player)
+			if dealt > 0 and monster.entity then
+				queueFx(
+					monster:Position(),
+					{ k = "dmg", e = monster.entity.id, a = math.floor(dealt), c = false, d = false }
+				)
+			end
+		end
 	else
 		ResourceService.MarkCombat(player)
 	end
@@ -478,6 +555,7 @@ function CombatService.Init(registry)
 	LevelService = registry.Get("LevelService")
 	PvpService = registry.Get("PvpService")
 	ZoneService = registry.Get("ZoneService")
+	EquipmentService = registry.Get("EquipmentService")
 
 	MonsterService.SetCombatHandlers({
 		basicAttack = monsterBasicAttack,

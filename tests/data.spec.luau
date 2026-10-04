@@ -4,7 +4,11 @@ local fs = require("@lune/fs")
 
 local Classes = require("../src/shared/Data/Classes")
 local Config = require("../src/shared/Config")
+local Bonuses = require("../src/shared/Data/Bonuses")
+local Items = require("../src/shared/Data/Items")
+local LootTables = require("../src/shared/Data/LootTables")
 local Maps = require("../src/shared/Data/Maps")
+local Rarities = require("../src/shared/Data/Rarities")
 local MonsterAbilities = require("../src/shared/Data/MonsterAbilities")
 local Monsters = require("../src/shared/Data/Monsters")
 local Spawns = require("../src/shared/Data/Spawns")
@@ -59,6 +63,17 @@ local NAMESPACES = {
 	"monsterPlate",
 	"variant",
 	"combat",
+	"rarity",
+	"category",
+	"bonus",
+	"inventory",
+	"tooltip",
+	"equip",
+	"loot",
+	"reveal",
+	"potion",
+	"itemTier",
+	"itemBase",
 }
 
 T.describe("Data: Classes", function()
@@ -191,6 +206,146 @@ T.describe("Data: Monsters", function()
 				end
 			end
 		end
+	end)
+end)
+
+T.describe("Data: Items", function()
+	local function fail(id: string, what: string)
+		error(`{id}: {what}`)
+	end
+
+	T.it("every item has a localized name, icon and valid fields", function()
+		local count = 0
+		for id, def in Items.byId do
+			count += 1
+			if def.id ~= id then
+				fail(id, "id mismatch")
+			end
+			if def.nameKey then
+				if not hasKey(def.nameKey) then
+					fail(id, `missing {def.nameKey}`)
+				end
+			else
+				local prefix = `{def.namePrefix}.{def.gender}`
+				if not hasKey(prefix) or not hasKey(def.nameBase or "") then
+					fail(id, `missing generated name {prefix} / {def.nameBase}`)
+				end
+			end
+			if def.descKey and not hasKey(def.descKey) then
+				fail(id, `missing {def.descKey}`)
+			end
+			if string.match(def.icon.color, "^#%x%x%x%x%x%x$") == nil or def.icon.glyph == "" then
+				fail(id, "icon")
+			end
+			if def.price < 0 or def.maxStack < 1 or (def.stackable and def.maxStack ~= 999) then
+				fail(id, "price/stack")
+			end
+			if def.category == "equipment" then
+				if not def.slot or (not def.weapon and not def.base) then
+					fail(id, "equipment without slot or stats")
+				end
+				if not def.fixedBonuses and not Bonuses.pools[def.bonusGroup or ""] then
+					fail(id, "unknown bonus group")
+				end
+				for _, classId in def.classes or {} do
+					if not Classes.get(classId) then
+						fail(id, `unknown class {classId}`)
+					end
+				end
+			end
+		end
+		-- 31 base types x 21 tiers + 30 materials + 24 consumables + 9 backpacks + 12 uniques
+		T.expect(count).toBe(31 * 21 + 30 + 24 + 9 + 12)
+	end)
+
+	T.it("class weapon types exist as item bases", function()
+		for _, classId in Classes.order do
+			local class = Classes.get(classId) :: Classes.ClassDef
+			for _, weaponType in class.weaponTypes do
+				T.expect({ type = weaponType, ok = Items.bases.byType[weaponType] ~= nil })
+					.toEqual({ type = weaponType, ok = true })
+			end
+			for _, offhand in class.offhandTypes do
+				T.expect({ type = offhand, ok = Items.bases.byType[offhand] ~= nil })
+					.toEqual({ type = offhand, ok = true })
+			end
+		end
+	end)
+
+	T.it("bonus pools are large enough and localized", function()
+		local maxCount = 0
+		for _, rarity in Rarities.list do
+			maxCount = math.max(maxCount, rarity.bonusCount)
+		end
+		for group, pool in Bonuses.pools do
+			T.expect({ group = group, ok = #pool >= maxCount }).toEqual({ group = group, ok = true })
+			for _, id in pool do
+				local def = Bonuses.get(id)
+				if not def then
+					fail(group, `unknown bonus {id}`)
+				end
+				if not hasKey((def :: any).nameKey) then
+					fail(group, `missing {(def :: any).nameKey}`)
+				end
+			end
+		end
+		T.expect(#Bonuses.pools.legendary >= 12).toBe(true)
+	end)
+
+	T.it("uniques use known bonuses and belong to a boss table", function()
+		T.expect(#Items.uniques).toBe(12)
+		for _, def in Items.uniques do
+			for _, bonus in def.fixedBonuses or {} do
+				if not Bonuses.get(bonus.stat) then
+					fail(def.id, `unknown bonus {bonus.stat}`)
+				end
+			end
+			local boss = LootTables.bosses[def.bossId or ""]
+			if not boss or not table.find(boss.uniques, def.id) then
+				fail(def.id, "not in its boss table")
+			end
+		end
+	end)
+
+	T.it("loot tables reference existing items", function()
+		for _, def in Monsters.list do
+			local tableDef = LootTables.get(def.lootTable)
+			if not tableDef then
+				fail(def.id, "no loot table")
+			end
+			for _, drop in (tableDef :: any).materials do
+				T.expect(Items.get(drop.id) ~= nil).toBe(true)
+			end
+			for _, list in (tableDef :: any).variantMaterials do
+				for _, drop in list do
+					T.expect(Items.get(drop.id) ~= nil).toBe(true)
+				end
+			end
+		end
+		for bossId, boss in LootTables.bosses do
+			for _, id in boss.uniques do
+				T.expect(Items.get(id) ~= nil).toBe(true)
+			end
+			for _, drop in boss.materials do
+				if not Items.get(drop.id) then
+					fail(bossId, `unknown material {drop.id}`)
+				end
+			end
+		end
+	end)
+
+	T.it("starting gear exists and fits the class", function()
+		for classId, list in Items.startingGear do
+			for _, id in list do
+				local def = Items.get(id)
+				if not def then
+					fail(classId, `unknown starting item {id}`)
+				end
+				T.expect(def.classes == nil or table.find(def.classes :: any, classId) ~= nil).toBe(true)
+			end
+		end
+		T.expect(Items.get(Items.startingBackpack) ~= nil).toBe(true)
+		T.expect(Items.get(Items.startingPotions.id) ~= nil).toBe(true)
 	end)
 end)
 

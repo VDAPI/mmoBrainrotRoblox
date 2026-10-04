@@ -42,6 +42,23 @@ local Definitions: { [string]: Definition } = {
 	SetTarget = { kind = "event", dir = "c2s", rate = 8, args = { "string?" } }, -- entityId or nil to clear
 	CombatFx = { kind = "event", dir = "s2c" }, -- batched { k = "dmg" | "heal" | "atk" | "tele" | "reward", ... }
 
+	-- Items (S04). Functions answer (ok, errorKey?).
+	MoveItem = { kind = "function", dir = "c2s", rate = 10, args = { "integer", "integer" } }, -- (from, to)
+	SplitStack = { kind = "function", dir = "c2s", rate = 4, args = { "integer", "integer" } }, -- (from, amount)
+	SortInventory = { kind = "function", dir = "c2s", rate = 1, args = {} },
+	DestroyItem = { kind = "function", dir = "c2s", rate = 4, args = { "integer" } },
+	UseItem = { kind = "function", dir = "c2s", rate = 6, args = { "integer" } },
+	EquipItem = { kind = "function", dir = "c2s", rate = 6, args = { "integer", "string?" } }, -- (index, slot?)
+	UnequipItem = { kind = "function", dir = "c2s", rate = 6, args = { "string", "integer?" } }, -- (slot, index?)
+	SetPotionSlot = { kind = "function", dir = "c2s", rate = 4, args = { "string", "string?" } }, -- (hp|mana|energy, itemId?)
+	UsePotion = { kind = "function", dir = "c2s", rate = 6, args = { "string" } },
+	PickupLoot = { kind = "function", dir = "c2s", rate = 10, args = { "string" } },
+	LootSpawn = { kind = "event", dir = "s2c" }, -- (bag) only to the owner
+	LootUpdate = { kind = "event", dir = "s2c" }, -- (bagId, items)
+	LootRemove = { kind = "event", dir = "s2c" }, -- (bagId)
+	LootPicked = { kind = "event", dir = "s2c" }, -- (items) what went into the backpack (legendary reveal)
+	Announce = { kind = "event", dir = "s2c" }, -- (key, args) banner + system chat for everyone
+
 	-- PvP and death
 	SetPvp = { kind = "function", dir = "c2s", rate = 1, args = { "boolean" } },
 	RespawnNow = { kind = "function", dir = "c2s", rate = 1, args = {} },

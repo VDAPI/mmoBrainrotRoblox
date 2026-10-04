@@ -20,6 +20,7 @@ local function GameMenu(scope: Scope, close: () -> ()): Fusion.Child
 	local busy = scope:Value(false)
 	local dataMock = State.Value({ "session", "dataMock" })
 	local dmgNumbers = State.Value({ "account", "settings", "dmgNumbers" })
+	local bindConfirm = State.Value({ "account", "settings", "bindConfirm" })
 
 	local function switchCharacter()
 		if Fusion.peek(busy) then
@@ -110,9 +111,40 @@ local function GameMenu(scope: Scope, close: () -> ()): Fusion.Child
 				}),
 			},
 		}),
+		scope:New("Frame")({
+			Name = "BindConfirm",
+			LayoutOrder = 5,
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1, 0, 0, 44),
+			[Children] = {
+				scope:New("TextLabel")({
+					BackgroundTransparency = 1,
+					Size = UDim2.fromScale(0.6, 1),
+					Text = Text.T(scope, "menu.bindConfirm"),
+					FontFace = Theme.Fonts.BodyBold,
+					TextSize = Theme.TextSize.Body,
+					TextColor3 = Theme.Colors.Text,
+					TextXAlignment = Enum.TextXAlignment.Left,
+				}),
+				Button(scope, {
+					AnchorPoint = Vector2.new(1, 0),
+					Position = UDim2.fromScale(1, 0),
+					Size = UDim2.fromOffset(136, 44),
+					Variant = scope:Computed(function(use): Button.Variant
+						return if use(bindConfirm) ~= false then "primary" else "ghost"
+					end) :: any,
+					Text = scope:Computed(function(use): string
+						return Text.get(use, if use(bindConfirm) ~= false then "menu.on" else "menu.off")
+					end),
+					OnClick = function()
+						Net.Send("SetSetting", "bindConfirm", Fusion.peek(bindConfirm) == false)
+					end,
+				}),
+			},
+		}),
 		scope:New("TextLabel")({
 			Name = "MockWarning",
-			LayoutOrder = 5,
+			LayoutOrder = 6,
 			BackgroundTransparency = 1,
 			Size = UDim2.fromScale(1, 0),
 			AutomaticSize = Enum.AutomaticSize.Y,

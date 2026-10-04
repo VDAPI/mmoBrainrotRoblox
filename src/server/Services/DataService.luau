@@ -2,6 +2,7 @@
 -- Player account persistence via ProfileStore (session locked). Falls back to ProfileStore's in-memory
 -- mock automatically when DataStore access is unavailable (unpublished place / API access disabled).
 
+local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerStorage = game:GetService("ServerStorage")
@@ -103,7 +104,9 @@ local function onPlayerAdded(player: Player)
 
 	profile:AddUserId(player.UserId)
 	profile:Reconcile()
-	local applied = AccountSchema.migrate(profile.Data)
+	local applied = AccountSchema.migrate(profile.Data, function(): string
+		return HttpService:GenerateGUID(false)
+	end)
 	if #applied > 0 then
 		log:info("migrated %s through schema %s", player.Name, table.concat(applied, ", "))
 	end

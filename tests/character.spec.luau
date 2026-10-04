@@ -32,15 +32,43 @@ T.describe("CharacterFactory", function()
 		end
 	end)
 
-	T.it("starts with gold, the city and a cloth backpack", function()
+	T.it("starts with gold, the city, a cloth backpack, class gear and potions", function()
 		local character = CharacterFactory.create("Mage", "Aria", ids())
 		T.expect(character.gold).toBe(Config.StartingGold)
 		T.expect(character.location.map).toBe(Config.StartingMap)
-		T.expect(character.equipment.backpack.id).toBe(Config.StartingBackpackId)
+		T.expect(character.equipment.backpack.id).toBe("backpack_20")
 		T.expect(character.equipment.backpack.n).toBe(1)
+		T.expect(character.equipment.weapon.id).toBe("wand_1")
+		T.expect(character.equipment.weapon.bound).toBe(true)
+		T.expect(character.equipment.armor.id).toBe("armor_light_1")
+		T.expect(character.inventory["1"].id).toBe("potion_hp_1")
+		T.expect(character.inventory["1"].n).toBe(10)
+		T.expect(character.potionBar.hp).toBe("potion_hp_1")
 		T.expect(character.id).toBe("id1")
-		T.expect(character.equipment.backpack.uid).toBe("id2")
 		T.expect(character.createdAt).toBe(1000)
+		-- every item got its own uid
+		local uids = {}
+		for _, item in character.equipment do
+			T.expect(uids[item.uid]).toBeNil()
+			uids[item.uid] = true
+		end
+	end)
+
+	T.it("schema 2 migration gives old characters their starting gear without replacing items", function()
+		local old = CharacterFactory.create("Warrior", "Old", ids())
+		old.equipment = { backpack = old.equipment.backpack }
+		old.inventory = {
+			["1"] = { uid = "keep", id = "ore_iron", rarity = 1, ilvl = 1, bonuses = {}, up = 0, bound = false, n = 3 },
+		}
+		old.potionBar = {}
+		local data: any = AccountSchema.accountTemplate()
+		data.schema = 1
+		data.characters["1"] = old
+		AccountSchema.migrate(data)
+		T.expect(old.equipment.weapon.id).toBe("sword1h_1")
+		T.expect(old.inventory["1"].uid).toBe("keep")
+		T.expect(old.inventory["2"].id).toBe("potion_hp_1")
+		T.expect(old.potionBar.hp).toBe("potion_hp_1")
 	end)
 
 	T.it("rejects unknown classes", function()

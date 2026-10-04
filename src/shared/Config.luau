@@ -25,7 +25,6 @@ local Config = {
 	-- Gold given to a freshly created character.
 	StartingGold = 50,
 	StartingMap = "city",
-	StartingBackpackId = "backpack_20",
 
 	-- Languages supported by Locale. First one is the fallback.
 	Languages = { "en", "pl" },
@@ -56,6 +55,12 @@ local Config = {
 	ZoneCheckInterval = 0.5,
 	-- Players within this radius see someone's level-up effect.
 	EffectRadius = 150,
+
+	-- Items (DESIGN §5.5, §9).
+	PotionCooldown = 1.5, -- seconds, per potion kind
+	LootLifetime = 120, -- seconds a loot bag stays
+	LootPickupRange = 12, -- studs (+ lag tolerance in LootService)
+	DefaultCapacity = 20, -- inventory slots without a backpack item
 
 	-- Live monsters allowed on one server (spawners stop when reached).
 	MaxActiveMonsters = 400,

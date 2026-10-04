@@ -5,7 +5,12 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Announcement = require(script.Parent.Parent.UI.Components.Announcement)
+local DragDrop = require(script.Parent.Parent.UI.DragDrop)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local ItemTooltip = require(script.Parent.Parent.UI.Components.ItemTooltip)
+local Items = require(ReplicatedStorage.Shared.Data.Items)
+local Theme = require(script.Parent.Parent.UI.Theme)
 local Scale = require(script.Parent.Parent.UI.Scale)
 local Sounds = require(script.Parent.Parent.UI.Sounds)
 local State = require(script.Parent.Parent.UI.State)
@@ -35,6 +40,50 @@ function UIController.GetLayer(name: LayerName): Frame
 	return root
 end
 
+-- Icon following the mouse while an item is dragged (UI/DragDrop).
+-- `getItemId(slotId)` is provided by ItemController.
+UIController.DragItemId = function(_slotId: string): string?
+	return nil
+end
+
+function UIController.MountDragGhost(scope: Fusion.Scope<typeof(Fusion)>, parent: Instance)
+	local def = scope:Computed(function(use): Items.ItemDef?
+		local dragging = use(DragDrop.Dragging)
+		local id = dragging and UIController.DragItemId(dragging)
+		return if id then Items.get(id) else nil
+	end)
+	scope:New("TextLabel")({
+		Name = "DragGhost",
+		Parent = parent,
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Size = UDim2.fromOffset(56, 56),
+		Position = scope:Computed(function(use): UDim2
+			local p: Vector2 = use(DragDrop.GhostPosition)
+			return UDim2.fromOffset(p.X, p.Y)
+		end),
+		Visible = scope:Computed(function(use): boolean
+			return use(def) ~= nil
+		end),
+		BackgroundColor3 = scope:Computed(function(use): Color3
+			local d = use(def)
+			return if d then Color3.fromHex(d.icon.color) else Theme.Colors.Panel
+		end),
+		BackgroundTransparency = 0.3,
+		Text = scope:Computed(function(use): string
+			local d = use(def)
+			return if d then d.icon.glyph else ""
+		end),
+		TextScaled = true,
+		FontFace = Theme.Fonts.BodyBold,
+		TextColor3 = Theme.Colors.Text,
+		ZIndex = 300,
+		[Fusion.Children] = {
+			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
+			scope:New("UIStroke")({ Color = Theme.Colors.Gold, Thickness = 2 }),
+		},
+	})
+end
+
 function UIController.Init()
 	local scope = UIController.Scope
 	-- PlayerGui exists before PlayerScripts run in practice; the wait is a safety net.
@@ -52,7 +101,10 @@ function UIController.Init()
 	end
 
 	Toast.mount(scope, roots.Toasts)
+	Announcement.mount(scope, roots.Toasts)
 	Tooltip.mount(scope, roots.Tooltip)
+	ItemTooltip.mount(scope, roots.Tooltip)
+	UIController.MountDragGhost(scope, roots.Tooltip)
 
 	scope:Observer(State.Value({ "account", "settings", "volume" })):onBind(function()
 		local volume = Fusion.peek(State.Value({ "account", "settings", "volume" }))

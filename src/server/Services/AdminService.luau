@@ -13,6 +13,9 @@ local Shared = ReplicatedStorage.Shared
 local AccountSchema = require(Shared.Logic.AccountSchema)
 local Config = require(Shared.Config)
 local Log = require(Shared.Util.Log)
+local Inventory = require(Shared.Logic.Inventory)
+local ItemRoll = require(Shared.Logic.ItemRoll)
+local Items = require(Shared.Data.Items)
 local Monsters = require(Shared.Data.Monsters)
 local Net = require(Shared.Net)
 
@@ -33,6 +36,9 @@ local AdminService = {
 		"MonsterService",
 		"CombatService",
 		"EntityService",
+		"InventoryService",
+		"LootService",
+		"StatService",
 	},
 }
 
@@ -48,6 +54,9 @@ local MonetizationService: any
 local MonsterService: any
 local CombatService: any
 local EntityService: any
+local InventoryService: any
+local LootService: any
+local StatService: any
 
 type Command = {
 	usageKey: string,
@@ -452,6 +461,122 @@ COMMANDS.monsters = {
 	end,
 }
 
+COMMANDS.give = {
+	usageKey = "admin.usage.give",
+	run = function(player, args)
+		local itemId = args[1]
+		if not itemId then
+			reply(player, "admin.usage.give")
+			return
+		end
+		local def = Items.get(itemId)
+		if not def then
+			reply(player, "admin.give.unknown", { id = itemId })
+			return
+		end
+		withCharacter(player, function()
+			local character = PlayerStateService.GetCharacter(player)
+			local rarityArg = args[2]
+			local rarity = if rarityArg == "u" then 6 else math.clamp(tonumber(rarityArg) or 1, 1, 5)
+			local ilvl = math.clamp(parseAmount(args[3]) or math.max(def.level, character.level), 1, Config.MaxLevel)
+			local n = math.clamp(parseAmount(args[4]) or 1, 1, 999)
+			local given = 0
+			if def.stackable then
+				given = n - InventoryService.GiveNew(player, itemId, n)
+			else
+				for _ = 1, math.min(n, 50) do
+					local leftover =
+						InventoryService.GiveNew(player, itemId, 1, if rarity == 6 then 1 else rarity, ilvl)
+					if leftover > 0 then
+						break
+					end
+					given += 1
+				end
+			end
+			if given == 0 then
+				reply(player, "inventory.full")
+			else
+				reply(player, "admin.give.ok", { name = `#item:{itemId}:0`, n = given })
+			end
+		end)
+	end,
+}
+
+COMMANDS.legend = {
+	usageKey = "admin.usage.legend",
+	run = function(player)
+		withCharacter(player, function()
+			if LootService.DropLegendary(player) then
+				reply(player, "admin.legend.ok")
+			end
+		end)
+	end,
+}
+
+COMMANDS.lootsim = {
+	usageKey = "admin.usage.lootsim",
+	run = function(player, args)
+		local monsterId = args[1]
+		local def = monsterId and Monsters.get(monsterId)
+		if not def then
+			reply(player, "admin.usage.lootsim")
+			return
+		end
+		local variant = VARIANTS[tonumber(args[2]) or 0] or "normal"
+		local n = math.clamp(parseAmount(args[3]) or 1000, 1, 100000)
+		local character = PlayerStateService.GetCharacter(player)
+		local counts, items, mats, gold =
+			LootService.Simulate(monsterId, variant, def.levels.max, n, if character then character.class else nil)
+		reply(player, "admin.lootsim.result", {
+			n = n,
+			items = items,
+			c1 = counts[1],
+			c2 = counts[2],
+			c3 = counts[3],
+			c4 = counts[4],
+			c5 = counts[5],
+			c6 = counts[6],
+			mats = mats,
+			gold = gold,
+		})
+	end,
+}
+
+COMMANDS.clearinv = {
+	usageKey = "admin.usage.clearinv",
+	run = function(player)
+		withCharacter(player, function()
+			InventoryService.Clear(player)
+			reply(player, "admin.clearinv.ok")
+		end)
+	end,
+}
+
+COMMANDS.bag = {
+	usageKey = "admin.usage.bag",
+	run = function(player, args)
+		local capacity = parseAmount(args[1])
+		local id = if capacity then `backpack_{capacity}` else ""
+		if not Items.get(id) then
+			reply(player, "admin.bag.unknown", { capacity = args[1] or "?" })
+			return
+		end
+		withCharacter(player, function()
+			local character = PlayerStateService.GetCharacter(player)
+			if not Inventory.compact(character.inventory, capacity :: number) then
+				reply(player, "equip.error.backpackFit")
+				return
+			end
+			local backpack = ItemRoll.makeStack(id, 1, InventoryService.NewUid())
+			backpack.bound = true
+			PlayerStateService.Set(player, { "character", "equipment", "backpack" }, backpack)
+			InventoryService.SyncAll(player)
+			StatService.Invalidate(player)
+			reply(player, "admin.bag.ok", { capacity = capacity })
+		end)
+	end,
+}
+
 local function onCommand(name: string, textSource: TextSource, message: string)
 	local player = Players:GetPlayerByUserId(textSource.UserId)
 	if not player then
@@ -489,6 +614,9 @@ function AdminService.Init(registry)
 	MonsterService = registry.Get("MonsterService")
 	CombatService = registry.Get("CombatService")
 	EntityService = registry.Get("EntityService")
+	InventoryService = registry.Get("InventoryService")
+	LootService = registry.Get("LootService")
+	StatService = registry.Get("StatService")
 end
 
 function AdminService.Start()

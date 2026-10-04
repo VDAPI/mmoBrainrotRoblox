@@ -1,15 +1,17 @@
 --!strict
--- Equipment silhouette: 10 gear slots + the backpack slot (DESIGN §5.1) around the character's emblem.
--- Items arrive in S04; until then slots show their placeholder glyph and the equipped backpack is marked.
+-- Equipment silhouette: 10 gear slots + the backpack slot (DESIGN §5.1) around the class emblem.
+-- Slots are ItemSlots ("eq:<slot>"): drag items from the backpack onto them, drag them back to unequip,
+-- double-click / tap twice to unequip, hover for the item tooltip.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local ItemSlot = require(script.Parent.Parent.Parent.Components.ItemSlot)
 local State = require(script.Parent.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
-local Tooltip = require(script.Parent.Parent.Parent.Components.Tooltip)
+local Types = require(ReplicatedStorage.Shared.Types)
 
 local Children = Fusion.Children
 
@@ -18,7 +20,7 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 local SLOT = 72
 local GAP = 12
 
--- slot id, glyph, column, row (3 x 4 grid; the middle column frames the silhouette)
+-- slot id, placeholder glyph, column, row (3 x 4 grid; the middle column frames the silhouette)
 local LAYOUT: { { id: string, glyph: string, col: number, row: number } } = {
 	{ id = "necklace", glyph = "◎", col = 1, row = 1 },
 	{ id = "helmet", glyph = "⛑", col = 2, row = 1 },
@@ -39,51 +41,20 @@ local function Equipment(scope: Scope, props: { LayoutOrder: number? }): Instanc
 
 	local slots = {}
 	for _, entry in LAYOUT do
-		local filled = scope:Computed(function(use): boolean
-			local eq = use(equipment)
-			return type(eq) == "table" and eq[entry.id] ~= nil
-		end)
-		local slot = scope:New("Frame")({
-			Name = entry.id,
-			Position = UDim2.fromOffset((entry.col - 1) * (SLOT + GAP), (entry.row - 1) * (SLOT + GAP)),
-			Size = UDim2.fromOffset(SLOT, SLOT),
-			BackgroundColor3 = Theme.Colors.Background,
-			Active = true,
-			[Children] = {
-				scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
-				scope:New("UIStroke")({
-					ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-					Thickness = Theme.Stroke.Normal,
-					Color = scope:Computed(function(use): Color3
-						return if use(filled) then Theme.Rarity[1] else Theme.Colors.Border
-					end),
-				}),
-				scope:New("TextLabel")({
-					BackgroundTransparency = 1,
-					Size = UDim2.fromScale(1, 1),
-					Text = entry.glyph,
-					FontFace = Theme.Fonts.BodyBold,
-					TextSize = 32,
-					TextColor3 = scope:Computed(function(use): Color3
-						return if use(filled) then Theme.Colors.Parchment else Theme.Colors.Border
-					end),
-				}),
-			},
-		})
-		Tooltip.attach(
-			scope,
-			slot :: GuiObject,
-			scope:Computed(function(use): string
-				local name = Text.get(use, `slot.{entry.id}`)
-				local eq = use(equipment)
-				local item = if type(eq) == "table" then eq[entry.id] else nil
-				if item then
-					return `{name}\n{Text.get(use, `item.{item.id}.name`)}`
-				end
-				return `{name}\n{Text.get(use, "slot.empty")}`
-			end)
+		table.insert(
+			slots,
+			ItemSlot(scope, {
+				SlotId = `eq:{entry.id}`,
+				Size = SLOT,
+				Placeholder = entry.glyph,
+				Position = UDim2.fromOffset((entry.col - 1) * (SLOT + GAP), (entry.row - 1) * (SLOT + GAP)),
+				Item = scope:Computed(function(use): Types.ItemInstance?
+					local eq = use(equipment)
+					return if type(eq) == "table" then eq[entry.id] else nil
+				end),
+				EmptyTooltip = Text.T(scope, `slot.{entry.id}`),
+			})
 		)
-		table.insert(slots, slot)
 	end
 
 	local width = 3 * SLOT + 2 * GAP

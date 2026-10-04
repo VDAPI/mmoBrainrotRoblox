@@ -15,6 +15,7 @@ local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local IconButton = require(script.Parent.Parent.Components.IconButton)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
+local PotionBar = require(script.PotionBar)
 local PvpToggle = require(script.PvpToggle)
 local State = require(script.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Text)
@@ -40,10 +41,11 @@ export type Props = {
 	IsOpen: (id: string) -> Fusion.Value<boolean>,
 	Target: Fusion.Value<Model?>,
 	OnAttack: () -> (),
+	UsePotion: (kind: string) -> (),
+	AssignPotion: (kind: string, itemId: string?) -> (),
 }
 
 local SKILL_SLOTS = 10
-local POTION_SLOTS = 3
 local SLOT_SIZE = 56
 
 local ZONE_COLORS = {
@@ -308,7 +310,7 @@ local function slot(scope: Scope, index: number, label: string, border: Color3):
 	})
 end
 
-local function actionBar(scope: Scope): Instance
+local function actionBar(scope: Scope, props: Props): Instance
 	local slots = {}
 	for i = 1, SKILL_SLOTS do
 		table.insert(slots, slot(scope, i, tostring(i % 10), Theme.Colors.GoldDim))
@@ -322,11 +324,14 @@ local function actionBar(scope: Scope): Instance
 			BackgroundTransparency = 1,
 		})
 	)
-	local potionColors = { Theme.Colors.Hp, Theme.Colors.Mana, Theme.Colors.Energy }
-	local potionKeys = { "Z", "X", "V" }
-	for i = 1, POTION_SLOTS do
-		table.insert(slots, slot(scope, SKILL_SLOTS + 1 + i, potionKeys[i], potionColors[i]))
-	end
+	table.insert(
+		slots,
+		PotionBar(scope, {
+			LayoutOrder = SKILL_SLOTS + 2,
+			Use = props.UsePotion,
+			Assign = props.AssignPotion,
+		})
+	)
 
 	return scope:New("Frame")({
 		Name = "ActionBar",
@@ -391,7 +396,7 @@ local function Hud(scope: Scope, props: Props): Instance
 		[Children] = {
 			portrait(scope),
 			menu(scope, props),
-			actionBar(scope),
+			actionBar(scope, props),
 			expBar(scope),
 			TargetFrame(scope, { Target = props.Target }),
 			ZoneBanner(scope),

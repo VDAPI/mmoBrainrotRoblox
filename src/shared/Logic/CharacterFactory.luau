@@ -5,6 +5,7 @@ local Classes = require("../Data/Classes")
 local Config = require("../Config")
 local Types = require("../Types")
 local AccountSchema = require("./AccountSchema")
+local StarterGear = require("./StarterGear")
 
 type CharacterData = Types.CharacterData
 
@@ -14,19 +15,6 @@ export type Ids = {
 	newId: () -> string,
 	now: number,
 }
-
-local function makeItem(id: string, uid: string): Types.ItemInstance
-	return {
-		uid = uid,
-		id = id,
-		rarity = 1,
-		ilvl = 1,
-		bonuses = {},
-		up = 0,
-		bound = false,
-		n = 1,
-	}
-end
 
 function CharacterFactory.create(classId: Types.ClassId, name: string, ids: Ids): CharacterData
 	local class = Classes.get(classId)
@@ -40,9 +28,8 @@ function CharacterFactory.create(classId: Types.ClassId, name: string, ids: Ids)
 	character.stats = table.clone(class.startStats)
 	character.gold = Config.StartingGold
 	character.location = { map = Config.StartingMap, x = 0, y = 0, z = 0 }
-	character.equipment = {
-		backpack = makeItem(Config.StartingBackpackId, ids.newId()),
-	}
+	character.equipment = {}
+	StarterGear.apply(character, ids.newId)
 	character.createdAt = ids.now
 	return character
 end

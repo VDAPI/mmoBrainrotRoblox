@@ -4,6 +4,7 @@
 
 local Config = require("../Config")
 local Types = require("../Types")
+local StarterGear = require("./StarterGear")
 local TableUtil = require("../Util/TableUtil")
 
 type AccountData = Types.AccountData
@@ -11,7 +12,7 @@ type CharacterData = Types.CharacterData
 
 local AccountSchema = {}
 
-AccountSchema.CURRENT = 1
+AccountSchema.CURRENT = 2
 
 function AccountSchema.accountTemplate(): AccountData
 	return {
@@ -22,7 +23,7 @@ function AccountSchema.accountTemplate(): AccountData
 		deposit = { size = 60, items = {} },
 		cosmetics = { owned = {}, equipped = {} },
 		pets = { owned = {}, equipped = nil },
-		settings = { lang = "", volume = 0.8, dmgNumbers = true },
+		settings = { lang = "", volume = 0.8, dmgNumbers = true, bindConfirm = true },
 		purchases = {},
 		dailyLimits = { day = 0, protectScrolls = 0 },
 		stats = { createdAt = 0, playtime = 0 },
@@ -62,17 +63,31 @@ function AccountSchema.characterTemplate(): CharacterData
 end
 
 -- schema N -> N+1 upgrade functions. MIGRATIONS[2] upgrades data saved with schema 1, etc.
-local MIGRATIONS: { [number]: (data: any) -> () } = {}
+-- `newId` creates item uids (GUIDs on the server, counters in tests).
+local MIGRATIONS: { [number]: (data: any, newId: () -> string) -> () } = {}
+
+-- 2 (S04): items exist now; give characters from S01–S03 their starting gear and potions.
+MIGRATIONS[2] = function(data, newId)
+	for _, character in data.characters do
+		TableUtil.reconcile(character, AccountSchema.characterTemplate())
+		StarterGear.apply(character, newId)
+	end
+end
 
 -- Upgrades and reconciles account data in place. Returns the list of applied migration numbers.
-function AccountSchema.migrate(data: any): { number }
+function AccountSchema.migrate(data: any, newId: (() -> string)?): { number }
+	local counter = 0
+	local makeId = newId or function(): string
+		counter += 1
+		return `migrated-{counter}`
+	end
 	local applied = {}
 	local schema = tonumber(data.schema) or 1
 	while schema < AccountSchema.CURRENT do
 		schema += 1
 		local migration = MIGRATIONS[schema]
 		if migration then
-			migration(data)
+			migration(data, makeId)
 		end
 		table.insert(applied, schema)
 	end

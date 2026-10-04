@@ -19,13 +19,11 @@ return table.freeze({
 	-- Who sees damage numbers / hit effects.
 	fxRadius = 80,
 
-	-- Gold from a monster: round((goldBase + goldFactor x L ^ goldExponent) x variant multiplier x random(goldRandomMin..Max))
-	goldBase = 2,
-	goldFactor = 1.2,
-	goldExponent = 1.1,
-	goldRandomMin = 0.8,
-	goldRandomMax = 1.2,
-	goldVariantMultiplier = table.freeze({ normal = 1, elite = 3, elite2 = 8, boss = 40 }),
+	-- Gold from a monster (DESIGN §5.5): round(L x goldPerLevel x random(goldRandomMin..Max) x variant multiplier)
+	goldPerLevel = 3,
+	goldRandomMin = 0.7,
+	goldRandomMax = 1.3,
+	goldVariantMultiplier = table.freeze({ normal = 1, elite = 4, elite2 = 12, boss = 40 }),
 
 	-- Monster base stats (DESIGN §15.1): HP = 60 + 28 L^1.35, attack = 6 + 3.2 L^1.15, armor = 4 L.
 	monsterHpBase = 60,

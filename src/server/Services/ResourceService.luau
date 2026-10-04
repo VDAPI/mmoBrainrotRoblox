@@ -178,6 +178,30 @@ function ResourceService.SpendEnergy(player: Player, amount: number): boolean
 	return spend(player, "energy", amount)
 end
 
+-- Restores one resource (potions). Returns the amount actually restored.
+function ResourceService.Add(player: Player, resource: "hp" | "mana" | "energy", amount: number): number
+	local pool = pools[player]
+	if not pool or pool.dead or amount <= 0 or amount ~= amount then
+		return 0
+	end
+	local maxId = if resource == "hp" then "maxHp" elseif resource == "mana" then "maxMana" else "maxEnergy"
+	local before = (pool :: any)[resource]
+	local after = math.min(maxOf(player, maxId), before + amount);
+	(pool :: any)[resource] = after
+	publish(player, pool)
+	return after - before
+end
+
+-- Missing amount of a resource (0 when full).
+function ResourceService.Missing(player: Player, resource: "hp" | "mana" | "energy"): number
+	local pool = pools[player]
+	if not pool then
+		return 0
+	end
+	local maxId = if resource == "hp" then "maxHp" elseif resource == "mana" then "maxMana" else "maxEnergy"
+	return math.max(0, maxOf(player, maxId) - (pool :: any)[resource])
+end
+
 -- Fills HP, Mana and Energy (level up, respawn, /heal).
 function ResourceService.Restore(player: Player)
 	local pool = pools[player]

@@ -1,12 +1,14 @@
 --!strict
 -- Server notifications: "Toast" (key, args?, kind?) -> toast stack; "SystemMessage" (key, args?) -> the
--- chat's system channel (admin replies, announcements).
+-- chat's system channel (admin replies); "Announce" (key, args?) -> golden banner + system chat.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TextChatService = game:GetService("TextChatService")
 
+local ItemText = require(script.Parent.Parent.UI.ItemText)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Text = require(script.Parent.Parent.UI.Text)
+local Announcement = require(script.Parent.Parent.UI.Components.Announcement)
 local Toast = require(script.Parent.Parent.UI.Components.Toast)
 
 local NotificationController = {
@@ -16,7 +18,8 @@ local NotificationController = {
 
 local KINDS = { info = true, success = true, warning = true, error = true }
 
--- Player-provided values (names) must not inject rich text tags. Values starting with "@" are localization keys.
+-- Player-provided values (names) must not inject rich text tags. Values starting with "@" are localization keys,
+-- "#item:<id>:<up>" are item names.
 local function escapeArgs(args: any): { [string]: any }?
 	if type(args) ~= "table" then
 		return nil
@@ -27,6 +30,9 @@ local function escapeArgs(args: any): { [string]: any }?
 			if string.sub(value, 1, 1) == "@" then
 				-- "@monster.wolf.normal" = a localization key, translated in the viewer's language.
 				value = Text.now(string.sub(value, 2))
+			elseif string.sub(value, 1, 6) == "#item:" then
+				-- "#item:<id>:<up>" = an item name (generated names need the item definition).
+				value = ItemText.resolveArg(value) or value
 			else
 				value = string.gsub(value, "[<>&]", { ["<"] = "&lt;", [">"] = "&gt;", ["&"] = "&amp;" })
 			end
@@ -34,6 +40,10 @@ local function escapeArgs(args: any): { [string]: any }?
 		out[key] = value
 	end
 	return out
+end
+
+function NotificationController.ResolveArgs(args: any): { [string]: any }?
+	return escapeArgs(args)
 end
 
 local systemChannel: TextChannel? = nil
@@ -68,6 +78,12 @@ function NotificationController.Start()
 	end)
 	Net.On("SystemMessage", function(key: string, args: any)
 		NotificationController.System(Text.now(key, escapeArgs(args)))
+	end)
+	-- Server-wide announcements (legendary drops, later +9 upgrades): golden banner + system chat.
+	Net.On("Announce", function(key: string, args: any)
+		local text = Text.now(key, escapeArgs(args))
+		Announcement.push(text)
+		NotificationController.System(text)
 	end)
 end
 

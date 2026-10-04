@@ -13,8 +13,6 @@ export type ClassDef = {
 	startStats: Types.Stats,
 	weaponTypes: { string },
 	offhandTypes: { string },
-	-- Item ids granted on creation once the item system exists (S04).
-	startingItems: { string },
 	-- Basic attack before a weapon defines it (S03): damage type, range class and visual style.
 	basicAttack: { kind: "phys" | "magic", ranged: boolean, style: "melee" | "arrow" | "bolt" },
 	color: string, -- hex, used for UI accents and placeholder icons
@@ -32,7 +30,6 @@ local Classes: { [Types.ClassId]: ClassDef } = {
 		startStats = { str = 10, dex = 5, int = 3, vit = 8 },
 		weaponTypes = { "sword1h", "axe1h", "mace1h", "sword2h", "axe2h", "hammer2h" },
 		offhandTypes = { "shield" },
-		startingItems = { "sword1h_1", "armor_plate_1" },
 		basicAttack = { kind = "phys", ranged = false, style = "melee" },
 		color = "#C0503C",
 		icon = "⚔",
@@ -47,7 +44,6 @@ local Classes: { [Types.ClassId]: ClassDef } = {
 		startStats = { str = 5, dex = 10, int = 3, vit = 8 },
 		weaponTypes = { "bow", "crossbow" },
 		offhandTypes = { "quiver" },
-		startingItems = { "bow_1", "armor_leather_1" },
 		basicAttack = { kind = "phys", ranged = true, style = "arrow" },
 		color = "#4FA35A",
 		icon = "➶",
@@ -62,7 +58,6 @@ local Classes: { [Types.ClassId]: ClassDef } = {
 		startStats = { str = 3, dex = 5, int = 10, vit = 8 },
 		weaponTypes = { "wand", "staff" },
 		offhandTypes = { "tome", "orb" },
-		startingItems = { "wand_1", "armor_cloth_1" },
 		basicAttack = { kind = "magic", ranged = true, style = "bolt" },
 		color = "#4A8FE7",
 		icon = "✦",
@@ -77,7 +72,6 @@ local Classes: { [Types.ClassId]: ClassDef } = {
 		startStats = { str = 4, dex = 4, int = 9, vit = 9 },
 		weaponTypes = { "mace1h", "scepter" },
 		offhandTypes = { "shield", "relic" },
-		startingItems = { "scepter_1", "armor_cloth_1" },
 		basicAttack = { kind = "magic", ranged = false, style = "melee" },
 		color = "#E8C25A",
 		icon = "✚",

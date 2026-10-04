@@ -23,6 +23,9 @@ local SETTINGS: { [string]: (value: any) -> boolean } = {
 	dmgNumbers = function(value)
 		return type(value) == "boolean"
 	end,
+	bindConfirm = function(value)
+		return type(value) == "boolean"
+	end,
 	volume = function(value)
 		return type(value) == "number" and value == value and value >= 0 and value <= 1
 	end,

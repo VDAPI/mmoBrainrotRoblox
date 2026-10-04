@@ -83,9 +83,8 @@ end
 -- Gold dropped by a monster (before the killer's gold bonus).
 function MonsterStats.gold(level: number, variant: string, roll: number): number
 	local multiplier = (Combat.goldVariantMultiplier :: any)[variant] or 1
-	local base = Combat.goldBase + Combat.goldFactor * level ^ Combat.goldExponent
 	local factor = Combat.goldRandomMin + (Combat.goldRandomMax - Combat.goldRandomMin) * math.clamp(roll, 0, 1)
-	return math.max(1, math.floor(base * multiplier * factor + 0.5))
+	return math.max(1, math.floor(level * Combat.goldPerLevel * factor * multiplier + 0.5))
 end
 
 -- Whether a monster attacks a player first (weak monsters leave much stronger players alone).

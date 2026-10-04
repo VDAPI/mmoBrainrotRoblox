@@ -70,6 +70,7 @@ export type Settings = {
 	lang: string, -- "" = not chosen yet (client picks from Roblox locale)
 	volume: number,
 	dmgNumbers: boolean,
+	bindConfirm: boolean, -- ask before an item binds on equip
 }
 
 export type AccountData = {
