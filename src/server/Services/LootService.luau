@@ -2,13 +2,11 @@
 -- Loot bags (DESIGN §5.5). On MonsterKilled each credited player gets a bag visible only to them (LootSpawn).
 -- The server keeps the contents; PickupLoot validates owner, distance and backpack room (partial pickups
 -- leave the rest in the bag). Bags expire after Config.LootLifetime. Uniques bind on pickup.
--- Legendary drops are announced to the whole server and, rate limited, to other servers (MessagingService).
+-- Legendary drops are announced to the whole server and to other servers (AnnounceService).
 
 local HttpService = game:GetService("HttpService")
-local MessagingService = game:GetService("MessagingService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local RunService = game:GetService("RunService")
 
 local Shared = ReplicatedStorage.Shared
 
@@ -16,14 +14,11 @@ local Config = require(Shared.Config)
 local Inventory = require(Shared.Logic.Inventory)
 local ItemRoll = require(Shared.Logic.ItemRoll)
 local Items = require(Shared.Data.Items)
-local Log = require(Shared.Util.Log)
 local Loot = require(Shared.Logic.Loot)
 local Net = require(Shared.Net)
 local Rarities = require(Shared.Data.Rarities)
 local Rng = require(Shared.Logic.Rng)
 local Types = require(Shared.Types)
-
-local log = Log.new("LootService")
 
 type ItemInstance = Types.ItemInstance
 
@@ -36,6 +31,7 @@ local LootService = {
 		"InventoryService",
 		"StatService",
 		"MonetizationService",
+		"AnnounceService",
 	},
 }
 
@@ -54,15 +50,12 @@ local CombatService: any
 local InventoryService: any
 local StatService: any
 local MonetizationService: any
+local AnnounceService: any
 
-local GLOBAL_TOPIC = "GlobalAnnounce"
-local GLOBAL_MIN_INTERVAL = 10 -- seconds between cross-server announcements from this server
 local PICKUP_TOLERANCE = 4
 
 local bags: { [string]: Bag } = {}
 local rng = Rng.new()
-local serverId = HttpService:GenerateGUID(false)
-local lastGlobal = 0
 
 local function summary(bag: Bag): { [string]: any }
 	local items = {}
@@ -81,27 +74,14 @@ end
 
 -- Announcements -------------------------------------------------------------------------------------------
 
-function LootService.Announce(key: string, args: { [string]: any })
-	Net.FireAll("Announce", key, args)
-end
-
 local function announceLegendary(player: Player, item: ItemInstance)
 	local character: Types.CharacterData? = PlayerStateService.GetCharacter(player)
 	local name = if character then character.name else player.Name
-	local args = { player = name, item = `#item:{item.id}:{item.up}` }
-	LootService.Announce("loot.announce", args)
-	if RunService:IsStudio() or os.clock() - lastGlobal < GLOBAL_MIN_INTERVAL then
-		return
-	end
-	lastGlobal = os.clock()
-	task.spawn(function()
-		local ok, err = pcall(function()
-			MessagingService:PublishAsync(GLOBAL_TOPIC, { from = serverId, key = "loot.announceGlobal", args = args })
-		end)
-		if not ok then
-			log:warn("global announce failed: %s", tostring(err))
-		end
-	end)
+	AnnounceService.Global(
+		"loot.announce",
+		"loot.announceGlobal",
+		{ player = name, item = `#item:{item.id}:{item.up}` }
+	)
 end
 
 -- Bags ----------------------------------------------------------------------------------------------------
@@ -272,6 +252,7 @@ function LootService.Init(registry)
 	InventoryService = registry.Get("InventoryService")
 	StatService = registry.Get("StatService")
 	MonetizationService = registry.Get("MonetizationService")
+	AnnounceService = registry.Get("AnnounceService")
 end
 
 function LootService.Start()
@@ -305,22 +286,6 @@ function LootService.Start()
 			end
 		end
 	end)
-
-	if not RunService:IsStudio() then
-		task.spawn(function()
-			local ok, err = pcall(function()
-				MessagingService:SubscribeAsync(GLOBAL_TOPIC, function(message)
-					local data = message.Data
-					if type(data) == "table" and data.from ~= serverId and type(data.key) == "string" then
-						LootService.Announce(data.key, if type(data.args) == "table" then data.args else {})
-					end
-				end)
-			end)
-			if not ok then
-				log:warn("cannot subscribe to %s: %s", GLOBAL_TOPIC, tostring(err))
-			end
-		end)
-	end
 end
 
 return LootService

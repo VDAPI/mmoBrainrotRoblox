@@ -23,10 +23,11 @@ type ItemInstance = Types.ItemInstance
 
 local ItemController = {
 	Name = "ItemController",
-	Deps = { "WindowManager", "UIController" },
+	Deps = { "WindowManager", "UIController", "NpcController" },
 }
 
 local WindowManager: any
+local NpcController: any
 
 local function parse(slotId: string): (string, string)
 	local kind, rest = string.match(slotId, "^(%a+):(.+)$")
@@ -39,6 +40,8 @@ function ItemController.ItemAt(slotId: string): ItemInstance?
 		return State.Get({ "character", "inventory", rest })
 	elseif kind == "eq" then
 		return State.Get({ "character", "equipment", rest })
+	elseif kind == "dep" then
+		return State.Get({ "account", "deposit", "items", rest })
 	elseif kind == "pot" then
 		local id = State.Get({ "character", "potionBar", rest })
 		if not id then
@@ -99,6 +102,12 @@ function ItemController.Unequip(slot: string, index: number?)
 end
 
 function ItemController.Use(index: number)
+	local item = State.Get({ "character", "inventory", tostring(index) })
+	if item and item.id == "scroll_unbind" then
+		-- The scroll needs a target: pick a bound item first.
+		NpcController.OpenUnbind()
+		return
+	end
 	invoke("UseItem", index)
 end
 
@@ -179,6 +188,8 @@ function ItemController.Activate(slotId: string)
 		ItemController.Unequip(rest, nil)
 	elseif kind == "pot" then
 		ItemController.UsePotion(rest)
+	elseif kind == "dep" then
+		invoke("WithdrawItem", tonumber(rest), nil)
 	end
 end
 
@@ -191,6 +202,14 @@ local function onDrop(from: string, to: string)
 		ItemController.Equip(tonumber(fromRest) :: number, toRest)
 	elseif fromKind == "eq" and toKind == "inv" then
 		ItemController.Unequip(fromRest, tonumber(toRest))
+	elseif fromKind == "inv" and toKind == "dep" then
+		invoke("DepositItem", tonumber(fromRest), tonumber(toRest))
+	elseif fromKind == "dep" and toKind == "inv" then
+		invoke("WithdrawItem", tonumber(fromRest), tonumber(toRest))
+	elseif fromKind == "dep" and toKind == "dep" then
+		invoke("MoveDeposit", tonumber(fromRest), tonumber(toRest))
+	elseif (fromKind == "inv" or fromKind == "eq") and toKind == "smith" then
+		NpcController.SetUpgradeTarget(fromKind, fromRest)
 	elseif fromKind == "inv" and toKind == "pot" then
 		local item = ItemController.ItemAt(from)
 		local def = item and Items.get(item.id)
@@ -204,6 +223,7 @@ end
 
 function ItemController.Init(registry)
 	WindowManager = registry.Get("WindowManager")
+	NpcController = registry.Get("NpcController")
 	local UIController = registry.Get("UIController")
 	UIController.AddDragVisual(function(slotId: string): (string?, string?)
 		local item = ItemController.ItemAt(slotId)
@@ -216,13 +236,13 @@ function ItemController.Init(registry)
 	DragDrop.AddHandlers({
 		owns = function(slotId: string): boolean
 			local kind = parse(slotId)
-			return kind == "inv" or kind == "eq" or kind == "pot"
+			return kind == "inv" or kind == "eq" or kind == "pot" or kind == "dep" or kind == "smith"
 		end,
 		drop = onDrop,
 		activate = ItemController.Activate,
 		hasItem = function(slotId: string): boolean
 			local kind = parse(slotId)
-			return kind ~= "pot" and ItemController.ItemAt(slotId) ~= nil
+			return kind ~= "pot" and kind ~= "smith" and ItemController.ItemAt(slotId) ~= nil
 		end,
 	})
 end

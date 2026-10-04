@@ -17,6 +17,7 @@ local IconButton = require(script.Parent.Parent.Components.IconButton)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local PotionBar = require(script.PotionBar)
 local SkillBar = require(script.SkillBar)
+local CastBar = require(script.CastBar)
 local EffectIcons = require(script.EffectIcons)
 local MobileSkills = require(script.MobileSkills)
 local PvpToggle = require(script.PvpToggle)
@@ -384,6 +385,7 @@ local function Hud(scope: Scope, props: Props): Instance
 		BackgroundTransparency = 1,
 		[Children] = {
 			portrait(scope),
+			CastBar(scope),
 			EffectIcons(scope, {
 				Model = myModel,
 				Position = UDim2.fromOffset(Theme.Padding.Large, Theme.Padding.Large + 136 + 6),

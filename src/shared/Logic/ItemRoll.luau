@@ -186,15 +186,19 @@ function ItemRoll.itemStats(item: ItemInstance): ItemStats
 	return result
 end
 
--- Price the merchant pays (DESIGN §18 economy is tuned in S06).
+-- Price a merchant pays (DESIGN §18): equipment round(ilvl x 2 x rarityMultiplier²) (+10 % per upgrade level),
+-- everything else the definition's unit price x stack size.
 function ItemRoll.sellPrice(item: ItemInstance): number
 	local def = Items.get(item.id)
 	if not def then
 		return 0
 	end
-	local rarityDef = Rarities.get(item.rarity)
-	local mul = if rarityDef then rarityDef.sellMul else 1
-	return math.floor(def.price * mul * (1 + 0.1 * (item.up or 0)) + 0.5) * math.max(1, item.n)
+	if def.category == "equipment" then
+		local rarityDef = Rarities.get(item.rarity)
+		local mul = if rarityDef then rarityDef.sellMul else 1
+		return math.max(1, math.floor(item.ilvl * 2 * mul * mul * (1 + 0.1 * (item.up or 0)) + 0.5))
+	end
+	return def.price * math.max(1, item.n)
 end
 
 -- Item level of a monster drop: monster level +-2, at least 1 (DESIGN §5.3).

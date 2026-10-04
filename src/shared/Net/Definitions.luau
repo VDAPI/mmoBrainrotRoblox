@@ -66,6 +66,22 @@ local Definitions: { [string]: Definition } = {
 	CastSkill = { kind = "function", dir = "c2s", rate = 8, args = { "string", "string?", "any" } }, -- (skillId, targetId?, aim: Vector3?)
 	SkillFx = { kind = "event", dir = "s2c" }, -- skill visuals for players nearby
 
+	-- City (S06). All validate the distance to the NPC on the server.
+	Buy = { kind = "function", dir = "c2s", rate = 6, args = { "string", "string", "integer" } }, -- (npcId, itemId, n)
+	Sell = { kind = "function", dir = "c2s", rate = 4, args = { "string", "table" } }, -- (npcId, { index })
+	Buyback = { kind = "function", dir = "c2s", rate = 4, args = { "string", "integer" } }, -- (npcId, buyback index)
+	HealMe = { kind = "function", dir = "c2s", rate = 2, args = { "string" } },
+	BuyBackpack = { kind = "function", dir = "c2s", rate = 2, args = { "string", "string" } }, -- (npcId, itemId)
+	DepositItem = { kind = "function", dir = "c2s", rate = 10, args = { "integer", "integer?" } }, -- (inv index, vault index?)
+	WithdrawItem = { kind = "function", dir = "c2s", rate = 10, args = { "integer", "integer?" } }, -- (vault index, inv index?)
+	MoveDeposit = { kind = "function", dir = "c2s", rate = 10, args = { "integer", "integer" } },
+	SortDeposit = { kind = "function", dir = "c2s", rate = 1, args = {} },
+	Craft = { kind = "function", dir = "c2s", rate = 4, args = { "string" } }, -- (recipeId)
+	UpgradeItem = { kind = "function", dir = "c2s", rate = 3, args = { "string", "string", "boolean" } }, -- ("inv"|"eq", key, protect)
+	Dismantle = { kind = "function", dir = "c2s", rate = 3, args = { "table" } }, -- ({ index })
+	DismantleAll = { kind = "function", dir = "c2s", rate = 1, args = { "integer" } }, -- (max rarity)
+	UnbindItem = { kind = "function", dir = "c2s", rate = 2, args = { "string", "string" } }, -- ("inv"|"eq", key)
+
 	-- PvP and death
 	SetPvp = { kind = "function", dir = "c2s", rate = 1, args = { "boolean" } },
 	RespawnNow = { kind = "function", dir = "c2s", rate = 1, args = {} },

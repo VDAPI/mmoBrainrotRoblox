@@ -10,7 +10,7 @@ export type RarityDef = {
 	baseMul: number, -- base stat multiplier
 	rangeMul: number, -- multiplier of random bonus values
 	legendaryBonus: boolean, -- +1 bonus from the legendary pool
-	sellMul: number,
+	sellMul: number, -- "mnożnik rzadkości" in the sell price formula (DESIGN §18)
 }
 
 local LIST: { RarityDef } = {
@@ -34,7 +34,7 @@ local LIST: { RarityDef } = {
 		baseMul = 1.08,
 		rangeMul = 1.0,
 		legendaryBonus = false,
-		sellMul = 1.6,
+		sellMul = 1.08,
 	},
 	{
 		id = 3,
@@ -45,7 +45,7 @@ local LIST: { RarityDef } = {
 		baseMul = 1.16,
 		rangeMul = 1.1,
 		legendaryBonus = false,
-		sellMul = 2.5,
+		sellMul = 1.16,
 	},
 	{
 		id = 4,
@@ -56,7 +56,7 @@ local LIST: { RarityDef } = {
 		baseMul = 1.25,
 		rangeMul = 1.25,
 		legendaryBonus = false,
-		sellMul = 4,
+		sellMul = 1.25,
 	},
 	{
 		id = 5,
@@ -67,7 +67,7 @@ local LIST: { RarityDef } = {
 		baseMul = 1.40,
 		rangeMul = 1.5,
 		legendaryBonus = true,
-		sellMul = 8,
+		sellMul = 1.40,
 	},
 	{
 		id = 6,
@@ -78,7 +78,7 @@ local LIST: { RarityDef } = {
 		baseMul = 1.0,
 		rangeMul = 1.0,
 		legendaryBonus = false,
-		sellMul = 10,
+		sellMul = 1.5,
 	},
 }
 

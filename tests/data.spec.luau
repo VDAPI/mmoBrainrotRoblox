@@ -78,6 +78,15 @@ local NAMESPACES = {
 	"skills",
 	"effect",
 	"cast",
+	"npc",
+	"heal",
+	"shop",
+	"backpacks",
+	"deposit",
+	"smith",
+	"announce",
+	"scroll",
+	"teleport",
 }
 
 T.describe("Data: Classes", function()

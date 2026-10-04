@@ -17,6 +17,7 @@ local Inventory = require(Shared.Logic.Inventory)
 local ItemRoll = require(Shared.Logic.ItemRoll)
 local Items = require(Shared.Data.Items)
 local Monsters = require(Shared.Data.Monsters)
+local Npcs = require(Shared.Data.Npcs)
 local Net = require(Shared.Net)
 
 local log = Log.new("AdminService")
@@ -40,6 +41,7 @@ local AdminService = {
 		"LootService",
 		"StatService",
 		"SkillService",
+		"NpcService",
 	},
 }
 
@@ -59,6 +61,7 @@ local InventoryService: any
 local LootService: any
 local StatService: any
 local SkillService: any
+local NpcService: any
 
 type Command = {
 	usageKey: string,
@@ -640,6 +643,99 @@ COMMANDS.res = {
 	end,
 }
 
+COMMANDS.up = {
+	usageKey = "admin.usage.up",
+	run = function(player, args)
+		local where, level = args[1], parseAmount(args[2])
+		if not where or level == nil then
+			reply(player, "admin.usage.up")
+			return
+		end
+		withCharacter(player, function()
+			local character = PlayerStateService.GetCharacter(player)
+			local up = math.clamp(level, 0, 9)
+			local index = tonumber(where)
+			if index then
+				local item = InventoryService.Get(player, index)
+				if not item then
+					reply(player, "admin.up.none")
+					return
+				end
+				item.up = up
+				InventoryService.SetSlot(player, index, item)
+			else
+				local item = character.equipment[where]
+				if not item then
+					reply(player, "admin.up.none")
+					return
+				end
+				item.up = up
+				PlayerStateService.Set(player, { "character", "equipment", where }, item)
+				StatService.Invalidate(player)
+			end
+			reply(player, "admin.up.ok", { up = up })
+		end)
+	end,
+}
+
+COMMANDS.mats = {
+	usageKey = "admin.usage.mats",
+	run = function(player, args)
+		local n = math.clamp(parseAmount(args[1]) or 50, 1, 999)
+		withCharacter(player, function()
+			for id, def in Items.byId do
+				if def.category == "material" then
+					InventoryService.GiveNew(player, id, n)
+				end
+			end
+			reply(player, "admin.mats.ok")
+		end)
+	end,
+}
+
+COMMANDS.scrolls = {
+	usageKey = "admin.usage.scrolls",
+	run = function(player, args)
+		local n = math.clamp(parseAmount(args[1]) or 5, 1, 999)
+		withCharacter(player, function()
+			for id, def in Items.byId do
+				if def.category == "scroll" or def.category == "stone" then
+					InventoryService.GiveNew(player, id, n)
+				end
+			end
+			reply(player, "admin.scrolls.ok")
+		end)
+	end,
+}
+
+COMMANDS.npc = {
+	usageKey = "admin.usage.npc",
+	run = function(player, args)
+		local id = args[1]
+		if not id then
+			local names = {}
+			for _, def in Npcs.list do
+				if not def.decoration then
+					table.insert(names, def.id)
+				end
+			end
+			reply(player, "admin.npc.list", { list = table.concat(names, ", ") })
+			return
+		end
+		local position = NpcService.Position(id)
+		local def = Npcs.get(id)
+		withCharacter(player, function()
+			local model = player.Character
+			if model and position and def then
+				model:PivotTo(CFrame.new(position + Vector3.new(0, 4, 6)))
+				reply(player, "admin.npc.tp", { npc = "@" .. def.nameKey })
+			else
+				reply(player, "admin.usage.npc")
+			end
+		end)
+	end,
+}
+
 local function onCommand(name: string, textSource: TextSource, message: string)
 	local player = Players:GetPlayerByUserId(textSource.UserId)
 	if not player then
@@ -681,6 +777,7 @@ function AdminService.Init(registry)
 	LootService = registry.Get("LootService")
 	StatService = registry.Get("StatService")
 	SkillService = registry.Get("SkillService")
+	NpcService = registry.Get("NpcService")
 end
 
 function AdminService.Start()

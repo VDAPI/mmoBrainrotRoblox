@@ -40,6 +40,28 @@ function Sounds.setVolume(volume: number)
 	master = math.clamp(volume, 0, 1)
 end
 
+-- Plays a sound at a custom pitch (upgrade tension, combos). Uses a fresh Sound so overlapping plays work.
+function Sounds.playPitched(name: string, speed: number)
+	local def = DEFS[name]
+	if not def or master <= 0 then
+		return
+	end
+	local sound = Instance.new("Sound")
+	sound.SoundId = def.id
+	sound.Volume = def.volume * master
+	sound.PlaybackSpeed = speed
+	sound.Parent = SoundService
+	sound:Play()
+	sound.Ended:Once(function()
+		sound:Destroy()
+	end)
+	task.delay(5, function()
+		if sound.Parent then
+			sound:Destroy()
+		end
+	end)
+end
+
 function Sounds.play(name: string)
 	local def = DEFS[name]
 	if not def or master <= 0 then

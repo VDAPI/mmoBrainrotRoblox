@@ -1,0 +1,179 @@
+--!strict
+-- City NPCs (DESIGN §3.2). Positions are relative to the map offset; S08 moves them into the real city layout.
+-- `services` are the buttons of the dialog window; their windows live on the client (NpcController).
+
+export type Service =
+	"shop" -- buy / sell / buyback (shop id below)
+	| "heal" -- free full restore in the city
+	| "deposit"
+	| "blacksmith"
+	| "backpacks"
+	| "alchemy" -- S07
+	| "guild" -- S12
+	| "auction" -- S13
+	| "mail" -- S13
+	| "quests" -- S11
+
+export type NpcDef = {
+	id: string,
+	map: string,
+	nameKey: string,
+	greetingKey: string,
+	services: { Service },
+	shop: string?, -- Data/Shops id for the "shop" service
+	position: { x: number, z: number },
+	facing: number, -- yaw in degrees
+	colors: { body: string, accent: string },
+	icon: string, -- glyph shown above the head
+	decoration: boolean?, -- guards: no dialog
+}
+
+local LIST: { NpcDef } = {}
+
+local function npc(def: NpcDef)
+	table.insert(LIST, def)
+end
+
+npc({
+	id = "healer",
+	map = "city",
+	nameKey = "npc.healer.name",
+	greetingKey = "npc.healer.greeting",
+	services = { "shop", "heal" },
+	shop = "healer",
+	position = { x = 70, z = -48 },
+	facing = 180,
+	colors = { body = "#EADDBE", accent = "#C2352E" },
+	icon = "⚕",
+})
+npc({
+	id = "blacksmith",
+	map = "city",
+	nameKey = "npc.blacksmith.name",
+	greetingKey = "npc.blacksmith.greeting",
+	services = { "blacksmith", "shop" },
+	shop = "blacksmith",
+	position = { x = -70, z = -48 },
+	facing = 180,
+	colors = { body = "#5A4636", accent = "#8E8E93" },
+	icon = "⚒",
+})
+npc({
+	id = "alchemist",
+	map = "city",
+	nameKey = "npc.alchemist.name",
+	greetingKey = "npc.alchemist.greeting",
+	services = { "alchemy" },
+	position = { x = -70, z = 94 },
+	facing = 0,
+	colors = { body = "#3E5A3A", accent = "#7ACB3A" },
+	icon = "⚗",
+})
+npc({
+	id = "merchant",
+	map = "city",
+	nameKey = "npc.merchant.name",
+	greetingKey = "npc.merchant.greeting",
+	services = { "shop" },
+	shop = "merchant",
+	position = { x = 70, z = 94 },
+	facing = 0,
+	colors = { body = "#6B4A2B", accent = "#E8C25A" },
+	icon = "⚖",
+})
+npc({
+	id = "backpacker",
+	map = "city",
+	nameKey = "npc.backpacker.name",
+	greetingKey = "npc.backpacker.greeting",
+	services = { "backpacks" },
+	position = { x = 42, z = 34 },
+	facing = 225,
+	colors = { body = "#8A6B4A", accent = "#4FA35A" },
+	icon = "▣",
+})
+npc({
+	id = "banker",
+	map = "city",
+	nameKey = "npc.banker.name",
+	greetingKey = "npc.banker.greeting",
+	services = { "deposit" },
+	position = { x = -36, z = -24 },
+	facing = 135,
+	colors = { body = "#2F3540", accent = "#C9A45C" },
+	icon = "⛃",
+})
+npc({
+	id = "teacher",
+	map = "city",
+	nameKey = "npc.teacher.name",
+	greetingKey = "npc.teacher.greeting",
+	services = { "shop" },
+	shop = "teacher",
+	position = { x = -42, z = 34 },
+	facing = 135,
+	colors = { body = "#4A3B6B", accent = "#B455FF" },
+	icon = "📜",
+})
+npc({
+	id = "guildmaster",
+	map = "city",
+	nameKey = "npc.guildmaster.name",
+	greetingKey = "npc.guildmaster.greeting",
+	services = { "guild" },
+	position = { x = 0, z = -108 },
+	facing = 0,
+	colors = { body = "#6B2F2A", accent = "#C9A45C" },
+	icon = "⚑",
+})
+npc({
+	id = "auctioneer",
+	map = "city",
+	nameKey = "npc.auctioneer.name",
+	greetingKey = "npc.auctioneer.greeting",
+	services = { "auction", "mail" },
+	position = { x = 36, z = -24 },
+	facing = 225,
+	colors = { body = "#2A3A5A", accent = "#4A8FE7" },
+	icon = "⚱",
+})
+npc({
+	id = "questboard",
+	map = "city",
+	nameKey = "npc.questboard.name",
+	greetingKey = "npc.questboard.greeting",
+	services = { "quests" },
+	position = { x = 0, z = 52 },
+	facing = 0,
+	colors = { body = "#6B4A2B", accent = "#EADDBE" },
+	icon = "✎",
+})
+for i, position in { { x = 250, z = -10 }, { x = 250, z = 10 } } do
+	npc({
+		id = `guard{i}`,
+		map = "city",
+		nameKey = "npc.guard.name",
+		greetingKey = "npc.guard.name",
+		services = {},
+		position = position,
+		facing = 90,
+		colors = { body = "#8E96A3", accent = "#C2352E" },
+		icon = "⛨",
+		decoration = true,
+	})
+end
+
+local byId: { [string]: NpcDef } = {}
+for _, def in LIST do
+	byId[def.id] = def
+end
+
+return table.freeze({
+	list = LIST,
+	byId = byId,
+	get = function(id: string): NpcDef?
+		return byId[id]
+	end,
+	-- Max distance (studs) between a player and an NPC for any service (+ lag tolerance on the server).
+	INTERACT_RANGE = 12,
+})
