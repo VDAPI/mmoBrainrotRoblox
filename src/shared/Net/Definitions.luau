@@ -106,7 +106,22 @@ local Definitions: { [string]: Definition } = {
 	PartyPromote = { kind = "function", dir = "c2s", rate = 2, args = { "integer" } },
 	DungeonInfo = { kind = "function", dir = "c2s", rate = 2, args = { "string" } }, -- (region) -> info
 	EnterDungeon = { kind = "function", dir = "c2s", rate = 1, args = { "string" } }, -- (region)
-	BossAnnounce = { kind = "event", dir = "s2c" }, -- (key, args) big centred message during a boss fight
+	BossAnnounce = { kind = "event", dir = "s2c" }, -- (key, args) big centred message (boss fights, duels)
+
+	-- PvP, duels and trade (S10)
+	KillFeed = { kind = "event", dir = "s2c" }, -- (killerName, victimName)
+	DuelChallenge = { kind = "function", dir = "c2s", rate = 1, args = { "integer" } }, -- (userId)
+	DuelInvited = { kind = "event", dir = "s2c" }, -- (fromName, seconds)
+	DuelRespond = { kind = "function", dir = "c2s", rate = 2, args = { "boolean" } },
+	TradeRequest = { kind = "function", dir = "c2s", rate = 1, args = { "integer" } }, -- (userId)
+	TradeInvited = { kind = "event", dir = "s2c" }, -- (fromName, seconds)
+	TradeRespond = { kind = "function", dir = "c2s", rate = 2, args = { "boolean" } },
+	TradeAddItem = { kind = "function", dir = "c2s", rate = 10, args = { "integer" } }, -- (inventory index)
+	TradeRemoveItem = { kind = "function", dir = "c2s", rate = 10, args = { "string" } }, -- (item uid)
+	TradeSetGold = { kind = "function", dir = "c2s", rate = 6, args = { "number" } },
+	TradeAccept = { kind = "function", dir = "c2s", rate = 4, args = { "boolean" } },
+	TradeConfirm = { kind = "function", dir = "c2s", rate = 2, args = {} },
+	TradeCancel = { kind = "event", dir = "c2s", rate = 2, args = {} },
 
 	-- PvP and death
 	SetPvp = { kind = "function", dir = "c2s", rate = 1, args = { "boolean" } },

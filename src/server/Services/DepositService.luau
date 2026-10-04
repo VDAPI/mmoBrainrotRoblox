@@ -49,6 +49,9 @@ local function nearBanker(player: Player): boolean
 end
 
 local function deposit(player: Player, invIndex: number, depIndex: number?): (boolean, string?)
+	if InventoryService.IsTradeLocked(player) then
+		return false, "trade.error.locked"
+	end
 	local data = account(player)
 	if not data or not PlayerStateService.GetCharacter(player) then
 		return false, "error.wrongPhase"

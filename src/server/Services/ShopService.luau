@@ -111,6 +111,9 @@ local function buy(player: Player, npcId: string, itemId: string, n: number): (b
 end
 
 local function sell(player: Player, npcId: string, indices: { any }): (boolean, string?, number?)
+	if InventoryService.IsTradeLocked(player) then
+		return false, "trade.error.locked"
+	end
 	local char = character(player)
 	if not char or not shopOf(npcId) then
 		return false, "error.badRequest"

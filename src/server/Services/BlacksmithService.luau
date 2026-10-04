@@ -127,6 +127,9 @@ local function locate(player: Player, location: string, key: string): (ItemInsta
 end
 
 local function upgrade(player: Player, location: string, key: string, protect: boolean): (boolean, string?, any)
+	if InventoryService.IsTradeLocked(player) then
+		return false, "trade.error.locked"
+	end
 	local char = character(player)
 	if not char then
 		return false, "error.wrongPhase"
@@ -174,6 +177,9 @@ end
 -- Dismantling -------------------------------------------------------------------------------------------------
 
 local function dismantleIndices(player: Player, indices: { number }): (boolean, string?, any)
+	if InventoryService.IsTradeLocked(player) then
+		return false, "trade.error.locked"
+	end
 	local gained: { [string]: number } = {}
 	local count = 0
 	for _, index in indices do
@@ -220,6 +226,9 @@ local function dismantle(player: Player, raw: { any }): (boolean, string?, any)
 end
 
 local function dismantleAll(player: Player, maxRarity: number): (boolean, string?, any)
+	if InventoryService.IsTradeLocked(player) then
+		return false, "trade.error.locked"
+	end
 	local char = character(player)
 	if not char then
 		return false, "error.wrongPhase"

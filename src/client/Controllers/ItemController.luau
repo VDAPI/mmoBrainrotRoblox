@@ -202,6 +202,11 @@ function ItemController.Activate(slotId: string)
 		if not def then
 			return
 		end
+		if State.Get({ "trade" }) ~= nil then
+			-- While trading, double-click puts the item on the table.
+			invoke("TradeAddItem", index)
+			return
+		end
 		if def.slot then
 			ItemController.Equip(index, nil)
 		else
@@ -231,6 +236,8 @@ local function onDrop(from: string, to: string)
 		invoke("WithdrawItem", tonumber(fromRest), tonumber(toRest))
 	elseif fromKind == "dep" and toKind == "dep" then
 		invoke("MoveDeposit", tonumber(fromRest), tonumber(toRest))
+	elseif fromKind == "inv" and toKind == "trade" then
+		invoke("TradeAddItem", tonumber(fromRest))
 	elseif (fromKind == "inv" or fromKind == "eq") and toKind == "smith" then
 		NpcController.SetUpgradeTarget(fromKind, fromRest)
 	elseif fromKind == "inv" and toKind == "pot" then
@@ -260,13 +267,13 @@ function ItemController.Init(registry)
 	DragDrop.AddHandlers({
 		owns = function(slotId: string): boolean
 			local kind = parse(slotId)
-			return kind == "inv" or kind == "eq" or kind == "pot" or kind == "dep" or kind == "smith"
+			return kind == "inv" or kind == "eq" or kind == "pot" or kind == "dep" or kind == "smith" or kind == "trade"
 		end,
 		drop = onDrop,
 		activate = ItemController.Activate,
 		hasItem = function(slotId: string): boolean
 			local kind = parse(slotId)
-			return kind ~= "pot" and kind ~= "smith" and ItemController.ItemAt(slotId) ~= nil
+			return kind ~= "pot" and kind ~= "smith" and kind ~= "trade" and ItemController.ItemAt(slotId) ~= nil
 		end,
 	})
 end

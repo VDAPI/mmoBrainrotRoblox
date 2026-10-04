@@ -191,6 +191,9 @@ local function resolveSlot(char: Types.CharacterData, def: Items.ItemDef, reques
 end
 
 function EquipmentService.Equip(player: Player, index: number, requested: string?): (boolean, string?)
+	if InventoryService.IsTradeLocked(player) then
+		return false, "trade.error.locked"
+	end
 	local char = character(player)
 	if not char then
 		return false, "error.wrongPhase"

@@ -15,7 +15,7 @@
 | S07 | Alchemik, błogosławieństwa, zbieractwo | ● |
 | S08 | Świat: miasto, regiony 1–2 | ● |
 | S09 | Grupa, lochy, bossy 20 i 45 | ● |
-| S10 | PvP, arena, handel | ○ |
+| S10 | PvP, arena, handel | ● |
 | S11 | Questy, regiony 3–4, bossy 70 i 100 | ○ |
 | S12 | Gildie | ○ |
 | S13 | Aukcja, poczta, czat | ○ |
@@ -238,13 +238,33 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
   regionu (`World/Layouts/DungeonArena`). Areny Azgora i Vaelgratha + ich dane walk są, budowa w S11.
 - **S09** Kamień Mapy nie zapisuje ani nie celuje w mapy lochów.
 
+- **S10** Większość PvP istniała od S02/S05 (ataki i umiejętności na graczy przez `PvpService.CanAttack`, modyfikator 0.6,
+  blokada przełącznika 15 s). S10 dokłada: CC z ręki gracza na graczu × `Config.PvpCcMultiplier` (0.5), Prowokacja nie działa
+  na graczy, kredyt za zabójstwo = ostatni gracz, który trafił ofiarę w ciągu `Config.PvpKillCredit` (10 s) — działa też dla
+  śmierci od DoT; liczniki `character.pvp` (kills/deaths/duelsWon/duelsLost), kill feed tylko dla graczy na tej samej mapie.
+- **S10** Arena: stanie na arenie (`zone.arena`) liczy się jak włączone PvP — bez zmiany przełącznika, więc wyjście „przywraca”
+  poprzedni stan automatycznie. Kolor nazwy: czerwony z ⚔ przy PvP włączonym / na arenie / w czerwonej strefie.
+- **S10** Pojedynki: jeden naraz, reszta par w kolejce FIFO. Reguła pojedynku w `PvpService` nadpisuje wszystko: walczący biją
+  tylko siebie (dopiero po „Walcz!”), nikt inny nie może ich trafić. Widzowie są wypychani z areny na czas pojedynku.
+  Cios śmiertelny zostawia 1 HP i kończy walkę (filtr obrażeń w `ResourceService` — filtry są teraz listą). Wyjście z areny = poddanie.
+  Limit 180 s → remis. Po walce pełne odnowienie obu. `/duel bot` pominięty (manekin-gracz wymaga fałszywego Player — niewykonalne).
+- **S10** Handel: logika w `Logic/Trade.exchange` (Lune) na kopiach plecaków — wszystkie sprawdzenia przed zmianą czegokolwiek
+  (obecność uid, niezwiązanie, brak duplikatów uid, złoto, miejsce po oddaniu), potem podmiana obu plecaków i złota bez yieldów
+  i `DataService.Save` obu (ProfileStore pozwala). Log transakcji tylko w logach serwera (bez DataStore `TradeLog`).
+- **S10** Blokada przedmiotów: zamiast blokować pojedyncze przedmioty na stole, przy otwartym handlu blokowane jest wszystko,
+  co zabiera przedmiot z plecaka (zakładanie, sprzedaż, depozyt, kowal, niszczenie, użycie). Prościej i bez dziur;
+  i tak potwierdzenie sprawdza uid jeszcze raz.
+- **S10** Handel zaczyna się z menu kontekstowego gracza (PPM). Zamknięcie okna handlu = anulowanie. Dwuklik na przedmiocie
+  w plecaku przy otwartym handlu kładzie go na stół; klik na przedmiocie na stole go zdejmuje.
+
 ## Niedokończone
 (Rzeczy z zakresu sesji, które nie zostały zrobione. Następna sesja zaczyna od nich.)
 
 - **S01** Dźwięki UI to placeholdery (`UI/Sounds.luau`), do podmiany na prawdziwe.
 - **S03** Potwory nie mają animacji (placeholdery z Partów poruszają się bez ruchu kończyn); zamach i pociski są efektami klienta.
 - **S09 → S11** Lochy Azgora (70) i Vaelgratha (100): dane bossów gotowe, areny i jaskinie w S11.
-- **S09 → S10** „Handel” w menu kontekstowym gracza mówi „wkrótce”.
+- **S10 → S14** Statystyki PvP i pojedynków są zapisywane, ale nie ma jeszcze okna profilu („Profil” mówi „wkrótce”).
+- **S10** Handel i pojedynek tylko z menu PPM — na telefonie brak wejścia (do dodania przyciskiem w ramce celu).
 - **S09** Menu kontekstowe gracza tylko pod prawym przyciskiem myszy (brak odpowiednika dotykowego poza zaproszeniem po nazwie).
 - **S08 → S11** Spalone Pustkowia, Lodowe Szczyty i ich jaskinie mają dane, ale nie mają layoutów (portale „nieotwarte”).
 - **S08 → S14** Muzyka map (crossfade gotowy, brak ścieżek), tryb obracającej się minimapy.
@@ -725,3 +745,38 @@ Loch (wystarczy 1 gracz):
 14. `/boss reset` czyści blokady. Morvane: `/lvl 45`, `/boss spawn morvane` → pociski cienia w 3 osoby, pole klątwy;
     `/phase 2` → 2 szkielety i tarcza (pasek niebieski, „nietykalna”) aż padną; `/phase 3` → pierścień z zielonym środkiem co 15 s.
 15. `/partyloot 4` → symulacja rozdziału łupu bossa między 4 klasy.
+
+### S10: PvP, arena, handel
+
+**Zrobione**
+- Logika (Lune): `Logic/Trade` (atomowa wymiana: brak dublowania, przedmioty związane, brakujące, podwójne uid, złoto, miejsce, limit 12).
+- Serwer: `PvpService` (kredyt za zabójstwo, liczniki, kill feed, arena = PvP, reguła pojedynków), skrócone CC i odporność
+  graczy na Prowokację (`StatusEffectService`), lista filtrów obrażeń (`ResourceService`), `DuelService` (wyzwanie, kolejka,
+  odliczanie, 1 HP, poddanie, remis, ogłoszenie, statystyki), `TradeService` (zaproszenie, stół, akceptacje, odliczanie 3 s,
+  potwierdzenie, atomowa wymiana, zapis profili, anulowanie przy oddaleniu/śmierci/wyjściu/zamknięciu), blokada plecaka podczas handlu.
+- Klient: czerwone nazwy z ⚔, kill feed (prawa strona), popup zaproszeń do pojedynku i handlu, odliczanie 3-2-1 i wynik
+  pojedynku jako duże komunikaty, okno handlu (dwie strony, złoto, ramki akceptacji, odliczanie, ostrzeżenia o wartości i pustej
+  stronie), przeciąganie/dwuklik z plecaka na stół, menu PPM: Zaproś / Handel / Wyzwij / Profil.
+- Admin: `/pvp force on|off`, `/tradetest` (Studio, podgląd okna).
+- Testy: 255 (nowe: handel).
+
+**Najważniejsze pliki**: `src/shared/Logic/Trade.luau`, `src/server/Services/{Pvp,Duel,Trade}Service.luau`,
+`src/client/Controllers/SocialController.luau`, `src/client/UI/Screens/TradeWindow.luau`.
+
+#### Instrukcja testu S10
+
+(Studio → Test → Clients and Servers, 2 graczy.)
+1. W mieście (zielona strefa) atak na drugiego gracza nie działa. Na Łąkach: obaj włączcie PvP (przełącznik, 10 s) → nazwy czerwone
+   z ⚔, można się bić (obrażenia ×0.6). Jeden z PvP wyłączonym → atak zablokowany.
+2. W Jaskini Mchów (czerwona) walka zawsze możliwa. Ogłuszenie z umiejętności trwa na graczu o połowę krócej; Prowokacja nie działa.
+3. Zabicie gracza: zabity „Zabił Cię X. Nic nie tracisz.”, zabójca „Pokonałeś: Y!”, po prawej kill feed u wszystkich na mapie.
+4. Arena (miasto, SE): wejście na piasek → nazwa czerwona, można walczyć bez przełącznika; zejście → wraca biała.
+5. PPM na drugim graczu → „Wyzwij na pojedynek” → u drugiego popup „Akceptuj” → obaj na arenie naprzeciw siebie, 3-2-1, „Walcz!”.
+   Ktoś trzeci na arenie zostaje wypchnięty. Cios kończący zostawia 1 HP → „X wygrywa pojedynek!”, ogłoszenie, obaj z pełnym HP.
+   Zejście z areny w trakcie = przegrana. Druga para w tym czasie → „jesteście w kolejce”.
+6. PPM → „Handel” → akceptacja → okno handlu u obu + plecak. Przeciągnij przedmiot na swój stół (albo dwuklik), wpisz złoto, „Ustaw”.
+   Związany przedmiot → „Związanych przedmiotów nie można handlować”.
+7. Obaj „Akceptuj” (zielone ramki) → „Potwierdź (3…)” → obaj „Potwierdź” → przedmioty i złoto zamienione, „Handel zakończony”.
+   Każda zmiana oferty kasuje akceptacje. W trakcie handlu sprzedaż/zakładanie/depozyt → „Najpierw zakończ handel”.
+8. Oddal się > 20 st. albo zamknij okno → „Handel anulowany”. Pełny plecak partnera → „Brak miejsca w plecaku”, nic nie znika.
+9. `/tradetest` (Studio) → podgląd okna handlu samemu.

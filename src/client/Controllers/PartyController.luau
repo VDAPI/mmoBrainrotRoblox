@@ -22,12 +22,13 @@ local Children = Fusion.Children
 
 local PartyController = {
 	Name = "PartyController",
-	Deps = { "WindowManager", "UIController", "TargetController" },
+	Deps = { "WindowManager", "UIController", "TargetController", "SocialController" },
 }
 
 local scope = Fusion.scoped(Fusion)
 local WindowManager: any
 local TargetController: any
+local SocialController: any
 
 local inviteFrom = scope:Value(nil :: string?)
 local inviteLeft = scope:Value(0)
@@ -96,15 +97,18 @@ local function invitePopup(): Instance
 end
 
 local function contextMenu(): Instance
-	local function entry(order: number, key: string, action: () -> ()): Instance
+	local function entry(order: number, key: string, action: (target: Player) -> ()): Instance
 		return Button(scope, {
 			LayoutOrder = order,
 			Size = UDim2.new(1, 0, 0, 40),
 			TextSize = Theme.TextSize.Small,
 			Text = Text.T(scope, key),
 			OnClick = function()
+				local target = Fusion.peek(menuFor)
 				menuFor:set(nil)
-				action()
+				if target then
+					action(target)
+				end
 			end,
 		})
 	end
@@ -148,20 +152,20 @@ local function contextMenu(): Instance
 				TextSize = Theme.TextSize.Body,
 				TextColor3 = Theme.Colors.GoldBright,
 			}),
-			entry(1, "party.menu.invite", function()
-				local target = Fusion.peek(menuFor)
-				if target then
-					task.spawn(function()
-						if invoke("PartyInviteUser", target.UserId) then
-							Toast.push(Text.now("party.inviteSent", { name = target.DisplayName }), "success")
-						end
-					end)
-				end
+			entry(1, "party.menu.invite", function(target)
+				task.spawn(function()
+					if invoke("PartyInviteUser", target.UserId) then
+						Toast.push(Text.now("party.inviteSent", { name = target.DisplayName }), "success")
+					end
+				end)
 			end),
-			entry(2, "party.menu.trade", function()
-				Toast.push(Text.now("npc.service.soon"), "info")
+			entry(2, "party.menu.trade", function(target)
+				SocialController.RequestTrade(target.UserId)
 			end),
-			entry(3, "party.menu.profile", function()
+			entry(3, "party.menu.duel", function(target)
+				SocialController.Challenge(target.UserId)
+			end),
+			entry(4, "party.menu.profile", function()
 				Toast.push(Text.now("npc.service.soon"), "info")
 			end),
 		},
@@ -194,6 +198,7 @@ end
 function PartyController.Init(registry)
 	WindowManager = registry.Get("WindowManager")
 	TargetController = registry.Get("TargetController")
+	SocialController = registry.Get("SocialController")
 	local UIController = registry.Get("UIController")
 	WindowManager.Register({
 		id = "party",

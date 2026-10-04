@@ -406,6 +406,7 @@ function CombatService.DealDamage(
 		)
 		PvpService.MarkPvpCombat(player)
 		PvpService.MarkPvpCombat(target)
+		PvpService.RecordHit(player, target)
 		if result.amount > 0 then
 			ResourceService.Damage(target, result.amount, "pvp")
 		end

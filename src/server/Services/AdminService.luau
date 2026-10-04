@@ -55,6 +55,7 @@ local AdminService = {
 		"WorldService",
 		"TravelService",
 		"DungeonService",
+		"TradeService",
 	},
 }
 
@@ -82,6 +83,7 @@ local FishingService: any
 local WorldService: any
 local TravelService: any
 local DungeonService: any
+local TradeService: any
 
 type Command = {
 	usageKey: string,
@@ -317,7 +319,7 @@ COMMANDS.kill = {
 COMMANDS.pvp = {
 	usageKey = "admin.usage.pvp",
 	run = function(player, args)
-		local mode = args[1]
+		local mode = if args[1] == "force" then args[2] else args[1]
 		if mode ~= "on" and mode ~= "off" then
 			reply(player, "admin.usage.pvp")
 			return
@@ -950,6 +952,21 @@ COMMANDS.partyloot = {
 	end,
 }
 
+COMMANDS.tradetest = {
+	usageKey = "admin.usage.tradetest",
+	run = function(player)
+		if not game:GetService("RunService"):IsStudio() then
+			reply(player, "admin.studioOnly")
+			return
+		end
+		withCharacter(player, function()
+			if TradeService.Preview(player) then
+				reply(player, "admin.tradetest.ok")
+			end
+		end)
+	end,
+}
+
 local function onCommand(name: string, textSource: TextSource, message: string)
 	local player = Players:GetPlayerByUserId(textSource.UserId)
 	if not player then
@@ -999,6 +1016,7 @@ function AdminService.Init(registry)
 	WorldService = registry.Get("WorldService")
 	TravelService = registry.Get("TravelService")
 	DungeonService = registry.Get("DungeonService")
+	TradeService = registry.Get("TradeService")
 end
 
 function AdminService.Start()

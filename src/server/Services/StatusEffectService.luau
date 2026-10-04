@@ -12,6 +12,8 @@ local Workspace = game:GetService("Workspace")
 
 local Shared = ReplicatedStorage.Shared
 
+local Config = require(Shared.Config)
+
 local Log = require(Shared.Util.Log)
 local Signal = require(ReplicatedStorage.Packages.Signal)
 
@@ -97,6 +99,9 @@ export type ApplyOptions = {
 	pct: boolean?,
 }
 
+-- Effects shortened in PvP.
+local CROWD_CONTROL: { [string]: boolean } = { stun = true, root = true, slow = true, freeze = true }
+
 function StatusEffectService.Apply(entity: any, kind: string, options: ApplyOptions)
 	if not entity or options.duration <= 0 then
 		return
@@ -107,6 +112,16 @@ function StatusEffectService.Apply(entity: any, kind: string, options: ApplyOpti
 	-- Invulnerable targets ignore debuffs.
 	if DEBUFFS[kind] and StatusEffectService.Has(entity, "invuln") then
 		return
+	end
+	local duration = options.duration
+	if entity.kind == "player" and options.source and options.source ~= entity.player then
+		-- Taunt only works on monsters; crowd control from players is shorter on players (S10).
+		if kind == "taunt" then
+			return
+		end
+		if CROWD_CONTROL[kind] then
+			duration *= Config.PvpCcMultiplier
+		end
 	end
 	local list = effects[entity.id]
 	if not list then
@@ -130,7 +145,7 @@ function StatusEffectService.Apply(entity: any, kind: string, options: ApplyOpti
 	end
 	local e = effect :: Effect
 	e.value = options.value or 0
-	e.expiresAt = t + options.duration
+	e.expiresAt = t + duration
 	e.tickAmount = options.tickAmount
 	e.nextTick = if options.tickAmount then t + TICK_INTERVAL else nil
 	e.stats = options.stats

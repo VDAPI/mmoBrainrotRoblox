@@ -58,6 +58,12 @@ local function build(model: Model)
 		return if class then Text.get(use, class.nameKey) else ""
 	end)
 	local isLocal = model == Players.LocalPlayer.Character
+	-- PvP (S10): red name with a crossed-swords icon when PvP is on or the player stands in a red zone.
+	local pvpEnabled = attributeValue(scope, model, "PvpEnabled")
+	local pvpZone = attributeValue(scope, model, "PvpZone")
+	local hostile = scope:Computed(function(use): boolean
+		return use(pvpEnabled) == true or use(pvpZone) == "red"
+	end)
 
 	local head = model:WaitForChild("Head", 10)
 	if not head or not model:IsDescendantOf(game) then
@@ -89,11 +95,17 @@ local function build(model: Model)
 				BackgroundTransparency = 1,
 				Size = UDim2.new(1, 0, 0, 28),
 				Text = scope:Computed(function(use): string
-					return use(charName) or ""
+					local name = use(charName) or ""
+					return if use(hostile) then `⚔ {name}` else name
 				end),
 				FontFace = Theme.Fonts.BodyBold,
 				TextSize = 22,
-				TextColor3 = if isLocal then Theme.Colors.GoldBright else Theme.Colors.Text,
+				TextColor3 = scope:Computed(function(use): Color3
+					if use(hostile) then
+						return Theme.Colors.ZoneRed
+					end
+					return if isLocal then Theme.Colors.GoldBright else Theme.Colors.Text
+				end),
 				TextStrokeTransparency = 0.35,
 			}),
 			scope:New("TextLabel")({

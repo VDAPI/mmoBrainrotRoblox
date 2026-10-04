@@ -63,6 +63,7 @@ export type CharacterData = {
 	guildId: string?,
 	pvpEnabled: boolean,
 	elixirs: { [string]: number }, -- resistance stat -> expiresAt (Clock time)
+	pvp: { kills: number, deaths: number, duelsWon: number, duelsLost: number },
 	visitedMaps: { [string]: boolean },
 	createdAt: number,
 	playtime: number,

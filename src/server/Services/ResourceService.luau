@@ -41,10 +41,12 @@ type Pool = {
 local pools: { [Player]: Pool } = {}
 
 -- Optional filter applied to incoming damage (StatusEffectService: invulnerability, shields, reductions).
-local damageFilter: ((player: Player, amount: number, source: string) -> number)? = nil
+type DamageFilter = (player: Player, amount: number, source: string) -> number
+local damageFilters: { DamageFilter } = {}
 
-function ResourceService.SetDamageFilter(filter: (player: Player, amount: number, source: string) -> number)
-	damageFilter = filter
+-- Adds a filter that may reduce incoming damage (shields, duels). Filters run in registration order.
+function ResourceService.SetDamageFilter(filter: DamageFilter)
+	table.insert(damageFilters, filter)
 end
 
 local function maxOf(player: Player, id: string): number
@@ -134,8 +136,8 @@ function ResourceService.Damage(player: Player, amount: number, source: string?)
 	if pool.god then
 		return 0
 	end
-	if damageFilter then
-		amount = damageFilter(player, amount, source or "unknown")
+	for _, filter in damageFilters do
+		amount = filter(player, amount, source or "unknown")
 		if amount <= 0 then
 			return 0
 		end

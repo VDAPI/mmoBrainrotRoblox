@@ -58,6 +58,7 @@ function AccountSchema.characterTemplate(): CharacterData
 		guildId = nil,
 		pvpEnabled = false,
 		elixirs = {},
+		pvp = { kills = 0, deaths = 0, duelsWon = 0, duelsLost = 0 },
 		visitedMaps = { [Config.StartingMap] = true },
 		createdAt = 0,
 		playtime = 0,

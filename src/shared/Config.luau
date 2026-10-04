@@ -50,6 +50,18 @@ local Config = {
 	-- PvP toggle (DESIGN §3.3).
 	PvpToggleDelay = 10,
 	PvpCombatLock = 15,
+	-- Crowd control from players lasts this fraction on players (DESIGN §3.3, S10).
+	PvpCcMultiplier = 0.5,
+	-- A kill counts for the last player who hit the victim within this many seconds.
+	PvpKillCredit = 10,
+	-- Duels on the city arena (S10).
+	DuelCountdown = 3,
+	DuelTimeLimit = 180,
+	DuelInviteSeconds = 30,
+	-- Trading (DESIGN §18, S10).
+	TradeRange = 20,
+	TradeConfirmDelay = 3,
+	TradeInviteSeconds = 30,
 
 	-- World generation (S08): warn when a generated map exceeds this many parts.
 	MaxPartsPerMap = 8000,

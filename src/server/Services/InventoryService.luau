@@ -34,6 +34,17 @@ local InventoryService = {
 local PlayerStateService: any
 local rng = Rng.new()
 
+-- Players with an open trade (S10): items cannot leave their backpack until the trade ends.
+local tradeLocked: { [Player]: boolean } = {}
+
+function InventoryService.SetTradeLock(player: Player, locked: boolean)
+	(tradeLocked :: any)[player] = if locked then true else nil
+end
+
+function InventoryService.IsTradeLocked(player: Player): boolean
+	return tradeLocked[player] == true
+end
+
 function InventoryService.NewUid(): string
 	return HttpService:GenerateGUID(false)
 end
@@ -237,6 +248,9 @@ local function sortInventory(player: Player): (boolean, string?)
 end
 
 local function destroyItem(player: Player, index: number): (boolean, string?)
+	if tradeLocked[player] then
+		return false, "trade.error.locked"
+	end
 	local char = character(player)
 	if not char or not validIndex(char, index) then
 		return false, "error.badRequest"
@@ -253,6 +267,9 @@ local function destroyItem(player: Player, index: number): (boolean, string?)
 end
 
 local function useItem(player: Player, index: number): (boolean, string?)
+	if tradeLocked[player] then
+		return false, "trade.error.locked"
+	end
 	local char = character(player)
 	if not char or not validIndex(char, index) then
 		return false, "error.badRequest"
