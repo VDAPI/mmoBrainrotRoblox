@@ -1,0 +1,15 @@
+[package]
+name = "vdapi/vaelthorn"
+version = "0.1.0"
+registry = "https://github.com/UpliftGames/wally-index"
+realm = "shared"
+private = true
+
+[dependencies]
+Fusion = "elttob/fusion@0.3.0"
+Signal = "sleitnick/signal@2.0.3"
+Promise = "evaera/promise@4.0.0"
+Trove = "sleitnick/trove@1.8.0"
+
+[server-dependencies]
+ProfileStore = "lm-loleris/profilestore@1.0.3"

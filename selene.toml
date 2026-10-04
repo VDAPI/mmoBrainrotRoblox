@@ -1,0 +1,5 @@
+std = "roblox"
+
+[lints]
+# Fusion's scoped API uses method-call syntax on tables built by Fusion.scoped
+shadowing = "allow"

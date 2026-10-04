@@ -1,0 +1,19 @@
+# Generated
+sourcemap.json
+globalTypes.d.luau
+
+# Place files and Studio lock files
+*.rbxl
+*.rbxlx
+*.rbxl.lock
+*.rbxlx.lock
+
+# Plan archive dropped by the owner
+*.zip
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
