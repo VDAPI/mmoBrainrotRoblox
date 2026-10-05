@@ -18,6 +18,30 @@ local Sounds = require(script.Parent.Parent.UI.Sounds)
 
 local VfxController = {
 	Name = "VfxController",
+	Deps = { "AnimationController" },
+}
+
+local AnimationController: any
+
+-- Cast pose per skill type (AnimationController.Cast); unlisted types (blink, charge) have none.
+local CAST_STYLES: { [string]: string } = {
+	target = "point",
+	debuff = "point",
+	projectile = "point",
+	chain = "point",
+	cone = "point",
+	line = "point",
+	circleTarget = "point",
+	circleSelf = "slam",
+	trap = "slam",
+	buff = "raise",
+	channel = "raise",
+	shield = "raise",
+	heal = "raise",
+	hot = "raise",
+	resurrect = "raise",
+	groupHeal = "raise",
+	groupBuff = "raise",
 }
 
 local ELEMENT_COLORS: { [string]: Color3 } = {
@@ -267,6 +291,11 @@ local function handle(data: { [string]: any })
 	end
 
 	local kind = skill.type
+	-- Self-centred waves send one event per wave (n); only the first one moves the caster.
+	local castStyle = CAST_STYLES[kind]
+	if caster and castStyle and (kind ~= "circleSelf" or (tonumber(data.n) or 1) <= 1) then
+		AnimationController.Cast(caster, castStyle)
+	end
 	if kind == "target" or kind == "debuff" then
 		if caster and target then
 			beam(centre(caster), centre(target), color, 0.25)
@@ -354,7 +383,8 @@ local function handle(data: { [string]: any })
 	end
 end
 
-function VfxController.Init()
+function VfxController.Init(registry)
+	AnimationController = registry.Get("AnimationController")
 	folder = Instance.new("Folder")
 	folder.Name = "Vaelthorn_SkillFx"
 	folder.Parent = Workspace

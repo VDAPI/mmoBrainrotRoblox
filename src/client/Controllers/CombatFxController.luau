@@ -22,8 +22,10 @@ local Theme = require(script.Parent.Parent.UI.Theme)
 
 local CombatFxController = {
 	Name = "CombatFxController",
-	Deps = { "EffectsController" },
+	Deps = { "EffectsController", "AnimationController" },
 }
+
+local AnimationController: any
 
 local player = Players.LocalPlayer
 
@@ -184,41 +186,6 @@ local function effectPart(name: string, size: Vector3, color: Color3, shape: Enu
 	end
 	part.Parent = fxFolder
 	return part
-end
-
--- Procedural arm swing on character rigs (no animation assets yet): the right shoulder joint is rotated
--- forward and back. Runs on every viewer, so other players' attacks are visible too.
-local shoulderRest: { [Motor6D]: CFrame } = {}
-
-local function armSwing(attacker: Model, ranged: boolean)
-	local motor = attacker:FindFirstChild("RightShoulder", true) or attacker:FindFirstChild("Right Shoulder", true)
-	if not motor or not motor:IsA("Motor6D") then
-		return
-	end
-	local rest = shoulderRest[motor]
-	if not rest then
-		rest = motor.C0
-		shoulderRest[motor] = rest
-		motor.Destroying:Connect(function()
-			shoulderRest[motor] = nil
-		end)
-	end
-	local raised = if ranged
-		then rest * CFrame.Angles(math.rad(80), 0, 0)
-		else rest * CFrame.Angles(math.rad(110), 0, math.rad(-25))
-	local strike = if ranged
-		then rest * CFrame.Angles(math.rad(90), 0, 0)
-		else rest * CFrame.Angles(math.rad(-20), 0, math.rad(25))
-	motor.C0 = raised
-	local down = TweenService:Create(
-		motor,
-		TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-		{ C0 = strike }
-	)
-	down:Play()
-	down.Completed:Once(function()
-		TweenService:Create(motor, TweenInfo.new(0.18, Enum.EasingStyle.Quad), { C0 = rest }):Play()
-	end)
 end
 
 local function lowQuality(): boolean
@@ -418,6 +385,7 @@ local function onDamage(event: { [string]: any })
 	end
 	flash(model)
 	impact(model, event.c == true)
+	AnimationController.MonsterHit(model)
 	if isMe and event.c then
 		shake(0.35)
 	end
@@ -451,7 +419,11 @@ local function handle(event: { [string]: any })
 		local attacker = findModel(event.s)
 		local target = findModel(event.t)
 		if attacker and target then
-			armSwing(attacker, event.st ~= "melee")
+			if attacker:GetAttribute("MonsterId") ~= nil then
+				AnimationController.MonsterAttack(attacker, nil, true)
+			else
+				AnimationController.Swing(attacker, event.st ~= "melee")
+			end
 			if event.st == "melee" then
 				swing(attacker, target)
 			else
@@ -463,6 +435,10 @@ local function handle(event: { [string]: any })
 		end
 	elseif kind == "tele" then
 		telegraph(event)
+		local caster = findModel(event.e)
+		if caster then
+			AnimationController.MonsterAttack(caster, tonumber(event.t))
+		end
 	elseif kind == "reward" then
 		local character = player.Character
 		if character then
@@ -475,7 +451,8 @@ local function handle(event: { [string]: any })
 	end
 end
 
-function CombatFxController.Init()
+function CombatFxController.Init(registry)
+	AnimationController = registry.Get("AnimationController")
 	fxFolder = Instance.new("Folder")
 	fxFolder.Name = "Vaelthorn_CombatFx"
 	fxFolder.Parent = Workspace

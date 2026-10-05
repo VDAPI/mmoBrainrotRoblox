@@ -23,11 +23,18 @@
 | S15 | Poprawki z „Niedokończone” (mobile, profil) | ● |
 | S16 | Walka na LPM, paski HP nad głowami, tytuły | ● |
 | S17 | Zmiana klawiszy, sprzedaż przeciąganiem, kanały czatu, kody nagród | ● |
+| S18 | Animacje proceduralne potworów, modele broni, pozy rzucania | ● |
 
 Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana przez właściciela
 
 ## Decyzje
 (Claude dopisuje tu decyzje podjęte w trakcie sesji, z numerem sesji.)
+- **S18** Animacje potworów są proceduralne i lokalne: serwer buduje szkielet z `Motor6D` („Gait_*”), klient ustawia
+  `Transform` z `Logic/Gait` (serwer zawsze widzi pozę spoczynkową; hitboxy i tak liczy root). Potwory dalej niż 150 studów
+  (70 przy niskiej jakości) nie są animowane. Prawdziwe modele z `Assets.Monsters` nie mają jointów „Gait_*”, więc
+  kontroler ich nie rusza.
+- **S18** Broń i off-hand to modele z kilku Partów (`Data/WeaponLooks`), część główna nazywa się `VaelthornWeapon` /
+  `VaelthornOffhand` (kosmetyki broni i poświata epic+ wiszą na niej). Akcent w kolorze rzadkości.
 
 - **S01** Paczki Wally (`Packages/`, `ServerPackages/`) są commitowane, żeby `rojo serve` działał bez `wally install`.
 - **S01** ProfileStore z Wally (`lm-loleris/profilestore@1.0.3`, realm server → `ServerStorage.ServerPackages`), nie z `Vendor/`.
@@ -391,7 +398,7 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
 (Rzeczy z zakresu sesji, które nie zostały zrobione. Następna sesja zaczyna od nich.)
 
 - **S01** Dźwięki UI to placeholdery (`UI/Sounds.luau`), do podmiany na prawdziwe.
-- **S03** Potwory nie mają animacji (placeholdery z Partów poruszają się bez ruchu kończyn); zamach i pociski są efektami klienta.
+- **S03** Animacje potworów są proceduralne (S18); prawdziwe animacje dopiero z modelami w `Assets.Monsters`.
 - **S11** Questy nie były grane w Studio od początku do końca (test `questpath.spec` sprawdza wykonalność celów i ciągłość
   poziomów); EXP z nagród dobrany wzorem, do strojenia.
 - **S08** Muzyka map: crossfade i głośność z opcji gotowe, ale brak ścieżek (pole `music` w `Data/Maps.luau` puste — wkleić
@@ -401,8 +408,9 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
   w Studio działają magazyny w pamięci jednego serwera.
 - **S17** Tłumaczenie zakładek czatu (handel, grupa) zmienia lokalnie `TextChannel.Name` — niesprawdzone w Studio, czy
   zakładka Roblox odświeża nazwę (jeśli nie, zostanie nazwa serwera `⚖ Trade`).
-- **S04** Broń w dłoni to placeholder z jednego Partu (bez modeli z assetów).
-- **S05** Efekty wizualne umiejętności to placeholdery z Partów (`VfxController`), bez animacji postaci.
+- **S04** Broń w dłoni składana z kilku Partów (S18), bez modeli z assetów.
+- **S05** Efekty wizualne umiejętności to placeholdery z Partów (`VfxController`); postać ma tylko proceduralne pozy
+  barków (S18), bez prawdziwych animacji.
 - **S12** Gildie między serwerami (MessagingService, MemoryStore) da się sprawdzić tylko w opublikowanej grze; w Studio
   działa jeden serwer (czat i obecność lokalnie). Etykieta zakładki czatu (`⚑ TAG`) niesprawdzona w Studio.
 - **S12** Zaproszenia do gildii między serwerami pominięte (zgodnie z zakresem); brak teleportu do serwera członka.
@@ -1241,3 +1249,38 @@ kilku sekund); dystans do NPC liczony od pozycji postaci kontrolowanej przez kli
 7. Czat: zakładka handlu nazywa się „⚖ Handel” (PL) / „⚖ Trade” (EN); po założeniu grupy „☍ Grupa”. Zmień język → nazwy też.
 8. Esc → „Kod nagrody” → wpisz `vaelthorn` → „Kod przyjęty” → poczta (koperta) z 500 złota i miksturami. Drugi raz →
    „już użyty”. `/resetcodes` → znów działa.
+
+### S18: Animacje proceduralne potworów, modele broni, pozy rzucania
+
+**Zrobione**
+- Potwory się ruszają (bez assetów animacji): chód (nogi na przemian, pająk przebiera nogami, ręce humanoidów i golemów
+  w kontrze do nóg), oddech i rozglądanie się w miejscu, machanie ogonem i skrzydłami, unoszenie się duchów. Atak:
+  zamach (ręka w górę / łeb w górę), uderzenie (wypad do przodu / ugryzienie). Przy zdolnościach z telegrafem zamach trwa
+  tyle, co czerwony obszar. Drgnięcie po trafieniu, przewrócenie się na bok po śmierci (przed zniknięciem).
+- Korona bossa wisi na głowie (rusza się razem z nią).
+- Broń i off-hand z kilku części: miecze (głownia, jelec, rękojeść, głowica), topory, buzdygan z kolcami, młot, łuk z
+  cięciwą, kusza, różdżka, kostur z kulą, berło; tarcza, kołczan na plecach, księga, kula, relikwia. Akcent (kamień,
+  runa) w kolorze rzadkości przedmiotu. Off-hand wcześniej nie był widoczny wcale.
+- Pozy rzucania u graczy: celowanie ręką (pociski, cel, stożek, linia), obie ręce w górę (buffy, leczenie), uniesienie i
+  uderzenie w dół (obszar wokół siebie, pułapka). Widzą je wszyscy w pobliżu.
+- Pety chodzące podskakują, gdy doganiają właściciela.
+- Testy: `gait.spec` (fazy nóg, krzywa ataku, upadek, zakresy kątów; każdy typ broni/off-hand ma wygląd, poprawne części).
+
+**Pliki**: `Logic/Gait.luau`, `Data/WeaponLooks.luau`, `Controllers/AnimationController.luau`, `Entities/RigBuilder.luau`,
+`Entities/Boss.luau`, `Services/EquipmentService.luau`, `CombatFxController`, `VfxController`, `PetController`.
+
+#### Instrukcja testu S18
+
+1. Wejdź na mapę z potworami. Wilk/dzik idący do ciebie: nogi przebierają po przekątnej, ogon macha; stojący oddycha i
+   rusza głową. Pająk przebiera ośmioma nogami. Humanoidy machają rękami przy chodzie, broń w ręce idzie za ręką.
+2. Daj się zaatakować: przy każdym ciosie potwór unosi rękę/łeb i uderza z wypadem. Uderz go: lekko drga.
+3. Zabij potwora: przewraca się na bok i znika jak wcześniej.
+4. Potwór ze zdolnością (czerwony obszar na ziemi): unosi się i trzyma zamach do końca telegrafu.
+5. Lochy / boss: smok macha skrzydłami (szybciej w ruchu), korona bossa porusza się z głową.
+6. `/give` różnych broni (miecz, topór dwuręczny, młot, łuk, kostur, berło) → w dłoni widać model z kilku części;
+   epicka broń świeci w kolorze rzadkości. Załóż tarczę / księgę / kulę / relikwię → widać w lewej ręce; kołczan na plecach.
+   Broń dwuręczna zdejmuje off-hand → znika z ręki.
+7. Rzuć umiejętność celowaną → postać wyciąga rękę; buff/leczenie → obie ręce w górę; obszar wokół siebie → ręce w górę
+   i w dół. Drugi gracz widzi to samo.
+8. Pet (lis/kot) podskakuje, gdy biegniesz.
+9. Opcje → jakość niska: potwory dalej niż ~70 studów stoją bez ruchu (oszczędność).

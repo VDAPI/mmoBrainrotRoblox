@@ -94,6 +94,9 @@ local function crown(model: Model, color: string)
 	if not root then
 		return
 	end
+	-- Hang the crown off the highest animated part so it follows the procedural poses (S18).
+	local head = model:FindFirstChild("Head") or model:FindFirstChild("Body") or model:FindFirstChild("Torso")
+	local anchor: BasePart = if head and head:IsA("BasePart") then head else root
 	for i = 0, 4 do
 		local spike = Instance.new("Part")
 		spike.Name = "Crown"
@@ -106,7 +109,7 @@ local function crown(model: Model, color: string)
 		local angle = i * math.pi * 2 / 5
 		spike.CFrame = cf * CFrame.new(math.cos(angle) * 1.1, size.Y / 2 + 0.6, math.sin(angle) * 1.1)
 		local weld = Instance.new("WeldConstraint")
-		weld.Part0 = root
+		weld.Part0 = anchor
 		weld.Part1 = spike
 		weld.Parent = spike
 		spike.Parent = model

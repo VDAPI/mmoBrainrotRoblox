@@ -22,6 +22,10 @@ function PetController.Start()
 		return
 	end
 	local clock = 0
+	local hops: { [Instance]: number } = {}
+	folder.ChildRemoved:Connect(function(pet)
+		hops[pet] = nil
+	end)
 	RunService.RenderStepped:Connect(function(dt)
 		clock += dt
 		for _, pet in folder:GetChildren() do
@@ -40,10 +44,20 @@ function PetController.Start()
 			local goal = root.CFrame * CFrame.new(FOLLOW_OFFSET + Vector3.new(0, height, 0))
 			local current = pet:GetPivot()
 			if (current.Position - goal.Position).Magnitude > TELEPORT_DISTANCE then
+				hops[pet] = nil
 				pet:PivotTo(goal)
 				continue
 			end
-			local position = current.Position:Lerp(goal.Position, math.min(1, dt * SPEED))
+			-- The hop drawn last frame is not part of the follow position.
+			local base = current.Position - Vector3.new(0, hops[pet] or 0, 0)
+			local position = base:Lerp(goal.Position, math.min(1, dt * SPEED))
+			-- Walkers hop while catching up (procedural, no animation assets).
+			local lag = Vector3.new(goal.Position.X - position.X, 0, goal.Position.Z - position.Z).Magnitude
+			local hop = if not flying and lag > 0.4
+				then math.abs(math.sin(clock * 11)) * math.min(0.35, lag * 0.2)
+				else 0
+			hops[pet] = hop
+			position += Vector3.new(0, hop, 0)
 			local flat = Vector3.new(root.Position.X - position.X, 0, root.Position.Z - position.Z)
 			local look = if flat.Magnitude > 0.5
 				then CFrame.lookAt(position, position + flat)

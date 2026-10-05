@@ -2,7 +2,7 @@
 -- Equipping (DESIGN §5.1, §5.6, §5.7). Validates level and class, handles rings (ring1/ring2), two-handed
 -- weapons (they push the off-hand back into the backpack), backpack swaps (only when everything fits) and
 -- binding on equip. Plugs equipment into StatService (modifier source + weapon provider), exposes legendary
--- effect totals (hooks) and shows the weapon in the character's hand (placeholder parts).
+-- effect totals (hooks) and shows the weapon and off-hand on the character (placeholder parts, Data/WeaponLooks).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -16,6 +16,7 @@ local QuestEvents = require(script.Parent.Parent.QuestEvents)
 local Rarities = require(Shared.Data.Rarities)
 local Signal = require(ReplicatedStorage.Packages.Signal)
 local Types = require(Shared.Types)
+local WeaponLooks = require(Shared.Data.WeaponLooks)
 
 type ItemInstance = Types.ItemInstance
 
@@ -64,81 +65,110 @@ end
 
 -- Weapon visuals ------------------------------------------------------------------------------------------
 
-local WEAPON_SHAPES: { [string]: { size: Vector3, color: Color3, material: Enum.Material, leftHand: boolean? } } = {
-	sword1h = { size = Vector3.new(0.25, 0.4, 3.2), color = Color3.fromHex("#C9CED6"), material = Enum.Material.Metal },
-	axe1h = { size = Vector3.new(0.3, 1.2, 2.6), color = Color3.fromHex("#8E8E93"), material = Enum.Material.Metal },
-	mace1h = { size = Vector3.new(0.6, 0.6, 2.6), color = Color3.fromHex("#8E8E93"), material = Enum.Material.Metal },
-	sword2h = { size = Vector3.new(0.3, 0.5, 4.6), color = Color3.fromHex("#C9CED6"), material = Enum.Material.Metal },
-	axe2h = { size = Vector3.new(0.35, 1.6, 4), color = Color3.fromHex("#8E8E93"), material = Enum.Material.Metal },
-	hammer2h = { size = Vector3.new(1.1, 1.1, 4), color = Color3.fromHex("#6F6F75"), material = Enum.Material.Metal },
-	bow = {
-		size = Vector3.new(0.2, 4, 0.3),
-		color = Color3.fromHex("#8A6B4A"),
-		material = Enum.Material.Wood,
-		leftHand = true,
-	},
-	crossbow = {
-		size = Vector3.new(1.6, 0.4, 2.2),
-		color = Color3.fromHex("#5A4632"),
-		material = Enum.Material.Wood,
-		leftHand = true,
-	},
-	wand = { size = Vector3.new(0.2, 0.2, 1.8), color = Color3.fromHex("#4A8FE7"), material = Enum.Material.Neon },
-	staff = { size = Vector3.new(0.3, 0.3, 5), color = Color3.fromHex("#6B4A2B"), material = Enum.Material.Wood },
-	scepter = { size = Vector3.new(0.3, 0.3, 2.4), color = Color3.fromHex("#E8C25A"), material = Enum.Material.Metal },
-}
+local HELD_NAMES = { weapon = "VaelthornWeapon", offhand = "VaelthornOffhand" }
 
 local function rarityColor(item: ItemInstance): Color3
 	local rarity = Rarities.get(item.rarity)
 	return Color3.fromHex(if rarity then rarity.color else "#C9CED6")
 end
 
-local function updateWeaponModel(player: Player)
+local function material(name: string): Enum.Material
+	local ok, value = pcall(function()
+		return (Enum.Material :: any)[name]
+	end)
+	return if ok and value then value else Enum.Material.SmoothPlastic
+end
+
+local function vector(values: { number }): Vector3
+	return Vector3.new(values[1], values[2], values[3])
+end
+
+-- Grip frame of a look (WeaponLooks): palm of the hand, or the centre of the upper torso for "back".
+local function anchorFor(model: Model, hand: string): (BasePart?, CFrame)
+	if hand == "back" then
+		local torso = model:FindFirstChild("UpperTorso") or model:FindFirstChild("Torso")
+		return if torso and torso:IsA("BasePart") then torso else nil, CFrame.identity
+	end
+	local side = if hand == "left" then "Left" else "Right"
+	local part = model:FindFirstChild(`{side}Hand`) or model:FindFirstChild(`{side} Arm`)
+	if not part or not part:IsA("BasePart") then
+		return nil, CFrame.identity
+	end
+	return part, CFrame.new(0, -part.Size.Y / 2, 0)
+end
+
+-- Builds the held model of `slot` from its look: the first piece is the main part (named after the slot),
+-- the others are welded to it and parented under it.
+local function updateHeldModel(player: Player, slot: "weapon" | "offhand")
 	local model = player.Character
 	if not model then
 		return
 	end
-	local old = model:FindFirstChild("VaelthornWeapon")
+	local name = HELD_NAMES[slot]
+	local old = model:FindFirstChild(name)
 	if old then
 		old:Destroy()
 	end
 	local char = character(player)
-	local item = char and char.equipment.weapon
+	local item = char and (char.equipment :: any)[slot] :: ItemInstance?
 	local def = item and Items.get(item.id)
-	if not item or not def then
+	local look = def and WeaponLooks.get(def.type)
+	if not item or not look then
 		return
 	end
-	local shape = WEAPON_SHAPES[def.type]
-	if not shape then
+	local anchor, grip = anchorFor(model, look.hand)
+	if not anchor then
 		return
 	end
-	local hand = model:FindFirstChild(if shape.leftHand then "LeftHand" else "RightHand")
-		or model:FindFirstChild(if shape.leftHand then "Left Arm" else "Right Arm")
-	if not hand or not hand:IsA("BasePart") then
-		return
+	local accent = rarityColor(item)
+	local main: BasePart? = nil
+	for _, piece in look.pieces do
+		local part = Instance.new("Part")
+		part.Name = if main then piece.name else name
+		part.Size = vector(piece.size)
+		part.Color = if piece.color == "rarity" then accent else Color3.fromHex(piece.color)
+		part.Material = material(piece.material)
+		part.Transparency = piece.transparency or 0
+		if piece.shape == "Ball" then
+			part.Shape = Enum.PartType.Ball
+		elseif piece.shape == "Cylinder" then
+			part.Shape = Enum.PartType.Cylinder
+		end
+		part.CanCollide = false
+		part.CanTouch = false
+		part.CanQuery = false
+		part.Massless = true
+		part.CastShadow = false
+		local rot = piece.rot or { 0, 0, 0 }
+		local offset = grip
+			* CFrame.new(vector(piece.pos))
+			* CFrame.Angles(math.rad(rot[1]), math.rad(rot[2]), math.rad(rot[3]))
+		part.CFrame = anchor.CFrame * offset
+		local weld = Instance.new("Weld")
+		weld.Part0 = anchor
+		weld.Part1 = part
+		weld.C0 = offset
+		weld.Parent = part
+		if main then
+			part.Parent = main
+		else
+			main = part
+		end
 	end
-	local part = Instance.new("Part")
-	part.Name = "VaelthornWeapon"
-	part.Size = shape.size
-	part.Color = shape.color
-	part.Material = shape.material
-	part.CanCollide = false
-	part.CanTouch = false
-	part.CanQuery = false
-	part.Massless = true
-	part.CFrame = hand.CFrame * CFrame.new(0, -hand.Size.Y / 2, -shape.size.Z / 2 + 0.3)
+	local held = main :: BasePart
 	if item.rarity >= Rarities.EPIC then
 		local light = Instance.new("PointLight")
-		light.Color = rarityColor(item)
+		light.Color = accent
 		light.Range = 6
 		light.Brightness = 1
-		light.Parent = part
+		light.Parent = held
 	end
-	local weld = Instance.new("WeldConstraint")
-	weld.Part0 = hand
-	weld.Part1 = part
-	weld.Parent = part
-	part.Parent = model
+	held.Parent = model
+end
+
+local function updateWeaponModel(player: Player)
+	updateHeldModel(player, "weapon")
+	updateHeldModel(player, "offhand")
 end
 
 -- Equip / unequip -----------------------------------------------------------------------------------------
@@ -154,7 +184,7 @@ local function changed(player: Player, slots: { string })
 	end
 	hookCache[player] = nil
 	StatService.Invalidate(player)
-	if table.find(slots, "weapon") then
+	if table.find(slots, "weapon") or table.find(slots, "offhand") then
 		updateWeaponModel(player)
 	end
 end

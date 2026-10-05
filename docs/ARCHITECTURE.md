@@ -165,6 +165,7 @@ type CharacterData = {
 - **Potwory**: serwerowe modele z `Humanoid` (proste, niezawodne MoveTo) lub AnimationController + przesuwanie CFrame, decyzja w S03 (domyślnie Humanoid z `HumanoidStateType` ograniczonymi, `BreakJointsOnDeath=false`). Własność sieciowa: serwer. AI tick 5 Hz, **uśpienie** potworów bez graczy w promieniu 150 st. (spawner nieaktywny).
 - Rejestr encji: `EntityService` nadaje każdej encji `entityId` (atrybut), mapuje model ↔ obiekt. Atak/skill odnosi się do `entityId`.
 - Wygląd potworów: jeśli w `ReplicatedStorage.Assets.Monsters` istnieje model o nazwie rodzaju → użyj; inaczej **generator placeholderów** (`Shared/Util/Placeholder.luau` lub serwerowy RigBuilder) buduje figurę z Partów w kolorach z danych (różne kształty: czworonóg, humanoid, pająk, golem). Elity: skala + kolor nazwy + aura (ParticleEmitter).
+- Animacje bez assetów (S18): RigBuilder łączy kończyny placeholderów przez `Motor6D` „Gait_<część>” (atrybuty Role/Side/Phase/Amp/Scale), wszystko wisi na części „core” połączonej z rootem. Klient (`AnimationController`) co klatkę liczy pozę z czystej logiki `Logic/Gait` (chód z prędkości roota, oddech, zamach i uderzenie, drgnięcie po trafieniu, upadek po śmierci) i ustawia `Motor6D.Transform` lokalnie. Postacie: ruch barków (C0) przy ataku i rzucaniu umiejętności. Broń i off-hand w dłoni: `Data/WeaponLooks.luau` (kilka Partów na typ).
 - Liczby obrażeń, efekty uderzeń, telegrafy: wysyłane eventem do klientów w zasięgu, rysowane lokalnie.
 
 ## 8. Świat
