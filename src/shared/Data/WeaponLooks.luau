@@ -1,5 +1,5 @@
 --!strict
--- Placeholder 3D looks of held weapons and off-hands (S18), built from a few Parts by EquipmentService.
+-- Placeholder 3D looks of held weapons and off-hands (S17b), built from a few Parts by EquipmentService.
 -- Frame: origin at the palm of the hand ("back": centre of the upper torso), -Z = forward (the way the
 -- weapon points), +Y = up the arm, +X = right. Sizes and positions in studs, rotations in degrees.
 -- The first piece is the main part (named VaelthornWeapon / VaelthornOffhand; weapon cosmetics and the

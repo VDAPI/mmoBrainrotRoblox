@@ -3,7 +3,7 @@
 -- with an invisible HumanoidRootPart, an R15-type Humanoid (HipHeight keeps it standing, MoveTo walks it)
 -- and decorative parts welded to the root. A real model in ReplicatedStorage.Assets.Monsters.<id> replaces
 -- the placeholder automatically (it must contain a Humanoid and a HumanoidRootPart).
--- Decision (S18): limbs are joined with Motor6Ds named "Gait_<part>" (attributes Role, Side, Phase, Amp,
+-- Decision (S17b): limbs are joined with Motor6Ds named "Gait_<part>" (attributes Role, Side, Phase, Amp,
 -- Scale) so clients can animate them procedurally (Logic/Gait, AnimationController). Every part hangs off
 -- a "core" part that is itself jointed to the root, so the whole body can bob, lean and collapse.
 

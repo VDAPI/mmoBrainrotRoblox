@@ -23,17 +23,20 @@
 | S15 | Poprawki z „Niedokończone” (mobile, profil) | ● |
 | S16 | Walka na LPM, paski HP nad głowami, tytuły | ● |
 | S17 | Zmiana klawiszy, sprzedaż przeciąganiem, kanały czatu, kody nagród | ● |
-| S18 | Animacje proceduralne potworów, modele broni, pozy rzucania | ● |
+| S17b | Animacje proceduralne potworów, modele broni, pozy rzucania (dodatkowa, poza planem) | ● |
+| S18 | Poprawki po testach (1/2): walka, sterowanie, przedmioty, broń, UI | ○ |
+| S19 | Poprawki po testach (2/2): grupy potworów, jaskinie, nowe potwory | ○ |
+| S20 | Szczegółowa mapa z obszarami potworów, bogatszy świat, wygoda łupu | ○ |
 
 Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana przez właściciela
 
 ## Decyzje
 (Claude dopisuje tu decyzje podjęte w trakcie sesji, z numerem sesji.)
-- **S18** Animacje potworów są proceduralne i lokalne: serwer buduje szkielet z `Motor6D` („Gait_*”), klient ustawia
+- **S17b** Animacje potworów są proceduralne i lokalne: serwer buduje szkielet z `Motor6D` („Gait_*”), klient ustawia
   `Transform` z `Logic/Gait` (serwer zawsze widzi pozę spoczynkową; hitboxy i tak liczy root). Potwory dalej niż 150 studów
   (70 przy niskiej jakości) nie są animowane. Prawdziwe modele z `Assets.Monsters` nie mają jointów „Gait_*”, więc
   kontroler ich nie rusza.
-- **S18** Broń i off-hand to modele z kilku Partów (`Data/WeaponLooks`), część główna nazywa się `VaelthornWeapon` /
+- **S17b** Broń i off-hand to modele z kilku Partów (`Data/WeaponLooks`), część główna nazywa się `VaelthornWeapon` /
   `VaelthornOffhand` (kosmetyki broni i poświata epic+ wiszą na niej). Akcent w kolorze rzadkości.
 
 - **S01** Paczki Wally (`Packages/`, `ServerPackages/`) są commitowane, żeby `rojo serve` działał bez `wally install`.
@@ -398,7 +401,7 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
 (Rzeczy z zakresu sesji, które nie zostały zrobione. Następna sesja zaczyna od nich.)
 
 - **S01** Dźwięki UI to placeholdery (`UI/Sounds.luau`), do podmiany na prawdziwe.
-- **S03** Animacje potworów są proceduralne (S18); prawdziwe animacje dopiero z modelami w `Assets.Monsters`.
+- **S03** Animacje potworów są proceduralne (S17b); prawdziwe animacje dopiero z modelami w `Assets.Monsters`.
 - **S11** Questy nie były grane w Studio od początku do końca (test `questpath.spec` sprawdza wykonalność celów i ciągłość
   poziomów); EXP z nagród dobrany wzorem, do strojenia.
 - **S08** Muzyka map: crossfade i głośność z opcji gotowe, ale brak ścieżek (pole `music` w `Data/Maps.luau` puste — wkleić
@@ -408,9 +411,9 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
   w Studio działają magazyny w pamięci jednego serwera.
 - **S17** Tłumaczenie zakładek czatu (handel, grupa) zmienia lokalnie `TextChannel.Name` — niesprawdzone w Studio, czy
   zakładka Roblox odświeża nazwę (jeśli nie, zostanie nazwa serwera `⚖ Trade`).
-- **S04** Broń w dłoni składana z kilku Partów (S18), bez modeli z assetów.
+- **S04** Broń w dłoni składana z kilku Partów (S17b), bez modeli z assetów.
 - **S05** Efekty wizualne umiejętności to placeholdery z Partów (`VfxController`); postać ma tylko proceduralne pozy
-  barków (S18), bez prawdziwych animacji.
+  barków (S17b), bez prawdziwych animacji.
 - **S12** Gildie między serwerami (MessagingService, MemoryStore) da się sprawdzić tylko w opublikowanej grze; w Studio
   działa jeden serwer (czat i obecność lokalnie). Etykieta zakładki czatu (`⚑ TAG`) niesprawdzona w Studio.
 - **S12** Zaproszenia do gildii między serwerami pominięte (zgodnie z zakresem); brak teleportu do serwera członka.
@@ -1250,7 +1253,10 @@ kilku sekund); dystans do NPC liczony od pozycji postaci kontrolowanej przez kli
 8. Esc → „Kod nagrody” → wpisz `vaelthorn` → „Kod przyjęty” → poczta (koperta) z 500 złota i miksturami. Drugi raz →
    „już użyty”. `/resetcodes` → znów działa.
 
-### S18: Animacje proceduralne potworów, modele broni, pozy rzucania
+### S17b: Animacje proceduralne potworów, modele broni, pozy rzucania
+
+> Sesja dodatkowa zrobiona z listy „Niedokończone” przed otrzymaniem planu S18–S20; commity mają w opisie „S18”
+> (`f388d97`, `d386f18`). Numer S18 należy teraz do sesji z `docs/sessions/S18.md`.
 
 **Zrobione**
 - Potwory się ruszają (bez assetów animacji): chód (nogi na przemian, pająk przebiera nogami, ręce humanoidów i golemów
@@ -1269,7 +1275,7 @@ kilku sekund); dystans do NPC liczony od pozycji postaci kontrolowanej przez kli
 **Pliki**: `Logic/Gait.luau`, `Data/WeaponLooks.luau`, `Controllers/AnimationController.luau`, `Entities/RigBuilder.luau`,
 `Entities/Boss.luau`, `Services/EquipmentService.luau`, `CombatFxController`, `VfxController`, `PetController`.
 
-#### Instrukcja testu S18
+#### Instrukcja testu S17b
 
 1. Wejdź na mapę z potworami. Wilk/dzik idący do ciebie: nogi przebierają po przekątnej, ogon macha; stojący oddycha i
    rusza głową. Pająk przebiera ośmioma nogami. Humanoidy machają rękami przy chodzie, broń w ręce idzie za ręką.

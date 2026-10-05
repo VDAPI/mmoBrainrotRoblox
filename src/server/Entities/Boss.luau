@@ -94,7 +94,7 @@ local function crown(model: Model, color: string)
 	if not root then
 		return
 	end
-	-- Hang the crown off the highest animated part so it follows the procedural poses (S18).
+	-- Hang the crown off the highest animated part so it follows the procedural poses (S17b).
 	local head = model:FindFirstChild("Head") or model:FindFirstChild("Body") or model:FindFirstChild("Torso")
 	local anchor: BasePart = if head and head:IsA("BasePart") then head else root
 	for i = 0, 4 do

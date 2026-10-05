@@ -1,5 +1,5 @@
 --!strict
--- Procedural animation without animation assets (S18):
+-- Procedural animation without animation assets (S17b):
 --   * monsters: every "Gait_*" Motor6D built by RigBuilder is posed each frame from Logic/Gait (walk cycle
 --     from the replicated root velocity, idle breathing, attack windup and strike, hit flinch, death collapse);
 --   * characters: arm swing on basic attacks and a cast pose (point / raise / slam) on skills, by rotating

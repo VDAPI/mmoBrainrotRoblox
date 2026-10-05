@@ -35,13 +35,21 @@
 |---|---|---|---|---|
 | `city` | Vaelthorn (stolica) | – | zielona | NPC: lekarz, kowal, alchemik, kupiec, handlarz plecaków, depozyt, mistrz gildii, aukcjoner, tablica zleceń, nauczyciel (reset) + **Arena** (żółta) |
 | `meadows` | Szepczące Łąki / Whispering Meadows | 1–20 | żółta | potwory zwykłe, węzły rud, ziół, łowisko |
-| `meadows_cave` | Jaskinia Mchów / Mosshollow Cave | 12–20 | **czerwona** | elity, Elita II, wejście do lochu bossa 20 |
+| `meadows_hideout` | Kryjówka Przemytników / Smugglers' Hideout | 7–12 | **czerwona** | jaskinia (zasady w §3.5) |
+| `meadows_burrow` | Gobliński Kopiec / Goblin Warren | 12–16 | **czerwona** | jaskinia |
+| `meadows_cave` | Jaskinia Mchów / Mosshollow Cave | 16–20 | **czerwona** | jaskinia + wejście do lochu bossa 20 |
 | `duskwood` | Mroczny Bór / Duskwood | 20–45 | żółta | jw. |
-| `duskwood_cave` | Krypta Zapomnianych / Crypt of the Forgotten | 35–45 | **czerwona** | elity, wejście do lochu bossa 45 |
+| `duskwood_den` | Wilcza Nora / Wolfden Hollow | 24–31 | **czerwona** | jaskinia |
+| `duskwood_barrow` | Kurhan Kultystów / Cultist Barrow | 31–38 | **czerwona** | jaskinia |
+| `duskwood_cave` | Krypta Zapomnianych / Crypt of the Forgotten | 38–45 | **czerwona** | jaskinia + wejście do lochu bossa 45 |
 | `ashen` | Spalone Pustkowia / Ashen Wastes | 45–70 | żółta | jw. |
-| `ashen_cave` | Kuźnia Głębin / Deepforge | 60–70 | **czerwona** | elity, wejście do lochu bossa 70 |
+| `ashen_mine` | Opuszczona Kopalnia / Abandoned Mine | 49–56 | **czerwona** | jaskinia |
+| `ashen_lair` | Leże Wywerny / Wyvern Lair | 56–63 | **czerwona** | jaskinia |
+| `ashen_cave` | Kuźnia Głębin / Deepforge | 63–70 | **czerwona** | jaskinia + wejście do lochu bossa 70 |
 | `frostpeak` | Lodowe Szczyty / Frostpeak | 70–100 | żółta | jw. |
-| `frostpeak_cave` | Serce Lodowca / Glacier Heart | 90–100 | **czerwona** | elity, wejście do lochu bossa 100 |
+| `frostpeak_grotto` | Lodowa Grota / Ice Grotto | 74–83 | **czerwona** | jaskinia |
+| `frostpeak_hold` | Zamarznięta Twierdza / Frozen Hold | 83–92 | **czerwona** | jaskinia |
+| `frostpeak_cave` | Serce Lodowca / Glacier Heart | 92–100 | **czerwona** | jaskinia + wejście do lochu bossa 100 |
 | `dungeon_*` | Komnaty bossów (4) | 20/45/70/100 | czerwona (PvP wyłączone wewnątrz, bo tylko jedna grupa) | boss |
 
 Każda strefa terenowa ma też podstrefy (np. łąka, las, ruiny) z innymi poziomami potworów, rosnącymi w głąb mapy.
@@ -53,14 +61,43 @@ Każda strefa terenowa ma też podstrefy (np. łąka, las, ruiny) z innymi pozio
 - **Czerwona** (wszystkie jaskinie): każdy może zaatakować każdego, przełącznik ignorowany.
 - Członków własnej grupy i gildii nie da się zaatakować w żadnej strefie (ustawienie, domyślnie włączone ochrona grupy; ochronę gildii można wyłączyć w opcjach gildii później).
 - Wejście na mapę pokazuje baner z nazwą i kolorem strefy.
+- **Kropka PvP przy nicku** (w portrecie HUD i nad głową każdego gracza): zielona = PvP wyłączone, czerwona = PvP włączone lub czerwona strefa (wymuszone), pomarańczowa (pulsuje) = trwa przełączanie, szara z kłódką = nie można zmienić (zielona strefa albo blokada po walce). Tooltip/przytrzymanie wyjaśnia stan.
 
 ### 3.4 Śmierć
 
 - **Nic nie tracisz.** Ekran śmierci z licznikiem.
 - Czas odrodzenia: `5 + 0.3 × poziom` sekund (poz. 1 → 5 s, poz. 100 → 35 s).
 - Przycisk „Odródź natychmiast” za Smoczą Walutę (lub Developer Product za Robux).
-- Odrodzenie w najbliższym punkcie odrodzenia mapy (dla jaskiń: przy wejściu do jaskini; dla lochu: przed wejściem do lochu, z pełnym HP).
+- Odrodzenie w najbliższym punkcie odrodzenia **mapy, na której zginąłeś** (dla jaskiń: przy wejściu do jaskini; dla lochu: przed wejściem do lochu, z pełnym HP). Po testach S17 postać zawsze lądowała w mieście; to był błąd.
 - Kapłan może wskrzesić sojusznika (skill), co pomija licznik.
+
+### 3.5 Jaskinie (zmiana po testach S17)
+
+- **3 jaskinie na region**, każda dla węższego przedziału poziomów (tabela §3.2). Wejście leży na mapie regionu w podstrefie o zbliżonym poziomie.
+- **Zawsze czerwona strefa.**
+- Zawartość każdej jaskini:
+  - 2–3 rodzaje zwykłych potworów z przedziału jaskini (w grupach 1–4, §15.1);
+  - **2 różne rodzaje Elit** (po 3–5 grup Elit na jaskinię, grupy po 1–2 Elity);
+  - **dokładnie 1 Elita II naraz** (jeden punkt odrodzenia; przy każdym odrodzeniu może wylosować jeden z 1–2 rodzajów przypisanych do jaskini), odrodzenie 10–20 min, ogłoszenie na mapie;
+  - 6–10 węzłów rud (§12).
+- Wejście z zewnątrz jest wyraźne: wylot jaskini (skały, łuk, pochodnie), płaski teren wokół portalu, tabliczka z nazwą i poziomami.
+- Ostatnia jaskinia regionu ma wejście do lochu bossa.
+
+### 3.6 Obszary potworów (zmiana po testach S17)
+
+- Każda mapa terenowa i jaskinia jest podzielona na **nazwane obszary potworów** (np. „Obóz Bandytów · 9–14”, „Wilcze Wzgórza · 2–6”): prostokąt lub wielokąt, przedział poziomów, 2–3 rodzaje potworów, liczba grup. Obszar jest jednym źródłem prawdy: z niego generują się grupy (§15.1), opisy na mapie i oznaczenia w świecie.
+- **W świecie**: przy wejściu w obszar mały baner u góry ekranu z nazwą i poziomami (kolor wg różnicy poziomów z graczem); na granicach przy ścieżkach drogowskazy/tabliczki z nazwą i poziomami; każdy obszar ma charakterystyczny punkt orientacyjny (obóz, ruiny, wieża, kamienny krąg, wrak wozu, gniazdo).
+- **Na mapie i minimapie**: obszary jako półprzezroczyste kolorowe plamy (kolor wg różnicy poziomów), podpis z nazwą i poziomami; po najechaniu/tapnięciu lista potworów (ikona, nazwa, poziomy, czy są elity), w jaskini także Elita II z timerem (§15.3).
+- Obszary nie nachodzą na ścieżki, wodę, portale i okolice miasta; między obszarami są przejścia bez potworów.
+
+### 3.7 Szczegółowość świata i wydajność (zmiana po testach S17)
+
+- Świat ma być **bardziej szczegółowy**: drogi z krawężnikami i drogowskazami, płoty, mosty, obozy, ruiny, wieże strażnicze, studnie, wozy, beczki i skrzynie, kamienne kręgi, polany z kwiatami, gęstsza i bardziej zróżnicowana roślinność (kilka gatunków drzew, krzewy, paprocie, trzciny przy wodzie, grzyby), zróżnicowany teren (pagórki, skały, wąwozy, strumienie), oświetlenie nastrojowe (latarnie przy drogach, ogniska w obozach), w jaskiniach stalaktyty, kryształy, pajęczyny, kości, tory i wózki w kopalni.
+- **Wydajność jest ważniejsza niż ilość**:
+  - dekoracje bez znaczenia dla rozgrywki (trawa, kwiaty, drobne kamienie, grzyby, liście) generuje **klient** z tego samego seeda, w kawałkach (chunkach) 128×128 st., widocznych tylko w promieniu zależnym od ustawienia jakości (np. 250/400/600 st.); serwer ich nie tworzy i nie replikuje;
+  - duże elementy (drzewa, budynki, skały kolizyjne) tworzy serwer, z `CanQuery=false` i `CanTouch=false` dla dekoracji, `CollisionFidelity=Box` dla prostych kształtów, `CastShadow=false` dla małych, modele `ModelStreamingMode` Atomic tylko tam, gdzie trzeba;
+  - budżet części na mapę (Config) i ostrzeżenie w logu; StreamingEnabled z dobranym `StreamingTargetRadius` i `StreamingMinRadius`;
+  - ustawienie „Szczegółowość świata” (niska/średnia/wysoka) zmienia gęstość dekoracji klienta.
 
 ## 4. Postać
 
@@ -162,13 +199,14 @@ Przedmioty **z kowala** mają rzadkość Zwykły i stałe statystyki dopasowane 
 ### 5.3 Definicja i instancja przedmiotu
 
 - **Definicja** (`Data/Items`): `id`, nazwa PL/EN, slot, typ (np. `sword1h`), klasa(y), wymagany poziom, statystyki bazowe (funkcja poziomu przedmiotu), ikona (placeholder: kolorowy kwadrat + litera), model (opcjonalny), cena sprzedaży.
-- Przedmioty nie są tworzone ręcznie dla każdego poziomu: **typy bazowe × progi poziomu** (co 5 poziomów: 1, 5, 10, …, 100) generują definicje przez generator w `Data/Items/Generate.luau` z nazwami z listy przedrostków materiału (np. „Żelazny”, „Stalowy”, „Mithrilowy”…).
+- Przedmioty nie są tworzone ręcznie dla każdego poziomu: **typy bazowe × progi poziomu** (co 5 poziomów: 1, 5, 10, …, 100) generują definicje przez generator w `Data/Items/Generate.luau` z nazwami z listy przedrostków materiału (np. „Żelazny”, „Stalowy”, „Mithrilowy”…). Progi służą **tylko do nazwy i ikony**.
+- **Statystyki bazowe liczone z `ilvl` instancji, płynnie dla każdego poziomu** (zmiana po testach S17): broń z poziomu 2 jest lepsza od broni z poziomu 1, z poziomu 3 lepsza od 2 itd. Wymagany poziom przedmiotu = jego `ilvl`. Tooltip pokazuje `Poziom przedmiotu: N`.
 - **Instancja** (zapisana w danych gracza):
 ```lua
 { uid = "GUID", id = "sword1h_30", rarity = 4, ilvl = 31, bonuses = { {stat="crit", v=3.2}, ... },
   up = 0, bound = false, n = 1 }  -- n: ilość (tylko stackowalne: mikstury, materiały, zwoje)
 ```
-- `ilvl` = poziom potwora ± 2 (losowo), zaokrąglony do progu definicji dla statystyk bazowych.
+- `ilvl` = poziom potwora ± 2 (losowo, min 1); nie jest zaokrąglany do progu.
 
 ### 5.4 Losowanie bonusów
 
@@ -181,7 +219,8 @@ Przedmioty **z kowala** mają rzadkość Zwykły i stałe statystyki dopasowane 
 
 ### 5.5 Drop
 
-- Szansa na przedmiot z potwora: zwykły 6%, Elita 35%, Elita II 100% (1–2 przedmioty), boss 3–4 przedmioty gwarantowane.
+- Szansa na przedmiot z potwora (podniesione po testach S17): zwykły **20%**, Elita **75%** (+25% na drugi), Elita II **100%, 2–3 przedmioty**, boss 3–4 przedmioty gwarantowane.
+- Broń ma większą wagę w losowaniu slotu (ok. 30% dropów), a przedmioty dla klasy zabójcy wypadają częściej (preferencja klasy ok. 80%, także w grupie przed rozdziałem łupu).
 - Wagi rzadkości (zwykły potwór / Elita / Elita II / boss):
   - Zwykły 72 / 45 / 20 / 0
   - Niezwykły 20 / 30 / 30 / 10
@@ -210,6 +249,26 @@ Przedmioty **z kowala** mają rzadkość Zwykły i stałe statystyki dopasowane 
 - Stackowanie: materiały, mikstury, zwoje do 999 w slocie.
 - Sortowanie inwentarza przyciskiem.
 
+### 5.8 Typy broni i żywioł broni maga (zmiana po testach S17)
+
+- Więcej typów broni na klasę:
+  - Wojownik: miecz 1H, topór 1H, buława 1H, **szabla 1H**, miecz 2H, topór 2H, młot 2H, **włócznia 2H**.
+  - Łowca: **łuk krótki** (szybki), łuk, **łuk długi** (wolny, mocny), kusza, **ciężka kusza**.
+  - Mag: różdżka, kostur, **kostur runiczny** (2H, wolniejszy, mocniejszy).
+  - Kapłan: buława, berło, **cep 1H**, **kostur święty 2H**.
+- **Każda broń maga ma żywioł**: Ogień, Lód albo Błyskawice. W dropie żywioł losowany przy tworzeniu przedmiotu, w sklepie i u kowala wybierany (osobna pozycja na każdy żywioł). Żywioł widać w nazwie („Stalowa Różdżka Ognia”), w kolorze ikony i jako linia tooltipa „Żywioł: Ogień”.
+- Atak podstawowy maga zadaje obrażenia żywiołu broni.
+- **Umiejętności żywiołowe maga wymagają broni z tym samym żywiołem** (jak w Margonem). Bez niej umiejętność jest wyszarzona na pasku i w drzewku, a tooltip mówi „Wymaga broni: Lód”. Umiejętności bez żywiołu i dwie umiejętności „adaptacyjne” (§14.4) działają z każdą bronią maga.
+- Startowa broń maga: Różdżka Ognia.
+
+### 5.9 Wygoda łupu (dodatek po testach S17)
+
+- **„Lepszy przedmiot!”**: gdy podniesiony przedmiot jest lepszy od założonego (suma ważonych statystyk wg klasy) i gracz może go założyć, pojawia się mała karta z porównaniem i przyciskiem „Załóż” (znika po 8 s; wyłączalne w opcjach).
+- **Filtr łupu** (opcje): automatyczne podnoszenie od wybranej rzadkości (dla gamepassa Auto-łup) i ukrywanie worków ze zwykłymi przedmiotami poniżej wybranej rzadkości (materiały i złoto zawsze widoczne).
+- **Dziennik łupu**: ostatnie 50 zdobytych przedmiotów z czasem i źródłem (potwór, mapa), dostępny z plecaka.
+- **Szybka sprzedaż**: u każdego kupca przycisk „Sprzedaj wszystkie Zwykłe” (i opcjonalnie „Niezwykłe”), pomija przedmioty założone, związane unikaty i zablokowane.
+- **Blokada przedmiotu**: kłódka w menu przedmiotu chroni go przed sprzedażą, rozbiciem i szybką sprzedażą.
+
 ## 6. Ulepszanie (kowal)
 
 - Poziomy +0 → +9. Szansa na sukces przy próbie przejścia na poziom N: `110% − 10%·N` (N=1: 100%, N=2: 90%, …, N=9: 20%).
@@ -231,6 +290,13 @@ Przedmioty **z kowala** mają rzadkość Zwykły i stałe statystyki dopasowane 
 
 - Kowal sprzedaje/wytwarza przedmioty o **stałych statystykach** (rzadkość Zwykły, średnie wartości) dla każdego progu poziomu i klasy, za złoto + rudy (z kopania).
 - Służy jako siatka bezpieczeństwa, gdy drop nie dopisuje.
+
+## 8a. Zbrojmistrz (sprzedawca broni)
+
+- NPC **Zbrojmistrz / Weaponsmith** w dzielnicy rzemieślniczej miasta, obok kuźni.
+- Sprzedaje broń (i drugą rękę) **każdej klasy co 5 poziomów** (1, 5, 10, …, 100), rzadkość Zwykły, statystyki stałe dla `ilvl` = próg, bez bonusów. Dla maga każda broń w 3 żywiołach.
+- Zakładki klas (domyślnie własna klasa), widać progi do poziomu gracza + 5, wyższe ukryte. Zakup wymaga poziomu.
+- Cena: ok. 4 × cena sprzedaży przedmiotu.
 
 ## 9. Mikstury (lekarz)
 
@@ -267,6 +333,7 @@ Przedmioty **z kowala** mają rzadkość Zwykły i stałe statystyki dopasowane 
 - **Kopanie**: węzły rud na mapach (Miedź, Żelazo, Srebro, Mithril, Adamantyt wg strefy). Podejdź, przytrzymaj (2.5 s pasek), dostajesz rudę. Węzeł znika i odnawia się po 90 s (indywidualnie dla serwera). Wymaga Kilofa w plecaku (kupowany).
 - **Zioła**: kliknij krzak (1.5 s), zioło; odnowienie 60 s. Bez narzędzia.
 - **Łowienie**: na łowiskach, Wędka w plecaku. Minigra: pływak, po „braniu” pojawia się pasek z przesuwającym się wskaźnikiem i zieloną strefą; kliknij/naciśnij w strefie 3 razy z rzędu (strefa się zwęża, wskaźnik przyspiesza na lepszych łowiskach). Porażka = ryba ucieka. Ryby = składnik alchemii + sprzedaż; rzadka szansa na skrzynkę z łupem.
+- Gęstość (po testach S17): **20–25 węzłów rud i 25–30 krzaków ziół na mapę terenową**, 6–10 węzłów rud na jaskinię; odnowienie rud 60 s, ziół 45 s.
 - Brak profesji i poziomów zbieractwa.
 
 ## 13. Kamienie teleportu i zwoje
@@ -331,22 +398,26 @@ Wymagania: Rozpłatanie ← Wir Ostrzy 3; Trzęsienie ← Rozpłatanie 3; Miażd
 
 ### 14.4 Mag (Mana)
 
-| # | Odbl. | Nazwa | Typ | Opis | Koszt / CD |
-|---|---|---|---|---|---|
-| 1 | 1 | Ognisty Pocisk / Firebolt | pocisk (ogień) | 170% → 310% ataku mag. | 12 mana / 2.5 s |
-| 2 | 3 | Lodowy Odłamek / Ice Shard | pocisk (lód) | 140% → 250%, spowolnienie 30% 3 s | 15 / 5 s |
-| 3 | 6 | Błysk / Blink | teleport | 15 st. w kierunku ruchu | 20 / 12 s |
-| 4 | 10 | Kula Ognia / Fireball | okrąg 8 st. w celu | 150% → 270% | 35 / 8 s |
-| 5 | 14 | Skupienie / Focus | pasywna | +5% → +25% max many, +10% → +50% regeneracji many | – |
-| 6 | 18 | Łańcuch Błyskawic / Chain Lightning | skoki do 3 → 6 celów | 130% → 230%, −10% na skok | 35 / 9 s |
-| 7 | 23 | Tarcza Many / Mana Shield | buff | 50% obrażeń z many zamiast HP, 8 → 15 s | 30 / 40 s |
-| 8 | 28 | Mistrz Żywiołów / Elementalist | pasywna | +3% → +15% obrażeń żywiołów | – |
-| 9 | 34 | Lodowa Nova / Frost Nova | okrąg 10 st. | 120% → 220%, zamrożenie 1.5 → 2.5 s | 45 / 18 s |
-| 10 | 40 | Meteor | okrąg 10 st., opóźnienie 1 s | 280% → 480% | 60 / 20 s |
-| 11 | 48 | Tajemny Umysł / Arcane Mind | pasywna | +2% → +10% kryt. mag., +5% → +25% obr. kryt. | – |
-| 12 | 56 | Ściana Ognia / Firewall | linia 16 st., 5 s | 50% → 90% co 0.5 s | 55 / 22 s |
-| 13 | 65 | Inwokacja / Evocation | kanał 3 s | przywraca 30% → 50% many | 0 / 90 s |
-| 14 | 75 | Deszcz Meteorów / Meteor Storm | okrąg 16 st. | 6 meteorów po 160% → 260% | 120 / 50 s |
+Zmienione po testach S17 (żywioł broni, §5.8). Kolumna „Żywioł”: umiejętność wymaga broni z tym żywiołem; „adapt.” = przyjmuje żywioł broni (wygląd i dodatkowy efekt: ogień = podpalenie 30% przez 4 s, lód = spowolnienie 25% 2 s, błyskawice = przeskok 40% na 1 cel obok); „–” = bez wymagań.
+
+| # | Odbl. | Nazwa | Żywioł | Typ | Opis | Koszt / CD |
+|---|---|---|---|---|---|---|
+| 1 | 1 | Magiczny Pocisk / Arcane Bolt | adapt. | pocisk | 170% → 310% ataku mag. + efekt żywiołu | 12 mana / 2.5 s |
+| 2 | 3 | Lodowy Odłamek / Ice Shard | Lód | pocisk | 140% → 250%, spowolnienie 30% 3 s | 15 / 5 s |
+| 3 | 6 | Błysk / Blink | – | teleport | 15 st. w kierunku ruchu | 20 / 12 s |
+| 4 | 10 | Kula Ognia / Fireball | Ogień | okrąg 8 st. w celu | 150% → 270% | 35 / 8 s |
+| 5 | 14 | Skupienie / Focus | – | pasywna | +5% → +25% max many, +10% → +50% regeneracji many | – |
+| 6 | 18 | Łańcuch Błyskawic / Chain Lightning | Błyskawice | skoki do 3 → 6 celów | 130% → 230%, −10% na skok | 35 / 9 s |
+| 7 | 23 | Tarcza Many / Mana Shield | – | buff | 50% obrażeń z many zamiast HP, 8 → 15 s | 30 / 40 s |
+| 8 | 28 | Mistrz Żywiołów / Elementalist | – | pasywna | +3% → +15% obrażeń żywiołów | – |
+| 9 | 34 | Lodowa Nova / Frost Nova | Lód | okrąg 10 st. | 120% → 220%, zamrożenie 1.5 → 2.5 s | 45 / 18 s |
+| 10 | 40 | Meteor | Ogień | okrąg 10 st., opóźnienie 1 s | 280% → 480% | 60 / 20 s |
+| 11 | 48 | Tajemny Umysł / Arcane Mind | – | pasywna | +2% → +10% kryt. mag., +5% → +25% obr. kryt. | – |
+| 12 | 56 | Burza Piorunów / Thunderstorm | Błyskawice | okrąg 12 st., 5 s | 50% → 90% co 0.5 s losowym celom w kręgu | 55 / 22 s |
+| 13 | 65 | Inwokacja / Evocation | – | kanał 3 s | przywraca 30% → 50% many | 0 / 90 s |
+| 14 | 75 | Gniew Żywiołów / Elemental Fury | adapt. | okrąg 16 st. | 6 uderzeń po 160% → 260% (ogień: meteory, lód: lodowe kolce, błyskawice: pioruny) | 120 / 50 s |
+
+Zmiany względem wersji S05: Ognisty Pocisk → Magiczny Pocisk (adapt.), Ściana Ognia → Burza Piorunów, Deszcz Meteorów → Gniew Żywiołów (adapt.). Każdy żywioł ma 2 własne umiejętności + 2 adaptacyjne.
 
 ### 14.5 Kapłan (Mana)
 
@@ -374,15 +445,25 @@ Leczenie/buffy kapłana działają tylko na członków grupy i na siebie.
 ### 15.1 Zasady
 
 - Każdy **rodzaj** potwora ma 3 warianty: **zwykły**, **Elita** (poziom +2, HP ×4, obrażenia ×1.5, większy model ×1.25, czerwona nazwa), **Elita II** (poziom +4, HP ×12, obrażenia ×2, model ×1.5, fioletowa aura, 1 specjalna zdolność z telegrafem).
-- Elity i Elity II **tylko w jaskiniach** (czerwone strefy). Elita II: 1–2 na jaskinię, odrodzenie 10–20 min (losowo), ogłoszenie na mapie przy pojawieniu się.
-- Statystyki z poziomu: `HP = 60 + 28·L^1.35`, `atak = 6 + 3.2·L^1.15`, `obrona = 4·L`, szybkość ataku 1/1.6 s. Mnożniki per rodzaj (`hpMul`, `atkMul`, `defMul`, `speed`) w danych.
-- AI: Bezczynność (spacer w promieniu 10 st.) → Aggro (zasięg 18 st. zwykłe, 25 elity; potwory słabsze o 15+ poziomów od gracza nie atakują pierwsze) → Pościg → Atak → Powrót (smycz 45 st. od spawnu, wtedy pełne HP i nietykalność w drodze).
-- Spawnery: punkt + promień + rodzaj + liczba + czas odrodzenia (zwykłe 20–40 s).
+- Elity i Elity II **tylko w jaskiniach** (czerwone strefy), zasady w §3.5: 2 rodzaje Elit i dokładnie 1 Elita II na jaskinię, odrodzenie Elity II 10–20 min (losowo), ogłoszenie na mapie przy pojawieniu się.
+- Statystyki z poziomu (osłabione po testach S17): `HP = 40 + 16·L^1.3`, `atak = 4 + 2.2·L^1.1`, `obrona = 4·L`, szybkość ataku 1/2.0 s. Mnożniki per rodzaj (`hpMul`, `atkMul`, `defMul`, `speed`) w danych. Cel: gracz z bronią ze swojego poziomu zabija zwykłego potwora swojego poziomu w ok. 6–10 s i traci 15–30% HP.
+- Szybkość ruchu zwykłych potworów 14 (gracz 16, sprint 21.6), żeby dało się uciec.
+- AI: Bezczynność (spacer w promieniu 8 st. wokół środka grupy) → Aggro (zasięg 12 st. zwykłe, 20 elity; potwory słabsze o 15+ poziomów od gracza nie atakują pierwsze) → Pościg → Atak → Powrót (**smycz 70 st.** od środka grupy, wtedy pełne HP i nietykalność w drodze).
+- **Grupy potworów** (zmiana po testach S17, jak w Margonem):
+  - Potwory stoją w **grupach po 1–4** (losowo przy tworzeniu mapy, deterministycznie z seedem), rozrzuconych gęsto po całej mapie: **45–60 grup na mapę terenową**, odstęp między grupami ok. 45–70 st., ścieżki, woda, portale i okolice miasta wolne.
+  - Każda podstrefa ma 2–3 rodzaje potworów; grupy mogą być mieszane tylko w obrębie podstrefy.
+  - **Grupa walczy razem**: zaatakowanie jednego potwora (albo wejście w zasięg aggro jednego) ściąga całą grupę.
+  - **Kolor grupy**: pod każdym potworem płaski krąg na ziemi w kolorze liczebności grupy: 1 = biały/szary, 2 = zielony, 3 = pomarańczowy, 4 = czerwony; ten sam kolor ma mała plakietka „×N” przy poziomie na pasku nad głową i kropka na minimapie.
+  - Odrodzenie: grupa odradza się w całości 30–45 s po zabiciu ostatniego członka.
+  - Grupy aktywują się, gdy gracz jest w promieniu 250 st. (uśpienie dalej, jak dotąd).
 - Obrażenia od wielu graczy: łup dostaje gracz (lub jego grupa), który zadał najwięcej obrażeń.
 
 ### 15.2 Zestawienie (rodzaj → Elita → Elita II)
 
-**Szepczące Łąki (1–20) / Jaskinia Mchów (12–20)**
+Po testach S17: **więcej rodzajów na każdej mapie (min. 8–10 na mapę terenową, 2–3 na podstrefę) i bez dziur w poziomach** (wcześniej puste były m.in. 19–20, 41–45, 67–70, 96–100). Nowe rodzaje dodane do list poniżej (oznaczone *nowy*); nazwy Elit i Elit II dla nowych rodzajów w tym samym stylu.
+
+**Szepczące Łąki (1–20) / jaskinie 7–20**
+- *nowy* Leśny Ryś (3–7), *nowy* Bagienna Ropucha (4–8), *nowy* Kruk Padlinożerca (6–11, latający), *nowy* Kobold Górnik (10–15), *nowy* Brunatny Niedźwiedź (16–20)
 - Dziki Królik Polny (1–3, pasywny) | –
 - Szary Wilk (2–6) → Wilk Wataha [E] → **Alfa Watahy [E II]**
 - Dzik Leśny (5–10) → Rozjuszony Dzik [E] → **Kłoborożec [E II]**
@@ -392,17 +473,25 @@ Leczenie/buffy kapłana działają tylko na członków grupy i na siebie.
 - Goblin Szaman (16–20, jaskinia) → Arcyszaman [E] → **Wieszcz Kości [E II]**
 - **Boss 20: Grimrok, Wódz Goblinów** (Komnata Grimroka)
 
-**Mroczny Bór (20–45) / Krypta Zapomnianych (35–45)**
+**Mroczny Bór (20–45) / jaskinie 24–45**
+- *nowy* Czarny Niedźwiedź (21–27), *nowy* Ghul (27–33), *nowy* Bagienny Wąż (30–36), *nowy* Wiedźma Mokradeł (36–42), *nowy* Nietoperz Krwiopijca (40–45, latający)
 - Wilkołak, Leśna Zjawa, Ent Zgnilizny, Kultysta Mroku, Bagienny Troll (las); Szkielet Strażnik, Upiór, Nekromanta (krypta) — każdy z E i E II.
 - **Boss 45: Morvane, Królowa Krypt**
 
-**Spalone Pustkowia (45–70) / Kuźnia Głębin (60–70)**
+**Spalone Pustkowia (45–70) / jaskinie 49–70**
+- *nowy* Hiena Pustkowi (46–52), *nowy* Sęp Popiołu (50–56, latający), *nowy* Ognisty Chochlik (55–61), *nowy* Bazyliszek (61–67), *nowy* Mumia Pustyni (66–70)
 - Salamandra, Ork Popiołu, Ognisty Golem, Skorpion Pustyni, Wywerna; Krasnolud Renegat, Golem Magmowy, Kowal Płomieni (jaskinia).
 - **Boss 70: Azgor, Pan Płomieni**
 
-**Lodowe Szczyty (70–100) / Serce Lodowca (90–100)**
+**Lodowe Szczyty (70–100) / jaskinie 74–100**
+- *nowy* Śnieżny Lampart (71–78), *nowy* Harpia Szczytów (76–83, latająca), *nowy* Mamut Lodowy (82–89), *nowy* Zamarznięty Rycerz (88–95), *nowy* Wyrm Szronu (95–100)
 - Lodowy Wilk, Yeti, Mroźny Olbrzym, Lodowy Żywiołak, Smoczy Pomiot; Kryształowy Strażnik, Młody Smok Lodu (jaskinia).
 - **Boss 100: Vaelgrath, Smok Mrozu**
+
+### 15.3 Timery Elit II (dodatek po testach S17, jak w Margonem)
+
+- Po zabiciu Elity II gracze, którzy zadali jej obrażenia, dostają **timer**: nazwa, jaskinia, okno odrodzenia „za 10–20 min” (od minimum do maksimum). Lista timerów w małym panelu (rozwijanym z HUD) i na mapie jaskini.
+- Timer jest per serwer (odrodzenie dzieje się na tym serwerze), znika po pojawieniu się Elity II (wtedy ogłoszenie na mapie).
 
 ## 16. Bossy i lochy
 
@@ -453,6 +542,7 @@ Leczenie/buffy kapłana działają tylko na członków grupy i na siebie.
 - **Główna linia**: krótka, prowadzi przez wszystkie mapy (ok. 30 questów: idź do NPC, zabij X, zbierz Y, pokonaj bossa). Nagrody: EXP, złoto, przedmioty, kamienie teleportu, plecak.
 - **Zlecenia dzienne** z tablicy w mieście: 3 losowe na dzień dopasowane do poziomu (zabij 40 X, zbierz 10 ziół, złów 5 ryb, pokonaj 3 elity). Nagrody: EXP, złoto, błogosławieństwa, materiały.
 - Śledzenie w HUD (prawa strona), znacznik nad NPC (!, ?), strzałka kierunku do celu.
+- **Każdy quest to osobny blok** z tytułem, linią „Od: {NPC}” (a gdy gotowy: „Oddaj: {NPC}”) i własnymi celami; zlecenia dzienne mają własny nagłówek „Zlecenia: Tablica Zleceń” i tytuł każdego zlecenia. Nic nie zlewa się w jedną listę. To samo w dzienniku questów.
 - Zaprojektowane pod przyszłą rozbudowę (dane questów w `Data/Quests`, typy celów rozszerzalne).
 
 ## 21. Monetyzacja (bez pay-to-win)
@@ -474,13 +564,18 @@ Leczenie/buffy kapłana działają tylko na członków grupy i na siebie.
 - **Okna**: Postać (staty, rozdawanie punktów, ekwipunek na sylwetce), Plecak (siatka, sortowanie, złoto), Umiejętności (drzewko jako graf z liniami wymagań), Mapa świata, Kowal (zakładki: Wytwarzanie / Ulepszanie / Rozbijanie), Alchemik, Lekarz, Sklep, Depozyt, Handel, Aukcja, Poczta, Gildia, Grupa, Questy, Sklep premium, Garderoba, Opcje (język, głośność, jakość, czułość kamery, pokazywanie liczb obrażeń).
 - Tooltip przedmiotu: nazwa w kolorze rzadkości, typ, slot, wymagania (czerwone gdy niespełnione), statystyki bazowe (+ulepszenie), bonusy z jakością rzutu, porównanie z założonym (zielone ↑ / czerwone ↓), związany/niezwiązany, cena.
 - Liczby obrażeń nad celami (biały zwykłe, żółty kryt, zielony leczenie, czerwony otrzymane).
+- **Jedno główne okno naraz**: otwarcie okna zamyka poprzednie. Wyjątek: okna usług (sklep, depozyt, kowal, alchemik, handel, aukcja, poczta, zbrojmistrz) otwierają się razem z plecakiem.
+- **Mapa świata** (przebudowa po testach S17): duże okno (do 85% ekranu) ze **szczegółowym rysunkiem mapy** wygenerowanym z danych layoutu (teren i biomy kolorami, drogi, woda, lasy jako skupiska drzew, budynki, mosty, wzgórza), **obszary potworów** z nazwą i poziomami (§3.6, lista potworów po najechaniu), portale podpisane nazwą celu i poziomami, wejścia do jaskiń i lochów osobnymi ikonami, NPC w mieście z podpisami, węzły zbierackie, łowiska, członkowie grupy, cel questa; legenda z przełącznikami warstw, przybliżanie kółkiem/szczypaniem, przesuwanie, „wyśrodkuj na mnie”. Znacznik gracza porusza się na żywo i obraca w kierunku, w którym idzie postać.
+- **Wydajność mapy**: statyczna warstwa rysowana raz na mapę (cache po `mapId`, przebudowa tylko przy zmianie danych), co klatkę aktualizowane są tylko znacznik i ruchome ikony; ikony poza widokiem i przy małym przybliżeniu łączone/ukrywane; brak tworzenia instancji w pętli klatek.
+- **Minimapa**: ten sam rysunek co mapa (wycinek), obszary potworów, strzałka gracza zgodna z kierunkiem postaci, kropki grup w kolorze liczebności.
 - Mobile: joystick Roblox, przycisk ataku duży w prawym dolnym, skille wokół, mikstury nad nimi, menu jako ikony na górze.
 
 ## 24. Sterowanie i kamera
 
 - Klasyczna kamera Roblox (3. osoba, zoom 8–30).
-- **LPM / tap na wroga = cel i atak** (obrys podświetlony; wróg pod kursorem ma delikatny obrys). Klik obok cienkiego modelu też się liczy. Przytrzymanie LPM = po śmierci celu następny wróg przy kursorze. Opcja „automatyczny następny cel”: po zabiciu cel przechodzi na potwora, który nas atakuje. Tab (opcjonalnie) = następny najbliższy cel. Esc = brak celu.
-- Atak podstawowy: automatyczny, gdy cel wybrany i w zasięgu (wręcz 7 st., dystans 35 st.); jeśli poza zasięgiem, postać idzie do celu i go śledzi (MoveTo), stojąc przy celu obraca się do niego. Ruch WASD przerywa podchodzenie (cel zostaje).
-- Nad potworami zawsze imię, poziom i pasek HP; nad graczami tytuł, imię, poziom i klasa oraz pasek HP po obrażeniach.
+- **LPM / tap na wroga = cel i atak** już przy wciśnięciu (nie przy puszczeniu); wróg ma pierwszeństwo przed graczem pod kursorem. Każde kliknięcie wroga wznawia auto-atak, także gdy był już celem. Gdy atak jest niemożliwy (strefa bezpieczna, za daleko, ogłuszenie), krótki komunikat. Przytrzymanie LPM = po śmierci celu następny wróg przy kursorze. Opcja „automatyczny następny cel”: po zabiciu cel przechodzi na potwora, który nas atakuje (nie w ciągu 1.5 s po ręcznym ruchu). Tab = następny najbliższy cel. **Q (zmienialne) lub klik w pustą ziemię = brak celu.**
+- Atak podstawowy: automatyczny, gdy cel wybrany i w zasięgu (wręcz 7 st., dystans 35 st.); jeśli poza zasięgiem, postać idzie do celu i go śledzi (MoveTo), stojąc przy celu obraca się do niego. **Ruch WASD/joystickiem przerywa podchodzenie i auto-atak** (cel zostaje zaznaczony, ale nie jest atakowany, dopóki gracz znów go nie kliknie albo nie użyje umiejętności), więc da się uciec.
+- **Sprint: przytrzymanie Ctrl** (zmienialne; na telefonie przycisk przełączający) = szybkość ruchu ×1.35. Bez kosztu; wyłącza się przy śmierci i przy rzucaniu kanałowanych umiejętności.
+- Nad potworami zawsze imię, poziom (kolor wg różnicy poziomów: szary/zielony/biały/żółty/czerwony) i pasek HP, **zawsze na wierzchu** (nie chowają się za modelem ani drzewami), widoczne do 130 st.; nad graczami kropka PvP, tytuł, imię, poziom i klasa oraz pasek HP po obrażeniach.
 - Skille: na cel, a umiejętności obszarowe bez celu w kierunku patrzenia/kursora.
 - E = interakcja (NPC, łup, węzły), F = podnieś łup.
