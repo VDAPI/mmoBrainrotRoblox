@@ -109,6 +109,10 @@ local function registerWindows()
 						Use = ItemController.Use,
 						Split = ItemController.Split,
 						Destroy = ItemController.Destroy,
+						Lock = ItemController.ToggleLock,
+						LootLog = function()
+							WindowManager.Open("lootlog")
+						end,
 					})
 				end,
 			})

@@ -76,6 +76,8 @@ return function(ctx: Build.Context)
 	Prefabs.portal(ctx, "frostpeak_ashen", "ashen", -770, 0, 90, { x = 690, z = -690 })
 	Prefabs.portal(ctx, "frostpeak_city", "city", -770, 160, 90, { x = 0, z = 236 })
 	Prefabs.caveEntrances(ctx, AREAS, "#8FA3B3")
+	Prefabs.areaFeatures(ctx, AREAS, "#8FA3B3") -- signposts, landmarks, lanterns (S20)
+	Prefabs.extraDecor(ctx, AREAS, { "pine", "birch", "dead", "dark" }, { { -660, 90 } })
 	for x = -720, 720, 140 do
 		Prefabs.lantern(ctx, x, 18, "#9FE0FF")
 	end

@@ -5,6 +5,7 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local AreaBanner = require(script.AreaBanner)
 local AttackButton = require(script.AttackButton)
 local Bar = require(script.Parent.Parent.Components.Bar)
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
@@ -369,6 +370,7 @@ local function Hud(scope: Scope, props: Props): Instance
 			expBar(scope),
 			TargetFrame(scope, { Target = props.Target, OnPlayerMenu = props.OnPlayerMenu }),
 			ZoneBanner(scope),
+			AreaBanner(scope),
 			AttackButton(scope, { OnAttack = props.OnAttack }),
 			SprintButton(scope, { Sprinting = props.Sprinting, OnToggle = props.OnSprint }),
 			PvpToggle(scope),

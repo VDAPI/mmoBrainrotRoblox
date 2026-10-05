@@ -247,6 +247,22 @@ local function sortInventory(player: Player): (boolean, string?)
 	return true, nil
 end
 
+-- Item lock (S20, DESIGN §5.9): protects from selling, dismantling, destroying and trading.
+local function toggleLock(player: Player, index: number): (boolean, string?)
+	local char = character(player)
+	if not char or not validIndex(char, index) then
+		return false, "error.badRequest"
+	end
+	local item = char.inventory[tostring(index)]
+	if not item then
+		return false, "error.badRequest"
+	end
+	local updated = table.clone(item)
+	updated.locked = if item.locked then nil else true
+	InventoryService.SetSlot(player, index, updated)
+	return true, nil
+end
+
 local function destroyItem(player: Player, index: number): (boolean, string?)
 	if tradeLocked[player] then
 		return false, "trade.error.locked"
@@ -259,6 +275,9 @@ local function destroyItem(player: Player, index: number): (boolean, string?)
 	local item = char.inventory[key]
 	if not item then
 		return false, "error.badRequest"
+	end
+	if item.locked then
+		return false, "item.error.locked"
 	end
 	char.inventory[key] = nil
 	sync(player, { index })
@@ -296,6 +315,7 @@ function InventoryService.Start()
 	Net.Handle("SplitStack", splitStack)
 	Net.Handle("SortInventory", sortInventory)
 	Net.Handle("DestroyItem", destroyItem)
+	Net.Handle("ToggleLock", toggleLock)
 	Net.Handle("UseItem", useItem)
 end
 

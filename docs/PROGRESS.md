@@ -26,12 +26,24 @@
 | S17b | Animacje proceduralne potworów, modele broni, pozy rzucania (dodatkowa, poza planem) | ● |
 | S18 | Poprawki po testach (1/2): walka, sterowanie, przedmioty, broń, UI | ● |
 | S19 | Poprawki po testach (2/2): grupy potworów, jaskinie, nowe potwory | ● |
-| S20 | Szczegółowa mapa z obszarami potworów, bogatszy świat, wygoda łupu | ○ |
+| S20 | Szczegółowa mapa z obszarami potworów, bogatszy świat, wygoda łupu | ● |
 
 Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana przez właściciela
 
 ## Decyzje
 (Claude dopisuje tu decyzje podjęte w trakcie sesji, z numerem sesji.)
+- **S20** Mapa (M) rysuje statyczną warstwę raz na mapę i trzyma ją w pamięci (moduł `WorldMapWindow`), zoom to
+  `UIScale` (4 poziomy), przesuwanie zmienia pozycję jednej ramki; na klatkę ruszają się tylko znaczniki gracza, grupy i
+  questa. Obszary rysowane z `Data/Areas` (nie ze szkicu), lasy jako skupiska drzew (komórki 80 st. z min. 3 drzewami),
+  duże malowania terenu jako prostokąty `ground:<materiał>`. Czas budowy i liczba obiektów idą do Output (`[WorldMap]`).
+- **S20** Dekoracje klienta (`DecorController`): chunki 128 st., promień 250/400/600 wg opcji „Szczegółowość świata”,
+  2 chunki na 0.25 s, części z puli. Serwer ich nie tworzy. Streaming: `StreamingTargetRadius` 512, `StreamingMinRadius`
+  128, `StreamingIntegrityMode` = MinimumRadiusPause (w `default.project.json`, liczby też w `Config`).
+- **S20** Filtr łupu działa na serwerze przy tworzeniu worka (ukryte przedmioty w ogóle nie powstają) i przy Auto-łupie
+  (bierze tylko to, co filtr pozwala; reszta zostaje w worku). Dziennik łupu: tylko ekwipunek, 50 wpisów w danych postaci.
+- **S20** Timery Elit II: okno odrodzenia (min–max ze spawnera) w `character.e2timers` z `JobId` serwera; znikają, gdy ta
+  Elita II pojawi się na tym serwerze. Na innym serwerze pokazują „inny serwer”.
+- **S20** Kłódka (`item.locked`) blokuje sprzedaż (także szybką), rozbicie, zniszczenie, handel i wystawienie na aukcji.
 - **S19** Obszary potworów są danymi współdzielonymi (`Data/Areas/<mapa>.luau`, `Data/Areas/Caves.luau`): prostokąty z
   poziomami, rodzajami i liczbą grup, drogi (layouty rysują je z tych danych), jeziora, miejsca do omijania i wejścia do
   jaskiń. `Logic/AreaSpawns` deterministycznie (seed z id obszaru) robi z nich spawnery grup; `Data/Spawns` nie ma już
@@ -457,6 +469,11 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
 - **S18** Łowca na poziomach 60+ zabija zwykłego potwora w 3–5 s (DEX skaluje obrażenia, kryty i szybkość), szybciej
   niż cel 6–10 s; do strojenia klas, nie potworów.
 - **S18** Sprint nie zmienia WalkSpeed lokalnie przed odpowiedzią serwera (opóźnienie o ping).
+
+- **S20** Mapa świata: bez mostów i strumieni (świat ich jeszcze nie ma); timer Elity II widać na karcie jaskini (tekst),
+  bez osobnej ikony na rysunku.
+- **S20** Miasto: brak szyldów usług nad NPC i oświetlenia nocnego (gra nie ma jeszcze cyklu dnia).
+- **S20** Ustawienia streamingu i liczba części na mapę niesprawdzone w Studio (log `[WorldBuilder] built …` i `/perf`).
 
 ## Zgłoszone błędy
 (Właściciel wpisuje tu błędy po testach albo przekazuje je przez sesję poprawek.)
@@ -1460,3 +1477,63 @@ kilku sekund); dystans do NPC liczony od pozycji postaci kontrolowanej przez kli
 10. W jaskini: `/e2 spawn` → Elita II odradza się od razu, komunikat na mapie.
 11. `/nodes count` na mapie regionu: ~22 żyły i ~26 krzaków; w jaskini 7–10 żył. Drugie łowisko na każdej mapie.
 12. Mapa świata: przy każdym regionie trzy węzły jaskiń; ikony ⛰ na szczegółach mapy przy wylotach.
+
+### S20: Szczegółowa mapa, obszary potworów, bogatszy świat, wygoda łupu
+
+**Zrobione**
+- Mapa świata v2 (M): duże okno (pełny ekran na telefonie), po lewej lista map (region → mapa → jaskinie), po prawej
+  szczegółowy rysunek: teren i plamy podłoża, lasy, woda, drogi, budynki; obszary potworów w kolorze różnicy poziomów z
+  podpisem „Nazwa · 9–14”, po najechaniu/tapnięciu karta z rodzajami potworów, poziomami i liczbą grup; w jaskini karta z
+  rodzajami, Elitami, Elitą II i timerem. Portale z nazwą celu i poziomami, wejścia do jaskiń (czerwone ⛰ z nazwą),
+  lochy z nazwą bossa, NPC z nazwami, węzły (od 2. przybliżenia), członkowie grupy, cel questa, gracz (ruchomy,
+  obracany). Przełączniki warstw, zoom kółkiem/szczypaniem/przyciskami, przesuwanie, „Wyśrodkuj na mnie”.
+- Minimapa: obszary potworów w kolorze poziomu, nazwa bieżącego obszaru pod nazwą mapy.
+- Obszary w świecie: baner „Obszar · poziomy” w kolorze różnicy poziomów przy wejściu (histereza 10 st., najwyżej raz na
+  20 s), drogowskazy z nazwą i poziomami tam, gdzie drogi wchodzą w obszar, punkt charakterystyczny w każdym obszarze
+  bez własnego (obóz, wieża, kamienny krąg, wrak wozu, gniazdo, sztolnia, cmentarzysko, ruiny).
+- Timery Elit II: po zabiciu Elity II każdy, kto ją ranił, ma timer w panelu questów („odrodzi się za 10:00–20:00”, potem
+  „może już być”, „może się pojawić”, „inny serwer”); znika, gdy Elita II wróci.
+- Bogatszy świat: dekoracje klienta (trawa, kwiaty, kamyki, grzyby, paprocie, trzciny przy wodzie, liście; w jaskiniach
+  stalaktyty, kryształki, pajęczyny, kości) w chunkach wokół gracza, opcja „Szczegółowość świata” (niska/średnia/wysoka).
+  Serwer: latarnie przy drogach, wozy z beczkami i skrzyniami, studnie, 4 gatunki drzew na biom; dekoracje
+  `CanTouch=false`; streaming ustawiony.
+- Wygoda łupu: karta „Lepszy przedmiot!” z przyciskiem „Załóż” (8 s, opcja), filtr łupu (ukrywanie ekwipunku poniżej
+  rzadkości, Auto-łup od rzadkości), dziennik łupu (przycisk „Dziennik” w plecaku), szybka sprzedaż u kupców
+  („Sprzedaj wszystkie Zwykłe” / „…i Niezwykłe”), kłódka na przedmiotach (przycisk „Zablokuj” w plecaku, 🔒 na slocie).
+- Admin: `/area`, `/e2timer`, `/decor low|mid|high`, `/mapcache clear`; `/perf` pokazuje też części na mapę oraz
+  chunki dekoracji i czas klatki klienta.
+- Testy: `lootcomfort.spec` (ItemScore dla każdej klasy, filtr łupu, kłódka), obszary w `world.spec` (nazwy PL/EN,
+  poziomy w granicach mapy, rodzaje istnieją, prostokąty w mapie i bez nakładania).
+
+**Pliki**: `Logic/ItemScore`, `Logic/LootFilter`, `Data/Areas/duskwood` (poprawka nakładania), `Config`,
+`default.project.json`; serwer: `LootService`, `ShopService`, `InventoryService`, `MonsterService` (timery),
+`SettingsService`, `AdminService`, `WorldService`, `World/WorldBuilder`, `World/Build`, `World/Prefabs` (rekwizyty,
+punkty charakterystyczne, drogowskazy, latarnie), layouty 4 regionów; klient: `WorldMapWindow` (nowy), `MapSketch`,
+`Hud/Minimap`, `Hud/AreaBanner`, `Hud/QuestTracker`, `AreaController`, `UI/AreaState`, `DecorController`,
+`LootComfortController`, `ItemController`, `InventoryWindow`, `ShopWindow`, `ItemSlot`, `GameMenu`, `WorldController`.
+
+#### Instrukcja testu S20
+
+1. M: duże okno; po lewej lista map z jaskiniami pod regionami. Wybierz Łąki: rysunek terenu, lasy, jezioro, drogi,
+   kolorowe prostokąty obszarów z podpisami. Najedź na obszar: karta z potworami i liczbą grup.
+2. Kółko myszy / +/−: przybliżenie (od 2. poziomu widać węzły i nazwy NPC), przeciąganie przesuwa mapę, „Wyśrodkuj na
+   mnie” wraca do znacznika. Przełączniki warstw ukrywają obszary/portale/NPC/węzły/quest.
+3. Wybierz jaskinię z listy: karta z rodzajami, Elitami i Elitą II. W Output w Studio linia `[WorldMap] … ms, N objects`
+   (N poniżej ~1500).
+4. Chodź po Łąkach: przy wejściu w nowy obszar baner „Wilcze Wzgórza · 3–7” w kolorze poziomu; pod minimapą nazwa
+   obszaru; na minimapie kolorowe obszary. Chodzenie po granicy nie powtarza banera.
+5. Przy drogach: drogowskazy z nazwą obszaru i poziomami, latarnie, wozy z beczkami; w obszarach obozy, kamienne kręgi,
+   gniazda itd.
+6. Esc → „Szczegółowość świata”: niska/średnia/wysoka zmienia promień trawy, kwiatów i kamyków wokół postaci; w jaskini
+   stalaktyty i kryształki. `/perf` → liczba chunków i czas klatki.
+7. Zabij Elitę II (`/tp cave meadows_hideout`, `/e2 spawn`): w panelu questów „Timery Elit II” z odliczaniem;
+   `/e2timer` wypisuje to samo. `/e2 spawn` znowu: timer znika.
+8. Podnieś przedmiot lepszy od założonego (`/lvl 10`, zabijaj potwory albo `/give sword1h_10`): karta „Lepszy
+   przedmiot!” → „Załóż” zakłada go. Esc → wyłącz kartę: nie pokazuje się.
+9. Esc → „Ukrywaj łup poniżej: Niezwykły”: zwykłe przedmioty nie wypadają w workach (materiały tak).
+   Z Auto-łupem: „Auto-łup od rzadkości: Rzadki” podnosi tylko rzadkie i lepsze (oraz materiały).
+10. Plecak → „Dziennik”: lista ostatnich przedmiotów z czasem, potworem i mapą.
+11. Zaznacz przedmiot w plecaku → „Zablokuj” → 🔒 na slocie; sprzedaż, rozbicie u kowala, zniszczenie i handel
+    odmawiają („Przedmiot jest zablokowany”).
+12. Kupiec → „Sprzedaj” → „Sprzedaj wszystkie Zwykłe”: potwierdzenie, sprzedane wszystkie zwykłe poza zablokowanymi i
+    związanymi, złoto rośnie.

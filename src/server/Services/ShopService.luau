@@ -148,7 +148,7 @@ local function sell(player: Player, npcId: string, indices: { any }): (boolean, 
 		if index and index == math.floor(index) and not seen[index] then
 			seen[index] = true
 			local item = InventoryService.Get(player, index)
-			if item then
+			if item and not item.locked then
 				local price = ItemRoll.sellPrice(item)
 				InventoryService.SetSlot(player, index, nil)
 				total += price
@@ -167,6 +167,34 @@ local function sell(player: Player, npcId: string, indices: { any }): (boolean, 
 	publishBuyback(player)
 	log:info("%s sold %d items for %d gold", player.Name, sold, total)
 	return true, nil, total
+end
+
+-- Quick sell (S20, DESIGN §5.9): every equipment item in the backpack up to `maxRarity` (Common or
+-- Uncommon), except locked, unique and bound items. Equipped items are never in the backpack.
+local function sellAll(player: Player, npcId: string, maxRarity: number): (boolean, string?, number?)
+	local char = character(player)
+	if not char then
+		return false, "error.badRequest"
+	end
+	local limit = math.clamp(math.floor(maxRarity), Rarities.COMMON, Rarities.UNCOMMON)
+	local indices = {}
+	for key, item in char.inventory do
+		local def = Items.get(item.id)
+		if
+			def
+			and def.category == "equipment"
+			and item.rarity <= limit
+			and not item.locked
+			and not item.bound
+			and item.rarity ~= Rarities.UNIQUE
+		then
+			table.insert(indices, tonumber(key))
+		end
+	end
+	if #indices == 0 then
+		return false, "shop.error.nothing"
+	end
+	return sell(player, npcId, indices)
 end
 
 local function buyBack(player: Player, npcId: string, index: number): (boolean, string?)
@@ -256,6 +284,9 @@ end
 
 function ShopService.Start()
 	Net.Handle("Buy", buy)
+	Net.Handle("SellAll", function(player: Player, npcId: string, maxRarity: number)
+		return sellAll(player, npcId, maxRarity)
+	end)
 	Net.Handle("Sell", sell)
 	Net.Handle("Buyback", buyBack)
 	Net.Handle("HealMe", healMe)

@@ -34,6 +34,16 @@ local COLORS: { [string]: { color: string, transparency: number } } = {
 	ruins = { color = "#7A7468", transparency = 0.2 },
 	floor = { color = "#5A5650", transparency = 0 },
 	lava = { color = "#E8541A", transparency = 0 },
+	forest = { color = "#22301C", transparency = 0.35 },
+	-- Large ground patches (S20): "ground:<Material>"
+	["ground:Sand"] = { color = "#C9A870", transparency = 0.2 },
+	["ground:Mud"] = { color = "#4A4232", transparency = 0.25 },
+	["ground:Basalt"] = { color = "#3A3436", transparency = 0.3 },
+	["ground:LeafyGrass"] = { color = "#3A5230", transparency = 0.35 },
+	["ground:Ground"] = { color = "#7A6A4E", transparency = 0.35 },
+	["ground:Snow"] = { color = "#EEF3F7", transparency = 0.3 },
+	["ground:Glacier"] = { color = "#A8D8F0", transparency = 0.2 },
+	["ground:Rock"] = { color = "#5A5650", transparency = 0.3 },
 }
 
 local BACKGROUND: { [string]: string } = {
@@ -109,10 +119,23 @@ function MapSketch.draw(parent: Instance, sketch: Sketch, scale: number)
 		return (Vector2.new(x, z) + half) * scale
 	end
 	-- Order: hills and floors first, then water, paths, buildings and walls on top.
-	local order = { hill = 1, floor = 1, water = 2, plaza = 3, path = 3, arena = 4, ruins = 4, building = 5, wall = 6 }
+	local order = {
+		hill = 1,
+		floor = 1,
+		forest = 2,
+		water = 3,
+		plaza = 4,
+		path = 4,
+		arena = 5,
+		ruins = 5,
+		building = 6,
+		wall = 7,
+	}
 	local shapes = table.clone(sketch.shapes)
 	table.sort(shapes, function(a, b)
-		return (order[a.c] or 3) < (order[b.c] or 3)
+		local oa = if string.sub(a.c, 1, 7) == "ground:" then 0 else order[a.c] or 4
+		local ob = if string.sub(b.c, 1, 7) == "ground:" then 0 else order[b.c] or 4
+		return oa < ob
 	end)
 	for _, shape in shapes do
 		if shape.t == "rect" and shape.x and shape.z and shape.w and shape.h then
@@ -144,6 +167,11 @@ function MapSketch.draw(parent: Instance, sketch: Sketch, scale: number)
 			end
 		end
 	end
+end
+
+-- Drops the cached sketches (admin /mapcache clear).
+function MapSketch.clearCache()
+	table.clear(cache)
 end
 
 -- Map-relative position -> pixel inside a drawn sketch.

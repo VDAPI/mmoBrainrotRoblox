@@ -100,6 +100,9 @@ function Auction.validateListing(
 	if not item or not def then
 		return false, "auction.error.noItem"
 	end
+	if item.locked then
+		return false, "item.error.locked"
+	end
 	if item.bound then
 		return false, "auction.error.bound"
 	end

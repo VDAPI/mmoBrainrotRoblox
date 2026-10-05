@@ -1405,6 +1405,89 @@ COMMANDS.perf = {
 			heartbeat = string.format("%.1f", heartbeat),
 			fps = math.floor(workspace:GetRealPhysicsFPS()),
 		})
+		-- Parts per map (S20) and the client's decoration chunks / frame time.
+		local counts = {}
+		for mapId, n in WorldService.PartCounts() do
+			table.insert(counts, `{mapId} {n}`)
+		end
+		table.sort(counts)
+		reply(player, "admin.perf.parts", { list = table.concat(counts, ", ") })
+		Net.Fire(player, "AdminClient", "perf")
+	end,
+}
+
+-- S20 -------------------------------------------------------------------------------------------------
+
+COMMANDS.area = {
+	usageKey = "admin.usage.area",
+	run = function(player)
+		local character = PlayerStateService.GetCharacter(player)
+		local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart") :: BasePart?
+		local map = character and Maps.get(character.location.map)
+		if not root or not map then
+			reply(player, "admin.needCharacter")
+			return
+		end
+		local x, z = root.Position.X - map.offset.x, root.Position.Z - map.offset.z
+		local area = Areas.areaAt(map.id, x, z)
+		if not area then
+			reply(player, "admin.area.none", { map = map.id, x = math.floor(x), z = math.floor(z) })
+			return
+		end
+		reply(player, "admin.area.info", {
+			id = area.id,
+			min = area.lv[1],
+			max = area.lv[2],
+			kinds = table.concat(area.kinds, ", "),
+			groups = area.groups,
+		})
+	end,
+}
+
+COMMANDS.e2timer = {
+	usageKey = "admin.usage.e2timer",
+	run = function(player)
+		local character = PlayerStateService.GetCharacter(player)
+		local timers = character and character.e2timers or {}
+		if #timers == 0 then
+			reply(player, "admin.e2timer.none")
+			return
+		end
+		local now = workspace:GetServerTimeNow()
+		for _, timer in timers do
+			reply(player, "admin.e2timer.entry", {
+				kind = timer.kind,
+				map = timer.map,
+				from = math.max(0, math.floor(timer.from - now)),
+				to = math.max(0, math.floor(timer.to - now)),
+				job = if timer.job == game.JobId then "this" else "other",
+			})
+		end
+	end,
+}
+
+COMMANDS.decor = {
+	usageKey = "admin.usage.decor",
+	run = function(player, args)
+		local level = args[1]
+		if level ~= "low" and level ~= "mid" and level ~= "high" then
+			reply(player, "admin.usage.decor")
+			return
+		end
+		PlayerStateService.Set(player, { "account", "settings", "decor" }, level)
+		reply(player, "admin.decor.ok", { level = level })
+	end,
+}
+
+COMMANDS.mapcache = {
+	usageKey = "admin.usage.mapcache",
+	run = function(player, args)
+		if args[1] ~= "clear" then
+			reply(player, "admin.usage.mapcache")
+			return
+		end
+		Net.Fire(player, "AdminClient", "mapcache")
+		reply(player, "admin.mapcache.ok")
 	end,
 }
 

@@ -99,4 +99,6 @@ return function(ctx: Build.Context)
 	Build.spawnPoint(ctx, 480, -200, 620, -440)
 	Build.spawnPoint(ctx, 690, 40, 745, 0)
 	Prefabs.caveEntrances(ctx, AREAS, "#3A2A24")
+	Prefabs.areaFeatures(ctx, AREAS, "#5C4A40") -- signposts, landmarks, lanterns (S20)
+	Prefabs.extraDecor(ctx, AREAS, { "dead", "dark", "willow", "pine" }, { { -660, 90 } })
 end

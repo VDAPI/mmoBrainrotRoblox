@@ -135,6 +135,16 @@ function ItemController.Use(index: number)
 	invoke("UseItem", index)
 end
 
+-- Padlock on an item (S20).
+function ItemController.ToggleLock(index: number)
+	task.spawn(function()
+		local ok, err = Net.Invoke("ToggleLock", index)
+		if not ok then
+			Toast.push(Text.now(err or "error.internal"), "error")
+		end
+	end)
+end
+
 function ItemController.Destroy(index: number)
 	local item = State.Get({ "character", "inventory", tostring(index) })
 	if not item then

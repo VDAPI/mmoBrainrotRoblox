@@ -76,6 +76,9 @@ end
 
 -- Whether an item may be put on the table.
 function Trade.canOffer(item: ItemInstance?): (boolean, string?)
+	if item and (item :: any).locked then
+		return false, "item.error.locked"
+	end
 	if not item then
 		return false, "error.badRequest"
 	end

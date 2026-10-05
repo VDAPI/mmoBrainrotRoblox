@@ -128,6 +128,8 @@ return function(ctx: Build.Context)
 	Prefabs.portal(ctx, "meadows_city", "city", -770, 0, 90, { x = 236, z = 0 })
 	Prefabs.portal(ctx, "meadows_duskwood", "duskwood", 730, -720, 45)
 	Prefabs.caveEntrances(ctx, AREAS)
+	Prefabs.areaFeatures(ctx, AREAS) -- signposts, landmarks, lanterns (S20)
+	Prefabs.extraDecor(ctx, AREAS, { "oak", "birch", "pine", "willow" }, { { -620, -140 }, { 140, 330 } })
 
 	-- Zones (smallest wins): whole map, then the sub-zones
 	Build.zone(ctx, "yellow", "zone.meadows.fields", -hx, -hz, hx, hz)

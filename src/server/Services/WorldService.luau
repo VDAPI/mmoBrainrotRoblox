@@ -85,6 +85,11 @@ function WorldService.GetNodePlacements(): { WorldBuilder.Placement }
 	return WorldBuilder.placements
 end
 
+-- Parts per built map (S20, /perf).
+function WorldService.PartCounts(): { [string]: number }
+	return WorldBuilder.partCounts
+end
+
 -- Portal registry: id -> { map, target, position, arrive? }.
 function WorldService.GetPortal(id: string): WorldBuilder.Portal?
 	return WorldBuilder.portals[id]

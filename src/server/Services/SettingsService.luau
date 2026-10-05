@@ -54,6 +54,18 @@ local SETTINGS: { [string]: (value: any) -> boolean } = {
 	groupRings = function(value)
 		return type(value) == "boolean"
 	end,
+	betterItem = function(value)
+		return type(value) == "boolean"
+	end,
+	lootHideBelow = function(value)
+		return type(value) == "number" and value == math.floor(value) and value >= 0 and value <= 4
+	end,
+	lootAutoFrom = function(value)
+		return type(value) == "number" and value == math.floor(value) and value >= 0 and value <= 5
+	end,
+	decor = function(value)
+		return value == "low" or value == "mid" or value == "high"
+	end,
 }
 
 function SettingsService.Start()

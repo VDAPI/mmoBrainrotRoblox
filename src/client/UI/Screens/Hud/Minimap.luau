@@ -8,9 +8,12 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 
+local AreaState = require(script.Parent.Parent.Parent.AreaState)
+local Areas = require(ReplicatedStorage.Shared.Data.Areas)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local GroupColors = require(script.Parent.Parent.Parent.GroupColors)
 local MapSketch = require(script.Parent.Parent.Parent.MapSketch)
+local LevelBand = require(ReplicatedStorage.Shared.Logic.LevelBand)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local Npcs = require(ReplicatedStorage.Shared.Data.Npcs)
 local QuestTrack = require(script.Parent.Parent.Parent.QuestTrack)
@@ -108,6 +111,24 @@ local function Minimap(scope: Scope): Instance
 		end
 		canvas.Size = UDim2.fromOffset(sketch.size.x * s, sketch.size.z * s)
 		MapSketch.draw(canvas, sketch, s)
+		-- Monster areas tinted by level difference (S20), under the icons.
+		local data = Areas.byMap[id]
+		local level = State.Get({ "character", "level" }) or 1
+		for _, area in (if data then data.areas else {}) :: { Areas.Area } do
+			local r = area.rect
+			local a1 = MapSketch.toPixel(sketch, s, r[1], r[2])
+			local a2 = MapSketch.toPixel(sketch, s, r[3], r[4])
+			local band = LevelBand.of(math.floor((area.lv[1] + area.lv[2]) / 2), level)
+			local f = Instance.new("Frame")
+			f.Name = "Area"
+			f.Position = UDim2.fromOffset(a1.X, a1.Y)
+			f.Size = UDim2.fromOffset(a2.X - a1.X, a2.Y - a1.Y)
+			f.BackgroundColor3 = Color3.fromHex((LevelBand.COLORS :: any)[band])
+			f.BackgroundTransparency = 0.82
+			f.BorderSizePixel = 0
+			f.ZIndex = 1
+			f.Parent = canvas
+		end
 		for _, icon in sketch.icons do
 			local style = ICONS[icon.t]
 			if style and style.glyph ~= "" then
@@ -317,6 +338,33 @@ local function Minimap(scope: Scope): Instance
 					zoomButton("+", 1, 1),
 					zoomButton("−", -1, 2),
 				},
+			}),
+			-- Current monster area under the map name (S20).
+			scope:New("TextLabel")({
+				Name = "AreaName",
+				AnchorPoint = Vector2.new(1, 0),
+				Position = UDim2.new(1, 0, 1, 2),
+				Size = UDim2.fromOffset(SIZE + 30, 22),
+				BackgroundTransparency = 1,
+				Visible = scope:Computed(function(use): boolean
+					return use(AreaState.Current) ~= nil
+				end),
+				Text = scope:Computed(function(use): string
+					local area = use(AreaState.Current)
+					if not area then
+						return ""
+					end
+					return Text.get(
+						use,
+						"area.label",
+						{ name = Text.get(use, area.nameKey), min = area.lv[1], max = area.lv[2] }
+					)
+				end),
+				TextTruncate = Enum.TextTruncate.AtEnd,
+				FontFace = Theme.Fonts.BodyMedium,
+				TextSize = 15,
+				TextColor3 = Theme.Colors.Parchment,
+				TextStrokeTransparency = 0.4,
 			}),
 			scope:New("TextLabel")({
 				Name = "MapName",

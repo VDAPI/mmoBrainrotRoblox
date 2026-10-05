@@ -181,6 +181,11 @@ type CharacterData = {
   przez `World/Layouts/CaveTemplate`. Grupy (`MonsterService`): wspólne aggro, odrodzenie całej grupy, atrybuty modelu
   `GroupId` / `GroupSize`, uśpienie 250 st., znikanie po 90 s snu.
 
+- Detale świata (S20): drobne dekoracje tworzy tylko klient (`DecorController`, chunki 128 st. z seeda mapy, pula
+  części, promień wg opcji). Serwer: rekwizyty, drogowskazy i punkty charakterystyczne obszarów z `Data/Areas`
+  (`Prefabs.areaFeatures`, `Prefabs.extraDecor`), dekoracje bez `CanQuery`/`CanTouch`. Streaming: TargetRadius 512,
+  MinRadius 128, IntegrityMode MinimumRadiusPause. Mapa (M) buforuje statyczną warstwę na mapę, zoom przez `UIScale`.
+
 ## 9. UI (Fusion 0.3)
 
 - Każdy ekran to moduł zwracający funkcję `(scope, props) -> Instance`. Jeden `ScreenGui` per warstwa (HUD, Okna, Modale, Toasty, Tooltip) z `IgnoreGuiInset` i `ResetOnSpawn = false`.

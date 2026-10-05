@@ -11,6 +11,7 @@ local KeybindData = require(ReplicatedStorage.Shared.Data.Keybinds)
 local Keybinds = require(script.Parent.Parent.Keybinds)
 local LanguageToggle = require(script.Parent.Parent.Components.LanguageToggle)
 local Net = require(ReplicatedStorage.Shared.Net)
+local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
 local State = require(script.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Text)
 local TextInput = require(script.Parent.Parent.Components.TextInput)
@@ -49,6 +50,39 @@ local function row(scope: Scope, order: number, labelKey: string, control: Insta
 end
 
 -- Two-state switch bound to a boolean setting (`default` when unset).
+-- Button cycling a setting through `values` (S20), labelled by `label(value)`.
+local function cycle(
+	scope: Scope,
+	name: string,
+	default: any,
+	values: { any },
+	label: (use: Fusion.Use, value: any) -> string
+): Instance
+	local value = State.Value({ "account", "settings", name })
+	return Button(scope, {
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.fromScale(1, 0),
+		Size = UDim2.fromOffset(150, 44),
+		Text = scope:Computed(function(use): string
+			local current = use(value)
+			return label(use, if current == nil then default else current)
+		end),
+		OnClick = function()
+			local current = Fusion.peek(value)
+			if current == nil then
+				current = default
+			end
+			local index = table.find(values, current) or 0
+			Net.Send("SetSetting", name, values[index % #values + 1])
+		end,
+	})
+end
+
+local function rarityLabel(use: Fusion.Use, value: any): string
+	local def = Rarities.get(tonumber(value) or 0)
+	return if def then Text.get(use, def.nameKey) else Text.get(use, "menu.off")
+end
+
 local function toggle(scope: Scope, name: string, default: boolean): Instance
 	local value = State.Value({ "account", "settings", name })
 	local on = scope:Computed(function(use): boolean
@@ -364,6 +398,24 @@ local function GameMenu(scope: Scope, close: () -> ()): Fusion.Child
 			row(scope, 12, "menu.sellConfirm", toggle(scope, "sellConfirm", true)),
 			row(scope, 13, "menu.autoTarget", toggle(scope, "autoTarget", true)),
 			row(scope, 13, "menu.groupRings", toggle(scope, "groupRings", true)),
+			row(scope, 13, "menu.betterItem", toggle(scope, "betterItem", true)),
+			row(scope, 13, "menu.lootHideBelow", cycle(scope, "lootHideBelow", 0, { 0, 2, 3, 4 }, rarityLabel)),
+			row(
+				scope,
+				13,
+				"menu.lootAutoFrom",
+				cycle(scope, "lootAutoFrom", 0, { 0, 2, 3, 4, 5 }, function(use, value)
+					return if value == 0 then Text.get(use, "menu.all") else rarityLabel(use, value)
+				end)
+			),
+			row(
+				scope,
+				7,
+				"menu.decor",
+				cycle(scope, "decor", "mid", { "low", "mid", "high" }, function(use, value)
+					return Text.get(use, `menu.decor.{value}`)
+				end)
+			),
 			codeRow(scope),
 			scope:New("TextLabel")({
 				LayoutOrder = 15,

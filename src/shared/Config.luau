@@ -95,6 +95,12 @@ local Config = {
 	StateFlushInterval = 0,
 	-- Sprint (S18, DESIGN §24): walk speed multiplier while the sprint key is held.
 	SprintMultiplier = 1.35,
+	-- Client decorations (S20, DESIGN §3.7): chunk size and radius per "World detail" setting (studs).
+	DecorChunk = 128,
+	DecorRadius = { low = 250, mid = 400, high = 600 },
+	-- Streaming (S20, decision in PROGRESS): also set in default.project.json (Workspace properties).
+	StreamingTargetRadius = 512,
+	StreamingMinRadius = 128,
 }
 
 return table.freeze(Config)

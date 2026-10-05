@@ -283,13 +283,37 @@ function WorldController.Init(registry)
 	WindowManager.Register({
 		id = "map",
 		titleKey = "window.map.title",
-		size = Vector2.new(980, 600),
+		size = Vector2.new(1180, 740), -- S20: up to ~85% of the screen (full screen on phones)
 		hotkey = Enum.KeyCode.M,
 		build = WorldMapWindow,
 	})
 end
 
+-- Client-side admin helpers (S20): drop the map cache, report decoration chunks and frame time.
+local function onAdminClient(action: any)
+	if action == "mapcache" then
+		(WorldMapWindow :: any).clearCache()
+	elseif action == "perf" then
+		local ok, decor = pcall(function()
+			return require(script.Parent.DecorController) :: any
+		end)
+		if ok and decor then
+			local chunks, parts, frame = decor.Stats()
+			Toast.push(
+				Text.now("admin.perf.client", {
+					chunks = chunks,
+					parts = parts,
+					ms = string.format("%.1f", frame * 1000),
+				}),
+				"info",
+				6
+			)
+		end
+	end
+end
+
 function WorldController.Start()
+	Net.On("AdminClient", onAdminClient)
 	atmosphere = Lighting:FindFirstChildOfClass("Atmosphere") or Instance.new("Atmosphere")
 	atmosphere.Parent = Lighting
 	grade = Instance.new("ColorCorrectionEffect")

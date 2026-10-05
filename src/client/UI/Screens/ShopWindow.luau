@@ -296,6 +296,31 @@ local function ShopWindow(scope: Scope, props: Props): Fusion.Child
 		end
 	end
 
+	-- Quick sell (S20): every Common (or Common and Uncommon) item, after a confirmation.
+	local function quickSell(maxRarity: number)
+		local id = Fusion.peek(npcId)
+		if not id then
+			return
+		end
+		props.ShowModal({
+			Title = Text.now("shop.sellAll.title"),
+			Message = Text.now("shop.sellAll.message"),
+			ConfirmText = Text.now("shop.sell"),
+			CancelText = Text.now("common.cancel"),
+			Variant = "danger",
+			OnConfirm = function(): (boolean, string?)
+				local ok, err, total = Net.Invoke("SellAll", id, maxRarity)
+				if ok then
+					selected:set({})
+					Sounds.play("click")
+					Toast.push(Text.now("shop.sold", { gold = Format.number(total or 0) }), "success")
+					return true, nil
+				end
+				return false, Text.now(err or "error.internal")
+			end,
+		})
+	end
+
 	local function sellSelected()
 		local keys = {}
 		for key in Fusion.peek(selected) do
@@ -402,6 +427,34 @@ local function ShopWindow(scope: Scope, props: Props): Fusion.Child
 					TextSize = Theme.TextSize.Small,
 					TextColor3 = Theme.Colors.TextMuted,
 					TextXAlignment = Enum.TextXAlignment.Left,
+				}),
+				s:New("Frame")({
+					Name = "QuickSell",
+					LayoutOrder = 0,
+					Size = UDim2.new(1, 0, 0, 44),
+					BackgroundTransparency = 1,
+					[Children] = {
+						s:New("UIListLayout")({
+							FillDirection = Enum.FillDirection.Horizontal,
+							Padding = UDim.new(0, 8),
+						}),
+						Button(s, {
+							Text = Text.get(use, "shop.sellAllCommon"),
+							TextSize = Theme.TextSize.Small,
+							Size = UDim2.fromOffset(230, 40),
+							OnClick = function()
+								quickSell(1)
+							end,
+						}),
+						Button(s, {
+							Text = Text.get(use, "shop.sellAllUncommon"),
+							TextSize = Theme.TextSize.Small,
+							Size = UDim2.fromOffset(250, 40),
+							OnClick = function()
+								quickSell(2)
+							end,
+						}),
+					},
 				}),
 			}
 			local grid = {}

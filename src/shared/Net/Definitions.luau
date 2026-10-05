@@ -44,6 +44,10 @@ local Definitions: { [string]: Definition } = {
 	-- (entityId or nil to clear, attack: false keeps the target but stops the auto-attack; S18)
 	SetTarget = { kind = "event", dir = "c2s", rate = 12, args = { "string?", "boolean?" } },
 	SetSprint = { kind = "event", dir = "c2s", rate = 10, args = { "boolean" } }, -- S18
+	-- S20: quick sell (npcId, max rarity 1..2), item lock (backpack index)
+	SellAll = { kind = "function", dir = "c2s", rate = 2, args = { "string", "integer" } },
+	ToggleLock = { kind = "function", dir = "c2s", rate = 6, args = { "integer" } },
+	AdminClient = { kind = "event", dir = "s2c" }, -- (action) client-side admin helpers: "mapcache", "perf" (S20)
 	AttackRejected = { kind = "event", dir = "s2c" }, -- (reason locale key), at most one per 2 s (S18)
 	SetTitle = { kind = "function", dir = "c2s", rate = 2, args = { "string?" } }, -- (titleId or nil), S16
 	CombatFx = { kind = "event", dir = "s2c" }, -- batched { k = "dmg" | "heal" | "atk" | "tele" | "reward", ... }

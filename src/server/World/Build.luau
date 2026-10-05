@@ -35,6 +35,7 @@ export type Context = {
 	sketch: { shapes: { Shape }, icons: { Icon } },
 	nodes: { NodePlacement },
 	parts: number,
+	trees: { { number } }, -- tree positions; the published sketch merges them into forest patches (S20)
 }
 
 local terrain = Workspace.Terrain
@@ -80,6 +81,7 @@ function Build.new(map: Maps.MapDef, root: Instance): Context
 		sketch = { shapes = {}, icons = {} },
 		nodes = {},
 		parts = 0,
+		trees = {},
 	}
 end
 
@@ -105,6 +107,13 @@ end
 function Build.paint(ctx: Context, x: number, z: number, w: number, h: number, angle: number, material: Enum.Material)
 	local cf = CFrame.new(Build.at(ctx, x, -2, z)) * CFrame.Angles(0, angle, 0)
 	terrain:FillBlock(cf, Vector3.new(w, 4, h), material)
+	-- Large ground patches (sand, mud, ash...) go on the map (S20); roads are recorded by Build.path.
+	if w >= 100 and h >= 100 and ctx.rayFrom > 20 then
+		table.insert(
+			ctx.sketch.shapes,
+			{ t = "rect", x = x, z = z, w = w, h = h, r = math.deg(angle), c = `ground:{material.Name}` }
+		)
+	end
 end
 
 -- Hill: a half-buried ball; `height` is how much rises above the ground.

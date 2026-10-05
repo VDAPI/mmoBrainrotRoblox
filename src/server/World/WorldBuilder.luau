@@ -27,6 +27,7 @@ WorldBuilder.FLOOR_TOP = 0
 WorldBuilder.built = {} :: { [string]: boolean }
 WorldBuilder.placements = {} :: { Placement }
 WorldBuilder.portals = {} :: { [string]: Portal }
+WorldBuilder.partCounts = {} :: { [string]: number } -- parts per built map (/perf, S20)
 
 local MATERIAL_COLORS: { [Enum.Material]: string } = {
 	[Enum.Material.Grass] = "#5C7A3A",
@@ -83,6 +84,27 @@ local function publishSketch(ctx: Build.Context)
 			s.p = points
 		end
 		table.insert(shapes, s)
+	end
+	-- Trees as forest patches (S20): 80-stud cells with 3+ trees become one circle each.
+	local cells: { [string]: { number } } = {}
+	for _, tree in ctx.trees do
+		local key = `{math.floor(tree[1] / 80)}:{math.floor(tree[2] / 80)}`
+		local cell = cells[key] or { 0, 0, 0 }
+		cell[1] += tree[1]
+		cell[2] += tree[2]
+		cell[3] += 1
+		cells[key] = cell
+	end
+	for _, cell in cells do
+		if cell[3] >= 3 then
+			table.insert(shapes, {
+				t = "circle",
+				x = round(cell[1] / cell[3]),
+				z = round(cell[2] / cell[3]),
+				r = round(math.min(60, 22 + cell[3] * 4)),
+				c = "forest",
+			})
+		end
 	end
 	local icons = {}
 	for _, icon in ctx.sketch.icons do
@@ -145,6 +167,7 @@ local function buildMap(map: Maps.MapDef, root: Instance, nodes: boolean): boole
 	publishSketch(ctx)
 	WorldBuilder.built[map.id] = true
 	log:info("built %s in %.2f s (%d parts, %d nodes)", map.id, os.clock() - started, ctx.parts, #ctx.nodes)
+	WorldBuilder.partCounts[map.id] = ctx.parts
 	if ctx.parts > Config.MaxPartsPerMap then
 		log:warn("map %s has %d parts (limit %d)", map.id, ctx.parts, Config.MaxPartsPerMap)
 	end

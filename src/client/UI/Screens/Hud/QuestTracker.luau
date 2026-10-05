@@ -11,11 +11,13 @@ local Workspace = game:GetService("Workspace")
 local CollectionService = game:GetService("CollectionService")
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
+local Monsters = require(ReplicatedStorage.Shared.Data.Monsters)
 local Npcs = require(ReplicatedStorage.Shared.Data.Npcs)
 local QuestLogic = require(ReplicatedStorage.Shared.Logic.QuestLogic)
 local QuestText = require(script.Parent.Parent.Parent.QuestText)
 local QuestTrack = require(script.Parent.Parent.Parent.QuestTrack)
 local Quests = require(ReplicatedStorage.Shared.Data.Quests)
+local Time = require(ReplicatedStorage.Shared.Logic.Time)
 local State = require(script.Parent.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
@@ -63,6 +65,19 @@ end
 
 local function QuestTracker(scope: Scope): Instance
 	local quests = State.Value({ "character", "quests" })
+	local timers = State.Value({ "character", "e2timers" })
+	local now = scope:Value(Workspace:GetServerTimeNow())
+	local clock = 0
+	table.insert(
+		scope,
+		RunService.Heartbeat:Connect(function(dt)
+			clock += dt
+			if clock >= 1 then
+				clock = 0
+				now:set(Workspace:GetServerTimeNow())
+			end
+		end)
+	)
 	local collapsed = scope:Value(false)
 	local arrow = scope:Value(nil :: number?)
 
@@ -222,6 +237,34 @@ local function QuestTracker(scope: Scope): Instance
 					Theme.Fonts.Body,
 					10
 				)
+			end
+		end
+		-- Elite II timers (S20, DESIGN §15.3)
+		local timerList = use(timers)
+		if type(timerList) == "table" and #timerList > 0 then
+			gap()
+			line(Text.get(use, "e2timer.header"), Theme.Colors.Gold, 16, Theme.Fonts.BodyBold)
+			local t = use(now)
+			for _, timer in timerList do
+				local def = Monsters.get(timer.kind)
+				local name = if def then Text.get(use, def.nameKeys.elite2) else timer.kind
+				local map = Maps.get(timer.map)
+				local where = if map then Text.get(use, map.nameKey) else timer.map
+				local state
+				if timer.job ~= game.JobId then
+					state = Text.get(use, "e2timer.otherServer")
+				elseif t < timer.from then
+					state = Text.get(use, "e2timer.window", {
+						from = Time.format(timer.from - t),
+						to = Time.format(timer.to - t),
+					})
+				elseif t < timer.to then
+					state = Text.get(use, "e2timer.soon", { to = Time.format(timer.to - t) })
+				else
+					state = Text.get(use, "e2timer.any")
+				end
+				line(`{name} ({where})`, Theme.Colors.Parchment, 14, Theme.Fonts.BodyMedium, 4)
+				line(state, Theme.Colors.TextMuted, 13, Theme.Fonts.Body, 10)
 			end
 		end
 		return list

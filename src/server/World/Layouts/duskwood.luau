@@ -100,6 +100,8 @@ return function(ctx: Build.Context)
 	Prefabs.portal(ctx, "duskwood_city", "city", -770, 160, 90, { x = 0, z = -236 })
 	Prefabs.portal(ctx, "duskwood_ashen", "ashen", 740, -740, 45)
 	Prefabs.caveEntrances(ctx, AREAS, "#4A4458")
+	Prefabs.areaFeatures(ctx, AREAS, "#4A4458") -- signposts, landmarks, lanterns (S20)
+	Prefabs.extraDecor(ctx, AREAS, { "dark", "pine", "dead", "willow" }, { { -660, 90 } })
 
 	Build.zone(ctx, "yellow", "zone.duskwood.woods", -hx, -hz, hx, hz)
 	Build.zone(ctx, "yellow", "zone.duskwood.ruins", -260, -560, 80, -200)

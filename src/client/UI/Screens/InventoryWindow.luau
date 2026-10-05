@@ -28,6 +28,8 @@ export type Actions = {
 	Use: (index: number) -> (),
 	Split: (index: number) -> (),
 	Destroy: (index: number) -> (),
+	Lock: (index: number) -> (), -- S20: toggle the padlock
+	LootLog: () -> (), -- S20: open the loot log
 }
 
 local SLOT = 64
@@ -268,6 +270,35 @@ local function InventoryWindow(scope: Scope, actions: Actions): Fusion.Child
 					end),
 					actions.Split
 				),
+				-- Padlock (S20): protects from selling, dismantling, destroying and trading.
+				Button(scope, {
+					LayoutOrder = 5,
+					Text = scope:Computed(function(use): string
+						local item = use(selectedItem)
+						return Text.get(use, if item and item.locked then "item.unlock" else "item.lock")
+					end),
+					Size = UDim2.fromOffset(110, Theme.Size.ButtonHeightSmall),
+					TextSize = Theme.TextSize.Small,
+					Visible = scope:Computed(function(use): boolean
+						local def = use(selectedDef)
+						return def ~= nil and def.category == "equipment"
+					end),
+					OnClick = function()
+						local index = Fusion.peek(selectedIndex)
+						if index then
+							actions.Lock(index)
+						end
+					end,
+				}),
+				Button(scope, {
+					LayoutOrder = 6,
+					Text = Text.T(scope, "lootlog.button"),
+					Size = UDim2.fromOffset(90, Theme.Size.ButtonHeightSmall),
+					TextSize = Theme.TextSize.Small,
+					OnClick = function()
+						actions.LootLog()
+					end,
+				}),
 				actionButton(
 					4,
 					"inventory.action.destroy",

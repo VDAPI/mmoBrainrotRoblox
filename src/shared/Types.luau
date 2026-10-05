@@ -77,7 +77,23 @@ export type CharacterData = {
 	visitedMaps: { [string]: boolean },
 	createdAt: number,
 	playtime: number,
+	-- S20: last items picked up (newest first, max 50) and Elite II respawn timers.
+	lootLog: { LootLogEntry }?,
+	e2timers: { Elite2Timer }?,
 }
+
+export type LootLogEntry = {
+	id: string,
+	rarity: number,
+	ilvl: number,
+	el: string?,
+	at: number,
+	src: string?,
+	map: string?,
+}
+
+-- Elite II respawn window after a kill (S20, DESIGN §15.3): server time from / to, on server `job`.
+export type Elite2Timer = { spawner: string, kind: string, map: string, from: number, to: number, job: string }
 
 export type Settings = {
 	lang: string, -- "" = not chosen yet (client picks from Roblox locale)
@@ -92,6 +108,11 @@ export type Settings = {
 	cameraSens: number, -- mouse/touch camera sensitivity multiplier
 	sellConfirm: boolean, -- ask before selling valuable items
 	autoTarget: boolean, -- S16: after a kill, target the next monster fighting us
+	-- S20: loot comfort and world detail
+	betterItem: boolean, -- "Better item!" card
+	lootHideBelow: number, -- hide equipment bags below this rarity (0 = off)
+	lootAutoFrom: number, -- Auto-loot picks up equipment from this rarity (0 = all)
+	decor: string, -- "low" | "mid" | "high": client decoration radius
 	groupRings: boolean, -- S19: coloured rings under monster groups
 	keys: { [string]: string }, -- S17: rebound keys, action -> Enum.KeyCode name (Data/Keybinds)
 }

@@ -16,7 +16,7 @@ export type Material = { id: string, n: number }
 
 function Dismantle.canDismantle(item: Types.ItemInstance): boolean
 	local def = Items.get(item.id)
-	return def ~= nil and def.category == "equipment"
+	return def ~= nil and def.category == "equipment" and item.locked ~= true
 end
 
 local function add(list: { Material }, id: string, n: number)

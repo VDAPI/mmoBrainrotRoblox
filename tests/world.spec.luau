@@ -258,6 +258,42 @@ describe("World spawns", function()
 	end)
 end)
 
+describe("Monster areas (S20)", function()
+	local pl = require("../src/shared/Data/Localization/pl") :: any
+	local en = require("../src/shared/Data/Localization/en") :: any
+
+	it("have names, valid levels and kinds, and stay inside their map without overlapping", function()
+		for mapId, data in Areas.byMap do
+			local map = Maps.get(mapId) :: Maps.MapDef
+			for i, area in data.areas do
+				expect(pl[area.nameKey] ~= nil and en[area.nameKey] ~= nil).toBe(true)
+				expect(area.lv[1] <= area.lv[2]).toBe(true)
+				expect(area.lv[1] >= map.minLevel and area.lv[2] <= map.maxLevel).toBe(true)
+				for _, kind in area.kinds do
+					expect(Monsters.get(kind) ~= nil).toBe(true)
+				end
+				local r = area.rect
+				expect(r[1] < r[3] and r[2] < r[4]).toBe(true)
+				expect(math.abs(r[1]) <= map.size.x / 2 and math.abs(r[3]) <= map.size.x / 2).toBe(true)
+				expect(math.abs(r[2]) <= map.size.z / 2 and math.abs(r[4]) <= map.size.z / 2).toBe(true)
+				for j = i + 1, #data.areas do
+					local o = data.areas[j].rect
+					local overlap = r[1] < o[3] and o[1] < r[3] and r[2] < o[4] and o[2] < r[4]
+					if overlap then
+						error(`{area.id} overlaps {data.areas[j].id}`)
+					end
+				end
+			end
+		end
+	end)
+
+	it("find the area at a point", function()
+		local area = Areas.areaAt("meadows", -600, 0)
+		expect(area and area.id).toBe("meadows_rabbitfields")
+		expect(Areas.areaAt("meadows", -790, 790)).toBeNil()
+	end)
+end)
+
 describe("NPCs", function()
 	it("stand inside the city walls or inside their map", function()
 		for _, npc in Npcs.list do

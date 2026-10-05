@@ -215,6 +215,22 @@ local function ItemSlot(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Inst
 				TextStrokeTransparency = 0.2,
 				TextXAlignment = Enum.TextXAlignment.Left,
 			}),
+			-- Padlock (S20): protected from selling, dismantling and trading
+			scope:New("TextLabel")({
+				Name = "Locked",
+				AnchorPoint = Vector2.new(1, 0),
+				Position = UDim2.new(1, -2, 0, 1),
+				Size = UDim2.fromOffset(14, 14),
+				BackgroundTransparency = 1,
+				Visible = scope:Computed(function(use): boolean
+					local i = use(item)
+					return i ~= nil and i.locked == true
+				end),
+				Text = "🔒",
+				TextScaled = true,
+				TextColor3 = Theme.Colors.GoldBright,
+				ZIndex = 3,
+			}),
 			-- Bound lock
 			scope:New("TextLabel")({
 				Name = "Bound",

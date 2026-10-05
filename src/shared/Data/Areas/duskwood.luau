@@ -110,7 +110,7 @@ local data: Types.MapAreas = {
 			nameKey = "area.duskwood_witchmarsh",
 			lv = { 36, 42 },
 			kinds = { "marshWitch", "swampTroll" },
-			rect = { -200, 40, 300, 160 },
+			rect = { -200, 30, 300, 140 },
 			groups = 4,
 		},
 		{

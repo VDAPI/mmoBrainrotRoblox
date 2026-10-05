@@ -23,6 +23,7 @@ local function part(ctx: Context, model: Instance, props: { [string]: any }): Pa
 	p.TopSurface = Enum.SurfaceType.Smooth
 	p.BottomSurface = Enum.SurfaceType.Smooth
 	p.CanQuery = false
+	p.CanTouch = false -- S20: decorations never fire touch events
 	for key, value in props do
 		(p :: any)[key] = value
 	end
@@ -77,6 +78,7 @@ function Prefabs.tree(ctx: Context, x: number, z: number, kind: TreeKind?, scale
 	local s = (scale or 1) * ctx.rng:float(0.8, 1.25)
 	local base = baseAt(ctx, x, z, ctx.rng:float(0, 360))
 	local model = newModel(ctx, `Tree_{k}`)
+	table.insert(ctx.trees, { x, z })
 	local trunkColor = if k == "birch" then "#D8D2C2" elseif k == "dead" or k == "dark" then "#3A3028" else "#5A4632"
 	local height = (if k == "pine" then 14 elseif k == "dead" then 12 else 10) * s
 	part(ctx, model, {
@@ -1034,6 +1036,311 @@ function Prefabs.caveMouth(
 	)
 	Build.icon(ctx, "cave", x, z)
 	return model
+end
+
+-- Small props (S20) -----------------------------------------------------------------------------------
+
+function Prefabs.barrel(ctx: Context, x: number, z: number): Model
+	local base = baseAt(ctx, x, z, ctx.rng:float(0, 360))
+	local model = newModel(ctx, "Barrel")
+	part(ctx, model, {
+		Name = "Body",
+		Shape = Enum.PartType.Cylinder,
+		Size = Vector3.new(3, 2.4, 2.4),
+		CFrame = base * CFrame.new(0, 1.5, 0) * CFrame.Angles(0, 0, math.rad(90)),
+		Color = hex("#7A5A3A"),
+		Material = Enum.Material.Wood,
+	})
+	return model
+end
+
+function Prefabs.crate(ctx: Context, x: number, z: number): Model
+	local s = ctx.rng:float(1.8, 2.6)
+	local base = baseAt(ctx, x, z, ctx.rng:float(0, 360))
+	local model = newModel(ctx, "Crate")
+	part(ctx, model, {
+		Name = "Box",
+		Size = Vector3.new(s, s, s),
+		CFrame = base * CFrame.new(0, s / 2, 0),
+		Color = hex("#9A7A4A"),
+		Material = Enum.Material.WoodPlanks,
+	})
+	return model
+end
+
+function Prefabs.wagon(ctx: Context, x: number, z: number, rot: number?): Model
+	local base = baseAt(ctx, x, z, rot or ctx.rng:float(0, 360))
+	local model = newModel(ctx, "Wagon")
+	part(ctx, model, {
+		Name = "Bed",
+		Size = Vector3.new(5, 1.4, 9),
+		CFrame = base * CFrame.new(0, 2.4, 0) * CFrame.Angles(0, 0, math.rad(8)),
+		Color = hex("#6B4A2B"),
+		Material = Enum.Material.WoodPlanks,
+		CanQuery = true,
+	})
+	for _, wheel in { { -2.8, -3 }, { 2.8, -3 }, { -2.8, 3 } } do
+		part(ctx, model, {
+			Name = "Wheel",
+			Shape = Enum.PartType.Cylinder,
+			Size = Vector3.new(0.5, 3, 3),
+			CFrame = base * CFrame.new(wheel[1], 1.5, wheel[2]),
+			Color = hex("#3A2E24"),
+			Material = Enum.Material.Wood,
+		})
+	end
+	return model
+end
+
+function Prefabs.well(ctx: Context, x: number, z: number): Model
+	local base = baseAt(ctx, x, z)
+	local model = newModel(ctx, "Well")
+	part(ctx, model, {
+		Name = "Ring",
+		Shape = Enum.PartType.Cylinder,
+		Size = Vector3.new(3, 6, 6),
+		CFrame = base * CFrame.new(0, 1.5, 0) * CFrame.Angles(0, 0, math.rad(90)),
+		Color = hex("#7A7468"),
+		Material = Enum.Material.Cobblestone,
+		CanQuery = true,
+	})
+	part(ctx, model, {
+		Name = "Roof",
+		Size = Vector3.new(7, 0.6, 4),
+		CFrame = base * CFrame.new(0, 6.5, 0),
+		Color = hex("#5A3A2A"),
+		Material = Enum.Material.WoodPlanks,
+	})
+	for _, side in { -1, 1 } do
+		part(ctx, model, {
+			Name = "Post",
+			Size = Vector3.new(0.5, 6, 0.5),
+			CFrame = base * CFrame.new(side * 2.8, 3.5, 0),
+			Color = hex("#5A4632"),
+			Material = Enum.Material.Wood,
+		})
+	end
+	return model
+end
+
+-- Landmark of a monster area (S20, DESIGN §3.6): camp, ruins, watchtower, stone circle, wagon wreck,
+-- nest, mine shaft or graveyard.
+function Prefabs.landmark(ctx: Context, kind: string, x: number, z: number, color: string?)
+	if kind == "camp" then
+		Prefabs.tent(ctx, x - 8, z - 4, color or "#6B4A2B")
+		Prefabs.tent(ctx, x + 8, z - 6, color or "#6B4A2B")
+		Prefabs.campfire(ctx, x, z + 4)
+		Prefabs.barrel(ctx, x + 12, z + 6)
+		Prefabs.crate(ctx, x - 12, z + 7)
+	elseif kind == "ruins" then
+		Prefabs.ruins(ctx, x, z, color)
+	elseif kind == "watchtower" then
+		Prefabs.tower(ctx, x, z, 5, 22, color or "#6A5A48")
+		Prefabs.crate(ctx, x + 7, z + 2)
+	elseif kind == "stonecircle" then
+		for i = 1, 7 do
+			local angle = i * math.pi * 2 / 7
+			Prefabs.column(ctx, x + math.cos(angle) * 10, z + math.sin(angle) * 10, 7 + (i % 3) * 2, color or "#8A8478")
+		end
+	elseif kind == "wagon" then
+		Prefabs.wagon(ctx, x, z)
+		Prefabs.barrel(ctx, x + 5, z + 6)
+		Prefabs.crate(ctx, x - 5, z + 7)
+	elseif kind == "nest" then
+		for i = 1, 9 do
+			local angle = i * math.pi * 2 / 9
+			Prefabs.rock(ctx, x + math.cos(angle) * 6, z + math.sin(angle) * 6, 0.7, color or "#6B5A40")
+		end
+		Prefabs.bush(ctx, x, z, "#5A4A30")
+	elseif kind == "mineshaft" then
+		Prefabs.column(ctx, x - 5, z, 9, "#6B4A2B")
+		Prefabs.column(ctx, x + 5, z, 9, "#6B4A2B")
+		local base = baseAt(ctx, x, z)
+		local model = newModel(ctx, "MineShaft")
+		part(ctx, model, {
+			Name = "Beam",
+			Size = Vector3.new(12, 1.2, 1.2),
+			CFrame = base * CFrame.new(0, 9, 0),
+			Color = hex("#6B4A2B"),
+			Material = Enum.Material.Wood,
+		})
+		part(ctx, model, {
+			Name = "Hole",
+			Size = Vector3.new(8, 8, 0.4),
+			CFrame = base * CFrame.new(0, 4, 0.6),
+			Color = hex("#0A0A0C"),
+			Material = Enum.Material.SmoothPlastic,
+		})
+		Prefabs.wagon(ctx, x + 10, z + 8, 90)
+	elseif kind == "graveyard" then
+		for i = 0, 7 do
+			Prefabs.tombstone(ctx, x - 12 + (i % 4) * 8, z - 4 + math.floor(i / 4) * 8)
+		end
+	end
+	Build.icon(ctx, "landmark", x, z, kind)
+end
+
+-- Landmark kind for an area without one: from its main monster kind.
+local LANDMARK_BY_KIND: { [string]: string } = {
+	rabbit = "stonecircle",
+	wolf = "nest",
+	lynx = "nest",
+	swampToad = "wagon",
+	boar = "nest",
+	carrionCrow = "stonecircle",
+	bandit = "camp",
+	koboldMiner = "mineshaft",
+	goblinScout = "camp",
+	brownBear = "nest",
+	werewolf = "nest",
+	blackBear = "nest",
+	forestWraith = "graveyard",
+	ghoul = "graveyard",
+	rotEnt = "stonecircle",
+	darkCultist = "stonecircle",
+	bogSerpent = "wagon",
+	swampTroll = "camp",
+	marshWitch = "stonecircle",
+	bloodBat = "ruins",
+	salamander = "nest",
+	wasteHyena = "wagon",
+	ashOrc = "camp",
+	ashVulture = "nest",
+	fireGolem = "ruins",
+	fireImp = "ruins",
+	desertScorpion = "wagon",
+	desertMummy = "graveyard",
+	wyvern = "nest",
+	basilisk = "ruins",
+	iceWolf = "nest",
+	snowLeopard = "nest",
+	yeti = "camp",
+	peakHarpy = "nest",
+	frostGiant = "ruins",
+	iceElemental = "stonecircle",
+	iceMammoth = "camp",
+	dragonspawn = "ruins",
+	frozenKnight = "watchtower",
+	frostWyrm = "ruins",
+}
+
+-- Signposts where roads enter monster areas, a landmark in every area without one, lanterns along the
+-- roads (S20, DESIGN §3.6–§3.7).
+function Prefabs.areaFeatures(ctx: Context, data: Areas.MapAreas, color: string?)
+	local clear = Build.clearOf(data, 4)
+	local signs: { { number } } = {}
+	local function farFromSigns(x: number, z: number): boolean
+		for _, other in signs do
+			if (x - other[1]) ^ 2 + (z - other[2]) ^ 2 < 60 * 60 then
+				return false
+			end
+		end
+		return true
+	end
+	for _, area in data.areas do
+		local r = area.rect
+		local placed = 0
+		for _, road in data.roads do
+			local p = road.points
+			for i = 1, #p - 3, 2 do
+				local ax, az, bx, bz = p[i], p[i + 1], p[i + 2], p[i + 3]
+				local aInside = ax >= r[1] and ax <= r[3] and az >= r[2] and az <= r[4]
+				local bInside = bx >= r[1] and bx <= r[3] and bz >= r[2] and bz <= r[4]
+				if aInside ~= bInside and placed < 2 then
+					-- Walk along the segment to the edge, then 12 studs inside, beside the road.
+					local fromX, fromZ = if aInside then bx else ax, if aInside then bz else az
+					local toX, toZ = if aInside then ax else bx, if aInside then az else bz
+					local length = math.sqrt((toX - fromX) ^ 2 + (toZ - fromZ) ^ 2)
+					local dx, dz = (toX - fromX) / length, (toZ - fromZ) / length
+					local x, z = fromX, fromZ
+					for step = 0, math.floor(length) do
+						x, z = fromX + dx * step, fromZ + dz * step
+						if x >= r[1] and x <= r[3] and z >= r[2] and z <= r[4] then
+							break
+						end
+					end
+					x, z = x + dx * 12 - dz * (road.width / 2 + 4), z + dz * 12 + dx * (road.width / 2 + 4)
+					if farFromSigns(x, z) then
+						local facing = math.deg(math.atan2(dx, dz)) + 180
+						Prefabs.signpost(ctx, x, z, facing, area.nameKey, area.lv[1], area.lv[2])
+						table.insert(signs, { x, z })
+						placed += 1
+					end
+				end
+			end
+		end
+		if not area.landmark then
+			local cx, cz = (r[1] + r[3]) / 2, (r[2] + r[4]) / 2
+			for attempt = 0, 30 do
+				local angle = attempt * 2.4
+				local distance = attempt * 8
+				local x, z = cx + math.cos(angle) * distance, cz + math.sin(angle) * distance
+				if x > r[1] + 20 and x < r[3] - 20 and z > r[2] + 20 and z < r[4] - 20 and clear(x, z) then
+					Prefabs.landmark(ctx, LANDMARK_BY_KIND[area.kinds[1]] or "stonecircle", x, z, color)
+					break
+				end
+			end
+		end
+	end
+	-- Lanterns along the roads, alternating sides.
+	for _, road in data.roads do
+		local p = road.points
+		local carried = 0
+		local side = 1
+		for i = 1, #p - 3, 2 do
+			local ax, az, bx, bz = p[i], p[i + 1], p[i + 2], p[i + 3]
+			local length = math.sqrt((bx - ax) ^ 2 + (bz - az) ^ 2)
+			local dx, dz = (bx - ax) / length, (bz - az) / length
+			local t = 140 - carried
+			while t < length do
+				local offset = road.width / 2 + 3
+				local x, z = ax + dx * t - dz * offset * side, az + dz * t + dx * offset * side
+				if math.abs(x) < ctx.map.size.x / 2 - 30 and math.abs(z) < ctx.map.size.z / 2 - 30 then
+					Prefabs.lantern(ctx, x, z)
+				end
+				side = -side
+				t += 140
+			end
+			carried = length - (t - 140)
+		end
+	end
+end
+
+-- Extra detail for a region map (S20, DESIGN §3.7): a mix of 4 tree species of the biome, wagons with
+-- barrels and crates by the roads, wells near the respawn points. Everything avoids roads, water and caves.
+function Prefabs.extraDecor(ctx: Context, data: Areas.MapAreas, species: { TreeKind }, wells: { { number } }?)
+	local clear = Build.clearOf(data, 8)
+	local hx, hz = ctx.map.size.x / 2 - 20, ctx.map.size.z / 2 - 20
+	Prefabs.scatter(ctx, 60, -hx, -hz, hx, hz, function(x, z)
+		Prefabs.tree(ctx, x, z, species[ctx.rng:int(1, #species)], ctx.rng:float(0.8, 1.3))
+	end, nil, clear)
+	-- Wagons and cargo by the roads
+	local placed = 0
+	for _, road in data.roads do
+		local p = road.points
+		if #p >= 4 and placed < 6 then
+			local i = 1 + 2 * ctx.rng:int(0, math.max(0, #p / 2 - 2))
+			local ax, az, bx, bz = p[i], p[i + 1], p[i + 2], p[i + 3]
+			if bx and bz then
+				local t = ctx.rng:float(0.3, 0.7)
+				local length = math.sqrt((bx - ax) ^ 2 + (bz - az) ^ 2)
+				if length > 1 then
+					local dx, dz = (bx - ax) / length, (bz - az) / length
+					local offset = road.width / 2 + 7
+					local x, z = ax + (bx - ax) * t - dz * offset, az + (bz - az) * t + dx * offset
+					if math.abs(x) < hx and math.abs(z) < hz then
+						Prefabs.wagon(ctx, x, z, math.deg(math.atan2(dx, dz)))
+						Prefabs.barrel(ctx, x + dx * 6, z + dz * 6)
+						Prefabs.crate(ctx, x - dx * 6, z - dz * 6)
+						placed += 1
+					end
+				end
+			end
+		end
+	end
+	for _, w in (wells or {}) :: { { number } } do
+		Prefabs.well(ctx, w[1], w[2])
+	end
 end
 
 -- Cave mouth, sign and portal for every cave entrance of a region map (S19, Data/Areas).

@@ -229,6 +229,68 @@ local function removeFrom(list: { any }, value: any)
 	end
 end
 
+-- Elite II timers (S20, DESIGN §15.3) ------------------------------------------------------------------------
+
+local function setTimers(player: Player, edit: (list: { Types.Elite2Timer }) -> { Types.Elite2Timer })
+	local character: Types.CharacterData? = PlayerStateService.GetCharacter(player)
+	if not character then
+		return
+	end
+	local list = edit(table.clone(character.e2timers or {}))
+	PlayerStateService.Set(player, { "character", "e2timers" }, list)
+end
+
+-- Everyone who hurt the Elite II gets its respawn window.
+local function startTimers(monster: Monster.Monster, spawner: SpawnerRuntime)
+	local now = Workspace:GetServerTimeNow()
+	local respawn = spawner.data.respawn
+	for player in monster.damageBy do
+		if player.Parent ~= nil then
+			setTimers(player, function(list)
+				local kept = {}
+				for _, timer in list do
+					if timer.spawner ~= spawner.data.id then
+						table.insert(kept, timer)
+					end
+				end
+				table.insert(kept, {
+					spawner = spawner.data.id,
+					kind = monster.def.id,
+					map = spawner.mapId,
+					from = now + respawn.min,
+					to = now + respawn.max,
+					job = game.JobId,
+				})
+				return kept
+			end)
+		end
+	end
+end
+
+-- The Elite II is back: drop its timers (this server only).
+local function clearTimers(spawnerId: string)
+	for _, player in Players:GetPlayers() do
+		local character: Types.CharacterData? = PlayerStateService.GetCharacter(player)
+		local timers = character and character.e2timers
+		if timers then
+			for _, timer in timers do
+				if timer.spawner == spawnerId and timer.job == game.JobId then
+					setTimers(player, function(list)
+						local kept = {}
+						for _, t in list do
+							if not (t.spawner == spawnerId and t.job == game.JobId) then
+								table.insert(kept, t)
+							end
+						end
+						return kept
+					end)
+					break
+				end
+			end
+		end
+	end
+end
+
 -- Living members of a group, mirrored on every member (client group rings, "xN" plate).
 local function refreshGroupSize(spawner: SpawnerRuntime)
 	local n = #spawner.alive
@@ -272,6 +334,9 @@ function MonsterService.OnDied(monster: Monster.Monster)
 	if spawner then
 		removeFrom(spawner.alive, monster)
 		refreshGroupSize(spawner)
+		if monster.variant == "elite2" then
+			startTimers(monster, spawner)
+		end
 		if #spawner.alive == 0 then
 			local respawn = spawner.data.respawn
 			spawner.respawnAt = os.clock() + respawn.min + random:NextNumber() * (respawn.max - respawn.min)
@@ -306,6 +371,9 @@ local function spawnGroup(spawner: SpawnerRuntime, announce: boolean)
 		kinds = { data.choices[random:NextInteger(1, #data.choices)] }
 	end
 	local attributes = { GroupId = data.id, GroupSize = #kinds }
+	if data.variant == "elite2" then
+		clearTimers(data.id)
+	end
 	for _, kind in kinds do
 		local angle = random:NextNumber() * math.pi * 2
 		-- sqrt keeps the members evenly spread over the circle instead of bunched in the middle.

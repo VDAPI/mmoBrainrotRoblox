@@ -3,6 +3,8 @@
 -- The server keeps the contents; PickupLoot validates owner, distance and backpack room (partial pickups
 -- leave the rest in the bag). Bags expire after Config.LootLifetime. Uniques bind on pickup.
 -- Legendary drops are announced to the whole server and to other servers (AnnounceService).
+-- S20: the owner's loot filter hides weak equipment and limits Auto-loot (Logic/LootFilter); picked-up
+-- equipment goes to the character's loot log (last 50, with source monster and map).
 
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
@@ -18,6 +20,7 @@ local Inventory = require(Shared.Logic.Inventory)
 local ItemRoll = require(Shared.Logic.ItemRoll)
 local Items = require(Shared.Data.Items)
 local Loot = require(Shared.Logic.Loot)
+local LootFilter = require(Shared.Logic.LootFilter)
 local Net = require(Shared.Net)
 local QuestEvents = require(script.Parent.Parent.QuestEvents)
 local PartyLoot = require(Shared.Logic.PartyLoot)
@@ -48,7 +51,10 @@ type Bag = {
 	items: { ItemInstance },
 	expiresAt: number,
 	legendary: boolean,
+	source: string?, -- monster kind (loot log)
 }
+
+local LOOT_LOG_SIZE = 50
 
 local PlayerStateService: any
 local CharacterService: any
@@ -94,8 +100,33 @@ end
 
 -- Bags ----------------------------------------------------------------------------------------------------
 
--- Creates a bag for `owner` at `position` (also used by /legend). Returns the bag id.
-function LootService.SpawnBag(owner: Player, position: Vector3, items: { ItemInstance }): string?
+local function settingsOf(player: Player): { [string]: any }
+	local settings = PlayerStateService.Get(player, { "account", "settings" })
+	return if type(settings) == "table" then settings else {}
+end
+
+local function decision(player: Player, item: ItemInstance): LootFilter.Decision
+	local def = Items.get(item.id)
+	local settings = settingsOf(player)
+	return LootFilter.decide(
+		if def then def.category else "material",
+		item.rarity,
+		tonumber(settings.lootHideBelow),
+		tonumber(settings.lootAutoFrom),
+		MonetizationService.HasPass(player, "autoLoot")
+	)
+end
+
+-- Creates a bag for `owner` at `position` (also used by /legend). Returns the bag id. Items the owner's
+-- loot filter hides are not dropped at all.
+function LootService.SpawnBag(owner: Player, position: Vector3, items: { ItemInstance }, source: string?): string?
+	local kept = {}
+	for _, item in items do
+		if decision(owner, item) ~= "hide" then
+			table.insert(kept, item)
+		end
+	end
+	items = kept
 	if #items == 0 then
 		return nil
 	end
@@ -112,6 +143,7 @@ function LootService.SpawnBag(owner: Player, position: Vector3, items: { ItemIns
 		items = items,
 		expiresAt = os.clock() + Config.LootLifetime,
 		legendary = legendary,
+		source = source,
 	}
 	bags[bag.id] = bag
 	Net.Fire(owner, "LootSpawn", summary(bag))
@@ -136,8 +168,40 @@ local function instancesFrom(loot: Loot.LootResult): { ItemInstance }
 	return items
 end
 
--- Picks up as much of the bag as fits. Returns (ok, errorKey?).
-function LootService.Pickup(player: Player, bagId: string, ignoreDistance: boolean?): (boolean, string?)
+-- Adds picked-up equipment to the character's loot log (newest first).
+local function logLoot(player: Player, bag: Bag, picked: { ItemInstance })
+	local character: Types.CharacterData? = PlayerStateService.GetCharacter(player)
+	if not character then
+		return
+	end
+	local log = table.clone(character.lootLog or {})
+	for _, item in picked do
+		local def = Items.get(item.id)
+		if def and def.category == "equipment" then
+			table.insert(log, 1, {
+				id = item.id,
+				rarity = item.rarity,
+				ilvl = item.ilvl,
+				el = item.el,
+				at = os.time(),
+				src = bag.source,
+				map = character.location.map,
+			})
+		end
+	end
+	while #log > LOOT_LOG_SIZE do
+		table.remove(log)
+	end
+	PlayerStateService.Set(player, { "character", "lootLog" }, log)
+end
+
+-- Picks up as much of the bag as fits (only the items `only` accepts, when given). Returns (ok, errorKey?).
+function LootService.Pickup(
+	player: Player,
+	bagId: string,
+	ignoreDistance: boolean?,
+	only: ((item: ItemInstance) -> boolean)?
+): (boolean, string?)
 	local bag = bags[bagId]
 	if not bag or bag.owner ~= player then
 		return false, "loot.gone"
@@ -151,6 +215,10 @@ function LootService.Pickup(player: Player, bagId: string, ignoreDistance: boole
 	local picked: { ItemInstance } = {}
 	local remaining: { ItemInstance } = {}
 	for _, item in bag.items do
+		if only and not only(item) then
+			table.insert(remaining, item)
+			continue
+		end
 		local def = Items.get(item.id)
 		if def and def.bindOnPickup then
 			item.bound = true
@@ -172,6 +240,7 @@ function LootService.Pickup(player: Player, bagId: string, ignoreDistance: boole
 	if #picked > 0 then
 		Net.Fire(player, "LootPicked", picked)
 		QuestEvents.fire(player, "loot", nil)
+		logLoot(player, bag, picked)
 	end
 	if #remaining > 0 then
 		bag.items = remaining
@@ -185,12 +254,12 @@ end
 
 -- Splits `items` between party members (DESIGN §17) and drops one bag per member. Equipment is announced
 -- in the party chat.
-function LootService.DistributeToParty(members: { Player }, position: Vector3, items: { ItemInstance })
+function LootService.DistributeToParty(members: { Player }, position: Vector3, items: { ItemInstance }, source: string?)
 	if #members == 0 or #items == 0 then
 		return
 	end
 	if #members == 1 then
-		LootService.SpawnBag(members[1], position, items)
+		LootService.SpawnBag(members[1], position, items, source)
 		return
 	end
 	local candidates: { PartyLoot.Candidate } = {}
@@ -227,7 +296,7 @@ function LootService.DistributeToParty(members: { Player }, position: Vector3, i
 		end
 	end
 	for member, list in perMember do
-		LootService.SpawnBag(member, position, list)
+		LootService.SpawnBag(member, position, list, source)
 	end
 end
 
@@ -246,7 +315,7 @@ local function onMonsterKilled(info: any, credit: { Player })
 		dropBonus = StatService.GetValue(killer, "dropBonus"),
 		classId = character.class :: string,
 	})
-	LootService.DistributeToParty(credit, info.position, instancesFrom(loot))
+	LootService.DistributeToParty(credit, info.position, instancesFrom(loot), info.monsterId)
 end
 
 -- Rolls items for a loot result (used by DungeonService for boss loot).
@@ -355,7 +424,10 @@ function LootService.Start()
 						and os.clock() >= retryAt
 						and (root.Position - bag.position).Magnitude <= Products.AUTO_LOOT_RANGE
 					then
-						local _, err = LootService.Pickup(owner, bag.id, true)
+						-- Only what the loot filter lets Auto-loot take; the rest waits in the bag.
+						local _, err = LootService.Pickup(owner, bag.id, true, function(item)
+							return decision(owner, item) == "pickup"
+						end)
 						if err == "loot.partial" then
 							(bag :: any).autoRetryAt = os.clock() + 5 -- full backpack: do not spam
 						end
