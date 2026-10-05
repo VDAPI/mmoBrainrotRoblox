@@ -8,6 +8,8 @@
 local CollectionService = game:GetService("CollectionService")
 local Workspace = game:GetService("Workspace")
 
+local AreaSpawns = require(game:GetService("ReplicatedStorage").Shared.Logic.AreaSpawns)
+local Areas = require(game:GetService("ReplicatedStorage").Shared.Data.Areas)
 local Maps = require(game:GetService("ReplicatedStorage").Shared.Data.Maps)
 local Rng = require(game:GetService("ReplicatedStorage").Shared.Logic.Rng)
 
@@ -132,18 +134,32 @@ function Build.lake(ctx: Context, x: number, z: number, radius: number, depth: n
 	table.insert(ctx.sketch.shapes, { t = "circle", x = x, z = z, r = radius, c = "water" })
 end
 
--- Ring of mountains just outside the map edge plus invisible walls on the boundary.
+-- Ring of mountains just outside the map edge plus invisible walls on the boundary. S19: the balls have
+-- radius BORDER_RADIUS and their centres sit BORDER_RADIUS outside the edge, so no slope reaches into the map
+-- (portals near the edge used to stand 40–80 studs up the mountains).
+Build.BORDER_RADIUS = 70
+
 function Build.border(ctx: Context, material: Enum.Material, height: number)
 	local hx, hz = ctx.map.size.x / 2, ctx.map.size.z / 2
-	local step = 70
+	local step = 60
+	local r = Build.BORDER_RADIUS
+	local function mountain(x: number, z: number)
+		local rise = math.min(r, height + ctx.rng:float(-10, 15))
+		terrain:FillBall(Build.at(ctx, x, rise - r, z), r, material)
+		-- A second, higher ball further out keeps the skyline tall.
+		local far = r * 1.5
+		local fx = if math.abs(x) > hx then x + math.sign(x) * r * 0.9 else x
+		local fz = if math.abs(z) > hz then z + math.sign(z) * r * 0.9 else z
+		terrain:FillBall(Build.at(ctx, fx, height * 1.3 - far, fz), far, material)
+	end
 	for x = -hx, hx, step do
-		for _, z in { -hz - 30, hz + 30 } do
-			Build.hill(ctx, x + ctx.rng:float(-15, 15), z, 70, height + ctx.rng:float(-10, 20), material)
+		for _, z in { -hz - r, hz + r } do
+			mountain(x + ctx.rng:float(-12, 12), z)
 		end
 	end
 	for z = -hz, hz, step do
-		for _, x in { -hx - 30, hx + 30 } do
-			Build.hill(ctx, x, z + ctx.rng:float(-15, 15), 70, height + ctx.rng:float(-10, 20), material)
+		for _, x in { -hx - r, hx + r } do
+			mountain(x, z + ctx.rng:float(-12, 12))
 		end
 	end
 	-- The border hills are not part of the minimap.
@@ -253,6 +269,85 @@ end
 
 function Build.node(ctx: Context, kind: string, x: number, z: number)
 	table.insert(ctx.nodes, { kind = kind, x = x, z = z })
+end
+
+-- Roads of a region map from Data/Areas (one source with the monster areas and the map, S19).
+function Build.roads(ctx: Context, data: Areas.MapAreas)
+	for _, road in data.roads do
+		local ok, material = pcall(function()
+			return (Enum.Material :: any)[road.material]
+		end)
+		Build.path(ctx, road.points, road.width, if ok and material then material else Enum.Material.Ground)
+	end
+end
+
+-- Placement filter for props and nodes: off the roads, out of the water and the avoided circles.
+function Build.clearOf(data: Areas.MapAreas, margin: number?): (x: number, z: number) -> boolean
+	local m = margin or 6
+	return function(x: number, z: number): boolean
+		if AreaSpawns.nearRoad(data.roads, x, z, m) then
+			return false
+		end
+		for _, list in { data.lakes, data.avoid } do
+			for _, c in list do
+				if (x - c.x) ^ 2 + (z - c.z) ^ 2 < (c.r + m) ^ 2 then
+					return false
+				end
+			end
+		end
+		for _, entrance in data.caves do
+			if (x - entrance.x) ^ 2 + (z - entrance.z) ^ 2 < 40 * 40 then
+				return false
+			end
+		end
+		return true
+	end
+end
+
+-- Flattens the ground around a point: clears terrain above y = 0 and fills a solid slab below (portals,
+-- cave mouths), so nothing stands on a slope.
+function Build.flatten(ctx: Context, x: number, z: number, radius: number, material: Enum.Material?)
+	terrain:FillCylinder(CFrame.new(Build.at(ctx, x, 30, z)), 60, radius, Enum.Material.Air)
+	terrain:FillCylinder(CFrame.new(Build.at(ctx, x, -4, z)), 8, radius, material or Enum.Material.Ground)
+end
+
+-- Scatters `n` gathering nodes of `kind` in a rectangle, away from the circles in `avoid` ({x, z, r}) and
+-- from other nodes (S19: many more nodes per map).
+function Build.scatterNodes(
+	ctx: Context,
+	kind: string,
+	n: number,
+	rect: { number },
+	avoid: { { x: number, z: number, r: number } }?,
+	allow: ((x: number, z: number) -> boolean)?
+)
+	local placed = 0
+	local tries = 0
+	while placed < n and tries < n * 40 do
+		tries += 1
+		local x, z = ctx.rng:float(rect[1], rect[3]), ctx.rng:float(rect[2], rect[4])
+		local ok = allow == nil or allow(x, z)
+		if ok then
+			for _, c in (avoid or {}) :: { { x: number, z: number, r: number } } do
+				if (x - c.x) ^ 2 + (z - c.z) ^ 2 < c.r * c.r then
+					ok = false
+					break
+				end
+			end
+		end
+		if ok then
+			for _, other in ctx.nodes do
+				if (x - other.x) ^ 2 + (z - other.z) ^ 2 < 24 * 24 then
+					ok = false
+					break
+				end
+			end
+		end
+		if ok then
+			Build.node(ctx, kind, x, z)
+			placed += 1
+		end
+	end
 end
 
 function Build.icon(ctx: Context, kind: string, x: number, z: number, id: string?)

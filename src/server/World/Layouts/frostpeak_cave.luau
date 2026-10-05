@@ -3,6 +3,7 @@
 -- guardians, side caverns where the surface elites shelter, the young dragons' roost and the gate to
 -- Vaelgrath's lair (east).
 
+local Areas = require(game:GetService("ReplicatedStorage").Shared.Data.Areas)
 local Build = require(script.Parent.Parent.Build)
 local Prefabs = require(script.Parent.Parent.Prefabs)
 
@@ -58,13 +59,27 @@ return function(ctx: Build.Context)
 		Prefabs.column(ctx, -100 + math.cos(angle) * 50, math.sin(angle) * 50, 30, "#A8D8F0")
 	end
 
-	Prefabs.portal(ctx, "frostpeak_cave_exit", "frostpeak", -278, 0, 90, { x = 700, z = 0 })
+	Prefabs.portal(ctx, "frostpeak_cave_exit", "frostpeak", -278, 0, 90, Areas.arrivalOf("frostpeak_cave"))
 	Prefabs.dungeonGate(ctx, "frostpeak", 284, 0, 90)
 	Prefabs.torch(ctx, 272, -12, "#D64A3E")
 	Prefabs.torch(ctx, 272, 12, "#D64A3E")
 
-	Build.node(ctx, "vein_adamantite", -130, -205)
-	Build.node(ctx, "vein_adamantite", 75, 175)
+	-- Ore veins in the fighting rooms (S19: 6–10 per cave, Data/Areas/Caves)
+	local cave = Areas.caves.get("frostpeak_cave")
+	if cave and cave.rooms then
+		local rooms = cave.rooms
+		for i = 1, cave.oreCount do
+			local room = rooms[(i - 1) % (#rooms - 2) + 2]
+			local angle = ctx.rng:float(0, math.pi * 2)
+			local distance = room.r * ctx.rng:float(0.45, 0.75)
+			Build.node(
+				ctx,
+				cave.ores[(i - 1) % #cave.ores + 1],
+				room.x + math.cos(angle) * distance,
+				room.z + math.sin(angle) * distance
+			)
+		end
+	end
 
 	Build.zone(ctx, "red", nil, -320, -320, 320, 320)
 	Build.spawnPoint(ctx, -240, 0, 0, 0)

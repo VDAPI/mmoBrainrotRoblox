@@ -2,10 +2,15 @@
 -- Whispering Meadows (1–20, yellow). Sub-zones grow in level away from the city portal (west):
 -- fields 1–6 (west), forest 5–10 (north), the trade road with the bandit camp 9–14 (south-east), the goblin
 -- camp 13–18 (east). A lake with a fishing spot in the south-west, copper and iron veins, herbs, the entrance
--- to Mosshollow Cave (east) and the portal to Duskwood (north-east). Spawners: Data/Spawns/meadows.
+-- to Mosshollow Cave (east) and the portal to Duskwood (north-east). Monster groups: Data/Areas.
 
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local Areas = require(ReplicatedStorage.Shared.Data.Areas)
 local Build = require(script.Parent.Parent.Build)
 local Prefabs = require(script.Parent.Parent.Prefabs)
+
+local AREAS = Areas.byMap.meadows
 
 return function(ctx: Build.Context)
 	local hx, hz = ctx.map.size.x / 2, ctx.map.size.z / 2
@@ -16,15 +21,16 @@ return function(ctx: Build.Context)
 	Build.paint(ctx, -50, -430, 560, 740, 0, Enum.Material.LeafyGrass)
 	Build.paint(ctx, 610, -400, 340, 560, 0, Enum.Material.Ground)
 
-	-- Roads
-	Build.path(ctx, { -790, 0, -420, 0, -120, 80, 120, 260, 300, 380, 520, 300, 700, 340 }, 14, Enum.Material.Ground)
-	Build.path(ctx, { -120, 80, -80, -260, 60, -520 }, 10, Enum.Material.Ground)
-	Build.path(ctx, { 300, 380, 420, 120, 560, -200, 640, -480, 720, -700 }, 12, Enum.Material.Ground)
+	-- Roads (Data/Areas/meadows)
+	Build.roads(ctx, AREAS)
 
 	-- Lake (south-west) with a jetty
 	Build.lake(ctx, -470, 450, 95, 10)
 	Prefabs.jetty(ctx, -470, 345, 0)
 	Build.node(ctx, "fishing_meadows", -470, 352)
+	-- A second fishing pond on the bandits' road (S19)
+	Build.lake(ctx, -60, 560, 34, 6)
+	Build.node(ctx, "fishing_meadows", -60, 530)
 
 	-- Hills away from roads
 	for _, h in
@@ -110,31 +116,18 @@ return function(ctx: Build.Context)
 		return math.abs(z - (80 + (x + 120) * 0.75)) > 26 or x > 140
 	end)
 
-	-- Gathering
-	for _, n in { { -620, -420 }, { -580, -470 }, { -720, -330 }, { -260, 560 } } do
-		Build.node(ctx, "vein_copper", n[1], n[2])
-	end
-	for _, n in { { 120, -640 }, { -60, -700 }, { 480, -620 }, { 560, 120 } } do
-		Build.node(ctx, "vein_iron", n[1], n[2])
-	end
-	for _, n in { { -560, 120 }, { -400, -120 }, { -700, 220 }, { -350, 260 }, { -520, -300 } } do
-		Build.node(ctx, "bush_meadowsweet", n[1], n[2])
-	end
-	for _, n in { { -200, -500 }, { 40, -380 }, { -260, -200 }, { 150, -250 } } do
-		Build.node(ctx, "bush_nightshade", n[1], n[2])
-	end
-	for _, n in { { -380, 420 }, { -560, 520 } } do
-		Build.node(ctx, "bush_moonpetal", n[1], n[2])
-	end
+	-- Gathering (S19: 22 veins, 27 herb bushes)
+	local clear = Build.clearOf(AREAS)
+	Build.scatterNodes(ctx, "vein_copper", 12, { -760, -760, 0, 760 }, nil, clear)
+	Build.scatterNodes(ctx, "vein_iron", 10, { 0, -760, 760, 760 }, nil, clear)
+	Build.scatterNodes(ctx, "bush_meadowsweet", 12, { -760, -400, -200, 400 }, nil, clear)
+	Build.scatterNodes(ctx, "bush_nightshade", 9, { -320, -760, 400, -60 }, nil, clear)
+	Build.scatterNodes(ctx, "bush_moonpetal", 6, { -760, 360, 400, 760 }, nil, clear)
 
-	-- Portals
+	-- Portals and the three caves (S19)
 	Prefabs.portal(ctx, "meadows_city", "city", -770, 0, 90, { x = 236, z = 0 })
-	Prefabs.portal(ctx, "meadows_cave", "meadows_cave", 740, 340, 90)
 	Prefabs.portal(ctx, "meadows_duskwood", "duskwood", 730, -720, 45)
-	Prefabs.rock(ctx, 760, 360, 2.2)
-	Prefabs.rock(ctx, 760, 316, 2.2)
-	Prefabs.torch(ctx, 725, 356)
-	Prefabs.torch(ctx, 725, 324)
+	Prefabs.caveEntrances(ctx, AREAS)
 
 	-- Zones (smallest wins): whole map, then the sub-zones
 	Build.zone(ctx, "yellow", "zone.meadows.fields", -hx, -hz, hx, hz)
@@ -147,5 +140,5 @@ return function(ctx: Build.Context)
 	Build.spawnPoint(ctx, -150, -300, 0, 0)
 	Build.spawnPoint(ctx, 120, 300, 300, 400)
 	Build.spawnPoint(ctx, 470, -180, 640, -390)
-	Build.spawnPoint(ctx, 660, 380, 740, 340)
+	Build.spawnPoint(ctx, 660, 380, 745, 330)
 end

@@ -1,7 +1,11 @@
 --!strict
 -- Monster spawners and the AI loop (DESIGN §15.1, ARCHITECTURE §7).
---   * spawners come from Data/Spawns (per map), positions relative to the map offset
---   * a spawner sleeps (no spawning, no AI) while no player is within Combat.sleepRadius
+--   * spawners come from Data/Spawns (per map), positions relative to the map offset; since S19 every
+--     spawner is a group of 1–4 (Logic/AreaSpawns) that spawns, fights and respawns together: hitting or
+--     aggroing one member pulls the whole group, the group comes back 30–45 s after its last member died,
+--     models carry GroupId / GroupSize (living members) for the client's group rings
+--   * a spawner sleeps (no spawning, no AI) while no player is within Combat.sleepRadius; groups asleep for
+--     SLEEP_DESPAWN seconds with nobody fighting are removed and spawn fresh on the next wake
 --   * AI ticks at Combat.aiTickRate per monster, staggered across frames
 --   * Config.MaxActiveMonsters caps the number of live monsters on the server
 -- Combat resolution (attacks, abilities, rewards) is plugged in by CombatService via SetCombatHandlers.
@@ -47,9 +51,13 @@ type SpawnerRuntime = {
 	mapId: string,
 	origin: Vector3,
 	alive: { Monster.Monster },
-	respawnAt: { number },
+	respawnAt: number?, -- the whole group comes back at this time
+	spawned: boolean, -- the group has been populated since the last despawn
 	awake: boolean,
+	asleepSince: number,
 }
+
+local SLEEP_DESPAWN = 90
 
 local EntityService: any
 local ZoneService: any
@@ -121,6 +129,18 @@ local context: Monster.Context = {
 	isDisabled = function(monster): boolean
 		return monster.entity ~= nil and StatusEffectService.IsDisabled(monster.entity)
 	end,
+	engaged = function(monster, player: Player)
+		-- The group fights together: everyone alive in the group joins the fight against the same player.
+		local spawner = spawnerOf[monster]
+		if not spawner then
+			return
+		end
+		for _, member in spawner.alive do
+			if member ~= monster and member:IsAlive() and member.threat[player] == nil then
+				member:AddThreat(player, 0)
+			end
+		end
+	end,
 	isRooted = function(monster): boolean
 		return monster.entity ~= nil and StatusEffectService.IsRooted(monster.entity)
 	end,
@@ -161,7 +181,8 @@ function MonsterService.SpawnAt(
 	variant: "normal" | "elite" | "elite2",
 	level: number,
 	at: CFrame,
-	spawner: SpawnerRuntime?
+	spawner: SpawnerRuntime?,
+	attributes: { [string]: any }?
 ): Monster.Monster?
 	local def = Monsters.get(monsterId)
 	if not def then
@@ -173,9 +194,13 @@ function MonsterService.SpawnAt(
 	end
 	local actualVariant: "normal" | "elite" | "elite2" = if def.elites then variant else "normal"
 	local ground = groundAt(at.Position)
-	local monster = Monster.new(def, actualVariant, level, CFrame.new(ground) * at.Rotation, context, folder)
+	local monster =
+		Monster.new(def, actualVariant, level, CFrame.new(ground) * at.Rotation, context, folder, attributes)
 	monster.entity = EntityService.RegisterMonster(monster, monster.model)
 	monster.spawnerId = if spawner then spawner.data.id else nil
+	if spawner then
+		monster.home = spawner.origin
+	end
 	table.insert(monsters, monster)
 	nextTick[monster] = os.clock() + random:NextNumber() * TICK
 	if spawner then
@@ -201,6 +226,14 @@ local function removeFrom(list: { any }, value: any)
 	local index = table.find(list, value)
 	if index then
 		table.remove(list, index)
+	end
+end
+
+-- Living members of a group, mirrored on every member (client group rings, "xN" plate).
+local function refreshGroupSize(spawner: SpawnerRuntime)
+	local n = #spawner.alive
+	for _, member in spawner.alive do
+		member.model:SetAttribute("GroupSize", n)
 	end
 end
 
@@ -238,8 +271,11 @@ function MonsterService.OnDied(monster: Monster.Monster)
 	spawnerOf[monster] = nil
 	if spawner then
 		removeFrom(spawner.alive, monster)
-		local respawn = spawner.data.respawn
-		table.insert(spawner.respawnAt, os.clock() + respawn.min + random:NextNumber() * (respawn.max - respawn.min))
+		refreshGroupSize(spawner)
+		if #spawner.alive == 0 then
+			local respawn = spawner.data.respawn
+			spawner.respawnAt = os.clock() + respawn.min + random:NextNumber() * (respawn.max - respawn.min)
+		end
 	end
 	fadeAndDestroy(monster)
 end
@@ -255,47 +291,132 @@ function MonsterService.Despawn(monster: Monster.Monster)
 	spawnerOf[monster] = nil
 	if spawner then
 		removeFrom(spawner.alive, monster)
+		refreshGroupSize(spawner)
 	end
 	monster:Destroy()
 end
 
-local function spawnFromSpawner(spawner: SpawnerRuntime, announce: boolean)
+-- Spawns the whole group (all members at once). Elite II picks its kind from `choices`.
+local function spawnGroup(spawner: SpawnerRuntime, announce: boolean)
 	local data = spawner.data
-	local angle = random:NextNumber() * math.pi * 2
-	local radius = random:NextNumber() * data.radius
-	local position = spawner.origin + Vector3.new(math.cos(angle) * radius, 0, math.sin(angle) * radius)
-	local level = random:NextInteger(data.level.min, data.level.max)
-	local facing = CFrame.Angles(0, random:NextNumber() * math.pi * 2, 0)
-	local monster = MonsterService.SpawnAt(data.monster, data.variant, level, CFrame.new(position) * facing, spawner)
-	if monster and announce and monster.variant == "elite2" then
-		for _, player in Players:GetPlayers() do
-			local zone = ZoneService.GetZone(player)
-			if zone and zone.map == spawner.mapId then
-				Net.Fire(player, "SystemMessage", "combat.elite2Spawned", { name = "@" .. monster:Name() })
+	spawner.spawned = true
+	spawner.respawnAt = nil
+	local kinds = data.members or table.create(data.count, data.monster)
+	if data.choices and #data.choices > 0 then
+		kinds = { data.choices[random:NextInteger(1, #data.choices)] }
+	end
+	local attributes = { GroupId = data.id, GroupSize = #kinds }
+	for _, kind in kinds do
+		local angle = random:NextNumber() * math.pi * 2
+		-- sqrt keeps the members evenly spread over the circle instead of bunched in the middle.
+		local radius = math.sqrt(random:NextNumber()) * data.radius
+		local position = spawner.origin + Vector3.new(math.cos(angle) * radius, 0, math.sin(angle) * radius)
+		local level = random:NextInteger(data.level.min, data.level.max)
+		local facing = CFrame.Angles(0, random:NextNumber() * math.pi * 2, 0)
+		local monster =
+			MonsterService.SpawnAt(kind, data.variant, level, CFrame.new(position) * facing, spawner, attributes)
+		if monster and announce and monster.variant == "elite2" then
+			for _, player in Players:GetPlayers() do
+				local zone = ZoneService.GetZone(player)
+				if zone and zone.map == spawner.mapId then
+					Net.Fire(player, "SystemMessage", "combat.elite2Spawned", { name = "@" .. monster:Name() })
+				end
 			end
 		end
 	end
+	refreshGroupSize(spawner)
+end
+
+-- Removes a sleeping group without rewards; it spawns fresh when a player comes back.
+local function despawnGroup(spawner: SpawnerRuntime)
+	for _, member in table.clone(spawner.alive) do
+		MonsterService.Despawn(member)
+	end
+	spawner.spawned = false
+end
+
+local function groupIdle(spawner: SpawnerRuntime): boolean
+	for _, member in spawner.alive do
+		if member.state ~= "idle" then
+			return false
+		end
+	end
+	return true
+end
+
+-- Player positions, gathered once per update (spawners x players distance checks are cheap).
+local function playerPositions(): { Vector3 }
+	local list = {}
+	for _, player in Players:GetPlayers() do
+		local character = player.Character
+		local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+		if root then
+			table.insert(list, root.Position)
+		end
+	end
+	return list
 end
 
 local function updateSpawners()
 	local now = os.clock()
+	local positions = playerPositions()
+	local radiusSq = Combat.sleepRadius * Combat.sleepRadius
 	for _, spawner in spawners do
-		spawner.awake = #EntityService.QueryPlayers(spawner.origin, Combat.sleepRadius) > 0
-		if not spawner.awake then
-			continue
-		end
-		-- Due respawns first, then fill up (initial population) without announcements.
-		for i = #spawner.respawnAt, 1, -1 do
-			if spawner.respawnAt[i] <= now then
-				table.remove(spawner.respawnAt, i)
-				spawnFromSpawner(spawner, true)
+		local awake = false
+		for _, position in positions do
+			local d = position - spawner.origin
+			if d.X * d.X + d.Z * d.Z <= radiusSq and math.abs(d.Y) < 300 then
+				awake = true
+				break
 			end
 		end
-		local missing = spawner.data.count - #spawner.alive - #spawner.respawnAt
-		for _ = 1, missing do
-			spawnFromSpawner(spawner, false)
+		if awake ~= spawner.awake then
+			spawner.awake = awake
+			spawner.asleepSince = now
+		end
+		if not awake then
+			if spawner.spawned and #spawner.alive > 0 and now - spawner.asleepSince > SLEEP_DESPAWN then
+				if groupIdle(spawner) then
+					despawnGroup(spawner)
+				end
+			end
+			continue
+		end
+		if spawner.respawnAt and spawner.respawnAt <= now then
+			spawnGroup(spawner, true)
+		elseif not spawner.spawned or (#spawner.alive == 0 and spawner.respawnAt == nil) then
+			spawnGroup(spawner, false)
 		end
 	end
+end
+
+-- Group statistics for /groups: groups, size distribution, active (awake) groups.
+function MonsterService.GroupStats(mapId: string?): (number, { number }, number)
+	local total, active = 0, 0
+	local sizes = { 0, 0, 0, 0 }
+	for _, spawner in spawners do
+		if mapId == nil or spawner.mapId == mapId then
+			total += 1
+			local n = math.clamp(spawner.data.count, 1, 4)
+			sizes[n] += 1
+			if spawner.awake then
+				active += 1
+			end
+		end
+	end
+	return total, sizes, active
+end
+
+-- Respawns the Elite II of a cave right away (admin /e2 spawn). Returns false when the map has none.
+function MonsterService.RespawnElite2(mapId: string): boolean
+	for _, spawner in spawners do
+		if spawner.mapId == mapId and spawner.data.variant == "elite2" then
+			despawnGroup(spawner)
+			spawnGroup(spawner, true)
+			return true
+		end
+	end
+	return false
 end
 
 function MonsterService.Stats(): (number, number, number, number)
@@ -369,8 +490,10 @@ function MonsterService.Init(registry)
 					map.offset.z + data.position.z
 				),
 				alive = {},
-				respawnAt = {},
+				respawnAt = nil,
+				spawned = false,
 				awake = false,
+				asleepSince = 0,
 			})
 		end
 	end

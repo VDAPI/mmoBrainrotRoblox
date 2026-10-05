@@ -37,6 +37,8 @@ export type Context = {
 	isDisabled: (monster: any) -> boolean,
 	isRooted: (monster: any) -> boolean,
 	taunter: (monster: any) -> Player?,
+	-- A player newly joined the monster's threat list (S19: the rest of the group joins the fight).
+	engaged: ((monster: any, player: Player) -> ())?,
 }
 
 local Monster = {}
@@ -72,6 +74,8 @@ export type Monster = typeof(setmetatable(
 		speedFactor: number,
 		-- Bosses: own leash range (arena) and no rewards through CombatService.
 		leashRange: number?,
+		-- Centre of the monster's group (S19): wander and leash around it instead of the own spawn point.
+		home: Vector3?,
 		isBoss: boolean?,
 	},
 	Monster
@@ -85,7 +89,8 @@ function Monster.new(
 	level: number,
 	spawnCFrame: CFrame,
 	ctx: Context,
-	parent: Instance
+	parent: Instance,
+	attributes: { [string]: any }?
 ): Monster
 	local stats = MonsterStats.compute(def, level, variant)
 	local model = RigBuilder.build(def, variant, stats.scale)
@@ -99,6 +104,10 @@ function Monster.new(
 	model:SetAttribute("MaxHp", stats.maxHp)
 	model:SetAttribute("Hp", stats.maxHp)
 	model:PivotTo(spawnCFrame + Vector3.new(0, humanoid.HipHeight + root.Size.Y / 2, 0))
+	-- Group attributes (GroupId, GroupSize) must be there before the model replicates.
+	for name, value in (attributes or {}) :: { [string]: any } do
+		model:SetAttribute(name, value)
+	end
 	model.Parent = parent
 	root:SetNetworkOwner(nil)
 
@@ -132,6 +141,7 @@ function Monster.new(
 		damageOverride = nil,
 		speedFactor = 1,
 		leashRange = nil,
+		home = nil,
 		isBoss = nil,
 	}, Monster)
 	return self
@@ -155,6 +165,11 @@ end
 
 local function distanceFlat(a: Vector3, b: Vector3): number
 	return (flat(a) - flat(b)).Magnitude
+end
+
+-- Wander / leash centre: the group centre, or the own spawn point.
+local function homeOf(self: Monster): Vector3
+	return self.home or self.spawnCFrame.Position
 end
 
 local function setHp(self: Monster, hp: number)
@@ -261,6 +276,9 @@ end
 local function engage(self: Monster, player: Player)
 	if self.threat[player] == nil then
 		self.threat[player] = 0
+		if self.ctx.engaged then
+			self.ctx.engaged(self, player)
+		end
 	end
 	if self.state == "idle" then
 		self.state = "chase"
@@ -297,7 +315,7 @@ local function stepIdle(self: Monster, now: number)
 		self.nextWander = now + 4 + self.random:NextNumber() * 5
 		local angle = self.random:NextNumber() * math.pi * 2
 		local radius = self.random:NextNumber() * Combat.wanderRadius
-		local point = self.spawnCFrame.Position + Vector3.new(math.cos(angle) * radius, 0, math.sin(angle) * radius)
+		local point = homeOf(self) + Vector3.new(math.cos(angle) * radius, 0, math.sin(angle) * radius)
 		if not self.ctx.isSafePosition(point) then
 			self.humanoid:MoveTo(point)
 		end
@@ -306,7 +324,7 @@ end
 
 local function stepChase(self: Monster, now: number)
 	local position = self.root.Position
-	if distanceFlat(position, self.spawnCFrame.Position) > (self.leashRange or Combat.leashRange) then
+	if distanceFlat(position, homeOf(self)) > (self.leashRange or Combat.leashRange) then
 		self:StartReturn()
 		return
 	end

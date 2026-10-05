@@ -9,6 +9,7 @@ local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local GroupColors = require(script.Parent.Parent.Parent.GroupColors)
 local MapSketch = require(script.Parent.Parent.Parent.MapSketch)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local Npcs = require(ReplicatedStorage.Shared.Data.Npcs)
@@ -31,6 +32,7 @@ local ZONE_COLORS = {
 }
 local ICONS: { [string]: { glyph: string, color: string } } = {
 	portal = { glyph = "◎", color = "#B9A8FF" },
+	cave = { glyph = "⛰", color = "#D9C9A8" },
 	dungeon = { glyph = "☠", color = "#D64A3E" },
 	node = { glyph = "•", color = "#E8C25A" },
 	spawn = { glyph = "", color = "#C9A45C" },
@@ -151,15 +153,18 @@ local function Minimap(scope: Scope): Instance
 			if camera then
 				local look = camera.CFrame.LookVector
 				local heading = math.deg(math.atan2(look.X, -look.Z))
+				-- The arrow shows where the character faces (S19), not the camera.
+				local facing = root.CFrame.LookVector
+				local characterHeading = math.deg(math.atan2(facing.X, -facing.Z))
 				if Fusion.peek(rotating) == true then
 					holder.Rotation = -heading
-					arrowRotation:set(0)
+					arrowRotation:set(characterHeading - heading)
 					local angle = math.rad(-heading)
 					local r = SIZE / 2 - 12
 					northPosition:set(UDim2.new(0.5, math.sin(angle) * r, 0.5, -math.cos(angle) * r))
 				else
 					holder.Rotation = 0
-					arrowRotation:set(heading)
+					arrowRotation:set(characterHeading)
 					northPosition:set(UDim2.new(0.5, 0, 0, 12))
 				end
 			end
@@ -199,8 +204,9 @@ local function Minimap(scope: Scope): Instance
 							local p = MapSketch.toPixel(sketch, currentScale, local_.X, local_.Z)
 							dot.Position = UDim2.fromOffset(p.X, p.Y)
 							dot.Size = UDim2.fromOffset(size, size)
+							-- Normal monsters in the colour of their group size (S19), elites gold.
 							dot.BackgroundColor3 = if variant == "normal" or variant == nil
-								then Theme.Colors.DangerHover
+								then GroupColors.of(model:GetAttribute("GroupSize") :: number?)
 								else Theme.Colors.GoldBright
 							dot.BorderSizePixel = 0
 							dot.ZIndex = 4

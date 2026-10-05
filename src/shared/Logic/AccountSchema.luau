@@ -35,6 +35,7 @@ function AccountSchema.accountTemplate(): AccountData
 			cameraSens = 1,
 			sellConfirm = true,
 			autoTarget = true,
+			groupRings = true,
 			keys = {},
 		},
 		purchases = {},

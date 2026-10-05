@@ -5,6 +5,7 @@
 
 local CollectionService = game:GetService("CollectionService")
 
+local Areas = require(game:GetService("ReplicatedStorage").Shared.Data.Areas)
 local Build = require(script.Parent.Build)
 
 local Prefabs = {}
@@ -866,6 +867,10 @@ function Prefabs.portal(
 	rot: number?,
 	arrive: { x: number, z: number }?
 ): Model
+	if ctx.rayFrom > 20 then
+		-- Outdoors: flat ground under the portal (S19); caves are carved flat already.
+		Build.flatten(ctx, x, z, 14)
+	end
 	local base = baseAt(ctx, x, z, rot)
 	local model = newModel(ctx, `Portal_{id}`, ctx.folder)
 	local stone = hex("#5E5A64")
@@ -915,6 +920,140 @@ function Prefabs.portal(
 	CollectionService:AddTag(model, "Portal")
 	Build.icon(ctx, "portal", x, z, target)
 	return model
+end
+
+-- Signpost (S19): a post with a board; clients write the localized name and levels on it (tag "Signpost",
+-- attributes NameKey, LvMin, LvMax).
+function Prefabs.signpost(
+	ctx: Context,
+	x: number,
+	z: number,
+	rot: number?,
+	nameKey: string,
+	lvMin: number?,
+	lvMax: number?
+): Model
+	local base = baseAt(ctx, x, z, rot)
+	local model = newModel(ctx, "Signpost", ctx.folder)
+	part(ctx, model, {
+		Name = "Post",
+		Size = Vector3.new(0.6, 7, 0.6),
+		CFrame = base * CFrame.new(0, 3.5, 0),
+		Color = hex("#5A4632"),
+		Material = Enum.Material.Wood,
+	})
+	local board = part(ctx, model, {
+		Name = "Board",
+		Size = Vector3.new(7, 2.6, 0.3),
+		CFrame = base * CFrame.new(0, 6, -0.4),
+		Color = hex("#8A6B4A"),
+		Material = Enum.Material.Wood,
+	})
+	model.PrimaryPart = board
+	model:SetAttribute("NameKey", nameKey)
+	if lvMin and lvMax then
+		model:SetAttribute("LvMin", lvMin)
+		model:SetAttribute("LvMax", lvMax)
+	end
+	CollectionService:AddTag(model, "Signpost")
+	return model
+end
+
+-- Cave mouth (S19): a rock arch around a dark opening with torches and a sign. The opening looks towards
+-- `rot` (0 = -Z). The portal into the cave stands in the opening (placed by the caller).
+function Prefabs.caveMouth(
+	ctx: Context,
+	x: number,
+	z: number,
+	rot: number,
+	nameKey: string,
+	lvMin: number,
+	lvMax: number,
+	rockColor: string?
+): Model
+	Build.flatten(ctx, x, z, 26)
+	local base = baseAt(ctx, x, z, rot)
+	local model = newModel(ctx, "CaveMouth", ctx.folder)
+	local rock = hex(rockColor or "#5A5650")
+	-- Back wall of rock and the dark hole
+	part(ctx, model, {
+		Name = "Back",
+		Size = Vector3.new(30, 24, 10),
+		CFrame = base * CFrame.new(0, 10, 8),
+		Color = rock,
+		Material = Enum.Material.Slate,
+		CanQuery = true,
+	})
+	part(ctx, model, {
+		Name = "Hole",
+		Size = Vector3.new(14, 15, 0.4),
+		CFrame = base * CFrame.new(0, 7.5, 2.9),
+		Color = hex("#050506"),
+		Material = Enum.Material.SmoothPlastic,
+	})
+	-- Arch: two pillars of stacked boulders and a lintel
+	for _, side in { -1, 1 } do
+		for i = 0, 2 do
+			part(ctx, model, {
+				Name = "Boulder",
+				Shape = Enum.PartType.Ball,
+				Size = Vector3.one * (7 - i),
+				CFrame = base * CFrame.new(side * (9 + i * 0.6), 3 + i * 5.5, 1),
+				Color = rock,
+				Material = Enum.Material.Slate,
+				CanQuery = true,
+			})
+		end
+	end
+	part(ctx, model, {
+		Name = "Lintel",
+		Size = Vector3.new(24, 4, 6),
+		CFrame = base * CFrame.new(0, 17, 1) * CFrame.Angles(0, 0, math.rad(4)),
+		Color = rock,
+		Material = Enum.Material.Slate,
+	})
+	-- Rocks around the mouth
+	for _, offset in { { -16, 6 }, { 16, 5 }, { -14, -4 }, { 15, -3 } } do
+		local p = base * CFrame.new(offset[1], 0, offset[2])
+		Prefabs.rock(ctx, p.Position.X - ctx.origin.X, p.Position.Z - ctx.origin.Z, 1.6, rockColor)
+	end
+	-- Torches and the sign in front
+	for _, side in { -1, 1 } do
+		local p = base * CFrame.new(side * 9, 0, -6)
+		Prefabs.torch(ctx, p.Position.X - ctx.origin.X, p.Position.Z - ctx.origin.Z)
+	end
+	local sign = base * CFrame.new(-13, 0, -14)
+	Prefabs.signpost(
+		ctx,
+		sign.Position.X - ctx.origin.X,
+		sign.Position.Z - ctx.origin.Z,
+		rot + 180,
+		nameKey,
+		lvMin,
+		lvMax
+	)
+	Build.icon(ctx, "cave", x, z)
+	return model
+end
+
+-- Cave mouth, sign and portal for every cave entrance of a region map (S19, Data/Areas).
+function Prefabs.caveEntrances(ctx: Context, data: Areas.MapAreas, rockColor: string?)
+	for _, entrance in data.caves do
+		local cave = Areas.caves.get(entrance.cave)
+		if cave then
+			Prefabs.caveMouth(
+				ctx,
+				entrance.x,
+				entrance.z,
+				entrance.rot,
+				cave.nameKey,
+				cave.levels[1],
+				cave.levels[2],
+				rockColor
+			)
+			Prefabs.portal(ctx, `{ctx.map.id}_{entrance.cave}`, entrance.cave, entrance.x, entrance.z, entrance.rot)
+		end
+	end
 end
 
 -- Boss dungeon entrance (S09 handles entering; tag "DungeonEntrance", attribute DungeonRegion).

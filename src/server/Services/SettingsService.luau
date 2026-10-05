@@ -51,6 +51,9 @@ local SETTINGS: { [string]: (value: any) -> boolean } = {
 	autoTarget = function(value)
 		return type(value) == "boolean"
 	end,
+	groupRings = function(value)
+		return type(value) == "boolean"
+	end,
 }
 
 function SettingsService.Start()

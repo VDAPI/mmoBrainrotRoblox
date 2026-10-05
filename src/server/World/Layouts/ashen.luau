@@ -3,8 +3,13 @@
 -- north: the ash orc warcamp with watchtowers (48–56); centre: the golem fields around lava pools (52–60);
 -- south-east: scorpion dunes (55–63); north-east: wyvern crags (58–66); east: the gate to Deepforge.
 
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local Areas = require(ReplicatedStorage.Shared.Data.Areas)
 local Build = require(script.Parent.Parent.Build)
 local Prefabs = require(script.Parent.Parent.Prefabs)
+
+local AREAS = Areas.byMap.ashen
 
 local function lavaPool(ctx: Build.Context, x: number, z: number, radius: number)
 	Build.paint(ctx, x, z, radius * 2, radius * 2, 0, Enum.Material.CrackedLava)
@@ -29,12 +34,8 @@ return function(ctx: Build.Context)
 		lavaPool(ctx, p[1], p[2], p[3])
 	end
 
-	-- Roads
-	Build.path(ctx, { -790, 0, -480, 0, -240, -60, 0, -60, 260, -20, 520, 0, 760, 0 }, 14, Enum.Material.Pavement)
-	Build.path(ctx, { -790, 160, -480, 0 }, 10, Enum.Material.Pavement)
-	Build.path(ctx, { -240, -60, -200, -420 }, 10, Enum.Material.Pavement)
-	Build.path(ctx, { 260, -20, 420, 360 }, 10, Enum.Material.Sand)
-	Build.path(ctx, { 520, 0, 620, -440, 740, -740 }, 10, Enum.Material.Pavement)
+	-- Roads (Data/Areas/ashen)
+	Build.roads(ctx, AREAS)
 
 	-- Ash orc warcamp (north-west)
 	Prefabs.palisade(ctx, -420, -660, -60, -660)
@@ -64,20 +65,18 @@ return function(ctx: Build.Context)
 	Prefabs.ruins(ctx, -520, 420, "#7A6A58")
 	Prefabs.ruins(ctx, 200, 640, "#7A6A58")
 
-	-- Gathering
-	for _, n in { { -560, -260 }, { -120, -300 }, { 340, -200 }, { 600, 160 } } do
-		Build.node(ctx, "vein_silver", n[1], n[2])
-	end
-	for _, n in { { 460, -620 }, { 700, -560 }, { 560, 700 } } do
-		Build.node(ctx, "vein_mithril", n[1], n[2])
-	end
-	for _, n in { { -420, 260 }, { -600, 120 }, { 180, 420 }, { 380, 120 } } do
-		Build.node(ctx, "bush_firebloom", n[1], n[2])
-	end
+	-- Gathering (S19: 22 veins, 26 herb bushes)
+	local clear = Build.clearOf(AREAS)
+	Build.scatterNodes(ctx, "vein_silver", 12, { -760, -760, 0, 760 }, nil, clear)
+	Build.scatterNodes(ctx, "vein_mithril", 10, { 0, -760, 760, 760 }, nil, clear)
+	Build.scatterNodes(ctx, "bush_firebloom", 26, { -760, -760, 760, 760 }, nil, clear)
 	-- Oasis with a fishing spot
 	Build.lake(ctx, -560, 600, 70, 8)
 	Prefabs.jetty(ctx, -560, 520, 0)
 	Build.node(ctx, "fishing_ashen", -560, 526)
+	-- A second spring in the flats (S19)
+	Build.lake(ctx, -680, 300, 26, 6)
+	Build.node(ctx, "fishing_ashen", -680, 270)
 	for _, p in { { -500, 560 }, { -620, 650 }, { -520, 670 } } do
 		Prefabs.tree(ctx, p[1], p[2], "willow", 1.2)
 	end
@@ -85,7 +84,6 @@ return function(ctx: Build.Context)
 	-- Portals
 	Prefabs.portal(ctx, "ashen_duskwood", "duskwood", -770, 0, 90, { x = 690, z = -690 })
 	Prefabs.portal(ctx, "ashen_city", "city", -770, 160, 90, { x = 236, z = 0 })
-	Prefabs.portal(ctx, "ashen_cave", "ashen_cave", 760, 0, 90)
 	Prefabs.portal(ctx, "ashen_frostpeak", "frostpeak", 740, -740, 45)
 
 	Build.zone(ctx, "yellow", "zone.ashen.flats", -hx, -hz, hx, hz)
@@ -99,5 +97,6 @@ return function(ctx: Build.Context)
 	Build.spawnPoint(ctx, -100, -20, 40, 150)
 	Build.spawnPoint(ctx, 300, 260, 460, 450)
 	Build.spawnPoint(ctx, 480, -200, 620, -440)
-	Build.spawnPoint(ctx, 690, 40, 760, 0)
+	Build.spawnPoint(ctx, 690, 40, 745, 0)
+	Prefabs.caveEntrances(ctx, AREAS, "#3A2A24")
 end

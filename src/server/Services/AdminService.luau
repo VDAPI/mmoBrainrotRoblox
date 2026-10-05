@@ -19,6 +19,7 @@ local MonsterStats = require(Shared.Logic.MonsterStats)
 local Log = require(Shared.Util.Log)
 local Inventory = require(Shared.Logic.Inventory)
 local ItemRoll = require(Shared.Logic.ItemRoll)
+local Areas = require(Shared.Data.Areas)
 local Blessings = require(Shared.Data.Blessings)
 local Bosses = require(Shared.Data.Bosses)
 local Clock = require(Shared.Util.Clock)
@@ -462,6 +463,25 @@ COMMANDS.tp = {
 	usageKey = "admin.usage.tp",
 	run = function(player, args)
 		local mapId = args[1]
+		if mapId == "cave" and args[2] then
+			-- /tp cave <id>: in front of the cave mouth on its region map (S19).
+			local cave = Areas.caves.get(args[2])
+			local arrival = Areas.arrivalOf(args[2])
+			if not cave or not arrival or not WorldService.IsBuilt(cave.region) then
+				reply(player, "admin.usage.tp")
+				return
+			end
+			withCharacter(player, function()
+				task.spawn(
+					TravelService.TeleportToMap,
+					player,
+					cave.region,
+					WorldService.GroundCFrame(cave.region, arrival.x, arrival.z)
+				)
+				reply(player, "admin.tp.map", { map = cave.region })
+			end)
+			return
+		end
 		if mapId == "boss" and args[2] then
 			-- /tp boss <id>: in front of that boss's dungeon gate.
 			local def = Bosses.get(args[2])
@@ -965,11 +985,64 @@ COMMANDS.bless = {
 COMMANDS.nodes = {
 	usageKey = "admin.usage.nodes",
 	run = function(player, args)
+		if args[1] == "count" then
+			-- Gathering nodes per kind on the current map (S19).
+			local character = PlayerStateService.GetCharacter(player)
+			local mapId = character and character.location.map or ""
+			local counts: { [string]: number } = {}
+			for _, placement in WorldService.GetNodePlacements() do
+				if placement.map == mapId then
+					counts[placement.kind] = (counts[placement.kind] or 0) + 1
+				end
+			end
+			local parts = {}
+			for kind, n in counts do
+				table.insert(parts, `{kind} {n}`)
+			end
+			table.sort(parts)
+			reply(player, "admin.nodes.count", { map = mapId, list = table.concat(parts, ", ") })
+			return
+		end
 		if args[1] ~= "respawn" then
 			reply(player, "admin.usage.nodes")
 			return
 		end
 		reply(player, "admin.nodes.ok", { n = GatherService.RespawnAll() })
+	end,
+}
+
+COMMANDS.groups = {
+	usageKey = "admin.usage.groups",
+	run = function(player)
+		local character = PlayerStateService.GetCharacter(player)
+		local mapId = character and character.location.map or nil
+		local total, sizes, active = MonsterService.GroupStats(mapId)
+		reply(player, "admin.groups.info", {
+			map = mapId or "?",
+			total = total,
+			s1 = sizes[1],
+			s2 = sizes[2],
+			s3 = sizes[3],
+			s4 = sizes[4],
+			active = active,
+		})
+	end,
+}
+
+COMMANDS.e2 = {
+	usageKey = "admin.usage.e2",
+	run = function(player, args)
+		if args[1] ~= "spawn" then
+			reply(player, "admin.usage.e2")
+			return
+		end
+		local character = PlayerStateService.GetCharacter(player)
+		local mapId = character and character.location.map or ""
+		if MonsterService.RespawnElite2(mapId) then
+			reply(player, "admin.e2.ok")
+		else
+			reply(player, "admin.e2.none")
+		end
 	end,
 }
 

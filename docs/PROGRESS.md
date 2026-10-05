@@ -25,13 +25,29 @@
 | S17 | Zmiana klawiszy, sprzedaż przeciąganiem, kanały czatu, kody nagród | ● |
 | S17b | Animacje proceduralne potworów, modele broni, pozy rzucania (dodatkowa, poza planem) | ● |
 | S18 | Poprawki po testach (1/2): walka, sterowanie, przedmioty, broń, UI | ● |
-| S19 | Poprawki po testach (2/2): grupy potworów, jaskinie, nowe potwory | ○ |
+| S19 | Poprawki po testach (2/2): grupy potworów, jaskinie, nowe potwory | ● |
 | S20 | Szczegółowa mapa z obszarami potworów, bogatszy świat, wygoda łupu | ○ |
 
 Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana przez właściciela
 
 ## Decyzje
 (Claude dopisuje tu decyzje podjęte w trakcie sesji, z numerem sesji.)
+- **S19** Obszary potworów są danymi współdzielonymi (`Data/Areas/<mapa>.luau`, `Data/Areas/Caves.luau`): prostokąty z
+  poziomami, rodzajami i liczbą grup, drogi (layouty rysują je z tych danych), jeziora, miejsca do omijania i wejścia do
+  jaskiń. `Logic/AreaSpawns` deterministycznie (seed z id obszaru) robi z nich spawnery grup; `Data/Spawns` nie ma już
+  ręcznych plików. Klient (S20) czyta te same dane do mapy zamiast szkicu.
+- **S19** Grupa = jeden spawner (`members` = rodzaj każdego członka, Elita II: `choices`). Cała grupa odradza się 30–45 s
+  po śmierci ostatniego członka; aggro/obrażenia jednego dołączają resztę (hook `engaged`); spacer i smycz od środka
+  grupy (`Monster.home`). Grupy uśpione ponad 90 s bez walki znikają i pojawiają się świeże po powrocie gracza, więc
+  `MaxActiveMonsters` = 600 wystarcza mimo ~400 grup na serwerze.
+- **S19** Jaskinie: 3 na region (8 nowych generuje `World/Layouts/CaveTemplate` z planu `Logic/CaveGen`, ten sam plan
+  zna `AreaSpawns`), 4 jaskinie bossów zostały ręczne, z komnatami w danych. Jaskinie bossów zmieniły przedziały:
+  16–20, 38–45, 63–70, 92–100. Elity questów: Elity Goblinów w Jaskini Mchów (i w Goblińskim Kopcu), Szkieletowi
+  Strażnicy w Krypcie, Krasnoludy Renegaci w Kuźni Głębin, Strażnicy Kryształu w Sercu Lodowca.
+- **S19** Góry graniczne: kule o promieniu 70 ze środkiem 70 st. za krawędzią (plus wyższa kula dalej), więc żaden stok
+  nie wchodzi na mapę; portale i wyloty jaskiń spłaszczają teren (`Build.flatten`).
+- **S19** Tabliczki (wyloty jaskiń) to modele z tagiem `Signpost` (atrybuty NameKey, LvMin, LvMax); tekst w języku
+  gracza pisze klient (`SignController`). S20 użyje tego samego dla drogowskazów obszarów.
 - **S18** Ucieczka z walki: klient wysyła `SetTarget(entityId, false)` (cel zostaje na serwerze dla umiejętności i komend
   admina, ale bez auto-ataku). Ręczny ruch (WASD/joystick) zatrzymuje podchodzenie i atak; przez 1.5 s bez auto-celu i
   obracania. Atak wraca po kliknięciu wroga (każde kliknięcie wysyła `SetTarget` ponownie) albo po umiejętności na cel.
@@ -1391,3 +1407,56 @@ kilku sekund); dystans do NPC liczony od pozycji postaci kontrolowanej przez kli
     dłoni z kilku części.
 20. HUD questów: główny quest z „Od: …”, po wykonaniu „Wykonane: oddaj u …”; poniżej „Zlecenia: Tablica Zleceń” i
     każde zlecenie z tytułem. Dziennik (L): „Zleceniodawca: …”.
+
+### S19: Poprawki po testach (2/2): grupy potworów, jaskinie, nowe potwory
+
+**Zrobione**
+- Grupy potworów 1–4 (30/30/25/15%) gęsto po mapach: 56–58 grup na mapę regionu w 9 nazwanych obszarach (np. „Wilcze
+  Wzgórza 3–7”, „Obóz Goblinów 13–18”), 10 rodzajów na mapę, 2–3 na obszar, poziomy bez dziur od 1 do 100. Grupy omijają
+  drogi, wodę, portale, punkty odrodzenia i wejścia do jaskiń, min. 45 st. odstępu.
+- Grupa walczy razem, odradza się w całości 30–45 s po śmierci ostatniego, spaceruje do 8 st. od środka. Uśpienie 250 st.
+  (sprawdzane raz na sekundę po liście pozycji graczy).
+- Kolor grupy: krąg na ziemi pod każdym potworem (1 szary, 2 zielony, 3 pomarańczowy, 4 czerwony), plakietka „×N” obok
+  poziomu, kropki na minimapie w tym kolorze. Opcja „Kręgi grup potworów”.
+- 20 nowych rodzajów potworów (po 5 na region) z nazwami Elit i Elit II, zdolnościami i łupem.
+- 12 jaskiń (3 na region): Kryjówka Przemytników, Gobliński Kopiec, Jaskinia Mchów; Wilcza Nora, Kurhan Kultystów,
+  Krypta Zapomnianych; Opuszczona Kopalnia, Leże Wywerny, Kuźnia Głębin; Lodowa Grota, Zamarznięta Twierdza, Serce
+  Lodowca. Każda: czerwona strefa, 2–3 rodzaje zwykłych grup, 2 rodzaje Elit (4–5 grup po 1–2), dokładnie 1 Elita II
+  (rodzaj losowany przy odrodzeniu, 10–20 min, ogłoszenie), 7–10 żył rud.
+- Wejścia do jaskiń: wylot ze skał (łuk, ciemny otwór, pochodnie, tabliczka z nazwą i poziomami), płaski teren, portal
+  w środku. Góry graniczne nie wchodzą już na mapę (portale stały na zboczach). Mapa świata ma węzły jaskiń przy
+  faktycznych wejściach, ikona ⛰ na mapie i minimapie.
+- Więcej węzłów: 22 żyły i 26–27 krzaków ziół na mapę regionu, 7–10 żył w jaskini, odnowienie 60 / 45 s, drugie łowisko
+  na każdej mapie regionu.
+- Znacznik gracza na mapie świata porusza się na żywo i obraca w kierunku postaci; strzałka minimapy pokazuje kierunek
+  postaci (w trybie obracanej mapy względem kamery).
+- Admin: `/groups`, `/tp cave <id>`, `/e2 spawn`, `/nodes count`.
+- Testy: `world.spec` przepisany (grupy 1–4, 45–60 grup, 8–10 rodzajów, 2–3 na obszar, odstępy, poza drogami,
+  jaskinie: 2 rodzaje Elit i 1 Elita II, wejścia z dala od krawędzi, linki w obie strony, poziomy 1–100 bez dziur),
+  `data.spec`, `alchemy.spec`, `questpath.spec` przechodzi.
+
+**Pliki**: `Data/Areas/*` (nowe), `Logic/AreaSpawns`, `Logic/CaveGen`, `Data/Spawns/*` (generowane), `Data/Monsters`,
+`Data/Maps`, `Data/GatherNodes`, `Data/Combat`, `Config`; serwer: `MonsterService`, `Entities/Monster`, `World/Build`,
+`World/Prefabs`, `Layouts/CaveTemplate` + 8 jaskiń, layouty 4 regionów i 4 jaskiń bossów, `SettingsService`,
+`AdminService`; klient: `GroupRingController`, `SignController`, `UI/GroupColors`, `MonsterPlateController`,
+`Hud/Minimap`, `WorldMapWindow`, `GameMenu`.
+
+#### Instrukcja testu S19
+
+1. Wejdź na Łąki: wszędzie widać małe grupy (1–4) z kolorowymi kręgami pod potworami; nad głową plakietka poziomu i
+   „×N” w kolorze grupy. `/groups` → ok. 58 grup i rozkład 1–4.
+2. Zaatakuj jednego wilka z grupy 3: cała grupa rusza na ciebie. Zabij wszystkie: po 30–45 s grupa wraca w komplecie.
+3. Odejdź od grupy: wraca, gdy oddalisz się ~70 st. od jej środka.
+4. Esc → „Kręgi grup potworów: Wył.” → kręgi znikają (plakietki zostają).
+5. Minimapa: kropki potworów w kolorach grup, elity złote. Obróć postać: strzałka obraca się z postacią, nie z kamerą.
+6. Mapa (M) → szczegóły bieżącej mapy: znacznik ▲ porusza się i obraca, gdy chodzisz.
+7. Przejdź się po Łąkach: rysie, ropuchy, kruki, kobolty, niedźwiedzie; kolejne obszary mają coraz wyższe poziomy.
+8. `/tp cave meadows_hideout` → stoisz przed wylotem jaskini (łuk ze skał, pochodnie, tabliczka „Kryjówka Przemytników
+   · poz. 7–12”), teren płaski. Wejdź w portal: jaskinia z komnatami, czerwona strefa, grupy zwykłych potworów, Elity i
+   jedna Elita II w najgłębszej komnacie. Portal wyjścia stawia cię przed wylotem.
+9. Sprawdź tak samo `meadows_burrow`, `duskwood_den`, `duskwood_barrow`, `ashen_mine`, `ashen_lair`,
+   `frostpeak_grotto`, `frostpeak_hold` oraz jaskinie bossów (`/tp cave meadows_cave` itd.): wejście na płaskim,
+   nie na zboczu gór.
+10. W jaskini: `/e2 spawn` → Elita II odradza się od razu, komunikat na mapie.
+11. `/nodes count` na mapie regionu: ~22 żyły i ~26 krzaków; w jaskini 7–10 żył. Drugie łowisko na każdej mapie.
+12. Mapa świata: przy każdym regionie trzy węzły jaskiń; ikony ⛰ na szczegółach mapy przy wylotach.

@@ -50,10 +50,10 @@ return table.freeze({
 	}),
 
 	-- AI (DESIGN §15.1).
-	wanderRadius = 10,
+	wanderRadius = 8, -- around the group centre (S19)
 	leashRange = 70,
 	passiveLevelGap = 15, -- monsters this many levels below the player do not attack first
 	aiTickRate = 5, -- per second
-	sleepRadius = 150, -- spawners without players this close stop working
+	sleepRadius = 250, -- spawners without players this close stop working (S19: was 150)
 	returnSpeedMultiplier = 1.6,
 })

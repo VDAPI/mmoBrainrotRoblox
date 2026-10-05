@@ -138,6 +138,53 @@ kind("goblinShaman", 1, true, 16, 20, {
 	colors = { primary = "#4F7A34", secondary = "#C9B26B" },
 })
 
+-- New kinds after the S17 tests (S19, DESIGN §15.2): more kinds per map, no level gaps.
+kind("lynx", 1, false, 3, 7, {
+	speed = 1.2,
+	moveSpeed = 14,
+	ability = "leap",
+	shape = "quadruped",
+	size = 0.8,
+	colors = { primary = "#B08A5A", secondary = "#3A2E24" },
+})
+kind("swampToad", 1, false, 4, 8, {
+	hpMul = 1.1,
+	atkMul = 0.9,
+	element = "poison",
+	ability = "poisonPool",
+	moveSpeed = 11,
+	shape = "quadruped",
+	size = 0.7,
+	colors = { primary = "#5E7A3A", secondary = "#C9C25A" },
+})
+kind("carrionCrow", 1, false, 6, 11, {
+	hpMul = 0.75,
+	speed = 1.3,
+	attack = "ranged",
+	range = 18,
+	ability = "wail",
+	shape = "flyer",
+	size = 0.6,
+	colors = { primary = "#1E1E24", secondary = "#5A5A66" },
+})
+kind("koboldMiner", 1, false, 10, 15, {
+	hpMul = 0.95,
+	defMul = 1.2,
+	ability = "slam",
+	shape = "humanoid",
+	size = 0.75,
+	colors = { primary = "#8A5A3A", secondary = "#C9A45C" },
+})
+kind("brownBear", 1, false, 16, 20, {
+	hpMul = 1.4,
+	atkMul = 1.1,
+	speed = 0.85,
+	ability = "slam",
+	shape = "quadruped",
+	size = 1.5,
+	colors = { primary = "#5A3A24", secondary = "#8A6B4A" },
+})
+
 -- Region 2: Duskwood (20–45) / Crypt of the Forgotten (35–45)
 kind("werewolf", 2, false, 20, 28, {
 	hpMul = 1.1,
@@ -213,6 +260,49 @@ kind("necromancer", 2, true, 39, 45, {
 	colors = { primary = "#1F1F24", secondary = "#5FA06B" },
 })
 
+-- New kinds (S19).
+kind("blackBear", 2, false, 21, 27, {
+	hpMul = 1.35,
+	speed = 0.9,
+	ability = "slam",
+	shape = "quadruped",
+	size = 1.5,
+	colors = { primary = "#1E1A18", secondary = "#5A4636" },
+})
+kind("ghoul", 2, false, 27, 33, {
+	speed = 1.15,
+	element = "poison",
+	ability = "leap",
+	shape = "humanoid",
+	colors = { primary = "#6E7A5A", secondary = "#3A3028" },
+})
+kind("bogSerpent", 2, false, 30, 36, {
+	hpMul = 1.1,
+	element = "poison",
+	ability = "poisonPool",
+	shape = "quadruped",
+	size = 1.1,
+	colors = { primary = "#3A5A3A", secondary = "#A8B85A" },
+})
+kind("marshWitch", 2, false, 36, 42, {
+	hpMul = 0.85,
+	attack = "ranged",
+	damageKind = "magic",
+	range = 26,
+	element = "poison",
+	ability = "voidPool",
+	shape = "humanoid",
+	colors = { primary = "#3A2E44", secondary = "#7ACB3A" },
+})
+kind("bloodBat", 2, false, 40, 45, {
+	hpMul = 0.8,
+	speed = 1.35,
+	ability = "wail",
+	shape = "flyer",
+	size = 0.7,
+	colors = { primary = "#4A1E24", secondary = "#C2352E" },
+})
+
 -- Region 3: Ashen Wastes (45–70) / Deepforge (60–70)
 kind("salamander", 3, false, 45, 52, {
 	speed = 1.1,
@@ -286,6 +376,53 @@ kind("flameSmith", 3, true, 64, 70, {
 	colors = { primary = "#4A3A30", secondary = "#FF9A3A" },
 })
 
+-- New kinds (S19).
+kind("wasteHyena", 3, false, 46, 52, {
+	speed = 1.2,
+	moveSpeed = 14,
+	ability = "leap",
+	shape = "quadruped",
+	size = 0.95,
+	colors = { primary = "#A8865A", secondary = "#5A4636" },
+})
+kind("ashVulture", 3, false, 50, 56, {
+	hpMul = 0.8,
+	speed = 1.25,
+	attack = "ranged",
+	range = 20,
+	ability = "wail",
+	shape = "flyer",
+	size = 0.8,
+	colors = { primary = "#4A3A3A", secondary = "#D9A27A" },
+})
+kind("fireImp", 3, false, 55, 61, {
+	hpMul = 0.8,
+	attack = "ranged",
+	damageKind = "magic",
+	range = 24,
+	element = "fire",
+	ability = "emberNova",
+	shape = "humanoid",
+	size = 0.7,
+	colors = { primary = "#C2352E", secondary = "#FF9F1C" },
+})
+kind("basilisk", 3, false, 61, 67, {
+	hpMul = 1.2,
+	defMul = 1.3,
+	element = "poison",
+	ability = "poisonPool",
+	shape = "dragon",
+	size = 0.8,
+	colors = { primary = "#5A6B3A", secondary = "#C9B26B" },
+})
+kind("desertMummy", 3, false, 66, 70, {
+	hpMul = 1.15,
+	speed = 0.9,
+	ability = "boneNova",
+	shape = "humanoid",
+	colors = { primary = "#D8C9A0", secondary = "#5A4A3A" },
+})
+
 -- Region 4: Frostpeak (70–100) / Glacier Heart (90–100)
 kind("iceWolf", 4, false, 70, 78, {
 	speed = 1.15,
@@ -352,6 +489,52 @@ kind("youngFrostDragon", 4, true, 93, 100, {
 	shape = "dragon",
 	size = 1.6,
 	colors = { primary = "#A8D8F0", secondary = "#3A6A9A" },
+})
+
+-- New kinds (S19).
+kind("snowLeopard", 4, false, 71, 78, {
+	speed = 1.25,
+	moveSpeed = 14,
+	ability = "leap",
+	shape = "quadruped",
+	size = 0.9,
+	colors = { primary = "#E8E4DA", secondary = "#5A5A66" },
+})
+kind("peakHarpy", 4, false, 76, 83, {
+	hpMul = 0.85,
+	speed = 1.2,
+	attack = "ranged",
+	range = 22,
+	element = "lightning",
+	ability = "wail",
+	shape = "flyer",
+	colors = { primary = "#8A9AB0", secondary = "#E8E25A" },
+})
+kind("iceMammoth", 4, false, 82, 89, {
+	hpMul = 1.5,
+	atkMul = 1.1,
+	speed = 0.8,
+	ability = "slam",
+	shape = "quadruped",
+	size = 1.9,
+	colors = { primary = "#7A6A5A", secondary = "#E4F0F7" },
+})
+kind("frozenKnight", 4, false, 88, 95, {
+	hpMul = 1.15,
+	defMul = 1.4,
+	element = "ice",
+	ability = "cleave",
+	shape = "humanoid",
+	size = 1.1,
+	colors = { primary = "#9FB6C9", secondary = "#2F3A4A" },
+})
+kind("frostWyrm", 4, false, 95, 100, {
+	hpMul = 1.3,
+	element = "ice",
+	ability = "frostBreath",
+	shape = "dragon",
+	size = 1.1,
+	colors = { primary = "#7FD4FF", secondary = "#E4F0F7" },
 })
 
 local byId: { [string]: MonsterDef } = {}

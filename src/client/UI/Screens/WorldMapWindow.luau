@@ -5,6 +5,7 @@
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local MapSketch = require(script.Parent.Parent.MapSketch)
@@ -152,7 +153,13 @@ local function WorldMapWindow(scope: Scope): Fusion.Child
 		[Children] = scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
 	}) :: Frame
 
+	-- Player marker of the open detail map; moved and turned every frame (S19).
+	local marker: TextLabel? = nil
+	local markerSketch: any = nil
+	local markerScale = 1
+
 	local function drawDetail()
+		marker = nil
 		for _, child in detail:GetChildren() do
 			if not child:IsA("UICorner") then
 				child:Destroy()
@@ -184,7 +191,7 @@ local function WorldMapWindow(scope: Scope): Fusion.Child
 		canvas.BackgroundTransparency = 1
 		canvas.Parent = detail
 		MapSketch.draw(canvas, sketch, scale)
-		local function icon(text: string, color: Color3, x: number, z: number, size: number)
+		local function icon(text: string, color: Color3, x: number, z: number, size: number): TextLabel
 			local p = MapSketch.toPixel(sketch, scale, x, z)
 			local label = Instance.new("TextLabel")
 			label.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -198,12 +205,15 @@ local function WorldMapWindow(scope: Scope): Fusion.Child
 			label.TextStrokeTransparency = 0.2
 			label.ZIndex = 4
 			label.Parent = canvas
+			return label
 		end
 		for _, i in sketch.icons do
 			if i.t == "portal" then
 				icon("◎", Color3.fromHex("#B9A8FF"), i.x, i.z, 20)
 			elseif i.t == "dungeon" then
 				icon("☠", Theme.Colors.Danger, i.x, i.z, 20)
+			elseif i.t == "cave" then
+				icon("⛰", Color3.fromHex("#D9C9A8"), i.x, i.z, 22)
 			end
 		end
 		for _, npc in Npcs.list do
@@ -216,12 +226,32 @@ local function WorldMapWindow(scope: Scope): Fusion.Child
 			local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
 			if root then
 				local relative = root.Position - Vector3.new(map.offset.x, map.offset.y, map.offset.z)
-				icon("▲", Theme.Colors.Accent, relative.X, relative.Z, 22)
+				marker = icon("▲", Theme.Colors.Accent, relative.X, relative.Z, 22)
+				markerSketch = sketch
+				markerScale = scale
 			end
 		end
 	end
 	drawDetail()
 	scope:Observer(selected):onChange(drawDetail)
+	table.insert(
+		scope,
+		RunService.RenderStepped:Connect(function()
+			local label = marker
+			local map = Maps.get(Fusion.peek(mapId))
+			local character = Players.LocalPlayer.Character
+			local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+			if not label or not map or not root or not markerSketch then
+				return
+			end
+			local relative = root.Position - Vector3.new(map.offset.x, map.offset.y, map.offset.z)
+			local p = MapSketch.toPixel(markerSketch, markerScale, relative.X, relative.Z)
+			label.Position = UDim2.fromOffset(p.X, p.Y)
+			-- Point where the character faces (north up).
+			local look = root.CFrame.LookVector
+			label.Rotation = math.deg(math.atan2(look.X, -look.Z))
+		end)
+	)
 
 	return {
 		graph :: any,

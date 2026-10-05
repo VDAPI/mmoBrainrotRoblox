@@ -92,6 +92,7 @@ export type Settings = {
 	cameraSens: number, -- mouse/touch camera sensitivity multiplier
 	sellConfirm: boolean, -- ask before selling valuable items
 	autoTarget: boolean, -- S16: after a kill, target the next monster fighting us
+	groupRings: boolean, -- S19: coloured rings under monster groups
 	keys: { [string]: string }, -- S17: rebound keys, action -> Enum.KeyCode name (Data/Keybinds)
 }
 

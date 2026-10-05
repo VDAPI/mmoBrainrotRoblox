@@ -2,10 +2,15 @@
 -- Duskwood (20–45, yellow): a dark forest. West: werewolf woods (20–28) by the portals from the Meadows and
 -- the capital; centre-north: old ruins haunted by wraiths (23–31); centre-south: the rotting heart of the
 -- forest with ents (26–34); north-east: the cultist village (29–37); south-east: the swamp with trolls
--- (32–40) and a fishing spot; east: the Crypt of the Forgotten. Spawners: Data/Spawns/duskwood.
+-- (32–40) and a fishing spot; three caves (Data/Areas/duskwood). Monster groups: Data/Areas.
 
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local Areas = require(ReplicatedStorage.Shared.Data.Areas)
 local Build = require(script.Parent.Parent.Build)
 local Prefabs = require(script.Parent.Parent.Prefabs)
+
+local AREAS = Areas.byMap.duskwood
 
 return function(ctx: Build.Context)
 	local hx, hz = ctx.map.size.x / 2, ctx.map.size.z / 2
@@ -19,14 +24,10 @@ return function(ctx: Build.Context)
 	end
 	Prefabs.jetty(ctx, 600, 480, 0)
 	Build.node(ctx, "fishing_duskwood", 600, 486)
+	Build.node(ctx, "fishing_duskwood", 420, 466) -- second spot (S19)
 
-	-- Roads
-	Build.path(ctx, { -790, 0, -480, 20, -200, -60, 80, 0, 360, -40, 560, 0, 740, 0 }, 12, Enum.Material.Ground)
-	Build.path(ctx, { -790, 160, -480, 20 }, 10, Enum.Material.Ground)
-	Build.path(ctx, { -200, -60, -80, -320 }, 10, Enum.Material.Ground)
-	Build.path(ctx, { 360, -40, 500, -480 }, 10, Enum.Material.Ground)
-	Build.path(ctx, { 80, 0, 160, 320, 380, 420 }, 8, Enum.Material.Mud)
-	Build.path(ctx, { 560, 0, 740, -740 }, 10, Enum.Material.Ground)
+	-- Roads (Data/Areas/duskwood)
+	Build.roads(ctx, AREAS)
 
 	local function road(x: number, z: number): boolean
 		-- coarse check against the main road band
@@ -87,27 +88,18 @@ return function(ctx: Build.Context)
 		Prefabs.lantern(ctx, x, 16, "#9FD0FF")
 	end
 
-	-- Gathering
-	for _, n in { { -560, -420 }, { -640, 420 }, { -300, 520 }, { 220, -700 } } do
-		Build.node(ctx, "vein_iron", n[1], n[2])
-	end
-	for _, n in { { 360, -720 }, { 700, -300 }, { 140, 640 } } do
-		Build.node(ctx, "vein_silver", n[1], n[2])
-	end
-	for _, n in { { -420, -200 }, { -260, 260 }, { 20, 160 }, { -600, 300 } } do
-		Build.node(ctx, "bush_nightshade", n[1], n[2])
-	end
-	for _, n in { { 220, 260 }, { -120, -520 }, { 300, 560 } } do
-		Build.node(ctx, "bush_moonpetal", n[1], n[2])
-	end
+	-- Gathering (S19: 22 veins, 26 herb bushes)
+	local clear = Build.clearOf(AREAS)
+	Build.scatterNodes(ctx, "vein_iron", 12, { -760, -760, 0, 760 }, nil, clear)
+	Build.scatterNodes(ctx, "vein_silver", 10, { 0, -760, 760, 760 }, nil, clear)
+	Build.scatterNodes(ctx, "bush_nightshade", 14, { -760, -760, 100, 760 }, nil, clear)
+	Build.scatterNodes(ctx, "bush_moonpetal", 12, { -100, -760, 760, 760 }, nil, clear)
 
-	-- Portals
+	-- Portals and the three caves (S19)
 	Prefabs.portal(ctx, "duskwood_meadows", "meadows", -770, 0, 90, { x = 690, z = -690 })
 	Prefabs.portal(ctx, "duskwood_city", "city", -770, 160, 90, { x = 0, z = -236 })
-	Prefabs.portal(ctx, "duskwood_crypt", "duskwood_cave", 760, 0, 90)
 	Prefabs.portal(ctx, "duskwood_ashen", "ashen", 740, -740, 45)
-	Prefabs.column(ctx, 760, -24, 18, "#4A4458")
-	Prefabs.column(ctx, 760, 24, 18, "#4A4458")
+	Prefabs.caveEntrances(ctx, AREAS, "#4A4458")
 
 	Build.zone(ctx, "yellow", "zone.duskwood.woods", -hx, -hz, hx, hz)
 	Build.zone(ctx, "yellow", "zone.duskwood.ruins", -260, -560, 80, -200)
@@ -120,5 +112,5 @@ return function(ctx: Build.Context)
 	Build.spawnPoint(ctx, 60, 100, 160, 300)
 	Build.spawnPoint(ctx, 380, -300, 540, -520)
 	Build.spawnPoint(ctx, 300, 150, 520, 470)
-	Build.spawnPoint(ctx, 690, 40, 760, 0)
+	Build.spawnPoint(ctx, 690, 40, 745, 0)
 end

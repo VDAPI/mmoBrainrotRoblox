@@ -1,9 +1,10 @@
 --!strict
--- Mosshollow Cave (12–20, red zone). Carved from a rock block: entrance hall (west, exit portal and respawn),
+-- Mosshollow Cave (16–20, red zone, boss cave of the region since S19). Carved from a rock block: entrance hall (west, exit portal and respawn),
 -- the great goblin hall in the middle, side dens (wolves north-west, boars south-west, bandit hideout
 -- north-east), the spider nest (north), the shamans' chamber (south) and the antechamber of Grimrok's
--- dungeon (east). Elites and Elite II only (Data/Spawns/meadows_cave).
+-- dungeon (east). Monster groups, elites and the Elite II come from Data/Areas/Caves (S19).
 
+local Areas = require(game:GetService("ReplicatedStorage").Shared.Data.Areas)
 local Build = require(script.Parent.Parent.Build)
 local Prefabs = require(script.Parent.Parent.Prefabs)
 
@@ -72,15 +73,27 @@ return function(ctx: Build.Context)
 	end, { { 90, 215, 10 } })
 
 	-- Exit and the dungeon gate
-	Prefabs.portal(ctx, "meadows_cave_exit", "meadows", -278, 0, 90, { x = 690, z = 340 })
+	Prefabs.portal(ctx, "meadows_cave_exit", "meadows", -278, 0, 90, Areas.arrivalOf("meadows_cave"))
 	Prefabs.dungeonGate(ctx, "meadows", 272, 0, 90)
 	Prefabs.torch(ctx, 262, -12, "#D64A3E")
 	Prefabs.torch(ctx, 262, 12, "#D64A3E")
 
-	-- Ores deeper in the cave
-	Build.node(ctx, "vein_iron", -170, -160)
-	Build.node(ctx, "vein_iron", 150, -180)
-	Build.node(ctx, "vein_copper", -165, 160)
+	-- Ore veins in the fighting rooms (S19: 6–10 per cave, Data/Areas/Caves)
+	local cave = Areas.caves.get("meadows_cave")
+	if cave and cave.rooms then
+		local rooms = cave.rooms
+		for i = 1, cave.oreCount do
+			local room = rooms[(i - 1) % (#rooms - 2) + 2]
+			local angle = ctx.rng:float(0, math.pi * 2)
+			local distance = room.r * ctx.rng:float(0.45, 0.75)
+			Build.node(
+				ctx,
+				cave.ores[(i - 1) % #cave.ores + 1],
+				room.x + math.cos(angle) * distance,
+				room.z + math.sin(angle) * distance
+			)
+		end
+	end
 
 	Build.zone(ctx, "red", nil, -320, -320, 320, 320)
 	Build.spawnPoint(ctx, -240, 0, 0, 0)

@@ -1,6 +1,6 @@
 --!strict
--- Gathering nodes (DESIGN §12): ore veins (pickaxe, 2.5 s, respawn 90 s), herb bushes (no tool, 1.5 s,
--- respawn 60 s) and fishing spots (rod, minigame — see Data/Fish). Respawn is per server.
+-- Gathering nodes (DESIGN §12): ore veins (pickaxe, 2.5 s, respawn 60 s), herb bushes (no tool, 1.5 s,
+-- respawn 45 s) and fishing spots (rod, minigame — see Data/Fish). Respawn is per server.
 
 export type LootEntry = { id: string, min: number, max: number, chance: number }
 
@@ -40,7 +40,7 @@ for _, ore in ORES do
 		category = "ore",
 		tool = "pickaxe",
 		time = 2.5,
-		respawn = 90,
+		respawn = 60, -- S19 (was 90)
 		loot = {
 			{ id = `ore_{ore.ore}`, min = 1, max = 2, chance = 1 },
 			{ id = "essence_dust", min = 1, max = 1, chance = 0.1 },
@@ -64,7 +64,7 @@ for _, herb in HERBS do
 		category = "herb",
 		tool = nil,
 		time = 1.5,
-		respawn = 60,
+		respawn = 45, -- S19 (was 60)
 		loot = { { id = `herb_{herb.herb}`, min = 1, max = 2, chance = 1 } },
 		level = herb.level,
 		look = { shape = "bush", color = "#3F6B35", accent = herb.color },

@@ -7,6 +7,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local GroupColors = require(script.Parent.Parent.UI.GroupColors)
 local LevelBand = require(ReplicatedStorage.Shared.Logic.LevelBand)
 local Monsters = require(ReplicatedStorage.Shared.Data.Monsters)
 local State = require(script.Parent.Parent.UI.State)
@@ -32,16 +33,8 @@ local VARIANT_COLORS: { [string]: Color3 } = {
 
 MonsterPlateController.VariantColors = VARIANT_COLORS
 
--- Group colours by size (DESIGN §15.1): 1 white/grey, 2 green, 3 orange, 4 red.
-local GROUP_COLORS = {
-	Color3.fromHex("#D8D8D8"),
-	Color3.fromHex("#5FCF6B"),
-	Color3.fromHex("#F0962E"),
-	Color3.fromHex("#E0503F"),
-}
-
 function MonsterPlateController.GroupColor(size: number): Color3
-	return GROUP_COLORS[math.clamp(math.floor(size), 1, #GROUP_COLORS)]
+	return GroupColors.of(size)
 end
 
 local TargetController: any

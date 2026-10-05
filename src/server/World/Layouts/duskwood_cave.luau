@@ -2,8 +2,9 @@
 -- Crypt of the Forgotten (35–45, red): straight stone corridors and burial halls. Entrance hall (west),
 -- the hall of columns, burial crypts north and south (forest elites driven underground), the ossuary of
 -- the skeleton guards, the specters' gallery, the necromancer sanctum and the antechamber of Morvane's
--- dungeon (east). Elites and Elite II only (Data/Spawns/duskwood_cave).
+-- dungeon (east). Monster groups from Data/Areas/Caves (S19).
 
+local Areas = require(game:GetService("ReplicatedStorage").Shared.Data.Areas)
 local Build = require(script.Parent.Parent.Build)
 local Prefabs = require(script.Parent.Parent.Prefabs)
 
@@ -79,13 +80,27 @@ return function(ctx: Build.Context)
 		end
 	end
 
-	Prefabs.portal(ctx, "duskwood_cave_exit", "duskwood", -275, 0, 90, { x = 700, z = 0 })
+	Prefabs.portal(ctx, "duskwood_cave_exit", "duskwood", -275, 0, 90, Areas.arrivalOf("duskwood_cave"))
 	Prefabs.dungeonGate(ctx, "duskwood", 282, 0, 90)
 	Prefabs.torch(ctx, 270, -12, "#D64A3E")
 	Prefabs.torch(ctx, 270, 12, "#D64A3E")
 
-	Build.node(ctx, "vein_silver", -130, -195)
-	Build.node(ctx, "vein_silver", 60, 195)
+	-- Ore veins in the fighting rooms (S19: 6–10 per cave, Data/Areas/Caves)
+	local cave = Areas.caves.get("duskwood_cave")
+	if cave and cave.rooms then
+		local rooms = cave.rooms
+		for i = 1, cave.oreCount do
+			local room = rooms[(i - 1) % (#rooms - 2) + 2]
+			local angle = ctx.rng:float(0, math.pi * 2)
+			local distance = room.r * ctx.rng:float(0.45, 0.75)
+			Build.node(
+				ctx,
+				cave.ores[(i - 1) % #cave.ores + 1],
+				room.x + math.cos(angle) * distance,
+				room.z + math.sin(angle) * distance
+			)
+		end
+	end
 
 	Build.zone(ctx, "red", nil, -320, -320, 320, 320)
 	Build.spawnPoint(ctx, -240, 0, 0, 0)

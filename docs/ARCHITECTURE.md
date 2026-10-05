@@ -175,6 +175,12 @@ type CharacterData = {
 - Gdy w przyszłości powstaną ręcznie zbudowane mapy (`.rbxm` w `assets/`), WorldBuilder używa ich zamiast generowania (przełącznik per mapa w `Maps.luau`).
 - `ZoneService` wykrywa mapę i strefę gracza (sprawdzanie `GetPartBoundsInBox`/pozycji co 0.5 s), ustawia atrybuty `MapId`, `PvpZone` i wysyła baner.
 
+- Obszary potworów (S19): `Shared/Data/Areas/<mapa>.luau` (obszary, drogi, jeziora, miejsca do omijania, wejścia do
+  jaskiń) i `Areas/Caves.luau` (12 jaskiń) to jedno źródło prawdy. `Logic/AreaSpawns` deterministycznie generuje z nich
+  grupy 1–4 (`Data/Spawns`), layouty rysują drogi z tych danych, `Logic/CaveGen` daje plan komnat jaskiń generowanych
+  przez `World/Layouts/CaveTemplate`. Grupy (`MonsterService`): wspólne aggro, odrodzenie całej grupy, atrybuty modelu
+  `GroupId` / `GroupSize`, uśpienie 250 st., znikanie po 90 s snu.
+
 ## 9. UI (Fusion 0.3)
 
 - Każdy ekran to moduł zwracający funkcję `(scope, props) -> Instance`. Jeden `ScreenGui` per warstwa (HUD, Okna, Modale, Toasty, Tooltip) z `IgnoreGuiInset` i `ResetOnSpawn = false`.

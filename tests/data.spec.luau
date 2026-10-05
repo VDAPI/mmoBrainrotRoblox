@@ -172,12 +172,12 @@ T.describe("Data: Maps", function()
 end)
 
 T.describe("Data: Monsters", function()
-	T.it("has every kind from DESIGN §15.2 (7 + 8 + 8 + 7)", function()
+	T.it("has every kind from DESIGN §15.2 (7 + 8 + 8 + 7, +5 per region in S19)", function()
 		local perRegion = { 0, 0, 0, 0 }
 		for _, def in Monsters.list do
 			perRegion[def.region] += 1
 		end
-		T.expect(perRegion).toEqual({ 7, 8, 8, 7 })
+		T.expect(perRegion).toEqual({ 12, 13, 13, 12 })
 	end)
 
 	T.it("every kind is complete, localized and consistent", function()

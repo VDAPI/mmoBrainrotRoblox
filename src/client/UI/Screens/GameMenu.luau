@@ -363,6 +363,7 @@ local function GameMenu(scope: Scope, close: () -> ()): Fusion.Child
 			row(scope, 11, "menu.bindConfirm", toggle(scope, "bindConfirm", true)),
 			row(scope, 12, "menu.sellConfirm", toggle(scope, "sellConfirm", true)),
 			row(scope, 13, "menu.autoTarget", toggle(scope, "autoTarget", true)),
+			row(scope, 13, "menu.groupRings", toggle(scope, "groupRings", true)),
 			codeRow(scope),
 			scope:New("TextLabel")({
 				LayoutOrder = 15,

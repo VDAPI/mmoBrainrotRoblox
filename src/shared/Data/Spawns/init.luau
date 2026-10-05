@@ -1,20 +1,25 @@
 --!strict
--- Spawners per map id. Each map file returns a list of Types.Spawner.
+-- Spawners per map id, generated from the named areas and caves (S19, Logic/AreaSpawns): every spawner is
+-- a monster group of 1–4.
 
+local AreaSpawns = require("../Logic/AreaSpawns")
+local Areas = require("./Areas")
+local Maps = require("./Maps")
 local Types = require("@self/Types")
 
 export type Spawner = Types.Spawner
 
-local byMap: { [string]: { Spawner } } = {
-	meadows = require("@self/meadows"),
-	meadows_cave = require("@self/meadows_cave"),
-	duskwood = require("@self/duskwood"),
-	duskwood_cave = require("@self/duskwood_cave"),
-	ashen = require("@self/ashen"),
-	ashen_cave = require("@self/ashen_cave"),
-	frostpeak = require("@self/frostpeak"),
-	frostpeak_cave = require("@self/frostpeak_cave"),
-}
+local byMap: { [string]: { Spawner } } = {}
+
+for mapId, data in Areas.byMap do
+	local map = Maps.get(mapId)
+	if map then
+		byMap[mapId] = AreaSpawns.region(data, map.size)
+	end
+end
+for _, cave in Areas.caves.list do
+	byMap[cave.id] = AreaSpawns.cave(cave)
+end
 
 return table.freeze({
 	byMap = byMap,

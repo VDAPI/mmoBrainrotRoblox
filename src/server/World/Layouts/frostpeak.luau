@@ -3,8 +3,13 @@
 -- slopes (74–82); centre: the giants' pass (78–88); south: the frozen lake of the elementals (82–92) with
 -- an ice hole; east: the ruins of the dragon temple (85–95) and the way into the Glacier Heart.
 
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local Areas = require(ReplicatedStorage.Shared.Data.Areas)
 local Build = require(script.Parent.Parent.Build)
 local Prefabs = require(script.Parent.Parent.Prefabs)
+
+local AREAS = Areas.byMap.frostpeak
 
 local ICE = "#9FE0FF"
 
@@ -26,12 +31,12 @@ return function(ctx: Build.Context)
 	table.insert(ctx.sketch.shapes, { t = "rect", x = 160, z = 560, w = 360, h = 260, c = "water" })
 	Build.lake(ctx, 160, 560, 26, 6)
 	Build.node(ctx, "fishing_frostpeak", 160, 528)
+	-- A second ice hole by the harpy rocks (S19)
+	Build.lake(ctx, -560, 600, 22, 6)
+	Build.node(ctx, "fishing_frostpeak", -560, 574)
 
-	-- Roads
-	Build.path(ctx, { -790, 0, -480, 20, -200, 0, 0, 0, 260, -40, 500, 0, 760, 0 }, 14, Enum.Material.Ground)
-	Build.path(ctx, { -790, 160, -480, 20 }, 10, Enum.Material.Ground)
-	Build.path(ctx, { -200, 0, -260, -460 }, 10, Enum.Material.Ground)
-	Build.path(ctx, { 0, 0, 120, 440 }, 10, Enum.Material.Ground)
+	-- Roads (Data/Areas/frostpeak)
+	Build.roads(ctx, AREAS)
 
 	-- Dragon temple ruins (east)
 	Prefabs.ruins(ctx, 520, -160, "#C8DDEB")
@@ -61,21 +66,16 @@ return function(ctx: Build.Context)
 		Prefabs.rock(ctx, x, z, 1.3, "#8FA3B3")
 	end, { { 160, 560, 200 } })
 
-	-- Gathering
-	for _, n in { { -620, -300 }, { -420, 380 }, { 260, -520 }, { 680, -420 } } do
-		Build.node(ctx, "vein_adamantite", n[1], n[2])
-	end
-	for _, n in { { -640, 260 }, { -300, -620 }, { 380, 380 } } do
-		Build.node(ctx, "vein_mithril", n[1], n[2])
-	end
-	for _, n in { { -520, -120 }, { -380, 160 }, { 40, -480 }, { 300, 460 }, { 640, 360 } } do
-		Build.node(ctx, "bush_frostleaf", n[1], n[2])
-	end
+	-- Gathering (S19: 22 veins, 26 herb bushes)
+	local clear = Build.clearOf(AREAS)
+	Build.scatterNodes(ctx, "vein_mithril", 11, { -760, -760, 0, 760 }, nil, clear)
+	Build.scatterNodes(ctx, "vein_adamantite", 11, { 0, -760, 760, 760 }, nil, clear)
+	Build.scatterNodes(ctx, "bush_frostleaf", 26, { -760, -760, 760, 760 }, nil, clear)
 
 	-- Portals
 	Prefabs.portal(ctx, "frostpeak_ashen", "ashen", -770, 0, 90, { x = 690, z = -690 })
 	Prefabs.portal(ctx, "frostpeak_city", "city", -770, 160, 90, { x = 0, z = 236 })
-	Prefabs.portal(ctx, "frostpeak_cave", "frostpeak_cave", 760, 0, 90)
+	Prefabs.caveEntrances(ctx, AREAS, "#8FA3B3")
 	for x = -720, 720, 140 do
 		Prefabs.lantern(ctx, x, 18, "#9FE0FF")
 	end
@@ -91,5 +91,5 @@ return function(ctx: Build.Context)
 	Build.spawnPoint(ctx, 40, 60, 0, 0)
 	Build.spawnPoint(ctx, 40, 420, 160, 560)
 	Build.spawnPoint(ctx, 420, 40, 560, 0)
-	Build.spawnPoint(ctx, 690, 40, 760, 0)
+	Build.spawnPoint(ctx, 690, 40, 745, 0)
 end

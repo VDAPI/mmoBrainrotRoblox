@@ -89,7 +89,7 @@ local Config = {
 	DefaultCapacity = 20, -- inventory slots without a backpack item
 
 	-- Live monsters allowed on one server (spawners stop when reached).
-	MaxActiveMonsters = 400,
+	MaxActiveMonsters = 600, -- S19: groups near players only (sleeping groups despawn after 90 s)
 
 	-- How often (s) the server flushes batched state diffs. 0 = every Heartbeat.
 	StateFlushInterval = 0,
