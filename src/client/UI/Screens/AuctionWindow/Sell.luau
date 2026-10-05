@@ -184,7 +184,7 @@ local function Sell(scope: Scope): Instance
 							if not current then
 								return Text.get(use, "auction.sell.pick")
 							end
-							local name = ItemText.get(use, current.id, current.up)
+							local name = ItemText.get(use, current.id, current.up, current.el)
 							return if current.n > 1 then `{name} x{current.n}` else name
 						end),
 						Theme.Colors.GoldBright

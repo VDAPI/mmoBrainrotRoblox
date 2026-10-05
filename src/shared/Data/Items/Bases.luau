@@ -16,6 +16,8 @@ export type Base = {
 	stats: ((level: number) -> { [string]: number })?,
 	-- Weapon damage at level L (before rarity and upgrades).
 	weapon: ((level: number) -> Types.WeaponStats)?,
+	-- Mage weapons carry an element (S18, DESIGN §5.8).
+	elemental: boolean?,
 }
 
 local WARRIOR, HUNTER, MAGE, CLERIC = "Warrior", "Hunter", "Mage", "Cleric"
@@ -113,7 +115,7 @@ local LIST: { Base } = {
 		bonusGroup = "weapon",
 		glyph = "⚚",
 		gender = "f",
-		weapon = weapon(1.0, 0.7, 1.1, false, false),
+		weapon = weapon(1.0, 1.0, 1.1, false, false),
 	},
 	{
 		type = "sword2h",
@@ -168,6 +170,7 @@ local LIST: { Base } = {
 		glyph = "✦",
 		gender = "f",
 		weapon = weapon(0, 1.0, 1.15, true, false),
+		elemental = true,
 	},
 	{
 		type = "staff",
@@ -177,6 +180,7 @@ local LIST: { Base } = {
 		glyph = "⚕",
 		gender = "m",
 		weapon = weapon(0, 1.6, 0.85, true, true),
+		elemental = true,
 	},
 	{
 		type = "scepter",
@@ -186,6 +190,80 @@ local LIST: { Base } = {
 		glyph = "⚜",
 		gender = "n",
 		weapon = weapon(0.4, 1.1, 1.0, false, false),
+	},
+	-- More weapon types per class (S18, DESIGN §5.8): speed vs damage trade-offs at about the same DPS.
+	{
+		type = "saber1h",
+		slot = "weapon",
+		classes = { WARRIOR },
+		bonusGroup = "weapon",
+		glyph = "⚔",
+		gender = "f",
+		weapon = weapon(0.85, 0, 1.4, false, false),
+	},
+	{
+		type = "spear2h",
+		slot = "weapon",
+		classes = { WARRIOR },
+		bonusGroup = "weapon",
+		glyph = "↟",
+		gender = "f",
+		weapon = weapon(1.6, 0, 0.88, false, true),
+	},
+	{
+		type = "shortbow",
+		slot = "weapon",
+		classes = { HUNTER },
+		bonusGroup = "weapon",
+		glyph = "➶",
+		gender = "m",
+		weapon = weapon(0.9, 0, 1.3, true, false),
+	},
+	{
+		type = "longbow",
+		slot = "weapon",
+		classes = { HUNTER },
+		bonusGroup = "weapon",
+		glyph = "➶",
+		gender = "m",
+		weapon = weapon(1.55, 0, 0.78, true, false),
+	},
+	{
+		type = "heavycrossbow",
+		slot = "weapon",
+		classes = { HUNTER },
+		bonusGroup = "weapon",
+		glyph = "➹",
+		gender = "f",
+		weapon = weapon(1.9, 0, 0.62, true, false),
+	},
+	{
+		type = "runestaff",
+		slot = "weapon",
+		classes = { MAGE },
+		bonusGroup = "weapon",
+		glyph = "⚕",
+		gender = "m",
+		weapon = weapon(0, 2.0, 0.72, true, true),
+		elemental = true,
+	},
+	{
+		type = "flail1h",
+		slot = "weapon",
+		classes = { CLERIC },
+		bonusGroup = "weapon",
+		glyph = "⚚",
+		gender = "m",
+		weapon = weapon(1.15, 1.2, 0.95, false, false),
+	},
+	{
+		type = "holystaff",
+		slot = "weapon",
+		classes = { CLERIC },
+		bonusGroup = "weapon",
+		glyph = "✟",
+		gender = "m",
+		weapon = weapon(0.5, 1.75, 0.8, false, true),
 	},
 	-- Off-hand
 	{

@@ -716,7 +716,7 @@ return {
 	["inventory.action.unequip"] = "Unequip",
 	["inventory.action.split"] = "Split",
 	["inventory.action.destroy"] = "Destroy",
-	["tooltip.ilvl"] = "Item level {ilvl}",
+	["tooltip.ilvl"] = "Item level: {ilvl}",
 	["tooltip.requiresLevel"] = "Requires level {level}",
 	["tooltip.classes"] = "Classes: {classes}",
 	["tooltip.bound"] = "Bound to character",
@@ -840,8 +840,8 @@ return {
 	["skill.camouflage.desc"] = "Monsters lose track of you for {camouflageDuration} s; your next shot is a guaranteed critical hit.",
 	["skill.stormArrow.name"] = "Storm Arrow",
 	["skill.stormArrow.desc"] = "Deals {dmg}% to the target and {splash}% to enemies within {radius} studs.",
-	["skill.firebolt.name"] = "Firebolt",
-	["skill.firebolt.desc"] = "A bolt of fire dealing {dmg}% of magic attack.",
+	["skill.firebolt.name"] = "Arcane Bolt",
+	["skill.firebolt.desc"] = "A bolt of magic dealing {dmg}% of magic attack. Takes the weapon's element: fire burns, ice slows, lightning arcs to an enemy nearby.",
 	["skill.iceShard.name"] = "Ice Shard",
 	["skill.iceShard.desc"] = "Deals {dmg}% and slows by {slow}% for {slowDuration} s.",
 	["skill.blink.name"] = "Blink",
@@ -862,12 +862,12 @@ return {
 	["skill.meteor.desc"] = "After a short delay a meteor hits the area for {dmg}%.",
 	["skill.arcaneMind.name"] = "Arcane Mind",
 	["skill.arcaneMind.desc"] = "Passive: +{crit}% critical chance and +{critDmg}% critical damage.",
-	["skill.firewall.name"] = "Firewall",
-	["skill.firewall.desc"] = "A {length}-stud wall of fire burns enemies for {dmg}% every 0.5 s for {duration} s.",
+	["skill.firewall.name"] = "Thunderstorm",
+	["skill.firewall.desc"] = "A storm in a {radius}-stud circle: every 0.5 s lightning strikes a random enemy for {dmg}% for 5 s.",
 	["skill.evocation.name"] = "Evocation",
 	["skill.evocation.desc"] = "Channel for {duration} s to restore {mana}% of your mana.",
-	["skill.meteorStorm.name"] = "Meteor Storm",
-	["skill.meteorStorm.desc"] = "{hits} meteors strike an area of {radius} studs, {dmg}% each.",
+	["skill.meteorStorm.name"] = "Elemental Fury",
+	["skill.meteorStorm.desc"] = "{hits} strikes of the weapon's element hit an area of {radius} studs, {dmg}% each (fire: meteors, ice: ice spikes, lightning: bolts).",
 	["skill.holyStrike.name"] = "Holy Strike",
 	["skill.holyStrike.desc"] = "Strikes with light for {dmg}% of magic attack.",
 	["skill.heal.name"] = "Heal",
@@ -1988,4 +1988,69 @@ return {
 	["mail.subject.code"] = "Reward for code {code}",
 	["admin.usage.resetcodes"] = "/resetcodes: reward codes can be used again on this account",
 	["admin.resetcodes.ok"] = "Reward codes reset.",
+
+	-- S18: combat input
+	["keys.target.clear"] = "Clear target",
+	["keys.sprint"] = "Sprint (hold)",
+	["combat.reject.safeZone"] = "Safe zone: no fighting here.",
+	["combat.reject.tooFar"] = "Too far from the target.",
+	["combat.reject.stunned"] = "You are stunned.",
+
+	-- S18: sprint
+	["hud.sprint"] = "Sprint",
+
+	-- S18: PvP dot
+	["pvp.dot.off"] = "PvP off: other players cannot attack you (outside red zones).",
+	["pvp.dot.on"] = "PvP on: you can fight other players with PvP on.",
+	["pvp.dot.forced"] = "Red zone: PvP is always on.",
+	["pvp.dot.switching"] = "PvP is switching.",
+	["pvp.dot.locked"] = "PvP cannot change right now (safe zone or recent fight).",
+
+	-- S18: new weapon types
+	["itemBase.saber1h"] = "Sabre",
+	["itemBase.spear2h"] = "Spear",
+	["itemBase.shortbow"] = "Shortbow",
+	["itemBase.longbow"] = "Longbow",
+	["itemBase.heavycrossbow"] = "Heavy Crossbow",
+	["itemBase.runestaff"] = "Runestaff",
+	["itemBase.flail1h"] = "Flail",
+	["itemBase.holystaff"] = "Holy Staff",
+
+	-- S18: weapon elements
+	["element.fire"] = "Fire",
+	["element.ice"] = "Ice",
+	["element.lightning"] = "Lightning",
+	["element.poison"] = "Poison",
+	["element.suffix.fire"] = "of Fire",
+	["element.suffix.ice"] = "of Ice",
+	["element.suffix.lightning"] = "of Lightning",
+	["element.suffix.poison"] = "of Poison",
+	["tooltip.element"] = "Element: {element}",
+	["skill.requiresElement"] = "Requires weapon: {element}",
+	["skill.adaptive"] = "Takes the weapon's element (fire: burn, ice: slow, lightning: arc).",
+	["cast.error.wrongElement"] = "This skill needs a weapon of another element.",
+
+	-- S18: weaponsmith
+	["npc.weaponsmith.name"] = "Weaponsmith",
+	["npc.weaponsmith.greeting"] = "Looking for a proper weapon? I have something for everyone, from plain swords to runestaffs.",
+	["shop.otherClass.title"] = "Another class",
+	["shop.otherClass.message"] = "Your class cannot use this item. Buy it anyway?",
+
+	-- S18: quest blocks
+	["quest.tracker.from"] = "From: {npc}",
+	["quest.tracker.turnIn"] = "Done: turn in to {npc}",
+	["quest.tracker.contracts"] = "Contracts: {npc}",
+	["quest.journal.giver"] = "Quest giver: {npc}",
+
+	-- S18: admin
+	["admin.usage.ilvl"] = "/ilvl <level>: item level of the equipped weapon",
+	["admin.usage.element"] = "/element fire, ice or lightning: element of the equipped mage weapon",
+	["admin.usage.mstats"] = "/mstats [level]: HP and attack of a normal monster and how long you need to kill it",
+	["admin.usage.sprint"] = "/sprint: sprint state and walk speed",
+	["admin.weapon.none"] = "You have no weapon equipped.",
+	["admin.ilvl.ok"] = "Weapon item level: {ilvl}.",
+	["admin.element.ok"] = "Weapon element: {element}.",
+	["admin.element.notMage"] = "That is not a mage weapon.",
+	["admin.mstats.info"] = "Level {level} monster: {hp} HP, attack {atk} (hits you for ~{hit} every {interval} s). You kill it in ~{seconds} s.",
+	["admin.sprint.info"] = "Sprint: {on}, walk speed {speed}.",
 }

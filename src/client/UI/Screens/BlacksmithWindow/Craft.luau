@@ -91,6 +91,7 @@ local function Craft(scope: Scope): Instance
 					up = 0,
 					bound = false,
 					n = 1,
+					el = recipe.el,
 				}
 				local parts = { `◉ {Format.number(recipe.gold)}` }
 				local missing = (use(gold) or 0) < recipe.gold
@@ -126,7 +127,7 @@ local function Craft(scope: Scope): Instance
 								Position = UDim2.fromOffset(74, 6),
 								Size = UDim2.new(1, -220, 0, 26),
 								BackgroundTransparency = 1,
-								Text = ItemText.get(use, recipe.item),
+								Text = ItemText.get(use, recipe.item, nil, recipe.el),
 								FontFace = Theme.Fonts.BodyBold,
 								TextSize = Theme.TextSize.Body,
 								TextColor3 = Theme.Colors.Text,
@@ -158,7 +159,10 @@ local function Craft(scope: Scope): Instance
 										if ok then
 											Sounds.play("levelUp")
 											Toast.push(
-												Text.now("smith.crafted", { name = ItemText.name(recipe.item) }),
+												Text.now(
+													"smith.crafted",
+													{ name = ItemText.name(recipe.item, nil, recipe.el) }
+												),
 												"success"
 											)
 										else

@@ -11,18 +11,18 @@ local Text = require(script.Parent.Text)
 
 local ItemText = {}
 
-function ItemText.nameIn(lang: string, itemId: string, up: number?): string
-	return ItemName.get(lang, itemId, up)
+function ItemText.nameIn(lang: string, itemId: string, up: number?, element: string?): string
+	return ItemName.get(lang, itemId, up, element)
 end
 
 -- Name in the current UI language (non-reactive).
-function ItemText.name(itemId: string, up: number?): string
-	return ItemText.nameIn(Fusion.peek(Text.Lang), itemId, up)
+function ItemText.name(itemId: string, up: number?, element: string?): string
+	return ItemText.nameIn(Fusion.peek(Text.Lang), itemId, up, element)
 end
 
 -- Name inside a Computed (subscribes to the language).
-function ItemText.get(use: Fusion.Use, itemId: string, up: number?): string
-	return ItemText.nameIn(use(Text.Lang), itemId, up)
+function ItemText.get(use: Fusion.Use, itemId: string, up: number?, element: string?): string
+	return ItemText.nameIn(use(Text.Lang), itemId, up, element)
 end
 
 function ItemText.rarityColor(rarity: number): Color3

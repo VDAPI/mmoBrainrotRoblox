@@ -186,4 +186,42 @@ T.describe("Skills logic", function()
 	end)
 end)
 
+T.describe("Mage weapon elements (S18)", function()
+	T.it("element skills need a matching weapon, adaptive ones do not", function()
+		local iceShard = SkillData.get("iceShard") :: any
+		T.expect(Skills.elementAllowed(iceShard, "ice")).toBe(true)
+		T.expect(Skills.elementAllowed(iceShard, "fire")).toBe(false)
+		T.expect(Skills.elementAllowed(iceShard, nil)).toBe(false)
+		local arcane = SkillData.get("firebolt") :: any
+		T.expect(arcane.adaptive).toBe(true)
+		T.expect(Skills.elementAllowed(arcane, nil)).toBe(true)
+		T.expect(Skills.elementAllowed(SkillData.get("blink") :: any, "ice")).toBe(true)
+		T.expect(Skills.requiredElement(SkillData.get("firewall") :: any)).toBe("lightning")
+		-- Other classes never depend on the weapon element.
+		for _, skill in SkillData.byId do
+			if skill.class ~= "Mage" then
+				T.expect(Skills.requiredElement(skill)).toBeNil()
+			end
+		end
+	end)
+
+	T.it("each element has two own skills plus the two adaptive ones", function()
+		local counts = { fire = 0, ice = 0, lightning = 0 }
+		local adaptive = 0
+		for _, skill in SkillData.byId do
+			if skill.class == "Mage" then
+				local element = Skills.requiredElement(skill)
+				if element then
+					counts[element] += 1
+				end
+				if skill.adaptive then
+					adaptive += 1
+				end
+			end
+		end
+		T.expect(counts).toEqual({ fire = 2, ice = 2, lightning = 2 })
+		T.expect(adaptive).toBe(2)
+	end)
+end)
+
 return nil

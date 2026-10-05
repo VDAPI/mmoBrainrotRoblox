@@ -63,7 +63,7 @@ local function labelText(items: { ItemInstance }): string
 	if not best then
 		return ""
 	end
-	local name = ItemText.name(best.id, best.up)
+	local name = ItemText.name(best.id, best.up, best.el)
 	if best.n > 1 then
 		name ..= ` x{best.n}`
 	end
@@ -259,7 +259,7 @@ local function onPicked(items: { ItemInstance })
 			Toast.push(
 				`<font color="#{ItemText.rarityColor(item.rarity):ToHex()}">{Text.now("loot.picked", {
 					n = item.n,
-					name = ItemText.name(item.id, item.up),
+					name = ItemText.name(item.id, item.up, item.el),
 				})}</font>`,
 				"info",
 				2.5

@@ -17,7 +17,7 @@ export type Source = {
 	pct: { [string]: number }?,
 }
 
-export type Weapon = { dmg: number, mdmg: number, speed: number, ranged: boolean }
+export type Weapon = { dmg: number, mdmg: number, speed: number, ranged: boolean, element: string? }
 
 export type Input = {
 	level: number,

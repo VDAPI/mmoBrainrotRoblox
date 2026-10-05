@@ -286,9 +286,9 @@ T.describe("Data: Items", function()
 				end
 			end
 		end
-		-- 31 base types x 21 tiers + 30 materials + 24 consumables + 9 backpacks + 12 uniques
+		-- 39 base types (S18: +8 weapons) x 21 tiers + 30 materials + 24 consumables + 9 backpacks + 12 uniques
 		-- + S07: 25 blessings, 4 elixirs, 4 dungeon stones
-		T.expect(count).toBe(31 * 21 + 30 + 24 + 9 + 12 + 25 + 4 + 4)
+		T.expect(count).toBe(39 * 21 + 30 + 24 + 9 + 12 + 25 + 4 + 4)
 	end)
 
 	T.it("class weapon types exist as item bases", function()

@@ -24,7 +24,7 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 export type Props = {
 	Cast: (slot: number) -> (),
 	Clear: (slot: number) -> (),
-	Usable: (skillId: string) -> (boolean, boolean),
+	Usable: (skillId: string) -> (boolean, boolean, boolean),
 	Color: (skillId: string) -> Color3,
 	SlotSize: number,
 }
@@ -80,14 +80,14 @@ local function SkillBar(scope: Scope, props: Props): { Instance }
 			local total = math.max(SkillData.GCD, Skills.scaled(s, s.cooldown, level))
 			return math.clamp(left / total, 0, 1)
 		end)
-		local usable = scope:Computed(function(use): { resource: boolean, range: boolean }
+		local usable = scope:Computed(function(use): { resource: boolean, range: boolean, element: boolean }
 			use(tick)
 			local id = use(skillId)
 			if not id then
-				return { resource = true, range = true }
+				return { resource = true, range = true, element = true }
 			end
-			local resource, range = props.Usable(id)
-			return { resource = resource, range = range }
+			local resource, range, element = props.Usable(id)
+			return { resource = resource, range = range, element = element }
 		end)
 
 		local key = Keybinds.Label(scope, `skill_{index}`)
@@ -142,6 +142,18 @@ local function SkillBar(scope: Scope, props: Props): { Instance }
 						PaddingLeft = UDim.new(0.15, 0),
 						PaddingRight = UDim.new(0.15, 0),
 					}),
+				}),
+				-- Weapon of the wrong element (Mage, S18): greyed out.
+				scope:New("Frame")({
+					Name = "ElementTint",
+					Size = UDim2.fromScale(1, 1),
+					BackgroundColor3 = Color3.fromHex("#2A2A2E"),
+					BackgroundTransparency = 0.25,
+					Visible = scope:Computed(function(use): boolean
+						return use(skill) ~= nil and not use(usable).element
+					end),
+					ZIndex = 2,
+					[Children] = scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 				}),
 				-- Not enough mana / energy
 				scope:New("Frame")({
@@ -219,7 +231,16 @@ local function SkillBar(scope: Scope, props: Props): { Instance }
 				local levels = use(skillLevels)
 				local level = if type(levels) == "table" then levels[s.id] or 1 else 1
 				local lang = use(Text.Lang)
-				return `{Text.get(use, s.nameKey)} ({level})\n{Skills.formatDescription(s, level, lang)}`
+				local text = `{Text.get(use, s.nameKey)} ({level})\n{Skills.formatDescription(s, level, lang)}`
+				local element = Skills.requiredElement(s)
+				if element then
+					text ..= `\n{Text.get(
+						use,
+						"skill.requiresElement",
+						{ element = Text.get(use, `element.{element}`) }
+					)}`
+				end
+				return text
 			end)
 		)
 		table.insert(slots, slot)

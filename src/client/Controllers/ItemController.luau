@@ -87,7 +87,7 @@ function ItemController.Equip(index: number, slot: string?)
 	end
 	WindowManager.ShowModal({
 		Title = Text.now("equip.bind.title"),
-		Message = Text.now("equip.bind.message", { name = ItemText.name(item.id, item.up) }),
+		Message = Text.now("equip.bind.message", { name = ItemText.name(item.id, item.up, item.el) }),
 		ConfirmText = Text.now("equip.bind.confirm"),
 		CancelText = Text.now("common.cancel"),
 		OnConfirm = function(): (boolean, string?)
@@ -140,7 +140,7 @@ function ItemController.Destroy(index: number)
 	if not item then
 		return
 	end
-	local name = ItemText.name(item.id, item.up)
+	local name = ItemText.name(item.id, item.up, item.el)
 	WindowManager.ShowModal({
 		Title = Text.now("inventory.drop.title"),
 		Message = Text.now("inventory.drop.message", { name = name }),

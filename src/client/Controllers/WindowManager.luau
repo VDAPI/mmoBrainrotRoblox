@@ -4,6 +4,8 @@
 --   Open / Close / Toggle / CloseAll / IsOpen(id) -> Fusion Value<boolean>
 --   ShowModal(spec): one modal at a time, later ones wait in a queue.
 -- Esc closes the modal, then the top window, and otherwise opens the game menu (while playing).
+-- One window at a time (S18, DESIGN §23): opening a window closes the others. Service windows (COMPANIONS)
+-- open together with the backpack, side by side on desktop.
 -- Hotkeys only work while enabled (ScreenController enables them in the "playing" phase).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -16,6 +18,7 @@ local Log = require(ReplicatedStorage.Shared.Util.Log)
 local Modal = require(script.Parent.Parent.UI.Components.Modal)
 local Sounds = require(script.Parent.Parent.UI.Sounds)
 local Text = require(script.Parent.Parent.UI.Text)
+local Device = require(script.Parent.Parent.UI.Device)
 local Window = require(script.Parent.Parent.UI.Components.Window)
 
 local log = Log.new("WindowManager")
@@ -42,6 +45,22 @@ local WindowManager = {
 	-- Window id opened by Esc when nothing else is open.
 	MenuWindowId = "menu",
 }
+
+-- Windows that may stay open next to the backpack (NPC services, trade, auction, mail).
+local COMPANIONS: { [string]: boolean } = {
+	shop = true,
+	weaponsmith = true,
+	deposit = true,
+	blacksmith = true,
+	backpacks = true,
+	alchemy = true,
+	unbind = true,
+	trade = true,
+	auction = true,
+	mail = true,
+}
+local INVENTORY = "inventory"
+local GAP = 12
 
 local UIController: any
 local rootScope: Scope
@@ -102,6 +121,17 @@ function WindowManager.Close(id: string)
 	openValue(id):set(false)
 end
 
+local openWindow: (id: string, offset: Vector2?) -> ()
+
+-- Closes every open window except `keep` (a set of ids).
+local function closeOthers(keep: { [string]: boolean })
+	for openId in open do
+		if not keep[openId] then
+			WindowManager.Close(openId)
+		end
+	end
+end
+
 function WindowManager.Open(id: string)
 	if open[id] then
 		bringToFront(id)
@@ -112,6 +142,45 @@ function WindowManager.Open(id: string)
 		log:warn("unknown window '%s'", id)
 		return
 	end
+	if COMPANIONS[id] then
+		-- Service window: backpack on the left, the service on the right.
+		closeOthers({ [INVENTORY] = true })
+		local inventory = defs[INVENTORY]
+		local desktop = not Fusion.peek(Device.Touch)
+		local half = (def.size.X + (if inventory then inventory.size.X else 0) + GAP) / 2
+		if inventory and desktop then
+			if open[INVENTORY] then
+				WindowManager.Close(INVENTORY)
+			end
+			openWindow(INVENTORY, Vector2.new(-half + inventory.size.X / 2, 0))
+		end
+		openWindow(id, if inventory and desktop then Vector2.new(half - def.size.X / 2, 0) else nil)
+		return
+	end
+	if id == INVENTORY then
+		-- The backpack may join an open service window.
+		local keep: { [string]: boolean } = {}
+		for openId in open do
+			if COMPANIONS[openId] then
+				keep[openId] = true
+			end
+		end
+		closeOthers(keep)
+		if next(keep) then
+			local companionId = next(keep) :: string
+			local companion = defs[companionId]
+			local half = (def.size.X + companion.size.X + GAP) / 2
+			openWindow(id, if Fusion.peek(Device.Touch) then nil else Vector2.new(-half + def.size.X / 2, 0))
+			return
+		end
+	else
+		closeOthers({})
+	end
+	openWindow(id, nil)
+end
+
+openWindow = function(id: string, offset: Vector2?)
+	local def = defs[id]
 	local scope = rootScope:innerScope()
 	local z = scope:Value(zCounter)
 	open[id] = { scope = scope, z = z }
@@ -122,6 +191,7 @@ function WindowManager.Open(id: string)
 		Name = `Window_{id}`,
 		Title = Text.T(scope, def.titleKey),
 		Size = def.size,
+		Offset = offset,
 		ZIndex = z,
 		OnClose = close,
 		OnFocus = function()

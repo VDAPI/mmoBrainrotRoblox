@@ -2,6 +2,7 @@
 -- Item rolling and item statistics (DESIGN §5.2–§5.4). Pure; randomness from Logic/Rng, uids injected.
 
 local Bonuses = require("../Data/Bonuses")
+local Elements = require("../Data/Elements")
 local Items = require("../Data/Items")
 local Rarities = require("../Data/Rarities")
 local Rng = require("./Rng")
@@ -16,7 +17,7 @@ export type BonusLine = { id: string, v: number, quality: number }
 export type ItemStats = {
 	-- Non-weapon base stats after rarity and upgrades.
 	base: { [string]: number },
-	weapon: { dmg: number, mdmg: number, speed: number, ranged: boolean, twoHanded: boolean }?,
+	weapon: { dmg: number, mdmg: number, speed: number, ranged: boolean, twoHanded: boolean, element: string? }?,
 	-- Totals ready for StatCalc: flat additions and % multipliers by stat id, plus special effects.
 	flat: { [string]: number },
 	pct: { [string]: number },
@@ -135,7 +136,18 @@ function ItemRoll.rollItem(defId: string, ilvl: number, rarity: number, rng: Rng
 		up = 0,
 		bound = false,
 		n = 1,
+		-- Mage weapons roll their element (S18).
+		el = if def.elemental then rng:pick(Elements.WEAPON) else nil,
 	}
+end
+
+-- Element of a mage weapon instance; weapons from before S18 count as fire. nil for everything else.
+function ItemRoll.elementOf(item: ItemInstance): string?
+	local def = Items.get(item.id)
+	if not def or not def.elemental then
+		return nil
+	end
+	return if Elements.isWeaponElement(item.el) then item.el else Elements.DEFAULT
 end
 
 -- Stats of an item instance: base (rarity + upgrade), weapon, and bonus totals mapped to StatCalc ids.
@@ -149,14 +161,19 @@ function ItemRoll.itemStats(item: ItemInstance): ItemStats
 	local baseMul = if rarityDef then rarityDef.baseMul else 1
 	local multiplier = baseMul * (1 + Rarities.upgradeStatPerLevel * (item.up or 0))
 
-	local baseStats: { [string]: number } = def.base or {}
+	-- S18: generated equipment scales with the instance's ilvl (every level beats the one before); the
+	-- tier definition only names it. Uniques keep their fixed base.
+	local scaling = if def.tier then Items.bases.byType[def.type] else nil
+	local baseStats: { [string]: number } = if scaling and scaling.stats
+		then scaling.stats(math.max(1, item.ilvl))
+		else def.base or {}
 	for stat, value in baseStats do
 		local decimals = if value % 1 == 0 then 0 else 1
 		local scaled = roundTo(value * multiplier, decimals)
 		result.base[stat] = scaled
 		result.flat[stat] = (result.flat[stat] or 0) + scaled
 	end
-	local weapon = def.weapon
+	local weapon = if scaling and scaling.weapon then scaling.weapon(math.max(1, item.ilvl)) else def.weapon
 	if weapon then
 		result.weapon = {
 			dmg = math.floor(weapon.dmg * multiplier + 0.5),
@@ -164,6 +181,7 @@ function ItemRoll.itemStats(item: ItemInstance): ItemStats
 			speed = weapon.speed,
 			ranged = weapon.ranged,
 			twoHanded = weapon.twoHanded,
+			element = ItemRoll.elementOf(item),
 		}
 	end
 
@@ -184,6 +202,15 @@ function ItemRoll.itemStats(item: ItemInstance): ItemStats
 		end
 	end
 	return result
+end
+
+-- Level needed to equip: the ilvl for generated equipment (S18), the definition's level otherwise.
+function ItemRoll.requiredLevel(item: ItemInstance): number
+	local def = Items.get(item.id)
+	if not def then
+		return 1
+	end
+	return if def.tier then math.max(1, item.ilvl) else def.level
 end
 
 -- Price a merchant pays (DESIGN §18): equipment round(ilvl x 2 x rarityMultiplier²) (+10 % per upgrade level),

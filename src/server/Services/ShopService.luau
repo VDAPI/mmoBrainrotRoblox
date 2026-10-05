@@ -18,11 +18,13 @@ local Log = require(Shared.Util.Log)
 local Net = require(Shared.Net)
 local Npcs = require(Shared.Data.Npcs)
 local Rarities = require(Shared.Data.Rarities)
+local Rng = require(Shared.Logic.Rng)
 local ShopPrice = require(Shared.Logic.ShopPrice)
 local Shops = require(Shared.Data.Shops)
 local Types = require(Shared.Types)
 
 local log = Log.new("ShopService")
+local rng = Rng.new()
 
 local ShopService = {
 	Name = "ShopService",
@@ -78,6 +80,7 @@ local function shopOf(npcId: string): Shops.ShopDef?
 	return if npc and npc.shop then Shops.get(npc.shop) else nil
 end
 
+-- `itemId` is the entry key (the item id, or "<item>:<element>" for mage weapons at the weaponsmith).
 local function buy(player: Player, npcId: string, itemId: string, n: number): (boolean, string?)
 	local char = character(player)
 	local shop = shopOf(npcId)
@@ -89,20 +92,30 @@ local function buy(player: Player, npcId: string, itemId: string, n: number): (b
 	end
 	local entry: Shops.Entry? = nil
 	for _, candidate in shop.entries do
-		if candidate.item == itemId then
+		if (candidate.key or candidate.item) == itemId then
 			entry = candidate
 		end
 	end
-	local def = Items.get(itemId)
+	local def = entry and Items.get(entry.item)
 	if not entry or not def then
 		return false, "shop.error.notSold"
+	end
+	if entry.level and char.level < entry.level then
+		return false, "shop.error.level"
 	end
 	local count = math.clamp(n, 1, def.maxStack)
 	local total = ShopService.Price(player, entry, char) * count
 	if char.gold < total then
 		return false, "shop.error.gold"
 	end
-	local item = ItemRoll.makeStack(itemId, count, InventoryService.NewUid())
+	local item: ItemInstance
+	if entry.ilvl and def.category == "equipment" then
+		-- Fixed common equipment (weaponsmith): no bonuses, the entry's ilvl and element.
+		item = ItemRoll.rollItem(entry.item, entry.ilvl, Rarities.COMMON, rng, InventoryService.NewUid())
+		item.el = entry.el
+	else
+		item = ItemRoll.makeStack(entry.item, count, InventoryService.NewUid())
+	end
 	if not InventoryService.CanFit(player, { item }) then
 		return false, "inventory.full"
 	end

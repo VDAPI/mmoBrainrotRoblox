@@ -11,6 +11,7 @@ local Workspace = game:GetService("Workspace")
 local CollectionService = game:GetService("CollectionService")
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
+local Npcs = require(ReplicatedStorage.Shared.Data.Npcs)
 local QuestLogic = require(ReplicatedStorage.Shared.Logic.QuestLogic)
 local QuestText = require(script.Parent.Parent.Parent.QuestText)
 local QuestTrack = require(script.Parent.Parent.Parent.QuestTrack)
@@ -91,13 +92,17 @@ local function QuestTracker(scope: Scope): Instance
 		end)
 	)
 
+	-- One block per quest (S18): title, a grey "From / Turn in: NPC" line and its own objectives, with a gap
+	-- between blocks; daily contracts under their own "Contracts: Quest Board" header.
 	local lines = scope:Computed(function(use, s: Scope): { Instance }
 		local q = use(quests)
 		local list = {}
 		if type(q) ~= "table" or use(collapsed) then
 			return list
 		end
-		local function line(order: number, text: string, color: Color3, size: number, font: Font)
+		local order = 0
+		local function line(text: string, color: Color3, size: number, font: Font, indent: number?)
+			order += 1
 			table.insert(
 				list,
 				s:New("TextLabel")({
@@ -112,25 +117,55 @@ local function QuestTracker(scope: Scope): Instance
 					TextColor3 = color,
 					TextStrokeTransparency = 0.5,
 					TextXAlignment = Enum.TextXAlignment.Left,
+					[Children] = if indent
+						then s:New("UIPadding")({ PaddingLeft = UDim.new(0, indent) }) :: any
+						else nil,
 				})
 			)
 		end
+		local function gap()
+			order += 1
+			table.insert(
+				list,
+				s:New("Frame")({
+					LayoutOrder = order,
+					Size = UDim2.new(1, 0, 0, 6),
+					BackgroundTransparency = 1,
+				})
+			)
+		end
+		local function npcName(npcId: string?): string
+			local npc = npcId and Npcs.get(npcId)
+			return if npc then Text.get(use, npc.nameKey) else ""
+		end
+
 		local main = q.main
 		local quest = if type(main) == "table" then Quests.Main.get(main.id) else nil
 		if quest and main and use(QuestTrack.Tracked) then
-			line(1, Text.get(use, `quest.{quest.id}.title`), Theme.Colors.GoldBright, 18, Theme.Fonts.BodyBold)
+			line(Text.get(use, `quest.{quest.id}.title`), Theme.Colors.GoldBright, 18, Theme.Fonts.BodyBold)
 			if QuestLogic.isComplete(main.progress or {}, quest.objectives) then
-				line(2, `→ {Text.get(use, "quest.readyShort")}`, Theme.Colors.Success, 16, Theme.Fonts.BodyMedium)
+				line(
+					Text.get(use, "quest.tracker.turnIn", { npc = npcName(quest.turnIn) }),
+					Theme.Colors.Success,
+					15,
+					Theme.Fonts.BodyMedium
+				)
 			else
+				line(
+					Text.get(use, "quest.tracker.from", { npc = npcName(quest.giver) }),
+					Theme.Colors.TextMuted,
+					14,
+					Theme.Fonts.Body
+				)
 				for i, objective in quest.objectives do
 					local have = (main.progress or {})[i] or 0
 					if have < objective.n then
 						line(
-							1 + i,
 							`• {QuestText.objective(use, objective, have)}`,
 							Theme.Colors.Text,
 							15,
-							Theme.Fonts.BodyMedium
+							Theme.Fonts.BodyMedium,
+							6
 						)
 					end
 				end
@@ -140,24 +175,52 @@ local function QuestTracker(scope: Scope): Instance
 				QuestLogic.nextMain(q.mainDone or 0, use(State.Value({ "character", "level" })) or 1)
 			if nextQuest and ready then
 				line(
-					1,
 					`! {Text.get(use, `quest.{nextQuest.id}.title`)}`,
 					Theme.Colors.GoldBright,
 					17,
 					Theme.Fonts.BodyBold
 				)
-			end
-		end
-		local daily = q.daily
-		for i, entry in (if type(daily) == "table" then daily.list else {}) or {} do
-			if not entry.claimed then
-				local done = entry.progress >= entry.objective.n
 				line(
-					20 + i,
-					`{if done then "✔" else "◦"} {QuestText.objective(use, entry.objective, entry.progress)}`,
-					if done then Theme.Colors.Success else Theme.Colors.Parchment,
+					Text.get(use, "quest.tracker.from", { npc = npcName(nextQuest.giver) }),
+					Theme.Colors.TextMuted,
 					14,
 					Theme.Fonts.Body
+				)
+			end
+		end
+
+		local daily = q.daily
+		local open = {}
+		for _, entry in (if type(daily) == "table" then daily.list else {}) or {} do
+			if not entry.claimed then
+				table.insert(open, entry)
+			end
+		end
+		if #open > 0 then
+			if order > 0 then
+				gap()
+			end
+			line(
+				Text.get(use, "quest.tracker.contracts", { npc = npcName("questboard") }),
+				Theme.Colors.Gold,
+				16,
+				Theme.Fonts.BodyBold
+			)
+			for _, entry in open do
+				local done = entry.progress >= entry.objective.n
+				line(
+					Text.get(use, `daily.{entry.template}.title`),
+					if done then Theme.Colors.Success else Theme.Colors.Parchment,
+					15,
+					Theme.Fonts.BodyMedium,
+					4
+				)
+				line(
+					`{if done then "✔" else "◦"} {QuestText.objective(use, entry.objective, entry.progress)}`,
+					if done then Theme.Colors.Success else Theme.Colors.Text,
+					14,
+					Theme.Fonts.Body,
+					10
 				)
 			end
 		end

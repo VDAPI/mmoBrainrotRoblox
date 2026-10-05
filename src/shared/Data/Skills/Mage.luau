@@ -1,5 +1,8 @@
 --!strict
 -- Mage tree (DESIGN §14.4), Mana. Requirements (not given in DESIGN) follow the fire and frost branches.
+-- S18: element skills need a weapon of the same element; Arcane Bolt (id firebolt) and Elemental Fury
+-- (id meteorStorm) are adaptive, Thunderstorm (id firewall) is lightning. Ids are kept so learned levels and
+-- hotbars need no migration.
 
 local Build = require("./Build")
 
@@ -11,12 +14,12 @@ return Build.class("Mage", "mana", "magic", {
 		cost = 12,
 		cooldown = 2.5,
 		range = 38,
-		element = "fire",
+		adaptive = true,
 		values = { dmg = { 170, 310 } },
 		col = 1,
 		row = 1,
-		glyph = "🔥",
-		vfx = "fireBolt",
+		glyph = "✦",
+		vfx = "arcaneBolt",
 	},
 	{
 		id = "iceShard",
@@ -151,19 +154,20 @@ return Build.class("Mage", "mana", "magic", {
 	{
 		id = "firewall",
 		unlock = 56,
-		type = "line",
+		type = "circleTarget",
 		cost = 55,
 		cooldown = 22,
-		length = 16,
-		width = 5,
-		duration = 5,
+		range = 38,
+		radius = 12,
+		hits = 10,
 		interval = 0.5,
-		element = "fire",
+		randomTarget = true,
+		element = "lightning",
 		values = { dmg = { 50, 90 } },
 		col = 2,
 		row = 5,
-		glyph = "🔥",
-		vfx = "firewall",
+		glyph = "⛈",
+		vfx = "thunderstorm",
 	},
 	{
 		id = "evocation",
@@ -188,11 +192,11 @@ return Build.class("Mage", "mana", "magic", {
 		hits = 6,
 		interval = 0.4,
 		delay = 0.8,
-		element = "fire",
+		adaptive = true,
 		values = { dmg = { 160, 260 } },
 		requires = { { skill = "meteor", level = 5 } },
 		col = 1,
 		row = 6,
-		glyph = "☄",
+		glyph = "✺",
 	},
 })

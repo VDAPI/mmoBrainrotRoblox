@@ -3,6 +3,7 @@
 -- 10 small health potions on the potion bar. Used by CharacterFactory and by the schema-2 migration for
 -- characters created before items existed. Pure; uids injected.
 
+local Elements = require("../Data/Elements")
 local ItemRoll = require("./ItemRoll")
 local Items = require("../Data/Items")
 local Rng = require("./Rng")
@@ -25,6 +26,9 @@ function StarterGear.apply(character: Types.CharacterData, newId: () -> string)
 		if def and slot and equipment[slot] == nil then
 			local item = ItemRoll.rollItem(defId, def.level, 1, rng, newId())
 			item.bound = true -- equipped items are bound (DESIGN §5.6)
+			if def.elemental then
+				item.el = Elements.DEFAULT -- the Mage starts with a Wand of Fire (S18)
+			end
 			equipment[slot] = item
 		end
 	end

@@ -1,10 +1,13 @@
 --!strict
 -- Shop window (DESIGN §9, §18): Buy (icon, name, price, quantity with −/+/Max), Sell (click backpack items to
 -- select, total, confirmation for Epic and better) and Buy back (last 10 sold). Gold always visible.
+-- Shops with class tabs (weaponsmith, S18) filter by class (own class first) and show tiers up to the
+-- player's level + 5; buying for another class asks first.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Button = require(script.Parent.Parent.Components.Button)
+local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local DragDrop = require(script.Parent.Parent.DragDrop)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
@@ -37,8 +40,16 @@ export type Props = {
 
 local ROW = 70
 
-local function preview(itemId: string): Types.ItemInstance
-	return ItemRoll.makeStack(itemId, 1, `preview:{itemId}`)
+local TIER_LOOKAHEAD = 5
+
+local function preview(entry: Shops.Entry): Types.ItemInstance
+	local item = ItemRoll.makeStack(entry.item, 1, `preview:{entry.key or entry.item}`)
+	if entry.ilvl then
+		item.ilvl = entry.ilvl
+		item.rarity = Rarities.COMMON
+		item.el = entry.el
+	end
+	return item
 end
 
 local function invoke(name: string, ...: any): (boolean, any)
@@ -58,15 +69,22 @@ local function priceOf(entry: Shops.Entry): number
 	)
 end
 
-local function buyRow(scope: Scope, npcId: string, entry: Shops.Entry, order: number): Instance
+local function buyRow(
+	scope: Scope,
+	npcId: string,
+	entry: Shops.Entry,
+	order: number,
+	showModal: (spec: any) -> ()
+): Instance
 	local def = Items.get(entry.item)
+	local key = entry.key or entry.item
 	local quantity = scope:Value("1")
 	local maxStack = if def then def.maxStack else 1
 	local function amount(): number
 		return math.clamp(tonumber(Fusion.peek(quantity)) or 1, 1, maxStack)
 	end
 	return scope:New("Frame")({
-		Name = entry.item,
+		Name = key,
 		LayoutOrder = order,
 		Size = UDim2.new(1, 0, 0, ROW),
 		BackgroundColor3 = Theme.Colors.PanelRaised,
@@ -74,8 +92,8 @@ local function buyRow(scope: Scope, npcId: string, entry: Shops.Entry, order: nu
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 			ItemSlot(scope, {
-				SlotId = `view:shop:{entry.item}`,
-				Item = preview(entry.item),
+				SlotId = `view:shop:{key}`,
+				Item = preview(entry),
 				Size = 56,
 				Position = UDim2.fromOffset(7, 7),
 			}),
@@ -84,7 +102,7 @@ local function buyRow(scope: Scope, npcId: string, entry: Shops.Entry, order: nu
 				Size = UDim2.new(1, -380, 0, 26),
 				BackgroundTransparency = 1,
 				Text = scope:Computed(function(use): string
-					return ItemText.get(use, entry.item)
+					return ItemText.get(use, entry.item, nil, entry.el)
 				end),
 				FontFace = Theme.Fonts.BodyBold,
 				TextSize = Theme.TextSize.Body,
@@ -167,16 +185,35 @@ local function buyRow(scope: Scope, npcId: string, entry: Shops.Entry, order: nu
 				Text = Text.T(scope, "shop.buy"),
 				OnClick = function()
 					local n = amount()
-					task.spawn(function()
-						if invoke("Buy", npcId, entry.item, n) then
+					local function doBuy()
+						local ok, err = Net.Invoke("Buy", npcId, key, n)
+						if ok then
 							Sounds.play("click")
 							Toast.push(
-								Text.now("shop.bought", { name = ItemText.name(entry.item), n = n }),
+								Text.now("shop.bought", { name = ItemText.name(entry.item, nil, entry.el), n = n }),
 								"success",
 								2
 							)
+						else
+							Sounds.play("error")
+							Toast.push(Text.now(err or "error.internal", { level = entry.level or 1 }), "error")
 						end
-					end)
+					end
+					local classId = State.Get({ "character", "class" })
+					if entry.classes and classId and not table.find(entry.classes, classId) then
+						showModal({
+							Title = Text.now("shop.otherClass.title"),
+							Message = Text.now("shop.otherClass.message"),
+							ConfirmText = Text.now("shop.buy"),
+							CancelText = Text.now("common.cancel"),
+							OnConfirm = function()
+								task.spawn(doBuy)
+								return true, nil
+							end,
+						})
+					else
+						task.spawn(doBuy)
+					end
 				end,
 			}),
 		},
@@ -193,6 +230,9 @@ local function ShopWindow(scope: Scope, props: Props): Fusion.Child
 	local npcId = scope:Computed(function(use): string?
 		return use(props.NpcId)
 	end)
+	-- Class tab of shops with classTabs (own class by default).
+	local classTab = scope:Value(State.Get({ "character", "class" }) or "Warrior")
+	local playerLevel = State.Value({ "character", "level" })
 
 	local sellTotal = scope:Computed(function(use): number
 		local inv = use(inventory) or {}
@@ -302,9 +342,52 @@ local function ShopWindow(scope: Scope, props: Props): Fusion.Child
 		local shop = npc and npc.shop and Shops.get(npc.shop)
 		if current == "buy" then
 			local rows = {}
-			if shop and id then
+			if shop and id and shop.classTabs then
+				local chosen = use(classTab)
+				local maxTier = (use(playerLevel) or 1) + TIER_LOOKAHEAD
+				local tabs = {}
+				for order, classId in Classes.order do
+					local class = Classes.get(classId) :: Classes.ClassDef
+					table.insert(
+						tabs,
+						Button(s, {
+							LayoutOrder = order,
+							Text = Text.get(use, class.nameKey),
+							TextSize = Theme.TextSize.Small,
+							Size = UDim2.fromOffset(130, 40),
+							Variant = if chosen == class.id then "primary" else "secondary",
+							OnClick = function()
+								classTab:set(class.id)
+							end,
+						})
+					)
+				end
+				table.insert(
+					rows,
+					s:New("Frame")({
+						Name = "ClassTabs",
+						LayoutOrder = 0,
+						Size = UDim2.new(1, 0, 0, 44),
+						BackgroundTransparency = 1,
+						[Children] = {
+							s:New("UIListLayout")({
+								FillDirection = Enum.FillDirection.Horizontal,
+								Padding = UDim.new(0, 6),
+								SortOrder = Enum.SortOrder.LayoutOrder,
+							}),
+							tabs :: any,
+						},
+					})
+				)
 				for i, entry in shop.entries do
-					table.insert(rows, buyRow(s, id, entry, i))
+					local forClass = entry.classes == nil or table.find(entry.classes, chosen) ~= nil
+					if forClass and (entry.level or 0) <= maxTier then
+						table.insert(rows, buyRow(s, id, entry, i, props.ShowModal))
+					end
+				end
+			elseif shop and id then
+				for i, entry in shop.entries do
+					table.insert(rows, buyRow(s, id, entry, i, props.ShowModal))
 				end
 			end
 			return rows

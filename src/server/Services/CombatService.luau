@@ -88,9 +88,15 @@ local PartyService: any
 
 type Attacker = {
 	target: string?,
+	attack: boolean, -- false: target kept (skills, admin) but no auto-attack (the player walked away)
 	nextAttack: number,
 	damageOverride: number?,
+	rejectedAt: number, -- last AttackRejected sent (rate limit)
+	outOfRangeSince: number?, -- standing still out of range since (for the "too far" message)
 }
+
+local REJECT_INTERVAL = 2
+local TOO_FAR_AFTER = 1
 
 local attackers: { [Player]: Attacker } = {}
 local rng = Rng.new()
@@ -99,7 +105,7 @@ local fxQueue: { { position: Vector3, event: FxEvent } } = {}
 local function attackerState(player: Player): Attacker
 	local state = attackers[player]
 	if not state then
-		state = { target = nil, nextAttack = 0, damageOverride = nil }
+		state = { target = nil, attack = false, nextAttack = 0, damageOverride = nil, rejectedAt = 0 }
 		attackers[player] = state
 	end
 	return state
@@ -429,9 +435,18 @@ function CombatService.DealDamage(
 	return result
 end
 
+-- Tells the client why its auto-attack does nothing (at most once per REJECT_INTERVAL).
+local function reject(player: Player, state: Attacker, now: number, reason: string)
+	if now - state.rejectedAt < REJECT_INTERVAL then
+		return
+	end
+	state.rejectedAt = now
+	Net.Fire(player, "AttackRejected", reason)
+end
+
 local function tryBasicAttack(player: Player, state: Attacker, now: number)
 	local targetId = state.target
-	if not targetId or now < state.nextAttack or not playerAlive(player) then
+	if not targetId or not state.attack or now < state.nextAttack or not playerAlive(player) then
 		return
 	end
 	local target = EntityService.Get(targetId)
@@ -450,20 +465,36 @@ local function tryBasicAttack(player: Player, state: Attacker, now: number)
 	end
 	-- No fighting from inside a safe zone, or while stunned / frozen.
 	if ZoneService.GetPvpZone(player) == "green" then
+		reject(player, state, now, "combat.reject.safeZone")
 		return
 	end
 	local selfEntity = EntityService.GetPlayerEntity(player)
 	if selfEntity and StatusEffectService.IsDisabled(selfEntity) then
+		reject(player, state, now, "combat.reject.stunned")
 		return
 	end
 	local kind, ranged, style = basicAttackProfile(player)
 	local range = (if ranged then Combat.rangedRange else Combat.meleeRange) + Combat.rangeTolerance
 	if flatDistance(myRoot.Position, targetPosition) - entityRadius(target) > range then
+		-- Walking into range is normal; only complain when the player stands still out of range.
+		local velocity = myRoot.AssemblyLinearVelocity
+		if Vector3.new(velocity.X, 0, velocity.Z).Magnitude < 1 then
+			state.outOfRangeSince = state.outOfRangeSince or now
+			if now - (state.outOfRangeSince :: number) >= TOO_FAR_AFTER then
+				reject(player, state, now, "combat.reject.tooFar")
+			end
+		else
+			state.outOfRangeSince = nil
+		end
 		return
 	end
+	state.outOfRangeSince = nil
 	local speed = math.max(0.2, StatService.GetValue(player, "atkSpeed"))
 	state.nextAttack = now + 1 / speed
-	local params: Damage.Params = { kind = if kind == "magic" then "magic" else "phys" }
+	-- Mage weapons hit with their element (S18).
+	local derived = PlayerStateService.Get(player, { "derived" })
+	local element = if derived and derived.weapon then derived.weapon.element else nil
+	local params: Damage.Params = { kind = if kind == "magic" then "magic" else "phys", element = element }
 	CombatService.DealDamage(player, target, params, style)
 	local double = hook(player, "doubleAttack")
 	if double > 0 and rng:chance(double / 100) then
@@ -613,12 +644,15 @@ end
 
 -- Remote --------------------------------------------------------------------------------------------------
 
-local function onSetTarget(player: Player, entityId: string?)
+local function onSetTarget(player: Player, entityId: string?, attack: boolean?)
 	local state = attackerState(player)
 	if entityId == nil then
 		state.target = nil
+		state.attack = false
 		return
 	end
+	state.attack = attack ~= false
+	state.outOfRangeSince = nil
 	local entity = EntityService.Get(entityId)
 	if not entity or entity.player == player then
 		state.target = nil

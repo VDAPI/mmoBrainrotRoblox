@@ -41,7 +41,10 @@ local Definitions: { [string]: Definition } = {
 	LevelUp = { kind = "event", dir = "s2c" }, -- (player, newLevel, statPoints, skillPoints) to nearby players
 
 	-- Combat
-	SetTarget = { kind = "event", dir = "c2s", rate = 8, args = { "string?" } }, -- entityId or nil to clear
+	-- (entityId or nil to clear, attack: false keeps the target but stops the auto-attack; S18)
+	SetTarget = { kind = "event", dir = "c2s", rate = 12, args = { "string?", "boolean?" } },
+	SetSprint = { kind = "event", dir = "c2s", rate = 10, args = { "boolean" } }, -- S18
+	AttackRejected = { kind = "event", dir = "s2c" }, -- (reason locale key), at most one per 2 s (S18)
 	SetTitle = { kind = "function", dir = "c2s", rate = 2, args = { "string?" } }, -- (titleId or nil), S16
 	CombatFx = { kind = "event", dir = "s2c" }, -- batched { k = "dmg" | "heal" | "atk" | "tele" | "reward", ... }
 

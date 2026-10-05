@@ -286,6 +286,7 @@ local function startChannel(ctx: Context.Ctx)
 	local token = rt.channelToken
 	local duration = ctx.scaled(ctx.skill.duration)
 	rt.channel = { skillId = ctx.skill.id, token = token, startedAt = ctx.root.Position }
+	StatService.SetSprint(player, false) -- channelling stops the sprint (S18)
 	PlayerStateService.Set(
 		player,
 		{ "skills", "channel" },
@@ -341,6 +342,12 @@ local function resolveTarget(player: Player, skill: SkillData.SkillDef, targetId
 	return nil
 end
 
+-- Element of the equipped weapon (mage weapons only), from the derived stats.
+local function weaponElement(player: Player): string?
+	local weapon = PlayerStateService.Get(player, { "derived", "weapon" })
+	return if type(weapon) == "table" then weapon.element else nil
+end
+
 local function cast(player: Player, skillId: string, targetId: string?, aim: any): (boolean, string?)
 	local char = character(player)
 	local skill = SkillData.get(skillId)
@@ -359,6 +366,10 @@ local function cast(player: Player, skillId: string, targetId: string?, aim: any
 	end
 	if StatusEffectService.IsDisabled(caster) then
 		return false, "cast.error.disabled"
+	end
+	-- Element skills need a weapon of the same element (S18, DESIGN §5.8).
+	if not Skills.elementAllowed(skill, weaponElement(player)) then
+		return false, "cast.error.wrongElement"
 	end
 	if (skill.type == "blink" or skill.type == "charge") and StatusEffectService.IsRooted(caster) then
 		return false, "cast.error.disabled"
@@ -496,6 +507,7 @@ function SkillService.Init(registry)
 		Death = DeathService,
 		Fx = sendFx,
 		PassiveHook = SkillService.PassiveHook,
+		WeaponElement = weaponElement,
 	}
 
 	StatService.RegisterModifierSource("passives", modifierSource)
@@ -503,6 +515,9 @@ function SkillService.Init(registry)
 end
 
 function SkillService.Start()
+	ResourceService.Died:Connect(function(player: Player)
+		StatService.SetSprint(player, false)
+	end)
 	Net.Handle("LearnSkill", learn)
 	Net.Handle("SetHotbar", setHotbar)
 	Net.Handle("ResetSkills", function(player: Player)

@@ -235,7 +235,8 @@ local function onMonsterKilled(info: any, credit: { Player })
 	if info.boss or #credit == 0 then
 		return
 	end
-	-- One roll per monster with the top damage dealer's bonuses; parties share it.
+	-- One roll per monster with the top damage dealer's bonuses and class preference (also in a party,
+	-- before the loot is split; S18); parties share it.
 	local killer = credit[1]
 	local character: Types.CharacterData? = PlayerStateService.GetCharacter(killer)
 	if not character then
@@ -243,7 +244,7 @@ local function onMonsterKilled(info: any, credit: { Player })
 	end
 	local loot = Loot.rollMonsterLoot(info.monsterId, info.variant, info.level, rng, {
 		dropBonus = StatService.GetValue(killer, "dropBonus"),
-		classId = if #credit == 1 then character.class :: string else nil,
+		classId = character.class :: string,
 	})
 	LootService.DistributeToParty(credit, info.position, instancesFrom(loot))
 end

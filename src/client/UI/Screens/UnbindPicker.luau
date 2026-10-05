@@ -41,7 +41,7 @@ local function UnbindPicker(scope: Scope, close: () -> ()): Fusion.Child
 							if ok then
 								Sounds.play("levelUp")
 								Toast.push(
-									Text.now("scroll.unbind.done", { name = ItemText.name(item.id, item.up) }),
+									Text.now("scroll.unbind.done", { name = ItemText.name(item.id, item.up, item.el) }),
 									"success"
 								)
 								close()

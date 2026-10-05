@@ -33,6 +33,7 @@ local ScreenController = {
 		"ItemController",
 		"SkillController",
 		"PartyController",
+		"MovementController",
 	},
 }
 
@@ -42,6 +43,7 @@ local TargetController: any
 local ItemController: any
 local SkillController: any
 local PartyController: any
+local MovementController: any
 
 -- HUD menu (DESIGN §23). Windows without their system yet show a "coming soon" body.
 local MENU: { Hud.MenuEntry } = {
@@ -208,6 +210,8 @@ local function show(screen: "select" | "hud")
 				PartyController.OpenMenu(player, at)
 			end,
 			OnAttack = TargetController.AttackNearest,
+			Sprinting = MovementController.Sprinting,
+			OnSprint = MovementController.ToggleSprint,
 			UsePotion = ItemController.UsePotion,
 			AssignPotion = ItemController.SetPotion,
 			CastSlot = SkillController.CastSlot,
@@ -236,6 +240,7 @@ function ScreenController.Init(registry)
 	ItemController = registry.Get("ItemController")
 	SkillController = registry.Get("SkillController")
 	PartyController = registry.Get("PartyController")
+	MovementController = registry.Get("MovementController")
 	blur = Instance.new("BlurEffect")
 	blur.Name = "Vaelthorn_SelectBlur"
 	blur.Enabled = false

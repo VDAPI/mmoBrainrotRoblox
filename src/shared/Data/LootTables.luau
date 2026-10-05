@@ -25,7 +25,7 @@ export type BossTable = {
 }
 
 local DEFAULT_SLOTS: { [string]: number } = {
-	weapon = 18,
+	weapon = 28,
 	offhand = 10,
 	helmet = 10,
 	armor = 10,
@@ -113,7 +113,7 @@ for _, def in Monsters.list do
 	TABLES[def.lootTable] = {
 		id = def.lootTable,
 		slotWeights = DEFAULT_SLOTS,
-		classBias = 0.65,
+		classBias = 0.8,
 		materials = materials,
 		variantMaterials = VARIANT_MATERIALS,
 	}

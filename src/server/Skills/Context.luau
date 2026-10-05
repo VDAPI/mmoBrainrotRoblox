@@ -23,6 +23,7 @@ export type Services = {
 	Death: any,
 	Fx: (player: Player, data: { [string]: any }) -> (),
 	PassiveHook: (player: Player, id: string) -> number,
+	WeaponElement: (player: Player) -> string?,
 }
 
 export type Ctx = {
@@ -40,6 +41,7 @@ export type Ctx = {
 	attack: () -> number, -- physical or magic attack depending on the skill
 	magAtk: () -> number,
 	fx: (data: { [string]: any }) -> (),
+	element: string?, -- the skill's element (adaptive: the weapon's), S18
 	isEnemy: (entity: any) -> boolean,
 	damage: (entity: any, percent: number, options: { [string]: any }?) -> Damage.Result?,
 	heal: (player: Player, amount: number) -> number,
@@ -111,9 +113,12 @@ function Context.new(
 		return if result then result.values else {}
 	end
 
+	-- Adaptive skills take the weapon's element (S18).
+	local element: string? = if skill.adaptive then services.WeaponElement(player) else skill.element
+
 	local function elementalMultiplier(): number
 		local mult = 1
-		if skill.element then
+		if element then
 			mult += services.PassiveHook(player, "elementDamage") / 100
 		end
 		if skill.holy then
@@ -139,6 +144,37 @@ function Context.new(
 		return found
 	end
 
+	-- Extra effect of adaptive skills by weapon element (DESIGN §14.4): fire burns for 30 % of the hit over
+	-- 4 s, ice slows by 25 % for 2 s, lightning arcs to one enemy nearby for 40 %.
+	local function adaptiveEffect(entity: any, percent: number, amount: number)
+		if element == "fire" then
+			services.StatusEffect.Apply(entity, "burn", {
+				duration = 4,
+				value = 30,
+				source = player,
+				tickAmount = math.max(1, amount * 0.3 / 4),
+			})
+		elseif element == "ice" then
+			services.StatusEffect.Apply(entity, "slow", { duration = 2, value = 25, source = player })
+		elseif element == "lightning" then
+			local from = Entity.Position(entity)
+			if not from then
+				return
+			end
+			local best, bestDistance = nil, 10
+			for _, other in Entity.QueryMonsters(from, 10) do
+				local p = Entity.Position(other)
+				if other ~= entity and p and isEnemy(other) and (p - from).Magnitude <= bestDistance then
+					best, bestDistance = other, (p - from).Magnitude
+				end
+			end
+			if best then
+				ctx.fx({ v = "arc", path = { entity.id, best.id } })
+				ctx.damage(best, percent * 0.4, { noAdaptive = true, consumeShot = false })
+			end
+		end
+	end
+
 	ctx = {
 		player = player,
 		skill = skill,
@@ -160,10 +196,12 @@ function Context.new(
 		magAtk = function(): number
 			return stats().magAtk or 0
 		end,
+		element = element,
 		fx = function(data)
 			data.s = skill.id
 			data.v = data.v or skill.vfx
 			data.c = caster.id
+			data.el = data.el or element
 			services.Fx(player, data)
 		end,
 		isEnemy = isEnemy,
@@ -174,13 +212,17 @@ function Context.new(
 			local params: Damage.Params = {
 				kind = if skill.damageKind == "magic" then "magic" else "phys",
 				multiplier = percent / 100,
-				element = skill.element,
+				element = element :: any,
 				canDodge = options == nil or options.canDodge ~= false,
 			}
-			return services.Combat.DealDamage(player, entity, params, nil, {
+			local result = services.Combat.DealDamage(player, entity, params, nil, {
 				multiplier = elementalMultiplier(),
 				consumeShot = options == nil or options.consumeShot ~= false,
 			})
+			if skill.adaptive and result and result.amount > 0 and not (options and options.noAdaptive) then
+				adaptiveEffect(entity, percent, result.amount)
+			end
+			return result
 		end,
 		heal = function(target: Player, amount: number): number
 			local bonus = services.PassiveHook(player, "healBonus")

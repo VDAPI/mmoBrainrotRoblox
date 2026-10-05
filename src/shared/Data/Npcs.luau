@@ -59,6 +59,19 @@ npc({
 	colors = { body = "#5A4636", accent = "#8E8E93" },
 	icon = "⚒",
 })
+-- Weaponsmith (S18, DESIGN §8a): stall between the forge and the alchemist.
+npc({
+	id = "weaponsmith",
+	map = "city",
+	nameKey = "npc.weaponsmith.name",
+	greetingKey = "npc.weaponsmith.greeting",
+	services = { "shop" },
+	shop = "weaponsmith",
+	position = { x = -150, z = -48 },
+	facing = 180,
+	colors = { body = "#4A3A2E", accent = "#C9CED6" },
+	icon = "⚔",
+})
 npc({
 	id = "alchemist",
 	map = "city",

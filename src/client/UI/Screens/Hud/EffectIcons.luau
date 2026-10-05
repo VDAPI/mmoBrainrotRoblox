@@ -30,6 +30,7 @@ local GLYPHS: { [string]: { glyph: string, good: boolean } } = {
 	freeze = { glyph = "❄", good = false },
 	bleed = { glyph = "🩸", good = false },
 	poison = { glyph = "☠", good = false },
+	burn = { glyph = "🔥", good = false },
 	armorBreak = { glyph = "⛨", good = false },
 	vulnerability = { glyph = "🎯", good = false },
 	taunt = { glyph = "❗", good = false },

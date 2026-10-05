@@ -343,6 +343,113 @@ local looks: { [string]: Look } = {
 	},
 }
 
+-- Variants built from another look, scaled (S18 weapon types).
+local function scaled(from: string, factor: number, tint: { [string]: string }?): Look
+	local source = looks[from]
+	local pieces: { Piece } = {}
+	for _, piece in source.pieces do
+		local copy = table.clone(piece)
+		copy.size = { piece.size[1] * factor, piece.size[2] * factor, piece.size[3] * factor }
+		copy.pos = { piece.pos[1] * factor, piece.pos[2] * factor, piece.pos[3] * factor }
+		if tint and tint[piece.name] then
+			copy.color = tint[piece.name]
+		end
+		table.insert(pieces, copy)
+	end
+	return { hand = source.hand, pieces = pieces }
+end
+
+looks.shortbow = scaled("bow", 0.8)
+looks.longbow = scaled("bow", 1.25, { UpperLimb = DARK_WOOD, LowerLimb = DARK_WOOD })
+looks.heavycrossbow = scaled("crossbow", 1.25, { Prod = DARK_IRON })
+looks.saber1h = {
+	hand = "right",
+	pieces = {
+		{
+			name = "Blade",
+			size = { 0.1, 0.28, 2.5 },
+			pos = { 0, 0.12, -1.7 },
+			rot = { 6, 0, 0 },
+			color = STEEL,
+			material = "Metal",
+		},
+		{ name = "Guard", size = { 0.2, 0.55, 0.14 }, pos = { 0, -0.1, -0.42 }, color = GOLD, material = "Metal" },
+		{ name = "Grip", size = { 0.17, 0.17, 0.65 }, pos = { 0, 0, 0 }, color = LEATHER, material = "Fabric" },
+		{
+			name = "Gem",
+			size = { 0.2, 0.2, 0.2 },
+			pos = { 0, 0, 0.4 },
+			color = "rarity",
+			material = "Neon",
+			shape = "Ball",
+		},
+	},
+}
+looks.spear2h = {
+	hand = "right",
+	pieces = {
+		{ name = "Head", size = { 0.12, 0.4, 1.0 }, pos = { 0, 0, -4.4 }, color = STEEL, material = "Metal" },
+		{ name = "Shaft", size = { 0.2, 0.2, 5.0 }, pos = { 0, 0, -1.6 }, color = WOOD, material = "Wood" },
+		{ name = "Collar", size = { 0.26, 0.26, 0.2 }, pos = { 0, 0, -3.9 }, color = "rarity", material = "Neon" },
+	},
+}
+looks.runestaff = {
+	hand = "right",
+	pieces = {
+		{
+			name = "Crystal",
+			size = { 0.45, 1.0, 0.45 },
+			pos = { 0, 4.1, 0 },
+			rot = { 0, 45, 0 },
+			color = "rarity",
+			material = "Neon",
+		},
+		{ name = "Shaft", size = { 0.3, 5.2, 0.3 }, pos = { 0, 1.2, 0 }, color = DARK_WOOD, material = "Wood" },
+		{ name = "RuneA", size = { 0.34, 0.12, 0.34 }, pos = { 0, 2.6, 0 }, color = "rarity", material = "Neon" },
+		{ name = "RuneB", size = { 0.34, 0.12, 0.34 }, pos = { 0, 1.8, 0 }, color = "rarity", material = "Neon" },
+		{ name = "Cage", size = { 0.6, 0.18, 0.6 }, pos = { 0, 3.6, 0 }, color = DARK_IRON, material = "Metal" },
+	},
+}
+looks.flail1h = {
+	hand = "right",
+	pieces = {
+		{
+			name = "Ball",
+			size = { 0.6, 0.6, 0.6 },
+			pos = { 0, -0.5, -1.9 },
+			color = DARK_IRON,
+			material = "Metal",
+			shape = "Ball",
+		},
+		{
+			name = "Chain",
+			size = { 0.08, 0.6, 0.08 },
+			pos = { 0, -0.2, -1.75 },
+			rot = { 20, 0, 0 },
+			color = IRON,
+			material = "Metal",
+		},
+		{ name = "Handle", size = { 0.2, 0.2, 1.6 }, pos = { 0, 0, -0.65 }, color = DARK_WOOD, material = "Wood" },
+		{
+			name = "Gem",
+			size = { 0.24, 0.24, 0.24 },
+			pos = { 0, 0, 0.2 },
+			color = "rarity",
+			material = "Neon",
+			shape = "Ball",
+		},
+	},
+}
+looks.holystaff = {
+	hand = "right",
+	pieces = {
+		{ name = "Halo", size = { 0.9, 0.9, 0.12 }, pos = { 0, 3.95, 0 }, color = "rarity", material = "Neon" },
+		{ name = "Shaft", size = { 0.26, 5.0, 0.26 }, pos = { 0, 1.2, 0 }, color = "#E8E2D0", material = "Wood" },
+		{ name = "CrossV", size = { 0.2, 1.0, 0.2 }, pos = { 0, 3.95, 0 }, color = GOLD, material = "Metal" },
+		{ name = "CrossH", size = { 0.7, 0.2, 0.2 }, pos = { 0, 4.1, 0 }, color = GOLD, material = "Metal" },
+	},
+}
+
 WeaponLooks.list = looks
 
 function WeaponLooks.get(itemType: string): Look?

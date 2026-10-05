@@ -29,6 +29,8 @@ export type ItemInstance = {
 	up: number, -- upgrade level 0..9
 	bound: boolean,
 	n: number, -- stack size (1 for non-stackables)
+	el: string?, -- element of a mage weapon ("fire" | "ice" | "lightning"), S18
+	locked: boolean?, -- protected from selling and dismantling (S20)
 }
 
 export type Stats = { str: number, dex: number, int: number, vit: number }

@@ -69,8 +69,21 @@ function TravelService.TeleportToMap(player: Player, mapId: string, at: CFrame?)
 	if not model or player.Parent == nil then
 		return
 	end
-	model:PivotTo(target)
+	-- Anchor while moving so the client (network owner) cannot snap the character back (S18).
+	local root = model:FindFirstChild("HumanoidRootPart") :: BasePart?
 	PlayerStateService.Set(player, { "character", "location", "map" }, mapId)
+	if root then
+		root.Anchored = true
+	end
+	model:PivotTo(target)
+	task.wait()
+	if root and (root.Position - target.Position).Magnitude > 20 then
+		model:PivotTo(target)
+		task.wait()
+	end
+	if root and root.Parent then
+		root.Anchored = false
+	end
 	TravelService.MarkVisited(player, mapId)
 	task.delay(0.6, function()
 		if player.Parent then

@@ -93,10 +93,11 @@ local DROP_WEIGHTS: { [string]: { [number]: number } } = {
 }
 
 -- Chance that a kill drops an item at all, and how many (DESIGN §5.5). Drop bonus multiplies `chance`.
-local ITEM_DROPS: { [string]: { chance: number, min: number, max: number } } = {
-	normal = { chance = 0.06, min = 1, max = 1 },
-	elite = { chance = 0.35, min = 1, max = 1 },
-	elite2 = { chance = 1.0, min = 1, max = 2 },
+-- Raised after the S17 tests: normal 20 %, elite 75 % (+25 % for a second), Elite II 2-3 items.
+local ITEM_DROPS: { [string]: { chance: number, min: number, max: number, extra: number? } } = {
+	normal = { chance = 0.20, min = 1, max = 1 },
+	elite = { chance = 0.75, min = 1, max = 1, extra = 0.25 },
+	elite2 = { chance = 1.0, min = 2, max = 3 },
 	boss = { chance = 1.0, min = 3, max = 4 },
 }
 

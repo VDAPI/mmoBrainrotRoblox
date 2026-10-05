@@ -18,6 +18,7 @@ type UsedAs<T> = Fusion.UsedAs<T>
 export type Props = {
 	Title: UsedAs<string>,
 	Size: Vector2, -- desktop size in virtual pixels
+	Offset: Vector2?, -- initial offset from the screen centre (desktop), e.g. side-by-side windows
 	OnClose: () -> (),
 	OnFocus: (() -> ())?,
 	ZIndex: UsedAs<number>?,
@@ -27,7 +28,7 @@ export type Props = {
 
 local function Window(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instance
 	-- Offset from the screen centre, in virtual pixels (desktop only).
-	local offset = scope:Value(Vector2.zero)
+	local offset = scope:Value(props.Offset or Vector2.zero)
 	local closeHovered = scope:Value(false)
 	local dragging = false
 	local dragStart = Vector2.zero

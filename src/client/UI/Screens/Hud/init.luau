@@ -16,7 +16,10 @@ local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local IconButton = require(script.Parent.Parent.Components.IconButton)
 local Keybinds = require(script.Parent.Parent.Keybinds)
 local PotionBar = require(script.PotionBar)
+local PvpDot = require(script.Parent.Parent.Components.PvpDot)
+local PvpState = require(script.Parent.Parent.PvpState)
 local SkillBar = require(script.SkillBar)
+local SprintButton = require(script.SprintButton)
 local BlessingIcon = require(script.BlessingIcon)
 local Minimap = require(script.Minimap)
 local CastBar = require(script.CastBar)
@@ -47,11 +50,13 @@ export type Props = {
 	IsOpen: (id: string) -> Fusion.Value<boolean>,
 	Target: Fusion.Value<Model?>,
 	OnAttack: () -> (),
+	Sprinting: Fusion.Value<boolean>,
+	OnSprint: () -> (),
 	UsePotion: (kind: string) -> (),
 	AssignPotion: (kind: string, itemId: string?) -> (),
 	CastSlot: (slot: number) -> (),
 	ClearSlot: (slot: number) -> (),
-	SkillUsable: (skillId: string) -> (boolean, boolean),
+	SkillUsable: (skillId: string) -> (boolean, boolean, boolean),
 	SkillColor: (skillId: string) -> Color3,
 	SelectTarget: () -> (),
 	OnPlayerMenu: ((player: Player, at: Vector2) -> ())?,
@@ -138,10 +143,15 @@ local function portrait(scope: Scope): Instance
 					}),
 				},
 			}),
+			PvpDot(scope, {
+				State = PvpState.indicator(scope),
+				Position = UDim2.fromOffset(110, 22),
+				Size = 14,
+			}),
 			scope:New("TextLabel")({
 				Name = "CharName",
-				Position = UDim2.fromOffset(110, 8),
-				Size = UDim2.new(1, -122, 0, 28),
+				Position = UDim2.fromOffset(130, 8),
+				Size = UDim2.new(1, -142, 0, 28),
 				BackgroundTransparency = 1,
 				Text = scope:Computed(function(use): string
 					return use(name) or ""
@@ -360,6 +370,7 @@ local function Hud(scope: Scope, props: Props): Instance
 			TargetFrame(scope, { Target = props.Target, OnPlayerMenu = props.OnPlayerMenu }),
 			ZoneBanner(scope),
 			AttackButton(scope, { OnAttack = props.OnAttack }),
+			SprintButton(scope, { Sprinting = props.Sprinting, OnToggle = props.OnSprint }),
 			PvpToggle(scope),
 			DeathScreen(scope),
 		},

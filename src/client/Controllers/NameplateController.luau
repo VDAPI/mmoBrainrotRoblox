@@ -9,6 +9,9 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local TitleData = require(ReplicatedStorage.Shared.Data.Titles)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local PvpDot = require(script.Parent.Parent.UI.Components.PvpDot)
+local PvpRules = require(ReplicatedStorage.Shared.Logic.PvpRules)
+local PvpState = require(script.Parent.Parent.UI.PvpState)
 local Text = require(script.Parent.Parent.UI.Text)
 local Theme = require(script.Parent.Parent.UI.Theme)
 
@@ -78,6 +81,19 @@ local function build(model: Model)
 	local hostile = scope:Computed(function(use): boolean
 		return use(pvpEnabled) == true or use(pvpZone) == "red"
 	end)
+	-- The local player's dot knows the countdown and the lock; others only the attributes.
+	local pvpIndicator: Fusion.Computed<string> = if isLocal
+		then PvpState.indicator(scope)
+		else scope:Computed(function(use): string
+			local zone = use(pvpZone)
+			return PvpRules.indicator(
+				use(pvpEnabled) == true,
+				if type(zone) == "string" then zone :: any else nil,
+				nil,
+				nil,
+				0
+			)
+		end)
 
 	local title = attributeValue(scope, model, "Title")
 	local titleDef = scope:Computed(function(use): any
@@ -162,32 +178,55 @@ local function build(model: Model)
 				end),
 				TextStrokeTransparency = 0.4,
 			}),
-			scope:New("TextLabel")({
-				Name = "CharName",
+			-- Name row (S18): PvP dot first, then the name.
+			scope:New("Frame")({
+				Name = "NameRow",
 				LayoutOrder = 1,
-				RichText = true,
 				BackgroundTransparency = 1,
 				Size = UDim2.new(1, 0, 0, 28),
-				Text = scope:Computed(function(use): string
-					local name = use(charName) or ""
-					local tag = use(guildTag)
-					if type(tag) == "string" and tag ~= "" then
-						name = `<font color="#{Theme.Colors.Gold:ToHex()}">[{tag}]</font> {name}`
-					end
-					return if use(hostile) then `⚔ {name}` else name
-				end),
-				FontFace = Theme.Fonts.BodyBold,
-				TextSize = 22,
-				TextColor3 = scope:Computed(function(use): Color3
-					if use(hostile) then
-						return Theme.Colors.ZoneRed
-					end
-					if use(vip) == true then
-						return Theme.Colors.GoldBright -- VIP pass: coloured name (DESIGN §21)
-					end
-					return if isLocal then Theme.Colors.GoldBright else Theme.Colors.Text
-				end),
-				TextStrokeTransparency = 0.35,
+				[Children] = {
+					scope:New("UIListLayout")({
+						FillDirection = Enum.FillDirection.Horizontal,
+						HorizontalAlignment = Enum.HorizontalAlignment.Center,
+						VerticalAlignment = Enum.VerticalAlignment.Center,
+						SortOrder = Enum.SortOrder.LayoutOrder,
+						Padding = UDim.new(0, 5),
+					}),
+					PvpDot(scope, {
+						State = pvpIndicator,
+						LayoutOrder = 1,
+						Size = 14,
+						Tooltip = false,
+					}),
+					scope:New("TextLabel")({
+						Name = "CharName",
+						LayoutOrder = 2,
+						RichText = true,
+						BackgroundTransparency = 1,
+						AutomaticSize = Enum.AutomaticSize.X,
+						Size = UDim2.fromScale(0, 1),
+						Text = scope:Computed(function(use): string
+							local name = use(charName) or ""
+							local tag = use(guildTag)
+							if type(tag) == "string" and tag ~= "" then
+								name = `<font color="#{Theme.Colors.Gold:ToHex()}">[{tag}]</font> {name}`
+							end
+							return if use(hostile) then `⚔ {name}` else name
+						end),
+						FontFace = Theme.Fonts.BodyBold,
+						TextSize = 22,
+						TextColor3 = scope:Computed(function(use): Color3
+							if use(hostile) then
+								return Theme.Colors.ZoneRed
+							end
+							if use(vip) == true then
+								return Theme.Colors.GoldBright -- VIP pass: coloured name (DESIGN §21)
+							end
+							return if isLocal then Theme.Colors.GoldBright else Theme.Colors.Text
+						end),
+						TextStrokeTransparency = 0.35,
+					}),
+				},
 			}),
 			scope:New("TextLabel")({
 				Name = "LevelClass",

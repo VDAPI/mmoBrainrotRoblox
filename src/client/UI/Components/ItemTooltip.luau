@@ -16,6 +16,7 @@ local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local ItemRoll = require(ReplicatedStorage.Shared.Logic.ItemRoll)
 local ItemText = require(script.Parent.Parent.ItemText)
+local Elements = require(ReplicatedStorage.Shared.Data.Elements)
 local Items = require(ReplicatedStorage.Shared.Data.Items)
 local Locale = require(ReplicatedStorage.Shared.Util.Locale)
 local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
@@ -176,7 +177,8 @@ local function build(s: Scope, item: ItemInstance, lang: string): { Instance }
 	local rarityColor = ItemText.rarityColor(item.rarity)
 	-- Darker rarity colour for legibility on parchment.
 	local nameColor = rarityColor:Lerp(Color3.new(0, 0, 0), 0.35)
-	addLine(ItemText.nameIn(lang, item.id, item.up), nameColor, Theme.TextSize.Large, Theme.Fonts.Heading)
+	local element = ItemRoll.elementOf(item)
+	addLine(ItemText.nameIn(lang, item.id, item.up, element), nameColor, Theme.TextSize.Large, Theme.Fonts.Heading)
 
 	local typeParts = {}
 	if def.category == "equipment" and rarity then
@@ -191,6 +193,12 @@ local function build(s: Scope, item: ItemInstance, lang: string): { Instance }
 	addLine(table.concat(typeParts, " · "), MUTED)
 	if def.category == "equipment" then
 		addLine(Locale.T("tooltip.ilvl", { ilvl = item.ilvl }, lang), MUTED)
+	end
+	if element then
+		addLine(
+			Locale.T("tooltip.element", { element = Locale.T(`element.{element}`, nil, lang) }, lang),
+			Color3.fromHex(Elements.COLORS[element] or "#FFFFFF")
+		)
 	end
 
 	-- Base stats
@@ -273,11 +281,9 @@ local function build(s: Scope, item: ItemInstance, lang: string): { Instance }
 	-- Requirements
 	local level = State.Get({ "character", "level" }) or 1
 	local classId = State.Get({ "character", "class" })
-	if def.level > 1 then
-		addLine(
-			Locale.T("tooltip.requiresLevel", { level = def.level }, lang),
-			if level >= def.level then DARK else BAD
-		)
+	local required = ItemRoll.requiredLevel(item)
+	if required > 1 then
+		addLine(Locale.T("tooltip.requiresLevel", { level = required }, lang), if level >= required then DARK else BAD)
 	end
 	if def.classes then
 		local names = {}

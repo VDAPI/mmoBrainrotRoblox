@@ -129,7 +129,11 @@ local function despawn(player: Player)
 	end
 end
 
-local function spawnModel(player: Player, at: CFrame?)
+-- Spawns the model at `at` (or the saved location) on `mapId` (or the saved map). S18: the target area is
+-- streamed in first and the root stays anchored until the pivot sticks; before, the client (network owner
+-- of the fresh model in the city) could overwrite the pivot thousands of studs away, so every respawn
+-- ended in the city. The client shows the map loading screen meanwhile.
+local function spawnModel(player: Player, at: CFrame?, mapId: string?)
 	local rt = runtime(player)
 	rt.spawnToken += 1
 	local token = rt.spawnToken
@@ -138,28 +142,58 @@ local function spawnModel(player: Player, at: CFrame?)
 	if not character or player.Parent ~= Players then
 		return
 	end
+	local loc = character.location
+	local map = mapId or loc.map
+	local cframe = at or WorldService.ResolveLocation(map, loc.x, loc.y, loc.z)
+	if map ~= loc.map then
+		PlayerStateService.Set(player, { "character", "location", "map" }, map)
+	end
+
+	Net.Fire(player, "MapTransition", map)
+	pcall(function()
+		player:RequestStreamAroundAsync(cframe.Position, 8)
+	end)
+	if rt.spawnToken ~= token or player.Parent ~= Players then
+		return
+	end
 
 	player:LoadCharacterAsync()
 	if rt.spawnToken ~= token or player.Parent ~= Players then
 		return -- switched or left while loading
 	end
 	local model = player.Character
+	local root = model and model:FindFirstChild("HumanoidRootPart") :: BasePart?
 	if not model then
 		return
 	end
 
-	local loc = character.location
-	local cframe = at or WorldService.ResolveLocation(loc.map, loc.x, loc.y, loc.z)
+	if root then
+		root.Anchored = true
+	end
 	model:PivotTo(cframe)
+	task.wait()
+	if root and (root.Position - cframe.Position).Magnitude > 20 then
+		model:PivotTo(cframe)
+		task.wait()
+	end
+	if root and root.Parent then
+		root.Anchored = false
+	end
+	log:info("spawned %s on %s at %s", player.Name, map, tostring(cframe.Position))
 	setNameplate(model, character)
 
 	CharacterService.ModelSpawned:Fire(player, model)
+	task.delay(0.5, function()
+		if player.Parent then
+			Net.Fire(player, "MapTransition", nil)
+		end
+	end)
 end
 
--- Spawns a fresh model for the active character (death respawn, /tp fallback). Yields.
-function CharacterService.Respawn(player: Player, at: CFrame?)
+-- Spawns a fresh model for the active character (death respawn, /tp fallback) at `at` on `mapId`. Yields.
+function CharacterService.Respawn(player: Player, at: CFrame?, mapId: string?)
 	if PlayerStateService.GetPhase(player) == "playing" then
-		spawnModel(player, at)
+		spawnModel(player, at, mapId)
 	end
 end
 

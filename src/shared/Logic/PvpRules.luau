@@ -63,4 +63,26 @@ function PvpRules.canToggle(
 	return true, nil
 end
 
+export type Indicator = "off" | "on" | "forced" | "switching" | "locked"
+
+-- PvP dot next to a name (DESIGN §3.3, after the S17 tests): forced in red zones, switching while a toggle
+-- counts down, locked (grey, padlock) when the toggle cannot change (green zone or the post-combat lock),
+-- otherwise on/off. For other players only `enabled` and `zone` are known (pass nil for the rest).
+function PvpRules.indicator(
+	enabled: boolean,
+	zone: Zone?,
+	pendingTarget: boolean?,
+	lockedUntil: number?,
+	now: number
+): Indicator
+	if zone == "red" then
+		return "forced"
+	elseif pendingTarget ~= nil then
+		return "switching"
+	elseif zone == "green" or (lockedUntil ~= nil and lockedUntil > now) then
+		return "locked"
+	end
+	return if enabled then "on" else "off"
+end
+
 return PvpRules

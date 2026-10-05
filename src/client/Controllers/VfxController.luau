@@ -273,13 +273,32 @@ local function handle(data: { [string]: any })
 	if not skill then
 		return
 	end
-	local color = skillColor(skill)
+	-- Adaptive skills (S18) send the weapon element they used.
+	local color = if type(data.el) == "string" and ELEMENT_COLORS[data.el]
+		then ELEMENT_COLORS[data.el]
+		else skillColor(skill)
 	local caster = findModel(data.c)
 	local target = findModel(data.t)
 	local vfx = data.v
 
+	if vfx == "arc" then
+		-- Lightning arc of an adaptive skill to an enemy nearby.
+		local path = data.path
+		if type(path) == "table" then
+			local a, b = findModel(path[1]), findModel(path[2])
+			if a and b then
+				beam(centre(a), centre(b), ELEMENT_COLORS.lightning, 0.3)
+			end
+		end
+		return
+	end
+
 	if vfx == "lightningBurst" then
 		ring(data.p, data.r or 8, ELEMENT_COLORS.lightning, 0.35)
+		if typeof(data.p) == "Vector3" then
+			-- A bolt from the sky (Thunderstorm, lightning skills).
+			beam(data.p + Vector3.new(0, 28, 0), data.p, ELEMENT_COLORS.lightning, 0.5)
+		end
 		return
 	elseif vfx == "meteorImpact" then
 		meteor(data.p, data.r or 5, 0.5, color)

@@ -159,6 +159,9 @@ function SkillController.Cast(skillId: string, aimOverride: Vector3?)
 		pending = false
 		if not ok then
 			report(err)
+		elseif skill.target == "enemy" then
+			-- A skill on the target resumes the auto-attack stopped by manual movement (S18).
+			TargetController.Resume()
 		end
 	end)
 end
@@ -347,17 +350,24 @@ function SkillController.Start()
 end
 
 -- For the UI: can the current level / resources / range allow this skill now?
-function SkillController.Usable(skillId: string): (boolean, boolean)
+-- Element of the equipped weapon (mage weapons, S18).
+function SkillController.WeaponElement(): string?
+	local weapon = State.Get({ "derived", "weapon" })
+	return if type(weapon) == "table" then weapon.element else nil
+end
+
+-- (enough resource, in range, weapon element fits)
+function SkillController.Usable(skillId: string): (boolean, boolean, boolean)
 	local skill = SkillData.get(skillId)
 	if not skill then
-		return false, false
+		return false, false, true
 	end
 	local level = State.Get({ "character", "skills", skillId }) or 0
 	local cost = Skills.scaled(skill, skill.cost, math.max(1, level))
 	local current = if skill.resource then State.Get({ "character", skill.resource }) or 0 else math.huge
 	local enoughResource = current >= cost
 	local inRange = skill.target ~= "enemy" or SkillController.TargetDistance() <= (skill.range or 10) + 2
-	return enoughResource, inRange
+	return enoughResource, inRange, Skills.elementAllowed(skill, SkillController.WeaponElement())
 end
 
 -- Theme colour of a skill's class (for icons).

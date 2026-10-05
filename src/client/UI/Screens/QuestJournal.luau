@@ -77,12 +77,17 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 			local main = q.main
 			local quest = if type(main) == "table" then Quests.Main.get(main.id) else nil
 			if quest and main then
+				local giver = Npcs.get(quest.giver)
+				-- Title with the quest giver underneath (S18).
+				local title = Text.get(use, `quest.{quest.id}.title`)
+				local giverLine =
+					Text.get(use, "quest.journal.giver", { npc = if giver then Text.get(use, giver.nameKey) else "?" })
 				table.insert(
 					list,
 					label(
 						s,
 						1,
-						Text.get(use, `quest.{quest.id}.title`),
+						title .. '\n<font size="16" color="#9A9DA8">' .. giverLine .. "</font>",
 						Theme.Fonts.Heading,
 						26,
 						Theme.Colors.GoldBright
@@ -192,11 +197,14 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 				label(
 					s,
 					0,
-					Text.get(
-						use,
-						"quest.dailyReset",
-						{ time = Time.format((Time.dayNumber(use(now)) + 1) * 86400 - use(now)) }
-					),
+					"<b>"
+						.. Text.get(use, "npc.questboard.name")
+						.. "</b>\n"
+						.. Text.get(
+							use,
+							"quest.dailyReset",
+							{ time = Time.format((Time.dayNumber(use(now)) + 1) * 86400 - use(now)) }
+						),
 					Theme.Fonts.BodyMedium,
 					16,
 					Theme.Colors.TextMuted

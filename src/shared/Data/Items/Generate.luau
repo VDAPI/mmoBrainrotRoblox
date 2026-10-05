@@ -34,6 +34,7 @@ function Generate.definition(base: Bases.Base, tier: number): Types.ItemDef
 		maxStack = 1,
 		base = if base.stats then base.stats(tier) else nil,
 		weapon = if base.weapon then base.weapon(tier) else nil,
+		elemental = base.elemental,
 		bonusGroup = base.bonusGroup,
 		namePrefix = `itemTier.{tier}`,
 		nameBase = `itemBase.{base.type}`,

@@ -11,6 +11,8 @@ local DragDrop = require(script.Parent.Parent.DragDrop)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local ItemText = require(script.Parent.Parent.ItemText)
 local ItemTooltip = require(script.Parent.ItemTooltip)
+local Elements = require(ReplicatedStorage.Shared.Data.Elements)
+local ItemRoll = require(ReplicatedStorage.Shared.Logic.ItemRoll)
 local Items = require(ReplicatedStorage.Shared.Data.Items)
 local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
 local State = require(script.Parent.Parent.State)
@@ -40,7 +42,7 @@ local function canUse(item: ItemInstance, level: number?, classId: string?): boo
 	if not def then
 		return true
 	end
-	if level and def.level > level then
+	if level and ItemRoll.requiredLevel(item) > level then
 		return false
 	end
 	if def.classes and classId and not table.find(def.classes, classId) then
@@ -136,6 +138,12 @@ local function ItemSlot(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Inst
 				Size = UDim2.fromScale(0.78, 0.78),
 				BackgroundColor3 = scope:Computed(function(use): Color3
 					local d = use(def)
+					-- Mage weapons take the colour of their element (S18).
+					local current = use(item)
+					local element = if current then ItemRoll.elementOf(current) else nil
+					if element then
+						return Color3.fromHex(Elements.COLORS[element])
+					end
 					return if d then Color3.fromHex(d.icon.color) else Theme.Colors.Background
 				end),
 				BackgroundTransparency = scope:Computed(function(use): number

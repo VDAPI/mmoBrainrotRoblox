@@ -94,6 +94,21 @@ T.describe("ItemRoll", function()
 		T.expect((ItemRoll.itemStats(legendary).weapon :: any).dmg).toBe(math.floor(def.weapon.dmg * 1.4 + 0.5))
 	end)
 
+	T.it("itemStats scales with ilvl: every level beats the one before", function()
+		local previous = 0
+		for ilvl = 1, 12 do
+			local item: any = ItemRoll.rollItem("sword1h_1", ilvl, 1, Rng.new(7), uid())
+			item.id = (Items.generate.tierFor(ilvl) == 1 and "sword1h_1") or `sword1h_{Items.generate.tierFor(ilvl)}`
+			local dmg = (ItemRoll.itemStats(item).weapon :: any).dmg
+			T.expect(dmg > previous).toBe(true)
+			previous = dmg
+			T.expect(ItemRoll.requiredLevel(item)).toBe(ilvl)
+		end
+		local armor: any = ItemRoll.rollItem("armor_heavy_1", 3, 1, Rng.new(8), uid())
+		local armor1: any = ItemRoll.rollItem("armor_heavy_1", 1, 1, Rng.new(8), uid())
+		T.expect(ItemRoll.itemStats(armor).base.armor > ItemRoll.itemStats(armor1).base.armor).toBe(true)
+	end)
+
 	T.it("itemStats maps bonuses to flat, pct and hooks", function()
 		local item: any = {
 			uid = "x",
@@ -148,7 +163,7 @@ T.describe("ItemRoll", function()
 end)
 
 T.describe("Loot", function()
-	T.it("normal monsters drop items about 6 % of the time", function()
+	T.it("normal monsters drop items about 20 % of the time", function()
 		local rng = Rng.new(11)
 		local withItems = 0
 		for _ = 1, 20000 do
@@ -156,7 +171,7 @@ T.describe("Loot", function()
 				withItems += 1
 			end
 		end
-		T.expect(withItems / 20000).toBeNear(0.06, 0.008)
+		T.expect(withItems / 20000).toBeNear(0.20, 0.015)
 	end)
 
 	T.it("drop bonus multiplies the chance", function()
@@ -167,10 +182,10 @@ T.describe("Loot", function()
 				withItems += 1
 			end
 		end
-		T.expect(withItems / 20000).toBeNear(0.12, 0.012)
+		T.expect(withItems / 20000).toBeNear(0.40, 0.02)
 	end)
 
-	T.it("Elite II always drops 1–2 items of the right tier", function()
+	T.it("Elite II always drops 2–3 items of the right tier", function()
 		local rng = Rng.new(13)
 		for _ = 1, 300 do
 			local loot = Loot.rollMonsterLoot("caveSpider", "elite2", 20, rng)
@@ -182,7 +197,7 @@ T.describe("Loot", function()
 					T.expect(drop.ilvl).toBeBetween(18, 22)
 				end
 			end
-			T.expect(regular).toBeBetween(1, 2)
+			T.expect(regular).toBeBetween(2, 3)
 			T.expect(loot.gold > 0).toBe(true)
 		end
 	end)

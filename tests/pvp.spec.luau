@@ -63,4 +63,16 @@ T.describe("PvpRules.canToggle", function()
 	end)
 end)
 
+T.describe("PvP indicator", function()
+	T.it("follows zone, countdown, lock and toggle", function()
+		T.expect(PvpRules.indicator(false, "red", nil, nil, 0)).toBe("forced")
+		T.expect(PvpRules.indicator(true, "yellow", false, nil, 0)).toBe("switching")
+		T.expect(PvpRules.indicator(true, "green", nil, nil, 0)).toBe("locked")
+		T.expect(PvpRules.indicator(true, "yellow", nil, 100, 50)).toBe("locked")
+		T.expect(PvpRules.indicator(true, "yellow", nil, 100, 150)).toBe("on")
+		T.expect(PvpRules.indicator(false, "yellow", nil, nil, 0)).toBe("off")
+		T.expect(PvpRules.indicator(false, nil, nil, nil, 0)).toBe("off")
+	end)
+end)
+
 return nil

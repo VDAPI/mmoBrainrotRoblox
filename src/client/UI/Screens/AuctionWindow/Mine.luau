@@ -51,7 +51,10 @@ local function Mine(scope: Scope, showModal: (spec: any) -> ()): Instance
 	local function cancel(entry: any)
 		showModal({
 			Title = Text.now("auction.cancel.title"),
-			Message = Text.now("auction.cancel.confirm", { item = ItemText.name(entry.item.id, entry.item.up) }),
+			Message = Text.now(
+				"auction.cancel.confirm",
+				{ item = ItemText.name(entry.item.id, entry.item.up, entry.item.el) }
+			),
 			ConfirmText = Text.now("auction.cancel"),
 			CancelText = Text.now("common.cancel"),
 			Variant = "danger",
@@ -87,7 +90,7 @@ local function Mine(scope: Scope, showModal: (spec: any) -> ()): Instance
 		end
 		local now = Workspace:GetServerTimeNow()
 		for i, entry in data do
-			local name = ItemText.get(use, entry.item.id, entry.item.up)
+			local name = ItemText.get(use, entry.item.id, entry.item.up, entry.item.el)
 			local status = Text.get(use, `auction.status.{entry.status}`)
 			local detail = if entry.status == "active"
 				then Format.time(entry.expiresAt - now)

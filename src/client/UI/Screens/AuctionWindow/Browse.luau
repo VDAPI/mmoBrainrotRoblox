@@ -115,7 +115,7 @@ local function Browse(scope: Scope, showModal: (spec: any) -> ()): Instance
 	end
 
 	local function confirmBuy(entry: any)
-		local name = ItemText.name(entry.item.id, entry.item.up)
+		local name = ItemText.name(entry.item.id, entry.item.up, entry.item.el)
 		showModal({
 			Title = Text.now("auction.buy.title"),
 			Message = Text.now("auction.buy.confirm", {
@@ -303,7 +303,7 @@ local function Browse(scope: Scope, showModal: (spec: any) -> ()): Instance
 			local item = s:Computed(function(use2): any
 				return use2(fullItems)[entry.id] or entry.item
 			end)
-			local name = ItemText.get(use, entry.item.id, entry.item.up)
+			local name = ItemText.get(use, entry.item.id, entry.item.up, entry.item.el)
 			table.insert(
 				list,
 				s:New("TextButton")({

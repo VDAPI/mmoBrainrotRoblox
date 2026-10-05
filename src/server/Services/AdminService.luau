@@ -11,7 +11,11 @@ local TextChatService = game:GetService("TextChatService")
 local Shared = ReplicatedStorage.Shared
 
 local AccountSchema = require(Shared.Logic.AccountSchema)
+local Classes = require(Shared.Data.Classes)
 local Config = require(Shared.Config)
+local Damage = require(Shared.Logic.Damage)
+local Elements = require(Shared.Data.Elements)
+local MonsterStats = require(Shared.Logic.MonsterStats)
 local Log = require(Shared.Util.Log)
 local Inventory = require(Shared.Logic.Inventory)
 local ItemRoll = require(Shared.Logic.ItemRoll)
@@ -247,6 +251,106 @@ COMMANDS.resetcodes = {
 	run = function(player)
 		PlayerStateService.Set(player, { "account", "redeemed" }, {})
 		reply(player, "admin.resetcodes.ok")
+	end,
+}
+
+-- S18 ------------------------------------------------------------------------------------------------
+
+-- Changes the equipped weapon with `edit` and recomputes stats.
+local function editWeapon(player: Player, edit: (item: any) -> ()): boolean
+	local character = PlayerStateService.GetCharacter(player)
+	local item = character and character.equipment.weapon
+	if not item then
+		reply(player, "admin.weapon.none")
+		return false
+	end
+	local copy = table.clone(item)
+	edit(copy)
+	PlayerStateService.Set(player, { "character", "equipment", "weapon" }, copy)
+	StatService.Invalidate(player)
+	return true
+end
+
+COMMANDS.ilvl = {
+	usageKey = "admin.usage.ilvl",
+	run = function(player, args)
+		local ilvl = parseAmount(args[1])
+		if ilvl == nil or ilvl < 1 or ilvl > Config.MaxLevel then
+			reply(player, "admin.usage.ilvl")
+			return
+		end
+		withCharacter(player, function()
+			if editWeapon(player, function(item)
+				item.ilvl = ilvl
+			end) then
+				reply(player, "admin.ilvl.ok", { ilvl = ilvl })
+			end
+		end)
+	end,
+}
+
+COMMANDS.element = {
+	usageKey = "admin.usage.element",
+	run = function(player, args)
+		local element = args[1]
+		if not Elements.isWeaponElement(element) then
+			reply(player, "admin.usage.element")
+			return
+		end
+		withCharacter(player, function()
+			local character = PlayerStateService.GetCharacter(player)
+			local item = character and character.equipment.weapon
+			local def = item and Items.get(item.id)
+			if def and not def.elemental then
+				reply(player, "admin.element.notMage")
+				return
+			end
+			if editWeapon(player, function(weapon)
+				weapon.el = element
+			end) then
+				reply(player, "admin.element.ok", { element = element })
+			end
+		end)
+	end,
+}
+
+COMMANDS.mstats = {
+	usageKey = "admin.usage.mstats",
+	run = function(player, args)
+		withCharacter(player, function()
+			local character = PlayerStateService.GetCharacter(player) :: any
+			local level = parseAmount(args[1]) or character.level
+			level = math.clamp(level, 1, Config.MaxLevel)
+			local monster =
+				MonsterStats.compute({ hpMul = 1, atkMul = 1, defMul = 1, speed = 1, attack = "melee" }, level)
+			local values = (StatService.Get(player) or { values = {} }).values
+			local class = Classes.get(character.class)
+			local magic = class ~= nil and class.basicAttack.kind == "magic"
+			local attack = if magic then values.magAtk or 0 else values.physAtk or 0
+			local defense = if magic then monster.mres else monster.armor
+			local perHit = attack * (1 - Damage.reduction(defense, character.level))
+			local dps = perHit * math.max(0.2, values.atkSpeed or 1)
+			local hit = monster.attack * (1 - Damage.reduction(values.armor or 0, level))
+			reply(player, "admin.mstats.info", {
+				level = level,
+				hp = monster.maxHp,
+				atk = math.floor(monster.attack + 0.5),
+				hit = math.floor(hit + 0.5),
+				interval = monster.attackInterval,
+				seconds = if dps > 0 then string.format("%.1f", monster.maxHp / dps) else "∞",
+			})
+		end)
+	end,
+}
+
+COMMANDS.sprint = {
+	usageKey = "admin.usage.sprint",
+	run = function(player)
+		local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+		reply(player, "admin.sprint.info", {
+			on = if StatService.IsSprinting(player) then "ON" else "OFF",
+			speed = if humanoid then string.format("%.1f", humanoid.WalkSpeed) else "-",
+		})
 	end,
 }
 

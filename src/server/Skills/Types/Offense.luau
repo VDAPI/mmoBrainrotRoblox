@@ -168,6 +168,19 @@ Offense.circleTarget = function(ctx)
 		end
 		local impactAt = at
 		task.delay(delay + (wave - 1) * interval, function()
+			if ctx.skill.randomTarget then
+				-- Thunderstorm: one bolt per wave on a random enemy inside the circle.
+				local enemies = ctx.enemiesInCircle(impactAt, impactRadius)
+				if #enemies > 0 then
+					local chosen = enemies[random:NextInteger(1, #enemies)]
+					local at = ctx.services.Entity.Position(chosen)
+					if at then
+						ctx.fx({ v = "lightningBurst", p = at, r = 3 })
+					end
+					hitAll(ctx, { chosen }, ctx.value("dmg"), false)
+				end
+				return
+			end
 			if storm then
 				ctx.fx({ v = "meteorImpact", p = impactAt, r = impactRadius })
 			end

@@ -93,6 +93,8 @@ local Config = {
 
 	-- How often (s) the server flushes batched state diffs. 0 = every Heartbeat.
 	StateFlushInterval = 0,
+	-- Sprint (S18, DESIGN §24): walk speed multiplier while the sprint key is held.
+	SprintMultiplier = 1.35,
 }
 
 return table.freeze(Config)

@@ -189,8 +189,8 @@ local function changed(player: Player, slots: { string })
 	end
 end
 
-local function canUse(char: Types.CharacterData, def: Items.ItemDef): (boolean, string?)
-	if char.level < def.level then
+local function canUse(char: Types.CharacterData, def: Items.ItemDef, item: ItemInstance): (boolean, string?)
+	if char.level < ItemRoll.requiredLevel(item) then
 		return false, "equip.error.level"
 	end
 	if def.classes and not table.find(def.classes, char.class) then
@@ -235,7 +235,7 @@ function EquipmentService.Equip(player: Player, index: number, requested: string
 	if not item or not def or not def.slot then
 		return false, "equip.error.slot"
 	end
-	local ok, err = canUse(char, def)
+	local ok, err = canUse(char, def, item)
 	if not ok then
 		return false, err
 	end
@@ -361,7 +361,7 @@ end
 local function weaponProvider(
 	_player: Player,
 	char: Types.CharacterData
-): { dmg: number, mdmg: number, speed: number, ranged: boolean }?
+): { dmg: number, mdmg: number, speed: number, ranged: boolean, element: string? }?
 	local item = char.equipment.weapon
 	if not item then
 		return nil
@@ -370,7 +370,13 @@ local function weaponProvider(
 	if not weapon then
 		return nil
 	end
-	return { dmg = weapon.dmg, mdmg = weapon.mdmg, speed = weapon.speed, ranged = weapon.ranged }
+	return {
+		dmg = weapon.dmg,
+		mdmg = weapon.mdmg,
+		speed = weapon.speed,
+		ranged = weapon.ranged,
+		element = weapon.element,
+	}
 end
 
 function EquipmentService.Init(registry)

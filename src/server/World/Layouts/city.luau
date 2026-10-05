@@ -47,6 +47,7 @@ return function(ctx: Build.Context)
 
 	-- Craft quarter (north-west)
 	Prefabs.forge(ctx, -110, -48, 180)
+	Prefabs.stall(ctx, -150, -42, "#8E8E93", 180) -- weaponsmith (S18)
 	Prefabs.house(
 		ctx,
 		-190,

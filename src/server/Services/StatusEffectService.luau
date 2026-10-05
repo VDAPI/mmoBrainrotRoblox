@@ -53,6 +53,7 @@ local DEBUFFS = {
 	freeze = true,
 	bleed = true,
 	poison = true,
+	burn = true, -- adaptive fire skills (S18)
 	armorBreak = true,
 	vulnerability = true,
 	taunt = true,

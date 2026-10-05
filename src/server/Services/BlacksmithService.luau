@@ -96,6 +96,7 @@ local function craft(player: Player, recipeId: string): (boolean, string?)
 		return false, "smith.missing"
 	end
 	local item = ItemRoll.rollItem(recipe.item, recipe.level, Rarities.COMMON, rng, InventoryService.NewUid())
+	item.el = recipe.el
 	if not InventoryService.CanFit(player, { item }) then
 		return false, "inventory.full"
 	end

@@ -108,7 +108,11 @@ function Loot.rollMonsterLoot(
 	local chance = math.min(1, drops.chance * (1 + (mods.dropBonus or 0) / 100))
 
 	if rng:chance(chance) then
-		for _ = 1, rng:int(drops.min, drops.max) do
+		local count = rng:int(drops.min, drops.max)
+		if drops.extra and rng:chance(drops.extra) then
+			count += 1
+		end
+		for _ = 1, count do
 			local ilvl = ItemRoll.dropLevel(level, rng)
 			local defId = Loot.pickItem(tableDef.slotWeights, ilvl, tableDef.classBias, mods.classId, rng)
 			if defId then
@@ -143,7 +147,7 @@ function Loot.rollBossLoot(bossId: string, players: number, rng: Rng.Rng, modifi
 	local count = rng:int(drops.min, drops.max) + math.max(0, players - 3)
 	for _ = 1, count do
 		local ilvl = ItemRoll.dropLevel(boss.level, rng)
-		local defId = Loot.pickItem(LootTables.byId.wolf.slotWeights, ilvl, 0.65, mods.classId, rng)
+		local defId = Loot.pickItem(LootTables.byId.wolf.slotWeights, ilvl, 0.8, mods.classId, rng)
 		if defId then
 			table.insert(result.items, { defId = defId, ilvl = ilvl, rarity = ItemRoll.rollRarity("boss", rng) })
 		end

@@ -8,6 +8,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Button = require(script.Parent.Parent.Components.Button)
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local DragDrop = require(script.Parent.Parent.DragDrop)
+local Elements = require(ReplicatedStorage.Shared.Data.Elements)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Net = require(ReplicatedStorage.Shared.Net)
 local SkillData = require(ReplicatedStorage.Shared.Data.Skills)
@@ -37,6 +38,7 @@ local function SkillsWindow(scope: Scope, showModal: (spec: any) -> ()): Fusion.
 	local skillLevels = State.Value({ "character", "skills" })
 	local points = State.Value({ "character", "skillPoints" })
 	local level = State.Value({ "character", "level" })
+	local weaponState = State.Value({ "derived", "weapon" })
 	local selected = scope:Value(nil :: string?)
 	local busy = false
 
@@ -132,6 +134,24 @@ local function SkillsWindow(scope: Scope, showModal: (spec: any) -> ()): Fusion.
 				[Children] = {
 					s:New("UICorner")({
 						CornerRadius = if skill.type == "passive" then Theme.Corner.Round else Theme.Corner.Small,
+					}),
+					-- Wrong weapon element (Mage, S18): greyed out.
+					s:New("Frame")({
+						Name = "ElementTint",
+						Size = UDim2.fromScale(1, 1),
+						BackgroundColor3 = Color3.fromHex("#2A2A2E"),
+						BackgroundTransparency = 0.3,
+						ZIndex = 5,
+						Visible = s:Computed(function(use2): boolean
+							local weapon = use2(weaponState)
+							return not Skills.elementAllowed(
+								skill,
+								if type(weapon) == "table" then weapon.element else nil
+							)
+						end),
+						[Children] = s:New("UICorner")({
+							CornerRadius = if skill.type == "passive" then Theme.Corner.Round else Theme.Corner.Small,
+						}),
 					}),
 					s:New("UIStroke")({
 						ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
@@ -253,6 +273,18 @@ local function SkillsWindow(scope: Scope, showModal: (spec: any) -> ()): Fusion.
 				table.insert(parts, Text.get(use, "skills.range", { range = skill.range }))
 			end
 			line(table.concat(parts, " · "), Theme.Colors.TextMuted)
+		end
+		-- Weapon element (Mage, S18): requirement in red while the weapon does not fit, adaptive note.
+		local element = Skills.requiredElement(skill)
+		if element then
+			local weapon = use(weaponState)
+			local fits = type(weapon) == "table" and weapon.element == element
+			line(
+				Text.get(use, "skill.requiresElement", { element = Text.get(use, `element.{element}`) }),
+				if fits then Color3.fromHex(Elements.COLORS[element]) else Theme.Colors.DangerHover
+			)
+		elseif skill.adaptive then
+			line(Text.get(use, "skill.adaptive"), Theme.Colors.Parchment)
 		end
 		line(Text.get(use, "skills.current"), Theme.Colors.Gold, nil, Theme.Fonts.BodyBold)
 		if current > 0 then

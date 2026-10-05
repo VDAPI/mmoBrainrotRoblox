@@ -31,6 +31,8 @@ local actions: { Action } = {
 	{ id = "potion_mana", default = "X", labelKey = "keys.potion.mana", group = "combat" },
 	{ id = "potion_energy", default = "V", labelKey = "keys.potion.energy", group = "combat" },
 	{ id = "target_next", default = "Tab", labelKey = "menu.keys.target", group = "combat" },
+	{ id = "target_clear", default = "Q", labelKey = "keys.target.clear", group = "combat" },
+	{ id = "sprint", default = "LeftControl", labelKey = "keys.sprint", group = "world" },
 	{ id = "interact", default = "E", labelKey = "keys.interact", group = "world" },
 	{ id = "pickup", default = "F", labelKey = "keys.pickup", group = "world" },
 }

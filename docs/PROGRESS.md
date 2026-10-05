@@ -24,7 +24,7 @@
 | S16 | Walka na LPM, paski HP nad głowami, tytuły | ● |
 | S17 | Zmiana klawiszy, sprzedaż przeciąganiem, kanały czatu, kody nagród | ● |
 | S17b | Animacje proceduralne potworów, modele broni, pozy rzucania (dodatkowa, poza planem) | ● |
-| S18 | Poprawki po testach (1/2): walka, sterowanie, przedmioty, broń, UI | ○ |
+| S18 | Poprawki po testach (1/2): walka, sterowanie, przedmioty, broń, UI | ● |
 | S19 | Poprawki po testach (2/2): grupy potworów, jaskinie, nowe potwory | ○ |
 | S20 | Szczegółowa mapa z obszarami potworów, bogatszy świat, wygoda łupu | ○ |
 
@@ -32,6 +32,26 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
 
 ## Decyzje
 (Claude dopisuje tu decyzje podjęte w trakcie sesji, z numerem sesji.)
+- **S18** Ucieczka z walki: klient wysyła `SetTarget(entityId, false)` (cel zostaje na serwerze dla umiejętności i komend
+  admina, ale bez auto-ataku). Ręczny ruch (WASD/joystick) zatrzymuje podchodzenie i atak; przez 1.5 s bez auto-celu i
+  obracania. Atak wraca po kliknięciu wroga (każde kliknięcie wysyła `SetTarget` ponownie) albo po umiejętności na cel.
+- **S18** Balans potworów dobrany symulacją (`tests/Balance.luau`, `balance.spec`), nie wartościami z promptu: HP =
+  55 + 15·L^1.55, atak = 4 + 2.5·L^0.88, atak co 2 s. Wartości z promptu (40 + 16·L^1.3, 4 + 2.2·L^1.1) dawały na
+  wysokich poziomach walki po 2–3 s, bo gracz skaluje się szybciej. Wojownik: 6–9 s i 13–23% HP na każdym poziomie;
+  Łowca na 60+ zabija w 3–5 s (skalowanie DEX), Kapłan walczy dłużej (7–13 s) i traci mniej. Buława ma teraz mdmg 1.0
+  (było 0.7), bo atak podstawowy Kapłana jest magiczny. Bossy: HP z nowej formuły i tak rośnie (×1.0–1.35), więc bez
+  mnożnika ×1.6; `dmgMul` bossa 2.2 → 6, żeby ciosy zostały blisko dawnych.
+- **S18** Statystyki przedmiotów generowanych liczone z `ilvl` instancji (`Bases.byType[type].weapon/stats(ilvl)`),
+  wymagany poziom = `ilvl` (`ItemRoll.requiredLevel`). Unikaty bez zmian (stała baza).
+- **S18** Żywioł broni maga w instancji (`item.el`); broń maga bez `el` (sprzed S18) liczy się jako Ogień
+  (`ItemRoll.elementOf`), więc bez migracji zapisów. Id umiejętności zostały (`firebolt` = Magiczny Pocisk, `firewall`
+  = Burza Piorunów, `meteorStorm` = Gniew Żywiołów). Podpalenie adaptacyjne to nowy efekt `burn` (DoT).
+- **S18** Zbrojmistrz: wpisy sklepu mają `key` (`wand_10:fire`), `ilvl`, `el`, `level`, `classes`; kowal ma osobne
+  receptury `<item>:<żywioł>` dla broni maga.
+- **S18** Jedno okno naraz: lista okien usług (`COMPANIONS` w `WindowManager`) zamiast pola w definicji okna; na
+  komputerze plecak po lewej, usługa po prawej, na telefonie bez zmian (pełny ekran).
+- **S18** Odrodzenie: `CharacterService.Respawn(player, at, mapId)` streamuje cel, kotwiczy root na czas `PivotTo` i
+  powtarza go, gdy klient przestawił postać. To samo w `TravelService.TeleportToMap` (wyjście z lochu, portale).
 - **S17b** Animacje potworów są proceduralne i lokalne: serwer buduje szkielet z `Motor6D` („Gait_*”), klient ustawia
   `Transform` z `Logic/Gait` (serwer zawsze widzi pozę spoczynkową; hitboxy i tak liczy root). Potwory dalej niż 150 studów
   (70 przy niskiej jakości) nie są animowane. Prawdziwe modele z `Assets.Monsters` nie mają jointów „Gait_*”, więc
@@ -417,6 +437,10 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
 - **S12** Gildie między serwerami (MessagingService, MemoryStore) da się sprawdzić tylko w opublikowanej grze; w Studio
   działa jeden serwer (czat i obecność lokalnie). Etykieta zakładki czatu (`⚑ TAG`) niesprawdzona w Studio.
 - **S12** Zaproszenia do gildii między serwerami pominięte (zgodnie z zakresem); brak teleportu do serwera członka.
+
+- **S18** Łowca na poziomach 60+ zabija zwykłego potwora w 3–5 s (DEX skaluje obrażenia, kryty i szybkość), szybciej
+  niż cel 6–10 s; do strojenia klas, nie potworów.
+- **S18** Sprint nie zmienia WalkSpeed lokalnie przed odpowiedzią serwera (opóźnienie o ping).
 
 ## Zgłoszone błędy
 (Właściciel wpisuje tu błędy po testach albo przekazuje je przez sesję poprawek.)
@@ -1290,3 +1314,80 @@ kilku sekund); dystans do NPC liczony od pozycji postaci kontrolowanej przez kli
    i w dół. Drugi gracz widzi to samo.
 8. Pet (lis/kot) podskakuje, gdy biegniesz; smoczek macha skrzydłami.
 9. Opcje → jakość niska: potwory dalej niż ~70 studów stoją bez ruchu (oszczędność).
+
+### S18: Poprawki po testach (1/2): walka, sterowanie, przedmioty, broń, UI
+
+**Zrobione**
+- Atak na LPM przy wciśnięciu (nie puszczeniu), wróg ma pierwszeństwo przed graczem, każde kliknięcie wznawia atak;
+  klik w ziemię lub Q = brak celu; kliknięcia nad prawdziwym oknem/przyciskiem nie atakują. Serwer mówi, czemu nie bije
+  („Strefa bezpieczna”, „Za daleko”, „Jesteś ogłuszony”, najwyżej raz na 2 s).
+- Ucieczka: WASD/joystick przerywa podchodzenie i auto-atak (cel zostaje zaznaczony), 1.5 s bez auto-celu i obracania.
+  Telefon: drugi tap w „Atak” zatrzymuje atak. Smycz 45 → 70 st., zwykłe potwory biegają 14 (było do 17).
+- Sprint pod Ctrl (zmienialny w opcjach), ×1.35 szybkości; telefon: przycisk „Sprint” nad joystickiem. Kończy się przy
+  śmierci, odrodzeniu i kanałowaniu.
+- Paski nad potworami zawsze na wierzchu, do 130 st., większe; poziom w osobnej plakietce w kolorze różnicy poziomów
+  (`Logic/LevelBand`); miejsce na „×N” grupy (atrybut `GroupSize`, S19).
+- Kropka PvP przy nicku w portrecie i nad głową każdego gracza (zielona, czerwona, pomarańczowa pulsująca, szara z
+  kłódką), opis po najechaniu.
+- Odrodzenie na mapie śmierci (streaming + kotwiczenie), to samo przy teleportach.
+- Balans potworów (patrz „Decyzje”), aggro 12 / 20 st., atak co 2 s.
+- Jedno okno naraz; okna usług otwierają się z plecakiem obok.
+- Przedmioty: statystyki z `ilvl` (każdy poziom lepszy), wymagany poziom = `ilvl`, tooltip „Poziom przedmiotu: N”.
+  Drop: zwykłe 20%, Elita 75% (+25% na drugi), Elita II 2–3, broń częściej, preferencja klasy 80% (też w grupie).
+- 8 nowych typów broni: szabla, włócznia, łuk krótki, łuk długi, ciężka kusza, kostur runiczny, cep, kostur święty
+  (z modelami w dłoni, recepturami kowala i nazwami).
+- Żywioł broni maga (Ogień/Lód/Błyskawice): w nazwie, kolorze ikony, tooltipie; atak podstawowy bije żywiołem;
+  umiejętności żywiołowe wymagają zgodnej broni (wyszarzone na pasku i w drzewku, „Wymaga broni: Lód”). Nowe:
+  Magiczny Pocisk i Gniew Żywiołów (adaptacyjne: podpalenie / spowolnienie / przeskok), Burza Piorunów. Startowa
+  Różdżka Ognia.
+- Zbrojmistrz w dzielnicy rzemieślniczej (stragan obok kuźni): broń i druga ręka każdej klasy co 5 poziomów, zakładki
+  klas, progi do poziomu + 5, broń maga w 3 żywiołach, ostrzeżenie przy innej klasie.
+- Questy w HUD: osobny blok na quest (tytuł, „Od: NPC” / „Wykonane: oddaj u NPC”, cele), zlecenia pod nagłówkiem
+  „Zlecenia: Tablica Zleceń” z tytułami. Dziennik: „Zleceniodawca: X”, nagłówek tablicy w zleceniach.
+- Admin: `/ilvl n`, `/element fire|ice|lightning`, `/mstats [poziom]`, `/sprint`.
+- Testy: `balance.spec`, `levelband.spec`, `weaponsmith.spec`, nowe przypadki w `items`, `skills`, `pvp`, `damage`.
+
+**Pliki**: klient: `TargetController`, `MovementController`, `MonsterPlateController`, `NameplateController`,
+`WindowManager`, `SkillController`, `VfxController`, `UI/PvpState`, `Components/PvpDot`, `Window`, `ItemSlot`,
+`ItemTooltip`, `Hud/init`, `Hud/SprintButton`, `Hud/QuestTracker`, `Hud/SkillBar`, `SkillsWindow`, `ShopWindow`,
+`QuestJournal`, `BlacksmithWindow/Craft`; serwer: `CombatService`, `StatService`, `CharacterService`, `DeathService`,
+`TravelService`, `SkillService`, `Skills/Context`, `Skills/Types/Offense`, `ShopService`, `BlacksmithService`,
+`EquipmentService`, `LootService`, `StatusEffectService`, `AdminService`, `World/Layouts/city`; dane i logika:
+`Data/Combat`, `Monsters`, `Rarities`, `LootTables`, `Items/Bases`, `Classes`, `Elements`, `Shops`, `Crafting`, `Npcs`,
+`Keybinds`, `WeaponLooks`, `Skills/Mage`, `Logic/ItemRoll`, `ItemName`, `Loot`, `Skills`, `PvpRules`, `LevelBand`,
+`StarterGear`, `Net/Definitions`, `Config`.
+
+#### Instrukcja testu S18
+
+1. Wejdź na łąki. Kliknij LPM na wilka: postać od razu podchodzi i bije (bez puszczania przycisku). Kliknij go jeszcze
+   raz w trakcie: atak trwa dalej.
+2. Stań obok gracza i potwora, kliknij między nimi: wybrany zostaje potwór.
+3. W trakcie walki naciśnij W: postać przestaje bić i iść do potwora, ramka celu zostaje. Uciekaj: potwór goni do
+   ~70 st. od swojego miejsca i wraca. Kliknij go znów: atak wraca.
+4. Klik w pustą ziemię albo Q: cel znika.
+5. Zaznacz potwora i stój w mieście (zielona strefa) albo daleko bez ruchu: komunikat „Strefa bezpieczna” / „Za
+   daleko”.
+6. Przytrzymaj Ctrl: szybszy bieg (`/sprint` pokazuje ~21.6). Esc → Klawisze → zmień „Sprint” na inny klawisz.
+   Telefon (emulator): przycisk „Sprint” nad joystickiem.
+7. Nad potworami: imię, plakietka poziomu (szara/zielona/biała/żółta/czerwona wg różnicy) i pasek HP, widoczne też za
+   drzewami i z daleka (~130 st.).
+8. Portret w lewym górnym rogu: kropka obok imienia (zielona). Włącz PvP w żółtej strefie: pomarańczowa pulsuje, potem
+   czerwona. W mieście szara z kłódką. Drugi gracz widzi twoją kropkę nad głową.
+9. Zgiń na łąkach (`/kill me`) i odródź się: lądujesz przy punkcie odrodzenia łąk, nie w mieście.
+10. `/lvl 5`, broń poz. 5, walka z wilkiem poz. 5: ~6–9 s i ok. 15–25% HP. `/mstats 30` pokazuje czas dla poz. 30.
+11. Otwórz plecak (B), potem postać (C): plecak się zamyka. Kupiec → sklep: plecak otwiera się obok (po lewej), oba
+    widoczne. Esc zamyka okna, potem otwiera menu.
+12. Załóż miecz i wpisz `/ilvl 1`, potem `/ilvl 4`: tooltip „Poziom przedmiotu: 4”, obrażenia rosną z każdym
+    poziomem, wymagany poziom = ilvl.
+13. `/lootsim wolf 0 200`: przedmioty z ~20% zabójstw, broń często.
+14. Postać maga: startowa „Prosta Różdżka Ognia” (pomarańczowa ikona, „Żywioł: Ogień”). `/element ice`: Lodowy
+    Odłamek przestaje być szary, Kula Ognia staje się szara (tooltip „Wymaga broni: Ogień”), rzucenie → komunikat.
+15. Magiczny Pocisk z bronią lodu spowalnia, ognia podpala (ikona 🔥 nad celem), błyskawic przeskakuje na wroga obok.
+16. `/lvl 60`, Burza Piorunów (dawna Ściana Ognia) z bronią błyskawic: pioruny z nieba w losowych wrogów w kręgu.
+17. Zbrojmistrz przy kuźni (stragan, ⚔): zakładki klas, widać progi do poziomu + 5, broń maga w trzech żywiołach.
+    Kup broń innej klasy: najpierw pytanie.
+18. Kowal → Wytwarzanie: różdżki i kostury w trzech żywiołach.
+19. Nowe bronie (`/give saber1h_10`, `spear2h_10`, `longbow_10`, `runestaff_10`, `holystaff_10`, `flail1h_10`): model w
+    dłoni z kilku części.
+20. HUD questów: główny quest z „Od: …”, po wykonaniu „Wykonane: oddaj u …”; poniżej „Zlecenia: Tablica Zleceń” i
+    każde zlecenie z tytułem. Dziennik (L): „Zleceniodawca: …”.

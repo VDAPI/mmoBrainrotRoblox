@@ -164,4 +164,18 @@ function Skills.formatDescription(skill: SkillDef, level: number, lang: string?)
 	return Locale.T(skill.descKey, Skills.descriptionArgs(skill, math.max(1, level)), lang)
 end
 
+-- Weapon element a skill needs (DESIGN §5.8, S18): Mage element skills need a weapon of their element;
+-- adaptive skills and everything else work with any weapon.
+function Skills.requiredElement(skill: SkillDef): string?
+	if skill.class ~= "Mage" or skill.adaptive or not skill.element then
+		return nil
+	end
+	return skill.element
+end
+
+function Skills.elementAllowed(skill: SkillDef, weaponElement: string?): boolean
+	local required = Skills.requiredElement(skill)
+	return required == nil or required == weaponElement
+end
+
 return Skills

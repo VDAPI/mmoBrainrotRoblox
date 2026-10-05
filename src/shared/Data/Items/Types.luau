@@ -22,6 +22,7 @@ export type WeaponStats = {
 	speed: number, -- attacks per second at +0
 	ranged: boolean,
 	twoHanded: boolean,
+	element: string?, -- mage weapons (from the item instance, S18)
 }
 
 export type UseEffect = {
@@ -43,6 +44,7 @@ export type ItemDef = {
 	maxStack: number,
 	base: { [string]: number }?, -- base stats of a common +0 item (non-weapon stats)
 	weapon: WeaponStats?,
+	elemental: boolean?, -- mage weapon: instances carry an element (S18)
 	bonusGroup: string?, -- Data/Bonuses pool
 	-- Name: a fixed key, or a generated prefix + base noun with Polish gender agreement.
 	nameKey: string?,

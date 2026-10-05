@@ -93,7 +93,7 @@ kind("rabbit", 1, false, 1, 3, {
 })
 kind("wolf", 1, false, 2, 6, {
 	speed = 1.15,
-	moveSpeed = 16,
+	moveSpeed = 14,
 	ability = "leap",
 	shape = "quadruped",
 	colors = { primary = "#6E6E6E", secondary = "#B9B9B9" },
@@ -113,7 +113,7 @@ kind("bandit", 1, false, 9, 14, {
 })
 kind("goblinScout", 1, true, 13, 18, {
 	speed = 1.1,
-	moveSpeed = 15,
+	moveSpeed = 14,
 	ability = "slam",
 	shape = "humanoid",
 	size = 0.8,
@@ -142,7 +142,7 @@ kind("goblinShaman", 1, true, 16, 20, {
 kind("werewolf", 2, false, 20, 28, {
 	hpMul = 1.1,
 	speed = 1.1,
-	moveSpeed = 16,
+	moveSpeed = 14,
 	ability = "leap",
 	shape = "humanoid",
 	size = 1.3,
@@ -289,7 +289,7 @@ kind("flameSmith", 3, true, 64, 70, {
 -- Region 4: Frostpeak (70–100) / Glacier Heart (90–100)
 kind("iceWolf", 4, false, 70, 78, {
 	speed = 1.15,
-	moveSpeed = 17,
+	moveSpeed = 14,
 	element = "ice",
 	ability = "leap",
 	shape = "quadruped",

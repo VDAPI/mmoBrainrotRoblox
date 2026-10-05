@@ -15,6 +15,7 @@ local RunService = game:GetService("RunService")
 local Shared = ReplicatedStorage.Shared
 
 local Classes = require(Shared.Data.Classes)
+local Config = require(Shared.Config)
 local Log = require(Shared.Util.Log)
 local Net = require(Shared.Net)
 local QuestEvents = require(script.Parent.Parent.QuestEvents)
@@ -61,13 +62,29 @@ function StatService.GetValue(player: Player, id: string): number
 	return if result then result.values[id] or 0 else 0
 end
 
+-- Players holding the sprint key (S18): walk speed x Config.SprintMultiplier.
+local sprinting: { [Player]: boolean? } = {}
+
 local function applyWalkSpeed(player: Player)
 	local result = results[player]
 	local model = player.Character
 	local humanoid = model and model:FindFirstChildOfClass("Humanoid")
 	if result and humanoid then
-		humanoid.WalkSpeed = result.walkSpeed
+		local sprint = sprinting[player] == true and humanoid.Health > 0
+		humanoid.WalkSpeed = result.walkSpeed * (if sprint then Config.SprintMultiplier else 1)
 	end
+end
+
+function StatService.SetSprint(player: Player, on: boolean)
+	if (sprinting[player] == true) == on then
+		return
+	end
+	sprinting[player] = if on then true else nil
+	applyWalkSpeed(player)
+end
+
+function StatService.IsSprinting(player: Player): boolean
+	return sprinting[player] == true
 end
 
 local function collectSources(player: Player, character: Types.CharacterData): { StatCalc.Source }
@@ -193,7 +210,11 @@ function StatService.Start()
 		end
 	end)
 	CharacterService.ModelSpawned:Connect(function(player: Player)
+		sprinting[player] = nil
 		applyWalkSpeed(player)
+	end)
+	Net.On("SetSprint", function(player: Player, on: boolean)
+		StatService.SetSprint(player, on)
 	end)
 
 	RunService.Heartbeat:Connect(function()
@@ -205,6 +226,7 @@ function StatService.Start()
 		task.defer(function()
 			results[player] = nil
 			dirty[player] = nil
+			sprinting[player] = nil
 		end)
 	end)
 end

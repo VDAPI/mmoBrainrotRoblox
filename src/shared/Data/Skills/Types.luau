@@ -48,6 +48,7 @@ export type EffectKind =
 	| "nextShot"
 	| "guaranteedCrit"
 	| "manaShield"
+	| "burn"
 
 export type SkillEffect = {
 	kind: EffectKind,
@@ -81,6 +82,10 @@ export type SkillDef = {
 	interval: number?, -- seconds between hits
 	duration: Scaled?, -- buff / channel / area length
 	element: ("fire" | "ice" | "lightning" | "poison")?,
+	-- Takes the element of the caster's weapon (Mage, S18): fire burns, ice slows, lightning arcs.
+	adaptive: boolean?,
+	-- Each wave strikes one random enemy in the area instead of all of them (Thunderstorm, S18).
+	randomTarget: boolean?,
 	damageKind: ("phys" | "magic")?,
 	holy: boolean?, -- light damage (Cleric, Divine Wrath)
 	values: { [string]: Scaled },

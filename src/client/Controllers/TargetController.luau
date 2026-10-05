@@ -5,10 +5,14 @@
 --                            the enemy drawn closest to the cursor within PICK_RADIUS pixels is used.
 --   holding LMB            = keep fighting: when the target dies the next enemy near the cursor is picked.
 --   auto target (option)   = after a kill, the nearest monster that is fighting us becomes the next target.
---   Tab (optional)         = next nearest target in front of the camera. Esc = clear.
+--   Tab (optional)         = next nearest target in front of the camera. Q (rebindable) / click on the
+--                            ground = clear.
 -- The hovered enemy gets a faint outline so the player sees what a click will hit. The selected model gets
--- a Highlight and the server is told with SetTarget. Walking on your own stops the approach (the target
--- stays selected); clicking the target again resumes it.
+-- a Highlight and the server is told with SetTarget(entityId, attack). S18: attacks start on mouse DOWN,
+-- every click on an enemy resends SetTarget (the server may have dropped it), and any manual movement
+-- (WASD / joystick) stops both the approach and the server auto-attack: the target stays selected but is not
+-- attacked until it is clicked again or a skill is used on it, so the player can run away. For 1.5 s after
+-- manual movement there is no auto retarget and no turning towards the target.
 
 local GuiService = game:GetService("GuiService")
 local Players = game:GetService("Players")
@@ -39,18 +43,20 @@ TargetController.Target = scope:Value(nil :: Model?)
 -- Enemy under the mouse cursor (PC only), observable by the UI.
 TargetController.Hover = scope:Value(nil :: Model?)
 
-local CLICK_MAX_MOVE = 8 -- pixels; more means the player was dragging the camera
 local PICK_RADIUS = 70 -- pixels around the cursor that still count as clicking an enemy
 local TAB_RANGE = 60
 local RETARGET_RANGE = 35 -- studs: auto target only picks monsters this close
 local HOLD_PICK_RANGE = 30 -- studs from the character for "hold LMB" picks
 local APPROACH_INTERVAL = 0.1
 local FACE_SPEED = 14 -- turn rate toward the target while standing (higher = snappier)
+local MANUAL_GRACE = 1.5 -- seconds after manual movement without auto retarget / facing
 
 local player = Players.LocalPlayer
 local highlight: Highlight
 local hoverHighlight: Highlight
 local approaching = false
+local attacking = false -- the server is told to auto-attack the target
+local movedAt = -math.huge -- os.clock() of the last manual movement
 local holding = false
 local controls: any = nil
 
@@ -124,18 +130,42 @@ function TargetController.SetTarget(model: Model?, engage: boolean?)
 		model = nil
 	end
 	local shouldEngage = if model == nil then false elseif engage == nil then isHostile(model) else engage
-	if Fusion.peek(TargetController.Target) == model then
-		approaching = shouldEngage
-		return
-	end
-	TargetController.Target:set(model)
-	highlight.Adornee = model
-	highlight.Enabled = model ~= nil
-	if model then
-		highlight.OutlineColor = if isMonster(model) then Theme.Colors.ZoneRed else Theme.Colors.GoldBright
+	if Fusion.peek(TargetController.Target) ~= model then
+		TargetController.Target:set(model)
+		highlight.Adornee = model
+		highlight.Enabled = model ~= nil
+		if model then
+			highlight.OutlineColor = if isMonster(model) then Theme.Colors.ZoneRed else Theme.Colors.GoldBright
+		end
 	end
 	approaching = shouldEngage
-	Net.Send("SetTarget", if model then model:GetAttribute("EntityId") else nil)
+	attacking = shouldEngage
+	-- Always resend: the server may have dropped the target (death, distance, a previous stop).
+	Net.Send("SetTarget", if model then model:GetAttribute("EntityId") else nil, shouldEngage)
+end
+
+-- Resumes attacking the selected target (a skill was used on it).
+function TargetController.Resume()
+	local model = Fusion.peek(TargetController.Target)
+	if model and isAlive(model) and isHostile(model) and not attacking then
+		TargetController.SetTarget(model, true)
+	end
+end
+
+-- True while the server auto-attacks the selected target.
+function TargetController.IsAttacking(): boolean
+	return attacking
+end
+
+-- Stops approaching and attacking but keeps the selection (manual movement, mobile stop).
+function TargetController.Stop()
+	if not attacking and not approaching then
+		return
+	end
+	local model = Fusion.peek(TargetController.Target)
+	approaching = false
+	attacking = false
+	Net.Send("SetTarget", if model then model:GetAttribute("EntityId") else nil, false)
 end
 
 function TargetController.Clear()
@@ -261,11 +291,16 @@ local function enemyAt(screenPosition: Vector2, hostileOnly: boolean): Model?
 	return best
 end
 
--- Mobile attack button: keep the current target or pick the nearest monster (fighting us first).
+-- Mobile attack button: a second tap while attacking stops; otherwise attack the current target or pick
+-- the nearest monster (fighting us first).
 function TargetController.AttackNearest()
 	local current = Fusion.peek(TargetController.Target)
+	if attacking and current then
+		TargetController.Stop()
+		return
+	end
 	if current and isAlive(current) and isHostile(current) then
-		approaching = true
+		TargetController.SetTarget(current, true)
 		return
 	end
 	local found = nearestAttacker(RETARGET_RANGE) or TargetController.FindNearest(TAB_RANGE, false, false)
@@ -276,11 +311,35 @@ function TargetController.AttackNearest()
 	end
 end
 
+-- Enemies win over friendly players under the cursor; a click on empty ground clears the target.
 local function click(screenPosition: Vector2)
-	local model = enemyAt(screenPosition, false)
+	local model = enemyAt(screenPosition, true) or enemyAt(screenPosition, false)
 	if model then
 		TargetController.SetTarget(model)
+	elseif Fusion.peek(TargetController.Target) then
+		TargetController.Clear()
 	end
+end
+
+-- True when a visible window or button is under the screen point (GetMouseLocation coordinates).
+local function overInterface(screenPosition: Vector2): boolean
+	local playerGui = player:FindFirstChildOfClass("PlayerGui")
+	if not playerGui then
+		return false
+	end
+	local point = screenPosition - GuiService:GetGuiInset()
+	for _, object in playerGui:GetGuiObjectsAtPosition(point.X, point.Y) do
+		if not object.Visible then
+			continue
+		end
+		if object:IsA("GuiButton") or object:IsA("TextBox") or object:IsA("ScrollingFrame") then
+			return true
+		end
+		if object.Active and object.BackgroundTransparency < 0.95 then
+			return true
+		end
+	end
+	return false
 end
 
 local function moveInput(): Vector3
@@ -318,7 +377,7 @@ local function retarget()
 			return
 		end
 	end
-	if autoTargetEnabled() then
+	if autoTargetEnabled() and attacking and os.clock() - movedAt > MANUAL_GRACE then
 		local found = nearestAttacker(RETARGET_RANGE)
 		if found then
 			TargetController.SetTarget(found, true)
@@ -338,10 +397,6 @@ local function approachStep()
 		return
 	end
 	if not approaching then
-		return
-	end
-	if moveInput().Magnitude > 0.1 then
-		approaching = false -- the player took over movement
 		return
 	end
 	local root = myRoot()
@@ -369,6 +424,9 @@ local function faceStep(dt: number)
 		return
 	end
 	if not isHostile(target) or humanoid.MoveDirection.Magnitude > 0.1 or humanoid.Sit then
+		return
+	end
+	if not attacking or os.clock() - movedAt < MANUAL_GRACE then
 		return
 	end
 	if UserInputService.MouseBehavior == Enum.MouseBehavior.LockCenter then
@@ -432,13 +490,14 @@ function TargetController.Init(registry)
 end
 
 function TargetController.Start()
-	local pressedAt: Vector2? = nil
 	UserInputService.InputBegan:Connect(function(input, processed)
-		if processed then
-			return
-		end
 		if input.UserInputType == Enum.UserInputType.MouseButton1 then
-			pressedAt = Vector2.new(input.Position.X, input.Position.Y)
+			-- `processed` is also set by full-screen HUD layers; only a real window or button under the
+			-- cursor blocks the attack.
+			local mouse = UserInputService:GetMouseLocation()
+			if processed and overInterface(mouse) then
+				return
+			end
 			holding = true
 			if UserInputService.MouseBehavior == Enum.MouseBehavior.LockCenter then
 				-- Shift lock: the crosshair is the screen centre, attack what it points at.
@@ -446,25 +505,26 @@ function TargetController.Start()
 				if camera then
 					click(camera.ViewportSize / 2)
 				end
-				pressedAt = nil
+			else
+				click(mouse)
 			end
-		elseif input.UserInputType == Enum.UserInputType.Keyboard and Keybinds.is(input.KeyCode, "target_next") then
+			return
+		end
+		if processed or input.UserInputType ~= Enum.UserInputType.Keyboard then
+			return
+		end
+		if Keybinds.is(input.KeyCode, "target_next") then
 			local found = TargetController.FindNearest(TAB_RANGE, true, true)
 			if found then
 				TargetController.SetTarget(found)
 			end
+		elseif Keybinds.is(input.KeyCode, "target_clear") then
+			TargetController.Clear()
 		end
 	end)
 	UserInputService.InputEnded:Connect(function(input)
-		if input.UserInputType ~= Enum.UserInputType.MouseButton1 then
-			return
-		end
-		holding = false
-		local start = pressedAt
-		pressedAt = nil
-		local position = Vector2.new(input.Position.X, input.Position.Y)
-		if start and (position - start).Magnitude <= CLICK_MAX_MOVE then
-			click(UserInputService:GetMouseLocation())
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			holding = false
 		end
 	end)
 	UserInputService.TouchTap:Connect(function(positions: { Vector2 }, processed: boolean)
@@ -472,6 +532,12 @@ function TargetController.Start()
 			-- Touch positions exclude the top bar inset; rays and WorldToViewportPoint include it.
 			local inset = GuiService:GetGuiInset()
 			click(positions[1] + inset)
+		end
+	end)
+
+	Net.On("AttackRejected", function(reason: any)
+		if type(reason) == "string" then
+			Toast.push(Text.now(reason), "info", 2)
 		end
 	end)
 
@@ -487,6 +553,18 @@ function TargetController.Start()
 	local elapsed = 0
 	local hoverElapsed = 0
 	RunService.RenderStepped:Connect(function(dt)
+		-- Manual movement takes over: stop walking to the target and stop the server auto-attack.
+		if moveInput().Magnitude > 0.1 then
+			movedAt = os.clock()
+			if approaching or attacking then
+				local humanoid = myHumanoid()
+				local root = myRoot()
+				if humanoid and root and approaching then
+					humanoid:MoveTo(root.Position)
+				end
+				TargetController.Stop()
+			end
+		end
 		local ok = pcall(faceStep, dt)
 		if not ok then
 			approaching = false

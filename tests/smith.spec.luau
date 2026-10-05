@@ -163,7 +163,8 @@ T.describe("Economy data", function()
 	end)
 
 	T.it("one recipe per equipment base and tier, using existing materials", function()
-		T.expect(#Crafting.list).toBe(31 * 21)
+		-- 39 bases x 21 tiers, mage weapons (3 bases) once per element (+2 each)
+		T.expect(#Crafting.list).toBe(39 * 21 + 3 * 21 * 2)
 		for _, recipe in Crafting.list do
 			T.expect(Items.get(recipe.item) ~= nil).toBe(true)
 			for _, material in recipe.materials do

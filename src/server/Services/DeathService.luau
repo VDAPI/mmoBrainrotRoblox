@@ -99,7 +99,7 @@ local function respawn(player: Player, token: number)
 		return
 	end
 	ResourceService.Revive(player)
-	CharacterService.Respawn(player, DeathService.SpawnCFrame(state.mapId, state.position))
+	CharacterService.Respawn(player, DeathService.SpawnCFrame(state.mapId, state.position), state.mapId)
 	DeathService.Respawned:Fire(player)
 end
 
@@ -147,7 +147,7 @@ function DeathService.Revive(player: Player, hpPct: number): boolean
 	ResourceService.Revive(player)
 	local at = if state.position then CFrame.new(state.position + Vector3.new(0, 3, 0)) else nil
 	task.spawn(function()
-		CharacterService.Respawn(player, at or DeathService.SpawnCFrame(state.mapId, nil))
+		CharacterService.Respawn(player, at or DeathService.SpawnCFrame(state.mapId, nil), state.mapId)
 		-- Revive restores everything; bring HP down to the resurrection percentage.
 		local hp = ResourceService.Get(player)
 		local keep = hp * math.clamp(hpPct, 1, 100) / 100
