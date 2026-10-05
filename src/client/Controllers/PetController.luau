@@ -23,9 +23,30 @@ function PetController.Start()
 	end
 	local clock = 0
 	local hops: { [Instance]: number } = {}
+	-- Rest offsets of wing parts from the body, captured before the first flap.
+	local wings: { [Instance]: { { part: BasePart, rest: CFrame, side: number } } } = {}
 	folder.ChildRemoved:Connect(function(pet)
 		hops[pet] = nil
+		wings[pet] = nil
 	end)
+	local function wingsOf(pet: Model): { { part: BasePart, rest: CFrame, side: number } }
+		local list = wings[pet]
+		if list then
+			return list
+		end
+		local found = {}
+		local body = pet.PrimaryPart
+		if body then
+			for side, name in { [-1] = "WingL", [1] = "WingR" } do
+				local wing = pet:FindFirstChild(name)
+				if wing and wing:IsA("BasePart") then
+					table.insert(found, { part = wing, rest = body.CFrame:ToObjectSpace(wing.CFrame), side = side })
+				end
+			end
+		end
+		wings[pet] = found
+		return found
+	end
 	RunService.RenderStepped:Connect(function(dt)
 		clock += dt
 		for _, pet in folder:GetChildren() do
@@ -62,7 +83,18 @@ function PetController.Start()
 			local look = if flat.Magnitude > 0.5
 				then CFrame.lookAt(position, position + flat)
 				else CFrame.new(position) * current.Rotation
+			local flaps = wingsOf(pet)
 			pet:PivotTo(look)
+			-- Flap around the inner wing edge.
+			if #flaps > 0 then
+				local flap = math.sin(clock * 9) * 0.45
+				for _, w in flaps do
+					local half = w.part.Size.X / 2
+					local hinge = w.rest * CFrame.new(-w.side * half, 0, 0)
+					local angle = CFrame.Angles(0, 0, w.side * flap)
+					w.part.CFrame = look * hinge * angle * CFrame.new(w.side * half, 0, 0)
+				end
+			end
 		end
 	end)
 end

@@ -1263,7 +1263,7 @@ kilku sekund); dystans do NPC liczony od pozycji postaci kontrolowanej przez kli
   runa) w kolorze rzadkości przedmiotu. Off-hand wcześniej nie był widoczny wcale.
 - Pozy rzucania u graczy: celowanie ręką (pociski, cel, stożek, linia), obie ręce w górę (buffy, leczenie), uniesienie i
   uderzenie w dół (obszar wokół siebie, pułapka). Widzą je wszyscy w pobliżu.
-- Pety chodzące podskakują, gdy doganiają właściciela.
+- Pety chodzące podskakują, gdy doganiają właściciela; smoczek macha skrzydłami.
 - Testy: `gait.spec` (fazy nóg, krzywa ataku, upadek, zakresy kątów; każdy typ broni/off-hand ma wygląd, poprawne części).
 
 **Pliki**: `Logic/Gait.luau`, `Data/WeaponLooks.luau`, `Controllers/AnimationController.luau`, `Entities/RigBuilder.luau`,
@@ -1282,5 +1282,5 @@ kilku sekund); dystans do NPC liczony od pozycji postaci kontrolowanej przez kli
    Broń dwuręczna zdejmuje off-hand → znika z ręki.
 7. Rzuć umiejętność celowaną → postać wyciąga rękę; buff/leczenie → obie ręce w górę; obszar wokół siebie → ręce w górę
    i w dół. Drugi gracz widzi to samo.
-8. Pet (lis/kot) podskakuje, gdy biegniesz.
+8. Pet (lis/kot) podskakuje, gdy biegniesz; smoczek macha skrzydłami.
 9. Opcje → jakość niska: potwory dalej niż ~70 studów stoją bez ruchu (oszczędność).
