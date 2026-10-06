@@ -33,7 +33,7 @@
 
 | ID mapy | Nazwa PL / EN | Poziomy | Strefa | Zawiera |
 |---|---|---|---|---|
-| `city` | Vaelthorn (stolica) | – | zielona | NPC: lekarz, kowal, alchemik, kupiec, handlarz plecaków, depozyt, mistrz gildii, aukcjoner, tablica zleceń, nauczyciel (reset) + **Arena** (żółta) |
+| `city` | Vaelthorn (stolica) | – | zielona | NPC: lekarz, kowal, alchemik, kupiec, handlarz plecaków, depozyt, mistrz gildii, aukcjoner, tablica zleceń, nauczyciel (reset) + **Arena** (żółta); układ i wygląd w §3.8 |
 | `meadows` | Szepczące Łąki / Whispering Meadows | 1–20 | żółta | potwory zwykłe, węzły rud, ziół, łowisko |
 | `meadows_hideout` | Kryjówka Przemytników / Smugglers' Hideout | 7–12 | **czerwona** | jaskinia (zasady w §3.5) |
 | `meadows_burrow` | Gobliński Kopiec / Goblin Warren | 12–16 | **czerwona** | jaskinia |
@@ -63,13 +63,21 @@ Każda strefa terenowa ma też podstrefy (np. łąka, las, ruiny) z innymi pozio
 - Wejście na mapę pokazuje baner z nazwą i kolorem strefy.
 - **Kropka PvP przy nicku** (w portrecie HUD i nad głową każdego gracza): zielona = PvP wyłączone, czerwona = PvP włączone lub czerwona strefa (wymuszone), pomarańczowa (pulsuje) = trwa przełączanie, szara z kłódką = nie można zmienić (zielona strefa albo blokada po walce). Tooltip/przytrzymanie wyjaśnia stan.
 
-### 3.4 Śmierć
+### 3.4 Śmierć (zmiana po testach S20)
 
 - **Nic nie tracisz.** Ekran śmierci z licznikiem.
 - Czas odrodzenia: `5 + 0.3 × poziom` sekund (poz. 1 → 5 s, poz. 100 → 35 s).
-- Przycisk „Odródź natychmiast” za Smoczą Walutę (lub Developer Product za Robux).
-- Odrodzenie w najbliższym punkcie odrodzenia **mapy, na której zginąłeś** (dla jaskiń: przy wejściu do jaskini; dla lochu: przed wejściem do lochu, z pełnym HP). Po testach S17 postać zawsze lądowała w mieście; to był błąd.
-- Kapłan może wskrzesić sojusznika (skill), co pomija licznik.
+- Przycisk „Odródź natychmiast” za Smoczą Walutę (lub Developer Product za Robux) pomija licznik.
+- Po liczniku gracz wybiera: **„Odródź w mieście”** albo **„Odródź tutaj”** (w miejscu śmierci). Brak wyboru przez 60 s oznacza miasto.
+- Wyjątki od „tutaj”:
+  - w lochu: przed wejściem do lochu;
+  - pod mapą albo poza nią: najbliższy punkt odrodzenia mapy;
+  - w wodzie albo w ścianie: najbliższe wolne miejsce w promieniu 20 st.
+- Po odrodzeniu: **1 HP**, pełna mana i energia oraz **Ochrona po odrodzeniu** przez 10 s:
+  - nie dostajesz obrażeń, potwory cię ignorują, gracze nie mogą cię zaatakować;
+  - każdy twój atak (podstawowy, umiejętność ofensywna, PvP) od razu kończy ochronę; leczenie i buffy jej nie kończą.
+- Śmierć czyści szkodliwe efekty (DoT, spowolnienia); buffy z błogosławieństw zostają.
+- Kapłan może wskrzesić sojusznika (skill), co pomija licznik; wskrzeszony też dostaje ochronę.
 
 ### 3.5 Jaskinie (zmiana po testach S17)
 
@@ -89,6 +97,16 @@ Każda strefa terenowa ma też podstrefy (np. łąka, las, ruiny) z innymi pozio
 - **W świecie**: przy wejściu w obszar mały baner u góry ekranu z nazwą i poziomami (kolor wg różnicy poziomów z graczem); na granicach przy ścieżkach drogowskazy/tabliczki z nazwą i poziomami; każdy obszar ma charakterystyczny punkt orientacyjny (obóz, ruiny, wieża, kamienny krąg, wrak wozu, gniazdo).
 - **Na mapie i minimapie**: obszary jako półprzezroczyste kolorowe plamy (kolor wg różnicy poziomów), podpis z nazwą i poziomami; po najechaniu/tapnięciu lista potworów (ikona, nazwa, poziomy, czy są elity), w jaskini także Elita II z timerem (§15.3).
 - Obszary nie nachodzą na ścieżki, wodę, portale i okolice miasta; między obszarami są przejścia bez potworów.
+- **Portal na mapę regionu** (zmiana po testach S20) otwiera okno „Dokąd?” z obszarami tej mapy:
+  - domyślnie najniższy obszar;
+  - wyższy można wybrać, gdy poziom gracza ≥ minimalny poziom obszaru (inaczej kłódka „od poz. X”);
+  - każdy obszar ma punkt przybycia przy drodze, min. 35 st. od grup potworów;
+  - kamień teleportu na mapę daje ten sam wybór.
+- **Czytelność poziomów na mapie** (zmiana po testach S20):
+  - mocniejsze kolory obszarów i legenda pasm względem poziomu gracza („łatwe” … „niebezpieczne”);
+  - znacznik „Polecane” i lista obszarów przy każdej mapie;
+  - mapa otwiera się wyśrodkowana na graczu, minimapa odświeża kolory po awansie;
+  - jedna nazwa miejsca: nazwa obszaru.
 
 ### 3.7 Szczegółowość świata i wydajność (zmiana po testach S17)
 
@@ -98,6 +116,23 @@ Każda strefa terenowa ma też podstrefy (np. łąka, las, ruiny) z innymi pozio
   - duże elementy (drzewa, budynki, skały kolizyjne) tworzy serwer, z `CanQuery=false` i `CanTouch=false` dla dekoracji, `CollisionFidelity=Box` dla prostych kształtów, `CastShadow=false` dla małych, modele `ModelStreamingMode` Atomic tylko tam, gdzie trzeba;
   - budżet części na mapę (Config) i ostrzeżenie w logu; StreamingEnabled z dobranym `StreamingTargetRadius` i `StreamingMinRadius`;
   - ustawienie „Szczegółowość świata” (niska/średnia/wysoka) zmienia gęstość dekoracji klienta.
+
+### 3.8 Miasto startowe (zmiana po testach S20)
+
+- Stolica Vaelthorn to **średniowieczne miasto handlowe** (XIV–XV w., poważne fantasy):
+  - stare, ciemne drewno szachulca, zszarzałe deski, tynki, kamień;
+  - dachy z gontu, dachówki, strzechy i łupka;
+  - każdy dom inny (piętra wysunięte, okiennice, szyldy, kominy z dymem).
+- Teren nie jest płaski: wzgórze zamkowe z klifem, górne miasto na tarasie, rampy i Wielkie Schody, rzeka z mostami, fosa, a za murami pola, farmy, wiatrak i las.
+- W mieście:
+  - mur z 4 bramami-portalami do regionów;
+  - rynek z ratuszem i Halą Kupiecką (Sukiennice), Świątynia Światła, donżon na wzgórzu;
+  - kuźnia, apteka, Dom Gildii, karczma, młyn wodny, arena (Ristalle, żółta strefa);
+  - NPC stoją przy swoich budynkach.
+- Wydajność:
+  - serwer buduje teren i tylko „skorupę” budynków, a klient dobudowuje detale w pobliżu kamery;
+  - okna, latarnie i ogniska świecą nocą (cykl dnia i nocy).
+- Pełna specyfikacja: `docs/miasto/MIASTO.md` (sesja S21).
 
 ## 4. Postać
 
@@ -448,7 +483,11 @@ Leczenie/buffy kapłana działają tylko na członków grupy i na siebie.
 - Elity i Elity II **tylko w jaskiniach** (czerwone strefy), zasady w §3.5: 2 rodzaje Elit i dokładnie 1 Elita II na jaskinię, odrodzenie Elity II 10–20 min (losowo), ogłoszenie na mapie przy pojawieniu się.
 - Statystyki z poziomu (osłabione po testach S17): `HP = 40 + 16·L^1.3`, `atak = 4 + 2.2·L^1.1`, `obrona = 4·L`, szybkość ataku 1/2.0 s. Mnożniki per rodzaj (`hpMul`, `atkMul`, `defMul`, `speed`) w danych. Cel: gracz z bronią ze swojego poziomu zabija zwykłego potwora swojego poziomu w ok. 6–10 s i traci 15–30% HP.
 - Szybkość ruchu zwykłych potworów 14 (gracz 16, sprint 21.6), żeby dało się uciec.
-- AI: Bezczynność (spacer w promieniu 8 st. wokół środka grupy) → Aggro (zasięg 12 st. zwykłe, 20 elity; potwory słabsze o 15+ poziomów od gracza nie atakują pierwsze) → Pościg → Atak → Powrót (**smycz 70 st.** od środka grupy, wtedy pełne HP i nietykalność w drodze).
+- AI: Bezczynność (spacer w promieniu 8 st. wokół środka grupy) → Aggro (zasięg 12 st. zwykłe, 20 elity; potwory słabsze o 15+ poziomów od gracza nie atakują pierwsze) → Pościg → Atak → Powrót. Smycz (zmiana po testach S20, wcześniej potwór uciekał z pełnym HP i nietykalnością):
+  - potwór wraca, gdy jest dalej niż **70 st.** od środka grupy i od 5 s nie dostał obrażeń; dopóki gracz go bije, walczy;
+  - zawsze wraca dalej niż **150 st.**;
+  - wraca **bez leczenia i bez nietykalności**, a trafiony w drodze zawraca;
+  - leczy się dopiero w domu, stopniowo (8% HP/s po 4 s bez obrażeń).
 - **Grupy potworów** (zmiana po testach S17, jak w Margonem):
   - Potwory stoją w **grupach po 1–4** (losowo przy tworzeniu mapy, deterministycznie z seedem), rozrzuconych gęsto po całej mapie: **45–60 grup na mapę terenową**, odstęp między grupami ok. 45–70 st., ścieżki, woda, portale i okolice miasta wolne.
   - Każda podstrefa ma 2–3 rodzaje potworów; grupy mogą być mieszane tylko w obrębie podstrefy.
@@ -458,7 +497,15 @@ Leczenie/buffy kapłana działają tylko na członków grupy i na siebie.
   - Grupy aktywują się, gdy gracz jest w promieniu 250 st. (uśpienie dalej, jak dotąd).
 - Obrażenia od wielu graczy: łup dostaje gracz (lub jego grupa), który zadał najwięcej obrażeń.
 
+- **Wygląd** (zmiana po testach S20):
+  - każdy rodzaj ma własny plan ciała i rozpoznawalną sylwetkę (ptaki ze skrzydłami, wąż, skorpion ze szczypcami, mamut z trąbą);
+  - Elita ma dodatkowe części i świecące oczy, Elita II jeszcze więcej;
+  - bossowie mają unikalny wygląd zmieniający się z fazą;
+  - wygląd buduje klient (z LOD), a prawdziwe modele i animacje można podmienić bez zmian w kodzie (`docs/MODELE.md`, sesja S24).
+
 ### 15.2 Zestawienie (rodzaj → Elita → Elita II)
+
+> **Pełny spis (expowiska, przedziały, skład jaskiń, Elity, Elity II, bossy, dropy) jest w `docs/SWIAT.md`.** Lista poniżej to skrót.
 
 Po testach S17: **więcej rodzajów na każdej mapie (min. 8–10 na mapę terenową, 2–3 na podstrefę) i bez dziur w poziomach** (wcześniej puste były m.in. 19–20, 41–45, 67–70, 96–100). Nowe rodzaje dodane do list poniżej (oznaczone *nowy*); nazwy Elit i Elit II dla nowych rodzajów w tym samym stylu.
 
@@ -555,7 +602,7 @@ Po testach S17: **więcej rodzajów na każdej mapie (min. 8–10 na mapę teren
 
 ## 22. Kosmetyki i pety
 
-- Pety chodzą za graczem, nie dają bonusów. Kosmetyki: strój (nakładany na awatar), aura, ślad, efekt broni. Garderoba w menu.
+- Pety chodzą (albo latają) za graczem, nie dają bonusów. Wygląd z tego samego generatora co potwory, w wersji „chibi”; prawdziwy model można podmienić (`docs/MODELE.md`). Wierzchowców nie ma. Kosmetyki: strój (nakładany na awatar), aura, ślad, efekt broni. Garderoba w menu.
 
 ## 23. Interfejs
 
