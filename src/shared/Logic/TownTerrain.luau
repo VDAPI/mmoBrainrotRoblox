@@ -7,6 +7,7 @@
 -- fall off over `blend` studs, "wall"/"cliff" edges are sharp; outside the walls every edge is soft), the moat
 -- (outside only), ramps (override: the road height at the nearest point of the ramp polyline) and the river.
 
+local TerrainLayers = require("./TerrainLayers")
 local Town = require("../Data/Town")
 local TownGeom = require("./TownGeom")
 
@@ -15,18 +16,10 @@ local TownTerrain = {}
 local city = Town.city
 local T = city.terrain
 
-local function smoothstep(t: number): number
-	t = math.clamp(t, 0, 1)
-	return t * t * (3 - 2 * t)
-end
+local smoothstep = TerrainLayers.smoothstep
 
--- Smooth deterministic noise from sines, about 0..1.
-function TownTerrain.noise(x: number, z: number, seed: number): number
-	return 0.5
-		+ 0.22 * math.sin(0.9 * x + seed * 1.3) * math.cos(0.8 * z - seed * 0.7)
-		+ 0.18 * math.sin(0.53 * (x + z) + seed * 2.1)
-		+ 0.1 * math.cos(1.7 * x - 1.1 * z + seed)
-end
+-- Smooth deterministic noise from sines, about 0..1 (S26: shared with the Meadows in Logic/TerrainLayers).
+TownTerrain.noise = TerrainLayers.sineNoise
 
 -- Road height and ramp at (x, z) when the point lies on a ramp band (nearest ramp wins), else nil.
 function TownTerrain.rampAt(x: number, z: number): (number?, any)
@@ -282,50 +275,22 @@ function TownTerrain.materialAt(x: number, z: number, h: number, slope: number):
 	return "LeafyGrass"
 end
 
-export type Voxels = { materials: { { { string } } }, occupancy: { { { number } } } }
+export type Voxels = TerrainLayers.Voxels
+
+local function waterAt(_x: number, _z: number, h: number, _info: any): number?
+	return if h < TownTerrain.WATER_LEVEL then TownTerrain.WATER_LEVEL else nil
+end
 
 -- Voxel block for Terrain:WriteVoxels (resolution 4): nx * ny * nz cells, cell [i][j][k] covers
 -- x0 + 4(i-1) .. x0 + 4i, yBottom + 4(j-1) .. yBottom + 4j, z0 + 4(k-1) .. z0 + 4k (map-relative studs).
 -- Ground fills each cell up to the height at its centre column; cells under the river/moat level are water.
 -- Material names are strings (see TownTerrain.MATERIALS); the writer converts them to Enum.Material.
 function TownTerrain.voxels(x0: number, z0: number, nx: number, nz: number, yBottom: number, ny: number): Voxels
-	local V = TownTerrain.VOXEL
-	-- heights at cell centres, with a one-cell ring for the slope
-	local heights: { { number } } = {}
-	for i = 0, nx + 1 do
-		local row = {}
-		for k = 0, nz + 1 do
-			row[k] = TownTerrain.heightAt(x0 + V * (i - 0.5), z0 + V * (k - 0.5))
-		end
-		heights[i] = row
-	end
-	local water = TownTerrain.WATER_LEVEL
-	local materials: { { { string } } } = table.create(nx)
-	local occupancy: { { { number } } } = table.create(nx)
-	for i = 1, nx do
-		local mi, oi = table.create(ny), table.create(ny)
-		for j = 1, ny do
-			mi[j], oi[j] = table.create(nz, "Air"), table.create(nz, 0)
-		end
-		for k = 1, nz do
-			local x, z = x0 + V * (i - 0.5), z0 + V * (k - 0.5)
-			local h = heights[i][k]
-			local gx = (heights[i + 1][k] - heights[i - 1][k]) / (2 * V)
-			local gz = (heights[i][k + 1] - heights[i][k - 1]) / (2 * V)
-			local material = TownTerrain.materialAt(x, z, h, math.sqrt(gx * gx + gz * gz))
-			for j = 1, ny do
-				local y = yBottom + V * (j - 1)
-				local solid = math.clamp((h - y) / V, 0, 1)
-				if solid >= 0.5 or (solid > 0 and h >= water) then
-					mi[j][k], oi[j][k] = material, solid
-				elseif h < water and y < water then
-					mi[j][k], oi[j][k] = "Water", math.clamp((water - y) / V, 0, 1)
-				end
-			end
-		end
-		materials[i], occupancy[i] = mi, oi
-	end
-	return { materials = materials, occupancy = occupancy }
+	return TerrainLayers.voxels(function(x: number, z: number): (number, any)
+		return TownTerrain.heightAt(x, z), nil
+	end, function(x: number, z: number, h: number, slope: number, _info: any): string
+		return TownTerrain.materialAt(x, z, h, slope)
+	end, waterAt, x0, z0, nx, nz, yBottom, ny)
 end
 
 return TownTerrain

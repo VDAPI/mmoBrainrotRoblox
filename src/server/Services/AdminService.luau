@@ -74,7 +74,8 @@ type Run = (player: Player, args: { string }) -> ...any
 
 -- Command name -> implementation, collected from the category modules in Init.
 local RUN: { [string]: Run } = {}
-local MODULES = { "Character", "Items", "World", "Monsters", "Combat", "Quests", "Economy", "Guild", "Perf", "Data" }
+local MODULES =
+	{ "Character", "Items", "World", "Terrain", "Monsters", "Combat", "Quests", "Economy", "Guild", "Perf", "Data" }
 
 -- Audit log (S23): the last AUDIT_SIZE calls, newest last.
 export type AuditEntry = { t: number, user: string, command: string, args: string, ok: boolean }

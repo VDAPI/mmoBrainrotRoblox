@@ -9,6 +9,10 @@ export type MapAreas = Types.MapAreas
 export type Cave = Types.Cave
 export type Road = Types.Road
 export type CaveEntrance = Types.CaveEntrance
+export type Stream = Types.Stream
+export type NpcSpot = Types.NpcSpot
+export type QuestAnchor = Types.QuestAnchor
+export type Site = Types.Site
 
 local byMap: { [string]: Types.MapAreas } = {
 	meadows = require("@self/meadows"),

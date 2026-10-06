@@ -1,7 +1,8 @@
 --!strict
 -- Applies the options (S14) on the client: effects quality (low = particle rates cut to a third on every
 -- ParticleEmitter in the world, original rate remembered in an attribute), music volume (SoundGroup
--- "Music", used by the map music), camera sensitivity (UserInputService.MouseDeltaSensitivity).
+-- "Music", used by the map music), ambience volume (S26, SoundGroup of AmbienceController's loops), camera
+-- sensitivity (UserInputService.MouseDeltaSensitivity).
 -- Effects volume, damage numbers, quick cast and confirmations are read where they are used.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -20,10 +21,16 @@ local LOW_FACTOR = 1 / 3
 
 local scope = Fusion.scoped(Fusion)
 local musicGroup: SoundGroup
+local ambientGroup: SoundGroup
 
 -- Sound group the map music plays through (WorldController).
 function SettingsController.MusicGroup(): SoundGroup
 	return musicGroup
+end
+
+-- Sound group of the area ambience loops (S26, AmbienceController).
+function SettingsController.AmbientGroup(): SoundGroup
+	return ambientGroup
 end
 
 local function lowQuality(): boolean
@@ -52,6 +59,10 @@ function SettingsController.Init()
 	musicGroup.Name = "VaelthornMusicGroup"
 	musicGroup.Volume = 0.6
 	musicGroup.Parent = SoundService
+	ambientGroup = Instance.new("SoundGroup")
+	ambientGroup.Name = "VaelthornAmbientGroup"
+	ambientGroup.Volume = 0.7
+	ambientGroup.Parent = SoundService
 end
 
 function SettingsController.Start()
@@ -64,6 +75,10 @@ function SettingsController.Start()
 	scope:Observer(State.Value({ "account", "settings", "musicVolume" })):onBind(function()
 		local value = State.Get({ "account", "settings", "musicVolume" })
 		musicGroup.Volume = if type(value) == "number" then value else 0.6
+	end)
+	scope:Observer(State.Value({ "account", "settings", "ambientVolume" })):onBind(function()
+		local value = State.Get({ "account", "settings", "ambientVolume" })
+		ambientGroup.Volume = if type(value) == "number" then value else 0.7
 	end)
 	scope:Observer(State.Value({ "account", "settings", "cameraSens" })):onBind(function()
 		local value = State.Get({ "account", "settings", "cameraSens" })

@@ -90,6 +90,18 @@ local LIGHT = {
 		saturation = -0.15,
 	}),
 	meadows = lighting({ clockTime = 13, saturation = 0.12, fogColor = "#D8E6C9" }),
+	-- Night on the Meadows (S26): moonlight bright enough to fight in, blue-green fog; fireflies and fires glow.
+	meadowsNight = lighting({
+		clockTime = 0,
+		brightness = 0.9,
+		ambient = "#2E3648",
+		outdoorAmbient = "#46506A",
+		fogColor = "#1E2632",
+		fogEnd = 760,
+		atmosphere = { density = 0.33, haze = 1.4, glare = 0, color = "#2E3A50", decay = "#161C2A" },
+		tint = "#D4DEFF",
+		saturation = -0.12,
+	}),
 	duskwood = lighting({
 		clockTime = 18.2,
 		brightness = 1.2,
@@ -189,8 +201,14 @@ map({
 	spawn = { x = -700, y = 4, z = 0 },
 	biome = "grass",
 	lighting = LIGHT.meadows,
+	-- S26: day and night (Logic/DayCycle) with the areas' mood on top (Data/Ambience).
+	dayNight = true,
+	nightLighting = LIGHT.meadowsNight,
+	-- Creator Store: a calm pastoral loop ("medieval countryside ambient music", ~2-3 min, loops cleanly).
 	music = "",
 	buildMode = "generated",
+	-- S26 server part budget: the S20 map had ~2150 parts; the shaped map may use up to +30%.
+	maxParts = 2800,
 	worldMap = { x = 0.42, y = 0.62 },
 	links = { "city", "meadows_hideout", "meadows_burrow", "meadows_cave", "duskwood" },
 })

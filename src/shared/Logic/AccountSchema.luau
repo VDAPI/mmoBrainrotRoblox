@@ -30,6 +30,7 @@ function AccountSchema.accountTemplate(): AccountData
 			bindConfirm = true,
 			quickCast = false,
 			musicVolume = 0.6,
+			ambientVolume = 0.7,
 			quality = "high",
 			minimapRotate = false,
 			cameraSens = 1,

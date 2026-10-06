@@ -107,6 +107,10 @@ Każda strefa terenowa ma też podstrefy (np. łąka, las, ruiny) z innymi pozio
   - znacznik „Polecane” i lista obszarów przy każdej mapie;
   - mapa otwiera się wyśrodkowana na graczu, minimapa odświeża kolory po awansie;
   - jedna nazwa miejsca: nazwa obszaru.
+- **Klimat obszaru** (zmiana S26): patrząc na obszar, gracz zgaduje, co tam żyje. Każdy obszar ma punkt
+  charakterystyczny, własne rośliny i materiały ziemi, 2–4 „ślady” potworów (jamy, kości, legowiska, obozy) i miejsce,
+  które zachęca, żeby podejść; przejścia między obszarami są miękkie (30–60 st. mieszania). Obszar ma też nastrój:
+  lekką zmianę światła (mgła, barwa, nasycenie) i własne dźwięki dnia i nocy, nakładane na oświetlenie mapy.
 
 ### 3.7 Szczegółowość świata i wydajność (zmiana po testach S17)
 
@@ -116,6 +120,11 @@ Każda strefa terenowa ma też podstrefy (np. łąka, las, ruiny) z innymi pozio
   - duże elementy (drzewa, budynki, skały kolizyjne) tworzy serwer, z `CanQuery=false` i `CanTouch=false` dla dekoracji, `CollisionFidelity=Box` dla prostych kształtów, `CastShadow=false` dla małych, modele `ModelStreamingMode` Atomic tylko tam, gdzie trzeba;
   - budżet części na mapę (Config) i ostrzeżenie w logu; StreamingEnabled z dobranym `StreamingTargetRadius` i `StreamingMinRadius`;
   - ustawienie „Szczegółowość świata” (niska/średnia/wysoka) zmienia gęstość dekoracji klienta.
+- Teren map terenowych (zmiana S26, na razie Szepczące Łąki): z funkcji wysokości jak w mieście — pagórki, grzbiety,
+  strumienie z mostami i brodem, jar z wodospadem, wkopany kamieniołom, bagno, drogi i miejsca budynków spłaszczone.
+  Serwer stawia teren, bryły budynków, duże drzewa i rzeczy z kolizją; detal budynków, podszyt, zwierzęta
+  dekoracyjne (owce, kaczki, kruki), pyłki, motyle, mgła, świetliki i liście robi klient. Przy niskiej
+  szczegółowości bez zwierząt i z połową cząsteczek.
 
 ### 3.8 Miasto startowe (zmiana po testach S20)
 

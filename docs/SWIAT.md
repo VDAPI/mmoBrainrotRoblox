@@ -124,20 +124,24 @@ Nowe materiały (S19): **Gruba Skóra** (`thick_hide`), **Jad** (`venom_sac`), *
 
 Kolumna „Grupy” = liczba grup po 1–4 potwory (DESIGN §15.1). Wszystkie obszary: tylko zwykłe potwory.
 
-### Szepczące Łąki (1–20), razem ok. 56 grup
+### Szepczące Łąki (1–20), razem 58 grup (stan po S26)
+
+Mapa ukształtowana (S26): pofałdowany teren, Szepcząca Struga od wodospadu w Niedźwiedzim Jarze przez środek mapy do
+Żabiego Oczka (3 mosty: kamienny na Kupieckim Trakcie i 2 drewniane), Leśny Potok ze Starego Lasu (bród na leśnej
+ścieżce), dzień i noc, nastrój i dźwięki na obszar (`Data/Ambience`). Dane: `Data/Areas/meadows` (obszary, drogi,
+woda, budowle, miejsca NPC i kotwice questów S27), `Data/Terrain/meadows` (kształt terenu).
 
 | Obszar | Poziomy | Potwory | Grupy | Punkt charakterystyczny | Inne |
 |---|---|---|---|---|---|
-| Polana Królików / Rabbit Glade | 1–3 | Królik | 5 | stary dąb z kapliczką | przy portalu z miasta |
-| Wilcze Wzgórza / Wolf Hills | 2–6 | Wilk, Ryś | 7 | kamienny krąg | zioła |
-| Żabie Oczko / Toad Pond | 4–8 | Ropucha, Wilk | 5 | pomost i łódka | łowisko |
-| Dębowy Las / Oakwood | 5–10 | Dzik, Ryś | 7 | chata drwala | zioła |
-| Krucze Pole / Crow Field | 6–11 | Kruk, Dzik | 5 | spalony młyn, strach na wróble | **wejście: Kryjówka Przemytników** |
-| Kupiecki Trakt / Merchant Road | 9–13 | Bandyta, Kruk | 6 | rozbity wóz kupiecki | droga z drogowskazami |
-| Obóz Bandytów / Bandit Camp | 11–14 | Bandyta | 5 | palisada, namioty, ognisko | |
-| Stare Wyrobisko / Old Quarry | 10–15 | Kobold, Bandyta | 5 | rusztowanie, wózki | rudy Miedzi i Żelaza, **wejście: Gobliński Kopiec** |
-| Gobliński Obóz / Goblin Camp | 13–18 | Goblin Zwiadowca | 6 | totem plemienny | |
-| Niedźwiedzi Jar / Bear Ravine | 16–20 | Niedźwiedź, Goblin Zwiadowca (17–18) | 5 | wąwóz z wodospadem | łowisko, **wejście: Jaskinia Mchów** |
+| Polana Królików / Rabbit Glade | 1–4 | Królik, Wilk | 7 | stary dąb z kapliczką | brama i portal z miasta, zagroda farmera (dom, stodoła, studnia, ogródek, ule, owce), norki królików · **NPC: farmer, kapliczka** |
+| Wilcze Wzgórza / Wolf Hills | 3–7 | Wilk, Ryś | 7 | kamienny krąg na grzbiecie | wystające skały, jamy wilków (kości, wełna), jałowce, samotne sosny, Leśny Potok z mostem na trakcie |
+| Żabie Oczko / Toad Pond | 4–8 | Ropucha, Ryś | 6 | pomost z łódką | bagno z rozlewiskami, trzciny i grążele, wierzby i martwe drzewa, zarośla rysia od strony wzgórz, łowisko · **NPC: rybak** |
+| Stary Las / Old Forest | 6–11 | Dzik, Kruk | 7 | chata drwala | gaje i polany, olbrzymie dęby, powalone drzewa, taplisko dzików, gniazda kruków, ruiny wieży, bród na Leśnym Potoku, stosy drewna · **NPC: drwal** |
+| Krucze Pole / Crow Field | 8–12 | Kruk, Dzik, Bandyta | 5 | spalony młyn (dymi) | wyschnięte pola, strachy na wróble z krukami, porzucony wózek, wyblakłe barwy |
+| Kupiecki Trakt / Merchant Road | 9–14 | Bandyta, Kobold | 8 | Obóz Bandytów (palisada, wieża, namioty, listy gończe) | rozbity wóz kupiecki, kamienny most, kamienie milowe, staw z łowiskiem, **wejście: Kryjówka Przemytników** · **NPC: kupiec** |
+| Stare Wyrobisko / Old Quarry | 11–15 | Kobold, Goblin Zwiadowca | 6 | kamieniołom z 3 tarasami | rampy, rusztowania, tory z wózkami, hałdy rudy, zielone latarnie koboldów, sztolnie zabite deskami, najwięcej miedzi i żelaza · **NPC: górnik** |
+| Gobliński Obóz / Goblin Camp | 13–18 | Goblin Zwiadowca, Kobold | 6 | totem plemienny | płot z pali z czaszkami, szałasy, bębny, kotły nad ogniem, kości, **wejście: Gobliński Kopiec**, portal do Mrocznego Boru |
+| Niedźwiedzi Jar / Bear Ravine | 16–20 | Niedźwiedź, Goblin Zwiadowca | 6 | wąwóz z wodospadem | płaskowyż z sosnami, mech, legowiska niedźwiedzi, łowisko pod wodospadem, ścieżka w dół, **wejście: Jaskinia Mchów** (na dnie) · **NPC: myśliwy** |
 
 ### Mroczny Bór (20–45), razem ok. 52 grupy
 

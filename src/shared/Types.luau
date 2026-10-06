@@ -107,6 +107,7 @@ export type Settings = {
 	quickCast: boolean, -- area skills cast on key press instead of on release
 	-- S14 options window
 	musicVolume: number,
+	ambientVolume: number, -- S26: area ambience loops (birds, wind, frogs, the waterfall)
 	quality: string, -- "high" | "low" (fewer particles)
 	minimapRotate: boolean,
 	cameraSens: number, -- mouse/touch camera sensitivity multiplier

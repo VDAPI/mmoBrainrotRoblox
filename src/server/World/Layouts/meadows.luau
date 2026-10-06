@@ -1,146 +1,187 @@
 --!strict
--- Whispering Meadows (1–20, yellow). Sub-zones grow in level away from the city portal (west):
--- fields 1–6 (west), forest 5–10 (north), the trade road with the bandit camp 9–14 (south-east), the goblin
--- camp 13–18 (east). A lake with a fishing spot in the south-west, copper and iron veins, herbs, the entrance
--- to Mosshollow Cave (east) and the portal to Duskwood (north-east). Monster groups: Data/Areas.
+-- Whispering Meadows (1–20, yellow), rebuilt in S26. Everything comes from data and pure generators:
+--   * terrain: Logic/MeadowsTerrain (hills, the Wolf Hills ridge, the Whispering Brook and its forest tributary,
+--     Toad Pond and its marsh, Bear Ravine with the waterfall, the Old Quarry terraces, flattened roads and building
+--     places) written by World/TerrainWriter; mountains outside the edge as before (Build.border),
+--   * buildings, camps, bridges, rocks and trees: the "shell" level of every Logic/MeadowsGen Build (the client adds
+--     "detail" and "fine" near the camera, TownDetailController), in Meadows/<tag> folders,
+--   * portals (Data/Portals), cave mouths (Data/Areas), signposts and road lanterns (Prefabs.areaFeatures), gathering
+--     nodes by the areas' character (MeadowsGen.nodes), quest anchors for S27 (Data/Areas questAnchors), zones,
+--     respawn points and the map sketch (streams, lakes, ravine, quarry, bridges, buildings, fields, forests).
+-- Output: "[Meadows] terrain ...", "[Meadows] shell ...", "[Meadows] parts=… ms=…" (S26 budget: server parts).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local Areas = require(ReplicatedStorage.Shared.Data.Areas)
 local Build = require(script.Parent.Parent.Build)
+local BuildStats = require(script.Parent.Parent.BuildStats)
 local Prefabs = require(script.Parent.Parent.Prefabs)
+local TerrainWriter = require(script.Parent.Parent.TerrainWriter)
+
+local Shared = ReplicatedStorage.Shared
+local Areas = require(Shared.Data.Areas)
+local BlueprintBuild = require(Shared.Util.BlueprintBuild)
+local Log = require(Shared.Util.Log)
+local MeadowsGen = require(Shared.Logic.MeadowsGen)
+local MeadowsTerrain = require(Shared.Logic.MeadowsTerrain)
+local TerrainShape = require(Shared.Data.Terrain.meadows)
+
+local log = Log.new("Meadows")
 
 local AREAS = Areas.byMap.meadows
 
+local function sketch(ctx: Build.Context)
+	-- terrain first (drawn under everything by MapSketch's order)
+	local m = TerrainShape.marsh
+	for _, c in { { 0, 0, 0.75 }, { -0.35, 0.3, 0.45 }, { 0.3, -0.25, 0.45 }, { 0.35, 0.35, 0.4 } } do
+		table.insert(ctx.sketch.shapes, {
+			t = "circle",
+			x = m.x + c[1] * m.rx,
+			z = m.z + c[2] * m.rz,
+			r = (m.rx + m.rz) / 2 * c[3],
+			c = "marsh",
+		})
+	end
+	local ravine = TerrainShape.ravine
+	for i = 1, #ravine.pts - 1 do
+		local a, b = ravine.pts[i], ravine.pts[i + 1]
+		Build.sketchLine(ctx, { a.x, a.z, b.x, b.z }, a.half + b.half + 2 * ravine.wall, "ravineWall")
+		Build.sketchLine(ctx, { a.x, a.z, b.x, b.z }, a.half + b.half, "ravine")
+	end
+	local last = ravine.pts[#ravine.pts]
+	table.insert(
+		ctx.sketch.shapes,
+		{ t = "circle", x = last.x, z = last.z, r = last.half + ravine.wall, c = "ravineWall" }
+	)
+	table.insert(ctx.sketch.shapes, { t = "circle", x = last.x, z = last.z, r = last.half, c = "ravine" })
+	for _, lake in AREAS.lakes do
+		table.insert(ctx.sketch.shapes, { t = "circle", x = lake.x, z = lake.z, r = lake.r, c = "water" })
+	end
+	for _, stream in (AREAS.streams or {}) :: { Areas.Stream } do
+		local p = stream.points
+		for i = 1, #p - 3, 2 do
+			local k = (i + 1) // 2
+			local w = ((stream.widths[k] or 8) + (stream.widths[k + 1] or 8)) / 2
+			Build.sketchLine(ctx, { p[i], p[i + 1], p[i + 2], p[i + 3] }, w, "water")
+		end
+	end
+	for _, road in AREAS.roads do
+		Build.sketchLine(ctx, road.points, road.width, "path")
+	end
+	for _, ramp in TerrainShape.ramps do
+		local pts = {}
+		for _, q in ramp.pts do
+			table.insert(pts, q[1])
+			table.insert(pts, q[2])
+		end
+		Build.sketchLine(ctx, pts, ramp.w, "path")
+	end
+	-- buildings, camps, fields, the quarry, bridges (MeadowsGen)
+	for _, shape in MeadowsGen.sketch() do
+		table.insert(ctx.sketch.shapes, shape :: any)
+	end
+end
+
 return function(ctx: Build.Context)
-	local hx, hz = ctx.map.size.x / 2, ctx.map.size.z / 2
-	Build.fill(ctx, -hx - 80, -hz - 80, hx + 80, hz + 80, Enum.Material.Grass)
+	local started = os.clock()
+	local half = ctx.map.size.x / 2
+	-- numbers of this build (admin /meadowsstats)
+	local stats: BuildStats.Stats =
+		{ parts = 0, ms = 0, terrainMs = 0, writeMs = 0, blocks = 0, shellMs = 0, builds = 0, nodes = 0 }
+	BuildStats[ctx.map.id] = stats
+
+	-- Terrain. The world is built from WorldService.Init, which must not yield: write without pauses.
+	local t0 = os.clock()
+	local blocks, writing = TerrainWriter.write(ctx.origin, half, MeadowsTerrain.voxels, MeadowsTerrain.MATERIALS, {
+		bottom = -24,
+		top = 48,
+		margin = 64,
+	})
+	stats.terrainMs = (os.clock() - t0) * 1000
+	stats.writeMs = writing * 1000
+	stats.blocks = blocks
+	log:info("terrain: %d blocks in %.2f s (WriteVoxels %.2f s)", blocks, os.clock() - t0, writing)
+	-- Mountains past the edge and the invisible boundary (balls over the written margin).
 	Build.border(ctx, Enum.Material.Rock, 55)
-
-	-- Forest floor (north) and goblin dirt (east)
-	Build.paint(ctx, -50, -430, 560, 740, 0, Enum.Material.LeafyGrass)
-	Build.paint(ctx, 610, -400, 340, 560, 0, Enum.Material.Ground)
-
-	-- Roads (Data/Areas/meadows)
-	Build.roads(ctx, AREAS)
-
-	-- Lake (south-west) with a jetty
-	Build.lake(ctx, -470, 450, 95, 10)
-	Prefabs.jetty(ctx, -470, 345, 0)
-	Build.node(ctx, "fishing_meadows", -470, 352)
-	-- A second fishing pond on the bandits' road (S19)
-	Build.lake(ctx, -60, 560, 34, 6)
-	Build.node(ctx, "fishing_meadows", -60, 530)
-
-	-- Hills away from roads
-	for _, h in
-		{
-			{ -650, -450, 60, 18 },
-			{ -300, 620, 70, 14 },
-			{ 200, 620, 80, 20 },
-			{ -560, 250, 40, 10 },
-			{ 300, -700, 60, 16 },
-		}
-	do
-		Build.hill(ctx, h[1], h[2], h[3], h[4], Enum.Material.Grass)
+	ctx.height = MeadowsTerrain.height
+	ctx.wet = function(x: number, z: number): boolean
+		return MeadowsTerrain.isWater(x, z) or MeadowsTerrain.streamDistance(x, z) < 5
 	end
 
-	-- Farm by the fields
-	Prefabs.house(
-		ctx,
-		-640,
-		-170,
-		{ w = 20, d = 16, h = 10, wall = "#B89B5A", roof = "#7A4A2A", rot = 0, name = "Farmhouse" }
-	)
-	Prefabs.house(
-		ctx,
-		-600,
-		-205,
-		{ w = 14, d = 12, h = 8, wall = "#8A6B4A", roof = "#5A3A2A", rot = 90, name = "Barn" }
-	)
-	Prefabs.palisade(ctx, -700, -120, -540, -120)
-
-	-- Fields: flowers, a few trees
-	Prefabs.scatter(ctx, 30, -780, -350, -320, 350, function(x, z)
-		Prefabs.flowers(ctx, x, z, if ctx.rng:chance(0.5) then "#F2E8A0" else "#E8A0C9")
-	end, { { -470, 450, 110 } }, function(_x, z)
-		return math.abs(z) > 14
-	end)
-	Prefabs.scatter(ctx, 25, -780, -780, -320, 780, function(x, z)
-		Prefabs.tree(ctx, x, z, if ctx.rng:chance(0.3) then "birch" else "oak")
-	end, { { -470, 450, 110 }, { -640, -180, 50 }, { -700, 0, 40 } }, function(_x, z)
-		return math.abs(z) > 20
-	end)
-
-	-- Forest (north)
-	Prefabs.scatter(ctx, 170, -320, -790, 220, -60, function(x, z)
-		Prefabs.tree(ctx, x, z, if ctx.rng:chance(0.4) then "pine" else "oak", 1.1)
-	end, { { -150, -380, 40 }, { 80, -560, 40 } }, function(x, z)
-		-- keep the forest path open
-		local t = math.clamp((z + 260) / -260, 0, 1)
-		local px = -80 + 140 * t
-		return math.abs(x - px) > 16 or z > -260
-	end)
-	Prefabs.scatter(ctx, 40, -320, -790, 220, -60, function(x, z)
-		Prefabs.bush(ctx, x, z)
-	end)
-	Prefabs.ruins(ctx, -150, -380)
-
-	-- Trade road: bandit camp
-	for _, t in { { 260, 420 }, { 300, 450 }, { 340, 420 }, { 280, 470 } } do
-		Prefabs.tent(ctx, t[1], t[2], "#6B4A2B")
+	-- Shells of every Build, grouped by tag (home, camp, trees, bridge, ...).
+	t0 = os.clock()
+	local root = Instance.new("Folder")
+	root.Name = "Meadows"
+	root.Parent = ctx.folder
+	local folders: { [string]: Folder } = {}
+	local function folderFor(tag: string): Folder
+		local folder = folders[tag]
+		if not folder then
+			local created = Instance.new("Folder")
+			created.Name = tag
+			created.Parent = root
+			folders[tag] = created
+			folder = created
+		end
+		return folder :: Folder
 	end
-	Prefabs.campfire(ctx, 300, 425)
-	Prefabs.palisade(ctx, 230, 400, 230, 500)
-	Prefabs.palisade(ctx, 230, 500, 370, 500)
-
-	-- Goblin camp (east)
-	Prefabs.palisade(ctx, 520, -520, 760, -520)
-	Prefabs.palisade(ctx, 760, -520, 760, -260)
-	Prefabs.palisade(ctx, 520, -260, 620, -260)
-	for _, t in { { 600, -460 }, { 660, -420 }, { 700, -340 }, { 620, -350 }, { 700, -470 } } do
-		Prefabs.tent(ctx, t[1], t[2], "#4F6B2E")
+	local builds = MeadowsGen.all()
+	local shell = 0
+	for _, build in builds do
+		local result = BlueprintBuild.build(build :: any, ctx.origin, { shell = true }, folderFor(build.tag))
+		shell += result.parts
 	end
-	Prefabs.campfire(ctx, 650, -390)
-	Prefabs.scatter(ctx, 30, 400, -700, 790, -150, function(x, z)
-		Prefabs.rock(ctx, x, z)
-	end, { { 640, -390, 140 } })
+	ctx.parts += shell
+	for _, tree in MeadowsGen.trees() do
+		table.insert(ctx.trees, { tree.x, tree.z })
+	end
+	stats.shellMs = (os.clock() - t0) * 1000
+	stats.builds = #builds
+	log:info("shell: %d builds, %d parts in %.2f s", #builds, shell, os.clock() - t0)
 
-	-- Scattered rocks and bushes
-	Prefabs.scatter(ctx, 40, -790, -790, 790, 790, function(x, z)
-		Prefabs.rock(ctx, x, z, 0.8)
-	end, { { -470, 450, 110 }, { 300, 440, 90 }, { 640, -390, 150 } })
-	Prefabs.scatter(ctx, 50, -100, 0, 790, 790, function(x, z)
-		Prefabs.tree(ctx, x, z, "oak")
-	end, { { 300, 440, 90 }, { 700, 340, 40 } }, function(x, z)
-		return math.abs(z - (80 + (x + 120) * 0.75)) > 26 or x > 140
-	end)
-
-	-- Gathering (S19: 22 veins, 27 herb bushes)
-	local clear = Build.clearOf(AREAS)
-	Build.scatterNodes(ctx, "vein_copper", 12, { -760, -760, 0, 760 }, nil, clear)
-	Build.scatterNodes(ctx, "vein_iron", 10, { 0, -760, 760, 760 }, nil, clear)
-	Build.scatterNodes(ctx, "bush_meadowsweet", 12, { -760, -400, -200, 400 }, nil, clear)
-	Build.scatterNodes(ctx, "bush_nightshade", 9, { -320, -760, 400, -60 }, nil, clear)
-	Build.scatterNodes(ctx, "bush_moonpetal", 6, { -760, 360, 400, 760 }, nil, clear)
-
-	-- Portals and the three caves (S19)
+	-- Portals, cave mouths, signposts and lanterns along the roads; the map's name sign by the gate.
 	Prefabs.portalFrom(ctx, "meadows_city")
 	Prefabs.portalFrom(ctx, "meadows_duskwood")
 	Prefabs.caveEntrances(ctx, AREAS)
-	Prefabs.areaFeatures(ctx, AREAS) -- signposts, landmarks, lanterns (S20)
-	Prefabs.extraDecor(ctx, AREAS, { "oak", "birch", "pine", "willow" }, { { -620, -140 }, { 140, 330 } })
+	Prefabs.areaFeatures(ctx, AREAS)
+	local gate = assert(AREAS.sites, "meadows sites").gate
+	Prefabs.signpost(ctx, gate.x + 8, gate.z - 13, 90, "map.meadows.name", ctx.map.minLevel, ctx.map.maxLevel)
 
-	-- Zones (smallest wins): whole map, then the sub-zones
-	Build.zone(ctx, "yellow", "zone.meadows.fields", -hx, -hz, hx, hz)
+	-- Gathering nodes by the areas' character (fishing spots, herbs, ores).
+	local nodes = MeadowsGen.nodes()
+	for _, node in nodes do
+		Build.node(ctx, node.kind, node.x, node.z)
+	end
+	stats.nodes = #nodes
+
+	-- Quest objects for S27 (invisible, tagged QuestAnchor).
+	for _, anchor in (AREAS.questAnchors or {}) :: { Areas.QuestAnchor } do
+		Build.questAnchor(ctx, anchor.id, anchor.x, anchor.z, anchor.y)
+	end
+
+	-- Zones (smallest wins): whole map, then the sub-zones.
+	local hz = ctx.map.size.z / 2
+	Build.zone(ctx, "yellow", "zone.meadows.fields", -half, -hz, half, hz)
 	Build.zone(ctx, "yellow", "zone.meadows.forest", -330, -hz, 230, -60)
-	Build.zone(ctx, "yellow", "zone.meadows.road", -100, 60, hx, hz)
-	Build.zone(ctx, "yellow", "zone.meadows.goblins", 400, -hz, hx, -120)
-	Build.zone(ctx, "yellow", "zone.meadows.lake", -580, 340, -360, 560)
+	Build.zone(ctx, "yellow", "zone.meadows.road", -100, 60, half, hz)
+	Build.zone(ctx, "yellow", "zone.meadows.goblins", 400, -hz, half, -120)
+	Build.zone(ctx, "yellow", "zone.meadows.lake", -720, 380, -330, 760)
 
 	Build.spawnPoint(ctx, -700, 30, 0, 0)
-	Build.spawnPoint(ctx, -150, -300, 0, 0)
+	Build.spawnPoint(ctx, -60, -250, 0, 0)
 	Build.spawnPoint(ctx, 120, 300, 300, 400)
-	Build.spawnPoint(ctx, 470, -180, 640, -390)
-	Build.spawnPoint(ctx, 660, 380, 745, 330)
+	Build.spawnPoint(ctx, 395, -150, 560, -120)
+	Build.spawnPoint(ctx, 680, 322, 745, 330)
+
+	sketch(ctx)
+
+	stats.parts = ctx.parts
+	stats.ms = (os.clock() - started) * 1000
+	log:info(
+		"parts=%d ms=%d (terrain %d ms, shell %d ms, %d nodes)",
+		ctx.parts,
+		stats.ms,
+		stats.terrainMs,
+		stats.shellMs,
+		stats.nodes
+	)
 end

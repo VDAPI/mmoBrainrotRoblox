@@ -4,6 +4,8 @@
 --     tracks) tween to the map's settings from Data/Maps; on maps with `dayNight` (S21: the city) the clock
 --     runs from the shared server time (Logic/DayCycle, offset from the Workspace attribute "DayOffset" set by
 --     /daytime) and the lighting blends between the day and night presets once a second,
+--   * mood (S26): AmbienceController hands over the current area's light modulation (Data/Ambience), applied on
+--     top of the map's light and the day and night blend, re-applied ~10 times a second while it changes,
 --   * loading screen on MapTransition (map name, levels, zone, a random tip), faded in and out,
 --   * portals (tag "Portal"): nameplate with the target map and levels, "Travel [E]" prompt; entering a red
 --     zone or a map above your level asks for confirmation first.
@@ -103,6 +105,41 @@ local function environment(map: Maps.MapDef): ({ [string]: any }, { [string]: an
 	}
 end
 
+-- Light modulation of the current area (S26, AmbienceController): fog distance / colour, tint, saturation,
+-- brightness, atmosphere haze and density. nil = none.
+export type Modulation = {
+	fogScale: number,
+	fogColor: Color3,
+	fogMix: number,
+	tint: Color3,
+	tintMix: number,
+	saturation: number,
+	brightness: number,
+	haze: number,
+	density: number,
+}
+local modulation: Modulation? = nil
+local modulationDirty = false
+
+function WorldController.SetModulation(mod: Modulation?)
+	modulation = mod
+	modulationDirty = true
+end
+
+local function modulate(lighting: { [string]: any }, air: { [string]: any }, grading: { [string]: any })
+	local m = modulation
+	if not m then
+		return
+	end
+	lighting.FogEnd *= m.fogScale
+	lighting.FogColor = (lighting.FogColor :: Color3):Lerp(m.fogColor, m.fogMix)
+	lighting.Brightness *= m.brightness
+	air.Haze = math.clamp(air.Haze + m.haze, 0, 10)
+	air.Density = math.clamp(air.Density + m.density, 0, 1)
+	grading.TintColor = (grading.TintColor :: Color3):Lerp(m.tint, m.tintMix)
+	grading.Saturation = math.clamp(grading.Saturation + m.saturation, -1, 1)
+end
+
 -- The day/night loop leaves the lighting alone while the map-entry tween runs.
 local tweenUntil = 0
 
@@ -114,6 +151,7 @@ local function applyEnvironment(mapId: string)
 	appliedMap = mapId
 	local info = TweenInfo.new(1.5, Enum.EasingStyle.Sine)
 	local lightingProps, atmosphereProps, gradeProps = environment(map)
+	modulate(lightingProps, atmosphereProps, gradeProps)
 	TweenService:Create(Lighting, info, lightingProps):Play()
 	TweenService:Create(atmosphere, info, atmosphereProps):Play()
 	TweenService:Create(grade, info, gradeProps):Play()
@@ -533,19 +571,34 @@ function WorldController.Start()
 		end
 	end)
 
-	-- Day and night (S21): once a second on maps with the cycle.
+	-- Day and night (S21): once a second on maps with the cycle; S26: up to 10 times a second while the area mood
+	-- changes.
 	local accumulator = 0
+	local sinceMod = 0
 	RunService.Heartbeat:Connect(function(dt: number)
 		accumulator += dt
-		if accumulator < 1 then
+		sinceMod += dt
+		local cycle = accumulator >= 1
+		local mood = modulationDirty and sinceMod >= 0.1
+		if not cycle and not mood then
 			return
 		end
-		accumulator = 0
 		local map = Maps.get(appliedMap)
-		if not map or not map.dayNight or os.clock() < tweenUntil then
+		if not map or os.clock() < tweenUntil then
 			return
+		end
+		if cycle then
+			accumulator = 0
+		end
+		if not mood and not map.dayNight then
+			return
+		end
+		if mood then
+			sinceMod = 0
+			modulationDirty = false
 		end
 		local lightingProps, atmosphereProps, gradeProps = environment(map)
+		modulate(lightingProps, atmosphereProps, gradeProps)
 		for key, value in lightingProps do
 			(Lighting :: any)[key] = value
 		end

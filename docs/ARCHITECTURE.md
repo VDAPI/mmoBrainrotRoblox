@@ -218,6 +218,17 @@ type CharacterData = {
 - Dzień i noc (S21): `MapDef.dayNight` + `nightLighting`; zegar liczy klient z `workspace:GetServerTimeNow()` i atrybutu
   `Workspace.DayOffset` (`/daytime`) przez `Logic/DayCycle` (noc = `Config.DayNightShare` doby); `WorldController`
   przenika oświetlenie co 1 s i wystawia `TimeOfDay()` / `HasDayNight()`.
+- Szepczące Łąki (S26): teren z `Logic/MeadowsTerrain` (dane kształtu `Data/Terrain/meadows`, drogi / woda / budowle
+  `Data/Areas/meadows`; wspólne warstwy `Logic/TerrainLayers`, zapis `World/TerrainWriter`), budowle, obozy, mosty,
+  skały i drzewa z czystego `Logic/MeadowsGen/*` (Blueprinty: serwer „shell” w `World/Layouts/meadows`, klient
+  „detail”/„fine” w `TownDetailController`, który ma generator na mapę). `Logic/MapTerrain` to rejestr wysokości map z
+  funkcją terenu (miasto, Łąki): `AreaSpawns` (grupy na suchym, łagodnym gruncie, y = teren), `AreaArrival`,
+  `GatherService`, `NpcService`, `WorldService.GroundCFrame` / `ResolveLocation`, `Build.groundY` (layout bez
+  raycastów). Kotwice questów: części z tagiem `QuestAnchor` (atrybuty `AnchorId`, `MapId`). Klient:
+  `DecorController` (motyw z `decor` obszaru), `MeadowsLifeController` (pogoda wokół gracza, zwierzęta, ptaki),
+  `AmbienceController` + `Data/Ambience` (nastrój obszaru: modulacja światła w `WorldController.SetModulation`, pętle
+  dźwięków przez `VaelthornAmbientGroup`). Podglądy bez Studio: `tools/meadowsdump.luau` + `meadowsmap.py`,
+  `tools/meadowsview.luau` + `meadowsview.py`.
 
 ## 9. UI (Fusion 0.3)
 
@@ -312,6 +323,9 @@ type CharacterData = {
 | `/town` | world | <info|lod|tp> [value] | miasto startowe |
 | `/portalpick` | world | <map:map> | okno wyboru expowiska bez portalu |
 | `/arrive` | world | <map:map> <area:area> | teleport na punkt przybycia expowiska |
+| `/tparea` | world | <target> | teleport do obszaru, miejsca NPC (`npc:farmer`), kotwicy questu lub budowli (S26) |
+| `/ambience` | world | <mood> | wymuś nastrój obszaru u siebie (`off`, `auto`) (S26) |
+| `/terrainrebuild` | world | <meadows|city> | przepisz teren mapy bez restartu ⚠ (S26) |
 | `/nav` | world | <target> [z] | cel prowadzenia: id NPC, id mapy, „x z” na tej mapie albo `clear` (S25) |
 | `/navdebug` | world |  | surowe punkty ścieżki na czerwono i liczba przeliczeń/s pod belką (S25) |
 | `/marks` | world | <list\|clear> | własne znaczniki postaci (S25) ⚠ clear |
@@ -355,6 +369,7 @@ type CharacterData = {
 | `/guild` | guild | <info|treasury|skills|bots|disband> [value] | /guild info | treasury n | skills max | bots n | disband ⚠ disband |
 | `/perf` | perf |  | /perf |
 | `/adminlog` | perf | [n] | ostatnie wywołania komend admina |
+| `/meadowsstats` | perf |  | części serwera, czasy budowy, budowle, drzewa, węzły i grupy Szepczących Łąk (S26) |
 | `/help` | data |  | lista komend admina |
 | `/wipe` | data | [confirm] | usuń całe konto (wymaga /wipe confirm) ⚠ |
 | `/resetcodes` | data |  | kody nagród znów do użycia na tym koncie |

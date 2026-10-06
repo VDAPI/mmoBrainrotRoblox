@@ -46,6 +46,8 @@ local MATERIAL_COLORS: { [Enum.Material]: string } = {
 	[Enum.Material.CrackedLava] = "#D6542A",
 	-- S21: light warm stone of the city market and temple square (no other map uses it).
 	[Enum.Material.Limestone] = "#B9AE96",
+	-- S26: gravel of the Meadows' quarry terraces and stream beds (no other map uses it).
+	[Enum.Material.Pebble] = "#8A847A",
 }
 
 local function layoutModule(mapId: string): ModuleScript?

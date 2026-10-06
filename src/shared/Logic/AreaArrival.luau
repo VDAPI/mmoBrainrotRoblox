@@ -5,6 +5,7 @@
 -- deterministic; the results are stored in Data/Areas (`arrive`) and checked by tests/areaarrival.spec.
 
 local AreaSpawns = require("./AreaSpawns")
+local MapTerrain = require("./MapTerrain")
 local AreaTypes = require("../Data/Areas/Types")
 
 local AreaArrival = {}
@@ -50,6 +51,12 @@ function AreaArrival.valid(
 		if (x - cave.x) ^ 2 + (z - cave.z) ^ 2 < AreaArrival.CAVE_CLEARANCE ^ 2 then
 			return false
 		end
+	end
+	-- S26: never in a stream or on a bridge over one, never at a cliff
+	if
+		AreaSpawns.nearStream(def.streams, x, z, AreaArrival.WATER_CLEARANCE) or not MapTerrain.walkable(def.map, x, z)
+	then
+		return false
 	end
 	local g = AreaArrival.GROUP_CLEARANCE
 	for _, spawner in spawners do
@@ -138,6 +145,10 @@ function AreaArrival.compute(
 				local score = if near
 					then math.abs(math.sqrt((p[1] - near.x) ^ 2 + (p[2] - near.z) ^ 2) - AreaArrival.BESIDE_SPAWN)
 					else math.abs(depth - AreaArrival.DEPTH_BEST)
+				-- S26: of two equally deep road entries, the one nearer to the map's spawn (the way in from the city)
+				if spawn and not near then
+					score += 0.002 * math.sqrt((p[1] - spawn.x) ^ 2 + (p[2] - spawn.z) ^ 2)
+				end
 				if score < bestScore then
 					bestScore = score
 					best = { x = math.floor(p[1] + 0.5), z = math.floor(p[2] + 0.5) }

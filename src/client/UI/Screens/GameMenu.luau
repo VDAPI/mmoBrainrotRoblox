@@ -175,7 +175,7 @@ local function codeRow(scope: Scope): Instance
 		end)
 	end
 	return scope:New("Frame")({
-		LayoutOrder = 14,
+		LayoutOrder = 15,
 		BackgroundTransparency = 1,
 		Size = UDim2.new(1, 0, 0, 46),
 		[Children] = {
@@ -374,10 +374,11 @@ local function GameMenu(scope: Scope, close: () -> ()): Fusion.Child
 			),
 			row(scope, 4, "menu.volume", stepper(scope, "volume", 0.8, 0.1, 0, 1)),
 			row(scope, 5, "menu.musicVolume", stepper(scope, "musicVolume", 0.6, 0.1, 0, 1)),
-			row(scope, 6, "menu.cameraSens", stepper(scope, "cameraSens", 1, 0.1, 0.2, 3)),
+			row(scope, 6, "menu.ambientVolume", stepper(scope, "ambientVolume", 0.7, 0.1, 0, 1)),
+			row(scope, 7, "menu.cameraSens", stepper(scope, "cameraSens", 1, 0.1, 0.2, 3)),
 			row(
 				scope,
-				7,
+				8,
 				"menu.quality",
 				Button(scope, {
 					AnchorPoint = Vector2.new(1, 0),
@@ -391,19 +392,19 @@ local function GameMenu(scope: Scope, close: () -> ()): Fusion.Child
 					end,
 				})
 			),
-			row(scope, 8, "menu.damageNumbers", toggle(scope, "dmgNumbers", true)),
-			row(scope, 9, "menu.minimapRotate", toggle(scope, "minimapRotate", false)),
-			row(scope, 10, "menu.quickCast", toggle(scope, "quickCast", false)),
-			row(scope, 11, "menu.bindConfirm", toggle(scope, "bindConfirm", true)),
-			row(scope, 12, "menu.sellConfirm", toggle(scope, "sellConfirm", true)),
-			row(scope, 13, "menu.autoTarget", toggle(scope, "autoTarget", true)),
-			row(scope, 13, "menu.groupRings", toggle(scope, "groupRings", true)),
-			row(scope, 13, "menu.mapCloseOnWalk", toggle(scope, "mapCloseOnWalk", true)),
-			row(scope, 13, "menu.betterItem", toggle(scope, "betterItem", true)),
-			row(scope, 13, "menu.lootHideBelow", cycle(scope, "lootHideBelow", 0, { 0, 2, 3, 4 }, rarityLabel)),
+			row(scope, 9, "menu.damageNumbers", toggle(scope, "dmgNumbers", true)),
+			row(scope, 10, "menu.minimapRotate", toggle(scope, "minimapRotate", false)),
+			row(scope, 11, "menu.quickCast", toggle(scope, "quickCast", false)),
+			row(scope, 12, "menu.bindConfirm", toggle(scope, "bindConfirm", true)),
+			row(scope, 13, "menu.sellConfirm", toggle(scope, "sellConfirm", true)),
+			row(scope, 14, "menu.autoTarget", toggle(scope, "autoTarget", true)),
+			row(scope, 14, "menu.groupRings", toggle(scope, "groupRings", true)),
+			row(scope, 14, "menu.mapCloseOnWalk", toggle(scope, "mapCloseOnWalk", true)),
+			row(scope, 14, "menu.betterItem", toggle(scope, "betterItem", true)),
+			row(scope, 14, "menu.lootHideBelow", cycle(scope, "lootHideBelow", 0, { 0, 2, 3, 4 }, rarityLabel)),
 			row(
 				scope,
-				13,
+				14,
 				"menu.lootAutoFrom",
 				cycle(scope, "lootAutoFrom", 0, { 0, 2, 3, 4, 5 }, function(use, value)
 					return if value == 0 then Text.get(use, "menu.all") else rarityLabel(use, value)
@@ -411,7 +412,7 @@ local function GameMenu(scope: Scope, close: () -> ()): Fusion.Child
 			),
 			row(
 				scope,
-				7,
+				8,
 				"menu.decor",
 				cycle(scope, "decor", "mid", { "low", "mid", "high" }, function(use, value)
 					return Text.get(use, `menu.decor.{value}`)
@@ -419,7 +420,7 @@ local function GameMenu(scope: Scope, close: () -> ()): Fusion.Child
 			),
 			codeRow(scope),
 			scope:New("TextLabel")({
-				LayoutOrder = 15,
+				LayoutOrder = 16,
 				Size = UDim2.new(1, 0, 0, 34),
 				BackgroundTransparency = 1,
 				Text = Text.T(scope, "menu.hotkeys"),
@@ -429,7 +430,7 @@ local function GameMenu(scope: Scope, close: () -> ()): Fusion.Child
 				TextXAlignment = Enum.TextXAlignment.Left,
 			}),
 			scope:New("Frame")({
-				LayoutOrder = 16,
+				LayoutOrder = 17,
 				Size = UDim2.fromScale(1, 0),
 				AutomaticSize = Enum.AutomaticSize.Y,
 				BackgroundTransparency = 1,
@@ -443,7 +444,7 @@ local function GameMenu(scope: Scope, close: () -> ()): Fusion.Child
 			}),
 			scope:New("TextLabel")({
 				Name = "MockWarning",
-				LayoutOrder = 17,
+				LayoutOrder = 18,
 				BackgroundTransparency = 1,
 				Size = UDim2.fromScale(1, 0),
 				AutomaticSize = Enum.AutomaticSize.Y,

@@ -4,6 +4,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
+local MapTerrain = require(ReplicatedStorage.Shared.Logic.MapTerrain)
 local TownTerrain = require(ReplicatedStorage.Shared.Logic.TownTerrain)
 local WorldBuilder = require(script.Parent.Parent.World.WorldBuilder)
 
@@ -62,6 +63,13 @@ function WorldService.ResolveLocation(mapId: string, x: number, y: number, z: nu
 			end
 			return WorldService.GetSpawnCFrame(mapId)
 		end
+		-- S26: on a reshaped map an old position may now be under a hill: stand on the ground there.
+		local lx, lz = x - map.offset.x, z - map.offset.z
+		local planned = MapTerrain.height(mapId, lx, lz)
+		if planned then
+			local ground = map.offset.y + planned
+			return CFrame.new(x, math.max(y, ground + 3), z)
+		end
 		return CFrame.new(position + Vector3.new(0, 3, 0))
 	end
 	return WorldService.GetSpawnCFrame(mapId)
@@ -82,7 +90,7 @@ end
 -- geometry) starting 16 studs up, under the roof. Outdoors (S21: the city's castle hill is at y 20 and the
 -- hills past its walls reach ~55): the terrain surface from high above first, then map geometry from 16 studs
 -- over that surface (bridges, floors), so tree crowns and roofs never catch the ray. In the city a miss falls
--- back to the plan's height (TownTerrain).
+-- back to the plan's height (TownTerrain; S26: every map with a height function, Logic/MapTerrain).
 function WorldService.GroundCFrame(mapId: string, x: number, z: number): CFrame
 	local map = Maps.get(mapId)
 	if not map then
@@ -97,10 +105,7 @@ function WorldService.GroundCFrame(mapId: string, x: number, z: number): CFrame
 		y = if hit then hit.Position.Y else origin.Y
 	else
 		local ground = raycastDown(origin + Vector3.new(x, 200, z), 400, { workspace.Terrain })
-		y = if ground
-			then ground.Position.Y
-			elseif mapId == "city" then origin.Y + TownTerrain.heightAt(x, z)
-			else origin.Y
+		y = if ground then ground.Position.Y else origin.Y + (MapTerrain.height(mapId, x, z) or 0)
 		local top = raycastDown(Vector3.new(origin.X + x, y + 16, origin.Z + z), 40, everything)
 		if top then
 			y = top.Position.Y

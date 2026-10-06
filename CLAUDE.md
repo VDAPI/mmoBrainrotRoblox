@@ -48,6 +48,11 @@ MMORPG na Roblox (Margonem w 3D). Luau + Rojo + Wally + Fusion 0.3 + ProfileStor
 - **Karta na mapie świata** (S25): treść w `UI/Screens/WorldMap/Cards.luau` (albo `CreatureCards`) jako spec
   `DetailCard` (sekcje, akcje); ikona w `WorldMap/Canvas.luau`. Prowadzenie: `NavController.Guide/Walk` z celem
   `UI/NavTarget.Target`.
+- **Teren / budowla / nastrój na Łąkach** (S26): kształt terenu w `Data/Terrain/meadows` (czysta funkcja
+  `Logic/MeadowsTerrain`), drogi, woda, `sites`, `npcSpots`, `questAnchors` w `Data/Areas/meadows`; budowla to builder w
+  `Logic/MeadowsGen/<moduł>` (`Kit.build`, LOD `shell`/`detail`/`fine`, kształt do mapy przez `Kit.rect`); nastrój i
+  dźwięki obszaru w `Data/Ambience`. Po zmianie dróg/wody/terenu: `python tools/arrivals_apply.py`. Podgląd bez Studio:
+  `lune run tools/meadowsview.luau out.json x1 z1 x2 z2` + `python tools/meadowsview.py out.json out.png --eye … --look …`.
 
 ## Typy Fusion
 - luau-lsp nie lubi mieszanych tablic w `[Children]`: tablice instancji, `if ... else nil`, `ForValues`

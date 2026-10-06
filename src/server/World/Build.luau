@@ -36,6 +36,10 @@ export type Context = {
 	nodes: { NodePlacement },
 	parts: number,
 	trees: { { number } }, -- tree positions; the published sketch merges them into forest patches (S20)
+	-- S26: maps with a height-function terrain (Logic/MapTerrain) read the ground from it instead of raycasts and
+	-- keep props out of the water; their terrain already has the flats under portals and cave mouths.
+	height: ((x: number, z: number) -> number)?,
+	wet: ((x: number, z: number) -> boolean)?,
 }
 
 local terrain = Workspace.Terrain
@@ -45,8 +49,11 @@ function Build.at(ctx: Context, x: number, y: number, z: number): Vector3
 	return ctx.origin + Vector3.new(x, y, z)
 end
 
--- Ground height (map-relative y) at x/z, from the terrain surface.
+-- Ground height (map-relative y) at x/z, from the terrain surface (S26: or the map's height function).
 function Build.groundY(ctx: Context, x: number, z: number): number
+	if ctx.height then
+		return ctx.height(x, z)
+	end
 	local params = RaycastParams.new()
 	params.FilterType = Enum.RaycastFilterType.Include
 	params.FilterDescendantsInstances = { terrain }
@@ -282,6 +289,28 @@ function Build.spawnPoint(ctx: Context, x: number, z: number, lookX: number?, lo
 	table.insert(ctx.sketch.icons, { t = "spawn", x = x, z = z })
 end
 
+-- Invisible quest object (S26 -> S27): tag "QuestAnchor", attributes AnchorId and MapId, `y` studs over the ground.
+function Build.questAnchor(ctx: Context, id: string, x: number, z: number, y: number?)
+	local p = Instance.new("Part")
+	p.Name = `QuestAnchor_{id}`
+	p.Anchored = true
+	p.CanCollide = false
+	p.CanQuery = false
+	p.CanTouch = false
+	p.Transparency = 1
+	p.Size = Vector3.new(2, 2, 2)
+	p.CFrame = CFrame.new(Build.ground(ctx, x, z) + Vector3.new(0, y or 2, 0))
+	p:SetAttribute("AnchorId", id)
+	p:SetAttribute("MapId", ctx.map.id)
+	CollectionService:AddTag(p, "QuestAnchor")
+	p.Parent = ctx.folder
+end
+
+-- Map sketch line only (S26: roads and streams of a height-function map are part of its terrain, not painted).
+function Build.sketchLine(ctx: Context, points: { number }, width: number, kind: string)
+	table.insert(ctx.sketch.shapes, { t = "line", p = points, w = width, c = kind })
+end
+
 function Build.node(ctx: Context, kind: string, x: number, z: number)
 	table.insert(ctx.nodes, { kind = kind, x = x, z = z })
 end
@@ -322,6 +351,9 @@ end
 -- Flattens the ground around a point: clears terrain above y = 0 and fills a solid slab below (portals,
 -- cave mouths), so nothing stands on a slope.
 function Build.flatten(ctx: Context, x: number, z: number, radius: number, material: Enum.Material?)
+	if ctx.height then
+		return -- S26: the height function has its own flats (Data/Terrain)
+	end
 	terrain:FillCylinder(CFrame.new(Build.at(ctx, x, 30, z)), 60, radius, Enum.Material.Air)
 	terrain:FillCylinder(CFrame.new(Build.at(ctx, x, -4, z)), 8, radius, material or Enum.Material.Ground)
 end

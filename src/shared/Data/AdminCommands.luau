@@ -159,6 +159,10 @@ cmd("world", "navdebug", {})
 cmd("world", "marks", { enum("action", { "list", "clear" }) }, { dangerActions = { "clear" } })
 cmd("world", "goto", { ref("player", "player") })
 cmd("world", "bring", { ref("player", "player") })
+-- S26: shaped terrains (Admin/Terrain)
+cmd("world", "tparea", { str("target") })
+cmd("world", "ambience", { str("mood") })
+cmd("world", "terrainrebuild", { enum("map", { "meadows", "city" }) }, { danger = true })
 
 -- Monsters
 cmd("monsters", "spawn", { ref("monster", "monster"), VARIANT, int("level", 1, MAX_LEVEL, true) })
@@ -213,6 +217,7 @@ cmd(
 -- Performance and logs
 cmd("perf", "perf", {})
 cmd("perf", "adminlog", { int("n", 1, 200, true) })
+cmd("perf", "meadowsstats", {})
 
 -- Data
 cmd("data", "help", {})

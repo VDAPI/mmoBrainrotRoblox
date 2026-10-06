@@ -14,6 +14,7 @@ local Workspace = game:GetService("Workspace")
 
 local Shared = ReplicatedStorage.Shared
 
+local MapTerrain = require(Shared.Logic.MapTerrain)
 local GatherNodes = require(Shared.Data.GatherNodes)
 local ItemRoll = require(Shared.Logic.ItemRoll)
 local Maps = require(Shared.Data.Maps)
@@ -171,8 +172,12 @@ local function buildModel(kind: GatherNodes.NodeKind, at: Vector3): Model
 	return model
 end
 
--- Ground below a map point (terrain and map geometry; starts low so cave roofs are not hit).
-local function groundAt(position: Vector3): Vector3
+-- Ground below a map point (terrain and map geometry; starts low so cave roofs are not hit). S26: on maps with a
+-- height function the ray starts over the planned ground (the Meadows' plateau is 25 studs high).
+local function groundAt(position: Vector3, planned: number?): Vector3
+	if planned then
+		position = Vector3.new(position.X, position.Y + planned, position.Z)
+	end
 	local params = RaycastParams.new()
 	params.FilterType = Enum.RaycastFilterType.Include
 	params.FilterDescendantsInstances = { Workspace.Terrain }
@@ -191,7 +196,7 @@ function GatherService.Spawn(kindId: string, mapId: string, x: number, z: number
 	if not folder then
 		return nil
 	end
-	local at = groundAt(Vector3.new(map.offset.x + x, map.offset.y, map.offset.z + z))
+	local at = groundAt(Vector3.new(map.offset.x + x, map.offset.y, map.offset.z + z), MapTerrain.height(mapId, x, z))
 	local uid = HttpService:GenerateGUID(false)
 	local model = buildModel(kind, at)
 	model.ModelStreamingMode = Enum.ModelStreamingMode.Atomic

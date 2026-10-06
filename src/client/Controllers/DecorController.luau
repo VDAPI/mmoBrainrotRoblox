@@ -4,6 +4,11 @@
 -- (Config.DecorChunk studs) from the map id + chunk seed, so every client sees the same; only chunks within
 -- the "World detail" radius exist. Parts come from a pool: unloading a chunk returns them instead of
 -- destroying. The server never creates or replicates any of this.
+-- S26: on maps whose areas name a decoration theme (Data/Areas `decor`) every item takes the theme of the area
+-- under a randomly shifted point, so neighbouring themes mix over ~40 studs: meadow (flowers, tall grass), hills
+-- (pebbles, dry tufts, bones, wool), marsh (reeds, cattails, lily pads on the water, mud), forest (ferns,
+-- mushrooms, leaves, twigs), field (dry ears, stones), road, quarry (gravel, chips, planks), goblin (bones, hide
+-- scraps) and ravine (moss, stones). On the Meadows shores come from the height function (Logic/MeadowsTerrain).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -14,6 +19,7 @@ local AreaSpawns = require(ReplicatedStorage.Shared.Logic.AreaSpawns)
 local Areas = require(ReplicatedStorage.Shared.Data.Areas)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
+local MeadowsTerrain = require(ReplicatedStorage.Shared.Logic.MeadowsTerrain)
 local State = require(script.Parent.Parent.UI.State)
 local TownTerrain = require(ReplicatedStorage.Shared.Logic.TownTerrain)
 
@@ -30,6 +36,7 @@ type Template = {
 	lift: number, -- height above the ground of the part centre (negative: hanging from a ceiling)
 	tilt: boolean?, -- random tilt (leaves, ferns)
 	water: boolean?, -- only near water
+	onWater: boolean?, -- S26: floats on the water surface (lily pads)
 	ceiling: boolean?, -- hangs from the ceiling (caves)
 }
 
@@ -137,6 +144,121 @@ local T: { [string]: Template } = {
 		lift = 0.6,
 		tilt = true,
 	},
+	-- S26: area themes
+	flowerW = {
+		size = Vector3.one * 0.55,
+		color = rgb("#EEEADA"),
+		material = Enum.Material.SmoothPlastic,
+		shape = Enum.PartType.Ball,
+		lift = 0.45,
+	},
+	tallGrass = {
+		size = Vector3.new(0.6, 2.2, 0.6),
+		color = rgb("#6E9A44"),
+		material = Enum.Material.Grass,
+		lift = 0.9,
+		tilt = true,
+	},
+	lily = {
+		size = Vector3.new(1.7, 0.08, 1.5),
+		color = rgb("#4E7A36"),
+		material = Enum.Material.SmoothPlastic,
+		lift = 0.05,
+		onWater = true,
+	},
+	lilyFlower = {
+		size = Vector3.one * 0.5,
+		color = rgb("#F2E6EE"),
+		material = Enum.Material.SmoothPlastic,
+		shape = Enum.PartType.Ball,
+		lift = 0.2,
+		onWater = true,
+	},
+	cattail = {
+		size = Vector3.new(0.25, 3.6, 0.25),
+		color = rgb("#6E7A3E"),
+		material = Enum.Material.Grass,
+		lift = 1.7,
+		water = true,
+		tilt = true,
+	},
+	mudClump = {
+		size = Vector3.new(1.4, 0.4, 1.1),
+		color = rgb("#3F3A2E"),
+		material = Enum.Material.Mud,
+		shape = Enum.PartType.Ball,
+		lift = 0.05,
+	},
+	dryEar = {
+		size = Vector3.new(0.3, 1.8, 0.3),
+		color = rgb("#B8A060"),
+		material = Enum.Material.Grass,
+		lift = 0.8,
+		tilt = true,
+	},
+	stone = {
+		size = Vector3.new(1.6, 0.9, 1.3),
+		color = rgb("#7A766E"),
+		material = Enum.Material.Slate,
+		lift = 0.25,
+		tilt = true,
+	},
+	gravel = {
+		size = Vector3.new(2.2, 0.25, 1.8),
+		color = rgb("#8E887C"),
+		material = Enum.Material.Pebble,
+		lift = 0.05,
+		tilt = true,
+	},
+	chip = {
+		size = Vector3.new(0.8, 0.5, 0.6),
+		color = rgb("#6E6A64"),
+		material = Enum.Material.Slate,
+		lift = 0.2,
+		tilt = true,
+	},
+	plank = {
+		size = Vector3.new(3, 0.2, 0.7),
+		color = rgb("#6B5038"),
+		material = Enum.Material.WoodPlanks,
+		lift = 0.1,
+		tilt = true,
+	},
+	hide = {
+		size = Vector3.new(1.6, 0.08, 1.2),
+		color = rgb("#7A5A3E"),
+		material = Enum.Material.Fabric,
+		lift = 0.05,
+		tilt = true,
+	},
+	moss = {
+		size = Vector3.new(2, 0.2, 1.6),
+		color = rgb("#4F6B35"),
+		material = Enum.Material.LeafyGrass,
+		shape = Enum.PartType.Ball,
+		lift = 0.05,
+	},
+	wool = {
+		size = Vector3.new(0.9, 0.5, 0.8),
+		color = rgb("#E2DCCC"),
+		material = Enum.Material.Fabric,
+		shape = Enum.PartType.Ball,
+		lift = 0.2,
+	},
+	twig = {
+		size = Vector3.new(2, 0.15, 0.15),
+		color = rgb("#4A3A2C"),
+		material = Enum.Material.Wood,
+		lift = 0.08,
+		tilt = true,
+	},
+	feather = {
+		size = Vector3.new(0.9, 0.05, 0.25),
+		color = rgb("#1A1A1E"),
+		material = Enum.Material.SmoothPlastic,
+		lift = 0.05,
+		tilt = true,
+	},
 	web = {
 		size = Vector3.new(3, 3, 0.05),
 		color = rgb("#E8E8F0"),
@@ -187,6 +309,87 @@ local BIOMES: { [string]: { count: number, mix: { { string | number } } } } = {
 		mix = { { "stalactite", 3 }, { "pebble", 3 }, { "bone", 4 }, { "web", 3 }, { "crystal", 1 } },
 	},
 }
+
+-- Area themes (S26, Data/Areas `decor`): items per chunk and the mix.
+local THEMES: { [string]: { count: number, mix: { { string | number } } } } = {
+	meadow = {
+		count = 44,
+		mix = {
+			{ "tuft", 8 },
+			{ "tallGrass", 5 },
+			{ "flowerY", 4 },
+			{ "flowerP", 4 },
+			{ "flowerB", 3 },
+			{ "flowerW", 3 },
+			{ "pebble", 1 },
+		},
+	},
+	hills = {
+		count = 34,
+		mix = {
+			{ "tuft", 6 },
+			{ "tuftDry", 4 },
+			{ "pebble", 5 },
+			{ "stone", 3 },
+			{ "bone", 1 },
+			{ "wool", 1 },
+			{ "flowerB", 1 },
+		},
+	},
+	marsh = {
+		count = 40,
+		mix = {
+			{ "reed", 8 },
+			{ "cattail", 5 },
+			{ "tuftDark", 5 },
+			{ "mudClump", 4 },
+			{ "lily", 7 },
+			{ "lilyFlower", 2 },
+			{ "twig", 1 },
+		},
+	},
+	forest = {
+		count = 40,
+		mix = {
+			{ "fern", 7 },
+			{ "mushroom", 4 },
+			{ "leaf", 6 },
+			{ "tuftDark", 5 },
+			{ "twig", 3 },
+			{ "moss", 2 },
+			{ "feather", 1 },
+		},
+	},
+	field = {
+		count = 36,
+		mix = { { "dryEar", 10 }, { "tuftDry", 6 }, { "stone", 2 }, { "pebble", 2 }, { "feather", 2 } },
+	},
+	road = {
+		count = 30,
+		mix = {
+			{ "tuft", 8 },
+			{ "tallGrass", 2 },
+			{ "flowerY", 2 },
+			{ "flowerP", 1 },
+			{ "pebble", 3 },
+			{ "tuftDry", 2 },
+		},
+	},
+	quarry = {
+		count = 28,
+		mix = { { "gravel", 7 }, { "chip", 6 }, { "pebble", 4 }, { "plank", 2 }, { "tuftDry", 2 } },
+	},
+	goblin = {
+		count = 28,
+		mix = { { "bone", 5 }, { "hide", 3 }, { "tuftDry", 4 }, { "twig", 3 }, { "pebble", 2 }, { "mudClump", 1 } },
+	},
+	ravine = {
+		count = 32,
+		mix = { { "moss", 6 }, { "stone", 4 }, { "fern", 3 }, { "pebble", 4 }, { "tuftDark", 3 }, { "reed", 2 } },
+	},
+}
+local THEME_MAX = 44
+local THEME_JITTER = 40
 
 -- Share of the city biome's items kept inside the walls (the streets are busy; outside it grows freely).
 local CITY_INSIDE_SHARE = 0.4
@@ -282,12 +485,46 @@ local function nearWater(lakes: { any }?, x: number, z: number): boolean
 	return false
 end
 
+-- Decoration theme at a point (S26): the `decor` of the area under the point shifted by up to THEME_JITTER studs,
+-- else (outside every area) the Meadows' surface theme, else nil (the map's biome).
+local function themeAt(map: Maps.MapDef, areas: any, x: number, z: number, rng: Random): string?
+	if not areas then
+		return nil
+	end
+	local jx = x + (rng:NextNumber() - 0.5) * 2 * THEME_JITTER
+	local jz = z + (rng:NextNumber() - 0.5) * 2 * THEME_JITTER
+	local area = Areas.areaAt(map.id, jx, jz)
+	if area and area.decor then
+		-- the toad mire is a marsh only around the water; its drier edges look like a meadow
+		if area.decor == "marsh" and map.id == "meadows" and MeadowsTerrain.marshWeight(x, z) < 0.35 then
+			return "meadow"
+		end
+		return area.decor
+	end
+	if map.id == "meadows" then
+		local theme = MeadowsTerrain.themeAt(x, z)
+		return if THEMES[theme] then theme elseif theme == "wet" then "meadow" else nil
+	end
+	return nil
+end
+
+-- Shore of a stream, a lake or a marsh pool on the Meadows (from the height function); other maps: lake circles.
+local function shore(map: Maps.MapDef, areas: any, x: number, z: number): boolean
+	if map.id == "meadows" then
+		local sd = MeadowsTerrain.streamDistance(x, z)
+		local ld = MeadowsTerrain.lakeDistance(x, z)
+		return (sd > -0.5 and sd < 5) or (ld > -1.5 and ld < 6) or MeadowsTerrain.marshWeight(x, z) > 0.55
+	end
+	return areas ~= nil and nearWater(areas.lakes, x, z)
+end
+
 local function buildChunk(map: Maps.MapDef, cx: number, cz: number): { BasePart }
 	local parts: { BasePart } = {}
 	local biome = BIOMES[map.biome]
 	if not biome then
 		return parts
 	end
+	local themed = Areas.byMap[map.id] ~= nil and Areas.byMap[map.id].areas[1].decor ~= nil
 	local rng = Random.new(seedOf(`{map.id}:{cx}:{cz}`))
 	local size = Config.DecorChunk
 	local areas = Areas.byMap[map.id]
@@ -295,11 +532,23 @@ local function buildChunk(map: Maps.MapDef, cx: number, cz: number): { BasePart 
 	local rooms = if cave then AreaSpawns.caveRooms(cave) else nil
 	local inCave = map.biome == "cave" or map.biome == "crypt"
 	local origin = Vector3.new(map.offset.x, map.offset.y, map.offset.z)
-	for _ = 1, biome.count do
-		local key = pick(biome.mix, rng)
-		local template = T[key]
+	for _ = 1, if themed then THEME_MAX else biome.count do
 		local x = cx * size + rng:NextNumber() * size
 		local z = cz * size + rng:NextNumber() * size
+		local mix = biome.mix
+		if themed then
+			local theme = THEMES[themeAt(map, areas, x, z, rng) or ""]
+			if theme then
+				if rng:NextNumber() * THEME_MAX > theme.count then
+					continue
+				end
+				mix = theme.mix
+			elseif rng:NextNumber() * THEME_MAX > biome.count then
+				continue
+			end
+		end
+		local key = pick(mix, rng)
+		local template = T[key]
 		if math.abs(x) > map.size.x / 2 - 4 or math.abs(z) > map.size.z / 2 - 4 then
 			continue
 		end
@@ -307,7 +556,7 @@ local function buildChunk(map: Maps.MapDef, cx: number, cz: number): { BasePart 
 			continue
 		end
 		if areas then
-			if template.water and not nearWater(areas.lakes, x, z) then
+			if template.water and not shore(map, areas, x, z) then
 				continue
 			end
 			if AreaSpawns.nearRoad(areas.roads, x, z, 1) then
@@ -323,7 +572,7 @@ local function buildChunk(map: Maps.MapDef, cx: number, cz: number): { BasePart 
 		end
 		local from = origin + Vector3.new(x, if inCave then 4 else 120, z)
 		local hit = Workspace:Raycast(from, Vector3.new(0, -200, 0), rayParams)
-		if not hit or hit.Material == Enum.Material.Water then
+		if not hit or (hit.Material == Enum.Material.Water) ~= (template.onWater == true) then
 			continue
 		end
 		if inCity and hit.Material ~= Enum.Material.Grass and hit.Material ~= Enum.Material.LeafyGrass then

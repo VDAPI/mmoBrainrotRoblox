@@ -474,6 +474,10 @@ local function forest(city: any, ground: Ground, out: { Build })
 	end
 end
 
+-- S26: the barn and the ruined tower are reused by the Whispering Meadows (Logic/MeadowsGen).
+Outside.barn = barn
+Outside.ruin = ruin
+
 function Outside.all(city: any, ground: Ground): { Build }
 	local out: { Build } = {}
 	local o2 = city.outside

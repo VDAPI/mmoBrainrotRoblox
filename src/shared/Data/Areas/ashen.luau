@@ -83,7 +83,7 @@ local data: Types.MapAreas = {
 			kinds = { "fireGolem", "fireImp" },
 			rect = { -260, -40, 330, 420 },
 			groups = 7,
-			arrive = { x = 324, z = 131 }, -- S22: portal / map stone arrival (Logic/AreaArrival)
+			arrive = { x = 314, z = -16 }, -- S22: portal / map stone arrival (Logic/AreaArrival)
 		},
 		{
 			id = "ashen_burntruins",

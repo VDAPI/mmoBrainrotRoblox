@@ -14,7 +14,7 @@ local Shared = ReplicatedStorage.Shared
 local Log = require(Shared.Util.Log)
 local Maps = require(Shared.Data.Maps)
 local Npcs = require(Shared.Data.Npcs)
-local TownTerrain = require(Shared.Logic.TownTerrain)
+local MapTerrain = require(Shared.Logic.MapTerrain)
 
 local log = Log.new("NpcService")
 
@@ -28,11 +28,12 @@ local TOLERANCE = 4
 local positions: { [string]: Vector3 } = {}
 
 -- Ground point under the NPC: the terrain surface (the world is built in WorldService.Init, before Start);
--- without a hit the plan's height in the city (TownTerrain), y = 0 elsewhere.
+-- without a hit the plan's height on maps with a height function (Logic/MapTerrain: the city, S26 the Meadows),
+-- y = 0 elsewhere.
 local function worldPosition(def: Npcs.NpcDef): Vector3
 	local map = Maps.get(def.map)
 	local origin = if map then Vector3.new(map.offset.x, map.offset.y, map.offset.z) else Vector3.zero
-	local planned = if def.map == "city" then TownTerrain.heightAt(def.position.x, def.position.z) else 0
+	local planned = MapTerrain.height(def.map, def.position.x, def.position.z) or 0
 	local params = RaycastParams.new()
 	params.FilterType = Enum.RaycastFilterType.Include
 	params.FilterDescendantsInstances = { Workspace.Terrain }

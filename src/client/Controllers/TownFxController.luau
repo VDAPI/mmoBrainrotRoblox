@@ -7,6 +7,8 @@
 --     (the mill wheel ~20°/s, the windmill sails ~25°/s; the sails are split between shell and fine models);
 --   * smoke: a slow grey smoke emitter on chimney tops; fire: flames, and flickering of the fire lights;
 --   * water: the fountain's small jets and a gentle shimmer;
+--   * waterfall (S26): streaks of falling water down the sheet and a shimmer; foam: mist rising from the pool and
+--     splashes; candle: nothing extra (its light flickers with the "fire" lights);
 --   * window / lamp: at night (Logic/DayCycle) ~60% of the windows glow warm (chosen by position) and lamps turn
 --     to Neon with their PointLights on; by day both go back to their own colour and material and lamp lights
 --     are off. Switching runs over several frames.
@@ -124,6 +126,68 @@ local function addWater(part: BasePart)
 	shimmers[part] = part.Transparency
 end
 
+local function addWaterfall(part: BasePart)
+	if part:FindFirstChild("TownFall") then
+		return
+	end
+	emitter(part, {
+		Name = "TownFall",
+		Color = ColorSequence.new(Color3.fromHex("#E8F4FA"), Color3.fromHex("#B8D8EA")),
+		Transparency = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 0.45),
+			NumberSequenceKeypoint.new(0.7, 0.6),
+			NumberSequenceKeypoint.new(1, 1),
+		}),
+		Size = NumberSequence.new(1.4, 2.6),
+		Lifetime = NumberRange.new(0.5, 0.9),
+		Rate = 34,
+		Speed = NumberRange.new(4, 7),
+		SpreadAngle = Vector2.new(6, 6),
+		Acceleration = Vector3.new(0, -60, 0),
+		LightInfluence = 1,
+		EmissionDirection = Enum.NormalId.Bottom,
+	})
+	shimmers[part] = part.Transparency
+end
+
+local function addFoam(part: BasePart)
+	if part:FindFirstChild("TownMist") then
+		return
+	end
+	emitter(part, {
+		Name = "TownMist",
+		Color = ColorSequence.new(Color3.fromHex("#F2F7FA")),
+		Transparency = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 1),
+			NumberSequenceKeypoint.new(0.2, 0.7),
+			NumberSequenceKeypoint.new(1, 1),
+		}),
+		Size = NumberSequence.new(4, 10),
+		Lifetime = NumberRange.new(3, 5),
+		Rate = 5,
+		Speed = NumberRange.new(1, 2.5),
+		SpreadAngle = Vector2.new(40, 40),
+		Rotation = NumberRange.new(0, 360),
+		RotSpeed = NumberRange.new(-10, 10),
+		LightInfluence = 1,
+		EmissionDirection = Enum.NormalId.Top,
+	})
+	emitter(part, {
+		Name = "TownSplash",
+		Color = ColorSequence.new(Color3.fromHex("#FFFFFF")),
+		Transparency = NumberSequence.new(0.2, 1),
+		Size = NumberSequence.new(0.5, 0.2),
+		Lifetime = NumberRange.new(0.4, 0.8),
+		Rate = 26,
+		Speed = NumberRange.new(5, 9),
+		SpreadAngle = Vector2.new(35, 35),
+		Acceleration = Vector3.new(0, -36, 0),
+		LightInfluence = 1,
+		EmissionDirection = Enum.NormalId.Top,
+	})
+	shimmers[part] = part.Transparency
+end
+
 local function spinnerKey(build: string, kind: string): string
 	return `{kind}:{build}`
 end
@@ -220,6 +284,10 @@ local function onAdded(instance: Instance)
 		end
 	elseif fx == "water" then
 		addWater(part)
+	elseif fx == "waterfall" then
+		addWaterfall(part)
+	elseif fx == "foam" then
+		addFoam(part)
 	elseif fx == "window" then
 		nightParts[part] = "window"
 		applyNight(part)

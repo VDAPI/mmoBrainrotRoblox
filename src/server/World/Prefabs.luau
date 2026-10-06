@@ -1023,7 +1023,7 @@ function Prefabs.areaFeatures(ctx: Context, data: Areas.MapAreas, color: string?
 						end
 					end
 					x, z = x + dx * 12 - dz * (road.width / 2 + 4), z + dz * 12 + dx * (road.width / 2 + 4)
-					if farFromSigns(x, z) then
+					if farFromSigns(x, z) and not (ctx.wet and ctx.wet(x, z)) then
 						local facing = math.deg(math.atan2(dx, dz)) + 180
 						Prefabs.signpost(ctx, x, z, facing, area.nameKey, area.lv[1], area.lv[2])
 						table.insert(signs, { x, z })
@@ -1058,7 +1058,8 @@ function Prefabs.areaFeatures(ctx: Context, data: Areas.MapAreas, color: string?
 			while t < length do
 				local offset = road.width / 2 + 3
 				local x, z = ax + dx * t - dz * offset * side, az + dz * t + dx * offset * side
-				if math.abs(x) < ctx.map.size.x / 2 - 30 and math.abs(z) < ctx.map.size.z / 2 - 30 then
+				local dry = not (ctx.wet and ctx.wet(x, z))
+				if dry and math.abs(x) < ctx.map.size.x / 2 - 30 and math.abs(z) < ctx.map.size.z / 2 - 30 then
 					Prefabs.lantern(ctx, x, z)
 				end
 				side = -side

@@ -1,11 +1,12 @@
 --!strict
--- Starting city detail on the client (S21, docs/miasto/MIASTO.md §5). The server builds only the "shell" level
--- of every city Build; this controller runs the same pure generator (TownGen.all with TownTerrain.heightAt,
--- identical lists on every machine) and builds the "detail" level of the buildings within
+-- Building detail on the client (S21 city, docs/miasto/MIASTO.md §5; S26 also the Whispering Meadows, whose
+-- buildings, camps, bridges and trees come from Logic/MeadowsGen). The server builds only the "shell" level of every
+-- Build; this controller runs the same pure generator (TownGen.all with TownTerrain.heightAt for the city,
+-- MeadowsGen.all for the Meadows; identical lists on every machine) and builds the "detail" level of the Builds within
 -- Config.TownDetailRadius of the camera and the "fine" level within Config.TownFineRadius (per "World detail"
 -- setting). A building enters when (distance - its reach) < radius and leaves at radius + hysteresis; the
 -- nearest go first and at most Config.TownDetailPartsPerFrame parts are created per frame. Everything lives in
--- Workspace.Vaelthorn_TownDetail (local only, no collisions, not clickable). Leaving the city drops the models
+-- Workspace.Vaelthorn_TownDetail (local only, no collisions, not clickable). Leaving the map drops the models
 -- and the generated list (it is rebuilt in a fraction of a second on the next visit).
 
 local Players = game:GetService("Players")
@@ -16,6 +17,7 @@ local Workspace = game:GetService("Workspace")
 local BlueprintBuild = require(ReplicatedStorage.Shared.Util.BlueprintBuild)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
+local MeadowsGen = require(ReplicatedStorage.Shared.Logic.MeadowsGen)
 local Net = require(ReplicatedStorage.Shared.Net)
 local State = require(script.Parent.Parent.UI.State)
 local Town = require(ReplicatedStorage.Shared.Data.Town)
@@ -26,8 +28,17 @@ local TownDetailController = {
 	Name = "TownDetailController",
 }
 
-local CITY = "city"
 local TICK = 0.25
+
+-- Maps with generated Builds and their generators (the same lists the server layouts build the shell from).
+local GENERATORS: { [string]: () -> { any } } = {
+	city = function()
+		return TownGen.all(Town.city, TownTerrain.heightAt) :: any
+	end,
+	meadows = function()
+		return MeadowsGen.all() :: any
+	end,
+}
 
 type Level = "detail" | "fine"
 
@@ -45,6 +56,7 @@ type Job = { entry: Entry, level: Level, distance: number }
 
 local folder: Folder
 local entries: { Entry }? = nil
+local entriesMap: string? = nil
 local preparing = false
 local origin = Vector3.zero
 local queue: { Job } = {}
@@ -55,17 +67,18 @@ local function setting(): string
 	return if value == "low" or value == "high" then value else "mid"
 end
 
--- Generates the city Builds once per visit (same list as the server) and counts their parts per level.
-local function prepare()
-	if entries or preparing then
+-- Generates a map's Builds once per visit (same list as the server) and counts their parts per level.
+local function prepare(mapId: string)
+	local generate = GENERATORS[mapId]
+	if (entries and entriesMap == mapId) or preparing or not generate then
 		return
 	end
 	preparing = true
 	local started = os.clock()
-	local map = Maps.get(CITY)
+	local map = Maps.get(mapId)
 	origin = if map then Vector3.new(map.offset.x, map.offset.y, map.offset.z) else Vector3.zero
 	local list: { Entry } = {}
-	for _, build in TownGen.all(Town.city, TownTerrain.heightAt) do
+	for _, build in generate() do
 		local counts = { detail = 0, fine = 0 }
 		for _, piece in build.bp.pieces do
 			local lod = piece.lod
@@ -86,6 +99,7 @@ local function prepare()
 		end
 	end
 	entries = list
+	entriesMap = mapId
 	preparing = false
 	stats.prepareMs = (os.clock() - started) * 1000
 end
@@ -114,6 +128,7 @@ local function clearAll(release: boolean)
 	table.clear(queue)
 	if release then
 		entries = nil
+		entriesMap = nil
 	end
 end
 
@@ -130,14 +145,17 @@ end
 -- Decides what should exist around the focus point; removes what left the radius, queues what entered.
 local function tick()
 	local mapId = State.Get({ "character", "location", "map" })
-	if mapId ~= CITY then
+	if type(mapId) ~= "string" or not GENERATORS[mapId] then
 		if entries then
 			clearAll(true)
 		end
 		return
 	end
+	if entries and entriesMap ~= mapId then
+		clearAll(true)
+	end
 	if not entries then
-		prepare()
+		prepare(mapId)
 	end
 	local list = entries
 	local focus = focusPoint()
@@ -232,10 +250,15 @@ function TownDetailController.Init()
 end
 
 function TownDetailController.Start()
-	-- Generate the list under the loading screen when travelling to the city.
+	-- Generate the list under the loading screen when travelling to a map with generated Builds.
 	Net.On("MapTransition", function(mapId: string?)
-		if mapId == CITY then
-			task.defer(prepare)
+		if mapId and GENERATORS[mapId] then
+			task.defer(function()
+				if entries and entriesMap ~= mapId then
+					clearAll(true)
+				end
+				prepare(mapId)
+			end)
 		end
 	end)
 	local accumulator = TICK

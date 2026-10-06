@@ -1,0 +1,201 @@
+--!strict
+-- Admin commands: height-function terrains (S26). Metadata in Shared.Data.AdminCommands; AdminService runs them
+-- for the chat and the dev panel. Required from AdminService.Init, after Context has the services.
+--   /tparea <target>          teleport to a monster area's middle, an NPC place, a quest anchor or a building site
+--   /ambience <area|off|auto> force an area's mood on the caller's client
+--   /terrainrebuild <map>     rewrite the terrain of the city or the Meadows (parts stay)
+--   /meadowsstats             server parts, build times, Builds, nodes and monster groups of the Meadows
+
+local Shared = game:GetService("ReplicatedStorage").Shared
+
+local Areas = require(Shared.Data.Areas)
+local MapTerrain = require(Shared.Logic.MapTerrain)
+local Maps = require(Shared.Data.Maps)
+local MeadowsGen = require(Shared.Logic.MeadowsGen)
+local MeadowsTerrain = require(Shared.Logic.MeadowsTerrain)
+local Net = require(Shared.Net)
+local Spawns = require(Shared.Data.Spawns)
+
+local BuildStats = require(script.Parent.Parent.World.BuildStats)
+local Context = require(script.Parent.Context)
+local TerrainWriter = require(script.Parent.Parent.World.TerrainWriter)
+local TownTerrainWriter = require(script.Parent.Parent.World.TownTerrainWriter)
+
+local reply = Context.reply
+local withCharacter = Context.withCharacter
+
+local WorldService = Context.services.WorldService
+local TravelService = Context.services.TravelService
+
+local commands: { [string]: (player: Player, args: { string }) -> ...any } = {}
+
+-- Nearest walkable point to (x, z) on a spiral (the middle of an area may be water or a cliff).
+local function standable(mapId: string, x: number, z: number): (number, number)
+	for ring = 0, 30 do
+		local r = ring * 6
+		local steps = math.max(1, ring * 6)
+		for k = 0, steps - 1 do
+			local a = k / steps * math.pi * 2
+			local px, pz = x + math.cos(a) * r, z + math.sin(a) * r
+			if MapTerrain.walkable(mapId, px, pz) then
+				return px, pz
+			end
+		end
+	end
+	return x, z
+end
+
+-- Map and point of a target name: an area id, an NPC place ("farmer" or "npc:farmer"), a quest anchor id or a
+-- building site of a map with sites.
+local function resolve(target: string): (string?, number?, number?)
+	local name = string.gsub(target, "^npc:", "")
+	for mapId, data in Areas.byMap do
+		for _, area in data.areas do
+			if area.id == target then
+				local r = area.rect
+				local x, z = standable(mapId, (r[1] + r[3]) / 2, (r[2] + r[4]) / 2)
+				return mapId, x, z
+			end
+		end
+		local spot = data.npcSpots and data.npcSpots[name]
+		if spot then
+			-- three studs in front of the place
+			local a = math.rad(spot.facing)
+			return mapId, spot.x - math.sin(a) * 3, spot.z - math.cos(a) * 3
+		end
+		for _, anchor in (data.questAnchors or {}) :: { Areas.QuestAnchor } do
+			if anchor.id == target then
+				local x, z = standable(mapId, anchor.x + 3, anchor.z + 3)
+				return mapId, x, z
+			end
+		end
+		local site = data.sites and data.sites[target]
+		if site then
+			local x, z = standable(mapId, site.x, site.z + 12)
+			return mapId, x, z
+		end
+	end
+	return nil, nil, nil
+end
+
+commands.tparea = function(player, args)
+	local target = args[1] or ""
+	local mapId, x, z = resolve(target)
+	if not mapId or not x or not z then
+		local names = {}
+		local data = Areas.byMap.meadows
+		for _, area in data.areas do
+			table.insert(names, area.id)
+		end
+		for name in (data.npcSpots or {}) :: { [string]: Areas.NpcSpot } do
+			table.insert(names, `npc:{name}`)
+		end
+		for _, anchor in (data.questAnchors or {}) :: { Areas.QuestAnchor } do
+			table.insert(names, anchor.id)
+		end
+		for name in (data.sites or {}) :: { [string]: Areas.Site } do
+			table.insert(names, name)
+		end
+		table.sort(names)
+		reply(player, "admin.tparea.list", { list = table.concat(names, ", ") })
+		return false, "admin.tparea.none"
+	end
+	if not WorldService.IsBuilt(mapId) then
+		reply(player, "admin.maps.notBuilt", { map = mapId })
+		return false, "portal.closed"
+	end
+	withCharacter(player, function()
+		task.spawn(TravelService.TeleportToMap, player, mapId, WorldService.GroundCFrame(mapId, x, z))
+		reply(player, "admin.tparea.ok", { target = target, map = mapId, x = math.floor(x), z = math.floor(z) })
+	end)
+	return true
+end
+
+commands.ambience = function(player, args)
+	local value = args[1] or ""
+	if value ~= "off" and value ~= "auto" then
+		local known = false
+		for _, data in Areas.byMap do
+			for _, area in data.areas do
+				if area.id == value then
+					known = true
+				end
+			end
+		end
+		if not known then
+			reply(player, "admin.usage.ambience")
+			return false, "admin.ambience.bad"
+		end
+	end
+	Net.Fire(player, "AdminClient", "ambience", value)
+	reply(player, if value == "auto" then "admin.ambience.auto" else "admin.ambience.ok", { mood = value })
+	return true
+end
+
+commands.terrainrebuild = function(player, args)
+	local mapId = args[1]
+	local map = mapId and Maps.get(mapId)
+	if not map or (mapId ~= "meadows" and mapId ~= "city") then
+		reply(player, "admin.usage.terrainrebuild")
+		return false, "admin.terrainrebuild.bad"
+	end
+	if not WorldService.IsBuilt(map.id) then
+		reply(player, "admin.maps.notBuilt", { map = map.id })
+		return false, "portal.closed"
+	end
+	local origin = Vector3.new(map.offset.x, map.offset.y, map.offset.z)
+	local started = os.clock()
+	task.spawn(function()
+		-- only the map square (the mountains past the edge stay); pauses between blocks keep the server responsive
+		if map.id == "meadows" then
+			TerrainWriter.write(origin, map.size.x / 2, MeadowsTerrain.voxels, MeadowsTerrain.MATERIALS, {
+				bottom = -24,
+				top = 48,
+				margin = 0,
+				yields = true,
+			})
+		else
+			TownTerrainWriter.write(origin, map.size.x / 2, true)
+		end
+		reply(
+			player,
+			"admin.terrainrebuild.ok",
+			{ map = map.id, seconds = math.floor((os.clock() - started) * 10) / 10 }
+		)
+	end)
+	return true
+end
+
+commands.meadowsstats = function(player)
+	local stats = BuildStats.meadows
+	local counts = MeadowsGen.counts()
+	local nodes: { [string]: number } = {}
+	for _, node in MeadowsGen.nodes() do
+		nodes[node.kind] = (nodes[node.kind] or 0) + 1
+	end
+	local list = {}
+	for kind, n in nodes do
+		table.insert(list, `{kind} {n}`)
+	end
+	table.sort(list)
+	reply(player, "admin.meadowsstats.build", {
+		parts = if stats then stats.parts else WorldService.PartCounts().meadows or 0,
+		ms = if stats then math.floor(stats.ms) else 0,
+		terrain = if stats then math.floor(stats.terrainMs) else 0,
+		write = if stats then math.floor(stats.writeMs) else 0,
+		blocks = if stats then stats.blocks else 0,
+		shell = if stats then math.floor(stats.shellMs) else 0,
+	})
+	reply(player, "admin.meadowsstats.gen", {
+		builds = counts.builds,
+		shell = counts.shell,
+		detail = counts.detail,
+		fine = counts.fine,
+		trees = #MeadowsGen.trees(),
+		groups = #(Spawns.byMap.meadows or {}),
+	})
+	reply(player, "admin.meadowsstats.nodes", { list = table.concat(list, ", ") })
+	return true
+end
+
+return commands

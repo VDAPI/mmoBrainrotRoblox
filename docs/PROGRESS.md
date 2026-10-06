@@ -32,6 +32,7 @@
 | S23 | Panel developerski (F2): rejestr komend, walidacja, audyt, okno z zakładkami, konsola | ● |
 | S24 | Ładne potwory, bossowie i pety: generator wyglądu, wygląd na kliencie z LOD, gotowość na prawdziwe modele | ● |
 | S25 | Interaktywna mapa: karty z podglądem 3D, prowadzenie i „Idź”, znaczniki, wyszukiwarka, minimapa | ● |
+| S26 | Szepczące Łąki od nowa: ukształtowany teren, struga z mostami, jar z wodospadem, wyrobisko, expowiska w klimacie potworów, życie, nastrój | ● |
 
 Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana przez właściciela
 
@@ -587,6 +588,62 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
 - **S25** Okno mapy podzielone na moduły `UI/Screens/WorldMap/*` (`init` ok. 830 linii to klej okna: stan,
   karty, focus, pętla klatki).
 
+- **S26** Kształt terenu Łąk w osobnym `Data/Terrain/meadows` (szum, wzgórza, płaskowyż, jar, wyrobisko, bagno,
+  spłaszczenia, rampy, motywy), a to, co dzielą obszary, mapa i questy (drogi, jeziora, strugi, budowle `sites`,
+  `npcSpots`, `questAnchors`), w `Data/Areas/meadows`. Id, poziomy i prostokąty obszarów bez zmian; zmienione drogi
+  (trakt przez kamienny most prostopadle do strugi, droga przy Wyrobisku, ścieżka do pomostu), jezioro (kilka kół z
+  postrzępionym brzegiem), wejścia do jaskiń na starych miejscach (Jaskinia Mchów w ścianie misy pod wodospadem).
+- **S26** Teren z funkcji wysokości jak miasto: `Logic/MeadowsTerrain` + wspólne `Logic/TerrainLayers`
+  (`TownTerrain.voxels` przechodzi przez `TerrainLayers.voxels`, wynik miasta bez zmian) + `World/TerrainWriter`
+  (729 bloków 64×64 od y −24 do 48, margines 64 st., bez pauz w `Init`; w Lune liczenie wokseli całej mapy 0,7 s).
+  Góry za krawędzią jak dotąd (`Build.border`, kule na zapisanym marginesie). Kolor `Pebble` (#8A847A) dodany.
+- **S26** Woda strug: poziom liczony wzdłuż strugi z najniższego gruntu w przekroju minus 1,1 st., nigdy nie rośnie
+  z biegiem i nie spada poniżej ujścia (jezioro / struga, do której wpada); woda tylko tak głęboka jak koryto (koniec
+  potoku na krawędzi wodospadu nie robi wiszącej kolumny wody). Wokół strugi łagodna dolina (wzrost ≤ 0,17 st. na
+  st., do 50 st.), poza jarem i potokiem nad wodospadem; drogi przechodzą na nasypach, most przykrywa koryto (długość
+  liczona wzdłuż drogi, także przy skośnym przecięciu). Rodzaj mostu z podpowiedzi w danych (kamienny / drewniany /
+  bród), bród obniża drogę do 0,4 st. nad wodę ze spadkiem drogi.
+- **S26** Drogi: profil to grunt pod osią co 4 st. uśredniony ±24 st. i ograniczony do 11% w obie strony; droga,
+  która zaczyna się na innej, przejmuje jej wysokość (40 st.), a na skrzyżowaniach wysokość to mieszanka dwóch
+  najbliższych dróg wg odległości, więc nie ma uskoków (test: < 15° wszędzie poza mostami).
+- **S26** Budowle, obozy, mosty, skały i drzewa Łąk z czystego `Logic/MeadowsGen` (Blueprinty jak TownGen; dom,
+  chaty i stodoła z generatora miasta — `Outside.barn` / `Outside.ruin` wyeksportowane). Serwer buduje „shell”
+  (~2130 części), klient „detail”/„fine” (`TownDetailController` ma teraz generator na mapę: city, meadows).
+  Palisady: na serwerze ściana z jednej części na odcinek, zaostrzone pale to detal klienta.
+- **S26** Drzewa: siatka 17 st. z drganiem, gatunki i gęstość wg motywu, wolny szum „kęp” (gaje i polany); serwer:
+  pień z kolizją (bez `CanQuery` się nie da — Roblox wymusza zapytania dla kolidujących części) i główna korona bez
+  kolizji, klient: reszta korony, gałęzie, korzenie, gniazda, podszyt. Kafelki 128 st. (jeden Build, tag `trees`).
+- **S26** Budżet części serwera: `maxParts = 2800` dla Łąk (stara mapa S20 miała szacunkowo ~2150 części: ok. 1000 w
+  drzewach, 460 w palisadach, reszta w skałach, jaskiniach, latarniach; +30%); test pilnuje, że shell generatora +
+  300 (portale, wyloty jaskiń, drogowskazy, latarnie z `Prefabs`) mieści się w limicie. Liczbę „przed” znamy tylko z
+  szacunku (bez Studio) — prawdziwe liczby daje Output `[Meadows] parts=… ms=…` i `/meadowsstats`.
+- **S26** Wysokość gruntu na mapach z funkcją wysokości (`Logic/MapTerrain`: miasto, Łąki) zamiast raycastów z y≈14:
+  spawnery mają y = teren (MonsterService szuka ziemi od tej wysokości), węzły zbierackie i NPC szukają od
+  planowanego gruntu, `GroundCFrame` bez trafienia bierze wysokość z funkcji, a stara zapisana pozycja na Łąkach jest
+  podnoszona nad nowy teren. Grupy potworów tylko tam, gdzie sucho i ≤ 32° w promieniu 10 st., 12 st. od wody
+  strug; przybycia nie na moście ani w wodzie.
+- **S26** `Logic/AreaArrival`: z dwóch równie głębokich wjazdów drogi do obszaru wygrywa bliższy spawnowi mapy (od
+  strony miasta); zmieniło to 3 punkty przybycia poza Łąkami (Mroczny Bór: Mglisty Rozstaj i Wiedźmie Moczary,
+  Spalone Pustkowia: Pola Golemów) — przeliczone `tools/arrivals_apply.py`.
+- **S26** Łąki mają dzień i noc (`meadowsNight`: księżycowo, jasność 0,9, żeby dało się walczyć); okna, latarnie i
+  ogień działają jak w mieście (`TownFxController`).
+- **S26** Nastrój w osobnym `AmbienceController` (nie w `AreaController`): czyta obszar z `AreaState.Current` (z
+  histerezą `AreaController`), przechodzi płynnie (~2,5 s) i oddaje modulację światła do
+  `WorldController.SetModulation` (mnożnik mgły, kolor mgły, tint, nasycenie, jasność, mgiełka atmosfery — na
+  wierzchu oświetlenia mapy i cyklu dnia, nigdy zamiast). Dźwięki: pętle obszaru dzień/noc (max 3, crossfade) i
+  punkty 3D mapy przez `VaelthornAmbientGroup` (opcja „Głośność otoczenia”, `settings.ambientVolume` = 0,7, stare
+  konta dostają ją przez reconcile). Id dźwięków puste, każde z podpowiedzią, czego szukać.
+- **S26** Dekoracje klienta: motyw z pola `decor` obszaru pod punktem przesuniętym losowo o ≤ 40 st. (miękkie
+  przejścia), poza obszarami motyw powierzchni z `MeadowsTerrain.themeAt`; na Żabim Oczku bagno tylko w rdzeniu
+  mokradła, suchsze brzegi jak łąka. Grążele tylko na wodzie, trzciny i pałki tylko przy brzegu (z funkcji terenu).
+- **S26** Zwierzęta dekoracyjne z 3–4 części (nie `Logic/Anatomy` — taniej przy kilkudziesięciu sztukach), tylko w
+  promieniu 140 st., bez nich przy „Szczegółowość świata: niska” (wtedy też połowa cząsteczek pogody).
+- **S26** Nazwy obszarów Łąk w lokalizacji jak w `SWIAT.md` i nowym krajobrazie (Polana Królików, Żabie Oczko, Stary
+  Las, Kupiecki Trakt, Stare Wyrobisko, Gobliński Obóz, Niedźwiedzi Jar); id bez zmian.
+- **S26** Admin: `/tparea <cel>` zamiast `/tp meadows <obszar>` (jeden cel dla obszaru, miejsca NPC `npc:<nazwa>`,
+  kotwicy questu i budowli); `/terrainrebuild` przepisuje tylko kwadrat mapy (góry za krawędzią zostają);
+  `/ambience`, `/meadowsstats`.
+
 ## Niedokończone
 (Rzeczy z zakresu sesji, które nie zostały zrobione. Następna sesja zaczyna od nich.)
 
@@ -611,8 +668,8 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
   niż cel 6–10 s; do strojenia klas, nie potworów.
 - **S18** Sprint nie zmienia WalkSpeed lokalnie przed odpowiedzią serwera (opóźnienie o ping).
 
-- **S20** Mapa świata: bez mostów i strumieni (świat ich jeszcze nie ma); timer Elity II widać na karcie jaskini (tekst),
-  bez osobnej ikony na rysunku.
+- **S20** Mapa świata: timer Elity II widać na karcie jaskini (tekst), bez osobnej ikony na rysunku. (Mosty i strugi
+  są od S26 na Łąkach i na mapie; inne regiony ich jeszcze nie mają.)
 - **S21** Miasto niesprawdzone w Studio: czas `WriteVoxels` całego terenu (225 bloków) i budowy shellu w `Init`, płynność
   detalu klienta na telefonie (`/perf`), kadr kamery wyboru postaci.
 - **S21** Nocą świecą okna, latarnie i ogień, ale nie ma zmiany muzyki ani dźwięków nocy.
@@ -637,6 +694,19 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
 - **S25** Serwer nie ma kontroli prędkości ani teleportów gracza (ruch jest po stronie klienta; „Idź” to zwykłe
   `MoveTo`). Zgodnie z zakresem nie dodano jej w tej sesji.
 - **S25** Słabości żywiołowe potworów nie istnieją w danych (karta pokazuje tylko żywioł ataku).
+
+- **S26** Łąki niesprawdzone w Studio. Do sprawdzenia: czas `[Meadows] terrain` (WriteVoxels 729 bloków w `Init`,
+  w Lune samo liczenie 0,7 s) i liczba części serwera (szacunek ~2450; przed sesją szacunkowo ~2150), streaming
+  kafelków drzew, płynność detalu i zwierząt na telefonie (`/perf`), wygląd wodospadu (cząsteczki), przejścia
+  nastroju, stawanie potworów na pagórkach i w jarze, łowiska (boje na wodzie).
+- **S26** Dźwięki do podpięcia przez właściciela (`Data/Ambience`, pole `id = "rbxassetid://…"`; podpowiedzi w
+  `hint`): ptaki na łące, wiatr w trawie, świerszcze nocą, sowa, wiatr na wzgórzach, wycie wilków, żaby, bagno nocą,
+  las w dzień i w nocy, kruki, odległe ognisko, gwar traktu, wyrobisko (kapanie, kilof), wiatr w jaskini, obóz
+  goblinów, bębny nocą, jar (wiatr, ptaki drapieżne), strumyk, wodospad, tlące się zgliszcza, trzask ogniska,
+  bębny goblinów, odgłosy farmy, pszczoły, plusk wody przy brzegu. Muzyka Łąk: `Data/Maps` (`music`, podpowiedź w
+  komentarzu).
+- **S26** Mapa świata pokazuje budowle Łąk jako kształty (bez ikon i podpisów punktów charakterystycznych).
+- **S26** Inne regiony (Mroczny Bór, Pustkowia, Szczyty) dalej na starym, płaskim generatorze z kulami terenu.
 
 ## Zgłoszone błędy
 (Właściciel wpisuje tu błędy po testach albo przekazuje je przez sesję poprawek.)
@@ -2041,3 +2111,125 @@ lokalizacja, `tests/data.spec`.
 21. Najmniejszy zoom w mieście: nakładające się ikony zostawiają ważniejszą (NPC z questem nad zwykłym NPC).
 22. Wydajność: mapa otwiera się tak szybko jak wcześniej (`[WorldMap] city: static layer built in … ms`), pierwsze
     wpisanie w wyszukiwarkę loguje czas indeksu; `/perf` przy włączonym prowadzeniu bez skoków.
+
+### S26: Szepczące Łąki od nowa
+
+**Zrobione**
+- Teren z funkcji wysokości: `Logic/MeadowsTerrain` (wysokość, materiał, woda, nachylenie, „da się stanąć”,
+  przecięcia dróg ze strugami, woksele) z danymi kształtu w `Data/Terrain/meadows` (strefy amplitudy szumu, 21
+  wzgórz-elips z grzbietem Wilczych Wzgórz i pagórkiem kapliczki, płaskowyż wschodni, Niedźwiedzi Jar z misą pod
+  wodospadem, Stare Wyrobisko z 3 tarasami i 4 rampami, bagno wokół Żabiego Oczka, spłaszczenia pod budynki,
+  portale, wyloty jaskiń i miejsca NPC, motywy powierzchni z miękkimi brzegami). Wspólne warstwy w
+  `Logic/TerrainLayers` (szum, szum wartości fbm, linie, prostokąty, woksele); `TownTerrain.voxels` idzie przez nie
+  bez zmiany wyniku (fixture miasta przechodzi). Indeks siatki 64 st. dla dróg i strug (~2 µs na kolumnę).
+- Woda: Szepcząca Struga od wodospadu przez jar, środek mapy, pod trzema mostami do Żabiego Oczka; Leśny Potok ze
+  źródła w Starym Lesie przez bród na leśnej ścieżce do strugi; górny potok na płaskowyżu do krawędzi wodospadu.
+  Poziom wody każdej strugi spada monotonicznie (nigdy nie stoi nad brzegiem), łagodna dolina wzdłuż strugi
+  (~10°), drogi na nasypach do mostów. Jezioro z kilku kół z postrzępionym brzegiem, rozlewiska bagna, staw
+  bandytów.
+- Drogi: profil wygładzony wzdłuż drogi i ograniczony do 11% spadku, skrzyżowania mieszane z dwóch najbliższych
+  dróg (bez uskoków), bród obniża drogę do wody. Nowy przebieg traktu (prostopadle przez kamienny most), droga przy
+  Wyrobisku omija wykop, nowa ścieżka do pomostu na Żabim Oczku.
+- Budowle z czystego generatora `Logic/MeadowsGen/*` (jak TownGen; serwer stawia „shell”, klient „detail”/„fine”):
+  brama z latarniami i zagajniki przy wjeździe, stary dąb z kapliczką (świece, kwiaty, ławka), zagroda farmera
+  (dom i stodoła z generatora miasta, studnia, stogi, wózek, ogródek z kapustą w płocie z wikliny, ule, zagroda dla
+  owiec), chata rybaka z sieciami i pomostem z łódką, chata drwala ze stosami drewna, obozowisko myśliwego, spalony
+  wiatrak z dymiącymi zgliszczami, wyschnięte pola ze strachami na wróble, porzucony wózek, ruiny wieży z
+  powalonym drzewem, kamienny krąg, jamy wilków (kości, wełna), taplisko dzików, rozbity wóz kupiecki z
+  rozsypanym towarem, kamienie milowe, legowiska niedźwiedzi (połamane gałęzie, zadrapany pień), Obóz Bandytów
+  (palisada z zaostrzonych pali, brama, wieża, namioty, ognisko, worki łupów, skrzynia, stojak z bronią, listy
+  gończe, chorągiew), Gobliński Obóz (płot z pali z czaszkami, szałasy, totem, bębny, kotły na ogniu, kości,
+  skóry, szmaty), Wyrobisko (sztolnie zabite deskami, rusztowania, tory z wózkami, hałdy rudy, zielone latarnie
+  koboldów, kołowrót, szopa górnika), mosty (kamienny łukowy na trakcie, 2 drewniane), kamienie brodu, wodospad
+  (kurtyna wody, piana), kamienie przy strudze, zarośla rysia, powalone drzewa.
+- Drzewa nie losowo: gatunki i gęstość wg motywu, wolny szum „kęp” daje gaje z polanami w Starym Lesie i sosnowe
+  zagajniki na płaskowyżu; 845 dużych drzew (pień z kolizją + korona na serwerze), reszta korony, gałęzie,
+  korzenie, gniazda i podszyt (sadzonki, krzaki, jałowce, trzciny) tylko na kliencie. Drzewa omijają drogi, wodę,
+  urwiska, budynki, miejsca NPC, kotwice i grupy potworów.
+- Węzły wg klimatu (`MeadowsGen.nodes`): wiązówka na polanach, wilcza jagoda w lesie, księżycowy płatek przy
+  wodzie, miedź na wzgórzach i w wyrobisku (14), żelazo w wyrobisku i jarze (12), 3 łowiska (pomost, pod
+  wodospadem, staw bandytów).
+- Dla S27: `npcSpots` (farmer, fisher, woodcutter, merchant, miner, hunter, shrine) i `questAnchors` (18 kotwic:
+  `shrine_candles`, `fence_1..4`, `net_shore`, `logpile_1..5`, `mill_ruin`, `wagon_goods`, `tunnel_1..3`,
+  `totem_goblin`, `bear_den`) w `Data/Areas/meadows`; kotwice to niewidoczne części z tagiem `QuestAnchor`
+  (atrybuty `AnchorId`, `MapId`).
+- Klient: `DecorController` z motywami obszarów (`decor`: łąka, wzgórza, bagno, las, pole, trakt, wyrobisko,
+  goblini, jar) i mieszaniem przy brzegach, nowe dekoracje (grążele na wodzie, pałki, kłosy, żwir, odłamki, deski,
+  skóry, mech, wełna, gałązki, pióra); `MeadowsLifeController` (pyłki i motyle w dzień, mgła przy wodzie rano i
+  nocą, świetliki, spadające liście, ptaki zrywające się z drzew przy biegu, kruki na strachach i martwych
+  drzewach odlatujące przy podejściu, owce w zagrodzie, kaczki na jeziorze); `TownDetailController` obsługuje też
+  Łąki; `TownFxController` zna wodospad (smugi spadającej wody) i pianę (mgiełka, rozbryzgi).
+- Nastrój: `Data/Ambience` (światło i dźwięki na obszar + punkty: wodospad, struga, zgliszcza, ognisko, bębny,
+  farma, ule, brzeg jeziora), `AmbienceController` (płynne przejście ~2,5 s, pętle dzień/noc, max 3 naraz,
+  crossfade, dźwięki 3D), modulacja światła w `WorldController` na bazie mapy i cyklu dnia; Łąki mają dzień i noc
+  (`meadowsNight`); suwak „Głośność otoczenia” (`settings.ambientVolume`).
+- Mapa świata i minimapa: struga i potok, jezioro, bagno, jar ze ścianami, tarasy wyrobiska, mosty i pomost,
+  budynki, palisady, pola, ogródek, lasy z nowych drzew.
+- Serwer: `World/TerrainWriter` (wspólny zapis wokseli), layout Łąk z logami `[Meadows] terrain/shell/parts=… ms=…`
+  i `World/BuildStats`; `Build` z funkcją wysokości (bez raycastów, `flatten` niepotrzebne), `Build.questAnchor`;
+  `Logic/MapTerrain` (rejestr wysokości map) w `AreaSpawns` (grupy tylko na suchym i łagodnym gruncie, 12 st. od
+  strug, y = wysokość terenu), `AreaArrival`, `GatherService`, `NpcService`, `WorldService` (`GroundCFrame`,
+  `ResolveLocation` podnosi starą pozycję nad nowy teren).
+- Admin (`Admin/Terrain`): `/tparea <obszar|npc:miejsce|kotwica|budowla>`, `/ambience <obszar|off|auto>`,
+  `/terrainrebuild <meadows|city>`, `/meadowsstats`.
+- Narzędzia: `tools/meadowsdump.luau` + `tools/meadowsmap.py` (mapa z góry z nakładkami), `tools/meadowsview.luau` +
+  `tools/meadowsview.py` (podgląd 3D z terenem), `tools/arrivals.luau` + `tools/arrivals_apply.py` (punkty
+  przybycia).
+- Testy: `meadowsterrain.spec` (wysokości, drogi < 15°, miejsca NPC, portale i przybycia na suchym, struga ciągła i
+  w dół od wodospadu do jeziora, jar ≥ 12 st., bród płytki, mosty nad wodą, determinizm, woksele),
+  `meadows.spec` (id i poziomy obszarów, motywy i nastroje, miejsca NPC i kotwice S27, grupy na suchym gruncie,
+  budżet części, węzły wg klimatu, łowiska, życie i szkic).
+
+**Pliki**: nowe `Logic/{TerrainLayers,MeadowsTerrain,MapTerrain}`, `Logic/MeadowsGen/{init,Kit,Nature,Homes,
+Landmarks,Camps,Quarry,Water}`, `Data/Terrain/meadows`, `Data/Ambience`, `World/{TerrainWriter,BuildStats}`,
+`Admin/Terrain`, `Controllers/{AmbienceController,MeadowsLifeController}`, testy, narzędzia; zmiany:
+`World/Layouts/meadows` (od nowa), `World/{Build,Prefabs,WorldBuilder,TownTerrainWriter}`,
+`Services/{WorldService,NpcService,GatherService,SettingsService,AdminService}`, `Data/Areas/{meadows,Types,init,
+duskwood,ashen}`, `Data/{Maps,AdminCommands}`, `Logic/{TownTerrain,AreaSpawns,AreaArrival,AccountSchema}`,
+`Logic/TownGen/Outside` (eksport stodoły i ruiny), `Types`, lokalizacja (nazwy obszarów jak w SWIAT),
+`Controllers/{DecorController,TownDetailController,TownFxController,WorldController,SettingsController}`,
+`UI/MapSketch`, `Screens/GameMenu`.
+
+#### Instrukcja testu S26
+
+1. `rojo serve`, Play. W Output: `[Meadows] terrain: 729 blocks in … s (WriteVoxels … s)`, `[Meadows] shell: 376
+   builds, … parts`, `[Meadows] parts=… ms=…` i `[WorldBuilder] built meadows …` bez ostrzeżenia o limicie (2800).
+   Zapisz liczby części i czas (porównanie z S20 w „Niedokończone”). Brak błędów `[WorldBuilder]`, `[Prefabs]`.
+2. `/tp meadows` (albo portal z miasta → Polana Królików): po wyjściu z portalu brama z latarniami nad drogą,
+   brzozy i dęby po bokach, w głębi na pagórku stary dąb z kapliczką; teren pofałdowany, kwiaty i wysoka trawa.
+3. Podejdź do kapliczki: świece świecą, kwiaty, ławka; nad łąką pyłki i motyle (w dzień).
+4. `/tparea npc:farmer`: zagroda — dom szachulcowy, stodoła pod strzechą, studnia, ogródek z kapustą w płocie,
+   ule, w zagrodzie 4 owce chodzą i skubią trawę. `/tparea fence_1` stoi przy rogu płotu ogródka.
+5. `/tparea meadows_wolfhills`: wzgórza ze skałami, na grzbiecie kamienny krąg (`/tparea stonecircle`), jamy wilków
+   z kośćmi i wełną, jałowce, sosny. `/daytime 23`: ciemniej, księżycowo; świerszcze i wycie (gdy będą id dźwięków).
+6. `/tparea npc:fisher`: chata rybaka, sieci, pomost z łódką i latarnią; bagno z rozlewiskami, trzciny, pałki,
+   grążele na wodzie, wierzby i martwe drzewa; kaczki na jeziorze; mgła nad wodą rano i nocą (`/daytime 6`,
+   `/daytime 23`), nocą świetliki. Nastrój mglisty i zielonkawy (przejście ~2 s przy wejściu na bagno).
+7. `/tparea npc:woodcutter`: polana z chatą drwala, pieńki, kozioł, stosy drewna; dookoła gęsty las z polanami,
+   wielkie dęby, paprocie i grzyby, spadające liście, gniazda kruków. `/tparea wallow` (taplisko), `/tparea ruins`.
+8. Leśna ścieżka na południe od drwala: bród przez Leśny Potok (płytka woda, kamienie, lina na słupkach).
+9. `/tparea mill`: spalony wiatrak dymi w kilku miejscach, wyschnięte pola, strachy na wróble z krukami (odlatują,
+   gdy podejdziesz, wracają po ~45 s), obraz wyblakły i szary.
+10. Trakt na wschód: kamienny most łukowy nad strugą, kamienie milowe, latarnie; `/tparea npc:merchant`: rozbity
+    wóz z rozsypanym towarem. `/tparea banditCamp`: palisada z bramą, wieża, namioty, ognisko, listy gończe.
+11. Drewniany most na drodze na północ od obozu, dalej `/tparea npc:miner`: Stare Wyrobisko — 3 tarasy z rampami,
+    rusztowania, tory z wózkami, hałdy rudy, zielone latarnie (nocą świecą), sztolnie zabite deskami
+    (`/tparea tunnel_1`).
+12. `/tparea totem_goblin`: Gobliński Obóz — płot z czaszkami, szałasy, totem, bębny, kotły z zieloną zupą i dymem.
+13. `/tparea meadows_bearridge` → do jaru drogą od zachodu: ściany skalne, na końcu wodospad z mgiełką i
+    rozbryzgami, łowisko pod wodospadem, Jaskinia Mchów w ścianie misy. `/tparea npc:hunter`: obozowisko na
+    płaskowyżu, ścieżka w dół do jaru. `/tparea bear_den`: legowisko niedźwiedzia.
+14. Biegnij (sprint) obok drzew: z koron zrywają się ptaki.
+15. Potwory: `/area` w każdym obszarze; grupy stoją na suchym, łagodnym gruncie (nie w wodzie, nie na ścianach jaru
+    i tarasów wyrobiska); smycz i powrót działają na pagórkach.
+16. Zbieractwo: `/nodes count` — miedź 14, żelazo 12, wiązówka 14, wilcza jagoda 10, księżycowy płatek 8, łowiska 3;
+    węzły leżą na ziemi (także na płaskowyżu ~25 st. wyżej), łowiska mają boje na wodzie.
+17. `/ambience meadows_toadmire` (wymuś nastrój), `/ambience off`, `/ambience auto`. Opcje (Esc) → „Głośność
+    otoczenia” (działa, gdy wkleisz id dźwięków).
+18. Mapa (M) i minimapa: struga z potokiem, jezioro, bagno, jar, tarasy wyrobiska, mosty, budynki, palisady, pola,
+    lasy w kępach.
+19. `/meadowsstats`: części serwera, czasy, liczba budowli (376) i drzew (845), węzły, grupy (58).
+20. `/terrainrebuild meadows` (pyta): teren przepisuje się w kilka sekund bez restartu, części zostają.
+21. Opcje → „Szczegółowość świata” niska: brak zwierząt, mniej cząsteczek, mniejszy promień detalu; `/perf` na
+    telefonie (emulator) przy farmie i w lesie.
+22. Stare zapisy: postać wylogowana na Łąkach przed S26 pojawia się na powierzchni (nie w pagórku).

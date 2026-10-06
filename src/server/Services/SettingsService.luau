@@ -40,6 +40,9 @@ local SETTINGS: { [string]: (value: any, player: Player) -> boolean } = {
 	musicVolume = function(value)
 		return type(value) == "number" and value == value and value >= 0 and value <= 1
 	end,
+	ambientVolume = function(value)
+		return type(value) == "number" and value == value and value >= 0 and value <= 1
+	end,
 	quality = function(value)
 		return value == "high" or value == "low"
 	end,

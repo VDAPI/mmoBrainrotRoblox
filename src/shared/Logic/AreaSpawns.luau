@@ -2,12 +2,15 @@
 -- Monster groups from named areas (S19, DESIGN §3.5, §3.6, §15.1). Pure and deterministic (seed = area /
 -- cave id), so the server, the tests and the map all see the same groups.
 --   * region maps: `groups` groups of 1–4 per area (30 / 30 / 25 / 15 %), 45+ studs apart, away from
---     roads, water, portals, spawn points and cave entrances; members mix the area's kinds;
+--     roads, water (lakes and, S26, streams), portals, spawn points and cave entrances, and on maps with a height
+--     function (Logic/MapTerrain) only on dry, gentle ground with the spawner at the ground's height;
+--     members mix the area's kinds;
 --   * caves: normal groups in every room but the entrance (and the boss antechamber), 3–5 elite groups of
 --     1–2 of the two elite kinds, one Elite II spawner in the deepest room.
 
 local AreaTypes = require("../Data/Areas/Types")
 local CaveGen = require("./CaveGen")
+local MapTerrain = require("./MapTerrain")
 local Monsters = require("../Data/Monsters")
 local Rng = require("./Rng")
 local SpawnTypes = require("../Data/Spawns/Types")
@@ -22,6 +25,8 @@ AreaSpawns.MIN_CAVE_GROUP_DISTANCE = 16
 AreaSpawns.ROAD_CLEARANCE = 14
 AreaSpawns.WATER_CLEARANCE = 16
 AreaSpawns.CAVE_CLEARANCE = 45
+AreaSpawns.STREAM_CLEARANCE = 12 -- from a stream's water edge (S26)
+AreaSpawns.CLIFF_CLEARANCE = 10 -- radius of gentle, dry ground around a group (S26, maps with a height function)
 AreaSpawns.EDGE = 40
 AreaSpawns.RESPAWN = { min = 30, max = 45 }
 AreaSpawns.ELITE_RESPAWN = { min = 90, max = 150 }
@@ -49,6 +54,21 @@ function AreaSpawns.nearRoad(roads: { AreaTypes.Road }, x: number, z: number, cl
 		local p = road.points
 		for i = 1, #p - 3, 2 do
 			if segmentDistance(x, z, p[i], p[i + 1], p[i + 2], p[i + 3]) < road.width / 2 + clearance then
+				return true
+			end
+		end
+	end
+	return false
+end
+
+-- Within `clearance` studs of a stream's water (S26); the widest width of a segment counts.
+function AreaSpawns.nearStream(streams: { AreaTypes.Stream }?, x: number, z: number, clearance: number): boolean
+	for _, stream in (streams or {}) :: { AreaTypes.Stream } do
+		local p, widths = stream.points, stream.widths
+		for i = 1, #p - 3, 2 do
+			local k = (i + 1) // 2
+			local half = math.max(widths[k] or 0, widths[k + 1] or 0) / 2
+			if segmentDistance(x, z, p[i], p[i + 1], p[i + 2], p[i + 3]) < half + clearance then
 				return true
 			end
 		end
@@ -124,6 +144,8 @@ function AreaSpawns.region(def: AreaTypes.MapAreas, size: { x: number, z: number
 				and not inCircles(def.lakes, x, z, AreaSpawns.WATER_CLEARANCE)
 				and not inCircles(def.avoid, x, z, 0)
 				and not inCircles(caves, x, z, 0)
+				and not AreaSpawns.nearStream(def.streams, x, z, AreaSpawns.STREAM_CLEARANCE)
+				and MapTerrain.walkable(def.map, x, z, AreaSpawns.CLIFF_CLEARANCE)
 			if ok then
 				made += 1
 				local count = rng:weighted(AreaSpawns.GROUP_SIZE_WEIGHTS)
@@ -135,7 +157,11 @@ function AreaSpawns.region(def: AreaTypes.MapAreas, size: { x: number, z: number
 					members = kinds,
 					variant = "normal",
 					level = levelRange(area.lv, kinds),
-					position = { x = math.floor(x + 0.5), y = 0, z = math.floor(z + 0.5) },
+					position = {
+						x = math.floor(x + 0.5),
+						y = math.floor((MapTerrain.height(def.map, x, z) or 0) + 0.5),
+						z = math.floor(z + 0.5),
+					},
 					radius = rng:int(5, 8),
 					count = count,
 					respawn = AreaSpawns.RESPAWN,
