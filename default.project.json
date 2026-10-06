@@ -1,5 +1,6 @@
 {
   "name": "Vaelthorn",
+  "globIgnorePaths": ["**/.gitkeep"],
   "tree": {
     "$className": "DataModel",
     "ReplicatedStorage": {
@@ -10,7 +11,7 @@
         "$path": "Packages"
       },
       "Assets": {
-        "$className": "Folder"
+        "$path": "assets"
       }
     },
     "ServerScriptService": {

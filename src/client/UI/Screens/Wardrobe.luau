@@ -132,7 +132,11 @@ local function Wardrobe(scope: Scope): Fusion.Child
 		if petId then
 			pet = CosmeticLook.buildPet(petId)
 			if pet then
-				pet:PivotTo(CFrame.new(2.6, -1.8, 0.5))
+				local lift = pet:GetAttribute("PetLift")
+				pet:PivotTo(
+					CFrame.new(2.6, -3 + (if type(lift) == "number" then lift else 1.2), 0.5)
+						* CFrame.Angles(0, math.rad(200), 0)
+				)
 				pet.Parent = viewport
 			end
 		end

@@ -13,7 +13,6 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
-local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
 
 local Shared = ReplicatedStorage.Shared
@@ -74,7 +73,7 @@ local spawnerOf: { [Monster.Monster]: SpawnerRuntime } = {}
 local random = Random.new()
 
 local TICK = 1 / Combat.aiTickRate
-local CORPSE_SECONDS = 1.6
+local CORPSE_SECONDS = Config.CorpseSeconds
 
 function MonsterService.SetCombatHandlers(h: Handlers)
 	handlers = h
@@ -316,13 +315,11 @@ local function refreshGroupSize(spawner: SpawnerRuntime)
 	end
 end
 
+-- The look lives on clients (S24, MonsterViewController fades it); the server only stops the aura and waits.
 local function fadeAndDestroy(monster: Monster.Monster)
-	local info = TweenInfo.new(CORPSE_SECONDS, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
-	for _, part in monster.model:GetDescendants() do
-		if part:IsA("BasePart") and part.Transparency < 1 then
-			TweenService:Create(part, info, { Transparency = 1 }):Play()
-		elseif part:IsA("ParticleEmitter") then
-			part.Enabled = false
+	for _, item in monster.model:GetDescendants() do
+		if item:IsA("ParticleEmitter") or item:IsA("Light") then
+			(item :: any).Enabled = false
 		end
 	end
 	task.delay(CORPSE_SECONDS + 0.1, function()

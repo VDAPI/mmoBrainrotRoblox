@@ -57,6 +57,7 @@ local function spawnPet(player: Player)
 	pet.Name = `Pet_{player.UserId}`
 	pet:SetAttribute("OwnerId", player.UserId)
 	pet:SetAttribute("PetId", id)
+	pet.ModelStreamingMode = Enum.ModelStreamingMode.Atomic
 	pet:PivotTo(root.CFrame * CFrame.new(2.5, 0, 2.5))
 	pet.Parent = petFolder
 	pets[player] = pet

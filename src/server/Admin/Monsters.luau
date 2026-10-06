@@ -4,7 +4,13 @@
 
 local Shared = game:GetService("ReplicatedStorage").Shared
 
+local Bosses = require(Shared.Data.Bosses)
+local Anatomy = require(Shared.Logic.Anatomy)
 local Classes = require(Shared.Data.Classes)
+local Cosmetics = require(Shared.Data.Cosmetics)
+local LookAnim = require(Shared.Logic.LookAnim)
+local MonsterLooks = require(Shared.Data.MonsterLooks)
+local Net = require(Shared.Net)
 local Config = require(Shared.Config)
 local Damage = require(Shared.Logic.Damage)
 local Monsters = require(Shared.Data.Monsters)
@@ -196,6 +202,106 @@ commands.leash = function(player)
 		max = monster.stats.maxHp,
 		boss = tostring(monster.isBoss == true),
 	})
+end
+
+-- Looks (S24) -------------------------------------------------------------------------------------------
+
+local VIZ_GROUPS = { all = true, bosses = true, pets = true, ["1"] = true, ["2"] = true, ["3"] = true, ["4"] = true }
+local VIZ_VARIANTS = { normal = true, elite = true, elite2 = true }
+
+local function isPet(id: string): boolean
+	local def = Cosmetics.get(id)
+	return def ~= nil and def.kind == "pet"
+end
+
+commands.mobviz = function(player, args)
+	local target = args[1] and string.lower(args[1]) or nil
+	if not target then
+		reply(player, "admin.usage.mobviz")
+		return
+	end
+	if target == "clear" then
+		Net.Fire(player, "MobViz", "clear")
+		reply(player, "admin.mobviz.cleared")
+		return
+	end
+	local id = args[1] :: string
+	if string.sub(target, 1, 6) == "region" then
+		target = string.sub(target, 7)
+	end
+	if not VIZ_GROUPS[target] and not MonsterLooks.has(id) and not isPet(id) then
+		reply(player, "admin.mobviz.unknown", { id = id })
+		return
+	end
+	local variant = "normal"
+	local anim = false
+	for i = 2, 3 do
+		local option = args[i] and string.lower(args[i])
+		if option == "anim" then
+			anim = true
+		elseif option and VIZ_VARIANTS[option] then
+			variant = option
+		elseif option then
+			reply(player, "admin.usage.mobviz")
+			return
+		end
+	end
+	Net.Fire(player, "MobViz", "show", {
+		target = if VIZ_GROUPS[target] then target else id,
+		variant = variant,
+		anim = anim,
+	})
+	reply(player, "admin.mobviz.ok", { target = if VIZ_GROUPS[target] then target else id, variant = variant })
+end
+
+commands.look = function(player, args)
+	local id = args[1]
+	local look: any = id and MonsterLooks.get(id)
+	local variant = "normal"
+	local scale = 1
+	if id and not look and isPet(id) then
+		look = (Cosmetics.get(id) :: any).look
+		variant = "pet"
+		scale = Cosmetics.PET_SCALE
+	elseif look then
+		local def = Monsters.get(id :: string)
+		local boss = Bosses.get(id :: string)
+		scale = if def then def.size elseif boss then boss.look.size else 1
+		variant = if boss then "boss" else "normal"
+	end
+	if not id or not look then
+		reply(player, "admin.mobviz.unknown", { id = tostring(id) })
+		return
+	end
+	local rig = Anatomy.build(look, { id = id :: string, variant = variant, scale = scale })
+	local asset = look.asset
+	local assets = game:GetService("ReplicatedStorage"):FindFirstChild("Assets")
+	local folder = assets and assets:FindFirstChild(if variant == "pet" then "Pets" else "Monsters")
+	local modelName = if asset then asset.model else id
+	local present = folder ~= nil and folder:FindFirstChild(modelName :: string) ~= nil
+	local missing = {}
+	if asset and asset.rig == "animator" then
+		for _, slot in LookAnim.SLOTS do
+			if not (asset.anims and asset.anims[slot]) then
+				table.insert(missing, slot)
+			end
+		end
+	end
+	local size = rig.root.size
+	reply(player, "admin.look.info", {
+		id = id,
+		plan = look.plan,
+		parts = #rig.pieces,
+		root = string.format("%.1f × %.1f × %.1f", size[1], size[2], size[3]),
+		hip = string.format("%.2f", rig.hipHeight),
+		height = string.format("%.1f", rig.height),
+		model = if present then "✔" else "✘",
+		missing = if #missing > 0 then table.concat(missing, ", ") else "-",
+	})
+end
+
+commands.lookstats = function(player)
+	Net.Fire(player, "MobViz", "stats")
 end
 
 return commands

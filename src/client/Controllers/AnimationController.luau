@@ -1,14 +1,16 @@
 --!strict
 -- Procedural animation without animation assets (S17b):
---   * monsters: every "Gait_*" Motor6D built by RigBuilder is posed each frame from Logic/Gait (walk cycle
---     from the replicated root velocity, idle breathing, attack windup and strike, hit flinch, death collapse);
+--   * monsters: every "Gait_*" Motor6D of the look (S24: built on this client by MonsterViewController, joints
+--     collected again whenever the full look appears) is posed each frame from Logic/Gait (walk cycle from the
+--     replicated root velocity, idle breathing, attack windup and strike, hit flinch, death collapse). Real
+--     models with `asset.rig = "animator"` play their clips instead (Logic/LookAnim). Only the nearest
+--     Config.MonsterLook.maxAnimated monsters with a full look move; the rest hold still;
 --   * characters (S22): basic attacks play a weapon-specific pose sequence (Logic/AttackPose: cut, two-handed
 --     cut, thrust, smash, bow draw, crossbow, wand / staff push, punch) written to Motor6D.Transform in
 --     PreSimulation, after the Animator, on top of the default animation (legs keep walking; the arms follow
 --     the attack by its weight); a hit tilts the upper body back for a moment. Skills keep the cast pose
 --     (point / raise / slam) by rotating the shoulder joints (C0).
--- Everything runs locally on every client, so other players see the same motion. Real monster models from
--- Assets.Monsters have no Gait joints and are left alone.
+-- Everything runs locally on every client, so other players see the same motion.
 
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -19,23 +21,39 @@ local AttackMotions = require(ReplicatedStorage.Shared.Data.AttackMotions)
 local AttackPose = require(ReplicatedStorage.Shared.Logic.AttackPose)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Gait = require(ReplicatedStorage.Shared.Logic.Gait)
-local State = require(script.Parent.Parent.UI.State)
+local LookAnim = require(ReplicatedStorage.Shared.Logic.LookAnim)
+local MonsterLooks = require(ReplicatedStorage.Shared.Data.MonsterLooks)
+local UserInputService = game:GetService("UserInputService")
 
 local AnimationController = {
 	Name = "AnimationController",
+	Deps = { "MonsterViewController" },
 }
 
-local RANGE = 150 -- studs from the camera; farther monsters keep their last pose
-local RANGE_LOW = 70 -- with low effects quality
+local MonsterView: any = nil
 local HIT_SECONDS = 0.25
+local SPAWN_SECONDS = 1.2
+local PICK_EVERY = 0.25 -- seconds between choosing which monsters animate
 local DEATH_SECONDS = 0.55
 
 type JointState = { motor: Motor6D, joint: Gait.Joint, scale: number }
+
+type Clips = {
+	animator: Animator,
+	tracks: { [string]: AnimationTrack },
+	playing: AnimationTrack?,
+	slot: string?,
+	walkSpeed: number?,
+	paused: boolean,
+}
 
 type MonsterState = {
 	model: Model,
 	root: BasePart,
 	joints: { JointState },
+	clips: Clips?,
+	spawnedAt: number,
+	attackSlot: string,
 	scale: number,
 	seed: number,
 	cycle: number,
@@ -47,6 +65,9 @@ type MonsterState = {
 }
 
 local monsters: { [Model]: MonsterState } = {}
+local animated: { [Model]: boolean } = {}
+local animations: { [string]: Animation } = {} -- one Animation object per id
+local pickClock = 0
 local motion: Gait.Motion = { cycle = 0, move = 0, time = 0, raise = 0, strike = 0, hit = 0, dead = 0 }
 
 -- Monsters --------------------------------------------------------------------------------------------------
@@ -74,6 +95,60 @@ local function collectJoints(model: Model): { JointState }
 	return joints
 end
 
+-- Clips of a real model (asset.rig = "animator"), loaded once per look.
+local function loadClips(model: Model): Clips?
+	local lookId = model:GetAttribute("Look")
+	local look = if type(lookId) == "string" then MonsterLooks.get(lookId) else nil
+	local asset = look and look.asset
+	if not asset or asset.rig ~= "animator" or not asset.anims then
+		return nil
+	end
+	local holder = model:FindFirstChild("Look")
+	local animator = holder and holder:FindFirstChildWhichIsA("Animator", true)
+	if not animator then
+		return nil
+	end
+	local tracks: { [string]: AnimationTrack } = {}
+	for slot, id in asset.anims :: { [string]: string } do
+		local animation = animations[id]
+		if not animation then
+			local created = Instance.new("Animation")
+			created.AnimationId = id
+			animations[id] = created
+			animation = created
+		end
+		local ok, loaded = pcall(function()
+			return (animator :: Animator):LoadAnimation(animation :: Animation)
+		end)
+		if ok and loaded then
+			tracks[slot] = loaded
+		end
+	end
+	return {
+		animator = animator :: Animator,
+		tracks = tracks,
+		playing = nil,
+		slot = nil,
+		walkSpeed = asset.walkSpeed,
+		paused = false,
+	}
+end
+
+-- (Re)collects the joints of a monster's look; called when the model arrives and when its look changes.
+local function refresh(model: Model)
+	local s = monsters[model]
+	if not s then
+		return
+	end
+	s.joints = collectJoints(model)
+	s.clips = loadClips(model)
+	for _, j in s.joints do
+		if j.joint.role == "body" then
+			s.scale = j.scale
+		end
+	end
+end
+
 local function track(model: Instance)
 	if not model:IsA("Model") or monsters[model] then
 		return
@@ -82,21 +157,15 @@ local function track(model: Instance)
 	if not root or not root:IsA("BasePart") then
 		return
 	end
-	local joints = collectJoints(model)
-	if #joints == 0 then
-		return
-	end
-	local scale = 1
-	for _, j in joints do
-		if j.joint.role == "body" then
-			scale = j.scale
-		end
-	end
+	local scale = model:GetAttribute("LookScale")
 	monsters[model] = {
 		model = model,
 		root = root,
-		joints = joints,
-		scale = scale,
+		joints = {},
+		clips = nil,
+		spawnedAt = os.clock(),
+		attackSlot = "attack1",
+		scale = if type(scale) == "number" then scale else 1,
 		seed = math.random() * 100,
 		cycle = 0,
 		move = 0,
@@ -105,6 +174,68 @@ local function track(model: Instance)
 		hitAt = -math.huge,
 		deadAt = nil,
 	}
+	refresh(model)
+end
+
+-- The nearest monsters with a full look shown animate (Config.MonsterLook.maxAnimated).
+local function pickAnimated()
+	local list: { MonsterState } = {}
+	for model, s in monsters do
+		if MonsterView.IsFull(model) and (#s.joints > 0 or s.clips ~= nil) then
+			table.insert(list, s)
+		end
+	end
+	table.sort(list, function(a, b)
+		return MonsterView.Distance(a.model) < MonsterView.Distance(b.model)
+	end)
+	local limits = Config.MonsterLook.maxAnimated
+	local limit = if UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
+		then limits.touch
+		else limits.desktop
+	table.clear(animated)
+	for i = 1, math.min(limit, #list) do
+		animated[list[i].model] = true
+	end
+	for _, s in list do
+		local clips = s.clips
+		if clips then
+			local on = animated[s.model] == true
+			if clips.paused == on and clips.playing then
+				clips.playing:AdjustSpeed(if on then 1 else 0)
+			end
+			clips.paused = not on
+		end
+	end
+end
+
+local function stepClips(s: MonsterState, clips: Clips, now: number, speed: number)
+	local raise, strike = Gait.attack(now - s.attackStart, s.attackWindup)
+	local available: { [string]: boolean } = {}
+	for slot in clips.tracks do
+		available[slot] = true
+	end
+	local pick = LookAnim.pick({
+		dead = s.deadAt ~= nil,
+		hit = now - s.hitAt < HIT_SECONDS,
+		attack = if raise > 0 or strike > 0 then s.attackSlot :: any else nil,
+		speed = speed,
+		spawning = now - s.spawnedAt < SPAWN_SECONDS,
+		walkSpeed = clips.walkSpeed,
+	}, available)
+	if not pick then
+		return
+	end
+	local clip = clips.tracks[pick.slot]
+	if clips.slot ~= pick.slot or not clips.playing then
+		if clips.playing then
+			clips.playing:Stop(pick.fade)
+		end
+		clip.Looped = pick.looped
+		clip:Play(pick.fade)
+		clips.playing = clip
+		clips.slot = pick.slot
+	end
+	clip:AdjustSpeed(pick.speed)
 end
 
 local function step(dt: number)
@@ -112,15 +243,21 @@ local function step(dt: number)
 	if not camera then
 		return
 	end
-	local eye = camera.CFrame.Position
-	local range = if State.Get({ "account", "settings", "quality" }) == "low" then RANGE_LOW else RANGE
 	local now = os.clock()
+	if now - pickClock >= PICK_EVERY then
+		pickClock = now
+		pickAnimated()
+	end
 	for model, s in monsters do
 		if not model.Parent or not s.root.Parent then
 			monsters[model] = nil
+			animated[model] = nil
 			continue
 		end
-		if (s.root.Position - eye).Magnitude > range then
+		if s.deadAt == nil and model:GetAttribute("Dead") == true then
+			s.deadAt = now
+		end
+		if not animated[model] then
 			continue
 		end
 		local velocity = s.root.AssemblyLinearVelocity
@@ -128,8 +265,10 @@ local function step(dt: number)
 		local target = math.clamp(speed / 3, 0, 1)
 		s.move += (target - s.move) * math.min(1, dt * 8)
 		s.cycle = Gait.advance(s.cycle, dt, speed, s.scale)
-		if s.deadAt == nil and model:GetAttribute("Dead") == true then
-			s.deadAt = now
+		local clips = s.clips
+		if clips then
+			stepClips(s, clips, now, speed)
+			continue
 		end
 
 		local raise, strike = Gait.attack(now - s.attackStart, s.attackWindup)
@@ -158,6 +297,8 @@ function AnimationController.MonsterAttack(model: Model, windup: number?, strike
 	end
 	local w = math.clamp(windup or Gait.DEFAULT_WINDUP, 0.05, 5)
 	s.attackWindup = w
+	-- Real models: long windups are spells and specials.
+	s.attackSlot = if strikeNow then "attack1" elseif w > 1 then "cast" else "attack2"
 	s.attackStart = os.clock() - (if strikeNow then math.max(0, w - 0.06) else 0)
 end
 
@@ -422,7 +563,27 @@ function AnimationController.Cast(character: Model, style: CastStyle)
 	both(left, restL, 1)
 end
 
+-- Monsters animated right now (/lookstats).
+function AnimationController.AnimatedCount(): number
+	local n = 0
+	for _ in animated do
+		n += 1
+	end
+	return n
+end
+
+function AnimationController.Init(registry: any)
+	MonsterView = registry.Get("MonsterViewController")
+end
+
 function AnimationController.Start()
+	MonsterView.Changed:Connect(function(model: Model)
+		if monsters[model] then
+			refresh(model)
+		else
+			track(model)
+		end
+	end)
 	RunService.PreSimulation:Connect(function(dt: number)
 		step(dt)
 		stepCharacters()

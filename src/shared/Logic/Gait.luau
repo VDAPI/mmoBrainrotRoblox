@@ -6,7 +6,40 @@
 
 local Gait = {}
 
-export type Role = "body" | "leg" | "spiderLeg" | "arm" | "head" | "tail" | "wing"
+-- S24 adds: flap (wings of the generated looks), segment (a wave along a chain: serpents, tails, trunks),
+-- claw (pincers open in the windup), sting (a tail strikes forward), jaw (opens to bite), orbit (slow turn
+-- around Y: shards, skulls). Every role is at rest (all zeros) for the rest motion (time 0, nothing going on);
+-- the continuous ones fade in over the first second of `time`, which in game is never near 0.
+export type Role =
+	"body"
+	| "leg"
+	| "spiderLeg"
+	| "arm"
+	| "head"
+	| "tail"
+	| "wing"
+	| "flap"
+	| "segment"
+	| "claw"
+	| "sting"
+	| "jaw"
+	| "orbit"
+
+Gait.ROLES = {
+	"body",
+	"leg",
+	"spiderLeg",
+	"arm",
+	"head",
+	"tail",
+	"wing",
+	"flap",
+	"segment",
+	"claw",
+	"sting",
+	"jaw",
+	"orbit",
+}
 
 export type Joint = {
 	role: Role,
@@ -132,6 +165,37 @@ function Gait.pose(joint: Joint, m: Motion): Pose
 	elseif role == "tail" then
 		local wag = math.sin(m.time * 2.4) * 0.35 + math.sin(m.cycle) * 0.25 * m.move
 		return pose(math.sin(m.time * 1.3) * 0.08 * alive, wag * amp * alive, 0, 0, 0, 0)
+	elseif role == "flap" then
+		-- Generated wings: quick beats while moving or attacking, slow ones while hovering; folded when dead.
+		local ramp = math.clamp(m.time, 0, 1)
+		local busy = math.max(m.move, m.raise)
+		local speed = 5 + 7 * busy
+		local width = 0.32 + 0.3 * busy
+		local beat = math.sin(m.time * speed) * width * ramp
+		return pose(0, 0, joint.side * (beat * amp * alive - m.dead * 0.7), 0, 0, 0)
+	elseif role == "segment" then
+		-- A wave runs along the chain (phase = position in it); the chain whips forward on a strike.
+		local ramp = math.clamp(m.time, 0, 1)
+		local speed = 1.6 + 2.4 * m.move
+		local wave = math.sin(m.time * speed - joint.phase * TAU) * 0.28 * amp * ramp
+		return pose((-m.strike * 0.25 + m.raise * 0.12) * amp * alive, wave * alive, 0, 0, 0, 0)
+	elseif role == "claw" then
+		-- Pincers open in the windup and snap shut on the strike.
+		return pose((-m.raise * 0.6 + m.strike * 0.25) * alive, 0, 0, 0, 0, 0)
+	elseif role == "sting" then
+		-- The tail curls back in the windup and stabs forward on the strike.
+		local ramp = math.clamp(m.time, 0, 1)
+		local sway = math.sin(m.time * 1.5 + joint.phase * TAU) * 0.05 * idle * ramp
+		return pose((m.raise * 0.35 - m.strike * 0.85) * amp * alive, sway * alive, 0, 0, 0, 0)
+	elseif role == "jaw" then
+		-- Opens wide in the windup, bites on the strike, gapes when dead.
+		local open = m.raise * 0.5 + m.strike * 0.15 * (1 - m.raise) + m.hit * 0.15
+		return pose(-open * amp * alive - m.dead * 0.35, 0, 0, 0, 0, 0)
+	elseif role == "orbit" then
+		-- Slow turn around Y (keeps turning after death, slower).
+		local ramp = math.clamp(m.time, 0, 1)
+		local angle = (m.time * (0.8 - m.dead * 0.5) * amp) % TAU
+		return pose(0, angle * ramp, 0, 0, 0, 0)
 	elseif role == "wing" then
 		-- Faster, wider flaps while moving or attacking; folded when dead.
 		local speed = 3 + 4 * math.max(m.move, m.raise)

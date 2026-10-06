@@ -4,8 +4,6 @@
 -- Stats: Logic/MonsterStats from level x multipliers below x variant (Data/Combat.variants).
 -- Elites and Elite II spawn only in caves (red zones); `elites = false` kinds have no elite variants.
 
-export type Shape = "quadruped" | "humanoid" | "spider" | "golem" | "flyer" | "dragon"
-
 export type MonsterDef = {
 	id: string,
 	region: number, -- 1 meadows, 2 duskwood, 3 ashen, 4 frostpeak
@@ -24,9 +22,8 @@ export type MonsterDef = {
 	elites: boolean,
 	ability: string?, -- Elite II special (Data/MonsterAbilities)
 	lootTable: string, -- Data/LootTables id (S04)
-	shape: Shape,
-	size: number, -- model scale before the variant scale
-	colors: { primary: string, secondary: string },
+	size: number, -- model scale before the variant scale (looks: Data/MonsterLooks, S24)
+	aura: string?, -- bosses: aura colour (Data/Bosses look.aura)
 	nameKeys: { normal: string, elite: string, elite2: string },
 }
 
@@ -43,9 +40,7 @@ type Options = {
 	passive: boolean?,
 	elites: boolean?,
 	ability: string?,
-	shape: Shape,
 	size: number?,
-	colors: { primary: string, secondary: string },
 }
 
 local LIST: { MonsterDef } = {}
@@ -69,9 +64,7 @@ local function kind(id: string, region: number, cave: boolean, minLevel: number,
 		elites = o.elites ~= false,
 		ability = o.ability,
 		lootTable = id,
-		shape = o.shape,
 		size = o.size or 1,
-		colors = o.colors,
 		nameKeys = {
 			normal = `monster.{id}.normal`,
 			elite = `monster.{id}.elite`,
@@ -87,45 +80,33 @@ kind("rabbit", 1, false, 1, 3, {
 	passive = true,
 	elites = false,
 	moveSpeed = 11,
-	shape = "quadruped",
 	size = 0.5,
-	colors = { primary = "#8B6B4A", secondary = "#E8DCC8" },
 })
 kind("wolf", 1, false, 2, 6, {
 	speed = 1.15,
 	moveSpeed = 14,
 	ability = "leap",
-	shape = "quadruped",
-	colors = { primary = "#6E6E6E", secondary = "#B9B9B9" },
 })
 kind("boar", 1, false, 5, 10, {
 	hpMul = 1.25,
 	defMul = 1.2,
 	ability = "charge",
-	shape = "quadruped",
 	size = 1.15,
-	colors = { primary = "#5A3D2B", secondary = "#D9C9A8" },
 })
 kind("bandit", 1, false, 9, 14, {
 	ability = "cleave",
-	shape = "humanoid",
-	colors = { primary = "#5B4636", secondary = "#2F2F35" },
 })
 kind("goblinScout", 1, true, 13, 18, {
 	speed = 1.1,
 	moveSpeed = 14,
 	ability = "slam",
-	shape = "humanoid",
 	size = 0.8,
-	colors = { primary = "#5E8C3A", secondary = "#6B4A2B" },
 })
 kind("caveSpider", 1, true, 14, 20, {
 	hpMul = 0.9,
 	speed = 1.2,
 	element = "poison",
 	ability = "poisonPool",
-	shape = "spider",
-	colors = { primary = "#2B2630", secondary = "#7A2E3A" },
 })
 kind("goblinShaman", 1, true, 16, 20, {
 	hpMul = 0.8,
@@ -133,9 +114,7 @@ kind("goblinShaman", 1, true, 16, 20, {
 	damageKind = "magic",
 	range = 26,
 	ability = "boneNova",
-	shape = "humanoid",
 	size = 0.85,
-	colors = { primary = "#4F7A34", secondary = "#C9B26B" },
 })
 
 -- New kinds after the S17 tests (S19, DESIGN §15.2): more kinds per map, no level gaps.
@@ -143,9 +122,7 @@ kind("lynx", 1, false, 3, 7, {
 	speed = 1.2,
 	moveSpeed = 14,
 	ability = "leap",
-	shape = "quadruped",
 	size = 0.8,
-	colors = { primary = "#B08A5A", secondary = "#3A2E24" },
 })
 kind("swampToad", 1, false, 4, 8, {
 	hpMul = 1.1,
@@ -153,9 +130,7 @@ kind("swampToad", 1, false, 4, 8, {
 	element = "poison",
 	ability = "poisonPool",
 	moveSpeed = 11,
-	shape = "quadruped",
 	size = 0.7,
-	colors = { primary = "#5E7A3A", secondary = "#C9C25A" },
 })
 kind("carrionCrow", 1, false, 6, 11, {
 	hpMul = 0.75,
@@ -163,26 +138,20 @@ kind("carrionCrow", 1, false, 6, 11, {
 	attack = "ranged",
 	range = 18,
 	ability = "wail",
-	shape = "flyer",
 	size = 0.6,
-	colors = { primary = "#1E1E24", secondary = "#5A5A66" },
 })
 kind("koboldMiner", 1, false, 10, 15, {
 	hpMul = 0.95,
 	defMul = 1.2,
 	ability = "slam",
-	shape = "humanoid",
 	size = 0.75,
-	colors = { primary = "#8A5A3A", secondary = "#C9A45C" },
 })
 kind("brownBear", 1, false, 16, 20, {
 	hpMul = 1.4,
 	atkMul = 1.1,
 	speed = 0.85,
 	ability = "slam",
-	shape = "quadruped",
 	size = 1.5,
-	colors = { primary = "#5A3A24", secondary = "#8A6B4A" },
 })
 
 -- Region 2: Duskwood (20–45) / Crypt of the Forgotten (35–45)
@@ -191,9 +160,7 @@ kind("werewolf", 2, false, 20, 28, {
 	speed = 1.1,
 	moveSpeed = 14,
 	ability = "leap",
-	shape = "humanoid",
 	size = 1.3,
-	colors = { primary = "#4A3B30", secondary = "#8E7E6A" },
 })
 kind("forestWraith", 2, false, 23, 31, {
 	hpMul = 0.8,
@@ -202,8 +169,6 @@ kind("forestWraith", 2, false, 23, 31, {
 	range = 26,
 	element = "ice",
 	ability = "frostNova",
-	shape = "flyer",
-	colors = { primary = "#9FB6C9", secondary = "#E4F0F7" },
 })
 kind("rotEnt", 2, false, 26, 34, {
 	hpMul = 1.5,
@@ -212,17 +177,13 @@ kind("rotEnt", 2, false, 26, 34, {
 	moveSpeed = 9,
 	element = "poison",
 	ability = "slam",
-	shape = "golem",
 	size = 1.5,
-	colors = { primary = "#4B3A26", secondary = "#5F7D3A" },
 })
 kind("darkCultist", 2, false, 29, 37, {
 	attack = "ranged",
 	damageKind = "magic",
 	range = 28,
 	ability = "voidPool",
-	shape = "humanoid",
-	colors = { primary = "#2A1F33", secondary = "#7A3FA0" },
 })
 kind("swampTroll", 2, false, 32, 40, {
 	hpMul = 1.6,
@@ -230,15 +191,11 @@ kind("swampTroll", 2, false, 32, 40, {
 	speed = 0.8,
 	moveSpeed = 11,
 	ability = "slam",
-	shape = "golem",
 	size = 1.6,
-	colors = { primary = "#4D5E3A", secondary = "#2E3A24" },
 })
 kind("skeletonGuard", 2, true, 35, 41, {
 	defMul = 1.4,
 	ability = "cleave",
-	shape = "humanoid",
-	colors = { primary = "#D8D2C2", secondary = "#5A5A60" },
 })
 kind("specter", 2, true, 37, 43, {
 	hpMul = 0.85,
@@ -247,8 +204,6 @@ kind("specter", 2, true, 37, 43, {
 	range = 24,
 	element = "ice",
 	ability = "wail",
-	shape = "flyer",
-	colors = { primary = "#6E8FA8", secondary = "#C9E3F2" },
 })
 kind("necromancer", 2, true, 39, 45, {
 	hpMul = 0.9,
@@ -256,8 +211,6 @@ kind("necromancer", 2, true, 39, 45, {
 	damageKind = "magic",
 	range = 28,
 	ability = "boneNova",
-	shape = "humanoid",
-	colors = { primary = "#1F1F24", secondary = "#5FA06B" },
 })
 
 -- New kinds (S19).
@@ -265,24 +218,18 @@ kind("blackBear", 2, false, 21, 27, {
 	hpMul = 1.35,
 	speed = 0.9,
 	ability = "slam",
-	shape = "quadruped",
 	size = 1.5,
-	colors = { primary = "#1E1A18", secondary = "#5A4636" },
 })
 kind("ghoul", 2, false, 27, 33, {
 	speed = 1.15,
 	element = "poison",
 	ability = "leap",
-	shape = "humanoid",
-	colors = { primary = "#6E7A5A", secondary = "#3A3028" },
 })
 kind("bogSerpent", 2, false, 30, 36, {
 	hpMul = 1.1,
 	element = "poison",
 	ability = "poisonPool",
-	shape = "quadruped",
 	size = 1.1,
-	colors = { primary = "#3A5A3A", secondary = "#A8B85A" },
 })
 kind("marshWitch", 2, false, 36, 42, {
 	hpMul = 0.85,
@@ -291,16 +238,12 @@ kind("marshWitch", 2, false, 36, 42, {
 	range = 26,
 	element = "poison",
 	ability = "voidPool",
-	shape = "humanoid",
-	colors = { primary = "#3A2E44", secondary = "#7ACB3A" },
 })
 kind("bloodBat", 2, false, 40, 45, {
 	hpMul = 0.8,
 	speed = 1.35,
 	ability = "wail",
-	shape = "flyer",
 	size = 0.7,
-	colors = { primary = "#4A1E24", secondary = "#C2352E" },
 })
 
 -- Region 3: Ashen Wastes (45–70) / Deepforge (60–70)
@@ -308,17 +251,13 @@ kind("salamander", 3, false, 45, 52, {
 	speed = 1.1,
 	element = "fire",
 	ability = "fireBreath",
-	shape = "quadruped",
 	size = 1.1,
-	colors = { primary = "#B5462B", secondary = "#F0A030" },
 })
 kind("ashOrc", 3, false, 48, 56, {
 	hpMul = 1.2,
 	atkMul = 1.1,
 	ability = "cleave",
-	shape = "humanoid",
 	size = 1.2,
-	colors = { primary = "#5C5A55", secondary = "#8A3A2A" },
 })
 kind("fireGolem", 3, false, 52, 60, {
 	hpMul = 1.6,
@@ -327,17 +266,13 @@ kind("fireGolem", 3, false, 52, 60, {
 	moveSpeed = 9,
 	element = "fire",
 	ability = "emberNova",
-	shape = "golem",
 	size = 1.6,
-	colors = { primary = "#3A2A22", secondary = "#FF7A1A" },
 })
 kind("desertScorpion", 3, false, 55, 63, {
 	speed = 1.2,
 	element = "poison",
 	ability = "poisonPool",
-	shape = "spider",
 	size = 1.3,
-	colors = { primary = "#C29A5B", secondary = "#6B4A2B" },
 })
 kind("wyvern", 3, false, 58, 66, {
 	hpMul = 1.1,
@@ -345,16 +280,12 @@ kind("wyvern", 3, false, 58, 66, {
 	range = 22,
 	element = "fire",
 	ability = "fireBreath",
-	shape = "dragon",
 	size = 1.3,
-	colors = { primary = "#6B2E25", secondary = "#C97B3A" },
 })
 kind("renegadeDwarf", 3, true, 60, 65, {
 	defMul = 1.5,
 	ability = "charge",
-	shape = "humanoid",
 	size = 0.85,
-	colors = { primary = "#6A4A32", secondary = "#9A9AA2" },
 })
 kind("magmaGolem", 3, true, 62, 68, {
 	hpMul = 1.7,
@@ -363,17 +294,13 @@ kind("magmaGolem", 3, true, 62, 68, {
 	moveSpeed = 9,
 	element = "fire",
 	ability = "slam",
-	shape = "golem",
 	size = 1.7,
-	colors = { primary = "#2B1F1A", secondary = "#FF5A1A" },
 })
 kind("flameSmith", 3, true, 64, 70, {
 	atkMul = 1.2,
 	element = "fire",
 	ability = "emberNova",
-	shape = "humanoid",
 	size = 1.1,
-	colors = { primary = "#4A3A30", secondary = "#FF9A3A" },
 })
 
 -- New kinds (S19).
@@ -381,9 +308,7 @@ kind("wasteHyena", 3, false, 46, 52, {
 	speed = 1.2,
 	moveSpeed = 14,
 	ability = "leap",
-	shape = "quadruped",
 	size = 0.95,
-	colors = { primary = "#A8865A", secondary = "#5A4636" },
 })
 kind("ashVulture", 3, false, 50, 56, {
 	hpMul = 0.8,
@@ -391,9 +316,7 @@ kind("ashVulture", 3, false, 50, 56, {
 	attack = "ranged",
 	range = 20,
 	ability = "wail",
-	shape = "flyer",
 	size = 0.8,
-	colors = { primary = "#4A3A3A", secondary = "#D9A27A" },
 })
 kind("fireImp", 3, false, 55, 61, {
 	hpMul = 0.8,
@@ -402,25 +325,19 @@ kind("fireImp", 3, false, 55, 61, {
 	range = 24,
 	element = "fire",
 	ability = "emberNova",
-	shape = "humanoid",
 	size = 0.7,
-	colors = { primary = "#C2352E", secondary = "#FF9F1C" },
 })
 kind("basilisk", 3, false, 61, 67, {
 	hpMul = 1.2,
 	defMul = 1.3,
 	element = "poison",
 	ability = "poisonPool",
-	shape = "dragon",
 	size = 0.8,
-	colors = { primary = "#5A6B3A", secondary = "#C9B26B" },
 })
 kind("desertMummy", 3, false, 66, 70, {
 	hpMul = 1.15,
 	speed = 0.9,
 	ability = "boneNova",
-	shape = "humanoid",
-	colors = { primary = "#D8C9A0", secondary = "#5A4A3A" },
 })
 
 -- Region 4: Frostpeak (70–100) / Glacier Heart (90–100)
@@ -429,17 +346,13 @@ kind("iceWolf", 4, false, 70, 78, {
 	moveSpeed = 14,
 	element = "ice",
 	ability = "leap",
-	shape = "quadruped",
 	size = 1.1,
-	colors = { primary = "#C8DDEB", secondary = "#7FA7C9" },
 })
 kind("yeti", 4, false, 74, 82, {
 	hpMul = 1.4,
 	atkMul = 1.1,
 	ability = "slam",
-	shape = "humanoid",
 	size = 1.6,
-	colors = { primary = "#EEF3F7", secondary = "#8FA3B3" },
 })
 kind("frostGiant", 4, false, 78, 88, {
 	hpMul = 1.8,
@@ -448,9 +361,7 @@ kind("frostGiant", 4, false, 78, 88, {
 	moveSpeed = 10,
 	element = "ice",
 	ability = "cleave",
-	shape = "golem",
 	size = 2,
-	colors = { primary = "#7FA7C9", secondary = "#3A5A7A" },
 })
 kind("iceElemental", 4, false, 82, 92, {
 	attack = "ranged",
@@ -458,18 +369,14 @@ kind("iceElemental", 4, false, 82, 92, {
 	range = 28,
 	element = "ice",
 	ability = "frostNova",
-	shape = "flyer",
 	size = 1.2,
-	colors = { primary = "#9FE0FF", secondary = "#FFFFFF" },
 })
 kind("dragonspawn", 4, false, 85, 95, {
 	hpMul = 1.2,
 	atkMul = 1.15,
 	element = "fire",
 	ability = "fireBreath",
-	shape = "dragon",
 	size = 1.2,
-	colors = { primary = "#3A4A6B", secondary = "#C9A45C" },
 })
 kind("crystalGuardian", 4, true, 90, 96, {
 	hpMul = 1.7,
@@ -477,18 +384,14 @@ kind("crystalGuardian", 4, true, 90, 96, {
 	speed = 0.8,
 	moveSpeed = 9,
 	ability = "slam",
-	shape = "golem",
 	size = 1.6,
-	colors = { primary = "#7FD4E8", secondary = "#E8FBFF" },
 })
 kind("youngFrostDragon", 4, true, 93, 100, {
 	hpMul = 1.5,
 	atkMul = 1.25,
 	element = "ice",
 	ability = "frostBreath",
-	shape = "dragon",
 	size = 1.6,
-	colors = { primary = "#A8D8F0", secondary = "#3A6A9A" },
 })
 
 -- New kinds (S19).
@@ -496,9 +399,7 @@ kind("snowLeopard", 4, false, 71, 78, {
 	speed = 1.25,
 	moveSpeed = 14,
 	ability = "leap",
-	shape = "quadruped",
 	size = 0.9,
-	colors = { primary = "#E8E4DA", secondary = "#5A5A66" },
 })
 kind("peakHarpy", 4, false, 76, 83, {
 	hpMul = 0.85,
@@ -507,34 +408,26 @@ kind("peakHarpy", 4, false, 76, 83, {
 	range = 22,
 	element = "lightning",
 	ability = "wail",
-	shape = "flyer",
-	colors = { primary = "#8A9AB0", secondary = "#E8E25A" },
 })
 kind("iceMammoth", 4, false, 82, 89, {
 	hpMul = 1.5,
 	atkMul = 1.1,
 	speed = 0.8,
 	ability = "slam",
-	shape = "quadruped",
 	size = 1.9,
-	colors = { primary = "#7A6A5A", secondary = "#E4F0F7" },
 })
 kind("frozenKnight", 4, false, 88, 95, {
 	hpMul = 1.15,
 	defMul = 1.4,
 	element = "ice",
 	ability = "cleave",
-	shape = "humanoid",
 	size = 1.1,
-	colors = { primary = "#9FB6C9", secondary = "#2F3A4A" },
 })
 kind("frostWyrm", 4, false, 95, 100, {
 	hpMul = 1.3,
 	element = "ice",
 	ability = "frostBreath",
-	shape = "dragon",
 	size = 1.1,
-	colors = { primary = "#7FD4FF", secondary = "#E4F0F7" },
 })
 
 local byId: { [string]: MonsterDef } = {}

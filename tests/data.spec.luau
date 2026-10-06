@@ -182,7 +182,7 @@ T.describe("Data: Monsters", function()
 	end)
 
 	T.it("every kind is complete, localized and consistent", function()
-		local shapes = { quadruped = true, humanoid = true, spider = true, golem = true, flyer = true, dragon = true }
+		-- S24: the look (plan, colours) lives in Data/MonsterLooks, checked by tests/anatomy.spec.
 		for _, def in Monsters.list do
 			local function check(ok: boolean, what: string)
 				if not ok then
@@ -192,12 +192,10 @@ T.describe("Data: Monsters", function()
 			for _, variant in Monsters.variants do
 				check(hasKey(def.nameKeys[variant]), `missing name {def.nameKeys[variant]}`)
 			end
-			check(shapes[def.shape] == true, "unknown shape")
 			check(def.levels.min >= 1 and def.levels.max <= 100 and def.levels.min <= def.levels.max, "levels")
 			check(def.hpMul > 0 and def.atkMul > 0 and def.defMul > 0 and def.speed > 0, "multipliers")
 			check(def.attack == "melee" or def.attack == "ranged", "attack type")
-			check(string.match(def.colors.primary, "^#%x%x%x%x%x%x$") ~= nil, "primary colour")
-			check(string.match(def.colors.secondary, "^#%x%x%x%x%x%x$") ~= nil, "secondary colour")
+			check(def.size >= 0.4 and def.size <= 2.5, "size")
 			if def.elites then
 				check(def.ability ~= nil and MonsterAbilities.get(def.ability :: string) ~= nil, "Elite II ability")
 			end

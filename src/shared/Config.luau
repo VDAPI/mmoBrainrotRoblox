@@ -117,6 +117,21 @@ local Config = {
 	-- DayNightShare of it.
 	DayLength = 2400,
 	DayNightShare = 0.25,
+	-- Monster looks (S24): the server waits CorpseSeconds before removing a dead monster; clients fade the look
+	-- over the same time. Clients build the full look within fullIn studs of the camera (lowQuality: graphics
+	-- quality "low"), hide it past fullOut (a 2-3 part silhouette stays) and destroy it past drop; at most
+	-- partsPerFrame parts are created per frame, and at most maxAnimated looks (the nearest) are animated.
+	CorpseSeconds = 1.6,
+	MonsterLook = {
+		fullIn = 160,
+		fullOut = 180,
+		fullInLow = 110,
+		fullOutLow = 130,
+		drop = 320,
+		partsPerFrame = 300,
+		checkEvery = 0.25,
+		maxAnimated = { touch = 25, desktop = 60 },
+	},
 	-- Streaming (S20, decision in PROGRESS): also set in default.project.json (Workspace properties).
 	StreamingTargetRadius = 512,
 	StreamingMinRadius = 128,

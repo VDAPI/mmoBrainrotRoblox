@@ -602,7 +602,7 @@ Po testach S17: **więcej rodzajów na każdej mapie (min. 8–10 na mapę teren
 
 ## 22. Kosmetyki i pety
 
-- Pety chodzą (albo latają) za graczem, nie dają bonusów. Wygląd z tego samego generatora co potwory, w wersji „chibi”; prawdziwy model można podmienić (`docs/MODELE.md`). Wierzchowców nie ma. Kosmetyki: strój (nakładany na awatar), aura, ślad, efekt broni. Garderoba w menu.
+- Pety chodzą (albo latają) za graczem, nie dają bonusów. Wygląd z tego samego generatora co potwory, w wersji „chibi” (duża głowa, duże oczy, krótkie nogi, do 16 części); to, czy pet lata, jest w danych (`flies`: sowa, smoczek, ognik), latające machają skrzydłami. Prawdziwy model można podmienić (`docs/MODELE.md`, `docs/ASSETS.md`). Wierzchowców nie ma. Kosmetyki: strój (nakładany na awatar), aura, ślad, efekt broni. Garderoba w menu.
 
 ## 23. Interfejs
 

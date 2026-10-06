@@ -30,6 +30,7 @@
 | S21 | Nowe miasto startowe (teren, budynki z generatora, detal na kliencie, życie miasta, dzień i noc) | ● |
 | S22 | Animacje ataku, smycz bez leczenia, śmierć z wyborem miejsca, wybór expowiska przy portalu, czytelna mapa | ● |
 | S23 | Panel developerski (F2): rejestr komend, walidacja, audyt, okno z zakładkami, konsola | ● |
+| S24 | Ładne potwory, bossowie i pety: generator wyglądu, wygląd na kliencie z LOD, gotowość na prawdziwe modele | ● |
 
 Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana przez właściciela
 
@@ -528,16 +529,39 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
 - **S23** Remote `AdminTravelArea` z S22 zastąpiony przez `AdminRun("arrive", …)`; komenda może zwrócić
   `(false, errKey)`, więc okno wyboru z `/portalpick` widzi porażkę.
 
+- **S24** Wygląd potworów buduje klient (`MonsterViewController`), serwer trzyma tylko hitbox (HRP z riga Anatomii,
+  ten sam deterministyczny rig liczą obie strony, cache per wygląd/wariant/skala) i atrybuty `Look`, `LookScale`,
+  `LookRegion`. Root to obrys tułowia (`core`) ×1,08 + 0,1, więc promień walki zależy od tułowia, nie od ogona czy
+  skrzydeł; `hipHeight` od najniższej części, latające plany (+2,5 × skala). Serwer nie zanika części, tylko wyłącza
+  aurę i czeka `Config.CorpseSeconds`.
+- **S24** Stawy wyglądu mają pivot w osiach roota (C0/C1 spotykają się w punkcie `joint.at`), więc pozy `Gait` są w
+  przestrzeni ciała niezależnie od obrotu części (nogi-walce, skrzydła). Stare rigi S17b (pivot w osiach części)
+  zniknęły razem ze starym `RigBuilder`.
+- **S24** LOD: sylwetka `far` (2–3 części oznaczone w planach, bez stawów) dla każdego potwora od razu; pełny wygląd z
+  kolejki od najbliższych (300 części/klatkę), chowany przez `LocalTransparencyModifier` (bez przebudowy przy
+  wahaniu odległości), niszczony dalej niż 320. Animowanych jest najwyżej 25 (dotyk) / 60 (PC) najbliższych z pełnym
+  wyglądem.
+- **S24** Prawdziwy model: `PrimaryPart` stoi na ziemi (stopy na 0, jak w `MODELE.md` §5), spaw z HRP z przesunięciem
+  `−(rootHalf + hipHeight)`; hitbox i wysokość z liczb w `asset` (serwer nie klonuje modeli). Gdy pliku brak,
+  generator stoi na tej samej ziemi. Skrypty z kopii są usuwane (ochrona przed backdoorami).
+- **S24** Elity: domyślnie `eliteHorns`/`runes`, rodzaje mają własne listy (`elite`, `elite2`); oczy świecą u Elit,
+  Elit II, bossów i rodzajów z `glowEyes` (nieumarli, żywiołaki, golemy). Barwa regionu tylko dla `inherit` bez
+  własnych kolorów (dziś wszystkie 4 warianty regionalne mają własne kolory; mechanizm zostaje dla następnych).
+- **S24** Pety: plan Anatomii w trybie `chibi` w skali `Cosmetics.PET_SCALE` (0,42), zakotwiczone; `PetController`
+  porusza części z atrybutem `Role` (`flap`, `orbit`, `tail`) przez CFrame wokół `Pivot`, dzieci takiej części
+  dziedziczą jej ruch. `PetLift` stawia chodzące pety na ziemi.
+- **S24** `/mobviz` jest tylko lokalny (remote `MobViz` do admina); podgląd z animacją liczy `Gait` sam, bez
+  `AnimationController`.
+
 ## Niedokończone
 (Rzeczy z zakresu sesji, które nie zostały zrobione. Następna sesja zaczyna od nich.)
 
 - **S01** Dźwięki UI to placeholdery (`UI/Sounds.luau`), do podmiany na prawdziwe.
-- **S03** Animacje potworów są proceduralne (S17b); prawdziwe animacje dopiero z modelami w `Assets.Monsters`.
 - **S11** Questy nie były grane w Studio od początku do końca (test `questpath.spec` sprawdza wykonalność celów i ciągłość
   poziomów); EXP z nagród dobrany wzorem, do strojenia.
 - **S08** Muzyka map: crossfade i głośność z opcji gotowe, ale brak ścieżek (pole `music` w `Data/Maps.luau` puste — wkleić
   id dźwięków z Creator Store).
-- **S14** Kosmetyki i pety to placeholdery z Partów.
+- **S14** Kosmetyki (stroje, aury, ślady, efekty broni) to placeholdery z Partów. Pety: generator S24.
 - **S13** Aukcja i poczta między serwerami (MessagingService, MemoryStore, DataStore) sprawdzalne tylko w opublikowanej grze;
   w Studio działają magazyny w pamięci jednego serwera.
 - **S17** Tłumaczenie zakładek czatu (handel, grupa) zmienia lokalnie `TextChannel.Name` — niesprawdzone w Studio, czy
@@ -564,6 +588,12 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
 - **S22** Pozy ataku (kąty) dobrane bez podglądu w Studio; do dostrojenia po teście (`/anim <typ>`). Umiejętności
   (`Cast`) i strzały z umiejętności łowcy nie korzystają jeszcze z nowego systemu póz i nie startują z łuku.
 - **S20** Ustawienia streamingu i liczba części na mapę niesprawdzone w Studio (log `[WorldBuilder] built …` i `/perf`).
+- **S24** Wygląd sprawdzony tylko w podglądzie 3D z `tools/lookdump.luau` (bez Studio): do oceny w grze `/mobviz all`,
+  wydajność przy 30 potworach (`/lookstats`, MicroProfiler), klik w małe części, `Highlight` przy trafieniu na
+  częściach schowanych przez `LocalTransparencyModifier`. Brak prawdziwych modeli i ID animacji (`docs/ASSETS.md`);
+  ścieżka `asset` (klonowanie, `Animator`, `LookAnim`) nie była uruchomiona z żadnym modelem.
+- **S24** Dodatki Elit i nakrycia bossów nie są montowane na `Attachment` prawdziwego modelu (generator ma własne
+  gniazda); przy pierwszym modelu z Elitami trzeba to dopiąć.
 
 ## Zgłoszone błędy
 (Właściciel wpisuje tu błędy po testach albo przekazuje je przez sesję poprawek.)
@@ -1818,3 +1848,72 @@ lokalizacja, `tests/data.spec`.
     `/lvl abc` odpowiada błędem z nazwą argumentu i składnią.
 17. Poza Studio (opublikowana gra) gracz bez UserId w `Config.AdminUserIds` nie widzi przycisku „DEV”, F2 nic nie
     robi, a ręczne wywołanie `AdminRun` zwraca „Nie masz uprawnień”.
+
+### S24: Ładne potwory, bossowie i pety
+
+**Zrobione**
+- `Data/MonsterLooks`: wygląd 50 rodzajów i 4 bossów (plan ciała, proporcje, kolory w 3 tonach + akcent i detal,
+  materiały, akcesoria, broń i off-hand, poświata, świecące oczy, cząsteczki regionu, dodatki Elit i Elit II, fazy
+  bossów), `inherit` z barwą regionu (`REGIONS`), miejsce na prawdziwy model (`asset`).
+- `Logic/Anatomy/`: `Builder`, 19 planów ciała (`Plans/Quadrupeds`, `Creatures`, `Humanoids`, `Spirits`), ok. 55
+  akcesoriów, broń (`WeaponLooks` + 16 własnych: tasak, kosa, płonący i lodowy miecz, tarcza z czaszką…), LOD `far`,
+  budżety części. Bossowie: Grimrok (tasak, tarcza z czaszką, hełm z rogami, sztandar, czerwień w fazie 3), Morvane
+  (kosa, korona z kolców, krążące czaszki, poświata rośnie z fazą), Azgor (golem z lawy, płonąca korona i miecz,
+  poświata do białej), Vaelgrath (długa szyja, ogromne skrzydła, lodowe kolce).
+- Serwer: `RigBuilder` buduje tylko ciało; usunięte: korona bossa, czerwienienie Grimroka, tweeny zanikania, stary
+  `fromAsset`. `Monsters`/`Bosses` bez `shape`/`colors` (zostaje `size`, boss `aura`).
+- Klient: `Util/LookBuild`, `MonsterViewController` (sylwetki, kolejka, LOD, zanikanie, fazy, `top`, `Changed`,
+  streaming), `AnimationController` (stawy z `Look`, nowe role, limit animowanych, klipy przez `Logic/LookAnim`),
+  tabliczki i liczby obrażeń z `MonsterView.top`.
+- `Logic/Gait`: role `flap`, `segment`, `claw`, `sting`, `jaw`, `orbit`. `Logic/LookAnim`: wybór klipu.
+- Pety: `look` i `flies` w `Cosmetics`, budowa przez Anatomię (chibi), `PetController` macha skrzydłami po roli.
+- Rojo: `assets/` → `ReplicatedStorage.Assets` (`Monsters`, `Pets`, `ignoreUnknownInstances`).
+- Admin: `/mobviz`, `/look`, `/lookstats`, sekcja „Wygląd” w zakładce Potwory, remote `MobViz`.
+- Narzędzie: `tools/lookdump.luau` (wyglądy do JSON) + `docs/miasto/tools/render3d.py` (PNG bez Studio).
+- Dokumentacja: `docs/ASSETS.md` (rejestr licencji, kroki, przykład `asset`), `ARCHITECTURE.md` §7 i §11,
+  `DESIGN.md` §22, `MODELE.md` §9, `CLAUDE.md`.
+- Testy: `anatomy.spec` (wszystkie wyglądy × warianty × LOD: poprawność części, budżety, hitbox, pary L/R,
+  determinizm, Neon ≤ 15% powierzchni, unikalność w regionie, gniazda; dane: pokrycie, `inherit`, `asset`; pety;
+  role `Gait`; `LookAnim`), `data.spec` bez starych kształtów.
+
+**Pliki**: nowe `Data/MonsterLooks`, `Logic/Anatomy/*`, `Logic/LookAnim`, `Util/LookBuild`,
+`Controllers/MonsterViewController`, `Controllers/MobVizController`, `assets/*`, `tools/lookdump.luau`,
+`tests/anatomy.spec`, `docs/ASSETS.md`; zmiany: `Entities/RigBuilder` (przepisany), `Entities/Boss`,
+`BossScripts/grimrok`, `MonsterService`, `CosmeticService`, `Data/{Monsters,Bosses,Cosmetics,AdminCommands}`,
+`Logic/Gait`, `Util/CosmeticLook`, `Config`, `Net/Definitions`, `Admin/Monsters`, `AnimationController`,
+`MonsterPlateController`, `CombatFxController`, `PetController`, `Wardrobe`, `DevWindow/Monsters`,
+`default.project.json`, lokalizacja, `tests/data.spec`.
+
+#### Instrukcja testu S24
+
+1. `rojo serve`, Play w Studio. W Explorerze `ReplicatedStorage.Assets` ma foldery `Monsters` i `Pets`; Output bez
+   błędów `[MonsterView]` i `[RigBuilder]`.
+2. Idź na Łąki: potwory mają nowe wyglądy (zając z długimi uszami, wilk z grzywą, dzik z kłami, ropucha, kruk ze
+   skrzydłami, goblin z dużą głową i uszami, kobold z lampką na hełmie, niedźwiedź z garbem). Chodzą, oddychają, a
+   kruk macha skrzydłami.
+3. Odejdź na 200+ studów i patrz na grupę: zamiast pełnych modeli widać proste sylwetki (2–3 części); po podejściu
+   wracają pełne modele.
+4. Zaatakuj wilka: tabliczka z nazwą jest nad głową (nie w środku modelu), liczby obrażeń nad głową, klik w model
+   zaznacza. Po zabiciu model zanika w ok. 1,6 s i znika.
+5. F2 → Potwory → „Wygląd”: Region 1, Normalny, Animacja ✓ → „Pokaż”: rząd 12 potworów przed tobą z etykietami
+   (id, plan, liczba części, „generator”); co 1,5 s zmieniają stan: bezczynność, chód, atak, trafienie, śmierć,
+   pojawienie.
+6. To samo dla regionów 2–4 i wariantów Elita / Elita II: Elity mają dodatkowe części (kolce, rogi, naramienniki) i
+   świecące oczy, Elity II jeszcze runy / łańcuchy / krążące czaszki.
+7. `/mobviz bosses anim`: Grimrok (tasak, tarcza z czaszką, sztandar), Morvane (kosa, korona z kolców, krążące
+   czaszki), Azgor (golem z lawą, płonący miecz), Vaelgrath (smok z ogromnymi skrzydłami). `/mobviz clear` czyści.
+8. `/mobviz pets`: lis, sowa, smoczek, ognik, kot, żaba w wersji chibi.
+9. `/look wolf`: plan canine, liczba części, root, hipHeight, „model w Assets ✘”.
+10. Wejdź do lochu Grimroka (`/boss spawn grimrok` albo przez loch): przy 35% HP zmienia barwę na czerwoną (faza 3).
+    Vaelgrath w locie: model, tabliczka i liczby obrażeń są razem w powietrzu.
+11. Morvane i Azgor: z każdą fazą mocniejsza / jaśniejsza poświata.
+12. Garderoba: kup/przymierz peta: podgląd stoi na ziemi obok postaci. Załóż sowę: lata przy ramieniu i macha
+    skrzydłami; lis chodzi po ziemi i podskakuje, gdy dogania; ognik ma krążące iskry.
+13. Spawnuj 30 potworów wokół (F2 → Potwory, liczba 10 ×3) i wpisz `/lookstats`: pełne ≤ liczba w promieniu 160,
+    animowane ≤ 60 (PC). Sprawdź płynność (MicroProfiler / `/perf`).
+14. Ustawienia → jakość niska: pełne wyglądy dopiero bliżej (110 studów).
+15. Na telefonie (emulator): animowanych najwyżej 25.
+16. Odejdź daleko od grupy (poza streaming) i wróć: potwory mają wygląd od razu, bez podwójnych modeli.
+17. Test prawdziwego modelu (opcjonalnie): wstaw dowolny Model z `PrimaryPart` jako `ReplicatedStorage.Assets.Monsters.wolf`
+    i dodaj w `MonsterLooks.wolf` wpis `asset` z `docs/ASSETS.md` (bez anim): wilki mają ten model; bez modelu wracają
+    do generatora z jednym ostrzeżeniem w Output.

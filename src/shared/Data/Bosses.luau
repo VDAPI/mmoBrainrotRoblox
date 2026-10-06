@@ -58,7 +58,8 @@ export type BossDef = {
 	enrageAfter: number, -- seconds
 	enrageDamage: number, -- damage multiplier when enraged
 	timeLimit: number, -- seconds
-	look: { shape: string, size: number, primary: string, secondary: string, aura: string },
+	-- S24: only the scale and the aura colour; the look itself is Data/MonsterLooks[boss id].
+	look: { size: number, aura: string },
 }
 
 local list: { BossDef } = {}
@@ -122,7 +123,7 @@ boss({
 	enrageAfter = 600,
 	enrageDamage = 1.6,
 	timeLimit = 900,
-	look = { shape = "humanoid", size = 2.6, primary = "#4F7A34", secondary = "#8A3A2A", aura = "#D64A3E" },
+	look = { size = 2.6, aura = "#D64A3E" },
 })
 
 boss({
@@ -194,7 +195,7 @@ boss({
 	enrageAfter = 600,
 	enrageDamage = 1.6,
 	timeLimit = 900,
-	look = { shape = "humanoid", size = 2.4, primary = "#2A1F33", secondary = "#9FE0C9", aura = "#7A3FA0" },
+	look = { size = 2.4, aura = "#7A3FA0" },
 })
 
 -- Arenas for these two are built in S11.
@@ -267,7 +268,7 @@ boss({
 	enrageAfter = 600,
 	enrageDamage = 1.6,
 	timeLimit = 900,
-	look = { shape = "golem", size = 2.8, primary = "#3A2A22", secondary = "#FF7A1A", aura = "#FF5A1A" },
+	look = { size = 2.8, aura = "#FF5A1A" },
 })
 
 boss({
@@ -348,7 +349,7 @@ boss({
 	enrageAfter = 600,
 	enrageDamage = 1.6,
 	timeLimit = 900,
-	look = { shape = "dragon", size = 2.8, primary = "#A8D8F0", secondary = "#3A6A9A", aura = "#9FE0FF" },
+	look = { size = 2.8, aura = "#9FE0FF" },
 })
 
 local byRegion: { [string]: BossDef } = {}

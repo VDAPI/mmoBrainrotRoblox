@@ -1,6 +1,7 @@
 --!strict
 -- Dev panel, "Monsters" tab (S23): spawning (search by name and region, variant, level, count), clearing,
--- lists, Elite II, bosses, phases, the AI state of the target and monster stats.
+-- lists, Elite II, bosses, phases, the AI state of the target and monster stats. S24: "Look" section (local
+-- preview of looks with /mobviz, /look, /lookstats).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -9,6 +10,7 @@ local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Monsters = require(ReplicatedStorage.Shared.Data.Monsters)
 local NumberInput = require(script.Parent.Parent.Parent.Components.NumberInput)
 local Select = require(script.Parent.Parent.Parent.Components.Select)
+local Toggle = require(script.Parent.Parent.Parent.Components.Toggle)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
 
@@ -37,6 +39,28 @@ local function MonstersTab(s: Dev.Scope): Instance
 		table.insert(bossOptions, { value = boss.id, label = Text.now(boss.nameKey) })
 	end
 	local boss = s:Value(nil :: string?)
+	local lookOptions = {
+		{ value = "all", label = Text.now("dev.look.all") },
+		{ value = "bosses", label = Text.now("dev.look.bosses") },
+		{ value = "pets", label = Text.now("dev.look.pets") },
+	}
+	for region = 1, 4 do
+		table.insert(lookOptions, { value = tostring(region), label = Text.now("dev.look.region", { n = region }) })
+	end
+	for _, option in monsterOptions do
+		table.insert(lookOptions, option)
+	end
+	for _, option in bossOptions do
+		table.insert(lookOptions, option)
+	end
+	local lookTarget = s:Value("1" :: string?)
+	local lookVariant = s:Value("normal" :: string?)
+	local lookAnim = s:Value(true)
+	local lookVariants = {
+		{ value = "normal", label = Text.now("dev.variant.normal") },
+		{ value = "elite", label = Text.now("dev.variant.elite") },
+		{ value = "elite2", label = Text.now("dev.variant.elite2") },
+	}
 	local variantOptions = {
 		{ value = "0", label = Text.now("dev.variant.normal") },
 		{ value = "1", label = Text.now("dev.variant.elite") },
@@ -126,8 +150,38 @@ local function MonstersTab(s: Dev.Scope): Instance
 				Dev.run("phase", { tostring(Fusion.peek(phase)) })
 			end, 60),
 		}),
-		Dev.header(s, 11, "dev.allCommands"),
-		Dev.commandRows(s, 12, { "monsters" }) :: any,
+		Dev.header(s, 11, "dev.look.title"),
+		Dev.row(s, 12, nil, {
+			Select(s, { Options = lookOptions, Selected = lookTarget, Width = 320 }),
+			Select(s, { Options = lookVariants, Selected = lookVariant, Width = 150, ListHeight = 120 }),
+			Toggle(s, { Value = lookAnim, Label = Text.T(s, "dev.look.anim") }),
+		}),
+		Dev.row(s, 13, nil, {
+			Dev.button(s, Text.T(s, "dev.look.show"), function()
+				local target = Fusion.peek(lookTarget)
+				if target then
+					local args = { target, Fusion.peek(lookVariant) or "normal" }
+					if Fusion.peek(lookAnim) then
+						table.insert(args, "anim")
+					end
+					Dev.run("mobviz", args)
+				end
+			end, 130),
+			Dev.button(s, Text.T(s, "dev.look.clear"), function()
+				Dev.run("mobviz", { "clear" })
+			end, 130),
+			Dev.button(s, "/look", function()
+				local target = Fusion.peek(lookTarget)
+				if target and not tonumber(target) and target ~= "all" and target ~= "bosses" and target ~= "pets" then
+					Dev.run("look", { target })
+				end
+			end, 100),
+			Dev.button(s, "/lookstats", function()
+				Dev.run("lookstats")
+			end, 140),
+		}),
+		Dev.header(s, 14, "dev.allCommands"),
+		Dev.commandRows(s, 15, { "monsters" }) :: any,
 	})
 end
 

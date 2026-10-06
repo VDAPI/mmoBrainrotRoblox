@@ -1,7 +1,10 @@
 --!strict
 -- Pets (DESIGN §22): the server spawns anchored pet models in Workspace.VaelthornPets (attribute OwnerId)
 -- and never moves them; every client moves every pet locally each frame, so following is smooth for the
--- owner and for everyone else. Flying pets (owl, dragon, wisp) hover higher and bob.
+-- owner and for everyone else. Flying pets (attribute Flies, from Data/Cosmetics) hover higher and bob.
+-- S24: pets are anchored Anatomy looks (Util/CosmeticLook.buildPet); parts with a Role attribute move by CFrame
+-- around their Pivot: "flap" wings beat, "orbit" sparks circle, "tail" wags. PetLift keeps walkers on the
+-- ground.
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -14,7 +17,9 @@ local PetController = {
 local FOLLOW_OFFSET = Vector3.new(2.6, 0, 2.4)
 local TELEPORT_DISTANCE = 60
 local SPEED = 8 -- lerp factor per second
-local FLYERS = { pet_owl = true, pet_dragon = true, pet_wisp = true }
+local ANIMATED = { flap = true, orbit = true, tail = true }
+
+type Moving = { part: BasePart, rest: CFrame, pivot: Vector3, role: string, side: number, phase: number, amp: number }
 
 function PetController.Start()
 	local folder = Workspace:WaitForChild("VaelthornPets", 60)
@@ -23,28 +28,35 @@ function PetController.Start()
 	end
 	local clock = 0
 	local hops: { [Instance]: number } = {}
-	-- Rest offsets of wing parts from the body, captured before the first flap.
-	local wings: { [Instance]: { { part: BasePart, rest: CFrame, side: number } } } = {}
+	-- Rest offsets of the animated parts from the pet's pivot, captured before the first frame.
+	local moving: { [Instance]: { Moving } } = {}
 	folder.ChildRemoved:Connect(function(pet)
 		hops[pet] = nil
-		wings[pet] = nil
+		moving[pet] = nil
 	end)
-	local function wingsOf(pet: Model): { { part: BasePart, rest: CFrame, side: number } }
-		local list = wings[pet]
+	local function movingOf(pet: Model): { Moving }
+		local list = moving[pet]
 		if list then
 			return list
 		end
-		local found = {}
-		local body = pet.PrimaryPart
-		if body then
-			for side, name in { [-1] = "WingL", [1] = "WingR" } do
-				local wing = pet:FindFirstChild(name)
-				if wing and wing:IsA("BasePart") then
-					table.insert(found, { part = wing, rest = body.CFrame:ToObjectSpace(wing.CFrame), side = side })
-				end
+		local found: { Moving } = {}
+		local pivot = pet:GetPivot()
+		for _, part in pet:GetDescendants() do
+			local role = part:GetAttribute("Role")
+			if part:IsA("BasePart") and type(role) == "string" and ANIMATED[role] then
+				local at = part:GetAttribute("Pivot")
+				table.insert(found, {
+					part = part,
+					rest = pivot:ToObjectSpace(part.CFrame),
+					pivot = if typeof(at) == "Vector3" then at else pivot:PointToObjectSpace(part.Position),
+					role = role,
+					side = (part:GetAttribute("Side") :: number?) or 0,
+					phase = (part:GetAttribute("Phase") :: number?) or 0,
+					amp = (part:GetAttribute("Amp") :: number?) or 1,
+				})
 			end
 		end
-		wings[pet] = found
+		moving[pet] = found
 		return found
 	end
 	RunService.RenderStepped:Connect(function(dt)
@@ -59,9 +71,13 @@ function PetController.Start()
 			if not root then
 				continue
 			end
-			local petId = pet:GetAttribute("PetId")
-			local flying = type(petId) == "string" and FLYERS[petId] == true
-			local height = if flying then 2.5 + math.sin(clock * 2.5 + (owner :: Player).UserId) * 0.35 else -2.4
+			local flying = pet:GetAttribute("Flies") == true
+			local humanoid = (character :: Model):FindFirstChildOfClass("Humanoid")
+			local ground = root.Size.Y / 2 + (if humanoid then humanoid.HipHeight else 2)
+			local lift = pet:GetAttribute("PetLift")
+			local height = if flying
+				then 2.5 + math.sin(clock * 2.5 + (owner :: Player).UserId) * 0.35
+				else -ground + (if type(lift) == "number" then lift else 0.6)
 			local goal = root.CFrame * CFrame.new(FOLLOW_OFFSET + Vector3.new(0, height, 0))
 			local current = pet:GetPivot()
 			if (current.Position - goal.Position).Magnitude > TELEPORT_DISTANCE then
@@ -83,17 +99,18 @@ function PetController.Start()
 			local look = if flat.Magnitude > 0.5
 				then CFrame.lookAt(position, position + flat)
 				else CFrame.new(position) * current.Rotation
-			local flaps = wingsOf(pet)
+			local parts = movingOf(pet)
 			pet:PivotTo(look)
-			-- Flap around the inner wing edge.
-			if #flaps > 0 then
-				local flap = math.sin(clock * 9) * 0.45
-				for _, w in flaps do
-					local half = w.part.Size.X / 2
-					local hinge = w.rest * CFrame.new(-w.side * half, 0, 0)
-					local angle = CFrame.Angles(0, 0, w.side * flap)
-					w.part.CFrame = look * hinge * angle * CFrame.new(w.side * half, 0, 0)
+			for _, m in parts do
+				local turn: CFrame
+				if m.role == "flap" then
+					turn = CFrame.Angles(0, 0, m.side * math.sin(clock * 9 + m.phase * math.pi * 2) * 0.5 * m.amp)
+				elseif m.role == "orbit" then
+					turn = CFrame.Angles(0, (clock * 1.2 * m.amp) % (math.pi * 2), 0)
+				else
+					turn = CFrame.Angles(0, math.sin(clock * 5 + m.phase * math.pi * 2) * 0.35 * m.amp, 0)
 				end
+				m.part.CFrame = look * CFrame.new(m.pivot) * turn * CFrame.new(-m.pivot) * m.rest
 			end
 		end
 	end)

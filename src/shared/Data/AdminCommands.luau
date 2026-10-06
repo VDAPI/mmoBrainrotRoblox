@@ -168,6 +168,10 @@ cmd("monsters", "e2timer", {})
 cmd("monsters", "boss", { enum("action", { "reset", "spawn" }), ref("boss", "boss", true) })
 cmd("monsters", "phase", { int("phase", 1, 3) })
 cmd("monsters", "leash", {})
+-- S24: looks. mobviz: <monster|boss|pet id | 1-4 (region) | bosses | pets | all | clear> [normal|elite|elite2] [anim]
+cmd("monsters", "mobviz", { str("target"), str("option", true), str("option2", true) })
+cmd("monsters", "look", { str("id") })
+cmd("monsters", "lookstats", {})
 
 -- Combat
 cmd("combat", "target", { enum("action", { "info" }) })

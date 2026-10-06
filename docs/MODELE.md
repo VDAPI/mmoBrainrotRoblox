@@ -233,6 +233,18 @@ Roblox Studio ma też **serwer MCP** dla Claude Code (`execute_luau`, `insert_as
 
 Po S24 gra wygląda lepiej nawet bez żadnego modelu, a każdy wgrany model od razu się podmienia.
 
+**Zrobione w S24 (stan kodu):**
+- `Data/MonsterLooks.luau`: wygląd każdego z 50 rodzajów i 4 bossów (plan ciała, proporcje, 3 tony + akcent, materiały, akcesoria, broń, poświata, cząsteczki, dodatki Elit, fazy bossów), warianty regionalne przez `inherit` + barwę regionu;
+- `Logic/Anatomy/`: 19 planów ciała, ok. 55 akcesoriów, broń z `WeaponLooks` + 16 własnych; budżety części pilnowane testem (36 / boss 90 / pet 16 / sylwetka 3);
+- wygląd budowany na kliencie (`MonsterViewController`) z LOD (sylwetka z daleka, pełny w promieniu 160), serwer trzyma tylko hitbox;
+- `assets/` w Rojo, wymiana na prawdziwy model przez wpis `asset` (`docs/ASSETS.md`), klipy z ID przez `Logic/LookAnim`;
+- nowe role animacji: machanie skrzydłami, falowanie węża, szczypce, żądło, szczęka, krążenie;
+- pety z tego samego generatora (chibi), latające z danych (`flies`);
+- `/mobviz`, `/look`, `/lookstats` + sekcja „Wygląd” w panelu F2;
+- `tools/lookdump.luau` + `docs/miasto/tools/render3d.py`: podgląd wyglądów w PNG bez Studio.
+
+**Zostaje dla właściciela:** punkty 1–4 niżej oraz ocena generatora w grze (`/mobviz all`) — uwagi typu „X wygląda źle” Claude Code poprawi w danych.
+
 **Właściciel (poza kodem):**
 1. Włącz Asset Privacy.
 2. Pobierz KayKit (Skeletons, Adventurers, Character Animations) i Quaternius (Animated Animals, RPG Characters, UAL); wszystko CC0.

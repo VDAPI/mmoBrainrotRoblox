@@ -29,10 +29,11 @@ local Theme = require(script.Parent.Parent.UI.Theme)
 
 local CombatFxController = {
 	Name = "CombatFxController",
-	Deps = { "EffectsController", "AnimationController" },
+	Deps = { "EffectsController", "AnimationController", "MonsterViewController" },
 }
 
 local AnimationController: any
+local MonsterView: any = nil
 
 local player = Players.LocalPlayer
 
@@ -84,8 +85,13 @@ local function findModel(entityId: string?): Model?
 	return nil
 end
 
+-- Top of a monster's look (S24: MonsterView.top), the bounding box for characters and as a fallback.
 local function headPosition(model: Model): Vector3
 	local cframe, size = model:GetBoundingBox()
+	local top = if MonsterView then MonsterView.top(model) else nil
+	if top then
+		return Vector3.new(cframe.Position.X, top + 0.5, cframe.Position.Z)
+	end
 	return cframe.Position + Vector3.new(0, size.Y / 2 + 0.5, 0)
 end
 
@@ -813,6 +819,7 @@ local function handle(event: { [string]: any })
 end
 
 function CombatFxController.Init(registry)
+	MonsterView = registry.Get("MonsterViewController")
 	AnimationController = registry.Get("AnimationController")
 	fxFolder = Instance.new("Folder")
 	fxFolder.Name = "Vaelthorn_CombatFx"

@@ -20,7 +20,7 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 
 local MonsterPlateController = {
 	Name = "MonsterPlateController",
-	Deps = { "TargetController" },
+	Deps = { "TargetController", "MonsterViewController" },
 }
 
 -- Name colours per variant (DESIGN §15.1: elite red, Elite II purple).
@@ -38,6 +38,7 @@ function MonsterPlateController.GroupColor(size: number): Color3
 end
 
 local TargetController: any
+local MonsterView: any
 local rootScope: Scope = Fusion.scoped(Fusion)
 local folder: Folder
 local playerLevel = State.Value({ "character", "level" })
@@ -94,11 +95,29 @@ local function build(model: Model)
 		return `{math.max(0, math.ceil(use(hp) or 0))} / {use(maxHp) or 0}`
 	end)
 
-	-- Plate height from the top of the model's bounding box, so big monsters never cover their bar.
+	-- Plate height from the top of the look (S24: MonsterView.top, from the rig the look is built from; the
+	-- bounding box only until the view knows the model), so big monsters never cover their bar.
 	local adornee = model:FindFirstChild("HumanoidRootPart") or model.PrimaryPart
-	local box, size = model:GetBoundingBox()
-	local top = box.Position.Y + size.Y / 2
-	local base = if adornee and adornee:IsA("BasePart") then adornee.Position.Y else box.Position.Y
+	local function plateOffset(): number
+		local box, size = model:GetBoundingBox()
+		local base = if adornee and adornee:IsA("BasePart") then adornee.Position.Y else box.Position.Y
+		local top = MonsterView.top(model) or (box.Position.Y + size.Y / 2)
+		return top - base + 1.4
+	end
+	local offset = scope:Value(plateOffset())
+	table.insert(
+		scope,
+		MonsterView.Changed:Connect(function(changed: Model)
+			if changed == model then
+				offset:set(plateOffset())
+			end
+		end)
+	)
+	task.defer(function()
+		if model.Parent then
+			offset:set(plateOffset())
+		end
+	end)
 	local groupSize = attribute(scope, model, "GroupSize")
 	local band = scope:Computed(function(use): LevelBand.Band
 		local mine = use(playerLevel)
@@ -115,7 +134,9 @@ local function build(model: Model)
 		MaxDistance = 130,
 		ResetOnSpawn = false,
 		Size = UDim2.fromOffset(230, 52),
-		StudsOffsetWorldSpace = Vector3.new(0, top - base + 1.4, 0),
+		StudsOffsetWorldSpace = scope:Computed(function(use): Vector3
+			return Vector3.new(0, use(offset), 0)
+		end),
 		Enabled = scope:Computed(function(use): boolean
 			return use(dead) ~= true
 		end),
@@ -264,6 +285,7 @@ end
 
 function MonsterPlateController.Init(registry)
 	TargetController = registry.Get("TargetController")
+	MonsterView = registry.Get("MonsterViewController")
 	folder = Instance.new("Folder")
 	folder.Name = "Vaelthorn_MonsterPlates"
 	folder.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")

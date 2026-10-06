@@ -3,7 +3,9 @@
 -- (CosmeticService, on real characters) and by the wardrobe preview (on a cloned model in a ViewportFrame).
 -- Every apply* call first removes what it added before, so it can be called again at any time.
 
+local Anatomy = require("../Logic/Anatomy")
 local Cosmetics = require("../Data/Cosmetics")
+local LookBuild = require("./LookBuild")
 
 local CosmeticLook = {}
 
@@ -234,84 +236,55 @@ end
 
 -- Pets ---------------------------------------------------------------------------------------------
 
--- Builds an anchored, non-colliding pet model (clients move it). Primary part "Body".
+-- Builds an anchored, non-colliding pet model (clients move it) from the pet's look (S24, Logic/Anatomy at
+-- Cosmetics.PET_SCALE). PrimaryPart "LookRoot"; attribute PetLift = height of the LookRoot centre above the
+-- ground, Flies = whether the pet flies. A model in ReplicatedStorage.Assets.Pets.<id> replaces the
+-- generated look (anchored, scripts removed).
 function CosmeticLook.buildPet(id: string): Model?
 	local def = Cosmetics.get(id)
 	if not def or def.kind ~= "pet" then
 		return nil
 	end
-	local main = Color3.fromHex(def.color)
-	local second = Color3.fromHex(def.color2 or def.color)
-	local model = Instance.new("Model")
-	model.Name = id
-	local function part(
-		name: string,
-		size: Vector3,
-		offset: CFrame,
-		color: Color3,
-		shape: Enum.PartType?,
-		neon: boolean?
-	): Part
-		local p = Instance.new("Part")
-		p.Name = name
-		p.Size = size
-		p.Shape = shape or Enum.PartType.Block
-		p.Color = color
-		p.Material = if neon then Enum.Material.Neon else Enum.Material.SmoothPlastic
-		p.Anchored = true
-		p.CanCollide = false
-		p.CanQuery = false
-		p.CanTouch = false
-		p.CastShadow = false
-		p.CFrame = offset
-		p.Parent = model
-		return p
+	local model: Model? = nil
+	local lift = 0.5
+	local assets = game:GetService("ReplicatedStorage"):FindFirstChild("Assets")
+	local folder = assets and assets:FindFirstChild("Pets")
+	local template = folder and folder:FindFirstChild(id)
+	if template and template:IsA("Model") then
+		local clone = template:Clone()
+		if LookBuild.stripScripts(clone) > 0 then
+			warn(`[CosmeticLook] removed scripts from Assets.Pets.{id}`)
+		end
+		for _, item in clone:GetDescendants() do
+			if item:IsA("BasePart") then
+				item.Anchored = true
+				item.CanCollide = false
+				item.CanTouch = false
+				item.CanQuery = false
+			end
+		end
+		local cf, size = clone:GetBoundingBox()
+		if not clone.PrimaryPart then
+			local first = clone:FindFirstChildWhichIsA("BasePart", true)
+			clone.PrimaryPart = first
+		end
+		local pivot = clone:GetPivot()
+		lift = size.Y / 2 + (pivot.Position.Y - cf.Position.Y)
+		model = clone
 	end
-	local shape = def.shape or "fox"
-	local body: Part
-	if shape == "wisp" then
-		body = part("Body", Vector3.new(1, 1, 1), CFrame.new(), main, Enum.PartType.Ball, true)
-		part("Core", Vector3.new(0.5, 0.5, 0.5), CFrame.new(), second, Enum.PartType.Ball, true)
-	elseif shape == "owl" then
-		body = part("Body", Vector3.new(1, 1.2, 0.9), CFrame.new(), main, Enum.PartType.Ball)
-		part("Belly", Vector3.new(0.7, 0.8, 0.3), CFrame.new(0, -0.1, -0.35), second, Enum.PartType.Ball)
-		part(
-			"EyeL",
-			Vector3.new(0.3, 0.3, 0.1),
-			CFrame.new(-0.2, 0.3, -0.45),
-			Color3.new(1, 0.85, 0.3),
-			Enum.PartType.Ball,
-			true
-		)
-		part(
-			"EyeR",
-			Vector3.new(0.3, 0.3, 0.1),
-			CFrame.new(0.2, 0.3, -0.45),
-			Color3.new(1, 0.85, 0.3),
-			Enum.PartType.Ball,
-			true
-		)
-	elseif shape == "frog" then
-		body = part("Body", Vector3.new(1.2, 0.7, 1.1), CFrame.new(), main, Enum.PartType.Ball)
-		part("EyeL", Vector3.new(0.35, 0.35, 0.35), CFrame.new(-0.3, 0.35, -0.3), second, Enum.PartType.Ball)
-		part("EyeR", Vector3.new(0.35, 0.35, 0.35), CFrame.new(0.3, 0.35, -0.3), second, Enum.PartType.Ball)
-	elseif shape == "dragon" then
-		body = part("Body", Vector3.new(0.9, 0.8, 1.4), CFrame.new(), main)
-		part("Head", Vector3.new(0.7, 0.6, 0.7), CFrame.new(0, 0.4, -0.85), main)
-		part("WingL", Vector3.new(1.1, 0.08, 0.7), CFrame.new(-0.8, 0.35, 0) * CFrame.Angles(0, 0, 0.35), second)
-		part("WingR", Vector3.new(1.1, 0.08, 0.7), CFrame.new(0.8, 0.35, 0) * CFrame.Angles(0, 0, -0.35), second)
-		part("Tail", Vector3.new(0.3, 0.3, 0.9), CFrame.new(0, 0, 1.05), main)
-	else -- fox / cat: four-legged
-		body = part("Body", Vector3.new(0.8, 0.7, 1.3), CFrame.new(), main)
-		part("Head", Vector3.new(0.7, 0.65, 0.65), CFrame.new(0, 0.35, -0.85), main)
-		part("EarL", Vector3.new(0.18, 0.35, 0.12), CFrame.new(-0.22, 0.8, -0.85), main)
-		part("EarR", Vector3.new(0.18, 0.35, 0.12), CFrame.new(0.22, 0.8, -0.85), main)
-		local tail = if shape == "fox" then Vector3.new(0.35, 0.35, 0.9) else Vector3.new(0.15, 0.15, 0.9)
-		part("Tail", tail, CFrame.new(0, 0.2, 1.05) * CFrame.Angles(0.4, 0, 0), second)
-		part("Chest", Vector3.new(0.55, 0.45, 0.2), CFrame.new(0, 0.05, -0.62), second)
+	if not model then
+		if not def.look then
+			return nil
+		end
+		local rig = Anatomy.build(def.look, { id = id, variant = "pet", scale = Cosmetics.PET_SCALE })
+		model = LookBuild.build(rig :: any, { anchored = true, name = id, shadows = false })
+		lift = rig.root.size[2] / 2 + rig.hipHeight
 	end
-	model.PrimaryPart = body
-	return model
+	local out = model :: Model
+	out.Name = id
+	out:SetAttribute("PetLift", lift)
+	out:SetAttribute("Flies", def.flies == true)
+	return out
 end
 
 -- Ids of everything this module draws (used to apply all equipped cosmetics at once).
