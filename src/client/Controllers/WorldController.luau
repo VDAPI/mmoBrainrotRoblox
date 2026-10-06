@@ -450,7 +450,7 @@ end
 local function onAdminClient(action: any, arg: any)
 	if action == "portalpick" and type(arg) == "string" then
 		WorldController.OpenAreaPicker(arg, {}, function(areaId: string): (boolean, string?)
-			return Net.Invoke("AdminTravelArea", arg, areaId)
+			return Net.Invoke("AdminRun", "arrive", { arg, areaId })
 		end)
 	elseif action == "anim" and type(arg) == "string" then
 		animLoop(arg)

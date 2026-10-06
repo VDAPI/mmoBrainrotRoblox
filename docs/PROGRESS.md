@@ -29,6 +29,7 @@
 | S20 | Szczegółowa mapa z obszarami potworów, bogatszy świat, wygoda łupu | ● |
 | S21 | Nowe miasto startowe (teren, budynki z generatora, detal na kliencie, życie miasta, dzień i noc) | ● |
 | S22 | Animacje ataku, smycz bez leczenia, śmierć z wyborem miejsca, wybór expowiska przy portalu, czytelna mapa | ● |
+| S23 | Panel developerski (F2): rejestr komend, walidacja, audyt, okno z zakładkami, konsola | ● |
 
 Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana przez właściciela
 
@@ -508,6 +509,25 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
   nie są animowane. Smuga broni między punktami `VaelthornGrip`/`VaelthornTip` (dodaje je serwer przy broni), w
   kolorze rzadkości. Bez broni zostaje dawny biały pasek. Umiejętności zostają przy starych pozach (C0).
 
+- **S23** Komendy admina: metadane w `Data/AdminCommands` (79 komend), implementacje podzielone na 10 modułów w
+  `src/server/Admin/` (ciała starych komend przeniesione bez zmian), wspólna ścieżka `AdminService.Run` (czat i
+  panel). Walidacja argumentów wg schematu działa też dla czatu: złe argumenty dają komunikat z nazwą argumentu i
+  linię składni zamiast cichego błędu. Opcjonalne argumenty z wartością domyślną są uzupełniane przed `run`.
+- **S23** `/pvp` przyjmuje 3 słowa (`force on`), `/tp` 3 (`x y z`, `cave <id>`, `boss <id>`); komendy z wieloma
+  formami (`tp`, `town`, `guild`, `mail`, `quest`, `boss`) mają w schemacie pierwszy argument jako wybór lub tekst, a
+  resztę jako tekst, żeby nie łamać starych form.
+- **S23** Panel: okno `overlay` (nie zamyka innych i nie jest zamykane; Esc zamyka je na końcu), na desktopie przy
+  prawej krawędzi. F2 panelu ma pierwszeństwo przed klawiszami okien gracza. Atrybut `Admin` to tylko widoczność.
+  Komendy niebezpieczne (`danger`, `dangerActions`) pytają w modalu; wipe pyta dwa razy (drugi raz wysyła
+  `/wipe confirm`). Ulubione w `account.settings.devPins` (max 12, walidator sprawdza `IsAdmin`); ulubiona komenda z
+  wymaganymi argumentami otwiera konsolę z wpisaną nazwą.
+- **S23** `/preset` ustawia poziom i daje pełny zestaw klasy z tieru poziomu (`Logic/DevPreset`: broń z broni
+  startowej, 4 części zbroi wagi klasy, naszyjnik, 2 pierścienie, talizman, ręka pomocnicza przy broni
+  jednoręcznej), każdy przez zwykłe `Equip` (stare części trafiają do plecaka). `/speed` ustawia stałą szybkość
+  wygrywającą ze statystykami i sprintem (`StatService.SetSpeedOverride`).
+- **S23** Remote `AdminTravelArea` z S22 zastąpiony przez `AdminRun("arrive", …)`; komenda może zwrócić
+  `(false, errKey)`, więc okno wyboru z `/portalpick` widzi porażkę.
+
 ## Niedokończone
 (Rzeczy z zakresu sesji, które nie zostały zrobione. Następna sesja zaczyna od nich.)
 
@@ -538,6 +558,9 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
 - **S21** Miasto niesprawdzone w Studio: czas `WriteVoxels` całego terenu (225 bloków) i budowy shellu w `Init`, płynność
   detalu klienta na telefonie (`/perf`), kadr kamery wyboru postaci.
 - **S21** Nocą świecą okna, latarnie i ogień, ale nie ma zmiany muzyki ani dźwięków nocy.
+- **S23** Panel developerski niesprawdzony w Studio (układ na telefonie, rozwijane listy w przewijanych zakładkach).
+  Stan przełączników „Nieśmiertelność / zasoby / odnowienie” jest lokalny (serwer nie odsyła ich stanu), więc po
+  ponownym otwarciu panelu mogą nie zgadzać się z serwerem.
 - **S22** Pozy ataku (kąty) dobrane bez podglądu w Studio; do dostrojenia po teście (`/anim <typ>`). Umiejętności
   (`Cast`) i strzały z umiejętności łowcy nie korzystają jeszcze z nowego systemu póz i nie startują z łuku.
 - **S20** Ustawienia streamingu i liczba części na mapę niesprawdzone w Studio (log `[WorldBuilder] built …` i `/perf`).
@@ -1738,3 +1761,60 @@ punkty charakterystyczne, drogowskazy, latarnie), layouty 4 regionów; klient: `
 20. Atakuj w biegu: nogi chodzą, ręce atakują, bez szarpnięć. `/anim sword1h`, `/anim bow`, `/anim staff`,
     `/anim unarmed`, `/anim off`: podgląd na sobie co 1 s.
 21. Jakość efektów „niska”: bez smug i strzał zostających w celu, animacje dalej działają.
+
+### S23: Panel developerski
+
+**Zrobione**
+- Rejestr komend: `Data/AdminCommands` (kategoria, składnia, schemat argumentów, flagi niebezpieczne/Studio),
+  `Logic/AdminArgs` (walidacja, czyszczenie argumentów z sieci, parser linii konsoli), implementacje w
+  `src/server/Admin/{Character,Items,World,Monsters,Combat,Quests,Economy,Guild,Perf,Data}.luau` + `Context`.
+- `AdminService.Run` dla czatu i panelu, remote `AdminRun` (zawsze `IsAdmin`), atrybut `Admin`, log audytu i
+  `/adminlog`, kontrola zgodności metadanych z implementacjami przy starcie.
+- Nowe komendy: `/setgold`, `/setshards`, `/statpoints`, `/givex`, `/preset`, `/goto`, `/bring`, `/speed`,
+  `/adminlog`; `/pass` i inne sprawdzają id z katalogów.
+- Panel (F2 albo „DEV”): ulubione, 10 zakładek (Postać, Przedmioty z wyszukiwarką katalogu, Świat z teleportami,
+  Potwory, Walka, Questy, Ekonomia i społeczność, Wydajność z odświeżaniem co 2 s, Konsola z historią i
+  podpowiedziami, Dane), pasek wyniku, automatyczne wiersze dla każdej komendy. Komponenty `SideTabs`, `Toggle`,
+  `NumberInput`, `Select`. `WindowManager` z oknami `overlay`.
+- Dokumentacja: `ARCHITECTURE.md` §11 (architektura + pełna tabela komend z metadanych), `CLAUDE.md`, `README.md`.
+- Testy: `admin.spec` (AdminArgs, metadane, flagi niebezpieczne, `DevPreset` dla 4 klas), przestrzeń `dev` w
+  `data.spec`.
+
+**Pliki**: nowe `Data/AdminCommands`, `Logic/AdminArgs`, `Logic/DevPreset`, `src/server/Admin/*`,
+`Controllers/DevController`, `UI/Screens/DevWindow/*`, `UI/Components/{SideTabs,Toggle,NumberInput,Select}`,
+`tests/admin.spec`; zmiany: `AdminService` (przepisany), `StatService`, `InventoryService` (`IndexOf`),
+`SettingsService` (`devPins`), `AccountSchema`, `Types`, `Net/Definitions`, `WindowManager`, `WorldController`,
+lokalizacja, `tests/data.spec`.
+
+#### Instrukcja testu S23
+
+1. Play w Studio: na ekranie złoty przycisk „DEV” (lewa strona, nad paskiem umiejętności). F2 otwiera panel po prawej;
+   otwórz plecak (I): oba okna zostają. Esc zamyka najpierw plecak, potem panel.
+2. Postać: „Poziom 50 → Ustaw”, „+1”, „+10”; pasek na dole pokazuje wynik na zielono. Złoto „Ustaw/Dodaj”, odłamki,
+   punkty statystyk i umiejętności, resety, „Wszystkie umiejętności”, „Lecz”.
+3. Przełączniki: Nieśmiertelność (`/hurt` w zakładce Walka nic nie robi), Nieskończone zasoby, Bez odnowienia.
+   Szybkość 80 → Ustaw: postać biega szybko także ze sprintem; „Wyłącz” wraca do normy.
+4. „Zestaw testowy”: 50, Epicki, +7 → „Ustaw zestaw”: poziom 50 i założona pełna zbroja, broń i biżuteria +7 (okno
+   postaci), stare części w plecaku.
+5. Przedmioty: wpisz „miecz”: lista na żywo; filtr Slot: weapon, klasa, poziom od–do; „…i jeszcze N” przy dużej
+   liście. Wybierz przedmiot → rzadkość, poziom, +ulepszenie, żywioł (broń maga), ilość → „Daj” / „Daj i załóż”.
+6. Szybkie akcje: materiały, zwoje, losowa legenda, „Wyczyść plecak” (pyta), „Ulepsz założony” (weapon, 9),
+   symulacja łupu (wilk, Elita, 1000).
+7. Świat: mapa Łąki → lista obszarów z „Idź” (punkt przybycia), jaskinia, boss, NPC, miejsce w mieście. Zegar
+   +3600 s, pora dnia 22 / auto, „Przebuduj mapę” (pyta), węzły, pamięć mapy, szczegółowość.
+8. Potwory: wybierz potwora (szukaj „wilk”), Elita II, poziom 10, liczba 3 → trzy potwory przed tobą. „Zabij w
+   promieniu” pyta. `/monsters`, `/groups`, `/leash`, boss spawn/reset, faza.
+9. Walka: wiersze z polami dla `/dmg`, `/pvp`, `/hurt`, `/kill`, `/die`, `/shield`, `/target`, `/anim`.
+10. Questy: lista fabuły z bieżącym questem (▶), „Ustaw” na innym, „Ukończ” na bieżącym; „Losuj ponownie” dzienne.
+11. Ekonomia: błogosławieństwo „Daj”, wszystkie kosmetyki, przepustki on/off (np. VIP: gwiazdka w czacie), poczta
+    złota, aukcje (expireall pyta), gildia (info, skarbiec, boty, rozwiąż pyta). Dwóch graczy: `/goto` i `/bring`.
+12. Wydajność: dane serwera i klienta odświeżają się co 2 s, gdy zakładka jest otwarta.
+13. Konsola: wpisz `/gi`: podpowiedzi `/give`, `/givex`; Enter wykonuje; ↑/↓ przewija historię; log pokazuje wyniki
+    (błędy na czerwono, np. `/lvl 500` → „level: poza zakresem 1–100” + składnia).
+14. ☆ przy dowolnej komendzie przypina ją na górnym pasku; komenda bez argumentów działa od razu, z argumentami
+    otwiera konsolę z wpisaną nazwą. Po ponownym wejściu do gry ulubione zostają.
+15. Dane: „Usuń konto” pyta dwa razy i czyści konto; kody nagród; `/help` i `/adminlog` (lista ostatnich wywołań).
+16. Czat: stare komendy (`/lvl 30`, `/give sword1h_10 4`, `/tp meadows`, `/town tp kuznia`) działają jak dawniej;
+    `/lvl abc` odpowiada błędem z nazwą argumentu i składnią.
+17. Poza Studio (opublikowana gra) gracz bez UserId w `Config.AdminUserIds` nie widzi przycisku „DEV”, F2 nic nie
+    robi, a ręczne wywołanie `AdminRun` zwraca „Nie masz uprawnień”.

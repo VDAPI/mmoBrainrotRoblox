@@ -48,7 +48,7 @@ local Definitions: { [string]: Definition } = {
 	SellAll = { kind = "function", dir = "c2s", rate = 2, args = { "string", "integer" } },
 	ToggleLock = { kind = "function", dir = "c2s", rate = 6, args = { "integer" } },
 	AdminClient = { kind = "event", dir = "s2c" }, -- (action, arg?) client-side admin helpers: "mapcache", "perf" (S20), "town" (S21), "portalpick", "anim" (S22)
-	AdminTravelArea = { kind = "function", dir = "c2s", rate = 2, args = { "string", "string" } }, -- (map id, area id) admins only, S22
+	AdminRun = { kind = "function", dir = "c2s", rate = 6, args = { "string", "table" } }, -- (command, args) dev panel, admins only (S23)
 	AttackRejected = { kind = "event", dir = "s2c" }, -- (reason locale key), at most one per 2 s (S18)
 	SetTitle = { kind = "function", dir = "c2s", rate = 2, args = { "string?" } }, -- (titleId or nil), S16
 	CombatFx = { kind = "event", dir = "s2c" }, -- batched { k = "dmg" | "heal" | "atk" | "tele" | "reward", ... }

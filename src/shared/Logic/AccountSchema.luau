@@ -41,6 +41,7 @@ function AccountSchema.accountTemplate(): AccountData
 			lootAutoFrom = 0,
 			decor = "mid",
 			keys = {},
+			devPins = {},
 		},
 		purchases = {},
 		dailyLimits = { day = 0, protectScrolls = 0 },

@@ -40,7 +40,9 @@ a dane znikają po zakończeniu testu. Żeby dane się zapisywały:
 
 W Studio każdy jest adminem. Na serwerach live: dopisz swoje UserId do `AdminUserIds` w
 `src/shared/Config.luau` (numer z adresu profilu `roblox.com/users/<id>/profile`).
-W czacie wpisz `/help`, żeby zobaczyć listę komend.
+W czacie wpisz `/help`, żeby zobaczyć listę komend. Panel developerski (**F2** albo złoty przycisk „DEV” na
+ekranie) ma te same komendy w zakładkach; poza Studio też wymaga UserId w `Config.AdminUserIds`. Pełna lista komend
+z argumentami: `docs/ARCHITECTURE.md` §11.
 
 ### Test wielu graczy
 

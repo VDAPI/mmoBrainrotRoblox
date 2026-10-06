@@ -95,6 +95,20 @@ function InventoryService.Get(player: Player, index: number): ItemInstance?
 	return if char then char.inventory[tostring(index)] else nil
 end
 
+-- Backpack index of the item with this uid (S23: admin tools edit a freshly given item), or nil.
+function InventoryService.IndexOf(player: Player, uid: string): number?
+	local char = character(player)
+	if not char then
+		return nil
+	end
+	for key, item in char.inventory do
+		if item.uid == uid then
+			return tonumber(key)
+		end
+	end
+	return nil
+end
+
 -- Puts `item` into a specific empty slot (or clears it with nil).
 function InventoryService.SetSlot(player: Player, index: number, item: ItemInstance?)
 	local char = character(player)

@@ -10,17 +10,21 @@ local Net = require(Shared.Net)
 
 local SettingsService = {
 	Name = "SettingsService",
-	Deps = { "PlayerStateService" },
+	Deps = { "PlayerStateService", "AdminService" },
 }
 
 local PlayerStateService: any
+local AdminService: any
 
 function SettingsService.Init(registry)
 	PlayerStateService = registry.Get("PlayerStateService")
+	AdminService = registry.Get("AdminService")
 end
 
+local MAX_PINS = 12
+
 -- Settings a client may change, with their validators.
-local SETTINGS: { [string]: (value: any) -> boolean } = {
+local SETTINGS: { [string]: (value: any, player: Player) -> boolean } = {
 	dmgNumbers = function(value)
 		return type(value) == "boolean"
 	end,
@@ -66,12 +70,29 @@ local SETTINGS: { [string]: (value: any) -> boolean } = {
 	decor = function(value)
 		return value == "low" or value == "mid" or value == "high"
 	end,
+	-- S23: dev panel favourites (admins only): up to MAX_PINS command names.
+	devPins = function(value, player)
+		if not AdminService.IsAdmin(player) or type(value) ~= "table" or #value > MAX_PINS then
+			return false
+		end
+		for key, name in value do
+			if
+				type(key) ~= "number"
+				or type(name) ~= "string"
+				or #name > 24
+				or not string.match(name, "^%l[%l%d]*$")
+			then
+				return false
+			end
+		end
+		return true
+	end,
 }
 
 function SettingsService.Start()
 	Net.On("SetSetting", function(player: Player, name: string, value: any)
 		local validate = SETTINGS[name]
-		if not validate or not validate(value) or not PlayerStateService.HasState(player) then
+		if not validate or not validate(value, player) or not PlayerStateService.HasState(player) then
 			return
 		end
 		PlayerStateService.Set(player, { "account", "settings", name }, value)

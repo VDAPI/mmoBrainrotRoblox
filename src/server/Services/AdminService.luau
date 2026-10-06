@@ -1,7 +1,10 @@
 --!strict
--- Chat commands for admins (Config.AdminUserIds) and everyone in Studio. Each command is a
--- TextChatCommand so the text never shows up in public chat. Replies go to the caller's system channel.
--- Add commands to COMMANDS; every session extends this list with tools for testing its features.
+-- Admin commands (S23): admins (Config.AdminUserIds) and everyone in Studio. One path for the chat and the dev
+-- panel: AdminService.Run checks the rights, validates the arguments against Data/AdminCommands
+-- (Logic/AdminArgs, catalogue ids resolved here), logs the call (audit, /adminlog) and runs the command from
+-- its category module in src/server/Admin. From the chat (TextChatCommand "/name", never shown in public chat)
+-- replies go to the caller's system channel; from the panel (remote AdminRun) they come back as result lines.
+-- Players get the attribute "Admin" so the client shows the panel (visibility only; the server always checks).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -10,37 +13,23 @@ local TextChatService = game:GetService("TextChatService")
 
 local Shared = ReplicatedStorage.Shared
 
-local AccountSchema = require(Shared.Logic.AccountSchema)
-local Classes = require(Shared.Data.Classes)
-local Config = require(Shared.Config)
-local Damage = require(Shared.Logic.Damage)
-local Elements = require(Shared.Data.Elements)
-local MonsterStats = require(Shared.Logic.MonsterStats)
-local Log = require(Shared.Util.Log)
-local Inventory = require(Shared.Logic.Inventory)
-local ItemRoll = require(Shared.Logic.ItemRoll)
+local AdminArgs = require(Shared.Logic.AdminArgs)
+local AdminCommands = require(Shared.Data.AdminCommands)
 local Areas = require(Shared.Data.Areas)
 local Blessings = require(Shared.Data.Blessings)
 local Bosses = require(Shared.Data.Bosses)
-local Clock = require(Shared.Util.Clock)
+local Config = require(Shared.Config)
 local Items = require(Shared.Data.Items)
 local Maps = require(Shared.Data.Maps)
 local Monsters = require(Shared.Data.Monsters)
-local Npcs = require(Shared.Data.Npcs)
 local Net = require(Shared.Net)
-local Rng = require(Shared.Logic.Rng)
-local PartyLoot = require(Shared.Logic.PartyLoot)
-local Loot = require(Shared.Logic.Loot)
-local GuildLogic = require(Shared.Logic.Guild)
-local GuildSkills = require(Shared.Data.GuildSkills)
+local Npcs = require(Shared.Data.Npcs)
 local Products = require(Shared.Data.Products)
-local DayCycle = require(Shared.Logic.DayCycle)
-local Town = require(Shared.Data.Town)
-local TownGen = require(Shared.Logic.TownGen)
-local TownGeom = require(Shared.Logic.TownGeom)
-local TownTerrain = require(Shared.Logic.TownTerrain)
+local Quests = require(Shared.Data.Quests)
 
-local log = Log.new("AdminService")
+local Context = require(script.Parent.Parent.Admin.Context)
+
+local log = Context.log
 
 local AdminService = {
 	Name = "AdminService",
@@ -58,6 +47,7 @@ local AdminService = {
 		"CombatService",
 		"EntityService",
 		"InventoryService",
+		"EquipmentService",
 		"LootService",
 		"StatService",
 		"SkillService",
@@ -79,50 +69,16 @@ local AdminService = {
 	},
 }
 
-local DataService: any
-local PlayerStateService: any
-local CharacterService: any
-local NameService: any
-local LevelService: any
-local ResourceService: any
-local DeathService: any
-local PvpService: any
-local MonetizationService: any
-local MonsterService: any
-local CombatService: any
-local EntityService: any
-local InventoryService: any
-local LootService: any
-local StatService: any
-local SkillService: any
-local NpcService: any
-local AlchemyService: any
-local BlessingService: any
-local GatherService: any
-local FishingService: any
-local WorldService: any
-local TravelService: any
-local DungeonService: any
-local TradeService: any
-local QuestService: any
-local GuildService: any
-local MailService: any
-local AuctionService: any
-local CosmeticService: any
-local StatusEffectService: any
+type Run = (player: Player, args: { string }) -> ...any
 
-type Command = {
-	usageKey: string,
-	run: (player: Player, args: { string }) -> (),
-}
+-- Command name -> implementation, collected from the category modules in Init.
+local RUN: { [string]: Run } = {}
+local MODULES = { "Character", "Items", "World", "Monsters", "Combat", "Quests", "Economy", "Guild", "Perf", "Data" }
 
-local WIPE_CONFIRM_SECONDS = 30
-local MAX_AMOUNT = 1e12
-local wipeRequests: { [Player]: number } = {}
-
-local function reply(player: Player, key: string, args: { [string]: any }?)
-	Net.Fire(player, "SystemMessage", key, args)
-end
+-- Audit log (S23): the last AUDIT_SIZE calls, newest last.
+export type AuditEntry = { t: number, user: string, command: string, args: string, ok: boolean }
+local AUDIT_SIZE = 200
+local audit: { AuditEntry } = {}
 
 function AdminService.IsAdmin(player: Player): boolean
 	if RunService:IsStudio() then
@@ -131,1625 +87,153 @@ function AdminService.IsAdmin(player: Player): boolean
 	return table.find(Config.AdminUserIds, player.UserId) ~= nil
 end
 
-local function parseAmount(text: string?): number?
-	local n = tonumber(text)
-	if n == nil or n ~= n or math.abs(n) > MAX_AMOUNT then
-		return nil
+-- The last `n` audit entries, newest first (/adminlog).
+function AdminService.Audit(n: number): { AuditEntry }
+	local out = {}
+	for i = #audit, math.max(1, #audit - n + 1), -1 do
+		table.insert(out, audit[i])
 	end
-	return math.floor(n)
+	return out
 end
 
-local COMMANDS: { [string]: Command } = {}
-
-COMMANDS.help = {
-	usageKey = "admin.usage.help",
-	run = function(player)
-		local names = {}
-		for name in COMMANDS do
-			table.insert(names, name)
-		end
-		table.sort(names)
-		reply(player, "admin.help.header")
-		for _, name in names do
-			reply(player, COMMANDS[name].usageKey)
-		end
-	end,
-}
-
-COMMANDS.gold = {
-	usageKey = "admin.usage.gold",
-	run = function(player, args)
-		local amount = parseAmount(args[1])
-		if amount == nil then
-			reply(player, "admin.usage.gold")
-			return
-		end
-		if PlayerStateService.GetCharacter(player) == nil then
-			reply(player, "admin.needCharacter")
-			return
-		end
-		local total = PlayerStateService.Update(player, { "character", "gold" }, function(gold: number)
-			return math.max(0, gold + amount)
-		end)
-		reply(player, "admin.gold.ok", { amount = amount, total = total })
-	end,
-}
-
-COMMANDS.shards = {
-	usageKey = "admin.usage.shards",
-	run = function(player, args)
-		local amount = parseAmount(args[1])
-		if amount == nil then
-			reply(player, "admin.usage.shards")
-			return
-		end
-		local total = PlayerStateService.Update(player, { "account", "dragonShards" }, function(shards: number)
-			return math.max(0, shards + amount)
-		end)
-		reply(player, "admin.shards.ok", { amount = amount, total = total })
-	end,
-}
-
-COMMANDS.wipe = {
-	usageKey = "admin.usage.wipe",
-	run = function(player, args)
-		local requestedAt = wipeRequests[player]
-		local confirmed = args[1] == "confirm"
-			and requestedAt ~= nil
-			and os.clock() - requestedAt <= WIPE_CONFIRM_SECONDS
-		if not confirmed then
-			wipeRequests[player] = os.clock()
-			reply(player, "admin.wipe.confirm", { seconds = WIPE_CONFIRM_SECONDS })
-			return
-		end
-		wipeRequests[player] = nil
-
-		local data = DataService.GetData(player)
-		if not data then
-			return
-		end
-		CharacterService.ReturnToSelect(player)
-		for _, character in data.characters do
-			NameService.Release(character.name, NameService.OwnerKey(player.UserId, character.id))
-		end
-		-- Replace contents in place: the profile keeps referencing the same table.
-		local fresh = AccountSchema.accountTemplate()
-		local keepLang = data.settings.lang
-		for key in data :: any do
-			(data :: any)[key] = nil
-		end
-		for key, value in fresh :: any do
-			(data :: any)[key] = value
-		end
-		data.settings.lang = keepLang
-		data.stats.createdAt = os.time()
-		PlayerStateService.Reset(player)
-		log:info("%s wiped their account", player.Name)
-		reply(player, "admin.wipe.ok")
-	end,
-}
-
--- Runs `fn` only when the caller is in the world with a character.
-local function withCharacter(player: Player, fn: () -> ())
-	if PlayerStateService.GetCharacter(player) == nil then
-		reply(player, "admin.needCharacter")
-		return
+local function record(player: Player, name: string, args: { string }, ok: boolean)
+	local text = table.concat(args, " ")
+	log:info("%s /%s %s -> %s", player.Name, name, text, if ok then "ok" else "rejected")
+	table.insert(audit, { t = os.time(), user = player.Name, command = name, args = text, ok = ok })
+	if #audit > AUDIT_SIZE then
+		table.remove(audit, 1)
 	end
-	fn()
 end
 
-COMMANDS.lvl = {
-	usageKey = "admin.usage.lvl",
-	run = function(player, args)
-		local level = parseAmount(args[1])
-		if level == nil or level < 1 then
-			reply(player, "admin.usage.lvl")
-			return
+-- Player by exact name, display name or a unique name prefix (case-insensitive).
+function AdminService.FindPlayer(text: string): Player?
+	local wanted = string.lower(text)
+	local prefix: Player? = nil
+	local count = 0
+	for _, other in Players:GetPlayers() do
+		local name, display = string.lower(other.Name), string.lower(other.DisplayName)
+		if name == wanted or display == wanted then
+			return other
 		end
-		withCharacter(player, function()
-			LevelService.SetLevel(player, level)
-			reply(player, "admin.lvl.ok", { level = PlayerStateService.Get(player, { "character", "level" }) })
-		end)
-	end,
-}
-
--- S17: lets the same account redeem the reward codes again (testing).
-COMMANDS.resetcodes = {
-	usageKey = "admin.usage.resetcodes",
-	run = function(player)
-		PlayerStateService.Set(player, { "account", "redeemed" }, {})
-		reply(player, "admin.resetcodes.ok")
-	end,
-}
-
--- S18 ------------------------------------------------------------------------------------------------
-
--- Changes the equipped weapon with `edit` and recomputes stats.
-local function editWeapon(player: Player, edit: (item: any) -> ()): boolean
-	local character = PlayerStateService.GetCharacter(player)
-	local item = character and character.equipment.weapon
-	if not item then
-		reply(player, "admin.weapon.none")
-		return false
+		if string.sub(name, 1, #wanted) == wanted or string.sub(display, 1, #wanted) == wanted then
+			prefix = other
+			count += 1
+		end
 	end
-	local copy = table.clone(item)
-	edit(copy)
-	PlayerStateService.Set(player, { "character", "equipment", "weapon" }, copy)
-	StatService.Invalidate(player)
-	return true
+	return if count == 1 then prefix else nil
 end
 
-COMMANDS.ilvl = {
-	usageKey = "admin.usage.ilvl",
-	run = function(player, args)
-		local ilvl = parseAmount(args[1])
-		if ilvl == nil or ilvl < 1 or ilvl > Config.MaxLevel then
-			reply(player, "admin.usage.ilvl")
-			return
-		end
-		withCharacter(player, function()
-			if editWeapon(player, function(item)
-				item.ilvl = ilvl
-			end) then
-				reply(player, "admin.ilvl.ok", { ilvl = ilvl })
-			end
-		end)
-	end,
-}
-
-COMMANDS.element = {
-	usageKey = "admin.usage.element",
-	run = function(player, args)
-		local element = args[1]
-		if not Elements.isWeaponElement(element) then
-			reply(player, "admin.usage.element")
-			return
-		end
-		withCharacter(player, function()
-			local character = PlayerStateService.GetCharacter(player)
-			local item = character and character.equipment.weapon
-			local def = item and Items.get(item.id)
-			if def and not def.elemental then
-				reply(player, "admin.element.notMage")
-				return
-			end
-			if editWeapon(player, function(weapon)
-				weapon.el = element
-			end) then
-				reply(player, "admin.element.ok", { element = element })
-			end
-		end)
-	end,
-}
-
-COMMANDS.mstats = {
-	usageKey = "admin.usage.mstats",
-	run = function(player, args)
-		withCharacter(player, function()
-			local character = PlayerStateService.GetCharacter(player) :: any
-			local level = parseAmount(args[1]) or character.level
-			level = math.clamp(level, 1, Config.MaxLevel)
-			local monster =
-				MonsterStats.compute({ hpMul = 1, atkMul = 1, defMul = 1, speed = 1, attack = "melee" }, level)
-			local values = (StatService.Get(player) or { values = {} }).values
-			local class = Classes.get(character.class)
-			local magic = class ~= nil and class.basicAttack.kind == "magic"
-			local attack = if magic then values.magAtk or 0 else values.physAtk or 0
-			local defense = if magic then monster.mres else monster.armor
-			local perHit = attack * (1 - Damage.reduction(defense, character.level))
-			local dps = perHit * math.max(0.2, values.atkSpeed or 1)
-			local hit = monster.attack * (1 - Damage.reduction(values.armor or 0, level))
-			reply(player, "admin.mstats.info", {
-				level = level,
-				hp = monster.maxHp,
-				atk = math.floor(monster.attack + 0.5),
-				hit = math.floor(hit + 0.5),
-				interval = monster.attackInterval,
-				seconds = if dps > 0 then string.format("%.1f", monster.maxHp / dps) else "∞",
-			})
-		end)
-	end,
-}
-
-COMMANDS.sprint = {
-	usageKey = "admin.usage.sprint",
-	run = function(player)
-		local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
-		reply(player, "admin.sprint.info", {
-			on = if StatService.IsSprinting(player) then "ON" else "OFF",
-			speed = if humanoid then string.format("%.1f", humanoid.WalkSpeed) else "-",
-		})
-	end,
-}
-
-COMMANDS.exp = {
-	usageKey = "admin.usage.exp",
-	run = function(player, args)
-		local amount = parseAmount(args[1])
-		if amount == nil or amount <= 0 then
-			reply(player, "admin.usage.exp")
-			return
-		end
-		withCharacter(player, function()
-			local levels = LevelService.GiveExp(player, amount, "admin")
-			reply(player, "admin.exp.ok", { amount = amount, levels = levels })
-		end)
-	end,
-}
-
-COMMANDS.stats = {
-	usageKey = "admin.usage.stats",
-	run = function(player, args)
-		if args[1] ~= "reset" then
-			reply(player, "admin.usage.stats")
-			return
-		end
-		withCharacter(player, function()
-			LevelService.ResetStats(player)
-			reply(player, "admin.stats.ok")
-		end)
-	end,
-}
-
-COMMANDS.heal = {
-	usageKey = "admin.usage.heal",
-	run = function(player)
-		withCharacter(player, function()
-			if ResourceService.IsDead(player) then
-				reply(player, "admin.heal.dead")
-				return
-			end
-			ResourceService.Restore(player)
-			reply(player, "admin.heal.ok")
-		end)
-	end,
-}
-
-COMMANDS.god = {
-	usageKey = "admin.usage.god",
-	run = function(player)
-		withCharacter(player, function()
-			local enabled = not ResourceService.IsGod(player)
-			ResourceService.SetGod(player, enabled)
-			reply(player, if enabled then "admin.god.on" else "admin.god.off")
-		end)
-	end,
-}
-
-COMMANDS.hurt = {
-	usageKey = "admin.usage.hurt",
-	run = function(player, args)
-		local amount = parseAmount(args[1])
-		if amount == nil or amount <= 0 then
-			reply(player, "admin.usage.hurt")
-			return
-		end
-		withCharacter(player, function()
-			local dealt = ResourceService.Damage(player, amount, "admin")
-			reply(player, "admin.hurt.ok", { amount = math.floor(dealt) })
-		end)
-	end,
-}
-
-COMMANDS.kill = {
-	usageKey = "admin.usage.kill",
-	run = function(player, args: { string })
-		withCharacter(player, function()
-			if args[1] == "me" then
-				DeathService.Kill(player)
-				return
-			end
-			local target = CombatService.GetTarget(player)
-			if not target then
-				reply(player, "admin.kill.noTarget")
-			elseif target.kind == "monster" then
-				target.monster:TakeDamage(target.monster.hp + 1, player)
-			elseif target.player then
-				DeathService.Kill(target.player)
-			end
-		end)
-	end,
-}
-
-COMMANDS.pvp = {
-	usageKey = "admin.usage.pvp",
-	run = function(player, args)
-		local mode = if args[1] == "force" then args[2] else args[1]
-		if mode ~= "on" and mode ~= "off" then
-			reply(player, "admin.usage.pvp")
-			return
-		end
-		withCharacter(player, function()
-			PvpService.Force(player, mode == "on")
-			reply(player, if mode == "on" then "admin.pvp.on" else "admin.pvp.off")
-		end)
-	end,
-}
-
-COMMANDS.tp = {
-	usageKey = "admin.usage.tp",
-	run = function(player, args)
-		local mapId = args[1]
-		if mapId == "cave" and args[2] then
-			-- /tp cave <id>: in front of the cave mouth on its region map (S19).
-			local cave = Areas.caves.get(args[2])
-			local arrival = Areas.arrivalOf(args[2])
-			if not cave or not arrival or not WorldService.IsBuilt(cave.region) then
-				reply(player, "admin.usage.tp")
-				return
-			end
-			withCharacter(player, function()
-				task.spawn(
-					TravelService.TeleportToMap,
-					player,
-					cave.region,
-					WorldService.GroundCFrame(cave.region, arrival.x, arrival.z)
-				)
-				reply(player, "admin.tp.map", { map = cave.region })
-			end)
-			return
-		end
-		if mapId == "boss" and args[2] then
-			-- /tp boss <id>: in front of that boss's dungeon gate.
-			local def = Bosses.get(args[2])
-			local cave = nil
-			for _, map in Maps.byId do
-				if def and map.dungeonRegion == def.region and map.dungeonEntrance then
-					cave = map
-				end
-			end
-			if not cave or not cave.dungeonEntrance or not WorldService.IsBuilt(cave.id) then
-				reply(player, "admin.usage.tp")
-				return
-			end
-			local e = cave.dungeonEntrance
-			withCharacter(player, function()
-				task.spawn(
-					TravelService.TeleportToMap,
-					player,
-					cave.id,
-					WorldService.GroundCFrame(cave.id, e.x - 22, e.z)
-				)
-				reply(player, "admin.tp.map", { map = cave.id })
-			end)
-			return
-		end
-		if mapId and Maps.get(mapId) then
-			if not WorldService.IsBuilt(mapId) then
-				reply(player, "admin.maps.notBuilt", { map = mapId })
-				return
-			end
-			withCharacter(player, function()
-				local px, pz = tonumber(args[2]), tonumber(args[3])
-				local at = if px and pz then WorldService.GroundCFrame(mapId, px, pz) else nil
-				task.spawn(TravelService.TeleportToMap, player, mapId, at)
-				reply(player, "admin.tp.map", { map = mapId })
-			end)
-			return
-		end
-		local x, y, z = tonumber(args[1]), tonumber(args[2]), tonumber(args[3])
-		if x == nil or y == nil or z == nil then
-			reply(player, "admin.usage.tp")
-			return
-		end
-		withCharacter(player, function()
-			local model = player.Character
-			if model then
-				model:PivotTo(CFrame.new(x :: number, y :: number, z :: number))
-				reply(player, "admin.tp.ok", { x = x, y = y, z = z })
-			end
-		end)
-	end,
-}
-
-COMMANDS.pass = {
-	usageKey = "admin.usage.pass",
-	run = function(player, args)
-		local passId = args[1]
-		if passId == nil or (args[2] ~= "on" and args[2] ~= "off") then
-			reply(player, "admin.usage.pass")
-			return
-		end
-		MonetizationService.SetTestPass(player, passId, args[2] == "on")
-		reply(player, "admin.pass.ok", { pass = passId, state = args[2] })
-	end,
-}
-
-local VARIANTS = { [0] = "normal", [1] = "elite", [2] = "elite2" }
-
-COMMANDS.spawn = {
-	usageKey = "admin.usage.spawn",
-	run = function(player, args)
-		local monsterId = args[1]
-		if not monsterId then
-			reply(player, "admin.usage.spawn")
-			return
-		end
-		local def = Monsters.get(monsterId)
-		if not def then
-			reply(player, "admin.spawn.unknown", { id = monsterId })
-			return
-		end
-		local variant = VARIANTS[tonumber(args[2]) or 0] or "normal"
-		local level = math.clamp(parseAmount(args[3]) or def.levels.min, 1, Config.MaxLevel)
-		withCharacter(player, function()
-			local model = player.Character
-			if not model then
-				return
-			end
-			local at = model:GetPivot() * CFrame.new(0, 0, -12)
-			local monster = MonsterService.SpawnAt(monsterId, variant, level, CFrame.new(at.Position))
-			if monster then
-				reply(player, "admin.spawn.ok", { name = "@" .. monster:Name(), level = monster.stats.level })
-			end
-		end)
-	end,
-}
-
-COMMANDS.killall = {
-	usageKey = "admin.usage.killall",
-	run = function(player, args)
-		local radius = math.clamp(parseAmount(args[1]) or 100, 1, 2000)
-		withCharacter(player, function()
-			local model = player.Character
-			if not model then
-				return
-			end
-			local count = 0
-			for _, entity in EntityService.QueryMonsters(model:GetPivot().Position, radius) do
-				local monster = entity.monster
-				if monster and monster:IsAlive() then
-					monster.invulnerable = false
-					monster:TakeDamage(monster.hp + 1, player)
-					count += 1
-				end
-			end
-			reply(player, "admin.killall.ok", { count = count })
-		end)
-	end,
-}
-
-COMMANDS.target = {
-	usageKey = "admin.usage.target",
-	run = function(player, args)
-		if args[1] ~= "info" then
-			reply(player, "admin.usage.target")
-			return
-		end
-		local target = CombatService.GetTarget(player)
-		if not target then
-			reply(player, "admin.target.none")
-			return
-		end
-		if target.kind == "monster" then
-			local m = target.monster
-			reply(player, "admin.target.info", {
-				name = "@" .. m:Name(),
-				level = m.stats.level,
-				hp = math.ceil(m.hp),
-				maxHp = m.stats.maxHp,
-				atk = math.floor(m.stats.attack),
-				armor = math.floor(m.stats.armor),
-				mres = math.floor(m.stats.mres),
-			})
-		else
-			local other = target.player
-			local character = other and PlayerStateService.GetCharacter(other)
-			local derived = other and PlayerStateService.Get(other, { "derived", "values" })
-			if character and derived then
-				reply(player, "admin.target.info", {
-					name = character.name,
-					level = character.level,
-					hp = character.hp,
-					maxHp = math.floor(derived.maxHp),
-					atk = math.floor(derived.physAtk),
-					armor = math.floor(derived.armor),
-					mres = math.floor(derived.mres),
-				})
+local function areaExists(id: string): boolean
+	for _, data in Areas.byMap do
+		for _, area in data.areas do
+			if area.id == id then
+				return true
 			end
 		end
-	end,
-}
-
-COMMANDS.dmg = {
-	usageKey = "admin.usage.dmg",
-	run = function(player, args)
-		if args[1] == "off" then
-			CombatService.SetDamageOverride(player, nil)
-			reply(player, "admin.dmg.off")
-			return
-		end
-		local amount = parseAmount(args[1])
-		if amount == nil or amount <= 0 then
-			reply(player, "admin.usage.dmg")
-			return
-		end
-		CombatService.SetDamageOverride(player, amount)
-		reply(player, "admin.dmg.on", { amount = amount })
-	end,
-}
-
-COMMANDS.monsters = {
-	usageKey = "admin.usage.monsters",
-	run = function(player)
-		local active, sleeping, spawners, awake = MonsterService.Stats()
-		reply(
-			player,
-			"admin.monsters.info",
-			{ active = active, sleeping = sleeping, spawners = spawners, awake = awake }
-		)
-	end,
-}
-
-COMMANDS.give = {
-	usageKey = "admin.usage.give",
-	run = function(player, args)
-		local itemId = args[1]
-		if not itemId then
-			reply(player, "admin.usage.give")
-			return
-		end
-		local def = Items.get(itemId)
-		if not def then
-			reply(player, "admin.give.unknown", { id = itemId })
-			return
-		end
-		withCharacter(player, function()
-			local character = PlayerStateService.GetCharacter(player)
-			local rarityArg = args[2]
-			local rarity = if rarityArg == "u" then 6 else math.clamp(tonumber(rarityArg) or 1, 1, 5)
-			local ilvl = math.clamp(parseAmount(args[3]) or math.max(def.level, character.level), 1, Config.MaxLevel)
-			local n = math.clamp(parseAmount(args[4]) or 1, 1, 999)
-			local given = 0
-			if def.stackable then
-				given = n - InventoryService.GiveNew(player, itemId, n)
-			else
-				for _ = 1, math.min(n, 50) do
-					local leftover =
-						InventoryService.GiveNew(player, itemId, 1, if rarity == 6 then 1 else rarity, ilvl)
-					if leftover > 0 then
-						break
-					end
-					given += 1
-				end
-			end
-			if given == 0 then
-				reply(player, "inventory.full")
-			else
-				reply(player, "admin.give.ok", { name = `#item:{itemId}:0`, n = given })
-			end
-		end)
-	end,
-}
-
-COMMANDS.legend = {
-	usageKey = "admin.usage.legend",
-	run = function(player)
-		withCharacter(player, function()
-			if LootService.DropLegendary(player) then
-				reply(player, "admin.legend.ok")
-			end
-		end)
-	end,
-}
-
-COMMANDS.lootsim = {
-	usageKey = "admin.usage.lootsim",
-	run = function(player, args)
-		local monsterId = args[1]
-		local def = monsterId and Monsters.get(monsterId)
-		if not def then
-			reply(player, "admin.usage.lootsim")
-			return
-		end
-		local variant = VARIANTS[tonumber(args[2]) or 0] or "normal"
-		local n = math.clamp(parseAmount(args[3]) or 1000, 1, 100000)
-		local character = PlayerStateService.GetCharacter(player)
-		local counts, items, mats, gold =
-			LootService.Simulate(monsterId, variant, def.levels.max, n, if character then character.class else nil)
-		reply(player, "admin.lootsim.result", {
-			n = n,
-			items = items,
-			c1 = counts[1],
-			c2 = counts[2],
-			c3 = counts[3],
-			c4 = counts[4],
-			c5 = counts[5],
-			c6 = counts[6],
-			mats = mats,
-			gold = gold,
-		})
-	end,
-}
-
-COMMANDS.clearinv = {
-	usageKey = "admin.usage.clearinv",
-	run = function(player)
-		withCharacter(player, function()
-			InventoryService.Clear(player)
-			reply(player, "admin.clearinv.ok")
-		end)
-	end,
-}
-
-COMMANDS.bag = {
-	usageKey = "admin.usage.bag",
-	run = function(player, args)
-		local capacity = parseAmount(args[1])
-		local id = if capacity then `backpack_{capacity}` else ""
-		if not Items.get(id) then
-			reply(player, "admin.bag.unknown", { capacity = args[1] or "?" })
-			return
-		end
-		withCharacter(player, function()
-			local character = PlayerStateService.GetCharacter(player)
-			if not Inventory.compact(character.inventory, capacity :: number) then
-				reply(player, "equip.error.backpackFit")
-				return
-			end
-			local backpack = ItemRoll.makeStack(id, 1, InventoryService.NewUid())
-			backpack.bound = true
-			PlayerStateService.Set(player, { "character", "equipment", "backpack" }, backpack)
-			InventoryService.SyncAll(player)
-			StatService.Invalidate(player)
-			reply(player, "admin.bag.ok", { capacity = capacity })
-		end)
-	end,
-}
-
-COMMANDS.skillpoints = {
-	usageKey = "admin.usage.skillpoints",
-	run = function(player, args)
-		local n = parseAmount(args[1])
-		if n == nil then
-			reply(player, "admin.usage.skillpoints")
-			return
-		end
-		withCharacter(player, function()
-			PlayerStateService.Update(player, { "character", "skillPoints" }, function(current: number)
-				return math.max(0, current + n)
-			end)
-			reply(player, "admin.skillpoints.ok", { n = n })
-		end)
-	end,
-}
-
-COMMANDS.skills = {
-	usageKey = "admin.usage.skills",
-	run = function(player, args)
-		if args[1] == "reset" then
-			withCharacter(player, function()
-				SkillService.Reset(player, true)
-				reply(player, "skills.reset.done")
-			end)
-			return
-		end
-		if args[1] ~= "max" then
-			reply(player, "admin.usage.skills")
-			return
-		end
-		withCharacter(player, function()
-			reply(player, "admin.skills.ok", { points = SkillService.LearnAll(player) })
-		end)
-	end,
-}
-
-COMMANDS.cd = {
-	usageKey = "admin.usage.cd",
-	run = function(player, args)
-		if args[1] ~= "off" and args[1] ~= "on" then
-			reply(player, "admin.usage.cd")
-			return
-		end
-		SkillService.SetNoCooldowns(player, args[1] == "off")
-		reply(player, if args[1] == "off" then "admin.cd.off" else "admin.cd.on")
-	end,
-}
-
-COMMANDS.res = {
-	usageKey = "admin.usage.res",
-	run = function(player, args)
-		if args[1] ~= "inf" and args[1] ~= "off" then
-			reply(player, "admin.usage.res")
-			return
-		end
-		SkillService.SetInfiniteResources(player, args[1] == "inf")
-		reply(player, if args[1] == "inf" then "admin.res.on" else "admin.res.off")
-	end,
-}
-
-COMMANDS.up = {
-	usageKey = "admin.usage.up",
-	run = function(player, args)
-		local where, level = args[1], parseAmount(args[2])
-		if not where or level == nil then
-			reply(player, "admin.usage.up")
-			return
-		end
-		withCharacter(player, function()
-			local character = PlayerStateService.GetCharacter(player)
-			local up = math.clamp(level, 0, 9)
-			local index = tonumber(where)
-			if index then
-				local item = InventoryService.Get(player, index)
-				if not item then
-					reply(player, "admin.up.none")
-					return
-				end
-				item.up = up
-				InventoryService.SetSlot(player, index, item)
-			else
-				local item = character.equipment[where]
-				if not item then
-					reply(player, "admin.up.none")
-					return
-				end
-				item.up = up
-				PlayerStateService.Set(player, { "character", "equipment", where }, item)
-				StatService.Invalidate(player)
-			end
-			reply(player, "admin.up.ok", { up = up })
-		end)
-	end,
-}
-
-COMMANDS.mats = {
-	usageKey = "admin.usage.mats",
-	run = function(player, args)
-		local n = math.clamp(parseAmount(args[1]) or 50, 1, 999)
-		withCharacter(player, function()
-			for id, def in Items.byId do
-				if def.category == "material" then
-					InventoryService.GiveNew(player, id, n)
-				end
-			end
-			reply(player, "admin.mats.ok")
-		end)
-	end,
-}
-
-COMMANDS.scrolls = {
-	usageKey = "admin.usage.scrolls",
-	run = function(player, args)
-		local n = math.clamp(parseAmount(args[1]) or 5, 1, 999)
-		withCharacter(player, function()
-			for id, def in Items.byId do
-				if def.category == "scroll" or def.category == "stone" then
-					InventoryService.GiveNew(player, id, n)
-				end
-			end
-			reply(player, "admin.scrolls.ok")
-		end)
-	end,
-}
-
-COMMANDS.npc = {
-	usageKey = "admin.usage.npc",
-	run = function(player, args)
-		local id = args[1]
-		if not id then
-			local names = {}
-			for _, def in Npcs.list do
-				if not def.decoration then
-					table.insert(names, def.id)
-				end
-			end
-			reply(player, "admin.npc.list", { list = table.concat(names, ", ") })
-			return
-		end
-		local position = NpcService.Position(id)
-		local def = Npcs.get(id)
-		withCharacter(player, function()
-			local model = player.Character
-			if model and position and def then
-				model:PivotTo(CFrame.new(position + Vector3.new(0, 4, 6)))
-				reply(player, "admin.npc.tp", { npc = "@" .. def.nameKey })
-			else
-				reply(player, "admin.usage.npc")
-			end
-		end)
-	end,
-}
-
-COMMANDS.time = {
-	usageKey = "admin.usage.time",
-	run = function(player, args)
-		local text = args[1]
-		local seconds = text and tonumber((string.gsub(text, "^%+", "")))
-		if not seconds then
-			reply(player, "admin.usage.time")
-			return
-		end
-		Clock.shift(seconds)
-		AlchemyService.CheckAll()
-		BlessingService.CheckAll()
-		reply(player, "admin.time.ok", { seconds = seconds, offset = Clock.offset() })
-	end,
-}
-
-COMMANDS.bless = {
-	usageKey = "admin.usage.bless",
-	run = function(player, args)
-		local id = args[1]
-		if not id then
-			local ids = {}
-			for _, blessing in Blessings.list do
-				table.insert(ids, blessing.id)
-			end
-			reply(player, "admin.bless.list", { list = table.concat(ids, ", ") })
-			return
-		end
-		withCharacter(player, function()
-			if BlessingService.Grant(player, id) then
-				reply(player, "admin.bless.ok", { id = id })
-			else
-				reply(player, "admin.usage.bless")
-			end
-		end)
-	end,
-}
-
-COMMANDS.nodes = {
-	usageKey = "admin.usage.nodes",
-	run = function(player, args)
-		if args[1] == "count" then
-			-- Gathering nodes per kind on the current map (S19).
-			local character = PlayerStateService.GetCharacter(player)
-			local mapId = character and character.location.map or ""
-			local counts: { [string]: number } = {}
-			for _, placement in WorldService.GetNodePlacements() do
-				if placement.map == mapId then
-					counts[placement.kind] = (counts[placement.kind] or 0) + 1
-				end
-			end
-			local parts = {}
-			for kind, n in counts do
-				table.insert(parts, `{kind} {n}`)
-			end
-			table.sort(parts)
-			reply(player, "admin.nodes.count", { map = mapId, list = table.concat(parts, ", ") })
-			return
-		end
-		if args[1] ~= "respawn" then
-			reply(player, "admin.usage.nodes")
-			return
-		end
-		reply(player, "admin.nodes.ok", { n = GatherService.RespawnAll() })
-	end,
-}
-
-COMMANDS.groups = {
-	usageKey = "admin.usage.groups",
-	run = function(player)
-		local character = PlayerStateService.GetCharacter(player)
-		local mapId = character and character.location.map or nil
-		local total, sizes, active = MonsterService.GroupStats(mapId)
-		reply(player, "admin.groups.info", {
-			map = mapId or "?",
-			total = total,
-			s1 = sizes[1],
-			s2 = sizes[2],
-			s3 = sizes[3],
-			s4 = sizes[4],
-			active = active,
-		})
-	end,
-}
-
-COMMANDS.e2 = {
-	usageKey = "admin.usage.e2",
-	run = function(player, args)
-		if args[1] ~= "spawn" then
-			reply(player, "admin.usage.e2")
-			return
-		end
-		local character = PlayerStateService.GetCharacter(player)
-		local mapId = character and character.location.map or ""
-		if MonsterService.RespawnElite2(mapId) then
-			reply(player, "admin.e2.ok")
-		else
-			reply(player, "admin.e2.none")
-		end
-	end,
-}
-
-COMMANDS.fish = {
-	usageKey = "admin.usage.fish",
-	run = function(player, args)
-		if args[1] ~= "auto" then
-			reply(player, "admin.usage.fish")
-			return
-		end
-		local enabled = not FishingService.IsAuto(player)
-		FishingService.SetAuto(player, enabled)
-		reply(player, if enabled then "admin.fish.on" else "admin.fish.off")
-	end,
-}
-
-COMMANDS.maps = {
-	usageKey = "admin.usage.maps",
-	run = function(player)
-		local ids = {}
-		for id in Maps.byId do
-			table.insert(ids, id)
-		end
-		table.sort(ids)
-		local parts = {}
-		for _, id in ids do
-			table.insert(parts, if WorldService.IsBuilt(id) then `{id} ✔` else id)
-		end
-		reply(player, "admin.maps.list", { list = table.concat(parts, ", ") })
-	end,
-}
-
-COMMANDS.rebuild = {
-	usageKey = "admin.usage.rebuild",
-	run = function(player, args)
-		local mapId = args[1]
-		if not mapId or not Maps.get(mapId) then
-			reply(player, "admin.usage.rebuild")
-			return
-		end
-		local started = os.clock()
-		if WorldService.Rebuild(mapId) then
-			reply(player, "admin.rebuild.ok", { map = mapId, seconds = math.floor((os.clock() - started) * 10) / 10 })
-		else
-			reply(player, "admin.maps.notBuilt", { map = mapId })
-		end
-	end,
-}
-
-COMMANDS.nearby = {
-	usageKey = "admin.usage.nearby",
-	run = function(player, args)
-		local radius = math.clamp(tonumber(args[1]) or 150, 10, 2000)
-		local model = player.Character
-		local root = model and model:FindFirstChild("HumanoidRootPart") :: BasePart?
-		if not root then
-			return
-		end
-		local lines = {}
-		for i, s in MonsterService.SpawnersNear(root.Position, radius) do
-			if i > 12 then
-				break
-			end
-			table.insert(lines, `{s.id} ({s.monster} {s.variant}) {s.alive}/{s.count} · {s.distance}`)
-		end
-		if #lines == 0 then
-			reply(player, "admin.nearby.none")
-		else
-			reply(player, "admin.nearby.list", { list = table.concat(lines, "; ") })
-		end
-	end,
-}
-
-COMMANDS.boss = {
-	usageKey = "admin.usage.boss",
-	run = function(player, args)
-		if args[1] == "reset" then
-			withCharacter(player, function()
-				DungeonService.ResetAll(player)
-				reply(player, "admin.boss.reset")
-			end)
-		elseif args[1] == "spawn" and args[2] then
-			withCharacter(player, function()
-				if DungeonService.ForceStart(player, args[2]) then
-					reply(player, "admin.boss.spawn", { boss = args[2] })
-				else
-					reply(player, "admin.usage.boss")
-				end
-			end)
-		else
-			reply(player, "admin.usage.boss")
-		end
-	end,
-}
-
-COMMANDS.phase = {
-	usageKey = "admin.usage.phase",
-	run = function(player, args)
-		local phase = tonumber(args[1])
-		if not phase or not DungeonService.ForcePhase(player, math.floor(phase)) then
-			reply(player, "admin.usage.phase")
-			return
-		end
-		reply(player, "admin.phase.ok", { phase = phase })
-	end,
-}
-
--- Simulates party loot distribution among fake members of every class (solo testing of DESIGN §17).
-COMMANDS.partyloot = {
-	usageKey = "admin.usage.partyloot",
-	run = function(player, args)
-		local n = math.clamp(tonumber(args[1]) or 4, 1, 5)
-		local classes = { "Warrior", "Mage", "Hunter", "Cleric", "Warrior" }
-		local candidates = {}
-		for i = 1, n do
-			table.insert(candidates, { id = i, classId = classes[i] })
-		end
-		local rng = Rng.new()
-		local loot = Loot.rollBossLoot("grimrok", n, rng, {})
-		local items = {}
-		for i, drop in loot.items do
-			local def = Items.get(drop.defId)
-			table.insert(items, { uid = tostring(i), classes = if def then def.classes else nil, id = drop.defId })
-		end
-		local assigned = PartyLoot.distribute(items :: any, candidates, rng)
-		local lines = {}
-		for _, item in items do
-			local owner = assigned[item.uid]
-			table.insert(lines, `{item.id} -> #{owner or 0} {classes[owner or 1]}`)
-		end
-		reply(player, "admin.partyloot.result", { list = table.concat(lines, "; ") })
-	end,
-}
-
-COMMANDS.tradetest = {
-	usageKey = "admin.usage.tradetest",
-	run = function(player)
-		if not game:GetService("RunService"):IsStudio() then
-			reply(player, "admin.studioOnly")
-			return
-		end
-		withCharacter(player, function()
-			if TradeService.Preview(player) then
-				reply(player, "admin.tradetest.ok")
-			end
-		end)
-	end,
-}
-
-COMMANDS.quest = {
-	usageKey = "admin.usage.quest",
-	run = function(player, args)
-		withCharacter(player, function()
-			if args[1] == "set" and args[2] and QuestService.SetMain(player, args[2]) then
-				reply(player, "admin.quest.set", { id = args[2] })
-			elseif args[1] == "complete" and QuestService.CompleteMain(player) then
-				reply(player, "admin.quest.complete")
-			else
-				reply(player, "admin.usage.quest")
-			end
-		end)
-	end,
-}
-
-COMMANDS.daily = {
-	usageKey = "admin.usage.daily",
-	run = function(player, args)
-		if args[1] ~= "reroll" then
-			reply(player, "admin.usage.daily")
-			return
-		end
-		withCharacter(player, function()
-			QuestService.RerollDaily(player)
-			reply(player, "admin.daily.reroll")
-		end)
-	end,
-}
-
-COMMANDS.guild = {
-	usageKey = "admin.usage.guild",
-	run = function(player, args)
-		withCharacter(player, function()
-			local data = GuildService.Data(player)
-			if not data then
-				reply(player, "admin.guild.none")
-				return
-			end
-			local sub = args[1]
-			if sub == "info" then
-				local skills = {}
-				for id, level in data.skills do
-					table.insert(skills, `{id} {level}`)
-				end
-				local count = 0
-				for _ in data.members do
-					count += 1
-				end
-				reply(player, "admin.guild.info", {
-					name = data.name,
-					tag = data.tag,
-					members = count,
-					treasury = data.treasury,
-					skills = if #skills > 0 then table.concat(skills, ", ") else "-",
-					version = data.version,
-					id = data.id,
-				})
-			elseif sub == "treasury" and parseAmount(args[2]) then
-				local amount = math.max(0, parseAmount(args[2]) :: number)
-				if GuildService.AdminMutate(player, function(guild)
-					guild.treasury = amount
-				end) then
-					reply(player, "admin.guild.done")
-				end
-			elseif sub == "skills" and args[2] == "max" then
-				if
-					GuildService.AdminMutate(player, function(guild)
-						for _, def in GuildSkills.list do
-							guild.skills[def.id] = GuildSkills.MAX_LEVEL
-						end
-					end)
-				then
-					reply(player, "admin.guild.done")
-				end
-			elseif sub == "bots" and parseAmount(args[2]) then
-				-- Offline dummy members to test the member list, ranks and kicking alone.
-				local n = math.clamp(parseAmount(args[2]) :: number, 1, 40)
-				local classes = { "Warrior", "Hunter", "Mage", "Cleric" }
-				if
-					GuildService.AdminMutate(player, function(guild)
-						local limit = GuildLogic.memberLimit(guild.skills)
-						for i = 1, n do
-							if GuildLogic.memberCount(guild) >= limit then
-								break
-							end
-							local charId = `bot{guild.version}_{i}`
-							guild.members[GuildLogic.memberKey(-i, charId)] = {
-								userId = -i,
-								charId = charId,
-								name = `Bot{i}`,
-								class = classes[(i - 1) % 4 + 1],
-								level = 10 + i * 2,
-								rank = "member",
-								joinedAt = os.time(),
-								contributed = 0,
-							}
-						end
-					end)
-				then
-					reply(player, "admin.guild.done")
-				end
-			elseif sub == "disband" then
-				if GuildService.AdminDisband(player) then
-					reply(player, "admin.guild.done")
-				end
-			else
-				reply(player, "admin.usage.guild")
-			end
-		end)
-	end,
-}
-
-COMMANDS.mail = {
-	usageKey = "admin.usage.mail",
-	run = function(player, args)
-		withCharacter(player, function()
-			local char = PlayerStateService.GetCharacter(player)
-			local outgoing: any = { from = "admin", subjectKey = "mail.subject.admin", charId = nil }
-			if args[1] == "gold" and parseAmount(args[2]) then
-				outgoing.gold = math.max(1, parseAmount(args[2]) :: number)
-			elseif args[1] == "item" and args[2] and Items.get(args[2]) then
-				local def = Items.get(args[2]) :: any
-				local n = math.clamp(parseAmount(args[3]) or 1, 1, def.maxStack)
-				local item = if def.category == "equipment"
-					then ItemRoll.rollItem(
-						args[2],
-						def.level,
-						math.clamp(parseAmount(args[4]) or 1, 1, 5),
-						Rng.new(),
-						InventoryService.NewUid()
-					)
-					else ItemRoll.makeStack(args[2], n, InventoryService.NewUid())
-				outgoing.items = { item }
-			else
-				reply(player, "admin.usage.mail")
-				return
-			end
-			outgoing.charId = if char then char.id else nil
-			local ok, err = MailService.Send(player.UserId, outgoing)
-			reply(player, if ok then "admin.mail.sent" else (err or "error.internal"))
-		end)
-	end,
-}
-
-COMMANDS.auction = {
-	usageKey = "admin.usage.auction",
-	run = function(player, args)
-		if args[1] == "list" then
-			local parts = {}
-			for category, n in AuctionService.AdminStats() do
-				table.insert(parts, `{category} {n}`)
-			end
-			table.sort(parts)
-			reply(player, "admin.auction.list", {
-				list = table.concat(parts, ", "),
-				mode = if AuctionService.IndexIsLocal() then "local" else "global",
-			})
-		elseif args[1] == "expireall" then
-			if not RunService:IsStudio() then
-				reply(player, "admin.studioOnly")
-				return
-			end
-			reply(player, "admin.auction.expired", { n = AuctionService.AdminExpireAll() })
-		else
-			reply(player, "admin.usage.auction")
-		end
-	end,
-}
-
-COMMANDS.premium = {
-	usageKey = "admin.usage.premium",
-	run = function(player, args)
-		local pass = args[2] and Products.getPass(args[2])
-		if args[1] ~= "grant" or not pass then
-			reply(player, "admin.usage.premium")
-			return
-		end
-		MonetizationService.SetTestPass(player, pass.key, true)
-		reply(player, "admin.pass.ok", { pass = pass.key, state = "on" })
-	end,
-}
-
-COMMANDS.cosmetic = {
-	usageKey = "admin.usage.cosmetic",
-	run = function(player, args)
-		if args[1] ~= "all" then
-			reply(player, "admin.usage.cosmetic")
-			return
-		end
-		CosmeticService.GrantAll(player)
-		reply(player, "admin.cosmetic.all")
-	end,
-}
-
-COMMANDS.perf = {
-	usageKey = "admin.usage.perf",
-	run = function(player)
-		local stats = game:GetService("Stats")
-		local heartbeat = 0
-		pcall(function()
-			heartbeat = (stats :: any).HeartbeatTimeMs
-		end)
-		local active, sleeping = MonsterService.Stats()
-		reply(player, "admin.perf", {
-			players = #Players:GetPlayers(),
-			monsters = EntityService.CountMonsters(),
-			active = active,
-			sleeping = sleeping,
-			bags = LootService.BagCount(),
-			memory = math.floor(stats:GetTotalMemoryUsageMb()),
-			heartbeat = string.format("%.1f", heartbeat),
-			fps = math.floor(workspace:GetRealPhysicsFPS()),
-		})
-		-- Parts per map (S20) and the client's decoration chunks / frame time.
-		local counts = {}
-		for mapId, n in WorldService.PartCounts() do
-			table.insert(counts, `{mapId} {n}`)
-		end
-		table.sort(counts)
-		reply(player, "admin.perf.parts", { list = table.concat(counts, ", ") })
-		Net.Fire(player, "AdminClient", "perf")
-	end,
-}
-
--- S20 -------------------------------------------------------------------------------------------------
-
-COMMANDS.area = {
-	usageKey = "admin.usage.area",
-	run = function(player)
-		local character = PlayerStateService.GetCharacter(player)
-		local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart") :: BasePart?
-		local map = character and Maps.get(character.location.map)
-		if not root or not map then
-			reply(player, "admin.needCharacter")
-			return
-		end
-		local x, z = root.Position.X - map.offset.x, root.Position.Z - map.offset.z
-		local area = Areas.areaAt(map.id, x, z)
-		if not area then
-			reply(player, "admin.area.none", { map = map.id, x = math.floor(x), z = math.floor(z) })
-			return
-		end
-		reply(player, "admin.area.info", {
-			id = area.id,
-			min = area.lv[1],
-			max = area.lv[2],
-			kinds = table.concat(area.kinds, ", "),
-			groups = area.groups,
-		})
-	end,
-}
-
-COMMANDS.e2timer = {
-	usageKey = "admin.usage.e2timer",
-	run = function(player)
-		local character = PlayerStateService.GetCharacter(player)
-		local timers = character and character.e2timers or {}
-		if #timers == 0 then
-			reply(player, "admin.e2timer.none")
-			return
-		end
-		local now = workspace:GetServerTimeNow()
-		for _, timer in timers do
-			reply(player, "admin.e2timer.entry", {
-				kind = timer.kind,
-				map = timer.map,
-				from = math.max(0, math.floor(timer.from - now)),
-				to = math.max(0, math.floor(timer.to - now)),
-				job = if timer.job == game.JobId then "this" else "other",
-			})
-		end
-	end,
-}
-
-COMMANDS.decor = {
-	usageKey = "admin.usage.decor",
-	run = function(player, args)
-		local level = args[1]
-		if level ~= "low" and level ~= "mid" and level ~= "high" then
-			reply(player, "admin.usage.decor")
-			return
-		end
-		PlayerStateService.Set(player, { "account", "settings", "decor" }, level)
-		reply(player, "admin.decor.ok", { level = level })
-	end,
-}
-
-COMMANDS.mapcache = {
-	usageKey = "admin.usage.mapcache",
-	run = function(player, args)
-		if args[1] ~= "clear" then
-			reply(player, "admin.usage.mapcache")
-			return
-		end
-		Net.Fire(player, "AdminClient", "mapcache")
-		reply(player, "admin.mapcache.ok")
-	end,
-}
-
--- S21 -------------------------------------------------------------------------------------------------
-
--- City Builds with their part counts per level, generated on the first /town info (same list as the layout).
-local townBuilds: { { name: string, tag: string, x: number, z: number, shell: number, detail: number, fine: number } }? =
-	nil
-
-local function cityBuilds()
-	if not townBuilds then
-		local list = {}
-		for _, build in TownGen.all(Town.city, TownTerrain.heightAt) do
-			local counts = { shell = 0, detail = 0, fine = 0 }
-			for _, piece in build.bp.pieces do
-				counts[piece.lod] += 1
-			end
-			table.insert(list, {
-				name = build.name,
-				tag = build.tag or "?",
-				x = build.at.x,
-				z = build.at.z,
-				shell = counts.shell,
-				detail = counts.detail,
-				fine = counts.fine,
-			})
-		end
-		townBuilds = list
 	end
-	return townBuilds :: any
+	return false
 end
 
--- Map-relative point in front of a city place: special building (its door), square (its middle), the arena
--- (its exit) or an NPC (3 studs in front of its spot).
-local function cityPlace(id: string): (number?, number?)
-	if id == "arena" then
-		local arena = Town.city.arena
-		return arena.exit[1], arena.exit[2]
-	end
-	local special = Town.special(id)
-	if special then
-		return TownGeom.door(special.x, special.z, special.d, special.rot)
-	end
-	for _, square in Town.city.squares do
-		if square.id == id then
-			local sx, sz = 0, 0
-			for _, point in square.poly do
-				sx += point[1]
-				sz += point[2]
-			end
-			return sx / #square.poly, sz / #square.poly
+local function passExists(key: string): boolean
+	for _, pass in Products.passes do
+		if pass.key == key then
+			return true
 		end
 	end
-	local spot = Town.npcSpot(id)
-	if spot then
-		local fx, fz = TownGeom.front(spot.facing)
-		return spot.x + fx * 3, spot.z + fz * 3
-	end
-	return nil, nil
+	return false
 end
 
-COMMANDS.town = {
-	usageKey = "admin.usage.town",
-	run = function(player, args)
-		local action = args[1]
-		if action == "lod" then
-			local level = args[2]
-			if level ~= "low" and level ~= "mid" and level ~= "high" then
-				reply(player, "admin.usage.town")
-				return
-			end
-			PlayerStateService.Set(player, { "account", "settings", "decor" }, level)
-			reply(player, "admin.decor.ok", { level = level })
-		elseif action == "tp" then
-			local x, z = cityPlace(args[2] or "")
-			if not x or not z then
-				local names = { "arena" }
-				for _, special in Town.city.specials do
-					table.insert(names, special.id)
-				end
-				for _, square in Town.city.squares do
-					table.insert(names, square.id)
-				end
-				reply(player, "admin.town.places", { list = table.concat(names, ", ") })
-				return
-			end
-			withCharacter(player, function()
-				task.spawn(TravelService.TeleportToMap, player, "city", WorldService.GroundCFrame("city", x, z))
-				reply(player, "admin.tp.map", { map = "city" })
-			end)
-		elseif action == "info" then
-			local character = PlayerStateService.GetCharacter(player)
-			local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart") :: BasePart?
-			local map = Maps.get("city")
-			if not root or not map or not character or character.location.map ~= "city" then
-				reply(player, "admin.town.notInCity")
-				return
-			end
-			local x, z = root.Position.X - map.offset.x, root.Position.Z - map.offset.z
-			local best, bestDistance = nil, math.huge
-			for _, build in cityBuilds() do
-				local d = math.sqrt((build.x - x) ^ 2 + (build.z - z) ^ 2)
-				if d < bestDistance then
-					best, bestDistance = build, d
-				end
-			end
-			local params = RaycastParams.new()
-			params.FilterType = Enum.RaycastFilterType.Include
-			params.FilterDescendantsInstances = { workspace.Terrain }
-			local hit = workspace:Raycast(root.Position + Vector3.new(0, 4, 0), Vector3.new(0, -60, 0), params)
-			reply(player, "admin.town.info", {
-				x = math.floor(x),
-				z = math.floor(z),
-				height = string.format("%.1f", TownTerrain.heightAt(x, z)),
-				material = if hit then hit.Material.Name else "-",
-				open = tostring(TownTerrain.isOpen(x, z)),
-				name = if best then best.name else "-",
-				tag = if best then best.tag else "-",
-				distance = math.floor(bestDistance),
-				shell = if best then best.shell else 0,
-				detail = if best then best.detail else 0,
-				fine = if best then best.fine else 0,
-			})
-			Net.Fire(player, "AdminClient", "town")
-		else
-			reply(player, "admin.usage.town")
-		end
+-- Catalogue lookups for argument validation.
+local RESOLVE: { [string]: (string) -> boolean } = {
+	item = function(id)
+		return Items.get(id) ~= nil
+	end,
+	monster = function(id)
+		return Monsters.get(id) ~= nil
+	end,
+	map = function(id)
+		return Maps.get(id) ~= nil
+	end,
+	area = areaExists,
+	npc = function(id)
+		return Npcs.get(id) ~= nil
+	end,
+	boss = function(id)
+		return Bosses.get(id) ~= nil
+	end,
+	quest = function(id)
+		return Quests.Main.get(id) ~= nil
+	end,
+	blessing = function(id)
+		return Blessings.get(id) ~= nil
+	end,
+	pass = passExists,
+	player = function(name)
+		return AdminService.FindPlayer(name) ~= nil
 	end,
 }
 
-COMMANDS.daytime = {
-	usageKey = "admin.usage.daytime",
-	run = function(player, args)
-		local text = args[1]
-		if text == "auto" then
-			workspace:SetAttribute("DayOffset", nil)
-			reply(player, "admin.daytime.auto")
-			return
-		end
-		local hour = tonumber(text)
-		if not hour or hour < 0 or hour > 24 then
-			reply(player, "admin.usage.daytime")
-			return
-		end
-		local offset =
-			DayCycle.offsetFor(workspace:GetServerTimeNow(), hour % 24, Config.DayLength, Config.DayNightShare)
-		workspace:SetAttribute("DayOffset", offset)
-		reply(player, "admin.daytime.ok", { hour = hour })
-	end,
-}
+local function resolve(kind: string, value: string): boolean
+	local check = RESOLVE[kind]
+	return check == nil or check(value)
+end
 
--- S22 -------------------------------------------------------------------------------------------------
-
-COMMANDS.die = {
-	usageKey = "admin.usage.die",
-	run = function(player)
-		withCharacter(player, function()
-			-- DeathService.Kill removes the respawn protection first.
-			DeathService.Kill(player)
-		end)
-	end,
-}
-
-COMMANDS.shield = {
-	usageKey = "admin.usage.shield",
-	run = function(player, args)
-		local seconds = math.clamp(tonumber(args[1]) or Config.RespawnShieldSeconds, 1, 600)
-		withCharacter(player, function()
-			StatusEffectService.ApplyRespawnShield(player, seconds)
-			reply(player, "admin.shield.ok", { seconds = seconds })
-		end)
-	end,
-}
-
-COMMANDS.leash = {
-	usageKey = "admin.usage.leash",
-	run = function(player)
-		local target = CombatService.GetTarget(player)
-		local monster = target and target.kind == "monster" and target.monster
-		if not monster then
-			reply(player, "admin.kill.noTarget")
-			return
-		end
-		local home = monster.home or monster.spawnCFrame.Position
-		local offset = monster.root.Position - home
-		local since = os.clock() - monster.lastHit
-		reply(player, "admin.leash.info", {
-			state = monster.state,
-			distance = math.floor(Vector3.new(offset.X, 0, offset.Z).Magnitude),
-			since = if monster.lastHit > 0 then string.format("%.1f", since) else "-",
-			hp = math.ceil(monster.hp),
-			max = monster.stats.maxHp,
-			boss = tostring(monster.isBoss == true),
-		})
-	end,
-}
-
-COMMANDS.portalpick = {
-	usageKey = "admin.usage.portalpick",
-	run = function(player, args)
-		local mapId = args[1]
-		if not mapId or not Areas.byMap[mapId] then
-			reply(player, "admin.usage.portalpick")
-			return
-		end
-		Net.Fire(player, "AdminClient", "portalpick", mapId)
-	end,
-}
-
--- Teleports to an area's arrival point (the same place a portal brings you to), honouring the level lock.
-local function travelArea(player: Player, mapId: string, areaId: string): (boolean, string?)
+-- Runs a command for `player` (chat or panel). Returns (ok, errorKey?, lines) where `lines` are the replies
+-- collected when `collect` is set (panel); from the chat the replies go to the system channel as they come.
+function AdminService.Run(
+	player: Player,
+	name: string,
+	rawArgs: { string },
+	collect: boolean?
+): (boolean, string?, { Context.Line })
+	local lines: { Context.Line } = {}
 	if not AdminService.IsAdmin(player) then
-		return false, "admin.denied"
+		record(player, name, rawArgs, false)
+		return false, "admin.denied", lines
 	end
-	if not WorldService.IsBuilt(mapId) or not PlayerStateService.GetCharacter(player) then
-		return false, "portal.closed"
+	local def = AdminCommands.get(name)
+	local run = RUN[name]
+	if not def or not run then
+		record(player, name, rawArgs, false)
+		return false, "admin.unknown", lines
 	end
-	local at, err = TravelService.AreaArrival(player, mapId, areaId)
-	if err then
-		return false, err
+	if def.studioOnly and not RunService:IsStudio() then
+		record(player, name, rawArgs, false)
+		return false, "admin.studioOnly", lines
 	end
-	if not at then
-		return false, "error.badRequest"
+	local valid, values, errKey, errArgs = AdminArgs.validate(def.args :: any, rawArgs, resolve)
+	if not valid or not values then
+		record(player, name, rawArgs, false)
+		if collect then
+			table.insert(lines, { key = errKey or "error.badRequest", args = errArgs })
+			table.insert(lines, { key = def.usageKey })
+		else
+			Context.reply(player, errKey or "error.badRequest", errArgs)
+			Context.reply(player, def.usageKey)
+		end
+		return false, errKey or "error.badRequest", lines
 	end
-	task.spawn(TravelService.TeleportToMap, player, mapId, at)
-	return true, nil
+	record(player, name, values, true)
+	if collect then
+		Context.capture(player, lines)
+	end
+	local okCall, result, resultErr = pcall(run, player, values)
+	if collect then
+		Context.capture(player, nil)
+	end
+	if not okCall then
+		log:error("/%s failed: %s", name, tostring(result))
+		if not collect then
+			Context.reply(player, "admin.failed", { command = name })
+		end
+		return false, "admin.failed", lines
+	end
+	-- A command may report a failure by returning (false, errorKey).
+	if result == false then
+		return false, if type(resultErr) == "string" then resultErr else "admin.failed", lines
+	end
+	return true, nil, lines
 end
-
-COMMANDS.arrive = {
-	usageKey = "admin.usage.arrive",
-	run = function(player, args)
-		local mapId, areaId = args[1], args[2]
-		if not mapId or not areaId then
-			reply(player, "admin.usage.arrive")
-			return
-		end
-		withCharacter(player, function()
-			local ok, err = travelArea(player, mapId, areaId)
-			reply(player, if ok then "admin.tp.map" else (err or "admin.usage.arrive"), { map = mapId })
-		end)
-	end,
-}
-
-COMMANDS.anim = {
-	usageKey = "admin.usage.anim",
-	run = function(player, args)
-		local kind = args[1]
-		if not kind then
-			reply(player, "admin.usage.anim")
-			return
-		end
-		Net.Fire(player, "AdminClient", "anim", kind)
-		reply(player, "admin.anim.ok", { kind = kind })
-	end,
-}
 
 local function onCommand(name: string, textSource: TextSource, message: string)
 	local player = Players:GetPlayerByUserId(textSource.UserId)
@@ -1757,7 +241,7 @@ local function onCommand(name: string, textSource: TextSource, message: string)
 		return
 	end
 	if not AdminService.IsAdmin(player) then
-		reply(player, "admin.denied")
+		Context.reply(player, "admin.denied")
 		return
 	end
 	local parts = string.split(message, " ")
@@ -1767,66 +251,82 @@ local function onCommand(name: string, textSource: TextSource, message: string)
 			table.insert(args, parts[i])
 		end
 	end
-	local command = COMMANDS[name]
-	local ok, err = pcall(command.run :: any, player, args)
-	if not ok then
-		log:error("/%s failed: %s", name, tostring(err))
-		reply(player, "admin.failed", { command = name })
+	AdminService.Run(player, name, args, false)
+end
+
+-- AdminRun(name, args) from the dev panel: (ok, errorKey?, lines). Admin rights are checked every time.
+local function onPanel(player: Player, name: string, raw: any): (boolean, string?, { Context.Line }?)
+	local args = AdminArgs.sanitize(raw)
+	if not args then
+		return false, "error.badRequest", nil
 	end
+	if not AdminService.IsAdmin(player) then
+		record(player, name, args, false)
+		return false, "admin.denied", nil
+	end
+	local ok, err, lines = AdminService.Run(player, string.lower(name), args, true)
+	return ok, err, lines
 end
 
 function AdminService.Init(registry)
-	DataService = registry.Get("DataService")
-	PlayerStateService = registry.Get("PlayerStateService")
-	CharacterService = registry.Get("CharacterService")
-	NameService = registry.Get("NameService")
-	LevelService = registry.Get("LevelService")
-	ResourceService = registry.Get("ResourceService")
-	DeathService = registry.Get("DeathService")
-	PvpService = registry.Get("PvpService")
-	MonetizationService = registry.Get("MonetizationService")
-	MonsterService = registry.Get("MonsterService")
-	CombatService = registry.Get("CombatService")
-	EntityService = registry.Get("EntityService")
-	InventoryService = registry.Get("InventoryService")
-	LootService = registry.Get("LootService")
-	StatService = registry.Get("StatService")
-	SkillService = registry.Get("SkillService")
-	NpcService = registry.Get("NpcService")
-	AlchemyService = registry.Get("AlchemyService")
-	BlessingService = registry.Get("BlessingService")
-	GatherService = registry.Get("GatherService")
-	FishingService = registry.Get("FishingService")
-	WorldService = registry.Get("WorldService")
-	TravelService = registry.Get("TravelService")
-	DungeonService = registry.Get("DungeonService")
-	TradeService = registry.Get("TradeService")
-	QuestService = registry.Get("QuestService")
-	GuildService = registry.Get("GuildService")
-	MailService = registry.Get("MailService")
-	AuctionService = registry.Get("AuctionService")
-	CosmeticService = registry.Get("CosmeticService")
-	StatusEffectService = registry.Get("StatusEffectService")
+	for _, serviceName in AdminService.Deps do
+		Context.services[serviceName] = registry.Get(serviceName)
+	end
+	Context.services.AdminService = AdminService
+	Context.isAdmin = AdminService.IsAdmin
+	-- The modules read Context.services when required, so they are loaded only now.
+	local folder = script.Parent.Parent:FindFirstChild("Admin")
+	assert(folder, "AdminService: src/server/Admin missing")
+	for _, moduleName in MODULES do
+		local module = folder:FindFirstChild(moduleName)
+		assert(module and module:IsA("ModuleScript"), `AdminService: Admin/{moduleName} missing`)
+		local commands = (require :: any)(module) :: { [string]: Run }
+		for name, run in commands do
+			if RUN[name] then
+				log:error("admin command /%s is defined twice", name)
+			end
+			RUN[name] = run
+		end
+	end
+	-- Metadata and implementations must match (S23).
+	for _, def in AdminCommands.list do
+		if not RUN[def.name] then
+			log:error("admin command /%s has metadata but no implementation", def.name)
+		end
+	end
+	for name in RUN do
+		if not AdminCommands.get(name) then
+			log:error("admin command /%s has no metadata (Data/AdminCommands)", name)
+		end
+	end
 end
 
 function AdminService.Start()
 	local folder = Instance.new("Folder")
 	folder.Name = "AdminCommands"
-	for name in COMMANDS do
-		local command = Instance.new("TextChatCommand")
-		command.Name = `Admin_{name}`
-		command.PrimaryAlias = `/{name}`
-		command.Triggered:Connect(function(textSource: TextSource, message: string)
-			onCommand(name, textSource, message)
-		end)
-		command.Parent = folder
+	for _, def in AdminCommands.list do
+		if RUN[def.name] then
+			local command = Instance.new("TextChatCommand")
+			command.Name = `Admin_{def.name}`
+			command.PrimaryAlias = `/{def.name}`
+			command.Triggered:Connect(function(textSource: TextSource, message: string)
+				onCommand(def.name, textSource, message)
+			end)
+			command.Parent = folder
+		end
 	end
 	folder.Parent = TextChatService
-	Net.Handle("AdminTravelArea", travelArea)
+	Net.Handle("AdminRun", onPanel)
 
-	Players.PlayerRemoving:Connect(function(player)
-		wipeRequests[player] = nil
-	end)
+	local function flag(player: Player)
+		if AdminService.IsAdmin(player) then
+			player:SetAttribute("Admin", true)
+		end
+	end
+	for _, player in Players:GetPlayers() do
+		flag(player)
+	end
+	Players.PlayerAdded:Connect(flag)
 end
 
 return AdminService

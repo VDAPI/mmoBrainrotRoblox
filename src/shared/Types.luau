@@ -115,6 +115,7 @@ export type Settings = {
 	decor: string, -- "low" | "mid" | "high": client decoration radius
 	groupRings: boolean, -- S19: coloured rings under monster groups
 	keys: { [string]: string }, -- S17: rebound keys, action -> Enum.KeyCode name (Data/Keybinds)
+	devPins: { string }, -- S23: dev panel favourites (admins)
 }
 
 export type AccountData = {

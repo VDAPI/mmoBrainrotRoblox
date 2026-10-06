@@ -7,6 +7,9 @@
 -- One window at a time (S18, DESIGN §23): opening a window closes the others. Service windows (COMPANIONS)
 -- open together with the backpack, side by side on desktop.
 -- Hotkeys only work while enabled (ScreenController enables them in the "playing" phase).
+-- S23: `overlay` windows (the dev panel) neither close other windows nor get closed by them; on desktop they
+-- open at the right edge. Esc closes the normal windows first and overlays last. Overlay hotkeys win over
+-- the other windows' keys; `enabled` hides a window's hotkey from players who may not use it.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
@@ -19,6 +22,7 @@ local Modal = require(script.Parent.Parent.UI.Components.Modal)
 local Sounds = require(script.Parent.Parent.UI.Sounds)
 local Text = require(script.Parent.Parent.UI.Text)
 local Device = require(script.Parent.Parent.UI.Device)
+local Scale = require(script.Parent.Parent.UI.Scale)
 local Window = require(script.Parent.Parent.UI.Components.Window)
 
 local log = Log.new("WindowManager")
@@ -32,6 +36,8 @@ export type WindowDef = {
 	hotkey: Enum.KeyCode?,
 	-- Builds the window content. `close` closes this window.
 	build: (scope: Scope, close: () -> ()) -> Fusion.Child,
+	overlay: boolean?, -- S23: stays open next to other windows
+	enabled: (() -> boolean)?, -- S23: hotkey only while this returns true
 }
 
 type OpenWindow = {
@@ -123,10 +129,11 @@ end
 
 local openWindow: (id: string, offset: Vector2?) -> ()
 
--- Closes every open window except `keep` (a set of ids).
+-- Closes every open window except `keep` (a set of ids) and the overlays.
 local function closeOthers(keep: { [string]: boolean })
 	for openId in open do
-		if not keep[openId] then
+		local openDef = defs[openId]
+		if not keep[openId] and not (openDef and openDef.overlay) then
 			WindowManager.Close(openId)
 		end
 	end
@@ -140,6 +147,13 @@ function WindowManager.Open(id: string)
 	local def = defs[id]
 	if not def then
 		log:warn("unknown window '%s'", id)
+		return
+	end
+	if def.overlay then
+		-- Overlay (dev panel): at the right edge on desktop, nothing else closes.
+		local screen = Fusion.peek(Scale.VirtualSize)
+		local desktop = not Fusion.peek(Device.Touch)
+		openWindow(id, if desktop then Vector2.new(math.max(0, screen.X / 2 - def.size.X / 2 - 16), 0) else nil)
 		return
 	end
 	if COMPANIONS[id] then
@@ -219,8 +233,16 @@ function WindowManager.CloseAll()
 	end
 end
 
--- Closes the top-most window. Returns false when none was open.
+-- Closes the top-most window (normal windows before overlays). Returns false when none was open.
 function WindowManager.CloseTop(): boolean
+	for i = #stack, 1, -1 do
+		local id = stack[i]
+		local def = defs[id]
+		if not (def and def.overlay) then
+			WindowManager.Close(id)
+			return true
+		end
+	end
 	local top = stack[#stack]
 	if top then
 		WindowManager.Close(top)
@@ -328,7 +350,17 @@ function WindowManager.Start()
 		if gameProcessed or not hotkeysEnabled or modalScope then
 			return
 		end
+		-- Overlay keys first (the dev panel's F2 wins over a player's own binding of F2).
 		for id, def in defs do
+			if def.overlay and def.hotkey == input.KeyCode and (def.enabled == nil or def.enabled()) then
+				WindowManager.Toggle(id)
+				return
+			end
+		end
+		for id, def in defs do
+			if def.overlay or (def.enabled and not def.enabled()) then
+				continue
+			end
 			-- Rebindable windows (S17) follow Data/Keybinds; others keep their registered key.
 			local action = `win_{id}`
 			local matches = if KeybindData.get(action)

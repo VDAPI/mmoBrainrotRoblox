@@ -64,15 +64,26 @@ end
 
 -- Players holding the sprint key (S18): walk speed x Config.SprintMultiplier.
 local sprinting: { [Player]: boolean? } = {}
+-- Admin /speed (S23): a fixed walk speed that wins over stats and sprint.
+local speedOverride: { [Player]: number? } = {}
 
 local function applyWalkSpeed(player: Player)
 	local result = results[player]
 	local model = player.Character
 	local humanoid = model and model:FindFirstChildOfClass("Humanoid")
-	if result and humanoid then
+	local override = speedOverride[player]
+	if humanoid and override then
+		humanoid.WalkSpeed = override
+	elseif result and humanoid then
 		local sprint = sprinting[player] == true and humanoid.Health > 0
 		humanoid.WalkSpeed = result.walkSpeed * (if sprint then Config.SprintMultiplier else 1)
 	end
+end
+
+-- Fixed walk speed for an admin (nil = back to normal).
+function StatService.SetSpeedOverride(player: Player, speed: number?)
+	speedOverride[player] = speed
+	applyWalkSpeed(player)
 end
 
 function StatService.SetSprint(player: Player, on: boolean)
@@ -223,6 +234,7 @@ function StatService.Start()
 		end
 	end)
 	Players.PlayerRemoving:Connect(function(player)
+		speedOverride[player] = nil
 		task.defer(function()
 			results[player] = nil
 			dirty[player] = nil

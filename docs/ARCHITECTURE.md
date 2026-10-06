@@ -220,9 +220,103 @@ type CharacterData = {
 
 ## 11. Admin / debug
 
-- `AdminService`: komendy czatu dla `Config.AdminUserIds` (+ każdy w Studio):
-  `/lvl n`, `/exp n`, `/gold n`, `/shards n`, `/give itemId [rarity] [ilvl] [n]`, `/legend` (losowy legendarny dla klasy), `/tp mapId`, `/spawn monsterId [elite 0/1/2] [lvl]`, `/kill` (cel), `/heal`, `/god`, `/reset stats|skills`, `/boss reset`, `/clearinv`, `/time +sekundy` (przesunięcie zegara do testów alchemii i błogosławieństw), `/wipe` (czyści konto, potwierdzenie).
-- Rozszerzaj w każdej sesji o komendy przydatne do testowania nowej funkcji.
+- **Komendy (S23):** metadane w `Shared/Data/AdminCommands.luau` (`name`, `category`, `usageKey`, `args` ze schematem
+  `{name, kind, min?, max?, options?, optional?, default?}`, `danger?`, `dangerActions?`, `studioOnly?`), implementacje
+  w `src/server/Admin/<Kategoria>.luau` (moduł zwraca `{ [name] = run }`, wspólny stan i `reply` w `Admin/Context`).
+  `AdminService.Run(player, name, args, collect?)` to jedna ścieżka dla czatu i panelu: `IsAdmin`, `studioOnly`,
+  walidacja (`Logic/AdminArgs`, katalogi przez resolver serwera), log audytu (200 wpisów, `/adminlog`), `pcall`;
+  komenda może zwrócić `(false, errKey)`. Przy starcie `AdminService` loguje rozjazdy metadanych i implementacji.
+- **Czat:** `TextChatCommand` `/nazwa` dla każdej komendy z metadanych; odpowiedzi na kanale systemowym.
+- **Panel (F2 albo przycisk „DEV”):** `DevController` + `UI/Screens/DevWindow/*`, okno `overlay` (nie zamyka innych),
+  remote `AdminRun(name, args)` → `(ok, errKey?, lines)`; serwer zawsze sprawdza `IsAdmin`. Atrybut gracza `Admin`
+  steruje tylko widocznością. Zakładki: postać, przedmioty (katalog), świat (teleporty), potwory, walka, questy,
+  ekonomia i społeczność, wydajność, konsola (historia, podpowiedzi), dane. Każda komenda ma też automatyczny wiersz
+  z polami wg schematu, ulubione w `account.settings.devPins`. Komponenty: `SideTabs`, `Toggle`, `NumberInput`,
+  `Select`.
+- **Dodanie komendy:** wpis w `Data/AdminCommands` + `run` w module kategorii + `admin.usage.<nazwa>` (PL i EN);
+  panel pokaże ją sam.
+
+| Komenda | Kategoria | Argumenty | Opis |
+|---|---|---|---|
+| `/lvl` | character | <level> | ustaw poziom postaci (punkty przeliczone) |
+| `/exp` | character | <amount> | dodaj doświadczenie |
+| `/stats` | character | <reset> | zwróć wszystkie punkty statystyk |
+| `/statpoints` | character | <n> | ustaw liczbę wolnych punktów statystyk |
+| `/skillpoints` | character | <n> | dodaj punkty umiejętności |
+| `/skills` | character | <max|reset> | naucz wszystkie umiejętności tak wysoko, jak pozwala poziom |
+| `/heal` | character |  | odnów życie, manę i energię |
+| `/god` | character |  | włącz/wyłącz nieśmiertelność |
+| `/cd` | character | <off|on> | wyłącz / włącz odnowienie umiejętności |
+| `/res` | character | <inf|off> | nieskończona mana i energia |
+| `/sprint` | character |  | stan sprintu i szybkość ruchu |
+| `/speed` | character | <value> | stała szybkość chodzenia (admin) |
+| `/preset` | character | <level> <rarity> [up] | poziom i pełny zestaw klasy z tieru poziomu |
+| `/give` | items | <item:item> [rarity] [ilvl] [n] | daj przedmiot |
+| `/givex` | items | <item:item> [rarity] [ilvl] [up] [none|fire|ice|lightning] [n] [no|yes] | przedmiot z ulepszeniem i żywiołem |
+| `/legend` | items |  | zrzuć losową legendę dla twojej klasy |
+| `/lootsim` | items | <monster:monster> [0|1|2] [n] | symuluj n zabójstw |
+| `/clearinv` | items |  | opróżnij plecak ⚠ |
+| `/bag` | items | <20|30|45|60|80|100|130|160|200> | ustaw plecak |
+| `/up` | items | <where> <level> | ustaw poziom ulepszenia przedmiotu założonego (slot) lub w plecaku (indeks) |
+| `/mats` | items | [n] | po n każdego materiału |
+| `/scrolls` | items | [n] | po n każdego zwoju i kamienia |
+| `/ilvl` | items | <level> | poziom przedmiotu założonej broni |
+| `/element` | items | <fire|ice|lightning> | żywioł założonej broni maga |
+| `/partyloot` | items | [n] | symulacja łupu bossa dla n członków |
+| `/tp` | world | <target> [a] [b] | teleport na mapę, przed wejście do jaskini albo na pozycję |
+| `/npc` | world | [id:npc] | lista NPC albo teleport do jednego |
+| `/time` | world | <seconds> | przesuń zegar gry (alchemia, błogosławieństwa) |
+| `/daytime` | world | <hour> | pora dnia na mapach z cyklem dnia i nocy |
+| `/nodes` | world | <respawn|count> | odnów wszystkie węzły zbieractwa albo policz węzły na tej mapie |
+| `/fish` | world | <auto> | włącz/wyłącz automatyczny sukces łowienia |
+| `/maps` | world |  | lista map (✔ = zbudowana) |
+| `/rebuild` | world | <map:map> | przebuduj mapę ⚠ |
+| `/nearby` | world | [radius] | spawnery w pobliżu |
+| `/area` | world |  | obszar potworów, w którym stoisz |
+| `/decor` | world | <low|mid|high> | szczegółowość świata (dekoracje klienta) |
+| `/mapcache` | world | <clear> | przebuduj pamięć podręczną mapy (M) |
+| `/town` | world | <info|lod|tp> [value] | miasto startowe |
+| `/portalpick` | world | <map:map> | okno wyboru expowiska bez portalu |
+| `/arrive` | world | <map:map> <area:area> | teleport na punkt przybycia expowiska |
+| `/goto` | world | <player:player> | teleport do gracza |
+| `/bring` | world | <player:player> | przenieś gracza do siebie |
+| `/spawn` | monsters | <monster:monster> [0|1|2] [level] | przywołaj potwora przed sobą |
+| `/killall` | monsters | [radius] | zabij potwory wokół (domyślnie 100) ⚠ |
+| `/monsters` | monsters |  | licznik aktywnych i uśpionych potworów |
+| `/groups` | monsters |  | grupy potworów na tej mapie (liczba, rozkład 1–4, aktywne) |
+| `/mstats` | monsters | [level] | HP i atak zwykłego potwora oraz czas zabicia go przez ciebie |
+| `/e2` | monsters | <spawn> | od razu odródź Elitę II w tej jaskini |
+| `/e2timer` | monsters |  | twoje timery Elit II |
+| `/boss` | monsters | <reset|spawn> [boss:boss] | /boss reset | spawn <grimrok|morvane> |
+| `/phase` | monsters | <phase> | wymuś fazę bossa |
+| `/leash` | monsters |  | stan AI zaznaczonego potwora (smycz, powrót, regeneracja) |
+| `/target` | combat | <info> | wypisz statystyki celu |
+| `/dmg` | combat | <amount> | nadpisz obrażenia ataku |
+| `/hurt` | combat | <amount> | zadaj sobie obrażenia |
+| `/kill` | combat | [who] | zabij swoją postać |
+| `/pvp` | combat | <a> [b] [c] | przełącz PvP natychmiast |
+| `/die` | combat |  | zabij siebie (zdejmuje ochronę) i pokaż wybór miejsca odrodzenia |
+| `/shield` | combat | [seconds] | nałóż ochronę po odrodzeniu |
+| `/anim` | combat | <kind> | animacja ataku na sobie co 1 s (np. sword1h, bow, staff) |
+| `/quest` | quests | <set|complete> [id:quest] | /quest set <id> | complete |
+| `/daily` | quests | <reroll> | /daily reroll |
+| `/gold` | economy | <amount> | dodaj (lub odejmij, gdy ujemna) złoto aktywnej postaci |
+| `/shards` | economy | <amount> | dodaj (lub odejmij) Smoczą Walutę na koncie |
+| `/setgold` | economy | <amount> | ustaw złoto postaci |
+| `/setshards` | economy | <amount> | ustaw Smoczą Walutę konta |
+| `/pass` | economy | <pass:pass> <on|off> | testuj gamepass |
+| `/premium` | economy | <grant> <pass:pass> | /premium grant autoLoot|vault|fastRespawn|vip |
+| `/bless` | economy | [id:blessing] | lista błogosławieństw albo nadaj jedno (np. warrior_5) |
+| `/cosmetic` | economy | <all> | /cosmetic all |
+| `/mail` | economy | <gold|item> <a> [b] [c] | /mail gold n | /mail item idPrzedmiotu [n] [rzadkość] |
+| `/auction` | economy | <list|expireall> | /auction list | /auction expireall (Studio) ⚠ expireall |
+| `/tradetest` | economy |  | otwórz okno handlu samemu (Studio) (Studio) |
+| `/guild` | guild | <info|treasury|skills|bots|disband> [value] | /guild info | treasury n | skills max | bots n | disband ⚠ disband |
+| `/perf` | perf |  | /perf |
+| `/adminlog` | perf | [n] | ostatnie wywołania komend admina |
+| `/help` | data |  | lista komend admina |
+| `/wipe` | data | [confirm] | usuń całe konto (wymaga /wipe confirm) ⚠ |
+| `/resetcodes` | data |  | kody nagród znów do użycia na tym koncie |
 
 ## 12. Testy
 

@@ -38,6 +38,7 @@ end
 -- Namespaces whose string literals are localization keys.
 local NAMESPACES = {
 	"admin",
+	"dev",
 	"daily",
 	"quest",
 	"duel",
