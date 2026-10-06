@@ -12,6 +12,10 @@ Instalacja narzędzi i uruchomienie gry: `README.md` w katalogu głównym.
 | `docs/PROGRESS.md` | Dziennik postępu (stan sesji, decyzje, niedokończone, zgłoszone błędy, instrukcje testów); Claude aktualizuje go po każdej sesji |
 | `docs/sessions/S01–S14.md` | Prompty sesji podstawowych (zrobione) |
 | `docs/sessions/S18–S20.md` | Po testach S17: S18 walka, sterowanie, przedmioty, broń, UI; S19 grupy potworów, jaskinie, nowe potwory; S20 szczegółowa mapa z obszarami potworów, bogatszy i wydajniejszy świat, wygoda łupu |
+| `docs/sessions/S21–S24.md` | Po testach S20: S21 nowe miasto startowe, S22 animacje ataku, smycz, śmierć z wyborem miejsca, wybór expowiska, czytelna mapa; S23 panel developerski; S24 ładne potwory, bossowie i pety |
+| `docs/SWIAT.md` | Spis świata: expowiska, potwory z Elitami, jaskinie, bossy, dropy |
+| `docs/MODELE.md` | Research: skąd brać modele potworów, bossów i petów, licencje, wgrywanie i animacje |
+| `docs/miasto/MIASTO.md` | Specyfikacja miasta startowego (S21) i narzędzia planu |
 | `docs/sessions/FIX.md` | Szablon sesji poprawek po testach |
 
 Sesje S15–S17 i S17b nie mają osobnych promptów (zakres był podawany w rozmowie); ich opis jest w `PROGRESS.md`.

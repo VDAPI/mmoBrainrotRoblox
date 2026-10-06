@@ -256,7 +256,7 @@ local function enemyAt(screenPosition: Vector2, hostileOnly: boolean): Model?
 	if player.Character then
 		table.insert(exclude, player.Character)
 	end
-	for _, name in { "Vaelthorn_Effects", "Vaelthorn_CombatFx" } do
+	for _, name in { "Vaelthorn_Effects", "Vaelthorn_CombatFx", "Vaelthorn_TownDetail", "Vaelthorn_ClientDecor" } do
 		local folder = Workspace:FindFirstChild(name)
 		if folder then
 			table.insert(exclude, folder)

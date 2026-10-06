@@ -186,6 +186,20 @@ type CharacterData = {
   (`Prefabs.areaFeatures`, `Prefabs.extraDecor`), dekoracje bez `CanQuery`/`CanTouch`. Streaming: TargetRadius 512,
   MinRadius 128, IntegrityMode MinimumRadiusPause. Mapa (M) buforuje statyczną warstwę na mapę, zoom przez `UIScale`.
 
+- Miasto startowe (S21, `docs/miasto/MIASTO.md`): plan w `Shared/Data/Town` (wygenerowany), czyste moduły
+  `Logic/TownTerrain` (jedyne źródło wysokości, materiały, woksele), `Logic/TownGeom`, `Logic/TownGen/*` (Blueprinty
+  z poziomami `shell`/`detail`/`fine`), `Logic/TownSketch` (szkic mapy), `Logic/TownSigns` (szyldy usług),
+  `Util/BlueprintBuild` (Party z Blueprintów, wspólne dla obu stron). Serwer: `World/TownTerrainWriter`
+  (`WriteVoxels`), `World/Layouts/city` (teren, shell, portale w bramach przez `Prefabs.makePortal`, strefy, spawn,
+  szyldy, `Build.boundary`). Klient: `TownDetailController` (detail/fine wokół kamery, budżet części na klatkę,
+  histereza, folder `Workspace.Vaelthorn_TownDetail`), `TownFxController` (tag `TownFx`: chorągwie, koło młyńskie,
+  wiatrak, dym, ogień, fontanna, okna i latarnie nocą). `WorldService.GroundCFrame` na zewnątrz: najpierw sam teren z
+  y+200, potem geometria mapy 16 st. nad gruntem; w jaskiniach krótki promień. NPC stoją na powierzchni terenu
+  (raycast w `NpcService.Start`); `body = "board"` to NPC bez postaci (tablica ogłoszeń).
+- Dzień i noc (S21): `MapDef.dayNight` + `nightLighting`; zegar liczy klient z `workspace:GetServerTimeNow()` i atrybutu
+  `Workspace.DayOffset` (`/daytime`) przez `Logic/DayCycle` (noc = `Config.DayNightShare` doby); `WorldController`
+  przenika oświetlenie co 1 s i wystawia `TimeOfDay()` / `HasDayNight()`.
+
 ## 9. UI (Fusion 0.3)
 
 - Każdy ekran to moduł zwracający funkcję `(scope, props) -> Instance`. Jeden `ScreenGui` per warstwa (HUD, Okna, Modale, Toasty, Tooltip) z `IgnoreGuiInset` i `ResetOnSpawn = false`.

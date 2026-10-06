@@ -15,6 +15,7 @@ local Areas = require(ReplicatedStorage.Shared.Data.Areas)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local State = require(script.Parent.Parent.UI.State)
+local TownTerrain = require(ReplicatedStorage.Shared.Logic.TownTerrain)
 
 local DecorController = {
 	Name = "DecorController",
@@ -148,6 +149,19 @@ local T: { [string]: Template } = {
 
 -- Weighted templates and items per chunk by biome.
 local BIOMES: { [string]: { count: number, mix: { { string | number } } } } = {
+	-- S21: the starting city; only on grass (never on paving), sparse inside the walls, denser outside.
+	city = {
+		count = 30,
+		mix = {
+			{ "tuft", 10 },
+			{ "tuftDark", 4 },
+			{ "flowerY", 2 },
+			{ "flowerP", 2 },
+			{ "flowerB", 1 },
+			{ "pebble", 3 },
+			{ "fern", 1 },
+		},
+	},
 	grass = {
 		count = 34,
 		mix = {
@@ -173,6 +187,9 @@ local BIOMES: { [string]: { count: number, mix: { { string | number } } } } = {
 		mix = { { "stalactite", 3 }, { "pebble", 3 }, { "bone", 4 }, { "web", 3 }, { "crystal", 1 } },
 	},
 }
+
+-- Share of the city biome's items kept inside the walls (the streets are busy; outside it grows freely).
+local CITY_INSIDE_SHARE = 0.4
 
 local folder: Folder
 local pool: { [string]: { BasePart } } = {}
@@ -299,9 +316,17 @@ local function buildChunk(map: Maps.MapDef, cx: number, cz: number): { BasePart 
 		elseif template.water then
 			continue
 		end
+		local inCity = map.biome == "city"
+		local insideWalls = inCity and TownTerrain.insideWalls(x, z)
+		if insideWalls and (rng:NextNumber() > CITY_INSIDE_SHARE or not TownTerrain.isOpen(x, z, 1)) then
+			continue
+		end
 		local from = origin + Vector3.new(x, if inCave then 4 else 120, z)
 		local hit = Workspace:Raycast(from, Vector3.new(0, -200, 0), rayParams)
 		if not hit or hit.Material == Enum.Material.Water then
+			continue
+		end
+		if inCity and hit.Material ~= Enum.Material.Grass and hit.Material ~= Enum.Material.LeafyGrass then
 			continue
 		end
 		local position = hit.Position

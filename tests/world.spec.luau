@@ -8,6 +8,9 @@ local Maps = require("../src/shared/Data/Maps")
 local Monsters = require("../src/shared/Data/Monsters")
 local Npcs = require("../src/shared/Data/Npcs")
 local Spawns = require("../src/shared/Data/Spawns")
+local Town = require("../src/shared/Data/Town")
+local TownGeom = require("../src/shared/Logic/TownGeom")
+local TownTerrain = require("../src/shared/Logic/TownTerrain")
 local Test = require("./Test")
 
 local describe, it, expect = Test.describe, Test.it, Test.expect
@@ -95,10 +98,44 @@ describe("World maps", function()
 
 	it("has lighting values in range", function()
 		for _, map in Maps.byId do
-			local l = map.lighting
-			expect(l.clockTime >= 0 and l.clockTime <= 24).toBe(true)
-			expect(l.fogEnd > 50).toBe(true)
-			expect(l.atmosphere.density >= 0 and l.atmosphere.density <= 1).toBe(true)
+			for _, l in { map.lighting, map.nightLighting } :: { Maps.Lighting? } do
+				if l then
+					expect(l.clockTime >= 0 and l.clockTime <= 24).toBe(true)
+					expect(l.fogEnd > 50).toBe(true)
+					expect(l.brightness >= 0 and l.brightness <= 5).toBe(true)
+					expect(l.atmosphere.density >= 0 and l.atmosphere.density <= 1).toBe(true)
+				end
+			end
+			-- Day and night needs both presets (S21).
+			if map.dayNight then
+				expect(map.nightLighting ~= nil).toBe(true)
+			end
+		end
+	end)
+
+	it("builds the city from the plan (S21)", function()
+		local city = assert(Maps.get("city"))
+		expect(city.size.x).toBe(Town.city.size)
+		expect(city.size.z).toBe(Town.city.size)
+		expect(city.spawn.x).toBe(Town.city.spawn.x)
+		expect(city.spawn.z).toBe(Town.city.spawn.z)
+		expect(TownTerrain.isOpen(city.spawn.x, city.spawn.z)).toBe(true)
+		expect(city.spawn.y).toBeNear(TownTerrain.heightAt(city.spawn.x, city.spawn.z) + 4, 0.001)
+		expect(city.dayNight).toBe(true)
+		-- every region portal back to the city lands at the gate of that region, on open ground
+		for _, region in { "meadows", "duskwood", "ashen", "frostpeak" } do
+			local gate = assert(Town.gate(region), region)
+			expect(TownTerrain.isOpen(gate.arrive[1], gate.arrive[2])).toBe(true)
+			expect(table.find(city.links, region) ~= nil).toBe(true)
+		end
+		-- the arena exit and the duel start points stand on open ground, the start points on the sand
+		local arena = Town.city.arena
+		expect(TownTerrain.isOpen(arena.exit[1], arena.exit[2])).toBe(true)
+		expect(math.abs(arena.exit[1] - arena.x) > arena.half or math.abs(arena.exit[2] - arena.z) > arena.half).toBe(
+			true
+		)
+		for _, p in arena.duel do
+			expect(math.abs(p[1] - arena.x) < arena.half and math.abs(p[2] - arena.z) < arena.half).toBe(true)
 		end
 	end)
 end)
@@ -295,12 +332,25 @@ describe("Monster areas (S20)", function()
 end)
 
 describe("NPCs", function()
+	it("use a known body", function()
+		for _, npc in Npcs.list do
+			expect(npc.body == nil or npc.body == "board").toBe(true)
+		end
+		expect(assert(Npcs.get("questboard")).body).toBe("board")
+	end)
+
 	it("stand inside the city walls or inside their map", function()
 		for _, npc in Npcs.list do
 			local map = Maps.get(npc.map)
 			assert(map, npc.map)
 			if npc.map == "city" then
-				expect(math.abs(npc.position.x) < 290 and math.abs(npc.position.z) < 290).toBe(true)
+				-- S21: inside the walls of the plan, at the plan's spot, on open ground
+				expect(TownGeom.inPoly(Town.city.wall, npc.position.x, npc.position.z)).toBe(true)
+				local spot = assert(Town.npcSpot(npc.id), npc.id)
+				expect(npc.position.x).toBe(spot.x)
+				expect(npc.position.z).toBe(spot.z)
+				expect(npc.facing).toBe(spot.facing)
+				expect(TownTerrain.isOpen(npc.position.x, npc.position.z)).toBe(true)
 			else
 				expect(math.abs(npc.position.x) < map.size.x / 2 and math.abs(npc.position.z) < map.size.z / 2).toBe(
 					true

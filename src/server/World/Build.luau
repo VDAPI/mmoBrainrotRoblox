@@ -12,6 +12,7 @@ local AreaSpawns = require(game:GetService("ReplicatedStorage").Shared.Logic.Are
 local Areas = require(game:GetService("ReplicatedStorage").Shared.Data.Areas)
 local Maps = require(game:GetService("ReplicatedStorage").Shared.Data.Maps)
 local Rng = require(game:GetService("ReplicatedStorage").Shared.Logic.Rng)
+local Town = require(game:GetService("ReplicatedStorage").Shared.Data.Town)
 
 local Build = {}
 
@@ -179,6 +180,12 @@ function Build.border(ctx: Context, material: Enum.Material, height: number)
 		end
 	end
 	ctx.sketch.shapes = kept
+	Build.boundary(ctx)
+end
+
+-- Invisible walls on the map edge only (S21: the city's terrain past the edge comes from its own writer).
+function Build.boundary(ctx: Context)
+	local hx, hz = ctx.map.size.x / 2, ctx.map.size.z / 2
 	for _, wall in
 		{
 			{ 0, -hz, hx * 2, 4 },
@@ -357,6 +364,13 @@ function Build.scatterNodes(
 			placed += 1
 		end
 	end
+end
+
+-- Arrival point in the city for a portal coming back from `region` (S21): just inside the gate that leads to
+-- that region (Town.city.gates), so every return lands at the right gate.
+function Build.cityArrival(region: string): { x: number, z: number }
+	local gate = assert(Town.gate(region), `no city gate leads to {region}`)
+	return { x = gate.arrive[1], z = gate.arrive[2] }
 end
 
 function Build.icon(ctx: Context, kind: string, x: number, z: number, id: string?)

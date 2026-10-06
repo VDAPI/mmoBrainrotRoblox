@@ -44,6 +44,8 @@ local MATERIAL_COLORS: { [Enum.Material]: string } = {
 	[Enum.Material.Glacier] = "#A8D8F0",
 	[Enum.Material.Ice] = "#C9E8F7",
 	[Enum.Material.CrackedLava] = "#D6542A",
+	-- S21: light warm stone of the city market and temple square (no other map uses it).
+	[Enum.Material.Limestone] = "#B9AE96",
 }
 
 local function layoutModule(mapId: string): ModuleScript?
@@ -168,8 +170,9 @@ local function buildMap(map: Maps.MapDef, root: Instance, nodes: boolean): boole
 	WorldBuilder.built[map.id] = true
 	log:info("built %s in %.2f s (%d parts, %d nodes)", map.id, os.clock() - started, ctx.parts, #ctx.nodes)
 	WorldBuilder.partCounts[map.id] = ctx.parts
-	if ctx.parts > Config.MaxPartsPerMap then
-		log:warn("map %s has %d parts (limit %d)", map.id, ctx.parts, Config.MaxPartsPerMap)
+	local limit = map.maxParts or Config.MaxPartsPerMap
+	if ctx.parts > limit then
+		log:warn("map %s has %d parts (limit %d)", map.id, ctx.parts, limit)
 	end
 	return true
 end
@@ -180,8 +183,26 @@ local function clearTerrain(map: Maps.MapDef)
 	Workspace.Terrain:FillBlock(CFrame.new(centre), size, Enum.Material.Air)
 end
 
+-- Removes a Baseplate left in the place file (S21): the default 2048 x 16 x 2048 plate with its top at y = 0
+-- would cover the city's river and moat (water at -1.5) and every valley below 0. Anything else the game
+-- does not create is left alone, except other huge flat slabs lying near y = 0 (a renamed baseplate).
+local function removeBaseplate()
+	for _, child in Workspace:GetChildren() do
+		local slab = child:IsA("BasePart")
+			and child.Size.X >= 500
+			and child.Size.Z >= 500
+			and child.Size.Y <= 40
+			and math.abs(child.Position.Y + child.Size.Y / 2) < 4
+		if child:IsA("BasePart") and (child.Name == "Baseplate" or slab) then
+			log:warn("removed %s (%s) from Workspace: it would cover the city terrain", child.Name, child.ClassName)
+			child:Destroy()
+		end
+	end
+end
+
 -- Builds every map into Workspace.World (idempotent: rebuilds if already present).
 function WorldBuilder.build(): Folder
+	removeBaseplate()
 	local existing = Workspace:FindFirstChild("World")
 	if existing then
 		existing:Destroy()

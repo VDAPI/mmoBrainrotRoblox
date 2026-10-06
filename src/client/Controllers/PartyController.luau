@@ -204,7 +204,18 @@ local function playerAt(position: Vector2): Player?
 	local ray = camera:ScreenPointToRay(position.X, position.Y)
 	local params = RaycastParams.new()
 	params.FilterType = Enum.RaycastFilterType.Exclude
-	params.FilterDescendantsInstances = if Players.LocalPlayer.Character then { Players.LocalPlayer.Character } else {}
+	local exclude: { Instance } = {}
+	if Players.LocalPlayer.Character then
+		table.insert(exclude, Players.LocalPlayer.Character)
+	end
+	-- Client-only decorations never take a click (S21).
+	for _, name in { "Vaelthorn_TownDetail", "Vaelthorn_ClientDecor" } do
+		local folder = Workspace:FindFirstChild(name)
+		if folder then
+			table.insert(exclude, folder)
+		end
+	end
+	params.FilterDescendantsInstances = exclude
 	local hit = Workspace:Raycast(ray.Origin, ray.Direction * 300, params)
 	local model = hit and hit.Instance:FindFirstAncestorOfClass("Model")
 	return if model then Players:GetPlayerFromCharacter(model) else nil

@@ -15,6 +15,7 @@ local Config = require(Shared.Config)
 local Log = require(Shared.Util.Log)
 local Maps = require(Shared.Data.Maps)
 local Net = require(Shared.Net)
+local Town = require(Shared.Data.Town)
 local QuestEvents = require(script.Parent.Parent.QuestEvents)
 local Types = require(Shared.Types)
 
@@ -34,9 +35,12 @@ local DuelService = {
 	},
 }
 
--- City arena (World/Layouts/city: centre 160, 175; half size 52).
-local ARENA = { map = "city", x = 160, z = 175, half = 52 }
-local EXIT = { x = 160, z = 108 }
+-- The Ristalle of the city plan (S21, Town.city.arena): centre and half size of the sand (the yellow zone
+-- "zone.arena"), the exit for spectators and the two start points of the fighters.
+local PLAN = Town.city.arena
+local ARENA = { map = "city", x = PLAN.x, z = PLAN.z, half = PLAN.half }
+local EXIT = { x = PLAN.exit[1], z = PLAN.exit[2] }
+local STARTS = { { x = PLAN.duel[1][1], z = PLAN.duel[1][2] }, { x = PLAN.duel[2][1], z = PLAN.duel[2][2] } }
 
 type Duel = { a: Player, b: Player, phase: "countdown" | "fight" | "done", startedAt: number }
 
@@ -137,13 +141,15 @@ local function start(a: Player, b: Player)
 	current = duel
 	restore(a)
 	restore(b)
+	local map = Maps.get(ARENA.map)
+	local origin = if map then Vector3.new(map.offset.x, map.offset.y, map.offset.z) else Vector3.zero
 	local spots = {
-		WorldService.GroundCFrame(ARENA.map, ARENA.x - 25, ARENA.z),
-		WorldService.GroundCFrame(ARENA.map, ARENA.x + 25, ARENA.z),
+		WorldService.GroundCFrame(ARENA.map, STARTS[1].x, STARTS[1].z),
+		WorldService.GroundCFrame(ARENA.map, STARTS[2].x, STARTS[2].z),
 	}
 	for i, player in { a, b } do
 		local spot = spots[i].Position
-		local face = Vector3.new(ARENA.x, 0, ARENA.z) + Vector3.new(0, spot.Y, 0)
+		local face = Vector3.new(origin.X + ARENA.x, spot.Y, origin.Z + ARENA.z)
 		task.spawn(TravelService.TeleportToMap, player, ARENA.map, CFrame.lookAt(spot, face))
 	end
 	task.spawn(function()

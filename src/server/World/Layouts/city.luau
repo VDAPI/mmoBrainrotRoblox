@@ -1,124 +1,116 @@
 --!strict
--- Vaelthorn, the capital (DESIGN §3.2): walls with four gates, main plaza with the fountain, craft quarter
--- (forge, alchemist) to the north-west, trade quarter (merchant, backpacks, auction house, bank) to the
--- north-east, temple (healer, teacher) and guild hall to the south-west, the Arena (yellow zone) to the
--- south-east, portals to the regions at the gates. NPC positions in Data/Npcs match this layout.
+-- Vaelthorn, the starting city (S21, docs/miasto/MIASTO.md). Everything comes from the city plan (Data/Town)
+-- and the pure generators:
+--   * terrain: TownTerrainWriter (hills, terraces, ramps, the river and the moat, painted materials),
+--   * buildings: the "shell" level of every TownGen Build (the client adds "detail" and "fine" near the camera,
+--     TownDetailController), in Town/<tag> folders,
+--   * the four gates are the only exits: their portal fields become Portal_<id> models (same attributes and tag
+--     as Prefabs.portal); an invisible barrier in every gate passage keeps players inside the walls,
+--   * zones (green map, yellow Ristalle), the spawn point on the market and the map sketch (TownSketch).
+-- NPC positions come from the same plan (Data/Npcs, NpcService); the arena from Town.city.arena (DuelService).
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Build = require(script.Parent.Parent.Build)
 local Prefabs = require(script.Parent.Parent.Prefabs)
+local TownTerrainWriter = require(script.Parent.Parent.TownTerrainWriter)
 
-local HALF = 290 -- wall line
-local GATE_GAP = 26
+local Shared = ReplicatedStorage.Shared
+local BlueprintBuild = require(Shared.Util.BlueprintBuild)
+local Log = require(Shared.Util.Log)
+local Town = require(Shared.Data.Town)
+local TownGen = require(Shared.Logic.TownGen)
+local TownGeom = require(Shared.Logic.TownGeom)
+local TownSigns = require(Shared.Logic.TownSigns)
+local TownSketch = require(Shared.Logic.TownSketch)
+local TownTerrain = require(Shared.Logic.TownTerrain)
+
+local log = Log.new("CityLayout")
+
+-- Moves the portal field of a gatehouse into its own Portal_<id> model directly in the map folder, where
+-- WorldBuilder.collect registers it. The rest of the gatehouse stays a normal (non-atomic) building model.
+local function gatePortal(ctx: Build.Context, build: any, result: BlueprintBuild.Result)
+	local gate = build.gate
+	local fields = result.tagged.portal
+	local field = fields and fields[1]
+	if not gate or not field then
+		log:warn("gate %s has no portal field", build.name)
+		return
+	end
+	local model = Instance.new("Model")
+	model.Name = `Portal_{gate.portal}`
+	field.Name = "Field"
+	field.Parent = model
+	model.Parent = ctx.folder
+	Prefabs.makePortal(ctx, model, field, gate.portal, gate.target, gate.x, gate.z, nil)
+end
 
 return function(ctx: Build.Context)
-	local size = ctx.map.size
-	Build.fill(ctx, -size.x / 2 - 60, -size.z / 2 - 60, size.x / 2 + 60, size.z / 2 + 60, Enum.Material.Grass)
-	Build.border(ctx, Enum.Material.Rock, 40)
+	local city = Town.city
+	local half = city.size / 2
 
-	-- Streets
-	Build.path(ctx, { -size.x / 2, 0, size.x / 2, 0 }, 18, Enum.Material.Cobblestone)
-	Build.path(ctx, { 0, -size.z / 2, 0, size.z / 2 }, 18, Enum.Material.Cobblestone)
-	Build.path(ctx, { -220, -120, 220, -120 }, 10, Enum.Material.Pavement)
-	Build.path(ctx, { -220, 120, 220, 120 }, 10, Enum.Material.Pavement)
-	Build.paint(ctx, 0, 0, 130, 130, 0, Enum.Material.Cobblestone)
-	Build.rect(ctx, 0, 0, 130, 130, "plaza")
-	Prefabs.fountain(ctx, 0, 0, 11)
+	-- Terrain. The world is built from WorldService.Init, which must not yield: write without pauses.
+	local started = os.clock()
+	local blocks = TownTerrainWriter.write(ctx.origin, half, false)
+	log:info("terrain: %d blocks in %.2f s", blocks, os.clock() - started)
 
-	-- Walls, corner towers and gates
-	for _, corner in { { -1, -1 }, { 1, -1 }, { -1, 1 }, { 1, 1 } } do
-		Prefabs.tower(ctx, corner[1] * HALF, corner[2] * HALF, 9, 30)
+	-- Building shells, grouped by tag (house, wall, tower, gate, special, ...).
+	started = os.clock()
+	local town = Instance.new("Folder")
+	town.Name = "Town"
+	town.Parent = ctx.folder
+	local folders: { [string]: Folder } = {}
+	local function folderFor(tag: string): Folder
+		local folder = folders[tag]
+		if not folder then
+			local created = Instance.new("Folder")
+			created.Name = tag
+			created.Parent = town
+			folders[tag] = created
+			folder = created
+		end
+		return folder :: Folder
 	end
-	for _, side in { -1, 1 } do
-		Prefabs.wall(ctx, -HALF, side * HALF, -GATE_GAP, side * HALF)
-		Prefabs.wall(ctx, GATE_GAP, side * HALF, HALF, side * HALF)
-		Prefabs.wall(ctx, side * HALF, -HALF, side * HALF, -GATE_GAP)
-		Prefabs.wall(ctx, side * HALF, GATE_GAP, side * HALF, HALF)
-	end
-	Prefabs.gate(ctx, HALF, 0, 90)
-	Prefabs.gate(ctx, -HALF, 0, 90)
-	Prefabs.gate(ctx, 0, -HALF, 0)
-	Prefabs.gate(ctx, 0, HALF, 0)
-
-	-- Portals just inside the gates
-	Prefabs.portal(ctx, "city_meadows", "meadows", 262, 0, 90)
-	Prefabs.portal(ctx, "city_duskwood", "duskwood", 0, -262, 0)
-	Prefabs.portal(ctx, "city_ashen", "ashen", -262, 0, 90)
-	Prefabs.portal(ctx, "city_frostpeak", "frostpeak", 0, 262, 0)
-
-	-- Craft quarter (north-west)
-	Prefabs.forge(ctx, -110, -48, 180)
-	Prefabs.stall(ctx, -150, -42, "#8E8E93", 180) -- weaponsmith (S18)
-	Prefabs.house(
-		ctx,
-		-190,
-		-46,
-		{ w = 22, d = 20, h = 14, wall = "#6F8A5A", roof = "#3E5A3A", rot = 180, name = "Alchemist" }
-	)
-	Prefabs.house(ctx, -150, -175, { rot = 0 })
-	Prefabs.house(ctx, -215, -175, { rot = 0, wall = "#A89478" })
-
-	-- Trade quarter (north-east)
-	Prefabs.stall(ctx, 92, -42, "#C2352E", 180)
-	Prefabs.stall(ctx, 130, -42, "#4A8FE7", 180)
-	Prefabs.house(
-		ctx,
-		185,
-		-50,
-		{ w = 24, d = 20, h = 14, wall = "#B8A27A", roof = "#5A3A6B", rot = 180, name = "AuctionHouse" }
-	)
-	Prefabs.house(
-		ctx,
-		240,
-		-56,
-		{ w = 30, d = 24, h = 16, wall = "#C9C2B2", roof = "#3A4A6B", rot = 180, name = "Bank" }
-	)
-	Prefabs.house(ctx, 150, -175, { rot = 0 })
-	Prefabs.house(ctx, 215, -175, { rot = 0, wall = "#A89478" })
-
-	-- Temple and guild hall (south-west)
-	Prefabs.temple(ctx, -130, 75, 0)
-	Prefabs.house(
-		ctx,
-		-225,
-		62,
-		{ w = 30, d = 22, h = 18, wall = "#8A7A62", roof = "#7A1F2B", rot = 0, name = "GuildHall" }
-	)
-	Prefabs.flag(ctx, -205, 44, "#7A1F2B")
-	Prefabs.flag(ctx, -245, 44, "#7A1F2B")
-	Prefabs.house(ctx, -150, 185, { rot = 180 })
-	Prefabs.house(ctx, -215, 185, { rot = 180, wall = "#A89478" })
-
-	-- Arena (south-east, yellow zone)
-	Prefabs.arena(ctx, 160, 175, 52)
-	Build.zone(ctx, "yellow", "zone.arena", 104, 119, 216, 231)
-
-	-- Plaza details: banners, lanterns, trees
-	for _, p in { { 50, 50 }, { -50, 50 }, { 50, -50 }, { -50, -50 } } do
-		Prefabs.flag(ctx, p[1], p[2], "#C9A45C")
-	end
-	for i = -6, 6 do
-		if math.abs(i) > 1 then
-			Prefabs.lantern(ctx, i * 40, 14)
-			Prefabs.lantern(ctx, 14, i * 40)
+	local builds = TownGen.all(city, TownTerrain.heightAt)
+	local parts = 0
+	for _, build in builds do
+		local result = BlueprintBuild.build(build :: any, ctx.origin, { shell = true }, folderFor(build.tag or "misc"))
+		parts += result.parts
+		if build.tag == "gate" then
+			gatePortal(ctx, build, result)
 		end
 	end
-	Prefabs.scatter(ctx, 40, -270, -270, 270, 270, function(x, z)
-		Prefabs.tree(ctx, x, z, "oak", 0.9)
-	end, {
-		{ 0, 0, 80 },
-		{ -110, -48, 40 },
-		{ -190, -46, 30 },
-		{ 160, -45, 110 },
-		{ -130, 75, 40 },
-		{ -225, 62, 30 },
-		{ 160, 175, 75 },
-		{ -180, -175, 60 },
-		{ 180, -175, 60 },
-		{ -180, 185, 60 },
-	}, function(x, z)
-		return math.abs(x) > 18 and math.abs(z) > 18 and math.abs(math.abs(z) - 120) > 12
-	end)
+	ctx.parts += parts
+	log:info("shell: %d builds, %d parts in %.2f s", #builds, parts, os.clock() - started)
 
-	Build.zone(ctx, "green", nil, -size.x / 2, -size.z / 2, size.x / 2, size.z / 2)
-	Build.spawnPoint(ctx, ctx.map.spawn.x, ctx.map.spawn.z, 0, 0)
+	-- Zones: the whole map is green, the sand of the Ristalle yellow (duels; the stands stay green).
+	Build.zone(ctx, "green", nil, -half, -half, half, half)
+	local arena = city.arena
+	Build.zone(
+		ctx,
+		"yellow",
+		"zone.arena",
+		arena.x - arena.half,
+		arena.z - arena.half,
+		arena.x + arena.half,
+		arena.z + arena.half
+	)
+
+	-- Spawn on the market by the fountain, facing along the plan's `facing`.
+	local spawn = city.spawn
+	local fx, fz = TownGeom.front(spawn.facing)
+	Build.spawnPoint(ctx, spawn.x, spawn.z, spawn.x + fx * 10, spawn.z + fz * 10)
+
+	-- Service signs beside the NPCs (apothecary, forge, guild hall, ...), written by the client (SignController).
+	for _, sign in TownSigns.list() do
+		Prefabs.signpost(ctx, sign.x, sign.z, sign.rot, sign.key)
+	end
+
+	-- Invisible walls on the map edge; the terrain writer already continues the hills past it.
+	Build.boundary(ctx)
+
+	-- Map sketch: fields, forest, water, gardens, squares, streets, buildings and walls (~910 shapes).
+	for _, shape in TownSketch.shapes() do
+		table.insert(ctx.sketch.shapes, shape :: any)
+	end
 end

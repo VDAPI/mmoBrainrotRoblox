@@ -1,6 +1,10 @@
 --!strict
--- City NPCs (DESIGN §3.2). Positions are relative to the map offset and match World/Layouts/city.
+-- City NPCs (DESIGN §3.2). Positions are relative to the map offset. City NPCs take their position and facing
+-- from the city plan (Town.npcSpot, S21: one source of truth with the buildings); the numbers below are only
+-- used when the plan has no spot for the NPC.
 -- `services` are the buttons of the dialog window; their windows live on the client (NpcController).
+
+local Town = require("./Town")
 
 export type Service =
 	"shop" -- buy / sell / buyback (shop id below)
@@ -27,11 +31,19 @@ export type NpcDef = {
 	colors: { body: string, accent: string },
 	icon: string, -- glyph shown above the head
 	decoration: boolean?, -- guards: no dialog
+	-- "board" (S21): no figure, only an invisible anchor over a model that the world already has (the quest
+	-- board of the city plan); default: a humanoid figure.
+	body: "board"?,
 }
 
 local LIST: { NpcDef } = {}
 
 local function npc(def: NpcDef)
+	local spot = if def.map == "city" then Town.npcSpot(def.id) else nil
+	if spot then
+		def.position = { x = spot.x, z = spot.z }
+		def.facing = spot.facing
+	end
 	table.insert(LIST, def)
 end
 
@@ -161,6 +173,7 @@ npc({
 	facing = 160,
 	colors = { body = "#6B4A2B", accent = "#EADDBE" },
 	icon = "✎",
+	body = "board", -- S21: the notice board on the market (Town plan, TownGen Props)
 })
 -- Main story (S11): the captain of the guard on the plaza and a scout at the entrance of every region.
 npc({

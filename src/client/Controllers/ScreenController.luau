@@ -17,6 +17,7 @@ local InventoryWindow = require(script.Parent.Parent.UI.Screens.InventoryWindow)
 local SkillsWindow = require(script.Parent.Parent.UI.Screens.SkillsWindow)
 local Hud = require(script.Parent.Parent.UI.Screens.Hud)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
+local Town = require(ReplicatedStorage.Shared.Data.Town)
 local State = require(script.Parent.Parent.UI.State)
 local Text = require(script.Parent.Parent.UI.Text)
 local Toast = require(script.Parent.Parent.UI.Components.Toast)
@@ -153,8 +154,12 @@ local function selectCamera()
 	if not camera or not city then
 		return
 	end
-	local centre = Vector3.new(city.offset.x, city.offset.y + 6, city.offset.z)
-	local eye = centre + Vector3.new(70, 48, 110)
+	-- S21: the shot of the city plan (eye and look point, x y z map-relative) over the market, the town hall
+	-- and the castle.
+	local origin = Vector3.new(city.offset.x, city.offset.y, city.offset.z)
+	local shot = Town.city.selectCamera
+	local centre = origin + Vector3.new(shot.look[1], shot.look[2], shot.look[3])
+	local eye = origin + Vector3.new(shot.eye[1], shot.eye[2], shot.eye[3])
 	camera.CameraType = Enum.CameraType.Scriptable
 	camera.CFrame = CFrame.lookAt(eye, centre)
 	blur.Size = SELECT_BLUR

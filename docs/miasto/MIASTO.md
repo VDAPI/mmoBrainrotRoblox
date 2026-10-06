@@ -191,6 +191,15 @@ Nic tam nie koliduje: gracz nie wychodzi za mury (bramy to portale), ale widzi o
 7. Szkic mapy (MapSketch) z `TownSketch.shapes()`: pola, las, drogi, fosa i rzeka, ogrody, cmentarz, place, ristalle, ulice, rampy, mosty, budynki, mury (ok. 910 kształtów). Wielokąty są pocięte na poziome pasy, bo UI rysuje tylko prostokąty. Nowe rodzaje `field`, `garden` i `cemetery` potrzebują kolorów w `MapSketch`.
 8. Noc: okna, latarnie, ogień; animacje: dym, chorągwie, koło, śmigła, woda.
 
+**Jak to zrobiono w S21 (różnice względem planu):**
+
+- Teren i shell buduje `World/Layouts/city.luau` w `WorldService.Init` bez ustępowania (czas w Output: `[CityLayout] terrain …`, `shell …`). Portal z każdej bramy trafia do osobnego modelu `Portal_<id>` (Atomic) przez wspólne `Prefabs.makePortal`; przybycia z regionów biorą `gate.arrive` przez `Build.cityArrival(region)`.
+- Klient (`TownDetailController`) generuje listę Buildów przy przejściu do miasta (pod ekranem ładowania) i zwalnia ją po wyjściu; modele detalu są niszczone po wyjściu z promienia (bez puli).
+- Latarnie mają w danych `Neon`: w dzień klient przygasza je do szkła, nocą przywraca. Światła z tagiem `lamp` są włączone tylko nocą; ogień (`fire`) świeci zawsze i migocze.
+- Tablica ogłoszeń jest NPC `questboard` z `body = "board"`: niewidzialna głowa nad modelem tablicy z `Props`, bez postaci.
+- Przy NPC z budynkiem stoją słupki z szyldem usługi (`Logic/TownSigns`, test `townsigns.spec`).
+- Drobna roślinność klienta (`DecorController`, biom `city`) rośnie tylko na trawie: w murach rzadko i poza działkami, za murami gęściej.
+
 ## 11. Jak zmienić miasto
 
 Wszystkie polecenia uruchamiaj w `docs/miasto/tools` (Python 3 z `shapely numpy pillow`, zob. §13).

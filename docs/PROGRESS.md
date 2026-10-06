@@ -27,6 +27,7 @@
 | S18 | Poprawki po testach (1/2): walka, sterowanie, przedmioty, broń, UI | ● |
 | S19 | Poprawki po testach (2/2): grupy potworów, jaskinie, nowe potwory | ● |
 | S20 | Szczegółowa mapa z obszarami potworów, bogatszy świat, wygoda łupu | ● |
+| S21 | Nowe miasto startowe (teren, budynki z generatora, detal na kliencie, życie miasta, dzień i noc) | ● |
 
 Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana przez właściciela
 
@@ -445,6 +446,38 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
   Smocza Waluta z kodów ograniczona testem do ≤ 100.
 - **S17** Kanał grupy w `PartyWindow` szukany po atrybucie `VaelthornChannel`, nie po nazwie (nazwa jest teraz lokalna).
 
+- **S21** Pliki z `repo-overlay` (plan miasta, generator, teren, testy, `docs/miasto`) skopiowane z `vaelthorn-plan.zip`
+  bez zmian; osobny commit. `DESIGN.md` podmieniony na wersję z planu (nadzbiór: zmiany po testach S20), dodany
+  `docs/SWIAT.md`; `ARCHITECTURE.md` i `README.md` zostały z repozytorium (nowsze niż w planie).
+- **S21** Teren i shell miasta budują się w `WorldService.Init` bez ustępowania (Init nie może yieldować); czas zapisu
+  terenu i budowy shellu idzie do Output (`[CityLayout]`). Budżet części miasta: `maxParts = 7000` (ostrzeżenie).
+- **S21** Baseplate: `WorldBuilder` przy starcie usuwa `Workspace.Baseplate` oraz każdą wielką płaską płytę (≥ 500×500,
+  wierzch przy y ≈ 0) leżącą bezpośrednio w Workspace i pisze to w Output (zakryłaby rzekę i fosę).
+- **S21** `WorldService.GroundCFrame` na mapach otwartych: najpierw promień tylko w teren z y+200 (400 w dół), potem
+  promień w teren i geometrię mapy z 16 st. nad gruntem (mosty, podłogi), żeby promień nie zatrzymywał się na koronach
+  drzew i dachach; w mieście brak trafienia = wysokość z `TownTerrain`. Jaskinie, krypty, lochy: stary krótki promień.
+- **S21** NPC stoją na faktycznej powierzchni terenu (raycast w `NpcService.Start`), bez dawnego +1 st. nad gruntem
+  (dotyczy też zwiadowców w regionach). Tablica ogłoszeń to NPC `body = "board"` (niewidzialna głowa 5 st. nad
+  gruntem, bez humanoida), widoczny model to Build „QuestBoard” z `Props`.
+- **S21** Pozycja po wczytaniu w mieście: przyjęta tylko, gdy `TownTerrain.isOpen` i y ≥ teren − 2 (wtedy na
+  max(y, teren + 3)); w przeciwnym razie spawn na rynku. Stare pozycje ze starego miasta zwykle trafiają na spawn.
+- **S21** Kamera wyboru postaci: `selectCamera` z planu bez zmian (oko 150, 70, 120 → punkt −20, 10, −80: rynek, Hala,
+  ratusz, w tle wzgórze zamkowe); `eye`/`look` czytane jako x, y, z.
+- **S21** Detal klienta: lista Buildów liczona przy `MapTransition("city")` (pod ekranem ładowania) albo przy pierwszym
+  ticku w mieście; po wyjściu z miasta modele i lista są zwalniane (lista ~42 tys. części to kilkanaście MB, a liczy się
+  ok. 0,1 s), modele poza promieniem są niszczone (bez LRU). Promień liczony od postaci (bez postaci od kamery).
+- **S21** Dzień i noc: doba 2400 s (`Config.DayLength`), noc 19–6 to 25% doby (`Config.DayNightShare`), cykl zaczyna
+  się o świcie; przesunięcie w atrybucie `Workspace.DayOffset` (`/daytime <h>` ustawia przesunięcie, zegar biegnie
+  dalej; `/daytime auto` je kasuje). Oświetlenie przenika między `lighting` a `nightLighting` przez 1,5 h wokół 19:00
+  i 6:00. Okna: ok. 60% świeci nocą (hash pozycji, `DayCycle.windowLit`), zmiana po 150 części na klatkę.
+- **S21** Latarnie są w danych `Neon`: w dzień klient zmienia je na przygaszone szkło, nocą przywraca kolor i Neon;
+  światła z tagiem `lamp` (latarnie, pochodnie bram) świecą tylko nocą, ogień (`fire`) zawsze.
+- **S21** Szyldy usług: słupek z tabliczką obok NPC przy budynku (`Logic/TownSigns`, 7 szyldów), a nie tablica nad
+  drzwiami (budynki mają własne szyldy w Blueprintach, a punkt obok NPC jest sprawdzalny testem).
+- **S21** Szkic miasta (~970 ramek na mapie) mieści się w limicie ~1500 obiektów mapy, więc ogrody rysują się przy
+  każdym zoomie.
+- **S21** Usunięte martwe prefaby starego miasta (`wall`, `gate`, `forge`, `temple`, `stall`, `fountain`, `arena`).
+
 ## Niedokończone
 (Rzeczy z zakresu sesji, które nie zostały zrobione. Następna sesja zaczyna od nich.)
 
@@ -472,7 +505,9 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
 
 - **S20** Mapa świata: bez mostów i strumieni (świat ich jeszcze nie ma); timer Elity II widać na karcie jaskini (tekst),
   bez osobnej ikony na rysunku.
-- **S20** Miasto: brak szyldów usług nad NPC i oświetlenia nocnego (gra nie ma jeszcze cyklu dnia).
+- **S21** Miasto niesprawdzone w Studio: czas `WriteVoxels` całego terenu (225 bloków) i budowy shellu w `Init`, płynność
+  detalu klienta na telefonie (`/perf`), kadr kamery wyboru postaci.
+- **S21** Nocą świecą okna, latarnie i ogień, ale nie ma zmiany muzyki ani dźwięków nocy.
 - **S20** Ustawienia streamingu i liczba części na mapę niesprawdzone w Studio (log `[WorldBuilder] built …` i `/perf`).
 
 ## Zgłoszone błędy
@@ -1537,3 +1572,64 @@ punkty charakterystyczne, drogowskazy, latarnie), layouty 4 regionów; klient: `
     odmawiają („Przedmiot jest zablokowany”).
 12. Kupiec → „Sprzedaj” → „Sprzedaj wszystkie Zwykłe”: potwierdzenie, sprzedane wszystkie zwykłe poza zablokowanymi i
     związanymi, złoto rośnie.
+
+### S21: Nowe miasto startowe
+
+**Zrobione**
+- Miasto 800×800 z planu (`Data/Town`, `docs/miasto/MIASTO.md`): pagórkowaty teren z tarasami, rampami i Wielkimi
+  Schodami, rzeka z mostami, fosa, wzgórze zamkowe; 704 budowle z generatora (kamienice z szachulca, Sukiennice, ratusz z
+  wieżą zegarową, świątynia z iglicą, donżon z murem, kuźnia, młyn, karczma, za murami pola, farmy, wiatrak, las).
+  Serwer stawia teren i „skorupę” (~5,3 tys. części), klient dobudowuje detal i drobiazgi wokół postaci.
+- Bramy to jedyne wyjścia: 4 portale w przejściach bram, niewidzialna ściana na zewnętrznym końcu. Powroty z regionów
+  lądują przy właściwej bramie (naprawiony powrót z Ashen na wschodzie).
+- Spawn na rynku przy fontannie, NPC przed swoimi budynkami (pozycje z planu, wysokość z terenu), tablica ogłoszeń jako
+  model tablicy, szyldy usług przy NPC. Ristalle (żółta strefa) z planu: start pojedynku, wyjście widzów.
+- Wysokość: nowy `GroundCFrame`, walidacja zapisanej pozycji w mieście, kamera wyboru postaci z planu.
+- Klient: `TownDetailController` (promień detalu 120/220/400 i drobiazgów 60/90/120 wg „Szczegółowość świata”, 400
+  części na klatkę, histereza 40 st.), `TownFxController` (chorągwie, koło młyńskie, śmigła wiatraka, dym z kominów,
+  ogień, fontanna), drobna roślinność biomu `city`, kolory pól, ogrodów i cmentarza na mapie.
+- Dzień i noc w mieście: doba 40 min (noc 10 min), przenikanie oświetlenia, nocą ~60% okien, latarnie i pochodnie.
+- Admin: `/town info`, `/town lod low|mid|high`, `/town tp <miejsce|npc>`, `/daytime <0-24>|auto`; `/perf` pokazuje też
+  detal miasta u klienta i godzinę.
+- Testy: `daycycle.spec` (zegar, udział nocy, przesunięcie, okna), `townsigns.spec`, w `world.spec` miasto z planu (rozmiar,
+  spawn, przybycia, arena), NPC w murach na spotach z planu i na wolnym terenie, `body`.
+
+**Pliki**: nowe `World/Layouts/city` (całość), `Logic/DayCycle`, `Logic/TownSigns`, `Controllers/TownDetailController`,
+`Controllers/TownFxController`, testy `daycycle.spec`, `townsigns.spec`; zmiany: `Data/Maps`, `Data/Npcs`, `Config`,
+`World/WorldBuilder`, `World/Build`, `World/Prefabs`, layouty 4 regionów, `WorldService`, `NpcService`, `DuelService`,
+`AdminService`, `WorldController`, `ScreenController`, `DecorController`, `TargetController`, `PartyController`,
+`UI/MapSketch`, lokalizacja, `world.spec`; z planu (overlay): `Data/Town`, `Logic/Town*`, `Logic/TownGen/*`,
+`Util/BlueprintBuild`, `World/TownTerrainWriter`, `tests/town*`, `tools/dump.luau`, `docs/miasto`.
+
+#### Instrukcja testu S21
+
+1. Jeśli place ma Baseplate, zostaw go: w Output pojawi się `removed Baseplate …`. Sprawdź też linie
+   `[CityLayout] terrain: 225 blocks in … s` i `shell: 704 builds, … parts`, potem `[WorldBuilder] built city …`
+   (bez ostrzeżenia o limicie części).
+2. Ekran wyboru postaci: w tle rynek, Hala Kupiecka, ratusz i wzgórze zamkowe (nic nie zasłania kadru).
+3. Wejdź postacią: stoisz na rynku przy fontannie, teren jest pagórkowaty, wokół kamienice z szachulca.
+4. Podejdź do kilku budynków: belki, okna, okiennice, szyldy pojawiają się płynnie przy zbliżaniu (bez długiej przycinki).
+5. `/perf`: liczba części serwera dla `city` ok. 5,3–5,5 tys.; komunikat „Miasto (klient)” z liczbą budowli z detalem
+   i godziną.
+6. `/town lod low`, potem `/town lod high`: promień detalu wyraźnie się zmienia (przy high detal widać daleko).
+7. `/npc` wypisuje NPC. `/town tp kuznia`, `/town tp apteka`, `/town tp swiatynia`, `/town tp gildia`, `/town tp ratusz`,
+   `/town tp hala`: przy każdym budynku stoi NPC i słupek z nazwą usługi; rozmowa [E] działa (sklep, kowal,
+   alchemik, depozyt, gildia, aukcja).
+8. `/town tp rynek`: kupiec i sakwiarz za ladami straganów, kapitan straży przy spawnie; tablica ogłoszeń (model tablicy,
+   bez postaci) ma nazwę i [E], otwiera zlecenia; znacznik questa nad tablicą działa.
+9. `/town info` przy budynku: nazwa, tag, części shell/detail/fine, materiał i wysokość terenu, „wolne”.
+10. Wielkie Schody i rampy na górne miasto i wzgórze zamkowe: da się wejść, kamera nie wariuje.
+11. Podejdź do każdej z 4 bram: fioletowe pole portalu z nazwą regionu, [E] przenosi. Pieszo nie da się wyjść za mur.
+12. Z Łąk, Mrocznego Boru, Spalonych Pustkowi i Lodowych Szczytów wróć portalem do miasta: lądujesz tuż za bramą tego
+    regionu (Ashen: brama zachodnia).
+13. `/town tp arena`: Ristalle z trybunami; na piasku baner żółtej strefy. Pojedynek dwóch graczy (Test → 2 klientów):
+    zawodnicy stają naprzeciw siebie na piasku, widzowie są wyrzucani do wyjścia.
+14. M: mapa miasta z polami, lasem, fosą, rzeką, ogrodami, cmentarzem, ulicami, budynkami i murami; NPC we właściwych
+    miejscach. Minimapa tak samo.
+15. Przy młynie (`/town tp mlyn`) koło obraca się; wiatrak za murami (widok z murów lub wzgórza) kręci śmigłami;
+    chorągwie się kołyszą, z kominów leci dym, w kuźni ogień.
+16. `/daytime 22`: w ciągu ~1,5 s robi się noc, część okien świeci ciepło, latarnie i pochodnie świecą.
+    `/daytime 12`: dzień, okna wracają do zwykłego wyglądu, latarnie gasną. `/daytime auto`: zwykły cykl.
+17. `/rebuild city`: miasto buduje się od nowa (teren i budynki), portale działają.
+18. Wyloguj się w środku miasta i wejdź ponownie: stoisz w tym miejscu; postać zapisana w starym mieście trafia na spawn.
+19. Na trawie w ogrodach i za murami rośnie drobna trawa i kwiaty, na brukach nie.

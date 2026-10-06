@@ -83,7 +83,7 @@ return function(ctx: Build.Context)
 
 	-- Portals
 	Prefabs.portal(ctx, "ashen_duskwood", "duskwood", -770, 0, 90, { x = 690, z = -690 })
-	Prefabs.portal(ctx, "ashen_city", "city", -770, 160, 90, { x = 236, z = 0 })
+	Prefabs.portal(ctx, "ashen_city", "city", -770, 160, 90, Build.cityArrival("ashen"))
 	Prefabs.portal(ctx, "ashen_frostpeak", "frostpeak", 740, -740, 45)
 
 	Build.zone(ctx, "yellow", "zone.ashen.flats", -hx, -hz, hx, hz)

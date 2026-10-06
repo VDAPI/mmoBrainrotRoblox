@@ -336,167 +336,6 @@ function Prefabs.tower(ctx: Context, x: number, z: number, radius: number?, heig
 	return model
 end
 
--- Straight wall from (ax, az) to (bx, bz) with crenellations.
-function Prefabs.wall(
-	ctx: Context,
-	ax: number,
-	az: number,
-	bx: number,
-	bz: number,
-	height: number?,
-	color: string?
-): Model
-	local h = height or 14
-	local dx, dz = bx - ax, bz - az
-	local length = math.sqrt(dx * dx + dz * dz)
-	local angle = math.atan2(-dz, dx)
-	local cx, cz = (ax + bx) / 2, (az + bz) / 2
-	local base = CFrame.new(Build.at(ctx, cx, Build.groundY(ctx, cx, cz), cz)) * CFrame.Angles(0, angle, 0)
-	local model = newModel(ctx, "Wall", ctx.folder)
-	part(ctx, model, {
-		Name = "Body",
-		Size = Vector3.new(length, h, 4),
-		CFrame = base * CFrame.new(0, h / 2 - 1, 0),
-		Color = hex(color or "#8A8278"),
-		Material = Enum.Material.Cobblestone,
-		CanQuery = true,
-	})
-	local count = math.floor(length / 6)
-	for i = 0, count - 1 do
-		part(ctx, model, {
-			Name = "Merlon",
-			Size = Vector3.new(3, 2.5, 4.4),
-			CFrame = base * CFrame.new(-length / 2 + 3 + i * 6, h + 0.2, 0),
-			Color = hex(color or "#8A8278"),
-			Material = Enum.Material.Cobblestone,
-		})
-	end
-	table.insert(ctx.sketch.shapes, { t = "line", p = { ax, az, bx, bz }, w = 4, c = "wall" })
-	return model
-end
-
--- Gate: two towers and an arch, opening along the local X axis.
-function Prefabs.gate(ctx: Context, x: number, z: number, rot: number?, width: number?): Model
-	local w = width or 24
-	local base = baseAt(ctx, x, z, rot)
-	local model = newModel(ctx, "Gate", ctx.folder)
-	for _, side in { -1, 1 } do
-		local p = base * CFrame.new(side * (w / 2 + 5), 0, 0)
-		part(ctx, model, {
-			Name = "GateTower",
-			Size = Vector3.new(10, 22, 10),
-			CFrame = p * CFrame.new(0, 10, 0),
-			Color = hex("#7E776C"),
-			Material = Enum.Material.Cobblestone,
-			CanQuery = true,
-		})
-		local banner = part(ctx, model, {
-			Name = "Banner",
-			Size = Vector3.new(4, 8, 0.3),
-			CFrame = p * CFrame.new(0, 14, -5.3),
-			Color = hex("#7A1F2B"),
-			Material = Enum.Material.Fabric,
-		})
-		banner.CanCollide = false
-	end
-	part(ctx, model, {
-		Name = "Arch",
-		Size = Vector3.new(w + 2, 5, 10),
-		CFrame = base * CFrame.new(0, 19, 0),
-		Color = hex("#7E776C"),
-		Material = Enum.Material.Cobblestone,
-	})
-	return model
-end
-
-function Prefabs.forge(ctx: Context, x: number, z: number, rot: number?): Model
-	local model = Prefabs.house(
-		ctx,
-		x,
-		z,
-		{ w = 28, d = 22, h = 13, wall = "#7A6A58", roof = "#3A3430", rot = rot, name = "Forge" }
-	)
-	local base = baseAt(ctx, x, z, rot)
-	part(ctx, model, {
-		Name = "Chimney",
-		Size = Vector3.new(4, 14, 4),
-		CFrame = base * CFrame.new(9, 18, 5),
-		Color = hex("#4A4440"),
-		Material = Enum.Material.Brick,
-	})
-	local anvil = part(ctx, model, {
-		Name = "Anvil",
-		Size = Vector3.new(3, 2.4, 1.6),
-		CFrame = base * CFrame.new(-6, 1.2, -15),
-		Color = hex("#3A3A3E"),
-		Material = Enum.Material.Metal,
-	})
-	local coals = part(ctx, model, {
-		Name = "Coals",
-		Size = Vector3.new(4, 1, 4),
-		CFrame = base * CFrame.new(6, 1, -15),
-		Color = hex("#FF6A1A"),
-		Material = Enum.Material.Neon,
-	})
-	light(coals, "#FF7A2A", 18, 1.4)
-	local _ = anvil
-	return model
-end
-
-function Prefabs.temple(ctx: Context, x: number, z: number, rot: number?): Model
-	local base = baseAt(ctx, x, z, rot)
-	local model = newModel(ctx, "Temple", ctx.folder)
-	part(ctx, model, {
-		Name = "Steps",
-		Size = Vector3.new(44, 3, 34),
-		CFrame = base * CFrame.new(0, 1, 0),
-		Color = hex("#D8D2C2"),
-		Material = Enum.Material.Marble,
-		CanQuery = true,
-	})
-	for ix = -2, 2 do
-		for _, iz in { -1, 1 } do
-			part(ctx, model, {
-				Name = "Column",
-				Shape = Enum.PartType.Cylinder,
-				Size = Vector3.new(16, 3, 3),
-				CFrame = base * CFrame.new(ix * 9, 10.5, iz * 13) * CFrame.Angles(0, 0, math.rad(90)),
-				Color = hex("#EAE4D6"),
-				Material = Enum.Material.Marble,
-				CanQuery = true,
-			})
-		end
-	end
-	part(ctx, model, {
-		Name = "Cella",
-		Size = Vector3.new(30, 16, 18),
-		CFrame = base * CFrame.new(0, 10.5, 2),
-		Color = hex("#CFC6B2"),
-		Material = Enum.Material.Marble,
-		CanQuery = true,
-	})
-	for _, side in { -1, 1 } do
-		wedge(ctx, model, {
-			Name = "Roof",
-			Size = Vector3.new(48, 6, 19),
-			CFrame = base * CFrame.new(0, 21.5, side * 9.5) * CFrame.Angles(0, if side > 0 then math.pi else 0, 0),
-			Color = hex("#B8AE98"),
-			Material = Enum.Material.Marble,
-		})
-	end
-	local glow = part(ctx, model, {
-		Name = "Brazier",
-		Shape = Enum.PartType.Ball,
-		Size = Vector3.new(2, 2, 2),
-		CFrame = base * CFrame.new(0, 4.5, -16),
-		Color = hex("#9FD0FF"),
-		Material = Enum.Material.Neon,
-	})
-	light(glow, "#9FD0FF", 22, 1)
-	Build.rect(ctx, x, z, 44, 34, "building", rot)
-	return model
-end
-
 function Prefabs.tent(ctx: Context, x: number, z: number, color: string?, rot: number?): Model
 	local base = baseAt(ctx, x, z, rot or ctx.rng:float(0, 360))
 	local model = newModel(ctx, "Tent", ctx.folder)
@@ -751,112 +590,41 @@ function Prefabs.flag(ctx: Context, x: number, z: number, color: string): Model
 	return model
 end
 
-function Prefabs.stall(ctx: Context, x: number, z: number, color: string, rot: number?): Model
-	local base = baseAt(ctx, x, z, rot)
-	local model = newModel(ctx, "Stall", ctx.folder)
-	part(ctx, model, {
-		Name = "Counter",
-		Size = Vector3.new(10, 3.5, 4),
-		CFrame = base * CFrame.new(0, 1.75, 0),
-		Color = hex("#7A5A3E"),
-		Material = Enum.Material.WoodPlanks,
-		CanQuery = true,
-	})
-	for _, sx in { -1, 1 } do
-		part(ctx, model, {
-			Name = "Post",
-			Size = Vector3.new(0.6, 9, 0.6),
-			CFrame = base * CFrame.new(sx * 4.6, 4.5, 1.6),
-			Color = hex("#5A4632"),
-			Material = Enum.Material.Wood,
-		})
-	end
-	part(ctx, model, {
-		Name = "Awning",
-		Size = Vector3.new(11, 0.4, 6),
-		CFrame = base * CFrame.new(0, 9, 0.5) * CFrame.Angles(math.rad(-12), 0, 0),
-		Color = hex(color),
-		Material = Enum.Material.Fabric,
-	})
-	Build.rect(ctx, x, z, 10, 5, "building", rot)
-	return model
-end
-
-function Prefabs.fountain(ctx: Context, x: number, z: number, radius: number?): Model
-	local r = radius or 11
-	local base = baseAt(ctx, x, z)
-	local model = newModel(ctx, "Fountain", ctx.folder)
-	part(ctx, model, {
-		Name = "Basin",
-		Shape = Enum.PartType.Cylinder,
-		Size = Vector3.new(3, r * 2, r * 2),
-		CFrame = base * CFrame.new(0, 1.5, 0) * CFrame.Angles(0, 0, math.rad(90)),
-		Color = hex("#A8A39A"),
-		Material = Enum.Material.Marble,
-		CanQuery = true,
-	})
-	part(ctx, model, {
-		Name = "Water",
-		Shape = Enum.PartType.Cylinder,
-		Size = Vector3.new(0.4, r * 2 - 3, r * 2 - 3),
-		CFrame = base * CFrame.new(0, 3.1, 0) * CFrame.Angles(0, 0, math.rad(90)),
-		Color = hex("#4A8FE7"),
-		Material = Enum.Material.Glass,
-		Transparency = 0.3,
-		CanCollide = false,
-	})
-	local spout = part(ctx, model, {
-		Name = "Statue",
-		Size = Vector3.new(2.5, 9, 2.5),
-		CFrame = base * CFrame.new(0, 7, 0),
-		Color = hex("#C9C2B2"),
-		Material = Enum.Material.Marble,
-	})
-	local spray = Instance.new("ParticleEmitter")
-	spray.Color = ColorSequence.new(hex("#CFE6FF"))
-	spray.Size = NumberSequence.new(0.6, 0.1)
-	spray.Speed = NumberRange.new(10, 14)
-	spray.SpreadAngle = Vector2.new(12, 12)
-	spray.Acceleration = Vector3.new(0, -30, 0)
-	spray.Lifetime = NumberRange.new(0.8, 1.1)
-	spray.Rate = 40
-	spray.Transparency = NumberSequence.new(0.2, 1)
-	spray.Parent = spout
-	table.insert(ctx.sketch.shapes, { t = "circle", x = x, z = z, r = r, c = "water" })
-	return model
-end
-
--- Arena stands: stepped seating on four sides of a square floor.
-function Prefabs.arena(ctx: Context, x: number, z: number, half: number): Model
-	local base = baseAt(ctx, x, z)
-	local model = newModel(ctx, "Arena", ctx.folder)
-	part(ctx, model, {
-		Name = "Floor",
-		Size = Vector3.new(half * 2, 0.6, half * 2),
-		CFrame = base * CFrame.new(0, 0.3, 0),
-		Color = hex("#C2A878"),
-		Material = Enum.Material.Sand,
-		CanQuery = true,
-	})
-	for side = 0, 3 do
-		local rot = CFrame.Angles(0, side * math.pi / 2, 0)
-		for step = 0, 3 do
-			local p = part(ctx, model, {
-				Name = "Stand",
-				Size = Vector3.new(half * 2 - 14, 2 + step * 2, 4),
-				CFrame = base * rot * CFrame.new(0, 1 + step, half + 2 + step * 4),
-				Color = hex("#8A8278"),
-				Material = Enum.Material.Cobblestone,
-				CanQuery = true,
-			})
-			local _ = p
-		end
-	end
-	table.insert(ctx.sketch.shapes, { t = "rect", x = x, z = z, w = half * 2, h = half * 2, c = "arena" })
-	return model
-end
-
 -- Portals and gates -------------------------------------------------------------------------------
+
+-- Turns `model` into a portal with `field` as its clickable part (S21: shared by the portal arches and the
+-- city gates): sparkles, PrimaryPart, the PortalId / TargetMap / ArriveX / ArriveZ attributes read by
+-- WorldBuilder.collect, the "Portal" tag (WorldController adds the prompt) and the map icon at x/z.
+function Prefabs.makePortal(
+	ctx: Context,
+	model: Model,
+	field: BasePart,
+	id: string,
+	target: string,
+	x: number,
+	z: number,
+	arrive: { x: number, z: number }?
+)
+	local sparkles = Instance.new("ParticleEmitter")
+	sparkles.Color = ColorSequence.new(hex("#B9A8FF"))
+	sparkles.Size = NumberSequence.new(0.4, 0)
+	sparkles.Speed = NumberRange.new(1, 3)
+	sparkles.Lifetime = NumberRange.new(1, 2)
+	sparkles.Rate = 18
+	sparkles.LightEmission = 1
+	sparkles.Parent = field
+	-- Atomic: WorldController.decoratePortal needs the PrimaryPart when the tag arrives on the client.
+	model.ModelStreamingMode = Enum.ModelStreamingMode.Atomic
+	model.PrimaryPart = field
+	model:SetAttribute("PortalId", id)
+	model:SetAttribute("TargetMap", target)
+	if arrive then
+		model:SetAttribute("ArriveX", arrive.x)
+		model:SetAttribute("ArriveZ", arrive.z)
+	end
+	CollectionService:AddTag(model, "Portal")
+	Build.icon(ctx, "portal", x, z, target)
+end
 
 -- Portal arch (tag "Portal", attributes PortalId, TargetMap, ArriveX/ArriveZ = arrival point on the
 -- target map, map-relative; defaults to the target map's spawn).
@@ -904,23 +672,7 @@ function Prefabs.portal(
 	})
 	field.CanQuery = true
 	light(field, "#8A6CFF", 20, 1.2)
-	local sparkles = Instance.new("ParticleEmitter")
-	sparkles.Color = ColorSequence.new(hex("#B9A8FF"))
-	sparkles.Size = NumberSequence.new(0.4, 0)
-	sparkles.Speed = NumberRange.new(1, 3)
-	sparkles.Lifetime = NumberRange.new(1, 2)
-	sparkles.Rate = 18
-	sparkles.LightEmission = 1
-	sparkles.Parent = field
-	model.PrimaryPart = field
-	model:SetAttribute("PortalId", id)
-	model:SetAttribute("TargetMap", target)
-	if arrive then
-		model:SetAttribute("ArriveX", arrive.x)
-		model:SetAttribute("ArriveZ", arrive.z)
-	end
-	CollectionService:AddTag(model, "Portal")
-	Build.icon(ctx, "portal", x, z, target)
+	Prefabs.makePortal(ctx, model, field, id, target, x, z, arrive)
 	return model
 end
 

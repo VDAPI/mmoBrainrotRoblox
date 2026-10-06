@@ -35,6 +35,10 @@ local COLORS: { [string]: { color: string, transparency: number } } = {
 	floor = { color = "#5A5650", transparency = 0 },
 	lava = { color = "#E8541A", transparency = 0 },
 	forest = { color = "#22301C", transparency = 0.35 },
+	-- Starting city (S21, TownSketch): fields outside the walls, gardens and the cemetery inside.
+	field = { color = "#B49A5A", transparency = 0.25 },
+	garden = { color = "#4E6E36", transparency = 0.15 },
+	cemetery = { color = "#465A3A", transparency = 0.1 },
 	-- Large ground patches (S20): "ground:<Material>"
 	["ground:Sand"] = { color = "#C9A870", transparency = 0.2 },
 	["ground:Mud"] = { color = "#4A4232", transparency = 0.25 },
@@ -122,7 +126,10 @@ function MapSketch.draw(parent: Instance, sketch: Sketch, scale: number)
 	local order = {
 		hill = 1,
 		floor = 1,
+		field = 1,
 		forest = 2,
+		garden = 3,
+		cemetery = 3,
 		water = 3,
 		plaza = 4,
 		path = 4,

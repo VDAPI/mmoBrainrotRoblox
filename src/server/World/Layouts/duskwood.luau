@@ -97,7 +97,7 @@ return function(ctx: Build.Context)
 
 	-- Portals and the three caves (S19)
 	Prefabs.portal(ctx, "duskwood_meadows", "meadows", -770, 0, 90, { x = 690, z = -690 })
-	Prefabs.portal(ctx, "duskwood_city", "city", -770, 160, 90, { x = 0, z = -236 })
+	Prefabs.portal(ctx, "duskwood_city", "city", -770, 160, 90, Build.cityArrival("duskwood"))
 	Prefabs.portal(ctx, "duskwood_ashen", "ashen", 740, -740, 45)
 	Prefabs.caveEntrances(ctx, AREAS, "#4A4458")
 	Prefabs.areaFeatures(ctx, AREAS, "#4A4458") -- signposts, landmarks, lanterns (S20)

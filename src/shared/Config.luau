@@ -74,7 +74,8 @@ local Config = {
 	TradeConfirmDelay = 3,
 	TradeInviteSeconds = 30,
 
-	-- World generation (S08): warn when a generated map exceeds this many parts.
+	-- World generation (S08): warn when a generated map exceeds this many parts (a map may set a stricter
+	-- `maxParts`, S21).
 	MaxPartsPerMap = 8000,
 
 	-- Zone detection interval (s).
@@ -98,6 +99,18 @@ local Config = {
 	-- Client decorations (S20, DESIGN §3.7): chunk size and radius per "World detail" setting (studs).
 	DecorChunk = 128,
 	DecorRadius = { low = 250, mid = 400, high = 600 },
+	-- Starting city (S21, docs/miasto/MIASTO.md §5): the client builds the "detail" level of buildings within
+	-- TownDetailRadius and the "fine" level within TownFineRadius of the camera (per "World detail" setting);
+	-- a building leaves when it is TownDetailHysteresis studs past the radius. At most TownDetailPartsPerFrame
+	-- parts are created per frame.
+	TownDetailRadius = { low = 120, mid = 220, high = 400 },
+	TownFineRadius = { low = 60, mid = 90, high = 120 },
+	TownDetailHysteresis = 40,
+	TownDetailPartsPerFrame = 400,
+	-- Day and night on maps with `dayNight` (S21): one full day in real seconds; night (19:00-6:00) takes
+	-- DayNightShare of it.
+	DayLength = 2400,
+	DayNightShare = 0.25,
 	-- Streaming (S20, decision in PROGRESS): also set in default.project.json (Workspace properties).
 	StreamingTargetRadius = 512,
 	StreamingMinRadius = 128,

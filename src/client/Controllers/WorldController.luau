@@ -1,7 +1,9 @@
 --!strict
 -- The world on the client (S08):
 --   * environment: on entering a map, Lighting / Atmosphere / colour grading (and music, once maps have
---     tracks) tween to the map's settings from Data/Maps,
+--     tracks) tween to the map's settings from Data/Maps; on maps with `dayNight` (S21: the city) the clock
+--     runs from the shared server time (Logic/DayCycle, offset from the Workspace attribute "DayOffset" set by
+--     /daytime) and the lighting blends between the day and night presets once a second,
 --   * loading screen on MapTransition (map name, levels, zone, a random tip), faded in and out,
 --   * portals (tag "Portal"): nameplate with the target map and levels, "Travel [E]" prompt; entering a red
 --     zone or a map above your level asks for confirmation first.
@@ -11,9 +13,12 @@ local CollectionService = game:GetService("CollectionService")
 local Lighting = game:GetService("Lighting")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 local SoundService = game:GetService("SoundService")
 local TweenService = game:GetService("TweenService")
 
+local Config = require(ReplicatedStorage.Shared.Config)
+local DayCycle = require(ReplicatedStorage.Shared.Logic.DayCycle)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Keybinds = require(script.Parent.Parent.UI.Keybinds)
 local MapSketch = require(script.Parent.Parent.UI.MapSketch)
@@ -44,33 +49,71 @@ local appliedMap = ""
 
 -- Environment ------------------------------------------------------------------------------------
 
+-- Time of day on maps with day and night (S21): clock 0..24 and how dark it is (0 day .. 1 night).
+function WorldController.TimeOfDay(): (number, number)
+	local offset = workspace:GetAttribute("DayOffset")
+	local now = workspace:GetServerTimeNow() + (if type(offset) == "number" then offset else 0)
+	local clock = DayCycle.clock(now, Config.DayLength, Config.DayNightShare)
+	return clock, DayCycle.nightness(clock)
+end
+
+-- Whether the map the player is on runs the day and night cycle.
+function WorldController.HasDayNight(): boolean
+	local map = Maps.get(appliedMap)
+	return map ~= nil and map.dayNight == true and map.nightLighting ~= nil
+end
+
+local function mix(a: string, b: string, t: number): Color3
+	return Color3.fromHex(a):Lerp(Color3.fromHex(b), t)
+end
+
+local function lerp(a: number, b: number, t: number): number
+	return a + (b - a) * t
+end
+
+-- Lighting, Atmosphere and colour grading properties of a map right now (day/night blend when it has one).
+local function environment(map: Maps.MapDef): ({ [string]: any }, { [string]: any }, { [string]: any })
+	local day = map.lighting
+	local night = if map.dayNight then map.nightLighting else nil
+	local clock, t = day.clockTime, 0
+	if night then
+		clock, t = WorldController.TimeOfDay()
+	end
+	local n = night or day
+	return {
+		ClockTime = clock,
+		Brightness = lerp(day.brightness, n.brightness, t),
+		Ambient = mix(day.ambient, n.ambient, t),
+		OutdoorAmbient = mix(day.outdoorAmbient, n.outdoorAmbient, t),
+		FogColor = mix(day.fogColor, n.fogColor, t),
+		FogEnd = lerp(day.fogEnd, n.fogEnd, t),
+	}, {
+		Density = lerp(day.atmosphere.density, n.atmosphere.density, t),
+		Haze = lerp(day.atmosphere.haze, n.atmosphere.haze, t),
+		Glare = lerp(day.atmosphere.glare, n.atmosphere.glare, t),
+		Color = mix(day.atmosphere.color, n.atmosphere.color, t),
+		Decay = mix(day.atmosphere.decay, n.atmosphere.decay, t),
+	}, {
+		TintColor = mix(day.tint, n.tint, t),
+		Saturation = lerp(day.saturation, n.saturation, t),
+	}
+end
+
+-- The day/night loop leaves the lighting alone while the map-entry tween runs.
+local tweenUntil = 0
+
 local function applyEnvironment(mapId: string)
 	local map = Maps.get(mapId)
 	if not map or mapId == appliedMap then
 		return
 	end
 	appliedMap = mapId
-	local l = map.lighting
 	local info = TweenInfo.new(1.5, Enum.EasingStyle.Sine)
-	TweenService:Create(Lighting, info, {
-		ClockTime = l.clockTime,
-		Brightness = l.brightness,
-		Ambient = Color3.fromHex(l.ambient),
-		OutdoorAmbient = Color3.fromHex(l.outdoorAmbient),
-		FogColor = Color3.fromHex(l.fogColor),
-		FogEnd = l.fogEnd,
-	}):Play()
-	TweenService:Create(atmosphere, info, {
-		Density = l.atmosphere.density,
-		Haze = l.atmosphere.haze,
-		Glare = l.atmosphere.glare,
-		Color = Color3.fromHex(l.atmosphere.color),
-		Decay = Color3.fromHex(l.atmosphere.decay),
-	}):Play()
-	TweenService:Create(grade, info, {
-		TintColor = Color3.fromHex(l.tint),
-		Saturation = l.saturation,
-	}):Play()
+	local lightingProps, atmosphereProps, gradeProps = environment(map)
+	TweenService:Create(Lighting, info, lightingProps):Play()
+	TweenService:Create(atmosphere, info, atmosphereProps):Play()
+	TweenService:Create(grade, info, gradeProps):Play()
+	tweenUntil = os.clock() + 1.6
 	-- Music crossfade (tracks arrive with S14; empty id = silence).
 	local volume = 0.35
 	TweenService:Create(music, TweenInfo.new(1), { Volume = 0 }):Play()
@@ -290,10 +333,37 @@ function WorldController.Init(registry)
 end
 
 -- Client-side admin helpers (S20): drop the map cache, report decoration chunks and frame time.
+-- Client town detail numbers (S21): buildings with detail, detail and fine parts, last build step, generation.
+local function townStats()
+	local ok, town = pcall(function()
+		return require(script.Parent.TownDetailController) :: any
+	end)
+	if not ok or not town then
+		return
+	end
+	local builds, detail, fine, lastMs, prepareMs = town.Stats()
+	local clock = WorldController.TimeOfDay()
+	Toast.push(
+		Text.now("admin.perf.town", {
+			builds = builds,
+			detail = detail,
+			fine = fine,
+			ms = string.format("%.1f", lastMs),
+			gen = math.floor(prepareMs),
+			clock = string.format("%02d:%02d", math.floor(clock), math.floor((clock % 1) * 60)),
+		}),
+		"info",
+		8
+	)
+end
+
 local function onAdminClient(action: any)
 	if action == "mapcache" then
 		(WorldMapWindow :: any).clearCache()
+	elseif action == "town" then
+		townStats()
 	elseif action == "perf" then
+		townStats()
 		local ok, decor = pcall(function()
 			return require(script.Parent.DecorController) :: any
 		end)
@@ -341,6 +411,30 @@ function WorldController.Start()
 
 	Net.On("MapTransition", function(mapId: string?)
 		showLoading(mapId)
+	end)
+
+	-- Day and night (S21): once a second on maps with the cycle.
+	local accumulator = 0
+	RunService.Heartbeat:Connect(function(dt: number)
+		accumulator += dt
+		if accumulator < 1 then
+			return
+		end
+		accumulator = 0
+		local map = Maps.get(appliedMap)
+		if not map or not map.dayNight or os.clock() < tweenUntil then
+			return
+		end
+		local lightingProps, atmosphereProps, gradeProps = environment(map)
+		for key, value in lightingProps do
+			(Lighting :: any)[key] = value
+		end
+		for key, value in atmosphereProps do
+			(atmosphere :: any)[key] = value
+		end
+		for key, value in gradeProps do
+			(grade :: any)[key] = value
+		end
 	end)
 
 	for _, instance in CollectionService:GetTagged("Portal") do

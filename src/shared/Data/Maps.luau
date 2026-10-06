@@ -4,6 +4,9 @@
 -- built. Offsets keep maps >= 3000 studs apart. Lighting/atmosphere are applied on the client when the
 -- player enters the map (EnvironmentController).
 
+local Town = require("./Town")
+local TownTerrain = require("../Logic/TownTerrain")
+
 export type PvpZone = "green" | "yellow" | "red"
 
 export type Biome = "city" | "grass" | "forest" | "desert" | "snow" | "cave" | "crypt" | "dungeon"
@@ -44,6 +47,12 @@ export type MapDef = {
 	dungeonEntrance: { x: number, y: number, z: number }?,
 	-- Boss dungeon region served by this cave ("meadows", ...), matches stone_dungeon_<region>.
 	dungeonRegion: string?,
+	-- Stricter part budget than Config.MaxPartsPerMap (S21; WorldBuilder only warns).
+	maxParts: number?,
+	-- Day and night cycle (S21): the client runs the clock (Logic/DayCycle) and blends `lighting` (day) with
+	-- `nightLighting`; maps without it keep their fixed lighting.
+	dayNight: boolean?,
+	nightLighting: Lighting?,
 }
 
 local DAY: Lighting = {
@@ -68,6 +77,18 @@ end
 
 local LIGHT = {
 	city = lighting({ clockTime = 15, fogEnd = 1200 }),
+	-- Night in the city (S21): cool moonlight, dark blue fog; windows, lamps and fires do the rest.
+	cityNight = lighting({
+		clockTime = 0,
+		brightness = 0.6,
+		ambient = "#2A2E40",
+		outdoorAmbient = "#3A4058",
+		fogColor = "#1A2030",
+		fogEnd = 700,
+		atmosphere = { density = 0.34, haze = 1.2, glare = 0, color = "#2A3248", decay = "#141826" },
+		tint = "#D8E0FF",
+		saturation = -0.15,
+	}),
 	meadows = lighting({ clockTime = 13, saturation = 0.12, fogColor = "#D8E6C9" }),
 	duskwood = lighting({
 		clockTime = 18.2,
@@ -138,10 +159,18 @@ map({
 	minLevel = 1,
 	maxLevel = 100,
 	offset = { x = 0, y = 0, z = 0 },
-	size = { x = 640, z = 640 },
-	spawn = { x = 0, y = 4, z = 40 },
+	-- S21: the starting city plan (Data/Town, docs/miasto/MIASTO.md); spawn on the market by the fountain.
+	size = { x = Town.city.size, z = Town.city.size },
+	spawn = {
+		x = Town.city.spawn.x,
+		y = TownTerrain.heightAt(Town.city.spawn.x, Town.city.spawn.z) + 4,
+		z = Town.city.spawn.z,
+	},
 	biome = "city",
 	lighting = LIGHT.city,
+	nightLighting = LIGHT.cityNight,
+	dayNight = true,
+	maxParts = 7000,
 	music = "",
 	buildMode = "generated",
 	worldMap = { x = 0.2, y = 0.5 },

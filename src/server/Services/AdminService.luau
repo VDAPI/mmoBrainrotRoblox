@@ -34,6 +34,11 @@ local Loot = require(Shared.Logic.Loot)
 local GuildLogic = require(Shared.Logic.Guild)
 local GuildSkills = require(Shared.Data.GuildSkills)
 local Products = require(Shared.Data.Products)
+local DayCycle = require(Shared.Logic.DayCycle)
+local Town = require(Shared.Data.Town)
+local TownGen = require(Shared.Logic.TownGen)
+local TownGeom = require(Shared.Logic.TownGeom)
+local TownTerrain = require(Shared.Logic.TownTerrain)
 
 local log = Log.new("AdminService")
 
@@ -1488,6 +1493,154 @@ COMMANDS.mapcache = {
 		end
 		Net.Fire(player, "AdminClient", "mapcache")
 		reply(player, "admin.mapcache.ok")
+	end,
+}
+
+-- S21 -------------------------------------------------------------------------------------------------
+
+-- City Builds with their part counts per level, generated on the first /town info (same list as the layout).
+local townBuilds: { { name: string, tag: string, x: number, z: number, shell: number, detail: number, fine: number } }? =
+	nil
+
+local function cityBuilds()
+	if not townBuilds then
+		local list = {}
+		for _, build in TownGen.all(Town.city, TownTerrain.heightAt) do
+			local counts = { shell = 0, detail = 0, fine = 0 }
+			for _, piece in build.bp.pieces do
+				counts[piece.lod] += 1
+			end
+			table.insert(list, {
+				name = build.name,
+				tag = build.tag or "?",
+				x = build.at.x,
+				z = build.at.z,
+				shell = counts.shell,
+				detail = counts.detail,
+				fine = counts.fine,
+			})
+		end
+		townBuilds = list
+	end
+	return townBuilds :: any
+end
+
+-- Map-relative point in front of a city place: special building (its door), square (its middle), the arena
+-- (its exit) or an NPC (3 studs in front of its spot).
+local function cityPlace(id: string): (number?, number?)
+	if id == "arena" then
+		local arena = Town.city.arena
+		return arena.exit[1], arena.exit[2]
+	end
+	local special = Town.special(id)
+	if special then
+		return TownGeom.door(special.x, special.z, special.d, special.rot)
+	end
+	for _, square in Town.city.squares do
+		if square.id == id then
+			local sx, sz = 0, 0
+			for _, point in square.poly do
+				sx += point[1]
+				sz += point[2]
+			end
+			return sx / #square.poly, sz / #square.poly
+		end
+	end
+	local spot = Town.npcSpot(id)
+	if spot then
+		local fx, fz = TownGeom.front(spot.facing)
+		return spot.x + fx * 3, spot.z + fz * 3
+	end
+	return nil, nil
+end
+
+COMMANDS.town = {
+	usageKey = "admin.usage.town",
+	run = function(player, args)
+		local action = args[1]
+		if action == "lod" then
+			local level = args[2]
+			if level ~= "low" and level ~= "mid" and level ~= "high" then
+				reply(player, "admin.usage.town")
+				return
+			end
+			PlayerStateService.Set(player, { "account", "settings", "decor" }, level)
+			reply(player, "admin.decor.ok", { level = level })
+		elseif action == "tp" then
+			local x, z = cityPlace(args[2] or "")
+			if not x or not z then
+				local names = { "arena" }
+				for _, special in Town.city.specials do
+					table.insert(names, special.id)
+				end
+				for _, square in Town.city.squares do
+					table.insert(names, square.id)
+				end
+				reply(player, "admin.town.places", { list = table.concat(names, ", ") })
+				return
+			end
+			withCharacter(player, function()
+				task.spawn(TravelService.TeleportToMap, player, "city", WorldService.GroundCFrame("city", x, z))
+				reply(player, "admin.tp.map", { map = "city" })
+			end)
+		elseif action == "info" then
+			local character = PlayerStateService.GetCharacter(player)
+			local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart") :: BasePart?
+			local map = Maps.get("city")
+			if not root or not map or not character or character.location.map ~= "city" then
+				reply(player, "admin.town.notInCity")
+				return
+			end
+			local x, z = root.Position.X - map.offset.x, root.Position.Z - map.offset.z
+			local best, bestDistance = nil, math.huge
+			for _, build in cityBuilds() do
+				local d = math.sqrt((build.x - x) ^ 2 + (build.z - z) ^ 2)
+				if d < bestDistance then
+					best, bestDistance = build, d
+				end
+			end
+			local params = RaycastParams.new()
+			params.FilterType = Enum.RaycastFilterType.Include
+			params.FilterDescendantsInstances = { workspace.Terrain }
+			local hit = workspace:Raycast(root.Position + Vector3.new(0, 4, 0), Vector3.new(0, -60, 0), params)
+			reply(player, "admin.town.info", {
+				x = math.floor(x),
+				z = math.floor(z),
+				height = string.format("%.1f", TownTerrain.heightAt(x, z)),
+				material = if hit then hit.Material.Name else "-",
+				open = tostring(TownTerrain.isOpen(x, z)),
+				name = if best then best.name else "-",
+				tag = if best then best.tag else "-",
+				distance = math.floor(bestDistance),
+				shell = if best then best.shell else 0,
+				detail = if best then best.detail else 0,
+				fine = if best then best.fine else 0,
+			})
+			Net.Fire(player, "AdminClient", "town")
+		else
+			reply(player, "admin.usage.town")
+		end
+	end,
+}
+
+COMMANDS.daytime = {
+	usageKey = "admin.usage.daytime",
+	run = function(player, args)
+		local text = args[1]
+		if text == "auto" then
+			workspace:SetAttribute("DayOffset", nil)
+			reply(player, "admin.daytime.auto")
+			return
+		end
+		local hour = tonumber(text)
+		if not hour or hour < 0 or hour > 24 then
+			reply(player, "admin.usage.daytime")
+			return
+		end
+		local offset =
+			DayCycle.offsetFor(workspace:GetServerTimeNow(), hour % 24, Config.DayLength, Config.DayNightShare)
+		workspace:SetAttribute("DayOffset", offset)
+		reply(player, "admin.daytime.ok", { hour = hour })
 	end,
 }
 

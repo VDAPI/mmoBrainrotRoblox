@@ -125,7 +125,7 @@ return function(ctx: Build.Context)
 	Build.scatterNodes(ctx, "bush_moonpetal", 6, { -760, 360, 400, 760 }, nil, clear)
 
 	-- Portals and the three caves (S19)
-	Prefabs.portal(ctx, "meadows_city", "city", -770, 0, 90, { x = 236, z = 0 })
+	Prefabs.portal(ctx, "meadows_city", "city", -770, 0, 90, Build.cityArrival("meadows"))
 	Prefabs.portal(ctx, "meadows_duskwood", "duskwood", 730, -720, 45)
 	Prefabs.caveEntrances(ctx, AREAS)
 	Prefabs.areaFeatures(ctx, AREAS) -- signposts, landmarks, lanterns (S20)
