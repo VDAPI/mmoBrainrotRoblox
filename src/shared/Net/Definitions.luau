@@ -47,7 +47,8 @@ local Definitions: { [string]: Definition } = {
 	-- S20: quick sell (npcId, max rarity 1..2), item lock (backpack index)
 	SellAll = { kind = "function", dir = "c2s", rate = 2, args = { "string", "integer" } },
 	ToggleLock = { kind = "function", dir = "c2s", rate = 6, args = { "integer" } },
-	AdminClient = { kind = "event", dir = "s2c" }, -- (action) client-side admin helpers: "mapcache", "perf" (S20)
+	AdminClient = { kind = "event", dir = "s2c" }, -- (action, arg?) client-side admin helpers: "mapcache", "perf" (S20), "town" (S21), "portalpick", "anim" (S22)
+	AdminTravelArea = { kind = "function", dir = "c2s", rate = 2, args = { "string", "string" } }, -- (map id, area id) admins only, S22
 	AttackRejected = { kind = "event", dir = "s2c" }, -- (reason locale key), at most one per 2 s (S18)
 	SetTitle = { kind = "function", dir = "c2s", rate = 2, args = { "string?" } }, -- (titleId or nil), S16
 	CombatFx = { kind = "event", dir = "s2c" }, -- batched { k = "dmg" | "heal" | "atk" | "tele" | "reward", ... }
@@ -102,9 +103,9 @@ local Definitions: { [string]: Definition } = {
 	FishingBite = { kind = "event", dir = "s2c" }, -- (sessionId, { zone, speed, hits, timeLimit })
 	FishingResult = { kind = "function", dir = "c2s", rate = 2, args = { "string", "integer" } }, -- (sessionId, hits)
 	CancelFishing = { kind = "event", dir = "c2s", rate = 2, args = {} },
-	UsePortal = { kind = "function", dir = "c2s", rate = 1, args = { "string" } }, -- (portal id)
+	UsePortal = { kind = "function", dir = "c2s", rate = 1, args = { "string", "string?" } }, -- (portal id, area id?) S22
 	MapTransition = { kind = "event", dir = "s2c" }, -- (mapId) shows the loading screen, (nil) hides it
-	UseMapStone = { kind = "function", dir = "c2s", rate = 1, args = { "integer", "string" } }, -- (inv index, target id)
+	UseMapStone = { kind = "function", dir = "c2s", rate = 1, args = { "integer", "string", "string?" } }, -- (inv index, target id, area id?) S22
 
 	-- Parties and dungeons (S09)
 	PartyInvite = { kind = "function", dir = "c2s", rate = 1, args = { "string" } }, -- (character or player name)
@@ -185,6 +186,7 @@ local Definitions: { [string]: Definition } = {
 	-- PvP and death
 	SetPvp = { kind = "function", dir = "c2s", rate = 1, args = { "boolean" } },
 	RespawnNow = { kind = "function", dir = "c2s", rate = 1, args = {} },
+	RespawnChoice = { kind = "function", dir = "c2s", rate = 2, args = { "string" } }, -- ("city" | "here"), S22
 }
 
 return table.freeze(Definitions)

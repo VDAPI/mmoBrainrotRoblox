@@ -22,6 +22,7 @@ local Classes = require(Shared.Data.Classes)
 local Combat = require(Shared.Data.Combat)
 local Damage = require(Shared.Logic.Damage)
 local Exp = require(Shared.Logic.Exp)
+local Items = require(Shared.Data.Items)
 local Log = require(Shared.Util.Log)
 local MonsterAbilities = require(Shared.Data.MonsterAbilities)
 local MonsterStats = require(Shared.Logic.MonsterStats)
@@ -183,6 +184,16 @@ local function basicAttackProfile(player: Player): ("phys" | "magic", boolean, s
 	return kind, ranged, style
 end
 
+-- Weapon type and element of a player's attack for the client's animation (S22: "atk" events carry them).
+local function weaponFx(player: Player): (string?, string?)
+	local character: Types.CharacterData? = PlayerStateService.GetCharacter(player)
+	local item = character and (character.equipment :: any).weapon
+	local def = item and Items.get(item.id)
+	local derived = PlayerStateService.Get(player, { "derived" })
+	local element = if derived and derived.weapon then derived.weapon.element else nil
+	return if def then def.type else nil, element
+end
+
 local function entityRadius(entity: Entity): number
 	local root = rootOf(entity.model)
 	return if root then math.max(root.Size.X, root.Size.Z) / 2 else 1
@@ -335,6 +346,8 @@ function CombatService.DealDamage(
 	if not attacker then
 		return nil
 	end
+	-- Any attack ends the attacker's respawn protection (S22).
+	StatusEffectService.BreakRespawnShield(player)
 	local selfEntity = EntityService.GetPlayerEntity(player)
 	local params = table.clone(baseParams)
 	local extra = if options and options.multiplier then options.multiplier else 1
@@ -376,7 +389,11 @@ function CombatService.DealDamage(
 			result.amount = 0
 		end
 		if style and selfEntity then
-			queueFx(targetPosition, { k = "atk", s = selfEntity.id, t = targetEntity.id, st = style })
+			local weaponType, element = weaponFx(player)
+			queueFx(
+				targetPosition,
+				{ k = "atk", s = selfEntity.id, t = targetEntity.id, st = style, w = weaponType, el = element }
+			)
 		end
 		queueFx(
 			targetPosition,
@@ -407,17 +424,25 @@ function CombatService.DealDamage(
 			result.amount = math.floor(override * Combat.pvpModifier)
 		end
 		if style and selfEntity then
-			queueFx(targetPosition, { k = "atk", s = selfEntity.id, t = targetEntity.id, st = style })
+			local weaponType, element = weaponFx(player)
+			queueFx(
+				targetPosition,
+				{ k = "atk", s = selfEntity.id, t = targetEntity.id, st = style, w = weaponType, el = element }
+			)
 		end
-		queueFx(
-			targetPosition,
-			{ k = "dmg", e = targetEntity.id, a = result.amount, c = result.crit, d = result.dodged }
-		)
 		PvpService.MarkPvpCombat(player)
 		PvpService.MarkPvpCombat(target)
 		PvpService.RecordHit(player, target)
+		local taken = 0
 		if result.amount > 0 then
-			ResourceService.Damage(target, result.amount, "pvp")
+			local _, filtered = ResourceService.Damage(target, result.amount, "pvp")
+			taken = filtered
+		end
+		if result.dodged or taken > 0 then
+			queueFx(
+				targetPosition,
+				{ k = "dmg", e = targetEntity.id, a = math.floor(taken), c = result.crit, d = result.dodged }
+			)
 		end
 	end
 
@@ -523,18 +548,23 @@ local function monsterHitsPlayer(monster: any, player: Player, params: Damage.Pa
 	if style and monster.entity and playerEntity then
 		queueFx(position, { k = "atk", s = monster.entity.id, t = playerEntity.id, st = style })
 	end
-	if playerEntity then
-		queueFx(position, { k = "dmg", e = playerEntity.id, a = result.amount, c = result.crit, d = result.dodged })
-	end
+	-- S22: the number shown is the damage after shields and protection (nothing when all of it was stopped).
+	local taken = 0
 	if result.amount > 0 then
-		ResourceService.Damage(player, result.amount, "monster")
+		local _, filtered = ResourceService.Damage(player, result.amount, "monster")
+		taken = filtered
+	end
+	if playerEntity and (result.dodged or taken > 0) then
+		queueFx(position, { k = "dmg", e = playerEntity.id, a = math.floor(taken), c = result.crit, d = result.dodged })
+	end
+	if taken > 0 then
 		local riposte = hook(player, "riposte")
 		if riposte > 0 and monster:IsAlive() and monster.entity and rng:chance(riposte / 100) then
 			CombatService.DealDamage(player, monster.entity, { kind = "phys" }, "melee", { consumeShot = false })
 		end
 		local thorns = hook(player, "thorns")
 		if thorns > 0 and monster:IsAlive() then
-			local reflected = math.max(1, math.floor(result.amount * thorns / 100))
+			local reflected = math.max(1, math.floor(taken * thorns / 100))
 			local dealt = monster:TakeDamage(reflected, player)
 			if dealt > 0 and monster.entity then
 				queueFx(

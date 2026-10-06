@@ -22,6 +22,8 @@ export type Props = {
 	Index: Fusion.UsedAs<number?>,
 	Kind: Fusion.UsedAs<string>, -- "map" | "dungeon"
 	Close: () -> (),
+	-- S22: region maps hand over to the area picker; returns true when it took over.
+	PickArea: ((mapId: string, index: number) -> boolean)?,
 }
 
 type Choice = { id: string, label: string, sub: string }
@@ -68,6 +70,9 @@ local function StonePicker(scope: Scope, props: Props): Fusion.Child
 					OnClick = function()
 						local index = Fusion.peek(props.Index)
 						if not index then
+							return
+						end
+						if Fusion.peek(props.Kind) == "map" and props.PickArea and props.PickArea(choice.id, index) then
 							return
 						end
 						task.spawn(function()

@@ -77,6 +77,8 @@ local function build(model: Model)
 	local hp = attribute(scope, model, "Hp")
 	local maxHp = attribute(scope, model, "MaxHp")
 	local dead = attribute(scope, model, "Dead")
+	-- S22: a monster going home keeps fighting when hit; its name fades a little and gets a "↩".
+	local returning = attribute(scope, model, "Returning")
 
 	local targeted = scope:Computed(function(use): boolean
 		return use(TargetController.Target) == model
@@ -125,13 +127,17 @@ local function build(model: Model)
 				Text = scope:Computed(function(use): string
 					local v = use(variant) or "normal"
 					local key = model:GetAttribute("NameKey")
-					return if type(key) == "string"
+					local name = if type(key) == "string"
 						then Text.get(use, key)
 						elseif def then Text.get(use, def.nameKeys[v] or def.nameKeys.normal)
 						else monsterId
+					return if use(returning) == true then `↩ {name}` else name
 				end),
 				FontFace = Theme.Fonts.BodyBold,
 				TextSize = 19,
+				TextTransparency = scope:Computed(function(use): number
+					return if use(returning) == true then 0.35 else 0
+				end),
 				TextColor3 = scope:Computed(function(use): Color3
 					return VARIANT_COLORS[use(variant) or "normal"] or VARIANT_COLORS.normal
 				end),

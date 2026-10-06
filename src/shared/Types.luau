@@ -159,7 +159,15 @@ export type PvpZone = "green" | "yellow" | "red"
 export type ZoneState = { map: string, pvp: PvpZone, nameKey: string }
 
 -- Server time (workspace:GetServerTimeNow()) based timers.
-export type DeathState = { diedAt: number, respawnAt: number, cost: number }
+-- S22: `respawnAt` opens the choice ("city" / "here"), `deadline` defaults to the city; `dungeon` = "here" means
+-- the dungeon entrance.
+export type DeathState = {
+	diedAt: number,
+	respawnAt: number,
+	deadline: number,
+	cost: number,
+	dungeon: boolean?,
+}
 
 export type PvpState = { pendingTarget: boolean?, switchAt: number?, lockedUntil: number? }
 

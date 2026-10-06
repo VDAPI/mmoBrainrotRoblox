@@ -1,14 +1,16 @@
 --!strict
--- World effects drawn locally: level-up pillar of light (DESIGN §4.6). Later sessions add hit sparks,
--- damage numbers and the legendary drop beam here.
+-- World effects drawn locally: level-up pillar of light (DESIGN §4.6); the golden glow of the respawn
+-- protection (S22) on every character whose "Effects" attribute lists "respawnShield" (not on low quality).
 
 local Debris = game:GetService("Debris")
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
 
 local Net = require(ReplicatedStorage.Shared.Net)
+local State = require(script.Parent.Parent.UI.State)
 local Sounds = require(script.Parent.Parent.UI.Sounds)
 local Text = require(script.Parent.Parent.UI.Text)
 local Theme = require(script.Parent.Parent.UI.Theme)
@@ -81,7 +83,72 @@ function EffectsController.Init()
 	folder.Parent = Workspace
 end
 
+-- Respawn protection glow (S22) ------------------------------------------------------------------------------
+
+local GLOW = "VaelthornRespawnGlow"
+
+local function hasShield(model: Model): boolean
+	local raw = model:GetAttribute("Effects")
+	return type(raw) == "string" and string.find(raw, "respawnShield:", 1, true) ~= nil
+end
+
+local function addGlow(model: Model, root: BasePart)
+	local glow = Instance.new("Part")
+	glow.Name = GLOW
+	glow.Shape = Enum.PartType.Ball
+	glow.Size = Vector3.one * 7
+	glow.Color = Color3.fromHex("#FFD86E")
+	glow.Material = Enum.Material.ForceField
+	glow.Transparency = 0.2
+	glow.CanCollide = false
+	glow.CanQuery = false
+	glow.CanTouch = false
+	glow.CastShadow = false
+	glow.Massless = true
+	glow.CFrame = root.CFrame
+	local weld = Instance.new("WeldConstraint")
+	weld.Part0 = root
+	weld.Part1 = glow
+	weld.Parent = glow
+	local light = Instance.new("PointLight")
+	light.Color = glow.Color
+	light.Range = 10
+	light.Brightness = 0.8
+	light.Parent = glow
+	glow.Parent = model
+	TweenService:Create(
+		glow,
+		TweenInfo.new(0.9, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
+		{ Transparency = 0.55 }
+	):Play()
+end
+
+local function refreshGlows()
+	local low = State.Get({ "account", "settings", "quality" }) == "low"
+	for _, player in Players:GetPlayers() do
+		local model = player.Character
+		local root = model and model:FindFirstChild("HumanoidRootPart") :: BasePart?
+		if model and root then
+			local glow = model:FindFirstChild(GLOW)
+			local wanted = not low and hasShield(model)
+			if wanted and not glow then
+				addGlow(model, root)
+			elseif not wanted and glow then
+				glow:Destroy()
+			end
+		end
+	end
+end
+
 function EffectsController.Start()
+	local glowCheck = 0
+	RunService.Heartbeat:Connect(function(dt: number)
+		glowCheck += dt
+		if glowCheck >= 0.25 then
+			glowCheck = 0
+			refreshGlows()
+		end
+	end)
 	Net.On("LevelUp", function(player: Player, level: number, statPoints: number, skillPoints: number)
 		if typeof(player) ~= "Instance" or not player:IsA("Player") then
 			return

@@ -15,8 +15,12 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local SoundService = game:GetService("SoundService")
+local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 
+local AreaAdvice = require(ReplicatedStorage.Shared.Logic.AreaAdvice)
+local AreaPicker = require(script.Parent.Parent.UI.Screens.AreaPicker)
+local Areas = require(ReplicatedStorage.Shared.Data.Areas)
 local Config = require(ReplicatedStorage.Shared.Config)
 local DayCycle = require(ReplicatedStorage.Shared.Logic.DayCycle)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
@@ -204,6 +208,51 @@ end
 
 -- Portals ----------------------------------------------------------------------------------------
 
+-- "Where to?" (S22): the area picker shared by portals and the Map Stone.
+local pickerMap = scope:Value(nil :: string?)
+local pickerWarnings = scope:Value({} :: { string })
+local pickerSelected = scope:Value(nil :: string?)
+local pickerBusy = scope:Value(false)
+local pickerGo: ((areaId: string) -> (boolean, string?))? = nil
+
+local function pickerConfirm()
+	local areaId = Fusion.peek(pickerSelected)
+	local go = pickerGo
+	if not areaId or not go or Fusion.peek(pickerBusy) then
+		return
+	end
+	pickerBusy:set(true)
+	task.spawn(function()
+		local ok, err = go(areaId)
+		pickerBusy:set(false)
+		if ok then
+			Sounds.play("click")
+			WindowManager.Close("areapicker")
+		else
+			Sounds.play("error")
+			Toast.push(Text.now(err or "error.internal"), "error")
+		end
+	end)
+end
+
+-- Opens the area picker for a region map; `go(areaId)` does the travel and returns (ok, errorKey?).
+function WorldController.OpenAreaPicker(mapId: string, warnings: { string }, go: (areaId: string) -> (boolean, string?))
+	local first = AreaAdvice.default(mapId)
+	pickerMap:set(mapId)
+	pickerWarnings:set(warnings)
+	pickerSelected:set(if first then first.id else nil)
+	pickerGo = go
+	WindowManager.Open("areapicker")
+end
+
+-- Whether travelling to `mapId` through this portal offers the area choice (not from cave exits).
+function WorldController.HasAreaChoice(mapId: string, portalId: string?): boolean
+	if portalId and string.sub(portalId, -5) == "_exit" then
+		return false
+	end
+	return Areas.byMap[mapId] ~= nil
+end
+
 local function travel(portalId: string)
 	task.spawn(function()
 		local ok, err = Net.Invoke("UsePortal", portalId)
@@ -230,6 +279,13 @@ local function onPortal(portalId: string, targetId: string)
 	local level = State.Get({ "character", "level" }) or 1
 	if level < target.minLevel then
 		table.insert(warnings, Text.now("portal.warnLevel", { level = target.minLevel }))
+	end
+	-- S22: region maps open the area picker; the warnings become a line in it.
+	if WorldController.HasAreaChoice(targetId, portalId) then
+		WorldController.OpenAreaPicker(targetId, warnings, function(areaId: string): (boolean, string?)
+			return Net.Invoke("UsePortal", portalId, areaId)
+		end)
+		return
 	end
 	if #warnings == 0 then
 		travel(portalId)
@@ -330,6 +386,20 @@ function WorldController.Init(registry)
 		hotkey = Enum.KeyCode.M,
 		build = WorldMapWindow,
 	})
+	WindowManager.Register({
+		id = "areapicker",
+		titleKey = "window.areapicker.title",
+		size = Vector2.new(560, 560),
+		build = function(s)
+			return AreaPicker(s, {
+				MapId = pickerMap,
+				Warnings = pickerWarnings,
+				Selected = pickerSelected,
+				Busy = pickerBusy,
+				OnGo = pickerConfirm,
+			})
+		end,
+	})
 end
 
 -- Client-side admin helpers (S20): drop the map cache, report decoration chunks and frame time.
@@ -357,8 +427,34 @@ local function townStats()
 	)
 end
 
-local function onAdminClient(action: any)
-	if action == "mapcache" then
+-- /anim (S22): repeats a weapon's attack on our character every second until "off".
+local animToken = 0
+local function animLoop(kind: string)
+	animToken += 1
+	local token = animToken
+	if kind == "off" then
+		return
+	end
+	local weaponType = if kind == "unarmed" or kind == "none" then nil else kind
+	task.spawn(function()
+		local ok, combat = pcall(function()
+			return require(script.Parent.CombatFxController) :: any
+		end)
+		while ok and token == animToken do
+			combat.PreviewAttack(weaponType)
+			task.wait(1)
+		end
+	end)
+end
+
+local function onAdminClient(action: any, arg: any)
+	if action == "portalpick" and type(arg) == "string" then
+		WorldController.OpenAreaPicker(arg, {}, function(areaId: string): (boolean, string?)
+			return Net.Invoke("AdminTravelArea", arg, areaId)
+		end)
+	elseif action == "anim" and type(arg) == "string" then
+		animLoop(arg)
+	elseif action == "mapcache" then
 		(WorldMapWindow :: any).clearCache()
 	elseif action == "town" then
 		townStats()
@@ -411,6 +507,16 @@ function WorldController.Start()
 
 	Net.On("MapTransition", function(mapId: string?)
 		showLoading(mapId)
+	end)
+	-- Enter confirms the area picker (S22).
+	UserInputService.InputBegan:Connect(function(input: InputObject, processed: boolean)
+		if
+			not processed
+			and (input.KeyCode == Enum.KeyCode.Return or input.KeyCode == Enum.KeyCode.KeypadEnter)
+			and Fusion.peek(WindowManager.IsOpen("areapicker"))
+		then
+			pickerConfirm()
+		end
 	end)
 
 	-- Day and night (S21): once a second on maps with the cycle.

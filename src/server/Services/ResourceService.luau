@@ -126,20 +126,21 @@ function ResourceService.IsGod(player: Player): boolean
 	return pool ~= nil and pool.god
 end
 
--- Applies damage. Returns the HP actually removed.
-function ResourceService.Damage(player: Player, amount: number, source: string?): number
+-- Applies damage. Returns the HP actually removed and the damage left after the filters (shields, mana
+-- shield, protection), before clamping to the remaining HP: the number to show over the head (S22).
+function ResourceService.Damage(player: Player, amount: number, source: string?): (number, number)
 	local pool = pools[player]
 	if not pool or pool.dead or amount <= 0 or amount ~= amount then
-		return 0
+		return 0, 0
 	end
 	pool.lastCombat = os.clock()
 	if pool.god then
-		return 0
+		return 0, 0
 	end
 	for _, filter in damageFilters do
 		amount = filter(player, amount, source or "unknown")
 		if amount <= 0 then
-			return 0
+			return 0, 0
 		end
 	end
 	local dealt = math.min(pool.hp, amount)
@@ -154,7 +155,7 @@ function ResourceService.Damage(player: Player, amount: number, source: string?)
 	if died then
 		ResourceService.Died:Fire(player, source or "unknown")
 	end
-	return dealt
+	return dealt, amount
 end
 
 -- Returns the HP actually restored.
@@ -226,6 +227,17 @@ function ResourceService.Restore(player: Player)
 	pool.hp = maxOf(player, "maxHp")
 	pool.mana = maxOf(player, "maxMana")
 	pool.energy = maxOf(player, "maxEnergy")
+	publish(player, pool)
+end
+
+-- Sets HP directly (S22: 1 HP after a respawn, the Cleric's resurrection percentage). No damage filters, no
+-- combat flag, no death: clamped to 1..max HP. Only for living characters.
+function ResourceService.SetHp(player: Player, hp: number)
+	local pool = pools[player]
+	if not pool or pool.dead or hp ~= hp then
+		return
+	end
+	pool.hp = math.clamp(hp, 1, maxOf(player, "maxHp"))
 	publish(player, pool)
 end
 

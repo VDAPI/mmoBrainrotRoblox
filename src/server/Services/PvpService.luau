@@ -26,6 +26,7 @@ local PvpService = {
 		"PartyService",
 		"ResourceService",
 		"GuildService",
+		"StatusEffectService",
 	},
 }
 
@@ -34,6 +35,7 @@ local CharacterService: any
 local ZoneService: any
 local PartyService: any
 local ResourceService: any
+local StatusEffectService: any
 local GuildService: any
 
 local ARENA_ZONE = "zone.arena"
@@ -146,6 +148,10 @@ function PvpService.CanAttack(attacker: Player, target: Player): (boolean, strin
 	if attacker == target then
 		return false, "pvp.deny.self"
 	end
+	-- Respawn protection (S22): nobody can attack a freshly respawned player, not even in a duel.
+	if StatusEffectService.PlayerHas(target, "respawnShield") then
+		return false, "pvp.deny.protected"
+	end
 	if duelRule then
 		local verdict = duelRule(attacker, target)
 		if verdict == "allow" then
@@ -210,6 +216,7 @@ function PvpService.Init(registry)
 	PartyService = registry.Get("PartyService")
 	ResourceService = registry.Get("ResourceService")
 	GuildService = registry.Get("GuildService")
+	StatusEffectService = registry.Get("StatusEffectService")
 end
 
 local function nameOf(player: Player): string

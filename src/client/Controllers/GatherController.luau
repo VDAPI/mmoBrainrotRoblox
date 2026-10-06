@@ -24,7 +24,7 @@ local Toast = require(script.Parent.Parent.UI.Components.Toast)
 
 local GatherController = {
 	Name = "GatherController",
-	Deps = { "UIController", "WindowManager" },
+	Deps = { "UIController", "WindowManager", "WorldController" },
 }
 
 local TAG = "GatherNode"
@@ -270,6 +270,7 @@ end
 
 function GatherController.Init(registry)
 	WindowManager = registry.Get("WindowManager")
+	local WorldController = registry.Get("WorldController")
 	local UIController = registry.Get("UIController")
 	FishingGame(scope, {
 		Phase = fishingPhase,
@@ -291,6 +292,17 @@ function GatherController.Init(registry)
 				Kind = stoneKind,
 				Close = function()
 					WindowManager.Close("stonepicker")
+				end,
+				-- S22: a region map asks for the monster area (same window as portals).
+				PickArea = function(mapId: string, index: number): boolean
+					if not WorldController.HasAreaChoice(mapId, nil) then
+						return false
+					end
+					WindowManager.Close("stonepicker")
+					WorldController.OpenAreaPicker(mapId, {}, function(areaId: string): (boolean, string?)
+						return Net.Invoke("UseMapStone", index, mapId, areaId)
+					end)
+					return true
 				end,
 			})
 		end,

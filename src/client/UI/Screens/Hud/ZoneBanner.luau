@@ -1,10 +1,13 @@
 --!strict
 -- Banner shown when the player enters another map or PvP zone (DESIGN §3.3): area name + zone line in
--- the zone colour ("Safe zone" / "PvP by consent" / "PvP zone").
+-- the zone colour ("Safe zone" / "PvP by consent" / "PvP zone"). S22: on region maps the map name (the area
+-- banner names the place).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local AreaState = require(script.Parent.Parent.Parent.AreaState)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local State = require(script.Parent.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
@@ -36,7 +39,8 @@ local function ZoneBanner(scope: Scope): Instance
 			lastKey = ""
 			return
 		end
-		local key = `{zone.map}|{zone.pvp}|{zone.nameKey}`
+		local map = Maps.get(zone.map)
+		local key = `{zone.map}|{zone.pvp}|{AreaState.zoneNameKey(zone, if map then map.nameKey else nil)}`
 		if key == lastKey then
 			return
 		end
@@ -73,7 +77,11 @@ local function ZoneBanner(scope: Scope): Instance
 				BackgroundTransparency = 1,
 				Text = scope:Computed(function(use): string
 					local zone = use(shown)
-					return if zone then Text.get(use, zone.nameKey) else ""
+					if not zone then
+						return ""
+					end
+					local map = Maps.get(zone.map)
+					return Text.get(use, AreaState.zoneNameKey(zone, if map then map.nameKey else nil))
 				end),
 				FontFace = Theme.Fonts.Heading,
 				TextSize = 56,

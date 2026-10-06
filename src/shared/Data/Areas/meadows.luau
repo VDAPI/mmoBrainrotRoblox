@@ -45,6 +45,7 @@ local data: Types.MapAreas = {
 			kinds = { "rabbit", "wolf" },
 			rect = { -760, -330, -480, 330 },
 			groups = 7,
+			arrive = { x = -672, z = 0 }, -- S22: portal / map stone arrival (Logic/AreaArrival)
 		},
 		{
 			id = "meadows_wolfhills",
@@ -53,6 +54,7 @@ local data: Types.MapAreas = {
 			kinds = { "wolf", "lynx" },
 			rect = { -470, -330, -200, 330 },
 			groups = 7,
+			arrive = { x = -454, z = 0 }, -- S22: portal / map stone arrival (Logic/AreaArrival)
 		},
 		{
 			id = "meadows_toadmire",
@@ -61,6 +63,7 @@ local data: Types.MapAreas = {
 			kinds = { "swampToad", "lynx" },
 			rect = { -760, 360, -200, 780 },
 			groups = 6,
+			arrive = { x = -480, z = 568 }, -- S22: portal / map stone arrival (Logic/AreaArrival)
 			landmark = { x = -470, z = 450 },
 		},
 		{
@@ -70,6 +73,7 @@ local data: Types.MapAreas = {
 			kinds = { "boar", "carrionCrow" },
 			rect = { -320, -780, 220, -360 },
 			groups = 7,
+			arrive = { x = -18, z = -375 }, -- S22: portal / map stone arrival (Logic/AreaArrival)
 			landmark = { x = -150, z = -380 },
 		},
 		{
@@ -79,6 +83,7 @@ local data: Types.MapAreas = {
 			kinds = { "carrionCrow", "boar", "bandit" },
 			rect = { -180, -330, 260, 40 },
 			groups = 5,
+			arrive = { x = -113, z = 22 }, -- S22: portal / map stone arrival (Logic/AreaArrival)
 		},
 		{
 			id = "meadows_banditroad",
@@ -87,6 +92,7 @@ local data: Types.MapAreas = {
 			kinds = { "bandit", "koboldMiner" },
 			rect = { -150, 120, 450, 780 },
 			groups = 8,
+			arrive = { x = -53, z = 130 }, -- S22: portal / map stone arrival (Logic/AreaArrival)
 			landmark = { x = 300, z = 440 },
 		},
 		{
@@ -96,6 +102,7 @@ local data: Types.MapAreas = {
 			kinds = { "koboldMiner", "goblinScout" },
 			rect = { 260, -330, 780, 60 },
 			groups = 6,
+			arrive = { x = 453, z = 45 }, -- S22: portal / map stone arrival (Logic/AreaArrival)
 		},
 		{
 			id = "meadows_goblincamp",
@@ -104,6 +111,7 @@ local data: Types.MapAreas = {
 			kinds = { "goblinScout", "koboldMiner" },
 			rect = { 420, -780, 780, -340 },
 			groups = 6,
+			arrive = { x = 605, z = -356 }, -- S22: portal / map stone arrival (Logic/AreaArrival)
 			landmark = { x = 650, z = -390 },
 		},
 		{
@@ -113,6 +121,7 @@ local data: Types.MapAreas = {
 			kinds = { "brownBear", "goblinScout" },
 			rect = { 480, 100, 780, 780 },
 			groups = 6,
+			arrive = { x = 496, z = 309 }, -- S22: portal / map stone arrival (Logic/AreaArrival)
 		},
 	},
 }

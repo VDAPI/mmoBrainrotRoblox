@@ -470,6 +470,10 @@ local function cast(player: Player, skillId: string, targetId: string?, aim: any
 	end
 
 	ResourceService.MarkCombat(player)
+	-- Offensive skills end the respawn protection even when they hit nothing (S22).
+	if offensive then
+		StatusEffectService.BreakRespawnShield(player)
+	end
 	if not rt.noCooldowns then
 		rt.gcd = t + SkillData.GCD
 		rt.cooldowns[skillId] = t + Skills.scaled(skill, skill.cooldown, level)

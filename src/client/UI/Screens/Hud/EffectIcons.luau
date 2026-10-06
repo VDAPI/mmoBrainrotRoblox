@@ -43,6 +43,7 @@ local GLYPHS: { [string]: { glyph: string, good: boolean } } = {
 	nextShot = { glyph = "➶", good = true },
 	guaranteedCrit = { glyph = "✦", good = true },
 	manaShield = { glyph = "🔵", good = true },
+	respawnShield = { glyph = "✧", good = true },
 }
 
 type Entry = { kind: string, left: number }

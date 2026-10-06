@@ -120,8 +120,12 @@ local context: Monster.Context = {
 		if not player.Character then
 			return false
 		end
-		-- Camouflaged players are invisible to monsters (Hunter skill).
-		if StatusEffectService.PlayerHas(player, "camouflage") then
+		-- Camouflaged players are invisible to monsters (Hunter skill); freshly respawned ones are left alone
+		-- (S22 respawn protection).
+		if
+			StatusEffectService.PlayerHas(player, "camouflage")
+			or StatusEffectService.PlayerHas(player, "respawnShield")
+		then
 			return false
 		end
 		return ZoneService.GetPvpZone(player) ~= "green"
@@ -140,6 +144,19 @@ local context: Monster.Context = {
 				member:AddThreat(player, 0)
 			end
 		end
+	end,
+	groupLastHit = function(monster): number
+		-- S22: the group shares the leash grace and the regeneration delay.
+		local spawner = spawnerOf[monster]
+		local last = monster.lastHit
+		if spawner then
+			for _, member in spawner.alive do
+				if member.lastHit > last then
+					last = member.lastHit
+				end
+			end
+		end
+		return last
 	end,
 	isRooted = function(monster): boolean
 		return monster.entity ~= nil and StatusEffectService.IsRooted(monster.entity)

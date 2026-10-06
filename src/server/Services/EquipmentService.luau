@@ -97,8 +97,31 @@ local function anchorFor(model: Model, hand: string): (BasePart?, CFrame)
 	return part, CFrame.new(0, -part.Size.Y / 2, 0)
 end
 
+-- Farthest point of a look from the palm (studs, weapon frame): the blade tip / staff head (S22 trails and
+-- projectile origins).
+local function tipOf(look: WeaponLooks.Look): Vector3
+	local best, bestDistance = Vector3.zero, -1
+	for _, piece in look.pieces do
+		local rot = piece.rot or { 0, 0, 0 }
+		local frame = CFrame.new(vector(piece.pos))
+			* CFrame.Angles(math.rad(rot[1]), math.rad(rot[2]), math.rad(rot[3]))
+		local half = vector(piece.size) / 2
+		for _, axis in { Vector3.xAxis, Vector3.yAxis, Vector3.zAxis } do
+			for _, sign in { -1, 1 } do
+				local point = frame * (axis * half * sign)
+				if point.Magnitude > bestDistance then
+					best, bestDistance = point, point.Magnitude
+				end
+			end
+		end
+	end
+	return best
+end
+
 -- Builds the held model of `slot` from its look: the first piece is the main part (named after the slot),
--- the others are welded to it and parented under it.
+-- the others are welded to it and parented under it. S22: the main part carries Attachments "VaelthornGrip"
+-- (the palm) and "VaelthornTip" (the farthest point) and the attribute "WeaponType" for the client's attack
+-- animation (trail between them, arrows from the grip of a bow, bolts from the tip of a wand).
 local function updateHeldModel(player: Player, slot: "weapon" | "offhand")
 	local model = player.Character
 	if not model then
@@ -156,6 +179,20 @@ local function updateHeldModel(player: Player, slot: "weapon" | "offhand")
 		end
 	end
 	local held = main :: BasePart
+	local first = look.pieces[1]
+	local firstRot = first.rot or { 0, 0, 0 }
+	local firstOffset = CFrame.new(vector(first.pos))
+		* CFrame.Angles(math.rad(firstRot[1]), math.rad(firstRot[2]), math.rad(firstRot[3]))
+	local palm = Instance.new("Attachment")
+	palm.Name = "VaelthornGrip"
+	palm.CFrame = firstOffset:Inverse()
+	palm.Parent = held
+	local tip = Instance.new("Attachment")
+	tip.Name = "VaelthornTip"
+	tip.CFrame = firstOffset:Inverse() * CFrame.new(tipOf(look))
+	tip.Parent = held
+	held:SetAttribute("WeaponType", (def :: any).type)
+	held:SetAttribute("Accent", accent) -- rarity colour (trail)
 	if item.rarity >= Rarities.EPIC then
 		local light = Instance.new("PointLight")
 		light.Color = accent

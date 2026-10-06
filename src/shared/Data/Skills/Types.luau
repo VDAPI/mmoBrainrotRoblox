@@ -48,6 +48,7 @@ export type EffectKind =
 	| "nextShot"
 	| "guaranteedCrit"
 	| "manaShield"
+	| "respawnShield" -- S22: after a respawn; no damage, ignored by monsters, no PvP; ends on any attack
 	| "burn"
 
 export type SkillEffect = {

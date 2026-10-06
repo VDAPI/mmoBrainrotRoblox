@@ -1,9 +1,13 @@
 --!strict
 -- One monster: model, stats, threat table and AI (DESIGN §15.1).
---   idle   : wander within Combat.wanderRadius of the spawn point, look for players in aggro range
---   chase  : follow the highest-threat valid target; leash at Combat.leashRange from spawn
+--   idle   : wander within Combat.wanderRadius of the group centre, look for players in aggro range; out of
+--            combat it slowly regains HP (S22, Logic/Leash.regen)
+--   chase  : follow the highest-threat valid target; goes home by Logic/Leash.shouldReturn (S22: soft leash
+--            while nobody hits the group, hard leash, lost target, stuck)
 --   cast   : Elite II special: telegraph for `windup` seconds, then resolve
---   return : walk back to spawn invulnerable with full HP, then idle
+--   return : walk back to the group centre (S22: no healing, no invulnerability; a hit within the hard leash
+--            turns it back into the fight), then to its own spot and idle. Bosses keep the old return: their
+--            arena centre, full HP and invulnerable on the way.
 --   dead   : waiting for MonsterService to remove the model
 -- Damage resolution, telegraphs and rewards are delegated to the Context given by MonsterService, so this
 -- module never talks to other services directly.
@@ -13,6 +17,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Shared = ReplicatedStorage.Shared
 
 local Combat = require(Shared.Data.Combat)
+local Leash = require(Shared.Logic.Leash)
 local MonsterAbilities = require(Shared.Data.MonsterAbilities)
 local MonsterStats = require(Shared.Logic.MonsterStats)
 local Monsters = require(Shared.Data.Monsters)
@@ -39,6 +44,9 @@ export type Context = {
 	taunter: (monster: any) -> Player?,
 	-- A player newly joined the monster's threat list (S19: the rest of the group joins the fight).
 	engaged: ((monster: any, player: Player) -> ())?,
+	-- Most recent time (os.clock) a player hit any monster of this one's group (S22: the group shares the leash
+	-- and the regeneration delay); nil = only the monster's own hits count.
+	groupLastHit: ((monster: any) -> number)?,
 }
 
 local Monster = {}
@@ -77,11 +85,14 @@ export type Monster = typeof(setmetatable(
 		-- Centre of the monster's group (S19): wander and leash around it instead of the own spawn point.
 		home: Vector3?,
 		isBoss: boolean?,
+		-- S22 leash: last hit by a player, last time the monster moved (or attacked) while chasing and where.
+		lastHit: number,
+		movedAt: number,
+		movedFrom: Vector3,
+		lastStep: number,
 	},
 	Monster
 ))
-
-local RETURN_TIMEOUT = 12
 
 function Monster.new(
 	def: Monsters.MonsterDef,
@@ -143,6 +154,10 @@ function Monster.new(
 		leashRange = nil,
 		home = nil,
 		isBoss = nil,
+		lastHit = 0,
+		movedAt = 0,
+		movedFrom = spawnCFrame.Position,
+		lastStep = os.clock(),
 	}, Monster)
 	return self
 end
@@ -207,25 +222,48 @@ function Monster.RefreshSpeed(self: Monster, factor: number)
 	end
 end
 
+-- Where a returning monster walks to: the group centre (S22), or the own spawn point (bosses, lone monsters).
+local function returnPoint(self: Monster): Vector3
+	return if self.isBoss then self.spawnCFrame.Position else homeOf(self)
+end
+
+local function sinceHit(self: Monster, now: number): number
+	local last = self.lastHit
+	local group = self.ctx.groupLastHit
+	if group then
+		last = math.max(last, group(self))
+	end
+	return now - last
+end
+
 function Monster.StartReturn(self: Monster)
 	self.state = "return"
 	setTarget(self, nil)
-	self.invulnerable = true
 	table.clear(self.threat)
-	table.clear(self.damageBy)
-	setHp(self, self.stats.maxHp)
+	if self.isBoss then
+		-- Bosses (arena leash 400) keep the old return: full HP and invulnerable on the way.
+		self.invulnerable = true
+		table.clear(self.damageBy)
+		setHp(self, self.stats.maxHp)
+	end
 	self.model:SetAttribute("Returning", true)
 	self.humanoid.WalkSpeed = self.def.moveSpeed * Combat.returnSpeedMultiplier * self.speedFactor
 	self.returnStarted = os.clock()
-	self.humanoid:MoveTo(self.spawnCFrame.Position)
+	self.humanoid:MoveTo(returnPoint(self))
 end
 
 local function finishReturn(self: Monster)
 	self.state = "idle"
-	self.invulnerable = false
+	if self.isBoss then
+		self.invulnerable = false
+	end
 	self.model:SetAttribute("Returning", nil)
 	self.humanoid.WalkSpeed = self.def.moveSpeed * self.speedFactor
 	self.nextWander = os.clock() + 2 + self.random:NextNumber() * 4
+	-- Spread back to the own spot of the group.
+	if not self.isBoss and not self.ctx.isRooted(self) then
+		self.humanoid:MoveTo(self.spawnCFrame.Position)
+	end
 end
 
 -- Highest-threat valid target, or nil. A taunting player always wins.
@@ -280,10 +318,22 @@ local function engage(self: Monster, player: Player)
 			self.ctx.engaged(self, player)
 		end
 	end
+	-- S22: a monster going home turns back when hit within the hard leash.
+	if
+		self.state == "return"
+		and not self.isBoss
+		and Leash.canReengage(distanceFlat(self.root.Position, homeOf(self)), Combat :: any)
+	then
+		self.state = "idle"
+		self.model:SetAttribute("Returning", nil)
+		self.humanoid.WalkSpeed = self.def.moveSpeed * self.speedFactor
+	end
 	if self.state == "idle" then
 		self.state = "chase"
 		setTarget(self, player)
 		local now = os.clock()
+		self.movedAt = now
+		self.movedFrom = self.root.Position
 		self.nextAttack = math.max(self.nextAttack, now + 0.4)
 		if self.ability then
 			self.nextAbility = now + 3 + self.random:NextNumber() * 3
@@ -322,14 +372,41 @@ local function stepIdle(self: Monster, now: number)
 	end
 end
 
+-- Leash check (S22). Bosses keep their single arena leash.
+local function leashed(self: Monster, now: number, hasTarget: boolean): boolean
+	local distHome = distanceFlat(self.root.Position, homeOf(self))
+	if self.isBoss then
+		return not hasTarget or distHome > (self.leashRange or Combat.leashRange)
+	end
+	local cfg = Combat :: any
+	if self.leashRange then
+		cfg = table.clone(Combat) :: any
+		cfg.leashRange = self.leashRange
+		cfg.leashMax = math.max(self.leashRange, Combat.leashMax)
+	end
+	local stuckFor = if self.ctx.isRooted(self) then 0 else now - self.movedAt
+	local back = Leash.shouldReturn({
+		distHome = distHome,
+		sinceHit = sinceHit(self, now),
+		hasTarget = hasTarget,
+		stuckFor = stuckFor,
+	}, cfg)
+	return back
+end
+
+-- Progress for the stuck check: moving at least 1.5 studs (or attacking, or being rooted) counts.
+local function noteMovement(self: Monster, now: number, attacking: boolean)
+	local position = self.root.Position
+	if attacking or self.ctx.isRooted(self) or distanceFlat(position, self.movedFrom) >= 1.5 then
+		self.movedAt = now
+		self.movedFrom = position
+	end
+end
+
 local function stepChase(self: Monster, now: number)
 	local position = self.root.Position
-	if distanceFlat(position, homeOf(self)) > (self.leashRange or Combat.leashRange) then
-		self:StartReturn()
-		return
-	end
 	local target = pickTarget(self)
-	if not target then
+	if leashed(self, now, target ~= nil) or not target then
 		self:StartReturn()
 		return
 	end
@@ -359,6 +436,7 @@ local function stepChase(self: Monster, now: number)
 		return
 	end
 
+	noteMovement(self, now, distance <= reach)
 	if distance <= reach then
 		stop(self)
 		face(self, targetPosition)
@@ -396,16 +474,33 @@ end
 
 local function stepReturn(self: Monster, now: number)
 	local position = self.root.Position
-	if distanceFlat(position, self.spawnCFrame.Position) <= 4 then
+	local point = returnPoint(self)
+	if distanceFlat(position, point) <= 4 then
 		finishReturn(self)
 		return
 	end
-	if now - self.returnStarted > RETURN_TIMEOUT then
-		self.model:PivotTo(self.spawnCFrame + Vector3.new(0, self.humanoid.HipHeight + self.root.Size.Y / 2, 0))
+	if now - self.returnStarted > Combat.returnTimeout then
+		-- Teleport home (no healing, S22).
+		self.model:PivotTo(CFrame.new(point) + Vector3.new(0, self.humanoid.HipHeight + self.root.Size.Y / 2, 0))
 		finishReturn(self)
 		return
 	end
-	self.humanoid:MoveTo(self.spawnCFrame.Position)
+	self.humanoid:MoveTo(point)
+end
+
+-- Out-of-combat regeneration at home (S22). Back at full HP the damage record is cleared, so a later kill
+-- credits only the new fight.
+local function regenerate(self: Monster, now: number, dt: number)
+	if self.isBoss or self.hp >= self.stats.maxHp then
+		return
+	end
+	local hp = Leash.regen(self.hp, self.stats.maxHp, sinceHit(self, now), dt, Combat :: any)
+	if hp ~= self.hp then
+		setHp(self, hp)
+		if self.hp >= self.stats.maxHp then
+			table.clear(self.damageBy)
+		end
+	end
 end
 
 -- One AI tick (MonsterService calls this at Combat.aiTickRate).
@@ -423,7 +518,10 @@ function Monster.Step(self: Monster, now: number)
 		stop(self)
 		return
 	end
+	local dt = math.min(now - self.lastStep, 1)
+	self.lastStep = now
 	if state == "idle" then
+		regenerate(self, now, dt)
 		stepIdle(self, now)
 	elseif state == "chase" then
 		stepChase(self, now)
@@ -443,6 +541,7 @@ function Monster.TakeDamage(self: Monster, amount: number, source: Player?): num
 	local dealt = math.min(self.hp, amount)
 	setHp(self, self.hp - dealt)
 	if source then
+		self.lastHit = os.clock()
 		self.damageBy[source] = (self.damageBy[source] or 0) + dealt
 		self.threat[source] = (self.threat[source] or 0) + dealt
 		engage(self, source)

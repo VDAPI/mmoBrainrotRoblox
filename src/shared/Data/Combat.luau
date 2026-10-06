@@ -51,9 +51,20 @@ return table.freeze({
 
 	-- AI (DESIGN §15.1).
 	wanderRadius = 8, -- around the group centre (S19)
-	leashRange = 70,
 	passiveLevelGap = 15, -- monsters this many levels below the player do not attack first
 	aiTickRate = 5, -- per second
 	sleepRadius = 250, -- spawners without players this close stop working (S19: was 150)
-	returnSpeedMultiplier = 1.6,
+	-- Leash (S22, Logic/Leash): past leashRange from the group centre a monster goes home once no player has hit
+	-- its group for leashGrace seconds; past leashMax it always goes home. A chasing monster that has not moved
+	-- (and not attacked) for stuckTime seconds goes home too. Going home: no healing, no invulnerability,
+	-- returnSpeedMultiplier x speed, teleported home after returnTimeout seconds. Back home (idle), it regains
+	-- idleRegenPct % of its max HP per second once idleRegenDelay seconds have passed since the last hit.
+	leashRange = 70,
+	leashMax = 150,
+	leashGrace = 5,
+	stuckTime = 5,
+	returnSpeedMultiplier = 1.25,
+	returnTimeout = 12,
+	idleRegenDelay = 4,
+	idleRegenPct = 8,
 })

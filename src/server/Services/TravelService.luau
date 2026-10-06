@@ -3,6 +3,9 @@
 -- teleport to the capital (the stone is consumed only on success). Map Stone: any visited map (picker on
 -- the client, remote UseMapStone). Dungeon Stones: in front of a boss dungeon entrance (once S08/S09 define
 -- them). The channel replicates as state branch `travel` = { endsAt, duration, label }.
+-- S22: portals and the Map Stone to a region map take an optional monster area: the player arrives at the
+-- area's `arrive` point (Data/Areas); without one, at the lowest area. An area opens at its minimum level.
+-- Cave exits keep their own arrival in front of the cave mouth; portals to the city keep the city gate.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -10,6 +13,8 @@ local Workspace = game:GetService("Workspace")
 
 local Shared = ReplicatedStorage.Shared
 
+local AreaAdvice = require(Shared.Logic.AreaAdvice)
+local Areas = require(Shared.Data.Areas)
 local Config = require(Shared.Config)
 local Items = require(Shared.Data.Items)
 local Maps = require(Shared.Data.Maps)
@@ -96,7 +101,44 @@ end
 local PORTAL_RANGE = 20
 local portalBusy: { [Player]: boolean } = {}
 
-local function usePortal(player: Player, portalId: string): (boolean, string?)
+-- Arrival on a region map with monster areas (S22): the picked area (or the lowest one). Returns nil without
+-- areas on that map; an error key for an unknown or locked area.
+function TravelService.AreaArrival(player: Player, mapId: string, areaId: string?): (CFrame?, string?)
+	local data = Areas.byMap[mapId]
+	if not data then
+		return nil, nil
+	end
+	local area: Areas.Area? = nil
+	if areaId then
+		for _, candidate in data.areas do
+			if candidate.id == areaId then
+				area = candidate
+			end
+		end
+		if not area then
+			return nil, "error.badRequest"
+		end
+	else
+		area = AreaAdvice.default(mapId)
+	end
+	local chosen = area :: Areas.Area
+	local char = PlayerStateService.GetCharacter(player)
+	if areaId and (not char or AreaAdvice.locked(chosen, char.level)) then
+		return nil, "portal.areaLocked"
+	end
+	local arrive = chosen.arrive
+	if not arrive then
+		return nil, nil
+	end
+	return WorldService.GroundCFrame(mapId, arrive.x, arrive.z), nil
+end
+
+-- Cave exits bring the player back to the cave mouth (no area choice).
+local function isCaveExit(portalId: string): boolean
+	return string.sub(portalId, -5) == "_exit"
+end
+
+local function usePortal(player: Player, portalId: string, areaId: string?): (boolean, string?)
 	local portal = WorldService.GetPortal(portalId)
 	if not portal or not PlayerStateService.GetCharacter(player) then
 		return false, "error.badRequest"
@@ -112,9 +154,19 @@ local function usePortal(player: Player, portalId: string): (boolean, string?)
 	if not WorldService.IsBuilt(portal.target) then
 		return false, "portal.closed"
 	end
-	interrupt(player, false)
 	local arrive = portal.arrive
-	local at = if arrive then WorldService.GroundCFrame(portal.target, arrive.x, arrive.z) else nil
+	local at: CFrame? = nil
+	if not isCaveExit(portalId) and Areas.byMap[portal.target] then
+		local area, err = TravelService.AreaArrival(player, portal.target, areaId)
+		if err then
+			return false, err
+		end
+		at = area
+	end
+	interrupt(player, false)
+	if not at and arrive then
+		at = WorldService.GroundCFrame(portal.target, arrive.x, arrive.z)
+	end
 	portalBusy[player] = true
 	task.spawn(function()
 		TravelService.TeleportToMap(player, portal.target, at)
@@ -190,7 +242,7 @@ local function channel(player: Player, itemId: string, label: string, arrive: ()
 	return true, nil
 end
 
-local function toMap(player: Player, itemId: string, mapId: string): (boolean, string?)
+local function toMap(player: Player, itemId: string, mapId: string, areaId: string?): (boolean, string?)
 	local map = Maps.get(mapId)
 	local char = PlayerStateService.GetCharacter(player)
 	if not map or not char then
@@ -199,11 +251,16 @@ local function toMap(player: Player, itemId: string, mapId: string): (boolean, s
 	if not (char.visitedMaps or {})[mapId] or map.biome == "dungeon" then
 		return false, "teleport.notVisited"
 	end
-	if char.location.map == mapId and mapId ~= Config.StartingMap then
+	if char.location.map == mapId and mapId ~= Config.StartingMap and not areaId then
 		return false, "teleport.sameMap"
 	end
+	-- S22: the same area choice as portals (lowest area by default).
+	local at, err = TravelService.AreaArrival(player, mapId, areaId)
+	if err then
+		return false, err
+	end
 	return channel(player, itemId, "teleport.channelMap", function()
-		TravelService.TeleportToMap(player, mapId)
+		TravelService.TeleportToMap(player, mapId, at)
 		Net.Fire(player, "Toast", "teleport.arrived", { map = `@{map.nameKey}` }, "success")
 	end)
 end
@@ -240,7 +297,7 @@ local function useStone(player: Player, _index: number, item: Types.ItemInstance
 end
 
 -- (inventory index, map id or dungeon region) for the Map Stone and the generic Dungeon Stone.
-local function useMapStone(player: Player, index: number, target: string): (boolean, string?)
+local function useMapStone(player: Player, index: number, target: string, areaId: string?): (boolean, string?)
 	local item = InventoryService.Get(player, index)
 	local def = item and Items.get(item.id)
 	local kind = def and def.use and def.use.target
@@ -248,7 +305,7 @@ local function useMapStone(player: Player, index: number, target: string): (bool
 		return false, "error.badRequest"
 	end
 	if kind == "map" then
-		return toMap(player, item.id, target)
+		return toMap(player, item.id, target, areaId)
 	elseif kind == "dungeon" then
 		return toDungeon(player, item.id, target)
 	end

@@ -1,9 +1,12 @@
 --!strict
 -- Death screen (DESIGN §3.4): dimmed world, "You died", respawn countdown and "Respawn now" for Dragon
--- Shards. Visible while the state branch `death` exists.
+-- Shards or Robux. Visible while the state branch `death` exists. S22: once the countdown ends (or after a
+-- paid skip) two choices replace it: "Respawn in the city" [1] and "Respawn here" [2] (in a dungeon: at its
+-- entrance); without a choice the server picks the city at `deadline`. Keys 1 and 2 are local to this screen.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
 
 local Button = require(script.Parent.Parent.Parent.Components.Button)
@@ -19,6 +22,20 @@ local Toast = require(script.Parent.Parent.Parent.Components.Toast)
 local Children = Fusion.Children
 
 type Scope = Fusion.Scope<typeof(Fusion)>
+
+local function label(scope: Scope, props: { [string]: any }): Instance
+	local base = {
+		BackgroundTransparency = 1,
+		FontFace = Theme.Fonts.Body,
+		TextSize = Theme.TextSize.Body,
+		TextColor3 = Theme.Colors.Parchment,
+		ZIndex = 52,
+	}
+	for key, value in props do
+		base[key] = value
+	end
+	return scope:New("TextLabel")(base :: any)
+end
 
 local function DeathScreen(scope: Scope): Instance
 	local death = State.Value({ "death" })
@@ -39,21 +56,59 @@ local function DeathScreen(scope: Scope): Instance
 		local d = use(death)
 		return if d then math.max(0, d.respawnAt - use(now)) else 0
 	end)
+	local choosing = scope:Computed(function(use): boolean
+		local d = use(death)
+		return d ~= nil and use(now) >= d.respawnAt
+	end)
+	local untilCity = scope:Computed(function(use): number
+		local d = use(death)
+		return if d and d.deadline then math.max(0, d.deadline - use(now)) else 0
+	end)
 	local cost = scope:Computed(function(use): number
 		local d = use(death)
 		return if d then d.cost else 0
 	end)
+	local counting = scope:Computed(function(use): boolean
+		return not use(choosing)
+	end)
 
-	local function respawnNow()
+	local function invoke(name: string, ...: any)
+		if Fusion.peek(busy) then
+			return
+		end
 		busy:set(true)
+		local args = { ... }
 		task.spawn(function()
-			local ok, err = Net.Invoke("RespawnNow")
+			local ok, err = Net.Invoke(name, table.unpack(args))
 			busy:set(false)
 			if not ok then
 				Toast.push(Text.now(err or "error.internal"), "error")
 			end
 		end)
 	end
+
+	local function choose(choice: string)
+		if Fusion.peek(death) ~= nil and Fusion.peek(choosing) then
+			invoke("RespawnChoice", choice)
+		end
+	end
+
+	-- Keys 1 / 2 while the choice is open (local to this screen, not Keybinds actions).
+	table.insert(
+		scope,
+		UserInputService.InputBegan:Connect(function(input: InputObject, processed: boolean)
+			if processed or Fusion.peek(death) == nil or not Fusion.peek(choosing) then
+				return
+			end
+			if input.KeyCode == Enum.KeyCode.One or input.KeyCode == Enum.KeyCode.KeypadOne then
+				choose("city")
+			elseif input.KeyCode == Enum.KeyCode.Two or input.KeyCode == Enum.KeyCode.KeypadTwo then
+				choose("here")
+			end
+		end)
+	)
+
+	local width = 460
 
 	return scope:New("Frame")({
 		Name = "DeathScreen",
@@ -73,56 +128,63 @@ local function DeathScreen(scope: Scope): Instance
 				Name = "Content",
 				AnchorPoint = Vector2.new(0.5, 0.5),
 				Position = UDim2.fromScale(0.5, 0.45),
-				Size = UDim2.fromOffset(560, 320),
+				Size = UDim2.new(0.92, 0, 0, 380), -- phones: 92% of the width, at most `width`
 				BackgroundTransparency = 1,
 				ZIndex = 51,
 				[Children] = {
+					scope:New("UISizeConstraint")({ MaxSize = Vector2.new(width, math.huge) }),
 					scope:New("UIListLayout")({
 						SortOrder = Enum.SortOrder.LayoutOrder,
 						HorizontalAlignment = Enum.HorizontalAlignment.Center,
 						Padding = UDim.new(0, Theme.Padding.Medium),
 					}),
-					scope:New("TextLabel")({
+					label(scope, {
 						Name = "Title",
 						LayoutOrder = 1,
 						Size = UDim2.new(1, 0, 0, 80),
-						BackgroundTransparency = 1,
 						Text = Text.T(scope, "death.title"),
 						FontFace = Theme.Fonts.Heading,
 						TextSize = 72,
 						TextColor3 = Theme.Colors.DangerHover,
 						TextStrokeTransparency = 0.4,
-						ZIndex = 52,
 					}),
-					scope:New("TextLabel")({
+					label(scope, {
 						Name = "Countdown",
 						LayoutOrder = 2,
 						Size = UDim2.new(1, 0, 0, 32),
-						BackgroundTransparency = 1,
 						Text = scope:Computed(function(use): string
+							if use(choosing) then
+								return Text.get(use, "death.choose")
+							end
 							return Text.get(use, "death.countdown", { time = Format.time(math.ceil(use(remaining))) })
 						end),
 						FontFace = Theme.Fonts.BodyBold,
 						TextSize = Theme.TextSize.Large,
-						TextColor3 = Theme.Colors.Parchment,
-						ZIndex = 52,
 					}),
-					scope:New("TextLabel")({
+					label(scope, {
 						Name = "Note",
 						LayoutOrder = 3,
 						Size = UDim2.new(1, 0, 0, 24),
-						BackgroundTransparency = 1,
-						Text = Text.T(scope, "death.nothingLost"),
-						FontFace = Theme.Fonts.Body,
+						Text = scope:Computed(function(use): string
+							if use(choosing) then
+								return Text.get(
+									use,
+									"death.autoCity",
+									{ time = Format.time(math.ceil(use(untilCity))) }
+								)
+							end
+							return Text.get(use, "death.nothingLost")
+						end),
 						TextSize = Theme.TextSize.Small,
 						TextColor3 = Theme.Colors.TextMuted,
-						ZIndex = 52,
 					}),
+					-- Countdown: pay to skip it.
 					Button(scope, {
 						Name = "RespawnNow",
 						LayoutOrder = 4,
-						Size = UDim2.fromOffset(420, Theme.Size.ButtonHeight),
+						Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeight),
 						Variant = "primary",
+						Visible = counting,
 						Text = scope:Computed(function(use): string
 							return Text.get(use, "death.respawnNow", { cost = use(cost) })
 						end),
@@ -130,37 +192,71 @@ local function DeathScreen(scope: Scope): Instance
 							local owned = use(shards)
 							return use(busy) or type(owned) ~= "number" or owned < use(cost)
 						end),
-						OnClick = respawnNow,
+						OnClick = function()
+							invoke("RespawnNow")
+						end,
 					}),
 					Button(scope, {
 						Name = "RespawnRobux",
 						LayoutOrder = 5,
-						Size = UDim2.fromOffset(420, Theme.Size.ButtonHeightSmall),
+						Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeightSmall),
+						Visible = counting,
 						Text = Text.T(scope, "death.respawnRobux", { robux = Products.respawn.robux }),
 						Disabled = busy,
 						OnClick = function()
-							busy:set(true)
-							task.spawn(function()
-								local ok, err = Net.Invoke("BuyProduct", Products.respawn.key)
-								busy:set(false)
-								if not ok then
-									Toast.push(Text.now(err or "error.internal"), "error")
-								end
-							end)
+							invoke("BuyProduct", Products.respawn.key)
 						end,
 					}),
-					scope:New("TextLabel")({
-						Name = "Shards",
+					-- Choice.
+					Button(scope, {
+						Name = "RespawnCity",
 						LayoutOrder = 6,
+						Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeight),
+						Variant = "primary",
+						Visible = choosing,
+						Disabled = busy,
+						Text = Text.T(scope, "death.respawnCity"),
+						OnClick = function()
+							choose("city")
+						end,
+					}),
+					Button(scope, {
+						Name = "RespawnHere",
+						LayoutOrder = 7,
+						Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeight),
+						Visible = choosing,
+						Disabled = busy,
+						Text = scope:Computed(function(use): string
+							local d = use(death)
+							return Text.get(
+								use,
+								if d and d.dungeon then "death.respawnEntrance" else "death.respawnHere"
+							)
+						end),
+						OnClick = function()
+							choose("here")
+						end,
+					}),
+					label(scope, {
+						Name = "Shards",
+						LayoutOrder = 8,
 						Size = UDim2.new(1, 0, 0, 22),
-						BackgroundTransparency = 1,
+						Visible = counting,
 						Text = scope:Computed(function(use): string
 							return Text.get(use, "death.shardsOwned", { shards = Format.number(use(shards) or 0) })
 						end),
-						FontFace = Theme.Fonts.Body,
 						TextSize = Theme.TextSize.Small,
 						TextColor3 = Theme.Colors.TextMuted,
-						ZIndex = 52,
+					}),
+					label(scope, {
+						Name = "Protection",
+						LayoutOrder = 9,
+						Size = UDim2.new(1, 0, 0, 40),
+						Visible = choosing,
+						TextWrapped = true,
+						Text = Text.T(scope, "death.protectionNote"),
+						TextSize = Theme.TextSize.Small,
+						TextColor3 = Theme.Colors.TextMuted,
 					}),
 				},
 			}),

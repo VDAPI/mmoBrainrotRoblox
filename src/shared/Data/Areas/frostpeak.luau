@@ -51,6 +51,7 @@ local data: Types.MapAreas = {
 			kinds = { "iceWolf", "snowLeopard" },
 			rect = { -760, -330, -420, 420 },
 			groups = 8,
+			arrive = { x = -682, z = 7 }, -- S22: portal / map stone arrival (Logic/AreaArrival)
 		},
 		{
 			id = "frostpeak_slopes",
@@ -59,6 +60,7 @@ local data: Types.MapAreas = {
 			kinds = { "yeti", "snowLeopard" },
 			rect = { -480, -780, -20, -340 },
 			groups = 7,
+			arrive = { x = -246, z = -356 }, -- S22: portal / map stone arrival (Logic/AreaArrival)
 		},
 		{
 			id = "frostpeak_harpyrocks",
@@ -67,6 +69,7 @@ local data: Types.MapAreas = {
 			kinds = { "peakHarpy", "yeti" },
 			rect = { -760, 440, -200, 780 },
 			groups = 6,
+			arrive = { x = -480, z = 608 }, -- S22: portal / map stone arrival (Logic/AreaArrival)
 		},
 		{
 			id = "frostpeak_pass",
@@ -75,6 +78,7 @@ local data: Types.MapAreas = {
 			kinds = { "frostGiant", "peakHarpy" },
 			rect = { -200, -240, 320, 240 },
 			groups = 7,
+			arrive = { x = -184, z = 0 }, -- S22: portal / map stone arrival (Logic/AreaArrival)
 		},
 		{
 			id = "frostpeak_lake",
@@ -83,6 +87,7 @@ local data: Types.MapAreas = {
 			kinds = { "iceElemental", "iceMammoth" },
 			rect = { -60, 400, 420, 780 },
 			groups = 6,
+			arrive = { x = 114, z = 417 }, -- S22: portal / map stone arrival (Logic/AreaArrival)
 			landmark = { x = 160, z = 560 },
 		},
 		{
@@ -92,6 +97,7 @@ local data: Types.MapAreas = {
 			kinds = { "iceMammoth", "frostGiant" },
 			rect = { 0, -780, 480, -320 },
 			groups = 6,
+			arrive = { x = 277, z = -336 }, -- S22: portal / map stone arrival (Logic/AreaArrival)
 		},
 		{
 			id = "frostpeak_temple",
@@ -100,6 +106,7 @@ local data: Types.MapAreas = {
 			kinds = { "dragonspawn", "frozenKnight" },
 			rect = { 400, -300, 780, 320 },
 			groups = 7,
+			arrive = { x = 417, z = -14 }, -- S22: portal / map stone arrival (Logic/AreaArrival)
 			landmark = { x = 560, z = 0 },
 		},
 		{
@@ -109,6 +116,7 @@ local data: Types.MapAreas = {
 			kinds = { "frozenKnight", "iceElemental" },
 			rect = { 440, 340, 780, 780 },
 			groups = 5,
+			arrive = { x = 608, z = 556 }, -- S22: portal / map stone arrival (Logic/AreaArrival)
 		},
 		{
 			id = "frostpeak_wyrmspire",
@@ -117,6 +125,7 @@ local data: Types.MapAreas = {
 			kinds = { "frostWyrm", "dragonspawn" },
 			rect = { 500, -780, 780, -320 },
 			groups = 5,
+			arrive = { x = 636, z = -548 }, -- S22: portal / map stone arrival (Logic/AreaArrival)
 		},
 	},
 }

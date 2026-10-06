@@ -6,12 +6,18 @@
 -- and turning). Zoom with the wheel / pinch / buttons, drag to pan, "Centre on me", layer toggles.
 -- Performance: the static layer of every map is built once and cached (zoom is a UIScale, panning moves
 -- one frame); per frame only the player, party and quest markers move. No Instance.new in RenderStepped.
+-- S22 (readable levels): areas filled ~45% in the band colour relative to the player (Logic/AreaAdvice), a
+-- darker 2 px outline, a 3 px gap between neighbours and a dark pill with the name and a big "9–14"; a legend
+-- (your level, the five bands, "Show only recommended"); map rows coloured by band with their areas listed
+-- under the selected map (click: zoom to the area and outline it); the map opens on the player with the
+-- recommended area outlined; the area card hides when the mouse leaves the area.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 
+local AreaAdvice = require(ReplicatedStorage.Shared.Logic.AreaAdvice)
 local Areas = require(ReplicatedStorage.Shared.Data.Areas)
 local AreaSpawns = require(ReplicatedStorage.Shared.Logic.AreaSpawns)
 local Bosses = require(ReplicatedStorage.Shared.Data.Bosses)
@@ -54,11 +60,20 @@ local NODE_COLORS: { [string]: string } = { vein = "#E8C25A", bush = "#6FCF5A", 
 
 -- Static layers ---------------------------------------------------------------------------------------------
 
+type AreaEntry = {
+	frame: TextButton,
+	area: Areas.Area,
+	stroke: UIStroke,
+	pill: Frame,
+	name: TextLabel,
+	levels: TextLabel,
+}
+
 type Cached = {
 	canvas: Frame,
 	scale: number,
 	sketch: MapSketch.Sketch,
-	areas: { { frame: Frame, area: Areas.Area } },
+	areas: { AreaEntry },
 	layers: { [string]: Frame },
 	npcNames: { TextLabel },
 }
@@ -132,8 +147,8 @@ local function build(mapId: string): Cached?
 		return MapSketch.toPixel(sketch, scale, x, z)
 	end
 
-	-- Monster areas
-	local areaFrames = {}
+	-- Monster areas (S22: inset by 3 px so neighbours keep a light gap; a dark pill with the name and levels)
+	local areaFrames: { AreaEntry } = {}
 	local data = Areas.byMap[mapId]
 	for _, area in (if data then data.areas else {}) :: { Areas.Area } do
 		local r = area.rect
@@ -142,23 +157,58 @@ local function build(mapId: string): Cached?
 		f.Name = area.id
 		f.AutoButtonColor = false
 		f.Text = ""
-		f.Position = UDim2.fromOffset(a.X, a.Y)
-		f.Size = UDim2.fromOffset(b.X - a.X, b.Y - a.Y)
-		f.BackgroundTransparency = 0.72
+		f.Position = UDim2.fromOffset(a.X + 3, a.Y + 3)
+		f.Size = UDim2.fromOffset(b.X - a.X - 6, b.Y - a.Y - 6)
+		f.BackgroundTransparency = 0.55
 		f.BorderSizePixel = 0
 		f.ZIndex = 2
 		local stroke = Instance.new("UIStroke")
-		stroke.Thickness = 1.5
-		stroke.Transparency = 0.2
+		stroke.Thickness = 2
 		stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 		stroke.Parent = f
 		local corner = Instance.new("UICorner")
 		corner.CornerRadius = UDim.new(0, 8)
 		corner.Parent = f
 		f.Parent = layers.areas
-		local name = label(f, "", Theme.Colors.Text, Vector2.new((b.X - a.X) / 2, (b.Y - a.Y) / 2), 13, 3)
-		name.Name = "Label"
-		table.insert(areaFrames, { frame = f :: any, area = area })
+		local pill = Instance.new("Frame")
+		pill.Name = "Pill"
+		pill.AnchorPoint = Vector2.new(0.5, 0.5)
+		pill.Position = UDim2.fromScale(0.5, 0.5)
+		pill.AutomaticSize = Enum.AutomaticSize.XY
+		pill.Size = UDim2.fromOffset(0, 0)
+		pill.BackgroundColor3 = Theme.Colors.Background
+		pill.BackgroundTransparency = 0.2
+		pill.ZIndex = 3
+		local pillCorner = Instance.new("UICorner")
+		pillCorner.CornerRadius = UDim.new(0, 6)
+		pillCorner.Parent = pill
+		local padding = Instance.new("UIPadding")
+		padding.PaddingLeft = UDim.new(0, 6)
+		padding.PaddingRight = UDim.new(0, 6)
+		padding.PaddingTop = UDim.new(0, 2)
+		padding.PaddingBottom = UDim.new(0, 2)
+		padding.Parent = pill
+		local list = Instance.new("UIListLayout")
+		list.HorizontalAlignment = Enum.HorizontalAlignment.Center
+		list.SortOrder = Enum.SortOrder.LayoutOrder
+		list.Parent = pill
+		local function line(order: number, size: number, font: Font): TextLabel
+			local l = Instance.new("TextLabel")
+			l.LayoutOrder = order
+			l.AutomaticSize = Enum.AutomaticSize.X
+			l.Size = UDim2.fromOffset(0, size + 2)
+			l.BackgroundTransparency = 1
+			l.FontFace = font
+			l.TextSize = size
+			l.TextStrokeTransparency = 0.5
+			l.ZIndex = 4
+			l.Parent = pill
+			return l
+		end
+		local name = line(1, 12, Theme.Fonts.BodyBold)
+		local levels = line(2, 17, Theme.Fonts.Heading)
+		pill.Parent = f
+		table.insert(areaFrames, { frame = f, area = area, stroke = stroke, pill = pill, name = name, levels = levels })
 	end
 
 	-- Icons: portals with their target, caves, boss dungeons
@@ -232,21 +282,30 @@ local function build(mapId: string): Cached?
 	return cached
 end
 
--- Localized captions and area colours (cheap: a few dozen objects), refreshed on language / level change.
-local function refresh(cached: Cached, level: number)
+type View = { onlyRecommended: boolean, highlight: string? }
+
+-- Localized captions and area colours (cheap: a few dozen objects), refreshed on language / level / view
+-- change (S22: band of the nearest end of the range, "★" on recommended areas, dimmed others when only the
+-- recommended ones are wanted, a gold outline on the highlighted area).
+local function refresh(cached: Cached, level: number, view: View)
 	for _, entry in cached.areas do
 		local area = entry.area
-		local band = LevelBand.of(math.floor((area.lv[1] + area.lv[2]) / 2), level)
-		local color = Color3.fromHex((LevelBand.COLORS :: any)[band])
+		local color = Color3.fromHex(LevelBand.COLORS[AreaAdvice.bandOf(area, level)])
+		local recommended = AreaAdvice.isRecommended(area, level)
+		local dim = view.onlyRecommended and not recommended
+		local highlighted = view.highlight == area.id
 		entry.frame.BackgroundColor3 = color
-		local stroke = entry.frame:FindFirstChildOfClass("UIStroke")
-		if stroke then
-			stroke.Color = color
-		end
-		local caption = entry.frame:FindFirstChild("Label") :: TextLabel?
-		if caption then
-			caption.Text = Text.now("area.label", { name = Text.now(area.nameKey), min = area.lv[1], max = area.lv[2] })
-		end
+		entry.frame.BackgroundTransparency = if dim then 0.9 else 0.55
+		entry.stroke.Color = if highlighted then Theme.Colors.GoldBright else color:Lerp(Color3.new(0, 0, 0), 0.45)
+		entry.stroke.Thickness = if highlighted then 4 else 2
+		entry.stroke.Transparency = if dim then 0.7 else 0
+		entry.pill.BackgroundTransparency = if dim then 0.75 else 0.2
+		entry.name.Text = (if recommended then "★ " else "") .. Text.now(area.nameKey)
+		entry.name.TextColor3 = color
+		entry.name.TextTransparency = if dim then 0.6 else 0
+		entry.levels.Text = `{area.lv[1]}–{area.lv[2]}`
+		entry.levels.TextColor3 = color
+		entry.levels.TextTransparency = if dim then 0.6 else 0
 	end
 	for _, object in cached.canvas:GetDescendants() do
 		local key = object:GetAttribute("Key")
@@ -341,6 +400,8 @@ local function WorldMapWindow(scope: Scope): Fusion.Child
 	local zoomIndex = scope:Value(1)
 	local center = scope:Value(Vector2.new(CANVAS / 2, CANVAS / 2)) -- canvas pixel in the middle of the view
 	local card = scope:Value(nil :: { CardLine }?)
+	local onlyRecommended = scope:Value(false)
+	local highlight = scope:Value(nil :: string?)
 	local toggles = {
 		areas = scope:Value(true),
 		nodes = scope:Value(true),
@@ -349,7 +410,9 @@ local function WorldMapWindow(scope: Scope): Fusion.Child
 		quest = scope:Value(true),
 	}
 
-	-- Map list
+	-- Map list (S22: map names and levels in the band colour relative to the player, the PvP zone as a small
+	-- dot; under the selected region map its areas, click = zoom to the area).
+	local focusArea: (area: Areas.Area) -> () = function() end
 	local listChildren = {}
 	local order = 0
 	for _, region in REGIONS do
@@ -357,6 +420,7 @@ local function WorldMapWindow(scope: Scope): Fusion.Child
 			local map = Maps.get(id)
 			if map then
 				order += 1
+				local zoneHex = (ZONE_COLORS[map.zone] or Theme.Colors.Text):ToHex()
 				table.insert(
 					listChildren,
 					scope:New("TextButton")({
@@ -367,14 +431,22 @@ local function WorldMapWindow(scope: Scope): Fusion.Child
 							return if use(selected) == id then Theme.Colors.PanelHover else Theme.Colors.PanelRaised
 						end),
 						BackgroundTransparency = if i == 1 then 0.1 else 0.4,
+						RichText = true,
 						Text = scope:Computed(function(use): string
-							local here = if use(mapId) == id then " ●" else ""
+							local here = if use(mapId) == id then " ▲" else ""
 							local levels = if id == "city" then "" else ` · {map.minLevel}–{map.maxLevel}`
-							return `{if i == 1 then "" else "   "}{Text.get(use, map.nameKey)}{levels}{here}`
+							local indent = if i == 1 then "" else "   "
+							return `{indent}<font color="#{zoneHex}">●</font> {Text.get(use, map.nameKey)}{levels}{here}`
 						end),
 						FontFace = if i == 1 then Theme.Fonts.BodyBold else Theme.Fonts.Body,
 						TextSize = if i == 1 then 16 else 14,
-						TextColor3 = ZONE_COLORS[map.zone] or Theme.Colors.Text,
+						TextColor3 = scope:Computed(function(use): Color3
+							if id == "city" then
+								return Theme.Colors.Parchment
+							end
+							local range = { lv = { map.minLevel, map.maxLevel } } :: any
+							return Color3.fromHex(LevelBand.COLORS[AreaAdvice.bandOf(range, use(level) or 1)])
+						end),
 						TextXAlignment = Enum.TextXAlignment.Left,
 						TextTruncate = Enum.TextTruncate.AtEnd,
 						[OnEvent("Activated")] = function()
@@ -386,6 +458,39 @@ local function WorldMapWindow(scope: Scope): Fusion.Child
 						},
 					})
 				)
+				for _, area in AreaAdvice.sorted(id) do
+					order += 1
+					table.insert(
+						listChildren,
+						scope:New("TextButton")({
+							LayoutOrder = order,
+							Visible = scope:Computed(function(use): boolean
+								return use(selected) == id
+							end),
+							Size = UDim2.new(1, -8, 0, 24),
+							AutoButtonColor = false,
+							BackgroundColor3 = scope:Computed(function(use): Color3
+								return if use(highlight) == area.id then Theme.Colors.PanelHover else Theme.Colors.Panel
+							end),
+							BackgroundTransparency = 0.2,
+							Text = scope:Computed(function(use): string
+								local star = if AreaAdvice.isRecommended(area, use(level) or 1) then "★ " else ""
+								return `      {star}{Text.get(use, area.nameKey)} · {area.lv[1]}–{area.lv[2]}`
+							end),
+							FontFace = Theme.Fonts.Body,
+							TextSize = 13,
+							TextColor3 = scope:Computed(function(use): Color3
+								return Color3.fromHex(LevelBand.COLORS[AreaAdvice.bandOf(area, use(level) or 1)])
+							end),
+							TextXAlignment = Enum.TextXAlignment.Left,
+							TextTruncate = Enum.TextTruncate.AtEnd,
+							[OnEvent("Activated")] = function()
+								focusArea(area)
+							end,
+							[Children] = scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
+						})
+					)
+				end
 			end
 		end
 	end
@@ -466,6 +571,8 @@ local function WorldMapWindow(scope: Scope): Fusion.Child
 		current.canvas.Position = UDim2.fromOffset(size.X / 2 - c.X * zoom, size.Y / 2 - c.Y * zoom)
 	end
 
+	local myPixel: () -> Vector2?
+
 	local function show(id: string)
 		if current then
 			current.canvas.Parent = nil
@@ -477,11 +584,25 @@ local function WorldMapWindow(scope: Scope): Fusion.Child
 		if not current then
 			return
 		end
-		refresh(current, Fusion.peek(level) or 1)
+		-- S22: open on the player (their own map) with the recommended area outlined.
+		local playerLevel = Fusion.peek(level) or 1
+		local best = if Areas.byMap[id] then AreaAdvice.best(playerLevel, id) else nil
+		highlight:set(if best then best.id else nil)
+		refresh(
+			current,
+			playerLevel,
+			{ onlyRecommended = Fusion.peek(onlyRecommended), highlight = Fusion.peek(highlight) }
+		)
 		uiScale.Parent = current.canvas
 		dynamic.Parent = current.canvas
 		current.canvas.Parent = holder
 		center:set(Vector2.new(current.canvas.Size.X.Offset / 2, current.canvas.Size.Y.Offset / 2))
+		if id == Fusion.peek(mapId) then
+			local me = myPixel()
+			if me then
+				center:set(me)
+			end
+		end
 		applyToggles()
 		place()
 	end
@@ -511,6 +632,12 @@ local function WorldMapWindow(scope: Scope): Fusion.Child
 					card:set(areaCard(entry.area, id))
 				end)
 			)
+			table.insert(
+				connections,
+				frame.MouseLeave:Connect(function()
+					card:set(nil)
+				end)
+			)
 		end
 	end
 	table.insert(scope, function()
@@ -531,19 +658,33 @@ local function WorldMapWindow(scope: Scope): Fusion.Child
 	for _, toggle in toggles do
 		scope:Observer(toggle):onChange(applyToggles)
 	end
-	scope:Observer(level):onChange(function()
+	local function refreshView()
 		if current then
-			refresh(current, Fusion.peek(level) or 1)
+			refresh(
+				current,
+				Fusion.peek(level) or 1,
+				{ onlyRecommended = Fusion.peek(onlyRecommended), highlight = Fusion.peek(highlight) }
+			)
 		end
-	end)
-	scope:Observer(Text.Lang):onChange(function()
-		if current then
-			refresh(current, Fusion.peek(level) or 1)
+	end
+	scope:Observer(level):onChange(refreshView)
+	scope:Observer(Text.Lang):onChange(refreshView)
+	scope:Observer(onlyRecommended):onChange(refreshView)
+	scope:Observer(highlight):onChange(refreshView)
+	-- Area rows in the list: zoom in on the area and outline it.
+	focusArea = function(area: Areas.Area)
+		if not current then
+			return
 		end
-	end)
+		local cx, cz = AreaAdvice.centre(area)
+		highlight:set(area.id)
+		zoomIndex:set(math.max(Fusion.peek(zoomIndex), 2))
+		center:set(MapSketch.toPixel(current.sketch, current.scale, cx, cz))
+		card:set(areaCard(area, Fusion.peek(selected)))
+	end
 	table.insert(scope, view:GetPropertyChangedSignal("AbsoluteSize"):Connect(place))
 
-	local function myPixel(): Vector2?
+	function myPixel(): Vector2?
 		local map = Maps.get(Fusion.peek(selected))
 		local character = Players.LocalPlayer.Character
 		local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
@@ -730,6 +871,102 @@ local function WorldMapWindow(scope: Scope): Fusion.Child
 			},
 		}),
 		view,
+		-- Band legend (S22, top left of the view)
+		scope:New("Frame")({
+			Name = "Bands",
+			Position = UDim2.fromOffset(LIST_WIDTH + 22, 10),
+			Size = UDim2.fromOffset(196, 0),
+			AutomaticSize = Enum.AutomaticSize.Y,
+			BackgroundColor3 = Theme.Colors.Panel,
+			BackgroundTransparency = 0.12,
+			ZIndex = 20,
+			Visible = scope:Computed(function(use): boolean
+				return Areas.byMap[use(selected)] ~= nil
+			end),
+			[Children] = {
+				scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
+				scope:New("UIStroke")({ Color = Theme.Colors.GoldDim }),
+				scope:New("UIPadding")({
+					PaddingTop = UDim.new(0, 6),
+					PaddingBottom = UDim.new(0, 6),
+					PaddingLeft = UDim.new(0, 8),
+					PaddingRight = UDim.new(0, 8),
+				}),
+				scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 3) }),
+				scope:New("TextLabel")({
+					LayoutOrder = 0,
+					Size = UDim2.new(1, 0, 0, 18),
+					BackgroundTransparency = 1,
+					Text = scope:Computed(function(use): string
+						return Text.get(use, "worldmap.yourLevel", { level = use(level) or 1 })
+					end),
+					FontFace = Theme.Fonts.BodyBold,
+					TextSize = 14,
+					TextColor3 = Theme.Colors.GoldBright,
+					TextXAlignment = Enum.TextXAlignment.Left,
+					ZIndex = 21,
+				}),
+				(function(): { Instance }
+					local rows = {}
+					for i, band in { "grey", "green", "white", "yellow", "red" } do
+						table.insert(
+							rows,
+							scope:New("Frame")({
+								LayoutOrder = i,
+								Size = UDim2.new(1, 0, 0, 16),
+								BackgroundTransparency = 1,
+								ZIndex = 21,
+								[Children] = {
+									scope:New("Frame")({
+										AnchorPoint = Vector2.new(0, 0.5),
+										Position = UDim2.fromScale(0, 0.5),
+										Size = UDim2.fromOffset(12, 12),
+										BackgroundColor3 = Color3.fromHex((LevelBand.COLORS :: any)[band]),
+										ZIndex = 22,
+										[Children] = scope:New("UICorner")({ CornerRadius = UDim.new(0, 3) }),
+									}),
+									scope:New("TextLabel")({
+										Position = UDim2.fromOffset(18, 0),
+										Size = UDim2.new(1, -18, 1, 0),
+										BackgroundTransparency = 1,
+										Text = Text.T(scope, `worldmap.band.{band}`),
+										FontFace = Theme.Fonts.Body,
+										TextSize = 12,
+										TextColor3 = Theme.Colors.Text,
+										TextXAlignment = Enum.TextXAlignment.Left,
+										TextTruncate = Enum.TextTruncate.AtEnd,
+										ZIndex = 22,
+									}),
+								},
+							})
+						)
+					end
+					return rows
+				end)() :: any,
+				scope:New("TextButton")({
+					LayoutOrder = 9,
+					Size = UDim2.new(1, 0, 0, 28),
+					AutoButtonColor = false,
+					BackgroundColor3 = scope:Computed(function(use): Color3
+						return if use(onlyRecommended) then Theme.Colors.PanelHover else Theme.Colors.PanelRaised
+					end),
+					Text = scope:Computed(function(use): string
+						return `{if use(onlyRecommended) then "☑" else "☐"} {Text.get(
+							use,
+							"worldmap.onlyRecommended"
+						)}`
+					end),
+					FontFace = Theme.Fonts.BodyMedium,
+					TextSize = 13,
+					TextColor3 = Theme.Colors.Parchment,
+					ZIndex = 21,
+					[OnEvent("Activated")] = function()
+						onlyRecommended:set(not Fusion.peek(onlyRecommended))
+					end,
+					[Children] = scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
+				}),
+			},
+		}),
 		-- Monster card (top right of the view)
 		scope:New("Frame")({
 			Name = "Card",

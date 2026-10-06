@@ -79,10 +79,11 @@ local function isMonster(model: Model): boolean
 	return model:GetAttribute("MonsterId") ~= nil
 end
 
--- Monsters always; other players only while they are open to attacks (PvP on or a red zone).
+-- Monsters always (S22: also those going home, they can be hit and turn back); other players only while they
+-- are open to attacks (PvP on or a red zone).
 local function isHostile(model: Model): boolean
 	if isMonster(model) then
-		return model:GetAttribute("Returning") ~= true
+		return true
 	end
 	return model:GetAttribute("PvpEnabled") == true or model:GetAttribute("PvpZone") == "red"
 end

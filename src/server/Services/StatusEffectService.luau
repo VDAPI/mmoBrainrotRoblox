@@ -110,8 +110,11 @@ function StatusEffectService.Apply(entity: any, kind: string, options: ApplyOpti
 	if entity.kind == "monster" and entity.monster and not entity.monster:IsAlive() then
 		return
 	end
-	-- Invulnerable targets ignore debuffs.
-	if DEBUFFS[kind] and StatusEffectService.Has(entity, "invuln") then
+	-- Invulnerable (or freshly respawned, S22) targets ignore debuffs.
+	if
+		DEBUFFS[kind]
+		and (StatusEffectService.Has(entity, "invuln") or StatusEffectService.Has(entity, "respawnShield"))
+	then
 		return
 	end
 	local duration = options.duration
@@ -270,6 +273,33 @@ function StatusEffectService.PlayerHas(player: Player, kind: string): boolean
 	return entity ~= nil and StatusEffectService.Has(entity, kind)
 end
 
+-- Respawn protection (S22, DESIGN §3.4): no damage, no debuffs, monsters ignore the player, no PvP against
+-- them. Any attack of the player ends it (BreakRespawnShield).
+function StatusEffectService.ApplyRespawnShield(player: Player, seconds: number?)
+	local entity = playerEntity(player)
+	if entity then
+		StatusEffectService.Apply(entity, "respawnShield", { duration = seconds or Config.RespawnShieldSeconds })
+	end
+end
+
+-- Ends the respawn protection: the player attacked (basic attack, offensive skill, PvP). True when it had one.
+function StatusEffectService.BreakRespawnShield(player: Player): boolean
+	local entity = playerEntity(player)
+	if entity and StatusEffectService.Has(entity, "respawnShield") then
+		StatusEffectService.Remove(entity, "respawnShield")
+		return true
+	end
+	return false
+end
+
+-- Death clears harmful effects (DoTs, slows, ...); buffs from blessings and skills stay (S22).
+function StatusEffectService.CleanseOnDeath(player: Player)
+	local entity = playerEntity(player)
+	if entity then
+		StatusEffectService.Cleanse(entity)
+	end
+end
+
 -- StatService modifier source: active stat buffs on a player.
 type Source = { key: string, flat: { [string]: number }?, pct: { [string]: number }? }
 
@@ -299,7 +329,7 @@ local function damageFilter(player: Player, amount: number, _source: string): nu
 	if not entity then
 		return amount
 	end
-	if StatusEffectService.Has(entity, "invuln") then
+	if StatusEffectService.Has(entity, "invuln") or StatusEffectService.Has(entity, "respawnShield") then
 		return 0
 	end
 	local reduction = StatusEffectService.Max(entity, "damageReduction")

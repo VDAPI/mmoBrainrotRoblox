@@ -53,6 +53,7 @@ local data: Types.MapAreas = {
 			kinds = { "werewolf", "blackBear" },
 			rect = { -760, -400, -420, 400 },
 			groups = 8,
+			arrive = { x = -682, z = 7 }, -- S22: portal / map stone arrival (Logic/AreaArrival)
 		},
 		{
 			id = "duskwood_bearhollow",
@@ -61,6 +62,7 @@ local data: Types.MapAreas = {
 			kinds = { "blackBear", "werewolf" },
 			rect = { -760, 420, -300, 780 },
 			groups = 6,
+			arrive = { x = -528, z = 596 }, -- S22: portal / map stone arrival (Logic/AreaArrival)
 		},
 		{
 			id = "duskwood_ruins",
@@ -69,6 +71,7 @@ local data: Types.MapAreas = {
 			kinds = { "forestWraith", "ghoul" },
 			rect = { -400, -780, 60, -150 },
 			groups = 7,
+			arrive = { x = 48, z = -448 }, -- S22: portal / map stone arrival (Logic/AreaArrival)
 			landmark = { x = -80, z = -380 },
 		},
 		{
@@ -78,6 +81,7 @@ local data: Types.MapAreas = {
 			kinds = { "rotEnt", "ghoul" },
 			rect = { -250, 150, 300, 780 },
 			groups = 7,
+			arrive = { x = 121, z = 166 }, -- S22: portal / map stone arrival (Logic/AreaArrival)
 			landmark = { x = 160, z = 300 },
 		},
 		{
@@ -87,6 +91,7 @@ local data: Types.MapAreas = {
 			kinds = { "darkCultist", "bogSerpent" },
 			rect = { 300, -780, 780, -300 },
 			groups = 7,
+			arrive = { x = 448, z = -315 }, -- S22: portal / map stone arrival (Logic/AreaArrival)
 			landmark = { x = 560, z = -560 },
 		},
 		{
@@ -96,6 +101,7 @@ local data: Types.MapAreas = {
 			kinds = { "bogSerpent", "darkCultist", "forestWraith" },
 			rect = { 80, -300, 500, -80 },
 			groups = 5,
+			arrive = { x = 437, z = -283 }, -- S22: portal / map stone arrival (Logic/AreaArrival)
 		},
 		{
 			id = "duskwood_swamp",
@@ -104,6 +110,7 @@ local data: Types.MapAreas = {
 			kinds = { "swampTroll", "bogSerpent", "marshWitch" },
 			rect = { 300, 180, 780, 780 },
 			groups = 7,
+			arrive = { x = 316, z = 391 }, -- S22: portal / map stone arrival (Logic/AreaArrival)
 		},
 		{
 			id = "duskwood_witchmarsh",
@@ -112,6 +119,7 @@ local data: Types.MapAreas = {
 			kinds = { "marshWitch", "swampTroll" },
 			rect = { -200, 30, 300, 140 },
 			groups = 4,
+			arrive = { x = 111, z = 123 }, -- S22: portal / map stone arrival (Logic/AreaArrival)
 		},
 		{
 			id = "duskwood_bloodcliffs",
@@ -120,6 +128,7 @@ local data: Types.MapAreas = {
 			kinds = { "bloodBat", "marshWitch" },
 			rect = { 520, -300, 780, 160 },
 			groups = 6,
+			arrive = { x = 536, z = -5 }, -- S22: portal / map stone arrival (Logic/AreaArrival)
 		},
 	},
 }

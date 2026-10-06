@@ -97,7 +97,8 @@ local function refreshTarget()
 	local quests = State.Get({ "character", "quests" })
 	local main = if type(quests) == "table" then quests.main else nil
 	local quest = if type(main) == "table" then Quests.Main.get(main.id) else nil
-	QuestTrack.Target:set(if quest and main then QuestText.target(quest, main.progress or {}) else nil)
+	local level = State.Get({ "character", "level" }) or 1
+	QuestTrack.Target:set(if quest and main then QuestText.target(quest, main.progress or {}, level) else nil)
 end
 
 function QuestController.Init(registry)
@@ -139,7 +140,10 @@ function QuestController.Start()
 		refreshMarkers()
 		refreshTarget()
 	end)
-	scope:Observer(State.Value({ "character", "level" })):onChange(refreshMarkers)
+	scope:Observer(State.Value({ "character", "level" })):onChange(function()
+		refreshMarkers()
+		refreshTarget()
+	end)
 	refreshTarget()
 	-- NPC models stream in and out: refresh the markers regularly.
 	task.spawn(function()

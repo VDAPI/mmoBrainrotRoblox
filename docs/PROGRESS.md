@@ -28,6 +28,7 @@
 | S19 | Poprawki po testach (2/2): grupy potworów, jaskinie, nowe potwory | ● |
 | S20 | Szczegółowa mapa z obszarami potworów, bogatszy świat, wygoda łupu | ● |
 | S21 | Nowe miasto startowe (teren, budynki z generatora, detal na kliencie, życie miasta, dzień i noc) | ● |
+| S22 | Animacje ataku, smycz bez leczenia, śmierć z wyborem miejsca, wybór expowiska przy portalu, czytelna mapa | ● |
 
 Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana przez właściciela
 
@@ -478,6 +479,35 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
   każdym zoomie.
 - **S21** Usunięte martwe prefaby starego miasta (`wall`, `gate`, `forge`, `temple`, `stall`, `fountain`, `arena`).
 
+- **S22** Smycz: liczby w `Data/Combat` (70 / 150 st., łaska 5 s, utknięcie 5 s, powrót ×1,25, 12 s do teleportu,
+  regeneracja 8%/s po 4 s). Grupa dzieli czas ostatniego trafienia (`groupLastHit`), więc dociągnięty członek grupy
+  nie wraca, dopóki gracz bije któregokolwiek z grupy. Elity II działają jak zwykłe potwory (nowa smycz i
+  regeneracja); **bossowie bez zmian** (smycz 400, powrót z pełnym HP i nietykalnością). Rekord obrażeń (`damageBy`)
+  czyści się dopiero, gdy potwór zregeneruje się do pełna.
+- **S22** Utknięcie = potwór w pościgu nie przesunął się o 1,5 st. i nie atakował przez 5 s (nie liczy się odległość do
+  celu, żeby uciekający łucznik nie „wygrywał” utknięciem).
+- **S22** Śmierć: po odliczaniu okno wyboru, brak wyboru przez 60 s = miasto. Odrodzenie: 1 HP, pełna mana i energia,
+  ochrona 10 s (`respawnShield`: filtr obrażeń, brak debuffów, potwory ignorują, brak PvP także w pojedynku). Ochronę
+  zdejmuje każde `CombatService.DealDamage` gracza (atak podstawowy, umiejętności, riposta) i rzucenie umiejętności
+  ofensywnej (nawet bez trafienia). Wskrzeszenie kapłana: HP z `hpPct` przez `ResourceService.SetHp` + ta sama ochrona.
+  „Tutaj” w wodzie lub w ścianie szuka wolnego miejsca w promieniu 20 st. (pierścienie co 5 st.), w lochu = przed
+  wejściem. Zakup Robux po końcu odliczania i tak jest przyznawany (nie ponawia się w nieskończoność).
+- **S22** Liczby obrażeń graczy to wartość po filtrach (`ResourceService.Damage` zwraca też ją); cios w pełni
+  zatrzymany przez tarczę nie pokazuje liczby.
+- **S22** Punkty przybycia obszarów są zapisane w `Data/Areas` (wygenerowane przez `Logic/AreaArrival`, test pilnuje
+  zgodności z generatorem). W obszarze ze spawnem mapy punkt leży ok. 20 st. od spawnu (obok, nie na nim).
+- **S22** Portal do mapy regionu zawsze otwiera okno „Dokąd?” (także powroty między regionami); bez wyboru serwer
+  stawia na najniższym obszarze. Wyjątki: wyjścia z jaskiń (`*_exit`) i portale do miasta (brama miasta).
+- **S22** Kolor obszaru = pasmo najbliższego końca przedziału poziomów (w przedziale: biały), a nie środka przedziału;
+  „Polecane” = poziom w [min − 1, max]; mapa podświetla jeden „najlepszy” obszar (`AreaAdvice.best`).
+- **S22** Jedna nazwa miejsca: na mapach z obszarami baner strefy i minimapa pokazują nazwę mapy (strefy PvP zostają
+  jako wolumeny i kolor), nazwę miejsca daje baner obszaru.
+- **S22** Animacje ataku: kąty w `Data/AttackMotions` (kolejność YXZ: pochylenie, uniesienie, obrót uniesionej
+  kończyny), `Transform` pisany w `PreSimulation` na wartość z Animatora z wagą (nogi chodzą dalej, ręce należą do
+  ataku); ochrona przed kumulacją, gdy Animator nie nadpisze stawu. Postaci dalej niż `Config.EffectRadius` od kamery
+  nie są animowane. Smuga broni między punktami `VaelthornGrip`/`VaelthornTip` (dodaje je serwer przy broni), w
+  kolorze rzadkości. Bez broni zostaje dawny biały pasek. Umiejętności zostają przy starych pozach (C0).
+
 ## Niedokończone
 (Rzeczy z zakresu sesji, które nie zostały zrobione. Następna sesja zaczyna od nich.)
 
@@ -508,6 +538,8 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
 - **S21** Miasto niesprawdzone w Studio: czas `WriteVoxels` całego terenu (225 bloków) i budowy shellu w `Init`, płynność
   detalu klienta na telefonie (`/perf`), kadr kamery wyboru postaci.
 - **S21** Nocą świecą okna, latarnie i ogień, ale nie ma zmiany muzyki ani dźwięków nocy.
+- **S22** Pozy ataku (kąty) dobrane bez podglądu w Studio; do dostrojenia po teście (`/anim <typ>`). Umiejętności
+  (`Cast`) i strzały z umiejętności łowcy nie korzystają jeszcze z nowego systemu póz i nie startują z łuku.
 - **S20** Ustawienia streamingu i liczba części na mapę niesprawdzone w Studio (log `[WorldBuilder] built …` i `/perf`).
 
 ## Zgłoszone błędy
@@ -663,7 +695,8 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
    nad wilkiem białe liczby, żółte „123!” przy krytyku, „Unik” przy uniku. Wojownik: biały zamach; Łowca: strzały; Mag: pociski.
 5. Ruch klawiszami w trakcie podchodzenia przerywa auto-podejście. **Tab** wybiera najbliższy cel przed kamerą, **Esc** czyści cel.
 6. Zabij wilka: zanika, nad Tobą „+EXP · +złoto”, pasek EXP rośnie, złoto w danych (okno Postaci / `/target info` przed zabiciem).
-7. Uciekaj od wilka na >45 st. od jego spawnu: zawraca, ma pełne HP i jest nietykalny w drodze (liczby 0 nie lecą).
+7. Uciekaj od wilka daleko od jego grupy: zawraca do domu (od S22: smycz 70/150 st., powrót bez leczenia i bez
+   nietykalności, leczy się stopniowo dopiero w domu; zob. Instrukcja testu S22).
 8. Wbiegnij z wilkiem na ogonie do miasta (zielona strefa): wilk nie wchodzi, przestaje atakować.
 9. `/dmg 99999` → jeden cios zabija; `/dmg off` wyłącza.
 10. W menu (☰) przełącz „Liczby obrażeń” → liczby znikają; włącz z powrotem.
@@ -1633,3 +1666,75 @@ punkty charakterystyczne, drogowskazy, latarnie), layouty 4 regionów; klient: `
 17. `/rebuild city`: miasto buduje się od nowa (teren i budynki), portale działają.
 18. Wyloguj się w środku miasta i wejdź ponownie: stoisz w tym miejscu; postać zapisana w starym mieście trafia na spawn.
 19. Na trawie w ogrodach i za murami rośnie drobna trawa i kwiaty, na brukach nie.
+
+### S22: Animacje ataku, smycz, śmierć z wyborem, wybór expowiska, czytelna mapa
+
+**Zrobione**
+- Potwory nie uciekają z pełnym HP: miękka smycz (70 st. i 5 s bez trafienia), twarda (150 st.), utknięcie, powrót bez
+  leczenia i nietykalności (trafiony w drodze zawraca), regeneracja dopiero w domu (8%/s po 4 s). Wracający potwór jest
+  zwykłym celem, tabliczka „↩” przygaszona. Bossowie bez zmian.
+- Śmierć: po odliczaniu wybór „[1] Odródź w mieście” / „[2] Odródź tutaj” (w lochu: przed wejściem), 60 s na wybór,
+  potem miasto. Wstaje się z 1 HP i 10 s ochrony (złota poświata, ikona efektu); pierwszy atak ją zdejmuje. Śmierć
+  czyści szkodliwe efekty. Liczby obrażeń zatrzymanych przez ochronę się nie pokazują.
+- Portal na mapę regionu i Kamień mapy: okno „Dokąd?” z expowiskami (poziomy w kolorze pasma, rodzaje potworów,
+  „★ Polecane”, kłódka „od poz. X”), domyślnie najniższe, Enter/„Ruszaj”. Każdy obszar ma punkt przybycia przy
+  drodze, z dala od grup potworów.
+- Mapa (M): obszary mocniej wypełnione, ciemniejszy obrys, przerwy między obszarami, pigułka z nazwą i dużym „9–14”,
+  legenda pasm z „Twój poziom” i „Pokaż tylko polecane”, lista map w kolorach pasm z rozwijaną listą obszarów (klik =
+  przybliżenie), otwiera się na graczu z obrysowanym polecanym obszarem, karta znika po zjechaniu myszą. Minimapa
+  odświeża kolory po awansie, ma poziomy przy największym zoomie i nazwę obszaru w kolorze pasma. Gwiazdka questa
+  „zabij/zbierz” wskazuje expowisko (a elity: jaskinię).
+- Animacje ataku: cięcie ze smugą, cięcie oburącz, pchnięcie, młot z pyłem, łuk w lewej ręce naciągany prawą (strzała
+  z łuku po paraboli, zostaje w celu), kusza (bełt), różdżka/kostur (pocisk z czubka w kolorze żywiołu, iskra w
+  czasie zamachu), pięść; błysk i liczba w chwili ciosu/dolotu; trafiona postać się odchyla; pula pocisków i limit
+  20 `Highlight`.
+- Admin: `/leash`, `/die`, `/shield [s]`, `/portalpick <mapId>`, `/arrive <mapId> <areaId>`, `/anim <typ>|off`.
+- Testy: `leash.spec`, `respawn.spec`, `areaarrival.spec` (punkty przybycia, AreaAdvice dla poziomów 1–100, cele
+  questów), `attackpose.spec` (ciągłość, spoczynek, ręka łuku i kuszy, wszystkie bronie mają ruch).
+
+**Pliki**: nowe `Logic/Leash`, `Logic/Respawn`, `Logic/AreaArrival`, `Logic/AreaAdvice`, `Logic/AttackPose`,
+`Data/AttackMotions`, `UI/Screens/AreaPicker`, testy jw.; zmiany: `Data/Combat`, `Data/Areas/*` (`arrive`), `Config`,
+`Types`, `Net/Definitions`, `Entities/Monster`, `MonsterService`, `DeathService`, `ResourceService`,
+`StatusEffectService`, `CombatService`, `SkillService`, `PvpService`, `TravelService`, `EquipmentService`,
+`AdminService`; klient `AnimationController`, `CombatFxController`, `EffectsController`, `WorldController`,
+`GatherController`, `QuestController`, `TargetController`, `MonsterPlateController`, `DeathScreen`, `StonePicker`,
+`WorldMapWindow`, `Hud/Minimap`, `Hud/ZoneBanner`, `Hud/EffectIcons`, `AreaState`, `QuestText`; lokalizacja;
+`DESIGN.md` §24.
+
+#### Instrukcja testu S22
+
+1. `/lvl 5`, Łąki: zaatakuj wilka łukiem lub różdżką i cofaj się (WASD przerywa auto-atak, potem klikaj dalej): wilk
+   goni i walczy, póki go trafiasz, także daleko od grupy. `/leash` przy zaznaczonym potworze: stan, odległość, sekundy
+   od trafienia, HP.
+2. Przestań bić i odejdź > 70 st.: po ~5 s wilk wraca (tabliczka „↩”), **z tym HP, które miał**. Trafiony w drodze
+   zawraca. Ucieknij > 150 st.: wraca zawsze.
+3. W domu po ~4 s HP rośnie stopniowo (ok. 12 s do pełna). `/leash` pokazuje rosnące HP.
+4. Boss (`/tp boss grimrok`): zachowuje się jak dawniej.
+5. `/die`: ekran śmierci z odliczaniem, potem „[1] Odródź w mieście” i „[2] Odródź tutaj”. Klawisz 2: wstajesz w miejscu
+   śmierci z 1 HP, złotą poświatą i ikoną ochrony.
+6. W ochronie potwory cię ignorują (stań przy grupie), nie dostajesz obrażeń; pierwszy atak lub umiejętność ofensywna
+   zdejmuje poświatę. Leczenie i buffy jej nie zdejmują. `/shield 30` nakłada ją ponownie.
+7. `/die` i nie wybieraj nic przez 60 s: lądujesz w mieście. `/die` w wodzie (jezioro na Łąkach): „tutaj” stawia na
+   brzegu. Śmierć w lochu: „[2] Odródź przed wejściem do lochu”.
+8. „Odródź natychmiast” za Smoczą Walutę pomija odliczanie i od razu pokazuje wybór.
+9. Dwóch graczy (Test → 2 klientów), PvP: gracz z ochroną nie może być zaatakowany („ma ochronę po odrodzeniu”).
+10. Miasto → brama wschodnia: okno „Dokąd?” z expowiskami Łąk; najniższe zaznaczone, wyższe z kłódką „od poz. X”.
+    „Ruszaj”: lądujesz przy drodze w tym obszarze. `/lvl 12` i znów: odblokowane do 12, „★ Polecane” przy 11–14.
+11. Kamień mapy: po wyborze mapy regionu to samo okno. `/portalpick ashen` i `/arrive meadows meadows_banditroad`.
+12. Wyjście z jaskini i portal do miasta działają jak dawniej (bez okna).
+13. M na Łąkach przy poz. 1: obszary w kilku kolorach (biały, żółty, czerwony), duże „1–4” na pigułkach, legenda
+    w lewym górnym rogu, mapa wyśrodkowana na tobie, polecany obszar w złotej ramce. „Pokaż tylko polecane” przygasza
+    resztę. Zjechanie myszą z obszaru chowa kartę.
+14. Lista map: Łąki z poziomami w kolorze pasma; pod zaznaczoną mapą lista obszarów, klik przybliża i obrysowuje obszar.
+15. `/lvl 15`: minimapa od razu zmienia kolory; przy największym zoomie minimapy widać poziomy obszarów; nazwa obszaru
+    pod minimapą w kolorze pasma. Baner strefy na Łąkach pokazuje nazwę mapy, bez dawnych pod-nazw.
+16. Quest „zabij wilki”: gwiazdka na mapie i minimapie wskazuje środek obszaru z wilkami.
+17. Wojownik z mieczem: zamach znad barku, cięcie ze smugą w kolorze rzadkości, liczba w chwili cięcia. Topór
+    dwuręczny: cięcie oburącz; młot: uderzenie z góry z pyłem; włócznia: pchnięcie.
+18. Łowca z łukiem: lewa ręka z łukiem w stronę celu, prawa naciąga do policzka, strzała wylatuje z łuku po łuku i na
+    chwilę zostaje w celu. Kusza: podniesiona do ramienia, bełt po prostej.
+19. Mag z różdżką/kosturem: iskra na czubku w czasie zamachu, pocisk w kolorze żywiołu broni z czubka. Kapłan:
+    zamach i jasny rozbłysk na celu.
+20. Atakuj w biegu: nogi chodzą, ręce atakują, bez szarpnięć. `/anim sword1h`, `/anim bow`, `/anim staff`,
+    `/anim unarmed`, `/anim off`: podgląd na sobie co 1 s.
+21. Jakość efektów „niska”: bez smug i strzał zostających w celu, animacje dalej działają.

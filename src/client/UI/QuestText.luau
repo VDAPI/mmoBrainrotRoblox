@@ -4,6 +4,7 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local AreaAdvice = require(ReplicatedStorage.Shared.Logic.AreaAdvice)
 local Bosses = require(ReplicatedStorage.Shared.Data.Bosses)
 local GatherNodes = require(ReplicatedStorage.Shared.Data.GatherNodes)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
@@ -77,8 +78,10 @@ end
 
 export type Target = { map: string, x: number?, z: number?, npc: string? }
 
--- Where the first unfinished objective of a quest points (NPC, map) or the turn-in NPC when done.
-function QuestText.target(quest: Quests.MainQuest, progress: { number }): Target?
+-- Where the first unfinished objective of a quest points (NPC, map) or the turn-in NPC when done. S22: kill and
+-- collect objectives point at the middle of the area with that monster at the player's level (or the lowest
+-- such area); elite kills at the mouth of the cave with that elite.
+function QuestText.target(quest: Quests.MainQuest, progress: { number }, level: number?): Target?
 	if QuestLogic.isComplete(progress, quest.objectives) then
 		local npc = Npcs.get(quest.turnIn)
 		return if npc then { map = npc.map, x = npc.position.x, z = npc.position.z, npc = npc.id } else nil
@@ -90,6 +93,22 @@ function QuestText.target(quest: Quests.MainQuest, progress: { number }): Target
 				return if npc then { map = npc.map, x = npc.position.x, z = npc.position.z, npc = npc.id } else nil
 			elseif objective.type == "reach" and objective.map then
 				return { map = objective.map, x = objective.x, z = objective.z }
+			elseif (objective.type == "kill" or objective.type == "collect") and objective.monster then
+				if objective.variant == "elite" or objective.variant == "elite2" then
+					local cave, mouth = AreaAdvice.caveFor(objective.monster)
+					if cave and mouth then
+						return { map = cave.region, x = mouth.x, z = mouth.z }
+					end
+				end
+				local area, mapId = AreaAdvice.forKind(objective.monster, level or 1)
+				if area and mapId then
+					local x, z = AreaAdvice.centre(area)
+					return { map = mapId, x = x, z = z }
+				end
+				local cave, mouth = AreaAdvice.caveFor(objective.monster)
+				if cave and mouth then
+					return { map = cave.region, x = mouth.x, z = mouth.z }
+				end
 			elseif objective.type == "boss" and objective.boss then
 				local boss = Bosses.get(objective.boss)
 				for _, map in Maps.byId do

@@ -75,6 +75,7 @@ local AdminService = {
 		"MailService",
 		"AuctionService",
 		"CosmeticService",
+		"StatusEffectService",
 	},
 }
 
@@ -108,6 +109,7 @@ local GuildService: any
 local MailService: any
 local AuctionService: any
 local CosmeticService: any
+local StatusEffectService: any
 
 type Command = {
 	usageKey: string,
@@ -1644,6 +1646,111 @@ COMMANDS.daytime = {
 	end,
 }
 
+-- S22 -------------------------------------------------------------------------------------------------
+
+COMMANDS.die = {
+	usageKey = "admin.usage.die",
+	run = function(player)
+		withCharacter(player, function()
+			-- DeathService.Kill removes the respawn protection first.
+			DeathService.Kill(player)
+		end)
+	end,
+}
+
+COMMANDS.shield = {
+	usageKey = "admin.usage.shield",
+	run = function(player, args)
+		local seconds = math.clamp(tonumber(args[1]) or Config.RespawnShieldSeconds, 1, 600)
+		withCharacter(player, function()
+			StatusEffectService.ApplyRespawnShield(player, seconds)
+			reply(player, "admin.shield.ok", { seconds = seconds })
+		end)
+	end,
+}
+
+COMMANDS.leash = {
+	usageKey = "admin.usage.leash",
+	run = function(player)
+		local target = CombatService.GetTarget(player)
+		local monster = target and target.kind == "monster" and target.monster
+		if not monster then
+			reply(player, "admin.kill.noTarget")
+			return
+		end
+		local home = monster.home or monster.spawnCFrame.Position
+		local offset = monster.root.Position - home
+		local since = os.clock() - monster.lastHit
+		reply(player, "admin.leash.info", {
+			state = monster.state,
+			distance = math.floor(Vector3.new(offset.X, 0, offset.Z).Magnitude),
+			since = if monster.lastHit > 0 then string.format("%.1f", since) else "-",
+			hp = math.ceil(monster.hp),
+			max = monster.stats.maxHp,
+			boss = tostring(monster.isBoss == true),
+		})
+	end,
+}
+
+COMMANDS.portalpick = {
+	usageKey = "admin.usage.portalpick",
+	run = function(player, args)
+		local mapId = args[1]
+		if not mapId or not Areas.byMap[mapId] then
+			reply(player, "admin.usage.portalpick")
+			return
+		end
+		Net.Fire(player, "AdminClient", "portalpick", mapId)
+	end,
+}
+
+-- Teleports to an area's arrival point (the same place a portal brings you to), honouring the level lock.
+local function travelArea(player: Player, mapId: string, areaId: string): (boolean, string?)
+	if not AdminService.IsAdmin(player) then
+		return false, "admin.denied"
+	end
+	if not WorldService.IsBuilt(mapId) or not PlayerStateService.GetCharacter(player) then
+		return false, "portal.closed"
+	end
+	local at, err = TravelService.AreaArrival(player, mapId, areaId)
+	if err then
+		return false, err
+	end
+	if not at then
+		return false, "error.badRequest"
+	end
+	task.spawn(TravelService.TeleportToMap, player, mapId, at)
+	return true, nil
+end
+
+COMMANDS.arrive = {
+	usageKey = "admin.usage.arrive",
+	run = function(player, args)
+		local mapId, areaId = args[1], args[2]
+		if not mapId or not areaId then
+			reply(player, "admin.usage.arrive")
+			return
+		end
+		withCharacter(player, function()
+			local ok, err = travelArea(player, mapId, areaId)
+			reply(player, if ok then "admin.tp.map" else (err or "admin.usage.arrive"), { map = mapId })
+		end)
+	end,
+}
+
+COMMANDS.anim = {
+	usageKey = "admin.usage.anim",
+	run = function(player, args)
+		local kind = args[1]
+		if not kind then
+			reply(player, "admin.usage.anim")
+			return
+		end
+		Net.Fire(player, "AdminClient", "anim", kind)
+		reply(player, "admin.anim.ok", { kind = kind })
+	end,
+}
+
 local function onCommand(name: string, textSource: TextSource, message: string)
 	local player = Players:GetPlayerByUserId(textSource.UserId)
 	if not player then
@@ -1699,6 +1806,7 @@ function AdminService.Init(registry)
 	MailService = registry.Get("MailService")
 	AuctionService = registry.Get("AuctionService")
 	CosmeticService = registry.Get("CosmeticService")
+	StatusEffectService = registry.Get("StatusEffectService")
 end
 
 function AdminService.Start()
@@ -1714,6 +1822,7 @@ function AdminService.Start()
 		command.Parent = folder
 	end
 	folder.Parent = TextChatService
+	Net.Handle("AdminTravelArea", travelArea)
 
 	Players.PlayerRemoving:Connect(function(player)
 		wipeRequests[player] = nil

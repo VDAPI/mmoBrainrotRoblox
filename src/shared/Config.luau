@@ -57,6 +57,12 @@ local Config = {
 	RespawnPerLevel = 0.3,
 	FastRespawnMultiplier = 0.5, -- "Fast Return" gamepass
 	RespawnNowCost = 10, -- Dragon Shards
+	-- S22: after the countdown the player picks "city" or "here"; no pick in this many seconds = the city.
+	DeathChoiceTimeout = 60,
+	-- S22: respawn protection (1 HP, no damage, monsters ignore, no PvP; ends early on any attack).
+	RespawnShieldSeconds = 10,
+	-- S22: a blocked death spot (water, inside a wall) looks for a free spot this far around it.
+	RespawnSearchRadius = 20,
 
 	-- PvP toggle (DESIGN §3.3).
 	PvpToggleDelay = 10,

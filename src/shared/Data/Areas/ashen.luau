@@ -54,6 +54,7 @@ local data: Types.MapAreas = {
 			kinds = { "salamander", "wasteHyena" },
 			rect = { -760, -330, -420, 420 },
 			groups = 8,
+			arrive = { x = -680, z = 0 }, -- S22: portal / map stone arrival (Logic/AreaArrival)
 		},
 		{
 			id = "ashen_oasis",
@@ -62,6 +63,7 @@ local data: Types.MapAreas = {
 			kinds = { "wasteHyena", "ashVulture" },
 			rect = { -760, 440, -300, 780 },
 			groups = 6,
+			arrive = { x = -488, z = 632 }, -- S22: portal / map stone arrival (Logic/AreaArrival)
 			landmark = { x = -560, z = 600 },
 		},
 		{
@@ -71,6 +73,7 @@ local data: Types.MapAreas = {
 			kinds = { "ashOrc", "ashVulture" },
 			rect = { -460, -780, -20, -340 },
 			groups = 7,
+			arrive = { x = -207, z = -356 }, -- S22: portal / map stone arrival (Logic/AreaArrival)
 			landmark = { x = -260, z = -540 },
 		},
 		{
@@ -80,6 +83,7 @@ local data: Types.MapAreas = {
 			kinds = { "fireGolem", "fireImp" },
 			rect = { -260, -40, 330, 420 },
 			groups = 7,
+			arrive = { x = 324, z = 131 }, -- S22: portal / map stone arrival (Logic/AreaArrival)
 		},
 		{
 			id = "ashen_burntruins",
@@ -88,6 +92,7 @@ local data: Types.MapAreas = {
 			kinds = { "fireImp", "desertScorpion" },
 			rect = { -280, 440, 280, 780 },
 			groups = 6,
+			arrive = { x = 0, z = 608 }, -- S22: portal / map stone arrival (Logic/AreaArrival)
 			landmark = { x = 200, z = 640 },
 		},
 		{
@@ -97,6 +102,7 @@ local data: Types.MapAreas = {
 			kinds = { "desertScorpion", "desertMummy" },
 			rect = { 330, 300, 780, 780 },
 			groups = 7,
+			arrive = { x = 401, z = 316 }, -- S22: portal / map stone arrival (Logic/AreaArrival)
 		},
 		{
 			id = "ashen_crags",
@@ -105,6 +111,7 @@ local data: Types.MapAreas = {
 			kinds = { "wyvern", "basilisk" },
 			rect = { 300, -780, 780, -300 },
 			groups = 6,
+			arrive = { x = 592, z = -317 }, -- S22: portal / map stone arrival (Logic/AreaArrival)
 		},
 		{
 			id = "ashen_ashroad",
@@ -113,6 +120,7 @@ local data: Types.MapAreas = {
 			kinds = { "basilisk", "wyvern" },
 			rect = { 0, -300, 500, -80 },
 			groups = 4,
+			arrive = { x = 248, z = -188 }, -- S22: portal / map stone arrival (Logic/AreaArrival)
 		},
 		{
 			id = "ashen_tombs",
@@ -121,6 +129,7 @@ local data: Types.MapAreas = {
 			kinds = { "desertMummy", "basilisk" },
 			rect = { 340, 40, 780, 280 },
 			groups = 5,
+			arrive = { x = 346, z = 185 }, -- S22: portal / map stone arrival (Logic/AreaArrival)
 		},
 	},
 }

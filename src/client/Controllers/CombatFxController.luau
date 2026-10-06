@@ -2,7 +2,11 @@
 -- Draws the server's batched "CombatFx" events locally (ARCHITECTURE §7):
 --   dmg    : floating damage number (white, yellow "!" crit, red when we are hit, grey "Dodge") + hit flash
 --   heal   : green "+N"
---   atk    : swing (melee) or projectile (arrow / bolt) from attacker to target
+--   atk    : swing (melee) or projectile (arrow / bolt) from attacker to target; S22: players play the attack
+--            pose of their weapon (AnimationController.Attack) with a rarity-coloured trail on the blade, arrows
+--            fly from the bow on an arc and stick in the target, crossbow bolts fly straight, wand / staff bolts
+--            leave the tip in the weapon's element colour; the hit flash and the number of that attack wait for
+--            the blow / the arrival (at most 0.5 s), the server's damage itself is not delayed
 --   tele   : red ground telegraph that fills during the windup (circle / cone / line)
 --   reward : "+EXP · +gold" above our character
 -- Damage numbers can be turned off in the menu (settings.dmgNumbers); telegraphs and hits always show.
@@ -10,9 +14,12 @@
 local Debris = game:GetService("Debris")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
 
+local AttackPose = require(ReplicatedStorage.Shared.Logic.AttackPose)
+local Config = require(ReplicatedStorage.Shared.Config)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Sounds = require(script.Parent.Parent.UI.Sounds)
@@ -43,7 +50,13 @@ local ELEMENT_COLORS: { [string]: Color3 } = {
 local fxFolder: Folder
 local guiFolder: Folder
 local pool: { BillboardGui } = {}
-local flashes: { [Model]: Highlight } = {}
+-- Hit flashes: at most MAX_FLASHES Highlights (Roblox draws 31 at once); the least recently used is reused.
+local MAX_FLASHES = 20
+local flashes: { [Model]: any } = {}
+local flashCount = 0
+-- Seconds to hold back the next damage number / flash of an entity (its attack is still swinging / flying).
+local MAX_HIT_DELAY = 0.5
+local hitDelay: { [string]: number } = {}
 
 -- Entity lookup ---------------------------------------------------------------------------------------------
 
@@ -147,23 +160,56 @@ local function numbersEnabled(): boolean
 	return State.Get({ "account", "settings", "dmgNumbers" }) ~= false
 end
 
-local function flash(model: Model)
-	local highlight = flashes[model]
-	if not highlight then
+type Flash = { highlight: Highlight, used: number }
+
+local function flashEntry(model: Model): Flash
+	local existing = flashes[model]
+	if existing then
+		return existing
+	end
+	local entry: Flash? = nil
+	if flashCount >= MAX_FLASHES then
+		-- Reuse the least recently used Highlight instead of creating one more.
+		local oldest: Model? = nil
+		local oldestUsed = math.huge
+		for other, e in flashes do
+			if e.used < oldestUsed then
+				oldest, oldestUsed = other, e.used
+			end
+		end
+		if oldest then
+			entry = flashes[oldest]
+			flashes[oldest] = nil
+		end
+	end
+	if not entry then
 		local created = Instance.new("Highlight")
 		created.FillColor = Color3.new(1, 1, 1)
 		created.OutlineTransparency = 1
+		created.FillTransparency = 1
 		created.DepthMode = Enum.HighlightDepthMode.Occluded
-		created.Adornee = model
 		created.Parent = guiFolder
-		flashes[model] = created
-		model.Destroying:Connect(function()
-			created:Destroy()
-			flashes[model] = nil
-		end)
-		highlight = created
+		flashCount += 1
+		entry = { highlight = created, used = 0 }
 	end
-	local h = highlight :: Highlight
+	local e = entry :: Flash
+	e.highlight.Adornee = model
+	flashes[model] = e
+	model.Destroying:Connect(function()
+		if flashes[model] == e then
+			flashes[model] = nil
+			e.highlight:Destroy()
+			flashCount -= 1
+		end
+	end)
+	return e
+end
+
+local function flash(model: Model, color: Color3?)
+	local e = flashEntry(model)
+	e.used = os.clock()
+	local h = e.highlight
+	h.FillColor = color or Color3.new(1, 1, 1)
 	h.FillTransparency = 0.35
 	TweenService:Create(h, TweenInfo.new(0.15), { FillTransparency = 1 }):Play()
 end
@@ -249,30 +295,335 @@ local function swing(attacker: Model, target: Model)
 	Debris:AddItem(arc, 0.2)
 end
 
-local function projectile(attacker: Model, target: Model, style: string)
-	local from = centre(attacker) + Vector3.new(0, 0.8, 0)
+-- Projectiles (S22): pooled parts moved every frame, homing on the target's centre; arrows fly an arc and
+-- stick in the target for a moment (not on low quality), bolts fly straight, magic bolts carry a trail.
+type Flight = {
+	part: BasePart,
+	kind: string,
+	from: Vector3,
+	target: Model,
+	start: number,
+	duration: number,
+	arc: number,
+	onArrive: (() -> ())?,
+}
+
+local flights: { Flight } = {}
+local projectilePool: { [string]: { BasePart } } = {}
+
+local function takeProjectile(kind: string, color: Color3?): BasePart
+	local list = projectilePool[kind]
+	local part = list and table.remove(list)
+	if not part then
+		if kind == "arrow" then
+			local arrow = effectPart("Arrow", Vector3.new(0.12, 0.12, 2.4), Color3.fromHex("#8A6B4A"))
+			arrow.Material = Enum.Material.Wood
+			local head = effectPart("Head", Vector3.new(0.22, 0.22, 0.4), Color3.fromHex("#C9CED6"))
+			head.Material = Enum.Material.Metal
+			head.Anchored = false
+			local fletch = effectPart("Fletching", Vector3.new(0.04, 0.32, 0.5), Color3.fromHex("#E8E2D0"))
+			fletch.Material = Enum.Material.Fabric
+			fletch.Anchored = false
+			for _, piece in { { head, -1.3 }, { fletch, 1.0 } } :: { { any } } do
+				local p = piece[1] :: BasePart
+				p.CFrame = arrow.CFrame * CFrame.new(0, 0, piece[2] :: number)
+				local weld = Instance.new("WeldConstraint")
+				weld.Part0 = arrow
+				weld.Part1 = p
+				weld.Parent = p
+				p.Parent = arrow
+			end
+			part = arrow
+		elseif kind == "bolt" then
+			local bolt = effectPart("CrossbowBolt", Vector3.new(0.14, 0.14, 1.4), Color3.fromHex("#5E5E66"))
+			bolt.Material = Enum.Material.Metal
+			part = bolt
+		else
+			local orb = effectPart("MagicBolt", Vector3.new(0.8, 0.8, 0.8), Theme.Colors.Accent, Enum.PartType.Ball)
+			local light = Instance.new("PointLight")
+			light.Range = 8
+			light.Parent = orb
+			local a0 = Instance.new("Attachment")
+			a0.Name = "A0"
+			a0.Position = Vector3.new(0, 0.3, 0)
+			a0.Parent = orb
+			local a1 = Instance.new("Attachment")
+			a1.Name = "A1"
+			a1.Position = Vector3.new(0, -0.3, 0)
+			a1.Parent = orb
+			local trail = Instance.new("Trail")
+			trail.Attachment0 = a0
+			trail.Attachment1 = a1
+			trail.Lifetime = 0.18
+			trail.LightEmission = 1
+			trail.Transparency = NumberSequence.new(0.2, 1)
+			trail.Parent = orb
+			part = orb
+		end
+	end
+	local p = part :: BasePart
+	if kind == "magic" then
+		local c = color or Theme.Colors.Accent
+		p.Color = c
+		local light = p:FindFirstChildOfClass("PointLight")
+		if light then
+			light.Color = c
+		end
+		local trail = p:FindFirstChildOfClass("Trail")
+		if trail then
+			trail.Color = ColorSequence.new(c)
+			trail.Enabled = not lowQuality()
+		end
+	end
+	p.Transparency = 0
+	for _, child in p:GetChildren() do
+		if child:IsA("BasePart") then
+			child.Transparency = 0
+		end
+	end
+	p.Parent = fxFolder
+	return p
+end
+
+local function giveBack(kind: string, part: BasePart)
+	part.Parent = nil
+	local trail = part:FindFirstChildOfClass("Trail")
+	if trail then
+		trail.Enabled = false
+	end
+	local list = projectilePool[kind]
+	if not list then
+		list = {}
+		projectilePool[kind] = list
+	end
+	if #list < 24 then
+		table.insert(list, part)
+	else
+		part:Destroy()
+	end
+end
+
+-- Seconds a projectile of `kind` needs for `distance` studs.
+local function flightTime(kind: string, distance: number): number
+	local speed = if kind == "bolt" then 150 elseif kind == "arrow" then 110 else 85
+	return math.clamp(distance / speed, 0.06, 0.4)
+end
+
+local function launch(kind: string, from: Vector3, target: Model, color: Color3?, onArrive: (() -> ())?)
 	local to = centre(target)
 	local distance = (to - from).Magnitude
 	if distance < 0.5 then
+		if onArrive then
+			onArrive()
+		end
 		return
 	end
-	local part
-	if style == "arrow" then
-		part = effectPart("Arrow", Vector3.new(0.15, 0.15, 2.2), Color3.fromHex("#C9A45C"))
-		part.Material = Enum.Material.Wood
-	else
-		part = effectPart("Bolt", Vector3.new(0.9, 0.9, 0.9), Theme.Colors.Accent, Enum.PartType.Ball)
-		local light = Instance.new("PointLight")
-		light.Color = Theme.Colors.Accent
-		light.Range = 8
-		light.Parent = part
-	end
+	local part = takeProjectile(kind, color)
 	part.CFrame = CFrame.lookAt(from, to)
-	local seconds = math.clamp(distance / 90, 0.08, 0.35)
-	TweenService
-		:Create(part, TweenInfo.new(seconds, Enum.EasingStyle.Linear), { CFrame = CFrame.lookAt(to, to + (to - from)) })
-		:Play()
-	Debris:AddItem(part, seconds + 0.05)
+	table.insert(flights, {
+		part = part,
+		kind = kind,
+		from = from,
+		target = target,
+		start = os.clock(),
+		duration = flightTime(kind, distance),
+		arc = if kind == "arrow" then math.min(4, distance * 0.08) else 0,
+		onArrive = onArrive,
+	})
+end
+
+local function stepFlights()
+	if #flights == 0 then
+		return
+	end
+	local now = os.clock()
+	for i = #flights, 1, -1 do
+		local f = flights[i]
+		local to = if f.target.Parent then centre(f.target) else f.part.Position
+		local t = math.clamp((now - f.start) / f.duration, 0, 1)
+		local function at(k: number): Vector3
+			return f.from:Lerp(to, k) + Vector3.new(0, f.arc * 4 * k * (1 - k), 0)
+		end
+		local position = at(t)
+		local ahead = at(math.min(1, t + 0.05))
+		if (ahead - position).Magnitude > 1e-3 then
+			f.part.CFrame = CFrame.lookAt(position, ahead)
+		else
+			f.part.CFrame = CFrame.new(position) * f.part.CFrame.Rotation
+		end
+		if t >= 1 then
+			table.remove(flights, i)
+			if f.onArrive then
+				task.spawn(f.onArrive)
+			end
+			local part, kind = f.part, f.kind
+			if kind == "arrow" and not lowQuality() and f.target.Parent then
+				-- Stuck in the target for a moment, then gone.
+				part.CFrame = part.CFrame * CFrame.new(0, 0, -0.6)
+				task.delay(0.6, function()
+					giveBack(kind, part)
+				end)
+			else
+				if kind == "magic" and not lowQuality() then
+					local burst = effectPart("Burst", Vector3.one * 0.6, part.Color, Enum.PartType.Ball)
+					burst.CFrame = part.CFrame
+					burst.Transparency = 0.2
+					TweenService:Create(burst, TweenInfo.new(0.18), { Size = Vector3.one * 2.4, Transparency = 1 })
+						:Play()
+					Debris:AddItem(burst, 0.2)
+				end
+				giveBack(kind, part)
+			end
+		end
+	end
+end
+
+-- Old monster projectiles (no weapon in hand): from the chest.
+local function projectile(attacker: Model, target: Model, style: string)
+	local from = centre(attacker) + Vector3.new(0, 0.8, 0)
+	launch(if style == "arrow" then "arrow" else "magic", from, target, nil, nil)
+end
+
+-- Weapon helpers (S22) ------------------------------------------------------------------------------------
+
+local function weaponOf(model: Model): BasePart?
+	local part = model:FindFirstChild("VaelthornWeapon")
+	return if part and part:IsA("BasePart") then part else nil
+end
+
+local function attachmentPosition(weapon: BasePart?, name: string): Vector3?
+	local a = weapon and weapon:FindFirstChild(name)
+	return if a and a:IsA("Attachment") then a.WorldPosition else nil
+end
+
+-- Blade trail between the grip and the tip, in the weapon's rarity colour, during the strike phase.
+local function weaponTrail(weapon: BasePart, timing: AttackPose.Timing)
+	if lowQuality() then
+		return
+	end
+	local trail = weapon:FindFirstChild("VaelthornTrail") :: Trail?
+	if not trail then
+		local grip = weapon:FindFirstChild("VaelthornGrip")
+		local tip = weapon:FindFirstChild("VaelthornTip")
+		if not grip or not tip or not grip:IsA("Attachment") or not tip:IsA("Attachment") then
+			return
+		end
+		local created = Instance.new("Trail")
+		created.Name = "VaelthornTrail"
+		created.Attachment0 = grip
+		created.Attachment1 = tip
+		created.Lifetime = 0.16
+		created.MinLength = 0.05
+		created.LightEmission = 0.7
+		created.Transparency = NumberSequence.new(0.25, 1)
+		local accent = weapon:GetAttribute("Accent")
+		created.Color = ColorSequence.new(if typeof(accent) == "Color3" then accent else Color3.new(1, 1, 1))
+		created.Enabled = false
+		created.Parent = weapon
+		trail = created
+	end
+	local t = trail :: Trail
+	task.delay(math.max(0, timing.windup - 0.02), function()
+		if t.Parent then
+			t.Enabled = true
+		end
+	end)
+	task.delay(timing.windup + timing.strike + 0.04, function()
+		if t.Parent then
+			t.Enabled = false
+		end
+	end)
+end
+
+-- Small glow growing at the tip of a wand / staff during the windup.
+local function charge(weapon: BasePart?, color: Color3, seconds: number)
+	local at = attachmentPosition(weapon, "VaelthornTip")
+	if not at or lowQuality() then
+		return
+	end
+	local spark = effectPart("Charge", Vector3.one * 0.2, color, Enum.PartType.Ball)
+	spark.CFrame = CFrame.new(at)
+	spark.Transparency = 0.3
+	TweenService:Create(spark, TweenInfo.new(seconds), { Size = Vector3.one * 0.9, Transparency = 0.1 }):Play()
+	Debris:AddItem(spark, seconds)
+end
+
+-- Dust ring at the target (hammer / mace blows).
+local function dust(target: Model)
+	if lowQuality() then
+		return
+	end
+	local at = centre(target) - Vector3.new(0, 2.5, 0)
+	local ring = effectPart("Dust", Vector3.new(0.2, 1, 1), Color3.fromHex("#B8A888"), Enum.PartType.Cylinder)
+	ring.Material = Enum.Material.SmoothPlastic
+	ring.Transparency = 0.35
+	ring.CFrame = CFrame.new(at) * CFrame.Angles(0, 0, math.rad(90))
+	TweenService:Create(ring, TweenInfo.new(0.3), { Size = Vector3.new(0.2, 7, 7), Transparency = 1 }):Play()
+	Debris:AddItem(ring, 0.35)
+end
+
+-- Bright flash at the target (priest weapons).
+local function holyFlash(target: Model)
+	if lowQuality() then
+		return
+	end
+	local ball = effectPart("Holy", Vector3.one * 0.6, Color3.fromHex("#FFF2B8"), Enum.PartType.Ball)
+	ball.CFrame = CFrame.new(centre(target))
+	ball.Transparency = 0.1
+	local light = Instance.new("PointLight")
+	light.Color = Color3.fromHex("#FFE8A0")
+	light.Range = 14
+	light.Brightness = 3
+	light.Parent = ball
+	TweenService:Create(ball, TweenInfo.new(0.25), { Size = Vector3.one * 4, Transparency = 1 }):Play()
+	Debris:AddItem(ball, 0.3)
+end
+
+local HOLY = { holystaff = true, scepter = true }
+
+-- A player's basic attack (S22): the pose, the weapon effects and the delay of its hit.
+local function playerAttack(attacker: Model, target: Model, event: { [string]: any })
+	local camera = Workspace.CurrentCamera
+	if camera and (centre(attacker) - camera.CFrame.Position).Magnitude > Config.EffectRadius then
+		return
+	end
+	local weaponType = if type(event.w) == "string" then event.w else nil
+	local timing = AnimationController.Attack(attacker, weaponType)
+	local weapon = weaponOf(attacker)
+	local motion = AttackPose.motionFor(weaponType)
+	local targetId = event.t :: string
+	if event.st == "melee" then
+		hitDelay[targetId] = timing.hitAt
+		if motion == "unarmed" or not weapon then
+			task.delay(timing.hitAt * 0.7, swing, attacker, target)
+		else
+			weaponTrail(weapon, timing)
+			if motion == "smash" then
+				task.delay(timing.hitAt, dust, target)
+			end
+		end
+		if weaponType and HOLY[weaponType] then
+			task.delay(timing.hitAt, holyFlash, target)
+		end
+		return
+	end
+	-- Ranged: arrows from the bow's grip, bolts and magic from the tip, at the release moment.
+	local kind = if motion == "bow" then "arrow" elseif motion == "crossbow" then "bolt" else "magic"
+	local color = ELEMENT_COLORS[event.el or ""] or Theme.Colors.Accent
+	if kind == "magic" then
+		charge(weapon, color, timing.hitAt)
+	end
+	local from0 = attachmentPosition(weapon, if kind == "arrow" then "VaelthornGrip" else "VaelthornTip")
+		or centre(attacker) + Vector3.new(0, 0.8, 0)
+	hitDelay[targetId] = timing.hitAt + flightTime(kind, (centre(target) - from0).Magnitude)
+	task.delay(timing.hitAt, function()
+		if not attacker.Parent or not target.Parent then
+			return
+		end
+		local from = attachmentPosition(weaponOf(attacker), if kind == "arrow" then "VaelthornGrip" else "VaelthornTip")
+			or centre(attacker) + Vector3.new(0, 0.8, 0)
+		launch(kind, from, target, color, nil)
+	end)
 end
 
 -- Telegraphs -----------------------------------------------------------------------------------------------
@@ -386,6 +737,9 @@ local function onDamage(event: { [string]: any })
 	flash(model)
 	impact(model, event.c == true)
 	AnimationController.MonsterHit(model)
+	if model:GetAttribute("MonsterId") == nil then
+		AnimationController.CharacterHit(model)
+	end
 	if isMe and event.c then
 		shake(0.35)
 	end
@@ -409,7 +763,14 @@ end
 local function handle(event: { [string]: any })
 	local kind = event.k
 	if kind == "dmg" then
-		onDamage(event)
+		-- The number of a player's attack waits for its blow / arrival (S22).
+		local wait = if type(event.e) == "string" then hitDelay[event.e] else nil
+		if wait then
+			hitDelay[event.e] = nil
+			task.delay(math.min(wait, MAX_HIT_DELAY), onDamage, event)
+		else
+			onDamage(event)
+		end
 	elseif kind == "heal" then
 		local model = findModel(event.e)
 		if model and numbersEnabled() then
@@ -421,13 +782,13 @@ local function handle(event: { [string]: any })
 		if attacker and target then
 			if attacker:GetAttribute("MonsterId") ~= nil then
 				AnimationController.MonsterAttack(attacker, nil, true)
+				if event.st == "melee" then
+					swing(attacker, target)
+				else
+					projectile(attacker, target, event.st)
+				end
 			else
-				AnimationController.Swing(attacker, event.st ~= "melee")
-			end
-			if event.st == "melee" then
-				swing(attacker, target)
-			else
-				projectile(attacker, target, event.st)
+				playerAttack(attacker, target, event)
 			end
 			if attacker == player.Character or target == player.Character then
 				Sounds.play("hit")
@@ -464,7 +825,30 @@ function CombatFxController.Init(registry)
 	end
 end
 
+-- Admin /anim (S22): plays a weapon's attack on our own character (no target, no damage).
+function CombatFxController.PreviewAttack(weaponType: string?)
+	local character = player.Character
+	if not character then
+		return
+	end
+	local timing = AnimationController.Attack(character, weaponType)
+	local weapon = weaponOf(character)
+	local motion = AttackPose.motionFor(weaponType)
+	if weapon and not AttackPose.timing(motion).ranged and motion ~= "unarmed" then
+		weaponTrail(weapon, timing)
+	end
+end
+
 function CombatFxController.Start()
+	RunService.Heartbeat:Connect(function()
+		local ok, err = pcall(function()
+			stepFlights()
+		end)
+		if not ok then
+			warn(`[CombatFxController] {err}`)
+			table.clear(flights)
+		end
+	end)
 	Net.On("CombatFx", function(batch: any)
 		if type(batch) ~= "table" then
 			return

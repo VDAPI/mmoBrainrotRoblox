@@ -2,6 +2,8 @@
 -- Round minimap (DESIGN §23, top right), north up: the current map's sketch (paths, water, buildings),
 -- the player arrow (camera heading), nearby monsters (bigger dots for elites), NPCs with their service
 -- glyph, portals, dungeon gates and gathering nodes. Map name and zone colour below, zoom + / −.
+-- S22: monster areas filled stronger in the band colour relative to the player (redrawn after a level-up),
+-- level ranges written on them at the closest zoom, the current area's name in its band colour.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -9,6 +11,7 @@ local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 
 local AreaState = require(script.Parent.Parent.Parent.AreaState)
+local AreaAdvice = require(ReplicatedStorage.Shared.Logic.AreaAdvice)
 local Areas = require(ReplicatedStorage.Shared.Data.Areas)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local GroupColors = require(script.Parent.Parent.Parent.GroupColors)
@@ -91,13 +94,17 @@ local function Minimap(scope: Scope): Instance
 	local current: MapSketch.Sketch? = nil
 	local currentScale = 0
 	local currentMap = ""
+	local currentLevel = 0
+	local level = State.Value({ "character", "level" })
 
 	local function redraw()
 		local id = Fusion.peek(mapId) or ""
 		local s = Fusion.peek(scale)
-		if id == currentMap and s == currentScale and current then
+		local playerLevel = Fusion.peek(level) or 1
+		if id == currentMap and s == currentScale and playerLevel == currentLevel and current then
 			return
 		end
+		currentLevel = playerLevel
 		for _, child in canvas:GetChildren() do
 			if child ~= dynamic then
 				child:Destroy()
@@ -111,23 +118,32 @@ local function Minimap(scope: Scope): Instance
 		end
 		canvas.Size = UDim2.fromOffset(sketch.size.x * s, sketch.size.z * s)
 		MapSketch.draw(canvas, sketch, s)
-		-- Monster areas tinted by level difference (S20), under the icons.
+		-- Monster areas tinted by level difference (S20; S22: band of the nearest end of the range, ~30% fill,
+		-- level ranges at the closest zoom), under the icons.
 		local data = Areas.byMap[id]
-		local level = State.Get({ "character", "level" }) or 1
+		local closest = s >= ZOOMS[#ZOOMS]
 		for _, area in (if data then data.areas else {}) :: { Areas.Area } do
 			local r = area.rect
 			local a1 = MapSketch.toPixel(sketch, s, r[1], r[2])
 			local a2 = MapSketch.toPixel(sketch, s, r[3], r[4])
-			local band = LevelBand.of(math.floor((area.lv[1] + area.lv[2]) / 2), level)
+			local color = Color3.fromHex(LevelBand.COLORS[AreaAdvice.bandOf(area, playerLevel)])
 			local f = Instance.new("Frame")
 			f.Name = "Area"
-			f.Position = UDim2.fromOffset(a1.X, a1.Y)
-			f.Size = UDim2.fromOffset(a2.X - a1.X, a2.Y - a1.Y)
-			f.BackgroundColor3 = Color3.fromHex((LevelBand.COLORS :: any)[band])
-			f.BackgroundTransparency = 0.82
+			f.Position = UDim2.fromOffset(a1.X + 1, a1.Y + 1)
+			f.Size = UDim2.fromOffset(a2.X - a1.X - 2, a2.Y - a1.Y - 2)
+			f.BackgroundColor3 = color
+			f.BackgroundTransparency = 0.7
 			f.BorderSizePixel = 0
 			f.ZIndex = 1
 			f.Parent = canvas
+			if closest then
+				local levels = glyph(canvas, `{area.lv[1]}–{area.lv[2]}`, "#FFFFFF", (a1 + a2) / 2, 16, 2)
+				levels.TextScaled = false
+				levels.TextSize = 13
+				levels.Size = UDim2.fromOffset(60, 16)
+				levels.TextColor3 = color
+				levels.TextStrokeTransparency = 0.1
+			end
 		end
 		for _, icon in sketch.icons do
 			local style = ICONS[icon.t]
@@ -151,6 +167,7 @@ local function Minimap(scope: Scope): Instance
 
 	scope:Observer(mapId):onChange(redraw)
 	scope:Observer(scale):onChange(redraw)
+	scope:Observer(level):onChange(redraw)
 
 	local arrowRotation = scope:Value(0)
 	local accumulator = 0
@@ -363,8 +380,14 @@ local function Minimap(scope: Scope): Instance
 				TextTruncate = Enum.TextTruncate.AtEnd,
 				FontFace = Theme.Fonts.BodyMedium,
 				TextSize = 15,
-				TextColor3 = Theme.Colors.Parchment,
-				TextStrokeTransparency = 0.4,
+				TextColor3 = scope:Computed(function(use): Color3
+					local area = use(AreaState.Current)
+					if not area then
+						return Theme.Colors.Parchment
+					end
+					return Color3.fromHex(LevelBand.COLORS[AreaAdvice.bandOf(area, use(level) or 1)])
+				end),
+				TextStrokeTransparency = 0.2,
 			}),
 			scope:New("TextLabel")({
 				Name = "MapName",
@@ -375,10 +398,10 @@ local function Minimap(scope: Scope): Instance
 				BackgroundTransparency = 0.15,
 				Text = scope:Computed(function(use): string
 					local z = use(zone)
-					if type(z) == "table" and z.nameKey then
-						return Text.get(use, z.nameKey)
-					end
 					local map = Maps.get(use(mapId) or "")
+					if type(z) == "table" and z.nameKey then
+						return Text.get(use, AreaState.zoneNameKey(z, if map then map.nameKey else nil))
+					end
 					return if map then Text.get(use, map.nameKey) else ""
 				end),
 				TextTruncate = Enum.TextTruncate.AtEnd,
