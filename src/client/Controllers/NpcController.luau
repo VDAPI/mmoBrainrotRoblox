@@ -25,7 +25,14 @@ local UnbindPicker = require(script.Parent.Parent.UI.Screens.UnbindPicker)
 
 local NpcController = {
 	Name = "NpcController",
-	Deps = { "WindowManager", "UIController", "QuestController", "GuildController", "MarketController" },
+	Deps = {
+		"WindowManager",
+		"UIController",
+		"QuestController",
+		"GuildController",
+		"MarketController",
+		"NavController",
+	},
 }
 
 local scope = Fusion.scoped(Fusion)
@@ -33,6 +40,7 @@ NpcController.Current = scope:Value(nil :: string?)
 NpcController.Quests = nil :: any
 NpcController.Guild = nil :: any
 NpcController.Market = nil :: any
+NpcController.Nav = nil :: any
 -- Target of the forge's upgrade tab ({ location, key }), set by dropping an item on the anvil.
 NpcController.UpgradeTarget = scope:Value(nil :: any)
 NpcController.SmithTab = scope:Value("craft")
@@ -103,6 +111,8 @@ function NpcController.Talk(npcId: string)
 		return
 	end
 	NpcController.Current:set(npcId)
+	-- S25: talking (opening a service) ends the guide's walk.
+	NpcController.Nav.StopWalk(true)
 	for _, id in SERVICE_WINDOWS do
 		WindowManager.Close(id)
 	end
@@ -253,6 +263,7 @@ function NpcController.Init(registry)
 	NpcController.Quests = registry.Get("QuestController")
 	NpcController.Guild = registry.Get("GuildController")
 	NpcController.Market = registry.Get("MarketController")
+	NpcController.Nav = registry.Get("NavController")
 	registerWindows()
 end
 

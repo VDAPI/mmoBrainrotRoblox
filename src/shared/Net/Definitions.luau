@@ -47,7 +47,7 @@ local Definitions: { [string]: Definition } = {
 	-- S20: quick sell (npcId, max rarity 1..2), item lock (backpack index)
 	SellAll = { kind = "function", dir = "c2s", rate = 2, args = { "string", "integer" } },
 	ToggleLock = { kind = "function", dir = "c2s", rate = 6, args = { "integer" } },
-	AdminClient = { kind = "event", dir = "s2c" }, -- (action, arg?) client-side admin helpers: "mapcache", "perf" (S20), "town" (S21), "portalpick", "anim" (S22)
+	AdminClient = { kind = "event", dir = "s2c" }, -- (action, arg?) client-side admin helpers: "mapcache", "perf" (S20), "town" (S21), "portalpick", "anim" (S22), "nav", "navdebug" (S25)
 	AdminRun = { kind = "function", dir = "c2s", rate = 6, args = { "string", "table" } }, -- (command, args) dev panel, admins only (S23)
 	MobViz = { kind = "event", dir = "s2c" }, -- ("show", {target, variant, anim}) | ("clear") | ("stats"): admin look preview (S24)
 	AttackRejected = { kind = "event", dir = "s2c" }, -- (reason locale key), at most one per 2 s (S18)
@@ -106,6 +106,9 @@ local Definitions: { [string]: Definition } = {
 	CancelFishing = { kind = "event", dir = "c2s", rate = 2, args = {} },
 	UsePortal = { kind = "function", dir = "c2s", rate = 1, args = { "string", "string?" } }, -- (portal id, area id?) S22
 	MapTransition = { kind = "event", dir = "s2c" }, -- (mapId) shows the loading screen, (nil) hides it
+	-- Own map marks (S25): (map, x, z, icon id) map-relative studs / (index); answer (ok, errorKey?)
+	MapMarkAdd = { kind = "function", dir = "c2s", rate = 2, args = { "string", "number", "number", "string" } },
+	MapMarkRemove = { kind = "function", dir = "c2s", rate = 4, args = { "integer" } },
 	UseMapStone = { kind = "function", dir = "c2s", rate = 1, args = { "integer", "string", "string?" } }, -- (inv index, target id, area id?) S22
 
 	-- Parties and dungeons (S09)

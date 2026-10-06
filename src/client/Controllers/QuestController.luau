@@ -1,6 +1,6 @@
 --!strict
 -- Quests on the client (DESIGN §20): the journal (L), the story dialog with NPCs, the contract board,
--- markers above NPCs ("!" quest available, golden "?" ready to hand in, grey "?" in progress), the HUD
+-- markers above NPCs ("!" quest available, golden "?" ready to hand in, grey "?" in progress; Logic/NpcMarks), the HUD
 -- tracker with the direction arrow and the target on the minimap, and the completion message.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -8,6 +8,7 @@ local Workspace = game:GetService("Workspace")
 
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Net = require(ReplicatedStorage.Shared.Net)
+local Npcs = require(ReplicatedStorage.Shared.Data.Npcs)
 local QuestBoard = require(script.Parent.Parent.UI.Screens.QuestBoard)
 local QuestDialog = require(script.Parent.Parent.UI.Screens.QuestDialog)
 local QuestJournal = require(script.Parent.Parent.UI.Screens.QuestJournal)
@@ -23,7 +24,7 @@ local Toast = require(script.Parent.Parent.UI.Components.Toast)
 
 local QuestController = {
 	Name = "QuestController",
-	Deps = { "WindowManager", "UIController" },
+	Deps = { "WindowManager", "UIController", "NavController" },
 }
 
 local scope = Fusion.scoped(Fusion)
@@ -32,8 +33,8 @@ local dialogNpc = scope:Value(nil :: string?)
 
 local MARKERS = {
 	available = { text = "!", color = Theme.Colors.GoldBright },
-	ready = { text = "?", color = Theme.Colors.GoldBright },
-	progress = { text = "?", color = Theme.Colors.TextMuted },
+	turnIn = { text = "?", color = Theme.Colors.GoldBright },
+	active = { text = "?", color = Theme.Colors.TextMuted },
 }
 
 function QuestController.OpenNpc(npcId: string)
@@ -132,7 +133,23 @@ function QuestController.Init(registry)
 		size = Vector2.new(640, 480),
 		build = QuestBoard,
 	})
-	QuestTracker(scope).Parent = UIController.GetLayer("Screens")
+	local Nav = registry.Get("NavController")
+	QuestTracker(scope, {
+		-- S25: the tracker's "➤" guides to the quest target like "Guide" on the map.
+		Guide = function(target)
+			local npc = if target.npc then Npcs.get(target.npc) else nil
+			Nav.Guide({
+				map = target.map,
+				x = target.x or 0,
+				z = target.z or 0,
+				npc = target.npc,
+				kind = if npc then "npc" else nil,
+				id = target.npc,
+				labelKey = if npc then npc.nameKey else "quest.tracker",
+			})
+		end,
+	}).Parent =
+		UIController.GetLayer("Screens")
 end
 
 function QuestController.Start()

@@ -186,4 +186,9 @@ function MapSketch.toPixel(sketch: Sketch, scale: number, x: number, z: number):
 	return (Vector2.new(x, z) + Vector2.new(sketch.size.x / 2, sketch.size.z / 2)) * scale
 end
 
+-- Pixel inside a drawn sketch -> map-relative position (S25: map clicks).
+function MapSketch.fromPixel(sketch: Sketch, scale: number, pixel: Vector2): (number, number)
+	return pixel.X / scale - sketch.size.x / 2, pixel.Y / scale - sketch.size.z / 2
+end
+
 return MapSketch

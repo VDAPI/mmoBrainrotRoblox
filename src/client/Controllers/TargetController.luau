@@ -362,6 +362,11 @@ local function moveInput(): Vector3
 	return Vector3.zero
 end
 
+-- Movement input of the player (WASD / joystick), also read by the guide's walk (S25).
+function TargetController.MoveInput(): Vector3
+	return moveInput()
+end
+
 -- Next target after the current one died: a monster fighting us, or (holding LMB) the one near the cursor.
 local function retarget()
 	if holding and not Fusion.peek(Device.Touch) then

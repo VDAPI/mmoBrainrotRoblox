@@ -12,7 +12,6 @@ local AreaSpawns = require(game:GetService("ReplicatedStorage").Shared.Logic.Are
 local Areas = require(game:GetService("ReplicatedStorage").Shared.Data.Areas)
 local Maps = require(game:GetService("ReplicatedStorage").Shared.Data.Maps)
 local Rng = require(game:GetService("ReplicatedStorage").Shared.Logic.Rng)
-local Town = require(game:GetService("ReplicatedStorage").Shared.Data.Town)
 
 local Build = {}
 
@@ -364,13 +363,6 @@ function Build.scatterNodes(
 			placed += 1
 		end
 	end
-end
-
--- Arrival point in the city for a portal coming back from `region` (S21): just inside the gate that leads to
--- that region (Town.city.gates), so every return lands at the right gate.
-function Build.cityArrival(region: string): { x: number, z: number }
-	local gate = assert(Town.gate(region), `no city gate leads to {region}`)
-	return { x = gate.arrive[1], z = gate.arrive[2] }
 end
 
 function Build.icon(ctx: Context, kind: string, x: number, z: number, id: string?)

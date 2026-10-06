@@ -4,6 +4,9 @@
 -- glyph, portals, dungeon gates and gathering nodes. Map name and zone colour below, zoom + / −.
 -- S22: monster areas filled stronger in the band colour relative to the player (redrawn after a level-up),
 -- level ranges written on them at the closest zoom, the current area's name in its band colour.
+-- S25: a click / tap opens the world map centred on the player; quest marks (! / ?) over NPCs, own map marks,
+-- the guide target and, when it is out of view (or on another map), an arrow on the edge towards it (or towards
+-- the portal on the way). Moving markers come from pools (no instances created while playing).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -18,6 +21,10 @@ local GroupColors = require(script.Parent.Parent.Parent.GroupColors)
 local MapSketch = require(script.Parent.Parent.Parent.MapSketch)
 local LevelBand = require(ReplicatedStorage.Shared.Logic.LevelBand)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
+local MapMarks = require(ReplicatedStorage.Shared.Data.MapMarks)
+local MapRoute = require(ReplicatedStorage.Shared.Logic.MapRoute)
+local NavTarget = require(script.Parent.Parent.Parent.NavTarget)
+local NpcMarkState = require(script.Parent.Parent.Parent.NpcMarkState)
 local Npcs = require(ReplicatedStorage.Shared.Data.Npcs)
 local QuestTrack = require(script.Parent.Parent.Parent.QuestTrack)
 local State = require(script.Parent.Parent.Parent.State)
@@ -31,6 +38,9 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 local SIZE = 220
 local ZOOMS = { 0.25, 0.4, 0.6, 0.9 }
 local MONSTER_RANGE = 140
+local MONSTER_DOTS = 60
+local MAX_MARKS = 8
+local EDGE = SIZE / 2 - 14 -- pixels from the centre where the edge arrow sits
 local ZONE_COLORS = {
 	green = Theme.Colors.ZoneGreen,
 	yellow = Theme.Colors.ZoneYellow,
@@ -60,7 +70,9 @@ local function glyph(parent: Instance, text: string, color: string, position: Ve
 	return label
 end
 
-local function Minimap(scope: Scope): Instance
+export type Props = { ShowWindow: (id: string) -> () }
+
+local function Minimap(scope: Scope, props: Props): Instance
 	local zone = State.Value({ "zone" })
 	local mapId = State.Value({ "character", "location", "map" })
 	local zoomIndex = scope:Value(2)
@@ -91,7 +103,53 @@ local function Minimap(scope: Scope): Instance
 		Parent = canvas,
 	}) :: Frame
 
+	-- Pools of the moving markers (S25): created once, only moved and shown / hidden.
+	local questStar = glyph(dynamic, "★", "#E8C25A", Vector2.zero, 20, 6)
+	questStar.Visible = false
+	local navGlyph = glyph(dynamic, "◆", "#F2E28A", Vector2.zero, 18, 7)
+	navGlyph.Visible = false
+	local navArrow = glyph(dynamic, "▲", "#F2E28A", Vector2.zero, 20, 8)
+	navArrow.TextStrokeTransparency = 0
+	navArrow.Visible = false
+	local markPool: { TextLabel } = {}
+	for i = 1, MAX_MARKS do
+		markPool[i] = glyph(dynamic, "⚑", "#E8C25A", Vector2.zero, 16, 6)
+		markPool[i].Visible = false
+	end
+	local partyPool: { TextLabel } = {}
+	for i = 1, 4 do
+		partyPool[i] = glyph(dynamic, "●", "#4A8FE7", Vector2.zero, 14, 5)
+		partyPool[i].Visible = false
+	end
+	local dotPool: { Frame } = {}
+	for i = 1, MONSTER_DOTS do
+		local dot = Instance.new("Frame")
+		dot.AnchorPoint = Vector2.new(0.5, 0.5)
+		dot.BorderSizePixel = 0
+		dot.ZIndex = 4
+		dot.Visible = false
+		local corner = Instance.new("UICorner")
+		corner.CornerRadius = UDim.new(0.5, 0)
+		corner.Parent = dot
+		dot.Parent = dynamic
+		dotPool[i] = dot
+	end
+
 	local current: MapSketch.Sketch? = nil
+	local npcMarks: { [string]: TextLabel } = {}
+	-- Quest marks over the NPC glyphs (S25), refreshed when the quests change.
+	local function applyMarks()
+		local marks = Fusion.peek(NpcMarkState.Marks)
+		for npcId, label in npcMarks do
+			local style = NpcMarkState.style(marks[npcId] :: any)
+			label.Visible = style ~= nil
+			if style then
+				label.Text = style.text
+				label.TextColor3 = style.color
+			end
+		end
+	end
+	scope:Observer(NpcMarkState.Marks):onChange(applyMarks)
 	local currentScale = 0
 	local currentMap = ""
 	local currentLevel = 0
@@ -158,11 +216,19 @@ local function Minimap(scope: Scope): Instance
 				)
 			end
 		end
+		table.clear(npcMarks)
 		for _, npc in Npcs.list do
 			if npc.map == id and not npc.decoration then
-				glyph(canvas, npc.icon, "#F2E8C9", MapSketch.toPixel(sketch, s, npc.position.x, npc.position.z), 18, 2)
+				local p = MapSketch.toPixel(sketch, s, npc.position.x, npc.position.z)
+				glyph(canvas, npc.icon, "#F2E8C9", p, 18, 2)
+				local mark = glyph(canvas, "", "#E8C25A", p - Vector2.new(0, 14), 18, 3)
+				mark.FontFace = Theme.Fonts.Heading
+				mark.TextStrokeTransparency = 0.1
+				mark.Visible = false
+				npcMarks[npc.id] = mark
 			end
 		end
+		applyMarks()
 	end
 
 	scope:Observer(mapId):onChange(redraw)
@@ -211,50 +277,120 @@ local function Minimap(scope: Scope): Instance
 				return
 			end
 			accumulator = 0
-			dynamic:ClearAllChildren()
+			local offset = Vector3.new(map.offset.x, map.offset.y, map.offset.z)
+			local function at(x: number, z: number): Vector2
+				return MapSketch.toPixel(sketch, currentScale, x, z)
+			end
 			-- Quest target (S11)
 			local target = Fusion.peek(QuestTrack.Target)
-			if target and target.map == currentMap and target.x and target.z and Fusion.peek(QuestTrack.Tracked) then
-				glyph(dynamic, "★", "#E8C25A", MapSketch.toPixel(sketch, currentScale, target.x, target.z), 20, 6)
+			local showQuest = target ~= nil
+				and target.map == currentMap
+				and target.x ~= nil
+				and target.z ~= nil
+				and Fusion.peek(QuestTrack.Tracked) == true
+			questStar.Visible = showQuest
+			if showQuest and target and target.x and target.z then
+				local p = at(target.x, target.z)
+				questStar.Position = UDim2.fromOffset(p.X, p.Y)
+			end
+			-- Guide target (S25): the target itself, or an arrow on the edge when it is out of view / elsewhere.
+			local nav = Fusion.peek(NavTarget.Target)
+			local navPoint: Vector2? = nil
+			if nav then
+				if nav.map == currentMap then
+					navPoint = at(nav.x, nav.z)
+				else
+					local exit = MapRoute.nextExit(currentMap, nav.map, MapSketch.isBuilt)
+					if exit then
+						navPoint = at(exit.x, exit.z)
+					end
+				end
+			end
+			local inView = navPoint ~= nil and (navPoint - pixel).Magnitude <= EDGE
+			navGlyph.Visible = navPoint ~= nil and nav ~= nil and nav.map == currentMap and inView
+			navArrow.Visible = navPoint ~= nil and not navGlyph.Visible
+			if navPoint then
+				if navGlyph.Visible then
+					navGlyph.Position = UDim2.fromOffset(navPoint.X, navPoint.Y)
+				else
+					local direction = navPoint - pixel
+					if direction.Magnitude > 0.01 then
+						local unit = direction.Unit
+						local edge = pixel + unit * math.min(EDGE, direction.Magnitude)
+						navArrow.Position = UDim2.fromOffset(edge.X, edge.Y)
+						navArrow.Rotation = math.deg(math.atan2(unit.X, -unit.Y))
+					end
+				end
+			end
+			-- Own marks (S25)
+			local marks = State.Get({ "character", "mapMarks" })
+			local usedMarks = 0
+			if type(marks) == "table" then
+				for _, mark in marks do
+					if mark.map == currentMap and usedMarks < MAX_MARKS then
+						usedMarks += 1
+						local label = markPool[usedMarks]
+						local icon = MapMarks.get(mark.icon)
+						label.Text = if icon then icon.glyph else "⚑"
+						label.TextColor3 = if icon then Color3.fromHex(icon.color) else Theme.Colors.GoldBright
+						local p = at(mark.x, mark.z)
+						label.Position = UDim2.fromOffset(p.X, p.Y)
+						label.Visible = true
+					end
+				end
+			end
+			for i = usedMarks + 1, MAX_MARKS do
+				markPool[i].Visible = false
 			end
 			-- Party members (blue dots)
 			local party = State.Get({ "party" })
+			local usedParty = 0
 			if type(party) == "table" then
 				for _, member in party.members do
-					if member.id ~= Players.LocalPlayer.UserId and member.map == currentMap then
-						local p =
-							MapSketch.toPixel(sketch, currentScale, member.x - map.offset.x, member.z - map.offset.z)
-						glyph(dynamic, "●", "#4A8FE7", p, 14, 5)
+					if
+						member.id ~= Players.LocalPlayer.UserId
+						and member.map == currentMap
+						and usedParty < #partyPool
+					then
+						usedParty += 1
+						local p = at(member.x - map.offset.x, member.z - map.offset.z)
+						partyPool[usedParty].Position = UDim2.fromOffset(p.X, p.Y)
+						partyPool[usedParty].Visible = true
 					end
 				end
 			end
+			for i = usedParty + 1, #partyPool do
+				partyPool[i].Visible = false
+			end
+			-- Monsters nearby (S19: normal ones in the colour of their group size, elites gold).
+			local usedDots = 0
 			local monsters = Workspace:FindFirstChild("Monsters")
 			if monsters then
 				for _, model in monsters:GetChildren() do
+					if usedDots >= MONSTER_DOTS then
+						break
+					end
 					if model:IsA("Model") and model:GetAttribute("Dead") ~= true then
 						local pivot = model:GetPivot().Position
 						if (pivot - root.Position).Magnitude <= MONSTER_RANGE then
-							local local_ = pivot - Vector3.new(map.offset.x, map.offset.y, map.offset.z)
+							usedDots += 1
+							local local_ = pivot - offset
 							local variant = model:GetAttribute("Variant")
 							local size = if variant == "elite2" then 12 elseif variant == "elite" then 9 else 6
-							local dot = Instance.new("Frame")
-							dot.AnchorPoint = Vector2.new(0.5, 0.5)
-							local p = MapSketch.toPixel(sketch, currentScale, local_.X, local_.Z)
+							local dot = dotPool[usedDots]
+							local p = at(local_.X, local_.Z)
 							dot.Position = UDim2.fromOffset(p.X, p.Y)
 							dot.Size = UDim2.fromOffset(size, size)
-							-- Normal monsters in the colour of their group size (S19), elites gold.
 							dot.BackgroundColor3 = if variant == "normal" or variant == nil
 								then GroupColors.of(model:GetAttribute("GroupSize") :: number?)
 								else Theme.Colors.GoldBright
-							dot.BorderSizePixel = 0
-							dot.ZIndex = 4
-							local corner = Instance.new("UICorner")
-							corner.CornerRadius = UDim.new(0.5, 0)
-							corner.Parent = dot
-							dot.Parent = dynamic
+							dot.Visible = true
 						end
 					end
 				end
+			end
+			for i = usedDots + 1, MONSTER_DOTS do
+				dotPool[i].Visible = false
 			end
 		end)
 	)
@@ -297,6 +433,18 @@ local function Minimap(scope: Scope): Instance
 				[Children] = {
 					scope:New("UICorner")({ CornerRadius = UDim.new(0.5, 0) }),
 					holder,
+					-- S25: click / tap = the world map, centred on the player.
+					scope:New("TextButton")({
+						Name = "OpenMap",
+						Size = UDim2.fromScale(1, 1),
+						BackgroundTransparency = 1,
+						Text = "",
+						ZIndex = 9,
+						[OnEvent("Activated")] = function()
+							NavTarget.MapFocus:set({ zoom = 2 })
+							props.ShowWindow("map")
+						end,
+					}),
 					scope:New("TextLabel")({
 						Name = "Player",
 						AnchorPoint = Vector2.new(0.5, 0.5),

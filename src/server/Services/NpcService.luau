@@ -61,7 +61,8 @@ local function buildBoard(def: Npcs.NpcDef, parent: Instance)
 	head.Parent = model
 	model.PrimaryPart = head
 	model:SetAttribute("NpcId", def.id)
-	model.ModelStreamingMode = Enum.ModelStreamingMode.Atomic
+	-- S25: always on every client (the world map clones NPCs for its 3D preview).
+	model.ModelStreamingMode = Enum.ModelStreamingMode.Persistent
 	model.Parent = parent
 	positions[def.id] = position
 end
@@ -114,7 +115,9 @@ local function build(def: Npcs.NpcDef, parent: Instance)
 	local height = if root and humanoid then humanoid.HipHeight + root.Size.Y / 2 else 3
 	npc:PivotTo(CFrame.new(position + Vector3.new(0, height, 0)) * CFrame.Angles(0, math.rad(def.facing), 0))
 	npc:SetAttribute("NpcId", def.id)
-	npc.ModelStreamingMode = Enum.ModelStreamingMode.Atomic
+	-- S25: Persistent (~15 light models) so the world map can clone any NPC for its 3D preview, even one on
+	-- another map or out of the streaming radius.
+	npc.ModelStreamingMode = Enum.ModelStreamingMode.Persistent
 	npc.Parent = parent
 	positions[def.id] = position
 end

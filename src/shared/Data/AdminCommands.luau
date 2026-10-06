@@ -154,6 +154,9 @@ cmd("world", "mapcache", { enum("action", { "clear" }) })
 cmd("world", "town", { enum("action", { "info", "lod", "tp" }), str("value", true) })
 cmd("world", "portalpick", { ref("map", "map") })
 cmd("world", "arrive", { ref("map", "map"), ref("area", "area") })
+cmd("world", "nav", { str("target"), str("z", true) })
+cmd("world", "navdebug", {})
+cmd("world", "marks", { enum("action", { "list", "clear" }) }, { dangerActions = { "clear" } })
 cmd("world", "goto", { ref("player", "player") })
 cmd("world", "bring", { ref("player", "player") })
 
@@ -186,6 +189,7 @@ cmd("combat", "anim", { str("kind") })
 -- Quests
 cmd("quests", "quest", { enum("action", { "set", "complete" }), ref("id", "quest", true) })
 cmd("quests", "daily", { enum("action", { "reroll" }) })
+cmd("quests", "questmarks", {})
 
 -- Economy and community
 cmd("economy", "gold", { int("amount", -BIG, BIG) })

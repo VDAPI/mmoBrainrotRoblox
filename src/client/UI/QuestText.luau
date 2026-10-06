@@ -9,6 +9,7 @@ local Bosses = require(ReplicatedStorage.Shared.Data.Bosses)
 local GatherNodes = require(ReplicatedStorage.Shared.Data.GatherNodes)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local Monsters = require(ReplicatedStorage.Shared.Data.Monsters)
+local NpcMarks = require(ReplicatedStorage.Shared.Logic.NpcMarks)
 local Npcs = require(ReplicatedStorage.Shared.Data.Npcs)
 local QuestLogic = require(ReplicatedStorage.Shared.Logic.QuestLogic)
 local Quests = require(ReplicatedStorage.Shared.Data.Quests)
@@ -123,33 +124,11 @@ function QuestText.target(quest: Quests.MainQuest, progress: { number }, level: 
 	return nil
 end
 
-export type Marker = "available" | "ready" | "progress" | nil
+export type Marker = NpcMarks.Mark?
 
--- Marker above an NPC for the character's quests.
+-- Marker above an NPC for the character's quests (S25: Logic/NpcMarks, shared with the maps).
 function QuestText.marker(npcId: string, quests: any, level: number): Marker
-	if type(quests) ~= "table" then
-		return nil
-	end
-	local main = quests.main
-	if type(main) == "table" then
-		local quest = Quests.Main.get(main.id)
-		if quest and quest.turnIn == npcId then
-			return if QuestLogic.isComplete(main.progress or {}, quest.objectives) then "ready" else "progress"
-		end
-		return nil
-	end
-	local nextQuest, ready = QuestLogic.nextMain(quests.mainDone or 0, level)
-	if nextQuest and nextQuest.giver == npcId and ready then
-		return "available"
-	end
-	if npcId == "questboard" and type(quests.daily) == "table" then
-		for _, entry in quests.daily.list or {} do
-			if not entry.claimed and entry.progress >= entry.objective.n then
-				return "ready"
-			end
-		end
-	end
-	return nil
+	return NpcMarks.of(npcId, quests, level)
 end
 
 return QuestText

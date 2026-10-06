@@ -6,6 +6,7 @@
 local CollectionService = game:GetService("CollectionService")
 
 local Areas = require(game:GetService("ReplicatedStorage").Shared.Data.Areas)
+local Portals = require(game:GetService("ReplicatedStorage").Shared.Data.Portals)
 local Build = require(script.Parent.Build)
 
 local Prefabs = {}
@@ -676,6 +677,16 @@ function Prefabs.portal(
 	return model
 end
 
+-- Portal arch from Data/Portals (S25: one source of truth with the route between maps and the world map).
+function Prefabs.portalFrom(ctx: Context, id: string): Model?
+	local portal = Portals.get(id)
+	if not portal or portal.map ~= ctx.map.id then
+		warn(`[Prefabs] no portal {id} on {ctx.map.id} in Data/Portals`)
+		return nil
+	end
+	return Prefabs.portal(ctx, portal.id, portal.target, portal.x, portal.z, portal.rot, portal.arrive)
+end
+
 -- Signpost (S19): a post with a board; clients write the localized name and levels on it (tag "Signpost",
 -- attributes NameKey, LvMin, LvMax).
 function Prefabs.signpost(
@@ -1113,6 +1124,16 @@ function Prefabs.caveEntrances(ctx: Context, data: Areas.MapAreas, rockColor: st
 			Prefabs.portal(ctx, `{ctx.map.id}_{entrance.cave}`, entrance.cave, entrance.x, entrance.z, entrance.rot)
 		end
 	end
+end
+
+-- Dungeon gate of a region from Data/Portals (S25).
+function Prefabs.dungeonGateFrom(ctx: Context, region: string): Model?
+	local gate = Portals.get(`dungeon_{region}`)
+	if not gate or gate.map ~= ctx.map.id then
+		warn(`[Prefabs] no dungeon gate for {region} on {ctx.map.id} in Data/Portals`)
+		return nil
+	end
+	return Prefabs.dungeonGate(ctx, region, gate.x, gate.z, gate.rot)
 end
 
 -- Boss dungeon entrance (S09 handles entering; tag "DungeonEntrance", attribute DungeonRegion).

@@ -73,8 +73,8 @@ return function(ctx: Build.Context)
 	Build.scatterNodes(ctx, "bush_frostleaf", 26, { -760, -760, 760, 760 }, nil, clear)
 
 	-- Portals
-	Prefabs.portal(ctx, "frostpeak_ashen", "ashen", -770, 0, 90, { x = 690, z = -690 })
-	Prefabs.portal(ctx, "frostpeak_city", "city", -770, 160, 90, Build.cityArrival("frostpeak"))
+	Prefabs.portalFrom(ctx, "frostpeak_ashen")
+	Prefabs.portalFrom(ctx, "frostpeak_city")
 	Prefabs.caveEntrances(ctx, AREAS, "#8FA3B3")
 	Prefabs.areaFeatures(ctx, AREAS, "#8FA3B3") -- signposts, landmarks, lanterns (S20)
 	Prefabs.extraDecor(ctx, AREAS, { "pine", "birch", "dead", "dark" }, { { -660, 90 } })

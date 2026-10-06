@@ -398,6 +398,7 @@ local function GameMenu(scope: Scope, close: () -> ()): Fusion.Child
 			row(scope, 12, "menu.sellConfirm", toggle(scope, "sellConfirm", true)),
 			row(scope, 13, "menu.autoTarget", toggle(scope, "autoTarget", true)),
 			row(scope, 13, "menu.groupRings", toggle(scope, "groupRings", true)),
+			row(scope, 13, "menu.mapCloseOnWalk", toggle(scope, "mapCloseOnWalk", true)),
 			row(scope, 13, "menu.betterItem", toggle(scope, "betterItem", true)),
 			row(scope, 13, "menu.lootHideBelow", cycle(scope, "lootHideBelow", 0, { 0, 2, 3, 4 }, rarityLabel)),
 			row(

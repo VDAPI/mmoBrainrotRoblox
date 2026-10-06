@@ -12,7 +12,7 @@ type CharacterData = Types.CharacterData
 
 local AccountSchema = {}
 
-AccountSchema.CURRENT = 2
+AccountSchema.CURRENT = 3
 
 function AccountSchema.accountTemplate(): AccountData
 	return {
@@ -42,6 +42,7 @@ function AccountSchema.accountTemplate(): AccountData
 			decor = "mid",
 			keys = {},
 			devPins = {},
+			mapCloseOnWalk = true,
 		},
 		purchases = {},
 		dailyLimits = { day = 0, protectScrolls = 0 },
@@ -82,6 +83,7 @@ function AccountSchema.characterTemplate(): CharacterData
 		elixirs = {},
 		pvp = { kills = 0, deaths = 0, duelsWon = 0, duelsLost = 0 },
 		visitedMaps = { [Config.StartingMap] = true },
+		mapMarks = {},
 		createdAt = 0,
 		playtime = 0,
 	}
@@ -96,6 +98,16 @@ MIGRATIONS[2] = function(data, newId)
 	for _, character in data.characters do
 		TableUtil.reconcile(character, AccountSchema.characterTemplate())
 		StarterGear.apply(character, newId)
+	end
+end
+
+-- 3 (S25): own map marks on every character (reconcile would add the empty list too; explicit for clarity and
+-- so a broken value from an old test build becomes a list).
+MIGRATIONS[3] = function(data, _newId)
+	for _, character in data.characters do
+		if type(character) == "table" and type(character.mapMarks) ~= "table" then
+			character.mapMarks = {}
+		end
 	end
 end
 

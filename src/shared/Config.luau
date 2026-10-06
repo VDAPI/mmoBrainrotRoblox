@@ -132,6 +132,24 @@ local Config = {
 		checkEvery = 0.25,
 		maxAnimated = { touch = 25, desktop = 60 },
 	},
+	-- Interactive map and the guide (S25, DESIGN §23): a target counts as reached within `arrive` studs
+	-- (`arriveNpc` for NPCs, who stand behind their counter); the path is recomputed when the player is more than
+	-- `deviate` studs off it, at most once every `recompute` seconds; markers every `spacing` studs up to `ahead`
+	-- studs in front of the player from a pool of `pool` parts. Pathfinding goes at most `pathRange` studs at once
+	-- (the client only knows the streamed world); farther goals get a partial path towards them. `maxMarks`
+	-- own map marks per character.
+	Nav = {
+		arrive = 6,
+		arriveNpc = 9,
+		deviate = 10,
+		recompute = 2,
+		spacing = 6,
+		ahead = 120,
+		pool = 40,
+		pathRange = 400,
+		waypointReach = 3.5,
+		maxMarks = 8,
+	},
 	-- Streaming (S20, decision in PROGRESS): also set in default.project.json (Workspace properties).
 	StreamingTargetRadius = 512,
 	StreamingMinRadius = 128,

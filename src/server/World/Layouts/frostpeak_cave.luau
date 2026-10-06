@@ -59,8 +59,8 @@ return function(ctx: Build.Context)
 		Prefabs.column(ctx, -100 + math.cos(angle) * 50, math.sin(angle) * 50, 30, "#A8D8F0")
 	end
 
-	Prefabs.portal(ctx, "frostpeak_cave_exit", "frostpeak", -278, 0, 90, Areas.arrivalOf("frostpeak_cave"))
-	Prefabs.dungeonGate(ctx, "frostpeak", 284, 0, 90)
+	Prefabs.portalFrom(ctx, "frostpeak_cave_exit")
+	Prefabs.dungeonGateFrom(ctx, "frostpeak")
 	Prefabs.torch(ctx, 272, -12, "#D64A3E")
 	Prefabs.torch(ctx, 272, 12, "#D64A3E")
 

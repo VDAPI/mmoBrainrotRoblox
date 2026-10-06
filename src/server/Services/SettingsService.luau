@@ -58,6 +58,9 @@ local SETTINGS: { [string]: (value: any, player: Player) -> boolean } = {
 	groupRings = function(value)
 		return type(value) == "boolean"
 	end,
+	mapCloseOnWalk = function(value)
+		return type(value) == "boolean"
+	end,
 	betterItem = function(value)
 		return type(value) == "boolean"
 	end,

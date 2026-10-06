@@ -73,8 +73,8 @@ return function(ctx: Build.Context)
 	end, { { 90, 215, 10 } })
 
 	-- Exit and the dungeon gate
-	Prefabs.portal(ctx, "meadows_cave_exit", "meadows", -278, 0, 90, Areas.arrivalOf("meadows_cave"))
-	Prefabs.dungeonGate(ctx, "meadows", 272, 0, 90)
+	Prefabs.portalFrom(ctx, "meadows_cave_exit")
+	Prefabs.dungeonGateFrom(ctx, "meadows")
 	Prefabs.torch(ctx, 262, -12, "#D64A3E")
 	Prefabs.torch(ctx, 262, 12, "#D64A3E")
 

@@ -80,8 +80,8 @@ return function(ctx: Build.Context)
 		end
 	end
 
-	Prefabs.portal(ctx, "duskwood_cave_exit", "duskwood", -275, 0, 90, Areas.arrivalOf("duskwood_cave"))
-	Prefabs.dungeonGate(ctx, "duskwood", 282, 0, 90)
+	Prefabs.portalFrom(ctx, "duskwood_cave_exit")
+	Prefabs.dungeonGateFrom(ctx, "duskwood")
 	Prefabs.torch(ctx, 270, -12, "#D64A3E")
 	Prefabs.torch(ctx, 270, 12, "#D64A3E")
 

@@ -23,6 +23,7 @@ local SkillBar = require(script.SkillBar)
 local SprintButton = require(script.SprintButton)
 local BlessingIcon = require(script.BlessingIcon)
 local Minimap = require(script.Minimap)
+local NavBar = require(script.NavBar)
 local CastBar = require(script.CastBar)
 local EffectIcons = require(script.EffectIcons)
 local MobileSkills = require(script.MobileSkills)
@@ -48,6 +49,8 @@ export type MenuEntry = {
 export type Props = {
 	Menu: { MenuEntry },
 	OpenWindow: (id: string) -> (),
+	ShowWindow: (id: string) -> (), -- S25: opens (never toggles) a window
+	StopGuide: () -> (), -- S25: clears the guide target
 	IsOpen: (id: string) -> Fusion.Value<boolean>,
 	Target: Fusion.Value<Model?>,
 	OnAttack: () -> (),
@@ -253,7 +256,8 @@ local function menu(scope: Scope, props: Props): Instance
 					buttons :: any,
 				},
 			}),
-			Minimap(scope),
+			Minimap(scope, { ShowWindow = props.ShowWindow }),
+			NavBar(scope, { ShowWindow = props.ShowWindow, StopGuide = props.StopGuide }),
 		},
 	})
 end

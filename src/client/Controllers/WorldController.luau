@@ -7,7 +7,7 @@
 --   * loading screen on MapTransition (map name, levels, zone, a random tip), faded in and out,
 --   * portals (tag "Portal"): nameplate with the target map and levels, "Travel [E]" prompt; entering a red
 --     zone or a map above your level asks for confirmation first.
--- Also registers the world map window (M).
+-- Also registers the world map window (M, UI/Screens/WorldMap; S25: interactive cards, guide and walk).
 
 local CollectionService = game:GetService("CollectionService")
 local Lighting = game:GetService("Lighting")
@@ -33,11 +33,11 @@ local State = require(script.Parent.Parent.UI.State)
 local Text = require(script.Parent.Parent.UI.Text)
 local Theme = require(script.Parent.Parent.UI.Theme)
 local Toast = require(script.Parent.Parent.UI.Components.Toast)
-local WorldMapWindow = require(script.Parent.Parent.UI.Screens.WorldMapWindow)
+local WorldMapWindow = require(script.Parent.Parent.UI.Screens.WorldMap)
 
 local WorldController = {
 	Name = "WorldController",
-	Deps = { "WindowManager", "SettingsController" },
+	Deps = { "WindowManager", "SettingsController", "NavController", "MonsterViewController", "PartyController" },
 }
 
 local TIP_COUNT = 10
@@ -379,6 +379,20 @@ end
 
 function WorldController.Init(registry)
 	WindowManager = registry.Get("WindowManager")
+	-- S25: the interactive map guides, walks, opens profiles and builds 3D previews of monsters.
+	local Nav = registry.Get("NavController")
+	local MonsterView = registry.Get("MonsterViewController")
+	local Party = registry.Get("PartyController")
+	WorldMapWindow.setServices({
+		Guide = Nav.Guide,
+		Walk = Nav.Walk,
+		Resolve = Nav.Resolve,
+		OpenProfile = function(userId: number)
+			WindowManager.Close("map")
+			Party.OpenProfile(userId)
+		end,
+		BuildLook = MonsterView.BuildPreview,
+	})
 	WindowManager.Register({
 		id = "map",
 		titleKey = "window.map.title",

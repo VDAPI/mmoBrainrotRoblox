@@ -66,6 +66,7 @@ local AdminService = {
 		"AuctionService",
 		"CosmeticService",
 		"StatusEffectService",
+		"MapMarkService",
 	},
 }
 

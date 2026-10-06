@@ -32,6 +32,7 @@ local FishingService = Context.services.FishingService
 local WorldService = Context.services.WorldService
 local TravelService = Context.services.TravelService
 local AdminService = Context.services.AdminService
+local MapMarkService = Context.services.MapMarkService
 
 local commands: { [string]: (player: Player, args: { string }) -> ...any } = {}
 
@@ -458,6 +459,52 @@ local function moveTo(who: Player, target: Player): boolean
 	local at = root.CFrame * CFrame.new(3, 0, 3)
 	task.spawn(TravelService.TeleportToMap, who, targetChar.location.map, at)
 	return true
+end
+
+-- S25: guide target for the caller (an NPC id, a map id, "x z" on the current map, or "clear"); the client
+-- draws the path and the HUD bar like after "Guide" on the world map.
+commands.nav = function(player, args)
+	local target = args[1] or ""
+	local spec: { [string]: any }? = nil
+	if target == "clear" or target == "off" then
+		spec = { kind = "clear" }
+	elseif Npcs.get(target) then
+		spec = { kind = "npc", id = target }
+	elseif Maps.get(target) then
+		spec = { kind = "map", id = target }
+	else
+		local x, z = tonumber(target), tonumber(args[2])
+		if x and z and x == x and z == z then
+			spec = { kind = "point", x = x, z = z }
+		end
+	end
+	if not spec then
+		reply(player, "admin.usage.nav")
+		return false, "admin.nav.bad"
+	end
+	Net.Fire(player, "AdminClient", "nav", spec)
+	reply(player, "admin.nav.ok", { target = if spec.kind == "point" then `{args[1]} {args[2]}` else target })
+	return true
+end
+
+commands.navdebug = function(player)
+	Net.Fire(player, "AdminClient", "navdebug")
+	reply(player, "admin.navdebug.ok")
+end
+
+-- S25: own map marks of the caller's character.
+commands.marks = function(player, args)
+	withCharacter(player, function()
+		if args[1] == "clear" then
+			reply(player, "admin.marks.cleared", { n = MapMarkService.Clear(player) })
+			return
+		end
+		local marks = MapMarkService.List(player)
+		reply(player, "admin.marks.count", { n = #marks, max = Config.Nav.maxMarks })
+		for i, mark in marks do
+			reply(player, "admin.marks.line", { i = i, icon = mark.icon, map = mark.map, x = mark.x, z = mark.z })
+		end
+	end)
 end
 
 commands["goto"] = function(player, args)

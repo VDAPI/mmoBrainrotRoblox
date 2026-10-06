@@ -142,8 +142,7 @@ return function(caveId: string)
 
 		-- Exit back to the region map, in front of the cave mouth there
 		local entrance = plan.rooms[1]
-		local arrival = Areas.arrivalOf(caveId)
-		Prefabs.portal(ctx, `{caveId}_exit`, cave.region, entrance.x - entrance.r + 10, entrance.z, 90, arrival)
+		Prefabs.portalFrom(ctx, `{caveId}_exit`)
 		Prefabs.signpost(
 			ctx,
 			entrance.x + 6,

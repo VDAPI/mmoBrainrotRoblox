@@ -5,7 +5,6 @@
 
 local Build = require(script.Parent.Parent.Build)
 local Prefabs = require(script.Parent.Parent.Prefabs)
-local Maps = require(game:GetService("ReplicatedStorage").Shared.Data.Maps)
 
 export type Style = {
 	rock: Enum.Material,
@@ -37,17 +36,7 @@ return function(ctx: Build.Context, style: Style)
 		end
 	end
 
-	local cave = Maps.get(style.cave)
-	local entrance = cave and cave.dungeonEntrance
-	Prefabs.portal(
-		ctx,
-		`{ctx.map.id}_exit`,
-		style.cave,
-		0,
-		78,
-		0,
-		if entrance then { x = entrance.x - 24, z = entrance.z } else nil
-	)
+	Prefabs.portalFrom(ctx, `{ctx.map.id}_exit`)
 
 	Build.icon(ctx, "boss", 0, -10)
 	Build.zone(ctx, "red", nil, -150, -150, 150, 150)

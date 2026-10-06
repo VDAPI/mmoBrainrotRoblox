@@ -60,8 +60,8 @@ return function(ctx: Build.Context)
 		Prefabs.column(ctx, -100 + math.cos(angle) * 46, math.sin(angle) * 46, 28, "#3A2A22")
 	end
 
-	Prefabs.portal(ctx, "ashen_cave_exit", "ashen", -278, 0, 90, Areas.arrivalOf("ashen_cave"))
-	Prefabs.dungeonGate(ctx, "ashen", 282, 0, 90)
+	Prefabs.portalFrom(ctx, "ashen_cave_exit")
+	Prefabs.dungeonGateFrom(ctx, "ashen")
 	Prefabs.torch(ctx, 270, -12, "#D64A3E")
 	Prefabs.torch(ctx, 270, 12, "#D64A3E")
 

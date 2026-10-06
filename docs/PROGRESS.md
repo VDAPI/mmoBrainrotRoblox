@@ -31,6 +31,7 @@
 | S22 | Animacje ataku, smycz bez leczenia, śmierć z wyborem miejsca, wybór expowiska przy portalu, czytelna mapa | ● |
 | S23 | Panel developerski (F2): rejestr komend, walidacja, audyt, okno z zakładkami, konsola | ● |
 | S24 | Ładne potwory, bossowie i pety: generator wyglądu, wygląd na kliencie z LOD, gotowość na prawdziwe modele | ● |
+| S25 | Interaktywna mapa: karty z podglądem 3D, prowadzenie i „Idź”, znaczniki, wyszukiwarka, minimapa | ● |
 
 Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana przez właściciela
 
@@ -553,6 +554,39 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
 - **S24** `/mobviz` jest tylko lokalny (remote `MobViz` do admina); podgląd z animacją liczy `Gait` sam, bez
   `AnimationController`.
 
+- **S25** Portale mają jedno źródło: `Data/Portals` (layouty stawiają je przez `Prefabs.portalFrom`, bramy miasta z
+  planu, wejścia jaskiń z `Data/Areas`, wyjście generowanej jaskini z `CaveGen.ENTRANCE`). `Build.cityArrival`
+  usunięte (przybycie do miasta liczy `Data/Portals`). Test pilnuje, że każdy `links` z `Data/Maps` ma portal.
+- **S25** „Nie otwarta kraina” na kliencie = mapa bez szkicu (`MapSketch.isBuilt`, ten sam test co portal przy E);
+  w czystej logice (testy) = `buildMode ~= "none"`. Bramy lochów są krawędziami trasy (wejście i tak sprawdza serwer).
+- **S25** NPC mają `ModelStreamingMode = Persistent` (15 lekkich modeli), żeby karta mogła sklonować każdego NPC
+  (także z innej mapy). Klon bez skryptów, promptów i tabliczek; tablica ogłoszeń (`body = "board"`) ma ikonę.
+- **S25** Podgląd 3D: jeden `ViewportFrame` na okno, model budowany przy otwarciu karty i trzymany w małym cache
+  (5 ostatnich, odłączonych), niszczony przy zamknięciu okna; obraca się kamera (nie model), bez obrotu na niskiej
+  jakości. Ta sama karta odświeżana co 2 s (grupa, timery) nie przebudowuje modelu.
+- **S25** Ikony mapy to `TextButton` z obszarem trafienia 36 px przy każdym zoomie (rozmiar / zoom); jeden zestaw
+  połączeń na pokazaną mapę. Kliknięcia ikon nie liczą współrzędnych; tylko menu na ziemi zamienia pozycję wskaźnika na
+  piksel płótna (`InputObject.Position` i `AbsolutePosition` w tej samej przestrzeni). Dymek i menu są w płótnie z
+  odwrotnym `UIScale`, więc nie trzeba przeliczać pozycji ekranu.
+- **S25** Podwójny klik na obszarze potworów też otwiera menu ziemi (obszary pokrywają większość map regionów);
+  pierwszy klik otwiera kartę obszaru.
+- **S25** Prowadzenie liczy ścieżkę `PathfindingService` na kliencie (zna tylko świat w zasięgu streamingu), więc cel
+  dalej niż `Config.Nav.pathRange` (400 st.) dostaje ścieżkę częściową, przeliczaną przy jej końcu; gdy ścieżki nie
+  ma, prosta linia. Przeliczenie najwyżej co 2 s (także dla ruchomego celu, np. członka grupy). Wysokość celu z
+  terenu (portale, dachy i NPC nie podnoszą punktu), w jaskiniach krótki promień spod sufitu.
+- **S25** Cel NPC kończy się 5 st. przed NPC (kierunek `facing`); dojście = 6 st. od tego punktu albo 9 st. od NPC
+  (w zasięgu „Rozmawiaj”). Cel na innej mapie prowadzi do `MapRoute.nextExit`; przy portalu podpowiedź „Podróżuj
+  [E]” (bez teleportu z mapy). „Idź” tylko na tej samej mapie; zaczęcie „Idź” zatrzymuje podchodzenie do celu ataku
+  (jak WASD), walka trwa dalej.
+- **S25** Znaczniki questów: `Logic/NpcMarks` (`available` / `turnIn` / `active`) zastąpiło `QuestText.marker`;
+  tablica zleceń dostaje szary „?” także wtedy, gdy zlecenia są w trakcie (wcześniej nic).
+- **S25** Wyszukiwarka: jedna pozycja na rodzaj potwora (najniższy obszar, inaczej jaskinia), boss wskazuje bramę lochu
+  w jaskini, węzły: jedna pozycja na rodzaj węzła i mapę (pierwszy węzeł ze szkicu). NPC szukani po imieniu, roli
+  (`npc.<id>.role`), nazwie usługi i słowach `worldmap.search.<usługa>`.
+- **S25** Minimapa: kropki potworów, grupa i znaczniki z puli (wcześniej tworzone od nowa co 0,4 s).
+- **S25** Okno mapy podzielone na moduły `UI/Screens/WorldMap/*` (`init` ok. 830 linii to klej okna: stan,
+  karty, focus, pętla klatki).
+
 ## Niedokończone
 (Rzeczy z zakresu sesji, które nie zostały zrobione. Następna sesja zaczyna od nich.)
 
@@ -594,6 +628,15 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
   ścieżka `asset` (klonowanie, `Animator`, `LookAnim`) nie była uruchomiona z żadnym modelem.
 - **S24** Dodatki Elit i nakrycia bossów nie są montowane na `Attachment` prawdziwego modelu (generator ma własne
   gniazda); przy pierwszym modelu z Elitami trzeba to dopiąć.
+
+- **S25** Mapa interaktywna i prowadzenie niesprawdzone w Studio. Do sprawdzenia: czy `view.InputBegan` przychodzi
+  przy wciśnięciu na ikonie / obszarze (przeciąganie mapy po obszarach działało w S20–S22, więc powinno), czy punkt
+  menu na ziemi trafia w miejsce kliknięcia (przestrzeń `InputObject.Position` vs `AbsolutePosition` przy
+  `ScreenInsets`), jakość ścieżek `PathfindingService` w mieście (bramy, mosty, schody) i na dużych mapach (ścieżki
+  częściowe), wydajność `/navdebug`.
+- **S25** Serwer nie ma kontroli prędkości ani teleportów gracza (ruch jest po stronie klienta; „Idź” to zwykłe
+  `MoveTo`). Zgodnie z zakresem nie dodano jej w tej sesji.
+- **S25** Słabości żywiołowe potworów nie istnieją w danych (karta pokazuje tylko żywioł ataku).
 
 ## Zgłoszone błędy
 (Właściciel wpisuje tu błędy po testach albo przekazuje je przez sesję poprawek.)
@@ -1917,3 +1960,84 @@ lokalizacja, `tests/data.spec`.
 17. Test prawdziwego modelu (opcjonalnie): wstaw dowolny Model z `PrimaryPart` jako `ReplicatedStorage.Assets.Monsters.wolf`
     i dodaj w `MonsterLooks.wolf` wpis `asset` z `docs/ASSETS.md` (bez anim): wilki mają ten model; bez modelu wracają
     do generatora z jednym ostrzeżeniem w Output.
+
+### S25: Interaktywna mapa
+
+**Zrobione**
+- Czysta logika: `Logic/MapRoute` (BFS po portalach, `path`, `nextExit`, `hops`, `exits`), `Logic/MapSearch`
+  (normalizacja bez wielkości liter i polskich znaków, indeks NPC / map / obszarów / potworów / bossów / węzłów,
+  ranking „od początku słowa” > „w środku”, limit 12), `Logic/NpcMarks` (`available` / `turnIn` / `active`, tablica
+  zleceń), `Logic/NavPath` (upraszczanie ścieżki, długość, postęp, zboczenie, znaczniki co N studów).
+- Dane: `Data/Portals` (jedno źródło przejść między mapami; layouty przez `Prefabs.portalFrom` /
+  `dungeonGateFrom`), `Data/MapMarks` (6 ikon), `Config.Nav`, `character.mapMarks` (migracja schematu 3),
+  `settings.mapCloseOnWalk`, role NPC i słowa wyszukiwania w lokalizacji.
+- Serwer: `MapMarkService` (remote'y `MapMarkAdd` / `MapMarkRemove` z walidacją), NPC `Persistent`, komendy `/nav`,
+  `/navdebug`, `/marks`, `/questmarks`.
+- Mapa świata (`UI/Screens/WorldMap/*`): klikalne ikony NPC, portali, bram, jaskiń, wyjść, lochów, węzłów, grupy i
+  znaczników; dymek na PC, przypięta karta z pulsującym pierścieniem, dolny panel na dotyku; karty NPC (3D, rola,
+  powitanie, usługi, sklep, questy, odległość / trasa), portalu, obszaru, potwora (3 warianty w 3D, statystyki,
+  gdzie występuje, łup), jaskini, lochu (boss 3D, blokada dzienna, unikaty z tooltipem), węzła, członka grupy i
+  znacznika; akcje Prowadź / Idź / Wyśrodkuj / Pokaż mapę / Profil / Usuń; menu ziemi (podwójny klik / długie
+  przytrzymanie): Idź tutaj, Prowadź tutaj, Postaw znacznik; wyszukiwarka; chipy usług; `!` / `?` nad NPC;
+  ograniczenie nakładających się ikon przy najmniejszym zoomie; log czasu budowy podglądu (`[WorldMap] preview`).
+- Prowadzenie: `UI/NavTarget`, `NavController` (ścieżka na ziemi z puli części, przeliczanie, cel na innej mapie,
+  auto-chodzenie z przerwaniami, obrót do NPC i „Rozmawiaj [E]”), `Hud/NavBar` pod minimapą (klik = mapa na celu,
+  ✕ = koniec), minimapa (klik = mapa na graczu, cel / strzałka na krawędzi, znaczniki, `!` / `?`, pule zamiast
+  tworzenia), strzałka questu przez `MapRoute`, przycisk „➤” w trackerze questów.
+- Opcje: „Zamykaj mapę przy »Idź«”.
+- Testy: `maproute.spec`, `mapsearch.spec`, `npcmarks.spec`, `navpath.spec`, `worldmap.spec` (dane NPC, `Config.Nav`,
+  ikony znaczników, migracja `mapMarks`).
+
+**Pliki**: nowe `Data/Portals`, `Data/MapMarks`, `Logic/{MapRoute,MapSearch,NpcMarks,NavPath}`,
+`Services/MapMarkService`, `Controllers/NavController`, `UI/NavTarget`, `UI/NpcMarkState`,
+`UI/Screens/WorldMap/{init,Canvas,Overlay,Gestures,GroundMenu,DetailCard,Preview,Cards,CreatureCards,CardKit,Search,Panels}`,
+`UI/Screens/Hud/NavBar`, testy; zmiany: layouty map (portale z `Data/Portals`), `Prefabs`, `Build`, `NpcService`,
+`SettingsService`, `AdminService`, `Admin/{World,Quests}`, `Net/Definitions`, `Config`, `Types`, `AccountSchema`,
+`AdminCommands`, lokalizacja, `WorldController`, `NpcController`, `QuestController`, `ScreenController`,
+`TargetController` (`MoveInput`), `MapSketch` (`fromPixel`), `QuestText`, `Hud/{init,Minimap,QuestTracker}`,
+`GameMenu`; usunięty `Screens/WorldMapWindow` (zastąpiony folderem `WorldMap`).
+
+#### Instrukcja testu S25
+
+1. `rojo serve`, Play. W Output bez błędów `[WorldMap]`, `[Nav]`, `[Prefabs]`; portale na wszystkich mapach stoją
+   tam, gdzie wcześniej (`/tp meadows`, `/tp duskwood` …, wyjście z jaskini, brama lochu).
+2. W mieście `M`: ikony NPC mają `!` / `?` zgodnie z questami. Najedź myszą na kowala: dymek z imieniem i rolą.
+   Kliknij: po prawej karta z obracającym się modelem kowala (kapelusz w kolorze NPC), powitaniem, usługami,
+   6 rzeczami ze sklepu z cenami (najechanie na przedmiot = tooltip) i przyciskami Prowadź / Idź / Wyśrodkuj.
+   Ikona ma pulsującą złotą obwódkę. Output: `[WorldMap] preview npc:blacksmith: … ms (first)`.
+3. Kliknij inną ikonę: karta się zmienia; kliknij pustą ziemię: karta znika; ✕ też zamyka.
+4. Karta kowala → „Prowadź”: na ziemi pojawiają się złote kropki co ~6 st. do kowala (tylko ~120 st. przed tobą),
+   nad celem świetlny słup; pod minimapą belka „➤ Kowal Dorgan · N m ✕”. Idź tam: kropki przesuwają się do
+   przodu, po dojściu belka znika i jest komunikat.
+5. Karta kowala → „Idź”: mapa się zamyka, postać idzie sama; naciśnij W: od razu staje (belka zostaje). Jeszcze
+   raz „Idź” i daj dojść: postać obraca się do kowala, podpowiedź „Rozmawiaj [E]”.
+6. „Idź” do daleko stojącego NPC, a po drodze skocz / kliknij potwora / porozmawiaj z innym NPC / zgiń: każde z tych
+   przerywa marsz. Opcje (Esc) → „Zamykaj mapę przy »Idź«” wyłączone: mapa zostaje otwarta.
+7. `/tp duskwood`, M, lista: Miasto → karta kapitana → „Prowadź”: belka „… · przez: Vaelthorn · N m”, kropki do
+   portalu do miasta; przy portalu „Podróżuj [E] …”; po przejściu prowadzi dalej w mieście do kapitana.
+8. Łąki: klik w obszar → karta z rodzajami; klik w wilka → podkarta z modelem wilka, przełącznik Zwykły / Elita /
+   Elita II zmienia model, poziomy, HP i atak; „Gdzie występuje”, „Ciekawy łup”; „← wróć” wraca do obszaru.
+9. Klik w ⛰ jaskini: karta jaskini z modelem Elity II, listami i (po zabiciu Elity II) timerem; „Prowadź” do
+   wejścia, „Pokaż mapę” przełącza widok na jaskinię.
+10. W jaskini z bossem klik ☠: boss w 3D, wymagany poziom, „Dziś dostępny” (po zabiciu: „dostępny za …”), unikaty
+    z tooltipami.
+11. Klik w portal ◎ (np. do Mrocznego Boru): karta mapy docelowej, poziomy, strefa, polecany obszar; „Pokaż mapę”.
+12. Wyszukiwarka: wpisz `kowal` → pierwszy wynik Kowal Dorgan, klik: mapa miasta, przybliżenie i karta. Wpisz
+    `laki` → Szepczące Łąki; `wilk`, `grimrok`, `poczta`, `miedz` (węzeł). Enter wybiera pierwszy wynik.
+13. W mieście chipy u góry: „Kowal” podświetla kowala na złoto i przygasza resztę; kilka chipów naraz łączy wyniki.
+14. Podwójny klik na ziemi mapy (albo przytrzymanie palcem): menu „Idź tutaj / Prowadź tutaj / Postaw znacznik ▸”.
+    Postaw ⛏: ikona na mapie i minimapie; klik w nią → karta z nazwą „Przy: …” albo obszaru, „Usuń”. Wyjdź z gry i
+    wróć: znacznik jest. Dziewiąty znacznik → komunikat o limicie. Punkt w jeziorze → prowadzi na brzeg.
+15. `/marks list`, `/marks clear` (pyta w panelu), `/questmarks` (lista NPC ze znacznikami).
+16. Minimapa: klik otwiera mapę na graczu; cel prowadzenia jako ◆, poza widokiem strzałka na krawędzi (cel na innej
+    mapie: strzałka do portalu po drodze); `!` / `?` nad NPC.
+17. Tracker questów: przycisk „➤” obok strzałki włącza prowadzenie do celu questu.
+18. `/nav blacksmith`, `/nav frostpeak`, `/nav 100 50`, `/nav clear`; `/navdebug`: czerwone kule surowej ścieżki i
+    linia pod belką (punkty, przeliczenia/s ≤ 0,5, tryb path / partial / line).
+19. Grupa (2 konta): kropka członka na mapie, klik → karta z klasą, HP, mapą; „Prowadź” idzie za nim, „Profil”
+    otwiera profil.
+20. Telefon (emulator): tap w ikonę = dolny panel z podglądem po lewej i dużymi przyciskami; przeciągnięcie mapy go
+    nie zamyka; szczypanie zmienia zoom; przytrzymanie = menu ziemi; wyszukiwarka otwiera klawiaturę.
+21. Najmniejszy zoom w mieście: nakładające się ikony zostawiają ważniejszą (NPC z questem nad zwykłym NPC).
+22. Wydajność: mapa otwiera się tak szybko jak wcześniej (`[WorldMap] city: static layer built in … ms`), pierwsze
+    wpisanie w wyszukiwarkę loguje czas indeksu; `/perf` przy włączonym prowadzeniu bez skoków.

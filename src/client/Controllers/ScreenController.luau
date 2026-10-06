@@ -35,6 +35,7 @@ local ScreenController = {
 		"SkillController",
 		"PartyController",
 		"MovementController",
+		"NavController",
 	},
 }
 
@@ -45,6 +46,7 @@ local ItemController: any
 local SkillController: any
 local PartyController: any
 local MovementController: any
+local NavController: any
 
 -- HUD menu (DESIGN §23). Windows without their system yet show a "coming soon" body.
 local MENU: { Hud.MenuEntry } = {
@@ -213,6 +215,10 @@ local function show(screen: "select" | "hud")
 		Hud(scope, {
 			Menu = MENU,
 			OpenWindow = WindowManager.Toggle,
+			ShowWindow = WindowManager.Open,
+			StopGuide = function()
+				NavController.Clear()
+			end,
 			IsOpen = WindowManager.IsOpen,
 			Target = TargetController.Target,
 			OnPlayerMenu = function(player: Player, at: Vector2)
@@ -250,6 +256,7 @@ function ScreenController.Init(registry)
 	SkillController = registry.Get("SkillController")
 	PartyController = registry.Get("PartyController")
 	MovementController = registry.Get("MovementController")
+	NavController = registry.Get("NavController")
 	blur = Instance.new("BlurEffect")
 	blur.Name = "Vaelthorn_SelectBlur"
 	blur.Enabled = false

@@ -75,6 +75,7 @@ export type CharacterData = {
 	elixirs: { [string]: number }, -- resistance stat -> expiresAt (Clock time)
 	pvp: { kills: number, deaths: number, duelsWon: number, duelsLost: number },
 	visitedMaps: { [string]: boolean },
+	mapMarks: { MapMark }, -- S25: own map marks (Data/MapMarks icons, max Config.Nav.maxMarks)
 	createdAt: number,
 	playtime: number,
 	-- S20: last items picked up (newest first, max 50) and Elite II respawn timers.
@@ -91,6 +92,9 @@ export type LootLogEntry = {
 	src: string?,
 	map: string?,
 }
+
+-- Own map mark (S25): map-relative position and an icon id from Data/MapMarks.
+export type MapMark = { map: string, x: number, z: number, icon: string }
 
 -- Elite II respawn window after a kill (S20, DESIGN §15.3): server time from / to, on server `job`.
 export type Elite2Timer = { spawner: string, kind: string, map: string, from: number, to: number, job: string }
@@ -116,6 +120,7 @@ export type Settings = {
 	groupRings: boolean, -- S19: coloured rings under monster groups
 	keys: { [string]: string }, -- S17: rebound keys, action -> Enum.KeyCode name (Data/Keybinds)
 	devPins: { string }, -- S23: dev panel favourites (admins)
+	mapCloseOnWalk: boolean, -- S25: the world map closes after "Walk"
 }
 
 export type AccountData = {

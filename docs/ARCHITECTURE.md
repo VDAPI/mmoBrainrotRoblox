@@ -51,7 +51,7 @@ mmoBrainrotRoblox/
 │  │  │  ├─ Items/ (init.luau, Generate.luau, Bases.luau, Uniques.luau, Materials.luau, Consumables.luau, Backpacks.luau)
 │  │  │  ├─ Skills/ (Warrior.luau, Hunter.luau, Mage.luau, Cleric.luau)
 │  │  │  ├─ Monsters.luau  Bosses.luau  LootTables.luau
-│  │  │  ├─ Maps.luau  Spawns/ (per mapa)  GatherNodes.luau  Portals.luau
+│  │  │  ├─ Maps.luau  Spawns/ (per mapa)  GatherNodes.luau  Portals.luau (S25)  MapMarks.luau (S25)
 │  │  │  ├─ Npcs.luau  Shops.luau  Recipes.luau  Blessings.luau  Potions.luau
 │  │  │  ├─ Quests/ (Main.luau, Daily.luau)  GuildSkills.luau  Products.luau
 │  │  │  └─ Localization/ (pl.luau, en.luau)
@@ -59,6 +59,7 @@ mmoBrainrotRoblox/
 │  │  │  ├─ Exp.luau  StatCalc.luau  Damage.luau  ItemRoll.luau  Loot.luau
 │  │  │  ├─ Upgrade.luau  Dismantle.luau  PartyLoot.luau  Skills.luau
 │  │  │  ├─ Inventory.luau  PvpRules.luau  Rng.luau  Time.luau
+│  │  │  ├─ MapRoute.luau  MapSearch.luau  NpcMarks.luau  NavPath.luau (S25: mapa i prowadzenie)
 │  │  └─ Util/ (Locale.luau, Format.luau, TableUtil.luau, Deep.luau)
 │  ├─ server/                    # → ServerScriptService.Server
 │  │  ├─ init.server.luau        # bootstrap: ładuje Services/*, Init → Start
@@ -106,6 +107,8 @@ Bootstrap ładuje wszystkie ModuleScript z `Services/`, sortuje po `Deps`, wywo�
 - Serwer: **każdy handler waliduje typy argumentów** (helper `Net.Check(args, {"string", "number?"})`), sprawdza rate-limit (token bucket per gracz per remote; nadmiar = odrzucenie + licznik podejrzeń w logu).
 - **Serwer jest autorytetem**: obrażenia, cooldowny, losowania, ekonomia, pozycje celów (sprawdzanie dystansu po stronie serwera z tolerancją).
 - Nigdy RemoteFunction serwer → klient.
+- S25: `MapMarkAdd(map, x, z, icon)` / `MapMarkRemove(index)` (`MapMarkService`: mapa istnieje i nie jest lochem,
+  punkt w granicach mapy, ikona z `Data/MapMarks`, limit `Config.Nav.maxMarks`, bez duplikatu w promieniu 4 st.).
 
 ## 5. Dane (ProfileStore)
 
@@ -144,6 +147,7 @@ type CharacterData = {
   quests: { main: { id: string, progress: {any} }, daily: { day: number, list: {any} } },
   guildId: string?,
   pvpEnabled: boolean,
+  mapMarks: { { map: string, x: number, z: number, icon: string } },  -- S25: własne znaczniki (max Config.Nav.maxMarks)
   createdAt: number, playtime: number,
 }
 ```
@@ -204,6 +208,13 @@ type CharacterData = {
   wiatrak, dym, ogień, fontanna, okna i latarnie nocą). `WorldService.GroundCFrame` na zewnątrz: najpierw sam teren z
   y+200, potem geometria mapy 16 st. nad gruntem; w jaskiniach krótki promień. NPC stoją na powierzchni terenu
   (raycast w `NpcService.Start`); `body = "board"` to NPC bez postaci (tablica ogłoszeń).
+- Portale (S25): `Shared/Data/Portals` to jedno źródło wszystkich przejść między mapami (`{id, map, target, kind,
+  x, z, rot, arrive?}`, rodzaje `portal | gate | cave | exit | dungeon`): portale regionów i wyjścia dużych jaskiń
+  wpisane tam, bramy miasta z planu (`Data/Town`), wejścia do jaskiń z `Data/Areas`, wyjście generowanej jaskini z
+  `Logic/CaveGen.ENTRANCE`, bramy lochów i wyjścia komnat bossów. Layouty stawiają je przez
+  `Prefabs.portalFrom(ctx, id)` / `Prefabs.dungeonGateFrom(ctx, region)`. `Logic/MapRoute` (BFS po portalach,
+  deterministycznie, mapy nieotwarte pomijane predykatem `isOpen`; klient: `MapSketch.isBuilt`) daje `path`,
+  `nextExit`, `hops`; używają go prowadzenie, karty mapy, strzałka questu i minimapa.
 - Dzień i noc (S21): `MapDef.dayNight` + `nightLighting`; zegar liczy klient z `workspace:GetServerTimeNow()` i atrybutu
   `Workspace.DayOffset` (`/daytime`) przez `Logic/DayCycle` (noc = `Config.DayNightShare` doby); `WorldController`
   przenika oświetlenie co 1 s i wystawia `TimeOfDay()` / `HasDayNight()`.
@@ -215,6 +226,21 @@ type CharacterData = {
 - `Theme.luau`: kolory, czcionki, rozmiary, odstępy, czasy animacji; **wszystkie** komponenty z niego korzystają.
 - Skalowanie: `UIScale` zależne od rozmiaru ekranu (bazowo 1920×1080), min. rozmiar przycisku dotykowego 44 px.
 - Ikony przedmiotów: dopóki brak grafik, `Icons.luau` generuje ikonę: tło w kolorze rzadkości + symbol typu (Unicode/tekst) + ramka. Pole `icon` w definicji pozwala później podać `rbxassetid`.
+- **Mapa świata (S25, `UI/Screens/WorldMap/`)**: `init` (okno: lista, widok, karta, wyszukiwarka, focus z
+  `NavTarget.MapFocus`), `Canvas` (statyczna warstwa mapy w cache: szkic, obszary, ikony jako lekkie `TextButton` z
+  obszarem trafienia `HIT`/zoom, quest-znaczniki, chipy, przygaszanie, `declutter` przy najmniejszym zoomie),
+  `Overlay` (warstwa ruchoma: gracz, quest, cel prowadzenia, grupa, własne znaczniki, pierścień zaznaczenia, dymek),
+  `Gestures` (przeciąganie, kółko, szczypanie, tap, podwójny tap / długie przytrzymanie → `GroundMenu`),
+  `DetailCard` (render deklaratywnej karty: panel PC / dolny panel na dotyku) + `Preview` (jeden `ViewportFrame`,
+  klon NPC albo `MonsterViewController.BuildPreview`, cache 5 modeli, obrót kamery), `Cards` / `CreatureCards` /
+  `CardKit` (treść kart), `Search` (`Logic/MapSearch`, indeks na język + węzły ze szkiców), `Panels` (lista map,
+  legenda pasm, chipy, pasek warstw). Jeden zestaw połączeń na pokazaną mapę. Usługi (prowadzenie, profil,
+  budowa wyglądu) wstrzykuje `WorldController` przez `WorldMap.setServices`.
+- **Prowadzenie (S25)**: `UI/NavTarget` (cel, `Walking`, `Distance`, `Via`, `Debug`, `MapFocus`) i
+  `Controllers/NavController` (ścieżka `PathfindingService` na kliencie + `Logic/NavPath`, pula 40 części w
+  `Workspace.VaelthornNav`, auto-chodzenie `Humanoid:MoveTo`, przerwania: `TargetController.MoveInput`,
+  `JumpRequest`, cel ataku, `NpcController.Talk`, śmierć, zmiana mapy). Liczby w `Config.Nav`. HUD: `Hud/NavBar`
+  pod minimapą, minimapa (klik → mapa, cel / strzałka na krawędzi, znaczniki, `!`/`?` z `UI/NpcMarkState`).
 - Lokalizacja: `Locale.T("key", args)`; teksty w `Data/Localization/pl.luau` i `en.luau`. Język z ustawień (domyślnie wg `LocalizationService` gracza: pl → pl, reszta → en).
 
 ## 10. Bezpieczeństwo i niezawodność
@@ -286,6 +312,9 @@ type CharacterData = {
 | `/town` | world | <info|lod|tp> [value] | miasto startowe |
 | `/portalpick` | world | <map:map> | okno wyboru expowiska bez portalu |
 | `/arrive` | world | <map:map> <area:area> | teleport na punkt przybycia expowiska |
+| `/nav` | world | <target> [z] | cel prowadzenia: id NPC, id mapy, „x z” na tej mapie albo `clear` (S25) |
+| `/navdebug` | world |  | surowe punkty ścieżki na czerwono i liczba przeliczeń/s pod belką (S25) |
+| `/marks` | world | <list\|clear> | własne znaczniki postaci (S25) ⚠ clear |
 | `/goto` | world | <player:player> | teleport do gracza |
 | `/bring` | world | <player:player> | przenieś gracza do siebie |
 | `/spawn` | monsters | <monster:monster> [0|1|2] [level] | przywołaj potwora przed sobą |
@@ -311,6 +340,7 @@ type CharacterData = {
 | `/anim` | combat | <kind> | animacja ataku na sobie co 1 s (np. sword1h, bow, staff) |
 | `/quest` | quests | <set|complete> [id:quest] | /quest set <id> | complete |
 | `/daily` | quests | <reroll> | /daily reroll |
+| `/questmarks` | quests |  | znaczniki questów nad NPC (`Logic/NpcMarks`) dla twojej postaci (S25) |
 | `/gold` | economy | <amount> | dodaj (lub odejmij, gdy ujemna) złoto aktywnej postaci |
 | `/shards` | economy | <amount> | dodaj (lub odejmij) Smoczą Walutę na koncie |
 | `/setgold` | economy | <amount> | ustaw złoto postaci |

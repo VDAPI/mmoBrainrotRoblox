@@ -8,8 +8,9 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 
-local CollectionService = game:GetService("CollectionService")
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local MapRoute = require(ReplicatedStorage.Shared.Logic.MapRoute)
+local MapSketch = require(script.Parent.Parent.Parent.MapSketch)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local Monsters = require(ReplicatedStorage.Shared.Data.Monsters)
 local Npcs = require(ReplicatedStorage.Shared.Data.Npcs)
@@ -44,26 +45,20 @@ local function aimPoint(target: QuestTrack.Target?): Vector3?
 		end
 		return nil
 	end
-	-- Another map: the portal straight to it, or failing that the portal to the capital.
-	local fallback: Vector3? = nil
-	for _, portal in CollectionService:GetTagged("Portal") do
-		if portal:IsA("Model") and portal:IsDescendantOf(Workspace) then
-			local to = portal:GetAttribute("TargetMap")
-			local position = portal:GetPivot().Position
-			local local_ = position - Vector3.new(here.offset.x, 0, here.offset.z)
-			if math.abs(local_.X) <= here.size.x / 2 and math.abs(local_.Z) <= here.size.z / 2 then
-				if to == target.map then
-					return position
-				elseif to == "city" then
-					fallback = position
-				end
-			end
-		end
+	-- Another map: the next way out on the route there (S25: Logic/MapRoute over Data/Portals).
+	local exit = MapRoute.nextExit(here.id, target.map, MapSketch.isBuilt)
+	if exit then
+		return Vector3.new(here.offset.x + exit.x, 0, here.offset.z + exit.z)
 	end
-	return fallback
+	return nil
 end
 
-local function QuestTracker(scope: Scope): Instance
+export type Props = {
+	-- S25: "Guide" to the tracked quest's target (NavController).
+	Guide: ((target: QuestTrack.Target) -> ())?,
+}
+
+local function QuestTracker(scope: Scope, props: Props?): Instance
 	local quests = State.Value({ "character", "quests" })
 	local timers = State.Value({ "character", "e2timers" })
 	local now = scope:Value(Workspace:GetServerTimeNow())
@@ -293,7 +288,7 @@ local function QuestTracker(scope: Scope): Instance
 				BackgroundTransparency = 1,
 				[Children] = {
 					scope:New("TextButton")({
-						Size = UDim2.new(1, -40, 1, 0),
+						Size = UDim2.new(1, -74, 1, 0),
 						BackgroundTransparency = 1,
 						Text = scope:Computed(function(use): string
 							return `{if use(collapsed) then "▸" else "▾"} {Text.get(use, "quest.tracker")}`
@@ -305,6 +300,29 @@ local function QuestTracker(scope: Scope): Instance
 						[OnEvent("Activated")] = function()
 							collapsed:set(not Fusion.peek(collapsed))
 						end,
+					}),
+					scope:New("TextButton")({
+						Name = "Guide",
+						AnchorPoint = Vector2.new(1, 0.5),
+						Position = UDim2.new(1, -34, 0.5, 0),
+						Size = UDim2.fromOffset(30, 28),
+						BackgroundColor3 = Theme.Colors.PanelRaised,
+						BackgroundTransparency = 0.2,
+						Text = "➤",
+						FontFace = Theme.Fonts.BodyBold,
+						TextSize = 16,
+						TextColor3 = Theme.Colors.GoldBright,
+						Visible = scope:Computed(function(use): boolean
+							local target = use(QuestTrack.Target)
+							return props ~= nil and props.Guide ~= nil and target ~= nil and target.x ~= nil
+						end),
+						[OnEvent("Activated")] = function()
+							local target = Fusion.peek(QuestTrack.Target)
+							if props and props.Guide and target then
+								props.Guide(target)
+							end
+						end,
+						[Children] = scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 					}),
 					scope:New("TextLabel")({
 						Name = "Arrow",
