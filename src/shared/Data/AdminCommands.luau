@@ -111,6 +111,12 @@ cmd("character", "res", { enum("mode", { "inf", "off" }) })
 cmd("character", "sprint", {})
 cmd("character", "speed", { str("value") })
 cmd("character", "preset", { int("level", 1, MAX_LEVEL), int("rarity", 1, 5), int("up", 0, 9, true, "0") })
+-- S28: skills
+cmd("character", "skill", { str("id"), int("level", 1, 10, true, "10") })
+cmd("character", "skillall", { enum("class", { "Warrior", "Hunter", "Mage", "Cleric" }, true) })
+cmd("character", "nocd", { enum("mode", { "on", "off" }, true, "on") })
+cmd("combat", "skillpreview", { str("id") })
+cmd("combat", "dummy", { int("level", 1, MAX_LEVEL, true) })
 
 -- Items
 cmd(

@@ -1,6 +1,9 @@
 --!strict
 -- Everything a skill handler needs while resolving one cast: the caster, resolved target / point, level
 -- values, and helpers for areas, damage, healing, effects and visuals. Built by SkillService per cast.
+-- S28: `skill` is the skill as it works at its level (Logic/Skills.effective: breakpoint numbers applied) and `bp`
+-- the breakpoint behaviours; `damage` applies the on-hit ones (lifesteal, knockback, execute, stun near the target,
+-- splash) and `applyEffect` stacks bleeds; `lingering` and `trap` leave lasting areas.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
@@ -8,6 +11,7 @@ local Workspace = game:GetService("Workspace")
 local Shared = ReplicatedStorage.Shared
 
 local Damage = require(Shared.Logic.Damage)
+local Push = require(script.Parent.Push)
 local SkillData = require(Shared.Data.Skills)
 local Skills = require(Shared.Logic.Skills)
 local Types = require(Shared.Types)
@@ -38,6 +42,7 @@ export type Ctx = {
 	services: Services,
 	value: (field: string) -> number,
 	scaled: (value: SkillData.Scaled?) -> number,
+	bp: SkillData.Breakpoint, -- S28: merged breakpoint behaviours at this level
 	attack: () -> number, -- physical or magic attack depending on the skill
 	magAtk: () -> number,
 	fx: (data: { [string]: any }) -> (),
@@ -46,6 +51,10 @@ export type Ctx = {
 	damage: (entity: any, percent: number, options: { [string]: any }?) -> Damage.Result?,
 	heal: (player: Player, amount: number) -> number,
 	applyEffects: (entity: any, side: "enemy" | "self" | "allies") -> (),
+	applyEffect: (entity: any, effect: SkillData.SkillEffect) -> (), -- one effect (breakpoint extras)
+	lingering: (center: Vector3, percent: number) -> (), -- the breakpoint's lasting area (S28)
+	trap: (at: Vector3, radius: number, duration: number, effect: SkillData.SkillEffect) -> (),
+	wounded: (center: Vector3, radius: number, except: Player?) -> Player?, -- most wounded ally (S28)
 	enemiesInCircle: (center: Vector3, radius: number) -> { any },
 	enemiesInCone: (origin: CFrame, radius: number, angle: number) -> { any },
 	enemiesInLine: (origin: CFrame, length: number, width: number) -> { any },
@@ -88,10 +97,12 @@ function Context.new(
 	character: Types.CharacterData,
 	caster: any,
 	root: BasePart,
-	services: Services
+	services: Services,
+	bp: SkillData.Breakpoint?
 ): Ctx
 	local ctx: Ctx
 	local Entity = services.Entity
+	local behaviour: any = bp or {}
 
 	local function value(field: string): number
 		return Skills.valueAt(skill, field, level)
@@ -126,6 +137,8 @@ function Context.new(
 		end
 		return mult
 	end
+
+	local onHit: (entity: any, percent: number, result: Damage.Result, opts: { [string]: any }) -> ()
 
 	local function enemiesWhere(center: Vector3, reach: number, test: (position: Vector3) -> boolean): { any }
 		local found = {}
@@ -175,6 +188,49 @@ function Context.new(
 		end
 	end
 
+	-- Share of HP left (monsters and players), nil when unknown.
+	local function hpFraction(entity: any): number?
+		if entity.kind == "monster" and entity.monster then
+			local monster = entity.monster
+			return monster.hp / math.max(1, monster.stats.maxHp)
+		elseif entity.kind == "player" and entity.player then
+			local hp = services.Resource.Get(entity.player)
+			local maxHp = services.Stat.GetValue(entity.player, "maxHp")
+			return if maxHp > 0 then hp / maxHp else nil
+		end
+		return nil
+	end
+
+	-- On-hit breakpoint behaviours (S28). `opts.primary`: the cast's main target (stun near it, splash around it).
+	onHit = function(entity: any, percent: number, result: Damage.Result, opts: { [string]: any })
+		if behaviour.lifesteal then
+			ctx.heal(player, result.amount * behaviour.lifesteal / 100)
+		end
+		if behaviour.knockback then
+			Push.knockback(entity, opts.from or root.Position, behaviour.knockback)
+		end
+		local at = Entity.Position(entity)
+		if not opts.primary or not at then
+			return
+		end
+		local near = behaviour.stunNear
+		if near then
+			for _, other in ctx.enemiesInCircle(at, near.radius) do
+				services.StatusEffect.Apply(other, "stun", { duration = near.duration, source = player })
+			end
+			ctx.fx({ v = "stunBurst", p = at, r = near.radius })
+		end
+		local splash = behaviour.splash
+		if splash then
+			for _, other in ctx.enemiesInCircle(at, splash.radius) do
+				if other ~= entity then
+					ctx.damage(other, percent * splash.pct / 100, { plain = true, consumeShot = false })
+				end
+			end
+			ctx.fx({ v = "splash", p = at, r = splash.radius })
+		end
+	end
+
 	ctx = {
 		player = player,
 		skill = skill,
@@ -185,6 +241,7 @@ function Context.new(
 		target = nil,
 		point = nil,
 		services = services,
+		bp = behaviour,
 		value = value,
 		scaled = function(v)
 			return Skills.scaled(skill, v, level)
@@ -209,18 +266,30 @@ function Context.new(
 			if not isEnemy(entity) then
 				return nil
 			end
+			local opts: { [string]: any } = options or {}
 			local params: Damage.Params = {
 				kind = if skill.damageKind == "magic" then "magic" else "phys",
 				multiplier = percent / 100,
 				element = element :: any,
-				canDodge = options == nil or options.canDodge ~= false,
+				canDodge = opts.canDodge ~= false,
 			}
+			-- S28 execute: a guaranteed crit on a wounded target.
+			if behaviour.execute and not opts.plain then
+				local fraction = hpFraction(entity)
+				if fraction and fraction * 100 < behaviour.execute then
+					params.forceCrit = true
+				end
+			end
 			local result = services.Combat.DealDamage(player, entity, params, nil, {
 				multiplier = elementalMultiplier(),
-				consumeShot = options == nil or options.consumeShot ~= false,
+				consumeShot = opts.consumeShot ~= false,
+				skill = if opts.plain then nil else skill.id,
 			})
-			if skill.adaptive and result and result.amount > 0 and not (options and options.noAdaptive) then
+			if skill.adaptive and result and result.amount > 0 and not opts.noAdaptive then
 				adaptiveEffect(entity, percent, result.amount)
+			end
+			if result and not result.dodged and result.amount > 0 and not opts.plain then
+				onHit(entity, percent, result, opts)
 			end
 			return result
 		end,
@@ -244,34 +313,95 @@ function Context.new(
 				local effectSide = effect.target
 					or (if skill.type == "buff" or skill.type == "groupBuff" then "self" else "enemy")
 				if effectSide == side or (side == "allies" and effectSide == "self" and skill.type == "groupBuff") then
-					local duration = Skills.scaled(skill, effect.duration, level)
-					local effectValue = if type(effect.value) == "string"
-						then value(effect.value)
-						elseif type(effect.value) == "number" then effect.value
-						else 0
-					local tickAmount: number? = nil
-					if effect.kind == "bleed" or effect.kind == "poison" then
-						-- value % of attack spread over the duration, one tick per second
-						tickAmount = math.max(1, ctx.attack() * effectValue / 100 / math.max(1, duration))
-					end
-					local statValues: { [string]: number }? = nil
-					if effect.stats then
-						local resolved: { [string]: number } = {}
-						for stat, field in effect.stats do
-							resolved[stat] = value(field)
-						end
-						statValues = resolved
-					end
-					services.StatusEffect.Apply(entity, effect.kind, {
-						duration = duration,
-						value = effectValue,
-						source = player,
-						tickAmount = tickAmount,
-						stats = statValues,
-						pct = effect.pct,
-					})
+					ctx.applyEffect(entity, effect)
 				end
 			end
+		end,
+		applyEffect = function(entity: any, effect: SkillData.SkillEffect)
+			local duration = Skills.scaled(skill, effect.duration, level)
+			local effectValue = if type(effect.value) == "string"
+				then value(effect.value)
+				elseif type(effect.value) == "number" then effect.value
+				else 0
+			local tickAmount: number? = nil
+			if effect.kind == "bleed" or effect.kind == "poison" then
+				-- value % of attack spread over the duration, one tick per second
+				tickAmount = math.max(1, ctx.attack() * effectValue / 100 / math.max(1, duration))
+			end
+			local statValues: { [string]: number }? = nil
+			if effect.stats then
+				local resolved: { [string]: number } = {}
+				for stat, field in effect.stats do
+					resolved[stat] = value(field)
+				end
+				statValues = resolved
+			end
+			services.StatusEffect.Apply(entity, effect.kind, {
+				duration = duration,
+				value = effectValue,
+				source = player,
+				tickAmount = tickAmount,
+				stats = statValues,
+				pct = effect.pct,
+				maxStacks = if effect.kind == "bleed" then behaviour.bleedStacks else nil,
+			})
+		end,
+		lingering = function(center: Vector3, percent: number)
+			local spec = behaviour.lingering
+			if not spec then
+				return
+			end
+			local radius = spec.radius or skill.radius or 8
+			ctx.fx({ v = "lingering", p = center, r = radius, d = spec.duration, k = spec.kind })
+			for second = 1, math.floor(spec.duration) do
+				task.delay(second, function()
+					for _, entity in ctx.enemiesInCircle(center, radius) do
+						ctx.damage(
+							entity,
+							percent * spec.pct / 100,
+							{ plain = true, canDodge = false, consumeShot = false }
+						)
+						if spec.slow then
+							services.StatusEffect.Apply(
+								entity,
+								"slow",
+								{ duration = 1.2, value = spec.slow, source = player }
+							)
+						end
+					end
+				end)
+			end
+		end,
+		trap = function(at: Vector3, radius: number, duration: number, effect: SkillData.SkillEffect)
+			ctx.fx({ v = "trapSet", p = at, r = radius, d = duration })
+			local expires = os.clock() + duration
+			task.spawn(function()
+				while os.clock() < expires do
+					task.wait(0.25)
+					local caught = ctx.enemiesInCircle(at, radius)
+					if #caught > 0 then
+						for _, entity in caught do
+							ctx.applyEffect(entity, effect)
+						end
+						ctx.fx({ v = "trapTrigger", p = at, r = radius })
+						return
+					end
+				end
+			end)
+		end,
+		wounded = function(center: Vector3, radius: number, except: Player?): Player?
+			local best, bestFraction = nil, 1
+			for _, ally in ctx.alliesInCircle(center, radius) do
+				if ally ~= except then
+					local hp = services.Resource.Get(ally)
+					local maxHp = services.Stat.GetValue(ally, "maxHp")
+					local fraction = if maxHp > 0 then hp / maxHp else 1
+					if fraction < bestFraction then
+						best, bestFraction = ally, fraction
+					end
+				end
+			end
+			return best
 		end,
 		enemiesInCircle = function(center: Vector3, radius: number): { any }
 			return enemiesWhere(center, radius, function(p)

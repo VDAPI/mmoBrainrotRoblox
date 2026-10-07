@@ -376,6 +376,7 @@ local function GameMenu(scope: Scope, close: () -> ()): Fusion.Child
 			row(scope, 5, "menu.musicVolume", stepper(scope, "musicVolume", 0.6, 0.1, 0, 1)),
 			row(scope, 6, "menu.ambientVolume", stepper(scope, "ambientVolume", 0.7, 0.1, 0, 1)),
 			row(scope, 7, "menu.cameraSens", stepper(scope, "cameraSens", 1, 0.1, 0.2, 3)),
+			row(scope, 7.5, "menu.shake", stepper(scope, "shake", 1, 0.1, 0, 1)),
 			row(
 				scope,
 				8,

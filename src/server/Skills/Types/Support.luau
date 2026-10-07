@@ -2,6 +2,7 @@
 -- Support skill types: buff, debuff, heal (Purify also cleanses), hot, shield, resurrect, groupBuff,
 -- groupHeal. Channel skills (Evocation, Prayer) are handled by SkillService because they span time and can
 -- be interrupted. Healing and buffs only affect the caster and party members (PartyService).
+-- S28 breakpoints: a second wounded ally (secondTarget), overheal into a shield, cleanse, extra effects on allies.
 
 local Context = require(script.Parent.Parent.Context)
 
@@ -60,39 +61,88 @@ Support.debuff = function(ctx)
 	return true, nil
 end
 
+-- Heals one target; with the breakpoint the overflow becomes an absorb shield.
+local function healOne(ctx: Ctx, player: Player, entity: any, amount: number)
+	if ctx.skill.id == "purify" or ctx.bp.cleanse then
+		ctx.services.StatusEffect.Cleanse(entity)
+	end
+	local healed = ctx.heal(player, amount)
+	if ctx.bp.overhealShield then
+		local bonus = ctx.services.PassiveHook(ctx.player, "healBonus")
+		local overflow = amount * (1 + bonus / 100) - healed
+		if overflow > 1 then
+			ctx.services.StatusEffect.Apply(entity, "shield", { duration = 8, value = overflow, source = ctx.player })
+		end
+	end
+end
+
+-- The breakpoint's second target: the most wounded other party member in range (nil when none).
+local function second(ctx: Ctx, first: Player): (Player?, any)
+	if not ctx.bp.secondTarget then
+		return nil, nil
+	end
+	local range = (ctx.skill :: any).range or 30
+	local other = ctx.wounded(ctx.root.Position, range + RANGE_TOLERANCE, first)
+	if not other then
+		return nil, nil
+	end
+	return other, ctx.services.Entity.GetPlayerEntity(other)
+end
+
 Support.heal = function(ctx)
 	local player, entity = allyTarget(ctx)
 	ctx.fx({ t = entity.id })
-	if ctx.skill.id == "purify" then
-		ctx.services.StatusEffect.Cleanse(entity)
+	local amount = ctx.magAtk() * ctx.value("heal") / 100
+	healOne(ctx, player, entity, amount)
+	local other, otherEntity = second(ctx, player)
+	if other and otherEntity then
+		ctx.fx({ t = otherEntity.id, n = 2 })
+		healOne(ctx, other, otherEntity, amount * (ctx.bp.secondTarget or 0) / 100)
 	end
-	ctx.heal(player, ctx.magAtk() * ctx.value("heal") / 100)
 	return true, nil
 end
 
-Support.hot = function(ctx)
-	local _, entity = allyTarget(ctx)
-	local duration = ctx.scaled(ctx.skill.duration)
-	local bonus = ctx.services.PassiveHook(ctx.player, "healBonus")
-	local total = ctx.magAtk() * ctx.value("heal") / 100 * (1 + bonus / 100)
-	ctx.fx({ t = entity.id, d = duration })
+local function hotOn(ctx: Ctx, entity: any, total: number, duration: number)
+	if ctx.bp.cleanse then
+		ctx.services.StatusEffect.Cleanse(entity)
+	end
 	ctx.services.StatusEffect.Apply(entity, "hot", {
 		duration = duration,
 		source = ctx.player,
 		tickAmount = total / math.max(1, duration),
 	})
+end
+
+Support.hot = function(ctx)
+	local player, entity = allyTarget(ctx)
+	local duration = ctx.scaled(ctx.skill.duration)
+	local bonus = ctx.services.PassiveHook(ctx.player, "healBonus")
+	local total = ctx.magAtk() * ctx.value("heal") / 100 * (1 + bonus / 100)
+	ctx.fx({ t = entity.id, d = duration })
+	hotOn(ctx, entity, total, duration)
+	local other, otherEntity = second(ctx, player)
+	if other and otherEntity then
+		ctx.fx({ t = otherEntity.id, d = duration, n = 2 })
+		hotOn(ctx, otherEntity, total * (ctx.bp.secondTarget or 0) / 100, duration)
+	end
 	return true, nil
 end
 
 Support.shield = function(ctx)
-	local _, entity = allyTarget(ctx)
+	local player, entity = allyTarget(ctx)
 	local duration = ctx.scaled(ctx.skill.duration)
+	local value = ctx.magAtk() * ctx.value("shield") / 100
 	ctx.fx({ t = entity.id, d = duration })
-	ctx.services.StatusEffect.Apply(entity, "shield", {
-		duration = duration,
-		value = ctx.magAtk() * ctx.value("shield") / 100,
-		source = ctx.player,
-	})
+	ctx.services.StatusEffect.Apply(entity, "shield", { duration = duration, value = value, source = ctx.player })
+	local other, otherEntity = second(ctx, player)
+	if other and otherEntity then
+		ctx.fx({ t = otherEntity.id, d = duration, n = 2 })
+		ctx.services.StatusEffect.Apply(otherEntity, "shield", {
+			duration = duration,
+			value = value * (ctx.bp.secondTarget or 0) / 100,
+			source = ctx.player,
+		})
+	end
 	return true, nil
 end
 
@@ -119,6 +169,16 @@ Support.resurrect = function(ctx)
 			if position and (position - ctx.root.Position).Magnitude <= range + 4 then
 				ctx.fx({ t = entity.id })
 				ctx.services.Death.Revive(member, ctx.value("hp"))
+				-- S28 breakpoint: the revived ally is protected for a moment.
+				local extra = ctx.bp.allyEffect
+				if extra then
+					task.defer(function()
+						local revived = Entity.GetPlayerEntity(member)
+						if revived then
+							ctx.applyEffect(revived, extra)
+						end
+					end)
+				end
 				return true, nil
 			end
 		end
@@ -135,6 +195,9 @@ Support.groupBuff = function(ctx)
 		local entity = Entity.GetPlayerEntity(ally)
 		if entity then
 			ctx.applyEffects(entity, "allies")
+			if ctx.bp.allyEffect then
+				ctx.applyEffect(entity, ctx.bp.allyEffect)
+			end
 		end
 	end
 	-- Divine Intervention also heals a share of maximum health.
@@ -153,6 +216,15 @@ Support.groupHeal = function(ctx)
 	local amount = ctx.magAtk() * ctx.value("heal") / 100
 	for _, ally in ctx.alliesInCircle(ctx.root.Position, radius) do
 		ctx.heal(ally, amount)
+		local entity = ctx.services.Entity.GetPlayerEntity(ally)
+		if entity then
+			if ctx.bp.cleanse then
+				ctx.services.StatusEffect.Cleanse(entity)
+			end
+			if ctx.bp.allyEffect then
+				ctx.applyEffect(entity, ctx.bp.allyEffect)
+			end
+		end
 	end
 	return true, nil
 end

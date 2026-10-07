@@ -30,6 +30,7 @@ export type Spec = {
 	effects: { Types.SkillEffect }?,
 	passive: { flat: { [string]: string }?, pct: { [string]: string }?, hooks: { [string]: string }? }?,
 	requires: { { skill: string, level: number } }?,
+	breakpoints: { [number]: Types.Breakpoint }?,
 	col: number,
 	row: number,
 	glyph: string,
@@ -58,6 +59,11 @@ local DEFAULT_TARGET: { [string]: Types.TargetMode } = {
 	groupHeal = "self",
 	passive = "none",
 }
+
+-- Breakpoints at skill levels 5 and 10 (S28). Untyped arguments: every breakpoint has its own shape.
+function Build.bp(five: any, ten: any): { [number]: Types.Breakpoint }
+	return { [5] = five, [10] = ten }
+end
 
 -- Builds the class list. `resource` and `damageKind` are class-wide defaults.
 function Build.class(
@@ -99,6 +105,7 @@ function Build.class(
 			effects = spec.effects,
 			passive = spec.passive,
 			requires = spec.requires,
+			breakpoints = spec.breakpoints,
 			col = spec.col,
 			row = spec.row,
 			glyph = spec.glyph,

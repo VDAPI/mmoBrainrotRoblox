@@ -1,6 +1,7 @@
 --!strict
 -- Skill rules (DESIGN §14.1). Pure.
 
+local Config = require("../Config")
 local Locale = require("../Util/Locale")
 local SkillData = require("../Data/Skills")
 local Types = require("../Types")
@@ -27,6 +28,105 @@ end
 
 function Skills.valueAt(skill: SkillDef, field: string, level: number): number
 	return Skills.scaled(skill, skill.values[field], level)
+end
+
+-- Breakpoints (S28) -----------------------------------------------------------------------------------------------
+
+Skills.BREAKPOINT_LEVELS = { 5, 10 }
+
+-- Active breakpoints of a skill at a level, lowest first (none when Config.Skills.breakpoints is off; `enabled`
+-- overrides the switch, for tests).
+function Skills.breakpointsAt(skill: SkillDef, level: number, enabled: boolean?): { SkillData.Breakpoint }
+	local out = {}
+	local list = skill.breakpoints
+	local on = if enabled == nil then Config.Skills.breakpoints else enabled
+	if not list or not on then
+		return out
+	end
+	for _, at in Skills.BREAKPOINT_LEVELS do
+		local bp = list[at]
+		if bp and level >= at then
+			table.insert(out, bp)
+		end
+	end
+	return out
+end
+
+-- Behaviours of the active breakpoints merged into one table (later breakpoints win on the same key).
+export type Behaviour = SkillData.Breakpoint
+
+local NUMERIC_FIELDS = { "range", "radius", "angle", "length", "width", "hits", "delay" }
+
+-- The skill as it works at `level`: numbers changed by the breakpoints (add / mul / values, extra effects with
+-- their durations) and the merged behaviours. Never mutates the data; without breakpoints returns the def itself.
+function Skills.effective(skill: SkillDef, level: number, enabled: boolean?): (SkillDef, Behaviour)
+	local active = Skills.breakpointsAt(skill, level, enabled)
+	local behaviour: any = {}
+	if #active == 0 then
+		return skill, behaviour
+	end
+	local def: any = table.clone(skill)
+	def.values = table.clone(skill.values)
+	local effects: { SkillData.SkillEffect } = table.clone(skill.effects or {})
+	local addDuration = 0
+	local jumps = 0
+	local none: { [string]: number } = {}
+	for _, bp in active do
+		for key, amount in bp.add or none do
+			if key == "effectDuration" then
+				addDuration += amount
+			elseif key == "jumps" then
+				jumps += amount
+			elseif key == "duration" then
+				def.duration = Skills.scaled(skill, def.duration, level) + amount
+			elseif table.find(NUMERIC_FIELDS, key) then
+				def[key] = (def[key] or 0) + amount
+			end
+		end
+		for key, factor in bp.mul or none do
+			if key == "cooldown" then
+				def.cooldown = Skills.scaled(skill, def.cooldown, level) * factor
+			elseif key == "cost" then
+				def.cost = Skills.scaled(skill, def.cost, level) * factor
+			elseif key == "delay" then
+				def.delay = (def.delay or 0) * factor
+			end
+		end
+		for field, amount in bp.values or none do
+			def.values[field] = Skills.scaled(skill, skill.values[field], level) + amount
+		end
+		for key, v in bp :: any do
+			if key ~= "add" and key ~= "mul" and key ~= "values" then
+				behaviour[key] = v
+			end
+		end
+	end
+	if jumps ~= 0 then
+		def.values.jumps = Skills.valueAt(skill, "jumps", level) + jumps
+	end
+	if behaviour.effect then
+		table.insert(effects, behaviour.effect)
+	end
+	if addDuration ~= 0 then
+		for i, effect in effects do
+			local copy = table.clone(effect)
+			copy.duration = math.max(0.5, Skills.scaled(skill, effect.duration, level) + addDuration)
+			effects[i] = copy
+		end
+	end
+	def.effects = effects
+	return def :: SkillDef, behaviour
+end
+
+-- Locale keys of a skill's breakpoints with their level: { { level, key } }.
+function Skills.breakpointKeys(skill: SkillDef): { { level: number, key: string } }
+	local out = {}
+	for _, at in Skills.BREAKPOINT_LEVELS do
+		if skill.breakpoints and skill.breakpoints[at] then
+			table.insert(out, { level = at, key = `skill.{skill.id}.bp{at}` })
+		end
+	end
+	return out
 end
 
 -- Character level needed for skill level n (DESIGN: unlock + 3·(n−1)).
@@ -139,7 +239,9 @@ local function round(value: number): number
 end
 
 -- Placeholder values for the description of `skill` at `level` ({dmg}, {slow}, {duration}, {cost}, ...).
-function Skills.descriptionArgs(skill: SkillDef, level: number): { [string]: number }
+-- S28: the numbers as the skill works at that level (breakpoints applied).
+function Skills.descriptionArgs(base: SkillDef, level: number): { [string]: number }
+	local skill = Skills.effective(base, level)
 	local args: { [string]: number } = {}
 	for field in skill.values do
 		args[field] = round(Skills.valueAt(skill, field, level))
@@ -166,6 +268,23 @@ end
 
 -- Weapon element a skill needs (DESIGN §5.8, S18): Mage element skills need a weapon of their element;
 -- adaptive skills and everything else work with any weapon.
+-- Shape of a skill's area for the tooltip icon (S28): "circle" | "self" | "cone" | "line" | "target" | "none".
+function Skills.shape(skill: SkillDef): string
+	local kind: string = skill.type
+	if kind == "cone" then
+		return "cone"
+	elseif kind == "line" then
+		return "line"
+	elseif kind == "circleSelf" or kind == "groupHeal" or kind == "groupBuff" then
+		return "self"
+	elseif kind == "circleTarget" or kind == "trap" then
+		return "circle"
+	elseif skill.target == "enemy" or skill.target == "ally" or skill.target == "deadAlly" then
+		return "target"
+	end
+	return "none"
+end
+
 function Skills.requiredElement(skill: SkillDef): string?
 	if skill.class ~= "Mage" or skill.adaptive or not skill.element then
 		return nil

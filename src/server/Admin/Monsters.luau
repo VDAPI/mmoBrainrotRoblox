@@ -58,6 +58,40 @@ commands.spawn = function(player, args)
 	end)
 end
 
+-- S28: /dummy [level]: a training dummy in front of you (no AI, no attacks, huge HP, removed after 10 minutes).
+local DUMMY_KIND = "bandit"
+local DUMMY_SECONDS = 600
+commands.dummy = function(player, args)
+	withCharacter(player, function()
+		local model = player.Character
+		local char = Context.services.PlayerStateService.GetCharacter(player)
+		if not model or not char then
+			return
+		end
+		local level = math.clamp(parseAmount(args[1]) or char.level, 1, Config.MaxLevel)
+		local at = model:GetPivot() * CFrame.new(0, 0, -10)
+		local monster =
+			MonsterService.SpawnAt(DUMMY_KIND, "normal", level, CFrame.lookAt(at.Position, model:GetPivot().Position))
+		if not monster then
+			return
+		end
+		local m: any = monster
+		m.dummy = true
+		m.stats.maxHp = 1e9
+		m.hp = 1e9
+		m.model:SetAttribute("Hp", 1e9)
+		m.model:SetAttribute("MaxHp", 1e9)
+		m.model:SetAttribute("Dummy", true)
+		m.humanoid.WalkSpeed = 0
+		task.delay(DUMMY_SECONDS, function()
+			if m.model.Parent and m:IsAlive() then
+				MonsterService.Despawn(m)
+			end
+		end)
+		reply(player, "admin.dummy.ok", { level = level })
+	end)
+end
+
 commands.killall = function(player, args)
 	local radius = math.clamp(parseAmount(args[1]) or 100, 1, 2000)
 	withCharacter(player, function()

@@ -62,6 +62,26 @@ function Sounds.playPitched(name: string, speed: number)
 	end)
 end
 
+-- S28: a sound by asset id (skill sounds from Data/SkillVfx), at the UI volume. Empty ids do nothing.
+function Sounds.playId(id: string, volume: number?)
+	if id == "" or master <= 0 then
+		return
+	end
+	local sound = Instance.new("Sound")
+	sound.SoundId = id
+	sound.Volume = (volume or 0.6) * master
+	sound.Parent = SoundService
+	sound:Play()
+	sound.Ended:Once(function()
+		sound:Destroy()
+	end)
+	task.delay(8, function()
+		if sound.Parent then
+			sound:Destroy()
+		end
+	end)
+end
+
 function Sounds.play(name: string)
 	local def = DEFS[name]
 	if not def or master <= 0 then

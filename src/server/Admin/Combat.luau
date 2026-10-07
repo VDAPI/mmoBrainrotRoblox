@@ -142,4 +142,11 @@ commands.anim = function(player, args)
 	reply(player, "admin.anim.ok", { kind = kind })
 end
 
+-- S28: /skillpreview <id>: the skill's animation and effect on your character (nothing is cast).
+commands.skillpreview = function(player, args)
+	local id = args[1] or ""
+	Net.Fire(player, "AdminClient", "skillpreview", id)
+	reply(player, "admin.skillpreview.ok", { id = id })
+end
+
 return commands

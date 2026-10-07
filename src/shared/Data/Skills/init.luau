@@ -10,6 +10,7 @@ local Warrior = require("@self/Warrior")
 export type SkillDef = Types.SkillDef
 export type Scaled = Types.Scaled
 export type SkillEffect = Types.SkillEffect
+export type Breakpoint = Types.Breakpoint
 
 local byClass: { [string]: { SkillDef } } = {
 	Warrior = Warrior,

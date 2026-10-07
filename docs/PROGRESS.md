@@ -34,6 +34,7 @@
 | S25 | Interaktywna mapa: karty z podglądem 3D, prowadzenie i „Idź”, znaczniki, wyszukiwarka, minimapa | ● |
 | S26 | Szepczące Łąki od nowa: ukształtowany teren, struga z mostami, jar z wodospadem, wyrobisko, expowiska w klimacie potworów, życie, nastrój | ● |
 | S27 | Questy poboczne Łąk: 13 nowych NPC, 28 questów w 9 wątkach, interakcje ze światem, dialogi ze stronami, nagrody do wyboru | ● |
+| S28 | Umiejętności od nowa: naprawa rzucania, animacja i efekt każdej umiejętności, przełomy na 5. i 10. poziomie, czucie trafień, wygoda | ● |
 
 Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana przez właściciela
 
@@ -709,6 +710,36 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
 - **S27** `/npc <id>` teleportuje przez zmianę mapy (`TeleportToMap`), bo NPC Łąk stoją na innej mapie; `/side arc
   <questId>` oddaje wszystko w wątku przed tym questem (i wymagania z innych wątków) i daje ten quest.
 
+- **S28** Aktywnych umiejętności w danych jest 45 (11 + 11 + 11 + 12), nie 40 jak w prompcie: animację, efekt i dwa
+  przełomy dostały wszystkie.
+- **S28** Trafienie zsynchronizowane z animacją: serwer wysyła `SkillFx` `cast` od razu, a handler (obrażenia, efekty,
+  ruch) uruchamia po czasie `hit`/`release` z `Data/SkillMotions` (≤ 0,6 s). Koszt i odnowienie liczą się od razu;
+  śmierć, ogłuszenie albo zmiana modelu w trakcie zamachu przerywa rzut i zwraca koszt i odnowienie („fizzle”).
+  Wskrzeszenie i kanały bez opóźnienia (ich odmowa ma dotrzeć do gracza w odpowiedzi remote'a).
+- **S28** Wir Ostrzy ma teraz 3 ciosy po 37–67% (suma jak w DESIGN 110–200%), bo animacja to dwa obroty i z
+  przełomem 5 gracz idzie podczas wiru — każda fala trafia wokół bieżącej pozycji.
+- **S28** Animacje: stawy jak w S22 plus `root` (obrót, pochylenie, wysokość — tylko wizualnie, przez RootJoint /
+  Root, HumanoidRootPart należy do fizyki), biodra i kolana. Staw obecny w żadnym kluczu nie jest ruszany (np.
+  łowca strzela w biegu, nogi zostają animacji chodu). `lock` trzyma postać w miejscu (lokalnie WalkSpeed 0 na czas
+  animacji; przełom `castMove` daje %). Powrót po obrocie / salcie idzie krótszą drogą (kąt zawinięty do ±180°).
+- **S28** Kąty animacji sprawdzone bez Studio narzędziem `tools/posedump.luau` (kinematyka R15 w Lune z
+  RigAttachmentami domyślnego awatara, render `render3d.py`) i znakami osi zmierzonymi w Studio (+x barku = w przód,
+  +z = w prawo, +y = w lewo, +x talii / całego ciała = odchylenie w tył, kolano + = zgięcie).
+- **S28** W tym miejscu stawy postaci graczy to `AnimationConstraint` (aktualizacja stawów awatarów Robloxa), nie
+  `Motor6D` — `AnimationController` przyjmuje oba (ta sama właściwość `Transform`, rama z `Attachment0`). Bez tego
+  ani pozy ataku z S22, ani animacje umiejętności nie poruszały postacią (znalezione w Studio).
+- **S28** Przełomy: siła oszacowana względem obrażeń / użyteczności: przełom 5 to zwykle +10–15% (większy obszar /
+  zasięg, dodatkowy efekt kontroli, ~+30% obrażeń przez 3 s na płonącej ziemi przy jednym celu), przełom 10 ≈
+  +20–25% (drugi wstrząs 60%, rozprysk 40–60% wokół celu, drugi cel leczenia 50%, ogłuszenie 1 s). Słownik zachowań
+  jest wspólny (~20 rodzajów), więc nowe przełomy to dane. Przełącznik `Config.Skills.breakpoints`.
+- **S28** Efekty: rejestr `Data/SkillVfx` + biblioteka z puli części (bez `Instance.new` w pętli klatek; pociski i
+  runy przesuwają istniejące części), limit 40 efektów naraz, uproszczone przy niskiej jakości i dla cudzych efektów
+  dalej niż 60 st. Tarcza to kula z materiałem ForceField (bez nowych Highlight). Kolory: żywioł broni maga dla
+  umiejętności adaptacyjnych, żywioł umiejętności, światło kapłana, leczenie, inaczej kolor klasy.
+- **S28** Podgląd w oknie K: kopia postaci w ViewportFrame z WorldModel, efekty tej chwili trafiają do jego
+  WorldModel (`Pool.setOverride`); cząsteczki i światła w ViewportFrame nie są widoczne (ograniczenie Robloxa).
+- **S28** Manekin `/dummy` to Bandyta z Traktu bez AI (`dummy` w MonsterService), z miliardem zdrowia; znika po 10 min.
+
 ## Niedokończone
 (Rzeczy z zakresu sesji, które nie zostały zrobione. Następna sesja zaczyna od nich.)
 
@@ -723,8 +754,8 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
 - **S17** Tłumaczenie zakładek czatu (handel, grupa) zmienia lokalnie `TextChannel.Name` — niesprawdzone w Studio, czy
   zakładka Roblox odświeża nazwę (jeśli nie, zostanie nazwa serwera `⚖ Trade`).
 - **S04** Broń w dłoni składana z kilku Partów (S17b), bez modeli z assetów.
-- **S05** Efekty wizualne umiejętności to placeholdery z Partów (`VfxController`); postać ma tylko proceduralne pozy
-  barków (S17b), bez prawdziwych animacji.
+- **S05** ~~Efekty wizualne umiejętności to placeholdery~~ — S28: animacje i efekty każdej umiejętności (dźwięki
+  wciąż do podpięcia, niżej).
 - **S12** Gildie między serwerami (MessagingService, MemoryStore) da się sprawdzić tylko w opublikowanej grze; w Studio
   działa jeden serwer (czat i obecność lokalnie). Etykieta zakładki czatu (`⚑ TAG`) niesprawdzona w Studio.
 - **S12** Zaproszenia do gildii między serwerami pominięte (zgodnie z zakresem); brak teleportu do serwera członka.
@@ -780,6 +811,20 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
   tytuły, portret (kadrowanie głowy), efekty na kotwicach (pozycja i obrót względem płotu / sztolni — kotwice nie
   mają kierunku).
 - **S27** Dźwięki interakcji (świece, deski, sieć) nie podpięte — korzystają z ogólnego „click”.
+
+- **S28** Dźwięki umiejętności do podpięcia przez właściciela (`Data/SkillVfx`, pole `sound = "rbxassetid://…"`):
+  wojownik — świst miecza (Potężne Uderzenie, Rozpłatanie, Wir Ostrzy), okrzyk (Okrzyk Bojowy, Prowokacja, Krwawy
+  Szał), tupot i uderzenie barkiem (Szarża), uderzenie w ziemię i trzask skał (Trzęsienie Ziemi, Gniew Tytana),
+  metaliczny brzęk tarczy (Ostatni Bastion), ciężkie uderzenie (Miażdżący Cios); łowca — naciąganie i świst cięciwy
+  (strzały), deszcz strzał, zatrzask pułapki i szron (Pułapka Mrozu), syk jadu, grzmot (Strzała Burzy), szelest
+  (Kamuflaż); mag — wybuch ognia, pękanie lodu, trzask piorunu, świst teleportu (Mrugnięcie), szum tarczy many,
+  spadający meteor i eksplozja, burza; kapłan — dzwonek leczenia, chór (Krąg Światła, Boska Interwencja), uderzenie
+  buławy ze światłem (Sąd), cicha modlitwa, wskrzeszenie.
+- **S28** Animacje i efekty sprawdzone w Studio liczbowo (stawy, odrzut, brak błędów), bez oglądania na ekranie
+  (zrzut ekranu z gry w Studio nie działał): do oceny wyglądu — kąty, rozmiary efektów, czytelność na telefonie,
+  wydajność przy 5 graczach.
+- **S28** „Flinch” potwora zależny od siły ciosu nie zrobiony (jest zwykłe mignięcie i hitstop); wstrząs kamery i
+  hitstop tylko z danych `SkillVfx`.
 
 ## Zgłoszone błędy
 (Właściciel wpisuje tu błędy po testach albo przekazuje je przez sesję poprawek.)
@@ -2392,3 +2437,101 @@ lokalizacja, testy (`npcmarks`, `town`, `worldmap`, `meadowsterrain`).
 19. Questy główne działają jak wcześniej (kapitan, zwiadowczyni Mira): na liście w rozmowie jako „FABUŁA”.
 20. Telefon (emulator): okno NPC i rozmowy mieszczą się, przyciski i karty nagród klikalne palcem, przytrzymanie
     podpowiedzi przy kotwicy działa.
+
+### S28: Umiejętności od nowa
+
+**Zrobione**
+- §0 (osobny commit przed S27): `CastSkill` z opcjonalnym `aim` — umiejętności nie zwracają już „Nieprawidłowe żądanie”.
+  Test każdej definicji `c2s` (znane typy, `rate`, opcjonalne tylko na końcu).
+- Animacje: `Data/SkillMotions` — własna animacja każdej z **45** aktywnych umiejętności (w danych jest ich 45, nie 40):
+  klucze póz z easingiem, nowe stawy (całe ciało: obrót, pochylenie, wysokość skoku; biodra i kolana), znaczniki
+  `hit` / `release` / `land`, pętla kanałów, blokada ruchu (`lock`), okno smugi broni. Czysta logika
+  `Logic/SkillPose` (próbkowanie, skalowanie czasu, wejście z bieżącej pozy, pętla, powrót krótszą drogą po obrocie
+  albo salcie). `AnimationController.Skill/StopSkill/Hitstop/SkillLock` gra je na wszystkich klientach (pierwszeństwo
+  nad atakiem podstawowym). Przykłady: Wir Ostrzy = 2 pełne obroty z bronią w bok w przysiadzie (3 ciosy), Trzęsienie
+  Ziemi = przysiad, skok z bronią nad głową i uderzenie oburącz, Gniew Tytana = 3 skoki z lądowaniem i falą, Odskok =
+  salto w tył, Celny Strzał = długie napięcie łuku, Deszcz Strzał = strzał w niebo, Nova Mrozu = przysiad z dłońmi
+  do ziemi, Meteor = długie wzywanie z rękami w górze, Inwokacja = lewitacja i krążące dłonie, Modlitwa = klęk,
+  Boska Interwencja = ręce rozłożone i unoszenie się.
+- Serwer synchronizuje trafienie z animacją: zdarzenie `cast` od razu (wszyscy widzą animację), handler po czasie
+  `hit` z danych (≤ 0,6 s); śmierć lub ogłuszenie w trakcie zamachu przerywa i zwraca koszt.
+- Efekty: rejestr `Data/SkillVfx` (kolor, smuga broni, świecące dłonie, kształt pocisku, składniki trafienia,
+  telegraf obszaru, wstrząs, hitstop, pole `sound`) i biblioteka `client/Vfx/{Pool,Library}`: fala uderzeniowa
+  z segmentów, łuk cięcia, pęknięcia ziemi, pocisk z ogonem (Trail, cząsteczki, światło), błyskawica (zygzak),
+  słup światła, obracająca się runa, tarcza (ForceField, bez nowych Highlight), aura, iskry, deszcz strzał, wachlarz
+  strzał, meteor, smuga szarży, kurz, płonąca / lodowa ziemia. Pula części, limit `Config.Vfx.maxActive`, wersja
+  uproszczona przy niskiej jakości i dla cudzych efektów dalej niż 60 st. `VfxController` przepisany.
+- Czucie trafień: hitstop (zamrożenie animacji atakującego i trafionego 0,04–0,08 s), odrzut i przyciąganie
+  (`Logic/Knockback` + `Skills/Push`: raycast ścian, bossy odporne, gracze w PvP o połowę), wstrząs kamery dużych
+  umiejętności z nowym suwakiem „Wstrząsy kamery” (0–100%), większe liczby obrażeń umiejętności z nazwą przy
+  pierwszym trafieniu, złoty błysk przy krytyku umiejętności.
+- Przełomy: każda aktywna umiejętność ma 2 (poziom 5 i 10) — dane w `Data/Skills/*` (`Build.bp`), słownik zmian w
+  `Data/Skills/Types` (liczby + ~20 zachowań: przyciąganie, odrzut, ruch podczas rzucania, ogłuszenie wokół celu,
+  kumulowane krwawienie, płonąca ziemia, echo, przebicie, egzekucja, pułapka, rozszczepienie, ogłuszenie ostatniej
+  fali, rozprysk, drugi cel leczenia, nadmiar leczenia w tarczę, oczyszczanie, kradzież życia, efekty dodatkowe),
+  logika `Skills.breakpointsAt/effective` (przełącznik `Config.Skills.breakpoints`), serwer w `Skills/Context` i
+  `Types/*`, `StatusEffectService` z kumulacją. Opisy przełomów w PL i EN.
+- Wygoda: tooltip (`UI/SkillInfo`: kształt z ikonką i rozmiarem, koszt/CD/zasięg po przełomach, następny poziom,
+  przełomy z „Poz. 5/10”), okno K z sekcją przełomów i podglądem 3D („Podgląd”: kopia postaci w ViewportFrame
+  odgrywa animację i efekt), podgląd obszaru przy przytrzymaniu klawisza (koło w punkcie, koło wokół siebie, stożek i
+  linia obrócone do kursora), na telefonie celowanie przeciągnięciem przycisku (puszczenie rzuca, powrót anuluje),
+  kolejka jednej umiejętności (0,4 s przed końcem odnowienia), pasek: błysk gotowości, czerwony przy braku zasobu,
+  szary poza zasięgiem.
+- Admin: `/skill <id> [poz.]`, `/skillall [klasa]`, `/nocd [on|off]`, `/skillpreview <id>`, `/dummy [poz.]`
+  (manekin bez AI z ogromnym zdrowiem, 10 min).
+- Narzędzie bez Studio: `tools/posedump.luau` (kinematyka R15 w Lune) + `docs/miasto/tools/render3d.py` — klatki
+  animacji przodem i bokiem; tak sprawdzone m.in. wir, trzęsienie, salto, łuk, szarża, rozpłatanie.
+- Sprawdzone w Studio (na prośbę właściciela): każda z 45 umiejętności się rzuca (mag: bronie złego żywiołu
+  odrzucone zgodnie z zasadą, wskrzeszenie bez martwego sojusznika odmawia), brak błędów w Output, animacja Wiru
+  obraca tułów 2× i wraca płynnie, odrzut przesuwa manekina o 6 st. **Przy okazji znaleziony błąd od S22**: postacie
+  graczy w tym miejscu mają stawy `AnimationConstraint` (aktualizacja stawów awatarów), a nie `Motor6D`, więc pozy
+  ataku z S22 nigdy się nie odtwarzały — `AnimationController` obsługuje teraz oba rodzaje.
+- Testy: `skillmotion.spec` (dane, pozy, przełomy, odrzut), `net.spec` (S28 §0).
+
+**Pliki**: nowe `Data/{SkillMotions,SkillVfx}`, `Logic/{SkillPose,Knockback}`, `server/Skills/Push`,
+`client/Vfx/{Pool,Library}`, `UI/SkillInfo`, `tools/posedump.luau`, `tests/skillmotion.spec`; zmiany:
+`Data/Skills/{Types,Build,init,Warrior,Hunter,Mage,Cleric}`, `Logic/Skills`, `Config`, `Logic/AccountSchema`,
+`Services/{SkillService,StatusEffectService,CombatService,MonsterService,SettingsService}`,
+`Skills/{Context,Types/Offense,Types/Movement,Types/Support}`, `Admin/{Character,Combat,Monsters}`,
+`Data/AdminCommands`, `Controllers/{AnimationController,VfxController,CombatFxController,SkillController,
+ScreenController}`, `Screens/{SkillsWindow,GameMenu}`, `Hud/{SkillBar,MobileSkills,CastBar,init}`, `UI/Sounds`,
+lokalizacja.
+
+#### Instrukcja testu S28
+
+1. `rojo serve`, Play, postać dowolnej klasy; Output bez błędów `[VfxController]`, `[SkillService]`.
+2. `/lvl 80`, `/skillall`, `/nocd`, `/tparea meadows_rabbitfields`, `/dummy` — manekin 10 st. przed tobą.
+3. Każda umiejętność z paska (1–0): rzuca się, nikt nie widzi „Nieprawidłowe żądanie”.
+4. Wojownik, Wir Ostrzy (poz. 10): kołowrotek — broń w bok, 2 obroty, smuga miecza, 3 fale; na poz. 10 przyciąga
+   wrogów z 12 st. (`/skill bladeWhirl 4` — bez przełomów: stoisz w miejscu podczas wiru; `/skill bladeWhirl 5` —
+   możesz iść w wolnym tempie).
+5. Trzęsienie Ziemi: przysiad, skok z bronią nad głową, uderzenie, fala i pęknięcia, kurz przy lądowaniu, wstrząs
+   kamery; na poz. 5 pęknięcia ranią 3 s, na 10 drugi wstrząs po sekundzie.
+6. Potężne Uderzenie: diagonalne cięcie, krótkie zamrożenie animacji przy trafieniu (hitstop), na poz. 5 odrzut
+   manekina o ~6 st., na 10 fala ciosu wokół celu. Szarża: pochylony bieg, uderzenie barkiem, smuga i kurz.
+7. Gniew Tytana: 3 skoki z falą przy każdym lądowaniu; ostatnie ogłusza (poz. 10).
+8. Łowca: Celny Strzał (długie naciąganie łuku, strzała ze smugą; poz. 5 przebija na drugiego wroga), Podwójny
+   Strzał, Deszcz Strzał (strzał w niebo, strzały spadają w kole), Odskok (salto w tył; poz. 5 zostawia pułapkę).
+9. Mag (broń ognia): Kula Ognia (zbieranie energii w dłoniach, pocisk, wybuch z falą; poz. 5 płonąca ziemia, poz. 10
+   trzy małe wybuchy), Meteor (długie wzywanie, spadająca skała, krater), Inwokacja (lewitacja, krążące dłonie przez
+   cały kanał). Broń lodu / błyskawicy (`/givex`) dla Lodowego Odłamka, Novy, Łańcucha Piorunów.
+10. Kapłan: Leczenie (dłoń do celu, promień i iskry), Krąg Światła (obrót z buławą, runa), Sąd (skok i uderzenie z
+    góry, piorun z nieba), Modlitwa (klęk na cały kanał), Boska Interwencja (ręce rozłożone, unoszenie się, słup
+    światła).
+11. Dwie umiejętności tego samego typu wyglądają inaczej (np. Okrzyk Bojowy vs Krwawy Szał, Leczenie vs Odnowa).
+12. Okno K: wybierz umiejętność → kształt („Stożek 90° · 10 st.”), koszt/CD/zasięg, „Następny poziom” na zielono,
+    „Przełomy” (Poz. 5 / Poz. 10, niezdobyte szare); „Podgląd” odgrywa animację i efekt na kopii postaci.
+13. Tooltip na pasku: to samo w skrócie, z ✔ przy zdobytych przełomach.
+14. PC: przytrzymaj klawisz Kuli Ognia — koło pod kursorem w zasięgu, puszczenie rzuca; Rozpłatanie — stożek
+    obraca się za kursorem; Wir Ostrzy — koło wokół ciebie. „Szybkie rzucanie” w menu: bez podglądu.
+15. Kolejka: wciśnij umiejętność tuż przed końcem odnowienia (albo w trakcie GCD) — rzuca się sama, gdy może.
+16. Pasek: po odnowieniu krótki złoty błysk; bez zasobu slot czerwony; cel poza zasięgiem — slot szary, klawisz
+    czerwony.
+17. Telefon (emulator): przeciągnij przycisk Kuli Ognia — koło idzie za palcem, puszczenie rzuca; wróć palcem na
+    przycisk — anulowane; zwykły tap rzuca jak dawniej.
+18. Menu → „Wstrząsy kamery”: 0 wyłącza wstrząs przy Trzęsieniu, 1 pełny.
+19. `/skillpreview earthquake` — animacja i efekt na twojej postaci bez rzucania; `/skill cleave 5` — stożek 120°.
+20. Wydajność: 5 graczy (albo kilka okien Studio) rzuca obok siebie — `/perf`, płynnie; jakość „niska” w menu:
+    bez smug broni i z mniejszą liczbą części.
+21. Atak podstawowy bronią (S22) teraz też widać na postaci gracza (wcześniej nie działał przez stawy
+    `AnimationConstraint`) — sprawdź `/anim slash1h`, `/anim bow`.

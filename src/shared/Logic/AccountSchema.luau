@@ -34,6 +34,7 @@ function AccountSchema.accountTemplate(): AccountData
 			quality = "high",
 			minimapRotate = false,
 			cameraSens = 1,
+			shake = 1,
 			sellConfirm = true,
 			autoTarget = true,
 			groupRings = true,

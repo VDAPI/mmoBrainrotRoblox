@@ -2,7 +2,9 @@
 -- Skills (DESIGN §14): learning (LearnSkill), the 10-slot hotbar (SetHotbar), tree reset with a Scroll of
 -- Rebirth (ResetSkills), passives as a StatService modifier source + combat hooks, and casting:
 --   CastSkill(skillId, targetId?, aim?) -> validate (learned, alive, not stunned, GCD 0.5 s, cooldown, cost,
---   target, range) -> spend -> Skills/Types/* handler -> SkillFx to players within FX_RADIUS.
+--   target, range) -> spend -> SkillFx "cast" (everyone nearby plays the skill's animation, Data/SkillMotions) ->
+--   after the motion's hit time (S28, at most 0.6 s) the Skills/Types/* handler -> SkillFx impact events.
+--   S28: the skill works as Logic/Skills.effective makes it at its level (breakpoints at 5 and 10).
 -- Cooldowns replicate as state branch `skills` = { cd = { [skillId] = readyAt }, gcd = readyAt, channel? }
 -- (server time), so the client draws the cooldown sweep.
 
@@ -20,6 +22,7 @@ local Net = require(Shared.Net)
 local QuestEvents = require(script.Parent.Parent.QuestEvents)
 local Offense = require(script.Parent.Parent.Skills.Types.Offense)
 local SkillData = require(Shared.Data.Skills)
+local SkillMotions = require(Shared.Data.SkillMotions)
 local Skills = require(Shared.Logic.Skills)
 local Support = require(script.Parent.Parent.Skills.Types.Support)
 local Types = require(Shared.Types)
@@ -214,6 +217,30 @@ function SkillService.SetInfiniteResources(player: Player, enabled: boolean)
 	runtime(player).infiniteResources = enabled
 end
 
+-- Admin (S28): passives changed outside learn/reset.
+function SkillService.RefreshPassives(player: Player)
+	passivesChanged(player)
+end
+
+-- Admin (S28): puts an active skill on the first free hotbar slot (nothing when it is already there or the bar is full).
+function SkillService.PutOnBar(player: Player, skillId: string)
+	local char = character(player)
+	if not char then
+		return
+	end
+	for _, existing in char.hotbar do
+		if existing == skillId then
+			return
+		end
+	end
+	for slot = 1, SkillData.HOTBAR_SLOTS do
+		if char.hotbar[tostring(slot)] == nil then
+			PlayerStateService.Set(player, { "character", "hotbar", tostring(slot) }, skillId)
+			return
+		end
+	end
+end
+
 -- Learns every skill of the class as high as the level allows (spending points first, then free ones).
 function SkillService.LearnAll(player: Player): number
 	local char = character(player)
@@ -348,16 +375,21 @@ local function weaponElement(player: Player): string?
 	return if type(weapon) == "table" then weapon.element else nil
 end
 
+-- Types whose handler may still refuse (no dead ally): they run at once, so the refusal reaches the caster.
+local INSTANT: { [string]: boolean } = { resurrect = true, channel = true }
+
 local function cast(player: Player, skillId: string, targetId: string?, aim: any): (boolean, string?)
 	local char = character(player)
-	local skill = SkillData.get(skillId)
-	if not char or not skill or skill.class ~= char.class then
+	local base = SkillData.get(skillId)
+	if not char or not base or base.class ~= char.class then
 		return false, "error.badRequest"
 	end
 	local level = Skills.level(char, skillId)
-	if level <= 0 or skill.type == "passive" then
+	if level <= 0 or base.type == "passive" then
 		return false, "cast.error.notLearned"
 	end
+	-- S28: numbers and behaviours at this level (breakpoints).
+	local skill, behaviour = Skills.effective(base, level)
 	local caster = EntityService.GetPlayerEntity(player)
 	local model = player.Character
 	local root = model and model:FindFirstChild("HumanoidRootPart") :: BasePart?
@@ -439,46 +471,96 @@ local function cast(player: Player, skillId: string, targetId: string?, aim: any
 			return false, `cast.error.resource.{resource}`
 		end
 	end
-
-	-- Execute
-	interruptChannel(player, nil)
-	local ctx = Context.new(player, skill, level, char, caster, root, services)
-	ctx.target = target
-	ctx.point = point
-	local ok: boolean, err: string?
-	if skill.type == "channel" then
-		startChannel(ctx)
-		ok = true
-	else
-		local handler = HANDLERS[skill.type]
-		if not handler then
-			return false, "error.internal"
-		end
-		local success, a, b = pcall(handler, ctx)
-		if not success then
-			log:error("%s failed: %s", skillId, tostring(a))
-			return false, "error.internal"
-		end
-		ok, err = a, b
-	end
-	if not ok then
-		-- Refund when the handler refused (e.g. no dead ally to revive).
+	local function refund()
 		if cost > 0 and resource and not rt.infiniteResources then
 			ResourceService.Add(player, resource, cost)
 		end
-		return false, err
+		if not rt.noCooldowns then
+			rt.cooldowns[skillId] = nil
+			rt.gcd = 0
+			publishCooldowns(player)
+		end
 	end
 
-	ResourceService.MarkCombat(player)
-	-- Offensive skills end the respawn protection even when they hit nothing (S22).
-	if offensive then
-		StatusEffectService.BreakRespawnShield(player)
-	end
+	interruptChannel(player, nil)
+	local ctx = Context.new(player, skill, level, char, caster, root, services, behaviour)
+	ctx.target = target
+	ctx.point = point
 	if not rt.noCooldowns then
 		rt.gcd = t + SkillData.GCD
 		rt.cooldowns[skillId] = t + Skills.scaled(skill, skill.cooldown, level)
 		publishCooldowns(player)
 	end
+	ResourceService.MarkCombat(player)
+	-- Offensive skills end the respawn protection even when they hit nothing (S22).
+	if offensive then
+		StatusEffectService.BreakRespawnShield(player)
+	end
+
+	-- After a successful handler: breakpoint effects on the caster.
+	local function finished()
+		if behaviour.selfEffect then
+			ctx.applyEffect(caster, behaviour.selfEffect)
+		end
+		if behaviour.selfHeal then
+			ctx.heal(player, StatService.GetValue(player, "maxHp") * behaviour.selfHeal / 100)
+		end
+	end
+
+	if skill.type == "channel" then
+		startChannel(ctx)
+		finished()
+		return true, nil
+	end
+	local handler = HANDLERS[skill.type]
+	if not handler then
+		refund()
+		return false, "error.internal"
+	end
+	local function run(): (boolean, string?)
+		local success, a, b = pcall(handler, ctx)
+		if not success then
+			log:error("%s failed: %s", skillId, tostring(a))
+			refund()
+			return false, "error.internal"
+		end
+		if not a then
+			-- The handler refused (e.g. no dead ally to revive): nothing was spent.
+			refund()
+			return false, b
+		end
+		finished()
+		return true, nil
+	end
+
+	-- S28: everyone nearby starts the animation now; the blow lands at the motion's hit time.
+	local delay = if INSTANT[skill.type] then 0 else SkillMotions.hitDelay(skillId)
+	ctx.fx({
+		v = "cast",
+		t = if target then target.id else nil,
+		p = point,
+		mv = behaviour.castMove,
+	})
+	if delay <= 0 then
+		return run()
+	end
+	task.delay(delay, function()
+		-- Killed or stunned during the windup: the skill fizzles and its cost comes back.
+		if
+			player.Parent == nil
+			or ResourceService.IsDead(player)
+			or StatusEffectService.IsDisabled(caster)
+			or player.Character ~= model
+		then
+			refund()
+			ctx.fx({ v = "fizzle" })
+			return
+		end
+		local ok, err = run()
+		if not ok and err then
+			Net.Fire(player, "Toast", err, nil, "warning")
+		end
+	end)
 	return true, nil
 end
 

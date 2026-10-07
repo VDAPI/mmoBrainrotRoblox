@@ -530,6 +530,10 @@ local function tick()
 				nextTick[monster] = now + TICK -- fell behind (sleep or hitch): do not burst
 			end
 			local spawner = spawnerOf[monster]
+			-- S28 training dummies (admin /dummy) have no AI: they stand, take hits and never fight back.
+			if (monster :: any).dummy then
+				continue
+			end
 			if spawner == nil or spawner.awake or monster.state ~= "idle" then
 				local ok, err = pcall(function()
 					monster:Step(now)

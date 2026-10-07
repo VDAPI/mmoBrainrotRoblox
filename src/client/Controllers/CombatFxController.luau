@@ -22,6 +22,7 @@ local AttackPose = require(ReplicatedStorage.Shared.Logic.AttackPose)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Net = require(ReplicatedStorage.Shared.Net)
+local SkillData = require(ReplicatedStorage.Shared.Data.Skills)
 local Sounds = require(script.Parent.Parent.UI.Sounds)
 local State = require(script.Parent.Parent.UI.State)
 local Text = require(script.Parent.Parent.UI.Text)
@@ -29,7 +30,7 @@ local Theme = require(script.Parent.Parent.UI.Theme)
 
 local CombatFxController = {
 	Name = "CombatFxController",
-	Deps = { "EffectsController", "AnimationController", "MonsterViewController" },
+	Deps = { "EffectsController", "AnimationController", "MonsterViewController", "VfxController" },
 }
 
 local AnimationController: any
@@ -266,10 +267,13 @@ local function impact(model: Model, crit: boolean)
 	Debris:AddItem(ball, 0.2)
 end
 
--- Short camera kick when we take a heavy (critical) hit.
+-- Short camera kick when we take a heavy (critical) hit or a big skill lands nearby (S28). Scaled by the setting
+-- "Camera shake" (settings.shake 0..1, default 1).
 local function shake(strength: number)
 	local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
-	if not humanoid then
+	local setting = State.Get({ "account", "settings", "shake" })
+	strength *= if type(setting) == "number" then math.clamp(setting, 0, 1) else 1
+	if not humanoid or strength <= 0.01 then
 		return
 	end
 	task.spawn(function()
@@ -724,6 +728,10 @@ end
 
 -- Dispatcher ---------------------------------------------------------------------------------------------
 
+-- S28: the name of a skill shows once per cast (its first hit within NAME_EVERY seconds).
+local NAME_EVERY = 1.2
+local namedAt: { [string]: number } = {}
+
 local function onDamage(event: { [string]: any })
 	local model = findModel(event.e)
 	if not model then
@@ -740,7 +748,9 @@ local function onDamage(event: { [string]: any })
 	if amount <= 0 then
 		return
 	end
-	flash(model)
+	local skill = if type(event.sk) == "string" then SkillData.get(event.sk) else nil
+	-- A critical skill hit flashes gold (S28).
+	flash(model, if skill and event.c then Theme.Colors.GoldBright else nil)
 	impact(model, event.c == true)
 	AnimationController.MonsterHit(model)
 	if model:GetAttribute("MonsterId") == nil then
@@ -758,11 +768,28 @@ local function onDamage(event: { [string]: any })
 		elseif event.c then
 			color = Theme.Colors.GoldBright
 		end
+		if skill then
+			size += 6 -- skill numbers are bigger than basic attacks
+		end
 		if event.c then
 			text ..= "!"
-			size = 36
+			size += 10
 		end
 		floatText(headPosition(model), text, color, size)
+		if skill and not isMe then
+			local key = `{event.by or "?"}:{skill.id}`
+			local now = os.clock()
+			if now - (namedAt[key] or 0) > NAME_EVERY then
+				namedAt[key] = now
+				floatText(
+					headPosition(model) + Vector3.new(0, 1.2, 0),
+					Text.now(skill.nameKey),
+					Theme.Colors.Gold,
+					18,
+					3.5
+				)
+			end
+		end
 	end
 end
 
@@ -821,6 +848,7 @@ end
 function CombatFxController.Init(registry)
 	MonsterView = registry.Get("MonsterViewController")
 	AnimationController = registry.Get("AnimationController")
+	registry.Get("VfxController").SetShake(shake)
 	fxFolder = Instance.new("Folder")
 	fxFolder.Name = "Vaelthorn_CombatFx"
 	fxFolder.Parent = Workspace

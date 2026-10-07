@@ -8,19 +8,23 @@
 --   * characters (S22): basic attacks play a weapon-specific pose sequence (Logic/AttackPose: cut, two-handed
 --     cut, thrust, smash, bow draw, crossbow, wand / staff push, punch) written to Motor6D.Transform in
 --     PreSimulation, after the Animator, on top of the default animation (legs keep walking; the arms follow
---     the attack by its weight); a hit tilts the upper body back for a moment. Skills keep the cast pose
---     (point / raise / slam) by rotating the shoulder joints (C0).
+--     the attack by its weight); a hit tilts the upper body back for a moment;
+--   * skills (S28): every active skill plays its own motion (Data/SkillMotions through Logic/SkillPose) on the same
+--     joints plus the whole body (RootJoint: turns, flips, visual jumps) and the legs; it wins over the basic attack,
+--     stops on stun / death, freezes for a moment on a melee hit (hitstop) and may hold the character still while it
+--     plays (`lock`, unless a breakpoint lets it move: castMove).
 -- Everything runs locally on every client, so other players see the same motion.
 
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
 
 local AttackMotions = require(ReplicatedStorage.Shared.Data.AttackMotions)
 local AttackPose = require(ReplicatedStorage.Shared.Logic.AttackPose)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Gait = require(ReplicatedStorage.Shared.Logic.Gait)
+local SkillMotions = require(ReplicatedStorage.Shared.Data.SkillMotions)
+local SkillPose = require(ReplicatedStorage.Shared.Logic.SkillPose)
 local LookAnim = require(ReplicatedStorage.Shared.Logic.LookAnim)
 local MonsterLooks = require(ReplicatedStorage.Shared.Data.MonsterLooks)
 local UserInputService = game:GetService("UserInputService")
@@ -311,7 +315,8 @@ end
 
 -- Characters: attack poses (S22) --------------------------------------------------------------------------
 
-type JointRef = { motor: Motor6D, rot: CFrame }
+-- A joint is a Motor6D or (avatar joint upgrade, S28) an AnimationConstraint: both take Transform.
+type JointRef = { motor: any, rot: CFrame }
 type Rig = { joints: { [AttackPose.Joint]: JointRef }, r6: boolean }
 type Attack = {
 	motion: AttackPose.MotionName,
@@ -329,17 +334,36 @@ local JOINT_NAMES: { [AttackPose.Joint]: { string } } = {
 	lElbow = { "LeftElbow" },
 	lWrist = { "LeftWrist" },
 	waist = { "Waist" },
+	-- S28: skill motions also move the whole body and the legs (R15 Root / R6 RootJoint).
+	root = { "Root", "RootJoint" },
+	rHip = { "RightHip", "Right Hip" },
+	lHip = { "LeftHip", "Left Hip" },
+	rKnee = { "RightKnee" },
+	lKnee = { "LeftKnee" },
 }
+-- Joints the basic attack poses own (the skill motions add the rest).
+local ATTACK_JOINTS = { "rShoulder", "rElbow", "rWrist", "lShoulder", "lElbow", "lWrist", "waist" }
 local FLINCH_SECONDS = 0.15
 local FLINCH_DEGREES = 3
 local R6_ELBOW_SHARE = 0.35 -- R6 has no elbows: part of the elbow bend goes to the shoulder
 
+type SkillPlay = {
+	motion: SkillMotions.Motion,
+	start: number,
+	loopUntil: number?,
+	from: AttackPose.Pose?,
+	pose: AttackPose.Pose?,
+	frozenUntil: number, -- hitstop: the motion clock stands still until then
+	frozenAt: number?,
+}
+
 local rigs: { [Model]: Rig } = {}
 local attacks: { [Model]: Attack } = {}
+local skills: { [Model]: SkillPlay } = {}
 local flinches: { [Model]: number } = {}
 -- Guard against stacking: the last Transform we wrote and the animation's own value under it.
-local written: { [Motor6D]: CFrame } = {}
-local under: { [Motor6D]: CFrame } = {}
+local written: { [any]: CFrame } = {}
+local under: { [any]: CFrame } = {}
 
 local function rigOf(model: Model): Rig?
 	local rig = rigs[model]
@@ -354,6 +378,12 @@ local function rigOf(model: Model): Rig?
 			if motor and motor:IsA("Motor6D") then
 				joints[joint] = { motor = motor, rot = motor.C0.Rotation }
 				break
+			elseif motor and motor:IsA("AnimationConstraint") then
+				-- Player characters with the avatar joint upgrade (found in Studio, S28): the same Transform, the
+				-- frame of Attachment0 instead of C0.
+				local a0 = motor.Attachment0
+				joints[joint] = { motor = motor, rot = if a0 then a0.CFrame.Rotation else CFrame.identity }
+				break
 			end
 		end
 	end
@@ -366,6 +396,7 @@ local function rigOf(model: Model): Rig?
 		rigs[model] = nil
 		attacks[model] = nil
 		flinches[model] = nil
+		skills[model] = nil
 	end)
 	return created
 end
@@ -382,7 +413,41 @@ local function release(rig: Rig)
 	end
 end
 
+-- Joint transform from pose degrees: torso-frame rotation q in the joint's own frame (rot = C0 rotation); knees bend
+-- with + (the shin folds back), the root also lifts the body (studs).
+local function jointTransform(joint: string, a: { number }, ref: JointRef, r6: boolean, pose: AttackPose.Pose?): CFrame
+	local x, y, z = a[1] or 0, a[2] or 0, a[3] or 0
+	if r6 and pose and (joint == "rShoulder" or joint == "lShoulder") then
+		local elbow = pose[if joint == "rShoulder" then "rElbow" else "lElbow"]
+		x += (elbow and elbow[1] or 0) * R6_ELBOW_SHARE
+	end
+	local q
+	if joint == "rKnee" or joint == "lKnee" then
+		q = CFrame.fromEulerAnglesYXZ(math.rad(-x), 0, 0)
+	else
+		q = CFrame.fromEulerAnglesYXZ(math.rad(x), math.rad(y), math.rad(z))
+	end
+	if joint == "root" then
+		q = CFrame.new(0, a[4] or 0, 0) * q
+	end
+	return ref.rot:Inverse() * q * ref.rot
+end
+
 local function poseCharacter(model: Model, rig: Rig, now: number)
+	-- A skill motion owns its joints; the basic attack the rest of the arms (S28).
+	local skillPose: AttackPose.Pose? = nil
+	local skillWeight = 0
+	local play = skills[model]
+	if play then
+		local t = (play.frozenAt or now) - play.start
+		local p, w, done = SkillPose.sample(play.motion, t, { from = play.from, loopUntil = play.loopUntil })
+		if done then
+			skills[model] = nil
+		else
+			skillPose, skillWeight = p, w
+			play.pose = p
+		end
+	end
 	local attack = attacks[model]
 	local pose: AttackPose.Pose? = nil
 	local weight = 0
@@ -405,23 +470,27 @@ local function poseCharacter(model: Model, rig: Rig, now: number)
 			flinch = math.rad(FLINCH_DEGREES) * math.sin(t * math.pi)
 		end
 	end
-	if not pose and flinch == 0 then
+	if not pose and not skillPose and flinch == 0 then
 		release(rig)
 		return
 	end
 	for joint, ref in rig.joints do
-		local a = if pose then pose[joint] else nil
-		local x, y, z = 0, 0, 0
-		if a then
-			x, y, z = a[1], a[2], a[3]
-			if rig.r6 and pose and (joint == "rShoulder" or joint == "lShoulder") then
-				local elbow = pose[if joint == "rShoulder" then "rElbow" else "lElbow"]
-				x += (elbow and elbow[1] or 0) * R6_ELBOW_SHARE
-			end
+		local fromSkill = skillPose and skillPose[joint]
+		local a = fromSkill or (if pose then pose[joint] else nil)
+		local isAttackJoint = table.find(ATTACK_JOINTS, joint) ~= nil
+		local own: number
+		if fromSkill then
+			own = if joint == "waist" then skillWeight * 0.85 else skillWeight
+		elseif isAttackJoint and pose then
+			own = if joint == "waist" then weight * 0.6 else weight
+		elseif joint == "waist" and flinch ~= 0 then
+			own = 0
+		else
+			continue -- not moved by anything now (legs and root outside skill motions)
 		end
-		local q = CFrame.fromEulerAnglesYXZ(math.rad(x), math.rad(y), math.rad(z))
+		local q = if a then jointTransform(joint, a, ref, rig.r6, skillPose or pose) else CFrame.identity
 		if joint == "waist" and flinch ~= 0 then
-			q = CFrame.Angles(flinch, 0, 0) * q
+			q = ref.rot:Inverse() * CFrame.Angles(flinch, 0, 0) * ref.rot * q
 		end
 		local motor = ref.motor
 		local anim = motor.Transform
@@ -430,8 +499,7 @@ local function poseCharacter(model: Model, rig: Rig, now: number)
 			anim = under[motor] or CFrame.identity
 		end
 		under[motor] = anim
-		local own = if joint == "waist" then weight * 0.6 else weight
-		local final = anim:Lerp(CFrame.identity, own) * (ref.rot:Inverse() * q * ref.rot)
+		local final = anim:Lerp(CFrame.identity, own) * q
 		motor.Transform = final
 		written[motor] = final
 	end
@@ -448,15 +516,22 @@ local function stepCharacters()
 	for model in flinches do
 		active[model] = true
 	end
+	for model in skills do
+		active[model] = true
+	end
 	for model in active do
 		local rig = rigs[model]
 		local root = model:FindFirstChild("HumanoidRootPart") :: BasePart?
 		if not rig or not model.Parent or not root then
 			attacks[model] = nil
 			flinches[model] = nil
-		elseif (root.Position - eye).Magnitude > Config.EffectRadius then
+			skills[model] = nil
+		elseif
+			model:GetAttribute("VaelthornPreview") ~= true and (root.Position - eye).Magnitude > Config.EffectRadius
+		then
 			attacks[model] = nil
 			flinches[model] = nil
+			skills[model] = nil
 			release(rig)
 		else
 			poseCharacter(model, rig, now)
@@ -484,6 +559,73 @@ function AnimationController.Attack(model: Model, weaponType: string?, interval:
 	return timing
 end
 
+-- Plays a skill's motion on a character (S28). `loopUntil`: seconds a channel lasts (its loop repeats till then).
+-- Returns the motion (nil when the skill has none) so callers can time effects on its events.
+function AnimationController.Skill(model: Model, skillId: string, loopUntil: number?): SkillMotions.Motion?
+	local motion = SkillMotions.get(skillId)
+	if not motion then
+		return nil
+	end
+	if monsters[model] then
+		AnimationController.MonsterAttack(model, nil, true)
+		return motion
+	end
+	if not rigOf(model) then
+		return motion
+	end
+	local running = skills[model]
+	local attack = attacks[model]
+	-- A skill takes over from the basic attack, starting from the pose it reached.
+	attacks[model] = nil
+	skills[model] = {
+		motion = motion,
+		start = os.clock(),
+		loopUntil = loopUntil,
+		from = if running then running.pose elseif attack then attack.pose else nil,
+		pose = nil,
+		frozenUntil = 0,
+		frozenAt = nil,
+	}
+	return motion
+end
+
+-- Stops a skill motion at once (stun, death, interrupted channel); the joints go back to the default animation.
+function AnimationController.StopSkill(model: Model)
+	if skills[model] then
+		skills[model] = nil
+		local rig = rigs[model]
+		if rig then
+			release(rig)
+		end
+	end
+end
+
+-- Hitstop (S28): the skill motion of `model` (and a monster's attack) stands still for `seconds`.
+function AnimationController.Hitstop(model: Model, seconds: number)
+	local play = skills[model]
+	local now = os.clock()
+	if play and not play.frozenAt then
+		play.frozenAt = now
+		task.delay(seconds, function()
+			if skills[model] == play and play.frozenAt then
+				play.start += os.clock() - (play.frozenAt :: number)
+				play.frozenAt = nil
+			end
+		end)
+	end
+	local s = monsters[model]
+	if s then
+		s.attackStart += seconds
+		s.hitAt = now
+	end
+end
+
+-- Whether a character is playing a skill motion that holds it still (S28 `lock`).
+function AnimationController.SkillLock(model: Model): boolean
+	local play = skills[model]
+	return play ~= nil and play.motion.lock == true
+end
+
 -- A short tilt of the upper body when a character is hit.
 function AnimationController.CharacterHit(model: Model)
 	if rigOf(model) then
@@ -493,75 +635,6 @@ end
 
 -- Motion names (for /anim).
 AnimationController.MOTIONS = AttackMotions.byWeapon
-
--- Characters: skill cast poses ---------------------------------------------------------------------------
-
-local shoulderRest: { [Motor6D]: CFrame } = {}
-
-local function shoulder(model: Model, side: "Right" | "Left"): (Motor6D?, CFrame)
-	local motor = model:FindFirstChild(`{side}Shoulder`, true) or model:FindFirstChild(`{side} Shoulder`, true)
-	if not motor or not motor:IsA("Motor6D") then
-		return nil, CFrame.identity
-	end
-	local rest = shoulderRest[motor]
-	if not rest then
-		rest = motor.C0
-		shoulderRest[motor] = rest
-		motor.Destroying:Connect(function()
-			shoulderRest[motor] = nil
-		end)
-	end
-	return motor, rest :: CFrame
-end
-
--- Plays raised -> strike -> rest on one shoulder.
-local function shoulderMove(motor: Motor6D, rest: CFrame, raised: CFrame, strike: CFrame, hold: number)
-	motor.C0 = raised
-	local down = TweenService:Create(
-		motor,
-		TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out, 0, false, hold),
-		{ C0 = strike }
-	)
-	down:Play()
-	down.Completed:Once(function(state)
-		if state == Enum.PlaybackState.Completed then
-			TweenService:Create(motor, TweenInfo.new(0.18, Enum.EasingStyle.Quad), { C0 = rest }):Play()
-		end
-	end)
-end
-
-export type CastStyle = "point" | "raise" | "slam"
-
--- Skill cast pose. point: right arm towards the target; raise: both arms up (buffs, heals);
--- slam: both arms up, then down hard (ground area skills).
-function AnimationController.Cast(character: Model, style: CastStyle)
-	if monsters[character] then
-		AnimationController.MonsterAttack(character, nil, true)
-		return
-	end
-	local right, restR = shoulder(character, "Right")
-	local left, restL = shoulder(character, "Left")
-	if style == "point" then
-		if right then
-			local aim = restR * CFrame.Angles(math.rad(90), 0, 0)
-			shoulderMove(right, restR, aim, aim, 0.2)
-		end
-		return
-	end
-	local function both(motor: Motor6D?, rest: CFrame, side: number)
-		if not motor then
-			return
-		end
-		local up = rest * CFrame.Angles(math.rad(160), 0, math.rad(18) * side)
-		if style == "slam" then
-			shoulderMove(motor, rest, up, rest * CFrame.Angles(math.rad(20), 0, 0), 0.12)
-		else
-			shoulderMove(motor, rest, up, up, 0.35)
-		end
-	end
-	both(right, restR, -1)
-	both(left, restL, 1)
-end
 
 -- Monsters animated right now (/lookstats).
 function AnimationController.AnimatedCount(): number

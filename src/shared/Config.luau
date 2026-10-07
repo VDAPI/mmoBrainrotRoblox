@@ -163,6 +163,19 @@ local Config = {
 		useRange = 10,
 		useMoveLimit = 3,
 	},
+	-- Skills (S28, DESIGN §14): `breakpoints` turns the level 5 / 10 breakpoints on (off = numbers only).
+	Skills = {
+		breakpoints = true,
+		-- Seconds a skill pressed during the global cooldown / the cast waits to fire (client queue).
+		queueWindow = 0.4,
+	},
+	-- Skill visuals (S28): at most `maxActive` effects at once on a client; effects of other players farther than
+	-- `simpleBeyond` studs use the simple version; low graphics quality halves particles and drops weapon trails.
+	Vfx = {
+		maxActive = 40,
+		simpleBeyond = 60,
+		lowParticles = 0.5,
+	},
 	-- Streaming (S20, decision in PROGRESS): also set in default.project.json (Workspace properties).
 	StreamingTargetRadius = 512,
 	StreamingMinRadius = 128,

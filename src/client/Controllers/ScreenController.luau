@@ -36,6 +36,7 @@ local ScreenController = {
 		"PartyController",
 		"MovementController",
 		"NavController",
+		"VfxController",
 	},
 }
 
@@ -47,6 +48,7 @@ local SkillController: any
 local PartyController: any
 local MovementController: any
 local NavController: any
+local VfxController: any
 
 -- HUD menu (DESIGN §23). Windows without their system yet show a "coming soon" body.
 local MENU: { Hud.MenuEntry } = {
@@ -95,7 +97,7 @@ local function registerWindows()
 				size = Vector2.new(780, 640),
 				hotkey = HOTKEYS.skills,
 				build = function(scope: Scope)
-					return SkillsWindow(scope, WindowManager.ShowModal)
+					return SkillsWindow(scope, WindowManager.ShowModal, VfxController.Preview)
 				end,
 			})
 		elseif entry.id == "inventory" then
@@ -230,6 +232,9 @@ local function show(screen: "select" | "hud")
 			UsePotion = ItemController.UsePotion,
 			AssignPotion = ItemController.SetPotion,
 			CastSlot = SkillController.CastSlot,
+			AimStart = SkillController.AimStart,
+			AimMove = SkillController.AimMove,
+			AimEnd = SkillController.AimEnd,
 			ClearSlot = SkillController.ClearSlot,
 			SkillUsable = SkillController.Usable,
 			SkillColor = SkillController.Color,
@@ -257,6 +262,7 @@ function ScreenController.Init(registry)
 	PartyController = registry.Get("PartyController")
 	MovementController = registry.Get("MovementController")
 	NavController = registry.Get("NavController")
+	VfxController = registry.Get("VfxController")
 	blur = Instance.new("BlurEffect")
 	blur.Name = "Vaelthorn_SelectBlur"
 	blur.Enabled = false

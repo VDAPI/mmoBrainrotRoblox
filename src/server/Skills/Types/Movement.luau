@@ -68,7 +68,7 @@ Movement.charge = function(ctx)
 	ctx.fx({ t = target.id, p = destination, from = from })
 	moveTo(ctx, destination, position)
 	task.delay(0.15, function()
-		local result = ctx.damage(target, ctx.value("dmg"))
+		local result = ctx.damage(target, ctx.value("dmg"), { primary = true, from = from })
 		if result and not result.dodged then
 			ctx.applyEffects(target, "enemy")
 		end
@@ -97,6 +97,11 @@ Movement.blink = function(ctx)
 	local lookAt = if ctx.skill.id == "disengage" then from else destination + direction.Unit
 	moveTo(ctx, destination, lookAt)
 	ctx.applyEffects(ctx.caster, "self")
+	-- S28 breakpoint: a slowing trap where the caster stood.
+	local trap = ctx.bp.trap
+	if trap then
+		ctx.trap(ctx.ground(from), trap.radius, trap.duration, { kind = "slow", duration = 3, value = trap.slow })
+	end
 	return true, nil
 end
 

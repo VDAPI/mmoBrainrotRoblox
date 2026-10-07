@@ -49,6 +49,10 @@ local SETTINGS: { [string]: (value: any, player: Player) -> boolean } = {
 	minimapRotate = function(value)
 		return type(value) == "boolean"
 	end,
+	-- S28: camera shake of skills and heavy hits (0 = off, 1 = full).
+	shake = function(value)
+		return type(value) == "number" and value == value and value >= 0 and value <= 1
+	end,
 	cameraSens = function(value)
 		return type(value) == "number" and value == value and value >= 0.2 and value <= 3
 	end,

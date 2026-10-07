@@ -60,6 +60,12 @@ MMORPG na Roblox (Margonem w 3D). Luau + Rojo + Wally + Fusion 0.3 + ProfileStor
   `questAnchors` w `Data/Areas/<mapa>` + efekt w `QuestAnchorController`. Reguły w `Logic/SideQuests`, testy w
   `tests/sidequests.spec`. Admin: `/side`, `/anchor`, `/npc`.
 
+- **Umiejętność: animacja / efekt / przełom** (S28): animacja w `Data/SkillMotions` (klucze póz, `hit`, `lock`;
+  podgląd bez Studio: `lune run tools/posedump.luau out.json <skillId>` + `render3d.py`), wygląd w `Data/SkillVfx`
+  (składniki z `client/Vfx/Library`), przełomy `breakpoints = Build.bp({...}, {...})` w `Data/Skills/<Klasa>` ze
+  słownika w `Data/Skills/Types` + teksty `skill.<id>.bp5/.bp10`; serwer stosuje je w `Skills/Context` i `Types/*`.
+  Stawy postaci graczy to `AnimationConstraint` (nie `Motor6D`).
+
 ## Typy Fusion
 - luau-lsp nie lubi mieszanych tablic w `[Children]`: tablice instancji, `if ... else nil`, `ForValues`
   i `Computed` w dzieciach rzutuj `:: any`.

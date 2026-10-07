@@ -4,6 +4,8 @@
 
 local Shared = game:GetService("ReplicatedStorage").Shared
 
+local SkillData = require(Shared.Data.Skills)
+
 local Config = require(Shared.Config)
 local DevPreset = require(Shared.Logic.DevPreset)
 local Elements = require(Shared.Data.Elements)
@@ -116,6 +118,57 @@ commands.skills = function(player, args)
 	withCharacter(player, function()
 		reply(player, "admin.skills.ok", { points = SkillService.LearnAll(player) })
 	end)
+end
+
+-- S28: /skill <id> [level]: learns the skill at that level (no points, requirements ignored) and puts it on the bar.
+commands.skill = function(player, args)
+	local skill = SkillData.get(args[1] or "")
+	local level = math.clamp(parseAmount(args[2]) or 10, 1, 10)
+	withCharacter(player, function()
+		local char = PlayerStateService.GetCharacter(player)
+		if not skill or skill.class ~= char.class then
+			reply(player, "admin.skill.unknown", { id = args[1] or "?" })
+			return
+		end
+		level = math.min(level, skill.maxLevel)
+		PlayerStateService.Set(player, { "character", "skills", skill.id }, level)
+		SkillService.RefreshPassives(player)
+		if skill.type ~= "passive" then
+			SkillService.PutOnBar(player, skill.id)
+		end
+		reply(player, "admin.skill.ok", { skill = `@{skill.nameKey}`, level = level })
+	end)
+end
+
+-- S28: /skillall [class]: every skill of the class (default the character's) at its max level, the bar filled.
+commands.skillall = function(player, args)
+	withCharacter(player, function()
+		local char = PlayerStateService.GetCharacter(player)
+		local class = args[1] or char.class
+		if class ~= char.class then
+			reply(player, "admin.skillall.class", { class = char.class })
+			return
+		end
+		local n = 0
+		local list: { SkillData.SkillDef } = SkillData.byClass[class] or {}
+		for _, skill in list do
+			PlayerStateService.Set(player, { "character", "skills", skill.id }, skill.maxLevel)
+			if skill.type ~= "passive" then
+				SkillService.PutOnBar(player, skill.id)
+			end
+			n += 1
+		end
+		SkillService.RefreshPassives(player)
+		reply(player, "admin.skillall.ok", { n = n })
+	end)
+end
+
+-- S28: /nocd [on|off]: no cooldowns and no costs together.
+commands.nocd = function(player, args)
+	local on = args[1] ~= "off"
+	SkillService.SetNoCooldowns(player, on)
+	SkillService.SetInfiniteResources(player, on)
+	reply(player, if on then "admin.nocd.on" else "admin.nocd.off")
 end
 
 commands.cd = function(player, args)

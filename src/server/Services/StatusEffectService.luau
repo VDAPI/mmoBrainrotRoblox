@@ -36,6 +36,7 @@ export type Effect = {
 	nextTick: number?,
 	stats: { [string]: number }?, -- statBuff: stat -> value
 	pct: boolean?,
+	stacks: number?, -- S28: stacking damage over time (Cleave's bleed at level 10)
 }
 
 local EntityService: any
@@ -98,6 +99,8 @@ export type ApplyOptions = {
 	tickAmount: number?,
 	stats: { [string]: number }?,
 	pct: boolean?,
+	-- S28: re-applying from the same source adds a stack (tick amount x stacks) up to this many.
+	maxStacks: number?,
 }
 
 -- Effects shortened in PvP.
@@ -148,9 +151,14 @@ function StatusEffectService.Apply(entity: any, kind: string, options: ApplyOpti
 		table.insert(list, created)
 	end
 	local e = effect :: Effect
+	local stacks = 1
+	if options.maxStacks and options.maxStacks > 1 and e.expiresAt > t then
+		stacks = math.min(options.maxStacks, (e.stacks or 1) + 1)
+	end
+	e.stacks = stacks
 	e.value = options.value or 0
 	e.expiresAt = t + duration
-	e.tickAmount = options.tickAmount
+	e.tickAmount = if options.tickAmount then options.tickAmount * stacks else nil
 	e.nextTick = if options.tickAmount then t + TICK_INTERVAL else nil
 	e.stats = options.stats
 	e.pct = options.pct

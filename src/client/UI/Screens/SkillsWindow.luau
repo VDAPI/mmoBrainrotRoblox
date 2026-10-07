@@ -2,6 +2,8 @@
 -- Skills window (K), DESIGN §23: the class tree as a graph (icons with "level/max", requirement lines,
 -- locked nodes grey with their unlock level) and a details panel for the selected skill (current and next
 -- level, cost, cooldown, range, requirements, "Learn"). Learned active skills can be dragged onto the bar.
+-- S28: the area's shape, the breakpoints at 5 and 10, and "Preview": a copy of the character in a viewport plays the
+-- skill's animation and effect (VfxController.Preview), so the player sees what the points buy.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -11,7 +13,9 @@ local DragDrop = require(script.Parent.Parent.DragDrop)
 local Elements = require(ReplicatedStorage.Shared.Data.Elements)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Net = require(ReplicatedStorage.Shared.Net)
+local Pool = require(script.Parent.Parent.Parent.Vfx.Pool)
 local SkillData = require(ReplicatedStorage.Shared.Data.Skills)
+local SkillInfo = require(script.Parent.Parent.SkillInfo)
 local Skills = require(ReplicatedStorage.Shared.Logic.Skills)
 local Sounds = require(script.Parent.Parent.Sounds)
 local State = require(script.Parent.Parent.State)
@@ -33,7 +37,46 @@ local function nodeCenter(skill: SkillData.SkillDef): Vector2
 	return Vector2.new((skill.col - 0.5) * COL_STEP, (skill.row - 0.5) * ROW_STEP)
 end
 
-local function SkillsWindow(scope: Scope, showModal: (spec: any) -> ()): Fusion.Child
+local PREVIEW_HEIGHT = 150
+
+-- A still copy of the local character for the preview viewport (scripts and plates removed, root anchored).
+local function mannequin(): Model?
+	local character = game:GetService("Players").LocalPlayer.Character
+	if not character then
+		return nil
+	end
+	local was = character.Archivable
+	character.Archivable = true
+	local copy = character:Clone()
+	character.Archivable = was
+	if not copy then
+		return nil
+	end
+	for _, item in copy:GetDescendants() do
+		if
+			item:IsA("LuaSourceContainer")
+			or item:IsA("BillboardGui")
+			or item:IsA("ProximityPrompt")
+			or item:IsA("Sound")
+			or item:IsA("ForceField")
+		then
+			item:Destroy()
+		elseif item:IsA("BasePart") then
+			item.Anchored = item.Name == "HumanoidRootPart"
+			item.CanCollide = false
+		end
+	end
+	copy:SetAttribute("VaelthornPreview", true)
+	copy:SetAttribute("EntityId", nil)
+	copy:PivotTo(CFrame.new(0, 3, 0) * CFrame.Angles(0, math.rad(180), 0))
+	return copy
+end
+
+local function SkillsWindow(
+	scope: Scope,
+	showModal: (spec: any) -> (),
+	preview: ((model: Model, skillId: string) -> ())?
+): Fusion.Child
 	local classId = State.Value({ "character", "class" })
 	local skillLevels = State.Value({ "character", "skills" })
 	local points = State.Value({ "character", "skillPoints" })
@@ -260,19 +303,11 @@ local function SkillsWindow(scope: Scope, showModal: (spec: any) -> ()): Fusion.
 		line(header, Theme.Colors.Parchment, Theme.TextSize.Body, Theme.Fonts.BodyBold)
 		if skill.type ~= "passive" then
 			local shown = math.max(1, current)
-			local cost = Skills.scaled(skill, skill.cost, shown)
-			local parts = {}
-			if cost > 0 and skill.resource then
-				table.insert(parts, Text.get(use, `skills.cost.{skill.resource}`, { cost = math.floor(cost) }))
+			local shape = SkillInfo.shapeLine(use, skill, shown)
+			if shape ~= "" then
+				line(shape, Theme.Colors.Parchment)
 			end
-			table.insert(
-				parts,
-				Text.get(use, "skills.cooldown", { cooldown = Skills.scaled(skill, skill.cooldown, shown) })
-			)
-			if skill.range then
-				table.insert(parts, Text.get(use, "skills.range", { range = skill.range }))
-			end
-			line(table.concat(parts, " · "), Theme.Colors.TextMuted)
+			line(SkillInfo.costLine(use, skill, shown), Theme.Colors.TextMuted)
 		end
 		-- Weapon element (Mage, S18): requirement in red while the weapon does not fit, adaptive note.
 		local element = Skills.requiredElement(skill)
@@ -314,6 +349,17 @@ local function SkillsWindow(scope: Scope, showModal: (spec: any) -> ()): Fusion.
 				end
 			end
 		end
+		-- S28: breakpoints at levels 5 and 10 (reached ones bright, later ones greyed).
+		local bps = SkillInfo.breakpoints(use, skill, current)
+		if #bps > 0 then
+			line(Text.get(use, "skills.breakpoints"), Theme.Colors.Gold, nil, Theme.Fonts.BodyBold)
+			for _, bp in bps do
+				line(
+					(if bp.reached then "✔ " else "") .. bp.text,
+					if bp.reached then Theme.Colors.Success else Theme.Colors.TextMuted
+				)
+			end
+		end
 		return out
 	end)
 
@@ -329,6 +375,69 @@ local function SkillsWindow(scope: Scope, showModal: (spec: any) -> ()): Fusion.
 		local char = State.Get({ "character" })
 		return char ~= nil and (Skills.canLearn(char, skill.id))
 	end)
+
+	-- Preview viewport (S28)
+	local world = scope:New("WorldModel")({}) :: WorldModel
+	local camera = scope:New("Camera")({
+		FieldOfView = 40,
+		CFrame = CFrame.lookAt(Vector3.new(7, 5, -11), Vector3.new(0, 3, 0)),
+	}) :: Camera
+	local copy: Model? = nil
+	local function play()
+		local id = Fusion.peek(selected)
+		local skill = id and SkillData.get(id)
+		if not id or not skill or skill.type == "passive" or not preview then
+			return
+		end
+		if copy then
+			copy:Destroy()
+		end
+		copy = mannequin()
+		local model = copy
+		if not model then
+			return
+		end
+		model.Parent = world
+		Pool.setOverride(world)
+		preview(model, id)
+		task.delay(2.5, function()
+			Pool.setOverride(nil)
+		end)
+	end
+	table.insert(scope, function()
+		Pool.setOverride(nil)
+		if copy then
+			copy:Destroy()
+		end
+	end)
+	local previewFrame = scope:New("ViewportFrame")({
+		Name = "Preview",
+		Size = UDim2.new(1, 0, 0, PREVIEW_HEIGHT),
+		BackgroundColor3 = Theme.Colors.Background,
+		Ambient = Color3.fromRGB(150, 145, 140),
+		LightColor = Color3.fromRGB(255, 240, 220),
+		LightDirection = Vector3.new(-1, -1.2, -0.8),
+		CurrentCamera = camera,
+		[Children] = {
+			world :: any,
+			camera :: any,
+			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }) :: any,
+			Button(scope, {
+				AnchorPoint = Vector2.new(1, 1),
+				Position = UDim2.new(1, -6, 1, -6),
+				Size = UDim2.fromOffset(120, 36),
+				Variant = "secondary",
+				TextSize = Theme.TextSize.Small,
+				Text = Text.T(scope, "skills.preview"),
+				Disabled = scope:Computed(function(use): boolean
+					local id = use(selected)
+					local skill = id and SkillData.get(id)
+					return skill == nil or skill.type == "passive"
+				end),
+				OnClick = play,
+			}),
+		},
+	})
 
 	return {
 		scope:New("TextLabel")({
@@ -370,8 +479,10 @@ local function SkillsWindow(scope: Scope, showModal: (spec: any) -> ()): Fusion.
 					PaddingLeft = UDim.new(0, Theme.Padding.Medium),
 					PaddingRight = UDim.new(0, Theme.Padding.Medium),
 				}),
+				previewFrame,
 				scope:New("ScrollingFrame")({
-					Size = UDim2.new(1, 0, 1, -(Theme.Size.ButtonHeight * 2 + 20)),
+					Position = UDim2.fromOffset(0, PREVIEW_HEIGHT + 8),
+					Size = UDim2.new(1, 0, 1, -(Theme.Size.ButtonHeight * 2 + 20 + PREVIEW_HEIGHT + 8)),
 					CanvasSize = UDim2.new(),
 					AutomaticCanvasSize = Enum.AutomaticSize.Y,
 					BackgroundTransparency = 1,

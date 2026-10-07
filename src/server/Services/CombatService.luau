@@ -335,6 +335,7 @@ end
 export type DealOptions = {
 	multiplier: number?, -- extra multiplier (skill passives: elementalist, divine wrath)
 	consumeShot: boolean?, -- default true: consumes "nextShot" / "guaranteedCrit"
+	skill: string?, -- S28: skill id shown with the damage number (bigger numbers, the name on the first hit)
 }
 
 function CombatService.DealDamage(
@@ -397,10 +398,15 @@ function CombatService.DealDamage(
 				{ k = "atk", s = selfEntity.id, t = targetEntity.id, st = style, w = weaponType, el = element }
 			)
 		end
-		queueFx(
-			targetPosition,
-			{ k = "dmg", e = targetEntity.id, a = result.amount, c = result.crit, d = result.dodged }
-		)
+		queueFx(targetPosition, {
+			k = "dmg",
+			e = targetEntity.id,
+			a = result.amount,
+			c = result.crit,
+			d = result.dodged,
+			sk = options and options.skill,
+			by = if selfEntity then selfEntity.id else nil,
+		})
 		if result.amount > 0 then
 			monster:TakeDamage(result.amount, player)
 		end
@@ -441,10 +447,15 @@ function CombatService.DealDamage(
 			taken = filtered
 		end
 		if result.dodged or taken > 0 then
-			queueFx(
-				targetPosition,
-				{ k = "dmg", e = targetEntity.id, a = math.floor(taken), c = result.crit, d = result.dodged }
-			)
+			queueFx(targetPosition, {
+				k = "dmg",
+				e = targetEntity.id,
+				a = math.floor(taken),
+				c = result.crit,
+				d = result.dodged,
+				sk = options and options.skill,
+				by = if selfEntity then selfEntity.id else nil,
+			})
 		end
 	end
 

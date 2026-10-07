@@ -1,6 +1,7 @@
 --!strict
 -- Skill bar (DESIGN §14.1): 10 slots on keys 1–0. Cooldown as a darkening sweep with seconds left (the
--- global cooldown too), blue/yellow tint when mana/energy is short, red key when the target is out of range.
+-- global cooldown too), a flash when it is ready again (S28), red when mana/energy is short, grey with a red key when
+-- the target is out of range. The tooltip is UI/SkillInfo (shape, numbers, next level, breakpoints).
 -- Drag skills from the tree or between slots; right-click clears a slot; click casts.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -15,6 +16,7 @@ local Skills = require(ReplicatedStorage.Shared.Logic.Skills)
 local State = require(script.Parent.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
+local SkillInfo = require(script.Parent.Parent.Parent.SkillInfo)
 local Tooltip = require(script.Parent.Parent.Parent.Components.Tooltip)
 
 local Children, OnEvent = Fusion.Children, Fusion.OnEvent
@@ -77,8 +79,27 @@ local function SkillBar(scope: Scope, props: Props): { Instance }
 			end
 			local levels = use(skillLevels)
 			local level = if type(levels) == "table" then levels[s.id] or 1 else 1
-			local total = math.max(SkillData.GCD, Skills.scaled(s, s.cooldown, level))
+			local def = Skills.effective(s, level)
+			local total = math.max(SkillData.GCD, Skills.scaled(def, def.cooldown, level))
 			return math.clamp(left / total, 0, 1)
+		end)
+		-- S28: a short flash when a real cooldown (not just the global one) ends.
+		local flash = scope:Value(1)
+		local wasCooling = false
+		scope:Observer(remaining):onChange(function()
+			local left = Fusion.peek(remaining)
+			if left > SkillData.GCD + 0.05 then
+				wasCooling = true
+			elseif left <= 0 and wasCooling then
+				wasCooling = false
+				flash:set(0.15)
+				task.delay(0.12, function()
+					flash:set(0.5)
+				end)
+				task.delay(0.24, function()
+					flash:set(1)
+				end)
+			end
 		end)
 		local usable = scope:Computed(function(use): { resource: boolean, range: boolean, element: boolean }
 			use(tick)
@@ -155,14 +176,32 @@ local function SkillBar(scope: Scope, props: Props): { Instance }
 					ZIndex = 2,
 					[Children] = scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 				}),
-				-- Not enough mana / energy
+				-- Ready again (S28)
+				scope:New("Frame")({
+					Name = "ReadyFlash",
+					Size = UDim2.fromScale(1, 1),
+					BackgroundColor3 = Theme.Colors.GoldBright,
+					BackgroundTransparency = flash,
+					ZIndex = 6,
+					[Children] = scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
+				}),
+				-- Out of range of the target: greyed (S28)
+				scope:New("Frame")({
+					Name = "RangeTint",
+					Size = UDim2.fromScale(1, 1),
+					BackgroundColor3 = Color3.fromHex("#2A2A2E"),
+					BackgroundTransparency = 0.45,
+					Visible = scope:Computed(function(use): boolean
+						return use(skill) ~= nil and not use(usable).range
+					end),
+					ZIndex = 2,
+					[Children] = scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
+				}),
+				-- Not enough mana / energy: red (S28)
 				scope:New("Frame")({
 					Name = "ResourceTint",
 					Size = UDim2.fromScale(1, 1),
-					BackgroundColor3 = scope:Computed(function(use): Color3
-						local s = use(skill)
-						return if s and s.resource == "mana" then Theme.Colors.Mana else Theme.Colors.Energy
-					end),
+					BackgroundColor3 = Theme.Colors.Danger,
 					BackgroundTransparency = 0.55,
 					Visible = scope:Computed(function(use): boolean
 						return use(skill) ~= nil and not use(usable).resource
@@ -230,17 +269,7 @@ local function SkillBar(scope: Scope, props: Props): { Instance }
 				end
 				local levels = use(skillLevels)
 				local level = if type(levels) == "table" then levels[s.id] or 1 else 1
-				local lang = use(Text.Lang)
-				local text = `{Text.get(use, s.nameKey)} ({level})\n{Skills.formatDescription(s, level, lang)}`
-				local element = Skills.requiredElement(s)
-				if element then
-					text ..= `\n{Text.get(
-						use,
-						"skill.requiresElement",
-						{ element = Text.get(use, `element.{element}`) }
-					)}`
-				end
-				return text
+				return SkillInfo.tooltip(use, s, level)
 			end)
 		)
 		table.insert(slots, slot)

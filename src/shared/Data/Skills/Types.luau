@@ -62,6 +62,55 @@ export type SkillEffect = {
 	target: ("enemy" | "self" | "allies")?, -- default: enemy for damage skills, self for buffs
 }
 
+-- Breakpoint (S28, DESIGN §14): what changes when the skill reaches level 5 / 10 — numbers (`add` to radius, angle,
+-- range, length, width, hits, jumps, duration, effectDuration; `mul` cooldown, cost, delay; `values` added to the
+-- skill's values) and behaviours the server applies (Skills/Context, Types/*):
+--   pull = radius            enemies within the radius are pulled to the caster at the start
+--   knockback = studs        hit enemies are pushed away (bosses immune, players half)
+--   castMove = %             the caster may move at this % speed while the motion plays (client)
+--   stunNear = { radius, duration }  enemies near the target are stunned too
+--   bleedStacks = n          the skill's bleed stacks up to n times
+--   lingering = { pct, duration, radius?, kind, slow? }  the area keeps hurting (pct of the hit per second)
+--   echo = { delay, pct }    the area hits again after `delay` seconds for pct
+--   pierce = pct             a projectile also hits the next enemy behind the target
+--   execute = hp%            guaranteed crit on a target below hp%
+--   trap = { radius, duration, slow }  leaves a slowing trap where the caster stood
+--   split = { count, pct, radius }     the impact splits into small blasts around
+--   stunLast = seconds       the last wave / jump stuns
+--   splash = { radius, pct } a single-target hit also hurts enemies around the target
+--   secondTarget = pct       heal / shield / heal-over-time also on the second most wounded ally
+--   overhealShield = true    healing above full HP becomes an absorb shield
+--   cleanse = true           also removes harmful effects
+--   lifesteal = pct          the caster heals for pct of the damage dealt
+--   selfHeal = pct           the caster heals pct of max HP on cast
+--   effect / selfEffect / allyEffect = SkillEffect   an extra effect on hit enemies / the caster / allies
+export type Breakpoint = {
+	add: { [string]: number }?,
+	mul: { [string]: number }?,
+	values: { [string]: number }?,
+	pull: number?,
+	knockback: number?,
+	castMove: number?,
+	stunNear: { radius: number, duration: number }?,
+	bleedStacks: number?,
+	lingering: { pct: number, duration: number, radius: number?, kind: string, slow: number? }?,
+	echo: { delay: number, pct: number }?,
+	pierce: number?,
+	execute: number?,
+	trap: { radius: number, duration: number, slow: number }?,
+	split: { count: number, pct: number, radius: number }?,
+	stunLast: number?,
+	splash: { radius: number, pct: number }?,
+	secondTarget: number?,
+	overhealShield: boolean?,
+	cleanse: boolean?,
+	lifesteal: number?,
+	selfHeal: number?,
+	effect: SkillEffect?,
+	selfEffect: SkillEffect?,
+	allyEffect: SkillEffect?,
+}
+
 export type SkillDef = {
 	id: string,
 	class: string,
@@ -94,6 +143,7 @@ export type SkillDef = {
 	-- Passive stat modifiers: stat id -> value field; `pct` stats multiply.
 	passive: { flat: { [string]: string }?, pct: { [string]: string }?, hooks: { [string]: string }? }?,
 	requires: { { skill: string, level: number } }?,
+	breakpoints: { [number]: Breakpoint }?, -- S28: at skill level 5 and 10 (texts skill.<id>.bp5 / .bp10)
 	col: number,
 	row: number,
 	glyph: string,

@@ -399,6 +399,17 @@ Przedmioty **z kowala** mają rzadkość Zwykły i stałe statystyki dopasowane 
 - Pasek: **10 slotów** (klawisze 1–0), gracz przeciąga dowolną aktywną umiejętność do dowolnego slotu. Mobile: 10 przycisków w łuku wokół przycisku ataku (z możliwością przewijania 2×5).
 - Umiejętności: koszt zasobu, cooldown, globalny cooldown 0.5 s, zasięg; typy: pojedynczy cel, stożek, okrąg wokół siebie, okrąg w punkcie celu, pocisk, szarża, buff, leczenie, przywołanie efektu.
 - Skalowanie: `mnożnik = baza + przyrost·(poziom−1)`; buffy: wartość i czas rosną z poziomem.
+- **Przełomy (S28)**: każda aktywna umiejętność na poziomie 5 i 10 zmienia działanie, nie tylko liczby (większy
+  obszar, dodatkowy efekt, ruch podczas rzucania, dodatkowy cel, przyciąganie, odrzut, echo, płonąca ziemia…).
+  Widoczne w opisie od początku (wyszarzone „od poz. 5/10”). To nie są nowe poziomy — „brak poziomów mistrzowskich”
+  zostaje. Siła: przełom 5 ≈ +10–15%, przełom 10 ≈ +20–25%. Da się je wyłączyć jednym przełącznikiem.
+- **Animacje i efekty (S28)**: każda aktywna umiejętność ma własną animację postaci (proceduralną, całe ciało: obroty,
+  skoki, przysiady, salta) i własny efekt (smuga broni, łuk cięcia, fala, pęknięcia, pocisk z ogonem, błyskawica,
+  słup światła, runa, tarcza, aura). Obrażenia lądują w chwili trafienia w animacji (najwyżej 0,6 s po rzuceniu).
+  Trafienia czuć: krótkie zatrzymanie animacji (hitstop), odrzut przy części umiejętności, wstrząs kamery przy dużych
+  (opcja „Wstrząsy kamery”), większe liczby z nazwą umiejętności, złoty błysk krytyka. Dwie umiejętności tego samego
+  typu wyglądają inaczej. Celowanie: przytrzymanie klawisza pokazuje obszar (koło / stożek / linię), na telefonie
+  przeciągnięcie przycisku; jedna umiejętność może czekać w kolejce 0,4 s przed końcem odnowienia.
 
 ### 14.2 Wojownik (Energia)
 
