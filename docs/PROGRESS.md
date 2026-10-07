@@ -40,6 +40,7 @@
 | S31 | Wartość i statystyki każdego przedmiotu (jedna cena w UI i na serwerze, tooltip każdej kategorii), handlarz broni z progami 5–95 | ● |
 | S32 | Balans poziomów 1–20: model liczbowy i raport `docs/BALANS.md`, grupy, elity, Grimrok, przedmioty i rzadkości, drop, złoto | ● |
 | S33 | Expowiska z charakterem: profile ⚡ szybki exp / ✦ lepszy drop / ⛁ więcej złota na każdym przedziale, widoczne przy portalu, na mapie i banerze | ● |
+| S34 | Wiki 1/10: eksporter danych gry do JSON (`tools/wikidump.luau`), schemat i `types.ts`, kolory `tokens.data.css`, `docs/PRZEDMIOTY.md`, test wycieków | ● |
 
 Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana przez właściciela
 
@@ -3021,3 +3022,51 @@ init}}`, `Controllers/MonsterPlateController`, `tests/Balance`, `tools/balance_r
 16. Polana Królików, jaskinie i potwory z `/spawn`: bez znaczka, wszystko jak przed S33.
 17. Punkty przybycia przy portalu (każdy obszar Łąk) dalej przy drodze, z dala od grup — grupy stoją tam, gdzie stały.
 18. Angielski język (ustawienia): „⚡ Fast EXP — EXP ×1 · items ×0.6 · gold ×0.7”, kropka dziesiętna.
+
+### S34: Wiki 1/10 — dane z gry (eksporter)
+
+Szczegóły, decyzje i niedokończone: `docs/WIKI.md` (Stan, Decyzje, Niedokończone, §5 schemat).
+
+**Zrobione**
+- `tools/wikidump.luau` (CLI: `--out`, `--rolls`, `--only`, `--check`) + czyste moduły `tools/WikiData/*`: `Json`
+  (posortowane klucze, liczby całkowite bez kropki, 4 miejsca, bez -0, rekord w linii), `Clean` (funkcje precz, rzadkie
+  klucze jako tekst, tablice mieszane i cykle = błąd), `Schema` (allowlista pól, walidacja, `types.ts`), `Names`
+  (`Locale`, `ItemName`), `StubRng` (skrajne rzuty), `Features` (wykrywanie modułów S27–S35), `Visibility` (`hidden` /
+  `wiki = false`), `Leak`, buildery `Basics`, `Monsters`, `Bosses`, `World`, `Quests`, `Skills`, `Upgrade`,
+  `Crafting`, `Items`, `Search`, pliki pochodne `TypesTs`, `TokensCss`, `ItemsMd`.
+- 28 plików `wiki/src/data/*.json`: rzadkości, żywioły, klasy, statystyki, przedmioty (5 rzadkości × +0…+9, wartości,
+  źródła, „używany do”), bonusy (zakresy na próg i rzadkość, częstość), potwory (statystyki na każdym poziomie spawnu,
+  łup z Monte Carlo 100 000 rzutów, grupy slotów, miejsca z profilem expowiska), bossowie (1–5 graczy, ataki min–max,
+  łup wspólny, rzut osobisty S30), mapy, obszary, jaskinie, portale, NPC, sklepy (`gold`), questy (główne, poboczne,
+  dzienne, etykiety celów PL/EN), umiejętności (rangi z opisami, przełomy, zasady punktów), ulepszanie (szanse, porażki,
+  koszty na próg i rzadkość), kowal, alchemia, błogosławieństwa, tytuły, kosmetyki (bez cen), łowiska, zbieractwo,
+  krzywa EXP, mechaniki (`Config` z jawnej listy, strefy, warianty, profile S33), indeks wyszukiwania + wektory
+  `MapSearch.normalize`, `meta` (commit, data, odcisk danych, funkcje gry, liczności).
+- `wiki/src/data/types.ts` (przechodzi `tsc --strict`), `wiki/src/styles/tokens.data.css` (kolory rzadkości z gry z
+  wariantem tekstowym AA dla obu motywów, poświaty, żywioły, klasy, strefy), `docs/PRZEDMIOTY.md`.
+- `scripts/wikidump.ps1` / `scripts/wikidump.sh`, sekcja „Wiki” w `CLAUDE.md`, `docs/WIKI.md` §5 (tabela plik → pola
+  → źródło), Stan, Decyzje, Niedokończone.
+- `tests/wikidump.spec.luau` (15 testów, 500 rzutów): wycieki, nazwy PL/EN, odwołania, liczności, Monte Carlo vs tabele
+  (3σ), przykładowe rekordy planu, `Clean`, `Json`, flagi ukrycia, determinizm.
+
+**Pliki**: nowe `tools/wikidump.luau`, `tools/WikiData/*` (19 modułów), `tests/wikidump.spec.luau`,
+`scripts/wikidump.{ps1,sh}`, generowane `wiki/src/data/*`, `wiki/src/styles/tokens.data.css`, `docs/PRZEDMIOTY.md`;
+zmiany: `CLAUDE.md`, `docs/WIKI.md`, `docs/sessions/S34–S43` (ścieżka `tools/WikiData`). Kod gry bez zmian (729 testów).
+
+#### Instrukcja testu S34
+
+1. W katalogu repozytorium: `.\scripts\wikidump.ps1` — tabela 31 plików, ok. 30 s, bez linii „missing texts”.
+2. `git status`: brak zmian (dane w repo są aktualne). `.\scripts\wikidump.ps1 --check` kończy się „up to date”.
+3. `wiki/src/data/monsters.json`, wiersz `"id":"wolf"`: na poziomie 5 HP 237, obrażenia 13–15, EXP 55, złoto 11–21;
+   miejsca: Polana Królików i Wilcze Wzgórza (`"profile":"exp"`, odrodzenie 20–30 s).
+4. W grze (`/target info` na wilku poz. 5 na Polanie) HP i poziom zgadzają się z pkt 3.
+5. `items.json`, `"id":"sword1h_30"`: `rarities` 5 kluczy, `stats.common.weapon.dmg` 10 liczb (72 … 111), w
+   `sources.monsters` potwory, które go upuszczają; wartość +0 Zwykłego = cena sprzedaży w grze.
+6. `"id":"unique_grimrok_cleaver"`: `fixedBonuses` jak w tooltipie w grze, źródło `grimrok` (osobisty rzut).
+7. `quests.json`, quest `wolves`: cel „Pokonaj: Szary Wilk 8” / „Defeat: Grey Wolf 8”, zleceniodawca `scout_meadows`.
+8. `skills.json`, `bladeWhirl`: opis rangi 1 i 10 po polsku i angielsku jak w oknie umiejętności (K) w grze.
+9. `upgrade.json`: szansa +1 = 1, +9 = 0,2; `failTo` = poziom niżej, `protectedTo` = bez spadku.
+10. `docs/PRZEDMIOTY.md`: legenda rzadkości z kolorami gry, tabele broni / zbroi wg progów, Mityki bossów, materiały.
+11. `wiki/src/styles/tokens.data.css`: `--vw-r-unique: #F2D33A`, `--vw-r-mythic: #E5302A` i warianty `-text`.
+12. Wyszukaj w `wiki/src/data` słowa `WITAJ`, `"price"`, `robux`: brak wyników.
+13. `lune run tests/run.luau` — wszystkie testy przechodzą (w tym `wikidump.spec`).

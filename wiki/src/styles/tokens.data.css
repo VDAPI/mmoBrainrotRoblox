@@ -1,0 +1,52 @@
+/* GENEROWANE przez tools/wikidump.luau — nie edytuj (kolory z danych gry). */
+:root, [data-theme="dark"] {
+  --vw-r-common: #9DA3AB;
+  --vw-r-common-text: #9DA3AB;
+  --vw-glow-common: 0 0 0 1px #14161B, 0 0 12px rgba(157,163,171,0.10);
+  --vw-r-unique: #F2D33A;
+  --vw-r-unique-text: #F2D33A;
+  --vw-glow-unique: 0 0 0 1px #14161B, 0 0 18px rgba(242,211,58,0.15);
+  --vw-r-heroic: #3D8BFF;
+  --vw-r-heroic-text: #3D8BFF;
+  --vw-glow-heroic: 0 0 0 1px #14161B, 0 0 24px rgba(61,139,255,0.19);
+  --vw-r-legendary: #FF9F1C;
+  --vw-r-legendary-text: #FF9F1C;
+  --vw-glow-legendary: 0 0 0 1px #14161B, 0 0 30px rgba(255,159,28,0.24), 0 0 2px rgba(255,159,28,0.60);
+  --vw-r-mythic: #E5302A;
+  --vw-r-mythic-text: #E94D48;
+  --vw-glow-mythic: 0 0 0 1px #14161B, 0 0 36px rgba(229,48,42,0.28), 0 0 72px rgba(229,48,42,0.10);
+  --vw-el-fire: #FF7A1A;
+  --vw-el-ice: #9FE0FF;
+  --vw-el-lightning: #F2E85A;
+  --vw-el-poison: #7ACB3A;
+  --vw-class-Warrior: #C0503C;
+  --vw-class-Hunter: #4FA35A;
+  --vw-class-Mage: #4A8FE7;
+  --vw-class-Cleric: #E8C25A;
+  --vw-zone-green: #4FD16B;
+  --vw-zone-yellow: #E0C23B;
+  --vw-zone-red: #D64A3E;
+}
+[data-theme="light"] {
+  --vw-r-common: #6E7278;
+  --vw-r-common-text: #6E7278;
+  --vw-r-unique: #83721F;
+  --vw-r-unique-text: #83721F;
+  --vw-r-heroic: #3171CF;
+  --vw-r-heroic-text: #3171CF;
+  --vw-r-legendary: #A16412;
+  --vw-r-legendary-text: #A16412;
+  --vw-r-mythic: #D72D27;
+  --vw-r-mythic-text: #D72D27;
+  --vw-el-fire: #B55712;
+  --vw-el-ice: #547787;
+  --vw-el-lightning: #79742D;
+  --vw-el-poison: #4C7E24;
+  --vw-class-Warrior: #BE4F3B;
+  --vw-class-Hunter: #3E7F46;
+  --vw-class-Mage: #3B72B9;
+  --vw-class-Cleric: #846F33;
+  --vw-zone-green: #307F41;
+  --vw-zone-yellow: #827122;
+  --vw-zone-red: #C7453A;
+}

@@ -1,0 +1,39 @@
+{
+  "blessings": [
+    {"id":"warrior_1","item":"blessing_warrior_1","line":"warrior","name":{"en":"Blessing of the Warrior","pl":"Błogosławieństwo Wojownika"},"rarity":"common","stats":{"maxHp":100,"str":5}},
+    {"id":"warrior_2","item":"blessing_warrior_2","line":"warrior","name":{"en":"Blessing of the Warrior","pl":"Błogosławieństwo Wojownika"},"rarity":"unique","stats":{"atkSpeed":2,"maxHp":200,"str":8}},
+    {"id":"warrior_3","item":"blessing_warrior_3","line":"warrior","name":{"en":"Blessing of the Warrior","pl":"Błogosławieństwo Wojownika"},"rarity":"heroic","stats":{"atkSpeed":4,"maxHp":350,"str":12}},
+    {"id":"warrior_4","item":"blessing_warrior_4","line":"warrior","name":{"en":"Blessing of the Warrior","pl":"Błogosławieństwo Wojownika"},"rarity":"legendary","stats":{"atkSpeed":6,"critChance":3,"maxHp":500,"str":16}},
+    {"id":"warrior_5","item":"blessing_warrior_5","line":"warrior","name":{"en":"Blessing of the Warrior","pl":"Błogosławieństwo Wojownika"},"rarity":"mythic","stats":{"atkSpeed":8,"critChance":5,"dropBonus":10,"expBonus":10,"maxHp":800,"str":22}},
+    {"id":"hunter_1","item":"blessing_hunter_1","line":"hunter","name":{"en":"Blessing of the Hunter","pl":"Błogosławieństwo Łowcy"},"rarity":"common","stats":{"dex":5,"maxHp":100}},
+    {"id":"hunter_2","item":"blessing_hunter_2","line":"hunter","name":{"en":"Blessing of the Hunter","pl":"Błogosławieństwo Łowcy"},"rarity":"unique","stats":{"critChance":2,"dex":8,"maxHp":200}},
+    {"id":"hunter_3","item":"blessing_hunter_3","line":"hunter","name":{"en":"Blessing of the Hunter","pl":"Błogosławieństwo Łowcy"},"rarity":"heroic","stats":{"critChance":3,"dex":12,"maxHp":350}},
+    {"id":"hunter_4","item":"blessing_hunter_4","line":"hunter","name":{"en":"Blessing of the Hunter","pl":"Błogosławieństwo Łowcy"},"rarity":"legendary","stats":{"critChance":4,"critDmg":10,"dex":16,"maxHp":500}},
+    {"id":"hunter_5","item":"blessing_hunter_5","line":"hunter","name":{"en":"Blessing of the Hunter","pl":"Błogosławieństwo Łowcy"},"rarity":"mythic","stats":{"critChance":5,"critDmg":15,"dex":22,"dropBonus":10,"expBonus":10,"maxHp":800}},
+    {"id":"sage_1","item":"blessing_sage_1","line":"sage","name":{"en":"Blessing of the Sage","pl":"Błogosławieństwo Mędrca"},"rarity":"common","stats":{"int":5,"maxMana":80}},
+    {"id":"sage_2","item":"blessing_sage_2","line":"sage","name":{"en":"Blessing of the Sage","pl":"Błogosławieństwo Mędrca"},"rarity":"unique","stats":{"int":8,"manaRegen":2,"maxMana":150}},
+    {"id":"sage_3","item":"blessing_sage_3","line":"sage","name":{"en":"Blessing of the Sage","pl":"Błogosławieństwo Mędrca"},"rarity":"heroic","stats":{"int":12,"manaRegen":3,"maxMana":250}},
+    {"id":"sage_4","item":"blessing_sage_4","line":"sage","name":{"en":"Blessing of the Sage","pl":"Błogosławieństwo Mędrca"},"rarity":"legendary","stats":{"critChance":3,"int":16,"manaRegen":5,"maxMana":400}},
+    {"id":"sage_5","item":"blessing_sage_5","line":"sage","name":{"en":"Blessing of the Sage","pl":"Błogosławieństwo Mędrca"},"rarity":"mythic","stats":{"critChance":5,"dropBonus":10,"expBonus":10,"int":22,"manaRegen":8,"maxMana":600}},
+    {"id":"guardian_1","item":"blessing_guardian_1","line":"guardian","name":{"en":"Blessing of the Guardian","pl":"Błogosławieństwo Strażnika"},"rarity":"common","stats":{"maxHp":150,"vit":5}},
+    {"id":"guardian_2","item":"blessing_guardian_2","line":"guardian","name":{"en":"Blessing of the Guardian","pl":"Błogosławieństwo Strażnika"},"rarity":"unique","stats":{"armor":20,"maxHp":300,"vit":8}},
+    {"id":"guardian_3","item":"blessing_guardian_3","line":"guardian","name":{"en":"Blessing of the Guardian","pl":"Błogosławieństwo Strażnika"},"rarity":"heroic","stats":{"armor":40,"maxHp":500,"vit":12}},
+    {"id":"guardian_4","item":"blessing_guardian_4","line":"guardian","name":{"en":"Blessing of the Guardian","pl":"Błogosławieństwo Strażnika"},"rarity":"legendary","stats":{"armor":60,"maxHp":750,"mres":40,"vit":16}},
+    {"id":"guardian_5","item":"blessing_guardian_5","line":"guardian","name":{"en":"Blessing of the Guardian","pl":"Błogosławieństwo Strażnika"},"rarity":"mythic","stats":{"armor":90,"dropBonus":10,"expBonus":10,"maxHp":1100,"mres":60,"vit":22}},
+    {"id":"fortune_1","item":"blessing_fortune_1","line":"fortune","name":{"en":"Blessing of Fortune","pl":"Błogosławieństwo Fortuny"},"rarity":"common","stats":{"expBonus":5,"goldBonus":5}},
+    {"id":"fortune_2","item":"blessing_fortune_2","line":"fortune","name":{"en":"Blessing of Fortune","pl":"Błogosławieństwo Fortuny"},"rarity":"unique","stats":{"dropBonus":3,"expBonus":8,"goldBonus":8}},
+    {"id":"fortune_3","item":"blessing_fortune_3","line":"fortune","name":{"en":"Blessing of Fortune","pl":"Błogosławieństwo Fortuny"},"rarity":"heroic","stats":{"dropBonus":5,"expBonus":12,"goldBonus":12,"maxHp":100}},
+    {"id":"fortune_4","item":"blessing_fortune_4","line":"fortune","name":{"en":"Blessing of Fortune","pl":"Błogosławieństwo Fortuny"},"rarity":"legendary","stats":{"dropBonus":8,"expBonus":16,"goldBonus":16,"maxHp":200}},
+    {"id":"fortune_5","item":"blessing_fortune_5","line":"fortune","name":{"en":"Blessing of Fortune","pl":"Błogosławieństwo Fortuny"},"rarity":"mythic","stats":{"dropBonus":22,"expBonus":32,"goldBonus":25,"maxHp":300}}
+  ],
+  "duration": 1800,
+  "elixirDuration": 3600,
+  "elixirValue": 15,
+  "elixirs": [
+    {"name":{"en":"Fire resistance","pl":"Odporność na ogień"},"stat":"resFire"},
+    {"name":{"en":"Ice resistance","pl":"Odporność na lód"},"stat":"resIce"},
+    {"name":{"en":"Lightning resistance","pl":"Odporność na błyskawice"},"stat":"resLightning"},
+    {"name":{"en":"Poison resistance","pl":"Odporność na truciznę"},"stat":"resPoison"}
+  ],
+  "lines": ["warrior","hunter","sage","guardian","fortune"]
+}

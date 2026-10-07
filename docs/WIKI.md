@@ -13,7 +13,7 @@ Oficjalna wiki gry w folderze `wiki/` tego repozytorium. Ten plik jest źródłe
 
 - Eksporter działa na **allowliście źródeł i pól** (jawna lista modułów `Data/*` i pól każdej encji), nigdy na liście zakazanych.
 - Nigdy nie trafiają na wiki: `Data/Codes` (kody nagród), `Data/AdminCommands`, `Logic/DevPreset`, konfiguracja serwera i identyfikatory administratorów z `Config`, ceny w Robux i Smoczej Walucie, id produktów i przepustek. Z `Config` eksporter bierze tylko jawnie wymienione klucze (nigdy `RespawnNowCost`), z `Data/Cosmetics` nigdy `price`.
-- `Data/Products` czyta wyłącznie `tools/WikiDump/Premium.luau` (S43) i kopiuje tylko klucze i ikony przepustek oraz listę usług sklepu premium (klucz, rodzaj, przedmiot, limit dzienny); nazwy i opisy idą z lokalizacji. Ceny w złocie mają w JSON klucz `gold`, klucz `price` nie występuje w żadnym pliku.
+- `Data/Products` czyta wyłącznie `tools/WikiData/Premium.luau` (S43) i kopiuje tylko klucze i ikony przepustek oraz listę usług sklepu premium (klucz, rodzaj, przedmiot, limit dzienny); nazwy i opisy idą z lokalizacji. Ceny w złocie mają w JSON klucz `gold`, klucz `price` nie występuje w żadnym pliku.
 - Encje oznaczone jako niewydane (`hidden = true` albo `wiki = false` w danych; eksporter dodaje obsługę tych flag tam, gdzie ich jeszcze nie ma) są pomijane razem z linkami do nich.
 - `tests/wikidump.spec.luau` wywala się, gdy w wyjściu pojawi się którykolwiek kod z `Data/Codes`, id administratora, klucz spoza allowlisty albo klucz `productId`, `passId`, `robux`, `price`, `shards`, `RespawnNowCost`. Od S44 ten sam skan wycieków przechodzi po zbudowanej stronie (`dist/`).
 
@@ -65,7 +65,8 @@ wiki/
   e2e/                    testy Playwright: dostępność, klawiatura, układ (S44)
   package.json            npm run dev | build | check | data | shots | renders | icons | qa | lighthouse
 tools/
-  wikidump.luau           CLI eksportera; logika w tools/WikiDump/*.luau (czyste moduły, testowalne)
+  wikidump.luau           CLI eksportera; logika w tools/WikiData/*.luau (czyste moduły, testowalne;
+                          nazwa inna niż wikidump, bo na Windows Lune myli plik z folderem tej samej nazwy)
   wikimap.luau            SVG map z danych; logika w tools/WikiMap/*.luau
   LookDump.luau           wyglądy potworów, bossów i petów do renderów (lookdump.luau --wiki)
   wiki-renders/           rendery potworów, bossów i petów (Python + numpy + Pillow; tylko lokalnie)
@@ -107,6 +108,52 @@ Identyfikatory w URL to **id z danych gry** (stabilne między językami, także 
 Szczegółowy schemat każdej encji uzupełnia S34 (tutaj tylko lista i zasady). Wszystkie pliki: posortowane klucze, liczby zaokrąglone tam, gdzie gra je zaokrągla, nazwy jako `{ pl, en }`, odwołania przez id (bez kopii obiektów), `meta.json` z commitem i datą.
 
 `meta`, `rarities`, `elements`, `classes`, `stats`, `items` (bazy + progi + mityki bossów + materiały + użytkowe + plecaki), `bonuses` (pule i zakresy), `icons` (warstwy ikon z S35), `monsters` (rodzaje + warianty + statystyki na poziomach), `bosses`, `maps`, `areas`, `caves`, `portals`, `npcs`, `shops`, `quests` (główne, poboczne, dzienne), `skills`, `recipes` (alchemia), `crafting` (kowal, skrócony do progów), `upgrade` (szanse i koszty +1…+9 dla progów), `blessings`, `titles`, `fish`, `gather`, `progression` (krzywa EXP 1–100), `mechanics` (liczby do stron mechanik), `cosmetics` (bez cen), `search` (lekki indeks do palety Ctrl+K), od S37 `mapsearch` (indeks szukania na mapie, jak `Logic/MapSearch`). Typy TS (`types.ts`) generuje ten sam eksporter, a także `wiki/src/styles/tokens.data.css` i `docs/PRZEDMIOTY.md`.
+
+### Schemat (S34)
+
+Deklaracje w `tools/WikiData/<Builder>.luau` (`Schema.file`/`Schema.rec`); walidator odrzuca każdy klucz spoza
+schematu, a `wiki/src/data/types.ts` powstaje z tych samych deklaracji (interfejs na rekord, unie literałów dla
+kluczy rzadkości, żywiołów, klas, slotów i kategorii, typ `Files`). Zasady wspólne: nazwy `{ pl, en }`, odwołania
+przez id (`ref:<plik>` w schemacie, komentarz `// id in <plik>.json` w TS), szanse jako ułamki 0–1, ceny w złocie pod
+kluczem `gold`, statystyki ulepszeń jako tablice 10 wartości (+0…+9), struktury gry bez stałego kształtu (wartości i
+przełomy umiejętności, `Combat`, `Stats.Formula`) jako `data` (typ `Json`).
+
+| Plik | Pola najwyższego poziomu | Źródło (moduł / funkcja) |
+|---|---|---|
+| `areas.json` | `areas`: Area[], `maps`: Record<string, MapFeatures> | `Data/Areas` (obszary, drogi, woda, wejścia jaskiń, miejsca NPC, kotwice), sumy grup i odrodzenia z `Data/Spawns` |
+| `blessings.json` | `blessings`: Blessing[], `duration`: number, `elixirDuration`: number, `elixirValue`: number, `elixirs`: Elixir[], `lines`: string[] | `Data/Blessings` |
+| `bonuses.json` | `bonuses`: Bonus[], `classStats`: Record<string, ClassId[]>, `frequency`: Record<string, Record<string, Record<string, number>>>, `pools`: Record<string, string[]>, `rolls`: number | `Data/Bonuses`; zakresy `ItemRoll.rollBonusValue(id, próg, r, 0|1)`; częstość: Monte Carlo `ItemRoll.rollItem` |
+| `bosses.json` | `bosses`: Boss[], `countdown`: number, `dailyRuns`: number, `entryRange`: number, `releaseAfter`: number | `Data/Bosses`, `LootTables.bosses`; `MonsterStats.compute(kind, poziom, "boss")` z `BossScaling.hpMultiplier`; ataki jak zdolność Elity II (`Damage.computeDamage` + `StubRng`); łup: Monte Carlo `Loot.rollBossLoot`; rzut osobisty `Loot.bossChances` |
+| `caves.json` | `caves`: Cave[] | `Data/Areas` (`caves.list`, `entranceOf`, `arrivalOf`), sumy z `Data/Spawns` |
+| `classes.json` | `classes`: ClassInfo[] | `Data/Classes`, `Items.startingGear` |
+| `cosmetics.json` | `cosmetics`: Cosmetic[], `kinds`: CosmeticKind[] | `Data/Cosmetics` (bez ceny) |
+| `crafting.json` | `dismantle`: Record<string, CraftRange[]>, `refund`: UpgradeRefund[], `rows`: CraftRow[] | `Data/Crafting` (wiersze o tym samym poziomie, złocie i materiałach), `Dismantle.preview`, `Dismantle.upgradeRefund` |
+| `elements.json` | `default`: ElementId, `elements`: Element[] | `Data/Elements` |
+| `fish.json` | `chest`: FishChest, `spots`: FishSpot[] | `Data/Fish` |
+| `gather.json` | `nodes`: GatherNode[] | `Data/GatherNodes` |
+| `icons.json` | `cell`: number, `icons`: Json, `sheets`: string[], `tierTint`: Json |  |
+| `items.json` | `bases`: Record<string, BaseInfo>, `categories`: Record<string, CategoryInfo>, `items`: Item[], `slots`: Record<string, SlotInfo> | `Data/Items`; nazwa `ItemName.get`; rzadkości przez `ItemRoll.rollItem`; statystyki `ItemRoll.itemStats` (+0…+9); wartość `ItemValue.value`; źródła z Monte Carlo potworów i bossów, sklepów, kowala, alchemii, nagród, łowiska, zbieractwa, rozbijania; `usedFor` z `Upgrade.cost`, `Crafting`, `Recipes` |
+| `maps.json` | `maps`: MapInfo[] | `Data/Maps` (bez oświetlenia i muzyki) |
+| `mechanics.json` | `areaProfiles`: Record<string, AreaProfileInfo>, `bossDailyRuns`: number, `combat`: Json, `config`: Record<string, number>, `formula`: Json, `variants`: Record<string, VariantInfo>, `zones`: Record<string, ZoneInfo> | `Data/Combat`, `Stats.Formula`, jawna lista kluczy `Config`, strefy (`zone.*`, `pvp.rules.*`, kolory z `UI/Theme.luau` jako tekst), warianty, profile expowisk `Data/AreaProfiles` (S33) |
+| `meta.json` | `counts`: Record<string, number>, `dataCommit`: string, `dataDate`: string, `dataHash`: string, `features`: Record<string, boolean>, `rolls`: number, `schemaVersion`: number | wersja schematu, commit i data danych (`git log -1 -- src/shared tools/WikiData`), `dataHash` (odcisk plików), funkcje gry, liczności, liczba rzutów |
+| `monsters.json` | `monsters`: Monster[] | `Data/Monsters`, `Data/Spawns`; `MonsterStats.compute`, `Damage.computeDamage` + `StubRng` (min–max), `Exp.monsterExp` i `MonsterStats.gold` × `kindReward`; łup: `Rarities`, `LootTables`, Monte Carlo `Loot.rollMonsterLoot`; `family` = `MonsterLooks.get(id, region).plan` |
+| `npcs.json` | `npcs`: Npc[] | `Data/Npcs` |
+| `portals.json` | `portals`: PortalInfo[] | `Data/Portals` |
+| `progression.json` | `expToNext`: LevelExp[], `levelDiff`: LevelDiff[], `maxLevel`: number, `skillPointsFromLevel`: number, `skillPointsPerLevel`: number, `statPointsPerLevel`: number, `variantExp`: Record<string, number> | `Exp.expToNext`, `Exp.levelDiffMultiplier`, `Data/Progression` |
+| `quests.json` | `daily`: DailyQuests, `levelSlack`: number, `main`: MainQuest[], `side`: SideQuest[], `sideLevelSlack`: number, `sideMaxActive`: number | `Data/Quests` (główne, poboczne S27, dzienne: `objective(level)`, `Daily.reward(level)`); etykiety celów z kluczy `quest.obj.*` jak `UI/QuestText.objective` |
+| `rarities.json` | `rarities`: Rarity[], `sources`: Record<string, DropSource>, `upgradeStatPerLevel`: number | `Data/Rarities` (drabina S30, `itemDrops`, `dropWeights`, `cap`) |
+| `recipes.json` | `groups`: RecipeGroup[], `queueSlots`: number, `recipes`: AlchemyRecipe[] | `Data/Recipes` |
+| `search.json` | `entries`: SearchEntry[], `vectors`: NormalizeVector[] | pozostałe pliki + `MapSearch.normalize` (klucz, wektory testowe) |
+| `shops.json` | `shops`: Shop[], `weaponsmithTiers`: number[] | `Data/Shops`; cena `ItemValue.buyPrice` pod kluczem `gold`; NPC z `Data/Npcs` |
+| `skills.json` | `rules`: SkillRules, `skills`: Skill[] | `Data/Skills` (bez `vfx`); rangi: `Skills.levelRequirement`, `scaled`, `valueAt`, `formatDescription`; przełomy `breakpointKeys`; `Exp.pointsForLevels` |
+| `stats.json` | `formula`: Json, `groups`: StatGroupInfo[], `primary`: string[], `stats`: StatInfo[] | `Data/Stats` |
+| `titles.json` | `titles`: Title[] | `Data/Titles` |
+| `upgrade.json` | `costs`: Record<string, Record<string, UpgradeCost[]>>, `max`: number, `protection`: string, `steps`: UpgradeStep[], `tiers`: number[] | `Upgrade.chance`, `statMultiplier`, `attempt` (`StubRng` fail), `Upgrade.cost` dla progów i rzadkości |
+
+Pliki pochodne: `wiki/src/data/types.ts`, `wiki/src/styles/tokens.data.css` (`--vw-r-<key>`, `--vw-r-<key>-text`
+z kontrastem AA na `--vw-panel` w obu motywach, `--vw-glow-<key>`, `--vw-el-<id>`, `--vw-class-<classId>`,
+`--vw-zone-*`), `docs/PRZEDMIOTY.md`. Regeneracja: `lune run tools/wikidump.luau` (≈ 30 s, 100 000 rzutów na wariant
+potwora), sprawdzenie aktualności: `lune run tools/wikidump.luau --check` (kod 1 przy różnicy).
 
 ## 6. Design system i makiety
 
@@ -158,12 +205,46 @@ Kolejność wiki: S34 → S36 → dalej po kolei (S37–S41 zależą tylko od S3
 
 ## Stan
 
-- (pusto; pierwsza sesja wiki wpisuje tu, co działa)
+- **S34 (dane):** `lune run tools/wikidump.luau` (albo `scripts\wikidump.ps1` / `bash scripts/wikidump.sh`) tworzy 28
+  plików JSON w `wiki/src/data/` (ok. 3,8 MB, z tego `items.json` 2 MB i `monsters.json` 0,8 MB), `types.ts`
+  (przechodzi `tsc --strict`), `wiki/src/styles/tokens.data.css` i `docs/PRZEDMIOTY.md`; pełny eksport ≈ 30 s,
+  drugie uruchomienie daje te same bajty, `--check` porównuje z dyskiem. Test `tests/wikidump.spec.luau` (500 rzutów,
+  ok. 3 s): wycieki (kody, id adminów, zakazane klucze), nazwy PL/EN każdej encji, odwołania, liczności, Monte Carlo
+  zgodne z tabelami (3σ), `Clean`/`Json`, flagi `hidden`/`wiki`, determinizm.
+- Strony jeszcze nie istnieją (S36+); `npm run data` dopisze S36 jako wywołanie tego CLI.
 
 ## Decyzje
 
 - 2026-10-07: wiki w `wiki/` (Astro 5 + Svelte 5 + Pagefind + Cloudflare Pages), dane z `tools/wikidump.luau`, wygląd „Kuźnia” z Claude Design. Zastępuje plan jednoplikowej wiki z pierwotnej S34. Budowa w 10 sesjach: S34, S36–S44 (S35 to ikony przedmiotów w grze).
+- **S34** Moduły eksportera w `tools/WikiData/` zamiast `tools/WikiDump/`: na Windows (system plików bez rozróżniania
+  wielkości liter) Lune zgłasza „Ambiguous” dla `tools/wikidump.luau` obok folderu `tools/WikiDump`. CLI zostało
+  `tools/wikidump.luau`; plany S35–S44 poprawione (`tools/WikiData/...`, np. `Premium.luau` w S43).
+- **S34** `meta.dataCommit`/`dataDate` = ostatni commit `src/shared` i eksportera **w chwili generowania** (plik nie
+  może zawierać hasha commita, w którym sam leży). Świeżość danych mierzy `meta.dataHash` (FNV-1a wszystkich plików
+  danych); `--check` porównuje `meta.json` bez commita i daty. `docs/PRZEDMIOTY.md` podaje odcisk, nie commit.
+- **S34** Monte Carlo: domyślnie 100 000 rzutów `Loot.rollMonsterLoot` na wariant potwora (równo na poziomy spawnu,
+  `modifiers` = tylko `dropLevel` jak w `CombatService`, zabójca bez klasy: preferencja klasy `classBias` jest osobną
+  liczbą przy potworze), ziarno = hash `"<id>:<wariant>"`; bossowie 1/10 tego (`"boss:<id>"`), częstość bonusów
+  min(10 000, rzuty) na pulę i rzadkość (`"bonus:<pula>:<rzadkość>"`). Szanse rzadkości i materiałów idą wprost z
+  tabel; pole `itemMeasured` i `materials[].measured` (z tego samego Monte Carlo) pilnuje zgodności w teście.
+- **S34** Obrażenia i nagrody potwora jak w `CombatService`: EXP i złoto × `MonsterStats.kindReward` (S32), złoto
+  min–max z `MonsterStats.gold(l, v, 0|1)`, obrażenia min–max z `Damage.computeDamage` na obrońcy bez pancerza
+  (`StubRng` min/max, bez krytyka i uniku); statystyki bez mnożników grupy i profilu (profil jest polem obszaru, a
+  jego mnożniki są w `mechanics.areaProfiles`).
+- **S34** `family` potwora = `MonsterLooks.get(id, region).plan` (np. `canine`, `humanoid`); tłumaczy wiki (S39).
+- **S34** Dozwolone rzadkości przedmiotu = wyniki `ItemRoll.rollItem` dla Zwykłego, wszystkich rzadkości z wag dropu
+  i Mitycznego (osobisty rzut bossa daje losowane Mityki dowolnej bazy), więc generowany ekwipunek ma 5 rzadkości,
+  nazwane Mityki 1, stosy swoją stałą.
+- **S34** Struktury bez stałego kształtu (wartości, efekty i przełomy umiejętności, `Data/Combat`, `Stats.Formula`,
+  `use` przedmiotu, ikony S35) są w schemacie typem `data` (czysty JSON); reszta pól jest wymieniona jawnie.
+- **S34** Pełny eksport nie czyta `Data/Codes`, `Data/AdminCommands`, `Logic/DevPreset`, `Data/Products`; kody i
+  `Config.AdminUserIds` czyta tylko `tests/wikidump.spec.luau` (`Leak.scan`). Każdy build sprawdza zakazane klucze.
 
 ## Niedokończone
 
-- (pusto)
+- **S34** Brak w grze (pola pominięte, dopisze sesja gry albo wiki z i18n): opisy potworów, nazwy zdolności Elit II
+  (`ability.<id>`), nazwy ataków bossów, nazwa wariantu `boss` (`variant.boss`), opisy kosmetyków (`cosmetic.<id>.desc`).
+- **S34** `icons.json` powstanie po S35 (moduły `Logic/ItemIcons`, `Data/ItemIconAtlas`; eksporter wykrywa je sam,
+  `meta.features.itemIcons`). Pola `iconKey`/`layers`/`layersByElement` przedmiotów też czekają na S35.
+- **S34** Linie `TooltipModel.build` dla przedmiotów spoza ekwipunku i mnożniki profili jako pole łupu potwora nie
+  zrobione (profil jest przy obszarze i w `mechanics.areaProfiles`).

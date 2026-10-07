@@ -1,0 +1,39 @@
+{
+  "formula": {"armorPerStr":0.5,"armorPerVit":1,"atkSpeedPerDex":0.002,"critBase":5,"critDmgBase":150,"critPerDex":0.05,"dodgePerDex":0.03,"energyBase":100,"energyPerLevel":1,"energyRegenBase":8,"hpBase":80,"hpPerLevel":20,"hpPerVit":12,"hpRegenCombatPct":0.1,"hpRegenPct":0.5,"magPerInt":0.025,"manaBase":40,"manaPerInt":8,"manaPerLevel":6,"manaRegenPct":0.5,"mresPerInt":0.5,"mresPerVit":0.5,"physPerStat":0.02,"unarmed":{"dmg":4,"mdmg":3,"ranged":false,"speed":1},"walkSpeed":16},
+  "groups": [
+    {"id":"offense","name":{"en":"Offense","pl":"Ofensywa"}},
+    {"id":"defense","name":{"en":"Defense","pl":"Defensywa"}},
+    {"id":"resources","name":{"en":"Resources","pl":"Zasoby"}},
+    {"id":"other","name":{"en":"Other","pl":"Inne"}}
+  ],
+  "primary": ["str","dex","int","vit"],
+  "stats": [
+    {"decimals":0,"format":"flat","group":"offense","id":"physAtk","name":{"en":"Physical attack","pl":"Atak fizyczny"},"order":1},
+    {"decimals":0,"format":"flat","group":"offense","id":"magAtk","name":{"en":"Magic attack","pl":"Atak magiczny"},"order":2},
+    {"cap":60,"decimals":1,"format":"pct","group":"offense","id":"critChance","name":{"en":"Critical chance","pl":"Szansa na krytyk"},"order":3},
+    {"decimals":0,"format":"pct","group":"offense","id":"critDmg","name":{"en":"Critical damage","pl":"Obrażenia krytyczne"},"order":4},
+    {"cap":2.5,"decimals":2,"format":"flat","group":"offense","id":"atkSpeed","name":{"en":"Attack speed (per s)","pl":"Szybkość ataku (na s)"},"order":5},
+    {"decimals":1,"format":"pct","group":"offense","id":"accuracy","name":{"en":"Accuracy","pl":"Celność"},"order":6},
+    {"decimals":0,"format":"flat","group":"offense","id":"armorPen","name":{"en":"Armor penetration","pl":"Przebicie pancerza"},"order":7},
+    {"cap":15,"decimals":1,"format":"pct","group":"offense","id":"lifesteal","name":{"en":"Life steal","pl":"Wampiryzm"},"order":8},
+    {"decimals":0,"format":"flat","group":"defense","id":"armor","name":{"en":"Armor","pl":"Obrona"},"order":9},
+    {"decimals":0,"format":"flat","group":"defense","id":"mres","name":{"en":"Magic resistance","pl":"Odporność magiczna"},"order":10},
+    {"cap":30,"decimals":1,"format":"pct","group":"defense","id":"dodge","name":{"en":"Dodge","pl":"Unik"},"order":11},
+    {"cap":75,"decimals":0,"format":"pct","group":"defense","id":"resFire","name":{"en":"Fire resistance","pl":"Odporność na ogień"},"order":12},
+    {"cap":75,"decimals":0,"format":"pct","group":"defense","id":"resIce","name":{"en":"Ice resistance","pl":"Odporność na lód"},"order":13},
+    {"cap":75,"decimals":0,"format":"pct","group":"defense","id":"resLightning","name":{"en":"Lightning resistance","pl":"Odporność na błyskawice"},"order":14},
+    {"cap":75,"decimals":0,"format":"pct","group":"defense","id":"resPoison","name":{"en":"Poison resistance","pl":"Odporność na truciznę"},"order":15},
+    {"decimals":0,"format":"flat","group":"resources","id":"maxHp","name":{"en":"Health","pl":"Życie"},"order":16},
+    {"decimals":0,"format":"flat","group":"resources","id":"maxMana","name":{"en":"Mana","pl":"Mana"},"order":17},
+    {"decimals":0,"format":"flat","group":"resources","id":"maxEnergy","name":{"en":"Energy","pl":"Energia"},"order":18},
+    {"decimals":1,"format":"flat","group":"resources","id":"hpRegen","name":{"en":"Health regen (per s)","pl":"Regeneracja życia (na s)"},"order":19},
+    {"decimals":1,"format":"flat","group":"resources","id":"hpRegenCombat","name":{"en":"Health regen in combat (per s)","pl":"Regeneracja życia w walce (na s)"},"order":20},
+    {"decimals":1,"format":"flat","group":"resources","id":"manaRegen","name":{"en":"Mana regen (per s)","pl":"Regeneracja many (na s)"},"order":21},
+    {"decimals":1,"format":"flat","group":"resources","id":"energyRegen","name":{"en":"Energy regen (per s)","pl":"Regeneracja energii (na s)"},"order":22},
+    {"cap":30,"decimals":0,"format":"pct","group":"other","id":"moveSpeed","name":{"en":"Movement speed","pl":"Szybkość ruchu"},"order":23},
+    {"decimals":0,"format":"pct","group":"other","id":"expBonus","name":{"en":"Experience bonus","pl":"Bonus do doświadczenia"},"order":24},
+    {"decimals":0,"format":"pct","group":"other","id":"dropBonus","name":{"en":"Drop bonus","pl":"Bonus do dropu"},"order":25},
+    {"decimals":0,"format":"pct","group":"other","id":"goldBonus","name":{"en":"Gold bonus","pl":"Bonus do złota"},"order":26},
+    {"cap":50,"decimals":0,"format":"pct","group":"other","id":"potionDiscount","name":{"en":"Potion discount","pl":"Zniżka na mikstury"},"order":27}
+  ]
+}

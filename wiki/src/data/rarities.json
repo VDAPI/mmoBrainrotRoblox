@@ -1,0 +1,16 @@
+{
+  "rarities": [
+    {"baseMul":1,"bindOnPickup":false,"bonusMax":0,"bonusMin":0,"color":"#9DA3AB","dismantle":[{"id":"essence_dust","max":2,"min":1}],"id":1,"key":"common","legendaryLines":0,"name":{"en":"Common","pl":"Zwykły"},"rangeMul":1,"sellMul":1,"short":{"en":"Commons","pl":"Zwykłe"},"textColor":"#565C64"},
+    {"baseMul":1.05,"bindOnPickup":false,"bonusMax":2,"bonusMin":1,"color":"#F2D33A","dismantle":[{"id":"essence_dust","max":4,"min":2},{"chance":0.25,"id":"essence_shard","max":1,"min":1}],"id":2,"key":"unique","legendaryLines":0,"name":{"en":"Unique","pl":"Unikatowy"},"rangeMul":1,"sellMul":1.12,"short":{"en":"Uniques","pl":"Unikaty"},"textColor":"#8C6D00"},
+    {"baseMul":1.12,"bindOnPickup":false,"bonusMax":3,"bonusMin":2,"color":"#3D8BFF","dismantle":[{"id":"essence_shard","max":3,"min":1},{"chance":0.2,"id":"essence_crystal","max":1,"min":1}],"id":3,"key":"heroic","legendaryLines":0,"name":{"en":"Heroic","pl":"Heroiczny"},"rangeMul":1.05,"sellMul":1.25,"short":{"en":"Heroics","pl":"Heroiki"},"textColor":"#1F5BC2"},
+    {"baseMul":1.16,"bindOnPickup":false,"bonusMax":4,"bonusMin":3,"color":"#FF9F1C","dismantle":[{"id":"essence_crystal","max":2,"min":1},{"id":"legend_core","max":1,"min":1}],"id":4,"key":"legendary","legendaryLines":1,"name":{"en":"Legendary","pl":"Legendarny"},"rangeMul":1.1,"sellMul":1.45,"short":{"en":"Legendaries","pl":"Legendy"},"textColor":"#C26A00"},
+    {"baseMul":1.22,"bindOnPickup":true,"bonusMax":4,"bonusMin":4,"color":"#E5302A","dismantle":[{"id":"essence_crystal","max":3,"min":2},{"id":"legend_core","max":2,"min":2}],"id":5,"key":"mythic","legendaryLines":2,"name":{"en":"Mythic","pl":"Mityczny"},"rangeMul":1.2,"sellMul":1.7,"short":{"en":"Mythics","pl":"Mityki"},"textColor":"#B01E19"}
+  ],
+  "sources": {
+    "boss": {"cap":"mythic","chance":1,"max":4,"min":3,"weights":{"heroic":0.65,"unique":0.35}},
+    "elite": {"cap":"heroic","chance":0.75,"extra":0.25,"max":1,"min":1,"weights":{"common":0.45,"heroic":0.06,"unique":0.49}},
+    "elite2": {"cap":"legendary","chance":1,"max":3,"min":2,"weights":{"heroic":0.5,"legendary":0.05,"unique":0.45}},
+    "normal": {"cap":"unique","chance":0.2,"max":1,"min":1,"weights":{"common":0.7,"unique":0.3}}
+  },
+  "upgradeStatPerLevel": 0.06
+}

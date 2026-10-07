@@ -69,3 +69,13 @@ MMORPG na Roblox (Margonem w 3D). Luau + Rojo + Wally + Fusion 0.3 + ProfileStor
 ## Typy Fusion
 - luau-lsp nie lubi mieszanych tablic w `[Children]`: tablice instancji, `if ... else nil`, `ForValues`
   i `Computed` w dzieciach rzutuj `:: any`.
+
+## Wiki
+- Decyzje, kontrakt i stan: `docs/WIKI.md`. Strona w `wiki/` (Astro, od S36); makiety tylko do wglądu w `wiki/design/`.
+- Dane wiki: `tools/wikidump.luau` (CLI) + `tools/WikiData/*` (czyste moduły: buildery, `Schema`, `Json`, `Clean`, `Leak`).
+  Wyjście jest generowane i commitowane: `wiki/src/data/*.json` + `types.ts`, `wiki/src/styles/tokens.data.css`,
+  `docs/PRZEDMIOTY.md`. Test: `tests/wikidump.spec.luau`.
+- **Po każdej sesji zmieniającej `src/shared/Data` (albo Logic używaną przez eksport) uruchom `lune run tools/wikidump.luau`**
+  (od S36: `npm run data` w `wiki/`) i zacommituj zmiany; `--check` mówi, czy dane są aktualne.
+- Nowe pole gry na wiki = wpis w schemacie buildera (`Schema.rec`) + wartość w builderze. Liczby tylko z funkcji `Logic`
+  i z `Data`; nic z `Data/Codes`, `AdminCommands`, `DevPreset`, `Products` (wyjątek S43: `WikiData/Premium.luau`).

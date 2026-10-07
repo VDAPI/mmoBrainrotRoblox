@@ -1,0 +1,9 @@
+{
+  "default": "fire",
+  "elements": [
+    {"color":"#FF7A1A","id":"fire","name":{"en":"Fire","pl":"Ogień"},"weapon":true},
+    {"color":"#9FE0FF","id":"ice","name":{"en":"Ice","pl":"Lód"},"weapon":true},
+    {"color":"#F2E85A","id":"lightning","name":{"en":"Lightning","pl":"Błyskawice"},"weapon":true},
+    {"color":"#7ACB3A","id":"poison","name":{"en":"Poison","pl":"Trucizna"},"weapon":false}
+  ]
+}

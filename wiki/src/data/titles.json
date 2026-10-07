@@ -1,0 +1,15 @@
+{
+  "titles": [
+    {"color":"#CFC6B0","id":"wanderer","name":{"en":"Wanderer","pl":"Wędrowiec"},"req":{"kind":"level","value":10}},
+    {"color":"#9FD18B","id":"adventurer","name":{"en":"Adventurer","pl":"Poszukiwacz Przygód"},"req":{"kind":"level","value":25}},
+    {"color":"#7FB8FF","id":"veteran","name":{"en":"Veteran","pl":"Weteran"},"req":{"kind":"level","value":50}},
+    {"color":"#C77BFF","id":"champion","name":{"en":"Champion","pl":"Czempion"},"req":{"kind":"level","value":75}},
+    {"color":"#FF9F1C","id":"legend","name":{"en":"Legend of Vaelthorn","pl":"Legenda Vaelthornu"},"req":{"kind":"level","value":100}},
+    {"color":"#E8D9A8","id":"sentinel","name":{"en":"Gate Sentinel","pl":"Strażnik Bram"},"req":{"kind":"mainDone","value":10}},
+    {"color":"#FF6B4A","id":"dragonbane","name":{"en":"Dragonbane","pl":"Pogromca Smoka"},"req":{"kind":"mainDone","value":32}},
+    {"color":"#E8E25A","id":"duelist","name":{"en":"Duelist","pl":"Pojedynkowicz"},"req":{"kind":"duelsWon","value":10}},
+    {"color":"#FFD36B","id":"gladiator","name":{"en":"Gladiator","pl":"Gladiator"},"req":{"kind":"duelsWon","value":50}},
+    {"color":"#E05A4A","id":"bloodied","name":{"en":"Bloodied","pl":"Splamiony Krwią"},"req":{"kind":"pvpKills","value":10}},
+    {"color":"#B8322A","id":"warlord","name":{"en":"Warlord","pl":"Watażka"},"req":{"kind":"pvpKills","value":100}}
+  ]
+}

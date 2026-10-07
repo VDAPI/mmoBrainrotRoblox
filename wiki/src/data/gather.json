@@ -1,0 +1,18 @@
+{
+  "nodes": [
+    {"category":"herb","color":"#3F6B35","id":"bush_firebloom","level":45,"loot":[{"chance":1,"id":"herb_firebloom","max":2,"min":1}],"name":{"en":"Firebloom","pl":"Ogniokwiat"},"respawn":45,"shape":"bush","time":1.5},
+    {"category":"herb","color":"#3F6B35","id":"bush_frostleaf","level":70,"loot":[{"chance":1,"id":"herb_frostleaf","max":2,"min":1}],"name":{"en":"Frostleaf","pl":"Szronolist"},"respawn":45,"shape":"bush","time":1.5},
+    {"category":"herb","color":"#3F6B35","id":"bush_meadowsweet","level":1,"loot":[{"chance":1,"id":"herb_meadowsweet","max":2,"min":1}],"name":{"en":"Meadowsweet","pl":"Wiązówka"},"respawn":45,"shape":"bush","time":1.5},
+    {"category":"herb","color":"#3F6B35","id":"bush_moonpetal","level":30,"loot":[{"chance":1,"id":"herb_moonpetal","max":2,"min":1}],"name":{"en":"Moonpetal","pl":"Księżycowy Płatek"},"respawn":45,"shape":"bush","time":1.5},
+    {"category":"herb","color":"#3F6B35","id":"bush_nightshade","level":20,"loot":[{"chance":1,"id":"herb_nightshade","max":2,"min":1}],"name":{"en":"Nightshade","pl":"Psianka"},"respawn":45,"shape":"bush","time":1.5},
+    {"category":"fishing","color":"#2F6FA3","id":"fishing_ashen","level":50,"loot":[],"name":{"en":"Lava fishing spot","pl":"Lawowe łowisko"},"respawn":0,"shape":"water","spot":"ashen","time":0,"tool":"fishing_rod"},
+    {"category":"fishing","color":"#2F6FA3","id":"fishing_duskwood","level":25,"loot":[],"name":{"en":"Swamp fishing spot","pl":"Bagienne łowisko"},"respawn":0,"shape":"water","spot":"duskwood","time":0,"tool":"fishing_rod"},
+    {"category":"fishing","color":"#2F6FA3","id":"fishing_frostpeak","level":75,"loot":[],"name":{"en":"Ice hole","pl":"Przerębel"},"respawn":0,"shape":"water","spot":"frostpeak","time":0,"tool":"fishing_rod"},
+    {"category":"fishing","color":"#2F6FA3","id":"fishing_meadows","level":1,"loot":[],"name":{"en":"Fishing spot","pl":"Łowisko"},"respawn":0,"shape":"water","spot":"meadows","time":0,"tool":"fishing_rod"},
+    {"category":"ore","color":"#6B6660","id":"vein_adamantite","level":90,"loot":[{"chance":1,"id":"ore_adamantite","max":2,"min":1},{"chance":0.1,"id":"essence_dust","max":1,"min":1}],"name":{"en":"Adamantite Vein","pl":"Żyła Adamantytu"},"respawn":60,"shape":"rock","time":2.5,"tool":"pickaxe"},
+    {"category":"ore","color":"#6B6660","id":"vein_copper","level":1,"loot":[{"chance":1,"id":"ore_copper","max":2,"min":1},{"chance":0.1,"id":"essence_dust","max":1,"min":1}],"name":{"en":"Copper Vein","pl":"Żyła Miedzi"},"respawn":60,"shape":"rock","time":2.5,"tool":"pickaxe"},
+    {"category":"ore","color":"#6B6660","id":"vein_iron","level":20,"loot":[{"chance":1,"id":"ore_iron","max":2,"min":1},{"chance":0.1,"id":"essence_dust","max":1,"min":1}],"name":{"en":"Iron Vein","pl":"Żyła Żelaza"},"respawn":60,"shape":"rock","time":2.5,"tool":"pickaxe"},
+    {"category":"ore","color":"#6B6660","id":"vein_mithril","level":70,"loot":[{"chance":1,"id":"ore_mithril","max":2,"min":1},{"chance":0.1,"id":"essence_dust","max":1,"min":1}],"name":{"en":"Mithril Vein","pl":"Żyła Mithrilu"},"respawn":60,"shape":"rock","time":2.5,"tool":"pickaxe"},
+    {"category":"ore","color":"#6B6660","id":"vein_silver","level":45,"loot":[{"chance":1,"id":"ore_silver","max":2,"min":1},{"chance":0.1,"id":"essence_dust","max":1,"min":1}],"name":{"en":"Silver Vein","pl":"Żyła Srebra"},"respawn":60,"shape":"rock","time":2.5,"tool":"pickaxe"}
+  ]
+}

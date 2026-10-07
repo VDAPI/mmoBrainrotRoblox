@@ -1,0 +1,43 @@
+{
+  "groups": [
+    {"id":"blessing","name":{"en":"Blessings","pl":"Błogosławieństwa"}},
+    {"id":"travel","name":{"en":"Scrolls & stones","pl":"Zwoje i kamienie"}},
+    {"id":"material","name":{"en":"Materials","pl":"Materiały"}},
+    {"id":"elixir","name":{"en":"Elixirs","pl":"Eliksiry"}}
+  ],
+  "queueSlots": 3,
+  "recipes": [
+    {"gold":100,"group":"blessing","id":"blessing_warrior_1","ingredients":[{"id":"herb_meadowsweet","n":3},{"id":"wolf_pelt","n":1}],"level":1,"result":{"id":"blessing_warrior_1","n":1},"time":180},
+    {"gold":400,"group":"blessing","id":"blessing_warrior_2","ingredients":[{"id":"herb_nightshade","n":4},{"id":"wolf_pelt","n":2}],"level":15,"result":{"id":"blessing_warrior_2","n":1},"time":480},
+    {"gold":1500,"group":"blessing","id":"blessing_warrior_3","ingredients":[{"id":"herb_firebloom","n":5},{"id":"wolf_pelt","n":3},{"id":"essence_shard","n":1}],"level":35,"result":{"id":"blessing_warrior_3","n":1},"time":900},
+    {"gold":5000,"group":"blessing","id":"blessing_warrior_4","ingredients":[{"id":"herb_frostleaf","n":6},{"id":"wolf_pelt","n":4},{"id":"essence_shard","n":2}],"level":60,"result":{"id":"blessing_warrior_4","n":1},"time":1800},
+    {"gold":100,"group":"blessing","id":"blessing_hunter_1","ingredients":[{"id":"herb_meadowsweet","n":3},{"id":"toad_venom","n":1}],"level":1,"result":{"id":"blessing_hunter_1","n":1},"time":180},
+    {"gold":400,"group":"blessing","id":"blessing_hunter_2","ingredients":[{"id":"herb_nightshade","n":4},{"id":"spider_silk","n":2}],"level":15,"result":{"id":"blessing_hunter_2","n":1},"time":480},
+    {"gold":1500,"group":"blessing","id":"blessing_hunter_3","ingredients":[{"id":"herb_firebloom","n":5},{"id":"spider_silk","n":3},{"id":"essence_shard","n":1}],"level":35,"result":{"id":"blessing_hunter_3","n":1},"time":900},
+    {"gold":5000,"group":"blessing","id":"blessing_hunter_4","ingredients":[{"id":"herb_frostleaf","n":6},{"id":"spider_silk","n":4},{"id":"essence_shard","n":2}],"level":60,"result":{"id":"blessing_hunter_4","n":1},"time":1800},
+    {"gold":100,"group":"blessing","id":"blessing_sage_1","ingredients":[{"id":"herb_meadowsweet","n":3},{"id":"herb_moonpetal","n":1}],"level":1,"result":{"id":"blessing_sage_1","n":1},"time":180},
+    {"gold":400,"group":"blessing","id":"blessing_sage_2","ingredients":[{"id":"herb_nightshade","n":4},{"id":"herb_moonpetal","n":2}],"level":15,"result":{"id":"blessing_sage_2","n":1},"time":480},
+    {"gold":1500,"group":"blessing","id":"blessing_sage_3","ingredients":[{"id":"herb_firebloom","n":5},{"id":"herb_moonpetal","n":3},{"id":"essence_shard","n":1}],"level":35,"result":{"id":"blessing_sage_3","n":1},"time":900},
+    {"gold":5000,"group":"blessing","id":"blessing_sage_4","ingredients":[{"id":"herb_frostleaf","n":6},{"id":"herb_moonpetal","n":4},{"id":"essence_shard","n":2}],"level":60,"result":{"id":"blessing_sage_4","n":1},"time":1800},
+    {"gold":100,"group":"blessing","id":"blessing_guardian_1","ingredients":[{"id":"herb_meadowsweet","n":3},{"id":"thick_hide","n":1}],"level":1,"result":{"id":"blessing_guardian_1","n":1},"time":180},
+    {"gold":400,"group":"blessing","id":"blessing_guardian_2","ingredients":[{"id":"herb_nightshade","n":4},{"id":"ore_iron","n":2}],"level":15,"result":{"id":"blessing_guardian_2","n":1},"time":480},
+    {"gold":1500,"group":"blessing","id":"blessing_guardian_3","ingredients":[{"id":"herb_firebloom","n":5},{"id":"ore_iron","n":3},{"id":"essence_shard","n":1}],"level":35,"result":{"id":"blessing_guardian_3","n":1},"time":900},
+    {"gold":5000,"group":"blessing","id":"blessing_guardian_4","ingredients":[{"id":"herb_frostleaf","n":6},{"id":"ore_iron","n":4},{"id":"essence_shard","n":2}],"level":60,"result":{"id":"blessing_guardian_4","n":1},"time":1800},
+    {"gold":100,"group":"blessing","id":"blessing_fortune_1","ingredients":[{"id":"herb_meadowsweet","n":3},{"id":"crow_feather","n":1}],"level":1,"result":{"id":"blessing_fortune_1","n":1},"time":180},
+    {"gold":400,"group":"blessing","id":"blessing_fortune_2","ingredients":[{"id":"herb_nightshade","n":4},{"id":"fish_goldfin","n":2}],"level":15,"result":{"id":"blessing_fortune_2","n":1},"time":480},
+    {"gold":1500,"group":"blessing","id":"blessing_fortune_3","ingredients":[{"id":"herb_firebloom","n":5},{"id":"fish_goldfin","n":3},{"id":"essence_shard","n":1}],"level":35,"result":{"id":"blessing_fortune_3","n":1},"time":900},
+    {"gold":5000,"group":"blessing","id":"blessing_fortune_4","ingredients":[{"id":"herb_frostleaf","n":6},{"id":"fish_goldfin","n":4},{"id":"essence_shard","n":2}],"level":60,"result":{"id":"blessing_fortune_4","n":1},"time":1800},
+    {"gold":2000,"group":"travel","id":"scroll_protection","ingredients":[{"id":"essence_shard","n":2},{"id":"herb_moonpetal","n":2}],"level":20,"result":{"id":"scroll_protection","n":1},"time":1200},
+    {"gold":300,"group":"travel","id":"stone_map","ingredients":[{"id":"ore_copper","n":3},{"id":"fish_pike","n":2}],"level":10,"result":{"id":"stone_map","n":2},"time":600},
+    {"gold":600,"group":"travel","id":"stone_dungeon_meadows","ingredients":[{"id":"ore_copper","n":4},{"id":"essence_shard","n":1}],"level":15,"result":{"id":"stone_dungeon_meadows","n":1},"time":1200},
+    {"gold":1350,"group":"travel","id":"stone_dungeon_duskwood","ingredients":[{"id":"ore_iron","n":4},{"id":"essence_shard","n":1}],"level":40,"result":{"id":"stone_dungeon_duskwood","n":1},"time":1200},
+    {"gold":2100,"group":"travel","id":"stone_dungeon_ashen","ingredients":[{"id":"ore_silver","n":4},{"id":"essence_shard","n":1}],"level":65,"result":{"id":"stone_dungeon_ashen","n":1},"time":1200},
+    {"gold":3000,"group":"travel","id":"stone_dungeon_frostpeak","ingredients":[{"id":"ore_mithril","n":4},{"id":"essence_shard","n":1}],"level":95,"result":{"id":"stone_dungeon_frostpeak","n":1},"time":1200},
+    {"gold":50,"group":"material","id":"transmute_shard","ingredients":[{"id":"essence_dust","n":10}],"level":20,"result":{"id":"essence_shard","n":1},"time":300},
+    {"gold":300,"group":"material","id":"transmute_crystal","ingredients":[{"id":"essence_shard","n":8}],"level":45,"result":{"id":"essence_crystal","n":1},"time":300},
+    {"gold":400,"group":"elixir","id":"elixir_resFire","ingredients":[{"id":"herb_firebloom","n":3},{"id":"salamander_scale","n":2}],"level":30,"result":{"id":"elixir_resFire","n":2},"time":900},
+    {"gold":400,"group":"elixir","id":"elixir_resIce","ingredients":[{"id":"herb_frostleaf","n":3},{"id":"yeti_fur","n":2}],"level":30,"result":{"id":"elixir_resIce","n":2},"time":900},
+    {"gold":400,"group":"elixir","id":"elixir_resLightning","ingredients":[{"id":"herb_moonpetal","n":2},{"id":"fish_eel","n":3}],"level":30,"result":{"id":"elixir_resLightning","n":2},"time":900},
+    {"gold":400,"group":"elixir","id":"elixir_resPoison","ingredients":[{"id":"herb_nightshade","n":3},{"id":"spider_silk","n":2}],"level":30,"result":{"id":"elixir_resPoison","n":2},"time":900}
+  ]
+}
