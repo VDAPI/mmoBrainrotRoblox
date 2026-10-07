@@ -76,7 +76,8 @@ MMORPG na Roblox (Margonem w 3D). Luau + Rojo + Wally + Fusion 0.3 + ProfileStor
   Wyjście jest generowane i commitowane: `wiki/src/data/*.json` + `types.ts`, `wiki/src/styles/tokens.data.css`,
   `docs/PRZEDMIOTY.md`. Test: `tests/wikidump.spec.luau`.
 - **Po każdej sesji zmieniającej `src/shared/Data` (albo Logic używaną przez eksport) uruchom `lune run tools/wikidump.luau`**
-  (od S36: `npm run data` w `wiki/`) i zacommituj zmiany; `--check` mówi, czy dane są aktualne.
+  (od S36: `npm run data` w `wiki/`, od S37 robi też mapy SVG `lune run tools/wikimap.luau` → `wiki/public/img/maps/`)
+  i zacommituj zmiany; `--check` mówi, czy dane są aktualne.
 - Strona (S36+): `cd wiki`, `npm install`, `npm run dev` (podgląd), `npm run build` + `npm run preview` (z wyszukiwarką),
   `npm run check` (typy, lint, testy, build, linki), `npm run data` (eksport danych), `npm run shots` (zrzuty 390/1440).
   Komponenty i jak dodać stronę: `docs/WIKI.md` → „Komponenty”.

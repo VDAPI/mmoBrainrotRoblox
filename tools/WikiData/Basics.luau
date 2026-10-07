@@ -13,6 +13,7 @@ local Elements = require("../../src/shared/Data/Elements")
 local Exp = require("../../src/shared/Logic/Exp")
 local Fish = require("../../src/shared/Data/Fish")
 local GatherNodes = require("../../src/shared/Data/GatherNodes")
+local Places = require("./Places")
 local Items = require("../../src/shared/Data/Items")
 local Names = require("./Names")
 local Progression = require("../../src/shared/Data/Progression")
@@ -264,6 +265,7 @@ S.file(
 			["spot?"] = "string",
 			loot = arr(AmountRange),
 		})),
+		placements = map(arr(Places.Placement)), -- S37: where nodes are on the region maps
 	})
 )
 
@@ -584,7 +586,7 @@ function Basics.fish(_ctx: any): any
 	return { spots = spots, chest = { gold = Fish.CHEST_GOLD, loot = Clean.clean(Fish.CHEST_LOOT) } }
 end
 
-function Basics.gather(_ctx: any): any
+function Basics.gather(ctx: any): any
 	local nodes = {}
 	for _, id in Clean.keys(GatherNodes.kinds) do
 		local n = GatherNodes.kinds[id]
@@ -602,7 +604,7 @@ function Basics.gather(_ctx: any): any
 			loot = Clean.clean(n.loot),
 		})
 	end
-	return { nodes = nodes }
+	return { nodes = nodes, placements = Places.gather(ctx.readText, ctx.warnings) }
 end
 
 function Basics.recipes(ctx: any): any

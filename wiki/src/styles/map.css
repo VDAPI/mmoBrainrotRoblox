@@ -1,0 +1,87 @@
+/* Map colours and behaviour of the inlined map SVGs (S37). Raw game colours come from tokens.data.css
+   (--vw-map-bg-<biome>, --vw-map-<kind>, generated from UI/MapSketch.luau); the SVGs draw with them and lay a
+   shade over the ground (--vw-map-shade, --vw-map-shade-o) so they sit in the dark UI, lighter in the light theme.
+   Labels: <text lang="pl|en"> per page language; level of detail: [data-lod] on a container hides lod-2 / lod-3. */
+:root, [data-theme="dark"] {
+  --vw-map-shade: #14161b;
+  --vw-map-shade-o: .46;
+  --vw-map-world: #15171c;
+  --vw-map-area: rgba(240, 236, 226, .07);
+  --vw-map-area-line: rgba(240, 236, 226, .5);
+  --vw-map-hl: #e8c25a;
+  --vw-map-hl-glow: rgba(232, 194, 90, .55);
+  --vw-map-label: #f0ece2;
+  --vw-map-label-halo: #101216;
+  --vw-map-stripes: repeating-linear-gradient(135deg, #17191e 0 22px, #1a1c22 22px 44px);
+}
+[data-theme="light"] {
+  --vw-map-shade: #fbf8f1;
+  --vw-map-shade-o: .18;
+  --vw-map-world: #ece6d8;
+  --vw-map-area: rgba(20, 22, 27, .06);
+  --vw-map-area-line: rgba(20, 22, 27, .55);
+  --vw-map-hl: #9a6b12;
+  --vw-map-hl-glow: rgba(154, 107, 18, .45);
+  --vw-map-label: #f7f3ea;
+  --vw-map-label-halo: #1b1d23;
+  --vw-map-stripes: repeating-linear-gradient(135deg, #ece6d8 0 22px, #e6dfcf 22px 44px);
+}
+
+.vw-mapsvg { display: block; width: 100%; height: auto; user-select: none; -webkit-user-select: none; }
+.vw-mapsvg text { pointer-events: none; }
+
+/* language of the labels */
+html[lang="en"] .vw-mapsvg text[lang="en"] { display: inline; }
+html[lang="en"] .vw-mapsvg text[lang="pl"] { display: none; }
+
+/* level of detail (set by the map island or the page) */
+[data-lod="1"] .vw-mapsvg .lod-2, [data-lod="1"] .vw-mapsvg .lod-3, [data-lod="2"] .vw-mapsvg .lod-3 { display: none; }
+[data-lod="1"] .vw-mapsvg .m-label.lod-2, [data-lod="1"] .vw-mapsvg .m-label.lod-3 { display: none; }
+
+/* interactive elements */
+.vw-mapsvg .mk, .vw-mapsvg .m-area { cursor: pointer; }
+.vw-mapsvg .m-area:hover { fill: color-mix(in srgb, var(--vw-map-hl) 12%, transparent); }
+.vw-mapsvg .mk:hover .m-shape { stroke: var(--vw-map-hl); stroke-width: 2.5px; }
+.vw-mapsvg .m-area.is-hl, .vw-mapsvg .m-area.is-sel {
+  fill: color-mix(in srgb, var(--vw-map-hl) 16%, transparent);
+  stroke: var(--vw-map-hl); stroke-width: 3px; stroke-dasharray: none;
+  filter: drop-shadow(0 0 6px var(--vw-map-hl-glow));
+}
+.vw-mapsvg .mk.is-hl .m-shape, .vw-mapsvg .mk.is-sel .m-shape { fill: var(--vw-map-hl); stroke: #fff6d8; stroke-width: 2px; }
+.vw-mapsvg .mk.is-hl .k, .vw-mapsvg .mk.is-sel .k { filter: drop-shadow(0 0 5px var(--vw-map-hl-glow)); }
+.vw-mapsvg .mk.is-hl .m-label, .vw-mapsvg .mk.is-sel .m-label { display: inline; fill: var(--vw-map-hl); }
+html[lang="pl"] .vw-mapsvg .mk.is-sel .m-label[lang="en"], html[lang="en"] .vw-mapsvg .mk.is-sel .m-label[lang="pl"],
+html[lang="pl"] .vw-mapsvg .mk.is-hl .m-label[lang="en"], html[lang="en"] .vw-mapsvg .mk.is-hl .m-label[lang="pl"] { display: none; }
+.vw-mapsvg .m-node.is-sel .m-plate { stroke: var(--vw-map-hl); stroke-width: 2px; fill: #241f14; }
+.vw-mapsvg .m-node.is-sel .m-node-name { fill: var(--vw-map-hl); }
+
+/* a highlighted mini map dims the rest */
+.vw-mapsvg[data-hl] .m-area:not(.is-hl), .vw-mapsvg[data-hl] .mk:not(.is-hl) { opacity: .45; }
+.vw-mapsvg[data-hl] .m-al:not(.is-hl) { opacity: .6; }
+
+/* quest goals (layer "quests") */
+.vw-mapsvg .is-quest.m-area { stroke: #5fcf6b; stroke-dasharray: none; stroke-width: 2.5px; }
+.vw-mapsvg .mk.is-quest .m-shape { stroke: #5fcf6b; stroke-width: 3px; }
+
+/* layers switched off by the map island */
+[data-off~="bosses"] .vw-mapsvg .m-boss, [data-off~="bosses"] .vw-mapsvg .m-elite, [data-off~="bosses"] .vw-mapsvg .m-elite2,
+[data-off~="portals"] .vw-mapsvg #layer-portals, [data-off~="portals"] .vw-mapsvg #layer-caves,
+[data-off~="npcs"] .vw-mapsvg #layer-npcs,
+[data-off~="gather"] .vw-mapsvg #layer-gather,
+[data-off~="zones"] .vw-mapsvg #layer-zones { display: none; }
+.vw-mapsvg #layer-gather { display: none; }
+[data-on~="gather"] .vw-mapsvg #layer-gather { display: inline; }
+[data-off~="zones"] .vw-mapframe { box-shadow: none; }
+
+/* static map frame (region pages, mini maps) */
+.vw-mapframe {
+  position: relative; overflow: hidden; background: var(--vw-map-stripes);
+  border: 1px solid var(--vw-border); box-shadow: inset 0 0 40px rgba(0, 0, 0, .55);
+}
+.vw-mapframe--green { box-shadow: inset 0 0 40px rgba(0, 0, 0, .55), 0 0 32px -12px color-mix(in srgb, var(--vw-zone-green) 70%, transparent); }
+.vw-mapframe--yellow { box-shadow: inset 0 0 40px rgba(0, 0, 0, .55), 0 0 32px -12px color-mix(in srgb, var(--vw-zone-yellow) 70%, transparent); }
+.vw-mapframe--red { box-shadow: inset 0 0 40px rgba(0, 0, 0, .55), 0 0 32px -12px color-mix(in srgb, var(--vw-zone-red) 70%, transparent); }
+
+@media (prefers-reduced-motion: reduce) {
+  .vw-mapsvg * { transition: none !important; }
+}

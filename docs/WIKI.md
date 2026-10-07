@@ -67,7 +67,8 @@ wiki/
 tools/
   wikidump.luau           CLI eksportera; logika w tools/WikiData/*.luau (czyste moduły, testowalne;
                           nazwa inna niż wikidump, bo na Windows Lune myli plik z folderem tej samej nazwy)
-  wikimap.luau            SVG map z danych; logika w tools/WikiMap/*.luau
+  wikimap.luau            SVG map z danych; logika w tools/WikiMaps/*.luau (nie WikiMap: ta sama kolizja nazw
+                          z plikiem na Windows co przy WikiData)
   LookDump.luau           wyglądy potworów, bossów i petów do renderów (lookdump.luau --wiki)
   wiki-renders/           rendery potworów, bossów i petów (Python + numpy + Pillow; tylko lokalnie)
 scripts/
@@ -120,7 +121,7 @@ przełomy umiejętności, `Combat`, `Stats.Formula`) jako `data` (typ `Json`).
 
 | Plik | Pola najwyższego poziomu | Źródło (moduł / funkcja) |
 |---|---|---|
-| `areas.json` | `areas`: Area[], `maps`: Record<string, MapFeatures> | `Data/Areas` (obszary, drogi, woda, wejścia jaskiń, miejsca NPC, kotwice), sumy grup i odrodzenia z `Data/Spawns` |
+| `areas.json` | `areas`: Area[], `groups`: Record<string, SpawnGroup[]>, `maps`: Record<string, MapFeatures> | `Data/Areas` (obszary, drogi, woda, wejścia jaskiń, miejsca NPC, kotwice), sumy grup i odrodzenia z `Data/Spawns`; od S37 `groups` = grupy każdej mapy regionu i jaskini (`Data/Spawns`: pozycja, wariant, rodzaje, liczność, poziomy, odrodzenie, obszar) |
 | `blessings.json` | `blessings`: Blessing[], `duration`: number, `elixirDuration`: number, `elixirValue`: number, `elixirs`: Elixir[], `lines`: string[] | `Data/Blessings` |
 | `bonuses.json` | `bonuses`: Bonus[], `classStats`: Record<string, ClassId[]>, `frequency`: Record<string, Record<string, Record<string, number>>>, `pools`: Record<string, string[]>, `rolls`: number | `Data/Bonuses`; zakresy `ItemRoll.rollBonusValue(id, próg, r, 0|1)`; częstość: Monte Carlo `ItemRoll.rollItem` |
 | `bosses.json` | `bosses`: Boss[], `countdown`: number, `dailyRuns`: number, `entryRange`: number, `releaseAfter`: number | `Data/Bosses`, `LootTables.bosses`; `MonsterStats.compute(kind, poziom, "boss")` z `BossScaling.hpMultiplier`; ataki jak zdolność Elity II (`Damage.computeDamage` + `StubRng`); łup: Monte Carlo `Loot.rollBossLoot`; rzut osobisty `Loot.bossChances` |
@@ -130,17 +131,18 @@ przełomy umiejętności, `Combat`, `Stats.Formula`) jako `data` (typ `Json`).
 | `crafting.json` | `dismantle`: Record<string, CraftRange[]>, `refund`: UpgradeRefund[], `rows`: CraftRow[] | `Data/Crafting` (wiersze o tym samym poziomie, złocie i materiałach), `Dismantle.preview`, `Dismantle.upgradeRefund` |
 | `elements.json` | `default`: ElementId, `elements`: Element[] | `Data/Elements` |
 | `fish.json` | `chest`: FishChest, `spots`: FishSpot[] | `Data/Fish` |
-| `gather.json` | `nodes`: GatherNode[] | `Data/GatherNodes` |
+| `gather.json` | `nodes`: GatherNode[], `placements`: Record<string, GatherPlacement[]> | `Data/GatherNodes`; od S37 `placements` regionów: Łąki z `MeadowsGen.nodes()` (punkty), reszta z tekstu `World/Layouts/<mapa>.luau` (`scatterNodes` = prostokąt + liczba, `node` = punkt) |
 | `icons.json` | `cell`: number, `icons`: Json, `sheets`: string[], `tierTint`: Json |  |
 | `items.json` | `bases`: Record<string, BaseInfo>, `categories`: Record<string, CategoryInfo>, `items`: Item[], `slots`: Record<string, SlotInfo> | `Data/Items`; nazwa `ItemName.get`; rzadkości przez `ItemRoll.rollItem`; statystyki `ItemRoll.itemStats` (+0…+9); wartość `ItemValue.value`; źródła z Monte Carlo potworów i bossów, sklepów, kowala, alchemii, nagród, łowiska, zbieractwa, rozbijania; `usedFor` z `Upgrade.cost`, `Crafting`, `Recipes` |
-| `maps.json` | `maps`: MapInfo[] | `Data/Maps` (bez oświetlenia i muzyki) |
+| `maps.json` | `maps`: MapInfo[] | `Data/Maps` (bez oświetlenia i muzyki); od S37 `route` = `MapRoute.path("city", id)` |
+| `mapsearch.json` | `limit`: number, `pl`/`en`: MapSearchEntry[], `vectors`: MapSearchVector[] | S37: `MapSearch.build(Locale.T w języku)` (rodzaj, id, mapa, x, z, teksty), wektory `MapSearch.search` (zapytanie → `rodzaj:id` w kolejności) |
 | `mechanics.json` | `areaProfiles`: Record<string, AreaProfileInfo>, `bossDailyRuns`: number, `combat`: Json, `config`: Record<string, number>, `formula`: Json, `variants`: Record<string, VariantInfo>, `zones`: Record<string, ZoneInfo> | `Data/Combat`, `Stats.Formula`, jawna lista kluczy `Config`, strefy (`zone.*`, `pvp.rules.*`, kolory z `UI/Theme.luau` jako tekst), warianty, profile expowisk `Data/AreaProfiles` (S33) |
 | `meta.json` | `counts`: Record<string, number>, `dataCommit`: string, `dataDate`: string, `dataHash`: string, `features`: Record<string, boolean>, `rolls`: number, `schemaVersion`: number | wersja schematu, commit i data danych (`git log -1 -- src/shared tools/WikiData`), `dataHash` (odcisk plików), funkcje gry, liczności, liczba rzutów |
 | `monsters.json` | `monsters`: Monster[] | `Data/Monsters`, `Data/Spawns`; `MonsterStats.compute`, `Damage.computeDamage` + `StubRng` (min–max), `Exp.monsterExp` i `MonsterStats.gold` × `kindReward`; łup: `Rarities`, `LootTables`, Monte Carlo `Loot.rollMonsterLoot`; `family` = `MonsterLooks.get(id, region).plan` |
-| `npcs.json` | `npcs`: Npc[] | `Data/Npcs` |
+| `npcs.json` | `npcs`: Npc[], `services`: Record<string, Name> | `Data/Npcs`; od S37 `role` (`npc.<id>.role`) i nazwy usług (`npc.service.<id>`) |
 | `portals.json` | `portals`: PortalInfo[] | `Data/Portals` |
 | `progression.json` | `expToNext`: LevelExp[], `levelDiff`: LevelDiff[], `maxLevel`: number, `skillPointsFromLevel`: number, `skillPointsPerLevel`: number, `statPointsPerLevel`: number, `variantExp`: Record<string, number> | `Exp.expToNext`, `Exp.levelDiffMultiplier`, `Data/Progression` |
-| `quests.json` | `daily`: DailyQuests, `levelSlack`: number, `main`: MainQuest[], `side`: SideQuest[], `sideLevelSlack`: number, `sideMaxActive`: number | `Data/Quests` (główne, poboczne S27, dzienne: `objective(level)`, `Daily.reward(level)`); etykiety celów z kluczy `quest.obj.*` jak `UI/QuestText.objective` |
+| `quests.json` | `daily`: DailyQuests, `levelSlack`: number, `main`: MainQuest[], `side`: SideQuest[], `sideLevelSlack`: number, `sideMaxActive`: number | `Data/Quests` (główne, poboczne S27, dzienne: `objective(level)`, `Daily.reward(level)`); etykiety celów z kluczy `quest.obj.*` jak `UI/QuestText.objective`; od S37 cel ma `where` = `{ map, area?, cave?, npc? }` (`AreaAdvice.forKind` / `caveFor`, mapa regionu, loch bossa, mapa NPC, kotwica) |
 | `rarities.json` | `rarities`: Rarity[], `sources`: Record<string, DropSource>, `upgradeStatPerLevel`: number | `Data/Rarities` (drabina S30, `itemDrops`, `dropWeights`, `cap`) |
 | `recipes.json` | `groups`: RecipeGroup[], `queueSlots`: number, `recipes`: AlchemyRecipe[] | `Data/Recipes` |
 | `search.json` | `entries`: SearchEntry[], `vectors`: NormalizeVector[] | pozostałe pliki + `MapSearch.normalize` (klucz, wektory testowe) |
@@ -152,7 +154,8 @@ przełomy umiejętności, `Combat`, `Stats.Formula`) jako `data` (typ `Json`).
 
 Pliki pochodne: `wiki/src/data/types.ts`, `wiki/src/styles/tokens.data.css` (`--vw-r-<key>`, `--vw-r-<key>-text`
 z kontrastem AA na `--vw-panel` w obu motywach, `--vw-glow-<key>`, `--vw-el-<id>`, `--vw-class-<classId>`,
-`--vw-zone-*`), `docs/PRZEDMIOTY.md`. Regeneracja: `lune run tools/wikidump.luau` (≈ 30 s, 100 000 rzutów na wariant
+`--vw-zone-*`), `docs/PRZEDMIOTY.md`. Od S37 także `--vw-map-bg-<biom>` i `--vw-map-<rodzaj>` (kolory szkicu mapy z `UI/MapSketch.luau`
+czytanego jako tekst) oraz SVG map `wiki/public/img/maps/*.svg` (`lune run tools/wikimap.luau`). Regeneracja: `lune run tools/wikidump.luau` (≈ 30 s, 100 000 rzutów na wariant
 potwora), sprawdzenie aktualności: `lune run tools/wikidump.luau --check` (kod 1 przy różnicy).
 
 ## 6. Design system i makiety
@@ -230,6 +233,16 @@ do HTML bez JS, wyspy importują te same pliki). Dane przez `src/lib/data.ts` (`
 | `Crumbs`, `Toc` | `{ items: { label, href? }[] }`, `{ items: { id, label, sub? }[], lang }` |
 | `Empty`, `Skeleton` | `{ title, text? }` (+ slot na akcję), `{ shape?, lines? }` |
 | `SoonLink` | `{ href: string\|null, lang }` — link albo tekst z „Wkrótce” |
+| `MiniMap` (S37) | `{ map, lang, highlight?: { areas?, caves?, portals?, npcs?, point?: { x, z } }, size?: "sm"\|"md", href?: string\|null, label? }` — przycięty inline SVG (obwiednia podświetleń + 25 %, min. 320 studów), reszta przygaszona, id usunięte, domyślny link na mapę `?m=&a=`, zero JS; `sm` 280 × 180, `md` 420 × 260, na telefonie 100 % |
+| `MapFrame` (S37) | `{ map, lang, zone, label, cards: Record<svgId, { title, line, href? }>, legend, openHref }` — cała mapa z id na stronie (jedna na stronę), legenda, karta wybranego; wiersze strony z `data-el="<svg id> …"` podświetlają się z mapą (skrypt < 3 KB) |
+| `WorldMap.svelte` (S37) | `{ lang, labels }` — wyspa strony `/mapa/`: bierze `#vw-stage` / `#vw-pan` z widoku, dane z `/<lang>/map-data.json`, SVG map z `/img/maps/<id>.svg` |
+
+**Mapy (S37):** `src/lib/mapsvg.ts` (`loadMapSvg`, `inlineMap(svg, { viewBox, highlight, stripIds, stripStyle, k, label })`,
+`cropViewBox`), `src/lib/deeplink.ts` (`parse`, `serialize` dla `?m=&a=&x=&z=&s=`), `src/lib/world.ts` (kolejność map,
+sąsiedzi, potwory mapy, zadania miejsca, adresy `placeHref` / `mapHref` / `mapLinkFor`), style `src/styles/map.css`
+(tokeny `--vw-map-*`, poziomy szczegółów `[data-lod]`, podświetlenia `.is-hl`/`.is-sel`, ramka `.vw-mapframe`). Id
+elementów SVG: `area-`, `cave-`, `portal-`, `npc-`, `group-`, `boss-`, `node-`, `link-a--b`, `room-<jaskinia>-<n>`.
+Link do miejsca na mapie z innych stron: `mapHref(lang, mapLinkFor(id))`.
 
 **Strona encji** (S37–S43): `<Base lang title section search={{ type, meta }}>` — `type` z kluczy `item`, `monster`,
 `region`, `quest`, `skill`, `guide`; `meta` trafia do Pagefind (`title`, `line`, `rarity`, `glyph`, `color`,
@@ -252,8 +265,44 @@ z rejestru), linia w `scripts/shots.pages.mjs`.
   najlepsze dopasowanie), paleta Ctrl+K (`/<lang>/palette.json`), `/pl/styleguide/`, strony „Wkrótce” dla sekcji
   S37–S43, 404 (`/404.html`, `/pl/404.html`, `/en/404.html`), motyw jasny/ciemny, PL/EN. `npm run check` przechodzi
   (astro check, ESLint, 14 testów Vitest, build, `check-links`).
+- **S37 (świat):** `npm run data` tworzy też 18 SVG map w `wiki/public/img/maps/` (świat 15 KB, miasto 44 KB, regiony
+  25–38 KB, jaskinie 6–10 KB; ≈ 0,2 s). Działa `/pl/mapa/` (świat, mapy na żądanie, karty, 6 warstw, legenda, szukaj,
+  link `?m=&a=&x=&z=&s=`, telefon z arkuszem), `/pl/krainy/` z 5 stronami map, 36 obszarów i 12 jaskiń, `MiniMap` w
+  styleguide. JS mapy ≈ 35 KB gzip (wyspa 11,7 + Svelte + panzoom + szukaj), dane mapy 8,8 KB gzip, skrypt krainy 1,3 KB.
+  Sekcje `map` i `regions` mają `ready: true` (rekordy zastępcze krain zniknęły z Pagefind).
 
 ## Decyzje
+
+- **S37** Moduły generatora map w `tools/WikiMaps/` (nie `WikiMap`): na Windows Lune myli `tools/wikimap.luau` z
+  folderem o tej samej nazwie („Ambiguous”), jak w S34.
+- **S37** Przegląd świata stawia węzły z `Maps.worldMap`, ale **rozciąga je do obwiedni** wszystkich węzłów (gra używa
+  tylko środka kwadratu 0,2–0,98 × 0,25–0,71; bez rozciągnięcia plakietki nachodzą na siebie). Margines 8 %, jaskinie
+  rysowane nad plakietkami, boss pod jaskinią z bramą.
+- **S37** Zbieractwo: Łąki (po S26) z `MeadowsGen.nodes()` — dokładne punkty jak w grze; pozostałe regiony z tekstu
+  `World/Layouts/<mapa>.luau` (`scatterNodes` → prostokąt z liczbą, `node` → punkt). Jaskinie nie mają rozmieszczenia
+  (serwer losuje żyły w salach) — strona jaskini pokazuje `ores` i `oreCount` z `caves.json`.
+- **S37** Korytarze jaskiń z bramą (ręczne layouty serwera) = minimalne drzewo rozpinające środków sal (schemat);
+  generowane jaskinie mają prawdziwe korytarze z `CaveGen.generate(seed)`.
+- **S37** Kolory map: surowe kolory gry jako `--vw-map-*` w `tokens.data.css`; SVG nakłada na grunt jedną warstwę
+  `.m-shade` (kolor i krycie z `map.css`: ciemny UI 0,46, jasny 0,18) zamiast przeliczać każdy kolor. SVG mają własny
+  `<style>` z wartościami zapasowymi, więc plik otwarty samodzielnie wygląda dobrze.
+- **S37** Znaczniki i etykiety mają stały rozmiar na ekranie: wewnętrzna grupa `.k` skalowana `var(--k)` (studów na
+  piksel); wyspa liczy `--k` raz na klatkę przy zmianie skali, strony statyczne biorą `--kd` = szerokość mapy / 700 px
+  (na telefonie × 1,9). Poziomy szczegółów: `lod-1` nazwy obszarów i krain, `lod-2` jaskinie i portale, `lod-3` NPC i
+  grupy; świat pokazuje `lod-2`, mapa przełącza progi skali 1,8 i 3,5.
+- **S37** Link mapy: `s` = skala panzoom względem dopasowania (1 = cała mapa, maks. 10), `x`/`z` = pinezka ⚑ w studach
+  mapy. Domyślne warstwy: strefy, bossy i elity, portale, postacie (zadania i zbieractwo wyłączone); stan w
+  `localStorage` (`vw-map-layers`).
+- **S37** Kontrakt dla S39: przycisk „Bestiariusz” w karcie krainy prowadzi do `sectionHref(lang, "bestiary")` z
+  `?region=<mapId>` — bestiariusz ma filtrować potwory tej mapy (dopóki sekcja nie jest gotowa, przycisku nie ma).
+- **S37** Opisy krain z szablonu i18n (`region.desc.*`: poziomy, liczba obszarów i jaskiń, boss) + zasada PvP strefy; lore
+  dopisze człowiek (S42–S43). Mobile „Kraina” ma też „Sąsiednie krainy” (makieta ich nie ma).
+- **S37** `astro.config.mjs`: `trailingSlash: "ignore"` (było `"always"`): serwer dev nie podawał endpointów `.json`
+  bez ukośnika (dotyczyło też palety Ctrl+K z S36); build daje te same katalogi `…/index.html`.
+- **S37** `@panzoom/panzoom` ładowany dynamicznie w przeglądarce (paczka nie ma eksportu ESM dla SSR); panzoom ustawia
+  transformację w `requestAnimationFrame`, więc przesunięcie po zoomie idzie w następnej klatce.
+- **S37** Karta krainy na desktopie: mapa przesuwa wybrany element w wolną część obok panelu (przesunięcie o połowę
+  szerokości panelu); „Cała mapa” dopasowuje do obszaru niezasłoniętego panelem.
 
 - 2026-10-07: wiki w `wiki/` (Astro 5 + Svelte 5 + Pagefind + Cloudflare Pages), dane z `tools/wikidump.luau`, wygląd „Kuźnia” z Claude Design. Zastępuje plan jednoplikowej wiki z pierwotnej S34. Budowa w 10 sesjach: S34, S36–S44 (S35 to ikony przedmiotów w grze).
 - **S36** Astro **5** (plan), choć npm ma już Astro 7: integracje `@astrojs/svelte@7`, `mdx@4`, `sitemap@3`,
@@ -301,6 +350,17 @@ z rejestru), linia w `scripts/shots.pages.mjs`.
   `Config.AdminUserIds` czyta tylko `tests/wikidump.spec.luau` (`Leak.scan`). Każdy build sprawdza zakazane klucze.
 
 ## Niedokończone
+
+- **S37** Różnice względem makiet: na mapie świata brak krótkich nazw krain przy małym zoomie na telefonie (plakietki są
+  pomniejszone); kontur wody Łąk z `MeadowsTerrain.water` (marching squares) i sylwetki obszarów w węzłach świata nie
+  zrobione (struga to linia o średniej szerokości, jeziora to koła z danych). Pole „Twój poziom” (barwienie obszarów
+  pasmem jak w grze, C.9) nie zrobione.
+- **S37** Playwright (karta obszaru z linku, „laki” w polu mapy, pomiar klatek z 4× spowolnieniem CPU) — do S44; płynność
+  sprawdzona tylko ręcznie w Chromium na desktopie.
+- **S37** Etykiety NPC w mieście nachodzą na siebie przy dużym zoomie (gęste stragany na placu); wybrany NPC jest zawsze
+  czytelny (złota etykieta).
+- **S37** Cele `gather`, `fish`, `potion`, `upgrade`, `equip`, `learn`, `loot`, `stats` nie mają `where` (nie są
+  przypięte do miejsca w danych gry).
 
 - **S36** Różnice względem makiet: wiersz wyniku na mobile bez linii meta pod tytułem; pływający tooltip
   (`data-tooltip`, `src/scripts/tooltip-float.ts`) nie zrobiony — dla S39; podświetlanie spisu treści przy

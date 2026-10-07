@@ -1,0 +1,243 @@
+---
+// Region / city page (/pl/krainy/<mapId>/, S37, Kraina-* mock-up): the map with a legend on the left; title, level
+// and zone badges, description and PvP rule, areas, monsters (row <-> map highlight), caves, quests, neighbouring
+// regions and the way from the city on the right. The city lists its characters and gates instead of monsters.
+import Base from "../../layouts/Base.astro";
+import Crumbs from "../../components/Crumbs.astro";
+import MapFrame from "../../components/MapFrame.astro";
+import RankBadge from "../../components/RankBadge.astro";
+import SectionTitle from "../../components/SectionTitle.astro";
+import ZoneBadge from "../../components/ZoneBadge.astro";
+import Route from "./Route.astro";
+import QuestCards from "./QuestCards.astro";
+import { href, type Lang } from "../../i18n/routes";
+import { load } from "../../lib/data";
+import { name, t } from "../../lib/i18n";
+import { cardsFor, legendFor } from "../../lib/mapcards";
+import { searchHref, sectionHref } from "../../lib/sections";
+import { areasOf, bossOfCave, cavesOf, getMapInfo, levels, mapDescription, mapHref, monstersOn, neighbours, npcs, placeHref, questsAt } from "../../lib/world";
+
+interface Props {
+  lang: Lang;
+  id: string;
+}
+const { lang, id } = Astro.props;
+const map = getMapInfo(id)!;
+const zones = load("mechanics").zones;
+const zone = zones[map.zone];
+const profiles = load("mechanics").areaProfiles ?? {};
+const isCity = map.kind === "city";
+const areaList = areasOf(id);
+const monsterList = monstersOn(id);
+const caveList = cavesOf(id);
+const quests = questsAt({ map: id });
+const near = neighbours(id)
+  .map((m) => getMapInfo(m))
+  .filter((m): m is NonNullable<typeof m> => !!m && (m.kind === "region" || m.kind === "city"));
+const services = load("npcs").services;
+const people = npcs().filter((n) => n.map === id && !n.decoration);
+const gates = load("portals").portals.filter((p) => p.map === id && (p.kind === "gate" || p.kind === "portal"));
+const monsterHref = (mid: string, label: string) => sectionHref(lang, "bestiary", mid) ?? searchHref(lang, label);
+const title = name(map.name, lang);
+---
+<Base lang={lang} title={title} description={mapDescription(lang, map)} section="map" search={{ type: "region", meta: { title, line: `${levels(lang, map.minLevel, map.maxLevel)} · ${name(zone?.name, lang)}`, type: "map" } }}>
+  <div class="page">
+    <div class="side">
+      <MapFrame map={id} lang={lang} zone={map.zone} label={t(lang, "region.mapOf", { name: title })} cards={cardsFor(lang, id)} legend={legendFor(lang, map.kind)} openHref={mapHref(lang, { m: id })} />
+    </div>
+    <div class="main">
+      <Crumbs items={[{ label: t(lang, "crumbs.wiki"), href: href(lang, "home") }, { label: t(lang, "region.title"), href: href(lang, "regions") }, { label: title }]} />
+      <h1 class="h1">{title}</h1>
+      <div class="badges">
+        <span class="vw-rank">{levels(lang, map.minLevel, map.maxLevel)}</span>
+        <ZoneBadge zone={map.zone} lang={lang} />
+      </div>
+      <p class="lead">{mapDescription(lang, map)} <strong>{name(zone?.rule, lang)}</strong></p>
+
+      {!isCity && (
+        <section>
+          <SectionTitle id="areas">{t(lang, "region.areas")}</SectionTitle>
+          <table class="vw-table list">
+            <caption class="vw-sr">{t(lang, "region.areas")}</caption>
+            <thead><tr><th scope="col">{t(lang, "col.name")}</th><th scope="col">{t(lang, "col.levels")}</th><th scope="col" class="hide-m">{t(lang, "col.monsters")}</th><th scope="col" class="hide-m">{t(lang, "col.groups")}</th><th scope="col">{t(lang, "col.profile")}</th></tr></thead>
+            <tbody>
+              {areaList.map((a) => {
+                const p = a.profile ? profiles[a.profile] : undefined;
+                const kinds = a.kinds.map((k) => load("monsters").monsters.find((m) => m.id === k)).filter(Boolean).map((m) => name(m!.name, lang));
+                return (
+                  <tr data-el={`area-${a.id}`}>
+                    <td><a class="strong" href={placeHref(lang, a.id)}>{name(a.name, lang)}</a></td>
+                    <td class="muted nowrap">{levels(lang, a.levelMin, a.levelMax)}</td>
+                    <td class="hide-m soft">{kinds.join(", ")}</td>
+                    <td class="hide-m muted">{a.groups}</td>
+                    <td>{p ? <span class="profile" style={`--c:${p.color}`} title={name(p.desc, lang)}>{p.icon} {name(p.name, lang)}</span> : "—"}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </section>
+      )}
+
+      {!isCity && monsterList.length > 0 && (
+        <section>
+          <SectionTitle id="monsters">{t(lang, "region.monsters")}</SectionTitle>
+          <ul class="mlist">
+            {monsterList.map((m) => {
+              const label = name(m.monster.variants[m.rank]?.name ?? m.monster.name, lang);
+              return (
+                <li data-el={m.areas.map((a) => `area-${a}`).join(" ")} class={`rank-${m.rank}`}>
+                  <span class="dia" aria-hidden="true"></span>
+                  <a class="strong" href={monsterHref(m.monster.id, label)}>{label}</a>
+                  <span class="muted nowrap">{levels(lang, m.levelMin, m.levelMax)}</span>
+                  <RankBadge rank={m.rank} lang={lang} />
+                  <span class="chev" aria-hidden="true">›</span>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
+
+      {isCity && (
+        <section>
+          <SectionTitle id="npcs">{t(lang, "region.npcs")}</SectionTitle>
+          <ul class="mlist">
+            {people.map((n) => (
+              <li data-el={`npc-${n.id}`} class="rank-npc">
+                <span class="glyph" aria-hidden="true">{n.icon}</span>
+                <span class="strong">{name(n.name, lang)}</span>
+                <span class="muted">{n.role ? name(n.role, lang) : ""}</span>
+                <span class="soft small">{n.services.filter((s) => s !== "talk" && s !== "story").map((s) => name(services[s], lang)).join(", ")}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {caveList.length > 0 && (
+        <section>
+          <SectionTitle id="caves">{t(lang, "region.caves")}</SectionTitle>
+          <div class="cards">
+            {caveList.map((c) => {
+              const boss = bossOfCave(c.id);
+              const elites = c.elites.map((k) => load("monsters").monsters.find((m) => m.id === k)?.variants.elite?.name).filter(Boolean).map((n) => name(n, lang));
+              return (
+                <a class="card" href={placeHref(lang, c.id)} data-el={`cave-${c.id}`}>
+                  <span class="dia red" aria-hidden="true"></span>
+                  <span class="strong">{name(c.name, lang)}</span>
+                  <span class="muted">{levels(lang, c.levelMin, c.levelMax)} · {t(lang, "col.groups")}: {c.groups}</span>
+                  <span class="soft small">{t(lang, "region.elites", { names: elites.join(", ") })}</span>
+                  {boss && <span class="boss small">☠ {t(lang, "region.bossGate", { boss: name(boss.name, lang) })}</span>}
+                </a>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {isCity && gates.length > 0 && (
+        <section>
+          <SectionTitle id="gates">{t(lang, "region.gates")}</SectionTitle>
+          <div class="cards">
+            {gates.map((g) => {
+              const target = getMapInfo(g.target)!;
+              return (
+                <a class="card" href={placeHref(lang, g.target)} data-el={`portal-${g.id}`}>
+                  <span class={`dia z-${target.zone}`} aria-hidden="true"></span>
+                  <span class="strong">{name(target.name, lang)}</span>
+                  <span class="muted">{levels(lang, target.minLevel, target.maxLevel)} · {name(zones[target.zone]?.name, lang)}</span>
+                </a>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      <div class="two">
+        <section>
+          <SectionTitle as="h2" id="quests">{t(lang, "region.quests")}</SectionTitle>
+          <QuestCards lang={lang} quests={quests} place={{ map: id }} />
+        </section>
+        <section>
+          <SectionTitle as="h2" id="near">{t(lang, "region.neighbours")}</SectionTitle>
+          <div class="stack">
+            {near.map((m) => (
+              <a class="card row" href={placeHref(lang, m.id)}>
+                <span class={`dia z-${m.zone}`} aria-hidden="true"></span>
+                <span class="strong">{name(m.name, lang)}</span>
+                <span class="muted small">{levels(lang, m.minLevel, m.maxLevel)} · {name(zones[m.zone]?.name, lang)}</span>
+              </a>
+            ))}
+          </div>
+        </section>
+      </div>
+
+      {!isCity && (
+        <section>
+          <SectionTitle id="route">{t(lang, "region.route")}</SectionTitle>
+          <Route lang={lang} route={map.route ?? []} />
+        </section>
+      )}
+    </div>
+  </div>
+</Base>
+
+<style>
+  .page { display: grid; grid-template-columns: minmax(0, 860px) minmax(0, 1fr); gap: 40px; padding: 36px 48px 72px; max-width: 1680px; margin: 0 auto; }
+  .side { position: sticky; top: 96px; align-self: start; }
+  .main { min-width: 0; display: flex; flex-direction: column; gap: 36px; }
+  .main > :global(nav) { margin-bottom: -24px; }
+  .h1 { margin: 0; font: 700 var(--vw-fs-display-l)/1 var(--vw-font-display); color: var(--vw-text); }
+  .badges { display: flex; flex-wrap: wrap; gap: 10px; margin-top: -20px; }
+  .lead { margin: -12px 0 0; font-size: 19px; line-height: 1.55; color: var(--vw-text-soft); }
+  .lead strong { color: var(--vw-text); }
+  section { min-width: 0; }
+  .strong { font-weight: 800; color: var(--vw-text); }
+  .muted { color: var(--vw-text-muted); }
+  .soft { color: var(--vw-text-soft); }
+  .small { font-size: 14px; }
+  .nowrap { white-space: nowrap; }
+  .list tr { cursor: pointer; }
+  .list tr:global(.is-sel) td, .mlist li:global(.is-sel), .card:global(.is-sel) { background: color-mix(in srgb, var(--vw-gold) 10%, var(--vw-panel)); }
+  .list tr:hover td { background: var(--vw-panel-raised); }
+  .profile { color: var(--c); font-weight: 800; white-space: nowrap; }
+  .mlist { list-style: none; margin: 0; padding: 0; background: var(--vw-panel); border: 1px solid var(--vw-border); }
+  .mlist li { display: grid; grid-template-columns: 20px minmax(0, 1fr) auto 90px 16px; align-items: center; gap: 12px; min-height: 44px; padding: 0 16px; border-bottom: 1px solid var(--vw-border-subtle); cursor: pointer; }
+  .mlist li:last-child { border-bottom: 0; }
+  .mlist li:hover { background: var(--vw-panel-raised); }
+  .mlist li.rank-npc { grid-template-columns: 20px minmax(0, 1fr) auto; grid-template-areas: "g n r" "g s s"; padding: 8px 16px; }
+  .rank-npc .glyph { grid-area: g; color: var(--vw-gold); }
+  .rank-npc .soft { grid-area: s; }
+  .dia { width: 11px; height: 11px; transform: rotate(45deg); background: var(--vw-text-soft); justify-self: center; }
+  .rank-elite .dia, .rank-elite2 .dia { background: var(--vw-gold-bright); }
+  .rank-elite2 .dia { background: #ff9f1c; }
+  .dia.red, .dia.z-red { background: var(--vw-zone-red); } .dia.z-yellow { background: var(--vw-zone-yellow); } .dia.z-green { background: var(--vw-zone-green); }
+  .chev { color: var(--vw-gold); }
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+  .card { display: grid; grid-template-columns: 16px 1fr; gap: 4px 10px; align-items: center; padding: 14px 16px; background: var(--vw-panel); border: 1px solid var(--vw-border); color: var(--vw-text); }
+  .card > :not(.dia) { grid-column: 2; }
+  .card:hover { text-decoration: none; border-color: var(--vw-gold-dark); }
+  .card .boss { color: var(--vw-zone-red-text); font-weight: 700; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .stack { display: flex; flex-direction: column; gap: 10px; }
+  .card.row .dia { grid-row: 1 / span 2; }
+  @media (max-width: 1279px) { .page { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); padding: 24px; } }
+  @media (max-width: 1023px) {
+    .page { display: flex; flex-direction: column-reverse; padding: 16px 16px 32px; gap: 24px; }
+    .side { position: static; align-self: stretch; }
+    .two { grid-template-columns: 1fr; }
+    .hide-m { display: none; }
+    .h1 { font-size: 46px; }
+  }
+  @media (max-width: 767px) {
+    .page { flex-direction: column; }
+    .main { display: contents; }
+    .main > :global(nav), .h1, .badges, .lead { order: -2; }
+    .side { order: -1; }
+    .badges, .lead { margin-top: -12px; }
+    .mlist li { grid-template-columns: 20px minmax(0, 1fr) auto; min-height: 52px; }
+    .mlist li :global(.vw-rank), .mlist li .chev { display: none; }
+    .list :global(td), .list :global(th) { padding: 0 10px; }
+  }
+</style>

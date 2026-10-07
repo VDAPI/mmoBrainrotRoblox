@@ -1,0 +1,19 @@
+---
+// Regions section (S37): /<lang>/krainy/ (index), /<mapId>/ (city and regions), /<mapId>/<areaId>/ (areas) and
+// /<regionId>/<caveId>/ (caves; the boss chamber is a section of the cave with the gate).
+import type { Lang } from "../i18n/routes";
+import AreaPage from "./regions/AreaPage.astro";
+import CavePage from "./regions/CavePage.astro";
+import RegionPage from "./regions/RegionPage.astro";
+import RegionsIndex from "./regions/RegionsIndex.astro";
+interface Props {
+  lang: Lang;
+  page: "index" | "region" | "area" | "cave";
+  id?: string;
+}
+const { lang, page, id = "" } = Astro.props;
+---
+{page === "index" && <RegionsIndex lang={lang} />}
+{page === "region" && <RegionPage lang={lang} id={id} />}
+{page === "area" && <AreaPage lang={lang} id={id} />}
+{page === "cave" && <CavePage lang={lang} id={id} />}

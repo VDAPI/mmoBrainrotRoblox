@@ -42,6 +42,7 @@
 | S33 | Expowiska z charakterem: profile ⚡ szybki exp / ✦ lepszy drop / ⛁ więcej złota na każdym przedziale, widoczne przy portalu, na mapie i banerze | ● |
 | S34 | Wiki 1/10: eksporter danych gry do JSON (`tools/wikidump.luau`), schemat i `types.ts`, kolory `tokens.data.css`, `docs/PRZEDMIOTY.md`, test wycieków | ● |
 | S36 | Wiki 2/10: szkielet Astro, design system 1:1, komponenty, strona główna, wyszukiwarka z paletą Ctrl+K, styleguide | ● |
+| S37 | Wiki 3/10: mapy SVG z danych gry, interaktywna mapa świata (przesuwanie, zoom, karty, warstwy, szukaj, link), strony krain, obszarów i jaskiń, `MiniMap` | ● |
 | S35 | Ikony przedmiotów: atlasy z grafikami (kolor progu, akcent żywiołu / mikstury), komponent `ItemIcon` z zapasem na symbole, sloty, duch przeciągania, legenda, mikstury, tooltip, waluty | ● |
 
 Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana przez właściciela
@@ -3174,3 +3175,47 @@ Szczegóły, komponenty i decyzje: `docs/WIKI.md` (Komponenty, Stan, Decyzje, Ni
 9. `/pl/styleguide/`: wszystkie komponenty i kolory z gry.
 10. Telefon (albo okno 390 px): nagłówek z PL/EN, motywem i lupą, dolny pasek zakładek, główna w jednej kolumnie.
 11. `npm run check` przechodzi; `npm run shots` zapisuje zrzuty w `wiki/.shots/`.
+
+### S37: Wiki 3/10 — mapy SVG, mapa świata, krainy
+
+Szczegóły, komponenty i decyzje: `docs/WIKI.md` (Komponenty, Stan, Decyzje, Niedokończone).
+
+**Zrobione**
+- Eksporter: `mapsearch.json` (indeks szukania na mapie z `Logic/MapSearch` + 12 wektorów), `where` celu zadania
+  (`AreaAdvice`), `route` mapy (`MapRoute.path` z miasta), grupy potworów każdej mapy, rozmieszczenie zbieractwa
+  (`MeadowsGen.nodes` na Łąkach, tekst layoutów w pozostałych regionach), role NPC i nazwy usług, kolory szkicu mapy
+  (`--vw-map-*` z `UI/MapSketch.luau` czytanego jako tekst). Kod gry bez zmian.
+- `tools/wikimap.luau` + `tools/WikiMaps/` → `wiki/public/img/maps/*.svg` (świat, miasto, 4 regiony, 12 jaskiń),
+  deterministycznie, z id dla każdego obszaru, jaskini, portalu, NPC, grupy i bossa; `npm run data` robi oba eksporty.
+- `/pl/mapa/`: mapa świata z poświatami stref, panzoom (mysz, kółko, szczypanie, klawiatura), mapy wczytywane na
+  żądanie, karty (desktop: lewy panel, telefon: wysuwany arkusz), 6 warstw z licznikami, legenda, szukaj na mapie
+  (te same wyniki co w grze), link `?m=&a=&x=&z=&s=` z „Kopiuj link” i historią przeglądarki.
+- `/pl/krainy/` (indeks), strony miasta i 4 krain (mapa z podświetlaniem wierszy, obszary, potwory, jaskinie, zadania,
+  sąsiednie krainy, droga z miasta), 36 obszarów i 12 jaskiń (z bossem i komnatą); komponent `MiniMap`.
+- Testy: `tests/wikimap.spec.luau` (XML, id, granice, pary etykiet, determinizm, budżety, miejsca zadań, trasy,
+  zbieractwo), Vitest `mapsvg`, `deeplink`, `mapsearch` (wektory z gry), `world`.
+
+#### Instrukcja testu S37
+
+1. `cd wiki`, `npm run dev` → http://localhost:4321/pl/mapa/ (albo `npm run build` + `npm run preview`).
+2. Mapa świata: Vaelthorn (zielona poświata), 4 krainy na plakietkach, jaskinie (czerwone romby), bossy przy ostatnich
+   jaskiniach; lewy panel z listą map w kolejności z gry.
+3. Przeciągnij, kręć kółkiem, `+`/`−`/`0` i strzałki (po kliknięciu w mapę), przycisk ⤢ = cała mapa.
+4. Klik w „Szepczące Łąki”: karta krainy (miniatura, poziomy, strefa, zasada PvP, potwory, „Pokaż mapę”, „Otwórz
+   krainę”). „Pokaż mapę” (albo podwójny klik): 9 obszarów z nazwami i poziomami, drogi, struga, jeziora, portale,
+   wejścia do jaskiń, postacie; „‹ Świat” wraca.
+5. Na Łąkach klik w obszar → karta obszaru (grupy, potwory, odrodzenie, profil, droga z miasta); klik w wejście jaskini
+   → „Przejdź” otwiera mapę jaskini (sale, elity, brama lochu i boss).
+6. Warstwy: wyłącz „Portale”/„Postacie”, włącz „Zadania” (zielone obrysy celów + lista zadań w panelu) i „Zbieractwo”;
+   liczniki zmieniają się z mapą; po odświeżeniu wybór zostaje.
+7. Pole „Szukaj na mapie…”: „laki”, „kowal”, „grimrok” (bez polskich znaków) → wybór przenosi na właściwą mapę.
+8. Link `/pl/mapa/?m=meadows&a=meadows_wolfhills&s=3`: Łąki przybliżone na Wilczych Wzgórzach z kartą; „Kopiuj link”
+   po zmianie wyboru daje nowy adres; „Wstecz” w przeglądarce wraca do świata.
+9. Telefon (390 px): chipy warstw nad mapą, lupa, +/−, karta jako arkusz od dołu (przeciągnij uchwyt w górę/dół, Esc).
+10. `/pl/krainy/meadows/`: mapa po lewej, obszary, potwory (najechanie na wiersz podświetla obszary), jaskinie,
+    zadania, sąsiednie krainy, droga; klik w obszar na mapie pokazuje kartę na dole mapy.
+11. `/pl/krainy/meadows/meadows_wolfhills/` (minimapa z podświetlonym obszarem, fakty, inne expowiska) i
+    `/pl/krainy/meadows/meadows_cave/` (mapa jaskini, zwykłe/elity/Elita II, rudy, boss Grimrok, wejście).
+12. `/en/regions/frostpeak/` po angielsku; `/pl/krainy/city/` z postaciami i bramami zamiast potworów.
+13. Wyszukiwarka wiki: „laki” znajduje stronę krainy (nie „Strona wkrótce”); menu „Mapa” i stopka „Krainy” działają.
+14. `npm run check` przechodzi; `npm run data -- --check` mówi „up to date”.

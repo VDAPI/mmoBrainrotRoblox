@@ -8,7 +8,8 @@ import { SITE_URL } from "./src/config.ts";
 export default defineConfig({
   site: SITE_URL,
   output: "static",
-  trailingSlash: "always",
+  // "ignore": dev serves .json endpoints without a slash (S37); the build writes the same directory pages.
+  trailingSlash: "ignore",
   integrations: [
     svelte(),
     mdx(),

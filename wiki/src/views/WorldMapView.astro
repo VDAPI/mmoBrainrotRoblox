@@ -1,0 +1,59 @@
+---
+// World map (/pl/mapa/, S37, Mapa-* mock-ups): the world SVG inline on a striped stage; without JS a list of links
+// to every map. The WorldMap island adds pan / zoom, maps on demand, cards, layers, legend, search and the
+// ?m=&a=&x=&z=&s= address (docs/WIKI.md §4).
+import "../styles/map.css";
+import Base from "../layouts/Base.astro";
+import WorldMap from "../islands/WorldMap.svelte";
+import type { Lang } from "../i18n/routes";
+import { pl } from "../i18n/pl";
+import { name, t, type Key } from "../lib/i18n";
+import { inlineMap, loadMapSvg } from "../lib/mapsvg";
+import { levels, mapList, placeHref } from "../lib/world";
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const labels: Record<string, string> = {};
+for (const key of Object.keys(pl) as Key[]) {
+  if (key.startsWith("map.") || key === "level" || key === "levelRangeCap") labels[key] = t(lang, key);
+}
+const world = inlineMap(loadMapSvg("world"), { label: t(lang, "map.title") });
+const list = mapList();
+---
+<Base lang={lang} title={t(lang, "map.title")} description={t(lang, "map.lead")} section="map">
+  <h1 class="vw-sr">{t(lang, "map.title")}</h1>
+  <div class="mapview">
+    <div id="vw-stage" class="stage" data-lod="2" data-off="" data-on="" tabindex="0" role="region" aria-label={t(lang, "map.canvas")} data-pagefind-ignore>
+      <div id="vw-pan" class="pan"><Fragment set:html={world} /></div>
+    </div>
+    <nav class="fallback" aria-label={t(lang, "map.list")}>
+      <h2 class="vw-label">{t(lang, "map.list")}</h2>
+      <ul>
+        {list.map((m) => (
+          <li class={m.kind}><a href={placeHref(lang, m.id) ?? "#"}>{name(m.name, lang)}</a> <span>{levels(lang, m.minLevel, m.maxLevel)}</span></li>
+        ))}
+      </ul>
+    </nav>
+    <WorldMap client:load lang={lang} labels={labels} />
+  </div>
+</Base>
+<style>
+  .mapview { position: relative; height: calc(100vh - 72px); height: calc(100dvh - 72px); min-height: 520px; overflow: hidden; background: var(--vw-map-stripes); }
+  .stage { position: absolute; inset: 0; touch-action: none; outline: none; }
+  .stage:focus-visible { box-shadow: inset 0 0 0 2px var(--vw-gold); }
+  .pan { width: 100%; height: 100%; }
+  .pan :global(svg) { width: 100%; height: 100%; }
+  .pan :global(.m-wbg) { fill: transparent; }
+  .fallback { position: absolute; left: 24px; top: 24px; bottom: 24px; width: 380px; overflow: auto; padding: 22px; background: var(--vw-panel); border: 1px solid var(--vw-border); }
+  :global(.js) .fallback { display: none; }
+  .fallback ul { margin: 8px 0 0; padding: 0; list-style: none; }
+  .fallback li { padding: 6px 0; border-bottom: 1px solid var(--vw-border-subtle); }
+  .fallback li.cave { padding-left: 18px; }
+  .fallback span { color: var(--vw-text-muted); font-size: 14px; }
+  @media (max-width: 1023px) {
+    .mapview { height: calc(100vh - 60px - 68px); height: calc(100dvh - 60px - 68px); min-height: 420px; }
+    .fallback { position: static; width: auto; }
+  }
+  :global(body:has(.mapview)) :global(.vw-footer) { display: none; }
+</style>

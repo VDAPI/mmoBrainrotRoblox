@@ -1,0 +1,118 @@
+---
+// Static map of a region / city / cave page (S37): the whole inline SVG (ids kept: one per page), a legend and a
+// small script (< 3 KB) linking map elements and table rows: a click on a marker or area selects it, highlights the
+// rows with data-el containing its id and shows a card at the bottom of the map; hovering or clicking a row
+// highlights its elements. Rows: any element of the page with data-el="<svg id> <svg id> …".
+import "../styles/map.css";
+import type { Lang } from "../i18n/routes";
+import { t } from "../lib/i18n";
+import { inlineMap, loadMapSvg, parseViewBox } from "../lib/mapsvg";
+
+export interface MapCard {
+  title: string;
+  line: string;
+  href?: string | null;
+}
+
+interface Props {
+  map: string;
+  lang: Lang;
+  zone: string;
+  label: string;
+  cards: Record<string, MapCard>;
+  legend: { cls: string; label: string }[];
+  openHref: string;
+}
+
+const { map, lang, zone, label, cards, legend, openHref } = Astro.props;
+const svg = loadMapSvg(map);
+const box = parseViewBox(svg);
+// --kd: studs per screen pixel at the desktop frame width (700 px); the CSS scales it on small screens.
+const kd = box.w / 700;
+const html = inlineMap(svg, { label });
+---
+<div class={`vw-mapframe vw-mapframe--${zone} frame`} data-mapframe data-lod="2" style={`--kd:${Math.round(kd * 100) / 100}`} data-pagefind-ignore>
+  <Fragment set:html={html} />
+  <ul class="legend" aria-label={t(lang, "map.legend")}>
+    {legend.map((l) => <li><span class={`mark ${l.cls}`} aria-hidden="true"></span>{l.label}</li>)}
+  </ul>
+  <a class="open vw-btn vw-btn--ghost" href={openHref}>{t(lang, "region.openMap")}</a>
+  <a class="card" hidden data-card href="#"><span class="title"></span><span class="line"></span><span class="go" aria-hidden="true">›</span></a>
+  <script type="application/json" set:html={JSON.stringify(cards).replace(/</g, "\\u003c")} />
+</div>
+
+<script>
+  for (const frame of document.querySelectorAll<HTMLElement>("[data-mapframe]")) {
+    const svg = frame.querySelector("svg")!;
+    const data = frame.querySelector('script[type="application/json"]');
+    const cards: Record<string, { title: string; line: string; href?: string | null }> = data ? JSON.parse(data.textContent || "{}") : {};
+    const card = frame.querySelector<HTMLAnchorElement>("[data-card]")!;
+    const rows = [...document.querySelectorAll<HTMLElement>("[data-el]")];
+    const mark = (ids: string[], cls: string) => {
+      svg.querySelectorAll(`.${cls}`).forEach((e) => e.classList.remove(cls));
+      for (const id of ids) {
+        svg.querySelector(`[id="${id}"]`)?.classList.add(cls);
+        svg.querySelectorAll(`[data-for="${id}"]`).forEach((e) => e.classList.add(cls));
+      }
+    };
+    const select = (id: string | null, fromMap: boolean) => {
+      mark(id ? [id] : [], "is-sel");
+      rows.forEach((r) => r.classList.toggle("is-sel", !!id && (r.dataset.el ?? "").split(" ").includes(id)));
+      const info = id ? cards[id] : undefined;
+      card.hidden = !info;
+      if (info) {
+        card.querySelector(".title")!.textContent = info.title;
+        card.querySelector(".line")!.textContent = info.line;
+        if (info.href) card.href = info.href;
+        else card.removeAttribute("href");
+      }
+      if (fromMap && id) rows.find((r) => r.classList.contains("is-sel"))?.scrollIntoView({ block: "nearest", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+    };
+    svg.addEventListener("click", (e) => {
+      const el = (e.target as Element).closest<SVGElement>("[id][data-id]");
+      select(el && cards[el.id] ? el.id : null, true);
+    });
+    for (const row of rows) {
+      const ids = (row.dataset.el ?? "").split(" ").filter(Boolean);
+      row.addEventListener("mouseenter", () => mark(ids, "is-hl"));
+      row.addEventListener("mouseleave", () => mark([], "is-hl"));
+      row.addEventListener("click", (e) => {
+        if ((e.target as Element).closest("a")) return;
+        if (ids.length === 1) select(ids[0], false);
+        else mark(ids, "is-hl");
+      });
+    }
+  }
+</script>
+
+<style>
+  .frame { --k: var(--kd); aspect-ratio: 1; }
+  .frame :global(svg) { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .legend {
+    position: absolute; left: 16px; bottom: 16px; display: flex; flex-wrap: wrap; gap: 6px 14px; max-width: calc(100% - 200px);
+    margin: 0; padding: 8px 12px; list-style: none; font: 700 13px/1.2 var(--vw-font-ui); color: var(--vw-text-soft);
+    background: color-mix(in srgb, var(--vw-panel) 90%, transparent); border: 1px solid var(--vw-border);
+  }
+  .legend li { display: inline-flex; align-items: center; gap: 6px; }
+  .mark { width: 9px; height: 9px; transform: rotate(45deg); background: var(--c, #f0ece2); }
+  .mark.boss { --c: #e0503f; } .mark.elite { --c: #e8c25a; } .mark.portal { --c: #4a8be8; transform: none; }
+  .mark.cave { --c: #e0503f; } .mark.npc { --c: #e8c25a; border-radius: 50%; transform: none; } .mark.group { --c: #f0ece2; border-radius: 50%; transform: none; width: 6px; height: 6px; }
+  .mark.area { --c: transparent; border: 1.5px dashed var(--vw-text-soft); transform: none; width: 12px; height: 9px; }
+  .open { position: absolute; right: 16px; top: 16px; min-height: 40px; background: color-mix(in srgb, var(--vw-panel) 90%, transparent); }
+  .card {
+    position: absolute; left: 12px; right: 12px; bottom: 12px; display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; align-items: center;
+    padding: 10px 14px; background: color-mix(in srgb, var(--vw-panel) 94%, transparent); border: 1px solid var(--vw-gold-dark); color: var(--vw-text);
+  }
+  .card[hidden] { display: none; }
+  .card:hover { text-decoration: none; border-color: var(--vw-gold); }
+  .card .title { font: 800 16px/1.2 var(--vw-font-ui); }
+  .card .line { grid-column: 1; font-size: 14px; color: var(--vw-text-muted); }
+  .card .go { grid-column: 2; grid-row: 1 / span 2; color: var(--vw-gold); font-size: 22px; }
+  .card:not([href]) .go { display: none; }
+  .frame:has(.card:not([hidden])) .legend { display: none; }
+  @media (max-width: 767px) {
+    .frame { --k: calc(var(--kd) * 1.9); aspect-ratio: auto; height: 340px; margin: 0 -16px; border-left: 0; border-right: 0; }
+    .legend { display: none; }
+    .open { top: 10px; right: 10px; min-height: 44px; }
+  }
+</style>

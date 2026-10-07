@@ -63,6 +63,9 @@ local result = WikiDump.build({
 	only = only,
 	exists = fs.isFile,
 	themeText = if fs.isFile("src/client/UI/Theme.luau") then fs.readFile("src/client/UI/Theme.luau") else nil,
+	readText = function(path: string): string?
+		return if fs.isFile(path) then fs.readFile(path) else nil
+	end,
 	git = gitInfo(),
 })
 

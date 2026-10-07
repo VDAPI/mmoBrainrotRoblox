@@ -1,0 +1,30 @@
+---
+// Way from the city to a map (MapRoute.path from the export) as linked chips.
+import type { Lang } from "../../i18n/routes";
+import { name } from "../../lib/i18n";
+import { getMapInfo, placeHref } from "../../lib/world";
+interface Props {
+  lang: Lang;
+  route: string[];
+}
+const { lang, route } = Astro.props;
+---
+<ol class="route">
+  {route.map((id, i) => {
+    const m = getMapInfo(id);
+    const target = placeHref(lang, id);
+    return (
+      <li>
+        {target && i < route.length - 1 ? <a class="vw-chip" href={target}>{m ? name(m.name, lang) : id}</a> : <span class="vw-chip" aria-current={i === route.length - 1 ? "step" : undefined}>{m ? name(m.name, lang) : id}</span>}
+        {i < route.length - 1 && <span class="arrow" aria-hidden="true">›</span>}
+      </li>
+    );
+  })}
+</ol>
+<style>
+  .route { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0; padding: 0; list-style: none; }
+  li { display: inline-flex; align-items: center; gap: 8px; }
+  .arrow { color: var(--vw-gold); font-weight: 800; }
+  a.vw-chip:hover { text-decoration: none; }
+  [aria-current] { border-color: var(--vw-gold-dark); color: var(--vw-gold-bright); }
+</style>

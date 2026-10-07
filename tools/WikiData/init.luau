@@ -7,6 +7,7 @@
 -- opts.rolls     Monte Carlo rolls per monster variant (loot) and per pool and rarity (bonus frequency)
 -- opts.only      { file names }: build only these JSON files (+ what they need), no derived files
 -- opts.exists    path -> boolean (feature detection), opts.themeText (src/client/UI/Theme.luau as text)
+-- opts.readText  path -> text? (S37: server layouts and UI/MapSketch.luau read as text, never required)
 -- opts.git       { commit, date } of the data (the CLI asks git; "unknown" without it)
 
 local Basics = require("@self/Basics")
@@ -20,6 +21,7 @@ local Json = require("@self/Json")
 local Leak = require("@self/Leak")
 local Monsters = require("@self/Monsters")
 local Names = require("@self/Names")
+local Places = require("@self/Places")
 local Quests = require("@self/Quests")
 local Schema = require("@self/Schema")
 local Search = require("@self/Search")
@@ -57,6 +59,7 @@ export type Opts = {
 	only: { string }?,
 	exists: ((path: string) -> boolean)?,
 	themeText: string?,
+	readText: ((path: string) -> string?)?,
 	git: { commit: string, date: string }?,
 }
 
@@ -98,6 +101,7 @@ local ORDER: { { name: string, fn: (ctx: any) -> any } } = {
 	{ name = "items", fn = Items.build },
 	{ name = "icons", fn = Items.icons },
 	{ name = "search", fn = Search.build },
+	{ name = "mapsearch", fn = Places.mapsearch },
 }
 
 -- Files a file needs built first (for opts.only).
@@ -158,6 +162,7 @@ function WikiDump.build(opts: Opts?): Result
 		rolls = o.rolls or WikiDump.DEFAULT_ROLLS,
 		features = features,
 		themeText = o.themeText,
+		readText = o.readText,
 		warnings = {},
 		data = {},
 		drops = {},

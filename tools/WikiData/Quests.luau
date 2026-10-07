@@ -13,6 +13,7 @@ local Names = require("./Names")
 local Npcs = require("../../src/shared/Data/Npcs")
 local QuestData = require("../../src/shared/Data/Quests")
 local Areas = require("../../src/shared/Data/Areas")
+local Places = require("./Places")
 local Schema = require("./Schema")
 
 local S = Schema
@@ -48,6 +49,7 @@ local Objective = rec("QuestObjective", {
 	["anchors?"] = arr("string"),
 	["hold?"] = "number",
 	["place?"] = "name",
+	["where?"] = Places.Where, -- S37: map (and area, cave or NPC) of the objective
 })
 
 local Reward = rec("QuestReward", {
@@ -170,7 +172,7 @@ function Quests.label(o: any, turnIn: string?, lang: string): string
 	return Names.T(`quest.obj.{t}`, { count = count }, lang)
 end
 
-local function objectives(list: { any }, turnIn: string?): { any }
+local function objectives(list: { any }, turnIn: string?, level: number): { any }
 	local out = {}
 	for _, o in list do
 		local entry = Clean.pick(o, {
@@ -203,6 +205,7 @@ local function objectives(list: { any }, turnIn: string?): { any }
 		if o.place then
 			entry.place = Names.of(o.place)
 		end
+		entry["where"] = Places.objectiveWhere(o, level, turnIn)
 		table.insert(out, entry)
 	end
 	return out
@@ -238,7 +241,7 @@ function Quests.build(ctx: any): any
 				title = Names.of(`quest.{q.id}.title`),
 				text = Names.opt(`quest.{q.id}.text`),
 				done = Names.opt(`quest.{q.id}.done`),
-				objectives = objectives(q.objectives, q.turnIn),
+				objectives = objectives(q.objectives, q.turnIn, q.level),
 				reward = reward(q.reward, ctx.hidden),
 			})
 		end
@@ -263,7 +266,7 @@ function Quests.build(ctx: any): any
 				progress = Names.opt(`quest.{q.id}.progress`),
 				done = Names.opt(`quest.{q.id}.done`),
 				requires = Clean.dropRefs(Clean.clean(q.requires or {}), ctx.hidden),
-				objectives = objectives(q.objectives, q.turnIn),
+				objectives = objectives(q.objectives, q.turnIn, q.level),
 				reward = reward(q.reward, ctx.hidden),
 				where = if q.where then Clean.clean(q.where) else nil,
 			})
@@ -277,7 +280,7 @@ function Quests.build(ctx: any): any
 				local r = QuestData.Daily.reward(level)
 				table.insert(byLevel, {
 					level = level,
-					objective = objectives({ t.objective(level) }, nil)[1],
+					objective = objectives({ t.objective(level) }, nil, level)[1],
 					reward = reward(r, ctx.hidden),
 				})
 			end

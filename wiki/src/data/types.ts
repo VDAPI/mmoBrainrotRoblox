@@ -85,6 +85,7 @@ export interface AreaProfileInfo {
 
 export interface AreasFile {
   areas: Area[];
+  groups: Record<string, SpawnGroup[]>;
   maps: Record<string, MapFeatures>;
 }
 
@@ -438,6 +439,7 @@ export interface FixedBonus {
 
 export interface GatherFile {
   nodes: GatherNode[];
+  placements: Record<string, GatherPlacement[]>;
 }
 
 export interface GatherNode {
@@ -452,6 +454,14 @@ export interface GatherNode {
   spot?: string;
   time: number;
   tool?: string; // id in items.json
+}
+
+export interface GatherPlacement {
+  kind: string;
+  n: number;
+  rect?: number[];
+  x?: number;
+  z?: number;
 }
 
 export interface IconLayer {
@@ -603,10 +613,33 @@ export interface MapInfo {
   minLevel: number;
   name: Name;
   offset: Point3;
+  route?: string[]; // ids in maps.json
   size: Point;
   spawn: Point3;
   worldMap: WorldMapPos;
   zone: string;
+}
+
+export interface MapSearchEntry {
+  id: string;
+  kind: string;
+  map: string; // id in maps.json
+  texts: string[];
+  x: number;
+  z: number;
+}
+
+export interface MapSearchFile {
+  en: MapSearchEntry[];
+  limit: number;
+  pl: MapSearchEntry[];
+  vectors: MapSearchVector[];
+}
+
+export interface MapSearchVector {
+  lang: string;
+  query: string;
+  results: string[];
 }
 
 export interface MapsFile {
@@ -737,6 +770,7 @@ export interface Npc {
   id: string;
   map: string; // id in maps.json
   name: Name;
+  role?: Name;
   services: string[];
   shop?: string; // id in shops.json
   x: number;
@@ -756,6 +790,7 @@ export interface NpcSpotInfo {
 
 export interface NpcsFile {
   npcs: Npc[];
+  services: Record<string, Name>;
 }
 
 export interface PityLine {
@@ -764,6 +799,13 @@ export interface PityLine {
   expectedKills: number;
   hard: number;
   step: number;
+}
+
+export interface PlaceRef {
+  area?: string; // id in areas.json
+  cave?: string; // id in caves.json
+  map: string; // id in maps.json
+  npc?: string; // id in npcs.json
 }
 
 export interface Point {
@@ -831,6 +873,7 @@ export interface QuestObjective {
   type: string;
   up?: number;
   variant?: string;
+  where?: PlaceRef;
   x?: number;
   z?: number;
 }
@@ -1081,6 +1124,20 @@ export interface SourceShop {
   shop: string; // id in shops.json
 }
 
+export interface SpawnGroup {
+  area?: string;
+  count: number;
+  id: string;
+  kinds: string[]; // ids in monsters.json
+  levelMax: number;
+  levelMin: number;
+  respawnMax: number;
+  respawnMin: number;
+  variant: string;
+  x: number;
+  z: number;
+}
+
 export interface StatGroupInfo {
   id: string;
   name: Name;
@@ -1195,6 +1252,7 @@ export interface Files {
   icons: IconsFile;
   items: ItemsFile;
   maps: MapsFile;
+  mapsearch: MapSearchFile;
   mechanics: MechanicsFile;
   meta: MetaFile;
   monsters: MonstersFile;

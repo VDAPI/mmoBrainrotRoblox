@@ -1,0 +1,165 @@
+---
+// Cave page (/pl/krainy/<region>/<caveId>/, S37): the cave map (rooms, corridors, groups, exit, dungeon gate), its
+// monsters in three groups (normal, elites, Elite II picked on every respawn) with respawn times, ores, the entrance
+// on the region map, the boss and its chamber (last cave of a region) and quests.
+import Base from "../../layouts/Base.astro";
+import Crumbs from "../../components/Crumbs.astro";
+import MapFrame from "../../components/MapFrame.astro";
+import MiniMap from "../../components/MiniMap.astro";
+import SectionTitle from "../../components/SectionTitle.astro";
+import ZoneBadge from "../../components/ZoneBadge.astro";
+import QuestCards from "./QuestCards.astro";
+import Route from "./Route.astro";
+import { href, type Lang } from "../../i18n/routes";
+import { load } from "../../lib/data";
+import { name, t } from "../../lib/i18n";
+import { cardsFor, legendFor } from "../../lib/mapcards";
+import { searchHref, sectionHref } from "../../lib/sections";
+import { bossOfCave, caveOf, getMapInfo, levels, mapDescription, mapHref, monstersOn, placeHref, questsAt, respawn, type Rank } from "../../lib/world";
+
+interface Props {
+  lang: Lang;
+  id: string;
+}
+const { lang, id } = Astro.props;
+const cave = caveOf(id)!;
+const map = getMapInfo(id)!;
+const region = getMapInfo(cave.region)!;
+const boss = bossOfCave(id);
+const room = boss ? getMapInfo(boss.dungeon) : undefined;
+const monsters = monstersOn(id);
+const quests = questsAt({ map: id, cave: id });
+const gather = new Map(load("gather").nodes.map((n) => [n.id, n]));
+const title = name(cave.name, lang);
+const groups: { rank: Rank; label: string }[] = [
+  { rank: "normal", label: t(lang, "cave.normal") },
+  { rank: "elite", label: t(lang, "cave.elites") },
+  { rank: "elite2", label: t(lang, "cave.elite2") },
+];
+const monsterHref = (mid: string, label: string) => sectionHref(lang, "bestiary", mid) ?? searchHref(lang, label);
+---
+<Base lang={lang} title={title} description={mapDescription(lang, map)} section="map" search={{ type: "region", meta: { title, line: `${levels(lang, cave.levelMin, cave.levelMax)} · ${name(region.name, lang)}`, type: "cave" } }}>
+  <div class="page">
+    <div class="side">
+      <MapFrame map={id} lang={lang} zone="red" label={t(lang, "region.mapOf", { name: title })} cards={cardsFor(lang, id)} legend={legendFor(lang, "cave")} openHref={mapHref(lang, { m: cave.region, a: id })} />
+    </div>
+    <div class="main">
+      <Crumbs items={[{ label: t(lang, "crumbs.wiki"), href: href(lang, "home") }, { label: t(lang, "region.title"), href: href(lang, "regions") }, { label: name(region.name, lang), href: placeHref(lang, region.id) }, { label: title }]} />
+      <h1 class="h1">{title}</h1>
+      <div class="badges">
+        <span class="vw-rank">{levels(lang, cave.levelMin, cave.levelMax)}</span>
+        <ZoneBadge zone={map.zone} lang={lang} />
+      </div>
+      <p class="lead">{mapDescription(lang, map)} <strong>{name(load("mechanics").zones[map.zone]?.rule, lang)}</strong></p>
+
+      <section>
+        <SectionTitle id="monsters">{t(lang, "region.monsters")}</SectionTitle>
+        <div class="groups">
+          {groups.map((g) => {
+            const list = monsters.filter((m) => m.rank === g.rank);
+            return list.length > 0 && (
+              <div class={`group rank-${g.rank}`}>
+                <h3 class="vw-label">{g.label} · {respawn(list[0].respawnMin, list[0].respawnMax)}</h3>
+                {g.rank === "elite2" && <p class="muted small">{t(lang, "cave.elite2Text")}</p>}
+                <ul class="mlist">
+                  {list.map((m) => {
+                    const label = name(m.monster.variants[m.rank]?.name ?? m.monster.name, lang);
+                    return (
+                      <li>
+                        <span class="dia" aria-hidden="true"></span>
+                        <a class="strong" href={monsterHref(m.monster.id, label)}>{label}</a>
+                        <span class="muted nowrap">{levels(lang, m.levelMin, m.levelMax)}</span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      <section>
+        <SectionTitle id="ores">{t(lang, "cave.ores")}</SectionTitle>
+        {cave.ores.length > 0 ? (
+          <p class="ores">
+            {cave.ores.map((o) => <span class="vw-chip">◆ {gather.get(o) ? name(gather.get(o)!.name, lang) : o}</span>)}
+            <span class="muted">{t(lang, "cave.oreCount", { n: cave.oreCount })}</span>
+          </p>
+        ) : (
+          <p class="muted">{t(lang, "cave.noOres")}</p>
+        )}
+      </section>
+
+      {boss && room && (
+        <section id="boss">
+          <SectionTitle>{t(lang, "cave.boss")}</SectionTitle>
+          <a class="bosscard" href={sectionHref(lang, "bosses", boss.id) ?? searchHref(lang, name(boss.name, lang))}>
+            <span class="skull" aria-hidden="true">☠</span>
+            <span class="strong">{name(boss.name, lang)}</span>
+            <span class="muted">{t(lang, "rank.boss")} · {t(lang, "level", { level: boss.level })}</span>
+            <span class="soft small">{t(lang, "cave.bossText", { room: name(room.name, lang), min: room.minLevel, max: room.maxLevel })}</span>
+          </a>
+        </section>
+      )}
+
+      <div class="two">
+        <section>
+          <SectionTitle id="entrance">{t(lang, "cave.entrance")}</SectionTitle>
+          <MiniMap map={cave.region} lang={lang} highlight={{ caves: [id] }} size="sm" />
+        </section>
+        <section>
+          <SectionTitle id="quests">{t(lang, "region.quests")}</SectionTitle>
+          <QuestCards lang={lang} quests={quests} place={{ map: id, cave: id }} />
+        </section>
+      </div>
+
+      <section>
+        <SectionTitle id="route">{t(lang, "region.route")}</SectionTitle>
+        <Route lang={lang} route={map.route ?? []} />
+      </section>
+    </div>
+  </div>
+</Base>
+
+<style>
+  .page { display: grid; grid-template-columns: minmax(0, 760px) minmax(0, 1fr); gap: 40px; padding: 36px 48px 72px; max-width: 1680px; margin: 0 auto; }
+  .side { position: sticky; top: 96px; align-self: start; }
+  .main { min-width: 0; display: flex; flex-direction: column; gap: 32px; }
+  .main > :global(nav) { margin-bottom: -20px; }
+  .h1 { margin: 0; font: 700 var(--vw-fs-display-l)/1 var(--vw-font-display); }
+  .badges { display: flex; flex-wrap: wrap; gap: 10px; margin-top: -16px; }
+  .lead { margin: -8px 0 0; font-size: 19px; line-height: 1.55; color: var(--vw-text-soft); }
+  .lead strong { color: var(--vw-text); }
+  .muted { color: var(--vw-text-muted); }
+  .soft { color: var(--vw-text-soft); }
+  .small { font-size: 14px; }
+  .nowrap { white-space: nowrap; }
+  .strong { font-weight: 800; color: var(--vw-text); }
+  .groups { display: flex; flex-direction: column; gap: 20px; }
+  .group h3 { margin: 0 0 8px; }
+  .group p { margin: 0 0 8px; }
+  .mlist { list-style: none; margin: 0; padding: 0; background: var(--vw-panel); border: 1px solid var(--vw-border); }
+  .mlist li { display: grid; grid-template-columns: 20px minmax(0, 1fr) auto; align-items: center; gap: 12px; min-height: 44px; padding: 0 16px; border-bottom: 1px solid var(--vw-border-subtle); }
+  .mlist li:last-child { border-bottom: 0; }
+  .dia { width: 11px; height: 11px; transform: rotate(45deg); background: var(--vw-text-soft); justify-self: center; }
+  .rank-elite .dia { background: var(--vw-gold-bright); }
+  .rank-elite2 .dia { background: #ff9f1c; }
+  .ores { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0; }
+  .bosscard { display: grid; grid-template-columns: 32px 1fr; gap: 4px 12px; align-items: center; padding: 16px; color: var(--vw-text);
+    background: radial-gradient(ellipse at 10% 0%, rgba(214, 74, 62, .18), transparent 60%), var(--vw-panel); border: 1px solid var(--vw-border); border-top: 2px solid var(--vw-zone-red); }
+  .bosscard > :not(.skull) { grid-column: 2; }
+  .bosscard:hover { text-decoration: none; border-color: var(--vw-zone-red); }
+  .skull { grid-row: 1 / span 3; font-size: 26px; color: var(--vw-zone-red-text); }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  @media (max-width: 1279px) { .page { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); padding: 24px; } }
+  @media (max-width: 1023px) {
+    .page { display: flex; flex-direction: column; padding: 16px 16px 32px; gap: 24px; }
+    .main { display: contents; }
+    .main > :global(nav), .h1, .badges, .lead { order: -2; }
+    .side { order: -1; position: static; align-self: stretch; }
+    .two { grid-template-columns: 1fr; }
+    .h1 { font-size: 46px; }
+    .mlist li { min-height: 52px; }
+  }
+</style>

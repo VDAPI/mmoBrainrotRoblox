@@ -1,0 +1,61 @@
+---
+// Regions index (/pl/krainy/, S37): every map in the game's order (city, then each region and its caves) with the
+// zone diamond, levels and counts; links to region and cave pages and to the world map.
+import Base from "../../layouts/Base.astro";
+import Crumbs from "../../components/Crumbs.astro";
+import { href, type Lang } from "../../i18n/routes";
+import { load } from "../../lib/data";
+import { name, t } from "../../lib/i18n";
+import { areasOf, cavesOf, levels, mapHref, mapList, placeHref } from "../../lib/world";
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const zones = load("mechanics").zones;
+const list = mapList();
+---
+<Base lang={lang} title={t(lang, "region.title")} description={t(lang, "region.lead")} section="map">
+  <div class="page">
+    <Crumbs items={[{ label: t(lang, "crumbs.wiki"), href: href(lang, "home") }, { label: t(lang, "region.title") }]} />
+    <h1 class="h1">{t(lang, "region.title")}</h1>
+    <p class="lead">{t(lang, "region.lead")} <a href={mapHref(lang)}>{t(lang, "map.title")} ›</a></p>
+    <ul class="list">
+      {list.map((m) => (
+        <li class={m.kind === "cave" ? "cave" : "map"}>
+          <a href={placeHref(lang, m.id) ?? "#"}>
+            <span class={`dia z-${m.zone}`} aria-hidden="true"></span>
+            <span class="name">{name(m.name, lang)}</span>
+            <span class="lv">{levels(lang, m.minLevel, m.maxLevel)}</span>
+            <span class="meta">
+              {m.kind === "region" ? t(lang, "region.counts", { areas: areasOf(m.id).length, caves: cavesOf(m.id).length }) : name(zones[m.zone]?.name, lang)}
+            </span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </div>
+</Base>
+<style>
+  .page { max-width: 980px; margin: 0 auto; padding: 36px 48px 72px; display: flex; flex-direction: column; gap: 20px; }
+  .h1 { margin: 0; font: 700 var(--vw-fs-display-l)/1 var(--vw-font-display); }
+  .lead { margin: 0; font-size: 19px; color: var(--vw-text-soft); }
+  .list { list-style: none; margin: 0; padding: 0; background: var(--vw-panel); border: 1px solid var(--vw-border); }
+  .list a { display: grid; grid-template-columns: 20px minmax(0, 1fr) auto minmax(0, 220px); gap: 14px; align-items: center; min-height: 52px; padding: 0 18px; color: var(--vw-text); border-bottom: 1px solid var(--vw-border-subtle); }
+  .list li:last-child a { border-bottom: 0; }
+  .list a:hover { text-decoration: none; background: var(--vw-panel-raised); }
+  .map .name { font: 700 22px/1.1 var(--vw-font-display); }
+  .cave a { padding-left: 46px; }
+  .cave .name { font-weight: 800; }
+  .lv { color: var(--vw-text-muted); white-space: nowrap; }
+  .meta { color: var(--vw-text-soft); font-size: 14px; text-align: right; }
+  .dia { width: 11px; height: 11px; transform: rotate(45deg); justify-self: center; }
+  .z-green { background: var(--vw-zone-green); } .z-yellow { background: var(--vw-zone-yellow); } .z-red { background: var(--vw-zone-red); }
+  @media (max-width: 767px) {
+    .page { padding: 16px 16px 32px; }
+    .h1 { font-size: 46px; }
+    .list a { grid-template-columns: 20px minmax(0, 1fr) auto; }
+    .meta { display: none; }
+    .cave a { padding-left: 30px; }
+  }
+</style>

@@ -176,6 +176,7 @@ const dataDate = formatDate(meta().dataDate, lang);
             <ZoneBadge zone={z.zone} lang={lang} />
             <p class="zone-rule">{name(zones[z.zone]?.rule, lang)}</p>
             <p class="zone-example">{z.example}</p>
+            {sectionHref(lang, "regions") && <a class="zone-link" href={sectionHref(lang, "regions")!}>{t(lang, "region.title")} ›</a>}
           </article>
         ))}
       </div>
@@ -239,6 +240,7 @@ const dataDate = formatDate(meta().dataDate, lang);
   .zone-card :global(.vw-zone) { border: 0; padding: 0; height: auto; }
   .zone-rule { margin: 0; font: 800 18px/1.3 var(--vw-font-ui); }
   .zone-example { margin: 0; font-size: 15px; color: var(--vw-text-muted); }
+  .zone-link { font-weight: 800; font-size: 15px; }
   @media (max-width: 1279px) {
     .row3 { grid-template-columns: 1fr 400px; }
     .changes { grid-column: 1 / -1; }

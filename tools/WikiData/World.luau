@@ -11,6 +11,7 @@ local Json = require("./Json")
 local Maps = require("../../src/shared/Data/Maps")
 local Names = require("./Names")
 local Npcs = require("../../src/shared/Data/Npcs")
+local Places = require("./Places")
 local Portals = require("../../src/shared/Data/Portals")
 local Rarities = require("../../src/shared/Data/Rarities")
 local Schema = require("./Schema")
@@ -44,6 +45,7 @@ S.file(
 			["dungeonRegion?"] = "string",
 			["dungeonEntrance?"] = Point3,
 			kind = "string", -- city, region, cave, dungeon, other
+			["route?"] = arr("ref:maps"), -- S37: MapRoute.path("city", id)
 		})),
 	})
 )
@@ -80,6 +82,7 @@ S.file(
 			npcSpots = map(rec("NpcSpotInfo", { x = "number", z = "number", facing = "number" })),
 			questAnchors = arr(rec("QuestAnchorInfo", { id = "string", x = "number", z = "number" })),
 		})),
+		groups = map(arr(Places.Group)), -- S37: monster groups of every region and cave map (Data/Spawns)
 	})
 )
 
@@ -131,6 +134,7 @@ S.file(
 			id = "string",
 			name = "name",
 			["greeting?"] = "name",
+			["role?"] = "name", -- S37: npc.<id>.role
 			map = "ref:maps",
 			x = "number",
 			z = "number",
@@ -141,6 +145,7 @@ S.file(
 			colors = rec("NpcColors", { body = "color", accent = "color" }),
 			decoration = "bool",
 		})),
+		services = map("name"), -- S37: npc.service.<id> of every service an NPC offers
 	})
 )
 
@@ -200,6 +205,7 @@ function World.mapsData(hidden: { [string]: boolean }): { any }
 				dungeonRegion = m.dungeonRegion,
 				dungeonEntrance = if m.dungeonEntrance then Clean.clean(m.dungeonEntrance) else nil,
 				kind = World.mapKind(m),
+				route = Places.route(id),
 			})
 		end
 	end
@@ -286,7 +292,7 @@ function World.areasData(): any
 			questAnchors = anchors,
 		}
 	end
-	return { areas = areas, maps = features }
+	return { areas = areas, maps = features, groups = Places.groups() }
 end
 
 function World.areas(_ctx: any): any
@@ -349,6 +355,7 @@ function World.npcs(ctx: any): any
 				id = n.id,
 				name = Names.of(n.nameKey),
 				greeting = Names.opt(n.greetingKey),
+				role = Names.opt(`npc.{n.id}.role`),
 				map = n.map,
 				x = n.position.x,
 				z = n.position.z,
@@ -361,7 +368,17 @@ function World.npcs(ctx: any): any
 			})
 		end
 	end
-	return { npcs = list }
+	local services = Json.object({})
+	local seen = {}
+	for _, n in list do
+		for _, service in n.services do
+			if not seen[service] then
+				seen[service] = true
+				services[service] = Names.opt(`npc.service.{service}`) or { pl = service, en = service }
+			end
+		end
+	end
+	return { npcs = list, services = services }
 end
 
 function World.shops(ctx: any): any

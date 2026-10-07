@@ -1,0 +1,42 @@
+---
+// Quests with a goal at a place: title (link once the quests section exists) and "Lv. 31 · goal".
+import type { Lang } from "../../i18n/routes";
+import { name, t } from "../../lib/i18n";
+import { searchHref, sectionHref } from "../../lib/sections";
+import { objectiveAt, type AnyQuest } from "../../lib/world";
+interface Props {
+  lang: Lang;
+  quests: AnyQuest[];
+  place: { map: string; area?: string; cave?: string };
+  limit?: number;
+}
+const { lang, quests, place, limit = 8 } = Astro.props;
+const shown = quests.slice(0, limit);
+---
+{shown.length === 0 ? (
+  <p class="none">{t(lang, "region.noQuests")}</p>
+) : (
+  <div class="stack">
+    {shown.map((q) => {
+      const o = objectiveAt(q, place);
+      const title = name(q.title, lang);
+      return (
+        <a class="quest" href={sectionHref(lang, "quests", q.id) ?? searchHref(lang, title)} data-el={o?.where?.area ? `area-${o.where.area}` : o?.where?.cave ? `cave-${o.where.cave}` : o?.where?.npc ? `npc-${o.where.npc}` : undefined}>
+          <span class="title">{title}</span>
+          <span class="line">{t(lang, "level", { level: q.level })}{o ? ` · ${name(o.label, lang)}` : ""}</span>
+        </a>
+      );
+    })}
+    {quests.length > limit && <a class="more" href={sectionHref(lang, "quests") ?? searchHref(lang, "")}>+{quests.length - limit}</a>}
+  </div>
+)}
+<style>
+  .stack { display: flex; flex-direction: column; gap: 10px; }
+  .quest { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; background: var(--vw-panel); border: 1px solid var(--vw-border); color: var(--vw-text); }
+  .quest:hover { text-decoration: none; border-color: var(--vw-gold-dark); }
+  .quest:global(.is-sel) { background: color-mix(in srgb, var(--vw-gold) 10%, var(--vw-panel)); }
+  .title { font: 800 17px/1.2 var(--vw-font-ui); }
+  .line { font-size: 14px; color: var(--vw-text-muted); }
+  .none { margin: 0; color: var(--vw-text-muted); }
+  .more { font-weight: 800; }
+</style>

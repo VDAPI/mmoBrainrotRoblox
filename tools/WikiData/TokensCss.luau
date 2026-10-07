@@ -9,6 +9,7 @@ local Basics = require("./Basics")
 local Classes = require("../../src/shared/Data/Classes")
 local Clean = require("./Clean")
 local Elements = require("../../src/shared/Data/Elements")
+local Places = require("./Places")
 local Rarities = require("../../src/shared/Data/Rarities")
 
 local TokensCss = {}
@@ -111,6 +112,12 @@ function TokensCss.generate(ctx: any): string
 	for _, zone in { "green", "yellow", "red" } do
 		table.insert(dark, `  --vw-zone-{zone}: {zones[zone]};`)
 		table.insert(light, `  --vw-zone-{zone}: {TokensCss.readable(zones[zone], TokensCss.PANEL_LIGHT, "#000000")};`)
+	end
+	-- S37: map sketch colours (raw game values; wiki/src/styles/map.css tones them for each theme).
+	local readText = ctx.readText
+	local sketch = if readText then readText("src/client/UI/MapSketch.luau") else nil
+	for _, c in Places.sketchColors(sketch, ctx.warnings) do
+		table.insert(dark, `  --vw-map-{c.name}: {c.hex};`)
 	end
 	return table.concat({
 		TokensCss.HEADER,

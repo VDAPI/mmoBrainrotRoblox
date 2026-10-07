@@ -19,6 +19,7 @@ import Pager from "../components/Pager.astro";
 import RankBadge from "../components/RankBadge.astro";
 import RarityBadge from "../components/RarityBadge.svelte";
 import SectionTitle from "../components/SectionTitle.astro";
+import MiniMap from "../components/MiniMap.astro";
 import SkillEdge from "../components/SkillEdge.astro";
 import SkillNode from "../components/SkillNode.astro";
 import Skeleton from "../components/Skeleton.astro";
@@ -143,6 +144,15 @@ const toc = [
         {boss && <BossHeader boss={boss} lang={lang} players={3} />}
       </section>
 
+      <section id="minimap">
+        <SectionTitle>MiniMap</SectionTitle>
+        <div class="minimaps">
+          <MiniMap map="meadows" lang={lang} highlight={{ areas: ["meadows_wolfhills"] }} />
+          <MiniMap map="city" lang={lang} highlight={{ npcs: ["blacksmith"] }} size="sm" />
+          <MiniMap map="meadows" lang={lang} highlight={{ caves: ["meadows_cave"] }} size="sm" />
+        </div>
+      </section>
+
       <section id="skills">
         <SectionTitle>SkillNode · SkillEdge</SectionTitle>
         <div class="row nodes">
@@ -236,4 +246,5 @@ const toc = [
   .swatch span { width: 28px; height: 28px; border: 1px solid var(--vw-border); }
   .swatch code { font: 400 13px var(--vw-font-mono); color: var(--vw-text-muted); }
   @media (max-width: 1023px) { .sg { grid-template-columns: 1fr; padding-top: 16px; } }
+  .minimaps { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; }
 </style>
