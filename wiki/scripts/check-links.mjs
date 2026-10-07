@@ -1,7 +1,9 @@
 // Internal links of dist/: every href / src starting with "/" must point at a file of the build (gives "Soon instead
-// of 404"). Exits 1 with the list of broken links.
+// of 404"). S39: also the og:image of every page when it points at our own domain. Exits 1 with the list of broken
+// links.
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
+import { SITE_URL } from "../src/config.ts";
 
 const DIST = "dist";
 if (!existsSync(DIST)) {
@@ -34,6 +36,12 @@ for (const file of htmlFiles(DIST)) {
     if (url.startsWith("//") || url.startsWith("/pagefind/")) continue;
     checked += 1;
     if (!exists(url)) broken.push(`${file}: ${url}`);
+  }
+  for (const match of html.matchAll(/<meta property="og:image" content="([^"]*)"/g)) {
+    if (!match[1].startsWith(SITE_URL)) continue;
+    checked += 1;
+    const url = match[1].slice(SITE_URL.length);
+    if (!exists(url)) broken.push(`${file}: og:image ${url}`);
   }
 }
 if (broken.length > 0) {

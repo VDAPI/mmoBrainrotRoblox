@@ -416,7 +416,7 @@ function Monsters.build(ctx: any): any
 			local ability = nil
 			if abilityDef then
 				ability = Clean.clean(abilityDef)
-				ability.name = Names.opt(`ability.{abilityDef.id}`)
+				ability.name = Names.opt(`ability.{abilityDef.id}.name`)
 			end
 			table.insert(list, {
 				id = def.id,

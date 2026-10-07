@@ -66,6 +66,7 @@ S.file(
 			})),
 			attacks = arr(rec("BossAttack", {
 				id = "string",
+				["name?"] = "name",
 				shape = "string",
 				target = "string",
 				["radius?"] = "number",
@@ -96,6 +97,7 @@ S.file(
 			enrageAfter = "number",
 			enrageDamage = "number",
 			timeLimit = "number",
+			scriptConsts = map("number"),
 			exp = "int",
 			goldMin = "int",
 			goldMax = "int",
@@ -117,6 +119,18 @@ S.file(
 		releaseAfter = "number",
 	})
 )
+
+-- Numeric constants of the server boss script (S39), read as text (never required): lines "local NAME = 12.5".
+function Bosses.scriptConsts(text: string?): { [string]: number }
+	local out = {}
+	for line in string.gmatch(text or "", "[^\r\n]+") do
+		local key, value = string.match(line, "^local ([A-Z_]+) = ([%d%.]+)$")
+		if key and value and tonumber(value) then
+			out[key] = tonumber(value) :: number
+		end
+	end
+	return out
+end
 
 local function kindFor(def: BossData.BossDef, players: number): any
 	return {
@@ -171,6 +185,7 @@ function Bosses.build(ctx: any): any
 			local attacks = {}
 			for _, a in def.attacks do
 				local entry = Clean.clean(a)
+				entry.name = Names.opt(`boss.{def.id}.attack.{a.id}`)
 				entry.dmgMin, entry.dmgMax =
 					Monsters.damageRange(stats, a.damage, a.element, a.damageKind or stats.damageKind)
 				table.insert(attacks, entry)
@@ -252,6 +267,9 @@ function Bosses.build(ctx: any): any
 				enrageAfter = def.enrageAfter,
 				enrageDamage = def.enrageDamage,
 				timeLimit = def.timeLimit,
+				scriptConsts = Bosses.scriptConsts(
+					if ctx.readText then ctx.readText(`src/server/Entities/BossScripts/{def.id}.luau`) else nil
+				),
 				exp = math.floor(Exp.monsterExp(def.level, "boss") + 0.5),
 				goldMin = MonsterStats.gold(def.level, "boss", 0),
 				goldMax = MonsterStats.gold(def.level, "boss", 1),

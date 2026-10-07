@@ -1,57 +1,70 @@
 ---
-// Monster card (.vw-monster, VwMonsterCard): picture 4:3, rank top left, element top right, variant name, level,
-// region with a diamond in its zone colour, best loot at the bottom. Top border: normal dark gold, elite gold,
-// Elite II orange, boss red.
-import type { Monster } from "../data/types";
+// Monster card (.vw-monster, VwMonsterCard): picture 4:3, rank top left, element top right, variant name, level range
+// and family, the first place with a diamond in its zone colour (+N more), the signature drop at the bottom (S39: the
+// rarest monster part of the variant, a boss's first named item) or "No unique loot". Top border: normal dark gold,
+// elite gold, Elite II orange, boss red. `boss` renders a boss card instead of a monster.
+import type { Boss, Monster } from "../data/types";
+import { finalLevels, placesOf, signatureDrop } from "../lib/bestiary";
 import { getItem, getMap, load } from "../lib/data";
-import { name, t } from "../lib/i18n";
+import { name, t, type Key } from "../lib/i18n";
 import type { Lang } from "../i18n/routes";
 import ElementBadge from "./ElementBadge.astro";
 import ItemIcon from "./ItemIcon.svelte";
 import MonsterImage from "./MonsterImage.astro";
 import RankBadge from "./RankBadge.astro";
 interface Props {
-  monster: Monster;
+  monster?: Monster;
+  boss?: Boss;
   variant?: "normal" | "elite" | "elite2";
   level?: number;
   lang: Lang;
   href?: string | null;
+  eager?: boolean;
 }
-const { monster, variant = "normal", level, lang, href } = Astro.props;
-const info = monster.variants[variant] ?? monster.variants.normal ?? Object.values(monster.variants)[0];
-const spawn = info?.spawns[0];
-const map = spawn ? getMap(spawn.cave ?? spawn.map) : getMap(monster.regionMap);
-const region = spawn?.cave ? load("caves").caves.find((c) => c.id === spawn.cave) : undefined;
-const area = spawn?.area ? load("areas").areas.find((a) => a.id === spawn.area) : undefined;
-const place = region ? name(region.name, lang) : area ? name(area.name, lang) : map ? name(map.name, lang) : "";
-const zone = map?.zone ?? "yellow";
-const shownLevel = level ?? info?.levelMax ?? 1;
-// Best loot: the drop with the highest required level, then the highest chance.
-const best = [...(info?.loot.items ?? [])]
-  .map((l) => ({ l, item: getItem(l.id) }))
-  .filter((x) => x.item && x.item.category === "equipment")
-  .sort((a, b) => b.item!.requiredLevel - a.item!.requiredLevel || b.l.chance - a.l.chance)[0];
-const cap = load("rarities").sources[variant]?.cap;
-const capName = cap ? name(load("rarities").rarities.find((r) => r.key === cap)?.name, lang) : "";
-const borders = { normal: "var(--vw-gold-dark)", elite: "var(--vw-gold-bright)", elite2: "var(--vw-r-legendary)" };
+const { monster, boss, variant = "normal", level, lang, href, eager = false } = Astro.props;
+const rank = boss ? "boss" : variant;
+const info = monster ? (monster.variants[variant] ?? monster.variants.normal ?? Object.values(monster.variants)[0]) : undefined;
+const title = boss ? name(boss.name, lang) : name(info?.name ?? monster?.name, lang);
+let levelText = "";
+if (boss) levelText = t(lang, "level", { level: boss.level });
+else if (level !== undefined) levelText = t(lang, "level", { level });
+else if (info) {
+  const [min, max] = finalLevels(info);
+  levelText = min === max ? t(lang, "level", { level: min }) : t(lang, "levelRangeCap", { min, max });
+}
+const family = monster?.family ? t(lang, `family.${monster.family}` as Key) : boss ? t(lang, "rank.boss") : "";
+const places = monster ? placesOf(monster, variant, lang) : [];
+const dungeon = boss ? getMap(boss.dungeon) : undefined;
+const place = boss ? { name: name(dungeon?.name, lang), zone: dungeon?.zone ?? "red" } : places[0] ?? (monster ? { name: name(getMap(monster.regionMap)?.name, lang), zone: getMap(monster.regionMap)?.zone ?? "yellow" } : undefined);
+const dropId = boss ? boss.loot.named[0] : monster ? signatureDrop(monster, variant) : undefined;
+const drop = dropId ? getItem(dropId) : undefined;
+const dropRarity = drop ? drop.rarities[drop.rarities.length - 1] : undefined;
+const dropRarityName = dropRarity ? name(load("rarities").rarities.find((r) => r.key === dropRarity)?.name, lang) : "";
+const borders = { normal: "var(--vw-gold-dark)", elite: "var(--vw-gold-bright)", elite2: "var(--vw-r-legendary)", boss: "var(--vw-zone-red)" };
 const Tag = href ? "a" : "article";
 ---
-<Tag class="vw-monster card" href={href ?? undefined} style={`border-top-color: ${borders[variant]}`}>
+<Tag class={`vw-monster card${boss ? " vw-monster--boss" : ""}`} href={href ?? undefined} style={`border-top-color: ${borders[rank]}`}>
   <div class="vw-monster__render render">
-    <MonsterImage id={monster.id} variant={variant} alt={name(info?.name, lang)} element={monster.element} />
-    <span class="rank"><RankBadge rank={variant} lang={lang} /></span>
-    <span class="element"><ElementBadge element={monster.element} lang={lang} /></span>
+    <MonsterImage id={boss?.id ?? monster?.id ?? ""} kind={boss ? "boss" : "monster"} variant={variant} alt={title} element={monster?.element} eager={eager} />
+    <span class="rank"><RankBadge rank={rank} lang={lang} /></span>
+    <span class="element"><ElementBadge element={monster?.element} damageKind={monster?.damageKind ?? boss?.damageKind} lang={lang} /></span>
   </div>
-  <div class="vw-monster__name name">{name(info?.name ?? monster.name, lang)}</div>
-  <div class="meta">{t(lang, "level", { level: shownLevel })}</div>
-  <div class="place"><span class="dot" style={`--c: var(--vw-zone-${zone})`}></span>{place}</div>
+  <div class="vw-monster__name name">{title}</div>
+  <div class="meta"><span class="lv">{levelText}</span>{family && <> · {family}</>}</div>
+  {place && (
+    <div class="place">
+      <span class="dot" style={`--c: var(--vw-zone-${place.zone})`}></span>
+      <span class="pname">{place.name}</span>
+      {places.length > 1 && <span class="more">{t(lang, "bestiary.places", { n: places.length - 1 })}</span>}
+    </div>
+  )}
   <div class="vw-monster__drop">
-    {best ? (
+    {drop ? (
       <>
-        <ItemIcon glyph={best.item!.glyph} color={best.item!.color} rarity={cap} size={36} />
-        <div>
-          <div class="drop-name" style={cap ? `color: var(--vw-r-${cap}-text)` : undefined}>{name(best.item!.name, lang)}</div>
-          <div class="drop-meta">{capName}</div>
+        <ItemIcon glyph={drop.glyph} color={drop.color} rarity={dropRarity} size={28} />
+        <div class="dropbox">
+          <div class="drop-name" style={dropRarity ? `color: var(--vw-r-${dropRarity}-text)` : undefined}>{name(drop.name, lang)}</div>
+          {boss && <div class="drop-meta">{dropRarityName}</div>}
         </div>
       </>
     ) : (
@@ -60,16 +73,27 @@ const Tag = href ? "a" : "article";
   </div>
 </Tag>
 <style>
-  .card { color: var(--vw-text); }
+  .card { color: var(--vw-text); padding: 0; gap: 0; height: 100%; }
   a.card:hover { text-decoration: none; }
-  .render { position: relative; overflow: hidden; }
-  .rank { position: absolute; left: 8px; top: 8px; }
-  .element { position: absolute; right: 8px; top: 8px; }
+  .render { position: relative; overflow: hidden; border: 0; border-bottom: 1px solid var(--vw-border); }
+  .rank { position: absolute; left: 10px; top: 10px; }
+  .element { position: absolute; right: 10px; top: 10px; }
   .element :global(.vw-rank) { background: var(--vw-bg); }
-  .name { font-size: 26px; color: var(--vw-text); }
-  .meta { color: var(--vw-text-soft); font-size: 15px; margin-top: -8px; }
-  .place { display: flex; align-items: center; gap: 8px; font-size: 15px; color: var(--vw-text-muted); }
-  .dot { width: 8px; height: 8px; background: var(--c); transform: rotate(45deg); box-shadow: 0 0 6px var(--c); }
-  .drop-name { font-weight: 800; font-size: 15px; }
+  .name { font-size: 26px; color: var(--vw-text); padding: 16px 16px 0; }
+  .meta { color: var(--vw-text-muted); font-size: 15px; font-weight: 700; padding: 6px 16px 0; }
+  .lv { color: var(--vw-gold-bright); }
+  .place { display: flex; align-items: center; gap: 8px; font-size: 15px; color: var(--vw-text-soft); padding: 6px 16px 14px; min-width: 0; }
+  .pname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .more { color: var(--vw-text-muted); font-size: 13px; }
+  .dot { flex-shrink: 0; width: 8px; height: 8px; background: var(--c); transform: rotate(45deg); box-shadow: 0 0 6px var(--c); }
+  .vw-monster__drop { margin-top: auto; min-height: 52px; padding: 10px 16px; }
+  .dropbox { min-width: 0; }
+  .drop-name { font-weight: 800; font-size: 15px; line-height: 1.2; }
   .drop-meta { font-size: 13px; color: var(--vw-text-muted); }
+  @media (max-width: 767px) {
+    .name { font-size: 22px; padding: 12px 12px 0; line-height: 1.05; }
+    .meta, .place { padding-left: 12px; padding-right: 12px; font-size: 14px; }
+    .vw-monster__drop { padding: 8px 12px; }
+    .rank { left: 6px; top: 6px; } .element { right: 6px; top: 6px; }
+  }
 </style>

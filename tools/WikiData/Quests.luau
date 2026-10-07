@@ -33,6 +33,7 @@ local Objective = rec("QuestObjective", {
 	["variant?"] = "string",
 	["region?"] = "int",
 	["item?"] = "string",
+	["itemName?"] = "name",
 	["chance?"] = "number",
 	["node?"] = "string",
 	["category?"] = "string",
@@ -204,6 +205,9 @@ local function objectives(list: { any }, turnIn: string?, level: number): { any 
 		end)
 		if o.place then
 			entry.place = Names.of(o.place)
+		end
+		if o.item then
+			entry.itemName = Names.opt(`quest.item.{o.item}`)
 		end
 		entry["where"] = Places.objectiveWhere(o, level, turnIn)
 		table.insert(out, entry)

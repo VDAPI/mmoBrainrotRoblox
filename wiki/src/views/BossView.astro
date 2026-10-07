@@ -1,0 +1,262 @@
+---
+// Boss page (S39, /pl/bossy/<id>/): BossHeader (players 1–5, phases with mechanics and script notes from
+// src/content/bosses), stats for the chosen party size, shared loot, boss items, the personal roll with its pity
+// bars, and on the right the entry rules, the gate on the cave mini map and the summons. Also the boss list
+// (/pl/bossy/, page "index"). Behaviour: src/scripts/boss.ts.
+import { getCollection } from "astro:content";
+import Base from "../layouts/Base.astro";
+import BossHeader from "../components/BossHeader.astro";
+import Crumbs from "../components/Crumbs.astro";
+import ItemIcon from "../components/ItemIcon.svelte";
+import ItemTooltip from "../components/ItemTooltip.svelte";
+import MiniMap from "../components/MiniMap.astro";
+import MonsterCard from "../components/MonsterCard.astro";
+import SectionTitle from "../components/SectionTitle.astro";
+import { href, type Lang } from "../i18n/routes";
+import { bossHref, monsterHref } from "../lib/bestiary";
+import { fillConsts, noteHtml } from "../lib/bossnotes";
+import { bosses, getBoss, getItem, getMap, getMonster, load, rarities } from "../lib/data";
+import { formatChance, formatDuration, formatNumber } from "../lib/format";
+import { name, t } from "../lib/i18n";
+import { itemHref } from "../lib/monster";
+import { sectionHref } from "../lib/sections";
+import { tooltipData } from "../lib/tooltip";
+import { caveOf, placeHref } from "../lib/world";
+
+interface Props {
+  lang: Lang;
+  page: "index" | "boss";
+  id?: string;
+}
+const { lang, page, id } = Astro.props;
+const crumbsBase = [
+  { label: t(lang, "crumbs.wiki"), href: href(lang, "home") },
+  { label: t(lang, "monster.crumb"), href: sectionHref(lang, "bestiary") },
+];
+const file = load("bosses");
+const boss = id ? getBoss(id) : undefined;
+const notes = boss
+  ? (await getCollection("bosses"))
+      .filter((e) => e.data.boss === boss.id && e.id.startsWith(`${lang}/`))
+      .sort((a, b) => a.data.phase - b.data.phase || (a.id < b.id ? -1 : 1))
+      .map((e) => ({ phase: e.data.phase, title: e.data.title, html: noteHtml(fillConsts(e.body ?? "", boss.scriptConsts, lang, `src/content/bosses/${e.id}`)) }))
+  : [];
+const title = boss ? name(boss.name, lang) : t(lang, "bosses.title");
+const range = (a: number, b: number) => (a === b ? formatNumber(a, lang) : `${formatNumber(a, lang)}–${formatNumber(b, lang)}`);
+const rarityName = (key: string) => name(rarities().find((r) => r.key === key)?.name, lang);
+const rarityOrder = (key: string) => rarities().findIndex((r) => r.key === key);
+
+const dungeon = boss ? getMap(boss.dungeon) : undefined;
+const cave = boss?.gateCave ? caveOf(boss.gateCave) : undefined;
+const gate = boss ? load("portals").portals.find((p) => p.kind === "dungeon" && p.target === boss.dungeon) : undefined;
+const stone = boss ? getItem(`stone_dungeon_${boss.region}`) : undefined;
+const bind = t(lang, "tooltip.bind");
+const by = (f: (p: NonNullable<typeof boss>["byPlayers"][number]) => string) => JSON.stringify(boss?.byPlayers.map(f) ?? []);
+const pity = boss
+  ? (["legendary", "mythic"] as const).map((k) => ({ key: k, line: boss.personal[k], rarity: k === "legendary" ? "legendary" : "mythic" }))
+  : [];
+---
+{page === "index" ? (
+  <Base lang={lang} title={title} description={t(lang, "bosses.lead")} section="bestiary" og={{ image: `/img/og/${lang}/bestiary.jpg`, alt: title }}>
+    <div class="page">
+      <Crumbs items={[...crumbsBase, { label: title }]} />
+      <h1 class="h1">{title}</h1>
+      <p class="lead">{t(lang, "bosses.lead")}</p>
+      <ul class="bossgrid">
+        {bosses().map((b) => <li><MonsterCard boss={b} lang={lang} href={bossHref(lang, b.id)} /></li>)}
+      </ul>
+    </div>
+  </Base>
+) : boss && (
+  <Base
+    lang={lang}
+    title={title}
+    description={t(lang, "og.boss", { name: title, level: boss.level })}
+    section="bestiary"
+    search={{ type: "monster", meta: { title, line: `${t(lang, "rank.boss")} · ${t(lang, "level", { level: boss.level })} · ${name(dungeon?.name, lang)}` } }}
+    og={{ image: `/img/og/${lang}/boss/${boss.id}.jpg`, alt: title }}
+  >
+    <div class="page" data-boss-page>
+      <Crumbs items={[...crumbsBase, { label: t(lang, "boss.crumb"), href: sectionHref(lang, "bosses") }, { label: title }]} />
+      <div class="header"><BossHeader boss={boss} lang={lang} notes={notes} heading="h1" /></div>
+
+      <div class="lower">
+        <div class="main">
+          <section>
+            <SectionTitle>{t(lang, "boss.stats")}</SectionTitle>
+            <dl class="cells">
+              <div><dt>{t(lang, "monster.stat.hp")}</dt><dd data-by-players={by((p) => formatNumber(p.hp, lang))}>{formatNumber(boss.byPlayers[0].hp, lang)}</dd></div>
+              <div><dt>{t(lang, "boss.attack")}</dt><dd>{range(boss.byPlayers[0].dmgMin, boss.byPlayers[0].dmgMax)}</dd></div>
+              <div><dt>{t(lang, "monster.stat.armor")}</dt><dd>{formatNumber(boss.byPlayers[0].armor, lang)}</dd></div>
+              <div><dt>{t(lang, "monster.stat.exp")}</dt><dd>{formatNumber(boss.exp, lang)}</dd></div>
+              <div><dt>{t(lang, "monster.stat.gold")}</dt><dd>{range(boss.goldMin, boss.goldMax)}</dd></div>
+              <div><dt>{t(lang, "monster.stat.time")}</dt><dd>{formatDuration(boss.timeLimit, lang)}</dd></div>
+            </dl>
+            <p class="note">{t(lang, "monster.dmgNote")} {t(lang, "monster.stat.mres")}: {formatNumber(boss.byPlayers[0].mres, lang)}.</p>
+            <table class="vw-table byp">
+              <caption class="cap vw-label">{t(lang, "boss.byPlayers")}</caption>
+              <thead><tr><th scope="col">{t(lang, "boss.playersPick")}</th><th scope="col">{t(lang, "monster.stat.hp")}</th><th scope="col">{t(lang, "boss.items")}</th></tr></thead>
+              <tbody>
+                {boss.byPlayers.map((p) => (
+                  <tr data-players-row={p.players}>
+                    <td>{p.players === 1 ? t(lang, "boss.player1") : t(lang, "boss.players", { n: p.players })}</td>
+                    <td>{formatNumber(p.hp, lang)}</td>
+                    <td>{range(boss.loot.itemMin + p.extraItems, boss.loot.itemMax + p.extraItems)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </section>
+
+          <section>
+            <SectionTitle>{t(lang, "boss.shared")}</SectionTitle>
+            <p>{t(lang, "boss.sharedText", { min: boss.loot.itemMin, max: boss.loot.itemMax })}</p>
+            <p class="rars">
+              {Object.entries(boss.loot.rarities).sort((a, b) => rarityOrder(a[0]) - rarityOrder(b[0])).map(([k, v]) => (
+                <span class="vw-rarity" style={`--c: var(--vw-r-${k}); color: var(--vw-r-${k}-text)`}>{rarityName(k)} · {formatChance(v, lang)}</span>
+              ))}
+            </p>
+            <table class="vw-table">
+              <caption class="vw-sr">{t(lang, "boss.shared")}</caption>
+              <thead><tr><th scope="col"><span class="vw-sr">{t(lang, "renders.title")}</span></th><th scope="col">{t(lang, "loot.col.item")}</th><th scope="col">{t(lang, "loot.amount", { range: "" }).trim()}</th><th scope="col" style="text-align: right">{t(lang, "loot.col.chance")}</th></tr></thead>
+              <tbody>
+                {boss.loot.materials.map((m) => {
+                  const item = getItem(m.id);
+                  const rar = item?.rarities[item.rarities.length - 1] ?? "common";
+                  const ih = itemHref(lang, m.id);
+                  return (
+                    <tr>
+                      <td class="icon"><ItemIcon glyph={item?.glyph ?? "◆"} color={item?.color ?? "#9DA3AB"} rarity={rar} size={36} /></td>
+                      <td class="strong">{ih ? <a href={ih} style={`color: var(--vw-r-${rar}-text)`}>{name(item?.name, lang)}</a> : <span style={`color: var(--vw-r-${rar}-text)`}>{name(item?.name, lang)}</span>}</td>
+                      <td>{range(m.min, m.max)}</td>
+                      <td class="chance">{formatChance(m.chance, lang)}</td>
+                    </tr>
+                  );
+                })}
+                <tr>
+                  <td class="icon"><ItemIcon glyph="✦" color="#FF9F1C" rarity="legendary" size={36} /></td>
+                  <td class="strong">{t(lang, "boss.blessing")}</td>
+                  <td>1</td>
+                  <td class="chance">{formatChance(boss.loot.legendaryBlessingChance, lang)}</td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+
+          <section>
+            <SectionTitle>{t(lang, "boss.named")}</SectionTitle>
+            <div class="named">
+              {boss.loot.named.map((itemId) => {
+                const data = tooltipData(itemId, { lang });
+                return data && <ItemTooltip data={data} href={itemHref(lang, itemId)} labels={{ bind }} />;
+              })}
+            </div>
+          </section>
+
+          <section>
+            <SectionTitle>{t(lang, "boss.personal")}</SectionTitle>
+            <p>{t(lang, "boss.personalText")}</p>
+            <div class="pity">
+              {pity.map(({ key, line, rarity }) => {
+                const n = line.byMisses.length;
+                const w = 100 / n;
+                return (
+                  <figure class="pityfig">
+                    <figcaption><span class="vw-label" style={`color: var(--vw-r-${rarity}-text)`}>{t(lang, `boss.pity.${key}`)}</span> {formatChance(line.chance, lang)} → 100%</figcaption>
+                    <svg viewBox="0 0 100 40" preserveAspectRatio="none" role="img" aria-label={`${t(lang, `boss.pity.${key}`)}: ${line.byMisses.map((c) => formatChance(c, lang)).join(", ")}`}>
+                      {line.byMisses.map((c, i) => (
+                        <rect x={(i * w + w * 0.12).toFixed(2)} y={(40 - c * 40).toFixed(2)} width={(w * 0.76).toFixed(2)} height={(c * 40).toFixed(2)} style={`fill: var(--vw-r-${rarity})`}><title>{i}: {formatChance(c, lang)}</title></rect>
+                      ))}
+                    </svg>
+                    <div class="axis"><span>0</span><span>{t(lang, "boss.pity.misses")}</span><span>{n - 1}</span></div>
+                    <p class="muted">{t(lang, "boss.pity.expected", { kills: formatNumber(Math.round(line.expectedKills * 10) / 10, lang), days: formatNumber(Math.round((line.expectedKills / file.dailyRuns) * 10) / 10, lang), runs: file.dailyRuns })}</p>
+                  </figure>
+                );
+              })}
+            </div>
+          </section>
+        </div>
+
+        <aside class="side">
+          <section class="rules">
+            <h2 class="vw-label">{t(lang, "boss.entry")}</h2>
+            <dl>
+              <div><dt>{t(lang, "boss.room")}</dt><dd>{name(dungeon?.name, lang)} · {t(lang, "levelRangeCap", { min: dungeon?.minLevel ?? boss.level, max: dungeon?.maxLevel ?? boss.level })}</dd></div>
+              <div><dt>{t(lang, "boss.required")}</dt><dd>{t(lang, "level", { level: boss.requiredLevel })}</dd></div>
+              {cave && <div><dt>{t(lang, "boss.gate")}</dt><dd>{placeHref(lang, cave.id) ? <a href={placeHref(lang, cave.id)!}>{name(cave.name, lang)}</a> : name(cave.name, lang)}</dd></div>}
+              {stone && <div><dt>{t(lang, "boss.stone")}</dt><dd>{itemHref(lang, stone.id) ? <a href={itemHref(lang, stone.id)!}>{name(stone.name, lang)}</a> : name(stone.name, lang)} <span class="muted">— {t(lang, "boss.stoneText")}</span></dd></div>}
+              <div><dt>{t(lang, "boss.daily")}</dt><dd>{t(lang, "boss.dailyText", { n: file.dailyRuns })}</dd></div>
+              <div><dt>{t(lang, "boss.party")}</dt><dd>{t(lang, "boss.partyText", { range: formatNumber(file.entryRange, lang) })}</dd></div>
+              <div><dt>{t(lang, "boss.countdown")}</dt><dd>{t(lang, "boss.countdownText", { n: file.countdown })}</dd></div>
+              <div><dt>{t(lang, "boss.release")}</dt><dd>{t(lang, "boss.releaseText", { n: file.releaseAfter })}</dd></div>
+              <div><dt>{t(lang, "monster.stat.time")}</dt><dd>{t(lang, "boss.timeText", { time: formatDuration(boss.timeLimit, lang) })}</dd></div>
+            </dl>
+            {cave && gate && <MiniMap map={cave.id} lang={lang} size="md" highlight={{ portals: [gate.id] }} />}
+          </section>
+          {boss.summons.length > 0 && (
+            <section>
+              <h2 class="vw-label">{t(lang, "boss.summonsTitle")}</h2>
+              <ul class="summons">
+                {boss.summons.map((s) => {
+                  const m = getMonster(s.monster);
+                  return m && <li><MonsterCard monster={m} level={s.level} lang={lang} href={monsterHref(lang, m.id)} /></li>;
+                })}
+              </ul>
+            </section>
+          )}
+        </aside>
+      </div>
+    </div>
+  </Base>
+)}
+
+<script>
+  import "../scripts/boss";
+</script>
+
+<style>
+  .page { max-width: 1440px; margin: 0 auto; padding: 22px 48px 72px; }
+  .h1 { margin: 12px 0 8px; font: 700 72px/1 var(--vw-font-display); color: var(--vw-gold-bright); }
+  .lead { margin: 0 0 28px; font-size: 19px; color: var(--vw-text-soft); }
+  .bossgrid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+  .header { margin-top: 20px; }
+  .lower { display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 48px; margin-top: 48px; align-items: start; }
+  .main { display: flex; flex-direction: column; gap: 40px; min-width: 0; }
+  .main p { margin: 0 0 12px; color: var(--vw-text-soft); }
+  .cells { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); margin: 0; border: 1px solid var(--vw-border); background: var(--vw-panel); }
+  .cells > div { padding: 14px; border-right: 1px solid var(--vw-border); }
+  .cells > div:last-child { border-right: 0; }
+  .cells dt { font-size: 13px; color: var(--vw-text-muted); }
+  .cells dd { margin: 6px 0 0; font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .note { margin-top: 8px !important; font-size: 13px; color: var(--vw-text-muted) !important; }
+  .byp { margin-top: 16px; }
+  .byp td:not(:first-child), .byp th:not(:first-child) { text-align: right; }
+  .byp tr[data-selected] { background: rgba(232, 194, 90, .10); }
+  .cap { caption-side: top; text-align: left; padding-bottom: 8px; }
+  .rars { display: flex; flex-wrap: wrap; gap: 8px; }
+  .icon { width: 52px; padding-right: 0; }
+  .strong { font-weight: 800; }
+  .chance { text-align: right; font-weight: 800; }
+  .muted { color: var(--vw-text-muted); }
+  .named { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; align-items: start; }
+  .pity { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+  .pityfig { margin: 0; padding: 16px; background: var(--vw-panel); border: 1px solid var(--vw-border); }
+  .pityfig figcaption { display: flex; gap: 12px; align-items: baseline; margin-bottom: 10px; font-weight: 800; }
+  .pityfig svg { display: block; width: 100%; height: 120px; background: #14161B; border-bottom: 1px solid var(--vw-border); }
+  .axis { display: flex; justify-content: space-between; font-size: 12px; color: var(--vw-text-muted); margin: 4px 0 8px; }
+  .side { display: flex; flex-direction: column; gap: 28px; }
+  .side h2 { margin: 0 0 10px; }
+  .rules dl { margin: 0 0 12px; padding: 14px 16px; background: var(--vw-panel); border: 1px solid var(--vw-border); display: flex; flex-direction: column; gap: 10px; }
+  .rules dt { font-size: 13px; color: var(--vw-text-muted); }
+  .rules dd { margin: 2px 0 0; font-weight: 700; }
+  .summons { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+  @media (max-width: 1279px) { .bossgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .cells { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  @media (max-width: 1023px) { .lower { grid-template-columns: minmax(0, 1fr); } .pity { grid-template-columns: 1fr; } }
+  @media (max-width: 767px) {
+    .page { padding: 12px 16px 48px; }
+    .h1 { font-size: 44px; }
+    .cells { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .cells > div { border-bottom: 1px solid var(--vw-border); }
+    .bossgrid { grid-template-columns: 1fr; }
+  }
+</style>

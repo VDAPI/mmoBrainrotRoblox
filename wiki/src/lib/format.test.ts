@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatNumber, pluralForm } from "./format";
+import { formatChance, formatNumber, pluralForm } from "./format";
 
 describe("format", () => {
   it("formats numbers in Polish and English", () => {
@@ -14,5 +14,15 @@ describe("format", () => {
   it("chooses Polish plural forms", () => {
     expect([1, 2, 5, 12, 22].map((n) => pluralForm(n, "pl"))).toEqual(["one", "few", "many", "many", "few"]);
     expect([1, 2].map((n) => pluralForm(n, "en"))).toEqual(["one", "many"]);
+  });
+
+  it("formats drop chances by size (S39)", () => {
+    expect(formatChance(0.3, "pl")).toBe("30%");
+    expect(formatChance(0.012, "pl")).toBe("1,2%");
+    expect(formatChance(0.0045, "pl")).toBe("0,45%");
+    expect(formatChance(0.00004, "pl")).toBe("< 0,01%");
+    expect(formatChance(0.012, "en")).toBe("1.2%");
+    expect(formatChance(0.00004, "en")).toBe("< 0.01%");
+    expect(formatChance(1, "en")).toBe("100%");
   });
 });

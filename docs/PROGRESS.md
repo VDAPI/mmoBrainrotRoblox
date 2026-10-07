@@ -43,6 +43,8 @@
 | S34 | Wiki 1/10: eksporter danych gry do JSON (`tools/wikidump.luau`), schemat i `types.ts`, kolory `tokens.data.css`, `docs/PRZEDMIOTY.md`, test wycieków | ● |
 | S36 | Wiki 2/10: szkielet Astro, design system 1:1, komponenty, strona główna, wyszukiwarka z paletą Ctrl+K, styleguide | ● |
 | S37 | Wiki 3/10: mapy SVG z danych gry, interaktywna mapa świata (przesuwanie, zoom, karty, warstwy, szukaj, link), strony krain, obszarów i jaskiń, `MiniMap` | ● |
+| S38 | Wiki 4/10: rendery potworów, bossów i petów (`tools/wiki-renders`), boss w hero, obrazy bazowe OG | ● |
+| S39 | Wiki 5/10: bestiariusz z filtrami w adresie, strony 50 potworów i 4 bossów (warianty, łup, fazy, mechaniki), obrazy OG | ● |
 | S35 | Ikony przedmiotów: atlasy z grafikami (kolor progu, akcent żywiołu / mikstury), komponent `ItemIcon` z zapasem na symbole, sloty, duch przeciągania, legenda, mikstury, tooltip, waluty | ● |
 
 Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana przez właściciela
@@ -3255,3 +3257,51 @@ Szczegóły, parametry i decyzje: `docs/WIKI.md` („Obrazy potworów”, Stan, 
 10. `/pl/styleguide/#boss`: obrazek Grimroka w nagłówku bossa; na telefonie tabela HP przewija się w bok.
 11. `wiki/public/img/og/base.png` i `default-art.png` — ramka, paski, boss po prawej.
 12. `npm run check` w `wiki/` i `scripts/check` przechodzą.
+
+### S39: Wiki 5/10 — bestiariusz, potwory i bossy
+
+Szczegóły i decyzje: `docs/WIKI.md` (Stan, Decyzje S39, Niedokończone, „Komponenty”).
+
+**Zrobione**
+- Dane: nazwy 12 zdolności Elit II (`ability.<id>.name`) i 16 ataków bossów (`boss.<id>.attack.<atak>`) w `pl.luau` i
+  `en.luau` (jedyna zmiana w `src/`), eksport `ability.name`, `attacks[].name`, `scriptConsts` (stałe ze skryptów bossów
+  czytane jako tekst), `itemName` celów zadań. Testy Lune: klucze zdolności i ataków, obrażenia każdej Elity II, grupy łupu,
+  stałe Azgora i Vaelgratha, HP bossa rośnie z liczbą graczy.
+- `/pl/bestiariusz/` (`/en/bestiary/`): 97 wpisów (93 występujące warianty + 4 bossy), karty i tabela, filtry region
+  (krainy z jaskiniami) / poziom (co 20) / typ / szukaj bez polskich znaków / sortowanie, wszystko w adresie, 24 na stronę
+  z pagerem (telefon: 12 + „Pokaż więcej”). Bez JS pełna lista.
+- `/pl/bestiariusz/<id>/` dla 50 rodzajów: zakładki wariantów (`?v=elite2`), chipy poziomów, statystyki, szczegóły walki,
+  tabela łupów (grupy ekwipunku rozwijane do 5 przedmiotów, materiały, przedmioty zadań, złoto) z podglądem tooltipa,
+  wszystkie poziomy, atak / zdolność Elity II z telegrafem / zachowanie, „Gdzie występuje” z minimapami, zadania,
+  przywołujący boss, inne potwory tutaj.
+- `/pl/bossy/` i `/pl/bossy/<id>/`: `BossHeader` z liczbą graczy 1–5, fazami (100–70–35 %) i ich mechanikami (ataki,
+  przywołania, tarcza, przyspieszenie, wściekłość, mechaniki skryptowe z `wiki/src/content/bosses` z liczbami ze skryptu),
+  statystyki, łup wspólny, przedmioty bossa, rzut osobisty (słupki SVG), wejście i zasady z minimapą bramy.
+- Obrazy OG: `npm run build` robi 110 JPEG 1200 × 630 (satori + sharp) w `dist/img/og/`; meta `og:*` i `twitter:card`
+  na każdej stronie. Budżety JS (`scripts/budgets.mjs`): bestiariusz 3,8 KB, potwór 1,3 KB, boss 0,9 KB gzip.
+- Naprawione przy okazji: bonusy przedmiotów bossów w tooltipie pokazywały „{v}”.
+
+#### Instrukcja testu S39
+
+1. `cd wiki`, `npm install` (nowe: `satori`, `sharp`), `npm run build`, `npm run preview` → http://localhost:4321/pl/bestiariusz/.
+2. Desktop: panel regionów (4 krainy, pod każdą 3 jaskinie z poziomami), chipy poziomów, typy w kolorach rang, 4 kolumny
+   kart z renderami, „1–24 z 97” i pager.
+3. Kliknij „Jaskinia Mchów” i „Elita II”: 2 potwory, adres `?region=meadows_cave&type=elite2`, chipy „Aktywne filtry” ×.
+   Skopiuj adres do nowej karty — ten sam widok.
+4. Wpisz „krolik” (bez ł/ó) — Dziki Królik Polny. Przycisk „Sortuj” przełącza poziom ↑ / poziom ↓ / nazwa.
+5. „Tabela” — wiersze z miniaturą, rangą, żywiołem, regionem i łupem; klik w wiersz otwiera potwora; po odświeżeniu
+   widok tabeli zostaje.
+6. Otwórz potwora z listy filtrów, potem „wstecz”: filtry są na miejscu.
+7. Telefon (390 px): chipy regionów i poziomów w przewijanych rzędach, 4 typy, 2 kolumny, „Pokaż więcej (12)”, bez
+   przewijania w bok.
+8. `/pl/bestiariusz/bandit/`: zakładki Zwykły / Elita / Elita II; Elita II zmienia nazwę (Krwawy Ruben), render, poziomy,
+   łup i miejsca; `?v=elite2` otwiera ją od razu. Strzałki ←/→ na zakładkach działają.
+9. Chipy poziomów zmieniają pasek HP i komórki. Najazd na wiersz łupu zmienia tooltip po prawej, klik go przypina;
+   „▸ Broń” rozwija 5 przedmiotów.
+10. Zdolność Elity II: nazwa (np. „Rozpłatanie”), rysunek kształtu i obrażenia; „Gdzie występuje” z minimapą.
+11. `/pl/bossy/grimrok/`: chipy 1–5 zmieniają HP na pasku i w statystykach; zakładki faz 100–70 / 70–35 / 35–0 % pokazują
+    mechaniki (faza 2: 4× Goblin Zwiadowca co 20 s, faza 3: Wir ostrzy i +25 %).
+12. `/pl/bossy/azgor/` faza 3: „Pole lawy” z liczbami 64 / 50 / 20 / 120 s; `/pl/bossy/vaelgrath/` fazy 2 i 3.
+13. Na dole strony bossa: 3 przedmioty bossa (bez „{v}” w bonusach), wykresy rzutu osobistego, zasady wejścia.
+14. `wiki/dist/img/og/pl/monster/wolf.jpg`: render wilka, „Szary Wilk”, „Poz. 1–7 · Polana Królików”, polskie znaki.
+15. `npm run check` w `wiki/` i `scripts/check` przechodzą.

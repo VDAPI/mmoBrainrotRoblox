@@ -1,0 +1,58 @@
+---
+// Attack telegraph (S39): a small SVG of the red area the game draws before a hit, to scale within the picture —
+// circle (radius), cone (angle + radius), line (length x width), ring (safe centre `inner`). The caster sits at the
+// centre (origin "self") or below the area (attacks that land on a target); the gold diamond marks the caster.
+interface Props {
+  shape: string;
+  radius?: number;
+  inner?: number;
+  angle?: number;
+  length?: number;
+  width?: number;
+  origin?: string;
+  size?: number;
+  label?: string;
+}
+const { shape, radius = 6, inner = 0, angle = 90, length = 10, width = 4, origin = "self", size = 56, label } = Astro.props;
+const R = 40; // drawing radius in the 100 x 100 box
+const atSelf = origin === "self" || shape === "cone" || shape === "line";
+let area: string;
+let hole = "";
+const cx = 50;
+let cy = 50;
+let caster: [number, number] = [50, 50];
+if (shape === "cone") {
+  cy = 82;
+  caster = [50, 82];
+  const a = (Math.min(angle, 359) / 2) * (Math.PI / 180);
+  const r = 70;
+  const x1 = cx + r * Math.sin(-a), y1 = cy - r * Math.cos(-a);
+  const x2 = cx + r * Math.sin(a), y2 = cy - r * Math.cos(a);
+  area = `M${cx} ${cy} L${x1.toFixed(1)} ${y1.toFixed(1)} A${r} ${r} 0 ${angle > 180 ? 1 : 0} 1 ${x2.toFixed(1)} ${y2.toFixed(1)} Z`;
+} else if (shape === "line") {
+  caster = [50, 86];
+  const h = 72;
+  const w = Math.max(6, Math.min(40, (width / Math.max(length, 1)) * h));
+  area = `M${50 - w / 2} 86 h${w} v${-h} h${-w} Z`;
+} else {
+  if (!atSelf) caster = [50, 94];
+  area = `M${cx - R} ${cy} a${R} ${R} 0 1 0 ${R * 2} 0 a${R} ${R} 0 1 0 ${-R * 2} 0`;
+  if (shape === "ring" && radius > 0) {
+    const r = Math.max(4, (inner / radius) * R);
+    hole = `M${cx - r} ${cy} a${r} ${r} 0 1 0 ${r * 2} 0 a${r} ${r} 0 1 0 ${-r * 2} 0`;
+  }
+}
+---
+<svg class="telegraph" width={size} height={size} viewBox="0 0 100 100" role="img" aria-label={label ?? shape}>
+  <rect x="1" y="1" width="98" height="98" class="bg"></rect>
+  <path d={`${area} ${hole}`} fill-rule="evenodd" class="area"></path>
+  {hole && <path d={hole} class="safe"></path>}
+  <rect x={caster[0] - 5} y={caster[1] - 5} width="10" height="10" transform={`rotate(45 ${caster[0]} ${caster[1]})`} class="caster"></rect>
+</svg>
+<style>
+  .telegraph { flex-shrink: 0; display: block; }
+  .bg { fill: #14161B; stroke: var(--vw-border); stroke-width: 2; }
+  .area { fill: rgba(214, 74, 62, .38); stroke: #E8665A; stroke-width: 2.5; }
+  .safe { fill: none; stroke: var(--vw-gold-dark); stroke-width: 2; stroke-dasharray: 4 3; }
+  .caster { fill: var(--vw-gold-bright); }
+</style>

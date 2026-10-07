@@ -54,6 +54,7 @@ const monsterHref = (mid: string, label: string) => sectionHref(lang, "bestiary"
 
       <section>
         <SectionTitle id="monsters">{t(lang, "region.monsters")}</SectionTitle>
+        {sectionHref(lang, "bestiary") && <p class="bestiary-link"><a href={`${sectionHref(lang, "bestiary")}?region=${id}`}>{t(lang, "map.bestiary")} →</a></p>}
         <div class="groups">
           {groups.map((g) => {
             const list = monsters.filter((m) => m.rank === g.rank);
@@ -162,4 +163,5 @@ const monsterHref = (mid: string, label: string) => sectionHref(lang, "bestiary"
     .h1 { font-size: 46px; }
     .mlist li { min-height: 52px; }
   }
+  .bestiary-link { margin: -12px 0 12px; font-weight: 800; }
 </style>

@@ -3,11 +3,14 @@
 // are not ready get a "Coming soon" page at their root, so no address of the menu is a 404.
 import type { Lang, RouteKey } from "../i18n/routes";
 import { SECTIONS } from "../lib/sections";
+import BestiarySection from "./BestiarySection.astro";
+import BossView from "./BossView.astro";
 import ComingSoon from "./ComingSoon.astro";
 import NotFound from "./NotFound.astro";
 import RegionsView from "./RegionsView.astro";
 import WorldMapView from "./WorldMapView.astro";
 import { areas, caves, maps } from "../lib/world";
+import { bosses, monsters } from "../lib/data";
 import SearchView from "./SearchView.astro";
 import Styleguide from "./Styleguide.astro";
 
@@ -37,6 +40,16 @@ export const REGISTRY: PageEntry[] = [
       ...areas().map((a) => ({ ids: [a.map, a.id], props: { page: "area", id: a.id } })),
       ...caves().map((c) => ({ ids: [c.region, c.id], props: { page: "cave", id: c.id } })),
     ],
+  },
+  {
+    key: "bestiary",
+    view: BestiarySection,
+    getPaths: () => [{ ids: [] }, ...monsters().map((m) => ({ ids: [m.id], props: { page: "monster", id: m.id } }))],
+  },
+  {
+    key: "bosses",
+    view: BossView,
+    getPaths: () => [{ ids: [], props: { page: "index" } }, ...bosses().map((b) => ({ ids: [b.id], props: { page: "boss", id: b.id } }))],
   },
   ...SECTIONS.filter((s) => !s.ready).map(
     (s): PageEntry => ({ key: s.id, view: ComingSoon, getPaths: () => [{ ids: [], props: { section: s.id } }] }),

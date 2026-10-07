@@ -58,6 +58,26 @@ T.describe("Localization of data tables", function()
 			T.expect(missing).toEqual({})
 		end)
 	end
+
+	T.it("every Elite II ability and boss attack has a name (S39)", function()
+		local Abilities = require("../src/shared/Data/MonsterAbilities")
+		local missing = {}
+		local function check(key: string)
+			if en[key] == nil or pl[key] == nil then
+				table.insert(missing, key)
+			end
+		end
+		for id in (Abilities :: any).byId do
+			check(`ability.{id}.name`)
+		end
+		for _, boss in MODULES.Bosses.list do
+			for _, a in boss.attacks do
+				check(`boss.{boss.id}.attack.{a.id}`)
+			end
+		end
+		table.sort(missing)
+		T.expect(missing).toEqual({})
+	end)
 end)
 
 return nil

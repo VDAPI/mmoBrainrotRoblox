@@ -17,6 +17,7 @@ import Label from "../components/Label.astro";
 import MonsterCard from "../components/MonsterCard.astro";
 import MonsterImage from "../components/MonsterImage.astro";
 import Pager from "../components/Pager.astro";
+import Telegraph from "../components/Telegraph.astro";
 import RankBadge from "../components/RankBadge.astro";
 import RarityBadge from "../components/RarityBadge.svelte";
 import SectionTitle from "../components/SectionTitle.astro";
@@ -77,6 +78,7 @@ const toc = [
   { id: "badges", label: "Badges" },
   { id: "monsters", label: "MonsterCard" },
   { id: "boss", label: "BossHeader" },
+  { id: "telegraph", label: "Telegraph" },
   { id: "renders", label: t(lang, "renders.title") },
   { id: "skills", label: "SkillNode" },
   { id: "table", label: "DataTable" },
@@ -152,6 +154,17 @@ const toc = [
       <section id="boss">
         <SectionTitle>BossHeader</SectionTitle>
         {boss && <BossHeader boss={boss} lang={lang} players={3} />}
+      </section>
+
+      <section id="telegraph">
+        <SectionTitle>Telegraph</SectionTitle>
+        <div class="telegraphs">
+          <Telegraph shape="circle" radius={7} origin="target" size={72} label="circle / target" />
+          <Telegraph shape="circle" radius={11} origin="self" size={72} label="circle / self" />
+          <Telegraph shape="cone" radius={11} angle={100} size={72} label="cone 100°" />
+          <Telegraph shape="line" length={20} width={6} size={72} label="line 20 x 6" />
+          <Telegraph shape="ring" radius={16} inner={6} origin="self" size={72} label="ring 6–16" />
+        </div>
       </section>
 
       <section id="renders">
@@ -318,4 +331,5 @@ const toc = [
   .swatch code { font: 400 13px var(--vw-font-mono); color: var(--vw-text-muted); }
   @media (max-width: 1023px) { .sg { grid-template-columns: 1fr; padding-top: 16px; } }
   .minimaps { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; }
+  .telegraphs { display: flex; flex-wrap: wrap; gap: 16px; }
 </style>

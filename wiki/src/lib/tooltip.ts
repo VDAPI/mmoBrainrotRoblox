@@ -99,7 +99,10 @@ export function tooltipData(itemId: string, options: TooltipOptions): TooltipDat
     const defs = load("bonuses").bonuses;
     for (const b of item.fixedBonuses) {
       const def = defs.find((d) => d.id === b.stat);
-      const text = def ? `+${formatNumber(b.v, lang)}${def.percent ? "%" : ""} ${name(def.name, lang)}` : b.stat;
+      // Bonus names are game templates ("+{v}% Physical attack"); older names without {v} get the value in front.
+      const label = def ? name(def.name, lang) : "";
+      const value = formatNumber(b.v, lang, def?.decimals || undefined);
+      const text = !def ? b.stat : label.includes("{v}") ? label.replace("{v}", value) : `+${value}${def.percent ? "%" : ""} ${label}`;
       bonuses.push({ text, legendary: b.stat.startsWith("leg_") });
     }
   } else if (equipment && rarity) {

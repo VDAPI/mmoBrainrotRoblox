@@ -1,0 +1,13 @@
+---
+// Bestiary section (S39): /<lang>/bestiariusz/ (the list) and /<lang>/bestiariusz/<monsterId>/ (a monster page).
+import type { Lang } from "../i18n/routes";
+import BestiaryView from "./BestiaryView.astro";
+import MonsterView from "./MonsterView.astro";
+interface Props {
+  lang: Lang;
+  page?: "index" | "monster";
+  id?: string;
+}
+const { lang, page = "index", id = "" } = Astro.props;
+---
+{page === "monster" ? <MonsterView lang={lang} id={id} /> : <BestiaryView lang={lang} />}

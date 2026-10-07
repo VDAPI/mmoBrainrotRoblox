@@ -83,6 +83,10 @@ MMORPG na Roblox (Margonem w 3D). Luau + Rojo + Wally + Fusion 0.3 + ProfileStor
 - Strona (S36+): `cd wiki`, `npm install`, `npm run dev` (podgląd), `npm run build` + `npm run preview` (z wyszukiwarką),
   `npm run check` (typy, lint, testy, build, linki), `npm run data` (eksport danych), `npm run shots` (zrzuty 390/1440),
   `npm run renders` (S38: rendery potworów, bossów i petów + OG; Python, `tools/wiki-renders/README.md`), `npm run renders:test`.
+  `npm run build` robi też obrazy OG (S39, `scripts/og-images.mjs`); `SHOTS_ONLY=bestiariusz,boss npm run shots` = tylko wybrane.
+- **Po zmianie skryptu bossa** (`src/server/Entities/BossScripts/*`, stałe `local NAZWA = liczba`): `npm run data` i sprawdź
+  teksty w `wiki/src/content/bosses` (liczby tylko jako `{NAZWA}`; brak stałej wywala build). Nowy atak bossa / zdolność
+  Elity II = klucz `boss.<id>.attack.<atak>` / `ability.<id>.name` (PL i EN, test `localization.spec`).
   Komponenty i jak dodać stronę: `docs/WIKI.md` → „Komponenty”.
 - Nowe pole gry na wiki = wpis w schemacie buildera (`Schema.rec`) + wartość w builderze. Liczby tylko z funkcji `Logic`
   i z `Data`; nic z `Data/Codes`, `AdminCommands`, `DevPreset`, `Products` (wyjątek S43: `WikiData/Premium.luau`).

@@ -31,9 +31,11 @@ interface Props {
   noindex?: boolean;
   section?: RouteKey;
   search?: { type: string; meta?: Record<string, string> };
+  /** Share preview (S39): image path on this site (default /img/og/default-art.png) and its alt text. */
+  og?: { image?: string; alt?: string };
 }
 
-const { lang, title, description = t(lang, "site.tagline"), noindex = false, section, search } = Astro.props;
+const { lang, title, description = t(lang, "site.tagline"), noindex = false, section, search, og = {} } = Astro.props;
 const path = Astro.url.pathname;
 
 const alt = Astro.props.alternate ?? alternateOf(path);
@@ -41,6 +43,7 @@ const here = path.startsWith(`/${lang}/`) ? path : href(lang, "home");
 const pagePl = lang === "pl" ? here : alt;
 const pageEn = lang === "en" ? here : alt;
 const fullTitle = title ? `${title} · ${t(lang, "site.name")}` : t(lang, "site.name");
+const ogImage = new URL(og.image ?? "/img/og/default-art.png", SITE_URL).href;
 const data = meta();
 const dataDate = formatDate(data.dataDate, lang);
 
@@ -52,6 +55,7 @@ const navLabel: Record<string, Parameters<typeof t>[1]> = {
   map: "nav.map",
   upgrading: "nav.upgrading",
   regions: "nav.regions",
+  bosses: "nav.bosses",
   home: "nav.home",
   search: "nav.search",
 };
@@ -80,6 +84,17 @@ const navText = (id: string) => t(lang, `nav.${id}` as Key);
     <link rel="alternate" hreflang="en" href={new URL(pageEn, SITE_URL).href} />
     <link rel="alternate" hreflang="x-default" href={new URL(pagePl, SITE_URL).href} />
     <meta name="theme-color" content="#14161B" />
+    <meta property="og:title" content={title || t(lang, "site.name")} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content={search ? "article" : "website"} />
+    <meta property="og:site_name" content={t(lang, "site.name")} />
+    <meta property="og:locale" content={lang === "pl" ? "pl_PL" : "en_US"} />
+    <meta property="og:url" content={new URL(here, SITE_URL).href} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    {og.alt && <meta property="og:image:alt" content={og.alt} />}
+    <meta name="twitter:card" content="summary_large_image" />
     <script is:inline>
       try {
         const saved = localStorage.getItem("vw-theme");

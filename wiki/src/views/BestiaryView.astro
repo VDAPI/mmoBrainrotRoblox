@@ -1,0 +1,311 @@
+---
+// Bestiary (S39, /pl/bestiariusz/, mock-up Bestiariusz-*): every occurring monster variant and every boss rendered
+// statically twice (cards and table rows, both outside the Pagefind index), filters on the left (desktop) or in chip
+// rows (mobile). src/scripts/bestiary.ts filters, sorts and pages by the data-* attributes and keeps the state in the
+// URL (?region=&lv=&type=&q=&sort=&view=&page=). Without JS: the full list sorted by level, no filter panel.
+import Base from "../layouts/Base.astro";
+import Crumbs from "../components/Crumbs.astro";
+import ElementBadge from "../components/ElementBadge.astro";
+import Empty from "../components/Empty.astro";
+import ItemIcon from "../components/ItemIcon.svelte";
+import MonsterCard from "../components/MonsterCard.astro";
+import MonsterImage from "../components/MonsterImage.astro";
+import RankBadge from "../components/RankBadge.astro";
+import { href, type Lang } from "../i18n/routes";
+import { bestiaryEntries, maxLevel, regionTree } from "../lib/bestiary";
+import { levelBands, RANKS, sortEntries } from "../lib/bestiary-filters";
+import { getBoss, getItem, getMonster, load } from "../lib/data";
+import { pluralForm } from "../lib/format";
+import { name, t, type Key } from "../lib/i18n";
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const entries = sortEntries(bestiaryEntries(lang), "level", lang).map((e, i) => ({ ...e, order: i }));
+const regions = regionTree(lang);
+// Bands up to the game's max level; the last one also covers Elite II final levels above it (e.g. 81–104).
+const bands = levelBands(Math.min(maxLevel(entries), load("mechanics").config.MaxLevel ?? maxLevel(entries)));
+bands[bands.length - 1][1] = Math.max(bands[bands.length - 1][1], maxLevel(entries));
+const total = entries.length;
+const countText = `${total} ${t(lang, `bestiary.count.${pluralForm(total, lang)}` as Key)}`;
+const rankLabel = (r: string) => (r === "boss" ? t(lang, "rank.boss") : name(load("mechanics").variants[r]?.name, lang));
+const config = {
+  lang,
+  perPage: 24,
+  perPageMobile: 12,
+  regions: Object.fromEntries(regions.map((r) => [r.id, r.name])),
+  bands,
+  ranks: Object.fromEntries(RANKS.map((r) => [r, rankLabel(r)])),
+  text: {
+    one: t(lang, "bestiary.count.one"),
+    few: t(lang, "bestiary.count.few"),
+    many: t(lang, "bestiary.count.many"),
+    range: t(lang, "bestiary.range"),
+    more: t(lang, "bestiary.more"),
+    remove: t(lang, "bestiary.remove"),
+    sort: { level: t(lang, "bestiary.sort.level"), "-level": t(lang, "bestiary.sort.-level"), name: t(lang, "bestiary.sort.name") },
+    prev: t(lang, "pager.prev"),
+    next: t(lang, "pager.next"),
+    page: t(lang, "pager.page"),
+  },
+};
+const data = (e: (typeof entries)[number]) => ({
+  "data-entry": "",
+  "data-rank": e.rank,
+  "data-min": e.levelMin,
+  "data-max": e.levelMax,
+  "data-places": e.places.join(" "),
+  "data-regions": e.regions.join(" "),
+  "data-key": e.key,
+  "data-name": e.name,
+  "data-order": e.order,
+});
+const placeText = (e: (typeof entries)[number]) => e.placeList[0]?.name ?? "";
+---
+<Base lang={lang} title={t(lang, "bestiary.title")} description={t(lang, "bestiary.lead")} section="bestiary" og={{ image: `/img/og/${lang}/bestiary.jpg`, alt: t(lang, "bestiary.title") }}>
+  <div class="page" data-bestiary>
+    <header class="head">
+      <Crumbs items={[{ label: t(lang, "crumbs.wiki"), href: href(lang, "home") }, { label: t(lang, "bestiary.title") }]} />
+      <div class="titlebar">
+        <h1 class="h1">{t(lang, "bestiary.title")}</h1>
+        <p class="count" aria-live="polite" data-count>{countText}</p>
+      </div>
+    </header>
+
+    <div class="layout">
+      <aside class="filters js-only" aria-label={t(lang, "bestiary.filters")}>
+        <div class="group">
+          <h2 class="vw-label">{t(lang, "bestiary.region")}</h2>
+          <div class="regions" role="group" aria-label={t(lang, "bestiary.region")}>
+            <button type="button" class="region all" data-region="" aria-pressed="true">
+              <span class="dia" style="--c: var(--vw-gold-dark)"></span><span class="rname">{t(lang, "bestiary.all")}</span>
+            </button>
+            {regions.map((r) => (
+              <button type="button" class={`region${r.cave ? " cave" : ""}`} data-region={r.id} aria-pressed="false">
+                <span class="dia" style={`--c: var(--vw-zone-${r.zone})`}></span>
+                <span class="rname">{r.name}</span>
+                <span class="rlv">{r.min}–{r.max}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+        <div class="group">
+          <h2 class="vw-label">{t(lang, "bestiary.level")}</h2>
+          <div class="chips" role="group" aria-label={t(lang, "bestiary.level")}>
+            <button type="button" class="vw-chip" data-lv="" aria-pressed="true">{t(lang, "bestiary.all")}</button>
+            {bands.map((b) => <button type="button" class="vw-chip" data-lv={`${b[0]}-${b[1]}`} aria-pressed="false">{b[0]}–{b[1]}</button>)}
+          </div>
+        </div>
+        <fieldset class="group types">
+          <legend class="vw-label">{t(lang, "bestiary.type")}</legend>
+          {RANKS.map((r) => (
+            <label class={`type rank-${r}`}>
+              <input type="checkbox" value={r} data-type />
+              <span class="box" aria-hidden="true"></span>
+              <span>{rankLabel(r)}</span>
+            </label>
+          ))}
+        </fieldset>
+        <button type="button" class="clear" data-clear>{t(lang, "bestiary.clear")}</button>
+      </aside>
+
+      <div class="results">
+        <div class="toolbar js-only">
+          <label class="searchbox">
+            <span class="vw-sr">{t(lang, "bestiary.search")}</span>
+            <input type="search" placeholder={t(lang, "bestiary.search")} data-q autocomplete="off" spellcheck="false" />
+          </label>
+          <div class="tools">
+          <button type="button" class="sort" data-sort aria-live="polite">
+            <span class="muted">{t(lang, "bestiary.sort")}</span> <strong data-sort-label>{t(lang, "bestiary.sort.level")}</strong>
+          </button>
+          <div class="views" role="group" aria-label={t(lang, "bestiary.view")}>
+            <button type="button" data-view="cards" aria-pressed="true">{t(lang, "bestiary.view.cards")}</button>
+            <button type="button" data-view="table" aria-pressed="false">{t(lang, "bestiary.view.table")}</button>
+          </div>
+          <button type="button" class="clear mobile-clear" data-clear>{t(lang, "bestiary.clear")}</button>
+          </div>
+        </div>
+        <div class="active js-only" data-active hidden>
+          <span class="muted">{t(lang, "bestiary.active")}</span>
+          <span class="active-chips" data-active-chips></span>
+        </div>
+
+        <ul class="grid" data-list="cards" data-pagefind-ignore>
+          {entries.map((e, i) => (
+            <li {...data(e)}>
+              {e.rank === "boss" ? (
+                <MonsterCard boss={getBoss(e.id)} lang={lang} href={e.href} />
+              ) : (
+                <MonsterCard monster={getMonster(e.id)} variant={e.rank} lang={lang} href={e.href} eager={i < 4} />
+              )}
+            </li>
+          ))}
+        </ul>
+
+        <table class="vw-table table" data-list="table" data-pagefind-ignore hidden>
+          <caption class="vw-sr">{t(lang, "bestiary.title")}</caption>
+          <thead>
+            <tr>
+              <th scope="col"><span class="vw-sr">{t(lang, "renders.title")}</span></th>
+              <th scope="col">{t(lang, "col.monster")}</th>
+              <th scope="col">{t(lang, "col.level")}</th>
+              <th scope="col">{t(lang, "col.type")}</th>
+              <th scope="col">{t(lang, "col.element")}</th>
+              <th scope="col">{t(lang, "col.region")}</th>
+              <th scope="col">{t(lang, "col.loot")}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {entries.map((e) => {
+              const drop = e.signature ? getItem(e.signature) : undefined;
+              const rarity = drop ? drop.rarities[drop.rarities.length - 1] : undefined;
+              return (
+                <tr {...data(e)} data-href={e.href}>
+                  <td class="thumb"><span class={`mini rank-${e.rank}`}><MonsterImage id={e.id} kind={e.rank === "boss" ? "boss" : "monster"} variant={e.rank === "boss" ? "normal" : e.rank} size="thumb" stage="card" alt="" /></span></td>
+                  <td><a class="tname" href={e.href}>{e.name}</a></td>
+                  <td class="lv">{e.levelMin === e.levelMax ? e.levelMin : `${e.levelMin}–${e.levelMax}`}</td>
+                  <td><RankBadge rank={e.rank} lang={lang} /></td>
+                  <td><ElementBadge element={e.element} damageKind={e.damageKind} lang={lang} /></td>
+                  <td class="place"><span class="dia" style={`--c: var(--vw-zone-${e.placeList[0]?.zone ?? "yellow"})`}></span>{placeText(e)}</td>
+                  <td>
+                    {drop ? (
+                      <span class="drop"><ItemIcon glyph={drop.glyph} color={drop.color} rarity={rarity} size={28} /><span style={`color: var(--vw-r-${rarity}-text)`}>{name(drop.name, lang)}</span></span>
+                    ) : <span class="muted">—</span>}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+
+        <div class="empty" data-empty hidden>
+          <Empty title={t(lang, "bestiary.none")} text={t(lang, "bestiary.noneText")}>
+            <button type="button" class="vw-btn" data-clear>{t(lang, "bestiary.clear")}</button>
+          </Empty>
+        </div>
+
+        <div class="foot js-only">
+          <p class="muted" data-range></p>
+          <nav class="vw-pager" data-pager aria-label={t(lang, "pager.page", { n: 1 })}></nav>
+          <button type="button" class="vw-btn more" data-more hidden></button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script type="application/json" id="bestiary-config" set:html={JSON.stringify(config)} />
+</Base>
+
+<script>
+  import "../scripts/bestiary";
+</script>
+
+<style>
+  .page { max-width: 1440px; margin: 0 auto; padding: 40px 48px 72px; }
+  .head { margin-bottom: 28px; }
+  .titlebar { display: flex; align-items: baseline; gap: 24px; margin-top: 12px; }
+  .h1 { margin: 0; font: 700 72px/1 var(--vw-font-display); color: var(--vw-gold-bright); }
+  .count { margin: 0; font-size: 18px; color: var(--vw-text-muted); }
+  .layout { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 32px; align-items: start; }
+  :global(html:not(.js)) .layout { grid-template-columns: minmax(0, 1fr); }
+  :global(html:not(.js)) .js-only { display: none !important; }
+  .muted { color: var(--vw-text-muted); }
+
+  .filters { display: flex; flex-direction: column; gap: 28px; }
+  .group { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; border: 0; min-width: 0; }
+  .group h2, .group legend { margin: 0 0 4px; padding: 0; }
+  .regions { display: flex; flex-direction: column; gap: 6px; }
+  .region { display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 14px; font: 700 16px/1.1 var(--vw-font-ui); color: var(--vw-text);
+    background: var(--vw-panel); border: 1px solid var(--vw-border); text-align: left; cursor: pointer; }
+  .region.cave { margin-left: 18px; min-height: 40px; font-size: 15px; }
+  .region:hover { border-color: var(--vw-gold-dark); }
+  .region[aria-pressed="true"] { border-color: var(--vw-gold); background: rgba(232, 194, 90, .10); font-weight: 800; }
+  .rname { flex: 1; min-width: 0; }
+  .rlv { font-size: 13px; color: var(--vw-text-muted); font-weight: 500; white-space: nowrap; }
+  .dia { flex-shrink: 0; width: 9px; height: 9px; background: var(--c); transform: rotate(45deg); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .types { gap: 6px; }
+  .type { display: flex; align-items: center; gap: 12px; min-height: 40px; padding: 0 14px; background: var(--vw-panel); border: 1px solid var(--vw-border); font-weight: 700; cursor: pointer; color: var(--c); --c: var(--vw-text-soft); }
+  .type.rank-elite { --c: var(--vw-gold-bright); } .type.rank-elite2 { --c: var(--vw-r-legendary-text); } .type.rank-boss { --c: var(--vw-zone-red-text); }
+  .type input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .box { width: 16px; height: 16px; border: 1.5px solid currentColor; display: inline-flex; align-items: center; justify-content: center; }
+  .type input:checked + .box { background: currentColor; }
+  .type input:checked + .box::after { content: ""; width: 4px; height: 8px; border: solid var(--vw-bg); border-width: 0 2px 2px 0; transform: translateY(-1px) rotate(45deg); }
+  .type:has(input:focus-visible) { box-shadow: var(--vw-focus); }
+  .type:has(input:checked) { border-color: currentColor; }
+  .clear { align-self: flex-start; min-height: 44px; padding: 0; background: none; border: 0; color: var(--vw-gold); font: 800 15px/1 var(--vw-font-ui); cursor: pointer; }
+  .clear:hover { color: var(--vw-gold-bright); text-decoration: underline; }
+
+  .toolbar { display: flex; gap: 12px; margin-bottom: 16px; }
+  .searchbox { flex: 1; }
+  .tools { display: flex; gap: 12px; }
+  .searchbox input { width: 100%; height: 48px; padding: 0 16px; font: 500 17px/1 var(--vw-font-ui); color: var(--vw-text); background: var(--vw-bg);
+    border: 1px solid var(--vw-gold-dark); box-shadow: inset 0 2px 6px rgba(0, 0, 0, .35); }
+  .searchbox input:focus { outline: none; box-shadow: var(--vw-focus); }
+  .sort { height: 48px; padding: 0 16px; background: var(--vw-panel); border: 1px solid var(--vw-border); color: var(--vw-text); font: 500 15px/1 var(--vw-font-ui); cursor: pointer; white-space: nowrap; }
+  .views { display: flex; border: 1px solid var(--vw-border); }
+  .views button { height: 46px; padding: 0 16px; background: transparent; border: 0; color: var(--vw-text-muted); font: 800 13px/1 var(--vw-font-ui); letter-spacing: .12em; text-transform: uppercase; cursor: pointer; }
+  .views button[aria-pressed="true"] { background: var(--vw-panel-raised); color: var(--vw-gold-bright); }
+  .mobile-clear { display: none; }
+  .active { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: -4px 0 16px; }
+  .active[hidden] { display: none; }
+  .active-chips { display: contents; }
+  .active-chips :global(button) { min-height: 36px; }
+
+  .grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+  .grid > li[hidden], .grid[hidden] { display: none; }
+  .table[hidden], .empty[hidden], .more[hidden] { display: none; }
+  .table td { height: 56px; }
+  .thumb { width: 52px; padding-right: 0; }
+  .mini { display: block; width: 40px; height: 40px; border: 1px solid var(--vw-gold-dark); overflow: hidden; }
+  .mini.rank-elite { border-color: var(--vw-gold-bright); } .mini.rank-elite2 { border-color: var(--vw-r-legendary); } .mini.rank-boss { border-color: var(--vw-zone-red); }
+  .mini :global(.mob) { aspect-ratio: auto; }
+  .tname { font-weight: 800; color: var(--vw-text); }
+  .lv { color: var(--vw-gold-bright); font-weight: 800; white-space: nowrap; }
+  .place { white-space: nowrap; }
+  .place .dia { display: inline-block; margin-right: 8px; }
+  .drop { display: inline-flex; align-items: center; gap: 10px; font-weight: 800; font-size: 15px; }
+  .foot { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 24px; }
+  .foot p { margin: 0; }
+  .more { width: 100%; min-height: 48px; }
+
+  @media (max-width: 1279px) { .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  @media (max-width: 1023px) {
+    .page { padding: 24px 24px 64px; }
+    .layout { display: flex; flex-direction: column; align-items: stretch; gap: 12px; }
+    .results, .toolbar { display: contents; }
+    .results > * { order: 1; }
+    .toolbar > .searchbox { order: -2; }
+    .filters { order: -1; }
+    .toolbar > .tools { order: 0; align-items: center; justify-content: space-between; }
+    .filters, .filters .group { min-width: 0; max-width: 100%; }
+    .toolbar > .searchbox { flex: none; width: 100%; }
+    .regions, .chips { flex-direction: row; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; scrollbar-width: thin; }
+    .chips .vw-chip { flex-shrink: 0; min-height: 44px; }
+    .region, .region.cave { flex-shrink: 0; margin: 0; }
+    .rlv { display: none; }
+    .types { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .type { justify-content: center; min-height: 44px; padding: 0 6px; }
+    .box { display: none; }
+    .type:has(input:checked) { background: color-mix(in srgb, var(--c) 18%, var(--vw-panel)); }
+    .filters { gap: 12px; }
+    .group > .vw-label { display: none; }
+    .filters > .clear { display: none; }
+    .views { display: none; }
+    .mobile-clear { display: inline-flex; align-items: center; margin-left: auto; }
+    .sort { height: 44px; padding: 0; background: none; border: 0; }
+    .table { display: none !important; }
+  }
+  @media (max-width: 767px) {
+    .page { padding: 16px 16px 48px; }
+    .head { margin-bottom: 16px; }
+    .titlebar { justify-content: space-between; }
+    .h1 { font-size: 44px; }
+    .count { font-size: 15px; }
+    .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .searchbox input { height: 50px; }
+    .foot { flex-direction: column; align-items: stretch; }
+    .foot p, .vw-pager { display: none; }
+  }
+</style>

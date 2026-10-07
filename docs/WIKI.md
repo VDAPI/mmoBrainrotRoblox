@@ -125,7 +125,7 @@ przełomy umiejętności, `Combat`, `Stats.Formula`) jako `data` (typ `Json`).
 | `areas.json` | `areas`: Area[], `groups`: Record<string, SpawnGroup[]>, `maps`: Record<string, MapFeatures> | `Data/Areas` (obszary, drogi, woda, wejścia jaskiń, miejsca NPC, kotwice), sumy grup i odrodzenia z `Data/Spawns`; od S37 `groups` = grupy każdej mapy regionu i jaskini (`Data/Spawns`: pozycja, wariant, rodzaje, liczność, poziomy, odrodzenie, obszar) |
 | `blessings.json` | `blessings`: Blessing[], `duration`: number, `elixirDuration`: number, `elixirValue`: number, `elixirs`: Elixir[], `lines`: string[] | `Data/Blessings` |
 | `bonuses.json` | `bonuses`: Bonus[], `classStats`: Record<string, ClassId[]>, `frequency`: Record<string, Record<string, Record<string, number>>>, `pools`: Record<string, string[]>, `rolls`: number | `Data/Bonuses`; zakresy `ItemRoll.rollBonusValue(id, próg, r, 0|1)`; częstość: Monte Carlo `ItemRoll.rollItem` |
-| `bosses.json` | `bosses`: Boss[], `countdown`: number, `dailyRuns`: number, `entryRange`: number, `releaseAfter`: number | `Data/Bosses`, `LootTables.bosses`; `MonsterStats.compute(kind, poziom, "boss")` z `BossScaling.hpMultiplier`; ataki jak zdolność Elity II (`Damage.computeDamage` + `StubRng`); łup: Monte Carlo `Loot.rollBossLoot`; rzut osobisty `Loot.bossChances` |
+| `bosses.json` | `bosses`: Boss[], `countdown`: number, `dailyRuns`: number, `entryRange`: number, `releaseAfter`: number | `Data/Bosses`, `LootTables.bosses`; `MonsterStats.compute(kind, poziom, "boss")` z `BossScaling.hpMultiplier`; ataki jak zdolność Elity II (`Damage.computeDamage` + `StubRng`); łup: Monte Carlo `Loot.rollBossLoot`; rzut osobisty `Loot.bossChances`; od S39 `attacks[].name` (`boss.<id>.attack.<atak>`) i `scriptConsts` (stałe `local NAZWA = liczba` ze skryptu `src/server/Entities/BossScripts/<id>.luau` czytanego jako tekst) |
 | `caves.json` | `caves`: Cave[] | `Data/Areas` (`caves.list`, `entranceOf`, `arrivalOf`), sumy z `Data/Spawns` |
 | `classes.json` | `classes`: ClassInfo[] | `Data/Classes`, `Items.startingGear` |
 | `cosmetics.json` | `cosmetics`: Cosmetic[], `kinds`: CosmeticKind[] | `Data/Cosmetics` (bez ceny) |
@@ -139,11 +139,11 @@ przełomy umiejętności, `Combat`, `Stats.Formula`) jako `data` (typ `Json`).
 | `mapsearch.json` | `limit`: number, `pl`/`en`: MapSearchEntry[], `vectors`: MapSearchVector[] | S37: `MapSearch.build(Locale.T w języku)` (rodzaj, id, mapa, x, z, teksty), wektory `MapSearch.search` (zapytanie → `rodzaj:id` w kolejności) |
 | `mechanics.json` | `areaProfiles`: Record<string, AreaProfileInfo>, `bossDailyRuns`: number, `combat`: Json, `config`: Record<string, number>, `formula`: Json, `variants`: Record<string, VariantInfo>, `zones`: Record<string, ZoneInfo> | `Data/Combat`, `Stats.Formula`, jawna lista kluczy `Config`, strefy (`zone.*`, `pvp.rules.*`, kolory z `UI/Theme.luau` jako tekst), warianty, profile expowisk `Data/AreaProfiles` (S33) |
 | `meta.json` | `counts`: Record<string, number>, `dataCommit`: string, `dataDate`: string, `dataHash`: string, `features`: Record<string, boolean>, `rolls`: number, `schemaVersion`: number | wersja schematu, commit i data danych (`git log -1 -- src/shared tools/WikiData`), `dataHash` (odcisk plików), funkcje gry, liczności, liczba rzutów |
-| `monsters.json` | `monsters`: Monster[] | `Data/Monsters`, `Data/Spawns`; `MonsterStats.compute`, `Damage.computeDamage` + `StubRng` (min–max), `Exp.monsterExp` i `MonsterStats.gold` × `kindReward`; łup: `Rarities`, `LootTables`, Monte Carlo `Loot.rollMonsterLoot`; `family` = `MonsterLooks.get(id, region).plan` |
+| `monsters.json` | `monsters`: Monster[] | `Data/Monsters`, `Data/Spawns`; `MonsterStats.compute`, `Damage.computeDamage` + `StubRng` (min–max), `Exp.monsterExp` i `MonsterStats.gold` × `kindReward`; łup: `Rarities`, `LootTables`, Monte Carlo `Loot.rollMonsterLoot`; `family` = `MonsterLooks.get(id, region).plan`; od S39 `ability.name` (`ability.<id>.name`) |
 | `npcs.json` | `npcs`: Npc[], `services`: Record<string, Name> | `Data/Npcs`; od S37 `role` (`npc.<id>.role`) i nazwy usług (`npc.service.<id>`) |
 | `portals.json` | `portals`: PortalInfo[] | `Data/Portals` |
 | `progression.json` | `expToNext`: LevelExp[], `levelDiff`: LevelDiff[], `maxLevel`: number, `skillPointsFromLevel`: number, `skillPointsPerLevel`: number, `statPointsPerLevel`: number, `variantExp`: Record<string, number> | `Exp.expToNext`, `Exp.levelDiffMultiplier`, `Data/Progression` |
-| `quests.json` | `daily`: DailyQuests, `levelSlack`: number, `main`: MainQuest[], `side`: SideQuest[], `sideLevelSlack`: number, `sideMaxActive`: number | `Data/Quests` (główne, poboczne S27, dzienne: `objective(level)`, `Daily.reward(level)`); etykiety celów z kluczy `quest.obj.*` jak `UI/QuestText.objective`; od S37 cel ma `where` = `{ map, area?, cave?, npc? }` (`AreaAdvice.forKind` / `caveFor`, mapa regionu, loch bossa, mapa NPC, kotwica) |
+| `quests.json` | `daily`: DailyQuests, `levelSlack`: number, `main`: MainQuest[], `side`: SideQuest[], `sideLevelSlack`: number, `sideMaxActive`: number | `Data/Quests` (główne, poboczne S27, dzienne: `objective(level)`, `Daily.reward(level)`); etykiety celów z kluczy `quest.obj.*` jak `UI/QuestText.objective`; od S37 cel ma `where` = `{ map, area?, cave?, npc? }` (`AreaAdvice.forKind` / `caveFor`, mapa regionu, loch bossa, mapa NPC, kotwica); od S39 `itemName` celów z przedmiotem (`quest.item.<item>`) |
 | `rarities.json` | `rarities`: Rarity[], `sources`: Record<string, DropSource>, `upgradeStatPerLevel`: number | `Data/Rarities` (drabina S30, `itemDrops`, `dropWeights`, `cap`) |
 | `recipes.json` | `groups`: RecipeGroup[], `queueSlots`: number, `recipes`: AlchemyRecipe[] | `Data/Recipes` |
 | `search.json` | `entries`: SearchEntry[], `vectors`: NormalizeVector[] | pozostałe pliki + `MapSearch.normalize` (klucz, wektory testowe) |
@@ -223,14 +223,15 @@ do HTML bez JS, wyspy importują te same pliki). Dane przez `src/lib/data.ts` (`
 | `ItemIcon.svelte` | `{ glyph, color, rarity?, size? = 40, src?, alt? }` (S40 dokłada `src` z manifestu ikon) |
 | `RarityBadge.svelte` | `{ rarity, label }` (nazwa z `rarities.json` podaje wywołujący — komponent działa też w wyspach) |
 | `MonsterImage` | `{ id, variant?, kind?: "monster"\|"boss"\|"pet", stage?: "card"\|"page"\|"portrait"\|"none", size?: "thumb"\|"full", alt, eager?, element?, class? }` (S38: render z `src/lib/renders.ts` na ciemnej scenie, inaczej wzór z rombem; patrz „Obrazy potworów”) |
-| `MonsterCard` | `{ monster, variant?, level?, lang, href? }` |
-| `BossHeader` | `{ boss, lang, players?: 1-5 }` |
+| `MonsterCard` | `{ monster?, boss?, variant?, level?, lang, href?, eager? }` — S39: poziomy końcowe „Poz. 2–6 · rodzina”, pierwsze miejsce + „+N”, łup specjalny (`signatureDrop`, u bossa pierwszy nazwany przedmiot); `boss` = karta bossa (czerwona ramka) |
+| `BossHeader` | `{ boss, lang, players?: 1-5, notes?: { phase, title, html }[], heading?: "h1"\|"h2" }` — S39: chipy graczy 1–5 (zmieniają każdy `[data-by-players]` na stronie), zakładki faz „Faza 1 · 100–70%” z okrzykiem i obrazkiem `-p2`/`-p3`, panele mechanik (ataki z `Telegraph`, przywołania, tarcza, przyspieszenie, wściekłość, `notes`); bez JS wszystkie fazy pod sobą; zachowanie `src/scripts/boss.ts` |
+| `Telegraph` (S39) | `{ shape, radius?, inner?, angle?, length?, width?, origin?, size?, label? }` — SVG kształtu ataku (koło, stożek, pas, pierścień z bezpiecznym środkiem), rzucający jako złoty romb; w `/styleguide#telegraph` |
 | `SkillNode` / `SkillEdge` | `{ glyph?, state, rank, max, active?, capstone?, selected?, label }` / `{ active? }` |
 | `DataTable` | `{ columns: { key, label, sortable?, align?, mobile?, sort? }[], rows, caption, html? }` |
 | `Chip`, `Pager` | `{ pressed?, disabled?, href?, count? }`, `{ page, pages, hrefFor, lang? }` |
 | `Callout` | `{ kind?: "info"\|"tip"\|"warn"\|"changed"\|"spoiler", title?, date?, lang? }` |
 | `Bar` | `{ kind?: "hp"\|"mana"\|"energy"\|"exp", value, max, label?, size?, lang? }` |
-| `ZoneBadge`, `RankBadge`, `ElementBadge` | `{ zone, lang }`, `{ rank, lang }`, `{ element?, lang }` |
+| `ZoneBadge`, `RankBadge`, `ElementBadge` | `{ zone, lang }`, `{ rank, lang }`, `{ element?, damageKind?, lang }` (S39: bez żywiołu „Fizyczne” albo „Magiczne”) |
 | `Crumbs`, `Toc` | `{ items: { label, href? }[] }`, `{ items: { id, label, sub? }[], lang }` |
 | `Empty`, `Skeleton` | `{ title, text? }` (+ slot na akcję), `{ shape?, lines? }` |
 | `SoonLink` | `{ href: string\|null, lang }` — link albo tekst z „Wkrótce” |
@@ -245,11 +246,22 @@ sąsiedzi, potwory mapy, zadania miejsca, adresy `placeHref` / `mapHref` / `mapL
 elementów SVG: `area-`, `cave-`, `portal-`, `npc-`, `group-`, `boss-`, `node-`, `link-a--b`, `room-<jaskinia>-<n>`.
 Link do miejsca na mapie z innych stron: `mapHref(lang, mapLinkFor(id))`.
 
-**Strona encji** (S37–S43): `<Base lang title section search={{ type, meta }}>` — `type` z kluczy `item`, `monster`,
+**Strona encji** (S37–S43): `<Base lang title section search={{ type, meta }} og={{ image?, alt? }}>` (S39: `og:*` i
+`twitter:card` na każdej stronie, domyślny obraz `/img/og/default-art.png`; obraz strony generuje `scripts/og-images.mjs`
+z wpisu w `src/lib/og.ts`) — `type` z kluczy `item`, `monster`,
 `region`, `quest`, `skill`, `guide`; `meta` trafia do Pagefind (`title`, `line`, `rarity`, `glyph`, `color`,
 `tooltip` dla przedmiotów). **Nowa strona:** wpis w `src/views/registry.ts` (`key`, `view`, `getPaths(lang)`),
 `ready: true` w `src/lib/sections.ts` (wtedy rekordy zastępcze tej sekcji znikają z indeksu, a strona „Wkrótce”
 z rejestru), linia w `scripts/shots.pages.mjs`.
+
+**Bestiariusz (S39):** `src/lib/bestiary-filters.ts` (czyste: kontrakt adresu `?region=&lv=&type=&q=&sort=&view=&page=`,
+`matches`, `sortEntries`, `levelBands`; współdzielone przez build i skrypt strony), `src/lib/bestiary.ts` (wpisy, miejsca,
+`signatureDrop`, `monsterHref` / `bossHref`, drzewo regionów), `src/lib/monster.ts` (komórki statystyk, wiersze łupu,
+teksty zdolności i ataków z szablonów, powiązania), `src/lib/bossnotes.ts` (`fillConsts`), `src/lib/og.ts` (manifest OG).
+Skrypty stron w `src/scripts/` (`bestiary.ts`, `monster.ts`, `boss.ts`, `tabs.ts` — dostępne zakładki ze strzałkami); dane
+jednej strony w `<script type="application/json">`, nigdy import JSON. Budżety JS: `scripts/budgets.mjs` w `npm run check`.
+Mechaniki skryptowe bossów: `src/content/bosses/{pl,en}/*.md` (frontmatter `boss`, `phase`, `title`; liczby tylko jako
+`{NAZWA}` ze `scriptConsts`, brak stałej = błąd buildu).
 
 ## Obrazy potworów (S38)
 
@@ -304,7 +316,42 @@ z rejestru), linia w `scripts/shots.pages.mjs`.
   potworów, `BossHeader`, „Potwór tygodnia”, galerii `/pl/styleguide/#renders` i w hero głównej (boss pod słupem). Obrazy
   OG `og/base.png`, `og/default-art.png`. `npm run renders:test` (9 testów Pythona), Vitest +2 pliki.
 
+- **S39 (bestiariusz):** `/pl/bestiariusz/` (97 wpisów: 93 występujące warianty + 4 bossy; filtry w adresie, karty i
+  tabela, 24 na stronę / 12 + „Pokaż więcej” na telefonie), 50 stron potworów (warianty, poziomy, łup z podglądem,
+  zdolności, miejsca z minimapami, powiązania), `/pl/bossy/` + 4 strony bossów (gracze 1–5, fazy i mechaniki, łup wspólny,
+  przedmioty, rzut osobisty, wejście). 110 obrazów OG (`npm run build`, ok. 7 s, 48 KB na obraz). Sekcje `bestiary` i
+  `bosses` mają `ready: true` (rekordy zastępcze potworów zniknęły z Pagefind; nazwy elit indeksują się ze stron rodzajów).
+  JS: bestiariusz 3,8 KB, potwór 1,3 KB, boss 0,9 KB gzip. Vitest 55 testów, Lune 758.
+
 ## Decyzje
+
+- **S39** Kod gry: tylko brakujące klucze lokalizacji `ability.<id>.name` (12) i `boss.<id>.attack.<atak>` (16) — wiki ich
+  potrzebuje, a gra może użyć ich przy telegrafach (§8). Mnożnik EXP/złota rodzaju (S32) już jest w `MonsterStats.kindReward`
+  (S34), więc A.6 bez zmian. Eksporter czyta skrypty bossów jako tekst (`ctx.readText`), `local NAZWA = liczba`.
+- **S39** Lista = wpisy wariantów (wilk, Wilk Wataha, Alfa Watahy osobno), nie rodzaje; tylko warianty ze spawnami. Wilk
+  nie ma elit w świecie, więc „Alfa Watahy” nie ma ani wpisu, ani zakładki (wyszukiwarka znajduje za to np. „Krwawy
+  Ruben” na stronie bandyty). Poziomy to poziomy końcowe (spawn + `levelAdd`).
+- **S39** Przedziały poziomów co 20 do `MaxLevel` (100); ostatni obejmuje poziomy końcowe Elit II ponad 100 („81–104”).
+  24 wpisy na stronę na desktopie, 12 + „Pokaż więcej” na telefonie (makieta: 8 / 6 przy 16 wpisach).
+- **S39** `signatureDrop` = materiał wariantu wypadający z najmniejszej liczby rodzajów, jeśli najwyżej z 5 (zwykle część
+  potwora: Wilcza Skóra, Kieł Dzika); inaczej „Brak unikatowego łupu”. U bossa pierwszy nazwany przedmiot.
+- **S39** Łup potwora: grupy ekwipunku na slot (szansa „co najmniej jeden przedmiot slotu”, poziomy przedmiotu, ramka
+  najwyższej dozwolonej rzadkości, rozwinięcie do 5 najczęstszych), materiały (podwójne wpisy bazowy + wariantu scalone z
+  szansą zmierzoną), przedmioty zadań (`collect` z `chance`), złoto; od najrzadszego. Domyślny podgląd: najrzadsza grupa.
+- **S39** Rodziny z planu ciała (`family.<plan>`, 19 etykiet), np. ryś ma plan `canine` → „Psowaty”: wiki nie wymyśla
+  podziału, którego nie ma w danych. Opis potwora z szablonu (miejsca, poziomy, atak, rodzaj obrażeń).
+- **S39** Mobile potwora ma „Gdzie występuje” (makieta nie ma) po umiejętnościach; tabela wszystkich poziomów zwinięta.
+  Zdolność Elity II pokazana tylko, gdy Elita II występuje w świecie (w innych zakładkach z dopiskiem).
+- **S39** Boss: nazwy faz z makiety zastępuje „Faza N · od–do%” + okrzyk z gry; typy mechanik: Obszar / Skok (ataki),
+  Przyzwanie, Strefa (tarcza przywołań i mechaniki skryptowe), Wzmocnienie (`haste`), Zabicie (wściekłość). Liczba
+  koksowników Vaelgratha nie trafiła do tekstu (to tablica, nie stała liczbowa).
+- **S39** OG w `dist/img/og/<lang>/{monster,boss}/<id>.jpg` i `bestiary.jpg` (generowane przy każdym buildzie, nie
+  commitowane): `satori` (tekst, fonty `.woff` latin + latin-ext jako dwie rodziny) + `sharp` (baza `og/base.png`, render,
+  poświata). Kolory rang jako stałe hex w `src/lib/og.ts` (satori nie czyta zmiennych CSS).
+- **S39** Bonusy przedmiotów to szablony gry („+{v}% Ataku fizycznego”): `tooltipData` wstawia wartość w `{v}` (wcześniej
+  dopisywała ją przed nazwą, a „{v}” zostawało).
+- **S39** `npm run shots` przyjmuje `SHOTS_ONLY=prefiks,…` (tylko wybrane strony); 3 losowe potwory przy każdym uruchomieniu
+  (id w konsoli).
 
 - **S38** Moduł zrzutu wyglądów to `tools/WikiLooks.luau` (plan: `LookDump.luau`): na Windows `LookDump.luau` i
   `lookdump.luau` to ten sam plik. Stary tryb `lookdump.luau out.json <ids…>` daje te same bajty (test z próbką
@@ -405,9 +452,15 @@ z rejestru), linia w `scripts/shots.pages.mjs`.
 
 ## Niedokończone
 
+- **S39** Różnice względem makiet: nagłówek bossa na telefonie to render nad nazwą (nie tło z nazwą na nim); tabela
+  bestiariusza bez sortowania klikiem w nagłówek; pole „Twój poziom” (pasma `LevelBand`) i `meta.image` w rekordach Pagefind
+  nie zrobione; opisy lore z kolekcji `src/content/bestiary` (S42–S43) nie podpięte; pływający tooltip
+  (`tooltip-float.ts`) dalej nie zrobiony — podgląd łupu działa w prawej kolumnie, a pod tabelą na telefonie. Linki do
+  przedmiotów i zadań pojawią się same, gdy S40 / S42 włączą sekcje (`sectionHref`). Zrzuty sprawdzone w ciemnym motywie.
+
 - **S38** Cząsteczki (`fx`: żar, szron, mgła, zarodniki) nie są renderowane; `CornerWedgePart` jako klin. Wygląd z
   `asset` (prawdziwy model) obecnie nie występuje — render pokaże wtedy wersję proceduralną (flaga `asset` w manifeście).
-  Zakładki faz w `BossHeader` z obrazkami `-p2`/`-p3` — S39. Wywerny i wyrmy przy dużej rozpiętości skrzydeł nadal
+  Zakładki faz w `BossHeader` z obrazkami `-p2`/`-p3` — zrobione w S39. Wywerny i wyrmy przy dużej rozpiętości skrzydeł nadal
   mniejsze od reszty (płaskie skrzydła w danych `wing`). Zrzuty wykonane w ciemnym motywie; jasny motyw hero sprawdzony
   tylko w kodzie (przyciemnienie z tokenów).
 

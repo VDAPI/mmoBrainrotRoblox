@@ -170,6 +170,7 @@ export interface Boss {
   range: number;
   region: string;
   requiredLevel: number;
+  scriptConsts: Record<string, number>;
   size: number;
   summons: BossSummon[];
   timeLimit: number;
@@ -188,6 +189,7 @@ export interface BossAttack {
   inner?: number;
   leap?: boolean;
   length?: number;
+  name?: Name;
   phases: number[];
   radius?: number;
   shape: string;
@@ -859,6 +861,7 @@ export interface QuestObjective {
   chance?: number;
   hold?: number;
   item?: string;
+  itemName?: Name;
   label: Name;
   level?: number;
   map?: string; // id in maps.json

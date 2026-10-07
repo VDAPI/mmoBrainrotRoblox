@@ -26,6 +26,14 @@ export function formatPercent(share: number, lang: Lang): string {
   return `${formatNumber(Number(pct.toFixed(decimals)), lang)}%`;
 }
 
+/** Drop chance 0..1: ≥ 10% whole, ≥ 1% one decimal, below two decimals, under 0.01% "< 0,01%". */
+export function formatChance(share: number, lang: Lang): string {
+  const pct = share * 100;
+  if (pct > 0 && pct < 0.01) return `< ${formatNumber(0.01, lang, 2)}%`;
+  const decimals = pct >= 10 ? 0 : pct >= 1 ? 1 : 2;
+  return `${formatNumber(Number(pct.toFixed(decimals)), lang)}%`;
+}
+
 /** Polish plural form: 1 wynik, 2–4 wyniki (but 12–14 wyników), 5+ wyników; English: one / many. */
 export function pluralForm(n: number, lang: Lang): "one" | "few" | "many" {
   if (lang === "en") {

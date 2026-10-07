@@ -26,6 +26,9 @@ local function build(): any
 		rolls = ROLLS,
 		exists = fs.isFile,
 		themeText = fs.readFile("src/client/UI/Theme.luau"),
+		readText = function(path: string): string?
+			return if fs.isFile(path) then fs.readFile(path) else nil
+		end,
 		git = { commit = "test", date = "test" },
 	})
 end
@@ -252,6 +255,53 @@ T.describe("Wiki export: consistency", function()
 			end
 		end
 		T.expect(checked > 50).toBe(true)
+	end)
+
+	T.it("gives every Elite II ability damage, loot groups in 0..1 and bosses their script numbers (S39)", function()
+		for _, m in d.monsters.monsters do
+			local e2 = m.variants.elite2
+			if m.ability and e2 then
+				for _, row in e2.levels do
+					if not (row.abilityMin and row.abilityMin > 0 and row.abilityMax >= row.abilityMin) then
+						error(`{m.id}: no ability damage on level {row.level}`)
+					end
+				end
+			end
+			for variant, info in m.variants do
+				local loot = info.loot
+				local sum = 0
+				for slot, g in loot.groups do
+					if g.chance < 0 or g.chance > 1 then
+						error(`{m.id} {variant} {slot}: chance {g.chance}`)
+					end
+					sum += g.chance
+				end
+				-- One item per kill: the groups are disjoint, so they add up to the item chance.
+				if loot.itemMin == 1 and loot.itemMax == 1 and not loot.itemExtra then
+					local p = loot.itemChance
+					local sigma = math.sqrt(p * (1 - p) / loot.rolls)
+					if math.abs(sum - p) > 3 * sigma + 1e-3 then
+						error(`{m.id} {variant}: groups {sum}, item chance {p}`)
+					end
+				end
+			end
+		end
+		local consts: { [string]: any } = {}
+		for _, b in d.bosses.bosses do
+			consts[b.id] = b.scriptConsts
+			for i = 2, #b.byPlayers do
+				T.expect(b.byPlayers[i].hp > b.byPlayers[i - 1].hp).toBe(true)
+			end
+			for _, a in b.attacks do
+				if not a.name then
+					error(`{b.id}.{a.id}: no name`)
+				end
+			end
+		end
+		T.expect(consts.azgor.SAFE_START).toBe(50)
+		T.expect(consts.azgor.SHRINK_SECONDS ~= nil).toBe(true)
+		T.expect(consts.vaelgrath.WARM_RADIUS ~= nil).toBe(true)
+		T.expect(consts.vaelgrath.FLIGHT_SECONDS ~= nil).toBe(true)
 	end)
 
 	T.it("shows the sample records of the plan", function()
