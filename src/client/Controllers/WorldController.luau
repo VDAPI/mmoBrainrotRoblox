@@ -7,6 +7,8 @@
 --   * mood (S26): AmbienceController hands over the current area's light modulation (Data/Ambience), applied on
 --     top of the map's light and the day and night blend, re-applied ~10 times a second while it changes,
 --   * loading screen on MapTransition (map name, levels, zone, a random tip), faded in and out,
+--   * GroundCheck: the server holds the character anchored after a spawn or teleport until this client has the
+--     ground under the target streamed in (server Placement), answered with GroundReady,
 --   * portals (tag "Portal"): nameplate with the target map and levels, "Travel [E]" prompt; entering a red
 --     zone or a map above your level asks for confirmation first.
 -- Also registers the world map window (M, UI/Screens/WorldMap; S25: interactive cards, guide and walk).
@@ -19,6 +21,7 @@ local RunService = game:GetService("RunService")
 local SoundService = game:GetService("SoundService")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
+local Workspace = game:GetService("Workspace")
 
 local AreaAdvice = require(ReplicatedStorage.Shared.Logic.AreaAdvice)
 local AreaPicker = require(script.Parent.Parent.UI.Screens.AreaPicker)
@@ -556,6 +559,29 @@ function WorldController.Start()
 	if type(initial) == "string" then
 		applyEnvironment(initial)
 	end
+
+	-- Safe placement: tell the server once the ground under the spawn / teleport target has streamed in (a ray
+	-- from just above the target hits terrain, water or map geometry), so it can release the anchored character.
+	Net.On("GroundCheck", function(token: number, target: Vector3)
+		task.spawn(function()
+			local deadline = os.clock() + 15
+			while os.clock() < deadline do
+				local character = Players.LocalPlayer.Character
+				local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+				if root and (root.Position - target).Magnitude < 12 then
+					local params = RaycastParams.new()
+					params.FilterType = Enum.RaycastFilterType.Exclude
+					params.FilterDescendantsInstances = { character :: Model }
+					local hit = Workspace:Raycast(target + Vector3.new(0, 3, 0), Vector3.new(0, -40, 0), params)
+					if hit then
+						Net.Send("GroundReady", token)
+						return
+					end
+				end
+				task.wait(0.1)
+			end
+		end)
+	end)
 
 	Net.On("MapTransition", function(mapId: string?)
 		showLoading(mapId)

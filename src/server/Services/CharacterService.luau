@@ -11,12 +11,19 @@ local Shared = ReplicatedStorage.Shared
 local CharacterFactory = require(Shared.Logic.CharacterFactory)
 local Classes = require(Shared.Data.Classes)
 local Log = require(Shared.Util.Log)
+local MapTerrain = require(Shared.Logic.MapTerrain)
+local Maps = require(Shared.Data.Maps)
 local NameRules = require(Shared.Logic.NameRules)
 local Net = require(Shared.Net)
+local Placement = require(script.Parent.Parent.Placement)
 local Signal = require(ReplicatedStorage.Packages.Signal)
 local Types = require(Shared.Types)
 
 local log = Log.new("CharacterService")
+
+-- Fall rescue: a character this far under its map's ground (map-relative studs; maps without a height function
+-- measure from y = 0) is put back on the ground instead of falling to its death.
+local FALL_RESCUE_DEPTH = 45
 
 local CharacterService = {
 	Name = "CharacterService",
@@ -162,28 +169,20 @@ local function spawnModel(player: Player, at: CFrame?, mapId: string?)
 		return -- switched or left while loading
 	end
 	local model = player.Character
-	local root = model and model:FindFirstChild("HumanoidRootPart") :: BasePart?
 	if not model then
 		return
 	end
 
-	if root then
-		root.Anchored = true
-	end
-	model:PivotTo(cframe)
-	task.wait()
-	if root and (root.Position - cframe.Position).Magnitude > 20 then
-		model:PivotTo(cframe)
-		task.wait()
-	end
-	if root and root.Parent then
-		root.Anchored = false
+	setNameplate(model, character)
+	-- Anchored at the target until the client has streamed the ground under it (Placement).
+	local placement = Placement.place(player, model, cframe)
+	CharacterService.ModelSpawned:Fire(player, model)
+	Placement.release(player, model, cframe, placement)
+	if rt.spawnToken ~= token or player.Parent ~= Players then
+		return
 	end
 	log:info("spawned %s on %s at %s", player.Name, map, tostring(cframe.Position))
-	setNameplate(model, character)
-
-	CharacterService.ModelSpawned:Fire(player, model)
-	task.delay(0.5, function()
+	task.delay(0.3, function()
 		if player.Parent then
 			Net.Fire(player, "MapTransition", nil)
 		end
@@ -399,6 +398,35 @@ function CharacterService.Start()
 		return withLock(player, function()
 			return switchCharacter(player)
 		end)
+	end)
+
+	Net.On("GroundReady", Placement.OnReady)
+	Players.PlayerRemoving:Connect(Placement.Forget)
+
+	-- Fall rescue: whatever let a character through the ground (a hole in the terrain, a stream that arrived too
+	-- late), it is put back on the ground at the same spot (or the map's spawn) instead of dying in the void.
+	task.spawn(function()
+		while true do
+			task.wait(0.5)
+			for _, player in Players:GetPlayers() do
+				local character = PlayerStateService.GetCharacter(player)
+				local model = player.Character
+				local root = model and model:FindFirstChild("HumanoidRootPart") :: BasePart?
+				local map = character and Maps.get(character.location.map)
+				if character and model and root and map and not root.Anchored and not Placement.IsPlacing(player) then
+					local lx, lz = root.Position.X - map.offset.x, root.Position.Z - map.offset.z
+					local ground = MapTerrain.height(map.id, lx, lz) or 0
+					if root.Position.Y - map.offset.y < ground - FALL_RESCUE_DEPTH then
+						local inside = math.abs(lx) <= map.size.x / 2 and math.abs(lz) <= map.size.z / 2
+						local target = if inside
+							then WorldService.GroundCFrame(map.id, lx, lz)
+							else WorldService.GetSpawnCFrame(map.id)
+						log:warn("%s fell under %s at %s, rescued", player.Name, map.id, tostring(root.Position))
+						task.spawn(Placement.hold, player, model, target)
+					end
+				end
+			end
+		end
 	end)
 
 	DataService.ProfileReleasing:Connect(function(player: Player)

@@ -29,6 +29,10 @@ local Definitions: { [string]: Definition } = {
 	DeleteCharacter = { kind = "function", dir = "c2s", rate = 0.5, args = { "integer", "string" } },
 	PlayCharacter = { kind = "function", dir = "c2s", rate = 0.5, args = { "integer" } },
 	SwitchCharacter = { kind = "function", dir = "c2s", rate = 0.5, args = {} },
+	-- Safe placement (Placement): the server holds the character anchored at a spawn / teleport target until the
+	-- client has the ground under it streamed in. (token, target position) / (token)
+	GroundCheck = { kind = "event", dir = "s2c" },
+	GroundReady = { kind = "event", dir = "c2s", rate = 4, args = { "integer" } },
 
 	-- Settings
 	SetLanguage = { kind = "event", dir = "c2s", rate = 1, args = { "string" } },
