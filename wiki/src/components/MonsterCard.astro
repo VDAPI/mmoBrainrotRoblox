@@ -6,6 +6,7 @@
 import type { Boss, Monster } from "../data/types";
 import { finalLevels, placesOf, signatureDrop } from "../lib/bestiary";
 import { getItem, getMap, load } from "../lib/data";
+import { iconFor } from "../lib/icons";
 import { name, t, type Key } from "../lib/i18n";
 import type { Lang } from "../i18n/routes";
 import ElementBadge from "./ElementBadge.astro";
@@ -61,7 +62,7 @@ const Tag = href ? "a" : "article";
   <div class="vw-monster__drop">
     {drop ? (
       <>
-        <ItemIcon glyph={drop.glyph} color={drop.color} rarity={dropRarity} size={28} />
+        <ItemIcon glyph={drop.glyph} color={drop.color} rarity={dropRarity} size={28} src={iconFor(drop.id)} />
         <div class="dropbox">
           <div class="drop-name" style={dropRarity ? `color: var(--vw-r-${dropRarity}-text)` : undefined}>{name(drop.name, lang)}</div>
           {boss && <div class="drop-meta">{dropRarityName}</div>}

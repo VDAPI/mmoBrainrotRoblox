@@ -6,7 +6,7 @@
   import ItemIcon from "../components/ItemIcon.svelte";
   import ItemTooltip from "../components/ItemTooltip.svelte";
   import { highlight } from "../lib/search";
-  import type { TooltipData } from "../lib/tooltip";
+  import type { TooltipData } from "../lib/item-model";
 
   interface Labels {
     placeholder: string;

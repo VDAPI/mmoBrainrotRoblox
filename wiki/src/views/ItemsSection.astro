@@ -1,0 +1,13 @@
+---
+// Items section (S40): /<lang>/przedmioty/ (the browser) and /<lang>/przedmioty/<id>/ (an item page).
+import type { Lang } from "../i18n/routes";
+import ItemView from "./ItemView.astro";
+import ItemsView from "./ItemsView.astro";
+interface Props {
+  lang: Lang;
+  page?: "index" | "item";
+  id?: string;
+}
+const { lang, page = "index", id = "" } = Astro.props;
+---
+{page === "item" ? <ItemView lang={lang} id={id} /> : <ItemsView lang={lang} />}

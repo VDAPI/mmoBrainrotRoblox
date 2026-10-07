@@ -41,5 +41,10 @@
     {"chance":0.3,"failTo":6,"protectedTo":7,"statMultiplier":1.48,"to":8},
     {"chance":0.2,"failTo":7,"protectedTo":8,"statMultiplier":1.54,"to":9}
   ],
-  "tiers": [1,2,3,4,5,6,10,13,14,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100]
+  "tiers": [1,2,3,4,5,6,10,13,14,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100],
+  "vectors": [
+    {"attempts":162.4157,"from":0,"gold":898197.0942,"ilvl":30,"materials":{"essence_crystal":132.5495,"essence_dust":70.6379,"essence_shard":496.9598,"legend_core":53.0095},"rarity":"legendary","runs":20000,"scrolls":0,"to":9},
+    {"attempts":10.8684,"from":5,"gold":69205.3947,"ilvl":30,"materials":{"essence_crystal":14.9307,"essence_dust":2.4851,"essence_shard":24.1332,"legend_core":5.8025},"protectFrom":7,"rarity":"legendary","runs":20000,"scrolls":5.8025,"to":8},
+    {"attempts":8.9284,"from":0,"gold":23709.5519,"ilvl":30,"materials":{"essence_dust":21.4609,"essence_shard":17.884},"rarity":"legendary","runs":20000,"scrolls":0,"to":5}
+  ]
 }

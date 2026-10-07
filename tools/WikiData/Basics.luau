@@ -241,9 +241,14 @@ S.file(
 		spots = arr(rec("FishSpot", {
 			id = "string",
 			chestChance = "number",
-			fish = arr(
-				rec("FishCatch", { id = "ref:items", weight = "number", chance = "number", rarity = enum("RarityKey") })
-			),
+			fish = arr(rec("FishCatch", {
+				id = "ref:items",
+				weight = "number",
+				chance = "number",
+				rarity = enum("RarityKey"),
+				zone = "number",
+				speed = "number",
+			})),
 		})),
 		chest = rec("FishChest", { gold = "int", loot = arr(AmountRange) }),
 	})
@@ -579,6 +584,8 @@ function Basics.fish(_ctx: any): any
 				weight = f.weight,
 				chance = f.weight / total,
 				rarity = Basics.rarityKey(f.rarity),
+				zone = f.zone,
+				speed = f.speed,
 			})
 		end
 		table.insert(spots, { id = id, chestChance = spot.chestChance, fish = fish })

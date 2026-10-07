@@ -1,9 +1,9 @@
 {
   "chest": {"gold":15,"loot":[{"chance":1,"id":"essence_dust","max":6,"min":3},{"chance":0.35,"id":"essence_shard","max":1,"min":1},{"chance":0.05,"id":"essence_crystal","max":1,"min":1}]},
   "spots": [
-    {"chestChance":0.03,"fish":[{"chance":0.4301,"id":"fish_eel","rarity":"heroic","weight":40},{"chance":0.5376,"id":"fish_magmafin","rarity":"heroic","weight":50},{"chance":0.0323,"id":"fish_goldfin","rarity":"mythic","weight":3}],"id":"ashen"},
-    {"chestChance":0.03,"fish":[{"chance":0.5376,"id":"fish_pike","rarity":"unique","weight":50},{"chance":0.4301,"id":"fish_eel","rarity":"heroic","weight":40},{"chance":0.0323,"id":"fish_goldfin","rarity":"mythic","weight":3}],"id":"duskwood"},
-    {"chestChance":0.04,"fish":[{"chance":0.3191,"id":"fish_magmafin","rarity":"heroic","weight":30},{"chance":0.6383,"id":"fish_icefin","rarity":"legendary","weight":60},{"chance":0.0426,"id":"fish_goldfin","rarity":"mythic","weight":4}],"id":"frostpeak"},
-    {"chestChance":0.02,"fish":[{"chance":0.6701,"id":"fish_carp","rarity":"common","weight":65},{"chance":0.3093,"id":"fish_pike","rarity":"unique","weight":30},{"chance":0.0206,"id":"fish_goldfin","rarity":"mythic","weight":2}],"id":"meadows"}
+    {"chestChance":0.03,"fish":[{"chance":0.4301,"id":"fish_eel","rarity":"heroic","speed":1.05,"weight":40,"zone":0.18},{"chance":0.5376,"id":"fish_magmafin","rarity":"heroic","speed":1.15,"weight":50,"zone":0.16},{"chance":0.0323,"id":"fish_goldfin","rarity":"mythic","speed":1.4,"weight":3,"zone":0.12}],"id":"ashen"},
+    {"chestChance":0.03,"fish":[{"chance":0.5376,"id":"fish_pike","rarity":"unique","speed":0.9,"weight":50,"zone":0.22},{"chance":0.4301,"id":"fish_eel","rarity":"heroic","speed":1,"weight":40,"zone":0.18},{"chance":0.0323,"id":"fish_goldfin","rarity":"mythic","speed":1.3,"weight":3,"zone":0.13}],"id":"duskwood"},
+    {"chestChance":0.04,"fish":[{"chance":0.3191,"id":"fish_magmafin","rarity":"heroic","speed":1.2,"weight":30,"zone":0.16},{"chance":0.6383,"id":"fish_icefin","rarity":"legendary","speed":1.3,"weight":60,"zone":0.14},{"chance":0.0426,"id":"fish_goldfin","rarity":"mythic","speed":1.5,"weight":4,"zone":0.11}],"id":"frostpeak"},
+    {"chestChance":0.02,"fish":[{"chance":0.6701,"id":"fish_carp","rarity":"common","speed":0.7,"weight":65,"zone":0.26},{"chance":0.3093,"id":"fish_pike","rarity":"unique","speed":0.85,"weight":30,"zone":0.22},{"chance":0.0206,"id":"fish_goldfin","rarity":"mythic","speed":1.2,"weight":2,"zone":0.14}],"id":"meadows"}
   ]
 }

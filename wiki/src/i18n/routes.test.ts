@@ -5,6 +5,7 @@ import { alternate, href, ROUTES, type RouteKey } from "./routes";
 const TABLE: Record<string, [string, string]> = {
   home: ["/pl/", "/en/"],
   items: ["/pl/przedmioty/", "/en/items/"],
+  bossItems: ["/pl/przedmioty/bossy/", "/en/items/bosses/"],
   bestiary: ["/pl/bestiariusz/", "/en/bestiary/"],
   bosses: ["/pl/bossy/", "/en/bosses/"],
   classes: ["/pl/klasy/", "/en/classes/"],
@@ -37,5 +38,12 @@ describe("routes", () => {
     expect(alternate("/pl/krainy/meadows/meadows_wolfhills/")).toBe("/en/regions/meadows/meadows_wolfhills/");
     expect(alternate("/pl/nie-ma/")).toBe("/en/");
     expect(alternate("/en/404/")).toBe("/pl/404/");
+    expect(alternate("/pl/przedmioty/sword1h_30/")).toBe("/en/items/sword1h_30/");
+  });
+
+  it("keeps the boss items segment apart from every item id (S40)", async () => {
+    const { items } = await import("../lib/data");
+    const ids = new Set(items().map((i) => i.id));
+    for (const lang of ["pl", "en"] as const) expect(ids.has(ROUTES.bossItems[lang].split("/")[1])).toBe(false);
   });
 });

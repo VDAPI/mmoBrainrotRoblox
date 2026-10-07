@@ -15,6 +15,7 @@ import { href, type Lang } from "../i18n/routes";
 import { bestiaryEntries, maxLevel, regionTree } from "../lib/bestiary";
 import { levelBands, RANKS, sortEntries } from "../lib/bestiary-filters";
 import { getBoss, getItem, getMonster, load } from "../lib/data";
+import { iconFor } from "../lib/icons";
 import { pluralForm } from "../lib/format";
 import { name, t, type Key } from "../lib/i18n";
 
@@ -171,7 +172,7 @@ const placeText = (e: (typeof entries)[number]) => e.placeList[0]?.name ?? "";
                   <td class="place"><span class="dia" style={`--c: var(--vw-zone-${e.placeList[0]?.zone ?? "yellow"})`}></span>{placeText(e)}</td>
                   <td>
                     {drop ? (
-                      <span class="drop"><ItemIcon glyph={drop.glyph} color={drop.color} rarity={rarity} size={28} /><span style={`color: var(--vw-r-${rarity}-text)`}>{name(drop.name, lang)}</span></span>
+                      <span class="drop"><ItemIcon glyph={drop.glyph} color={drop.color} rarity={rarity} size={28} src={iconFor(drop.id)} /><span style={`color: var(--vw-r-${rarity}-text)`}>{name(drop.name, lang)}</span></span>
                     ) : <span class="muted">—</span>}
                   </td>
                 </tr>

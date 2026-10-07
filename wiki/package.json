@@ -14,7 +14,8 @@
     "data": "node scripts/data.mjs",
     "shots": "node scripts/shots.mjs",
     "renders": "node scripts/renders.mjs",
-    "renders:test": "node scripts/renders.mjs --test"
+    "renders:test": "node scripts/renders.mjs --test",
+    "icons": "node scripts/item-icons.mjs"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",

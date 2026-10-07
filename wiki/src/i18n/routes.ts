@@ -6,6 +6,8 @@ export type Lang = (typeof LANGS)[number];
 export const ROUTES = {
   home: { pl: "", en: "" },
   items: { pl: "przedmioty", en: "items" },
+  // S40: boss items live below the item section (two segments; no item id is "bossy" / "bosses").
+  bossItems: { pl: "przedmioty/bossy", en: "items/bosses" },
   bestiary: { pl: "bestiariusz", en: "bestiary" },
   bosses: { pl: "bossy", en: "bosses" },
   classes: { pl: "klasy", en: "classes" },
@@ -37,7 +39,7 @@ export function href(lang: Lang, key: RouteKey, ...ids: string[]): string {
   return `/${parts.join("/")}/`;
 }
 
-/** Route key of a path segment in a language. */
+/** Route key of a path segment (or "a/b" for two-segment sections) in a language. */
 export function keyOf(lang: Lang, segment: string): RouteKey | undefined {
   return (Object.keys(ROUTES) as RouteKey[]).find((key) => key !== "home" && ROUTES[key][lang] === segment);
 }
@@ -52,6 +54,10 @@ export function alternate(path: string): string {
   const to = otherLang(lang);
   if (parts.length === 1) {
     return `/${to}/`;
+  }
+  const two = parts.length > 2 ? keyOf(lang, `${parts[1]}/${parts[2]}`) : undefined;
+  if (two) {
+    return `/${[to, ROUTES[two][to], ...parts.slice(3)].join("/")}/`;
   }
   const key = keyOf(lang, parts[1]);
   if (!key) {

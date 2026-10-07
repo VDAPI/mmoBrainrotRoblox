@@ -415,7 +415,9 @@ export interface FishCatch {
   chance: number;
   id: string; // id in items.json
   rarity: RarityKey;
+  speed: number;
   weight: number;
+  zone: number;
 }
 
 export interface FishChest {
@@ -1197,6 +1199,7 @@ export interface UpgradeFile {
   protection: string; // id in items.json
   steps: UpgradeStep[];
   tiers: number[];
+  vectors: UpgradeVector[];
 }
 
 export interface UpgradeMaterial {
@@ -1214,6 +1217,19 @@ export interface UpgradeStep {
   failTo?: number;
   protectedTo: number;
   statMultiplier: number;
+  to: number;
+}
+
+export interface UpgradeVector {
+  attempts: number;
+  from: number;
+  gold: number;
+  ilvl: number;
+  materials: Record<string, number>;
+  protectFrom?: number;
+  rarity: string;
+  runs: number;
+  scrolls: number;
   to: number;
 }
 

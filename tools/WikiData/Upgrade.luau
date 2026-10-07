@@ -9,6 +9,7 @@ local Items = require("../../src/shared/Data/Items")
 local Rarities = require("../../src/shared/Data/Rarities")
 local Schema = require("./Schema")
 local StubRng = require("./StubRng")
+local Rng = require("../../src/shared/Logic/Rng")
 local UpgradeLogic = require("../../src/shared/Logic/Upgrade")
 
 local S = Schema
@@ -35,8 +36,79 @@ S.file(
 		tiers = arr("int"),
 		costs = map(map(arr(Cost))),
 		protection = "ref:items",
+		vectors = arr(rec("UpgradeVector", {
+			from = "int",
+			to = "int",
+			["protectFrom?"] = "int",
+			ilvl = "int",
+			rarity = "string",
+			runs = "int",
+			attempts = "number",
+			gold = "number",
+			materials = map("number"),
+			scrolls = "number",
+		})),
 	})
 )
+
+local function instance(ilvl: number, rarity: number, up: number): any
+	return { uid = "wiki", id = "sword1h_1", rarity = rarity, ilvl = ilvl, bonuses = {}, up = up, bound = false, n = 1 }
+end
+
+-- Calculator check vectors (S40): the mean attempts, gold, materials and protection scrolls of upgrading from
+-- `from` to `to` (scrolls on every attempt at a target >= protectFrom), simulated with Upgrade.attempt and the
+-- Upgrade.cost paid before each attempt, like BlacksmithService. The wiki's Markov chain must match them.
+Upgrade.VECTOR_RUNS = 20000
+Upgrade.VECTOR_CASES = {
+	{ from = 0, to = 9, ilvl = 30, rarity = "legendary" },
+	{ from = 5, to = 8, protectFrom = 7, ilvl = 30, rarity = "legendary" },
+	{ from = 0, to = 5, ilvl = 30, rarity = "legendary" },
+}
+
+function Upgrade.simulate(case: any, runs: number): any
+	local rarity = Rarities.list[1].id
+	for _, r in Rarities.list do
+		if r.key == case.rarity then
+			rarity = r.id
+		end
+	end
+	local rng = Rng.new(4021 + case.from * 100 + case.to * 10 + (case.protectFrom or 0))
+	local attempts, gold, scrolls = 0, 0, 0
+	local materials: { [string]: number } = {}
+	for _ = 1, runs do
+		local up = case.from
+		while up < case.to do
+			local item = instance(case.ilvl, rarity, up)
+			local cost = UpgradeLogic.cost(item, up + 1)
+			gold += cost.gold
+			for _, m in cost.materials do
+				materials[m.id] = (materials[m.id] or 0) + m.n
+			end
+			local protect = case.protectFrom ~= nil and up + 1 >= case.protectFrom
+			if protect then
+				scrolls += 1
+			end
+			attempts += 1
+			up = UpgradeLogic.attempt(item, protect, rng).to
+		end
+	end
+	local mean = {}
+	for id, n in materials do
+		mean[id] = n / runs
+	end
+	return {
+		from = case.from,
+		to = case.to,
+		protectFrom = case.protectFrom,
+		ilvl = case.ilvl,
+		rarity = case.rarity,
+		runs = runs,
+		attempts = attempts / runs,
+		gold = gold / runs,
+		materials = mean,
+		scrolls = scrolls / runs,
+	}
+end
 
 -- Equipment tiers of the generated items (1, 5, 10, ..., 100), sorted.
 function Upgrade.tiers(): { number }
@@ -49,11 +121,7 @@ function Upgrade.tiers(): { number }
 	return Clean.keys(set)
 end
 
-local function instance(ilvl: number, rarity: number, up: number): any
-	return { uid = "wiki", id = "sword1h_1", rarity = rarity, ilvl = ilvl, bonuses = {}, up = up, bound = false, n = 1 }
-end
-
-function Upgrade.build(_ctx: any): any
+function Upgrade.build(ctx: any): any
 	local steps = {}
 	for n = 1, UpgradeLogic.MAX do
 		local item = instance(1, Rarities.COMMON, n - 1)
@@ -81,7 +149,19 @@ function Upgrade.build(_ctx: any): any
 		end
 		costs[tostring(tier)] = byRarity
 	end
-	return { max = UpgradeLogic.MAX, steps = steps, tiers = tiers, costs = costs, protection = Upgrade.PROTECTION }
+	local vectors = {}
+	local runs = math.min(Upgrade.VECTOR_RUNS, math.max(1000, (ctx and ctx.rolls) or Upgrade.VECTOR_RUNS))
+	for _, case in Upgrade.VECTOR_CASES do
+		table.insert(vectors, Upgrade.simulate(case, runs))
+	end
+	return {
+		max = UpgradeLogic.MAX,
+		steps = steps,
+		tiers = tiers,
+		costs = costs,
+		protection = Upgrade.PROTECTION,
+		vectors = vectors,
+	}
 end
 
 return Upgrade

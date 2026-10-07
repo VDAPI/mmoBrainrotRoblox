@@ -1,0 +1,276 @@
+---
+// Crafting (S40, /pl/rzemioslo/, no mock-up: design-system components): blacksmith recipes by level, upgrading in
+// numbers (link to the calculator), dismantling and the refund of upgrades, alchemy by group, gathering nodes with
+// the ores of caves, fishing spots with their fish and the chest. Every number from the export.
+import Base from "../layouts/Base.astro";
+import Crumbs from "../components/Crumbs.astro";
+import ItemIcon from "../components/ItemIcon.svelte";
+import RarityBadge from "../components/RarityBadge.svelte";
+import SectionTitle from "../components/SectionTitle.astro";
+import Toc from "../components/Toc.astro";
+import { href, type Lang } from "../i18n/routes";
+import { getItem, getMap, load, rarities } from "../lib/data";
+import { formatChance, formatDuration, formatNumber } from "../lib/format";
+import { name, t } from "../lib/i18n";
+import { materialRef } from "../lib/items";
+import { sectionHref } from "../lib/sections";
+import { mapHref, mapLinkFor } from "../lib/world";
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const crafting = load("crafting");
+const upgrade = load("upgrade");
+const recipes = load("recipes");
+const gather = load("gather");
+const fish = load("fish");
+const npcs = load("npcs").npcs;
+const smith = npcs.find((n) => n.services.includes("blacksmith"));
+const alchemist = npcs.find((n) => n.services.includes("alchemy"));
+const slots = load("items").slots;
+const ref = (id: string) => materialRef(id);
+const itemLink = (id: string) => sectionHref(lang, "items", id);
+const range = (a: number, b: number) => (a === b ? formatNumber(a, lang) : `${formatNumber(a, lang)}–${formatNumber(b, lang)}`);
+const rows = [...crafting.rows].sort((a, b) => a.level - b.level || (a.slot < b.slot ? -1 : 1));
+const steps = upgrade.steps;
+const firstCost = upgrade.costs[String(upgrade.tiers[0])].common;
+const essenceIds = [...new Set(Object.values(upgrade.costs).flatMap((r) => Object.values(r).flatMap((list) => list.flatMap((c) => c.materials.map((m) => m.id)))))];
+const essenceSteps = essenceIds.map((id) => ({ id, from: firstCost.findIndex((c) => c.materials.some((m) => m.id === id)) + 1 })).filter((e) => e.from > 0);
+const rarityKeys = rarities().map((r) => r.key);
+const caves = load("caves").caves.filter((c) => c.ores.length > 0);
+const toc = [
+  { id: "blacksmith", label: t(lang, "craft.blacksmith") },
+  { id: "upgrading", label: t(lang, "craft.upgrading") },
+  { id: "dismantle", label: t(lang, "craft.dismantle") },
+  { id: "alchemy", label: t(lang, "craft.alchemy") },
+  { id: "gathering", label: t(lang, "craft.gathering") },
+  { id: "fishing", label: t(lang, "craft.fishing") },
+];
+const npcLink = (id?: string) => (id ? mapHref(lang, mapLinkFor(id)) : null);
+---
+<Base lang={lang} title={t(lang, "craft.title")} description={t(lang, "craft.lead")} section="crafting">
+  <div class="page">
+    <Crumbs items={[{ label: t(lang, "crumbs.wiki"), href: href(lang, "home") }, { label: t(lang, "craft.title") }]} />
+    <h1 class="h1">{t(lang, "craft.title")}</h1>
+    <p class="lead">{t(lang, "craft.lead")}</p>
+    <div class="layout">
+      <aside class="side"><Toc items={toc} lang={lang} /></aside>
+      <div class="main">
+        <section id="blacksmith">
+          <SectionTitle>{t(lang, "craft.blacksmith")}</SectionTitle>
+          <p>{t(lang, "craft.blacksmith.text", { npc: smith ? name(smith.name, lang) : "" })} {smith && <a href={npcLink(smith.id)!}>{t(lang, "craft.onMap")}</a>}</p>
+          <table class="vw-table">
+            <caption class="vw-sr">{t(lang, "craft.blacksmith")}</caption>
+            <thead><tr><th scope="col">{t(lang, "craft.col.level")}</th><th scope="col">{t(lang, "craft.col.slot")}</th><th scope="col">{t(lang, "craft.col.gold")}</th><th scope="col">{t(lang, "craft.col.materials")}</th><th scope="col">{t(lang, "craft.col.items")}</th></tr></thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr>
+                  <td class="strong">{r.level}</td>
+                  <td>{name(slots[r.slot]?.name, lang) || r.slot}</td>
+                  <td class="gold">{formatNumber(r.gold, lang)}</td>
+                  <td>
+                    <span class="mats">{r.materials.map((m) => {
+                      const x = ref(m.id);
+                      const h = itemLink(m.id);
+                      return <span class="mat"><ItemIcon glyph={x.glyph} color={x.color} rarity={x.rarity} size={28} src={x.icon} alt={name(x.name, lang)} />{h ? <a href={h}>×{m.n}</a> : `×${m.n}`}</span>;
+                    })}</span>
+                  </td>
+                  <td>
+                    <details class="itemsd">
+                      <summary>{t(lang, "craft.items", { n: r.items.length })}</summary>
+                      <ul>
+                        {r.items.map((i) => {
+                          const it = getItem(i.item);
+                          const h = itemLink(i.item);
+                          return <li>{h ? <a href={h}>{name(it?.name, lang)}</a> : name(it?.name, lang)}</li>;
+                        })}
+                      </ul>
+                    </details>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p class="note">{t(lang, "craft.blacksmith.elements")}</p>
+        </section>
+
+        <section id="upgrading">
+          <SectionTitle>{t(lang, "craft.upgrading")}</SectionTitle>
+          <p>{t(lang, "craft.upgrading.chances", { first: formatChance(steps[0].chance, lang), last: formatChance(steps[steps.length - 1].chance, lang), max: upgrade.max })}</p>
+          <p>{t(lang, "craft.upgrading.essences", { list: essenceSteps.map((e) => `${name(getItem(e.id)?.name, lang)} (+${e.from})`).join(", ") })}</p>
+          <p>{t(lang, "craft.upgrading.scroll", { scroll: name(getItem(upgrade.protection)?.name, lang) })}</p>
+          {sectionHref(lang, "upgrading") && <p><a class="vw-btn vw-btn--primary" href={sectionHref(lang, "upgrading")!}>{t(lang, "craft.toCalc")}</a></p>}
+        </section>
+
+        <section id="dismantle">
+          <SectionTitle>{t(lang, "craft.dismantle")}</SectionTitle>
+          <p>{t(lang, "craft.dismantle.text")}</p>
+          <table class="vw-table">
+            <caption class="vw-sr">{t(lang, "craft.dismantle")}</caption>
+            <thead><tr><th scope="col">{t(lang, "craft.col.rarity")}</th><th scope="col">{t(lang, "craft.col.result")}</th></tr></thead>
+            <tbody>
+              {rarityKeys.filter((k) => crafting.dismantle[k]).map((k) => (
+                <tr>
+                  <td><RarityBadge rarity={k} label={name(rarities().find((r) => r.key === k)?.name, lang)} /></td>
+                  <td><span class="mats">{crafting.dismantle[k].map((m) => {
+                    const x = ref(m.id);
+                    return <span class="mat"><ItemIcon glyph={x.glyph} color={x.color} rarity={x.rarity} size={28} src={x.icon} />{name(x.name, lang)} {range(m.min, m.max)}</span>;
+                  })}</span></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <h3 class="vw-label sub">{t(lang, "craft.refund")}</h3>
+          <table class="vw-table">
+            <caption class="vw-sr">{t(lang, "craft.refund")}</caption>
+            <thead><tr><th scope="col">{t(lang, "craft.col.up")}</th><th scope="col">{t(lang, "craft.col.result")}</th></tr></thead>
+            <tbody>
+              {crafting.refund.map((r) => (
+                <tr><td class="strong">+{r.up}</td><td><span class="mats">{r.materials.map((m) => {
+                  const x = ref(m.id);
+                  return <span class="mat"><ItemIcon glyph={x.glyph} color={x.color} rarity={x.rarity} size={28} src={x.icon} />{name(x.name, lang)} ×{m.n}</span>;
+                })}</span></td></tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+
+        <section id="alchemy">
+          <SectionTitle>{t(lang, "craft.alchemy")}</SectionTitle>
+          <p>{t(lang, "craft.alchemy.text", { npc: alchemist ? name(alchemist.name, lang) : "", n: recipes.queueSlots })} {alchemist && <a href={npcLink(alchemist.id)!}>{t(lang, "craft.onMap")}</a>}</p>
+          {recipes.groups.map((g) => (
+            <>
+              <h3 class="vw-label sub">{name(g.name, lang) || g.id}</h3>
+              <table class="vw-table">
+                <caption class="vw-sr">{name(g.name, lang)}</caption>
+                <thead><tr><th scope="col">{t(lang, "craft.col.result")}</th><th scope="col">{t(lang, "craft.col.ingredients")}</th><th scope="col">{t(lang, "craft.col.gold")}</th><th scope="col">{t(lang, "craft.col.time")}</th><th scope="col">{t(lang, "craft.col.level")}</th></tr></thead>
+                <tbody>
+                  {recipes.recipes.filter((r) => r.group === g.id).map((r) => {
+                    const x = ref(r.result.id);
+                    const h = itemLink(r.result.id);
+                    return (
+                      <tr>
+                        <td><span class="mat"><ItemIcon glyph={x.glyph} color={x.color} rarity={x.rarity} size={28} src={x.icon} />{h ? <a href={h} style={`color: var(--vw-r-${x.rarity}-text)`}>{name(x.name, lang)}</a> : name(x.name, lang)}{r.result.n > 1 && ` ×${r.result.n}`}</span></td>
+                        <td><span class="mats">{r.ingredients.map((m) => {
+                          const y = ref(m.id);
+                          return <span class="mat"><ItemIcon glyph={y.glyph} color={y.color} rarity={y.rarity} size={24} src={y.icon} alt={name(y.name, lang)} />×{m.n}</span>;
+                        })}</span></td>
+                        <td class="gold">{formatNumber(r.gold, lang)}</td>
+                        <td>{formatDuration(r.time, lang)}</td>
+                        <td>{r.level}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </>
+          ))}
+        </section>
+
+        <section id="gathering">
+          <SectionTitle>{t(lang, "craft.gathering")}</SectionTitle>
+          <p>{t(lang, "craft.gathering.text")} {sectionHref(lang, "map") && <a href={`${sectionHref(lang, "map")}`}>{t(lang, "craft.onMap")}</a>}</p>
+          <table class="vw-table">
+            <caption class="vw-sr">{t(lang, "craft.gathering")}</caption>
+            <thead><tr><th scope="col">{t(lang, "craft.col.node")}</th><th scope="col">{t(lang, "craft.col.level")}</th><th scope="col">{t(lang, "craft.col.tool")}</th><th scope="col">{t(lang, "craft.col.time")}</th><th scope="col">{t(lang, "craft.col.respawn")}</th><th scope="col">{t(lang, "craft.col.loot")}</th></tr></thead>
+            <tbody>
+              {gather.nodes.filter((n) => n.category !== "fishing" && !n.spot).sort((a, b) => a.category.localeCompare(b.category) || a.level - b.level).map((n) => (
+                <tr>
+                  <td class="strong">{name(n.name, lang)}</td>
+                  <td>{n.level}</td>
+                  <td>{n.tool ? (itemLink(n.tool) ? <a href={itemLink(n.tool)!}>{name(getItem(n.tool)?.name, lang)}</a> : name(getItem(n.tool)?.name, lang)) : "—"}</td>
+                  <td>{formatNumber(n.time, lang)} s</td>
+                  <td>{formatDuration(n.respawn, lang)}</td>
+                  <td><span class="mats">{n.loot.map((l) => {
+                    const x = ref(l.id);
+                    return <span class="mat"><ItemIcon glyph={x.glyph} color={x.color} rarity={x.rarity} size={24} src={x.icon} />{name(x.name, lang)} {range(l.min, l.max)}{l.chance !== undefined && l.chance < 1 && <span class="muted"> · {formatChance(l.chance, lang)}</span>}</span>;
+                  })}</span></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {caves.length > 0 && (
+            <>
+              <h3 class="vw-label sub">{t(lang, "craft.caveOres")}</h3>
+              <ul class="ores">
+                {caves.map((c) => (
+                  <li>
+                    <a href={href(lang, "regions", c.region, c.id)}>{name(c.name, lang)}</a>
+                    <span class="muted"> · {c.levelMin}–{c.levelMax} · </span>
+                    {c.ores.map((o) => name(gather.nodes.find((n) => n.id === o)?.name, lang) || o).join(", ")}
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </section>
+
+        <section id="fishing">
+          <SectionTitle>{t(lang, "craft.fishing")}</SectionTitle>
+          <p>{t(lang, "craft.fishing.text")}</p>
+          <div class="spots">
+            {fish.spots.map((s) => (
+              <div class="spot">
+                <h3>{name(getMap(s.id)?.name, lang) || s.id}</h3>
+                <table class="vw-table">
+                  <caption class="vw-sr">{name(getMap(s.id)?.name, lang)}</caption>
+                  <thead><tr><th scope="col">{t(lang, "craft.col.fish")}</th><th scope="col">{t(lang, "craft.col.chance")}</th><th scope="col">{t(lang, "craft.col.zone")}</th><th scope="col">{t(lang, "craft.col.speed")}</th></tr></thead>
+                  <tbody>
+                    {s.fish.map((f) => {
+                      const x = ref(f.id);
+                      return (
+                        <tr>
+                          <td><span class="mat"><ItemIcon glyph={x.glyph} color={x.color} rarity={f.rarity} size={28} src={x.icon} /><span style={`color: var(--vw-r-${f.rarity}-text)`}>{name(x.name, lang)}</span></span></td>
+                          <td class="strong">{formatChance(f.chance, lang)}</td>
+                          <td>{formatChance(f.zone, lang)}</td>
+                          <td>{formatNumber(f.speed, lang)}/s</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+                <p class="note">{t(lang, "craft.chestChance", { chance: formatChance(s.chestChance, lang) })}</p>
+              </div>
+            ))}
+          </div>
+          <div class="box">
+            <h3 class="vw-label sub">{t(lang, "craft.chest")}</h3>
+            <p>{t(lang, "craft.chest.text", { gold: fish.chest.gold })}</p>
+            <span class="mats">{fish.chest.loot.map((l) => {
+              const x = ref(l.id);
+              return <span class="mat"><ItemIcon glyph={x.glyph} color={x.color} rarity={x.rarity} size={28} src={x.icon} />{name(x.name, lang)} {range(l.min, l.max)}{l.chance !== undefined && l.chance < 1 && <span class="muted"> · {formatChance(l.chance, lang)}</span>}</span>;
+            })}</span>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+</Base>
+
+<style>
+  .page { max-width: 1440px; margin: 0 auto; padding: 40px 48px 72px; }
+  .h1 { margin: 12px 0 8px; font: 700 64px/1 var(--vw-font-display); color: var(--vw-gold-bright); }
+  .lead { margin: 0 0 32px; max-width: 820px; font-size: 19px; color: var(--vw-text-soft); }
+  .layout { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 48px; align-items: start; }
+  .side { position: sticky; top: 90px; }
+  .main { display: flex; flex-direction: column; gap: 48px; min-width: 0; }
+  section p { color: var(--vw-text-soft); max-width: 900px; }
+  .sub { margin: 24px 0 10px; }
+  .strong { font-weight: 800; }
+  .gold { color: var(--vw-gold-bright); font-weight: 800; }
+  .muted { color: var(--vw-text-muted); }
+  .mats { display: inline-flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+  .mat { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; }
+  .note { font-size: 14px; color: var(--vw-text-muted) !important; }
+  .itemsd summary { cursor: pointer; color: var(--vw-gold); font-weight: 800; min-height: 32px; display: flex; align-items: center; }
+  .itemsd ul { margin: 6px 0 8px; padding-left: 18px; }
+  .ores { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; }
+  .spots { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+  .spot h3 { margin: 0 0 8px; font: 400 26px/1.1 var(--vw-font-display); }
+  .box { margin-top: 24px; padding: 16px; background: var(--vw-panel); border: 1px solid var(--vw-border); }
+  .box .sub { margin-top: 0; }
+  @media (max-width: 1100px) { .spots { grid-template-columns: 1fr; } }
+  @media (max-width: 1023px) { .layout { grid-template-columns: minmax(0, 1fr); gap: 16px; } .side { position: static; } }
+  @media (max-width: 767px) { .page { padding: 16px 16px 48px; } .h1 { font-size: 40px; } }
+</style>

@@ -1,7 +1,7 @@
 <script lang="ts">
   // Item tooltip (.vw-tooltip, always dark): data from src/lib/tooltip.ts (TooltipData). Server-rendered by Astro
   // without JS and reused by the islands (search page, later the floating tooltip).
-  import type { TooltipData } from "../lib/tooltip";
+  import type { TooltipData } from "../lib/item-model";
   import ItemIcon from "./ItemIcon.svelte";
 
   interface Props {
@@ -22,7 +22,7 @@
   style={`--c: var(--vw-r-${data.rarity}); --g: var(--vw-glow-${data.rarity});`}
 >
   <div class="vw-tooltip__head">
-    <ItemIcon glyph={data.glyph} color={data.color} rarity={data.rarity} size={56} />
+    <ItemIcon glyph={data.glyph} color={data.color} rarity={data.rarity} size={56} src={data.icon} />
     <div class="head">
       <div class="title">
         {#if href}

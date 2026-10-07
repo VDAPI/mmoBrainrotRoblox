@@ -1,0 +1,71 @@
+---
+// Boss items (S40, /pl/przedmioty/bossy/): bosses by level, each with its named items as tooltips and how they drop
+// (S30 personal roll: base chance, step, guarantee, expected kills; numbers from bosses.json).
+import Base from "../layouts/Base.astro";
+import Crumbs from "../components/Crumbs.astro";
+import ItemTooltip from "../components/ItemTooltip.svelte";
+import RarityBadge from "../components/RarityBadge.svelte";
+import { href, type Lang } from "../i18n/routes";
+import { bossHref } from "../lib/bestiary";
+import { bosses, getItem, getMap, load, rarities } from "../lib/data";
+import { formatChance, formatNumber } from "../lib/format";
+import { name, t } from "../lib/i18n";
+import { itemTooltip } from "../lib/items";
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const list = [...bosses()].sort((a, b) => a.level - b.level);
+const runs = load("bosses").dailyRuns;
+const bind = t(lang, "tooltip.bind");
+const title = t(lang, "bossItems.title");
+const rarityOf = (id: string) => {
+  const item = getItem(id);
+  const key = item ? item.rarities[item.rarities.length - 1] : "common";
+  return { key, name: name(rarities().find((r) => r.key === key)?.name, lang) };
+};
+---
+<Base lang={lang} title={title} description={t(lang, "bossItems.lead")} section="items">
+  <div class="page">
+    <Crumbs items={[{ label: t(lang, "crumbs.wiki"), href: href(lang, "home") }, { label: t(lang, "nav.items"), href: href(lang, "items") }, { label: title }]} />
+    <h1 class="h1">{title}</h1>
+    <p class="lead">{t(lang, "bossItems.lead")}</p>
+    {list.map((b) => {
+      const m = b.personal.mythic;
+      const region = getMap(b.region);
+      return (
+        <section class="boss">
+          <header class="bhead">
+            <h2><a href={bossHref(lang, b.id)}>{name(b.name, lang)}</a></h2>
+            <span class="vw-rank">{t(lang, "level", { level: b.level })}</span>
+            <span class="muted">{name(region?.name, lang)}</span>
+            {b.loot.named[0] && <RarityBadge rarity={rarityOf(b.loot.named[0]).key} label={rarityOf(b.loot.named[0]).name} />}
+          </header>
+          <p class="how">{t(lang, "bossItems.how", { chance: formatChance(m.chance, lang), step: formatChance(m.step, lang), hard: m.hard, kills: formatNumber(Math.round(m.expectedKills * 10) / 10, lang), runs })}</p>
+          <div class="tips">
+            {b.loot.named.map((id) => {
+              const data = itemTooltip(id, { lang });
+              return data && <ItemTooltip data={data} href={href(lang, "items", id)} labels={{ bind }} />;
+            })}
+          </div>
+        </section>
+      );
+    })}
+  </div>
+</Base>
+
+<style>
+  .page { max-width: 1440px; margin: 0 auto; padding: 40px 48px 72px; }
+  .h1 { margin: 12px 0 8px; font: 700 64px/1 var(--vw-font-display); color: var(--vw-gold-bright); }
+  .lead { margin: 0 0 32px; max-width: 820px; font-size: 19px; color: var(--vw-text-soft); }
+  .boss { padding: 24px 0; border-top: 1px solid var(--vw-border); }
+  .bhead { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+  .bhead h2 { margin: 0; font: 400 34px/1.1 var(--vw-font-display); }
+  .bhead h2 a { color: var(--vw-text); }
+  .muted { color: var(--vw-text-muted); }
+  .how { margin: 10px 0 16px; color: var(--vw-text-soft); max-width: 900px; }
+  .tips { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; align-items: start; }
+  @media (max-width: 1023px) { .tips { grid-template-columns: 1fr; } }
+  @media (max-width: 767px) { .page { padding: 16px 16px 48px; } .h1 { font-size: 40px; } .bhead h2 { font-size: 26px; } }
+</style>

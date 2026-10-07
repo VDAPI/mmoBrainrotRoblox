@@ -45,6 +45,7 @@
 | S37 | Wiki 3/10: mapy SVG z danych gry, interaktywna mapa świata (przesuwanie, zoom, karty, warstwy, szukaj, link), strony krain, obszarów i jaskiń, `MiniMap` | ● |
 | S38 | Wiki 4/10: rendery potworów, bossów i petów (`tools/wiki-renders`), boss w hero, obrazy bazowe OG | ● |
 | S39 | Wiki 5/10: bestiariusz z filtrami w adresie, strony 50 potworów i 4 bossów (warianty, łup, fazy, mechaniki), obrazy OG | ● |
+| S40 | Wiki 6/10: ikony przedmiotów z atlasów, baza 930 przedmiotów, strona przedmiotu, przedmioty bossów, kalkulator ulepszania, rzemiosło | ● |
 | S35 | Ikony przedmiotów: atlasy z grafikami (kolor progu, akcent żywiołu / mikstury), komponent `ItemIcon` z zapasem na symbole, sloty, duch przeciągania, legenda, mikstury, tooltip, waluty | ● |
 
 Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana przez właściciela
@@ -3310,4 +3311,42 @@ Szczegóły i decyzje: `docs/WIKI.md` (Stan, Decyzje S39, Niedokończone, „Kom
 12. `/pl/bossy/azgor/` faza 3: „Pole lawy” z liczbami 64 / 50 / 20 / 120 s; `/pl/bossy/vaelgrath/` fazy 2 i 3.
 13. Na dole strony bossa: 3 przedmioty bossa (bez „{v}” w bonusach), wykresy rzutu osobistego, zasady wejścia.
 14. `wiki/dist/img/og/pl/monster/wolf.jpg`: render wilka, „Szary Wilk”, „Poz. 1–7 · Polana Królików”, polskie znaki.
+15. `npm run check` w `wiki/` i `scripts/check` przechodzą.
+
+### S40: Wiki 6/10 — przedmioty, ulepszanie, rzemiosło
+
+Szczegóły i decyzje: `docs/WIKI.md` (Stan, Decyzje S40, Niedokończone, „Komponenty”).
+
+**Zrobione**
+- `npm run icons` (`wiki/scripts/item-icons.mjs`, `sharp`): ikony przedmiotów z atlasów S35 (warstwy mnożone kolorem jak w
+  grze) w `wiki/public/img/items/` + manifest; ikony na wszystkich stronach wiki (także łup potworów i bossów z S39).
+- `/pl/przedmioty/`: filtry rzadkości, slotu, klasy, poziomu i nazwy (bez polskich znaków), bazy z krokomierzem progów,
+  sortowanie, podgląd tooltipa, stan w adresie. 930 stron przedmiotów: przełącznik rzadkości/żywiołu i +0…+9 (tooltip,
+  tabela szans, skutków porażki i kosztów), pula bonusów z zakresami i szansami, źródła z szansą, kowal, rozbijanie,
+  „używany do”, inne progi. `/pl/przedmioty/bossy/`: 12 przedmiotów 4 bossów z zasadą rzutu osobistego.
+- `/pl/ulepszanie/`: kalkulator (szansa za pierwszym razem, średnie złoto, esencje, zwoje, próby, drabina ryzyka, koszt
+  każdego kroku, Zwój Ochrony od +N), wynik zgodny z symulacją `Upgrade.attempt` z gry (wektory w eksporcie, test 2 %).
+- `/pl/rzemioslo/`: kowal (189 wierszy przepisów), ulepszanie w liczbach, rozbijanie i zwrot z ulepszeń, alchemia,
+  zbieractwo z rudami jaskiń, rybołówstwo z trudnością i skrzynią.
+- Eksport: `upgrade.json` `vectors`, `fish.json` `zone`/`speed` (kod gry bez zmian).
+
+#### Instrukcja testu S40
+
+1. `cd wiki`, `npm run icons`: „1032 ikon (0 zbudowano, 1032 bez zmian…)”; `npm run build`, `npm run preview`.
+2. http://localhost:4321/pl/przedmioty/: tabela z ikonami, z prawej podgląd; „150 przedmiotów”.
+3. Zaznacz „Legendarny” i slot „Pierścień”: lista się zawęża, adres ma `?r=legendary&slot=ring`; skopiuj adres do nowej
+   karty — ten sam widok.
+4. Strzałki ‹ › przy poziomie zmieniają próg wiersza; „Wszystkie progi” pokazuje każdy próg osobno.
+5. Wpisz „krolewski” (bez polskich znaków) — wyniki się zawężają; „Wyczyść filtry” wraca do całości.
+6. Telefon (390 px): chipy rzadkości w rzędzie, „Filtry” rozwija resztę, tap w wiersz rozwija tooltip pod nim.
+7. `/pl/przedmioty/sword2h_35/`: słup światła z ikoną, tooltip, ramka techniczna; przełącz rzadkość (kolor tytułu i słupa
+   się zmienia) i kliknij +7 — tooltip pokazuje +7, adres `?r=…&up=7`.
+8. Tabela ulepszeń: szanse 100…20 %, „spadek do +N”, nigdzie „zniszczenia”; koszt próby ze złotem i esencjami.
+9. Pula bonusów: zakresy („+1,0–2,3% Szansy na krytyk”) i szanse; pula legendarna rozwijana.
+10. `/pl/przedmioty/unique_grimrok_cleaver/`: stałe bonusy z wartościami (bez „{v}”), źródło: Grimrok, rzut osobisty.
+11. `/pl/przedmioty/essence_shard/`: źródła i „Używany do” (ulepszanie, alchemia).
+12. `/pl/przedmioty/bossy/`: 4 bossów po 3 przedmioty.
+13. `/pl/ulepszanie/`: wybierz przedmiot w polu („kostur”), rzadkość, +5 → +8, zaznacz Zwój Ochrony od +7 — szansa,
+    złoto, esencje, zwoje i tabela kroków się zmieniają; link z adresu odtwarza stan.
+14. `/pl/rzemioslo/`: spis treści, kowal, ulepszanie, rozbijanie, alchemia, zbieractwo, ryby; wersje `/en/` działają.
 15. `npm run check` w `wiki/` i `scripts/check` przechodzą.

@@ -184,7 +184,7 @@ const statCols = [
                 <tbody>
                   {view.rows.map((r) => (
                     <tr data-row={r.key} tabindex="0" aria-selected={r.key === view.preview.key ? "true" : "false"} class={`kind-${r.kind}`}>
-                      <td class="icon"><ItemIcon glyph={r.glyph} color={r.color} rarity={r.rarity} size={38} /></td>
+                      <td class="icon"><ItemIcon glyph={r.glyph} color={r.color} rarity={r.rarity} size={38} src={r.icon} /></td>
                       <td class="iname">
                         {r.top ? (
                           <details class="grp">

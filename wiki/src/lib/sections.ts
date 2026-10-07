@@ -9,9 +9,9 @@ export interface Section {
 }
 
 export const SECTIONS: Section[] = [
-  { id: "items", ready: false, session: "S40" },
-  { id: "upgrading", ready: false, session: "S40" },
-  { id: "crafting", ready: false, session: "S40" },
+  { id: "items", ready: true, session: "S40" },
+  { id: "upgrading", ready: true, session: "S40" },
+  { id: "crafting", ready: true, session: "S40" },
   { id: "bestiary", ready: true, session: "S39" },
   { id: "bosses", ready: true, session: "S39" },
   { id: "map", ready: true, session: "S37" },

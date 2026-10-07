@@ -56,6 +56,11 @@ const navLabel: Record<string, Parameters<typeof t>[1]> = {
   upgrading: "nav.upgrading",
   regions: "nav.regions",
   bosses: "nav.bosses",
+  crafting: "nav.crafting",
+  quests: "nav.quests",
+  mechanics: "nav.mechanics",
+  guides: "nav.guides",
+  updates: "nav.updates",
   home: "nav.home",
   search: "nav.search",
 };
@@ -140,7 +145,8 @@ const navText = (id: string) => t(lang, `nav.${id}` as Key);
     </header>
 
     <main id="main" data-pagefind-body={search ? "" : undefined} data-pagefind-filter={search ? `type:${search.type}` : undefined}>
-      {search && Object.entries(searchMeta).map(([key, value]) => <span hidden data-pagefind-meta={`${key}:${value}`}></span>)}
+      {/* value from an attribute: Pagefind splits "key:value" lists on commas (tooltips are JSON) */}
+      {search && Object.entries(searchMeta).map(([key, value]) => <span hidden data-pagefind-meta={`${key}[data-v]`} data-v={value}></span>)}
       <slot />
     </main>
 

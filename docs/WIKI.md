@@ -58,7 +58,7 @@ wiki/
     lib/                  funkcje TS (formatowanie liczb pl/en, filtry, wyszukiwanie, kalkulator) + testy Vitest
     views/                widoki stron + registry.ts (jeden wpis = nowa strona)
     pages/[lang]/...      trasy (index, [...path] z rejestru, endpointy JSON)
-    generated/            GENEROWANE manifesty (np. item-icons.json)
+    generated/            GENEROWANE manifesty: item-icons.json (S40, npm run icons; commitowany)
     content/              updates, guides, mechanics ({pl,en}/*.mdx), bosses (opisy mechanik)
   public/img/{mobs,items,maps,og,city}/  GENEROWANE obrazy
   scripts/                data, shots, search-index, check-links, item-icons, og-images, budgets, audit, stale-data (.mjs)
@@ -86,9 +86,9 @@ Identyfikatory w URL to **id z danych gry** (stabilne między językami, także 
 | Strona | PL | EN |
 |---|---|---|
 | Główna | `/pl/` | `/en/` |
-| Baza przedmiotów | `/pl/przedmioty/` | `/en/items/` |
-| Przedmiot | `/pl/przedmioty/<id>/` | `/en/items/<id>/` |
-| Przedmioty bossów | `/pl/przedmioty/bossy/` | `/en/items/bosses/` |
+| Baza przedmiotów | `/pl/przedmioty/` (`?q=&r=&slot=&cls=&lv=&sort=&sel=&all=&page=`) | `/en/items/` |
+| Przedmiot | `/pl/przedmioty/<id>/` (`?r=&up=&el=`) | `/en/items/<id>/` |
+| Przedmioty bossów (klucz trasy `bossItems`, dwa segmenty) | `/pl/przedmioty/bossy/` | `/en/items/bosses/` |
 | Bestiariusz | `/pl/bestiariusz/` | `/en/bestiary/` |
 | Potwór | `/pl/bestiariusz/<id>/` | `/en/bestiary/<id>/` |
 | Bossy, boss | `/pl/bossy/`, `/pl/bossy/<id>/` | `/en/bosses/`, `/en/bosses/<id>/` |
@@ -96,7 +96,7 @@ Identyfikatory w URL to **id z danych gry** (stabilne między językami, także 
 | Mapa świata | `/pl/mapa/` (`?m=<mapa>&a=<obszar>&x=&z=&s=`) | `/en/map/` |
 | Krainy, kraina | `/pl/krainy/`, `/pl/krainy/<mapId>/` | `/en/regions/`, `/en/regions/<mapId>/` |
 | Obszar / jaskinia | `/pl/krainy/<mapId>/<areaId>/` | `/en/regions/<mapId>/<areaId>/` |
-| Kalkulator ulepszania | `/pl/ulepszanie/` | `/en/upgrading/` |
+| Kalkulator ulepszania | `/pl/ulepszanie/` (`?item=&r=&el=&from=&to=&prot=`) | `/en/upgrading/` |
 | Rzemiosło | `/pl/rzemioslo/` (kowal, alchemia, rozbijanie, zbieractwo, ryby) | `/en/crafting/` |
 | Zadania | `/pl/zadania/`, `/pl/zadania/<id>/` | `/en/quests/` |
 | Mechaniki | `/pl/mechaniki/`, `/pl/mechaniki/<temat>/` | `/en/mechanics/`, `/en/mechanics/<topic>/` |
@@ -131,7 +131,7 @@ przełomy umiejętności, `Combat`, `Stats.Formula`) jako `data` (typ `Json`).
 | `cosmetics.json` | `cosmetics`: Cosmetic[], `kinds`: CosmeticKind[] | `Data/Cosmetics` (bez ceny) |
 | `crafting.json` | `dismantle`: Record<string, CraftRange[]>, `refund`: UpgradeRefund[], `rows`: CraftRow[] | `Data/Crafting` (wiersze o tym samym poziomie, złocie i materiałach), `Dismantle.preview`, `Dismantle.upgradeRefund` |
 | `elements.json` | `default`: ElementId, `elements`: Element[] | `Data/Elements` |
-| `fish.json` | `chest`: FishChest, `spots`: FishSpot[] | `Data/Fish` |
+| `fish.json` | `chest`: FishChest, `spots`: FishSpot[] | `Data/Fish`; od S40 ryba ma `zone` i `speed` (trudność minigry) |
 | `gather.json` | `nodes`: GatherNode[], `placements`: Record<string, GatherPlacement[]> | `Data/GatherNodes`; od S37 `placements` regionów: Łąki z `MeadowsGen.nodes()` (punkty), reszta z tekstu `World/Layouts/<mapa>.luau` (`scatterNodes` = prostokąt + liczba, `node` = punkt) |
 | `icons.json` | `cell`: number, `icons`: Json, `sheets`: string[], `tierTint`: Json |  |
 | `items.json` | `bases`: Record<string, BaseInfo>, `categories`: Record<string, CategoryInfo>, `items`: Item[], `slots`: Record<string, SlotInfo> | `Data/Items`; nazwa `ItemName.get`; rzadkości przez `ItemRoll.rollItem`; statystyki `ItemRoll.itemStats` (+0…+9); wartość `ItemValue.value`; źródła z Monte Carlo potworów i bossów, sklepów, kowala, alchemii, nagród, łowiska, zbieractwa, rozbijania; `usedFor` z `Upgrade.cost`, `Crafting`, `Recipes` |
@@ -151,7 +151,7 @@ przełomy umiejętności, `Combat`, `Stats.Formula`) jako `data` (typ `Json`).
 | `skills.json` | `rules`: SkillRules, `skills`: Skill[] | `Data/Skills` (bez `vfx`); rangi: `Skills.levelRequirement`, `scaled`, `valueAt`, `formatDescription`; przełomy `breakpointKeys`; `Exp.pointsForLevels` |
 | `stats.json` | `formula`: Json, `groups`: StatGroupInfo[], `primary`: string[], `stats`: StatInfo[] | `Data/Stats` |
 | `titles.json` | `titles`: Title[] | `Data/Titles` |
-| `upgrade.json` | `costs`: Record<string, Record<string, UpgradeCost[]>>, `max`: number, `protection`: string, `steps`: UpgradeStep[], `tiers`: number[] | `Upgrade.chance`, `statMultiplier`, `attempt` (`StubRng` fail), `Upgrade.cost` dla progów i rzadkości |
+| `upgrade.json` | `costs`: Record<string, Record<string, UpgradeCost[]>>, `max`: number, `protection`: string, `steps`: UpgradeStep[], `tiers`: number[], `vectors`: UpgradeVector[] | `Upgrade.chance`, `statMultiplier`, `attempt` (`StubRng` fail), `Upgrade.cost` dla progów i rzadkości; od S40 `vectors` = 3 przypadki × 20 000 symulacji `Upgrade.attempt` + `Upgrade.cost` (kontrola kalkulatora) |
 
 Pliki pochodne: `wiki/src/data/types.ts`, `wiki/src/styles/tokens.data.css` (`--vw-r-<key>`, `--vw-r-<key>-text`
 z kontrastem AA na `--vw-panel` w obu motywach, `--vw-glow-<key>`, `--vw-el-<id>`, `--vw-class-<classId>`,
@@ -219,12 +219,13 @@ do HTML bez JS, wyspy importują te same pliki). Dane przez `src/lib/data.ts` (`
 |---|---|
 | `Button` | `{ variant?: "default"\|"primary"\|"ghost"\|"play", href?, disabled?, type?, class? }` |
 | `SectionTitle`, `Label` | `{ as?, id? }` |
-| `ItemTooltip.svelte` | `{ data: TooltipData, floating?, href?, labels?: { bind } }`; dane: `tooltipData(itemId, { rarity?, upgrade?, lang, playerLevel? })`, `defaultRarity(item)` (`src/lib/tooltip.ts`) |
-| `ItemIcon.svelte` | `{ glyph, color, rarity?, size? = 40, src?, alt? }` (S40 dokłada `src` z manifestu ikon) |
+| `ItemTooltip.svelte` | `{ data: TooltipData, floating?, href?, labels?: { bind } }`; dane: `tooltipData(itemId, { rarity?, upgrade?, lang, playerLevel?, element? })`, `defaultRarity(item)` (`src/lib/tooltip.ts`); od S40 `tooltipData` = `buildTooltip(itemDetail(id), …, tooltipLabels(lang))` — czysta funkcja z `src/lib/item-model.ts` (działa w wyspach na szczegółach z `/data/items/<id>.json`); `TooltipData.icon` = obrazek ikony |
+| `ItemIcon.svelte` | `{ glyph, color, rarity?, size? = 40, src?, alt? }` — S40: `src` = bazowy adres ikony z `iconFor(itemId, element?)` (`src/lib/icons.ts`, tylko build): ≤ 64 px plik `-64.webp` + `-128.webp` dla 2×, większe `-128`; brak `src` → glif |
 | `RarityBadge.svelte` | `{ rarity, label }` (nazwa z `rarities.json` podaje wywołujący — komponent działa też w wyspach) |
 | `MonsterImage` | `{ id, variant?, kind?: "monster"\|"boss"\|"pet", stage?: "card"\|"page"\|"portrait"\|"none", size?: "thumb"\|"full", alt, eager?, element?, class? }` (S38: render z `src/lib/renders.ts` na ciemnej scenie, inaczej wzór z rombem; patrz „Obrazy potworów”) |
 | `MonsterCard` | `{ monster?, boss?, variant?, level?, lang, href?, eager? }` — S39: poziomy końcowe „Poz. 2–6 · rodzina”, pierwsze miejsce + „+N”, łup specjalny (`signatureDrop`, u bossa pierwszy nazwany przedmiot); `boss` = karta bossa (czerwona ramka) |
 | `BossHeader` | `{ boss, lang, players?: 1-5, notes?: { phase, title, html }[], heading?: "h1"\|"h2" }` — S39: chipy graczy 1–5 (zmieniają każdy `[data-by-players]` na stronie), zakładki faz „Faza 1 · 100–70%” z okrzykiem i obrazkiem `-p2`/`-p3`, panele mechanik (ataki z `Telegraph`, przywołania, tarcza, przyspieszenie, wściekłość, `notes`); bez JS wszystkie fazy pod sobą; zachowanie `src/scripts/boss.ts` |
+| Wyspy S40 | `ItemsBrowser` (lista z filtrami i krokomierzem progów), `ItemTooltipLive` + `ItemUpgradeView` (strona przedmiotu; wspólny stan `src/lib/itemState.ts` i `?r=&up=&el=`), `UpgradeCalc` (kalkulator) — dane wyłącznie z propsów i endpointów `/data/items/<id>.json`, `/<lang>/items-index.json` |
 | `Telegraph` (S39) | `{ shape, radius?, inner?, angle?, length?, width?, origin?, size?, label? }` — SVG kształtu ataku (koło, stożek, pas, pierścień z bezpiecznym środkiem), rzucający jako złoty romb; w `/styleguide#telegraph` |
 | `SkillNode` / `SkillEdge` | `{ glyph?, state, rank, max, active?, capstone?, selected?, label }` / `{ active? }` |
 | `DataTable` | `{ columns: { key, label, sortable?, align?, mobile?, sort? }[], rows, caption, html? }` |
@@ -316,6 +317,14 @@ Mechaniki skryptowe bossów: `src/content/bosses/{pl,en}/*.md` (frontmatter `bos
   potworów, `BossHeader`, „Potwór tygodnia”, galerii `/pl/styleguide/#renders` i w hero głównej (boss pod słupem). Obrazy
   OG `og/base.png`, `og/default-art.png`. `npm run renders:test` (9 testów Pythona), Vitest +2 pliki.
 
+- **S40 (przedmioty):** `npm run icons` składa 1032 ikony (1119 wpisów z wariantami żywiołów, 4,8 MB, ok. 11 s; drugie
+  uruchomienie nic nie przebudowuje). `/pl/przedmioty/` (150 wierszy: bazy z krokomierzem progów + reszta; filtry
+  rzadkości, slotu/kategorii, klasy, poziomu, nazwy; podgląd tooltipa), 930 stron przedmiotów (rzadkość i żywioł,
+  +0…+9 z szansą, skutkiem porażki i kosztem próby, pula bonusów z zakresami i szansami albo stałe bonusy, źródła,
+  przepis kowala, rozbijanie, „używany do”, inne progi), `/pl/przedmioty/bossy/` (12 przedmiotów 4 bossów),
+  `/pl/ulepszanie/` (kalkulator z łańcuchem Markowa, zgodny z symulacją gry ≤ 2%), `/pl/rzemioslo/` (kowal, ulepszanie,
+  rozbijanie, alchemia, zbieractwo, ryby). Sekcje `items`, `upgrading`, `crafting` gotowe; build 2110 stron ok. 20 s.
+  JS stron z wyspami ok. 31 KB gzip (budżet 50). Vitest 76 testów.
 - **S39 (bestiariusz):** `/pl/bestiariusz/` (97 wpisów: 93 występujące warianty + 4 bossy; filtry w adresie, karty i
   tabela, 24 na stronę / 12 + „Pokaż więcej” na telefonie), 50 stron potworów (warianty, poziomy, łup z podglądem,
   zdolności, miejsca z minimapami, powiązania), `/pl/bossy/` + 4 strony bossów (gracze 1–5, fazy i mechaniki, łup wspólny,
@@ -324,6 +333,31 @@ Mechaniki skryptowe bossów: `src/content/bosses/{pl,en}/*.md` (frontmatter `bos
   JS: bestiariusz 3,8 KB, potwór 1,3 KB, boss 0,9 KB gzip. Vitest 55 testów, Lune 758.
 
 ## Decyzje
+
+- **S40** Ikony: `scripts/item-icons.mjs` mnoży kolor warstw na surowych pikselach (jak `ImageColor3` w grze; `sharp.tint`
+  nie mnoży) i zapisuje `-128` (natywne) i `-64` (lanczos3); nazwa pliku = klucz ikony + kolory warstw, więc ten sam wygląd
+  to jeden plik (1032 pliki na 1119 wpisów). Manifest i obrazki są commitowane; bez atlasów pusty manifest i glify.
+- **S40** `padding` ikony z obrazkiem w pikselach (8 % rozmiaru): procent liczył się od szerokości rodzica i w szerokim
+  tooltipie obrazek zapadał się do zera.
+- **S40** Lista: ekwipunek generowany = jeden wiersz na bazę z krokomierzem progów (pokazany najwyższy próg w zakresie
+  poziomu, bez zakresu najwyższy ≤ 100), „Wszystkie progi” = płaska lista; 50 wierszy na stronę. Rzadkość wiersza
+  (`listRarity`): najwyższa zaznaczona w filtrze spośród dozwolonych, bez filtra najniższa (Zwykły), stała u przedmiotów
+  bossów i materiałów. Pierwsza strona renderowana przy buildzie, pełny indeks (`/<lang>/items-index.json`) po starcie.
+- **S40** Strona przedmiotu: domyślna rzadkość = najwyższa dozwolona (kontrakt S36), żywioł = pierwszy z `Elements.WEAPON`.
+  Statystyki pokazane dla `ilvl` = próg (gra liczy łup od poziomu instancji). Wiersze puli z szansą 0 dla rzadkości (np.
+  bonusy magiczne na mieczu) ukryte; zwykły przedmiot (0 bonusów) pokazuje całą pulę z „—”. Szansa źródła potwora =
+  szansa na ten konkretny przedmiot (zwykle ułamki procenta; grupy łupu na stronie potwora).
+- **S40** Kalkulator: absorbujący łańcuch Markowa na stanach 0…cel−1 (porażka może zejść poniżej startu), układ
+  `(I − Q)x = c` eliminacją Gaussa osobno dla prób, złota, każdego materiału i zwojów; koszt kroku = `perStep` (pierwsze
+  przejście L → L+1, sumy kolumn = wynik). Zwój Ochrony: 1 na każdą próbę o cel ≥ „od +N”. Zgodność: `upgrade.json`
+  `vectors` (20 000 symulacji w Lune) w granicy 2 %. Koszt dla progu = najwyższy próg kosztu ≤ poziom (`costTier`).
+- **S40** Przedmioty bossów pod `/pl/przedmioty/bossy/`: klucz trasy `bossItems` z dwoma segmentami
+  (`przedmioty/bossy`), `alternate()` najpierw próbuje dwóch segmentów; test pilnuje, że żadne id przedmiotu nie jest
+  równe `bossy`/`bosses`.
+- **S40** Metadane Pagefind z atrybutu (`data-pagefind-meta="tooltip[data-v]"`): Pagefind dzieli `key:value` po
+  przecinkach, a tooltip to JSON. Rekordy zastępcze przedmiotów zniknęły (indeksują się strony z tooltipem dla
+  „Najlepszego dopasowania”).
+- **S40** Rzemiosło bez makiety: `Toc` + tabele design systemu. Eksport ryb dostał `zone` i `speed` (trudność minigry).
 
 - **S39** Kod gry: tylko brakujące klucze lokalizacji `ability.<id>.name` (12) i `boss.<id>.attack.<atak>` (16) — wiki ich
   potrzebuje, a gra może użyć ich przy telegrafach (§8). Mnożnik EXP/złota rodzaju (S32) już jest w `MonsterStats.kindReward`
@@ -451,6 +485,11 @@ Mechaniki skryptowe bossów: `src/content/bosses/{pl,en}/*.md` (frontmatter `bos
   `Config.AdminUserIds` czyta tylko `tests/wikidump.spec.luau` (`Leak.scan`). Każdy build sprawdza zakazane klucze.
 
 ## Niedokończone
+
+- **S40** Filtr źródła na liście przedmiotów, mediana / 90. percentyl prób i „najtańszy próg ochrony” w kalkulatorze,
+  chipy klas w tabeli kowala — nie zrobione (opcjonalne „jeśli zostanie czas”). Kolumna „Koszt próby” tylko na desktopie,
+  na telefonie tabela ulepszeń ma 3 kolumny. Linki do zadań i alchemii w źródłach prowadzą do stron „Wkrótce” (S42) albo
+  do sekcji rzemiosła. Zrzuty w ciemnym motywie.
 
 - **S39** Różnice względem makiet: nagłówek bossa na telefonie to render nad nazwą (nie tło z nazwą na nim); tabela
   bestiariusza bez sortowania klikiem w nagłówek; pole „Twój poziom” (pasma `LevelBand`) i `meta.image` w rekordach Pagefind

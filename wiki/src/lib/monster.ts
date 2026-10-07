@@ -9,6 +9,7 @@ import { name, t, type Key } from "./i18n";
 import { occurringVariants, placesOf, type MonsterRank } from "./bestiary";
 import { sectionHref } from "./sections";
 import { respawn } from "./world";
+import { iconFor } from "./icons";
 
 const range = (lang: Lang, min: number, max: number) =>
   min === max ? formatNumber(min, lang) : `${formatNumber(min, lang)}–${formatNumber(max, lang)}`;
@@ -95,6 +96,7 @@ export interface LootRow {
   chanceText: string;
   glyph: string;
   color: string;
+  icon?: string | null; // generated icon (S40)
   item?: string; // tooltip item id
   itemRarity?: RarityKey;
   href: string | null;
@@ -138,6 +140,7 @@ export function lootRows(m: Monster, variant: MonsterRank, lang: Lang): LootRow[
       glyph: first?.glyph ?? "◆",
       color: first?.color ?? "#9DA3AB",
       item: first?.id,
+      icon: first ? iconFor(first.id) : null,
       itemRarity: top,
       href: null,
       top: g.top.map((x) => ({ id: x.id, name: name(getItem(x.id)?.name, lang) || x.id, chance: x.chance, chanceText: formatChance(x.chance, lang), href: itemHref(lang, x.id) })),
@@ -165,6 +168,7 @@ export function lootRows(m: Monster, variant: MonsterRank, lang: Lang): LootRow[
       glyph: item?.glyph ?? "◆",
       color: item?.color ?? "#9DA3AB",
       item: item ? id : undefined,
+      icon: iconFor(id),
       itemRarity: rarity,
       href: itemHref(lang, id),
     });

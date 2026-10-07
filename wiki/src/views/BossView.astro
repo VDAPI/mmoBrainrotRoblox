@@ -17,6 +17,7 @@ import { bossHref, monsterHref } from "../lib/bestiary";
 import { fillConsts, noteHtml } from "../lib/bossnotes";
 import { bosses, getBoss, getItem, getMap, getMonster, load, rarities } from "../lib/data";
 import { formatChance, formatDuration, formatNumber } from "../lib/format";
+import { iconFor } from "../lib/icons";
 import { name, t } from "../lib/i18n";
 import { itemHref } from "../lib/monster";
 import { sectionHref } from "../lib/sections";
@@ -126,7 +127,7 @@ const pity = boss
                   const ih = itemHref(lang, m.id);
                   return (
                     <tr>
-                      <td class="icon"><ItemIcon glyph={item?.glyph ?? "◆"} color={item?.color ?? "#9DA3AB"} rarity={rar} size={36} /></td>
+                      <td class="icon"><ItemIcon glyph={item?.glyph ?? "◆"} color={item?.color ?? "#9DA3AB"} rarity={rar} size={36} src={iconFor(m.id)} /></td>
                       <td class="strong">{ih ? <a href={ih} style={`color: var(--vw-r-${rar}-text)`}>{name(item?.name, lang)}</a> : <span style={`color: var(--vw-r-${rar}-text)`}>{name(item?.name, lang)}</span>}</td>
                       <td>{range(m.min, m.max)}</td>
                       <td class="chance">{formatChance(m.chance, lang)}</td>

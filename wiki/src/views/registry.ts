@@ -4,13 +4,17 @@
 import type { Lang, RouteKey } from "../i18n/routes";
 import { SECTIONS } from "../lib/sections";
 import BestiarySection from "./BestiarySection.astro";
+import BossItemsView from "./BossItemsView.astro";
 import BossView from "./BossView.astro";
+import CraftingView from "./CraftingView.astro";
+import ItemsSection from "./ItemsSection.astro";
+import UpgradeView from "./UpgradeView.astro";
 import ComingSoon from "./ComingSoon.astro";
 import NotFound from "./NotFound.astro";
 import RegionsView from "./RegionsView.astro";
 import WorldMapView from "./WorldMapView.astro";
 import { areas, caves, maps } from "../lib/world";
-import { bosses, monsters } from "../lib/data";
+import { bosses, items, monsters } from "../lib/data";
 import SearchView from "./SearchView.astro";
 import Styleguide from "./Styleguide.astro";
 
@@ -51,6 +55,14 @@ export const REGISTRY: PageEntry[] = [
     view: BossView,
     getPaths: () => [{ ids: [], props: { page: "index" } }, ...bosses().map((b) => ({ ids: [b.id], props: { page: "boss", id: b.id } }))],
   },
+  {
+    key: "items",
+    view: ItemsSection,
+    getPaths: () => [{ ids: [] }, ...items().map((i) => ({ ids: [i.id], props: { page: "item", id: i.id } }))],
+  },
+  { key: "bossItems", view: BossItemsView, getPaths: () => [{ ids: [] }] },
+  { key: "upgrading", view: UpgradeView, getPaths: () => [{ ids: [] }] },
+  { key: "crafting", view: CraftingView, getPaths: () => [{ ids: [] }] },
   ...SECTIONS.filter((s) => !s.ready).map(
     (s): PageEntry => ({ key: s.id, view: ComingSoon, getPaths: () => [{ ids: [], props: { section: s.id } }] }),
   ),

@@ -1,0 +1,274 @@
+---
+// Item page (S40, /pl/przedmioty/<id>/, mock-up Przedmiot-*): left column the beam with the icon, the live tooltip
+// and the technical frame (island ItemTooltipLive); right column the name, chips, a description built from data, the
+// rarity / element switch, stats by upgrade level and the bonus pool (island ItemUpgradeView), then sources,
+// crafting and dismantling, other tiers. Without JS the page is complete for the default rarity and +0.
+import Base from "../layouts/Base.astro";
+import Crumbs from "../components/Crumbs.astro";
+import ItemIcon from "../components/ItemIcon.svelte";
+import MonsterImage from "../components/MonsterImage.astro";
+import SectionTitle from "../components/SectionTitle.astro";
+import ItemTooltipLive from "../islands/ItemTooltipLive.svelte";
+import ItemUpgradeView from "../islands/ItemUpgradeView.svelte";
+import { href, type Lang } from "../i18n/routes";
+import { getItem, items, load, meta, rarities } from "../lib/data";
+import { formatDate, formatNumber } from "../lib/format";
+import { name, t } from "../lib/i18n";
+import { defaultRarityOf } from "../lib/item-model";
+import type { ItemState } from "../lib/itemState";
+import { craftRecipe, itemDetail, itemTooltip, materialRef, tooltipLabels } from "../lib/items";
+import { itemSources, usedInAlchemy } from "../lib/itemsources";
+import { sectionHref } from "../lib/sections";
+
+interface Props {
+  lang: Lang;
+  id: string;
+}
+const { lang, id } = Astro.props;
+const item = getItem(id)!;
+const d = itemDetail(id)!;
+const rarity = defaultRarityOf(d);
+const initial: ItemState = { rarity, up: 0, element: d.elements?.[0]?.id ?? null };
+const title = name(d.name, lang);
+const listHref = href(lang, "items");
+const groupHref = `${listHref}?slot=${item.slot ?? item.category}`;
+const groupName = name(d.slotName ?? d.categoryName, lang);
+const sources = itemSources(item, lang);
+const firstSources = sources.slice(0, 8);
+const moreSources = sources.slice(8);
+const m = meta();
+const dataLine = `${m.dataCommit} · ${formatDate(m.dataDate, lang)}`;
+const shopPrice = item.sources.shops.length > 0 ? Math.min(...item.sources.shops.map((s) => s.gold)) : null;
+const recipe = item.sources.crafting[0] ? craftRecipe(item.sources.crafting[0].recipe) : undefined;
+const dismantle = d.equipment ? load("crafting").dismantle[rarity] : undefined;
+const alchemy = usedInAlchemy(item);
+const usedUpgrade = item.usedFor?.upgrade ?? [];
+const usedCrafting = item.usedFor?.crafting ?? 0;
+const tiers = d.generated ? items().filter((x) => x.type === item.type && x.id === `${x.type}_${x.tier}`).sort((a, b) => (a.tier ?? 0) - (b.tier ?? 0)) : [];
+const rarityNames = d.rarities.map((r) => name(r.name, lang));
+const classText = d.allClasses ? t(lang, "item.allClasses") : d.classes.map((c) => name(c.name, lang)).join(", ");
+const topMonsters = sources.filter((s) => s.kind === "monster").slice(0, 3).map((s) => s.title);
+const bossSource = sources.find((s) => s.kind === "boss");
+const sentences = [
+  d.equipment
+    ? t(lang, d.allClasses ? "item.desc.equipAll" : "item.desc.equip", { type: name(d.typeName, lang), classes: classText, level: d.level })
+    : t(lang, "item.desc.other", { type: name(d.typeName, lang), category: name(d.categoryName, lang) }),
+  d.equipment && d.rarities.length > 1 ? t(lang, "item.desc.rarities", { list: rarityNames.join(", ") }) : "",
+  bossSource ? t(lang, "item.desc.boss", { boss: bossSource.title }) : topMonsters.length > 0 ? t(lang, "item.desc.from", { list: topMonsters.join(", ") }) : "",
+].filter(Boolean);
+const upgradeLabels = {
+  rarity: t(lang, "item.rarity"),
+  element: t(lang, "item.element"),
+  stats: t(lang, "item.statsByUp"),
+  level: t(lang, "item.col.level"),
+  chance: t(lang, "item.col.chance"),
+  onFail: t(lang, "item.col.onFail"),
+  cost: t(lang, "item.col.cost"),
+  base: t(lang, "item.up.base"),
+  noRisk: t(lang, "item.up.noRisk"),
+  dropTo: t(lang, "item.up.dropTo"),
+  protected: t(lang, "item.up.protected"),
+  scroll: name(getItem(load("upgrade").protection)?.name, lang),
+  calc: t(lang, "item.up.calc"),
+  pool: t(lang, "item.pool"),
+  poolText: t(lang, "item.pool.text"),
+  poolLegendary: t(lang, "item.pool.legendary"),
+  poolLegendaryText: t(lang, "item.pool.legendaryText"),
+  bonus: t(lang, "item.col.bonus"),
+  fixed: t(lang, "item.fixed"),
+  levels: t(lang, "item.up.levels"),
+  dmg: t(lang, "tooltip.dmg"),
+  mdmg: t(lang, "tooltip.mdmg"),
+  caption: t(lang, "item.statsByUp"),
+};
+const liveLabels = {
+  bind: t(lang, "tooltip.bind"),
+  id: "ID",
+  binding: t(lang, "item.tech.binding"),
+  bindYes: t(lang, "item.tech.bindYes"),
+  bindNo: t(lang, "item.tech.bindNo"),
+  bonuses: t(lang, "item.tech.bonuses"),
+  bonusesFixed: t(lang, "item.tech.fixed"),
+  random: t(lang, "item.tech.random"),
+  value: t(lang, "tooltip.value"),
+  shop: t(lang, "item.tech.shop"),
+  ilvl: t(lang, "item.tech.ilvl"),
+  data: t(lang, "item.tech.data"),
+  noSell: t(lang, "item.tech.noSell"),
+};
+const rarityText = (key: string) => name(rarities().find((r) => r.key === key)?.name, lang);
+const ref = (rid: string) => materialRef(rid);
+const searchLine = [rarityText(rarity), name(d.typeName, lang), t(lang, "level", { level: d.level })].join(" · ");
+const searchTip = JSON.stringify(itemTooltip(id, { lang, rarity }));
+---
+<Base
+  lang={lang}
+  title={title}
+  description={sentences.join(" ")}
+  section="items"
+  search={{ type: "item", meta: { title, line: searchLine, rarity, level: String(d.level), glyph: d.glyph, color: d.color, tooltip: searchTip } }}
+>
+  <div class="page" data-item-page style={`--c: var(--vw-r-${rarity}); --ct: var(--vw-r-${rarity}-text)`}>
+    <Crumbs items={[{ label: t(lang, "crumbs.wiki"), href: href(lang, "home") }, { label: t(lang, "nav.items"), href: listHref }, { label: groupName, href: groupHref }, { label: title }]} />
+    <div class="grid">
+      <aside class="left">
+        <ItemTooltipLive client:load detail={d} lang={lang} initial={initial} tooltip={tooltipLabels(lang)} labels={liveLabels} shopPrice={shopPrice} dataLine={dataLine} />
+      </aside>
+      <div class="right">
+        <h1 class="h1">{title}</h1>
+        <div class="chips">
+          <span class="vw-rank">{rarityText(rarity)}</span>
+          <span class="vw-rank">{name(d.typeName, lang)}</span>
+          {(d.equipment || d.level > 1) && <span class="vw-rank">{t(lang, "level", { level: d.level })}</span>}
+          {d.equipment && <span class="vw-rank">{classText}</span>}
+          {d.stackable && d.maxStack > 1 && <span class="vw-rank">{t(lang, "tooltip.stack", { n: d.maxStack })}</span>}
+        </div>
+        <p class="lead">{sentences.join(" ")}</p>
+        {d.desc && <p class="flavor">„{name(d.desc, lang)}”</p>}
+
+        <ItemUpgradeView client:load detail={d} lang={lang} initial={initial} labels={upgradeLabels} calcHref={sectionHref(lang, "upgrading")} scrollHref={sectionHref(lang, "items", load("upgrade").protection)} />
+
+        <div class="two">
+          <section>
+            <SectionTitle>{t(lang, "item.sources")}</SectionTitle>
+            {sources.length === 0 && <p class="muted">{t(lang, "item.noSources")}</p>}
+            <ul class="cards">
+              {firstSources.map((s) => (
+                <li>
+                    {s.href ? (
+                      <a class="src" href={s.href}>
+                        <span class="thumb">{s.monster ? <MonsterImage id={s.monster.id} kind={s.monster.variant === "boss" ? "boss" : "monster"} variant={s.monster.variant === "boss" ? "normal" : s.monster.variant} size="thumb" stage="card" alt="" /> : <span class="dia" aria-hidden="true"></span>}</span>
+                        <span class="txt"><strong>{s.title}</strong><span>{s.line}</span></span>
+                        {s.chance && <span class="ch">{s.chance}</span>}
+                      </a>
+                    ) : (
+                      <div class="src">
+                        <span class="thumb"><span class="dia" aria-hidden="true"></span></span>
+                        <span class="txt"><strong>{s.title}</strong><span>{s.line}</span></span>
+                        {s.chance && <span class="ch">{s.chance}</span>}
+                      </div>
+                    )}
+                </li>
+              ))}
+            </ul>
+            {moreSources.length > 0 && (
+              <details class="more">
+                <summary>{t(lang, "item.moreSources", { n: moreSources.length })}</summary>
+                <ul class="cards">
+                  {moreSources.map((s) => (
+                    <li>
+                      <a class="src" href={s.href ?? undefined}>
+                        <span class="thumb">{s.monster ? <MonsterImage id={s.monster.id} kind={s.monster.variant === "boss" ? "boss" : "monster"} variant={s.monster.variant === "boss" ? "normal" : s.monster.variant} size="thumb" stage="card" alt="" /> : <span class="dia" aria-hidden="true"></span>}</span>
+                        <span class="txt"><strong>{s.title}</strong><span>{s.line}</span></span>
+                        {s.chance && <span class="ch">{s.chance}</span>}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            )}
+            {sources.some((s) => s.kind === "monster") && <p class="note">{t(lang, "item.monsterNote")}</p>}
+          </section>
+
+          <section>
+            <SectionTitle>{t(lang, "item.craft")}</SectionTitle>
+            {recipe && (
+              <div class="box">
+                <h3 class="vw-label">{t(lang, "item.craft.recipe")}</h3>
+                <p class="mats">
+                  <span class="gold">{formatNumber(recipe.gold, lang)} {t(lang, "item.gold")}</span>
+                  {recipe.materials.map((mm) => {
+                    const r = ref(mm.id);
+                    const h = sectionHref(lang, "items", mm.id);
+                    return <span class="mat"><ItemIcon glyph={r.glyph} color={r.color} rarity={r.rarity} size={28} src={r.icon} />{h ? <a href={h}>{name(r.name, lang)}</a> : name(r.name, lang)} ×{mm.n}</span>;
+                  })}
+                </p>
+                {d.elements && <p class="note">{t(lang, "item.craft.elements")}</p>}
+              </div>
+            )}
+            {dismantle && (
+              <div class="box">
+                <h3 class="vw-label">{t(lang, "item.craft.dismantle", { rarity: rarityText(rarity) })}</h3>
+                <p class="mats">
+                  {dismantle.map((x) => {
+                    const r = ref(x.id);
+                    return <span class="mat"><ItemIcon glyph={r.glyph} color={r.color} rarity={r.rarity} size={28} src={r.icon} />{name(r.name, lang)} {x.min === x.max ? x.min : `${x.min}–${x.max}`}</span>;
+                  })}
+                </p>
+                <p class="note">{t(lang, "item.craft.refund")}</p>
+              </div>
+            )}
+            {(alchemy.length > 0 || usedUpgrade.length > 0 || usedCrafting > 0) && (
+              <div class="box">
+                <h3 class="vw-label">{t(lang, "item.usedFor")}</h3>
+                <ul class="used">
+                  {alchemy.map((a) => {
+                    const r = ref(a.result);
+                    const h = sectionHref(lang, "items", a.result);
+                    return <li><ItemIcon glyph={r.glyph} color={r.color} rarity={r.rarity} size={28} src={r.icon} />{h ? <a href={h}>{name(r.name, lang)}</a> : name(r.name, lang)} <span class="muted">· {t(lang, "item.src.alchemy")}</span></li>;
+                  })}
+                  {usedUpgrade.length > 0 && <li>{t(lang, "item.usedUpgrade", { levels: usedUpgrade.map((u) => `+${u}`).join(", ") })}</li>}
+                  {usedCrafting > 0 && <li>{t(lang, "item.usedCrafting", { n: usedCrafting })}</li>}
+                </ul>
+              </div>
+            )}
+            {!recipe && !dismantle && alchemy.length === 0 && usedUpgrade.length === 0 && usedCrafting === 0 && <p class="muted">{t(lang, "item.noCraft")}</p>}
+          </section>
+        </div>
+
+        {tiers.length > 1 && (
+          <section>
+            <SectionTitle>{t(lang, "item.otherTiers")}</SectionTitle>
+            <p class="tiers">
+              {tiers.map((x) => <a class="vw-chip" href={href(lang, "items", x.id)} aria-current={x.id === id ? "page" : undefined} aria-pressed={x.id === id ? "true" : undefined}>{x.tier}</a>)}
+            </p>
+          </section>
+        )}
+      </div>
+    </div>
+  </div>
+</Base>
+
+<style>
+  .page { max-width: 1440px; margin: 0 auto; padding: 22px 72px 72px; }
+  .grid { display: grid; grid-template-columns: 400px minmax(0, 1fr); gap: 56px; margin-top: 28px; align-items: start; }
+  .left { position: sticky; top: 90px; }
+  .right { display: flex; flex-direction: column; gap: 22px; min-width: 0; }
+  .h1 { margin: 0; font: 800 54px/1.05 var(--vw-font-ui); color: var(--ct); text-shadow: 0 0 28px color-mix(in srgb, var(--c) 45%, transparent); }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .lead { margin: 0; max-width: 760px; font-size: 19px; line-height: 1.6; color: var(--vw-text-soft); }
+  .flavor { margin: -8px 0 0; font-style: italic; color: #EADDBE; }
+  .two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 40px; margin-top: 12px; }
+  .cards { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+  .src { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 10px 14px; background: var(--vw-panel); border: 1px solid var(--vw-border); color: var(--vw-text); }
+  a.src:hover { text-decoration: none; border-color: var(--vw-gold-dark); }
+  .thumb { width: 44px; height: 44px; border: 1px solid var(--vw-border); overflow: hidden; display: inline-flex; align-items: center; justify-content: center; background: #14161B; }
+  .dia { width: 12px; height: 12px; transform: rotate(45deg); background: var(--vw-gold-dark); }
+  .txt { display: flex; flex-direction: column; min-width: 0; }
+  .txt strong { font-weight: 800; }
+  .txt span { font-size: 13px; color: var(--vw-text-muted); }
+  .ch { color: var(--vw-r-legendary-text); font-weight: 800; white-space: nowrap; }
+  .more summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; color: var(--vw-gold); font-weight: 800; }
+  .note { margin: 8px 0 0; font-size: 14px; color: var(--vw-text-muted); }
+  .box { padding: 16px; background: var(--vw-panel); border: 1px solid var(--vw-border); margin-bottom: 12px; }
+  .box h3 { margin: 0 0 10px; }
+  .mats { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; margin: 0; }
+  .mat { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; }
+  .gold { color: var(--vw-gold-bright); font-weight: 800; }
+  .used { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+  .used li { display: flex; align-items: center; gap: 8px; }
+  .muted { color: var(--vw-text-muted); }
+  .tiers { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; }
+  .tiers a { min-width: 52px; justify-content: center; min-height: 44px; }
+  .tiers a:hover { text-decoration: none; }
+  @media (max-width: 1100px) { .grid { grid-template-columns: 340px minmax(0, 1fr); gap: 32px; } .two { grid-template-columns: 1fr; } }
+  @media (max-width: 860px) {
+    .page { padding: 16px 16px 48px; }
+    .grid { display: flex; flex-direction: column; gap: 22px; margin-top: 12px; }
+    .right { display: contents; }
+    .h1, .chips { order: -2; }
+    .left { order: -1; position: static; }
+    .h1 { font-size: 34px; margin-bottom: -10px; }
+    .lead { font-size: 17px; }
+  }
+</style>

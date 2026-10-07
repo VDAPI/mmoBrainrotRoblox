@@ -9,21 +9,25 @@ const BUDGETS = [
   { page: "pl/bestiariusz/index.html", kb: 8 },
   { page: "pl/bestiariusz/wolf/index.html", kb: 5 },
   { page: "pl/bossy/grimrok/index.html", kb: 4 },
+  // S40: pages with Svelte islands, everything they load (layout and palette included)
+  { page: "pl/przedmioty/index.html", kb: 50, all: true },
+  { page: "pl/przedmioty/sword2h_35/index.html", kb: 50, all: true },
+  { page: "pl/ulepszanie/index.html", kb: 50, all: true },
 ];
 const SHARED = /\/_astro\/(Base\.astro|SearchPalette|client\.svelte|render\.|class\.|input\.)/;
 
-function chunks(file, seen) {
+function chunks(file, seen, all = false) {
   if (seen.has(file)) return;
   seen.add(file);
   const code = readFileSync(join(DIST, file), "utf8");
   for (const m of code.matchAll(/(?:import|from)\s*["'](\.\/[^"']+\.js)["']/g)) {
     const next = `/_astro/${m[1].slice(2)}`;
-    if (!SHARED.test(next)) chunks(next, seen);
+    if (all || !SHARED.test(next)) chunks(next, seen, all);
   }
 }
 
 let failed = false;
-for (const { page, kb } of BUDGETS) {
+for (const { page, kb, all = false } of BUDGETS) {
   const path = join(DIST, page);
   if (!existsSync(path)) {
     console.error(`budgets: missing ${page}`);
@@ -32,7 +36,9 @@ for (const { page, kb } of BUDGETS) {
   }
   const html = readFileSync(path, "utf8");
   const seen = new Set();
-  for (const m of html.matchAll(/<script type="module" src="(\/_astro\/[^"]+\.js)"/g)) if (!SHARED.test(m[1])) chunks(m[1], seen);
+  for (const m of html.matchAll(/<script type="module" src="(\/_astro\/[^"]+\.js)"/g)) if (all || !SHARED.test(m[1])) chunks(m[1], seen, all);
+  // islands: component-url / renderer-url of <astro-island>
+  if (all) for (const m of html.matchAll(/(?:component|renderer)-url="(\/_astro\/[^"]+\.js)"/g)) chunks(m[1], seen, all);
   const size = [...seen].reduce((n, f) => n + gzipSync(readFileSync(join(DIST, f))).length, 0);
   const ok = size <= kb * 1024;
   if (!ok) failed = true;

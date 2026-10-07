@@ -1,0 +1,56 @@
+---
+// Upgrade calculator page (S40, /pl/ulepszanie/, mock-up Ulepszanie-*): heading and the UpgradeCalc island, server-
+// rendered with the weekly legendary item (pickWeeklyLegendary) from +5 to +8.
+import Base from "../layouts/Base.astro";
+import Crumbs from "../components/Crumbs.astro";
+import UpgradeCalc from "../islands/UpgradeCalc.svelte";
+import { href, type Lang } from "../i18n/routes";
+import { getItem, items, load } from "../lib/data";
+import { isoWeek, pickWeeklyLegendary } from "../lib/featured";
+import { name, t, type Key } from "../lib/i18n";
+import { itemDetail, materialRef, tooltipLabels } from "../lib/items";
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const week = isoWeek(new Date());
+const weekly = pickWeeklyLegendary(items(), week.key);
+const fallback = items().find((i) => i.category === "equipment" && i.rarities.includes("legendary"))!;
+const d = itemDetail(weekly?.item.id ?? fallback.id)!;
+const rarity = d.rarities.some((r) => r.key === "legendary") ? "legendary" : d.rarities[d.rarities.length - 1].key;
+const keys = [
+  "item", "search", "lv", "rarity", "element", "current", "target", "less", "moreLv", "protUse", "protFrom", "firstTry", "path",
+  "gold", "scrolls", "attempts", "ladder", "legendSafe", "legendDrop", "step", "chance", "avgTries", "materials", "onFail",
+  "noDrop", "dropTo", "footnote", "after",
+] as const;
+const labels: Record<string, string> = Object.fromEntries(keys.map((k) => [k, t(lang, `calc.${k}` as Key)]));
+labels.bind = t(lang, "tooltip.bind");
+const scrollId = load("upgrade").protection;
+const scrollRef = materialRef(scrollId);
+const scroll = { name: name(scrollRef.name, lang), desc: name(getItem(scrollId)?.desc, lang), glyph: scrollRef.glyph, color: scrollRef.color, icon: scrollRef.icon };
+---
+<Base lang={lang} title={t(lang, "calc.title")} description={t(lang, "calc.lead")} section="upgrading">
+  <div class="page">
+    <Crumbs items={[{ label: t(lang, "crumbs.wiki"), href: href(lang, "home") }, { label: t(lang, "nav.upgrading") }]} />
+    <h1 class="h1">{t(lang, "calc.title")}</h1>
+    <p class="lead">{t(lang, "calc.lead")}</p>
+    <UpgradeCalc
+      client:load
+      lang={lang}
+      detail={d}
+      initial={{ rarity, element: d.elements?.[0]?.id ?? null, from: 5, to: 8, prot: null }}
+      labels={labels}
+      tooltip={tooltipLabels(lang)}
+      indexUrl={`/${lang}/items-index.json`}
+      scroll={scroll}
+    />
+  </div>
+</Base>
+
+<style>
+  .page { max-width: 1440px; margin: 0 auto; padding: 40px 56px 72px; }
+  .h1 { margin: 16px 0 12px; font: 700 72px/1 var(--vw-font-display); color: var(--vw-gold-bright); }
+  .lead { margin: 0 0 36px; max-width: 760px; font-size: 19px; line-height: 1.55; color: var(--vw-text-soft); }
+  @media (max-width: 767px) { .page { padding: 16px 16px 48px; } .h1 { font-size: 40px; } .lead { font-size: 17px; margin-bottom: 20px; } }
+</style>

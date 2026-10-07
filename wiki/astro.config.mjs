@@ -14,7 +14,7 @@ export default defineConfig({
     svelte(),
     mdx(),
     sitemap({
-      filter: (page) => !page.includes("/styleguide/") && !page.includes("/404/") && !page.endsWith("/404.html"),
+      filter: (page) => !page.endsWith(".json") && !page.includes("/styleguide/") && !page.includes("/404/") && !page.endsWith("/404.html"),
     }),
   ],
   vite: { build: { assetsInlineLimit: 0 } },

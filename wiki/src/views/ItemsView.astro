@@ -1,0 +1,66 @@
+---
+// Item base (S40, /pl/przedmioty/, mock-up Przedmioty-*): the ItemsBrowser island, server-rendered with the first page
+// (generated equipment grouped by base, highest tier, level ↓); the full index loads after mounting.
+import Base from "../layouts/Base.astro";
+import Crumbs from "../components/Crumbs.astro";
+import ItemsBrowser from "../islands/ItemsBrowser.svelte";
+import { href, type Lang } from "../i18n/routes";
+import { load, rarities } from "../lib/data";
+import { name, t, type Key } from "../lib/i18n";
+import { DEFAULT_ITEM_FILTERS, groupTiers, sortRows } from "../lib/items-filters";
+import { indexRows, itemTooltip, tooltipLabels } from "../lib/items";
+import { listRarity } from "../lib/item-model";
+import { normalize } from "../lib/search";
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const all = indexRows(lang, (id) => href(lang, "items", id), normalize);
+const order = rarities().map((r) => r.key);
+const first = sortRows(
+  groupTiers(all, null).map((g) => ({ ...g.shown, statNum: g.shown.statNum[listRarity(g.shown.rarities, [], order)] })),
+  DEFAULT_ITEM_FILTERS.sort,
+  lang,
+).slice(0, 50);
+const initial = first.map((r) => all.find((x) => x.id === r.id)!);
+const file = load("items");
+const slotIds = [...Object.keys(file.slots).filter((s) => s !== "backpack"), ...Object.keys(file.categories).filter((c) => c !== "equipment")];
+const slots = slotIds.map((id) => ({ id, name: name(file.slots[id]?.name ?? file.categories[id]?.name, lang) }));
+const classes = load("classes").classes.map((c) => ({ id: c.id, name: name(c.name, lang) }));
+const keys = [
+  "title", "filter", "filters", "rarity", "slot", "class", "level", "from", "to", "all", "anyClass", "allTiers", "clear", "sort",
+  "sort.-level", "sort.level", "sort.name", "sort.type", "sort.stat", "bossItems", "none", "icon", "colName", "colType",
+  "colLevel", "colStat", "prevTier", "nextTier", "more", "pages", "preview", "open", "count.one", "count.few", "count.many",
+] as const;
+const labels: Record<string, string> = Object.fromEntries(keys.map((k) => [k, t(lang, `items.${k}` as Key)]));
+labels.bind = t(lang, "tooltip.bind");
+const firstRow = initial[0];
+const initialTip = firstRow ? (itemTooltip(firstRow.id, { lang, rarity: listRarity(firstRow.rarities, [], order) }) ?? null) : null;
+const bossesHref = href(lang, "bossItems");
+---
+<Base lang={lang} title={t(lang, "items.title")} description={t(lang, "items.lead")} section="items">
+  <div class="page">
+    <Crumbs items={[{ label: t(lang, "crumbs.wiki"), href: href(lang, "home") }, { label: t(lang, "items.title") }]} />
+    <ItemsBrowser
+      client:load
+      lang={lang}
+      initial={initial}
+      total={groupTiers(all, null).length}
+      rarities={rarities().map((r) => ({ key: r.key, name: name(r.name, lang) }))}
+      slots={slots}
+      classes={classes}
+      labels={labels}
+      tooltip={tooltipLabels(lang)}
+      initialTip={initialTip}
+      indexUrl={`/${lang}/items-index.json`}
+      bossesHref={bossesHref}
+    />
+  </div>
+</Base>
+
+<style>
+  .page { max-width: 1440px; margin: 0 auto; padding: 40px 48px 72px; }
+  .page > :global(nav) { margin-bottom: 12px; }
+  @media (max-width: 767px) { .page { padding: 16px 16px 48px; } }
+</style>
