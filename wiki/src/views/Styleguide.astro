@@ -15,6 +15,7 @@ import ItemIcon from "../components/ItemIcon.svelte";
 import ItemTooltip from "../components/ItemTooltip.svelte";
 import Label from "../components/Label.astro";
 import MonsterCard from "../components/MonsterCard.astro";
+import MonsterImage from "../components/MonsterImage.astro";
 import Pager from "../components/Pager.astro";
 import RankBadge from "../components/RankBadge.astro";
 import RarityBadge from "../components/RarityBadge.svelte";
@@ -47,6 +48,14 @@ const withElite2 = mons.find((m) => m.variants.elite2);
 const withElite = mons.find((m) => m.variants.elite);
 const wolf = mons.find((m) => m.id === "wolf") ?? mons[0];
 const boss = bosses()[0];
+// S38 renders: monsters by region map (variants side by side), then bosses and pets.
+const regionOrder = load("maps").maps.filter((m) => m.kind === "region").sort((a, b) => a.minLevel - b.minLevel);
+const rendersByRegion = regionOrder
+  .map((m) => ({ map: m, list: mons.filter((x) => x.regionMap === m.id).sort((a, b) => (a.id < b.id ? -1 : 1)) }))
+  .filter((g) => g.list.length > 0);
+const VARIANTS = ["normal", "elite", "elite2"] as const;
+const pets = load("cosmetics").cosmetics.filter((c) => c.kind === "pet");
+const noElites = mons.find((m) => !m.variants.elite);
 const tableRows = mons.slice(0, 5).map((m) => {
   const v = m.variants.normal ?? Object.values(m.variants)[0];
   const row = v.levels[v.levels.length - 1];
@@ -68,6 +77,7 @@ const toc = [
   { id: "badges", label: "Badges" },
   { id: "monsters", label: "MonsterCard" },
   { id: "boss", label: "BossHeader" },
+  { id: "renders", label: t(lang, "renders.title") },
   { id: "skills", label: "SkillNode" },
   { id: "table", label: "DataTable" },
   { id: "bars", label: "Bar" },
@@ -142,6 +152,56 @@ const toc = [
       <section id="boss">
         <SectionTitle>BossHeader</SectionTitle>
         {boss && <BossHeader boss={boss} lang={lang} players={3} />}
+      </section>
+
+      <section id="renders">
+        <SectionTitle>{t(lang, "renders.title")}</SectionTitle>
+        <p class="note">{t(lang, "renders.lead")}</p>
+        <Label as="h3">{t(lang, "renders.stages")}</Label>
+        <div class="stages">
+          <MonsterImage id={wolf.id} stage="page" alt={name(wolf.name, lang)} />
+          {boss && <MonsterImage id={boss.id} kind="boss" stage="page" alt={name(boss.name, lang)} />}
+          <div class="stage-col">
+            <div class="portrait"><MonsterImage id={wolf.id} variant="elite" stage="portrait" alt={name(wolf.variants.elite?.name ?? wolf.name, lang)} /></div>
+            <div class="portrait sm"><MonsterImage id={wolf.id} variant="elite" stage="portrait" alt={name(wolf.variants.elite?.name ?? wolf.name, lang)} /></div>
+            <div class="missing"><MonsterImage id="__missing__" alt={t(lang, "renders.missing")} element="fire" /><span>{t(lang, "renders.missing")}</span></div>
+          </div>
+        </div>
+        <div class="grid cards">
+          {VARIANTS.map((v) => <MonsterCard monster={wolf} variant={v} lang={lang} />)}
+          {noElites && <MonsterCard monster={noElites} lang={lang} />}
+        </div>
+        {rendersByRegion.map((g) => (
+          <>
+            <Label as="h3">{name(g.map.name, lang)}</Label>
+            <div class="gallery">
+              {g.list.map((m) => VARIANTS.filter((v) => m.variants[v]).map((v) => (
+                <figure class="tile">
+                  <div class="vw-monster__render"><MonsterImage id={m.id} variant={v} alt={name(m.variants[v]?.name ?? m.name, lang)} element={m.element} /></div>
+                  <figcaption>{name(m.variants[v]?.name ?? m.name, lang)}</figcaption>
+                </figure>
+              )))}
+            </div>
+          </>
+        ))}
+        <Label as="h3">{t(lang, "renders.bosses")}</Label>
+        <div class="gallery">
+          {bosses().map((b) => (
+            <figure class="tile">
+              <div class="vw-monster__render"><MonsterImage id={b.id} kind="boss" alt={name(b.name, lang)} /></div>
+              <figcaption>{name(b.name, lang)}</figcaption>
+            </figure>
+          ))}
+        </div>
+        <Label as="h3">{t(lang, "renders.pets")}</Label>
+        <div class="gallery">
+          {pets.map((p) => (
+            <figure class="tile">
+              <div class="vw-monster__render"><MonsterImage id={p.id} kind="pet" alt={name(p.name, lang)} /></div>
+              <figcaption>{name(p.name, lang)}</figcaption>
+            </figure>
+          ))}
+        </div>
       </section>
 
       <section id="minimap">
@@ -241,6 +301,17 @@ const toc = [
   .cards { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
   .stack { display: flex; flex-direction: column; gap: 12px; max-width: 480px; }
   .nodes { gap: 24px; }
+  .note { margin: 0 0 16px; color: var(--vw-text-muted); }
+  .stages { display: flex; flex-wrap: wrap; gap: 28px; align-items: flex-start; margin: 12px 0 28px; }
+  .stage-col { display: flex; flex-direction: column; gap: 20px; align-items: flex-start; }
+  .portrait { width: 92px; height: 92px; margin: 4px; }
+  .portrait.sm { width: 56px; height: 56px; }
+  .missing { width: 200px; display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--vw-text-muted); }
+  .missing :global(.mob) { aspect-ratio: 4 / 3; height: auto; border: 1px solid var(--vw-border); }
+  #renders :global(h3) { margin-top: 8px; }
+  .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin: 12px 0 28px; }
+  .tile { margin: 0; display: flex; flex-direction: column; gap: 6px; }
+  .tile figcaption { font-size: 13px; color: var(--vw-text-muted); overflow-wrap: anywhere; }
   .swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; margin-bottom: 20px; }
   .swatch { display: flex; align-items: center; gap: 10px; }
   .swatch span { width: 28px; height: 28px; border: 1px solid var(--vw-border); }

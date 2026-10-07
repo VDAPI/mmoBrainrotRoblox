@@ -3219,3 +3219,39 @@ Szczegóły, komponenty i decyzje: `docs/WIKI.md` (Komponenty, Stan, Decyzje, Ni
 12. `/en/regions/frostpeak/` po angielsku; `/pl/krainy/city/` z postaciami i bramami zamiast potworów.
 13. Wyszukiwarka wiki: „laki” znajduje stronę krainy (nie „Strona wkrótce”); menu „Mapa” i stopka „Krainy” działają.
 14. `npm run check` przechodzi; `npm run data -- --check` mówi „up to date”.
+
+### S38: Wiki 4/10 — rendery potworów, bossów i petów
+
+Szczegóły, parametry i decyzje: `docs/WIKI.md` („Obrazy potworów”, Stan, Decyzje, Niedokończone),
+`tools/wiki-renders/README.md`.
+
+**Zrobione**
+- `tools/WikiLooks.luau` (czysty moduł zrzutu wyglądów) + tryb `lune run tools/lookdump.luau --wiki <json>`: 158 wpisów
+  (50 rodzajów × warianty, 4 bossy z aurą i fazami, 6 petów bez ceny). Stary tryb podglądu daje te same bajty.
+  Kod gry bez zmian.
+- `tools/wiki-renders/` (Python + numpy + Pillow): gładkie kule i walce, normalna na piksel, światło kluczowe /
+  wypełniające / kontur w kolorze rangi, połysk wg materiału, półprzezroczyste duchy i szkło, poświata Neon, miękki cień,
+  automatyczny kadr (szerokie skrzydła → widok bardziej z boku), `overrides.json`, przyrostowo po hashu z manifestem,
+  arkusz kontrolny, obrazy faz bossów, obrazy OG. `npm run renders` / `renders:test` w `wiki/`.
+- Wiki: `src/lib/renders.ts`, `MonsterImage` ze scenami `card`/`page`/`portrait`/`none`, rendery w kartach potworów,
+  `BossHeader`, „Potwór tygodnia”, boss w tle hero strony głównej (`pickHeroBoss`), galeria „Rendery” w styleguide.
+- Testy: `tests/lookdump.spec.luau`, 9 testów Pythona, Vitest `renders`, `renders-manifest`, `featured` (`pickHeroBoss`).
+
+#### Instrukcja testu S38
+
+1. `cd wiki`, `npm run renders`: „wyrenderowano 0, pominięto 158” (obrazki są w repo); `npm run renders -- --only wolf
+   --force` renderuje tylko wilka i jego elity.
+2. Otwórz `tools/wiki-renders/out/contact.png` (arkusz kontrolny): wszystkie potwory, bossy i pety, nic nieucięte.
+3. `npm run renders:test` — 9 testów OK. (Bez Pythona: komunikat z instrukcją `winget` i `pip`; wiki dalej się buduje.)
+4. `npm run build` + `npm run preview` → http://localhost:4321/pl/: za słupem światła stoi Vaelgrath (odwrócony w stronę
+   tytułu, przyciemniony, z niebieską poświatą); tytuł i pole szukania czytelne.
+5. Zmień motyw na jasny (przycisk ◑): tekst hero dalej czytelny.
+6. Telefon (390 px, DevTools): boss mniejszy, półprzezroczysty nad tytułem; brak poziomego przewijania.
+7. „Potwór tygodnia” ma render elity w podwójnej złotej ramce.
+8. `/pl/styleguide/#renders`: sceny `page` (wilk, Grimrok w złotej ramce 380 × 460), portrety 92 i 56 px, zaślepka,
+   4 karty potworów z obrazkami (plakietki rang i żywiołu nie zasłaniają głów).
+9. Niżej galeria: potwory wg krain (warianty obok siebie), bossowie, pety; ciemne potwory (Azgor, golemy) mają złoty
+   kontur, elity świecące oczy, duchy są półprzezroczyste.
+10. `/pl/styleguide/#boss`: obrazek Grimroka w nagłówku bossa; na telefonie tabela HP przewija się w bok.
+11. `wiki/public/img/og/base.png` i `default-art.png` — ramka, paski, boss po prawej.
+12. `npm run check` w `wiki/` i `scripts/check` przechodzą.

@@ -69,7 +69,8 @@ tools/
                           nazwa inna niż wikidump, bo na Windows Lune myli plik z folderem tej samej nazwy)
   wikimap.luau            SVG map z danych; logika w tools/WikiMaps/*.luau (nie WikiMap: ta sama kolizja nazw
                           z plikiem na Windows co przy WikiData)
-  LookDump.luau           wyglądy potworów, bossów i petów do renderów (lookdump.luau --wiki)
+  WikiLooks.luau          wyglądy potworów, bossów i petów do renderów (lookdump.luau --wiki; nie LookDump:
+                          na Windows ta sama nazwa co lookdump.luau)
   wiki-renders/           rendery potworów, bossów i petów (Python + numpy + Pillow; tylko lokalnie)
 scripts/
   wikidump.sh, wikidump.ps1
@@ -221,7 +222,7 @@ do HTML bez JS, wyspy importują te same pliki). Dane przez `src/lib/data.ts` (`
 | `ItemTooltip.svelte` | `{ data: TooltipData, floating?, href?, labels?: { bind } }`; dane: `tooltipData(itemId, { rarity?, upgrade?, lang, playerLevel? })`, `defaultRarity(item)` (`src/lib/tooltip.ts`) |
 | `ItemIcon.svelte` | `{ glyph, color, rarity?, size? = 40, src?, alt? }` (S40 dokłada `src` z manifestu ikon) |
 | `RarityBadge.svelte` | `{ rarity, label }` (nazwa z `rarities.json` podaje wywołujący — komponent działa też w wyspach) |
-| `MonsterImage` | `{ id, variant?, kind?: "monster"\|"boss"\|"pet", size?: "thumb"\|"full", alt, element?, class? }` (`public/img/mobs/<id>[-elite\|-elite2][-128].webp`, inaczej wzór z rombem) |
+| `MonsterImage` | `{ id, variant?, kind?: "monster"\|"boss"\|"pet", stage?: "card"\|"page"\|"portrait"\|"none", size?: "thumb"\|"full", alt, eager?, element?, class? }` (S38: render z `src/lib/renders.ts` na ciemnej scenie, inaczej wzór z rombem; patrz „Obrazy potworów”) |
 | `MonsterCard` | `{ monster, variant?, level?, lang, href? }` |
 | `BossHeader` | `{ boss, lang, players?: 1-5 }` |
 | `SkillNode` / `SkillEdge` | `{ glyph?, state, rank, max, active?, capstone?, selected?, label }` / `{ active? }` |
@@ -250,6 +251,31 @@ Link do miejsca na mapie z innych stron: `mapHref(lang, mapLinkFor(id))`.
 `ready: true` w `src/lib/sections.ts` (wtedy rekordy zastępcze tej sekcji znikają z indeksu, a strona „Wkrótce”
 z rejestru), linia w `scripts/shots.pages.mjs`.
 
+## Obrazy potworów (S38)
+
+- **Generowanie:** `cd wiki && npm run renders` (Python 3.10+ z numpy i Pillow; instrukcja i parametry w
+  `tools/wiki-renders/README.md`). Zrzut wyglądów: `lune run tools/lookdump.luau --wiki` (`tools/WikiLooks.luau`:
+  potwory × warianty, bossowie z `aura` i fazami, pety bez ceny; pomija `hidden`/`wiki = false`). Przyrostowo po hashu
+  (`tools/wiki-renders/manifest.json`); obrazki i manifest są commitowane. Build i CI nie potrzebują Pythona.
+- **Pliki** w `public/img/mobs/`: `<id>.webp`, `<id>-elite.webp`, `<id>-elite2.webp` (512), `…-128.webp` (128), bossy
+  `<id>-1024.webp` i fazy `<id>-p2.webp` / `-p3.webp` (512). Pety też tutaj (`pet_fox.webp`), nie w `img/pets`.
+- **`src/lib/renders.ts`** (tylko build): `renderSrc(id, variant, "thumb"|"full"|"hero")` → URL albo `null`; wariant bez
+  pliku → `normal` → `null`; brak `-128`/`-1024` → 512. Test `renders-manifest.test.ts` pilnuje zgodności folderu z
+  manifestem.
+- **Sceny `MonsterImage`:** zawsze ciemne (`#14161B`, przyciemnione paski, eliptyczna poświata u dołu w kolorze rangi:
+  normal `--vw-gold-dark`, elita `--vw-gold-bright`, Elita II `--vw-r-legendary`, boss `--vw-zone-red`). `card` wypełnia
+  `.vw-monster__render` 4:3; `page` 380 × 460 w złotej ramce z podwójnym pierścieniem (≤ 767 px pas 260 px z dolną
+  ramką); `portrait` kwadrat w podwójnej ramce (rozmiar daje rodzic); `none` sam obrazek. Obrazek `object-fit: contain`
+  przy dolnej krawędzi, `loading="lazy"` (poza `eager`), `width`/`height` 512 (128 dla `size="thumb"`); bossy z
+  `srcset` 512 1x / 1024 2x. Brak pliku → zaślepka z rombem żywiołu.
+- **Hero strony głównej:** `pickHeroBoss` (`src/lib/featured.ts`) — boss, z którego wypada przedmiot z hero, inaczej
+  najwyższy poziom; `<id>-1024.webp` pod słupem światła, odbity w stronę tytułu, przyciemniony, z poświatą `aura`.
+- **OG (dla S39):** `public/img/og/base.png` (1200 × 630, paski 135°, poświata, ramki 2 px `#C9A45C` / 1 px `#7A6438`)
+  i `default-art.png` (baza + boss z hero). Obszar renderu x 640–1160, y 40–600; obszar tekstu x 64–600 (S39 dopisze
+  tytuły w `scripts/og-images.mjs`).
+- **Regeneracja:** po zmianie `Data/MonsterLooks`, `Logic/Anatomy`, `Data/Cosmetics` (pety) albo nowym potworze:
+  `npm run renders` i commit obrazków z manifestem. Zmiana renderera = podbicie `RENDERER_VERSION`.
+
 ## Stan
 
 - **S34 (dane):** `lune run tools/wikidump.luau` (albo `scripts\wikidump.ps1` / `bash scripts/wikidump.sh`) tworzy 28
@@ -271,7 +297,35 @@ z rejestru), linia w `scripts/shots.pages.mjs`.
   styleguide. JS mapy ≈ 35 KB gzip (wyspa 11,7 + Svelte + panzoom + szukaj), dane mapy 8,8 KB gzip, skrypt krainy 1,3 KB.
   Sekcje `map` i `regions` mają `ready: true` (rekordy zastępcze krain zniknęły z Pagefind).
 
+## Stan (ciąg dalszy)
+
+- **S38 (rendery):** `npm run renders` tworzy 158 renderów 512 + miniatury 128 + 4 bossy 1024 i 7 obrazów faz
+  (3,8 MB, ok. 26 s na 7 procesach); drugie uruchomienie „wyrenderowano 0, pominięto 158” w ok. 2 s. Rendery w kartach
+  potworów, `BossHeader`, „Potwór tygodnia”, galerii `/pl/styleguide/#renders` i w hero głównej (boss pod słupem). Obrazy
+  OG `og/base.png`, `og/default-art.png`. `npm run renders:test` (9 testów Pythona), Vitest +2 pliki.
+
 ## Decyzje
+
+- **S38** Moduł zrzutu wyglądów to `tools/WikiLooks.luau` (plan: `LookDump.luau`): na Windows `LookDump.luau` i
+  `lookdump.luau` to ten sam plik. Stary tryb `lookdump.luau out.json <ids…>` daje te same bajty (test z próbką
+  `tests/fixtures/lookdump_wolf.json`). Liczba renderów z danych: 158 (50 rodzajów → 148 wariantów, 4 bossy, 6 petów).
+- **S38** Kamera 3/4 (35°, 15°, FOV 22°) i kadr 84 % × 80 % z dołem na 94 %. Szerokie sylwetki (skrzydła, ogony)
+  automatycznie dostają azymut 20–80°, gdy postać rośnie ≥ 1,25×; wywerny, wyrmy i młode smoki mają override
+  (`overrides.json`). Latające wiszą 0,8 studa × skala nad cieniem (w grze 2,5), bo pełna szczelina zmniejszała je o
+  połowę. Każdy wariant jest kadrowany osobno, więc różnicy rozmiaru elit (×1,25 / ×1,5) na obrazkach nie widać.
+- **S38** Światło: kluczowe ciepłe z lewej góry, wypełniające chłodne z prawej, kontur w kolorze rangi (0,55), liczone w
+  liniowym RGB; Neon bez cieniowania z poświatą 1,5 % boku. `CornerWedgePart` jako klin (dokumentacja Roblox nie podaje
+  geometrii; kryształowe żywiołaki i kilka akcesoriów).
+- **S38** Hero głównej: przyciemnienie od lewej przeniesione z tła `.hero` na warstwę `.hero__shade` (boss między
+  paskami a przyciemnieniem). Boss stoi na prawo od słupa (środek ok. 280 px od osi), tak że słup jest tuż przed jego
+  głową — przy szerokim smoku (Vaelgrath) „słup przez bok” wypadał na głowę. Na telefonie boss 280 px nad tytułem,
+  krycie 0,55.
+- **S38** `MonsterImage`: pety w `img/mobs` (S36 zakładało `img/pets`); miniatura 128 tylko dla `size="thumb"`, „Potwór
+  tygodnia” bierze 512 (92 px na ekranach 2×). `BossHeader` używa sceny `card` w swojej kwadratowej ramce + `srcset`.
+- **S38** `npm run shots` przed zrzutem przełącza obrazki na `eager` i czeka na `decode()` (pełnostronicowy zrzut nie
+  ładował leniwych obrazków). `scripts/lib/run.mjs` (wspólne `runLune`, bez `shell: true`) dla `data` i `renders`;
+  `renders.mjs` importuje `featured.ts` bezpośrednio (Node 24 usuwa typy).
+- **S38** Tabela HP w `BossHeader` przewija się poziomo na telefonie (rozpychała styleguide do 415 px).
 
 - **S37** Moduły generatora map w `tools/WikiMaps/` (nie `WikiMap`): na Windows Lune myli `tools/wikimap.luau` z
   folderem o tej samej nazwie („Ambiguous”), jak w S34.
@@ -350,6 +404,12 @@ z rejestru), linia w `scripts/shots.pages.mjs`.
   `Config.AdminUserIds` czyta tylko `tests/wikidump.spec.luau` (`Leak.scan`). Każdy build sprawdza zakazane klucze.
 
 ## Niedokończone
+
+- **S38** Cząsteczki (`fx`: żar, szron, mgła, zarodniki) nie są renderowane; `CornerWedgePart` jako klin. Wygląd z
+  `asset` (prawdziwy model) obecnie nie występuje — render pokaże wtedy wersję proceduralną (flaga `asset` w manifeście).
+  Zakładki faz w `BossHeader` z obrazkami `-p2`/`-p3` — S39. Wywerny i wyrmy przy dużej rozpiętości skrzydeł nadal
+  mniejsze od reszty (płaskie skrzydła w danych `wing`). Zrzuty wykonane w ciemnym motywie; jasny motyw hero sprawdzony
+  tylko w kodzie (przyciemnienie z tokenów).
 
 - **S37** Różnice względem makiet: na mapie świata brak krótkich nazw krain przy małym zoomie na telefonie (plakietki są
   pomniejszone); kontur wody Łąk z `MeadowsTerrain.water` (marching squares) i sylwetki obszarów w węzłach świata nie

@@ -1,0 +1,1912 @@
+{
+  "files": {
+    "ashOrc": {
+      "asset": false,
+      "bytes": 18834,
+      "hash": "ad3a0ccba21f9559392c8fcb65a284b9783c380cd2d209445c573fbfa2507d18",
+      "id": "ashOrc",
+      "kind": "monster",
+      "outputs": [
+        "ashOrc.webp",
+        "ashOrc-128.webp"
+      ],
+      "variant": "normal"
+    },
+    "ashOrc-elite": {
+      "asset": false,
+      "bytes": 19750,
+      "hash": "cdd96cb0f1683faccc63f580991a8bfb638c4caa06943687458eff61afce57db",
+      "id": "ashOrc",
+      "kind": "monster",
+      "outputs": [
+        "ashOrc-elite.webp",
+        "ashOrc-elite-128.webp"
+      ],
+      "variant": "elite"
+    },
+    "ashOrc-elite2": {
+      "asset": false,
+      "bytes": 20062,
+      "hash": "5da4eff904c677cd243862fbbb225caf2defb4f385323b832e681693c650326d",
+      "id": "ashOrc",
+      "kind": "monster",
+      "outputs": [
+        "ashOrc-elite2.webp",
+        "ashOrc-elite2-128.webp"
+      ],
+      "variant": "elite2"
+    },
+    "ashVulture": {
+      "asset": false,
+      "bytes": 19562,
+      "hash": "f3bf71edfe4bc34aa530fc7ea9a35a9b4c0bb134115286671b6a386c8883951c",
+      "id": "ashVulture",
+      "kind": "monster",
+      "outputs": [
+        "ashVulture.webp",
+        "ashVulture-128.webp"
+      ],
+      "variant": "normal"
+    },
+    "ashVulture-elite": {
+      "asset": false,
+      "bytes": 22302,
+      "hash": "c8ff49c4b906b45b6f5db920eb80e639702452b77d8bd43a4916206afe6d5484",
+      "id": "ashVulture",
+      "kind": "monster",
+      "outputs": [
+        "ashVulture-elite.webp",
+        "ashVulture-elite-128.webp"
+      ],
+      "variant": "elite"
+    },
+    "ashVulture-elite2": {
+      "asset": false,
+      "bytes": 23270,
+      "hash": "4d6f71021ab6ad6efd5756b139910112d1be841ddfd60d1f75c0f962ab30cc97",
+      "id": "ashVulture",
+      "kind": "monster",
+      "outputs": [
+        "ashVulture-elite2.webp",
+        "ashVulture-elite2-128.webp"
+      ],
+      "variant": "elite2"
+    },
+    "azgor": {
+      "asset": false,
+      "bytes": 115234,
+      "hash": "303677e21c3e1f2c5ba90300edfa8a3466eabf69ed7a97406c46167c8ef99930",
+      "id": "azgor",
+      "kind": "boss",
+      "outputs": [
+        "azgor.webp",
+        "azgor-128.webp",
+        "azgor-1024.webp",
+        "azgor-p2.webp",
+        "azgor-p3.webp"
+      ],
+      "variant": "boss"
+    },
+    "bandit": {
+      "asset": false,
+      "bytes": 19042,
+      "hash": "622f384c8d11d708390f026a1beffd4708832b639644954f31f78ba69578cff2",
+      "id": "bandit",
+      "kind": "monster",
+      "outputs": [
+        "bandit.webp",
+        "bandit-128.webp"
+      ],
+      "variant": "normal"
+    },
+    "bandit-elite": {
+      "asset": false,
+      "bytes": 21772,
+      "hash": "44a01284e8a91ef64dee58e264d922260af6dabbd898c1188d9557dc70a0de91",
+      "id": "bandit",
+      "kind": "monster",
+      "outputs": [
+        "bandit-elite.webp",
+        "bandit-elite-128.webp"
+      ],
+      "variant": "elite"
+    },
+    "bandit-elite2": {
+      "asset": false,
+      "bytes": 22332,
+      "hash": "38061e2a93e9abe71792914463bde38f6eb7cad60e5ccdfd6f9099d03eddfc61",
+      "id": "bandit",
+      "kind": "monster",
+      "outputs": [
+        "bandit-elite2.webp",
+        "bandit-elite2-128.webp"
+      ],
+      "variant": "elite2"
+    },
+    "basilisk": {
+      "asset": false,
+      "bytes": 28420,
+      "hash": "5fc252bbcb05ff91c8a343064c4045de3c14c07b582ee49823558318549549d7",
+      "id": "basilisk",
+      "kind": "monster",
+      "outputs": [
+        "basilisk.webp",
+        "basilisk-128.webp"
+      ],
+      "variant": "normal"
+    },
+    "basilisk-elite": {
+      "asset": false,
+      "bytes": 30790,
+      "hash": "3133c3028fee7f4197c03568cf6ae7709c2062ca172eb6d31ba754ea19cda7c4",
+      "id": "basilisk",
+      "kind": "monster",
+      "outputs": [
+        "basilisk-elite.webp",
+        "basilisk-elite-128.webp"
+      ],
+      "variant": "elite"
+    },
+    "basilisk-elite2": {
+      "asset": false,
+      "bytes": 33236,
+      "hash": "386169a51c7aa1f2148385f51e66e671cd8a338fa430125a1bc2963c8f8da7ee",
+      "id": "basilisk",
+      "kind": "monster",
+      "outputs": [
+        "basilisk-elite2.webp",
+        "basilisk-elite2-128.webp"
+      ],
+      "variant": "elite2"
+    },
+    "blackBear": {
+      "asset": false,
+      "bytes": 23094,
+      "hash": "1f47ae61ed57b3dd96bd222f3a467b526626e75601882a6b2be27bf2d8f1935e",
+      "id": "blackBear",
+      "kind": "monster",
+      "outputs": [
+        "blackBear.webp",
+        "blackBear-128.webp"
+      ],
+      "variant": "normal"
+    },
+    "blackBear-elite": {
+      "asset": false,
+      "bytes": 24578,
+      "hash": "299242952c5f6061d13006f6ac7269e187372bf9cdab231b1355fa5e0174cb46",
+      "id": "blackBear",
+      "kind": "monster",
+      "outputs": [
+        "blackBear-elite.webp",
+        "blackBear-elite-128.webp"
+      ],
+      "variant": "elite"
+    },
+    "blackBear-elite2": {
+      "asset": false,
+      "bytes": 25872,
+      "hash": "684dc8c5452f9ed1d1ee563b5d6bf65f792ebb2d261169abd976603f5f64d7bb",
+      "id": "blackBear",
+      "kind": "monster",
+      "outputs": [
+        "blackBear-elite2.webp",
+        "blackBear-elite2-128.webp"
+      ],
+      "variant": "elite2"
+    },
+    "bloodBat": {
+      "asset": false,
+      "bytes": 16218,
+      "hash": "a0480f54b60e68d7d6056e3b68c4b11b0f7a27296e21a532f6aaa599bda0bc72",
+      "id": "bloodBat",
+      "kind": "monster",
+      "outputs": [
+        "bloodBat.webp",
+        "bloodBat-128.webp"
+      ],
+      "variant": "normal"
+    },
+    "bloodBat-elite": {
+      "asset": false,
+      "bytes": 17250,
+      "hash": "38ca93549301c794c10398dab9dbc9982974d932afd12cf943904d6dc0283c5e",
+      "id": "bloodBat",
+      "kind": "monster",
+      "outputs": [
+        "bloodBat-elite.webp",
+        "bloodBat-elite-128.webp"
+      ],
+      "variant": "elite"
+    },
+    "bloodBat-elite2": {
+      "asset": false,
+      "bytes": 18446,
+      "hash": "34250dce26d33bd875f29f1796bfdf3b7f609a8b09c10b5e2f40614797cbb9b5",
+      "id": "bloodBat",
+      "kind": "monster",
+      "outputs": [
+        "bloodBat-elite2.webp",
+        "bloodBat-elite2-128.webp"
+      ],
+      "variant": "elite2"
+    },
+    "boar": {
+      "asset": false,
+      "bytes": 24666,
+      "hash": "fb40c156b08e419a6e8a246ee311b171c79bdf726f6ffa1244e3a4126e6b2edb",
+      "id": "boar",
+      "kind": "monster",
+      "outputs": [
+        "boar.webp",
+        "boar-128.webp"
+      ],
+      "variant": "normal"
+    },
+    "boar-elite": {
+      "asset": false,
+      "bytes": 27424,
+      "hash": "382b35a4dbe98ad92765ff661199e73ba9563971cc22f24136a4bdea0056f7e6",
+      "id": "boar",
+      "kind": "monster",
+      "outputs": [
+        "boar-elite.webp",
+        "boar-elite-128.webp"
+      ],
+      "variant": "elite"
+    },
+    "boar-elite2": {
+      "asset": false,
+      "bytes": 28896,
+      "hash": "4da514179be6e8645762551f4bb32a812db73c8907105cf825352421561c2ad2",
+      "id": "boar",
+      "kind": "monster",
+      "outputs": [
+        "boar-elite2.webp",
+        "boar-elite2-128.webp"
+      ],
+      "variant": "elite2"
+    },
+    "bogSerpent": {
+      "asset": false,
+      "bytes": 19598,
+      "hash": "935929cc2335ba64453e7754d40bbed8c98608965fff94be0a4ecb494505605f",
+      "id": "bogSerpent",
+      "kind": "monster",
+      "outputs": [
+        "bogSerpent.webp",
+        "bogSerpent-128.webp"
+      ],
+      "variant": "normal"
+    },
+    "bogSerpent-elite": {
+      "asset": false,
+      "bytes": 24108,
+      "hash": "1dd2f9e91ae7a6fbc9522df71ac618d4669dcc4bed08a3f1d40a06bb9b2dba6d",
+      "id": "bogSerpent",
+      "kind": "monster",
+      "outputs": [
+        "bogSerpent-elite.webp",
+        "bogSerpent-elite-128.webp"
+      ],
+      "variant": "elite"
+    },
+    "bogSerpent-elite2": {
+      "asset": false,
+      "bytes": 24640,
+      "hash": "7e41691d91b42d60da899a4ee8551806bbddb097acf259a5b8f8a0e85b5be878",
+      "id": "bogSerpent",
+      "kind": "monster",
+      "outputs": [
+        "bogSerpent-elite2.webp",
+        "bogSerpent-elite2-128.webp"
+      ],
+      "variant": "elite2"
+    },
+    "brownBear": {
+      "asset": false,
+      "bytes": 22930,
+      "hash": "f629bdf6857cb7f6529d0e230d9d5dc223f2aee1de66872a4579c45be99456e7",
+      "id": "brownBear",
+      "kind": "monster",
+      "outputs": [
+        "brownBear.webp",
+        "brownBear-128.webp"
+      ],
+      "variant": "normal"
+    },
+    "brownBear-elite": {
+      "asset": false,
+      "bytes": 24340,
+      "hash": "3e476531f7139fc2c3208cb522f1c4ed3054f32156f2c937797591bc4a4c357d",
+      "id": "brownBear",
+      "kind": "monster",
+      "outputs": [
+        "brownBear-elite.webp",
+        "brownBear-elite-128.webp"
+      ],
+      "variant": "elite"
+    },
+    "brownBear-elite2": {
+      "asset": false,
+      "bytes": 25570,
+      "hash": "b47bf41ece62d000353326010ec24987a8805e551b2a1ec1743622a30081c60f",
+      "id": "brownBear",
+      "kind": "monster",
+      "outputs": [
+        "brownBear-elite2.webp",
+        "brownBear-elite2-128.webp"
+      ],
+      "variant": "elite2"
+    },
+    "carrionCrow": {
+      "asset": false,
+      "bytes": 18568,
+      "hash": "12d6dd2eb7f391dbeacd4c9fcf8c30c78cc949e02359851c21c19f0edb95532b",
+      "id": "carrionCrow",
+      "kind": "monster",
+      "outputs": [
+        "carrionCrow.webp",
+        "carrionCrow-128.webp"
+      ],
+      "variant": "normal"
+    },
+    "carrionCrow-elite": {
+      "asset": false,
+      "bytes": 20186,
+      "hash": "3a6a9d2e36bc88d467eda80b329cceec49143a05f015574ed48ddbdb9ed71e7c",
+      "id": "carrionCrow",
+      "kind": "monster",
+      "outputs": [
+        "carrionCrow-elite.webp",
+        "carrionCrow-elite-128.webp"
+      ],
+      "variant": "elite"
+    },
+    "carrionCrow-elite2": {
+      "asset": false,
+      "bytes": 21724,
+      "hash": "5589255fdeee1285f636e19598ee72ec7db0601f8a8808151f70abb4de9ea42f",
+      "id": "carrionCrow",
+      "kind": "monster",
+      "outputs": [
+        "carrionCrow-elite2.webp",
+        "carrionCrow-elite2-128.webp"
+      ],
+      "variant": "elite2"
+    },
+    "caveSpider": {
+      "asset": false,
+      "bytes": 41562,
+      "hash": "9d176b599704fcac28b9d82399ca386a6b0b35906514c2cd15da8621854a2e2c",
+      "id": "caveSpider",
+      "kind": "monster",
+      "outputs": [
+        "caveSpider.webp",
+        "caveSpider-128.webp"
+      ],
+      "variant": "normal"
+    },
+    "caveSpider-elite": {
+      "asset": false,
+      "bytes": 42966,
+      "hash": "6780f843d6b578a17aa7704d86fdb91599c9e07fb8f58cc901ae56abdd3b72d9",
+      "id": "caveSpider",
+      "kind": "monster",
+      "outputs": [
+        "caveSpider-elite.webp",
+        "caveSpider-elite-128.webp"
+      ],
+      "variant": "elite"
+    },
+    "caveSpider-elite2": {
+      "asset": false,
+      "bytes": 43930,
+      "hash": "6457c44005cef98a9542815ae0aa74420f6154f853e764d08c92a5a04f867417",
+      "id": "caveSpider",
+      "kind": "monster",
+      "outputs": [
+        "caveSpider-elite2.webp",
+        "caveSpider-elite2-128.webp"
+      ],
+      "variant": "elite2"
+    },
+    "crystalGuardian": {
+      "asset": false,
+      "bytes": 31048,
+      "hash": "7e7671480fb9b47809736b35aeda69da4b0c8c21cffb1b841091361dc2489aa3",
+      "id": "crystalGuardian",
+      "kind": "monster",
+      "outputs": [
+        "crystalGuardian.webp",
+        "crystalGuardian-128.webp"
+      ],
+      "variant": "normal"
+    },
+    "crystalGuardian-elite": {
+      "asset": false,
+      "bytes": 32314,
+      "hash": "64a6a2184f64f70020e09f77f89127eb3123b6b68db922110f3220d5e19c33df",
+      "id": "crystalGuardian",
+      "kind": "monster",
+      "outputs": [
+        "crystalGuardian-elite.webp",
+        "crystalGuardian-elite-128.webp"
+      ],
+      "variant": "elite"
+    },
+    "crystalGuardian-elite2": {
+      "asset": false,
+      "bytes": 32384,
+      "hash": "117f50fc996835b547a976a89971611bf135717b2752a94f93921c371ca6bdf6",
+      "id": "crystalGuardian",
+      "kind": "monster",
+      "outputs": [
+        "crystalGuardian-elite2.webp",
+        "crystalGuardian-elite2-128.webp"
+      ],
+      "variant": "elite2"
+    },
+    "darkCultist": {
+      "asset": false,
+      "bytes": 15854,
+      "hash": "98800f36b0dde792f4a7bd8e427b78cb6acf1537bc96627b1e3c22872fda0382",
+      "id": "darkCultist",
+      "kind": "monster",
+      "outputs": [
+        "darkCultist.webp",
+        "darkCultist-128.webp"
+      ],
+      "variant": "normal"
+    },
+    "darkCultist-elite": {
+      "asset": false,
+      "bytes": 16336,
+      "hash": "3636e71b42faa4efbcaa2e416eccd302a6388192551451d05ab08a5b90be27e3",
+      "id": "darkCultist",
+      "kind": "monster",
+      "outputs": [
+        "darkCultist-elite.webp",
+        "darkCultist-elite-128.webp"
+      ],
+      "variant": "elite"
+    },
+    "darkCultist-elite2": {
+      "asset": false,
+      "bytes": 20152,
+      "hash": "75add815bdc409d667a16195f388bb80b0acca80526fb163303775cd40517608",
+      "id": "darkCultist",
+      "kind": "monster",
+      "outputs": [
+        "darkCultist-elite2.webp",
+        "darkCultist-elite2-128.webp"
+      ],
+      "variant": "elite2"
+    },
+    "desertMummy": {
+      "asset": false,
+      "bytes": 18436,
+      "hash": "b238f370ac0af9b355b26f2ba4ec0f0c7da7544171c85bb18d51d5e47addd53d",
+      "id": "desertMummy",
+      "kind": "monster",
+      "outputs": [
+        "desertMummy.webp",
+        "desertMummy-128.webp"
+      ],
+      "variant": "normal"
+    },
+    "desertMummy-elite": {
+      "asset": false,
+      "bytes": 18860,
+      "hash": "be006e24fdcac41401877174937173f6b8b1512824f8d11192d81c3cba2df45f",
+      "id": "desertMummy",
+      "kind": "monster",
+      "outputs": [
+        "desertMummy-elite.webp",
+        "desertMummy-elite-128.webp"
+      ],
+      "variant": "elite"
+    },
+    "desertMummy-elite2": {
+      "asset": false,
+      "bytes": 19386,
+      "hash": "5ea928fd6b56f8ec96815cbd9d951d4805be09bf93a94c70c5ee89345407e395",
+      "id": "desertMummy",
+      "kind": "monster",
+      "outputs": [
+        "desertMummy-elite2.webp",
+        "desertMummy-elite2-128.webp"
+      ],
+      "variant": "elite2"
+    },
+    "desertScorpion": {
+      "asset": false,
+      "bytes": 25936,
+      "hash": "1f43b0ddee65236a8a76e17f35562714f55d4c14c414f2c06c3b8de008846224",
+      "id": "desertScorpion",
+      "kind": "monster",
+      "outputs": [
+        "desertScorpion.webp",
+        "desertScorpion-128.webp"
+      ],
+      "variant": "normal"
+    },
+    "desertScorpion-elite": {
+      "asset": false,
+      "bytes": 27564,
+      "hash": "d0150115d74cf42ef2026dbf5b863843498ccc923b496fbb81a21e7269fd7356",
+      "id": "desertScorpion",
+      "kind": "monster",
+      "outputs": [
+        "desertScorpion-elite.webp",
+        "desertScorpion-elite-128.webp"
+      ],
+      "variant": "elite"
+    },
+    "desertScorpion-elite2": {
+      "asset": false,
+      "bytes": 29966,
+      "hash": "95058d6864588edb06a5c5f9234895f8292e4215756775a4e57e2ac3b115b141",
+      "id": "desertScorpion",
+      "kind": "monster",
+      "outputs": [
+        "desertScorpion-elite2.webp",
+        "desertScorpion-elite2-128.webp"
+      ],
+      "variant": "elite2"
+    },
+    "dragonspawn": {
+      "asset": false,
+      "bytes": 21752,
+      "hash": "85cb5f8129c58ffaa28a2b065005d24d8ccd14fc88f4ecb474bc774a66bcb3fc",
+      "id": "dragonspawn",
+      "kind": "monster",
+      "outputs": [
+        "dragonspawn.webp",
+        "dragonspawn-128.webp"
+      ],
+      "variant": "normal"
+    },
+    "dragonspawn-elite": {
+      "asset": false,
+      "bytes": 23958,
+      "hash": "1fc5436fb3025ccb1bbf9f2113ff7f22644541e0342a2029a1870fc9ad6930ac",
+      "id": "dragonspawn",
+      "kind": "monster",
+      "outputs": [
+        "dragonspawn-elite.webp",
+        "dragonspawn-elite-128.webp"
+      ],
+      "variant": "elite"
+    },
+    "dragonspawn-elite2": {
+      "asset": false,
+      "bytes": 24120,
+      "hash": "9b03ad12275a392544efae13b278b8fa23c3d3540c76edc40f17828081466508",
+      "id": "dragonspawn",
+      "kind": "monster",
+      "outputs": [
+        "dragonspawn-elite2.webp",
+        "dragonspawn-elite2-128.webp"
+      ],
+      "variant": "elite2"
+    },
+    "fireGolem": {
+      "asset": false,
+      "bytes": 16736,
+      "hash": "ce5d75a9c54ff596dab153821209b6715d5e8be52f8456ad38688ca69c2c80b2",
+      "id": "fireGolem",
+      "kind": "monster",
+      "outputs": [
+        "fireGolem.webp",
+        "fireGolem-128.webp"
+      ],
+      "variant": "normal"
+    },
+    "fireGolem-elite": {
+      "asset": false,
+      "bytes": 17682,
+      "hash": "54abe1083118a30028364309d6c4ca27b2b4d60f4912ef7973ceb593a1b12f99",
+      "id": "fireGolem",
+      "kind": "monster",
+      "outputs": [
+        "fireGolem-elite.webp",
+        "fireGolem-elite-128.webp"
+      ],
+      "variant": "elite"
+    },
+    "fireGolem-elite2": {
+      "asset": false,
+      "bytes": 20108,
+      "hash": "d6dbefdc817d2927cae67b63c4d4cd753fe891219db9f0e1735ad06972d308dc",
+      "id": "fireGolem",
+      "kind": "monster",
+      "outputs": [
+        "fireGolem-elite2.webp",
+        "fireGolem-elite2-128.webp"
+      ],
+      "variant": "elite2"
+    },
+    "fireImp": {
+      "asset": false,
+      "bytes": 21198,
+      "hash": "3070895f5b0c5fdc883f509a452bda861bca06f7df1b5a6f3c9ecfe437a0d149",
+      "id": "fireImp",
+      "kind": "monster",
+      "outputs": [
+        "fireImp.webp",
+        "fireImp-128.webp"
+      ],
+      "variant": "normal"
+    },
+    "fireImp-elite": {
+      "asset": false,
+      "bytes": 21960,
+      "hash": "3912ca843783cf6dadb25b4c88a6303bdce8bf607f70e0a20ea90f154c316d6d",
+      "id": "fireImp",
+      "kind": "monster",
+      "outputs": [
+        "fireImp-elite.webp",
+        "fireImp-elite-128.webp"
+      ],
+      "variant": "elite"
+    },
+    "fireImp-elite2": {
+      "asset": false,
+      "bytes": 22398,
+      "hash": "08ce4cd4cc3187bf0d20c7a9b711324142787177cab65237cb93e796482c104b",
+      "id": "fireImp",
+      "kind": "monster",
+      "outputs": [
+        "fireImp-elite2.webp",
+        "fireImp-elite2-128.webp"
+      ],
+      "variant": "elite2"
+    },
+    "flameSmith": {
+      "asset": false,
+      "bytes": 19418,
+      "hash": "7c6cf1e938199e56c9f5b7f31553466955c374fafd4f12dcd1b0bcdfce1eb7f0",
+      "id": "flameSmith",
+      "kind": "monster",
+      "outputs": [
+        "flameSmith.webp",
+        "flameSmith-128.webp"
+      ],
+      "variant": "normal"
+    },
+    "flameSmith-elite": {
+      "asset": false,
+      "bytes": 19784,
+      "hash": "29685ae5d924375e3174bf36a0f0a7ccb1163afff2bd0d81be12d18771a4e006",
+      "id": "flameSmith",
+      "kind": "monster",
+      "outputs": [
+        "flameSmith-elite.webp",
+        "flameSmith-elite-128.webp"
+      ],
+      "variant": "elite"
+    },
+    "flameSmith-elite2": {
+      "asset": false,
+      "bytes": 18978,
+      "hash": "5a14a82c44a34b50ff8794eaa367585c004e02f12a1b59f420b45694fc550a7b",
+      "id": "flameSmith",
+      "kind": "monster",
+      "outputs": [
+        "flameSmith-elite2.webp",
+        "flameSmith-elite2-128.webp"
+      ],
+      "variant": "elite2"
+    },
+    "forestWraith": {
+      "asset": false,
+      "bytes": 24068,
+      "hash": "ab8195d60717c10f561323936fca50bb29592cac59fd59a0b26da7530ba3718b",
+      "id": "forestWraith",
+      "kind": "monster",
+      "outputs": [
+        "forestWraith.webp",
+        "forestWraith-128.webp"
+      ],
+      "variant": "normal"
+    },
+    "forestWraith-elite": {
+      "asset": false,
+      "bytes": 22494,
+      "hash": "18012d307c2efde32146895ebdd1afb3ac1436cc1408a9689ea268a65275225e",
+      "id": "forestWraith",
+      "kind": "monster",
+      "outputs": [
+        "forestWraith-elite.webp",
+        "forestWraith-elite-128.webp"
+      ],
+      "variant": "elite"
+    },
+    "forestWraith-elite2": {
+      "asset": false,
+      "bytes": 24006,
+      "hash": "afce35936ec36897d518e8b2fbc97d8c702b12602c597289ed7747ca5a4ba298",
+      "id": "forestWraith",
+      "kind": "monster",
+      "outputs": [
+        "forestWraith-elite2.webp",
+        "forestWraith-elite2-128.webp"
+      ],
+      "variant": "elite2"
+    },
+    "frostGiant": {
+      "asset": false,
+      "bytes": 18418,
+      "hash": "9718e1f4747b9db208cb563c2b5be25eb4f5f089ede1637a1eacb9e6d718a6df",
+      "id": "frostGiant",
+      "kind": "monster",
+      "outputs": [
+        "frostGiant.webp",
+        "frostGiant-128.webp"
+      ],
+      "variant": "normal"
+    },
+    "frostGiant-elite": {
+      "asset": false,
+      "bytes": 19014,
+      "hash": "0f1cd4efc227cab8db17b7f0c66eea4e295ecfec29fdab11234783ebf3e0e989",
+      "id": "frostGiant",
+      "kind": "monster",
+      "outputs": [
+        "frostGiant-elite.webp",
+        "frostGiant-elite-128.webp"
+      ],
+      "variant": "elite"
+    },
+    "frostGiant-elite2": {
+      "asset": false,
+      "bytes": 19642,
+      "hash": "02b74f516f6a0a6aa13bbd1b1b8bb1df0bd2f43e1c409420532bac9f06ad6594",
+      "id": "frostGiant",
+      "kind": "monster",
+      "outputs": [
+        "frostGiant-elite2.webp",
+        "frostGiant-elite2-128.webp"
+      ],
+      "variant": "elite2"
+    },
+    "frostWyrm": {
+      "asset": false,
+      "bytes": 23384,
+      "hash": "048583c489a80d30af1eaa91ce7f9a3d9b67944e4f799b43c03808333c69519d",
+      "id": "frostWyrm",
+      "kind": "monster",
+      "outputs": [
+        "frostWyrm.webp",
+        "frostWyrm-128.webp"
+      ],
+      "variant": "normal"
+    },
+    "frostWyrm-elite": {
+      "asset": false,
+      "bytes": 24430,
+      "hash": "290cb00684cd9d9a7c80ec2ef45adf639eff4c36abe6ff954fe6497e6279e026",
+      "id": "frostWyrm",
+      "kind": "monster",
+      "outputs": [
+        "frostWyrm-elite.webp",
+        "frostWyrm-elite-128.webp"
+      ],
+      "variant": "elite"
+    },
+    "frostWyrm-elite2": {
+      "asset": false,
+      "bytes": 24280,
+      "hash": "6c2c63c6804d50ff28836ca8b8af6316636a87ab70ef365350ea43ad3926b7d6",
+      "id": "frostWyrm",
+      "kind": "monster",
+      "outputs": [
+        "frostWyrm-elite2.webp",
+        "frostWyrm-elite2-128.webp"
+      ],
+      "variant": "elite2"
+    },
+    "frozenKnight": {
+      "asset": false,
+      "bytes": 18854,
+      "hash": "92b1320fc3121522e7d947dadb6a17d8fe706c856ed964decde4e513df97683c",
+      "id": "frozenKnight",
+      "kind": "monster",
+      "outputs": [
+        "frozenKnight.webp",
+        "frozenKnight-128.webp"
+      ],
+      "variant": "normal"
+    },
+    "frozenKnight-elite": {
+      "asset": false,
+      "bytes": 18278,
+      "hash": "ea62b168fce872edccc5634180d233be869f0579c31fcdf66c6e08f7e2f4b73e",
+      "id": "frozenKnight",
+      "kind": "monster",
+      "outputs": [
+        "frozenKnight-elite.webp",
+        "frozenKnight-elite-128.webp"
+      ],
+      "variant": "elite"
+    },
+    "frozenKnight-elite2": {
+      "asset": false,
+      "bytes": 18682,
+      "hash": "80e0dd1275a0a09c360189a009651215b96bcc428e20783197c6fda1d1655f5b",
+      "id": "frozenKnight",
+      "kind": "monster",
+      "outputs": [
+        "frozenKnight-elite2.webp",
+        "frozenKnight-elite2-128.webp"
+      ],
+      "variant": "elite2"
+    },
+    "ghoul": {
+      "asset": false,
+      "bytes": 25408,
+      "hash": "7953c7ca32a10eda01e0c54f690a870e76b1bc877991aa4f251751a23f7a5096",
+      "id": "ghoul",
+      "kind": "monster",
+      "outputs": [
+        "ghoul.webp",
+        "ghoul-128.webp"
+      ],
+      "variant": "normal"
+    },
+    "ghoul-elite": {
+      "asset": false,
+      "bytes": 24578,
+      "hash": "18e85bb553122ab84c9e8ffc0f695566cdac23affb34920ddd0b6d798038dfd7",
+      "id": "ghoul",
+      "kind": "monster",
+      "outputs": [
+        "ghoul-elite.webp",
+        "ghoul-elite-128.webp"
+      ],
+      "variant": "elite"
+    },
+    "ghoul-elite2": {
+      "asset": false,
+      "bytes": 25794,
+      "hash": "bc52740db6e9b9ea40a44dd45ff9d58c1a4876b6b3df54bf582083932c467551",
+      "id": "ghoul",
+      "kind": "monster",
+      "outputs": [
+        "ghoul-elite2.webp",
+        "ghoul-elite2-128.webp"
+      ],
+      "variant": "elite2"
+    },
+    "goblinScout": {
+      "asset": false,
+      "bytes": 20804,
+      "hash": "a6b0a5203958cb7be3a794a6f18e24cc9bd76e040eb291ac9d10a39c9f62ecf7",
+      "id": "goblinScout",
+      "kind": "monster",
+      "outputs": [
+        "goblinScout.webp",
+        "goblinScout-128.webp"
+      ],
+      "variant": "normal"
+    },
+    "goblinScout-elite": {
+      "asset": false,
+      "bytes": 23574,
+      "hash": "3e88b934f21b7b2d277af42d731649e118adc29a1ab3f2eeb5a2aa36264837b1",
+      "id": "goblinScout",
+      "kind": "monster",
+      "outputs": [
+        "goblinScout-elite.webp",
+        "goblinScout-elite-128.webp"
+      ],
+      "variant": "elite"
+    },
+    "goblinScout-elite2": {
+      "asset": false,
+      "bytes": 24472,
+      "hash": "b14343147b83ec5f55f868c356597cb6cd25a734dcc0a1ade4b778ce8b1464af",
+      "id": "goblinScout",
+      "kind": "monster",
+      "outputs": [
+        "goblinScout-elite2.webp",
+        "goblinScout-elite2-128.webp"
+      ],
+      "variant": "elite2"
+    },
+    "goblinShaman": {
+      "asset": false,
+      "bytes": 18268,
+      "hash": "8efea5832e00cd964c5d54cb235dbcc059f37cb33575fd05c47ddef55bd634ba",
+      "id": "goblinShaman",
+      "kind": "monster",
+      "outputs": [
+        "goblinShaman.webp",
+        "goblinShaman-128.webp"
+      ],
+      "variant": "normal"
+    },
+    "goblinShaman-elite": {
+      "asset": false,
+      "bytes": 18890,
+      "hash": "d0c0aebfb0a00683864e09209d1180e5fe06e7b06635bd5c66d0fcd63c80ae20",
+      "id": "goblinShaman",
+      "kind": "monster",
+      "outputs": [
+        "goblinShaman-elite.webp",
+        "goblinShaman-elite-128.webp"
+      ],
+      "variant": "elite"
+    },
+    "goblinShaman-elite2": {
+      "asset": false,
+      "bytes": 22532,
+      "hash": "10547a37f1e08254aa5a91dde4cd6ceb0be3a0dfc3c4ef8d434b81aa5c4fcfde",
+      "id": "goblinShaman",
+      "kind": "monster",
+      "outputs": [
+        "goblinShaman-elite2.webp",
+        "goblinShaman-elite2-128.webp"
+      ],
+      "variant": "elite2"
+    },
+    "grimrok": {
+      "asset": false,
+      "bytes": 66836,
+      "hash": "db348b0fced7ec88ca9f95ffd0e9232ac6d8ba81a5b44ce2782b16829ed59c45",
+      "id": "grimrok",
+      "kind": "boss",
+      "outputs": [
+        "grimrok.webp",
+        "grimrok-128.webp",
+        "grimrok-1024.webp",
+        "grimrok-p3.webp"
+      ],
+      "variant": "boss"
+    },
+    "iceElemental": {
+      "asset": false,
+      "bytes": 26902,
+      "hash": "f74472dc44274265ba6d40b3b44f1aa663a14827ee820dc009e6592e5b57bebe",
+      "id": "iceElemental",
+      "kind": "monster",
+      "outputs": [
+        "iceElemental.webp",
+        "iceElemental-128.webp"
+      ],
+      "variant": "normal"
+    },
+    "iceElemental-elite": {
+      "asset": false,
+      "bytes": 27096,
+      "hash": "2ca6fa247ef11865386d525db156504a52776df08fc53bf8ad5ba6fa186b9e4c",
+      "id": "iceElemental",
+      "kind": "monster",
+      "outputs": [
+        "iceElemental-elite.webp",
+        "iceElemental-elite-128.webp"
+      ],
+      "variant": "elite"
+    },
+    "iceElemental-elite2": {
+      "asset": false,
+      "bytes": 27206,
+      "hash": "391860ca7c753374ac9fa2ec1c6b5cc6aceb7c9e1faeda2f610a1fc6b9df6b92",
+      "id": "iceElemental",
+      "kind": "monster",
+      "outputs": [
+        "iceElemental-elite2.webp",
+        "iceElemental-elite2-128.webp"
+      ],
+      "variant": "elite2"
+    },
+    "iceMammoth": {
+      "asset": false,
+      "bytes": 22650,
+      "hash": "827b3f7ec5f140c5194748222942f1bfd39dc837c134136315e542022d50509a",
+      "id": "iceMammoth",
+      "kind": "monster",
+      "outputs": [
+        "iceMammoth.webp",
+        "iceMammoth-128.webp"
+      ],
+      "variant": "normal"
+    },
+    "iceMammoth-elite": {
+      "asset": false,
+      "bytes": 23956,
+      "hash": "b5c7681dd71da1c771f57a0957e0e897c9f24bcc457118d2ec73104f1975c238",
+      "id": "iceMammoth",
+      "kind": "monster",
+      "outputs": [
+        "iceMammoth-elite.webp",
+        "iceMammoth-elite-128.webp"
+      ],
+      "variant": "elite"
+    },
+    "iceMammoth-elite2": {
+      "asset": false,
+      "bytes": 25198,
+      "hash": "7dc8c6867c2eda65f6596e9d9bd4fe76e58720f10f63981d12c4257b97075cf7",
+      "id": "iceMammoth",
+      "kind": "monster",
+      "outputs": [
+        "iceMammoth-elite2.webp",
+        "iceMammoth-elite2-128.webp"
+      ],
+      "variant": "elite2"
+    },
+    "iceWolf": {
+      "asset": false,
+      "bytes": 24172,
+      "hash": "62be8bc33681c7ec2dceb64e50fa5a80e4868ab585951e629f34ff80e1ca6254",
+      "id": "iceWolf",
+      "kind": "monster",
+      "outputs": [
+        "iceWolf.webp",
+        "iceWolf-128.webp"
+      ],
+      "variant": "normal"
+    },
+    "iceWolf-elite": {
+      "asset": false,
+      "bytes": 25572,
+      "hash": "0224dc649af519c98e2057b435dd7172e448ab7132f7439935f1eb8a602528e1",
+      "id": "iceWolf",
+      "kind": "monster",
+      "outputs": [
+        "iceWolf-elite.webp",
+        "iceWolf-elite-128.webp"
+      ],
+      "variant": "elite"
+    },
+    "iceWolf-elite2": {
+      "asset": false,
+      "bytes": 26510,
+      "hash": "1b6b1cc4d4794117f00330480dfc783a7f68a07af677d6814187bd70e3f7105d",
+      "id": "iceWolf",
+      "kind": "monster",
+      "outputs": [
+        "iceWolf-elite2.webp",
+        "iceWolf-elite2-128.webp"
+      ],
+      "variant": "elite2"
+    },
+    "koboldMiner": {
+      "asset": false,
+      "bytes": 18026,
+      "hash": "3c00c65e8974f5325e874185c1791ae7b30705a4d6c78800d690bfc0a41af8f0",
+      "id": "koboldMiner",
+      "kind": "monster",
+      "outputs": [
+        "koboldMiner.webp",
+        "koboldMiner-128.webp"
+      ],
+      "variant": "normal"
+    },
+    "koboldMiner-elite": {
+      "asset": false,
+      "bytes": 21758,
+      "hash": "01a1de7bc1bea827994cfbeb57d4960b51f547557864944ab8e340c20935e2a0",
+      "id": "koboldMiner",
+      "kind": "monster",
+      "outputs": [
+        "koboldMiner-elite.webp",
+        "koboldMiner-elite-128.webp"
+      ],
+      "variant": "elite"
+    },
+    "koboldMiner-elite2": {
+      "asset": false,
+      "bytes": 22052,
+      "hash": "1baf975bfd5bfcc2e78d0ab44ab80ee1ae76cbc9554c285afca4bd90c9edc263",
+      "id": "koboldMiner",
+      "kind": "monster",
+      "outputs": [
+        "koboldMiner-elite2.webp",
+        "koboldMiner-elite2-128.webp"
+      ],
+      "variant": "elite2"
+    },
+    "lynx": {
+      "asset": false,
+      "bytes": 20882,
+      "hash": "462e7b349c4c03b45102eb5559eaa85fd102458cf26d3b5af6e56dd60b228305",
+      "id": "lynx",
+      "kind": "monster",
+      "outputs": [
+        "lynx.webp",
+        "lynx-128.webp"
+      ],
+      "variant": "normal"
+    },
+    "lynx-elite": {
+      "asset": false,
+      "bytes": 23622,
+      "hash": "d9396fa4c4c716675898c6b8da30b7d48271e88d8cf7fcb8b4d7414f1ee0919d",
+      "id": "lynx",
+      "kind": "monster",
+      "outputs": [
+        "lynx-elite.webp",
+        "lynx-elite-128.webp"
+      ],
+      "variant": "elite"
+    },
+    "lynx-elite2": {
+      "asset": false,
+      "bytes": 23828,
+      "hash": "512f84efc63c66d4a2d4874d38a3ed7091893f14e384d2e3828eb4b329b4a24e",
+      "id": "lynx",
+      "kind": "monster",
+      "outputs": [
+        "lynx-elite2.webp",
+        "lynx-elite2-128.webp"
+      ],
+      "variant": "elite2"
+    },
+    "magmaGolem": {
+      "asset": false,
+      "bytes": 15030,
+      "hash": "be9bdb330aa05d9549bdfce84d3856f461e06b8e3a03678de96c12f59c548237",
+      "id": "magmaGolem",
+      "kind": "monster",
+      "outputs": [
+        "magmaGolem.webp",
+        "magmaGolem-128.webp"
+      ],
+      "variant": "normal"
+    },
+    "magmaGolem-elite": {
+      "asset": false,
+      "bytes": 16588,
+      "hash": "d071dcacdaadc4b894d4412da5eca18aa3bedcc44bc46b851a0923214b2af315",
+      "id": "magmaGolem",
+      "kind": "monster",
+      "outputs": [
+        "magmaGolem-elite.webp",
+        "magmaGolem-elite-128.webp"
+      ],
+      "variant": "elite"
+    },
+    "magmaGolem-elite2": {
+      "asset": false,
+      "bytes": 18754,
+      "hash": "c307de10679e2f5b5a4240034afb25738da6e084df0acf30e277305431c496b5",
+      "id": "magmaGolem",
+      "kind": "monster",
+      "outputs": [
+        "magmaGolem-elite2.webp",
+        "magmaGolem-elite2-128.webp"
+      ],
+      "variant": "elite2"
+    },
+    "marshWitch": {
+      "asset": false,
+      "bytes": 12392,
+      "hash": "aca55de278f13b1afe19789c5f5a89b104e379b517bc37c227645a2d74a3c902",
+      "id": "marshWitch",
+      "kind": "monster",
+      "outputs": [
+        "marshWitch.webp",
+        "marshWitch-128.webp"
+      ],
+      "variant": "normal"
+    },
+    "marshWitch-elite": {
+      "asset": false,
+      "bytes": 13174,
+      "hash": "b89ff729fdb839e47fb1ec62af4de4e29474ed06d2558a0771658c541f98c99e",
+      "id": "marshWitch",
+      "kind": "monster",
+      "outputs": [
+        "marshWitch-elite.webp",
+        "marshWitch-elite-128.webp"
+      ],
+      "variant": "elite"
+    },
+    "marshWitch-elite2": {
+      "asset": false,
+      "bytes": 16006,
+      "hash": "b390af368c396f35594005cd05cefa7d5324f193244e2541194534a21418d0b0",
+      "id": "marshWitch",
+      "kind": "monster",
+      "outputs": [
+        "marshWitch-elite2.webp",
+        "marshWitch-elite2-128.webp"
+      ],
+      "variant": "elite2"
+    },
+    "morvane": {
+      "asset": false,
+      "bytes": 75792,
+      "hash": "863a3c337a78fb3ec46e29d4b87fde77349dece484811b53b1a6bbc3b10b89b8",
+      "id": "morvane",
+      "kind": "boss",
+      "outputs": [
+        "morvane.webp",
+        "morvane-128.webp",
+        "morvane-1024.webp",
+        "morvane-p2.webp",
+        "morvane-p3.webp"
+      ],
+      "variant": "boss"
+    },
+    "necromancer": {
+      "asset": false,
+      "bytes": 17710,
+      "hash": "3383a1a7c161fb7308b60e7edc9c0844ea554e8103541db0170cbab1a051c134",
+      "id": "necromancer",
+      "kind": "monster",
+      "outputs": [
+        "necromancer.webp",
+        "necromancer-128.webp"
+      ],
+      "variant": "normal"
+    },
+    "necromancer-elite": {
+      "asset": false,
+      "bytes": 18562,
+      "hash": "d4de9fe39abe1c7d123ad897e1a267f2ae039b7ce6b4523515562152c216ebe3",
+      "id": "necromancer",
+      "kind": "monster",
+      "outputs": [
+        "necromancer-elite.webp",
+        "necromancer-elite-128.webp"
+      ],
+      "variant": "elite"
+    },
+    "necromancer-elite2": {
+      "asset": false,
+      "bytes": 19642,
+      "hash": "b63cda4466a050888f3f3e3a18bf4f019d6e7a016774cfae3699dcc311ff34d7",
+      "id": "necromancer",
+      "kind": "monster",
+      "outputs": [
+        "necromancer-elite2.webp",
+        "necromancer-elite2-128.webp"
+      ],
+      "variant": "elite2"
+    },
+    "peakHarpy": {
+      "asset": false,
+      "bytes": 15822,
+      "hash": "8710d35ca2ba1f9fbfeb66e732dd7463c91bf4c8cbeef00498293c032c87d042",
+      "id": "peakHarpy",
+      "kind": "monster",
+      "outputs": [
+        "peakHarpy.webp",
+        "peakHarpy-128.webp"
+      ],
+      "variant": "normal"
+    },
+    "peakHarpy-elite": {
+      "asset": false,
+      "bytes": 21114,
+      "hash": "8e1ac0b8713bbcc95a718dae310756dadcaa2aad455d75b324a711f052d15710",
+      "id": "peakHarpy",
+      "kind": "monster",
+      "outputs": [
+        "peakHarpy-elite.webp",
+        "peakHarpy-elite-128.webp"
+      ],
+      "variant": "elite"
+    },
+    "peakHarpy-elite2": {
+      "asset": false,
+      "bytes": 21680,
+      "hash": "3e931654e355b3a61816e7652b393ed471d26c46cb55d36fc0b738de4861291c",
+      "id": "peakHarpy",
+      "kind": "monster",
+      "outputs": [
+        "peakHarpy-elite2.webp",
+        "peakHarpy-elite2-128.webp"
+      ],
+      "variant": "elite2"
+    },
+    "pet_cat": {
+      "asset": false,
+      "bytes": 23042,
+      "hash": "b7f2a702d353f6cef5f57e5f93519ceb62f299870526ef88b27866f5efcf890d",
+      "id": "pet_cat",
+      "kind": "pet",
+      "outputs": [
+        "pet_cat.webp",
+        "pet_cat-128.webp"
+      ],
+      "variant": "pet"
+    },
+    "pet_dragon": {
+      "asset": false,
+      "bytes": 21116,
+      "hash": "bea3d6ad03fbddc38960b5b1c225add87a8ac6993e0475533ba826dac186d333",
+      "id": "pet_dragon",
+      "kind": "pet",
+      "outputs": [
+        "pet_dragon.webp",
+        "pet_dragon-128.webp"
+      ],
+      "variant": "pet"
+    },
+    "pet_fox": {
+      "asset": false,
+      "bytes": 26376,
+      "hash": "53ced8c2b85e0cbcacf423d0194e703881b32f7231999174a5f6d7416bc07f32",
+      "id": "pet_fox",
+      "kind": "pet",
+      "outputs": [
+        "pet_fox.webp",
+        "pet_fox-128.webp"
+      ],
+      "variant": "pet"
+    },
+    "pet_frog": {
+      "asset": false,
+      "bytes": 25000,
+      "hash": "1b61b5c1f2756bbffda972599d9d234c49f79d55d8250188e5d813fb5ce4452a",
+      "id": "pet_frog",
+      "kind": "pet",
+      "outputs": [
+        "pet_frog.webp",
+        "pet_frog-128.webp"
+      ],
+      "variant": "pet"
+    },
+    "pet_owl": {
+      "asset": false,
+      "bytes": 18924,
+      "hash": "d3e1afd915985d49ebb35d3ed69811194df5ac2882b9762a323abaf6a2f91934",
+      "id": "pet_owl",
+      "kind": "pet",
+      "outputs": [
+        "pet_owl.webp",
+        "pet_owl-128.webp"
+      ],
+      "variant": "pet"
+    },
+    "pet_wisp": {
+      "asset": false,
+      "bytes": 18876,
+      "hash": "4246a4f426231fff6ac5700f52b86bae7e2445ae9b5dafddbc75d379a3f3af50",
+      "id": "pet_wisp",
+      "kind": "pet",
+      "outputs": [
+        "pet_wisp.webp",
+        "pet_wisp-128.webp"
+      ],
+      "variant": "pet"
+    },
+    "rabbit": {
+      "asset": false,
+      "bytes": 20214,
+      "hash": "48805fb85a2e76388c18f2ac4f12a8c15c7ed34f9dca9bdbd77f8ce889ae1287",
+      "id": "rabbit",
+      "kind": "monster",
+      "outputs": [
+        "rabbit.webp",
+        "rabbit-128.webp"
+      ],
+      "variant": "normal"
+    },
+    "renegadeDwarf": {
+      "asset": false,
+      "bytes": 20246,
+      "hash": "d467a95992afa5095334d18919b207c62bdd4bd7a519e1ddb0c2f75bb34be854",
+      "id": "renegadeDwarf",
+      "kind": "monster",
+      "outputs": [
+        "renegadeDwarf.webp",
+        "renegadeDwarf-128.webp"
+      ],
+      "variant": "normal"
+    },
+    "renegadeDwarf-elite": {
+      "asset": false,
+      "bytes": 22720,
+      "hash": "5b7b833f81f7715046907abf4534574a640effd5cb3c207460c8c42a95c205a0",
+      "id": "renegadeDwarf",
+      "kind": "monster",
+      "outputs": [
+        "renegadeDwarf-elite.webp",
+        "renegadeDwarf-elite-128.webp"
+      ],
+      "variant": "elite"
+    },
+    "renegadeDwarf-elite2": {
+      "asset": false,
+      "bytes": 22932,
+      "hash": "33eea1f213a2db8d8462acb92646ee60b48111510b4b9114287033b9abe055ee",
+      "id": "renegadeDwarf",
+      "kind": "monster",
+      "outputs": [
+        "renegadeDwarf-elite2.webp",
+        "renegadeDwarf-elite2-128.webp"
+      ],
+      "variant": "elite2"
+    },
+    "rotEnt": {
+      "asset": false,
+      "bytes": 20888,
+      "hash": "7b7c1d66e04c6ba96152d0b208705cd6fadaee43a0f5fd68d304da3be7ce2752",
+      "id": "rotEnt",
+      "kind": "monster",
+      "outputs": [
+        "rotEnt.webp",
+        "rotEnt-128.webp"
+      ],
+      "variant": "normal"
+    },
+    "rotEnt-elite": {
+      "asset": false,
+      "bytes": 21442,
+      "hash": "2f8d34335fee8c9d92576c576bf68b358c91eca41f82332dc4085ee75497ff7e",
+      "id": "rotEnt",
+      "kind": "monster",
+      "outputs": [
+        "rotEnt-elite.webp",
+        "rotEnt-elite-128.webp"
+      ],
+      "variant": "elite"
+    },
+    "rotEnt-elite2": {
+      "asset": false,
+      "bytes": 22842,
+      "hash": "c137bb01fc600a5890c4272a4bd749281fc2d1ffc5a403e55a10ca59ad868652",
+      "id": "rotEnt",
+      "kind": "monster",
+      "outputs": [
+        "rotEnt-elite2.webp",
+        "rotEnt-elite2-128.webp"
+      ],
+      "variant": "elite2"
+    },
+    "salamander": {
+      "asset": false,
+      "bytes": 31058,
+      "hash": "b9e22e689b53ee9ff092b21bd77f61562f1f8987c1bd3a28cda0e70dd059f9f2",
+      "id": "salamander",
+      "kind": "monster",
+      "outputs": [
+        "salamander.webp",
+        "salamander-128.webp"
+      ],
+      "variant": "normal"
+    },
+    "salamander-elite": {
+      "asset": false,
+      "bytes": 35584,
+      "hash": "75dcde558256a4af633eaf926de1eb0ff00337fccaa9b73f387160ec70b5433d",
+      "id": "salamander",
+      "kind": "monster",
+      "outputs": [
+        "salamander-elite.webp",
+        "salamander-elite-128.webp"
+      ],
+      "variant": "elite"
+    },
+    "salamander-elite2": {
+      "asset": false,
+      "bytes": 35432,
+      "hash": "ea189149563f0287247dde44203b9886e164b455c2cf8c9f24939d64bb1412ca",
+      "id": "salamander",
+      "kind": "monster",
+      "outputs": [
+        "salamander-elite2.webp",
+        "salamander-elite2-128.webp"
+      ],
+      "variant": "elite2"
+    },
+    "skeletonGuard": {
+      "asset": false,
+      "bytes": 22080,
+      "hash": "e13a0e1c6576bac6f72d5acc79403fccf82aa0b74ec86b16b3b206ea19127d9f",
+      "id": "skeletonGuard",
+      "kind": "monster",
+      "outputs": [
+        "skeletonGuard.webp",
+        "skeletonGuard-128.webp"
+      ],
+      "variant": "normal"
+    },
+    "skeletonGuard-elite": {
+      "asset": false,
+      "bytes": 22602,
+      "hash": "d43fe23238cae5583bc09fbe546fbbd74dde8d70041845b23b97ce8b74e80c6a",
+      "id": "skeletonGuard",
+      "kind": "monster",
+      "outputs": [
+        "skeletonGuard-elite.webp",
+        "skeletonGuard-elite-128.webp"
+      ],
+      "variant": "elite"
+    },
+    "skeletonGuard-elite2": {
+      "asset": false,
+      "bytes": 23792,
+      "hash": "db36230ae848b5b39979b99d7d4ccbad45a6d03357066476a7d709f7bdba6e27",
+      "id": "skeletonGuard",
+      "kind": "monster",
+      "outputs": [
+        "skeletonGuard-elite2.webp",
+        "skeletonGuard-elite2-128.webp"
+      ],
+      "variant": "elite2"
+    },
+    "snowLeopard": {
+      "asset": false,
+      "bytes": 23728,
+      "hash": "cfd9aee8e166ae1b2c3ccaa01f5fc49b055dc4260291f59c28cf6ce138b8f474",
+      "id": "snowLeopard",
+      "kind": "monster",
+      "outputs": [
+        "snowLeopard.webp",
+        "snowLeopard-128.webp"
+      ],
+      "variant": "normal"
+    },
+    "snowLeopard-elite": {
+      "asset": false,
+      "bytes": 26034,
+      "hash": "92d1bd76598a49fcf78b8460ba3111a208e52e75bc43d9e9cfb0efb574dee86a",
+      "id": "snowLeopard",
+      "kind": "monster",
+      "outputs": [
+        "snowLeopard-elite.webp",
+        "snowLeopard-elite-128.webp"
+      ],
+      "variant": "elite"
+    },
+    "snowLeopard-elite2": {
+      "asset": false,
+      "bytes": 26868,
+      "hash": "0c55d2c406ddad6f60bb976a051bc6f669a476c59a40750d063899b852888bb5",
+      "id": "snowLeopard",
+      "kind": "monster",
+      "outputs": [
+        "snowLeopard-elite2.webp",
+        "snowLeopard-elite2-128.webp"
+      ],
+      "variant": "elite2"
+    },
+    "specter": {
+      "asset": false,
+      "bytes": 26282,
+      "hash": "7ec34d618a3a94a32c5b80820880f52a9ce2104cf6ba3c253c3a971fa50a615b",
+      "id": "specter",
+      "kind": "monster",
+      "outputs": [
+        "specter.webp",
+        "specter-128.webp"
+      ],
+      "variant": "normal"
+    },
+    "specter-elite": {
+      "asset": false,
+      "bytes": 26062,
+      "hash": "325f37c0490e934fcd0f690f73ebbf926add4916b630e3d2f60c167d8bf3f795",
+      "id": "specter",
+      "kind": "monster",
+      "outputs": [
+        "specter-elite.webp",
+        "specter-elite-128.webp"
+      ],
+      "variant": "elite"
+    },
+    "specter-elite2": {
+      "asset": false,
+      "bytes": 28164,
+      "hash": "7c7360032794152976a4d1f5742c7d38fde56cab5f3ef6a69c5aa02dea08c7a2",
+      "id": "specter",
+      "kind": "monster",
+      "outputs": [
+        "specter-elite2.webp",
+        "specter-elite2-128.webp"
+      ],
+      "variant": "elite2"
+    },
+    "swampToad": {
+      "asset": false,
+      "bytes": 26140,
+      "hash": "cb57176b253fbb088a0a630e78a192d936d3223931d1b36d56b5b43d0b55f59a",
+      "id": "swampToad",
+      "kind": "monster",
+      "outputs": [
+        "swampToad.webp",
+        "swampToad-128.webp"
+      ],
+      "variant": "normal"
+    },
+    "swampToad-elite": {
+      "asset": false,
+      "bytes": 33206,
+      "hash": "c3c3b3058051a813c6e418d7ea570cf9d62a94074a06e50106b318e4abe52f99",
+      "id": "swampToad",
+      "kind": "monster",
+      "outputs": [
+        "swampToad-elite.webp",
+        "swampToad-elite-128.webp"
+      ],
+      "variant": "elite"
+    },
+    "swampToad-elite2": {
+      "asset": false,
+      "bytes": 34060,
+      "hash": "89880ef125a05c17bdc0ea6e0135cfae5c80678a721c45495632a6fcf9e65850",
+      "id": "swampToad",
+      "kind": "monster",
+      "outputs": [
+        "swampToad-elite2.webp",
+        "swampToad-elite2-128.webp"
+      ],
+      "variant": "elite2"
+    },
+    "swampTroll": {
+      "asset": false,
+      "bytes": 24202,
+      "hash": "853b8cc9b9618fb774d3cbfcc02925724e1068020f569c92e4359c607a6221ae",
+      "id": "swampTroll",
+      "kind": "monster",
+      "outputs": [
+        "swampTroll.webp",
+        "swampTroll-128.webp"
+      ],
+      "variant": "normal"
+    },
+    "swampTroll-elite": {
+      "asset": false,
+      "bytes": 25568,
+      "hash": "dc5a09437b49b112fc94c5771e39d0ce13c46100091e09754ef9e57d4161259e",
+      "id": "swampTroll",
+      "kind": "monster",
+      "outputs": [
+        "swampTroll-elite.webp",
+        "swampTroll-elite-128.webp"
+      ],
+      "variant": "elite"
+    },
+    "swampTroll-elite2": {
+      "asset": false,
+      "bytes": 25674,
+      "hash": "25bca833d9591134555703f66c2bf9d84fec43fc50bd7ef1ad4eec097d455b7d",
+      "id": "swampTroll",
+      "kind": "monster",
+      "outputs": [
+        "swampTroll-elite2.webp",
+        "swampTroll-elite2-128.webp"
+      ],
+      "variant": "elite2"
+    },
+    "vaelgrath": {
+      "asset": false,
+      "bytes": 105010,
+      "hash": "e4c8a9582d079bde5f200a9cd4016c458a17e13d960ae3ff302bfcd6a6b0a95b",
+      "id": "vaelgrath",
+      "kind": "boss",
+      "outputs": [
+        "vaelgrath.webp",
+        "vaelgrath-128.webp",
+        "vaelgrath-1024.webp",
+        "vaelgrath-p2.webp",
+        "vaelgrath-p3.webp"
+      ],
+      "variant": "boss"
+    },
+    "wasteHyena": {
+      "asset": false,
+      "bytes": 19690,
+      "hash": "26d4405403462745f71d9755c69a90b8fd8408fadcc1b276a440e92be36cb1d7",
+      "id": "wasteHyena",
+      "kind": "monster",
+      "outputs": [
+        "wasteHyena.webp",
+        "wasteHyena-128.webp"
+      ],
+      "variant": "normal"
+    },
+    "wasteHyena-elite": {
+      "asset": false,
+      "bytes": 21162,
+      "hash": "75ae598cb998d8d86dd16778a0fc20af67ab35bfdd6c9c02faefe4c6f7e7bb5f",
+      "id": "wasteHyena",
+      "kind": "monster",
+      "outputs": [
+        "wasteHyena-elite.webp",
+        "wasteHyena-elite-128.webp"
+      ],
+      "variant": "elite"
+    },
+    "wasteHyena-elite2": {
+      "asset": false,
+      "bytes": 21722,
+      "hash": "e17585748e8fcfaed4296d33f2760a70a835603568489a21ea27a9fea9ac0842",
+      "id": "wasteHyena",
+      "kind": "monster",
+      "outputs": [
+        "wasteHyena-elite2.webp",
+        "wasteHyena-elite2-128.webp"
+      ],
+      "variant": "elite2"
+    },
+    "werewolf": {
+      "asset": false,
+      "bytes": 23622,
+      "hash": "f331f7f911d4dd3487e8e4a634ace7b922547878d8cbd42f992d2f9887ab11e8",
+      "id": "werewolf",
+      "kind": "monster",
+      "outputs": [
+        "werewolf.webp",
+        "werewolf-128.webp"
+      ],
+      "variant": "normal"
+    },
+    "werewolf-elite": {
+      "asset": false,
+      "bytes": 24436,
+      "hash": "3670fc59901338dedbc90063bef5ad0237c5fffcb276dece58edf1a3ac76e333",
+      "id": "werewolf",
+      "kind": "monster",
+      "outputs": [
+        "werewolf-elite.webp",
+        "werewolf-elite-128.webp"
+      ],
+      "variant": "elite"
+    },
+    "werewolf-elite2": {
+      "asset": false,
+      "bytes": 24660,
+      "hash": "19b1e6a043199a983d4d8bf0eb9d45ef5835c598e8b2e9670b709b8f7a9083cf",
+      "id": "werewolf",
+      "kind": "monster",
+      "outputs": [
+        "werewolf-elite2.webp",
+        "werewolf-elite2-128.webp"
+      ],
+      "variant": "elite2"
+    },
+    "wolf": {
+      "asset": false,
+      "bytes": 23674,
+      "hash": "9cc8528008a82ed89acfab595f1b113f330f4b8666896f162a84ed0af05ddfda",
+      "id": "wolf",
+      "kind": "monster",
+      "outputs": [
+        "wolf.webp",
+        "wolf-128.webp"
+      ],
+      "variant": "normal"
+    },
+    "wolf-elite": {
+      "asset": false,
+      "bytes": 26194,
+      "hash": "e551c01c4705e564f5b07233be481bab55bd0f21c453640e7fa58efb4fc6466c",
+      "id": "wolf",
+      "kind": "monster",
+      "outputs": [
+        "wolf-elite.webp",
+        "wolf-elite-128.webp"
+      ],
+      "variant": "elite"
+    },
+    "wolf-elite2": {
+      "asset": false,
+      "bytes": 26650,
+      "hash": "803030b72679647a9b7cce1b1e77e39cfd235bd7d0a9a8783d9703919bc870a3",
+      "id": "wolf",
+      "kind": "monster",
+      "outputs": [
+        "wolf-elite2.webp",
+        "wolf-elite2-128.webp"
+      ],
+      "variant": "elite2"
+    },
+    "wyvern": {
+      "asset": false,
+      "bytes": 23886,
+      "hash": "c4e13902c8d694be909bfd5bc099ad89f742edd0a885d57808e01c9d2ec6f6c7",
+      "id": "wyvern",
+      "kind": "monster",
+      "outputs": [
+        "wyvern.webp",
+        "wyvern-128.webp"
+      ],
+      "variant": "normal"
+    },
+    "wyvern-elite": {
+      "asset": false,
+      "bytes": 25164,
+      "hash": "744a8041f90ceac196f4250cb42eb2d4669fb2b5a32a77cbcdf52dfcde9a52b4",
+      "id": "wyvern",
+      "kind": "monster",
+      "outputs": [
+        "wyvern-elite.webp",
+        "wyvern-elite-128.webp"
+      ],
+      "variant": "elite"
+    },
+    "wyvern-elite2": {
+      "asset": false,
+      "bytes": 24994,
+      "hash": "81b2b7b31935551c3167c864ee711355a41cbb99eae96d8fc90c94c7a88f5811",
+      "id": "wyvern",
+      "kind": "monster",
+      "outputs": [
+        "wyvern-elite2.webp",
+        "wyvern-elite2-128.webp"
+      ],
+      "variant": "elite2"
+    },
+    "yeti": {
+      "asset": false,
+      "bytes": 22628,
+      "hash": "9e43fdfdbfef3f1d5af65006dc6536b5b998d60d0834f184c19881ecab41c2d9",
+      "id": "yeti",
+      "kind": "monster",
+      "outputs": [
+        "yeti.webp",
+        "yeti-128.webp"
+      ],
+      "variant": "normal"
+    },
+    "yeti-elite": {
+      "asset": false,
+      "bytes": 24364,
+      "hash": "88f5a5dee531f6473c7dbbecbe4208ecd729fd1e9a997ae557db204d77c2fe9f",
+      "id": "yeti",
+      "kind": "monster",
+      "outputs": [
+        "yeti-elite.webp",
+        "yeti-elite-128.webp"
+      ],
+      "variant": "elite"
+    },
+    "yeti-elite2": {
+      "asset": false,
+      "bytes": 24402,
+      "hash": "3288ac1dc1c76cc89ee49f22a10b480690c251b3a699afe8e724cfa49a6e0463",
+      "id": "yeti",
+      "kind": "monster",
+      "outputs": [
+        "yeti-elite2.webp",
+        "yeti-elite2-128.webp"
+      ],
+      "variant": "elite2"
+    },
+    "youngFrostDragon": {
+      "asset": false,
+      "bytes": 22962,
+      "hash": "2db24fad34b069dca6bccc7c6aa16516bd250e8f995db5d816b1ab7c59669875",
+      "id": "youngFrostDragon",
+      "kind": "monster",
+      "outputs": [
+        "youngFrostDragon.webp",
+        "youngFrostDragon-128.webp"
+      ],
+      "variant": "normal"
+    },
+    "youngFrostDragon-elite": {
+      "asset": false,
+      "bytes": 24474,
+      "hash": "ecef062892d0306e760f4d66a58950d05d5801b953a42647d9adfe52356aeea7",
+      "id": "youngFrostDragon",
+      "kind": "monster",
+      "outputs": [
+        "youngFrostDragon-elite.webp",
+        "youngFrostDragon-elite-128.webp"
+      ],
+      "variant": "elite"
+    },
+    "youngFrostDragon-elite2": {
+      "asset": false,
+      "bytes": 24892,
+      "hash": "ab2f1930a5a65f13f79ccdc18cf51d1e31157e50cec45aa0250fb19a7aa44b76",
+      "id": "youngFrostDragon",
+      "kind": "monster",
+      "outputs": [
+        "youngFrostDragon-elite2.webp",
+        "youngFrostDragon-elite2-128.webp"
+      ],
+      "variant": "elite2"
+    }
+  },
+  "rendererVersion": 1
+}

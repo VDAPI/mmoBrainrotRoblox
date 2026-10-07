@@ -48,6 +48,12 @@ for (const size of SIZES) {
   const page = await browser.newPage({ viewport: size, deviceScaleFactor: 1, colorScheme: "dark" });
   for (const entry of PAGES) {
     await page.goto(base + entry.path, { waitUntil: "networkidle" });
+    // lazy images (S38 renders) load only near the viewport: load them all before the full-page capture
+    await page.evaluate(async () => {
+      const imgs = [...document.images];
+      for (const img of imgs) img.loading = "eager";
+      await Promise.all(imgs.map((img) => img.decode().catch(() => null)));
+    });
     await page.waitForTimeout(400);
     const file = `.shots/${entry.name}-${size.width}.png`;
     await page.screenshot({ path: file, fullPage: true });

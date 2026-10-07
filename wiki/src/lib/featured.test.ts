@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import type { Files } from "../data/types";
-import { isoWeek, pickFeaturedItem, pickMonsterOfWeek, pickWeeklyLegendary } from "./featured";
+import { isoWeek, pickFeaturedItem, pickHeroBoss, pickMonsterOfWeek, pickWeeklyLegendary } from "./featured";
 
 const load = <K extends keyof Files>(name: K): Files[K] =>
   JSON.parse(readFileSync(join(process.cwd(), "src", "data", `${name}.json`), "utf8"));
@@ -34,5 +34,20 @@ describe("featured", () => {
       expect(pick.monster.variants.elite.spawns.length).toBeGreaterThan(0);
       expect(pick.level).toBe(pick.monster.variants.elite.levelMax);
     }
+  });
+
+  it("picks the hero boss: item source, then highest level, then id", () => {
+    const bosses = load("bosses").bosses;
+    const items = load("items").items;
+    const hero = pickFeaturedItem(items, load("rarities").rarities)!;
+    const boss = pickHeroBoss(bosses, hero)!;
+    const sources = hero.sources.bosses.map((s) => s.boss);
+    if (sources.length > 0) expect(sources).toContain(boss.id);
+    const top = Math.max(...bosses.map((b) => b.level));
+    expect(pickHeroBoss(bosses, undefined)!.level).toBe(top);
+    const a = { ...bosses[0], id: "b", level: 500 };
+    const b = { ...bosses[0], id: "a", level: 500 };
+    expect(pickHeroBoss([a, b], undefined)!.id).toBe("a");
+    expect(pickHeroBoss([a, b, bosses[0]], { ...hero, sources: { ...hero.sources, bosses: [{ boss: bosses[0].id, chance: 0, personal: true }] } })!.id).toBe(bosses[0].id);
   });
 });

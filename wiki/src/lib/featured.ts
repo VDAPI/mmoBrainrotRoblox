@@ -1,6 +1,6 @@
 // What the home page features (S36): the hero item, the legendary item and the monster of the week. Pure functions
 // over the exported data; the week is taken at build time (the site is static: weekly rebuild in S44).
-import type { Item, Monster, Rarity } from "../data/types";
+import type { Boss, Item, Monster, Rarity } from "../data/types";
 
 export interface IsoWeek {
   year: number;
@@ -58,4 +58,11 @@ export function pickMonsterOfWeek(monsters: Monster[], week: string): { monster:
   if (pool.length === 0) return undefined;
   const monster = pool[hash(`monster:${week}`) % pool.length];
   return { monster, level: monster.variants.elite.levelMax };
+}
+
+/** Boss behind the hero (S38): the boss that drops the hero item, else the highest level, then the id. */
+export function pickHeroBoss(bosses: Boss[], featuredItem: Item | undefined): Boss | undefined {
+  const byRank = [...bosses].sort((a, b) => (a.level !== b.level ? b.level - a.level : a.id < b.id ? -1 : 1));
+  const dropIds = new Set((featuredItem?.sources.bosses ?? []).map((s) => s.boss));
+  return byRank.find((b) => dropIds.has(b.id)) ?? byRank[0];
 }

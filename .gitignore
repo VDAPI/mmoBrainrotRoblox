@@ -20,3 +20,7 @@ Thumbs.db
 
 # Generated icon builds (tools/icons)
 build/
+
+# Wiki renders work folder (tools/wiki-renders)
+tools/wiki-renders/out/
+__pycache__/

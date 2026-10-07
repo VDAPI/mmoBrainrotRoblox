@@ -1,0 +1,11 @@
+{
+  "frostWyrm": { "azimuth": 55, "elevation": 40 },
+  "frostWyrm-elite": { "azimuth": 55, "elevation": 40 },
+  "frostWyrm-elite2": { "azimuth": 55, "elevation": 40 },
+  "wyvern": { "azimuth": 80, "elevation": 25 },
+  "wyvern-elite": { "azimuth": 80, "elevation": 25 },
+  "wyvern-elite2": { "azimuth": 80, "elevation": 25 },
+  "youngFrostDragon": { "azimuth": 75, "elevation": 22 },
+  "youngFrostDragon-elite": { "azimuth": 75, "elevation": 22 },
+  "youngFrostDragon-elite2": { "azimuth": 75, "elevation": 22 }
+}

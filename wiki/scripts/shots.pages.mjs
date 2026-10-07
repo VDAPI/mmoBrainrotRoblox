@@ -5,6 +5,7 @@ export const PAGES = [
   { name: "szukaj", path: "/pl/szukaj/?q=wilk" },
   { name: "szukaj-pusto", path: "/pl/szukaj/" },
   { name: "styleguide", path: "/pl/styleguide/" },
+  { name: "styleguide-en", path: "/en/styleguide/" },
   { name: "wkrotce", path: "/pl/przedmioty/" },
   { name: "404", path: "/pl/404/" },
   { name: "mapa", path: "/pl/mapa/" },

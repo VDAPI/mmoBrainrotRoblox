@@ -1,33 +1,74 @@
 ---
-// Monster / boss / pet picture: public/img/mobs/<id>[-elite|-elite2].webp (+ -128 thumbnail) from S38 when it exists,
-// otherwise the mock-up's diagonal pattern with a diamond in the element colour (no "render" text).
-import { existsSync } from "node:fs";
-import { join } from "node:path";
+// Monster / boss / pet picture (S38): the render from public/img/mobs (src/lib/renders.ts) on a dark stage, or the
+// mock-up's diagonal pattern with a diamond in the element colour when there is no file. The stage is always dark
+// (also in the light theme), with dimmed stripes and an elliptical glow at the bottom in the rank colour.
+//   card     .vw-monster__render 4:3 (the card gives the box; rank / element badges sit over the corners)
+//   page     monster page: desktop 380 x 460 with a gold frame and double ring, mobile a 260 px full-width band
+//   portrait square in a double frame (home page "Monster of the week"; the parent sets the size)
+//   none     the picture only (hero)
+// `size="thumb"` (pictures up to 64 CSS px) takes the 128 px file; bosses on `page` get srcset 512 1x / 1024 2x.
+import { renderSrc, type RenderVariant } from "../lib/renders";
 interface Props {
   id: string;
   variant?: "normal" | "elite" | "elite2";
   kind?: "monster" | "boss" | "pet";
+  stage?: "card" | "page" | "portrait" | "none";
   size?: "thumb" | "full";
   alt: string;
+  eager?: boolean;
   element?: string | null;
   class?: string;
 }
-const { id, variant = "normal", kind = "monster", size = "full", alt, element, class: extra = "" } = Astro.props;
-const folder = kind === "pet" ? "pets" : "mobs";
-const base = `${id}${variant === "normal" ? "" : `-${variant}`}`;
-const file = `${base}${size === "thumb" ? "-128" : ""}.webp`;
-const exists = existsSync(join(process.cwd(), "public", "img", folder, file));
-const color = element ? `var(--vw-el-${element})` : kind === "boss" ? "var(--vw-zone-red)" : "var(--vw-gold-dark)";
+const { id, variant = "normal", kind = "monster", stage = "card", size = "full", alt, eager = false, element, class: extra = "" } = Astro.props;
+const v: RenderVariant = kind === "monster" ? variant : kind;
+const src = renderSrc(id, v, size);
+const hero = kind === "boss" && size === "full" ? renderSrc(id, v, "hero") : null;
+const srcset = src && hero && hero !== src ? `${src} 1x, ${hero} 2x` : undefined;
+const px = size === "thumb" && src?.endsWith("-128.webp") ? 128 : 512;
+const RANK: Record<string, string> = {
+  normal: "var(--vw-gold-dark)",
+  elite: "var(--vw-gold-bright)",
+  elite2: "var(--vw-r-legendary)",
+  boss: "var(--vw-zone-red)",
+  pet: "var(--vw-gold-dark)",
+};
+const glow = RANK[v] ?? RANK.normal;
+const mark = element ? `var(--vw-el-${element})` : kind === "boss" ? "var(--vw-zone-red)" : "var(--vw-gold-dark)";
 ---
-{exists ? (
-  <img class={`mob-img ${extra}`} src={`/img/${folder}/${file}`} alt={alt} loading="lazy" decoding="async" />
-) : (
-  <div class={`mob-img vw-ph ${extra}`} role="img" aria-label={alt} style={`--c: ${color}`}>
-    <span class="mark" aria-hidden="true"></span>
-  </div>
-)}
+<div class={`mob stage-${stage} ${src ? "" : "is-empty"} ${extra}`} style={`--glow: ${glow}; --c: ${mark}`} data-variant={v}>
+  {src ? (
+    <img
+      src={src}
+      srcset={srcset}
+      width={px}
+      height={px}
+      alt={alt}
+      loading={eager ? "eager" : "lazy"}
+      fetchpriority={eager ? "high" : undefined}
+      decoding="async"
+    />
+  ) : (
+    <div class="ph" role="img" aria-label={alt}><span class="mark" aria-hidden="true"></span></div>
+  )}
+</div>
 <style>
-  .mob-img { display: block; width: 100%; height: 100%; object-fit: cover; }
-  div.mob-img { display: flex; align-items: center; justify-content: center; }
+  .mob { position: relative; display: block; width: 100%; height: 100%; overflow: hidden; }
+  .mob:not(.stage-none) {
+    background:
+      radial-gradient(ellipse 60% 22% at 50% 96%, color-mix(in srgb, var(--glow) 34%, transparent), transparent 70%),
+      repeating-linear-gradient(135deg, #15171C 0 12px, #181A20 12px 24px),
+      #14161B;
+  }
+  .mob.is-empty:not(.stage-none) { background: repeating-linear-gradient(135deg, #1B1D23 0 10px, #202229 10px 20px); }
+  img { position: relative; display: block; width: 100%; height: 100%; object-fit: contain; object-position: 50% 100%; }
+  .ph { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; }
   .mark { width: 22%; max-width: 40px; aspect-ratio: 1; border: 2px solid var(--c); transform: rotate(45deg); box-shadow: 0 0 18px color-mix(in srgb, var(--c) 50%, transparent); opacity: .8; }
+
+  .stage-page { width: 380px; height: 460px; border: 2px solid var(--vw-gold); box-shadow: 0 0 0 3px var(--vw-bg), 0 0 0 4px var(--vw-gold-dark); }
+  .stage-page img { padding: 12px 8px 0; }
+  @media (max-width: 767px) {
+    .stage-page { width: 100%; height: 260px; border: 0; border-bottom: 2px solid var(--vw-gold); box-shadow: none; }
+    .stage-page img { padding: 8px 0 0; }
+  }
+  .stage-portrait { aspect-ratio: 1; height: auto; border: 1px solid var(--vw-gold); outline: 1px solid var(--vw-gold-dark); outline-offset: 3px; overflow: hidden; }
 </style>
