@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Grenze+Gotisch:wght@500;700&family=Alegreya+Sans:ital,wght@0,400;0,500;0,700;0,800;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<script src="vw-data.js"></script>
+<style>body{margin:0;background:#0E0F12;color:#E8E4DA;font-family:'Alegreya Sans',sans-serif;-webkit-font-smoothing:antialiased}a{color:#E8C25A;text-decoration:none}a:hover{color:#FFE7C2}*{box-sizing:border-box}</style>
+</helmet>
+<div style="padding:56px 80px 120px;display:flex;flex-direction:column;gap:32px">
+  <dc-import name="VwNav" variant="pages" active="monster" lang="{{ lang }}" hint-size="100%,36px"></dc-import>
+  <sc-if value="{{ ready }}" hint-placeholder-val="{{ true }}">
+  <div style="display:flex;gap:60px;align-items:flex-start;width:max-content">
+
+    <div data-screen-label="Potwor desktop" style="flex-shrink:0;width:1440px;background:#14161B;background-image:radial-gradient(ellipse 60% 35% at 30% 0%,rgba(194,53,46,.12),transparent 70%);outline:1px solid #3A3F4C">
+      <dc-import name="VwNav" variant="desktop" active="monster" lang="{{ lang }}" on-lang="{{ setLang }}" hint-size="1440px,72px"></dc-import>
+      <div style="padding:22px 72px;display:flex;gap:10px;font-size:15px;color:#9A9DA8"><a href="{{ homeHref }}" style="color:#9A9DA8">Wiki</a><span>/</span><span>{{ t.mons }}</span><span>/</span><a href="{{ zoneHref }}" style="color:#9A9DA8">{{ m.zone }}</a><span>/</span><span style="color:#E8E4DA">{{ m.name }}</span></div>
+
+      <div style="display:grid;grid-template-columns:380px minmax(0,1fr);gap:48px;padding:8px 72px 56px;align-items:start">
+        <div style="height:460px;background:repeating-linear-gradient(135deg,#16181D 0 12px,#1B1D23 12px 24px);border:2px solid #C9A45C;box-shadow:0 0 0 3px #14161B,0 0 0 4px #7A6438;display:flex;align-items:flex-end;padding:14px"><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#9A9DA8">{{ t.render }}</span></div>
+        <div style="display:flex;flex-direction:column;gap:22px">
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <span style="font-size:15px;font-weight:800;color:#14161B;background:#E8C25A;padding:4px 10px">{{ m.rank }}</span>
+            <span style="font-size:15px;font-weight:700;border:1px solid #3A3F4C;background:#1B1D23;padding:4px 10px">{{ m.lvl }}</span>
+            <span style="font-size:15px;font-weight:700;border:1px solid #3A3F4C;background:#1B1D23;padding:4px 10px">{{ m.kind }}</span>
+            <span style="display:flex;align-items:center;gap:7px;font-size:15px;font-weight:800;border:1px solid #3A3F4C;background:#1B1D23;padding:4px 10px;color:{{ m.elC }}"><span style="width:8px;height:8px;background:{{ m.elC }};transform:rotate(45deg)"></span>{{ m.el }}</span>
+            <span style="font-size:14px;font-weight:800;letter-spacing:.1em;border:1px solid #D64A3E;color:#E8665A;padding:4px 10px">{{ m.zt }}</span>
+          </div>
+          <h1 style="margin:0;font-family:'Grenze Gotisch',serif;font-weight:700;font-size:84px;line-height:.9;color:#E8E4DA">{{ m.name }}</h1>
+          <p style="margin:0;font-size:21px;line-height:1.5;font-style:italic;color:#EADDBE;max-width:720px;text-wrap:pretty">{{ t.desc }}</p>
+          <div style="position:relative;height:28px;background:#2A1616;border:1px solid #14161B;box-shadow:0 0 0 1px #3A3F4C;max-width:760px"><div style="position:absolute;inset:0;background:linear-gradient(#D9463E,#C2352E 50%,#9E2A24)"></div><span style="position:relative;display:flex;justify-content:center;font-size:16px;font-weight:800;line-height:28px;color:#FFF;text-shadow:0 1px 2px #000">{{ m.hp }}</span></div>
+          <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:#3A3F4C;border:1px solid #3A3F4C;max-width:760px">
+            <sc-for list="{{ stats }}" as="s" hint-placeholder-count="5"><div style="background:#1B1D23;padding:12px 14px;display:flex;flex-direction:column;gap:3px"><span style="font-size:13px;color:#9A9DA8">{{ s.k }}</span><span style="font-size:20px;font-weight:800;font-variant-numeric:tabular-nums">{{ s.v }}</span></div></sc-for>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:48px;padding:0 72px 88px;align-items:start">
+        <div style="display:flex;flex-direction:column;gap:44px">
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div style="display:flex;align-items:center;gap:18px"><span style="font-family:'Grenze Gotisch',serif;font-size:34px;color:#E8C25A">{{ t.loot }}</span><div style="flex:1;height:1px;background:linear-gradient(90deg,#7A6438,transparent)"></div><span style="font-size:15px;color:#9A9DA8">{{ t.lootHint }}</span></div>
+            <div style="border:1px solid #3A3F4C;background:#1B1D23">
+              <div style="display:grid;grid-template-columns:56px 1.6fr 1fr 1fr 90px;align-items:center;padding:12px 16px;font-size:13px;font-weight:800;letter-spacing:.14em;color:#C9A45C;border-bottom:1px solid #3A3F4C"><span></span><span>{{ t.cItem }}</span><span>{{ t.cRar }}</span><span>{{ t.cType }}</span><span style="text-align:right">{{ t.cCh }}</span></div>
+              <sc-for list="{{ drops }}" as="d" hint-placeholder-count="5">
+                <div onClick="{{ d.pick }}" style="display:grid;grid-template-columns:56px 1.6fr 1fr 1fr 90px;align-items:center;padding:8px 16px;border-bottom:1px solid #252832;background:{{ d.bg }};cursor:pointer;font-size:17px">
+                  <div style="width:38px;height:38px;border:1px solid {{ d.c }};background:repeating-linear-gradient(135deg,#14161B 0 5px,#1B1D23 5px 10px);box-shadow:inset 0 0 10px {{ d.cs }}"></div>
+                  <span style="font-weight:800;color:{{ d.c }}">{{ d.n }}</span><span style="color:#9A9DA8">{{ d.r }}</span><span style="color:#9A9DA8">{{ d.ty }}</span><span style="text-align:right;font-weight:800;font-variant-numeric:tabular-nums">{{ d.ch }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div style="display:flex;align-items:center;gap:18px"><span style="font-family:'Grenze Gotisch',serif;font-size:34px;color:#E8C25A">{{ t.abil }}</span><div style="flex:1;height:1px;background:linear-gradient(90deg,#7A6438,transparent)"></div></div>
+            <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px">
+              <sc-for list="{{ abil }}" as="a" hint-placeholder-count="3">
+                <div style="display:flex;flex-direction:column;gap:10px;padding:18px;background:linear-gradient(#252832,#1B1D23);border:1px solid #3A3F4C">
+                  <div style="display:flex;gap:12px;align-items:center"><div style="width:44px;height:44px;flex-shrink:0;background:repeating-linear-gradient(135deg,#14161B 0 5px,#1B1D23 5px 10px);border:1px solid #7A6438"></div><span style="font-size:19px;font-weight:800">{{ a.n }}</span></div>
+                  <span style="font-size:16px;line-height:1.45;color:#C9CED6">{{ a.d }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:22px">
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div style="font-size:14px;font-weight:800;letter-spacing:.2em;color:#C9A45C">{{ t.preview }}</div>
+            <dc-import name="VwTooltip" item="{{ sel }}" lang="{{ lang }}" hint-size="400px,380px"></dc-import>
+            <a href="{{ selHref }}" style="font-size:16px;font-weight:700">{{ t.openItem }}</a>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div style="font-size:14px;font-weight:800;letter-spacing:.2em;color:#C9A45C">{{ t.where }}</div>
+            <a href="{{ zoneHref }}" style="display:flex;flex-direction:column;background:#1B1D23;border:1px solid #3A3F4C;color:#E8E4DA">
+              <div style="position:relative;height:200px;background:repeating-linear-gradient(135deg,#16181D 0 10px,#1A1C22 10px 20px)"><div style="position:absolute;left:62%;top:38%;width:16px;height:16px;background:#E8C25A;transform:rotate(45deg);box-shadow:0 0 0 4px rgba(232,194,90,.25),0 0 14px #E8C25A"></div><span style="position:absolute;left:12px;bottom:10px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#9A9DA8">{{ t.mapPh }}</span></div>
+              <div style="padding:14px 16px;display:flex;flex-direction:column;gap:4px"><span style="font-size:18px;font-weight:800">{{ m.zone }}</span><span style="font-size:15px;color:#9A9DA8">{{ m.zoneMeta }}</span><span style="font-size:15px;color:#9A9DA8">{{ t.respawn }}</span></div>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div data-screen-label="Potwor mobile" style="flex-shrink:0;width:390px;background:#14161B;outline:1px solid #3A3F4C;border-radius:28px;overflow:hidden">
+      <dc-import name="VwNav" variant="mobile" lang="{{ lang }}" on-lang="{{ setLang }}" hint-size="390px,60px"></dc-import>
+      <div style="height:260px;background:repeating-linear-gradient(135deg,#16181D 0 12px,#1B1D23 12px 24px);border-bottom:2px solid #C9A45C;display:flex;align-items:flex-end;padding:10px 16px"><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#9A9DA8">{{ t.render }}</span></div>
+      <div style="padding:18px 16px 0;display:flex;flex-direction:column;gap:14px">
+        <div style="display:flex;gap:6px;flex-wrap:wrap"><span style="font-size:14px;font-weight:800;color:#14161B;background:#E8C25A;padding:3px 8px">{{ m.rank }}</span><span style="font-size:14px;font-weight:700;border:1px solid #3A3F4C;padding:3px 8px">{{ m.lvl }}</span><span style="font-size:13px;font-weight:800;border:1px solid #D64A3E;color:#E8665A;padding:3px 8px">{{ m.zt }}</span></div>
+        <h1 style="margin:0;font-family:'Grenze Gotisch',serif;font-weight:700;font-size:48px;line-height:.9">{{ m.name }}</h1>
+        <p style="margin:0;font-size:17px;line-height:1.45;font-style:italic;color:#EADDBE">{{ t.desc }}</p>
+        <div style="position:relative;height:24px;background:#2A1616;box-shadow:0 0 0 1px #3A3F4C"><div style="position:absolute;inset:0;background:linear-gradient(#D9463E,#C2352E 50%,#9E2A24)"></div><span style="position:relative;display:flex;justify-content:center;font-size:14px;font-weight:800;line-height:24px;color:#FFF;text-shadow:0 1px 2px #000">{{ m.hp }}</span></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#3A3F4C;border:1px solid #3A3F4C">
+          <sc-for list="{{ stats }}" as="s" hint-placeholder-count="5"><div style="background:#1B1D23;padding:10px 12px;display:flex;flex-direction:column;gap:2px"><span style="font-size:13px;color:#9A9DA8">{{ s.k }}</span><span style="font-size:18px;font-weight:800">{{ s.v }}</span></div></sc-for>
+        </div>
+      </div>
+      <div style="padding:28px 16px 0;display:flex;flex-direction:column;gap:10px">
+        <span style="font-family:'Grenze Gotisch',serif;font-size:28px;color:#E8C25A">{{ t.loot }}</span>
+        <sc-for list="{{ drops }}" as="d" hint-placeholder-count="5">
+          <div onClick="{{ d.pick }}" style="display:flex;gap:12px;align-items:center;min-height:56px;padding:8px 10px;background:{{ d.bgM }};border:1px solid #252832;cursor:pointer">
+            <div style="width:36px;height:36px;flex-shrink:0;border:1px solid {{ d.c }};background:repeating-linear-gradient(135deg,#14161B 0 5px,#1B1D23 5px 10px)"></div>
+            <span style="flex:1;font-size:16px;font-weight:800;color:{{ d.c }}">{{ d.n }}</span><span style="font-size:16px;font-weight:800">{{ d.ch }}</span>
+          </div>
+        </sc-for>
+        <dc-import name="VwTooltip" item="{{ sel }}" lang="{{ lang }}" hint-size="100%,380px"></dc-import>
+      </div>
+      <div style="padding:28px 16px 28px;display:flex;flex-direction:column;gap:10px">
+        <span style="font-family:'Grenze Gotisch',serif;font-size:28px;color:#E8C25A">{{ t.abil }}</span>
+        <sc-for list="{{ abil }}" as="a" hint-placeholder-count="3">
+          <div style="display:flex;flex-direction:column;gap:4px;padding:12px 0;border-bottom:1px solid #252832"><span style="font-size:17px;font-weight:800">{{ a.n }}</span><span style="font-size:15px;line-height:1.4;color:#C9CED6">{{ a.d }}</span></div>
+        </sc-for>
+      </div>
+      <dc-import name="VwNav" variant="tabs" active="monster" lang="{{ lang }}" hint-size="390px,68px"></dc-import>
+    </div>
+  </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const T = {
+  pl: { mons: 'Potwory', render: 'render potwora 3D', desc: 'Wartownik, który nie pamięta już, czego strzeże. Budzi się, gdy ktoś stąpnie po kamieniach kurhanu.', loot: 'Tabela łupów', lootHint: 'Kliknij, aby podejrzeć', cItem: 'PRZEDMIOT', cRar: 'RZADKOŚĆ', cType: 'TYP', cCh: 'SZANSA', abil: 'Umiejętności', preview: 'PODGLĄD ŁUPU', openItem: 'Otwórz stronę przedmiotu →', where: 'GDZIE WYSTĘPUJE', mapPh: 'wycinek mapy krainy', respawn: 'Odrodzenie co 6 min, jeden na kanał serwera', lvl: 'Poz. ',
+    k: ['Życie', 'Obrażenia', 'Pancerz', 'Doświadczenie', 'Odrodzenie'],
+    abil: [['Uderzenie Kurhanu', 'Co 12 s uderza w ziemię: obrażenia obszarowe w promieniu 6 m. Odejdź, gdy unosi broń.'], ['Wezwanie Straży', 'Przy 50% życia przyzywa 3 kurhanowe szkielety. Zabij je, zanim wrócisz do Strażnika.'], ['Kamienna Skóra', 'Poniżej 25% życia otrzymuje o 40% mniej obrażeń przez 8 s.']] },
+  en: { mons: 'Monsters', render: '3D monster render', desc: 'A sentinel that no longer remembers what it guards. It wakes when someone steps on the barrow stones.', loot: 'Loot table', lootHint: 'Click to preview', cItem: 'ITEM', cRar: 'RARITY', cType: 'TYPE', cCh: 'CHANCE', abil: 'Abilities', preview: 'LOOT PREVIEW', openItem: 'Open item page →', where: 'WHERE TO FIND', mapPh: 'zone map excerpt', respawn: 'Respawns every 6 min, one per server channel', lvl: 'Lv. ',
+    k: ['Health', 'Damage', 'Armor', 'Experience', 'Respawn'],
+    abil: [['Barrow Slam', 'Every 12 s slams the ground for area damage within 6 m. Step away when it raises its weapon.'], ['Call the Watch', 'At 50% health summons 3 Barrow Skeletons. Kill them before returning to the Warden.'], ['Stoneskin', 'Below 25% health takes 40% less damage for 8 s.']] }
+};
+class Component extends DCLogic {
+  state = { lang: null, sel: 'ostrze' };
+  componentDidMount() {
+    try { const l = localStorage.getItem('vw-lang'); if (l === 'pl' || l === 'en') this.setState({ lang: l }); } catch (e) {}
+    if (!window.VW) this._i = setInterval(() => { if (window.VW) { clearInterval(this._i); this.forceUpdate(); } }, 40);
+  }
+  componentWillUnmount() { clearInterval(this._i); }
+  renderVals() {
+    const lang = this.state.lang || 'pl', L = lang === 'en', t = T[lang];
+    const setLang = l => { this.setState({ lang: l }); try { localStorage.setItem('vw-lang', l); } catch (e) {} };
+    const V = window.VW;
+    if (!V) return { ready: false, lang, setLang, t };
+    const mo = V.monster('straznik'), z = V.zone(mo.zone), zt = V.zoneTypes[z.z], sel = this.state.sel;
+    const drops = V.items.filter(i => i.from === 'straznik').sort((a, b) => a.ch - b.ch).map(i => {
+      const r = V.rar[i.rar], on = i.id === sel;
+      return { n: L ? i.en : i.pl, c: r.c, cs: r.c + '44', r: L ? r.en : r.pl, ty: L ? i.ten : i.tpl, ch: V.nf(i.ch, lang) + '%', bg: on ? 'rgba(232,194,90,.10)' : 'transparent', bgM: on ? 'rgba(232,194,90,.10)' : '#1B1D23', pick: () => this.setState({ sel: i.id }) };
+    });
+    return {
+      ready: true, lang, setLang, t, sel, drops,
+      homeHref: V.href('home'), zoneHref: V.href('zone'), selHref: V.itemHref(sel),
+      m: { name: L ? mo.en : mo.pl, rank: V.loc(V.ranks[mo.rank], lang), lvl: t.lvl + mo.lvl, kind: V.loc(V.kinds[mo.kind], lang), el: V.loc(V.elements[mo.el], lang), elC: V.elements[mo.el].c, zt: V.loc(zt, lang).toUpperCase(), hp: V.nf(mo.hp, lang) + ' / ' + V.nf(mo.hp, lang), zone: L ? z.en : z.pl, zoneMeta: t.lvl + z.lv + ' · ' + V.loc(zt, lang) },
+      stats: [V.nf(mo.hp, lang), mo.dmg, V.nf(mo.arm, lang), V.nf(mo.xp, lang), mo.resp].map((v, i) => ({ k: t.k[i], v })),
+      abil: t.abil.map(([n, d]) => ({ n, d }))
+    };
+  }
+}
+</script>
+</body>
+</html>

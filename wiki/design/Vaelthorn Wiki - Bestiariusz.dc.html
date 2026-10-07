@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Grenze+Gotisch:wght@500;700&family=Alegreya+Sans:ital,wght@0,400;0,500;0,700;0,800;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<script src="vw-data.js"></script>
+<style>body{margin:0;background:#0E0F12;color:#E8E4DA;font-family:'Alegreya Sans',sans-serif;-webkit-font-smoothing:antialiased}a{color:#E8C25A;text-decoration:none}a:hover{color:#FFE7C2}*{box-sizing:border-box}input::placeholder{color:#9A9DA8}</style>
+</helmet>
+<div style="padding:56px 80px 120px;display:flex;flex-direction:column;gap:32px">
+  <dc-import name="VwNav" variant="pages" active="bestiary" lang="{{ lang }}" hint-size="100%,36px"></dc-import>
+  <sc-if value="{{ ready }}" hint-placeholder-val="{{ true }}">
+  <div style="display:flex;gap:60px;align-items:flex-start;width:max-content">
+
+    <div data-screen-label="Bestiariusz desktop" style="flex-shrink:0;width:1440px;min-height:1200px;background:#14161B;background-image:radial-gradient(ellipse 60% 25% at 50% 100%,rgba(217,110,40,.10),transparent 70%);outline:1px solid #3A3F4C">
+      <dc-import name="VwNav" variant="desktop" active="bestiary" lang="{{ lang }}" on-lang="{{ setLang }}" hint-size="1440px,72px"></dc-import>
+      <div style="padding:40px 48px 28px;display:flex;align-items:flex-end;gap:24px">
+        <div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:15px;color:#9A9DA8">Wiki / {{ t.title }}</span><h1 style="margin:0;font-family:'Grenze Gotisch',serif;font-weight:700;font-size:72px;line-height:.9;color:#E8C25A">{{ t.title }}</h1></div>
+        <span style="font-size:18px;color:#9A9DA8;padding-bottom:8px">{{ count }}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:260px minmax(0,1fr);gap:32px;padding:0 48px 80px;align-items:start">
+        <div style="display:flex;flex-direction:column;gap:26px">
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <span style="font-size:13px;font-weight:800;letter-spacing:.18em;color:#C9A45C">{{ t.fReg }}</span>
+            <sc-for list="{{ regF }}" as="r" hint-placeholder-count="7">
+              <div onClick="{{ r.set }}" style="display:flex;align-items:center;gap:10px;min-height:44px;padding:0 12px;border:1px solid {{ r.bd }};background:{{ r.bg }};cursor:pointer">
+                <span style="width:9px;height:9px;background:{{ r.c }};transform:rotate(45deg);flex-shrink:0"></span><span style="flex:1;font-size:16px;font-weight:{{ r.fw }};color:{{ r.fg }}">{{ r.n }}</span><span style="font-size:13px;color:#9A9DA8">{{ r.lv }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <span style="font-size:13px;font-weight:800;letter-spacing:.18em;color:#C9A45C">{{ t.fLvl }}</span>
+            <div style="display:flex;flex-wrap:wrap;gap:6px">
+              <sc-for list="{{ lvlF }}" as="s" hint-placeholder-count="5">
+                <sc-if value="{{ s.on }}"><span style="display:flex;align-items:center;min-height:36px;padding:0 11px;font-size:14px;font-weight:800;background:#E8C25A;color:#14161B;border:1px solid #E8C25A">{{ s.n }}</span></sc-if>
+                <sc-if value="{{ s.off }}"><span onClick="{{ s.set }}" style="display:flex;align-items:center;min-height:36px;padding:0 11px;font-size:14px;font-weight:700;background:#1B1D23;color:#C9CED6;border:1px solid #3A3F4C;cursor:pointer" style-hover="border-color:#7A6438">{{ s.n }}</span></sc-if>
+              </sc-for>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <span style="font-size:13px;font-weight:800;letter-spacing:.18em;color:#C9A45C">{{ t.fType }}</span>
+            <sc-for list="{{ typeF }}" as="r" hint-placeholder-count="4">
+              <div onClick="{{ r.toggle }}" style="display:flex;align-items:center;gap:10px;min-height:40px;padding:0 12px;border:1px solid {{ r.bd }};background:#1B1D23;cursor:pointer">
+                <div style="width:16px;height:16px;border:1px solid {{ r.c }};background:{{ r.fill }}"></div><span style="font-size:16px;font-weight:700;color:{{ r.c }}">{{ r.n }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <span onClick="{{ reset }}" style="font-size:15px;font-weight:700;color:#E8C25A;cursor:pointer">{{ t.reset }}</span>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:18px;min-width:0">
+          <div style="display:flex;gap:12px;align-items:center">
+            <div style="flex:1;display:flex;height:48px;background:#1B1D23;border:1px solid #7A6438;box-shadow:inset 0 2px 6px rgba(0,0,0,.5)"><input value="{{ q }}" onChange="{{ onQ }}" placeholder="{{ t.ph }}" style="flex:1;background:transparent;border:0;outline:0;color:#E8E4DA;font-family:'Alegreya Sans',sans-serif;font-size:17px;padding:0 16px"></div>
+            <div onClick="{{ toggleSort }}" style="display:flex;align-items:center;gap:8px;height:48px;padding:0 14px;border:1px solid #3A3F4C;background:#1B1D23;font-size:15px;cursor:pointer"><span style="color:#9A9DA8">{{ t.sort }}</span><b>{{ sortL }}</b></div>
+            <div style="display:flex;border:1px solid #3A3F4C">
+              <sc-for list="{{ views }}" as="v" hint-placeholder-count="2">
+                <sc-if value="{{ v.on }}"><span style="display:flex;align-items:center;height:46px;padding:0 14px;font-size:14px;font-weight:800;background:#252832;color:#E8C25A">{{ v.n }}</span></sc-if>
+                <sc-if value="{{ v.off }}"><span onClick="{{ v.set }}" style="display:flex;align-items:center;height:46px;padding:0 14px;font-size:14px;font-weight:700;color:#9A9DA8;cursor:pointer">{{ v.n }}</span></sc-if>
+              </sc-for>
+            </div>
+          </div>
+          <sc-if value="{{ hasActive }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center"><span style="font-size:14px;color:#9A9DA8;margin-right:4px">{{ t.active }}</span><sc-for list="{{ activeF }}" as="a" hint-placeholder-count="2"><span onClick="{{ a.clear }}" style="display:flex;align-items:center;gap:8px;min-height:32px;padding:0 10px;font-size:14px;font-weight:700;border:1px solid #7A6438;background:rgba(232,194,90,.08);cursor:pointer">{{ a.n }} <span style="color:#9A9DA8">×</span></span></sc-for></div>
+          </sc-if>
+
+          <sc-if value="{{ sLoading }}" hint-placeholder-val="{{ false }}">
+            <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px" aria-busy="true">
+              <sc-for list="{{ skel8 }}" as="s" hint-placeholder-count="8"><div style="display:flex;flex-direction:column;background:#1B1D23;border:1px solid #252832;border-top:2px solid #3A3F4C"><div style="aspect-ratio:4/3;background:linear-gradient(90deg,#1B1D23,#252832,#1B1D23)"></div><div style="padding:14px;display:flex;flex-direction:column;gap:10px"><div style="height:20px;width:75%;background:#252832"></div><div style="height:12px;width:45%;background:#252832"></div><div style="height:12px;width:60%;background:#252832"></div></div></div></sc-for>
+            </div>
+          </sc-if>
+          <sc-if value="{{ sEmpty }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:14px;padding:80px 24px;background:#1B1D23;border:1px solid #252832;text-align:center"><div style="width:30px;height:30px;border:1px solid #7A6438;transform:rotate(45deg);margin:10px 0"></div><span style="font-family:'Grenze Gotisch',serif;font-size:38px;color:#E8C25A">{{ t.emptyT }}</span><span style="font-size:17px;color:#9A9DA8;max-width:420px;line-height:1.45">{{ t.emptyD }}</span><div style="display:flex;align-items:center;min-height:44px;padding:0 20px;font-size:15px;font-weight:800;letter-spacing:.06em;background:linear-gradient(#252832,#1B1D23);border:1px solid #7A6438">{{ t.add }}</div></div>
+          </sc-if>
+          <sc-if value="{{ sNone }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:14px;padding:80px 24px;background:#1B1D23;border:1px solid #252832;text-align:center"><div style="width:30px;height:30px;border:1px solid #3A3F4C;transform:rotate(45deg);margin:10px 0"></div><span style="font-family:'Grenze Gotisch',serif;font-size:38px;color:#E8C25A">{{ t.noneT }}</span><span style="font-size:17px;color:#9A9DA8;max-width:420px;line-height:1.45">{{ t.noneD }}</span><div onClick="{{ reset }}" style="display:flex;align-items:center;min-height:44px;padding:0 20px;font-size:15px;font-weight:800;letter-spacing:.06em;background:linear-gradient(#E8C25A,#C9A45C);color:#14161B;cursor:pointer">{{ t.reset }}</div></div>
+          </sc-if>
+
+          <sc-if value="{{ showGrid }}" hint-placeholder-val="{{ true }}">
+            <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px">
+              <sc-for list="{{ pageItems }}" as="m" hint-placeholder-count="8"><dc-import name="VwMonsterCard" monster="{{ m.id }}" lang="{{ lang }}" hint-size="100%,400px"></dc-import></sc-for>
+            </div>
+          </sc-if>
+          <sc-if value="{{ showTable }}" hint-placeholder-val="{{ false }}">
+            <div style="border:1px solid #3A3F4C;background:#1B1D23">
+              <div style="display:grid;grid-template-columns:52px minmax(0,1.6fr) 70px 90px 100px minmax(0,1.2fr) minmax(0,1.4fr);gap:10px;align-items:center;height:44px;padding:0 14px;font-size:13px;font-weight:800;letter-spacing:.12em;color:#C9A45C;border-bottom:1px solid #3A3F4C"><span></span><span>{{ t.cName }}</span><span onClick="{{ toggleSort }}" style="cursor:pointer;color:#E8C25A">{{ t.cLvl }} {{ arrow }}</span><span>{{ t.cRank }}</span><span>{{ t.cEl }}</span><span>{{ t.cReg }}</span><span>{{ t.cDrop }}</span></div>
+              <sc-for list="{{ pageItems }}" as="m" hint-placeholder-count="8">
+                <a href="{{ m.href }}" style="display:grid;grid-template-columns:52px minmax(0,1.6fr) 70px 90px 100px minmax(0,1.2fr) minmax(0,1.4fr);gap:10px;align-items:center;min-height:56px;padding:6px 14px;border-bottom:1px solid #252832;color:#E8E4DA;font-size:16px" style-hover="background:rgba(255,255,255,.03)">
+                  <div style="width:40px;height:40px;border:1px solid {{ m.rc }};background:repeating-linear-gradient(135deg,#14161B 0 5px,#1B1D23 5px 10px)"></div>
+                  <span style="font-weight:800">{{ m.n }}</span><span style="font-variant-numeric:tabular-nums;font-weight:700">{{ m.lvl }}</span><span style="color:{{ m.rc }};font-weight:700">{{ m.rank }}</span>
+                  <span style="display:flex;align-items:center;gap:6px;color:{{ m.ec }};font-weight:700;font-size:15px"><span style="width:8px;height:8px;background:{{ m.ec }};transform:rotate(45deg)"></span>{{ m.el }}</span>
+                  <span style="display:flex;align-items:center;gap:6px;color:#C9CED6;font-size:15px"><span style="width:8px;height:8px;background:{{ m.zc }};transform:rotate(45deg);flex-shrink:0"></span>{{ m.reg }}</span>
+                  <span style="color:{{ m.dc }};font-weight:700;font-size:15px">{{ m.drop }}</span>
+                </a>
+              </sc-for>
+            </div>
+          </sc-if>
+          <sc-if value="{{ showPager }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:15px;color:#9A9DA8">{{ range }}</span>
+              <div style="display:flex;gap:4px">
+                <div onClick="{{ prev }}" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid #3A3F4C;color:#E8E4DA;opacity:{{ prevOp }};cursor:pointer">‹</div>
+                <sc-for list="{{ pages }}" as="p" hint-placeholder-count="2">
+                  <sc-if value="{{ p.on }}"><div style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;background:#E8C25A;color:#14161B;font-weight:800">{{ p.n }}</div></sc-if>
+                  <sc-if value="{{ p.off }}"><div onClick="{{ p.set }}" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid #3A3F4C;font-weight:700;cursor:pointer">{{ p.n }}</div></sc-if>
+                </sc-for>
+                <div onClick="{{ next }}" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid #3A3F4C;color:#E8E4DA;opacity:{{ nextOp }};cursor:pointer">›</div>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+      </div>
+    </div>
+
+    <div data-screen-label="Bestiariusz mobile" style="flex-shrink:0;width:390px;background:#14161B;outline:1px solid #3A3F4C;border-radius:28px;overflow:hidden">
+      <dc-import name="VwNav" variant="mobile" lang="{{ lang }}" on-lang="{{ setLang }}" hint-size="390px,60px"></dc-import>
+      <div style="padding:22px 16px 0;display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;align-items:baseline;justify-content:space-between"><h1 style="margin:0;font-family:'Grenze Gotisch',serif;font-weight:700;font-size:44px;line-height:.9;color:#E8C25A">{{ t.title }}</h1><span style="font-size:15px;color:#9A9DA8">{{ count }}</span></div>
+        <div style="display:flex;height:50px;background:#1B1D23;border:1px solid #7A6438"><input value="{{ q }}" onChange="{{ onQ }}" placeholder="{{ t.ph }}" style="flex:1;background:transparent;border:0;outline:0;color:#E8E4DA;font-family:'Alegreya Sans',sans-serif;font-size:17px;padding:0 14px"></div>
+        <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:2px">
+          <sc-for list="{{ regF }}" as="r" hint-placeholder-count="7"><span onClick="{{ r.set }}" style="flex-shrink:0;display:flex;align-items:center;gap:7px;height:44px;padding:0 12px;font-size:15px;font-weight:{{ r.fw }};color:{{ r.fg }};border:1px solid {{ r.bd }};background:{{ r.bg }};cursor:pointer;white-space:nowrap"><span style="width:8px;height:8px;background:{{ r.c }};transform:rotate(45deg)"></span>{{ r.n }}</span></sc-for>
+        </div>
+        <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:2px">
+          <sc-for list="{{ typeF }}" as="r" hint-placeholder-count="4"><span onClick="{{ r.toggle }}" style="flex-shrink:0;display:flex;align-items:center;height:44px;padding:0 12px;font-size:15px;font-weight:700;color:{{ r.c }};border:1px solid {{ r.bd }};background:{{ r.bgM }};cursor:pointer;white-space:nowrap">{{ r.n }}</span></sc-for>
+          <sc-for list="{{ lvlF }}" as="s" hint-placeholder-count="5"><span onClick="{{ s.set }}" style="flex-shrink:0;display:flex;align-items:center;height:44px;padding:0 12px;font-size:15px;font-weight:700;color:{{ s.fg }};border:1px solid {{ s.bd }};background:{{ s.bg }};cursor:pointer;white-space:nowrap">{{ s.n }}</span></sc-for>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:15px;color:#9A9DA8"><span onClick="{{ toggleSort }}" style="cursor:pointer">{{ t.sort }} <b style="color:#E8E4DA">{{ sortL }}</b></span><span onClick="{{ reset }}" style="color:#E8C25A;font-weight:700;cursor:pointer">{{ t.reset }}</span></div>
+      </div>
+      <div style="padding:12px 16px 28px;display:flex;flex-direction:column;gap:12px">
+        <sc-if value="{{ sLoading }}" hint-placeholder-val="{{ false }}"><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><sc-for list="{{ skel4 }}" as="s" hint-placeholder-count="4"><div style="background:#1B1D23;border:1px solid #252832"><div style="aspect-ratio:4/3;background:linear-gradient(90deg,#1B1D23,#252832,#1B1D23)"></div><div style="padding:10px;display:flex;flex-direction:column;gap:8px"><div style="height:16px;width:80%;background:#252832"></div><div style="height:10px;width:50%;background:#252832"></div></div></div></sc-for></div></sc-if>
+        <sc-if value="{{ sEmpty }}" hint-placeholder-val="{{ false }}"><div style="display:flex;flex-direction:column;align-items:center;gap:12px;padding:48px 16px;background:#1B1D23;border:1px solid #252832;text-align:center"><div style="width:24px;height:24px;border:1px solid #7A6438;transform:rotate(45deg);margin:8px 0"></div><span style="font-family:'Grenze Gotisch',serif;font-size:30px;color:#E8C25A">{{ t.emptyT }}</span><span style="font-size:15px;color:#9A9DA8;line-height:1.45">{{ t.emptyD }}</span></div></sc-if>
+        <sc-if value="{{ sNone }}" hint-placeholder-val="{{ false }}"><div style="display:flex;flex-direction:column;align-items:center;gap:12px;padding:48px 16px;background:#1B1D23;border:1px solid #252832;text-align:center"><div style="width:24px;height:24px;border:1px solid #3A3F4C;transform:rotate(45deg);margin:8px 0"></div><span style="font-family:'Grenze Gotisch',serif;font-size:30px;color:#E8C25A">{{ t.noneT }}</span><span style="font-size:15px;color:#9A9DA8;line-height:1.45">{{ t.noneD }}</span><div onClick="{{ reset }}" style="display:flex;align-items:center;min-height:48px;padding:0 20px;font-size:15px;font-weight:800;background:linear-gradient(#E8C25A,#C9A45C);color:#14161B;cursor:pointer">{{ t.reset }}</div></div></sc-if>
+        <sc-if value="{{ hasResults }}" hint-placeholder-val="{{ true }}">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><sc-for list="{{ mobileItems }}" as="m" hint-placeholder-count="6"><dc-import name="VwMonsterCard" monster="{{ m.id }}" lang="{{ lang }}" hint-size="100%,330px"></dc-import></sc-for></div>
+          <sc-if value="{{ moreLeft }}"><div onClick="{{ more }}" style="display:flex;align-items:center;justify-content:center;min-height:48px;font-size:15px;font-weight:800;letter-spacing:.06em;background:linear-gradient(#252832,#1B1D23);border:1px solid #3A3F4C;cursor:pointer">{{ moreL }}</div></sc-if>
+        </sc-if>
+      </div>
+      <dc-import name="VwNav" variant="tabs" active="bestiary" lang="{{ lang }}" hint-size="390px,68px"></dc-import>
+    </div>
+  </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;stan&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dane&quot;,&quot;ladowanie&quot;,&quot;pusto&quot;],&quot;default&quot;:&quot;dane&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Stan strony&quot;}}">
+const T = {
+  pl: { title: 'Bestiariusz', ph: 'Szukaj potwora…', fReg: 'REGION', fLvl: 'POZIOM', fType: 'TYP', all: 'Wszystkie', reset: 'Wyczyść filtry', sort: 'Sortuj:', active: 'Aktywne filtry:', grid: 'KARTY', table: 'TABELA', cName: 'POTWÓR', cLvl: 'POZ.', cRank: 'TYP', cEl: 'ŻYWIOŁ', cReg: 'REGION', cDrop: 'NAJCENNIEJSZY ŁUP', sorts: { lvl: 'poziom', name: 'nazwa' }, emptyT: 'Kronika milczy', emptyD: 'Nikt jeszcze nie opisał potworów z tego regionu. Widziałeś któregoś? Dodaj wpis.', add: 'DODAJ WPIS', noneT: 'Nic nie znaleziono', noneD: 'Żaden potwór nie pasuje do wybranych filtrów. Usuń jeden z nich albo szukaj krótszej nazwy.', lvlS: 'Poz. ', of: 'z', moreL: n => 'POKAŻ WIĘCEJ (' + n + ')',
+    count: n => n + ' ' + (n === 1 ? 'potwór' : (n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20)) ? 'potwory' : 'potworów') },
+  en: { title: 'Bestiary', ph: 'Search monsters…', fReg: 'REGION', fLvl: 'LEVEL', fType: 'TYPE', all: 'All', reset: 'Clear filters', sort: 'Sort:', active: 'Active filters:', grid: 'CARDS', table: 'TABLE', cName: 'MONSTER', cLvl: 'LV.', cRank: 'TYPE', cEl: 'ELEMENT', cReg: 'REGION', cDrop: 'BEST LOOT', sorts: { lvl: 'level', name: 'name' }, emptyT: 'The chronicle is silent', emptyD: 'No one has described the monsters of this region yet. Seen one? Add an entry.', add: 'ADD ENTRY', noneT: 'Nothing found', noneD: 'No monster matches the selected filters. Remove one or try a shorter name.', lvlS: 'Lv. ', of: 'of', moreL: n => 'SHOW MORE (' + n + ')',
+    count: n => n + ' ' + (n === 1 ? 'monster' : 'monsters') }
+};
+const LV = [['all', null], ['1–12', [1, 12]], ['13–25', [13, 25]], ['26–35', [26, 35]], ['36+', [36, 99]]];
+const PER = 8;
+class Component extends DCLogic {
+  state = { lang: null, reg: 'all', lv: 'all', types: {}, q: '', sort: 'lvl', dir: 1, view: 'grid', page: 0, mShow: 6 };
+  componentDidMount() {
+    try { const l = localStorage.getItem('vw-lang'); if (l === 'pl' || l === 'en') this.setState({ lang: l }); } catch (e) {}
+    if (!window.VW) this._i = setInterval(() => { if (window.VW) { clearInterval(this._i); this.forceUpdate(); } }, 40);
+  }
+  componentWillUnmount() { clearInterval(this._i); }
+  renderVals() {
+    const lang = this.state.lang || 'pl', L = lang === 'en', t = T[lang];
+    const setLang = l => { this.setState({ lang: l }); try { localStorage.setItem('vw-lang', l); } catch (e) {} };
+    const V = window.VW;
+    if (!V) return { ready: false, lang, setLang, t };
+    const S = this.state, stan = this.props.stan || 'dane';
+    const anyT = Object.values(S.types).some(Boolean), lvR = LV.find(l => l[0] === S.lv)[1], ql = S.q.trim().toLowerCase();
+    const nm = m => (L ? m.en : m.pl);
+    let list = stan === 'pusto' ? [] : V.monsters.filter(m => (S.reg === 'all' || m.zone === S.reg) && (!lvR || (m.lvl >= lvR[0] && m.lvl <= lvR[1])) && (!anyT || S.types[m.rank]) && (!ql || nm(m).toLowerCase().includes(ql)));
+    list = list.slice().sort((a, b) => (S.sort === 'lvl' ? a.lvl - b.lvl : nm(a).localeCompare(nm(b))) * S.dir);
+    const pages = Math.max(1, Math.ceil(list.length / PER)), page = Math.min(S.page, pages - 1);
+    const set = o => () => this.setState({ ...o, page: 0, mShow: 6 });
+    const row = m => { const rk = V.ranks[m.rank], z = V.zone(m.zone), el = V.elements[m.el], it = m.drop ? V.item(m.drop) : null; return { id: m.id, n: nm(m), lvl: m.lvl, rank: V.loc(rk, lang), rc: rk.c, el: V.loc(el, lang), ec: el.c, reg: L ? z.en : z.pl, zc: V.zoneTypes[z.z].c, drop: it ? (L ? it.en : it.pl) : '—', dc: it ? V.rar[it.rar].c : '#9A9DA8', href: m.id === 'straznik' ? V.href('monster') : '#' }; };
+    const loading = stan === 'ladowanie', empty = stan === 'pusto', none = !loading && !empty && list.length === 0, has = !loading && !empty && list.length > 0;
+    const activeF = [];
+    if (S.reg !== 'all') { const z = V.zone(S.reg); activeF.push({ n: L ? z.en : z.pl, clear: set({ reg: 'all' }) }); }
+    if (S.lv !== 'all') activeF.push({ n: t.lvlS + S.lv, clear: set({ lv: 'all' }) });
+    Object.keys(S.types).filter(k => S.types[k]).forEach(k => activeF.push({ n: V.loc(V.ranks[k], lang), clear: () => this.setState(s => ({ types: { ...s.types, [k]: false }, page: 0 })) }));
+    const start = page * PER;
+    return {
+      ready: true, lang, setLang, t, q: S.q, onQ: e => this.setState({ q: e.target.value, page: 0, mShow: 6 }),
+      count: t.count(list.length),
+      regF: [{ id: 'all', n: t.all, c: '#7A6438', lv: '' }].concat(V.zones.map(z => ({ id: z.id, n: L ? z.en : z.pl, c: V.zoneTypes[z.z].c, lv: z.lv }))).map(r => { const on = S.reg === r.id; return { ...r, bd: on ? '#C9A45C' : '#3A3F4C', bg: on ? 'rgba(232,194,90,.10)' : '#1B1D23', fg: on ? '#E8E4DA' : '#C9CED6', fw: on ? 800 : 600, set: set({ reg: r.id }) }; }),
+      lvlF: LV.map(([k]) => { const on = S.lv === k; return { n: k === 'all' ? t.all : k, on, off: !on, set: set({ lv: k }), bg: on ? '#E8C25A' : '#1B1D23', fg: on ? '#14161B' : '#C9CED6', bd: on ? '#E8C25A' : '#3A3F4C' }; }),
+      typeF: ['normal', 'elite', 'elite2', 'boss'].map(k => { const on = !!S.types[k], c = V.ranks[k].c; return { n: V.loc(V.ranks[k], lang), c, bd: on ? c : '#3A3F4C', fill: on ? c : 'transparent', bgM: on ? c + '1F' : '#1B1D23', toggle: () => this.setState(s => ({ types: { ...s.types, [k]: !s.types[k] }, page: 0, mShow: 6 })) }; }),
+      reset: () => this.setState({ reg: 'all', lv: 'all', types: {}, q: '', page: 0, mShow: 6 }),
+      hasActive: activeF.length > 0, activeF,
+      toggleSort: () => this.setState(s => (s.sort === 'lvl' && s.dir === 1 ? { dir: -1 } : s.sort === 'lvl' ? { sort: 'name', dir: 1 } : { sort: 'lvl', dir: 1 })),
+      sortL: t.sorts[S.sort] + (S.dir > 0 ? ' ↑' : ' ↓'), arrow: S.sort === 'lvl' ? (S.dir > 0 ? '↑' : '↓') : '',
+      views: [['grid', t.grid], ['table', t.table]].map(([k, n]) => ({ n, on: S.view === k, off: S.view !== k, set: () => this.setState({ view: k }) })),
+      sLoading: loading, sEmpty: empty, sNone: none, hasResults: has,
+      showGrid: has && S.view === 'grid', showTable: has && S.view === 'table', showPager: has && list.length > PER,
+      pageItems: list.slice(start, start + PER).map(row),
+      range: (start + 1) + '–' + Math.min(start + PER, list.length) + ' ' + t.of + ' ' + list.length,
+      pages: Array.from({ length: pages }, (_, i) => ({ n: i + 1, on: i === page, off: i !== page, set: () => this.setState({ page: i }) })),
+      prev: () => this.setState({ page: Math.max(0, page - 1) }), next: () => this.setState({ page: Math.min(pages - 1, page + 1) }), prevOp: page === 0 ? .4 : 1, nextOp: page >= pages - 1 ? .4 : 1,
+      mobileItems: list.slice(0, S.mShow).map(row), moreLeft: list.length > S.mShow, moreL: t.moreL(list.length - S.mShow), more: () => this.setState(s => ({ mShow: s.mShow + 6 })),
+      skel8: Array.from({ length: 8 }, (_, i) => ({ i })), skel4: Array.from({ length: 4 }, (_, i) => ({ i }))
+    };
+  }
+}
+</script>
+</body>
+</html>

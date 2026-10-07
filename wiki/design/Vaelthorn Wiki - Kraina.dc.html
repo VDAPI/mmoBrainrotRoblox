@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Grenze+Gotisch:wght@500;700&family=Alegreya+Sans:ital,wght@0,400;0,500;0,700;0,800;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<script src="vw-data.js"></script>
+<style>body{margin:0;background:#0E0F12;color:#E8E4DA;font-family:'Alegreya Sans',sans-serif;-webkit-font-smoothing:antialiased}a{color:#E8C25A;text-decoration:none}a:hover{color:#FFE7C2}*{box-sizing:border-box}</style>
+</helmet>
+<div style="padding:56px 80px 120px;display:flex;flex-direction:column;gap:32px">
+  <dc-import name="VwNav" variant="pages" active="zone" lang="{{ lang }}" hint-size="100%,36px"></dc-import>
+  <sc-if value="{{ ready }}" hint-placeholder-val="{{ true }}">
+  <div style="display:flex;gap:60px;align-items:flex-start;width:max-content">
+
+    <div data-screen-label="Kraina desktop" style="flex-shrink:0;width:1440px;background:#14161B;outline:1px solid #3A3F4C">
+      <dc-import name="VwNav" variant="desktop" active="zone" lang="{{ lang }}" on-lang="{{ setLang }}" hint-size="1440px,72px"></dc-import>
+      <div style="display:grid;grid-template-columns:860px minmax(0,1fr);gap:40px;padding:36px 48px 88px;align-items:start">
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div style="position:relative;height:700px;overflow:hidden;background:radial-gradient(ellipse at 70% 30%,rgba(214,74,62,.12),transparent 60%),repeating-linear-gradient(135deg,#16181D 0 14px,#1A1C22 14px 28px);border:1px solid #3A3F4C;box-shadow:inset 0 0 0 1px #14161B,inset 0 0 80px rgba(0,0,0,.6)">
+            <span style="position:absolute;left:16px;top:14px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:#9A9DA8">{{ t.mapPh }}</span>
+            <sc-for list="{{ markers }}" as="m" hint-placeholder-count="7">
+              <div onClick="{{ m.pick }}" style="position:absolute;left:{{ m.x }};top:{{ m.y }};transform:translate(-50%,-50%);display:flex;align-items:center;gap:10px;cursor:pointer">
+                <div style="width:{{ m.s }};height:{{ m.s }};background:{{ m.c }};transform:rotate(45deg);box-shadow:{{ m.glow }};border:1px solid #14161B"></div>
+                <span style="font-size:15px;font-weight:800;color:{{ m.lc }};background:rgba(20,22,27,.85);padding:3px 8px;border:1px solid {{ m.lb }};white-space:nowrap">{{ m.n }}</span>
+              </div>
+            </sc-for>
+            <div style="position:absolute;left:16px;bottom:16px;display:flex;gap:18px;padding:10px 14px;background:rgba(20,22,27,.9);border:1px solid #3A3F4C;font-size:14px;color:#C9CED6">
+              <sc-for list="{{ legend }}" as="g" hint-placeholder-count="4"><span style="display:flex;align-items:center;gap:8px"><span style="width:10px;height:10px;background:{{ g.c }};transform:rotate(45deg)"></span>{{ g.n }}</span></sc-for>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:32px;min-width:0">
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <span style="font-size:15px;color:#9A9DA8">Wiki / {{ t.zones }}</span>
+            <h1 style="margin:0;font-family:'Grenze Gotisch',serif;font-weight:700;font-size:68px;line-height:.9;color:#E8E4DA">{{ z.name }}</h1>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+              <span style="font-size:15px;font-weight:700;border:1px solid #3A3F4C;background:#1B1D23;padding:5px 10px">{{ z.lv }}</span>
+              <span style="display:flex;align-items:center;gap:8px;font-size:14px;font-weight:800;letter-spacing:.1em;border:1px solid #D64A3E;color:#E8665A;padding:5px 10px"><span style="width:8px;height:8px;background:#D64A3E;transform:rotate(45deg)"></span>{{ z.zt }}</span>
+            </div>
+            <p style="margin:0;font-size:19px;line-height:1.5;color:#C9CED6;text-wrap:pretty">{{ t.desc }} <b style="color:#E8E4DA">{{ z.pvp }}</b></p>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;align-items:center;gap:14px"><span style="font-family:'Grenze Gotisch',serif;font-size:30px;color:#E8C25A">{{ t.mons }}</span><div style="flex:1;height:1px;background:linear-gradient(90deg,#7A6438,transparent)"></div></div>
+            <div style="border:1px solid #3A3F4C;background:#1B1D23">
+              <sc-for list="{{ mons }}" as="m" hint-placeholder-count="5">
+                <div onClick="{{ m.pick }}" style="display:grid;grid-template-columns:18px minmax(0,1fr) 70px 70px 24px;gap:12px;align-items:center;padding:11px 14px;border-bottom:1px solid #252832;background:{{ m.bg }};cursor:pointer;font-size:17px">
+                  <span style="width:10px;height:10px;background:{{ m.c }};transform:rotate(45deg)"></span>
+                  <span style="font-weight:800">{{ m.n }}</span><span style="color:#9A9DA8">{{ m.lvl }}</span><span style="color:{{ m.c }};font-weight:700;font-size:15px">{{ m.rank }}</span>
+                  <a href="{{ m.href }}" style="font-size:18px">›</a>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <span style="font-family:'Grenze Gotisch',serif;font-size:26px;color:#E8C25A">{{ t.quests }}</span>
+              <sc-for list="{{ quests }}" as="q" hint-placeholder-count="2"><div style="display:flex;flex-direction:column;gap:2px;padding:10px 12px;background:linear-gradient(#252832,#1B1D23);border:1px solid #3A3F4C"><span style="font-size:17px;font-weight:800">{{ q.n }}</span><span style="font-size:14px;color:#9A9DA8">{{ q.m }}</span></div></sc-for>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <span style="font-family:'Grenze Gotisch',serif;font-size:26px;color:#E8C25A">{{ t.near }}</span>
+              <sc-for list="{{ near }}" as="n" hint-placeholder-count="2"><div style="display:flex;gap:10px;align-items:center;padding:10px 12px;background:linear-gradient(#252832,#1B1D23);border:1px solid #3A3F4C"><span style="width:10px;height:10px;background:{{ n.c }};transform:rotate(45deg);flex-shrink:0"></span><div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:17px;font-weight:800">{{ n.n }}</span><span style="font-size:14px;color:#9A9DA8">{{ n.m }}</span></div></div></sc-for>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div data-screen-label="Kraina mobile" style="flex-shrink:0;width:390px;background:#14161B;outline:1px solid #3A3F4C;border-radius:28px;overflow:hidden">
+      <dc-import name="VwNav" variant="mobile" lang="{{ lang }}" on-lang="{{ setLang }}" hint-size="390px,60px"></dc-import>
+      <div style="padding:22px 16px 16px;display:flex;flex-direction:column;gap:12px">
+        <h1 style="margin:0;font-family:'Grenze Gotisch',serif;font-weight:700;font-size:46px;line-height:.9">{{ z.name }}</h1>
+        <div style="display:flex;gap:6px;flex-wrap:wrap"><span style="font-size:14px;font-weight:700;border:1px solid #3A3F4C;padding:4px 9px">{{ z.lv }}</span><span style="font-size:13px;font-weight:800;letter-spacing:.08em;border:1px solid #D64A3E;color:#E8665A;padding:4px 9px">{{ z.zt }}</span></div>
+        <p style="margin:0;font-size:16px;line-height:1.45;color:#C9CED6"><b style="color:#E8E4DA">{{ z.pvp }}</b></p>
+      </div>
+      <div style="position:relative;height:340px;overflow:hidden;background:radial-gradient(ellipse at 70% 30%,rgba(214,74,62,.12),transparent 60%),repeating-linear-gradient(135deg,#16181D 0 10px,#1A1C22 10px 20px);border-top:1px solid #3A3F4C;border-bottom:1px solid #3A3F4C">
+        <sc-for list="{{ markers }}" as="m" hint-placeholder-count="7">
+          <div onClick="{{ m.pick }}" style="position:absolute;left:{{ m.x }};top:{{ m.y }};transform:translate(-50%,-50%);width:44px;height:44px;display:flex;align-items:center;justify-content:center;cursor:pointer"><div style="width:{{ m.sM }};height:{{ m.sM }};background:{{ m.c }};transform:rotate(45deg);box-shadow:{{ m.glow }};border:1px solid #14161B"></div></div>
+        </sc-for>
+        <div style="position:absolute;left:10px;right:10px;bottom:10px;padding:10px 12px;background:rgba(20,22,27,.92);border:1px solid #7A6438;display:flex;justify-content:space-between;align-items:center"><div style="display:flex;flex-direction:column"><span style="font-size:16px;font-weight:800">{{ selN }}</span><span style="font-size:13px;color:#9A9DA8">{{ selM }}</span></div><a href="{{ selHref }}" style="font-size:20px;padding:0 6px">›</a></div>
+      </div>
+      <div style="padding:22px 16px 0;display:flex;flex-direction:column">
+        <span style="font-family:'Grenze Gotisch',serif;font-size:28px;color:#E8C25A;margin-bottom:6px">{{ t.mons }}</span>
+        <sc-for list="{{ mons }}" as="m" hint-placeholder-count="5">
+          <div onClick="{{ m.pick }}" style="display:flex;gap:12px;align-items:center;min-height:52px;border-bottom:1px solid #252832;background:{{ m.bg }};padding:0 6px;cursor:pointer"><span style="width:10px;height:10px;background:{{ m.c }};transform:rotate(45deg)"></span><span style="flex:1;font-size:16px;font-weight:800">{{ m.n }}</span><span style="font-size:14px;color:#9A9DA8">{{ m.lvl }}</span></div>
+        </sc-for>
+      </div>
+      <div style="padding:24px 16px 28px;display:flex;flex-direction:column;gap:8px">
+        <span style="font-family:'Grenze Gotisch',serif;font-size:28px;color:#E8C25A">{{ t.quests }}</span>
+        <sc-for list="{{ quests }}" as="q" hint-placeholder-count="2"><div style="display:flex;flex-direction:column;gap:2px;padding:10px 12px;background:linear-gradient(#252832,#1B1D23);border:1px solid #3A3F4C"><span style="font-size:16px;font-weight:800">{{ q.n }}</span><span style="font-size:13px;color:#9A9DA8">{{ q.m }}</span></div></sc-for>
+      </div>
+      <dc-import name="VwNav" variant="tabs" active="zone" lang="{{ lang }}" hint-size="390px,68px"></dc-import>
+    </div>
+  </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const T = {
+  pl: { zones: 'Krainy', mapPh: 'mapa krainy: render z góry', desc: 'Pas starych kurhanów na wschód od Popielnego Traktu. Tu odradzają się strażnicy dawnego króla.', mons: 'Potwory', quests: 'Zadania', near: 'Sąsiednie krainy', lv: 'Poz. ', legend: ['Boss', 'Elita', 'Potwór', 'Punkt'],
+    poi: [['Wejście z Popielnego Traktu', 8, 74], ['Ołtarz Popiołu', 74, 62]],
+    quests: [['Cisza w kurhanach', 'Poz. 31 · 12 kurhanowych szkieletów'], ['Ostatni wartownik', 'Poz. 34 · pokonaj Strażnika Kurhanu']] },
+  en: { zones: 'Zones', mapPh: 'zone map: top-down render', desc: 'A belt of ancient barrows east of the Ash Road, where the old king’s guardians rise again.', mons: 'Monsters', quests: 'Quests', near: 'Neighbouring zones', lv: 'Lv. ', legend: ['Boss', 'Elite', 'Monster', 'Landmark'],
+    poi: [['Ash Road entrance', 8, 74], ['Altar of Ash', 74, 62]],
+    quests: [['Silence in the Barrows', 'Lv. 31 · 12 Barrow Skeletons'], ['The Last Sentinel', 'Lv. 34 · defeat the Barrow Warden']] }
+};
+const POS = { straznik: [60, 36], pani: [82, 18], grabarz: [46, 80], szkielet: [36, 52], wrona: [22, 26] };
+const RC = { boss: '#D64A3E', elite: '#E8C25A', normal: '#C9CED6' };
+class Component extends DCLogic {
+  state = { lang: null, sel: 'straznik' };
+  componentDidMount() {
+    try { const l = localStorage.getItem('vw-lang'); if (l === 'pl' || l === 'en') this.setState({ lang: l }); } catch (e) {}
+    if (!window.VW) this._i = setInterval(() => { if (window.VW) { clearInterval(this._i); this.forceUpdate(); } }, 40);
+  }
+  componentWillUnmount() { clearInterval(this._i); }
+  renderVals() {
+    const lang = this.state.lang || 'pl', L = lang === 'en', t = T[lang];
+    const setLang = l => { this.setState({ lang: l }); try { localStorage.setItem('vw-lang', l); } catch (e) {} };
+    const V = window.VW;
+    if (!V) return { ready: false, lang, setLang, t };
+    const zz = V.zone('kurhany'), zt = V.zoneTypes[zz.z], sel = this.state.sel;
+    const ms = V.monsters.filter(m => m.zone === 'kurhany').sort((a, b) => b.lvl - a.lvl);
+    const pick = id => () => this.setState({ sel: id });
+    const href = id => (id === 'straznik' ? V.href('monster') : '#');
+    const markers = ms.map(m => { const on = m.id === sel, c = RC[m.rank], big = m.rank !== 'normal'; return { x: POS[m.id][0] + '%', y: POS[m.id][1] + '%', s: (on ? 22 : big ? 18 : 12) + 'px', sM: (on ? 18 : big ? 14 : 10) + 'px', c, glow: on ? '0 0 0 5px rgba(232,194,90,.25), 0 0 18px ' + c : '0 0 8px ' + c + '88', n: L ? m.en : m.pl, lc: on ? '#E8C25A' : '#E8E4DA', lb: on ? '#C9A45C' : '#3A3F4C', pick: pick(m.id) }; })
+      .concat(t.poi.map(([n, x, y]) => ({ x: x + '%', y: y + '%', s: '12px', sM: '10px', c: '#4A8FE7', glow: '0 0 8px #4A8FE788', n, lc: '#C9CED6', lb: '#3A3F4C', pick: () => {} })));
+    const sm = V.monster(sel);
+    return {
+      ready: true, lang, setLang, t, markers,
+      legend: ['#D64A3E', '#E8C25A', '#C9CED6', '#4A8FE7'].map((c, i) => ({ c, n: t.legend[i] })),
+      z: { name: L ? zz.en : zz.pl, lv: t.lv + zz.lv, zt: V.loc(zt, lang).toUpperCase(), pvp: L ? zt.den : zt.dpl },
+      mons: ms.map(m => ({ n: L ? m.en : m.pl, lvl: t.lv + m.lvl, rank: V.loc(V.ranks[m.rank], lang), c: RC[m.rank], bg: m.id === sel ? 'rgba(232,194,90,.10)' : 'transparent', href: href(m.id), pick: pick(m.id) })),
+      selN: L ? sm.en : sm.pl, selM: t.lv + sm.lvl + ' · ' + V.loc(V.ranks[sm.rank], lang) + ' · ' + sm.resp, selHref: href(sel),
+      quests: t.quests.map(([n, m]) => ({ n, m })),
+      near: ['trakt', 'osada'].map(id => { const n = V.zone(id), ty = V.zoneTypes[n.z]; return { n: L ? n.en : n.pl, m: t.lv + n.lv + ' · ' + V.loc(ty, lang), c: ty.c }; })
+    };
+  }
+}
+</script>
+</body>
+</html>

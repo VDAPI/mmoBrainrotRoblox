@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+<meta name="ext-resource-dependency" content="./VwNav.dc.html" data-resource-id="./VwNav.dc.html" />
+<meta name="ext-resource-dependency" content="./VwTooltip.dc.html" data-resource-id="./VwTooltip.dc.html" />
+<meta name="ext-resource-dependency" content="./VwMonsterCard.dc.html" data-resource-id="./VwMonsterCard.dc.html" />
+</head>
+<body>
+<template id="__bundler_thumbnail" data-bg-color="#14161B"><svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg"><rect width="1200" height="800" fill="#14161B"/><rect x="520" y="320" width="160" height="160" transform="rotate(45 600 400)" fill="none" stroke="#E8C25A" stroke-width="14"/><rect x="565" y="365" width="70" height="70" transform="rotate(45 600 400)" fill="#C9A45C"/></svg></template>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Grenze+Gotisch:wght@500;700&family=Alegreya+Sans:ital,wght@0,400;0,500;0,700;0,800;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<script src="vw-data.js"></script>
+<style>body{margin:0;background:#14161B;color:#E8E4DA;font-family:'Alegreya Sans',sans-serif;-webkit-font-smoothing:antialiased}a{color:#E8C25A;text-decoration:none}a:hover{color:#FFE7C2}*{box-sizing:border-box}html{scroll-behavior:smooth}</style>
+</helmet>
+<div style="padding:40px 56px 0">
+  <dc-import name="VwNav" variant="pages" active="ds" lang="pl" hint-size="100%,36px"></dc-import>
+</div>
+<div style="max-width:1560px;margin:0 auto;padding:48px clamp(16px,4vw,56px) 160px;display:flex;flex-wrap:wrap;gap:clamp(24px,4vw,56px);align-items:flex-start">
+  <nav style="position:sticky;top:24px;display:flex;flex-direction:column;border-left:1px solid #3A3F4C;flex:0 0 200px">
+    <sc-for list="{{ toc }}" as="s" hint-placeholder-count="14">
+      <a href="{{ s.href }}" style="display:flex;align-items:center;min-height:34px;padding:0 14px;margin-left:-1px;font-size:15px;color:#9A9DA8;border-left:2px solid transparent" style-hover="color:#E8E4DA;border-left-color:#7A6438">{{ s.n }}</a>
+    </sc-for>
+  </nav>
+
+  <main style="display:flex;flex-direction:column;min-width:0;flex:1 1 640px">
+    <header style="display:flex;flex-direction:column;gap:18px;padding-bottom:56px">
+      <span style="font-size:13px;font-weight:800;letter-spacing:.2em;color:#C9A45C">VAELTHORN WIKI · DESIGN SYSTEM · KUŹNIA v1.0</span>
+      <h1 style="margin:0;font-family:'Grenze Gotisch',serif;font-weight:700;font-size:96px;line-height:.85;color:#E8C25A;text-shadow:0 2px 0 #7A6438">Kuźnia</h1>
+      <p style="margin:0;font-size:21px;line-height:1.5;color:#C9CED6;max-width:820px;text-wrap:pretty">Ciemny metal, złote krawędzie i żar od dołu. Wiki wygląda jak przedłużenie UI gry. Każdy komponent ma odpowiednik w <b style="color:#E8E4DA">vaelthorn.css</b>: zmienne <code style="font-family:'IBM Plex Mono',monospace;font-size:16px;color:#6FA8F0">--vw-*</code> i klasy <code style="font-family:'IBM Plex Mono',monospace;font-size:16px;color:#6FA8F0">.vw-*</code>. Domyślny jest motyw ciemny, jasny włącza <code style="font-family:'IBM Plex Mono',monospace;font-size:16px;color:#6FA8F0">html[data-theme="light"]</code>.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <a href="vaelthorn.css" style="display:flex;align-items:center;min-height:44px;padding:0 20px;font-weight:800;font-size:15px;letter-spacing:.06em;background:linear-gradient(#E8C25A,#C9A45C);color:#14161B;border:1px solid #7A6438;box-shadow:inset 0 1px 0 rgba(255,255,255,.4)">VAELTHORN.CSS</a>
+        <a href="vw-data.js" style="display:flex;align-items:center;min-height:44px;padding:0 20px;font-weight:800;font-size:15px;letter-spacing:.06em;background:linear-gradient(#252832,#1B1D23);color:#E8E4DA;border:1px solid #3A3F4C">VW-DATA.JS (DANE PRZYKŁADOWE)</a>
+      </div>
+    </header>
+
+    <!-- KOLORY -->
+    <section id="kolory" style="display:flex;flex-direction:column;gap:24px;padding:56px 0;border-top:1px solid #252832">
+      <div style="display:flex;flex-direction:column;gap:6px"><span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#9A9DA8">01 · TOKENY</span><h2 style="margin:0;font-family:'Grenze Gotisch',serif;font-weight:500;font-size:52px;line-height:1;color:#E8C25A">Kolory</h2><p style="margin:0;font-size:18px;color:#9A9DA8;max-width:780px">Wartości jasnego motywu są przyciemnione tak, żeby tekst trzymał AA na jasnym tle. Tooltip przedmiotu zostaje ciemny w obu motywach.</p></div>
+      <sc-for list="{{ colorGroups }}" as="g" hint-placeholder-count="6">
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <span style="font-size:13px;font-weight:800;letter-spacing:.18em;color:#C9A45C">{{ g.n }}</span>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px">
+            <sc-for list="{{ g.items }}" as="c" hint-placeholder-count="5">
+              <div style="display:flex;flex-direction:column;background:#1B1D23;border:1px solid #252832">
+                <div style="display:grid;grid-template-columns:1fr 1fr;height:64px"><div style="background:{{ c.d }}"></div><div style="background:{{ c.l }}"></div></div>
+                <div style="padding:10px 12px;display:flex;flex-direction:column;gap:3px">
+                  <span style="font-size:16px;font-weight:800">{{ c.n }}</span>
+                  <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#6FA8F0">{{ c.v }}</span>
+                  <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#9A9DA8">{{ c.d }} · jasny {{ c.l }}</span>
+                  <span style="font-size:13px;color:#9A9DA8;line-height:1.35">{{ c.u }}</span>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-for>
+    </section>
+
+    <!-- TYPOGRAFIA -->
+    <section id="typografia" style="display:flex;flex-direction:column;gap:24px;padding:56px 0;border-top:1px solid #252832">
+      <div style="display:flex;flex-direction:column;gap:6px"><span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#9A9DA8">02 · TOKENY</span><h2 style="margin:0;font-family:'Grenze Gotisch',serif;font-weight:500;font-size:52px;line-height:1;color:#E8C25A">Typografia</h2><p style="margin:0;font-size:18px;color:#9A9DA8;max-width:780px">Grenze Gotisch tylko od 28 px w górę: logo, tytuły stron, nazwy potworów i sekcji. Cały UI, tabele i tooltipy w Alegreya Sans z cyframi tabelarycznymi. Wszystkie trzy kroje mają pełne polskie znaki.</p></div>
+      <div style="display:flex;flex-direction:column;border:1px solid #252832;background:#1B1D23">
+        <div style="display:grid;grid-template-columns:120px minmax(0,1fr) minmax(150px,230px);gap:20px;padding:10px 20px;font-size:12px;font-weight:800;letter-spacing:.14em;color:#C9A45C;border-bottom:1px solid #3A3F4C"><span>TOKEN</span><span>PRÓBKA</span><span>DESKTOP → MOBILE</span></div>
+        <div style="display:grid;grid-template-columns:120px minmax(0,1fr) minmax(150px,230px);gap:20px;align-items:center;padding:16px 20px;border-bottom:1px solid #252832"><span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#6FA8F0">display-xl</span><span style="font-family:'Grenze Gotisch',serif;font-weight:700;font-size:clamp(56px,8vw,128px);line-height:.85;color:#E8C25A">Vaelthorn</span><span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#9A9DA8">Grenze 700 · 128/0.85 → 68</span></div>
+        <div style="display:grid;grid-template-columns:120px minmax(0,1fr) minmax(150px,230px);gap:20px;align-items:center;padding:16px 20px;border-bottom:1px solid #252832"><span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#6FA8F0">display-l</span><span style="font-family:'Grenze Gotisch',serif;font-weight:700;font-size:clamp(40px,5vw,72px);line-height:.9;text-wrap:balance">Strażnik Kurhanu</span><span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#9A9DA8">Grenze 700 · 72/0.9 → 44</span></div>
+        <div style="display:grid;grid-template-columns:120px minmax(0,1fr) minmax(150px,230px);gap:20px;align-items:center;padding:16px 20px;border-bottom:1px solid #252832"><span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#6FA8F0">display-m</span><span style="font-family:'Grenze Gotisch',serif;font-size:48px;line-height:.95">Kurhany Wschodu</span><span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#9A9DA8">Grenze 500 · 48/0.95 → 34</span></div>
+        <div style="display:grid;grid-template-columns:120px minmax(0,1fr) minmax(150px,230px);gap:20px;align-items:center;padding:16px 20px;border-bottom:1px solid #252832"><span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#6FA8F0">h2</span><span style="font-family:'Grenze Gotisch',serif;font-size:34px;line-height:1.05;color:#E8C25A">Tabela łupów</span><span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#9A9DA8">Grenze 500 · 34/1.05 → 28</span></div>
+        <div style="display:grid;grid-template-columns:120px minmax(0,1fr) minmax(150px,230px);gap:20px;align-items:center;padding:16px 20px;border-bottom:1px solid #252832"><span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#6FA8F0">h3</span><span style="font-size:22px;font-weight:800;line-height:1.15;color:#FF9A2E">Ostrze Popielnego Króla</span><span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#9A9DA8">Alegreya 800 · 22/1.15 → 19</span></div>
+        <div style="display:grid;grid-template-columns:120px minmax(0,1fr) minmax(150px,230px);gap:20px;align-items:center;padding:16px 20px;border-bottom:1px solid #252832"><span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#6FA8F0">body-l</span><span style="font-size:20px;line-height:1.5">Trzy losowe bonusy są losowane w chwili dropu, więc każdy egzemplarz jest inny.</span><span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#9A9DA8">Alegreya 400 · 20/1.5 → 18</span></div>
+        <div style="display:grid;grid-template-columns:120px minmax(0,1fr) minmax(150px,230px);gap:20px;align-items:center;padding:16px 20px;border-bottom:1px solid #252832"><span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#6FA8F0">body</span><span style="font-size:17px;line-height:1.5">Zażółć gęślą jaźń. Atak 191–255 · Szybkość ataku 1,15 · 0123456789</span><span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#9A9DA8">Alegreya 400 · 17/1.5 · tnum</span></div>
+        <div style="display:grid;grid-template-columns:120px minmax(0,1fr) minmax(150px,230px);gap:20px;align-items:center;padding:16px 20px;border-bottom:1px solid #252832"><span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#6FA8F0">body-s</span><span style="font-size:15px;line-height:1.4;color:#9A9DA8">Wiąże się po podniesieniu · Odrodzenie co 6 min</span><span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#9A9DA8">Alegreya 400 · 15/1.4</span></div>
+        <div style="display:grid;grid-template-columns:120px minmax(0,1fr) minmax(150px,230px);gap:20px;align-items:center;padding:16px 20px;border-bottom:1px solid #252832"><span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#6FA8F0">label</span><span style="font-size:13px;font-weight:800;letter-spacing:.18em;color:#C9A45C">OSTATNI LEGENDARNY DROP</span><span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#9A9DA8">Alegreya 800 · 13/1.2 · .18em · CAPS</span></div>
+        <div style="display:grid;grid-template-columns:120px minmax(0,1fr) minmax(150px,230px);gap:20px;align-items:center;padding:16px 20px"><span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#6FA8F0">mono</span><span style="font-family:'IBM Plex Mono',monospace;font-size:13px">blade_ash_king · v0.9.3</span><span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#9A9DA8">Plex Mono 400 · 13/1.4</span></div>
+      </div>
+    </section>
+
+    <!-- ODSTEPY, PROMIENIE, CIENIE -->
+    <section id="odstepy" style="display:flex;flex-direction:column;gap:24px;padding:56px 0;border-top:1px solid #252832">
+      <div style="display:flex;flex-direction:column;gap:6px"><span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#9A9DA8">03 · TOKENY</span><h2 style="margin:0;font-family:'Grenze Gotisch',serif;font-weight:500;font-size:52px;line-height:1;color:#E8C25A">Odstępy, promienie, cienie</h2></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(380px,100%),1fr));gap:24px">
+        <div style="display:flex;flex-direction:column;gap:8px;padding:20px;background:#1B1D23;border:1px solid #252832">
+          <span style="font-size:13px;font-weight:800;letter-spacing:.18em;color:#C9A45C">ODSTĘPY · SIATKA 4 PX</span>
+          <sc-for list="{{ spacing }}" as="s" hint-placeholder-count="11">
+            <div style="display:grid;grid-template-columns:90px 50px 1fr;gap:12px;align-items:center"><span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#6FA8F0">{{ s.t }}</span><span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#9A9DA8">{{ s.v }}</span><div style="height:12px;width:{{ s.v }};background:#C9A45C"></div></div>
+          </sc-for>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px;padding:20px;background:#1B1D23;border:1px solid #252832">
+          <span style="font-size:13px;font-weight:800;letter-spacing:.18em;color:#C9A45C">PROMIENIE</span>
+          <p style="margin:0;font-size:16px;color:#C9CED6;line-height:1.45">Kuźnia jest kanciasta. Domyślnie <b>0</b>. 2 px tylko dla pasków postępu ulepszania, 4 px dla klawiszy (kbd). Pigułka tylko dla licznika powiadomień.</p>
+          <div style="display:flex;flex-wrap:wrap;gap:16px">
+            <div style="display:flex;flex-direction:column;gap:6px;align-items:center"><div style="width:72px;height:72px;border:1px solid #C9A45C;background:#252832"></div><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#9A9DA8">r-0 · 0</span></div>
+            <div style="display:flex;flex-direction:column;gap:6px;align-items:center"><div style="width:72px;height:72px;border:1px solid #3A3F4C;background:#252832;border-radius:2px"></div><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#9A9DA8">r-1 · 2px</span></div>
+            <div style="display:flex;flex-direction:column;gap:6px;align-items:center"><div style="width:72px;height:72px;border:1px solid #3A3F4C;background:#252832;border-radius:4px"></div><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#9A9DA8">r-2 · 4px</span></div>
+            <div style="display:flex;flex-direction:column;gap:6px;align-items:center"><div style="width:72px;height:32px;margin:20px 0;border:1px solid #3A3F4C;background:#252832;border-radius:999px"></div><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#9A9DA8">r-pill</span></div>
+          </div>
+          <span style="font-size:13px;font-weight:800;letter-spacing:.18em;color:#C9A45C;margin-top:8px">CIENIE</span>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">
+            <div style="display:flex;flex-direction:column;gap:8px"><div style="height:64px;background:linear-gradient(#252832,#1B1D23);border:1px solid #3A3F4C;box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 2px 0 #0E0F12"></div><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#9A9DA8">elev-1 · panele</span></div>
+            <div style="display:flex;flex-direction:column;gap:8px"><div style="height:64px;background:#1B1D23;border:1px solid #3A3F4C;box-shadow:0 8px 24px rgba(0,0,0,.45)"></div><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#9A9DA8">elev-2 · popover</span></div>
+            <div style="display:flex;flex-direction:column;gap:8px"><div style="height:64px;background:#1B1D23;border:1px solid #7A6438;box-shadow:inset 0 2px 6px rgba(0,0,0,.5)"></div><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#9A9DA8">well · pola tekstowe</span></div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px;padding:24px;background:#101216;border:1px solid #252832">
+        <span style="font-size:13px;font-weight:800;letter-spacing:.18em;color:#C9A45C">POŚWIATY RZADKOŚCI · --vw-glow-*</span>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:20px;padding:12px 0">
+          <sc-for list="{{ glows }}" as="g" hint-placeholder-count="6">
+            <div style="display:flex;flex-direction:column;gap:12px;align-items:center">
+              <div style="width:84px;height:84px;background:repeating-linear-gradient(135deg,#14161B 0 6px,#1B1D23 6px 12px);border:1px solid {{ g.c }};box-shadow:{{ g.sh }}"></div>
+              <span style="font-size:16px;font-weight:800;color:{{ g.c }}">{{ g.n }}</span>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#9A9DA8;text-align:center;line-height:1.4">{{ g.sh }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </section>
+
+    <!-- RUCH -->
+    <section id="ruch" style="display:flex;flex-direction:column;gap:24px;padding:56px 0;border-top:1px solid #252832">
+      <div style="display:flex;flex-direction:column;gap:6px"><span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#9A9DA8">04 · TOKENY</span><h2 style="margin:0;font-family:'Grenze Gotisch',serif;font-weight:500;font-size:52px;line-height:1;color:#E8C25A">Ruch</h2><p style="margin:0;font-size:18px;color:#9A9DA8;max-width:780px">UI reaguje szybko i bez sprężynowania. Jedyny „teatralny” moment to drop legendarny: słup światła i odsłanianie statystyk.</p></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(380px,100%),1fr));gap:24px">
+        <div style="border:1px solid #252832;background:#1B1D23">
+          <sc-for list="{{ motion }}" as="m" hint-placeholder-count="8">
+            <div style="display:grid;grid-template-columns:150px 170px 1fr;gap:12px;padding:12px 18px;border-bottom:1px solid #252832;font-size:15px"><span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#6FA8F0">{{ m.t }}</span><span style="font-family:'IBM Plex Mono',monospace;font-size:13px">{{ m.v }}</span><span style="color:#9A9DA8">{{ m.u }}</span></div>
+          </sc-for>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div style="padding:20px;background:#1B1D23;border:1px solid #252832;display:flex;flex-direction:column;gap:12px">
+            <span style="font-size:13px;font-weight:800;letter-spacing:.18em;color:#C9A45C">SEKWENCJA DROPU LEGENDARNEGO</span>
+            <sc-for list="{{ dropSeq }}" as="d" hint-placeholder-count="4">
+              <div style="display:grid;grid-template-columns:110px 1fr;gap:12px;font-size:15px"><span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#FF9A2E">{{ d.t }}</span><span style="color:#C9CED6">{{ d.d }}</span></div>
+            </sc-for>
+          </div>
+          <div style="padding:20px;background:#1B1D23;border:1px solid #3A3F4C;display:flex;flex-direction:column;gap:10px">
+            <span style="font-size:13px;font-weight:800;letter-spacing:.18em;color:#C9A45C">PREFERS-REDUCED-MOTION</span>
+            <span style="font-size:16px;line-height:1.5;color:#C9CED6">Wszystkie czasy spadają do 1 ms. Słup światła pojawia się od razu w pełnej wysokości, bez rozjaśniania. Statystyki tooltipa widać od razu. Skeleton nie migocze. Zmiany stanu (kolor, ramka) zostają, bo niosą informację.</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PRZYCISKI -->
+    <section id="przyciski" style="display:flex;flex-direction:column;gap:24px;padding:56px 0;border-top:1px solid #252832">
+      <div style="display:flex;flex-direction:column;gap:6px"><span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#9A9DA8">05 · KOMPONENT · .vw-btn</span><h2 style="margin:0;font-family:'Grenze Gotisch',serif;font-weight:500;font-size:52px;line-height:1;color:#E8C25A">Przyciski i „Graj na Roblox”</h2></div>
+      <div style="display:grid;grid-template-columns:150px repeat(5,minmax(130px,1fr));gap:12px;align-items:center;padding:24px;background:#1B1D23;border:1px solid #252832;overflow-x:auto">
+        <span></span><sc-for list="{{ stateNames }}" as="s" hint-placeholder-count="5"><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#9A9DA8">{{ s }}</span></sc-for>
+        <sc-for list="{{ buttons }}" as="b" hint-placeholder-count="4">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#6FA8F0">{{ b.cls }}</span>
+          <sc-for list="{{ b.states }}" as="s" hint-placeholder-count="5">
+            <div style="display:flex;align-items:center;justify-content:center;gap:8px;min-height:{{ b.h }};padding:0 16px;font-size:15px;font-weight:800;letter-spacing:.06em;background:{{ s.bg }};color:{{ s.fg }};border:1px solid {{ s.bd }};box-shadow:{{ s.sh }};opacity:{{ s.op }};transform:{{ s.tf }};filter:{{ s.fl }}"><sc-if value="{{ b.play }}"><span style="width:10px;height:10px;background:currentColor;transform:rotate(45deg)"></span></sc-if>{{ b.label }}</div>
+          </sc-for>
+        </sc-for>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(390px,100%),1fr));gap:24px">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:13px;line-height:1.8;color:#9A9DA8;padding:20px;background:#101216;border:1px solid #252832">min-height 44px (play: 48px) · padding 0 20px · Alegreya 800 15px · .06em · UPPERCASE · radius 0<br>primary: tło --vw-gold-gradient · tekst #14161B (10.6:1) · ramka --vw-gold-dark · bevel inset 0 1px 0 rgba(255,255,255,.4)<br>hover: brightness(1.08) | secondary: ramka → --vw-gold-dark<br>active: translateY(1px) + inset well · focus-visible: --vw-focus (2px tło + 2px złoto)<br>disabled: opacity .45, cursor not-allowed, bez hover</div>
+        <div style="display:flex;flex-direction:column;gap:10px;padding:16px;background:#14161B;border:1px solid #3A3F4C;border-radius:20px">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#9A9DA8">MOBILE 390 · pełna szerokość, 48 px</span>
+          <div style="display:flex;align-items:center;justify-content:center;gap:10px;min-height:48px;font-size:16px;font-weight:800;letter-spacing:.06em;background:linear-gradient(#E8C25A,#C9A45C);color:#14161B;border:1px solid #7A6438;box-shadow:inset 0 1px 0 rgba(255,255,255,.4)"><span style="width:10px;height:10px;background:#14161B;transform:rotate(45deg)"></span>GRAJ NA ROBLOX</div>
+          <div style="display:flex;align-items:center;justify-content:center;min-height:48px;font-size:16px;font-weight:800;letter-spacing:.06em;background:linear-gradient(#252832,#1B1D23);color:#E8E4DA;border:1px solid #3A3F4C">OTWÓRZ KALKULATOR</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TOOLTIP -->
+    <section id="tooltip" style="display:flex;flex-direction:column;gap:24px;padding:56px 0;border-top:1px solid #252832">
+      <div style="display:flex;flex-direction:column;gap:6px"><span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#9A9DA8">06 · KOMPONENT · .vw-tooltip</span><h2 style="margin:0;font-family:'Grenze Gotisch',serif;font-weight:500;font-size:52px;line-height:1;color:#E8C25A">Tooltip przedmiotu</h2><p style="margin:0;font-size:18px;color:#9A9DA8;max-width:820px">1:1 z gry. Kolejność: ikona, nazwa w kolorze rzadkości, plakietka +N, rzadkość i typ, pasek ulepszenia (9 segmentów), statystyki bazowe, wymagania, wylosowane bonusy, cytat, wiązanie.</p></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:24px;align-items:start;padding:28px;background:#101216;border:1px solid #252832">
+        <div style="display:flex;flex-direction:column;gap:8px"><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#9A9DA8">LEGENDARNY +7 · domyślny</span><dc-import name="VwTooltip" item="ostrze" upgrade="7" hint-size="100%,400px"></dc-import></div>
+        <div style="display:flex;flex-direction:column;gap:8px"><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#9A9DA8">EPICKI · wymagania niespełnione</span><dc-import name="VwTooltip" item="tarcza" upgrade="5" unmet="{{ true }}" hint-size="100%,380px"></dc-import></div>
+        <div style="display:flex;flex-direction:column;gap:8px"><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#9A9DA8">MITYCZNY · bez statystyki bazowej</span><dc-import name="VwTooltip" item="amulet" upgrade="0" hint-size="100%,380px"></dc-import></div>
+        <div style="display:flex;flex-direction:column;gap:8px"><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#9A9DA8">ZWYKŁY · materiał (bez ulepszeń)</span><dc-import name="VwTooltip" item="kosc" hint-size="100%,260px"></dc-import>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#9A9DA8;margin-top:12px">ŁADOWANIE</span>
+          <div style="display:flex;flex-direction:column;gap:10px;padding:18px;background:#16181D;border:1px solid #3A3F4C">
+            <div style="display:flex;gap:14px"><div style="width:56px;height:56px;background:linear-gradient(90deg,#1B1D23,#252832,#1B1D23)"></div><div style="flex:1;display:flex;flex-direction:column;gap:8px;padding-top:4px"><div style="height:16px;width:80%;background:linear-gradient(90deg,#1B1D23,#252832,#1B1D23)"></div><div style="height:12px;width:50%;background:linear-gradient(90deg,#1B1D23,#252832,#1B1D23)"></div></div></div>
+            <div style="height:6px;background:#252832"></div><div style="height:12px;width:70%;background:linear-gradient(90deg,#1B1D23,#252832,#1B1D23)"></div><div style="height:12px;width:55%;background:linear-gradient(90deg,#1B1D23,#252832,#1B1D23)"></div>
+          </div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(390px,100%),1fr));gap:24px">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:13px;line-height:1.8;color:#9A9DA8;padding:20px;background:#101216;border:1px solid #252832">szer. 100%, max 400px · padding 18 · gap 12 · ramka 1px var(--c) · tło: gradient var(--c) 14% → 0 na 90px + #16181D<br>poświata: --vw-glow-{rzadkość} · ikona 56×56, inset 0 0 14px var(--c)/33%<br>nazwa 800 21/1.1 · +N: tło #E8C25A, 19px 800, h 27 · typ 15 muted<br>pasek: 9 × (flex 1, h 6, gap 4) · wł. #E8C25A + glow 6px · wył. #3A3F4C<br>bonusy: #6FA8F0 700 17 z prefiksem ◆ · niespełnione wymagania: #E8665A<br>desktop: hover 120 ms opóźnienia, pozycja przy kursorze, flip przy krawędzi ekranu<br>klawiatura: focus na linku przedmiotu otwiera tooltip, Esc zamyka</div>
+        <div style="display:flex;flex-direction:column;gap:10px;padding:12px;background:#0E0F12;border:1px solid #3A3F4C;border-radius:20px;overflow:hidden;position:relative">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#9A9DA8;padding:4px">MOBILE · tap otwiera bottom sheet (8 px od krawędzi)</span>
+          <div style="height:120px;background:repeating-linear-gradient(135deg,#14161B 0 10px,#16181D 10px 20px);opacity:.5"></div>
+          <div style="display:flex;justify-content:center"><div style="width:44px;height:4px;background:#3A3F4C"></div></div>
+          <dc-import name="VwTooltip" item="ostrze" upgrade="7" hint-size="100%,400px"></dc-import>
+          <div style="display:flex;gap:8px"><div style="flex:1;display:flex;align-items:center;justify-content:center;min-height:48px;font-size:15px;font-weight:800;background:linear-gradient(#E8C25A,#C9A45C);color:#14161B">OTWÓRZ STRONĘ</div><div style="width:48px;display:flex;align-items:center;justify-content:center;border:1px solid #3A3F4C;font-size:20px;color:#9A9DA8">×</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- KARTA POTWORA -->
+    <section id="potwor" style="display:flex;flex-direction:column;gap:24px;padding:56px 0;border-top:1px solid #252832">
+      <div style="display:flex;flex-direction:column;gap:6px"><span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#9A9DA8">07 · KOMPONENT · .vw-monster</span><h2 style="margin:0;font-family:'Grenze Gotisch',serif;font-weight:500;font-size:52px;line-height:1;color:#E8C25A">Karta potwora</h2><p style="margin:0;font-size:18px;color:#9A9DA8;max-width:820px">Ranga to kolor górnej krawędzi i plakietki: zwykły (złoto ciemne, plakietka konturowa), Elita (złoto), Elita II (pomarańcz legendarny), Boss (czerwień). Żywioł zawsze z kolorowym rombem, nigdy samym kolorem.</p></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:20px;padding:28px;background:#101216;border:1px solid #252832">
+        <div style="display:flex;flex-direction:column;gap:8px"><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#9A9DA8">ZWYKŁY · domyślny</span><dc-import name="VwMonsterCard" monster="dzik" hint-size="100%,420px"></dc-import></div>
+        <div style="display:flex;flex-direction:column;gap:8px"><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#9A9DA8">ELITA · hover</span><dc-import name="VwMonsterCard" monster="straznik" demo="hover" hint-size="100%,420px"></dc-import></div>
+        <div style="display:flex;flex-direction:column;gap:8px"><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#9A9DA8">ELITA II · focus</span><dc-import name="VwMonsterCard" monster="krolowa" demo="focus" hint-size="100%,420px"></dc-import></div>
+        <div style="display:flex;flex-direction:column;gap:8px"><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#9A9DA8">BOSS</span><dc-import name="VwMonsterCard" monster="pani" hint-size="100%,420px"></dc-import></div>
+      </div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:13px;line-height:1.8;color:#9A9DA8;padding:20px;background:#101216;border:1px solid #252832">cały element to link (cel dotyku = karta) · render 4:3 · plakietka rangi lewy górny róg, żywioł prawy górny róg (h 26)<br>nazwa Grenze 26 · poziom #E8C25A 700 15 · region: romb 8px w kolorze strefy + 15 #C9CED6 · drop: slot 28 + nazwa w kolorze rzadkości, min-h 52<br>siatka: desktop 4 kolumny (min 260px) · tablet 3 · mobile 2 kolumny (karta ~171px; render 4:3 zostaje, nazwa 22)</div>
+    </section>
+
+    <!-- BOSS -->
+    <section id="boss" style="display:flex;flex-direction:column;gap:24px;padding:56px 0;border-top:1px solid #252832">
+      <div style="display:flex;flex-direction:column;gap:6px"><span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#9A9DA8">08 · KOMPONENT · .vw-boss</span><h2 style="margin:0;font-family:'Grenze Gotisch',serif;font-weight:500;font-size:52px;line-height:1;color:#E8C25A">Nagłówek bossa</h2></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(300px,100%),1fr));gap:32px;padding:24px;background:radial-gradient(ellipse at 20% 0%,rgba(214,74,62,.18),transparent 60%),#1B1D23;border:1px solid #3A3F4C;border-top:2px solid #D64A3E">
+        <div style="aspect-ratio:3/4;background:repeating-linear-gradient(135deg,#14161B 0 10px,#191B20 10px 20px);border:2px solid #D64A3E;box-shadow:0 0 0 3px #14161B,0 0 0 4px #7A6438;display:flex;align-items:flex-end;padding:10px"><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#9A9DA8">render bossa</span></div>
+        <div style="display:flex;flex-direction:column;gap:18px;min-width:0">
+          <div style="display:flex;gap:8px;flex-wrap:wrap"><span style="height:26px;display:flex;align-items:center;padding:0 9px;font-size:14px;font-weight:800;background:#D64A3E;color:#FFF">Boss</span><span style="height:26px;display:flex;align-items:center;padding:0 9px;font-size:14px;font-weight:700;border:1px solid #3A3F4C">Poz. 38</span><span style="height:26px;display:flex;align-items:center;gap:6px;padding:0 9px;font-size:13px;font-weight:800;border:1px solid #3A3F4C;color:#E8763A"><span style="width:8px;height:8px;background:#E8763A;transform:rotate(45deg)"></span>Ogień</span><span style="height:26px;display:flex;align-items:center;padding:0 9px;font-size:13px;font-weight:800;letter-spacing:.1em;border:1px solid #D64A3E;color:#E8665A">STREFA CZERWONA</span></div>
+          <span style="font-family:'Grenze Gotisch',serif;font-weight:700;font-size:72px;line-height:.9">Pani Popiołów</span>
+          <div style="position:relative;height:28px;background:#2A1616;box-shadow:0 0 0 1px #3A3F4C">
+            <div style="position:absolute;inset:0;background:linear-gradient(#D9463E,#C2352E 50%,#9E2A24)"></div>
+            <div style="position:absolute;top:-4px;bottom:-4px;left:40%;width:2px;background:#E8C25A"></div>
+            <div style="position:absolute;top:-4px;bottom:-4px;left:75%;width:2px;background:#E8C25A"></div>
+            <span style="position:relative;display:flex;justify-content:center;font-size:15px;font-weight:800;line-height:28px;color:#FFF;text-shadow:0 1px 2px #000">142 000 / 142 000</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px">
+            <sc-for list="{{ phases }}" as="p" hint-placeholder-count="3">
+              <div onClick="{{ p.pick }}" style="display:flex;flex-direction:column;gap:3px;min-height:64px;padding:10px 12px;background:{{ p.bg }};border:1px solid {{ p.bd }};border-top:3px solid #C2352E;cursor:pointer">
+                <span style="font-size:13px;font-weight:800;letter-spacing:.14em;color:#C9A45C">{{ p.k }}</span><span style="font-size:18px;font-weight:800">{{ p.n }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <sc-for list="{{ mechs }}" as="m" hint-placeholder-count="2">
+              <div style="display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:start;padding:12px;background:#14161B;border:1px solid #252832">
+                <span style="display:flex;align-items:center;gap:8px;height:32px;padding:0 10px 0 4px;border:1px solid {{ m.c }};font-size:14px;font-weight:800;color:{{ m.c }};white-space:nowrap"><span style="width:22px;height:22px;border:1px solid {{ m.c }};background:{{ m.cs }}"></span>{{ m.t }}</span>
+                <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:17px;font-weight:800">{{ m.n }}</span><span style="font-size:15px;color:#C9CED6;line-height:1.4">{{ m.d }}</span></div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(390px,100%),1fr));gap:24px">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:13px;line-height:1.8;color:#9A9DA8;padding:20px;background:#101216;border:1px solid #252832">ramka górna 2px #D64A3E · tło: poświata radialna rgba(214,74,62,.18)<br>pasek HP 28px ze znacznikami progów faz (2px #E8C25A, wystają 4px)<br>fazy: zakładki role="tab", min-h 64 · wybrana: tło rgba(232,194,90,.08), ramka --vw-gold-dark<br>ikony mechanik: 22×22 w kolorze typu + etykieta słowna (nigdy sama ikona)<br>typy: Obszar #E8763A · Przyzwanie #A88BE8 · Strefa #E8665A · Wzmocnienie #E0C23B · Zabicie #E8665A + podwójna ramka</div>
+        <div style="display:flex;flex-direction:column;gap:12px;padding:16px;background:#14161B;border:1px solid #3A3F4C;border-radius:20px">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#9A9DA8">MOBILE · render jako tło nagłówka, fazy w pionie</span>
+          <div style="height:150px;background:linear-gradient(transparent,#1B1D23),repeating-linear-gradient(135deg,#14161B 0 10px,#191B20 10px 20px);border-top:2px solid #D64A3E;display:flex;align-items:flex-end;padding:12px"><span style="font-family:'Grenze Gotisch',serif;font-weight:700;font-size:42px;line-height:.9">Pani Popiołów</span></div>
+          <div style="position:relative;height:22px;background:#C2352E"><div style="position:absolute;top:-3px;bottom:-3px;left:40%;width:2px;background:#E8C25A"></div><div style="position:absolute;top:-3px;bottom:-3px;left:75%;width:2px;background:#E8C25A"></div></div>
+          <sc-for list="{{ phases }}" as="p" hint-placeholder-count="3"><div onClick="{{ p.pick }}" style="display:flex;justify-content:space-between;align-items:center;min-height:48px;padding:0 12px;background:{{ p.bg }};border:1px solid {{ p.bd }};border-left:3px solid #C2352E;cursor:pointer"><span style="font-size:16px;font-weight:800">{{ p.n }}</span><span style="font-size:13px;font-weight:800;color:#C9A45C">{{ p.k }}</span></div></sc-for>
+        </div>
+      </div>
+    </section>
+
+    <!-- DRZEWKO -->
+    <section id="drzewko" style="display:flex;flex-direction:column;gap:24px;padding:56px 0;border-top:1px solid #252832">
+      <div style="display:flex;flex-direction:column;gap:6px"><span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#9A9DA8">09 · KOMPONENT · .vw-node · .vw-edge</span><h2 style="margin:0;font-family:'Grenze Gotisch',serif;font-weight:500;font-size:52px;line-height:1;color:#E8C25A">Węzeł drzewka umiejętności</h2><p style="margin:0;font-size:18px;color:#9A9DA8;max-width:820px">Stan niesiony jest naraz kolorem ramki, licznikiem i ikoną kłódki, więc daltoniści też go rozpoznają. Umiejętność aktywna ma podwójną ramkę, zwieńczenie gałęzi jest większe (76 px).</p></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:28px 20px;padding:32px;background:#101216;border:1px solid #252832;align-items:end">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:14px"><div style="position:relative;width:64px;height:64px;background:repeating-linear-gradient(135deg,#14161B 0 5px,#1B1D23 5px 10px);border:1px solid #3A3F4C;opacity:.45;filter:grayscale(1)"><div style="position:absolute;left:50%;top:50%;width:14px;height:12px;margin:-4px 0 0 -7px;background:#9A9DA8"></div><div style="position:absolute;left:50%;top:50%;width:10px;height:10px;margin:-12px 0 0 -5px;border:2px solid #9A9DA8;border-bottom:0"></div><span style="position:absolute;right:-6px;bottom:-8px;min-width:30px;height:20px;padding:0 4px;font-size:13px;font-weight:800;line-height:20px;text-align:center;background:#14161B;border:1px solid #9A9DA8;color:#9A9DA8">0/3</span></div><span style="font-size:14px;font-weight:800;color:#9A9DA8">Zablokowany</span></div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:14px"><div style="position:relative;width:64px;height:64px;background:repeating-linear-gradient(135deg,#14161B 0 5px,#1B1D23 5px 10px);border:1px solid #7A6438"><span style="position:absolute;right:-6px;bottom:-8px;min-width:30px;height:20px;padding:0 4px;font-size:13px;font-weight:800;line-height:20px;text-align:center;background:#14161B;border:1px solid #7A6438;color:#9A9DA8">0/3</span></div><span style="font-size:14px;font-weight:800;color:#C9CED6">Dostępny</span></div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:14px"><div style="position:relative;width:64px;height:64px;background:repeating-linear-gradient(135deg,#14161B 0 5px,#1B1D23 5px 10px);border:1px solid #E8C25A"><span style="position:absolute;right:-6px;bottom:-8px;min-width:30px;height:20px;padding:0 4px;font-size:13px;font-weight:800;line-height:20px;text-align:center;background:#14161B;border:1px solid #7A6438;color:#9A9DA8">0/3</span></div><span style="font-size:14px;font-weight:800;color:#C9CED6">Dostępny · hover</span></div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:14px"><div style="position:relative;width:64px;height:64px;background:repeating-linear-gradient(135deg,#14161B 0 5px,#1B1D23 5px 10px);border:1px solid #C9A45C"><span style="position:absolute;right:-6px;bottom:-8px;min-width:30px;height:20px;padding:0 4px;font-size:13px;font-weight:800;line-height:20px;text-align:center;background:#14161B;border:1px solid #C9A45C;color:#C9A45C">2/3</span></div><span style="font-size:14px;font-weight:800;color:#C9A45C">Wykupiony</span></div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:14px"><div style="position:relative;width:64px;height:64px;background:repeating-linear-gradient(135deg,#14161B 0 5px,#1B1D23 5px 10px);border:1px solid #E8C25A;box-shadow:0 0 0 1px #14161B,0 0 18px rgba(232,194,90,.45)"><span style="position:absolute;right:-6px;bottom:-8px;min-width:30px;height:20px;padding:0 4px;font-size:13px;font-weight:800;line-height:20px;text-align:center;background:#E8C25A;border:1px solid #E8C25A;color:#14161B">3/3</span></div><span style="font-size:14px;font-weight:800;color:#E8C25A">Maksymalny</span></div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:14px"><div style="position:relative;width:76px;height:76px;background:repeating-linear-gradient(135deg,#14161B 0 5px,#1B1D23 5px 10px);border:1px solid #7A6438;outline:1px solid #7A6438;outline-offset:3px;box-shadow:0 0 0 2px #14161B,0 0 0 4px #E8C25A"><span style="position:absolute;right:-8px;bottom:-10px;min-width:30px;height:20px;padding:0 4px;font-size:13px;font-weight:800;line-height:20px;text-align:center;background:#14161B;border:1px solid #7A6438;color:#9A9DA8">0/1</span></div><span style="font-size:14px;font-weight:800;color:#C9CED6">Zwieńczenie · focus</span></div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(380px,100%),1fr));gap:24px">
+        <div style="display:flex;gap:40px;justify-content:center;padding:28px;background:#101216;border:1px solid #252832">
+          <div style="display:flex;flex-direction:column;align-items:center"><div style="width:52px;height:52px;border:1px solid #E8C25A;background:#14161B"></div><div style="width:4px;height:36px;background:#C9A45C;box-shadow:0 0 8px rgba(201,164,92,.5)"></div><div style="width:52px;height:52px;border:1px solid #C9A45C;background:#14161B"></div><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#9A9DA8;margin-top:10px">krawędź aktywna</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center"><div style="width:52px;height:52px;border:1px solid #7A6438;background:#14161B"></div><div style="width:4px;height:36px;background:#3A3F4C"></div><div style="width:52px;height:52px;border:1px solid #3A3F4C;background:#14161B;opacity:.45"></div><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#9A9DA8;margin-top:10px">krawędź nieaktywna</span></div>
+        </div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:13px;line-height:1.8;color:#9A9DA8;padding:20px;background:#101216;border:1px solid #252832">węzeł 64×64 (zwieńczenie 76) · licznik: prawy dolny róg, h 20, 13px 800<br>locked: opacity .45 + grayscale + kłódka · available: ramka #7A6438, hover #E8C25A<br>partial: ramka i licznik #C9A45C · max: ramka #E8C25A + glow 18px, licznik pełny<br>krawędź: 4px × 36px · aktywna #C9A45C + glow, gdy rodzic ≥1 pkt<br>mobile: cel dotyku 64 ≥ 44 · tap = zaznacz, przyciski +/− w panelu (48 px)<br>aria: role="button", aria-pressed, aria-label="Szron, 2 z 3, wykupiony"</div>
+      </div>
+    </section>
+
+    <!-- TABELA -->
+    <section id="tabela" style="display:flex;flex-direction:column;gap:24px;padding:56px 0;border-top:1px solid #252832">
+      <div style="display:flex;flex-direction:column;gap:6px"><span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#9A9DA8">10 · KOMPONENT · .vw-table · .vw-chip · .vw-pager</span><h2 style="margin:0;font-family:'Grenze Gotisch',serif;font-weight:500;font-size:52px;line-height:1;color:#E8C25A">Tabela danych</h2></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(390px,100%),1fr));gap:24px;align-items:start">
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <sc-for list="{{ tChips }}" as="c" hint-placeholder-count="5">
+              <sc-if value="{{ c.on }}"><span style="display:flex;align-items:center;min-height:36px;padding:0 12px;font-size:15px;font-weight:800;background:#E8C25A;color:#14161B;border:1px solid #E8C25A">{{ c.n }}</span></sc-if>
+              <sc-if value="{{ c.off }}"><span onClick="{{ c.set }}" style="display:flex;align-items:center;min-height:36px;padding:0 12px;font-size:15px;font-weight:700;background:#1B1D23;color:#C9CED6;border:1px solid #3A3F4C;cursor:pointer" style-hover="border-color:#7A6438">{{ c.n }}</span></sc-if>
+            </sc-for>
+            <span style="display:flex;align-items:center;min-height:36px;padding:0 12px;font-size:15px;font-weight:700;background:#1B1D23;color:#C9CED6;border:1px solid #3A3F4C;opacity:.4">Wyłączony</span>
+          </div>
+          <div style="border:1px solid #3A3F4C;background:#1B1D23">
+            <div style="display:grid;grid-template-columns:minmax(0,2fr) 1fr 1fr 1fr;align-items:center;height:44px;padding:0 14px;font-size:13px;font-weight:800;letter-spacing:.12em;color:#C9A45C;border-bottom:1px solid #3A3F4C"><span>POTWÓR</span><span onClick="{{ tSort }}" style="cursor:pointer;color:#E8C25A">POZIOM {{ tArrow }}</span><span>RANGA</span><span>REGION</span></div>
+            <sc-for list="{{ tRows }}" as="r" hint-placeholder-count="5">
+              <div style="display:grid;grid-template-columns:minmax(0,2fr) 1fr 1fr 1fr;align-items:center;height:52px;padding:0 14px;border-bottom:1px solid #252832;background:{{ r.bg }};font-size:17px" style-hover="background:rgba(255,255,255,.03)">
+                <span style="font-weight:800">{{ r.n }}</span><span style="font-variant-numeric:tabular-nums">{{ r.lvl }}</span><span style="color:{{ r.rc }};font-weight:700">{{ r.rank }}</span><span style="color:#C9CED6">{{ r.reg }}</span>
+              </div>
+            </sc-for>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px">
+              <span style="font-size:15px;color:#9A9DA8">1–5 z 16</span>
+              <div style="display:flex;gap:4px">
+                <div style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid #3A3F4C;color:#9A9DA8;opacity:.4">‹</div>
+                <div style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;background:#E8C25A;color:#14161B;font-weight:800">1</div>
+                <div style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid #3A3F4C;font-weight:700">2</div>
+                <div style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid #3A3F4C;font-weight:700">3</div>
+                <div style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid #3A3F4C;color:#E8E4DA">›</div>
+              </div>
+            </div>
+          </div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:13px;line-height:1.8;color:#9A9DA8;padding:20px;background:#101216;border:1px solid #252832">nagłówek h 44, 13px 800 .12em #C9A45C · sortowalny: cursor pointer, aktywny #E8C25A + strzałka, aria-sort<br>wiersz h 52 · hover rgba(255,255,255,.03) · zaznaczony rgba(232,194,90,.10) · liczby tabular-nums<br>chip h 36 (dotyk: 44) · aktywny: tło #E8C25A, tekst #14161B · paginacja 44×44<br>&lt; 768 px: thead znika, każdy wiersz staje się kartą (grid 44px | 1fr | auto), etykiety z data-label</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;padding:16px;background:#14161B;border:1px solid #3A3F4C;border-radius:20px">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#9A9DA8">MOBILE · wiersze jako karty</span>
+          <div style="display:flex;gap:6px;overflow-x:auto"><sc-for list="{{ tChips }}" as="c" hint-placeholder-count="5"><span onClick="{{ c.set }}" style="flex-shrink:0;display:flex;align-items:center;height:44px;padding:0 12px;font-size:15px;font-weight:800;background:{{ c.bg }};color:{{ c.fg }};border:1px solid {{ c.bd }};cursor:pointer">{{ c.n }}</span></sc-for></div>
+          <div style="display:flex;justify-content:space-between;font-size:14px;color:#9A9DA8;padding:4px 0"><span onClick="{{ tSort }}" style="cursor:pointer">Sortuj: <b style="color:#E8E4DA">poziom {{ tArrow }}</b></span><span>16 wyników</span></div>
+          <sc-for list="{{ tRows }}" as="r" hint-placeholder-count="5">
+            <div style="display:grid;grid-template-columns:44px 1fr auto;gap:2px 12px;align-items:center;padding:10px;background:#1B1D23;border:1px solid #252832">
+              <div style="grid-row:span 2;width:44px;height:44px;background:repeating-linear-gradient(135deg,#14161B 0 5px,#1B1D23 5px 10px);border:1px solid {{ r.rc }}"></div>
+              <span style="font-size:16px;font-weight:800">{{ r.n }}</span><span style="font-size:15px;font-weight:800;color:#E8C25A">{{ r.lvlS }}</span>
+              <span style="font-size:13px;color:#9A9DA8">{{ r.rank }} · {{ r.reg }}</span><span></span>
+            </div>
+          </sc-for>
+          <div style="display:flex;align-items:center;justify-content:center;min-height:48px;margin-top:4px;font-size:15px;font-weight:800;letter-spacing:.06em;background:linear-gradient(#252832,#1B1D23);border:1px solid #3A3F4C">POKAŻ WIĘCEJ (11)</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PASKI I PLAKIETKI -->
+    <section id="paski" style="display:flex;flex-direction:column;gap:24px;padding:56px 0;border-top:1px solid #252832">
+      <div style="display:flex;flex-direction:column;gap:6px"><span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#9A9DA8">11 · KOMPONENT · .vw-bar · .vw-zone · .vw-rarity · .vw-rank</span><h2 style="margin:0;font-family:'Grenze Gotisch',serif;font-weight:500;font-size:52px;line-height:1;color:#E8C25A">Paski statystyk i plakietki</h2></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(380px,100%),1fr));gap:24px">
+        <div style="display:flex;flex-direction:column;gap:12px;padding:24px;background:#1B1D23;border:1px solid #252832">
+          <sc-for list="{{ bars }}" as="b" hint-placeholder-count="4">
+            <div style="display:grid;grid-template-columns:80px 1fr;gap:12px;align-items:center"><span style="font-size:14px;font-weight:800;color:#9A9DA8">{{ b.n }}</span>
+              <div style="position:relative;height:22px;background:{{ b.track }};border:1px solid #14161B;box-shadow:0 0 0 1px #3A3F4C"><div style="position:absolute;top:0;bottom:0;left:0;width:{{ b.v }};background:{{ b.fill }}"></div><span style="position:relative;display:flex;justify-content:center;font-size:14px;font-weight:800;line-height:22px;color:{{ b.fg }};text-shadow:{{ b.ts }}">{{ b.t }}</span></div>
+            </div>
+          </sc-for>
+          <div style="display:grid;grid-template-columns:80px 1fr;gap:12px;align-items:center"><span style="font-size:14px;font-weight:800;color:#9A9DA8">sm</span><div style="display:flex;flex-direction:column;gap:4px"><div style="height:8px;background:#2A1616;box-shadow:0 0 0 1px #3A3F4C"><div style="width:64%;height:100%;background:#C2352E"></div></div><div style="height:8px;background:#151E33;box-shadow:0 0 0 1px #3A3F4C"><div style="width:40%;height:100%;background:#3D6FD6"></div></div></div></div>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;line-height:1.7;color:#9A9DA8">h 22 (sm 8, bez tekstu) · tor: kolor 18% na #0E0F12 · wypełnienie: gradient 3-stopniowy · zmiana szerokości 360 ms ease-out · liczby zawsze w środku, cień 0 1px 2px #000 · energia: tekst #14161B</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:18px;padding:24px;background:#1B1D23;border:1px solid #252832">
+          <span style="font-size:13px;font-weight:800;letter-spacing:.18em;color:#C9A45C">STREFY PVP</span>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <span style="display:flex;align-items:center;gap:8px;height:28px;padding:0 10px;font-size:13px;font-weight:800;letter-spacing:.1em;color:#4FD16B;border:1px solid #4FD16B"><span style="width:8px;height:8px;background:#4FD16B;transform:rotate(45deg);box-shadow:0 0 8px #4FD16B"></span>STREFA ZIELONA</span>
+            <span style="display:flex;align-items:center;gap:8px;height:28px;padding:0 10px;font-size:13px;font-weight:800;letter-spacing:.1em;color:#E0C23B;border:1px solid #E0C23B"><span style="width:8px;height:8px;background:#E0C23B;transform:rotate(45deg);box-shadow:0 0 8px #E0C23B"></span>STREFA ŻÓŁTA</span>
+            <span style="display:flex;align-items:center;gap:8px;height:28px;padding:0 10px;font-size:13px;font-weight:800;letter-spacing:.1em;color:#E8665A;border:1px solid #D64A3E"><span style="width:8px;height:8px;background:#D64A3E;transform:rotate(45deg);box-shadow:0 0 8px #D64A3E"></span>STREFA CZERWONA</span>
+          </div>
+          <span style="font-size:13px;font-weight:800;letter-spacing:.18em;color:#C9A45C">RZADKOŚCI</span>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <sc-for list="{{ glows }}" as="g" hint-placeholder-count="6"><span style="display:flex;align-items:center;gap:6px;height:24px;padding:0 8px;font-size:12px;font-weight:800;letter-spacing:.12em;color:{{ g.c }};border:1px solid {{ g.c }};background:{{ g.bg }}"><span style="width:7px;height:7px;background:{{ g.c }};transform:rotate(45deg)"></span>{{ g.up }}</span></sc-for>
+          </div>
+          <span style="font-size:13px;font-weight:800;letter-spacing:.18em;color:#C9A45C">RANGI I ŻYWIOŁY</span>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <span style="height:26px;display:flex;align-items:center;padding:0 9px;font-size:14px;font-weight:800;border:1px solid #3A3F4C;color:#C9CED6">Zwykły</span>
+            <span style="height:26px;display:flex;align-items:center;padding:0 9px;font-size:14px;font-weight:800;background:#E8C25A;color:#14161B">Elita</span>
+            <span style="height:26px;display:flex;align-items:center;padding:0 9px;font-size:14px;font-weight:800;background:#FF9A2E;color:#14161B">Elita II</span>
+            <span style="height:26px;display:flex;align-items:center;padding:0 9px;font-size:14px;font-weight:800;background:#D64A3E;color:#FFFFFF">Boss</span>
+            <sc-for list="{{ elems }}" as="e" hint-placeholder-count="5"><span style="height:26px;display:flex;align-items:center;gap:6px;padding:0 9px;font-size:13px;font-weight:800;border:1px solid #3A3F4C;color:{{ e.c }}"><span style="width:8px;height:8px;background:{{ e.c }};transform:rotate(45deg)"></span>{{ e.n }}</span></sc-for>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CALLOUTY -->
+    <section id="callouty" style="display:flex;flex-direction:column;gap:24px;padding:56px 0;border-top:1px solid #252832">
+      <div style="display:flex;flex-direction:column;gap:6px"><span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#9A9DA8">12 · KOMPONENT · .vw-callout</span><h2 style="margin:0;font-family:'Grenze Gotisch',serif;font-weight:500;font-size:52px;line-height:1;color:#E8C25A">Callouty</h2></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(380px,100%),1fr));gap:16px">
+        <div style="display:grid;grid-template-columns:28px 1fr;gap:12px;padding:16px 18px;background:#1B2230;border:1px solid #3B5679"><div style="width:14px;height:14px;margin:5px 0 0 6px;background:#6FA8F0;transform:rotate(45deg)"></div><div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:13px;font-weight:800;letter-spacing:.16em;color:#6FA8F0">WSKAZÓWKA</span><span style="font-size:17px;line-height:1.5">Strażnik nie widzi graczy za kamiennymi płytami. Zaatakuj z dystansu, a potem schowaj się, gdy unosi broń.</span></div></div>
+        <div style="display:grid;grid-template-columns:28px 1fr;gap:12px;padding:16px 18px;background:#272418;border:1px solid #6B5F2A"><div style="width:14px;height:14px;margin:5px 0 0 6px;background:#E0C23B;transform:rotate(45deg)"></div><div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:13px;font-weight:800;letter-spacing:.16em;color:#E0C23B">OSTRZEŻENIE</span><span style="font-size:17px;line-height:1.5">Od +8 nieudane ulepszenie może zniszczyć przedmiot. Użyj Pieczęci Ochrony.</span></div></div>
+        <div onClick="{{ toggleSpoiler }}" style="display:grid;grid-template-columns:28px 1fr;gap:12px;padding:16px 18px;background:#211B2E;border:1px solid #57407D;cursor:pointer">
+          <div style="width:14px;height:14px;margin:5px 0 0 6px;background:#8E5BD9;transform:rotate(45deg)"></div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <div style="display:flex;justify-content:space-between;gap:12px"><span style="font-size:13px;font-weight:800;letter-spacing:.16em;color:#B893F0">SPOILER · FABUŁA SEZONU II</span><span style="font-size:14px;font-weight:800;color:#B893F0">{{ spoilerCta }}</span></div>
+            <span style="font-size:17px;line-height:1.5;filter:{{ spoilerBlur }};user-select:none;transition:filter 200ms cubic-bezier(.2,0,0,1)">Pani Popiołów to córka Popielnego Króla, która sama podpaliła cytadelę, by uwięzić ojca w kurhanach.</span>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:28px 1fr;gap:12px;padding:16px 18px;background:#262217;border:1px solid #7A6438"><div style="width:14px;height:14px;margin:5px 0 0 6px;background:#E8C25A;transform:rotate(45deg)"></div><div style="display:flex;flex-direction:column;gap:4px"><div style="display:flex;gap:10px;align-items:center"><span style="font-size:13px;font-weight:800;letter-spacing:.16em;color:#E8C25A">ZMIENIONE W AKTUALIZACJI</span><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;padding:1px 6px;background:#E8C25A;color:#14161B">0.9.3</span></div><span style="font-size:17px;line-height:1.5">Bazowy atak 120–160 → <b>128–171</b>. Dodano kradzież życia do puli bonusów.</span></div></div>
+      </div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:13px;line-height:1.8;color:#9A9DA8;padding:20px;background:#101216;border:1px solid #252832">grid 28px | 1fr · padding 16 18 · tło: kolor 8% na --vw-panel · ramka: kolor 45% na --vw-border · romb 14px · tytuł 13px 800 .16em<br>spoiler: treść blur(6px) + user-select none · cały callout to przycisk (aria-expanded) · odsłonięcie 200 ms · reduced-motion: od razu<br>„zmienione w” zawsze z numerem wersji jako linkiem do changelogu · mobile: identyczne, pełna szerokość, padding 14 16</div>
+    </section>
+
+    <!-- NAWIGACJA -->
+    <section id="nawigacja" style="display:flex;flex-direction:column;gap:24px;padding:56px 0;border-top:1px solid #252832">
+      <div style="display:flex;flex-direction:column;gap:6px"><span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#9A9DA8">13 · KOMPONENT · .vw-topbar · .vw-tabbar · .vw-toc · .vw-crumbs · .vw-lang · .vw-search</span><h2 style="margin:0;font-family:'Grenze Gotisch',serif;font-weight:500;font-size:52px;line-height:1;color:#E8C25A">Nawigacja</h2></div>
+      <div style="overflow-x:auto;border:1px solid #3A3F4C"><div style="width:1440px;height:72px"><dc-import name="VwNav" variant="desktop" active="bestiary" hint-size="1440px,72px"></dc-import></div></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(340px,100%),1fr));gap:20px;align-items:start">
+        <div style="display:flex;flex-direction:column;gap:18px;padding:22px;background:#1B1D23;border:1px solid #252832">
+          <span style="font-size:13px;font-weight:800;letter-spacing:.18em;color:#C9A45C">BOCZNY SPIS TREŚCI</span>
+          <div style="display:flex;flex-direction:column;border-left:1px solid #3A3F4C">
+            <span style="display:flex;align-items:center;min-height:36px;padding:0 14px;font-size:15px;color:#9A9DA8">Opis</span>
+            <span style="display:flex;align-items:center;min-height:36px;padding:0 14px;margin-left:-1px;font-size:15px;font-weight:700;color:#E8C25A;border-left:2px solid #E8C25A">Tabela łupów</span>
+            <span style="display:flex;align-items:center;min-height:36px;padding:0 28px;font-size:14px;color:#9A9DA8">Legendarne</span>
+            <span style="display:flex;align-items:center;min-height:36px;padding:0 14px;font-size:15px;color:#E8E4DA">Umiejętności · hover</span>
+            <span style="display:flex;align-items:center;min-height:36px;padding:0 14px;font-size:15px;color:#9A9DA8">Gdzie występuje</span>
+          </div>
+          <span style="font-size:13px;font-weight:800;letter-spacing:.18em;color:#C9A45C">OKRUSZKI</span>
+          <div style="display:flex;flex-wrap:wrap;gap:10px;font-size:15px;color:#9A9DA8"><span>Wiki</span><span>/</span><span>Bestiariusz</span><span>/</span><span>Kurhany Wschodu</span><span>/</span><span style="color:#E8E4DA">Strażnik Kurhanu</span></div>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;line-height:1.7;color:#9A9DA8">ToC: sticky top 96, pozycja 36px (≥44 na dotyk), aktywna: 2px #E8C25A, scroll-spy · mobile: ToC jako rozwijane „Na tej stronie” pod tytułem · okruszki: mobile pokazują tylko ‹ rodzica</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:18px;padding:22px;background:#1B1D23;border:1px solid #252832">
+          <span style="font-size:13px;font-weight:800;letter-spacing:.18em;color:#C9A45C">PRZEŁĄCZNIK PL/EN</span>
+          <div style="display:flex;gap:16px;align-items:center">
+            <div style="display:flex;border:1px solid #3A3F4C;font-size:14px;font-weight:700"><span onClick="{{ setPl }}" style="padding:9px 12px;background:{{ plBg }};color:{{ plFg }};cursor:pointer">PL</span><span onClick="{{ setEn }}" style="padding:9px 12px;background:{{ enBg }};color:{{ enFg }};cursor:pointer">EN</span></div>
+            <span style="font-size:14px;color:#9A9DA8">kliknij · zapamiętywane w localStorage</span>
+          </div>
+          <span style="font-size:13px;font-weight:800;letter-spacing:.18em;color:#C9A45C">WYSZUKIWARKA · CTRL+K</span>
+          <div style="display:flex;flex-direction:column;background:#1B1D23;border:1px solid #7A6438;box-shadow:0 24px 60px rgba(0,0,0,.55)">
+            <div style="display:flex;align-items:center;gap:12px;height:56px;padding:0 16px;border-bottom:1px solid #3A3F4C"><div style="width:16px;height:16px;border:2px solid #E8C25A;border-radius:50%"></div><span style="flex:1;font-size:18px">popiel<span style="display:inline-block;width:2px;height:20px;background:#E8C25A;vertical-align:middle;margin-left:2px"></span></span><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;border:1px solid #3A3F4C;padding:0 6px;color:#9A9DA8">Esc</span></div>
+            <div style="display:flex;align-items:center;gap:12px;min-height:52px;padding:0 16px;background:rgba(232,194,90,.10);box-shadow:inset 2px 0 0 #E8C25A"><span style="font-size:11px;font-weight:800;letter-spacing:.14em;color:#E8C25A">PRZEDMIOT</span><span style="font-size:17px;font-weight:800;color:#FF9A2E">Ostrze <u>Popiel</u>nego Króla</span><span style="margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:12px;color:#9A9DA8">↵</span></div>
+            <div style="display:flex;align-items:center;gap:12px;min-height:52px;padding:0 16px"><span style="font-size:11px;font-weight:800;letter-spacing:.14em;color:#4FD16B">KRAINA</span><span style="font-size:17px;font-weight:800">Popielny Trakt</span></div>
+            <div style="display:flex;align-items:center;gap:12px;min-height:52px;padding:0 16px"><span style="font-size:11px;font-weight:800;letter-spacing:.14em;color:#6FA8F0">PORADNIK</span><span style="font-size:17px;font-weight:800">Popielne Ziemie: przewodnik</span></div>
+            <div style="display:flex;gap:16px;padding:10px 16px;border-top:1px solid #3A3F4C;font-family:'IBM Plex Mono',monospace;font-size:12px;color:#9A9DA8"><span>↑↓ wybór</span><span>↵ otwórz</span><span>Tab filtr typu</span></div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:0;background:#14161B;border:1px solid #3A3F4C;border-radius:20px;overflow:hidden">
+          <dc-import name="VwNav" variant="mobile" hint-size="390px,60px"></dc-import>
+          <div style="padding:14px 16px;display:flex;flex-direction:column;gap:10px">
+            <span style="font-size:14px;color:#9A9DA8">‹ Kurhany Wschodu</span>
+            <div style="display:flex;justify-content:space-between;align-items:center;min-height:48px;padding:0 14px;background:#1B1D23;border:1px solid #3A3F4C;font-size:15px;font-weight:800"><span>Na tej stronie</span><span style="color:#E8C25A">▾</span></div>
+          </div>
+          <div style="height:120px"></div>
+          <dc-import name="VwNav" variant="tabs" active="bestiary" hint-size="390px,68px"></dc-import>
+        </div>
+      </div>
+    </section>
+
+    <!-- STOPKA -->
+    <section id="stopka" style="display:flex;flex-direction:column;gap:24px;padding:56px 0;border-top:1px solid #252832">
+      <div style="display:flex;flex-direction:column;gap:6px"><span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#9A9DA8">14 · KOMPONENT · .vw-footer</span><h2 style="margin:0;font-family:'Grenze Gotisch',serif;font-weight:500;font-size:52px;line-height:1;color:#E8C25A">Stopka</h2></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(390px,100%),1fr));gap:24px;align-items:start">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:32px;padding:40px;background:#1B1D23;border-top:1px solid #7A6438;color:#9A9DA8;font-size:15px">
+          <div style="display:flex;flex-direction:column;gap:14px"><span style="font-family:'Grenze Gotisch',serif;font-weight:700;font-size:34px;color:#E8C25A">Vaelthorn</span><span style="line-height:1.5">Oficjalna wiki, tworzona przez społeczność graczy. Każdą stronę możesz poprawić.</span><div style="display:flex;align-items:center;justify-content:center;gap:10px;min-height:48px;width:240px;font-size:16px;font-weight:800;letter-spacing:.06em;background:linear-gradient(#E8C25A,#C9A45C);color:#14161B;border:1px solid #7A6438;box-shadow:inset 0 1px 0 rgba(255,255,255,.4)"><span style="width:10px;height:10px;background:#14161B;transform:rotate(45deg)"></span>GRAJ NA ROBLOX</div></div>
+          <div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:13px;font-weight:800;letter-spacing:.18em;color:#C9A45C">WIKI</span><span>Przedmioty</span><span>Bestiariusz</span><span>Klasy</span><span>Mapa świata</span></div>
+          <div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:13px;font-weight:800;letter-spacing:.18em;color:#C9A45C">SPOŁECZNOŚĆ</span><span>Discord</span><span>Jak edytować</span><span>Zasady wiki</span></div>
+          <div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:13px;font-weight:800;letter-spacing:.18em;color:#C9A45C">WERSJA</span><span style="font-family:'IBM Plex Mono',monospace;font-size:13px">gra 0.9.3</span><span>Polski · English</span></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;padding:28px 16px;background:#1B1D23;border-top:1px solid #7A6438;border-radius:0 0 20px 20px;font-size:15px;color:#9A9DA8">
+          <div style="grid-column:span 2;display:flex;flex-direction:column;gap:12px"><span style="font-family:'Grenze Gotisch',serif;font-weight:700;font-size:28px;color:#E8C25A">Vaelthorn</span><div style="display:flex;align-items:center;justify-content:center;gap:10px;min-height:48px;font-size:16px;font-weight:800;background:linear-gradient(#E8C25A,#C9A45C);color:#14161B"><span style="width:10px;height:10px;background:#14161B;transform:rotate(45deg)"></span>GRAJ NA ROBLOX</div></div>
+          <div style="display:flex;flex-direction:column;gap:0"><span style="font-size:12px;font-weight:800;letter-spacing:.18em;color:#C9A45C;padding-bottom:6px">WIKI</span><span style="min-height:44px;display:flex;align-items:center">Przedmioty</span><span style="min-height:44px;display:flex;align-items:center">Bestiariusz</span></div>
+          <div style="display:flex;flex-direction:column;gap:0"><span style="font-size:12px;font-weight:800;letter-spacing:.18em;color:#C9A45C;padding-bottom:6px">SPOŁECZNOŚĆ</span><span style="min-height:44px;display:flex;align-items:center">Discord</span><span style="min-height:44px;display:flex;align-items:center">Jak edytować</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- STANY -->
+    <section id="stany" style="display:flex;flex-direction:column;gap:24px;padding:56px 0;border-top:1px solid #252832">
+      <div style="display:flex;flex-direction:column;gap:6px"><span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#9A9DA8">15 · WZORCE · .vw-skeleton · .vw-empty</span><h2 style="margin:0;font-family:'Grenze Gotisch',serif;font-weight:500;font-size:52px;line-height:1;color:#E8C25A">Ładowanie, pusto, nic nie znaleziono</h2></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(280px,100%),1fr));gap:20px">
+        <div style="display:flex;flex-direction:column;gap:10px;padding:20px;background:#1B1D23;border:1px solid #252832">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#9A9DA8">ŁADOWANIE · szkielet w kształcie treści</span>
+          <sc-for list="{{ skel }}" as="s" hint-placeholder-count="4"><div style="display:flex;gap:12px;align-items:center;padding:8px 0;border-bottom:1px solid #252832"><div style="width:40px;height:40px;background:linear-gradient(90deg,#1B1D23,#2A2D37,#1B1D23)"></div><div style="flex:1;display:flex;flex-direction:column;gap:6px"><div style="height:14px;width:{{ s.w }};background:linear-gradient(90deg,#252832,#2E323D,#252832)"></div><div style="height:10px;width:40%;background:#252832"></div></div></div></sc-for>
+          <span style="font-size:14px;color:#9A9DA8;line-height:1.4">Pokazywany po 300 ms (wcześniej nic, żeby nie migało). Shimmer 1,4 s, przy reduced-motion statyczny. aria-busy="true".</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:14px;padding:44px 24px;background:#1B1D23;border:1px solid #252832;text-align:center">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#9A9DA8;align-self:flex-start">PUSTO · brak danych</span>
+          <div style="width:30px;height:30px;border:1px solid #7A6438;transform:rotate(45deg);margin:14px 0"></div>
+          <span style="font-family:'Grenze Gotisch',serif;font-size:32px;color:#E8C25A">Kronika milczy</span>
+          <span style="font-size:16px;color:#9A9DA8;line-height:1.45;max-width:320px">Nikt jeszcze nie opisał potworów z tej krainy. Widziałeś któregoś? Dodaj wpis.</span>
+          <div style="display:flex;align-items:center;justify-content:center;min-height:44px;padding:0 20px;font-size:15px;font-weight:800;letter-spacing:.06em;background:linear-gradient(#252832,#1B1D23);border:1px solid #7A6438">DODAJ WPIS</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:14px;padding:44px 24px;background:#1B1D23;border:1px solid #252832;text-align:center">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#9A9DA8;align-self:flex-start">NIC NIE ZNALEZIONO · filtry / wyszukiwanie</span>
+          <div style="width:30px;height:30px;border:1px solid #3A3F4C;transform:rotate(45deg);margin:14px 0"></div>
+          <span style="font-family:'Grenze Gotisch',serif;font-size:32px;color:#E8C25A">Nic dla „smok”</span>
+          <span style="font-size:16px;color:#9A9DA8;line-height:1.45;max-width:320px">Żaden potwór nie pasuje do filtrów: Bagna Mgieł · Boss. Usuń jeden filtr albo szukaj krócej.</span>
+          <div style="display:flex;gap:8px"><span style="display:flex;align-items:center;min-height:44px;padding:0 14px;font-size:15px;font-weight:700;border:1px solid #3A3F4C">Bagna Mgieł ×</span><span style="display:flex;align-items:center;min-height:44px;padding:0 14px;font-size:15px;font-weight:700;border:1px solid #3A3F4C">Boss ×</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ZASADY -->
+    <section id="zasady" style="display:flex;flex-direction:column;gap:24px;padding:56px 0;border-top:1px solid #252832">
+      <div style="display:flex;flex-direction:column;gap:6px"><span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#9A9DA8">16 · ZASADY</span><h2 style="margin:0;font-family:'Grenze Gotisch',serif;font-weight:500;font-size:52px;line-height:1;color:#E8C25A">Dostępność, dotyk, siatka</h2></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(420px,100%),1fr));gap:24px;align-items:start">
+        <div style="border:1px solid #3A3F4C;background:#1B1D23;overflow-x:auto">
+          <div style="display:grid;grid-template-columns:minmax(0,1.6fr) 1fr 70px 70px;padding:12px 16px;font-size:12px;font-weight:800;letter-spacing:.14em;color:#C9A45C;border-bottom:1px solid #3A3F4C"><span>PARA (TEKST / TŁO)</span><span>PRÓBKA</span><span>KONTRAST</span><span>AA</span></div>
+          <sc-for list="{{ contrast }}" as="c" hint-placeholder-count="12">
+            <div style="display:grid;grid-template-columns:minmax(0,1.6fr) 1fr 70px 70px;align-items:center;padding:8px 16px;border-bottom:1px solid #252832;font-size:15px">
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#C9CED6">{{ c.p }}</span>
+              <span style="padding:4px 8px;background:{{ c.bg }};color:{{ c.fg }};font-weight:700;justify-self:start">Aa Zażółć</span>
+              <span style="font-variant-numeric:tabular-nums;font-weight:700">{{ c.r }}</span>
+              <span style="font-weight:800;color:{{ c.okC }}">{{ c.ok }}</span>
+            </div>
+          </sc-for>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div style="padding:20px;background:#1B1D23;border:1px solid #252832;display:flex;flex-direction:column;gap:10px">
+            <span style="font-size:13px;font-weight:800;letter-spacing:.18em;color:#C9A45C">KONTRAST</span>
+            <span style="font-size:16px;line-height:1.5;color:#C9CED6">Tekst ≥ 4.5:1, duży tekst (≥ 24 px lub ≥ 19 px bold) i ikony ≥ 3:1. #7A6438 (złoto ciemne) i #C2352E (HP) nigdy jako tekst. Czerwień strefy jako tekst to #E8665A. Kolor nigdy nie jest jedynym nośnikiem informacji: rzadkość ma też nazwę, strefa etykietę, stan węzła licznik.</span>
+          </div>
+          <div style="padding:20px;background:#1B1D23;border:1px solid #252832;display:flex;flex-direction:column;gap:10px">
+            <span style="font-size:13px;font-weight:800;letter-spacing:.18em;color:#C9A45C">CELE DOTYKU</span>
+            <div style="display:flex;gap:16px;align-items:center"><div style="width:44px;height:44px;border:1px dashed #E8C25A;display:flex;align-items:center;justify-content:center"><div style="width:20px;height:20px;border:2px solid #E8C25A;border-radius:50%"></div></div><span style="font-size:16px;line-height:1.5;color:#C9CED6">Min. 44×44 px, odstęp min. 8 px między celami. Linki w tekście dostają padding pionowy, a całe wiersze tabel i karty są klikalne.</span></div>
+          </div>
+          <div style="border:1px solid #3A3F4C;background:#1B1D23">
+            <div style="display:grid;grid-template-columns:90px 120px 60px 70px 1fr;padding:12px 16px;font-size:12px;font-weight:800;letter-spacing:.14em;color:#C9A45C;border-bottom:1px solid #3A3F4C"><span>NAZWA</span><span>ZAKRES</span><span>KOL.</span><span>MARG.</span><span>UWAGI</span></div>
+            <sc-for list="{{ bps }}" as="b" hint-placeholder-count="5"><div style="display:grid;grid-template-columns:90px 120px 60px 70px 1fr;padding:10px 16px;border-bottom:1px solid #252832;font-size:15px"><span style="font-family:'IBM Plex Mono',monospace;color:#6FA8F0">{{ b.n }}</span><span style="font-family:'IBM Plex Mono',monospace;font-size:13px">{{ b.r }}</span><span>{{ b.c }}</span><span>{{ b.m }}</span><span style="color:#9A9DA8">{{ b.u }}</span></div></sc-for>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;padding:24px;background:#101216;border:1px solid #252832">
+        <span style="font-size:13px;font-weight:800;letter-spacing:.18em;color:#C9A45C">SIATKA XL · 12 KOLUMN · MAX 1296 · MARGINES 72 · ODSTĘP 24</span>
+        <div style="display:grid;grid-template-columns:repeat(12,1fr);gap:clamp(4px,2vw,24px);height:80px"><sc-for list="{{ cols12 }}" as="c" hint-placeholder-count="12"><div style="background:rgba(201,164,92,.12);border:1px solid rgba(201,164,92,.35)"></div></sc-for></div>
+        <span style="font-size:13px;font-weight:800;letter-spacing:.18em;color:#C9A45C;margin-top:12px">XS · 4 KOLUMNY · MARGINES 16 · ODSTĘP 12</span>
+        <div style="width:min(390px,100%);padding:0 16px;display:grid;grid-template-columns:repeat(4,1fr);gap:12px;height:60px;border:1px solid #3A3F4C"><sc-for list="{{ cols4 }}" as="c" hint-placeholder-count="4"><div style="background:rgba(201,164,92,.12);border:1px solid rgba(201,164,92,.35)"></div></sc-for></div>
+      </div>
+    </section>
+
+    <!-- JASNY -->
+    <section id="jasny" style="display:flex;flex-direction:column;gap:24px;padding:56px 0;border-top:1px solid #252832">
+      <div style="display:flex;flex-direction:column;gap:6px"><span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#9A9DA8">17 · MOTYW</span><h2 style="margin:0;font-family:'Grenze Gotisch',serif;font-weight:500;font-size:52px;line-height:1;color:#E8C25A">Tryb jasny</h2><p style="margin:0;font-size:18px;color:#9A9DA8;max-width:820px">Opcjonalny, dla czytania w słońcu. Pergaminowe tło, te same proporcje i komponenty. Tooltip przedmiotu i scena dropu zostają ciemne, bo to „okno do gry”.</p></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(400px,100%),1fr));gap:28px;padding:32px;background:#F4EFE4;color:#1E1C18;border:1px solid #CFC4AC">
+        <div style="display:flex;flex-direction:column;gap:18px">
+          <div style="display:flex;justify-content:space-between;align-items:center;height:60px;padding:0 20px;background:linear-gradient(#FFFFFF,#F6F1E6);border-bottom:1px solid #CDB585"><span style="font-family:'Grenze Gotisch',serif;font-weight:700;font-size:30px;color:#7D5F17">Vaelthorn</span><div style="display:flex;gap:22px;font-size:14px;font-weight:700;letter-spacing:.08em;color:#5E5A52"><span style="color:#1E1C18;border-bottom:2px solid #7D5F17">BESTIARIUSZ</span><span>PRZEDMIOTY</span><span>MAPA</span></div></div>
+          <span style="font-family:'Grenze Gotisch',serif;font-weight:700;font-size:56px;line-height:.9">Strażnik Kurhanu</span>
+          <div style="display:flex;gap:8px;flex-wrap:wrap"><span style="height:26px;display:flex;align-items:center;padding:0 9px;font-size:14px;font-weight:800;background:#7D5F17;color:#FFFFFF">Elita</span><span style="display:flex;align-items:center;gap:8px;height:28px;padding:0 10px;font-size:13px;font-weight:800;letter-spacing:.1em;color:#B8362B;border:1px solid #B8362B">STREFA CZERWONA</span><span style="display:flex;align-items:center;height:24px;padding:0 8px;font-size:12px;font-weight:800;letter-spacing:.12em;color:#9A5008;border:1px solid #9A5008">LEGENDARNY</span><span style="display:flex;align-items:center;height:24px;padding:0 8px;font-size:12px;font-weight:800;letter-spacing:.12em;color:#1F62D0;border:1px solid #1F62D0">RZADKI</span></div>
+          <div style="display:grid;grid-template-columns:28px 1fr;gap:12px;padding:16px 18px;background:#E9EFF8;border:1px solid #A9BEDF"><div style="width:14px;height:14px;margin:5px 0 0 6px;background:#245BA6;transform:rotate(45deg)"></div><div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:13px;font-weight:800;letter-spacing:.16em;color:#245BA6">WSKAZÓWKA</span><span style="font-size:17px;line-height:1.5">Strażnik nie widzi graczy za kamiennymi płytami.</span></div></div>
+          <div style="border:1px solid #CFC4AC;background:#FBF8F1">
+            <div style="display:grid;grid-template-columns:2fr 1fr 1fr;height:44px;align-items:center;padding:0 14px;font-size:13px;font-weight:800;letter-spacing:.12em;color:#7D5F17;border-bottom:1px solid #CFC4AC"><span>ŁUP</span><span>RZADKOŚĆ</span><span>SZANSA</span></div>
+            <div style="display:grid;grid-template-columns:2fr 1fr 1fr;height:48px;align-items:center;padding:0 14px;border-bottom:1px solid #E2D9C5;font-size:16px"><span style="font-weight:800;color:#9A5008">Ostrze Popielnego Króla</span><span style="color:#5E5A52">Legendarny</span><span style="font-weight:700">0,04%</span></div>
+            <div style="display:grid;grid-template-columns:2fr 1fr 1fr;height:48px;align-items:center;padding:0 14px;font-size:16px"><span style="font-weight:800;color:#8241D6">Kaptur Wartownika</span><span style="color:#5E5A52">Epicki</span><span style="font-weight:700">1,2%</span></div>
+          </div>
+          <div style="display:flex;gap:10px"><span style="display:flex;align-items:center;min-height:44px;padding:0 20px;font-size:15px;font-weight:800;letter-spacing:.06em;background:linear-gradient(#E8C25A,#C9A45C);color:#14161B;border:1px solid #7D5F17">GRAJ NA ROBLOX</span><span style="display:flex;align-items:center;min-height:44px;padding:0 20px;font-size:15px;font-weight:800;letter-spacing:.06em;background:#FFFFFF;color:#1E1C18;border:1px solid #CFC4AC">SZCZEGÓŁY</span></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px"><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#5E5A52">TOOLTIP ZOSTAJE CIEMNY</span><dc-import name="VwTooltip" item="ostrze" upgrade="7" hint-size="100%,400px"></dc-import></div>
+      </div>
+    </section>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { spoiler: false, phase: 0, chip: 'all', dir: 1, lang: 'pl' };
+  componentDidMount() { if (!window.VW) this._i = setInterval(() => { if (window.VW) { clearInterval(this._i); this.forceUpdate(); } }, 40); }
+  componentWillUnmount() { clearInterval(this._i); }
+  renderVals() {
+    const S = this.state, V = window.VW;
+    const toc = [['kolory', 'Kolory'], ['typografia', 'Typografia'], ['odstepy', 'Odstępy i cienie'], ['ruch', 'Ruch'], ['przyciski', 'Przyciski'], ['tooltip', 'Tooltip przedmiotu'], ['potwor', 'Karta potwora'], ['boss', 'Nagłówek bossa'], ['drzewko', 'Drzewko umiejętności'], ['tabela', 'Tabela danych'], ['paski', 'Paski i plakietki'], ['callouty', 'Callouty'], ['nawigacja', 'Nawigacja'], ['stopka', 'Stopka'], ['stany', 'Stany'], ['zasady', 'Zasady'], ['jasny', 'Tryb jasny']].map(([id, n]) => ({ href: '#' + id, n }));
+    const C = (n, v, d, l, u) => ({ n, v, d, l, u });
+    const colorGroups = [
+      { n: 'POWIERZCHNIE', items: [C('Tło', '--vw-bg', '#14161B', '#F4EFE4', 'Tło strony'), C('Tło wklęsłe', '--vw-bg-sunken', '#101216', '#EAE3D3', 'Sceny, mapy, kod'), C('Panel', '--vw-panel', '#1B1D23', '#FBF8F1', 'Karty, tabele'), C('Panel wyżej', '--vw-panel-raised', '#252832', '#FFFFFF', 'Góra gradientu metalu'), C('Ramka', '--vw-border', '#3A3F4C', '#CFC4AC', 'Krawędzie komponentów'), C('Ramka cicha', '--vw-border-subtle', '#252832', '#E2D9C5', 'Separatory wierszy')] },
+      { n: 'TEKST', items: [C('Tekst', '--vw-text', '#E8E4DA', '#1E1C18', 'Podstawowy'), C('Tekst miękki', '--vw-text-soft', '#C9CED6', '#3C3933', 'Opisy, akapity'), C('Wyciszony', '--vw-text-muted', '#9A9DA8', '#5E5A52', 'Meta, etykiety'), C('Pergamin', '--vw-parchment', '#EADDBE', '#5C4A30', 'Cytaty, flavor')] },
+      { n: 'MARKA I AKCENT', items: [C('Złoto', '--vw-gold', '#C9A45C', '#7D5F17', 'Etykiety, aktywne'), C('Złoto jasne', '--vw-gold-bright', '#E8C25A', '#8A6A1F', 'Logo, CTA, fokus'), C('Złoto ciemne', '--vw-gold-dark', '#7A6438', '#CDB585', 'Tylko ramki/dekor'), C('Akcent', '--vw-accent', '#4A8FE7', '#2F6FC4', 'Info, warstwy mapy'), C('Akcent tekst', '--vw-accent-text', '#6FA8F0', '#245BA6', 'Bonusy, wskazówki')] },
+      { n: 'ZASOBY POSTACI', items: [C('HP', '--vw-hp', '#C2352E', '#C2352E', 'Tylko paski'), C('Mana', '--vw-mana', '#3D6FD6', '#3D6FD6', 'Tylko paski'), C('Energia', '--vw-energy', '#D9B23A', '#D9B23A', 'Paski, tekst #14161B'), C('EXP', '--vw-exp', '#8E5BD9', '#8E5BD9', 'Paski, spoiler')] },
+      { n: 'STREFY PVP', items: [C('Zielona', '--vw-zone-green', '#4FD16B', '#1C7030', 'Bez PvP'), C('Żółta', '--vw-zone-yellow', '#E0C23B', '#74620A', 'PvP za zgodą'), C('Czerwona', '--vw-zone-red', '#D64A3E', '#B8362B', 'Ramki i tło'), C('Czerwona tekst', '--vw-zone-red-text', '#E8665A', '#B8362B', 'Tekst na ciemnym')] },
+      { n: 'RZADKOŚCI', items: [C('Zwykły', '--vw-r-common', '#C9CED6', '#5D636C', ''), C('Niezwykły', '--vw-r-uncommon', '#4FD16B', '#1C7030', ''), C('Rzadki', '--vw-r-rare', '#3D8BFF', '#1F62D0', ''), C('Epicki', '--vw-r-epic', '#B36BFF', '#8241D6', 'propozycja'), C('Legendarny', '--vw-r-legendary', '#FF9A2E', '#9A5008', 'propozycja'), C('Mityczny', '--vw-r-mythic', '#3FE0C8', '#0B7468', 'propozycja')] },
+      { n: 'ŻYWIOŁY', items: [C('Fizyczny', '--vw-el-physical', '#C9CED6', '#5D636C', ''), C('Ogień', '--vw-el-fire', '#E8763A', '#A84A12', ''), C('Mróz', '--vw-el-frost', '#7CC3F0', '#1F6A9C', ''), C('Mrok', '--vw-el-shadow', '#A88BE8', '#6A48B8', ''), C('Natura', '--vw-el-nature', '#7BC86A', '#2E7A22', '')] }
+    ];
+    const spacing = [['s-1', 4], ['s-2', 8], ['s-3', 12], ['s-4', 16], ['s-5', 20], ['s-6', 24], ['s-7', 32], ['s-8', 44], ['s-9', 56], ['s-10', 72], ['s-11', 96]].map(([t, v]) => ({ t: '--vw-' + t, v: v + 'px' }));
+    const R = [['Zwykły', 'ZWYKŁY', '#C9CED6', '0 0 0 1px #14161B, 0 0 12px rgba(201,206,214,.10)'], ['Niezwykły', 'NIEZWYKŁY', '#4FD16B', '0 0 0 1px #14161B, 0 0 20px rgba(79,209,107,.18)'], ['Rzadki', 'RZADKI', '#3D8BFF', '0 0 0 1px #14161B, 0 0 24px rgba(61,139,255,.22)'], ['Epicki', 'EPICKI', '#B36BFF', '0 0 0 1px #14161B, 0 0 28px rgba(179,107,255,.24)'], ['Legendarny', 'LEGENDARNY', '#FF9A2E', '0 0 0 1px #14161B, 0 0 32px rgba(255,154,46,.28), 0 0 2px rgba(255,154,46,.6)'], ['Mityczny', 'MITYCZNY', '#3FE0C8', '0 0 0 1px #14161B, 0 0 36px rgba(63,224,200,.28), 0 0 72px rgba(63,224,200,.10)']];
+    const glows = R.map(([n, up, c, sh]) => ({ n, up, c, sh, bg: c + '1A' }));
+    const motion = [['dur-instant', '80ms', 'Naciśnięcie przycisku'], ['dur-fast', '120ms', 'Hover, tooltip, chipy'], ['dur-base', '200ms', 'Panele, spoiler, zakładki'], ['dur-slow', '360ms', 'Paski statystyk, bottom sheet'], ['dur-reveal', '900ms', 'Słup światła dropu'], ['ease-standard', 'cubic-bezier(.2,0,0,1)', 'Domyślny'], ['ease-out', 'cubic-bezier(.16,1,.3,1)', 'Wejścia, odsłanianie'], ['ease-in', 'cubic-bezier(.4,0,1,1)', 'Wyjścia, zamykanie']].map(([t, v, u]) => ({ t: '--vw-' + t, v, u }));
+    const dropSeq = [['0 ms', 'Słup światła rośnie od ziemi (scaleY 0→1, 900 ms, ease-out).'], ['600 ms', 'Tooltip: fade + 6 px w górę, 360 ms.'], ['700 ms', 'Nazwa, +N, statystyki: kolejno co 80 ms.'], ['1000 ms', 'Bonusy losowe: kolejno co 80 ms, każdy z krótkim błyskiem #6FA8F0.']].map(([t, d]) => ({ t, d }));
+    const stateNames = ['domyślny', 'hover', 'focus', 'aktywny', 'wyłączony'];
+    const mk = (base, hov, foc, act, dis) => [base, hov, foc, act, dis];
+    const P = { bg: 'linear-gradient(#E8C25A,#C9A45C)', fg: '#14161B', bd: '#7A6438', sh: 'inset 0 1px 0 rgba(255,255,255,.4)', op: 1, tf: 'none', fl: 'none' };
+    const Sx = { bg: 'linear-gradient(#252832,#1B1D23)', fg: '#E8E4DA', bd: '#3A3F4C', sh: 'inset 0 1px 0 rgba(255,255,255,.04), 0 2px 0 #0E0F12', op: 1, tf: 'none', fl: 'none' };
+    const G = { bg: 'transparent', fg: '#E8C25A', bd: 'transparent', sh: 'none', op: 1, tf: 'none', fl: 'none' };
+    const focus = '0 0 0 2px #14161B, 0 0 0 4px #E8C25A';
+    const states = b => mk(b, b === G ? { ...b, bd: '#3A3F4C' } : b === P ? { ...b, fl: 'brightness(1.08)' } : { ...b, bd: '#7A6438' }, { ...b, sh: focus }, { ...b, tf: 'translateY(1px)', sh: 'inset 0 2px 6px rgba(0,0,0,.5)', fl: b === P ? 'brightness(.94)' : 'none' }, { ...b, op: .45 });
+    const buttons = [
+      { cls: '.vw-btn--primary', label: 'SZUKAJ', h: '44px', play: false, states: states(P) },
+      { cls: '.vw-btn', label: 'SZCZEGÓŁY', h: '44px', play: false, states: states(Sx) },
+      { cls: '.vw-btn--ghost', label: 'WIĘCEJ', h: '44px', play: false, states: states(G) },
+      { cls: '.vw-btn--play', label: 'GRAJ', h: '48px', play: true, states: states(P) }
+    ];
+    const phasesD = [
+      { k: 'FAZA 1 · 100–60%', n: 'Popielny Welon', m: [['Obszar', '#E8763A', 'Fala Popiołu', 'Stożek ognia przed bossem co 15 s. Stań za jej plecami.'], ['Przyzwanie', '#A88BE8', 'Popielne ogary', 'Dwa ogary co 30 s. Zabijaj je od razu.']] },
+      { k: 'FAZA 2 · 60–25%', n: 'Płonące Kurhany', m: [['Strefa', '#E8665A', 'Płonące pola', 'Czerwone kręgi pod graczami wybuchają po 2 s.'], ['Wzmocnienie', '#E0C23B', 'Gniew popiołu', 'Boss atakuje o 20% szybciej.']] },
+      { k: 'FAZA 3 · 25–0%', n: 'Ostatni Żar', m: [['Zabicie', '#E8665A', 'Zapłon', '3 s rzucania. Przerwij Wyciszeniem albo schowaj się za kamieniem, inaczej giniesz.'], ['Wściekłość', '#C2352E', 'Po 4 min walki', 'Boss zadaje 300% obrażeń.']] }
+    ];
+    const phases = phasesD.map((p, i) => ({ k: p.k, n: p.n, bg: i === S.phase ? 'rgba(232,194,90,.08)' : '#252832', bd: i === S.phase ? '#7A6438' : '#3A3F4C', pick: () => this.setState({ phase: i }) }));
+    const mechs = phasesD[S.phase].m.map(([t, c, n, d]) => ({ t, c, cs: c + '33', n, d }));
+    let tRows = [], tChips = [], elems = [];
+    if (V) {
+      const regs = ['all', 'osada', 'las', 'kurhany'];
+      tChips = regs.map(r => { const on = S.chip === r; return { n: r === 'all' ? 'Wszystkie' : V.zone(r).pl, on, off: !on, set: () => this.setState({ chip: r }), bg: on ? '#E8C25A' : '#1B1D23', fg: on ? '#14161B' : '#C9CED6', bd: on ? '#E8C25A' : '#3A3F4C' }; });
+      tRows = V.monsters.filter(m => S.chip === 'all' || m.zone === S.chip).sort((a, b) => (a.lvl - b.lvl) * S.dir).slice(0, 5).map((m, i) => ({ n: m.pl, lvl: m.lvl, lvlS: 'Poz. ' + m.lvl, rank: V.ranks[m.rank].pl, rc: V.ranks[m.rank].c, reg: V.zone(m.zone).pl, bg: i === 1 ? 'rgba(232,194,90,.10)' : 'transparent' }));
+      elems = Object.values(V.elements).map(e => ({ n: e.pl, c: e.c }));
+    }
+    const bars = [['HP', '#2A1616', 'linear-gradient(#D9463E,#C2352E 50%,#9E2A24)', '64%', '11 776 / 18 400', '#FFFFFF', '0 1px 2px #000'], ['Mana', '#151E33', 'linear-gradient(#5A88E6,#3D6FD6 50%,#2C55AD)', '40%', '720 / 1 800', '#FFFFFF', '0 1px 2px #000'], ['Energia', '#2B2512', 'linear-gradient(#EAC75A,#D9B23A 50%,#B8932A)', '85%', '85 / 100', '#14161B', 'none'], ['EXP', '#1F1630', 'linear-gradient(#A47AE6,#8E5BD9 50%,#6F43B5)', '22%', '22,4%', '#FFFFFF', '0 1px 2px #000']].map(([n, track, fill, v, t, fg, ts]) => ({ n, track, fill, v, t, fg, ts }));
+    const ok = '#4FD16B';
+    const contrast = [['#E8E4DA / #14161B', '#E8E4DA', '#14161B', '14.6'], ['#C9CED6 / #14161B', '#C9CED6', '#14161B', '11.6'], ['#9A9DA8 / #14161B', '#9A9DA8', '#14161B', '6.7'], ['#9A9DA8 / #252832', '#9A9DA8', '#252832', '5.5'], ['#E8C25A / #14161B', '#E8C25A', '#14161B', '10.4'], ['#14161B / #E8C25A', '#14161B', '#E8C25A', '10.4'], ['#6FA8F0 / #16181D', '#6FA8F0', '#16181D', '7.1'], ['#3D8BFF / #14161B', '#3D8BFF', '#14161B', '5.5'], ['#B36BFF / #14161B', '#B36BFF', '#14161B', '5.6'], ['#E8665A / #14161B', '#E8665A', '#14161B', '5.6'], ['#D64A3E / #14161B', '#D64A3E', '#14161B', '4.2'], ['#7A6438 / #14161B', '#7A6438', '#14161B', '3.2'], ['#1E1C18 / #F4EFE4', '#1E1C18', '#F4EFE4', '15.1'], ['#7D5F17 / #F4EFE4', '#7D5F17', '#F4EFE4', '5.2'], ['#9A5008 / #F4EFE4', '#9A5008', '#F4EFE4', '5.2']].map(([p, fg, bg, r]) => { const v = parseFloat(r); return { p, fg, bg, r: r + ':1', ok: v >= 4.5 ? 'TAK' : v >= 3 ? 'TYLKO DUŻY' : 'NIE', okC: v >= 4.5 ? ok : v >= 3 ? '#E0C23B' : '#E8665A' }; });
+    const bps = [['xs', '0–479', 4, 16, 'projekt 390, tab bar dolny'], ['sm', '480–767', 4, 24, 'tabele jako karty'], ['md', '768–1023', 8, 32, 'górny pasek bez linków, hamburger'], ['lg', '1024–1279', 12, 48, 'pełna nawigacja, ToC zwinięty'], ['xl', '1280+', 12, 72, 'projekt 1440, max treści 1296']].map(([n, r, c, m, u]) => ({ n, r, c, m: m + 'px', u }));
+    return {
+      toc, colorGroups, spacing, glows, motion, dropSeq, stateNames, buttons, phases, mechs, tChips, tRows, elems, bars, contrast, bps,
+      tSort: () => this.setState(s => ({ dir: -s.dir })), tArrow: S.dir > 0 ? '↑' : '↓',
+      toggleSpoiler: () => this.setState(s => ({ spoiler: !s.spoiler })), spoilerBlur: S.spoiler ? 'none' : 'blur(6px)', spoilerCta: S.spoiler ? 'UKRYJ' : 'POKAŻ',
+      setPl: () => this.setState({ lang: 'pl' }), setEn: () => this.setState({ lang: 'en' }),
+      plBg: S.lang === 'pl' ? '#252832' : 'transparent', plFg: S.lang === 'pl' ? '#E8C25A' : '#9A9DA8', enBg: S.lang === 'en' ? '#252832' : 'transparent', enFg: S.lang === 'en' ? '#E8C25A' : '#9A9DA8',
+      skel: [{ w: '70%' }, { w: '55%' }, { w: '80%' }, { w: '45%' }],
+      cols12: Array.from({ length: 12 }, (_, i) => ({ i })), cols4: Array.from({ length: 4 }, (_, i) => ({ i }))
+    };
+  }
+}
+</script>
+</body>
+</html>

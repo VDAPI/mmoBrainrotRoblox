@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<sc-if value="{{ isDesk }}" hint-placeholder-val="{{ true }}">
+<div style="height:72px;background:linear-gradient(#252832,#1B1D23);border-bottom:1px solid #7A6438;box-shadow:0 1px 0 #14161B,inset 0 1px 0 rgba(232,194,90,.12);display:flex;align-items:center;padding:0 48px;gap:44px;font-family:'Alegreya Sans',sans-serif">
+  <a href="{{ home }}" style="font-family:'Grenze Gotisch',serif;font-weight:700;font-size:36px;color:#E8C25A;text-shadow:0 0 14px rgba(232,194,90,.35)">Vaelthorn</a>
+  <div style="display:flex;gap:26px;font-size:15px;font-weight:700;letter-spacing:.08em;height:72px;align-items:stretch">
+    <sc-for list="{{ links }}" as="l" hint-placeholder-count="4">
+      <sc-if value="{{ l.on }}"><a href="{{ l.href }}" style="display:flex;align-items:center;color:#E8E4DA;border-bottom:2px solid #E8C25A;padding-top:2px">{{ l.label }}</a></sc-if>
+      <sc-if value="{{ l.off }}"><a href="{{ l.href }}" style="display:flex;align-items:center;color:#9A9DA8;border-bottom:2px solid transparent;padding-top:2px" style-hover="color:#E8E4DA">{{ l.label }}</a></sc-if>
+    </sc-for>
+  </div>
+  <div style="margin-left:auto;display:flex;gap:14px;align-items:center">
+    <a href="{{ search }}" style="display:flex;align-items:center;gap:40px;height:40px;padding:0 12px 0 14px;background:#14161B;border:1px solid #3A3F4C;box-shadow:inset 0 2px 4px rgba(0,0,0,.4);font-size:15px;color:#9A9DA8"><span>{{ searchPh }}</span><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;border:1px solid #3A3F4C;padding:0 6px">Ctrl K</span></a>
+    <div style="display:flex;border:1px solid #3A3F4C;font-size:14px;font-weight:700">
+      <sc-if value="{{ plOn }}"><span style="padding:6px 10px;background:#252832;color:#E8C25A">PL</span></sc-if>
+      <sc-if value="{{ plOff }}"><span onClick="{{ setPl }}" style="padding:6px 10px;color:#9A9DA8;cursor:pointer">PL</span></sc-if>
+      <sc-if value="{{ enOn }}"><span style="padding:6px 10px;background:#252832;color:#E8C25A">EN</span></sc-if>
+      <sc-if value="{{ enOff }}"><span onClick="{{ setEn }}" style="padding:6px 10px;color:#9A9DA8;cursor:pointer">EN</span></sc-if>
+    </div>
+    <div style="background:linear-gradient(#E8C25A,#C9A45C);color:#14161B;font-weight:800;font-size:15px;letter-spacing:.06em;padding:10px 18px;border:1px solid #7A6438;box-shadow:inset 0 1px 0 rgba(255,255,255,.4)">{{ play }}</div>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isMob }}" hint-placeholder-val="{{ false }}">
+<div style="height:60px;background:linear-gradient(#252832,#1B1D23);border-bottom:1px solid #7A6438;display:flex;align-items:center;justify-content:space-between;padding:0 12px 0 16px;font-family:'Alegreya Sans',sans-serif">
+  <a href="{{ home }}" style="font-family:'Grenze Gotisch',serif;font-weight:700;font-size:28px;color:#E8C25A;text-shadow:0 0 12px rgba(232,194,90,.35)">Vaelthorn</a>
+  <div style="display:flex;gap:8px;align-items:center">
+    <div style="display:flex;border:1px solid #3A3F4C;font-size:13px;font-weight:700;height:36px;align-items:stretch">
+      <sc-if value="{{ plOn }}"><span style="display:flex;align-items:center;padding:0 10px;background:#252832;color:#E8C25A">PL</span></sc-if>
+      <sc-if value="{{ plOff }}"><span onClick="{{ setPl }}" style="display:flex;align-items:center;padding:0 10px;color:#9A9DA8;cursor:pointer">PL</span></sc-if>
+      <sc-if value="{{ enOn }}"><span style="display:flex;align-items:center;padding:0 10px;background:#252832;color:#E8C25A">EN</span></sc-if>
+      <sc-if value="{{ enOff }}"><span onClick="{{ setEn }}" style="display:flex;align-items:center;padding:0 10px;color:#9A9DA8;cursor:pointer">EN</span></sc-if>
+    </div>
+    <a href="{{ search }}" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid #3A3F4C;background:#14161B"><div style="width:16px;height:16px;border:2px solid #E8C25A;border-radius:50%"></div></a>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isTabs }}" hint-placeholder-val="{{ false }}">
+<div style="height:68px;background:linear-gradient(#252832,#1B1D23);border-top:1px solid #7A6438;display:grid;grid-template-columns:repeat(5,1fr);font-family:'Alegreya Sans',sans-serif;font-size:12px;font-weight:800;letter-spacing:.03em">
+  <sc-for list="{{ tabs }}" as="l" hint-placeholder-count="5">
+    <sc-if value="{{ l.on }}"><a href="{{ l.href }}" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;color:#E8C25A"><div style="width:12px;height:12px;background:#E8C25A;transform:rotate(45deg);box-shadow:0 0 8px rgba(232,194,90,.6)"></div>{{ l.label }}</a></sc-if>
+    <sc-if value="{{ l.off }}"><a href="{{ l.href }}" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;color:#9A9DA8"><div style="width:12px;height:12px;border:1.5px solid #9A9DA8;transform:rotate(45deg)"></div>{{ l.label }}</a></sc-if>
+  </sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{ isPages }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:13px">
+  <span style="color:#9A9DA8;letter-spacing:.12em;margin-right:8px">VAELTHORN WIKI · KUŹNIA · STRONY</span>
+  <sc-for list="{{ pages }}" as="l" hint-placeholder-count="7">
+    <sc-if value="{{ l.on }}"><a href="{{ l.href }}" style="padding:6px 12px;border:1px solid #C9A45C;color:#14161B;background:#C9A45C">{{ l.label }}</a></sc-if>
+    <sc-if value="{{ l.off }}"><a href="{{ l.href }}" style="padding:6px 12px;border:1px solid #3A3F4C;color:#E8E4DA" style-hover="border-color:#C9A45C">{{ l.label }}</a></sc-if>
+  </sc-for>
+</div>
+</sc-if>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:72},&quot;active&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;home&quot;,&quot;items&quot;,&quot;item&quot;,&quot;monster&quot;,&quot;zone&quot;,&quot;upgrade&quot;,&quot;search&quot;],&quot;default&quot;:&quot;home&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;variant&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;desktop&quot;,&quot;mobile&quot;,&quot;tabs&quot;,&quot;pages&quot;],&quot;default&quot;:&quot;desktop&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;lang&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;pl&quot;,&quot;en&quot;],&quot;default&quot;:&quot;pl&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;onLang&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;(l: string) =&gt; void&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const lang = this.props.lang || 'pl', L = lang === 'en', a = this.props.active || 'home', v = this.props.variant || 'desktop';
+    const P = { home: 'Vaelthorn Wiki - Glowna.dc.html', items: 'Vaelthorn Wiki - Przedmioty.dc.html', item: 'Vaelthorn Wiki - Przedmiot.dc.html', monster: 'Vaelthorn Wiki - Potwor.dc.html', zone: 'Vaelthorn Wiki - Kraina.dc.html', upgrade: 'Vaelthorn Wiki - Ulepszanie.dc.html', search: 'Vaelthorn Wiki - Szukaj.dc.html', bestiary: 'Vaelthorn Wiki - Bestiariusz.dc.html', mage: 'Vaelthorn Wiki - Klasa Mag.dc.html', map: 'Vaelthorn Wiki - Mapa swiata.dc.html', ds: 'Vaelthorn Design System.dc.html' };
+    const h = k => encodeURI(P[k]);
+    const grp = { item: 'items', monster: 'bestiary', zone: 'map' };
+    const isOn = (k, strict) => k === a || (!strict && grp[a] === k);
+    const mk = (arr, strict) => arr.map(([k, pl, en]) => { const on = isOn(k, strict); return { href: h(k), label: L ? en : pl, on, off: !on }; });
+    const set = l => () => this.props.onLang && this.props.onLang(l);
+    return {
+      isDesk: v === 'desktop', isMob: v === 'mobile', isTabs: v === 'tabs', isPages: v === 'pages',
+      links: mk([['items', 'PRZEDMIOTY', 'ITEMS'], ['bestiary', 'BESTIARIUSZ', 'BESTIARY'], ['mage', 'KLASY', 'CLASSES'], ['map', 'MAPA', 'MAP'], ['upgrade', 'ULEPSZANIE', 'UPGRADING']]),
+      tabs: mk([['home', 'Główna', 'Home'], ['items', 'Przedmioty', 'Items'], ['bestiary', 'Bestie', 'Bestiary'], ['map', 'Mapa', 'Map'], ['search', 'Szukaj', 'Search']]),
+      pages: mk([['ds', 'Design system', 'Design system'], ['home', 'Główna', 'Home'], ['bestiary', 'Bestiariusz', 'Bestiary'], ['monster', 'Potwór', 'Monster'], ['items', 'Baza przedmiotów', 'Item database'], ['item', 'Przedmiot', 'Item'], ['mage', 'Klasa Mag', 'Mage class'], ['map', 'Mapa świata', 'World map'], ['zone', 'Kraina', 'Zone'], ['upgrade', 'Ulepszanie', 'Upgrading'], ['search', 'Wyszukiwanie', 'Search']], true),
+      home: h('home'), search: h('search'),
+      searchPh: L ? 'Search the wiki…' : 'Szukaj w wiki…', play: L ? 'PLAY ON ROBLOX' : 'ZAGRAJ NA ROBLOX',
+      plOn: !L, plOff: L, enOn: L, enOff: !L, setPl: set('pl'), setEn: set('en')
+    };
+  }
+}
+</script>
+</body>
+</html>

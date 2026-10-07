@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Grenze+Gotisch:wght@500;700&family=Alegreya+Sans:ital,wght@0,400;0,500;0,700;0,800;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<script src="vw-data.js"></script>
+<style>body{margin:0;background:#0E0F12;color:#E8E4DA;font-family:'Alegreya Sans',sans-serif;-webkit-font-smoothing:antialiased}a{color:#E8C25A;text-decoration:none}a:hover{color:#FFE7C2}*{box-sizing:border-box}</style>
+</helmet>
+<div style="padding:56px 80px 120px;display:flex;flex-direction:column;gap:32px">
+  <dc-import name="VwNav" variant="pages" active="item" lang="{{ lang }}" hint-size="100%,36px"></dc-import>
+  <sc-if value="{{ ready }}" hint-placeholder-val="{{ true }}">
+  <div style="display:flex;gap:60px;align-items:flex-start;width:max-content">
+
+    <div data-screen-label="Przedmiot desktop" style="flex-shrink:0;width:1440px;background:#14161B;background-image:radial-gradient(ellipse 70% 30% at 50% 100%,rgba(217,110,40,.12),transparent 70%);outline:1px solid #3A3F4C">
+      <dc-import name="VwNav" variant="desktop" active="item" lang="{{ lang }}" on-lang="{{ setLang }}" hint-size="1440px,72px"></dc-import>
+      <div style="padding:22px 72px;display:flex;gap:10px;font-size:15px;color:#9A9DA8"><a href="{{ homeHref }}" style="color:#9A9DA8">Wiki</a><span>/</span><a href="{{ listHref }}" style="color:#9A9DA8">{{ t.items }}</a><span>/</span><span>{{ t.weapon }}</span><span>/</span><span style="color:#E8E4DA">{{ name }}</span></div>
+      <div style="display:grid;grid-template-columns:400px minmax(0,1fr);gap:56px;padding:8px 72px 88px;align-items:start">
+        <div style="display:flex;flex-direction:column;gap:18px">
+          <div style="position:relative;height:270px;overflow:hidden;background:radial-gradient(ellipse at 50% 85%,rgba(255,154,46,.18),transparent 60%),#101216;border:1px solid #3A3F4C">
+            <div style="position:absolute;left:50%;top:0;bottom:70px;width:90px;margin-left:-45px;background:linear-gradient(to top,rgba(255,154,46,.9),rgba(255,180,80,.4) 50%,rgba(255,154,46,0));filter:blur(9px)"></div>
+            <div style="position:absolute;left:50%;top:20px;bottom:76px;width:12px;margin-left:-6px;background:linear-gradient(to top,#FFF2D8,rgba(255,226,170,0));filter:blur(2px)"></div>
+            <div style="position:absolute;left:50%;bottom:34px;width:76px;height:76px;margin-left:-38px;background:repeating-linear-gradient(135deg,#14161B 0 6px,#1B1D23 6px 12px);border:1px solid #FF9A2E;box-shadow:0 0 28px rgba(255,154,46,.55),inset 0 0 16px rgba(255,154,46,.4)"></div>
+            <div style="position:absolute;left:14px;bottom:12px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#9A9DA8">{{ t.render }}</div>
+          </div>
+          <dc-import name="VwTooltip" item="ostrze" lang="{{ lang }}" upgrade="{{ lvl }}" hint-size="400px,400px"></dc-import>
+          <div style="background:#1B1D23;border:1px solid #3A3F4C">
+            <sc-for list="{{ info }}" as="r" hint-placeholder-count="5"><div style="display:flex;justify-content:space-between;gap:12px;padding:11px 16px;border-bottom:1px solid #252832;font-size:16px"><span style="color:#9A9DA8">{{ r.k }}</span><span style="font-weight:700;text-align:right">{{ r.v }}</span></div></sc-for>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:44px;min-width:0">
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <h1 style="margin:0;font-size:54px;font-weight:800;line-height:1;color:#FF9A2E;text-shadow:0 0 30px rgba(255,154,46,.25)">{{ name }}</h1>
+            <div style="display:flex;gap:8px;flex-wrap:wrap"><sc-for list="{{ chips }}" as="c" hint-placeholder-count="4"><span style="font-size:15px;font-weight:700;border:1px solid #3A3F4C;background:#1B1D23;padding:6px 12px">{{ c }}</span></sc-for></div>
+            <p style="margin:0;font-size:20px;line-height:1.55;max-width:760px;text-wrap:pretty">{{ t.intro1 }}<a href="{{ monHref }}">{{ t.monName }}</a>{{ t.intro2 }}</p>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <div style="display:flex;align-items:center;gap:18px"><span style="font-family:'Grenze Gotisch',serif;font-size:34px;color:#E8C25A">{{ t.byUp }}</span><div style="flex:1;height:1px;background:linear-gradient(90deg,#7A6438,transparent)"></div></div>
+            <div style="display:flex;gap:6px">
+              <sc-for list="{{ lvls }}" as="b" hint-placeholder-count="10">
+                <sc-if value="{{ b.on }}"><div style="flex:1;height:48px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;background:linear-gradient(#E8C25A,#C9A45C);color:#14161B;border:1px solid #7A6438">{{ b.t }}</div></sc-if>
+                <sc-if value="{{ b.off }}"><div onClick="{{ b.set }}" style="flex:1;height:48px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;background:linear-gradient(#252832,#1B1D23);color:#9A9DA8;border:1px solid #3A3F4C;cursor:pointer" style-hover="color:#E8E4DA;border-color:#7A6438">{{ b.t }}</div></sc-if>
+              </sc-for>
+            </div>
+            <div style="border:1px solid #3A3F4C;background:#1B1D23">
+              <div style="display:grid;grid-template-columns:100px 1fr 1fr 1.4fr;padding:12px 18px;font-size:13px;font-weight:800;letter-spacing:.14em;color:#C9A45C;border-bottom:1px solid #3A3F4C"><span>{{ t.cLvl }}</span><span>{{ t.cAtk }}</span><span>{{ t.cP }}</span><span>{{ t.cFail }}</span></div>
+              <sc-for list="{{ rows }}" as="r" hint-placeholder-count="10">
+                <div onClick="{{ r.set }}" style="display:grid;grid-template-columns:100px 1fr 1fr 1.4fr;padding:10px 18px;font-size:17px;font-variant-numeric:tabular-nums;border-bottom:1px solid #252832;background:{{ r.bg }};cursor:pointer">
+                  <span style="font-weight:800;color:{{ r.lc }}">{{ r.l }}</span><span style="font-weight:700">{{ r.atk }}</span><span>{{ r.p }}</span><span style="color:{{ r.fc }}">{{ r.f }}</span>
+                </div>
+              </sc-for>
+            </div>
+            <a href="{{ upHref }}" style="font-size:16px;font-weight:700">{{ t.calc }}</a>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <div style="display:flex;align-items:center;gap:18px"><span style="font-family:'Grenze Gotisch',serif;font-size:34px;color:#E8C25A">{{ t.pool }}</span><div style="flex:1;height:1px;background:linear-gradient(90deg,#7A6438,transparent)"></div></div>
+            <p style="margin:0;font-size:18px;color:#9A9DA8">{{ t.poolD }}</p>
+            <div style="border:1px solid #3A3F4C;background:#1B1D23">
+              <div style="display:grid;grid-template-columns:1.6fr 1fr 1fr;padding:12px 18px;font-size:13px;font-weight:800;letter-spacing:.14em;color:#C9A45C;border-bottom:1px solid #3A3F4C"><span>{{ t.cBonus }}</span><span>{{ t.cRange }}</span><span>{{ t.cFreq }}</span></div>
+              <sc-for list="{{ pool }}" as="p" hint-placeholder-count="5">
+                <div style="display:grid;grid-template-columns:1.6fr 1fr 1fr;padding:11px 18px;font-size:17px;border-bottom:1px solid #252832"><span style="color:#6FA8F0;font-weight:700">{{ p.n }}</span><span style="font-variant-numeric:tabular-nums">{{ p.r }}</span><span style="color:{{ p.c }}">{{ p.f }}</span></div>
+              </sc-for>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:28px">
+            <div style="display:flex;flex-direction:column;gap:14px">
+              <span style="font-family:'Grenze Gotisch',serif;font-size:30px;color:#E8C25A">{{ t.src }}</span>
+              <sc-for list="{{ sources }}" as="s" hint-placeholder-count="2">
+                <div style="display:flex;gap:14px;align-items:center;padding:12px;background:linear-gradient(#252832,#1B1D23);border:1px solid #3A3F4C">
+                  <div style="width:44px;height:44px;flex-shrink:0;background:repeating-linear-gradient(135deg,#14161B 0 5px,#1B1D23 5px 10px);border:1px solid #7A6438"></div>
+                  <div style="display:flex;flex-direction:column;gap:2px;flex:1"><a href="{{ s.href }}" style="font-size:18px;font-weight:800;color:#E8E4DA">{{ s.n }}</a><span style="font-size:14px;color:#9A9DA8">{{ s.m }}</span></div>
+                  <span style="font-size:18px;font-weight:800;color:#FF9A2E;font-variant-numeric:tabular-nums">{{ s.ch }}</span>
+                </div>
+              </sc-for>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:14px">
+              <span style="font-family:'Grenze Gotisch',serif;font-size:30px;color:#E8C25A">{{ t.hist }}</span>
+              <sc-for list="{{ hist }}" as="h" hint-placeholder-count="3">
+                <div style="display:flex;gap:14px;padding:10px 0;border-bottom:1px solid #252832;font-size:17px"><span style="font-family:'IBM Plex Mono',monospace;font-size:14px;color:#C9A45C;width:52px;flex-shrink:0;padding-top:3px">{{ h.v }}</span><span>{{ h.t }}</span></div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div data-screen-label="Przedmiot mobile" style="flex-shrink:0;width:390px;background:#14161B;outline:1px solid #3A3F4C;border-radius:28px;overflow:hidden">
+      <dc-import name="VwNav" variant="mobile" lang="{{ lang }}" on-lang="{{ setLang }}" hint-size="390px,60px"></dc-import>
+      <div style="padding:14px 16px 0;font-size:14px;color:#9A9DA8;display:flex;gap:8px"><a href="{{ listHref }}" style="color:#9A9DA8">‹ {{ t.items }}</a></div>
+      <div style="padding:14px 16px 0;display:flex;flex-direction:column;gap:12px">
+        <h1 style="margin:0;font-size:34px;font-weight:800;line-height:1.02;color:#FF9A2E">{{ name }}</h1>
+        <div style="display:flex;gap:6px;flex-wrap:wrap"><sc-for list="{{ chips }}" as="c" hint-placeholder-count="4"><span style="font-size:14px;font-weight:700;border:1px solid #3A3F4C;background:#1B1D23;padding:5px 10px">{{ c }}</span></sc-for></div>
+      </div>
+      <div style="position:relative;height:190px;margin:16px 16px 0;overflow:hidden;background:radial-gradient(ellipse at 50% 85%,rgba(255,154,46,.18),transparent 60%),#101216;border:1px solid #3A3F4C">
+        <div style="position:absolute;left:50%;top:0;bottom:50px;width:70px;margin-left:-35px;background:linear-gradient(to top,rgba(255,154,46,.9),rgba(255,180,80,.4) 50%,rgba(255,154,46,0));filter:blur(8px)"></div>
+        <div style="position:absolute;left:50%;bottom:24px;width:60px;height:60px;margin-left:-30px;background:repeating-linear-gradient(135deg,#14161B 0 5px,#1B1D23 5px 10px);border:1px solid #FF9A2E;box-shadow:0 0 22px rgba(255,154,46,.55)"></div>
+      </div>
+      <div style="padding:14px 16px 0"><dc-import name="VwTooltip" item="ostrze" lang="{{ lang }}" upgrade="{{ lvl }}" hint-size="100%,400px"></dc-import></div>
+      <div style="padding:28px 16px 0;display:flex;flex-direction:column;gap:12px">
+        <span style="font-family:'Grenze Gotisch',serif;font-size:28px;color:#E8C25A">{{ t.byUp }}</span>
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px">
+          <sc-for list="{{ lvls }}" as="b" hint-placeholder-count="10">
+            <sc-if value="{{ b.on }}"><div style="height:46px;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:800;background:linear-gradient(#E8C25A,#C9A45C);color:#14161B">{{ b.t }}</div></sc-if>
+            <sc-if value="{{ b.off }}"><div onClick="{{ b.set }}" style="height:46px;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:800;background:linear-gradient(#252832,#1B1D23);color:#9A9DA8;border:1px solid #3A3F4C;cursor:pointer">{{ b.t }}</div></sc-if>
+          </sc-for>
+        </div>
+        <div style="border:1px solid #3A3F4C;background:#1B1D23">
+          <sc-for list="{{ rows }}" as="r" hint-placeholder-count="10">
+            <div onClick="{{ r.set }}" style="display:grid;grid-template-columns:48px 1fr 56px;gap:8px;padding:9px 12px;font-size:16px;font-variant-numeric:tabular-nums;border-bottom:1px solid #252832;background:{{ r.bg }}"><span style="font-weight:800;color:{{ r.lc }}">{{ r.l }}</span><span style="font-weight:700">{{ r.atk }}</span><span style="text-align:right;color:{{ r.fc }}">{{ r.p }}</span></div>
+          </sc-for>
+        </div>
+      </div>
+      <div style="padding:28px 16px 0;display:flex;flex-direction:column;gap:10px">
+        <span style="font-family:'Grenze Gotisch',serif;font-size:28px;color:#E8C25A">{{ t.pool }}</span>
+        <sc-for list="{{ pool }}" as="p" hint-placeholder-count="5">
+          <div style="display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid #252832;font-size:16px"><div style="display:flex;flex-direction:column;gap:2px"><span style="color:#6FA8F0;font-weight:700">{{ p.n }}</span><span style="font-size:14px;color:{{ p.c }}">{{ p.f }}</span></div><span style="font-variant-numeric:tabular-nums;white-space:nowrap">{{ p.r }}</span></div>
+        </sc-for>
+      </div>
+      <div style="padding:28px 16px 28px;display:flex;flex-direction:column;gap:10px">
+        <span style="font-family:'Grenze Gotisch',serif;font-size:28px;color:#E8C25A">{{ t.src }}</span>
+        <sc-for list="{{ sources }}" as="s" hint-placeholder-count="2">
+          <a href="{{ s.href }}" style="display:flex;gap:12px;align-items:center;min-height:56px;padding:8px 12px;background:linear-gradient(#252832,#1B1D23);border:1px solid #3A3F4C;color:#E8E4DA"><div style="display:flex;flex-direction:column;gap:2px;flex:1"><span style="font-size:17px;font-weight:800">{{ s.n }}</span><span style="font-size:13px;color:#9A9DA8">{{ s.m }}</span></div><span style="font-size:17px;font-weight:800;color:#FF9A2E">{{ s.ch }}</span></a>
+        </sc-for>
+      </div>
+      <dc-import name="VwNav" variant="tabs" active="items" lang="{{ lang }}" hint-size="390px,68px"></dc-import>
+    </div>
+  </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;upgrade&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;min&quot;:0,&quot;max&quot;:9,&quot;step&quot;:1,&quot;default&quot;:7,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Przedmiot&quot;}}">
+const T = {
+  pl: { items: 'Przedmioty', weapon: 'Broń', render: 'render przedmiotu 3D', monName: 'Strażnika Kurhanu', intro1: 'Legendarny miecz dwuręczny dla Wojowników. Wypada ze ', intro2: ' w Kurhanach Wschodu. Trzy losowe bonusy są losowane w chwili dropu z puli poniżej, więc każdy egzemplarz jest inny.', byUp: 'Statystyki wg ulepszenia', cLvl: 'POZIOM', cAtk: 'ATAK', cP: 'SZANSA', cFail: 'PRZY PORAŻCE', calc: 'Policz koszt w kalkulatorze ulepszania →', pool: 'Pula losowych bonusów', poolD: 'Przy dropie losowane są 3 różne bonusy. Wartość w zakresie jest losowa.', cBonus: 'BONUS', cRange: 'ZAKRES', cFreq: 'CZĘSTOŚĆ', src: 'Źródła', hist: 'Historia zmian', lvl: 'Poz. ', base: 'bazowy',
+    info: [['ID', 'blade_ash_king'], ['Wiązanie', 'Po podniesieniu'], ['Liczba bonusów', '3 (losowe)'], ['Dodano', '0.9.0'], ['Ostatnia zmiana', '0.9.3']],
+    pool: [['Obrażenia od ognia', '+8–16%', 0], ['Szansa na trafienie krytyczne', '+3–7%', 0], ['Kradzież życia', '1,0–2,5%', 1], ['Szybkość ataku', '+4–8%', 1], ['Obrażenia przeciw nieumarłym', '+10–20%', 2]],
+    freq: ['Częsty', 'Rzadki', 'Bardzo rzadki'],
+    hist: [['0.9.3', 'Nowa pula bonusów, dodana kradzież życia'], ['0.9.1', 'Bazowy atak 120–160 → 128–171'], ['0.9.0', 'Dodano przedmiot']] },
+  en: { items: 'Items', weapon: 'Weapons', render: '3D item render', monName: 'Barrow Warden', intro1: 'A legendary two-handed sword for Warriors. Drops from the ', intro2: ' in the Eastern Barrows. Three random bonuses are rolled from the pool below when it drops, so every copy is different.', byUp: 'Stats by upgrade level', cLvl: 'LEVEL', cAtk: 'ATTACK', cP: 'CHANCE', cFail: 'ON FAILURE', calc: 'Work out the cost in the upgrade calculator →', pool: 'Random bonus pool', poolD: 'Three different bonuses are rolled on drop. The value within each range is random.', cBonus: 'BONUS', cRange: 'RANGE', cFreq: 'FREQUENCY', src: 'Sources', hist: 'Change history', lvl: 'Lv. ', base: 'base',
+    info: [['ID', 'blade_ash_king'], ['Binding', 'On pickup'], ['Bonus count', '3 (random)'], ['Added', '0.9.0'], ['Last change', '0.9.3']],
+    pool: [['Fire damage', '+8–16%', 0], ['Critical hit chance', '+3–7%', 0], ['Life steal', '1.0–2.5%', 1], ['Attack speed', '+4–8%', 1], ['Damage vs undead', '+10–20%', 2]],
+    freq: ['Common', 'Rare', 'Very rare'],
+    hist: [['0.9.3', 'New bonus pool, life steal added'], ['0.9.1', 'Base attack 120–160 → 128–171'], ['0.9.0', 'Item added']] }
+};
+class Component extends DCLogic {
+  state = { lang: null, lvl: null };
+  componentDidMount() {
+    try { const l = localStorage.getItem('vw-lang'); if (l === 'pl' || l === 'en') this.setState({ lang: l }); } catch (e) {}
+    if (!window.VW) this._i = setInterval(() => { if (window.VW) { clearInterval(this._i); this.forceUpdate(); } }, 40);
+  }
+  componentWillUnmount() { clearInterval(this._i); }
+  renderVals() {
+    const lang = this.state.lang || 'pl', L = lang === 'en', t = T[lang];
+    const setLang = l => { this.setState({ lang: l }); try { localStorage.setItem('vw-lang', l); } catch (e) {} };
+    const V = window.VW;
+    if (!V) return { ready: false, lang, setLang, t };
+    const it = V.item('ostrze'), r = V.rar[it.rar];
+    const lvl = this.state.lvl ?? Math.max(0, Math.min(9, this.props.upgrade ?? 7));
+    const set = n => () => this.setState({ lvl: n });
+    const fc = ['#4FD16B', '#E0C23B', '#D64A3E'];
+    return {
+      ready: true, lang, setLang, t, lvl,
+      homeHref: V.href('home'), listHref: V.href('items'), monHref: V.href('monster'), upHref: V.href('upgrade'),
+      name: L ? it.en : it.pl,
+      chips: [L ? r.en : r.pl, L ? it.ten : it.tpl, t.lvl + it.lvl, V.loc(V.classes[it.cls], lang)],
+      info: t.info.map(([k, v]) => ({ k, v })),
+      lvls: Array.from({ length: 10 }, (_, i) => ({ t: '+' + i, on: i === lvl, off: i !== lvl, set: set(i) })),
+      rows: Array.from({ length: 10 }, (_, i) => {
+        const u = V.upgrade[i - 1], s = V.statAt(it, i), sel = i === lvl, f = u ? V.failT[u.fail] : null;
+        return { l: '+' + i, atk: s.join('–'), p: u ? u.p + '%' : '—', f: f ? V.loc(f, lang) : t.base, fc: f ? f.c : '#9A9DA8', bg: sel ? 'rgba(232,194,90,.12)' : 'transparent', lc: sel ? '#E8C25A' : '#E8E4DA', set: set(i) };
+      }),
+      pool: t.pool.map(([n, rr, fi]) => ({ n, r: rr, f: t.freq[fi], c: fc[fi] })),
+      sources: [
+        { n: L ? 'Barrow Warden' : 'Strażnik Kurhanu', m: (L ? 'Elite · Lv. 34 · Eastern Barrows' : 'Elita · Poz. 34 · Kurhany Wschodu'), ch: V.nf(0.04, lang) + '%', href: V.href('monster') },
+        { n: L ? 'Lady of Ashes' : 'Pani Popiołów', m: (L ? 'Boss · Lv. 38 · Eastern Barrows' : 'Boss · Poz. 38 · Kurhany Wschodu'), ch: V.nf(0.02, lang) + '%', href: V.href('zone') }
+      ],
+      hist: t.hist.map(([v, tt]) => ({ v, t: tt }))
+    };
+  }
+}
+</script>
+</body>
+</html>

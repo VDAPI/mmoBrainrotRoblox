@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Grenze+Gotisch:wght@500;700&family=Alegreya+Sans:ital,wght@0,400;0,500;0,700;0,800;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<script src="vw-data.js"></script>
+<style>body{margin:0;background:#0E0F12;color:#E8E4DA;font-family:'Alegreya Sans',sans-serif;-webkit-font-smoothing:antialiased}a{color:#E8C25A;text-decoration:none}a:hover{color:#FFE7C2}*{box-sizing:border-box}</style>
+</helmet>
+<div style="padding:56px 80px 120px;display:flex;flex-direction:column;gap:32px">
+  <dc-import name="VwNav" variant="pages" active="upgrade" lang="{{ lang }}" hint-size="100%,36px"></dc-import>
+  <sc-if value="{{ ready }}" hint-placeholder-val="{{ true }}">
+  <div style="display:flex;gap:60px;align-items:flex-start;width:max-content">
+
+    <div data-screen-label="Ulepszanie desktop" style="flex-shrink:0;width:1440px;background:#14161B;background-image:radial-gradient(ellipse 60% 35% at 50% 100%,rgba(217,110,40,.16),transparent 70%);outline:1px solid #3A3F4C">
+      <dc-import name="VwNav" variant="desktop" active="upgrade" lang="{{ lang }}" on-lang="{{ setLang }}" hint-size="1440px,72px"></dc-import>
+      <div style="padding:44px 56px 32px;display:flex;flex-direction:column;gap:12px">
+        <span style="font-size:15px;color:#9A9DA8">Wiki / {{ t.crumb }}</span>
+        <h1 style="margin:0;font-family:'Grenze Gotisch',serif;font-weight:700;font-size:72px;line-height:.9;color:#E8C25A">{{ t.title }}</h1>
+        <p style="margin:0;font-size:20px;line-height:1.5;color:#C9CED6;max-width:760px;text-wrap:pretty">{{ t.intro }}</p>
+      </div>
+      <div style="display:grid;grid-template-columns:330px minmax(0,1fr) 380px;gap:28px;padding:0 56px 88px;align-items:start">
+        <div style="display:flex;flex-direction:column;gap:26px">
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <span style="font-size:13px;font-weight:800;letter-spacing:.18em;color:#C9A45C">{{ t.item }}</span>
+            <sc-for list="{{ items }}" as="i" hint-placeholder-count="7">
+              <div onClick="{{ i.pick }}" style="display:flex;gap:10px;align-items:center;height:48px;padding:0 10px;border:1px solid {{ i.bd }};background:{{ i.bg }};cursor:pointer">
+                <div style="width:30px;height:30px;flex-shrink:0;border:1px solid {{ i.c }};background:repeating-linear-gradient(135deg,#14161B 0 4px,#1B1D23 4px 8px)"></div><span style="font-size:16px;font-weight:800;color:{{ i.c }}">{{ i.n }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <span style="font-size:13px;font-weight:800;letter-spacing:.18em;color:#C9A45C">{{ t.from }}</span>
+            <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:5px">
+              <sc-for list="{{ fromB }}" as="b" hint-placeholder-count="9">
+                <sc-if value="{{ b.on }}"><div style="height:44px;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:800;background:#E8E4DA;color:#14161B">{{ b.t }}</div></sc-if>
+                <sc-if value="{{ b.off }}"><div onClick="{{ b.set }}" style="height:44px;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:800;background:linear-gradient(#252832,#1B1D23);color:#9A9DA8;border:1px solid #3A3F4C;cursor:pointer">{{ b.t }}</div></sc-if>
+              </sc-for>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <span style="font-size:13px;font-weight:800;letter-spacing:.18em;color:#C9A45C">{{ t.to }}</span>
+            <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:5px">
+              <sc-for list="{{ toB }}" as="b" hint-placeholder-count="9">
+                <sc-if value="{{ b.on }}"><div style="height:44px;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:800;background:linear-gradient(#E8C25A,#C9A45C);color:#14161B">{{ b.t }}</div></sc-if>
+                <sc-if value="{{ b.off }}"><div onClick="{{ b.set }}" style="height:44px;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:800;background:linear-gradient(#252832,#1B1D23);color:#9A9DA8;border:1px solid #3A3F4C;cursor:pointer">{{ b.t }}</div></sc-if>
+              </sc-for>
+            </div>
+          </div>
+          <div onClick="{{ toggleSeal }}" style="display:flex;gap:12px;align-items:center;padding:14px;border:1px solid {{ sealBd }};background:#1B1D23;cursor:pointer">
+            <div style="width:22px;height:22px;flex-shrink:0;border:1px solid {{ sealBd }};background:{{ sealFill }}"></div>
+            <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:17px;font-weight:800">{{ t.seal }}</span><span style="font-size:14px;color:#9A9DA8;line-height:1.35">{{ t.sealD }}</span></div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:20px;min-width:0">
+          <div style="background:linear-gradient(#252832,#1B1D23);border:1px solid #7A6438;box-shadow:inset 0 1px 0 rgba(232,194,90,.12);padding:26px;display:grid;grid-template-columns:1.2fr 1fr 1fr 1fr;gap:20px;align-items:end">
+            <div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:14px;font-weight:800;letter-spacing:.14em;color:#C9A45C">{{ t.chance }}</span><span style="font-size:72px;font-weight:800;line-height:.9;color:{{ overallC }};font-variant-numeric:tabular-nums">{{ overall }}</span><span style="font-size:15px;color:#9A9DA8">{{ path }}</span></div>
+            <div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:14px;color:#9A9DA8">{{ t.gold }}</span><span style="font-size:28px;font-weight:800;color:#E8C25A;font-variant-numeric:tabular-nums">{{ gold }}</span></div>
+            <div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:14px;color:#9A9DA8">{{ t.stones }}</span><span style="font-size:28px;font-weight:800;font-variant-numeric:tabular-nums">{{ stones }}</span></div>
+            <div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:14px;color:#9A9DA8">{{ t.seals }}</span><span style="font-size:28px;font-weight:800;font-variant-numeric:tabular-nums">{{ seals }}</span></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <span style="font-size:13px;font-weight:800;letter-spacing:.18em;color:#C9A45C">{{ t.ladder }}</span>
+            <div style="display:grid;grid-template-columns:repeat(9,1fr);gap:4px">
+              <sc-for list="{{ ladder }}" as="s" hint-placeholder-count="9">
+                <div style="display:flex;flex-direction:column;gap:6px;align-items:center;padding:10px 0;background:#1B1D23;border:1px solid {{ s.bd }};opacity:{{ s.op }}">
+                  <span style="font-size:16px;font-weight:800">{{ s.l }}</span>
+                  <div style="width:100%;height:4px;background:{{ s.c }}"></div>
+                  <span style="font-size:15px;font-variant-numeric:tabular-nums;color:#C9CED6">{{ s.p }}</span>
+                </div>
+              </sc-for>
+            </div>
+            <div style="display:flex;gap:20px;font-size:14px;color:#9A9DA8"><sc-for list="{{ legend }}" as="g" hint-placeholder-count="3"><span style="display:flex;align-items:center;gap:6px"><span style="width:12px;height:4px;background:{{ g.c }}"></span>{{ g.n }}</span></sc-for></div>
+          </div>
+          <div style="border:1px solid #3A3F4C;background:#1B1D23">
+            <div style="display:grid;grid-template-columns:90px 1fr 1fr 1fr 1fr 1.4fr;padding:12px 16px;font-size:13px;font-weight:800;letter-spacing:.12em;color:#C9A45C;border-bottom:1px solid #3A3F4C"><span>{{ t.cStep }}</span><span>{{ t.cP }}</span><span>{{ t.cTries }}</span><span>{{ t.cGold }}</span><span>{{ t.cStone }}</span><span>{{ t.cFail }}</span></div>
+            <sc-for list="{{ steps }}" as="s" hint-placeholder-count="3">
+              <div style="display:grid;grid-template-columns:90px 1fr 1fr 1fr 1fr 1.4fr;padding:11px 16px;font-size:17px;font-variant-numeric:tabular-nums;border-bottom:1px solid #252832"><span style="font-weight:800">{{ s.l }}</span><span>{{ s.p }}</span><span>{{ s.tries }}</span><span style="color:#E8C25A">{{ s.gold }}</span><span>{{ s.stones }}</span><span style="color:{{ s.fc }}">{{ s.f }}</span></div>
+            </sc-for>
+          </div>
+          <span style="font-size:14px;color:#9A9DA8">{{ t.note }}</span>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <span style="font-size:13px;font-weight:800;letter-spacing:.18em;color:#C9A45C">{{ t.after }}</span>
+          <dc-import name="VwTooltip" item="{{ sel }}" lang="{{ lang }}" upgrade="{{ to }}" hint-size="380px,380px"></dc-import>
+          <sc-if value="{{ hasStat }}"><div style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px;background:#1B1D23;border:1px solid #3A3F4C;font-size:17px;font-variant-numeric:tabular-nums"><span style="color:#9A9DA8">{{ statLabel }}</span><span><span style="color:#9A9DA8">{{ statFrom }}</span> → <b style="color:#4FD16B">{{ statTo }}</b></span></div></sc-if>
+        </div>
+      </div>
+    </div>
+
+    <div data-screen-label="Ulepszanie mobile" style="flex-shrink:0;width:390px;background:#14161B;outline:1px solid #3A3F4C;border-radius:28px;overflow:hidden">
+      <dc-import name="VwNav" variant="mobile" lang="{{ lang }}" on-lang="{{ setLang }}" hint-size="390px,60px"></dc-import>
+      <div style="padding:22px 16px 0;display:flex;flex-direction:column;gap:16px">
+        <h1 style="margin:0;font-family:'Grenze Gotisch',serif;font-weight:700;font-size:42px;line-height:.9;color:#E8C25A">{{ t.title }}</h1>
+        <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px">
+          <sc-for list="{{ items }}" as="i" hint-placeholder-count="7"><span onClick="{{ i.pick }}" style="flex-shrink:0;display:flex;align-items:center;height:44px;padding:0 12px;font-size:15px;font-weight:800;color:{{ i.c }};border:1px solid {{ i.bd }};background:{{ i.bg }};cursor:pointer;white-space:nowrap">{{ i.n }}</span></sc-for>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:12px;font-weight:800;letter-spacing:.14em;color:#C9A45C">{{ t.fromS }}</span><div style="display:flex;align-items:center;border:1px solid #3A3F4C;background:#1B1D23"><div onClick="{{ fromDec }}" style="width:44px;height:48px;display:flex;align-items:center;justify-content:center;font-size:22px;color:#9A9DA8;cursor:pointer">−</div><span style="flex:1;text-align:center;font-size:22px;font-weight:800">{{ fromL }}</span><div onClick="{{ fromInc }}" style="width:44px;height:48px;display:flex;align-items:center;justify-content:center;font-size:22px;color:#9A9DA8;cursor:pointer">+</div></div></div>
+          <div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:12px;font-weight:800;letter-spacing:.14em;color:#C9A45C">{{ t.toS }}</span><div style="display:flex;align-items:center;border:1px solid #7A6438;background:#1B1D23"><div onClick="{{ toDec }}" style="width:44px;height:48px;display:flex;align-items:center;justify-content:center;font-size:22px;color:#9A9DA8;cursor:pointer">−</div><span style="flex:1;text-align:center;font-size:22px;font-weight:800;color:#E8C25A">{{ toL }}</span><div onClick="{{ toInc }}" style="width:44px;height:48px;display:flex;align-items:center;justify-content:center;font-size:22px;color:#9A9DA8;cursor:pointer">+</div></div></div>
+        </div>
+        <div onClick="{{ toggleSeal }}" style="display:flex;gap:12px;align-items:center;min-height:52px;padding:10px 12px;border:1px solid {{ sealBd }};background:#1B1D23;cursor:pointer"><div style="width:22px;height:22px;flex-shrink:0;border:1px solid {{ sealBd }};background:{{ sealFill }}"></div><span style="font-size:16px;font-weight:800">{{ t.seal }}</span></div>
+        <div style="background:linear-gradient(#252832,#1B1D23);border:1px solid #7A6438;padding:18px;display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:12px;font-weight:800;letter-spacing:.14em;color:#C9A45C">{{ t.chance }}</span><span style="font-size:56px;font-weight:800;line-height:.95;color:{{ overallC }}">{{ overall }}</span></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-variant-numeric:tabular-nums">
+            <div style="display:flex;flex-direction:column"><span style="font-size:13px;color:#9A9DA8">{{ t.goldS }}</span><span style="font-size:18px;font-weight:800;color:#E8C25A">{{ gold }}</span></div>
+            <div style="display:flex;flex-direction:column"><span style="font-size:13px;color:#9A9DA8">{{ t.stonesS }}</span><span style="font-size:18px;font-weight:800">{{ stones }}</span></div>
+            <div style="display:flex;flex-direction:column"><span style="font-size:13px;color:#9A9DA8">{{ t.sealsS }}</span><span style="font-size:18px;font-weight:800">{{ seals }}</span></div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(9,1fr);gap:3px">
+          <sc-for list="{{ ladder }}" as="s" hint-placeholder-count="9"><div style="display:flex;flex-direction:column;gap:4px;align-items:center;padding:6px 0;background:#1B1D23;border:1px solid {{ s.bd }};opacity:{{ s.op }}"><span style="font-size:13px;font-weight:800">{{ s.l }}</span><div style="width:100%;height:3px;background:{{ s.c }}"></div><span style="font-size:11px;color:#C9CED6">{{ s.pS }}</span></div></sc-for>
+        </div>
+      </div>
+      <div style="padding:20px 16px 0;display:flex;flex-direction:column">
+        <sc-for list="{{ steps }}" as="s" hint-placeholder-count="3">
+          <div style="display:flex;justify-content:space-between;align-items:center;min-height:52px;border-bottom:1px solid #252832;font-size:16px"><div style="display:flex;flex-direction:column"><span style="font-weight:800">{{ s.l }} · {{ s.p }}</span><span style="font-size:13px;color:{{ s.fc }}">{{ s.f }}</span></div><span style="color:#E8C25A;font-weight:700">{{ s.gold }}</span></div>
+        </sc-for>
+      </div>
+      <div style="padding:24px 16px 28px"><dc-import name="VwTooltip" item="{{ sel }}" lang="{{ lang }}" upgrade="{{ to }}" hint-size="100%,380px"></dc-import></div>
+      <dc-import name="VwNav" variant="tabs" active="upgrade" lang="{{ lang }}" hint-size="390px,68px"></dc-import>
+    </div>
+  </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const T = {
+  pl: { crumb: 'Ulepszanie', title: 'Kalkulator ulepszania', intro: 'Wybierz przedmiot i zakres ulepszenia. Zobaczysz szansę na przejście całej ścieżki za pierwszym razem i szacowany koszt w złocie i Popielnych Kamieniach.', item: 'PRZEDMIOT', from: 'OBECNY POZIOM', to: 'DOCELOWY POZIOM', fromS: 'OBECNY', toS: 'DOCELOWY', seal: 'Pieczęć Ochrony', sealD: 'Zamienia zniszczenie na spadek o 1 poziom. Zużywana przy każdej próbie +8 i +9.', chance: 'SZANSA ZA PIERWSZYM RAZEM', gold: 'Złoto (szac.)', stones: 'Popielne Kamienie', seals: 'Pieczęcie', goldS: 'Złoto', stonesS: 'Kamienie', sealsS: 'Pieczęcie', ladder: 'DRABINA RYZYKA', cStep: 'KROK', cP: 'SZANSA', cTries: 'ŚR. PRÓB', cGold: 'ZŁOTO', cStone: 'KAMIENIE', cFail: 'PRZY PORAŻCE', note: 'Szacunek zakłada powtarzanie kroku do skutku i nie uwzględnia spadków poziomu.', after: 'PO ULEPSZENIU', path: 'ścieżka', atk: 'Atak', def: 'Pancerz' },
+  en: { crumb: 'Upgrading', title: 'Upgrade calculator', intro: 'Pick an item and an upgrade range. You will see the chance of clearing the whole path on the first try and the estimated cost in gold and Ash Stones.', item: 'ITEM', from: 'CURRENT LEVEL', to: 'TARGET LEVEL', fromS: 'CURRENT', toS: 'TARGET', seal: 'Seal of Protection', sealD: 'Turns breaking into a 1-level drop. Consumed on every +8 and +9 attempt.', chance: 'FIRST-TRY CHANCE', gold: 'Gold (est.)', stones: 'Ash Stones', seals: 'Seals', goldS: 'Gold', stonesS: 'Stones', sealsS: 'Seals', ladder: 'RISK LADDER', cStep: 'STEP', cP: 'CHANCE', cTries: 'AVG. TRIES', cGold: 'GOLD', cStone: 'STONES', cFail: 'ON FAILURE', note: 'Estimate assumes retrying each step until success and ignores level drops.', after: 'AFTER UPGRADE', path: 'path', atk: 'Attack', def: 'Armor' }
+};
+class Component extends DCLogic {
+  state = { lang: null, sel: 'ostrze', from: 5, to: 8, seal: false };
+  componentDidMount() {
+    try { const l = localStorage.getItem('vw-lang'); if (l === 'pl' || l === 'en') this.setState({ lang: l }); } catch (e) {}
+    if (!window.VW) this._i = setInterval(() => { if (window.VW) { clearInterval(this._i); this.forceUpdate(); } }, 40);
+  }
+  componentWillUnmount() { clearInterval(this._i); }
+  setFrom(f) { f = Math.max(0, Math.min(8, f)); this.setState(s => ({ from: f, to: Math.max(s.to, f + 1) })); }
+  setTo(v) { v = Math.max(1, Math.min(9, v)); this.setState(s => ({ to: v, from: Math.min(s.from, v - 1) })); }
+  renderVals() {
+    const lang = this.state.lang || 'pl', L = lang === 'en', t = T[lang];
+    const setLang = l => { this.setState({ lang: l }); try { localStorage.setItem('vw-lang', l); } catch (e) {} };
+    const V = window.VW;
+    if (!V) return { ready: false, lang, setLang, t };
+    const { sel, from, to, seal } = this.state, it = V.item(sel);
+    const ft = f => (seal && f === 'break' ? 'down' : f);
+    const steps = V.upgrade.slice(from, to);
+    const overallN = steps.reduce((a, s) => a * s.p / 100, 1);
+    const pct = x => V.nf(x < 1 ? Math.round(x * 100) / 100 : Math.round(x * 10) / 10, lang) + '%';
+    const gold = steps.reduce((a, s) => a + s.gold * 100 / s.p, 0);
+    const stones = steps.reduce((a, s) => a + s.stones * 100 / s.p, 0);
+    const seals = seal ? steps.filter(s => s.fail === 'break').reduce((a, s) => a + 100 / s.p, 0) : 0;
+    const sf = V.statAt(it, from), st = V.statAt(it, to);
+    const ids = ['ostrze', 'kostur', 'tarcza', 'napiersnik', 'sztylet', 'kaptur', 'luk'];
+    return {
+      ready: true, lang, setLang, t, sel, to,
+      items: ids.map(id => { const i = V.item(id), r = V.rar[i.rar], on = id === sel; return { n: L ? i.en : i.pl, c: r.c, bd: on ? r.c : '#3A3F4C', bg: on ? r.c + '1A' : '#1B1D23', pick: () => this.setState({ sel: id }) }; }),
+      fromB: Array.from({ length: 9 }, (_, i) => ({ t: '+' + i, on: i === from, off: i !== from, set: () => this.setFrom(i) })),
+      toB: Array.from({ length: 9 }, (_, i) => ({ t: '+' + (i + 1), on: i + 1 === to, off: i + 1 !== to, set: () => this.setTo(i + 1) })),
+      fromL: '+' + from, toL: '+' + to,
+      fromDec: () => this.setFrom(from - 1), fromInc: () => this.setFrom(from + 1), toDec: () => this.setTo(to - 1), toInc: () => this.setTo(to + 1),
+      toggleSeal: () => this.setState(s => ({ seal: !s.seal })), sealBd: seal ? '#E8C25A' : '#3A3F4C', sealFill: seal ? '#E8C25A' : 'transparent',
+      overall: pct(overallN * 100), overallC: overallN > 0.5 ? '#4FD16B' : overallN > 0.1 ? '#E0C23B' : '#D64A3E', path: t.path + ' +' + from + ' → +' + to,
+      gold: V.nf(Math.round(gold / 10) * 10, lang), stones: V.nf(Math.round(stones), lang), seals: V.nf(Math.round(seals), lang),
+      ladder: V.upgrade.map(s => { const inR = s.to > from && s.to <= to, f = V.failT[ft(s.fail)]; return { l: '+' + s.to, p: s.p + '%', pS: s.p, c: f.c, bd: inR ? f.c : '#252832', op: inR ? 1 : 0.4 }; }),
+      legend: ['none', 'down', 'break'].map(k => ({ c: V.failT[k].c, n: V.loc(V.failT[k], lang) })),
+      steps: steps.map(s => { const f = V.failT[ft(s.fail)]; return { l: '+' + (s.to - 1) + '→+' + s.to, p: s.p + '%', tries: V.nf(Math.round(1000 / s.p) / 10, lang), gold: V.nf(s.gold, lang), stones: s.stones, f: V.loc(f, lang), fc: f.c }; }),
+      hasStat: !!sf, statLabel: it.stat === 'atk' ? t.atk : t.def, statFrom: sf ? sf.join('–') : '', statTo: st ? st.join('–') : ''
+    };
+  }
+}
+</script>
+</body>
+</html>

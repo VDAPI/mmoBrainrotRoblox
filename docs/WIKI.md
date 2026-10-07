@@ -1,274 +1,169 @@
-# Vaelthorn: plan wiki
+# Vaelthorn Wiki: decyzje, kontrakt i stan
 
-> Plan oficjalnej wiki gry. Sesje Claude Code W0–W9 aktualizują tabelę stanu i sekcję „Decyzje”.
-
-## Stan sesji
-
-| Sesja | Temat | Stan |
-|---|---|---|
-| D1–D3 | Claude Design: kierunek wizualny, design system, makiety | ○ |
-| W0 | Plan, kontrakt JSON, zasady w CLAUDE.md | ○ |
-| W1 | Exporter danych (`tools/wikidump.luau`) | ○ |
-| W2 | Rendery potworów i SVG map | ○ |
-| W3 | Szkielet Astro i design system | ○ |
-| W4 | Bestiariusz i bossy | ○ |
-| W5 | Przedmioty i rzemiosło | ○ |
-| W6 | Klasy i planer buildów | ○ |
-| W7 | Świat i mapa interaktywna | ○ |
-| W8 | Treści ręczne (poradniki MDX) | ○ |
-| W9 | Jakość i wdrożenie | ○ |
-
-Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ sprawdzona przez właściciela
-
-## Decyzje
-
-- Na razie brak.
-
-## Niedokończone
-
-- Na razie brak.
-
----
+Oficjalna wiki gry w folderze `wiki/` tego repozytorium. Ten plik jest źródłem prawdy dla sesji wiki (S34, S36–S44): każda sesja zaczyna od jego lektury i kończy aktualizacją sekcji **Stan**, **Decyzje** i **Niedokończone**. Zasady gry dalej opisuje `docs/DESIGN.md`.
 
 ## 0. Zasada główna: wiki generowana z danych gry
 
-Tabel potworów, przedmiotów i skilli nie piszemy ręcznie, bo po każdej sesji balansu byłyby nieaktualne.
+- **Tabel potworów, przedmiotów, umiejętności, questów i map nie piszemy ręcznie.** Liczby są w `src/shared/Data/*`, wzory w `src/shared/Logic/*`; oba działają w Lune. Eksporter `tools/wikidump.luau` zrzuca je do `wiki/src/data/*.json`, licząc wartości funkcjami z `Logic` (statystyki potwora na poziomie, szanse i koszty ulepszania, wartości przedmiotów, szanse łupu). Wiki nie powtarza wzorów w TypeScript.
+- **Nazwy i opisy PL/EN** pochodzą z `src/shared/Data/Localization` (przez `Util/Locale`), więc wiki jest dwujęzyczna od pierwszego dnia. Teksty samego interfejsu wiki („Filtruj”, „Pokaż więcej”) są w `wiki/src/i18n/{pl,en}.ts`.
+- **Obrazki** potworów, bossów i petów generuje `tools/wiki-renders` (na bazie `tools/lookdump.luau` i `docs/miasto/tools/render3d.py`); ikony przedmiotów składa skrypt z atlasów S35 (`art/icons`, `Data/ItemIconAtlas`). Mapy to SVG z `Data/Areas`, `Data/Maps`, `Data/Portals` (te same dane co mapa w grze).
+- **Podział pracy:** dane i obrazki generuje skrypt; poradniki i lore pisze człowiek w MDX (`wiki/src/content`); wygląd zaprojektowano w Claude Design (`wiki/design/`).
 
-- **Liczby** są w `src/shared/Data/*`. `Logic` i `Data` działają w Lune, więc exporter `tools/wikidump.luau` zrzuca je do JSON.
-- **Nazwy i opisy (PL/EN)** są w `Data/Localization`, dzięki czemu wiki jest dwujęzyczna od pierwszego dnia.
-- **Obrazki potworów, bossów i petów** generują `tools/lookdump.luau` i `docs/miasto/tools/render3d.py` (PNG/WebP dla każdego potwora).
-- **Mapa świata** powstaje z `Data/Areas`, `Data/Portals` i `Data/Maps` jako SVG. To te same dane, z których korzysta mapa w grze.
+## 1. Bezpieczeństwo: nic, co nie jest publiczne
 
-Podział pracy: dane generuje skrypt, poradniki i lore pisze człowiek (MDX), wygląd projektujemy w Claude Design.
+- Eksporter działa na **allowliście źródeł i pól** (jawna lista modułów `Data/*` i pól każdej encji), nigdy na liście zakazanych.
+- Nigdy nie trafiają na wiki: `Data/Codes` (kody nagród), `Data/AdminCommands`, `Logic/DevPreset`, konfiguracja serwera i identyfikatory administratorów z `Config`, ceny w Robux i Smoczej Walucie, id produktów i przepustek. Z `Config` eksporter bierze tylko jawnie wymienione klucze (nigdy `RespawnNowCost`), z `Data/Cosmetics` nigdy `price`.
+- `Data/Products` czyta wyłącznie `tools/WikiDump/Premium.luau` (S43) i kopiuje tylko klucze i ikony przepustek oraz listę usług sklepu premium (klucz, rodzaj, przedmiot, limit dzienny); nazwy i opisy idą z lokalizacji. Ceny w złocie mają w JSON klucz `gold`, klucz `price` nie występuje w żadnym pliku.
+- Encje oznaczone jako niewydane (`hidden = true` albo `wiki = false` w danych; eksporter dodaje obsługę tych flag tam, gdzie ich jeszcze nie ma) są pomijane razem z linkami do nich.
+- `tests/wikidump.spec.luau` wywala się, gdy w wyjściu pojawi się którykolwiek kod z `Data/Codes`, id administratora, klucz spoza allowlisty albo klucz `productId`, `passId`, `robux`, `price`, `shards`, `RespawnNowCost`. Od S44 ten sam skan wycieków przechodzi po zbudowanej stronie (`dist/`).
 
-**Uwaga, wyciek:** `Codes.luau`, `AdminCommands`, `Products` i niewydane questy czy bossy nie mogą trafić na wiki.
-Exporter korzysta z **allowlisty** źródeł i pól, nigdy z listy zakazanych. Dodatkowo test wywala się, gdy w JSON pojawi się kod nagrody.
-
-## 1. Stack
+## 2. Stack
 
 | Element | Wybór | Dlaczego |
 |---|---|---|
-| Generator | **Astro** (statyczny, MDX, content collections) | Najszybsze strony, dobre SEO, interaktywność tylko tam, gdzie jest potrzebna (wyspy w Vue) |
-| Wyszukiwarka | **Pagefind** | Pełny tekst offline, działa bez backendu |
-| Mapa | SVG z danych, pan i zoom (np. `panzoom`) | Bez kafelków, ostra, lekka |
-| Wykresy | Małe wyspy z Chart.js albo czysty SVG | Krzywa EXP, skalowanie statystyk |
-| Hosting | **Cloudflare Pages** | Za darmo, własna domena, preview dla każdego brancha |
-| Miejsce | Folder `wiki/` w tym repo | Exporter czyta `src/shared` bezpośrednio, a CI buduje stronę po pushu |
+| Generator | **Astro 5** (`output: "static"`), TypeScript `strict`, MDX, content collections | Najszybsze strony i dobre SEO; JavaScript tylko tam, gdzie jest potrzebny |
+| Wyspy interaktywne | **Svelte 5** (`@astrojs/svelte`) | Najmniejszy narzut na stronę (budżet < 50 KB JS poza mapą) |
+| Wyszukiwarka | **Pagefind** (`pagefind --site dist` po buildzie), własny interfejs z makiety + paleta Ctrl+K | Pełny tekst offline, bez backendu |
+| Mapa | SVG z danych, przesuwanie i zoom: `@panzoom/panzoom` | Bez kafelków, ostra, lekka |
+| Wykresy | Czysty SVG (komponenty Astro) | Krzywa EXP, skalowanie statystyk, bez bibliotek |
+| Obrazy | WebP generowane skryptami; ikony przedmiotów przez `sharp` (Node) | Działa na Windows bez Pythona |
+| Testy TS | Vitest; `astro check`; ESLint | `npm run check` = typy + lint + testy + build |
+| Hosting | **Cloudflare Pages**, budowa w GitHub Actions | Za darmo, własna domena, podgląd dla każdego PR |
+| Menedżer pakietów | npm, Node 22 LTS | Najprostszy na Windows |
 
-Starlight odpada: jest wygodny, ale wygląda jak dokumentacja techniczna, a wiki ma mieć klimat gry.
+Starlight odpada: wygląda jak dokumentacja techniczna, a wiki ma mieć klimat gry.
 
-## 2. Mapa strony
+## 3. Struktura folderów
 
-1. **Strona główna**: hero z renderem bossa, przycisk „Graj na Roblox”, „Co nowego”, skróty do sekcji.
-2. **Pierwsze kroki**: sterowanie (z `Keybinds`), pierwsze 10 poziomów, strefy PvP, śmierć.
-3. **Klasy**: 4 strony, każda z drzewkiem umiejętności (interaktywnym, z planerem buildu i linkiem do niego).
-4. **Bestiariusz**: potwory pogrupowane według regionu. Elita i Elita II, poziomy, gdzie występują (mini-mapa), drop i render.
-5. **Bossy i lochy**: fazy, mechaniki, łup, wymagania grupy.
-6. **Przedmioty**: baza z filtrami (slot, rzadkość, poziom, klasa), tooltip w stylu gry, legendy osobno.
-7. **Rzemiosło**: kowal (ulepszanie +0…+9 z szansami), rozbijanie, alchemik, receptury, zbieractwo, ryby.
-8. **Świat**: interaktywna mapa (obszary, poziomy, portale, jaskinie, NPC) i strona każdej mapy.
-9. **Miasto**: NPC i usługi, z obrazkami z `docs/miasto/img`.
-10. **Questy**: fabuła (spoilery domyślnie ukryte) i dzienne.
-11. **Mechaniki**: formuły statystyk, obrażenia, żywioły, krzywa EXP (wykresy z `Progression`), błogosławieństwa.
-12. **PvP, arena, gildie, handel, aukcja.**
-13. **Kosmetyki i przepustki**: przejrzyście, bez „kup teraz”, z jasnym przekazem, że gra nie jest pay-to-win.
-14. **Aktualizacje**: changelog pisany dla graczy, nie kopia PROGRESS.md.
-
-## 3. Jak dzielić pracę między Claude Design i Claude Code
-
-- **Claude Design** odpowiada za kierunek wizualny, design system i makiety 5–6 kluczowych ekranów. Nie buduje całej strony.
-- **Claude Code** odpowiada za exporter, implementację, dane, rendery, testy, wydajność i wdrożenie. Jedna sesja W to jeden zakres, a stan trafia do tego pliku.
-- **Przekazanie projektu:** gotowy design system z Claude Design (link do artefaktu albo eksport: tokeny, komponenty, makiety) trafia do Claude Code.
-  Claude Code przenosi go 1:1 do `wiki/src/styles/tokens.css` i komponentów Astro. Źródłem prawdy są tokeny, nie zrzuty ekranu.
-
----
-
-## 4. Prompty: Claude Design
-
-### D1: kierunek wizualny (3 warianty)
-
-```text
-Projektuję oficjalną wiki dla mojej gry Vaelthorn: MMORPG na Roblox, "Margonem w 3D".
-Klimat: poważne dark fantasy, zero memów. Rdzeń emocjonalny gry to drop legendarnego
-przedmiotu (słup światła, odsłanianie statystyk), ulepszanie +0..+9 i losowe bonusy.
-Odbiorcy: gracze 12–25 lat, PL i EN, ok. 60% na telefonie.
-
-Kolory z UI gry (trzymaj się ich, możesz dodać odcienie):
-tło #14161B, panel #1B1D23, panel wyżej #252832, ramka #3A3F4C,
-złoto #C9A45C / jasne #E8C25A / ciemne #7A6438, pergamin #EADDBE,
-tekst #E8E4DA / wyciszony #9A9DA8, akcent #4A8FE7,
-HP #C2352E, mana #3D6FD6, energia #D9B23A, EXP #8E5BD9,
-strefy: zielona #4FD16B, żółta #E0C23B, czerwona #D64A3E,
-rzadkości: zwykły #C9CED6, niezwykły #4FD16B, rzadki #3D8BFF, [dopisz resztę z Data/Rarities].
-
-Inspiracje do przemyślenia (nie do kopiowania): czytelność baz danych Wowhead i poe2db,
-struktura OSRS Wiki, klimat stron Diablo IV i Hollow Knight.
-
-Zaproponuj 3 wyraźnie różne kierunki wizualne strony głównej (desktop 1440 + mobile 390):
-A) "Kronika": pergamin, iluminowane inicjały, ornamentyka
-B) "Kuźnia": ciemny metal, złote krawędzie, żar, bliżej UI gry
-C) "Atlas": nowoczesny, minimalistyczny, dużo powietrza, fantasy tylko w akcentach
-Dla każdego: typografia (nagłówki + tekst, Google Fonts, z polskimi znakami),
-przykładowy hero, karta potwora i tooltip przedmiotu. Krótko opisz, dla kogo który działa najlepiej.
+```
+wiki/
+  design/                 eksport z Claude Design (tylko do wglądu, nie importować w kodzie)
+    vaelthorn.css         design system „Kuźnia” v1.0: tokeny + klasy komponentów (źródło prawdy wyglądu)
+    *.dc.html             makiety stron i komponentów (desktop 1440 + mobile 390)
+    vw-data.js            PRZYKŁADOWE dane makiet (do zastąpienia danymi z gry)
+    frames/               zrzuty makiet: <Strona>-desktop.jpg, <Strona>-mobile.jpg
+    screenshots/          zrzuty design systemu
+    README.md             jak oglądać makiety, znane błędy makiet, różnice względem gry
+  src/
+    data/                 GENEROWANE przez tools/wikidump.luau (commitowane, deterministyczne)
+      *.json, types.ts
+    styles/
+      tokens.css          tokeny 1:1 z design/vaelthorn.css
+      tokens.data.css     GENEROWANE: kolory rzadkości, żywiołów, klas i stref z danych gry
+      components.css      klasy .vw-* z design/vaelthorn.css
+    components/           komponenty Astro (statyczne)
+    islands/              komponenty Svelte (interaktywne)
+    layouts/              Base.astro (topbar, tabbar mobilny, stopka, meta, hreflang)
+    i18n/                 pl.ts, en.ts (teksty interfejsu), routes.ts (segmenty URL)
+    lib/                  funkcje TS (formatowanie liczb pl/en, filtry, wyszukiwanie, kalkulator) + testy Vitest
+    views/                widoki stron + registry.ts (jeden wpis = nowa strona)
+    pages/[lang]/...      trasy (index, [...path] z rejestru, endpointy JSON)
+    generated/            GENEROWANE manifesty (np. item-icons.json)
+    content/              updates, guides, mechanics ({pl,en}/*.mdx), bosses (opisy mechanik)
+  public/img/{mobs,items,maps,og,city}/  GENEROWANE obrazy
+  scripts/                data, shots, search-index, check-links, item-icons, og-images, budgets, audit, stale-data (.mjs)
+  e2e/                    testy Playwright: dostępność, klawiatura, układ (S44)
+  package.json            npm run dev | build | check | data | shots | renders | icons | qa | lighthouse
+tools/
+  wikidump.luau           CLI eksportera; logika w tools/WikiDump/*.luau (czyste moduły, testowalne)
+  wikimap.luau            SVG map z danych; logika w tools/WikiMap/*.luau
+  LookDump.luau           wyglądy potworów, bossów i petów do renderów (lookdump.luau --wiki)
+  wiki-renders/           rendery potworów, bossów i petów (Python + numpy + Pillow; tylko lokalnie)
+scripts/
+  wikidump.sh, wikidump.ps1
+tests/
+  wikidump.spec.luau, wikimap.spec.luau, lookdump.spec.luau
+.github/workflows/wiki.yml   build, testy i wdrożenie na Cloudflare Pages (S44)
 ```
 
-### D2: design system (po wyborze kierunku)
+## 4. Adresy stron
 
-```text
-Wybieram kierunek [X], z tych zmian: [...].
-Zbuduj z niego design system wiki:
-1. Tokeny: kolory (z trybem jasnym i ciemnym; ciemny jest domyślny), typografia (skala, wysokości linii),
-   odstępy, promienie, cienie i poświaty (osobna poświata dla każdej rzadkości), ruch (czasy, easing,
-   wariant prefers-reduced-motion).
-2. Komponenty, każdy ze stanami (hover, focus, aktywny, wyłączony) i wersją mobilną:
-   - tooltip przedmiotu jak w grze: nazwa w kolorze rzadkości, poziom ulepszenia, statystyki bazowe,
-     wylosowane bonusy, wymagania, wiązanie
-   - karta potwora (render, poziom, typ: zwykły/Elita/Elita II, region, żywioł, drop)
-   - nagłówek bossa (fazy, mechaniki, ikony)
-   - węzeł i połączenie drzewka umiejętności (zablokowany, dostępny, wykupiony, maks.)
-   - tabela danych z sortowaniem, filtrami (chipy), paginacją; na telefonie zamienia się w karty
-   - pasek statystyk (HP/mana/energia/EXP), plakietka strefy PvP, plakietka rzadkości
-   - callouty: wskazówka, ostrzeżenie, spoiler (zakryty), "zmienione w aktualizacji X"
-   - nawigacja: górny pasek, boczny spis treści, okruszki, przełącznik PL/EN, wyszukiwarka (Ctrl+K)
-   - stopka, przycisk "Graj na Roblox"
-3. Zasady: kontrast WCAG AA, cele dotyku min. 44 px, siatka i breakpointy.
-Dokumentuj każdy komponent tak, żeby developer mógł go odtworzyć 1:1 w CSS.
-```
+Identyfikatory w URL to **id z danych gry** (stabilne między językami, także wielkość liter, np. `/pl/klasy/Mage/`), segmenty sekcji są tłumaczone. Slugi poradników i mechanik są tłumaczone i łączone wspólnym kluczem `key`. `/` przekierowuje do `/pl/` albo `/en/` według języka przeglądarki (domyślnie PL). Każda strona ma `hreflang` do drugiego języka.
 
-### D3: makiety kluczowych stron
+| Strona | PL | EN |
+|---|---|---|
+| Główna | `/pl/` | `/en/` |
+| Baza przedmiotów | `/pl/przedmioty/` | `/en/items/` |
+| Przedmiot | `/pl/przedmioty/<id>/` | `/en/items/<id>/` |
+| Przedmioty bossów | `/pl/przedmioty/bossy/` | `/en/items/bosses/` |
+| Bestiariusz | `/pl/bestiariusz/` | `/en/bestiary/` |
+| Potwór | `/pl/bestiariusz/<id>/` | `/en/bestiary/<id>/` |
+| Bossy, boss | `/pl/bossy/`, `/pl/bossy/<id>/` | `/en/bosses/`, `/en/bosses/<id>/` |
+| Klasy, klasa z planerem | `/pl/klasy/`, `/pl/klasy/<classId>/` (`?b=<kod buildu>`) | `/en/classes/`, `/en/classes/<classId>/` |
+| Mapa świata | `/pl/mapa/` (`?m=<mapa>&a=<obszar>&x=&z=&s=`) | `/en/map/` |
+| Krainy, kraina | `/pl/krainy/`, `/pl/krainy/<mapId>/` | `/en/regions/`, `/en/regions/<mapId>/` |
+| Obszar / jaskinia | `/pl/krainy/<mapId>/<areaId>/` | `/en/regions/<mapId>/<areaId>/` |
+| Kalkulator ulepszania | `/pl/ulepszanie/` | `/en/upgrading/` |
+| Rzemiosło | `/pl/rzemioslo/` (kowal, alchemia, rozbijanie, zbieractwo, ryby) | `/en/crafting/` |
+| Zadania | `/pl/zadania/`, `/pl/zadania/<id>/` | `/en/quests/` |
+| Mechaniki | `/pl/mechaniki/`, `/pl/mechaniki/<temat>/` | `/en/mechanics/`, `/en/mechanics/<topic>/` |
+| Poradniki | `/pl/poradniki/`, `/pl/poradniki/<slug>/` | `/en/guides/`, `/en/guides/<slug>/` |
+| Szukaj | `/pl/szukaj/?q=` | `/en/search/?q=` |
+| Aktualizacje | `/pl/aktualizacje/` | `/en/updates/` |
+| Styleguide (noindex) | `/pl/styleguide/` | `/en/styleguide/` |
 
-```text
-Na bazie design systemu zaprojektuj (desktop 1440 + mobile 390, prawdziwe przykładowe dane):
-1. Strona główna
-2. Lista bestiariusza z filtrami (region, poziom, typ)
-3. Strona potwora (render, statystyki, gdzie występuje z mini-mapą, tabela dropu z szansami)
-4. Baza przedmiotów + otwarty tooltip
-5. Klasa Mag z interaktywnym drzewkiem umiejętności i planerem punktów
-6. Interaktywna mapa świata (panel boczny z kartą obszaru, legenda, warstwy)
-Pokaż też stany puste, ładowania i "nic nie znaleziono".
-```
+## 5. Kontrakt danych (pliki `wiki/src/data`)
 
-Wskazówki do pracy z Claude Design:
-- Wrzucaj zrzuty z gry (UI, okno ekwipunku, mapa M) i obrazki z `docs/miasto/img`. Wynik będzie bardziej „wasz”.
-- Iteruj na jednym komponencie naraz, a nie na całej stronie.
-- Najpierw dopracuj tooltip przedmiotu i kartę potwora. To one niosą klimat, reszta to tabele.
+Szczegółowy schemat każdej encji uzupełnia S34 (tutaj tylko lista i zasady). Wszystkie pliki: posortowane klucze, liczby zaokrąglone tam, gdzie gra je zaokrągla, nazwy jako `{ pl, en }`, odwołania przez id (bez kopii obiektów), `meta.json` z commitem i datą.
 
----
+`meta`, `rarities`, `elements`, `classes`, `stats`, `items` (bazy + progi + mityki bossów + materiały + użytkowe + plecaki), `bonuses` (pule i zakresy), `icons` (warstwy ikon z S35), `monsters` (rodzaje + warianty + statystyki na poziomach), `bosses`, `maps`, `areas`, `caves`, `portals`, `npcs`, `shops`, `quests` (główne, poboczne, dzienne), `skills`, `recipes` (alchemia), `crafting` (kowal, skrócony do progów), `upgrade` (szanse i koszty +1…+9 dla progów), `blessings`, `titles`, `fish`, `gather`, `progression` (krzywa EXP 1–100), `mechanics` (liczby do stron mechanik), `cosmetics` (bez cen), `search` (lekki indeks do palety Ctrl+K), od S37 `mapsearch` (indeks szukania na mapie, jak `Logic/MapSearch`). Typy TS (`types.ts`) generuje ten sam eksporter, a także `wiki/src/styles/tokens.data.css` i `docs/PRZEDMIOTY.md`.
 
-## 5. Prompty: Claude Code (sesje W0–W9)
+## 6. Design system i makiety
 
-Każdą sesję zaczynaj w nowej rozmowie. Na koniec każdego promptu dopisz:
+- Kierunek wizualny: **„Kuźnia”** (ciemny metal, złote krawędzie, żar), wybrany z trzech w `design/Vaelthorn Wiki - Kierunki.dc.html`.
+- **Źródłem prawdy są tokeny i klasy z `design/vaelthorn.css`**, nie zrzuty. `tokens.css` i `components.css` przenoszą je 1:1 (te same nazwy `--vw-*` i `.vw-*`); zmiany wyglądu robimy w tokenach.
+- Fonty: Grenze Gotisch 500/700 (nagłówki), Alegreya Sans 400/500/700/800 (tekst i UI), IBM Plex Mono 400/500 (id, kod); hostowane lokalnie (`@fontsource`), z polskimi znakami, `font-display: swap`.
+- Makiety: Główna, Bestiariusz, Potwór, Przedmioty, Przedmiot, Klasa Mag, Mapa świata, Kraina, Ulepszanie, Szukaj (każda desktop 1440 + mobile 390) oraz komponenty `VwNav`, `VwTooltip`, `VwMonsterCard`.
+- Komponenty z design systemu: przyciski (`.vw-btn` primary/ghost/play), tooltip przedmiotu (`.vw-tooltip`, też pływający), karta potwora (`.vw-monster`, wariant boss), nagłówek bossa z fazami (`.vw-boss`), węzeł i krawędź drzewka (`.vw-node`, `.vw-edge`), tabela z chipami i paginacją (`.vw-table`, `.vw-chip`, `.vw-pager`), paski zasobów (`.vw-bar`), plakietki strefy, rzadkości i rangi (`.vw-zone`, `.vw-rarity`, `.vw-rank`), callouty (wskazówka, ostrzeżenie, spoiler, „zmienione w aktualizacji”), nawigacja (`.vw-topbar`, `.vw-tabbar`, `.vw-toc`, `.vw-crumbs`, `.vw-lang`, `.vw-search`, paleta `.vw-palette`), stopka, szkielety ładowania i stany puste (`.vw-skeleton`, `.vw-empty`), animacja odsłonięcia legendy (`.vw-reveal`, `.vw-beam`).
 
-```text
-Na start przeczytaj docs/WIKI.md (Decyzje, Niedokończone). Po pracy: `npm run check` w wiki/
-(typy, lint, testy, build) musi przejść; zaktualizuj docs/WIKI.md. Nie ruszaj kodu gry
-poza tools/ i tests/, chyba że to konieczne (wtedy napisz dlaczego).
-```
+### Różnice: makiety a gra (zawsze wygrywają dane gry)
 
-### W0: plan i zasady
+| W makiecie | W grze / na wiki |
+|---|---|
+| Rzadkości Zwykły, Niezwykły, Rzadki, Epicki, Legendarny, Mityczny (turkus) | Z `Data/Rarities`: po S30 Zwykły #9DA3AB, Unikatowy #F2D33A, Heroiczny #3D8BFF, Legendarny #FF9F1C, Mityczny #E5302A. Tokeny `--vw-r-<key>` i poświaty `--vw-glow-<key>` (po kluczu rzadkości, bo `--vw-r-0/1/2` to promienie) generowane do `tokens.data.css`; kolor tekstu z kontrastem AA (jaśniejszy wariant tekstowy, jak `--vw-zone-red-text`) |
+| Żywioły fizyczny, ogień, mróz, mrok, natura | `Data/Elements`: ogień, lód, błyskawica, trucizna (+ fizyczne obrażenia jako brak żywiołu) |
+| Klasy Wojownik, Mag, Łowca, Łotr | `Data/Classes`: Wojownik, Łowca, Mag, Kapłan |
+| Sloty Głowa, Tors, Dłonie, Stopy, Szyja | Sloty gry: broń, druga ręka, hełm, zbroja, rękawice, buty, naszyjnik, pierścień, talizman (+ plecak) |
+| Drzewko maga: 3 gałęzie (Mróz/Ogień/Arkana), progi 1/10/20/30, „pkt w gałęzi” | Układ i wymagania z `Data/Skills` (`col`, `row`, `unlock`, `requires`), zasady punktów z `Logic/Skills`; przełomy na 5. i 10. poziomie umiejętności po S28 |
+| Ulepszanie z „ryzykiem zniszczenia” i „Popielnymi Kamieniami” | `Logic/Upgrade.chance/cost`: porażka = −1 poziom, bez niszczenia; materiały i złoto z kosztu; zwój ochrony jak w grze |
+| Wersje „0.9.x”, „Sezon II: Popielne Ziemie” | Gra nie ma wersji; zamiast nich commit i data z `meta.json` oraz wpisy w „Aktualizacjach” (MDX) |
+| Nazwy (Strażnik Kurhanu, Ostrze Popielnego Króla, Kurhany Wschodu) | Przykłady; prawdziwe potwory, przedmioty i mapy z danych |
+| Nagłówki sekcji „Umiejętności”, „Pula bonusów”, „Historia zmian”, „Zadania” sklejone z treścią dużą czcionką | Błąd makiety (kolizja kluczy w przykładowych danych): zwykły tytuł sekcji `.vw-section-title`, treść pod nim |
+| Przycisk „Zagraj na Roblox” | Adres gry w `wiki/src/config.ts` (`PLAY_URL`), uzupełnia właściciel |
 
-```text
-Chcę oficjalną wiki gry w folderze wiki/ tego repo: Astro + TypeScript, statyczna,
-dane generowane z src/shared/Data przez Lune, poradniki w MDX, PL i EN, hosting Cloudflare Pages.
-Przeczytaj docs/WIKI.md, docs/DESIGN.md, docs/ARCHITECTURE.md, src/shared/Data/* i tools/*.luau.
-Uzupełnij docs/WIKI.md o: strukturę folderów, kontrakt JSON (schemat dla każdej
-encji: monster, boss, item base, unique, skill, recipe, quest, map, area, portal, npc)
-i mapę strony z URL-ami (/pl/bestiariusz/<id>, /en/bestiary/<id>). Dopisz do CLAUDE.md
-sekcję "Wiki" (krótko: gdzie co jest, jak dodać stronę).
-Najpierw pokaż mi plan, nie pisz plików bez akceptacji.
-```
+## 7. Plan sesji
 
-### W1: exporter danych
+| Sesja | Zakres |
+|---|---|
+| **S34** | Wiki 1/10: dane. `tools/wikidump.luau`, kontrakt, allowlista, testy wycieku, `types.ts`, `tokens.data.css`, `docs/PRZEDMIOTY.md` |
+| **S36** | Wiki 2/10: szkielet Astro, design system 1:1, wspólne komponenty, układ, i18n, Pagefind, strona główna, szukaj, `/styleguide` |
+| **S37** | Wiki 3/10: świat. `tools/wikimap.luau` (SVG), interaktywna mapa świata, strony krain, obszarów i jaskiń, `MiniMap` |
+| **S38** | Wiki 4/10: rendery potworów, bossów i petów (`tools/wiki-renders`), boss w hero, obrazy bazowe OG |
+| **S39** | Wiki 5/10: bestiariusz, strony potworów i bossów, obrazy OG |
+| **S40** | Wiki 6/10: przedmioty (baza, strona przedmiotu, ikony, przedmioty bossów), kalkulator ulepszania, rzemiosło |
+| **S41** | Wiki 7/10: klasy i planer umiejętności |
+| **S42** | Wiki 8/10: komponenty MDX, zadania, mechaniki (PvP, śmierć, doświadczenie, walka, statystyki, błogosławieństwa) |
+| **S43** | Wiki 9/10: miasto, handel, gildie, kosmetyki, poradniki MDX, aktualizacje |
+| **S44** | Wiki 10/10: jakość i wdrożenie (budżety, dostępność, SEO, Lighthouse, GitHub Actions, Cloudflare Pages) |
 
-```text
-Napisz tools/wikidump.luau (Lune): zrzuca do wiki/src/data/*.json wszystkie encje z kontraktu
-w docs/WIKI.md, z nazwami i opisami z Localization (pl i en) oraz z wartościami
-wyliczonymi przez Logic (np. statystyki potwora na poziomie, szanse ulepszania), żeby wiki
-nie powtarzała formuł w TS.
-Bezpieczeństwo: ALLOWLISTA źródeł i pól. Nigdy nie eksportuj Codes, AdminCommands, Products
-(poza nazwą i opisem kosmetyków), niczego z flagą hidden/unreleased. Dodaj
-tests/wikidump.spec.luau: brak kodów nagród w wyjściu, każde id ma nazwę PL i EN,
-każdy drop wskazuje istniejący przedmiot, każdy potwór ma obszar występowania.
-Dodaj generowanie typów TS (wiki/src/data/types.ts) z tego samego schematu.
-Wyjście ma być deterministyczne (posortowane klucze), żeby diff w git był czytelny.
-```
+Kolejność wiki: S34 → S36 → dalej po kolei (S37–S41 zależą tylko od S34 i S36, więc w razie potrzeby można je przestawić; S42 → S43 → S44 na końcu). Kolejność względem gry: S34 najlepiej po S30–S33 (rzadkości, wartości, balans, profile expowisk), S40 po S35 (ikony), S42–S43 po S27 (zadania poboczne). Wiki działa na każdym stanie danych: po każdej sesji zmieniającej dane wystarczy `npm run data` w `wiki/`.
 
-### W2: rendery i mapa
+## 8. Wspólne zasady sesji wiki
 
-```text
-Na bazie tools/lookdump.luau i docs/miasto/tools/render3d.py zrób skrypt
-tools/wiki-renders (Python): render każdego potwora, wariantów Elita/Elita II, bossów i petów
-do wiki/public/img/mobs/<id>.webp (512 px, przezroczyste tło, ten sam kąt kamery i światło,
-lekki 3/4) + miniatura 128 px. Skrypt jest przyrostowy: hash wyglądu → nie renderuje,
-jeśli się nie zmienił.
-Mapy: tools/wikimap.luau generuje SVG każdej mapy z Data/Areas, Portals, Maps
-(obszary z poziomami, drogi, jeziora, jaskinie, portale, NPC), z id elementów do
-podświetlania z poziomu strony. Kolory z tokenów wiki (zmienne CSS).
-```
+- Na start: ten plik, `CLAUDE.md`, `wiki/design/README.md`, odpowiednie makiety z `wiki/design/frames/`.
+- Bez pytań do właściciela w trakcie; niejasność → rozwiązanie najbliższe makiecie i danym, zapis w **Decyzje**.
+- Kod gry (`src/`) zmieniamy tylko, gdy to konieczne (np. flaga `wiki = false`, brakujący klucz lokalizacji), z uzasadnieniem w **Decyzje**.
+- Po pracy: `npm run check` w `wiki/` (typy, lint, testy, build) i `scripts/check` muszą przejść; zrzuty `npm run shots` na 390 i 1440 px porównane z makietami; aktualizacja tego pliku (Stan, Decyzje, Niedokończone) i sekcji sesji w `docs/PROGRESS.md` z „Instrukcją testu”; commit `SXX: wiki — …` i push.
+- Wdrożenie: domenę, konto Cloudflare i sekrety GitHub podłącza właściciel według sekcji „Wdrożenie” (pisze ją S44); sesje tego nie robią.
 
-### W3: szkielet i design system
+## Stan
 
-```text
-Postaw wiki/ (Astro, TS strict, i18n PL/EN z routingiem, Pagefind, sitemap).
-Zaimplementuj design system z [link / eksport z Claude Design]: tokeny w
-src/styles/tokens.css 1:1 z projektu, komponenty z listy w docs/WIKI.md jako komponenty
-Astro (interaktywne jako wyspy Vue). Zrób stronę /styleguide pokazującą każdy
-komponent we wszystkich stanach, na prawdziwych danych z JSON.
-Sprawdź w przeglądarce (wbudowany browser) na 390 i 1440 px, porównaj z makietami,
-pokaż mi zrzuty i listę różnic.
-```
+- (pusto; pierwsza sesja wiki wpisuje tu, co działa)
 
-### W4: bestiariusz i bossy (W5 i W6 analogicznie)
+## Decyzje
 
-```text
-Zbuduj sekcję [Bestiariusz + Bossy] wg makiety [D3 #2, #3] i kontraktu z docs/WIKI.md.
-Strony generowane z JSON (getStaticPaths), lista z filtrami w URL (do udostępniania),
-na telefonie karty zamiast tabeli. Każda strona: render, statystyki, gdzie występuje
-(fragment SVG mapy z podświetlonym obszarem), tabela dropu, linki krzyżowe do przedmiotów.
-Meta tagi i obrazek OG generowany per strona (render + nazwa + poziom).
-Sprawdź w przeglądarce 3 losowe strony na 390 i 1440 px i pokaż zrzuty.
-```
+- 2026-10-07: wiki w `wiki/` (Astro 5 + Svelte 5 + Pagefind + Cloudflare Pages), dane z `tools/wikidump.luau`, wygląd „Kuźnia” z Claude Design. Zastępuje plan jednoplikowej wiki z pierwotnej S34. Budowa w 10 sesjach: S34, S36–S44 (S35 to ikony przedmiotów w grze).
 
-- **W5** (Przedmioty i rzemiosło): makiety D3 #4, baza z filtrami, tooltip, kowal z szansami ulepszania, receptury.
-- **W6** (Klasy i planer): makieta D3 #5. Planer rozdaje punkty zgodnie z regułami z `Logic`, trzyma stan w URL i ma przycisk „Kopiuj link”.
+## Niedokończone
 
-### W7: świat i mapa interaktywna
-
-```text
-Interaktywna mapa świata wg makiety D3 #6: pan i zoom (mysz, dotyk, pinch), warstwy
-(potwory wg poziomu, portale, jaskinie, NPC, zbieractwo), klik → panel boczny z kartą,
-wyszukiwarka na mapie, deep-link (/mapa?m=<mapa>&x=..&z=..). Strona każdej mapy i obszaru.
-Bez bibliotek kafelkowych, SVG z W2. 60 fps na średnim telefonie (sprawdź w devtools).
-```
-
-### W8: treści ręczne
-
-```text
-Napisz poradniki w MDX (PL, potem tłumaczenie EN): Pierwsze kroki, Jak expić 1–30,
-Ulepszanie bez płaczu, Strefy PvP, Gildie. Źródło prawdy to DESIGN.md i dane; liczby
-wstawiaj komponentem <Stat id="..."/> z JSON, nie na sztywno. Ton: konkretny, krótki,
-dla nastolatka, bez memów. Fabułę questów ukrywaj za spoilerem.
-```
-
-### W9: jakość i wdrożenie
-
-```text
-Audyt i wdrożenie: Lighthouse (cel: 95+ w każdej kategorii na mobile), dostępność (axe,
-nawigacja klawiaturą, focus), budżet JS na stronę <50 KB poza mapą, obrazy webp/avif z
-srcset, 404 w obu językach, sitemap i hreflang, robots. GitHub Actions: na push do main
-lune wikidump → testy → build → Cloudflare Pages (preview na PR). Nie podłączaj
-domeny ani sekretów sam, przygotuj instrukcję dla mnie.
-```
-
----
-
-## 6. Co da najlepszy efekt
-
-1. **Najpierw design, potem kod.** Do W3 nie ruszaj implementacji, dopóki makieta tooltipu i karty potwora nie jest „ta”.
-2. **Weryfikacja wizualna w każdej sesji.** Zawsze wymagaj zrzutów na 390 i 1440 px oraz porównania z makietą.
-3. **Rendery to połowa wrażenia.** Jeśli `render3d.py` daje płaskie obrazki, poświęć jedną sesję na samo oświetlenie, kąt i obrys.
-4. **Zrzuty z gry robi właściciel** (Claude nie uruchamia gry). Przygotuj 10–15 ujęć: miasto o zmierzchu, drop legendy, boss, mapa.
-5. **Dane zawsze aktualne.** `wikidump` w `scripts/check.ps1` oraz test, że JSON w repo zgadza się z danymi.
-6. **Później:** porównywarka przedmiotów, timery Elit II online (wymaga backendu) i edycje społeczności przez PR na GitHubie.
-
-Kolejność: **W0 → D1–D3 (równolegle W1–W2) → W3 → W4…W8 → W9.** Realnie to 10–12 sesji.
+- (pusto)

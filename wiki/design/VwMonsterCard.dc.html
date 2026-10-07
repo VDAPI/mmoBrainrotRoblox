@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><script src="vw-data.js"></script></helmet>
+<sc-if value="{{ ready }}" hint-placeholder-val="{{ true }}">
+<a href="{{ href }}" style="display:flex;flex-direction:column;height:100%;background:linear-gradient(#252832,#1B1D23);border:1px solid {{ bd }};border-top:2px solid {{ top }};box-shadow:{{ sh }};color:#E8E4DA;font-family:'Alegreya Sans',sans-serif;text-decoration:none" style-hover="border-color:#7A6438">
+  <div style="position:relative;aspect-ratio:4/3;background:repeating-linear-gradient(135deg,#14161B 0 8px,#181A1F 8px 16px);border-bottom:1px solid #252832">
+    <span style="position:absolute;left:10px;top:10px;height:26px;display:flex;align-items:center;padding:0 9px;font-size:14px;font-weight:800;background:{{ rankBg }};color:{{ rankFg }};border:1px solid {{ rankBd }}">{{ rank }}</span>
+    <span style="position:absolute;right:10px;top:10px;height:26px;display:flex;align-items:center;gap:6px;padding:0 9px;font-size:13px;font-weight:800;background:rgba(20,22,27,.85);border:1px solid #3A3F4C;color:{{ elC }}"><span style="width:8px;height:8px;background:{{ elC }};transform:rotate(45deg)"></span>{{ el }}</span>
+    <span style="position:absolute;left:10px;bottom:8px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#9A9DA8">{{ renderL }}</span>
+  </div>
+  <div style="padding:14px 14px 12px;display:flex;flex-direction:column;gap:6px;flex:1">
+    <span style="font-family:'Grenze Gotisch',serif;font-size:26px;line-height:1">{{ name }}</span>
+    <span style="font-size:15px;font-weight:700;color:#9A9DA8"><span style="color:#E8C25A">{{ lvl }}</span> · {{ kind }}</span>
+    <span style="display:flex;align-items:center;gap:8px;font-size:15px;color:#C9CED6"><span style="width:8px;height:8px;background:{{ zc }};transform:rotate(45deg);flex-shrink:0"></span>{{ region }}</span>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;padding:10px 14px 12px;border-top:1px solid #252832;min-height:52px">
+    <sc-if value="{{ hasDrop }}"><div style="width:28px;height:28px;flex-shrink:0;border:1px solid {{ dc }};background:#14161B;box-shadow:inset 0 0 8px {{ dcs }}"></div><span style="flex:1;font-size:15px;font-weight:800;color:{{ dc }};line-height:1.15">{{ drop }}</span></sc-if>
+    <sc-if value="{{ noDrop }}"><span style="font-size:14px;color:#9A9DA8">{{ noDropL }}</span></sc-if>
+  </div>
+</a>
+</sc-if>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:300,&quot;height&quot;:440},&quot;monster&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;straznik&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;lang&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;pl&quot;,&quot;en&quot;],&quot;default&quot;:&quot;pl&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;demo&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;default&quot;,&quot;hover&quot;,&quot;focus&quot;],&quot;default&quot;:&quot;default&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;href&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  componentDidMount() { if (!window.VW) this._i = setInterval(() => { if (window.VW) { clearInterval(this._i); this.forceUpdate(); } }, 40); }
+  componentWillUnmount() { clearInterval(this._i); }
+  renderVals() {
+    const V = window.VW; if (!V) return { ready: false };
+    const lang = this.props.lang || 'pl', L = lang === 'en';
+    const m = V.monster(this.props.monster || 'straznik') || V.monsters[0];
+    const rk = V.ranks[m.rank], z = V.zone(m.zone), zt = V.zoneTypes[z.z], el = V.elements[m.el], it = m.drop ? V.item(m.drop) : null;
+    const demo = this.props.demo || 'default';
+    const top = { normal: '#7A6438', elite: '#E8C25A', elite2: '#FF9A2E', boss: '#D64A3E' }[m.rank];
+    const filled = m.rank !== 'normal';
+    return {
+      ready: true, href: this.props.href || (m.id === 'straznik' ? V.href('monster') : '#'),
+      name: L ? m.en : m.pl, lvl: (L ? 'Lv. ' : 'Poz. ') + m.lvl, kind: V.loc(V.kinds[m.kind], lang),
+      rank: V.loc(rk, lang), rankBg: filled ? (m.rank === 'boss' ? '#D64A3E' : rk.c) : 'rgba(20,22,27,.85)', rankFg: filled ? (m.rank === 'boss' ? '#FFFFFF' : '#14161B') : '#C9CED6', rankBd: filled ? (m.rank === 'boss' ? '#D64A3E' : rk.c) : '#3A3F4C',
+      el: V.loc(el, lang), elC: el.c, region: (L ? z.en : z.pl), zc: zt.c, renderL: L ? 'render' : 'render',
+      top: demo === 'hover' ? '#E8C25A' : top, bd: demo === 'hover' ? '#7A6438' : '#3A3F4C',
+      sh: demo === 'focus' ? '0 0 0 2px #14161B, 0 0 0 4px #E8C25A' : 'inset 0 1px 0 rgba(255,255,255,.04), 0 2px 0 #0E0F12',
+      hasDrop: !!it, noDrop: !it, drop: it ? (L ? it.en : it.pl) : '', dc: it ? V.rar[it.rar].c : '#9A9DA8', dcs: it ? V.rar[it.rar].c + '44' : 'transparent',
+      noDropL: L ? 'No unique loot' : 'Brak unikatowego łupu'
+    };
+  }
+}
+</script>
+</body>
+</html>

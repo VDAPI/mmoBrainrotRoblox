@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><script src="vw-data.js"></script></helmet>
+<sc-if value="{{ ready }}" hint-placeholder-val="{{ true }}">
+<div style="background:{{ band }};border:1px solid {{ color }};box-shadow:{{ glow }};padding:18px;display:flex;flex-direction:column;gap:12px;font-family:'Alegreya Sans',sans-serif;color:#E8E4DA;text-align:left">
+  <div style="display:flex;gap:14px;align-items:flex-start">
+    <div style="width:56px;height:56px;flex-shrink:0;border:1px solid {{ color }};background:repeating-linear-gradient(135deg,#14161B 0 5px,#1B1D23 5px 10px);box-shadow:inset 0 0 14px {{ colorSoft }}"></div>
+    <div style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:0">
+      <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">
+        <span style="font-size:21px;font-weight:800;line-height:1.1;color:{{ color }};text-wrap:pretty">{{ name }}</span>
+        <sc-if value="{{ upg }}"><span style="font-size:19px;font-weight:800;color:#14161B;background:#E8C25A;padding:0 7px;height:27px;line-height:27px;flex-shrink:0">{{ up }}</span></sc-if>
+      </div>
+      <span style="font-size:15px;color:#9A9DA8">{{ typeLine }}</span>
+    </div>
+  </div>
+  <sc-if value="{{ upg }}">
+    <div style="display:flex;gap:4px">
+      <sc-for list="{{ pips }}" as="p" hint-placeholder-count="9"><sc-if value="{{ p.on }}"><div style="flex:1;height:6px;background:#E8C25A;box-shadow:0 0 6px rgba(232,194,90,.6)"></div></sc-if><sc-if value="{{ p.off }}"><div style="flex:1;height:6px;background:#3A3F4C"></div></sc-if></sc-for>
+    </div>
+  </sc-if>
+  <div style="display:flex;flex-direction:column;gap:4px;font-size:17px;font-variant-numeric:tabular-nums;border-top:1px solid #3A3F4C;padding-top:10px">
+    <sc-if value="{{ hasStat }}"><div style="display:flex;justify-content:space-between;gap:12px"><span style="color:#9A9DA8">{{ statLabel }}</span><span style="font-weight:800">{{ statVal }}</span></div></sc-if>
+    <sc-if value="{{ hasSpd }}"><div style="display:flex;justify-content:space-between;gap:12px"><span style="color:#9A9DA8">{{ spdLabel }}</span><span style="font-weight:800">{{ spd }}</span></div></sc-if>
+    <div style="display:flex;justify-content:space-between;gap:12px"><span style="color:#9A9DA8">{{ reqLabel }}</span><span style="font-weight:800;text-align:right;color:{{ reqC }}">{{ req }}</span></div>
+  </div>
+  <sc-if value="{{ hasBonus }}">
+    <div style="display:flex;flex-direction:column;gap:4px;font-size:17px;font-weight:700;color:#6FA8F0;border-top:1px solid #3A3F4C;padding-top:10px">
+      <sc-for list="{{ bonuses }}" as="b" hint-placeholder-count="3"><span>◆ {{ b.t }}</span></sc-for>
+    </div>
+  </sc-if>
+  <sc-if value="{{ hasFlavor }}"><div style="font-style:italic;font-size:17px;color:#EADDBE;line-height:1.35">{{ flavor }}</div></sc-if>
+  <div style="font-size:14px;color:#9A9DA8">{{ bind }}</div>
+</div>
+</sc-if>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:400,&quot;height&quot;:420},&quot;item&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;ostrze&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;lang&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;pl&quot;,&quot;en&quot;],&quot;default&quot;:&quot;pl&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;upgrade&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;min&quot;:0,&quot;max&quot;:9,&quot;step&quot;:1,&quot;default&quot;:7,&quot;tsType&quot;:&quot;number&quot;},&quot;unmet&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;}}">
+class Component extends DCLogic {
+  componentDidMount() { if (!window.VW) this._i = setInterval(() => { if (window.VW) { clearInterval(this._i); this.forceUpdate(); } }, 40); }
+  componentWillUnmount() { clearInterval(this._i); }
+  renderVals() {
+    const V = window.VW; if (!V) return { ready: false };
+    const lang = this.props.lang || 'pl', L = lang === 'en';
+    const it = V.item(this.props.item || 'ostrze') || V.items[0], r = V.rar[it.rar];
+    const lvl = Math.max(0, Math.min(9, this.props.upgrade ?? it.up ?? 0));
+    const upg = it.slot !== 'material', s = V.statAt(it, lvl);
+    return {
+      ready: true, name: L ? it.en : it.pl, color: r.c, colorSoft: r.c + '55',
+      glow: '0 0 0 1px #14161B, 0 0 32px ' + r.c + '38',
+      band: 'linear-gradient(' + r.c + '24, ' + r.c + '00 90px), #16181D',
+      typeLine: (L ? r.en : r.pl) + ' · ' + (L ? it.ten : it.tpl),
+      upg, up: '+' + lvl, pips: Array.from({ length: 9 }, (_, i) => ({ on: i < lvl, off: i >= lvl })),
+      hasStat: !!s, statLabel: it.stat === 'atk' ? (L ? 'Attack' : 'Atak') : (L ? 'Armor' : 'Pancerz'), statVal: s ? s.join('–') : '',
+      hasSpd: !!it.spd, spdLabel: L ? 'Attack speed' : 'Szybkość ataku', spd: it.spd ? V.nf(it.spd, lang) : '',
+      reqC: this.props.unmet ? '#E8665A' : '#E8E4DA',
+      reqLabel: L ? 'Requires' : 'Wymagania', req: (L ? 'Level ' : 'Poz. ') + it.lvl + ' · ' + V.loc(V.classes[it.cls], lang),
+      hasBonus: it.b.length > 0, bonuses: it.b.map(x => ({ t: L ? x[1] : x[0] })),
+      hasFlavor: !!it.f, flavor: it.f ? (L ? it.f[1] : it.f[0]) : '',
+      bind: upg ? (L ? 'Binds on pickup' : 'Wiąże się po podniesieniu') : (L ? 'Stacks up to 99' : 'Do 99 w stosie')
+    };
+  }
+}
+</script>
+</body>
+</html>

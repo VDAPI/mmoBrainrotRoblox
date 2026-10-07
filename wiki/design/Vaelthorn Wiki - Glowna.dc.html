@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Grenze+Gotisch:wght@500;700&family=Alegreya+Sans:ital,wght@0,400;0,500;0,700;0,800;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<script src="vw-data.js"></script>
+<style>body{margin:0;background:#0E0F12;color:#E8E4DA;font-family:'Alegreya Sans',sans-serif;-webkit-font-smoothing:antialiased}a{color:#E8C25A;text-decoration:none}a:hover{color:#FFE7C2}*{box-sizing:border-box}</style>
+</helmet>
+<div style="padding:56px 80px 120px;display:flex;flex-direction:column;gap:32px">
+  <dc-import name="VwNav" variant="pages" active="home" lang="{{ lang }}" hint-size="100%,36px"></dc-import>
+  <sc-if value="{{ ready }}" hint-placeholder-val="{{ true }}">
+  <div style="display:flex;gap:60px;align-items:flex-start;width:max-content">
+
+    <div data-screen-label="Glowna desktop" style="flex-shrink:0;width:1440px;background:#14161B;background-image:radial-gradient(ellipse 70% 40% at 50% 100%,rgba(217,110,40,.14),transparent 70%);outline:1px solid #3A3F4C">
+      <dc-import name="VwNav" variant="desktop" active="home" lang="{{ lang }}" on-lang="{{ setLang }}" hint-size="1440px,72px"></dc-import>
+      <div style="position:relative;height:600px;overflow:hidden;border-bottom:1px solid #3A3F4C">
+        <div style="position:absolute;inset:0;background:repeating-linear-gradient(135deg,#191B20 0 14px,#1D2026 14px 28px)"></div>
+        <div style="position:absolute;right:28px;bottom:20px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:#9A9DA8">{{ t.art }}</div>
+        <div style="position:absolute;inset:0;background:linear-gradient(90deg,#14161B 0%,rgba(20,22,27,.92) 38%,rgba(20,22,27,.2) 70%,rgba(20,22,27,.5) 100%)"></div>
+        <div style="position:absolute;right:250px;top:0;bottom:0;width:300px">
+          <div style="position:absolute;left:50%;bottom:90px;top:0;width:110px;margin-left:-55px;background:linear-gradient(to top,rgba(255,154,46,.9),rgba(255,180,80,.45) 45%,rgba(255,154,46,0));filter:blur(10px)"></div>
+          <div style="position:absolute;left:50%;bottom:96px;top:40px;width:14px;margin-left:-7px;background:linear-gradient(to top,#FFF2D8,rgba(255,226,170,.6) 50%,rgba(255,226,170,0));filter:blur(2px)"></div>
+          <div style="position:absolute;left:0;right:0;bottom:50px;height:90px;background:radial-gradient(ellipse at center,rgba(255,154,46,.65),rgba(255,154,46,.12) 45%,transparent 70%)"></div>
+          <a href="{{ itemHref }}" style="position:absolute;left:50%;bottom:150px;transform:translateX(-50%);white-space:nowrap;display:flex;flex-direction:column;align-items:center;gap:4px">
+            <span style="font-size:13px;font-weight:800;letter-spacing:.2em;color:#FF9A2E">{{ t.legend }}</span>
+            <span style="font-size:20px;font-weight:700;color:#FFE7C2;text-shadow:0 0 12px rgba(255,154,46,.8)">{{ dropName }}</span>
+          </a>
+        </div>
+        <div style="position:relative;padding:96px 72px 0;display:flex;flex-direction:column;gap:22px;max-width:760px">
+          <div style="font-size:15px;font-weight:800;letter-spacing:.22em;color:#C9A45C">{{ t.kicker }}</div>
+          <div style="font-family:'Grenze Gotisch',serif;font-weight:700;font-size:128px;line-height:.85;color:#E8C25A;text-shadow:0 2px 0 #7A6438,0 0 40px rgba(232,194,90,.2)">Vaelthorn</div>
+          <div style="font-size:23px;line-height:1.45;color:#E8E4DA;max-width:560px;text-wrap:pretty">{{ t.sub }}</div>
+          <a href="{{ searchHref }}" style="display:flex;height:62px;max-width:640px;background:#1B1D23;border:1px solid #7A6438;box-shadow:inset 0 2px 6px rgba(0,0,0,.5),0 0 0 1px #14161B">
+            <div style="flex:1;display:flex;align-items:center;padding:0 22px;font-size:19px;color:#9A9DA8">{{ t.ph }}</div>
+            <div style="background:linear-gradient(#E8C25A,#C9A45C);color:#14161B;font-weight:800;font-size:16px;letter-spacing:.08em;padding:0 30px;display:flex;align-items:center;box-shadow:inset 0 1px 0 rgba(255,255,255,.4)">{{ t.btn }}</div>
+          </a>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <sc-for list="{{ quick }}" as="q" hint-placeholder-count="3"><a href="{{ q.href }}" style="font-size:15px;font-weight:700;color:#E8E4DA;border:1px solid #3A3F4C;background:#1B1D23;padding:7px 12px" style-hover="border-color:#7A6438">{{ q.t }}</a></sc-for>
+          </div>
+        </div>
+      </div>
+
+      <div style="padding:56px 72px 24px;display:flex;align-items:center;gap:18px"><span style="font-family:'Grenze Gotisch',serif;font-size:38px;color:#E8C25A">{{ t.secCats }}</span><div style="flex:1;height:1px;background:linear-gradient(90deg,#7A6438,transparent)"></div></div>
+      <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;padding:0 72px 64px">
+        <sc-for list="{{ cats }}" as="c" hint-placeholder-count="8">
+          <a href="{{ c.href }}" style="display:flex;gap:16px;align-items:center;padding:16px;background:linear-gradient(#252832,#1B1D23);border:1px solid #3A3F4C;box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 2px 0 #0E0F12" style-hover="border-color:#7A6438">
+            <div style="width:64px;height:64px;flex-shrink:0;background:repeating-linear-gradient(135deg,#14161B 0 6px,#191B21 6px 12px);border:1px solid #7A6438;box-shadow:inset 0 0 0 2px #14161B,inset 0 0 12px rgba(0,0,0,.6)"></div>
+            <div style="display:flex;flex-direction:column;gap:3px;min-width:0"><span style="font-size:20px;font-weight:800;color:#E8E4DA">{{ c.n }}</span><span style="font-size:15px;line-height:1.3;color:#9A9DA8">{{ c.d }}</span></div>
+          </a>
+        </sc-for>
+      </div>
+
+      <div style="display:grid;grid-template-columns:minmax(0,1.2fr) 400px minmax(0,1fr);gap:28px;padding:0 72px 64px;align-items:start">
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div style="font-size:14px;font-weight:800;letter-spacing:.2em;color:#C9A45C">{{ t.mon }}</div>
+          <div style="background:linear-gradient(#252832,#1B1D23 120px);border:1px solid #3A3F4C;border-top:2px solid #C9A45C;padding:22px;display:flex;flex-direction:column;gap:18px">
+            <div style="display:flex;gap:18px;align-items:center">
+              <div style="width:92px;height:92px;flex-shrink:0;background:repeating-linear-gradient(135deg,#14161B 0 6px,#1B1D23 6px 12px);border:2px solid #C9A45C;box-shadow:0 0 0 2px #14161B,0 0 0 3px #7A6438;display:flex;align-items:flex-end;padding:4px"><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#9A9DA8">{{ t.portrait }}</span></div>
+              <div style="display:flex;flex-direction:column;gap:6px">
+                <span style="font-family:'Grenze Gotisch',serif;font-size:34px;line-height:1;color:#E8E4DA">{{ mon.name }}</span>
+                <div style="display:flex;gap:8px;align-items:center;font-size:15px;font-weight:700;flex-wrap:wrap"><span style="color:#E8C25A">{{ mon.lvl }}</span><span style="color:#9A9DA8">· {{ mon.meta }}</span><span style="padding:2px 8px;border:1px solid #D64A3E;color:#E8665A;font-size:13px;letter-spacing:.08em">{{ mon.zt }}</span></div>
+              </div>
+            </div>
+            <div style="position:relative;height:22px;background:#2A1616;border:1px solid #14161B;box-shadow:0 0 0 1px #3A3F4C"><div style="position:absolute;inset:0;background:linear-gradient(#D9463E,#C2352E 50%,#9E2A24)"></div><span style="position:relative;display:flex;justify-content:center;font-size:14px;font-weight:800;line-height:22px;color:#FFF;text-shadow:0 1px 2px #000">{{ mon.hp }}</span></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:#3A3F4C;border:1px solid #3A3F4C">
+              <div style="background:#1B1D23;padding:10px 12px;display:flex;flex-direction:column;gap:2px"><span style="font-size:13px;color:#9A9DA8">{{ t.dmg }}</span><span style="font-size:19px;font-weight:700">{{ mon.dmg }}</span></div>
+              <div style="background:#1B1D23;padding:10px 12px;display:flex;flex-direction:column;gap:2px"><span style="font-size:13px;color:#9A9DA8">{{ t.resp }}</span><span style="font-size:19px;font-weight:700">{{ mon.resp }}</span></div>
+              <div style="background:#1B1D23;padding:10px 12px;display:flex;flex-direction:column;gap:2px"><span style="font-size:13px;color:#9A9DA8">{{ t.zone }}</span><span style="font-size:19px;font-weight:700">{{ mon.zone }}</span></div>
+            </div>
+            <a href="{{ monHref }}" style="font-size:16px;font-weight:700">{{ t.more }}</a>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div style="font-size:14px;font-weight:800;letter-spacing:.2em;color:#C9A45C">{{ t.drop }}</div>
+          <dc-import name="VwTooltip" item="ostrze" lang="{{ lang }}" hint-size="400px,400px"></dc-import>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div style="font-size:14px;font-weight:800;letter-spacing:.2em;color:#C9A45C">{{ t.ch }}</div>
+          <div style="background:#1B1D23;border:1px solid #3A3F4C">
+            <sc-for list="{{ changes }}" as="ch" hint-placeholder-count="4">
+              <div style="display:flex;gap:14px;padding:14px 16px;border-bottom:1px solid #252832"><span style="font-size:15px;font-weight:800;color:#C9A45C;width:44px;flex-shrink:0;padding-top:2px">{{ ch.d }}</span><div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:18px;font-weight:700">{{ ch.t }}</span><span style="font-size:15px;color:#9A9DA8">{{ ch.w }}</span></div></div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+
+      <div style="padding:8px 72px 24px;display:flex;align-items:center;gap:18px"><span style="font-family:'Grenze Gotisch',serif;font-size:38px;color:#E8C25A">{{ t.zonesT }}</span><div style="flex:1;height:1px;background:linear-gradient(90deg,#7A6438,transparent)"></div></div>
+      <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;padding:0 72px 80px">
+        <sc-for list="{{ zones }}" as="z" hint-placeholder-count="3">
+          <div style="background:linear-gradient(#252832,#1B1D23);border:1px solid #3A3F4C;border-top:2px solid {{ z.c }};padding:20px;display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;align-items:center;gap:10px"><div style="width:10px;height:10px;background:{{ z.c }};transform:rotate(45deg);box-shadow:0 0 8px {{ z.c }}"></div><span style="font-size:14px;font-weight:800;letter-spacing:.14em;color:{{ z.c }}">{{ z.type }}</span></div>
+            <span style="font-size:19px;font-weight:700">{{ z.desc }}</span>
+            <span style="font-size:15px;color:#9A9DA8">{{ z.ex }}</span>
+          </div>
+        </sc-for>
+      </div>
+      <div style="border-top:1px solid #7A6438;background:#1B1D23;padding:24px 72px;display:flex;justify-content:space-between;align-items:center;font-size:16px;color:#9A9DA8"><span>{{ t.foot }}</span><span style="font-family:'Grenze Gotisch',serif;font-size:22px;color:#C9A45C">Vaelthorn</span></div>
+    </div>
+
+    <div data-screen-label="Glowna mobile" style="flex-shrink:0;width:390px;background:#14161B;background-image:radial-gradient(ellipse 90% 30% at 50% 100%,rgba(217,110,40,.14),transparent 70%);outline:1px solid #3A3F4C;border-radius:28px;overflow:hidden">
+      <dc-import name="VwNav" variant="mobile" lang="{{ lang }}" on-lang="{{ setLang }}" hint-size="390px,60px"></dc-import>
+      <div style="position:relative;height:440px;overflow:hidden;border-bottom:1px solid #3A3F4C">
+        <div style="position:absolute;inset:0;background:repeating-linear-gradient(135deg,#191B20 0 12px,#1D2026 12px 24px)"></div>
+        <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(20,22,27,.2),rgba(20,22,27,.55) 55%,#14161B 92%)"></div>
+        <div style="position:absolute;left:50%;top:0;width:200px;margin-left:-100px;height:250px">
+          <div style="position:absolute;left:50%;top:0;bottom:30px;width:70px;margin-left:-35px;background:linear-gradient(to top,rgba(255,154,46,.9),rgba(255,180,80,.4) 50%,rgba(255,154,46,0));filter:blur(8px)"></div>
+          <div style="position:absolute;left:50%;top:30px;bottom:34px;width:9px;margin-left:-4px;background:linear-gradient(to top,#FFF2D8,rgba(255,226,170,0));filter:blur(1.5px)"></div>
+          <div style="position:absolute;left:0;right:0;bottom:0;height:60px;background:radial-gradient(ellipse at center,rgba(255,154,46,.6),transparent 70%)"></div>
+        </div>
+        <div style="position:absolute;left:20px;right:20px;bottom:24px;display:flex;flex-direction:column;gap:12px">
+          <div style="font-size:12px;font-weight:800;letter-spacing:.2em;color:#C9A45C">{{ t.kickerM }}</div>
+          <div style="font-family:'Grenze Gotisch',serif;font-weight:700;font-size:68px;line-height:.85;color:#E8C25A;text-shadow:0 2px 0 #7A6438">Vaelthorn</div>
+          <a href="{{ searchHref }}" style="display:flex;height:52px;background:#1B1D23;border:1px solid #7A6438;box-shadow:inset 0 2px 6px rgba(0,0,0,.5)"><div style="flex:1;display:flex;align-items:center;padding:0 14px;font-size:17px;color:#9A9DA8">{{ t.phM }}</div><div style="background:linear-gradient(#E8C25A,#C9A45C);color:#14161B;font-weight:800;font-size:14px;letter-spacing:.06em;padding:0 18px;display:flex;align-items:center">{{ t.btn }}</div></a>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:22px 16px">
+        <sc-for list="{{ cats }}" as="c" hint-placeholder-count="8">
+          <a href="{{ c.href }}" style="display:flex;gap:10px;align-items:center;padding:10px;min-height:60px;background:linear-gradient(#252832,#1B1D23);border:1px solid #3A3F4C;color:#E8E4DA"><div style="width:38px;height:38px;flex-shrink:0;background:repeating-linear-gradient(135deg,#14161B 0 5px,#191B21 5px 10px);border:1px solid #7A6438"></div><span style="font-size:16px;font-weight:800">{{ c.n }}</span></a>
+        </sc-for>
+      </div>
+      <div style="padding:0 16px 24px;display:flex;flex-direction:column;gap:10px">
+        <div style="font-size:12px;font-weight:800;letter-spacing:.2em;color:#C9A45C">{{ t.drop }}</div>
+        <dc-import name="VwTooltip" item="ostrze" lang="{{ lang }}" hint-size="100%,400px"></dc-import>
+      </div>
+      <div style="padding:0 16px 28px;display:flex;flex-direction:column;gap:10px">
+        <div style="font-size:12px;font-weight:800;letter-spacing:.2em;color:#C9A45C">{{ t.mon }}</div>
+        <a href="{{ monHref }}" style="display:flex;gap:12px;align-items:center;padding:12px;background:linear-gradient(#252832,#1B1D23);border:1px solid #3A3F4C;border-top:2px solid #C9A45C;color:#E8E4DA">
+          <div style="width:56px;height:56px;flex-shrink:0;background:repeating-linear-gradient(135deg,#14161B 0 5px,#1B1D23 5px 10px);border:2px solid #C9A45C"></div>
+          <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:0"><span style="font-family:'Grenze Gotisch',serif;font-size:24px;line-height:1">{{ mon.name }}</span><span style="font-size:14px;font-weight:700;color:#9A9DA8">{{ mon.lvl }} · {{ mon.meta }}</span></div>
+          <span style="color:#E8C25A;font-size:20px">›</span>
+        </a>
+      </div>
+      <dc-import name="VwNav" variant="tabs" active="home" lang="{{ lang }}" hint-size="390px,68px"></dc-import>
+    </div>
+  </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const T = {
+  pl: { kicker: 'OFICJALNA WIKI · SEZON II: POPIELNE ZIEMIE', kickerM: 'OFICJALNA WIKI · SEZON II', sub: 'Każdy drop, każde ulepszenie i każdy losowy bonus, sprawdzone przez graczy.', ph: 'Szukaj przedmiotu, potwora, krainy…', phM: 'Szukaj…', btn: 'SZUKAJ', legend: 'LEGENDARNY', secCats: 'Działy wiki', mon: 'POTWÓR TYGODNIA', drop: 'OSTATNI LEGENDARNY DROP', ch: 'OSTATNIE ZMIANY', zonesT: 'Strefy świata', foot: 'Wiki tworzona przez społeczność graczy Vaelthorn', more: 'Pełna karta potwora →', art: 'key art: Kurhany Wschodu nocą, pełna szerokość', portrait: 'portret', dmg: 'Obrażenia', resp: 'Odrodzenie', zone: 'Kraina',
+    quick: ['Ulepszanie +9', 'Kurhany Wschodu', 'Strażnik Kurhanu'],
+    cats: [['Przedmioty', 'Broń, zbroje i ich losowe bonusy', 'items'], ['Bestiariusz', 'Elity i bossowie z tabelami łupów', 'bestiary'], ['Mapa świata', 'Krainy i strefy PvP', 'map'], ['Ulepszanie', 'Kalkulator +0…+9 i ryzyko', 'upgrade'], ['Zadania', 'Fabuła i zlecenia dzienne', null], ['Klasy', 'Umiejętności i drzewka', 'mage'], ['Rzemiosło', 'Surowce i receptury', null], ['Kroniki', 'Lore i postacie świata', null]],
+    changes: [['06.10', 'Ostrze Popielnego Króla', 'nowa pula bonusów'], ['05.10', 'Kurhany Wschodu', 'mapa i miejsca odrodzeń'], ['03.10', 'Ulepszanie +8 → +9', 'poprawione szanse'], ['01.10', 'Strażnik Kurhanu', 'tabela łupów']], ex: 'np.' },
+  en: { kicker: 'OFFICIAL WIKI · SEASON II: THE ASHLANDS', kickerM: 'OFFICIAL WIKI · SEASON II', sub: 'Every drop, every upgrade and every random bonus, verified by players.', ph: 'Search items, monsters, zones…', phM: 'Search…', btn: 'SEARCH', legend: 'LEGENDARY', secCats: 'Wiki sections', mon: 'MONSTER OF THE WEEK', drop: 'LATEST LEGENDARY DROP', ch: 'RECENT CHANGES', zonesT: 'World zones', foot: 'Built by the Vaelthorn player community', more: 'Full monster page →', art: 'key art: Eastern Barrows at night, full width', portrait: 'portrait', dmg: 'Damage', resp: 'Respawn', zone: 'Zone',
+    quick: ['Upgrading +9', 'Eastern Barrows', 'Barrow Warden'],
+    cats: [['Items', 'Weapons, armor and random bonuses', 'items'], ['Bestiary', 'Elites and bosses with loot tables', 'bestiary'], ['World map', 'Zones and PvP areas', 'map'], ['Upgrading', '+0…+9 calculator and risk', 'upgrade'], ['Quests', 'Story and daily tasks', null], ['Classes', 'Skills and talent trees', 'mage'], ['Crafting', 'Materials and recipes', null], ['Chronicles', 'Lore and characters', null]],
+    changes: [['06.10', 'Blade of the Ash King', 'new bonus pool'], ['05.10', 'Eastern Barrows', 'map and spawn points'], ['03.10', 'Upgrading +8 → +9', 'corrected chances'], ['01.10', 'Barrow Warden', 'loot table']], ex: 'e.g.' }
+};
+class Component extends DCLogic {
+  state = { lang: null };
+  componentDidMount() {
+    try { const l = localStorage.getItem('vw-lang'); if (l === 'pl' || l === 'en') this.setState({ lang: l }); } catch (e) {}
+    if (!window.VW) this._i = setInterval(() => { if (window.VW) { clearInterval(this._i); this.forceUpdate(); } }, 40);
+  }
+  componentWillUnmount() { clearInterval(this._i); }
+  renderVals() {
+    const lang = this.state.lang || 'pl', L = lang === 'en', t = T[lang];
+    const setLang = l => { this.setState({ lang: l }); try { localStorage.setItem('vw-lang', l); } catch (e) {} };
+    const V = window.VW;
+    if (!V) return { ready: false, lang, setLang, t };
+    const m = V.monster('straznik'), z = V.zone(m.zone), zt = V.zoneTypes[z.z];
+    const qh = ['upgrade', 'zone', 'monster'];
+    return {
+      ready: true, lang, setLang, t,
+      itemHref: V.href('item'), searchHref: V.href('search'), monHref: V.href('monster'),
+      dropName: L ? V.item('ostrze').en : V.item('ostrze').pl,
+      quick: t.quick.map((q, i) => ({ t: q, href: V.href(qh[i]) })),
+      cats: t.cats.map(([n, d, k]) => ({ n, d, href: k ? V.href(k) : '#' })),
+      changes: t.changes.map(([d, tt, w]) => ({ d, t: tt, w })),
+      mon: { name: L ? m.en : m.pl, lvl: (L ? 'Lv. ' : 'Poz. ') + m.lvl, meta: V.loc(V.ranks[m.rank], lang) + ' · ' + V.loc(V.kinds[m.kind], lang), zt: V.loc(zt, lang).toUpperCase(), hp: V.nf(m.hp, lang) + ' / ' + V.nf(m.hp, lang), dmg: m.dmg, resp: m.resp, zone: L ? z.en : z.pl },
+      zones: V.zones.map(zz => { const ty = V.zoneTypes[zz.z]; return { c: ty.c, type: V.loc(ty, lang).toUpperCase(), desc: L ? ty.den : ty.dpl, ex: t.ex + ' ' + (L ? zz.en : zz.pl) + ' · ' + (L ? 'lv. ' : 'poz. ') + zz.lv }; })
+    };
+  }
+}
+</script>
+</body>
+</html>
