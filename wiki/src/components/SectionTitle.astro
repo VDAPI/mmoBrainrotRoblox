@@ -1,0 +1,12 @@
+---
+// Section title (.vw-section-title + .vw-h2) with the gradient line.
+interface Props {
+  as?: "h2" | "h3";
+  id?: string;
+}
+const { as: Tag = "h2", id } = Astro.props;
+---
+<Tag class="vw-section-title vw-h2" id={id}><slot /></Tag>
+<style>
+  .vw-section-title { margin: 0 0 var(--vw-s-6); }
+</style>

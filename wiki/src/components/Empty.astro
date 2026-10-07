@@ -1,0 +1,18 @@
+---
+// Empty state (.vw-empty): diamond, Grenze title, text, optional action slot.
+interface Props {
+  title: string;
+  text?: string;
+}
+const { title, text } = Astro.props;
+---
+<div class="vw-empty">
+  <span class="vw-empty__mark" aria-hidden="true"></span>
+  <p class="title">{title}</p>
+  {text && <p class="text">{text}</p>}
+  <slot />
+</div>
+<style>
+  .title { margin: 0; font: 400 var(--vw-fs-h2)/var(--vw-lh-h2) var(--vw-font-display); color: var(--vw-gold-bright); }
+  .text { margin: 0; max-width: 520px; }
+</style>

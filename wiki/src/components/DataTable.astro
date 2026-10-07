@@ -1,0 +1,42 @@
+---
+// Data table (.vw-table): columns with labels (data-label for the mobile card view), optional sort marks.
+export interface Column {
+  key: string;
+  label: string;
+  sortable?: boolean;
+  align?: "left" | "right" | "center";
+  mobile?: "title" | "meta" | "value" | "hidden";
+  sort?: "ascending" | "descending";
+}
+interface Props {
+  columns: Column[];
+  rows: Record<string, unknown>[];
+  caption: string;
+  html?: boolean;
+}
+const { columns, rows, caption, html = false } = Astro.props;
+---
+<table class="vw-table">
+  <caption class="vw-sr">{caption}</caption>
+  <thead>
+    <tr>{columns.map((c) => <th scope="col" style={c.align ? `text-align: ${c.align}` : undefined} aria-sort={c.sortable ? (c.sort ?? "none") : undefined}>{c.label}</th>)}</tr>
+  </thead>
+  <tbody>
+    {rows.map((row) => (
+      <tr>
+        {columns.map((c) => (
+          <td data-label={c.mobile === "title" || c.mobile === "value" ? undefined : c.label} data-mobile={c.mobile} style={c.align ? `text-align: ${c.align}` : undefined}>
+            {html ? <Fragment set:html={String(row[c.key] ?? "")} /> : String(row[c.key] ?? "")}
+          </td>
+        ))}
+      </tr>
+    ))}
+  </tbody>
+</table>
+<style>
+  @media (max-width: 767px) {
+    td[data-mobile="hidden"] { display: none; }
+    td[data-mobile="title"] { grid-column: 2; font-weight: 800; }
+    td[data-mobile="value"] { grid-column: 3; grid-row: 1; text-align: right; font-weight: 800; }
+  }
+</style>

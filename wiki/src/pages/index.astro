@@ -1,0 +1,38 @@
+---
+// "/" picks /en/ when the saved language or the first pl/en browser language is English, otherwise /pl/.
+---
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Vaelthorn Wiki</title>
+    <meta name="robots" content="noindex" />
+    <link rel="alternate" hreflang="pl" href="/pl/" />
+    <link rel="alternate" hreflang="en" href="/en/" />
+    <script is:inline>
+      let lang = "pl";
+      try {
+        const saved = localStorage.getItem("vw-lang");
+        if (saved === "en" || saved === "pl") {
+          lang = saved;
+        } else {
+          for (const item of navigator.languages || [navigator.language || "pl"]) {
+            const code = String(item).slice(0, 2).toLowerCase();
+            if (code === "pl" || code === "en") {
+              lang = code;
+              break;
+            }
+          }
+        }
+      } catch {
+        lang = "pl";
+      }
+      location.replace("/" + lang + "/");
+    </script>
+    <noscript><meta http-equiv="refresh" content="0; url=/pl/" /></noscript>
+  </head>
+  <body style="background:#14161B;color:#E8E4DA;font-family:system-ui,sans-serif">
+    <p><a href="/pl/" style="color:#E8C25A">Polski</a> · <a href="/en/" style="color:#E8C25A">English</a></p>
+  </body>
+</html>

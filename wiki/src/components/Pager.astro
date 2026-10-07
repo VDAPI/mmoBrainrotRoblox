@@ -1,0 +1,24 @@
+---
+// Pager (.vw-pager): previous / page numbers / next, as links.
+import { t } from "../lib/i18n";
+import type { Lang } from "../i18n/routes";
+interface Props {
+  page: number;
+  pages: number;
+  hrefFor: (page: number) => string;
+  lang?: Lang;
+}
+const { page, pages, hrefFor, lang = "pl" } = Astro.props;
+const numbers = Array.from({ length: pages }, (_, i) => i + 1);
+---
+<nav class="vw-pager" aria-label={t(lang, "pager.page", { n: page })}>
+  {page > 1 ? <a class="vw-btn" href={hrefFor(page - 1)} aria-label={t(lang, "pager.prev")}>‹</a> : <span class="vw-btn" aria-disabled="true">‹</span>}
+  {numbers.map((n) => (
+    <a class={`vw-btn${n === page ? " vw-btn--primary" : ""}`} href={hrefFor(n)} aria-current={n === page ? "page" : undefined} aria-label={t(lang, "pager.page", { n })}>{n}</a>
+  ))}
+  {page < pages ? <a class="vw-btn" href={hrefFor(page + 1)} aria-label={t(lang, "pager.next")}>›</a> : <span class="vw-btn" aria-disabled="true">›</span>}
+</nav>
+<style>
+  .vw-btn { min-width: var(--vw-touch); padding: 0 12px; }
+  a.vw-btn:hover { text-decoration: none; }
+</style>

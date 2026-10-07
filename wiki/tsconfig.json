@@ -1,0 +1,6 @@
+{
+  "extends": "astro/tsconfigs/strict",
+  "include": [".astro/types.d.ts", "**/*"],
+  "exclude": ["dist", "design", "node_modules"],
+  "compilerOptions": { "resolveJsonModule": true, "verbatimModuleSyntax": true }
+}

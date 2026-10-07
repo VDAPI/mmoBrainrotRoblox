@@ -1,0 +1,14 @@
+---
+// Monster rank badge (.vw-rank): names from mechanics.variants, "Boss" from the wiki texts.
+import { load } from "../lib/data";
+import { name, t } from "../lib/i18n";
+import type { Lang } from "../i18n/routes";
+interface Props {
+  rank: "normal" | "elite" | "elite2" | "boss";
+  lang: Lang;
+}
+const { rank, lang } = Astro.props;
+const variant = load("mechanics").variants[rank];
+const label = rank === "boss" ? t(lang, "rank.boss") : name(variant?.name, lang) || rank;
+---
+<span class={`vw-rank${rank === "normal" ? "" : ` vw-rank--${rank}`}`}>{label}</span>

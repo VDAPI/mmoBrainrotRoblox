@@ -6,6 +6,7 @@
 
 | Plik | Źródło (paczka) | Licencja | Wersja i data pobrania | Link | Uwagi |
 |---|---|---|---|---|---|
+| Fonty wiki: Grenze Gotisch, Alegreya Sans, IBM Plex Mono (`@fontsource`) | Google Fonts przez Fontsource | SIL OFL 1.1 | 5.3.0, 2026-10-07 | fontsource.org | tylko strona wiki (`wiki/`) |
 | `art/icons/items_*.png` | własne, wygenerowane (`tools/icons`) | własne | 2026-10-07 | — | przebudowa: `tools/icons/README.md` |
 
 ## Gdzie co leży

@@ -203,6 +203,40 @@ Kolejność wiki: S34 → S36 → dalej po kolei (S37–S41 zależą tylko od S3
 - Po pracy: `npm run check` w `wiki/` (typy, lint, testy, build) i `scripts/check` muszą przejść; zrzuty `npm run shots` na 390 i 1440 px porównane z makietami; aktualizacja tego pliku (Stan, Decyzje, Niedokończone) i sekcji sesji w `docs/PROGRESS.md` z „Instrukcją testu”; commit `SXX: wiki — …` i push.
 - Wdrożenie: domenę, konto Cloudflare i sekrety GitHub podłącza właściciel według sekcji „Wdrożenie” (pisze ją S44); sesje tego nie robią.
 
+
+## Komponenty (S36, kontrakt dla S37–S44)
+
+Statyczne `.astro` w `wiki/src/components/`; `ItemTooltip`, `ItemIcon`, `RarityBadge` w Svelte 5 (Astro renderuje je
+do HTML bez JS, wyspy importują te same pliki). Dane przez `src/lib/data.ts` (`load`, `getItem`, `getMonster`,
+`getBoss`, `getMap`, `rarityOf`; czyta JSON z dysku przy buildzie, **nigdy w wyspach**). Kolory zawsze przez tokeny
+`--vw-r-<key>`, `--vw-r-<key>-text`, `--vw-glow-<key>`, `--vw-el-<id>`, `--vw-zone-<z>` (z `tokens.data.css`).
+
+| Komponent | Propsy |
+|---|---|
+| `Button` | `{ variant?: "default"\|"primary"\|"ghost"\|"play", href?, disabled?, type?, class? }` |
+| `SectionTitle`, `Label` | `{ as?, id? }` |
+| `ItemTooltip.svelte` | `{ data: TooltipData, floating?, href?, labels?: { bind } }`; dane: `tooltipData(itemId, { rarity?, upgrade?, lang, playerLevel? })`, `defaultRarity(item)` (`src/lib/tooltip.ts`) |
+| `ItemIcon.svelte` | `{ glyph, color, rarity?, size? = 40, src?, alt? }` (S40 dokłada `src` z manifestu ikon) |
+| `RarityBadge.svelte` | `{ rarity, label }` (nazwa z `rarities.json` podaje wywołujący — komponent działa też w wyspach) |
+| `MonsterImage` | `{ id, variant?, kind?: "monster"\|"boss"\|"pet", size?: "thumb"\|"full", alt, element?, class? }` (`public/img/mobs/<id>[-elite\|-elite2][-128].webp`, inaczej wzór z rombem) |
+| `MonsterCard` | `{ monster, variant?, level?, lang, href? }` |
+| `BossHeader` | `{ boss, lang, players?: 1-5 }` |
+| `SkillNode` / `SkillEdge` | `{ glyph?, state, rank, max, active?, capstone?, selected?, label }` / `{ active? }` |
+| `DataTable` | `{ columns: { key, label, sortable?, align?, mobile?, sort? }[], rows, caption, html? }` |
+| `Chip`, `Pager` | `{ pressed?, disabled?, href?, count? }`, `{ page, pages, hrefFor, lang? }` |
+| `Callout` | `{ kind?: "info"\|"tip"\|"warn"\|"changed"\|"spoiler", title?, date?, lang? }` |
+| `Bar` | `{ kind?: "hp"\|"mana"\|"energy"\|"exp", value, max, label?, size?, lang? }` |
+| `ZoneBadge`, `RankBadge`, `ElementBadge` | `{ zone, lang }`, `{ rank, lang }`, `{ element?, lang }` |
+| `Crumbs`, `Toc` | `{ items: { label, href? }[] }`, `{ items: { id, label, sub? }[], lang }` |
+| `Empty`, `Skeleton` | `{ title, text? }` (+ slot na akcję), `{ shape?, lines? }` |
+| `SoonLink` | `{ href: string\|null, lang }` — link albo tekst z „Wkrótce” |
+
+**Strona encji** (S37–S43): `<Base lang title section search={{ type, meta }}>` — `type` z kluczy `item`, `monster`,
+`region`, `quest`, `skill`, `guide`; `meta` trafia do Pagefind (`title`, `line`, `rarity`, `glyph`, `color`,
+`tooltip` dla przedmiotów). **Nowa strona:** wpis w `src/views/registry.ts` (`key`, `view`, `getPaths(lang)`),
+`ready: true` w `src/lib/sections.ts` (wtedy rekordy zastępcze tej sekcji znikają z indeksu, a strona „Wkrótce”
+z rejestru), linia w `scripts/shots.pages.mjs`.
+
 ## Stan
 
 - **S34 (dane):** `lune run tools/wikidump.luau` (albo `scripts\wikidump.ps1` / `bash scripts/wikidump.sh`) tworzy 28
@@ -211,11 +245,37 @@ Kolejność wiki: S34 → S36 → dalej po kolei (S37–S41 zależą tylko od S3
   drugie uruchomienie daje te same bajty, `--check` porównuje z dyskiem. Test `tests/wikidump.spec.luau` (500 rzutów,
   ok. 3 s): wycieki (kody, id adminów, zakazane klucze), nazwy PL/EN każdej encji, odwołania, liczności, Monte Carlo
   zgodne z tabelami (3σ), `Clean`/`Json`, flagi `hidden`/`wiki`, determinizm.
-- Strony jeszcze nie istnieją (S36+); `npm run data` dopisze S36 jako wywołanie tego CLI.
+- **S36 (szkielet):** `wiki/` = Astro 5 + Svelte 5 + MDX + sitemap + Pagefind; `npm run dev | build | check | data |
+  shots`. Działa: `/` (przekierowanie wg języka), główna `/pl/`, `/en/` (hero ze słupem światła nad Mitykiem, działy,
+  potwór i legendarny przedmiot tygodnia, ostatnie zmiany z `src/content/updates`, 3 strefy), wyszukiwarka
+  `/pl/szukaj/` (Pagefind: rekordy z danych dla wszystkich niegotowych sekcji, zakładki z licznikami, podświetlenia,
+  najlepsze dopasowanie), paleta Ctrl+K (`/<lang>/palette.json`), `/pl/styleguide/`, strony „Wkrótce” dla sekcji
+  S37–S43, 404 (`/404.html`, `/pl/404.html`, `/en/404.html`), motyw jasny/ciemny, PL/EN. `npm run check` przechodzi
+  (astro check, ESLint, 14 testów Vitest, build, `check-links`).
 
 ## Decyzje
 
 - 2026-10-07: wiki w `wiki/` (Astro 5 + Svelte 5 + Pagefind + Cloudflare Pages), dane z `tools/wikidump.luau`, wygląd „Kuźnia” z Claude Design. Zastępuje plan jednoplikowej wiki z pierwotnej S34. Budowa w 10 sesjach: S34, S36–S44 (S35 to ikony przedmiotów w grze).
+- **S36** Astro **5** (plan), choć npm ma już Astro 7: integracje `@astrojs/svelte@7`, `mdx@4`, `sitemap@3`,
+  TypeScript 5. ESLint 10 (wymaga go `eslint-plugin-astro`).
+- **S36** Na PC właściciela Windows (App Control) blokuje natywną bibliotekę Rollupa (`rollup.win32-x64-msvc.node`):
+  `package.json` → `overrides.rollup = npm:@rollup/wasm-node` (wolniej o sekundy, działa wszędzie). npm 11 wymaga
+  zgody na skrypty instalacyjne: `allowScripts` dla `esbuild` i `sharp`.
+- **S36** Dane czyta `src/lib/data.ts` z dysku (`fs`) przy buildzie zamiast `import` JSON: TypeScript nie wnioskuje
+  typów z 2 MB plików, a wyspy nie mogą ich przypadkiem dołączyć. Wyspy dostają małe pliki (`palette.json`) albo
+  gotowe propsy.
+- **S36** Pagefind nie składa „ł”: rekordy zastępcze mają na końcu treści nazwę bez polskich znaków (`normalize`),
+  więc „laki” znajduje „Łąki” (czasem widać to we fragmencie). Strony bez `data-pagefind-body` nie są indeksowane:
+  skrypt dodaje katalog `dist` dopiero, gdy jakaś strona ma ten znacznik (Pagefind bez znaczników bierze wszystko).
+  Liczniki zakładek: `pagefind.filters()` przy starcie + `totalFilters`.
+- **S36** `ItemIcon`/`RarityBadge` przyjmują gotowe wartości (`glyph`, `color`, `label`) zamiast `item`/`lang`, żeby
+  działały w wyspach bez danych. `tooltipData` liczy wiersze z eksportu; losowe bonusy jako „◆ Losowy bonus” w
+  liczbie `bonusMax` rzadkości (+ linie legendarne).
+- **S36** Główna na mobile: po makiecie (tooltip, potwór tygodnia) dodane „Ostatnie zmiany” i „Strefy świata” w jednej
+  kolumnie. Hero: Mityk z najwyższym poziomem (`pickFeaturedItem`); słup w kolorze rzadkości. Zrzuty `npm run shots`
+  w ciemnym motywie (Playwright domyślnie zgłasza jasny).
+- **S36** Sekcje niegotowe: link w menu jako tekst „Wkrótce”, a pod ich adresem strona „Wkrótce” z rejestru (żaden
+  adres z menu nie daje 404).
 - **S34** Moduły eksportera w `tools/WikiData/` zamiast `tools/WikiDump/`: na Windows (system plików bez rozróżniania
   wielkości liter) Lune zgłasza „Ambiguous” dla `tools/wikidump.luau` obok folderu `tools/WikiDump`. CLI zostało
   `tools/wikidump.luau`; plany S35–S44 poprawione (`tools/WikiData/...`, np. `Premium.luau` w S43).
@@ -242,6 +302,11 @@ Kolejność wiki: S34 → S36 → dalej po kolei (S37–S41 zależą tylko od S3
 
 ## Niedokończone
 
+- **S36** Różnice względem makiet: wiersz wyniku na mobile bez linii meta pod tytułem; pływający tooltip
+  (`data-tooltip`, `src/scripts/tooltip-float.ts`) nie zrobiony — dla S39; podświetlanie spisu treści przy
+  przewijaniu tylko desktop. Cotygodniowy rebuild (potwór i przedmiot tygodnia liczone przy buildzie) — S44.
+- **S36** `PLAY_URL` i `DISCORD_URL` w `wiki/src/config.ts` puste (uzupełnia właściciel): przycisk „Zagraj” i Discord
+  ukryte.
 - **S34** Brak w grze (pola pominięte, dopisze sesja gry albo wiki z i18n): opisy potworów, nazwy zdolności Elit II
   (`ability.<id>`), nazwy ataków bossów, nazwa wariantu `boss` (`variant.boss`), opisy kosmetyków (`cosmetic.<id>.desc`).
 - ~~**S34** `icons.json` po S35~~ — S35: `icons.json` (komórka, kolory progów, ikony, ścieżki atlasów bez id assetów)

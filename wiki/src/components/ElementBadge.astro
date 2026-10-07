@@ -1,0 +1,19 @@
+---
+// Element badge (.vw-rank with a diamond in the element colour); no element = "Physical" in --vw-text-soft.
+import { load } from "../lib/data";
+import { name, t } from "../lib/i18n";
+import type { Lang } from "../i18n/routes";
+interface Props {
+  element?: string | null;
+  lang: Lang;
+}
+const { element, lang } = Astro.props;
+const info = element ? load("elements").elements.find((e) => e.id === element) : undefined;
+const label = info ? name(info.name, lang) : t(lang, "element.physical");
+const color = info ? `var(--vw-el-${info.id})` : "var(--vw-text-soft)";
+---
+<span class="vw-rank vw-element" style={`--c: ${color}`}>{label}</span>
+<style>
+  .vw-element { gap: 6px; color: var(--c); }
+  .vw-element::before { content: ""; width: 7px; height: 7px; background: var(--c); transform: rotate(45deg); }
+</style>

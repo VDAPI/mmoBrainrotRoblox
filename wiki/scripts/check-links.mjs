@@ -1,0 +1,43 @@
+// Internal links of dist/: every href / src starting with "/" must point at a file of the build (gives "Soon instead
+// of 404"). Exits 1 with the list of broken links.
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { join } from "node:path";
+
+const DIST = "dist";
+if (!existsSync(DIST)) {
+  console.error("check-links: no dist/ (run npm run build)");
+  process.exit(1);
+}
+
+function* htmlFiles(dir) {
+  for (const entry of readdirSync(dir)) {
+    const path = join(dir, entry);
+    if (statSync(path).isDirectory()) yield* htmlFiles(path);
+    else if (entry.endsWith(".html")) yield path;
+  }
+}
+
+function exists(url) {
+  const path = decodeURIComponent(url.split("#")[0].split("?")[0]);
+  if (path === "" || path === "/") return true;
+  const file = join(DIST, path);
+  if (path.endsWith("/")) return existsSync(join(file, "index.html"));
+  return existsSync(file) || existsSync(join(file, "index.html"));
+}
+
+const broken = [];
+let checked = 0;
+for (const file of htmlFiles(DIST)) {
+  const html = readFileSync(file, "utf8");
+  for (const match of html.matchAll(/(?:href|src)="(\/[^"]*)"/g)) {
+    const url = match[1].replaceAll("&amp;", "&");
+    if (url.startsWith("//") || url.startsWith("/pagefind/")) continue;
+    checked += 1;
+    if (!exists(url)) broken.push(`${file}: ${url}`);
+  }
+}
+if (broken.length > 0) {
+  console.error(`check-links: ${broken.length} broken link(s):\n  ${[...new Set(broken)].slice(0, 50).join("\n  ")}`);
+  process.exit(1);
+}
+console.log(`check-links: ${checked} internal links OK`);

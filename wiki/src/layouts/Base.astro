@@ -1,0 +1,249 @@
+---
+// Page layout (S36): <head> (title, description, hreflang, canonical, theme before paint, fonts and styles in the
+// order fonts -> tokens -> tokens.data -> components), skip link, topbar (desktop) / header (mobile), main, footer,
+// bottom tab bar on mobile and the Ctrl+K palette island. `search` marks entity pages for Pagefind.
+import "@fontsource/grenze-gotisch/500.css";
+import "@fontsource/grenze-gotisch/700.css";
+import "@fontsource/alegreya-sans/400.css";
+import "@fontsource/alegreya-sans/400-italic.css";
+import "@fontsource/alegreya-sans/500.css";
+import "@fontsource/alegreya-sans/700.css";
+import "@fontsource/alegreya-sans/800.css";
+import "@fontsource/ibm-plex-mono/400.css";
+import "@fontsource/ibm-plex-mono/500.css";
+import "../styles/tokens.css";
+import "../styles/tokens.data.css";
+import "../styles/components.css";
+import { DISCORD_URL, PLAY_URL, SITE_URL } from "../config";
+import { alternate as alternateOf, href, type Lang, type RouteKey } from "../i18n/routes";
+import SearchPalette from "../islands/SearchPalette.svelte";
+import { meta } from "../lib/data";
+import { formatDate } from "../lib/format";
+import { t, type Key } from "../lib/i18n";
+import { SECTIONS, sectionHref } from "../lib/sections";
+import SoonLink from "../components/SoonLink.astro";
+
+interface Props {
+  lang: Lang;
+  title: string;
+  description?: string;
+  alternate?: string;
+  noindex?: boolean;
+  section?: RouteKey;
+  search?: { type: string; meta?: Record<string, string> };
+}
+
+const { lang, title, description = t(lang, "site.tagline"), noindex = false, section, search } = Astro.props;
+const path = Astro.url.pathname;
+
+const alt = Astro.props.alternate ?? alternateOf(path);
+const here = path.startsWith(`/${lang}/`) ? path : href(lang, "home");
+const pagePl = lang === "pl" ? here : alt;
+const pageEn = lang === "en" ? here : alt;
+const fullTitle = title ? `${title} · ${t(lang, "site.name")}` : t(lang, "site.name");
+const data = meta();
+const dataDate = formatDate(data.dataDate, lang);
+
+const NAV: RouteKey[] = ["items", "bestiary", "classes", "map", "upgrading"];
+const navLabel: Record<string, Parameters<typeof t>[1]> = {
+  items: "nav.items",
+  bestiary: "nav.bestiary",
+  classes: "nav.classes",
+  map: "nav.map",
+  upgrading: "nav.upgrading",
+  home: "nav.home",
+  search: "nav.search",
+};
+const TABS: { key: RouteKey; label: Parameters<typeof t>[1] }[] = [
+  { key: "home", label: "nav.home" },
+  { key: "items", label: "nav.items" },
+  { key: "bestiary", label: "nav.bestiaryShort" },
+  { key: "map", label: "nav.map" },
+  { key: "search", label: "nav.search" },
+];
+const tabHref = (key: RouteKey) => (key === "home" ? href(lang, "home") : sectionHref(lang, key) ?? null);
+const footerSections = SECTIONS.filter((s) => s.ready && s.id !== "styleguide");
+const searchMeta = search?.meta ?? {};
+const navText = (id: string) => t(lang, `nav.${id}` as Key);
+---
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    {noindex && <meta name="robots" content="noindex" />}
+    <link rel="canonical" href={new URL(here, SITE_URL).href} />
+    <link rel="alternate" hreflang="pl" href={new URL(pagePl, SITE_URL).href} />
+    <link rel="alternate" hreflang="en" href={new URL(pageEn, SITE_URL).href} />
+    <link rel="alternate" hreflang="x-default" href={new URL(pagePl, SITE_URL).href} />
+    <meta name="theme-color" content="#14161B" />
+    <script is:inline>
+      try {
+        const saved = localStorage.getItem("vw-theme");
+        const theme = saved || (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+        document.documentElement.dataset.theme = theme;
+      } catch {
+        document.documentElement.dataset.theme = "dark";
+      }
+      document.documentElement.classList.add("js");
+    </script>
+  </head>
+  <body>
+    <a class="vw-skip" href="#main">{t(lang, "skip")}</a>
+    <header class="vw-topbar">
+      <a class="vw-topbar__logo" href={href(lang, "home")}>Vaelthorn</a>
+      <nav class="vw-topbar__links" aria-label={t(lang, "nav.main")}>
+        {NAV.map((key) => {
+          const target = sectionHref(lang, key);
+          return target ? (
+            <a class="vw-topbar__link" href={target} aria-current={section === key ? "page" : undefined}>{t(lang, navLabel[key])}</a>
+          ) : (
+            <span class="vw-topbar__link soon" aria-disabled="true" title={t(lang, "soon")}>{t(lang, navLabel[key])}</span>
+          );
+        })}
+      </nav>
+      <div class="tools">
+        <a class="vw-search vw-only-desktop" href={href(lang, "search")} data-palette-open>
+          <span>{t(lang, "search.placeholder")}</span>
+          <kbd class="vw-kbd">Ctrl K</kbd>
+        </a>
+        <div class="vw-lang" role="group" aria-label={t(lang, "lang.switch")}>
+          <a href={pagePl} hreflang="pl" lang="pl" aria-current={lang === "pl" ? "true" : undefined} data-lang="pl">PL</a>
+          <a href={pageEn} hreflang="en" lang="en" aria-current={lang === "en" ? "true" : undefined} data-lang="en">EN</a>
+        </div>
+        <button class="vw-icon-btn theme" type="button" aria-pressed="false" aria-label={t(lang, "theme.toggle")} data-theme-toggle>
+          <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="6" fill="none" stroke="currentColor" stroke-width="1.6"></circle><path class="half" d="M10 4a6 6 0 0 1 0 12z" fill="currentColor"></path></svg>
+        </button>
+        <a class="vw-icon-btn vw-only-mobile" href={href(lang, "search")} aria-label={t(lang, "search.open")} data-palette-open>
+          <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5" fill="none" stroke="currentColor" stroke-width="1.6"></circle><path d="M13 13l4.5 4.5" stroke="currentColor" stroke-width="1.6"></path></svg>
+        </a>
+        {PLAY_URL && <a class="vw-btn vw-btn--primary vw-only-desktop play" href={PLAY_URL} rel="noopener">{t(lang, "play")}</a>}
+      </div>
+    </header>
+
+    <main id="main" data-pagefind-body={search ? "" : undefined} data-pagefind-filter={search ? `type:${search.type}` : undefined}>
+      {search && Object.entries(searchMeta).map(([key, value]) => <span hidden data-pagefind-meta={`${key}:${value}`}></span>)}
+      <slot />
+    </main>
+
+    <footer class="vw-footer">
+      <div class="brand">
+        <a class="vw-topbar__logo" href={href(lang, "home")}>Vaelthorn</a>
+        <p>{t(lang, "site.tagline")}</p>
+        {PLAY_URL && <a class="vw-btn vw-btn--play" href={PLAY_URL} rel="noopener">{t(lang, "play")}</a>}
+      </div>
+      <div>
+        <p class="vw-label">{t(lang, "footer.wiki")}</p>
+        <ul>
+          <li><a href={href(lang, "home")}>{t(lang, "nav.home")}</a></li>
+          {footerSections.map((s) => <li><a href={href(lang, s.id)}>{t(lang, navLabel[s.id] ?? "nav.search")}</a></li>)}
+          {SECTIONS.filter((s) => !s.ready).slice(0, 4).map((s) => (
+            <li><SoonLink href={null} lang={lang}>{navText(s.id)}</SoonLink></li>
+          ))}
+        </ul>
+      </div>
+      <div>
+        <p class="vw-label">{t(lang, "footer.community")}</p>
+        <ul>
+          {DISCORD_URL ? <li><a href={DISCORD_URL} rel="noopener">{t(lang, "footer.discord")}</a></li> : <li class="muted">—</li>}
+        </ul>
+      </div>
+      <div>
+        <p class="vw-label">{t(lang, "footer.data")}</p>
+        <ul>
+          <li>{t(lang, "footer.commit", { commit: data.dataCommit, date: dataDate })}</li>
+          <li><a href={pagePl} lang="pl" data-lang="pl">Polski</a> · <a href={pageEn} lang="en" data-lang="en">English</a></li>
+        </ul>
+      </div>
+    </footer>
+
+    <nav class="vw-tabbar" aria-label={t(lang, "nav.tabbar")}>
+      {TABS.map((tab) => {
+        const target = tabHref(tab.key);
+        const current = tab.key === "home" ? section === undefined && path === href(lang, "home") : section === tab.key;
+        return target ? (
+          <a href={target} aria-current={current ? "page" : undefined}><span class="vw-tabbar__mark" aria-hidden="true"></span>{t(lang, tab.label)}</a>
+        ) : (
+          <a aria-disabled="true" class="tab-soon"><span class="vw-tabbar__mark" aria-hidden="true"></span>{t(lang, tab.label)}</a>
+        );
+      })}
+    </nav>
+
+    <SearchPalette
+      client:idle
+      lang={lang}
+      searchHref={href(lang, "search")}
+      labels={{
+        label: t(lang, "palette.label"),
+        placeholder: t(lang, "search.placeholder"),
+        hint: t(lang, "palette.hint"),
+        close: t(lang, "palette.close"),
+        all: t(lang, "palette.allTypes"),
+        pending: t(lang, "search.pending"),
+        types: {
+          item: t(lang, "search.badge.item"),
+          monster: t(lang, "search.badge.monster"),
+          boss: t(lang, "search.badge.boss"),
+          map: t(lang, "search.badge.map"),
+          area: t(lang, "search.badge.area"),
+          cave: t(lang, "search.badge.cave"),
+          npc: t(lang, "search.badge.npc"),
+          quest: t(lang, "search.badge.quest"),
+          skill: t(lang, "search.badge.skill"),
+          class: t(lang, "search.badge.class"),
+        },
+      }}
+    />
+
+    <script>
+      // Language links remember the choice; the theme button switches and remembers the theme.
+      document.querySelectorAll<HTMLAnchorElement>("[data-lang]").forEach((a) =>
+        a.addEventListener("click", () => {
+          try {
+            localStorage.setItem("vw-lang", a.dataset.lang ?? "pl");
+          } catch {
+            /* private mode */
+          }
+        }),
+      );
+      const button = document.querySelector<HTMLButtonElement>("[data-theme-toggle]");
+      const root = document.documentElement;
+      const sync = () => button?.setAttribute("aria-pressed", String(root.dataset.theme === "light"));
+      sync();
+      button?.addEventListener("click", () => {
+        root.dataset.theme = root.dataset.theme === "light" ? "dark" : "light";
+        try {
+          localStorage.setItem("vw-theme", root.dataset.theme);
+        } catch {
+          /* private mode */
+        }
+        sync();
+      });
+    </script>
+  </body>
+</html>
+
+<style>
+  .vw-topbar { justify-content: flex-start; }
+  .vw-topbar__logo:hover { text-decoration: none; color: var(--vw-gold-bright); }
+  @media (min-width: 1024px) { .vw-topbar__links { display: flex; gap: 28px; } }
+  .vw-topbar__link.soon { cursor: default; opacity: .7; }
+  .tools { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+  .vw-search { width: 212px; justify-content: space-between; font-size: 15px; }
+  .vw-search:hover { text-decoration: none; color: var(--vw-text-muted); }
+  .play { min-height: 40px; }
+  .theme :global(.half) { transition: transform var(--vw-dur-base); transform-origin: center; }
+  :global([data-theme="light"]) .theme .half { transform: rotate(180deg); }
+  @media (max-width: 1023px) {
+    .vw-topbar { gap: 12px; }
+    .tools { gap: 8px; }
+  }
+  .vw-footer ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+  .vw-footer .brand p { max-width: 320px; }
+  .vw-footer a { color: var(--vw-text-soft); }
+  .vw-footer .brand .vw-topbar__logo { color: var(--vw-gold-bright); }
+  .muted { color: var(--vw-text-muted); }
+  .tab-soon { opacity: .45; }
+</style>

@@ -1,0 +1,33 @@
+---
+// Monster / boss / pet picture: public/img/mobs/<id>[-elite|-elite2].webp (+ -128 thumbnail) from S38 when it exists,
+// otherwise the mock-up's diagonal pattern with a diamond in the element colour (no "render" text).
+import { existsSync } from "node:fs";
+import { join } from "node:path";
+interface Props {
+  id: string;
+  variant?: "normal" | "elite" | "elite2";
+  kind?: "monster" | "boss" | "pet";
+  size?: "thumb" | "full";
+  alt: string;
+  element?: string | null;
+  class?: string;
+}
+const { id, variant = "normal", kind = "monster", size = "full", alt, element, class: extra = "" } = Astro.props;
+const folder = kind === "pet" ? "pets" : "mobs";
+const base = `${id}${variant === "normal" ? "" : `-${variant}`}`;
+const file = `${base}${size === "thumb" ? "-128" : ""}.webp`;
+const exists = existsSync(join(process.cwd(), "public", "img", folder, file));
+const color = element ? `var(--vw-el-${element})` : kind === "boss" ? "var(--vw-zone-red)" : "var(--vw-gold-dark)";
+---
+{exists ? (
+  <img class={`mob-img ${extra}`} src={`/img/${folder}/${file}`} alt={alt} loading="lazy" decoding="async" />
+) : (
+  <div class={`mob-img vw-ph ${extra}`} role="img" aria-label={alt} style={`--c: ${color}`}>
+    <span class="mark" aria-hidden="true"></span>
+  </div>
+)}
+<style>
+  .mob-img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  div.mob-img { display: flex; align-items: center; justify-content: center; }
+  .mark { width: 22%; max-width: 40px; aspect-ratio: 1; border: 2px solid var(--c); transform: rotate(45deg); box-shadow: 0 0 18px color-mix(in srgb, var(--c) 50%, transparent); opacity: .8; }
+</style>

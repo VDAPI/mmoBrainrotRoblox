@@ -41,6 +41,7 @@
 | S32 | Balans poziomów 1–20: model liczbowy i raport `docs/BALANS.md`, grupy, elity, Grimrok, przedmioty i rzadkości, drop, złoto | ● |
 | S33 | Expowiska z charakterem: profile ⚡ szybki exp / ✦ lepszy drop / ⛁ więcej złota na każdym przedziale, widoczne przy portalu, na mapie i banerze | ● |
 | S34 | Wiki 1/10: eksporter danych gry do JSON (`tools/wikidump.luau`), schemat i `types.ts`, kolory `tokens.data.css`, `docs/PRZEDMIOTY.md`, test wycieków | ● |
+| S36 | Wiki 2/10: szkielet Astro, design system 1:1, komponenty, strona główna, wyszukiwarka z paletą Ctrl+K, styleguide | ● |
 | S35 | Ikony przedmiotów: atlasy z grafikami (kolor progu, akcent żywiołu / mikstury), komponent `ItemIcon` z zapasem na symbole, sloty, duch przeciągania, legenda, mikstury, tooltip, waluty | ● |
 
 Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana przez właściciela
@@ -3143,3 +3144,33 @@ ItemTooltip,QuestRewards}`, `Screens/{LegendReveal,BackpackPanel,Hud/PotionBar,H
 16. `/legend`: okno ujawnienia legendy z dużą (ostrą) ikoną.
 17. Nagrody questu (dziennik albo rozmowa z NPC): EXP i złoto z ikonkami; licznik złota w plecaku z monetą.
 18. `/icons glyph` wraca do symboli, `/icons art` znów rysunki. Na telefonie najmniejszy slot dalej czytelny.
+
+### S36: Wiki 2/10 — szkielet, design system, główna, szukaj
+
+Szczegóły, komponenty i decyzje: `docs/WIKI.md` (Komponenty, Stan, Decyzje, Niedokończone).
+
+**Zrobione**
+- Projekt `wiki/` (Astro 5, Svelte 5, MDX, sitemap, Pagefind, Vitest, ESLint, Playwright), skrypty npm, `.nvmrc`.
+- Style 1:1 z makiety (`tokens.css`, `components.css`) + kolory z gry (`tokens.data.css`), fonty lokalne, motyw
+  jasny/ciemny, PL/EN z tymi samymi adresami, `/` wg języka przeglądarki.
+- Komponenty z kontraktu (tooltip, ikona, karty potworów, nagłówek bossa, węzły, tabela, paski, plakietki, callouty,
+  okruszki, spis treści, stany), `/pl/styleguide/` na prawdziwych danych.
+- Strona główna, wyszukiwarka (Pagefind + rekordy z danych dla sekcji bez stron), paleta Ctrl+K, strony „Wkrótce”,
+  404, aktualizacje w MDX.
+- Testy: tokeny 1:1, trasy, wyszukiwanie (wektory z gry), wybory tygodnia, formatowanie liczb.
+
+#### Instrukcja testu S36
+
+1. `cd wiki`, `npm install` (raz), `npm run build`, `npm run preview` → http://localhost:4321/.
+2. `/` przenosi na `/pl/` (albo `/en/` przy angielskiej przeglądarce). PL/EN w nagłówku zostaje na tej samej stronie.
+3. Główna: „Vaelthorn”, słup światła z nazwą Mitycznego przedmiotu, działy (karty „Wkrótce”), potwór tygodnia (elita z
+   HP, obrażeniami, odrodzeniem, jaskinią), legendarny przedmiot tygodnia w ciemnym tooltipie, ostatnie zmiany, 3 strefy.
+4. Przycisk motywu (kółko): jasny motyw, tooltip zostaje ciemny; odświeżenie pamięta wybór.
+5. Szukaj „wilk”: zakładki Wszystko / Przedmioty / Potwory / Krainy / Zadania z licznikami, podświetlone dopasowania,
+   z prawej najlepsze dopasowanie (tooltip przedmiotu); wyniki z dopiskiem „Strona wkrótce”.
+6. Szukaj „laki” (bez polskich znaków): znajduje „Łąki”. Szukaj „xyzxyz”: „Nic dla „xyzxyz””.
+7. Ctrl+K na dowolnej stronie: paleta; strzałki, Enter, Tab (filtr typu), Esc.
+8. Menu: Przedmioty, Bestiariusz… prowadzą do stron „Wkrótce” (nigdzie 404); `/pl/nie-ma/` → polska 404.
+9. `/pl/styleguide/`: wszystkie komponenty i kolory z gry.
+10. Telefon (albo okno 390 px): nagłówek z PL/EN, motywem i lupą, dolny pasek zakładek, główna w jednej kolumnie.
+11. `npm run check` przechodzi; `npm run shots` zapisuje zrzuty w `wiki/.shots/`.

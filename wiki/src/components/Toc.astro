@@ -1,0 +1,48 @@
+---
+// Table of contents (.vw-toc), sticky; on mobile a collapsed <details> "On this page".
+import { t } from "../lib/i18n";
+import type { Lang } from "../i18n/routes";
+interface Props {
+  items: { id: string; label: string; sub?: boolean }[];
+  lang: Lang;
+}
+const { items, lang } = Astro.props;
+---
+<nav class="toc" aria-label={t(lang, "toc.title")}>
+  <details class="mobile">
+    <summary>{t(lang, "toc.title")}</summary>
+    <div class="vw-toc">{items.map((i) => <a href={`#${i.id}`} class={i.sub ? "is-sub" : undefined}>{i.label}</a>)}</div>
+  </details>
+  <div class="vw-toc desktop">
+    <p class="vw-label">{t(lang, "toc.title")}</p>
+    {items.map((i) => <a href={`#${i.id}`} class={i.sub ? "is-sub" : undefined}>{i.label}</a>)}
+  </div>
+</nav>
+<script>
+  // Highlights the section in view (aria-current) on desktop.
+  const links = [...document.querySelectorAll<HTMLAnchorElement>(".toc .desktop a")];
+  const targets = links.map((a) => document.getElementById(a.hash.slice(1))).filter((e): e is HTMLElement => e !== null);
+  if (targets.length > 0 && "IntersectionObserver" in window) {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            for (const a of links) {
+              if (a.hash === `#${entry.target.id}`) a.setAttribute("aria-current", "true");
+              else a.removeAttribute("aria-current");
+            }
+          }
+        }
+      },
+      { rootMargin: "-20% 0px -70% 0px" },
+    );
+    targets.forEach((target) => observer.observe(target));
+  }
+</script>
+<style>
+  .vw-toc .vw-label { padding: 0 14px; }
+  .mobile { display: none; border: 1px solid var(--vw-border); background: var(--vw-panel); }
+  .mobile summary { min-height: var(--vw-touch); display: flex; align-items: center; padding: 0 14px; font-weight: 800; cursor: pointer; }
+  .mobile .vw-toc { position: static; border-left: 0; padding-bottom: 8px; }
+  @media (max-width: 1023px) { .desktop { display: none; } .mobile { display: block; } }
+</style>

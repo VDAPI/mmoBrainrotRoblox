@@ -1,0 +1,84 @@
+---
+// Boss header (.vw-boss): picture, badges, name, HP bar with phase thresholds, phase tabs (.vw-phase), attacks with
+// their telegraph shape (.vw-mech), summons and HP for 1–5 players from the export.
+import type { Boss } from "../data/types";
+import { getMap, getMonster } from "../lib/data";
+import { formatNumber } from "../lib/format";
+import { name, t } from "../lib/i18n";
+import type { Lang } from "../i18n/routes";
+import Bar from "./Bar.astro";
+import ElementBadge from "./ElementBadge.astro";
+import MonsterImage from "./MonsterImage.astro";
+import RankBadge from "./RankBadge.astro";
+import ZoneBadge from "./ZoneBadge.astro";
+interface Props {
+  boss: Boss;
+  lang: Lang;
+  players?: 1 | 2 | 3 | 4 | 5;
+}
+const { boss, lang, players = 1 } = Astro.props;
+const scale = boss.byPlayers.find((p) => p.players === players) ?? boss.byPlayers[0];
+const dungeon = getMap(boss.dungeon);
+const thresholds = boss.phases;
+const SHAPES: Record<string, string> = { circle: "◯", cone: "◸", line: "▭", ring: "◎" };
+---
+<section class="vw-boss" aria-label={name(boss.name, lang)}>
+  <div class="picture"><MonsterImage id={boss.id} kind="boss" alt={name(boss.name, lang)} /></div>
+  <div class="body">
+    <div class="badges">
+      <RankBadge rank="boss" lang={lang} />
+      <span class="vw-rank">{t(lang, "level", { level: boss.level })}</span>
+      <ElementBadge element={null} lang={lang} />
+      <ZoneBadge zone={dungeon?.zone ?? "red"} lang={lang} />
+    </div>
+    <h2 class="name">{name(boss.name, lang)}</h2>
+    <div class="hp">
+      <Bar value={scale.hp} max={scale.hp} lang={lang} />
+      {thresholds.map((p) => <span class="mark" style={`left: ${p * 100}%`} aria-hidden="true"></span>)}
+    </div>
+    <div class="vw-boss__phases" role="tablist">
+      {[1, ...thresholds].map((from, i) => (
+        <div class="vw-phase" role="tab" aria-selected={i === 0 ? "true" : "false"}>
+          <div class="phase-title">{t(lang, "boss.phase", { n: i + 1 })} · {Math.round((i === 0 ? 1 : from) * 100)}%</div>
+          {boss.phaseTexts[i] && <p class="phase-text">{name(boss.phaseTexts[i], lang)}</p>}
+        </div>
+      ))}
+    </div>
+    <div class="mechs">
+      {boss.attacks.map((a) => (
+        <span class="vw-mech" title={`${formatNumber(a.dmgMin, lang)}–${formatNumber(a.dmgMax, lang)}`}>
+          <span class="vw-mech__icon shape" aria-hidden="true">{SHAPES[a.shape] ?? "◇"}</span>
+          {a.id} · {formatNumber(a.dmgMin, lang)}–{formatNumber(a.dmgMax, lang)}
+        </span>
+      ))}
+      {boss.summons.map((s) => {
+        const m = getMonster(s.monster);
+        return <span class="vw-mech summon"><span class="vw-mech__icon shape" aria-hidden="true">✚</span>{s.count}× {m ? name(m.name, lang) : s.monster}</span>;
+      })}
+    </div>
+    <table class="players">
+      <caption class="vw-label">{t(lang, "boss.hp")}</caption>
+      <tbody>
+        <tr>{boss.byPlayers.map((p) => <th scope="col">{p.players === 1 ? t(lang, "boss.player1") : t(lang, "boss.players", { n: p.players })}</th>)}</tr>
+        <tr>{boss.byPlayers.map((p) => <td>{formatNumber(p.hp, lang)}</td>)}</tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+<style>
+  .picture { aspect-ratio: 1; border: 1px solid var(--vw-border); background: #14161B; }
+  .body { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+  .badges { display: flex; flex-wrap: wrap; gap: 8px; }
+  .name { margin: 0; font: 400 var(--vw-fs-display-m)/var(--vw-lh-display-m) var(--vw-font-display); color: var(--vw-text); }
+  .hp { position: relative; }
+  .mark { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--vw-gold-bright); box-shadow: 0 0 6px var(--vw-gold-bright); }
+  .phase-title { font-weight: 800; }
+  .phase-text { margin: 6px 0 0; font-size: 15px; color: var(--vw-text-muted); }
+  .mechs { display: flex; flex-wrap: wrap; gap: 8px; }
+  .shape { display: inline-flex; align-items: center; justify-content: center; color: var(--vw-zone-red-text); font-size: 14px; }
+  .summon .shape { color: var(--vw-gold-bright); }
+  .players { border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  .players caption { text-align: left; }
+  .players th, .players td { padding: 6px 12px; border: 1px solid var(--vw-border-subtle); text-align: right; }
+  .players th { font-size: 13px; color: var(--vw-text-muted); font-weight: 700; }
+</style>

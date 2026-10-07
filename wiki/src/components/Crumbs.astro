@@ -1,0 +1,25 @@
+---
+// Breadcrumbs (.vw-crumbs); on mobile only "‹ parent".
+interface Props {
+  items: { label: string; href?: string | null }[];
+}
+const { items } = Astro.props;
+const parent = [...items].reverse().find((i, n) => i.href && n > 0);
+---
+<nav aria-label="breadcrumbs">
+  <ol class="vw-crumbs desktop">
+    {items.map((item, i) => (
+      <li>
+        {item.href && i < items.length - 1 ? <a href={item.href}>{item.label}</a> : <span aria-current={i === items.length - 1 ? "page" : undefined}>{item.label}</span>}
+        {i < items.length - 1 && <span aria-hidden="true">/</span>}
+      </li>
+    ))}
+  </ol>
+  {parent && <a class="mobile vw-crumbs" href={parent.href ?? undefined}>‹ {parent.label}</a>}
+</nav>
+<style>
+  ol { margin: 0; padding: 0; list-style: none; }
+  li { display: inline-flex; gap: 10px; }
+  .mobile { display: none; }
+  @media (max-width: 767px) { .desktop { display: none; } .mobile { display: inline-flex; } }
+</style>

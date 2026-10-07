@@ -1,0 +1,239 @@
+---
+// Component catalogue (/pl/styleguide/, noindex, outside sitemap and Pagefind): every component of S36 in its states
+// on real game data. The reference for S37–S44.
+import Base from "../layouts/Base.astro";
+import Bar from "../components/Bar.astro";
+import BossHeader from "../components/BossHeader.astro";
+import Button from "../components/Button.astro";
+import Callout from "../components/Callout.astro";
+import Chip from "../components/Chip.astro";
+import Crumbs from "../components/Crumbs.astro";
+import DataTable from "../components/DataTable.astro";
+import ElementBadge from "../components/ElementBadge.astro";
+import Empty from "../components/Empty.astro";
+import ItemIcon from "../components/ItemIcon.svelte";
+import ItemTooltip from "../components/ItemTooltip.svelte";
+import Label from "../components/Label.astro";
+import MonsterCard from "../components/MonsterCard.astro";
+import Pager from "../components/Pager.astro";
+import RankBadge from "../components/RankBadge.astro";
+import RarityBadge from "../components/RarityBadge.svelte";
+import SectionTitle from "../components/SectionTitle.astro";
+import SkillEdge from "../components/SkillEdge.astro";
+import SkillNode from "../components/SkillNode.astro";
+import Skeleton from "../components/Skeleton.astro";
+import Toc from "../components/Toc.astro";
+import ZoneBadge from "../components/ZoneBadge.astro";
+import { href, type Lang } from "../i18n/routes";
+import { bosses, items, load, monsters, rarities } from "../lib/data";
+import { formatNumber } from "../lib/format";
+import { name, t } from "../lib/i18n";
+import { tooltipData } from "../lib/tooltip";
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const all = items();
+// A real item for every rarity (the lowest-level equipment that can have it; fixed rarities for the top ones).
+const perRarity = rarities().map((r) => {
+  const item = all.filter((i) => i.category === "equipment" && i.rarities.includes(r.key)).sort((a, b) => b.requiredLevel - a.requiredLevel)[0];
+  return { rarity: r, item };
+});
+const material = all.find((i) => i.category === "material");
+const highLevel = all.filter((i) => i.category === "equipment" && i.requiredLevel >= 90)[0];
+const mons = monsters();
+const withElite2 = mons.find((m) => m.variants.elite2);
+const withElite = mons.find((m) => m.variants.elite);
+const wolf = mons.find((m) => m.id === "wolf") ?? mons[0];
+const boss = bosses()[0];
+const tableRows = mons.slice(0, 5).map((m) => {
+  const v = m.variants.normal ?? Object.values(m.variants)[0];
+  const row = v.levels[v.levels.length - 1];
+  return { name: name(m.name, lang), level: `${v.levelMin}–${v.levelMax}`, hp: formatNumber(row.hp, lang), exp: formatNumber(row.exp, lang) };
+});
+const swatches = ["--vw-bg", "--vw-panel", "--vw-panel-raised", "--vw-border", "--vw-text", "--vw-text-muted", "--vw-gold", "--vw-gold-bright", "--vw-accent", "--vw-hp", "--vw-mana", "--vw-energy", "--vw-exp"];
+const dataSwatches = [
+  ...rarities().flatMap((r) => [`--vw-r-${r.key}`, `--vw-r-${r.key}-text`]),
+  ...load("elements").elements.map((e) => `--vw-el-${e.id}`),
+  "--vw-el-physical",
+  ...load("classes").classes.map((c) => `--vw-class-${c.id}`),
+  "--vw-zone-green",
+  "--vw-zone-yellow",
+  "--vw-zone-red",
+];
+const toc = [
+  { id: "buttons", label: "Button" },
+  { id: "tooltips", label: "ItemTooltip" },
+  { id: "badges", label: "Badges" },
+  { id: "monsters", label: "MonsterCard" },
+  { id: "boss", label: "BossHeader" },
+  { id: "skills", label: "SkillNode" },
+  { id: "table", label: "DataTable" },
+  { id: "bars", label: "Bar" },
+  { id: "callouts", label: "Callout" },
+  { id: "nav", label: "Crumbs · Toc" },
+  { id: "states", label: "Empty · Skeleton" },
+  { id: "colors", label: "Tokens" },
+];
+---
+<Base lang={lang} title={t(lang, "styleguide.title")} section="styleguide" noindex>
+  <div class="vw-container sg">
+    <aside class="side"><Toc items={toc} lang={lang} /></aside>
+    <div class="main">
+      <h1 class="vw-h2">{t(lang, "styleguide.title")}</h1>
+
+      <section id="buttons">
+        <SectionTitle>Button</SectionTitle>
+        <div class="row">
+          <Button>Default</Button>
+          <Button variant="primary">Primary</Button>
+          <Button variant="ghost">Ghost</Button>
+          <Button variant="play">{t(lang, "play")}</Button>
+          <Button disabled>Disabled</Button>
+        </div>
+      </section>
+
+      <section id="tooltips">
+        <SectionTitle>ItemTooltip · ItemIcon</SectionTitle>
+        <div class="grid">
+          {perRarity.filter((p) => p.item).map((p) => (
+            <ItemTooltip data={tooltipData(p.item!.id, { lang, rarity: p.rarity.key, upgrade: 0 })!} labels={{ bind: t(lang, "tooltip.bind") }} />
+          ))}
+          {perRarity.filter((p) => p.item).slice(-2).map((p) => (
+            <ItemTooltip data={tooltipData(p.item!.id, { lang, rarity: p.rarity.key, upgrade: 7 })!} labels={{ bind: t(lang, "tooltip.bind") }} />
+          ))}
+          {highLevel && <ItemTooltip data={tooltipData(highLevel.id, { lang, playerLevel: 10 })!} labels={{ bind: t(lang, "tooltip.bind") }} />}
+          {material && <ItemTooltip data={tooltipData(material.id, { lang })!} labels={{ bind: t(lang, "tooltip.bind") }} />}
+          <Skeleton shape="tooltip" lines={5} />
+        </div>
+        <div class="row">
+          {perRarity.filter((p) => p.item).map((p, i) => <ItemIcon glyph={p.item!.glyph} color={p.item!.color} rarity={p.rarity.key} size={[20, 32, 40, 64, 128][i] ?? 40} />)}
+        </div>
+      </section>
+
+      <section id="badges">
+        <SectionTitle>Badges</SectionTitle>
+        <div class="row">
+          {["green", "yellow", "red"].map((z) => <ZoneBadge zone={z} lang={lang} />)}
+        </div>
+        <div class="row">
+          {rarities().map((r) => <RarityBadge rarity={r.key} label={name(r.name, lang)} />)}
+        </div>
+        <div class="row">
+          {(["normal", "elite", "elite2", "boss"] as const).map((r) => <RankBadge rank={r} lang={lang} />)}
+          <ElementBadge lang={lang} />
+          {load("elements").elements.map((e) => <ElementBadge element={e.id} lang={lang} />)}
+        </div>
+        <div class="row">
+          <Chip pressed>Pressed</Chip><Chip count={12}>Chip</Chip><Chip disabled>Disabled</Chip>
+        </div>
+      </section>
+
+      <section id="monsters">
+        <SectionTitle>MonsterCard</SectionTitle>
+        <div class="grid cards">
+          <MonsterCard monster={wolf} lang={lang} />
+          {withElite && <MonsterCard monster={withElite} variant="elite" lang={lang} />}
+          {withElite2 && <MonsterCard monster={withElite2} variant="elite2" lang={lang} />}
+        </div>
+      </section>
+
+      <section id="boss">
+        <SectionTitle>BossHeader</SectionTitle>
+        {boss && <BossHeader boss={boss} lang={lang} players={3} />}
+      </section>
+
+      <section id="skills">
+        <SectionTitle>SkillNode · SkillEdge</SectionTitle>
+        <div class="row nodes">
+          <SkillNode state="locked" rank={0} max={10} label="locked" />
+          <SkillNode state="available" rank={0} max={10} label="available" />
+          <SkillNode state="partial" rank={4} max={10} label="partial" />
+          <SkillNode state="max" rank={10} max={10} label="max" />
+          <SkillNode state="partial" rank={2} max={5} active label="active" />
+          <SkillNode state="available" rank={0} max={5} capstone selected label="capstone" />
+        </div>
+        <div class="row"><div><SkillNode state="max" rank={10} max={10} label="a" /><SkillEdge active /><SkillNode state="available" rank={0} max={10} label="b" /><SkillEdge /><SkillNode state="locked" rank={0} max={10} label="c" /></div></div>
+      </section>
+
+      <section id="table">
+        <SectionTitle>DataTable · Pager</SectionTitle>
+        <DataTable
+          caption="Monsters"
+          columns={[
+            { key: "name", label: "Name", mobile: "title", sortable: true, sort: "ascending" },
+            { key: "level", label: "Lv", sortable: true },
+            { key: "hp", label: "HP", align: "right" },
+            { key: "exp", label: "EXP", align: "right", mobile: "value" },
+          ]}
+          rows={tableRows}
+        />
+        <div class="row"><Pager page={2} pages={4} hrefFor={(n) => `${href(lang, "styleguide")}#p${n}`} lang={lang} /></div>
+      </section>
+
+      <section id="bars">
+        <SectionTitle>Bar</SectionTitle>
+        <div class="stack">
+          <Bar kind="hp" value={1840} max={2400} lang={lang} />
+          <Bar kind="mana" value={300} max={800} lang={lang} />
+          <Bar kind="energy" value={60} max={100} lang={lang} />
+          <Bar kind="exp" value={4200} max={10000} lang={lang} />
+          <Bar kind="hp" value={30} max={100} size="sm" lang={lang} />
+        </div>
+      </section>
+
+      <section id="callouts">
+        <SectionTitle>Callout</SectionTitle>
+        <div class="grid">
+          <Callout kind="info" lang={lang}><p>{t(lang, "site.tagline")}</p></Callout>
+          <Callout kind="tip" lang={lang}><p>{t(lang, "search.none.text")}</p></Callout>
+          <Callout kind="warn" lang={lang}><p>{t(lang, "soon.text")}</p></Callout>
+          <Callout kind="changed" date="2026-10-07" lang={lang}><p>{t(lang, "home.lead")}</p></Callout>
+          <Callout kind="spoiler" lang={lang}><p>{t(lang, "notfound.text")}</p></Callout>
+        </div>
+      </section>
+
+      <section id="nav">
+        <SectionTitle>Crumbs · Toc · Lang · Search</SectionTitle>
+        <Crumbs items={[{ label: t(lang, "crumbs.wiki"), href: href(lang, "home") }, { label: t(lang, "nav.bestiary"), href: href(lang, "styleguide") }, { label: name(wolf.name, lang) }]} />
+        <div class="row">
+          <a class="vw-search" href={href(lang, "search")}><span>{t(lang, "search.placeholder")}</span><kbd class="vw-kbd">Ctrl K</kbd></a>
+          <div class="vw-lang"><a href="/pl/styleguide/" aria-current={lang === "pl" ? "true" : undefined}>PL</a><a href="/en/styleguide/" aria-current={lang === "en" ? "true" : undefined}>EN</a></div>
+        </div>
+      </section>
+
+      <section id="states">
+        <SectionTitle>Empty · Skeleton</SectionTitle>
+        <div class="grid">
+          <Empty title={t(lang, "search.empty.title")} text={t(lang, "search.empty.text")} />
+          <Empty title={t(lang, "search.none.title", { q: "xyz" })} text={t(lang, "search.none.text")} />
+          <Skeleton shape="row" lines={4} />
+          <Skeleton shape="card" lines={3} />
+        </div>
+      </section>
+
+      <section id="colors">
+        <SectionTitle>Tokens</SectionTitle>
+        <Label>tokens.css</Label>
+        <div class="swatches">{swatches.map((s) => <div class="swatch"><span style={`background: var(${s})`}></span><code>{s}</code></div>)}</div>
+        <Label>tokens.data.css</Label>
+        <div class="swatches">{dataSwatches.map((s) => <div class="swatch"><span style={`background: var(${s})`}></span><code>{s}</code></div>)}</div>
+      </section>
+    </div>
+  </div>
+</Base>
+<style>
+  .sg { display: grid; grid-template-columns: 220px 1fr; gap: 48px; padding-top: 48px; padding-bottom: 72px; }
+  .main { display: flex; flex-direction: column; gap: 56px; min-width: 0; }
+  h1 { margin: 0; }
+  .row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 12px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; align-items: start; }
+  .cards { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+  .stack { display: flex; flex-direction: column; gap: 12px; max-width: 480px; }
+  .nodes { gap: 24px; }
+  .swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; margin-bottom: 20px; }
+  .swatch { display: flex; align-items: center; gap: 10px; }
+  .swatch span { width: 28px; height: 28px; border: 1px solid var(--vw-border); }
+  .swatch code { font: 400 13px var(--vw-font-mono); color: var(--vw-text-muted); }
+  @media (max-width: 1023px) { .sg { grid-template-columns: 1fr; padding-top: 16px; } }
+</style>

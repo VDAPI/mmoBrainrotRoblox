@@ -1,0 +1,75 @@
+---
+// Monster card (.vw-monster, VwMonsterCard): picture 4:3, rank top left, element top right, variant name, level,
+// region with a diamond in its zone colour, best loot at the bottom. Top border: normal dark gold, elite gold,
+// Elite II orange, boss red.
+import type { Monster } from "../data/types";
+import { getItem, getMap, load } from "../lib/data";
+import { name, t } from "../lib/i18n";
+import type { Lang } from "../i18n/routes";
+import ElementBadge from "./ElementBadge.astro";
+import ItemIcon from "./ItemIcon.svelte";
+import MonsterImage from "./MonsterImage.astro";
+import RankBadge from "./RankBadge.astro";
+interface Props {
+  monster: Monster;
+  variant?: "normal" | "elite" | "elite2";
+  level?: number;
+  lang: Lang;
+  href?: string | null;
+}
+const { monster, variant = "normal", level, lang, href } = Astro.props;
+const info = monster.variants[variant] ?? monster.variants.normal ?? Object.values(monster.variants)[0];
+const spawn = info?.spawns[0];
+const map = spawn ? getMap(spawn.cave ?? spawn.map) : getMap(monster.regionMap);
+const region = spawn?.cave ? load("caves").caves.find((c) => c.id === spawn.cave) : undefined;
+const area = spawn?.area ? load("areas").areas.find((a) => a.id === spawn.area) : undefined;
+const place = region ? name(region.name, lang) : area ? name(area.name, lang) : map ? name(map.name, lang) : "";
+const zone = map?.zone ?? "yellow";
+const shownLevel = level ?? info?.levelMax ?? 1;
+// Best loot: the drop with the highest required level, then the highest chance.
+const best = [...(info?.loot.items ?? [])]
+  .map((l) => ({ l, item: getItem(l.id) }))
+  .filter((x) => x.item && x.item.category === "equipment")
+  .sort((a, b) => b.item!.requiredLevel - a.item!.requiredLevel || b.l.chance - a.l.chance)[0];
+const cap = load("rarities").sources[variant]?.cap;
+const capName = cap ? name(load("rarities").rarities.find((r) => r.key === cap)?.name, lang) : "";
+const borders = { normal: "var(--vw-gold-dark)", elite: "var(--vw-gold-bright)", elite2: "var(--vw-r-legendary)" };
+const Tag = href ? "a" : "article";
+---
+<Tag class="vw-monster card" href={href ?? undefined} style={`border-top-color: ${borders[variant]}`}>
+  <div class="vw-monster__render render">
+    <MonsterImage id={monster.id} variant={variant} alt={name(info?.name, lang)} element={monster.element} />
+    <span class="rank"><RankBadge rank={variant} lang={lang} /></span>
+    <span class="element"><ElementBadge element={monster.element} lang={lang} /></span>
+  </div>
+  <div class="vw-monster__name name">{name(info?.name ?? monster.name, lang)}</div>
+  <div class="meta">{t(lang, "level", { level: shownLevel })}</div>
+  <div class="place"><span class="dot" style={`--c: var(--vw-zone-${zone})`}></span>{place}</div>
+  <div class="vw-monster__drop">
+    {best ? (
+      <>
+        <ItemIcon glyph={best.item!.glyph} color={best.item!.color} rarity={cap} size={36} />
+        <div>
+          <div class="drop-name" style={cap ? `color: var(--vw-r-${cap}-text)` : undefined}>{name(best.item!.name, lang)}</div>
+          <div class="drop-meta">{capName}</div>
+        </div>
+      </>
+    ) : (
+      <span class="drop-meta">{t(lang, "monster.noLoot")}</span>
+    )}
+  </div>
+</Tag>
+<style>
+  .card { color: var(--vw-text); }
+  a.card:hover { text-decoration: none; }
+  .render { position: relative; overflow: hidden; }
+  .rank { position: absolute; left: 8px; top: 8px; }
+  .element { position: absolute; right: 8px; top: 8px; }
+  .element :global(.vw-rank) { background: var(--vw-bg); }
+  .name { font-size: 26px; color: var(--vw-text); }
+  .meta { color: var(--vw-text-soft); font-size: 15px; margin-top: -8px; }
+  .place { display: flex; align-items: center; gap: 8px; font-size: 15px; color: var(--vw-text-muted); }
+  .dot { width: 8px; height: 8px; background: var(--c); transform: rotate(45deg); box-shadow: 0 0 6px var(--c); }
+  .drop-name { font-weight: 800; font-size: 15px; }
+  .drop-meta { font-size: 13px; color: var(--vw-text-muted); }
+</style>

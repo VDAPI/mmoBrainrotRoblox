@@ -1,0 +1,26 @@
+---
+// Root page of a section that a later session builds: "Coming soon" with the search field (no 404).
+import Base from "../layouts/Base.astro";
+import Empty from "../components/Empty.astro";
+import Button from "../components/Button.astro";
+import { href, type Lang, type RouteKey } from "../i18n/routes";
+import { t } from "../lib/i18n";
+interface Props {
+  lang: Lang;
+  section: RouteKey;
+}
+const { lang, section } = Astro.props;
+const title = t(lang, `nav.${section}` as Parameters<typeof t>[1]);
+---
+<Base lang={lang} title={title} section={section} noindex>
+  <div class="vw-container wrap">
+    <h1 class="vw-h2">{title}</h1>
+    <Empty title={t(lang, "soon.title")} text={t(lang, "soon.text")}>
+      <Button variant="primary" href={href(lang, "search")}>{t(lang, "soon.search")}</Button>
+    </Empty>
+  </div>
+</Base>
+<style>
+  .wrap { padding-top: 48px; padding-bottom: 48px; }
+  h1 { margin: 0; }
+</style>

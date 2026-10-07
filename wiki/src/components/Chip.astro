@@ -1,0 +1,23 @@
+---
+// Filter chip (.vw-chip): a link with `href`, otherwise a toggle button.
+interface Props {
+  pressed?: boolean;
+  disabled?: boolean;
+  href?: string | null;
+  count?: number;
+}
+const { pressed = false, disabled = false, href, count } = Astro.props;
+---
+{href ? (
+  <a class="vw-chip" href={href} aria-pressed={pressed ? "true" : undefined}>
+    <slot />{count !== undefined && <span class="count">{count}</span>}
+  </a>
+) : (
+  <button type="button" class="vw-chip" aria-pressed={pressed ? "true" : "false"} disabled={disabled}>
+    <slot />{count !== undefined && <span class="count">{count}</span>}
+  </button>
+)}
+<style>
+  .count { font-size: 13px; opacity: .8; }
+  a.vw-chip:hover { text-decoration: none; }
+</style>

@@ -1,0 +1,12 @@
+---
+// Small uppercase label (.vw-label).
+interface Props {
+  as?: "p" | "span" | "h2" | "h3";
+  id?: string;
+}
+const { as: Tag = "p", id } = Astro.props;
+---
+<Tag class="vw-label" id={id}><slot /></Tag>
+<style>
+  .vw-label { margin: 0 0 var(--vw-s-3); }
+</style>

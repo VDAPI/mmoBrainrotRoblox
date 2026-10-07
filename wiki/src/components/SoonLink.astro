@@ -1,0 +1,12 @@
+---
+// Link to a section: a normal link when it is ready, otherwise text with a "Soon" tag (aria-disabled).
+import { t } from "../lib/i18n";
+import type { Lang } from "../i18n/routes";
+interface Props {
+  href: string | null;
+  lang: Lang;
+  class?: string;
+}
+const { href, lang, class: extra = "" } = Astro.props;
+---
+{href ? <a class={extra} href={href}><slot /></a> : <span class={`vw-soon ${extra}`} aria-disabled="true"><slot /><span class="vw-soon__tag">{t(lang, "soon")}</span></span>}

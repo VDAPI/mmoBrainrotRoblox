@@ -77,5 +77,8 @@ MMORPG na Roblox (Margonem w 3D). Luau + Rojo + Wally + Fusion 0.3 + ProfileStor
   `docs/PRZEDMIOTY.md`. Test: `tests/wikidump.spec.luau`.
 - **Po każdej sesji zmieniającej `src/shared/Data` (albo Logic używaną przez eksport) uruchom `lune run tools/wikidump.luau`**
   (od S36: `npm run data` w `wiki/`) i zacommituj zmiany; `--check` mówi, czy dane są aktualne.
+- Strona (S36+): `cd wiki`, `npm install`, `npm run dev` (podgląd), `npm run build` + `npm run preview` (z wyszukiwarką),
+  `npm run check` (typy, lint, testy, build, linki), `npm run data` (eksport danych), `npm run shots` (zrzuty 390/1440).
+  Komponenty i jak dodać stronę: `docs/WIKI.md` → „Komponenty”.
 - Nowe pole gry na wiki = wpis w schemacie buildera (`Schema.rec`) + wartość w builderze. Liczby tylko z funkcji `Logic`
   i z `Data`; nic z `Data/Codes`, `AdminCommands`, `DevPreset`, `Products` (wyjątek S43: `WikiData/Premium.luau`).

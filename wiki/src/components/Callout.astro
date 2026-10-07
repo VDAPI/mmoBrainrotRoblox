@@ -1,0 +1,47 @@
+---
+// Callout (.vw-callout): info, tip, warn, changed (date instead of a version), spoiler (button toggles data-open).
+import { t } from "../lib/i18n";
+import { formatDate } from "../lib/format";
+import type { Lang } from "../i18n/routes";
+interface Props {
+  kind?: "info" | "tip" | "warn" | "changed" | "spoiler";
+  title?: string;
+  date?: string;
+  lang?: Lang;
+}
+const { kind = "info", title, date, lang = "pl" } = Astro.props;
+const heading = title ?? t(lang, `callout.${kind}`);
+---
+<aside class={`vw-callout${kind === "info" ? "" : ` vw-callout--${kind}`}`} data-open={kind === "spoiler" ? "false" : undefined}>
+  <span class="vw-callout__icon" aria-hidden="true"></span>
+  <div class="content">
+    <div class="top">
+      <span class="vw-callout__title">{heading}</span>
+      {kind === "changed" && date && <span class="date">{formatDate(date, lang)}</span>}
+      {kind === "spoiler" && (
+        <button type="button" class="toggle" aria-expanded="false" data-show={t(lang, "callout.show")} data-hide={t(lang, "callout.hide")}>
+          {t(lang, "callout.show")}
+        </button>
+      )}
+    </div>
+    <div class="vw-callout__body"><slot /></div>
+  </div>
+</aside>
+<script>
+  document.querySelectorAll<HTMLButtonElement>(".vw-callout--spoiler .toggle").forEach((button) => {
+    button.addEventListener("click", () => {
+      const box = button.closest(".vw-callout");
+      const open = box?.getAttribute("data-open") !== "true";
+      box?.setAttribute("data-open", String(open));
+      button.setAttribute("aria-expanded", String(open));
+      button.textContent = (open ? button.dataset.hide : button.dataset.show) ?? "";
+    });
+  });
+</script>
+<style>
+  .content { display: flex; flex-direction: column; gap: 6px; }
+  .top { display: flex; align-items: center; gap: 10px; }
+  .date { font: 800 12px/1 var(--vw-font-ui); padding: 3px 6px; background: var(--vw-gold-bright); color: var(--vw-text-on-gold); }
+  .toggle { margin-left: auto; min-height: 32px; background: none; border: 0; color: var(--c); font: 800 12px/1 var(--vw-font-ui); letter-spacing: .12em; text-transform: uppercase; cursor: pointer; }
+  .vw-callout__body :global(p) { margin: 0; }
+</style>

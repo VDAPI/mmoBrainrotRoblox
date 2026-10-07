@@ -1,0 +1,20 @@
+---
+// Resource bar (.vw-bar): hp, mana, energy, exp.
+import { formatNumber } from "../lib/format";
+import type { Lang } from "../i18n/routes";
+interface Props {
+  kind?: "hp" | "mana" | "energy" | "exp";
+  value: number;
+  max: number;
+  label?: string;
+  size?: "md" | "sm";
+  lang?: Lang;
+}
+const { kind = "hp", value, max, label, size = "md", lang = "pl" } = Astro.props;
+const pct = max > 0 ? Math.max(0, Math.min(100, (value / max) * 100)) : 0;
+const text = label ?? `${formatNumber(value, lang)} / ${formatNumber(max, lang)}`;
+const cls = ["vw-bar", kind === "hp" ? "" : `vw-bar--${kind}`, size === "sm" ? "vw-bar--sm" : ""].filter(Boolean).join(" ");
+---
+<div class={cls} style={`--v: ${pct}%`} role="meter" aria-valuemin={0} aria-valuemax={max} aria-valuenow={value} aria-label={text}>
+  <span>{text}</span>
+</div>

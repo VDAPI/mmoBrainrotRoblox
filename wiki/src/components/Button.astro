@@ -1,0 +1,18 @@
+---
+// Button (.vw-btn*): a link when `href` is given, otherwise a <button>.
+interface Props {
+  variant?: "default" | "primary" | "ghost" | "play";
+  href?: string | null;
+  disabled?: boolean;
+  type?: "button" | "submit";
+  class?: string;
+}
+const { variant = "default", href, disabled = false, type = "button", class: extra = "" } = Astro.props;
+const cls = ["vw-btn", variant === "default" ? "" : `vw-btn--${variant}`, variant === "play" ? "vw-btn--primary" : "", extra]
+  .filter(Boolean)
+  .join(" ");
+---
+{href && !disabled ? <a class={cls} href={href}><slot /></a> : <button class={cls} type={type} disabled={disabled}><slot /></button>}
+<style>
+  a.vw-btn:hover { text-decoration: none; }
+</style>

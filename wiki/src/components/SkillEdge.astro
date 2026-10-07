@@ -1,0 +1,8 @@
+---
+// Edge between skill nodes (.vw-edge).
+interface Props {
+  active?: boolean;
+}
+const { active = false } = Astro.props;
+---
+<div class={`vw-edge${active ? " is-active" : ""}`} aria-hidden="true"></div>

@@ -1,0 +1,37 @@
+---
+// Site-wide 404: both languages, the script shows the one from the start of the path.
+import "../styles/tokens.css";
+import "../styles/tokens.data.css";
+import "../styles/components.css";
+---
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>404 · Vaelthorn Wiki</title>
+    <meta name="robots" content="noindex" />
+  </head>
+  <body>
+    <main class="vw-empty">
+      <span class="vw-empty__mark" aria-hidden="true"></span>
+      <div lang="pl" data-lang="pl">
+        <p class="vw-h2">Nic tu nie ma</p>
+        <p>Ta strona nie istnieje albo została przeniesiona.</p>
+        <p><a href="/pl/">Wróć na stronę główną</a> · <a href="/pl/szukaj/">Szukaj w wiki</a></p>
+      </div>
+      <div lang="en" data-lang="en" hidden>
+        <p class="vw-h2">Nothing here</p>
+        <p>This page does not exist or has moved.</p>
+        <p><a href="/en/">Back to the home page</a> · <a href="/en/search/">Search the wiki</a></p>
+      </div>
+    </main>
+    <script is:inline>
+      if (location.pathname.indexOf("/en/") === 0) {
+        document.documentElement.lang = "en";
+        document.querySelector('[data-lang="pl"]').hidden = true;
+        document.querySelector('[data-lang="en"]').hidden = false;
+      }
+    </script>
+  </body>
+</html>

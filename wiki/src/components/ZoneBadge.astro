@@ -1,0 +1,13 @@
+---
+// PvP zone badge (.vw-zone) with the zone name from the export (mechanics.zones = game keys zone.<z>).
+import { load } from "../lib/data";
+import { name } from "../lib/i18n";
+import type { Lang } from "../i18n/routes";
+interface Props {
+  zone: string;
+  lang: Lang;
+}
+const { zone, lang } = Astro.props;
+const info = load("mechanics").zones[zone];
+---
+<span class={`vw-zone vw-zone--${zone}`}>{name(info?.name, lang) || zone}</span>

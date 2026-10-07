@@ -1,0 +1,26 @@
+---
+// Language 404 page (/pl/404/ and /en/404/; the build copies them to /pl/404.html and /en/404.html for Cloudflare).
+import Base from "../layouts/Base.astro";
+import Empty from "../components/Empty.astro";
+import { href, type Lang } from "../i18n/routes";
+import { t } from "../lib/i18n";
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+---
+<Base lang={lang} title={t(lang, "notfound.title")} noindex alternate={lang === "pl" ? "/en/404/" : "/pl/404/"}>
+  <div class="vw-container wrap">
+    <Empty title={t(lang, "notfound.title")} text={t(lang, "notfound.text")}>
+      <form class="search" action={href(lang, "search")} method="get" role="search">
+        <input class="vw-search" name="q" type="search" placeholder={t(lang, "search.placeholderLong")} aria-label={t(lang, "search.placeholder")} />
+      </form>
+      <a href={href(lang, "home")}>{t(lang, "notfound.home")}</a>
+    </Empty>
+  </div>
+</Base>
+<style>
+  .wrap { padding-top: 48px; padding-bottom: 48px; }
+  .search { width: min(520px, 100%); }
+  .search input { width: 100%; height: 52px; font: 500 17px var(--vw-font-ui); color: var(--vw-text); }
+</style>

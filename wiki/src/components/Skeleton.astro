@@ -1,0 +1,25 @@
+---
+// Loading skeleton (.vw-skeleton), visible after 300 ms (no flash on fast loads), aria-busy.
+interface Props {
+  shape?: "row" | "card" | "tooltip";
+  lines?: number;
+}
+const { shape = "row", lines = 3 } = Astro.props;
+---
+<div class={`skeleton skeleton--${shape}`} aria-busy="true" role="status">
+  {Array.from({ length: lines }, (_, i) => (
+    <div class="line">
+      {shape === "row" && <span class="vw-skeleton box"></span>}
+      <span class="vw-skeleton bar" style={`width: ${90 - i * 12}%`}></span>
+    </div>
+  ))}
+</div>
+<style>
+  .skeleton { display: flex; flex-direction: column; gap: 12px; animation: appear 1ms 300ms both; }
+  @keyframes appear { from { opacity: 0; } to { opacity: 1; } }
+  .skeleton--card, .skeleton--tooltip { padding: 18px; border: 1px solid var(--vw-border); background: var(--vw-panel); }
+  .skeleton--tooltip { max-width: 400px; }
+  .line { display: flex; align-items: center; gap: 12px; }
+  .box { width: 32px; height: 32px; flex-shrink: 0; }
+  .bar { height: 14px; display: block; }
+</style>

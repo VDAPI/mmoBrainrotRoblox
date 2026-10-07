@@ -1,0 +1,65 @@
+---
+// Search page (/pl/szukaj/): the island does the work; examples are real names from the data.
+import Base from "../layouts/Base.astro";
+import SearchPage from "../islands/SearchPage.svelte";
+import type { Lang } from "../i18n/routes";
+import { getMonster, items, rarities } from "../lib/data";
+import { pickFeaturedItem, pickMonsterOfWeek, isoWeek } from "../lib/featured";
+import { monsters } from "../lib/data";
+import { name, t } from "../lib/i18n";
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const week = isoWeek(new Date()).key;
+const hero = pickFeaturedItem(items(), rarities());
+const monster = pickMonsterOfWeek(monsters(), week);
+const wolf = getMonster("wolf");
+const examples = [hero ? name(hero.name, lang) : "", monster ? name(monster.monster.name, lang) : "", wolf ? name(wolf.name, lang) : ""].filter(Boolean);
+---
+<Base lang={lang} title={t(lang, "nav.search")} section="search" noindex>
+  <div class="wrap">
+    <h1 class="vw-sr">{t(lang, "nav.search")}</h1>
+    <SearchPage
+      client:load
+      lang={lang}
+      labels={{
+        placeholder: t(lang, "search.placeholderLong"),
+        button: t(lang, "search.button"),
+        all: t(lang, "search.all"),
+        results: t(lang, "search.results"),
+        noneTitle: t(lang, "search.none.title"),
+        noneText: t(lang, "search.none.text"),
+        emptyTitle: t(lang, "search.empty.title"),
+        emptyText: t(lang, "search.empty.text"),
+        pending: t(lang, "search.pending"),
+        devOnly: t(lang, "search.devOnly"),
+        loading: t(lang, "search.loading"),
+        best: t(lang, "search.best"),
+        bind: t(lang, "tooltip.bind"),
+        tabs: {
+          item: t(lang, "search.type.item"),
+          monster: t(lang, "search.type.monster"),
+          region: t(lang, "search.type.region"),
+          quest: t(lang, "search.type.quest"),
+          skill: t(lang, "search.type.skill"),
+          guide: t(lang, "search.type.guide"),
+        },
+        badges: {
+          item: t(lang, "search.badge.item"),
+          monster: t(lang, "search.badge.monster"),
+          region: t(lang, "search.badge.region"),
+          quest: t(lang, "search.badge.quest"),
+          skill: t(lang, "search.badge.skill"),
+          guide: t(lang, "search.badge.guide"),
+        },
+        plural: { one: t(lang, "results.one"), few: t(lang, "results.few"), many: t(lang, "results.many") },
+        examples,
+      }}
+    />
+  </div>
+</Base>
+<style>
+  .wrap { padding: 48px 120px 72px; }
+  @media (max-width: 1023px) { .wrap { padding: 16px 16px 32px; } }
+</style>

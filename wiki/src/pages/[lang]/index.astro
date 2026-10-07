@@ -1,0 +1,278 @@
+---
+// Home page (S36, Glowna-desktop / Glowna-mobile): hero with the search field and a beam of light over a real item,
+// wiki sections, monster and legendary item of the week, latest changes, the three world zones.
+import type { GetStaticPaths } from "astro";
+import { getCollection } from "astro:content";
+import Base from "../../layouts/Base.astro";
+import Bar from "../../components/Bar.astro";
+import ItemTooltip from "../../components/ItemTooltip.svelte";
+import Label from "../../components/Label.astro";
+import MonsterImage from "../../components/MonsterImage.astro";
+import SectionTitle from "../../components/SectionTitle.astro";
+import ZoneBadge from "../../components/ZoneBadge.astro";
+import { href, LANGS, type Lang, type RouteKey } from "../../i18n/routes";
+import { getMap, items, load, meta, monsters, rarities, rarityOf } from "../../lib/data";
+import { isoWeek, pickFeaturedItem, pickMonsterOfWeek, pickWeeklyLegendary } from "../../lib/featured";
+import { formatDate, formatDuration, formatNumber } from "../../lib/format";
+import { name, t } from "../../lib/i18n";
+import { searchHref, sectionHref } from "../../lib/sections";
+import { tooltipData } from "../../lib/tooltip";
+
+export const getStaticPaths = (() => LANGS.map((lang) => ({ params: { lang } }))) satisfies GetStaticPaths;
+
+const lang = Astro.params.lang as Lang;
+const week = isoWeek(new Date()).key;
+const allItems = items();
+const hero = pickFeaturedItem(allItems, rarities());
+const heroRarity = hero ? rarityOf(hero.rarities[0]) : undefined;
+const heroHref = hero ? (sectionHref(lang, "items", hero.id) ?? searchHref(lang, name(hero.name, lang))) : null;
+const weekly = pickWeeklyLegendary(allItems, week);
+const weeklyTip = weekly ? tooltipData(weekly.item.id, { lang, rarity: "legendary", upgrade: weekly.upgrade }) : undefined;
+const weeklyHref = weekly ? (sectionHref(lang, "items", weekly.item.id) ?? searchHref(lang, name(weekly.item.name, lang))) : null;
+const featured = pickMonsterOfWeek(monsters(), week);
+const elite = featured?.monster.variants.elite;
+const eliteLevel = elite?.levels.find((l) => l.level === featured!.level) ?? elite?.levels[elite.levels.length - 1];
+const eliteSpawn = elite?.spawns[0];
+const eliteCave = eliteSpawn?.cave ? load("caves").caves.find((c) => c.id === eliteSpawn.cave) : undefined;
+const eliteMap = eliteCave ? getMap(eliteCave.id) : eliteSpawn ? getMap(eliteSpawn.map) : undefined;
+const monsterHref = featured ? (sectionHref(lang, "bestiary", featured.monster.id) ?? searchHref(lang, name(featured.monster.name, lang))) : null;
+const highestRegion = load("maps").maps.filter((m) => m.kind === "region").sort((a, b) => b.maxLevel - a.maxLevel)[0];
+
+const quests = load("quests");
+const SECTION_CARDS: { key: RouteKey; title: Parameters<typeof t>[1]; desc: Parameters<typeof t>[1]; n?: number; icon: string }[] = [
+  { key: "items", title: "home.section.items", desc: "home.section.items.desc", n: allItems.length, icon: "M8 26l14-14m-4-4l6 6M6 22l4 4m14-20l2 2" },
+  { key: "bestiary", title: "home.section.bestiary", desc: "home.section.bestiary.desc", n: monsters().length, icon: "M8 22c0-8 4-14 8-14s8 6 8 14M12 16h1m6 0h1M11 24l2-3 3 3 3-3 2 3" },
+  { key: "map", title: "home.section.map", desc: "home.section.map.desc", icon: "M6 9l7-3 6 3 7-3v17l-7 3-6-3-7 3zM13 6v17m6-14v17" },
+  { key: "upgrading", title: "home.section.upgrading", desc: "home.section.upgrading.desc", icon: "M7 25h18M10 25l2-6h8l2 6M16 19V7m-4 4l4-4 4 4" },
+  { key: "quests", title: "home.section.quests", desc: "home.section.quests.desc", n: quests.main.length + quests.side.length, icon: "M9 6h14v20H9zM12 11h8m-8 4h8m-8 4h5" },
+  { key: "classes", title: "home.section.classes", desc: "home.section.classes.desc", n: load("classes").classes.length, icon: "M16 6l3 6 6 1-4.5 4.5L22 24l-6-3-6 3 1.5-6.5L7 13l6-1z" },
+  { key: "crafting", title: "home.section.crafting", desc: "home.section.crafting.desc", icon: "M7 23l9-9m3-7l6 6-4 4-6-6zM6 26l3-3" },
+  { key: "guides", title: "home.section.guides", desc: "home.section.guides.desc", icon: "M8 7h7a3 3 0 0 1 3 3v16a3 3 0 0 0-3-3H8zM24 7h-6m6 0v16h-6" },
+];
+
+const updates = (await getCollection("updates"))
+  .filter((u) => u.id.startsWith(`${lang}/`))
+  .sort((a, b) => b.data.date.getTime() - a.data.date.getTime() || (a.id < b.id ? -1 : 1))
+  .slice(0, 4);
+
+const mapList = load("maps").maps;
+const zones = load("mechanics").zones;
+const city = mapList.find((m) => m.kind === "city");
+const regionMaps = mapList.filter((m) => m.kind === "region").sort((a, b) => a.minLevel - b.minLevel);
+const caves = load("caves").caves;
+const bossList = load("bosses").bosses;
+const redMin = Math.min(...caves.map((c) => c.levelMin), ...bossList.map((b) => b.level));
+const redMax = Math.max(...caves.map((c) => c.levelMax), ...bossList.map((b) => b.level));
+const zoneCards = [
+  { zone: "green", example: city ? t(lang, "home.zone.city", { name: name(city.name, lang), min: city.minLevel, max: city.maxLevel }) : "" },
+  { zone: "yellow", example: t(lang, "home.zone.regions", { names: regionMaps.map((m) => `${name(m.name, lang)} ${m.minLevel}–${m.maxLevel}`).join(" · ") }) },
+  { zone: "red", example: t(lang, "home.zone.caves", { caves: caves.length, rooms: bossList.length, min: redMin, max: redMax }) },
+];
+const dataDate = formatDate(meta().dataDate, lang);
+---
+<Base lang={lang} title="" description={t(lang, "home.lead")}>
+  <section class="hero" style={heroRarity ? `--c: var(--vw-r-${heroRarity.key})` : undefined}>
+    <div class="hero__text">
+      <p class="vw-label kicker">{t(lang, "home.kicker", { date: dataDate })}</p>
+      <h1 class="title">Vaelthorn</h1>
+      <p class="lead">{t(lang, "home.lead")}</p>
+      <form class="search" action={href(lang, "search")} method="get" role="search">
+        <input type="search" name="q" placeholder={t(lang, "search.placeholderLong")} data-short={t(lang, "search.short")} aria-label={t(lang, "search.placeholder")} />
+        <button class="vw-btn vw-btn--primary" type="submit">{t(lang, "search.button")}</button>
+      </form>
+      <div class="chips">
+        {hero && heroHref && <a class="vw-chip" href={heroHref}>{name(hero.name, lang)}</a>}
+        {featured && monsterHref && <a class="vw-chip" href={monsterHref}>{name(elite?.name ?? featured.monster.name, lang)}</a>}
+        {highestRegion && <a class="vw-chip" href={sectionHref(lang, "regions", highestRegion.id) ?? searchHref(lang, name(highestRegion.name, lang))}>{name(highestRegion.name, lang)}</a>}
+      </div>
+    </div>
+    {hero && heroRarity && (
+      <div class="beam-wrap" aria-hidden="false">
+        <div class="vw-beam beam" aria-hidden="true"><span class="core"></span><span class="glow"></span></div>
+        <div class="pool" aria-hidden="true"></div>
+        <div class="beam-label">
+          <span class="vw-label" style={`color: var(--vw-r-${heroRarity.key}-text)`}>{name(heroRarity.name, lang)}</span>
+          {heroHref && <a href={heroHref}>{name(hero.name, lang)}</a>}
+        </div>
+      </div>
+    )}
+  </section>
+
+  <div class="vw-container page">
+    <section aria-labelledby="sections">
+      <SectionTitle id="sections">{t(lang, "home.sections")}</SectionTitle>
+      <div class="sections">
+        {SECTION_CARDS.map((card) => {
+          const target = sectionHref(lang, card.key);
+          const Tag = target ? "a" : "div";
+          return (
+            <Tag class={`section-card${target ? "" : " is-soon"}`} href={target ?? undefined}>
+              <span class="section-icon" aria-hidden="true">
+                <svg viewBox="0 0 32 32" width="34" height="34"><path d={card.icon} fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"></path></svg>
+              </span>
+              <span class="section-text">
+                <span class="section-title">{t(lang, card.title)}{!target && <span class="vw-soon__tag">{t(lang, "soon")}</span>}</span>
+                <span class="section-desc">{t(lang, card.desc, { n: card.n ?? "" })}</span>
+              </span>
+            </Tag>
+          );
+        })}
+      </div>
+    </section>
+
+    <div class="row3">
+      {featured && elite && eliteLevel && (
+        <section class="monster-week" aria-labelledby="mw">
+          <Label as="h2" id="mw">{t(lang, "home.monsterWeek")}</Label>
+          <div class="mw-card">
+            <div class="mw-head">
+              <div class="portrait"><MonsterImage id={featured.monster.id} variant="elite" size="thumb" alt={name(elite.name, lang)} element={featured.monster.element} /></div>
+              <div class="mw-title">
+                <p class="mw-name">{name(elite.name, lang)}</p>
+                <p class="mw-meta"><span class="gold">{t(lang, "level", { level: eliteLevel.finalLevel })}</span> · {name(load("mechanics").variants.elite?.name, lang)}</p>
+                <ZoneBadge zone={eliteMap?.zone ?? "red"} lang={lang} />
+              </div>
+              <span class="mw-arrow vw-only-mobile" aria-hidden="true">›</span>
+            </div>
+            <div class="vw-only-desktop mw-bar"><Bar value={eliteLevel.hp} max={eliteLevel.hp} lang={lang} /></div>
+            <dl class="vw-only-desktop mw-grid">
+              <div><dt>{t(lang, "home.damage")}</dt><dd>{formatNumber(eliteLevel.dmgMin, lang)}–{formatNumber(eliteLevel.dmgMax, lang)}</dd></div>
+              {eliteSpawn ? (
+                <div><dt>{t(lang, "home.respawn")}</dt><dd>{formatDuration(eliteSpawn.respawnMin, lang)}–{formatDuration(eliteSpawn.respawnMax, lang)}</dd></div>
+              ) : (
+                <div><dt>{t(lang, "home.exp")}</dt><dd>{formatNumber(eliteLevel.exp, lang)}</dd></div>
+              )}
+              <div><dt>{t(lang, "home.region")}</dt><dd>{eliteCave ? name(eliteCave.name, lang) : eliteMap ? name(eliteMap.name, lang) : ""}</dd></div>
+            </dl>
+            {monsterHref && <a class="vw-only-desktop more" href={monsterHref}>{t(lang, "home.fullCard")}</a>}
+            {monsterHref && <a class="vw-only-mobile stretched" href={monsterHref} aria-label={name(elite.name, lang)}></a>}
+          </div>
+        </section>
+      )}
+      {weeklyTip && (
+        <section class="item-week" aria-labelledby="iw">
+          <Label as="h2" id="iw">{t(lang, "home.itemWeek")}</Label>
+          <ItemTooltip data={weeklyTip} href={weeklyHref} labels={{ bind: t(lang, "tooltip.bind") }} />
+        </section>
+      )}
+      <section class="changes" aria-labelledby="ch">
+        <Label as="h2" id="ch">{t(lang, "home.changes")}</Label>
+        <ol class="change-list">
+          {updates.map((u) => (
+            <li>
+              <span class="date">{formatDate(u.data.date.toISOString(), lang, true)}</span>
+              <span><span class="change-title">{u.data.title}</span><span class="change-sum">{u.data.summary}</span></span>
+            </li>
+          ))}
+        </ol>
+      </section>
+    </div>
+
+    <section aria-labelledby="zones" class="zones-section">
+      <SectionTitle id="zones">{t(lang, "home.zones")}</SectionTitle>
+      <div class="zones">
+        {zoneCards.map((z) => (
+          <article class="zone-card" style={`--c: var(--vw-zone-${z.zone})`}>
+            <ZoneBadge zone={z.zone} lang={lang} />
+            <p class="zone-rule">{name(zones[z.zone]?.rule, lang)}</p>
+            <p class="zone-example">{z.example}</p>
+          </article>
+        ))}
+      </div>
+    </section>
+  </div>
+</Base>
+
+<style>
+  .hero { --c: var(--vw-gold-bright); position: relative; min-height: 600px; display: flex; align-items: center; overflow: hidden; border-bottom: 1px solid var(--vw-border); background: linear-gradient(90deg, var(--vw-bg) 0%, color-mix(in srgb, var(--vw-bg) 70%, transparent) 55%, transparent 100%), repeating-linear-gradient(135deg, var(--vw-panel) 0 14px, var(--vw-bg) 14px 28px); }
+  .hero__text { position: relative; z-index: 2; max-width: 760px; padding: 96px 72px; }
+  .kicker { font-size: 15px; margin: 0 0 18px; }
+  .title { margin: 0; font: 700 var(--vw-fs-display-xl)/var(--vw-lh-display-xl) var(--vw-font-display); color: var(--vw-gold-bright); text-shadow: 0 4px 24px rgba(0, 0, 0, .6), 0 0 32px rgba(232, 194, 90, .25); }
+  .lead { max-width: 560px; margin: 24px 0 32px; font-size: 23px; line-height: 1.4; color: var(--vw-text); }
+  .search { display: flex; max-width: 640px; height: 62px; border: 1px solid var(--vw-gold-dark); background: var(--vw-bg); box-shadow: var(--vw-well); }
+  .search input { flex: 1; min-width: 0; padding: 0 22px; background: none; border: 0; outline: none; color: var(--vw-text); font: 500 19px/1 var(--vw-font-ui); }
+  .search:focus-within { box-shadow: var(--vw-well), var(--vw-focus); }
+  .search .vw-btn { height: 100%; min-width: 120px; letter-spacing: .14em; }
+  .chips { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
+  .chips .vw-chip:hover { text-decoration: none; }
+  .beam-wrap { position: absolute; z-index: 1; top: 0; bottom: 0; right: 400px; width: 0; }
+  .beam { position: absolute; left: -60px; width: 120px; top: 40px; bottom: 90px; }
+  .beam .glow { position: absolute; inset: 0; background: linear-gradient(transparent, color-mix(in srgb, var(--c) 70%, transparent) 70%, var(--c)); filter: blur(22px); opacity: .85; }
+  .beam .core { position: absolute; left: 50%; top: 10%; bottom: 0; width: 8px; transform: translateX(-50%); background: linear-gradient(transparent, #fff 50%, #fff); filter: blur(2px); z-index: 1; }
+  .pool { position: absolute; left: -130px; width: 260px; bottom: 60px; height: 60px; border-radius: 50%; background: radial-gradient(color-mix(in srgb, var(--c) 70%, transparent), transparent 70%); filter: blur(8px); }
+  .beam-label { position: absolute; bottom: 150px; left: 0; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; white-space: nowrap; z-index: 3; }
+  .beam-label .vw-label { margin: 0; }
+  .beam-label a { font: 800 19px/1.2 var(--vw-font-ui); color: var(--vw-text); text-shadow: 0 2px 8px #000; }
+  .page { padding-top: 72px; padding-bottom: 96px; display: flex; flex-direction: column; gap: 72px; background: radial-gradient(ellipse at 50% 100%, rgba(214, 120, 46, .08), transparent 60%); }
+  .sections { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+  .section-card { display: flex; align-items: center; gap: 18px; min-height: 96px; padding: 16px; background: var(--vw-metal-gradient); border: 1px solid var(--vw-border); box-shadow: var(--vw-elev-1); color: var(--vw-text); }
+  a.section-card:hover { border-color: var(--vw-gold-dark); text-decoration: none; }
+  .section-icon { width: 64px; height: 64px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border: 1px solid var(--vw-gold-dark); background: var(--vw-bg); color: var(--vw-gold); }
+  .section-text { display: flex; flex-direction: column; gap: 4px; }
+  .section-title { display: flex; align-items: center; gap: 8px; font: 800 20px/1.2 var(--vw-font-ui); }
+  .section-desc { font-size: 15px; color: var(--vw-text-muted); }
+  .is-soon { opacity: .75; }
+  .row3 { display: grid; grid-template-columns: 1.2fr 400px 1fr; gap: 28px; align-items: start; }
+  .mw-card { position: relative; padding: 22px; background: var(--vw-panel); border: 1px solid var(--vw-border); border-top: 2px solid var(--vw-gold); display: flex; flex-direction: column; gap: 18px; }
+  .mw-head { display: flex; gap: 16px; align-items: center; }
+  .portrait { width: 92px; height: 92px; flex-shrink: 0; padding: 3px; border: 1px solid var(--vw-gold); outline: 1px solid var(--vw-gold-dark); outline-offset: 3px; background: #14161B; }
+  .mw-title { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+  .mw-name { margin: 0; font: 400 34px/1 var(--vw-font-display); color: var(--vw-text); }
+  .mw-meta { margin: 0; font-size: 15px; color: var(--vw-text-soft); }
+  .gold { color: var(--vw-gold-bright); font-weight: 800; }
+  .mw-grid { display: grid; grid-template-columns: repeat(3, 1fr); margin: 0; border: 1px solid var(--vw-border); }
+  .mw-grid div { padding: 12px; border-right: 1px solid var(--vw-border); }
+  .mw-grid div:last-child { border-right: 0; }
+  .mw-grid dt { font-size: 13px; color: var(--vw-text-muted); }
+  .mw-grid dd { margin: 4px 0 0; font: 800 18px/1.2 var(--vw-font-ui); }
+  .more { font-weight: 800; font-size: 15px; }
+  .stretched { position: absolute; inset: 0; }
+  .mw-arrow { margin-left: auto; color: var(--vw-gold-bright); font-size: 24px; }
+  .change-list { list-style: none; margin: 0; padding: 0; background: var(--vw-panel); border: 1px solid var(--vw-border); }
+  .change-list li { display: grid; grid-template-columns: 44px 1fr; gap: 16px; padding: 16px; border-bottom: 1px solid var(--vw-border-subtle); }
+  .change-list li:last-child { border-bottom: 0; }
+  .date { font: 800 13px/1.6 var(--vw-font-ui); color: var(--vw-gold-bright); }
+  .change-title { display: block; font: 800 18px/1.3 var(--vw-font-ui); }
+  .change-sum { display: block; font-size: 15px; color: var(--vw-text-muted); }
+  .zones { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .zone-card { padding: 20px; background: var(--vw-panel); border: 1px solid var(--vw-border); border-top: 2px solid var(--c); display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+  .zone-card :global(.vw-zone) { border: 0; padding: 0; height: auto; }
+  .zone-rule { margin: 0; font: 800 18px/1.3 var(--vw-font-ui); }
+  .zone-example { margin: 0; font-size: 15px; color: var(--vw-text-muted); }
+  @media (max-width: 1279px) {
+    .row3 { grid-template-columns: 1fr 400px; }
+    .changes { grid-column: 1 / -1; }
+    .beam-wrap { right: 200px; }
+  }
+  @media (max-width: 1023px) {
+    .hero { min-height: 440px; align-items: flex-end; background: linear-gradient(transparent 30%, var(--vw-bg) 95%), repeating-linear-gradient(135deg, var(--vw-panel) 0 14px, var(--vw-bg) 14px 28px); }
+    .hero__text { padding: 0 16px 24px; width: 100%; }
+    .kicker { font-size: 12px; margin-bottom: 10px; }
+    .lead, .chips { display: none; }
+    .title { margin-bottom: 18px; }
+    .search { height: 52px; }
+    .search .vw-btn { min-width: 88px; }
+    .beam-wrap { right: auto; left: 50%; }
+    .beam { top: 0; bottom: auto; height: 260px; }
+    .pool { bottom: auto; top: 220px; }
+    .beam-label { display: none; }
+    .page { padding: 24px 16px 32px; gap: 32px; }
+    .sections { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .section-card { min-height: 60px; padding: 10px; gap: 14px; }
+    .section-icon { width: 38px; height: 38px; }
+    .section-icon svg { width: 22px; height: 22px; }
+    .section-title { font-size: 16px; }
+    .section-desc { display: none; }
+    .section-title .vw-soon__tag { display: none; }
+    .section-title { min-width: 0; overflow-wrap: anywhere; }
+    .row3 { display: flex; flex-direction: column; gap: 32px; }
+    .item-week { order: 1; }
+    .monster-week { order: 2; }
+    .changes { order: 3; }
+    .mw-card { padding: 12px; }
+    .portrait { width: 56px; height: 56px; }
+    .mw-name { font-size: 24px; }
+    .mw-title :global(.vw-zone) { display: none; }
+    .zones { grid-template-columns: 1fr; }
+  }
+</style>
