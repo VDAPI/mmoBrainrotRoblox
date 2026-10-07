@@ -9,6 +9,7 @@ export type Special = Types.Special
 export type Spot = Types.Spot
 
 local city: Types.City = require("@self/city")
+local extra: { [string]: Types.Spot } = require("@self/npcExtra")
 
 local specialsById: { [string]: Types.Special } = {}
 for _, special in city.specials do
@@ -23,9 +24,19 @@ function Town.special(id: string): Types.Special?
 	return specialsById[id]
 end
 
--- NPC spot by NPC id (Data/Npcs ids), or nil when the NPC does not stand in the city.
+-- NPC spot by NPC id (Data/Npcs ids), or nil when the NPC does not stand in the city. S27: the generated plan
+-- first, then the hand-placed spots (Town/npcExtra).
 function Town.npcSpot(id: string): Types.Spot?
-	return city.npcs[id]
+	return city.npcs[id] or extra[id]
+end
+
+-- Every NPC spot (plan and hand-placed), for tests and tools.
+function Town.allNpcSpots(): { [string]: Types.Spot }
+	local out = table.clone(city.npcs)
+	for id, spot in extra do
+		out[id] = spot
+	end
+	return out
 end
 
 function Town.gate(target: string): Types.Gate?

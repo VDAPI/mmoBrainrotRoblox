@@ -63,8 +63,35 @@ local function areaAt(mapId: string, x: number, z: number): Types.Area?
 	return nil
 end
 
+-- S27: a named area by id and its map.
+local function areaById(id: string): (Types.Area?, string?)
+	for mapId, data in byMap do
+		for _, area in data.areas do
+			if area.id == id then
+				return area, mapId
+			end
+		end
+	end
+	return nil, nil
+end
+
+-- S27: a quest anchor by id and its map.
+local function anchorById(id: string): (Types.QuestAnchor?, string?)
+	for mapId, data in byMap do
+		local list: { Types.QuestAnchor } = data.questAnchors or {}
+		for _, anchor in list do
+			if anchor.id == id then
+				return anchor, mapId
+			end
+		end
+	end
+	return nil, nil
+end
+
 return table.freeze({
 	byMap = byMap,
+	areaById = areaById,
+	anchorById = anchorById,
 	caves = Caves,
 	entranceOf = entranceOf,
 	arrivalOf = arrivalOf,

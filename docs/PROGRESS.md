@@ -33,6 +33,7 @@
 | S24 | Ładne potwory, bossowie i pety: generator wyglądu, wygląd na kliencie z LOD, gotowość na prawdziwe modele | ● |
 | S25 | Interaktywna mapa: karty z podglądem 3D, prowadzenie i „Idź”, znaczniki, wyszukiwarka, minimapa | ● |
 | S26 | Szepczące Łąki od nowa: ukształtowany teren, struga z mostami, jar z wodospadem, wyrobisko, expowiska w klimacie potworów, życie, nastrój | ● |
+| S27 | Questy poboczne Łąk: 13 nowych NPC, 28 questów w 9 wątkach, interakcje ze światem, dialogi ze stronami, nagrody do wyboru | ● |
 
 Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana przez właściciela
 
@@ -669,6 +670,45 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
   `MATERIALS` terenu miasta i Łąk to materiały terenu. Sprawdzone w Studio (na prośbę właściciela): świat buduje się
   w ~4,1 s (Łąki 2,0 s), postać staje na ziemi w mieście i po `/tparea` na Łąkach, bez błędów w Output.
 
+- **S27** Questy poboczne w osobnym `SideQuestService` (QuestService miał ~360 linii); jeden przepływ zdarzeń:
+  `QuestService.handle` (fabuła, zlecenia) na końcu woła `SideQuestService.Handle`, a interakcje (`use`) i
+  „dotrzyj do miejsca” idą przez `QuestEvents`, więc fabuła też je zobaczy. Reguły w czystym `Logic/SideQuests`
+  (serwer, okno NPC, dziennik, znaczniki `Logic/NpcMarks`, testy).
+- **S27** EXP pobocznych: prompt dawał 0,35 / 0,6 `expToNext`, co sumarycznie wychodzi 54% EXP na 1→20, a ten sam
+  prompt ustala limit 40% (fabuła daje już ~58%). Wygrał limit: 0,25 dla zwykłych, 0,45 dla zamykających wątek
+  (razem ~39,6%, test pilnuje ≤ 40% i ≤ 70% poziomu na quest). Złoto: połowa złota questa głównego.
+- **S27** Nagroda do wyboru (koniec każdego wątku): 3 przedmioty dla klasy postaci — broń klasy i 2 losowe części
+  pancerza jej wagi z najwyższego progu ≤ poziom questa (`DevPreset.pick`), `ilvl` = poziom questa, rzadkość z
+  `Config.SideQuest.choiceRarity` (Niezwykły; koniec wątku = Rzadki, więc w praktyce zawsze Rzadki, bo tylko
+  końce wątków mają wybór). Losowane przez serwer w chwili, gdy quest jest wykonany (nie przy otwarciu okna — bez
+  osobnego remote'a i bez możliwości przelosowania), zapisane w questcie.
+- **S27** `deliver` kończy się rozmową z NPC docelowym (domyślnie odbierający quest); wirtualny przedmiot widać w
+  dzienniku i trackerze, nie zajmuje plecaka.
+- **S27** `use`: serwer trzyma interakcję jak zbieractwo (stan `questUse` → pasek), dystans ≤ 10 st. (+3 tolerancji),
+  przerwanie ruchem > 3 st. lub obrażeniami. Kotwice z tagu `QuestAnchor` (S26). Efekt „zrobione” tylko na kliencie,
+  z zapisu postaci (`used` w aktywnym queście, wszystkie kotwice ukończonego questa), więc zostaje po relogu.
+- **S27** „Dotrzyj do miejsca” (kamienny krąg): serwer co 1 s sprawdza pozycję graczy, którzy mają otwarty taki cel
+  (zwykłe `reach` liczyło tylko mapę).
+- **S27** Kills „w obszarze”: monster ma atrybut `AreaId` (id obszaru albo jaskini grupy z `AreaSpawns`), trafia do
+  zdarzenia `kill` jako `areaId`.
+- **S27** Nowi NPC miasta mają miejsca w ręcznym `Data/Town/npcExtra.luau` (`city.luau` jest generowany);
+  `Town.npcSpot` czyta oba, testy miasta (przy drzwiach, otwarty grunt, dojście od spawnu) obejmują też nowe.
+  Brat Anzelm przesunięty bliżej drzwi świątyni (test: ≤ 16 st.).
+- **S27** Usługa `talk` (tylko rozmowa); rybak Wit i górnik Dobromir mają małe sklepy (`fisher`: wędka, `miner`:
+  kilof), bo sklepu wędkarskiego nie było, a te narzędzia są potrzebne dokładnie tam.
+- **S27** Okno NPC: portret 3D (podgląd z mapy świata w trybie „portret”: głowa i ramiona, bez obrotu), losowa kwestia
+  (`npc.<id>.line1..3` albo powitanie), plotki karczmarza (`gossip1..3`, NPC z questem do wzięcia najbliższym
+  poziomem), lista questów (? / ! / … / szare „od poz.”), potem usługi. Przycisk „Zadanie” (usługa `story`)
+  zniknął — fabuła jest na tej samej liście. Rozmowa o queście to osobne okno: strony „Dalej”, cele i nagrody na
+  ostatniej, „Przyjmij / Nie teraz”, oddanie z wyborem 1 z 3 (`SelectableSlot`, tooltip z porównaniem).
+- **S27** Śledzony jest jeden quest naraz (`QuestTrack.Focus`: fabuła albo poboczny); świeżo przyjęty poboczny dostaje
+  strzałkę; po oddaniu lub porzuceniu strzałka wraca do fabuły. Tracker HUD pokazuje śledzony poboczny nad fabułą.
+- **S27** Wątki z promptu bez zmian: Herszt Bandytów żyje w Kryjówce Przemytników (elity: bandyta, dzik), Kobold
+  Brygadzista w Goblińskim Kopcu (elity: gobliński zwiadowca, kobold) — test to pilnuje. `side_mill` wymaga
+  `side_shiny` (sygnet z wątku D prowadzi do Hanny). Na liście jest 28 questów (A5 B2 C4 D4 E2 F3 G3 H2 I3).
+- **S27** `/npc <id>` teleportuje przez zmianę mapy (`TeleportToMap`), bo NPC Łąk stoją na innej mapie; `/side arc
+  <questId>` oddaje wszystko w wątku przed tym questem (i wymagania z innych wątków) i daje ten quest.
+
 ## Niedokończone
 (Rzeczy z zakresu sesji, które nie zostały zrobione. Następna sesja zaczyna od nich.)
 
@@ -732,6 +772,14 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
   komentarzu).
 - **S26** Mapa świata pokazuje budowle Łąk jako kształty (bez ikon i podpisów punktów charakterystycznych).
 - **S26** Inne regiony (Mroczny Bór, Pustkowia, Szczyty) dalej na starym, płaskim generatorze z kulami terenu.
+
+- **S27** Okna questów (NPC, rozmowa, dziennik) sprawdzone w Studio tylko częściowo: przebieg przyjęcie → rozmowa →
+  oddanie → wybór nagrody, interakcja z płotem (podpowiedź, pasek, efekt deski, brak powtórki, dystans) i znaczniki
+  nad NPC działały przez remote'y; okna zbudowały się bez błędów z portretem 3D, ale nie dało się ich obejrzeć
+  (zrzut ekranu i klawisz E z narzędzi Studio nie działały). Do obejrzenia: układ okna rozmowy na telefonie, długie
+  tytuły, portret (kadrowanie głowy), efekty na kotwicach (pozycja i obrót względem płotu / sztolni — kotwice nie
+  mają kierunku).
+- **S27** Dźwięki interakcji (świece, deski, sieć) nie podpięte — korzystają z ogólnego „click”.
 
 ## Zgłoszone błędy
 (Właściciel wpisuje tu błędy po testach albo przekazuje je przez sesję poprawek.)
@@ -2258,3 +2306,89 @@ duskwood,ashen}`, `Data/{Maps,AdminCommands}`, `Logic/{TownTerrain,AreaSpawns,Ar
 21. Opcje → „Szczegółowość świata” niska: brak zwierząt, mniej cząsteczek, mniejszy promień detalu; `/perf` na
     telefonie (emulator) przy farmie i w lesie.
 22. Stare zapisy: postać wylogowana na Łąkach przed S26 pojawia się na powierzchni (nie w pagórku).
+
+### S27: Questy poboczne Szepczących Łąk
+
+**Zrobione**
+- System questów pobocznych: `Data/Quests/Side` (28 questów w 9 wątkach, jeden na każdy obszar Łąk), typ `SideQuest`
+  i nowe cele w `Data/Quests/Types` (`use`, `deliver`, `kill`/`collect` z `area`, `reach` z miejscem), czysta logika
+  `Logic/SideQuests` (przyjęcie, dostępne / później / do oddania u NPC, postęp ze zdarzeń, kotwice do użycia i
+  „zrobione”, postęp wątku, plotki karczmarza, losowanie nagrody do wyboru), `Logic/QuestLogic` zna nowe cele,
+  `Logic/NpcMarks` pokazuje `!`/`?` także dla pobocznych (świat, mapa, minimapa).
+- Zapis: `quests.side = { active = { [id] = { progress, used, choice? } }, done = { [id] = true } }`, migracja 4 w
+  `AccountSchema` (stare zapisy dostają puste tabele), typ `SideEntry`.
+- Serwer: `SideQuestService` (remote'y `SideAccept`, `SideTurnIn` z wyborem nagrody, `SideAbandon`, `QuestUse`,
+  `CancelQuestUse`; dystans do NPC i kotwicy, trzymanie interakcji z przerwaniem ruchem i obrażeniami, punkt
+  „dotrzyj do miejsca” sprawdzany co 1 s), `QuestService` przekazuje każde zdarzenie do pobocznych, potwory mają
+  `AreaId`, zabicie niesie `areaId`.
+- 13 nowych NPC: w mieście Zarządca Ignacy (spichlerz), Brat Anzelm (świątynia), Rybaczka Jagna (stragan z
+  rybami), Karczmarz Wacław (karczma, plotki), Młynarzowa Hanna (młyn), Stajenny Radosz (stajnia), Sierżant Dobiesław
+  (wartownia) — miejsca w `Data/Town/npcExtra`; na Łąkach (miejsca z S26) Farmer Bartosz, Rybak Wit (sklep z wędką),
+  Drwal Gerwazy, Kupiec Lucjan, Górnik Dobromir (sklep z kilofem), Myśliwy Borys. Każdy ma rolę, powitanie, 3 kwestie
+  i opis miejsca do plotek. Kowal Dorgan i Alchemiczka Ysolde biorą udział w wątkach.
+- Klient: nowe okno NPC (portret 3D, kwestia/plotka, lista questów, usługi), okno rozmowy o queście (strony, cele,
+  nagrody, „Przyjmij / Nie teraz”, oddanie z wyborem 1 z 3), dziennik z zakładką „Poboczne” (wątki, postęp,
+  śledzenie, porzucanie), śledzenie jednego questa (`QuestTrack.Focus`, strzałka, minimapa, mapa), tracker HUD z
+  pobocznym, `QuestAnchorController` (podpowiedź „[E] Napraw płot” i złoty ✦ tylko przy potrzebnych kotwicach,
+  efekty „zrobione” tylko dla gracza: świece, deski, sieć, znaki na drewnie, zgliszcza ze skrzynką, otwarta skrzynia
+  z suknem, zabite sztolnie, płonący totem, znak myśliwego), pasek trzymania w `CastBar`, karty NPC na mapie świata
+  z questami pobocznymi, podgląd 3D w trybie portretu.
+- Admin: `/side list|give|complete|reset|arc`, `/anchor [id]`; `/npc <id>` przenosi też na inne mapy.
+- Teksty PL/EN: 13 NPC, 28 questów (tytuł, 2–4 strony, w trakcie, podziękowanie), 14 przedmiotów questowych, 9
+  wątków, interfejs.
+- Testy `sidequests.spec`: dane (NPC, wymagania bez cykli, kotwice, potwory w obszarach, elity w jaskiniach, węzły na
+  Łąkach, teksty), ciągłość poziomów (co 2 poziomy 1–20), budżet EXP, nagrody dla 4 klas, reguły (`canAccept`,
+  dostępne, plotki, `deliver`, `use` z powtórką, `kill` z obszarem, `reach` z punktem, znaczniki, postęp wątku),
+  migracja; `town.spec` obejmuje nowe miejsca NPC.
+- Przy okazji (osobne commity przed sesją): naprawa „Nieprawidłowe żądanie” przy umiejętnościach (S28 §0), świat nie
+  budował się po S26 (materiał `Pebble`), bezpieczne stawianie postaci (`server/Placement`); pusta nazwa poziomu w
+  analityce awansu.
+
+**Pliki**: nowe `Data/Quests/Side`, `Data/Town/npcExtra`, `Logic/SideQuests`, `Services/SideQuestService`,
+`Controllers/QuestAnchorController`, `UI/NpcQuests`, `tests/sidequests.spec`; zmiany: `Data/Quests/{Types,init}`,
+`Data/{Npcs,Shops,AdminCommands,Areas/init,Town/init}`, `Logic/{QuestLogic,NpcMarks,AccountSchema}`, `Types`,
+`Config`, `Net/Definitions`, `Services/{QuestService,MonsterService,CombatService,AdminService,LevelService}`,
+`Admin/{Quests,World}`, `Controllers/{QuestController,NpcController}`, `UI/{QuestText,QuestTrack}`,
+`Screens/{NpcDialog,QuestDialog,QuestJournal}`, `Hud/{QuestTracker,CastBar}`, `WorldMap/{Cards,Preview}`,
+lokalizacja, testy (`npcmarks`, `town`, `worldmap`, `meadowsterrain`).
+
+#### Instrukcja testu S27
+
+1. `rojo serve`, Play, nowa postać. W Output brak błędów `[SideQuestService]`, `[QuestService]`.
+2. W mieście: nad Zarządcą Ignacym (spichlerz, wschód), Bratem Anzelmem (przed świątynią) i Rybaczką Jagną (stragan
+   z rybami, od poz. 2) świeci się `!`; te same znaczniki na minimapie i mapie świata (M).
+3. Porozmawiaj z Karczmarzem Wacławem (karczma): portret, imię, rola; kilka razy otwórz rozmowę — kwestie się
+   zmieniają, a plotka wskazuje kogoś z robotą („Słyszałem, że Zarządca Ignacy przy spichlerzu…”).
+4. Ignacy: na liście „! POBOCZNE Zamówienie na zboże”. Klik → 3 strony („Dalej”), na ostatniej cele i nagrody →
+   „Przyjmij”. Toast „Otrzymujesz: Zamówienie na zboże”, quest śledzony (strzałka, ◆ w trackerze).
+5. L → zakładka „Poboczne”: wątek „Farma Bartosza 0/5”, quest z celem „Dostarcz: Zamówienie na zboże → Farmer
+   Bartosz”, przyciski „Nie śledź” i „Porzuć”.
+6. Idź na Łąki (portal), za bramą na zachód: farma, nad Bartoszem `?`. Rozmowa → „? Zamówienie na zboże (Wykonane —
+   oddaj)” → podziękowanie → „Oddaj”: EXP i złoto. Potem „! Plaga uszatych”.
+7. Zabij 10 królików na Polanie Królików (wilki się nie liczą; króliki z innego obszaru też nie). Oddaj, weź „Dziurawy
+   płot”.
+8. Przy rogach ogródka obok farmy (`/anchor fence_1`): złoty ✦ i „[E] Napraw płot”. Przytrzymaj: pasek „Napraw płot”
+   ~2 s; ruch lub obrażenia przerywają („Przerwano.”). Po zrobieniu nowe deski — tylko u ciebie (drugi gracz ich nie
+   widzi); ten sam róg drugi raz nie działa. Zrób 4 rogi, relog — deski dalej są.
+9. `/side arc side_grainCart` i `/side complete side_grainCart`, `/npc granary_keeper`: przy oddaniu 3 karty
+   przedmiotów dla twojej klasy (broń + 2 części zbroi, Rzadkie, tooltip porównuje z założonym). „Oddaj” jest
+   wyłączone, dopóki nie wybierzesz; wybrany przedmiot ląduje w plecaku. Ponowne otwarcie okna nie losuje nowych.
+10. `/side arc side_shrine` → `/anchor shrine_candles`: „Zapal świece” (3 s), potem palące się świece z poświatą.
+11. `/side arc side_stoneCircle`: cel „Dotrzyj: Kamienny krąg na Wilczych Wzgórzach” zalicza się dopiero w kręgu
+    (`/tparea stonecircle`), nie od samego wejścia na mapę; rysie tylko z Wilczych Wzgórz.
+12. Wątek C: `/side arc side_venom` + complete → oddanie u Alchemiczki Ysolde w mieście (dialog pokazuje quest nad
+    usługą „Alchemia”). `side_net`: `/anchor net_shore` (sieć na brzegu) + 3 ryby (wędka u Wita).
+13. Wątek D→E: `side_shiny` oddajesz u Młynarzowej Hanny w mieście (młyn nad rzeką), dopiero potem ona daje
+    „Zgliszcza młyna”; `/anchor mill_ruin` → zgliszcza ze skrzynką.
+14. `side_smugglers`: Kryjówka Przemytników, Herszt Bandytów (elita) daje Księgę rachunkową (100%); oddanie u
+    Sierżanta Dobiesława.
+15. Wątki F–I: `/side arc side_goods` (`/anchor wagon_goods`: otwarta skrzynia z suknem), `side_tunnels` (3 sztolnie
+    zabite deskami + 8× żyła żelaza, kilof u Dobromira), `side_totem` (płonący totem z dymem), `side_den` (znak
+    myśliwego przy legowisku).
+16. `/side list`: każdy wątek z ✔ / … / ! / ·; `/side reset` czyści wszystko (panel pyta).
+17. Dziennik: „Śledź” na innym pobocznym przenosi strzałkę; „Porzuć” pyta i usuwa quest (strzałka wraca do fabuły).
+    Przyjmij 10 questów (`/side give`) i spróbuj wziąć 11. — komunikat o limicie.
+18. Mapa świata (M): klik w NPC z questem pobocznym — karta z listą („Nowe zadanie…”, „Do oddania…”), „Prowadź”.
+19. Questy główne działają jak wcześniej (kapitan, zwiadowczyni Mira): na liście w rozmowie jako „FABUŁA”.
+20. Telefon (emulator): okno NPC i rozmowy mieszczą się, przyciski i karty nagród klikalne palcem, przytrzymanie
+    podpowiedzi przy kotwicy działa.

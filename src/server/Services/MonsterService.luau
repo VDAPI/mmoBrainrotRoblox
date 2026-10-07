@@ -384,7 +384,8 @@ local function spawnGroup(spawner: SpawnerRuntime, announce: boolean)
 	if data.choices and #data.choices > 0 then
 		kinds = { data.choices[random:NextInteger(1, #data.choices)] }
 	end
-	local attributes = { GroupId = data.id, GroupSize = #kinds }
+	-- S27: AreaId = the named area (or cave) of the group, for "kill / collect in an area" side quests.
+	local attributes = { GroupId = data.id, GroupSize = #kinds, AreaId = data.areaId }
 	if data.variant == "elite2" then
 		clearTimers(data.id)
 	end

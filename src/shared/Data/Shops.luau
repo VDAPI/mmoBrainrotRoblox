@@ -89,6 +89,9 @@ local SHOPS: { [string]: ShopDef } = {
 		},
 	},
 	weaponsmith = { id = "weaponsmith", entries = weaponsmith(), classTabs = true },
+	-- S27: tools sold where they are needed (Wit by Toad Pond, Dobromir at the Old Quarry).
+	fisher = { id = "fisher", entries = { { item = "fishing_rod" }, { item = "potion_hp_1" } } },
+	miner = { id = "miner", entries = { { item = "pickaxe" }, { item = "potion_hp_2" } } },
 	teacher = {
 		id = "teacher",
 		entries = {

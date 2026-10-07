@@ -12,7 +12,7 @@ type CharacterData = Types.CharacterData
 
 local AccountSchema = {}
 
-AccountSchema.CURRENT = 3
+AccountSchema.CURRENT = 4
 
 function AccountSchema.accountTemplate(): AccountData
 	return {
@@ -76,7 +76,12 @@ function AccountSchema.characterTemplate(): CharacterData
 		blessing = nil,
 		bossLockouts = {},
 		alchemy = {},
-		quests = { main = nil, mainDone = 0, daily = { day = 0, list = {}, rerolls = 0 } },
+		quests = {
+			main = nil,
+			mainDone = 0,
+			daily = { day = 0, list = {}, rerolls = 0 },
+			side = { active = {}, done = {} },
+		},
 		guildId = nil,
 		auctions = {},
 		guideDone = true, -- existing characters skip the guide; CharacterFactory sets false for new ones
@@ -108,6 +113,25 @@ MIGRATIONS[3] = function(data, _newId)
 	for _, character in data.characters do
 		if type(character) == "table" and type(character.mapMarks) ~= "table" then
 			character.mapMarks = {}
+		end
+	end
+end
+
+-- 4 (S27): side quests. Reconcile adds `quests.side` too; explicit so a broken value becomes empty tables.
+MIGRATIONS[4] = function(data, _newId)
+	for _, character in data.characters do
+		if type(character) == "table" and type(character.quests) == "table" then
+			local side = character.quests.side
+			if type(side) ~= "table" then
+				character.quests.side = { active = {}, done = {} }
+			else
+				if type(side.active) ~= "table" then
+					side.active = {}
+				end
+				if type(side.done) ~= "table" then
+					side.done = {}
+				end
+			end
 		end
 	end
 end

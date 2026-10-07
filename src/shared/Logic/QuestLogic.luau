@@ -20,6 +20,10 @@ function QuestLogic.amount(objective: Objective, kind: string, data: { [string]:
 		if objective.monster and objective.monster ~= data.monsterId then
 			return 0
 		end
+		-- S27: only monsters of groups from that area (MonsterService tags them with AreaId).
+		if objective.area and objective.area ~= data.areaId then
+			return 0
+		end
 		if objective.region then
 			local def = Monsters.get(data.monsterId or "")
 			if not def or def.region ~= objective.region then
@@ -55,6 +59,20 @@ function QuestLogic.amount(objective: Objective, kind: string, data: { [string]:
 		return if kind == "equip" and (data.rarity or 1) >= (objective.rarity or 1) then 1 else 0
 	elseif t == "talk" then
 		return if kind == "talk" and data.npc == objective.npc then 1 else 0
+	elseif t == "deliver" then
+		-- S27: `npc` nil = the quest's turn-in NPC (the caller passes it as data.turnIn).
+		local target = objective.npc or data.turnIn
+		return if kind == "talk" and target ~= nil and data.npc == target then 1 else 0
+	elseif t == "use" then
+		-- S27: one anchor once; `data.used` lists the anchors this objective already counted.
+		if kind ~= "use" or type(data.anchor) ~= "string" then
+			return 0
+		end
+		if not QuestLogic.usesAnchor(objective, data.anchor) then
+			return 0
+		end
+		local used: { string } = data.used or {}
+		return if table.find(used, data.anchor) then 0 else 1
 	elseif t == "reach" then
 		if kind ~= "reach" or data.map ~= objective.map then
 			return 0
@@ -73,6 +91,15 @@ function QuestLogic.amount(objective: Objective, kind: string, data: { [string]:
 		return 1
 	end
 	return 0
+end
+
+-- S27: whether a `use` objective involves this anchor.
+function QuestLogic.usesAnchor(objective: Objective, anchor: string): boolean
+	if objective.anchor == anchor then
+		return true
+	end
+	local list: { string } = objective.anchors or {}
+	return table.find(list, anchor) ~= nil
 end
 
 -- Applies an event to a progress list in place. Returns the indices that changed.

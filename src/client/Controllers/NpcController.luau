@@ -47,7 +47,8 @@ NpcController.SmithTab = scope:Value("craft")
 
 local WindowManager: any
 local CLOSE_DISTANCE = 20
-local SERVICE_WINDOWS = { "npc", "shop", "deposit", "blacksmith", "backpacks", "alchemy", "guildfound", "auction" }
+local SERVICE_WINDOWS =
+	{ "npc", "questnpc", "shop", "deposit", "blacksmith", "backpacks", "alchemy", "guildfound", "auction" }
 
 local SERVICE_TO_WINDOW: { [string]: string } = {
 	shop = "shop",
@@ -78,11 +79,7 @@ function NpcController.OpenService(service: string)
 		heal(npcId)
 		return
 	end
-	if service == "story" then
-		WindowManager.Close("npc")
-		NpcController.Quests.OpenNpc(npcId)
-		return
-	elseif service == "quests" then
+	if service == "quests" then
 		WindowManager.Close("npc")
 		NpcController.Quests.OpenBoard()
 		return
@@ -195,13 +192,16 @@ local function registerWindows()
 	WindowManager.Register({
 		id = "npc",
 		titleKey = "window.npc.title",
-		size = Vector2.new(560, 460),
+		size = Vector2.new(580, 520),
 		build = function(s)
 			return NpcDialog(s, {
 				NpcId = NpcController.Current,
 				OnService = NpcController.OpenService,
-				HasStory = function(npcId: string): boolean
-					return NpcController.Quests.HasStory(npcId)
+				OnQuest = function(row)
+					local npcId = Fusion.peek(NpcController.Current)
+					if npcId then
+						NpcController.Quests.OpenQuest(npcId, row)
+					end
 				end,
 			})
 		end,

@@ -62,6 +62,7 @@ export type KillInfo = {
 	mapId: string?,
 	entityId: string,
 	boss: boolean?, -- dungeon bosses: DungeonService hands out the rewards
+	areaId: string?, -- S27: named area of the monster's group (model attribute AreaId)
 }
 
 type FxEvent = { [string]: any }
@@ -316,6 +317,7 @@ local function onMonsterDied(monster: any)
 		mapId = zone.map,
 		entityId = if monster.entity then monster.entity.id else "",
 		boss = monster.isBoss == true,
+		areaId = monster.model:GetAttribute("AreaId") :: string?,
 	}
 	CombatService.MonsterKilled:Fire(info, credit, credit[1])
 	-- Clear player targets pointing at the corpse.

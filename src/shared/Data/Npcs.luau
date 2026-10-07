@@ -4,6 +4,7 @@
 -- used when the plan has no spot for the NPC.
 -- `services` are the buttons of the dialog window; their windows live on the client (NpcController).
 
+local Areas = require("./Areas")
 local Town = require("./Town")
 
 export type Service =
@@ -18,6 +19,7 @@ export type Service =
 	| "mail" -- S13
 	| "quests" -- S11: daily contracts board
 	| "story" -- S11: main story quests
+	| "talk" -- S27: only conversation (side quests, gossip)
 
 export type NpcDef = {
 	id: string,
@@ -34,6 +36,9 @@ export type NpcDef = {
 	-- "board" (S21): no figure, only an invisible anchor over a model that the world already has (the quest
 	-- board of the city plan); default: a humanoid figure.
 	body: "board"?,
+	-- S27: random lines in the dialog instead of the greeting (npc.<id>.line1..N); the innkeeper adds gossip.
+	lines: number?,
+	gossip: boolean?,
 }
 
 local LIST: { NpcDef } = {}
@@ -214,6 +219,73 @@ for i, position in { { x = 272, z = -16 }, { x = 272, z = 16 } } do
 		decoration = true,
 	})
 end
+
+-- Side quest givers in the city (S27): by their buildings, spots in Data/Town/npcExtra (hand-placed next to the
+-- generated plan).
+local function townsfolk(id: string, colors: { body: string, accent: string }, icon: string, extra: any)
+	local e: any = extra or {}
+	npc({
+		id = id,
+		map = "city",
+		nameKey = `npc.{id}.name`,
+		greetingKey = `npc.{id}.greeting`,
+		services = e.services or { "talk" },
+		shop = e.shop,
+		position = { x = 0, z = 0 }, -- from Town.npcSpot
+		facing = 0,
+		colors = colors,
+		icon = icon,
+		lines = e.lines or 3,
+		gossip = e.gossip,
+	})
+end
+
+townsfolk("granary_keeper", { body = "#8A7A52", accent = "#5A4A2E" }, "⚖")
+townsfolk("brother_anzelm", { body = "#5A4A3A", accent = "#2E2620" }, "✝")
+townsfolk("fishwife", { body = "#3E6B5A", accent = "#C9B98A" }, "🐟")
+townsfolk("innkeeper", { body = "#7A3E2A", accent = "#E8D8B0" }, "🍺", { gossip = true })
+townsfolk("miller_widow", { body = "#4A4A52", accent = "#1E1E22" }, "⚙")
+townsfolk("stablemaster", { body = "#6B4A2B", accent = "#3A2A1A" }, "🐎")
+townsfolk("sergeant", { body = "#8E96A3", accent = "#7A1F2B" }, "⚔")
+
+-- Side quest NPCs on the Whispering Meadows (S27), on the places S26 prepared (Areas/meadows npcSpots).
+local MEADOW_SPOTS: { [string]: Areas.NpcSpot } = Areas.byMap.meadows.npcSpots or {}
+local function meadowsfolk(id: string, spot: string, colors: { body: string, accent: string }, icon: string, extra: any)
+	local place = assert(MEADOW_SPOTS[spot], `meadows npc spot {spot}`)
+	local e: any = extra or {}
+	npc({
+		id = id,
+		map = "meadows",
+		nameKey = `npc.{id}.name`,
+		greetingKey = `npc.{id}.greeting`,
+		services = e.services or { "talk" },
+		shop = e.shop,
+		position = { x = place.x, z = place.z },
+		facing = place.facing,
+		colors = colors,
+		icon = icon,
+		lines = 3,
+	})
+end
+
+meadowsfolk("farmer_bartosz", "farmer", { body = "#7A6A3A", accent = "#C9A45C" }, "🌾")
+meadowsfolk(
+	"fisher_wit",
+	"fisher",
+	{ body = "#4A5A4A", accent = "#8A7A5A" },
+	"🎣",
+	{ services = { "talk", "shop" }, shop = "fisher" }
+)
+meadowsfolk("woodcutter_gerwazy", "woodcutter", { body = "#6B2F2A", accent = "#3A2A1A" }, "🪓")
+meadowsfolk("merchant_lucjan", "merchant", { body = "#2A3A5A", accent = "#C9A45C" }, "⚖")
+meadowsfolk(
+	"miner_dobromir",
+	"miner",
+	{ body = "#5A5650", accent = "#C9A45C" },
+	"⛏",
+	{ services = { "talk", "shop" }, shop = "miner" }
+)
+meadowsfolk("hunter_borys", "hunter", { body = "#4F5A2E", accent = "#6B4A2B" }, "🏹")
 
 local byId: { [string]: NpcDef } = {}
 for _, def in LIST do

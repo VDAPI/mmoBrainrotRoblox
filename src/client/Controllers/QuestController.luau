@@ -1,7 +1,8 @@
 --!strict
--- Quests on the client (DESIGN §20): the journal (L), the story dialog with NPCs, the contract board,
--- markers above NPCs ("!" quest available, golden "?" ready to hand in, grey "?" in progress; Logic/NpcMarks), the HUD
--- tracker with the direction arrow and the target on the minimap, and the completion message.
+-- Quests on the client (DESIGN §20): the journal (L), the quest conversation with NPCs (story and, S27, side
+-- quests), the contract board, markers above NPCs ("!" quest available, golden "?" ready to hand in, grey "?" in
+-- progress; Logic/NpcMarks), the HUD tracker with the direction arrow and the target on the minimap for the one
+-- tracked quest (the story or a side quest, QuestTrack.Focus), and the completion message.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
@@ -14,8 +15,10 @@ local QuestDialog = require(script.Parent.Parent.UI.Screens.QuestDialog)
 local QuestJournal = require(script.Parent.Parent.UI.Screens.QuestJournal)
 local QuestText = require(script.Parent.Parent.UI.QuestText)
 local QuestTrack = require(script.Parent.Parent.UI.QuestTrack)
+local NpcQuests = require(script.Parent.Parent.UI.NpcQuests)
 local QuestTracker = require(script.Parent.Parent.UI.Screens.Hud.QuestTracker)
 local Quests = require(ReplicatedStorage.Shared.Data.Quests)
+local SideQuests = require(ReplicatedStorage.Shared.Logic.SideQuests)
 local Sounds = require(script.Parent.Parent.UI.Sounds)
 local State = require(script.Parent.Parent.UI.State)
 local Text = require(script.Parent.Parent.UI.Text)
@@ -30,6 +33,7 @@ local QuestController = {
 local scope = Fusion.scoped(Fusion)
 local WindowManager: any
 local dialogNpc = scope:Value(nil :: string?)
+local dialogRow = scope:Value(nil :: NpcQuests.Row?)
 
 local MARKERS = {
 	available = { text = "!", color = Theme.Colors.GoldBright },
@@ -37,8 +41,11 @@ local MARKERS = {
 	active = { text = "?", color = Theme.Colors.TextMuted },
 }
 
-function QuestController.OpenNpc(npcId: string)
+-- Opens the conversation about one quest of an NPC (a row of UI/NpcQuests).
+function QuestController.OpenQuest(npcId: string, row: NpcQuests.Row)
 	dialogNpc:set(npcId)
+	dialogRow:set(row)
+	WindowManager.Close("npc")
 	WindowManager.Close("questnpc")
 	WindowManager.Open("questnpc")
 end
@@ -47,12 +54,10 @@ function QuestController.OpenBoard()
 	WindowManager.Open("questboard")
 end
 
--- Whether talking to this NPC has something to do with the story right now.
-function QuestController.HasStory(npcId: string): boolean
-	local quests = State.Get({ "character", "quests" })
-	local level = State.Get({ "character", "level" }) or 1
-	local marker = QuestText.marker(npcId, quests, level)
-	return marker ~= nil and npcId ~= "questboard"
+-- S27: track one quest (nil = the story) and show its arrow.
+function QuestController.Track(focus: QuestTrack.Focus)
+	QuestTrack.Focus:set(focus)
+	QuestTrack.Tracked:set(true)
 end
 
 local function refreshMarkers()
@@ -96,9 +101,20 @@ end
 
 local function refreshTarget()
 	local quests = State.Get({ "character", "quests" })
+	local level = State.Get({ "character", "level" }) or 1
+	-- S27: a tracked side quest that is no longer active (handed in, abandoned) gives the arrow back to the story.
+	local focus = Fusion.peek(QuestTrack.Focus)
+	if focus then
+		local side = Quests.Side.get(focus.id)
+		local entry = SideQuests.activeOf(quests)[focus.id]
+		if side and type(entry) == "table" then
+			QuestTrack.Target:set(QuestText.sideTarget(side, entry, level))
+			return
+		end
+		QuestTrack.Focus:set(nil)
+	end
 	local main = if type(quests) == "table" then quests.main else nil
 	local quest = if type(main) == "table" then Quests.Main.get(main.id) else nil
-	local level = State.Get({ "character", "level" }) or 1
 	QuestTrack.Target:set(if quest and main then QuestText.target(quest, main.progress or {}, level) else nil)
 end
 
@@ -111,18 +127,34 @@ function QuestController.Init(registry)
 		size = Vector2.new(640, 600),
 		hotkey = Enum.KeyCode.L,
 		build = function(s)
-			return QuestJournal(s, { Tracked = QuestTrack.Tracked })
+			return QuestJournal(s, {
+				Tracked = QuestTrack.Tracked,
+				Focus = QuestTrack.Focus,
+				Track = QuestController.Track,
+				ShowModal = WindowManager.ShowModal,
+			})
 		end,
 	})
 	WindowManager.Register({
 		id = "questnpc",
 		titleKey = "window.questnpc.title",
-		size = Vector2.new(620, 520),
+		size = Vector2.new(640, 560),
 		build = function(s)
 			return QuestDialog(s, {
 				NpcId = dialogNpc,
+				Row = dialogRow,
 				Close = function()
 					WindowManager.Close("questnpc")
+				end,
+				Back = function()
+					WindowManager.Close("questnpc")
+					WindowManager.Open("npc")
+				end,
+				OnAccepted = function(row: NpcQuests.Row)
+					-- A freshly taken side quest gets the arrow (one tracked quest at a time).
+					if row.kind == "side" then
+						QuestController.Track({ kind = "side", id = row.id })
+					end
 				end,
 			})
 		end,
@@ -161,6 +193,7 @@ function QuestController.Start()
 		refreshMarkers()
 		refreshTarget()
 	end)
+	scope:Observer(QuestTrack.Focus):onChange(refreshTarget)
 	refreshTarget()
 	-- NPC models stream in and out: refresh the markers regularly.
 	task.spawn(function()

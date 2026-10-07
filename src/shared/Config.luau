@@ -150,6 +150,19 @@ local Config = {
 		waypointReach = 3.5,
 		maxMarks = 8,
 	},
+	-- Side quests (S27, DESIGN §20): at most `maxActive` at once, taken from `levelSlack` levels under the quest's
+	-- level; the arc's last quest lets the player pick 1 of `choiceCount` items for their class (weapon + armour
+	-- pieces, item level = quest level) of rarity `choiceRarity` (2 Uncommon, 3 Rare for the arc's end). `use`
+	-- interactions need the player within `useRange` studs of the anchor and break when moving more than
+	-- `useMoveLimit` studs or taking damage (like gathering).
+	SideQuest = {
+		maxActive = 10,
+		levelSlack = 2,
+		choiceCount = 3,
+		choiceRarity = { normal = 2, final = 3 },
+		useRange = 10,
+		useMoveLimit = 3,
+	},
 	-- Streaming (S20, decision in PROGRESS): also set in default.project.json (Workspace properties).
 	StreamingTargetRadius = 512,
 	StreamingMinRadius = 128,

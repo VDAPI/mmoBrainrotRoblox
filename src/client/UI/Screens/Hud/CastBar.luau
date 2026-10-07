@@ -1,6 +1,6 @@
 --!strict
 -- Channel bar above the skill bar: channelled skills (Evocation, Prayer — state `skills.channel`) and the
--- teleport stones (state `travel`) and gathering (state `gather`). Fills over the channel time; disappears when done or interrupted.
+-- teleport stones (state `travel`), gathering (state `gather`) and quest interactions (S27, state `questUse`). Fills over the channel time; disappears when done or interrupted.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -22,6 +22,7 @@ local function CastBar(scope: Scope): Instance
 	local skillChannel = State.Value({ "skills", "channel" })
 	local travel = State.Value({ "travel" })
 	local gather = State.Value({ "gather" })
+	local questUse = State.Value({ "questUse" }) -- S27: holding a quest interaction
 	local now = scope:Value(Workspace:GetServerTimeNow())
 	table.insert(
 		scope,
@@ -37,6 +38,14 @@ local function CastBar(scope: Scope): Instance
 				label = Text.get(use, if type(t.label) == "string" then t.label else "teleport.channel"),
 				endsAt = t.endsAt,
 				duration = t.duration or 5,
+			}
+		end
+		local u = use(questUse)
+		if type(u) == "table" and u.endsAt then
+			return {
+				label = Text.get(use, if type(u.label) == "string" then u.label else "quest.use.default"),
+				endsAt = u.endsAt,
+				duration = u.duration or 2,
 			}
 		end
 		local g = use(gather)

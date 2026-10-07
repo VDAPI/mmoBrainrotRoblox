@@ -600,6 +600,18 @@ Po testach S17: **więcej rodzajów na każdej mapie (min. 8–10 na mapę teren
 - Śledzenie w HUD (prawa strona), znacznik nad NPC (!, ?), strzałka kierunku do celu.
 - **Każdy quest to osobny blok** z tytułem, linią „Od: {NPC}” (a gdy gotowy: „Oddaj: {NPC}”) i własnymi celami; zlecenia dzienne mają własny nagłówek „Zlecenia: Tablica Zleceń” i tytuł każdego zlecenia. Nic nie zlewa się w jedną listę. To samo w dzienniku questów.
 - Zaprojektowane pod przyszłą rozbudowę (dane questów w `Data/Quests`, typy celów rozszerzalne).
+- **Questy poboczne (S27)**: miasto zleca, mapa jest miejscem roboty. Każdy obszar Szepczących Łąk ma swój wątek
+  (2–5 questów, `Data/Quests/Side`) z NPC, który tam mieszka; zleceniodawcy stoją w mieście przy swoich budynkach.
+  Do 10 aktywnych naraz, przyjęcie od poziomu questa − 2, kolejne questy wątku po kolei (`requires`). Tekst na 2–4
+  stronach z imieniem i portretem NPC; linia „w trakcie” i podziękowanie. Nagroda: EXP 0,25 poziomu (koniec wątku
+  0,45; wszystkie poboczne Łąk ≤ 40% EXP na 1→20), połowa złota questa głównego, a na końcu wątku **wybór 1 z 3
+  przedmiotów dla klasy** (Rzadkie, `ilvl` = poziom questa). Poboczne nigdy nie blokują fabuły.
+- **Typy celów (S27)**: `use` — interakcja z obiektem w świecie (trzymanie 1,5–3 s, przerywa ruch i obrażenia; po
+  wykonaniu obiekt zmienia się tylko dla gracza: zapalone świece, nowa deska w płocie, płonący totem); `deliver` —
+  zanieś wirtualny przedmiot NPC; `kill` / `collect` z `area` — tylko potwory z danego obszaru; `reach` z punktem
+  (`x`, `z`, `radius`, nazwa miejsca).
+- Dziennik: zakładki Główne / Poboczne / Dzienne; poboczne po wątkach z postępem („2/5”), śledzenie jednego questa
+  naraz (strzałka, minimapa), porzucanie z potwierdzeniem. Karczmarz w plotkach wskazuje NPC, u których jest robota.
 
 ## 21. Monetyzacja (bez pay-to-win)
 

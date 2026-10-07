@@ -39,6 +39,14 @@ export type Location = { map: string, x: number, y: number, z: number }
 
 export type PotionBar = { hp: string?, mana: string?, energy: string? }
 
+-- S27: an active side quest in the save. `progress` per objective (dense list), `used` anchors already counted by
+-- `use` objectives, `choice` the rolled reward items (rolled once, when the quest is complete).
+export type SideEntry = {
+	progress: { number },
+	used: { string },
+	choice: { ItemInstance }?,
+}
+
 export type CharacterData = {
 	id: string,
 	name: string,
@@ -66,6 +74,12 @@ export type CharacterData = {
 		main: { id: string, progress: { number } }?,
 		mainDone: number,
 		daily: { day: number, list: { any }, rerolls: number },
+		-- S27: side quests. active[id] = progress per objective, anchors already used, the rolled reward choice;
+		-- done[id] = true once handed in.
+		side: {
+			active: { [string]: SideEntry },
+			done: { [string]: boolean },
+		},
 	},
 	guildId: string?,
 	auctions: { [string]: boolean }, -- S13: ids of this character's auction listings

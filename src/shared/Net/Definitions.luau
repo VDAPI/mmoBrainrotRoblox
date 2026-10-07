@@ -133,6 +133,12 @@ local Definitions: { [string]: Definition } = {
 	QuestTurnIn = { kind = "function", dir = "c2s", rate = 2, args = { "string" } }, -- (npcId)
 	DailyClaim = { kind = "function", dir = "c2s", rate = 2, args = { "integer" } }, -- (contract index)
 	QuestCompleted = { kind = "event", dir = "s2c" }, -- (titleKey) big message + sound
+	-- Side quests (S27): (questId) / (questId, reward choice 1..3) / (questId) / (quest anchor id) / ()
+	SideAccept = { kind = "function", dir = "c2s", rate = 2, args = { "string" } },
+	SideTurnIn = { kind = "function", dir = "c2s", rate = 2, args = { "string", "integer?" } },
+	SideAbandon = { kind = "function", dir = "c2s", rate = 1, args = { "string" } },
+	QuestUse = { kind = "function", dir = "c2s", rate = 2, args = { "string" } },
+	CancelQuestUse = { kind = "event", dir = "c2s", rate = 4, args = {} },
 
 	-- PvP, duels and trade (S10)
 	KillFeed = { kind = "event", dir = "s2c" }, -- (killerName, victimName)

@@ -27,10 +27,9 @@ local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local Monsters = require(ReplicatedStorage.Shared.Data.Monsters)
 local NavTarget = require(script.Parent.Parent.Parent.NavTarget)
 local NpcMarks = require(ReplicatedStorage.Shared.Logic.NpcMarks)
+local NpcQuests = require(script.Parent.Parent.Parent.NpcQuests)
 local Npcs = require(ReplicatedStorage.Shared.Data.Npcs)
 local Portals = require(ReplicatedStorage.Shared.Data.Portals)
-local QuestLogic = require(ReplicatedStorage.Shared.Logic.QuestLogic)
-local Quests = require(ReplicatedStorage.Shared.Data.Quests)
 local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
 local ShopPrice = require(ReplicatedStorage.Shared.Logic.ShopPrice)
 local Shops = require(ReplicatedStorage.Shared.Data.Shops)
@@ -132,34 +131,25 @@ local function questSection(npcId: string, level: number): Section?
 		return nil
 	end
 	local lines: { DetailCard.Line } = {}
-	local mark = NpcMarks.of(npcId, quests, level)
-	local main = quests.main
-	if mark == "turnIn" and npcId ~= NpcMarks.BOARD and type(main) == "table" then
-		table.insert(lines, {
-			text = T("worldmap.card.questTurnIn", { title = T(`quest.{main.id}.title`) }),
-			color = Theme.Colors.GoldBright,
-			bold = true,
-		})
-	elseif mark == "active" and npcId ~= NpcMarks.BOARD and type(main) == "table" then
-		table.insert(lines, {
-			text = T("worldmap.card.questActive", { title = T(`quest.{main.id}.title`) }),
-			color = Theme.Colors.TextMuted,
-		})
-	elseif mark == "available" then
-		local quest = QuestLogic.nextMain(quests.mainDone or 0, level)
-		if quest then
+	-- S27: story and side quests of this NPC (UI/NpcQuests, the same list as the NPC dialog).
+	local KEYS = {
+		turnIn = "worldmap.card.questTurnIn",
+		offer = "worldmap.card.questNew",
+		active = "worldmap.card.questActive",
+	}
+	for _, row in NpcQuests.rows(quests, level, npcId) do
+		local title = T(`quest.{row.id}.title`)
+		if row.mode == "later" then
 			table.insert(lines, {
-				text = T("worldmap.card.questNew", { title = T(`quest.{quest.id}.title`) }),
-				color = Theme.Colors.GoldBright,
-				bold = true,
-			})
-		end
-	elseif not main then
-		local quest, ready = QuestLogic.nextMain(quests.mainDone or 0, level)
-		if quest and quest.giver == npcId and not ready then
-			table.insert(lines, {
-				text = T("worldmap.card.questLater", { level = quest.level - Quests.Main.LEVEL_SLACK }),
+				text = `{title} ({T("quest.fromLevel", { level = NpcQuests.minLevel(row) })})`,
 				color = Theme.Colors.TextMuted,
+			})
+		else
+			local strong = row.mode ~= "active"
+			table.insert(lines, {
+				text = T(KEYS[row.mode], { title = title }),
+				color = if strong then Theme.Colors.GoldBright else Theme.Colors.TextMuted,
+				bold = strong,
 			})
 		end
 	end

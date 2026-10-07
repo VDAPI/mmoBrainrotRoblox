@@ -29,10 +29,16 @@ describe("NpcMarks", function()
 		expect(NpcMarks.of(quest.turnIn, state({ id = quest.id, progress = done }, 1), 1)).toBe("turnIn")
 		local open = QuestLogic.emptyProgress(quest.objectives)
 		expect(NpcMarks.of(quest.turnIn, state({ id = quest.id, progress = open }, 1), 1)).toBe("active")
-		-- The giver of the next quest has nothing while a quest is active.
+		-- The giver of the next quest has nothing while a quest is active (S27: side quest givers aside).
 		local count = 0
-		for _ in NpcMarks.all(state({ id = quest.id, progress = open }, 1), 1) do
-			count += 1
+		for npcId in NpcMarks.all(state({ id = quest.id, progress = open }, 1), 1) do
+			local sideGiver = false
+			for _, side in Quests.Side.list do
+				sideGiver = sideGiver or side.giver == npcId
+			end
+			if not sideGiver then
+				count += 1
+			end
 		end
 		expect(count).toBe(1)
 	end)

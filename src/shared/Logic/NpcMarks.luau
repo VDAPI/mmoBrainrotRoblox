@@ -1,11 +1,13 @@
 --!strict
 -- Quest marks over NPCs (S25, DESIGN §20): "available" (!) a story quest to take, "turnIn" (?) a quest ready
--- to hand in, "active" (grey ?) a quest in progress that ends at this NPC. One rule for the plates over the
+-- to hand in, "active" (grey ?) a quest in progress that ends at this NPC. S27: side quests too (Logic/SideQuests);
+-- an NPC with several shows the most important mark (turnIn > available > active). One rule for the plates over the
 -- NPCs in the world, the world map and the minimap. Daily contracts mark the quest board: "turnIn" when one is
 -- done and not collected, "active" while some are still open. Pure (Lune).
 
 local QuestLogic = require("./QuestLogic")
 local Quests = require("../Data/Quests")
+local SideQuests = require("./SideQuests")
 
 export type Mark = "available" | "turnIn" | "active"
 
@@ -31,6 +33,25 @@ function NpcMarks.all(quests: any, level: number): { [string]: Mark }
 		local nextQuest, ready = QuestLogic.nextMain(tonumber(quests.mainDone) or 0, level)
 		if nextQuest and ready then
 			marks[nextQuest.giver] = "available"
+		end
+	end
+	-- S27: side quests
+	local function put(npcId: string, mark: Mark)
+		if NpcMarks.priority(mark) > NpcMarks.priority(marks[npcId]) then
+			marks[npcId] = mark
+		end
+	end
+	for id, entry in SideQuests.activeOf(quests) do
+		local quest = Quests.Side.get(id)
+		if quest and type(entry) == "table" then
+			put(quest.turnIn, if SideQuests.isComplete(entry, quest) then "turnIn" else "active")
+		end
+	end
+	for _, quest in Quests.Side.list do
+		if marks[quest.giver] ~= "turnIn" and marks[quest.giver] ~= "available" then
+			if SideQuests.canAccept(quests, level, quest) then
+				put(quest.giver, "available")
+			end
 		end
 	end
 	local daily = quests.daily

@@ -3,7 +3,8 @@
 -- giver NPC once the level allows it and handed in at its turn-in NPC. Daily contracts: 3 per UTC day
 -- (Logic/QuestLogic.dailyFor), active automatically, rewards collected at the board on the plaza.
 -- Progress comes from QuestEvents (combat, gathering, fishing, upgrades, …), kills (CombatService credit),
--- levels, map changes and talking to NPCs. Rewards check the backpack space first.
+-- levels, map changes and talking to NPCs. Rewards check the backpack space first. S27: every event also goes to
+-- the side quests (SideQuestService.Handle).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -39,6 +40,7 @@ local QuestService = {
 		"CombatService",
 		"NpcService",
 		"ZoneService",
+		"SideQuestService",
 	},
 }
 
@@ -49,6 +51,7 @@ local LevelService: any
 local CombatService: any
 local NpcService: any
 local ZoneService: any
+local SideQuestService: any
 
 local rng = Rng.new()
 
@@ -147,6 +150,8 @@ local function handle(player: Player, kind: string, data: { [string]: any })
 			end
 		end
 	end
+	-- S27: the same event for every active side quest.
+	SideQuestService.Handle(player, kind, data)
 end
 
 function QuestService.Handle(player: Player, kind: string, data: { [string]: any }?)
@@ -316,6 +321,7 @@ function QuestService.Init(registry)
 	CombatService = registry.Get("CombatService")
 	NpcService = registry.Get("NpcService")
 	ZoneService = registry.Get("ZoneService")
+	SideQuestService = registry.Get("SideQuestService")
 end
 
 function QuestService.Start()
@@ -334,6 +340,7 @@ function QuestService.Start()
 				variant = info.variant,
 				level = info.level,
 				mapId = info.mapId,
+				areaId = info.areaId,
 			})
 		end
 	end)

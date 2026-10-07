@@ -194,6 +194,14 @@ cmd("combat", "anim", { str("kind") })
 cmd("quests", "quest", { enum("action", { "set", "complete" }), ref("id", "quest", true) })
 cmd("quests", "daily", { enum("action", { "reroll" }) })
 cmd("quests", "questmarks", {})
+-- S27: side quests of the caller's character; `arc <id>` hands in everything before the quest in its arc.
+cmd(
+	"quests",
+	"side",
+	{ enum("action", { "list", "give", "complete", "reset", "arc" }), str("id", true) },
+	{ dangerActions = { "reset" } }
+)
+cmd("quests", "anchor", { str("id", true) })
 
 -- Economy and community
 cmd("economy", "gold", { int("amount", -BIG, BIG) })

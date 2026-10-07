@@ -193,7 +193,10 @@ commands.npc = function(player, args)
 	withCharacter(player, function()
 		local model = player.Character
 		if model and position and def then
-			model:PivotTo(CFrame.new(position + Vector3.new(0, 4, 6)))
+			-- S27: NPCs on other maps (the Meadows) go through the map change (zone, location, loading screen).
+			local a = math.rad(def.facing)
+			local front = position + Vector3.new(-math.sin(a) * 5, 4, -math.cos(a) * 5)
+			task.spawn(TravelService.TeleportToMap, player, def.map, CFrame.lookAt(front, position + Vector3.yAxis * 4))
 			reply(player, "admin.npc.tp", { npc = "@" .. def.nameKey })
 		else
 			reply(player, "admin.usage.npc")

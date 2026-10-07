@@ -90,7 +90,9 @@ local function standOnOrigin(model: Model): (number, number)
 	return size.Y, math.max(size.X, size.Z)
 end
 
-function Preview.new(scope: Scope, buildLook: BuildLook?): Api
+-- `portrait` (S27, NPC dialogs): head and shoulders from the front, no turning.
+function Preview.new(scope: Scope, buildLook: BuildLook?, options: { portrait: boolean? }?): Api
+	local portrait = options ~= nil and options.portrait == true
 	local viewport = scope:New("ViewportFrame")({
 		Name = "Preview",
 		Size = UDim2.fromScale(1, 1),
@@ -128,11 +130,12 @@ function Preview.new(scope: Scope, buildLook: BuildLook?): Api
 		if not entry then
 			return
 		end
-		local focus = Vector3.new(0, entry.height * 0.5, 0)
-		local extent = math.max(entry.height, entry.width * 0.85)
+		local focus = Vector3.new(0, entry.height * (if portrait then 0.8 else 0.5), 0)
+		local extent = if portrait then entry.height * 0.42 else math.max(entry.height, entry.width * 0.85)
 		local distance = (extent * 0.5) / math.tan(math.rad(FOV / 2)) * 1.3 + entry.width * 0.25
 		local a = entry.front + angle
-		local eye = focus + Vector3.new(math.sin(a) * distance, entry.height * 0.18, math.cos(a) * distance)
+		local rise = entry.height * (if portrait then 0.04 else 0.18)
+		local eye = focus + Vector3.new(math.sin(a) * distance, rise, math.cos(a) * distance)
 		camera.CFrame = CFrame.lookAt(eye, focus)
 	end
 
@@ -223,7 +226,7 @@ function Preview.new(scope: Scope, buildLook: BuildLook?): Api
 		end
 		found.model.Parent = viewport
 		current = found
-		angle = if Fusion.peek(quality) == "low" then 0.5 else 0
+		angle = if portrait then 0 elseif Fusion.peek(quality) == "low" then 0.5 else 0
 		place()
 		print(`[WorldMap] preview {key}: {string.format("%.1f", (os.clock() - started) * 1000)} ms ({source})`)
 	end
@@ -231,7 +234,7 @@ function Preview.new(scope: Scope, buildLook: BuildLook?): Api
 	table.insert(
 		scope,
 		RunService.RenderStepped:Connect(function(dt: number)
-			if current and viewport.Visible and Fusion.peek(quality) ~= "low" then
+			if current and viewport.Visible and not portrait and Fusion.peek(quality) ~= "low" then
 				angle += dt * TURN_SPEED
 				place()
 			end

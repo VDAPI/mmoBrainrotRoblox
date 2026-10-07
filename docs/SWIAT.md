@@ -185,6 +185,48 @@ woda, budowle, miejsca NPC i kotwice questów S27), `Data/Terrain/meadows` (kszt
 | Ruiny Smoczej Świątyni / Dragon Temple Ruins | 85–95 | Smoczy Pomiot, Zamarznięty Rycerz (88–95) | 6 | ruiny świątyni | rudy Adamantytu |
 | Szczyt Wyrmów / Wyrm Peak | 95–100 | Wyrm Szronu, Smoczy Pomiot (95) | 5 | smocze kości na szczycie | **wejście: Serce Lodowca** |
 
+### Questy poboczne Szepczących Łąk (S27)
+
+Miasto zleca, Łąki są miejscem roboty. ★ = koniec wątku, nagroda do wyboru (3 Rzadkie przedmioty dla klasy). Dane:
+`Data/Quests/Side`; teksty `quest.<id>.*`.
+
+| Wątek | id | Poz. | Daje → odbiera | Cele |
+|---|---|---|---|---|
+| A. Farma Bartosza | `side_granary` | 1 | Ignacy → Bartosz | dostarcz „Zamówienie na zboże” |
+| | `side_rabbits` | 1 | Bartosz → Bartosz | 10 królików z Polany Królików |
+| | `side_fence` | 2 | Bartosz → Bartosz | „Napraw płot” ×4 (`fence_1..4`, 2 s) |
+| | `side_sheep` | 3 | Bartosz → Bartosz | 5 „Owczy dzwonek” z wilków (40%) |
+| | `side_grainCart` ★ | 4 | Bartosz → Ignacy | dostarcz „Worek zboża”; 6 wilków |
+| B. Kapliczka pod dębem | `side_shrine` | 2 | Anzelm → Anzelm | „Zapal świece” (3 s); 3× wiązówka |
+| | `side_stoneCircle` ★ | 5 | Anzelm → Anzelm | dotrzyj do kamiennego kręgu; 8 rysi z Wilczych Wzgórz |
+| C. Żabie Oczko | `side_father` | 4 | Jagna → Wit | dostarcz „Koszyk z chlebem” |
+| | `side_toads` | 5 | Wit → Wit | 12 ropuch |
+| | `side_venom` | 6 | Wit → Alchemiczka Ysolde | 6 „Jad ropuchy” (50%) |
+| | `side_net` ★ | 7 | Wit → Jagna | „Wyciągnij sieć” (3 s); 3 ryby |
+| D. Stary Las | `side_roast` | 6 | Wacław → Wacław | 6 „Udziec dzika” (50%) |
+| | `side_woodcutter` | 7 | Wacław → Gerwazy | dostarcz „Baryłka piwa” |
+| | `side_logs` | 8 | Gerwazy → Gerwazy | „Oznacz drewno” ×5 (1,5 s); 8 ścierwników |
+| | `side_shiny` ★ | 9 | Gerwazy → Hanna | 5 „Błyszczący drobiazg” ze ścierwników (40%) |
+| E. Spalony młyn | `side_mill` | 9 | Hanna → Hanna (po `side_shiny`) | „Przeszukaj zgliszcza” (3 s); 6 bandytów z Kruczego Pola |
+| | `side_smugglers` ★ | 11 | Hanna → Dobiesław | Kryjówka Przemytników; Herszt Bandytów; „Księga rachunkowa” (100%) |
+| F. Kupiecki Trakt | `side_wagon` | 10 | Radosz → Lucjan | porozmawiaj z Lucjanem |
+| | `side_goods` | 11 | Lucjan → Lucjan | „Przeszukaj wóz” (2 s); 8 „Bela sukna” z bandytów traktu (50%) |
+| | `side_wanted` ★ | 13 | Dobiesław → Dobiesław | 15 bandytów z Kupieckiego Traktu |
+| G. Stare Wyrobisko | `side_ore` | 11 | Kowal Dorgan → Dobromir | dostarcz „Wiadomość od kowala” |
+| | `side_tools` | 12 | Dobromir → Dobromir | 6 „Kilof górniczy” z koboldów (50%) |
+| | `side_tunnels` ★ | 14 | Dobromir → Kowal Dorgan | „Zabezpiecz sztolnię” ×3 (3 s); 8× żyła żelaza |
+| H. Gobliński Obóz | `side_totem` | 15 | Dobiesław → Dobiesław | 12 goblińskich zwiadowców z obozu; „Podpal totem” (3 s) |
+| | `side_foreman` ★ | 16 | Dobiesław → Dobromir | Gobliński Kopiec; 2 Koboldy Brygadziści |
+| I. Niedźwiedzi Jar | `side_hunter` | 16 | Wacław → Borys | dostarcz „Bukłak i suchary” |
+| | `side_bears` | 17 | Borys → Borys | 10 niedźwiedzi; 4 „Niedźwiedzi pazur” (40%) |
+| | `side_den` ★ | 19 | Borys → Borys | „Zbadaj legowisko” (3 s); 6 goblińskich zwiadowców z jaru |
+
+NPC w mieście: Zarządca Ignacy (spichlerz), Brat Anzelm (świątynia), Rybaczka Jagna (stragan z rybami), Karczmarz
+Wacław (karczma; plotki o robocie), Młynarzowa Hanna (młyn), Stajenny Radosz (stajnia), Sierżant Dobiesław
+(wartownia). Na Łąkach: Farmer Bartosz (farma), Rybak Wit (chata nad Żabim Oczkiem; wędka), Drwal Gerwazy (polana w
+Starym Lesie), Kupiec Lucjan (rozbity wóz), Górnik Dobromir (szopa przy Wyrobisku; kilof), Myśliwy Borys (obozowisko
+nad jarem). EXP: 0,25 poziomu, koniec wątku 0,45 (razem ~40% EXP na 1→20).
+
 ## 4. Jaskinie (czerwona strefa, PvP zawsze)
 
 W każdej: 2–3 rodzaje zwykłych potworów, **2 rodzaje Elit** (3–5 grup po 1–2 Elity), **1 Elita II naraz** (losuje jeden z 2 rodzajów przy odrodzeniu, 10–20 min), 6–10 rud. ⚑ = Elita potrzebna questom głównej linii (nie przenosić do innej jaskini bez poprawy questa).

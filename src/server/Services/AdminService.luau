@@ -61,6 +61,7 @@ local AdminService = {
 		"DungeonService",
 		"TradeService",
 		"QuestService",
+		"SideQuestService",
 		"GuildService",
 		"MailService",
 		"AuctionService",

@@ -1,18 +1,25 @@
 --!strict
--- Quest journal (L): Main / Daily tabs. Main: the active story quest (or the next one and where to get it),
--- the story so far as a list. Daily: today's three contracts with progress and the time to the reset.
--- "Track" toggles the HUD tracker for the main quest.
+-- Quest journal (L): Main / Side / Daily tabs. Main: the active story quest (or the next one and where to get it),
+-- the story so far as a list. Side (S27): the side quests by arc (arc name, "2/5"), every active one with its
+-- objectives, "Track" (one tracked quest at a time: the story or a side quest) and "Abandon" (asks first); then the
+-- quests on offer within reach of the level and where to get them. Daily: today's three contracts with progress and
+-- the time to the reset.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local Button = require(script.Parent.Parent.Components.Button)
+local Config = require(ReplicatedStorage.Shared.Config)
 local Clock = require(ReplicatedStorage.Shared.Util.Clock)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local Modal = require(script.Parent.Parent.Components.Modal)
+local Net = require(ReplicatedStorage.Shared.Net)
 local Npcs = require(ReplicatedStorage.Shared.Data.Npcs)
 local QuestLogic = require(ReplicatedStorage.Shared.Logic.QuestLogic)
 local QuestText = require(script.Parent.Parent.QuestText)
+local QuestTrack = require(script.Parent.Parent.QuestTrack)
 local Quests = require(ReplicatedStorage.Shared.Data.Quests)
+local SideQuests = require(ReplicatedStorage.Shared.Logic.SideQuests)
 local State = require(script.Parent.Parent.State)
 local Tabs = require(script.Parent.Parent.Components.Tabs)
 local Text = require(script.Parent.Parent.Text)
@@ -25,6 +32,9 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 
 export type Props = {
 	Tracked: Fusion.Value<boolean>,
+	Focus: Fusion.Value<QuestTrack.Focus>,
+	Track: (focus: QuestTrack.Focus) -> (),
+	ShowModal: (spec: Modal.Spec) -> (),
 }
 
 local function label(
@@ -125,10 +135,15 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 						LayoutOrder = 4,
 						Size = UDim2.fromOffset(200, 44),
 						Text = s:Computed(function(use2): string
-							return Text.get(use2, if use2(props.Tracked) then "quest.untrack" else "quest.track")
+							local tracked = use2(props.Tracked) and use2(props.Focus) == nil
+							return Text.get(use2, if tracked then "quest.untrack" else "quest.track")
 						end),
 						OnClick = function()
-							props.Tracked:set(not Fusion.peek(props.Tracked))
+							if Fusion.peek(props.Focus) ~= nil then
+								props.Track(nil)
+							else
+								props.Tracked:set(not Fusion.peek(props.Tracked))
+							end
 						end,
 					})
 				)
@@ -190,6 +205,176 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 				)
 				table.insert(list, label(s, 11, table.concat(done, "\n"), Theme.Fonts.Body, 15, Theme.Colors.TextMuted))
 			end
+		elseif use(tab) == "side" then
+			local order = 0
+			local function add(item: Instance)
+				order += 1
+				(item :: any).LayoutOrder = order
+				table.insert(list, item)
+			end
+			local lvl = use(level) or 1
+			local active = SideQuests.activeOf(q)
+			local anything = false
+			for _, arc in Quests.Side.ARCS do
+				local done, total = SideQuests.arcProgress(q, arc)
+				local arcQuests: { Quests.SideQuest } = Quests.Side.byArc[arc] or {}
+				local shown: { Instance } = {}
+				for _, quest in arcQuests do
+					local entry = active[quest.id]
+					if type(entry) ~= "table" then
+						continue
+					end
+					local complete = SideQuests.isComplete(entry, quest)
+					local lines = {}
+					for i, objective in quest.objectives do
+						local have = (entry.progress or {})[i] or 0
+						local text = QuestText.objective(use, objective, have, quest.turnIn)
+						table.insert(
+							lines,
+							if have >= objective.n then `<font color="#4FD16B">✔ {text}</font>` else `• {text}`
+						)
+					end
+					local turnIn = Npcs.get(quest.turnIn)
+					if complete and turnIn then
+						local hand = Text.get(use, "quest.handInAt", { npc = Text.get(use, turnIn.nameKey) })
+						table.insert(lines, `<font color="#E8C25A">{hand}</font>`)
+					end
+					local giver = Npcs.get(quest.giver)
+					local from = Text.get(
+						use,
+						"quest.journal.giver",
+						{ npc = if giver then Text.get(use, giver.nameKey) else "?" }
+					)
+					local title = Text.get(use, `quest.{quest.id}.title`)
+					table.insert(
+						shown,
+						label(
+							s,
+							0,
+							`<b>{title}</b>  <font size="14" color="#9A9DA8">{from}</font>`,
+							Theme.Fonts.BodyBold,
+							19,
+							Theme.Colors.GoldBright
+						)
+					)
+					table.insert(
+						shown,
+						label(
+							s,
+							0,
+							Text.get(use, `quest.{quest.id}.progress`),
+							Theme.Fonts.Body,
+							15,
+							Theme.Colors.Parchment
+						)
+					)
+					table.insert(
+						shown,
+						label(s, 0, table.concat(lines, "\n"), Theme.Fonts.BodyMedium, 16, Theme.Colors.Text)
+					)
+					local id = quest.id
+					table.insert(
+						shown,
+						s:New("Frame")({
+							Size = UDim2.new(1, 0, 0, 40),
+							BackgroundTransparency = 1,
+							[Children] = {
+								s:New("UIListLayout")({
+									FillDirection = Enum.FillDirection.Horizontal,
+									Padding = UDim.new(0, 8),
+								}),
+								Button(s, {
+									Size = UDim2.fromOffset(150, 40),
+									Variant = "secondary",
+									Text = s:Computed(function(use2): string
+										local focus = use2(props.Focus)
+										local tracked = use2(props.Tracked) and focus ~= nil and focus.id == id
+										return Text.get(use2, if tracked then "quest.untrack" else "quest.track")
+									end),
+									OnClick = function()
+										local focus = Fusion.peek(props.Focus)
+										if focus and focus.id == id then
+											props.Track(nil)
+										else
+											props.Track({ kind = "side", id = id })
+										end
+									end,
+								}),
+								Button(s, {
+									Size = UDim2.fromOffset(150, 40),
+									Variant = "ghost",
+									Text = Text.T(s, "quest.abandon"),
+									OnClick = function()
+										props.ShowModal({
+											Title = Text.now("quest.abandonTitle"),
+											Message = Text.now(
+												"quest.abandonText",
+												{ title = Text.now(`quest.{id}.title`) }
+											),
+											ConfirmText = Text.now("quest.abandon"),
+											CancelText = Text.now("quest.back"),
+											Variant = "danger",
+											OnConfirm = function(): (boolean, string?)
+												local ok, err = Net.Invoke("SideAbandon", id)
+												if not ok then
+													return false, Text.now(err or "error.internal")
+												end
+												return true, nil
+											end,
+										})
+									end,
+								}),
+							},
+						})
+					)
+				end
+				-- On offer now: where to get them.
+				for _, quest in arcQuests do
+					if SideQuests.canAccept(q, lvl, quest) then
+						local giver = Npcs.get(quest.giver)
+						local getFrom = Text.get(
+							use,
+							"quest.getFrom",
+							{ npc = if giver then Text.get(use, giver.nameKey) else "?" }
+						)
+						local title = Text.get(use, `quest.{quest.id}.title`)
+						table.insert(
+							shown,
+							label(
+								s,
+								0,
+								`<font color="#E8C25A">!</font> {title}  <font size="14" color="#9A9DA8">{getFrom}</font>`,
+								Theme.Fonts.BodyMedium,
+								16,
+								Theme.Colors.Parchment
+							)
+						)
+					end
+				end
+				if #shown > 0 or done > 0 then
+					anything = true
+					local arcName = Text.get(use, `quest.arc.{arc}`)
+					add(
+						label(
+							s,
+							0,
+							`{arcName}  <font color="#9A9DA8">{done}/{total}</font>`,
+							Theme.Fonts.Heading,
+							22,
+							if done == total then Theme.Colors.Success else Theme.Colors.Gold
+						)
+					)
+					for _, item in shown do
+						add(item)
+					end
+				end
+			end
+			if not anything then
+				add(label(s, 0, Text.get(use, "quest.side.none"), Theme.Fonts.Body, 17, Theme.Colors.TextMuted))
+			end
+			local count =
+				Text.get(use, "quest.side.count", { n = SideQuests.activeCount(q), max = Config.SideQuest.maxActive })
+			add(label(s, 0, count, Theme.Fonts.Body, 14, Theme.Colors.TextMuted))
 		else
 			local daily = q.daily
 			table.insert(
@@ -250,6 +435,7 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 			Selected = tab,
 			Tabs = {
 				{ id = "main", label = Text.T(scope, "quest.tab.main") },
+				{ id = "side", label = Text.T(scope, "quest.tab.side") },
 				{ id = "daily", label = Text.T(scope, "quest.tab.daily") },
 			},
 		}),

@@ -1,6 +1,6 @@
 --!strict
--- Quest tracker (DESIGN §20, right side under the minimap): the main quest with its objectives and an arrow
--- towards its target (an NPC or a place on this map, or the portal leading to the target map), plus the
+-- Quest tracker (DESIGN §20, right side under the minimap): the tracked side quest (S27, QuestTrack.Focus) and the
+-- main quest with their objectives and an arrow towards the tracked one's target (an NPC or a place on this map, or the portal leading to the target map), plus the
 -- daily contracts. The header collapses it.
 
 local Players = game:GetService("Players")
@@ -18,6 +18,7 @@ local QuestLogic = require(ReplicatedStorage.Shared.Logic.QuestLogic)
 local QuestText = require(script.Parent.Parent.Parent.QuestText)
 local QuestTrack = require(script.Parent.Parent.Parent.QuestTrack)
 local Quests = require(ReplicatedStorage.Shared.Data.Quests)
+local SideQuests = require(ReplicatedStorage.Shared.Logic.SideQuests)
 local Time = require(ReplicatedStorage.Shared.Logic.Time)
 local State = require(script.Parent.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Parent.Text)
@@ -147,6 +148,36 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 		local function npcName(npcId: string?): string
 			local npc = npcId and Npcs.get(npcId)
 			return if npc then Text.get(use, npc.nameKey) else ""
+		end
+
+		-- S27: the tracked side quest first.
+		local focus = use(QuestTrack.Focus)
+		local sideQuest = if focus then Quests.Side.get(focus.id) else nil
+		local sideEntry = if focus then SideQuests.activeOf(q)[focus.id] else nil
+		if sideQuest and type(sideEntry) == "table" then
+			line(`◆ {Text.get(use, `quest.{sideQuest.id}.title`)}`, Theme.Colors.GoldBright, 17, Theme.Fonts.BodyBold)
+			if SideQuests.isComplete(sideEntry, sideQuest) then
+				line(
+					Text.get(use, "quest.tracker.turnIn", { npc = npcName(sideQuest.turnIn) }),
+					Theme.Colors.Success,
+					15,
+					Theme.Fonts.BodyMedium
+				)
+			else
+				for i, objective in sideQuest.objectives do
+					local have = (sideEntry.progress or {})[i] or 0
+					if have < objective.n then
+						line(
+							`• {QuestText.objective(use, objective, have, sideQuest.turnIn)}`,
+							Theme.Colors.Text,
+							15,
+							Theme.Fonts.BodyMedium,
+							6
+						)
+					end
+				end
+			end
+			gap()
 		end
 
 		local main = q.main

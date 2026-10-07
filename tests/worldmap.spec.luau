@@ -92,7 +92,7 @@ describe("AccountSchema S25", function()
 			settings = { lang = "pl", devPins = { "heal" } },
 		}
 		local applied = AccountSchema.migrate(data)
-		expect(applied).toEqual({ 3 })
+		expect(applied).toEqual({ 3, 4 })
 		expect(data.schema).toBe(AccountSchema.CURRENT)
 		expect(data.characters["1"].mapMarks).toEqual({})
 		expect(data.characters["2"].mapMarks).toEqual({})

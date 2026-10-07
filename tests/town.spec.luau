@@ -111,7 +111,7 @@ T.describe("Town plan", function()
 	end)
 
 	T.it("puts NPCs next to their buildings", function()
-		for id, spot in city.npcs do
+		for id, spot in Town.allNpcSpots() do
 			local at = spot.at
 			if at then
 				local special = Town.special(at)
@@ -301,7 +301,7 @@ T.describe("Town plan", function()
 				error(`{what} ({x}, {z}) cannot be reached from the spawn`)
 			end
 		end
-		for id, spot in city.npcs do
+		for id, spot in Town.allNpcSpots() do
 			reach(`NPC {id}`, spot.x, spot.z)
 		end
 		for _, gate in city.gates do
