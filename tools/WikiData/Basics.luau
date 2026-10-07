@@ -190,17 +190,12 @@ S.file(
 S.file(
 	"titles",
 	rec("TitlesFile", {
-		titles = arr(
-			rec(
-				"Title",
-				{
-					id = "string",
-					name = "name",
-					color = "color",
-					req = rec("TitleReq", { kind = "string", value = "int" }),
-				}
-			)
-		),
+		titles = arr(rec("Title", {
+			id = "string",
+			name = "name",
+			color = "color",
+			req = rec("TitleReq", { kind = "string", value = "int" }),
+		})),
 	})
 )
 

@@ -41,6 +41,8 @@ local Weapon = rec("ItemWeapon", {
 	twoHanded = "bool",
 })
 
+local IconLayer = rec("IconLayer", { image = "int", x = "int", y = "int", ["tint?"] = "color" })
+
 local Sources = rec("ItemSources", {
 	monsters = arr(rec("SourceMonster", { monster = "ref:monsters", variant = "string", chance = "number" })),
 	bosses = arr(rec("SourceBoss", { boss = "ref:bosses", chance = "number", personal = "bool" })),
@@ -70,6 +72,9 @@ S.file(
 			["desc?"] = "name",
 			glyph = "string",
 			color = "color",
+			["iconKey?"] = "string",
+			["layers?"] = arr(IconLayer),
+			["layersByElement?"] = map(arr(IconLayer)),
 			bind = "bool",
 			stackable = "bool",
 			maxStack = "int",
@@ -305,6 +310,7 @@ local function sortedDefs(): { any }
 end
 
 function Items.build(ctx: any): any
+	local ItemIcons = if ctx.features.itemIcons then (require :: any)("../../src/shared/Logic/ItemIcons") else nil
 	local used = usedForIndex()
 	local dismantled: { [string]: boolean } = {}
 	for _, r in Rarities.list do
@@ -355,6 +361,23 @@ function Items.build(ctx: any): any
 				end
 			end
 			local usedFor = used[def.id]
+			-- S35: atlas icon (Logic/ItemIcons.resolve); mage weapons once per weapon element.
+			local iconKey, layers, layersByElement = nil, nil, nil
+			if ItemIcons then
+				local resolved = ItemIcons.resolve(def)
+				if resolved then
+					iconKey, layers = resolved.key, resolved.layers
+				end
+				if def.elemental then
+					layersByElement = {}
+					for _, el in Elements.WEAPON do
+						local r = ItemIcons.resolve(def, el)
+						if r then
+							layersByElement[el] = r.layers
+						end
+					end
+				end
+			end
 			table.insert(list, {
 				id = def.id,
 				category = def.category,
@@ -368,6 +391,9 @@ function Items.build(ctx: any): any
 				desc = Names.opt(def.descKey),
 				glyph = def.icon.glyph,
 				color = def.icon.color,
+				iconKey = iconKey,
+				layers = layers,
+				layersByElement = layersByElement,
 				bind = def.bindOnPickup == true,
 				stackable = def.stackable,
 				maxStack = def.maxStack,
@@ -513,7 +539,7 @@ function Items.icons(ctx: any): any
 	end
 	local Atlas = (require :: any)("../../src/shared/Data/ItemIconAtlas")
 	local sheets = {}
-	for i = 1, #(Atlas.SHEETS or {}) do
+	for i = 1, Atlas.SHEETS do
 		table.insert(sheets, `art/icons/items_{i}.png`)
 	end
 	return {

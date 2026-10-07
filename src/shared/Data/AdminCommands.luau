@@ -160,6 +160,13 @@ cmd("items", "lootsim", {
 	ref("area", "area", true), -- S33: with the hunting ground's profile
 })
 cmd("items", "rarities", {})
+-- S35: item icon atlases (client preview, glyph / picture switch).
+cmd("items", "icons", { enum("mode", { "status", "glyph", "art" }, true, "status") })
+cmd(
+	"items",
+	"icongrid",
+	{ enum("group", { "eq", "uniq", "mat", "pot", "misc", "tiers" }, true, "eq"), str("type", true) }
+)
 cmd("items", "clearinv", {}, { danger = true })
 cmd("items", "bag", { enum("capacity", { "20", "30", "45", "60", "80", "100", "130", "160", "200" }) })
 cmd("items", "up", { str("where"), int("level", 0, 9) })

@@ -305,6 +305,19 @@ Przedmioty **z kowala** mają rzadkość Zwykły i stałe statystyki dopasowane 
 
 Każdy przedmiot ma w tooltipie „Rzadkość · Kategoria” (broń jedno-/dwuręczna/dystansowa, druga ręka, hełm, zbroja, rękawice, buty, naszyjnik, pierścień, talizman, mikstura, błogosławieństwo, eliksir, kamień, zwój, narzędzie, materiał, plecak), swoje statystyki albo efekt (broń z DPS, mikstury ile przywracają, błogosławieństwa i eliksiry efekt z czasem, kamienie / zwoje / narzędzia co robią, materiały „Używany do:” liczone z danych i poziom materiału, plecaki miejsca i poziom) oraz zawsze „Wartość: X złota”; w sklepie „Cena”, przy otwartym kupcu „Sprzedasz za”. Treść buduje czysta funkcja `Logic/TooltipModel`. Na dotyku tap w przedmiot w sklepie / nagrodzie pokazuje tooltip.
 
+### 5.3b Ikony przedmiotów (S35)
+
+- Grafiki z trzech atlasów (`art/icons`, 128 px na komórkę); do czasu wgrania i wczytania wszystkich trzech gra pokazuje
+  wszędzie dawne symbole na kolorowym kafelku (nigdy pół na pół). Logika: `Logic/ItemIcons`, komponent
+  `UI/Components/ItemIcon`.
+- Ikona to 1–3 warstwy: metal w szarościach barwiony **kolorem progu** (`TIER_TINT`: 21 progów tej samej broni różni się
+  kolorem metalu), stałe kolory (drewno, skóra, klejnoty) i **akcent** w szarościach barwiony kolorem z danych: żywioł
+  broni maga, kolor mikstury, rudy, zioła, ryby, pieczęci zwoju, kamienia, plecaka. 12 nazwanych Mityków bossów ma własne
+  rysunki. Waluty: `ui/gold`, `ui/exp`, `ui/dragon`.
+- **Rzadkość nie jest częścią ikony**, tylko ramki slotu (§5.2). Z grafiką slot nie ma kolorowego kafelka pod ikoną.
+- Materiały dodane po narysowaniu atlasu mają alias do najbliższego rysunku (`crow_feather` → pióro, `toad_venom` →
+  worek jadu).
+
 ### 5.4 Losowanie bonusów
 
 - Pula bonusów per typ slotu (broń: atak, kryt, obr. kryt., szybkość ataku, przebicie, wampiryzm, SIŁ/ZRĘ/INT; zbroja: HP, obrona, odp. mag., odporności, WIT; biżuteria: wszystkie staty główne, kryt, unik, celność, regeneracje, bonus EXP/złota/dropu; buty: szybkość ruchu, unik; itd.). Pula w `Data/Bonuses.luau`.
@@ -738,6 +751,14 @@ Po testach S17: **więcej rodzajów na każdej mapie (min. 8–10 na mapę teren
 - **Mapa interaktywna** (S25, jak w Margonem: mapa jest głównym narzędziem nawigacji): każda ikona na mapie jest klikalna. Na PC najechanie pokazuje dymek (nazwa + 1 linia), kliknięcie przypina **kartę szczegółów** po prawej (zostaje do ✕, kliknięcia w puste miejsce albo innej ikony; zaznaczona ikona ma pulsującą złotą obwódkę); na dotyku tap otwiera kartę jako dolny panel z dużymi przyciskami, a przeciąganie mapy jej nie zamyka. Karta: nagłówek (ikona, nazwa, poziomy / rola, kolor strefy lub pasma) → **obracający się podgląd 3D** (NPC, potwór w wariantach Zwykły / Elita / Elita II, Elita II jaskini, boss) → treść → przyciski. Rodzaje: **NPC** (powitanie, usługi, 6 pierwszych rzeczy ze sklepu dla poziomu gracza z cenami, quest do wzięcia / oddania / w trakcie, zlecenia dzienne przy tablicy, odległość albo trasa przez mapy), **portal** (mapa docelowa, poziomy, strefa, polecany obszar, „Pokaż mapę”; nieotwarta kraina: szara karta „Wkrótce”), **obszar** (rodzaje jako klikalne wiersze → karta potwora z „← wróć”: poziomy, HP i atak dla środka zakresu, żywioł, gdzie występuje, ciekawy łup słowami „często / czasem / rzadko / bardzo rzadko”), **jaskinia** (zwykłe, Elity, Elita II z timerem, komnaty), **loch** (boss 3D, wymagany poziom, czy dziś dostępny, zasada grupy, unikaty z tooltipem), **węzeł / łowisko**, **członek grupy** (klasa, poziom, HP/mana, Profil), **własny znacznik**. Akcje: **Prowadź** (ścieżka na ziemi z kropek co 6 st. na pierwszych 120 st., belka „➤ Kowal Dorgan · 84 m ✕” pod minimapą, cel na innej mapie prowadzi do właściwego portalu i przelicza się po teleporcie, dojście czyści cel), **Idź** (tylko ta sama mapa: postać idzie sama; przerywa ją WASD / joystick, skok, wybranie celu ataku, rozmowa z NPC, śmierć, teleport; walka trwa normalnie; mapa się zamyka, opcja w ustawieniach; dojście do NPC kończy się obrotem do niego i „Rozmawiaj [E]”), **Wyśrodkuj**, **Pokaż mapę**. Podwójny klik / długie przytrzymanie na ziemi mapy: „Idź tutaj”, „Prowadź tutaj”, „Postaw znacznik” (punkt w wodzie albo w ścianie → najbliższe osiągalne miejsce). **Własne znaczniki**: do 8 na postać, bez własnego tekstu (ikona z 6: ⚑ ★ ✖ ⛏ 💰 ☠, nazwa z najbliższego NPC albo obszaru), zapisane w postaci, widoczne na mapie i minimapie. **Wyszukiwarka** nad listą map (NPC także po roli i usłudze: „kowal”, „sklep”, „poczta”; mapy, obszary, potwory po każdej nazwie wariantu, bossowie, węzły; bez wielkości liter i polskich znaków: „laki” → Łąki; max 12 wyników; Enter = pierwszy). **Chipy usług** w mieście (Sklepy, Kowal, Alchemik, Questy, Bank) podświetlają pasujących NPC. Znaczniki questów **!** (quest do wzięcia), **?** złoty (do oddania), **?** szary (w trakcie) nad NPC na mapie, minimapie i nad głowami. Przy najmniejszym zoomie nakładające się ikony: zostaje ważniejsza (NPC z questem > portal > loch > NPC > węzeł), reszta jest dostępna z wyszukiwarki.
 - **Minimapa**: ten sam rysunek co mapa (wycinek), obszary potworów, strzałka gracza zgodna z kierunkiem postaci, kropki grup w kolorze liczebności. S25: klik / tap otwiera mapę świata na graczu; pokazuje cel prowadzenia (poza widokiem albo na innej mapie: strzałka na krawędzi w stronę celu lub portalu po drodze), własne znaczniki i **!** / **?** nad NPC. Strzałka questu w trackerze wskazuje portal z trasy, a przycisk **➤** w trackerze włącza prowadzenie do celu questu.
 - Mobile: joystick Roblox, przycisk ataku duży w prawym dolnym, skille wokół, mikstury nad nimi, menu jako ikony na górze.
+
+### Ikony w UI (S35)
+
+Wszystkie sloty przedmiotów (plecak, ekwipunek, depozyt, sklepy, kowal, handel, poczta, aukcja, nagrody, podgląd)
+rysują ikonę z atlasu; tak samo duch przeciągania, ujawnienie legendy (ikona najwyżej ~140 px, źródło ma 128 px),
+pasek mikstur, tooltip (44 px w prawym górnym rogu), eliksiry w pasku efektów. Złoto i EXP w nagrodach questów oraz
+licznik złota w plecaku mają ikonki walut. Puste sloty ekwipunku zostają podpowiedzią-symbolem, ✶ błogosławieństwa
+przy nicku zostaje znakiem. Admin: `/icons [glyph|art]`, `/icongrid <grupa>`.
 
 ## 24. Sterowanie i kamera
 

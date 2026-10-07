@@ -10,6 +10,8 @@ local RunService = game:GetService("RunService")
 local Bonuses = require(ReplicatedStorage.Shared.Data.Bonuses)
 local Button = require(script.Parent.Parent.Components.Button)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local IconState = require(script.Parent.Parent.IconState)
+local ItemIcon = require(script.Parent.Parent.Components.ItemIcon)
 local ItemRoll = require(ReplicatedStorage.Shared.Logic.ItemRoll)
 local ItemText = require(script.Parent.Parent.ItemText)
 local Items = require(ReplicatedStorage.Shared.Data.Items)
@@ -164,7 +166,13 @@ local function LegendReveal(scope: Scope, props: Props): Instance
 								else 96 + use(animatedGlow) * 24
 							return UDim2.fromOffset(s, s)
 						end),
-						BackgroundColor3 = if def then Color3.fromHex(def.icon.color) else Theme.Colors.Panel,
+						-- S35: the picture sits on the dark panel; the coloured tile only behind the glyph.
+						BackgroundColor3 = scope:Computed(function(use): Color3
+							if use(IconState.Art) or not def then
+								return Theme.Colors.Panel
+							end
+							return Color3.fromHex(def.icon.color)
+						end),
 						BackgroundTransparency = 0.3,
 						[Children] = {
 							scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
@@ -173,13 +181,12 @@ local function LegendReveal(scope: Scope, props: Props): Instance
 								Color = Color3.new(1, 1, 1),
 								[Children] = scope:New("UIGradient")({ Color = frameGradient, Rotation = spin }),
 							}),
-							scope:New("TextLabel")({
-								BackgroundTransparency = 1,
-								Size = UDim2.fromScale(1, 1),
-								Text = if def then def.icon.glyph else "?",
-								TextScaled = true,
-								FontFace = Theme.Fonts.BodyBold,
-								TextColor3 = Theme.Colors.Text,
+							-- The atlas cell is 128 px: never drawn larger than the frame (<= 142 px).
+							ItemIcon(scope, {
+								Def = def,
+								Element = ItemRoll.elementOf(item),
+								Fallback = "?",
+								Size = UDim2.fromScale(0.86, 0.86),
 							}),
 						},
 					}),

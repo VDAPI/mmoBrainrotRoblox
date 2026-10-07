@@ -9,11 +9,13 @@ local Config = require(Shared.Config)
 local DevPreset = require(Shared.Logic.DevPreset)
 local Elements = require(Shared.Data.Elements)
 local Inventory = require(Shared.Logic.Inventory)
+local ItemIcons = require(Shared.Logic.ItemIcons)
 local ItemRoll = require(Shared.Logic.ItemRoll)
 local ItemValue = require(Shared.Logic.ItemValue)
 local Items = require(Shared.Data.Items)
 local Loot = require(Shared.Logic.Loot)
 local Monsters = require(Shared.Data.Monsters)
+local Net = require(Shared.Net)
 local PartyLoot = require(Shared.Logic.PartyLoot)
 local Rarities = require(Shared.Data.Rarities)
 local Rng = require(Shared.Logic.Rng)
@@ -126,6 +128,30 @@ commands.lootsim = function(player, args)
 		mats = mats,
 		gold = gold,
 	})
+end
+
+-- S35: /icons [status|glyph|art]: the atlas state (server side: ids, items without an icon) and the client's own
+-- preload result; glyph / art switches the client (not saved).
+commands.icons = function(player, args)
+	local mode = args[1] or "status"
+	local missing = 0
+	for _, def in Items.byId do
+		if not ItemIcons.resolve(def) then
+			missing += 1
+		end
+	end
+	reply(player, "admin.icons.info", { ready = tostring(ItemIcons.ready()), missing = missing })
+	Net.Fire(player, "AdminClient", "icons", mode)
+end
+
+-- S35: /icongrid [eq|uniq|mat|pot|misc|tiers <type>]: preview window of a group of icons on the client.
+commands.icongrid = function(player, args)
+	local group = args[1] or "eq"
+	if group == "tiers" and not Items.bases.byType[args[2] or ""] then
+		reply(player, "admin.usage.icongrid")
+		return
+	end
+	Net.Fire(player, "AdminClient", "icongrid", { group, args[2] })
 end
 
 commands.clearinv = function(player)

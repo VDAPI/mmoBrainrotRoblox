@@ -488,7 +488,7 @@ function SkillController.Init(registry)
 			return kind == "skill" and learned(rest)
 		end,
 	})
-	UIController.AddDragVisual(function(slotId: string): (string?, string?)
+	UIController.AddDragVisual(function(slotId: string): any
 		local kind, rest = parse(slotId)
 		local skillId = if kind == "bar"
 			then SkillController.SkillInSlot(tonumber(rest) :: number)
@@ -497,9 +497,9 @@ function SkillController.Init(registry)
 		local skill = skillId and SkillData.get(skillId)
 		if skill then
 			local class = Classes.get(skill.class)
-			return skill.glyph, if class then class.color else nil
+			return { glyph = skill.glyph, color = if class then class.color else nil }
 		end
-		return nil, nil
+		return nil
 	end)
 end
 

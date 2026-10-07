@@ -9,6 +9,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Button = require(script.Parent.Parent.Components.Button)
 local Config = require(ReplicatedStorage.Shared.Config)
 local DragDrop = require(script.Parent.Parent.DragDrop)
+local CurrencyIcon = require(script.Parent.Parent.Components.CurrencyIcon)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local ItemSlot = require(script.Parent.Parent.Components.ItemSlot)
@@ -154,13 +155,21 @@ local function BackpackPanel(scope: Scope, props: Props): Fusion.Child
 			Size = UDim2.new(1, 0, 0, 40),
 			BackgroundTransparency = 1,
 			[Children] = {
+				-- S35: gold coin from the item atlases (the ◉ glyph before the upload).
+				CurrencyIcon(scope, {
+					Currency = "gold",
+					AnchorPoint = Vector2.new(0, 0.5),
+					Position = UDim2.fromScale(0, 0.5),
+					Size = UDim2.fromOffset(20, 20),
+				}),
 				scope:New("TextLabel")({
 					Name = "Gold",
-					Size = UDim2.new(1, -270, 1, 0),
+					Position = UDim2.fromOffset(24, 0),
+					Size = UDim2.new(1, -294, 1, 0),
 					TextTruncate = Enum.TextTruncate.AtEnd,
 					BackgroundTransparency = 1,
 					Text = scope:Computed(function(use): string
-						return `◉ {Text.get(use, "inventory.gold", { gold = Format.number(use(gold) or 0) })}`
+						return Text.get(use, "inventory.gold", { gold = Format.number(use(gold) or 0) })
 					end),
 					FontFace = Theme.Fonts.BodyBold,
 					TextSize = Theme.TextSize.Body,

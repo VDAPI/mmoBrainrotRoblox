@@ -17,3 +17,6 @@ Thumbs.db
 .vscode/*
 !.vscode/settings.json
 !.vscode/extensions.json
+
+# Generated icon builds (tools/icons)
+build/

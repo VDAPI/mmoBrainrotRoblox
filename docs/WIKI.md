@@ -244,7 +244,7 @@ Kolejność wiki: S34 → S36 → dalej po kolei (S37–S41 zależą tylko od S3
 
 - **S34** Brak w grze (pola pominięte, dopisze sesja gry albo wiki z i18n): opisy potworów, nazwy zdolności Elit II
   (`ability.<id>`), nazwy ataków bossów, nazwa wariantu `boss` (`variant.boss`), opisy kosmetyków (`cosmetic.<id>.desc`).
-- **S34** `icons.json` powstanie po S35 (moduły `Logic/ItemIcons`, `Data/ItemIconAtlas`; eksporter wykrywa je sam,
-  `meta.features.itemIcons`). Pola `iconKey`/`layers`/`layersByElement` przedmiotów też czekają na S35.
+- ~~**S34** `icons.json` po S35~~ — S35: `icons.json` (komórka, kolory progów, ikony, ścieżki atlasów bez id assetów)
+  i pola `iconKey`/`layers`/`layersByElement` przedmiotów są w eksporcie.
 - **S34** Linie `TooltipModel.build` dla przedmiotów spoza ekwipunku i mnożniki profili jako pole łupu potwora nie
   zrobione (profil jest przy obszarze i w `mechanics.areaProfiles`).

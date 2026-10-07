@@ -6,6 +6,7 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local CurrencyIcon = require(script.Parent.CurrencyIcon)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local ItemRoll = require(ReplicatedStorage.Shared.Logic.ItemRoll)
@@ -29,12 +30,13 @@ export type Props = {
 	Width: UDim?, -- default the full width; the height follows the content (wraps)
 }
 
--- Icon and a number (EXP, gold) or a short note, as tall as the slots so the row lines up.
+-- Icon and a number (EXP, gold; S35: CurrencyIcon when `iconColor` is nil) or a short note, as tall as the slots
+-- so the row lines up.
 local function chip(
 	scope: Scope,
 	order: number,
 	icon: string,
-	iconColor: Color3,
+	iconColor: Color3?,
 	text: Fusion.UsedAs<string>,
 	height: number
 )
@@ -51,15 +53,21 @@ local function chip(
 				SortOrder = Enum.SortOrder.LayoutOrder,
 				Padding = UDim.new(0, 4),
 			}),
-			scope:New("TextLabel")({
-				LayoutOrder = 1,
-				Size = UDim2.fromOffset(20, 20),
-				BackgroundTransparency = 1,
-				Text = icon,
-				FontFace = Theme.Fonts.BodyBold,
-				TextSize = 18,
-				TextColor3 = iconColor,
-			}),
+			if iconColor
+				then scope:New("TextLabel")({
+					LayoutOrder = 1,
+					Size = UDim2.fromOffset(20, 20),
+					BackgroundTransparency = 1,
+					Text = icon,
+					FontFace = Theme.Fonts.BodyBold,
+					TextSize = 18,
+					TextColor3 = iconColor,
+				})
+				else CurrencyIcon(scope, {
+					Currency = icon :: CurrencyIcon.Currency,
+					Size = UDim2.fromOffset(20, 20),
+					LayoutOrder = 1,
+				}),
 			scope:New("TextLabel")({
 				LayoutOrder = 2,
 				Size = UDim2.fromOffset(0, 20),
@@ -101,8 +109,8 @@ local function QuestRewards(scope: Scope, props: Props): Instance
 		add(chip(
 			scope,
 			0,
-			"✦",
-			Theme.Colors.Exp,
+			"exp",
+			nil,
 			scope:Computed(function(use): string
 				return Text.get(use, "quest.reward.exp", { exp = Format.number(reward.exp) })
 			end),
@@ -110,7 +118,7 @@ local function QuestRewards(scope: Scope, props: Props): Instance
 		))
 	end
 	if reward.gold > 0 then
-		add(chip(scope, 0, "◉", Theme.Colors.GoldBright, Format.number(reward.gold), size))
+		add(chip(scope, 0, "gold", nil, Format.number(reward.gold), size))
 	end
 	for n, entry in (reward.items or {}) :: { { id: string, n: number } } do
 		if Items.get(entry.id) then

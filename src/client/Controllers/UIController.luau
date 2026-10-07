@@ -8,7 +8,10 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Announcement = require(script.Parent.Parent.UI.Components.Announcement)
 local DragDrop = require(script.Parent.Parent.UI.DragDrop)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local IconState = require(script.Parent.Parent.UI.IconState)
+local ItemIcon = require(script.Parent.Parent.UI.Components.ItemIcon)
 local ItemTooltip = require(script.Parent.Parent.UI.Components.ItemTooltip)
+local Items = require(ReplicatedStorage.Shared.Data.Items)
 local Theme = require(script.Parent.Parent.UI.Theme)
 local Scale = require(script.Parent.Parent.UI.Scale)
 local Sounds = require(script.Parent.Parent.UI.Sounds)
@@ -40,31 +43,37 @@ function UIController.GetLayer(name: LayerName): Frame
 end
 
 -- Icon following the mouse while something is dragged (UI/DragDrop). Controllers register providers that
--- return (glyph, colour hex) for slot ids they own.
-local dragVisuals: { (slotId: string) -> (string?, string?) } = {}
+-- return the visual for slot ids they own: a glyph with its colour (skills) or, S35, an item definition (and the
+-- element of a mage weapon) drawn with UI/Components/ItemIcon.
+export type DragVisual = { glyph: string, color: string?, def: Items.ItemDef?, element: string? }
 
-function UIController.AddDragVisual(provider: (slotId: string) -> (string?, string?))
+local dragVisuals: { (slotId: string) -> DragVisual? } = {}
+
+function UIController.AddDragVisual(provider: (slotId: string) -> DragVisual?)
 	table.insert(dragVisuals, provider)
 end
 
-local function dragVisual(slotId: string): (string?, string?)
+local function dragVisual(slotId: string): DragVisual?
 	for _, provider in dragVisuals do
-		local glyph, color = provider(slotId)
-		if glyph then
-			return glyph, color
+		local visual = provider(slotId)
+		if visual then
+			return visual
 		end
 	end
-	return nil, nil
+	return nil
 end
 
 function UIController.MountDragGhost(scope: Fusion.Scope<typeof(Fusion)>, parent: Instance)
-	local visual = scope:Computed(function(use): { glyph: string, color: string }?
+	local visual = scope:Computed(function(use): DragVisual?
 		local dragging = use(DragDrop.Dragging)
 		if not dragging then
 			return nil
 		end
-		local glyph, color = dragVisual(dragging)
-		return if glyph then { glyph = glyph, color = color or "#252832" } else nil
+		return dragVisual(dragging)
+	end)
+	local itemDef = scope:Computed(function(use): Items.ItemDef?
+		local v = use(visual)
+		return if v then v.def else nil
 	end)
 	scope:New("TextLabel")({
 		Name = "DragGhost",
@@ -80,12 +89,16 @@ function UIController.MountDragGhost(scope: Fusion.Scope<typeof(Fusion)>, parent
 		end),
 		BackgroundColor3 = scope:Computed(function(use): Color3
 			local v = use(visual)
-			return if v then Color3.fromHex(v.color) else Theme.Colors.Panel
+			if v and v.def then
+				return Theme.Colors.Background
+			end
+			return if v and v.color then Color3.fromHex(v.color) else Theme.Colors.Panel
 		end),
 		BackgroundTransparency = 0.3,
+		-- Items draw their icon (atlas or glyph tile) on top; skills keep the glyph text.
 		Text = scope:Computed(function(use): string
 			local v = use(visual)
-			return if v then v.glyph else ""
+			return if v and not v.def then v.glyph else ""
 		end),
 		TextScaled = true,
 		FontFace = Theme.Fonts.BodyBold,
@@ -94,6 +107,15 @@ function UIController.MountDragGhost(scope: Fusion.Scope<typeof(Fusion)>, parent
 		[Fusion.Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 			scope:New("UIStroke")({ Color = Theme.Colors.Gold, Thickness = 2 }),
+			ItemIcon(scope, {
+				Def = itemDef,
+				Element = scope:Computed(function(use): string?
+					local v = use(visual)
+					return if v then v.element else nil
+				end),
+				Size = UDim2.fromScale(0.86, 0.86),
+				ZIndex = 301,
+			}),
 		},
 	})
 end
@@ -130,6 +152,8 @@ function UIController.Init()
 	Tooltip.mount(scope, roots.Tooltip)
 	ItemTooltip.mount(scope, roots.Tooltip)
 	UIController.MountDragGhost(scope, roots.Tooltip)
+	-- S35: item icon atlases (glyphs until they are uploaded and loaded).
+	task.spawn(IconState.load)
 
 	scope:Observer(State.Value({ "account", "settings", "volume" })):onBind(function()
 		local volume = Fusion.peek(State.Value({ "account", "settings", "volume" }))

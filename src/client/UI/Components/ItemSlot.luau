@@ -1,5 +1,5 @@
 --!strict
--- Item slot (DESIGN §23): placeholder icon (glyph on the item colour), rarity frame from the rarity's
+-- Item slot (DESIGN §23): item icon (S35: atlas picture, or the glyph on the item colour before the upload), rarity frame from the rarity's
 -- `frame` data (S30: grey, yellow, blue with a glow, orange / red with a rotating gradient), stack count, "+N" upgrade, lock when bound, red tint when the
 -- character cannot use it. Interaction (select, drag & drop, double-click, tap) comes from UI/DragDrop;
 -- the rich tooltip from ItemTooltip.
@@ -9,8 +9,8 @@ local RunService = game:GetService("RunService")
 
 local DragDrop = require(script.Parent.Parent.DragDrop)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local ItemIcon = require(script.Parent.ItemIcon)
 local ItemTooltip = require(script.Parent.ItemTooltip)
-local Elements = require(ReplicatedStorage.Shared.Data.Elements)
 local ItemRoll = require(ReplicatedStorage.Shared.Logic.ItemRoll)
 local Items = require(ReplicatedStorage.Shared.Data.Items)
 local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
@@ -202,57 +202,17 @@ local function ItemSlot(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Inst
 					},
 				})
 			end) :: any,
-			-- Icon
-			scope:New("Frame")({
-				Name = "Icon",
-				AnchorPoint = Vector2.new(0.5, 0.5),
-				Position = UDim2.fromScale(0.5, 0.5),
-				Size = UDim2.fromScale(0.78, 0.78),
-				BackgroundColor3 = scope:Computed(function(use): Color3
-					local d = use(def)
-					-- Mage weapons take the colour of their element (S18).
+			-- Icon (S35): atlas layers while loaded, otherwise the glyph on its tile; mage weapons get their element.
+			ItemIcon(scope, {
+				Def = def,
+				Element = scope:Computed(function(use): string?
 					local current = use(item)
-					local element = if current then ItemRoll.elementOf(current) else nil
-					if element then
-						return Color3.fromHex(Elements.COLORS[element])
-					end
-					return if d then Color3.fromHex(d.icon.color) else Theme.Colors.Background
+					return if current then ItemRoll.elementOf(current) else nil
 				end),
-				BackgroundTransparency = scope:Computed(function(use): number
-					if use(dragging) then
-						return 0.85
-					end
-					return if use(def) then 0.55 else 1
+				Fallback = props.Placeholder,
+				Transparency = scope:Computed(function(use): number
+					return if use(dragging) then 0.7 else 0
 				end),
-				[Children] = {
-					scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
-					scope:New("UIGradient")({
-						Rotation = 90,
-						Transparency = NumberSequence.new(0, 0.5),
-					}),
-					scope:New("TextLabel")({
-						BackgroundTransparency = 1,
-						Size = UDim2.fromScale(1, 1),
-						Text = scope:Computed(function(use): string
-							local d = use(def)
-							return if d then d.icon.glyph else (props.Placeholder or "")
-						end),
-						FontFace = Theme.Fonts.BodyBold,
-						TextScaled = true,
-						TextColor3 = scope:Computed(function(use): Color3
-							return if use(def) then Theme.Colors.Text else Theme.Colors.Border
-						end),
-						TextTransparency = scope:Computed(function(use): number
-							return if use(dragging) then 0.7 else 0
-						end),
-						[Children] = scope:New("UIPadding")({
-							PaddingTop = UDim.new(0.12, 0),
-							PaddingBottom = UDim.new(0.12, 0),
-							PaddingLeft = UDim.new(0.12, 0),
-							PaddingRight = UDim.new(0.12, 0),
-						}),
-					}),
-				},
 			}),
 			-- Stack count
 			scope:New("TextLabel")({

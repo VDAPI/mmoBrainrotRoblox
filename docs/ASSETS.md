@@ -6,13 +6,32 @@
 
 | Plik | Źródło (paczka) | Licencja | Wersja i data pobrania | Link | Uwagi |
 |---|---|---|---|---|---|
-| _(pusto — pierwszy model dopisz tutaj)_ | | | | | |
+| `art/icons/items_*.png` | własne, wygenerowane (`tools/icons`) | własne | 2026-10-07 | — | przebudowa: `tools/icons/README.md` |
 
 ## Gdzie co leży
 
 - `assets/Monsters/<nazwa>.rbxm` → `ReplicatedStorage.Assets.Monsters.<nazwa>` (Rojo, `default.project.json`).
 - `assets/Pets/<petId>.rbxm` → `ReplicatedStorage.Assets.Pets.<petId>` (statyczny model peta, zastępuje generator bez wpisu w danych).
 - Foldery mają `init.meta.json` z `ignoreUnknownInstances`, więc model wklejony ręcznie w Studio nie znika przy `rojo serve`. Żeby trafił do repozytorium, zapisz go jako `.rbxm` w odpowiednim folderze.
+
+## Ikony przedmiotów (S35)
+
+Trzy atlasy `art/icons/items_1..3.png` (1024×1024, komórki 128 px, 91 ikon w 145 warstwach) i indeks
+`src/shared/Data/ItemIconAtlas.luau`. `art/` leży poza drzewem Rojo: atlasy wgrywa się jako obrazki, a gra zna je po
+id z `src/shared/Data/ItemIconSheets.luau`. Dopóki id są puste, gra pokazuje dotychczasowe symbole. Przebudowa
+(Python + Pillow + Playwright): `tools/icons/README.md`; każda zmiana położenia komórek wymaga ponownego wgrania.
+
+**Wgranie (właściciel):**
+
+1. Studio, otwarte miejsce gry (to samo konto albo grupa, do której należy gra — inaczej obrazki mogą się nie wczytać
+   w grze).
+2. Widok → **Asset Manager** → **Bulk Import** (albo zakładka Images → Import) → wybierz `art/icons/items_1.png`,
+   `items_2.png`, `items_3.png`.
+3. Po wgraniu: prawy klik na każdym obrazku → **Copy Asset ID** i wklej do `src/shared/Data/ItemIconSheets.luau` jako
+   `"rbxassetid://<liczba>"` **w kolejności 1, 2, 3**. Zapisz plik (Rojo zsynchronizuje).
+4. Moderacja obrazków trwa zwykle kilka minut; do tego czasu ikony mogą być puste. `/icons` pokazuje stan,
+   `/icons glyph` wraca do symboli.
+5. Commit zmiany id (`ItemIconSheets.luau`).
 
 ## Dodanie modelu potwora (skrót `docs/MODELE.md` §5)
 

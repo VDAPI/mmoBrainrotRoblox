@@ -41,6 +41,7 @@
 | S32 | Balans poziomów 1–20: model liczbowy i raport `docs/BALANS.md`, grupy, elity, Grimrok, przedmioty i rzadkości, drop, złoto | ● |
 | S33 | Expowiska z charakterem: profile ⚡ szybki exp / ✦ lepszy drop / ⛁ więcej złota na każdym przedziale, widoczne przy portalu, na mapie i banerze | ● |
 | S34 | Wiki 1/10: eksporter danych gry do JSON (`tools/wikidump.luau`), schemat i `types.ts`, kolory `tokens.data.css`, `docs/PRZEDMIOTY.md`, test wycieków | ● |
+| S35 | Ikony przedmiotów: atlasy z grafikami (kolor progu, akcent żywiołu / mikstury), komponent `ItemIcon` z zapasem na symbole, sloty, duch przeciągania, legenda, mikstury, tooltip, waluty | ● |
 
 Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana przez właściciela
 
@@ -880,6 +881,22 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
 - **S33** Przypisanie w regionach 2–4 tematycznie, w każdej parze z planu jeden ⚡ i jeden ✦/⛁ (tabela w DESIGN §3.6).
   Obszary spoza par (Krwawe Urwiska, Obóz Orków, Pola Golemów, Grobowce, Dolina Wilków, Przełęcz, Iglica) bez profilu.
   Plan sesji odsyłał do „DESIGN §19 Świat” — w DESIGN to §3.6 (§19 to Gildie), tam trafiły profile.
+- **S35** Paczka ikon rozpakowana bez zmian w atlasach; `stylua` sformatował indeks. Dwa materiały z S32 nie mają
+  rysunku: alias w `ItemIcons.keyOf` (`crow_feather` → `mat/feather`, `toad_venom` → `mat/venom_sac`).
+- **S35** Gotowość atlasów: czysta `ItemIcons.readyFor(ids)` (każdy z 3 id w formacie `rbxassetid://<cyfry>`), `ready()`
+  = `readyFor(ItemIconSheets)`. Klient (`UI/IconState`) wczytuje atlasy raz w `UIController.Init`
+  (`ContentProvider:PreloadAsync`); `IconState.Art` = wczytane i tryb „art”. Brak id = cicho symbole; status inny niż
+  `Success` = jedno ostrzeżenie `[ItemIcons] sheet N: <status>` i symbole wszędzie.
+- **S35** `ItemIcon`: 3 stałe `ImageLabel` zmieniane `Computed` + glif na kolorowym kafelku jako zapas (ten sam wygląd co
+  przed S35). Duch przeciągania: dostawcy zwracają `{ glyph, color, def?, element? }`; dla przedmiotów czysta
+  `ItemIcons.visualOf(item)` (definicja, żywioł broni maga — stare bez żywiołu jako ogień — i glif).
+- **S35** Tooltip: ikona 44 px w prawym górnym rogu tylko z grafiką (dwa pierwsze wiersze mają margines), bez
+  powtarzania glifu. Pasek mikstur: rysunek przypisanej mikstury zamiast ⚗ (tylko z grafiką). Ujawnienie legendy:
+  ramka ≤ 142 px, ikona 86% ramki.
+- **S35** Ikonki walut (`CurrencyIcon`, zapas: dawne ◉ i ✦) tylko w prostych podmianach: nagrody questów (EXP, złoto)
+  i licznik złota w plecaku. Ceny w sklepach, Smocza Waluta (sklep premium, ekran śmierci) zostały przy tekście.
+- **S35** Pasek efektów: eliksiry odporności dostają rysunek przedmiotu `elixir_<stat>`; błogosławieństwa mają w HUD
+  znak ✶ przy nicku (S29), więc ikony `bless/<linia>` widać tylko w slotach przedmiotów.
 
 ## Niedokończone
 (Rzeczy z zakresu sesji, które nie zostały zrobione. Następna sesja zaczyna od nich.)
@@ -991,6 +1008,9 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
   osobno szybszego respawnu jako „więcej potworów naraz” poza krótszym dojściem.
 - **S33** Opisy obszarów w `docs/SWIAT.md` dla regionów 2–4 (punkty charakterystyczne) dalej z planu sprzed S19; nowa
   tabela z kodu stoi nad nimi.
+
+- **S35** Do narysowania (dziś aliasy): `crow_feather`, `toad_venom`. Ikonki walut przy cenach w sklepach, w sklepie
+  premium i na ekranie śmierci (dziś tekst / ◆). Gra nie testowana po wgraniu atlasów (robi właściciel, instrukcja S35).
 
 ## Zgłoszone błędy
 (Właściciel wpisuje tu błędy po testach albo przekazuje je przez sesję poprawek.)
@@ -3070,3 +3090,56 @@ zmiany: `CLAUDE.md`, `docs/WIKI.md`, `docs/sessions/S34–S43` (ścieżka `tools
 11. `wiki/src/styles/tokens.data.css`: `--vw-r-unique: #F2D33A`, `--vw-r-mythic: #E5302A` i warianty `-text`.
 12. Wyszukaj w `wiki/src/data` słowa `WITAJ`, `"price"`, `robux`: brak wyników.
 13. `lune run tests/run.luau` — wszystkie testy przechodzą (w tym `wikidump.spec`).
+
+### S35: Ikony przedmiotów
+
+**Zrobione**
+- Paczka ikon: `art/icons/items_1..3.png`, `Data/ItemIconAtlas` (91 ikon, 145 warstw), `Data/ItemIconSheets` (puste id),
+  `Logic/ItemIcons` (+ `readyFor`, `visualOf`, `SHEETS`, aliasy materiałów S32), `tests/itemicons.spec` (+2 testy),
+  `tools/icons` (generator), `build/` w `.gitignore`.
+- Klient: `UI/IconState` (wczytanie atlasów, tryb art/glyph), `UI/Components/ItemIcon` (warstwy albo glif),
+  `UI/Components/CurrencyIcon` (złoto, EXP, Smocza Waluta). Podpięte: `ItemSlot` (wszystkie siatki przedmiotów), duch
+  przeciągania (`UIController`, dostawcy w `ItemController` i `SkillController`), `LegendReveal`, `Hud/PotionBar`,
+  `ItemTooltip`, eliksiry w `Hud/BlessingIcon`, nagrody questów (`QuestRewards`), licznik złota w plecaku.
+- Admin: `/icons [status|glyph|art]` (serwer: id kompletne, przedmioty bez ikony; klient: wynik wczytania każdego
+  atlasu, przełącznik), `/icongrid [eq|uniq|mat|pot|misc|tiers <typ>]` (okno podglądu w slotach Zwykłych).
+- Wiki: eksport ma `icons.json` i `iconKey`/`layers`/`layersByElement` przedmiotów (S34 wykrywa moduły sam).
+- DESIGN §5.3b i „Ikony w UI” w §23, `docs/ASSETS.md` (sekcja „Ikony przedmiotów”, wiersz w rejestrze licencji).
+
+**Pliki**: nowe `art/icons/*`, `Data/{ItemIconAtlas,ItemIconSheets}`, `Logic/ItemIcons`, `UI/IconState`,
+`UI/Components/{ItemIcon,CurrencyIcon}`, `Controllers/IconController`, `tools/icons/*`; zmiany: `Components/{ItemSlot,
+ItemTooltip,QuestRewards}`, `Screens/{LegendReveal,BackpackPanel,Hud/PotionBar,Hud/BlessingIcon}`,
+`Controllers/{UIController,ItemController,SkillController}`, `Admin/Items`, `Data/{AdminCommands,Localization}`,
+`tools/WikiData/Items`, dane wiki (736 testów).
+
+#### Instrukcja testu S35
+
+**Przed wgraniem atlasów**
+1. Uruchom grę: plecak, ekwipunek, sklep, kowal wyglądają jak przed S35 (symbole na kolorowych kafelkach), w Output
+   brak ostrzeżeń `[ItemIcons]`.
+2. `/icons`: „id atlasów kompletne: false, przedmioty bez ikony: 0”, klient: wczytane false, atlasy „—”.
+
+**Wgranie (raz)**
+3. Studio, otwarte miejsce gry (to samo konto albo grupa, do której należy gra — inaczej obrazki mogą się nie wczytać
+   w grze).
+4. Widok → **Asset Manager** → **Bulk Import** (albo zakładka Images → Import) → wybierz `art/icons/items_1.png`,
+   `items_2.png`, `items_3.png`.
+5. Po wgraniu: prawy klik na każdym obrazku → **Copy Asset ID** i wklej do `src/shared/Data/ItemIconSheets.luau` jako
+   `"rbxassetid://<liczba>"` **w kolejności 1, 2, 3**. Zapisz plik (Rojo zsynchronizuje).
+6. Moderacja obrazków trwa zwykle kilka minut; do tego czasu ikony mogą być puste. `/icons` pokazuje stan,
+   `/icons glyph` wraca do symboli.
+7. Commit zmiany id (`ItemIconSheets.luau`).
+
+**Po wgraniu (Play)**
+8. `/icons`: id kompletne true, klient: wczytane true, każdy atlas `Success`.
+9. Plecak: zamiast symboli rysunki; rzadkość widać tylko po ramce (szara, żółta, niebieska, pomarańczowa, czerwona),
+   pod ikoną nie ma kolorowego kafelka.
+10. `/icongrid tiers sword1h`: 21 mieczy, każdy próg w innym kolorze metalu.
+11. `/icongrid pot`: mikstury HP czerwone, many niebieskie, energii żółte, w 5 kształtach; eliksiry osobno.
+12. Broń maga (`/item wand_10`): kryształ w kolorze żywiołu (ogień pomarańczowy, lód błękitny…).
+13. Przeciągnij przedmiot w plecaku: duch pokazuje jego rysunek; przeciągnięcie umiejętności nadal pokazuje jej znak.
+14. Najedź na przedmiot: tooltip ma ikonę w prawym górnym rogu, nazwa jej nie nachodzi.
+15. Pasek mikstur (Z/X/V): rysunek przypisanej mikstury.
+16. `/legend`: okno ujawnienia legendy z dużą (ostrą) ikoną.
+17. Nagrody questu (dziennik albo rozmowa z NPC): EXP i złoto z ikonkami; licznik złota w plecaku z monetą.
+18. `/icons glyph` wraca do symboli, `/icons art` znów rysunki. Na telefonie najmniejszy slot dalej czytelny.

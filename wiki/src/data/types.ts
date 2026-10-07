@@ -454,6 +454,13 @@ export interface GatherNode {
   tool?: string; // id in items.json
 }
 
+export interface IconLayer {
+  image: number;
+  tint?: string;
+  x: number;
+  y: number;
+}
+
 export interface IconsFile {
   cell: number;
   icons: Json;
@@ -473,7 +480,10 @@ export interface Item {
   elemental: boolean;
   fixedBonuses?: FixedBonus[];
   glyph: string;
+  iconKey?: string;
   id: string;
+  layers?: IconLayer[];
+  layersByElement?: Record<string, IconLayer[]>;
   level: number;
   maxStack: number;
   name: Name;

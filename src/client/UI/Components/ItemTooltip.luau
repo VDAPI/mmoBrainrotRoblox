@@ -14,6 +14,9 @@ local UserInputService = game:GetService("UserInputService")
 local Device = require(script.Parent.Parent.Device)
 local DragDrop = require(script.Parent.Parent.DragDrop)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local IconState = require(script.Parent.Parent.IconState)
+local ItemIcon = require(script.Parent.ItemIcon)
+local ItemRoll = require(ReplicatedStorage.Shared.Logic.ItemRoll)
 local ItemText = require(script.Parent.Parent.ItemText)
 local Items = require(ReplicatedStorage.Shared.Data.Items)
 local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
@@ -33,6 +36,7 @@ local ItemTooltip = {}
 
 local WIDTH = 340
 local OFFSET = Vector2.new(20, 20)
+local ICON_SIZE = 44 -- S35: item picture next to the name (the atlas cell is 128 px)
 local DARK = Theme.Colors.TextDark
 local MUTED = Color3.fromHex("#6B5E48")
 local GOOD = Color3.fromHex("#2E8B3E")
@@ -285,6 +289,13 @@ function ItemTooltip.mount(scope: Scope, parent: Instance)
 		end
 	end)
 
+	local shownDef = scope:Computed(function(use): Items.ItemDef?
+		local item = use(shown)
+		return if item then Items.get(item.id) else nil
+	end)
+	local showIcon = scope:Computed(function(use): boolean
+		return use(IconState.Art) and use(shownDef) ~= nil
+	end)
 	scope:New("Frame")({
 		Name = "ItemTooltip",
 		Parent = parent,
@@ -323,11 +334,36 @@ function ItemTooltip.mount(scope: Scope, parent: Instance)
 				SortOrder = Enum.SortOrder.LayoutOrder,
 				Padding = UDim.new(0, 3),
 			}),
+			-- S35: the item's picture in the top right corner (only with the atlases; the glyph is not repeated here).
+			scope:New("Frame")({
+				Name = "IconHolder",
+				LayoutOrder = 0,
+				Size = UDim2.fromScale(1, 0),
+				BackgroundTransparency = 1,
+				[Children] = ItemIcon(scope, {
+					Def = shownDef,
+					Element = scope:Computed(function(use): string?
+						local item = use(shown)
+						return if item then ItemRoll.elementOf(item) else nil
+					end),
+					AnchorPoint = Vector2.new(1, 0),
+					Position = UDim2.fromScale(1, 0),
+					Size = UDim2.fromOffset(ICON_SIZE, ICON_SIZE),
+					Visible = showIcon,
+				}),
+			}),
 			scope:Computed(function(use, s: Scope): { Instance }
 				local item = use(shown)
 				local lang = use(Text.Lang)
 				if item then
-					return build(s, item, lang, use(shownCtx), use(merchantOpen))
+					local lines = build(s, item, lang, use(shownCtx), use(merchantOpen))
+					-- The name and the category line keep clear of the picture.
+					if use(showIcon) then
+						for i = 1, math.min(2, #lines) do
+							s:New("UIPadding")({ PaddingRight = UDim.new(0, ICON_SIZE + 6), Parent = lines[i] })
+						end
+					end
+					return lines
 				end
 				local text = use(emptyText)
 				return if text then { line(s, 1, text, DARK) } else {}

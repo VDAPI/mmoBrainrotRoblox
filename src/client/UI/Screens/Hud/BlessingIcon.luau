@@ -9,6 +9,9 @@ local BlessingBadge = require(script.Parent.BlessingBadge)
 local Blessings = require(ReplicatedStorage.Shared.Data.Blessings)
 local Clock = require(ReplicatedStorage.Shared.Util.Clock)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local IconState = require(script.Parent.Parent.Parent.IconState)
+local ItemIcon = require(script.Parent.Parent.Parent.Components.ItemIcon)
+local Items = require(ReplicatedStorage.Shared.Data.Items)
 local State = require(script.Parent.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
@@ -27,8 +30,14 @@ local function icon(
 	glyph: string,
 	color: Color3,
 	left: Fusion.UsedAs<number>,
-	tooltip: Fusion.UsedAs<string>
+	tooltip: Fusion.UsedAs<string>,
+	itemId: string?
 ): Instance
+	-- S35: the item's picture (elixir bottle) while the atlases are loaded, otherwise the glyph.
+	local def = if itemId then Items.get(itemId) else nil
+	local art = scope:Computed(function(use): boolean
+		return def ~= nil and use(IconState.Art)
+	end)
 	local frame = scope:New("Frame")({
 		LayoutOrder = order,
 		Size = UDim2.fromOffset(SIZE, SIZE + 16),
@@ -41,13 +50,16 @@ local function icon(
 				Size = UDim2.fromOffset(SIZE, SIZE),
 				BackgroundColor3 = Theme.Colors.Panel,
 				BackgroundTransparency = 0.1,
-				Text = glyph,
+				Text = scope:Computed(function(use): string
+					return if use(art) then "" else glyph
+				end),
 				TextScaled = true,
 				FontFace = Theme.Fonts.BodyBold,
 				TextColor3 = color,
 				[Children] = {
 					scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 					scope:New("UIStroke")({ Color = color, Thickness = 2 }),
+					ItemIcon(scope, { Def = def, Size = UDim2.fromScale(1, 1), Visible = art }),
 					scope:New("UIPadding")({
 						PaddingTop = UDim.new(0, 6),
 						PaddingBottom = UDim.new(0, 6),
@@ -109,7 +121,8 @@ local function BlessingIcon(scope: Scope, position: UDim2): Instance
 						s:Computed(function(use2): number
 							return Time.remaining(expiresAt, use2(now))
 						end),
-						tip
+						tip,
+						`elixir_{stat}`
 					)
 				)
 			end

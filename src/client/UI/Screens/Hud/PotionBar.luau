@@ -11,6 +11,8 @@ local Config = require(ReplicatedStorage.Shared.Config)
 local DragDrop = require(script.Parent.Parent.Parent.DragDrop)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Keybinds = require(script.Parent.Parent.Parent.Keybinds)
+local IconState = require(script.Parent.Parent.Parent.IconState)
+local ItemIcon = require(script.Parent.Parent.Parent.Components.ItemIcon)
 local ItemText = require(script.Parent.Parent.Parent.ItemText)
 local Items = require(ReplicatedStorage.Shared.Data.Items)
 local State = require(script.Parent.Parent.Parent.State)
@@ -76,6 +78,13 @@ local function PotionBar(scope: Scope, props: Props): Instance
 		local amount = scope:Computed(function(use): number
 			return count(use(inventory), use(assigned))
 		end)
+		local assignedDef = scope:Computed(function(use): Items.ItemDef?
+			local id = use(assigned)
+			return if id then Items.get(id) else nil
+		end)
+		local showArt = scope:Computed(function(use): boolean
+			return use(IconState.Art) and use(assignedDef) ~= nil
+		end)
 		local cooldown = scope:Computed(function(use): number
 			local c = use(cooldowns)
 			local ready = if type(c) == "table" then c[entry.kind] else nil
@@ -127,10 +136,22 @@ local function PotionBar(scope: Scope, props: Props): Instance
 					Color = entry.color,
 					Transparency = 0.3,
 				}),
+				-- S35: the assigned potion's picture (size and colour from its data) while the atlases are loaded.
+				ItemIcon(scope, {
+					Def = assignedDef,
+					Size = UDim2.fromScale(0.8, 0.8),
+					Transparency = scope:Computed(function(use): number
+						return if use(amount) > 0 then 0 else 0.6
+					end),
+					Visible = showArt,
+				}),
 				scope:New("TextLabel")({
 					Name = "Icon",
 					BackgroundTransparency = 1,
 					Size = UDim2.fromScale(1, 1),
+					Visible = scope:Computed(function(use): boolean
+						return not use(showArt)
+					end),
 					Text = "⚗",
 					FontFace = Theme.Fonts.BodyBold,
 					TextSize = 30,

@@ -16,6 +16,7 @@ local Clock = require(ReplicatedStorage.Shared.Util.Clock)
 local DragDrop = require(script.Parent.Parent.UI.DragDrop)
 local EquipFit = require(ReplicatedStorage.Shared.Logic.EquipFit)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local ItemIcons = require(ReplicatedStorage.Shared.Logic.ItemIcons)
 local ItemText = require(script.Parent.Parent.UI.ItemText)
 local Items = require(ReplicatedStorage.Shared.Data.Items)
 local Keybinds = require(script.Parent.Parent.UI.Keybinds)
@@ -42,6 +43,11 @@ local menuScope: Fusion.Scope<typeof(Fusion)>? = nil
 local function parse(slotId: string): (string, string)
 	local kind, rest = string.match(slotId, "^(%a+):(.+)$")
 	return kind or "", rest or ""
+end
+
+-- S35: what the drag ghost draws for an item slot (ItemIcons.visualOf: definition, element, glyph).
+function ItemController.DragVisual(slotId: string): any
+	return ItemIcons.visualOf(ItemController.ItemAt(slotId))
 end
 
 function ItemController.ItemAt(slotId: string): ItemInstance?
@@ -389,13 +395,8 @@ function ItemController.Init(registry)
 	NpcController = registry.Get("NpcController")
 	GatherController = registry.Get("GatherController")
 	UIController = registry.Get("UIController")
-	UIController.AddDragVisual(function(slotId: string): (string?, string?)
-		local item = ItemController.ItemAt(slotId)
-		local def = item and Items.get(item.id)
-		if def then
-			return def.icon.glyph, def.icon.color
-		end
-		return nil, nil
+	UIController.AddDragVisual(function(slotId: string): any
+		return ItemController.DragVisual(slotId)
 	end)
 	DragDrop.AddHandlers({
 		owns = function(slotId: string): boolean
