@@ -235,13 +235,11 @@ local function QuestDialog(scope: Scope, props: Props): Fusion.Child
 			return ""
 		end
 		local lines = { `<b>{Text.get(use, "quest.objectives")}</b>` }
-		for i, objective in v.objectives do
-			local have = v.progress[i] or 0
-			local label = QuestText.objective(use, objective, have, v.turnIn)
-			table.insert(
-				lines,
-				if have >= objective.n then `<font color="#4FD16B">✔ {label}</font>` else `• {label}`
-			)
+		-- S29: the same rows as the tracker (finished objectives stay green; "Return to" when talking to another NPC).
+		for _, line in
+			QuestText.richRows(use, QuestText.rows(use, v.objectives, v.progress, v.turnIn), v.mode == "active")
+		do
+			table.insert(lines, line)
 		end
 		table.insert(lines, "")
 		table.insert(

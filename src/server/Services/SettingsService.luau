@@ -28,6 +28,10 @@ local SETTINGS: { [string]: (value: any, player: Player) -> boolean } = {
 	dmgNumbers = function(value)
 		return type(value) == "boolean"
 	end,
+	-- S29: "Damage numbers: all / mine and received / off" (replaces the dmgNumbers switch).
+	dmgMode = function(value)
+		return value == "all" or value == "mine" or value == "off"
+	end,
 	quickCast = function(value)
 		return type(value) == "boolean"
 	end,

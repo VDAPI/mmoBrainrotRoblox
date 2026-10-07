@@ -116,7 +116,9 @@ export type Elite2Timer = { spawner: string, kind: string, map: string, from: nu
 export type Settings = {
 	lang: string, -- "" = not chosen yet (client picks from Roblox locale)
 	volume: number,
-	dmgNumbers: boolean,
+	dmgNumbers: boolean, -- before S29; kept for old saves (see dmgMode)
+	-- S29: "all" | "mine" (mine and received) | "off"; unset on old saves (DamageText.mode reads dmgNumbers then)
+	dmgMode: string?,
 	bindConfirm: boolean, -- ask before an item binds on equip
 	quickCast: boolean, -- area skills cast on key press instead of on release
 	-- S14 options window

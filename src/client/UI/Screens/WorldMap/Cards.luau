@@ -18,6 +18,7 @@ local CreatureCards = require(script.Parent.CreatureCards)
 local DetailCard = require(script.Parent.DetailCard)
 local Fish = require(ReplicatedStorage.Shared.Data.Fish)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
+local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local GatherNodes = require(ReplicatedStorage.Shared.Data.GatherNodes)
 local ItemRoll = require(ReplicatedStorage.Shared.Logic.ItemRoll)
 local Items = require(ReplicatedStorage.Shared.Data.Items)
@@ -30,8 +31,11 @@ local NpcMarks = require(ReplicatedStorage.Shared.Logic.NpcMarks)
 local NpcQuests = require(script.Parent.Parent.Parent.NpcQuests)
 local Npcs = require(ReplicatedStorage.Shared.Data.Npcs)
 local Portals = require(ReplicatedStorage.Shared.Data.Portals)
+local QuestText = require(script.Parent.Parent.Parent.QuestText)
+local Quests = require(ReplicatedStorage.Shared.Data.Quests)
 local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
 local ShopPrice = require(ReplicatedStorage.Shared.Logic.ShopPrice)
+local SideQuests = require(ReplicatedStorage.Shared.Logic.SideQuests)
 local Shops = require(ReplicatedStorage.Shared.Data.Shops)
 local Spawns = require(ReplicatedStorage.Shared.Data.Spawns)
 local State = require(script.Parent.Parent.Parent.State)
@@ -125,6 +129,31 @@ end
 
 -- Quests at an NPC --------------------------------------------------------------------------------------------
 
+-- S29: the objective rows of a quest the character has taken (the same rows as the tracker and the journal):
+-- finished objectives green, "Return to: <NPC>" when complete and handed in elsewhere.
+local function objectiveLines(lines: { DetailCard.Line }, quests: any, row: NpcQuests.Row)
+	local objectives: { Quests.Objective }, progress: any, turnIn: string
+	if row.kind == "main" then
+		local quest = Quests.Main.get(row.id)
+		local main = quests.main
+		if not quest or type(main) ~= "table" or main.id ~= quest.id then
+			return
+		end
+		objectives, progress, turnIn = quest.objectives, main.progress, quest.turnIn
+	else
+		local quest = Quests.Side.get(row.id)
+		local entry = SideQuests.activeOf(quests)[row.id]
+		if not quest or type(entry) ~= "table" then
+			return
+		end
+		objectives, progress, turnIn = quest.objectives, entry.progress, quest.turnIn
+	end
+	local list = QuestText.rows(Fusion.peek, objectives, progress, turnIn)
+	for _, line in QuestText.richRows(Fusion.peek, list, row.mode == "active") do
+		table.insert(lines, { text = `   {line}`, size = 13, color = Theme.Colors.Text })
+	end
+end
+
 local function questSection(npcId: string, level: number): Section?
 	local quests = State.Get({ "character", "quests" })
 	if type(quests) ~= "table" then
@@ -151,6 +180,9 @@ local function questSection(npcId: string, level: number): Section?
 				color = if strong then Theme.Colors.GoldBright else Theme.Colors.TextMuted,
 				bold = strong,
 			})
+			if row.mode ~= "offer" then
+				objectiveLines(lines, quests, row)
+			end
 		end
 	end
 	if npcId == NpcMarks.BOARD and type(quests.daily) == "table" then

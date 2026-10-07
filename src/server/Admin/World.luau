@@ -14,7 +14,7 @@ local Net = require(Shared.Net)
 local Npcs = require(Shared.Data.Npcs)
 local Town = require(Shared.Data.Town)
 local TownGen = require(Shared.Logic.TownGen)
-local TownGeom = require(Shared.Logic.TownGeom)
+local TownPlaces = require(Shared.Logic.TownPlaces)
 local TownTerrain = require(Shared.Logic.TownTerrain)
 
 local Context = require(script.Parent.Context)
@@ -63,33 +63,23 @@ local function cityBuilds()
 	return townBuilds :: any
 end
 
--- Map-relative point in front of a city place: special building (its door), square (its middle), the arena
--- (its exit) or an NPC (3 studs in front of its spot).
-local function cityPlace(id: string): (number?, number?)
-	if id == "arena" then
-		local arena = Town.city.arena
-		return arena.exit[1], arena.exit[2]
+-- S29: standing CFrame for a map-relative point, checked by WorldService.SafeSpot (ground under the feet,
+-- nothing in the body or over the head), facing `look` (map-relative x, z) when given.
+local function safeAt(mapId: string, x: number, z: number, lookX: number?, lookZ: number?): CFrame
+	local map = Maps.get(mapId)
+	if map and lookX and lookZ then
+		return (WorldService.SafeSpotFacing(mapId, x, z, Vector3.new(map.offset.x + lookX, 0, map.offset.z + lookZ)))
 	end
-	local special = Town.special(id)
-	if special then
-		return TownGeom.door(special.x, special.z, special.d, special.rot)
+	return (WorldService.SafeSpot(mapId, x, z))
+end
+
+-- City place or city NPC (Logic/TownPlaces: a free point off every building) as a standing CFrame, or nil.
+local function cityPlace(id: string): CFrame?
+	local spot = TownPlaces.resolve(id)
+	if not spot then
+		return nil
 	end
-	for _, square in Town.city.squares do
-		if square.id == id then
-			local sx, sz = 0, 0
-			for _, point in square.poly do
-				sx += point[1]
-				sz += point[2]
-			end
-			return sx / #square.poly, sz / #square.poly
-		end
-	end
-	local spot = Town.npcSpot(id)
-	if spot then
-		local fx, fz = TownGeom.front(spot.facing)
-		return spot.x + fx * 3, spot.z + fz * 3
-	end
-	return nil, nil
+	return safeAt("city", spot.x, spot.z, spot.lookX, spot.lookZ)
 end
 
 -- Teleports to an area's arrival point (the same place a portal brings you to), honouring the level lock.
@@ -119,12 +109,7 @@ commands.tp = function(player, args)
 			return
 		end
 		withCharacter(player, function()
-			task.spawn(
-				TravelService.TeleportToMap,
-				player,
-				cave.region,
-				WorldService.GroundCFrame(cave.region, arrival.x, arrival.z)
-			)
+			task.spawn(TravelService.TeleportToMap, player, cave.region, safeAt(cave.region, arrival.x, arrival.z))
 			reply(player, "admin.tp.map", { map = cave.region })
 		end)
 		return
@@ -144,7 +129,7 @@ commands.tp = function(player, args)
 		end
 		local e = cave.dungeonEntrance
 		withCharacter(player, function()
-			task.spawn(TravelService.TeleportToMap, player, cave.id, WorldService.GroundCFrame(cave.id, e.x - 22, e.z))
+			task.spawn(TravelService.TeleportToMap, player, cave.id, safeAt(cave.id, e.x - 22, e.z, e.x, e.z))
 			reply(player, "admin.tp.map", { map = cave.id })
 		end)
 		return
@@ -156,7 +141,7 @@ commands.tp = function(player, args)
 		end
 		withCharacter(player, function()
 			local px, pz = tonumber(args[2]), tonumber(args[3])
-			local at = if px and pz then WorldService.GroundCFrame(mapId, px, pz) else nil
+			local at = if px and pz then safeAt(mapId, px, pz) else nil
 			task.spawn(TravelService.TeleportToMap, player, mapId, at)
 			reply(player, "admin.tp.map", { map = mapId })
 		end)
@@ -194,9 +179,16 @@ commands.npc = function(player, args)
 		local model = player.Character
 		if model and position and def then
 			-- S27: NPCs on other maps (the Meadows) go through the map change (zone, location, loading screen).
-			local a = math.rad(def.facing)
-			local front = position + Vector3.new(-math.sin(a) * 5, 4, -math.cos(a) * 5)
-			task.spawn(TravelService.TeleportToMap, player, def.map, CFrame.lookAt(front, position + Vector3.yAxis * 4))
+			-- S29: a checked free spot in front of the NPC (in the city off every building, Logic/TownPlaces).
+			local at = if def.map == "city" then cityPlace(id) else nil
+			if not at then
+				local map = Maps.get(def.map)
+				local ox, oz = if map then map.offset.x else 0, if map then map.offset.z else 0
+				local a = math.rad(def.facing)
+				local lx, lz = position.X - ox, position.Z - oz
+				at = safeAt(def.map, lx - math.sin(a) * 5, lz - math.cos(a) * 5, lx, lz)
+			end
+			task.spawn(TravelService.TeleportToMap, player, def.map, at)
 			reply(player, "admin.npc.tp", { npc = "@" .. def.nameKey })
 		else
 			reply(player, "admin.usage.npc")
@@ -354,20 +346,21 @@ commands.town = function(player, args)
 		PlayerStateService.Set(player, { "account", "settings", "decor" }, level)
 		reply(player, "admin.decor.ok", { level = level })
 	elseif action == "tp" then
-		local x, z = cityPlace(args[2] or "")
-		if not x or not z then
-			local names = { "arena" }
-			for _, special in Town.city.specials do
-				table.insert(names, special.id)
-			end
-			for _, square in Town.city.squares do
-				table.insert(names, square.id)
+		if not WorldService.IsBuilt("city") then
+			reply(player, "admin.maps.notBuilt", { map = "city" })
+			return
+		end
+		local at = cityPlace(args[2] or "")
+		if not at then
+			local names = {}
+			for _, place in TownPlaces.list() do
+				table.insert(names, place.id)
 			end
 			reply(player, "admin.town.places", { list = table.concat(names, ", ") })
 			return
 		end
 		withCharacter(player, function()
-			task.spawn(TravelService.TeleportToMap, player, "city", WorldService.GroundCFrame("city", x, z))
+			task.spawn(TravelService.TeleportToMap, player, "city", at)
 			reply(player, "admin.tp.map", { map = "city" })
 		end)
 	elseif action == "info" then

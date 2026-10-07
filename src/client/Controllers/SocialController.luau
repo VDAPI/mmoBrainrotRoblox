@@ -236,11 +236,10 @@ function SocialController.Start()
 	scope:Observer(State.Value({ "trade" })):onChange(function()
 		if State.Get({ "trade" }) ~= nil then
 			if not Fusion.peek(tradeOpen) then
-				WindowManager.Open("trade")
-				WindowManager.Open("inventory")
+				WindowManager.Open("trade") -- brings the companion backpack (WindowRules)
 			end
 		elseif Fusion.peek(tradeOpen) then
-			WindowManager.Close("trade")
+			WindowManager.Close("trade") -- cancelled or done: the companion backpack closes with it
 		end
 	end)
 	scope:Observer(tradeOpen):onChange(function()

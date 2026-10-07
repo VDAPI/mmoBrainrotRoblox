@@ -234,6 +234,13 @@ type CharacterData = {
 
 - Każdy ekran to moduł zwracający funkcję `(scope, props) -> Instance`. Jeden `ScreenGui` per warstwa (HUD, Okna, Modale, Toasty, Tooltip) z `IgnoreGuiInset` i `ResetOnSpawn = false`.
 - `WindowManager` (kontroler): otwieranie/zamykanie okien, Esc zamyka górne, okna przeciągalne na PC, pełnoekranowe na mobile.
+  Pary okien (S29) to czysta logika `Logic/WindowRules` (`onOpen` / `onClose` / `onEscape`, flaga „plecak otworzyła
+  usługa”): usługi (`COMPANIONS`: sklep, kowal, alchemik, handel, aukcja, poczta, plecakarz…) otwierają `inventory`
+  (sam `BackpackPanel`) jako towarzysza, który zamyka się z ostatnią usługą; `Open('inventory')` bez usługi
+  przekierowuje na `character` (ekwipunek + `BackpackPanel` + statystyki, `FocusHint` dla zakładek na dotyku).
+  Każda droga zamknięcia (✕, Esc, `CloseTop`, `CloseMany`, `CloseServices` przy śmierci / zmianie mapy, odejście od NPC,
+  koniec handlu) przechodzi przez `WindowRules`. Dopasowanie przedmiotu do slotu przy przeciąganiu: `Logic/EquipFit`
+  (tylko podpowiedź; rozstrzyga serwer).
 - `Theme.luau`: kolory, czcionki, rozmiary, odstępy, czasy animacji; **wszystkie** komponenty z niego korzystają.
 - Skalowanie: `UIScale` zależne od rozmiaru ekranu (bazowo 1920×1080), min. rozmiar przycisku dotykowego 44 px.
 - Ikony przedmiotów: dopóki brak grafik, `Icons.luau` generuje ikonę: tło w kolorze rzadkości + symbol typu (Unicode/tekst) + ramka. Pole `icon` w definicji pozwala później podać `rbxassetid`.

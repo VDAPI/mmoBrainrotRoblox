@@ -2,9 +2,17 @@
 -- Title, name, level and class above every player character, plus an HP bar that appears while the player
 -- is hurt (S16). Built client-side from model attributes set by the server (CharName, Level, ClassId,
 -- GuildTag, Title) and Humanoid.Health (the HP percentage mirror), so each viewer sees their own language.
+-- S29: a rarity-coloured ✶ right of the name while the character has an active blessing (attributes Blessing and
+-- BlessingUntil, Logic/BlessingMark); it blinks during the last minute. Everyone sees it.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+
+local BlessingMark = require(ReplicatedStorage.Shared.Logic.BlessingMark)
+local Blessings = require(ReplicatedStorage.Shared.Data.Blessings)
+local Clock = require(ReplicatedStorage.Shared.Util.Clock)
+local ItemText = require(script.Parent.Parent.UI.ItemText)
 
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local TitleData = require(ReplicatedStorage.Shared.Data.Titles)
@@ -25,8 +33,12 @@ local NameplateController = {
 
 local MAX_DISTANCE = 80
 local HP_LINGER = 4 -- seconds the bar stays after the last hit at full HP
+local CLOCK_TICK = 0.25 -- seconds between blessing clock updates shared by all nameplates
 local rootScope: Scope = Fusion.scoped(Fusion)
 local folder: Folder
+-- Shared by every nameplate: the real-time clock and the last-minute blink phase.
+local clock = rootScope:Value(Clock.now())
+local blinkOn = rootScope:Value(true)
 
 local function attributeValue(scope: Scope, model: Model, name: string): Fusion.Value<any>
 	local value = scope:Value(model:GetAttribute(name))
@@ -99,6 +111,21 @@ local function build(model: Model)
 	local titleDef = scope:Computed(function(use): any
 		local id = use(title)
 		return if type(id) == "string" then TitleData.get(id) else nil
+	end)
+
+	-- Blessing ✶ (S29): primitive Computeds, so the shared clock only touches what changes.
+	local blessingId = attributeValue(scope, model, "Blessing")
+	local blessingUntil = attributeValue(scope, model, "BlessingUntil")
+	local blessingMark = function(use: Fusion.Use): BlessingMark.Mark?
+		return BlessingMark.read(use(blessingId), use(blessingUntil), use(clock))
+	end
+	local activeBlessing = scope:Computed(function(use): string?
+		local mark = blessingMark(use)
+		return if mark then mark.def.id else nil
+	end)
+	local blessingEnding = scope:Computed(function(use): boolean
+		local mark = blessingMark(use)
+		return mark ~= nil and mark.lastMinute
 	end)
 
 	local head = model:WaitForChild("Head", 10)
@@ -226,6 +253,26 @@ local function build(model: Model)
 						end),
 						TextStrokeTransparency = 0.35,
 					}),
+					scope:New("TextLabel")({
+						Name = "Blessing",
+						LayoutOrder = 3,
+						BackgroundTransparency = 1,
+						Size = UDim2.fromOffset(18, 22),
+						Visible = scope:Computed(function(use): boolean
+							return use(activeBlessing) ~= nil
+						end),
+						Text = "✶",
+						FontFace = Theme.Fonts.BodyBold,
+						TextSize = 20,
+						TextColor3 = scope:Computed(function(use): Color3
+							local def = Blessings.get(use(activeBlessing) or "")
+							return if def then ItemText.rarityColor(def.rarity) else Theme.Colors.Gold
+						end),
+						TextTransparency = scope:Computed(function(use): number
+							return if use(blessingEnding) and not use(blinkOn) then 0.85 else 0
+						end),
+						TextStrokeTransparency = 0.35,
+					}),
 				},
 			}),
 			scope:New("TextLabel")({
@@ -286,6 +333,15 @@ function NameplateController.Init()
 end
 
 function NameplateController.Start()
+	local accumulator = 0
+	RunService.Heartbeat:Connect(function(dt)
+		accumulator += dt
+		if accumulator >= CLOCK_TICK then
+			accumulator = 0
+			clock:set(Clock.now())
+		end
+		blinkOn:set(BlessingMark.blinkOn(os.clock()))
+	end)
 	for _, player in Players:GetPlayers() do
 		watchPlayer(player)
 	end

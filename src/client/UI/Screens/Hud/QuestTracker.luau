@@ -6,6 +6,7 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
 
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
@@ -15,6 +16,7 @@ local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local Monsters = require(ReplicatedStorage.Shared.Data.Monsters)
 local Npcs = require(ReplicatedStorage.Shared.Data.Npcs)
 local QuestLogic = require(ReplicatedStorage.Shared.Logic.QuestLogic)
+local QuestRows = require(ReplicatedStorage.Shared.Logic.QuestRows)
 local QuestText = require(script.Parent.Parent.Parent.QuestText)
 local QuestTrack = require(script.Parent.Parent.Parent.QuestTrack)
 local Quests = require(ReplicatedStorage.Shared.Data.Quests)
@@ -29,6 +31,9 @@ local Children, OnEvent = Fusion.Children, Fusion.OnEvent
 type Scope = Fusion.Scope<typeof(Fusion)>
 
 local WIDTH = 300
+-- S29: a finished objective pulses for this long (seconds), then keeps a soft green glow.
+local PULSE_TIME = 1
+local GLOW_TRANSPARENCY = 0.6
 
 -- World position the arrow points to (nil = hide the arrow).
 local function aimPoint(target: QuestTrack.Target?): Vector3?
@@ -75,6 +80,10 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 		end)
 	)
 	local collapsed = scope:Value(false)
+	-- S29: which objective rows were already seen done and when their pulse ends; kept outside the Computed, so a
+	-- recompute (progress, language, the timers' clock) does not pulse them again.
+	local seen: QuestRows.Seen = {}
+	local pulseUntil: { [string]: number } = {}
 	local arrow = scope:Value(nil :: number?)
 
 	table.insert(
@@ -112,27 +121,24 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 			return list
 		end
 		local order = 0
-		local function line(text: string, color: Color3, size: number, font: Font, indent: number?)
+		local function line(text: string, color: Color3, size: number, font: Font, indent: number?): TextLabel
 			order += 1
-			table.insert(
-				list,
-				s:New("TextLabel")({
-					LayoutOrder = order,
-					Size = UDim2.fromScale(1, 0),
-					AutomaticSize = Enum.AutomaticSize.Y,
-					BackgroundTransparency = 1,
-					TextWrapped = true,
-					Text = text,
-					FontFace = font,
-					TextSize = size,
-					TextColor3 = color,
-					TextStrokeTransparency = 0.5,
-					TextXAlignment = Enum.TextXAlignment.Left,
-					[Children] = if indent
-						then s:New("UIPadding")({ PaddingLeft = UDim.new(0, indent) }) :: any
-						else nil,
-				})
-			)
+			local label = s:New("TextLabel")({
+				LayoutOrder = order,
+				Size = UDim2.fromScale(1, 0),
+				AutomaticSize = Enum.AutomaticSize.Y,
+				BackgroundTransparency = 1,
+				TextWrapped = true,
+				Text = text,
+				FontFace = font,
+				TextSize = size,
+				TextColor3 = color,
+				TextStrokeTransparency = 0.5,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				[Children] = if indent then s:New("UIPadding")({ PaddingLeft = UDim.new(0, indent) }) :: any else nil,
+			}) :: TextLabel
+			table.insert(list, label)
+			return label
 		end
 		local function gap()
 			order += 1
@@ -150,33 +156,110 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 			return if npc then Text.get(use, npc.nameKey) else ""
 		end
 
+		-- S29: every objective stays in the list (Logic/QuestRows); finished ones are green with a soft glow and
+		-- pulse once when finished; a complete quest adds the gold "Return to: <NPC>" line with its own guide button.
+		local function objectives(key: string, rowList: QuestRows.List, guide: QuestTrack.Target?)
+			local clockNow = os.clock()
+			for _, index in QuestRows.newlyDone(seen, key, rowList) do
+				pulseUntil[`{key}#{index}`] = clockNow + PULSE_TIME
+			end
+			for _, row in rowList.rows do
+				local label = line(
+					QuestRows.line(row),
+					if row.done then Theme.Colors.Success else Theme.Colors.Text,
+					15,
+					Theme.Fonts.BodyMedium,
+					6
+				)
+				if row.done then
+					local pulseKey = `{key}#{row.index}`
+					local left = (pulseUntil[pulseKey] or 0) - clockNow
+					local alpha = math.clamp(left / PULSE_TIME, 0, 1)
+					if alpha <= 0 then
+						pulseUntil[pulseKey] = nil
+					end
+					local stroke = s:New("UIStroke")({
+						Color = Theme.Colors.Success,
+						Thickness = 1 + 2 * alpha,
+						Transparency = GLOW_TRANSPARENCY * (1 - alpha),
+						Parent = label,
+					})
+					if alpha > 0 then
+						label.TextColor3 = Theme.Colors.Success:Lerp(Color3.new(1, 1, 1), alpha)
+						local info = TweenInfo.new(left, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+						task.defer(function()
+							if stroke.Parent then
+								TweenService:Create(stroke, info, { Thickness = 1, Transparency = GLOW_TRANSPARENCY })
+									:Play()
+								TweenService:Create(label, info, { TextColor3 = Theme.Colors.Success }):Play()
+							end
+						end)
+					end
+				end
+			end
+			if rowList.complete then
+				local back = QuestText.returnTo(use, rowList)
+				if back ~= "" then
+					order += 1
+					local canGuide = props ~= nil and props.Guide ~= nil and guide ~= nil and guide.x ~= nil
+					table.insert(
+						list,
+						s:New("Frame")({
+							LayoutOrder = order,
+							Size = UDim2.new(1, 0, 0, 26),
+							BackgroundTransparency = 1,
+							[Children] = {
+								s:New("TextLabel")({
+									Size = UDim2.new(1, if canGuide then -34 else 0, 1, 0),
+									BackgroundTransparency = 1,
+									TextWrapped = true,
+									TextScaled = false,
+									Text = back,
+									FontFace = Theme.Fonts.BodyBold,
+									TextSize = 15,
+									TextColor3 = Theme.Colors.GoldBright,
+									TextStrokeTransparency = 0.4,
+									TextXAlignment = Enum.TextXAlignment.Left,
+								}),
+								if canGuide
+									then s:New("TextButton")({
+										Name = "GuideTurnIn",
+										AnchorPoint = Vector2.new(1, 0.5),
+										Position = UDim2.fromScale(1, 0.5),
+										Size = UDim2.fromOffset(30, 26),
+										BackgroundColor3 = Theme.Colors.PanelRaised,
+										BackgroundTransparency = 0.2,
+										Text = "➤",
+										FontFace = Theme.Fonts.BodyBold,
+										TextSize = 16,
+										TextColor3 = Theme.Colors.GoldBright,
+										[OnEvent("Activated")] = function()
+											if props and props.Guide and guide then
+												props.Guide(guide)
+											end
+										end,
+										[Children] = s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
+									}) :: any
+									else nil,
+							},
+						})
+					)
+				end
+			end
+		end
+
 		-- S27: the tracked side quest first.
+		local level = use(State.Value({ "character", "level" })) or 1
 		local focus = use(QuestTrack.Focus)
 		local sideQuest = if focus then Quests.Side.get(focus.id) else nil
 		local sideEntry = if focus then SideQuests.activeOf(q)[focus.id] else nil
 		if sideQuest and type(sideEntry) == "table" then
 			line(`◆ {Text.get(use, `quest.{sideQuest.id}.title`)}`, Theme.Colors.GoldBright, 17, Theme.Fonts.BodyBold)
-			if SideQuests.isComplete(sideEntry, sideQuest) then
-				line(
-					Text.get(use, "quest.tracker.turnIn", { npc = npcName(sideQuest.turnIn) }),
-					Theme.Colors.Success,
-					15,
-					Theme.Fonts.BodyMedium
-				)
-			else
-				for i, objective in sideQuest.objectives do
-					local have = (sideEntry.progress or {})[i] or 0
-					if have < objective.n then
-						line(
-							`• {QuestText.objective(use, objective, have, sideQuest.turnIn)}`,
-							Theme.Colors.Text,
-							15,
-							Theme.Fonts.BodyMedium,
-							6
-						)
-					end
-				end
-			end
+			objectives(
+				`side:{sideQuest.id}`,
+				QuestText.rows(use, sideQuest.objectives, sideEntry.progress, sideQuest.turnIn),
+				QuestText.sideTarget(sideQuest, sideEntry, level)
+			)
 			gap()
 		end
 
@@ -184,36 +267,18 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 		local quest = if type(main) == "table" then Quests.Main.get(main.id) else nil
 		if quest and main and use(QuestTrack.Tracked) then
 			line(Text.get(use, `quest.{quest.id}.title`), Theme.Colors.GoldBright, 18, Theme.Fonts.BodyBold)
-			if QuestLogic.isComplete(main.progress or {}, quest.objectives) then
-				line(
-					Text.get(use, "quest.tracker.turnIn", { npc = npcName(quest.turnIn) }),
-					Theme.Colors.Success,
-					15,
-					Theme.Fonts.BodyMedium
-				)
-			else
+			local rows = QuestText.rows(use, quest.objectives, main.progress, quest.turnIn)
+			if not rows.complete then
 				line(
 					Text.get(use, "quest.tracker.from", { npc = npcName(quest.giver) }),
 					Theme.Colors.TextMuted,
 					14,
 					Theme.Fonts.Body
 				)
-				for i, objective in quest.objectives do
-					local have = (main.progress or {})[i] or 0
-					if have < objective.n then
-						line(
-							`• {QuestText.objective(use, objective, have)}`,
-							Theme.Colors.Text,
-							15,
-							Theme.Fonts.BodyMedium,
-							6
-						)
-					end
-				end
 			end
+			objectives(`main:{quest.id}`, rows, QuestText.target(quest, main.progress or {}, level))
 		elseif not quest then
-			local nextQuest, ready =
-				QuestLogic.nextMain(q.mainDone or 0, use(State.Value({ "character", "level" })) or 1)
+			local nextQuest, ready = QuestLogic.nextMain(q.mainDone or 0, level)
 			if nextQuest and ready then
 				line(
 					`! {Text.get(use, `quest.{nextQuest.id}.title`)}`,

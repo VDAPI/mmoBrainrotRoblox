@@ -1,7 +1,10 @@
 --!strict
 -- Draws the server's batched "CombatFx" events locally (ARCHITECTURE §7):
---   dmg    : floating damage number (white, yellow "!" crit, red when we are hit, grey "Dodge") + hit flash
---   heal   : green "+N"
+--   dmg    : floating damage number + hit flash. S29: text and style come from Logic/DamageText (our hits big
+--            and white, "KRYT! 1 234" crits orange-gold with a pop, others' hits smaller and dimmer, hits on us
+--            red, "Absorbed" / "Immune" / "Dodge", DoT ticks small in their element's colour); numbers of one
+--            target stack upwards instead of overlapping (DamageText.newStack: at most 6, fast hits merge)
+--   heal   : green "+N" (heals and heal-over-time ticks)
 --   atk    : swing (melee) or projectile (arrow / bolt) from attacker to target; S22: players play the attack
 --            pose of their weapon (AnimationController.Attack) with a rarity-coloured trail on the blade, arrows
 --            fly from the bow on an arc and stick in the target, crossbow bolts fly straight, wand / staff bolts
@@ -9,7 +12,8 @@
 --            the blow / the arrival (at most 0.5 s), the server's damage itself is not delayed
 --   tele   : red ground telegraph that fills during the windup (circle / cone / line)
 --   reward : "+EXP · +gold" above our character
--- Damage numbers can be turned off in the menu (settings.dmgNumbers); telegraphs and hits always show.
+-- Damage numbers: setting "all / mine and received / off" (settings.dmgMode, DamageText.mode; the old
+-- dmgNumbers = false counts as "off"); telegraphs and hit flashes always show. Tuning in Data/DamageNumbers.
 
 local Debris = game:GetService("Debris")
 local Players = game:GetService("Players")
@@ -20,6 +24,8 @@ local Workspace = game:GetService("Workspace")
 
 local AttackPose = require(ReplicatedStorage.Shared.Logic.AttackPose)
 local Config = require(ReplicatedStorage.Shared.Config)
+local DamageNumbers = require(ReplicatedStorage.Shared.Data.DamageNumbers)
+local DamageText = require(ReplicatedStorage.Shared.Logic.DamageText)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Net = require(ReplicatedStorage.Shared.Net)
 local SkillData = require(ReplicatedStorage.Shared.Data.Skills)
@@ -38,8 +44,6 @@ local MonsterView: any = nil
 
 local player = Players.LocalPlayer
 
-local NUMBER_SECONDS = 0.9
-local POOL_SIZE = 40
 local TELEGRAPH_COLOR = Color3.fromHex("#D64A3E")
 
 local ELEMENT_COLORS: { [string]: Color3 } = {
@@ -49,16 +53,44 @@ local ELEMENT_COLORS: { [string]: Color3 } = {
 	poison = Color3.fromHex("#7ACB3A"),
 }
 
+-- S29: colours of the number styles (Data/DamageNumbers.styles); DoT ticks use DOT_COLORS by element.
+local STYLE_COLORS: { [string]: Color3 } = {
+	mine = Color3.new(1, 1, 1),
+	mineCrit = Color3.fromHex("#FFA62B"),
+	other = Color3.fromHex("#E4DED2"),
+	otherCrit = Color3.fromHex("#F2C46A"),
+	received = Color3.fromHex("#FF5A4E"),
+	receivedCrit = Color3.fromHex("#FF2E22"),
+	absorbed = Color3.fromHex("#A9B2BD"),
+	immune = Color3.fromHex("#C9C3E6"),
+	dodge = Color3.fromHex("#B8B4AA"),
+	heal = Color3.fromHex("#5BD66B"),
+	hot = Color3.fromHex("#8FE39A"),
+	dot = Color3.fromHex("#C9A0FF"),
+}
+local DOT_COLORS: { [string]: Color3 } = {
+	fire = Color3.fromHex("#FF7A1A"),
+	ice = Color3.fromHex("#7FD4FF"),
+	lightning = Color3.fromHex("#E8E25A"),
+	poison = Color3.fromHex("#7ACB3A"),
+	bleed = Color3.fromHex("#D2382E"),
+	holy = Color3.fromHex("#FFE8A0"),
+}
+local SHIELD_FLASH = Color3.fromHex("#9FC8FF")
+
 local fxFolder: Folder
 local guiFolder: Folder
+-- S29: the billboards live in their own ScreenGui with ResetOnSpawn = false (they survive our respawn).
+local numbersGui: ScreenGui? = nil
 local pool: { BillboardGui } = {}
 -- Hit flashes: at most MAX_FLASHES Highlights (Roblox draws 31 at once); the least recently used is reused.
 local MAX_FLASHES = 20
 local flashes: { [Model]: any } = {}
 local flashCount = 0
--- Seconds to hold back the next damage number / flash of an entity (its attack is still swinging / flying).
-local MAX_HIT_DELAY = 0.5
-local hitDelay: { [string]: number } = {}
+-- Seconds to hold back the next damage number / flash of an entity (its attack is still swinging / flying),
+-- with the moment the attack started: entries older than DamageNumbers.hitDelayExpiry are ignored (S29).
+type HitDelay = { wait: number, at: number }
+local hitDelay: { [string]: HitDelay } = {}
 
 -- Entity lookup ---------------------------------------------------------------------------------------------
 
@@ -103,68 +135,224 @@ end
 
 -- Floating numbers ---------------------------------------------------------------------------------------
 
+local function numbersContainer(): ScreenGui
+	local existing = numbersGui
+	if existing and existing.Parent then
+		return existing
+	end
+	local gui = Instance.new("ScreenGui")
+	gui.Name = "Vaelthorn_CombatNumbers"
+	gui.ResetOnSpawn = false
+	gui.IgnoreGuiInset = true
+	gui.Parent = player:WaitForChild("PlayerGui")
+	numbersGui = gui
+	table.clear(pool) -- the pooled billboards went with the old container
+	return gui
+end
+
 local function newBillboard(): BillboardGui
 	local gui = Instance.new("BillboardGui")
 	gui.Name = "FloatingText"
 	gui.AlwaysOnTop = true
 	gui.LightInfluence = 0
-	gui.Size = UDim2.fromOffset(220, 60)
-	gui.MaxDistance = 120
+	gui.Size = UDim2.fromOffset(340, 80)
+	gui.MaxDistance = DamageNumbers.maxDistance
 	gui.Enabled = false
 	local label = Instance.new("TextLabel")
 	label.Name = "Label"
+	label.AnchorPoint = Vector2.new(0.5, 0.5)
+	label.Position = UDim2.fromScale(0.5, 0.5)
 	label.BackgroundTransparency = 1
 	label.Size = UDim2.fromScale(1, 1)
 	label.FontFace = Theme.Fonts.BodyBold
 	label.TextScaled = false
 	label.TextStrokeTransparency = 0.3
 	label.Parent = gui
-	gui.Parent = guiFolder
+	local scale = Instance.new("UIScale")
+	scale.Parent = label
+	gui.Parent = numbersContainer()
 	return gui
 end
 
-local function floatText(at: Vector3, text: string, color: Color3, size: number, rise: number?)
-	local gui = table.remove(pool) or newBillboard()
-	local label = gui:FindFirstChild("Label") :: TextLabel
-	local anchor = Instance.new("Attachment")
-	anchor.WorldPosition = at + Vector3.new((math.random() - 0.5) * 1.5, 0, (math.random() - 0.5) * 1.5)
-	anchor.Parent = Workspace.Terrain
-	gui.Adornee = anchor
-	gui.StudsOffsetWorldSpace = Vector3.zero
-	label.Text = text
-	label.TextColor3 = color
-	label.TextSize = size
-	label.TextTransparency = 0
-	label.TextStrokeTransparency = 0.3
-	gui.Enabled = true
-	local info = TweenInfo.new(NUMBER_SECONDS, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-	TweenService:Create(gui, info, { StudsOffsetWorldSpace = Vector3.new(0, rise or 3, 0) }):Play()
-	TweenService:Create(
-		label,
-		TweenInfo.new(
-			NUMBER_SECONDS * 0.5,
-			Enum.EasingStyle.Quad,
-			Enum.EasingDirection.In,
-			0,
-			false,
-			NUMBER_SECONDS * 0.5
-		),
-		{ TextTransparency = 1, TextStrokeTransparency = 1 }
-	):Play()
-	task.delay(NUMBER_SECONDS + 0.05, function()
-		gui.Enabled = false
-		(gui :: any).Adornee = nil
-		anchor:Destroy()
-		if #pool < POOL_SIZE then
-			table.insert(pool, gui)
-		else
-			gui:Destroy()
+local function takeBillboard(): BillboardGui
+	local container = numbersContainer()
+	while #pool > 0 do
+		local gui = table.remove(pool) :: BillboardGui
+		if gui.Parent == container then
+			return gui
+		end
+		gui:Destroy()
+	end
+	return newBillboard()
+end
+
+-- One number in the air.
+type Live = {
+	gui: BillboardGui,
+	label: TextLabel,
+	scale: UIScale,
+	anchor: Attachment,
+	tweens: { Tween },
+	done: boolean,
+	stackId: number?,
+	target: string?,
+}
+
+type TextOptions = {
+	base: number?, -- studs above the anchor at the start (stack slot)
+	rise: number?, -- studs it rises
+	dim: number?, -- starting transparency
+	pop: number?, -- starting scale (crits)
+	twitch: boolean?,
+}
+
+local stack = DamageText.newStack()
+local live: { [number]: Live } = {}
+
+local function finish(entry: Live)
+	if entry.done then
+		return
+	end
+	entry.done = true
+	for _, tween in entry.tweens do
+		tween:Cancel()
+	end
+	entry.gui.Enabled = false
+	(entry.gui :: any).Adornee = nil
+	entry.anchor:Destroy()
+	if entry.stackId then
+		live[entry.stackId] = nil
+		if entry.target then
+			stack:release(entry.target, entry.stackId)
+		end
+	end
+	if #pool < DamageNumbers.poolSize and entry.gui.Parent then
+		table.insert(pool, entry.gui)
+	else
+		entry.gui:Destroy()
+	end
+end
+
+local function play(entry: Live, instance: Instance, info: TweenInfo, goal: { [string]: any })
+	local tween = TweenService:Create(instance, info, goal)
+	table.insert(entry.tweens, tween)
+	tween:Play()
+end
+
+-- Small sideways twitch of a critical number while it pops.
+local function twitch(entry: Live)
+	task.spawn(function()
+		local px = DamageNumbers.twitch
+		for _, dx in { px, -px, px * 0.5, 0 } do
+			if entry.done then
+				return
+			end
+			entry.label.Position = UDim2.new(0.5, dx, 0.5, 0)
+			task.wait(DamageNumbers.popSeconds / 4)
 		end
 	end)
 end
 
-local function numbersEnabled(): boolean
-	return State.Get({ "account", "settings", "dmgNumbers" }) ~= false
+local function floatText(at: Vector3, text: string, color: Color3, size: number, options: TextOptions?): Live
+	local o: TextOptions = options or {}
+	local gui = takeBillboard()
+	local label = gui:FindFirstChild("Label") :: TextLabel
+	local scale = label:FindFirstChildOfClass("UIScale") :: UIScale
+	local anchor = Instance.new("Attachment")
+	anchor.WorldPosition = at + Vector3.new((math.random() - 0.5) * 0.8, 0, (math.random() - 0.5) * 0.8)
+	anchor.Parent = Workspace.Terrain
+	local base = o.base or 0
+	local dim = o.dim or 0
+	local lifetime = DamageNumbers.lifetime
+	gui.Adornee = anchor
+	gui.StudsOffsetWorldSpace = Vector3.new(0, base, 0)
+	label.Text = text
+	label.TextColor3 = color
+	label.TextSize = size
+	label.TextTransparency = dim
+	label.TextStrokeTransparency = 0.3 + dim * 0.5
+	label.Position = UDim2.fromScale(0.5, 0.5)
+	scale.Scale = o.pop or 1
+	gui.Enabled = true
+	local entry: Live = { gui = gui, label = label, scale = scale, anchor = anchor, tweens = {}, done = false }
+	play(
+		entry,
+		gui,
+		TweenInfo.new(lifetime, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+		{ StudsOffsetWorldSpace = Vector3.new(0, base + (o.rise or DamageNumbers.rise), 0) }
+	)
+	play(
+		entry,
+		label,
+		TweenInfo.new(lifetime * 0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In, 0, false, lifetime * 0.5),
+		{ TextTransparency = 1, TextStrokeTransparency = 1 }
+	)
+	if o.pop and o.pop ~= 1 then
+		play(
+			entry,
+			scale,
+			TweenInfo.new(DamageNumbers.popSeconds, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+			{ Scale = 1 }
+		)
+	end
+	if o.twitch then
+		twitch(entry)
+	end
+	task.delay(lifetime + 0.05, finish, entry)
+	return entry
+end
+
+local function myEntityId(): string?
+	local character = player.Character
+	local id = character and character:GetAttribute("EntityId")
+	return if type(id) == "string" then id else nil
+end
+
+local function numberMode(): DamageText.Mode
+	return DamageText.mode(State.Get({ "account", "settings" }))
+end
+
+local function styleColor(result: DamageText.Result): Color3
+	if result.style == "dot" and result.element then
+		return DOT_COLORS[result.element] or STYLE_COLORS.dot
+	end
+	return STYLE_COLORS[result.style] or STYLE_COLORS.mine
+end
+
+-- Draws one formatted number above `model`, stacked with the other numbers of `targetId` (S29).
+local function showNumber(model: Model, targetId: string, result: DamageText.Result, skill: boolean)
+	local style = DamageNumbers.styles[result.style] or DamageNumbers.styles.mine
+	local now = os.clock()
+	local placement = stack:add(targetId, now, result.style, result.amount)
+	if placement.action == "merge" then
+		local entry = live[placement.id]
+		if entry and not entry.done then
+			entry.label.Text = DamageText.sumText(result.style, placement.sum)
+			entry.scale.Scale = 1.15
+			play(entry, entry.scale, TweenInfo.new(DamageNumbers.popSeconds), { Scale = 1 })
+			return
+		end
+		-- The merged number is gone already: draw a new one.
+		stack:release(targetId, placement.id)
+		placement = stack:add(targetId, now, "none", result.amount)
+	end
+	if placement.evict then
+		local old = live[placement.evict]
+		if old then
+			finish(old)
+		end
+	end
+	local size = style.size + (if skill and result.style ~= "dot" then DamageNumbers.skillBonus else 0)
+	local entry = floatText(headPosition(model), result.text, styleColor(result), size, {
+		base = placement.slot * DamageNumbers.stackStep,
+		rise = style.rise,
+		dim = style.dim,
+		pop = style.pop,
+		twitch = result.crit,
+	})
+	entry.stackId = placement.id
+	entry.target = targetId
+	live[placement.id] = entry
 end
 
 type Flash = { highlight: Highlight, used: number }
@@ -603,7 +791,7 @@ local function playerAttack(attacker: Model, target: Model, event: { [string]: a
 	local motion = AttackPose.motionFor(weaponType)
 	local targetId = event.t :: string
 	if event.st == "melee" then
-		hitDelay[targetId] = timing.hitAt
+		hitDelay[targetId] = { wait = timing.hitAt, at = os.clock() }
 		if motion == "unarmed" or not weapon then
 			task.delay(timing.hitAt * 0.7, swing, attacker, target)
 		else
@@ -625,7 +813,7 @@ local function playerAttack(attacker: Model, target: Model, event: { [string]: a
 	end
 	local from0 = attachmentPosition(weapon, if kind == "arrow" then "VaelthornGrip" else "VaelthornTip")
 		or centre(attacker) + Vector3.new(0, 0.8, 0)
-	hitDelay[targetId] = timing.hitAt + flightTime(kind, (centre(target) - from0).Magnitude)
+	hitDelay[targetId] = { wait = timing.hitAt + flightTime(kind, (centre(target) - from0).Magnitude), at = os.clock() }
 	task.delay(timing.hitAt, function()
 		if not attacker.Parent or not target.Parent then
 			return
@@ -738,77 +926,78 @@ local function onDamage(event: { [string]: any })
 		return
 	end
 	local isMe = model == player.Character
-	if event.d then
-		if numbersEnabled() then
-			floatText(headPosition(model), Text.now("combat.dodge"), Theme.Colors.TextMuted, 22)
-		end
-		return
-	end
-	local amount = tonumber(event.a) or 0
-	if amount <= 0 then
-		return
-	end
+	local me = myEntityId()
+	local result = DamageText.format(event, me)
+	local amount = result.amount
 	local skill = if type(event.sk) == "string" then SkillData.get(event.sk) else nil
-	-- A critical skill hit flashes gold (S28).
-	flash(model, if skill and event.c then Theme.Colors.GoldBright else nil)
-	impact(model, event.c == true)
-	AnimationController.MonsterHit(model)
-	if model:GetAttribute("MonsterId") == nil then
-		AnimationController.CharacterHit(model)
+	-- DoT ticks get no flash or hit reaction, just the small number.
+	if amount > 0 and not event.dot then
+		-- A critical skill hit flashes gold (S28).
+		flash(model, if skill and event.c then Theme.Colors.GoldBright else nil)
+		impact(model, event.c == true)
+		AnimationController.MonsterHit(model)
+		if model:GetAttribute("MonsterId") == nil then
+			AnimationController.CharacterHit(model)
+		end
+		if isMe and event.c then
+			shake(0.35)
+		end
+	elseif event.ab or event.im then
+		flash(model, SHIELD_FLASH)
 	end
-	if isMe and event.c then
-		shake(0.35)
+	if result.style == "none" or type(event.e) ~= "string" then
+		return
 	end
-	if numbersEnabled() then
-		local text = Format.number(amount)
-		local color = Color3.new(1, 1, 1)
-		local size = 26
-		if isMe then
-			color = Theme.Colors.DangerHover
-		elseif event.c then
-			color = Theme.Colors.GoldBright
-		end
-		if skill then
-			size += 6 -- skill numbers are bigger than basic attacks
-		end
-		if event.c then
-			text ..= "!"
-			size += 10
-		end
-		floatText(headPosition(model), text, color, size)
-		if skill and not isMe then
-			local key = `{event.by or "?"}:{skill.id}`
-			local now = os.clock()
-			if now - (namedAt[key] or 0) > NAME_EVERY then
-				namedAt[key] = now
-				floatText(
-					headPosition(model) + Vector3.new(0, 1.2, 0),
-					Text.now(skill.nameKey),
-					Theme.Colors.Gold,
-					18,
-					3.5
-				)
-			end
+	if not DamageText.visible(event, me, numberMode()) then
+		return
+	end
+	showNumber(model, event.e, result, skill ~= nil)
+	if skill and amount > 0 and not isMe then
+		local key = `{event.s or event.by or "?"}:{skill.id}`
+		local now = os.clock()
+		if now - (namedAt[key] or 0) > NAME_EVERY then
+			namedAt[key] = now
+			floatText(
+				headPosition(model) + Vector3.new(0, 1.2, 0),
+				Text.now(skill.nameKey),
+				Theme.Colors.Gold,
+				18,
+				{ base = DamageNumbers.maxPerTarget * DamageNumbers.stackStep * 0.5, rise = 3.5 }
+			)
 		end
 	end
+end
+
+local function onHeal(event: { [string]: any })
+	local model = findModel(event.e)
+	if not model or type(event.e) ~= "string" then
+		return
+	end
+	local me = myEntityId()
+	local result = DamageText.format(event, me)
+	if result.style == "none" or not DamageText.visible(event, me, numberMode()) then
+		return
+	end
+	showNumber(model, event.e, result, false)
 end
 
 local function handle(event: { [string]: any })
 	local kind = event.k
 	if kind == "dmg" then
-		-- The number of a player's attack waits for its blow / arrival (S22).
-		local wait = if type(event.e) == "string" then hitDelay[event.e] else nil
-		if wait then
+		-- The number of a player's attack waits for its blow / arrival (S22); stale entries are ignored (S29).
+		local entry = if type(event.e) == "string" and not event.dot then hitDelay[event.e] else nil
+		if entry then
 			hitDelay[event.e] = nil
-			task.delay(math.min(wait, MAX_HIT_DELAY), onDamage, event)
-		else
-			onDamage(event)
+			local elapsed = os.clock() - entry.at
+			local remaining = entry.wait - elapsed
+			if elapsed <= DamageNumbers.hitDelayExpiry and remaining > 0 then
+				task.delay(math.min(remaining, DamageNumbers.maxHitDelay), onDamage, event)
+				return
+			end
 		end
+		onDamage(event)
 	elseif kind == "heal" then
-		local model = findModel(event.e)
-		if model and numbersEnabled() then
-			floatText(headPosition(model), `+{Format.number(tonumber(event.a) or 0)}`, Theme.Colors.Success, 24)
-		end
+		onHeal(event)
 	elseif kind == "atk" then
 		local attacker = findModel(event.s)
 		local target = findModel(event.t)
@@ -840,7 +1029,7 @@ local function handle(event: { [string]: any })
 				"combat.reward",
 				{ exp = Format.number(event.exp or 0), gold = Format.number(event.gold or 0) }
 			)
-			floatText(headPosition(character) + Vector3.new(0, 1, 0), text, Theme.Colors.Gold, 22, 4)
+			floatText(headPosition(character) + Vector3.new(0, 1, 0), text, Theme.Colors.Gold, 22, { rise = 4 })
 		end
 	end
 end
@@ -858,6 +1047,10 @@ function CombatFxController.Init(registry)
 	for _ = 1, 12 do
 		table.insert(pool, newBillboard())
 	end
+	-- A new character: attacks of the old one no longer hold numbers back.
+	player.CharacterAdded:Connect(function()
+		table.clear(hitDelay)
+	end)
 end
 
 -- Admin /anim (S22): plays a weapon's attack on our own character (no target, no damage).
@@ -873,6 +1066,9 @@ function CombatFxController.PreviewAttack(weaponType: string?)
 		weaponTrail(weapon, timing)
 	end
 end
+
+local WARN_EVERY = 2
+local warnedAt = -math.huge
 
 function CombatFxController.Start()
 	RunService.Heartbeat:Connect(function()
@@ -890,9 +1086,16 @@ function CombatFxController.Start()
 		end
 		for _, event in batch do
 			if type(event) == "table" then
-				local ok = pcall(handle, event)
+				local ok, err = pcall(function()
+					handle(event)
+				end)
 				if not ok then
-					continue
+					-- S29: never silent; at most one warning per WARN_EVERY seconds so a broken event cannot flood.
+					local now = os.clock()
+					if now - warnedAt >= WARN_EVERY then
+						warnedAt = now
+						warn(`[CombatFxController] {tostring(event.k)} event failed: {err}`)
+					end
 				end
 			end
 		end

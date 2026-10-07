@@ -4,6 +4,9 @@
 -- (NpcController); every service call on the server checks the distance with NpcService.Near.
 -- S21: in the city NPCs stand on the plan's terrain (TownTerrain.heightAt); `body = "board"` NPCs (the quest
 -- board) get no figure, only an invisible anchored Head over the board model the city already has.
+-- S29: feet on the ground. The ground ray ignores NPCs and characters and stops on the top surface of the map's
+-- own geometry (porch, stairs, paving; WorldService.FloorAt); after placing, the figure's real lowest corner
+-- (Logic/Footing) is moved onto that ground and HipHeight is set to match.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -14,6 +17,7 @@ local Shared = ReplicatedStorage.Shared
 local Log = require(Shared.Util.Log)
 local Maps = require(Shared.Data.Maps)
 local Npcs = require(Shared.Data.Npcs)
+local Footing = require(Shared.Logic.Footing)
 local MapTerrain = require(Shared.Logic.MapTerrain)
 
 local log = Log.new("NpcService")
@@ -24,24 +28,63 @@ local NpcService = {
 }
 
 local TOLERANCE = 4
+-- The ground ray starts this far over the plan height: over a porch or stairs, under stall awnings and roofs.
+local RAY_OVER_PLAN = 6
+-- Lifts larger than this are reported once in the log (diagnostics for the owner).
+local REPORT_LIFT = 0.3
+
+local WorldService: any = nil
 
 local positions: { [string]: Vector3 } = {}
 
--- Ground point under the NPC: the terrain surface (the world is built in WorldService.Init, before Start);
--- without a hit the plan's height on maps with a height function (Logic/MapTerrain: the city, S26 the Meadows),
--- y = 0 elsewhere.
+-- Ground point under the NPC (the world is built in WorldService.Init, before Start): the top surface of the
+-- terrain or the map's geometry under a ray from just over the plan height (Logic/MapTerrain: the city, S26 the
+-- Meadows; y = 0 elsewhere). S29: NPCs and characters are ignored (WorldService.FloorAt), so a figure never
+-- stands on another one.
 local function worldPosition(def: Npcs.NpcDef): Vector3
 	local map = Maps.get(def.map)
-	local origin = if map then Vector3.new(map.offset.x, map.offset.y, map.offset.z) else Vector3.zero
-	local planned = MapTerrain.height(def.map, def.position.x, def.position.z) or 0
-	local params = RaycastParams.new()
-	params.FilterType = Enum.RaycastFilterType.Include
-	params.FilterDescendantsInstances = { Workspace.Terrain }
-	params.IgnoreWater = true
-	local from = origin + Vector3.new(def.position.x, planned + 30, def.position.z)
-	local hit = Workspace:Raycast(from, Vector3.new(0, -80, 0), params)
-	local y = if hit then hit.Position.Y - origin.Y else planned
-	return origin + Vector3.new(def.position.x, y, def.position.z)
+	if not map then
+		return Vector3.new(def.position.x, 0, def.position.z)
+	end
+	local planned = MapTerrain.height(def.map, def.position.x, def.position.z)
+	local fromY = if planned then planned + RAY_OVER_PLAN else nil
+	return WorldService.FloorAt(def.map, def.position.x, def.position.z, fromY)
+end
+
+-- Every part that shapes the figure's silhouette, as Footing boxes: not the root part (it hangs at hip
+-- height) and not accessory handles.
+local function bodyBoxes(model: Model): { Footing.Box }
+	local out: { Footing.Box } = {}
+	for _, part in model:GetDescendants() do
+		if not part:IsA("BasePart") or part.Name == "HumanoidRootPart" then
+			continue
+		end
+		if part.Parent and part.Parent:IsA("Accessory") then
+			continue
+		end
+		local _, _, _, r00, r01, r02, r10, r11, r12, r20, r21, r22 = part.CFrame:GetComponents()
+		local p, size = part.Position, part.Size
+		table.insert(out, {
+			p = { p.X, p.Y, p.Z },
+			r = { r00, r01, r02, r10, r11, r12, r20, r21, r22 },
+			size = { size.X, size.Y, size.Z },
+		})
+	end
+	return out
+end
+
+-- Moves the placed figure so its lowest corner rests on groundY and makes HipHeight agree.
+local function settle(npc: Model, def: Npcs.NpcDef, groundY: number)
+	local dy = Footing.liftFor(bodyBoxes(npc), groundY)
+	npc:PivotTo(npc:GetPivot() + Vector3.new(0, dy, 0))
+	local humanoid = npc:FindFirstChildOfClass("Humanoid")
+	local root = npc:FindFirstChild("HumanoidRootPart") :: BasePart?
+	if humanoid and root then
+		humanoid.HipHeight = Footing.hipHeight(root.Position.Y, root.Size.Y, groundY)
+	end
+	if math.abs(dy) > REPORT_LIFT then
+		print(`[Npc] lift {def.id} {string.format("%.2f", dy)}`)
+	end
 end
 
 -- Quest board (S21): an invisible anchored Head (nameplate, prompt and quest marker hang on it) about 5 studs
@@ -120,6 +163,7 @@ local function build(def: Npcs.NpcDef, parent: Instance)
 	-- another map or out of the streaming radius.
 	npc.ModelStreamingMode = Enum.ModelStreamingMode.Persistent
 	npc.Parent = parent
+	settle(npc, def, position.Y)
 	positions[def.id] = position
 end
 
@@ -151,6 +195,10 @@ end
 
 function NpcService.Position(npcId: string): Vector3?
 	return positions[npcId]
+end
+
+function NpcService.Init(registry: any)
+	WorldService = registry.Get("WorldService")
 end
 
 function NpcService.Start()

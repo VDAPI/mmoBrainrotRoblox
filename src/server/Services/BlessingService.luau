@@ -2,13 +2,15 @@
 -- Blessings (DESIGN §11) and resistance elixirs (§10): real-time buffs that also tick while offline
 -- (expiry is a Util/Clock timestamp). One blessing at a time; replacing an active one needs the client's
 -- confirmation (remote UseBlessing). Stats plug into StatService as modifier source "blessing"; the
--- EXP/gold/drop bonuses are ordinary stats read by Combat/Level/Loot.
+-- EXP/gold/drop bonuses are ordinary stats read by Combat/Level/Loot. The active blessing is mirrored to the
+-- character model (attributes Blessing / BlessingUntil, Logic/BlessingMark) for the ✶ next to the name (S29).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage.Shared
 
+local BlessingMark = require(Shared.Logic.BlessingMark)
 local Blessings = require(Shared.Data.Blessings)
 local Clock = require(Shared.Util.Clock)
 local Items = require(Shared.Data.Items)
@@ -60,6 +62,27 @@ local function modifierSource(_player: Player, char: Types.CharacterData): StatC
 	return { key = "source.blessing", flat = flat }
 end
 
+-- Writes the active blessing onto the character model (nil attributes hide the ✶ on every nameplate).
+function BlessingService.RefreshAttribute(player: Player)
+	local model = player.Character
+	if not model then
+		return
+	end
+	local char: Types.CharacterData? = PlayerStateService.GetCharacter(player)
+	local id, untilTime = BlessingMark.attributes(if char then char.blessing else nil, Clock.now())
+	model:SetAttribute("Blessing", id)
+	model:SetAttribute("BlessingUntil", untilTime)
+end
+
+local function setBlessing(player: Player, blessing: Blessings.BlessingDef, seconds: number)
+	PlayerStateService.Set(player, { "character", "blessing" }, {
+		id = blessing.id,
+		expiresAt = Clock.now() + seconds,
+	})
+	StatService.Invalidate(player)
+	BlessingService.RefreshAttribute(player)
+end
+
 local function apply(player: Player, index: number, item: Types.ItemInstance, replace: boolean): (boolean, string?)
 	local char = PlayerStateService.GetCharacter(player)
 	local def = Items.get(item.id)
@@ -75,11 +98,7 @@ local function apply(player: Player, index: number, item: Types.ItemInstance, re
 	if InventoryService.ConsumeAt(player, index) == nil then
 		return false, "error.badRequest"
 	end
-	PlayerStateService.Set(player, { "character", "blessing" }, {
-		id = blessing.id,
-		expiresAt = now + Blessings.DURATION,
-	})
-	StatService.Invalidate(player)
+	setBlessing(player, blessing, Blessings.DURATION)
 	return true, nil
 end
 
@@ -109,6 +128,7 @@ local function expire(player: Player): boolean
 	if char.blessing and char.blessing.expiresAt <= now then
 		PlayerStateService.Set(player, { "character", "blessing" }, nil)
 		Net.Fire(player, "Toast", "blessing.expired", nil, "info")
+		BlessingService.RefreshAttribute(player)
 		changed = true
 	end
 	local elixirs: { [string]: number } = char.elixirs or {}
@@ -124,17 +144,13 @@ local function expire(player: Player): boolean
 	return changed
 end
 
--- Admin /bless: grants a blessing directly.
-function BlessingService.Grant(player: Player, blessingId: string): boolean
+-- Admin /bless and /blessing: grants a blessing directly, optionally for `seconds` (default: the full duration).
+function BlessingService.Grant(player: Player, blessingId: string, seconds: number?): boolean
 	local blessing = Blessings.get(blessingId)
 	if not blessing or not PlayerStateService.GetCharacter(player) then
 		return false
 	end
-	PlayerStateService.Set(player, { "character", "blessing" }, {
-		id = blessing.id,
-		expiresAt = Clock.now() + Blessings.DURATION,
-	})
-	StatService.Invalidate(player)
+	setBlessing(player, blessing, seconds or Blessings.DURATION)
 	return true
 end
 
@@ -171,6 +187,10 @@ function BlessingService.Start()
 
 	CharacterService.CharacterEntered:Connect(function(player: Player)
 		expire(player)
+		BlessingService.RefreshAttribute(player)
+	end)
+	CharacterService.ModelSpawned:Connect(function(player: Player)
+		BlessingService.RefreshAttribute(player)
 	end)
 
 	task.spawn(function()

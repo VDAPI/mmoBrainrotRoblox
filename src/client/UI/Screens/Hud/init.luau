@@ -21,6 +21,7 @@ local PvpDot = require(script.Parent.Parent.Components.PvpDot)
 local PvpState = require(script.Parent.Parent.PvpState)
 local SkillBar = require(script.SkillBar)
 local SprintButton = require(script.SprintButton)
+local BlessingBadge = require(script.BlessingBadge)
 local BlessingIcon = require(script.BlessingIcon)
 local Minimap = require(script.Minimap)
 local NavBar = require(script.NavBar)
@@ -156,19 +157,37 @@ local function portrait(scope: Scope): Instance
 				Position = UDim2.fromOffset(110, 22),
 				Size = 14,
 			}),
-			scope:New("TextLabel")({
-				Name = "CharName",
+			-- Name row (S29): the name, then the active blessing's ✶ with its countdown.
+			scope:New("Frame")({
+				Name = "NameRow",
 				Position = UDim2.fromOffset(130, 8),
 				Size = UDim2.new(1, -142, 0, 28),
 				BackgroundTransparency = 1,
-				Text = scope:Computed(function(use): string
-					return use(name) or ""
-				end),
-				FontFace = Theme.Fonts.Heading,
-				TextSize = Theme.TextSize.Large,
-				TextColor3 = Theme.Colors.Gold,
-				TextXAlignment = Enum.TextXAlignment.Left,
-				TextTruncate = Enum.TextTruncate.AtEnd,
+				[Children] = {
+					scope:New("UIListLayout")({
+						FillDirection = Enum.FillDirection.Horizontal,
+						VerticalAlignment = Enum.VerticalAlignment.Center,
+						SortOrder = Enum.SortOrder.LayoutOrder,
+						Padding = UDim.new(0, 8),
+					}),
+					scope:New("TextLabel")({
+						Name = "CharName",
+						LayoutOrder = 1,
+						Size = UDim2.fromScale(0, 1),
+						AutomaticSize = Enum.AutomaticSize.X,
+						BackgroundTransparency = 1,
+						Text = scope:Computed(function(use): string
+							return use(name) or ""
+						end),
+						FontFace = Theme.Fonts.Heading,
+						TextSize = Theme.TextSize.Large,
+						TextColor3 = Theme.Colors.Gold,
+						TextXAlignment = Enum.TextXAlignment.Left,
+						TextTruncate = Enum.TextTruncate.AtEnd,
+						[Children] = scope:New("UISizeConstraint")({ MaxSize = Vector2.new(170, 28) }),
+					}),
+					BlessingBadge.new(scope, 2),
+				},
 			}),
 			scope:New("Frame")({
 				Name = "Bars",

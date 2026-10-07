@@ -6,6 +6,8 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Button = require(script.Parent.Parent.Components.Button)
+local DamageNumbers = require(ReplicatedStorage.Shared.Data.DamageNumbers)
+local DamageText = require(ReplicatedStorage.Shared.Logic.DamageText)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local KeybindData = require(ReplicatedStorage.Shared.Data.Keybinds)
 local Keybinds = require(script.Parent.Parent.Keybinds)
@@ -101,6 +103,29 @@ local function toggle(scope: Scope, name: string, default: boolean): Instance
 		end),
 		OnClick = function()
 			Net.Send("SetSetting", name, not Fusion.peek(on))
+		end,
+	})
+end
+
+-- S29: "Damage numbers: all / mine and received / off". Reads through DamageText.mode, so an old save with
+-- the dmgNumbers switch off shows (and cycles on from) "off".
+local function damageNumbers(scope: Scope): Instance
+	local modeValue = State.Value({ "account", "settings", "dmgMode" })
+	local oldSwitch = State.Value({ "account", "settings", "dmgNumbers" })
+	local mode = scope:Computed(function(use): string
+		return DamageText.mode({ dmgMode = use(modeValue), dmgNumbers = use(oldSwitch) })
+	end)
+	return Button(scope, {
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.fromScale(1, 0),
+		Size = UDim2.fromOffset(150, 44),
+		Text = scope:Computed(function(use): string
+			return Text.get(use, `menu.damageNumbers.{use(mode)}`)
+		end),
+		OnClick = function()
+			local modes = DamageNumbers.modes
+			local index = table.find(modes, Fusion.peek(mode)) or 0
+			Net.Send("SetSetting", "dmgMode", modes[index % #modes + 1])
 		end,
 	})
 end
@@ -393,7 +418,7 @@ local function GameMenu(scope: Scope, close: () -> ()): Fusion.Child
 					end,
 				})
 			),
-			row(scope, 9, "menu.damageNumbers", toggle(scope, "dmgNumbers", true)),
+			row(scope, 9, "menu.damageNumbers", damageNumbers(scope)),
 			row(scope, 10, "menu.minimapRotate", toggle(scope, "minimapRotate", false)),
 			row(scope, 11, "menu.quickCast", toggle(scope, "quickCast", false)),
 			row(scope, 12, "menu.bindConfirm", toggle(scope, "bindConfirm", true)),

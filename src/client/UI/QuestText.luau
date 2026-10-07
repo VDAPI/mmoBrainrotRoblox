@@ -13,9 +13,11 @@ local Monsters = require(ReplicatedStorage.Shared.Data.Monsters)
 local NpcMarks = require(ReplicatedStorage.Shared.Logic.NpcMarks)
 local Npcs = require(ReplicatedStorage.Shared.Data.Npcs)
 local QuestLogic = require(ReplicatedStorage.Shared.Logic.QuestLogic)
+local QuestRows = require(ReplicatedStorage.Shared.Logic.QuestRows)
 local Quests = require(ReplicatedStorage.Shared.Data.Quests)
 local SideQuests = require(ReplicatedStorage.Shared.Logic.SideQuests)
 local Text = require(script.Parent.Text)
+local Theme = require(script.Parent.Theme)
 
 local QuestText = {}
 
@@ -93,6 +95,45 @@ function QuestText.objective(use: any, objective: Objective, have: number, turnI
 	end
 	-- fish, equip, loot, stats, learn, potion, duel
 	return Text.get(use, `quest.obj.{t}`, { count = count })
+end
+
+-- S29: the objective rows of a quest with localized labels (Logic/QuestRows): every objective stays, finished
+-- ones are done, and a complete quest names its turn-in NPC.
+function QuestText.rows(use: any, objectives: { Objective }, progress: { number }?, turnIn: string?): QuestRows.List
+	return QuestRows.build(objectives, progress, turnIn, function(objective: Objective, have: number): string
+		return QuestText.objective(use, objective, have, turnIn)
+	end)
+end
+
+-- S29: "Return to: <NPC>" of a complete quest ("" without a turn-in NPC).
+function QuestText.returnTo(use: any, list: QuestRows.List): string
+	local npc = list.turnIn and Npcs.get(list.turnIn)
+	return if npc then Text.get(use, "quest.tracker.returnTo", { npc = Text.get(use, npc.nameKey) }) else ""
+end
+
+local SUCCESS_HEX = "#" .. Theme.Colors.Success:ToHex()
+local GOLD_HEX = "#" .. Theme.Colors.GoldBright:ToHex()
+
+-- S29: the rows as rich text lines for the journal and the NPC dialog: finished objectives green with a "✔" and a
+-- soft glow, open ones with a bullet, then the gold "Return to: <NPC>" line when complete (`withReturn`).
+function QuestText.richRows(use: any, list: QuestRows.List, withReturn: boolean?): { string }
+	local lines: { string } = {}
+	for _, row in list.rows do
+		local line = QuestRows.line(row)
+		table.insert(
+			lines,
+			if row.done
+				then `<stroke color="{SUCCESS_HEX}" thickness="1" transparency="0.65"><font color="{SUCCESS_HEX}">{line}</font></stroke>`
+				else line
+		)
+	end
+	if withReturn ~= false and list.complete then
+		local back = QuestText.returnTo(use, list)
+		if back ~= "" then
+			table.insert(lines, `<font color="{GOLD_HEX}"><b>{back}</b></font>`)
+		end
+	end
+	return lines
 end
 
 export type Target = { map: string, x: number?, z: number?, npc: string? }

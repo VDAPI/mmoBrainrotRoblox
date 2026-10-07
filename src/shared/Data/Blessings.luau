@@ -1,5 +1,5 @@
 --!strict
--- Blessings (DESIGN §11): 1 hour real-time buffs (counting offline too), one active at a time.
+-- Blessings (DESIGN §11): 30 minute real-time buffs (counting offline too), one active at a time.
 -- 5 lines x 5 rarities. Each blessing is also a consumable item "blessing_<line>_<rarity>".
 -- Stats use StatCalc ids; legendary blessings add the special bonus (+10 % EXP and +10 % drop).
 
@@ -12,7 +12,8 @@ export type BlessingDef = {
 	itemId: string,
 }
 
-local DURATION = 3600
+local DURATION = 1800 -- S29: 30 min (was 60)
+local LAST_MINUTE = 60 -- the ✶ next to the name blinks / pulses during the last seconds
 
 -- Per line: stats for Common, Uncommon, Rare, Epic, Legendary (DESIGN §11 Warrior line, others analogous).
 local LINES: { [string]: { { [string]: number } } } = {
@@ -89,7 +90,12 @@ return table.freeze({
 	get = function(id: string): BlessingDef?
 		return byId[id]
 	end,
+	-- Blessing of a line and tier (1..5), e.g. ("warrior", 3) -> warrior_3.
+	of = function(line: string, tier: number): BlessingDef?
+		return byId[`{line}_{tier}`]
+	end,
 	DURATION = DURATION,
+	LAST_MINUTE = LAST_MINUTE,
 	-- Resistance elixirs (DESIGN §10): 1 hour, +15 % to one element.
 	ELIXIR_DURATION = 3600,
 	ELIXIR_VALUE = 15,

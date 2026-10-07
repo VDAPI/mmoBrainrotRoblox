@@ -19,6 +19,7 @@ local DeathService = Context.services.DeathService
 local PvpService = Context.services.PvpService
 local CombatService = Context.services.CombatService
 local StatusEffectService = Context.services.StatusEffectService
+local EntityService = Context.services.EntityService
 
 local commands: { [string]: (player: Player, args: { string }) -> ...any } = {}
 
@@ -147,6 +148,58 @@ commands.skillpreview = function(player, args)
 	local id = args[1] or ""
 	Net.Fire(player, "AdminClient", "skillpreview", id)
 	reply(player, "admin.skillpreview.ok", { id = id })
+end
+
+-- S29: /dmgtest: every kind of damage number in turn above the target (or above you), through the real
+-- CombatFx batching, to judge the look. Nothing is dealt.
+local DMGTEST_STEP = 0.45
+
+commands.dmgtest = function(player)
+	withCharacter(player, function()
+		local me = EntityService.GetPlayerEntity(player)
+		if not me then
+			return
+		end
+		local target = CombatService.GetTarget(player) or me
+		local other = "m-dmgtest" -- an attacker that is not us: "others' hits"
+		local hit: { [string]: any } = { k = "dmg", e = target.id, s = me.id }
+		local function with(extra: { [string]: any }): { [string]: any }
+			local event = table.clone(hit)
+			for key, value in extra do
+				event[key] = value
+			end
+			return event
+		end
+		local steps: { { [string]: any } } = {
+			with({ a = 128 }),
+			with({ a = 1234, c = true }),
+			with({ a = 312, sk = "mightyStrike" }),
+			with({ a = 96, s = other }),
+			with({ a = 240, s = other, c = true }),
+			{ k = "dmg", e = me.id, s = other, a = 57 },
+			{ k = "dmg", e = me.id, s = other, a = 204, c = true },
+			with({ a = 0, ab = true }),
+			with({ a = 0, im = true }),
+			with({ a = 0, d = true }),
+			{ k = "heal", e = me.id, s = me.id, a = 123 },
+			{ k = "heal", e = me.id, s = me.id, a = 25, hot = true },
+			with({ a = 18, dot = true, el = "fire" }),
+			with({ a = 14, dot = true, el = "poison" }),
+			with({ a = 11, dot = true, el = "bleed" }),
+		}
+		reply(player, "admin.dmgtest.ok")
+		task.spawn(function()
+			for _, event in steps do
+				CombatService.QueueFx(EntityService.Position(event.e == me.id and me or target), event)
+				task.wait(DMGTEST_STEP)
+			end
+			-- A burst faster than the merge rate: the numbers add up instead of piling.
+			for _ = 1, 14 do
+				CombatService.QueueFx(EntityService.Position(target), with({ a = 21 }))
+				task.wait(0.05)
+			end
+		end)
+	end)
 end
 
 return commands

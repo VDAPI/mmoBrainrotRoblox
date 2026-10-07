@@ -13,7 +13,7 @@ local ComingSoon = require(script.Parent.Parent.UI.Screens.ComingSoon)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local GameMenu = require(script.Parent.Parent.UI.Screens.GameMenu)
-local InventoryWindow = require(script.Parent.Parent.UI.Screens.InventoryWindow)
+local BackpackPanel = require(script.Parent.Parent.UI.Screens.BackpackPanel)
 local SkillsWindow = require(script.Parent.Parent.UI.Screens.SkillsWindow)
 local Hud = require(script.Parent.Parent.UI.Screens.Hud)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
@@ -80,15 +80,38 @@ local current: "select" | "hud" | nil = nil
 local screenScope: Scope? = nil
 local blur: BlurEffect
 
+local backpackActions: BackpackPanel.Actions
+
 local function registerWindows()
+	backpackActions = {
+		Equip = function(index: number)
+			ItemController.Equip(index, nil)
+		end,
+		Use = ItemController.Use,
+		Split = ItemController.Split,
+		Destroy = ItemController.Destroy,
+		Lock = ItemController.ToggleLock,
+		LootLog = function()
+			WindowManager.Open("lootlog")
+		end,
+	}
 	for _, entry in MENU do
 		if entry.id == "character" then
+			-- S29: equipment + backpack + statistics in one window (B and C, WindowRules alias).
 			WindowManager.Register({
 				id = "character",
 				titleKey = "window.character.title",
-				size = Vector2.new(900, 640),
+				size = Vector2.new(1240, 700),
 				hotkey = HOTKEYS.character,
-				build = CharacterWindow,
+				build = function(scope: Scope)
+					return CharacterWindow(scope, {
+						Focus = WindowManager.FocusHint,
+						Backpack = backpackActions,
+						Unequip = function(slot: string)
+							ItemController.Unequip(slot, nil)
+						end,
+					})
+				end,
 			})
 		elseif entry.id == "skills" then
 			WindowManager.Register({
@@ -101,24 +124,14 @@ local function registerWindows()
 				end,
 			})
 		elseif entry.id == "inventory" then
+			-- The companion backpack next to service windows (without a service B opens "character").
 			WindowManager.Register({
 				id = "inventory",
 				titleKey = "window.inventory.title",
 				size = Vector2.new(560, 640),
 				hotkey = HOTKEYS.inventory,
 				build = function(scope: Scope)
-					return InventoryWindow(scope, {
-						Equip = function(index: number)
-							ItemController.Equip(index, nil)
-						end,
-						Use = ItemController.Use,
-						Split = ItemController.Split,
-						Destroy = ItemController.Destroy,
-						Lock = ItemController.ToggleLock,
-						LootLog = function()
-							WindowManager.Open("lootlog")
-						end,
-					})
+					return BackpackPanel(scope, { Actions = backpackActions })
 				end,
 			})
 		elseif

@@ -1,7 +1,8 @@
 --!strict
 -- Item slot interaction shared by the backpack, equipment and potion bar (DESIGN §23):
 --   mouse : click selects, drag & drop moves, double-click activates (equip / use / unequip)
---   touch : tap selects, tap another slot moves there, tap the selected slot again activates
+--   touch : tap selects, tap another slot moves there, tap the selected slot again activates,
+--           press and hold (S29) opens the slot's action menu (equip / unequip / sell ...)
 -- Slots register with an id ("inv:5", "eq:weapon", "pot:hp"); ItemController sets the drop/activate handlers.
 
 local Players = game:GetService("Players")
@@ -16,6 +17,8 @@ local DragDrop = {}
 
 local DRAG_THRESHOLD = 6
 local DOUBLE_CLICK = 0.35
+local LONG_PRESS = 0.5 -- seconds a finger rests on a slot before its action menu opens
+local LONG_PRESS_SLOP = 12 -- pixels the finger may move meanwhile
 
 local scope = Fusion.scoped(Fusion)
 -- Currently selected slot id (highlighted; the inventory action bar acts on it).
@@ -32,6 +35,8 @@ export type Handlers = {
 	drop: (from: string, to: string) -> (),
 	activate: (slotId: string) -> (),
 	hasItem: (slotId: string) -> boolean,
+	-- S29: action menu for a held slot (touch); nil = no menu.
+	menu: ((slotId: string) -> ())?,
 }
 
 local handlerSets: { Handlers } = {}
@@ -117,6 +122,23 @@ function DragDrop.register(ownerScope: Fusion.Scope<any>, object: GuiObject, slo
 					drop(selected, slotId)
 				elseif hasItem(slotId) then
 					DragDrop.Selected:set(slotId)
+					-- Held long enough without moving: the action menu.
+					local start = Vector2.new(input.Position.X, input.Position.Y)
+					task.delay(LONG_PRESS, function()
+						local moved = (Vector2.new(input.Position.X, input.Position.Y) - start).Magnitude
+						if
+							input.UserInputState ~= Enum.UserInputState.End
+							and input.UserInputState ~= Enum.UserInputState.Cancel
+							and moved <= LONG_PRESS_SLOP
+							and slots[object] == slotId
+						then
+							local owner = ownerOf(slotId)
+							if owner and owner.menu then
+								Sounds.play("click")
+								owner.menu(slotId)
+							end
+						end
+					end)
 				end
 			end
 		end)

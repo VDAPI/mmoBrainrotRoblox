@@ -86,6 +86,27 @@ commands.bless = function(player, args)
 	end)
 end
 
+commands.blessing = function(player, args)
+	local tier = tonumber(args[2])
+	local blessing = if args[1] and tier then Blessings.of(args[1], tier) else nil
+	local seconds = tonumber(args[3])
+	if not blessing or (seconds ~= nil and (seconds < 1 or seconds > Blessings.DURATION)) then
+		reply(player, "admin.usage.blessing")
+		return
+	end
+	withCharacter(player, function()
+		if BlessingService.Grant(player, blessing.id, if seconds then math.floor(seconds) else nil) then
+			reply(
+				player,
+				"admin.blessing.ok",
+				{ id = blessing.id, seconds = math.floor(seconds or Blessings.DURATION) }
+			)
+		else
+			reply(player, "admin.usage.blessing")
+		end
+	end)
+end
+
 commands.premium = function(player, args)
 	local pass = args[2] and Products.getPass(args[2])
 	if args[1] ~= "grant" or not pass then

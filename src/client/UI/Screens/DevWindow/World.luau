@@ -15,7 +15,7 @@ local NumberInput = require(script.Parent.Parent.Parent.Components.NumberInput)
 local Select = require(script.Parent.Parent.Parent.Components.Select)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
-local Town = require(ReplicatedStorage.Shared.Data.Town)
+local TownPlaces = require(ReplicatedStorage.Shared.Logic.TownPlaces)
 
 local Dev = require(script.Parent.Dev)
 
@@ -65,12 +65,13 @@ local function World(s: Dev.Scope): Instance
 		end
 	end
 	local npc = s:Value(nil :: string?)
-	local placeOptions = { { value = "arena", label = "arena" } }
-	for _, special in Town.city.specials do
-		table.insert(placeOptions, { value = special.id, label = special.id })
-	end
-	for _, square in Town.city.squares do
-		table.insert(placeOptions, { value = square.id, label = square.id })
+	-- S29: places from Logic/TownPlaces (the server resolves each to a free point off every building).
+	local placeOptions = {}
+	for _, place in TownPlaces.list() do
+		table.insert(
+			placeOptions,
+			{ value = place.id, label = `{place.id} · {Text.now(`dev.world.place.{place.kind}`)}` }
+		)
 	end
 	local place = s:Value("rynek" :: string?)
 
@@ -101,6 +102,10 @@ local function World(s: Dev.Scope): Instance
 					Dev.run("tp", { id })
 				end
 			end, 110),
+			-- S29: straight to the city spawn by the fountain (/tp city).
+			Dev.button(s, Text.T(s, "dev.world.citySpawn"), function()
+				Dev.run("tp", { "city" })
+			end, 180),
 		}),
 		s:New("Frame")({
 			LayoutOrder = 3,

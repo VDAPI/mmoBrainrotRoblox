@@ -35,6 +35,7 @@
 | S26 | Szepczące Łąki od nowa: ukształtowany teren, struga z mostami, jar z wodospadem, wyrobisko, expowiska w klimacie potworów, życie, nastrój | ● |
 | S27 | Questy poboczne Łąk: 13 nowych NPC, 28 questów w 9 wątkach, interakcje ze światem, dialogi ze stronami, nagrody do wyboru | ● |
 | S28 | Umiejętności od nowa: naprawa rzucania, animacja i efekt każdej umiejętności, przełomy na 5. i 10. poziomie, czucie trafień, wygoda | ● |
+| S29 | Poprawki po testach: jedno okno Postaci z plecakiem, plecak znika z usługą, NPC na ziemi, ✶ błogosławieństwa przy nicku (30 min), zielone cele questów, teleport do miasta, liczby obrażeń zawsze | ● |
 
 Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana przez właściciela
 
@@ -739,6 +740,35 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
 - **S28** Podgląd w oknie K: kopia postaci w ViewportFrame z WorldModel, efekty tej chwili trafiają do jego
   WorldModel (`Pool.setOverride`); cząsteczki i światła w ViewportFrame nie są widoczne (ograniczenie Robloxa).
 - **S28** Manekin `/dummy` to Bandyta z Traktu bez AI (`dummy` w MonsterService), z miliardem zdrowia; znika po 10 min.
+- **S29** Pary okien w `Logic/WindowRules`: plecak otwarty przez usługę zamyka się z ostatnią usługą; plecak otwarty
+  ręcznie (albo gdy przed usługą było otwarte okno Postaci) zostaje. Handel nie zamyka innej usługi i nie jest przez nią
+  zamykany; pozostałe usługi wymieniają się nawzajem. Śmierć i zmiana mapy zamykają wszystkie usługi z plecakiem.
+- **S29** Depozyt nie otwiera plecaka-towarzysza (ma własną siatkę plecaka, zostawioną); B przy depozycie otwiera okno
+  Postaci. Usunięte martwe `weaponsmith` z `COMPANIONS`.
+- **S29** Okno Postaci 1240×700 (ekwipunek 260 | `BackpackPanel` 500 | statystyki); na PC prawa kolumna bez zakładek
+  (nazwy statystyk pochodnych 68% szerokości, pełna nazwa w tooltipie), na dotyku zakładki „Plecak | Statystyki”
+  (B → Plecak, C → Statystyki przez `WindowManager.FocusHint`). `Open('inventory')` bez usługi = `character`.
+- **S29** `Logic/EquipFit` po stronie klienta tylko podświetla sloty i podaje powód; rozstrzyga serwer. Zamiana
+  pierścieni to osobny remote `SwapRings` bez argumentów (rate 4, blokada handlu).
+- **S29** NPC: ziemia przez `WorldService.FloorAt` (promień tylko w teren i folder własnej mapy, start 6 st. nad
+  wysokością z planu), potem `Logic/Footing.liftFor` po narożnikach części i spójny `HipHeight`; przesunięcie > 0,3 st.
+  wypisuje `[Npc] lift <id> <dy>`.
+- **S29** Teleporty dev: `Logic/TownPlaces` (`rynek` = spawn miasta; budynek = drzwi, plac = start szukania, NPC = 3 st.
+  przed nim) szuka po pierścieniach punktu z wolną kolumną do 18 st. nad ziemią (żadnych dachów, daszków, ganków);
+  `WorldService.SafeSpot/SafeSpotFacing` (bez wody, 6,5 st. nad głową, NPC jako przeszkoda) dla `/town tp`, `/npc`,
+  `/tp <mapa> x z`, `/tp cave|boss`, `/tparea`. `/tp x y z` z jawnym y dalej bez sprawdzania. `GroundCFrame` bez zmian.
+- **S29** Błogosławieństwo 30 min (`Blessings.DURATION = 1800`), warzenie skrócone ok. o połowę: 3 / 8 / 15 / 30 min
+  (nigdy dłużej niż działanie); aktywne w zapisach mają swoje `expiresAt` (bez migracji). Atrybuty modelu `Blessing`
+  (`<linia>_<stopień>`) i `BlessingUntil` (czas `Util/Clock`, zgodny z `/time`). ✶ w HUD przeniesione do wiersza
+  imienia (przy portrecie zostały tylko eliksiry). `/blessing` to nowa komenda; `/bless <id>` zostaje.
+- **S29** Cele questów: `Logic/QuestRows`; puls tylko przy przejściu niewykonany → wykonany (nie przy pierwszym
+  wyświetleniu). Złote „Oddaj: X” w dzienniku zastąpione „Wróć do: X”. Kontrakty dzienne bez zmian.
+- **S29** Zmiana decyzji S22: serwer wysyła zdarzenie dla **każdego** rozstrzygniętego trafienia — w całości
+  pochłonięte przez tarczę = `ab` („Pochłonięto”), nietykalność / ochrona po odrodzeniu / god / nietykalny boss = `im`
+  („Odporny”); ticki DoT (`dot`, `el`) i HoT (`hot`) też. Pole `by` z S28 zastąpione `s` (atakujący / leczący).
+- **S29** Ustawienie `settings.dmgMode` (`all` / `mine` / `off`) bez podbijania wersji schematu; brak pola = stare
+  `dmgNumbers` (false → off). Powyżej 8 liczb/s na cel trafienia tego samego stylu dopisują się do najnowszej liczby
+  (< 0,6 s); krytyki, Pochłonięto, Odporny i Unik nigdy się nie łączą. Liczby w `Data/DamageNumbers`.
 
 ## Niedokończone
 (Rzeczy z zakresu sesji, które nie zostały zrobione. Następna sesja zaczyna od nich.)
@@ -825,6 +855,11 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
   wydajność przy 5 graczach.
 - **S28** „Flinch” potwora zależny od siły ciosu nie zrobiony (jest zwykłe mignięcie i hitstop); wstrząs kamery i
   hitstop tylko z danych `SkillVfx`.
+
+- **S29** Ikona plecaka w menu HUD nie podświetla się, gdy okno Postaci otwarto klawiszem B (świeci ikona Postaci). Esc
+  nie zamyka menu przytrzymania (tap w tło / „Anuluj”).
+- **S29** Zdarzenia liczb obrażeń dalej tylko w promieniu `Combat.fxRadius = 80` (bilbord ma `MaxDistance` 250; większy
+  promień = więcej ruchu sieciowego — do decyzji właściciela).
 
 ## Zgłoszone błędy
 (Właściciel wpisuje tu błędy po testach albo przekazuje je przez sesję poprawek.)
@@ -2535,3 +2570,84 @@ lokalizacja.
     bez smug broni i z mniejszą liczbą części.
 21. Atak podstawowy bronią (S22) teraz też widać na postaci gracza (wcześniej nie działał przez stawy
     `AnimationConstraint`) — sprawdź `/anim slash1h`, `/anim bow`.
+
+### S29: Poprawki po testach (okno Postaci, plecak z usługą, NPC, błogosławieństwo, questy, teleport, liczby obrażeń)
+
+**Zrobione**
+- **A. Plecak znika z usługą**: czysta logika `Logic/WindowRules` (`onOpen` / `onClose` / `onEscape`, flaga „plecak
+  otworzyła usługa”); `WindowManager` używa jej przy ✕, Esc, `CloseTop`, odejściu od NPC (`NpcController.CloseMany`,
+  doszła `mail`), końcu handlu (anulowany i zakończony), śmierci, zmianie mapy i otwarciu okna wykluczającego
+  (`CloseMany`, `CloseServices`). Esc na usłudze zamyka ją z plecakiem jednym naciśnięciem; ✕ na samym plecaku
+  zamyka tylko plecak. Usunięte martwe `weaponsmith`; depozyt bez plecaka-towarzysza.
+- **B. Jedno okno Postaci**: `character` 1240×700 — ekwipunek (imię, klasa, tytuł, przycisk „Zdejmij”) | `BackpackPanel`
+  (wydzielony z dawnego `InventoryWindow`, ten sam komponent w plecaku-towarzyszu) | punkty i statystyki pochodne. B i
+  C otwierają to samo okno. Przeciąganie plecak ↔ ekwipunek z zieloną / czerwoną obwódką slotów i powodem („Wymaga
+  poziomu 12”), komunikat przy złym slocie, zamiana pierścieni (`SwapRings`). Dotyk: ekwipunek (sloty 56 px) +
+  zakładki „Plecak | Statystyki”, tap → tap zakłada, przytrzymanie 0,5 s = `ActionMenu` (Załóż/Użyj, Sprzedaj… przy
+  sklepie, Podziel, Zniszcz, Zdejmij).
+- **C. NPC na ziemi**: `Logic/Footing` (najniższy narożnik po 8 narożnikach z obrotem, `liftFor`, `hipHeight`),
+  `NpcService.settle` po wstawieniu modelu, ziemia z `WorldService.FloorAt` (ignoruje NPC, graczy, potwory, węzły;
+  trafia w ganek / schody / bruk), log `[Npc] lift <id> <dy>` przy > 0,3 st.
+- **D. Błogosławieństwo**: 30 min, warzenie 3 / 8 / 15 / 30 min. `BlessingService.RefreshAttribute` (atrybuty
+  `Blessing`, `BlessingUntil`) przy nałożeniu, zamianie, wygaśnięciu, wejściu i respawnie. ✶ w kolorze stopnia przy
+  nicku nad głową (`NameplateController`, wspólny zegar, miga w ostatniej minucie) i `Hud/BlessingBadge` przy własnym
+  nicku z licznikiem mm:ss (pulsuje, tooltip z efektami; aktualizuje tylko tekst). Czysta logika `Logic/BlessingMark`.
+- **E. Cele questów**: `Logic/QuestRows`; tracker pokazuje wszystkie cele, wykonane „✔ … 10/10” na zielono z poświatą
+  i jednorazowym pulsem 1 s; po wykonaniu wszystkich złota linia „Wróć do: <NPC>” z „➤”. To samo w dzienniku, rozmowie
+  z NPC i na kartach NPC mapy świata (tam doszła lista celów), dla questów głównych i pobocznych.
+- **F. Teleport do miasta**: `Logic/TownPlaces` + `WorldService.SafeSpot/SafeSpotFacing`; `/town tp`, `/npc`, `/tp`,
+  `/tparea` stawiają na ziemi przed budynkiem / NPC. Panel F2 → Świat: przycisk „Miasto (spawn)” i lista miejsc z
+  `TownPlaces.list()`.
+- **G. Liczby obrażeń**: serwer wysyła każde trafienie (`s`, `ab`, `im`, `dot` + `el`, HoT), `Logic/DamageText`
+  (`format`, `mode`, `visible`, `newStack`), `CombatFxController`: „KRYT! 1 234” z wyskokiem i drgnięciem, cudze
+  przygaszone, otrzymane czerwone, Pochłonięto / Odporny / Unik, zielone leczenie, ticki DoT w kolorze żywiołu, stos
+  bez nakładania (maks. 6, łączenie > 8/s), 1,2 s, `MaxDistance` 250, `ResetOnSpawn = false`, `hitDelay` z ważnością,
+  `warn` zamiast cichego `pcall`. Opcja „Liczby obrażeń: Wszystkie / Moje i otrzymane / Wyłączone”.
+- Admin: `/gearbag` (zestaw do testu przeciągania i czerwonych slotów), `/blessing <linia> <stopień> [sekundy]`,
+  `/dmgtest`.
+- Testy: `windowrules.spec`, `equipfit.spec`, `footing.spec`, `townplaces.spec`, `blessings.spec`, `questrows.spec`,
+  `damagetext.spec` (razem 648 testów).
+
+**Pliki**: nowe `Logic/{WindowRules,EquipFit,Footing,TownPlaces,BlessingMark,QuestRows,DamageText}`,
+`Data/DamageNumbers`, `Screens/BackpackPanel`, `Components/ActionMenu`, `Hud/BlessingBadge`, 7 plików testów; usunięty
+`Screens/InventoryWindow`; zmiany: `Controllers/{WindowManager,ItemController,NpcController,SocialController,
+ScreenController,NameplateController,CombatFxController}`, `UI/{DragDrop,QuestText}`, `Components/{ItemSlot,
+ItemTooltip}`, `CharacterWindow/{init,Equipment,DerivedList}`, `Hud/{init,BlessingIcon,QuestTracker}`,
+`Screens/{QuestDialog,QuestJournal,GameMenu,WorldMap/Cards,DevWindow/World}`, `Services/{EquipmentService,NpcService,
+WorldService,BlessingService,CombatService,StatusEffectService,SettingsService}`, `Skills/Context`,
+`Admin/{Items,World,Terrain,Economy,Combat}`, `Data/{Blessings,Recipes,AdminCommands}`, `Net/Definitions`, `Types`,
+lokalizacja.
+
+#### Instrukcja testu S29
+
+1. **A** Porozmawiaj z kupcem i otwórz sklep (plecak obok). Zamknij sklep ✕; otwórz ponownie i naciśnij Esc — oba razy
+   plecak znika razem ze sklepem.
+2. **A** Otwórz kowala albo alchemika i odejdź od NPC na > 20 st. — usługa i plecak znikają razem.
+3. **A** Otwórz sklep, zamknij ✕ sam plecak — sklep zostaje. Naciśnij B (plecak wraca), zamknij sklep — plecak zostaje.
+4. **A** Handel z drugim graczem: anuluj, potem w drugiej próbie dokończ — za każdym razem plecak znika z oknem handlu.
+5. **B** `/gearbag`, potem C i B — oba otwierają jedno okno (ekwipunek, plecak, statystyki). Przeciągnij miecz z plecaka
+   na slot broni: założony, slot świeci na zielono w trakcie.
+6. **B** Przeciągnij hełm za wysoki i broń innej klasy: czerwona obwódka z „Wymaga poziomu N”, komunikat po upuszczeniu.
+7. **B** Dwa pierścienie: przeciągnij jeden na drugi slot — zamieniają się. Kliknij założony przedmiot → „Zdejmij”.
+8. **B** Emulator telefonu: B = zakładka Plecak, C = Statystyki; tap przedmiot → tap slot zakłada; przytrzymanie = menu.
+9. **C** Output: linie `[Npc] lift <id> <dy>` (zanotuj). Obejdź NPC w mieście (kupiec, plecakarz, bankier, karczmarz,
+   kowal, aukcjoner) i na Łąkach — stopy na bruku / ganku / ziemi, nie w ziemi i nie w powietrzu.
+10. **D** `/blessing warrior 3`: ✶ przy nicku na portrecie HUD z licznikiem od 30:00; tooltip z efektami i „Pozostało”.
+11. **D** ✶ w tym samym kolorze nad głową po prawej od imienia; drugi gracz (Test → 2 graczy) też ją widzi.
+12. **D** `/blessing fortune 5 70`: po ~10 s ✶ w HUD pulsuje, licznik czerwony, nad głową miga. Po końcu: komunikat
+    wygaśnięcia, ✶ znika u wszystkich. Nałóż ponownie, zgiń, odrodź się — ✶ wraca.
+13. **D** Tooltip błogosławieństwa: „Czas działania: 30 min”; u alchemika najwyższy stopień warzy się 30 min.
+14. **E** Quest z kilkoma celami: wykonany cel zostaje „✔ … 10/10” na zielono z krótkim błyskiem (bez powtórek).
+15. **E** Po wykonaniu wszystkich: lista zostaje, pod nią „Wróć do: <NPC>” z „➤” prowadzącym do NPC oddającego.
+16. **E** Dziennik (fabuła i poboczne), rozmowa z NPC i karta NPC na mapie świata — te same zielone wiersze.
+17. **F** F2 → Świat → „Miasto (spawn)”: stoisz przy fontannie na rynku.
+18. **F** „Miejsce w mieście”: hala, ratusz, dziedziniec, kuźnia, apteka, stajnia, wartownia, arena, place — zawsze na
+    ziemi przed budynkiem, nie w środku ani na dachu. NPC: kupiec, plecakarz, bankier — na ziemi, przodem do NPC.
+19. **F** `/town tp xyz` → lista miejsc; `/tp meadows 0 0`, `/tp cave <id>` — na ziemi, nie w ścianie ani w wodzie.
+20. **G** Atakuj potwora: każde trafienie ma liczbę; krytyk „KRYT! 1 234” pomarańczowo-złoty z wyskokiem; liczby nie
+    nachodzą na siebie.
+21. **G** `/dmgtest` z celem i bez: po kolei wszystkie rodzaje liczb, na końcu seria łączona w rosnącą sumę.
+22. **G** Tarcza kapłana i słaby potwór → „Pochłonięto”; `/god` → „Odporny”; nietykalny boss → „Odporny”.
+23. **G** Esc → opcje → „Liczby obrażeń”: Wszystkie → Moje i otrzymane (cudze trafienia znikają) → Wyłączone.
+24. **G** Zgiń i odrodź się — liczby dalej działają; F9 bez ostrzeżeń `[CombatFxController] … event failed`. Ticki DoT
+    małe i kolorowe, HoT zielone „+N”.

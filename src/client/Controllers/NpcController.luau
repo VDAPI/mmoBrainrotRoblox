@@ -47,8 +47,9 @@ NpcController.SmithTab = scope:Value("craft")
 
 local WindowManager: any
 local CLOSE_DISTANCE = 20
+-- Windows of an NPC; closing them goes through WindowRules, so the companion backpack closes with the last.
 local SERVICE_WINDOWS =
-	{ "npc", "questnpc", "shop", "deposit", "blacksmith", "backpacks", "alchemy", "guildfound", "auction" }
+	{ "npc", "questnpc", "shop", "deposit", "blacksmith", "backpacks", "alchemy", "guildfound", "auction", "mail" }
 
 local SERVICE_TO_WINDOW: { [string]: string } = {
 	shop = "shop",
@@ -110,9 +111,7 @@ function NpcController.Talk(npcId: string)
 	NpcController.Current:set(npcId)
 	-- S25: talking (opening a service) ends the guide's walk.
 	NpcController.Nav.StopWalk(true)
-	for _, id in SERVICE_WINDOWS do
-		WindowManager.Close(id)
-	end
+	WindowManager.CloseMany(SERVICE_WINDOWS)
 	-- Talking counts for "talk to X" quest objectives.
 	task.spawn(function()
 		Net.Invoke("QuestTalk", npcId)
@@ -300,9 +299,7 @@ function NpcController.Start()
 			local model = npcId and folder and folder:FindFirstChild(npcId) :: Model?
 			if npcId and root and model then
 				if (model:GetPivot().Position - root.Position).Magnitude > CLOSE_DISTANCE then
-					for _, id in SERVICE_WINDOWS do
-						WindowManager.Close(id)
-					end
+					WindowManager.CloseMany(SERVICE_WINDOWS)
 					NpcController.Current:set(nil)
 				end
 			end

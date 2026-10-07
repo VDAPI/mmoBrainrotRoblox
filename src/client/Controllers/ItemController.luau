@@ -5,12 +5,17 @@
 --   "pot:<kind>" potion bar slot (hp / mana / energy)
 -- inv→inv moves, inv→eq equips (with the bind confirmation), eq→inv unequips, inv→pot assigns a potion.
 -- Double-click / tap-again activates: equip, use, unequip, drink.
+-- S29: eq:ring1 ↔ eq:ring2 swaps the rings; a drop on a slot the item cannot go to says why (Logic/EquipFit)
+-- instead of doing nothing; holding a slot on touch opens its action menu (equip / use / unequip / sell).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 
+local ActionMenu = require(script.Parent.Parent.UI.Components.ActionMenu)
 local Clock = require(ReplicatedStorage.Shared.Util.Clock)
 local DragDrop = require(script.Parent.Parent.UI.DragDrop)
+local EquipFit = require(ReplicatedStorage.Shared.Logic.EquipFit)
+local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local ItemText = require(script.Parent.Parent.UI.ItemText)
 local Items = require(ReplicatedStorage.Shared.Data.Items)
 local Keybinds = require(script.Parent.Parent.UI.Keybinds)
@@ -31,6 +36,8 @@ local ItemController = {
 local WindowManager: any
 local NpcController: any
 local GatherController: any
+local UIController: any
+local menuScope: Fusion.Scope<typeof(Fusion)>? = nil
 
 local function parse(slotId: string): (string, string)
 	local kind, rest = string.match(slotId, "^(%a+):(.+)$")
@@ -232,13 +239,38 @@ function ItemController.Activate(slotId: string)
 	end
 end
 
+-- Local check before asking the server (which checks again): a refused drop says why.
+local function fitsSlot(item: ItemInstance, slot: string): boolean
+	local ok, reason, required = EquipFit.check(item, slot, {
+		level = State.Get({ "character", "level" }) or 1,
+		class = State.Get({ "character", "class" }) or "",
+		equipment = State.Get({ "character", "equipment" }),
+	})
+	if not ok and reason then
+		local key, args = EquipFit.messageKey(reason, required)
+		Sounds.play("error")
+		Toast.push(Text.now(key, args), "error")
+		return false
+	end
+	return true
+end
+
 local function onDrop(from: string, to: string)
 	local fromKind, fromRest = parse(from)
 	local toKind, toRest = parse(to)
 	if fromKind == "inv" and toKind == "inv" then
 		invoke("MoveItem", tonumber(fromRest), tonumber(toRest))
 	elseif fromKind == "inv" and toKind == "eq" then
-		ItemController.Equip(tonumber(fromRest) :: number, toRest)
+		local item = ItemController.ItemAt(from)
+		if item and fitsSlot(item, toRest) then
+			ItemController.Equip(tonumber(fromRest) :: number, toRest)
+		end
+	elseif fromKind == "eq" and toKind == "eq" then
+		if EquipFit.group(fromRest) == "ring" and EquipFit.group(toRest) == "ring" then
+			invoke("SwapRings")
+		else
+			report(false, "equip.error.slot")
+		end
 	elseif fromKind == "eq" and toKind == "inv" then
 		ItemController.Unequip(fromRest, tonumber(toRest))
 	elseif fromKind == "inv" and toKind == "dep" then
@@ -267,11 +299,96 @@ local function onDrop(from: string, to: string)
 	end
 end
 
+function ItemController.CloseMenu()
+	local s = menuScope
+	if s then
+		menuScope = nil
+		Fusion.doCleanup(s)
+	end
+end
+
+-- Action menu of a held slot (touch, S29): what a tap-tap or drag could do, as buttons.
+local function openMenu(slotId: string)
+	local kind, rest = parse(slotId)
+	local item = ItemController.ItemAt(slotId)
+	local def = item and Items.get(item.id)
+	if not item or not def or (kind ~= "inv" and kind ~= "eq") then
+		return
+	end
+	local options: { ActionMenu.Option } = {}
+	if kind == "inv" then
+		local index = tonumber(rest) :: number
+		if def.slot then
+			table.insert(options, {
+				label = Text.now("inventory.action.equip"),
+				variant = "primary",
+				run = function()
+					ItemController.Equip(index, nil)
+				end,
+			})
+		elseif def.use and def.use.kind ~= "none" then
+			table.insert(options, {
+				label = Text.now("inventory.action.use"),
+				variant = "primary",
+				run = function()
+					ItemController.Use(index)
+				end,
+			})
+		end
+		local sell = DragDrop.SellHandler
+		if sell then
+			table.insert(options, {
+				label = Text.now("inventory.action.sell"),
+				run = function()
+					sell(index)
+				end,
+			})
+		end
+		if item.n > 1 then
+			table.insert(options, {
+				label = Text.now("inventory.action.split"),
+				run = function()
+					ItemController.Split(index)
+				end,
+			})
+		end
+		table.insert(options, {
+			label = Text.now("inventory.action.destroy"),
+			variant = "danger",
+			run = function()
+				ItemController.Destroy(index)
+			end,
+		})
+	elseif rest ~= "backpack" then
+		table.insert(options, {
+			label = Text.now("inventory.action.unequip"),
+			variant = "primary",
+			run = function()
+				ItemController.Unequip(rest, nil)
+			end,
+		})
+	end
+	if #options == 0 then
+		return
+	end
+	ItemController.CloseMenu()
+	DragDrop.Clear()
+	local s = UIController.Scope:innerScope()
+	menuScope = s
+	ActionMenu(s, {
+		Title = ItemText.name(item.id, item.up, item.el),
+		Options = options,
+		CancelText = Text.now("common.cancel"),
+		Close = ItemController.CloseMenu,
+	}).Parent =
+		UIController.GetLayer("Modals")
+end
+
 function ItemController.Init(registry)
 	WindowManager = registry.Get("WindowManager")
 	NpcController = registry.Get("NpcController")
 	GatherController = registry.Get("GatherController")
-	local UIController = registry.Get("UIController")
+	UIController = registry.Get("UIController")
 	UIController.AddDragVisual(function(slotId: string): (string?, string?)
 		local item = ItemController.ItemAt(slotId)
 		local def = item and Items.get(item.id)
@@ -291,6 +408,7 @@ function ItemController.Init(registry)
 			local kind = parse(slotId)
 			return kind ~= "pot" and kind ~= "smith" and kind ~= "trade" and ItemController.ItemAt(slotId) ~= nil
 		end,
+		menu = openMenu,
 	})
 end
 

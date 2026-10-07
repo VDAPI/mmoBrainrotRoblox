@@ -35,6 +35,8 @@ export type Props = {
 	Name: string?,
 	-- Text shown on hover when the slot is empty.
 	EmptyTooltip: UsedAs<string>?,
+	-- S29: drop highlight while an item is dragged / selected: "ok" (green) or "bad" (red), nil = none.
+	DropHint: UsedAs<string?>?,
 }
 
 local function canUse(item: ItemInstance, level: number?, classId: string?): boolean
@@ -80,6 +82,9 @@ local function ItemSlot(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Inst
 	local dragging = scope:Computed(function(use): boolean
 		return use(DragDrop.Dragging) == props.SlotId
 	end)
+	local hint = scope:Computed(function(use): string?
+		return if props.DropHint ~= nil then use(props.DropHint) else nil
+	end)
 	local usable = scope:Computed(function(use): boolean
 		local i = use(item)
 		return i == nil or canUse(i, use(level), use(classId))
@@ -104,20 +109,26 @@ local function ItemSlot(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Inst
 				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
 				Thickness = scope:Computed(function(use): number
 					local i = use(item)
-					if use(selected) then
+					if use(selected) or use(hint) ~= nil then
 						return 3
 					end
 					return if i and i.rarity >= Rarities.EPIC then 2.5 else 1.5
 				end),
 				Color = scope:Computed(function(use): Color3
+					local h = use(hint)
+					if h == "ok" then
+						return Theme.Colors.Success
+					elseif h == "bad" then
+						return Theme.Colors.DangerHover
+					end
 					return if use(selected) then Theme.Colors.GoldBright else use(rarityColor)
 				end),
 				Transparency = scope:Computed(function(use): number
-					return if use(item) or use(selected) then 0 else 0.4
+					return if use(item) or use(selected) or use(hint) ~= nil then 0 else 0.4
 				end),
 				[Children] = scope:Computed(function(use, s: Fusion.Scope<typeof(Fusion)>): Instance?
 					local i = use(item)
-					if not i or i.rarity ~= Rarities.LEGENDARY then
+					if not i or i.rarity ~= Rarities.LEGENDARY or use(hint) ~= nil then
 						return nil
 					end
 					return s:New("UIGradient")({

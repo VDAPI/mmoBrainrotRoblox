@@ -376,6 +376,24 @@ function EquipmentService.Unequip(player: Player, slot: string, targetIndex: num
 	return true, nil
 end
 
+-- Swaps the two ring slots (S29: dragging a ring onto the other ring slot). Either may be empty.
+function EquipmentService.SwapRings(player: Player): (boolean, string?)
+	if InventoryService.IsTradeLocked(player) then
+		return false, "trade.error.locked"
+	end
+	local char = character(player)
+	if not char then
+		return false, "error.wrongPhase"
+	end
+	local equipment = char.equipment :: any
+	if equipment.ring1 == nil and equipment.ring2 == nil then
+		return false, "error.badRequest"
+	end
+	equipment.ring1, equipment.ring2 = equipment.ring2, equipment.ring1
+	changed(player, { "ring1", "ring2" })
+	return true, nil
+end
+
 -- StatService plug-ins ------------------------------------------------------------------------------------
 
 local function modifierSource(_player: Player, char: Types.CharacterData)
@@ -431,6 +449,9 @@ function EquipmentService.Start()
 	end)
 	Net.Handle("UnequipItem", function(player: Player, slot: string, index: number?)
 		return EquipmentService.Unequip(player, slot, index)
+	end)
+	Net.Handle("SwapRings", function(player: Player)
+		return EquipmentService.SwapRings(player)
 	end)
 	CharacterService.ModelSpawned:Connect(function(player: Player)
 		updateWeaponModel(player)

@@ -53,6 +53,8 @@ export type Command = {
 	studioOnly: boolean?,
 }
 
+local Blessings = require("./Blessings")
+
 local MAX_LEVEL = 100
 local BIG = 1e12
 
@@ -117,6 +119,8 @@ cmd("character", "skillall", { enum("class", { "Warrior", "Hunter", "Mage", "Cle
 cmd("character", "nocd", { enum("mode", { "on", "off" }, true, "on") })
 cmd("combat", "skillpreview", { str("id") })
 cmd("combat", "dummy", { int("level", 1, MAX_LEVEL, true) })
+-- S29: every kind of damage number in turn (look check).
+cmd("combat", "dmgtest", {})
 
 -- Items
 cmd(
@@ -143,6 +147,7 @@ cmd("items", "scrolls", { int("n", 1, 999, true) })
 cmd("items", "ilvl", { int("level", 1, MAX_LEVEL) })
 cmd("items", "element", { enum("element", { "fire", "ice", "lightning" }) })
 cmd("items", "partyloot", { int("n", 1, 5, true) })
+cmd("items", "gearbag", {}) -- S29: drag-to-equip test set in the backpack
 
 -- World
 cmd("world", "tp", { str("target"), str("a", true), str("b", true) })
@@ -217,6 +222,12 @@ cmd("economy", "setshards", { int("amount", 0, BIG) })
 cmd("economy", "pass", { ref("pass", "pass"), enum("mode", { "on", "off" }) })
 cmd("economy", "premium", { enum("action", { "grant" }), ref("pass", "pass") })
 cmd("economy", "bless", { ref("id", "blessing", true) })
+-- S29: a blessing by line and tier, optionally with only `seconds` left (to see the last minute).
+cmd(
+	"economy",
+	"blessing",
+	{ enum("line", Blessings.lines), int("tier", 1, 5), int("seconds", 1, Blessings.DURATION, true) }
+)
 cmd("economy", "cosmetic", { enum("action", { "all" }) })
 cmd("economy", "mail", { enum("kind", { "gold", "item" }), str("a"), str("b", true), str("c", true) })
 cmd("economy", "auction", { enum("action", { "list", "expireall" }) }, { dangerActions = { "expireall" } })

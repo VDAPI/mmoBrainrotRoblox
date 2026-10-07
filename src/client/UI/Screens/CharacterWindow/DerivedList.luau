@@ -104,7 +104,7 @@ local function DerivedList(scope: Scope, props: Props): Instance
 					}),
 					scope:New("TextLabel")({
 						Name = "Name",
-						Size = UDim2.fromScale(0.6, 1),
+						Size = UDim2.fromScale(0.68, 1), -- S29: narrower column, long names keep more room
 						BackgroundTransparency = 1,
 						Text = Text.T(scope, def.nameKey),
 						FontFace = Theme.Fonts.Body,
@@ -117,7 +117,7 @@ local function DerivedList(scope: Scope, props: Props): Instance
 						Name = "Value",
 						AnchorPoint = Vector2.new(1, 0),
 						Position = UDim2.fromScale(1, 0),
-						Size = UDim2.fromScale(0.4, 1),
+						Size = UDim2.fromScale(0.32, 1),
 						BackgroundTransparency = 1,
 						RichText = true,
 						Text = scope:Computed(function(use): string

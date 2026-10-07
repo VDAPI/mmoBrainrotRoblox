@@ -30,7 +30,8 @@ end
 -- Blessings: herb by rarity + one ingredient typical for the line (+ essence shards from Rare up).
 local BLESSING_LEVEL = { 1, 15, 35, 60 }
 local BLESSING_GOLD = { 100, 400, 1500, 5000 }
-local BLESSING_MINUTES = { 5, 15, 30, 60 }
+-- S29: halved with the blessing duration (30 min); brewing never takes longer than the blessing lasts.
+local BLESSING_MINUTES = { 3, 8, 15, 30 }
 local BLESSING_HERB = { "herb_meadowsweet", "herb_nightshade", "herb_firebloom", "herb_frostleaf" }
 local LINE_INGREDIENT: { [string]: string } = {
 	warrior = "wolf_pelt",

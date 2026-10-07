@@ -1,17 +1,15 @@
 --!strict
--- Active blessing (DESIGN §11) and resistance elixirs next to the portrait: rarity-coloured icon with the
--- time left (real time, Util/Clock) and a tooltip with the stats.
+-- Resistance elixirs (DESIGN §10) next to the portrait: icon with the time left (real time, Util/Clock) and a
+-- tooltip with the stat. The active blessing sits next to the character name since S29 (Hud/BlessingBadge).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
+local BlessingBadge = require(script.Parent.BlessingBadge)
 local Blessings = require(ReplicatedStorage.Shared.Data.Blessings)
 local Clock = require(ReplicatedStorage.Shared.Util.Clock)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
-local ItemText = require(script.Parent.Parent.Parent.ItemText)
-local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
 local State = require(script.Parent.Parent.Parent.State)
-local Stats = require(ReplicatedStorage.Shared.Data.Stats)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
 local Time = require(ReplicatedStorage.Shared.Logic.Time)
@@ -22,12 +20,6 @@ local Children = Fusion.Children
 type Scope = Fusion.Scope<typeof(Fusion)>
 
 local SIZE = 48
-
-local function statLine(use: Fusion.Use, stat: string, value: number): string
-	local def = Stats.get(stat)
-	local suffix = if def and def.format == "pct" or stat == "atkSpeed" then "%" else ""
-	return `+{value}{suffix} {Text.get(use, `stat.{stat}`)}`
-end
 
 local function icon(
 	scope: Scope,
@@ -41,6 +33,9 @@ local function icon(
 		LayoutOrder = order,
 		Size = UDim2.fromOffset(SIZE, SIZE + 16),
 		BackgroundTransparency = 1,
+		Visible = scope:Computed(function(use): boolean
+			return use(left) > 0
+		end),
 		[Children] = {
 			scope:New("TextLabel")({
 				Size = UDim2.fromOffset(SIZE, SIZE),
@@ -80,7 +75,6 @@ local function icon(
 end
 
 local function BlessingIcon(scope: Scope, position: UDim2): Instance
-	local blessing = State.Value({ "character", "blessing" })
 	local elixirs = State.Value({ "character", "elixirs" })
 	local now = scope:Value(Clock.now())
 	local accumulator = 0
@@ -95,44 +89,16 @@ local function BlessingIcon(scope: Scope, position: UDim2): Instance
 		end)
 	)
 
+	-- Rebuilt only when the set of elixirs changes; the clock just updates each countdown text.
 	local icons = scope:Computed(function(use, s: Scope): { Instance }
 		local list = {}
-		local t = use(now)
-		local active = use(blessing)
-		local def = if type(active) == "table" and active.expiresAt > t then Blessings.get(active.id) else nil
-		if def and active then
-			local rarity = Rarities.get(def.rarity)
-			local color = ItemText.rarityColor(def.rarity)
-			local lines = {
-				`{Text.get(use, def.nameKey)} ({if rarity then Text.get(use, rarity.nameKey) else ""})`,
-			}
-			local keys = {}
-			for stat in def.stats do
-				table.insert(keys, stat)
-			end
-			table.sort(keys)
-			for _, stat in keys do
-				table.insert(lines, statLine(use, stat, def.stats[stat]))
-			end
-			local expiresAt = active.expiresAt
-			table.insert(
-				list,
-				icon(
-					s,
-					1,
-					"✶",
-					color,
-					s:Computed(function(use2): number
-						return Time.remaining(expiresAt, use2(now))
-					end),
-					table.concat(lines, "\n")
-				)
-			)
-		end
-		local order = 1
+		local t = Fusion.peek(now)
+		local order = 0
 		for stat, expiresAt in (use(elixirs) or {}) :: { [string]: number } do
 			if expiresAt > t then
 				order += 1
+				local name = Text.get(use, `item.elixir_{stat}.name`)
+				local tip = `{name}\n{BlessingBadge.statLine(use, stat, Blessings.ELIXIR_VALUE)}`
 				table.insert(
 					list,
 					icon(
@@ -143,7 +109,7 @@ local function BlessingIcon(scope: Scope, position: UDim2): Instance
 						s:Computed(function(use2): number
 							return Time.remaining(expiresAt, use2(now))
 						end),
-						`{Text.get(use, `item.elixir_{stat}.name`)}\n{statLine(use, stat, Blessings.ELIXIR_VALUE)}`
+						tip
 					)
 				)
 			end

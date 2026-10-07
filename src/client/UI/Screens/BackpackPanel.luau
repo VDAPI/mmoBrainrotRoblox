@@ -1,6 +1,8 @@
 --!strict
--- Backpack window (B), DESIGN §23: slot grid sized by the backpack, gold, used/total slots, sort button,
--- category filter and an action bar for the selected slot (works for mouse and touch).
+-- Backpack panel (DESIGN §23): slot grid sized by the backpack, gold, used/total slots, sort button,
+-- category filter and an action bar for the selected slot (works for mouse and touch). S29: one component
+-- embedded in the character window (middle column / "Backpack" tab) and in the companion backpack window
+-- next to services ("inventory").
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -32,8 +34,15 @@ export type Actions = {
 	LootLog: () -> (), -- S20: open the loot log
 }
 
+export type Props = {
+	Actions: Actions,
+	SlotSize: number?, -- default 64
+	ButtonWidth: number?, -- action bar button width, default 120
+}
+
 local SLOT = 64
 local GAP = 6
+local BUTTON_WIDTH = 120
 
 local FILTERS: { [string]: { [string]: boolean }? } = {
 	all = nil,
@@ -42,7 +51,10 @@ local FILTERS: { [string]: { [string]: boolean }? } = {
 	consumables = { consumable = true, scroll = true, stone = true, tool = true },
 }
 
-local function InventoryWindow(scope: Scope, actions: Actions): Fusion.Child
+local function BackpackPanel(scope: Scope, props: Props): Fusion.Child
+	local actions = props.Actions
+	local slotSize = props.SlotSize or SLOT
+	local buttonWidth = props.ButtonWidth or BUTTON_WIDTH
 	local inventory = State.Value({ "character", "inventory" })
 	local backpack = State.Value({ "character", "equipment", "backpack" })
 	local gold = State.Value({ "character", "gold" })
@@ -90,7 +102,7 @@ local function InventoryWindow(scope: Scope, actions: Actions): Fusion.Child
 				ItemSlot(s, {
 					SlotId = `inv:{index}`,
 					Item = item,
-					Size = SLOT,
+					Size = slotSize,
 					LayoutOrder = index,
 					Visible = s:Computed(function(use2): boolean
 						local categories = FILTERS[use2(filter)]
@@ -118,7 +130,7 @@ local function InventoryWindow(scope: Scope, actions: Actions): Fusion.Child
 			LayoutOrder = order,
 			Text = Text.T(scope, key),
 			Variant = (variant or "secondary") :: any,
-			Size = UDim2.fromOffset(120, Theme.Size.ButtonHeightSmall),
+			Size = UDim2.fromOffset(buttonWidth, Theme.Size.ButtonHeightSmall),
 			TextSize = Theme.TextSize.Small,
 			Visible = visible,
 			OnClick = function()
@@ -144,7 +156,8 @@ local function InventoryWindow(scope: Scope, actions: Actions): Fusion.Child
 			[Children] = {
 				scope:New("TextLabel")({
 					Name = "Gold",
-					Size = UDim2.fromScale(0.5, 1),
+					Size = UDim2.new(1, -270, 1, 0),
+					TextTruncate = Enum.TextTruncate.AtEnd,
 					BackgroundTransparency = 1,
 					Text = scope:Computed(function(use): string
 						return `◉ {Text.get(use, "inventory.gold", { gold = Format.number(use(gold) or 0) })}`
@@ -216,7 +229,7 @@ local function InventoryWindow(scope: Scope, actions: Actions): Fusion.Child
 			ScrollBarImageColor3 = Theme.Colors.GoldDim,
 			[Children] = {
 				scope:New("UIGridLayout")({
-					CellSize = UDim2.fromOffset(SLOT, SLOT),
+					CellSize = UDim2.fromOffset(slotSize, slotSize),
 					CellPadding = UDim2.fromOffset(GAP, GAP),
 					SortOrder = Enum.SortOrder.LayoutOrder,
 				}),
@@ -229,12 +242,19 @@ local function InventoryWindow(scope: Scope, actions: Actions): Fusion.Child
 			},
 		}),
 		-- Actions for the selected slot
-		scope:New("Frame")({
+		-- Scrolls sideways when the panel is narrower than the visible buttons (touch, character window).
+		scope:New("ScrollingFrame")({
 			Name = "Actions",
 			AnchorPoint = Vector2.new(0, 1),
 			Position = UDim2.fromScale(0, 1),
-			Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeightSmall),
+			Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeightSmall + 6),
 			BackgroundTransparency = 1,
+			BorderSizePixel = 0,
+			CanvasSize = UDim2.new(),
+			AutomaticCanvasSize = Enum.AutomaticSize.X,
+			ScrollingDirection = Enum.ScrollingDirection.X,
+			ScrollBarThickness = 4,
+			ScrollBarImageColor3 = Theme.Colors.GoldDim,
 			[Children] = {
 				scope:New("UIListLayout")({
 					FillDirection = Enum.FillDirection.Horizontal,
@@ -277,7 +297,7 @@ local function InventoryWindow(scope: Scope, actions: Actions): Fusion.Child
 						local item = use(selectedItem)
 						return Text.get(use, if item and item.locked then "item.unlock" else "item.lock")
 					end),
-					Size = UDim2.fromOffset(110, Theme.Size.ButtonHeightSmall),
+					Size = UDim2.fromOffset(math.min(110, buttonWidth), Theme.Size.ButtonHeightSmall),
 					TextSize = Theme.TextSize.Small,
 					Visible = scope:Computed(function(use): boolean
 						local def = use(selectedDef)
@@ -293,7 +313,7 @@ local function InventoryWindow(scope: Scope, actions: Actions): Fusion.Child
 				Button(scope, {
 					LayoutOrder = 6,
 					Text = Text.T(scope, "lootlog.button"),
-					Size = UDim2.fromOffset(90, Theme.Size.ButtonHeightSmall),
+					Size = UDim2.fromOffset(math.min(90, buttonWidth), Theme.Size.ButtonHeightSmall),
 					TextSize = Theme.TextSize.Small,
 					OnClick = function()
 						actions.LootLog()
@@ -313,4 +333,4 @@ local function InventoryWindow(scope: Scope, actions: Actions): Fusion.Child
 	}
 end
 
-return InventoryWindow
+return BackpackPanel

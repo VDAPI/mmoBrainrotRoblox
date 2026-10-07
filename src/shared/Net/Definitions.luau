@@ -66,6 +66,7 @@ local Definitions: { [string]: Definition } = {
 	UseItem = { kind = "function", dir = "c2s", rate = 6, args = { "integer" } },
 	EquipItem = { kind = "function", dir = "c2s", rate = 6, args = { "integer", "string?" } }, -- (index, slot?)
 	UnequipItem = { kind = "function", dir = "c2s", rate = 6, args = { "string", "integer?" } }, -- (slot, index?)
+	SwapRings = { kind = "function", dir = "c2s", rate = 4, args = {} }, -- S29: ring1 <-> ring2
 	SetPotionSlot = { kind = "function", dir = "c2s", rate = 4, args = { "string", "string?" } }, -- (hp|mana|energy, itemId?)
 	UsePotion = { kind = "function", dir = "c2s", rate = 6, args = { "string" } },
 	PickupLoot = { kind = "function", dir = "c2s", rate = 10, args = { "string" } },

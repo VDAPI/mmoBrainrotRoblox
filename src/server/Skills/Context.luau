@@ -299,9 +299,11 @@ function Context.new(
 			if healed > 0 then
 				local entity = Entity.GetPlayerEntity(target)
 				if entity then
+					-- S29: `s` (the healer) lets "mine and received" damage numbers show our heals on allies.
+					local caster = Entity.GetPlayerEntity(player)
 					services.Combat.QueueFx(
 						Entity.Position(entity),
-						{ k = "heal", e = entity.id, a = math.floor(healed) }
+						{ k = "heal", e = entity.id, s = caster and caster.id, a = math.floor(healed) }
 					)
 				end
 			end

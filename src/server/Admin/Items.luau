@@ -5,6 +5,7 @@
 local Shared = game:GetService("ReplicatedStorage").Shared
 
 local Config = require(Shared.Config)
+local DevPreset = require(Shared.Logic.DevPreset)
 local Elements = require(Shared.Data.Elements)
 local Inventory = require(Shared.Logic.Inventory)
 local ItemRoll = require(Shared.Logic.ItemRoll)
@@ -314,6 +315,54 @@ commands.givex = function(player, args)
 				reply(player, err or "equip.error.slot")
 			end
 		end
+	end)
+end
+
+-- S29: test set for the character window's drag & drop: the class gear of the character's level in the
+-- backpack (not equipped; two rings for the ring swap), a helmet 10 levels too high (red slot "requires
+-- level") and a weapon of another class (red slot "class").
+commands.gearbag = function(player, _args)
+	withCharacter(player, function()
+		local character = PlayerStateService.GetCharacter(player)
+		local level = character.level
+		local tier = Items.generate.tierFor(level)
+		local given = 0
+		local function give(id: string, ilvl: number): boolean
+			local leftover = InventoryService.GiveNew(player, id, 1, 2, ilvl)
+			if leftover > 0 then
+				return false
+			end
+			given += 1
+			return true
+		end
+		local pieces = DevPreset.pick(character.class, level)
+		local full = false
+		for _, piece in pieces do
+			if not give(piece.id, tier) then
+				full = true
+				break
+			end
+		end
+		if not full and level + 10 <= Config.MaxLevel then
+			for _, piece in pieces do
+				if piece.slot == "helmet" then
+					full = not give(piece.id, level + 10)
+					break
+				end
+			end
+		end
+		if not full then
+			for class, gear in Items.startingGear do
+				if class ~= character.class then
+					full = not give(gear[1], level)
+					break
+				end
+			end
+		end
+		if full then
+			reply(player, "inventory.full")
+		end
+		reply(player, "admin.gearbag.ok", { n = given })
 	end)
 end
 

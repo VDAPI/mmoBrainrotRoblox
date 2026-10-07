@@ -384,14 +384,16 @@ local function tickEntity(entity: any, list: { Effect }, t: number)
 			effect.nextTick = nextTick + TICK_INTERVAL
 			if effect.kind == "hot" then
 				if entity.kind == "player" and entity.player then
-					ResourceService.Heal(entity.player, effect.tickAmount)
+					local healed = ResourceService.Heal(entity.player, effect.tickAmount)
+					StatusEffectService.Ticked:Fire(entity, effect, healed)
 				end
 			elseif entity.kind == "monster" and entity.monster then
-				entity.monster:TakeDamage(effect.tickAmount, effect.source)
-				StatusEffectService.Ticked:Fire(entity, effect)
+				local dealt = entity.monster:TakeDamage(effect.tickAmount, effect.source)
+				StatusEffectService.Ticked:Fire(entity, effect, if type(dealt) == "number" then dealt else nil)
 			elseif entity.kind == "player" and entity.player then
-				ResourceService.Damage(entity.player, effect.tickAmount, effect.kind)
-				StatusEffectService.Ticked:Fire(entity, effect)
+				-- S29: the number shows what got through (after shields); 0 = absorbed / immune.
+				local _, filtered = ResourceService.Damage(entity.player, effect.tickAmount, effect.kind)
+				StatusEffectService.Ticked:Fire(entity, effect, filtered)
 			end
 		end
 	end
@@ -400,7 +402,8 @@ local function tickEntity(entity: any, list: { Effect }, t: number)
 	end
 end
 
--- (entity, effect) after a damaging tick (CombatService draws the number).
+-- (entity, effect, amount?) after a tick: damage dealt after shields, or HP healed by "hot" (CombatService draws
+-- the number, S29).
 StatusEffectService.Ticked = Signal.new()
 
 function StatusEffectService.Init(registry)

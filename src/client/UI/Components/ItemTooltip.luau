@@ -255,7 +255,7 @@ local function build(s: Scope, item: ItemInstance, lang: string): { Instance }
 			for _, stat in ids do
 				addLine(`{statName(lang, stat)}: <b>+{formatStat(stat, blessing.stats[stat])}</b>`, DARK)
 			end
-			addLine(Locale.T("tooltip.blessingDuration", { time = Format.timeLong(Blessings.DURATION) }, lang), MUTED)
+			addLine(Locale.T("tooltip.blessingDuration", { minutes = Blessings.DURATION // 60 }, lang), MUTED)
 		end
 	end
 

@@ -4,8 +4,9 @@
 --   Open / Close / Toggle / CloseAll / IsOpen(id) -> Fusion Value<boolean>
 --   ShowModal(spec): one modal at a time, later ones wait in a queue.
 -- Esc closes the modal, then the top window, and otherwise opens the game menu (while playing).
--- One window at a time (S18, DESIGN §23): opening a window closes the others. Service windows (COMPANIONS)
--- open together with the backpack, side by side on desktop.
+-- One window at a time (S18, DESIGN §23): opening a window closes the others. Service windows open together
+-- with the companion backpack, side by side on desktop. S29: the pairing rules (what closes with what, the
+-- B/C alias of the character window) live in Shared/Logic/WindowRules; every way of closing goes through them.
 -- Hotkeys only work while enabled (ScreenController enables them in the "playing" phase).
 -- S23: `overlay` windows (the dev panel) neither close other windows nor get closed by them; on desktop they
 -- open at the right edge. Esc closes the normal windows first and overlays last. Overlay hotkeys win over
@@ -24,6 +25,8 @@ local Text = require(script.Parent.Parent.UI.Text)
 local Device = require(script.Parent.Parent.UI.Device)
 local Scale = require(script.Parent.Parent.UI.Scale)
 local Window = require(script.Parent.Parent.UI.Components.Window)
+local WindowRules = require(ReplicatedStorage.Shared.Logic.WindowRules)
+local State = require(script.Parent.Parent.UI.State)
 
 local log = Log.new("WindowManager")
 
@@ -50,29 +53,19 @@ local WindowManager = {
 	Deps = { "UIController" },
 	-- Window id opened by Esc when nothing else is open.
 	MenuWindowId = "menu",
+	-- S29: which part of the character window B / C asked for ("backpack" | "stats"), set on open.
+	FocusHint = nil :: any,
 }
 
--- Windows that may stay open next to the backpack (NPC services, trade, auction, mail).
-local COMPANIONS: { [string]: boolean } = {
-	shop = true,
-	weaponsmith = true,
-	deposit = true,
-	blacksmith = true,
-	backpacks = true,
-	alchemy = true,
-	unbind = true,
-	trade = true,
-	auction = true,
-	mail = true,
-}
-local INVENTORY = "inventory"
+local INVENTORY = WindowRules.INVENTORY
 local GAP = 12
 
 local UIController: any
 local rootScope: Scope
 local defs: { [string]: WindowDef } = {}
 local open: { [string]: OpenWindow } = {}
-local stack: { string } = {} -- open window ids, top last
+local stack: { string } = {} -- open window ids (overlays included), top last
+local rules = WindowRules.new() -- pairing state of the non-overlay windows (S29)
 local openValues: { [string]: Fusion.Value<boolean> } = {}
 local hotkeysEnabled = false
 local zCounter = 1
@@ -90,6 +83,11 @@ local function openValue(id: string): Fusion.Value<boolean>
 	return value
 end
 
+local function isOverlay(id: string): boolean
+	local def = defs[id]
+	return def ~= nil and def.overlay == true
+end
+
 local function bringToFront(id: string)
 	local window = open[id]
 	if not window then
@@ -100,6 +98,9 @@ local function bringToFront(id: string)
 		table.remove(stack, index)
 	end
 	table.insert(stack, id)
+	if not isOverlay(id) then
+		WindowRules.onFocus(rules, id)
+	end
 	zCounter += 1
 	window.z:set(zCounter)
 end
@@ -113,7 +114,8 @@ function WindowManager.IsOpen(id: string): Fusion.Value<boolean>
 	return openValue(id)
 end
 
-function WindowManager.Close(id: string)
+-- Removes one window from the screen (no pairing rules).
+local function destroyWindow(id: string)
 	local window = open[id]
 	if not window then
 		return
@@ -127,70 +129,118 @@ function WindowManager.Close(id: string)
 	openValue(id):set(false)
 end
 
-local openWindow: (id: string, offset: Vector2?) -> ()
-
--- Closes every open window except `keep` (a set of ids) and the overlays.
-local function closeOthers(keep: { [string]: boolean })
-	for openId in open do
-		local openDef = defs[openId]
-		if not keep[openId] and not (openDef and openDef.overlay) then
-			WindowManager.Close(openId)
-		end
+local function destroyAll(ids: { string })
+	for _, id in ids do
+		destroyWindow(id)
 	end
 end
 
-function WindowManager.Open(id: string)
-	if open[id] then
-		bringToFront(id)
+-- Closes a window and whatever closes with it (the companion backpack after the last service, S29).
+function WindowManager.Close(id: string)
+	if not open[id] then
 		return
 	end
-	local def = defs[id]
-	if not def then
+	if isOverlay(id) then
+		destroyWindow(id)
+		return
+	end
+	local closing = WindowRules.onClose(rules, id)
+	if #closing == 0 then
+		closing = { id } -- out of sync: close it anyway
+	end
+	destroyAll(closing)
+end
+
+-- Closes several windows through the pairing rules (walking away from an NPC, death, map change).
+function WindowManager.CloseMany(ids: { string })
+	destroyAll(WindowRules.onCloseMany(rules, ids))
+end
+
+-- Closes every service window and its companion backpack.
+function WindowManager.CloseServices()
+	WindowManager.CloseMany(WindowRules.openServices(rules))
+end
+
+local openWindow: (id: string, offset: Vector2?) -> ()
+
+-- Desktop offsets of a backpack + service pair (backpack on the left, service on the right).
+local function pairOffsets(serviceId: string): (Vector2, Vector2)
+	local inventory = defs[INVENTORY]
+	local service = defs[serviceId]
+	local invWidth = if inventory then inventory.size.X else 0
+	local serviceWidth = if service then service.size.X else 0
+	local half = (invWidth + serviceWidth + GAP) / 2
+	return Vector2.new(-half + invWidth / 2, 0), Vector2.new(half - serviceWidth / 2, 0)
+end
+
+local function topService(): string?
+	for i = #rules.open, 1, -1 do
+		local id = rules.open[i]
+		if WindowRules.isService(id) and open[id] then
+			return id
+		end
+	end
+	return nil
+end
+
+function WindowManager.Open(id: string)
+	if not defs[id] then
 		log:warn("unknown window '%s'", id)
 		return
 	end
-	if def.overlay then
+	if isOverlay(id) then
+		if open[id] then
+			bringToFront(id)
+			return
+		end
 		-- Overlay (dev panel): at the right edge on desktop, nothing else closes.
+		local def = defs[id]
 		local screen = Fusion.peek(Scale.VirtualSize)
 		local desktop = not Fusion.peek(Device.Touch)
 		openWindow(id, if desktop then Vector2.new(math.max(0, screen.X / 2 - def.size.X / 2 - 16), 0) else nil)
 		return
 	end
-	if COMPANIONS[id] then
-		-- Service window: backpack on the left, the service on the right.
-		closeOthers({ [INVENTORY] = true })
-		local inventory = defs[INVENTORY]
-		local desktop = not Fusion.peek(Device.Touch)
-		local half = (def.size.X + (if inventory then inventory.size.X else 0) + GAP) / 2
-		if inventory and desktop then
-			if open[INVENTORY] then
-				WindowManager.Close(INVENTORY)
-			end
-			openWindow(INVENTORY, Vector2.new(-half + inventory.size.X / 2, 0))
-		end
-		openWindow(id, if inventory and desktop then Vector2.new(half - def.size.X / 2, 0) else nil)
+	local plan = WindowRules.onOpen(rules, id)
+	if plan.focus then
+		WindowManager.FocusHint:set(plan.focus)
+	end
+	destroyAll(plan.close)
+	if #plan.open == 0 then
+		local target = WindowRules.resolve(rules, id)
+		bringToFront(target)
 		return
 	end
-	if id == INVENTORY then
-		-- The backpack may join an open service window.
-		local keep: { [string]: boolean } = {}
-		for openId in open do
-			if COMPANIONS[openId] then
-				keep[openId] = true
+	local desktop = not Fusion.peek(Device.Touch)
+	for _, openId in plan.open do
+		if not defs[openId] then
+			log:warn("unknown window '%s'", openId)
+			WindowRules.onClose(rules, openId)
+			continue
+		end
+		local offset: Vector2? = nil
+		if desktop and WindowRules.isService(openId) and WindowRules.bringsBackpack(openId) then
+			local invOffset, serviceOffset = pairOffsets(openId)
+			if open[INVENTORY] and not table.find(plan.open, INVENTORY) then
+				-- The backpack was already open: move it next to the new service.
+				destroyWindow(INVENTORY)
+				openWindow(INVENTORY, invOffset)
+			end
+			offset = serviceOffset
+		elseif desktop and openId == INVENTORY then
+			-- Next to the service opening with it, else next to the open one.
+			local service: string? = nil
+			for _, other in plan.open do
+				if WindowRules.bringsBackpack(other) then
+					service = other
+				end
+			end
+			service = service or topService()
+			if service then
+				offset = (pairOffsets(service))
 			end
 		end
-		closeOthers(keep)
-		if next(keep) then
-			local companionId = next(keep) :: string
-			local companion = defs[companionId]
-			local half = (def.size.X + companion.size.X + GAP) / 2
-			openWindow(id, if Fusion.peek(Device.Touch) then nil else Vector2.new(-half + def.size.X / 2, 0))
-			return
-		end
-	else
-		closeOthers({})
+		openWindow(openId, offset)
 	end
-	openWindow(id, nil)
 end
 
 openWindow = function(id: string, offset: Vector2?)
@@ -219,33 +269,56 @@ openWindow = function(id: string, offset: Vector2?)
 	Sounds.play("open")
 end
 
+-- Toggle with the backpack alias (S29): B / C toggle the character window; on touch, pressing the other
+-- one while it is open switches its tab instead of closing it.
 function WindowManager.Toggle(id: string)
-	if open[id] then
-		WindowManager.Close(id)
+	if isOverlay(id) then
+		if open[id] then
+			WindowManager.Close(id)
+		else
+			WindowManager.Open(id)
+		end
+		return
+	end
+	local target, focus = WindowRules.resolve(rules, id)
+	if open[target] then
+		if focus and Fusion.peek(Device.Touch) and Fusion.peek(WindowManager.FocusHint) ~= focus then
+			WindowManager.FocusHint:set(focus)
+			bringToFront(target)
+			return
+		end
+		WindowManager.Close(target)
 	else
 		WindowManager.Open(id)
 	end
 end
 
 function WindowManager.CloseAll()
+	WindowRules.closeAll(rules)
 	for id in open do
-		WindowManager.Close(id)
+		destroyWindow(id)
 	end
 end
 
--- Closes the top-most window (normal windows before overlays). Returns false when none was open.
+-- Closes the top-most window (normal windows before overlays; a service together with its companion
+-- backpack). Returns false when none was open.
 function WindowManager.CloseTop(): boolean
+	local closing = WindowRules.onEscape(rules)
+	if #closing > 0 then
+		destroyAll(closing)
+		return true
+	end
 	for i = #stack, 1, -1 do
 		local id = stack[i]
-		local def = defs[id]
-		if not (def and def.overlay) then
-			WindowManager.Close(id)
+		if not isOverlay(id) then
+			-- Not tracked by the rules (should not happen): close it directly.
+			destroyWindow(id)
 			return true
 		end
 	end
 	local top = stack[#stack]
 	if top then
-		WindowManager.Close(top)
+		destroyWindow(top)
 		return true
 	end
 	return false
@@ -333,9 +406,19 @@ end
 function WindowManager.Init(registry)
 	UIController = registry.Get("UIController")
 	rootScope = UIController.Scope
+	WindowManager.FocusHint = rootScope:Value("stats")
 end
 
 function WindowManager.Start()
+	-- Death and map changes end every service (and take the companion backpack along).
+	rootScope:Observer(State.Value({ "death" })):onChange(function()
+		if State.Get({ "death" }) ~= nil then
+			WindowManager.CloseServices()
+		end
+	end)
+	rootScope:Observer(State.Value({ "character", "location", "map" })):onChange(function()
+		WindowManager.CloseServices()
+	end)
 	UserInputService.InputBegan:Connect(function(input, gameProcessed)
 		if input.UserInputType ~= Enum.UserInputType.Keyboard then
 			return

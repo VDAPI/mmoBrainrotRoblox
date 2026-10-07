@@ -105,7 +105,8 @@ commands.tparea = function(player, args)
 		return false, "portal.closed"
 	end
 	withCharacter(player, function()
-		task.spawn(TravelService.TeleportToMap, player, mapId, WorldService.GroundCFrame(mapId, x, z))
+		-- S29: a checked free spot (ground under the feet, nothing in the body or over the head).
+		task.spawn(TravelService.TeleportToMap, player, mapId, (WorldService.SafeSpot(mapId, x, z)))
 		reply(player, "admin.tparea.ok", { target = target, map = mapId, x = math.floor(x), z = math.floor(z) })
 	end)
 	return true

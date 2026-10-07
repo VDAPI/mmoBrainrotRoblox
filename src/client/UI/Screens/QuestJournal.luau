@@ -107,24 +107,9 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 					list,
 					label(s, 2, Text.get(use, `quest.{quest.id}.text`), Theme.Fonts.Body, 17, Theme.Colors.Parchment)
 				)
-				local lines = {}
-				for i, objective in quest.objectives do
-					local have = (main.progress or {})[i] or 0
-					local text = QuestText.objective(use, objective, have)
-					table.insert(
-						lines,
-						if have >= objective.n then `<font color="#4FD16B">✔ {text}</font>` else `• {text}`
-					)
-				end
-				local turnIn = Npcs.get(quest.turnIn)
-				if QuestLogic.isComplete(main.progress or {}, quest.objectives) and turnIn then
-					table.insert(
-						lines,
-						`<font color="#E8C25A">{Text.get(use, "quest.handInAt", {
-							npc = Text.get(use, turnIn.nameKey),
-						})}</font>`
-					)
-				end
+				-- S29: every objective stays (finished ones green), then "Return to: <NPC>" (Logic/QuestRows).
+				local lines =
+					QuestText.richRows(use, QuestText.rows(use, quest.objectives, main.progress, quest.turnIn))
 				table.insert(
 					list,
 					label(s, 3, table.concat(lines, "\n"), Theme.Fonts.BodyMedium, 17, Theme.Colors.Text)
@@ -224,21 +209,8 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 					if type(entry) ~= "table" then
 						continue
 					end
-					local complete = SideQuests.isComplete(entry, quest)
-					local lines = {}
-					for i, objective in quest.objectives do
-						local have = (entry.progress or {})[i] or 0
-						local text = QuestText.objective(use, objective, have, quest.turnIn)
-						table.insert(
-							lines,
-							if have >= objective.n then `<font color="#4FD16B">✔ {text}</font>` else `• {text}`
-						)
-					end
-					local turnIn = Npcs.get(quest.turnIn)
-					if complete and turnIn then
-						local hand = Text.get(use, "quest.handInAt", { npc = Text.get(use, turnIn.nameKey) })
-						table.insert(lines, `<font color="#E8C25A">{hand}</font>`)
-					end
+					local rows = QuestText.rows(use, quest.objectives, entry.progress, quest.turnIn)
+					local lines = QuestText.richRows(use, rows)
 					local giver = Npcs.get(quest.giver)
 					local from = Text.get(
 						use,

@@ -19,6 +19,7 @@ local Shared = ReplicatedStorage.Shared
 local Analytics = require(script.Parent.Parent.Analytics)
 
 local Classes = require(Shared.Data.Classes)
+local DamageText = require(Shared.Logic.DamageText)
 local Combat = require(Shared.Data.Combat)
 local Damage = require(Shared.Logic.Damage)
 local Exp = require(Shared.Logic.Exp)
@@ -148,6 +149,35 @@ end
 
 local function rootOf(model: Model?): BasePart?
 	return if model then model:FindFirstChild("HumanoidRootPart") :: BasePart? else nil
+end
+
+-- S29: why a player took nothing from a hit that was not dodged: "im" (god mode, invulnerability, respawn
+-- protection) or "ab" (shields / mana shield soaked all of it).
+local function blockedFlag(player: Player): string
+	if ResourceService.IsGod(player) then
+		return "im"
+	end
+	local entity = EntityService.GetPlayerEntity(player)
+	if entity and (StatusEffectService.Has(entity, "invuln") or StatusEffectService.Has(entity, "respawnShield")) then
+		return "im"
+	end
+	return "ab"
+end
+
+-- S29: the damage event of a resolved hit on a player (every hit shows something).
+local function playerHitEvent(
+	target: Player,
+	targetId: string,
+	attackerId: string?,
+	result: Damage.Result,
+	taken: number
+): FxEvent
+	local event: FxEvent =
+		{ k = "dmg", e = targetId, s = attackerId, a = math.floor(taken), c = result.crit, d = result.dodged }
+	if not result.dodged and taken <= 0 then
+		event[blockedFlag(target)] = true
+	end
+	return event
 end
 
 local function flatDistance(a: Vector3, b: Vector3): number
@@ -398,14 +428,16 @@ function CombatService.DealDamage(
 				{ k = "atk", s = selfEntity.id, t = targetEntity.id, st = style, w = weaponType, el = element }
 			)
 		end
+		-- S29: every resolved hit shows a number; an untouchable boss shows "Immune".
 		queueFx(targetPosition, {
 			k = "dmg",
 			e = targetEntity.id,
+			s = if selfEntity then selfEntity.id else nil,
 			a = result.amount,
 			c = result.crit,
 			d = result.dodged,
+			im = if monster.invulnerable and not result.dodged then true else nil,
 			sk = options and options.skill,
-			by = if selfEntity then selfEntity.id else nil,
 		})
 		if result.amount > 0 then
 			monster:TakeDamage(result.amount, player)
@@ -446,17 +478,10 @@ function CombatService.DealDamage(
 			local _, filtered = ResourceService.Damage(target, result.amount, "pvp")
 			taken = filtered
 		end
-		if result.dodged or taken > 0 then
-			queueFx(targetPosition, {
-				k = "dmg",
-				e = targetEntity.id,
-				a = math.floor(taken),
-				c = result.crit,
-				d = result.dodged,
-				sk = options and options.skill,
-				by = if selfEntity then selfEntity.id else nil,
-			})
-		end
+		-- S29 (changes S22): a hit stopped in full by shields shows "Absorbed", by invulnerability "Immune".
+		local event = playerHitEvent(target, targetEntity.id, if selfEntity then selfEntity.id else nil, result, taken)
+		event.sk = options and options.skill
+		queueFx(targetPosition, event)
 	end
 
 	ResourceService.MarkCombat(player)
@@ -467,7 +492,10 @@ function CombatService.DealDamage(
 	if result.lifesteal > 0 then
 		local healed = ResourceService.Heal(player, result.lifesteal)
 		if healed > 0 and selfEntity then
-			queueFx(EntityService.Position(selfEntity), { k = "heal", e = selfEntity.id, a = math.floor(healed) })
+			queueFx(
+				EntityService.Position(selfEntity),
+				{ k = "heal", e = selfEntity.id, s = selfEntity.id, a = math.floor(healed) }
+			)
 		end
 	end
 	return result
@@ -561,14 +589,18 @@ local function monsterHitsPlayer(monster: any, player: Player, params: Damage.Pa
 	if style and monster.entity and playerEntity then
 		queueFx(position, { k = "atk", s = monster.entity.id, t = playerEntity.id, st = style })
 	end
-	-- S22: the number shown is the damage after shields and protection (nothing when all of it was stopped).
+	-- The number shown is the damage after shields and protection (S22); S29: a hit stopped in full shows
+	-- "Absorbed" / "Immune" instead of nothing.
 	local taken = 0
 	if result.amount > 0 then
 		local _, filtered = ResourceService.Damage(player, result.amount, "monster")
 		taken = filtered
 	end
-	if playerEntity and (result.dodged or taken > 0) then
-		queueFx(position, { k = "dmg", e = playerEntity.id, a = math.floor(taken), c = result.crit, d = result.dodged })
+	if playerEntity then
+		queueFx(
+			position,
+			playerHitEvent(player, playerEntity.id, if monster.entity then monster.entity.id else nil, result, taken)
+		)
 	end
 	if taken > 0 then
 		local riposte = hook(player, "riposte")
@@ -580,10 +612,14 @@ local function monsterHitsPlayer(monster: any, player: Player, params: Damage.Pa
 			local reflected = math.max(1, math.floor(taken * thorns / 100))
 			local dealt = monster:TakeDamage(reflected, player)
 			if dealt > 0 and monster.entity then
-				queueFx(
-					monster:Position(),
-					{ k = "dmg", e = monster.entity.id, a = math.floor(dealt), c = false, d = false }
-				)
+				queueFx(monster:Position(), {
+					k = "dmg",
+					e = monster.entity.id,
+					s = if playerEntity then playerEntity.id else nil,
+					a = math.floor(dealt),
+					c = false,
+					d = false,
+				})
 			end
 		end
 	else
@@ -740,12 +776,38 @@ end
 function CombatService.Start()
 	Net.On("SetTarget", onSetTarget)
 
-	-- Bleed / poison ticks show as numbers too.
-	StatusEffectService.Ticked:Connect(function(entity, effect)
-		queueFx(
-			EntityService.Position(entity),
-			{ k = "dmg", e = entity.id, a = math.floor(effect.tickAmount or 0), c = false, d = false }
-		)
+	-- Bleed / poison / burn ticks show as small numbers in their element's colour, heal-over-time ticks as
+	-- green "+N" (S29). `amount` is what the tick really did (after shields; healed HP).
+	StatusEffectService.Ticked:Connect(function(entity, effect, amount: number?)
+		local source = effect.source and EntityService.GetPlayerEntity(effect.source)
+		local shown = math.floor(if amount then amount else effect.tickAmount or 0)
+		local position = EntityService.Position(entity)
+		if effect.kind == "hot" then
+			if shown > 0 then
+				queueFx(position, { k = "heal", e = entity.id, s = source and source.id, a = shown, hot = true })
+			end
+			return
+		end
+		local event: FxEvent = {
+			k = "dmg",
+			e = entity.id,
+			s = source and source.id,
+			a = shown,
+			c = false,
+			d = false,
+			dot = true,
+			el = DamageText.dotElement(effect.kind),
+		}
+		if shown <= 0 then
+			if entity.kind == "player" and entity.player then
+				event[blockedFlag(entity.player)] = true
+			elseif entity.kind == "monster" and entity.monster and entity.monster.invulnerable then
+				event.im = true
+			else
+				return
+			end
+		end
+		queueFx(position, event)
 	end)
 
 	ResourceService.Died:Connect(function(player: Player)
