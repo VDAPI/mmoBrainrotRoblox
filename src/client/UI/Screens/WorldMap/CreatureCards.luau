@@ -1,8 +1,10 @@
 --!strict
 -- Monster, cave and dungeon cards of the world map (S25): a monster in three variants with a 3D preview, its
 -- levels, HP and attack in the middle of the range, element, where it lives and interesting loot (no
--- percentages); a cave with its kinds, elites, Elite II (timer, 3D) and rooms; a boss dungeon with the boss in
--- 3D, the required level, today's lockout, the party rule and the boss uniques (item tooltips).
+-- percentages) and the best rarity the variant can drop (S30); a cave with its kinds, elites, Elite II (timer,
+-- 3D) and rooms; a boss dungeon with the boss in 3D, the required level, today's runs ("Dziś: 1/3") with the
+-- time to the UTC reset, the current personal Legendary / Mythic chances (growing with the pity counters), the
+-- party rule and the boss's named mythic items (item tooltips).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -12,12 +14,14 @@ local Areas = require(ReplicatedStorage.Shared.Data.Areas)
 local BossScaling = require(ReplicatedStorage.Shared.Logic.BossScaling)
 local Bosses = require(ReplicatedStorage.Shared.Data.Bosses)
 local Clock = require(ReplicatedStorage.Shared.Util.Clock)
+local Config = require(ReplicatedStorage.Shared.Config)
 local DetailCard = require(script.Parent.DetailCard)
 local Elements = require(ReplicatedStorage.Shared.Data.Elements)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local ItemRoll = require(ReplicatedStorage.Shared.Logic.ItemRoll)
 local ItemText = require(script.Parent.Parent.Parent.ItemText)
 local Items = require(ReplicatedStorage.Shared.Data.Items)
+local Loot = require(ReplicatedStorage.Shared.Logic.Loot)
 local LootTables = require(ReplicatedStorage.Shared.Data.LootTables)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local MonsterStats = require(ReplicatedStorage.Shared.Logic.MonsterStats)
@@ -132,8 +136,12 @@ function CreatureCards.monster(ctx: Context, kind: string, extra: any?): Spec?
 	if #where > 0 then
 		table.insert(sections, { title = T("worldmap.card.where"), lines = where })
 	end
-	-- Interesting loot: materials of its table (and the variant's), the region boss's uniques for Elite II.
-	local loot: { DetailCard.Line } = {}
+	-- Interesting loot: the best rarity of the variant (S30 source cap), materials of its table (and the
+	-- variant's).
+	local cap = Rarities.get(Rarities.cap[variant] or Rarities.UNIQUE)
+	local loot: { DetailCard.Line } = {
+		{ text = T("worldmap.card.rarityCap", { rarity = T(cap.nameKey) }), color = cap.color, bold = true },
+	}
 	local tableDef = LootTables.get(def.lootTable)
 	if tableDef then
 		local drops = table.clone(tableDef.materials)
@@ -148,21 +156,6 @@ function CreatureCards.monster(ctx: Context, kind: string, extra: any?): Spec?
 					text = `• {ItemText.name(drop.id)} — {rarityWord(drop.chance)}`,
 					size = 14,
 				})
-			end
-		end
-	end
-	if variant == "elite2" then
-		local bossId = LootTables.regionBoss[def.region]
-		local bossTable = bossId and LootTables.bosses[bossId]
-		if bossTable then
-			for _, unique in bossTable.uniques do
-				if Items.get(unique) then
-					table.insert(loot, {
-						text = `• {ItemText.name(unique)} — {rarityWord(LootTables.elite2UniqueChance)}`,
-						color = ItemText.rarityColor(Rarities.UNIQUE),
-						size = 14,
-					})
-				end
 			end
 		end
 	end
@@ -309,26 +302,39 @@ function CreatureCards.dungeon(ctx: Context, region: string): Spec?
 	end
 	local required = BossScaling.requiredLevel(boss.level)
 	local now = Clock.now()
-	local lockouts = State.Get({ "character", "bossLockouts" })
-	local locked = BossScaling.isLocked(if type(lockouts) == "table" then lockouts else nil, boss.id, now)
+	local runs = State.Get({ "character", "bossRuns" })
+	local done = BossScaling.runsToday(if type(runs) == "table" then runs else nil, boss.id, now)
+	local limit = Config.Boss.dailyRuns
+	local pity = State.Get({ "character", "bossPity" })
+	local chances = Loot.bossChances(boss.id, if type(pity) == "table" then pity[boss.id] else nil)
 	local lines: { DetailCard.Line } = {
 		{
 			text = T("worldmap.card.required", { level = required }),
 			color = if ctx.level >= required then Theme.Colors.ZoneGreen else Theme.Colors.ZoneRed,
 			bold = true,
 		},
-		if locked
-			then {
-				text = T("worldmap.card.lockedFor", { time = Time.format(BossScaling.untilReset(now)) }),
-				color = Theme.Colors.Warning,
-			}
-			else { text = T("worldmap.card.available"), color = Theme.Colors.ZoneGreen },
+		{
+			text = T("worldmap.card.runsToday", {
+				n = done,
+				limit = limit,
+				time = Time.format(BossScaling.untilReset(now)),
+			}),
+			color = if done >= limit then Theme.Colors.Warning else Theme.Colors.ZoneGreen,
+		},
+		{
+			text = T("worldmap.card.bossChances", {
+				leg = math.floor(chances.legendary * 100 + 0.5),
+				myth = math.floor(chances.mythic * 100 + 0.5),
+			}),
+			color = Rarities.get(Rarities.MYTHIC).color:Lerp(Rarities.get(Rarities.LEGENDARY).color, 0.5),
+			bold = true,
+		},
 		{ text = T("worldmap.card.group"), color = Theme.Colors.TextMuted },
 		whereLine(ctx, gate.map, gate.x, gate.z),
 	}
 	local items: { DetailCard.ItemRow } = {}
 	local bossTable = LootTables.bosses[boss.id]
-	for i, unique in (if bossTable then bossTable.uniques else {}) :: { string } do
+	for i, unique in (if bossTable then bossTable.named else {}) :: { string } do
 		local def = Items.get(unique)
 		if def then
 			local item = ItemRoll.makeStack(unique, 1, `mapcard:unique:{i}`)

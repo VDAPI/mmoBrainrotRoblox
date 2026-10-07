@@ -4,6 +4,7 @@
 -- listing state machine active -> sold | cancelled | expired (each transition only from "active").
 
 local Market = require("../Data/Market")
+local Rarities = require("../Data/Rarities")
 local Types = require("../Types")
 
 type ItemInstance = Types.ItemInstance
@@ -43,6 +44,7 @@ export type Summary = {
 	sn: string, -- seller name
 	su: number, -- seller user id
 	q: string, -- folded search text
+	v: number?, -- S30: rarity format (Rarities.RV); summaries without it carry a pre-S30 rarity in `r`
 }
 
 export type Filter = {
@@ -142,7 +144,18 @@ function Auction.summary(listing: Listing, def: DefLike?, searchText: string): S
 		sn = listing.sellerName,
 		su = listing.sellerUserId,
 		q = searchText,
+		v = Rarities.RV,
 	}
+end
+
+-- S30: index entries written before the new rarity ladder are mapped when read (listings live <= 48 h).
+-- Mutates and returns the summary; idempotent.
+function Auction.upgradeSummary(summary: Summary): Summary
+	if summary.v ~= Rarities.RV then
+		summary.r = Rarities.fromLegacy[tonumber(summary.r) or 1] or Rarities.COMMON
+		summary.v = Rarities.RV
+	end
+	return summary
 end
 
 function Auction.matches(summary: Summary, filter: Filter, now: number): boolean

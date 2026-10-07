@@ -45,15 +45,7 @@ Theme.Colors = {
 	ZoneRed = Color3.fromHex("#D64A3E"),
 }
 
--- Item rarity colours (DESIGN §5.2), index = rarity number.
-Theme.Rarity = {
-	[1] = Color3.fromHex("#C9CED6"),
-	[2] = Color3.fromHex("#4FD16B"),
-	[3] = Color3.fromHex("#3D8BFF"),
-	[4] = Color3.fromHex("#B455FF"),
-	[5] = Color3.fromHex("#FF9F1C"),
-	[6] = Color3.fromHex("#E8C25A"), -- Unique
-}
+-- Item rarity colours live in Shared.Data.Rarities (S30: `color`, `textColor`, `frame`); see UI/ItemText.
 
 Theme.Fonts = {
 	Heading = Font.fromEnum(Enum.Font.Fondamento),

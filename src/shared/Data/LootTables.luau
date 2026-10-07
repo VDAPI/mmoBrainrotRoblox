@@ -20,8 +20,27 @@ export type LootTable = {
 export type BossTable = {
 	id: string,
 	level: number,
-	uniques: { string },
+	-- Hand-made Mythic items of this boss (Items/Uniques, ids `unique_*` kept for saves).
+	named: { string },
 	materials: { MaterialDrop },
+	-- Personal roll for every winner (S30, Loot.rollBossPersonal): chance + step per kill without a hit,
+	-- guaranteed on the `Hard`-th kill without one. Legendary avg ≈ 3.4 kills, Mythic ≈ 9.8 kills.
+	legendaryChance: number,
+	legendaryStep: number,
+	legendaryHard: number,
+	mythicChance: number,
+	mythicStep: number,
+	mythicHard: number,
+}
+
+-- Default pity numbers (each boss may tune its own).
+local PITY = {
+	legendaryChance = 0.20,
+	legendaryStep = 0.05,
+	legendaryHard = 8,
+	mythicChance = 0.04,
+	mythicStep = 0.01,
+	mythicHard = 30,
 }
 
 local DEFAULT_SLOTS: { [string]: number } = {
@@ -119,12 +138,13 @@ for _, def in Monsters.list do
 	}
 end
 
--- Bosses (S09/S11 add their encounters): guaranteed items come from Rarities.itemDrops.boss.
+-- Bosses (S09/S11 add their encounters): shared items come from Rarities.itemDrops.boss; Legendary and Mythic
+-- only from the personal roll (S30).
 local BOSSES: { [string]: BossTable } = {
 	grimrok = {
 		id = "grimrok",
 		level = 20,
-		uniques = { "unique_grimrok_cleaver", "unique_grimrok_fang", "unique_grimrok_totem" },
+		named = { "unique_grimrok_cleaver", "unique_grimrok_fang", "unique_grimrok_totem" },
 		materials = {
 			{ id = "essence_shard", chance = 1, min = 2, max = 4 },
 			{ id = "essence_crystal", chance = 0.5, min = 1, max = 1 },
@@ -132,11 +152,17 @@ local BOSSES: { [string]: BossTable } = {
 			{ id = "scroll_protection", chance = 0.25, min = 1, max = 1 },
 			{ id = "scroll_unbind", chance = 0.08, min = 1, max = 1 },
 		},
+		legendaryChance = PITY.legendaryChance,
+		legendaryStep = PITY.legendaryStep,
+		legendaryHard = PITY.legendaryHard,
+		mythicChance = PITY.mythicChance,
+		mythicStep = PITY.mythicStep,
+		mythicHard = PITY.mythicHard,
 	},
 	morvane = {
 		id = "morvane",
 		level = 45,
-		uniques = { "unique_morvane_shroud", "unique_morvane_scepter", "unique_morvane_bow" },
+		named = { "unique_morvane_shroud", "unique_morvane_scepter", "unique_morvane_bow" },
 		materials = {
 			{ id = "essence_shard", chance = 1, min = 3, max = 5 },
 			{ id = "essence_crystal", chance = 0.8, min = 1, max = 2 },
@@ -144,28 +170,46 @@ local BOSSES: { [string]: BossTable } = {
 			{ id = "scroll_protection", chance = 0.3, min = 1, max = 1 },
 			{ id = "scroll_unbind", chance = 0.1, min = 1, max = 1 },
 		},
+		legendaryChance = PITY.legendaryChance,
+		legendaryStep = PITY.legendaryStep,
+		legendaryHard = PITY.legendaryHard,
+		mythicChance = PITY.mythicChance,
+		mythicStep = PITY.mythicStep,
+		mythicHard = PITY.mythicHard,
 	},
 	azgor = {
 		id = "azgor",
 		level = 70,
-		uniques = { "unique_azgor_heart", "unique_azgor_staff", "unique_azgor_helm" },
+		named = { "unique_azgor_heart", "unique_azgor_staff", "unique_azgor_helm" },
 		materials = {
 			{ id = "essence_crystal", chance = 1, min = 2, max = 3 },
 			{ id = "legend_core", chance = 0.2, min = 1, max = 1 },
 			{ id = "scroll_protection", chance = 0.35, min = 1, max = 2 },
 			{ id = "scroll_unbind", chance = 0.12, min = 1, max = 1 },
 		},
+		legendaryChance = PITY.legendaryChance,
+		legendaryStep = PITY.legendaryStep,
+		legendaryHard = PITY.legendaryHard,
+		mythicChance = PITY.mythicChance,
+		mythicStep = PITY.mythicStep,
+		mythicHard = PITY.mythicHard,
 	},
 	vaelgrath = {
 		id = "vaelgrath",
 		level = 100,
-		uniques = { "unique_vaelgrath_fang", "unique_vaelgrath_scale", "unique_vaelgrath_eye" },
+		named = { "unique_vaelgrath_fang", "unique_vaelgrath_scale", "unique_vaelgrath_eye" },
 		materials = {
 			{ id = "essence_crystal", chance = 1, min = 3, max = 5 },
 			{ id = "legend_core", chance = 0.3, min = 1, max = 2 },
 			{ id = "scroll_protection", chance = 0.4, min = 1, max = 2 },
 			{ id = "scroll_unbind", chance = 0.15, min = 1, max = 1 },
 		},
+		legendaryChance = PITY.legendaryChance,
+		legendaryStep = PITY.legendaryStep,
+		legendaryHard = PITY.legendaryHard,
+		mythicChance = PITY.mythicChance,
+		mythicStep = PITY.mythicStep,
+		mythicHard = PITY.mythicHard,
 	},
 }
 
@@ -175,7 +219,5 @@ return table.freeze({
 	get = function(id: string): LootTable?
 		return TABLES[id]
 	end,
-	-- Elite II have a small chance at a unique of the region's boss (DESIGN §5.2 "rarely Elite II").
-	elite2UniqueChance = 0.02,
 	regionBoss = { [1] = "grimrok", [2] = "morvane", [3] = "azgor", [4] = "vaelgrath" } :: { [number]: string },
 })

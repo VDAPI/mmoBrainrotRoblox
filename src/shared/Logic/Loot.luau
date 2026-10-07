@@ -1,9 +1,10 @@
 --!strict
 -- Monster and boss loot (DESIGN §5.5). Pure: returns what dropped; services turn it into item instances.
---   items     : { defId, ilvl, rarity } (equipment only; rarity 6 = unique)
+--   items     : { defId, ilvl, rarity } (equipment only; S30 rarity ids, see Data/Rarities)
 --   materials : { id, n }
 --   gold      : gold for the kill (CombatService awards gold immediately, see PROGRESS S04)
 
+local Config = require("../Config")
 local Items = require("../Data/Items")
 local LootTables = require("../Data/LootTables")
 local Monsters = require("../Data/Monsters")
@@ -11,6 +12,7 @@ local MonsterStats = require("./MonsterStats")
 local Rarities = require("../Data/Rarities")
 local Rng = require("./Rng")
 local ItemRoll = require("./ItemRoll")
+local Types = require("../Types")
 
 export type ItemDrop = { defId: string, ilvl: number, rarity: number }
 export type MaterialDrop = { id: string, n: number }
@@ -121,21 +123,14 @@ function Loot.rollMonsterLoot(
 		end
 	end
 
-	-- Elite II: small chance at a unique of the region's boss.
-	if variant == "elite2" and rng:chance(LootTables.elite2UniqueChance) then
-		local boss = LootTables.bosses[LootTables.regionBoss[def.region] or ""]
-		if boss and #boss.uniques > 0 then
-			table.insert(result.items, { defId = rng:pick(boss.uniques), ilvl = boss.level, rarity = Rarities.UNIQUE })
-		end
-	end
-
 	rollMaterials(tableDef.materials, rng, result.materials)
 	rollMaterials(tableDef.variantMaterials[variant] or {}, rng, result.materials)
 	result.gold = MonsterStats.gold(level, variant, rng:next())
 	return result
 end
 
--- Boss loot (DESIGN §16): 3–4 items (+1 per player above 3), 25 % unique, materials.
+-- Shared boss loot (DESIGN §16): 3–4 Unique/Heroic items (+1 per player above 3) and materials. Legendary and
+-- Mythic items only come from every winner's personal roll (Loot.rollBossPersonal).
 function Loot.rollBossLoot(bossId: string, players: number, rng: Rng.Rng, modifiers: Modifiers?): LootResult
 	local result: LootResult = { items = {}, materials = {}, gold = 0 }
 	local boss = LootTables.bosses[bossId]
@@ -152,12 +147,117 @@ function Loot.rollBossLoot(bossId: string, players: number, rng: Rng.Rng, modifi
 			table.insert(result.items, { defId = defId, ilvl = ilvl, rarity = ItemRoll.rollRarity("boss", rng) })
 		end
 	end
-	if #boss.uniques > 0 and rng:chance(Rarities.bossUniqueChance) then
-		table.insert(result.items, { defId = rng:pick(boss.uniques), ilvl = boss.level, rarity = Rarities.UNIQUE })
-	end
 	rollMaterials(boss.materials, rng, result.materials)
 	result.gold = MonsterStats.gold(boss.level, "boss", rng:next())
 	return result
+end
+
+-- Personal boss roll (S30, DESIGN §16) ------------------------------------------------------------------------
+
+export type Pity = Types.BossPity
+export type PersonalRoll = { legendary: boolean, mythic: boolean, pity: Pity }
+
+local function pityOf(entry: Pity?): Pity
+	if type(entry) ~= "table" then
+		return { leg = 0, myth = 0 }
+	end
+	return {
+		leg = math.max(0, math.floor(tonumber(entry.leg) or 0)),
+		myth = math.max(0, math.floor(tonumber(entry.myth) or 0)),
+	}
+end
+
+-- Chance on the next kill after `misses` kills without a hit: base + step × misses, 1 on the `hard`-th kill.
+local function pityChance(base: number, step: number, hard: number, misses: number): number
+	if misses + 1 >= hard then
+		return 1
+	end
+	return math.clamp(base + step * misses, 0, 1)
+end
+
+-- Current chances (0..1) of a Legendary and a Mythic on the next kill of this boss, given the pity counters.
+function Loot.bossChances(bossId: string, pityEntry: Pity?): { legendary: number, mythic: number }
+	local boss = LootTables.bosses[bossId]
+	if not boss then
+		return { legendary = 0, mythic = 0 }
+	end
+	local pity = pityOf(pityEntry)
+	return {
+		legendary = pityChance(boss.legendaryChance, boss.legendaryStep, boss.legendaryHard, pity.leg),
+		mythic = pityChance(boss.mythicChance, boss.mythicStep, boss.mythicHard, pity.myth),
+	}
+end
+
+-- One winner's personal roll. A hit resets its counter, a miss adds one. Does not mutate `pity`.
+function Loot.rollBossPersonal(boss: LootTables.BossTable, pity: Pity?, rng: Rng.Rng): PersonalRoll
+	local current = pityOf(pity)
+	local chances = Loot.bossChances(boss.id, current)
+	local legendary = rng:next() < chances.legendary
+	local mythic = rng:next() < chances.mythic
+	return {
+		legendary = legendary,
+		mythic = mythic,
+		pity = {
+			leg = if legendary then 0 else current.leg + 1,
+			myth = if mythic then 0 else current.myth + 1,
+		},
+	}
+end
+
+-- Simulates `n` kills of a boss by one character starting from `pity` (admin /bosssim, tests).
+function Loot.simulateBoss(
+	boss: LootTables.BossTable,
+	n: number,
+	rng: Rng.Rng,
+	pity: Pity?
+): { legendary: number, mythic: number, pity: Pity }
+	local current = pityOf(pity)
+	local legendary, mythic = 0, 0
+	for _ = 1, n do
+		local roll = Loot.rollBossPersonal(boss, current, rng)
+		current = roll.pity
+		legendary += if roll.legendary then 1 else 0
+		mythic += if roll.mythic then 1 else 0
+	end
+	return { legendary = legendary, mythic = mythic, pity = current }
+end
+
+-- Items of a personal roll for a winner of `classId`: a rolled Legendary (class-usable with
+-- Config.BossLoot.legendaryClassShare) and a Mythic (a named item of the boss with Config.BossLoot.mythicNamedShare,
+-- otherwise a rolled Mythic of a class-usable base). All at the boss's level.
+function Loot.personalItems(
+	boss: LootTables.BossTable,
+	roll: PersonalRoll,
+	classId: string?,
+	rng: Rng.Rng
+): { ItemDrop }
+	local items: { ItemDrop } = {}
+	local slots = LootTables.byId.wolf.slotWeights
+	if roll.legendary then
+		local defId = Loot.pickItem(slots, boss.level, Config.BossLoot.legendaryClassShare, classId, rng)
+		if defId then
+			table.insert(items, { defId = defId, ilvl = boss.level, rarity = Rarities.LEGENDARY })
+		end
+	end
+	if roll.mythic then
+		local defId: string? = nil
+		if #boss.named > 0 and rng:chance(Config.BossLoot.mythicNamedShare) then
+			local usable = {}
+			for _, id in boss.named do
+				if usableBy(id, classId) then
+					table.insert(usable, id)
+				end
+			end
+			defId = rng:pick(if #usable > 0 then usable else boss.named)
+		end
+		if not defId then
+			defId = Loot.pickItem(slots, boss.level, 1, classId, rng)
+		end
+		if defId then
+			table.insert(items, { defId = defId, ilvl = boss.level, rarity = Rarities.MYTHIC })
+		end
+	end
+	return items
 end
 
 return Loot

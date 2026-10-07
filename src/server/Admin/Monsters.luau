@@ -4,9 +4,14 @@
 
 local Shared = game:GetService("ReplicatedStorage").Shared
 
+local BossScaling = require(Shared.Logic.BossScaling)
 local Bosses = require(Shared.Data.Bosses)
+local Loot = require(Shared.Logic.Loot)
+local LootTables = require(Shared.Data.LootTables)
+local Rng = require(Shared.Logic.Rng)
 local Anatomy = require(Shared.Logic.Anatomy)
 local Classes = require(Shared.Data.Classes)
+local Clock = require(Shared.Util.Clock)
 local Cosmetics = require(Shared.Data.Cosmetics)
 local LookAnim = require(Shared.Logic.LookAnim)
 local MonsterLooks = require(Shared.Data.MonsterLooks)
@@ -207,6 +212,85 @@ commands.boss = function(player, args)
 	else
 		reply(player, "admin.usage.boss")
 	end
+end
+
+-- S30: /bosspity [boss] [leg] [myth]: show the pity counters (all bosses or one) or set them.
+commands.bosspity = function(player, args)
+	withCharacter(player, function()
+		local character = PlayerStateService.GetCharacter(player)
+		local bossId = args[1]
+		if bossId and not LootTables.bosses[bossId] then
+			reply(player, "admin.usage.bosspity")
+			return
+		end
+		local leg, myth = parseAmount(args[2]), parseAmount(args[3])
+		if bossId and leg then
+			local current = (character.bossPity or {})[bossId] or { leg = 0, myth = 0 }
+			local value = { leg = math.clamp(leg, 0, 1000), myth = math.clamp(myth or current.myth or 0, 0, 1000) }
+			PlayerStateService.Set(player, { "character", "bossPity", bossId }, value)
+			character = PlayerStateService.GetCharacter(player)
+		end
+		local ids = {}
+		for id in LootTables.bosses do
+			if not bossId or id == bossId then
+				table.insert(ids, id)
+			end
+		end
+		table.sort(ids)
+		local now = Clock.now()
+		for _, id in ids do
+			local pity = (character.bossPity or {})[id] or { leg = 0, myth = 0 }
+			local chances = Loot.bossChances(id, pity)
+			reply(player, "admin.bosspity.line", {
+				boss = id,
+				leg = pity.leg,
+				myth = pity.myth,
+				legChance = math.floor(chances.legendary * 100 + 0.5),
+				mythChance = math.floor(chances.mythic * 100 + 0.5),
+				runs = BossScaling.runsToday(character.bossRuns, id, now),
+				limit = Config.Boss.dailyRuns,
+			})
+		end
+	end)
+end
+
+-- S30: /bossruns reset [boss]: today's kills of every boss (or one) back to 0.
+commands.bossruns = function(player, args)
+	local bossId = args[2]
+	if args[1] ~= "reset" or (bossId and not LootTables.bosses[bossId]) then
+		reply(player, "admin.usage.bossruns")
+		return
+	end
+	withCharacter(player, function()
+		if bossId then
+			PlayerStateService.Set(player, { "character", "bossRuns", bossId }, nil)
+		else
+			PlayerStateService.Set(player, { "character", "bossRuns" }, {})
+		end
+		reply(player, "admin.bossruns.ok", { boss = bossId or "*" })
+	end)
+end
+
+-- S30: /bosssim <boss> <n>: n kills by one character from zero pity.
+commands.bosssim = function(player, args)
+	local boss = args[1] and LootTables.bosses[args[1]]
+	if not boss then
+		reply(player, "admin.usage.bosssim")
+		return
+	end
+	local n = math.clamp(parseAmount(args[2]) or 1000, 1, 100000)
+	local result = Loot.simulateBoss(boss, n, Rng.new())
+	local function every(count: number): string
+		return if count > 0 then string.format("%.1f", n / count) else "-"
+	end
+	reply(player, "admin.bosssim.result", {
+		boss = boss.id,
+		n = n,
+		leg = result.legendary,
+		myth = result.mythic,
+		legEvery = every(result.legendary),
+		mythEvery = every(result.mythic),
+	})
 end
 
 commands.phase = function(player, args)

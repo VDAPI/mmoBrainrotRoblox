@@ -27,7 +27,16 @@ local Log = require(Shared.Util.Log)
 local Market = require(Shared.Data.Market)
 local Net = require(Shared.Net)
 local Notify = require(script.Parent.Parent.Market.Notify)
+local Rarities = require(Shared.Data.Rarities)
 local Types = require(Shared.Types)
+
+-- S30: full listings stored before the new rarity ladder get their item upgraded when read (idempotent).
+local function upgraded(listing: any): any
+	if type(listing) == "table" and type(listing.item) == "table" then
+		Rarities.upgradeItem(listing.item, Items.get(listing.item.id))
+	end
+	return listing
+end
 
 local log = Log.new("AuctionService")
 
@@ -204,7 +213,7 @@ local function entriesFor(category: string, descending: boolean): { Auction.Summ
 	if ok then
 		for _, entry in range do
 			if type(entry.value) == "table" then
-				table.insert(entries, entry.value)
+				table.insert(entries, Auction.upgradeSummary(entry.value))
 			end
 		end
 	end
@@ -290,6 +299,7 @@ local function details(player: Player, id: string): (boolean, any)
 	if not listing or listing.status ~= "active" then
 		return false, "auction.error.gone"
 	end
+	upgraded(listing)
 	detailCache[id] = { at = os.clock(), item = listing.item }
 	return true, listing.item
 end
@@ -323,7 +333,7 @@ local function buy(player: Player, id: string, expectedPrice: number): (boolean,
 		addGold(player, expectedPrice)
 		return false, err
 	end
-	local listing = written :: Listing
+	local listing = upgraded(written) :: Listing
 	local item = listing.item
 	-- Item to the buyer (backpack, or mail when it does not fit / the character switched meanwhile).
 	local fits = character(player) == char and InventoryService.CanFit(player, { item })
@@ -378,7 +388,7 @@ local function cancel(player: Player, id: string): (boolean, string?)
 		end
 		return false, err
 	end
-	local listing = written :: Listing
+	local listing = upgraded(written) :: Listing
 	setOwnListing(player, id, false)
 	dropFromIndex(listing)
 	MailService.Send(player.UserId, {
@@ -403,7 +413,7 @@ local function expireListing(id: string): boolean
 	if not ok or not written then
 		return false
 	end
-	local listing = written :: Listing
+	local listing = upgraded(written) :: Listing
 	dropFromIndex(listing)
 	MailService.Send(listing.sellerUserId, {
 		from = "auction",
@@ -450,6 +460,7 @@ local function mine(player: Player): (boolean, any)
 	for id in table.clone(char.auctions) do
 		local ok, listing = store:get(key(id))
 		if ok and listing then
+			upgraded(listing)
 			if listing.status == "active" and listing.expiresAt <= os.time() then
 				expireListing(id)
 				listing.status = "expired"

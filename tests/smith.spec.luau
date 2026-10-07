@@ -37,11 +37,17 @@ T.describe("Upgrade", function()
 		T.expect(c1.materials).toEqual({ { id = "essence_dust", n = 2 } })
 		T.expect(Upgrade.cost(item(4, 2), 3).materials).toEqual({ { id = "essence_dust", n = 6 } })
 		T.expect(Upgrade.cost(item(4, 4), 5).materials).toEqual({ { id = "essence_shard", n = 5 } })
-		T.expect(Upgrade.cost(item(4, 6), 7).materials).toEqual({ { id = "essence_crystal", n = 2 } })
-		T.expect(Upgrade.cost(item(5, 8), 9).materials).toEqual({
-			{ id = "essence_crystal", n = 4 },
-			{ id = "legend_core", n = 1 },
-		})
+		T.expect(Upgrade.cost(item(3, 6), 7).materials).toEqual({ { id = "essence_crystal", n = 2 } })
+		-- Legendary and Mythic (rarity `legendCore`) need a Legend Core from +7; named boss items too (Mythic).
+		for _, rarity in { 4, 5 } do
+			T.expect(Upgrade.cost(item(rarity, 8), 9).materials).toEqual({
+				{ id = "essence_crystal", n = 4 },
+				{ id = "legend_core", n = 1 },
+			})
+		end
+		local named = item(5, 6)
+		named.id = "unique_grimrok_cleaver"
+		T.expect(#Upgrade.cost(named, 7).materials).toBe(2)
 	end)
 
 	T.it("+0 → +1 always succeeds", function()
@@ -96,25 +102,43 @@ T.describe("Dismantle", function()
 			local common = Dismantle.roll(item(1, 0), rng)
 			T.expect(common[1].id).toBe("essence_dust")
 			T.expect(common[1].n).toBeBetween(1, 2)
-			local rare = Dismantle.roll(item(3, 0), rng)
-			T.expect(rare[1].id).toBe("essence_shard")
-			local legendary = Dismantle.roll(item(5, 0), rng)
+			local unique = Dismantle.roll(item(2, 0), rng)
+			T.expect(unique[1].id).toBe("essence_dust")
+			T.expect(unique[1].n).toBeBetween(2, 4)
+			local heroic = Dismantle.roll(item(3, 0), rng)
+			T.expect(heroic[1].id).toBe("essence_shard")
+			T.expect(heroic[1].n).toBeBetween(1, 3)
+			local legendary = Dismantle.roll(item(4, 0), rng)
 			T.expect(legendary[1].id).toBe("essence_crystal")
+			T.expect(legendary[1].n).toBeBetween(1, 2)
 			T.expect(legendary[2]).toEqual({ id = "legend_core", n = 1 })
+			local mythic = Dismantle.roll(item(5, 0), rng)
+			T.expect(mythic[1].id).toBe("essence_crystal")
+			T.expect(mythic[1].n).toBeBetween(2, 3)
+			T.expect(mythic[2]).toEqual({ id = "legend_core", n = 2 })
 		end
 	end)
 
-	T.it("epic gives a crystal about 30 % of the time", function()
+	T.it("unique gives a shard about 25 %, heroic a crystal about 20 % of the time", function()
 		local rng = Rng.new(5)
-		local crystals = 0
-		for _ = 1, 5000 do
-			for _, m in Dismantle.roll(item(4, 0), rng) do
-				if m.id == "essence_crystal" then
-					crystals += 1
+		for _, case in { { 2, "essence_shard", 0.25 }, { 3, "essence_crystal", 0.2 } } do
+			local hits = 0
+			for _ = 1, 5000 do
+				for _, m in Dismantle.roll(item(case[1] :: number, 0), rng) do
+					if m.id == case[2] then
+						hits += 1
+					end
 				end
 			end
+			T.expect(hits / 5000).toBeNear(case[3] :: number, 0.03)
 		end
-		T.expect(crystals / 5000).toBeNear(0.3, 0.03)
+	end)
+
+	T.it("preview lists the rarity's ranges (chance drops from 0)", function()
+		T.expect(Dismantle.preview(item(3, 0))).toEqual({
+			{ id = "essence_shard", min = 1, max = 3 },
+			{ id = "essence_crystal", min = 0, max = 1 },
+		})
 	end)
 
 	T.it("upgrades refund half of the spent essences", function()
@@ -132,7 +156,8 @@ end)
 T.describe("Economy data", function()
 	T.it("sell price follows DESIGN §18", function()
 		T.expect(ItemRoll.sellPrice(item(1, 0, 50))).toBe(100)
-		T.expect(ItemRoll.sellPrice(item(5, 0, 50))).toBe(math.floor(50 * 2 * 1.4 * 1.4 + 0.5))
+		T.expect(ItemRoll.sellPrice(item(4, 0, 50))).toBe(math.floor(50 * 2 * 1.45 * 1.45 + 0.5))
+		T.expect(ItemRoll.sellPrice(item(5, 0, 50))).toBe(math.floor(50 * 2 * 1.7 * 1.7 + 0.5))
 		T.expect(ItemRoll.sellPrice(item(5, 0, 50)) > ItemRoll.sellPrice(item(4, 0, 50))).toBe(true)
 	end)
 

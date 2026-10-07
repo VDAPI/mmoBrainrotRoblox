@@ -1,7 +1,9 @@
 --!strict
 -- Boss numbers (DESIGN §16). Pure functions (Lune tests).
 
+local Config = require("../Config")
 local Time = require("./Time")
+local Types = require("../Types")
 
 local BossScaling = {}
 
@@ -26,10 +28,23 @@ function BossScaling.phaseFor(hpFraction: number, thresholds: { number }): numbe
 	return phase
 end
 
--- Whether the character already killed this boss today (lockouts store the UTC day number).
-function BossScaling.isLocked(lockouts: { [string]: number }?, bossId: string, now: number): boolean
-	local day = lockouts and lockouts[bossId]
-	return day ~= nil and day >= Time.dayNumber(now)
+-- Kills of this boss today (S30: runs store { day = UTC day number, n = kills that day }).
+function BossScaling.runsToday(runs: { [string]: Types.BossRun }?, bossId: string, now: number): number
+	local entry = runs and runs[bossId]
+	if type(entry) ~= "table" or entry.day ~= Time.dayNumber(now) then
+		return 0
+	end
+	return math.max(0, tonumber(entry.n) or 0)
+end
+
+-- Whether the character used all its kills of this boss today (`limit` defaults to Config.Boss.dailyRuns).
+function BossScaling.isLocked(runs: { [string]: Types.BossRun }?, bossId: string, now: number, limit: number?): boolean
+	return BossScaling.runsToday(runs, bossId, now) >= (limit or Config.Boss.dailyRuns)
+end
+
+-- The runs entry after one more kill now.
+function BossScaling.addRun(runs: { [string]: Types.BossRun }?, bossId: string, now: number): Types.BossRun
+	return { day = Time.dayNumber(now), n = BossScaling.runsToday(runs, bossId, now) + 1 }
 end
 
 -- Seconds until the daily reset (00:00 UTC).

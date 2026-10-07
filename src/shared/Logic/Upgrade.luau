@@ -3,7 +3,7 @@
 --   chance(N)   = 110 − 10·N %   (N = target level: +1 100 %, +2 90 %, … +9 20 %)
 --   failure     = the item drops one level (never below +0); a Scroll of Protection prevents the drop
 --   cost        = gold round(ilvl × 40 × (N+1)^1.6) + essences: +1..+3 dust ×2N, +4..+6 shard ×N, +7..+9 crystal ×(N−5);
---                 legendary items also need 1 Legend Core from +7
+--                 Legendary and Mythic items (Rarities `legendCore`) also need 1 Legend Core from +7
 --   each level  = +6 % base stats (Rarities.upgradeStatPerLevel)
 
 local Rarities = require("../Data/Rarities")
@@ -41,7 +41,7 @@ function Upgrade.cost(item: Types.ItemInstance, targetLevel: number): Cost
 		table.insert(materials, { id = "essence_shard", n = n })
 	else
 		table.insert(materials, { id = "essence_crystal", n = n - 5 })
-		if item.rarity == Rarities.LEGENDARY then
+		if Rarities.get(item.rarity).legendCore then
 			table.insert(materials, { id = "legend_core", n = 1 })
 		end
 	end

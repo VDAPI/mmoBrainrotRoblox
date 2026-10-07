@@ -1,7 +1,8 @@
 --!strict
 -- Loot bags in the world (DESIGN §5.5), visible only to their owner: a small bag glowing in the colour of the
 -- best item inside with its name above it. Pick up with F (prompt), E, or a click. Legendary drops add an
--- orange pillar of light, a sound and a screen flash; picking one up opens the reveal window.
+-- orange pillar of light, a sound and a screen flash, mythic ones a taller red pillar with embers and a red
+-- flash (S30); picking one up opens the reveal window.
 
 local Debris = game:GetService("Debris")
 local Players = game:GetService("Players")
@@ -12,6 +13,7 @@ local Workspace = game:GetService("Workspace")
 
 local Config = require(ReplicatedStorage.Shared.Config)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local Items = require(ReplicatedStorage.Shared.Data.Items)
 local ItemText = require(script.Parent.Parent.UI.ItemText)
 local Keybinds = require(script.Parent.Parent.UI.Keybinds)
 local LegendReveal = require(script.Parent.Parent.UI.Screens.LegendReveal)
@@ -46,7 +48,13 @@ local bags: { [string]: BagView } = {}
 local busy: { [string]: boolean } = {}
 
 local PILLAR_HEIGHT = 60
-local LEGEND = Color3.fromHex("#FF9F1C")
+
+-- Whether an item gets the pillar / reveal (S30: the rarity's `reveal`, equipment only: a legendary blessing
+-- from a boss is not a legendary item drop).
+local function revealable(item: ItemInstance): boolean
+	local def = Items.get(item.id)
+	return def ~= nil and def.category == "equipment" and Rarities.get(item.rarity).reveal
+end
 
 local function bestOf(items: { ItemInstance }): ItemInstance?
 	local best: ItemInstance? = nil
@@ -88,22 +96,28 @@ local function pickup(id: string)
 	end)
 end
 
-local function flashScreen()
+local function flashScreen(mythic: boolean)
 	local layer = UIController.GetLayer("Toasts")
 	local flash = Instance.new("Frame")
 	flash.Name = "LegendFlash"
 	flash.Size = UDim2.fromScale(1, 1)
-	flash.BackgroundColor3 = Color3.fromHex("#FFE7A0")
-	flash.BackgroundTransparency = 0.25
+	flash.BackgroundColor3 = if mythic then Color3.fromHex("#FF6A5E") else Color3.fromHex("#FFE7A0")
+	flash.BackgroundTransparency = if mythic then 0.15 else 0.25
 	flash.ZIndex = 100
 	flash.Parent = layer
-	TweenService:Create(flash, TweenInfo.new(0.7, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+	local seconds = if mythic then 1.3 else 0.7
+	TweenService:Create(flash, TweenInfo.new(seconds, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
 		BackgroundTransparency = 1,
 	}):Play()
-	Debris:AddItem(flash, 0.8)
+	Debris:AddItem(flash, seconds + 0.1)
 end
 
-local function pillar(model: Model, at: Vector3)
+-- Pillar of light over a bag with a legendary (orange) or mythic (red: wider, faster pulse, more sparks and a
+-- second spiralling ring of embers) item.
+local function pillar(model: Model, at: Vector3, rarity: Rarities.RarityDef)
+	local mythic = rarity.id >= Rarities.MYTHIC
+	local width = if mythic then 3 else 2.2
+	local colors = rarity.frame.gradient or { rarity.color, rarity.color }
 	local beam = Instance.new("Part")
 	beam.Name = "LegendPillar"
 	beam.Anchored = true
@@ -112,27 +126,45 @@ local function pillar(model: Model, at: Vector3)
 	beam.CanTouch = false
 	beam.CastShadow = false
 	beam.Material = Enum.Material.Neon
-	beam.Color = LEGEND
+	beam.Color = rarity.color
 	beam.Transparency = 0.35
 	beam.Shape = Enum.PartType.Cylinder
-	beam.Size = Vector3.new(PILLAR_HEIGHT, 2.2, 2.2)
-	beam.CFrame = CFrame.new(at + Vector3.new(0, PILLAR_HEIGHT / 2, 0)) * CFrame.Angles(0, 0, math.rad(90))
+	local height = if mythic then PILLAR_HEIGHT * 1.4 else PILLAR_HEIGHT
+	beam.Size = Vector3.new(height, width, width)
+	beam.CFrame = CFrame.new(at + Vector3.new(0, height / 2, 0)) * CFrame.Angles(0, 0, math.rad(90))
 	beam.Parent = model
 	TweenService:Create(
 		beam,
-		TweenInfo.new(1.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
-		{ Transparency = 0.6, Size = Vector3.new(PILLAR_HEIGHT, 3, 3) }
+		TweenInfo.new(if mythic then 0.7 else 1.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
+		{ Transparency = 0.6, Size = Vector3.new(height, width * 1.4, width * 1.4) }
 	):Play()
 	local sparks = Instance.new("ParticleEmitter")
-	sparks.Color = ColorSequence.new(LEGEND)
+	sparks.Color = ColorSequence.new(colors[1], colors[2])
 	sparks.LightEmission = 1
-	sparks.Rate = 25
+	sparks.Rate = if mythic then 60 else 25
 	sparks.Lifetime = NumberRange.new(1.5, 2.5)
 	sparks.Speed = NumberRange.new(4, 10)
 	sparks.SpreadAngle = Vector2.new(25, 25)
 	sparks.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.5), NumberSequenceKeypoint.new(1, 0) })
 	sparks.EmissionDirection = Enum.NormalId.Right -- cylinder axis is X
 	sparks.Parent = beam
+	if mythic then
+		local embers = Instance.new("ParticleEmitter")
+		embers.Color = ColorSequence.new(colors[2], colors[1])
+		embers.LightEmission = 1
+		embers.Rate = 30
+		embers.Lifetime = NumberRange.new(0.8, 1.4)
+		embers.Speed = NumberRange.new(6, 9)
+		embers.SpreadAngle = Vector2.new(180, 180)
+		embers.RotSpeed = NumberRange.new(-180, 180)
+		embers.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.9), NumberSequenceKeypoint.new(1, 0) })
+		embers.Parent = beam
+		local light = Instance.new("PointLight")
+		light.Color = rarity.color
+		light.Range = 24
+		light.Brightness = 4
+		light.Parent = beam
+	end
 end
 
 local function spawnBag(data: { [string]: any })
@@ -171,7 +203,7 @@ local function spawnBag(data: { [string]: any })
 
 	local light = Instance.new("PointLight")
 	light.Color = color
-	light.Range = if best and best.rarity >= Rarities.EPIC then 14 else 8
+	light.Range = if best and Rarities.get(best.rarity).valuable then 14 else 8
 	light.Brightness = 2
 	light.Parent = bag
 
@@ -213,10 +245,19 @@ local function spawnBag(data: { [string]: any })
 		pickup(data.id)
 	end)
 
-	if data.legendary then
-		pillar(model, position)
+	-- Pillar for the best revealable item (the server's `legendary` / `mythic` flags are the fallback).
+	local shine: ItemInstance? = nil
+	for _, item in items do
+		if revealable(item) and (shine == nil or item.rarity > shine.rarity) then
+			shine = item
+		end
+	end
+	if shine or data.legendary then
+		local rarity =
+			Rarities.get(if shine then shine.rarity elseif data.mythic then Rarities.MYTHIC else Rarities.LEGENDARY)
+		pillar(model, position, rarity)
 		Sounds.play("levelUp")
-		flashScreen()
+		flashScreen(rarity.id >= Rarities.MYTHIC)
 	end
 
 	model.Parent = folder
@@ -266,11 +307,15 @@ local function onPicked(items: { ItemInstance })
 			)
 		end
 	end
+	-- Reveal the best legendary / mythic equipment piece of the pickup.
+	local reveal: ItemInstance? = nil
 	for _, item in items do
-		if item.rarity == Rarities.LEGENDARY then
-			openReveal(item)
-			break
+		if revealable(item) and (reveal == nil or item.rarity > reveal.rarity) then
+			reveal = item
 		end
+	end
+	if reveal then
+		openReveal(reveal)
 	end
 end
 

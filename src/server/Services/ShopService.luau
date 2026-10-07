@@ -169,14 +169,14 @@ local function sell(player: Player, npcId: string, indices: { any }): (boolean, 
 	return true, nil, total
 end
 
--- Quick sell (S20, DESIGN §5.9): every equipment item in the backpack up to `maxRarity` (Common or
--- Uncommon), except locked, unique and bound items. Equipped items are never in the backpack.
+-- Quick sell (S20, DESIGN §5.9): every equipment item in the backpack up to `maxRarity` (S30: Common, or Common
+-- and Unique; only rarities with `quickSell`), except locked, named and bound items. Equipped items are never in the backpack.
 local function sellAll(player: Player, npcId: string, maxRarity: number): (boolean, string?, number?)
 	local char = character(player)
 	if not char then
 		return false, "error.badRequest"
 	end
-	local limit = math.clamp(math.floor(maxRarity), Rarities.COMMON, Rarities.UNCOMMON)
+	local limit = math.clamp(math.floor(tonumber(maxRarity) or 1), Rarities.COMMON, Rarities.UNIQUE)
 	local indices = {}
 	for key, item in char.inventory do
 		local def = Items.get(item.id)
@@ -186,7 +186,8 @@ local function sellAll(player: Player, npcId: string, maxRarity: number): (boole
 			and item.rarity <= limit
 			and not item.locked
 			and not item.bound
-			and item.rarity ~= Rarities.UNIQUE
+			and Rarities.get(item.rarity).quickSell
+			and def.fixedBonuses == nil
 		then
 			table.insert(indices, tonumber(key))
 		end
@@ -270,7 +271,7 @@ end
 
 -- Sell price helper for the client preview (also used by rarity confirmations).
 function ShopService.IsValuable(item: ItemInstance): boolean
-	return item.rarity >= Rarities.EPIC
+	return Rarities.get(item.rarity).valuable
 end
 
 function ShopService.Init(registry)

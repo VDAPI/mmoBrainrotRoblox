@@ -36,6 +36,7 @@
 | S27 | Questy poboczne Łąk: 13 nowych NPC, 28 questów w 9 wątkach, interakcje ze światem, dialogi ze stronami, nagrody do wyboru | ● |
 | S28 | Umiejętności od nowa: naprawa rzucania, animacja i efekt każdej umiejętności, przełomy na 5. i 10. poziomie, czucie trafień, wygoda | ● |
 | S29 | Poprawki po testach: jedno okno Postaci z plecakiem, plecak znika z usługą, NPC na ziemi, ✶ błogosławieństwa przy nicku (30 min), zielone cele questów, teleport do miasta, liczby obrażeń zawsze | ● |
+| S30 | Rzadkości od nowa (Zwykły, Unikatowy, Heroiczny, Legendarny, Mityczny), ramki w kolorach, drop wg źródła, grind legend i mityków z bossów | ● |
 
 Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana przez właściciela
 
@@ -769,6 +770,28 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
 - **S29** Ustawienie `settings.dmgMode` (`all` / `mine` / `off`) bez podbijania wersji schematu; brak pola = stare
   `dmgNumbers` (false → off). Powyżej 8 liczb/s na cel trafienia tego samego stylu dopisują się do najnowszej liczby
   (< 0,6 s); krytyki, Pochłonięto, Odporny i Unik nigdy się nie łączą. Liczby w `Data/DamageNumbers`.
+- **S30** Rzadkości: 5 rosnących id (`COMMON, UNIQUE, HEROIC, LEGENDARY, MYTHIC`), zdolności w danych (`valuable`,
+  `announce`, `reveal`, `legendCore`, `quickSell`, `dismantle`, `bindOnPickup`) zamiast porównań id. `Rarities.get` nigdy
+  nie zwraca nil (przycina do 1–5). Kolory w Lune są stringami hex, w Robloxie `Color3`.
+- **S30** Migracja zapisów nr **5** (S27 miał 4): `fromLegacy` 1→1, 2→2, 3→3, 4→3, 5→4, 6→5, znacznik `item.rv = 2`
+  (idempotentne `Rarities.upgradeItem`), ekwipunek, plecak, depozyt, log łupu, ustawienia filtrów, przedmioty wyboru
+  w aktywnych questach pobocznych, `bossLockouts` → `bossRuns` (dzisiejsza blokada = limit), puste `bossPity`.
+  Poczta: upgrade przy wczytaniu skrzynki. Czysta logika dostaje zegar przez `AccountSchema.now` (powtarzalne testy).
+- **S30** Aukcja: ta sama mapa MemoryStore; nowe streszczenia mają `v = 2`, stare (bez `v`) mapowane `fromLegacy` przy
+  odczycie. Zmiana nazwy mapy zostawiłaby stare oferty bez wygasania (przegląd wygasłych czyta indeks).
+- **S30** Każdy Mityk (także losowany) wiąże się przy podniesieniu — grindu nie da się obejść handlem.
+- **S30** Usunięte `elite2UniqueChance` i `bossUniqueChance`: Legendarne / Mityczne z bossa tylko z rzutu osobistego.
+  Rzut: szansa przy `n` zabiciach bez trafienia = `base + step × n`, 100% gdy `n + 1 ≥ hard`; wszystkie 4 bossy na razie
+  z tymi samymi liczbami (`PITY` w `LootTables`). Rzut osobisty losuje slot z wagami `wolf` (jak dawny łup bossa).
+- **S30** Filtry łupu: „ukrywaj poniżej” najwyżej Heroiczny, „auto-łup od” do Mitycznego. „Sprzedaj / rozbij
+  wszystko” tylko Zwykłe i Unikatowe (`quickSell`) i nigdy przedmioty bossów; klucze `shop.sellAllCommon/Uncommon` i
+  `smith.dismantle.common/uncommon` zostały (zmienione tylko teksty).
+- **S30** `Config.SideQuest.choiceRarity = {2, 3}` bez zmian liczbowych: teraz znaczy Unikatowy (zwykłe zadania) i
+  Heroiczny (zamykające wątek). Próg 95 broni: „Eteryczny / Eteryczna / Eteryczne” (en „Ethereal”).
+- **S30** Ramki slotów: jeden wspólny `RenderStepped` obraca gradienty legend i mityków w całym UI (gradienty w cache
+  per rzadkość); zaznaczony slot = biała obwódka + jaśniejsze tło; podświetlenia przeciągania z S29 i zaznaczenie
+  wyłączają gradient i poświatę. `Theme.Rarity` usunięte. Nowa karta nagrody po bossie (`Screens/BossReward`) z
+  wynikiem rzutu, „Dziś: n/3” i szansami na następne zabicie (zdarzenie `CombatFx` `reward` z polem `boss`).
 
 ## Niedokończone
 (Rzeczy z zakresu sesji, które nie zostały zrobione. Następna sesja zaczyna od nich.)
@@ -860,6 +883,7 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
   nie zamyka menu przytrzymania (tap w tło / „Anuluj”).
 - **S29** Zdarzenia liczb obrażeń dalej tylko w promieniu `Combat.fxRadius = 80` (bilbord ma `MaxDistance` 250; większy
   promień = więcej ruchu sieciowego — do decyzji właściciela).
+- **S30** Szanse rzutu osobistego są wspólne dla 4 bossów (do strojenia w S32: `LootTables.bosses[*]`).
 
 ## Zgłoszone błędy
 (Właściciel wpisuje tu błędy po testach albo przekazuje je przez sesję poprawek.)
@@ -2651,3 +2675,65 @@ lokalizacja.
 23. **G** Esc → opcje → „Liczby obrażeń”: Wszystkie → Moje i otrzymane (cudze trafienia znikają) → Wyłączone.
 24. **G** Zgiń i odrodź się — liczby dalej działają; F9 bez ostrzeżeń `[CombatFxController] … event failed`. Ticki DoT
     małe i kolorowe, HoT zielone „+N”.
+
+### S30: Rzadkości od nowa
+
+**Zrobione**
+- **Dane**: `Data/Rarities` — 5 rzadkości (Zwykły szary, Unikatowy żółty, Heroiczny niebieski, Legendarny pomarańczowy,
+  Mityczny czerwony) z `bonusMin/Max`, `baseMul`, `rangeMul`, `legendaryLines`, `sellMul`, `textColor`, `frame`,
+  zdolnościami, `dropWeights`, `cap`, `fromLegacy`, `upgradeItem`, `parse`. Lokalizacja `rarity.*` i `rarity.short.*`;
+  próg 95 „Eteryczny”.
+- **Przedmioty bossów**: 12 ręcznych = Mityczne; naprawiony błąd ×1.3 (tasak Grimroka 72 obrażenia); `LootTables`
+  `uniques` → `named`. `ItemRoll`: liczba bonusów z zakresu, 1–2 różne linie legendarne.
+- **Drop wg źródła**: zwykły potwór do Unikatowego, Elita do Heroicznego, Elita II do Legendarnego, wspólny łup bossa
+  Unikatowe/Heroiczne; handlarz i kowal Zwykłe.
+- **Grind bossów**: `Loot.rollBossPersonal / bossChances / personalItems / simulateBoss`; `DungeonService.reward` robi
+  rzut osobisty każdego zwycięzcy do osobnego worka; liczniki `character.bossPity`; limit 3 zabić dziennie
+  (`bossRuns`, `BossScaling.runsToday / isLocked / addRun`). Ogłoszenia tylko dla ekwipunku: legenda jak dotąd,
+  mityk osobny czerwony, większy, pulsujący baner (`loot.announceMythic`).
+- **UI**: ramki z danych (grubość, gradient, poświata, obrót), zaznaczenie białe, tooltip w kolorze rzadkości (nazwa,
+  linia rzadkości, obwódka, linie legendarne z danych), słup łupu i węzeł worka w kolorze najlepszej rzadkości (mityk:
+  wyższy czerwony z żarem i błyskiem), `LegendReveal` z wariantem mitycznym, karta lochu na mapie i brama lochu
+  („Dziś: n/3 · reset za …”, „Szansa na legendę: X% · na mityka: Y%”, mityczne przedmioty bossa), karta potwora
+  („Przedmioty do rzadkości: …”), karta nagrody po bossie, sklep / kowal / filtry łupu / panel dev na 5 rzadkościach.
+- **Migracja** nr 5 (zob. „Decyzje”), poczta i aukcja przy wczytaniu.
+- **Admin**: `/item` / `/give` / `/givex` / `/mail` z nazwą rzadkości albo 1–5, `/legend [legendary|mythic]`,
+  `/lootsim <potwór> <normal|elite|elite2> <n>` (5 kubełków), `/rarities`, `/bosspity [boss] [leg] [myth]`,
+  `/bossruns reset [boss]`, `/bosssim <boss> <n>`.
+- Testy: nowy `rarities.spec` (drabina, sufity, rzut osobisty z gwarancją i średnimi z 100 000 symulacji, statystyki
+  ręcznych, 2 linie legendarne mityka, migracja, `isLocked`); poprawione data, items, smith, lootcomfort, party,
+  sidequests, worldmap (670 testów).
+
+**Pliki**: `Data/{Rarities,LootTables,Items/Uniques,Items/Types,AdminCommands,WeaponLooks}`, `Config`, `Types`,
+`Logic/{ItemRoll,Loot,BossScaling,AccountSchema,Upgrade,Dismantle,LootFilter,Auction,Mail}`, `Services/{LootService,
+DungeonService,AuctionService,ShopService,BlacksmithService,EquipmentService,SettingsService}`,
+`Admin/{Items,Monsters,Economy}`, `Components/{ItemSlot,ItemTooltip,Announcement}`, `UI/{ItemText,Theme}`,
+`Screens/{LegendReveal,BossReward (nowy),DungeonWindow,ShopWindow,GameMenu,WorldMap/CreatureCards,
+BlacksmithWindow/Dismantle,DevWindow/Character,DevWindow/Items}`, `Controllers/{LootController,
+NotificationController,DungeonController,CombatFxController}`, lokalizacja, `tests/rarities.spec` + poprawki testów.
+
+#### Instrukcja testu S30
+
+1. Wejdź starą postacią: nic nie zniknęło; dawne epickie są niebieskie (Heroiczny), legendy pomarańczowe, unikaty
+   bossów czerwone (Mityczny), błogosławieństwa w tej samej ilości.
+2. `/item` po jednym przedmiocie każdej rzadkości (`common`, `unique`, `heroic`, `legendary`, `mythic`): ramki szara,
+   żółta, niebieska z poświatą, pomarańczowa z obracającym się gradientem, czerwono-różowa z mocną poświatą.
+3. Kliknij slot: biała obwódka i jaśniejsze tło (bez złota). Przeciągnij przedmiot na ekwipunek: zielone / czerwone
+   podświetlenia S29 wyraźnie inne niż ramki.
+4. Najedź na legendę i mityka: nazwa i słowo rzadkości w czytelnym kolorze, obwódka dymka w kolorze rzadkości.
+5. `/rarities`: 5 linii i sufity `normal 2, elite 3, elite2 4, boss 5`.
+6. `/lootsim wolf normal 10000` — tylko Zwykłe i Unikatowe; `elite` — najwyżej Heroiczne; `elite2` — ok. 5% legend.
+7. `/give unique_grimrok_cleaver`: Mityczny, 72 obrażenia, związany po podniesieniu.
+8. `/item ring_30 mythic`: 4 bonusy + 2 różne linie legendarne; `/item ring_30 heroic`: 2–3 bonusy.
+9. `/bosssim grimrok 10000`: legenda średnio co ~3,4 zabicia, mityk co ~9,8.
+10. Mapa (M) → karta lochu: „Dziś: 0/3 · reset za …”, „Szansa na legendę: 20% · na mityka: 4%”. `/bosspity grimrok 7 29`
+    → szanse 100% / 100% (karta i brama lochu).
+11. Zabij Grimroka: wspólny łup tylko Unikatowe/Heroiczne; osobny worek z legendą i mitykiem; słup czerwony dla mityka,
+    okno „Mityczny przedmiot!”; czerwony, pulsujący baner na serwerze; karta nagrody z wynikiem, „Dziś: 1/3” i szansami.
+    Potem `/bosspity` pokazuje 0 / 0.
+12. Trzy zabicia (pomagaj sobie `/boss spawn`): po 3. wejście blokuje dzienny limit; `/bossruns reset grimrok` odblokowuje.
+13. Kowal: rozbiór Mityka daje 2–3 kryształy i 2 rdzenie; ulepszenie Legendy / Mityka z +6 na +7 wymaga rdzenia.
+14. Handlarz: „Sprzedaj zwykłe i unikaty” nie rusza Heroicznych, związanych, zablokowanych ani przedmiotów bossów;
+    sprzedaż Heroicznego pyta o potwierdzenie. Menu → filtry łupu przełączają się po nowych nazwach.
+15. Karta potwora na mapie: „Przedmioty do rzadkości: Unikatowy” (zwykły), Heroiczny (Elita), Legendarny (Elita II).
+16. Aukcja: stara oferta „epicka” ma filtr i kolor Heroiczny; stara paczka pocztowa pokazuje nowe rzadkości.

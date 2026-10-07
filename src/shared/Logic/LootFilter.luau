@@ -2,7 +2,7 @@
 -- Loot filter (S20, DESIGN §5.9): what happens to an item that drops for the player.
 --   "show"   : a normal loot bag
 --   "hide"   : equipment below the "hide below" rarity is not shown (materials, gold, consumables and
---              legendaries / uniques are always shown)
+--              rarities with a reveal (Legendary, Mythic) are always shown)
 --   "pickup" : picked up automatically (Auto-loot pass) from the "auto from" rarity up
 -- Settings: lootHideBelow (rarity, 0 = off), lootAutoFrom (rarity, 0 = everything the pass picks up).
 
@@ -23,7 +23,7 @@ function LootFilter.decide(
 	if autoLoot and (not equipment or rarity >= (autoFrom or 0)) then
 		return "pickup"
 	end
-	if equipment and rarity < Rarities.LEGENDARY and rarity < (hideBelow or 0) then
+	if equipment and not Rarities.get(rarity).reveal and rarity < (hideBelow or 0) then
 		return "hide"
 	end
 	return "show"

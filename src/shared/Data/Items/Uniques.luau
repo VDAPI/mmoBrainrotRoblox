@@ -1,9 +1,11 @@
 --!strict
--- Unique items (DESIGN §5.2): hand-made, fixed stats, own name and lore, drop only from bosses (rarely
--- Elite II). Three per boss. Base stats come from the matching base type at the boss level x 1.3; the
--- bonuses below are fixed (no rolling). Bind on pickup.
+-- Named boss items (DESIGN §5.2; S30: rarity Mythic, ids `unique_*` kept for saves): hand-made, fixed stats,
+-- own name and lore, only from a boss's personal Mythic roll. Three per boss. Base stats come from the matching
+-- base type at the boss level x 1.3 (ItemRoll.itemStats keeps them, no rarity multiplier on top); the bonuses
+-- below are fixed (no rolling). Bind on pickup.
 
 local Bases = require("./Bases")
+local Rarities = require("../Rarities")
 local Types = require("./Types")
 
 local LIST: { Types.ItemDef } = {}
@@ -54,11 +56,12 @@ local function unique(
 		weapon = weapon,
 		nameKey = `item.{id}.name`,
 		descKey = `item.{id}.desc`,
-		icon = { glyph = glyph, color = "#E8C25A" },
+		icon = { glyph = glyph, color = Rarities.get(Rarities.MYTHIC).hex },
 		price = Bases.priceAt(level) * 3,
 		fixedBonuses = bonuses,
 		bossId = bossId,
 		bindOnPickup = true,
+		rarity = Rarities.MYTHIC,
 	})
 end
 

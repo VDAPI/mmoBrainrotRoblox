@@ -36,11 +36,12 @@ local Theme = require(script.Parent.Parent.UI.Theme)
 
 local CombatFxController = {
 	Name = "CombatFxController",
-	Deps = { "EffectsController", "AnimationController", "MonsterViewController", "VfxController" },
+	Deps = { "EffectsController", "AnimationController", "MonsterViewController", "VfxController", "DungeonController" },
 }
 
 local AnimationController: any
-local MonsterView: any = nil
+local MonsterView: any
+local DungeonController: any = nil
 
 local player = Players.LocalPlayer
 
@@ -1031,10 +1032,25 @@ local function handle(event: { [string]: any })
 			)
 			floatText(headPosition(character) + Vector3.new(0, 1, 0), text, Theme.Colors.Gold, 22, { rise = 4 })
 		end
+		-- Boss kill (S30): the reward card with the personal roll and the grind progress.
+		if type(event.boss) == "string" then
+			DungeonController.ShowReward({
+				boss = event.boss,
+				exp = tonumber(event.exp),
+				gold = tonumber(event.gold),
+				gotLeg = event.gotLeg == true,
+				gotMyth = event.gotMyth == true,
+				leg = tonumber(event.leg),
+				myth = tonumber(event.myth),
+				runs = tonumber(event.runs),
+				dailyRuns = tonumber(event.dailyRuns),
+			})
+		end
 	end
 end
 
 function CombatFxController.Init(registry)
+	DungeonController = registry.Get("DungeonController")
 	MonsterView = registry.Get("MonsterViewController")
 	AnimationController = registry.Get("AnimationController")
 	registry.Get("VfxController").SetShake(shake)

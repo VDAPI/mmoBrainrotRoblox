@@ -68,8 +68,7 @@ end
 local HELD_NAMES = { weapon = "VaelthornWeapon", offhand = "VaelthornOffhand" }
 
 local function rarityColor(item: ItemInstance): Color3
-	local rarity = Rarities.get(item.rarity)
-	return Color3.fromHex(if rarity then rarity.color else "#C9CED6")
+	return Color3.fromHex(Rarities.get(item.rarity).hex)
 end
 
 local function material(name: string): Enum.Material
@@ -193,7 +192,7 @@ local function updateHeldModel(player: Player, slot: "weapon" | "offhand")
 	tip.Parent = held
 	held:SetAttribute("WeaponType", (def :: any).type)
 	held:SetAttribute("Accent", accent) -- rarity colour (trail)
-	if item.rarity >= Rarities.EPIC then
+	if Rarities.get(item.rarity).valuable then
 		local light = Instance.new("PointLight")
 		light.Color = accent
 		light.Range = 6

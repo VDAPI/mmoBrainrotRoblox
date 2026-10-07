@@ -1,13 +1,15 @@
 --!strict
 -- Dungeons on the client (DESIGN §16): the gate prompt and window (tag "DungeonEntrance"), the boss HP bar at
 -- the top of the screen (state `boss`: name, phase, HP, time left, enrage / shield) and big centred
--- messages of the fight (BossAnnounce: countdown, phases, victory, wipe).
+-- messages of the fight (BossAnnounce: countdown, phases, victory, wipe); the post-fight reward card with the
+-- grind progress (S30, ShowReward from the CombatFx "reward" event).
 
 local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 
+local BossReward = require(script.Parent.Parent.UI.Screens.BossReward)
 local Bosses = require(ReplicatedStorage.Shared.Data.Bosses)
 local DungeonWindow = require(script.Parent.Parent.UI.Screens.DungeonWindow)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
@@ -28,6 +30,10 @@ local DungeonController = {
 
 local scope = Fusion.scoped(Fusion)
 local WindowManager: any
+local UIControllerRef: any
+local rewardScope: Fusion.Scope<typeof(Fusion)>? = nil
+
+local REWARD_SECONDS = 14
 local region = scope:Value(nil :: string?)
 local announceText = scope:Value("")
 local announceAlpha = scope:Value(1)
@@ -232,9 +238,31 @@ local function decorate(instance: Instance)
 	end)
 end
 
+-- Post-fight reward card (S30): one at a time, closes on OK or after REWARD_SECONDS.
+function DungeonController.ShowReward(reward: BossReward.Reward)
+	if rewardScope then
+		Fusion.doCleanup(rewardScope)
+		rewardScope = nil
+	end
+	local inner = scope:innerScope()
+	rewardScope = inner
+	local function close()
+		if rewardScope == inner then
+			rewardScope = nil
+			Fusion.doCleanup(inner)
+		end
+	end
+	if reward.gotMyth or reward.gotLeg then
+		Sounds.play("levelUp")
+	end
+	BossReward(inner, { Reward = reward, Close = close }).Parent = UIControllerRef.GetLayer("Toasts")
+	task.delay(REWARD_SECONDS, close)
+end
+
 function DungeonController.Init(registry)
 	WindowManager = registry.Get("WindowManager")
 	local UIController = registry.Get("UIController")
+	UIControllerRef = UIController
 	WindowManager.Register({
 		id = "dungeon",
 		titleKey = "window.dungeon.title",

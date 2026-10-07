@@ -13,6 +13,7 @@ local Items = require(Shared.Data.Items)
 local Loot = require(Shared.Logic.Loot)
 local Monsters = require(Shared.Data.Monsters)
 local PartyLoot = require(Shared.Logic.PartyLoot)
+local Rarities = require(Shared.Data.Rarities)
 local Rng = require(Shared.Logic.Rng)
 
 local Context = require(script.Parent.Context)
@@ -58,8 +59,8 @@ commands.give = function(player, args)
 	end
 	withCharacter(player, function()
 		local character = PlayerStateService.GetCharacter(player)
-		local rarityArg = args[2]
-		local rarity = if rarityArg == "u" then 6 else math.clamp(tonumber(rarityArg) or 1, 1, 5)
+		-- S30: common|unique|heroic|legendary|mythic or 1-5; named boss items are always Mythic.
+		local rarity = Rarities.parse(args[2]) or def.rarity or Rarities.COMMON
 		local ilvl = math.clamp(parseAmount(args[3]) or math.max(def.level, character.level), 1, Config.MaxLevel)
 		local n = math.clamp(parseAmount(args[4]) or 1, 1, 999)
 		local given = 0
@@ -67,7 +68,7 @@ commands.give = function(player, args)
 			given = n - InventoryService.GiveNew(player, itemId, n)
 		else
 			for _ = 1, math.min(n, 50) do
-				local leftover = InventoryService.GiveNew(player, itemId, 1, if rarity == 6 then 1 else rarity, ilvl)
+				local leftover = InventoryService.GiveNew(player, itemId, 1, rarity, ilvl)
 				if leftover > 0 then
 					break
 				end
@@ -82,9 +83,12 @@ commands.give = function(player, args)
 	end)
 end
 
-commands.legend = function(player)
+-- S30: /item = /give with rarity names.
+commands.item = commands.give
+
+commands.legend = function(player, args)
 	withCharacter(player, function()
-		if LootService.DropLegendary(player) then
+		if LootService.DropLegendary(player, Rarities.parse(args[1])) then
 			reply(player, "admin.legend.ok")
 		end
 	end)
@@ -97,20 +101,21 @@ commands.lootsim = function(player, args)
 		reply(player, "admin.usage.lootsim")
 		return
 	end
-	local variant = VARIANTS[tonumber(args[2]) or 0] or "normal"
+	local variant = VARIANTS[tonumber(args[2]) or -1]
+		or (if Rarities.dropWeights[args[2] or ""] then args[2] else "normal")
 	local n = math.clamp(parseAmount(args[3]) or 1000, 1, 100000)
 	local character = PlayerStateService.GetCharacter(player)
 	local counts, items, mats, gold =
 		LootService.Simulate(monsterId, variant, def.levels.max, n, if character then character.class else nil)
 	reply(player, "admin.lootsim.result", {
 		n = n,
+		variant = variant,
 		items = items,
 		c1 = counts[1],
 		c2 = counts[2],
 		c3 = counts[3],
 		c4 = counts[4],
 		c5 = counts[5],
-		c6 = counts[6],
 		mats = mats,
 		gold = gold,
 	})
@@ -271,7 +276,7 @@ commands.givex = function(player, args)
 	end
 	withCharacter(player, function()
 		local character = PlayerStateService.GetCharacter(player)
-		local rarity = math.clamp(parseAmount(args[2]) or def.rarity or 1, 1, 6)
+		local rarity = Rarities.parse(args[2]) or def.rarity or Rarities.COMMON
 		local ilvl = math.clamp(parseAmount(args[3]) or math.max(def.level, character.level), 1, Config.MaxLevel)
 		local up = math.clamp(parseAmount(args[4]) or 0, 0, 9)
 		local element = args[5]
@@ -289,7 +294,7 @@ commands.givex = function(player, args)
 		local given = 0
 		local lastIndex: number? = nil
 		for _ = 1, math.min(n, 50) do
-			local leftover, item = InventoryService.GiveNew(player, itemId, 1, if def.bossId then 6 else rarity, ilvl)
+			local leftover, item = InventoryService.GiveNew(player, itemId, 1, rarity, ilvl)
 			if leftover > 0 or not item then
 				break
 			end
@@ -364,6 +369,30 @@ commands.gearbag = function(player, _args)
 		end
 		reply(player, "admin.gearbag.ok", { n = given })
 	end)
+end
+
+-- S30: /rarities: the rarity ladder in the panel console.
+commands.rarities = function(player)
+	for _, rarity in Rarities.list do
+		reply(player, "admin.rarities.line", {
+			id = rarity.id,
+			name = `@{rarity.nameKey}`,
+			color = rarity.hex,
+			bonuses = if rarity.bonusMin == rarity.bonusMax
+				then tostring(rarity.bonusMin)
+				else `{rarity.bonusMin}-{rarity.bonusMax}`,
+			legendary = rarity.legendaryLines,
+			base = rarity.baseMul,
+			range = rarity.rangeMul,
+			sell = rarity.sellMul,
+		})
+	end
+	local caps = {}
+	for source, cap in Rarities.cap do
+		table.insert(caps, `{source} {cap}`)
+	end
+	table.sort(caps)
+	reply(player, "admin.rarities.caps", { list = table.concat(caps, ", ") })
 end
 
 return commands

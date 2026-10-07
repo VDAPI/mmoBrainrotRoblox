@@ -18,7 +18,7 @@
 2. Drop: losowa rzadkość, losowe bonusy. Lepsze zakładasz (przedmiot się wiąże), gorsze sprzedajesz, rozbijasz na materiały albo wystawiasz na aukcję.
 3. Materiały + złoto → ulepszanie u kowala (+0 do +9, ryzyko spadku poziomu).
 4. Elity w jaskiniach (czerwona strefa, PvP zawsze) → lepszy drop, ryzyko ze strony graczy.
-5. Raz dziennie boss w lochu w grupie do 5 osób → największa szansa na legendę i przedmioty unikatowe.
+5. Boss w lochu (do 3 razy dziennie) w grupie do 5 osób → grind legend i mityków (rzut osobisty z rosnącą szansą).
 6. Poziom w górę → punkty statystyk i umiejętności → nowe strefy.
 7. Społeczne: grupa, gildia z umiejętnościami, handel, aukcja, arena.
 
@@ -228,15 +228,22 @@ Broń, Druga ręka, Hełm, Zbroja, Rękawice, Buty, Naszyjnik, Pierścień 1, Pi
 
 ### 5.2 Rzadkości
 
-| Rzadkość PL / EN | Kolor | Liczba losowych bonusów | Mnożnik statystyk bazowych | Mnożnik zakresu bonusów |
-|---|---|---|---|---|
-| Zwykły / Common | `#C9CED6` | 0 | 1.00 | – |
-| Niezwykły / Uncommon | `#4FD16B` | 1 | 1.08 | 1.0 |
-| Rzadki / Rare | `#3D8BFF` | 2 | 1.16 | 1.1 |
-| Epicki / Epic | `#B455FF` | 3 | 1.25 | 1.25 |
-| Legendarny / Legendary | `#FF9F1C` | 4 | 1.40 | 1.5 (+ zawsze 1 bonus z puli „legendarnej”) |
+Od S30 pięć rzadkości (rosnące id, `Data/Rarities.luau`); rzadkość widać po kolorze ramki slotu i nazwy.
 
-Oddzielnie istnieją **przedmioty unikatowe** (Unique, kolor `#E8C25A`, ramka ozdobna): ręcznie zaprojektowane, **stałe** statystyki, dropią tylko z bossów (i rzadko Elit II). Mają własną nazwę i opis fabularny.
+| id | Rzadkość PL / EN | Ramka | Bonusy losowe | Mnożnik bazy | Mnożnik zakresu | Linie z puli legendarnej | Mnożnik ceny |
+|---|---|---|---|---|---|---|---|
+| 1 | Zwykły / Common | szary `#9DA3AB`, 1,5 px | 0 | 1.00 | 1.0 | 0 | 1.00 |
+| 2 | Unikatowy / Unique | żółty `#F2D33A`, 2 px | 1–2 | 1.10 | 1.1 | 0 | 1.12 |
+| 3 | Heroiczny / Heroic | niebieski `#3D8BFF`, 2,5 px + poświata | 2–3 | 1.22 | 1.25 | 0 | 1.25 |
+| 4 | Legendarny / Legendary | pomarańczowy `#FF9F1C`, obracający się gradient | 4 | 1.38 | 1.5 | 1 | 1.45 |
+| 5 | Mityczny / Mythic | czerwony `#E5302A`, obracający się gradient + mocna poświata | 4 (losowany) albo stałe (ręczny) | 1.55 (losowany) | 1.75 | 2 różne | 1.70 |
+
+Zdolności rzadkości są w danych, nie w porównaniach id: `valuable` (potwierdzenie sprzedaży i rozbioru, światło przy
+broni; od Heroicznego), `announce` (legenda / mityk), `reveal` (okno odsłonięcia; od Legendarnego), `legendCore`
+(rdzeń legendy przy ulepszaniu od +7), `quickSell` (Zwykły, Unikatowy), `dismantle`.
+
+**Ręcznie zrobione przedmioty bossów** (12, `Items/Uniques.luau`) są **Mityczne**: stałe bonusy, baza ×1.3 (bez
+dodatkowego mnożnika rzadkości), własna nazwa i opis. Próg 95 broni nazywa się „Eteryczny” (nie „Mityczny”).
 
 Przedmioty **z kowala** mają rzadkość Zwykły i stałe statystyki dopasowane do poziomu (zawsze średnia wartość, bez bonusów). Są pewnym, przeciętnym wyborem; drop jest lepszy.
 
@@ -265,23 +272,22 @@ Przedmioty **z kowala** mają rzadkość Zwykły i stałe statystyki dopasowane 
 
 - Szansa na przedmiot z potwora (podniesione po testach S17): zwykły **20%**, Elita **75%** (+25% na drugi), Elita II **100%, 2–3 przedmioty**, boss 3–4 przedmioty gwarantowane.
 - Broń ma większą wagę w losowaniu slotu (ok. 30% dropów), a przedmioty dla klasy zabójcy wypadają częściej (preferencja klasy ok. 80%, także w grupie przed rozdziałem łupu).
-- Wagi rzadkości (zwykły potwór / Elita / Elita II / boss):
-  - Zwykły 72 / 45 / 20 / 0
-  - Niezwykły 20 / 30 / 30 / 10
-  - Rzadki 6.5 / 17 / 30 / 35
-  - Epicki 1.4 / 7 / 15 / 38
-  - Legendarny 0.1 / 1 / 5 / 17
-- Boss: dodatkowo 25% szansy na przedmiot unikatowy z tabeli bossa.
+- **Rzadkość zależy od źródła** (S30; sufit nigdy nieprzekraczany, `Rarities.cap`):
+  - handlarz broni i kowal: zawsze Zwykły;
+  - zwykły potwór: Zwykły 85, Unikatowy 15 (sufit Unikatowy);
+  - Elita: Zwykły 40, Unikatowy 45, Heroiczny 15 (sufit Heroiczny);
+  - Elita II: Unikatowy 45, Heroiczny 50, Legendarny 5 (sufit Legendarny);
+  - boss — przedmioty wspólne: Unikatowy 35, Heroiczny 65; Legendarne i Mityczne **tylko z rzutu osobistego** (§16).
 - Bonus dropu (%) mnoży szansę na przedmiot, nie wagi rzadkości.
 - Złoto: każdy potwór `round(Lp × 3 × losowe(0.7..1.3))`, elity ×4 / ×12.
 - Materiały/zioła/kamienie z tabel potworów (`Data/Monsters`).
 - Przedmiot ląduje na ziemi jako „worek łupu” widoczny **tylko dla właściciela** (lokalnie po stronie klienta); podniesienie klawiszem/klikiem lub automatycznie z gamepassem Auto-łup. Znika po 120 s.
-- **Drop legendy**: pomarańczowy słup światła na ziemi, specjalny dźwięk, krótki flash ekranu, komunikat na całym serwerze „⚜ {gracz} zdobył legendarny przedmiot: {nazwa}!” (i między serwerami przez MessagingService). Po podniesieniu: okno odsłonięcia z animacją pojawiania się bonusów jeden po drugim.
+- **Drop legendy / mityka**: pomarańczowy (mityk: wyższy czerwony z żarem) słup światła na ziemi, specjalny dźwięk, krótki flash ekranu, komunikat na całym serwerze „⚜ {gracz} zdobył legendarny przedmiot: {nazwa}!” (i między serwerami przez MessagingService). Po podniesieniu: okno odsłonięcia z animacją pojawiania się bonusów jeden po drugim.
 
 ### 5.6 Wiązanie
 
 - Każdy przedmiot **założony** choć raz staje się związany (`bound = true`): nie można go wymienić ani wystawić na aukcję. Można go natomiast włożyć do depozytu (depozyt jest kontowy, więc związany przedmiot może przejść do innej postaci tego samego konta).
-- Unikaty wiążą się przy podniesieniu.
+- Mityczne przedmioty (ręczne i losowane) wiążą się przy podniesieniu (S30), żeby grindu bossów nie obchodzić handlem.
 - **Zwój Rozwiązania** odwiązuje 1 przedmiot (Smocza Waluta albo rzadki drop z bossów / nagroda z questów).
 - UI: przed założeniem niezwiązanego przedmiotu potwierdzenie „Przedmiot zostanie związany”.
 
@@ -310,7 +316,7 @@ Przedmioty **z kowala** mają rzadkość Zwykły i stałe statystyki dopasowane 
 - **„Lepszy przedmiot!”**: gdy podniesiony przedmiot jest lepszy od założonego (suma ważonych statystyk wg klasy) i gracz może go założyć, pojawia się mała karta z porównaniem i przyciskiem „Załóż” (znika po 8 s; wyłączalne w opcjach).
 - **Filtr łupu** (opcje): automatyczne podnoszenie od wybranej rzadkości (dla gamepassa Auto-łup) i ukrywanie worków ze zwykłymi przedmiotami poniżej wybranej rzadkości (materiały i złoto zawsze widoczne).
 - **Dziennik łupu**: ostatnie 50 zdobytych przedmiotów z czasem i źródłem (potwór, mapa), dostępny z plecaka.
-- **Szybka sprzedaż**: u każdego kupca przycisk „Sprzedaj wszystkie Zwykłe” (i opcjonalnie „Niezwykłe”), pomija przedmioty założone, związane unikaty i zablokowane.
+- **Szybka sprzedaż**: u każdego kupca przycisk „Sprzedaj zwykłe” i „Sprzedaj zwykłe i unikaty”, pomija przedmioty założone, związane, zablokowane i przedmioty bossów.
 - **Blokada przedmiotu**: kłódka w menu przedmiotu chroni go przed sprzedażą, rozbiciem i szybką sprzedażą.
 
 ## 6. Ulepszanie (kowal)
@@ -320,15 +326,15 @@ Przedmioty **z kowala** mają rzadkość Zwykły i stałe statystyki dopasowane 
 - **Zwój Ochrony** (jednorazowy, zużywany przy próbie): przy porażce poziom nie spada. Do zdobycia: drop z Elit II i bossów, alchemik, Smocza Waluta.
 - Każdy poziom: `+6%` statystyk bazowych przedmiotu (broń: obrażenia, zbroja: obrona/HP; biżuteria: bonusy bazowe), kumulatywnie (+9 = +54%). Bonusy losowe się nie zmieniają.
 - Koszt: złoto `round(ilvl × 40 × (N+1)^1.6)` + materiały:
-  - +1…+3: Pył Esencji × (2N), +4…+6: Odłamek Esencji × N, +7…+9: Kryształ Esencji × (N−5). Legendarne zawsze dodatkowo 1 Rdzeń Legendy od +7.
+  - +1…+3: Pył Esencji × (2N), +4…+6: Odłamek Esencji × N, +7…+9: Kryształ Esencji × (N−5). Legendarne i Mityczne zawsze dodatkowo 1 Rdzeń Legendy od +7 (zdolność `legendCore`).
 - UI ulepszania: przedmiot w środku, koszty, szansa w %, przycisk „Ulepsz”, checkbox Zwoju Ochrony. Animacja napięcia (ok. 1.5 s, iskry, narastający dźwięk) → wynik (złoty błysk sukcesu / pęknięcie przy porażce). Komunikat globalny dla +9 na legendzie.
 - Ulepszony przedmiot ma w nazwie `+N` i świecącą ramkę od +7.
 
 ## 7. Rozbijanie (kowal)
 
-- Przedmiot (niezwiązany lub związany) → materiały: Zwykły: 1–2 Pył; Niezwykły: 2–4 Pył; Rzadki: 1–2 Odłamek; Epicki: 2–3 Odłamek + 30% Kryształ; Legendarny: 1–2 Kryształ + 1 Rdzeń Legendy. Ulepszenie +N zwraca dodatkowo część materiałów.
-- Masowe rozbijanie: zaznacz wiele / „rozbij wszystkie zwykłe i niezwykłe”.
-- Potwierdzenie przy Epickim i wyższym.
+- Przedmiot (niezwiązany lub związany) → materiały (S30): Zwykły: 1–2 Pył; Unikatowy: 2–4 Pył + 25% Odłamek; Heroiczny: 1–3 Odłamki + 20% Kryształ; Legendarny: 1–2 Kryształy + 1 Rdzeń Legendy; Mityczny: 2–3 Kryształy + 2 Rdzenie Legendy. Ulepszenie +N zwraca dodatkowo część materiałów.
+- Masowe rozbijanie: zaznacz wiele / „rozbij zwykłe” / „rozbij zwykłe i unikaty” (nigdy przedmioty bossów).
+- Potwierdzenie przy Heroicznym i wyższym.
 
 ## 8. Kowal: wytwarzanie
 
@@ -354,7 +360,7 @@ Przedmioty **z kowala** mają rzadkość Zwykły i stałe statystyki dopasowane 
 - **Receptury odblokowywane poziomem postaci.** Gracz przynosi materiały (z kopania, łowienia, ziół, dropu) + złoto, alchemik przyjmuje zamówienie i **wytwarza w czasie rzeczywistym** (np. 2–60 min). Kolejka: 3 zamówienia naraz. Odbiór u alchemika (powiadomienie, gdy gotowe, działa też offline, bo czas to `os.time()`).
 - Brak losowania jakości, brak eksperymentowania: wynik jest zawsze taki sam.
 - Co robi alchemik:
-  - Błogosławieństwa (rozdział 11) w rzadkościach do Epickiego (legendarne tylko z dropu bossów).
+  - Błogosławieństwa (rozdział 11) w stopniach do Legendarnego (Mityczne tylko z dropu bossów).
   - Zwoje Ochrony, Kamienie Teleportu.
   - Przemiana materiałów: 10 Pył → 1 Odłamek, 8 Odłamek → 1 Kryształ (koszt złota, 5 min).
   - Eliksiry odporności (1 h, +15% odporności na żywioł).
@@ -363,12 +369,12 @@ Przedmioty **z kowala** mają rzadkość Zwykły i stałe statystyki dopasowane 
 ## 11. Błogosławieństwa
 
 - Czasowe wzmocnienie **30 min** (S29; czas rzeczywisty, liczy się też offline, jak w Margonem). Jedno aktywne naraz; użycie nowego pyta o zastąpienie. Aktywne błogosławieństwo widać jako ✶ w kolorze stopnia przy nicku nad głową (widzą wszyscy, miga w ostatniej minucie) i przy własnym nicku w HUD z licznikiem mm:ss. Warzenie u alchemika nigdy nie trwa dłużej niż działanie (3 / 8 / 15 / 30 min).
-- Rzadkości jak przedmioty. Przykład linii „Błogosławieństwo Wojownika”:
+- Stopnie jak rzadkości przedmiotów (S30): Zwykłe / Unikatowe / Heroiczne / Legendarne / Mityczne (stopień 5 tylko od bossów). Przykład linii „Błogosławieństwo Wojownika”:
   - Zwykłe: +100 HP, +5 SIŁ
-  - Niezwykłe: +200 HP, +8 SIŁ, +2% szybkości ataku
-  - Rzadkie: +350 HP, +12 SIŁ, +4% szybkości ataku
-  - Epickie: +500 HP, +16 SIŁ, +6% szybkości ataku, +3% kryt
-  - Legendarne: +800 HP, +22 SIŁ, +8% szybkości ataku, +5% kryt **+ bonus specjalny** (np. +10% EXP i +10% szansy na drop)
+  - Unikatowe: +200 HP, +8 SIŁ, +2% szybkości ataku
+  - Heroiczne: +350 HP, +12 SIŁ, +4% szybkości ataku
+  - Legendarne: +500 HP, +16 SIŁ, +6% szybkości ataku, +3% kryt
+  - Mityczne: +800 HP, +22 SIŁ, +8% szybkości ataku, +5% kryt **+ bonus specjalny** (np. +10% EXP i +10% szansy na drop)
 - Linie: Wojownika (SIŁ), Łowcy (ZRĘ), Mędrca (INT), Strażnika (WIT/obrona), Fortuny (EXP/złoto/drop, słabsze staty).
 - Źródła: drop (Elity, bossy), alchemik, questy dzienne. Ikona z licznikiem w HUD.
 
@@ -564,11 +570,12 @@ Po testach S17: **więcej rodzajów na każdej mapie (min. 8–10 na mapę teren
 
 - Wejście do lochu w głębi jaskini. Portal pokazuje: wymagany poziom (poziom bossa − 5), stan „Wolny / Zajęty przez grupę X (mm:ss)”.
 - **Tylko jedna grupa naraz** na serwerze. Wchodzi lider grupy z członkami w zasięgu 20 st. (grupa 1–5 osób; projektowany pod 5). Inni czekają.
-- **Raz dziennie na postać** (reset o 00:00 czasu UTC; licznik w UI). Wejście zużywa dzienną próbę dopiero po zabiciu bossa (porażka nie zużywa).
+- **Do 3 zabić jednego bossa dziennie na postać** (S30, `Config.Boss.dailyRuns`; reset o 00:00 UTC; karta lochu i brama pokazują „Dziś: 1/3” i czas do resetu). Wejście zużywa dzienną próbę dopiero po zabiciu bossa (porażka nie zużywa).
 - Limit czasu walki 15 min; po wybiciu całej grupy lub przekroczeniu czasu: wyrzucenie, boss się resetuje, loch wolny.
 - Boss: HP `30 × HP zwykłego potwora tego poziomu × (1 + 0.6 × (gracze − 1))`, 2–3 fazy (przejścia przy 70% i 35%), ataki telegrafowane (czerwone strefy na ziemi 1–1.5 s przed uderzeniem), przyzwania, wściekłość po 10 min.
 - Przykład Grimrok (20): Faza 1: zamach (stożek), skok na losowego gracza (okrąg). Faza 2 (70%): przyzywa 4 gobliny co 20 s. Faza 3 (35%): wir (okrąg 10 st., trzeba uciec), +25% szybkości.
-- Łup: 3–4 przedmioty (+1 na każdego gracza powyżej 3) rozdzielane wg zasad grupy, 25% na unikat, złoto, materiały, szansa na legendarne błogosławieństwo i Zwój Rozwiązania.
+- Łup wspólny: 3–4 przedmioty Unikatowe/Heroiczne (+1 na każdego gracza powyżej 3) rozdzielane wg zasad grupy, złoto, materiały, szansa na legendarne błogosławieństwo i Zwój Rozwiązania.
+- **Rzut osobisty** (S30, każdy zwycięzca, worek widoczny tylko dla niego): legenda 20% + 5 pkt. proc. za każde zabicie bez legendy, pewna przy 8. (średnio ok. 3,4 zabicia); mityk 4% + 1 pkt. proc., pewny przy 30. (średnio ok. 9,8). Trafienie zeruje licznik (`character.bossPity`). Legenda: losowy Legendarny przedmiot na poziomie bossa (80% dla klasy gracza); mityk: w 50% ręczny przedmiot bossa (pierwszeństwo dla klasy), inaczej losowy Mityczny dla klasy (4 bonusy + 2 linie legendarne). Szanse widać na karcie lochu i w karcie nagrody po walce; mityk ma osobne, mocniejsze ogłoszenie na serwerze.
 
 ## 17. Grupa
 

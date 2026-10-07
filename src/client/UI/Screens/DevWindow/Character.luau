@@ -39,9 +39,8 @@ local function Character(s: Dev.Scope): Instance
 	local noCooldowns = s:Value(false)
 
 	local rarityOptions = {}
-	for r = 1, 5 do
-		local def = Rarities.get(r)
-		table.insert(rarityOptions, { value = tostring(r), label = if def then Text.now(def.nameKey) else tostring(r) })
+	for _, def in Rarities.list do
+		table.insert(rarityOptions, { value = tostring(def.id), label = Text.now(def.nameKey), color = def.color })
 	end
 
 	local function num(v: Fusion.Value<number>): string

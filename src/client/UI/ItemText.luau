@@ -25,9 +25,14 @@ function ItemText.get(use: Fusion.Use, itemId: string, up: number?, element: str
 	return ItemText.nameIn(use(Text.Lang), itemId, up, element)
 end
 
-function ItemText.rarityColor(rarity: number): Color3
-	local def = Rarities.get(rarity)
-	return Color3.fromHex(if def then def.color else "#C9CED6")
+-- Frame colour of a rarity (grey, yellow, blue, orange, red; S30).
+function ItemText.rarityColor(rarity: number?): Color3
+	return Rarities.get(rarity or Rarities.COMMON).color
+end
+
+-- Readable name colour of a rarity on light parchment (tooltips).
+function ItemText.rarityTextColor(rarity: number?): Color3
+	return Rarities.get(rarity or Rarities.COMMON).textColor
 end
 
 -- Resolves "#item:<id>:<up>" message arguments (announcements) into a localized item name.

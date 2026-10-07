@@ -7,6 +7,7 @@ local Shared = ReplicatedStorage.Shared
 local Keybinds = require(Shared.Logic.Keybinds)
 local Locale = require(Shared.Util.Locale)
 local Net = require(Shared.Net)
+local Rarities = require(Shared.Data.Rarities)
 
 local SettingsService = {
 	Name = "SettingsService",
@@ -75,11 +76,12 @@ local SETTINGS: { [string]: (value: any, player: Player) -> boolean } = {
 	betterItem = function(value)
 		return type(value) == "boolean"
 	end,
+	-- S30 ladder: hide below Unique (2) or Heroic (3); Legendary+ is always shown.
 	lootHideBelow = function(value)
-		return type(value) == "number" and value == math.floor(value) and value >= 0 and value <= 4
+		return type(value) == "number" and value == math.floor(value) and value >= 0 and value <= Rarities.HEROIC
 	end,
 	lootAutoFrom = function(value)
-		return type(value) == "number" and value == math.floor(value) and value >= 0 and value <= 5
+		return type(value) == "number" and value == math.floor(value) and value >= 0 and value <= Rarities.MAX
 	end,
 	decor = function(value)
 		return value == "low" or value == "mid" or value == "high"

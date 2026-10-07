@@ -1,12 +1,19 @@
 --!strict
 -- Dungeon gate window (DESIGN §16): boss name and level, required level, state (free / taken by X's group
 -- with the time left), every party member with ✓ / ✗ and why (level, daily lockout with the time to reset,
--- too far), and "Enter" for the leader.
+-- too far), the own grind progress (S30: "Dziś: 1/3" and the current personal Legendary / Mythic chances) and
+-- "Enter" for the leader.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 
+local BossScaling = require(ReplicatedStorage.Shared.Logic.BossScaling)
+local Bosses = require(ReplicatedStorage.Shared.Data.Bosses)
 local Button = require(script.Parent.Parent.Components.Button)
+local Config = require(ReplicatedStorage.Shared.Config)
+local Loot = require(ReplicatedStorage.Shared.Logic.Loot)
+local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
+local State = require(script.Parent.Parent.State)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Sounds = require(script.Parent.Parent.Sounds)
@@ -48,6 +55,31 @@ local function DungeonWindow(scope: Scope, props: Props): Fusion.Child
 				now:set(Workspace:GetServerTimeNow())
 			end
 		end
+	end)
+
+	local bossRuns = State.Value({ "character", "bossRuns" })
+	local bossPity = State.Value({ "character", "bossPity" })
+	local grind = scope:Computed(function(use): string
+		local region = use(props.Region)
+		local boss = if region then Bosses.forRegion(region) else nil
+		if not boss then
+			return ""
+		end
+		local runs = use(bossRuns)
+		local pity = use(bossPity)
+		local t = use(now)
+		local done = BossScaling.runsToday(if type(runs) == "table" then runs else nil, boss.id, t)
+		local chances = Loot.bossChances(boss.id, if type(pity) == "table" then pity[boss.id] else nil)
+		local runsLine = Text.get(use, "worldmap.card.runsToday", {
+			n = done,
+			limit = Config.Boss.dailyRuns,
+			time = Time.format(BossScaling.untilReset(t)),
+		})
+		local chanceLine = Text.get(use, "worldmap.card.bossChances", {
+			leg = math.floor(chances.legendary * 100 + 0.5),
+			myth = math.floor(chances.mythic * 100 + 0.5),
+		})
+		return runsLine .. "\n" .. chanceLine
 	end)
 
 	local members = scope:Computed(function(use, s: Scope): { Instance }
@@ -136,9 +168,20 @@ local function DungeonWindow(scope: Scope, props: Props): Fusion.Child
 				return if data and data.busy then Theme.Colors.DangerHover else Theme.Colors.Success
 			end),
 		}),
+		scope:New("TextLabel")({
+			Name = "Grind",
+			Position = UDim2.fromOffset(0, 108),
+			Size = UDim2.new(1, 0, 0, 46),
+			BackgroundTransparency = 1,
+			Text = grind,
+			FontFace = Theme.Fonts.BodyBold,
+			TextSize = Theme.TextSize.Small,
+			TextColor3 = Rarities.get(Rarities.LEGENDARY).color,
+			TextWrapped = true,
+		}),
 		scope:New("Frame")({
-			Position = UDim2.fromOffset(0, 116),
-			Size = UDim2.new(1, 0, 1, -186),
+			Position = UDim2.fromOffset(0, 160),
+			Size = UDim2.new(1, 0, 1, -230),
 			BackgroundTransparency = 1,
 			[Children] = {
 				scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 4) }),

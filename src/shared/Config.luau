@@ -152,7 +152,7 @@ local Config = {
 	},
 	-- Side quests (S27, DESIGN §20): at most `maxActive` at once, taken from `levelSlack` levels under the quest's
 	-- level; the arc's last quest lets the player pick 1 of `choiceCount` items for their class (weapon + armour
-	-- pieces, item level = quest level) of rarity `choiceRarity` (2 Uncommon, 3 Rare for the arc's end). `use`
+	-- pieces, item level = quest level) of rarity `choiceRarity` (S30: 2 Unique, 3 Heroic for the arc's end). `use`
 	-- interactions need the player within `useRange` studs of the anchor and break when moving more than
 	-- `useMoveLimit` studs or taking damage (like gathering).
 	SideQuest = {
@@ -175,6 +175,17 @@ local Config = {
 		maxActive = 40,
 		simpleBeyond = 60,
 		lowParticles = 0.5,
+	},
+	-- Bosses (S30, DESIGN §16): every character may kill one boss `dailyRuns` times per UTC day.
+	Boss = {
+		dailyRuns = 3,
+	},
+	-- Boss personal loot (S30, DESIGN §16): a personal Legendary is usable by the winner's class with chance
+	-- `legendaryClassShare`; a personal Mythic is one of the boss's named items with chance `mythicNamedShare`
+	-- (class-usable first), otherwise a rolled Mythic of a base usable by the winner's class.
+	BossLoot = {
+		legendaryClassShare = 0.8,
+		mythicNamedShare = 0.5,
 	},
 	-- Streaming (S20, decision in PROGRESS): also set in default.project.json (Workspace properties).
 	StreamingTargetRadius = 512,

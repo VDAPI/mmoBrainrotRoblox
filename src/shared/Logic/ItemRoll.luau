@@ -43,8 +43,7 @@ end
 function ItemRoll.bonusRange(bonusId: string, ilvl: number, rarity: number): (number, number)
 	local def = Bonuses.get(bonusId)
 	assert(def, `ItemRoll: unknown bonus {bonusId}`)
-	local rarityDef = Rarities.get(rarity)
-	local rangeMul = if rarityDef and def.scaling ~= "none" then rarityDef.rangeMul else 1
+	local rangeMul = if def.scaling ~= "none" then Rarities.get(rarity).rangeMul else 1
 	local scale = scaleFor(def, ilvl) * rangeMul
 	return def.min * scale, def.max * scale
 end
@@ -57,9 +56,9 @@ function ItemRoll.rollBonusValue(bonusId: string, ilvl: number, rarity: number, 
 	return math.max(value, 10 ^ -def.decimals)
 end
 
--- 0..1: where the value sits inside its possible range (1 for fixed/unique bonuses outside the range).
-function ItemRoll.bonusQuality(bonusId: string, value: number, ilvl: number, rarity: number): number
-	if rarity == Rarities.UNIQUE or Bonuses.get(bonusId) == nil then
+-- 0..1: where the value sits inside its possible range (1 for fixed bonuses of named items: pass `fixed`).
+function ItemRoll.bonusQuality(bonusId: string, value: number, ilvl: number, rarity: number, fixed: boolean?): number
+	if fixed or Bonuses.get(bonusId) == nil then
 		return 1
 	end
 	local low, high = ItemRoll.bonusRange(bonusId, ilvl, rarity)
@@ -87,11 +86,13 @@ function ItemRoll.makeStack(defId: string, n: number, uid: string): ItemInstance
 		up = 0,
 		bound = false,
 		n = math.clamp(math.floor(n), 1, def.maxStack),
+		rv = Rarities.RV,
 	}
 end
 
--- Rolls an item instance. Equipment gets rarity-based random bonuses (no repeats; legendary +1 from the
--- legendary pool); uniques get their fixed bonuses; everything else is a single common unit.
+-- Rolls an item instance. Equipment gets bonusMin..bonusMax random bonuses of its rarity (no repeats) plus
+-- `legendaryLines` distinct lines from the legendary pool; named boss items get their fixed bonuses and fixed
+-- rarity (Mythic); everything else is a single unit of its definition's rarity.
 function ItemRoll.rollItem(defId: string, ilvl: number, rarity: number, rng: Rng.Rng, uid: string): ItemInstance
 	local def = Items.get(defId)
 	assert(def, `ItemRoll: unknown item {defId}`)
@@ -102,29 +103,35 @@ function ItemRoll.rollItem(defId: string, ilvl: number, rarity: number, rng: Rng
 		return {
 			uid = uid,
 			id = defId,
-			rarity = Rarities.UNIQUE,
+			rarity = def.rarity or Rarities.MYTHIC,
 			ilvl = def.level,
 			bonuses = table.clone(def.fixedBonuses),
 			up = 0,
 			bound = false,
 			n = 1,
+			rv = Rarities.RV,
 		}
 	end
 
-	local rarityId = math.clamp(math.floor(rarity), Rarities.COMMON, Rarities.LEGENDARY)
-	local rarityDef = Rarities.get(rarityId) :: Rarities.RarityDef
+	local rarityId = math.clamp(math.floor(rarity), Rarities.COMMON, Rarities.MAX)
+	local rarityDef = Rarities.get(rarityId)
 	local level = math.max(1, math.floor(ilvl))
 	local bonuses: { Types.Bonus } = {}
 
 	local pool = table.clone(Bonuses.pools[def.bonusGroup or ""] or {})
 	rng:shuffle(pool)
-	for i = 1, math.min(rarityDef.bonusCount, #pool) do
+	local count = if rarityDef.bonusMax > 0 then rng:int(rarityDef.bonusMin, rarityDef.bonusMax) else 0
+	for i = 1, math.min(count, #pool) do
 		local id = pool[i]
 		table.insert(bonuses, { stat = id, v = ItemRoll.rollBonusValue(id, level, rarityId, rng:next()) })
 	end
-	if rarityDef.legendaryBonus then
-		local id = rng:pick(Bonuses.pools.legendary)
-		table.insert(bonuses, { stat = id, v = ItemRoll.rollBonusValue(id, level, rarityId, rng:next()) })
+	if rarityDef.legendaryLines > 0 then
+		local legendary = table.clone(Bonuses.pools.legendary)
+		rng:shuffle(legendary)
+		for i = 1, math.min(rarityDef.legendaryLines, #legendary) do
+			local id = legendary[i]
+			table.insert(bonuses, { stat = id, v = ItemRoll.rollBonusValue(id, level, rarityId, rng:next()) })
+		end
 	end
 
 	return {
@@ -138,6 +145,7 @@ function ItemRoll.rollItem(defId: string, ilvl: number, rarity: number, rng: Rng
 		n = 1,
 		-- Mage weapons roll their element (S18).
 		el = if def.elemental then rng:pick(Elements.WEAPON) else nil,
+		rv = Rarities.RV,
 	}
 end
 
@@ -157,13 +165,14 @@ function ItemRoll.itemStats(item: ItemInstance): ItemStats
 	if not def then
 		return result
 	end
-	local rarityDef = Rarities.get(item.rarity)
-	local baseMul = if rarityDef then rarityDef.baseMul else 1
+	local named = def.fixedBonuses ~= nil
+	-- Named items already carry their ×1.3 in the definition: no rarity multiplier on top (S30 B.2).
+	local baseMul = if named then 1 else Rarities.get(item.rarity).baseMul
 	local multiplier = baseMul * (1 + Rarities.upgradeStatPerLevel * (item.up or 0))
 
 	-- S18: generated equipment scales with the instance's ilvl (every level beats the one before); the
-	-- tier definition only names it. Uniques keep their fixed base.
-	local scaling = if def.tier then Items.bases.byType[def.type] else nil
+	-- tier definition only names it. Named items keep their fixed base (S30 fix: it was recomputed and lost ×1.3).
+	local scaling = if def.tier and not named then Items.bases.byType[def.type] else nil
 	local baseStats: { [string]: number } = if scaling and scaling.stats
 		then scaling.stats(math.max(1, item.ilvl))
 		else def.base or {}
@@ -191,7 +200,7 @@ function ItemRoll.itemStats(item: ItemInstance): ItemStats
 			table.insert(result.bonuses, {
 				id = bonus.stat,
 				v = bonus.v,
-				quality = ItemRoll.bonusQuality(bonus.stat, bonus.v, item.ilvl, item.rarity),
+				quality = ItemRoll.bonusQuality(bonus.stat, bonus.v, item.ilvl, item.rarity, named),
 			})
 			if bonusDef.hook then
 				result.hooks[bonusDef.hook] = (result.hooks[bonusDef.hook] or 0) + bonus.v
@@ -221,8 +230,7 @@ function ItemRoll.sellPrice(item: ItemInstance): number
 		return 0
 	end
 	if def.category == "equipment" then
-		local rarityDef = Rarities.get(item.rarity)
-		local mul = if rarityDef then rarityDef.sellMul else 1
+		local mul = Rarities.get(item.rarity).sellMul
 		return math.max(1, math.floor(item.ilvl * 2 * mul * mul * (1 + 0.1 * (item.up or 0)) + 0.5))
 	end
 	return def.price * math.max(1, item.n)

@@ -3,6 +3,9 @@
 -- When the shape changes: bump CURRENT, add MIGRATIONS[CURRENT], extend the templates.
 
 local Config = require("../Config")
+local Items = require("../Data/Items")
+local Rarities = require("../Data/Rarities")
+local Time = require("./Time")
 local Types = require("../Types")
 local StarterGear = require("./StarterGear")
 local TableUtil = require("../Util/TableUtil")
@@ -12,7 +15,7 @@ type CharacterData = Types.CharacterData
 
 local AccountSchema = {}
 
-AccountSchema.CURRENT = 4
+AccountSchema.CURRENT = 5
 
 function AccountSchema.accountTemplate(): AccountData
 	return {
@@ -75,7 +78,8 @@ function AccountSchema.characterTemplate(): CharacterData
 		mana = 0,
 		energy = 0,
 		blessing = nil,
-		bossLockouts = {},
+		bossRuns = {},
+		bossPity = {},
 		alchemy = {},
 		quests = {
 			main = nil,
@@ -134,6 +138,83 @@ MIGRATIONS[4] = function(data, _newId)
 				end
 			end
 		end
+	end
+end
+
+-- Clock for migrations that depend on the day (tests may replace it).
+AccountSchema.now = function(): number
+	return os.time()
+end
+
+local function upgradeItems(list: any)
+	if type(list) ~= "table" then
+		return
+	end
+	for _, item in list do
+		if type(item) == "table" and type(item.id) == "string" then
+			Rarities.upgradeItem(item, Items.get(item.id))
+		end
+	end
+end
+
+-- Legacy rarity setting (0 = off) -> the new ladder.
+local function upgradeSetting(value: any): number
+	local n = math.floor(tonumber(value) or 0)
+	if n <= 0 then
+		return 0
+	end
+	return Rarities.fromLegacy[n] or Rarities.MAX
+end
+
+-- 5 (S30): the new rarity ladder (Data/Rarities.fromLegacy) on every saved item (equipment, inventory, side
+-- quest reward choices, deposit), the loot log and the loot filter settings; `bossLockouts` (one kill per day)
+-- becomes `bossRuns` (today's lockout = the daily limit used up), and empty `bossPity`.
+MIGRATIONS[5] = function(data, _newId)
+	local today = Time.dayNumber(AccountSchema.now())
+	for _, character in data.characters do
+		if type(character) ~= "table" then
+			continue
+		end
+		upgradeItems(character.equipment)
+		upgradeItems(character.inventory)
+		local quests = character.quests
+		if type(quests) == "table" and type(quests.side) == "table" and type(quests.side.active) == "table" then
+			for _, entry in quests.side.active do
+				if type(entry) == "table" then
+					upgradeItems(entry.choice)
+				end
+			end
+		end
+		if type(character.lootLog) == "table" then
+			for _, entry in character.lootLog do
+				if type(entry) == "table" then
+					entry.rarity = Rarities.fromLegacy[tonumber(entry.rarity) or 1] or Rarities.COMMON
+				end
+			end
+		end
+		local runs = {}
+		if type(character.bossLockouts) == "table" then
+			for bossId, day in character.bossLockouts do
+				local lockedDay = tonumber(day)
+				if type(bossId) == "string" and lockedDay ~= nil and lockedDay >= today then
+					runs[bossId] = { day = today, n = Config.Boss.dailyRuns }
+				end
+			end
+		end
+		character.bossLockouts = nil
+		if type(character.bossRuns) ~= "table" then
+			character.bossRuns = runs
+		end
+		if type(character.bossPity) ~= "table" then
+			character.bossPity = {}
+		end
+	end
+	if type(data.deposit) == "table" then
+		upgradeItems(data.deposit.items)
+	end
+	if type(data.settings) == "table" then
+		data.settings.lootHideBelow = upgradeSetting(data.settings.lootHideBelow)
+		data.settings.lootAutoFrom = upgradeSetting(data.settings.lootAutoFrom)
 	end
 end
 

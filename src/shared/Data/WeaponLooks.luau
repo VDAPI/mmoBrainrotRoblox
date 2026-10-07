@@ -3,7 +3,7 @@
 -- Frame: origin at the palm of the hand ("back": centre of the upper torso), -Z = forward (the way the
 -- weapon points), +Y = up the arm, +X = right. Sizes and positions in studs, rotations in degrees.
 -- The first piece is the main part (named VaelthornWeapon / VaelthornOffhand; weapon cosmetics and the
--- epic+ glow attach to it). Colour "rarity" takes the item's rarity colour.
+-- heroic+ glow attach to it). Colour "rarity" takes the item's rarity colour.
 -- A real model can replace these later without touching the item data.
 
 local WeaponLooks = {}

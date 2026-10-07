@@ -79,10 +79,12 @@ function NotificationController.Start()
 	Net.On("SystemMessage", function(key: string, args: any)
 		NotificationController.System(Text.now(key, escapeArgs(args)))
 	end)
-	-- Server-wide announcements (legendary drops, later +9 upgrades): golden banner + system chat.
+	-- Server-wide announcements (legendary drops, +7..+9 upgrades): golden banner + system chat; a mythic drop
+	-- (loot.announceMythic*, S30) gets the stronger red banner.
 	Net.On("Announce", function(key: string, args: any)
 		local text = Text.now(key, escapeArgs(args))
-		Announcement.push(text)
+		local mythic = type(key) == "string" and string.find(key, "announceMythic", 1, true) ~= nil
+		Announcement.push(text, if mythic then "mythic" else nil)
 		NotificationController.System(text)
 	end)
 end

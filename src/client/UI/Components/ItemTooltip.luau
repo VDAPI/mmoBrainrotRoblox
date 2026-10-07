@@ -118,6 +118,9 @@ local function line(s: Scope, order: number, text: string, color: Color3, size: 
 	})
 end
 
+-- Legendary bonus lines take the Legendary rarity's parchment text colour (S30: from data, not hard-coded).
+local LEGENDARY_LINE = Rarities.get(Rarities.LEGENDARY).textColor
+
 local function bonusRow(s: Scope, order: number, text: string, quality: number, legendary: boolean): Instance
 	return s:New("Frame")({
 		LayoutOrder = order,
@@ -131,7 +134,7 @@ local function bonusRow(s: Scope, order: number, text: string, quality: number, 
 				TextWrapped = true,
 				FontFace = Theme.Fonts.BodyBold,
 				TextSize = Theme.TextSize.Small,
-				TextColor3 = if legendary then Color3.fromHex("#C26A00") else Color3.fromHex("#1F4E9A"),
+				TextColor3 = if legendary then LEGENDARY_LINE else Color3.fromHex("#1F4E9A"),
 				TextXAlignment = Enum.TextXAlignment.Left,
 			}),
 			s:New("Frame")({
@@ -145,7 +148,7 @@ local function bonusRow(s: Scope, order: number, text: string, quality: number, 
 					s:New("Frame")({
 						Size = UDim2.fromScale(math.clamp(quality, 0.05, 1), 1),
 						BackgroundColor3 = if quality >= 0.9
-							then Color3.fromHex("#C26A00")
+							then LEGENDARY_LINE
 							elseif quality >= 0.5 then GOOD
 							else MUTED,
 						[Children] = s:New("UICorner")({ CornerRadius = UDim.new(1, 0) }),
@@ -174,15 +177,17 @@ local function build(s: Scope, item: ItemInstance, lang: string): { Instance }
 	end
 
 	local rarity = Rarities.get(item.rarity)
-	local rarityColor = ItemText.rarityColor(item.rarity)
-	-- Darker rarity colour for legibility on parchment.
-	local nameColor = rarityColor:Lerp(Color3.new(0, 0, 0), 0.35)
+	-- Readable rarity colour on parchment (S30 `textColor`).
+	local nameColor = rarity.textColor
 	local element = ItemRoll.elementOf(item)
 	addLine(ItemText.nameIn(lang, item.id, item.up, element), nameColor, Theme.TextSize.Large, Theme.Fonts.Heading)
 
 	local typeParts = {}
-	if def.category == "equipment" and rarity then
-		table.insert(typeParts, Locale.T(rarity.nameKey, nil, lang))
+	if def.category == "equipment" then
+		table.insert(
+			typeParts,
+			`<font color="#{nameColor:ToHex()}"><b>{Locale.T(rarity.nameKey, nil, lang)}</b></font>`
+		)
 	end
 	if def.slot then
 		local slotKey = if def.slot == "ring" then "slot.ring1" else `slot.{def.slot}`

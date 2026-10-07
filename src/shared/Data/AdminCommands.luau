@@ -78,6 +78,8 @@ local function ref(name: string, kind: ArgKind, optional: boolean?): Arg
 end
 
 local VARIANT = enum("variant", { "0", "1", "2" }, true, "0")
+-- S30: rarities by name (or 1-5 typed in the chat; the panel offers the names).
+local RARITY_NAMES = { "common", "unique", "heroic", "legendary", "mythic" }
 
 local list: { Command } = {}
 
@@ -128,17 +130,27 @@ cmd(
 	"give",
 	{ ref("item", "item"), str("rarity", true), int("ilvl", 1, MAX_LEVEL, true), int("n", 1, 999, true) }
 )
+cmd(
+	"items",
+	"item",
+	{ ref("item", "item"), enum("rarity", RARITY_NAMES, true), int("ilvl", 1, MAX_LEVEL, true), int("n", 1, 999, true) }
+)
 cmd("items", "givex", {
 	ref("item", "item"),
-	int("rarity", 1, 5, true),
+	str("rarity", true),
 	int("ilvl", 1, MAX_LEVEL, true),
 	int("up", 0, 9, true, "0"),
 	enum("el", { "none", "fire", "ice", "lightning" }, true, "none"),
 	int("n", 1, 999, true, "1"),
 	enum("equip", { "no", "yes" }, true, "no"),
 })
-cmd("items", "legend", {})
-cmd("items", "lootsim", { ref("monster", "monster"), VARIANT, int("n", 1, 100000, true) })
+cmd("items", "legend", { enum("rarity", { "legendary", "mythic" }, true, "legendary") })
+cmd("items", "lootsim", {
+	ref("monster", "monster"),
+	enum("variant", { "0", "1", "2", "normal", "elite", "elite2" }, true, "0"),
+	int("n", 1, 100000, true),
+})
+cmd("items", "rarities", {})
 cmd("items", "clearinv", {}, { danger = true })
 cmd("items", "bag", { enum("capacity", { "20", "30", "45", "60", "80", "100", "130", "160", "200" }) })
 cmd("items", "up", { str("where"), int("level", 0, 9) })
@@ -185,6 +197,10 @@ cmd("monsters", "e2", { enum("action", { "spawn" }) })
 cmd("monsters", "e2timer", {})
 cmd("monsters", "boss", { enum("action", { "reset", "spawn" }), ref("boss", "boss", true) })
 cmd("monsters", "phase", { int("phase", 1, 3) })
+-- S30: boss grind (personal roll pity counters, daily runs, simulation)
+cmd("monsters", "bosspity", { ref("boss", "boss", true), int("leg", 0, 1000, true), int("myth", 0, 1000, true) })
+cmd("monsters", "bossruns", { enum("action", { "reset" }), ref("boss", "boss", true) })
+cmd("monsters", "bosssim", { ref("boss", "boss"), int("n", 1, 100000, true, "1000") })
 cmd("monsters", "leash", {})
 -- S24: looks. mobviz: <monster|boss|pet id | 1-4 (region) | bosses | pets | all | clear> [normal|elite|elite2] [anim]
 cmd("monsters", "mobviz", { str("target"), str("option", true), str("option2", true) })

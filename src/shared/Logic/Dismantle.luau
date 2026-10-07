@@ -1,7 +1,7 @@
 --!strict
--- Dismantling equipment into essences (DESIGN §7). Pure.
---   Common 1–2 dust · Uncommon 2–4 dust · Rare 1–2 shards · Epic 2–3 shards + 30 % crystal ·
---   Legendary (and Unique) 1–2 crystals + 1 Legend Core.
+-- Dismantling equipment into essences (DESIGN §7). Pure. Outcomes per rarity in Data/Rarities `dismantle`:
+--   Common 1–2 dust · Unique 2–4 dust + 25 % shard · Heroic 1–3 shards + 20 % crystal ·
+--   Legendary 1–2 crystals + 1 Legend Core · Mythic 2–3 crystals + 2 Legend Cores.
 -- Upgraded items also give back half of the essences spent on their upgrades (rounded down).
 
 local Items = require("../Data/Items")
@@ -49,21 +49,10 @@ end
 
 function Dismantle.roll(item: Types.ItemInstance, rng: Rng.Rng): { Material }
 	local result: { Material } = {}
-	local rarity = item.rarity
-	if rarity == Rarities.COMMON then
-		add(result, "essence_dust", rng:int(1, 2))
-	elseif rarity == Rarities.UNCOMMON then
-		add(result, "essence_dust", rng:int(2, 4))
-	elseif rarity == Rarities.RARE then
-		add(result, "essence_shard", rng:int(1, 2))
-	elseif rarity == Rarities.EPIC then
-		add(result, "essence_shard", rng:int(2, 3))
-		if rng:chance(0.3) then
-			add(result, "essence_crystal", 1)
+	for _, drop in Rarities.get(item.rarity).dismantle do
+		if drop.chance == nil or rng:chance(drop.chance) then
+			add(result, drop.id, rng:int(drop.min, drop.max))
 		end
-	else
-		add(result, "essence_crystal", rng:int(1, 2))
-		add(result, "legend_core", 1)
 	end
 	for _, material in Dismantle.upgradeRefund(item) do
 		add(result, material.id, material.n)
@@ -71,18 +60,12 @@ function Dismantle.roll(item: Types.ItemInstance, rng: Rng.Rng): { Material }
 	return result
 end
 
--- Expected outcome text helper: { id, min, max } ranges for the preview (without the 30 % crystal).
+-- Expected outcome for the preview: { id, min, max } ranges; chance-based drops have min 0.
 function Dismantle.preview(item: Types.ItemInstance): { { id: string, min: number, max: number } }
-	local ranges: { [number]: { { id: string, min: number, max: number } } } = {
-		[Rarities.COMMON] = { { id = "essence_dust", min = 1, max = 2 } },
-		[Rarities.UNCOMMON] = { { id = "essence_dust", min = 2, max = 4 } },
-		[Rarities.RARE] = { { id = "essence_shard", min = 1, max = 2 } },
-		[Rarities.EPIC] = { { id = "essence_shard", min = 2, max = 3 }, { id = "essence_crystal", min = 0, max = 1 } },
-	}
-	local list = table.clone(ranges[item.rarity] or {
-		{ id = "essence_crystal", min = 1, max = 2 },
-		{ id = "legend_core", min = 1, max = 1 },
-	})
+	local list = {}
+	for _, drop in Rarities.get(item.rarity).dismantle do
+		table.insert(list, { id = drop.id, min = if drop.chance then 0 else drop.min, max = drop.max })
+	end
 	for _, material in Dismantle.upgradeRefund(item) do
 		table.insert(list, { id = material.id, min = material.n, max = material.n })
 	end

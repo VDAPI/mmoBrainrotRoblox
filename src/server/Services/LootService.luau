@@ -1,8 +1,9 @@
 --!strict
 -- Loot bags (DESIGN §5.5). On MonsterKilled each credited player gets a bag visible only to them (LootSpawn).
 -- The server keeps the contents; PickupLoot validates owner, distance and backpack room (partial pickups
--- leave the rest in the bag). Bags expire after Config.LootLifetime. Uniques bind on pickup.
--- Legendary drops are announced to the whole server and to other servers (AnnounceService).
+-- leave the rest in the bag). Bags expire after Config.LootLifetime. Named boss items and every Mythic bind on pickup.
+-- Equipment whose rarity announces (S30: Legendary, Mythic) is announced to the whole server and to other servers
+-- (AnnounceService); Mythic has its own, stronger message (`loot.announceMythic`).
 -- S20: the owner's loot filter hides weak equipment and limits Auto-loot (Logic/LootFilter); picked-up
 -- equipment goes to the character's loot log (last 50, with source monster and map).
 
@@ -16,7 +17,6 @@ local Analytics = require(script.Parent.Parent.Analytics)
 local Products = require(Shared.Data.Products)
 
 local Config = require(Shared.Config)
-local Inventory = require(Shared.Logic.Inventory)
 local ItemRoll = require(Shared.Logic.ItemRoll)
 local Items = require(Shared.Data.Items)
 local Loot = require(Shared.Logic.Loot)
@@ -50,7 +50,10 @@ type Bag = {
 	position: Vector3,
 	items: { ItemInstance },
 	expiresAt: number,
-	legendary: boolean,
+	legendary: boolean, -- holds equipment with a reveal (Legendary or Mythic)
+	mythic: boolean, -- holds Mythic equipment
+	best: number, -- best equipment rarity (bag colour)
+	personal: boolean?, -- a boss's personal roll (S30)
 	source: string?, -- monster kind (loot log)
 }
 
@@ -80,22 +83,38 @@ local function summary(bag: Bag): { [string]: any }
 		position = bag.position,
 		items = items,
 		legendary = bag.legendary,
-		best = Inventory.bestRarity(bag.items),
+		mythic = bag.mythic,
+		best = bag.best,
+		personal = bag.personal == true,
 		expiresIn = bag.expiresAt - os.clock(),
 	}
 end
 
 -- Announcements -------------------------------------------------------------------------------------------
 
-local function announceLegendary(player: Player, item: ItemInstance)
+local function isEquipment(item: ItemInstance): boolean
+	local def = Items.get(item.id)
+	return def ~= nil and def.category == "equipment"
+end
+
+-- Server-wide announcement of an equipment drop whose rarity announces (only `category == "equipment"`, so a
+-- Mythic blessing never does). Returns whether it announced.
+local function announceDrop(player: Player, item: ItemInstance): boolean
+	local kind = Rarities.get(item.rarity).announce
+	if kind == nil or not isEquipment(item) then
+		return false
+	end
 	local character: Types.CharacterData? = PlayerStateService.GetCharacter(player)
 	local name = if character then character.name else player.Name
-	Analytics.custom(player, "LegendaryDrop", item.ilvl)
-	AnnounceService.Global(
-		"loot.announce",
-		"loot.announceGlobal",
-		{ player = name, item = `#item:{item.id}:{item.up}` }
-	)
+	local args = { player = name, item = `#item:{item.id}:{item.up}`, rarity = item.rarity }
+	if kind == "mythic" then
+		Analytics.custom(player, "MythicDrop", item.ilvl)
+		AnnounceService.Global("loot.announceMythic", "loot.announceMythicGlobal", args)
+	else
+		Analytics.custom(player, "LegendaryDrop", item.ilvl)
+		AnnounceService.Global("loot.announce", "loot.announceGlobal", args)
+	end
+	return true
 end
 
 -- Bags ----------------------------------------------------------------------------------------------------
@@ -119,7 +138,13 @@ end
 
 -- Creates a bag for `owner` at `position` (also used by /legend). Returns the bag id. Items the owner's
 -- loot filter hides are not dropped at all.
-function LootService.SpawnBag(owner: Player, position: Vector3, items: { ItemInstance }, source: string?): string?
+function LootService.SpawnBag(
+	owner: Player,
+	position: Vector3,
+	items: { ItemInstance },
+	source: string?,
+	personal: boolean?
+): string?
 	local kept = {}
 	for _, item in items do
 		if decision(owner, item) ~= "hide" then
@@ -130,10 +155,13 @@ function LootService.SpawnBag(owner: Player, position: Vector3, items: { ItemIns
 	if #items == 0 then
 		return nil
 	end
-	local legendary = false
+	local legendary, mythic, best = false, false, Rarities.COMMON
 	for _, item in items do
-		if item.rarity == Rarities.LEGENDARY then
-			legendary = true
+		if isEquipment(item) then
+			local rarity = Rarities.get(item.rarity)
+			legendary = legendary or rarity.reveal
+			mythic = mythic or rarity.id == Rarities.MYTHIC
+			best = math.max(best, rarity.id)
 		end
 	end
 	local bag: Bag = {
@@ -143,16 +171,15 @@ function LootService.SpawnBag(owner: Player, position: Vector3, items: { ItemIns
 		items = items,
 		expiresAt = os.clock() + Config.LootLifetime,
 		legendary = legendary,
+		mythic = mythic,
+		best = best,
+		personal = personal,
 		source = source,
 	}
 	bags[bag.id] = bag
 	Net.Fire(owner, "LootSpawn", summary(bag))
-	if legendary then
-		for _, item in items do
-			if item.rarity == Rarities.LEGENDARY then
-				announceLegendary(owner, item)
-			end
-		end
+	for _, item in items do
+		announceDrop(owner, item)
 	end
 	return bag.id
 end
@@ -220,7 +247,7 @@ function LootService.Pickup(
 			continue
 		end
 		local def = Items.get(item.id)
-		if def and def.bindOnPickup then
+		if def and (def.bindOnPickup or (def.category == "equipment" and Rarities.get(item.rarity).bindOnPickup)) then
 			item.bound = true
 		end
 		local leftover = InventoryService.AddItem(player, item)
@@ -323,8 +350,8 @@ function LootService.InstancesFrom(loot: Loot.LootResult): { ItemInstance }
 	return instancesFrom(loot)
 end
 
--- Admin: rolls a legendary for the player's class and drops it in front of them.
-function LootService.DropLegendary(player: Player): boolean
+-- Admin: rolls a Legendary (or `rarity`) item for the player's class and drops it in front of them.
+function LootService.DropLegendary(player: Player, rarity: number?): boolean
 	local character: Types.CharacterData? = PlayerStateService.GetCharacter(player)
 	local model = player.Character
 	if not character or not model then
@@ -348,7 +375,7 @@ function LootService.DropLegendary(player: Player): boolean
 	if not defId then
 		return false
 	end
-	local item = ItemRoll.rollItem(defId, level, Rarities.LEGENDARY, rng, HttpService:GenerateGUID(false))
+	local item = ItemRoll.rollItem(defId, level, rarity or Rarities.LEGENDARY, rng, HttpService:GenerateGUID(false))
 	local position = (model:GetPivot() * CFrame.new(0, -2.5, -8)).Position
 	LootService.SpawnBag(player, position, { item })
 	return true
@@ -356,7 +383,7 @@ end
 
 -- Admin: n simulated kills. Returns counts per rarity, materials and gold.
 function LootService.Simulate(monsterId: string, variant: string, level: number, n: number, classId: string?)
-	local counts = { 0, 0, 0, 0, 0, 0 }
+	local counts = table.create(Rarities.MAX, 0)
 	local items, mats, gold = 0, 0, 0
 	for _ = 1, n do
 		local loot = Loot.rollMonsterLoot(monsterId, variant, level, rng, { classId = classId })

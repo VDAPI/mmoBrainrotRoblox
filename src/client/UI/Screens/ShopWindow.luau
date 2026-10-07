@@ -42,6 +42,14 @@ local ROW = 70
 
 local TIER_LOOKAHEAD = 5
 
+-- Highest rarity the "sell all" buttons may include (S30: the `quickSell` rarities, Common and Unique).
+local QUICK_SELL_MAX = Rarities.COMMON
+for _, rarity in Rarities.list do
+	if rarity.quickSell then
+		QUICK_SELL_MAX = math.max(QUICK_SELL_MAX, rarity.id)
+	end
+end
+
 local function preview(entry: Shops.Entry): Types.ItemInstance
 	local item = ItemRoll.makeStack(entry.item, 1, `preview:{entry.key or entry.item}`)
 	if entry.ilvl then
@@ -258,7 +266,7 @@ local function ShopWindow(scope: Scope, props: Props): Fusion.Child
 			if item then
 				table.insert(indices, tonumber(key))
 				total += ItemRoll.sellPrice(item)
-				if item.rarity >= Rarities.EPIC then
+				if Rarities.get(item.rarity).valuable then
 					valuable = true
 				end
 			end
@@ -296,7 +304,7 @@ local function ShopWindow(scope: Scope, props: Props): Fusion.Child
 		end
 	end
 
-	-- Quick sell (S20): every Common (or Common and Uncommon) item, after a confirmation.
+	-- Quick sell (S20, S30): every Common (or Common and Unique) item, after a confirmation.
 	local function quickSell(maxRarity: number)
 		local id = Fusion.peek(npcId)
 		if not id then
@@ -443,7 +451,7 @@ local function ShopWindow(scope: Scope, props: Props): Fusion.Child
 							TextSize = Theme.TextSize.Small,
 							Size = UDim2.fromOffset(230, 40),
 							OnClick = function()
-								quickSell(1)
+								quickSell(Rarities.COMMON)
 							end,
 						}),
 						Button(s, {
@@ -451,7 +459,7 @@ local function ShopWindow(scope: Scope, props: Props): Fusion.Child
 							TextSize = Theme.TextSize.Small,
 							Size = UDim2.fromOffset(250, 40),
 							OnClick = function()
-								quickSell(2)
+								quickSell(QUICK_SELL_MAX)
 							end,
 						}),
 					},

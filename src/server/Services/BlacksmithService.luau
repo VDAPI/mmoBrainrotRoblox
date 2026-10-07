@@ -175,7 +175,7 @@ local function upgrade(player: Player, location: string, key: string, protect: b
 	if result.success and result.to >= 7 then
 		Analytics.custom(player, `Upgrade+{result.to}`, item.rarity)
 		local args = { player = char.name, item = `#item:{item.id}:0`, up = result.to }
-		if result.to >= 9 and item.rarity == Rarities.LEGENDARY then
+		if result.to >= 9 and Rarities.get(item.rarity).announce ~= nil then
 			AnnounceService.Global("announce.upgrade", "announce.upgradeGlobal", args)
 		else
 			AnnounceService.Server("announce.upgrade", args)
@@ -265,10 +265,11 @@ local function dismantleAll(player: Player, maxRarity: number): (boolean, string
 	if not nearSmith(player) then
 		return false, "npc.error.tooFar"
 	end
-	local limit = math.clamp(maxRarity, Rarities.COMMON, Rarities.UNCOMMON)
+	-- "Dismantle all": Common, or Common and Unique (never valuable rarities).
+	local limit = math.clamp(maxRarity, Rarities.COMMON, Rarities.UNIQUE)
 	local indices = {}
 	for key, item in char.inventory do
-		if item.rarity <= limit and Dismantle.canDismantle(item) then
+		if item.rarity <= limit and not Rarities.get(item.rarity).valuable and Dismantle.canDismantle(item) then
 			table.insert(indices, tonumber(key) :: number)
 		end
 	end

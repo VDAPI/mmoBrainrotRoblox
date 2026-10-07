@@ -2,6 +2,7 @@
 -- S09: party loot, gold/EXP sharing, boss scaling and boss data.
 
 local BossScaling = require("../src/shared/Logic/BossScaling")
+local Config = require("../src/shared/Config")
 local Bosses = require("../src/shared/Data/Bosses")
 local LootTables = require("../src/shared/Data/LootTables")
 local Maps = require("../src/shared/Data/Maps")
@@ -128,13 +129,22 @@ describe("BossScaling", function()
 		expect(BossScaling.phaseFor(0.01, t)).toBe(3)
 	end)
 
-	it("locks for the rest of the UTC day", function()
+	it("locks after the daily runs for the rest of the UTC day (S30 bossRuns)", function()
 		local day = 20000
 		local now = day * 86400 + 3600
-		expect(BossScaling.isLocked({ grimrok = day }, "grimrok", now)).toBe(true)
-		expect(BossScaling.isLocked({ grimrok = day - 1 }, "grimrok", now)).toBe(false)
+		expect(BossScaling.isLocked({ grimrok = { day = day, n = 3 } }, "grimrok", now, 3)).toBe(true)
+		expect(BossScaling.isLocked({ grimrok = { day = day, n = 2 } }, "grimrok", now, 3)).toBe(false)
+		expect(BossScaling.isLocked({ grimrok = { day = day, n = 1 } }, "grimrok", now, 1)).toBe(true)
+		expect(BossScaling.isLocked({ grimrok = { day = day - 1, n = 3 } }, "grimrok", now, 3)).toBe(false)
 		expect(BossScaling.isLocked({}, "grimrok", now)).toBe(false)
 		expect(BossScaling.isLocked(nil, "grimrok", now)).toBe(false)
+		expect(BossScaling.runsToday({ grimrok = { day = day, n = 2 } }, "grimrok", now)).toBe(2)
+		expect(BossScaling.runsToday({ grimrok = { day = day - 1, n = 2 } }, "grimrok", now)).toBe(0)
+		expect(BossScaling.addRun({ grimrok = { day = day, n = 2 } }, "grimrok", now)).toEqual({ day = day, n = 3 })
+		expect(BossScaling.addRun({ grimrok = { day = day - 1, n = 3 } }, "grimrok", now)).toEqual({ day = day, n = 1 })
+		expect(BossScaling.isLocked({ grimrok = { day = day, n = 2 } }, "grimrok", now)).toBe(
+			Config.Boss.dailyRuns <= 2
+		)
 		expect(BossScaling.untilReset(now)).toBe(86400 - 3600)
 	end)
 

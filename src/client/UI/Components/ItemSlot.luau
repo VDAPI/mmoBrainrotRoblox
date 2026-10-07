@@ -1,6 +1,6 @@
 --!strict
--- Item slot (DESIGN §23): placeholder icon (glyph on the item colour), rarity frame (glowing from Epic,
--- animated for Legendary, ornate for Unique), stack count, "+N" upgrade, lock when bound, red tint when the
+-- Item slot (DESIGN §23): placeholder icon (glyph on the item colour), rarity frame from the rarity's
+-- `frame` data (S30: grey, yellow, blue with a glow, orange / red with a rotating gradient), stack count, "+N" upgrade, lock when bound, red tint when the
 -- character cannot use it. Interaction (select, drag & drop, double-click, tap) comes from UI/DragDrop;
 -- the rich tooltip from ItemTooltip.
 
@@ -9,7 +9,6 @@ local RunService = game:GetService("RunService")
 
 local DragDrop = require(script.Parent.Parent.DragDrop)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
-local ItemText = require(script.Parent.Parent.ItemText)
 local ItemTooltip = require(script.Parent.ItemTooltip)
 local Elements = require(ReplicatedStorage.Shared.Data.Elements)
 local ItemRoll = require(ReplicatedStorage.Shared.Logic.ItemRoll)
@@ -53,12 +52,34 @@ local function canUse(item: ItemInstance, level: number?, classId: string?): boo
 	return true
 end
 
--- Rotating gradient shared by every legendary frame.
+-- One rotation angle shared by every spinning frame (legendary, mythic): a single RenderStepped connection
+-- for the whole UI, not one per slot.
 local spinScope = Fusion.scoped(Fusion)
 local spin = spinScope:Value(0)
 RunService.RenderStepped:Connect(function(dt: number)
 	spin:set((Fusion.peek(spin) + dt * 90) % 360)
 end)
+
+-- Selected slot: white outline and a lighter background (not gold: it would read as a Unique frame).
+local SELECTED = Color3.new(1, 1, 1)
+local SELECTED_BG = Theme.Colors.PanelHover:Lerp(Color3.new(1, 1, 1), 0.12)
+
+-- Gradient of a frame (c1 → c2 → c1), cached per rarity.
+local gradients: { [number]: ColorSequence } = {}
+local function gradientOf(r: Rarities.RarityDef): ColorSequence
+	local cached = gradients[r.id]
+	if cached then
+		return cached
+	end
+	local colors = r.frame.gradient or { r.color, r.color }
+	local sequence = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, colors[1]),
+		ColorSequenceKeypoint.new(0.5, colors[2]),
+		ColorSequenceKeypoint.new(1, colors[1]),
+	})
+	gradients[r.id] = sequence
+	return sequence
+end
 
 local function ItemSlot(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instance
 	local size = props.Size or 64
@@ -72,9 +93,9 @@ local function ItemSlot(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Inst
 		local i = use(item)
 		return if i then Items.get(i.id) else nil
 	end)
-	local rarityColor = scope:Computed(function(use): Color3
+	local rarity = scope:Computed(function(use): Rarities.RarityDef?
 		local i = use(item)
-		return if i then ItemText.rarityColor(i.rarity) else Theme.Colors.Border
+		return if i then Rarities.get(i.rarity) else nil
 	end)
 	local selected = scope:Computed(function(use): boolean
 		return use(DragDrop.Selected) == props.SlotId
@@ -98,21 +119,23 @@ local function ItemSlot(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Inst
 		Size = UDim2.fromOffset(size, size),
 		BackgroundColor3 = scope:Computed(function(use): Color3
 			if use(selected) then
-				return Theme.Colors.PanelHover
+				return SELECTED_BG
 			end
 			return if use(usable) then Theme.Colors.Background else Color3.fromHex("#3A1A18")
 		end),
 		Active = true,
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
+			-- Rarity frame (S30): thickness / gradient / glow / spin from Rarities.get(r).frame. Drop hints (S29) and
+			-- the selection replace it with a plain green / red / white outline so they never read as a rarity.
 			scope:New("UIStroke")({
 				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
 				Thickness = scope:Computed(function(use): number
-					local i = use(item)
 					if use(selected) or use(hint) ~= nil then
 						return 3
 					end
-					return if i and i.rarity >= Rarities.EPIC then 2.5 else 1.5
+					local r = use(rarity)
+					return if r then r.frame.thickness else 1.5
 				end),
 				Color = scope:Computed(function(use): Color3
 					local h = use(hint)
@@ -120,27 +143,61 @@ local function ItemSlot(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Inst
 						return Theme.Colors.Success
 					elseif h == "bad" then
 						return Theme.Colors.DangerHover
+					elseif use(selected) then
+						return SELECTED
 					end
-					return if use(selected) then Theme.Colors.GoldBright else use(rarityColor)
+					local r = use(rarity)
+					if r and r.frame.gradient then
+						return Color3.new(1, 1, 1) -- the gradient carries the colour
+					end
+					return if r then r.color else Theme.Colors.Border
 				end),
 				Transparency = scope:Computed(function(use): number
 					return if use(item) or use(selected) or use(hint) ~= nil then 0 else 0.4
 				end),
 				[Children] = scope:Computed(function(use, s: Fusion.Scope<typeof(Fusion)>): Instance?
-					local i = use(item)
-					if not i or i.rarity ~= Rarities.LEGENDARY or use(hint) ~= nil then
+					local r = use(rarity)
+					if not r or not r.frame.gradient or use(hint) ~= nil or use(selected) then
 						return nil
 					end
 					return s:New("UIGradient")({
-						Color = ColorSequence.new({
-							ColorSequenceKeypoint.new(0, Color3.fromHex("#FF9F1C")),
-							ColorSequenceKeypoint.new(0.5, Color3.fromHex("#FFE7A0")),
-							ColorSequenceKeypoint.new(1, Color3.fromHex("#FF9F1C")),
-						}),
-						Rotation = spin,
+						Color = gradientOf(r),
+						Rotation = if r.frame.spin then spin else 45,
 					})
 				end) :: any,
 			}),
+			-- Glow outside the frame (heroic and better; stronger with a thicker frame).
+			scope:Computed(function(use, s: Fusion.Scope<typeof(Fusion)>): Instance?
+				local r = use(rarity)
+				if not r or not r.frame.glow or use(hint) ~= nil or use(selected) then
+					return nil
+				end
+				local width = math.max(2, (r.frame.thickness - 1) * 2.5)
+				return s:New("Frame")({
+					Name = "Glow",
+					AnchorPoint = Vector2.new(0.5, 0.5),
+					Position = UDim2.fromScale(0.5, 0.5),
+					Size = UDim2.new(1, math.ceil(r.frame.thickness * 2), 1, math.ceil(r.frame.thickness * 2)),
+					BackgroundTransparency = 1,
+					[Children] = {
+						s:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
+						s:New("UIStroke")({
+							ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+							Thickness = width,
+							Color = r.color,
+							Transparency = if r.frame.spin then 0.45 else 0.6,
+							[Children] = s:New("UIGradient")({
+								Transparency = NumberSequence.new({
+									NumberSequenceKeypoint.new(0, 0),
+									NumberSequenceKeypoint.new(0.5, 0.5),
+									NumberSequenceKeypoint.new(1, 0),
+								}),
+								Rotation = if r.frame.spin then spin else 90,
+							}),
+						}),
+					},
+				})
+			end) :: any,
 			-- Icon
 			scope:New("Frame")({
 				Name = "Icon",

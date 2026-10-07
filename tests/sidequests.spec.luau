@@ -435,7 +435,7 @@ describe("AccountSchema S27", function()
 			},
 		}
 		local applied = AccountSchema.migrate(data)
-		expect(applied).toEqual({ 4 })
+		expect(applied).toEqual({ 4, 5 })
 		expect(data.characters["1"].quests.side).toEqual({ active = {}, done = {} })
 		expect(data.characters["2"].quests.side).toEqual({ active = {}, done = {} })
 		expect(data.characters["1"].quests.main.id).toBe("boars")

@@ -1,13 +1,15 @@
 --!strict
 -- Boss dungeons (DESIGN §16). One group at a time per dungeon on a server. The leader (or a solo player)
 -- enters at the gate in the cave; party members within 20 studs come along if they meet the level
--- (boss − 5) and have no daily lockout (others are told why they stay). After a 5 s countdown the boss
--- appears (Entities/Boss). The run fails after 15 minutes or when nobody is left fighting: everyone is
--- sent out and the boss resets. On a kill: EXP and gold shared, loot split by PartyLoot (25 % unique,
--- 20 % legendary blessing), the daily lockout for everyone present, a server announcement; the dungeon is
--- released 60 s later or when everybody has left through the exit portal.
+-- (boss − 5) and have kills left today (S30: Config.Boss.dailyRuns per boss; others are told why they stay).
+-- After a 5 s countdown the boss appears (Entities/Boss). The run fails after 15 minutes or when nobody is left
+-- fighting: everyone is sent out and the boss resets. On a kill: EXP and gold shared, 3–4 Unique/Heroic items
+-- split by PartyLoot (20 % legendary blessing), a personal Legendary/Mythic roll with pity for every winner
+-- (Loot.rollBossPersonal, own bag), one daily run used for everyone present, a server announcement; the dungeon
+-- is released 60 s later or when everybody has left through the exit portal.
 -- Fighters see the state branch `boss` = { id, nameKey, hp, maxHp, phase, endsAt, enraged, shielded }.
 
+local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -25,14 +27,15 @@ local Clock = require(Shared.Util.Clock)
 local Exp = require(Shared.Logic.Exp)
 local ItemRoll = require(Shared.Logic.ItemRoll)
 local Log = require(Shared.Util.Log)
+local Config = require(Shared.Config)
 local Loot = require(Shared.Logic.Loot)
+local LootTables = require(Shared.Data.LootTables)
 local Maps = require(Shared.Data.Maps)
 local MonsterStats = require(Shared.Logic.MonsterStats)
 local Net = require(Shared.Net)
 local QuestEvents = require(script.Parent.Parent.QuestEvents)
 local PartyLoot = require(Shared.Logic.PartyLoot)
 local Rng = require(Shared.Logic.Rng)
-local Time = require(Shared.Logic.Time)
 local Types = require(Shared.Types)
 
 local log = Log.new("DungeonService")
@@ -195,13 +198,18 @@ local function reward(run: Run, position: Vector3)
 		return
 	end
 	local def = run.def
-	local today = Time.dayNumber(Clock.now())
+	local now = Clock.now()
+	local bossTable = LootTables.bosses[def.id]
 	local baseExp = PartyLoot.splitExp(Exp.monsterExp(def.level, "boss"), n)
 	local shares = PartyLoot.splitGold(MonsterStats.gold(def.level, "boss", rng:next()), n, rng)
 	for i, player in winners do
 		local char = character(player)
 		if char then
-			PlayerStateService.Set(player, { "character", "bossLockouts", def.id }, today)
+			PlayerStateService.Set(
+				player,
+				{ "character", "bossRuns", def.id },
+				BossScaling.addRun(char.bossRuns, def.id, now)
+			)
 			local exp = math.floor(baseExp * Exp.levelDiffMultiplier(char.level, def.level) + 0.5)
 			LevelService.GiveExp(player, exp, "boss")
 			QuestEvents.fire(player, "boss", { bossId = def.id })
@@ -211,17 +219,54 @@ local function reward(run: Run, position: Vector3)
 			end)
 			Analytics.gold(player, gold, balance, "boss")
 			Analytics.progression(player, "Bosses", def.level, def.id)
-			Net.Fire(player, "CombatFx", { { k = "reward", exp = exp, gold = gold } })
+			-- Personal Legendary / Mythic roll with pity (S30, DESIGN §16): own bag, only this player sees it.
+			local gotLeg, gotMyth = false, false
+			local pity = (char.bossPity or {})[def.id]
+			if bossTable then
+				local roll = Loot.rollBossPersonal(bossTable, pity, rng)
+				pity = roll.pity
+				gotLeg, gotMyth = roll.legendary, roll.mythic
+				PlayerStateService.Set(player, { "character", "bossPity", def.id }, roll.pity)
+				local personal = {}
+				for _, drop in Loot.personalItems(bossTable, roll, char.class :: string, rng) do
+					table.insert(
+						personal,
+						ItemRoll.rollItem(drop.defId, drop.ilvl, drop.rarity, rng, HttpService:GenerateGUID(false))
+					)
+				end
+				if #personal > 0 then
+					LootService.SpawnBag(player, position + Vector3.new(0, 0, 3), personal, def.id, true)
+				end
+				if gotLeg or gotMyth then
+					Analytics.custom(player, if gotMyth then "BossMythic" else "BossLegendary", def.level)
+				end
+			end
+			local chances = Loot.bossChances(def.id, pity)
+			Net.Fire(player, "CombatFx", {
+				{
+					k = "reward",
+					exp = exp,
+					gold = gold,
+					boss = def.id,
+					gotLeg = gotLeg,
+					gotMyth = gotMyth,
+					leg = chances.legendary,
+					myth = chances.mythic,
+					runs = BossScaling.runsToday(
+						PlayerStateService.Get(player, { "character", "bossRuns" }),
+						def.id,
+						now
+					),
+					dailyRuns = Config.Boss.dailyRuns,
+				},
+			})
 		end
 	end
 	local loot = Loot.rollBossLoot(def.id, n, rng, { dropBonus = StatService.GetValue(run.leader, "dropBonus") })
 	local items = LootService.InstancesFrom(loot)
 	if rng:chance(Bosses.LEGENDARY_BLESSING_CHANCE) then
 		local line = Blessings.lines[rng:int(1, #Blessings.lines)]
-		table.insert(
-			items,
-			ItemRoll.makeStack(`blessing_{line}_5`, 1, game:GetService("HttpService"):GenerateGUID(false))
-		)
+		table.insert(items, ItemRoll.makeStack(`blessing_{line}_5`, 1, HttpService:GenerateGUID(false)))
 	end
 	LootService.DistributeToParty(winners, position, items)
 	AnnounceService.Server("announce.boss", { name = run.leaderName, boss = `@{def.nameKey}` })
@@ -349,7 +394,7 @@ local function blocker(player: Player, def: Bosses.BossDef): (string?, number?)
 		return "dungeon.reason.level", nil
 	end
 	local now = Clock.now()
-	if BossScaling.isLocked(char.bossLockouts, def.id, now) then
+	if BossScaling.isLocked(char.bossRuns, def.id, now, Config.Boss.dailyRuns) then
 		return "dungeon.reason.locked", BossScaling.untilReset(now)
 	end
 	if ResourceService.IsDead(player) then
@@ -372,6 +417,9 @@ local function info(player: Player, region: string): (boolean, string?, any)
 	end
 	local run = runs[region]
 	local members = {}
+	local self = character(player)
+	local now = Clock.now()
+	local chances = Loot.bossChances(def.id, if self and self.bossPity then self.bossPity[def.id] else nil)
 	local leaderRoot = player.Character and player.Character:FindFirstChild("HumanoidRootPart") :: BasePart?
 	for _, member in PartyService.Members(player) do
 		local reason, lockLeft = blocker(member, def)
@@ -404,6 +452,12 @@ local function info(player: Player, region: string): (boolean, string?, any)
 			endsAt = if run then run.endsAt else nil,
 			isLeader = PartyService.IsLeader(player),
 			members = members,
+			-- S30: today's kills of this boss, the limit, seconds to the reset and the personal roll chances.
+			runs = if self then BossScaling.runsToday(self.bossRuns, def.id, now) else 0,
+			dailyRuns = Config.Boss.dailyRuns,
+			resetIn = BossScaling.untilReset(now),
+			legChance = chances.legendary,
+			mythChance = chances.mythic,
 		}
 end
 
@@ -485,9 +539,9 @@ end
 
 -- Admin ------------------------------------------------------------------------------------------
 
--- /boss reset: clears the player's lockouts and ends every run.
+-- /boss reset: clears the player's daily runs and ends every run.
 function DungeonService.ResetAll(player: Player)
-	PlayerStateService.Set(player, { "character", "bossLockouts" }, {})
+	PlayerStateService.Set(player, { "character", "bossRuns" }, {})
 	for _, run in runs do
 		finish(run)
 	end

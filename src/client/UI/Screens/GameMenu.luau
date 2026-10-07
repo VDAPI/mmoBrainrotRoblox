@@ -80,9 +80,13 @@ local function cycle(
 	})
 end
 
+-- Loot filter tiers (S30): 0 = off, otherwise a rarity id of the 5-step ladder.
 local function rarityLabel(use: Fusion.Use, value: any): string
-	local def = Rarities.get(tonumber(value) or 0)
-	return if def then Text.get(use, def.nameKey) else Text.get(use, "menu.off")
+	local id = tonumber(value) or 0
+	if id < Rarities.COMMON or id > Rarities.MAX then
+		return Text.get(use, "menu.off")
+	end
+	return Text.get(use, Rarities.get(id).nameKey)
 end
 
 local function toggle(scope: Scope, name: string, default: boolean): Instance
@@ -427,14 +431,31 @@ local function GameMenu(scope: Scope, close: () -> ()): Fusion.Child
 			row(scope, 14, "menu.groupRings", toggle(scope, "groupRings", true)),
 			row(scope, 14, "menu.mapCloseOnWalk", toggle(scope, "mapCloseOnWalk", true)),
 			row(scope, 14, "menu.betterItem", toggle(scope, "betterItem", true)),
-			row(scope, 14, "menu.lootHideBelow", cycle(scope, "lootHideBelow", 0, { 0, 2, 3, 4 }, rarityLabel)),
+			row(
+				scope,
+				14,
+				"menu.lootHideBelow",
+				cycle(
+					scope,
+					"lootHideBelow",
+					0,
+					{ 0, Rarities.UNIQUE, Rarities.HEROIC, Rarities.LEGENDARY },
+					rarityLabel
+				)
+			),
 			row(
 				scope,
 				14,
 				"menu.lootAutoFrom",
-				cycle(scope, "lootAutoFrom", 0, { 0, 2, 3, 4, 5 }, function(use, value)
-					return if value == 0 then Text.get(use, "menu.all") else rarityLabel(use, value)
-				end)
+				cycle(
+					scope,
+					"lootAutoFrom",
+					0,
+					{ 0, Rarities.UNIQUE, Rarities.HEROIC, Rarities.LEGENDARY, Rarities.MYTHIC },
+					function(use, value)
+						return if value == 0 then Text.get(use, "menu.all") else rarityLabel(use, value)
+					end
+				)
 			),
 			row(
 				scope,

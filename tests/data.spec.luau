@@ -307,7 +307,7 @@ T.describe("Data: Items", function()
 	T.it("bonus pools are large enough and localized", function()
 		local maxCount = 0
 		for _, rarity in Rarities.list do
-			maxCount = math.max(maxCount, rarity.bonusCount)
+			maxCount = math.max(maxCount, rarity.bonusMax, 5)
 		end
 		for group, pool in Bonuses.pools do
 			T.expect({ group = group, ok = #pool >= maxCount }).toEqual({ group = group, ok = true })
@@ -324,7 +324,7 @@ T.describe("Data: Items", function()
 		T.expect(#Bonuses.pools.legendary >= 12).toBe(true)
 	end)
 
-	T.it("uniques use known bonuses and belong to a boss table", function()
+	T.it("named boss items use known bonuses, are Mythic and belong to a boss table", function()
 		T.expect(#Items.uniques).toBe(12)
 		for _, def in Items.uniques do
 			for _, bonus in def.fixedBonuses or {} do
@@ -333,8 +333,11 @@ T.describe("Data: Items", function()
 				end
 			end
 			local boss = LootTables.bosses[def.bossId or ""]
-			if not boss or not table.find(boss.uniques, def.id) then
+			if not boss or not table.find(boss.named, def.id) then
 				fail(def.id, "not in its boss table")
+			end
+			if def.rarity ~= Rarities.MYTHIC then
+				fail(def.id, "named boss items are Mythic")
 			end
 		end
 	end)
@@ -355,7 +358,7 @@ T.describe("Data: Items", function()
 			end
 		end
 		for bossId, boss in LootTables.bosses do
-			for _, id in boss.uniques do
+			for _, id in boss.named do
 				T.expect(Items.get(id) ~= nil).toBe(true)
 			end
 			for _, drop in boss.materials do

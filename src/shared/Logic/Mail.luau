@@ -3,7 +3,9 @@
 -- an account ("Mail_<userId>"); a parcel addressed to a character (`charId`) is only visible to it, one
 -- without `charId` to every character of the account. Parcels expire after Market.Mail.lifetimeDays.
 
+local Items = require("../Data/Items")
 local Market = require("../Data/Market")
+local Rarities = require("../Data/Rarities")
 local Types = require("../Types")
 
 type ItemInstance = Types.ItemInstance
@@ -34,8 +36,19 @@ function Mail.newBox(): Box
 end
 
 -- Accepts nil/garbage from the store and returns a usable box.
+-- Normalises a stored mailbox. S30: items of parcels sent before the new rarity ladder are upgraded
+-- (Rarities.upgradeItem, idempotent; parcels live up to 30 days).
 function Mail.box(value: any): Box
 	if type(value) == "table" and type(value.parcels) == "table" then
+		for _, parcel in value.parcels do
+			if type(parcel) == "table" and type(parcel.items) == "table" then
+				for _, item in parcel.items do
+					if type(item) == "table" and type(item.id) == "string" then
+						Rarities.upgradeItem(item, Items.get(item.id))
+					end
+				end
+			end
+		end
 		return value
 	end
 	return Mail.newBox()

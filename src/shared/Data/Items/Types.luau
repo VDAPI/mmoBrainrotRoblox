@@ -57,11 +57,11 @@ export type ItemDef = {
 	buyPrice: number?, -- shop price (S06)
 	use: UseEffect?,
 	capacity: number?, -- backpacks
-	-- Unique items: fixed bonuses and the boss that drops them.
+	-- Named (hand-made Mythic) boss items: fixed bonuses and the boss that drops them.
 	fixedBonuses: { { stat: string, v: number } }?,
 	bossId: string?,
 	bindOnPickup: boolean?,
-	-- Fixed rarity of stackable items (blessings); equipment rolls its rarity.
+	-- Fixed rarity of stackable items (blessings) and of named boss items; other equipment rolls its rarity.
 	rarity: number?,
 }
 

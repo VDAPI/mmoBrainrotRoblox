@@ -77,12 +77,11 @@ local function ItemsTab(s: Dev.Scope): Instance
 		end
 	end
 	local rarityOptions = {}
-	for r = 1, 5 do
-		local rdef = Rarities.get(r)
+	for _, rdef in Rarities.list do
 		table.insert(rarityOptions, {
-			value = tostring(r),
-			label = if rdef then Text.now(rdef.nameKey) else tostring(r),
-			color = ItemText.rarityColor(r),
+			value = tostring(rdef.id),
+			label = Text.now(rdef.nameKey),
+			color = rdef.color,
 		})
 	end
 	local elementOptions = {}
@@ -144,7 +143,7 @@ local function ItemsTab(s: Dev.Scope): Instance
 			if i > MAX_RESULTS then
 				break
 			end
-			local color = ItemText.rarityColor(def.rarity or (if def.bossId then 6 else 1))
+			local color = ItemText.rarityColor(def.rarity or (if def.bossId then Rarities.MYTHIC else Rarities.COMMON))
 			table.insert(
 				out,
 				inner:New("TextButton")({

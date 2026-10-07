@@ -10,6 +10,7 @@ local Blessings = require(Shared.Data.Blessings)
 local ItemRoll = require(Shared.Logic.ItemRoll)
 local Items = require(Shared.Data.Items)
 local Products = require(Shared.Data.Products)
+local Rarities = require(Shared.Data.Rarities)
 local Rng = require(Shared.Logic.Rng)
 
 local Context = require(script.Parent.Context)
@@ -139,7 +140,7 @@ commands.mail = function(player, args)
 				then ItemRoll.rollItem(
 					args[2],
 					def.level,
-					math.clamp(parseAmount(args[4]) or 1, 1, 5),
+					Rarities.parse(args[4]) or def.rarity or Rarities.COMMON,
 					Rng.new(),
 					InventoryService.NewUid()
 				)

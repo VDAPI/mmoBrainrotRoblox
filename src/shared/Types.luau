@@ -23,7 +23,7 @@ export type Bonus = { stat: string, v: number }
 export type ItemInstance = {
 	uid: string,
 	id: string,
-	rarity: number, -- 1 Common .. 5 Legendary, 6 Unique
+	rarity: number, -- S30: 1 Common, 2 Unique, 3 Heroic, 4 Legendary, 5 Mythic (Data/Rarities)
 	ilvl: number,
 	bonuses: { Bonus },
 	up: number, -- upgrade level 0..9
@@ -31,6 +31,7 @@ export type ItemInstance = {
 	n: number, -- stack size (1 for non-stackables)
 	el: string?, -- element of a mage weapon ("fire" | "ice" | "lightning"), S18
 	locked: boolean?, -- protected from selling and dismantling (S20)
+	rv: number?, -- S30: rarity format version (2 = new ladder; Rarities.upgradeItem)
 }
 
 export type Stats = { str: number, dex: number, int: number, vit: number }
@@ -67,7 +68,9 @@ export type CharacterData = {
 	mana: number,
 	energy: number,
 	blessing: { id: string, expiresAt: number }?,
-	bossLockouts: { [string]: number },
+	-- S30: boss kills today (UTC day `day`, `n` kills) and pity counters (kills without a Legendary / Mythic).
+	bossRuns: { [string]: BossRun },
+	bossPity: { [string]: BossPity },
 	alchemy: { { recipeId: string, readyAt: number } },
 	-- S11: main = the accepted story quest, mainDone = completed story quests (in order), daily = contracts.
 	quests: {
@@ -96,6 +99,9 @@ export type CharacterData = {
 	lootLog: { LootLogEntry }?,
 	e2timers: { Elite2Timer }?,
 }
+
+export type BossRun = { day: number, n: number }
+export type BossPity = { leg: number, myth: number }
 
 export type LootLogEntry = {
 	id: string,

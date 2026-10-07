@@ -1,6 +1,6 @@
 --!strict
 -- Forge → Dismantling (DESIGN §7): select backpack equipment, see the materials you will get, "Dismantle";
--- quick buttons for all Common / Common + Uncommon. Epic and better ask for confirmation.
+-- quick buttons for all Common / Common + Unique. Valuable rarities (Heroic and better) ask for confirmation.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -56,7 +56,7 @@ local function Dismantle_(scope: Scope, showModal: (spec: any) -> ()): Instance
 			local item = inv[key]
 			if item then
 				table.insert(indices, tonumber(key))
-				if item.rarity >= Rarities.EPIC then
+				if Rarities.get(item.rarity).valuable then
 					valuable = true
 				end
 			end
@@ -205,7 +205,7 @@ local function Dismantle_(scope: Scope, showModal: (spec: any) -> ()): Instance
 						TextSize = Theme.TextSize.Small,
 						Text = Text.T(scope, "smith.dismantle.uncommon"),
 						OnClick = function()
-							run("DismantleAll", Rarities.UNCOMMON)
+							run("DismantleAll", Rarities.UNIQUE)
 						end,
 					}),
 				},
