@@ -75,7 +75,7 @@ local Definitions: { [string]: Definition } = {
 	LearnSkill = { kind = "function", dir = "c2s", rate = 6, args = { "string" } },
 	SetHotbar = { kind = "function", dir = "c2s", rate = 10, args = { "integer", "string?" } }, -- (slot 1..10, skillId?)
 	ResetSkills = { kind = "function", dir = "c2s", rate = 1, args = {} },
-	CastSkill = { kind = "function", dir = "c2s", rate = 8, args = { "string", "string?", "any" } }, -- (skillId, targetId?, aim: Vector3?)
+	CastSkill = { kind = "function", dir = "c2s", rate = 8, args = { "string", "string?", "any?" } }, -- (skillId, targetId?, aim: Vector3?)
 	SkillFx = { kind = "event", dir = "s2c" }, -- skill visuals for players nearby
 
 	-- City (S06). All validate the distance to the NPC on the server.

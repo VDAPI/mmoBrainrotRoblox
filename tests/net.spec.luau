@@ -1,6 +1,7 @@
 --!strict
 -- Pure building blocks of the Net layer: argument checks and rate limiting.
 local ArgCheck = require("../src/shared/Logic/ArgCheck")
+local Definitions = require("../src/shared/Net/Definitions")
 local RateLimit = require("../src/shared/Logic/RateLimit")
 local T = require("./Test")
 
@@ -36,6 +37,41 @@ T.describe("ArgCheck", function()
 	T.it("caps string length", function()
 		T.expect((ArgCheck.check({ string.rep("a", ArgCheck.MAX_STRING) }, { "string" }))).toBe(true)
 		T.expect((ArgCheck.check({ string.rep("a", ArgCheck.MAX_STRING + 1) }, { "string" }))).toBe(false)
+	end)
+end)
+
+T.describe("Definitions", function()
+	T.it("CastSkill accepts every client call shape (regression: aim was required)", function()
+		local spec = assert(Definitions.CastSkill.args, "CastSkill has args")
+		T.expect((ArgCheck.check({ "id" }, spec, 1))).toBe(true)
+		T.expect((ArgCheck.check({ "id", "m1" }, spec, 2))).toBe(true)
+		T.expect((ArgCheck.check({ "id", nil, { x = 1 } }, spec, 3))).toBe(true)
+		T.expect((ArgCheck.check({ "id", "m1", nil }, spec, 3))).toBe(true)
+		T.expect((ArgCheck.check({ "id", nil, nil }, spec, 3))).toBe(true)
+		T.expect((ArgCheck.check({}, spec, 0))).toBe(false)
+	end)
+
+	T.it("every c2s remote has well-formed argument rules", function()
+		local known = { string = true, number = true, integer = true, boolean = true, table = true, any = true }
+		for name, def in Definitions do
+			if def.dir == "s2c" then
+				continue
+			end
+			T.expect(def.args ~= nil).toBe(true)
+			T.expect(type(def.rate) == "number" and (def.rate :: number) > 0).toBe(true)
+			local seenOptional = false
+			for i, rule in def.args or {} do
+				local optional = string.sub(rule, -1) == "?"
+				local kind = if optional then string.sub(rule, 1, -2) else rule
+				if not known[kind] then
+					error(`{name}: unknown rule '{rule}' at {i}`)
+				end
+				if seenOptional and not optional then
+					error(`{name}: required argument {i} after an optional one`)
+				end
+				seenOptional = seenOptional or optional
+			end
+		end
 	end)
 end)
 
