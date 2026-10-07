@@ -23,7 +23,7 @@ def load(path):
 
 
 def save(path, data):
-    Path(path).write_text(json.dumps(data, sort_keys=True, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    Path(path).write_text(json.dumps(data, sort_keys=True, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
 
 
 def orphans(old, current_files):
