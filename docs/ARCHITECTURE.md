@@ -303,6 +303,7 @@ type CharacterData = {
 | `/sprint` | character |  | stan sprintu i szybkość ruchu |
 | `/speed` | character | <value> | stała szybkość chodzenia (admin) |
 | `/preset` | character | <level> <rarity> [up] | poziom i pełny zestaw klasy z tieru poziomu |
+| `/gearset` | items | <level> [rarity] | S32: pełny komplet klasy o ilvl = level (bonusy dla klasy), zakłada go |
 | `/give` | items | <item:item> [rarity] [ilvl] [n] | daj przedmiot |
 | `/givex` | items | <item:item> [rarity] [ilvl] [up] [none|fire|ice|lightning] [n] [no|yes] | przedmiot z ulepszeniem i żywiołem |
 | `/legend` | items |  | zrzuć losową legendę dla twojej klasy |
@@ -343,6 +344,8 @@ type CharacterData = {
 | `/monsters` | monsters |  | licznik aktywnych i uśpionych potworów |
 | `/groups` | monsters |  | grupy potworów na tej mapie (liczba, rozkład 1–4, aktywne) |
 | `/mstats` | monsters | [level] | HP i atak zwykłego potwora oraz czas zabicia go przez ciebie |
+| `/simfight` | combat | <monster> <level> [n] [variant] | S32: przewidywana walka z grupą n (`Logic/FightSim`, twoje statystyki) |
+| `/balance` | combat | – | S32: twoja postać względem celów balansu (1 potwór, grupy, Elita) |
 | `/e2` | monsters | <spawn> | od razu odródź Elitę II w tej jaskini |
 | `/e2timer` | monsters |  | twoje timery Elit II |
 | `/boss` | monsters | <reset|spawn> [boss:boss] | /boss reset | spawn <grimrok|morvane> |

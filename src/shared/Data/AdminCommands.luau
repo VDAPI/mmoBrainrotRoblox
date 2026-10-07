@@ -123,6 +123,14 @@ cmd("combat", "skillpreview", { str("id") })
 cmd("combat", "dummy", { int("level", 1, MAX_LEVEL, true) })
 -- S29: every kind of damage number in turn (look check).
 cmd("combat", "dmgtest", {})
+-- S32: balance checks with the player's real stats (Logic/FightSim, targets of DESIGN §15.1).
+cmd("combat", "simfight", {
+	ref("monster", "monster"),
+	int("level", 1, MAX_LEVEL),
+	int("n", 1, 4, true, "1"),
+	enum("variant", { "normal", "elite", "elite2" }, true, "normal"),
+})
+cmd("combat", "balance", {})
 
 -- Items
 cmd(
@@ -160,6 +168,8 @@ cmd("items", "ilvl", { int("level", 1, MAX_LEVEL) })
 cmd("items", "element", { enum("element", { "fire", "ice", "lightning" }) })
 cmd("items", "partyloot", { int("n", 1, 5, true) })
 cmd("items", "gearbag", {}) -- S29: drag-to-equip test set in the backpack
+-- S32: equips the class's full set (weapon, off-hand, armour, jewellery) of item level `level` at `rarity`.
+cmd("items", "gearset", { int("level", 1, MAX_LEVEL), enum("rarity", RARITY_NAMES, true, "common") })
 -- S31: item value / buy / sell price and the tooltip lines of any item.
 cmd("items", "value", {
 	ref("item", "item"),

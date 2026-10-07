@@ -75,8 +75,14 @@ local REGION_MATERIALS: { [number]: { MaterialDrop } } = {
 	},
 }
 
--- Monster parts by kind.
+-- Monster parts by kind (chance 0.3, 1-2; PART_CHANCE overrides).
 local PARTS: { [string]: string } = {
+	-- S32: the S19 kinds of the Meadows (docs/SWIAT.md §2).
+	lynx = "thick_hide",
+	brownBear = "thick_hide",
+	swampToad = "toad_venom",
+	carrionCrow = "crow_feather",
+	koboldMiner = "ore_copper",
 	wolf = "wolf_pelt",
 	rabbit = "wolf_pelt",
 	boar = "boar_tusk",
@@ -109,6 +115,8 @@ local PARTS: { [string]: string } = {
 	youngFrostDragon = "frost_scale",
 }
 
+local PART_CHANCE: { [string]: number } = { koboldMiner = 0.25 }
+
 local VARIANT_MATERIALS: { [string]: { MaterialDrop } } = {
 	normal = {},
 	elite = {
@@ -127,7 +135,7 @@ for _, def in Monsters.list do
 	local materials = table.clone(REGION_MATERIALS[def.region] or {})
 	local part = PARTS[def.id]
 	if part then
-		table.insert(materials, { id = part, chance = 0.3, min = 1, max = 2 })
+		table.insert(materials, { id = part, chance = PART_CHANCE[def.id] or 0.3, min = 1, max = 2 })
 	end
 	TABLES[def.lootTable] = {
 		id = def.lootTable,

@@ -187,7 +187,10 @@ end
 local function instancesFrom(loot: Loot.LootResult): { ItemInstance }
 	local items: { ItemInstance } = {}
 	for _, drop in loot.items do
-		table.insert(items, ItemRoll.rollItem(drop.defId, drop.ilvl, drop.rarity, rng, HttpService:GenerateGUID(false)))
+		table.insert(
+			items,
+			ItemRoll.rollItem(drop.defId, drop.ilvl, drop.rarity, rng, HttpService:GenerateGUID(false), drop.forClass)
+		)
 	end
 	for _, material in loot.materials do
 		table.insert(items, ItemRoll.makeStack(material.id, material.n, HttpService:GenerateGUID(false)))
@@ -341,6 +344,7 @@ local function onMonsterKilled(info: any, credit: { Player })
 	local loot = Loot.rollMonsterLoot(info.monsterId, info.variant, info.level, rng, {
 		dropBonus = StatService.GetValue(killer, "dropBonus"),
 		classId = character.class :: string,
+		dropLevel = info.dropLevel,
 	})
 	LootService.DistributeToParty(credit, info.position, instancesFrom(loot), info.monsterId)
 end

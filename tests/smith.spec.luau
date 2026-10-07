@@ -34,7 +34,11 @@ T.describe("Upgrade", function()
 
 	T.it("costs follow DESIGN §6", function()
 		local c1 = Upgrade.cost(item(4, 0), 1)
-		T.expect(c1.gold).toBe(math.floor(30 * 40 * 2 ^ 1.6 + 0.5))
+		-- S32: gold per ilvl 4 up to ilvl 20, rising to 40 at ilvl 100 (Config.Upgrade).
+		T.expect(c1.gold).toBe(math.floor(30 * Upgrade.goldPerIlvl(30) * 2 ^ 1.6 + 0.5))
+		T.expect(Upgrade.goldPerIlvl(10)).toBe(4)
+		T.expect(Upgrade.goldPerIlvl(100)).toBe(40)
+		T.expect(Upgrade.cost(item(1, 0), 1).gold < Upgrade.cost(item(1, 4), 5).gold).toBe(true)
 		T.expect(c1.materials).toEqual({ { id = "essence_dust", n = 2 } })
 		T.expect(Upgrade.cost(item(4, 2), 3).materials).toEqual({ { id = "essence_dust", n = 6 } })
 		T.expect(Upgrade.cost(item(4, 4), 5).materials).toEqual({ { id = "essence_shard", n = 5 } })

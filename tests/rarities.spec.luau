@@ -49,7 +49,8 @@ describe("Rarities S30", function()
 				local before = Rarities.list[i - 1]
 				expect(rarity.baseMul > before.baseMul).toBe(true)
 				expect(rarity.sellMul > before.sellMul).toBe(true)
-				expect(rarity.rangeMul > before.rangeMul).toBe(true)
+				-- Common rolls no bonuses, so its rangeMul is unused (S32: Unique 1.0).
+				expect(rarity.rangeMul >= before.rangeMul).toBe(true)
 				expect(rarity.frame.thickness >= before.frame.thickness).toBe(true)
 			end
 		end

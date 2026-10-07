@@ -85,6 +85,8 @@ export type Monster = typeof(setmetatable(
 		-- Centre of the monster's group (S19): wander and leash around it instead of the own spawn point.
 		home: Vector3?,
 		isBoss: boolean?,
+		-- S32: highest level of the monster's spawner (drops never get a higher item level).
+		levelCap: number?,
 		-- S22 leash: last hit by a player, last time the monster moved (or attacked) while chasing and where.
 		lastHit: number,
 		movedAt: number,
@@ -103,7 +105,9 @@ function Monster.new(
 	parent: Instance,
 	attributes: { [string]: any }?
 ): Monster
-	local stats = MonsterStats.compute(def, level, variant)
+	-- S32: members of bigger groups hit softer (Combat.groupDamageMul).
+	local groupSize = attributes and (attributes :: any).GroupSize
+	local stats = MonsterStats.compute(def, level, variant, if type(groupSize) == "number" then groupSize else nil)
 	local model = RigBuilder.build(def, variant, stats.scale)
 	local root = model:FindFirstChild("HumanoidRootPart") :: BasePart
 	local humanoid = model:FindFirstChildOfClass("Humanoid") :: Humanoid
@@ -154,6 +158,7 @@ function Monster.new(
 		leashRange = nil,
 		home = nil,
 		isBoss = nil,
+		levelCap = nil,
 		lastHit = 0,
 		movedAt = 0,
 		movedFrom = spawnCFrame.Position,

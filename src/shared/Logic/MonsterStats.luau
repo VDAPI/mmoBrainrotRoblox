@@ -3,6 +3,7 @@
 
 local Combat = require("../Data/Combat")
 local Damage = require("./Damage")
+local Exp = require("./Exp")
 
 export type Variant = "normal" | "elite" | "elite2" | "boss"
 
@@ -41,8 +42,18 @@ function MonsterStats.baseAttack(level: number): number
 	return Combat.monsterAtkBase + Combat.monsterAtkFactor * level ^ Combat.monsterAtkExponent
 end
 
--- `level` is the spawner's rolled level; the variant adds its own levels on top.
-function MonsterStats.compute(kind: Kind, level: number, variant: Variant?): MonsterStats
+-- Damage multiplier of a member of a group of `size` (S32, Combat.groupDamageMul; 1 alone or unknown).
+function MonsterStats.groupDamageMul(size: number?): number
+	local list = Combat.groupDamageMul
+	if not size or size <= 1 then
+		return 1
+	end
+	return list[math.min(math.floor(size), #list)] or 1
+end
+
+-- `level` is the spawner's rolled level; the variant adds its own levels on top. `groupSize` (S32) lowers the
+-- damage of every member of a bigger group.
+function MonsterStats.compute(kind: Kind, level: number, variant: Variant?, groupSize: number?): MonsterStats
 	local v: Variant = variant or "normal"
 	local mods = Combat.variants[v]
 	assert(mods, `MonsterStats: unknown variant {v}`)
@@ -50,7 +61,9 @@ function MonsterStats.compute(kind: Kind, level: number, variant: Variant?): Mon
 	return {
 		level = finalLevel,
 		maxHp = math.floor(MonsterStats.baseHp(finalLevel) * kind.hpMul * mods.hpMul + 0.5),
-		attack = MonsterStats.baseAttack(finalLevel) * kind.atkMul * mods.dmgMul,
+		attack = MonsterStats.baseAttack(finalLevel) * kind.atkMul * mods.dmgMul * MonsterStats.groupDamageMul(
+			groupSize
+		),
 		armor = Combat.monsterArmorPerLevel * finalLevel * kind.defMul,
 		mres = Combat.monsterMresPerLevel * finalLevel * kind.defMul,
 		attackInterval = Combat.monsterAttackInterval / math.max(0.1, kind.speed),
@@ -80,7 +93,24 @@ function MonsterStats.asDefender(stats: MonsterStats): Damage.Defender
 	return { armor = stats.armor, mres = stats.mres, dodge = 0, res = {} }
 end
 
--- Gold dropped by a monster (before the killer's gold bonus).
+-- EXP and gold factor of a kind (S32): tougher kinds pay more, weak ones less. Bosses use 1.
+function MonsterStats.kindReward(kind: { hpMul: number, atkMul: number, speed: number }?): number
+	if not kind then
+		return 1
+	end
+	local hp = math.max(0.05, kind.hpMul or 1) ^ Combat.kindRewardHpExponent
+	local danger = math.max(0.05, (kind.atkMul or 1) * (kind.speed or 1)) ^ Combat.kindRewardAtkExponent
+	return hp * danger
+end
+
+-- Gold multiplier for a player of `playerLevel` killing a monster of `monsterLevel` (S32): a share of the EXP
+-- penalty (Exp.levelDiffMultiplier), never a bonus.
+function MonsterStats.goldLevelMultiplier(playerLevel: number, monsterLevel: number): number
+	local expMul = math.min(1, Exp.levelDiffMultiplier(playerLevel, monsterLevel))
+	return 1 - (1 - expMul) * Combat.goldPenaltyShare
+end
+
+-- Gold dropped by a monster (before the kind factor, the level penalty and the killer's gold bonus).
 function MonsterStats.gold(level: number, variant: string, roll: number): number
 	local multiplier = (Combat.goldVariantMultiplier :: any)[variant] or 1
 	local factor = Combat.goldRandomMin + (Combat.goldRandomMax - Combat.goldRandomMin) * math.clamp(roll, 0, 1)

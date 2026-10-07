@@ -28,6 +28,7 @@ local Log = require(Shared.Util.Log)
 local MonsterAbilities = require(Shared.Data.MonsterAbilities)
 local MonsterStats = require(Shared.Logic.MonsterStats)
 local Net = require(Shared.Net)
+local Loot = require(Shared.Logic.Loot)
 local PartyLoot = require(Shared.Logic.PartyLoot)
 local Rng = require(Shared.Logic.Rng)
 local Signal = require(ReplicatedStorage.Packages.Signal)
@@ -64,6 +65,7 @@ export type KillInfo = {
 	entityId: string,
 	boss: boolean?, -- dungeon bosses: DungeonService hands out the rewards
 	areaId: string?, -- S27: named area of the monster's group (model attribute AreaId)
+	dropLevel: number?, -- S32: base level for item drops (spawner level without the variant's levels)
 }
 
 type FxEvent = { [string]: any }
@@ -310,10 +312,13 @@ local function reward(player: Player, monster: any, share: number, goldShare: nu
 		return
 	end
 	local level = monster.stats.level
-	local baseExp = PartyLoot.splitExp(Exp.monsterExp(level, monster.variant), share)
+	-- S32: tougher kinds pay more EXP and gold (MonsterStats.kindReward); gold also drops for monsters far below.
+	local kindReward = MonsterStats.kindReward(monster.def)
+	local baseExp = PartyLoot.splitExp(Exp.monsterExp(level, monster.variant) * kindReward, share)
 	local exp = math.floor(baseExp * Exp.levelDiffMultiplier(character.level, level) + 0.5)
 	local goldBonus = StatService.GetValue(player, "goldBonus")
-	local gold = math.floor(goldShare * (1 + goldBonus / 100) + 0.5)
+	local goldMul = MonsterStats.goldLevelMultiplier(character.level, level)
+	local gold = math.floor(goldShare * goldMul * (1 + goldBonus / 100) + 0.5)
 	local expBonus = StatService.GetValue(player, "expBonus")
 	LevelService.GiveExp(player, exp, "monster")
 	local balance = PlayerStateService.Update(player, { "character", "gold" }, function(current: number)
@@ -331,7 +336,14 @@ end
 local function onMonsterDied(monster: any)
 	local credit = CombatService.ResolveKillCredit(monster)
 	if not monster.isBoss then
-		local total = MonsterStats.gold(monster.stats.level, monster.variant, rng:next())
+		local total = math.max(
+			1,
+			math.floor(
+				MonsterStats.gold(monster.stats.level, monster.variant, rng:next())
+						* MonsterStats.kindReward(monster.def)
+					+ 0.5
+			)
+		)
 		local shares = PartyLoot.splitGold(total, #credit, rng)
 		for i, player in credit do
 			reward(player, monster, #credit, shares[i])
@@ -348,6 +360,7 @@ local function onMonsterDied(monster: any)
 		entityId = if monster.entity then monster.entity.id else "",
 		boss = monster.isBoss == true,
 		areaId = monster.model:GetAttribute("AreaId") :: string?,
+		dropLevel = Loot.dropBaseLevel(monster.stats.level, monster.variant, monster.levelCap),
 	}
 	CombatService.MonsterKilled:Fire(info, credit, credit[1])
 	-- Clear player targets pointing at the corpse.

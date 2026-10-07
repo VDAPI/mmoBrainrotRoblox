@@ -60,5 +60,9 @@ material("salamander_scale", "part", 45, 45, "✾", "#D6542A")
 material("magma_shard", "part", 60, 60, "✾", "#FF5A1A")
 material("yeti_fur", "part", 70, 80, "✾", "#EEF3F7")
 material("frost_scale", "part", 90, 120, "✾", "#7FD4E8")
+-- S32: parts of the S19 kinds of the Meadows (docs/SWIAT.md §2): lynx and brown bear, swamp toad, carrion crow.
+material("thick_hide", "part", 3, 6, "✾", "#8A6B4A")
+material("toad_venom", "part", 4, 6, "✾", "#7FB04A")
+material("crow_feather", "part", 6, 7, "✾", "#3A3A44")
 
 return LIST

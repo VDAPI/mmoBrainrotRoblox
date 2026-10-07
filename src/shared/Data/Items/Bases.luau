@@ -22,8 +22,15 @@ export type Base = {
 
 local WARRIOR, HUNTER, MAGE, CLERIC = "Warrior", "Hunter", "Mage", "Cleric"
 
+-- % attack of off-hands and rings at level 0 (S32, tests/balance.spec: 2H vs 1H + off-hand).
+local QUIVER_PCT, TOME_PCT, ORB_PCT, RELIC_PCT, RING_PCT = 8, 5, 8, 5, 3.5
+
 local function round(x: number): number
 	return math.floor(x + 0.5)
+end
+
+local function round1(x: number): number
+	return math.floor(x * 10 + 0.5) / 10
 end
 
 -- Weapon damage curve: (6 + 2.2 L) x multiplier.
@@ -72,9 +79,11 @@ local WEIGHTS: { { id: string, classes: { string }, stats: (level: number, facto
 			id = "light",
 			classes = { MAGE, CLERIC },
 			stats = function(level, f)
+				-- S32: a small HP line (Mages had ~25 % less HP than Warriors and died in groups).
 				return {
 					armor = round((2 + 1.0 * level) * f),
 					mres = round((2 + 1.4 * level) * f),
+					hp = round((3 + 1.5 * level) * f),
 					mana = round((5 + 2.5 * level) * f),
 				}
 			end,
@@ -106,7 +115,7 @@ local LIST: { Base } = {
 		bonusGroup = "weapon",
 		glyph = "⚒",
 		gender = "m",
-		weapon = weapon(1.1, 0, 1.05, false, false),
+		weapon = weapon(1.14, 0, 1.05, false, false),
 	},
 	{
 		type = "mace1h",
@@ -133,7 +142,7 @@ local LIST: { Base } = {
 		bonusGroup = "weapon",
 		glyph = "⚒",
 		gender = "m",
-		weapon = weapon(1.75, 0, 0.8, false, true),
+		weapon = weapon(1.69, 0, 0.8, false, true),
 	},
 	{
 		type = "hammer2h",
@@ -142,7 +151,7 @@ local LIST: { Base } = {
 		bonusGroup = "weapon",
 		glyph = "⚒",
 		gender = "m",
-		weapon = weapon(1.85, 0, 0.75, false, true),
+		weapon = weapon(1.82, 0, 0.75, false, true),
 	},
 	{
 		type = "bow",
@@ -179,7 +188,7 @@ local LIST: { Base } = {
 		bonusGroup = "weapon",
 		glyph = "⚕",
 		gender = "m",
-		weapon = weapon(0, 1.6, 0.85, true, true),
+		weapon = weapon(0, 1.47, 0.85, true, true),
 		elemental = true,
 	},
 	{
@@ -192,6 +201,8 @@ local LIST: { Base } = {
 		weapon = weapon(0.4, 1.1, 1.0, false, false),
 	},
 	-- More weapon types per class (S18, DESIGN §5.8): speed vs damage trade-offs at about the same DPS.
+	-- S32: two-handed multipliers lowered (staff 1.6 → 1.47, runestaff 2.0 → 1.75, holy staff 1.75 → 1.5, ...) so a
+	-- two-handed weapon gives the same DPS x survivability as 1H + off-hand (±3 %, tests/balance.spec).
 	{
 		type = "saber1h",
 		slot = "weapon",
@@ -208,7 +219,7 @@ local LIST: { Base } = {
 		bonusGroup = "weapon",
 		glyph = "↟",
 		gender = "f",
-		weapon = weapon(1.6, 0, 0.88, false, true),
+		weapon = weapon(1.53, 0, 0.88, false, true),
 	},
 	{
 		type = "shortbow",
@@ -226,7 +237,7 @@ local LIST: { Base } = {
 		bonusGroup = "weapon",
 		glyph = "➶",
 		gender = "m",
-		weapon = weapon(1.55, 0, 0.78, true, false),
+		weapon = weapon(1.47, 0, 0.78, true, false),
 	},
 	{
 		type = "heavycrossbow",
@@ -235,7 +246,7 @@ local LIST: { Base } = {
 		bonusGroup = "weapon",
 		glyph = "➹",
 		gender = "f",
-		weapon = weapon(1.9, 0, 0.62, true, false),
+		weapon = weapon(1.85, 0, 0.62, true, false),
 	},
 	{
 		type = "runestaff",
@@ -244,7 +255,7 @@ local LIST: { Base } = {
 		bonusGroup = "weapon",
 		glyph = "⚕",
 		gender = "m",
-		weapon = weapon(0, 2.0, 0.72, true, true),
+		weapon = weapon(0, 1.75, 0.72, true, true),
 		elemental = true,
 	},
 	{
@@ -263,7 +274,7 @@ local LIST: { Base } = {
 		bonusGroup = "weapon",
 		glyph = "✟",
 		gender = "m",
-		weapon = weapon(0.5, 1.75, 0.8, false, true),
+		weapon = weapon(0.5, 1.5, 0.8, false, true),
 	},
 	-- Off-hand
 	{
@@ -284,8 +295,10 @@ local LIST: { Base } = {
 		bonusGroup = "quiver",
 		glyph = "➵",
 		gender = "m",
+		-- S32: attack off-hands and rings give a % of the attack ("<stat>Pct"), so 1H + off-hand keeps up with
+		-- two-handed weapons at every level (a flat bonus fell behind the stat-scaled weapon damage).
 		stats = function(level)
-			return { physAtk = round(2 + 0.6 * level) }
+			return { physAtkPct = round1(QUIVER_PCT + 0.03 * level) }
 		end,
 	},
 	{
@@ -296,7 +309,7 @@ local LIST: { Base } = {
 		glyph = "📖",
 		gender = "f",
 		stats = function(level)
-			return { magAtk = round(2 + 0.6 * level), mana = round(8 + 3 * level) }
+			return { magAtkPct = round1(TOME_PCT + 0.03 * level), mana = round(8 + 3 * level) }
 		end,
 	},
 	{
@@ -307,7 +320,7 @@ local LIST: { Base } = {
 		glyph = "◉",
 		gender = "f",
 		stats = function(level)
-			return { magAtk = round(3 + 0.8 * level) }
+			return { magAtkPct = round1(ORB_PCT + 0.04 * level) }
 		end,
 	},
 	{
@@ -318,7 +331,7 @@ local LIST: { Base } = {
 		glyph = "✚",
 		gender = "f",
 		stats = function(level)
-			return { magAtk = round(2 + 0.5 * level), hpRegen = math.floor((0.5 + 0.05 * level) * 10 + 0.5) / 10 }
+			return { magAtkPct = round1(RELIC_PCT + 0.03 * level), hpRegen = round1(0.5 + 0.05 * level) }
 		end,
 	},
 	-- Jewellery (every class)
@@ -328,8 +341,9 @@ local LIST: { Base } = {
 		bonusGroup = "necklace",
 		glyph = "◎",
 		gender = "m",
+		-- S32: more HP (it was +90 at level 20, ~10 % of a Warrior's HP).
 		stats = function(level)
-			return { hp = round(10 + 4 * level) }
+			return { hp = round(12 + 6 * level) }
 		end,
 	},
 	{
@@ -338,8 +352,9 @@ local LIST: { Base } = {
 		bonusGroup = "ring",
 		glyph = "○",
 		gender = "m",
+		-- Both attacks: every class uses only its own one, so the ring is class-neutral (S32 decision).
 		stats = function(level)
-			return { physAtk = round(1 + 0.4 * level), magAtk = round(1 + 0.4 * level) }
+			return { physAtkPct = round1(RING_PCT + 0.03 * level), magAtkPct = round1(RING_PCT + 0.03 * level) }
 		end,
 	},
 	{
@@ -348,8 +363,9 @@ local LIST: { Base } = {
 		bonusGroup = "talisman",
 		glyph = "✧",
 		gender = "m",
+		-- S32: HP + armour + magic resistance for every class (was magic resistance + mana).
 		stats = function(level)
-			return { mres = round(2 + 1.2 * level), mana = round(5 + 2 * level) }
+			return { hp = round(6 + 3 * level), armor = round(2 + 1 * level), mres = round(2 + 1 * level) }
 		end,
 	},
 }

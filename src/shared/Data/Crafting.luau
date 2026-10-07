@@ -4,6 +4,7 @@
 -- Recipe id = item id ("sword1h_30"); mage weapons have one recipe per element ("wand_30:fire", S18).
 
 local Bases = require("./Items/Bases")
+local ValueData = require("./ItemValue")
 local Elements = require("./Elements")
 
 export type Recipe = {
@@ -31,6 +32,8 @@ local function oreFor(tier: number): string
 	return "ore_adamantite"
 end
 
+local HIDE_SLOTS: { [string]: boolean } = { armor = true, gloves = true, boots = true }
+
 local RECIPES: { [string]: Recipe } = {}
 local LIST: { Recipe } = {}
 
@@ -38,6 +41,10 @@ for _, base in Bases.list do
 	for _, tier in Bases.tiers do
 		local id = `{base.type}_{tier}`
 		local materials = { { id = oreFor(tier), n = 3 + math.floor(tier / 15) } }
+		-- S32: chest pieces, gloves and boots of tiers 5-15 also take thick hide (lynx, brown bear).
+		if HIDE_SLOTS[base.slot] and tier >= 5 and tier < 20 then
+			table.insert(materials, { id = "thick_hide", n = 1 + math.floor(tier / 10) })
+		end
 		if tier >= 30 then
 			table.insert(materials, { id = "essence_dust", n = 2 + math.floor(tier / 20) })
 		end
@@ -48,7 +55,16 @@ for _, base in Bases.list do
 				id = if element then `{id}:{element}` else id,
 				item = id,
 				level = tier,
-				gold = Bases.priceAt(tier) * 3,
+				gold = math.max(
+					1,
+					math.floor(
+						ValueData.perLevel
+								* tier
+								* (ValueData.slotMul[base.slot] or ValueData.defaultSlotMul)
+								* ValueData.craftMul
+							+ 0.5
+					)
+				),
 				materials = materials,
 				classes = base.classes,
 				slot = base.slot,

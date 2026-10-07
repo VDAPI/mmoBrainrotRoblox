@@ -43,6 +43,7 @@ export type BossDef = {
 	nameKey: string,
 	region: string, -- dungeon region, map "dungeon_<region>"
 	level: number,
+	hpMul: number?, -- S32: on top of BossScaling.hpMultiplier (fight length), default 1
 	atkMul: number,
 	defMul: number,
 	speed: number, -- attack speed multiplier
@@ -75,7 +76,11 @@ boss({
 	nameKey = "boss.grimrok.name",
 	region = "meadows",
 	level = 20,
-	atkMul = 1.2,
+	-- S32 (tests/balance.spec): 3-5 players of level 18-20 need 4-6 min; no hit takes more than 70 % of a level 20
+	-- Mage's HP (the whirlwind took ~150 %). Basic attacks are softer (atkMul 1.2 → 0.32), the telegraphed attacks
+	-- carry the danger.
+	hpMul = 1.4,
+	atkMul = 0.32,
 	defMul = 1.3,
 	speed = 0.9,
 	moveSpeed = 14,
@@ -90,8 +95,8 @@ boss({
 			radius = 15,
 			angle = 120,
 			windup = 1.2,
-			damage = 2.2,
-			cooldown = 7,
+			damage = 4.5,
+			cooldown = 8,
 			phases = { 1, 2, 3 },
 		},
 		{
@@ -100,7 +105,7 @@ boss({
 			target = "random",
 			radius = 8,
 			windup = 1.5,
-			damage = 2.8,
+			damage = 6,
 			cooldown = 13,
 			phases = { 1, 2, 3 },
 			leap = true,
@@ -111,7 +116,7 @@ boss({
 			target = "self",
 			radius = 10,
 			windup = 1.6,
-			damage = 3.2,
+			damage = 7,
 			cooldown = 10,
 			phases = { 3 },
 		},

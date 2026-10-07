@@ -187,6 +187,15 @@ local Config = {
 		legendaryClassShare = 0.8,
 		mythicNamedShare = 0.5,
 	},
+	-- Upgrade gold (S32, Logic/Upgrade, DESIGN §6): round(ilvl x perIlvl(ilvl) x (N+1)^goldExponent), perIlvl =
+	-- goldLow up to ilvl goldLowUntil, then rising linearly to goldHigh at ilvl 100 (before S32: 40 everywhere,
+	-- +1 on a level 10 item cost more than all gold from level 10). +1..+3 on the weapon fits a level's income.
+	Upgrade = {
+		goldLow = 4,
+		goldLowUntil = 20,
+		goldHigh = 40,
+		goldExponent = 1.6,
+	},
 	-- Streaming (S20, decision in PROGRESS): also set in default.project.json (Workspace properties).
 	StreamingTargetRadius = 512,
 	StreamingMinRadius = 128,

@@ -5,6 +5,7 @@ local Bonuses = require("../Data/Bonuses")
 local Elements = require("../Data/Elements")
 local ItemValue = require("./ItemValue")
 local Items = require("../Data/Items")
+local LootRules = require("../Data/LootRules")
 local Rarities = require("../Data/Rarities")
 local Rng = require("./Rng")
 local Types = require("../Types")
@@ -34,6 +35,8 @@ end
 local function scaleFor(def: Bonuses.BonusDef, ilvl: number): number
 	if def.scaling == "flat" then
 		return 1 + ilvl / 20
+	elseif def.scaling == "curve" then
+		return (6 + 2.2 * ilvl) / 8.2
 	elseif def.scaling == "pct" then
 		return 1 + ilvl / 60
 	end
@@ -91,10 +94,59 @@ function ItemRoll.makeStack(defId: string, n: number, uid: string): ItemInstance
 	}
 end
 
+-- Whether a bonus is useful to one of `classes` (S32, Bonuses.classStats; nil classes = every class).
+local function fitsClasses(bonusId: string, classes: { string }?): boolean
+	local only = Bonuses.classStats[bonusId]
+	if not only or not classes then
+		return true
+	end
+	for _, classId in classes do
+		if table.find(only, classId) then
+			return true
+		end
+	end
+	return false
+end
+
+local function filtered(pool: { string }, classes: { string }?): { string }
+	local out = {}
+	for _, id in pool do
+		if fitsClasses(id, classes) then
+			table.insert(out, id)
+		end
+	end
+	return out
+end
+
+-- Bonus pool of an equipment definition (S32): its bonus group without stats none of its classes use; class-free
+-- items (jewellery) filter by `forClass` (the class they dropped for) when given.
+function ItemRoll.bonusPool(defId: string, forClass: string?): { string }
+	local def = Items.get(defId)
+	if not def then
+		return {}
+	end
+	local classes = def.classes or (if forClass then { forClass } else nil)
+	return filtered(Bonuses.pools[def.bonusGroup or ""] or {}, classes)
+end
+
+function ItemRoll.legendaryPool(defId: string, forClass: string?): { string }
+	local def = Items.get(defId)
+	local classes = if def and def.classes then def.classes elseif forClass then { forClass } else nil
+	return filtered(Bonuses.pools.legendary, classes)
+end
+
 -- Rolls an item instance. Equipment gets bonusMin..bonusMax random bonuses of its rarity (no repeats) plus
 -- `legendaryLines` distinct lines from the legendary pool; named boss items get their fixed bonuses and fixed
--- rarity (Mythic); everything else is a single unit of its definition's rarity.
-function ItemRoll.rollItem(defId: string, ilvl: number, rarity: number, rng: Rng.Rng, uid: string): ItemInstance
+-- rarity (Mythic); everything else is a single unit of its definition's rarity. `forClass` (S32) is the class a
+-- class-free item (jewellery) dropped for: its bonuses are useful to that class.
+function ItemRoll.rollItem(
+	defId: string,
+	ilvl: number,
+	rarity: number,
+	rng: Rng.Rng,
+	uid: string,
+	forClass: string?
+): ItemInstance
 	local def = Items.get(defId)
 	assert(def, `ItemRoll: unknown item {defId}`)
 	if def.category ~= "equipment" then
@@ -119,7 +171,7 @@ function ItemRoll.rollItem(defId: string, ilvl: number, rarity: number, rng: Rng
 	local level = math.max(1, math.floor(ilvl))
 	local bonuses: { Types.Bonus } = {}
 
-	local pool = table.clone(Bonuses.pools[def.bonusGroup or ""] or {})
+	local pool = ItemRoll.bonusPool(defId, forClass)
 	rng:shuffle(pool)
 	local count = if rarityDef.bonusMax > 0 then rng:int(rarityDef.bonusMin, rarityDef.bonusMax) else 0
 	for i = 1, math.min(count, #pool) do
@@ -127,7 +179,7 @@ function ItemRoll.rollItem(defId: string, ilvl: number, rarity: number, rng: Rng
 		table.insert(bonuses, { stat = id, v = ItemRoll.rollBonusValue(id, level, rarityId, rng:next()) })
 	end
 	if rarityDef.legendaryLines > 0 then
-		local legendary = table.clone(Bonuses.pools.legendary)
+		local legendary = ItemRoll.legendaryPool(defId, forClass)
 		rng:shuffle(legendary)
 		for i = 1, math.min(rarityDef.legendaryLines, #legendary) do
 			local id = legendary[i]
@@ -159,6 +211,15 @@ function ItemRoll.elementOf(item: ItemInstance): string?
 	return if Elements.isWeaponElement(item.el) then item.el else Elements.DEFAULT
 end
 
+-- A base stat key "<stat>Pct" (S32: off-hands and rings) is a % multiplier of <stat>; anything else is flat.
+function ItemRoll.baseKey(key: string): (string, boolean)
+	local stat = string.match(key, "^(.+)Pct$")
+	if stat then
+		return stat, true
+	end
+	return key, false
+end
+
 -- Stats of an item instance: base (rarity + upgrade), weapon, and bonus totals mapped to StatCalc ids.
 function ItemRoll.itemStats(item: ItemInstance): ItemStats
 	local def = Items.get(item.id)
@@ -181,7 +242,9 @@ function ItemRoll.itemStats(item: ItemInstance): ItemStats
 		local decimals = if value % 1 == 0 then 0 else 1
 		local scaled = roundTo(value * multiplier, decimals)
 		result.base[stat] = scaled
-		result.flat[stat] = (result.flat[stat] or 0) + scaled
+		local id, isPct = ItemRoll.baseKey(stat)
+		local target = if isPct then result.pct else result.flat
+		target[id] = (target[id] or 0) + scaled
 	end
 	local weapon = if scaling and scaling.weapon then scaling.weapon(math.max(1, item.ilvl)) else def.weapon
 	if weapon then
@@ -195,7 +258,9 @@ function ItemRoll.itemStats(item: ItemInstance): ItemStats
 		}
 	end
 
-	for _, bonus in item.bonuses do
+	-- Named items always use their definition's bonuses (S32: values changed, saved copies follow).
+	local bonuses: { Types.Bonus } = if named then def.fixedBonuses :: any else item.bonuses
+	for _, bonus in ipairs(bonuses) do
 		local bonusDef = Bonuses.get(bonus.stat)
 		if bonusDef then
 			table.insert(result.bonuses, {
@@ -228,9 +293,16 @@ function ItemRoll.sellPrice(item: ItemInstance): number
 	return ItemValue.sellPrice(item)
 end
 
--- Item level of a monster drop: monster level +-2, at least 1 (DESIGN §5.3).
-function ItemRoll.dropLevel(monsterLevel: number, rng: Rng.Rng): number
-	return math.max(1, monsterLevel + rng:int(-2, 2))
+-- Item levels a drop of a monster of `level` can have (S32, DESIGN §5.3): level - 0..dropLevelBelow, at least 1.
+-- Before S32 it was level +-2, so 40 % of drops at the player's level could not be worn.
+function ItemRoll.dropLevelRange(level: number, _variant: string?): (number, number)
+	local high = math.max(1, math.floor(level))
+	return math.max(1, high - LootRules.dropLevelBelow), high
+end
+
+function ItemRoll.dropLevel(level: number, rng: Rng.Rng): number
+	local low, high = ItemRoll.dropLevelRange(level)
+	return rng:int(low, high)
 end
 
 return ItemRoll

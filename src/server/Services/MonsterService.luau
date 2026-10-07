@@ -216,6 +216,7 @@ function MonsterService.SpawnAt(
 	monster.spawnerId = if spawner then spawner.data.id else nil
 	if spawner then
 		monster.home = spawner.origin
+		monster.levelCap = spawner.data.level.max
 	end
 	table.insert(monsters, monster)
 	nextTick[monster] = os.clock() + random:NextNumber() * TICK

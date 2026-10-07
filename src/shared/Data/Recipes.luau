@@ -40,12 +40,23 @@ local LINE_INGREDIENT: { [string]: string } = {
 	guardian = "ore_iron",
 	fortune = "fish_goldfin",
 }
+-- S32: Common blessings use parts of the early Meadows (the line's own ingredient comes later).
+local LINE_INGREDIENT_COMMON: { [string]: string } = {
+	hunter = "toad_venom",
+	guardian = "thick_hide",
+	fortune = "crow_feather",
+}
 
 for _, line in Blessings.lines do
 	for rarity = 1, 4 do
 		local ingredients: { Ingredient } = {
 			{ id = BLESSING_HERB[rarity], n = 2 + rarity },
-			{ id = LINE_INGREDIENT[line], n = rarity },
+			{
+				id = if rarity == 1
+					then LINE_INGREDIENT_COMMON[line] or LINE_INGREDIENT[line]
+					else LINE_INGREDIENT[line],
+				n = rarity,
+			},
 		}
 		if rarity >= 3 then
 			table.insert(ingredients, { id = "essence_shard", n = rarity - 2 })

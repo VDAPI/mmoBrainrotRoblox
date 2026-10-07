@@ -59,9 +59,18 @@ Na Linux/macOS/CI: `bash scripts/check.sh`.
 
 Formatowanie automatycznie: `stylua src tests`.
 
+## Balans (S32)
+
+```powershell
+lune run tools/balance_report.luau            # generuje docs/BALANS.md (przed → po)
+lune run tools/balance_report.luau snapshot   # zapisuje bieżące liczby jako „przed” (tools/balance_before.json)
+```
+Model liczbowy: `tests/Balance.luau` (moduły gry, wartości oczekiwane), cele: `tests/balance.spec.luau`.
+
 ## Dokumentacja
 
 - `docs/DESIGN.md` – zasady gry i liczby
 - `docs/ARCHITECTURE.md` – architektura techniczna
 - `docs/PROGRESS.md` – postęp, decyzje, instrukcje testów po każdej sesji
+- `docs/BALANS.md` – raport balansu 1–20 (generowany)
 - `CLAUDE.md` – zasady dla Claude Code

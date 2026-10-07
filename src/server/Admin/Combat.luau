@@ -4,7 +4,10 @@
 
 local Shared = game:GetService("ReplicatedStorage").Shared
 
+local Classes = require(Shared.Data.Classes)
 local Config = require(Shared.Config)
+local FightSim = require(Shared.Logic.FightSim)
+local Monsters = require(Shared.Data.Monsters)
 local Net = require(Shared.Net)
 
 local Context = require(script.Parent.Context)
@@ -20,6 +23,8 @@ local PvpService = Context.services.PvpService
 local CombatService = Context.services.CombatService
 local StatusEffectService = Context.services.StatusEffectService
 local EntityService = Context.services.EntityService
+local StatService = Context.services.StatService
+local EquipmentService = Context.services.EquipmentService
 
 local commands: { [string]: (player: Player, args: { string }) -> ...any } = {}
 
@@ -199,6 +204,81 @@ commands.dmgtest = function(player)
 				task.wait(0.05)
 			end
 		end)
+	end)
+end
+
+-- S32: the player as Logic/FightSim sees them (current stats, legendary effects, class attack kind).
+local function simPlayer(player: Player, character: any): FightSim.Player
+	local values = (StatService.Get(player) or { values = {} }).values
+	local class = Classes.get(character.class)
+	return {
+		level = character.level,
+		values = values,
+		hooks = EquipmentService.GetHooks(player),
+		magic = class ~= nil and class.basicAttack.kind == "magic",
+	}
+end
+
+local function percent(x: number): number
+	return math.floor(x * 100 + 0.5)
+end
+
+local function seconds(x: number): string
+	return string.format("%.1f", x)
+end
+
+-- /simfight <monster> <level> [n] [variant]: expected fight against a group of `n` with your current stats.
+commands.simfight = function(player, args)
+	local def = Monsters.get(args[1] or "")
+	local level = parseAmount(args[2])
+	local variant = args[4] or "normal"
+	if not def or not level or (variant ~= "normal" and variant ~= "elite" and variant ~= "elite2") then
+		reply(player, "admin.usage.simfight")
+		return
+	end
+	withCharacter(player, function()
+		local character = PlayerStateService.GetCharacter(player)
+		local p = simPlayer(player, character)
+		local n = math.clamp(parseAmount(args[3]) or 1, 1, 4)
+		local actual = if def.elites then variant else "normal"
+		local members = FightSim.group(def, math.clamp(level, 1, Config.MaxLevel), n, actual :: any)
+		local basic = FightSim.groupFight(p, members, 1)
+		local skills = FightSim.groupFight(p, members, FightSim.SKILL_DPS)
+		local m = members[1]
+		reply(player, "admin.simfight.info", {
+			name = `@{(def.nameKeys :: any)[actual] or def.nameKeys.normal}`,
+			level = m.level,
+			n = n,
+			hp = m.maxHp,
+			hit = math.floor(FightSim.hit(m, p) + 0.5),
+			s1 = seconds(basic.seconds),
+			l1 = percent(basic.hpLost),
+			s2 = seconds(skills.seconds),
+			l2 = percent(skills.hpLost),
+		})
+	end)
+end
+
+-- /balance: your character against the S32 targets at your level (DESIGN §15.1).
+commands.balance = function(player)
+	withCharacter(player, function()
+		local character = PlayerStateService.GetCharacter(player)
+		local p = simPlayer(player, character)
+		local level = character.level
+		local generic = { hpMul = 1, atkMul = 1, defMul = 1, speed = 1, attack = "melee" }
+		local duel = FightSim.groupFight(p, FightSim.group(generic, level, 1), FightSim.SKILL_DPS)
+		local groups = FightSim.expectedGroup(p, generic, level, FightSim.SKILL_DPS)
+		local elite = FightSim.groupFight(p, FightSim.group(generic, level, 1, "elite"), FightSim.SKILL_DPS)
+		reply(player, "admin.balance.info", {
+			level = level,
+			ds = seconds(duel.seconds),
+			dl = percent(duel.hpLost),
+			gl = percent(groups.hpLost),
+			g4 = percent(groups.bySize[4].hpLost),
+			es = seconds(elite.seconds),
+			el = percent(elite.hpLost),
+		})
+		reply(player, "admin.balance.targets")
 	end)
 end
 

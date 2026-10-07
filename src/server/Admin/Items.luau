@@ -374,6 +374,43 @@ commands.gearbag = function(player, _args)
 	end)
 end
 
+-- S32: /gearset <level> [rarity]: the class's full set (Logic/DevPreset types) of item level `level`, rolled at
+-- `rarity` (bonuses for the class), equipped through the normal Equip path (old pieces go to the backpack;
+-- pieces above the character's level stay in the backpack).
+commands.gearset = function(player, args)
+	local level = parseAmount(args[1])
+	local rarity = Rarities.parse(args[2] or "common")
+	if not level or not rarity then
+		reply(player, "admin.usage.gearset")
+		return
+	end
+	withCharacter(player, function()
+		local character = PlayerStateService.GetCharacter(player)
+		local ilvl = math.clamp(level, 1, Config.MaxLevel)
+		local equipped = 0
+		for _, piece in DevPreset.pick(character.class, ilvl) do
+			local leftover, item =
+				InventoryService.GiveNew(player, piece.id, 1, rarity, ilvl, character.class :: string)
+			if leftover > 0 or not item then
+				reply(player, "inventory.full")
+				break
+			end
+			local def = Items.get(piece.id)
+			if def and def.elemental and item.el == nil then
+				item.el = Elements.DEFAULT
+			end
+			local index = InventoryService.IndexOf(player, item.uid)
+			if index then
+				InventoryService.SetSlot(player, index, item)
+				if EquipmentService.Equip(player, index, piece.slot) then
+					equipped += 1
+				end
+			end
+		end
+		reply(player, "admin.gearset.ok", { ilvl = ilvl, rarity = `@rarity.{Rarities.get(rarity).key}`, n = equipped })
+	end)
+end
+
 -- S30: /rarities: the rarity ladder in the panel console.
 commands.rarities = function(player)
 	for _, rarity in Rarities.list do

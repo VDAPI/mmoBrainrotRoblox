@@ -77,12 +77,13 @@ local function statLines(use: Fusion.Use, item: Types.ItemInstance, up: number):
 	end
 	table.sort(keys)
 	local aliases = { hp = "maxHp", mana = "maxMana", energy = "maxEnergy" }
-	for _, stat in keys do
+	for _, key in keys do
+		local stat, isPct = ItemRoll.baseKey(key)
 		local def = Stats.get(aliases[stat] or stat)
 		local name = Text.get(use, `stat.{aliases[stat] or stat}`)
-		local value = stats.base[stat]
+		local value = stats.base[key]
 		local text = if value % 1 == 0 then tostring(value) else string.format("%.1f", value)
-		if def and def.format == "pct" then
+		if isPct or (def and def.format == "pct") then
 			text ..= "%"
 		end
 		table.insert(lines, `{name}: {text}`)

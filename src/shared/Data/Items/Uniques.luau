@@ -2,7 +2,8 @@
 -- Named boss items (DESIGN §5.2; S30: rarity Mythic, ids `unique_*` kept for saves): hand-made, fixed stats,
 -- own name and lore, only from a boss's personal Mythic roll. Three per boss. Base stats come from the matching
 -- base type at the boss level x 1.3 (ItemRoll.itemStats keeps them, no rarity multiplier on top); the bonuses
--- below are fixed (no rolling). Bind on pickup.
+-- below are fixed (no rolling; S32: an instance always shows the definition's current bonuses, attack bonuses
+-- are percentages since S32). Bind on pickup.
 
 local Bases = require("./Bases")
 local Rarities = require("../Rarities")
@@ -67,7 +68,7 @@ end
 
 -- Grimrok, Goblin Warlord (20)
 unique("unique_grimrok_cleaver", "axe1h", "grimrok", 20, "⚒", {
-	{ stat = "physAtk", v = 12 },
+	{ stat = "physAtk", v = 7 },
 	{ stat = "str", v = 8 },
 	{ stat = "critDmg", v = 15 },
 	{ stat = "leg_executioner", v = 15 },
@@ -92,13 +93,13 @@ unique("unique_morvane_shroud", "armor_light", "morvane", 45, "♜", {
 	{ stat = "leg_lastStand", v = 15 },
 })
 unique("unique_morvane_scepter", "scepter", "morvane", 45, "⚜", {
-	{ stat = "magAtk", v = 30 },
+	{ stat = "magAtk", v = 8 },
 	{ stat = "int", v = 12 },
 	{ stat = "hpRegen", v = 6 },
 	{ stat = "leg_manaOnHit", v = 2 },
 })
 unique("unique_morvane_bow", "bow", "morvane", 45, "➶", {
-	{ stat = "physAtk", v = 28 },
+	{ stat = "physAtk", v = 8 },
 	{ stat = "dex", v = 14 },
 	{ stat = "critChance", v = 6 },
 	{ stat = "leg_doubleAttack", v = 5 },
@@ -111,7 +112,7 @@ unique("unique_azgor_heart", "necklace", "azgor", 70, "◎", {
 	{ stat = "leg_eliteDamage", v = 12 },
 })
 unique("unique_azgor_staff", "staff", "azgor", 70, "⚕", {
-	{ stat = "magAtk", v = 60 },
+	{ stat = "magAtk", v = 9 },
 	{ stat = "int", v = 22 },
 	{ stat = "critChance", v = 8 },
 	{ stat = "leg_bossDamage", v = 10 },
@@ -124,7 +125,7 @@ unique("unique_azgor_helm", "helmet_heavy", "azgor", 70, "⛑", {
 })
 -- Vaelgrath, Frost Dragon (100)
 unique("unique_vaelgrath_fang", "sword2h", "vaelgrath", 100, "⚔", {
-	{ stat = "physAtk", v = 110 },
+	{ stat = "physAtk", v = 11 },
 	{ stat = "str", v = 35 },
 	{ stat = "critDmg", v = 40 },
 	{ stat = "leg_bossDamage", v = 12 },
@@ -136,7 +137,7 @@ unique("unique_vaelgrath_scale", "shield", "vaelgrath", 100, "⛨", {
 	{ stat = "leg_lastStand", v = 18 },
 })
 unique("unique_vaelgrath_eye", "orb", "vaelgrath", 100, "◉", {
-	{ stat = "magAtk", v = 90 },
+	{ stat = "magAtk", v = 10 },
 	{ stat = "int", v = 35 },
 	{ stat = "manaRegen", v = 12 },
 	{ stat = "leg_executioner", v = 18 },

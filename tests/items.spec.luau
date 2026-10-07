@@ -54,7 +54,8 @@ T.describe("ItemRoll", function()
 				end
 				T.expect(legendary).toBe(case[2])
 				if case[1] ~= Rarities.HEROIC then
-					T.expect(#item.bonuses).toBe(4 + case[2])
+					local r = Rarities.get(case[1])
+					T.expect(#item.bonuses).toBeBetween(r.bonusMin + case[2], r.bonusMax + case[2])
 				end
 			end
 		end
@@ -92,8 +93,9 @@ T.describe("ItemRoll", function()
 		local _, legMax = ItemRoll.bonusRange("physAtk", 100, Rarities.LEGENDARY)
 		local _, mythMax = ItemRoll.bonusRange("physAtk", 100, Rarities.MYTHIC)
 		T.expect(highMax > lowMax).toBe(true)
-		T.expect(legMax).toBeNear(highMax / 1.1 * 1.5)
-		T.expect(mythMax).toBeNear(highMax / 1.1 * 1.75)
+		local unique = Rarities.get(2).rangeMul
+		T.expect(legMax).toBeNear(highMax / unique * Rarities.get(Rarities.LEGENDARY).rangeMul)
+		T.expect(mythMax).toBeNear(highMax / unique * Rarities.get(Rarities.MYTHIC).rangeMul)
 	end)
 
 	T.it("named boss items keep fixed bonuses and are Mythic", function()
@@ -117,24 +119,26 @@ T.describe("ItemRoll", function()
 		common.up = 9
 		T.expect((ItemRoll.itemStats(common).weapon :: any).dmg).toBe(math.floor(def.weapon.dmg * 1.54 + 0.5))
 		local legendary: any = ItemRoll.rollItem("sword1h_50", 50, Rarities.LEGENDARY, Rng.new(6), uid())
-		T.expect((ItemRoll.itemStats(legendary).weapon :: any).dmg).toBe(math.floor(def.weapon.dmg * 1.38 + 0.5))
+		local legMul = Rarities.get(Rarities.LEGENDARY).baseMul
+		T.expect((ItemRoll.itemStats(legendary).weapon :: any).dmg).toBe(math.floor(def.weapon.dmg * legMul + 0.5))
 		local mythic: any = ItemRoll.rollItem("sword1h_50", 50, Rarities.MYTHIC, Rng.new(6), uid())
-		T.expect((ItemRoll.itemStats(mythic).weapon :: any).dmg).toBe(math.floor(def.weapon.dmg * 1.55 + 0.5))
+		local mythMul = Rarities.get(Rarities.MYTHIC).baseMul
+		T.expect((ItemRoll.itemStats(mythic).weapon :: any).dmg).toBe(math.floor(def.weapon.dmg * mythMul + 0.5))
 	end)
 
-	T.it("named boss items keep their ×1.3 base (S30 B.2: Grimrok's cleaver has 72 damage)", function()
+	T.it("named boss items keep their ×1.3 base (S30 B.2; S32: axe 1.14, Grimrok's cleaver has 74 damage)", function()
 		local item: any = ItemRoll.rollItem("unique_grimrok_cleaver", 20, 1, Rng.new(6), uid())
 		local base = (Items.bases.byType.axe1h.weapon :: any)(20)
 		local dmg = (ItemRoll.itemStats(item).weapon :: any).dmg
 		T.expect(dmg).toBe(math.floor(base.dmg * 1.3 + 0.5))
-		T.expect(dmg).toBe(72)
+		T.expect(dmg).toBe(74)
 		local totem: any = ItemRoll.rollItem("unique_grimrok_totem", 20, 1, Rng.new(6), uid())
 		local raw = (Items.bases.byType.talisman.stats :: any)(20)
 		for stat, value in raw do
 			T.expect(ItemRoll.itemStats(totem).base[stat]).toBeNear(value * 1.3, 0.11)
 		end
 		item.up = 9
-		T.expect((ItemRoll.itemStats(item).weapon :: any).dmg).toBe(math.floor(72 * 1.54 + 0.5))
+		T.expect((ItemRoll.itemStats(item).weapon :: any).dmg).toBe(math.floor(74 * 1.54 + 0.5))
 	end)
 
 	T.it("itemStats scales with ilvl: every level beats the one before", function()
@@ -164,7 +168,8 @@ T.describe("ItemRoll", function()
 			bonuses = { { stat = "hp", v = 20 }, { stat = "hpPct", v = 3 }, { stat = "leg_bossDamage", v = 8 } },
 		}
 		local stats = ItemRoll.itemStats(item)
-		local baseHp = math.floor((Items.get("necklace_10") :: any).base.hp * 1.55 * 10 + 0.5) / 10
+		local mythMul = Rarities.get(Rarities.MYTHIC).baseMul
+		local baseHp = math.floor((Items.get("necklace_10") :: any).base.hp * mythMul * 10 + 0.5) / 10
 		T.expect(stats.flat.maxHp).toBe(20)
 		T.expect(stats.flat.hp).toBeNear(baseHp, 0.6)
 		T.expect(stats.pct.maxHp).toBe(3)

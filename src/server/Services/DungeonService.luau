@@ -231,7 +231,14 @@ local function reward(run: Run, position: Vector3)
 				for _, drop in Loot.personalItems(bossTable, roll, char.class :: string, rng) do
 					table.insert(
 						personal,
-						ItemRoll.rollItem(drop.defId, drop.ilvl, drop.rarity, rng, HttpService:GenerateGUID(false))
+						ItemRoll.rollItem(
+							drop.defId,
+							drop.ilvl,
+							drop.rarity,
+							rng,
+							HttpService:GenerateGUID(false),
+							char.class :: string
+						)
 					)
 				end
 				if #personal > 0 then

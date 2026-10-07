@@ -38,6 +38,7 @@
 | S29 | Poprawki po testach: jedno okno Postaci z plecakiem, plecak znika z usługą, NPC na ziemi, ✶ błogosławieństwa przy nicku (30 min), zielone cele questów, teleport do miasta, liczby obrażeń zawsze | ● |
 | S30 | Rzadkości od nowa (Zwykły, Unikatowy, Heroiczny, Legendarny, Mityczny), ramki w kolorach, drop wg źródła, grind legend i mityków z bossów | ● |
 | S31 | Wartość i statystyki każdego przedmiotu (jedna cena w UI i na serwerze, tooltip każdej kategorii), handlarz broni z progami 5–95 | ● |
+| S32 | Balans poziomów 1–20: model liczbowy i raport `docs/BALANS.md`, grupy, elity, Grimrok, przedmioty i rzadkości, drop, złoto | ● |
 
 Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana przez właściciela
 
@@ -97,6 +98,49 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
   kontroler ich nie rusza.
 - **S17b** Broń i off-hand to modele z kilku Partów (`Data/WeaponLooks`), część główna nazywa się `VaelthornWeapon` /
   `VaelthornOffhand` (kosmetyki broni i poświata epic+ wiszą na niej). Akcent w kolorze rzadkości.
+
+- **S32** Model balansu: czysta `Logic/FightSim` (wartości oczekiwane, bez losowości) + `tests/Balance.luau` (ekwipunek,
+  tempo, ekonomia) + `balance.spec` (cele) + `tools/balance_report.luau` (raport `docs/BALANS.md`, „przed” z migawki
+  `tools/balance_before.json` policzonej obecnym modelem na kodzie z commita startowego). Założenia: ekwipunek „na
+  poziomie” = broń + druga ręka + 4 części zbroi + naszyjnik + 2 pierścienie + talizman, Zwykłe, ilvl = poziom − 2,
+  średni rzut bonusów; 1–2 umiejętności = ×1,2 obrażeń; połowa ciosów z telegrafem trafia; w bossie 75% czasu na biciu;
+  questy: fabuła w całości + połowa pobocznych (dają ~70% EXP 1→20, więc zabić z grindu jest mało — tempa expa nie
+  ruszałem). „Moc” = √(DPS × efektywne HP); cel rzadkości liczony dla **pełnego kompletu** tej rzadkości (jeden
+  przedmiot nie da +25–40%); porównanie 2H z 1H + druga ręka na iloczynie DPS × przeżywalność.
+- **S32** Grupy: dźwignia = mnożnik obrażeń członka wg rozmiaru grupy przy pojawieniu się (`Combat.groupDamageMul`
+  1 / 0,85 / 0,72 / 0,62, atrybut `GroupSize` → `MonsterStats.compute(…, groupSize)`); wagi rozmiarów, liczba grup i
+  prostokąty obszarów bez zmian. Mnożnik zostaje, gdy członkowie giną (prościej i przewidywalnie).
+- **S32** Druga ręka z atakiem i pierścienie dają **procent ataku** (klucze bazy `<stat>Pct`, `ItemRoll.baseKey`,
+  w tooltipie „Atak magiczny: 8,8%”): płaski atak przestawał się liczyć przy broni skalowanej statystyką, więc 2H
+  wygrywało coraz bardziej z poziomem. Pierścień ma oba ataki (każda klasa używa tylko swojego — neutralny klasowo),
+  talizman HP + obrona + odporność magiczna (zamiast odporności magicznej i many), naszyjnik `12 + 6L` HP, zbroja lekka
+  linia HP `(3 + 1,5L) × część`. Mnożniki 2H: miecz 1,6, topór 1,69, młot 1,82, włócznia 1,53, kostur 1,47, runiczny
+  1,75, święty 1,5 (mdmg); topór 1H 1,14, łuk długi 1,47, ciężka kusza 1,85 (dorównanie DPS w klasie).
+- **S32** Bonusy: atak fizyczny / magiczny jako % (1–2,2%), HP / mana / obrona / odp. mag. / przebicie / regeneracje
+  skalowane jak bazy (`curve`: `(6 + 2,2·ilvl) / 8,2`), statystyki główne jak dawniej; wartości bojowe ×~0,6.
+  Pule filtrowane po klasie (`Bonuses.classStats`, `ItemRoll.bonusPool(defId, forClass)`); biżuteria dostaje klasę,
+  dla której wypadła (`ItemDrop.forClass`, `InventoryService.GiveNew(…, forClass)`, rzut osobisty bossa). Zapisane
+  przedmioty bez migracji: stare płaskie linie ataku liczą się teraz jako % (na ilvl ≤ 20 to 2–10%, do ~2× więcej niż
+  nowy rzut — dotyczy tylko postaci testowych). Ręczne przedmioty bossów zawsze biorą bonusy z definicji
+  (`ItemRoll.itemStats`), ich ataki przeliczone na % (tasak Grimroka +7%).
+- **S32** Rzadkości: `baseMul` 1,05 / 1,12 / 1,16 / 1,22, `rangeMul` 1,0 / 1,05 / 1,1 / 1,2, Legendarny 3–4 bonusy
+  (było 4). Drop: zwykły 70 / 30 (Unikatowy), Elita 45 / 49 / 6 (Heroiczny). Mityk Grimroka (baza ×1,3) bije
+  Legendarny tego poziomu (test).
+- **S32** Elita `hpMul 3, dmgMul 1,25` (było 4 / 1,5), Elita II `10 / 1,35` (było 12 / 2). Grimrok: nowe pole bossa
+  `hpMul` (1,4, mnożone w `Boss.kindFor`), `atkMul` 1,2 → 0,32, ciosy z telegrafem ×4,5 (cd 8 s) / ×6 / ×7. Wariant
+  `boss` (`dmgMul 6`) i pozostali bossowie bez zmian (regiony 2–4 poza zakresem).
+- **S32** Nagroda rodzaju `hpMul^0,75 × (atkMul × szybkość)^0,25` zamiast `(hpMul × atkMul)^0,5` z promptu: z wzoru z
+  promptu wrona dalej dawała +32% EXP/s, niedźwiedź −18%; teraz wszystkie rodzaje Łąk w ±15% (test). Dotyczy EXP i
+  złota zwykłych potworów i Elit (`CombatService.reward`), nie bossów.
+- **S32** Złoto: kara za różnicę poziomów = połowa kary EXP (`MonsterStats.goldLevelMultiplier`, liczona dla każdego
+  gracza z grupy osobno), nigdy bonus. Ulepszanie: `Config.Upgrade` (4 / ilvl do 20, potem liniowo do 40 na ilvl 100 —
+  późna gra bez zmian). Rzemiosło: wartość × 3 (`ItemValue.craftMul`). Plecaki 45 / 60 miejsc: 1500 / 5000.
+- **S32** Drop: `ilvl = poziom bazowy − 0…2` (`Data/LootRules.dropLevelBelow`); poziom bazowy Elit i Elit II bez
+  `levelAdd`, przycięty do `spawner.level.max` (`Monster.levelCap`, `KillInfo.dropLevel`, `Loot.dropBaseLevel`).
+- **S32** Części: Gruba Skóra (ryś, niedźwiedź; kowal: napierśniki / rękawice / buty progów 5–15 po 1–2 sztuki;
+  Zwykłe błogosławieństwo strażnika), Jad Ropuchy (Zwykłe błogosławieństwo łowcy), Krucze Pióro (Zwykłe
+  błogosławieństwo fortuny), kobold: Ruda Miedzi 25%. Wyższe stopnie błogosławieństw bez zmian.
+- **S32** Ekwipunek startowy bez zmian: model pokazuje, że poziomy 1–5 są łatwe (1 potwór 4–6 s, ≤ 12% HP).
 
 - **S01** Paczki Wally (`Packages/`, `ServerPackages/`) są commitowane, żeby `rojo serve` działał bez `wally install`.
 - **S01** ProfileStore z Wally (`lm-loleris/profilestore@1.0.3`, realm server → `ServerStorage.ServerPackages`), nie z `Vendor/`.
@@ -897,10 +941,19 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
   nie zamyka menu przytrzymania (tap w tło / „Anuluj”).
 - **S29** Zdarzenia liczb obrażeń dalej tylko w promieniu `Combat.fxRadius = 80` (bilbord ma `MaxDistance` 250; większy
   promień = więcej ruchu sieciowego — do decyzji właściciela).
-- **S30** Szanse rzutu osobistego są wspólne dla 4 bossów (do strojenia w S32: `LootTables.bosses[*]`).
+- **S30** Szanse rzutu osobistego są wspólne dla 4 bossów (S32: sprawdzone dla Grimroka — legenda średnio co ~3,4
+  zabicia, czyli ok. 1 dziennie przy limicie 3 — bez zmian; inne bossy do strojenia z ich regionami).
 - **S31** Aukcja nie ma podpowiedzi minimalnej ceny, a poczta nie ma wysyłki za pobraniem (nie istniały — pominięte).
-- **S31** Do S32: złoto rzemiosła u kowala to dalej `priceAt(tier) × 3` (próg 55 ≈ 6120), a ta sama broń u handlarza
-  kosztuje teraz 1320 — przeliczyć rzemiosło na `ItemValue`.
+- **S31** ~~Złoto rzemiosła `priceAt(tier) × 3`~~ — S32: wartość × 3 (próg 55: 990).
+- **S32** Model nie symuluje umiejętności pojedynczo (obszarowe, np. Wir Ostrzy, ułatwiają grupy bardziej niż ×1,2),
+  leczenia Kapłana ani odnowienia mikstur. Tank Grimroka traci ok. 290% HP na minutę (Kapłan / mikstury) — do
+  sprawdzenia w grze z drużyną.
+- **S32** Regiony 2–4 nie strojone: formuły przedmiotów (rzadkości, bonusy, druga ręka, 2H) i Elit są globalne, pasmo
+  S18 na poziomach 30 / 60 / 90 dalej przechodzi; Morvane, Azgor i Vaelgrath mają stare mnożniki ciosów. Rodzaje S19
+  regionów 2–4 (np. czarny niedźwiedź, ghul) dalej bez części.
+- **S32** Regeneracja poza walką 0,5%/s: w modelu ok. 85% czasu grindu to odpoczynek (bez mikstur). Bez zmian (poza
+  zakresem); mikstury są tanie (ok. 2% dochodu).
+
 
 ## Zgłoszone błędy
 (Właściciel wpisuje tu błędy po testach albo przekazuje je przez sesję poprawek.)
@@ -2805,3 +2858,70 @@ lokalizacja, `tests/{weaponsmith,smith}.spec`.
     chowa, przewijanie nie.
 14. Rozmowa z NPC dającym quest: pod celami nagrody — ikona EXP, złota i małe sloty z tooltipem (także dotykiem). To
     samo na tablicy zleceń, w dzienniku (Fabuła, Poboczne, Dzienne) i na karcie NPC na mapie świata.
+
+### S32: Balans poziomów 1–20
+
+**Zrobione**
+- **Model liczbowy**: `Logic/FightSim` (walka z grupą: kolejne zabijanie, wszyscy żywi biją, zdolności Elit II,
+  regeneracja), `tests/Balance.luau` (pełny ekwipunek 4 klas z oczekiwanymi bonusami, grupy z wagami, elity, Elita II
+  z drużyną, Grimrok z liczbą graczy, luka sprzętowa, moc rzadkości, broń 2H, tempo, budżet złota 1→20),
+  `balance.spec` z celami sekcji A dla poziomów 1–20 (+ pasmo S18 na 30 / 60 / 90).
+- **Raport** `docs/BALANS.md` z `tools/balance_report.luau` (przed → po): gracz każdej klasy, potwory, 1 na 1,
+  grupy 1–4, trzy wilki bez umiejętności, luka sprzętowa, elity, Elita II, Grimrok, moc rzadkości, 2H, tempo,
+  złoto, kara złota, rodzaje Łąk, drop, ceny, wzory.
+- **Potwory**: obrażenia członka grupy wg rozmiaru (grupa 4: 147% → 82% HP Wojownika L20, średnia 63% → 42%), Elity
+  i Elita II słabsze (Elita solo Wojownikiem L20: 34 s / 106% → 26 s / 61%), Grimrok: HP ×1,4, słabe zwykłe ciosy, mocne
+  telegrafy — najmocniejszy cios w Maga L20 148% → 67% HP, 3–5 graczy ok. 5 min. EXP i złoto wg wytrzymałości rodzaju.
+- **Przedmioty**: zbroja lekka z HP (Mag L20 658 → 833 HP), biżuteria dla każdej klasy (naszyjnik HP, pierścień %
+  ataku, talizman HP + obrona + odp. mag.), druga ręka z % ataku, 2H wyrównane do ±3%, bonusy skalowane jak bazy, atak
+  jako %, pule filtrowane po klasie, rzadkości: Unikatowy +18% → +10%, Heroiczny +40% → +20%, Legendarny +85% → +35%,
+  Mityczny +120% → +49% mocy kompletu.
+- **Drop**: ilvl nigdy ponad poziom potwora (da się założyć 60% → 100%), Elity bez dodatkowych poziomów i przycięte do
+  przedziału jaskini (Elita II w Jaskini Mchów: do ilvl 26 → do 20), Unikatowy do klasy ok. co 1–1,5 poziomu,
+  Heroiczny z Elit ok. 1/h. Części dla rysia, ropuchy, wrony, kobolda i niedźwiedzia (z użyciem u kowala i alchemika).
+- **Złoto**: kara za potwory dużo niższe, ulepszanie do ilvl 20 10× tańsze (+1…+3 broni L10: 6708 → 671 przy
+  dochodzie poziomu ~850), rzemiosło z wartości przedmiotu, tańsze plecaki 45 / 60.
+- Admin: `/simfight <potwór> <poziom> [n] [wariant]`, `/gearset <poziom> [rzadkość]`, `/balance`.
+- DESIGN §4.4, §4.6, §5.2–5.5, §6, §8, §15.1 (aktualne wzory potworów i tabela celów), §16, §18.
+
+**Pliki**: nowe `Logic/FightSim`, `Data/LootRules`, `tools/balance_report.luau`, `tools/balance_before.json`,
+`docs/BALANS.md`; zmiany: `Data/{Combat,Bonuses,Rarities,Bosses,LootTables,Crafting,Recipes,ItemValue,AdminCommands,
+Items/Bases,Items/Uniques,Items/Materials,Items/Backpacks,Localization}`, `Config`, `Logic/{MonsterStats,ItemRoll,Loot,
+Upgrade,TooltipModel}`, `Services/{CombatService,LootService,MonsterService,DungeonService,InventoryService}`,
+`Entities/{Monster,Boss}`, `Admin/{Combat,Items}`, `BlacksmithWindow/Upgrade`, testy `Balance`, `balance`, `damage`,
+`items`, `rarities`, `smith`, `data` (699 testów).
+
+#### Instrukcja testu S32
+
+Poziomy ustawiasz `/lvl N` (punkty rozdaj w główną statystykę klasy — tak liczy model), komplet `/gearset N` (ilvl = N,
+Zwykły), statystyki względem celów `/balance`.
+
+1. **Poziom 1** (nowa postać, tylko broń i napierśnik startowy): wilk poziomu 1 pada w ok. 5 s, tracisz ok. 10% HP.
+2. Najedź na pierścień z dropu albo `/item ring_5`: „Atak fizyczny: 3,7%” i „Atak magiczny: 3,7%”.
+3. **Poziom 5**, `/gearset 3`: `/balance` — 1 potwór ok. 6–8 s i 12–17% HP, grupa średnio ~40%, grupa 4 ≤ 90%.
+4. Na Wilczych Wzgórzach zaatakuj grupę 3 wilków (pomarańczowe kręgi) samymi atakami: ciężko (ok. 75–90% HP), ale
+   wygrywasz. `/simfight wolf 5 3` pokazuje podobne liczby.
+5. Zabij kilka potworów poziomu 5: każdy przedmiot z dropu ma ilvl 3–5 i da się go założyć (czerwonego wymagania brak).
+6. Ryś i niedźwiedź dają Grubą Skórę, ropucha Jad Ropuchy, wrona Krucze Pióro, kobold czasem Rudę Miedzi. Tooltip
+   skóry: „Używany do:” kowal i alchemik.
+7. Alchemik: Zwykłe błogosławieństwo łowcy wymaga Jadu Ropuchy, strażnika Grubej Skóry, fortuny Kruczego Pióra.
+8. **Poziom 10**, `/gearset 8`: `/balance` — 1 potwór ~7 s / ~16%, grupa ~44%, grupa 4 ~86%, Elita ~30 s / ~76%.
+9. Kowal: ulepszenie broni ilvl 8 na +1 kosztuje 97 złota (+2: 186, +3: 294). Wytworzenie `armor_heavy_15` 216 złota
+   + 4 Rudy Miedzi + 2 Grube Skóry.
+10. Plecakarz: 45 miejsc za 1500, 60 miejsc za 5000.
+11. Kryjówka Przemytników: Elita (Herszt Bandytów) solo — trudna, ok. 30 s, wygrywasz z resztką HP albo z jedną
+    miksturą. Drop z Elit ma ilvl ≤ 12 (przedział jaskini).
+12. **Poziom 15**, `/gearset 13`: Mag (postać Maga) w lekkiej zbroi ma wyraźnie więcej HP niż przed
+    S32 (napierśnik ilvl 13 ma linię „Życie: 23”); grupa 4 goblinów nie zabija go bez mikstury.
+13. `/gearset 13 unique`, potem `/gearset 13 legendary` i `/balance`: Unikatowy komplet ok. +10% mocy, Legendarny ok.
+    +35% (1 potwór szybciej, mniej HP stracone) — wyraźnie, ale nie dwukrotnie.
+14. Tooltip broni Unikatowej / Heroicznej: Wojownik nie dostaje INT ani ataku magicznego, Mag nie dostaje SIŁ;
+    „+1,6% Ataku fizycznego” zamiast płaskiej liczby.
+15. Kostur Maga (`/item staff_15`) vs różdżka + kula: DPS kostura wyższy, ale z kulą (+% ataku) wychodzi podobnie.
+16. **Poziom 20**, `/gearset 18`: `/balance` — 1 potwór ~7,5 s / ~15%, Elita ~26 s / ~61%.
+17. Zabij potwora poziomu 10 postacią 20: złoto ok. 60% tego, co dostaje postać 10 (EXP jak dotąd prawie zero).
+18. Niedźwiedź brunatny daje więcej EXP i złota niż goblin zwiadowca tego samego poziomu (×1,27 vs ×1,02),
+    królik mniej (×0,57).
+19. **Grimrok** (3–5 graczy L18–20 z `/gearset 18`): walka ok. 5 min; zwykłe ciosy bolą mało, zamach / skok / wir
+    dużo — wir trafia Maga L20 za ok. 2/3 HP (nie zabija jednym ciosem). Tank potrzebuje leczenia Kapłana albo mikstur.
+20. Elita II w Jaskini Mchów: solo przegrywasz, we 2 z miksturami da się, we 3 wygrywacie; jej drop ma ilvl ≤ 20.

@@ -84,11 +84,16 @@ local function decimal(value: number, places: number, lang: string): string
 end
 TooltipModel.decimal = decimal
 
-local function statName(lang: string, id: string): string
+local function statName(lang: string, key: string): string
+	local id = ItemRoll.baseKey(key)
 	return Locale.T(`stat.{ALIASES[id] or id}`, nil, lang)
 end
 
-local function formatStat(id: string, value: number, lang: string): string
+local function formatStat(key: string, value: number, lang: string): string
+	local id, isPct = ItemRoll.baseKey(key)
+	if isPct then
+		return decimal(value, if value % 1 == 0 then 0 else 1, lang) .. "%"
+	end
 	local def = Stats.get(ALIASES[id] or id)
 	local places = if def then def.decimals else (if value % 1 == 0 then 0 else 1)
 	local text = if places == 0 then Format.number(value) else decimal(value, places, lang)
@@ -283,6 +288,10 @@ local function comparable(item: ItemInstance): { [string]: number }
 	end
 	for stat, v in stats.flat do
 		local key = ALIASES[stat] or stat
+		values[key] = (values[key] or 0) + v
+	end
+	for stat, v in stats.pct do
+		local key = `{ALIASES[stat] or stat}Pct`
 		values[key] = (values[key] or 0) + v
 	end
 	return values

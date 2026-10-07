@@ -2,10 +2,12 @@
 -- Blacksmith upgrades +0 → +9 (DESIGN §6). Pure.
 --   chance(N)   = 110 − 10·N %   (N = target level: +1 100 %, +2 90 %, … +9 20 %)
 --   failure     = the item drops one level (never below +0); a Scroll of Protection prevents the drop
---   cost        = gold round(ilvl × 40 × (N+1)^1.6) + essences: +1..+3 dust ×2N, +4..+6 shard ×N, +7..+9 crystal ×(N−5);
+--   cost        = gold round(ilvl × perIlvl × (N+1)^1.6) (S32: perIlvl 4 up to ilvl 20, then up to 40 at 100;
+--                 Config.Upgrade) + essences: +1..+3 dust ×2N, +4..+6 shard ×N, +7..+9 crystal ×(N−5);
 --                 Legendary and Mythic items (Rarities `legendCore`) also need 1 Legend Core from +7
 --   each level  = +6 % base stats (Rarities.upgradeStatPerLevel)
 
+local Config = require("../Config")
 local Rarities = require("../Data/Rarities")
 local Rng = require("./Rng")
 local Types = require("../Types")
@@ -31,9 +33,20 @@ function Upgrade.statMultiplier(up: number): number
 	return 1 + Rarities.upgradeStatPerLevel * up
 end
 
+-- Gold per item level of an upgrade (S32): Config.Upgrade.goldLow up to goldLowUntil, then linear to goldHigh.
+function Upgrade.goldPerIlvl(ilvl: number): number
+	local c = Config.Upgrade
+	if ilvl <= c.goldLowUntil then
+		return c.goldLow
+	end
+	local t = math.clamp((ilvl - c.goldLowUntil) / (100 - c.goldLowUntil), 0, 1)
+	return c.goldLow + (c.goldHigh - c.goldLow) * t
+end
+
 function Upgrade.cost(item: Types.ItemInstance, targetLevel: number): Cost
 	local n = targetLevel
-	local gold = math.floor(item.ilvl * 40 * (n + 1) ^ 1.6 + 0.5)
+	local ilvl = math.max(1, item.ilvl)
+	local gold = math.floor(ilvl * Upgrade.goldPerIlvl(ilvl) * (n + 1) ^ Config.Upgrade.goldExponent + 0.5)
 	local materials = {}
 	if n <= 3 then
 		table.insert(materials, { id = "essence_dust", n = 2 * n })

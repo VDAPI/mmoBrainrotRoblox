@@ -4,6 +4,7 @@
 --   materials : { id, n }
 --   gold      : gold for the kill (CombatService awards gold immediately, see PROGRESS S04)
 
+local Combat = require("../Data/Combat")
 local Config = require("../Config")
 local Items = require("../Data/Items")
 local LootTables = require("../Data/LootTables")
@@ -14,13 +15,15 @@ local Rng = require("./Rng")
 local ItemRoll = require("./ItemRoll")
 local Types = require("../Types")
 
-export type ItemDrop = { defId: string, ilvl: number, rarity: number }
+-- `forClass`: the class a class-free item (jewellery) rolls its bonuses for (S32).
+export type ItemDrop = { defId: string, ilvl: number, rarity: number, forClass: string? }
 export type MaterialDrop = { id: string, n: number }
 export type LootResult = { items: { ItemDrop }, materials: { MaterialDrop }, gold: number }
 
 export type Modifiers = {
 	dropBonus: number?, -- % (multiplies the item chance, never the rarity weights)
 	classId: string?, -- killer's class (class-biased item choice)
+	dropLevel: number?, -- S32: base level of item drops (Loot.dropBaseLevel); the monster level otherwise
 }
 
 local Loot = {}
@@ -115,10 +118,15 @@ function Loot.rollMonsterLoot(
 			count += 1
 		end
 		for _ = 1, count do
-			local ilvl = ItemRoll.dropLevel(level, rng)
+			local ilvl = ItemRoll.dropLevel(mods.dropLevel or level, rng)
 			local defId = Loot.pickItem(tableDef.slotWeights, ilvl, tableDef.classBias, mods.classId, rng)
 			if defId then
-				table.insert(result.items, { defId = defId, ilvl = ilvl, rarity = ItemRoll.rollRarity(variant, rng) })
+				table.insert(result.items, {
+					defId = defId,
+					ilvl = ilvl,
+					rarity = ItemRoll.rollRarity(variant, rng),
+					forClass = mods.classId,
+				})
 			end
 		end
 	end
@@ -127,6 +135,17 @@ function Loot.rollMonsterLoot(
 	rollMaterials(tableDef.variantMaterials[variant] or {}, rng, result.materials)
 	result.gold = MonsterStats.gold(level, variant, rng:next())
 	return result
+end
+
+-- Base level of a monster's item drops (S32, DESIGN §5.5): its level without the variant's extra levels (Elites
+-- +2, Elite II +4), never above its spawner's highest level (`cap`), at least 1.
+function Loot.dropBaseLevel(level: number, variant: string, cap: number?): number
+	local mods = Combat.variants[variant]
+	local base = level - (if mods and variant ~= "boss" then mods.levelAdd else 0)
+	if cap then
+		base = math.min(base, cap)
+	end
+	return math.max(1, math.floor(base))
 end
 
 -- Shared boss loot (DESIGN §16): 3–4 Unique/Heroic items (+1 per player above 3) and materials. Legendary and
@@ -144,7 +163,10 @@ function Loot.rollBossLoot(bossId: string, players: number, rng: Rng.Rng, modifi
 		local ilvl = ItemRoll.dropLevel(boss.level, rng)
 		local defId = Loot.pickItem(LootTables.byId.wolf.slotWeights, ilvl, 0.8, mods.classId, rng)
 		if defId then
-			table.insert(result.items, { defId = defId, ilvl = ilvl, rarity = ItemRoll.rollRarity("boss", rng) })
+			table.insert(
+				result.items,
+				{ defId = defId, ilvl = ilvl, rarity = ItemRoll.rollRarity("boss", rng), forClass = mods.classId }
+			)
 		end
 	end
 	rollMaterials(boss.materials, rng, result.materials)

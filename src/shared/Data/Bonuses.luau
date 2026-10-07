@@ -6,7 +6,11 @@
 -- handled by CombatService/LootService (legendary pool).
 --
 -- Value = lerp(min, max, roll) x scale(ilvl) x rarity.rangeMul, where
---   scale = 1 + ilvl / 20 for "flat" scaling (plain numbers) and 1 + ilvl / 60 for "pct" scaling (percentages).
+--   scale = 1 + ilvl / 20 for "flat" scaling (primary stats),
+--           (6 + 2.2 ilvl) / 8.2 for "curve" scaling (S32: HP, mana, armour, resistance grow like item bases),
+--           1 + ilvl / 60 for "pct" scaling (percentages).
+-- S32: attack bonuses are percentages of the attack (a flat +5 was +50 % at level 1 and +3 % at level 20), and
+-- pools are filtered by class (`CLASS_STATS`): a Warrior's sword never rolls INT or magic attack.
 
 export type BonusDef = {
 	id: string,
@@ -16,7 +20,7 @@ export type BonusDef = {
 	hook: string?, -- special effect id (legendary pool)
 	min: number,
 	max: number,
-	scaling: "flat" | "pct" | "none",
+	scaling: "flat" | "curve" | "pct" | "none",
 	decimals: number,
 	percent: boolean, -- display with %
 }
@@ -29,7 +33,7 @@ local function bonus(
 	mode: "flat" | "pct",
 	min: number,
 	max: number,
-	scaling: "flat" | "pct" | "none",
+	scaling: "flat" | "curve" | "pct" | "none",
 	decimals: number,
 	percent: boolean,
 	hook: string?
@@ -49,31 +53,31 @@ local function bonus(
 end
 
 -- Regular bonuses ------------------------------------------------------------------------------------------
-bonus("str", "str", "flat", 1, 3, "flat", 0, false)
-bonus("dex", "dex", "flat", 1, 3, "flat", 0, false)
-bonus("int", "int", "flat", 1, 3, "flat", 0, false)
-bonus("vit", "vit", "flat", 1, 3, "flat", 0, false)
-bonus("hp", "maxHp", "flat", 8, 20, "flat", 0, false)
-bonus("hpPct", "maxHp", "pct", 2, 5, "pct", 1, true)
-bonus("mana", "maxMana", "flat", 6, 15, "flat", 0, false)
+bonus("str", "str", "flat", 0.6, 1.8, "flat", 0, false)
+bonus("dex", "dex", "flat", 0.6, 1.8, "flat", 0, false)
+bonus("int", "int", "flat", 0.6, 1.8, "flat", 0, false)
+bonus("vit", "vit", "flat", 0.6, 1.8, "flat", 0, false)
+bonus("hp", "maxHp", "flat", 2.5, 6, "curve", 0, false)
+bonus("hpPct", "maxHp", "pct", 1, 2, "pct", 1, true)
+bonus("mana", "maxMana", "flat", 2.5, 6, "curve", 0, false)
 bonus("energy", "maxEnergy", "flat", 3, 8, "pct", 0, false)
-bonus("physAtk", "physAtk", "flat", 2, 5, "flat", 0, false)
-bonus("magAtk", "magAtk", "flat", 2, 5, "flat", 0, false)
-bonus("armor", "armor", "flat", 3, 8, "flat", 0, false)
-bonus("mres", "mres", "flat", 3, 8, "flat", 0, false)
-bonus("critChance", "critChance", "flat", 1, 3, "pct", 1, true)
-bonus("critDmg", "critDmg", "flat", 4, 10, "pct", 0, true)
-bonus("atkSpeed", "atkSpeed", "flat", 2, 5, "pct", 1, true)
-bonus("armorPen", "armorPen", "flat", 2, 6, "flat", 0, false)
+bonus("physAtk", "physAtk", "pct", 1, 2.2, "pct", 1, true)
+bonus("magAtk", "magAtk", "pct", 1, 2.2, "pct", 1, true)
+bonus("armor", "armor", "flat", 1, 2.5, "curve", 0, false)
+bonus("mres", "mres", "flat", 1, 2.5, "curve", 0, false)
+bonus("critChance", "critChance", "flat", 0.5, 1.2, "pct", 1, true)
+bonus("critDmg", "critDmg", "flat", 2, 5, "pct", 0, true)
+bonus("atkSpeed", "atkSpeed", "flat", 1, 2.2, "pct", 1, true)
+bonus("armorPen", "armorPen", "flat", 1, 2.5, "curve", 0, false)
 bonus("lifesteal", "lifesteal", "flat", 0.5, 1.5, "pct", 1, true)
 bonus("accuracy", "accuracy", "flat", 1, 3, "pct", 1, true)
-bonus("dodge", "dodge", "flat", 1, 2.5, "pct", 1, true)
+bonus("dodge", "dodge", "flat", 0.5, 1.2, "pct", 1, true)
 bonus("resFire", "resFire", "flat", 3, 8, "pct", 0, true)
 bonus("resIce", "resIce", "flat", 3, 8, "pct", 0, true)
 bonus("resLightning", "resLightning", "flat", 3, 8, "pct", 0, true)
 bonus("resPoison", "resPoison", "flat", 3, 8, "pct", 0, true)
-bonus("hpRegen", "hpRegen", "flat", 0.5, 1.5, "flat", 1, false)
-bonus("manaRegen", "manaRegen", "flat", 0.5, 1.5, "flat", 1, false)
+bonus("hpRegen", "hpRegen", "flat", 0.3, 1, "curve", 1, false)
+bonus("manaRegen", "manaRegen", "flat", 0.3, 1, "curve", 1, false)
 bonus("energyRegen", "energyRegen", "flat", 0.3, 1, "pct", 1, false)
 bonus("moveSpeed", "moveSpeed", "flat", 2, 5, "pct", 0, true)
 bonus("expBonus", "expBonus", "flat", 2, 5, "pct", 0, true)
@@ -165,9 +169,26 @@ local POOLS: { [string]: { string } } = {
 	},
 }
 
+-- Bonuses only some classes use (S32): an item rolls them only when one of its classes (or, for class-free
+-- jewellery, the class it dropped for) is listed. Everything else is useful to every class.
+local CLASS_STATS: { [string]: { string } } = {
+	str = { "Warrior" },
+	dex = { "Hunter" },
+	int = { "Mage", "Cleric" },
+	physAtk = { "Warrior", "Hunter" },
+	armorPen = { "Warrior", "Hunter" },
+	magAtk = { "Mage", "Cleric" },
+	mana = { "Mage", "Cleric" },
+	manaRegen = { "Mage", "Cleric" },
+	leg_manaOnHit = { "Mage", "Cleric" },
+	energy = { "Warrior", "Hunter" },
+	energyRegen = { "Warrior", "Hunter" },
+}
+
 return table.freeze({
 	byId = DEFS,
 	pools = POOLS,
+	classStats = CLASS_STATS,
 	get = function(id: string): BonusDef?
 		return DEFS[id]
 	end,

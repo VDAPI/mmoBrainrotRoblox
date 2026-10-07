@@ -142,7 +142,8 @@ function InventoryService.GiveNew(
 	defId: string,
 	n: number?,
 	rarity: number?,
-	ilvl: number?
+	ilvl: number?,
+	forClass: string? -- S32: class-free items (jewellery) roll bonuses for this class
 ): (number, ItemInstance?)
 	local def = Items.get(defId)
 	if not def then
@@ -150,7 +151,7 @@ function InventoryService.GiveNew(
 	end
 	local item: ItemInstance
 	if def.category == "equipment" then
-		item = ItemRoll.rollItem(defId, ilvl or def.level, rarity or 1, rng, InventoryService.NewUid())
+		item = ItemRoll.rollItem(defId, ilvl or def.level, rarity or 1, rng, InventoryService.NewUid(), forClass)
 	else
 		item = ItemRoll.makeStack(defId, n or 1, InventoryService.NewUid())
 	end

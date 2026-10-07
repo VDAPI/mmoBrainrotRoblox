@@ -19,6 +19,9 @@ return table.freeze({
 		talisman = 0.7,
 	}) :: { [string]: number },
 	defaultSlotMul = 0.8,
+	-- Blacksmith crafting gold = the Common item's value x craftMul (S32; the player also brings the ore). Before:
+	-- priceAt(tier) x 3, e.g. 6120 for a tier 55 weapon the weapon merchant sells for 1320.
+	craftMul = 3,
 	-- NPC shops sell at value x buyMul unless the entry has a fixed price (DESIGN §8a: about 4x).
 	buyMul = 4,
 	minValue = 1,

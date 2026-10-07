@@ -68,7 +68,7 @@ local function kindFor(def: Bosses.BossDef, players: number): Monsters.MonsterDe
 		region = 0,
 		cave = true,
 		levels = { min = def.level, max = def.level },
-		hpMul = BossScaling.hpMultiplier(players),
+		hpMul = BossScaling.hpMultiplier(players) * (def.hpMul or 1),
 		atkMul = def.atkMul,
 		defMul = def.defMul,
 		speed = def.speed,
