@@ -4,7 +4,6 @@
 
 local Shared = game:GetService("ReplicatedStorage").Shared
 
-local Classes = require(Shared.Data.Classes)
 local Config = require(Shared.Config)
 local FightSim = require(Shared.Logic.FightSim)
 local Monsters = require(Shared.Data.Monsters)
@@ -23,8 +22,6 @@ local PvpService = Context.services.PvpService
 local CombatService = Context.services.CombatService
 local StatusEffectService = Context.services.StatusEffectService
 local EntityService = Context.services.EntityService
-local StatService = Context.services.StatService
-local EquipmentService = Context.services.EquipmentService
 
 local commands: { [string]: (player: Player, args: { string }) -> ...any } = {}
 
@@ -207,17 +204,7 @@ commands.dmgtest = function(player)
 	end)
 end
 
--- S32: the player as Logic/FightSim sees them (current stats, legendary effects, class attack kind).
-local function simPlayer(player: Player, character: any): FightSim.Player
-	local values = (StatService.Get(player) or { values = {} }).values
-	local class = Classes.get(character.class)
-	return {
-		level = character.level,
-		values = values,
-		hooks = EquipmentService.GetHooks(player),
-		magic = class ~= nil and class.basicAttack.kind == "magic",
-	}
-end
+local simPlayer: (player: Player, character: any) -> FightSim.Player = Context.simPlayer
 
 local function percent(x: number): number
 	return math.floor(x * 100 + 0.5)

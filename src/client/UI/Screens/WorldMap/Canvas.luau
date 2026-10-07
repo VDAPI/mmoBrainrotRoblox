@@ -11,6 +11,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local AreaAdvice = require(ReplicatedStorage.Shared.Logic.AreaAdvice)
+local AreaProfileText = require(script.Parent.Parent.Parent.AreaProfileText)
 local Areas = require(ReplicatedStorage.Shared.Data.Areas)
 local Bosses = require(ReplicatedStorage.Shared.Data.Bosses)
 local LevelBand = require(ReplicatedStorage.Shared.Logic.LevelBand)
@@ -321,6 +322,7 @@ local function areaFrames(cached: Cached, layers: { [string]: Frame })
 			return l
 		end
 		local name = line(1, 12, Theme.Fonts.BodyBold)
+		name.RichText = true -- S33: the profile icon in its colour
 		local levels = line(2, 17, Theme.Fonts.Heading)
 		pill.Parent = f
 		table.insert(
@@ -417,7 +419,8 @@ function Canvas.applyZoom(cached: Cached, zoomIndex: number, toggles: Toggles)
 	end
 end
 
-export type View = { onlyRecommended: boolean, highlight: string? }
+-- `profiles` (S33): hunting ground profile icons before the area names.
+export type View = { onlyRecommended: boolean, highlight: string?, profiles: boolean? }
 
 -- Localized captions and area colours (cheap: a few dozen objects), refreshed on language / level / view
 -- change (S22: band of the nearest end of the range, "★" on recommended areas, dimmed others when only the
@@ -435,7 +438,10 @@ function Canvas.refresh(cached: Cached, level: number, view: View)
 		entry.stroke.Thickness = if highlighted then 4 else 2
 		entry.stroke.Transparency = if dim then 0.7 else 0
 		entry.pill.BackgroundTransparency = if dim then 0.75 else 0.2
-		entry.name.Text = (if recommended then "★ " else "") .. Text.now(area.nameKey)
+		local icon = if view.profiles ~= false then AreaProfileText.iconRich(area.profile, nil) else ""
+		entry.name.Text = (if icon ~= "" then icon .. " " else "")
+			.. (if recommended then "★ " else "")
+			.. AreaProfileText.escape(Text.now(area.nameKey))
 		entry.name.TextColor3 = color
 		entry.name.TextTransparency = if dim then 0.6 else 0
 		entry.levels.Text = `{area.lv[1]}–{area.lv[2]}`

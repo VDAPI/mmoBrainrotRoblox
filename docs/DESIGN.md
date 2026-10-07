@@ -111,6 +111,34 @@ Każda strefa terenowa ma też podstrefy (np. łąka, las, ruiny) z innymi pozio
   charakterystyczny, własne rośliny i materiały ziemi, 2–4 „ślady” potworów (jamy, kości, legowiska, obozy) i miejsce,
   które zachęca, żeby podejść; przejścia między obszarami są miękkie (30–60 st. mieszania). Obszar ma też nastrój:
   lekką zmianę światła (mgła, barwa, nasycenie) i własne dźwięki dnia i nocy, nakładane na oświetlenie mapy.
+- **Profile expowisk** (zmiana S33): na tym samym przedziale poziomów gracz wybiera, czego szuka. Obszar może mieć profil
+  (`profile` w `Data/Areas/*`, mnożniki tylko w `Data/AreaProfiles`); bez profilu wszystko ×1. Serwer stosuje mnożniki
+  przy pojawieniu się potwora (HP, atak), przy odrodzeniu grupy i przy nagrodzie (EXP przed podziałem w grupie, tylko
+  za zabicia, nie za questy; złoto; drop). Klient tylko je pokazuje: linia profilu w oknie „Dokąd?” (opis po tapnięciu
+  wiersza, „Polecane” = najlepszy obszar każdego profilu), karta i znaczek na mapie świata (przełącznik „Profile
+  expowisk” w legendzie), znaczek za nazwą na banerze, minimapie i na pasku potwora.
+
+  | profil | gracz czuje | grupy 1/2/3/4 | respawn | HP / atak | EXP | złoto | szansa przedmiotu | najlepsza rzadkość źródła | materiały |
+  |---|---|---|---|---|---|---|---|---|---|
+  | ⚡ Szybki exp | dużo słabszych potworów, szybki respawn | 10/25/35/30 | 20–30 s | ×0,85 / ×1 | ×1 | ×0,7 | ×0,6 | ×1 | ×1 |
+  | ✦ Lepszy drop | mniej, twardsze potwory, częściej dobre przedmioty | 40/35/20/5 | 45–60 s | ×1,25 / ×1,1 | ×0,8 | ×1 | ×1,7 | ×2 (nigdy ponad sufit źródła) | ×1,5 |
+  | ⛁ Więcej złota | średnia gęstość, potwory z sakiewkami | 30/30/25/15 | 30–45 s | ×1 / ×1 | ×0,85 | ×1,9 | ×0,8 | ×1 | ×1,3 |
+  | bez profilu | | 30/30/25/15 | 30–45 s | ×1 / ×1 | ×1 | ×1 | ×1 | ×1 | ×1 |
+
+  Cele na godzinę na tym samym poziomie (model `Logic/AreaRates`, test `areaprofiles.spec`, raport `docs/BALANS.md`):
+  ⚡ daje ≥ 1,25× EXP/h obszaru ✦; ✦ daje ≥ 1,6× przedmiotów najwyższej rzadkości źródła/h niż pozostałe; ⛁ daje
+  ≥ 1,5× złota/h niż pozostałe (licząc sprzedaż dropu). Rozmiar grupy z profilem to ten sam rzut co bez profilu,
+  czytany na wagach profilu: grupa ⚡ nigdy nie jest mniejsza, ✦ nigdy większa; położenie grup i punkty przybycia się
+  nie zmieniają.
+
+  | przedział | ⚡ szybki exp | ✦ lepszy drop | ⛁ więcej złota | bez profilu |
+  |---|---|---|---|---|
+  | Łąki 1–20 | Wilcze Wzgórza 3–7, Stary Las 6–11, Gobliński Obóz 13–18 | Żabie Oczko 4–8, Stare Wyrobisko 11–15 (rudy, skrzynki górników), Niedźwiedzi Jar 16–20 | Krucze Pole 8–12 (pobojowisko, wrony znoszą błyskotki), Kupiecki Trakt 9–14 (bandyci z sakiewkami) | Polana Królików 1–4 |
+  | Mroczny Bór 20–45 | Wilcze Ostępy (watahy wilkołaków), Serce Puszczy (rój ghuli), Mglisty Rozstaj, Trolle Bagno | Niedźwiedzi Jar (sprzęt zaginionych myśliwych), Wiedźmie Moczary (amulety wiedźm) | Nawiedzone Ruiny (monety dawnych panów), Osada Kultystów (dziesięciny kultu) | Krwawe Urwiska |
+  | Spalone Pustkowia 45–70 | Równiny Salamander, Spalone Ruiny (roje chochlików), Turnie Wywern (stada wywern) | Martwa Oaza (sprzęt zaginionych karawan) | Wydmy Skorpionów (mumie pochowane ze złotem), Szlak Popiołu (obrabowane karawany) | Obóz Orków, Pola Golemów, Grobowce |
+  | Lodowe Szczyty 70–100 | Zbocza Yeti, Mamucia Tundra (stada mamutów), Lodowa Strażnica (patrole) | Skały Harpii (gniazda ze sprzętem wspinaczy), Zamarznięte Jezioro (rzeczy uwięzione w lodzie) | Ruiny Smoczej Świątyni (ofiary w świątyni) | Dolina Wilków, Przełęcz, Iglica Wyrmów |
+
+  Na Łąkach na każdym poziomie 3–18 są co najmniej dwa różne wybory (test). Jaskinie nie mają profilu.
 
 ### 3.7 Szczegółowość świata i wydajność (zmiana po testach S17)
 

@@ -16,6 +16,7 @@ local Shared = ReplicatedStorage.Shared
 local Analytics = require(script.Parent.Parent.Analytics)
 local Products = require(Shared.Data.Products)
 
+local AreaProfiles = require(Shared.Data.AreaProfiles)
 local Config = require(Shared.Config)
 local ItemRoll = require(Shared.Logic.ItemRoll)
 local Items = require(Shared.Data.Items)
@@ -341,10 +342,15 @@ local function onMonsterKilled(info: any, credit: { Player })
 	if not character then
 		return
 	end
+	-- S33: the hunting ground's profile (item chance, top rarity, materials).
+	local area = AreaProfiles.modsOf(info.areaId)
 	local loot = Loot.rollMonsterLoot(info.monsterId, info.variant, info.level, rng, {
 		dropBonus = StatService.GetValue(killer, "dropBonus"),
 		classId = character.class :: string,
 		dropLevel = info.dropLevel,
+		itemChanceMul = area.itemChanceMul,
+		topTierMul = area.topTierMul,
+		materialMul = area.materialMul,
 	})
 	LootService.DistributeToParty(credit, info.position, instancesFrom(loot), info.monsterId)
 end
@@ -385,12 +391,26 @@ function LootService.DropLegendary(player: Player, rarity: number?): boolean
 	return true
 end
 
--- Admin: n simulated kills. Returns counts per rarity, materials and gold.
-function LootService.Simulate(monsterId: string, variant: string, level: number, n: number, classId: string?)
+-- Admin: n simulated kills (S33: in a hunting ground `areaId`, with its profile). Returns counts per rarity,
+-- materials and gold (the area's gold multiplier included).
+function LootService.Simulate(
+	monsterId: string,
+	variant: string,
+	level: number,
+	n: number,
+	classId: string?,
+	areaId: string?
+)
+	local area = AreaProfiles.modsOf(areaId)
 	local counts = table.create(Rarities.MAX, 0)
 	local items, mats, gold = 0, 0, 0
 	for _ = 1, n do
-		local loot = Loot.rollMonsterLoot(monsterId, variant, level, rng, { classId = classId })
+		local loot = Loot.rollMonsterLoot(monsterId, variant, level, rng, {
+			classId = classId,
+			itemChanceMul = area.itemChanceMul,
+			topTierMul = area.topTierMul,
+			materialMul = area.materialMul,
+		})
 		for _, drop in loot.items do
 			counts[drop.rarity] += 1
 			items += 1
@@ -398,9 +418,9 @@ function LootService.Simulate(monsterId: string, variant: string, level: number,
 		for _, material in loot.materials do
 			mats += material.n
 		end
-		gold += loot.gold
+		gold += loot.gold * area.goldMul
 	end
-	return counts, items, mats, gold
+	return counts, items, mats, math.floor(gold + 0.5)
 end
 
 -- Number of loot bags on the server (/perf).

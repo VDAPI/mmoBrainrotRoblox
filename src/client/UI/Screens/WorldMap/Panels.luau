@@ -7,6 +7,8 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local AreaAdvice = require(ReplicatedStorage.Shared.Logic.AreaAdvice)
+local AreaProfileText = require(script.Parent.Parent.Parent.AreaProfileText)
+local AreaProfiles = require(ReplicatedStorage.Shared.Data.AreaProfiles)
 local Areas = require(ReplicatedStorage.Shared.Data.Areas)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local LevelBand = require(ReplicatedStorage.Shared.Logic.LevelBand)
@@ -131,11 +133,14 @@ function Panels.mapList(scope: Scope, props: ListProps): { Instance }
 									else Theme.Colors.Panel
 							end),
 							BackgroundTransparency = 0.2,
+							RichText = true, -- S33: the profile icon in its colour
 							Text = scope:Computed(function(use): string
 								local star = if AreaAdvice.isRecommended(area, use(props.Level) or 1)
 									then "★ "
 									else ""
-								return `      {star}{Text.get(use, area.nameKey)} · {area.lv[1]}–{area.lv[2]}`
+								local name = AreaProfileText.escape(Text.get(use, area.nameKey))
+								return `      {star}{name} · {area.lv[1]}–{area.lv[2]}`
+									.. AreaProfileText.iconRich(area.profile, " ")
 							end),
 							FontFace = Theme.Fonts.Body,
 							TextSize = 13,
@@ -162,9 +167,11 @@ export type BandProps = {
 	Selected: Fusion.UsedAs<string>,
 	Level: Fusion.UsedAs<number?>,
 	OnlyRecommended: Fusion.Value<boolean>,
+	ShowProfiles: Fusion.Value<boolean>, -- S33
 }
 
 -- Band legend (S22): your level, the five bands, "Show only recommended". Only on maps with areas.
+-- S33: the three hunting ground profiles (icon, name) and a switch for their icons on the map.
 function Panels.bands(scope: Scope, props: BandProps): Instance
 	local rows = {}
 	for i, band in { "grey", "green", "white", "yellow", "red" } do
@@ -201,6 +208,50 @@ function Panels.bands(scope: Scope, props: BandProps): Instance
 		)
 	end
 	local onlyRecommended = props.OnlyRecommended
+	local showProfiles = props.ShowProfiles
+	for i, id in AreaProfiles.order do
+		local profile = AreaProfiles.get(id) :: AreaProfiles.Profile
+		table.insert(
+			rows,
+			scope:New("TextLabel")({
+				LayoutOrder = 5 + i,
+				Size = UDim2.new(1, 0, 0, 16),
+				BackgroundTransparency = 1,
+				Visible = showProfiles,
+				Text = scope:Computed(function(use): string
+					return AreaProfileText.tag(use, profile)
+				end),
+				FontFace = Theme.Fonts.BodyMedium,
+				TextSize = 12,
+				TextColor3 = AreaProfileText.color(profile),
+				TextXAlignment = Enum.TextXAlignment.Left,
+				TextTruncate = Enum.TextTruncate.AtEnd,
+				ZIndex = 22,
+			})
+		)
+	end
+	table.insert(
+		rows,
+		scope:New("TextButton")({
+			LayoutOrder = 10,
+			Size = UDim2.new(1, 0, 0, 28),
+			AutoButtonColor = false,
+			BackgroundColor3 = scope:Computed(function(use): Color3
+				return if use(showProfiles) then Theme.Colors.PanelHover else Theme.Colors.PanelRaised
+			end),
+			Text = scope:Computed(function(use): string
+				return `{if use(showProfiles) then "☑" else "☐"} {Text.get(use, "worldmap.showProfiles")}`
+			end),
+			FontFace = Theme.Fonts.BodyMedium,
+			TextSize = 13,
+			TextColor3 = Theme.Colors.Parchment,
+			ZIndex = 21,
+			[OnEvent("Activated")] = function()
+				showProfiles:set(not Fusion.peek(showProfiles))
+			end,
+			[Children] = scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
+		})
+	)
 	return scope:New("Frame")({
 		Name = "Bands",
 		Position = props.Position,

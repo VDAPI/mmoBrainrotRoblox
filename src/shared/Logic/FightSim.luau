@@ -73,12 +73,19 @@ function FightSim.groupFight(p: Player, members: { any }, skill: number?): Fight
 	return { seconds = seconds, hpLost = math.max(0, lost) / hp, playerHp = hp }
 end
 
--- `n` members of a monster kind at spawner level `level` (Elite II carry their ability).
-function FightSim.group(kind: any, level: number, n: number, variant: MonsterStats.Variant?): { any }
+-- `n` members of a monster kind at spawner level `level` (Elite II carry their ability); `mods` (S33) are the
+-- hunting ground's HP and attack multipliers.
+function FightSim.group(
+	kind: any,
+	level: number,
+	n: number,
+	variant: MonsterStats.Variant?,
+	mods: MonsterStats.Mods?
+): { any }
 	local v: MonsterStats.Variant = variant or "normal"
 	local members = {}
 	for _ = 1, n do
-		local m: any = table.clone(MonsterStats.compute(kind, level, v, n))
+		local m: any = table.clone(MonsterStats.compute(kind, level, v, n, mods))
 		if v == "elite2" and kind.ability then
 			m.ability = MonsterAbilities.get(kind.ability)
 		end
@@ -88,16 +95,19 @@ function FightSim.group(kind: any, level: number, n: number, variant: MonsterSta
 end
 
 -- Expected fight over the group sizes of Logic/AreaSpawns: HP lost and seconds per fight, members per fight.
+-- S33: `weights` (a hunting ground profile's group sizes) and `mods` (its HP and attack) are optional.
 function FightSim.expectedGroup(
 	p: Player,
 	kind: any,
 	level: number,
-	skill: number?
+	skill: number?,
+	weights: { [number]: number }?,
+	mods: MonsterStats.Mods?
 ): { hpLost: number, seconds: number, members: number, bySize: { Fight } }
 	local total, hpLost, seconds, members = 0, 0, 0, 0
 	local bySize: { Fight } = {}
-	for n, w in AreaSpawns.GROUP_SIZE_WEIGHTS do
-		local fight = FightSim.groupFight(p, FightSim.group(kind, level, n), skill)
+	for n, w in weights or AreaSpawns.GROUP_SIZE_WEIGHTS do
+		local fight = FightSim.groupFight(p, FightSim.group(kind, level, n, nil, mods), skill)
 		bySize[n] = fight
 		total += w
 		hpLost += w * fight.hpLost

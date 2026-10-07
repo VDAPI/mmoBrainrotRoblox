@@ -72,9 +72,29 @@ function ItemRoll.bonusQuality(bonusId: string, value: number, ilvl: number, rar
 	return math.clamp((value - low) / (high - low), 0, 1)
 end
 
-function ItemRoll.rollRarity(variant: string, rng: Rng.Rng): number
+-- Weights of a drop source with its highest rarity (never above Rarities.cap) multiplied by `topTierMul` (S33:
+-- "better drops" hunting grounds).
+function ItemRoll.rarityWeights(variant: string, topTierMul: number?): { [number]: number }
 	local weights = Rarities.dropWeights[variant] or Rarities.dropWeights.normal
-	return rng:weighted(weights)
+	if not topTierMul or topTierMul == 1 then
+		return weights
+	end
+	local cap = Rarities.cap[variant] or Rarities.cap.normal
+	local top = 0
+	for rarity, weight in weights do
+		if weight > 0 and rarity <= cap and rarity > top then
+			top = rarity
+		end
+	end
+	local out = table.clone(weights)
+	if top > 0 then
+		out[top] = weights[top] * math.max(0, topTierMul)
+	end
+	return out
+end
+
+function ItemRoll.rollRarity(variant: string, rng: Rng.Rng, topTierMul: number?): number
+	return rng:weighted(ItemRoll.rarityWeights(variant, topTierMul))
 end
 
 -- Builds a stack of a non-equipment item (materials, potions, scrolls, tools, backpacks).

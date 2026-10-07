@@ -60,6 +60,7 @@ local data: Types.MapAreas = {
 			kinds = { "yeti", "snowLeopard" },
 			rect = { -480, -780, -20, -340 },
 			groups = 7,
+			profile = "exp", -- S33: yeti families on the slopes
 			arrive = { x = -246, z = -356 }, -- S22: portal / map stone arrival (Logic/AreaArrival)
 		},
 		{
@@ -69,6 +70,7 @@ local data: Types.MapAreas = {
 			kinds = { "peakHarpy", "yeti" },
 			rect = { -760, 440, -200, 780 },
 			groups = 6,
+			profile = "loot", -- S33: nests full of fallen climbers' gear
 			arrive = { x = -480, z = 608 }, -- S22: portal / map stone arrival (Logic/AreaArrival)
 		},
 		{
@@ -87,6 +89,7 @@ local data: Types.MapAreas = {
 			kinds = { "iceElemental", "iceMammoth" },
 			rect = { -60, 400, 420, 780 },
 			groups = 6,
+			profile = "loot", -- S33: things frozen in the ice
 			arrive = { x = 114, z = 417 }, -- S22: portal / map stone arrival (Logic/AreaArrival)
 			landmark = { x = 160, z = 560 },
 		},
@@ -97,6 +100,7 @@ local data: Types.MapAreas = {
 			kinds = { "iceMammoth", "frostGiant" },
 			rect = { 0, -780, 480, -320 },
 			groups = 6,
+			profile = "exp", -- S33: mammoth herds
 			arrive = { x = 277, z = -336 }, -- S22: portal / map stone arrival (Logic/AreaArrival)
 		},
 		{
@@ -106,6 +110,7 @@ local data: Types.MapAreas = {
 			kinds = { "dragonspawn", "frozenKnight" },
 			rect = { 400, -300, 780, 320 },
 			groups = 7,
+			profile = "gold", -- S33: the temple's offerings
 			arrive = { x = 417, z = -14 }, -- S22: portal / map stone arrival (Logic/AreaArrival)
 			landmark = { x = 560, z = 0 },
 		},
@@ -116,6 +121,7 @@ local data: Types.MapAreas = {
 			kinds = { "frozenKnight", "iceElemental" },
 			rect = { 440, 340, 780, 780 },
 			groups = 5,
+			profile = "exp", -- S33: the watch's patrols
 			arrive = { x = 608, z = 556 }, -- S22: portal / map stone arrival (Logic/AreaArrival)
 		},
 		{

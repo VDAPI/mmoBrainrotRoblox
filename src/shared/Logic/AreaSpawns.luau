@@ -4,10 +4,14 @@
 --   * region maps: `groups` groups of 1–4 per area (30 / 30 / 25 / 15 %), 45+ studs apart, away from
 --     roads, water (lakes and, S26, streams), portals, spawn points and cave entrances, and on maps with a height
 --     function (Logic/MapTerrain) only on dry, gentle ground with the spawner at the ground's height;
---     members mix the area's kinds;
+--     members mix the area's kinds; S33: an area with a profile (Data/AreaProfiles) gets its own group sizes and
+--     respawn: the same roll read on the profile's size weights (a fast-EXP group is never smaller, a better-drop
+--     group never bigger than without the profile), extra members from a second generator, so the group
+--     positions (and the `arrive` points) never move;
 --   * caves: normal groups in every room but the entrance (and the boss antechamber), 3–5 elite groups of
 --     1–2 of the two elite kinds, one Elite II spawner in the deepest room.
 
+local AreaProfiles = require("../Data/AreaProfiles")
 local AreaTypes = require("../Data/Areas/Types")
 local CaveGen = require("./CaveGen")
 local MapTerrain = require("./MapTerrain")
@@ -94,6 +98,30 @@ local function farFrom(points: { { number } }, x: number, z: number, distance: n
 	return true
 end
 
+-- Key of { [key] = weight } at quantile `u` (0..1), in the order Rng.weighted uses (Rng.weighted = this with
+-- rng:next()).
+local function weightedAt<K>(weights: { [K]: number }, u: number): K
+	local keys: { K } = {}
+	local total = 0
+	for key, weight in weights do
+		if weight > 0 then
+			table.insert(keys, key)
+			total += weight
+		end
+	end
+	table.sort(keys, function(a: any, b: any)
+		return tostring(a) < tostring(b)
+	end)
+	local roll = u * total
+	for _, key in keys do
+		roll -= weights[key]
+		if roll < 0 then
+			return key
+		end
+	end
+	return keys[#keys]
+end
+
 -- Members: the first kind is the group's main kind; the others repeat it 65 % of the time.
 local function members(kinds: { string }, count: number, rng: Rng.Rng): { string }
 	local main = rng:pick(kinds)
@@ -132,6 +160,8 @@ function AreaSpawns.region(def: AreaTypes.MapAreas, size: { x: number, z: number
 	end
 	for _, area in def.areas do
 		local rng = Rng.new(seedOf(area.id))
+		local profile = AreaProfiles.get(area.profile)
+		local profileRng = Rng.new(seedOf(`{area.id}#profile`))
 		local x1, z1 = math.max(area.rect[1], -hx), math.max(area.rect[2], -hz)
 		local x2, z2 = math.min(area.rect[3], hx), math.min(area.rect[4], hz)
 		local made = 0
@@ -148,8 +178,22 @@ function AreaSpawns.region(def: AreaTypes.MapAreas, size: { x: number, z: number
 				and MapTerrain.walkable(def.map, x, z, AreaSpawns.CLIFF_CLEARANCE)
 			if ok then
 				made += 1
-				local count = rng:weighted(AreaSpawns.GROUP_SIZE_WEIGHTS)
+				local u = rng:next()
+				local count = weightedAt(AreaSpawns.GROUP_SIZE_WEIGHTS, u)
 				local kinds = members(area.kinds, count, rng)
+				if profile then
+					-- The layout generator keeps its sequence: the profile reads the same roll on its weights,
+					-- drops members from the end or adds some from its own generator.
+					count = weightedAt(profile.sizeWeights, u)
+					local main = kinds[1]
+					while #kinds > count do
+						table.remove(kinds)
+					end
+					while #kinds < count do
+						local more = #area.kinds > 1 and not profileRng:chance(0.65)
+						table.insert(kinds, if more then profileRng:pick(area.kinds) else main)
+					end
+				end
 				table.insert(placed, { x, z })
 				table.insert(spawners, {
 					id = `{area.id}_{made}`,
@@ -164,7 +208,7 @@ function AreaSpawns.region(def: AreaTypes.MapAreas, size: { x: number, z: number
 					},
 					radius = rng:int(5, 8),
 					count = count,
-					respawn = AreaSpawns.RESPAWN,
+					respawn = if profile then profile.respawn else AreaSpawns.RESPAWN,
 					areaId = area.id,
 				})
 			end

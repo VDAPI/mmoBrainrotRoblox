@@ -81,6 +81,28 @@ function AreaAdvice.best(level: number, mapId: string): Area?
 	return if level < list[1].lv[1] then list[1] else list[#list]
 end
 
+-- S33: the best area of every hunting ground profile for a level (key = profile id, "none" for areas without
+-- one): the recommended area of that profile whose range middle is nearest to the level (the higher one on a tie).
+function AreaAdvice.bestByProfile(level: number, mapId: string): { [string]: Area }
+	local out: { [string]: Area } = {}
+	local scores: { [string]: number } = {}
+	for _, area in AreaAdvice.sorted(mapId) do
+		if AreaAdvice.isRecommended(area, level) then
+			local key = area.profile or "none"
+			local score = math.abs((area.lv[1] + area.lv[2]) / 2 - level)
+			if score <= (scores[key] or math.huge) then
+				out[key], scores[key] = area, score
+			end
+		end
+	end
+	return out
+end
+
+-- Whether an area is the best of its profile for a level (the portal's "Recommended" tag, S33).
+function AreaAdvice.isBestOfProfile(area: Area, level: number, mapId: string): boolean
+	return AreaAdvice.bestByProfile(level, mapId)[area.profile or "none"] == area
+end
+
 -- Default area for the portal choice: the lowest area of the map (S22, owner's decision).
 function AreaAdvice.default(mapId: string): Area?
 	return AreaAdvice.sorted(mapId)[1]

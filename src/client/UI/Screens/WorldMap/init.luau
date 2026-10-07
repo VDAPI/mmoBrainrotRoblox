@@ -77,6 +77,7 @@ local function WorldMapWindow(scope: Scope, closeWindow: (() -> ())?): Fusion.Ch
 	local zoomIndex = scope:Value(1)
 	local center = scope:Value(Vector2.new(Canvas.SIZE / 2, Canvas.SIZE / 2)) -- canvas pixel in the view middle
 	local onlyRecommended = scope:Value(false)
+	local showProfiles = scope:Value(true) -- S33: hunting ground profile icons on the areas
 	local highlight = scope:Value(nil :: string?)
 	local chips = scope:Value({} :: { [string]: boolean })
 	local toggles = {
@@ -562,11 +563,11 @@ local function WorldMapWindow(scope: Scope, closeWindow: (() -> ())?): Fusion.Ch
 		local playerLevel = Fusion.peek(level) or 1
 		local best = if Areas.byMap[id] then AreaAdvice.best(playerLevel, id) else nil
 		highlight:set(if best then best.id else nil)
-		Canvas.refresh(
-			cached,
-			playerLevel,
-			{ onlyRecommended = Fusion.peek(onlyRecommended), highlight = Fusion.peek(highlight) }
-		)
+		Canvas.refresh(cached, playerLevel, {
+			onlyRecommended = Fusion.peek(onlyRecommended),
+			highlight = Fusion.peek(highlight),
+			profiles = Fusion.peek(showProfiles),
+		})
 		Canvas.applyMarks(cached, Fusion.peek(NpcMarkState.Marks))
 		Canvas.applyFilter(cached, serviceFilter())
 		uiScale.Parent = cached.canvas
@@ -606,11 +607,11 @@ local function WorldMapWindow(scope: Scope, closeWindow: (() -> ())?): Fusion.Ch
 	end
 	local function refreshView()
 		if current then
-			Canvas.refresh(
-				current,
-				Fusion.peek(level) or 1,
-				{ onlyRecommended = Fusion.peek(onlyRecommended), highlight = Fusion.peek(highlight) }
-			)
+			Canvas.refresh(current, Fusion.peek(level) or 1, {
+				onlyRecommended = Fusion.peek(onlyRecommended),
+				highlight = Fusion.peek(highlight),
+				profiles = Fusion.peek(showProfiles),
+			})
 		end
 	end
 	scope:Observer(level):onChange(refreshView)
@@ -621,6 +622,7 @@ local function WorldMapWindow(scope: Scope, closeWindow: (() -> ())?): Fusion.Ch
 		end
 	end)
 	scope:Observer(onlyRecommended):onChange(refreshView)
+	scope:Observer(showProfiles):onChange(refreshView)
 	scope:Observer(highlight):onChange(refreshView)
 	scope:Observer(NpcMarkState.Marks):onChange(function()
 		if current then
@@ -788,6 +790,7 @@ local function WorldMapWindow(scope: Scope, closeWindow: (() -> ())?): Fusion.Ch
 			Selected = selected,
 			Level = level,
 			OnlyRecommended = onlyRecommended,
+			ShowProfiles = showProfiles,
 		}),
 		Panels.chips(scope, {
 			Position = UDim2.fromOffset(LIST_WIDTH + 22, 10),

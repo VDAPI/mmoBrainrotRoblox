@@ -854,7 +854,7 @@ return {
 	-- Admin (S04)
 	["admin.usage.give"] = "/give <idPrzedmiotu> [rzadkość: common|unique|heroic|legendary|mythic albo 1-5] [ilvl] [n]: daj przedmiot",
 	["admin.usage.legend"] = "/legend [legendary|mythic]: zrzuć losową legendę (albo mityk) dla twojej klasy",
-	["admin.usage.lootsim"] = "/lootsim <idPotwora> <wariant normal|elite|elite2 albo 0|1|2> <n>: symuluj n zabójstw",
+	["admin.usage.lootsim"] = "/lootsim <idPotwora> <wariant normal|elite|elite2 albo 0|1|2> <n> [idObszaru]: symuluj n zabójstw (z profilem expowiska)",
 	["admin.usage.clearinv"] = "/clearinv: opróżnij plecak",
 	["admin.usage.bag"] = "/bag <20|30|...|200>: ustaw plecak",
 	["admin.give.ok"] = "Dano: {name} x{n}.",
@@ -2265,6 +2265,16 @@ return {
 	["area.frostpeak_icewatch"] = "Lodowa Strażnica",
 	["area.frostpeak_wyrmspire"] = "Iglica Wyrmów",
 	["area.label"] = "{name} · {min}–{max}",
+	-- S33: hunting ground profiles
+	["area.profile.exp"] = "Szybki exp",
+	["area.profile.loot"] = "Lepszy drop",
+	["area.profile.gold"] = "Więcej złota",
+	["area.profile.exp.desc"] = "Dużo słabszych potworów w większych grupach i szybki respawn. Mniej przedmiotów i złota.",
+	["area.profile.loot.desc"] = "Mniej, ale twardszych potworów. Częściej przedmioty, częściej najlepsze, więcej materiałów.",
+	["area.profile.gold.desc"] = "Potwory z sakiewkami: dużo więcej złota, trochę mniej doświadczenia i przedmiotów.",
+	["area.profile.mults"] = "EXP ×{exp} · przedmioty ×{drop} · złoto ×{gold}",
+	["area.profile.rare"] = "najlepsze ×{mul}",
+	["format.decimal"] = ",",
 
 	-- S19: group rings and signs
 	["menu.groupRings"] = "Kręgi grup potworów",
@@ -2331,6 +2341,7 @@ return {
 	["worldmap.band.yellow"] = "trudne",
 	["worldmap.band.red"] = "niebezpieczne",
 	["worldmap.onlyRecommended"] = "Pokaż tylko polecane",
+	["worldmap.showProfiles"] = "Profile expowisk",
 
 	-- S20: admin
 	["admin.perf.parts"] = "Części na mapę: {list}",
@@ -2507,6 +2518,11 @@ return {
 	["admin.args.unknown"] = "{name}: nie ma „{value}”.",
 	["admin.usage.portalpick"] = "/portalpick <mapId>: okno wyboru expowiska bez portalu",
 	["admin.usage.arrive"] = "/arrive <mapId> <areaId>: teleport na punkt przybycia expowiska",
+	["admin.usage.areainfo"] = "/areainfo: expowisko, na którym stoisz: profil, mnożniki, żywe potwory, EXP/h i złoto/h twojej postaci",
+	["admin.usage.areasim"] = "/areasim <idObszaru> [minuty]: symulacja expienia twoją postacią (model S32 + profil): zabicia, EXP, złoto, przedmioty",
+	["admin.areainfo.info"] = "Obszar {id} · profil: {profile} · żywe potwory: {alive} w {groups} grupach.",
+	["admin.areainfo.rates"] = "Model (poz. potworów {level}, {kill} s/zabicie): EXP/h {exp} · złoto/h {gold} (monety {coin}, sprzedaż dropu {drop}) · przedmioty/h {items} (najlepszej rzadkości {top}).",
+	["admin.areasim.result"] = "{id} ({profile}), {minutes} min: {kills} zabić · EXP {exp} · złoto {coin} + drop {drop} · przedmioty {items} (zwykłe {c1}, unikaty {c2}, heroiki {c3}).",
 	["admin.usage.anim"] = "/anim <typ broni>|unarmed|off: animacja ataku na sobie co 1 s (np. sword1h, bow, staff)",
 	["admin.anim.ok"] = "Animacja ataku: {kind}.",
 	["admin.usage.die"] = "/die: zabij siebie (zdejmuje ochronę) i pokaż wybór miejsca odrodzenia",

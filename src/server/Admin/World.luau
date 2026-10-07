@@ -4,12 +4,16 @@
 
 local Shared = game:GetService("ReplicatedStorage").Shared
 
+local AreaProfiles = require(Shared.Data.AreaProfiles)
+local AreaRates = require(Shared.Logic.AreaRates)
 local Areas = require(Shared.Data.Areas)
 local Bosses = require(Shared.Data.Bosses)
 local Clock = require(Shared.Util.Clock)
 local Config = require(Shared.Config)
 local DayCycle = require(Shared.Logic.DayCycle)
+local FightSim = require(Shared.Logic.FightSim)
 local Maps = require(Shared.Data.Maps)
+local Monsters = require(Shared.Data.Monsters)
 local Net = require(Shared.Net)
 local Npcs = require(Shared.Data.Npcs)
 local Town = require(Shared.Data.Town)
@@ -24,6 +28,7 @@ local withCharacter = Context.withCharacter
 
 local PlayerStateService = Context.services.PlayerStateService
 local MonsterService = Context.services.MonsterService
+local LootService = Context.services.LootService
 local NpcService = Context.services.NpcService
 local AlchemyService = Context.services.AlchemyService
 local BlessingService = Context.services.BlessingService
@@ -314,6 +319,96 @@ commands.area = function(player)
 		kinds = table.concat(area.kinds, ", "),
 		groups = area.groups,
 	})
+end
+
+-- S33: the profile line of an area ("⚡ exp · EXP ×1 · items ×0.6 · gold ×0.7 · rare ×1" or "none").
+local function profileLine(area: Areas.Area): string
+	local p = AreaProfiles.ofArea(area.id)
+	if not p then
+		return "—"
+	end
+	return `{p.icon} {p.id} · EXP ×{p.expMul} · items ×{p.itemChanceMul} · gold ×{p.goldMul} · rare ×{p.topTierMul}`
+		.. ` · HP ×{p.hpMul} · atk ×{p.atkMul} · respawn {p.respawn.min}-{p.respawn.max} s`
+end
+
+local function round(x: number): number
+	return math.floor(x + 0.5)
+end
+
+-- /areainfo: the area you stand in, its profile, living monsters and your EXP/h and gold/h there (Logic/AreaRates).
+commands.areainfo = function(player)
+	local character = PlayerStateService.GetCharacter(player)
+	local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart") :: BasePart?
+	local map = character and Maps.get(character.location.map)
+	if not character or not root or not map then
+		reply(player, "admin.needCharacter")
+		return
+	end
+	local x, z = root.Position.X - map.offset.x, root.Position.Z - map.offset.z
+	local area = Areas.areaAt(map.id, x, z)
+	if not area then
+		reply(player, "admin.area.none", { map = map.id, x = math.floor(x), z = math.floor(z) })
+		return
+	end
+	local alive, groups = 0, {}
+	for _, monster in MonsterService.All() do
+		if monster.model:GetAttribute("AreaId") == area.id and monster:IsAlive() then
+			alive += 1
+			groups[monster.model:GetAttribute("GroupId") or ""] = true
+		end
+	end
+	local nGroups = 0
+	for _ in groups do
+		nGroups += 1
+	end
+	reply(player, "admin.areainfo.info", { id = area.id, profile = profileLine(area), alive = alive, groups = nGroups })
+	local rates = AreaRates.forArea(Context.simPlayer(player, character), area, FightSim.SKILL_DPS)
+	if rates then
+		reply(player, "admin.areainfo.rates", {
+			level = rates.level,
+			exp = round(rates.expPerHour),
+			gold = round(rates.goldPerHour),
+			coin = round(rates.coinGoldPerHour),
+			drop = round(rates.dropGoldPerHour),
+			items = string.format("%.1f", rates.itemsPerHour),
+			top = string.format("%.1f", rates.topPerHour),
+			kill = string.format("%.0f", rates.secondsPerKill),
+		})
+	end
+end
+
+-- /areasim <areaId> [minutes]: your character grinding there (model: kills, EXP, gold; loot rolled kill by kill).
+commands.areasim = function(player, args)
+	local area = Areas.areaById(args[1] or "")
+	local minutes = math.clamp(tonumber(args[2]) or 60, 1, 600)
+	if not area then
+		reply(player, "admin.usage.areasim")
+		return
+	end
+	withCharacter(player, function()
+		local character = PlayerStateService.GetCharacter(player)
+		local rates = AreaRates.forArea(Context.simPlayer(player, character), area, FightSim.SKILL_DPS)
+		local kind = Monsters.get(area.kinds[1])
+		if not rates or not kind then
+			return
+		end
+		local hours = minutes / 60
+		local kills = math.max(1, round(rates.killsPerHour * hours))
+		local counts, items = LootService.Simulate(kind.id, "normal", rates.level, kills, character.class, area.id)
+		reply(player, "admin.areasim.result", {
+			id = area.id,
+			profile = profileLine(area),
+			minutes = minutes,
+			kills = kills,
+			exp = round(rates.expPerHour * hours),
+			coin = round(rates.coinGoldPerHour * hours),
+			drop = round(rates.dropGoldPerHour * hours),
+			items = items,
+			c1 = counts[1],
+			c2 = counts[2],
+			c3 = counts[3],
+		})
+	end)
 end
 
 commands.decor = function(player, args)

@@ -356,6 +356,54 @@ Wojownik. Elity: walka + odpoczynek do pełna + marsz; Unikatowe ze zwykłych po
 | miecz ilvl 15 | 360 | 90 |
 | miecz ilvl 20 | 480 | 120 |
 
+## Expowiska z profilem: godzina expienia (Wojownik, S33)
+
+Cele (DESIGN §3.6): ⚡ ≥ 1,25× EXP/h ✦; ✦ ≥ 1,6× przedmiotów najwyższej rzadkości/h pozostałych; ⛁ ≥ 1,5× złota/h pozostałych (licząc sprzedaż dropu). Model: Logic/AreaRates (walka S32 + rozmiary grup, HP i atak profilu, odpoczynek, dojście do grupy krótsze przy szybszym respawnie).
+
+| poziom · profil | s / zabicie | EXP/h | złoto/h (z dropem) | monety/h | przedmioty/h | najlepsze/h |
+| --- | --: | --: | --: | --: | --: | --: |
+| 4 · brak | 55,7 | 2809 | 1232 | 802 | 12,9 | 3,87 |
+| 4 · ⚡ szybki exp | 49,0 | 3194 | 1033 | 639 | 8,8 | 2,64 |
+| 4 · ✦ lepszy drop | 72,0 | 1740 | 1163 | 621 | 17,0 | 7,85 |
+| 4 · ⛁ więcej złota | 55,7 | 2387 | 1979 | 1525 | 10,3 | 3,10 |
+| 8 · brak | 62,2 | 6088 | 2354 | 1642 | 11,6 | 3,47 |
+| 8 · ⚡ szybki exp | 54,9 | 6904 | 1913 | 1303 | 7,9 | 2,36 |
+| 8 · ✦ lepszy drop | 80,2 | 3777 | 2191 | 1273 | 15,3 | 7,04 |
+| 8 · ⛁ więcej złota | 62,2 | 5175 | 3827 | 3119 | 9,3 | 2,78 |
+| 12 · brak | 50,4 | 10 144 | 3852 | 2572 | 14,3 | 4,29 |
+| 12 · ⚡ szybki exp | 44,3 | 11 527 | 3118 | 2046 | 9,7 | 2,92 |
+| 12 · ✦ lepszy drop | 65,0 | 6294 | 3657 | 1995 | 18,8 | 8,69 |
+| 12 · ⛁ więcej złota | 50,4 | 8622 | 6130 | 4886 | 11,4 | 3,43 |
+| 16 · brak | 52,8 | 13 975 | 4869 | 3354 | 13,6 | 4,09 |
+| 16 · ⚡ szybki exp | 46,5 | 15 873 | 3889 | 2667 | 9,3 | 2,79 |
+| 16 · ✦ lepszy drop | 68,1 | 8665 | 4585 | 2600 | 18,0 | 8,30 |
+| 16 · ⛁ więcej złota | 52,8 | 11 879 | 7794 | 6373 | 10,9 | 3,28 |
+| 19 · brak | 47,3 | 15 836 | 5602 | 3669 | 15,2 | 4,57 |
+| 19 · ⚡ szybki exp | 41,7 | 17 978 | 4445 | 2916 | 10,4 | 3,11 |
+| 19 · ✦ lepszy drop | 60,9 | 9838 | 5402 | 2849 | 20,1 | 9,27 |
+| 19 · ⛁ więcej złota | 47,3 | 13 461 | 8752 | 6972 | 12,2 | 3,65 |
+| 30 (rodzaj 1) · brak | 44,6 | 34 635 | 10 052 | 7266 | 16,1 | 4,84 |
+| 30 (rodzaj 1) · ⚡ szybki exp | 39,1 | 39 450 | 7824 | 5793 | 11,0 | 3,31 |
+| 30 (rodzaj 1) · ✦ lepszy drop | 57,5 | 21 498 | 9397 | 5638 | 21,3 | 9,83 |
+| 30 (rodzaj 1) · ⛁ więcej złota | 44,6 | 29 440 | 16 173 | 13 806 | 12,9 | 3,88 |
+| 55 (rodzaj 1) · brak | 37,8 | 86 374 | 21 547 | 15 713 | 19,0 | 5,71 |
+| 55 (rodzaj 1) · ⚡ szybki exp | 33,1 | 98 663 | 16 712 | 12 564 | 13,1 | 3,92 |
+| 55 (rodzaj 1) · ✦ lepszy drop | 48,7 | 53 654 | 20 128 | 12 201 | 25,1 | 11,60 |
+| 55 (rodzaj 1) · ⛁ więcej złota | 37,8 | 73 418 | 34 686 | 29 855 | 15,2 | 4,57 |
+| 85 (rodzaj 1) · brak | 32,5 | 172 345 | 38 568 | 28 226 | 22,1 | 6,64 |
+| 85 (rodzaj 1) · ⚡ szybki exp | 28,4 | 197 463 | 29 922 | 22 638 | 15,2 | 4,57 |
+| 85 (rodzaj 1) · ✦ lepszy drop | 41,9 | 107 132 | 36 037 | 21 932 | 29,2 | 13,50 |
+| 85 (rodzaj 1) · ⛁ więcej złota | 32,5 | 146 494 | 62 093 | 53 630 | 17,7 | 5,31 |
+
+## Potwory na mapach regionów (wszystkie grupy żywe naraz, S33)
+
+| mapa | bez profili | z profilami |
+| --- | --: | --: |
+| meadows | 142 | 145 |
+| duskwood | 124 | 134 |
+| ashen | 131 | 138 |
+| frostpeak | 124 | 134 |
+
 ## Wzory (stan obecny)
 
 - Potwór: HP = 55 + 15·L^1.55, atak = 4 + 2.5·L^0.88, pancerz 4·L, atak co 2 s / szybkość.

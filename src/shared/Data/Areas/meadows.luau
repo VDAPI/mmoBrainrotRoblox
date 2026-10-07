@@ -353,6 +353,7 @@ local data: Types.MapAreas = {
 			kinds = { "wolf", "lynx" },
 			rect = { -470, -330, -200, 330 },
 			groups = 7,
+			profile = "exp", -- S33: wolf packs on open hills
 			arrive = { x = -454, z = 13 }, -- S22: portal / map stone arrival (Logic/AreaArrival)
 			landmark = { x = SITES.stonecircle.x, z = SITES.stonecircle.z },
 			decor = "hills",
@@ -364,6 +365,7 @@ local data: Types.MapAreas = {
 			kinds = { "swampToad", "lynx" },
 			rect = { -760, 360, -200, 780 },
 			groups = 6,
+			profile = "loot", -- S33: the bog swallowed many travellers' gear
 			arrive = { x = -477, z = 376 }, -- S22: portal / map stone arrival (Logic/AreaArrival)
 			landmark = { x = SITES.jetty.x, z = SITES.jetty.z },
 			decor = "marsh",
@@ -375,6 +377,7 @@ local data: Types.MapAreas = {
 			kinds = { "boar", "carrionCrow" },
 			rect = { -320, -780, 220, -360 },
 			groups = 7,
+			profile = "exp", -- S33: boars and crows everywhere
 			arrive = { x = -23, z = -376 }, -- S22: portal / map stone arrival (Logic/AreaArrival)
 			landmark = { x = SITES.woodcutter.x, z = SITES.woodcutter.z },
 			decor = "forest",
@@ -386,6 +389,7 @@ local data: Types.MapAreas = {
 			kinds = { "carrionCrow", "boar", "bandit" },
 			rect = { -180, -330, 260, 40 },
 			groups = 5,
+			profile = "gold", -- S33: old battlefield, crows carry off trinkets
 			arrive = { x = -110, z = 24 }, -- S22: portal / map stone arrival (Logic/AreaArrival)
 			landmark = { x = SITES.mill.x, z = SITES.mill.z },
 			decor = "field",
@@ -397,6 +401,7 @@ local data: Types.MapAreas = {
 			kinds = { "bandit", "koboldMiner" },
 			rect = { -150, 120, 450, 780 },
 			groups = 8,
+			profile = "gold", -- S33: bandits with purses
 			arrive = { x = -40, z = 128 }, -- S22: portal / map stone arrival (Logic/AreaArrival)
 			landmark = { x = SITES.banditCamp.x, z = SITES.banditCamp.z },
 			decor = "road",
@@ -408,6 +413,7 @@ local data: Types.MapAreas = {
 			kinds = { "koboldMiner", "goblinScout" },
 			rect = { 260, -330, 780, 60 },
 			groups = 6,
+			profile = "loot", -- S33: ores and the miners' chests
 			arrive = { x = 417, z = 44 }, -- S22: portal / map stone arrival (Logic/AreaArrival)
 			landmark = { x = SITES.quarry.x, z = SITES.quarry.z },
 			decor = "quarry",
@@ -419,6 +425,7 @@ local data: Types.MapAreas = {
 			kinds = { "goblinScout", "koboldMiner" },
 			rect = { 420, -780, 780, -340 },
 			groups = 6,
+			profile = "exp", -- S33: a crowded camp
 			arrive = { x = 519, z = -352 }, -- S22: portal / map stone arrival (Logic/AreaArrival)
 			landmark = { x = SITES.goblinCamp.x, z = SITES.goblinCamp.z },
 			decor = "goblin",
@@ -430,6 +437,7 @@ local data: Types.MapAreas = {
 			kinds = { "brownBear", "goblinScout" },
 			rect = { 480, 100, 780, 780 },
 			groups = 6,
+			profile = "loot", -- S33: bears guard the remains of hunters
 			arrive = { x = 496, z = 302 }, -- S22: portal / map stone arrival (Logic/AreaArrival)
 			landmark = { x = SITES.waterfall.x, z = SITES.waterfall.z },
 			decor = "ravine",

@@ -6,6 +6,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 
+local AreaProfiles = require(ReplicatedStorage.Shared.Data.AreaProfiles)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local GroupColors = require(script.Parent.Parent.UI.GroupColors)
 local LevelBand = require(ReplicatedStorage.Shared.Logic.LevelBand)
@@ -119,6 +120,8 @@ local function build(model: Model)
 		end
 	end)
 	local groupSize = attribute(scope, model, "GroupSize")
+	-- S33: hunting ground profile of the monster's area (set before the model replicates).
+	local areaProfile = AreaProfiles.get(model:GetAttribute("AreaProfile") :: string?)
 	local band = scope:Computed(function(use): LevelBand.Band
 		local mine = use(playerLevel)
 		return LevelBand.of(use(level) or 1, if type(mine) == "number" then mine else 1)
@@ -203,6 +206,23 @@ local function build(model: Model)
 							}),
 						},
 					}),
+					-- Hunting ground profile icon (S33).
+					if areaProfile
+						then scope:New("TextLabel")({
+							Name = "Profile",
+							LayoutOrder = 2,
+							Size = UDim2.fromOffset(18, 16),
+							BackgroundColor3 = Theme.Colors.Background,
+							BackgroundTransparency = 0.1,
+							Text = areaProfile.icon,
+							FontFace = Theme.Fonts.BodyBold,
+							TextSize = 12,
+							TextColor3 = Color3.fromHex(areaProfile.color),
+							[Children] = {
+								scope:New("UICorner")({ CornerRadius = UDim.new(0, 3) }),
+							},
+						})
+						else nil :: any,
 					-- Group size badge (monster groups, S19): "xN" in the group colour.
 					scope:New("TextLabel")({
 						Name = "Group",

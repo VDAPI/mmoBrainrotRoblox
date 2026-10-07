@@ -18,6 +18,7 @@ local Shared = ReplicatedStorage.Shared
 
 local Analytics = require(script.Parent.Parent.Analytics)
 
+local AreaProfiles = require(Shared.Data.AreaProfiles)
 local Classes = require(Shared.Data.Classes)
 local DamageText = require(Shared.Logic.DamageText)
 local Combat = require(Shared.Data.Combat)
@@ -305,8 +306,9 @@ function CombatService.ResolveKillCredit(monster: any): { Player }
 	return credit
 end
 
--- EXP and gold for one credited player; `share` = number of credited players, `goldShare` = their gold.
-local function reward(player: Player, monster: any, share: number, goldShare: number)
+-- EXP and gold for one credited player; `share` = number of credited players, `goldShare` = their gold (already
+-- with the area's gold multiplier); `expMul` = the area profile's EXP multiplier (S33, before the party split).
+local function reward(player: Player, monster: any, share: number, goldShare: number, expMul: number)
 	local character: Types.CharacterData? = PlayerStateService.GetCharacter(player)
 	if not character then
 		return
@@ -314,7 +316,7 @@ local function reward(player: Player, monster: any, share: number, goldShare: nu
 	local level = monster.stats.level
 	-- S32: tougher kinds pay more EXP and gold (MonsterStats.kindReward); gold also drops for monsters far below.
 	local kindReward = MonsterStats.kindReward(monster.def)
-	local baseExp = PartyLoot.splitExp(Exp.monsterExp(level, monster.variant) * kindReward, share)
+	local baseExp = PartyLoot.splitExp(Exp.monsterExp(level, monster.variant) * kindReward * expMul, share)
 	local exp = math.floor(baseExp * Exp.levelDiffMultiplier(character.level, level) + 0.5)
 	local goldBonus = StatService.GetValue(player, "goldBonus")
 	local goldMul = MonsterStats.goldLevelMultiplier(character.level, level)
@@ -335,18 +337,22 @@ end
 
 local function onMonsterDied(monster: any)
 	local credit = CombatService.ResolveKillCredit(monster)
+	local areaId = monster.model:GetAttribute("AreaId") :: string?
 	if not monster.isBoss then
+		-- S33: the area profile scales the kill's EXP and gold before the party split (quests are not affected).
+		local mods = AreaProfiles.modsOf(areaId)
 		local total = math.max(
 			1,
 			math.floor(
 				MonsterStats.gold(monster.stats.level, monster.variant, rng:next())
 						* MonsterStats.kindReward(monster.def)
+						* mods.goldMul
 					+ 0.5
 			)
 		)
 		local shares = PartyLoot.splitGold(total, #credit, rng)
 		for i, player in credit do
-			reward(player, monster, #credit, shares[i])
+			reward(player, monster, #credit, shares[i], mods.expMul)
 		end
 	end
 	local position = monster:Position()
@@ -359,7 +365,7 @@ local function onMonsterDied(monster: any)
 		mapId = zone.map,
 		entityId = if monster.entity then monster.entity.id else "",
 		boss = monster.isBoss == true,
-		areaId = monster.model:GetAttribute("AreaId") :: string?,
+		areaId = areaId,
 		dropLevel = Loot.dropBaseLevel(monster.stats.level, monster.variant, monster.levelCap),
 	}
 	CombatService.MonsterKilled:Fire(info, credit, credit[1])

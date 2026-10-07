@@ -24,6 +24,10 @@ export type Modifiers = {
 	dropBonus: number?, -- % (multiplies the item chance, never the rarity weights)
 	classId: string?, -- killer's class (class-biased item choice)
 	dropLevel: number?, -- S32: base level of item drops (Loot.dropBaseLevel); the monster level otherwise
+	-- S33: hunting ground profile (Data/AreaProfiles); 1 when nil.
+	itemChanceMul: number?, -- multiplies the item chance (with dropBonus)
+	topTierMul: number?, -- weight of the source's highest rarity (never above Rarities.cap)
+	materialMul: number?, -- amount of every dropped material (expected value kept: fractions round by chance)
 }
 
 local Loot = {}
@@ -87,10 +91,23 @@ function Loot.pickItem(
 	return rng:pick(candidates)
 end
 
-local function rollMaterials(list: { LootTables.MaterialDrop }, rng: Rng.Rng, into: { MaterialDrop })
+-- Amount `n` x `mul`, the fraction rounded up with its probability (expected value = n x mul, at least 1).
+local function scaleAmount(n: number, mul: number, rng: Rng.Rng): number
+	if mul == 1 then
+		return n
+	end
+	local scaled = n * mul
+	local whole = math.floor(scaled)
+	if rng:chance(scaled - whole) then
+		whole += 1
+	end
+	return math.max(1, whole)
+end
+
+local function rollMaterials(list: { LootTables.MaterialDrop }, rng: Rng.Rng, into: { MaterialDrop }, mul: number?)
 	for _, drop in list do
 		if rng:chance(drop.chance) then
-			table.insert(into, { id = drop.id, n = rng:int(drop.min, drop.max) })
+			table.insert(into, { id = drop.id, n = scaleAmount(rng:int(drop.min, drop.max), mul or 1, rng) })
 		end
 	end
 end
@@ -110,7 +127,7 @@ function Loot.rollMonsterLoot(
 	end
 	local mods: Modifiers = modifiers or {}
 	local drops = Rarities.itemDrops[variant] or Rarities.itemDrops.normal
-	local chance = math.min(1, drops.chance * (1 + (mods.dropBonus or 0) / 100))
+	local chance = math.min(1, drops.chance * (1 + (mods.dropBonus or 0) / 100) * (mods.itemChanceMul or 1))
 
 	if rng:chance(chance) then
 		local count = rng:int(drops.min, drops.max)
@@ -124,15 +141,15 @@ function Loot.rollMonsterLoot(
 				table.insert(result.items, {
 					defId = defId,
 					ilvl = ilvl,
-					rarity = ItemRoll.rollRarity(variant, rng),
+					rarity = ItemRoll.rollRarity(variant, rng, mods.topTierMul),
 					forClass = mods.classId,
 				})
 			end
 		end
 	end
 
-	rollMaterials(tableDef.materials, rng, result.materials)
-	rollMaterials(tableDef.variantMaterials[variant] or {}, rng, result.materials)
+	rollMaterials(tableDef.materials, rng, result.materials, mods.materialMul)
+	rollMaterials(tableDef.variantMaterials[variant] or {}, rng, result.materials, mods.materialMul)
 	result.gold = MonsterStats.gold(level, variant, rng:next())
 	return result
 end

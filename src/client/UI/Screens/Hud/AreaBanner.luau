@@ -1,9 +1,11 @@
 --!strict
 -- Small banner at the top when entering a monster area (S20, DESIGN §3.6): "Bandits' Road · 9–14" in the
--- level difference colour, 2.5 s.
+-- level difference colour, 2.5 s. S33: the hunting ground profile's icon after it and its name below.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local AreaProfileText = require(script.Parent.Parent.Parent.AreaProfileText)
+local AreaProfiles = require(ReplicatedStorage.Shared.Data.AreaProfiles)
 local AreaState = require(script.Parent.Parent.Parent.AreaState)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local LevelBand = require(ReplicatedStorage.Shared.Logic.LevelBand)
@@ -50,6 +52,7 @@ local function AreaBanner(scope: Scope): Instance
 		Position = UDim2.new(0.5, 0, 0, 96),
 		Size = UDim2.fromOffset(520, 34),
 		BackgroundTransparency = 1,
+		RichText = true,
 		Visible = scope:Computed(function(use): boolean
 			return use(animated) < 0.99
 		end),
@@ -58,11 +61,11 @@ local function AreaBanner(scope: Scope): Instance
 			if not banner then
 				return ""
 			end
-			return Text.get(use, "area.label", {
+			return AreaProfileText.escape(Text.get(use, "area.label", {
 				name = Text.get(use, banner.area.nameKey),
 				min = banner.area.lv[1],
 				max = banner.area.lv[2],
-			})
+			})) .. AreaProfileText.iconRich(banner.area.profile, " ")
 		end),
 		FontFace = Theme.Fonts.Heading,
 		TextSize = 28,
@@ -72,7 +75,32 @@ local function AreaBanner(scope: Scope): Instance
 			return 0.3 + use(animated) * 0.7
 		end),
 		TextTransparency = animated,
-		[Children] = {},
+		[Children] = {
+			scope:New("TextLabel")({
+				Name = "Profile",
+				AnchorPoint = Vector2.new(0.5, 0),
+				Position = UDim2.fromScale(0.5, 1),
+				Size = UDim2.new(1, 0, 0, 20),
+				BackgroundTransparency = 1,
+				Text = scope:Computed(function(use): string
+					local banner = use(AreaState.Banner)
+					local profile = banner and AreaProfiles.get(banner.area.profile)
+					return if profile then AreaProfileText.tag(use, profile) else ""
+				end),
+				FontFace = Theme.Fonts.BodyBold,
+				TextSize = 16,
+				TextColor3 = scope:Computed(function(use): Color3
+					local banner = use(AreaState.Banner)
+					local profile = banner and AreaProfiles.get(banner.area.profile)
+					return if profile then AreaProfileText.color(profile) else Theme.Colors.Parchment
+				end),
+				TextStrokeColor3 = Theme.Colors.Background,
+				TextStrokeTransparency = scope:Computed(function(use): number
+					return 0.3 + use(animated) * 0.7
+				end),
+				TextTransparency = animated,
+			}),
+		},
 	})
 end
 

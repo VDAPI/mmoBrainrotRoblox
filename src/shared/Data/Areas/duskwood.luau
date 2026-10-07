@@ -53,6 +53,7 @@ local data: Types.MapAreas = {
 			kinds = { "werewolf", "blackBear" },
 			rect = { -760, -400, -420, 400 },
 			groups = 8,
+			profile = "exp", -- S33: werewolf packs
 			arrive = { x = -682, z = 7 }, -- S22: portal / map stone arrival (Logic/AreaArrival)
 		},
 		{
@@ -62,6 +63,7 @@ local data: Types.MapAreas = {
 			kinds = { "blackBear", "werewolf" },
 			rect = { -760, 420, -300, 780 },
 			groups = 6,
+			profile = "loot", -- S33: the hollow keeps the gear of lost hunters
 			arrive = { x = -528, z = 596 }, -- S22: portal / map stone arrival (Logic/AreaArrival)
 		},
 		{
@@ -71,6 +73,7 @@ local data: Types.MapAreas = {
 			kinds = { "forestWraith", "ghoul" },
 			rect = { -400, -780, 60, -150 },
 			groups = 7,
+			profile = "gold", -- S33: wraiths of the old nobles keep their coin
 			arrive = { x = 48, z = -448 }, -- S22: portal / map stone arrival (Logic/AreaArrival)
 			landmark = { x = -80, z = -380 },
 		},
@@ -81,6 +84,7 @@ local data: Types.MapAreas = {
 			kinds = { "rotEnt", "ghoul" },
 			rect = { -250, 150, 300, 780 },
 			groups = 7,
+			profile = "exp", -- S33: ghouls swarm around the rotten heart
 			arrive = { x = 121, z = 166 }, -- S22: portal / map stone arrival (Logic/AreaArrival)
 			landmark = { x = 160, z = 300 },
 		},
@@ -91,6 +95,7 @@ local data: Types.MapAreas = {
 			kinds = { "darkCultist", "bogSerpent" },
 			rect = { 300, -780, 780, -300 },
 			groups = 7,
+			profile = "gold", -- S33: the cult's tithes
 			arrive = { x = 448, z = -315 }, -- S22: portal / map stone arrival (Logic/AreaArrival)
 			landmark = { x = 560, z = -560 },
 		},
@@ -101,6 +106,7 @@ local data: Types.MapAreas = {
 			kinds = { "bogSerpent", "darkCultist", "forestWraith" },
 			rect = { 80, -300, 500, -80 },
 			groups = 5,
+			profile = "exp", -- S33: everything passes the crossroads
 			arrive = { x = 378, z = -95 }, -- S22: portal / map stone arrival (Logic/AreaArrival)
 		},
 		{
@@ -110,6 +116,7 @@ local data: Types.MapAreas = {
 			kinds = { "swampTroll", "bogSerpent", "marshWitch" },
 			rect = { 300, 180, 780, 780 },
 			groups = 7,
+			profile = "exp", -- S33: trolls and serpents in numbers
 			arrive = { x = 316, z = 391 }, -- S22: portal / map stone arrival (Logic/AreaArrival)
 		},
 		{
@@ -119,6 +126,7 @@ local data: Types.MapAreas = {
 			kinds = { "marshWitch", "swampTroll" },
 			rect = { -200, 30, 300, 140 },
 			groups = 4,
+			profile = "loot", -- S33: witches' charms and trinkets
 			arrive = { x = 92, z = 47 }, -- S22: portal / map stone arrival (Logic/AreaArrival)
 		},
 		{

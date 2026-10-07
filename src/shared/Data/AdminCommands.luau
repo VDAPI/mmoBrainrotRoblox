@@ -157,6 +157,7 @@ cmd("items", "lootsim", {
 	ref("monster", "monster"),
 	enum("variant", { "0", "1", "2", "normal", "elite", "elite2" }, true, "0"),
 	int("n", 1, 100000, true),
+	ref("area", "area", true), -- S33: with the hunting ground's profile
 })
 cmd("items", "rarities", {})
 cmd("items", "clearinv", {}, { danger = true })
@@ -195,6 +196,9 @@ cmd("world", "mapcache", { enum("action", { "clear" }) })
 cmd("world", "town", { enum("action", { "info", "lod", "tp" }), str("value", true) })
 cmd("world", "portalpick", { ref("map", "map") })
 cmd("world", "arrive", { ref("map", "map"), ref("area", "area") })
+-- S33: hunting ground profiles (Data/AreaProfiles, Logic/AreaRates).
+cmd("world", "areainfo", {})
+cmd("world", "areasim", { ref("area", "area"), int("minutes", 1, 600, true, "60") })
 cmd("world", "nav", { str("target"), str("z", true) })
 cmd("world", "navdebug", {})
 cmd("world", "marks", { enum("action", { "list", "clear" }) }, { dangerActions = { "clear" } })

@@ -13,6 +13,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 
+local AreaProfileText = require(script.Parent.Parent.Parent.AreaProfileText)
 local AreaState = require(script.Parent.Parent.Parent.AreaState)
 local AreaAdvice = require(ReplicatedStorage.Shared.Logic.AreaAdvice)
 local Areas = require(ReplicatedStorage.Shared.Data.Areas)
@@ -504,9 +505,10 @@ local function Minimap(scope: Scope, props: Props): Instance
 					zoomButton("−", -1, 2),
 				},
 			}),
-			-- Current monster area under the map name (S20).
+			-- Current monster area under the map name (S20), S33: with its profile's icon.
 			scope:New("TextLabel")({
 				Name = "AreaName",
+				RichText = true,
 				AnchorPoint = Vector2.new(1, 0),
 				Position = UDim2.new(1, 0, 1, 2),
 				Size = UDim2.fromOffset(SIZE + 30, 22),
@@ -519,11 +521,13 @@ local function Minimap(scope: Scope, props: Props): Instance
 					if not area then
 						return ""
 					end
-					return Text.get(
-						use,
-						"area.label",
-						{ name = Text.get(use, area.nameKey), min = area.lv[1], max = area.lv[2] }
-					)
+					return AreaProfileText.escape(
+						Text.get(
+							use,
+							"area.label",
+							{ name = Text.get(use, area.nameKey), min = area.lv[1], max = area.lv[2] }
+						)
+					) .. AreaProfileText.iconRich(area.profile, " ")
 				end),
 				TextTruncate = Enum.TextTruncate.AtEnd,
 				FontFace = Theme.Fonts.BodyMedium,

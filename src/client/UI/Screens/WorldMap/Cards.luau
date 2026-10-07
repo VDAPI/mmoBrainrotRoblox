@@ -9,6 +9,8 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local AreaAdvice = require(ReplicatedStorage.Shared.Logic.AreaAdvice)
+local AreaProfileText = require(script.Parent.Parent.Parent.AreaProfileText)
+local AreaProfiles = require(ReplicatedStorage.Shared.Data.AreaProfiles)
 local Areas = require(ReplicatedStorage.Shared.Data.Areas)
 local Bosses = require(ReplicatedStorage.Shared.Data.Bosses)
 local BossScaling = require(ReplicatedStorage.Shared.Logic.BossScaling)
@@ -372,6 +374,15 @@ function Cards.area(ctx: Context, mapId: string, areaId: string): Spec?
 	local lines: { DetailCard.Line } = {
 		{ text = T("worldmap.groups", { n = groups }), color = Theme.Colors.TextMuted },
 	}
+	-- S33: the hunting ground profile, its multipliers and what it feels like.
+	local profile = AreaProfiles.get(found.profile)
+	if profile then
+		local peek = Fusion.peek :: any
+		local color = AreaProfileText.color(profile)
+		table.insert(lines, 1, { text = T(profile.descKey), color = Theme.Colors.Text, size = 14 })
+		table.insert(lines, 1, { text = AreaProfileText.mults(peek, profile), color = color, size = 14 })
+		table.insert(lines, 1, { text = AreaProfileText.tag(peek, profile), color = color, bold = true })
+	end
 	if AreaAdvice.isRecommended(found, ctx.level) then
 		table.insert(lines, 1, { text = T("worldmap.card.forYou"), color = Theme.Colors.GoldBright, bold = true })
 	end

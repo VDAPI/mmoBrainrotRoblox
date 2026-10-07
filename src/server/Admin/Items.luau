@@ -4,6 +4,7 @@
 
 local Shared = game:GetService("ReplicatedStorage").Shared
 
+local AreaProfiles = require(Shared.Data.AreaProfiles)
 local Config = require(Shared.Config)
 local DevPreset = require(Shared.Logic.DevPreset)
 local Elements = require(Shared.Data.Elements)
@@ -107,12 +108,15 @@ commands.lootsim = function(player, args)
 	local variant = VARIANTS[tonumber(args[2]) or -1]
 		or (if Rarities.dropWeights[args[2] or ""] then args[2] else "normal")
 	local n = math.clamp(parseAmount(args[3]) or 1000, 1, 100000)
+	-- S33: optional hunting ground (its profile changes items, rarity, materials and gold).
+	local areaId = args[4]
+	local profile = AreaProfiles.ofArea(areaId)
 	local character = PlayerStateService.GetCharacter(player)
 	local counts, items, mats, gold =
-		LootService.Simulate(monsterId, variant, def.levels.max, n, if character then character.class else nil)
+		LootService.Simulate(monsterId, variant, def.levels.max, n, if character then character.class else nil, areaId)
 	reply(player, "admin.lootsim.result", {
 		n = n,
-		variant = variant,
+		variant = if profile then `{variant}, {profile.icon} {areaId}` else variant,
 		items = items,
 		c1 = counts[1],
 		c2 = counts[2],

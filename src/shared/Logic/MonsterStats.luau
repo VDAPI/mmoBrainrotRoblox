@@ -51,25 +51,38 @@ function MonsterStats.groupDamageMul(size: number?): number
 	return list[math.min(math.floor(size), #list)] or 1
 end
 
+-- Hunting ground multipliers (S33, Data/AreaProfiles): HP and attack of the area's monsters.
+export type Mods = { hpMul: number?, atkMul: number? }
+
 -- `level` is the spawner's rolled level; the variant adds its own levels on top. `groupSize` (S32) lowers the
--- damage of every member of a bigger group.
-function MonsterStats.compute(kind: Kind, level: number, variant: Variant?, groupSize: number?): MonsterStats
+-- damage of every member of a bigger group; `mods` (S33) are the area profile's HP and attack multipliers.
+function MonsterStats.compute(
+	kind: Kind,
+	level: number,
+	variant: Variant?,
+	groupSize: number?,
+	mods: Mods?
+): MonsterStats
 	local v: Variant = variant or "normal"
-	local mods = Combat.variants[v]
-	assert(mods, `MonsterStats: unknown variant {v}`)
-	local finalLevel = math.max(1, math.floor(level + mods.levelAdd))
+	local variantMods = Combat.variants[v]
+	assert(variantMods, `MonsterStats: unknown variant {v}`)
+	local hpMul = if mods and mods.hpMul then mods.hpMul else 1
+	local atkMul = if mods and mods.atkMul then mods.atkMul else 1
+	local finalLevel = math.max(1, math.floor(level + variantMods.levelAdd))
 	return {
 		level = finalLevel,
-		maxHp = math.floor(MonsterStats.baseHp(finalLevel) * kind.hpMul * mods.hpMul + 0.5),
-		attack = MonsterStats.baseAttack(finalLevel) * kind.atkMul * mods.dmgMul * MonsterStats.groupDamageMul(
-			groupSize
-		),
+		maxHp = math.floor(MonsterStats.baseHp(finalLevel) * kind.hpMul * variantMods.hpMul * hpMul + 0.5),
+		attack = MonsterStats.baseAttack(finalLevel)
+			* kind.atkMul
+			* variantMods.dmgMul
+			* atkMul
+			* MonsterStats.groupDamageMul(groupSize),
 		armor = Combat.monsterArmorPerLevel * finalLevel * kind.defMul,
 		mres = Combat.monsterMresPerLevel * finalLevel * kind.defMul,
 		attackInterval = Combat.monsterAttackInterval / math.max(0.1, kind.speed),
 		range = kind.range or (if kind.attack == "ranged" then 30 else Combat.meleeRange),
-		aggroRange = mods.aggroRange,
-		scale = mods.scale,
+		aggroRange = variantMods.aggroRange,
+		scale = variantMods.scale,
 		variant = v,
 		damageKind = (kind.damageKind or "phys") :: "phys" | "magic",
 	}

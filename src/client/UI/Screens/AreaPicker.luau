@@ -4,10 +4,15 @@
 -- "Recommended" when the player's level fits, a lock with "from level X" when the area is still closed.
 -- The lowest area is selected at first; a row click selects, "Set off" (or Enter) travels. Warnings of the
 -- portal (red zone, map above your level) sit on top. Works with touch: tall rows in a scrolling list.
+-- S33: a third line with the hunting ground profile ("⚡ Fast EXP — EXP ×1 · items ×0.6 · gold ×0.7"), the selected
+-- area's profile described under the list, "Recommended" on the best area of every profile.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local AreaAdvice = require(ReplicatedStorage.Shared.Logic.AreaAdvice)
+local AreaProfileText = require(script.Parent.Parent.AreaProfileText)
+local AreaProfiles = require(ReplicatedStorage.Shared.Data.AreaProfiles)
+local Areas = require(ReplicatedStorage.Shared.Data.Areas)
 local Button = require(script.Parent.Parent.Components.Button)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local LevelBand = require(ReplicatedStorage.Shared.Logic.LevelBand)
@@ -30,6 +35,7 @@ export type Props = {
 }
 
 local ROW_HEIGHT = 66
+local PROFILE_ROW_HEIGHT = 88
 
 local function kindsText(use: Fusion.Use, kinds: { string }): string
 	local names = {}
@@ -49,10 +55,12 @@ local function AreaPicker(scope: Scope, props: Props): Fusion.Child
 		local mapId = use(props.MapId)
 		local playerLevel = use(level) or 1
 		local list = {}
+		local best = AreaAdvice.bestByProfile(playerLevel, mapId or "")
 		for i, area in AreaAdvice.sorted(mapId or "") do
 			local locked = AreaAdvice.locked(area, playerLevel)
 			local band = Color3.fromHex(LevelBand.COLORS[AreaAdvice.bandOf(area, playerLevel)])
-			local recommended = AreaAdvice.isRecommended(area, playerLevel)
+			local recommended = best[area.profile or "none"] == area
+			local profile = AreaProfiles.get(area.profile)
 			local selected = s:Computed(function(use2): boolean
 				return use2(props.Selected) == area.id
 			end)
@@ -61,7 +69,7 @@ local function AreaPicker(scope: Scope, props: Props): Fusion.Child
 				s:New("TextButton")({
 					Name = area.id,
 					LayoutOrder = i,
-					Size = UDim2.new(1, 0, 0, ROW_HEIGHT),
+					Size = UDim2.new(1, 0, 0, if profile then PROFILE_ROW_HEIGHT else ROW_HEIGHT),
 					AutoButtonColor = false,
 					Text = "",
 					BackgroundColor3 = s:Computed(function(use2): Color3
@@ -115,6 +123,21 @@ local function AreaPicker(scope: Scope, props: Props): Fusion.Child
 							TextSize = Theme.TextSize.Small,
 							TextColor3 = Theme.Colors.TextMuted,
 						}),
+						if profile
+							then s:New("TextLabel")({
+								Name = "Profile",
+								Position = UDim2.fromOffset(20, 60),
+								Size = UDim2.new(1, -32, 0, 20),
+								BackgroundTransparency = 1,
+								Text = `{AreaProfileText.tag(use, profile)} — {AreaProfileText.mults(use, profile)}`,
+								TextXAlignment = Enum.TextXAlignment.Left,
+								TextTruncate = Enum.TextTruncate.AtEnd,
+								FontFace = Theme.Fonts.BodyBold,
+								TextSize = Theme.TextSize.Small,
+								TextColor3 = AreaProfileText.color(profile),
+								TextTransparency = if locked then 0.4 else 0,
+							})
+							else nil :: any,
 						s:New("TextLabel")({
 							Name = "Levels",
 							AnchorPoint = Vector2.new(1, 0),
@@ -155,6 +178,18 @@ local function AreaPicker(scope: Scope, props: Props): Fusion.Child
 	end)
 	local hasWarnings = scope:Computed(function(use): boolean
 		return #(use(props.Warnings) or {}) > 0
+	end)
+	-- What the selected area's profile feels like (touch: tap a row to read it).
+	local detail = scope:Computed(function(use): string
+		local area = Areas.areaById(use(props.Selected) or "")
+		local profile = area and AreaProfiles.get(area.profile)
+		if not profile then
+			return ""
+		end
+		return `{AreaProfileText.tag(use, profile)}: {Text.get(use, profile.descKey)}`
+	end)
+	local hasDetail = scope:Computed(function(use): boolean
+		return use(detail) ~= ""
 	end)
 
 	return {
@@ -202,7 +237,12 @@ local function AreaPicker(scope: Scope, props: Props): Fusion.Child
 					Name = "List",
 					LayoutOrder = 3,
 					Size = scope:Computed(function(use): UDim2
-						return UDim2.new(1, 0, 1, if use(hasWarnings) then -160 else -110)
+						return UDim2.new(
+							1,
+							0,
+							1,
+							(if use(hasWarnings) then -160 else -110) - (if use(hasDetail) then 44 else 0)
+						)
 					end),
 					CanvasSize = UDim2.new(),
 					AutomaticCanvasSize = Enum.AutomaticSize.Y,
@@ -215,9 +255,23 @@ local function AreaPicker(scope: Scope, props: Props): Fusion.Child
 						rows :: any,
 					},
 				}),
+				scope:New("TextLabel")({
+					Name = "Detail",
+					LayoutOrder = 4,
+					Visible = hasDetail,
+					Size = UDim2.new(1, 0, 0, 36),
+					BackgroundTransparency = 1,
+					Text = detail,
+					TextWrapped = true,
+					TextXAlignment = Enum.TextXAlignment.Left,
+					TextYAlignment = Enum.TextYAlignment.Top,
+					FontFace = Theme.Fonts.Body,
+					TextSize = Theme.TextSize.Small,
+					TextColor3 = Theme.Colors.Parchment,
+				}),
 				Button(scope, {
 					Name = "Go",
-					LayoutOrder = 4,
+					LayoutOrder = 5,
 					Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeight),
 					Variant = "primary",
 					Disabled = scope:Computed(function(use): boolean

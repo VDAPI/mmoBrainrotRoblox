@@ -854,7 +854,7 @@ return {
 	-- Admin (S04)
 	["admin.usage.give"] = "/give <itemId> [rarity: common|unique|heroic|legendary|mythic or 1-5] [ilvl] [n]: give an item",
 	["admin.usage.legend"] = "/legend [legendary|mythic]: drop a random legendary (or mythic) item for your class",
-	["admin.usage.lootsim"] = "/lootsim <monsterId> <variant normal|elite|elite2 or 0|1|2> <n>: simulate n kills",
+	["admin.usage.lootsim"] = "/lootsim <monsterId> <variant normal|elite|elite2 or 0|1|2> <n> [areaId]: simulate n kills (with the hunting ground's profile)",
 	["admin.usage.clearinv"] = "/clearinv: empty your backpack",
 	["admin.usage.bag"] = "/bag <20|30|45|60|80|100|130|160|200>: set your backpack",
 	["admin.give.ok"] = "Given: {name} x{n}.",
@@ -2267,6 +2267,16 @@ return {
 	["area.frostpeak_icewatch"] = "Ice Watch",
 	["area.frostpeak_wyrmspire"] = "Wyrm Spire",
 	["area.label"] = "{name} · {min}–{max}",
+	-- S33: hunting ground profiles
+	["area.profile.exp"] = "Fast EXP",
+	["area.profile.loot"] = "Better drops",
+	["area.profile.gold"] = "More gold",
+	["area.profile.exp.desc"] = "Many weaker monsters in bigger groups that respawn fast. Fewer items and less gold.",
+	["area.profile.loot.desc"] = "Fewer but tougher monsters. Items more often, the best ones more often, more materials.",
+	["area.profile.gold.desc"] = "Monsters with purses: much more gold, a little less experience and fewer items.",
+	["area.profile.mults"] = "EXP ×{exp} · items ×{drop} · gold ×{gold}",
+	["area.profile.rare"] = "best ×{mul}",
+	["format.decimal"] = ".",
 
 	-- S19: group rings and signs
 	["menu.groupRings"] = "Monster group rings",
@@ -2333,6 +2343,7 @@ return {
 	["worldmap.band.yellow"] = "hard",
 	["worldmap.band.red"] = "dangerous",
 	["worldmap.onlyRecommended"] = "Show only recommended",
+	["worldmap.showProfiles"] = "Hunting ground profiles",
 
 	-- S20: admin
 	["admin.perf.parts"] = "Parts per map: {list}",
@@ -2509,6 +2520,11 @@ return {
 	["admin.args.unknown"] = "{name}: there is no '{value}'.",
 	["admin.usage.portalpick"] = "/portalpick <mapId>: the hunting ground picker without a portal",
 	["admin.usage.arrive"] = "/arrive <mapId> <areaId>: teleport to a hunting ground's arrival point",
+	["admin.usage.areainfo"] = "/areainfo: the hunting ground you stand in: profile, multipliers, living monsters, your character's EXP/h and gold/h",
+	["admin.usage.areasim"] = "/areasim <areaId> [minutes]: your character grinding there (S32 model + profile): kills, EXP, gold, items",
+	["admin.areainfo.info"] = "Area {id} · profile: {profile} · living monsters: {alive} in {groups} groups.",
+	["admin.areainfo.rates"] = "Model (monster level {level}, {kill} s/kill): EXP/h {exp} · gold/h {gold} (coins {coin}, drops sold {drop}) · items/h {items} (top rarity {top}).",
+	["admin.areasim.result"] = "{id} ({profile}), {minutes} min: {kills} kills · EXP {exp} · gold {coin} + drops {drop} · items {items} (common {c1}, unique {c2}, heroic {c3}).",
 	["admin.usage.anim"] = "/anim <weapon type>|unarmed|off: play the attack on yourself every 1 s (e.g. sword1h, bow, staff)",
 	["admin.anim.ok"] = "Attack animation: {kind}.",
 	["admin.usage.die"] = "/die: kill yourself (removes the protection) and show the respawn choice",

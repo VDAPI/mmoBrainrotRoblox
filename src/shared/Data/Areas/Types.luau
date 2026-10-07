@@ -48,6 +48,8 @@ export type Area = {
 	-- S26: client decoration theme ("meadow", "hills", "marsh", "forest", "field", "road", "quarry", "goblin",
 	-- "ravine"), also the key of the area's mood in Data/Ambience.
 	decor: string?,
+	-- S33: hunting ground profile (Data/AreaProfiles: "exp" | "loot" | "gold"); nil = neutral.
+	profile: string?,
 }
 
 -- Entrance of a cave on its region map; the mouth faces `rot` degrees (0 = the opening looks to -Z).
@@ -86,6 +88,7 @@ export type Cave = {
 	theme: string?,
 	rooms: { Room }?, -- rooms[1] is the entrance; boss caves: the last room is the dungeon antechamber
 	boss: boolean, -- last cave of the region with the boss dungeon gate
+	profile: string?, -- S33: Data/AreaProfiles id (caves have none yet: their elites already are the better drop)
 }
 
 return nil

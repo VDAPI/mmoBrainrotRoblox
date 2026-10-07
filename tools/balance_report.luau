@@ -7,15 +7,19 @@ local fs = require("@lune/fs")
 local process = require("@lune/process")
 local serde = require("@lune/serde")
 
+local AreaSpawns = require("../src/shared/Logic/AreaSpawns")
+local Areas = require("../src/shared/Data/Areas")
 local B = require("../tests/Balance")
 local Bosses = require("../src/shared/Data/Bosses")
 local Combat = require("../src/shared/Data/Combat")
 local Exp = require("../src/shared/Logic/Exp")
 local Items = require("../src/shared/Data/Items")
 local ItemValue = require("../src/shared/Logic/ItemValue")
+local Maps = require("../src/shared/Data/Maps")
 local MonsterStats = require("../src/shared/Logic/MonsterStats")
 local Monsters = require("../src/shared/Data/Monsters")
 local Rarities = require("../src/shared/Data/Rarities")
+local Spawns = require("../src/shared/Data/Spawns")
 
 local SNAPSHOT = "tools/balance_before.json"
 local OUT = "docs/BALANS.md"
@@ -95,7 +99,10 @@ for _, L in LEVELS do
 	row(tostring(L), cells)
 end
 
-section("Zwykły potwór (mnożniki rodzaju 1)", { "poziom", "HP", "atak", "pancerz", "EXP", "złoto", "EXP do poziomu" })
+section(
+	"Zwykły potwór (mnożniki rodzaju 1)",
+	{ "poziom", "HP", "atak", "pancerz", "EXP", "złoto", "EXP do poziomu" }
+)
 for _, L in LEVELS do
 	local m = B.monster(B.GENERIC, L)
 	row(tostring(L), {
@@ -433,25 +440,106 @@ for _, r in { Rarities.UNIQUE, Rarities.HEROIC, Rarities.LEGENDARY } do
 end
 
 section("Ceny", { "przedmiot", "cena kupna", "wartość" })
-for _, id in {
-	"potion_hp_1",
-	"potion_hp_2",
-	"potion_hp_3",
-	"backpack_30",
-	"backpack_45",
-	"backpack_60",
-	"stone_return",
-	"scroll_protection",
-} do
+for _, id in
+	{
+		"potion_hp_1",
+		"potion_hp_2",
+		"potion_hp_3",
+		"backpack_30",
+		"backpack_45",
+		"backpack_60",
+		"stone_return",
+		"scroll_protection",
+	}
+do
 	local def = Items.get(id) :: any
 	if def then
-		local item = { uid = "x", id = id, rarity = def.rarity or 1, ilvl = def.level, bonuses = {}, up = 0, bound = false, n = 1 }
+		local item = {
+			uid = "x",
+			id = id,
+			rarity = def.rarity or 1,
+			ilvl = def.level,
+			bonuses = {},
+			up = 0,
+			bound = false,
+			n = 1,
+		}
 		row(id, { { def.buyPrice or 0, "i" }, { ItemValue.value(item :: any), "i" } })
 	end
 end
 for _, L in { 5, 10, 15, 20 } do
 	local def = Items.get(`sword1h_{Items.generate.tierFor(L)}`) :: any
-	row(`miecz ilvl {L}`, { { ItemValue.equipment(def, L, 1, 0) * ItemValue.BUY_MUL, "i" }, { ItemValue.equipment(def, L, 1, 0), "i" } })
+	row(
+		`miecz ilvl {L}`,
+		{ { ItemValue.equipment(def, L, 1, 0) * ItemValue.BUY_MUL, "i" }, { ItemValue.equipment(def, L, 1, 0), "i" } }
+	)
+end
+
+-- S33: hunting ground profiles --------------------------------------------------------------------------------
+
+local PROFILE_LABELS = { none = "brak", exp = "⚡ szybki exp", loot = "✦ lepszy drop", gold = "⛁ więcej złota" }
+
+section(
+	"Expowiska z profilem: godzina expienia (Wojownik, S33)",
+	{
+		"poziom · profil",
+		"s / zabicie",
+		"EXP/h",
+		"złoto/h (z dropem)",
+		"monety/h",
+		"przedmioty/h",
+		"najlepsze/h",
+	},
+	"Cele (DESIGN §3.6): ⚡ ≥ 1,25× EXP/h ✦; ✦ ≥ 1,6× przedmiotów najwyższej rzadkości/h pozostałych; ⛁ ≥ 1,5× złota/h pozostałych (licząc sprzedaż dropu). Model: Logic/AreaRates (walka S32 + rozmiary grup, HP i atak profilu, odpoczynek, dojście do grupy krótsze przy szybszym respawnie)."
+)
+for _, L in { 4, 8, 12, 16, 19 } do
+	for _, id in { "none", "exp", "loot", "gold" } do
+		local r = B.areaRates("Warrior", L, if id == "none" then nil else id)
+		row(`{L} · {PROFILE_LABELS[id]}`, {
+			{ r.secondsPerKill, "s" },
+			{ r.expPerHour, "i" },
+			{ r.goldPerHour, "i" },
+			{ r.coinGoldPerHour, "i" },
+			{ r.itemsPerHour, "1" },
+			{ r.topPerHour, "2" },
+		})
+	end
+end
+for _, L in { 30, 55, 85 } do
+	for _, id in { "none", "exp", "loot", "gold" } do
+		local r = B.areaRates("Warrior", L, if id == "none" then nil else id, B.GENERIC)
+		row(`{L} (rodzaj 1) · {PROFILE_LABELS[id]}`, {
+			{ r.secondsPerKill, "s" },
+			{ r.expPerHour, "i" },
+			{ r.goldPerHour, "i" },
+			{ r.coinGoldPerHour, "i" },
+			{ r.itemsPerHour, "1" },
+			{ r.topPerHour, "2" },
+		})
+	end
+end
+
+section("Potwory na mapach regionów (wszystkie grupy żywe naraz, S33)", { "mapa", "bez profili", "z profilami" })
+for _, mapId in { "meadows", "duskwood", "ashen", "frostpeak" } do
+	local data = Areas.byMap[mapId]
+	local plain = table.clone(data) :: any
+	plain.areas = {}
+	for _, area in data.areas do
+		local copy = table.clone(area) :: any
+		copy.profile = nil
+		table.insert(plain.areas, copy)
+	end
+	local function count(list: { any }): number
+		local n = 0
+		for _, spawner in list do
+			n += spawner.count
+		end
+		return n
+	end
+	row(mapId, {
+		{ count(AreaSpawns.region(plain, (Maps.get(mapId) :: any).size)), "i" },
+		{ count(Spawns.byMap[mapId]), "i" },
+	})
 end
 
 -- Output -------------------------------------------------------------------------------------------------------
@@ -535,7 +623,9 @@ local stats: any = MonsterStats
 if stats.kindReward then
 	table.insert(
 		lines,
-		`- EXP i złoto rodzaju × mnożnik HP^{(Combat :: any).kindRewardHpExponent} × (mnożnik ataku × szybkość)^{(Combat :: any).kindRewardAtkExponent}.`
+		`- EXP i złoto rodzaju × mnożnik HP^{(Combat :: any).kindRewardHpExponent} × (mnożnik ataku × szybkość)^{(
+			Combat :: any
+		).kindRewardAtkExponent}.`
 	)
 end
 table.insert(lines, "")

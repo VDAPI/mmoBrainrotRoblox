@@ -124,6 +124,58 @@ Nowe materiały (S19): **Gruba Skóra** (`thick_hide`), **Jad** (`venom_sac`), *
 
 Kolumna „Grupy” = liczba grup po 1–4 potwory (DESIGN §15.1). Wszystkie obszary: tylko zwykłe potwory.
 
+### Profile expowisk (S33), lista obszarów wg kodu
+
+Źródło prawdy: `src/shared/Data/Areas/*` (pole `profile`) i `Data/AreaProfiles` (DESIGN §3.6). ⚡ szybki exp, ✦ lepszy
+drop, ⛁ więcej złota, — bez profilu. „Potwory” = suma członków wszystkich grup (z rozmiarami grup profilu). Tabele
+regionów 2–4 niżej opisują wygląd z planu sprzed S19 i ich nazwy rozjechały się z kodem; nazwy, poziomy i liczby
+grup bierz z tej tabeli. Tabela Łąk niżej zgadza się z kodem (znaczek profilu przy nazwie).
+
+| Obszar (id) | Poziomy | Rodzaje | Grupy | Potwory | Profil |
+|---|---|---|---|---|---|
+| **Szepczące Łąki** | | | | | |
+| Polana Królików (`meadows_rabbitfields`) | 1–4 | Dziki Królik Polny, Szary Wilk | 7 | 12 | — |
+| Wilcze Wzgórza (`meadows_wolfhills`) | 3–7 | Szary Wilk, Ryś Leśny | 7 | 25 | ⚡ |
+| Żabie Oczko (`meadows_toadmire`) | 4–8 | Bagienna Ropucha, Ryś Leśny | 6 | 14 | ✦ |
+| Stary Las (`meadows_oldforest`) | 6–11 | Dzik Leśny, Kruk Padlinożerca | 7 | 25 | ⚡ |
+| Krucze Pole (`meadows_crowfield`) | 8–12 | Kruk Padlinożerca, Dzik Leśny, Bandyta z Traktu | 5 | 13 | ⛁ |
+| Kupiecki Trakt (`meadows_banditroad`) | 9–14 | Bandyta z Traktu, Kobold Górnik | 8 | 13 | ⛁ |
+| Stare Wyrobisko (`meadows_diggings`) | 11–15 | Kobold Górnik, Goblin Zwiadowca | 6 | 11 | ✦ |
+| Gobliński Obóz (`meadows_goblincamp`) | 13–18 | Goblin Zwiadowca, Kobold Górnik | 6 | 19 | ⚡ |
+| Niedźwiedzi Jar (`meadows_bearridge`) | 16–20 | Brunatny Niedźwiedź, Goblin Zwiadowca | 6 | 13 | ✦ |
+| **Mroczny Bór** | | | | | |
+| Wilcze Ostępy (`duskwood_werethicket`) | 20–25 | Wilkołak, Czarny Niedźwiedź | 8 | 25 | ⚡ |
+| Niedźwiedzi Jar (`duskwood_bearhollow`) | 21–27 | Czarny Niedźwiedź, Wilkołak | 6 | 9 | ✦ |
+| Nawiedzone Ruiny (`duskwood_ruins`) | 24–31 | Leśna Zjawa, Ghul | 7 | 16 | ⛁ |
+| Serce Puszczy (`duskwood_heart`) | 26–33 | Ent Zgnilizny, Ghul | 7 | 23 | ⚡ |
+| Osada Kultystów (`duskwood_cultvillage`) | 29–37 | Kultysta Mroku, Bagienny Wąż | 7 | 20 | ⛁ |
+| Mglisty Rozstaj (`duskwood_crossroads`) | 30–36 | Bagienny Wąż, Kultysta Mroku, Leśna Zjawa | 5 | 11 | ⚡ |
+| Trolle Bagno (`duskwood_swamp`) | 32–40 | Bagienny Troll, Bagienny Wąż, Wiedźma Mokradeł | 7 | 13 | ⚡ |
+| Wiedźmie Moczary (`duskwood_witchmarsh`) | 36–42 | Wiedźma Mokradeł, Bagienny Troll | 4 | 5 | ✦ |
+| Krwawe Urwiska (`duskwood_bloodcliffs`) | 40–45 | Nietoperz Krwiopijca, Wiedźma Mokradeł | 6 | 12 | — |
+| **Spalone Pustkowia** | | | | | |
+| Równiny Salamander (`ashen_flats`) | 45–50 | Salamandra, Hiena Pustkowi | 8 | 20 | ⚡ |
+| Martwa Oaza (`ashen_oasis`) | 46–52 | Hiena Pustkowi, Sęp Popiołu | 6 | 12 | ✦ |
+| Obóz Popielnych Orków (`ashen_warcamp`) | 48–56 | Ork Popiołu, Sęp Popiołu | 7 | 15 | — |
+| Pola Golemów (`ashen_golemfields`) | 52–60 | Ognisty Golem, Ognisty Chochlik | 7 | 19 | — |
+| Spalone Ruiny (`ashen_burntruins`) | 55–61 | Ognisty Chochlik, Skorpion Pustyni | 6 | 15 | ⚡ |
+| Wydmy Skorpionów (`ashen_dunes`) | 55–63 | Skorpion Pustyni, Mumia Pustyni | 7 | 19 | ⛁ |
+| Turnie Wywern (`ashen_crags`) | 58–66 | Wywerna, Bazyliszek | 6 | 20 | ⚡ |
+| Szlak Popiołu (`ashen_ashroad`) | 61–67 | Bazyliszek, Wywerna | 4 | 8 | ⛁ |
+| Grobowce Pustyni (`ashen_tombs`) | 66–70 | Mumia Pustyni, Bazyliszek | 5 | 10 | — |
+| **Lodowe Szczyty** | | | | | |
+| Dolina Lodowych Wilków (`frostpeak_valley`) | 70–75 | Lodowy Wilk, Śnieżny Lampart | 8 | 16 | — |
+| Zbocza Yeti (`frostpeak_slopes`) | 74–80 | Yeti, Śnieżny Lampart | 7 | 19 | ⚡ |
+| Skały Harpii (`frostpeak_harpyrocks`) | 76–83 | Harpia Szczytów, Yeti | 6 | 8 | ✦ |
+| Przełęcz Olbrzymów (`frostpeak_pass`) | 78–86 | Mroźny Olbrzym, Harpia Szczytów | 7 | 18 | — |
+| Zamarznięte Jezioro (`frostpeak_lake`) | 82–90 | Lodowy Żywiołak, Mamut Lodowy | 6 | 14 | ✦ |
+| Mamucia Tundra (`frostpeak_tundra`) | 82–89 | Mamut Lodowy, Mroźny Olbrzym | 6 | 16 | ⚡ |
+| Ruiny Smoczej Świątyni (`frostpeak_temple`) | 85–95 | Smoczy Pomiot, Zamarznięty Rycerz | 7 | 21 | ⛁ |
+| Lodowa Strażnica (`frostpeak_icewatch`) | 88–95 | Zamarznięty Rycerz, Lodowy Żywiołak | 5 | 11 | ⚡ |
+| Iglica Wyrmów (`frostpeak_wyrmspire`) | 94–100 | Wyrm Szronu, Smoczy Pomiot | 5 | 11 | — |
+
+Jaskinie nie mają profilu (elity już są „lepszym dropem”).
+
 ### Szepczące Łąki (1–20), razem 58 grup (stan po S26)
 
 Mapa ukształtowana (S26): pofałdowany teren, Szepcząca Struga od wodospadu w Niedźwiedzim Jarze przez środek mapy do
@@ -134,14 +186,14 @@ woda, budowle, miejsca NPC i kotwice questów S27), `Data/Terrain/meadows` (kszt
 | Obszar | Poziomy | Potwory | Grupy | Punkt charakterystyczny | Inne |
 |---|---|---|---|---|---|
 | Polana Królików / Rabbit Glade | 1–4 | Królik, Wilk | 7 | stary dąb z kapliczką | brama i portal z miasta, zagroda farmera (dom, stodoła, studnia, ogródek, ule, owce), norki królików · **NPC: farmer, kapliczka** |
-| Wilcze Wzgórza / Wolf Hills | 3–7 | Wilk, Ryś | 7 | kamienny krąg na grzbiecie | wystające skały, jamy wilków (kości, wełna), jałowce, samotne sosny, Leśny Potok z mostem na trakcie |
-| Żabie Oczko / Toad Pond | 4–8 | Ropucha, Ryś | 6 | pomost z łódką | bagno z rozlewiskami, trzciny i grążele, wierzby i martwe drzewa, zarośla rysia od strony wzgórz, łowisko · **NPC: rybak** |
-| Stary Las / Old Forest | 6–11 | Dzik, Kruk | 7 | chata drwala | gaje i polany, olbrzymie dęby, powalone drzewa, taplisko dzików, gniazda kruków, ruiny wieży, bród na Leśnym Potoku, stosy drewna · **NPC: drwal** |
-| Krucze Pole / Crow Field | 8–12 | Kruk, Dzik, Bandyta | 5 | spalony młyn (dymi) | wyschnięte pola, strachy na wróble z krukami, porzucony wózek, wyblakłe barwy |
-| Kupiecki Trakt / Merchant Road | 9–14 | Bandyta, Kobold | 8 | Obóz Bandytów (palisada, wieża, namioty, listy gończe) | rozbity wóz kupiecki, kamienny most, kamienie milowe, staw z łowiskiem, **wejście: Kryjówka Przemytników** · **NPC: kupiec** |
-| Stare Wyrobisko / Old Quarry | 11–15 | Kobold, Goblin Zwiadowca | 6 | kamieniołom z 3 tarasami | rampy, rusztowania, tory z wózkami, hałdy rudy, zielone latarnie koboldów, sztolnie zabite deskami, najwięcej miedzi i żelaza · **NPC: górnik** |
-| Gobliński Obóz / Goblin Camp | 13–18 | Goblin Zwiadowca, Kobold | 6 | totem plemienny | płot z pali z czaszkami, szałasy, bębny, kotły nad ogniem, kości, **wejście: Gobliński Kopiec**, portal do Mrocznego Boru |
-| Niedźwiedzi Jar / Bear Ravine | 16–20 | Niedźwiedź, Goblin Zwiadowca | 6 | wąwóz z wodospadem | płaskowyż z sosnami, mech, legowiska niedźwiedzi, łowisko pod wodospadem, ścieżka w dół, **wejście: Jaskinia Mchów** (na dnie) · **NPC: myśliwy** |
+| Wilcze Wzgórza / Wolf Hills ⚡ | 3–7 | Wilk, Ryś | 7 | kamienny krąg na grzbiecie | wystające skały, jamy wilków (kości, wełna), jałowce, samotne sosny, Leśny Potok z mostem na trakcie |
+| Żabie Oczko / Toad Pond ✦ | 4–8 | Ropucha, Ryś | 6 | pomost z łódką | bagno z rozlewiskami, trzciny i grążele, wierzby i martwe drzewa, zarośla rysia od strony wzgórz, łowisko · **NPC: rybak** |
+| Stary Las / Old Forest ⚡ | 6–11 | Dzik, Kruk | 7 | chata drwala | gaje i polany, olbrzymie dęby, powalone drzewa, taplisko dzików, gniazda kruków, ruiny wieży, bród na Leśnym Potoku, stosy drewna · **NPC: drwal** |
+| Krucze Pole / Crow Field ⛁ | 8–12 | Kruk, Dzik, Bandyta | 5 | spalony młyn (dymi) | wyschnięte pola, strachy na wróble z krukami, porzucony wózek, wyblakłe barwy |
+| Kupiecki Trakt / Merchant Road ⛁ | 9–14 | Bandyta, Kobold | 8 | Obóz Bandytów (palisada, wieża, namioty, listy gończe) | rozbity wóz kupiecki, kamienny most, kamienie milowe, staw z łowiskiem, **wejście: Kryjówka Przemytników** · **NPC: kupiec** |
+| Stare Wyrobisko / Old Quarry ✦ | 11–15 | Kobold, Goblin Zwiadowca | 6 | kamieniołom z 3 tarasami | rampy, rusztowania, tory z wózkami, hałdy rudy, zielone latarnie koboldów, sztolnie zabite deskami, najwięcej miedzi i żelaza · **NPC: górnik** |
+| Gobliński Obóz / Goblin Camp ⚡ | 13–18 | Goblin Zwiadowca, Kobold | 6 | totem plemienny | płot z pali z czaszkami, szałasy, bębny, kotły nad ogniem, kości, **wejście: Gobliński Kopiec**, portal do Mrocznego Boru |
+| Niedźwiedzi Jar / Bear Ravine ✦ | 16–20 | Niedźwiedź, Goblin Zwiadowca | 6 | wąwóz z wodospadem | płaskowyż z sosnami, mech, legowiska niedźwiedzi, łowisko pod wodospadem, ścieżka w dół, **wejście: Jaskinia Mchów** (na dnie) · **NPC: myśliwy** |
 
 ### Mroczny Bór (20–45), razem ok. 52 grupy
 

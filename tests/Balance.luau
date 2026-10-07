@@ -11,6 +11,7 @@
 -- Fights use basic attacks plus `SKILL_DPS` (1-2 skills on cooldown) and no potions. Monsters swing once at the
 -- start and then every interval; the player regenerates its in-combat regen.
 
+local AreaRates = require("../src/shared/Logic/AreaRates")
 local AreaSpawns = require("../src/shared/Logic/AreaSpawns")
 local Bases = require("../src/shared/Data/Items/Bases")
 local Bonuses = require("../src/shared/Data/Bonuses")
@@ -689,6 +690,18 @@ function Balance.economy(classId: string, toLevel: number?): Economy
 		potionGold = potionGold,
 		upgradeGold = upgradeGold,
 	}
+end
+
+-- Hunting ground profiles (S33) ----------------------------------------------------------------------------
+
+-- An hour in a hunting ground of `profileId` (nil = none) at the player's level against `kind` (default: the
+-- level's usual Meadows kind), Logic/AreaRates.
+function Balance.areaRates(classId: string, level: number, profileId: string?, kind: any?): AreaRates.Rates
+	local def = if kind == nil
+		then Monsters.get(Balance.kindAt(level))
+		elseif type(kind) == "string" then Monsters.get(kind)
+		else kind
+	return AreaRates.rates(Balance.player(classId, level) :: any, def, level, profileId, Balance.SKILL_DPS)
 end
 
 -- Backwards-compatible single fight (S18 spec): common weapon + 4 armour pieces of `level`, no off-hand,

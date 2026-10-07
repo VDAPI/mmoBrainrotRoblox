@@ -6,6 +6,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage.Shared
 
+local Classes = require(Shared.Data.Classes)
 local Log = require(Shared.Util.Log)
 local Net = require(Shared.Net)
 
@@ -54,6 +55,18 @@ function Context.withCharacter(player: Player, fn: () -> ())
 		return
 	end
 	fn()
+end
+
+-- S32: the player as Logic/FightSim sees them (current stats, legendary effects, class attack kind).
+function Context.simPlayer(player: Player, character: any): any
+	local values = (Context.services.StatService.Get(player) or { values = {} }).values
+	local class = Classes.get(character.class)
+	return {
+		level = character.level,
+		values = values,
+		hooks = Context.services.EquipmentService.GetHooks(player),
+		magic = class ~= nil and class.basicAttack.kind == "magic",
+	}
 end
 
 -- Admin check (AdminService.IsAdmin), set by AdminService.Init.

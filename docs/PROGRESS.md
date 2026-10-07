@@ -39,6 +39,7 @@
 | S30 | Rzadkości od nowa (Zwykły, Unikatowy, Heroiczny, Legendarny, Mityczny), ramki w kolorach, drop wg źródła, grind legend i mityków z bossów | ● |
 | S31 | Wartość i statystyki każdego przedmiotu (jedna cena w UI i na serwerze, tooltip każdej kategorii), handlarz broni z progami 5–95 | ● |
 | S32 | Balans poziomów 1–20: model liczbowy i raport `docs/BALANS.md`, grupy, elity, Grimrok, przedmioty i rzadkości, drop, złoto | ● |
+| S33 | Expowiska z charakterem: profile ⚡ szybki exp / ✦ lepszy drop / ⛁ więcej złota na każdym przedziale, widoczne przy portalu, na mapie i banerze | ● |
 
 Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana przez właściciela
 
@@ -850,6 +851,34 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
 - **S31** Sloty `view:*` obsługuje sam `DragDrop` (bez przeciągania, upuszczania i aktywacji); dotyk: tap = zaznacz i
   tooltip, drugi tap / tap obok chowa, przewijanie nie chowa. Kontekst tooltipa przez prop `TooltipCtx` (`ItemSlot`,
   `SelectableSlot`) → `ItemTooltip.attach(..., getCtx)`; otwarty sklep włącza `ItemTooltip.setMerchantOpen`.
+- **S33** Profile expowisk w `Data/AreaProfiles` (exp / loot / gold), przypisanie polem `profile` w `Data/Areas/*`.
+  Mnożniki z sesji przeszły cele modelu bez zmian poza złotem: ⛁ złoto ×1,8 → ×1,9 (przy ×1,8 poziom 19 dawał 1,497×
+  złota/h obszaru bez profilu). Cele porównują każdy profil z pozostałymi dwoma i z obszarem bez profilu na tym samym
+  poziomie (Łąki 4–19 dla 4 klas, rodzaj 1 na 30 / 55 / 85).
+- **S33** Model godziny (`Logic/AreaRates`): walka S32 z wagami grup, HP i atakiem profilu + odpoczynek + przerwa +
+  dojście do grupy `WALK × √(respawn / 37,5 s)` (szybszy respawn = więcej żywych grup = bliżej). Złoto/h liczy monety i
+  sprzedaż dropu. Odpoczynek to dalej ok. 85% czasu (S32), więc ⚡ daje tylko ok. +14% EXP/h względem obszaru bez profilu,
+  ale ok. 1,8× względem ✦; ⛁ ok. 1,55× złota/h.
+- **S33** Rozmiary grup z profilem nie losują się od nowa: ten sam rzut co bez profilu jest czytany na wagach profilu
+  (kwantyl), więc grupa ⚡ nigdy nie jest mniejsza, ✦ nigdy większa, ⛁ (te same wagi) identyczna. Dodatkowych
+  członków dobiera drugi generator (`<id>#profile`), nadmiarowych ucina się od końca. Generator rozmieszczenia ma tę samą
+  sekwencję, więc pozycje grup, promienie i punkty `arrive` się nie zmieniły (test porównuje z danymi bez profili).
+  Łąki: Wilcze Wzgórza 22 → 25 potworów, Stary Las 21 → 25, Gobliński Obóz 15 → 19, Żabie Oczko 17 → 14, Stare
+  Wyrobisko 14 → 11, Niedźwiedzi Jar 15 → 13.
+- **S33** Limit `MaxActiveMonsters = 600`: wszystkie grupy 4 map regionów żywe naraz 521 → 551 (grupy i tak śpią z dala
+  od graczy). Raport w `docs/BALANS.md` („Potwory na mapach regionów”).
+- **S33** EXP profilu mnoży EXP zabicia przed podziałem w grupie (`CombatService.reward`), złoto profilu całą pulę
+  przed podziałem; questy (też `GiveExp`) bez zmian. Drop: `Loot.Modifiers.itemChanceMul` (z premią do dropu),
+  `topTierMul` (waga najwyższej rzadkości źródła ≤ `Rarities.cap`, `ItemRoll.rarityWeights`), `materialMul` (ilość ×
+  mnożnik, ułamek zaokrąglany losowo, min. 1). HP i atak: `MonsterStats.compute(..., groupSize, mods)`, profil czyta
+  `Entities/Monster` z atrybutu `AreaId`; model ma atrybut `AreaProfile` (znaczek na pasku potwora). Spawny bez obszaru
+  (admin, lochy) i jaskinie: bez profilu.
+- **S33** „Polecane” w oknie „Dokąd?” = najlepszy obszar każdego profilu (`AreaAdvice.bestByProfile`, „bez profilu” to
+  osobna grupa); mapa świata dalej gwiazdką oznacza wszystkie obszary w zasięgu. Opis profilu pokazuje się pod listą po
+  wybraniu wiersza (dotyk). Liczby mnożników z przecinkiem w PL (`format.decimal`).
+- **S33** Przypisanie w regionach 2–4 tematycznie, w każdej parze z planu jeden ⚡ i jeden ✦/⛁ (tabela w DESIGN §3.6).
+  Obszary spoza par (Krwawe Urwiska, Obóz Orków, Pola Golemów, Grobowce, Dolina Wilków, Przełęcz, Iglica) bez profilu.
+  Plan sesji odsyłał do „DESIGN §19 Świat” — w DESIGN to §3.6 (§19 to Gildie), tam trafiły profile.
 
 ## Niedokończone
 (Rzeczy z zakresu sesji, które nie zostały zrobione. Następna sesja zaczyna od nich.)
@@ -954,6 +983,13 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
 - **S32** Regeneracja poza walką 0,5%/s: w modelu ok. 85% czasu grindu to odpoczynek (bez mikstur). Bez zmian (poza
   zakresem); mikstury są tanie (ok. 2% dochodu).
 
+
+- **S33** Końce przedziałów z jednym obszarem (Łąki 1–2 i 19–20, Bór 43–45, Pustkowia 68–70, Szczyty 96–100) bez
+  wyboru — pomysł: dodatkowe małe obszary z profilem w przyszłej przebudowie regionów (sesja nie dodaje obszarów).
+- **S33** Jaskinie bez profilu (pole `profile` w `Cave` jest, ale `AreaSpawns.cave` go nie czyta). Model nie liczy
+  osobno szybszego respawnu jako „więcej potworów naraz” poza krótszym dojściem.
+- **S33** Opisy obszarów w `docs/SWIAT.md` dla regionów 2–4 (punkty charakterystyczne) dalej z planu sprzed S19; nowa
+  tabela z kodu stoi nad nimi.
 
 ## Zgłoszone błędy
 (Właściciel wpisuje tu błędy po testach albo przekazuje je przez sesję poprawek.)
@@ -2925,3 +2961,63 @@ Zwykły), statystyki względem celów `/balance`.
 19. **Grimrok** (3–5 graczy L18–20 z `/gearset 18`): walka ok. 5 min; zwykłe ciosy bolą mało, zamach / skok / wir
     dużo — wir trafia Maga L20 za ok. 2/3 HP (nie zabija jednym ciosem). Tank potrzebuje leczenia Kapłana albo mikstur.
 20. Elita II w Jaskini Mchów: solo przegrywasz, we 2 z miksturami da się, we 3 wygrywacie; jej drop ma ilvl ≤ 20.
+
+### S33: Expowiska z charakterem (szybki exp, lepszy drop, więcej złota)
+
+**Zrobione**
+- **Profile** w `Data/AreaProfiles`: ⚡ szybki exp (grupy 10/25/35/30, respawn 20–30 s, HP ×0,85, złoto ×0,7, przedmioty
+  ×0,6), ✦ lepszy drop (grupy 40/35/20/5, respawn 45–60 s, HP ×1,25, atak ×1,1, EXP ×0,8, przedmioty ×1,7, najlepsza
+  rzadkość ×2, materiały ×1,5), ⛁ więcej złota (złoto ×1,9, EXP ×0,85, przedmioty ×0,8, materiały ×1,3). Pole
+  `profile` w `Area` i `Cave`; przypisanie na wszystkich 4 mapach (Łąki: ⚡ Wilcze Wzgórza, Stary Las, Gobliński Obóz;
+  ✦ Żabie Oczko, Stare Wyrobisko, Niedźwiedzi Jar; ⛁ Krucze Pole, Kupiecki Trakt).
+- **Serwer**: grupy i respawn z profilu (`AreaSpawns.region`, położenie grup bez zmian), HP i atak potworów
+  (`MonsterStats.compute` + `Entities/Monster`), EXP i złoto zabicia przed podziałem (`CombatService`), szansa
+  przedmiotu, najwyższa rzadkość (nigdy ponad sufit źródła) i materiały (`Loot`, `LootService`, `ItemRoll.rarityWeights`).
+- **Model** `Logic/AreaRates` (EXP/h, złoto/h z dropem, przedmioty/h, najlepsze/h), `Balance.areaRates`, cele w
+  `tests/areaprofiles.spec` (⚡ ≥ 1,25× EXP/h ✦, ✦ ≥ 1,6× najlepszych przedmiotów/h, ⛁ ≥ 1,5× złota/h), raport
+  `docs/BALANS.md` (godzina expienia wg profilu, potwory na mapach).
+- **Gracz widzi**: okno „Dokąd?” (linia profilu ze znaczkiem i mnożnikami, opis wybranego obszaru, „Polecane” dla
+  najlepszego obszaru każdego profilu), mapa świata (karta obszaru z profilem, mnożnikami i opisem; znaczek przed nazwą
+  obszaru i na liście map; legenda profili z przełącznikiem „Profile expowisk”), baner wejścia (znaczek + nazwa profilu
+  pod spodem), minimapa (znaczek za nazwą obszaru), pasek potwora (znaczek obok ×N).
+- Admin: `/areainfo`, `/areasim <obszar> [minuty]`, `/lootsim <potwór> [wariant] [n] [obszar]`.
+- DESIGN §3.6 (profile, tabela mnożników i przypisań), SWIAT §3 (tabela obszarów wg kodu z profilami, znaczki w
+  tabeli Łąk).
+
+**Pliki**: nowe `Data/AreaProfiles`, `Logic/AreaRates`, `UI/AreaProfileText`, `tests/areaprofiles.spec`; zmiany:
+`Data/Areas/{Types,meadows,duskwood,ashen,frostpeak}`, `Data/{AdminCommands,Localization}`, `Logic/{AreaSpawns,
+AreaAdvice,FightSim,ItemRoll,Loot,MonsterStats}`, `Entities/Monster`, `Services/{CombatService,LootService}`,
+`Admin/{Context,Combat,Items,World}`, `Screens/{AreaPicker,Hud/AreaBanner,Hud/Minimap,WorldMap/{Canvas,Cards,Panels,
+init}}`, `Controllers/MonsterPlateController`, `tests/Balance`, `tools/balance_report` (714 testów).
+
+#### Instrukcja testu S33
+
+1. Postać poziomu 5 (`/lvl 5`), portal z miasta na Łąki: w oknie „Dokąd?” Wilcze Wzgórza mają żółtą linię
+   „⚡ Szybki exp — EXP ×1 · przedmioty ×0,6 · złoto ×0,7”, Żabie Oczko niebieską „✦ Lepszy drop — … · najlepsze ×2”.
+2. Tapnij / kliknij Żabie Oczko: pod listą opis „✦ Lepszy drop: Mniej, ale twardszych potworów…”. Na dotyku wiersze
+   dalej wygodne (wyższe przy profilu).
+3. „Polecane” stoi przy Wilczych Wzgórzach i przy Żabim Oczku (najlepszy ⚡ i najlepszy ✦ na poz. 5).
+4. Wejdź na Wilcze Wzgórza: baner „Wilcze Wzgórza · 3–7 ⚡”, pod nim „⚡ Szybki exp”; minimapa pod nazwą mapy ma
+   znaczek za nazwą obszaru.
+5. Na Wilczych Wzgórzach grupy są wyraźnie większe (często ×3–×4), znaczek ⚡ obok ×N na pasku potwora; wybita grupa
+   wraca po 20–30 s.
+6. `/areainfo` na Wzgórzach: profil z mnożnikami, liczba żywych potworów (do 25 w 7 grupach), EXP/h i złoto/h twojej
+   postaci.
+7. Żabie Oczko: mniej potworów w grupie (głównie ×1–×2), ropucha ma więcej HP niż na liście bez profilu (`/target info`
+   ok. +25%), bije trochę mocniej; przedmioty wypadają częściej i częściej są niebieskie (Unikatowe).
+8. `/lootsim swampToad 0 2000` i `/lootsim swampToad 0 2000 meadows_toadmire`: przy obszarze ok. 1,7× więcej
+   przedmiotów, unikatów ok. 2,6×, materiałów ok. 1,5×; żadnego Heroicznego (sufit zwykłych potworów).
+9. `/lvl 12`, Kupiecki Trakt (⛁): złoto z bandytów ok. 1,9× tego, co wcześniej (liczba nad głową po zabiciu); EXP
+   trochę mniejszy (×0,85).
+10. W grupie 2 graczy na Trakcie: złoto i EXP dzielą się jak dotąd, ale z większej puli.
+11. Quest z nagrodą EXP oddany po expieniu na Trakcie: EXP z questu bez zmian (profil nie działa na questy).
+12. `/areasim meadows_wolfhills 60`, `/areasim meadows_toadmire 60`, `/areasim meadows_crowfield 60` (postać 8):
+    Wzgórza najwięcej EXP, Oczko najwięcej Unikatowych, Krucze Pole najwięcej złota (monety + drop).
+13. Mapa świata (M) na Łąkach: przed nazwami obszarów kolorowe ⚡ / ✦ / ⛁; w legendzie poziomów trzy profile i
+    przełącznik „Profile expowisk” — wyłączony chowa znaczki. Lista map po lewej też ma znaczki.
+14. Karta obszaru (klik w Krucze Pole): „⛁ Więcej złota”, linia mnożników i opis nad liczbą grup.
+15. Mroczny Bór i dalsze mapy: Wilcze Ostępy ⚡, Niedźwiedzi Jar ✦, Nawiedzone Ruiny ⛁ (okno „Dokąd?” z `/portalpick
+    duskwood`).
+16. Polana Królików, jaskinie i potwory z `/spawn`: bez znaczka, wszystko jak przed S33.
+17. Punkty przybycia przy portalu (każdy obszar Łąk) dalej przy drodze, z dala od grup — grupy stoją tam, gdzie stały.
+18. Angielski język (ustawienia): „⚡ Fast EXP — EXP ×1 · items ×0.6 · gold ×0.7”, kropka dziesiętna.

@@ -16,6 +16,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage.Shared
 
+local AreaProfiles = require(Shared.Data.AreaProfiles)
 local Combat = require(Shared.Data.Combat)
 local Leash = require(Shared.Logic.Leash)
 local MonsterAbilities = require(Shared.Data.MonsterAbilities)
@@ -105,9 +106,12 @@ function Monster.new(
 	parent: Instance,
 	attributes: { [string]: any }?
 ): Monster
-	-- S32: members of bigger groups hit softer (Combat.groupDamageMul).
+	-- S32: members of bigger groups hit softer (Combat.groupDamageMul). S33: the area profile's HP and attack.
 	local groupSize = attributes and (attributes :: any).GroupSize
-	local stats = MonsterStats.compute(def, level, variant, if type(groupSize) == "number" then groupSize else nil)
+	local areaId = attributes and (attributes :: any).AreaId
+	local profile = AreaProfiles.ofArea(if type(areaId) == "string" then areaId else nil)
+	local stats =
+		MonsterStats.compute(def, level, variant, if type(groupSize) == "number" then groupSize else nil, profile)
 	local model = RigBuilder.build(def, variant, stats.scale)
 	local root = model:FindFirstChild("HumanoidRootPart") :: BasePart
 	local humanoid = model:FindFirstChildOfClass("Humanoid") :: Humanoid
@@ -116,6 +120,9 @@ function Monster.new(
 	model:SetAttribute("Variant", variant)
 	model:SetAttribute("NameKey", (def.nameKeys :: any)[variant] or def.nameKeys.normal)
 	model:SetAttribute("Level", stats.level)
+	if profile then
+		model:SetAttribute("AreaProfile", profile.id) -- S33: the target plate shows the profile's icon
+	end
 	model:SetAttribute("MaxHp", stats.maxHp)
 	model:SetAttribute("Hp", stats.maxHp)
 	model:PivotTo(spawnCFrame + Vector3.new(0, humanoid.HipHeight + root.Size.Y / 2, 0))

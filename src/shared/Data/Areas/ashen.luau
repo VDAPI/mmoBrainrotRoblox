@@ -54,6 +54,7 @@ local data: Types.MapAreas = {
 			kinds = { "salamander", "wasteHyena" },
 			rect = { -760, -330, -420, 420 },
 			groups = 8,
+			profile = "exp", -- S33: salamanders and hyena packs
 			arrive = { x = -680, z = 0 }, -- S22: portal / map stone arrival (Logic/AreaArrival)
 		},
 		{
@@ -63,6 +64,7 @@ local data: Types.MapAreas = {
 			kinds = { "wasteHyena", "ashVulture" },
 			rect = { -760, 440, -300, 780 },
 			groups = 6,
+			profile = "loot", -- S33: lost caravans' gear in the sand
 			arrive = { x = -488, z = 632 }, -- S22: portal / map stone arrival (Logic/AreaArrival)
 			landmark = { x = -560, z = 600 },
 		},
@@ -92,6 +94,7 @@ local data: Types.MapAreas = {
 			kinds = { "fireImp", "desertScorpion" },
 			rect = { -280, 440, 280, 780 },
 			groups = 6,
+			profile = "exp", -- S33: swarms of imps
 			arrive = { x = 0, z = 608 }, -- S22: portal / map stone arrival (Logic/AreaArrival)
 			landmark = { x = 200, z = 640 },
 		},
@@ -102,6 +105,7 @@ local data: Types.MapAreas = {
 			kinds = { "desertScorpion", "desertMummy" },
 			rect = { 330, 300, 780, 780 },
 			groups = 7,
+			profile = "gold", -- S33: mummies buried with their gold
 			arrive = { x = 401, z = 316 }, -- S22: portal / map stone arrival (Logic/AreaArrival)
 		},
 		{
@@ -111,6 +115,7 @@ local data: Types.MapAreas = {
 			kinds = { "wyvern", "basilisk" },
 			rect = { 300, -780, 780, -300 },
 			groups = 6,
+			profile = "exp", -- S33: wyvern flocks
 			arrive = { x = 592, z = -317 }, -- S22: portal / map stone arrival (Logic/AreaArrival)
 		},
 		{
@@ -120,6 +125,7 @@ local data: Types.MapAreas = {
 			kinds = { "basilisk", "wyvern" },
 			rect = { 0, -300, 500, -80 },
 			groups = 4,
+			profile = "gold", -- S33: robbed caravans along the road
 			arrive = { x = 248, z = -188 }, -- S22: portal / map stone arrival (Logic/AreaArrival)
 		},
 		{
