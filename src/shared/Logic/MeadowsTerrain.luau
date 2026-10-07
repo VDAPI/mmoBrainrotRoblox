@@ -48,7 +48,7 @@ MeadowsTerrain.MATERIALS = {
 	"Rock",
 	"Slate",
 	"Sand",
-	"Pebble",
+	"Salt",
 	"Water",
 	"Air",
 }
@@ -734,7 +734,7 @@ local THEME_GROUND: { [string]: (n: number) -> string } = {
 		return if n > 0.66 then "LeafyGrass" else "Grass"
 	end,
 	hills = function(n)
-		return if n > 0.72 then "Pebble" elseif n < 0.24 then "LeafyGrass" else "Grass"
+		return if n > 0.72 then "Salt" elseif n < 0.24 then "LeafyGrass" else "Grass"
 	end,
 	marsh = function(n)
 		return if n > 0.5 then "Mud" elseif n > 0.3 then "LeafyGrass" else "Grass"
@@ -752,7 +752,7 @@ local THEME_GROUND: { [string]: (n: number) -> string } = {
 		return if n > 0.78 then "Ground" elseif n < 0.22 then "LeafyGrass" else "Grass"
 	end,
 	quarry = function(n)
-		return if n > 0.62 then "Ground" elseif n < 0.26 then "Pebble" else "Grass"
+		return if n > 0.62 then "Ground" elseif n < 0.26 then "Salt" else "Grass"
 	end,
 	goblin = function(n)
 		return if n > 0.56 then "Ground" elseif n < 0.24 then "Mud" else "LeafyGrass"
@@ -770,7 +770,7 @@ function MeadowsTerrain.materialAt(x: number, z: number, h: number, slope: numbe
 	local water = waterOf(h, info)
 	if water then
 		if info.stream > 0 and info.streamD < 0 then
-			return if info.ravine or n > 0.62 then "Pebble" else "Sand"
+			return if info.ravine or n > 0.62 then "Salt" else "Sand"
 		end
 		return "Mud"
 	end
@@ -784,7 +784,7 @@ function MeadowsTerrain.materialAt(x: number, z: number, h: number, slope: numbe
 		return if info.ravine or info.quarry < 1.1 then "Slate" else "Rock"
 	end
 	if info.stream > 0 and info.streamD < 2.5 then
-		return if info.marsh > 0.3 or n < 0.3 then "Mud" elseif info.ravine then "Pebble" else "Sand"
+		return if info.marsh > 0.3 or n < 0.3 then "Mud" elseif info.ravine then "Salt" else "Sand"
 	end
 	if info.lake < 4 and info.lake > -1 then
 		return if info.marsh > 0.3 then "Mud" else "Sand"
@@ -793,10 +793,10 @@ function MeadowsTerrain.materialAt(x: number, z: number, h: number, slope: numbe
 		return if info.ravine then "Slate" else "Rock"
 	end
 	if info.quarry < 1.0 then
-		return if n > 0.55 then "Ground" else "Pebble"
+		return if n > 0.55 then "Ground" else "Salt"
 	end
 	if info.ravine then
-		return if n > 0.7 then "Pebble" elseif n > 0.4 then "LeafyGrass" else "Ground"
+		return if n > 0.7 then "Salt" elseif n > 0.4 then "LeafyGrass" else "Ground"
 	end
 	for _, patch in Shape.patches do
 		local d = math.sqrt((x - patch.x) ^ 2 + (z - patch.z) ^ 2)

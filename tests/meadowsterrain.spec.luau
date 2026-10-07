@@ -5,6 +5,7 @@
 
 local Areas = require("../src/shared/Data/Areas")
 local MeadowsTerrain = require("../src/shared/Logic/MeadowsTerrain")
+local TownTerrain = require("../src/shared/Logic/TownTerrain")
 local Portals = require("../src/shared/Data/Portals")
 local Shape = require("../src/shared/Data/Terrain/meadows")
 local TerrainLayers = require("../src/shared/Logic/TerrainLayers")
@@ -162,6 +163,47 @@ describe("Meadows terrain", function()
 			local b = MeadowsTerrain.height(p[1], p[2])
 			expect(a).toBe(b)
 			expect(MeadowsTerrain.material(p[1], p[2])).toBe(MeadowsTerrain.material(p[1], p[2]))
+		end
+	end)
+
+	it("uses only materials Roblox terrain accepts (Pebble is part-only: WorldService.Init failed in S26)", function()
+		-- Enum.Material values valid for Terrain:WriteVoxels / SetMaterialColor (plus Air and Water).
+		local terrain: { [string]: boolean } = {}
+		for _, name in
+			{
+				"Air",
+				"Water",
+				"Asphalt",
+				"Basalt",
+				"Brick",
+				"Cobblestone",
+				"Concrete",
+				"CrackedLava",
+				"Glacier",
+				"Grass",
+				"Ground",
+				"Ice",
+				"LeafyGrass",
+				"Limestone",
+				"Mud",
+				"Pavement",
+				"Rock",
+				"Salt",
+				"Sand",
+				"Sandstone",
+				"Slate",
+				"Snow",
+				"WoodPlanks",
+			}
+		do
+			terrain[name] = true
+		end
+		for _, list in { MeadowsTerrain.MATERIALS, TownTerrain.MATERIALS } do
+			for _, name in list do
+				if not terrain[name] then
+					error(`{name} is not a terrain material`)
+				end
+			end
 		end
 	end)
 
