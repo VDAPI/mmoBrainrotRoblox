@@ -3116,6 +3116,12 @@ ItemTooltip,QuestRewards}`, `Screens/{LegendReveal,BackpackPanel,Hud/PotionBar,H
 `Controllers/{UIController,ItemController,SkillController}`, `Admin/Items`, `Data/{AdminCommands,Localization}`,
 `tools/WikiData/Items`, dane wiki (736 testów).
 
+**Uzupełnienie (2026-10-07, po S39):** atlasy wgrane przez Studio MCP (`upload_image`), id w `ItemIconSheets.luau`.
+Naprawiony błąd: `IconState.load` wołał `PreloadAsync` na tekstach id, co w Studio daje `Failure` dla każdego obrazka
+(też publicznego), więc gra ostrzegała `[ItemIcons] sheet N: Failure` i zostawała przy symbolach. Teraz wczytuje
+instancje `ImageLabel` (Success dla 3 atlasów); w Play pasek mikstur rysuje warstwy z atlasu. Kroki 1–7 instrukcji
+poniżej są już zrobione; do sprawdzenia przez właściciela zostają kroki 8–13.
+
 #### Instrukcja testu S35
 
 **Przed wgraniem atlasów**

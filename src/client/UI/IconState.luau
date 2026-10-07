@@ -44,9 +44,17 @@ function IconState.load()
 	if not ItemIcons.ready() then
 		return
 	end
+	-- Preload ImageLabels, not the id strings: PreloadAsync on a bare "rbxassetid://" string reports Failure for
+	-- images that load fine (checked in Studio for these sheets and public assets); an instance fetches the image.
+	local labels: { Instance } = {}
+	for _, id in ids do
+		local label = Instance.new("ImageLabel")
+		label.Image = id
+		table.insert(labels, label)
+	end
 	local failed = false
 	local ok = pcall(function()
-		ContentProvider:PreloadAsync(ids, function(contentId: string, status: Enum.AssetFetchStatus)
+		ContentProvider:PreloadAsync(labels, function(contentId: string, status: Enum.AssetFetchStatus)
 			for n = 1, #ids do
 				if ItemIcons.sheet(n) == contentId then
 					IconState.Status[n] = status.Name
@@ -58,6 +66,9 @@ function IconState.load()
 			end
 		end)
 	end)
+	for _, label in labels do
+		label:Destroy()
+	end
 	IconState.Ok:set(ok and not failed)
 end
 

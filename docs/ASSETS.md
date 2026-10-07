@@ -35,6 +35,11 @@ id z `src/shared/Data/ItemIconSheets.luau`. Dopóki id są puste, gra pokazuje d
    `/icons glyph` wraca do symboli.
 5. Commit zmiany id (`ItemIconSheets.luau`).
 
+**Stan (2026-10-07):** atlasy wgrane (konto VDaPii) i wpisane w `ItemIconSheets.luau`: items_1 `104431147179940`,
+items_2 `113622747165970`, items_3 `103992189653299`. Sprawdzone w Play: warstwy ikon w pasku mikstur wczytane.
+Uwaga techniczna: `ContentProvider:PreloadAsync` z samym tekstem `rbxassetid://…` zwraca w Studio `Failure` także dla
+obrazków, które się wczytują; `UI/IconState` wczytuje więc instancje `ImageLabel`.
+
 ## Dodanie modelu potwora (skrót `docs/MODELE.md` §5)
 
 1. Asset Privacy włączone, wszystko wgrywa ten sam właściciel co gra.

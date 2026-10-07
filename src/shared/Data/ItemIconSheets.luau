@@ -4,7 +4,7 @@
 -- the UI then keeps the old glyph icons, so the game works before and after the upload.
 
 return table.freeze({
-	"", -- items_1.png, e.g. "rbxassetid://1234567890"
-	"", -- items_2.png
-	"", -- items_3.png
+	"rbxassetid://104431147179940", -- items_1.png
+	"rbxassetid://113622747165970", -- items_2.png
+	"rbxassetid://103992189653299", -- items_3.png
 })
