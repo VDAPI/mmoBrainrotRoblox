@@ -37,6 +37,7 @@
 | S28 | Umiejętności od nowa: naprawa rzucania, animacja i efekt każdej umiejętności, przełomy na 5. i 10. poziomie, czucie trafień, wygoda | ● |
 | S29 | Poprawki po testach: jedno okno Postaci z plecakiem, plecak znika z usługą, NPC na ziemi, ✶ błogosławieństwa przy nicku (30 min), zielone cele questów, teleport do miasta, liczby obrażeń zawsze | ● |
 | S30 | Rzadkości od nowa (Zwykły, Unikatowy, Heroiczny, Legendarny, Mityczny), ramki w kolorach, drop wg źródła, grind legend i mityków z bossów | ● |
+| S31 | Wartość i statystyki każdego przedmiotu (jedna cena w UI i na serwerze, tooltip każdej kategorii), handlarz broni z progami 5–95 | ● |
 
 Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana przez właściciela
 
@@ -792,6 +793,19 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
   per rzadkość); zaznaczony slot = biała obwódka + jaśniejsze tło; podświetlenia przeciągania z S29 i zaznaczenie
   wyłączają gradient i poświatę. `Theme.Rarity` usunięte. Nowa karta nagrody po bossie (`Screens/BossReward`) z
   wynikiem rzutu, „Dziś: n/3” i szansami na następne zabicie (zdarzenie `CombatFx` `reward` z polem `boss`).
+- **S31** Wartość: `perLevel = 6`, ulepszenie +10% / poziom, `buyMul = 4` (nadpisywalny `shop.buyMul`), `slotMul` broń
+  1,0, druga ręka i pancerz 0,8, biżuteria 0,7. Mityczne ręczne liczą się jak losowany Mityczny tego poziomu.
+  Handlarz broni: próg 5 = 120 złota (było 160), 55 = 1320 (było 8160), 95 = 2280; druga ręka ×0,8.
+- **S31** Poprawione wartości: `backpack_20` 0 → 25, `scroll_oblivion` i `scroll_skillreset` 1 → 100. Stałe ceny
+  mikstur, kamieni, narzędzi, plecaków, rudy i pyłu zostały (są ×4–5 wartości; test pilnuje, że cena ≥ wartość).
+- **S31** „Nie można sprzedać” = przedmiot zablokowany albo z flagą `def.noSell`; związane dalej można sprzedać kupcowi
+  (jak od S20). DPS = max(obrażenia, obrażenia magiczne) × szybkość; w PL przecinek dziesiętny.
+- **S31** Handlarz broni sprzedaje też drugą rękę (tarcze, kołczany, księgi, kule, relikwie). Lista okna liczona ze
+  stałych wysokości elementów (wirtualne piksele przed `UIScale`); wiersze tworzone leniwie (zapas 400 px), okno
+  przewinięte na najwyższy próg ≤ poziom postaci.
+- **S31** Sloty `view:*` obsługuje sam `DragDrop` (bez przeciągania, upuszczania i aktywacji); dotyk: tap = zaznacz i
+  tooltip, drugi tap / tap obok chowa, przewijanie nie chowa. Kontekst tooltipa przez prop `TooltipCtx` (`ItemSlot`,
+  `SelectableSlot`) → `ItemTooltip.attach(..., getCtx)`; otwarty sklep włącza `ItemTooltip.setMerchantOpen`.
 
 ## Niedokończone
 (Rzeczy z zakresu sesji, które nie zostały zrobione. Następna sesja zaczyna od nich.)
@@ -884,6 +898,9 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
 - **S29** Zdarzenia liczb obrażeń dalej tylko w promieniu `Combat.fxRadius = 80` (bilbord ma `MaxDistance` 250; większy
   promień = więcej ruchu sieciowego — do decyzji właściciela).
 - **S30** Szanse rzutu osobistego są wspólne dla 4 bossów (do strojenia w S32: `LootTables.bosses[*]`).
+- **S31** Aukcja nie ma podpowiedzi minimalnej ceny, a poczta nie ma wysyłki za pobraniem (nie istniały — pominięte).
+- **S31** Do S32: złoto rzemiosła u kowala to dalej `priceAt(tier) × 3` (próg 55 ≈ 6120), a ta sama broń u handlarza
+  kosztuje teraz 1320 — przeliczyć rzemiosło na `ItemValue`.
 
 ## Zgłoszone błędy
 (Właściciel wpisuje tu błędy po testach albo przekazuje je przez sesję poprawek.)
@@ -2737,3 +2754,54 @@ NotificationController,DungeonController,CombatFxController}`, lokalizacja, `tes
     sprzedaż Heroicznego pyta o potwierdzenie. Menu → filtry łupu przełączają się po nowych nazwach.
 15. Karta potwora na mapie: „Przedmioty do rzadkości: Unikatowy” (zwykły), Heroiczny (Elita), Legendarny (Elita II).
 16. Aukcja: stara oferta „epicka” ma filtr i kolor Heroiczny; stara paczka pocztowa pokazuje nowe rzadkości.
+
+### S31: Wartość i statystyki każdego przedmiotu, handlarz broni 5–95
+
+**Zrobione**
+- **Jedna wartość**: `Logic/ItemValue` (`value`, `sellPrice`, `buyPrice`, `canSell`, `entryItem`) ze stałymi w
+  `Data/ItemValue`; `ItemRoll.sellPrice`, `ShopPrice.unit` (nowy argument `shop`) i `ShopService` (kupno, sprzedaż,
+  „sprzedaj wszystko”, odkup, plecaki) liczą przez nią — ta sama liczba w wierszu sklepu, tooltipie i na serwerze.
+- **Tooltip każdego przedmiotu**: czysta `Logic/TooltipModel.build(item, def, ctx)` — „Rzadkość · Kategoria” z własnymi
+  kluczami, broń z DPS, mikstury, błogosławieństwa (30 min), eliksiry (odporność + czas), kamienie, zwoje, narzędzia
+  (z `GatherNodes`), materiały „Używany do:” z odwrotnego indeksu danych (ulepszanie, alchemia, kowal, questy) i poziom,
+  plecaki; na końcu „Wartość”, w sklepie „Cena”, przy kupcu „Sprzedasz za”, „Nie można sprzedać”. `ItemTooltip` tylko
+  rysuje linie (kolory S30 i porównanie ↑/↓ zostały). `TooltipModel.statLine` dla wierszy sklepu.
+- **Bez najeżdżania i na dotyku**: obsługa `view:*` w `DragDrop` (sklep, odkup, siatka sprzedaży, kowal, plecakarz,
+  poczta, aukcja, alchemia, karty mapy, handel, profil, wybór nagrody); trzecia linia wiersza sklepu „Poz. · Obr. ·
+  szybkość · DPS” (poziom na czerwono, gdy za wysoki); nagrody questów jako `Components/QuestRewards` (ikony EXP i
+  złota z liczbą, małe sloty z tooltipem) w rozmowie, na tablicy zleceń, w dzienniku i na kartach NPC mapy.
+- **Handlarz broni**: progi 5, 15, …, 95 (`Shops.WEAPONSMITH_TIERS`), wszystko Zwykłe, druga ręka zostaje; okno ze
+  wszystkimi progami pod nagłówkami „Poziom 15 · Wzmocniony”, przewinięte na próg gracza, wyższe z szarym „Kup” i
+  czerwonym „Wymaga poziomu N”, leniwe wiersze.
+- Admin: `/value <id> [ilvl] [rzadkość] [ulepszenie]`, `/tooltip <id> [pl|en]`.
+- Testy: `itemvalue.spec` (wartość > 0 i kategoria z kluczami dla każdego przedmiotu, wzrost z poziomem / rzadkością /
+  ulepszeniem, kupno = wartość × `buyMul`, TooltipModel dla każdej kategorii), `weaponsmith.spec` (progi 5…95, Zwykłe,
+  każda klasa w każdym progu, cena), poprawki `smith.spec` (681 testów).
+
+**Pliki**: nowe `Logic/{ItemValue,TooltipModel}`, `Data/ItemValue`, `Components/QuestRewards`, `tests/itemvalue.spec`;
+zmiany: `Logic/{ShopPrice,ItemRoll}`, `Data/{Shops,AdminCommands,Items/Backpacks,Items/Consumables,Items/Types}`,
+`Services/ShopService`, `Admin/Items`, `UI/DragDrop`, `Components/{ItemTooltip,ItemSlot,SelectableSlot}`,
+`Screens/{ShopWindow,BackpackShop,QuestDialog,QuestBoard,QuestJournal,WorldMap/DetailCard,WorldMap/Cards}`,
+lokalizacja, `tests/{weaponsmith,smith}.spec`.
+
+#### Instrukcja testu S31
+
+1. Najedź na broń w plecaku: „Rzadkość · Broń jednoręczna/dwuręczna/dystansowa”, „Obrażenia na sekundę: …”, na dole
+   „Wartość: X złota”.
+2. F2 → konsola: `/tooltip elixir_resFire` — „Odporność na ogień +15%” i „Czas działania: 60 min”.
+3. `/tooltip essence_dust` — „Używany do:” z ulepszaniem +1…+3, alchemią i kowalem; `/tooltip legend_core` — +7…+9.
+4. `/tooltip stone_return`, `scroll_protection`, `pickaxe`, `backpack_45` — efekt, pojemność, wymagany poziom.
+5. `/value sword1h_30 30 common 0` — wartość 180, kupno 720, sprzedaż 180; z `mythic 3` wyraźnie więcej.
+6. Otwórz kupca, najedź na przedmiot w plecaku: „Sprzedasz za: X”; po sprzedaży złoto rośnie dokładnie o X. Po
+   zamknięciu sklepu linia znika.
+7. Zablokuj przedmiot (🔒): czerwone „Nie można sprzedać”.
+8. Handlarz broni postacią ~20: lista przewinięta na „Poziom 15 · …”, widać progi 5–95, wszystko szare (Zwykłe); broń
+   progu 5 kosztuje 120.
+9. Przewiń szybko do 95: wiersze dorysowują się płynnie; wyższe progi mają szary „Kup” i czerwone „Wymaga poziomu N”.
+10. Tooltip broni w sklepie: „Cena” = cena w wierszu; trzecia linia wiersza: poziom, obrażenia, szybkość, DPS.
+11. Zakładki klas (mag z żywiołami): każda klasa ma broń w każdym progu.
+12. Kup broń i sprzedaj: dostajesz 1/4 ceny (30 za 120); odkup za tę samą kwotę.
+13. Emulator telefonu: tap w przedmiot w sklepie, odkupie i siatce sprzedaży pokazuje tooltip; drugi tap / tap obok
+    chowa, przewijanie nie.
+14. Rozmowa z NPC dającym quest: pod celami nagrody — ikona EXP, złota i małe sloty z tooltipem (także dotykiem). To
+    samo na tablicy zleceń, w dzienniku (Fabuła, Poboczne, Dzienne) i na karcie NPC na mapie świata.

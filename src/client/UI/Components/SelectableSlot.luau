@@ -8,6 +8,7 @@ local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local ItemSlot = require(script.Parent.ItemSlot)
 local Sounds = require(script.Parent.Parent.Sounds)
 local Theme = require(script.Parent.Parent.Theme)
+local TooltipModel = require(ReplicatedStorage.Shared.Logic.TooltipModel)
 local Types = require(ReplicatedStorage.Shared.Types)
 
 local Children, OnEvent = Fusion.Children, Fusion.OnEvent
@@ -22,6 +23,7 @@ export type Props = {
 	Size: number?,
 	LayoutOrder: UsedAs<number>?,
 	Visible: UsedAs<boolean>?,
+	TooltipCtx: (TooltipModel.Ctx | () -> TooltipModel.Ctx?)?, -- see ItemSlot
 }
 
 local function SelectableSlot(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instance
@@ -32,6 +34,7 @@ local function SelectableSlot(scope: Fusion.Scope<typeof(Fusion)>, props: Props)
 		Size = size,
 		LayoutOrder = props.LayoutOrder,
 		Visible = props.Visible,
+		TooltipCtx = props.TooltipCtx,
 	})
 	scope:New("TextButton")({
 		Name = "Toggle",

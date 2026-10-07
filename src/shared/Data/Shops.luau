@@ -1,17 +1,20 @@
 --!strict
--- Shop assortments (DESIGN §9, §13, §18). Prices default to the item's `buyPrice`; `pricePerLevel` makes
--- the price depend on the buyer's level (teacher's reset scrolls). Every shop buys player items.
+-- Shop assortments (DESIGN §9, §13, §18). Prices come from Logic/ItemValue.buyPrice (S31): the entry's
+-- fixed `price`, else the item's fixed `buyPrice`, else value x `buyMul`; `pricePerLevel` makes the price
+-- depend on the buyer's level (teacher's reset scrolls). Every shop buys player items (for their value).
 
 local Bases = require("./Items/Bases")
 local Elements = require("./Elements")
+local Rarities = require("./Rarities")
 
 export type Entry = {
 	item: string,
-	price: number?, -- overrides the item's buyPrice
+	price: number?, -- fixed price (overrides the item's buyPrice and value x buyMul)
 	pricePerLevel: number?, -- price = pricePerLevel x character level
 	-- Equipment sold at a fixed item level (weaponsmith, S18): common, no bonuses.
 	key: string?, -- unique id of the entry when one item is sold several ways (elements); default `item`
 	ilvl: number?,
+	rarity: number?, -- rarity of the sold equipment (weaponsmith: Common)
 	el: string?, -- element of a mage weapon
 	level: number?, -- character level needed to buy
 	classes: { string }?, -- classes that can use it (class tabs)
@@ -20,12 +23,13 @@ export type Entry = {
 export type ShopDef = {
 	id: string,
 	entries: { Entry },
-	classTabs: boolean?, -- the window shows class tabs and tiers up to the player's level + 5
+	classTabs: boolean?, -- the window shows class tabs grouped by tier (weaponsmith)
+	buyMul: number?, -- price = value x buyMul for entries without a fixed price (default Data/ItemValue.buyMul)
 }
 
--- Weaponsmith (S18, DESIGN §8a): every weapon and off-hand base at every tier, common, ilvl = tier, mage
--- weapons once per element. Price about 4x the sell price of the tier.
-local WEAPONSMITH_PRICE_FACTOR = 4
+-- Weaponsmith (S18, S31 DESIGN §8a): every weapon and off-hand base at tiers 5, 15, ..., 95 (tier 1 is the
+-- starting gear), Common, ilvl = tier, mage weapons once per element. No fixed price: value x buyMul.
+local WEAPONSMITH_TIERS: { number } = { 5, 15, 25, 35, 45, 55, 65, 75, 85, 95 }
 
 local function weaponsmith(): { Entry }
 	local list = {}
@@ -33,9 +37,8 @@ local function weaponsmith(): { Entry }
 		if base.slot ~= "weapon" and base.slot ~= "offhand" then
 			continue
 		end
-		for _, tier in Bases.tiers do
+		for _, tier in WEAPONSMITH_TIERS do
 			local item = `{base.type}_{tier}`
-			local price = Bases.priceAt(tier) * WEAPONSMITH_PRICE_FACTOR
 			local elements: { string? } = if base.elemental then Elements.WEAPON :: any else { false :: any }
 			for _, el in elements do
 				local element = if el then el :: string else nil
@@ -43,10 +46,10 @@ local function weaponsmith(): { Entry }
 					item = item,
 					key = if element then `{item}:{element}` else item,
 					ilvl = tier,
+					rarity = Rarities.COMMON,
 					el = element,
 					level = tier,
 					classes = base.classes,
-					price = price,
 				})
 			end
 		end
@@ -107,4 +110,5 @@ return table.freeze({
 		return SHOPS[id]
 	end,
 	BUYBACK_SIZE = 10,
+	WEAPONSMITH_TIERS = table.freeze(WEAPONSMITH_TIERS),
 })

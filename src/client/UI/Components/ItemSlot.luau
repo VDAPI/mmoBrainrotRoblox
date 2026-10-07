@@ -16,6 +16,7 @@ local Items = require(ReplicatedStorage.Shared.Data.Items)
 local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
 local State = require(script.Parent.Parent.State)
 local Theme = require(script.Parent.Parent.Theme)
+local TooltipModel = require(ReplicatedStorage.Shared.Logic.TooltipModel)
 local Types = require(ReplicatedStorage.Shared.Types)
 
 local Children = Fusion.Children
@@ -36,6 +37,9 @@ export type Props = {
 	EmptyTooltip: UsedAs<string>?,
 	-- S29: drop highlight while an item is dragged / selected: "ok" (green) or "bad" (red), nil = none.
 	DropHint: UsedAs<string?>?,
+	-- S31: extra tooltip context (shop / shopEntry / merchantOpen / hints, see Logic/TooltipModel), a table or a
+	-- function returning one when it is read (the tooltip opens).
+	TooltipCtx: (TooltipModel.Ctx | () -> TooltipModel.Ctx?)?,
 }
 
 local function canUse(item: ItemInstance, level: number?, classId: string?): boolean
@@ -319,10 +323,26 @@ local function ItemSlot(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Inst
 		},
 	})
 
-	DragDrop.register(scope, frame :: GuiObject, props.SlotId)
-	ItemTooltip.attach(scope, frame :: GuiObject, function(): ItemInstance?
+	local function getItem(): ItemInstance?
 		return Fusion.peek(item)
-	end, props.EmptyTooltip, props.SlotId)
+	end
+	DragDrop.register(scope, frame :: GuiObject, props.SlotId, getItem)
+	local ctx = props.TooltipCtx
+	local getCtx: (() -> TooltipModel.Ctx?)? = nil
+	if type(ctx) == "function" then
+		getCtx = ctx
+	elseif ctx ~= nil then
+		local fixed = ctx :: TooltipModel.Ctx
+		getCtx = function(): TooltipModel.Ctx?
+			return fixed
+		end
+	elseif string.sub(props.SlotId, 1, 5) == "view:" then
+		-- Look-only slots cannot be equipped / used from here: no "double click" hint.
+		getCtx = function(): TooltipModel.Ctx?
+			return { hints = false }
+		end
+	end
+	ItemTooltip.attach(scope, frame :: GuiObject, getItem, props.EmptyTooltip, props.SlotId, getCtx)
 	return frame
 end
 

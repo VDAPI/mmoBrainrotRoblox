@@ -160,6 +160,14 @@ cmd("items", "ilvl", { int("level", 1, MAX_LEVEL) })
 cmd("items", "element", { enum("element", { "fire", "ice", "lightning" }) })
 cmd("items", "partyloot", { int("n", 1, 5, true) })
 cmd("items", "gearbag", {}) -- S29: drag-to-equip test set in the backpack
+-- S31: item value / buy / sell price and the tooltip lines of any item.
+cmd("items", "value", {
+	ref("item", "item"),
+	int("ilvl", 1, MAX_LEVEL, true),
+	enum("rarity", RARITY_NAMES, true),
+	int("up", 0, 9, true, "0"),
+})
+cmd("items", "tooltip", { ref("item", "item"), enum("lang", { "pl", "en" }, true, "pl") })
 
 -- World
 cmd("world", "tp", { str("target"), str("a", true), str("b", true) })

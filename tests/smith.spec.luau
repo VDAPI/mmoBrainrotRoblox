@@ -2,6 +2,7 @@
 local Crafting = require("../src/shared/Data/Crafting")
 local Dismantle = require("../src/shared/Logic/Dismantle")
 local ItemRoll = require("../src/shared/Logic/ItemRoll")
+local ItemValue = require("../src/shared/Logic/ItemValue")
 local Items = require("../src/shared/Data/Items")
 local Npcs = require("../src/shared/Data/Npcs")
 local Rng = require("../src/shared/Logic/Rng")
@@ -154,10 +155,10 @@ T.describe("Dismantle", function()
 end)
 
 T.describe("Economy data", function()
-	T.it("sell price follows DESIGN §18", function()
-		T.expect(ItemRoll.sellPrice(item(1, 0, 50))).toBe(100)
-		T.expect(ItemRoll.sellPrice(item(4, 0, 50))).toBe(math.floor(50 * 2 * 1.45 * 1.45 + 0.5))
-		T.expect(ItemRoll.sellPrice(item(5, 0, 50))).toBe(math.floor(50 * 2 * 1.7 * 1.7 + 0.5))
+	T.it("sell price follows DESIGN §18 (S31: the item value, weapon slotMul 1)", function()
+		T.expect(ItemRoll.sellPrice(item(1, 0, 50))).toBe(300)
+		T.expect(ItemRoll.sellPrice(item(4, 0, 50))).toBe(math.floor(50 * 6 * 1.45 * 1.45 + 0.5))
+		T.expect(ItemRoll.sellPrice(item(5, 0, 50))).toBe(math.floor(50 * 6 * 1.7 * 1.7 + 0.5))
 		T.expect(ItemRoll.sellPrice(item(5, 0, 50)) > ItemRoll.sellPrice(item(4, 0, 50))).toBe(true)
 	end)
 
@@ -168,8 +169,8 @@ T.describe("Economy data", function()
 				if not def then
 					error(`{id}: unknown item {entry.item}`)
 				end
-				local price = entry.price or entry.pricePerLevel or def.buyPrice
-				if not price or price <= 0 then
+				local price = ItemValue.buyPrice(entry, shop, 1)
+				if price <= 0 then
 					error(`{id}: {entry.item} has no price`)
 				end
 			end

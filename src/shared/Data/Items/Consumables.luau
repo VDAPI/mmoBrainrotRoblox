@@ -78,8 +78,9 @@ for _, region in { "meadows", "duskwood", "ashen", "frostpeak" } do
 end
 -- Scrolls (S06–S07)
 other("scroll_protection", "scroll", "scroll", "📜", "#4FD16B", 200, nil, { kind = "scroll", target = "protection" })
-other("scroll_oblivion", "scroll", "scroll", "📜", "#C9A45C", 1, nil, { kind = "scroll", target = "oblivion" })
-other("scroll_skillreset", "scroll", "scroll", "📜", "#4A8FE7", 1, nil, { kind = "scroll", target = "skillreset" })
+-- S31: the reset scrolls are worth 100 (bought for 500 / 400 x level, so selling never pays off).
+other("scroll_oblivion", "scroll", "scroll", "📜", "#C9A45C", 100, nil, { kind = "scroll", target = "oblivion" })
+other("scroll_skillreset", "scroll", "scroll", "📜", "#4A8FE7", 100, nil, { kind = "scroll", target = "skillreset" })
 other("scroll_unbind", "scroll", "scroll", "📜", "#E8C25A", 500, nil, { kind = "scroll", target = "unbind" })
 -- Gathering tools (S07)
 other("pickaxe", "tool", "tool", "⛏", "#8E8E93", 25, 100, { kind = "none" }, false)

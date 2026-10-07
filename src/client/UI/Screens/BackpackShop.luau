@@ -58,6 +58,8 @@ local function BackpackShop(scope: Scope, npcId: Fusion.UsedAs<string?>): Fusion
 						Item = ItemRoll.makeStack(def.id, 1, `preview:{def.id}`),
 						Size = 56,
 						Position = UDim2.fromOffset(7, 7),
+						-- S31: "Price" in the tooltip = the row's price (ItemValue.buyPrice -> the backpack's buyPrice).
+						TooltipCtx = { shopEntry = { item = def.id }, merchantOpen = false, hints = false },
 					}),
 					scope:New("TextLabel")({
 						Position = UDim2.fromOffset(74, 6),

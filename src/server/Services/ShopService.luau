@@ -1,6 +1,6 @@
 --!strict
--- NPC trade (DESIGN §9, §13, §18): buying from Data/Shops, selling any item to any trader (sell price from
--- ItemRoll.sellPrice), buying back the last 10 sold items (session only, state branch `buyback`), the
+-- NPC trade (DESIGN §9, §13, §18): buying from Data/Shops (price from ShopPrice / ItemValue.buyPrice), selling
+-- any item to any trader for its value (S31: Logic/ItemValue, the same function the tooltip uses), buying back the last 10 sold items (session only, state branch `buyback`), the
 -- healer's free restore in the city and the backpack merchant's "buy and equip".
 -- Every operation validates the NPC distance and changes data in one step (ARCHITECTURE §10).
 
@@ -13,6 +13,7 @@ local Analytics = require(script.Parent.Parent.Analytics)
 
 local Inventory = require(Shared.Logic.Inventory)
 local ItemRoll = require(Shared.Logic.ItemRoll)
+local ItemValue = require(Shared.Logic.ItemValue)
 local Items = require(Shared.Data.Items)
 local Log = require(Shared.Util.Log)
 local Net = require(Shared.Net)
@@ -71,8 +72,8 @@ local function publishBuyback(player: Player)
 end
 
 -- Unit price of a shop entry for this character (guild potion discount included).
-function ShopService.Price(player: Player, entry: Shops.Entry, char: Types.CharacterData): number
-	return ShopPrice.unit(entry, char.level, StatService.GetValue(player, "potionDiscount"))
+function ShopService.Price(player: Player, entry: Shops.Entry, char: Types.CharacterData, shop: Shops.ShopDef?): number
+	return ShopPrice.unit(entry, char.level, StatService.GetValue(player, "potionDiscount"), shop)
 end
 
 local function shopOf(npcId: string): Shops.ShopDef?
@@ -104,14 +105,15 @@ local function buy(player: Player, npcId: string, itemId: string, n: number): (b
 		return false, "shop.error.level"
 	end
 	local count = math.clamp(n, 1, def.maxStack)
-	local total = ShopService.Price(player, entry, char) * count
+	local total = ShopService.Price(player, entry, char, shop) * count
 	if char.gold < total then
 		return false, "shop.error.gold"
 	end
 	local item: ItemInstance
 	if entry.ilvl and def.category == "equipment" then
 		-- Fixed common equipment (weaponsmith): no bonuses, the entry's ilvl and element.
-		item = ItemRoll.rollItem(entry.item, entry.ilvl, Rarities.COMMON, rng, InventoryService.NewUid())
+		item =
+			ItemRoll.rollItem(entry.item, entry.ilvl, entry.rarity or Rarities.COMMON, rng, InventoryService.NewUid())
 		item.el = entry.el
 	else
 		item = ItemRoll.makeStack(entry.item, count, InventoryService.NewUid())
@@ -148,8 +150,8 @@ local function sell(player: Player, npcId: string, indices: { any }): (boolean, 
 		if index and index == math.floor(index) and not seen[index] then
 			seen[index] = true
 			local item = InventoryService.Get(player, index)
-			if item and not item.locked then
-				local price = ItemRoll.sellPrice(item)
+			if item and ItemValue.canSell(item) then
+				local price = ItemValue.sellPrice(item)
 				InventoryService.SetSlot(player, index, nil)
 				total += price
 				sold += 1
@@ -247,7 +249,10 @@ local function buyBackpack(player: Player, npcId: string, itemId: string): (bool
 	if char.level < def.level then
 		return false, "shop.error.level"
 	end
-	local price = def.buyPrice or 0
+	if (def.buyPrice or 0) <= 0 then
+		return false, "shop.error.notSold"
+	end
+	local price = ItemValue.buyPrice({ item = itemId })
 	if char.gold < price then
 		return false, "shop.error.gold"
 	end

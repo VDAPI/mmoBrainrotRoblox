@@ -9,14 +9,13 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Button = require(script.Parent.Parent.Components.Button)
-local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
-local ItemText = require(script.Parent.Parent.ItemText)
 local Net = require(ReplicatedStorage.Shared.Net)
 local NpcQuests = require(script.Parent.Parent.NpcQuests)
 local Npcs = require(ReplicatedStorage.Shared.Data.Npcs)
 local Preview = require(script.Parent.WorldMap.Preview)
 local QuestLogic = require(ReplicatedStorage.Shared.Logic.QuestLogic)
+local QuestRewards = require(script.Parent.Parent.Components.QuestRewards)
 local QuestText = require(script.Parent.Parent.QuestText)
 local Quests = require(ReplicatedStorage.Shared.Data.Quests)
 local SelectableSlot = require(script.Parent.Parent.Components.SelectableSlot)
@@ -54,23 +53,6 @@ type View = {
 	turnIn: string,
 	choice: { any }?,
 }
-
-local function rewardLine(use: Fusion.Use, reward: Quests.Reward): string
-	local parts = {
-		Text.get(use, "quest.reward.exp", { exp = Format.number(reward.exp) }),
-		Text.get(use, "quest.reward.gold", { gold = Format.number(reward.gold) }),
-	}
-	for _, item in (reward.items or {}) :: { { id: string, n: number } } do
-		table.insert(parts, `{ItemText.get(use, item.id)}{if item.n > 1 then ` x{item.n}` else ""}`)
-	end
-	if reward.choice then
-		table.insert(
-			parts,
-			Text.get(use, if reward.choice == "final" then "quest.reward.choiceRare" else "quest.reward.choice")
-		)
-	end
-	return table.concat(parts, "  ·  ")
-end
 
 local function buildView(row: NpcQuests.Row?, quests: any, npcId: string?): View?
 	if not row or type(quests) ~= "table" then
@@ -241,12 +223,15 @@ local function QuestDialog(scope: Scope, props: Props): Fusion.Child
 		do
 			table.insert(lines, line)
 		end
-		table.insert(lines, "")
-		table.insert(
-			lines,
-			`<font color="#E8C25A"><b>{Text.get(use, "quest.rewards")}:</b> {rewardLine(use, v.reward)}</font>`
-		)
 		return table.concat(lines, "\n")
+	end)
+	-- S31: rewards as icons and item slots with tooltips (on the last page, under the objectives).
+	local rewards = scope:Computed(function(use, s: Scope): Instance?
+		local v = use(view)
+		if not v or not use(lastPage) or v.mode == "later" then
+			return nil
+		end
+		return QuestRewards(s, { Id = v.row.id, Reward = v.reward, ShowTitle = true, LayoutOrder = 3 })
 	end)
 
 	local choices = scope:Computed(function(use, s: Scope): { Instance }
@@ -374,6 +359,7 @@ local function QuestDialog(scope: Scope, props: Props): Fusion.Child
 					TextXAlignment = Enum.TextXAlignment.Left,
 					TextYAlignment = Enum.TextYAlignment.Top,
 				}),
+				rewards :: any,
 			},
 		}),
 		scope:New("Frame")({

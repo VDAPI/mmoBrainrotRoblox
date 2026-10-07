@@ -259,6 +259,10 @@ Przedmioty **z kowala** mają rzadkość Zwykły i stałe statystyki dopasowane 
 ```
 - `ilvl` = poziom potwora ± 2 (losowo, min 1); nie jest zaokrąglany do progu.
 
+### 5.3a Tooltip i wartość (S31)
+
+Każdy przedmiot ma w tooltipie „Rzadkość · Kategoria” (broń jedno-/dwuręczna/dystansowa, druga ręka, hełm, zbroja, rękawice, buty, naszyjnik, pierścień, talizman, mikstura, błogosławieństwo, eliksir, kamień, zwój, narzędzie, materiał, plecak), swoje statystyki albo efekt (broń z DPS, mikstury ile przywracają, błogosławieństwa i eliksiry efekt z czasem, kamienie / zwoje / narzędzia co robią, materiały „Używany do:” liczone z danych i poziom materiału, plecaki miejsca i poziom) oraz zawsze „Wartość: X złota”; w sklepie „Cena”, przy otwartym kupcu „Sprzedasz za”. Treść buduje czysta funkcja `Logic/TooltipModel`. Na dotyku tap w przedmiot w sklepie / nagrodzie pokazuje tooltip.
+
 ### 5.4 Losowanie bonusów
 
 - Pula bonusów per typ slotu (broń: atak, kryt, obr. kryt., szybkość ataku, przebicie, wampiryzm, SIŁ/ZRĘ/INT; zbroja: HP, obrona, odp. mag., odporności, WIT; biżuteria: wszystkie staty główne, kryt, unik, celność, regeneracje, bonus EXP/złota/dropu; buty: szybkość ruchu, unik; itd.). Pula w `Data/Bonuses.luau`.
@@ -344,9 +348,9 @@ Przedmioty **z kowala** mają rzadkość Zwykły i stałe statystyki dopasowane 
 ## 8a. Zbrojmistrz (sprzedawca broni)
 
 - NPC **Zbrojmistrz / Weaponsmith** w dzielnicy rzemieślniczej miasta, obok kuźni.
-- Sprzedaje broń (i drugą rękę) **każdej klasy co 5 poziomów** (1, 5, 10, …, 100), rzadkość Zwykły, statystyki stałe dla `ilvl` = próg, bez bonusów. Dla maga każda broń w 3 żywiołach.
-- Zakładki klas (domyślnie własna klasa), widać progi do poziomu gracza + 5, wyższe ukryte. Zakup wymaga poziomu.
-- Cena: ok. 4 × cena sprzedaży przedmiotu.
+- Sprzedaje broń (i drugą rękę) **każdej klasy na progach 5, 15, 25, …, 95** (S31, `Shops.WEAPONSMITH_TIERS`; próg 1 to broń startowa), rzadkość Zwykły, statystyki stałe dla `ilvl` = próg, bez bonusów. Dla maga każda broń w 3 żywiołach.
+- Zakładki klas (domyślnie własna klasa), lista pogrupowana nagłówkami „Poziom 15 · Wzmocniony”, **wszystkie progi widoczne**, okno otwiera się na progu gracza; wyższe mają szary „Kup” i czerwone „Wymaga poziomu N”. Zakup sprawdza poziom na serwerze. Wiersze tworzone leniwie.
+- Cena = wartość × `buyMul` (4) — ta sama liczba w wierszu i w tooltipie. Wiersz ma trzecią linię „Poz. 15 · Obr. 39 · 1,20/s · DPS 46,8”.
 
 ## 9. Mikstury (lekarz)
 
@@ -594,7 +598,7 @@ Po testach S17: **więcej rodzajów na każdej mapie (min. 8–10 na mapę teren
 - **Handel 1 na 1**: zaproszenie, okno z dwoma stronami (przedmioty + złoto), obaj klikają „Akceptuj”, każda zmiana resetuje akceptację, potem 3 s odliczania i „Potwierdź”. Tylko niezwiązane. Transakcja atomowa na serwerze (obaj na tym samym serwerze).
 - **Dom aukcyjny** (między serwerami): wystaw niezwiązany przedmiot za złoto (24/48 h), opłata 5% od sprzedaży + kaucja 1%. Wyszukiwanie: slot, klasa, poziom, rzadkość, nazwa; sortowanie po cenie. Zakup natychmiastowy (bez licytacji). Złoto/przedmioty trafiają do **Poczty** (odbiór w mieście, także offline).
 - Waluty: **Złoto** (grywalna, per postać), **Smocza Waluta / Dragon Shards** (premium, kontowa, tylko za Robux i rzadkie wydarzenia).
-- Sklepy NPC kupują przedmioty za `cenaSprzedaży = round(ilvl × 2 × mnożnikRzadkości²)`.
+- **Wartość przedmiotu** (S31, `Logic/ItemValue`, stałe w `Data/ItemValue`): ekwipunek `round(6 × ilvl × sellMul² × slotMul × (1 + 0,1 × ulepszenie))`, `slotMul` broń 1,0 / pancerz i druga ręka 0,8 / biżuteria 0,7; pozostałe `def.price × ilość` (każdy przedmiot ma cenę > 0). Kupiec płaci wartość; zakup u NPC = wartość × `shop.buyMul` (domyślnie 4), chyba że wpis ma stałą cenę (mikstury, kamienie, narzędzia, plecaki, ruda — nie niższą niż wartość). Ta sama funkcja liczy cenę na serwerze i w UI. Zablokowane i `noSell`: „Nie można sprzedać”.
 - Odbiorniki złota: ulepszanie, mikstury, plecaki, alchemik, wytwarzanie, opłaty aukcji, zwoje resetu, gildie.
 
 ## 19. Gildie

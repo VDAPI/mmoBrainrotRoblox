@@ -11,7 +11,10 @@ local Button = require(script.Parent.Parent.Parent.Components.Button)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local ItemSlot = require(script.Parent.Parent.Parent.Components.ItemSlot)
 local Preview = require(script.Parent.Preview)
+local QuestRewards = require(script.Parent.Parent.Parent.Components.QuestRewards)
+local Quests = require(ReplicatedStorage.Shared.Data.Quests)
 local Theme = require(script.Parent.Parent.Parent.Theme)
+local TooltipModel = require(ReplicatedStorage.Shared.Logic.TooltipModel)
 local Types = require(ReplicatedStorage.Shared.Types)
 
 local Children, OnEvent = Fusion.Children, Fusion.OnEvent
@@ -20,12 +23,22 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 
 export type Line = { text: string, color: Color3?, size: number?, bold: boolean?, italic: boolean? }
 export type Row = { text: string, sub: string?, color: Color3?, icon: string?, onClick: (() -> ())? }
-export type ItemRow = { item: Types.ItemInstance, text: string, sub: string?, color: Color3? }
+-- `tooltip`: extra tooltip context (S31, e.g. the shop entry so the tooltip shows the same price).
+export type ItemRow = {
+	item: Types.ItemInstance,
+	text: string,
+	sub: string?,
+	color: Color3?,
+	tooltip: TooltipModel.Ctx?,
+}
 export type Chip = { icon: string, text: string }
 export type Choice = { options: { { id: string, text: string } }, selected: string, onSelect: (id: string) -> () }
+-- S31: a quest's rewards (icons + item slots with tooltips), drawn under the section's lines.
+export type RewardRow = { id: string, reward: Quests.Reward }
 export type Section = {
 	title: string?,
 	lines: { Line }?,
+	rewards: { RewardRow }?,
 	rows: { Row }?,
 	items: { ItemRow }?,
 	chips: { Chip }?,
@@ -367,6 +380,9 @@ function DetailCard.new(scope: Scope, props: Props): Api
 		for _, line in (data.lines or {}) :: { Line } do
 			add(textLine(s, 0, line))
 		end
+		for _, row in (data.rewards or {}) :: { RewardRow } do
+			add(QuestRewards(s, { Id = row.id, Reward = row.reward, SlotSize = 36 }))
+		end
 		if data.chips and #data.chips > 0 then
 			local chips: { Instance } = {}
 			for i, chip in data.chips do
@@ -468,6 +484,7 @@ function DetailCard.new(scope: Scope, props: Props): Api
 					ItemSlot(s, {
 						SlotId = `view:mapcard:{order}:{i}`,
 						Item = entry.item,
+						TooltipCtx = entry.tooltip,
 						Size = 40,
 						Position = UDim2.fromOffset(0, 2),
 					}),

@@ -9,12 +9,15 @@ local DevPreset = require(Shared.Logic.DevPreset)
 local Elements = require(Shared.Data.Elements)
 local Inventory = require(Shared.Logic.Inventory)
 local ItemRoll = require(Shared.Logic.ItemRoll)
+local ItemValue = require(Shared.Logic.ItemValue)
 local Items = require(Shared.Data.Items)
 local Loot = require(Shared.Logic.Loot)
 local Monsters = require(Shared.Data.Monsters)
 local PartyLoot = require(Shared.Logic.PartyLoot)
 local Rarities = require(Shared.Data.Rarities)
 local Rng = require(Shared.Logic.Rng)
+local Shops = require(Shared.Data.Shops)
+local TooltipModel = require(Shared.Logic.TooltipModel)
 
 local Context = require(script.Parent.Context)
 
@@ -393,6 +396,64 @@ commands.rarities = function(player)
 	end
 	table.sort(caps)
 	reply(player, "admin.rarities.caps", { list = table.concat(caps, ", ") })
+end
+
+-- S31: an item instance for /value and /tooltip: Common +0 at the definition level unless given.
+local function sampleItem(def: Items.ItemDef, ilvl: number?, rarity: number?, up: number?): any
+	local item: any =
+		ItemRoll.rollItem(def.id, ilvl or def.level, rarity or def.rarity or Rarities.COMMON, Rng.new(1), "admin")
+	if def.category == "equipment" then
+		item.ilvl = math.clamp(ilvl or def.level, 1, Config.MaxLevel)
+		item.up = math.clamp(up or 0, 0, 9)
+	end
+	return item
+end
+
+-- S31: /value <id> [ilvl] [rarity] [up]: value, NPC buy price (value x buyMul) and sell price.
+commands.value = function(player, args)
+	local def = Items.get(args[1] or "")
+	if not def then
+		reply(player, "admin.usage.value")
+		return
+	end
+	local item = sampleItem(def, parseAmount(args[2]), Rarities.parse(args[3]), parseAmount(args[4]))
+	local entry: Shops.Entry = { item = def.id, ilvl = if def.category == "equipment" then item.ilvl else nil }
+	reply(player, "admin.value.result", {
+		item = `#item:{def.id}:{item.up}`,
+		ilvl = item.ilvl,
+		rarity = `@{Rarities.get(item.rarity).nameKey}`,
+		value = ItemValue.value(item),
+		buy = ItemValue.buyPrice(
+			entry,
+			nil,
+			PlayerStateService.GetCharacter(player) and PlayerStateService.GetCharacter(player).level or 1
+		),
+		sell = ItemValue.sellPrice(item),
+	})
+end
+
+-- S31: /tooltip <id> [lang]: the TooltipModel lines (rich text removed) in the panel console.
+commands.tooltip = function(player, args)
+	local def = Items.get(args[1] or "")
+	if not def then
+		reply(player, "admin.usage.tooltip")
+		return
+	end
+	local character = PlayerStateService.GetCharacter(player)
+	local lang = if args[2] == "en" then "en" else "pl"
+	local model = TooltipModel.build(sampleItem(def), def, {
+		lang = lang,
+		level = if character then character.level else nil,
+		class = if character then character.class else nil,
+		merchantOpen = true,
+	})
+	for _, line in model.lines do
+		reply(player, "admin.tooltip.line", { role = line.role, text = TooltipModel.plain(line.text) })
+	end
+	local short = TooltipModel.statLine(sampleItem(def), def, lang)
+	if short then
+		reply(player, "admin.tooltip.line", { role = "statLine", text = short })
+	end
 end
 
 return commands

@@ -61,6 +61,7 @@ export type ItemDef = {
 	fixedBonuses: { { stat: string, v: number } }?,
 	bossId: string?,
 	bindOnPickup: boolean?,
+	noSell: boolean?, -- S31: merchants refuse it (the tooltip says "Cannot be sold"; its value still shows)
 	-- Fixed rarity of stackable items (blessings) and of named boss items; other equipment rolls its rarity.
 	rarity: number?,
 }

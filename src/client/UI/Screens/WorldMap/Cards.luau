@@ -23,6 +23,7 @@ local GatherNodes = require(ReplicatedStorage.Shared.Data.GatherNodes)
 local ItemRoll = require(ReplicatedStorage.Shared.Logic.ItemRoll)
 local Items = require(ReplicatedStorage.Shared.Data.Items)
 local ItemText = require(script.Parent.Parent.Parent.ItemText)
+local ItemValue = require(ReplicatedStorage.Shared.Logic.ItemValue)
 local MapMarks = require(ReplicatedStorage.Shared.Data.MapMarks)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local Monsters = require(ReplicatedStorage.Shared.Data.Monsters)
@@ -33,7 +34,6 @@ local Npcs = require(ReplicatedStorage.Shared.Data.Npcs)
 local Portals = require(ReplicatedStorage.Shared.Data.Portals)
 local QuestText = require(script.Parent.Parent.Parent.QuestText)
 local Quests = require(ReplicatedStorage.Shared.Data.Quests)
-local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
 local ShopPrice = require(ReplicatedStorage.Shared.Logic.ShopPrice)
 local SideQuests = require(ReplicatedStorage.Shared.Logic.SideQuests)
 local Shops = require(ReplicatedStorage.Shared.Data.Shops)
@@ -72,14 +72,9 @@ local SERVICE_ICONS: { [string]: string } = {
 	story = "❗",
 }
 
+-- The item a shop entry sells (S31: the same instance as the shop window and the price).
 local function previewItem(entry: Shops.Entry): Types.ItemInstance
-	local item = ItemRoll.makeStack(entry.item, 1, `mapcard:{entry.key or entry.item}`)
-	if entry.ilvl then
-		item.ilvl = entry.ilvl
-		item.rarity = Rarities.COMMON
-		item.el = entry.el
-	end
-	return item
+	return ItemValue.entryItem(entry)
 end
 
 -- First entries of a shop the character can use now (the newest tiers first in class shops).
@@ -116,7 +111,8 @@ local function shopSection(shopId: string, level: number, class: string): Sectio
 			item = item,
 			text = ItemText.name(entry.item, nil, entry.el),
 			color = ItemText.rarityColor(item.rarity),
-			sub = T("worldmap.card.price", { price = Format.number(ShopPrice.unit(entry, level, discount)) }),
+			sub = T("worldmap.card.price", { price = Format.number(ShopPrice.unit(entry, level, discount, shop)) }),
+			tooltip = { shop = shop, shopEntry = entry, potionDiscount = discount, merchantOpen = false, hints = false },
 		})
 	end
 	local lines: { DetailCard.Line } = {}
@@ -154,12 +150,34 @@ local function objectiveLines(lines: { DetailCard.Line }, quests: any, row: NpcQ
 	end
 end
 
-local function questSection(npcId: string, level: number): Section?
+-- Rewards of a quest row (S31): shown under its line, except for quests not reachable yet.
+local function rewardOf(row: NpcQuests.Row): Quests.Reward?
+	if row.kind == "main" then
+		local quest = Quests.Main.get(row.id)
+		return if quest then quest.reward else nil
+	end
+	local quest = Quests.Side.get(row.id)
+	return if quest then quest.reward else nil
+end
+
+-- One section per quest (its line, objectives and rewards); the first one carries the "Quests" title.
+local function questSections(npcId: string, level: number): { Section }
 	local quests = State.Get({ "character", "quests" })
+	local sections: { Section } = {}
 	if type(quests) ~= "table" then
-		return nil
+		return sections
 	end
 	local lines: { DetailCard.Line } = {}
+	local function flush(rewards: { DetailCard.RewardRow }?)
+		if #lines > 0 then
+			table.insert(sections, {
+				title = if #sections == 0 then T("worldmap.card.quests") else nil,
+				lines = lines,
+				rewards = rewards,
+			})
+			lines = {}
+		end
+	end
 	-- S27: story and side quests of this NPC (UI/NpcQuests, the same list as the NPC dialog).
 	local KEYS = {
 		turnIn = "worldmap.card.questTurnIn",
@@ -183,6 +201,8 @@ local function questSection(npcId: string, level: number): Section?
 			if row.mode ~= "offer" then
 				objectiveLines(lines, quests, row)
 			end
+			local reward = rewardOf(row)
+			flush(if reward then { { id = row.id, reward = reward } } else nil)
 		end
 	end
 	if npcId == NpcMarks.BOARD and type(quests.daily) == "table" then
@@ -209,10 +229,8 @@ local function questSection(npcId: string, level: number): Section?
 			})
 		end
 	end
-	if #lines == 0 then
-		return nil
-	end
-	return { title = T("worldmap.card.quests"), lines = lines }
+	flush(nil)
+	return sections
 end
 
 -- Cards ----------------------------------------------------------------------------------------------------
@@ -235,9 +253,8 @@ function Cards.npc(ctx: Context, npcId: string): Spec?
 	if #chips > 0 then
 		table.insert(sections, { title = T("worldmap.card.services"), chips = chips })
 	end
-	local quests = questSection(def.id, ctx.level)
-	if quests then
-		table.insert(sections, quests)
+	for _, section in questSections(def.id, ctx.level) do
+		table.insert(sections, section)
 	end
 	if def.shop and table.find(def.services, "shop") then
 		local shop = shopSection(def.shop, ctx.level, ctx.class)

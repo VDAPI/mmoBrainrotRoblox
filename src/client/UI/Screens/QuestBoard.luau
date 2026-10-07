@@ -7,10 +7,9 @@ local RunService = game:GetService("RunService")
 
 local Button = require(script.Parent.Parent.Components.Button)
 local Clock = require(ReplicatedStorage.Shared.Util.Clock)
-local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
-local ItemText = require(script.Parent.Parent.ItemText)
 local Net = require(ReplicatedStorage.Shared.Net)
+local QuestRewards = require(script.Parent.Parent.Components.QuestRewards)
 local QuestText = require(script.Parent.Parent.QuestText)
 local Quests = require(ReplicatedStorage.Shared.Data.Quests)
 local Sounds = require(script.Parent.Parent.Sounds)
@@ -47,10 +46,6 @@ local function QuestBoard(scope: Scope): Fusion.Child
 			return list
 		end
 		local reward = Quests.Daily.reward(use(level) or 1)
-		local rewardParts = { `{Format.number(reward.exp)} EXP`, `◉ {Format.number(reward.gold)}` }
-		for _, item in (reward.items or {}) :: { { id: string, n: number } } do
-			table.insert(rewardParts, `{ItemText.get(use, item.id)} x{item.n}`)
-		end
 		for i, entry in d.list or {} do
 			local done = entry.progress >= entry.objective.n
 			table.insert(
@@ -82,17 +77,13 @@ local function QuestBoard(scope: Scope): Fusion.Child
 							TextColor3 = if done then Theme.Colors.Success else Theme.Colors.Text,
 							TextXAlignment = Enum.TextXAlignment.Left,
 						}),
-						s:New("TextLabel")({
+						-- S31: rewards as icons and item slots with tooltips.
+						QuestRewards(s, {
+							Id = `daily{i}`,
+							Reward = reward,
+							SlotSize = 38,
 							Position = UDim2.fromOffset(0, 58),
-							Size = UDim2.new(1, -170, 0, 40),
-							BackgroundTransparency = 1,
-							TextWrapped = true,
-							Text = table.concat(rewardParts, "  ·  "),
-							FontFace = Theme.Fonts.Body,
-							TextSize = 15,
-							TextColor3 = Theme.Colors.Parchment,
-							TextXAlignment = Enum.TextXAlignment.Left,
-							TextYAlignment = Enum.TextYAlignment.Top,
+							Width = UDim.new(1, -170),
 						}),
 						Button(s, {
 							AnchorPoint = Vector2.new(1, 0.5),

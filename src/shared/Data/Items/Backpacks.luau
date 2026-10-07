@@ -4,8 +4,9 @@
 
 local Types = require("./Types")
 
-local DEFS: { { capacity: number, level: number, buyPrice: number, color: string } } = {
-	{ capacity = 20, level = 1, buyPrice = 0, color = "#B89B5A" },
+-- `value` (S31): the starting backpack is not sold (buyPrice 0) but still has a value; the rest are worth 1/4.
+local DEFS: { { capacity: number, level: number, buyPrice: number, color: string, value: number? } } = {
+	{ capacity = 20, level = 1, buyPrice = 0, color = "#B89B5A", value = 25 },
 	{ capacity = 30, level = 1, buyPrice = 300, color = "#9C8A72" },
 	{ capacity = 45, level = 8, buyPrice = 2500, color = "#8A6B4A" },
 	{ capacity = 60, level = 15, buyPrice = 9000, color = "#6F8F5A" },
@@ -29,7 +30,7 @@ for _, def in DEFS do
 		maxStack = 1,
 		nameKey = `item.{id}.name`,
 		icon = { glyph = "▣", color = def.color },
-		price = math.floor(def.buyPrice / 4),
+		price = def.value or math.floor(def.buyPrice / 4),
 		buyPrice = def.buyPrice,
 		capacity = def.capacity,
 	})

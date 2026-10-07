@@ -16,6 +16,7 @@ local Modal = require(script.Parent.Parent.Components.Modal)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Npcs = require(ReplicatedStorage.Shared.Data.Npcs)
 local QuestLogic = require(ReplicatedStorage.Shared.Logic.QuestLogic)
+local QuestRewards = require(script.Parent.Parent.Components.QuestRewards)
 local QuestText = require(script.Parent.Parent.QuestText)
 local QuestTrack = require(script.Parent.Parent.QuestTrack)
 local Quests = require(ReplicatedStorage.Shared.Data.Quests)
@@ -116,8 +117,12 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 				)
 				table.insert(
 					list,
+					QuestRewards(s, { Id = quest.id, Reward = quest.reward, ShowTitle = true, LayoutOrder = 4 })
+				)
+				table.insert(
+					list,
 					Button(s, {
-						LayoutOrder = 4,
+						LayoutOrder = 5,
 						Size = UDim2.fromOffset(200, 44),
 						Text = s:Computed(function(use2): string
 							local tracked = use2(props.Tracked) and use2(props.Focus) == nil
@@ -244,6 +249,10 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 						shown,
 						label(s, 0, table.concat(lines, "\n"), Theme.Fonts.BodyMedium, 16, Theme.Colors.Text)
 					)
+					table.insert(
+						shown,
+						QuestRewards(s, { Id = quest.id, Reward = quest.reward, ShowTitle = true, SlotSize = 36 })
+					)
 					local id = quest.id
 					table.insert(
 						shown,
@@ -367,6 +376,7 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 					Theme.Colors.TextMuted
 				)
 			)
+			local dailyReward = Quests.Daily.reward(use(level) or 1)
 			for i, entry in (if type(daily) == "table" then daily.list else {}) or {} do
 				local status = if entry.claimed
 					then ` <font color="#8E8E93">({Text.get(use, "quest.claimed")})</font>`
@@ -379,7 +389,7 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 					list,
 					label(
 						s,
-						i * 2,
+						i * 3,
 						`<b>{Text.get(use, `daily.{entry.template}.title`)}</b>{status}`,
 						Theme.Fonts.BodyBold,
 						18,
@@ -390,13 +400,22 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 					list,
 					label(
 						s,
-						i * 2 + 1,
+						i * 3 + 1,
 						QuestText.objective(use, entry.objective, entry.progress),
 						Theme.Fonts.Body,
 						16,
 						Theme.Colors.Text
 					)
 				)
+				if not entry.claimed then
+					table.insert(
+						list,
+						QuestRewards(
+							s,
+							{ Id = `daily{i}`, Reward = dailyReward, SlotSize = 34, LayoutOrder = i * 3 + 2 }
+						)
+					)
+				end
 			end
 		end
 		return list

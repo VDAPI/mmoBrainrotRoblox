@@ -1,30 +1,27 @@
 --!strict
--- Item tooltip (DESIGN §23): name in the rarity colour, rarity and slot, item level, weapon / base stats
--- (with upgrades), bonuses with a roll-quality bar, requirements (red when unmet), comparison with the
--- equipped item (green ↑ / red ↓), binding, price and an action hint. Parchment panel that follows the
--- mouse; on touch it appears for the selected slot.
+-- Item tooltip (DESIGN §23). The content comes from the pure Logic/TooltipModel (S31: header, stats or effect
+-- of every category, requirements, comparison with the equipped item (green ↑ / red ↓), binding, value and the
+-- context price); this module only draws the lines on a parchment panel that follows the mouse, with the S30
+-- rarity border. On touch it appears for the selected slot.
+--
+-- Context: `attach(..., getCtx)` may pass a function returning TooltipModel.Ctx fields (`shop`, `shopEntry`,
+-- `potionDiscount`, `merchantOpen`, `hints`); language, character level/class and the equipped item are filled
+-- in here. `ItemTooltip.setMerchantOpen(true)` while a merchant window is open adds "Sells for" everywhere.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 
-local Blessings = require(ReplicatedStorage.Shared.Data.Blessings)
-local Bonuses = require(ReplicatedStorage.Shared.Data.Bonuses)
-local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local Device = require(script.Parent.Parent.Device)
 local DragDrop = require(script.Parent.Parent.DragDrop)
-local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
-local ItemRoll = require(ReplicatedStorage.Shared.Logic.ItemRoll)
 local ItemText = require(script.Parent.Parent.ItemText)
-local Elements = require(ReplicatedStorage.Shared.Data.Elements)
 local Items = require(ReplicatedStorage.Shared.Data.Items)
-local Locale = require(ReplicatedStorage.Shared.Util.Locale)
 local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
 local Scale = require(script.Parent.Parent.Scale)
 local State = require(script.Parent.Parent.State)
-local Stats = require(ReplicatedStorage.Shared.Data.Stats)
 local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
+local TooltipModel = require(ReplicatedStorage.Shared.Logic.TooltipModel)
 local Types = require(ReplicatedStorage.Shared.Types)
 
 local Children = Fusion.Children
@@ -45,29 +42,17 @@ local moduleScope = Fusion.scoped(Fusion)
 local shown = moduleScope:Value(nil :: ItemInstance?)
 local emptyText = moduleScope:Value(nil :: string?)
 local position = moduleScope:Value(Vector2.zero)
+local shownCtx = moduleScope:Value(nil :: TooltipModel.Ctx?)
+local merchantOpen = moduleScope:Value(false)
 local owner: GuiObject? = nil
 local getters: { [string]: () -> ItemInstance? } = {}
+local ctxGetters: { [string]: () -> TooltipModel.Ctx? } = {}
 
--- Stat display helpers -----------------------------------------------------------------------------------
+type CtxGetter = () -> TooltipModel.Ctx?
 
-local ALIASES: { [string]: string } = { hp = "maxHp", mana = "maxMana", energy = "maxEnergy" }
-
-local function statName(lang: string, id: string): string
-	return Locale.T(`stat.{ALIASES[id] or id}`, nil, lang)
-end
-
-local function formatStat(id: string, value: number): string
-	local def = Stats.get(ALIASES[id] or id)
-	local decimals = if def then def.decimals else (if value % 1 == 0 then 0 else 1)
-	local text = if decimals == 0 then Format.number(value) else string.format(`%.{decimals}f`, value)
-	return if def and def.format == "pct" then text .. "%" else text
-end
-
-local function bonusText(lang: string, id: string, value: number): string
-	local def = Bonuses.get(id)
-	local decimals = if def then def.decimals else 0
-	local v = if decimals == 0 then tostring(math.floor(value + 0.5)) else string.format(`%.{decimals}f`, value)
-	return Locale.T(`bonus.{id}`, { v = v }, lang)
+-- A merchant window is open: backpack tooltips add "Sells for: X gold" (shop windows call this).
+function ItemTooltip.setMerchantOpen(open: boolean)
+	merchantOpen:set(open == true)
 end
 
 -- Equipped item to compare with (same slot group; rings compare with ring1).
@@ -83,21 +68,6 @@ local function equippedFor(def: Items.ItemDef): ItemInstance?
 		return equipment.ring1 or equipment.ring2
 	end
 	return equipment[def.slot]
-end
-
--- Comparable numbers of an item: weapon damage + flat totals.
-local function comparable(item: ItemInstance): { [string]: number }
-	local stats = ItemRoll.itemStats(item)
-	local values: { [string]: number } = {}
-	if stats.weapon then
-		values.weaponDmg = stats.weapon.dmg
-		values.weaponMdmg = stats.weapon.mdmg
-	end
-	for stat, v in stats.flat do
-		local key = ALIASES[stat] or stat
-		values[key] = (values[key] or 0) + v
-	end
-	return values
 end
 
 -- Content ---------------------------------------------------------------------------------------------------
@@ -159,208 +129,64 @@ local function bonusRow(s: Scope, order: number, text: string, quality: number, 
 	})
 end
 
-local function build(s: Scope, item: ItemInstance, lang: string): { Instance }
+local TONES: { [string]: Color3 } = {
+	dark = DARK,
+	muted = MUTED,
+	good = GOOD,
+	bad = BAD,
+	bonus = Color3.fromHex("#1F4E9A"),
+	legendary = LEGENDARY_LINE,
+}
+local SIZES: { [string]: number } = {
+	large = Theme.TextSize.Large,
+	body = Theme.TextSize.Body,
+	small = Theme.TextSize.Small,
+}
+local FONTS: { [string]: Font } = {
+	heading = Theme.Fonts.Heading,
+	bold = Theme.Fonts.BodyBold,
+	medium = Theme.Fonts.BodyMedium,
+}
+
+local function build(
+	s: Scope,
+	item: ItemInstance,
+	lang: string,
+	extra: TooltipModel.Ctx?,
+	merchant: boolean
+): { Instance }
 	local def = Items.get(item.id)
+	local ctx: TooltipModel.Ctx = {
+		lang = lang,
+		level = State.Get({ "character", "level" }) or 1,
+		class = State.Get({ "character", "class" }),
+		equipped = if def then equippedFor(def) else nil,
+		merchantOpen = merchant,
+	}
+	if extra then
+		for k, v in extra :: any do
+			(ctx :: any)[k] = v
+		end
+	end
 	local out: { Instance } = {}
-	local order = 0
-	local function add(instance: Instance)
-		order += 1
-		table.insert(out, instance)
-	end
-	local function addLine(text: string, color: Color3?, size: number?, font: Font?)
-		order += 1
-		table.insert(out, line(s, order, text, color or DARK, size, font))
-	end
-	if not def then
-		addLine(Locale.T("item.unknown", nil, lang))
-		return out
-	end
-
-	local rarity = Rarities.get(item.rarity)
-	-- Readable rarity colour on parchment (S30 `textColor`).
-	local nameColor = rarity.textColor
-	local element = ItemRoll.elementOf(item)
-	addLine(ItemText.nameIn(lang, item.id, item.up, element), nameColor, Theme.TextSize.Large, Theme.Fonts.Heading)
-
-	local typeParts = {}
-	if def.category == "equipment" then
-		table.insert(
-			typeParts,
-			`<font color="#{nameColor:ToHex()}"><b>{Locale.T(rarity.nameKey, nil, lang)}</b></font>`
-		)
-	end
-	if def.slot then
-		local slotKey = if def.slot == "ring" then "slot.ring1" else `slot.{def.slot}`
-		table.insert(typeParts, Locale.T(slotKey, nil, lang))
-	else
-		table.insert(typeParts, Locale.T(`category.{def.category}`, nil, lang))
-	end
-	addLine(table.concat(typeParts, " · "), MUTED)
-	if def.category == "equipment" then
-		addLine(Locale.T("tooltip.ilvl", { ilvl = item.ilvl }, lang), MUTED)
-	end
-	if element then
-		addLine(
-			Locale.T("tooltip.element", { element = Locale.T(`element.{element}`, nil, lang) }, lang),
-			Color3.fromHex(Elements.COLORS[element] or "#FFFFFF")
-		)
-	end
-
-	-- Base stats
-	local stats = ItemRoll.itemStats(item)
-	if stats.weapon then
-		local w = stats.weapon
-		if w.dmg > 0 then
-			addLine(Locale.T("tooltip.damage", { dmg = w.dmg }, lang), DARK, Theme.TextSize.Body, Theme.Fonts.BodyBold)
-		end
-		if w.mdmg > 0 then
-			addLine(
-				Locale.T("tooltip.magicDamage", { mdmg = w.mdmg }, lang),
-				DARK,
-				Theme.TextSize.Body,
-				Theme.Fonts.BodyBold
-			)
-		end
-		local tags = { Locale.T("tooltip.speed", { speed = string.format("%.2f", w.speed) }, lang) }
-		if w.twoHanded then
-			table.insert(tags, Locale.T("tooltip.twoHanded", nil, lang))
-		end
-		if w.ranged then
-			table.insert(tags, Locale.T("tooltip.ranged", nil, lang))
-		end
-		addLine(table.concat(tags, " · "), MUTED)
-	end
-	local baseKeys = {}
-	for stat in stats.base do
-		table.insert(baseKeys, stat)
-	end
-	table.sort(baseKeys)
-	for _, stat in baseKeys do
-		addLine(`{statName(lang, stat)}: <b>{formatStat(stat, stats.base[stat])}</b>`, DARK)
-	end
-	if def.capacity then
-		addLine(Locale.T("tooltip.capacity", { capacity = def.capacity }, lang), DARK, nil, Theme.Fonts.BodyBold)
-	end
-	if def.use and def.use.kind == "potion" and def.use.resource then
-		addLine(
-			Locale.T(`tooltip.restores.{def.use.resource}`, { amount = Format.number(def.use.amount or 0) }, lang),
-			DARK
-		)
-	end
-
-	-- Blessings list what they give while active (S15).
-	if def.use and def.use.kind == "blessing" and def.use.target then
-		local blessing = Blessings.get(def.use.target)
-		if blessing then
-			local ids = {}
-			for stat in blessing.stats do
-				table.insert(ids, stat)
-			end
-			table.sort(ids)
-			for _, stat in ids do
-				addLine(`{statName(lang, stat)}: <b>+{formatStat(stat, blessing.stats[stat])}</b>`, DARK)
-			end
-			addLine(Locale.T("tooltip.blessingDuration", { minutes = Blessings.DURATION // 60 }, lang), MUTED)
-		end
-	end
-
-	-- Bonuses with roll quality
-	for _, bonus in stats.bonuses do
-		local bonusDef = Bonuses.get(bonus.id)
-		order += 1
-		add(
-			bonusRow(
-				s,
-				order,
-				bonusText(lang, bonus.id, bonus.v),
-				bonus.quality,
-				bonusDef ~= nil and bonusDef.hook ~= nil or string.sub(bonus.id, 1, 4) == "leg_"
-			)
-		)
-	end
-
-	if def.descKey then
-		addLine(`<i>{Locale.T(def.descKey, nil, lang)}</i>`, MUTED)
-	end
-
-	-- Requirements
-	local level = State.Get({ "character", "level" }) or 1
-	local classId = State.Get({ "character", "class" })
-	local required = ItemRoll.requiredLevel(item)
-	if required > 1 then
-		addLine(Locale.T("tooltip.requiresLevel", { level = required }, lang), if level >= required then DARK else BAD)
-	end
-	if def.classes then
-		local names = {}
-		for _, id in def.classes do
-			local class = Classes.get(id)
-			table.insert(names, if class then Locale.T(class.nameKey, nil, lang) else id)
-		end
-		local ok = classId == nil or table.find(def.classes, classId) ~= nil
-		addLine(Locale.T("tooltip.classes", { classes = table.concat(names, ", ") }, lang), if ok then DARK else BAD)
-	end
-
-	-- Comparison with the equipped item
-	local equipped = equippedFor(def)
-	if equipped and equipped.uid ~= item.uid then
-		local mine, theirs = comparable(item), comparable(equipped)
-		local keys = {}
-		for k in mine do
-			keys[k] = true
-		end
-		for k in theirs do
-			keys[k] = true
-		end
-		local lines = {}
-		for k in keys do
-			local diff = (mine[k] or 0) - (theirs[k] or 0)
-			if math.abs(diff) >= 0.05 then
-				local label = if k == "weaponDmg"
-					then Locale.T("tooltip.damage", { dmg = "" }, lang)
-					elseif k == "weaponMdmg" then Locale.T("tooltip.magicDamage", { mdmg = "" }, lang)
-					else statName(lang, k)
-				local arrow = if diff > 0 then "↑" else "↓"
-				local color = if diff > 0 then "#2E8B3E" else "#B8423A"
-				local sign = if diff > 0 then "+" else "−"
-				table.insert(
-					lines,
-					`<font color="{color}">{arrow} {sign}{formatStat(k, math.abs(diff))} {label}</font>`
-				)
-			end
-		end
-		if #lines > 0 then
-			table.sort(lines)
-			addLine(Locale.T("tooltip.compare", nil, lang), MUTED)
-			addLine(table.concat(lines, "\n"), DARK)
-		end
-	end
-
-	-- Binding and price
-	if def.category == "equipment" then
-		if item.bound then
-			addLine(Locale.T("tooltip.bound", nil, lang), BAD)
-		elseif def.bindOnPickup then
-			addLine(Locale.T("tooltip.bindOnPickup", nil, lang), MUTED)
+	for order, entry in TooltipModel.build(item, def, ctx).lines do
+		if entry.kind == "bonus" then
+			table.insert(out, bonusRow(s, order, entry.text, entry.quality or 0, entry.legendary == true))
 		else
-			addLine(Locale.T("tooltip.bindOnEquip", nil, lang), MUTED)
+			local color = if entry.hex then Color3.fromHex(entry.hex) else TONES[entry.tone] or DARK
+			local size = if entry.size then SIZES[entry.size] else nil
+			local font = if entry.font then FONTS[entry.font] else nil
+			table.insert(out, line(s, order, entry.text, color, size, font))
 		end
-	end
-	if item.n > 1 then
-		addLine(Locale.T("tooltip.stack", { n = item.n }, lang), MUTED)
-	end
-	addLine(Locale.T("tooltip.price", { price = Format.number(ItemRoll.sellPrice(item)) }, lang), MUTED)
-	if def.slot then
-		addLine(Locale.T("tooltip.hintEquip", nil, lang), MUTED)
-	elseif def.use and def.use.kind ~= "none" then
-		addLine(Locale.T("tooltip.hintUse", nil, lang), MUTED)
 	end
 	return out
 end
 
 -- Show / hide -----------------------------------------------------------------------------------------------
 
-local function show(object: GuiObject, item: ItemInstance?, text: string?, at: Vector2)
+local function show(object: GuiObject, item: ItemInstance?, text: string?, at: Vector2, ctx: TooltipModel.Ctx?)
 	owner = object
+	shownCtx:set(ctx)
 	shown:set(item)
 	emptyText:set(if item then nil else text)
 	position:set(at)
@@ -383,7 +209,8 @@ function ItemTooltip.attach(
 	object: GuiObject,
 	getItem: () -> ItemInstance?,
 	empty: Fusion.UsedAs<string>?,
-	slotId: string
+	slotId: string,
+	getCtx: CtxGetter?
 )
 	table.insert(
 		scope,
@@ -392,7 +219,7 @@ function ItemTooltip.attach(
 				local text = if empty then Fusion.peek(empty) else nil
 				local item = getItem()
 				if item or text then
-					show(object, item, text, Scale.toVirtual(Vector2.new(x, y)))
+					show(object, item, text, Scale.toVirtual(Vector2.new(x, y)), if getCtx then getCtx() else nil)
 				end
 			end
 		end)
@@ -416,9 +243,13 @@ function ItemTooltip.attach(
 	end)
 	-- Touch: the selected slot shows its tooltip (DragDrop.Selected).
 	getters[slotId] = getItem
+	if getCtx then
+		ctxGetters[slotId] = getCtx
+	end
 	table.insert(scope, function()
 		if getters[slotId] == getItem then
 			getters[slotId] = nil
+			ctxGetters[slotId] = nil
 		end
 	end)
 	table.insert(
@@ -444,6 +275,8 @@ function ItemTooltip.mount(scope: Scope, parent: Instance)
 		if item then
 			local screen = Fusion.peek(Scale.VirtualSize)
 			owner = nil
+			local ctxGetter = selected and ctxGetters[selected]
+			shownCtx:set(if ctxGetter then ctxGetter() else nil)
 			shown:set(item)
 			emptyText:set(nil)
 			position:set(Vector2.new(screen.X / 2 - WIDTH / 2 - OFFSET.X, 70))
@@ -494,7 +327,7 @@ function ItemTooltip.mount(scope: Scope, parent: Instance)
 				local item = use(shown)
 				local lang = use(Text.Lang)
 				if item then
-					return build(s, item, lang)
+					return build(s, item, lang, use(shownCtx), use(merchantOpen))
 				end
 				local text = use(emptyText)
 				return if text then { line(s, 1, text, DARK) } else {}

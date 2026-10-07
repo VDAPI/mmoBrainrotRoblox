@@ -1,8 +1,11 @@
 --!strict
 -- Shop window (DESIGN §9, §18): Buy (icon, name, price, quantity with −/+/Max), Sell (click backpack items to
 -- select, total, confirmation for Epic and better) and Buy back (last 10 sold). Gold always visible.
--- Shops with class tabs (weaponsmith, S18) filter by class (own class first) and show tiers up to the
--- player's level + 5; buying for another class asks first.
+-- Shops with class tabs (weaponsmith, S18) filter by class (own class first); buying for another class asks first.
+-- S31: rows show a third line with the item's stats (TooltipModel.statLine, required level red when too high) and
+-- the price of ItemValue.buyPrice (the tooltip shows the same price). The weaponsmith lists every tier (5, 15 ...
+-- 95) under "Level 15 · Reinforced" headers, scrolled to the player's tier; rows above the character's level
+-- show a red "Requires level N" and a disabled "Buy". Its rows are built lazily (only those near the view).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -13,11 +16,15 @@ local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local ItemRoll = require(ReplicatedStorage.Shared.Logic.ItemRoll)
 local ItemSlot = require(script.Parent.Parent.Components.ItemSlot)
+local ItemTooltip = require(script.Parent.Parent.Components.ItemTooltip)
 local ItemText = require(script.Parent.Parent.ItemText)
+local ItemValue = require(ReplicatedStorage.Shared.Logic.ItemValue)
+local Locale = require(ReplicatedStorage.Shared.Util.Locale)
 local Items = require(ReplicatedStorage.Shared.Data.Items)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Npcs = require(ReplicatedStorage.Shared.Data.Npcs)
 local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
+local Scale = require(script.Parent.Parent.Scale)
 local SelectableSlot = require(script.Parent.Parent.Components.SelectableSlot)
 local ShopPrice = require(ReplicatedStorage.Shared.Logic.ShopPrice)
 local Shops = require(ReplicatedStorage.Shared.Data.Shops)
@@ -27,6 +34,7 @@ local Tabs = require(script.Parent.Parent.Components.Tabs)
 local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
 local Toast = require(script.Parent.Parent.Components.Toast)
+local TooltipModel = require(ReplicatedStorage.Shared.Logic.TooltipModel)
 local Types = require(ReplicatedStorage.Shared.Types)
 
 local Children, Out = Fusion.Children, Fusion.Out
@@ -38,9 +46,10 @@ export type Props = {
 	ShowModal: (spec: any) -> (),
 }
 
-local ROW = 70
-
-local TIER_LOOKAHEAD = 5
+local ROW = 76
+-- Lazy rows (weaponsmith): rows within this many pixels of the visible part of the list are built.
+local LAZY_MARGIN = 400
+local RED_HEX = "#" .. Theme.Colors.DangerHover:ToHex()
 
 -- Highest rarity the "sell all" buttons may include (S30: the `quickSell` rarities, Common and Unique).
 local QUICK_SELL_MAX = Rarities.COMMON
@@ -50,14 +59,29 @@ for _, rarity in Rarities.list do
 	end
 end
 
+-- The (Common, +0) item an entry sells: the same instance the price and the tooltip are computed from.
 local function preview(entry: Shops.Entry): Types.ItemInstance
-	local item = ItemRoll.makeStack(entry.item, 1, `preview:{entry.key or entry.item}`)
-	if entry.ilvl then
-		item.ilvl = entry.ilvl
-		item.rarity = Rarities.COMMON
-		item.el = entry.el
+	return ItemValue.entryItem(entry)
+end
+
+-- Third line of a row: the stats summary, the required level in red when the character is below it.
+local function statsText(use: Fusion.Use, item: Types.ItemInstance): string
+	local lang = use(Text.Lang)
+	local line = TooltipModel.statLine(item, nil, lang)
+	if not line then
+		return ""
 	end
-	return item
+	local required = ItemRoll.requiredLevel(item)
+	if required > (use(State.Value({ "character", "level" })) or 1) then
+		local levelPart = Locale.T("itemLine.level", { level = required }, lang)
+		local at = string.find(line, levelPart, 1, true)
+		if at then
+			line = string.sub(line, 1, at - 1)
+				.. `<font color="{RED_HEX}">{levelPart}</font>`
+				.. string.sub(line, at + #levelPart)
+		end
+	end
+	return line
 end
 
 local function invoke(name: string, ...: any): (boolean, any)
@@ -69,17 +93,20 @@ local function invoke(name: string, ...: any): (boolean, any)
 	return ok, extra
 end
 
-local function priceOf(entry: Shops.Entry): number
+-- Unit price shown in the row, the tooltip and charged by ShopService (ShopPrice.unit -> ItemValue.buyPrice).
+local function priceOf(entry: Shops.Entry, shop: Shops.ShopDef?): number
 	return ShopPrice.unit(
 		entry,
 		State.Get({ "character", "level" }) or 1,
-		State.Get({ "derived", "values", "potionDiscount" }) or 0
+		State.Get({ "derived", "values", "potionDiscount" }) or 0,
+		shop
 	)
 end
 
 local function buyRow(
 	scope: Scope,
 	npcId: string,
+	shop: Shops.ShopDef,
 	entry: Shops.Entry,
 	order: number,
 	showModal: (spec: any) -> ()
@@ -88,6 +115,13 @@ local function buyRow(
 	local key = entry.key or entry.item
 	local quantity = scope:Value("1")
 	local maxStack = if def then def.maxStack else 1
+	local item = preview(entry)
+	-- Text column width: stackable rows keep room for the quantity controls.
+	local textWidth = if maxStack > 1 then -380 else -214
+	local level = State.Value({ "character", "level" })
+	local locked = scope:Computed(function(use): boolean
+		return (entry.level or 0) > (use(level) or 1)
+	end)
 	local function amount(): number
 		return math.clamp(tonumber(Fusion.peek(quantity)) or 1, 1, maxStack)
 	end
@@ -101,35 +135,67 @@ local function buyRow(
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 			ItemSlot(scope, {
 				SlotId = `view:shop:{key}`,
-				Item = preview(entry),
+				Item = item,
 				Size = 56,
-				Position = UDim2.fromOffset(7, 7),
+				Position = UDim2.fromOffset(7, (ROW - 56) / 2),
+				TooltipCtx = function(): TooltipModel.Ctx?
+					return {
+						shop = shop,
+						shopEntry = entry,
+						potionDiscount = State.Get({ "derived", "values", "potionDiscount" }) or 0,
+						merchantOpen = false,
+						hints = false,
+					}
+				end,
 			}),
 			scope:New("TextLabel")({
-				Position = UDim2.fromOffset(74, 8),
-				Size = UDim2.new(1, -380, 0, 26),
+				Position = UDim2.fromOffset(74, 5),
+				Size = UDim2.new(1, textWidth, 0, 24),
 				BackgroundTransparency = 1,
 				Text = scope:Computed(function(use): string
 					return ItemText.get(use, entry.item, nil, entry.el)
 				end),
 				FontFace = Theme.Fonts.BodyBold,
 				TextSize = Theme.TextSize.Body,
-				TextColor3 = Theme.Colors.Text,
+				TextColor3 = ItemText.rarityTextColor(item.rarity),
 				TextXAlignment = Enum.TextXAlignment.Left,
 				TextTruncate = Enum.TextTruncate.AtEnd,
 			}),
 			scope:New("TextLabel")({
-				Position = UDim2.fromOffset(74, 36),
-				Size = UDim2.new(1, -380, 0, 22),
+				Position = UDim2.fromOffset(74, 30),
+				Size = UDim2.new(1, textWidth, 0, 20),
 				BackgroundTransparency = 1,
+				RichText = true,
 				Text = scope:Computed(function(use): string
-					use(State.Value({ "character", "level" }))
-					return Text.get(use, "shop.price", { price = Format.number(priceOf(entry)) })
+					use(level)
+					use(State.Value({ "derived", "values", "potionDiscount" }))
+					local price = Text.get(use, "shop.price", { price = Format.number(priceOf(entry, shop)) })
+					if use(locked) then
+						local need = Text.get(use, "shop.requiresLevel", { level = entry.level or 1 })
+						return `{price}   <font color="{RED_HEX}">{need}</font>`
+					end
+					return price
 				end),
 				FontFace = Theme.Fonts.BodyMedium,
 				TextSize = Theme.TextSize.Small,
 				TextColor3 = Theme.Colors.GoldBright,
 				TextXAlignment = Enum.TextXAlignment.Left,
+				TextTruncate = Enum.TextTruncate.AtEnd,
+			}),
+			scope:New("TextLabel")({
+				Name = "Stats",
+				Position = UDim2.fromOffset(74, 52),
+				Size = UDim2.new(1, textWidth, 0, 18),
+				BackgroundTransparency = 1,
+				RichText = true,
+				Text = scope:Computed(function(use): string
+					return statsText(use, item)
+				end),
+				FontFace = Theme.Fonts.Body,
+				TextSize = 14,
+				TextColor3 = Theme.Colors.TextMuted,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				TextTruncate = Enum.TextTruncate.AtEnd,
 			}),
 			-- Quantity
 			scope:New("Frame")({
@@ -179,7 +245,7 @@ local function buyRow(
 						Size = UDim2.fromOffset(40, 44),
 						OnClick = function()
 							local gold = State.Get({ "character", "gold" }) or 0
-							local price = math.max(1, priceOf(entry))
+							local price = math.max(1, priceOf(entry, shop))
 							quantity:set(tostring(math.clamp(math.floor(gold / price), 1, maxStack)))
 						end,
 					}),
@@ -191,7 +257,11 @@ local function buyRow(
 				Size = UDim2.fromOffset(120, 48),
 				Variant = "primary",
 				Text = Text.T(scope, "shop.buy"),
+				Disabled = locked,
 				OnClick = function()
+					if Fusion.peek(locked) then
+						return
+					end
 					local n = amount()
 					local function doBuy()
 						local ok, err = Net.Invoke("Buy", npcId, key, n)
@@ -341,8 +411,11 @@ local function ShopWindow(scope: Scope, props: Props): Fusion.Child
 	DragDrop.SellHandler = function(index: number)
 		sellKeys({ tostring(index) })
 	end
+	-- While the window is open, backpack tooltips add "Sells for: X gold" (S31).
+	ItemTooltip.setMerchantOpen(true)
 	table.insert(scope, function()
 		DragDrop.SellHandler = nil
+		ItemTooltip.setMerchantOpen(false)
 	end)
 
 	local dropZone = scope:New("TextLabel")({
@@ -368,16 +441,67 @@ local function ShopWindow(scope: Scope, props: Props): Fusion.Child
 	})
 	DragDrop.register(scope, dropZone :: any, "shopsell:zone")
 
+	-- Lazy rows of the weaponsmith list: placeholders of the row's height, filled when they come near the view.
+	local list: ScrollingFrame? = nil
+	-- `y` = the row's canvas offset in virtual pixels (the layout is fixed: known heights and padding), so the
+	-- check does not depend on when the layout pass runs.
+	local pending: { { y: number, build: () -> () } } = {}
+	-- Canvas offset (virtual pixels) of the player's tier header, applied once the canvas is tall enough.
+	local scrollTarget: number? = nil
+	local scrollTries = 0
+	local function fillVisible()
+		local frame = list
+		if not frame or #pending == 0 or frame.AbsoluteSize.Y <= 0 then
+			return
+		end
+		-- CanvasPosition is in unscaled (virtual) pixels; the visible height is AbsoluteSize / UI scale.
+		local height = frame.AbsoluteSize.Y / math.max(0.1, Scale.get())
+		local top = frame.CanvasPosition.Y - LAZY_MARGIN
+		local bottom = frame.CanvasPosition.Y + height + LAZY_MARGIN
+		local i = 1
+		while i <= #pending do
+			local p = pending[i]
+			if p.y + ROW >= top and p.y <= bottom then
+				table.remove(pending, i)
+				p.build()
+			else
+				i += 1
+			end
+		end
+	end
+	local function applyScroll()
+		local frame = list
+		local target = scrollTarget
+		if not frame or not target then
+			return
+		end
+		frame.CanvasPosition = Vector2.new(0, target)
+		scrollTries += 1
+		-- The automatic canvas grows after the layout pass; retry until the position sticks.
+		if frame.CanvasPosition.Y >= target - 1 or scrollTries > 8 then
+			scrollTarget = nil
+		end
+	end
+	-- After a rebuild: scroll to the player's tier header, then fill what is visible.
+	local function afterBuild()
+		task.defer(function()
+			applyScroll()
+			fillVisible()
+		end)
+	end
+
 	local content = scope:Computed(function(use, s: Scope): { Instance }
 		local current = use(tab)
 		local id = use(npcId)
 		local npc = id and Npcs.get(id)
 		local shop = npc and npc.shop and Shops.get(npc.shop)
+		pending = {}
+		scrollTarget = nil
+		scrollTries = 0
 		if current == "buy" then
 			local rows = {}
 			if shop and id and shop.classTabs then
 				local chosen = use(classTab)
-				local maxTier = (use(playerLevel) or 1) + TIER_LOOKAHEAD
 				local tabs = {}
 				for order, classId in Classes.order do
 					local class = Classes.get(classId) :: Classes.ClassDef
@@ -412,15 +536,100 @@ local function ShopWindow(scope: Scope, props: Props): Fusion.Child
 						},
 					})
 				)
-				for i, entry in shop.entries do
-					local forClass = entry.classes == nil or table.find(entry.classes, chosen) ~= nil
-					if forClass and (entry.level or 0) <= maxTier then
-						table.insert(rows, buyRow(s, id, entry, i, props.ShowModal))
+				-- S31: every tier (Shops.WEAPONSMITH_TIERS) under its header; the list opens at the highest tier
+				-- the character can use (the first one below level 5).
+				local alive = true
+				table.insert(s, function()
+					alive = false
+				end)
+				local lvl = Fusion.peek(playerLevel) or 1
+				local targetTier = Shops.WEAPONSMITH_TIERS[1]
+				for _, tier in Shops.WEAPONSMITH_TIERS do
+					if tier <= lvl then
+						targetTier = tier
 					end
 				end
+				local byTier: { [number]: { { entry: Shops.Entry, index: number } } } = {}
+				for i, entry in shop.entries do
+					local forClass = entry.classes == nil or table.find(entry.classes, chosen) ~= nil
+					if forClass then
+						local tier = entry.level or 0
+						byTier[tier] = byTier[tier] or {}
+						table.insert(byTier[tier], { entry = entry, index = i })
+					end
+				end
+				local order = 0
+				-- Canvas offset of the next element (the class tabs row comes first; list padding 6).
+				local offset = 44 + 6
+				for _, tier in Shops.WEAPONSMITH_TIERS do
+					local group = byTier[tier]
+					if not group then
+						continue
+					end
+					order += 1
+					local header = s:New("Frame")({
+						Name = `Tier{tier}`,
+						LayoutOrder = order,
+						Size = UDim2.new(1, 0, 0, 34),
+						BackgroundTransparency = 1,
+						[Children] = {
+							s:New("TextLabel")({
+								Position = UDim2.fromOffset(4, 6),
+								Size = UDim2.new(1, -8, 0, 26),
+								BackgroundTransparency = 1,
+								Text = Text.get(use, "shop.tierHeader", {
+									level = tier,
+									name = Text.get(use, `itemTier.{tier}.m`),
+								}),
+								FontFace = Theme.Fonts.Heading,
+								TextSize = 20,
+								TextColor3 = s:Computed(function(use2): Color3
+									return if tier > (use2(playerLevel) or 1)
+										then Theme.Colors.TextMuted
+										else Theme.Colors.GoldBright
+								end),
+								TextXAlignment = Enum.TextXAlignment.Left,
+							}),
+							s:New("Frame")({
+								AnchorPoint = Vector2.new(0, 1),
+								Position = UDim2.fromScale(0, 1),
+								Size = UDim2.new(1, 0, 0, 1),
+								BackgroundColor3 = Theme.Colors.GoldDim,
+								BackgroundTransparency = 0.5,
+								BorderSizePixel = 0,
+							}),
+						},
+					}) :: Frame
+					table.insert(rows, header)
+					if tier == targetTier and tier ~= Shops.WEAPONSMITH_TIERS[1] then
+						scrollTarget = offset
+					end
+					offset += 34 + 6
+					for _, row in group do
+						order += 1
+						local holder = s:New("Frame")({
+							Name = row.entry.key or row.entry.item,
+							LayoutOrder = order,
+							Size = UDim2.new(1, 0, 0, ROW),
+							BackgroundTransparency = 1,
+						}) :: Frame
+						table.insert(rows, holder)
+						table.insert(pending, {
+							y = offset,
+							build = function()
+								if alive then
+									local built = buyRow(s, id, shop, row.entry, 0, props.ShowModal) :: any
+									built.Parent = holder
+								end
+							end,
+						})
+						offset += ROW + 6
+					end
+				end
+				afterBuild()
 			elseif shop and id then
 				for i, entry in shop.entries do
-					table.insert(rows, buyRow(s, id, entry, i, props.ShowModal))
+					table.insert(rows, buyRow(s, id, shop, entry, i, props.ShowModal))
 				end
 			end
 			return rows
@@ -478,6 +687,7 @@ local function ShopWindow(scope: Scope, props: Props): Fusion.Child
 					SelectableSlot(s, {
 						Id = `sell:{key}`,
 						LayoutOrder = index,
+						TooltipCtx = { merchantOpen = true },
 						Item = s:Computed(function(use2): Types.ItemInstance?
 							local inv = use2(inventory)
 							return if inv then inv[key] else nil
@@ -528,7 +738,8 @@ local function ShopWindow(scope: Scope, props: Props): Fusion.Child
 								SlotId = `view:buyback:{i}`,
 								Item = entry.item,
 								Size = 56,
-								Position = UDim2.fromOffset(7, 7),
+								Position = UDim2.fromOffset(7, (ROW - 56) / 2),
+								TooltipCtx = { hints = false, merchantOpen = false },
 							}),
 							s:New("TextLabel")({
 								Position = UDim2.fromOffset(74, 8),
@@ -583,6 +794,38 @@ local function ShopWindow(scope: Scope, props: Props): Fusion.Child
 		end
 	end)
 
+	local listFrame = scope:New("ScrollingFrame")({
+		Name = "List",
+		Position = UDim2.fromOffset(0, 50),
+		Size = scope:Computed(function(use): UDim2
+			return UDim2.new(1, 0, 1, if use(tab) == "sell" then -110 else -100)
+		end),
+		CanvasSize = UDim2.new(),
+		AutomaticCanvasSize = Enum.AutomaticSize.Y,
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		ScrollBarThickness = 6,
+		ScrollBarImageColor3 = Theme.Colors.GoldDim,
+		[Children] = {
+			scope:New("UIListLayout")({
+				SortOrder = Enum.SortOrder.LayoutOrder,
+				Padding = UDim.new(0, 6),
+			}),
+			scope:New("UIPadding")({ PaddingRight = UDim.new(0, 10) }),
+			content :: any,
+		},
+	}) :: ScrollingFrame
+	list = listFrame
+	table.insert(scope, listFrame:GetPropertyChangedSignal("CanvasPosition"):Connect(fillVisible))
+	table.insert(scope, listFrame:GetPropertyChangedSignal("AbsoluteSize"):Connect(fillVisible))
+	table.insert(
+		scope,
+		listFrame:GetPropertyChangedSignal("AbsoluteCanvasSize"):Connect(function()
+			applyScroll()
+			fillVisible()
+		end)
+	)
+
 	return {
 		Tabs(scope, {
 			Selected = tab,
@@ -606,27 +849,7 @@ local function ShopWindow(scope: Scope, props: Props): Fusion.Child
 			TextColor3 = Theme.Colors.GoldBright,
 			TextXAlignment = Enum.TextXAlignment.Right,
 		}),
-		scope:New("ScrollingFrame")({
-			Name = "List",
-			Position = UDim2.fromOffset(0, 50),
-			Size = scope:Computed(function(use): UDim2
-				return UDim2.new(1, 0, 1, if use(tab) == "sell" then -110 else -100)
-			end),
-			CanvasSize = UDim2.new(),
-			AutomaticCanvasSize = Enum.AutomaticSize.Y,
-			BackgroundTransparency = 1,
-			BorderSizePixel = 0,
-			ScrollBarThickness = 6,
-			ScrollBarImageColor3 = Theme.Colors.GoldDim,
-			[Children] = {
-				scope:New("UIListLayout")({
-					SortOrder = Enum.SortOrder.LayoutOrder,
-					Padding = UDim.new(0, 6),
-				}),
-				scope:New("UIPadding")({ PaddingRight = UDim.new(0, 10) }),
-				content :: any,
-			},
-		}),
+		listFrame,
 		dropZone,
 		scope:New("Frame")({
 			Name = "SellBar",

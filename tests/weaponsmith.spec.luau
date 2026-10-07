@@ -3,8 +3,10 @@ local Classes = require("../src/shared/Data/Classes")
 local Elements = require("../src/shared/Data/Elements")
 local ItemName = require("../src/shared/Logic/ItemName")
 local ItemRoll = require("../src/shared/Logic/ItemRoll")
+local ItemValue = require("../src/shared/Logic/ItemValue")
 local Items = require("../src/shared/Data/Items")
 local Npcs = require("../src/shared/Data/Npcs")
+local Rarities = require("../src/shared/Data/Rarities")
 local Rng = require("../src/shared/Logic/Rng")
 local ShopPrice = require("../src/shared/Logic/ShopPrice")
 local Shops = require("../src/shared/Data/Shops")
@@ -20,10 +22,33 @@ T.describe("Weaponsmith (S18)", function()
 		T.expect(shop.classTabs).toBe(true)
 	end)
 
-	T.it("every class gets a weapon at every tier, priced and level gated", function()
+	T.it("sells exactly tiers 5, 15, ..., 95, all Common, value x buyMul (S31)", function()
+		T.expect(Shops.WEAPONSMITH_TIERS).toEqual({ 5, 15, 25, 35, 45, 55, 65, 75, 85, 95 })
+		local tiers: { [number]: boolean } = {}
+		local offhand = false
+		for _, entry in shop.entries do
+			local def = Items.get(entry.item) :: Items.ItemDef
+			T.expect(def ~= nil).toBe(true)
+			T.expect(entry.ilvl ~= nil and entry.ilvl % 10 == 5).toBe(true)
+			tiers[entry.ilvl :: number] = true
+			T.expect(entry.rarity).toBe(Rarities.COMMON)
+			T.expect(entry.price).toBeNil()
+			T.expect(ItemValue.buyPrice(entry, shop))
+				.toBe(math.floor(ItemValue.entryValue(entry) * ItemValue.BUY_MUL + 0.5))
+			T.expect(ShopPrice.unit(entry, 1, 0, shop)).toBe(ItemValue.buyPrice(entry, shop))
+			offhand = offhand or def.slot == "offhand"
+		end
+		for _, tier in Shops.WEAPONSMITH_TIERS do
+			T.expect(tiers[tier]).toBe(true)
+		end
+		T.expect(tiers[1]).toBeNil()
+		T.expect(offhand).toBe(true)
+	end)
+
+	T.it("every class gets a weapon at every tier, level gated, unique keys", function()
 		local seen: { [string]: boolean } = {}
 		for _, classId in Classes.order do
-			for _, tier in { 1, 5, 50, 100 } do
+			for _, tier in Shops.WEAPONSMITH_TIERS do
 				local found = false
 				for _, entry in shop.entries do
 					local def = Items.get(entry.item)
@@ -45,14 +70,13 @@ T.describe("Weaponsmith (S18)", function()
 			T.expect(seen[key]).toBeNil()
 			seen[key] = true
 			T.expect(entry.level).toBe(entry.ilvl)
-			T.expect(ShopPrice.unit(entry, 1, 0) > 0).toBe(true)
 		end
 	end)
 
 	T.it("mage weapons come in every element", function()
 		local wand: { [string]: boolean } = {}
 		for _, entry in shop.entries do
-			if entry.item == "wand_10" then
+			if entry.item == "wand_15" then
 				wand[entry.el or "none"] = true
 			end
 		end

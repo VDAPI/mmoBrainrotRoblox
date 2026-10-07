@@ -4,6 +4,9 @@
 --   touch : tap selects, tap another slot moves there, tap the selected slot again activates,
 --           press and hold (S29) opens the slot's action menu (equip / unequip / sell ...)
 -- Slots register with an id ("inv:5", "eq:weapon", "pot:hp"); ItemController sets the drop/activate handlers.
+-- S31: "view:*" slots (shop rows, buyback, crafting, mail, auction, quest rewards ...) are owned here: no drag,
+-- drop or activation. On touch a tap selects the slot (ItemTooltip shows the selected slot's tooltip); a second
+-- tap on it or a tap anywhere else hides it again. The mouse only hovers them (tooltip on hover).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -40,6 +43,23 @@ export type Handlers = {
 }
 
 local handlerSets: { Handlers } = {}
+
+-- Item getters of registered slots (ItemSlot passes the same getter as its tooltip), for the view slots.
+local itemGetters: { [string]: () -> any } = {}
+
+local function isView(slotId: string): boolean
+	return string.sub(slotId, 1, 5) == "view:"
+end
+
+table.insert(handlerSets, {
+	owns = isView,
+	drop = function() end,
+	activate = function() end,
+	hasItem = function(slotId: string): boolean
+		local getter = itemGetters[slotId]
+		return getter ~= nil and getter() ~= nil
+	end,
+})
 
 local function ownerOf(slotId: string): Handlers?
 	for _, set in handlerSets do
@@ -97,11 +117,18 @@ local function hasItem(slotId: string): boolean
 	return owner ~= nil and owner.hasItem(slotId)
 end
 
--- Called by ItemSlot. The registration lives as long as `ownerScope`.
-function DragDrop.register(ownerScope: Fusion.Scope<any>, object: GuiObject, slotId: string)
+-- Called by ItemSlot. The registration lives as long as `ownerScope`. `getItem` (the tooltip's getter) tells
+-- whether a view slot holds anything.
+function DragDrop.register(ownerScope: Fusion.Scope<any>, object: GuiObject, slotId: string, getItem: (() -> any)?)
 	slots[object] = slotId
+	if getItem then
+		itemGetters[slotId] = getItem
+	end
 	table.insert(ownerScope, function()
 		slots[object] = nil
+		if getItem and itemGetters[slotId] == getItem then
+			itemGetters[slotId] = nil
+		end
 		if Fusion.peek(DragDrop.Selected) == slotId then
 			DragDrop.Selected:set(nil)
 		end
@@ -111,13 +138,20 @@ function DragDrop.register(ownerScope: Fusion.Scope<any>, object: GuiObject, slo
 		ownerScope,
 		object.InputBegan:Connect(function(input: InputObject)
 			if input.UserInputType == Enum.UserInputType.MouseButton1 then
-				pressed = { slotId = slotId, at = Vector2.new(input.Position.X, input.Position.Y) }
+				if not isView(slotId) then
+					pressed = { slotId = slotId, at = Vector2.new(input.Position.X, input.Position.Y) }
+				end
 			elseif input.UserInputType == Enum.UserInputType.Touch then
 				local selected = Fusion.peek(DragDrop.Selected)
 				if selected == slotId then
 					DragDrop.Selected:set(nil)
-					activate(slotId)
-				elseif selected and hasItem(selected) then
+					if not isView(slotId) then
+						activate(slotId)
+					end
+				elseif isView(slotId) then
+					-- Look only: the tap shows this slot's tooltip (and drops any other selection).
+					DragDrop.Selected:set(if hasItem(slotId) then slotId else nil)
+				elseif selected and not isView(selected) and hasItem(selected) then
 					DragDrop.Selected:set(nil)
 					drop(selected, slotId)
 				elseif hasItem(slotId) then
@@ -167,7 +201,31 @@ UserInputService.InputChanged:Connect(function(input)
 	end
 end)
 
+-- Touch: a tap that ends away from the selected view slot hides its tooltip (a drag / scroll does not).
+local touchStart: Vector2? = nil
+UserInputService.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.Touch then
+		touchStart = Vector2.new(input.Position.X, input.Position.Y)
+	end
+end)
+
 UserInputService.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.Touch then
+		local position = Vector2.new(input.Position.X, input.Position.Y)
+		local start = touchStart
+		touchStart = nil
+		local selected = Fusion.peek(DragDrop.Selected)
+		if
+			selected
+			and isView(selected)
+			and start
+			and (position - start).Magnitude <= LONG_PRESS_SLOP
+			and slotAt(position) ~= selected
+		then
+			DragDrop.Selected:set(nil)
+		end
+		return
+	end
 	if input.UserInputType ~= Enum.UserInputType.MouseButton1 then
 		return
 	end
