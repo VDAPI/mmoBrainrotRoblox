@@ -20,12 +20,15 @@
 | 13–18 | Gobliński Obóz | Szepczące Łąki |
 | 16–20 | Niedźwiedzi Jar, **Jaskinia Mchów** (jaskinia) | Szepczące Łąki |
 | 20 | **Boss: Grimrok** | Komnata Grimroka |
-| 20–24 | Skraj Boru | Mroczny Bór |
-| 23–31 | Wilcze Ostępy, Mglista Polana, **Wilcza Nora** (jaskinia 24–31) | Mroczny Bór |
-| 26–34 | Zgniły Gaj, Stary Cmentarz | Mroczny Bór |
-| 29–38 | Wioska Kultystów, **Kurhan Kultystów** (jaskinia 31–38) | Mroczny Bór |
-| 30–42 | Moczary, Chata Wiedźmy | Mroczny Bór |
-| 38–45 | Nietoperzowe Skały, **Krypta Zapomnianych** (jaskinia) | Mroczny Bór |
+| 20–25 | Wilcze Ostępy, **Wilcza Nora** (jaskinia 24–31) | Mroczny Bór |
+| 21–27 | Niedźwiedzi Jar | Mroczny Bór |
+| 24–31 | Nawiedzone Ruiny | Mroczny Bór |
+| 26–33 | Serce Puszczy | Mroczny Bór |
+| 29–37 | Osada Kultystów, **Kurhan Kultystów** (jaskinia 31–38) | Mroczny Bór |
+| 30–36 | Mglisty Rozstaj | Mroczny Bór |
+| 32–40 | Trolle Bagno | Mroczny Bór |
+| 36–42 | Wiedźmie Moczary | Mroczny Bór |
+| 40–45 | Krwawe Urwiska, **Krypta Zapomnianych** (jaskinia) | Mroczny Bór |
 | 45 | **Boss: Morvane** | Komnata Morvane |
 | 45–52 | Popielne Wydmy, Hienie Rozpadliny | Spalone Pustkowia |
 | 48–56 | Obóz Orków Popiołu, Sępia Grań, **Opuszczona Kopalnia** (jaskinia 49–56) | Spalone Pustkowia |
@@ -128,8 +131,8 @@ Kolumna „Grupy” = liczba grup po 1–4 potwory (DESIGN §15.1). Wszystkie ob
 
 Źródło prawdy: `src/shared/Data/Areas/*` (pole `profile`) i `Data/AreaProfiles` (DESIGN §3.6). ⚡ szybki exp, ✦ lepszy
 drop, ⛁ więcej złota, — bez profilu. „Potwory” = suma członków wszystkich grup (z rozmiarami grup profilu). Tabele
-regionów 2–4 niżej opisują wygląd z planu sprzed S19 i ich nazwy rozjechały się z kodem; nazwy, poziomy i liczby
-grup bierz z tej tabeli. Tabela Łąk niżej zgadza się z kodem (znaczek profilu przy nazwie).
+regionów 3–4 niżej opisują wygląd z planu sprzed S19 i ich nazwy rozjechały się z kodem; nazwy, poziomy i liczby
+grup bierz z tej tabeli. Tabele Łąk i (od S45) Boru niżej zgadzają się z kodem (znaczek profilu przy nazwie).
 
 | Obszar (id) | Poziomy | Rodzaje | Grupy | Potwory | Profil |
 |---|---|---|---|---|---|
@@ -145,14 +148,14 @@ grup bierz z tej tabeli. Tabela Łąk niżej zgadza się z kodem (znaczek profil
 | Niedźwiedzi Jar (`meadows_bearridge`) | 16–20 | Brunatny Niedźwiedź, Goblin Zwiadowca | 6 | 13 | ✦ |
 | **Mroczny Bór** | | | | | |
 | Wilcze Ostępy (`duskwood_werethicket`) | 20–25 | Wilkołak, Czarny Niedźwiedź | 8 | 25 | ⚡ |
-| Niedźwiedzi Jar (`duskwood_bearhollow`) | 21–27 | Czarny Niedźwiedź, Wilkołak | 6 | 9 | ✦ |
-| Nawiedzone Ruiny (`duskwood_ruins`) | 24–31 | Leśna Zjawa, Ghul | 7 | 16 | ⛁ |
-| Serce Puszczy (`duskwood_heart`) | 26–33 | Ent Zgnilizny, Ghul | 7 | 23 | ⚡ |
-| Osada Kultystów (`duskwood_cultvillage`) | 29–37 | Kultysta Mroku, Bagienny Wąż | 7 | 20 | ⛁ |
+| Niedźwiedzi Jar (`duskwood_bearhollow`) | 21–27 | Czarny Niedźwiedź, Wilkołak | 6 | 11 | ✦ |
+| Nawiedzone Ruiny (`duskwood_ruins`) | 24–31 | Leśna Zjawa, Ghul | 7 | 9 | ⛁ |
+| Serce Puszczy (`duskwood_heart`) | 26–33 | Ent Zgnilizny, Ghul | 7 | 22 | ⚡ |
+| Osada Kultystów (`duskwood_cultvillage`) | 29–37 | Kultysta Mroku, Bagienny Wąż | 7 | 18 | ⛁ |
 | Mglisty Rozstaj (`duskwood_crossroads`) | 30–36 | Bagienny Wąż, Kultysta Mroku, Leśna Zjawa | 5 | 11 | ⚡ |
-| Trolle Bagno (`duskwood_swamp`) | 32–40 | Bagienny Troll, Bagienny Wąż, Wiedźma Mokradeł | 7 | 13 | ⚡ |
-| Wiedźmie Moczary (`duskwood_witchmarsh`) | 36–42 | Wiedźma Mokradeł, Bagienny Troll | 4 | 5 | ✦ |
-| Krwawe Urwiska (`duskwood_bloodcliffs`) | 40–45 | Nietoperz Krwiopijca, Wiedźma Mokradeł | 6 | 12 | — |
+| Trolle Bagno (`duskwood_swamp`) | 32–40 | Bagienny Troll, Bagienny Wąż, Wiedźma Mokradeł | 7 | 18 | ⚡ |
+| Wiedźmie Moczary (`duskwood_witchmarsh`) | 36–42 | Wiedźma Mokradeł, Bagienny Troll | 4 | 7 | ✦ |
+| Krwawe Urwiska (`duskwood_bloodcliffs`) | 40–45 | Nietoperz Krwiopijca, Wiedźma Mokradeł | 6 | 14 | — |
 | **Spalone Pustkowia** | | | | | |
 | Równiny Salamander (`ashen_flats`) | 45–50 | Salamandra, Hiena Pustkowi | 8 | 20 | ⚡ |
 | Martwa Oaza (`ashen_oasis`) | 46–52 | Hiena Pustkowi, Sęp Popiołu | 6 | 12 | ✦ |
@@ -195,19 +198,26 @@ woda, budowle, miejsca NPC i kotwice questów S27), `Data/Terrain/meadows` (kszt
 | Gobliński Obóz / Goblin Camp ⚡ | 13–18 | Goblin Zwiadowca, Kobold | 6 | totem plemienny | płot z pali z czaszkami, szałasy, bębny, kotły nad ogniem, kości, **wejście: Gobliński Kopiec**, portal do Mrocznego Boru |
 | Niedźwiedzi Jar / Bear Ravine ✦ | 16–20 | Niedźwiedź, Goblin Zwiadowca | 6 | wąwóz z wodospadem | płaskowyż z sosnami, mech, legowiska niedźwiedzi, łowisko pod wodospadem, ścieżka w dół, **wejście: Jaskinia Mchów** (na dnie) · **NPC: myśliwy** |
 
-### Mroczny Bór (20–45), razem ok. 52 grupy
+### Mroczny Bór (20–45), razem 57 grup (stan po S45)
+
+Mapa ukształtowana (S45, wspólny silnik krain): stary, korzenisty las na falującym gruncie; Czarna Struga spada
+czarnym wodospadem z Krwawych Urwisk, płynie przez Mglisty Rozstaj (kamienny most), pod traktem (drewniany most) i
+brodem na ścieżce bagiennej do Trollego Bagna; od wschodu ściana czerwonych urwisk (ok. 13–16 st.), w środku niecka
+Serca Puszczy z Pradrzewem, na zachodzie głęboki Niedźwiedzi Jar. Wieczny zmierzch za dnia, ciemnoniebieska noc,
+nastrój i dźwięki na obszar (`Data/Ambience`). Dane: `Data/Areas/duskwood` (obszary, drogi, woda, budowle),
+`Data/Terrain/duskwood` (kształt terenu), budowle `Logic/DuskwoodGen`.
 
 | Obszar | Poziomy | Potwory | Grupy | Punkt charakterystyczny | Inne |
 |---|---|---|---|---|---|
-| Skraj Boru / Forest Edge | 20–24 | Wilkołak, Czarny Niedźwiedź | 6 | wieża strażnicza | przy portalu z Łąk |
-| Wilcze Ostępy / Wolfwood | 23–28 | Wilkołak, Czarny Niedźwiedź | 6 | kości pod martwym drzewem | **wejście: Wilcza Nora** |
-| Mglista Polana / Misty Glade | 23–31 | Leśna Zjawa | 6 | kamienny krąg we mgle | zioła (Księżycowy Płatek rzadko) |
-| Zgniły Gaj / Rotgrove | 26–34 | Ent Zgnilizny, Ghul | 6 | olbrzymie martwe drzewo | |
-| Stary Cmentarz / Old Graveyard | 27–33 | Ghul, Leśna Zjawa | 5 | kaplica cmentarna | |
-| Wioska Kultystów / Cultist Village | 29–37 | Kultysta Mroku | 6 | ołtarz z runami | **wejście: Kurhan Kultystów** |
-| Moczary / The Mire | 30–40 | Bagienny Wąż, Bagienny Troll | 7 | chata na palach | łowisko |
-| Chata Wiedźmy / Witch's Hollow | 36–42 | Wiedźma Mokradeł, Troll | 5 | kocioł i wisielcze drzewo | |
-| Nietoperzowe Skały / Bat Crags | 40–45 | Nietoperz, Wiedźma (40–42) | 5 | skalne iglice | **wejście: Krypta Zapomnianych** |
+| Wilcze Ostępy / Werewolf Thicket ⚡ | 20–25 | Wilkołak, Czarny Niedźwiedź | 8 | Księżycowa Polana (menhir z pazurami, nocą srebrny blask) | wjazd: brama ostrzegawcza z niebieskimi latarniami między olbrzymimi dębami, rozszarpany obóz myśliwych, kości pod martwym drzewem, zadrapane pnie, sierść, odciski łap, wywrócona barć, **wejście: Wilcza Nora** (między korzeniami martwego dębu) |
+| Niedźwiedzi Jar / Bear Hollow ✦ | 21–27 | Czarny Niedźwiedź, Wilkołak | 6 | powalony olbrzym (pień jak most nad parowem) | głęboki parów z 2 ścieżkami w dół, zagubiony obóz myśliwych na dnie, legowiska pod wykrotami, ości ryb, trop wilkołaka w dół parowu |
+| Nawiedzone Ruiny / Haunted Ruins ⛁ | 24–31 | Leśna Zjawa, Ghul | 7 | dwór na wzniesieniu (zawalona wieża, schody donikąd, nocą zimne okna) | dziedziniec z fontanną czarnej wody i posągami bez głów, płaczący anioł, rodowy cmentarz za żelaznym płotem (rozkopane groby, trumny), kaplica z witrażem i pazurami na drzwiach, otwarta krypta rodowa z monetami, ogniki między grobami |
+| Serce Puszczy / Heart of the Forest ⚡ | 26–33 | Ent Zgnilizny, Ghul | 7 | Pradrzewo (rozłupany kolos w niecce, świecąca szczelina) | grzbiety korzeni, olbrzymie grzyby na krawędzi niecki, świecące huby, zgniłe rozlewiska z bąblami, zarodniki, kratery po korzeniach, nory ghuli z kośćmi |
+| Osada Kultystów / Cultist Village ⛁ | 29–37 | Kultysta Mroku, Bagienny Wąż | 7 | krąg rytualny (runy świecą nocą, ołtarz z fioletowym ogniem) | palisada z czarnych pali z fioletowymi szmatami, brama z dzwonem, hala kultu, chaty o spiczastych dachach, klatki, dziesięcina (skrzynie i worki monet), ogrodzona sadzawka węży, skóry, jaja, totem węża, **wejście: Kurhan Kultystów** (kopiec z dolmenem i kręgiem menhirów) |
+| Mglisty Rozstaj / Misty Crossroads ⚡ | 30–36 | Bagienny Wąż, Kultysta Mroku, Leśna Zjawa | 5 | przydrożna kapliczka z latarnią | płytka niecka pełna mgły, krzywy drogowskaz o wielu ramionach, szubienica z krukiem, kamienny most nad Czarną Strugą, wylinki w trzcinach, ogniki nad wodą |
+| Trolle Bagno / Troll Swamp ⚡ | 32–40 | Bagienny Troll, Bagienny Wąż, Wiedźma Mokradeł | 7 | zatopiona wieża strażnicza (gniazdo trolla na szczycie) | wielkie mokradło z wysepkami i groblami z pni, wioska trolli (kopulaste chaty, tron z głazów, kocioł), opuszczona wioska na palach, pomost z łódką i latarnią (łowisko), wierzby z brodami mchu, amulety wiedźm, gniazdo węży |
+| Wiedźmie Moczary / Witch Marsh ✦ | 36–42 | Wiedźma Mokradeł, Bagienny Troll | 4 | chata wiedźmy na palach | dym z wygiętego komina, czaszki ze świecami, kocioł z zieloną poświatą, wisielcze drzewo z amuletami i kościanymi dzwonkami, laleczki, krąg świecących grzybów, półki ze słojami i skrzynia amuletów, trop trolla w trzcinach |
+| Krwawe Urwiska / Blood Cliffs | 40–45 | Nietoperz Krwiopijca, Wiedźma Mokradeł | 6 | Brama Krypty (wrota w skale, zakapturzone figury, zimne niebieskie płomienie) | czerwona skarpa z wyżyną (droga wcięciem), nawisy z gniazdami nietoperzy i guanem, piargi, czarny wodospad, białe kości, ciernie, **wejście: Krypta Zapomnianych** (jaskinia bossa) |
 
 ### Spalone Pustkowia (45–70), razem ok. 50 grup
 

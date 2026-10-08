@@ -27,6 +27,7 @@
   --vw-zone-yellow: #E0C23B;
   --vw-zone-red: #D64A3E;
   --vw-map-arena: #C2A878;
+  --vw-map-basin: #2A3424;
   --vw-map-bg-cave: #1E1C1A;
   --vw-map-bg-city: #4F6A35;
   --vw-map-bg-crypt: #16141C;
@@ -38,6 +39,8 @@
   --vw-map-bridge: #8A6A48;
   --vw-map-building: #B5A488;
   --vw-map-cemetery: #465A3A;
+  --vw-map-cliff: #6E2F2A;
+  --vw-map-elder-tree: #4A3A2C;
   --vw-map-field: #B49A5A;
   --vw-map-floor: #5A5650;
   --vw-map-forest: #22301C;
@@ -54,12 +57,14 @@
   --vw-map-lava: #E8541A;
   --vw-map-marsh: #3E4A30;
   --vw-map-path: #9A8A68;
+  --vw-map-plateau: #5A3E36;
   --vw-map-plaza: #8A8070;
   --vw-map-quarry: #7E786C;
   --vw-map-quarry-deep: #5A554C;
   --vw-map-quarry-mid: #6C665C;
   --vw-map-ravine: #4E4A40;
   --vw-map-ravine-wall: #2E2C2A;
+  --vw-map-ritual: #5A3A6E;
   --vw-map-ruins: #7A7468;
   --vw-map-wall: #4A4744;
   --vw-map-water: #3A6FA8;

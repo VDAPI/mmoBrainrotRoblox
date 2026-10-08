@@ -53,6 +53,12 @@ export type MapDef = {
 	-- `nightLighting`; maps without it keep their fixed lighting.
 	dayNight: boolean?,
 	nightLighting: Lighting?,
+	-- S45: with dayNight, the clock range { from, to } the day's hours are shown as (eternal dusk: the sun stays
+	-- low all day; Logic/DayCycle.duskClock). nil = the real clock.
+	dayClock: { number }?,
+	-- S45: built in the background after the server started (World/WorldBuilder.buildLate): the shaped regions.
+	-- Until done, portals show "Soon" and travel there is refused, like an unbuilt map.
+	buildLate: boolean?,
 }
 
 local DAY: Lighting = {
@@ -101,6 +107,18 @@ local LIGHT = {
 		atmosphere = { density = 0.33, haze = 1.4, glare = 0, color = "#2E3A50", decay = "#161C2A" },
 		tint = "#D4DEFF",
 		saturation = -0.12,
+	}),
+	-- Duskwood (S45): its "day" is an eternal dusk (dayClock), the night deep blue and moonlit, bright enough to fight.
+	duskwoodNight = lighting({
+		clockTime = 0,
+		brightness = 0.85,
+		ambient = "#262A44",
+		outdoorAmbient = "#363C5E",
+		fogColor = "#141A2E",
+		fogEnd = 380,
+		atmosphere = { density = 0.46, haze = 2.2, glare = 0, color = "#222A44", decay = "#10142A" },
+		tint = "#C8D2FF",
+		saturation = -0.2,
 	}),
 	duskwood = lighting({
 		clockTime = 18.2,
@@ -243,8 +261,17 @@ map({
 	spawn = { x = -700, y = 4, z = 0 },
 	biome = "forest",
 	lighting = LIGHT.duskwood,
+	-- S45: night and an eternal dusk by day; the areas' moods on top (Data/Ambience).
+	dayNight = true,
+	nightLighting = LIGHT.duskwoodNight,
+	dayClock = { 17.4, 18.3 },
+	-- Creator Store: a dark forest loop ("dark fantasy forest ambient music", slow strings / choir, ~3 min, loops).
 	music = "",
 	buildMode = "generated",
+	-- S45: the shaped forest builds in the background; server budget: ~930 big trees (2 parts each), buildings
+	-- ~350, portals / cave entrances / signposts ~300 (tests/duskwood.spec: generator shell + 300 <= maxParts).
+	buildLate = true,
+	maxParts = 3000,
 	worldMap = { x = 0.58, y = 0.38 },
 	links = { "meadows", "city", "duskwood_den", "duskwood_barrow", "duskwood_cave", "ashen" },
 })

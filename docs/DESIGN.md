@@ -153,6 +153,11 @@ Każda strefa terenowa ma też podstrefy (np. łąka, las, ruiny) z innymi pozio
   Serwer stawia teren, bryły budynków, duże drzewa i rzeczy z kolizją; detal budynków, podszyt, zwierzęta
   dekoracyjne (owce, kaczki, kruki), pyłki, motyle, mgła, świetliki i liście robi klient. Przy niskiej
   szczegółowości bez zwierząt i z połową cząsteczek.
+- Krainy na wspólnym silniku (zmiana S45, pierwsza: Mroczny Bór): ten sam podział serwer / klient; las gęstnieje
+  wokół kamery dzięki drzewom-wypełniaczom budowanym tylko przez klienta (serwer: ok. 930 dużych drzew po 2 części,
+  budżet mapy 3000 części). Ukształtowane krainy budują się **w tle po starcie serwera** (pole mapy `buildLate`):
+  start trwa tyle co przed sesją, a portal do krainy pokazuje „Wkrótce”, dopóki budowa się nie skończy (kilka do
+  kilkunastu sekund).
 
 ### 3.8 Miasto startowe (zmiana po testach S20)
 

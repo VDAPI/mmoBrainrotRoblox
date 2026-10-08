@@ -151,6 +151,17 @@ local function spawnModel(player: Player, at: CFrame?, mapId: string?)
 	end
 	local loc = character.location
 	local map = mapId or loc.map
+	if not at and WorldService.IsBuilding(map) then
+		-- S45: saved in a region still building in the background: wait for it (the loading screen is up)
+		Net.Fire(player, "MapTransition", map)
+		WorldService.WaitBuilt(map, 45)
+		if rt.spawnToken ~= token or player.Parent ~= Players then
+			return
+		end
+	end
+	if not at and not WorldService.IsBuilt(map) then
+		map = "city" -- ResolveLocation sends a character on an unbuilt map to the capital
+	end
 	local cframe = at or WorldService.ResolveLocation(map, loc.x, loc.y, loc.z)
 	if map ~= loc.map then
 		PlayerStateService.Set(player, { "character", "location", "map" }, map)

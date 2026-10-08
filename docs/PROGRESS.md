@@ -47,6 +47,7 @@
 | S39 | Wiki 5/10: bestiariusz z filtrami w adresie, strony 50 potworów i 4 bossów (warianty, łup, fazy, mechaniki), obrazy OG | ● |
 | S40 | Wiki 6/10: ikony przedmiotów z atlasów, baza 930 przedmiotów, strona przedmiotu, przedmioty bossów, kalkulator ulepszania, rzemiosło | ● |
 | S35 | Ikony przedmiotów: atlasy z grafikami (kolor progu, akcent żywiołu / mikstury), komponent `ItemIcon` z zapasem na symbole, sloty, duch przeciągania, legenda, mikstury, tooltip, waluty | ● |
+| S45 | Mroczny Bór od nowa + wspólny silnik krain: teren z danych (`RegionTerrain`), generator `DuskwoodGen` (9 expowisk w klimacie potworów, wyloty jaskiń), rejestry `WorldGen` / `Data/Terrain`, budowa w tle, życie, wieczny zmierzch, mapa i wiki | ● |
 
 Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana przez właściciela
 
@@ -903,6 +904,52 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
 - **S35** Pasek efektów: eliksiry odporności dostają rysunek przedmiotu `elixir_<stat>`; błogosławieństwa mają w HUD
   znak ✶ przy nicku (S29), więc ikony `bless/<linia>` widać tylko w slotach przedmiotów.
 
+- **S45** Silnik krain: `RegionTerrain` to **kopia** algorytmów `MeadowsTerrain` z parametrami z danych (bez wydzielania
+  `TerrainLines`): Łąki zostają na `MeadowsTerrain`, `MeadowsGen` i `MeadowsLifeController` bez żadnej zmiany (testy
+  Łąk i fixture miasta przechodzą bez zmian). Tak samo palisada, namiot, mosty, bród i kurtyna wodospadu: skopiowane
+  do `WorldGen/Structures`, nie przeniesione.
+- **S45** Woda: jeziora i mokradła mają wspólny `lakeLevel` (−1), mokradło może mieć własny poziom (`water`: zgniłe
+  rozlewiska w niecce Serca −7,1); struga może wpadać do mokradła (`into = "marsh:<n>"`). Wyspy mokradeł (`islands`)
+  to suchy grunt `h` nad wodą mokradła.
+- **S45** Urwiska: płaskowyż z wielokątem i szerokością urwiska **na wierzchołek** (6 st. od zachodu, 60–70 st. na
+  końcach: skarpa wygasa łagodnie); droga główna wspina się wcięciem (profil drogi ≤ 11% tnie płaskowyż), droga do
+  Pustkowi poprowadzona na zachód od skarpy, na wyżynę wchodzi tam, gdzie skarpa wygasa (portal bez zmian). Wyżyna
+  21 st., skarpa 13–16 st. Ściany `Sandstone` z nowym kolorem `#6E2F2A` w `MATERIAL_COLORS` (S46 odziedziczy), piargi
+  `Rock`; `Asphalt`, `Concrete`, `Brick` zostają wolne dla S46/S47.
+- **S45** Las: ok. 930 dużych drzew na serwerze (pień z kolizją + główna korona), gęstość dają **drzewa-wypełniacze
+  tylko na kliencie** (`flora.filler` na kafelek 128 st., cała bryła w `detail`). Gatunki Boru: `gnarledOak`,
+  `darkPine` (czarny świerk), `blackDead` (grzęda kruków), `mossWillow`, `giantMushroom` (blaszki świecą nocą, tag
+  `lamp`), `giantOak` (wjazd).
+- **S45** Budowa w tle: pole mapy `buildLate` (Bór), `WorldBuilder.buildLate()` z `WorldService.Start` (`task.spawn`),
+  pauza co ~10 ms pracy (`ctx.pace`, też po każdym bloku terenu i każdej budowli), sygnał `WorldBuilder.MapBuilt`
+  (`WorldService.MapBuilt`), `WorldService.WaitBuilt(map, timeout)` / `IsBuilding` / `BackgroundSeconds`. Postać
+  zapisana w Borze czeka do 45 s (ekran ładowania), potem idzie do miasta; `CharacterService` przestawia wtedy też mapę
+  zapisu na `city` (wcześniej pozycja była z miasta, a mapa zostawała stara).
+- **S45** Wieczny zmierzch: pole mapy `dayClock = { 17.4, 18.3 }`; za dnia `ClockTime` biegnie tylko w tym zakresie
+  (nisko stojące słońce), nocą zegar prawdziwy (`DayCycle.duskClock`). Przeskok z ~6 na 17,4 dzieje się w połowie
+  przejścia światła o świcie (mgła Boru go zasłania).
+- **S45** Obszary: Mglisty Rozstaj przesunięty na `{80, −280, 515, −20}` (skrzyżowanie, kapliczka i mgła w jednym
+  obszarze), Wiedźmie Moczary poszerzone na południe `{−220, 20, 300, 195}`, Serce Puszczy od z = 200, Trolle Bagno od
+  x = 305; ścieżka bagienna omija Pradrzewo i przechodzi bród przez Czarną Strugę (226, 117). Punkty `arrive` z
+  `arrivals_apply.py` (narzędzie zapisuje teraz końce linii LF; wcześniej na Windows dawało CRLF).
+- **S45** Nazwy `sites` Boru unikalne między mapami (test): `duskGate`, `ravagedCamp`, `moonstone`, `boneTree`,
+  `fallenGiant`, `lostCamp`, `manor`, `cemetery`, `chapel`, `familyCrypt`, `elderTree`, `cultVillage`, `ritualCircle`,
+  `cultHall`, `serpentPond`, `wayShrine`, `gallows`, `trollVillage`, `sunkenTower`, `swampJetty`, `stiltVillage`,
+  `witchHut`, `hangingTree`, `cryptGate`, `blackFall`, `batRoost`. `landmark` każdego obszaru = jego punkt
+  charakterystyczny z `sites` (ogólny `Prefabs.landmark` już nie staje w Borze).
+- **S45** Wyloty jaskiń ubiera generator (`Prefabs.caveEntrances(..., { mouth = false })`: portal, tablica i ikona
+  zostają); latarnie dróg stawia generator (zimne niebieskie, `Prefabs.areaFeatures(..., { lanterns = false })`).
+  Łąki wołają obie funkcje bez opcji (bez zmian).
+- **S45** Życie Boru w nowym `WorldLifeController` (mapy z rejestru `WorldGen` poza Łąkami; rejestr rodzajów:
+  `perch`, `batRoost`, `bats`, `wisp`, `mist`, `moths`, `fireflies`, `spores` + liście wokół gracza w leśnych
+  motywach). Łąki zostają na `MeadowsLifeController`.
+- **S45** Budżet: `maxParts = 3000` dla Boru. Szacunek „przed” (S19/S20: ~360 drzew po 3–4 części, 80 krzaków, 40
+  skał, ruiny, namioty, palisady, latarnie, `extraDecor`, `areaFeatures`) ok. 2400–2600 części; „po”: shell
+  generatora 2213 (930 drzew = 1860, budowle ~350) + ok. 300 (portale, drogowskazy, tablice jaskiń, granica, strefy)
+  ≈ 2500. Prawdziwa liczba: Output `[Duskwood] parts=…` i `/regionstats duskwood`.
+- **S45** Liczba potworów Boru po nowym rozmieszczeniu: 120 bez profili / 135 z profilami (było 124 / 134;
+  `docs/BALANS.md` przegenerowany, nic więcej w balansie nie ruszane). Grupy na obszar bez zmian (razem 57).
+
 ## Niedokończone
 (Rzeczy z zakresu sesji, które nie zostały zrobione. Następna sesja zaczyna od nich.)
 
@@ -928,7 +975,7 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
 - **S18** Sprint nie zmienia WalkSpeed lokalnie przed odpowiedzią serwera (opóźnienie o ping).
 
 - **S20** Mapa świata: timer Elity II widać na karcie jaskini (tekst), bez osobnej ikony na rysunku. (Mosty i strugi
-  są od S26 na Łąkach i na mapie; inne regiony ich jeszcze nie mają.)
+  są od S26 na Łąkach i od S45 w Borze; Pustkowia i Szczyty ich jeszcze nie mają.)
 - **S21** Miasto niesprawdzone w Studio: czas `WriteVoxels` całego terenu (225 bloków) i budowy shellu w `Init`, płynność
   detalu klienta na telefonie (`/perf`), kadr kamery wyboru postaci.
 - **S21** Nocą świecą okna, latarnie i ogień, ale nie ma zmiany muzyki ani dźwięków nocy.
@@ -965,7 +1012,8 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
   bębny goblinów, odgłosy farmy, pszczoły, plusk wody przy brzegu. Muzyka Łąk: `Data/Maps` (`music`, podpowiedź w
   komentarzu).
 - **S26** Mapa świata pokazuje budowle Łąk jako kształty (bez ikon i podpisów punktów charakterystycznych).
-- **S26** Inne regiony (Mroczny Bór, Pustkowia, Szczyty) dalej na starym, płaskim generatorze z kulami terenu.
+- **S26** Pustkowia i Szczyty dalej na starym, płaskim generatorze z kulami terenu (Bór od S45 na silniku krain;
+  dalej S46/S47).
 
 - **S27** Okna questów (NPC, rozmowa, dziennik) sprawdzone w Studio tylko częściowo: przebieg przyjęcie → rozmowa →
   oddanie → wybór nagrody, interakcja z płotem (podpowiedź, pasek, efekt deski, brak powtórki, dystans) i znaczniki
@@ -1011,11 +1059,29 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
   wyboru — pomysł: dodatkowe małe obszary z profilem w przyszłej przebudowie regionów (sesja nie dodaje obszarów).
 - **S33** Jaskinie bez profilu (pole `profile` w `Cave` jest, ale `AreaSpawns.cave` go nie czyta). Model nie liczy
   osobno szybszego respawnu jako „więcej potworów naraz” poza krótszym dojściem.
-- **S33** Opisy obszarów w `docs/SWIAT.md` dla regionów 2–4 (punkty charakterystyczne) dalej z planu sprzed S19; nowa
-  tabela z kodu stoi nad nimi.
+- **S33** Opisy obszarów w `docs/SWIAT.md` dla Pustkowi i Szczytów (punkty charakterystyczne) dalej z planu sprzed
+  S19; nowa tabela z kodu stoi nad nimi (Bór opisany od nowa w S45).
 
 - **S35** Do narysowania (dziś aliasy): `crow_feather`, `toad_venom`. Ikonki walut przy cenach w sklepach, w sklepie
   premium i na ekranie śmierci (dziś tekst / ◆). Gra nie testowana po wgraniu atlasów (robi właściciel, instrukcja S35).
+
+- **S45** Bór niesprawdzony w Studio (sesja bez Studio). Do sprawdzenia: czasy `[Duskwood] terrain/shell/parts=…` i
+  `[WorldBuilder] background duskwood built in … s`, czy start serwera się nie wydłużył, płynność gry w trakcie budowy w
+  tle, napis „Wkrótce” → poziomy nad portalem po zbudowaniu, postać wylogowana w Borze (czekanie przy wejściu).
+- **S45** Dźwięki Boru do podpięcia (`Data/Ambience`, `id = ""`, podpowiedzi w `hint`): wiatr w starych drzewach,
+  noc ciemnego lasu, wycie wilkołaków, wilgotny parów (kapanie), szepty w ruinach, pojedynczy dzwon kaplicy, jęki
+  zgnilizny i bulgot, niski szum zarodników, skandowanie kultystów nocą, obóz kultu za dnia, wiatr nad mglistym
+  wrzosowiskiem, skrzypienie liny szubienicy, bagno dzień / noc, pomruki trolli, kocioł i dzwonki wiedźmy, wiatr na
+  urwiskach, piski kolonii nietoperzy; punkty: czarny wodospad, struga przy mostach, magiczny ogień ołtarza, kocioł
+  trolli, kocioł wiedźmy, kościane dzwonki, wycie wiatru w Bramie Krypty. Muzyka Boru: `music = ""` w `Data/Maps`
+  (podpowiedź w komentarzu).
+- **S45** Nie zrobione z planu: wspólne `Logic/TerrainLines` (algorytmy skopiowane), przeniesienie Łąk na
+  `WorldLifeController` i na `WorldGen/Structures`, fixture `meadowsHeights` (nic nie było wydzielane). Pomysł S33 o
+  dodatkowych małych obszarach Boru dalej otwarty.
+- **S45** Nawisy Urwisk to płyty skalne w shellu przy krawędzi skarpy (krawędź przybliżona z wielokąta,
+  `Cliffs.edgeX`); w Studio sprawdzić, czy nie wiszą w powietrzu ani nie toną w ścianie. Okna dworu „świecą zimno”
+  przez tag `lamp` (nie `window`), więc świecą wszystkie, nie 60%.
+- **S45** `/tparea` wypisuje cele wszystkich map (długa lista), bez filtra po mapie wołającego.
 
 ## Zgłoszone błędy
 (Właściciel wpisuje tu błędy po testach albo przekazuje je przez sesję poprawek.)
@@ -3466,4 +3532,155 @@ Szczegóły: `docs/WIKI.md` → „Wdrożenie”, „Jakość”, Stan (tabela L
     Actions → Wiki → Run workflow.
 11. Po ok. 10 min: `https://vaelthorn-wiki.pages.dev/pl/` działa; adres jest w podsumowaniu runu.
 12. Własna domena i `SITE_URL`: kroki 6–7 tamże. `scripts/check` w korzeniu przechodzi.
+### S45: Mroczny Bór od nowa + wspólny silnik krain
 
+**Zrobione**
+- Wspólny silnik krain: kształt terenu z danych (`Data/Terrain/Types`, rejestr `Data/Terrain/init`, kształt Boru
+  `Data/Terrain/duskwood`), czysta funkcja wysokości `Logic/RegionTerrain` (warstwy jak na Łąkach plus listy: wzgórza,
+  grzbiety, płaskowyże z urwiskiem na wierzchołek, wąwozy, niecki, mokradła z wyspami; drogi, rampy, jeziora, strugi z
+  monotonicznym poziomem, mosty i bród), `Logic/MapTerrain` dla każdej krainy (`walkable` + 12 st. od wody terenu).
+- Teren Boru: garby i korzenie w Wilczych Ostępach, Księżycowa Polana na pagórku, głęboki Niedźwiedzi Jar z dwiema
+  ścieżkami w dół, wzniesienie dworu w Ruinach, niecka Serca Puszczy (12 st.) z grzbietami korzeni i zgniłymi
+  rozlewiskami, płytka mglista niecka Rozstaju, wielkie mokradło Trollego Bagna z wysepkami i jeziorkiem, Wiedźmie
+  Moczary, czerwona skarpa Krwawych Urwisk (13–16 st.) z wyżyną, wcięciem drogi i dziedzińcem Krypty; Czarna Struga
+  (czarny wodospad z wyżyny, kamienny most na Rozstaju, drewniane mosty na trakcie i drodze do Pustkowi, bród na
+  ścieżce bagiennej). Materiały: `LeafyGrass` z plamami `Mud`/`Ground`, `Sandstone` (nowy kolor `#6E2F2A`) na
+  urwiskach, `Rock` piargi, `Cobblestone` dziedziniec dworu, `Slate` ściany Jaru.
+- Generator `Logic/DuskwoodGen/*` (Thicket, Hollow, Ruins, Heart, Cult, Crossroads, Swamp, Witch, Cliffs, Props, Env):
+  wjazd (brama ostrzegawcza z niebieskimi latarniami między olbrzymimi dębami, deska z pazurami, czaszki), rozszarpany
+  obóz myśliwych, Księżycowa Polana, drzewo z kośćmi, zadrapane pnie z sierścią i odciskami łap, barć; powalony olbrzym
+  (pień-most nad Jarem z kolizją), zagubiony obóz na dnie Jaru, legowiska pod wykrotami, trop wilkołaka; dwór (mury,
+  zawalona wieża, schody donikąd, zimne okna), dziedziniec z fontanną czarnej wody, posągi bez głów, płaczący anioł,
+  cmentarz za żelaznym płotem z rozkopanymi grobami, kaplica z witrażem, otwarta krypta z monetami; Pradrzewo
+  (rozłupany kolos ~45 st., martwe konary do ~60 st., świecąca szczelina, huby), olbrzymie grzyby na krawędzi niecki,
+  kratery entów, nory ghuli, bąble w rozlewiskach; osada kultu w palisadzie z czarnych pali (brama z dzwonem, hala,
+  chaty, klatki, ogniska, dziesięcina), krąg rytualny ze świecącymi runami i fioletowym ogniem, sadzawka węży, Kurhan
+  Kultystów (kopiec, dolmen, menhiry z fioletowymi świecami); kapliczka, szubienica, drogowskaz wielu ramion; zatopiona
+  wieża z gniazdem trolla, wioska trolli z kotłem, pomost z łódką, wioska na palach, groble z pni, amulety; chata
+  wiedźmy na palach z kotłem, wisielcze drzewo; Brama Krypty (fasada z czerwonych płyt, nisze z czaszkami, zakapturzone
+  figury, uchylone wrota, zimne płomienie), nawisy z gniazdami nietoperzy i guanem, piargi, czarny wodospad; mosty,
+  kamienie przy strudze, zimne niebieskie latarnie dróg, skały. Drzewa z `WorldGen/Flora` wg motywu (930 dużych, reszta
+  wypełniacze na kliencie) i podszyt (paprocie, jeżyny, ciernie, jagody, muchomory, trzciny).
+- Rejestr `Logic/WorldGen` (`meadows` = `MeadowsGen`, `duskwood` = `DuskwoodGen`), `WorldGen/Kit`, `Flora`,
+  `Structures`; `TownDetailController` bierze generatory z rejestru.
+- Serwer: `World/RegionLayout`, cienki `Layouts/duskwood`, opcje `Prefabs.caveEntrances` (`mouth = false`) i
+  `Prefabs.areaFeatures` (`lanterns = false`), `TerrainWriter` z `pace`, budowa w tle (`buildLate`,
+  `WorldBuilder.buildLate`, `MapBuilt`, `WorldService.Start/WaitBuilt/IsBuilding/BackgroundSeconds`),
+  `GatherService` stawia węzły późno zbudowanych map, `CharacterService` czeka z postacią zapisaną w Borze.
+- Klient: `WorldLifeController` (kruki, nietoperze pod nawisami i roje nocą, błędne ogniki, mgła w nieckach, ćmy przy
+  latarniach, świetliki, zarodniki, liście), `DecorController` (9 motywów Boru, nowe dekoracje: korzenie, czaszki,
+  świecące grzyby, świece, fioletowe szmaty, wylinki, jagody, sierść, bluszcz, ciernie, czerwone odłamki; motyw i
+  brzeg z terenu krainy), `TownFxController` (`FxColor` dla `fire`/`candle`/`lamp`, nowy `bubbles`),
+  `WorldController` (wieczny zmierzch `dayClock`, napis portalu odświeża się po zbudowaniu krainy).
+- Nastrój: `Data/Ambience` (9 obszarów Boru, mapa, 13 punktów dźwięku, id do podpięcia), `Data/Maps`: noc
+  `duskwoodNight`, `dayNight`, `dayClock`, `buildLate`, `maxParts = 3000`.
+- Mapa świata / minimapa / wiki: szkic z generatora (mokradła, niecki, Jar, wyżyna i skarpa, dwór, cmentarz, palisada,
+  krąg, Pradrzewo, mosty, groble, budynki) + nowe kolory `MapSketch` (`plateau`, `cliff`, `basin`, `elderTree`,
+  `ritual`); `tools/WikiMaps` (las i szkic z `WorldGen`, kształty terenu pod wodą i drogami), `Places.gather` (węzły z
+  `nodes()`); przegenerowane `wiki/src/data/*.json`, `tokens.data.css`, `duskwood.svg` (40 KB).
+- Admin: `/regionstats <map>`, `/terrainrebuild` dla każdej mapy z funkcją terenu (lista z rejestru), `/tparea` z celami
+  wszystkich map (miejsca `sites` Boru), `/ambience` dla obszarów Boru.
+- Testy: `regionterrain.spec` (wysokości, drogi < 15°, miejsca na suchym, struga ciągła i w dół, mosty i bród, niecka
+  i skarpa, flood fill od portalu z Łąk do każdej grupy, przybycia, jaskini, portalu, odrodzenia i miejsca, determinizm,
+  materiały, woksele, fixture), `duskwood.spec` (obszary z planu, motywy i nastroje, dokładnie swoje grupy na suchym
+  12 st. od wody, unikalne `sites`, węzły wg klimatu, łowiska, budżet, budowle na ziemi, wyloty jaskiń, życie i szkic,
+  budowa w tle), `worldgen.spec` (rejestr, Łąki bez zmian, `MapTerrain` = `RegionTerrain`, konteksty, `duskClock`),
+  fixture `tests/fixtures/duskwoodHeights.luau` (400 punktów).
+- Narzędzia: `tools/regiondump.luau` + `regionmap.py`, `tools/regionview.luau` + `regionview.py` (`--dusk`),
+  `tools/fixture_duskwood.luau`; `arrivals_apply.py` zapisuje LF.
+- Pomiary (Lune): woksele Boru 729 bloków 0,99 s (Łąki 0,71 s), generator Boru 0,24 s (Łąki 0,10 s). W Studio teren
+  Łąk ~2,0 s, więc Bór ~2,8 s terenu + shell; buduje się w tle, start serwera bez zmian.
+- Obrazy kontrolne (z góry i 3D, nie w repo): poprawione po obejrzeniu: Pradrzewo stało w zgniłym rozlewisku
+  (rozlewiska przesunięte, spłaszczenie pod drzewem), zatopiona wieża na suchym (przesunięta w jezioro), za niski i
+  zasłonięty drzewami dwór (wyższe mury i wieża, czysty dziedziniec), pusta osada (mniejsza palisada, ognisko, klatki,
+  drewno, więcej chat, hala w środku zamiast na palisadzie), za mało wody na bagnach (głębsze rozlewiska), szare pasy
+  na skarpie (ściany całe z `Sandstone`), za ciemny wodospad, ścieżka bagienna biegnąca w korycie strugi (nowy
+  przebieg z brodem), smugi guana na fasadzie Bramy.
+
+**Pliki**: nowe `Data/Terrain/{Types,init,duskwood}`, `Logic/RegionTerrain`, `Logic/WorldGen/{init,Kit,Flora,
+Structures}`, `Logic/DuskwoodGen/{init,Env,Props,Thicket,Hollow,Ruins,Heart,Cult,Crossroads,Swamp,Witch,Cliffs}`,
+`World/RegionLayout`, `Controllers/WorldLifeController`, testy `regionterrain`, `duskwood`, `worldgen`, fixture,
+narzędzia `regiondump`, `regionmap.py`, `regionview`, `regionview.py`, `fixture_duskwood`; zmiany: `Data/Areas/{duskwood,
+Types}`, `Data/{Maps,Ambience,AdminCommands}`, lokalizacja (PL, EN), `Logic/{MapTerrain,DayCycle}`,
+`Logic/TownGen/Blueprint` (`fxColor`), `Util/BlueprintBuild` (`FxColor`), `World/{WorldBuilder,Build,BuildStats,
+TerrainWriter,Prefabs,Layouts/duskwood}`, `Services/{WorldService,GatherService,CharacterService}`, `Admin/Terrain`,
+`Controllers/{TownDetailController,DecorController,TownFxController,WorldController}`, `UI/MapSketch`,
+`tools/{WikiMaps/init,WikiData/Places,arrivals_apply.py}`, dane wiki, `docs/{SWIAT,ARCHITECTURE,DESIGN,BALANS}`,
+`CLAUDE.md`.
+
+**API silnika krain (dla S46–S48)**
+- `Data/Terrain/Types.Shape`: `map`, `seed`, `writer {bottom, top, margin}`, `lakeLevel`, `lakeDepth`, `lakeShore`,
+  `swell`, `detail`, `fine`, `zones {rect, blend, amp}`, `hills {x, z, rx, rz, rot, h, flat}` (h < 0 = dołek),
+  `ridges {pts = {{x, z, h, w}}, sharp?, steep? (±1), cliff?}`, `plateaus {y, cliff: number | {per vertex}, poly? |
+  x/z/rx/rz/rot, noise?}`, `gorges {wall, pts = {x, z, half, floor}}`, `basins {x, z, rx, rz, rot, depth, flat}`,
+  `marshes {x, z, rx, rz, edge, ragged, level, amp, scale, strength, water?, theme?, islands? {x, z, r, h}}`,
+  `flats {x, z, r, blend, y?}`, `ramps {w, pts {x, z, y?}}`, `crossings {x, z, kind}`, `themes {rect, theme}`,
+  `defaultTheme`, `themeJitter`, `patches {x, z, r, material}`, `materialRules {mat, theme?, minSlope?, maxSlope?,
+  minY?, maxY?, minNoise?, maxNoise?, gorge?, plateau?, marsh?}` (pierwsza pasująca), `flora {[theme] = {spacing,
+  dense, sparse, clump, kinds, filler?, fillerKinds?, under? {n, kinds}}}`, `respawns {x, z, lookX, lookZ}`,
+  `valley? {slope, reach}`. Struga: `into = "lake" | "stream:<n>" | "marsh:<n>" | "fall"`.
+- `Logic/RegionTerrain`: `get(map)`, `new(shape, areas)`, `has(map)`, stałe `VOXEL`, `HALF`, `WALKABLE_SLOPE`,
+  `WATER_CLEARANCE` (12), `MATERIALS`, `MATERIAL_SET`; obiekt: `sample`, `height`, `water`, `isWater`, `slope`,
+  `walkable`, `dryAround(x, z, r)`, `themeAt`, `materialAt`, `material`, `voxels`, `crossings`, `streamLevel`,
+  `streamLine`, `roadLine`, `roadDistance`, `streamDistance`, `lakeDistance`, `marshWeight`, `gorgeFloor`,
+  `plateauAt`, `basinWeight`, pola `shape`, `areas`, `map`.
+- `Logic/WorldGen`: `get(map)` → `{ all, trees, life, sketch, nodes, counts, radius }`, `maps()`; nowa kraina = wpis w
+  `REGISTRY`. `WorldGen/Kit`: `new(map, ground?)` → ctx `{map, ground, life, sketch}`, `build(ctx, name, tag, x, z, rot,
+  lift?)`, `buildAt(name, tag, x, y, z, rot)`, `gy`, `range`, `toWorld`, `worldOf`, `life`, `lifeAt`, `rect`,
+  `circle`, `line`, `ring`, swatche (`redRock`, `violet`, `blackBark`…), kolory `FIRE`/`VIOLET`/`COLD`/`GREEN`, rekwizyty
+  `campfire(…, color?)`, `fire(bp, x, y, z, size, color)`, `candle`, `lantern(…, color, height, lod)`, `rock`,
+  `skull`, `bones`, `claws`. `WorldGen/Flora`: `species[kind](bp, x, y, z, s, big, ctx)`, `under[kind]`,
+  `forest({ctx, ground, rules, default, seed, half, clear})`. `WorldGen/Structures`: `palisade`, `tent`, `bridges`,
+  `waterfall(ctx, g, out, head, pool, rock, color?)`, `banks`.
+- Serwer: `World/RegionLayout.build(ctx, {name, border, borderHeight, signColor?, nameSign?})`,
+  `RegionLayout.respawns(ctx)`; `MapDef.buildLate` + `WorldBuilder.buildLate()`, sygnał `WorldBuilder.MapBuilt`
+  (`WorldService.MapBuilt`), `WorldService.WaitBuilt(map, timeout)`, `IsBuilding`, `BackgroundSeconds`; `ctx.pace`;
+  `BuildStats` z `trees`, `lights`, `background`; `MapDef.dayClock`.
+- Rodzaje życia (`WorldLifeController`: emitery w `EMITTERS` + zwierzęta): `perch`, `batRoost`, `bats`, `wisp`,
+  `mist`, `moths`, `fireflies`, `spores`. Atrybut koloru płomieni / poświaty: `FxColor` (Color3) z pola części
+  `fxColor` (Blueprint). Nowy tag efektu: `bubbles`.
+- Fixture `tests/fixtures/duskwoodHeights.luau` (`tools/fixture_duskwood.luau`): S46/S47 rozszerzają `RegionTerrain`,
+  a te punkty muszą zostać bez zmian.
+
+#### Instrukcja testu S45
+
+1. `rojo serve`, Play. W Output najpierw `[WorldBuilder] world built in … s (1 maps left for the background)`: zapisz
+   czas (porównaj z ~4,1 s sprzed sesji; nie powinien wzrosnąć).
+2. Zaraz potem `[Duskwood] terrain: 729 blocks in … s`, `[Duskwood] shell: … builds, … parts, … trees`,
+   `[Duskwood] parts=… ms=…` i `[WorldBuilder] background duskwood built in … s`: zapisz liczby (części ≤ 3000, bez
+   ostrzeżenia o limicie) i czas tła. W trakcie budowy gra w mieście nie powinna się zacinać.
+3. Zanim pojawi się „background … built”: portal do Boru (Łąki, brama miasta) pokazuje „Wkrótce” i odmawia; po
+   zbudowaniu napis sam zmienia się na „20–45 · …”.
+4. Wejdź do Boru portalem z Łąk (Wilcze Ostępy): droga wchodzi w las między dwoma olbrzymimi dębami pod bramą z
+   niebieskimi latarniami, deska z pazurami, tablica z nazwą mapy, zwiadowca przy drodze, w głębi mgła.
+5. `/daytime 12`: wciąż zmierzch (słońce nisko). `/daytime 23`: ciemnoniebiesko, latarnie i ognie świecą, da się walczyć.
+6. `/tparea moonstone`: polana z menhirem (pazury, nocą srebrny blask), kamienny krąg, sierść; `/tparea ravagedCamp`:
+   podarte namioty, łuki, przewrócony kocioł, tląca się latarnia.
+7. `/tparea fallenGiant`: Niedźwiedzi Jar, pień przerzucony nad parowem: przejdź po nim; zejdź ścieżką na dno
+   (`/tparea lostCamp`: zagubiony obóz z latarnią na gałęzi).
+8. `/tparea manor`: dwór na wzniesieniu (wieża, schody donikąd, fontanna, posągi, anioł); nocą zimne okna.
+   `/tparea cemetery`, `/tparea familyCrypt` (monety w środku), `/tparea chapel` (witraż, pazury na drzwiach).
+9. `/tparea elderTree`: niecka z Pradrzewem, świecąca szczelina, grzyby na krawędzi, bąble w rozlewiskach, zarodniki;
+   nocą błędne ogniki.
+10. `/tparea ritualCircle`: palisada z fioletowymi szmatami, krąg run (nocą świecą), ołtarz z **fioletowym** ogniem,
+    hala kultu, dziesięcina; `/tparea serpentPond`.
+11. `/tparea wayShrine`: gęsta biała mgła w niecce, kapliczka z latarnią, szubienica z krukiem (odlatuje, gdy
+    podejdziesz), kamienny most nad Czarną Strugą.
+12. `/tparea sunkenTower`: przechylona wieża w wodzie, groble z pni między wysepkami, wioska trolli z kotłem
+    (`/tparea trollVillage`), pomost z łódką (`/tparea swampJetty`), wioska na palach.
+13. `/tparea witchHut`: chata na palach z dymem, czaszki ze świecami, zielony kocioł; `/tparea hangingTree`.
+14. Krwawe Urwiska: `/tparea blackFall` (czarny wodospad po czerwonej skale), wejdź drogą główną wcięciem na wyżynę,
+    `/tparea cryptGate`: Brama Krypty z niebieskimi płomieniami, portal do Krypty w wejściu, za bramą nie widać szarej
+    ramki. Sprawdź nawisy (`/tparea batRoost`): czy nie wiszą w powietrzu; o zmierzchu i nocą nietoperze wylatują.
+15. Wyloty jaskiń: `/tparea duskwood_werethicket` → droga do Wilczej Nory (korzenie martwego dębu nad wejściem),
+    Kurhan Kultystów (kopiec, dolmen, menhiry): portale działają, tablice z nazwą i poziomami stoją.
+16. `/area` w kilku obszarach: grupy na suchym, łagodnym gruncie (nie w wodzie, nie na skarpie i ścianach Jaru).
+17. `/nodes count`: żelazo ≥ 12, srebro ≥ 10, psianka ≥ 14, księżycowy płatek ≥ 12, łowiska Boru 2 (boje na wodzie).
+18. `/regionstats duskwood`: części, czasy (z „w tle”), 930 drzew, budowle, światła, węzły, 57 grup.
+19. Mapa (M) i minimapa: Czarna Struga, bagna, niecki, Jar, wyżyna i czerwona skarpa, dwór, cmentarz, palisada, krąg,
+    mosty, las.
+20. `/ambience duskwood_crossroads` (gęsta mgła), `/ambience duskwood_bloodcliffs` (czerwonawo), `/ambience auto`.
+21. Opcje → „Szczegółowość świata” niska: bez nietoperzy i kruków, mniej ogników i cząsteczek; `/perf` w lesie.
+22. Wyloguj się w Borze i wejdź od razu po restarcie serwera: ekran ładowania czeka na Bór (do ~45 s), postać ląduje
+    w Borze, a nie w mieście.
+23. `/terrainrebuild duskwood` (pyta): teren przepisuje się bez restartu. Łąki wyglądają i działają jak przed sesją.

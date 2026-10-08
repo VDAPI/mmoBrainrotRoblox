@@ -47,6 +47,12 @@ local COLORS: { [string]: { color: string, transparency: number } } = {
 	quarryMid = { color = "#6C665C", transparency = 0.1 },
 	quarryDeep = { color = "#5A554C", transparency = 0.05 },
 	bridge = { color = "#8A6A48", transparency = 0 },
+	-- Duskwood (S45): the Blood Cliffs (plateau and scarp), hollows, the Elder Tree, the ritual circle.
+	plateau = { color = "#5A3E36", transparency = 0.45 },
+	cliff = { color = "#6E2F2A", transparency = 0 },
+	basin = { color = "#2A3424", transparency = 0.35 },
+	elderTree = { color = "#4A3A2C", transparency = 0 },
+	ritual = { color = "#5A3A6E", transparency = 0.1 },
 	-- Large ground patches (S20): "ground:<Material>"
 	["ground:Sand"] = { color = "#C9A870", transparency = 0.2 },
 	["ground:Mud"] = { color = "#4A4232", transparency = 0.25 },

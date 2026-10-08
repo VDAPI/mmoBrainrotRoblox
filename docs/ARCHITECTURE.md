@@ -229,6 +229,32 @@ type CharacterData = {
   `AmbienceController` + `Data/Ambience` (nastrój obszaru: modulacja światła w `WorldController.SetModulation`, pętle
   dźwięków przez `VaelthornAmbientGroup`). Podglądy bez Studio: `tools/meadowsdump.luau` + `meadowsmap.py`,
   `tools/meadowsview.luau` + `meadowsview.py`.
+- Silnik krain (S45, pierwsza: Mroczny Bór; S46/S47 dokładają dane i własne generatory):
+  - kształt terenu krainy w `Data/Terrain/<map>` (typy `Data/Terrain/Types`: strefy, wzgórza, grzbiety ze skarpą,
+    płaskowyże z urwiskiem na wierzchołek, wąwozy, niecki, mokradła z wyspami, spłaszczenia, rampy, motywy, reguły
+    materiałów, flora, `writer`, `respawns`; rejestr `Data/Terrain/init` `byMap`), drogi / woda / budowle dalej w
+    `Data/Areas/<map>`;
+  - `Logic/RegionTerrain.get(map)`: funkcja wysokości z API `MeadowsTerrain` (algorytmy S26 skopiowane z parametrami
+    z danych; Łąki zostają na `MeadowsTerrain`); `Logic/MapTerrain` pyta ją dla każdej mapy z `Data/Terrain`
+    (`walkable` odrzuca też wodę terenu bliżej niż 12 st.);
+  - `Logic/WorldGen` (rejestr generatorów: `meadows` = `MeadowsGen`, `duskwood` = `Logic/DuskwoodGen/*`),
+    `WorldGen/Kit` (kontekst generatora z własnym gruntem, punktami życia i szkicem), `WorldGen/Flora` (drzewa wg
+    motywu, rejestr gatunków, drzewa-wypełniacze tylko na kliencie), `WorldGen/Structures` (palisada, namiot, mosty,
+    bród, wodospad; kopie z `MeadowsGen`, żeby Łąki dawały identyczny wynik);
+  - serwer: `World/RegionLayout` (teren `TerrainWriter`, granica, shelle wg tagu, portale, wyloty jaskiń bez ogólnej
+    arkady, drogowskazy bez latarni, węzły, kotwice, szkic, `BuildStats`, logi `[<Name>] terrain/shell/parts`),
+    cienki `World/Layouts/<map>` (strefy, punkty odrodzenia, tablica nazwy);
+  - budowa w tle: `MapDef.buildLate` → `WorldBuilder.build()` pomija mapę, `WorldService.Start` woła
+    `WorldBuilder.buildLate()` (pauza co ~10 ms pracy przez `ctx.pace`), `built[id]` i `MapSketches.<id>` dopiero na
+    końcu, sygnał `WorldBuilder.MapBuilt` (`WorldService.MapBuilt`: `GatherService` stawia węzły mapy),
+    `WorldService.WaitBuilt` (`CharacterService` czeka z postacią zapisaną na takiej mapie), napis „Wkrótce” nad
+    portalem odświeża się po pojawieniu szkicu;
+  - klient: `TownDetailController` bierze generatory z rejestru, `DecorController` motyw i brzeg z terenu krainy,
+    `WorldLifeController` (rejestr rodzajów życia z `life()`: kruki, nietoperze, ogniki, mgła, ćmy, świetliki,
+    zarodniki, liście; Łąki zostają na `MeadowsLifeController`), `TownFxController` (atrybut `FxColor` płomieni,
+    świec i latarni, `bubbles`), `WorldController` (`MapDef.dayClock`: wieczny zmierzch, `DayCycle.duskClock`);
+  - podglądy bez Studio: `tools/regiondump.luau` + `regionmap.py` (mapa z góry), `tools/regionview.luau` +
+    `regionview.py` (3D, `--dusk`), fixture `tools/fixture_duskwood.luau` → `tests/fixtures/duskwoodHeights.luau`.
 
 ## 9. UI (Fusion 0.3)
 

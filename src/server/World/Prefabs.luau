@@ -988,8 +988,8 @@ local LANDMARK_BY_KIND: { [string]: string } = {
 }
 
 -- Signposts where roads enter monster areas, a landmark in every area without one, lanterns along the
--- roads (S20, DESIGN §3.6–§3.7).
-function Prefabs.areaFeatures(ctx: Context, data: Areas.MapAreas, color: string?)
+-- roads (S20, DESIGN §3.6–§3.7). S45: `options.lanterns = false` leaves the road lanterns to the map's generator.
+function Prefabs.areaFeatures(ctx: Context, data: Areas.MapAreas, color: string?, options: { lanterns: boolean? }?)
 	local clear = Build.clearOf(data, 4)
 	local signs: { { number } } = {}
 	local function farFromSigns(x: number, z: number): boolean
@@ -1046,6 +1046,9 @@ function Prefabs.areaFeatures(ctx: Context, data: Areas.MapAreas, color: string?
 		end
 	end
 	-- Lanterns along the roads, alternating sides.
+	if options and options.lanterns == false then
+		return
+	end
 	for _, road in data.roads do
 		local p = road.points
 		local carried = 0
@@ -1107,11 +1110,27 @@ function Prefabs.extraDecor(ctx: Context, data: Areas.MapAreas, species: { TreeK
 	end
 end
 
--- Cave mouth, sign and portal for every cave entrance of a region map (S19, Data/Areas).
-function Prefabs.caveEntrances(ctx: Context, data: Areas.MapAreas, rockColor: string?)
+-- Cave mouth, sign and portal for every cave entrance of a region map (S19, Data/Areas). S45: with
+-- `options.mouth = false` the generic rock arch is left out (the map's generator dresses the mouth); the portal,
+-- the sign and the map icon stay.
+function Prefabs.caveEntrances(ctx: Context, data: Areas.MapAreas, rockColor: string?, options: { mouth: boolean? }?)
 	for _, entrance in data.caves do
 		local cave = Areas.caves.get(entrance.cave)
-		if cave then
+		if cave and options and options.mouth == false then
+			local base = baseAt(ctx, entrance.x, entrance.z, entrance.rot)
+			local sign = base * CFrame.new(-13, 0, -14)
+			Prefabs.signpost(
+				ctx,
+				sign.Position.X - ctx.origin.X,
+				sign.Position.Z - ctx.origin.Z,
+				entrance.rot + 180,
+				cave.nameKey,
+				cave.levels[1],
+				cave.levels[2]
+			)
+			Build.icon(ctx, "cave", entrance.x, entrance.z)
+			Prefabs.portal(ctx, `{ctx.map.id}_{entrance.cave}`, entrance.cave, entrance.x, entrance.z, entrance.rot)
+		elseif cave then
 			Prefabs.caveMouth(
 				ctx,
 				entrance.x,

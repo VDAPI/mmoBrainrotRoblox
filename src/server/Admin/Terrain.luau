@@ -3,8 +3,9 @@
 -- for the chat and the dev panel. Required from AdminService.Init, after Context has the services.
 --   /tparea <target>          teleport to a monster area's middle, an NPC place, a quest anchor or a building site
 --   /ambience <area|off|auto> force an area's mood on the caller's client
---   /terrainrebuild <map>     rewrite the terrain of the city or the Meadows (parts stay)
+--   /terrainrebuild <map>     rewrite the terrain of a map with a height function (city, Meadows, S45 the regions)
 --   /meadowsstats             server parts, build times, Builds, nodes and monster groups of the Meadows
+--   /regionstats <map>        the same for any region of Logic/WorldGen, with the background build time (S45)
 
 local Shared = game:GetService("ReplicatedStorage").Shared
 
@@ -14,7 +15,9 @@ local Maps = require(Shared.Data.Maps)
 local MeadowsGen = require(Shared.Logic.MeadowsGen)
 local MeadowsTerrain = require(Shared.Logic.MeadowsTerrain)
 local Net = require(Shared.Net)
+local RegionTerrain = require(Shared.Logic.RegionTerrain)
 local Spawns = require(Shared.Data.Spawns)
+local WorldGen = require(Shared.Logic.WorldGen)
 
 local BuildStats = require(script.Parent.Parent.World.BuildStats)
 local Context = require(script.Parent.Context)
@@ -82,19 +85,21 @@ commands.tparea = function(player, args)
 	local target = args[1] or ""
 	local mapId, x, z = resolve(target)
 	if not mapId or not x or not z then
+		-- S45: the targets of every map
 		local names = {}
-		local data = Areas.byMap.meadows
-		for _, area in data.areas do
-			table.insert(names, area.id)
-		end
-		for name in (data.npcSpots or {}) :: { [string]: Areas.NpcSpot } do
-			table.insert(names, `npc:{name}`)
-		end
-		for _, anchor in (data.questAnchors or {}) :: { Areas.QuestAnchor } do
-			table.insert(names, anchor.id)
-		end
-		for name in (data.sites or {}) :: { [string]: Areas.Site } do
-			table.insert(names, name)
+		for _, data in Areas.byMap do
+			for _, area in data.areas do
+				table.insert(names, area.id)
+			end
+			for name in (data.npcSpots or {}) :: { [string]: Areas.NpcSpot } do
+				table.insert(names, `npc:{name}`)
+			end
+			for _, anchor in (data.questAnchors or {}) :: { Areas.QuestAnchor } do
+				table.insert(names, anchor.id)
+			end
+			for name in (data.sites or {}) :: { [string]: Areas.Site } do
+				table.insert(names, name)
+			end
 		end
 		table.sort(names)
 		reply(player, "admin.tparea.list", { list = table.concat(names, ", ") })
@@ -136,7 +141,7 @@ end
 commands.terrainrebuild = function(player, args)
 	local mapId = args[1]
 	local map = mapId and Maps.get(mapId)
-	if not map or (mapId ~= "meadows" and mapId ~= "city") then
+	if not map or (mapId ~= "meadows" and mapId ~= "city" and not RegionTerrain.has(mapId)) then
 		reply(player, "admin.usage.terrainrebuild")
 		return false, "admin.terrainrebuild.bad"
 	end
@@ -148,10 +153,18 @@ commands.terrainrebuild = function(player, args)
 	local started = os.clock()
 	task.spawn(function()
 		-- only the map square (the mountains past the edge stay); pauses between blocks keep the server responsive
+		local region = RegionTerrain.get(map.id)
 		if map.id == "meadows" then
 			TerrainWriter.write(origin, map.size.x / 2, MeadowsTerrain.voxels, MeadowsTerrain.MATERIALS, {
 				bottom = -24,
 				top = 48,
+				margin = 0,
+				yields = true,
+			})
+		elseif region then
+			TerrainWriter.write(origin, map.size.x / 2, region.voxels, region.MATERIALS, {
+				bottom = region.shape.writer.bottom,
+				top = region.shape.writer.top,
 				margin = 0,
 				yields = true,
 			})
@@ -196,6 +209,49 @@ commands.meadowsstats = function(player)
 		groups = #(Spawns.byMap.meadows or {}),
 	})
 	reply(player, "admin.meadowsstats.nodes", { list = table.concat(list, ", ") })
+	return true
+end
+
+-- S45: build numbers of any region of Logic/WorldGen.
+commands.regionstats = function(player, args)
+	local mapId = args[1] or ""
+	local gen = WorldGen.get(mapId)
+	if not gen then
+		reply(player, "admin.usage.regionstats")
+		return false, "admin.usage.regionstats"
+	end
+	local stats = BuildStats[mapId]
+	local counts = gen.counts()
+	local nodes: { [string]: number } = {}
+	for _, node in gen.nodes() do
+		nodes[node.kind] = (nodes[node.kind] or 0) + 1
+	end
+	local list = {}
+	for kind, n in nodes do
+		table.insert(list, `{kind} {n}`)
+	end
+	table.sort(list)
+	local background = WorldService.BackgroundSeconds(mapId)
+	reply(player, "admin.regionstats.build", {
+		map = mapId,
+		parts = if stats then stats.parts else WorldService.PartCounts()[mapId] or 0,
+		ms = if stats then math.floor(stats.ms) else 0,
+		terrain = if stats then math.floor(stats.terrainMs) else 0,
+		write = if stats then math.floor(stats.writeMs) else 0,
+		blocks = if stats then stats.blocks else 0,
+		shell = if stats then math.floor(stats.shellMs) else 0,
+		background = if background then `{math.floor(background * 10) / 10} s` else "—",
+	})
+	reply(player, "admin.regionstats.gen", {
+		builds = counts.builds,
+		shell = counts.shell,
+		detail = counts.detail,
+		fine = counts.fine,
+		trees = #gen.trees(),
+		lights = counts.lights,
+		groups = #(Spawns.byMap[mapId] or {}),
+	})
+	reply(player, "admin.regionstats.nodes", { list = table.concat(list, ", ") })
 	return true
 end
 

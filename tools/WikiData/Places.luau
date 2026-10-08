@@ -2,8 +2,8 @@
 -- Where things are in the world (S37, docs/WIKI.md §5): the map search index of the game (mapsearch.json, built by
 -- Logic/MapSearch in each language with test vectors), the place of a quest objective (`where`, through the game's
 -- AreaAdvice), the route from the city to every map (MapRoute.path), the monster groups of every map (Data/Spawns),
--- the gathering placements (MeadowsGen.nodes for the Meadows, the other regions from the text of their server
--- layouts) and the colours of the map sketch (src/client/UI/MapSketch.luau read as text). Pure: file texts come in
+-- the gathering placements (S45: `nodes()` of a region's Logic/WorldGen generator, the Meadows and Duskwood; the
+-- other regions from the text of their server layouts) and the colours of the map sketch (src/client/UI/MapSketch.luau read as text). Pure: file texts come in
 -- through ctx.readText.
 
 local AreaAdvice = require("../../src/shared/Logic/AreaAdvice")
@@ -13,10 +13,10 @@ local Clean = require("./Clean")
 local Locale = require("../../src/shared/Util/Locale")
 local MapRoute = require("../../src/shared/Logic/MapRoute")
 local MapSearch = require("../../src/shared/Logic/MapSearch")
-local MeadowsGen = require("../../src/shared/Logic/MeadowsGen")
 local Npcs = require("../../src/shared/Data/Npcs")
 local Schema = require("./Schema")
 local Spawns = require("../../src/shared/Data/Spawns")
+local WorldGen = require("../../src/shared/Logic/WorldGen")
 
 local S = Schema
 local arr, map, rec = S.arr, S.map, S.rec
@@ -260,8 +260,9 @@ function Places.gather(readText: ((path: string) -> string?)?, warnings: { strin
 	local out = {}
 	for _, mapId in Places.REGION_MAPS do
 		local list = {}
-		if mapId == "meadows" then
-			for _, node in MeadowsGen.nodes() do
+		local gen = WorldGen.get(mapId)
+		if gen then
+			for _, node in gen.nodes() do
 				table.insert(list, { kind = node.kind, n = 1, x = round1(node.x), z = round1(node.z) })
 			end
 		else

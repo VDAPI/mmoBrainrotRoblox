@@ -245,6 +245,29 @@ function WorldService.IsBuilt(mapId: string): boolean
 	return WorldBuilder.built[mapId] == true
 end
 
+-- S45: fires (mapId) when a map finished building in the background or was rebuilt.
+WorldService.MapBuilt = WorldBuilder.MapBuilt
+
+-- Whether a map is still waiting for (or in) its background build.
+function WorldService.IsBuilding(mapId: string): boolean
+	return table.find(WorldBuilder.late, mapId) ~= nil and not WorldService.IsBuilt(mapId)
+end
+
+-- S45: waits (yields) until a map built in the background is ready, at most `timeout` seconds. True when built.
+-- Maps that are not waiting for the background build answer at once.
+function WorldService.WaitBuilt(mapId: string, timeout: number): boolean
+	local deadline = os.clock() + timeout
+	while WorldService.IsBuilding(mapId) and os.clock() < deadline do
+		task.wait(0.25)
+	end
+	return WorldService.IsBuilt(mapId)
+end
+
+-- Seconds the background build of a map took (nil: built at start or not yet).
+function WorldService.BackgroundSeconds(mapId: string): number?
+	return WorldBuilder.lateSeconds[mapId]
+end
+
 -- Gathering node placements collected from the layouts: { { map, kind, x, z } }.
 function WorldService.GetNodePlacements(): { WorldBuilder.Placement }
 	return WorldBuilder.placements
@@ -266,6 +289,11 @@ end
 
 function WorldService.Init()
 	WorldBuilder.build()
+end
+
+-- S45: the shaped regions (Data/Maps buildLate) are built after every service started, in the background.
+function WorldService.Start()
+	task.spawn(WorldBuilder.buildLate)
 end
 
 return WorldService

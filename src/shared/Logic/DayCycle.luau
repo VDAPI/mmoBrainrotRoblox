@@ -47,6 +47,17 @@ function DayCycle.offsetFor(now: number, clock: number, length: number, nightSha
 	return ((want - DayCycle.phase(now, length)) % 1) * length
 end
 
+-- S45: clock shown on a map of eternal dusk (Data/Maps dayClock = { from, to }): the day's hours (dawn..dusk)
+-- run through `from`..`to` (a low sun that never climbs), the night keeps the real clock. While the light is
+-- still mostly night (`night` >= 0.5, Logic/DayCycle.nightness) the real clock is kept too, so the jump from the
+-- night clock to `from` happens in the middle of the dawn's light blend.
+function DayCycle.duskClock(clock: number, night: number, from: number, to: number): number
+	if night >= 0.5 or clock < DayCycle.DAWN or clock >= DayCycle.DUSK then
+		return clock
+	end
+	return from + (to - from) * (clock - DayCycle.DAWN) / DAY_HOURS
+end
+
 function DayCycle.isNight(clock: number): boolean
 	return clock < DayCycle.DAWN or clock >= DayCycle.DUSK
 end

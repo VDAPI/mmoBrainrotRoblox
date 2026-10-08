@@ -138,6 +138,10 @@ function BlueprintBuild.build(build: Build, origin: Vector3, lods: Lods, parent:
 		if piece.tag and piece.tag ~= "barrier" then
 			part:SetAttribute("Fx", piece.tag)
 			part:SetAttribute("Build", build.name)
+			if piece.fxColor then
+				-- S45: violet ritual fire, cold blue flames and lamps (TownFxController reads it)
+				part:SetAttribute("FxColor", colorOf(piece.fxColor))
+			end
 			CollectionService:AddTag(part, BlueprintBuild.FX_TAG)
 			local list = result.tagged[piece.tag]
 			if not list then

@@ -13,7 +13,7 @@ local AreaSpawns = require("../src/shared/Logic/AreaSpawns")
 local Bosses = require("../src/shared/Data/Bosses")
 local CaveGen = require("../src/shared/Logic/CaveGen")
 local Clean = require("./WikiData/Clean")
-local MeadowsGen = require("../src/shared/Logic/MeadowsGen")
+local WorldGen = require("../src/shared/Logic/WorldGen")
 local Monsters = require("../src/shared/Data/Monsters")
 local Names = require("./WikiData/Names")
 local Npcs = require("../src/shared/Data/Npcs")
@@ -187,10 +187,11 @@ end
 
 -- Region map --------------------------------------------------------------------------------------------------------
 
--- Forest patches of the Meadows: 80-stud cells holding 3+ big trees (like the game's map, S20).
-local function forestPatches(): { string }
+-- Forest patches of a generated region (S26 Meadows, S45 every map of Logic/WorldGen): 80-stud cells holding 3+ big
+-- trees (like the game's map, S20).
+local function forestPatches(gen: WorldGen.Generator): { string }
 	local cells: { [string]: { x: number, z: number, n: number } } = {}
-	for _, t in MeadowsGen.trees() do
+	for _, t in gen.trees() do
 		local cx, cz = math.floor(t.x / 80), math.floor(t.z / 80)
 		local key = `{cx},{cz}`
 		local c = cells[key] or { x = 0, z = 0, n = 0 }
@@ -304,15 +305,37 @@ local function gatherLayer(ctx: Ctx, mapId: string): { string }
 	return out
 end
 
+-- Sketch kinds drawn under the water and the roads (terrain shapes of the generators).
+local UNDER: { [string]: boolean } = {
+	marsh = true,
+	basin = true,
+	ravine = true,
+	ravineWall = true,
+	plateau = true,
+	cliff = true,
+}
+
 local function region(ctx: Ctx, mapId: string): string
 	local map = ctx.maps[mapId]
 	local data = Areas.byMap[mapId]
 	local sx, sz = map.size.x, map.size.z
 	local out = header(sx, sz, -sx / 2, -sz / 2, mapId, sx / WikiMap.VIEW_PX, map.name)
 	table.insert(out, background(ctx, map))
-	-- forest and the layout's sketch (Meadows, S26)
-	if mapId == "meadows" then
-		local patches = forestPatches()
+	-- forest and the generator's sketch (S26 Meadows, S45 every region of Logic/WorldGen); water and roads come from
+	-- the data below, the terrain shapes of the sketch (marshes, hollows, gorges, cliffs) lie under them
+	local gen = WorldGen.get(mapId)
+	local under: { { [string]: any } } = {}
+	local over: { { [string]: any } } = {}
+	if gen then
+		for _, s in gen.sketch() do
+			if s.c == "water" or s.c == "path" then
+				continue
+			end
+			table.insert(if UNDER[s.c] then under else over, s)
+		end
+	end
+	if gen then
+		local patches = forestPatches(gen)
 		if #patches > 0 then
 			table.insert(
 				out,
@@ -328,6 +351,9 @@ local function region(ctx: Ctx, mapId: string): string
 				})
 			)
 		end
+	end
+	if #under > 0 then
+		table.insert(out, layer("terrain", sketchShapes(ctx, under)))
 	end
 	-- water
 	local water = {}
@@ -370,8 +396,8 @@ local function region(ctx: Ctx, mapId: string): string
 		)
 	end
 	table.insert(out, layer("roads", roads))
-	if mapId == "meadows" then
-		table.insert(out, layer("sketch", sketchShapes(ctx, MeadowsGen.sketch())))
+	if gen then
+		table.insert(out, layer("sketch", sketchShapes(ctx, over)))
 	end
 	table.insert(out, shade(map))
 	-- areas

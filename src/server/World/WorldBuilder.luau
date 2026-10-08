@@ -6,6 +6,13 @@
 --   * a sketch (paths, water, buildings, icons) published as JSON in ReplicatedStorage.MapSketches.<mapId>
 --     for the minimap and the world map.
 -- `rebuild(mapId)` clears the map's terrain region and builds it again (admin /rebuild).
+--
+-- S45: maps with `buildLate = true` in Data/Maps (the shaped regions: Duskwood, later S46/S47; caves and dungeons
+-- may join when the start grows) are skipped by `build()` and built by `buildLate()` after every service started
+-- (WorldService.Start), with a pause after every ~10 ms of work (ctx.pace). Until a map is done, `built[id]` is
+-- false and its MapSketches.<id> missing: portals show "Soon", TravelService refuses, a character saved there
+-- waits (WorldService.WaitBuilt). `MapBuilt` fires (mapId) after every map built in the background or rebuilt;
+-- GatherService places that map's nodes on it.
 
 local HttpService = game:GetService("HttpService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -15,6 +22,7 @@ local Build = require(script.Parent.Build)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Log = require(ReplicatedStorage.Shared.Util.Log)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
+local Signal = require(ReplicatedStorage.Packages.Signal)
 
 local log = Log.new("WorldBuilder")
 
@@ -28,6 +36,12 @@ WorldBuilder.built = {} :: { [string]: boolean }
 WorldBuilder.placements = {} :: { Placement }
 WorldBuilder.portals = {} :: { [string]: Portal }
 WorldBuilder.partCounts = {} :: { [string]: number } -- parts per built map (/perf, S20)
+WorldBuilder.late = {} :: { string } -- S45: maps waiting for the background build, in build order
+WorldBuilder.lateSeconds = {} :: { [string]: number } -- S45: wall-clock seconds of each background build
+WorldBuilder.MapBuilt = Signal.new() -- S45: (mapId) after a background build or a rebuild
+
+-- Work slice of a background build before it yields a frame.
+local SLICE = 0.010
 
 local MATERIAL_COLORS: { [Enum.Material]: string } = {
 	[Enum.Material.Grass] = "#5C7A3A",
@@ -49,6 +63,8 @@ local MATERIAL_COLORS: { [Enum.Material]: string } = {
 	-- S26: gravel of the Meadows' quarry terraces and stream beds (no other map uses it; Pebble is a part-only
 	-- material, terrain rejects it).
 	[Enum.Material.Salt] = "#8A847A",
+	-- S45: dark red rock of Duskwood's Blood Cliffs (S46's red crags of the Ashen Wastes match it).
+	[Enum.Material.Sandstone] = "#6E2F2A",
 }
 
 local function layoutModule(mapId: string): ModuleScript?
@@ -153,13 +169,14 @@ local function collect(ctx: Build.Context, nodes: boolean)
 	end
 end
 
-local function buildMap(map: Maps.MapDef, root: Instance, nodes: boolean): boolean
+local function buildMap(map: Maps.MapDef, root: Instance, nodes: boolean, pace: (() -> ())?): boolean
 	local module = layoutModule(map.id)
 	if map.buildMode ~= "generated" or not module then
 		return false
 	end
 	local started = os.clock()
 	local ctx = Build.new(map, root)
+	ctx.pace = pace
 	local layout = (require :: any)(module) :: (Build.Context) -> ()
 	local ok, err = pcall(function()
 		layout(ctx)
@@ -222,14 +239,50 @@ function WorldBuilder.build(): Folder
 		table.insert(ids, id)
 	end
 	table.sort(ids)
+	table.clear(WorldBuilder.late)
 	for _, id in ids do
 		local map = Maps.get(id)
-		if map then
+		if map and map.buildLate and layoutModule(id) then
+			table.insert(WorldBuilder.late, id)
+		elseif map then
 			buildMap(map, root, true)
 		end
 	end
-	log:info("world built in %.2f s", os.clock() - started)
+	log:info("world built in %.2f s (%d maps left for the background)", os.clock() - started, #WorldBuilder.late)
 	return root
+end
+
+-- Pacer of a background build: yields a frame once SLICE seconds of work passed since the last pause.
+local function pacer(): () -> ()
+	local last = os.clock()
+	return function()
+		if os.clock() - last >= SLICE then
+			task.wait()
+			last = os.clock()
+		end
+	end
+end
+
+-- Builds the maps left by `build()` one after another, yielding between slices of work (S45). Called once from
+-- WorldService.Start; returns when every late map is built.
+function WorldBuilder.buildLate()
+	local root = Workspace:FindFirstChild("World")
+	if not root then
+		return
+	end
+	for _, id in table.clone(WorldBuilder.late) do
+		local map = Maps.get(id)
+		if map and not WorldBuilder.built[id] then
+			local started = os.clock()
+			if buildMap(map, root, true, pacer()) then
+				local seconds = os.clock() - started
+				WorldBuilder.lateSeconds[id] = seconds
+				log:info("background %s built in %.2f s", id, seconds)
+				WorldBuilder.MapBuilt:Fire(id)
+			end
+		end
+	end
+	table.clear(WorldBuilder.late)
 end
 
 -- Rebuilds one map in place (admin). Gathering nodes and NPCs are owned by their services and stay.
@@ -252,7 +305,11 @@ function WorldBuilder.rebuild(mapId: string): boolean
 	end
 	WorldBuilder.portals = portals
 	-- Gathering node models are owned by GatherService and stay in place.
-	return buildMap(map, root, false)
+	local ok = buildMap(map, root, false)
+	if ok then
+		WorldBuilder.MapBuilt:Fire(mapId)
+	end
+	return ok
 end
 
 return WorldBuilder

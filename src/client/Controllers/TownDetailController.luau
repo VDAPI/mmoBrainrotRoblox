@@ -1,6 +1,6 @@
 --!strict
--- Building detail on the client (S21 city, docs/miasto/MIASTO.md §5; S26 also the Whispering Meadows, whose
--- buildings, camps, bridges and trees come from Logic/MeadowsGen). The server builds only the "shell" level of every
+-- Building detail on the client (S21 city, docs/miasto/MIASTO.md §5; S26 also the Whispering Meadows, S45 every
+-- region of Logic/WorldGen, whose buildings, camps, bridges and trees come from their generators). The server builds only the "shell" level of every
 -- Build; this controller runs the same pure generator (TownGen.all with TownTerrain.heightAt for the city,
 -- MeadowsGen.all for the Meadows; identical lists on every machine) and builds the "detail" level of the Builds within
 -- Config.TownDetailRadius of the camera and the "fine" level within Config.TownFineRadius (per "World detail"
@@ -17,12 +17,12 @@ local Workspace = game:GetService("Workspace")
 local BlueprintBuild = require(ReplicatedStorage.Shared.Util.BlueprintBuild)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
-local MeadowsGen = require(ReplicatedStorage.Shared.Logic.MeadowsGen)
 local Net = require(ReplicatedStorage.Shared.Net)
 local State = require(script.Parent.Parent.UI.State)
 local Town = require(ReplicatedStorage.Shared.Data.Town)
 local TownGen = require(ReplicatedStorage.Shared.Logic.TownGen)
 local TownTerrain = require(ReplicatedStorage.Shared.Logic.TownTerrain)
+local WorldGen = require(ReplicatedStorage.Shared.Logic.WorldGen)
 
 local TownDetailController = {
 	Name = "TownDetailController",
@@ -30,15 +30,21 @@ local TownDetailController = {
 
 local TICK = 0.25
 
--- Maps with generated Builds and their generators (the same lists the server layouts build the shell from).
+-- Maps with generated Builds and their generators (the same lists the server layouts build the shell from): the
+-- city, and every region of the Logic/WorldGen registry (S45: the Meadows, Duskwood, ...).
 local GENERATORS: { [string]: () -> { any } } = {
 	city = function()
 		return TownGen.all(Town.city, TownTerrain.heightAt) :: any
 	end,
-	meadows = function()
-		return MeadowsGen.all() :: any
-	end,
 }
+for _, mapId in WorldGen.maps() do
+	local gen = WorldGen.get(mapId)
+	if gen then
+		GENERATORS[mapId] = function()
+			return gen.all() :: any
+		end
+	end
+end
 
 type Level = "detail" | "fine"
 

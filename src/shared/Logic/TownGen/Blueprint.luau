@@ -29,6 +29,7 @@ export type Piece = {
 	q: boolean, -- CanQuery (camera and clicks; only meaningful with col = true)
 	t: number?, -- Transparency
 	tag: string?, -- client behaviour: "window", "smoke", "lamp", "flag", "wheel", "sail", "fire", "water"
+	fxColor: string?, -- S45: colour of the flame / glow of a "fire", "candle" or "lamp" piece (part attribute FxColor)
 }
 
 export type Light = { p: { number }, color: string, range: number, brightness: number, tag: string? }
@@ -42,6 +43,7 @@ export type Options = {
 	t: number?,
 	tag: string?,
 	jitter: number?, -- colour jitter override (0..1), default 0.05
+	fxColor: string?, -- S45: flame / glow colour of a "fire", "candle" or "lamp" piece
 }
 
 type Mat3 = { number }
@@ -166,6 +168,7 @@ function Blueprint.add(
 		q = if o.q ~= nil then o.q else col,
 		t = o.t,
 		tag = o.tag,
+		fxColor = o.fxColor,
 	}
 	table.insert(self.pieces, piece)
 	if lod == "shell" then

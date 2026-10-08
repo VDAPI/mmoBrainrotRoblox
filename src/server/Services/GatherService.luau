@@ -384,9 +384,25 @@ function GatherService.Start()
 	local folder = Instance.new("Folder")
 	folder.Name = "GatherNodes"
 	folder.Parent = world
-	for _, placement in WorldService.GetNodePlacements() do
-		GatherService.Spawn(placement.kind, placement.map, placement.x, placement.z)
+	-- Nodes of every map built so far; S45: maps built later in the background get theirs when they are done.
+	local spawnedMaps: { [string]: boolean } = {}
+	local function spawnMap(mapId: string?)
+		for _, placement in WorldService.GetNodePlacements() do
+			if (mapId == nil or placement.map == mapId) and not spawnedMaps[placement.map] then
+				GatherService.Spawn(placement.kind, placement.map, placement.x, placement.z)
+			end
+		end
 	end
+	spawnMap(nil)
+	for _, placement in WorldService.GetNodePlacements() do
+		spawnedMaps[placement.map] = true
+	end
+	WorldService.MapBuilt:Connect(function(mapId: string)
+		if not spawnedMaps[mapId] then
+			spawnMap(mapId)
+			spawnedMaps[mapId] = true
+		end
+	end)
 
 	Net.Handle("StartGather", startGather)
 	Net.On("CancelGather", function(player: Player)

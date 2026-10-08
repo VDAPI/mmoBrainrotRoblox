@@ -9,6 +9,8 @@
 -- (pebbles, dry tufts, bones, wool), marsh (reeds, cattails, lily pads on the water, mud), forest (ferns,
 -- mushrooms, leaves, twigs), field (dry ears, stones), road, quarry (gravel, chips, planks), goblin (bones, hide
 -- scraps) and ravine (moss, stones). On the Meadows shores come from the height function (Logic/MeadowsTerrain).
+-- S45: Duskwood's themes (thicket, hollow, ruins, rot, cult, mist, bog, witch, cliffs) and, on every shaped region,
+-- the theme and shores from its terrain (Logic/RegionTerrain).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -20,6 +22,7 @@ local Areas = require(ReplicatedStorage.Shared.Data.Areas)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local MeadowsTerrain = require(ReplicatedStorage.Shared.Logic.MeadowsTerrain)
+local RegionTerrain = require(ReplicatedStorage.Shared.Logic.RegionTerrain)
 local State = require(script.Parent.Parent.UI.State)
 local TownTerrain = require(ReplicatedStorage.Shared.Logic.TownTerrain)
 
@@ -45,6 +48,85 @@ local function rgb(hex: string): Color3
 end
 
 local T: { [string]: Template } = {
+	-- S45: Duskwood (roots, skulls, glowing mushrooms, candles, violet rags, serpent sheds, berries, fur, ivy, thorns)
+	root = {
+		size = Vector3.new(4, 0.6, 0.6),
+		color = rgb("#3A2E24"),
+		material = Enum.Material.Wood,
+		lift = 0.15,
+		tilt = true,
+	},
+	skull = {
+		size = Vector3.new(0.9, 0.8, 1),
+		color = rgb("#D8D0BA"),
+		material = Enum.Material.SmoothPlastic,
+		shape = Enum.PartType.Ball,
+		lift = 0.3,
+	},
+	glowShroom = {
+		size = Vector3.new(0.7, 0.4, 0.7),
+		color = rgb("#7CFFC0"),
+		material = Enum.Material.Neon,
+		shape = Enum.PartType.Ball,
+		lift = 0.35,
+	},
+	candle = {
+		size = Vector3.new(0.3, 0.8, 0.3),
+		color = rgb("#E8DCC0"),
+		material = Enum.Material.Neon,
+		lift = 0.4,
+	},
+	violetRag = {
+		size = Vector3.new(1.2, 0.08, 0.9),
+		color = rgb("#4A2A5E"),
+		material = Enum.Material.Fabric,
+		lift = 0.06,
+		tilt = true,
+	},
+	shed = {
+		size = Vector3.new(2.4, 0.12, 0.6),
+		color = rgb("#CFC8A8"),
+		material = Enum.Material.SmoothPlastic,
+		transparency = 0.3,
+		lift = 0.08,
+		tilt = true,
+		water = true,
+	},
+	berries = {
+		size = Vector3.one * 0.45,
+		color = rgb("#A3222A"),
+		material = Enum.Material.SmoothPlastic,
+		shape = Enum.PartType.Ball,
+		lift = 0.35,
+	},
+	fur = {
+		size = Vector3.new(0.9, 0.4, 0.7),
+		color = rgb("#6E6A64"),
+		material = Enum.Material.Fabric,
+		shape = Enum.PartType.Ball,
+		lift = 0.2,
+	},
+	ivy = {
+		size = Vector3.new(1.6, 0.1, 1.6),
+		color = rgb("#2E4426"),
+		material = Enum.Material.LeafyGrass,
+		lift = 0.06,
+		tilt = true,
+	},
+	thorn = {
+		size = Vector3.new(0.15, 1.6, 0.15),
+		color = rgb("#3A2A26"),
+		material = Enum.Material.Wood,
+		lift = 0.6,
+		tilt = true,
+	},
+	redChip = {
+		size = Vector3.new(0.9, 0.35, 0.7),
+		color = rgb("#6E2F2A"),
+		material = Enum.Material.Sandstone,
+		lift = 0.1,
+		tilt = true,
+	},
 	tuft = { size = Vector3.new(0.5, 1.1, 0.5), color = rgb("#5C8A3A"), material = Enum.Material.Grass, lift = 0.4 },
 	tuftDark = {
 		size = Vector3.new(0.5, 1.2, 0.5),
@@ -388,6 +470,103 @@ local THEMES: { [string]: { count: number, mix: { { string | number } } } } = {
 		mix = { { "moss", 6 }, { "stone", 4 }, { "fern", 3 }, { "pebble", 4 }, { "tuftDark", 3 }, { "reed", 2 } },
 	},
 }
+-- S45: Duskwood's areas.
+THEMES.thicket = {
+	count = 40,
+	mix = {
+		{ "fern", 6 },
+		{ "root", 5 },
+		{ "tuftDark", 5 },
+		{ "leaf", 5 },
+		{ "moss", 3 },
+		{ "thorn", 3 },
+		{ "fur", 1 },
+		{ "bone", 1 },
+	},
+}
+THEMES.hollow = {
+	count = 40,
+	mix = { { "fern", 8 }, { "moss", 5 }, { "root", 5 }, { "berries", 3 }, { "stone", 3 }, { "twig", 3 }, { "fur", 1 } },
+}
+THEMES.ruins = {
+	count = 34,
+	mix = {
+		{ "ivy", 6 },
+		{ "stone", 4 },
+		{ "tuftDark", 4 },
+		{ "web", 2 },
+		{ "skull", 2 },
+		{ "bone", 2 },
+		{ "leaf", 3 },
+	},
+}
+THEMES.rot = {
+	count = 38,
+	mix = {
+		{ "glowShroom", 5 },
+		{ "mushroom", 4 },
+		{ "root", 5 },
+		{ "mudClump", 4 },
+		{ "moss", 4 },
+		{ "bone", 2 },
+		{ "leaf", 3 },
+	},
+}
+THEMES.cult = {
+	count = 28,
+	mix = {
+		{ "tuftDry", 5 },
+		{ "violetRag", 3 },
+		{ "candle", 2 },
+		{ "bone", 2 },
+		{ "twig", 3 },
+		{ "pebble", 3 },
+		{ "shed", 2 },
+	},
+}
+THEMES.mist = {
+	count = 34,
+	mix = {
+		{ "tuftDark", 6 },
+		{ "reed", 4 },
+		{ "shed", 3 },
+		{ "leaf", 4 },
+		{ "stone", 2 },
+		{ "violetRag", 1 },
+		{ "fern", 3 },
+	},
+}
+THEMES.bog = {
+	count = 40,
+	mix = {
+		{ "reed", 8 },
+		{ "cattail", 5 },
+		{ "mudClump", 6 },
+		{ "lily", 5 },
+		{ "root", 3 },
+		{ "shed", 2 },
+		{ "bone", 1 },
+		{ "tuftDark", 4 },
+	},
+}
+THEMES.witch = {
+	count = 38,
+	mix = {
+		{ "reed", 6 },
+		{ "glowShroom", 4 },
+		{ "candle", 2 },
+		{ "skull", 2 },
+		{ "mudClump", 4 },
+		{ "lily", 4 },
+		{ "tuftDark", 4 },
+		{ "twig", 3 },
+	},
+}
+THEMES.cliffs = {
+	count = 30,
+	mix = { { "redChip", 7 }, { "thorn", 4 }, { "pebbleRed", 4 }, { "bone", 3 }, { "tuftDry", 4 } },
+}
+
 local THEME_MAX = 44
 local THEME_JITTER = 40
 
@@ -505,6 +684,12 @@ local function themeAt(map: Maps.MapDef, areas: any, x: number, z: number, rng: 
 		local theme = MeadowsTerrain.themeAt(x, z)
 		return if THEMES[theme] then theme elseif theme == "wet" then "meadow" else nil
 	end
+	-- S45: shaped regions: the surface theme of their terrain
+	local region = RegionTerrain.get(map.id)
+	if region then
+		local theme = region.themeAt(x, z)
+		return if THEMES[theme] then theme else nil
+	end
 	return nil
 end
 
@@ -514,6 +699,12 @@ local function shore(map: Maps.MapDef, areas: any, x: number, z: number): boolea
 		local sd = MeadowsTerrain.streamDistance(x, z)
 		local ld = MeadowsTerrain.lakeDistance(x, z)
 		return (sd > -0.5 and sd < 5) or (ld > -1.5 and ld < 6) or MeadowsTerrain.marshWeight(x, z) > 0.55
+	end
+	local region = RegionTerrain.get(map.id)
+	if region then
+		local sd = region.streamDistance(x, z)
+		local ld = region.lakeDistance(x, z)
+		return (sd > -0.5 and sd < 5) or (ld > -1.5 and ld < 6) or region.marshWeight(x, z) > 0.4
 	end
 	return areas ~= nil and nearWater(areas.lakes, x, z)
 end

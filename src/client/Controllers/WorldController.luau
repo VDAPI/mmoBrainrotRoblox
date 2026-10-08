@@ -87,6 +87,10 @@ local function environment(map: Maps.MapDef): ({ [string]: any }, { [string]: an
 	local clock, t = day.clockTime, 0
 	if night then
 		clock, t = WorldController.TimeOfDay()
+		if map.dayClock then
+			-- S45: eternal dusk (Duskwood): the day's sun stays low
+			clock = DayCycle.duskClock(clock, t, map.dayClock[1], map.dayClock[2])
+		end
 	end
 	local n = night or day
 	return {
@@ -413,6 +417,27 @@ local function decoratePortal(instance: Instance)
 	end
 	refresh()
 	scope:Observer(Text.Lang):onChange(refresh)
+	if not MapSketch.isBuilt(target.id) then
+		-- S45: a region built in the background: "Soon" turns into its levels when its sketch is published
+		task.spawn(function()
+			local sketches = ReplicatedStorage:WaitForChild("MapSketches", 30)
+			if not sketches or not gui.Parent then
+				return
+			end
+			local connection: RBXScriptConnection
+			connection = sketches.ChildAdded:Connect(function(child: Instance)
+				if child.Name == target.id then
+					connection:Disconnect()
+					if gui.Parent then
+						refresh()
+					end
+				end
+			end)
+			gui.Destroying:Connect(function()
+				connection:Disconnect()
+			end)
+		end)
+	end
 	prompt.Triggered:Connect(function()
 		onPortal(portalId :: string, target.id)
 	end)

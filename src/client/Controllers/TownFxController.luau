@@ -8,7 +8,10 @@
 --   * smoke: a slow grey smoke emitter on chimney tops; fire: flames, and flickering of the fire lights;
 --   * water: the fountain's small jets and a gentle shimmer;
 --   * waterfall (S26): streaks of falling water down the sheet and a shimmer; foam: mist rising from the pool and
---     splashes; candle: nothing extra (its light flickers with the "fire" lights);
+--     splashes; candle: nothing extra (its light flickers with the "fire" lights), S45: a tiny flame when coloured;
+--   * S45: the part attribute FxColor (Color3) colours the flames of "fire" and "candle" and the night glow of
+--     "lamp" (violet ritual fire, cold blue flames and lanterns, green witch light); bubbles: bubbles rising and
+--     popping on rot pools and cauldrons (in the FxColor);
 --   * window / lamp: at night (Logic/DayCycle) ~60% of the windows glow warm (chosen by position) and lamps turn
 --     to Neon with their PointLights on; by day both go back to their own colour and material and lamp lights
 --     are off. Switching runs over several frames.
@@ -87,13 +90,28 @@ local function addSmoke(part: BasePart)
 	e.Enabled = true
 end
 
+-- S45: the colour a part asks for (attribute FxColor), or nil.
+local function fxColor(part: BasePart): Color3?
+	local c = part:GetAttribute("FxColor")
+	return if typeof(c) == "Color3" then c else nil
+end
+
+-- Flame colours: the warm default, or a lighter core fading into the FxColor.
+local function flameColors(part: BasePart): ColorSequence
+	local c = fxColor(part)
+	if c then
+		return ColorSequence.new(c:Lerp(Color3.new(1, 1, 1), 0.45), c)
+	end
+	return ColorSequence.new(Color3.fromHex("#FFD27A"), Color3.fromHex("#FF5A1A"))
+end
+
 local function addFire(part: BasePart)
 	if part:FindFirstChild("TownFire") then
 		return
 	end
 	emitter(part, {
 		Name = "TownFire",
-		Color = ColorSequence.new(Color3.fromHex("#FFD27A"), Color3.fromHex("#FF5A1A")),
+		Color = flameColors(part),
 		Transparency = NumberSequence.new(0.2, 1),
 		Size = NumberSequence.new(0.9, 0.1),
 		Lifetime = NumberRange.new(0.4, 0.8),
@@ -102,6 +120,54 @@ local function addFire(part: BasePart)
 		SpreadAngle = Vector2.new(10, 10),
 		LightEmission = 1,
 		LightInfluence = 0,
+		EmissionDirection = Enum.NormalId.Top,
+	})
+end
+
+-- S45: a tiny flame over a coloured candle.
+local function addCandle(part: BasePart)
+	if part:FindFirstChild("TownCandle") or not fxColor(part) then
+		return
+	end
+	emitter(part, {
+		Name = "TownCandle",
+		Color = flameColors(part),
+		Transparency = NumberSequence.new(0.1, 1),
+		Size = NumberSequence.new(0.25, 0.05),
+		Lifetime = NumberRange.new(0.3, 0.5),
+		Rate = 8,
+		Speed = NumberRange.new(0.8, 1.4),
+		SpreadAngle = Vector2.new(5, 5),
+		LightEmission = 1,
+		LightInfluence = 0,
+		EmissionDirection = Enum.NormalId.Top,
+	})
+end
+
+-- S45: bubbles rising from a rot pool or a cauldron and popping at the surface.
+local function addBubbles(part: BasePart)
+	if part:FindFirstChild("TownBubbles") then
+		return
+	end
+	local c = fxColor(part) or Color3.fromHex("#8A9A5A")
+	emitter(part, {
+		Name = "TownBubbles",
+		Color = ColorSequence.new(c:Lerp(Color3.new(1, 1, 1), 0.3), c),
+		Transparency = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 0.2),
+			NumberSequenceKeypoint.new(0.8, 0.35),
+			NumberSequenceKeypoint.new(1, 1),
+		}),
+		Size = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 0.2),
+			NumberSequenceKeypoint.new(0.85, 0.6),
+			NumberSequenceKeypoint.new(1, 0.9),
+		}),
+		Lifetime = NumberRange.new(0.6, 1.2),
+		Rate = 3,
+		Speed = NumberRange.new(0.6, 1.2),
+		SpreadAngle = Vector2.new(60, 60),
+		LightInfluence = 0.6,
 		EmissionDirection = Enum.NormalId.Top,
 	})
 end
@@ -211,7 +277,8 @@ local function setNightLook(part: BasePart, kind: string, night: boolean)
 	end
 	assert(original, "original")
 	if kind == "lamp" then
-		part.Color = if night then original.color else original.color:Lerp(LAMP_DAY, 0.6)
+		local glow = fxColor(part) or original.color
+		part.Color = if night then glow else original.color:Lerp(LAMP_DAY, 0.6)
 		part.Material = if night then original.material else Enum.Material.Glass
 		return
 	end
@@ -288,6 +355,10 @@ local function onAdded(instance: Instance)
 		addWaterfall(part)
 	elseif fx == "foam" then
 		addFoam(part)
+	elseif fx == "candle" then
+		addCandle(part)
+	elseif fx == "bubbles" then
+		addBubbles(part)
 	elseif fx == "window" then
 		nightParts[part] = "window"
 		applyNight(part)

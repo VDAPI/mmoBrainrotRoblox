@@ -28,4 +28,5 @@ for map_id in sorted({k[0] for k in values}):
             x, z = values[(map_id, current)]
             line = re.sub(r"arrive = \{ x = -?\d+, z = -?\d+ \}", f"arrive = {{ x = {x}, z = {z} }}", line)
         lines.append(line)
-    open(path, "w", encoding="utf-8").write("\n".join(lines))
+    # newline="\n": keep LF line endings on Windows too
+    open(path, "w", encoding="utf-8", newline="\n").write("\n".join(lines))

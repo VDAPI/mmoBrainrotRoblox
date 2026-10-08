@@ -54,6 +54,7 @@ export type Command = {
 }
 
 local Blessings = require("./Blessings")
+local TerrainShapes = require("./Terrain")
 
 local MAX_LEVEL = 100
 local BIG = 1e12
@@ -214,7 +215,18 @@ cmd("world", "bring", { ref("player", "player") })
 -- S26: shaped terrains (Admin/Terrain)
 cmd("world", "tparea", { str("target") })
 cmd("world", "ambience", { str("mood") })
-cmd("world", "terrainrebuild", { enum("map", { "meadows", "city" }) }, { danger = true })
+-- S45: every map with a height function (the city, the Meadows and the shaped regions of Data/Terrain)
+local TERRAIN_MAPS = { "city", "meadows" }
+for mapId in TerrainShapes.byMap do
+	table.insert(TERRAIN_MAPS, mapId)
+end
+table.sort(TERRAIN_MAPS)
+local REGION_MAPS = { "meadows" }
+for mapId in TerrainShapes.byMap do
+	table.insert(REGION_MAPS, mapId)
+end
+table.sort(REGION_MAPS)
+cmd("world", "terrainrebuild", { enum("map", TERRAIN_MAPS) }, { danger = true })
 
 -- Monsters
 cmd("monsters", "spawn", { ref("monster", "monster"), VARIANT, int("level", 1, MAX_LEVEL, true) })
@@ -288,6 +300,7 @@ cmd(
 cmd("perf", "perf", {})
 cmd("perf", "adminlog", { int("n", 1, 200, true) })
 cmd("perf", "meadowsstats", {})
+cmd("perf", "regionstats", { enum("map", REGION_MAPS) })
 
 -- Data
 cmd("data", "help", {})

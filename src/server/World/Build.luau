@@ -40,6 +40,9 @@ export type Context = {
 	-- keep props out of the water; their terrain already has the flats under portals and cave mouths.
 	height: ((x: number, z: number) -> number)?,
 	wet: ((x: number, z: number) -> boolean)?,
+	-- S45: set while a map builds in the background (WorldBuilder.buildLate): long loops call it, and it yields
+	-- once ~10 ms of work have passed since the last pause.
+	pace: (() -> ())?,
 }
 
 local terrain = Workspace.Terrain

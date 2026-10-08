@@ -56,6 +56,17 @@ MMORPG na Roblox (Margonem w 3D). Luau + Rojo + Wally + Fusion 0.3 + ProfileStor
   dźwięki obszaru w `Data/Ambience`. Po zmianie dróg/wody/terenu: `python tools/arrivals_apply.py`. Podgląd bez Studio:
   `lune run tools/meadowsview.luau out.json x1 z1 x2 z2` + `python tools/meadowsview.py out.json out.png --eye … --look …`.
 
+- **Teren / budowla / nastrój krainy** (S45, wspólny silnik; pierwsza: Mroczny Bór): kształt w `Data/Terrain/<mapa>`
+  (typy `Data/Terrain/Types`, rejestr `Data/Terrain/init`; czysta funkcja `Logic/RegionTerrain.get(mapa)`), drogi,
+  woda i `sites` w `Data/Areas/<mapa>`; budowle w generatorze `Logic/<Mapa>Gen/<moduł>` zarejestrowanym w
+  `Logic/WorldGen` (pomocniki `WorldGen/Kit`, `Flora` z rejestrem gatunków, `Structures`); serwer `World/RegionLayout`
+  + cienki `World/Layouts/<mapa>`; budowa w tle: `buildLate = true` w `Data/Maps`; życie: punkty `life()` + rodzaj w
+  `WorldLifeController`; nastrój w `Data/Ambience`; kolor płomieni: `fxColor` w opcjach części (atrybut `FxColor`).
+  Po zmianie dróg/wody/terenu: `python tools/arrivals_apply.py`. Podgląd bez Studio:
+  `lune run tools/regiondump.luau <mapa> out.json 8 builds` + `python tools/regionmap.py out.json out.png --overlay`,
+  `lune run tools/regionview.luau <mapa> out.json x1 z1 x2 z2` + `python tools/regionview.py out.json out.png --eye … --look … --dusk`.
+  Zmiana kształtu Boru = świadomie `lune run tools/fixture_duskwood.luau` (fixture w `tests/regionterrain.spec`).
+
 - **Quest poboczny** (S27): wpis w `Data/Quests/Side.luau` (`side(...)`: giver, turnIn, arc, pages, requires,
   cele `use`/`deliver`/`kill` z `area`…) + teksty `quest.<id>.title/.p1..pN/.progress/.done` (PL i EN); nowy NPC w
   `Data/Npcs` (`townsfolk` / `meadowsfolk`, miejsce w mieście w `Data/Town/npcExtra`); interakcja = kotwica
