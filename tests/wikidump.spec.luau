@@ -426,7 +426,7 @@ T.describe("Wiki export: consistency", function()
 		end
 		T.expect(#d.premium.passes).toBe(#Products.passes)
 		-- the instant respawn product never reaches the wiki (areaProfiles use a "respawn" key, so only premium.json)
-		T.expect(string.find(Json.encode(d.premium), "respawn\"", 1, true)).toBe(nil)
+		T.expect(string.find(Json.encode(d.premium), 'respawn"', 1, true)).toBe(nil)
 		for _, npc in d.npcs.npcs do
 			if npc.building then
 				local spot = Town.npcSpot(npc.id)
@@ -435,9 +435,7 @@ T.describe("Wiki export: consistency", function()
 		end
 		for _, file in { "cosmetics", "mechanics", "premium" } do
 			local text = Json.encode(d[file])
-			for _, key in
-				{ "robux", "productId", "passId", "price", "shards", "shardPacks", "RespawnNowCost" }
-			do
+			for _, key in { "robux", "productId", "passId", "price", "shards", "shardPacks", "RespawnNowCost" } do
 				if string.find(text, `"{key}"`, 1, true) then
 					error(`{file}.json has the key {key}`)
 				end
