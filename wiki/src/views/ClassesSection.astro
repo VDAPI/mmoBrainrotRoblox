@@ -1,0 +1,13 @@
+---
+// Classes section (S41): /<lang>/klasy/ (the index) and /<lang>/klasy/<classId>/ (a class page with the planner).
+import type { Lang } from "../i18n/routes";
+import ClassesView from "./ClassesView.astro";
+import ClassView from "./ClassView.astro";
+interface Props {
+  lang: Lang;
+  page?: "index" | "class";
+  id?: string;
+}
+const { lang, page = "index", id = "" } = Astro.props;
+---
+{page === "class" ? <ClassView lang={lang} id={id} /> : <ClassesView lang={lang} />}

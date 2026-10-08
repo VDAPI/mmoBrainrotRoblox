@@ -1,0 +1,216 @@
+---
+// Class page (S41, /pl/klasy/<classId>/, mock-up Mag-*): static hero (portrait with the class glyph, roles, description,
+// four facts, starting stats and gear), the SkillPlanner island and "All skills" (content without JS and for search
+// engines; Pagefind takes skills from the records, so the list is ignored there).
+import Base from "../layouts/Base.astro";
+import Crumbs from "../components/Crumbs.astro";
+import ItemIcon from "../components/ItemIcon.svelte";
+import SectionTitle from "../components/SectionTitle.astro";
+import SkillNode from "../components/SkillNode.svelte";
+import SkillPlanner from "../islands/SkillPlanner.svelte";
+import { href, type Lang } from "../i18n/routes";
+import {
+  armorNames,
+  baseName,
+  getClass,
+  hpPerLevel,
+  plannerData,
+  resourceLine,
+  resourceName,
+  roleParts,
+  skillRows,
+  startingGear,
+  statName,
+} from "../lib/classes";
+import { formatNumber } from "../lib/format";
+import { name, t } from "../lib/i18n";
+import { sectionHref } from "../lib/sections";
+
+interface Props {
+  lang: Lang;
+  id: string;
+}
+const { lang, id } = Astro.props;
+const c = getClass(id)!;
+const title = name(c.name, lang);
+const roles = roleParts(c, lang);
+const facts = [
+  { k: t(lang, "class.resource"), v: resourceName(c, lang), sub: resourceLine(c, lang) },
+  { k: t(lang, "class.mainStats"), v: c.mainStats.map((s) => statName(s, lang)).join(", ") },
+  { k: t(lang, "class.weapons"), v: c.weaponTypes.map((w) => baseName(w, lang)).join(", "), sub: c.offhandTypes.map((w) => baseName(w, lang)).join(", ") },
+  { k: t(lang, "class.armor"), v: armorNames(c, lang).join(", ") },
+];
+const startStats = ["str", "dex", "int", "vit"]
+  .filter((s) => c.startStats[s] !== undefined)
+  .map((s) => `${statName(s, lang)} ${c.startStats[s]}`)
+  .join(" · ");
+const gear = startingGear(c, lang);
+const itemsHref = sectionHref(lang, "items");
+const planner = plannerData(c, lang);
+const rows = skillRows(c, lang);
+const num = (n: number) => formatNumber(n, lang, Number.isInteger(n) ? 0 : 1);
+const range = (a: number, b: number, unit = "") => (a === b ? `${num(a)}${unit}` : `${num(a)}${unit} → ${num(b)}${unit}`);
+const description = t(lang, "class.description", { name: title, role: name(c.role, lang) });
+---
+<Base
+  lang={lang}
+  title={title}
+  description={description}
+  section="classes"
+  search={{ type: "skill", meta: { title, line: name(c.role, lang), glyph: c.icon, color: c.color, type: "class" } }}
+>
+  <div class="cls" style={`--cls: var(--vw-class-${c.id})`}>
+    <header class="hero">
+      <div class="portrait" aria-hidden="true"><span>{c.icon}</span></div>
+      <div class="hero__text">
+        <Crumbs items={[{ label: t(lang, "crumbs.wiki"), href: href(lang, "home") }, { label: t(lang, "nav.classes"), href: href(lang, "classes") }, { label: title }]} />
+        <div class="title">
+          <h1>{title}</h1>
+          <ul class="roles">
+            {roles.map((r) => <li>{r}</li>)}
+            <li class={`res res--${c.resource}`}>{resourceName(c, lang)}</li>
+          </ul>
+          <p class="roles-short">{[...roles, resourceName(c, lang)].join(" · ")}</p>
+        </div>
+        <p class="desc">{name(c.desc, lang)}</p>
+        <dl class="facts">
+          {facts.map((f) => (
+            <div>
+              <dt>{f.k}</dt>
+              <dd>{f.v}{f.sub && <span>{f.sub}</span>}</dd>
+            </div>
+          ))}
+        </dl>
+        <p class="small">{t(lang, "class.startStats")}: {startStats} · {t(lang, "class.hpLine", { n: hpPerLevel() })}</p>
+        <div class="gear">
+          <span class="small">{t(lang, "class.startGear")}:</span>
+          {gear.map((g) => (
+            g.href ? (
+              <a href={g.href} class="gear__item"><ItemIcon glyph={g.glyph} color={g.color} src={g.icon} size={28} alt="" /><span>{g.name}</span></a>
+            ) : (
+              <span class="gear__item"><ItemIcon glyph={g.glyph} color={g.color} src={g.icon} size={28} alt="" /><span>{g.name}</span></span>
+            )
+          ))}
+          {itemsHref && <a class="gear__more" href={`${itemsHref}?cls=${c.id}`}>{t(lang, "class.items")}</a>}
+        </div>
+      </div>
+    </header>
+
+    <section class="planner" id="planner" aria-labelledby="planner-title" data-pagefind-ignore>
+      <SectionTitle id="planner-title">{t(lang, "planner.title")}</SectionTitle>
+      <SkillPlanner client:load data={planner} />
+    </section>
+
+    <section class="all" aria-labelledby="all-skills" data-pagefind-ignore>
+      <SectionTitle id="all-skills">{t(lang, "class.allSkills")}</SectionTitle>
+      <table class="vw-table skills">
+        <caption class="vw-sr">{t(lang, "class.allSkills")}</caption>
+        <thead>
+          <tr>
+            <th scope="col">{t(lang, "skills.col.skill")}</th>
+            <th scope="col">{t(lang, "skills.col.unlock")}</th>
+            <th scope="col">{t(lang, "skills.col.ranks")}</th>
+            <th scope="col">{t(lang, "skills.col.cost")}</th>
+            <th scope="col">{t(lang, "skills.col.cooldown")}</th>
+            <th scope="col">{t(lang, "skills.col.desc")}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => {
+            const s = r.skill;
+            const first = s.ranks[0];
+            const last = s.ranks[s.ranks.length - 1];
+            const resource = s.resource === "mana" || s.resource === "energy" ? s.resource : null;
+            return (
+              <tr id={`s-${s.id}`}>
+                <th scope="row" class="name"><div class="name__in">
+                  <SkillNode glyph={s.glyph} color={r.color} state="available" rank={0} max={s.maxLevel} active={!s.passiveSkill} label={r.name} size={40} tabindex={-1} aria-hidden="true" />
+                  <span>
+                    <b>{r.name}</b>
+                    <small>{t(lang, s.passiveSkill ? "planner.passive" : "planner.active")}{s.elementNote && ` · ${name(s.elementNote, lang)}`}</small>
+                  </span>
+                </div></th>
+                <td data-label={t(lang, "skills.col.unlock")}>{s.unlock}</td>
+                <td data-label={t(lang, "skills.col.ranks")}>{s.maxLevel}{r.reachable < s.maxLevel && <small class="warn"> ({t(lang, "skills.reachable", { n: r.reachable })})</small>}</td>
+                <td data-label={t(lang, "skills.col.cost")}>{s.passiveSkill || !resource ? t(lang, "skills.none") : t(lang, `planner.cost.${resource}`, { n: range(first.cost, last.cost) })}</td>
+                <td data-label={t(lang, "skills.col.cooldown")}>{s.passiveSkill || last.cooldown === 0 ? t(lang, "skills.none") : range(first.cooldown, last.cooldown, " s")}</td>
+                <td class="descs">
+                  <p><b>{t(lang, "skills.rankN", { n: 1 })}:</b> {name(first.desc, lang)}</p>
+                  <p><b>{t(lang, "skills.rankN", { n: s.maxLevel })}:</b> {name(last.desc, lang)}</p>
+                  {s.breakpoints.length > 0 && s.breakpoints.map((b) => <p class="bp"><b>{t(lang, "planner.bp", { n: b.level })}:</b> {name(b.text, lang)}</p>)}
+                  {r.requires.length > 0 && <p class="req">{t(lang, "skills.requires", { list: r.requires.map((q) => t(lang, "planner.reqSkill", { name: q.name, n: q.level })).join(", ") })}</p>}
+                  <a class="plan" href={`?s=${s.id}#planner`} data-plan={s.id}>{t(lang, "skills.plan")} →</a>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </section>
+  </div>
+</Base>
+
+<style>
+  .cls { max-width: 1440px; margin: 0 auto; padding: 0 48px 88px; background: radial-gradient(ellipse 50% 30% at 80% 0%, color-mix(in srgb, var(--cls) 12%, transparent), transparent 70%) no-repeat; }
+  .hero { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 40px; padding: 36px 0 40px; align-items: end; }
+  .portrait { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; background: repeating-linear-gradient(135deg, var(--vw-bg-sunken) 0 12px, var(--vw-panel) 12px 24px); border: 2px solid var(--vw-gold); box-shadow: 0 0 0 3px var(--vw-bg), 0 0 0 4px var(--vw-gold-dark); }
+  .portrait span { font-size: 150px; line-height: 1; color: var(--cls); text-shadow: 0 0 40px color-mix(in srgb, var(--cls) 45%, transparent); }
+  .hero__text { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+  .title { display: flex; flex-direction: column; gap: 16px; }
+  h1 { margin: 0; font: 700 96px/0.85 var(--vw-font-display); color: var(--vw-text); }
+  .roles { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+  .roles li { padding: 6px 12px; font-size: 15px; font-weight: 700; background: var(--vw-panel); border: 1px solid var(--vw-border); }
+  .roles .res { border-color: color-mix(in srgb, var(--c) 60%, var(--vw-border)); color: var(--vw-text); }
+  .res--mana { --c: var(--vw-mana); } .res--energy { --c: var(--vw-energy); }
+  .roles-short { display: none; margin: 0; font-size: 14px; color: var(--vw-text-muted); }
+  .desc { margin: 0; max-width: 760px; font-size: 19px; line-height: 1.5; color: var(--vw-text-soft); }
+  .facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; max-width: 820px; margin: 0; background: var(--vw-border); border: 1px solid var(--vw-border); }
+  .facts div { display: flex; flex-direction: column; gap: 2px; padding: 10px 14px; background: var(--vw-panel); }
+  .facts dt { font-size: 13px; color: var(--vw-text-muted); }
+  .facts dd { margin: 0; display: flex; flex-direction: column; font-size: 18px; font-weight: 800; }
+  .facts dd span { font-size: 14px; font-weight: 500; color: var(--vw-text-soft); }
+  .small { margin: 0; font-size: 15px; color: var(--vw-text-muted); }
+  .gear { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+  .gear__item { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; color: var(--vw-text); }
+  a.gear__item:hover { color: var(--vw-gold-bright); }
+  .gear__more { font-weight: 800; }
+  .planner, .all { scroll-margin-top: 88px; }
+  .all { margin-top: 56px; }
+  .name__in { display: flex; align-items: center; gap: 14px; }
+  .skills .name { width: 260px; vertical-align: top; height: auto; padding: 12px 14px; text-align: left; font: 400 17px/1.3 var(--vw-font-ui); letter-spacing: 0; text-transform: none; white-space: normal; color: var(--vw-text); border-bottom: 1px solid var(--vw-border-subtle); }
+  .skills .descs { width: 46%; }
+  .name__in > span { display: flex; flex-direction: column; gap: 2px; }
+  .skills .name b { font-size: 17px; }
+  .skills .name small { font-size: 13px; color: var(--vw-text-muted); }
+  .skills :global(.vw-node) { pointer-events: none; }
+  .skills :global(.vw-node__rank) { display: none; }
+  .skills td { height: auto; padding: 12px 14px; vertical-align: top; }
+  .skills tbody tr { cursor: default; }
+  .skills tbody tr:target { background: color-mix(in srgb, var(--vw-gold) 10%, transparent); }
+  .descs p { margin: 0 0 6px; font-size: 15px; line-height: 1.45; }
+  .descs .bp { color: var(--vw-text-soft); }
+  .descs .req { color: var(--vw-text-muted); }
+  .warn { color: var(--vw-warning); }
+  .plan { font-weight: 800; font-size: 14px; }
+  @media (max-width: 767px) {
+    .cls { padding: 0 16px 56px; }
+    .hero { grid-template-columns: 88px minmax(0, 1fr); gap: 14px; padding: 20px 0 24px; align-items: end; }
+    .portrait { grid-row: 1; width: 88px; box-shadow: none; }
+    .portrait span { font-size: 52px; }
+    .hero__text { display: contents; }
+    .hero__text > :global(nav) { display: none; }
+    .title { grid-column: 2; grid-row: 1; gap: 6px; }
+    h1 { font-size: 56px; }
+    .roles { display: none; }
+    .roles-short { display: block; }
+    .desc, .facts, .small, .gear { grid-column: 1 / -1; }
+    .desc { font-size: 17px; }
+    .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .skills thead { display: none; }
+    .skills, .skills tbody, .skills tr, .skills th, .skills td { display: block; }
+    .skills tr { padding: 12px; border-bottom: 1px solid var(--vw-border); }
+    .skills td, .skills .name { width: auto; padding: 4px 0; border: 0; min-width: 0; }
+    .skills td[data-label]::before { content: attr(data-label) ": "; color: var(--vw-text-muted); font-size: 13px; }
+    .skills td[data-label] { display: inline-block; margin-right: 14px; font-size: 15px; }
+  }
+</style>

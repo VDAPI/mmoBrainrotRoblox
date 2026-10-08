@@ -100,17 +100,26 @@ export function wikiRecords(lang: Lang): WikiRecord[] {
       out.push(record(lang, href(lang, "quests", q.id), "quest", name(q.title, lang), t(lang, "level", { level: q.level }), q.objectives.map((o) => name(o.label, lang)), { type: "quest" }));
     }
   }
-  if (!isReady("classes")) {
-    const classes = load("classes").classes;
+  // Classes: the class pages index themselves once ready (S41); skills stay records (their only separate results),
+  // pointing at the node on the class page, and lose `pending` then.
+  const classes = load("classes").classes;
+  const classesReady = isReady("classes");
+  if (!classesReady) {
     for (const c of classes) {
       out.push(record(lang, href(lang, "classes", c.id), "skill", name(c.name, lang), name(c.role, lang), [name(c.desc, lang)], { type: "class" }));
     }
-    for (const s of load("skills").skills) {
-      const cls = classes.find((c) => c.id === s.class);
-      out.push(
-        record(lang, `${href(lang, "classes", s.class)}#s-${s.id}`, "skill", name(s.name, lang), `${cls ? name(cls.name, lang) : s.class} · ${t(lang, "level", { level: s.unlock })}`, [name(s.ranks[0]?.desc, lang)], { type: "skill" }),
-      );
+  }
+  for (const s of load("skills").skills) {
+    const cls = classes.find((c) => c.id === s.class);
+    const r = record(lang, `${href(lang, "classes", s.class)}?s=${s.id}#s-${s.id}`, "skill", name(s.name, lang), `${cls ? name(cls.name, lang) : s.class} · ${t(lang, "level", { level: s.unlock })}`, [name(s.ranks[0]?.desc, lang)], {
+      type: "skill",
+      glyph: s.glyph,
+      color: cls?.color ?? "",
+    });
+    if (classesReady) {
+      delete r.meta.pending;
     }
+    out.push(r);
   }
   return out;
 }

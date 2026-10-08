@@ -134,6 +134,7 @@ S.file(
 		})),
 		groups = arr(rec("StatGroupInfo", { id = "string", name = "name" })),
 		primary = arr("string"),
+		primaryNames = map("name"),
 		formula = "data",
 	})
 )
@@ -391,6 +392,11 @@ function Basics.stats(_ctx: any): any
 			order = def.order,
 		})
 	end
+	-- S41: names of the primary stats (class pages: main and starting stats).
+	local primaryNames = {}
+	for _, id in Stats.primary do
+		primaryNames[id] = Names.of(`stat.{id}`)
+	end
 	local groups = {}
 	for _, id in Stats.groups do
 		table.insert(groups, { id = id, name = Names.of(`statGroup.{id}`) })
@@ -399,6 +405,7 @@ function Basics.stats(_ctx: any): any
 		stats = list,
 		groups = groups,
 		primary = Clean.clean(Stats.primary),
+		primaryNames = primaryNames,
 		formula = Clean.clean(Stats.Formula),
 	}
 end

@@ -24,7 +24,7 @@ import RarityBadge from "../components/RarityBadge.svelte";
 import SectionTitle from "../components/SectionTitle.astro";
 import MiniMap from "../components/MiniMap.astro";
 import SkillEdge from "../components/SkillEdge.astro";
-import SkillNode from "../components/SkillNode.astro";
+import SkillNode from "../components/SkillNode.svelte";
 import Skeleton from "../components/Skeleton.astro";
 import Toc from "../components/Toc.astro";
 import ZoneBadge from "../components/ZoneBadge.astro";
@@ -231,11 +231,12 @@ const toc = [
       <section id="skills">
         <SectionTitle>SkillNode · SkillEdge</SectionTitle>
         <div class="row nodes">
-          <SkillNode state="locked" rank={0} max={10} label="locked" />
+          <SkillNode state="locked" rank={0} max={10} label="locked" lockText="poz. 28" />
           <SkillNode state="available" rank={0} max={10} label="available" />
           <SkillNode state="partial" rank={4} max={10} label="partial" />
           <SkillNode state="max" rank={10} max={10} label="max" />
-          <SkillNode state="partial" rank={2} max={5} active label="active" />
+          <SkillNode state="partial" rank={2} max={5} active label="active" glyph="❄" color="var(--vw-el-ice)" />
+          <SkillNode state="partial" rank={9} max={10} invalid label="invalid" />
           <SkillNode state="available" rank={0} max={5} capstone selected label="capstone" />
         </div>
         <div class="row"><div><SkillNode state="max" rank={10} max={10} label="a" /><SkillEdge active /><SkillNode state="available" rank={0} max={10} label="b" /><SkillEdge /><SkillNode state="locked" rank={0} max={10} label="c" /></div></div>

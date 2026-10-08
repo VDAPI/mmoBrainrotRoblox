@@ -3350,3 +3350,33 @@ Szczegóły i decyzje: `docs/WIKI.md` (Stan, Decyzje S40, Niedokończone, „Kom
     złoto, esencje, zwoje i tabela kroków się zmieniają; link z adresu odtwarza stan.
 14. `/pl/rzemioslo/`: spis treści, kowal, ulepszanie, rozbijanie, alchemia, zbieractwo, ryby; wersje `/en/` działają.
 15. `npm run check` w `wiki/` i `scripts/check` przechodzą.
+
+### S41: Wiki 7/10 — klasy i planer umiejętności
+
+Szczegóły i decyzje: `docs/WIKI.md` (Stan, Decyzje S41, Niedokończone, „Komponenty”).
+
+**Zrobione**
+- Eksport: `skills.json` `rules.vectors` (stany i buildy policzone prawdziwym `Skills.canLearn`), `elementNote`,
+  `stats.primaryNames`. Kod gry bez zmian.
+- `wiki/src/lib/skills.ts`: reguły planera (kolejność sprawdzeń jak w grze), kod buildu; Vitest na wektorach z Lune.
+- `/pl/klasy/` i 4 strony klas: hero, planer (poziom, punkty, kod/link, reset, ostrzeżenia, panel szczegółów, klawiatura,
+  dotyk), tabela wszystkich umiejętności. `SkillNode` przepisany na Svelte (prop `invalid`).
+- Uwaga balansowa: ranga 10 zwieńczeń (odblokowanie 75) wymaga poziomu 102 — nieosiągalna przy `MaxLevel` 100.
+
+#### Instrukcja testu S41
+
+1. `cd wiki`, `npm run build`, `npm run preview`.
+2. http://localhost:4321/pl/klasy/: 4 karty (Wojownik, Łowca, Mag, Kapłan) z glifem, rolami i zasobem.
+3. „Planer umiejętności →” przy Magu: hero, planer na poziomie 100, puste drzewko 4×6 z krawędziami.
+4. Ustaw poziom 34 (pole albo −/+, Shift = ±10): „33” punkty.
+5. Kula Ognia jest zablokowana; dodaj 3 rangi Magicznego Pocisku (klik) — krawędź robi się złota, Kula Ognia dostępna.
+6. Prawy klik na Magicznym Pocisku przy nauczonej Kuli Ognia nie zejdzie poniżej 3 (panel mówi dlaczego).
+7. Zmniejsz poziom do 5: ostrzeżenie i czerwone liczniki, punkty nie znikają.
+8. Gniew Żywiołów: panel „Maks. osiągalna ranga 9”.
+9. „Kopiuj link” → wklej w nowej karcie: ten sam build i zaznaczona umiejętność. Wklej kod w pole + Enter — działa;
+   zły kod pokazuje błąd. „Resetuj” czyści drzewko.
+10. Klawiatura: Tab do drzewka, strzałki, `+`/`-`.
+11. Telefon (390 px): drzewko w jednej siatce, tap zaznacza, przytrzymanie odejmuje, panel i kod pod drzewkiem.
+12. Ctrl+K „meteor” → strona Maga z zaznaczonym Meteorem.
+13. `/en/classes/Warrior/` po angielsku; `npm run check` w `wiki/` i `scripts/check` przechodzą.
+

@@ -148,8 +148,8 @@ przełomy umiejętności, `Combat`, `Stats.Formula`) jako `data` (typ `Json`).
 | `recipes.json` | `groups`: RecipeGroup[], `queueSlots`: number, `recipes`: AlchemyRecipe[] | `Data/Recipes` |
 | `search.json` | `entries`: SearchEntry[], `vectors`: NormalizeVector[] | pozostałe pliki + `MapSearch.normalize` (klucz, wektory testowe) |
 | `shops.json` | `shops`: Shop[], `weaponsmithTiers`: number[] | `Data/Shops`; cena `ItemValue.buyPrice` pod kluczem `gold`; NPC z `Data/Npcs` |
-| `skills.json` | `rules`: SkillRules, `skills`: Skill[] | `Data/Skills` (bez `vfx`); rangi: `Skills.levelRequirement`, `scaled`, `valueAt`, `formatDescription`; przełomy `breakpointKeys`; `Exp.pointsForLevels` |
-| `stats.json` | `formula`: Json, `groups`: StatGroupInfo[], `primary`: string[], `stats`: StatInfo[] | `Data/Stats` |
+| `skills.json` | `rules`: SkillRules, `skills`: Skill[] | `Data/Skills` (bez `vfx`); rangi: `Skills.levelRequirement`, `scaled`, `valueAt`, `formatDescription`; przełomy `breakpointKeys`; `Exp.pointsForLevels`; od S41 `rules.vectors` (`states`: stan postaci + wynik `Skills.canLearn` każdej umiejętności klasy, `builds`: docelowe buildy z `achievable` odtworzonym punkt po punkcie; ziarno 4141) i `elementNote` umiejętności (`skill.requiresElement` / `skill.adaptive`) |
+| `stats.json` | `formula`: Json, `groups`: StatGroupInfo[], `primary`: string[], `primaryNames` (S41), `stats`: StatInfo[] | `Data/Stats` |
 | `titles.json` | `titles`: Title[] | `Data/Titles` |
 | `upgrade.json` | `costs`: Record<string, Record<string, UpgradeCost[]>>, `max`: number, `protection`: string, `steps`: UpgradeStep[], `tiers`: number[], `vectors`: UpgradeVector[] | `Upgrade.chance`, `statMultiplier`, `attempt` (`StubRng` fail), `Upgrade.cost` dla progów i rzadkości; od S40 `vectors` = 3 przypadki × 20 000 symulacji `Upgrade.attempt` + `Upgrade.cost` (kontrola kalkulatora) |
 
@@ -227,7 +227,8 @@ do HTML bez JS, wyspy importują te same pliki). Dane przez `src/lib/data.ts` (`
 | `BossHeader` | `{ boss, lang, players?: 1-5, notes?: { phase, title, html }[], heading?: "h1"\|"h2" }` — S39: chipy graczy 1–5 (zmieniają każdy `[data-by-players]` na stronie), zakładki faz „Faza 1 · 100–70%” z okrzykiem i obrazkiem `-p2`/`-p3`, panele mechanik (ataki z `Telegraph`, przywołania, tarcza, przyspieszenie, wściekłość, `notes`); bez JS wszystkie fazy pod sobą; zachowanie `src/scripts/boss.ts` |
 | Wyspy S40 | `ItemsBrowser` (lista z filtrami i krokomierzem progów), `ItemTooltipLive` + `ItemUpgradeView` (strona przedmiotu; wspólny stan `src/lib/itemState.ts` i `?r=&up=&el=`), `UpgradeCalc` (kalkulator) — dane wyłącznie z propsów i endpointów `/data/items/<id>.json`, `/<lang>/items-index.json` |
 | `Telegraph` (S39) | `{ shape, radius?, inner?, angle?, length?, width?, origin?, size?, label? }` — SVG kształtu ataku (koło, stożek, pas, pierścień z bezpiecznym środkiem), rzucający jako złoty romb; w `/styleguide#telegraph` |
-| `SkillNode` / `SkillEdge` | `{ glyph?, state, rank, max, active?, capstone?, selected?, label }` / `{ active? }` |
+| `SkillNode.svelte` / `SkillEdge` | S41: Svelte (Astro renderuje bez JS, planer importuje ten sam plik) `{ glyph?, state, rank, max, active?, capstone?, selected?, invalid?, label, color?, size?, lockText? }` + atrybuty `<button>`; `invalid` = czerwony licznik (ranga wymaga wyższego poziomu) / `{ active? }` |
+| `SkillPlanner.svelte` (S41) | `{ data: PlannerData, labels }` — wycinek jednej klasy w jednym języku z `plannerData(c, lang)` (`src/lib/classes.ts`); reguły w `src/lib/skills.ts` (`canAdd` w kolejności `Skills.canLearn`, `canRemove`, `validate`, `requiredCharLevel`, `maxReachableRank`, `nodeState`, `encodeBuild`/`decodeBuild`); stan `?b=<kod>&s=<id>`, `#s-<id>` |
 | `DataTable` | `{ columns: { key, label, sortable?, align?, mobile?, sort? }[], rows, caption, html? }` |
 | `Chip`, `Pager` | `{ pressed?, disabled?, href?, count? }`, `{ page, pages, hrefFor, lang? }` |
 | `Callout` | `{ kind?: "info"\|"tip"\|"warn"\|"changed"\|"spoiler", title?, date?, lang? }` |
@@ -332,7 +333,24 @@ Mechaniki skryptowe bossów: `src/content/bosses/{pl,en}/*.md` (frontmatter `bos
   `bosses` mają `ready: true` (rekordy zastępcze potworów zniknęły z Pagefind; nazwy elit indeksują się ze stron rodzajów).
   JS: bestiariusz 3,8 KB, potwór 1,3 KB, boss 0,9 KB gzip. Vitest 55 testów, Lune 758.
 
+- **S41 (klasy):** `/pl/klasy/` (4 karty) i 4 strony klas: hero (portret z glifem, role, zasób z `Formula`, główne
+  statystyki, broń, pancerz z baz, statystyki i ekwipunek startowy, link do przedmiotów `?cls=`), planer umiejętności
+  (wyspa `SkillPlanner`, 33 KB gzip z layoutem i paletą; budżet 35) i tabela „Wszystkie umiejętności” (opisy rangi 1 i
+  maks., przełomy 5/10, wymagania, maks. osiągalna ranga). Kod buildu `MAGE34-a535230-2000000`, kopiowanie linku, reset,
+  ostrzeżenie przy za niskim poziomie. Zgodność z grą: `rules.vectors` z Lune, Vitest `skills.test.ts`. Sekcja
+  `classes` ma `ready: true`; rekordy umiejętności w Pagefind prowadzą do `?s=<id>#s-<id>`.
+
 ## Decyzje
+
+- **S41** Krawędź wymagania biegnąca pod innym węzłem tej samej kolumny odsunięta łukiem o 40 px (plan: 12): przy 12 px
+  linia dalej wchodziła pod węzeł 64 px.
+- **S41** „Wszystkie umiejętności” to własna tabela (`.vw-skilltable`), nie `DataTable`: wiersze mają węzeł, kilka linii
+  opisu i link „Zaplanuj”; na telefonie wiersz = karta.
+- **S41** Mobile: pod panelem szczegółów pole kodu na całą szerokość, „Kopiuj link” i „Resetuj” pod spodem; zakładki
+  gałęzi z makiety zastąpione podsumowaniem „Aktywne · Pasywne” (gra nie ma gałęzi).
+- **S41** Start bez `?b`: poziom `rules.maxLevel` (100), puste drzewko, zaznaczona pierwsza umiejętność (SSR renderuje ten
+  stan, więc bez JS widać drzewko i opis).
+- **S41** Kod gry bez zmian. Eksport: `rules.vectors`, `elementNote`, `stats.primaryNames`.
 
 - **S40** Ikony: `scripts/item-icons.mjs` mnoży kolor warstw na surowych pikselach (jak `ImageColor3` w grze; `sharp.tint`
   nie mnoży) i zapisuje `-128` (natywne) i `-64` (lanczos3); nazwa pliku = klucz ikony + kolory warstw, więc ten sam wygląd
@@ -485,6 +503,11 @@ Mechaniki skryptowe bossów: `src/content/bosses/{pl,en}/*.md` (frontmatter `bos
   `Config.AdminUserIds` czyta tylko `tests/wikidump.spec.luau` (`Leak.scan`). Każdy build sprawdza zakazane klucze.
 
 ## Niedokończone
+
+- **S41** Uwaga balansowa (bez zmiany gry): ranga 10 umiejętności z odblokowaniem 75 (zwieńczenia każdej klasy) wymaga
+  poziomu 102 > `MaxLevel` 100 — nieosiągalna; wiki pokazuje „maks. osiągalna 9” z danych. Punkt G („jeśli zostanie
+  czas”: widok listy na mobile, tabela rang w `<details>`, podgląd przy najechaniu, „Dopasuj do poziomu”, powtarzanie
+  +/−, OG klas, test Playwright planera) nie zrobiony — Playwright planera w S44.
 
 - **S40** Filtr źródła na liście przedmiotów, mediana / 90. percentyl prób i „najtańszy próg ochrony” w kalkulatorze,
   chipy klas w tabeli kowala — nie zrobione (opcjonalne „jeśli zostanie czas”). Kolumna „Koszt próby” tylko na desktopie,

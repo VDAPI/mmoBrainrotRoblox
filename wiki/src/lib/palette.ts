@@ -16,7 +16,7 @@ export interface PaletteEntry {
   r?: string; // rarity key (items)
 }
 
-export function entityHref(lang: Lang, type: string, id: string, map?: string): string | null {
+export function entityHref(lang: Lang, type: string, id: string, map?: string, cls?: string): string | null {
   switch (type) {
     case "item":
       return isReady("items") ? href(lang, "items", id) : null;
@@ -32,7 +32,7 @@ export function entityHref(lang: Lang, type: string, id: string, map?: string): 
     case "quest":
       return isReady("quests") ? href(lang, "quests", id) : null;
     case "skill":
-      return null;
+      return isReady("classes") && cls ? `${href(lang, "classes", cls)}?s=${id}#s-${id}` : null;
     case "class":
       return isReady("classes") ? href(lang, "classes", id) : null;
     default:
@@ -50,7 +50,7 @@ export function paletteEntries(lang: Lang): PaletteEntry[] {
       t: e.type,
       id: e.id,
       n: name(e.name, lang),
-      h: entityHref(lang, e.type, e.id, e.map),
+      h: entityHref(lang, e.type, e.id, e.map, e.class),
       m: parts.join(" · "),
       r: e.type === "item" ? e.rarity : undefined,
     };

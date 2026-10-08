@@ -1024,6 +1024,7 @@ export interface Skill {
   delay?: number;
   effects?: Json;
   element?: ElementId;
+  elementNote?: Name;
   glyph: string;
   hits?: number;
   holy?: boolean;
@@ -1077,6 +1078,34 @@ export interface SkillRules {
   pointsByLevel: number[];
   skillPointsFromLevel: number;
   skillPointsPerLevel: number;
+  vectors: SkillVectors;
+}
+
+export interface SkillVectorBuild {
+  achievable: boolean;
+  class: ClassId;
+  level: number;
+  skills: Record<string, number>;
+}
+
+export interface SkillVectorResult {
+  detail?: Json;
+  ok: boolean;
+  reason?: string;
+  skill: string; // id in skills.json
+}
+
+export interface SkillVectorState {
+  class: ClassId;
+  level: number;
+  results: SkillVectorResult[];
+  skillPoints: number;
+  skills: Record<string, number>;
+}
+
+export interface SkillVectors {
+  builds: SkillVectorBuild[];
+  states: SkillVectorState[];
 }
 
 export interface SkillsFile {
@@ -1162,6 +1191,7 @@ export interface StatsFile {
   formula: Json;
   groups: StatGroupInfo[];
   primary: string[];
+  primaryNames: Record<string, Name>;
   stats: StatInfo[];
 }
 

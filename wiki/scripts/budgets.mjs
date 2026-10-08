@@ -13,6 +13,8 @@ const BUDGETS = [
   { page: "pl/przedmioty/index.html", kb: 50, all: true },
   { page: "pl/przedmioty/sword2h_35/index.html", kb: 50, all: true },
   { page: "pl/ulepszanie/index.html", kb: 50, all: true },
+  // S41: skill planner island (limit from the session plan)
+  { page: "pl/klasy/Mage/index.html", kb: 35, all: true },
 ];
 const SHARED = /\/_astro\/(Base\.astro|SearchPalette|client\.svelte|render\.|class\.|input\.)/;
 

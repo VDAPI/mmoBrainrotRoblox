@@ -7,6 +7,12 @@
     {"id":"other","name":{"en":"Other","pl":"Inne"}}
   ],
   "primary": ["str","dex","int","vit"],
+  "primaryNames": {
+    "dex": {"en":"Dexterity","pl":"Zręczność"},
+    "int": {"en":"Intellect","pl":"Intelekt"},
+    "str": {"en":"Strength","pl":"Siła"},
+    "vit": {"en":"Vitality","pl":"Witalność"}
+  },
   "stats": [
     {"decimals":0,"format":"flat","group":"offense","id":"physAtk","name":{"en":"Physical attack","pl":"Atak fizyczny"},"order":1},
     {"decimals":0,"format":"flat","group":"offense","id":"magAtk","name":{"en":"Magic attack","pl":"Atak magiczny"},"order":2},

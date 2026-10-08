@@ -339,6 +339,43 @@ T.describe("Wiki export: consistency", function()
 		end
 		T.expect(whirl.ranks[1].desc.pl ~= whirl.ranks[10].desc.pl).toBe(true)
 	end)
+
+	T.it("gives the planner every rank with texts and parity vectors of every class and reason (S41)", function()
+		for _, s in d.skills.skills do
+			T.expect(#s.ranks).toBe(s.maxLevel)
+			for _, rank in s.ranks do
+				for _, lang in { "pl", "en" } do
+					local text = rank.desc[lang]
+					if text == "" or string.find(text, "{", 1, true) then
+						error(`{s.id} rank {rank.rank} {lang}: "{text}"`)
+					end
+				end
+			end
+		end
+		local vectors = d.skills.rules.vectors
+		local classes, reasons = {}, {}
+		for _, state in vectors.states do
+			classes[state.class] = true
+			for _, r in state.results do
+				reasons[if r.ok then "ok" else r.reason] = true
+			end
+		end
+		for _, id in { "Warrior", "Hunter", "Mage", "Cleric" } do
+			T.expect(classes[id]).toBe(true)
+		end
+		for _, reason in { "ok", "maxLevel", "noPoints", "level", "requires" } do
+			T.expect(reasons[reason]).toBe(true)
+		end
+		local good, bad = 0, 0
+		for _, b in vectors.builds do
+			if b.achievable then
+				good += 1
+			else
+				bad += 1
+			end
+		end
+		T.expect(good > 0 and bad > 0).toBe(true)
+	end)
 end)
 
 T.describe("Wiki export: building blocks", function()

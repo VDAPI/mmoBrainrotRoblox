@@ -6,6 +6,7 @@ import { SECTIONS } from "../lib/sections";
 import BestiarySection from "./BestiarySection.astro";
 import BossItemsView from "./BossItemsView.astro";
 import BossView from "./BossView.astro";
+import ClassesSection from "./ClassesSection.astro";
 import CraftingView from "./CraftingView.astro";
 import ItemsSection from "./ItemsSection.astro";
 import UpgradeView from "./UpgradeView.astro";
@@ -15,6 +16,7 @@ import RegionsView from "./RegionsView.astro";
 import WorldMapView from "./WorldMapView.astro";
 import { areas, caves, maps } from "../lib/world";
 import { bosses, items, monsters } from "../lib/data";
+import { classes } from "../lib/classes";
 import SearchView from "./SearchView.astro";
 import Styleguide from "./Styleguide.astro";
 
@@ -63,6 +65,11 @@ export const REGISTRY: PageEntry[] = [
   { key: "bossItems", view: BossItemsView, getPaths: () => [{ ids: [] }] },
   { key: "upgrading", view: UpgradeView, getPaths: () => [{ ids: [] }] },
   { key: "crafting", view: CraftingView, getPaths: () => [{ ids: [] }] },
+  {
+    key: "classes",
+    view: ClassesSection,
+    getPaths: () => [{ ids: [] }, ...classes().map((c) => ({ ids: [c.id], props: { page: "class", id: c.id } }))],
+  },
   ...SECTIONS.filter((s) => !s.ready).map(
     (s): PageEntry => ({ key: s.id, view: ComingSoon, getPaths: () => [{ ids: [], props: { section: s.id } }] }),
   ),

@@ -16,7 +16,7 @@ export const SECTIONS: Section[] = [
   { id: "bosses", ready: true, session: "S39" },
   { id: "map", ready: true, session: "S37" },
   { id: "regions", ready: true, session: "S37" },
-  { id: "classes", ready: false, session: "S41" },
+  { id: "classes", ready: true, session: "S41" },
   { id: "quests", ready: false, session: "S42" },
   { id: "mechanics", ready: false, session: "S42" },
   { id: "guides", ready: false, session: "S43" },

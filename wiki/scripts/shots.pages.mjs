@@ -13,7 +13,7 @@ export const PAGES = [
   { name: "szukaj-pusto", path: "/pl/szukaj/" },
   { name: "styleguide", path: "/pl/styleguide/" },
   { name: "styleguide-en", path: "/en/styleguide/" },
-  { name: "wkrotce", path: "/pl/klasy/" },
+  { name: "wkrotce", path: "/pl/zadania/" },
   { name: "404", path: "/pl/404/" },
   { name: "mapa", path: "/pl/mapa/" },
   { name: "mapa-laki", path: "/pl/mapa/?m=meadows&a=meadows_wolfhills" },
@@ -39,4 +39,10 @@ export const PAGES = [
   { name: "przedmioty-bossy", path: "/pl/przedmioty/bossy/" },
   { name: "ulepszanie", path: "/pl/ulepszanie/" },
   { name: "rzemioslo", path: "/pl/rzemioslo/" },
+  { name: "klasy", path: "/pl/klasy/" },
+  { name: "klasa-mag", path: "/pl/klasy/Mage/" },
+  // S41: the level-34 build of src/lib/skills.test.ts ("a sample build at level 34").
+  { name: "klasa-mag-build", path: "/pl/klasy/Mage/?b=MAGE34-a535230-2000000&s=fireball" },
+  { name: "klasa-kaplan", path: "/pl/klasy/Cleric/" },
+  { name: "class-warrior-en", path: "/en/classes/Warrior/" },
 ];

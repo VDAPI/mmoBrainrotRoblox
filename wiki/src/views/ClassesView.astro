@@ -1,0 +1,82 @@
+---
+// Class index (S41, /pl/klasy/; no mock-up): four cards in Classes.order, styled like the section cards of the home
+// page: portrait with the class glyph, name, roles, description, resource (bar colour), weapons, planner link.
+import Base from "../layouts/Base.astro";
+import Crumbs from "../components/Crumbs.astro";
+import { href, type Lang } from "../i18n/routes";
+import { baseName, classes, resourceLine, resourceName, roleParts, skillsOf } from "../lib/classes";
+import { name, t } from "../lib/i18n";
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const list = classes();
+---
+<Base lang={lang} title={t(lang, "classes.title")} description={t(lang, "classes.lead")} section="classes">
+  <div class="page">
+    <Crumbs items={[{ label: t(lang, "crumbs.wiki"), href: href(lang, "home") }, { label: t(lang, "nav.classes") }]} />
+    <h1 class="h1">{t(lang, "classes.title")}</h1>
+    <p class="lead">{t(lang, "classes.lead")}</p>
+    <ul class="cards">
+      {list.map((c) => (
+        <li class="card" style={`--cls: var(--vw-class-${c.id})`}>
+          <a class="card__link" href={href(lang, "classes", c.id)}>
+            <span class="portrait" aria-hidden="true"><span>{c.icon}</span></span>
+            <span class="name">{name(c.name, lang)}</span>
+          </a>
+          <ul class="roles">{roleParts(c, lang).map((r) => <li>{r}</li>)}</ul>
+          <p class="desc">{name(c.desc, lang)}</p>
+          <dl class="facts">
+            <div>
+              <dt>{t(lang, "class.resource")}</dt>
+              <dd><span class={`bar bar--${c.resource}`} aria-hidden="true"></span>{resourceName(c, lang)} <small>{resourceLine(c, lang)}</small></dd>
+            </div>
+            <div>
+              <dt>{t(lang, "class.weapons")}</dt>
+              <dd>{c.weaponTypes.map((w) => baseName(w, lang)).join(", ")}</dd>
+            </div>
+          </dl>
+          <a class="plan" href={`${href(lang, "classes", c.id)}#planner`}>{t(lang, "classes.planner")} <small>({t(lang, "classes.skills", { n: skillsOf(c.id).length })})</small></a>
+        </li>
+      ))}
+    </ul>
+  </div>
+</Base>
+
+<style>
+  .page { max-width: 1440px; margin: 0 auto; padding: 40px 56px 72px; }
+  .h1 { margin: 16px 0 12px; font: 700 72px/1 var(--vw-font-display); color: var(--vw-gold-bright); }
+  .lead { margin: 0 0 36px; max-width: 760px; font-size: 19px; line-height: 1.55; color: var(--vw-text-soft); }
+  .cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; }
+  .card { display: flex; flex-direction: column; gap: 14px; padding: 18px; background: var(--vw-metal-gradient); border: 1px solid var(--vw-border); border-top: 2px solid var(--cls); box-shadow: var(--vw-elev-1); }
+  .card:hover { border-color: var(--vw-gold-dark); border-top-color: var(--cls); }
+  .card__link { display: flex; flex-direction: column; gap: 12px; color: var(--vw-text); }
+  .card__link:hover { text-decoration: none; color: var(--vw-gold-bright); }
+  .portrait { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; background: repeating-linear-gradient(135deg, var(--vw-bg-sunken) 0 10px, var(--vw-panel) 10px 20px); border: 2px solid var(--vw-gold); box-shadow: 0 0 0 3px var(--vw-bg), 0 0 0 4px var(--vw-gold-dark); }
+  .portrait span { font-size: 110px; line-height: 1; color: var(--cls); text-shadow: 0 0 32px color-mix(in srgb, var(--cls) 45%, transparent); }
+  .name { font: 700 52px/0.9 var(--vw-font-display); }
+  .roles { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+  .roles li { padding: 4px 10px; font-size: 14px; font-weight: 700; background: var(--vw-panel); border: 1px solid var(--vw-border); }
+  .desc { margin: 0; font-size: 16px; line-height: 1.5; color: var(--vw-text-soft); flex: 1; }
+  .facts { display: flex; flex-direction: column; gap: 8px; margin: 0; }
+  .facts dt { font-size: 13px; color: var(--vw-text-muted); }
+  .facts dd { margin: 0; font-weight: 800; }
+  .facts small { font-weight: 500; color: var(--vw-text-muted); }
+  .bar { display: inline-block; width: 28px; height: 8px; margin-right: 8px; vertical-align: middle; border: 1px solid var(--vw-border); }
+  .bar--mana { background: var(--vw-mana); }
+  .bar--energy { background: var(--vw-energy); }
+  .plan { font-weight: 800; }
+  .plan small { font-weight: 500; color: var(--vw-text-muted); }
+  @media (max-width: 1100px) { .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 767px) {
+    .page { padding: 16px 16px 48px; }
+    .h1 { font-size: 40px; }
+    .lead { font-size: 17px; margin-bottom: 20px; }
+    .cards { grid-template-columns: 1fr; }
+    .card__link { flex-direction: row; align-items: center; gap: 16px; }
+    .portrait { width: 88px; flex-shrink: 0; box-shadow: none; }
+    .portrait span { font-size: 52px; }
+    .name { font-size: 44px; }
+  }
+</style>
