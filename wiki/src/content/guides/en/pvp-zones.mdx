@@ -1,0 +1,51 @@
+---
+title: PvP zones
+description: "How not to be caught off guard by other players: zone colours, the PvP toggle, red caves, party and guild protection, titles for fighting."
+key: pvp-zones
+order: 4
+updated: 2026-10-08
+tags: [PvP]
+---
+
+<Callout kind="tip" title="In short">
+- In the city nobody can attack you, in regions only if you both agree, in caves anyone can attack anyone.
+- Your party and guild always protect you from each other.
+- When someone chases you in a red zone, run for the exit or to your party.
+</Callout>
+
+## Three colours
+
+<ZoneCards compact />
+
+You see the zone colour on the banner when you enter a map. The zone that counts is the one the target stands in.
+
+## The toggle
+
+In a yellow zone you decide whether you fight players. Switching takes <Stat path="mechanics.config.PvpToggleDelay" format="s" />, and after a fight with a player you cannot turn PvP off for <Stat path="mechanics.config.PvpCombatLock" format="s" />. Only turn it on when you really want to fight.
+
+## Caves
+
+Caves are a red zone: the toggle does nothing and anyone can attack you. In return they give the best EXP and loot for your level. Go in with a party, keep spare potions and watch other players.
+
+## When someone attacks you
+
+- Damage between players is lower than from monsters, so you have a moment to decide.
+- In a yellow zone turn PvP off and walk away; after the lock the toggle works.
+- In a red zone run for the exit or fight back with your party.
+- After you die, nobody can attack you for <Stat path="mechanics.config.RespawnShieldSeconds" format="s" />.
+
+## Party and guild protection
+
+You cannot attack members of your party or guild in any zone, and they cannot attack you. The guild leader can turn guild protection off.
+
+## Duels and titles
+
+If you want to test yourself against someone without risk, challenge them to a duel on the city arena. Duels won and players defeated unlock titles.
+
+<TitleTable kinds={["duelsWon", "pvpKills"]} />
+
+## What next
+
+- <Link to="mechanics" id="pvp">Full PvP rules</Link>
+- <Link to="guides" id="guilds">Guilds</Link>
+- <Link to="regions">Regions and caves</Link>

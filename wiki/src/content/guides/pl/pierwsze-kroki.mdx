@@ -1,0 +1,54 @@
+---
+title: Pierwsze kroki
+description: "Pierwsza godzina w Vaelthorn: sterowanie, pierwsze zadania, gdzie expić do poziomu dziesiątego, punkty i co się dzieje po śmierci."
+key: first-steps
+order: 1
+levels: [1, 10]
+updated: 2026-10-08
+tags: [Start]
+---
+
+<Callout kind="tip" title="W skrócie">
+- Idź za zadaniami głównymi: prowadzą cię przez miasto i pierwszą krainę we właściwej kolejności.
+- Rozdawaj punkty od razu po awansie, głównie w atrybut swojej klasy.
+- Śmierć nic nie zabiera, więc nie bój się próbować.
+</Callout>
+
+## Sterowanie
+
+Ruszasz się klawiszami WASD, kamerę obracasz prawym przyciskiem myszy. Okna gry otwierasz skrótami, a umiejętności siedzą pod cyframi. Na telefonie wszystko masz pod przyciskami na ekranie.
+
+<KeybindTable />
+
+Mikstury pijesz klawiszami <Key action="potion_hp" />, <Key action="potion_mana" /> i <Key action="potion_energy" />. Łup podnosisz <Key action="pickup" />, a z postaciami rozmawiasz <Key action="interact" />.
+
+## Pierwsza godzina
+
+Zaczynasz na rynku. <Npc id="captain" /> daje pierwsze zadanie i od tego momentu wątek główny prowadzi cię sam: wizyta u lekarki, u kowala, wyjście za mury i pierwsze polowanie. Znacznik nad postacią pokazuje, kto ma dla ciebie zadanie, a strzałka na ekranie prowadzi do celu. Dziennik zadań otwierasz <Key action="win_quests" />.
+
+## Gdzie expić
+
+Ta ścieżka pokazuje obszar, który gra poleca na każdy poziom, oraz zadania główne z tego zakresu. Bij potwory blisko swojego poziomu: kolor poziomu nad potworem podpowiada, czy to dobry cel.
+
+<LevelPath from={1} to={10} />
+
+## Punkty po awansie
+
+Każdy awans daje <Stat path="progression.statPointsPerLevel" /> punktów atrybutów. Wojownik wkłada je w Siłę, Łowca w Zręczność, Mag i Kapłan w Intelekt, a trochę Witalności przyda się każdemu. Od poziomu <Stat path="progression.skillPointsFromLevel" /> dostajesz też punkt umiejętności: wydasz go w oknie <Key action="win_skills" />. Swój build możesz wcześniej ułożyć w <Link to="classes">planerze klas</Link>.
+
+## Strefy
+
+Kolor strefy mówi, czy inni gracze mogą cię zaatakować.
+
+<ZoneCards compact />
+
+## Gdy zginiesz
+
+Nic nie tracisz. Po krótkim liczniku wybierasz, czy wstać w mieście, czy w miejscu śmierci, a przez chwilę po odrodzeniu nic cię nie zrani. Szczegóły w temacie <Link to="mechanics" id="death">Śmierć</Link>.
+
+## Co dalej
+
+- <Link to="guides" id="leveling-1-30">Jak expić do poziomu trzydziestego</Link>
+- <Link to="guides" id="upgrading">Ulepszanie bez płaczu</Link>
+- <Link to="quests">Wszystkie zadania</Link>
+- <Link to="mechanics" id="combat">Jak działa walka</Link>

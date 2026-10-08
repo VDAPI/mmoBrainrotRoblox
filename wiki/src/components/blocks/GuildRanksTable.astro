@@ -1,0 +1,32 @@
+---
+// Guild rank permissions (S43): mechanics.guild.ranks (Guild.can for every rank x action).
+import Source from "./Source.astro";
+import type { Lang } from "../../i18n/routes";
+import { load } from "../../lib/data";
+import { name, t, type Key } from "../../lib/i18n";
+const lang = (Astro.params.lang ?? "pl") as Lang;
+const guild = load("mechanics").guild;
+---
+<div class="vw-scroll">
+  <table class="vw-table vw-table--plain vw-table--keep vw-perm">
+    <caption class="vw-sr">{t(lang, "block.guild.ranks")}</caption>
+    <thead><tr><th scope="col">{t(lang, "block.guild.action")}</th>{guild.ranks.map((r) => <th scope="col" style="text-align: center">{name(r.name, lang)}</th>)}</tr></thead>
+    <tbody>
+      {guild.actions.map((a) => (
+        <tr>
+          <th scope="row" class="rowhead">{t(lang, `block.guild.act.${a}` as Key)}</th>
+          {guild.ranks.map((r) => (
+            <td style="text-align: center" class={r.can[a] ? "yes" : "no"}>
+              <span aria-hidden="true">{r.can[a] ? "✓" : "—"}</span><span class="vw-sr">{t(lang, r.can[a] ? "block.yes" : "block.no")}</span>
+            </td>
+          ))}
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
+<Source from="Logic/Guild" />
+<style>
+  .yes { color: var(--vw-success); font-weight: 800; }
+  .no { color: var(--vw-text-muted); }
+</style>

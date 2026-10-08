@@ -89,6 +89,25 @@ export interface AreasFile {
   maps: Record<string, MapFeatures>;
 }
 
+export interface AuctionCategory {
+  id: string;
+  name: Name;
+}
+
+export interface AuctionExample {
+  deposit: number;
+  fee: number;
+  gold: number;
+  payout: number;
+}
+
+export interface AuctionRules {
+  depositPct: number;
+  durations: number[];
+  feePct: number;
+  maxListings: number;
+}
+
 export interface BaseInfo {
   bonusGroup: string;
   classes?: ClassId[];
@@ -325,10 +344,12 @@ export interface Cosmetic {
   color: string;
   color2?: string;
   desc?: Name;
+  flies?: boolean;
   icon: string;
   id: string;
   kind: string;
   name: Name;
+  parts?: string[];
 }
 
 export interface CosmeticKind {
@@ -336,9 +357,16 @@ export interface CosmeticKind {
   name?: Name;
 }
 
+export interface CosmeticTexts {
+  hint: Name;
+  pack: Name;
+  wardrobe: Name;
+}
+
 export interface CosmeticsFile {
   cosmetics: Cosmetic[];
   kinds: CosmeticKind[];
+  texts: CosmeticTexts;
 }
 
 export interface CraftAmount {
@@ -472,6 +500,31 @@ export interface GatherPlacement {
   rect?: number[];
   x?: number;
   z?: number;
+}
+
+export interface GuildInfo {
+  actions: string[];
+  maxLevel: number;
+  memberLimits: number[];
+  ranks: GuildRankInfo[];
+  rules: Record<string, number>;
+  skills: GuildSkillInfo[];
+}
+
+export interface GuildRankInfo {
+  can: Record<string, boolean>;
+  id: string;
+  name: Name;
+}
+
+export interface GuildSkillInfo {
+  costs: number[];
+  desc: Name[];
+  effects: number[];
+  icon: string;
+  id: string;
+  name: Name;
+  stat: string;
 }
 
 export interface IconLayer {
@@ -612,6 +665,12 @@ export interface LootGroup {
   top: ItemChance[];
 }
 
+export interface MailRules {
+  lifetimeDays: number;
+  maxItemsPerParcel: number;
+  maxParcels: number;
+}
+
 export interface MainQuest {
   done?: Name;
   giver: string; // id in npcs.json
@@ -678,6 +737,13 @@ export interface MapsFile {
   maps: MapInfo[];
 }
 
+export interface MarketInfo {
+  auction: AuctionRules;
+  categories: AuctionCategory[];
+  examples: AuctionExample[];
+  mail: MailRules;
+}
+
 export interface MaterialChance {
   chance: number;
   id: string; // id in items.json
@@ -692,8 +758,10 @@ export interface MechanicsFile {
   combat: Json;
   config: Record<string, number>;
   formula: Json;
+  guild: GuildInfo;
   keybinds: KeybindInfo[];
   levelBands: LevelBandInfo[];
+  market: MarketInfo;
   pvp: PvpInfo;
   reduction: ReductionTable;
   variants: Record<string, VariantInfo>;
@@ -803,6 +871,8 @@ export interface NormalizeVector {
 }
 
 export interface Npc {
+  building?: string;
+  buildingName?: Name;
   colors: NpcColors;
   decoration: boolean;
   facing: number;
@@ -832,6 +902,13 @@ export interface NpcSpotInfo {
 export interface NpcsFile {
   npcs: Npc[];
   services: Record<string, Name>;
+}
+
+export interface PassInfo {
+  desc: Name;
+  icon: string;
+  key: string;
+  name: Name;
 }
 
 export interface PityLine {
@@ -873,6 +950,20 @@ export interface PortalInfo {
 
 export interface PortalsFile {
   portals: PortalInfo[];
+}
+
+export interface PremiumFile {
+  passes: PassInfo[];
+  shop: PremiumService[];
+}
+
+export interface PremiumService {
+  dailyLimit?: number;
+  desc?: Name;
+  item?: string; // id in items.json
+  key: string;
+  kind: string;
+  name: Name;
 }
 
 export interface ProgressionFile {
@@ -1378,6 +1469,7 @@ export interface Files {
   monsters: MonstersFile;
   npcs: NpcsFile;
   portals: PortalsFile;
+  premium: PremiumFile;
   progression: ProgressionFile;
   quests: QuestsFile;
   rarities: RaritiesFile;

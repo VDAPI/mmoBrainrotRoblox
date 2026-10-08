@@ -6,9 +6,11 @@ import { load } from "./data";
 import { name, t } from "./i18n";
 import { isReady } from "./sections";
 import { href } from "../i18n/routes";
+import { contentEntries } from "./content";
+import { npcHref } from "./links";
 
 export interface PaletteEntry {
-  t: string; // type: item, monster, boss, map, area, cave, npc, quest, skill, class
+  t: string; // type: item, monster, boss, map, area, cave, npc, quest, skill, class, guide, mechanic (S43)
   id: string;
   n: string; // name
   h: string | null; // link or null (section not ready)
@@ -35,13 +37,31 @@ export function entityHref(lang: Lang, type: string, id: string, map?: string, c
       return isReady("classes") && cls ? `${href(lang, "classes", cls)}?s=${id}#s-${id}` : null;
     case "class":
       return isReady("classes") ? href(lang, "classes", id) : null;
+    case "npc":
+      return npcHref(lang, id);
     default:
       return null;
   }
 }
 
+/** S43: written articles (guides and mechanics topics of the language) for the palette. */
+function articleEntries(lang: Lang): PaletteEntry[] {
+  const out: PaletteEntry[] = [];
+  for (const [collection, type] of [["guides", "guide"], ["mechanics", "mechanic"]] as const) {
+    if (!isReady(collection)) continue;
+    for (const e of contentEntries(collection).filter((x) => x.lang === lang)) {
+      out.push({ t: type, id: e.key, n: e.title, h: href(lang, collection, e.slug), m: e.levels ? t(lang, "levelRange", { min: e.levels[0], max: e.levels[1] }) : "" });
+    }
+  }
+  return out;
+}
+
 export function paletteEntries(lang: Lang): PaletteEntry[] {
   const raritiesByKey = new Map<string, Rarity>(load("rarities").rarities.map((r) => [r.key, r]));
+  return [...articleEntries(lang), ...paletteData(lang, raritiesByKey)];
+}
+
+function paletteData(lang: Lang, raritiesByKey: Map<string, Rarity>): PaletteEntry[] {
   return load("search").entries.map((e) => {
     const parts: string[] = [];
     if (e.rarity && raritiesByKey.has(e.rarity)) parts.push(name(raritiesByKey.get(e.rarity)!.name, lang));

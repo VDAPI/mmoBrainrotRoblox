@@ -9,7 +9,9 @@ import BossView from "./BossView.astro";
 import ClassesSection from "./ClassesSection.astro";
 import CraftingView from "./CraftingView.astro";
 import ItemsSection from "./ItemsSection.astro";
+import GuidesSection from "./GuidesSection.astro";
 import MechanicsSection from "./MechanicsSection.astro";
+import UpdatesView from "./UpdatesView.astro";
 import QuestsSection from "./QuestsSection.astro";
 import UpgradeView from "./UpgradeView.astro";
 import ComingSoon from "./ComingSoon.astro";
@@ -89,6 +91,17 @@ export const REGISTRY: PageEntry[] = [
         .map((e) => ({ ids: [e.slug], props: { page: "topic", slug: e.slug } })),
     ],
   },
+  {
+    key: "guides",
+    view: GuidesSection,
+    getPaths: (lang) => [
+      { ids: [] },
+      ...contentEntries("guides")
+        .filter((e) => e.lang === lang)
+        .map((e) => ({ ids: [e.slug], props: { page: "guide", slug: e.slug } })),
+    ],
+  },
+  { key: "updates", view: UpdatesView, getPaths: () => [{ ids: [] }] },
   ...SECTIONS.filter((s) => !s.ready).map(
     (s): PageEntry => ({ key: s.id, view: ComingSoon, getPaths: () => [{ ids: [], props: { section: s.id } }] }),
   ),

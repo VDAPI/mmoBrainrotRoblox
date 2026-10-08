@@ -1,13 +1,13 @@
 {
   "cosmetics": [
-    {"color":"#3E5B33","color2":"#6B4E2E","icon":"♣","id":"outfit_ranger","kind":"outfit","name":{"en":"Ranger's Garb","pl":"Strój Tropiciela"}},
-    {"color":"#D8D2C0","color2":"#C9A45C","icon":"✚","id":"outfit_paladin","kind":"outfit","name":{"en":"Paladin's Tabard","pl":"Tabard Paladyna"}},
-    {"color":"#1E1E26","color2":"#5A2A7A","icon":"☾","id":"outfit_shadow","kind":"outfit","name":{"en":"Shadow Cloak","pl":"Płaszcz Cienia"}},
-    {"color":"#6B1F2A","color2":"#E8C25A","icon":"♛","id":"outfit_royal","kind":"outfit","name":{"en":"Royal Regalia","pl":"Królewskie Regalia"}},
-    {"color":"#BFE3F2","color2":"#4A8FE7","icon":"❄","id":"outfit_frost","kind":"outfit","name":{"en":"Frostguard Plate","pl":"Zbroja Mroźnej Straży"}},
-    {"color":"#7A2A12","color2":"#FF8A2A","icon":"♨","id":"outfit_ember","kind":"outfit","name":{"en":"Ember Raiment","pl":"Szaty Żaru"}},
-    {"color":"#5E7A3A","color2":"#A88A5A","icon":"❦","id":"outfit_druid","kind":"outfit","name":{"en":"Druid's Mantle","pl":"Płaszcz Druida"}},
-    {"color":"#F4EFE0","color2":"#FFD86A","icon":"✧","id":"outfit_saint","kind":"outfit","name":{"en":"Saint's Vestments","pl":"Szaty Świętego"}},
+    {"color":"#3E5B33","color2":"#6B4E2E","icon":"♣","id":"outfit_ranger","kind":"outfit","name":{"en":"Ranger's Garb","pl":"Strój Tropiciela"},"parts":["hood","cape"]},
+    {"color":"#D8D2C0","color2":"#C9A45C","icon":"✚","id":"outfit_paladin","kind":"outfit","name":{"en":"Paladin's Tabard","pl":"Tabard Paladyna"},"parts":["pauldrons","cape"]},
+    {"color":"#1E1E26","color2":"#5A2A7A","icon":"☾","id":"outfit_shadow","kind":"outfit","name":{"en":"Shadow Cloak","pl":"Płaszcz Cienia"},"parts":["hood","mask"]},
+    {"color":"#6B1F2A","color2":"#E8C25A","icon":"♛","id":"outfit_royal","kind":"outfit","name":{"en":"Royal Regalia","pl":"Królewskie Regalia"},"parts":["crown","cape"]},
+    {"color":"#BFE3F2","color2":"#4A8FE7","icon":"❄","id":"outfit_frost","kind":"outfit","name":{"en":"Frostguard Plate","pl":"Zbroja Mroźnej Straży"},"parts":["pauldrons","crown"]},
+    {"color":"#7A2A12","color2":"#FF8A2A","icon":"♨","id":"outfit_ember","kind":"outfit","name":{"en":"Ember Raiment","pl":"Szaty Żaru"},"parts":["horns","cape"]},
+    {"color":"#5E7A3A","color2":"#A88A5A","icon":"❦","id":"outfit_druid","kind":"outfit","name":{"en":"Druid's Mantle","pl":"Płaszcz Druida"},"parts":["horns","hood"]},
+    {"color":"#F4EFE0","color2":"#FFD86A","icon":"✧","id":"outfit_saint","kind":"outfit","name":{"en":"Saint's Vestments","pl":"Szaty Świętego"},"parts":["halo","cape"]},
     {"color":"#FFD86A","icon":"✺","id":"aura_gold","kind":"aura","name":{"en":"Golden Aura","pl":"Złota Aura"}},
     {"color":"#9ED8FF","icon":"❄","id":"aura_frost","kind":"aura","name":{"en":"Frost Aura","pl":"Mroźna Aura"}},
     {"color":"#7A3AB0","icon":"☾","id":"aura_shadow","kind":"aura","name":{"en":"Shadow Aura","pl":"Aura Cienia"}},
@@ -17,12 +17,12 @@
     {"color":"#FF7A2A","icon":"♨","id":"weapon_flame","kind":"weapon","name":{"en":"Flaming Weapon","pl":"Płonąca Broń"}},
     {"color":"#8FD8FF","icon":"❄","id":"weapon_frost","kind":"weapon","name":{"en":"Frozen Weapon","pl":"Zamarznięta Broń"}},
     {"color":"#FFF2B0","icon":"✧","id":"weapon_holy","kind":"weapon","name":{"en":"Holy Weapon","pl":"Święta Broń"}},
-    {"color":"#D9752E","color2":"#F4EFE0","icon":"🦊","id":"pet_fox","kind":"pet","name":{"en":"Fox","pl":"Lisek"}},
-    {"color":"#8A6A4A","color2":"#E8D8B0","icon":"🦉","id":"pet_owl","kind":"pet","name":{"en":"Owl","pl":"Sowa"}},
-    {"color":"#3E8A4A","color2":"#E8C25A","icon":"🐉","id":"pet_dragon","kind":"pet","name":{"en":"Little Dragon","pl":"Smoczek"}},
-    {"color":"#9ED8FF","color2":"#FFFFFF","icon":"✦","id":"pet_wisp","kind":"pet","name":{"en":"Crystal Wisp","pl":"Kryształowy Duszek"}},
-    {"color":"#4A4A52","color2":"#E8E4DA","icon":"🐈","id":"pet_cat","kind":"pet","name":{"en":"Cat","pl":"Kotek"}},
-    {"color":"#5EA83A","color2":"#E8D85A","icon":"🐸","id":"pet_frog","kind":"pet","name":{"en":"Frog","pl":"Żaba"}}
+    {"color":"#D9752E","color2":"#F4EFE0","flies":false,"icon":"🦊","id":"pet_fox","kind":"pet","name":{"en":"Fox","pl":"Lisek"}},
+    {"color":"#8A6A4A","color2":"#E8D8B0","flies":true,"icon":"🦉","id":"pet_owl","kind":"pet","name":{"en":"Owl","pl":"Sowa"}},
+    {"color":"#3E8A4A","color2":"#E8C25A","flies":true,"icon":"🐉","id":"pet_dragon","kind":"pet","name":{"en":"Little Dragon","pl":"Smoczek"}},
+    {"color":"#9ED8FF","color2":"#FFFFFF","flies":true,"icon":"✦","id":"pet_wisp","kind":"pet","name":{"en":"Crystal Wisp","pl":"Kryształowy Duszek"}},
+    {"color":"#4A4A52","color2":"#E8E4DA","flies":false,"icon":"🐈","id":"pet_cat","kind":"pet","name":{"en":"Cat","pl":"Kotek"}},
+    {"color":"#5EA83A","color2":"#E8D85A","flies":false,"icon":"🐸","id":"pet_frog","kind":"pet","name":{"en":"Frog","pl":"Żaba"}}
   ],
   "kinds": [
     {"id":"outfit","name":{"en":"Outfits","pl":"Stroje"}},
@@ -30,5 +30,10 @@
     {"id":"trail","name":{"en":"Trails","pl":"Ślady"}},
     {"id":"weapon","name":{"en":"Weapon effects","pl":"Efekty broni"}},
     {"id":"pet","name":{"en":"Pets","pl":"Pety"}}
-  ]
+  ],
+  "texts": {
+    "hint": {"en":"Click an item to try it on. Looks only — no stats.","pl":"Kliknij przedmiot, by go przymierzyć. Tylko wygląd — bez statystyk."},
+    "pack": {"en":"For cosmetics, pets, scrolls and services. Never for power.","pl":"Na kosmetyki, pety, zwoje i usługi. Nigdy na siłę postaci."},
+    "wardrobe": {"en":"Outfits, auras, trails, weapon effects and pets.","pl":"Stroje, aury, ślady, efekty broni i pety."}
+  }
 }

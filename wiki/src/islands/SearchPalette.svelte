@@ -49,6 +49,8 @@
     skill: "var(--vw-exp)",
     class: "var(--vw-exp)",
     npc: "var(--vw-text-soft)",
+    guide: "var(--vw-gold)",
+    mechanic: "var(--vw-gold)",
   };
 
   async function show() {

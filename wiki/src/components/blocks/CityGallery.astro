@@ -1,0 +1,42 @@
+---
+// City previews (S43): images of the town plan tool (npm run images:city). `names` picks images; `hero` = one big image
+// loaded eagerly (the top of the city topic).
+import type { Lang } from "../../i18n/routes";
+import { cityImage } from "../../lib/city";
+import { t, type Key } from "../../lib/i18n";
+interface Props {
+  names?: string[];
+  hero?: string;
+}
+const { names = ["zamek", "mlyn", "okolica", "farma", "aerial"], hero } = Astro.props;
+const lang = (Astro.params.lang ?? "pl") as Lang;
+const big = hero ? cityImage(hero) : null;
+const list = names.map((n) => cityImage(n)).filter((x) => x !== null);
+const alt = (n: string) => t(lang, `city.img.${n}` as Key);
+---
+{big ? (
+  <figure class="vw-cityhero">
+    <img src={big.src} srcset={big.srcset} sizes="(max-width: 1023px) 100vw, 920px" width={big.width} height={big.height} alt={alt(big.name)} loading="eager" fetchpriority="high" decoding="async" />
+    <figcaption class="vw-label">{alt(big.name)} · {t(lang, "city.caption")}</figcaption>
+  </figure>
+) : (
+  <div class="vw-citygrid">
+    {list.map((img) => (
+      <figure>
+        <img src={img.src} srcset={img.srcset} sizes="(max-width: 767px) 100vw, 450px" width={img.width} height={img.height} alt={alt(img.name)} loading="lazy" decoding="async" />
+        <figcaption>{alt(img.name)}</figcaption>
+      </figure>
+    ))}
+    <p class="vw-label note">{t(lang, "city.caption")}</p>
+  </div>
+)}
+<style>
+  .vw-cityhero { margin: 0; }
+  .vw-cityhero img, .vw-citygrid img { display: block; width: 100%; height: auto; border: 1px solid var(--vw-border); }
+  .vw-cityhero figcaption { margin-top: 8px; color: var(--vw-text-muted); }
+  .vw-citygrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+  .vw-citygrid figure { margin: 0; }
+  .vw-citygrid figcaption { margin-top: 6px; font-size: 15px; font-weight: 700; }
+  .note { grid-column: 1 / -1; margin: 0; color: var(--vw-text-muted); }
+  @media (max-width: 767px) { .vw-citygrid { grid-template-columns: 1fr; } }
+</style>

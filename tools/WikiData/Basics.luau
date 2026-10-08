@@ -19,6 +19,10 @@ local LevelBand = require("../../src/shared/Logic/LevelBand")
 local Maps = require("../../src/shared/Data/Maps")
 local PvpRules = require("../../src/shared/Logic/PvpRules")
 local Fish = require("../../src/shared/Data/Fish")
+local Guild = require("../../src/shared/Logic/Guild")
+local GuildSkills = require("../../src/shared/Data/GuildSkills")
+local Auction = require("../../src/shared/Logic/Auction")
+local Market = require("../../src/shared/Data/Market")
 local GatherNodes = require("../../src/shared/Data/GatherNodes")
 local Places = require("./Places")
 local Items = require("../../src/shared/Data/Items")
@@ -55,6 +59,7 @@ Basics.CONFIG_KEYS = {
 	"DuelInviteSeconds",
 	"TradeRange",
 	"TradeConfirmDelay",
+	"TradeInviteSeconds",
 	"LootLifetime",
 	"PotionCooldown",
 	"DefaultCapacity",
@@ -223,6 +228,34 @@ S.file(
 			})),
 			toggleMatters = map("bool"),
 		}),
+		-- S43
+		guild = rec("GuildInfo", {
+			skills = arr(rec("GuildSkillInfo", {
+				id = "string",
+				icon = "string",
+				stat = "string",
+				name = "name",
+				costs = arr("int"),
+				effects = arr("number"),
+				desc = arr("name"),
+			})),
+			maxLevel = "int",
+			rules = map("number"),
+			memberLimits = arr("int"),
+			ranks = arr(rec("GuildRankInfo", { id = "string", name = "name", can = map("bool") })),
+			actions = arr("string"),
+		}),
+		market = rec("MarketInfo", {
+			auction = rec("AuctionRules", {
+				depositPct = "number",
+				feePct = "number",
+				durations = arr("int"),
+				maxListings = "int",
+			}),
+			mail = rec("MailRules", { lifetimeDays = "int", maxParcels = "int", maxItemsPerParcel = "int" }),
+			categories = arr(rec("AuctionCategory", { id = "string", name = "name" })),
+			examples = arr(rec("AuctionExample", { gold = "int", deposit = "int", fee = "int", payout = "int" })),
+		}),
 	})
 )
 
@@ -268,8 +301,12 @@ S.file(
 			icon = "string",
 			color = "color",
 			["color2?"] = "color",
+			["parts?"] = arr("string"), -- S43: outfit accessories
+			["flies?"] = "bool", -- S43: pets
 		})),
 		kinds = arr(rec("CosmeticKind", { id = "string", ["name?"] = "name" })),
+		-- S43: wardrobe and shop texts of the game
+		texts = rec("CosmeticTexts", { hint = "name", pack = "name", wardrobe = "name" }),
 	})
 )
 
@@ -628,6 +665,93 @@ function Basics.mechanics(ctx: any): any
 		levelBands = Basics.levelBands(),
 		reduction = Basics.reduction(),
 		pvp = Basics.pvp(),
+		guild = Basics.guild(),
+		market = Basics.market(),
+	}
+end
+
+Basics.GUILD_ACTIONS = { "deposit", "invite", "kick", "motd", "upgrade", "promote", "settings", "transfer", "disband" }
+
+-- Guild skills with their effect and cost on every level, rules, member limits and rank permissions (S43).
+function Basics.guild(): any
+	local skills = {}
+	for _, def in GuildSkills.list do
+		local effects, desc = {}, {}
+		for n = 1, GuildSkills.MAX_LEVEL do
+			local value = Guild.skillEffect(def.id, n)
+			table.insert(effects, value)
+			table.insert(desc, Names.of(def.descKey, { value = value }))
+		end
+		table.insert(skills, {
+			id = def.id,
+			icon = def.icon,
+			stat = def.stat,
+			name = Names.of(def.nameKey),
+			costs = table.clone(def.costs),
+			effects = effects,
+			desc = desc,
+		})
+	end
+	local rules = {}
+	for key, value in GuildSkills.Rules :: any do
+		if key ~= "maxDeposit" then
+			rules[key] = value
+		end
+	end
+	local limits = {}
+	for n = 0, GuildSkills.MAX_LEVEL do
+		table.insert(limits, Guild.memberLimit({ expansion = n }))
+	end
+	local ranks = {}
+	for _, rank in Guild.RANKS do
+		local can = {}
+		for _, action in Basics.GUILD_ACTIONS do
+			can[action] = Guild.can(rank, action :: any)
+		end
+		table.insert(ranks, { id = rank, name = Names.of(`guild.rank.{rank}`), can = can })
+	end
+	return {
+		skills = skills,
+		maxLevel = GuildSkills.MAX_LEVEL,
+		rules = rules,
+		memberLimits = limits,
+		ranks = ranks,
+		actions = table.clone(Basics.GUILD_ACTIONS),
+	}
+end
+
+Basics.AUCTION_EXAMPLES = { 1000, 100000 }
+
+-- Auction house and mail rules, categories and two payout examples (S43).
+function Basics.market(): any
+	local categories = {}
+	for _, c in Market.categories do
+		table.insert(categories, { id = c.id, name = Names.of(c.nameKey) })
+	end
+	local examples = {}
+	for _, price in Basics.AUCTION_EXAMPLES do
+		local deposit = Auction.deposit(price)
+		table.insert(examples, {
+			gold = price,
+			deposit = deposit,
+			fee = Auction.fee(price),
+			payout = Auction.payout(price, deposit),
+		})
+	end
+	return {
+		auction = {
+			depositPct = Market.Auction.depositPct,
+			feePct = Market.Auction.feePct,
+			durations = table.clone(Market.Auction.durations),
+			maxListings = Market.Auction.maxListings,
+		},
+		mail = {
+			lifetimeDays = Market.Mail.lifetimeDays,
+			maxParcels = Market.Mail.maxParcels,
+			maxItemsPerParcel = Market.Mail.maxItemsPerParcel,
+		},
+		categories = categories,
+		examples = examples,
 	}
 end
 
@@ -771,6 +895,8 @@ function Basics.cosmetics(ctx: any): any
 				icon = c.icon,
 				color = c.color,
 				color2 = c.color2,
+				parts = if c.parts then Clean.clean(c.parts) else nil,
+				flies = if c.kind == "pet" then c.flies == true else nil,
 			})
 		end
 	end
@@ -778,7 +904,15 @@ function Basics.cosmetics(ctx: any): any
 	for _, kind in Cosmetics.kinds do
 		table.insert(kinds, { id = kind, name = Names.opt(`wardrobe.kind.{kind}`) })
 	end
-	return { cosmetics = list, kinds = kinds }
+	return {
+		cosmetics = list,
+		kinds = kinds,
+		texts = {
+			hint = Names.of("wardrobe.hint"),
+			pack = Names.of("premium.pack.desc"),
+			wardrobe = Names.of("premium.wardrobe.desc"),
+		},
+	}
 end
 
 function Basics.fish(_ctx: any): any

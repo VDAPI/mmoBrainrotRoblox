@@ -22,6 +22,7 @@ local Leak = require("@self/Leak")
 local Monsters = require("@self/Monsters")
 local Names = require("@self/Names")
 local Places = require("@self/Places")
+local Premium = require("@self/Premium")
 local Quests = require("@self/Quests")
 local Schema = require("@self/Schema")
 local Search = require("@self/Search")
@@ -102,6 +103,7 @@ local ORDER: { { name: string, fn: (ctx: any) -> any } } = {
 	{ name = "icons", fn = Items.icons },
 	{ name = "search", fn = Search.build },
 	{ name = "mapsearch", fn = Places.mapsearch },
+	{ name = "premium", fn = Premium.build },
 }
 
 -- Files a file needs built first (for opts.only).

@@ -1,0 +1,51 @@
+---
+// Updates (S43, /pl/aktualizacje/): the update notes of src/content/updates, newest first, each with its anchor
+// #<slug> (target of Callout `update`) and its text under the heading; the home page reads the same collection.
+import { getCollection, render } from "astro:content";
+import Base from "../layouts/Base.astro";
+import Crumbs from "../components/Crumbs.astro";
+import { mdxComponents } from "../components/mdx";
+import { href, type Lang } from "../i18n/routes";
+import { formatDate } from "../lib/format";
+import { t } from "../lib/i18n";
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const notes = (await getCollection("updates"))
+  .filter((u) => u.id.startsWith(`${lang}/`))
+  .sort((a, b) => b.data.date.getTime() - a.data.date.getTime() || (a.id < b.id ? 1 : -1));
+const rendered = await Promise.all(notes.map(async (u) => ({ u, slug: u.id.slice(lang.length + 1), Content: (await render(u)).Content })));
+---
+<Base lang={lang} title={t(lang, "updates.title")} description={t(lang, "updates.lead")} section="updates">
+  <div class="vw-article">
+    <Crumbs items={[{ label: t(lang, "crumbs.wiki"), href: href(lang, "home") }, { label: t(lang, "updates.title") }]} />
+    <p class="vw-label vw-article__kicker kicker">{t(lang, "updates.kicker")}</p>
+    <h1 class="vw-article__title">{t(lang, "updates.title")}</h1>
+    <p class="vw-article__lead">{t(lang, "updates.lead")}</p>
+    <ol class="notes">
+      {rendered.map(({ u, slug, Content }) => (
+        <li id={slug} class="note">
+          <time class="date" datetime={u.data.date.toISOString().slice(0, 10)}>{formatDate(u.data.date.toISOString(), lang)}</time>
+          <div class="body">
+            <h2 class="title">{u.data.title}</h2>
+            <p class="sum">{u.data.summary}</p>
+            <div class="vw-prose text"><Content components={mdxComponents} /></div>
+          </div>
+        </li>
+      ))}
+    </ol>
+  </div>
+</Base>
+<style>
+  .kicker { margin-top: 24px; }
+  .notes { margin: 40px 0 0; padding: 0; list-style: none; max-width: 980px; }
+  .note { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 24px; padding: 24px 0; border-top: 1px solid var(--vw-border-subtle); scroll-margin-top: 96px; }
+  .note:target .title { color: var(--vw-gold-bright); }
+  .date { font: 800 13px/1.6 var(--vw-font-ui); letter-spacing: .1em; color: var(--vw-gold); }
+  .title { margin: 0; font: 800 22px/1.2 var(--vw-font-ui); color: var(--vw-text); }
+  .sum { margin: 6px 0 0; font-size: 15px; color: var(--vw-text-muted); }
+  .text { margin-top: 12px; font-size: 17px; }
+  .text :global(p) { margin: 0 0 10px; }
+  @media (max-width: 767px) { .note { grid-template-columns: 1fr; gap: 6px; padding: 18px 0; } .title { font-size: 19px; } }
+</style>

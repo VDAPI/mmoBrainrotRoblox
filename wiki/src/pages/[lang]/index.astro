@@ -59,6 +59,7 @@ const updates = (await getCollection("updates"))
   .sort((a, b) => b.data.date.getTime() - a.data.date.getTime() || (a.id < b.id ? -1 : 1))
   .slice(0, 4);
 
+const updatesHref = sectionHref(lang, "updates");
 const mapList = load("maps").maps;
 const zones = load("mechanics").zones;
 const city = mapList.find((m) => m.kind === "city");
@@ -172,7 +173,7 @@ const dataDate = formatDate(meta().dataDate, lang);
           {updates.map((u) => (
             <li>
               <span class="date">{formatDate(u.data.date.toISOString(), lang, true)}</span>
-              <span><span class="change-title">{u.data.title}</span><span class="change-sum">{u.data.summary}</span></span>
+              <span>{updatesHref ? <a class="change-title" href={`${updatesHref}#${u.id.slice(lang.length + 1)}`}>{u.data.title}</a> : <span class="change-title">{u.data.title}</span>}<span class="change-sum">{u.data.summary}</span></span>
             </li>
           ))}
         </ol>
@@ -248,7 +249,7 @@ const dataDate = formatDate(meta().dataDate, lang);
   .change-list li { display: grid; grid-template-columns: 44px 1fr; gap: 16px; padding: 16px; border-bottom: 1px solid var(--vw-border-subtle); }
   .change-list li:last-child { border-bottom: 0; }
   .date { font: 800 13px/1.6 var(--vw-font-ui); color: var(--vw-gold-bright); }
-  .change-title { display: block; font: 800 18px/1.3 var(--vw-font-ui); }
+  .change-title { display: block; font: 800 18px/1.3 var(--vw-font-ui); color: var(--vw-text); }
   .change-sum { display: block; font-size: 15px; color: var(--vw-text-muted); }
   .zones { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
   .zone-card { padding: 20px; background: var(--vw-panel); border: 1px solid var(--vw-border); border-top: 2px solid var(--c); display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }

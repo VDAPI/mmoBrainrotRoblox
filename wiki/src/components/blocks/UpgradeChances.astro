@@ -1,0 +1,49 @@
+---
+// Upgrade chances (S43, guides): every step +1…+max with its chance, where a failure drops you, where it drops you with
+// the protection scroll, and the average number of attempts from +0 without and with protection (src/lib/upgrade.ts,
+// the same Markov chain as the calculator, on upgrade.json).
+import Source from "./Source.astro";
+import type { Lang } from "../../i18n/routes";
+import { load } from "../../lib/data";
+import { formatChance, formatNumber } from "../../lib/format";
+import { t } from "../../lib/i18n";
+import { expected } from "../../lib/upgrade";
+const lang = (Astro.params.lang ?? "pl") as Lang;
+const upgrade = load("upgrade");
+const costs = upgrade.costs[String(upgrade.tiers[0])].common;
+const rows = upgrade.steps.map((s) => ({
+  ...s,
+  plain: expected(upgrade.steps, costs, 0, s.to, null).attempts,
+  prot: expected(upgrade.steps, costs, 0, s.to, 1).scrolls,
+  protAttempts: expected(upgrade.steps, costs, 0, s.to, 1).attempts,
+}));
+const fmt = (v: number) => formatNumber(Math.round(v * 10) / 10, lang);
+---
+<div class="vw-scroll">
+  <table class="vw-table vw-table--plain vw-table--keep">
+    <caption class="vw-sr">{t(lang, "block.up.caption")}</caption>
+    <thead>
+      <tr>
+        <th scope="col">{t(lang, "block.up.step")}</th>
+        <th scope="col" style="text-align: right">{t(lang, "block.up.chance")}</th>
+        <th scope="col">{t(lang, "block.up.fail")}</th>
+        <th scope="col">{t(lang, "block.up.failProt")}</th>
+        <th scope="col" style="text-align: right">{t(lang, "block.up.tries")}</th>
+        <th scope="col" style="text-align: right">{t(lang, "block.up.triesProt")}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {rows.map((r) => (
+        <tr>
+          <th scope="row" class="rowhead">+{r.to - 1} → +{r.to}</th>
+          <td style="text-align: right" class="gold">{formatChance(r.chance, lang)}</td>
+          <td>{r.failTo === undefined ? "—" : r.failTo === r.to - 1 ? t(lang, "block.up.stay") : `+${r.failTo}`}</td>
+          <td>{r.failTo === undefined ? "—" : r.protectedTo === r.to - 1 ? t(lang, "block.up.stay") : `+${r.protectedTo}`}</td>
+          <td style="text-align: right">{fmt(r.plain)}</td>
+          <td style="text-align: right">{fmt(r.protAttempts)}</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
+<Source from="Logic/Upgrade" />

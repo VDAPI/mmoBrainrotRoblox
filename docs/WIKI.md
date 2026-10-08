@@ -128,7 +128,7 @@ przełomy umiejętności, `Combat`, `Stats.Formula`) jako `data` (typ `Json`).
 | `bosses.json` | `bosses`: Boss[], `countdown`: number, `dailyRuns`: number, `entryRange`: number, `releaseAfter`: number | `Data/Bosses`, `LootTables.bosses`; `MonsterStats.compute(kind, poziom, "boss")` z `BossScaling.hpMultiplier`; ataki jak zdolność Elity II (`Damage.computeDamage` + `StubRng`); łup: Monte Carlo `Loot.rollBossLoot`; rzut osobisty `Loot.bossChances`; od S39 `attacks[].name` (`boss.<id>.attack.<atak>`) i `scriptConsts` (stałe `local NAZWA = liczba` ze skryptu `src/server/Entities/BossScripts/<id>.luau` czytanego jako tekst) |
 | `caves.json` | `caves`: Cave[] | `Data/Areas` (`caves.list`, `entranceOf`, `arrivalOf`), sumy z `Data/Spawns` |
 | `classes.json` | `classes`: ClassInfo[] | `Data/Classes`, `Items.startingGear` |
-| `cosmetics.json` | `cosmetics`: Cosmetic[], `kinds`: CosmeticKind[] | `Data/Cosmetics` (bez ceny) |
+| `cosmetics.json` | `cosmetics`: Cosmetic[], `kinds`: CosmeticKind[], `texts` (S43) | `Data/Cosmetics` (bez ceny); od S43 `parts`, `flies`, teksty `wardrobe.hint`, `premium.pack.desc`, `premium.wardrobe.desc` |
 | `crafting.json` | `dismantle`: Record<string, CraftRange[]>, `refund`: UpgradeRefund[], `rows`: CraftRow[] | `Data/Crafting` (wiersze o tym samym poziomie, złocie i materiałach), `Dismantle.preview`, `Dismantle.upgradeRefund` |
 | `elements.json` | `default`: ElementId, `elements`: Element[] | `Data/Elements` |
 | `fish.json` | `chest`: FishChest, `spots`: FishSpot[] | `Data/Fish`; od S40 ryba ma `zone` i `speed` (trudność minigry) |
@@ -137,11 +137,12 @@ przełomy umiejętności, `Combat`, `Stats.Formula`) jako `data` (typ `Json`).
 | `items.json` | `bases`: Record<string, BaseInfo>, `categories`: Record<string, CategoryInfo>, `items`: Item[], `slots`: Record<string, SlotInfo> | `Data/Items`; nazwa `ItemName.get`; rzadkości przez `ItemRoll.rollItem`; statystyki `ItemRoll.itemStats` (+0…+9); wartość `ItemValue.value`; źródła z Monte Carlo potworów i bossów, sklepów, kowala, alchemii, nagród, łowiska, zbieractwa, rozbijania; `usedFor` z `Upgrade.cost`, `Crafting`, `Recipes` |
 | `maps.json` | `maps`: MapInfo[] | `Data/Maps` (bez oświetlenia i muzyki); od S37 `route` = `MapRoute.path("city", id)` |
 | `mapsearch.json` | `limit`: number, `pl`/`en`: MapSearchEntry[], `vectors`: MapSearchVector[] | S37: `MapSearch.build(Locale.T w języku)` (rodzaj, id, mapa, x, z, teksty), wektory `MapSearch.search` (zapytanie → `rodzaj:id` w kolejności) |
-| `mechanics.json` | `areaProfiles`: Record<string, AreaProfileInfo>, `bossDailyRuns`: number, `combat`: Json, `config`: Record<string, number>, `formula`: Json, `variants`: Record<string, VariantInfo>, `zones`: Record<string, ZoneInfo>; od S42 `keybinds`, `levelBands`, `reduction`, `pvp` | `Data/Combat`, `Stats.Formula`, jawna lista kluczy `Config`, strefy (`zone.*`, `pvp.rules.*`, kolory z `UI/Theme.luau` jako tekst), warianty, profile expowisk `Data/AreaProfiles` (S33); S42: `Data/Keybinds` + `Keybinds.label` (nazwy bez „ (C)”), `LevelBand.of` (d = −15…+10 w przedziały) i `COLORS`, `Damage.reduction` (obrona 50…1600 × poziom 10…100), macierz `PvpRules.canAttack` (strefa × relacja obcy/grupa/gildia/gildia bez ochrony × PvP własne × PvP celu) + `toggleMatters` |
+| `mechanics.json` | `areaProfiles`: Record<string, AreaProfileInfo>, `bossDailyRuns`: number, `combat`: Json, `config`: Record<string, number>, `formula`: Json, `variants`: Record<string, VariantInfo>, `zones`: Record<string, ZoneInfo>; od S42 `keybinds`, `levelBands`, `reduction`, `pvp`; od S43 `guild` (umiejętności z efektem `Guild.skillEffect` i kosztem na każdym poziomie, `Rules` bez `maxDeposit`, limity `Guild.memberLimit`, uprawnienia `Guild.can` rang × akcji), `market` (`Market.Auction`/`Mail`, kategorie, przykłady `Auction.deposit/fee/payout` dla 1 000 i 100 000 złota pod kluczem `gold`), `config.TradeInviteSeconds` | `Data/Combat`, `Stats.Formula`, jawna lista kluczy `Config`, strefy (`zone.*`, `pvp.rules.*`, kolory z `UI/Theme.luau` jako tekst), warianty, profile expowisk `Data/AreaProfiles` (S33); S42: `Data/Keybinds` + `Keybinds.label` (nazwy bez „ (C)”), `LevelBand.of` (d = −15…+10 w przedziały) i `COLORS`, `Damage.reduction` (obrona 50…1600 × poziom 10…100), macierz `PvpRules.canAttack` (strefa × relacja obcy/grupa/gildia/gildia bez ochrony × PvP własne × PvP celu) + `toggleMatters` |
 | `meta.json` | `counts`: Record<string, number>, `dataCommit`: string, `dataDate`: string, `dataHash`: string, `features`: Record<string, boolean>, `rolls`: number, `schemaVersion`: number | wersja schematu, commit i data danych (`git log -1 -- src/shared tools/WikiData`), `dataHash` (odcisk plików), funkcje gry, liczności, liczba rzutów |
 | `monsters.json` | `monsters`: Monster[] | `Data/Monsters`, `Data/Spawns`; `MonsterStats.compute`, `Damage.computeDamage` + `StubRng` (min–max), `Exp.monsterExp` i `MonsterStats.gold` × `kindReward`; łup: `Rarities`, `LootTables`, Monte Carlo `Loot.rollMonsterLoot`; `family` = `MonsterLooks.get(id, region).plan`; od S39 `ability.name` (`ability.<id>.name`) |
-| `npcs.json` | `npcs`: Npc[], `services`: Record<string, Name> | `Data/Npcs`; od S37 `role` (`npc.<id>.role`) i nazwy usług (`npc.service.<id>`) |
+| `npcs.json` | `npcs`: Npc[], `services`: Record<string, Name> | `Data/Npcs`; od S37 `role` (`npc.<id>.role`) i nazwy usług (`npc.service.<id>`); od S43 `building` (`Town.npcSpot(id).at`) i `buildingName` (`town.sign.<at>`, gdy jest) |
 | `portals.json` | `portals`: PortalInfo[] | `Data/Portals` |
+| `premium.json` (S43) | `passes`: PassInfo[], `shop`: PremiumService[] | jedyny moduł czytający `Data/Products`: `tools/WikiData/Premium.luau` (klucz i ikona przepustki, nazwa/opis z `premium.pass.<key>`; usługa: klucz, rodzaj, przedmiot, `dailyLimit`, nazwa z przedmiotu albo `premium.<key>`) |
 | `progression.json` | `expToNext`: LevelExp[], `levelDiff`: LevelDiff[], `maxLevel`: number, `skillPointsFromLevel`: number, `skillPointsPerLevel`: number, `statPointsPerLevel`: number, `variantExp`: Record<string, number>; od S42 `monsterExp`, `bestArea`, `levelDiffRules` | `Exp.expToNext`, `Exp.levelDiffMultiplier` (`diff` = poziom potwora − poziom gracza), `Data/Progression`; S42: `Exp.monsterExp` (poz. 1, 10…100 × normal/elite/elite2/boss), `AreaAdvice.best` dla poziomów 1…100 (mapa regionu z zakresem poziomu, polecany obszar najbliższy środkiem) |
 | `quests.json` | `daily`: DailyQuests, `levelSlack`: number, `main`: MainQuest[], `side`: SideQuest[], `sideLevelSlack`: number, `sideMaxActive`: number, `sideChoice` (S42: `count`, `rarity` z `Config.SideQuest`) | `Data/Quests` (główne, poboczne S27, dzienne: `objective(level)`, `Daily.reward(level)`); etykiety celów z kluczy `quest.obj.*` jak `UI/QuestText.objective`; od S37 cel ma `where` = `{ map, area?, cave?, npc? }` (`AreaAdvice.forKind` / `caveFor`, mapa regionu, loch bossa, mapa NPC, kotwica); od S39 `itemName` celów z przedmiotem (`quest.item.<item>`) |
 | `rarities.json` | `rarities`: Rarity[], `sources`: Record<string, DropSource>, `upgradeStatPerLevel`: number | `Data/Rarities` (drabina S30, `itemDrops`, `dropWeights`, `cap`) |
@@ -274,10 +275,12 @@ sama data), spoiler `inert` + `data-pagefind-ignore`. `src/lib/stat.ts` (`resolv
 `src/lib/quests.ts`, `src/lib/mechanics.ts` (`TOPICS`), `src/lib/blocks.ts`. Bloki: `ZoneCards` (`compact?`), `PvpMatrix`,
 `TitleTable` (`kinds?`), `ExpChart`, `ExpDiffChart`, `MonsterExpTable`, `ReductionTable`, `VariantTable`,
 `LevelBandStrip`, `StatFormulaTable`, `CapsTable`, `ClassStartTable`, `ElementList`, `BlessingTable`, `ElixirTable`,
-`PotionTable`, `KeybindTable` (`groups?`, `fixed?`). Klasy CSS: `.vw-article*`, `.vw-prose`, `.vw-h3`, `.vw-stat`,
+`PotionTable`, `KeybindTable` (`groups?`, `fixed?`); S43: `CityNpcs`, `CityGallery` (`names?`, `hero?`), `GuildRanksTable`,
+`GuildSkillsTable`, `AuctionTable`, `CosmeticsGrid`, `PassList` (`shop?`), `LevelPath` (`from`, `to`), `UpgradeChances`. Widoki S43:
+`GuidesSection.astro`, `UpdatesView.astro`, `src/lib/city.ts`. Klasy CSS: `.vw-article*`, `.vw-prose`, `.vw-h3`, `.vw-stat`,
 `.vw-ref`, `.vw-scroll`, `.vw-table--plain|keep|dense|prose`, `.vw-chart`, `.vw-chip--static`.
 
-## Pisanie treści (S42, pierwsza wersja)
+## Pisanie treści (S42, uzupełnione w S43)
 
 - Artykuł = dwa pliki: `src/content/<mechanics|guides>/pl/<slug-pl>.mdx` i `en/<slug-en>.mdx`. Frontmatter: `title`,
   `description` (≤ 155 znaków, w cudzysłowie, gdy ma dwukropek), `key` (wspólny dla PL i EN), `order`, `updated`
@@ -292,6 +295,16 @@ sama data), spoiler `inert` + `data-pagefind-ignore`. `src/lib/stat.ts` (`resolv
   - Nieznane id albo ścieżka = błąd buildu i testu.
 - `##` = tytuł sekcji (trafia do spisu treści), `###` = podtytuł. Ton: konkretnie, krótko, w drugiej osobie, bez
   wykrzykników i memów.
+- **Nowy poradnik:** `src/content/guides/pl/<slug>.mdx` i `en/<slug-en>.mdx` z tym samym `key`; `levels: [1, 10]` daje
+  kicker „PORADNIK · POZ. 1–10” i chip. Zaczynaj od `<Callout kind="tip" title="W skrócie">` z 3 punktami, kończ sekcją
+  „Co dalej” z 2–4 `<Link/>`. 300–600 słów. Nazwy przedmiotów, potworów, NPC i miejsc zawsze przez komponent, nie
+  gołym tekstem. Przykład liczby: `Elita daje <Stat path="mechanics.variants.elite.expMul" format="x" />`.
+- **Spoilery:** `<Spoiler title="…">tekst</Spoiler>` — rozmyte, poza wyszukiwarką, odsłaniane przyciskiem.
+- **Zmiana w grze:** `<Callout kind="changed" date="2026-10-07" update="2026-10-07-expowiska">…</Callout>` — data w
+  chipie linkuje do wpisu w „Aktualizacjach”.
+- **Nowy wpis aktualizacji:** `src/content/updates/{pl,en}/<RRRR-MM-DD>-<slug>.md` z `date`, `title`, `summary` (w
+  cudzysłowie) i krótkim tekstem dla graczy (bez rzeczy deweloperskich); główna pokazuje 4 najnowsze.
+- Test `content.test.ts` sprawdza pary PL/EN, każde id i ścieżkę oraz brak cyfr w prozie; `npm run check` przed commitem.
 
 ## Obrazy potworów (S38)
 
@@ -375,7 +388,27 @@ sama data), spoiler `inert` + `data-pagefind-ignore`. `src/lib/stat.ts` (`resolv
   błogosławieństwa, PvP) z 17 blokami danych. Zero wysp; JS tylko spoiler, spis treści i chipy zleceń. Build 2250
   stron, Vitest 109 testów.
 
+- **S43 (miasto, handel, gildie, kosmetyki, poradniki, aktualizacje):** 4 ostatnie tematy mechaniki PL/EN (wszystkie 10
+  kart indeksu to linki), `npm run images:city` (9 podglądów miasta × 2 rozmiary WebP, 0,5 MB), karty 19 NPC miasta z
+  kotwicami `#npc-<id>` (linki „Od/Oddaj” zadań prowadzą tutaj), 5 poradników PL/EN (`/pl/poradniki/`), `/pl/aktualizacje/`
+  (10 wpisów, kotwice, callout „Zmienione” linkuje do wpisu, główna linkuje tytuły), paleta Ctrl+K z poradnikami i
+  tematami mechaniki, `premium.json` bez cen. Sekcje `guides` i `updates` gotowe — w wiki nie ma już stron „Wkrótce”.
+  Build 2268 stron, Vitest 110, Lune 761.
+
 ## Decyzje
+
+- **S43** Przepustki i usługi premium w osobnym pliku `premium.json` (nie w `cosmetics.json`), żeby jedyny czytający
+  `Data/Products` moduł miał jedyny plik wyjścia. Przykład wypłaty aukcji ma cenę pod kluczem `gold` (skaner odrzuca
+  `price`, także w złocie).
+- **S43** Obrazy miasta: `scripts/city-images.mjs` (sharp, 1000 i 500 px, pomija aktualne) + `src/generated/city-images.json`
+  (rozmiary); `plan.png` pominięty (angielskie id NPC, nakładające się etykiety). Budynek → obraz w `src/lib/city.ts`
+  (stragany → rynek, apteka i zbrojownia → kuźnia); bez obrazu karta pokazuje `MiniMap` z NPC.
+- **S43** Opis kosmetyku składany z rodzaju, części i `flies` (gra nie ma opisów); pety z renderem S38. Żadnych cen ani
+  przycisków zakupu; tekst „ceny sprawdzaj w grze”.
+- **S43** Aktualizacje: wpis = plik `src/content/updates/<lang>/<data>-<slug>.md`, kotwica = nazwa pliku bez języka.
+  Strona bez indeksu Pagefind. Wpisy tylko dla rzeczy, które są w repo (S24–S42).
+- **S43** Paleta: poradniki (`guide`) i tematy mechaniki (`mechanic`) z `src/lib/content.ts`; NPC w palecie dostają link
+  z `npcHref` (wcześniej brak linku).
 
 - **S42** Slugi treści są tłumaczone (`pl/smierc.mdx` ↔ `en/death.mdx`, wspólny `key`), id danych nie. `routes.alternate()`
   przyjmuje opcjonalny tłumacz slugów; `Base` podaje `translateSlug` z `src/lib/content.ts` (czyta frontmatter z dysku, bo
@@ -553,6 +586,10 @@ sama data), spoiler `inert` + `data-pagefind-ignore`. `src/lib/stat.ts` (`resolv
   `Config.AdminUserIds` czyta tylko `tests/wikidump.spec.luau` (`Leak.scan`). Każdy build sprawdza zakazane klucze.
 
 ## Niedokończone
+
+- **S43** Kanał RSS aktualizacji nie zrobiony (opcjonalny). Budynki bez szyldu w grze (spichlerz, karczma, młyn, stajnia,
+  wartownia) mają na karcie nazwę „Plac miejski”/„Stragan na rynku” albo brak (gra nie ma kluczy `town.sign.*` dla
+  nich). Poradniki przeczytane na 390 px tylko na zrzutach.
 
 - **S42** Stałe grupy (`MAX_MEMBERS`, `PARTY_RANGE`) są w kodzie serwera: dzielenie EXP w grupie opisane słowami
   (przeniesienie do `Data` to decyzja właściciela). Tabela przypadków `Respawn.place` (jeśli zostanie czas) nie zrobiona.

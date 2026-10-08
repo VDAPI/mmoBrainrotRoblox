@@ -1,0 +1,40 @@
+---
+title: Trading
+description: "Trading with players, the auction house with its deposit and fee, mail, selling to merchants and sharing loot in a party."
+key: trading
+order: 7
+updated: 2026-10-08
+tags: [Gold, Auctions]
+---
+
+## Trading with a player
+
+Click a player and choose trade. You must stand at most <Stat path="mechanics.config.TradeRange" /> studs apart, and the invitation waits <Stat path="mechanics.config.TradeInviteSeconds" format="s" />.
+
+- Each of you puts items and gold on your side of the window.
+- You both click “Accept”. Any change on either side cancels the acceptance.
+- After accepting there is a <Stat path="mechanics.config.TradeConfirmDelay" format="s" /> countdown, then “Confirm”. The trade happens completely or not at all.
+- Only unbound items can be traded. A <Item id="scroll_unbind" /> unbinds an item.
+
+## Auction house
+
+The auction house in the Merchants' Hall works across servers: you list an item for gold and someone buys it at once, with no bidding.
+
+- Listing costs a deposit of <Stat path="mechanics.market.auction.depositPct" format="pct" /> of the price. It comes back with the payment; if you cancel the listing, you lose it.
+- The house takes a <Stat path="mechanics.market.auction.feePct" format="pct" /> fee from the sale.
+- A listing lasts <Stat path="mechanics.market.auction.durations.0" /> or <Stat path="mechanics.market.auction.durations.1" /> hours. You can have <Stat path="mechanics.market.auction.maxListings" /> listings per character at once.
+- Gold from sales and items you bought arrive by mail.
+
+<AuctionTable />
+
+## Mail
+
+You collect mail from <Npc id="auctioneer" />, also after you come back to the game. A parcel waits <Stat path="mechanics.market.mail.lifetimeDays" /> days, holds up to <Stat path="mechanics.market.mail.maxItemsPerParcel" /> items, and an account can have at most <Stat path="mechanics.market.mail.maxParcels" /> parcels.
+
+## Merchants in the city
+
+Every merchant buys items at their value. The value and the merchant price of every item are in the <Link to="items">item database</Link>. Items that cannot be sold and locked items stay in your backpack.
+
+## Loot in a party
+
+Gold from a monster defeated by a party is split evenly. Each item is rolled separately among the members nearby: if the item is for a specific class, players of that class get it first, and if nobody has that class, everybody rolls. Materials and herbs are rolled among everybody. The party chat tells who got what. A loot bag stays on the ground for <Stat path="mechanics.config.LootLifetime" format="min" />.

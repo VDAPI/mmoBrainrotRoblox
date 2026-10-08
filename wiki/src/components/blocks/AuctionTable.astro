@@ -1,0 +1,39 @@
+---
+// Auction house payout examples (S43): mechanics.market.examples (Auction.deposit / fee / payout).
+import Source from "./Source.astro";
+import type { Lang } from "../../i18n/routes";
+import { load } from "../../lib/data";
+import { formatNumber } from "../../lib/format";
+import { name, t } from "../../lib/i18n";
+const lang = (Astro.params.lang ?? "pl") as Lang;
+const market = load("mechanics").market;
+const n = (v: number) => formatNumber(v, lang);
+---
+<div class="vw-scroll">
+  <table class="vw-table vw-table--plain vw-table--keep">
+    <caption class="vw-sr">{t(lang, "block.auction.caption")}</caption>
+    <thead>
+      <tr>
+        <th scope="col" style="text-align: right">{t(lang, "block.auction.price")}</th>
+        <th scope="col" style="text-align: right">{t(lang, "block.auction.deposit")}</th>
+        <th scope="col" style="text-align: right">{t(lang, "block.auction.fee")}</th>
+        <th scope="col" style="text-align: right">{t(lang, "block.auction.payout")}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {market.examples.map((e) => (
+        <tr>
+          <td style="text-align: right" class="strong">{n(e.gold)}</td>
+          <td style="text-align: right">{n(e.deposit)}</td>
+          <td style="text-align: right">−{n(e.fee)}</td>
+          <td style="text-align: right" class="gold">{n(e.payout)}</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
+<p class="vw-auction-cats"><span class="vw-label">{t(lang, "block.auction.categories")}</span> {market.categories.map((c) => name(c.name, lang)).join(" · ")}</p>
+<Source from="Data/Market, Logic/Auction" />
+<style>
+  .vw-auction-cats { margin: 8px 0 0; font-size: 15px; color: var(--vw-text-soft); }
+</style>

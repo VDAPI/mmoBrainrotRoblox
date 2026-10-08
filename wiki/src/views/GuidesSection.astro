@@ -1,0 +1,82 @@
+---
+// Guides (S43): /pl/poradniki/ (cards by `order` with the level chip) and /pl/poradniki/<slug>/ (an MDX guide from
+// src/content/guides in the shared article layout of S42).
+import { getCollection, render } from "astro:content";
+import Base from "../layouts/Base.astro";
+import Article from "../components/Article.astro";
+import Crumbs from "../components/Crumbs.astro";
+import { mdxComponents } from "../components/mdx";
+import { href, type Lang } from "../i18n/routes";
+import { contentEntries } from "../lib/content";
+import { formatDate } from "../lib/format";
+import { t } from "../lib/i18n";
+interface Props {
+  lang: Lang;
+  page?: "index" | "guide";
+  slug?: string;
+}
+const { lang, page = "index", slug } = Astro.props;
+const entry = page === "guide" ? (await getCollection("guides")).find((e) => e.id === `${lang}/${slug}`) : undefined;
+if (page === "guide" && !entry) throw new Error(`guides: no guide ${lang}/${slug}`);
+const rendered = entry ? await render(entry) : undefined;
+const toc = (rendered?.headings ?? []).filter((h) => h.depth === 2 || h.depth === 3).map((h) => ({ id: h.slug, label: h.text, sub: h.depth === 3 }));
+const sectionTitle = t(lang, "guides.title");
+const Content = rendered?.Content;
+const levels = entry?.data.levels;
+const list = contentEntries("guides").filter((e) => e.lang === lang);
+---
+{entry && Content ? (
+  <Base lang={lang} title={entry.data.title} description={entry.data.description} section="guides" search={{ type: "guide", meta: { line: sectionTitle } }}>
+    <Article
+      lang={lang}
+      crumbs={[{ label: t(lang, "crumbs.wiki"), href: href(lang, "home") }, { label: sectionTitle, href: href(lang, "guides") }, { label: entry.data.title }]}
+      kicker={entry.data.kicker ?? (levels ? t(lang, "guides.kickerLevels", { min: levels[0], max: levels[1] }) : t(lang, "guides.kicker"))}
+      title={entry.data.title}
+      lead={entry.data.description}
+      toc={toc}
+    >
+      <Fragment slot="badges">
+        {levels && <span class="vw-chip vw-chip--static">{t(lang, "levelRange", { min: levels[0], max: levels[1] })}</span>}
+        {(entry.data.tags ?? []).map((tag) => <span class="vw-chip vw-chip--static">{tag}</span>)}
+        <span class="vw-chip vw-chip--static">{t(lang, "article.updated", { date: formatDate(entry.data.updated.toISOString(), lang) })}</span>
+      </Fragment>
+      <Content components={mdxComponents} />
+    </Article>
+  </Base>
+) : (
+  <Base lang={lang} title={sectionTitle} description={t(lang, "guides.lead")} section="guides">
+    <div class="vw-article">
+      <Crumbs items={[{ label: t(lang, "crumbs.wiki"), href: href(lang, "home") }, { label: sectionTitle }]} />
+      <p class="vw-label vw-article__kicker kicker">{t(lang, "guides.kicker")}</p>
+      <h1 class="vw-article__title">{sectionTitle}</h1>
+      <p class="vw-article__lead">{t(lang, "guides.lead")}</p>
+      <ol class="cards">
+        {list.map((g, i) => (
+          <li>
+            <a class="card" href={href(lang, "guides", g.slug)}>
+              <span class="no">{String(i + 1).padStart(2, "0")}</span>
+              <span class="text">
+                <span class="title">{g.title}</span>
+                <span class="desc">{g.description}</span>
+              </span>
+              {g.levels && <span class="vw-chip vw-chip--static lv">{t(lang, "levelRange", { min: g.levels[0], max: g.levels[1] })}</span>}
+            </a>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </Base>
+)}
+<style>
+  .kicker { margin-top: 24px; }
+  .cards { margin: 40px 0 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .card { display: flex; align-items: center; gap: 18px; min-height: 110px; height: 100%; padding: 18px; background: var(--vw-metal-gradient); border: 1px solid var(--vw-border); box-shadow: var(--vw-elev-1); color: var(--vw-text); }
+  .card:hover { border-color: var(--vw-gold-dark); text-decoration: none; }
+  .no { font: 700 40px/1 var(--vw-font-display); color: var(--vw-gold); min-width: 52px; }
+  .text { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 0; }
+  .title { font: 800 20px/1.2 var(--vw-font-ui); }
+  .desc { font-size: 15px; color: var(--vw-text-muted); }
+  .lv { flex-shrink: 0; }
+  @media (max-width: 1023px) { .cards { grid-template-columns: 1fr; } }
+  @media (max-width: 767px) { .card { flex-wrap: wrap; min-height: 0; padding: 14px; gap: 12px; } .no { font-size: 30px; min-width: 40px; } .lv { margin-left: 52px; } }
+</style>

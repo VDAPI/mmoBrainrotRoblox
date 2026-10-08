@@ -1,0 +1,53 @@
+---
+title: Jak expić 1–30
+description: "Gdzie i jak zdobywać poziomy do trzydziestego: polecane obszary, różnica poziomów, elity, jaskinie, zlecenia, grupa i Fortuna."
+key: leveling-1-30
+order: 2
+levels: [1, 30]
+updated: 2026-10-08
+tags: [Doświadczenie]
+---
+
+<Callout kind="tip" title="W skrócie">
+- Bij potwory w swoim kolorze poziomu: za dużo słabsze dają coraz mniej, aż prawie nic.
+- Rób zadania główne i zlecenia dzienne po drodze, a nie zamiast polowania.
+- Elity, jaskinie i gra w grupie dają więcej EXP na minutę, gdy jesteś gotów.
+</Callout>
+
+## Ścieżka poziomów
+
+Gra poleca obszar dla twojego poziomu w oknie portalu i na mapie. Tak wygląda ta ścieżka od początku do poziomu trzydziestego. Obszary z plakietką mają swój charakter: jedne dają szybszy EXP, inne lepszy łup albo więcej złota.
+
+<Callout kind="changed" date="2026-10-07" update="2026-10-07-expowiska">
+Expowiska mają teraz profile: szybki EXP, lepszy łup albo więcej złota na tym samym poziomie. Profil widzisz przy obszarze w oknie portalu i na mapie.
+</Callout>
+
+<LevelPath from={1} to={30} />
+
+## Różnica poziomów
+
+Potwór słabszy od ciebie o więcej niż <Stat path="progression.levelDiffRules.freeDiff" /> poziomów traci <Stat path="progression.levelDiffRules.penaltyPerLevel" format="frac" /> nagrody za każdy kolejny poziom, aż do <Stat path="progression.levelDiffRules.minMultiplier" format="frac" />. Silniejszy daje premię, najwyżej <Stat path="progression.levelDiffRules.maxBonus" format="frac" />. Gdy potwory w obszarze robią się szare albo zielone, czas iść dalej.
+
+## Elity i jaskinie
+
+Elita daje <Stat path="mechanics.variants.elite.expMul" format="x" />, a Elita II <Stat path="mechanics.variants.elite2.expMul" format="x" /> zwykłej nagrody. Jaskinie są pełne elit, ale to czerwona strefa: inni gracze mogą cię tam zaatakować. Wchodź z zapasem mikstur i najlepiej w grupie.
+
+## Zadania i zlecenia
+
+- Zadania główne dają duże porcje EXP i prowadzą do kolejnych krain.
+- Zadania poboczne mieszkańców Łąk kończą się wyborem przedmiotu dla twojej klasy.
+- <Npc id="questboard" /> daje <Stat path="quests.daily.perDay" /> zlecenia dziennie. Cele pasują do twojego poziomu, więc zrobisz je przy zwykłym polowaniu.
+
+## Grupa i bonusy
+
+W grupie EXP dzieli się między członków, ale bijecie dużo szybciej i bezpieczniej, zwłaszcza elity. Błogosławieństwo z linii Fortuny i premie gildii dodają procent do każdego zdobytego EXP. Szczegóły w temacie <Link to="mechanics" id="experience">Doświadczenie</Link>.
+
+## Kolejna kraina
+
+Gdy polecany obszar przenosi się do nowej krainy, wątek główny zwykle już tam prowadzi. Najpierw jednak wymień broń i zbroję na nowy próg: w <Link to="items">bazie przedmiotów</Link> sprawdzisz, co nosić na swoim poziomie.
+
+## Co dalej
+
+- <Link to="guides" id="upgrading">Ulepszanie bez płaczu</Link>
+- <Link to="guides" id="pvp-zones">Strefy PvP</Link>
+- <Link to="bestiary">Bestiariusz</Link>

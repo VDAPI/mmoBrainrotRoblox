@@ -1,0 +1,51 @@
+---
+title: Strefy PvP
+description: "Jak nie dać się zaskoczyć innym graczom: kolory stref, przełącznik PvP, czerwone jaskinie, ochrona grupy i gildii, tytuły za walkę."
+key: pvp-zones
+order: 4
+updated: 2026-10-08
+tags: [PvP]
+---
+
+<Callout kind="tip" title="W skrócie">
+- W mieście nikt cię nie zaatakuje, w krainach tylko za obopólną zgodą, w jaskiniach każdy każdego.
+- Grupa i gildia zawsze cię chronią przed swoimi.
+- Gdy ktoś cię goni w czerwonej strefie, uciekaj do wyjścia albo do swojej grupy.
+</Callout>
+
+## Trzy kolory
+
+<ZoneCards compact />
+
+Kolor strefy widzisz na banerze po wejściu na mapę. Liczy się strefa, w której stoi cel ataku.
+
+## Przełącznik
+
+W żółtej strefie sam decydujesz, czy walczysz z graczami. Zmiana przełącznika trwa <Stat path="mechanics.config.PvpToggleDelay" format="s" />, a po walce z graczem przez <Stat path="mechanics.config.PvpCombatLock" format="s" /> nie wyłączysz PvP. Włączaj je tylko wtedy, gdy naprawdę chcesz walczyć.
+
+## Jaskinie
+
+Jaskinie to czerwona strefa: przełącznik nie działa i każdy może cię zaatakować. Za to dają najlepszy EXP i łup na twoim poziomie. Wchodź z grupą, trzymaj zapas mikstur i patrz na innych graczy.
+
+## Gdy ktoś cię atakuje
+
+- Obrażenia między graczami są mniejsze niż od potworów, więc masz chwilę na decyzję.
+- W żółtej strefie wyłącz PvP i odejdź; po blokadzie przełącznik zadziała.
+- W czerwonej strefie biegnij do wyjścia albo walcz razem z grupą.
+- Po śmierci przez <Stat path="mechanics.config.RespawnShieldSeconds" format="s" /> nikt cię nie zaatakuje.
+
+## Ochrona grupy i gildii
+
+Członków swojej grupy i gildii nie zaatakujesz w żadnej strefie, a oni ciebie też nie. Ochronę gildii może wyłączyć przywódca.
+
+## Pojedynki i tytuły
+
+Jeśli chcesz zmierzyć się z kimś bez ryzyka, wyzwij go na pojedynek na arenie w mieście. Wygrane pojedynki i pokonani gracze odblokowują tytuły.
+
+<TitleTable kinds={["duelsWon", "pvpKills"]} />
+
+## Co dalej
+
+- <Link to="mechanics" id="pvp">Pełne zasady PvP</Link>
+- <Link to="guides" id="guilds">Gildie</Link>
+- <Link to="regions">Krainy i jaskinie</Link>

@@ -1,0 +1,65 @@
+---
+// Townsfolk of the city (S43): one card per NPC (decorations left out) with the anchor #npc-<id> (target of npcHref),
+// role and name, greeting, services, building with its preview (or the mini map), quests they give and a map link.
+import MiniMap from "../MiniMap.astro";
+import Source from "./Source.astro";
+import type { Lang } from "../../i18n/routes";
+import { buildingImage, cityNpcs } from "../../lib/city";
+import { load } from "../../lib/data";
+import { name, t } from "../../lib/i18n";
+import { questHref } from "../../lib/links";
+import { npcLabel } from "../../lib/quests";
+import { mapHref, mapLinkFor } from "../../lib/world";
+const lang = (Astro.params.lang ?? "pl") as Lang;
+const services = load("npcs").services;
+const quests = [...load("quests").main, ...load("quests").side];
+const npcs = cityNpcs();
+---
+<div class="vw-npcs">
+  {npcs.map((n) => {
+    const img = buildingImage(n.building);
+    const where = n.buildingName ? name(n.buildingName, lang) : n.building?.startsWith("stall_") ? t(lang, "city.stall") : t(lang, "city.square");
+    const gives = quests.filter((q) => q.giver === n.id);
+    return (
+      <article class="vw-npc" id={`npc-${n.id}`}>
+        <div class="media">
+          {img ? (
+            <img src={img.src} srcset={img.srcset} sizes="(max-width: 767px) 100vw, 320px" width={img.width} height={img.height} loading="lazy" decoding="async" alt={t(lang, "city.imgAlt", { place: where })} />
+          ) : (
+            <MiniMap map="city" lang={lang} size="sm" highlight={{ npcs: [n.id] }} href={null} label={npcLabel(n.id, lang)} />
+          )}
+        </div>
+        <div class="body">
+          <p class="vw-label where">{where}</p>
+          <h3 class="vw-h3 who"><span class="icon" aria-hidden="true">{n.icon}</span> {npcLabel(n.id, lang)}</h3>
+          {n.greeting && <p class="greet">„{name(n.greeting, lang)}”</p>}
+          <div class="chips">{n.services.map((s) => <span class="vw-chip vw-chip--static">{name(services[s], lang) || s}</span>)}</div>
+          {gives.length > 0 && (
+            <p class="quests"><span class="vw-label">{t(lang, "city.quests")}</span> {gives.map((q, i) => {
+              const h = questHref(lang, q.id);
+              return <Fragment>{i > 0 && ", "}{h ? <a href={h}>{name(q.title, lang)}</a> : name(q.title, lang)}</Fragment>;
+            })}</p>
+          )}
+          <a class="map" href={mapHref(lang, mapLinkFor(n.id))}>{t(lang, "city.onMap")} ›</a>
+        </div>
+      </article>
+    );
+  })}
+</div>
+<Source from="Data/Npcs, Data/Town" />
+<style>
+  .vw-npcs { display: flex; flex-direction: column; gap: 14px; }
+  .vw-npc { display: grid; grid-template-columns: 320px minmax(0, 1fr); gap: 20px; padding: 14px; background: var(--vw-panel); border: 1px solid var(--vw-border); scroll-margin-top: 96px; }
+  .vw-npc:target { border-color: var(--vw-gold); box-shadow: 0 0 0 1px var(--vw-gold); }
+  .media img { display: block; width: 100%; height: auto; aspect-ratio: 25 / 17; object-fit: cover; border: 1px solid var(--vw-border-subtle); }
+  .media :global(.vw-minimap) { width: 100%; }
+  .body { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+  .where { margin: 0; color: var(--vw-gold); }
+  .who { margin: 0; }
+  .icon { color: var(--vw-gold); }
+  .greet { margin: 0; font-style: italic; color: var(--vw-text-soft); font-size: 17px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .quests { margin: 0; font-size: 15px; }
+  .map { margin-top: auto; font-weight: 800; font-size: 15px; }
+  @media (max-width: 767px) { .vw-npc { grid-template-columns: 1fr; gap: 12px; } }
+</style>

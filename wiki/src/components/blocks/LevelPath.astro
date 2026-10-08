@@ -1,0 +1,63 @@
+---
+// Where to level (S43, guides): progression.bestArea from..to (AreaAdvice.best on the region maps), consecutive levels
+// with the same area in one row, with the area's hunting profile and the main quests of that level range.
+import Source from "./Source.astro";
+import type { Lang } from "../../i18n/routes";
+import { load } from "../../lib/data";
+import { name, t } from "../../lib/i18n";
+import { questHref } from "../../lib/links";
+import { mainQuests } from "../../lib/quests";
+import { placeHref } from "../../lib/world";
+interface Props {
+  from: number;
+  to: number;
+}
+const { from, to } = Astro.props;
+const lang = (Astro.params.lang ?? "pl") as Lang;
+const best = load("progression").bestArea.filter((b) => b.level >= from && b.level <= to);
+if (best.length === 0) throw new Error(`<LevelPath from={${from}} to={${to}}>: no levels`);
+const areas = load("areas").areas;
+const profiles = load("mechanics").areaProfiles ?? {};
+const rows: { from: number; to: number; area: string; map: string }[] = [];
+for (const b of best) {
+  const last = rows[rows.length - 1];
+  if (last && last.area === b.area) last.to = b.level;
+  else rows.push({ from: b.level, to: b.level, area: b.area, map: b.map });
+}
+const quests = mainQuests();
+const range = (a: number, b: number) => (a === b ? t(lang, "level", { level: a }) : t(lang, "levelRangeCap", { min: a, max: b }));
+---
+<ol class="vw-path">
+  {rows.map((r) => {
+    const area = areas.find((a) => a.id === r.area);
+    const map = load("maps").maps.find((m) => m.id === r.map);
+    const profile = area?.profile ? profiles[area.profile] : undefined;
+    const h = placeHref(lang, r.area);
+    const qs = quests.filter((q) => q.level >= r.from && q.level <= r.to);
+    return (
+      <li>
+        <span class="lv">{range(r.from, r.to)}</span>
+        <span class="body">
+          <strong>{h ? <a href={h}>{name(area?.name, lang)}</a> : name(area?.name, lang)}</strong>
+          <span class="meta">{name(map?.name, lang)}{area && ` · ${t(lang, "levelRange", { min: area.levelMin, max: area.levelMax })}`}{profile && <Fragment> · <span class="prof" style={`--pc: ${profile.color}`}>{profile.icon} {name(profile.name, lang)}</span></Fragment>}</span>
+          {qs.length > 0 && (
+            <span class="qs">{t(lang, "block.path.quests")} {qs.map((q, i) => {
+              const qh = questHref(lang, q.id);
+              return <Fragment>{i > 0 && ", "}{qh ? <a href={qh}>{name(q.title, lang)}</a> : name(q.title, lang)}</Fragment>;
+            })}</span>
+          )}
+        </span>
+      </li>
+    );
+  })}
+</ol>
+<Source from="Logic/AreaAdvice.best, Data/Quests" />
+<style>
+  .vw-path { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
+  .vw-path li { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 14px; padding: 12px 14px; background: var(--vw-panel); border: 1px solid var(--vw-border-subtle); font-size: 16px; }
+  .lv { font-weight: 800; color: var(--vw-gold-bright); }
+  .body { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .meta, .qs { font-size: 14px; color: var(--vw-text-muted); }
+  .prof { color: var(--pc); font-weight: 700; }
+  @media (max-width: 767px) { .vw-path li { grid-template-columns: 1fr; gap: 4px; } }
+</style>

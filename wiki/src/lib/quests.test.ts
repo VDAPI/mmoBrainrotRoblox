@@ -69,3 +69,16 @@ describe("links", () => {
     expect(npcHref("en", outside.id)).toMatch(/^\/en\/map\//);
   });
 });
+
+describe("city (S43)", () => {
+  it("gives every city NPC a card on the city topic and links it there", async () => {
+    const { cityNpcs } = await import("./city");
+    const cards = new Set(cityNpcs().map((n) => n.id));
+    const city = contentEntry("mechanics", "pl", "city");
+    expect(city).toBeDefined();
+    for (const n of load("npcs").npcs.filter((x) => x.map === "city" && !x.decoration)) {
+      expect(cards.has(n.id)).toBe(true);
+      expect(npcHref("pl", n.id)).toBe(`/pl/mechaniki/${city!.slug}/#npc-${n.id}`);
+    }
+  });
+});

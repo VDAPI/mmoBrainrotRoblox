@@ -1,0 +1,15 @@
+{
+  "passes": [
+    {"desc":{"en":"Loot bags within 15 studs are picked up on their own.","pl":"Worki z łupem w promieniu 15 st. podnoszą się same."},"icon":"✋","key":"autoLoot","name":{"en":"Auto-loot","pl":"Auto-łup"}},
+    {"desc":{"en":"+60 slots in the account vault.","pl":"+60 miejsc w depozycie konta."},"icon":"▤","key":"vault","name":{"en":"Vault","pl":"Skarbiec"}},
+    {"desc":{"en":"Respawn time halved.","pl":"Czas odrodzenia o połowę krótszy."},"icon":"⟲","key":"fastRespawn","name":{"en":"Fast Return","pl":"Szybki Powrót"}},
+    {"desc":{"en":"Golden star in chat, coloured name, +1 alchemist queue slot.","pl":"Złota gwiazdka w czacie, kolorowy nick, +1 miejsce w kolejce alchemika."},"icon":"★","key":"vip","name":{"en":"VIP","pl":"VIP"}}
+  ],
+  "shop": [
+    {"item":"scroll_oblivion","key":"scroll_oblivion","kind":"item","name":{"en":"Scroll of Oblivion","pl":"Zwój Zapomnienia"}},
+    {"item":"scroll_skillreset","key":"scroll_skillreset","kind":"item","name":{"en":"Scroll of Rebirth","pl":"Zwój Odrodzenia Umiejętności"}},
+    {"item":"scroll_unbind","key":"scroll_unbind","kind":"item","name":{"en":"Scroll of Unbinding","pl":"Zwój Rozwiązania"}},
+    {"dailyLimit":5,"item":"scroll_protection","key":"scroll_protection","kind":"item","name":{"en":"Scroll of Protection","pl":"Zwój Ochrony"}},
+    {"desc":{"en":"A new unique name for the active character.","pl":"Nowe, unikalne imię aktywnej postaci."},"key":"rename","kind":"rename","name":{"en":"Rename character","pl":"Zmiana imienia"}}
+  ]
+}

@@ -3411,3 +3411,29 @@ Szczegóły i decyzje: `docs/WIKI.md` (Stan, Decyzje S42, Niedokończone, „Kom
     (cofnij zmianę).
 13. `npm run check` w `wiki/` i `scripts/check` przechodzą.
 
+### S43: Wiki 9/10 — miasto, gildie, handel, kosmetyki, poradniki, aktualizacje
+
+Szczegóły i decyzje: `docs/WIKI.md` (Stan, Decyzje S43, „Pisanie treści”).
+
+**Zrobione**
+- Eksport: `mechanics.guild`, `mechanics.market`, `cosmetics` (`parts`, `flies`, teksty), `npcs` (`building`,
+  `buildingName`), `premium.json` z `tools/WikiData/Premium.luau` (bez cen i id). Kod gry bez zmian.
+- `npm run images:city`, tematy Miasto, Handel, Gildie, Kosmetyki (PL/EN), 5 poradników PL/EN, `/pl/aktualizacje/` z
+  6 nowymi wpisami, paleta Ctrl+K z poradnikami i mechanikami.
+
+#### Instrukcja testu S43
+
+1. `cd wiki`, `npm run build`, `npm run preview`.
+2. `/pl/mechaniki/`: wszystkie 10 kart to linki, żadnego „Wkrótce”.
+3. `/pl/mechaniki/miasto/`: duży obraz rynku, karty mieszkańców z obrazem budynku albo minimapą, „Pokaż na mapie”.
+4. `/pl/zadania/healer/` → „Zleca: Kapitan Aldric” prowadzi do jego karty w temacie Miasto (podświetlona ramka).
+5. `/pl/mechaniki/gildie/`: tabela uprawnień rang i tabela umiejętności z efektem i kosztem na każdym poziomie.
+6. `/pl/mechaniki/handel/`: przykład wypłaty z domu aukcyjnego; `/pl/mechaniki/kosmetyki/`: żadnej ceny ani „Kup”.
+7. `/pl/poradniki/`: 5 kart; „Pierwsze kroki” — klawisze jak w grze (V = mikstura energii), ścieżka poziomów 1–10,
+   „W skrócie” na górze, „Co dalej” na dole; przełącznik EN → `/en/guides/first-steps/`.
+8. `/pl/poradniki/jak-expic-1-30/`: callout „Zmienione w aktualizacji” — data prowadzi do wpisu na `/pl/aktualizacje/`.
+9. `/pl/aktualizacje/`: wpisy z datami, najnowszy na górze; na głównej „Ostatnie zmiany” linkują do wpisów.
+10. Ctrl+K „pierwsze” albo „gildie”: poradnik i temat mechaniki; zakładka „Poradniki” w wyszukiwarce.
+11. Telefon (390 px): poradnik bez przewijania w bok, „Na tej stronie” zwinięte.
+12. `npm run check` w `wiki/` i `scripts/check` przechodzą.
+

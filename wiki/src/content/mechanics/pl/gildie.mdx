@@ -1,0 +1,35 @@
+---
+title: Gildie
+description: "Jak założyć gildię, co mogą rangi, skarbiec, umiejętności gildii na każdym poziomie, czat i ochrona PvP."
+key: guilds
+order: 8
+updated: 2026-10-08
+tags: [Gracze, Skarbiec]
+---
+
+## Założenie
+
+Gildię zakładasz u <Npc id="guildmaster" />. Potrzebujesz poziomu <Stat path="mechanics.guild.rules.createLevel" /> i <Stat path="mechanics.guild.rules.createCost" format="gold" />.
+
+- Nazwa: od <Stat path="mechanics.guild.rules.nameMin" /> do <Stat path="mechanics.guild.rules.nameMax" /> znaków, unikalna.
+- Tag: od <Stat path="mechanics.guild.rules.tagMin" /> do <Stat path="mechanics.guild.rules.tagMax" /> wielkich liter albo cyfr. Widać go nad głową każdego członka.
+- Gildia należy do postaci, nie do konta: każda twoja postać może być w innej.
+
+## Rangi
+
+Są trzy rangi: przywódca, oficer i członek. Zaproszenie ważne jest <Stat path="mechanics.guild.rules.inviteSeconds" format="s" />.
+
+<GuildRanksTable />
+
+## Skarbiec i umiejętności
+
+Każdy członek może wpłacać złoto do skarbca. Za złoto ze skarbca przywódca i oficerowie kupują umiejętności gildii, każdą do poziomu <Stat path="mechanics.guild.maxLevel" />. Premie działają na wszystkich członków, także na tych, którzy dołączą później.
+
+<GuildSkillsTable />
+
+Na start gildia ma <Stat path="mechanics.guild.rules.baseMembers" /> miejsc. Rozbudowa podnosi limit do <Stat path="mechanics.guild.memberLimits.5" />.
+
+## Czat i ochrona
+
+- Czat gildii działa między serwerami, a lista członków pokazuje, kto gra i gdzie.
+- Członkowie gildii nie mogą się atakować w żadnej strefie. Przywódca może tę ochronę wyłączyć w ustawieniach gildii (zobacz <Link to="mechanics" id="pvp">PvP</Link>).

@@ -1,0 +1,35 @@
+---
+title: Guilds
+description: "How to found a guild, what the ranks can do, the treasury, guild skills on every level, chat and PvP protection."
+key: guilds
+order: 8
+updated: 2026-10-08
+tags: [Players, Treasury]
+---
+
+## Founding
+
+You found a guild with <Npc id="guildmaster" />. You need level <Stat path="mechanics.guild.rules.createLevel" /> and <Stat path="mechanics.guild.rules.createCost" format="gold" />.
+
+- Name: <Stat path="mechanics.guild.rules.nameMin" /> to <Stat path="mechanics.guild.rules.nameMax" /> characters, unique.
+- Tag: <Stat path="mechanics.guild.rules.tagMin" /> to <Stat path="mechanics.guild.rules.tagMax" /> capital letters or digits. It shows above every member's head.
+- A guild belongs to a character, not to the account: each of your characters can be in a different one.
+
+## Ranks
+
+There are three ranks: leader, officer and member. An invitation lasts <Stat path="mechanics.guild.rules.inviteSeconds" format="s" />.
+
+<GuildRanksTable />
+
+## Treasury and skills
+
+Every member can deposit gold into the treasury. With treasury gold the leader and officers buy guild skills, each up to level <Stat path="mechanics.guild.maxLevel" />. The bonuses work for every member, including those who join later.
+
+<GuildSkillsTable />
+
+A new guild has <Stat path="mechanics.guild.rules.baseMembers" /> places. Expansion raises the limit to <Stat path="mechanics.guild.memberLimits.5" />.
+
+## Chat and protection
+
+- Guild chat works across servers, and the member list shows who is playing and where.
+- Guild members cannot attack each other in any zone. The leader can turn that protection off in the guild settings (see <Link to="mechanics" id="pvp">PvP</Link>).

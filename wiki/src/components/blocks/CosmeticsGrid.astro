@@ -1,0 +1,47 @@
+---
+// Cosmetics by kind (S43): a colour swatch (pets: their render), name and a description built from the kind, parts
+// and flying. No prices, no buy buttons: the game sells them, the wiki only shows them.
+import MonsterImage from "../MonsterImage.astro";
+import Source from "./Source.astro";
+import type { Lang } from "../../i18n/routes";
+import { load } from "../../lib/data";
+import { name, t, type Key } from "../../lib/i18n";
+import { renderSrc } from "../../lib/renders";
+const lang = (Astro.params.lang ?? "pl") as Lang;
+const file = load("cosmetics");
+const describe = (c: (typeof file.cosmetics)[number]) => {
+  const kind = t(lang, `cos.kind.${c.kind}` as Key);
+  if (c.parts?.length) return `${kind}: ${c.parts.map((p) => t(lang, `cos.part.${p}` as Key)).join(t(lang, "cos.and"))}`;
+  if (c.kind === "pet") return `${kind}, ${t(lang, c.flies ? "cos.flies" : "cos.walks")}`;
+  return kind;
+};
+---
+{file.kinds.map((k) => {
+  const list = file.cosmetics.filter((c) => c.kind === k.id);
+  return list.length > 0 && (
+    <section class="vw-cos">
+      <h3 class="vw-h3">{name(k.name, lang) || k.id}</h3>
+      <ul>
+        {list.map((c) => (
+          <li>
+            {c.kind === "pet" && renderSrc(c.id, "normal", "thumb") ? (
+              <MonsterImage id={c.id} kind="pet" stage="portrait" size="thumb" alt={name(c.name, lang)} class="pet" />
+            ) : (
+              <span class="sw" style={`--c1: ${c.color}; --c2: ${c.color2 ?? c.color}`} aria-hidden="true"><span>{c.icon}</span></span>
+            )}
+            <span class="txt"><strong>{name(c.name, lang)}</strong><span>{describe(c)}</span></span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+})}
+<Source from="Data/Cosmetics" />
+<style>
+  .vw-cos ul { margin: 0 0 8px; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+  .vw-cos li { display: flex; align-items: center; gap: 14px; padding: 10px 12px; background: var(--vw-panel); border: 1px solid var(--vw-border); }
+  .sw { flex-shrink: 0; width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, var(--c1) 0 55%, var(--c2) 55% 100%); border: 2px solid var(--vw-gold-dark); font-size: 22px; color: #fff; text-shadow: 0 1px 2px #000; }
+  .vw-cos li :global(.pet) { flex-shrink: 0; width: 56px; height: 56px; }
+  .txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .txt span { font-size: 14px; color: var(--vw-text-muted); }
+</style>

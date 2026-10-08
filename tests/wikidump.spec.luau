@@ -414,6 +414,36 @@ T.describe("Wiki export: consistency", function()
 			T.expect(string.find(Json.encode(d.mechanics), `"{key}"`, 1, true)).toBe(nil)
 		end
 	end)
+
+	T.it("exports guild permissions, passes, shop services and city buildings without prices (S43)", function()
+		local Guild = require("../src/shared/Logic/Guild")
+		local Products = require("../src/shared/Data/Products")
+		local Town = require("../src/shared/Data/Town")
+		for _, rank in d.mechanics.guild.ranks do
+			for action, allowed in rank.can do
+				T.expect(allowed).toBe(Guild.can(rank.id, action))
+			end
+		end
+		T.expect(#d.premium.passes).toBe(#Products.passes)
+		-- the instant respawn product never reaches the wiki (areaProfiles use a "respawn" key, so only premium.json)
+		T.expect(string.find(Json.encode(d.premium), "respawn\"", 1, true)).toBe(nil)
+		for _, npc in d.npcs.npcs do
+			if npc.building then
+				local spot = Town.npcSpot(npc.id)
+				assert(spot and (spot :: any).at == npc.building, `{npc.id}: building {npc.building}`)
+			end
+		end
+		for _, file in { "cosmetics", "mechanics", "premium" } do
+			local text = Json.encode(d[file])
+			for _, key in
+				{ "robux", "productId", "passId", "price", "shards", "shardPacks", "RespawnNowCost" }
+			do
+				if string.find(text, `"{key}"`, 1, true) then
+					error(`{file}.json has the key {key}`)
+				end
+			end
+		end
+	end)
 end)
 
 T.describe("Wiki export: building blocks", function()

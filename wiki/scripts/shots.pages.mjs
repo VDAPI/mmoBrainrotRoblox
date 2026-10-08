@@ -13,7 +13,6 @@ export const PAGES = [
   { name: "szukaj-pusto", path: "/pl/szukaj/" },
   { name: "styleguide", path: "/pl/styleguide/" },
   { name: "styleguide-en", path: "/en/styleguide/" },
-  { name: "wkrotce", path: "/pl/poradniki/" },
   { name: "404", path: "/pl/404/" },
   { name: "mapa", path: "/pl/mapa/" },
   { name: "mapa-laki", path: "/pl/mapa/?m=meadows&a=meadows_wolfhills" },
@@ -54,4 +53,12 @@ export const PAGES = [
   { name: "mech-doswiadczenie", path: "/pl/mechaniki/doswiadczenie/" },
   { name: "mech-smierc", path: "/pl/mechaniki/smierc/" },
   { name: "mech-death-en", path: "/en/mechanics/death/" },
+  // S43
+  { name: "mech-miasto", path: "/pl/mechaniki/miasto/" },
+  { name: "mech-gildie", path: "/pl/mechaniki/gildie/" },
+  { name: "mech-kosmetyki", path: "/pl/mechaniki/kosmetyki/" },
+  { name: "poradniki", path: "/pl/poradniki/" },
+  { name: "poradnik-pierwsze", path: "/pl/poradniki/pierwsze-kroki/" },
+  { name: "guide-first-en", path: "/en/guides/first-steps/" },
+  { name: "aktualizacje", path: "/pl/aktualizacje/" },
 ];

@@ -1,0 +1,48 @@
+---
+title: Guilds
+description: "How to found a guild, set up ranks, fill the treasury and in which order to buy guild skills."
+key: guilds
+order: 5
+levels: [20, 100]
+updated: 2026-10-08
+tags: [Guilds]
+---
+
+<Callout kind="tip" title="In short">
+- You can found a guild from level <Stat path="mechanics.guild.rules.createLevel" /> for <Stat path="mechanics.guild.rules.createCost" format="gold" />.
+- Officers can invite and buy skills, members can only deposit.
+- Wisdom or Expansion first, the rest later.
+</Callout>
+
+## Founding
+
+Go to <Npc id="guildmaster" />. Pick a name and a short tag: the tag shows above every member's head, so keep it readable. The guild belongs to the character who founded it.
+
+## Ranks
+
+Only make people you trust officers: an officer can remove members and spend the treasury on skills.
+
+<GuildRanksTable />
+
+## Treasury
+
+Anyone can deposit, and the member list shows who gave how much. Agree on a simple rule, for example a share of the gold from every day of hunting.
+
+## Which skills first
+
+- **Wisdom** adds <Stat path="mechanics.guild.skills[wisdom].effects.0" format="pct" /> EXP per skill level for everyone. It pays off at once because it works for all members.
+- **Expansion** adds <Stat path="mechanics.guild.skills[expansion].effects.0" /> places per level. Buy it when you run out of places for new players.
+- **Luck** and **Fortune** add item chance and gold. They are expensive, so they are a later goal.
+- **Healer's Grace** lowers potion prices. It is the cheapest, good for a start while the treasury is small.
+
+<GuildSkillsTable />
+
+## PvP protection
+
+Guild members cannot attack each other. If you want to practise fighting each other, the leader can turn the protection off, but duels on the arena are the better way.
+
+## What next
+
+- <Link to="mechanics" id="guilds">Full guild rules</Link>
+- <Link to="guides" id="pvp-zones">PvP zones</Link>
+- <Link to="mechanics" id="trading">Trading</Link>

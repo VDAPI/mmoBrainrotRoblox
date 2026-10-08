@@ -353,9 +353,11 @@ main { flex: 1; }
 .vw-prose > p, .vw-prose > ul, .vw-prose > ol { max-width: 72ch; margin: 0 0 var(--vw-s-5); }
 .vw-prose > * + .vw-section-title { margin-top: var(--vw-s-10); }
 .vw-prose > .vw-section-title:first-child { margin-top: 0; }
-.vw-prose ul { padding-left: 0; list-style: none; }
-.vw-prose ul > li { position: relative; padding-left: 26px; margin-bottom: var(--vw-s-2); }
-.vw-prose ul > li::before { content: ""; position: absolute; left: 4px; top: .62em; width: 8px; height: 8px; background: var(--vw-gold-dark); transform: rotate(45deg); }
+.vw-prose > ul, .vw-callout__body ul { padding-left: 0; list-style: none; }
+.vw-prose > ul > li, .vw-callout__body ul > li { position: relative; padding-left: 26px; margin-bottom: var(--vw-s-2); }
+.vw-prose > ul > li::before, .vw-callout__body ul > li::before { content: ""; position: absolute; left: 4px; top: .62em; width: 8px; height: 8px; background: var(--vw-gold-dark); transform: rotate(45deg); }
+.vw-callout__body ul { margin: 4px 0 0; }
+.vw-callout__body ul > li:last-child { margin-bottom: 0; }
 .vw-prose ol { padding-left: 26px; }
 .vw-prose ol > li { margin-bottom: var(--vw-s-2); }
 .vw-prose ol > li::marker { color: var(--vw-gold); font-weight: 800; }

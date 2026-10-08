@@ -1,0 +1,53 @@
+---
+title: Levelling 1–30
+description: "Where and how to level up to thirty: recommended areas, the level gap, elites, caves, contracts, parties and Fortune."
+key: leveling-1-30
+order: 2
+levels: [1, 30]
+updated: 2026-10-08
+tags: [Experience]
+---
+
+<Callout kind="tip" title="In short">
+- Fight monsters in your level colour: much weaker ones give less and less, down to almost nothing.
+- Do main quests and daily contracts on the way, not instead of hunting.
+- Elites, caves and playing in a party give more EXP per minute once you are ready.
+</Callout>
+
+## The level path
+
+The game recommends an area for your level in the portal window and on the map. This is that path from the start to level thirty. Areas with a badge have their own character: some give faster EXP, others better loot or more gold.
+
+<Callout kind="changed" date="2026-10-07" update="2026-10-07-expowiska">
+Hunting grounds now have profiles: fast EXP, better loot or more gold at the same level. You see the profile next to the area in the portal window and on the map.
+</Callout>
+
+<LevelPath from={1} to={30} />
+
+## Level gap
+
+A monster more than <Stat path="progression.levelDiffRules.freeDiff" /> levels below you loses <Stat path="progression.levelDiffRules.penaltyPerLevel" format="frac" /> of its reward for every further level, down to <Stat path="progression.levelDiffRules.minMultiplier" format="frac" />. A stronger one gives a bonus, at most <Stat path="progression.levelDiffRules.maxBonus" format="frac" />. When the monsters of an area turn grey or green, it is time to move on.
+
+## Elites and caves
+
+An Elite gives <Stat path="mechanics.variants.elite.expMul" format="x" /> and an Elite II <Stat path="mechanics.variants.elite2.expMul" format="x" /> of the normal reward. Caves are full of elites, but they are a red zone: other players can attack you there. Go in with spare potions and preferably with a party.
+
+## Quests and contracts
+
+- Main quests give big chunks of EXP and lead to the next regions.
+- Side quests of the Meadows folk end with a choice of an item for your class.
+- The <Npc id="questboard" /> gives <Stat path="quests.daily.perDay" /> contracts a day. Their goals fit your level, so you finish them while hunting anyway.
+
+## Parties and bonuses
+
+In a party EXP is split between the members, but you kill much faster and more safely, especially elites. A Fortune line blessing and guild bonuses add a percentage to every EXP you gain. Details in <Link to="mechanics" id="experience">Experience</Link>.
+
+## The next region
+
+When the recommended area moves to a new region, the main story usually already leads there. First, though, swap your weapon and armour for the next tier: the <Link to="items">item database</Link> shows what to wear at your level.
+
+## What next
+
+- <Link to="guides" id="upgrading">Upgrading without tears</Link>
+- <Link to="guides" id="pvp-zones">PvP zones</Link>
+- <Link to="bestiary">Bestiary</Link>

@@ -1,0 +1,48 @@
+---
+// Passes and Dragon Currency services (S43): premium.json (tools/WikiData/Premium.luau: names, descriptions, daily
+// limits — never prices). `shop` = list the services instead of the passes.
+import Source from "./Source.astro";
+import type { Lang } from "../../i18n/routes";
+import { load } from "../../lib/data";
+import { name, t } from "../../lib/i18n";
+import { sectionHref } from "../../lib/sections";
+interface Props {
+  shop?: boolean;
+}
+const { shop = false } = Astro.props;
+const lang = (Astro.params.lang ?? "pl") as Lang;
+const premium = load("premium");
+---
+{shop ? (
+  <ul class="vw-pass">
+    {premium.shop.map((s) => {
+      const h = s.item ? sectionHref(lang, "items", s.item) : null;
+      return (
+        <li>
+          <span class="txt">
+            <strong>{h ? <a href={h}>{name(s.name, lang)}</a> : name(s.name, lang)}</strong>
+            {s.desc && <span>{name(s.desc, lang)}</span>}
+            {s.dailyLimit !== undefined && <span>{t(lang, "cos.dailyLimit", { n: s.dailyLimit })}</span>}
+          </span>
+        </li>
+      );
+    })}
+  </ul>
+) : (
+  <ul class="vw-pass">
+    {premium.passes.map((p) => (
+      <li>
+        <span class="icon" aria-hidden="true">{p.icon}</span>
+        <span class="txt"><strong>{name(p.name, lang)}</strong><span>{name(p.desc, lang)}</span></span>
+      </li>
+    ))}
+  </ul>
+)}
+<Source from="Data/Products (Premium.luau)" />
+<style>
+  .vw-pass { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; }
+  .vw-pass li { display: flex; align-items: center; gap: 14px; padding: 12px 14px; background: var(--vw-panel); border: 1px solid var(--vw-border); }
+  .icon { flex-shrink: 0; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--vw-gold-dark); color: var(--vw-gold-bright); font-size: 20px; }
+  .txt { display: flex; flex-direction: column; gap: 2px; }
+  .txt span { font-size: 14px; color: var(--vw-text-muted); }
+</style>

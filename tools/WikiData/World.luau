@@ -17,6 +17,7 @@ local Rarities = require("../../src/shared/Data/Rarities")
 local Schema = require("./Schema")
 local Shops = require("../../src/shared/Data/Shops")
 local Spawns = require("../../src/shared/Data/Spawns")
+local Town = require("../../src/shared/Data/Town")
 
 local S = Schema
 local arr, map, rec = S.arr, S.map, S.rec
@@ -135,6 +136,8 @@ S.file(
 			name = "name",
 			["greeting?"] = "name",
 			["role?"] = "name", -- S37: npc.<id>.role
+			["building?"] = "string", -- S43: Town.npcSpot(id).at (city NPCs)
+			["buildingName?"] = "name", -- S43: town.sign.<at>
 			map = "ref:maps",
 			x = "number",
 			z = "number",
@@ -347,6 +350,12 @@ function World.portals(ctx: any): any
 	return { portals = list }
 end
 
+-- S43: the city building an NPC stands at (Town.npcSpot(id).at), nil outside the city plan.
+function World.buildingOf(id: string): string?
+	local spot = Town.npcSpot(id)
+	return spot and (spot :: any).at or nil
+end
+
 function World.npcs(ctx: any): any
 	local list = {}
 	for _, n in Npcs.list do
@@ -356,6 +365,8 @@ function World.npcs(ctx: any): any
 				name = Names.of(n.nameKey),
 				greeting = Names.opt(n.greetingKey),
 				role = Names.opt(`npc.{n.id}.role`),
+				building = World.buildingOf(n.id),
+				buildingName = World.buildingOf(n.id) and Names.opt(`town.sign.{World.buildingOf(n.id)}`),
 				map = n.map,
 				x = n.position.x,
 				z = n.position.z,

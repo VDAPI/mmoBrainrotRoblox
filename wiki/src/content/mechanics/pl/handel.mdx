@@ -1,0 +1,40 @@
+---
+title: Handel
+description: "Wymiana z graczem, dom aukcyjny z kaucją i prowizją, poczta oraz sprzedaż u kupców i podział łupu w grupie."
+key: trading
+order: 7
+updated: 2026-10-08
+tags: [Złoto, Aukcje]
+---
+
+## Wymiana z graczem
+
+Kliknij gracza i wybierz wymianę. Musicie stać najwyżej <Stat path="mechanics.config.TradeRange" /> studów od siebie, a zaproszenie czeka <Stat path="mechanics.config.TradeInviteSeconds" format="s" />.
+
+- Każdy wkłada przedmioty i złoto na swoją stronę okna.
+- Obaj klikacie „Akceptuj”. Każda zmiana po którejkolwiek stronie cofa akceptację.
+- Po akceptacji jest odliczanie <Stat path="mechanics.config.TradeConfirmDelay" format="s" />, potem „Potwierdź”. Wymiana dzieje się w całości albo wcale.
+- Wymienisz tylko przedmioty niezwiązane. Związane odblokowuje <Item id="scroll_unbind" />.
+
+## Dom aukcyjny
+
+Dom aukcyjny w Hali Kupieckiej działa między serwerami: wystawiasz przedmiot za złoto, a ktoś kupuje go od razu, bez licytacji.
+
+- Przy wystawieniu płacisz kaucję <Stat path="mechanics.market.auction.depositPct" format="pct" /> ceny. Wraca do ciebie razem z zapłatą, a przy wycofaniu oferty przepada.
+- Od sprzedaży dom pobiera prowizję <Stat path="mechanics.market.auction.feePct" format="pct" />.
+- Oferta wisi <Stat path="mechanics.market.auction.durations.0" /> albo <Stat path="mechanics.market.auction.durations.1" /> godzin. Naraz możesz mieć <Stat path="mechanics.market.auction.maxListings" /> ofert na postać.
+- Złoto ze sprzedaży i kupione przedmioty przychodzą pocztą.
+
+<AuctionTable />
+
+## Poczta
+
+Pocztę odbierasz u <Npc id="auctioneer" />, także po powrocie z gry. Paczka czeka <Stat path="mechanics.market.mail.lifetimeDays" /> dni, mieści do <Stat path="mechanics.market.mail.maxItemsPerParcel" /> przedmiotów, a konto może mieć najwyżej <Stat path="mechanics.market.mail.maxParcels" /> paczek.
+
+## Kupcy w mieście
+
+Każdy kupiec skupuje przedmioty po ich wartości. Wartość i cenę u kupca każdego przedmiotu znajdziesz w <Link to="items">bazie przedmiotów</Link>. Przedmioty bez ceny sprzedaży i zablokowane zostają w plecaku.
+
+## Łup w grupie
+
+Złoto z potwora pokonanego w grupie dzieli się po równo. Każdy przedmiot losowany jest osobno między członków, którzy są blisko: jeśli przedmiot jest dla konkretnej klasy, najpierw dostają go gracze tej klasy, a gdy nikogo takiego nie ma, losują wszyscy. Materiały i zioła losują wszyscy. Czat grupy mówi, kto co dostał. Worek z łupem leży na ziemi przez <Stat path="mechanics.config.LootLifetime" format="min" />.

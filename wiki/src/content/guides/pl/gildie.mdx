@@ -1,0 +1,48 @@
+---
+title: Gildie
+description: "Jak założyć gildię, ustawić rangi, zbierać do skarbca i w jakiej kolejności kupować umiejętności gildii."
+key: guilds
+order: 5
+levels: [20, 100]
+updated: 2026-10-08
+tags: [Gildie]
+---
+
+<Callout kind="tip" title="W skrócie">
+- Gildię zakładasz od poziomu <Stat path="mechanics.guild.rules.createLevel" /> za <Stat path="mechanics.guild.rules.createCost" format="gold" />.
+- Oficerowie mogą zapraszać i kupować umiejętności, członkowie tylko wpłacać.
+- Najpierw Mądrość albo Rozbudowa, potem reszta.
+</Callout>
+
+## Założenie
+
+Idź do <Npc id="guildmaster" />. Wybierz nazwę i krótki tag: tag widać nad głową każdego członka, więc niech będzie czytelny. Gildia należy do postaci, która ją założyła.
+
+## Rangi
+
+Daj rangę oficera tylko osobom, którym ufasz: oficer może wyrzucać członków i wydawać skarbiec na umiejętności.
+
+<GuildRanksTable />
+
+## Skarbiec
+
+Wpłacać może każdy, a lista członków pokazuje, kto ile dał. Umówcie się na prostą zasadę, na przykład część złota z każdego dnia polowania.
+
+## Które umiejętności najpierw
+
+- **Mądrość** dodaje <Stat path="mechanics.guild.skills[wisdom].effects.0" format="pct" /> EXP na poziom umiejętności dla każdego. Opłaca się od razu, bo działa na wszystkich.
+- **Rozbudowa** dodaje <Stat path="mechanics.guild.skills[expansion].effects.0" /> miejsc na poziom. Kupuj, gdy brakuje miejsc dla chętnych.
+- **Szczęście** i **Fortuna** dodają szansę na przedmiot i złoto. Są drogie, więc to cel na później.
+- **Łaska Uzdrowiciela** obniża ceny mikstur. Najtańsza, dobra na start, gdy skarbiec jest mały.
+
+<GuildSkillsTable />
+
+## Ochrona PvP
+
+Członkowie gildii nie mogą się atakować. Jeśli chcecie trenować walkę ze sobą, przywódca może wyłączyć ochronę, ale lepiej używać pojedynków na arenie.
+
+## Co dalej
+
+- <Link to="mechanics" id="guilds">Pełne zasady gildii</Link>
+- <Link to="guides" id="pvp-zones">Strefy PvP</Link>
+- <Link to="mechanics" id="trading">Handel</Link>

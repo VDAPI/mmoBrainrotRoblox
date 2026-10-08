@@ -1,0 +1,54 @@
+---
+title: First steps
+description: "Your first hour in Vaelthorn: controls, the first quests, where to level up to ten, points and what happens when you die."
+key: first-steps
+order: 1
+levels: [1, 10]
+updated: 2026-10-08
+tags: [Start]
+---
+
+<Callout kind="tip" title="In short">
+- Follow the main quests: they lead you through the city and the first region in the right order.
+- Spend your points right after every level up, mostly on your class's main attribute.
+- Death takes nothing from you, so do not be afraid to try.
+</Callout>
+
+## Controls
+
+You move with WASD and turn the camera with the right mouse button. Game windows open with shortcuts, and your skills sit on the number keys. On a phone everything is on the on-screen buttons.
+
+<KeybindTable />
+
+Drink potions with <Key action="potion_hp" />, <Key action="potion_mana" /> and <Key action="potion_energy" />. Pick up loot with <Key action="pickup" /> and talk to characters with <Key action="interact" />.
+
+## The first hour
+
+You start on the market square. <Npc id="captain" /> gives you the first quest, and from then on the main story leads you by itself: a visit to the healer, to the blacksmith, out through the walls and your first hunt. A mark above a character shows who has a quest for you, and an arrow on screen leads to your goal. The quest journal opens with <Key action="win_quests" />.
+
+## Where to level
+
+This path shows the area the game recommends for every level, with the main quests of that range. Fight monsters close to your level: the colour of the level above a monster tells you whether it is a good target.
+
+<LevelPath from={1} to={10} />
+
+## Points after a level up
+
+Every level up gives <Stat path="progression.statPointsPerLevel" /> attribute points. Warriors put them into Strength, Hunters into Dexterity, Mages and Clerics into Intellect, and some Vitality helps everyone. From level <Stat path="progression.skillPointsFromLevel" /> you also get a skill point: spend it in the <Key action="win_skills" /> window. You can plan your build first in the <Link to="classes">class planner</Link>.
+
+## Zones
+
+The zone colour tells you whether other players can attack you.
+
+<ZoneCards compact />
+
+## When you die
+
+You lose nothing. After a short timer you choose to stand up in the city or where you died, and for a moment after respawning nothing can hurt you. Details in <Link to="mechanics" id="death">Death</Link>.
+
+## What next
+
+- <Link to="guides" id="leveling-1-30">Levelling to thirty</Link>
+- <Link to="guides" id="upgrading">Upgrading without tears</Link>
+- <Link to="quests">All quests</Link>
+- <Link to="mechanics" id="combat">How combat works</Link>
