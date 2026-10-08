@@ -1,0 +1,11 @@
+---
+// <Spoiler title?>…</Spoiler>: blurred story text (kept out of the search index), revealed by a button.
+import Callout from "../Callout.astro";
+import type { Lang } from "../../i18n/routes";
+interface Props {
+  title?: string;
+}
+const { title } = Astro.props;
+const lang = (Astro.params.lang ?? "pl") as Lang;
+---
+<Callout kind="spoiler" title={title} lang={lang}><slot /></Callout>

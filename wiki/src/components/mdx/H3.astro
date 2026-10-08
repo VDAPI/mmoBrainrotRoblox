@@ -1,0 +1,8 @@
+---
+// MDX ### heading.
+interface Props {
+  id?: string;
+}
+const { id } = Astro.props;
+---
+<h3 class="vw-h3" id={id}><slot /></h3>

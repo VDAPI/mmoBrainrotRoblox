@@ -13,7 +13,7 @@ export const PAGES = [
   { name: "szukaj-pusto", path: "/pl/szukaj/" },
   { name: "styleguide", path: "/pl/styleguide/" },
   { name: "styleguide-en", path: "/en/styleguide/" },
-  { name: "wkrotce", path: "/pl/zadania/" },
+  { name: "wkrotce", path: "/pl/poradniki/" },
   { name: "404", path: "/pl/404/" },
   { name: "mapa", path: "/pl/mapa/" },
   { name: "mapa-laki", path: "/pl/mapa/?m=meadows&a=meadows_wolfhills" },
@@ -45,4 +45,13 @@ export const PAGES = [
   { name: "klasa-mag-build", path: "/pl/klasy/Mage/?b=MAGE34-a535230-2000000&s=fireball" },
   { name: "klasa-kaplan", path: "/pl/klasy/Cleric/" },
   { name: "class-warrior-en", path: "/en/classes/Warrior/" },
+  // S42
+  { name: "zadania", path: "/pl/zadania/" },
+  { name: "zadanie-wilki", path: "/pl/zadania/wolves/" },
+  { name: "zadanie-poboczne", path: "/pl/zadania/side_grainCart/" },
+  { name: "mechaniki", path: "/pl/mechaniki/" },
+  { name: "mech-pvp", path: "/pl/mechaniki/pvp/" },
+  { name: "mech-doswiadczenie", path: "/pl/mechaniki/doswiadczenie/" },
+  { name: "mech-smierc", path: "/pl/mechaniki/smierc/" },
+  { name: "mech-death-en", path: "/en/mechanics/death/" },
 ];

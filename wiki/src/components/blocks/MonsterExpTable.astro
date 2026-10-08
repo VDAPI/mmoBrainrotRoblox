@@ -1,0 +1,25 @@
+---
+// EXP of one monster by level and rank (S42): progression.monsterExp (Exp.monsterExp, before the level-gap multiplier).
+import Source from "./Source.astro";
+import type { Lang } from "../../i18n/routes";
+import { load } from "../../lib/data";
+import { formatNumber } from "../../lib/format";
+import { name, t } from "../../lib/i18n";
+const lang = (Astro.params.lang ?? "pl") as Lang;
+const rows = load("progression").monsterExp;
+const variants = load("mechanics").variants;
+const cols = ["normal", "elite", "elite2", "boss"].filter((v) => rows[0]?.exp[v] !== undefined);
+const label = (v: string) => (v === "boss" ? t(lang, "rank.boss") : name(variants[v]?.name, lang) || v);
+---
+<div class="vw-scroll">
+  <table class="vw-table vw-table--plain vw-table--keep">
+    <caption class="vw-sr">{t(lang, "block.mexp.caption")}</caption>
+    <thead><tr><th scope="col">{t(lang, "block.col.level")}</th>{cols.map((v) => <th scope="col" style="text-align: right">{label(v)}</th>)}</tr></thead>
+    <tbody>
+      {rows.map((r) => (
+        <tr><td class="strong">{r.level}</td>{cols.map((v) => <td style="text-align: right">{formatNumber(r.exp[v], lang)}</td>)}</tr>
+      ))}
+    </tbody>
+  </table>
+</div>
+<Source from="Logic/Exp.monsterExp" />

@@ -1,0 +1,18 @@
+---
+// <Stat path="mechanics.config.PvpToggleDelay" format="s" />: a game number from the export (src/lib/stat.ts).
+// `mul` scales the value (e.g. 100 for a share shown as points), `decimals` fixes the decimals. A missing path fails
+// the build, so texts never keep a number the game dropped.
+import type { Lang } from "../../i18n/routes";
+import { t } from "../../lib/i18n";
+import { formatStat, resolveStat, type StatFormat } from "../../lib/stat";
+interface Props {
+  path: string;
+  format?: StatFormat;
+  decimals?: number;
+  mul?: number;
+}
+const { path, format = "num", decimals, mul = 1 } = Astro.props;
+const lang = (Astro.params.lang ?? "pl") as Lang;
+const value = resolveStat(path) * mul;
+---
+<span class="vw-stat" data-src={path} title={t(lang, "stat.source", { path })}>{formatStat(value, format, lang, decimals)}</span>

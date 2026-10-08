@@ -336,3 +336,87 @@ main { flex: 1; }
 @media (prefers-reduced-motion: reduce) {
   .sp-edges path.is-met { filter: none; }
 }
+
+/* S42: articles (mechanics, guides), MDX references and data blocks */
+.vw-article { max-width: 1296px; margin: 0 auto; padding: 32px 72px 72px; }
+.vw-article__grid { display: grid; grid-template-columns: 280px minmax(0, 920px); grid-template-areas: "side head" "side main"; column-gap: 48px; align-items: start; margin-top: 20px; }
+.vw-article__head { grid-area: head; margin-bottom: 36px; }
+.vw-article__side { grid-area: side; position: sticky; top: 96px; }
+.vw-article__main { grid-area: main; min-width: 0; }
+.vw-article__kicker { margin: 0 0 10px; color: var(--vw-gold); }
+.vw-article__title { margin: 0; font: 700 var(--vw-fs-display-l)/var(--vw-lh-display-l) var(--vw-font-display); color: var(--vw-gold-bright); }
+.vw-article__badges { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+.vw-article__badges > * { min-height: 34px; display: inline-flex; align-items: center; }
+.vw-article__lead { margin: 18px 0 0; max-width: 72ch; font-size: 20px; line-height: 1.6; color: var(--vw-text-soft); }
+.vw-article__data { margin: 14px 0 0; color: var(--vw-text-muted); }
+.vw-prose { font-size: var(--vw-fs-body-l); line-height: 1.6; color: var(--vw-text-soft); }
+.vw-prose > p, .vw-prose > ul, .vw-prose > ol { max-width: 72ch; margin: 0 0 var(--vw-s-5); }
+.vw-prose > * + .vw-section-title { margin-top: var(--vw-s-10); }
+.vw-prose > .vw-section-title:first-child { margin-top: 0; }
+.vw-prose ul { padding-left: 0; list-style: none; }
+.vw-prose ul > li { position: relative; padding-left: 26px; margin-bottom: var(--vw-s-2); }
+.vw-prose ul > li::before { content: ""; position: absolute; left: 4px; top: .62em; width: 8px; height: 8px; background: var(--vw-gold-dark); transform: rotate(45deg); }
+.vw-prose ol { padding-left: 26px; }
+.vw-prose ol > li { margin-bottom: var(--vw-s-2); }
+.vw-prose ol > li::marker { color: var(--vw-gold); font-weight: 800; }
+.vw-prose strong { color: var(--vw-text); }
+.vw-prose > .vw-callout, .vw-prose > .vw-scroll, .vw-prose > table, .vw-prose > figure, .vw-prose > div { margin: 0 0 var(--vw-s-5); }
+.vw-prose .vw-source { margin: calc(-1 * var(--vw-s-3)) 0 var(--vw-s-6); }
+.vw-prose .vw-callout { font-size: 17px; }
+.vw-h3 { margin: var(--vw-s-8) 0 var(--vw-s-3); font: 800 var(--vw-fs-h3)/var(--vw-lh-h3) var(--vw-font-ui); color: var(--vw-text); }
+.vw-stat { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--vw-text); text-decoration: underline dashed var(--vw-gold-dark); text-underline-offset: 3px; text-decoration-thickness: 1px; cursor: help; }
+.vw-ref { display: inline; font-weight: 700; }
+.vw-ref--item { color: var(--ref-c, var(--vw-text)); }
+.vw-ref--item > a { color: inherit; }
+.vw-ref .vw-item-icon { display: inline-flex; vertical-align: -5px; margin-right: 6px; }
+.vw-ref__meta, .vw-ref__n { font-weight: 400; color: var(--vw-text-muted); }
+.vw-scroll { max-width: 100%; overflow-x: auto; }
+.vw-table--plain tbody tr { cursor: default; }
+.vw-table--plain tbody tr:hover { background: none; }
+.vw-table--dense td { height: 36px; }
+.vw-table .strong, .vw-table .rowhead { font-weight: 800; color: var(--vw-text); }
+.vw-table .rowhead { text-align: left; font: 800 16px/1.2 var(--vw-font-ui); letter-spacing: 0; text-transform: none; height: auto; padding: 8px 14px; white-space: nowrap; }
+.vw-table .gold { color: var(--vw-gold-bright); font-weight: 800; }
+.vw-table--prose td { height: auto; padding: 10px 14px; }
+@media (max-width: 767px) {
+  .vw-table--keep, .vw-table--prose, .vw-table--dense { display: table; background: var(--vw-panel); border: 1px solid var(--vw-border); }
+  .vw-table--keep thead, .vw-table--prose thead, .vw-table--dense thead { display: table-header-group; }
+  .vw-table--keep tbody, .vw-table--prose tbody, .vw-table--dense tbody { display: table-row-group; }
+  .vw-table--keep tr, .vw-table--prose tr, .vw-table--dense tr { display: table-row; padding: 0; margin: 0; background: none; border: 0; }
+  .vw-table--keep td, .vw-table--keep th, .vw-table--prose td, .vw-table--prose th, .vw-table--dense td { display: table-cell; padding: 8px 10px; border-bottom: 1px solid var(--vw-border-subtle); white-space: nowrap; }
+  .vw-table--keep td[data-label]::before, .vw-table--prose td[data-label]::before { content: none; }
+}
+.vw-chart { margin: 0; padding: 16px; background: var(--vw-bg-sunken); border: 1px solid var(--vw-border); }
+.vw-chart svg { display: block; width: 100%; height: auto; }
+.vw-chart .grid { stroke: var(--vw-border-subtle); stroke-width: 1; }
+.vw-chart .border { stroke: var(--vw-gold-dark); stroke-width: 1; stroke-dasharray: 4 4; }
+.vw-chart .tick { fill: var(--vw-text-muted); font: 500 12px var(--vw-font-ui); }
+.vw-chart .region { fill: var(--vw-text-muted); font: 700 12px var(--vw-font-ui); }
+.vw-chart .mark { fill: var(--vw-text); font: 800 13px var(--vw-font-ui); }
+.vw-chart .line { fill: none; stroke: var(--vw-gold); stroke-width: 2.5; }
+.vw-chart .fill { fill: var(--vw-gold); opacity: .1; }
+.vw-chart .dot { fill: var(--vw-gold-bright); stroke: var(--vw-bg-sunken); stroke-width: 2; }
+.vw-chart .bar { fill: var(--vw-text-muted); }
+.vw-chart .bar--up { fill: var(--vw-success); }
+.vw-chart .bar--down { fill: var(--vw-danger); }
+.vw-chart figcaption { margin-top: 10px; }
+.vw-chart__data { margin-top: 10px; }
+.vw-chart__data summary { min-height: var(--vw-touch); display: flex; align-items: center; cursor: pointer; color: var(--vw-gold); font-weight: 800; font-size: 15px; }
+.vw-blocks-zones { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.vw-zonecard { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; padding: 16px; background: var(--vw-panel); border: 1px solid var(--vw-border); border-top: 3px solid var(--zc); font-size: 16px; }
+.vw-zonecard p { margin: 0; }
+.vw-zonecard__maps { font-size: 14px; color: var(--vw-text-muted); }
+.vw-zonecard__maps .vw-label { display: block; margin-bottom: 4px; }
+.vw-title-name { display: inline-block; padding: 2px 8px; background: #14161B; }
+@media (max-width: 1023px) {
+  .vw-article { padding: 20px 16px 48px; }
+  .vw-article__grid { grid-template-columns: minmax(0, 1fr); grid-template-areas: "head" "side" "main"; }
+  .vw-article__head { margin-bottom: 16px; }
+  .vw-article__side { position: static; margin-bottom: 24px; }
+  .vw-blocks-zones { grid-template-columns: 1fr; }
+}
+@media (max-width: 767px) {
+  .vw-article__lead { font-size: 18px; }
+  .vw-prose > * + .vw-section-title { margin-top: var(--vw-s-8); }
+}
+.vw-chip--static { cursor: default; } .vw-chip--static:hover { border-color: var(--vw-border); color: inherit; }

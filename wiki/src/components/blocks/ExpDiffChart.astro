@@ -1,0 +1,52 @@
+---
+// EXP multiplier by level gap (S42): progression.levelDiff (Exp.levelDiffMultiplier; `diff` = monster level minus
+// player level, -10 to +20) as SVG bars; the data table sits in <details>.
+import Source from "./Source.astro";
+import type { Lang } from "../../i18n/routes";
+import { load } from "../../lib/data";
+import { formatNumber, formatPercent } from "../../lib/format";
+import { t } from "../../lib/i18n";
+const lang = (Astro.params.lang ?? "pl") as Lang;
+const rows = [...load("progression").levelDiff].sort((a, b) => a.diff - b.diff);
+const W = 720;
+const H = 240;
+const pad = { l: 48, r: 12, t: 16, b: 40 };
+const top = Math.max(1.25, ...rows.map((r) => r.multiplier));
+const bw = (W - pad.l - pad.r) / rows.length;
+const y = (v: number) => H - pad.b - (v / top) * (H - pad.t - pad.b);
+const sign = (d: number) => (d > 0 ? `+${d}` : String(d));
+const label = t(lang, "block.diff.aria", {
+  low: formatPercent(rows[0].multiplier, lang),
+  high: formatPercent(rows[rows.length - 1].multiplier, lang),
+});
+---
+<figure class="vw-chart">
+  <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={label}>
+    {[0, 0.5, 1].map((v) => (
+      <g>
+        <line x1={pad.l} x2={W - pad.r} y1={y(v)} y2={y(v)} class="grid" />
+        <text x={pad.l - 6} y={y(v) + 4} text-anchor="end" class="tick">{formatPercent(v, lang)}</text>
+      </g>
+    ))}
+    {rows.map((r, i) => (
+      <rect x={pad.l + i * bw + 1} y={y(r.multiplier)} width={bw - 2} height={y(0) - y(r.multiplier)} class={r.multiplier > 1 ? "bar bar--up" : r.multiplier < 1 ? "bar bar--down" : "bar"}>
+        <title>{`${sign(r.diff)}: ${formatPercent(r.multiplier, lang)}`}</title>
+      </rect>
+    ))}
+    {rows.filter((r) => r.diff % 5 === 0).map((r) => (
+      <text x={pad.l + rows.indexOf(r) * bw + bw / 2} y={H - pad.b + 18} text-anchor="middle" class="tick">{sign(r.diff)}</text>
+    ))}
+    <text x={W / 2} y={H - 4} text-anchor="middle" class="tick">{t(lang, "block.diff.axis")}</text>
+  </svg>
+  <details class="vw-chart__data">
+    <summary>{t(lang, "block.chart.data")}</summary>
+    <div class="vw-scroll">
+      <table class="vw-table vw-table--plain vw-table--dense">
+        <caption class="vw-sr">{t(lang, "block.diff.table")}</caption>
+        <thead><tr><th scope="col">{t(lang, "block.diff.gap")}</th><th scope="col">{t(lang, "block.diff.mult")}</th></tr></thead>
+        <tbody>{rows.map((r) => <tr><td>{sign(r.diff)}</td><td>{formatNumber(Math.round(r.multiplier * 100), lang)}%</td></tr>)}</tbody>
+      </table>
+    </div>
+  </details>
+</figure>
+<Source from="Logic/Exp.levelDiffMultiplier" />

@@ -1,0 +1,52 @@
+---
+title: Combat
+description: "How the game counts damage step by step, how much armour stops, how elements, crits and dodges work and how monster ranks differ."
+key: combat
+order: 1
+updated: 2026-10-08
+tags: [Damage, Monsters]
+---
+
+## Damage step by step
+
+The server counts everything, in this order:
+
+1. **Hit.** The target's dodge chance minus your accuracy, at most <Stat path="mechanics.combat.dodgeCap" format="pct" />. A dodge means no damage.
+2. **Strength of the blow.** Your attack (physical or magic) times the skill multiplier.
+3. **Armour.** The target's defence (after your armour penetration) stops part of the damage, a smaller part the higher your level. Magic uses magic resistance the same way.
+4. **Randomness.** The result is multiplied by a value from <Stat path="mechanics.combat.randomMin" format="frac" /> to <Stat path="mechanics.combat.randomMax" format="frac" />.
+5. **Critical hit.** The base chance is <Stat path="mechanics.formula.critBase" format="pct" />, at most <Stat path="stats.stats[critChance].cap" format="pct" />. A crit deals <Stat path="mechanics.formula.critDmgBase" format="pct" /> damage.
+6. **Element.** The target's resistance to the attack's element reduces the damage, by at most <Stat path="stats.stats[resFire].cap" format="pct" />.
+7. **PvP.** Against a player the result is multiplied by <Stat path="mechanics.combat.pvpModifier" format="frac" />.
+
+Every hit deals at least <Stat path="mechanics.combat.minDamage" /> point of damage.
+
+## Armour
+
+The table shows the share of damage armour stops against an attacker of a given level. The same armour protects less and less against stronger enemies, so replace your armour as you level.
+
+<ReductionTable />
+
+## Elements
+
+Mage weapons and some skills deal elemental damage. An attack without an element is physical. Each element is blocked by its own resistance.
+
+<ElementList />
+
+## Range
+
+A basic melee attack reaches <Stat path="mechanics.combat.meleeRange" /> studs, a ranged one <Stat path="mechanics.combat.rangedRange" /> studs.
+
+## Monster ranks
+
+Elites are bigger, stronger and higher level than normal monsters of their kind. Elite II fight like a small boss and need a party.
+
+<VariantTable />
+
+Monsters in a group hit weaker one by one but attack together. Monsters far below your level (<Stat path="mechanics.combat.passiveLevelGap" /> levels or more) do not attack first.
+
+## Level colour
+
+The colour of the level above a monster compares its level with yours.
+
+<LevelBandStrip />

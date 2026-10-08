@@ -1,0 +1,37 @@
+---
+// Potions (S42): consumables with use.kind = "potion" from items.json (amount restored, level), grouped by resource.
+import ItemIcon from "../ItemIcon.svelte";
+import Source from "./Source.astro";
+import type { Lang } from "../../i18n/routes";
+import { items } from "../../lib/data";
+import { formatNumber } from "../../lib/format";
+import { name, t, type Key } from "../../lib/i18n";
+import { materialRef } from "../../lib/items";
+import { sectionHref } from "../../lib/sections";
+const lang = (Astro.params.lang ?? "pl") as Lang;
+type Use = { kind?: string; resource?: string; amount?: number };
+const potions = items()
+  .filter((i) => (i.use as Use | undefined)?.kind === "potion")
+  .sort((a, b) => ((a.use as Use).resource ?? "").localeCompare((b.use as Use).resource ?? "") || a.requiredLevel - b.requiredLevel);
+---
+<div class="vw-scroll">
+  <table class="vw-table vw-table--plain vw-table--keep">
+    <caption class="vw-sr">{t(lang, "block.potion.caption")}</caption>
+    <thead><tr><th scope="col">{t(lang, "block.elixir.item")}</th><th scope="col" style="text-align: right">{t(lang, "block.col.level")}</th><th scope="col" style="text-align: right">{t(lang, "block.potion.amount")}</th></tr></thead>
+    <tbody>
+      {potions.map((p) => {
+        const ref = materialRef(p.id);
+        const use = p.use as Use;
+        const h = sectionHref(lang, "items", p.id);
+        return (
+          <tr>
+            <td><span class="vw-ref"><ItemIcon glyph={ref.glyph} color={ref.color} rarity={ref.rarity} size={28} src={ref.icon} alt="" />{h ? <a href={h}>{name(p.name, lang)}</a> : name(p.name, lang)}</span></td>
+            <td style="text-align: right">{p.requiredLevel}</td>
+            <td style="text-align: right">{t(lang, `block.potion.${use.resource}` as Key, { n: formatNumber(use.amount ?? 0, lang) })}</td>
+          </tr>
+        );
+      })}
+    </tbody>
+  </table>
+</div>
+<Source from="Data/Items" />

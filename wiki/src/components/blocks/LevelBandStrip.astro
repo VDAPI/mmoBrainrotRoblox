@@ -1,0 +1,35 @@
+---
+// Level colour bands (S42): mechanics.levelBands (LevelBand.of, monster level minus player level) as a strip of
+// five colours with their ranges; the open ends of the scan read "≤" / "≥".
+import Source from "./Source.astro";
+import type { Lang } from "../../i18n/routes";
+import { load } from "../../lib/data";
+import { t, type Key } from "../../lib/i18n";
+const lang = (Astro.params.lang ?? "pl") as Lang;
+const bands = load("mechanics").levelBands;
+const sign = (d: number) => (d > 0 ? `+${d}` : d < 0 ? `−${-d}` : "0");
+const range = (i: number) => {
+  const b = bands[i];
+  if (i === 0) return `≤ ${sign(b.max)}`;
+  if (i === bands.length - 1) return `≥ ${sign(b.min)}`;
+  return b.min === b.max ? sign(b.min) : `${sign(b.min)} … ${sign(b.max)}`;
+};
+---
+<ol class="vw-bands" aria-label={t(lang, "block.bands.caption")}>
+  {bands.map((b, i) => (
+    <li style={`--band: ${b.color}`}>
+      <span class="sw" aria-hidden="true"></span>
+      <strong>{t(lang, `block.bands.${b.band}` as Key)}</strong>
+      <span class="r">{range(i)}</span>
+    </li>
+  ))}
+</ol>
+<Source from="Logic/LevelBand" />
+<style>
+  .vw-bands { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; margin: 0; padding: 0; list-style: none; }
+  .vw-bands li { display: flex; flex-direction: column; gap: 4px; padding: 0 0 10px; background: var(--vw-panel); border: 1px solid var(--vw-border-subtle); }
+  .sw { height: 10px; background: var(--band); }
+  .vw-bands strong, .r { padding: 0 10px; }
+  .r { color: var(--vw-text-muted); font-size: 14px; font-variant-numeric: tabular-nums; }
+  @media (max-width: 767px) { .vw-bands { grid-template-columns: 1fr; } .vw-bands li { flex-direction: row; align-items: center; padding: 8px 10px 8px 0; } .sw { width: 10px; height: 28px; } .r { margin-left: auto; } }
+</style>

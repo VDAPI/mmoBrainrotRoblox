@@ -1,0 +1,38 @@
+---
+// PvP zones (S42): one card per zone with the game's rule and the maps of that zone (maps.json `zone`).
+// `compact` = rule only (guides).
+import ZoneBadge from "../ZoneBadge.astro";
+import Source from "./Source.astro";
+import type { Lang } from "../../i18n/routes";
+import { load } from "../../lib/data";
+import { name, t } from "../../lib/i18n";
+import { placeHref } from "../../lib/world";
+interface Props {
+  compact?: boolean;
+}
+const { compact = false } = Astro.props;
+const lang = (Astro.params.lang ?? "pl") as Lang;
+const zones = load("mechanics").zones;
+const maps = load("maps").maps.filter((m) => m.kind !== "other");
+const order = ["green", "yellow", "red"].filter((z) => zones[z]);
+const kindOrder = ["city", "region", "cave", "dungeon"];
+const mapsOf = (z: string) => maps.filter((m) => m.zone === z).sort((a, b) => kindOrder.indexOf(a.kind) - kindOrder.indexOf(b.kind) || a.minLevel - b.minLevel);
+---
+<div class="vw-blocks-zones">
+  {order.map((z) => (
+    <article class="vw-zonecard" style={`--zc: var(--vw-zone-${z})`}>
+      <ZoneBadge zone={z} lang={lang} />
+      <p>{name(zones[z].rule, lang)}</p>
+      {!compact && (
+        <p class="vw-zonecard__maps">
+          <span class="vw-label">{t(lang, "block.zones.maps")}</span>
+          {mapsOf(z).map((m, i) => {
+            const h = placeHref(lang, m.id);
+            return <Fragment>{i > 0 && ", "}{h ? <a href={h}>{name(m.name, lang)}</a> : name(m.name, lang)}</Fragment>;
+          })}
+        </p>
+      )}
+    </article>
+  ))}
+</div>
+{!compact && <Source from="Data/Maps, Logic/PvpRules" />}

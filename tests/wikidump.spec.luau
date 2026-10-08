@@ -376,6 +376,44 @@ T.describe("Wiki export: consistency", function()
 		end
 		T.expect(good > 0 and bad > 0).toBe(true)
 	end)
+
+	T.it("exports keys, the full PvP matrix and a best area for every level (S42)", function()
+		local KeybindData = require("../src/shared/Data/Keybinds")
+		local PvpRules = require("../src/shared/Logic/PvpRules")
+		local Areas = require("../src/shared/Data/Areas")
+		T.expect(#d.mechanics.keybinds).toBe(#KeybindData.actions)
+		for _, k in d.mechanics.keybinds do
+			for _, lang in { "pl", "en" } do
+				if string.find(k.name[lang], "%)%s*$") then
+					error(`{k.id} {lang}: "{k.name[lang]}"`)
+				end
+			end
+		end
+		T.expect(#d.mechanics.pvp.rows).toBe(3 * 4 * 2 * 2)
+		for _, r in d.mechanics.pvp.rows do
+			local ok = PvpRules.canAttack({ pvpEnabled = r.attackerPvp }, { pvpEnabled = r.targetPvp }, {
+				zone = r.zone,
+				sameParty = r.relation == "party",
+				sameGuild = r.relation == "guild" or r.relation == "guildOpen",
+				guildProtection = r.relation ~= "guildOpen",
+			})
+			T.expect(r.allowed).toBe(ok)
+		end
+		T.expect(#d.progression.bestArea).toBe(Config.MaxLevel)
+		for _, b in d.progression.bestArea do
+			local area = Areas.areaById(b.area)
+			assert(area, `bestArea {b.level}: unknown area {b.area}`)
+			local data = Areas.byMap[b.map]
+			local found = false
+			for _, a in data.areas do
+				found = found or a.id == b.area
+			end
+			T.expect(found).toBe(true)
+		end
+		for _, key in { "robux", "productId", "passId", "price", "shards", "RespawnNowCost" } do
+			T.expect(string.find(Json.encode(d.mechanics), `"{key}"`, 1, true)).toBe(nil)
+		end
+	end)
 end)
 
 T.describe("Wiki export: building blocks", function()

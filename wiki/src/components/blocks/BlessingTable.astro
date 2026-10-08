@@ -1,0 +1,55 @@
+---
+// Blessings (S42): 5 lines x rarities from blessings.json; a stat that appears first at a rarity is highlighted.
+// Each cell links to the blessing item (its page lists where it comes from).
+import Source from "./Source.astro";
+import type { Lang } from "../../i18n/routes";
+import { statName, statValue } from "../../lib/blocks";
+import { load, rarities } from "../../lib/data";
+import { name, t, type Key } from "../../lib/i18n";
+import { sectionHref } from "../../lib/sections";
+const lang = (Astro.params.lang ?? "pl") as Lang;
+const file = load("blessings");
+const order = rarities().map((r) => r.key).filter((k) => file.blessings.some((b) => b.rarity === k));
+const rarityName = (k: string) => name(rarities().find((r) => r.key === k)?.name, lang);
+const of = (line: string, rarity: string) => file.blessings.find((b) => b.line === line && b.rarity === rarity);
+const prevStats = (line: string, i: number) => (i > 0 ? Object.keys(of(line, order[i - 1])?.stats ?? {}) : []);
+---
+<div class="vw-scroll">
+  <table class="vw-table vw-table--plain vw-table--keep vw-bless">
+    <caption class="vw-sr">{t(lang, "block.bless.caption")}</caption>
+    <thead>
+      <tr><th scope="col">{t(lang, "block.bless.line")}</th>{order.map((k) => <th scope="col" style={`color: var(--vw-r-${k}-text)`}>{rarityName(k)}</th>)}</tr>
+    </thead>
+    <tbody>
+      {file.lines.map((line) => (
+        <tr>
+          <th scope="row" class="rowhead">{t(lang, `block.bless.line.${line}` as Key)}</th>
+          {order.map((k, i) => {
+            const b = of(line, k);
+            if (!b) return <td>—</td>;
+            const before = prevStats(line, i);
+            const h = sectionHref(lang, "items", b.item);
+            return (
+              <td>
+                <ul>
+                  {Object.entries(b.stats).map(([s, v]) => (
+                    <li class={i > 0 && !before.includes(s) ? "new" : undefined}>{statValue(s, v, lang)} {statName(s, lang)}</li>
+                  ))}
+                </ul>
+                {h && <a class="item" href={h}>{t(lang, "block.bless.item")}</a>}
+              </td>
+            );
+          })}
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
+<Source from="Data/Blessings" />
+<style>
+  .vw-bless td { vertical-align: top; height: auto; padding: 10px 12px; font-size: 14px; }
+  .vw-bless ul { margin: 0; padding: 0; list-style: none; }
+  .vw-bless li { white-space: nowrap; }
+  .vw-bless li.new { color: var(--vw-gold-bright); font-weight: 800; }
+  .item { display: inline-block; margin-top: 4px; font-size: 13px; }
+</style>

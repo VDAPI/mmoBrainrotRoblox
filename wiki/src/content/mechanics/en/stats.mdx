@@ -1,0 +1,34 @@
+---
+title: Stats
+description: "The four attributes, points per level, how attributes turn into health, attack and defence, stat limits and resetting points."
+key: stats
+order: 2
+updated: 2026-10-08
+tags: [Attributes, Character]
+---
+
+## Attributes
+
+A character has four attributes: **Strength**, **Dexterity**, **Intellect** and **Vitality**. Every class starts with a different set; the class's main attributes are highlighted.
+
+<ClassStartTable />
+
+## Points per level
+
+Every level up gives you <Stat path="progression.statPointsPerLevel" /> attribute points to spend in the Character window (<Key action="win_character" />). From level <Stat path="progression.skillPointsFromLevel" /> you also get <Stat path="progression.skillPointsPerLevel" /> skill point per level; spend it in the Skills window (<Key action="win_skills" />) or plan it in the <Link to="classes">class planner</Link>.
+
+## Formulas
+
+Attributes turn into stats by the game's formulas. Bonuses from gear, blessings and the guild are added on top.
+
+<StatFormulaTable />
+
+## Limits
+
+Some stats have an upper limit. Anything above the limit does nothing, so once you reach it, look for other bonuses.
+
+<CapsTable />
+
+## Resetting points
+
+You take back spent attribute points with a <Item id="scroll_oblivion" />: the teacher in the city sells it and the price grows with your level. Skill points are reset by a separate <Item id="scroll_skillreset" />.

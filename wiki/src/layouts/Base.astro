@@ -16,6 +16,7 @@ import "../styles/tokens.data.css";
 import "../styles/components.css";
 import { DISCORD_URL, PLAY_URL, SITE_URL } from "../config";
 import { alternate as alternateOf, href, type Lang, type RouteKey } from "../i18n/routes";
+import { translateSlug } from "../lib/content";
 import SearchPalette from "../islands/SearchPalette.svelte";
 import { meta } from "../lib/data";
 import { formatDate } from "../lib/format";
@@ -38,7 +39,7 @@ interface Props {
 const { lang, title, description = t(lang, "site.tagline"), noindex = false, section, search, og = {} } = Astro.props;
 const path = Astro.url.pathname;
 
-const alt = Astro.props.alternate ?? alternateOf(path);
+const alt = Astro.props.alternate ?? alternateOf(path, translateSlug);
 const here = path.startsWith(`/${lang}/`) ? path : href(lang, "home");
 const pagePl = lang === "pl" ? here : alt;
 const pageEn = lang === "en" ? here : alt;

@@ -1,0 +1,49 @@
+---
+title: PvP
+description: "Combat zones, the PvP toggle, who can attack you, reduced damage between players, arena duels and titles."
+key: pvp
+order: 6
+updated: 2026-10-08
+tags: [Zones, Duels]
+---
+
+## Zones
+
+Every map has a zone colour. You see it on the banner when you enter a map and next to the map name on the wiki. The zone that counts is the one the **target** stands in.
+
+<ZoneCards />
+
+## The PvP toggle
+
+The toggle is the icon in the bottom right corner of the screen. It only matters in yellow zones: nobody fights in green zones, everybody fights in red ones.
+
+- Switching takes <Stat path="mechanics.config.PvpToggleDelay" format="s" />. A countdown shows above the icon.
+- For <Stat path="mechanics.config.PvpCombatLock" format="s" /> after you deal or take damage from a player you cannot turn PvP off.
+- The dot next to a name tells you the state: green is off, red is on or forced by the zone, pulsing is switching, grey with a padlock is locked.
+
+## Who can attack whom
+
+Your party and your guild are always protected, whatever the zone. A guild leader can turn the guild protection off.
+
+<PvpMatrix />
+
+## Fighting a player
+
+- Damage between players is multiplied by <Stat path="mechanics.combat.pvpModifier" format="frac" />, so fights last longer than against monsters.
+- Stuns, slows and other control effects last <Stat path="mechanics.config.PvpCcMultiplier" format="frac" /> of their normal time on players.
+- A kill counts for the player who last hit the victim within <Stat path="mechanics.config.PvpKillCredit" format="s" />.
+- After you respawn, nobody can attack you for <Stat path="mechanics.config.RespawnShieldSeconds" format="s" />. Attacking ends that protection at once.
+
+<Callout kind="tip" title="When someone attacks you">
+In a yellow zone, turn PvP off and walk away: the toggle works once the lock ends. In a red zone, run for the cave exit or fight back with your party.
+</Callout>
+
+## Arena and duels
+
+On the city arena you can challenge a player to a duel, even in the green zone. An invitation lasts <Stat path="mechanics.config.DuelInviteSeconds" format="s" />, the fight starts after a <Stat path="mechanics.config.DuelCountdown" format="s" /> countdown and lasts at most <Stat path="mechanics.config.DuelTimeLimit" format="min" />. During a duel you only fight each other and nobody loses items.
+
+## Titles
+
+Titles come from your level, the main story, duels and fights with players. The title you pick shows above your head.
+
+<TitleTable />

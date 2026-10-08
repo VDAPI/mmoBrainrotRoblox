@@ -44,8 +44,11 @@ export function keyOf(lang: Lang, segment: string): RouteKey | undefined {
   return (Object.keys(ROUTES) as RouteKey[]).find((key) => key !== "home" && ROUTES[key][lang] === segment);
 }
 
+/** Slug of a written article in the other language (S42: mechanics and guides have translated slugs paired by key). */
+export type SlugTranslator = (key: RouteKey, from: Lang, slug: string) => string | undefined;
+
 /** The same address in the other language (unknown paths go to the other language's home page). */
-export function alternate(path: string): string {
+export function alternate(path: string, translate?: SlugTranslator): string {
   const parts = path.split("?")[0].split("/").filter(Boolean);
   const lang = parts[0];
   if (!isLang(lang)) {
@@ -63,5 +66,11 @@ export function alternate(path: string): string {
   if (!key) {
     return parts[1] === "404" ? `/${to}/404/` : `/${to}/`;
   }
-  return `/${[to, ROUTES[key][to], ...parts.slice(2)].join("/")}/`;
+  const rest = parts.slice(2);
+  if (translate && rest.length > 0) {
+    const slug = translate(key, lang, rest[0]);
+    if (slug === undefined) return `/${[to, ROUTES[key][to]].join("/")}/`;
+    rest[0] = slug;
+  }
+  return `/${[to, ROUTES[key][to], ...rest].join("/")}/`;
 }

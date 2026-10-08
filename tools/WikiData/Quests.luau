@@ -13,11 +13,12 @@ local Names = require("./Names")
 local Npcs = require("../../src/shared/Data/Npcs")
 local QuestData = require("../../src/shared/Data/Quests")
 local Areas = require("../../src/shared/Data/Areas")
+local Basics = require("./Basics")
 local Places = require("./Places")
 local Schema = require("./Schema")
 
 local S = Schema
-local arr, rec = S.arr, S.rec
+local arr, map, rec = S.arr, S.map, S.rec
 
 local Quests = {}
 
@@ -106,6 +107,8 @@ S.file(
 		levelSlack = "int",
 		sideLevelSlack = "int",
 		sideMaxActive = "int",
+		-- S42: class items offered by side quests with a reward choice (Config.SideQuest)
+		sideChoice = rec("SideChoice", { count = "int", rarity = map(S.enum("RarityKey")) }),
 	})
 )
 
@@ -224,6 +227,14 @@ local function reward(r: any, hidden: { [string]: boolean }): any
 	}
 end
 
+function Quests.sideChoice(): any
+	local rarity = {}
+	for kind, id in Config.SideQuest.choiceRarity do
+		rarity[kind] = Basics.rarityKey(id)
+	end
+	return { count = Config.SideQuest.choiceCount, rarity = rarity }
+end
+
 function Quests.build(ctx: any): any
 	ctx.questItems = {}
 	local function noteItems(questId: string, r: any)
@@ -303,6 +314,7 @@ function Quests.build(ctx: any): any
 		levelSlack = QuestData.Main.LEVEL_SLACK,
 		sideLevelSlack = Config.SideQuest.levelSlack,
 		sideMaxActive = Config.SideQuest.maxActive,
+		sideChoice = Quests.sideChoice(),
 	}
 end
 

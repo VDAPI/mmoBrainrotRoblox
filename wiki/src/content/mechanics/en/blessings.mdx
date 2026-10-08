@@ -1,0 +1,34 @@
+---
+title: Blessings
+description: "Five lines of blessings in five rarities, how long they last, resistance elixirs and potions."
+key: blessings
+order: 5
+updated: 2026-10-08
+tags: [Buffs, Potions]
+---
+
+## How they work
+
+A blessing is an item that gives a stat bonus for <Stat path="blessings.duration" format="min" /> once used. Only one works at a time: a new one replaces the old one. The time runs even while you are offline, and death does not stop it.
+
+There are five lines, each in five rarities. A higher rarity gives more and adds new stats (highlighted in gold). The rarest blessing of every line also adds an EXP and loot bonus.
+
+<BlessingTable />
+
+<Callout kind="tip" title="Which line to pick">
+Warriors and Hunters take their own lines, Mages and Clerics the Sage line, tanks the Guardian line. For levelling and farming gold, Fortune is the best.
+</Callout>
+
+You get blessings from daily contracts and some main quests. The alchemist also brews every rarity except the highest (see <Link to="crafting" hash="alchemy">Crafting</Link>).
+
+## Resistance elixirs
+
+An elixir raises one elemental resistance. It works on its own, next to a blessing, so you can have both at once.
+
+<ElixirTable />
+
+## Potions
+
+Potions restore health, mana or energy at once. Each kind of potion has its own cooldown: <Stat path="mechanics.config.PotionCooldown" format="s" />. The default keys are <Key action="potion_hp" />, <Key action="potion_mana" /> and <Key action="potion_energy" />.
+
+<PotionTable />

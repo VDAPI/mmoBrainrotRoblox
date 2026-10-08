@@ -1,0 +1,15 @@
+---
+// <Rarity id="legendary" />: rarity badge with the game's name (an unknown key fails the build).
+import RarityBadge from "../RarityBadge.svelte";
+import type { Lang } from "../../i18n/routes";
+import { rarityOf } from "../../lib/data";
+import { name } from "../../lib/i18n";
+interface Props {
+  id: string;
+}
+const { id } = Astro.props;
+const lang = (Astro.params.lang ?? "pl") as Lang;
+const rarity = rarityOf(id);
+if (!rarity) throw new Error(`<Rarity id="${id}">: unknown rarity`);
+---
+<RarityBadge rarity={id} label={name(rarity.name, lang)} />

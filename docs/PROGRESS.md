@@ -3380,3 +3380,34 @@ Szczegóły i decyzje: `docs/WIKI.md` (Stan, Decyzje S41, Niedokończone, „Kom
 12. Ctrl+K „meteor” → strona Maga z zaznaczonym Meteorem.
 13. `/en/classes/Warrior/` po angielsku; `npm run check` w `wiki/` i `scripts/check` przechodzą.
 
+### S42: Wiki 8/10 — zadania i mechaniki
+
+Szczegóły i decyzje: `docs/WIKI.md` (Stan, Decyzje S42, Niedokończone, „Komponenty”, „Pisanie treści”).
+
+**Zrobione**
+- Eksport: `mechanics.keybinds/levelBands/reduction/pvp`, `progression.monsterExp/bestArea/levelDiffRules`,
+  `quests.sideChoice` (+ test Lune). Kod gry bez zmian.
+- Komponenty MDX (`<Stat/>`, `<Item/>`, `<Monster/>`, `<Quest/>`, `<Npc/>`, `<Region/>`, `<Rarity/>`, `<Key/>`,
+  `<Link/>`, `<Spoiler/>`, `<Callout/>`), 17 bloków danych, układ artykułu, kolekcje `mechanics` i `guides`.
+- `/pl/zadania/` + 60 stron zadań, `/pl/mechaniki/` + 6 tematów PL/EN.
+
+#### Instrukcja testu S42
+
+1. `cd wiki`, `npm run build`, `npm run preview`.
+2. http://localhost:4321/pl/zadania/: chipy „Główne 32 · Poboczne 28 · Zlecenia dzienne 8”, wątek główny w odcinkach
+   krain, bez fabuły; poboczne wg NPC.
+3. W „Zleceniach dziennych” kliknij poziom 50: cele i podświetlony wiersz nagród się zmieniają.
+4. `/pl/zadania/wolves/`: fakty, minimapa, cele z linkami do potwora, nagrody, fabuła rozmyta, „Pokaż” ją odsłania; na
+   dole poprzednie/następne.
+5. `/pl/zadania/side_grainCart/`: wątek, wymaganie „Najpierw”, „Do wyboru 1 z 3 … Heroiczny”.
+6. `/pl/mechaniki/`: 10 kart, 6 prowadzi do tematów, Miasto/Handel/Gildie/Kosmetyki „Wkrótce”.
+7. `/pl/mechaniki/pvp/`: spis treści z lewej, strefy, macierz „kto kogo”, tytuły; liczby podkreślone przerywaną linią
+   pokazują po najechaniu ścieżkę danych.
+8. `/pl/mechaniki/doswiadczenie/`: wykres EXP z granicami krain, „Pokaż dane wykresu” rozwija tabelę.
+9. `/pl/mechaniki/smierc/` → przełącznik EN prowadzi do `/en/mechanics/death/`.
+10. Telefon (390 px): „Na tej stronie” zwinięte pod nagłówkiem, tabele jako karty, strona nie przewija się w bok.
+11. Szukaj fragmentu fabuły — brak wyników; nazwa zadania — jest.
+12. Zmień stałą w `src/shared/Data/Combat.luau` (np. `pvpModifier`), `npm run data`, build: liczba w PvP się zmienia
+    (cofnij zmianę).
+13. `npm run check` w `wiki/` i `scripts/check` przechodzą.
+

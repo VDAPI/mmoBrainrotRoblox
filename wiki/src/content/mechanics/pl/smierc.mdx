@@ -1,0 +1,48 @@
+---
+title: Śmierć
+description: "Co się dzieje, gdy zginiesz: licznik odrodzenia, wybór miejsca, ochrona po odrodzeniu i jak uciec przed potworem."
+key: death
+order: 4
+updated: 2026-10-08
+tags: [Odrodzenie, Potwory]
+---
+
+## Nic nie tracisz
+
+Śmierć w Vaelthorn nie zabiera przedmiotów, złota ani doświadczenia. Tracisz tylko trochę czasu. Szkodliwe efekty (trucizna, spowolnienia) znikają, a błogosławieństwa i eliksiry działają dalej.
+
+## Licznik odrodzenia
+
+Po śmierci widzisz ekran z licznikiem. Czas rośnie z poziomem postaci: <Stat path="mechanics.config.RespawnBase" format="s" /> plus <Stat path="mechanics.config.RespawnPerLevel" format="s" /> za każdy poziom. Przepustka „Szybki Powrót” mnoży ten czas przez <Stat path="mechanics.config.FastRespawnMultiplier" format="x" />. Licznik można też pominąć za Smoczą Walutę.
+
+## Miasto albo tutaj
+
+Gdy licznik dojdzie do końca, wybierasz miejsce:
+
+- **Odródź w mieście**: wracasz na plac miasta.
+- **Odródź tutaj**: wstajesz tam, gdzie zginąłeś.
+
+Bez wyboru przez <Stat path="mechanics.config.DeathChoiceTimeout" format="s" /> gra wybiera miasto.
+
+### Wyjątki od „tutaj”
+
+- W lochu bossa wstajesz przed wejściem do lochu.
+- Gdy zginąłeś w wodzie albo w ścianie, gra szuka wolnego miejsca w promieniu <Stat path="mechanics.config.RespawnSearchRadius" /> studów.
+- Pod mapą albo poza nią trafiasz do najbliższego punktu odrodzenia mapy.
+
+## Ochrona po odrodzeniu
+
+Wstajesz z jednym punktem życia, ale z pełną maną i energią. Przez <Stat path="mechanics.config.RespawnShieldSeconds" format="s" /> nie dostajesz obrażeń, potwory cię ignorują, a gracze nie mogą cię zaatakować. Każdy twój atak kończy ochronę od razu; leczenie i wzmocnienia jej nie kończą. Wypij miksturę, zanim ruszysz dalej.
+
+<Callout kind="tip">
+Kapłan może cię wskrzesić umiejętnością Wskrzeszenie. Licznik wtedy znika, a ochrona po odrodzeniu działa tak samo.
+</Callout>
+
+## Jak uciec przed potworem
+
+Potwory pilnują swojego miejsca. Gdy odbiegniesz dalej niż <Stat path="mechanics.combat.leashRange" /> studów od środka ich grupy i nikt z was nie trafi ich przez <Stat path="mechanics.combat.leashGrace" format="s" />, wracają do siebie. Dalej niż <Stat path="mechanics.combat.leashMax" /> studów wracają zawsze.
+
+- Wracający potwór biegnie szybciej (<Stat path="mechanics.combat.returnSpeedMultiplier" format="x" />) i nie leczy się po drodze.
+- Jeśli nie dotrze w <Stat path="mechanics.combat.returnTimeout" format="s" />, pojawia się na miejscu.
+- U siebie odzyskuje <Stat path="mechanics.combat.idleRegenPct" format="pct" /> życia na sekundę, ale dopiero <Stat path="mechanics.combat.idleRegenDelay" format="s" /> po ostatnim trafieniu. Jeśli wrócisz szybko, dokończysz walkę.
+- Potwory dużo słabsze od ciebie (o <Stat path="mechanics.combat.passiveLevelGap" /> poziomów i więcej) same nie atakują.

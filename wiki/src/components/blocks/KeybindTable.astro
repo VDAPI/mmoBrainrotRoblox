@@ -1,0 +1,40 @@
+---
+// Default keys (S42, used by the S43 guides): mechanics.keybinds by group, plus the fixed Roblox keys from the wiki
+// texts (movement, jump, camera, chat). `groups` limits the groups.
+import Source from "./Source.astro";
+import type { Lang } from "../../i18n/routes";
+import { load } from "../../lib/data";
+import { name, t, type Key } from "../../lib/i18n";
+interface Props {
+  groups?: string[];
+  fixed?: boolean;
+}
+const { groups, fixed = true } = Astro.props;
+const lang = (Astro.params.lang ?? "pl") as Lang;
+const binds = load("mechanics").keybinds;
+const order = [...new Set(binds.map((b) => b.group))].filter((g) => !groups || groups.includes(g));
+const FIXED = ["move", "jump", "camera", "chat"];
+---
+<div class="vw-keys">
+  {order.map((g) => (
+    <section>
+      <h4 class="vw-label">{t(lang, `block.keys.${g}` as Key)}</h4>
+      <ul>{binds.filter((b) => b.group === g).map((b) => <li><kbd class="vw-kbd">{b.key}</kbd> {name(b.name, lang)}</li>)}</ul>
+    </section>
+  ))}
+  {fixed && (
+    <section>
+      <h4 class="vw-label">{t(lang, "block.keys.fixed")}</h4>
+      <ul>{FIXED.map((k) => <li><kbd class="vw-kbd">{t(lang, `block.keys.fixed.${k}.key` as Key)}</kbd> {t(lang, `block.keys.fixed.${k}` as Key)}</li>)}</ul>
+    </section>
+  )}
+</div>
+<Source from="Data/Keybinds" />
+<style>
+  .vw-keys { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+  .vw-keys section { padding: 14px 16px; background: var(--vw-panel); border: 1px solid var(--vw-border); }
+  .vw-keys h4 { margin: 0 0 10px; }
+  .vw-keys ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
+  .vw-keys li { display: flex; align-items: center; gap: 10px; }
+  .vw-keys .vw-kbd { min-width: 44px; text-align: center; color: var(--vw-text); }
+</style>

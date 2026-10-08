@@ -9,6 +9,8 @@ import BossView from "./BossView.astro";
 import ClassesSection from "./ClassesSection.astro";
 import CraftingView from "./CraftingView.astro";
 import ItemsSection from "./ItemsSection.astro";
+import MechanicsSection from "./MechanicsSection.astro";
+import QuestsSection from "./QuestsSection.astro";
 import UpgradeView from "./UpgradeView.astro";
 import ComingSoon from "./ComingSoon.astro";
 import NotFound from "./NotFound.astro";
@@ -17,6 +19,8 @@ import WorldMapView from "./WorldMapView.astro";
 import { areas, caves, maps } from "../lib/world";
 import { bosses, items, monsters } from "../lib/data";
 import { classes } from "../lib/classes";
+import { contentEntries } from "../lib/content";
+import { mainQuests, sideQuests } from "../lib/quests";
 import SearchView from "./SearchView.astro";
 import Styleguide from "./Styleguide.astro";
 
@@ -69,6 +73,21 @@ export const REGISTRY: PageEntry[] = [
     key: "classes",
     view: ClassesSection,
     getPaths: () => [{ ids: [] }, ...classes().map((c) => ({ ids: [c.id], props: { page: "class", id: c.id } }))],
+  },
+  {
+    key: "quests",
+    view: QuestsSection,
+    getPaths: () => [{ ids: [] }, ...[...mainQuests(), ...sideQuests()].map((q) => ({ ids: [q.id], props: { page: "quest", id: q.id } }))],
+  },
+  {
+    key: "mechanics",
+    view: MechanicsSection,
+    getPaths: (lang) => [
+      { ids: [] },
+      ...contentEntries("mechanics")
+        .filter((e) => e.lang === lang)
+        .map((e) => ({ ids: [e.slug], props: { page: "topic", slug: e.slug } })),
+    ],
   },
   ...SECTIONS.filter((s) => !s.ready).map(
     (s): PageEntry => ({ key: s.id, view: ComingSoon, getPaths: () => [{ ids: [], props: { section: s.id } }] }),

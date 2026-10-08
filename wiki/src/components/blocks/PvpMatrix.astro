@@ -1,0 +1,72 @@
+---
+// Who may attack whom (S42): PvpRules.canAttack for every zone x relation x PvP toggles (mechanics.pvp). A relation
+// whose answer does not depend on the toggles collapses to one row. On phones every row is a card with the zones.
+import Source from "./Source.astro";
+import type { Lang } from "../../i18n/routes";
+import { load } from "../../lib/data";
+import { name, t, type Key } from "../../lib/i18n";
+const lang = (Astro.params.lang ?? "pl") as Lang;
+const pvp = load("mechanics").pvp;
+const zones = load("mechanics").zones;
+const zoneIds = ["green", "yellow", "red"];
+const relations = [...new Set(pvp.rows.map((r) => r.relation))];
+const toggles = [
+  [true, true],
+  [true, false],
+  [false, true],
+  [false, false],
+] as const;
+const cell = (relation: string, mine: boolean, theirs: boolean, zone: string) =>
+  pvp.rows.find((r) => r.relation === relation && r.attackerPvp === mine && r.targetPvp === theirs && r.zone === zone)!;
+const sig = (relation: string, mine: boolean, theirs: boolean) => zoneIds.map((z) => `${cell(relation, mine, theirs, z).allowed}:${cell(relation, mine, theirs, z).reason ?? ""}`).join("|");
+const rows = relations.flatMap((relation) => {
+  const same = new Set(toggles.map(([a, b]) => sig(relation, a, b))).size === 1;
+  return same ? [{ relation, mine: true, theirs: true, any: true }] : toggles.map(([mine, theirs]) => ({ relation, mine, theirs, any: false }));
+});
+const onOff = (v: boolean) => t(lang, v ? "block.pvp.on" : "block.pvp.off");
+---
+<div class="vw-scroll">
+  <table class="vw-table vw-matrix">
+    <caption class="vw-sr">{t(lang, "block.pvp.caption")}</caption>
+    <thead>
+      <tr>
+        <th scope="col">{t(lang, "block.pvp.target")}</th>
+        <th scope="col">{t(lang, "block.pvp.toggles")}</th>
+        {zoneIds.map((z) => <th scope="col">{name(zones[z]?.name, lang)}</th>)}
+      </tr>
+    </thead>
+    <tbody>
+      {rows.map((r) => (
+        <tr>
+          <th scope="row" class="rel">{t(lang, `block.pvp.rel.${r.relation}` as Key)}</th>
+          <td class="tog">{r.any ? t(lang, "block.pvp.any") : t(lang, "block.pvp.pair", { mine: onOff(r.mine), theirs: onOff(r.theirs) })}</td>
+          {zoneIds.map((z) => {
+            const c = cell(r.relation, r.mine, r.theirs, z);
+            return (
+              <td data-label={name(zones[z]?.name, lang)} class={c.allowed ? "yes" : "no"}>
+                <strong>{t(lang, c.allowed ? "block.yes" : "block.no")}</strong>
+                {c.reasonName && <span class="why">{name(c.reasonName, lang)}</span>}
+              </td>
+            );
+          })}
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
+<Source from="Logic/PvpRules" />
+<style>
+  .vw-matrix th.rel { font: 800 15px/1.2 var(--vw-font-ui); letter-spacing: 0; text-transform: none; color: var(--vw-text); border-bottom: 1px solid var(--vw-border-subtle); }
+  .vw-matrix td { height: auto; padding: 10px 14px; vertical-align: top; }
+  .vw-matrix tbody tr { cursor: default; }
+  .tog { color: var(--vw-text-muted); font-size: 15px; }
+  .yes strong { color: var(--vw-success); }
+  .no strong { color: var(--vw-danger); }
+  .why { display: block; font-size: 13px; color: var(--vw-text-muted); }
+  @media (max-width: 767px) {
+    .vw-matrix th.rel { display: block; grid-column: 1 / -1; padding: 0; border: 0; }
+    .vw-matrix .tog { grid-column: 1 / -1; padding: 0 0 4px; }
+    .vw-matrix td[data-label] { grid-column: 1 / -1; padding: 2px 0; }
+    .vw-matrix .why { display: inline; margin-left: 6px; }
+  }
+</style>

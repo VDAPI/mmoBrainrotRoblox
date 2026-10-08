@@ -1,0 +1,14 @@
+---
+// <Callout kind title? date? update?> in MDX: the shared Callout with the page language.
+import Callout from "../Callout.astro";
+import type { Lang } from "../../i18n/routes";
+interface Props {
+  kind?: "info" | "tip" | "warn" | "changed" | "spoiler";
+  title?: string;
+  date?: string;
+  update?: string;
+}
+const props = Astro.props;
+const lang = (Astro.params.lang ?? "pl") as Lang;
+---
+<Callout {...props} lang={lang}><slot /></Callout>

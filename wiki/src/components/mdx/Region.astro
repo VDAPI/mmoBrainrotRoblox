@@ -1,0 +1,22 @@
+---
+// <Region id="meadows" area="meadows_wolfhills" />: map, area or cave name + levels, link to its page.
+import type { Lang } from "../../i18n/routes";
+import { name } from "../../lib/i18n";
+import { areaOf, caveOf, getMapInfo, levels, placeHref } from "../../lib/world";
+interface Props {
+  id: string;
+  area?: string;
+  plain?: boolean;
+}
+const { id, area, plain = false } = Astro.props;
+const lang = (Astro.params.lang ?? "pl") as Lang;
+const target = area ?? id;
+const a = areaOf(target);
+const c = a ? undefined : caveOf(target);
+const m = a || c ? undefined : getMapInfo(target);
+if (!a && !c && !m) throw new Error(`<Region id="${id}"${area ? ` area="${area}"` : ""}>: unknown place`);
+const label = name((a ?? c ?? m)!.name, lang);
+const lv = a ? levels(lang, a.levelMin, a.levelMax) : c ? levels(lang, c.levelMin, c.levelMax) : m!.kind === "city" ? "" : levels(lang, m!.minLevel, m!.maxLevel);
+const link = placeHref(lang, target);
+---
+<span class="vw-ref">{link ? <a href={link}>{label}</a> : label}{!plain && lv && <span class="vw-ref__meta"> ({lv})</span>}</span>

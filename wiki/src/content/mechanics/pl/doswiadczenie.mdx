@@ -1,0 +1,43 @@
+---
+title: Doświadczenie
+description: "Ile EXP potrzebujesz na poziom, ile dają potwory, jak różnica poziomów zmienia nagrodę i co daje dodatkowe doświadczenie."
+key: experience
+order: 3
+updated: 2026-10-08
+tags: [Poziomy, Potwory]
+---
+
+## Krzywa poziomów
+
+Maksymalny poziom to <Stat path="progression.maxLevel" />. Każdy kolejny poziom wymaga więcej doświadczenia niż poprzedni. Na pierwszy awans potrzebujesz <Stat path="progression.expToNext.0.exp" /> EXP, a na ostatni <Stat path="progression.expToNext.98.exp" />. Na maksymalnym poziomie EXP się już nie zbiera.
+
+<ExpChart />
+
+Przy awansie odzyskujesz pełne życie, manę i energię oraz dostajesz punkty do rozdania (zobacz <Link to="mechanics" id="stats">Statystyki</Link>).
+
+## EXP z potworów
+
+EXP za potwora zależy od jego poziomu i rangi. Elity dają <Stat path="mechanics.variants.elite.expMul" format="x" />, Elity II <Stat path="mechanics.variants.elite2.expMul" format="x" />, a bossowie <Stat path="mechanics.variants.boss.expMul" format="x" /> zwykłej nagrody. Do tego twardsze rodzaje potworów (więcej życia, mocniejszy atak) płacą więcej niż słabe, więc EXP na minutę walki jest podobny przy każdym rodzaju.
+
+<MonsterExpTable />
+
+## Różnica poziomów
+
+Bij potwory blisko swojego poziomu. Gdy potwór jest słabszy od ciebie o więcej niż <Stat path="progression.levelDiffRules.freeDiff" /> poziomów, za każdy kolejny poziom tracisz <Stat path="progression.levelDiffRules.penaltyPerLevel" format="frac" /> nagrody, aż do <Stat path="progression.levelDiffRules.minMultiplier" format="frac" />. Silniejszy potwór daje premię <Stat path="progression.levelDiffRules.bonusPerLevel" format="frac" /> za poziom, najwyżej <Stat path="progression.levelDiffRules.maxBonus" format="frac" />.
+
+<ExpDiffChart />
+
+Kolor poziomu nad potworem podpowiada, czy warto go bić:
+
+<LevelBandStrip />
+
+## Grupa
+
+W grupie EXP z potwora dzieli się równo między członków, którzy są blisko. Każdy dostaje swoją część, a potem własną karę albo premię za różnicę poziomów. Grupa bije szybciej i bezpieczniej, więc na elitach i w jaskiniach opłaca się bardziej niż gra w pojedynkę.
+
+## Dodatkowe źródła
+
+- **Zadania** z wątku głównego i poboczne dają stałą nagrodę EXP (zobacz <Link to="quests">Zadania</Link>).
+- **Zlecenia dzienne** z Tablicy Zleceń: <Stat path="quests.daily.perDay" /> dziennie, nagroda rośnie z poziomem.
+- **Linia Fortuny** błogosławieństw i bonusy z ekwipunku zwiększają zdobywany EXP (zobacz <Link to="mechanics" id="blessings">Błogosławieństwa</Link>).
+- **Umiejętności gildii** mogą dodać premię do EXP dla wszystkich członków.

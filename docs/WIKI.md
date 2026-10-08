@@ -98,7 +98,7 @@ Identyfikatory w URL to **id z danych gry** (stabilne między językami, także 
 | Obszar / jaskinia | `/pl/krainy/<mapId>/<areaId>/` | `/en/regions/<mapId>/<areaId>/` |
 | Kalkulator ulepszania | `/pl/ulepszanie/` (`?item=&r=&el=&from=&to=&prot=`) | `/en/upgrading/` |
 | Rzemiosło | `/pl/rzemioslo/` (kowal, alchemia, rozbijanie, zbieractwo, ryby) | `/en/crafting/` |
-| Zadania | `/pl/zadania/`, `/pl/zadania/<id>/` | `/en/quests/` |
+| Zadania | `/pl/zadania/`, `/pl/zadania/<id>/` (S42) | `/en/quests/`, `/en/quests/<id>/` |
 | Mechaniki | `/pl/mechaniki/`, `/pl/mechaniki/<temat>/` | `/en/mechanics/`, `/en/mechanics/<topic>/` |
 | Poradniki | `/pl/poradniki/`, `/pl/poradniki/<slug>/` | `/en/guides/`, `/en/guides/<slug>/` |
 | Szukaj | `/pl/szukaj/?q=` | `/en/search/?q=` |
@@ -137,13 +137,13 @@ przełomy umiejętności, `Combat`, `Stats.Formula`) jako `data` (typ `Json`).
 | `items.json` | `bases`: Record<string, BaseInfo>, `categories`: Record<string, CategoryInfo>, `items`: Item[], `slots`: Record<string, SlotInfo> | `Data/Items`; nazwa `ItemName.get`; rzadkości przez `ItemRoll.rollItem`; statystyki `ItemRoll.itemStats` (+0…+9); wartość `ItemValue.value`; źródła z Monte Carlo potworów i bossów, sklepów, kowala, alchemii, nagród, łowiska, zbieractwa, rozbijania; `usedFor` z `Upgrade.cost`, `Crafting`, `Recipes` |
 | `maps.json` | `maps`: MapInfo[] | `Data/Maps` (bez oświetlenia i muzyki); od S37 `route` = `MapRoute.path("city", id)` |
 | `mapsearch.json` | `limit`: number, `pl`/`en`: MapSearchEntry[], `vectors`: MapSearchVector[] | S37: `MapSearch.build(Locale.T w języku)` (rodzaj, id, mapa, x, z, teksty), wektory `MapSearch.search` (zapytanie → `rodzaj:id` w kolejności) |
-| `mechanics.json` | `areaProfiles`: Record<string, AreaProfileInfo>, `bossDailyRuns`: number, `combat`: Json, `config`: Record<string, number>, `formula`: Json, `variants`: Record<string, VariantInfo>, `zones`: Record<string, ZoneInfo> | `Data/Combat`, `Stats.Formula`, jawna lista kluczy `Config`, strefy (`zone.*`, `pvp.rules.*`, kolory z `UI/Theme.luau` jako tekst), warianty, profile expowisk `Data/AreaProfiles` (S33) |
+| `mechanics.json` | `areaProfiles`: Record<string, AreaProfileInfo>, `bossDailyRuns`: number, `combat`: Json, `config`: Record<string, number>, `formula`: Json, `variants`: Record<string, VariantInfo>, `zones`: Record<string, ZoneInfo>; od S42 `keybinds`, `levelBands`, `reduction`, `pvp` | `Data/Combat`, `Stats.Formula`, jawna lista kluczy `Config`, strefy (`zone.*`, `pvp.rules.*`, kolory z `UI/Theme.luau` jako tekst), warianty, profile expowisk `Data/AreaProfiles` (S33); S42: `Data/Keybinds` + `Keybinds.label` (nazwy bez „ (C)”), `LevelBand.of` (d = −15…+10 w przedziały) i `COLORS`, `Damage.reduction` (obrona 50…1600 × poziom 10…100), macierz `PvpRules.canAttack` (strefa × relacja obcy/grupa/gildia/gildia bez ochrony × PvP własne × PvP celu) + `toggleMatters` |
 | `meta.json` | `counts`: Record<string, number>, `dataCommit`: string, `dataDate`: string, `dataHash`: string, `features`: Record<string, boolean>, `rolls`: number, `schemaVersion`: number | wersja schematu, commit i data danych (`git log -1 -- src/shared tools/WikiData`), `dataHash` (odcisk plików), funkcje gry, liczności, liczba rzutów |
 | `monsters.json` | `monsters`: Monster[] | `Data/Monsters`, `Data/Spawns`; `MonsterStats.compute`, `Damage.computeDamage` + `StubRng` (min–max), `Exp.monsterExp` i `MonsterStats.gold` × `kindReward`; łup: `Rarities`, `LootTables`, Monte Carlo `Loot.rollMonsterLoot`; `family` = `MonsterLooks.get(id, region).plan`; od S39 `ability.name` (`ability.<id>.name`) |
 | `npcs.json` | `npcs`: Npc[], `services`: Record<string, Name> | `Data/Npcs`; od S37 `role` (`npc.<id>.role`) i nazwy usług (`npc.service.<id>`) |
 | `portals.json` | `portals`: PortalInfo[] | `Data/Portals` |
-| `progression.json` | `expToNext`: LevelExp[], `levelDiff`: LevelDiff[], `maxLevel`: number, `skillPointsFromLevel`: number, `skillPointsPerLevel`: number, `statPointsPerLevel`: number, `variantExp`: Record<string, number> | `Exp.expToNext`, `Exp.levelDiffMultiplier`, `Data/Progression` |
-| `quests.json` | `daily`: DailyQuests, `levelSlack`: number, `main`: MainQuest[], `side`: SideQuest[], `sideLevelSlack`: number, `sideMaxActive`: number | `Data/Quests` (główne, poboczne S27, dzienne: `objective(level)`, `Daily.reward(level)`); etykiety celów z kluczy `quest.obj.*` jak `UI/QuestText.objective`; od S37 cel ma `where` = `{ map, area?, cave?, npc? }` (`AreaAdvice.forKind` / `caveFor`, mapa regionu, loch bossa, mapa NPC, kotwica); od S39 `itemName` celów z przedmiotem (`quest.item.<item>`) |
+| `progression.json` | `expToNext`: LevelExp[], `levelDiff`: LevelDiff[], `maxLevel`: number, `skillPointsFromLevel`: number, `skillPointsPerLevel`: number, `statPointsPerLevel`: number, `variantExp`: Record<string, number>; od S42 `monsterExp`, `bestArea`, `levelDiffRules` | `Exp.expToNext`, `Exp.levelDiffMultiplier` (`diff` = poziom potwora − poziom gracza), `Data/Progression`; S42: `Exp.monsterExp` (poz. 1, 10…100 × normal/elite/elite2/boss), `AreaAdvice.best` dla poziomów 1…100 (mapa regionu z zakresem poziomu, polecany obszar najbliższy środkiem) |
+| `quests.json` | `daily`: DailyQuests, `levelSlack`: number, `main`: MainQuest[], `side`: SideQuest[], `sideLevelSlack`: number, `sideMaxActive`: number, `sideChoice` (S42: `count`, `rarity` z `Config.SideQuest`) | `Data/Quests` (główne, poboczne S27, dzienne: `objective(level)`, `Daily.reward(level)`); etykiety celów z kluczy `quest.obj.*` jak `UI/QuestText.objective`; od S37 cel ma `where` = `{ map, area?, cave?, npc? }` (`AreaAdvice.forKind` / `caveFor`, mapa regionu, loch bossa, mapa NPC, kotwica); od S39 `itemName` celów z przedmiotem (`quest.item.<item>`) |
 | `rarities.json` | `rarities`: Rarity[], `sources`: Record<string, DropSource>, `upgradeStatPerLevel`: number | `Data/Rarities` (drabina S30, `itemDrops`, `dropWeights`, `cap`) |
 | `recipes.json` | `groups`: RecipeGroup[], `queueSlots`: number, `recipes`: AlchemyRecipe[] | `Data/Recipes` |
 | `search.json` | `entries`: SearchEntry[], `vectors`: NormalizeVector[] | pozostałe pliki + `MapSearch.normalize` (klucz, wektory testowe) |
@@ -265,6 +265,34 @@ jednej strony w `<script type="application/json">`, nigdy import JSON. Budżety 
 Mechaniki skryptowe bossów: `src/content/bosses/{pl,en}/*.md` (frontmatter `boss`, `phase`, `title`; liczby tylko jako
 `{NAZWA}` ze `scriptConsts`, brak stałej = błąd buildu).
 
+**Treść MDX (S42):** komponenty w `src/components/mdx/` (eksport `mdxComponents` z `index.ts`, podawany jako
+`<Content components={mdxComponents} />`), bloki danych w `src/components/blocks/` (`BLOCKS`, każdy kończy się linią
+źródła `Source`), wspólny układ `Article.astro` (`{ lang, crumbs, kicker, title, lead?, toc }` + slot `badges`), `Callout`
+z propem `update` (slug wpisu aktualizacji: link do `/<lang>/aktualizacje/#<slug>` po `SECTIONS.updates.ready`, wcześniej
+sama data), spoiler `inert` + `data-pagefind-ignore`. `src/lib/stat.ts` (`resolvePath`, `resolveStat`, `formatStat`),
+`src/lib/links.ts` (`mechanicsHref`, `guideHref`, `questHref`, `npcHref`), `src/lib/content.ts` (indeks MDX z dysku),
+`src/lib/quests.ts`, `src/lib/mechanics.ts` (`TOPICS`), `src/lib/blocks.ts`. Bloki: `ZoneCards` (`compact?`), `PvpMatrix`,
+`TitleTable` (`kinds?`), `ExpChart`, `ExpDiffChart`, `MonsterExpTable`, `ReductionTable`, `VariantTable`,
+`LevelBandStrip`, `StatFormulaTable`, `CapsTable`, `ClassStartTable`, `ElementList`, `BlessingTable`, `ElixirTable`,
+`PotionTable`, `KeybindTable` (`groups?`, `fixed?`). Klasy CSS: `.vw-article*`, `.vw-prose`, `.vw-h3`, `.vw-stat`,
+`.vw-ref`, `.vw-scroll`, `.vw-table--plain|keep|dense|prose`, `.vw-chart`, `.vw-chip--static`.
+
+## Pisanie treści (S42, pierwsza wersja)
+
+- Artykuł = dwa pliki: `src/content/<mechanics|guides>/pl/<slug-pl>.mdx` i `en/<slug-en>.mdx`. Frontmatter: `title`,
+  `description` (≤ 155 znaków, w cudzysłowie, gdy ma dwukropek), `key` (wspólny dla PL i EN), `order`, `updated`
+  (data), opcjonalnie `levels: [1, 10]`, `tags: [..]`, `kicker`. Nazwa pliku = adres w danym języku.
+- **Liczby z gry tylko przez `<Stat/>`** (test `content.test.ts` odrzuca cyfry w prozie). Komponenty bez importu:
+  - `<Stat path="mechanics.config.PvpToggleDelay" format="s" />` — formaty `num`, `pct` (15 → 15%), `frac` (0,15 → 15%),
+    `x`, `s`, `min`, `h`, `gold`, `lvl`; `decimals`, `mul`; segment `lista[id]` wybiera rekord po `id`/`key`.
+  - `<Item id n? rarity? />`, `<Monster id variant? />`, `<Quest id />`, `<Npc id />`, `<Region id area? plain? />`,
+    `<Rarity id />`, `<Key action="win_map" />`, `<Link to="upgrading" id? hash?>tekst</Link>` (`to="mechanics" id="death"`
+    = artykuł po kluczu), `<Spoiler title?>`, `<Callout kind title? date? update?>`.
+  - Bloki danych (lista w „Komponenty”) wstawia się jak komponent: `<PvpMatrix />`.
+  - Nieznane id albo ścieżka = błąd buildu i testu.
+- `##` = tytuł sekcji (trafia do spisu treści), `###` = podtytuł. Ton: konkretnie, krótko, w drugiej osobie, bez
+  wykrzykników i memów.
+
 ## Obrazy potworów (S38)
 
 - **Generowanie:** `cd wiki && npm run renders` (Python 3.10+ z numpy i Pillow; instrukcja i parametry w
@@ -340,7 +368,29 @@ Mechaniki skryptowe bossów: `src/content/bosses/{pl,en}/*.md` (frontmatter `bos
   ostrzeżenie przy za niskim poziomie. Zgodność z grą: `rules.vectors` z Lune, Vitest `skills.test.ts`. Sekcja
   `classes` ma `ready: true`; rekordy umiejętności w Pagefind prowadzą do `?s=<id>#s-<id>`.
 
+- **S42 (zadania, mechaniki):** `/pl/zadania/` (32 główne w kolejności gry pogrupowane w odcinki wg krainy, 28 pobocznych
+  wg NPC, 8 rodzajów zleceń z chipami poziomu i tabelą nagród), 60 stron zadań (fakty, minimapa celu, cele z linkami,
+  nagrody z tooltipem, wybór przedmiotu, fabuła w spoilerach poza indeksem, poprzednie/następne), `/pl/mechaniki/` (10
+  kart w 3 grupach; 4 „Wkrótce” do S43) i 6 tematów PL/EN w MDX (walka, statystyki, doświadczenie, śmierć,
+  błogosławieństwa, PvP) z 17 blokami danych. Zero wysp; JS tylko spoiler, spis treści i chipy zleceń. Build 2250
+  stron, Vitest 109 testów.
+
 ## Decyzje
+
+- **S42** Slugi treści są tłumaczone (`pl/smierc.mdx` ↔ `en/death.mdx`, wspólny `key`), id danych nie. `routes.alternate()`
+  przyjmuje opcjonalny tłumacz slugów; `Base` podaje `translateSlug` z `src/lib/content.ts` (czyta frontmatter z dysku, bo
+  `routes.ts` działa też w wyspach, a `astro:content` nie działa w Vitest). Brak pary → strona sekcji w drugim języku.
+- **S42** Wątek główny na indeksie: odcinki wg krainy celów (pierwszy cel poza miastem, inaczej mapa zlecającego), w
+  kolejności łańcucha — kraina może się powtórzyć (fabuła wraca do miasta). Plan mówił „wg krainy NPC”, ale zlecający
+  w mieście dają zadania na wszystkie krainy.
+- **S42** Zlecenia: chipy poziomów 1, 10…100 (wiersze z eksportu na tych poziomach); domyślnie poziom 1, bez JS widać
+  tylko jego cele (150 wierszy wszystkich poziomów to za długa strona); tabela nagród zawsze cała z podświetlonym wierszem.
+- **S42** NPC: `npcLabel` = „rola · imię”, chyba że imię zaczyna się pierwszym słowem roli („Kowal Dorgan”). `npcHref`:
+  karta w temacie `city` (S43), inaczej mapa `?m=&a=`. Pagefind: zadania `type: quest`, mechaniki `type: guide`.
+- **S42** `mechanics.death` nie powstał: wszystkie liczby śmierci już są w `mechanics.config` i `mechanics.combat` (leash).
+  `RespawnNowCost` dalej poza eksportem.
+- **S42** Tytuły na wiki na ciemnym tle chipa (`.vw-title-name`): kolory tytułów z gry są dobrane pod ciemny HUD.
+- **S42** Test prozy: cyfry zabronione poza frontmatter, nagłówkami, atrybutami komponentów, `+N` i numeracją list.
 
 - **S41** Krawędź wymagania biegnąca pod innym węzłem tej samej kolumny odsunięta łukiem o 40 px (plan: 12): przy 12 px
   linia dalej wchodziła pod węzeł 64 px.
@@ -503,6 +553,11 @@ Mechaniki skryptowe bossów: `src/content/bosses/{pl,en}/*.md` (frontmatter `bos
   `Config.AdminUserIds` czyta tylko `tests/wikidump.spec.luau` (`Leak.scan`). Każdy build sprawdza zakazane klucze.
 
 ## Niedokończone
+
+- **S42** Stałe grupy (`MAX_MEMBERS`, `PARTY_RANGE`) są w kodzie serwera: dzielenie EXP w grupie opisane słowami
+  (przeniesienie do `Data` to decyzja właściciela). Tabela przypadków `Respawn.place` (jeśli zostanie czas) nie zrobiona.
+  Źródła błogosławieństw ze zleceń dziennych nie są w `items.sources` (nagroda zleceń liczona funkcją, nie tabelą).
+  Pływający tooltip nadal brak; nagrody zadań mają tooltip CSS przy najechaniu/fokusie (desktop).
 
 - **S41** Uwaga balansowa (bez zmiany gry): ranga 10 umiejętności z odblokowaniem 75 (zwieńczenia każdej klasy) wymaga
   poziomu 102 > `MaxLevel` 100 — nieosiągalna; wiki pokazuje „maks. osiągalna 9” z danych. Punkt G („jeśli zostanie

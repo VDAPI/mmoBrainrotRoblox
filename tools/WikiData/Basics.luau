@@ -7,10 +7,17 @@ local Blessings = require("../../src/shared/Data/Blessings")
 local Classes = require("../../src/shared/Data/Classes")
 local Clean = require("./Clean")
 local Combat = require("../../src/shared/Data/Combat")
+local AreaAdvice = require("../../src/shared/Logic/AreaAdvice")
 local Config = require("../../src/shared/Config")
 local Cosmetics = require("../../src/shared/Data/Cosmetics")
 local Elements = require("../../src/shared/Data/Elements")
+local Damage = require("../../src/shared/Logic/Damage")
 local Exp = require("../../src/shared/Logic/Exp")
+local KeybindData = require("../../src/shared/Data/Keybinds")
+local Keybinds = require("../../src/shared/Logic/Keybinds")
+local LevelBand = require("../../src/shared/Logic/LevelBand")
+local Maps = require("../../src/shared/Data/Maps")
+local PvpRules = require("../../src/shared/Logic/PvpRules")
 local Fish = require("../../src/shared/Data/Fish")
 local GatherNodes = require("../../src/shared/Data/GatherNodes")
 local Places = require("./Places")
@@ -22,6 +29,7 @@ local Recipes = require("../../src/shared/Data/Recipes")
 local Schema = require("./Schema")
 local Stats = require("../../src/shared/Data/Stats")
 local Titles = require("../../src/shared/Data/Titles")
+local World = require("./World")
 
 local S = Schema
 local arr, map, rec, enum = S.arr, S.map, S.rec, S.enum
@@ -149,6 +157,16 @@ S.file(
 		skillPointsPerLevel = "int",
 		skillPointsFromLevel = "int",
 		maxLevel = "int",
+		-- S42: EXP of a monster per level and variant, the best hunting area of every level, level-gap rules
+		monsterExp = arr(rec("MonsterExpRow", { level = "int", exp = map("number") })),
+		bestArea = arr(rec("BestArea", { level = "int", map = "ref:maps", area = "ref:areas" })),
+		levelDiffRules = rec("LevelDiffRules", {
+			freeDiff = "number",
+			penaltyPerLevel = "number",
+			minMultiplier = "number",
+			bonusPerLevel = "number",
+			maxBonus = "number",
+		}),
 	})
 )
 
@@ -186,6 +204,25 @@ S.file(
 			materialMul = "number",
 		})),
 		bossDailyRuns = "int",
+		-- S42
+		keybinds = arr(rec("KeybindInfo", { id = "string", group = "string", key = "string", name = "name" })),
+		levelBands = arr(rec("LevelBandInfo", { band = "string", min = "int", max = "int", color = "color" })),
+		reduction = rec("ReductionTable", {
+			levels = arr("int"),
+			rows = arr(rec("ReductionRow", { defense = "int", values = arr("number") })),
+		}),
+		pvp = rec("PvpInfo", {
+			rows = arr(rec("PvpCase", {
+				zone = "string",
+				relation = "string",
+				attackerPvp = "bool",
+				targetPvp = "bool",
+				allowed = "bool",
+				["reason?"] = "string",
+				["reasonName?"] = "name",
+			})),
+			toggleMatters = map("bool"),
+		}),
 	})
 )
 
@@ -431,7 +468,82 @@ function Basics.progression(_ctx: any): any
 		skillPointsPerLevel = Progression.skillPointsPerLevel,
 		skillPointsFromLevel = Progression.skillPointsFromLevel,
 		maxLevel = Config.MaxLevel,
+		monsterExp = Basics.monsterExp(),
+		bestArea = Basics.bestArea(),
+		levelDiffRules = {
+			freeDiff = Progression.freeDiff,
+			penaltyPerLevel = Progression.penaltyPerLevel,
+			minMultiplier = Progression.minMultiplier,
+			bonusPerLevel = Progression.bonusPerLevel,
+			maxBonus = Progression.maxBonus,
+		},
 	}
+end
+
+Basics.MONSTER_EXP_VARIANTS = { "normal", "elite", "elite2", "boss" }
+
+-- Exp.monsterExp on levels 1, 10, 20, ..., MaxLevel for every variant (S42).
+function Basics.monsterExp(): { any }
+	local out = {}
+	local levels = { 1 }
+	for level = 10, Config.MaxLevel, 10 do
+		table.insert(levels, level)
+	end
+	for _, level in levels do
+		local exp = {}
+		for _, v in Basics.MONSTER_EXP_VARIANTS do
+			exp[v] = Exp.monsterExp(level, v :: any)
+		end
+		table.insert(out, { level = level, exp = exp })
+	end
+	return out
+end
+
+-- Region maps sorted by their minimum level.
+function Basics.regionMaps(): { any }
+	local regions = {}
+	for _, id in Clean.keys(Maps.byId) do
+		local m = (Maps.byId :: any)[id]
+		if World.mapKind(m) == "region" then
+			table.insert(regions, m)
+		end
+	end
+	table.sort(regions, function(a, b)
+		return a.minLevel < b.minLevel or (a.minLevel == b.minLevel and a.id < b.id)
+	end)
+	return regions
+end
+
+-- Best region area for every level (S42): among the region maps whose range holds the level, AreaAdvice.best
+-- of the map whose area is recommended and nearest by its range middle (the later map on a tie).
+function Basics.bestArea(): { any }
+	local regions = Basics.regionMaps()
+	local out = {}
+	for level = 1, Config.MaxLevel do
+		local best, bestMap, bestScore = nil, nil, math.huge
+		for _, m in regions do
+			if level >= m.minLevel and level <= m.maxLevel then
+				local area = AreaAdvice.best(level, m.id)
+				if area then
+					local score = math.abs((area.lv[1] + area.lv[2]) / 2 - level)
+					if not AreaAdvice.isRecommended(area, level) then
+						score += 1000
+					end
+					if score <= bestScore then
+						best, bestMap, bestScore = area, m.id, score
+					end
+				end
+			end
+		end
+		if not best and #regions > 0 then
+			local nearest = if level < regions[1].minLevel then regions[1] else regions[#regions]
+			best, bestMap = AreaAdvice.best(level, nearest.id), nearest.id
+		end
+		if best then
+			table.insert(out, { level = level, map = bestMap, area = best.id })
+		end
+	end
+	return out
 end
 
 -- Zone colours from src/client/UI/Theme.luau read as text (the client module does not load in Lune).
@@ -512,7 +624,100 @@ function Basics.mechanics(ctx: any): any
 		variants = variants,
 		areaProfiles = profiles,
 		bossDailyRuns = (Config :: any).Boss and (Config :: any).Boss.dailyRuns or 1,
+		keybinds = Basics.keybinds(),
+		levelBands = Basics.levelBands(),
+		reduction = Basics.reduction(),
+		pvp = Basics.pvp(),
 	}
+end
+
+local function stripHint(text: string): string
+	return (string.gsub(text, "%s*%b()$", ""))
+end
+
+-- Default keys of the rebindable actions in data order (S42); names without the " (C)" hint of the HUD texts.
+function Basics.keybinds(): { any }
+	local out = {}
+	for _, a in KeybindData.actions do
+		local n = Names.of(a.labelKey)
+		table.insert(out, {
+			id = a.id,
+			group = a.group,
+			key = Keybinds.label(a.default),
+			name = { pl = stripHint(n.pl), en = stripHint(n.en) },
+		})
+	end
+	return out
+end
+
+Basics.BAND_RANGE = { -15, 10 }
+
+-- LevelBand.of(L + d, L) for d in BAND_RANGE gathered into ranges (the ends of the scan are open).
+function Basics.levelBands(): { any }
+	local out = {}
+	local player = 50
+	for d = Basics.BAND_RANGE[1], Basics.BAND_RANGE[2] do
+		local band = LevelBand.of(player + d, player)
+		local last = out[#out]
+		if last and last.band == band then
+			last.max = d
+		else
+			table.insert(out, { band = band, min = d, max = d, color = (LevelBand.COLORS :: any)[band] })
+		end
+	end
+	return out
+end
+
+Basics.REDUCTION_DEFENSE = { 50, 100, 200, 400, 800, 1600 }
+Basics.REDUCTION_LEVELS = { 10, 25, 50, 75, 100 }
+
+-- Damage.reduction for a grid of defence x attacker level (S42), rounded to 0.01 %.
+function Basics.reduction(): any
+	local rows = {}
+	for _, def in Basics.REDUCTION_DEFENSE do
+		local values = {}
+		for _, level in Basics.REDUCTION_LEVELS do
+			table.insert(values, math.floor(Damage.reduction(def, level) * 10000 + 0.5) / 10000)
+		end
+		table.insert(rows, { defense = def, values = values })
+	end
+	return { levels = table.clone(Basics.REDUCTION_LEVELS), rows = rows }
+end
+
+Basics.PVP_RELATIONS = { "stranger", "party", "guild", "guildOpen" }
+Basics.ZONES = { "green", "yellow", "red" }
+
+-- PvpRules.canAttack for every zone x relation x own toggle x target toggle (S42).
+function Basics.pvp(): any
+	local rows = {}
+	for _, zone in Basics.ZONES do
+		for _, relation in Basics.PVP_RELATIONS do
+			for _, mine in { true, false } do
+				for _, theirs in { true, false } do
+					local ok, reason = PvpRules.canAttack({ pvpEnabled = mine }, { pvpEnabled = theirs }, {
+						zone = zone :: any,
+						sameParty = relation == "party",
+						sameGuild = relation == "guild" or relation == "guildOpen",
+						guildProtection = relation ~= "guildOpen",
+					})
+					table.insert(rows, {
+						zone = zone,
+						relation = relation,
+						attackerPvp = mine,
+						targetPvp = theirs,
+						allowed = ok,
+						reason = if reason then (string.gsub(reason, "^pvp%.deny%.", "")) else nil,
+						reasonName = if reason then Names.of(reason) else nil,
+					})
+				end
+			end
+		end
+	end
+	local matters = {}
+	for _, zone in Basics.ZONES do
+		matters[zone] = PvpRules.toggleMatters(zone :: any)
+	end
+	return { rows = rows, toggleMatters = matters }
 end
 
 function Basics.titles(ctx: any): any

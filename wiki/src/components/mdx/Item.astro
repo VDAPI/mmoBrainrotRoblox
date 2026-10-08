@@ -1,0 +1,22 @@
+---
+// <Item id="scroll_protection" n={3} />: icon 20 px + name in the rarity text colour, link to the item page.
+import ItemIcon from "../ItemIcon.svelte";
+import type { Lang } from "../../i18n/routes";
+import { getItem } from "../../lib/data";
+import { name } from "../../lib/i18n";
+import { materialRef } from "../../lib/items";
+import { sectionHref } from "../../lib/sections";
+interface Props {
+  id: string;
+  n?: number;
+  rarity?: string;
+}
+const { id, n, rarity } = Astro.props;
+const lang = (Astro.params.lang ?? "pl") as Lang;
+if (!getItem(id)) throw new Error(`<Item id="${id}">: unknown item`);
+const ref = materialRef(id);
+const r = rarity ?? ref.rarity;
+const link = sectionHref(lang, "items", id);
+const label = name(ref.name, lang);
+---
+<span class="vw-ref vw-ref--item" style={`--ref-c: var(--vw-r-${r}-text)`}><ItemIcon glyph={ref.glyph} color={ref.color} rarity={r} size={20} src={ref.icon} alt="" />{link ? <a href={link}>{label}</a> : <span>{label}</span>}{n !== undefined && <span class="vw-ref__n"> ×{n}</span>}</span>

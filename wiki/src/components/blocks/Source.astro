@@ -1,0 +1,14 @@
+---
+// Source line under a data block: "Dane: Data/Combat · commit abc1234 · 07.10.2026" (meta.json).
+import type { Lang } from "../../i18n/routes";
+import { sourceParts } from "../../lib/blocks";
+import { formatDate } from "../../lib/format";
+import { t } from "../../lib/i18n";
+interface Props {
+  from: string;
+}
+const { from } = Astro.props;
+const lang = (Astro.params.lang ?? "pl") as Lang;
+const { commit, date } = sourceParts();
+---
+<p class="vw-label vw-source">{t(lang, "block.source", { from, commit, date: formatDate(date, lang) })}</p>

@@ -1,0 +1,16 @@
+---
+// <Quest id="wolves" />: quest title with a link to its page.
+import SoonLink from "../SoonLink.astro";
+import type { Lang } from "../../i18n/routes";
+import { name } from "../../lib/i18n";
+import { questHref } from "../../lib/links";
+import { questById } from "../../lib/quests";
+interface Props {
+  id: string;
+}
+const { id } = Astro.props;
+const lang = (Astro.params.lang ?? "pl") as Lang;
+const quest = questById(id);
+if (!quest) throw new Error(`<Quest id="${id}">: unknown quest`);
+---
+<SoonLink href={questHref(lang, id)} lang={lang} class="vw-ref">{name(quest.q.title, lang)}</SoonLink>

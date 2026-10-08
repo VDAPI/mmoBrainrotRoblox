@@ -1,0 +1,15 @@
+---
+// <Npc id="healer" />: "role · name" (role only when the name does not start with it), link from npcHref.
+import type { Lang } from "../../i18n/routes";
+import { load } from "../../lib/data";
+import { npcHref } from "../../lib/links";
+import { npcLabel } from "../../lib/quests";
+interface Props {
+  id: string;
+}
+const { id } = Astro.props;
+const lang = (Astro.params.lang ?? "pl") as Lang;
+if (!load("npcs").npcs.some((n) => n.id === id)) throw new Error(`<Npc id="${id}">: unknown NPC`);
+const link = npcHref(lang, id);
+---
+{link ? <a class="vw-ref" href={link}>{npcLabel(id, lang)}</a> : <span class="vw-ref">{npcLabel(id, lang)}</span>}

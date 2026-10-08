@@ -1,0 +1,28 @@
+---
+// Elements of the game (S42): elements.json in its colours, with the resistance that blocks each; weapon elements
+// marked. No element = physical damage.
+import Source from "./Source.astro";
+import type { Lang } from "../../i18n/routes";
+import { statName } from "../../lib/blocks";
+import { load } from "../../lib/data";
+import { name, t } from "../../lib/i18n";
+const lang = (Astro.params.lang ?? "pl") as Lang;
+const els = load("elements").elements;
+const resOf = (id: string) => `res${id.charAt(0).toUpperCase()}${id.slice(1)}`;
+---
+<ul class="vw-els">
+  {els.map((e) => (
+    <li style={`--el: var(--vw-el-${e.id})`}>
+      <span class="dot" aria-hidden="true"></span>
+      <strong>{name(e.name, lang)}</strong>
+      <span class="muted">{statName(resOf(e.id), lang)}{e.weapon ? ` · ${t(lang, "block.el.weapon")}` : ""}</span>
+    </li>
+  ))}
+</ul>
+<Source from="Data/Elements" />
+<style>
+  .vw-els { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; margin: 0; padding: 0; list-style: none; }
+  .vw-els li { display: grid; grid-template-columns: 14px 1fr; gap: 2px 10px; align-items: center; padding: 10px 14px; background: var(--vw-panel); border: 1px solid var(--vw-border-subtle); }
+  .dot { width: 12px; height: 12px; background: var(--el); transform: rotate(45deg); }
+  .muted { grid-column: 2; color: var(--vw-text-muted); font-size: 14px; }
+</style>

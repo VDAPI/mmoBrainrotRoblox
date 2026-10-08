@@ -1,0 +1,34 @@
+---
+title: Statystyki
+description: "Cztery atrybuty, punkty za poziom, jak atrybuty zmieniają się w życie, atak i obronę, limity statystyk i reset punktów."
+key: stats
+order: 2
+updated: 2026-10-08
+tags: [Atrybuty, Postać]
+---
+
+## Atrybuty
+
+Postać ma cztery atrybuty: **Siłę**, **Zręczność**, **Intelekt** i **Witalność**. Każda klasa zaczyna z innym zestawem; główne atrybuty klasy są wyróżnione.
+
+<ClassStartTable />
+
+## Punkty za poziom
+
+Za każdy awans dostajesz <Stat path="progression.statPointsPerLevel" /> punktów atrybutów do rozdania w oknie Postaci (<Key action="win_character" />). Od poziomu <Stat path="progression.skillPointsFromLevel" /> dostajesz też <Stat path="progression.skillPointsPerLevel" /> punkt umiejętności na poziom; wydasz go w oknie Umiejętności (<Key action="win_skills" />) albo zaplanujesz w <Link to="classes">planerze klas</Link>.
+
+## Wzory
+
+Atrybuty zamieniają się w statystyki według wzorów gry. Bonusy z ekwipunku, błogosławieństw i gildii dochodzą na końcu.
+
+<StatFormulaTable />
+
+## Limity
+
+Niektóre statystyki mają górną granicę. Nadmiar ponad limit nic nie daje, więc przy pełnej wartości szukaj innych bonusów.
+
+<CapsTable />
+
+## Reset punktów
+
+Rozdane punkty atrybutów cofniesz <Item id="scroll_oblivion" />: kupisz go u nauczyciela w mieście, a cena rośnie z poziomem. Punkty umiejętności resetuje osobny <Item id="scroll_skillreset" />.

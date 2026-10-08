@@ -1,0 +1,48 @@
+---
+title: Death
+description: "What happens when you die: the respawn timer, choosing where to stand up, respawn protection and how to escape a monster."
+key: death
+order: 4
+updated: 2026-10-08
+tags: [Respawn, Monsters]
+---
+
+## You lose nothing
+
+Dying in Vaelthorn takes no items, gold or experience. You only lose a little time. Harmful effects (poison, slows) are removed, while blessings and elixirs keep working.
+
+## Respawn timer
+
+After death you see a screen with a timer. It grows with your level: <Stat path="mechanics.config.RespawnBase" format="s" /> plus <Stat path="mechanics.config.RespawnPerLevel" format="s" /> per level. The “Fast Return” pass multiplies that time by <Stat path="mechanics.config.FastRespawnMultiplier" format="x" />. You can also skip the timer with Dragon Currency.
+
+## City or here
+
+When the timer ends, you choose where to stand up:
+
+- **Respawn in the city**: back to the city square.
+- **Respawn here**: right where you died.
+
+If you do not choose within <Stat path="mechanics.config.DeathChoiceTimeout" format="s" />, the game picks the city.
+
+### Exceptions to “here”
+
+- In a boss dungeon you stand up in front of the dungeon entrance.
+- If you died in water or inside a wall, the game looks for a free spot within <Stat path="mechanics.config.RespawnSearchRadius" /> studs.
+- Under or outside the map you go to the map's nearest respawn point.
+
+## Respawn protection
+
+You stand up with a single point of health but full mana and energy. For <Stat path="mechanics.config.RespawnShieldSeconds" format="s" /> you take no damage, monsters ignore you and players cannot attack you. Any attack of yours ends the protection at once; healing and buffs do not. Drink a potion before you move on.
+
+<Callout kind="tip">
+A Cleric can bring you back with the Resurrection skill. The timer is skipped and respawn protection works the same way.
+</Callout>
+
+## Escaping a monster
+
+Monsters guard their place. When you get further than <Stat path="mechanics.combat.leashRange" /> studs from the centre of their group and nobody hits them for <Stat path="mechanics.combat.leashGrace" format="s" />, they go home. Beyond <Stat path="mechanics.combat.leashMax" /> studs they always go home.
+
+- A returning monster runs faster (<Stat path="mechanics.combat.returnSpeedMultiplier" format="x" />) and does not heal on the way.
+- If it does not get home in <Stat path="mechanics.combat.returnTimeout" format="s" />, it appears there.
+- At home it regains <Stat path="mechanics.combat.idleRegenPct" format="pct" /> of its health per second, but only <Stat path="mechanics.combat.idleRegenDelay" format="s" /> after the last hit. Come back quickly and you can finish the fight.
+- Monsters far below your level (<Stat path="mechanics.combat.passiveLevelGap" /> levels or more) do not attack first.

@@ -1,0 +1,33 @@
+---
+// How attributes become stats (S42): text formulas from the wiki i18n (block.formula.<stat>) filled with the constants
+// of Stats.Formula (mechanics.formula). Same rules as Logic/StatCalc; numbers never typed by hand.
+import Source from "./Source.astro";
+import type { Lang } from "../../i18n/routes";
+import { statName } from "../../lib/blocks";
+import { load } from "../../lib/data";
+import { formatNumber } from "../../lib/format";
+import { t, type Key } from "../../lib/i18n";
+const lang = (Astro.params.lang ?? "pl") as Lang;
+const f = load("mechanics").formula as Record<string, number>;
+const n = (v: number) => formatNumber(Math.round(v * 1e6) / 1e6, lang);
+const args: Record<string, string> = {};
+for (const [k, v] of Object.entries(f)) if (typeof v === "number") args[k] = n(v);
+// per-point shares shown as percent points
+args.physPct = n(f.physPerStat * 100);
+args.magPct = n(f.magPerInt * 100);
+args.atkPct = n(f.atkSpeedPerDex * 100);
+const rows = ["maxHp", "maxMana", "maxEnergy", "physAtk", "magAtk", "critChance", "critDmg", "atkSpeed", "armor", "mres", "dodge", "hpRegen", "hpRegenCombat", "manaRegen", "energyRegen"];
+---
+<table class="vw-table vw-table--plain">
+  <caption class="vw-sr">{t(lang, "block.formula.caption")}</caption>
+  <thead><tr><th scope="col">{t(lang, "block.formula.stat")}</th><th scope="col">{t(lang, "block.formula.rule")}</th></tr></thead>
+  <tbody>
+    {rows.map((id) => (
+      <tr>
+        <td data-mobile="title" class="strong">{statName(id, lang)}</td>
+        <td data-label="">{t(lang, `block.formula.${id}` as Key, args)}</td>
+      </tr>
+    ))}
+  </tbody>
+</table>
+<Source from="Data/Stats (Formula), Logic/StatCalc" />

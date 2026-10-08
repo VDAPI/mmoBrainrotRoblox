@@ -1,0 +1,23 @@
+---
+// <Link to="upgrading" id?>text</Link>: link to a wiki section, an entity of it, or an article key of mechanics /
+// guides (to="mechanics" id="death"); a target that does not exist yet shows the text with "Soon".
+import SoonLink from "../SoonLink.astro";
+import { ROUTES, type Lang, type RouteKey } from "../../i18n/routes";
+import { guideHref, mechanicsHref } from "../../lib/links";
+import { sectionHref } from "../../lib/sections";
+interface Props {
+  to: string;
+  id?: string;
+  hash?: string;
+}
+const { to, id, hash } = Astro.props;
+const lang = (Astro.params.lang ?? "pl") as Lang;
+if (!(to in ROUTES)) throw new Error(`<Link to="${to}">: unknown section`);
+const key = to as RouteKey;
+let link: string | null;
+if (key === "mechanics" && id) link = mechanicsHref(lang, id);
+else if (key === "guides" && id) link = guideHref(lang, id);
+else link = id ? sectionHref(lang, key, id) : sectionHref(lang, key);
+if (link && hash) link = `${link}#${hash}`;
+---
+<SoonLink href={link} lang={lang}><slot /></SoonLink>

@@ -1,0 +1,52 @@
+---
+title: Walka
+description: "Jak gra liczy obrażenia krok po kroku, ile zatrzymuje pancerz, jak działają żywioły, krytyki i uniki oraz czym różnią się rangi potworów."
+key: combat
+order: 1
+updated: 2026-10-08
+tags: [Obrażenia, Potwory]
+---
+
+## Obrażenia krok po kroku
+
+Wszystko liczy serwer, w tej kolejności:
+
+1. **Trafienie.** Szansa celu na unik minus twoja celność, najwyżej <Stat path="mechanics.combat.dodgeCap" format="pct" />. Unik oznacza zero obrażeń.
+2. **Siła ciosu.** Twój atak (fizyczny albo magiczny) razy mnożnik umiejętności.
+3. **Pancerz.** Obrona celu (po odjęciu twojego przebicia pancerza) zatrzymuje część obrażeń, tym mniejszą, im wyższy jest twój poziom. Przy magii tę rolę gra odporność magiczna.
+4. **Losowość.** Wynik mnożony przez wartość od <Stat path="mechanics.combat.randomMin" format="frac" /> do <Stat path="mechanics.combat.randomMax" format="frac" />.
+5. **Krytyk.** Podstawowa szansa to <Stat path="mechanics.formula.critBase" format="pct" />, najwyżej <Stat path="stats.stats[critChance].cap" format="pct" />. Krytyk zadaje <Stat path="mechanics.formula.critDmgBase" format="pct" /> obrażeń.
+6. **Żywioł.** Odporność celu na żywioł ataku zmniejsza obrażenia, najwyżej o <Stat path="stats.stats[resFire].cap" format="pct" />.
+7. **PvP.** Przeciw graczowi wynik mnożony jest przez <Stat path="mechanics.combat.pvpModifier" format="frac" />.
+
+Każde trafienie zadaje co najmniej <Stat path="mechanics.combat.minDamage" /> punkt obrażeń.
+
+## Pancerz
+
+Tabela pokazuje, jaką część obrażeń zatrzymuje pancerz przeciw atakującemu na danym poziomie. Ten sam pancerz chroni coraz słabiej przed silniejszymi przeciwnikami, więc wymieniaj zbroję razem z poziomem.
+
+<ReductionTable />
+
+## Żywioły
+
+Broń maga i niektóre umiejętności zadają obrażenia żywiołu. Atak bez żywiołu to obrażenia fizyczne. Każdy żywioł blokuje osobna odporność.
+
+<ElementList />
+
+## Zasięg
+
+Podstawowy atak wręcz sięga <Stat path="mechanics.combat.meleeRange" /> studów, atak z dystansu <Stat path="mechanics.combat.rangedRange" /> studów.
+
+## Rangi potworów
+
+Elity są większe, mocniejsze i mają wyższy poziom niż zwykłe potwory tego rodzaju. Elity II walczą jak mały boss i wymagają grupy.
+
+<VariantTable />
+
+Potwory w grupie biją słabiej każdy z osobna, ale atakują razem. Potwory dużo słabsze od ciebie (o <Stat path="mechanics.combat.passiveLevelGap" /> poziomów i więcej) nie atakują pierwsze.
+
+## Kolor poziomu
+
+Kolor poziomu nad potworem porównuje jego poziom z twoim.
+
+<LevelBandStrip />

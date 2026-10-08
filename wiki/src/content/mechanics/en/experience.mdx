@@ -1,0 +1,43 @@
+---
+title: Experience
+description: "How much EXP each level needs, what monsters give, how the level gap changes the reward and what gives extra experience."
+key: experience
+order: 3
+updated: 2026-10-08
+tags: [Levels, Monsters]
+---
+
+## The level curve
+
+The maximum level is <Stat path="progression.maxLevel" />. Every level needs more experience than the one before. Your first level up needs <Stat path="progression.expToNext.0.exp" /> EXP, the last one <Stat path="progression.expToNext.98.exp" />. At the maximum level you no longer gain EXP.
+
+<ExpChart />
+
+A level up restores your health, mana and energy and gives you points to spend (see <Link to="mechanics" id="stats">Stats</Link>).
+
+## EXP from monsters
+
+A monster's EXP depends on its level and rank. Elites give <Stat path="mechanics.variants.elite.expMul" format="x" />, Elite II <Stat path="mechanics.variants.elite2.expMul" format="x" /> and bosses <Stat path="mechanics.variants.boss.expMul" format="x" /> of the normal reward. Tougher kinds of monsters (more health, harder hits) also pay more than weak ones, so EXP per minute of fighting stays similar for every kind.
+
+<MonsterExpTable />
+
+## Level gap
+
+Fight monsters close to your level. When a monster is more than <Stat path="progression.levelDiffRules.freeDiff" /> levels below you, every further level costs <Stat path="progression.levelDiffRules.penaltyPerLevel" format="frac" /> of the reward, down to <Stat path="progression.levelDiffRules.minMultiplier" format="frac" />. A stronger monster gives a bonus of <Stat path="progression.levelDiffRules.bonusPerLevel" format="frac" /> per level, at most <Stat path="progression.levelDiffRules.maxBonus" format="frac" />.
+
+<ExpDiffChart />
+
+The colour of the level above a monster tells you whether it is worth fighting:
+
+<LevelBandStrip />
+
+## Party
+
+In a party, a monster's EXP is split evenly between the members nearby. Each gets an equal share and then their own penalty or bonus for the level gap. A party kills faster and more safely, so it pays off on elites and in caves more than playing alone.
+
+## Extra sources
+
+- **Quests** of the main story and side quests give a fixed EXP reward (see <Link to="quests">Quests</Link>).
+- **Daily contracts** from the Contract Board: <Stat path="quests.daily.perDay" /> a day, the reward grows with your level.
+- **The Fortune line** of blessings and gear bonuses raise the EXP you gain (see <Link to="mechanics" id="blessings">Blessings</Link>).
+- **Guild skills** can add an EXP bonus for every member.

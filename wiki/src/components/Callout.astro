@@ -1,30 +1,37 @@
 ---
 // Callout (.vw-callout): info, tip, warn, changed (date instead of a version), spoiler (button toggles data-open).
+// S42: `update` = slug of an update note: the date links to /<lang>/aktualizacje/#<slug> once that section is ready
+// (until then the date alone). Spoiler text is inert and kept out of the search index until revealed.
 import { t } from "../lib/i18n";
 import { formatDate } from "../lib/format";
+import { sectionHref } from "../lib/sections";
 import type { Lang } from "../i18n/routes";
 interface Props {
   kind?: "info" | "tip" | "warn" | "changed" | "spoiler";
   title?: string;
   date?: string;
+  update?: string;
   lang?: Lang;
 }
-const { kind = "info", title, date, lang = "pl" } = Astro.props;
+const { kind = "info", title, date, update, lang = "pl" } = Astro.props;
 const heading = title ?? t(lang, `callout.${kind}`);
+const updates = update ? sectionHref(lang, "updates") : null;
+const updateHref = updates && update ? `${updates}#${update}` : null;
+const spoiler = kind === "spoiler";
 ---
 <aside class={`vw-callout${kind === "info" ? "" : ` vw-callout--${kind}`}`} data-open={kind === "spoiler" ? "false" : undefined}>
   <span class="vw-callout__icon" aria-hidden="true"></span>
   <div class="content">
     <div class="top">
       <span class="vw-callout__title">{heading}</span>
-      {kind === "changed" && date && <span class="date">{formatDate(date, lang)}</span>}
+      {kind === "changed" && date && (updateHref ? <a class="date" href={updateHref}>{formatDate(date, lang)}</a> : <span class="date">{formatDate(date, lang)}</span>)}
       {kind === "spoiler" && (
         <button type="button" class="toggle" aria-expanded="false" data-show={t(lang, "callout.show")} data-hide={t(lang, "callout.hide")}>
           {t(lang, "callout.show")}
         </button>
       )}
     </div>
-    <div class="vw-callout__body"><slot /></div>
+    <div class="vw-callout__body" inert={spoiler} data-pagefind-ignore={spoiler ? "all" : undefined}><slot /></div>
   </div>
 </aside>
 <script>
@@ -35,6 +42,7 @@ const heading = title ?? t(lang, `callout.${kind}`);
       box?.setAttribute("data-open", String(open));
       button.setAttribute("aria-expanded", String(open));
       button.textContent = (open ? button.dataset.hide : button.dataset.show) ?? "";
+      box?.querySelector(".vw-callout__body")?.toggleAttribute("inert", !open);
     });
   });
 </script>
@@ -44,4 +52,6 @@ const heading = title ?? t(lang, `callout.${kind}`);
   .date { font: 800 12px/1 var(--vw-font-ui); padding: 3px 6px; background: var(--vw-gold-bright); color: var(--vw-text-on-gold); }
   .toggle { margin-left: auto; min-height: 32px; background: none; border: 0; color: var(--c); font: 800 12px/1 var(--vw-font-ui); letter-spacing: .12em; text-transform: uppercase; cursor: pointer; }
   .vw-callout__body :global(p) { margin: 0; }
+  .vw-callout__body :global(p + p) { margin-top: 8px; }
+  a.date { text-decoration: none; }
 </style>

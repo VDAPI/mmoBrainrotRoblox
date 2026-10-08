@@ -1,0 +1,35 @@
+---
+// Article layout shared by mechanics and guides (S42): crumbs, table of contents on the left (desktop, sticky) or a
+// collapsed "On this page" under the lead (mobile), kicker, H1, badges (slot "badges"), lead, "Game data: <commit> ·
+// <date>" and the prose (.vw-prose). The page itself (Base) is the caller's.
+import Crumbs from "./Crumbs.astro";
+import Toc from "./Toc.astro";
+import type { Lang } from "../i18n/routes";
+import { meta } from "../lib/data";
+import { formatDate } from "../lib/format";
+import { t } from "../lib/i18n";
+interface Props {
+  lang: Lang;
+  crumbs: { label: string; href?: string | null }[];
+  kicker: string;
+  title: string;
+  lead?: string;
+  toc: { id: string; label: string; sub?: boolean }[];
+}
+const { lang, crumbs, kicker, title, lead, toc } = Astro.props;
+const data = meta();
+---
+<div class="vw-article">
+  <Crumbs items={crumbs} />
+  <div class="vw-article__grid">
+    <header class="vw-article__head">
+      <p class="vw-label vw-article__kicker">{kicker}</p>
+      <h1 class="vw-article__title">{title}</h1>
+      {Astro.slots.has("badges") && <div class="vw-article__badges"><slot name="badges" /></div>}
+      {lead && <p class="vw-article__lead">{lead}</p>}
+      <p class="vw-label vw-article__data">{t(lang, "article.data", { commit: data.dataCommit.slice(0, 7), date: formatDate(data.dataDate, lang) })}</p>
+    </header>
+    <aside class="vw-article__side">{toc.length > 0 && <Toc items={toc} lang={lang} />}</aside>
+    <div class="vw-article__main vw-prose"><slot /></div>
+  </div>
+</div>

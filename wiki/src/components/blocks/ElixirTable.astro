@@ -1,0 +1,32 @@
+---
+// Elixirs (S42): blessings.json elixirs (+elixirValue to a resistance for elixirDuration), items elixir_<stat>.
+import ItemIcon from "../ItemIcon.svelte";
+import Source from "./Source.astro";
+import type { Lang } from "../../i18n/routes";
+import { getItem, load } from "../../lib/data";
+import { formatDuration, formatNumber } from "../../lib/format";
+import { name, t } from "../../lib/i18n";
+import { materialRef } from "../../lib/items";
+import { sectionHref } from "../../lib/sections";
+const lang = (Astro.params.lang ?? "pl") as Lang;
+const file = load("blessings");
+---
+<table class="vw-table vw-table--plain">
+  <caption class="vw-sr">{t(lang, "block.elixir.caption")}</caption>
+  <thead><tr><th scope="col">{t(lang, "block.elixir.item")}</th><th scope="col">{t(lang, "block.elixir.effect")}</th></tr></thead>
+  <tbody>
+    {file.elixirs.map((e) => {
+      const id = `elixir_${e.stat}`;
+      const item = getItem(id);
+      const ref = materialRef(id);
+      const h = item ? sectionHref(lang, "items", id) : null;
+      return (
+        <tr>
+          <td data-mobile="title"><span class="vw-ref"><ItemIcon glyph={ref.glyph} color={ref.color} rarity={ref.rarity} size={28} src={ref.icon} alt="" />{h ? <a href={h}>{name(item?.name, lang)}</a> : name(item?.name ?? e.name, lang)}</span></td>
+          <td data-label="">{t(lang, "block.elixir.text", { value: formatNumber(file.elixirValue, lang), stat: name(e.name, lang), time: formatDuration(file.elixirDuration, lang) })}</td>
+        </tr>
+      );
+    })}
+  </tbody>
+</table>
+<Source from="Data/Blessings" />

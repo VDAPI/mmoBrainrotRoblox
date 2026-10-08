@@ -1,0 +1,49 @@
+---
+title: PvP
+description: "Strefy walki, przełącznik PvP, kto może cię zaatakować, mniejsze obrażenia między graczami, pojedynki na arenie i tytuły."
+key: pvp
+order: 6
+updated: 2026-10-08
+tags: [Strefy, Pojedynki]
+---
+
+## Strefy
+
+Każda mapa ma kolor strefy. Kolor widzisz na banerze po wejściu na mapę i przy nazwie mapy na wiki. Strefa liczy się tam, gdzie stoi **cel** ataku.
+
+<ZoneCards />
+
+## Przełącznik PvP
+
+Przełącznik to ikona w prawym dolnym rogu ekranu. Ma znaczenie tylko w żółtej strefie: w zielonej nikt nie walczy, w czerwonej walczą wszyscy.
+
+- Zmiana stanu trwa <Stat path="mechanics.config.PvpToggleDelay" format="s" />. Nad ikoną widzisz odliczanie.
+- Przez <Stat path="mechanics.config.PvpCombatLock" format="s" /> po zadaniu albo otrzymaniu obrażeń od gracza nie wyłączysz PvP.
+- Kropka przy nicku mówi, co się dzieje: zielona to PvP wyłączone, czerwona to włączone albo wymuszone przez strefę, pulsująca to przełączanie, szara z kłódką to blokada.
+
+## Kto może zaatakować kogo
+
+Grupa i gildia chronią zawsze, niezależnie od strefy. Ochronę gildii może wyłączyć jej przywódca.
+
+<PvpMatrix />
+
+## Walka z graczem
+
+- Obrażenia między graczami są mnożone przez <Stat path="mechanics.combat.pvpModifier" format="frac" />, więc walka trwa dłużej niż z potworem.
+- Ogłuszenia, spowolnienia i inne efekty kontroli trwają na graczu <Stat path="mechanics.config.PvpCcMultiplier" format="frac" /> zwykłego czasu.
+- Zabójstwo liczy się graczowi, który ostatni trafił ofiarę w ciągu <Stat path="mechanics.config.PvpKillCredit" format="s" />.
+- Po odrodzeniu przez <Stat path="mechanics.config.RespawnShieldSeconds" format="s" /> nikt cię nie zaatakuje. Twój atak kończy tę ochronę od razu.
+
+<Callout kind="tip" title="Gdy ktoś cię atakuje">
+W żółtej strefie wyłącz PvP i odejdź: po zakończeniu blokady przełącznik zadziała. W czerwonej strefie uciekaj do wyjścia z jaskini albo walcz razem z grupą.
+</Callout>
+
+## Arena i pojedynki
+
+Na arenie w mieście możesz wyzwać gracza na pojedynek, także w zielonej strefie. Zaproszenie ważne jest <Stat path="mechanics.config.DuelInviteSeconds" format="s" />, przed walką jest odliczanie <Stat path="mechanics.config.DuelCountdown" format="s" />, a pojedynek trwa najwyżej <Stat path="mechanics.config.DuelTimeLimit" format="min" />. W czasie pojedynku walczycie tylko ze sobą i nikt nie traci przedmiotów.
+
+## Tytuły
+
+Tytuły zdobywasz za poziom, wątek główny, pojedynki i walkę z graczami. Wybrany tytuł widać nad twoją głową.
+
+<TitleTable />

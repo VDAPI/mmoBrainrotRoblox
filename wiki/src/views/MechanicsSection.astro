@@ -1,0 +1,88 @@
+---
+// Mechanics (S42): /pl/mechaniki/ (ten topic cards in three groups; a topic without an article shows "Soon") and
+// /pl/mechaniki/<slug>/ (an MDX article from src/content/mechanics in the shared article layout).
+import { getCollection, render } from "astro:content";
+import Base from "../layouts/Base.astro";
+import Article from "../components/Article.astro";
+import Crumbs from "../components/Crumbs.astro";
+import SectionTitle from "../components/SectionTitle.astro";
+import { mdxComponents } from "../components/mdx";
+import { href, type Lang } from "../i18n/routes";
+import { formatDate } from "../lib/format";
+import { t, type Key } from "../lib/i18n";
+import { mechanicsHref } from "../lib/links";
+import { GROUPS, TOPICS } from "../lib/mechanics";
+interface Props {
+  lang: Lang;
+  page?: "index" | "topic";
+  slug?: string;
+}
+const { lang, page = "index", slug } = Astro.props;
+const entry = page === "topic" ? (await getCollection("mechanics")).find((e) => e.id === `${lang}/${slug}`) : undefined;
+if (page === "topic" && !entry) throw new Error(`mechanics: no article ${lang}/${slug}`);
+const rendered = entry ? await render(entry) : undefined;
+const toc = (rendered?.headings ?? []).filter((h) => h.depth === 2 || h.depth === 3).map((h) => ({ id: h.slug, label: h.text, sub: h.depth === 3 }));
+const sectionTitle = t(lang, "mech.title");
+const Content = rendered?.Content;
+---
+{entry && Content ? (
+  <Base lang={lang} title={entry.data.title} description={entry.data.description} section="mechanics" search={{ type: "guide", meta: { line: sectionTitle } }}>
+    <Article
+      lang={lang}
+      crumbs={[{ label: t(lang, "crumbs.wiki"), href: href(lang, "home") }, { label: sectionTitle, href: href(lang, "mechanics") }, { label: entry.data.title }]}
+      kicker={entry.data.kicker ?? t(lang, "mech.kicker")}
+      title={entry.data.title}
+      lead={entry.data.description}
+      toc={toc}
+    >
+      <Fragment slot="badges">
+        {(entry.data.tags ?? []).map((tag) => <span class="vw-chip vw-chip--static">{tag}</span>)}
+        <span class="vw-chip vw-chip--static">{t(lang, "article.updated", { date: formatDate(entry.data.updated.toISOString(), lang) })}</span>
+      </Fragment>
+      <Content components={mdxComponents} />
+    </Article>
+  </Base>
+) : (
+  <Base lang={lang} title={sectionTitle} description={t(lang, "mech.lead")} section="mechanics">
+    <div class="vw-article">
+      <Crumbs items={[{ label: t(lang, "crumbs.wiki"), href: href(lang, "home") }, { label: sectionTitle }]} />
+      <p class="vw-label vw-article__kicker kicker">{t(lang, "mech.kicker")}</p>
+      <h1 class="vw-article__title">{sectionTitle}</h1>
+      <p class="vw-article__lead">{t(lang, "mech.lead")}</p>
+      {GROUPS.map((g) => (
+        <section class="group" aria-labelledby={`g-${g}`}>
+          <SectionTitle id={`g-${g}`}>{t(lang, `mech.group.${g}` as Key)}</SectionTitle>
+          <div class="cards">
+            {TOPICS.filter((x) => x.group === g).map((topic) => {
+              const target = mechanicsHref(lang, topic.key);
+              const Tag = target ? "a" : "div";
+              return (
+                <Tag class={`card${target ? "" : " is-soon"}`} href={target ?? undefined}>
+                  <span class="icon" aria-hidden="true"><svg viewBox="0 0 32 32" width="34" height="34"><path d={topic.icon} fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" /></svg></span>
+                  <span class="text">
+                    <span class="title">{t(lang, `mech.topic.${topic.key}` as Key)}{!target && <span class="vw-soon__tag">{t(lang, "soon")}</span>}</span>
+                    <span class="desc">{t(lang, `mech.topic.${topic.key}.desc` as Key)}</span>
+                  </span>
+                </Tag>
+              );
+            })}
+          </div>
+        </section>
+      ))}
+    </div>
+  </Base>
+)}
+<style>
+  .kicker { margin-top: 24px; }
+  .group { margin-top: 48px; }
+  .cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+  .card { display: flex; align-items: center; gap: 18px; min-height: 96px; padding: 16px; background: var(--vw-metal-gradient); border: 1px solid var(--vw-border); box-shadow: var(--vw-elev-1); color: var(--vw-text); }
+  a.card:hover { border-color: var(--vw-gold-dark); text-decoration: none; }
+  .icon { width: 64px; height: 64px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border: 1px solid var(--vw-gold-dark); background: var(--vw-bg); color: var(--vw-gold); }
+  .text { display: flex; flex-direction: column; gap: 4px; }
+  .title { display: flex; align-items: center; gap: 8px; font: 800 20px/1.2 var(--vw-font-ui); }
+  .desc { font-size: 15px; color: var(--vw-text-muted); }
+  .is-soon { opacity: .75; }
+  @media (max-width: 1023px) { .cards { grid-template-columns: 1fr; } }
+  @media (max-width: 767px) { .card { min-height: 72px; padding: 12px; gap: 14px; } .icon { width: 48px; height: 48px; } .title { font-size: 18px; } .group { margin-top: 32px; } }
+</style>

@@ -1,0 +1,22 @@
+---
+// <Monster id="wolf" variant="elite" />: variant name + rank badge for elites (bosses too), link to the bestiary.
+import RankBadge from "../RankBadge.astro";
+import type { Lang } from "../../i18n/routes";
+import { getBoss, getMonster } from "../../lib/data";
+import { bossHref, monsterHref } from "../../lib/bestiary";
+import { name } from "../../lib/i18n";
+interface Props {
+  id: string;
+  variant?: "normal" | "elite" | "elite2";
+}
+const { id, variant = "normal" } = Astro.props;
+const lang = (Astro.params.lang ?? "pl") as Lang;
+const monster = getMonster(id);
+const boss = monster ? undefined : getBoss(id);
+if (!monster && !boss) throw new Error(`<Monster id="${id}">: unknown monster`);
+if (monster && !monster.variants[variant]) throw new Error(`<Monster id="${id}" variant="${variant}">: unknown variant`);
+const label = monster ? name(monster.variants[variant].name, lang) : name(boss!.name, lang);
+const link = monster ? monsterHref(lang, id, variant) : bossHref(lang, id);
+const rank = boss ? "boss" : variant;
+---
+<span class="vw-ref"><a href={link}>{label}</a>{rank !== "normal" && <Fragment> <RankBadge rank={rank} lang={lang} /></Fragment>}</span>

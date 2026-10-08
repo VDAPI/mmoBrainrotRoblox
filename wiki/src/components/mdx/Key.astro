@@ -1,0 +1,14 @@
+---
+// <Key action="win_map" />: the default key of a game action (mechanics.keybinds) as .vw-kbd.
+import type { Lang } from "../../i18n/routes";
+import { load } from "../../lib/data";
+import { name, t } from "../../lib/i18n";
+interface Props {
+  action: string;
+}
+const { action } = Astro.props;
+const lang = (Astro.params.lang ?? "pl") as Lang;
+const bind = load("mechanics").keybinds.find((k) => k.id === action);
+if (!bind) throw new Error(`<Key action="${action}">: unknown action`);
+---
+<kbd class="vw-kbd" title={t(lang, "key.title", { action: name(bind.name, lang) })}>{bind.key}</kbd>

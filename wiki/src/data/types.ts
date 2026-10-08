@@ -104,6 +104,12 @@ export interface BasicAttack {
   style: string;
 }
 
+export interface BestArea {
+  area: string; // id in areas.json
+  level: number;
+  map: string; // id in maps.json
+}
+
 export interface Blessing {
   id: string;
   item: string; // id in items.json
@@ -560,15 +566,37 @@ export interface ItemsFile {
   slots: Record<string, SlotInfo>;
 }
 
+export interface KeybindInfo {
+  group: string;
+  id: string;
+  key: string;
+  name: Name;
+}
+
 export interface Lake {
   r: number;
   x: number;
   z: number;
 }
 
+export interface LevelBandInfo {
+  band: string;
+  color: string;
+  max: number;
+  min: number;
+}
+
 export interface LevelDiff {
   diff: number;
   multiplier: number;
+}
+
+export interface LevelDiffRules {
+  bonusPerLevel: number;
+  freeDiff: number;
+  maxBonus: number;
+  minMultiplier: number;
+  penaltyPerLevel: number;
 }
 
 export interface LevelExp {
@@ -664,6 +692,10 @@ export interface MechanicsFile {
   combat: Json;
   config: Record<string, number>;
   formula: Json;
+  keybinds: KeybindInfo[];
+  levelBands: LevelBandInfo[];
+  pvp: PvpInfo;
+  reduction: ReductionTable;
   variants: Record<string, VariantInfo>;
   zones: Record<string, ZoneInfo>;
 }
@@ -701,6 +733,11 @@ export interface Monster {
   regionMap: string; // id in maps.json
   speed: number;
   variants: Record<string, MonsterVariant>;
+}
+
+export interface MonsterExpRow {
+  exp: Record<string, number>;
+  level: number;
 }
 
 export interface MonsterLevel {
@@ -839,13 +876,31 @@ export interface PortalsFile {
 }
 
 export interface ProgressionFile {
+  bestArea: BestArea[];
   expToNext: LevelExp[];
   levelDiff: LevelDiff[];
+  levelDiffRules: LevelDiffRules;
   maxLevel: number;
+  monsterExp: MonsterExpRow[];
   skillPointsFromLevel: number;
   skillPointsPerLevel: number;
   statPointsPerLevel: number;
   variantExp: Record<string, number>;
+}
+
+export interface PvpCase {
+  allowed: boolean;
+  attackerPvp: boolean;
+  reason?: string;
+  reasonName?: Name;
+  relation: string;
+  targetPvp: boolean;
+  zone: string;
+}
+
+export interface PvpInfo {
+  rows: PvpCase[];
+  toggleMatters: Record<string, boolean>;
 }
 
 export interface QuestAnchorInfo {
@@ -907,6 +962,7 @@ export interface QuestsFile {
   levelSlack: number;
   main: MainQuest[];
   side: SideQuest[];
+  sideChoice: SideChoice;
   sideLevelSlack: number;
   sideMaxActive: number;
 }
@@ -943,6 +999,16 @@ export interface RecipesFile {
   groups: RecipeGroup[];
   queueSlots: number;
   recipes: AlchemyRecipe[];
+}
+
+export interface ReductionRow {
+  defense: number;
+  values: number[];
+}
+
+export interface ReductionTable {
+  levels: number[];
+  rows: ReductionRow[];
 }
 
 export interface Road {
@@ -995,6 +1061,11 @@ export interface ShopEntry {
 export interface ShopsFile {
   shops: Shop[];
   weaponsmithTiers: number[];
+}
+
+export interface SideChoice {
+  count: number;
+  rarity: Record<string, RarityKey>;
 }
 
 export interface SideQuest {

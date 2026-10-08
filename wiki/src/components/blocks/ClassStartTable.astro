@@ -1,0 +1,31 @@
+---
+// Starting attributes of the classes (S42): classes.json startStats, main attributes highlighted.
+import Source from "./Source.astro";
+import type { Lang } from "../../i18n/routes";
+import { statName } from "../../lib/blocks";
+import { load } from "../../lib/data";
+import { name, t } from "../../lib/i18n";
+import { sectionHref } from "../../lib/sections";
+const lang = (Astro.params.lang ?? "pl") as Lang;
+const classes = [...load("classes").classes].sort((a, b) => a.order - b.order);
+const primary = load("stats").primary;
+const start = (c: (typeof classes)[number], p: string): number => (c.startStats as Record<string, number>)[p] ?? 0;
+---
+<div class="vw-scroll">
+  <table class="vw-table vw-table--plain vw-table--keep">
+    <caption class="vw-sr">{t(lang, "block.start.caption")}</caption>
+    <thead><tr><th scope="col">{t(lang, "block.start.class")}</th>{primary.map((p) => <th scope="col" style="text-align: right">{statName(p, lang)}</th>)}</tr></thead>
+    <tbody>
+      {classes.map((c) => {
+        const h = sectionHref(lang, "classes", c.id);
+        return (
+          <tr>
+            <th scope="row" class="rowhead"><span style={`color: var(--vw-class-${c.id})`} aria-hidden="true">{c.icon}</span> {h ? <a href={h}>{name(c.name, lang)}</a> : name(c.name, lang)}</th>
+            {primary.map((p) => <td style="text-align: right" class={c.mainStats.includes(p) ? "gold" : undefined}>{start(c, p)}</td>)}
+          </tr>
+        );
+      })}
+    </tbody>
+  </table>
+</div>
+<Source from="Data/Classes" />

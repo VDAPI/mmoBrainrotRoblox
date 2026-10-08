@@ -1,0 +1,27 @@
+---
+// Titles (S42): name in the title colour and its condition (titles.json `req`).
+import Source from "./Source.astro";
+import type { Lang } from "../../i18n/routes";
+import { load } from "../../lib/data";
+import { formatNumber } from "../../lib/format";
+import { name, t, type Key } from "../../lib/i18n";
+interface Props {
+  kinds?: string[];
+}
+const { kinds } = Astro.props;
+const lang = (Astro.params.lang ?? "pl") as Lang;
+const titles = load("titles").titles.filter((x) => !kinds || kinds.includes(x.req.kind));
+---
+<table class="vw-table vw-table--plain">
+  <caption class="vw-sr">{t(lang, "block.titles.caption")}</caption>
+  <thead><tr><th scope="col">{t(lang, "block.titles.title")}</th><th scope="col">{t(lang, "block.titles.req")}</th></tr></thead>
+  <tbody>
+    {titles.map((x) => (
+      <tr>
+        <td data-mobile="title"><strong style={`color: ${x.color}`} class="vw-title-name">{name(x.name, lang)}</strong></td>
+        <td data-label={t(lang, "block.titles.req")}>{t(lang, `block.titles.req.${x.req.kind}` as Key, { n: formatNumber(x.req.value, lang) })}</td>
+      </tr>
+    ))}
+  </tbody>
+</table>
+<Source from="Data/Titles" />
