@@ -4,10 +4,10 @@ import Source from "./Source.astro";
 import type { Lang } from "../../i18n/routes";
 import { load } from "../../lib/data";
 import { name, t, type Key } from "../../lib/i18n";
-const lang = (Astro.params.lang ?? "pl") as Lang;
+const lang = (Astro.url.pathname.startsWith("/en/") ? "en" : "pl") as Lang;
 const guild = load("mechanics").guild;
 ---
-<div class="vw-scroll">
+<div class="vw-scroll" tabindex="0">
   <table class="vw-table vw-table--plain vw-table--keep vw-perm">
     <caption class="vw-sr">{t(lang, "block.guild.ranks")}</caption>
     <thead><tr><th scope="col">{t(lang, "block.guild.action")}</th>{guild.ranks.map((r) => <th scope="col" style="text-align: center">{name(r.name, lang)}</th>)}</tr></thead>

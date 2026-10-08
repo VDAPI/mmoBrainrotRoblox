@@ -5,7 +5,7 @@ import Source from "./Source.astro";
 import type { Lang } from "../../i18n/routes";
 import { load } from "../../lib/data";
 import { name, t, type Key } from "../../lib/i18n";
-const lang = (Astro.params.lang ?? "pl") as Lang;
+const lang = (Astro.url.pathname.startsWith("/en/") ? "en" : "pl") as Lang;
 const pvp = load("mechanics").pvp;
 const zones = load("mechanics").zones;
 const zoneIds = ["green", "yellow", "red"];
@@ -25,7 +25,7 @@ const rows = relations.flatMap((relation) => {
 });
 const onOff = (v: boolean) => t(lang, v ? "block.pvp.on" : "block.pvp.off");
 ---
-<div class="vw-scroll">
+<div class="vw-scroll" tabindex="0">
   <table class="vw-table vw-matrix">
     <caption class="vw-sr">{t(lang, "block.pvp.caption")}</caption>
     <thead>

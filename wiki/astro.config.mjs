@@ -14,8 +14,16 @@ export default defineConfig({
     svelte(),
     mdx(),
     sitemap({
-      filter: (page) => !page.endsWith(".json") && !page.includes("/styleguide/") && !page.includes("/404/") && !page.endsWith("/404.html"),
+      // S44: only indexable pages (noindex: the language redirect "/", search, styleguide, 404)
+      filter: (page) =>
+        !page.endsWith(".json") &&
+        new URL(page).pathname !== "/" &&
+        !/\/(pl\/szukaj|en\/search|pl\/styleguide|en\/styleguide|pl\/404|en\/404)\//.test(page) &&
+        !page.endsWith("/404.html"),
     }),
   ],
-  vite: { build: { assetsInlineLimit: 0 } },
+  // S44: every section has its own route file (scripts/routes.mjs), so CSS splits per view. Small stylesheets (the
+  // views' own CSS) are inlined to save requests; the shared design-system sheet stays a cached file. Images, fonts
+  // and scripts are never inlined.
+  vite: { build: { assetsInlineLimit: (file, content) => (file.endsWith(".css") ? content.length < 20000 : false) } },
 });

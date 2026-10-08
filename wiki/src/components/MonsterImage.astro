@@ -44,7 +44,7 @@ const mark = element ? `var(--vw-el-${element})` : kind === "boss" ? "var(--vw-z
       height={px}
       alt={alt}
       loading={eager ? "eager" : "lazy"}
-      fetchpriority={eager ? "high" : undefined}
+      fetchpriority={eager && stage !== "card" ? "high" : undefined}
       decoding="async"
     />
   ) : (

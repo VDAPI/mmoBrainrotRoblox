@@ -56,8 +56,9 @@ wiki/
     layouts/              Base.astro (topbar, tabbar mobilny, stopka, meta, hreflang)
     i18n/                 pl.ts, en.ts (teksty interfejsu), routes.ts (segmenty URL)
     lib/                  funkcje TS (formatowanie liczb pl/en, filtry, wyszukiwanie, kalkulator) + testy Vitest
-    views/                widoki stron + registry.ts (jeden wpis = nowa strona)
-    pages/[lang]/...      trasy (index, [...path] z rejestru, endpointy JSON)
+    views/                widoki stron + paths.ts (jeden wpis = nowa sekcja; S44)
+    pages/<lang>/<segment>/[...path].astro  GENEROWANE trasy sekcji (npm run routes, S44)
+    pages/[lang]/...      główna i endpointy JSON
     generated/            GENEROWANE manifesty: item-icons.json (S40, npm run icons; commitowany)
     content/              updates, guides, mechanics ({pl,en}/*.mdx), bosses (opisy mechanik)
   public/img/{mobs,items,maps,og,city}/  GENEROWANE obrazy
@@ -253,9 +254,10 @@ Link do miejsca na mapie z innych stron: `mapHref(lang, mapLinkFor(id))`.
 `twitter:card` na każdej stronie, domyślny obraz `/img/og/default-art.png`; obraz strony generuje `scripts/og-images.mjs`
 z wpisu w `src/lib/og.ts`) — `type` z kluczy `item`, `monster`,
 `region`, `quest`, `skill`, `guide`; `meta` trafia do Pagefind (`title`, `line`, `rarity`, `glyph`, `color`,
-`tooltip` dla przedmiotów). **Nowa strona:** wpis w `src/views/registry.ts` (`key`, `view`, `getPaths(lang)`),
+`tooltip` dla przedmiotów). **Nowa strona:** wpis w `src/views/paths.ts` (`key`, `view` = nazwa pliku, `getPaths(lang)`) + `npm run routes`,
 `ready: true` w `src/lib/sections.ts` (wtedy rekordy zastępcze tej sekcji znikają z indeksu, a strona „Wkrótce”
-z rejestru), linia w `scripts/shots.pages.mjs`.
+z rejestru), linia w `scripts/shots.pages.mjs`. Od S44: wpis w `src/views/paths.ts` (`view` = nazwa pliku widoku) i
+`npm run routes`.
 
 **Bestiariusz (S39):** `src/lib/bestiary-filters.ts` (czyste: kontrakt adresu `?region=&lv=&type=&q=&sort=&view=&page=`,
 `matches`, `sortEntries`, `levelBands`; współdzielone przez build i skrypt strony), `src/lib/bestiary.ts` (wpisy, miejsca,
@@ -331,6 +333,57 @@ sama data), spoiler `inert` + `data-pagefind-ignore`. `src/lib/stat.ts` (`resolv
 - **Regeneracja:** po zmianie `Data/MonsterLooks`, `Logic/Anatomy`, `Data/Cosmetics` (pety) albo nowym potworze:
   `npm run renders` i commit obrazków z manifestem. Zmiana renderera = podbicie `RENDERER_VERSION`.
 
+## Wdrożenie (S44)
+
+Wiki buduje GitHub Actions (workflow „Wiki”, `.github/workflows/wiki.yml`; potrzebny Lune, więc Cloudflare nie buduje
+sam) i wgrywa `wiki/dist` na Cloudflare Pages. Bez sekretów workflow przechodzi na zielono i tylko pomija wdrożenie.
+
+1. Załóż darmowe konto Cloudflare: https://dash.cloudflare.com/sign-up. Skopiuj **Account ID** (Workers & Pages →
+   prawa kolumna, albo przegląd konta).
+2. Utwórz projekt Pages metodą **Direct Upload** (nie „Connect to Git”): Workers & Pages → **Create** → **Pages** →
+   **Upload assets** → nazwa `vaelthorn-wiki` → wgraj folder `wiki/dist` z lokalnego `npm run build`. Albo w terminalu:
+   `npx wrangler login`, potem `npx wrangler pages project create vaelthorn-wiki --production-branch=main`. Inna nazwa
+   projektu = zmienna repozytorium `CF_PAGES_PROJECT` (punkt 6).
+3. Token API: **My Profile** → **API Tokens** → **Create Token** → **Custom token**. Uprawnienie **Account → Cloudflare
+   Pages → Edit**, Account Resources: tylko Twoje konto. Skopiuj token od razu (pokazuje się raz).
+4. GitHub: repozytorium → **Settings** → **Secrets and variables** → **Actions** → **New repository secret**: dodaj
+   `CLOUDFLARE_API_TOKEN` i `CLOUDFLARE_ACCOUNT_ID`.
+5. **Actions** → „Wiki” → **Run workflow** (gałąź `main`). Po ok. 10 min adres jest w podsumowaniu runu. Sprawdź
+   `https://vaelthorn-wiki.pages.dev/pl/` i `/en/`.
+6. Własna domena: projekt Pages → **Custom domains** → **Set up a custom domain**, np. `wiki.<domena>`. Domena w
+   Cloudflare = rekord doda się sam; inaczej u rejestratora CNAME `wiki` → `vaelthorn-wiki.pages.dev`. Poczekaj na
+   „Active” (SSL). Potem **Settings → Secrets and variables → Actions → Variables**: `SITE_URL` = `https://wiki.<domena>`
+   i uruchom workflow ponownie (canonical, sitemap, robots i obrazy OG przejdą na nowy adres).
+7. Wpisz `PLAY_URL` (link do gry) i opcjonalnie `DISCORD_URL` w `wiki/src/config.ts`, commit.
+8. Na co dzień: push na `main` = produkcja; każdy PR i inna gałąź = podgląd z `noindex` (adres w podsumowaniu runu).
+   W poniedziałek o 4:17 UTC harmonogram przebudowuje stronę („Potwór tygodnia”, „Legendarny przedmiot tygodnia”).
+   Wycofanie: Pages → **Deployments** → wybrane wdrożenie → **Rollback**. Ręcznie w awarii: `cd wiki`,
+   `npm run build`, `npx wrangler pages deploy dist --project-name vaelthorn-wiki --branch main`.
+9. Problemy: „Authentication error [code: 10000]” = zły token albo brak uprawnienia; „Project not found” = inna nazwa
+   projektu (`CF_PAGES_PROJECT`). GitHub wyłącza harmonogram po 60 dniach bez commitów (Actions → Wiki → **Enable
+   workflow**). Darmowy plan Cloudflare: 20 000 plików na wdrożenie (pilnuje `budgets.mjs`, dziś ok. 8 400). Żółte
+   ostrzeżenie „Nieaktualne dane wiki” = zmiana danych gry bez `npm run data` w `wiki/` i commita (strona i tak buduje
+   się ze świeżego eksportu). Opcjonalnie: Google Search Console → dodaj domenę → prześlij `sitemap-index.xml`.
+
+## Jakość (S44)
+
+- `npm run check` (w `wiki/`): `astro check`, ESLint, Vitest (`src/**/*.test.ts` i rdzenie skryptów
+  `scripts/**/*.test.mjs`), build (z obrazami OG i Pagefind), `check-links`, **`budgets.mjs`** i **`audit.mjs`**.
+  - Budżety JS (gzip) wszystkich stron: tabela `scripts/budgets.config.mjs` (domyślnie 50 KB całego JS strony; mapa 60;
+    planer 35; S39: bestiariusz 8, potwór 5, boss 4, kraina 10 KB „własnego” JS bez plików wspólnych). Ostrzeżenia: CSS
+    > 60 KB, HTML > 150 KB, obraz > 300 KB, `img/mobs` > 10 MB, `img/items` > 8 MB. Błąd: > 19 000 plików albo plik >
+    25 MiB. Raport `.reports/budgets.json` + 20 najcięższych stron.
+  - Audyt: `lang`, jeden `<h1>`, unikalne `<title>` w języku, opis, canonical i wzajemne hreflang od `SITE_URL`,
+    sitemap bez stron `noindex`, `og:image` istnieje, `<img>` z `alt`/`width`/`height`, brak pustych linków, wycieki kodów
+    nagród i id administratorów (błąd), brak renderów/ikon (ostrzeżenie).
+- `npm run qa`: Playwright (`e2e/`, `playwright.config.ts`, telefon 390 i desktop 1440): axe WCAG 2.2 AA na stronach
+  `KEY_PAGES` (`scripts/shots.pages.mjs`) w obu motywach (serious/critical = błąd), klawiatura, ograniczony ruch, układ
+  na telefonie. Wymaga builda (`npm run build`).
+- `npm run lighthouse`: build + Lighthouse CI (`lighthouserc.cjs`, mobile, `KEY_PAGES` bez 404, próg 0,95 w 4
+  kategoriach), raporty w `.lighthouse/`. Lokalnie, bez `PUBLIC_NOINDEX`.
+- `npm run compare`: makieta i zrzut obok siebie w `.shots/compare/` (po `npm run shots`).
+- `npm run ci:local`: to samo co workflow (data, stale-data, check, qa); potem `lune run tests/run.luau` w korzeniu.
+
 ## Stan
 
 - **S34 (dane):** `lune run tools/wikidump.luau` (albo `scripts\wikidump.ps1` / `bash scripts/wikidump.sh`) tworzy 28
@@ -395,7 +448,66 @@ sama data), spoiler `inert` + `data-pagefind-ignore`. `src/lib/stat.ts` (`resolv
   tematami mechaniki, `premium.json` bez cen. Sekcje `guides` i `updates` gotowe — w wiki nie ma już stron „Wkrótce”.
   Build 2268 stron, Vitest 110, Lune 761.
 
+- **S44 (jakość, wdrożenie):** workflow „Wiki” (`.github/workflows/wiki.yml`: Lune, eksport, `stale-data`, testy Lune,
+  `check`, Playwright, wdrożenie na Cloudflare Pages tylko z sekretami), `robots.txt`, `_headers`, favicona, obrazy OG
+  `default` i 9 działów, `SITE_URL`/`PUBLIC_NOINDEX` ze środowiska. `npm run check` = typy, lint, Vitest 122 (w tym rdzenie
+  skryptów i workflow), build 2270 stron, linki, budżety JS wszystkich stron, audyt SEO/wycieków. `npm run qa` = 131 testów
+  Playwright (axe WCAG 2.2 AA w 2 motywach × 2 szerokościach, klawiatura, ruch, układ) — przechodzi. Routing: osobny plik
+  trasy na sekcję i język (CSS strony 10,5 KB wspólnego arkusza + własne style widoku zamiast 41 KB wszystkiego), paleta
+  Ctrl+K ładowana przy pierwszym użyciu (strony bez wysp: 1,5–3 KB JS zamiast ok. 25 KB), fonty bez blokowania renderu z
+  fallbackami o dopasowanych metrykach (CLS ≈ 0). JS gzip (cały / limit): główna 1,7 · mapa 36,5/60 · bestiariusz 5,9 ·
+  potwór 3,0 · boss 2,6 · przedmioty 34,1 · przedmiot 33,0 · ulepszanie 34,9 · klasa 33,4/35 · zadania 2,3 · mechanika 2,2
+  · poradnik 2,2 · kraina 2,3 KB (limit 50, chyba że podano).
+
+  Lighthouse (mobile, symulowane wolne 4G, lokalnie na Windows, 1 przebieg; wydajność / dostępność / dobre praktyki / SEO):
+
+  | Strona | Perf | A11y | BP | SEO |
+  |---|---|---|---|---|
+  | `/pl/` · `/en/` | 94 · 97 | 100 | 100 | 100 |
+  | `/pl/szukaj/?q=…` | 91 | 100 | 100 | 66 (celowe `noindex`) |
+  | `/pl/bestiariusz/` | 81 | 100 | 100 | 100 |
+  | potwór (elita) PL · EN | 84 · 95 | 99 | 100 | 100 |
+  | boss | 90 | 96 | 100 | 100 |
+  | `/pl/przedmioty/` | 85 | 97 | 100 | 100 |
+  | przedmiot PL · EN · przedmiot bossa | 90 · 94 · 89 | 100 | 100 | 100 |
+  | `/pl/ulepszanie/` · `/pl/rzemioslo/` | 92 · 94 | 100 · 97 | 100 | 100 |
+  | klasa Mag z buildem | 89 | 100 | 100 | 100 |
+  | mapa · kraina · jaskinia | 93 · 94 · 94 | 100 | 100 | 100 |
+  | zadania · zadanie | 94 · 94 | 96 · 100 | 100 | 100 |
+  | mechanika · poradnik · aktualizacje | 92 · 95 · 98 | 100 | 100 | 100 |
+
 ## Decyzje
+
+- **S44** Routing: zamiast jednego `src/pages/[lang]/[...path].astro` (który dołączał CSS wszystkich widoków do każdej
+  strony: 208 KB / 34 KB gzip) każda sekcja ma plik `src/pages/<lang>/<segment>/[...path].astro` generowany przez
+  `npm run routes` (`scripts/routes.mjs`; `npm run build` sprawdza `--check`). Ścieżki i widoki: `src/views/paths.ts`
+  (`PAGES`, `pagesOf`, `pageFor`) — to dawny `registry.ts` bez importów widoków. Małe arkusze (< 20 KB) wbudowane w HTML,
+  wspólny arkusz design systemu jako plik w cache. Uwaga: `export const getStaticPaths = (...) satisfies …` z komentarzem
+  w następnej linii kompilator Astro wyciągał razem z tą linią (liczyła się raz, bez żądania — puste strony krain i
+  bossów); szablon używa `export function getStaticPaths()`. Komponenty MDX biorą język z `Astro.url`, nie z `params`.
+- **S44** Paleta Ctrl+K nie jest już wyspą: `Base` montuje ją (`svelte` `mount`) przy pierwszym Ctrl/Cmd+K albo kliknięciu
+  w pole szukania (`startOpen`). Strony bez wysp nie ładują runtime’u Svelte.
+- **S44** Fonty: `scripts/fonts.mjs` (przy `dev` i `build`) kopiuje podzbiory latin + latin-ext do `public/fonts/` (nie
+  commitowane) i pisze `fonts.css`, ładowany `media="print" onload` (bez blokowania renderu). Fallbacki `… Fallback`
+  (`local()` Arial/Georgia/Courier) z `size-adjust` i `ascent/descent-override` zmierzonymi w przeglądarce, osobno dla
+  wagi normalnej i pogrubionej — podmiana fontu nie przesuwa układu. Preload fontów usunięty (konkurował z CSS).
+- **S44** Budżety (`scripts/budgets.config.mjs`): domyślnie 50 KB całego JS strony (z layoutem i inline); „all” zastępuje
+  domyślny (mapa 60, klasy 35), „own” dochodzi do niego (S39: bestiariusz 8, potwór 5, boss 4, kraina 10 KB własnego JS
+  bez plików wspólnych mierzonych na stronie 404). Pagefind tylko raportowany.
+- **S44** Dostępność: kontrasty poprawione w tokenach (jasny motyw: złoto `#7A5C15`/`#6E5212` z białym tekstem na złotym
+  tle, kolory stanów, `--vw-danger-text`, `--vw-exp-text`, `--vw-zone-red-strong`), generator `tokens.data.css` liczy
+  kolory tekstu rzadkości na 5,5:1 (AA także na podbarwionych chipach); linki w tekście ciągłym podkreślone; zablokowany
+  węzeł planera przyciemnia treść, nie licznik; kolory danych (profile, mechaniki bossa) w jasnym motywie jako ramka, nie
+  tekst. Test tokenów ma jawną listę tokenów zmienionych w S44. Wykluczeń axe brak; w teście axe dolny pasek mobilny jest
+  statyczny (pasek `fixed` przykrywa dół kadru, co axe liczył jako zasłonięte cele dotyku; koniec strony sprawdza
+  `layout.e2e.ts`).
+- **S44** Lighthouse: wyjątek tylko dla SEO strony wyszukiwania (`assertMatrix`, celowe `noindex`). Próbowane: preload
+  fontów (gorzej), wbudowanie całego CSS (+3 pkt, `dist` 276 → 809 MB — odrzucone), jeden plik CSS, podział CSS per trasa
+  (zostawione), fonty poza ścieżką renderu, CLS. FCP w symulacji Lighthouse ok. 2,1–2,6 s na każdej stronie (opóźnienie
+  562 ms na żądanie, CPU 4×), więc ciężkie strony danych (bestiariusz, potwór, lista przedmiotów) zostają poniżej 95.
+- **S44** Strony z tym samym tytułem: przedmioty o tej samej nazwie mają rzadkość w `<title>`, zadania „· Zadanie”,
+  poradniki „· Poradnik”, obszary nazwę krainy. Mapa w ramce krainy: karta to link do mapy także przed wyborem znacznika.
+  Plany S44 (sekcja A): `wranglerVersion` przypięty na 4.148.0; Node z `wiki/.nvmrc` (22).
 
 - **S43** Przepustki i usługi premium w osobnym pliku `premium.json` (nie w `cosmetics.json`), żeby jedyny czytający
   `Data/Products` moduł miał jedyny plik wyjścia. Przykład wypłaty aukcji ma cenę pod kluczem `gold` (skaner odrzuca
@@ -586,6 +698,13 @@ sama data), spoiler `inert` + `data-pagefind-ignore`. `src/lib/stat.ts` (`resolv
   `Config.AdminUserIds` czyta tylko `tests/wikidump.spec.luau` (`Leak.scan`). Każdy build sprawdza zakazane klucze.
 
 ## Niedokończone
+
+- **S44** Lighthouse wydajność < 95 na: bestiariusz (81), potwór PL (84), lista przedmiotów (85), przedmiot bossa (89),
+  klasa (89), boss (90), przedmiot PL (90), szukaj (91), mechanika (92), ulepszanie (92) — przyczyna i próby w „Decyzje”.
+  Dalsze kroki: mniejszy HTML stron potworów (wszystkie warianty i tabele poziomów w jednym dokumencie), obrazy kart 256 px
+  (dziś tylko 128 i 512), krytyczny CSS. `npm run lighthouse` dlatego kończy się kodem 1 (nie jest w CI). AVIF, CSP
+  (Report-Only), hreflang w sitemapie, Lighthouse w CI — nie zrobione (opcjonalne). Wyniki Lighthouse na runnerach GitHub
+  będą inne niż lokalnie.
 
 - **S43** Kanał RSS aktualizacji nie zrobiony (opcjonalny). Budynki bez szyldu w grze (spichlerz, karczma, młyn, stajnia,
   wartownia) mają na karcie nazwę „Plac miejski”/„Stragan na rynku” albo brak (gra nie ma kluczy `town.sign.*` dla

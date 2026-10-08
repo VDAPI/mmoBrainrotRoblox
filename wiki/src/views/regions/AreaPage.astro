@@ -38,7 +38,7 @@ const fmt = (v: number) => (Math.round(v * 100) / 100).toLocaleString(lang === "
 const monsterHref = (mid: string, label: string) => sectionHref(lang, "bestiary", mid) ?? searchHref(lang, label);
 const route = [...(map.route ?? [])];
 ---
-<Base lang={lang} title={title} description={`${title}: ${levels(lang, area.levelMin, area.levelMax)}, ${mapName}.`} section="map" search={{ type: "region", meta: { title, line: `${levels(lang, area.levelMin, area.levelMax)} · ${mapName}`, type: "area" } }}>
+<Base lang={lang} title={`${title} · ${mapName}`} description={`${title}: ${levels(lang, area.levelMin, area.levelMax)}, ${mapName}.`} section="map" search={{ type: "region", meta: { title, line: `${levels(lang, area.levelMin, area.levelMax)} · ${mapName}`, type: "area" } }}>
   <article class="page">
     <Crumbs items={[{ label: t(lang, "crumbs.wiki"), href: href(lang, "home") }, { label: t(lang, "region.title"), href: href(lang, "regions") }, { label: mapName, href: placeHref(lang, map.id) }, { label: title }]} />
     <header class="head">
@@ -116,6 +116,8 @@ const route = [...(map.route ?? [])];
   .h1 { margin: 0; font: 700 var(--vw-fs-display-l)/1 var(--vw-font-display); }
   .badges { display: flex; flex-wrap: wrap; gap: 10px; }
   .profile { color: var(--c); border-color: color-mix(in srgb, var(--c) 60%, var(--vw-border)); }
+  /* S44: data colours are tuned for the dark UI; in the light theme the text is dark and the colour stays on the frame */
+  :global([data-theme="light"]) .profile { color: var(--vw-text); }
   .soft { margin: 0; color: var(--vw-text-soft); font-size: 18px; }
   .muted { color: var(--vw-text-muted); }
   .small { font-size: 14px; }

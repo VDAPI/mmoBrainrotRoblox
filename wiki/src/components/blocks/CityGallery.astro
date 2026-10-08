@@ -9,7 +9,7 @@ interface Props {
   hero?: string;
 }
 const { names = ["zamek", "mlyn", "okolica", "farma", "aerial"], hero } = Astro.props;
-const lang = (Astro.params.lang ?? "pl") as Lang;
+const lang = (Astro.url.pathname.startsWith("/en/") ? "en" : "pl") as Lang;
 const big = hero ? cityImage(hero) : null;
 const list = names.map((n) => cityImage(n)).filter((x) => x !== null);
 const alt = (n: string) => t(lang, `city.img.${n}` as Key);

@@ -8,13 +8,13 @@ import { formatNumber } from "../../lib/format";
 import { name, t, type Key } from "../../lib/i18n";
 import { materialRef } from "../../lib/items";
 import { sectionHref } from "../../lib/sections";
-const lang = (Astro.params.lang ?? "pl") as Lang;
+const lang = (Astro.url.pathname.startsWith("/en/") ? "en" : "pl") as Lang;
 type Use = { kind?: string; resource?: string; amount?: number };
 const potions = items()
   .filter((i) => (i.use as Use | undefined)?.kind === "potion")
   .sort((a, b) => ((a.use as Use).resource ?? "").localeCompare((b.use as Use).resource ?? "") || a.requiredLevel - b.requiredLevel);
 ---
-<div class="vw-scroll">
+<div class="vw-scroll" tabindex="0">
   <table class="vw-table vw-table--plain vw-table--keep">
     <caption class="vw-sr">{t(lang, "block.potion.caption")}</caption>
     <thead><tr><th scope="col">{t(lang, "block.elixir.item")}</th><th scope="col" style="text-align: right">{t(lang, "block.col.level")}</th><th scope="col" style="text-align: right">{t(lang, "block.potion.amount")}</th></tr></thead>

@@ -11,6 +11,17 @@ const dataTokens = readFileSync(join(process.cwd(), "src", "styles", "tokens.dat
 
 const MOCKUP_ONLY = /^--vw-(r-(common|uncommon|rare|epic|legendary|mythic)|glow-(common|uncommon|rare|epic|legendary|mythic)|el-(fire|frost|shadow|nature))$/;
 
+// S44 (docs/WIKI.md "Decyzje"): font stacks with size-matched fallbacks (CLS) and the light-theme gold darkened for
+// WCAG AA; every other token stays 1:1 with the design system.
+const S44_CHANGED = new Set([
+  ":root|--vw-font-display",
+  ":root|--vw-font-ui",
+  ":root|--vw-font-mono",
+  '[data-theme="light"]|--vw-gold',
+  '[data-theme="light"]|--vw-gold-bright',
+  '[data-theme="light"]|--vw-focus',
+]);
+
 // Declarations per block: ":root", "[data-theme=\"light\"]" and media blocks, keyed by their header.
 function declarations(css: string): Map<string, string> {
   const out = new Map<string, string>();
@@ -34,7 +45,7 @@ describe("design tokens", () => {
     const sectionOne = design.split("/* ---------- 2. BAZA")[0];
     for (const [key, value] of declarations(sectionOne)) {
       const name = key.split("|")[1];
-      if (MOCKUP_ONLY.test(name)) continue;
+      if (MOCKUP_ONLY.test(name) || S44_CHANGED.has(key)) continue;
       expect(ours.get(key), key).toBe(value);
     }
   });

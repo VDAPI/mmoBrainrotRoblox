@@ -4,3 +4,7 @@ dist/
 .shots/
 test-results/
 playwright-report/
+.reports/
+.lighthouse/
+public/fonts/
+.lighthouseci/

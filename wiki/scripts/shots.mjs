@@ -2,7 +2,9 @@
 // scripts/shots.pages.mjs at 390x844 and 1440x900 to .shots/<name>-<width>.png.
 import { spawn, spawnSync } from "node:child_process";
 import { existsSync, mkdirSync } from "node:fs";
-import { PAGES as ALL } from "./shots.pages.mjs";
+import { PAGES as ALL, RANDOM_MONSTERS } from "./shots.pages.mjs";
+
+console.log(`random monsters: ${RANDOM_MONSTERS.join(", ")}`);
 
 // SHOTS_ONLY=bestiariusz,boss captures only pages whose name starts with one of the prefixes.
 const only = (process.env.SHOTS_ONLY ?? "").split(",").filter(Boolean);

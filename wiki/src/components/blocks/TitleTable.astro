@@ -9,7 +9,7 @@ interface Props {
   kinds?: string[];
 }
 const { kinds } = Astro.props;
-const lang = (Astro.params.lang ?? "pl") as Lang;
+const lang = (Astro.url.pathname.startsWith("/en/") ? "en" : "pl") as Lang;
 const titles = load("titles").titles.filter((x) => !kinds || kinds.includes(x.req.kind));
 ---
 <table class="vw-table vw-table--plain">

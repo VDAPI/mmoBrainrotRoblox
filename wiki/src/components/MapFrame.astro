@@ -37,7 +37,7 @@ const html = inlineMap(svg, { label });
     {legend.map((l) => <li><span class={`mark ${l.cls}`} aria-hidden="true"></span>{l.label}</li>)}
   </ul>
   <a class="open vw-btn vw-btn--ghost" href={openHref}>{t(lang, "region.openMap")}</a>
-  <a class="card" hidden data-card href="#"><span class="title"></span><span class="line"></span><span class="go" aria-hidden="true">›</span></a>
+  <a class="card" hidden data-card href={openHref}><span class="title"></span><span class="line"></span><span class="go" aria-hidden="true">›</span></a>
   <script type="application/json" set:html={JSON.stringify(cards).replace(/</g, "\\u003c")} />
 </div>
 

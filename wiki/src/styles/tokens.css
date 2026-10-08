@@ -1,6 +1,13 @@
 /* Tokeny design systemu „Kuźnia” 1:1 z wiki/design/vaelthorn.css (sekcja 1).
    Zmiany: ciemny blok też pod [data-theme="dark"]; rzadkości i żywioły (poza --vw-el-physical) generuje
    tools/wikidump.luau do tokens.data.css. --vw-r-0/1/2/pill to promienie. */
+/* S44: local fallbacks sized like the web fonts (measured text width, ascent/descent of the fonts), so the swap to
+   Alegreya / Grenze / Plex does not move the layout (CLS). */
+@font-face { font-family: "Alegreya Sans Fallback"; font-weight: 100 600; src: local("Arial"), local("Helvetica"), local("Liberation Sans"); size-adjust: 86%; ascent-override: 105%; descent-override: 35%; line-gap-override: 0%; }
+@font-face { font-family: "Alegreya Sans Fallback"; font-weight: 700 900; src: local("Arial Bold"), local("Arial-BoldMT"), local("Helvetica Bold"), local("Liberation Sans Bold"); size-adjust: 84%; ascent-override: 107%; descent-override: 36%; line-gap-override: 0%; }
+@font-face { font-family: "Grenze Gotisch Fallback"; src: local("Georgia"), local("Times New Roman"); size-adjust: 73%; ascent-override: 151%; descent-override: 52%; line-gap-override: 0%; }
+@font-face { font-family: "IBM Plex Mono Fallback"; src: local("Courier New"), local("Courier"); size-adjust: 68%; ascent-override: 151%; descent-override: 40%; line-gap-override: 0%; }
+
 /* ---------- 1. TOKENY ---------- */
 :root, [data-theme="dark"] {
   /* powierzchnie */
@@ -34,6 +41,7 @@
   /* strefy PvP */
   --vw-zone-green: #4FD16B; --vw-zone-yellow: #E0C23B; --vw-zone-red: #D64A3E;
   --vw-zone-red-text: #E8665A; /* czerwony jako TEKST (5.6:1); #D64A3E tylko ramki/tło (4.2:1) */
+  --vw-zone-red-strong: #B83A2F; /* S44: tło pod białym tekstem (5.7:1), np. plakietka bossa */
 
   /* rzadkości — z danych gry: tokens.data.css */
 
@@ -42,11 +50,13 @@
 
   /* stany */
   --vw-success: #4FD16B; --vw-warning: #E0C23B; --vw-danger: #D64A3E; --vw-info: #4A8FE7;
+  /* S44: warianty do TEKSTU (AA także na podbarwionych tłach calloutów i chipów) */
+  --vw-danger-text: #E8665A; --vw-exp-text: #B28CF0;
 
   /* typografia */
-  --vw-font-display: 'Grenze Gotisch', Georgia, serif;
-  --vw-font-ui: 'Alegreya Sans', system-ui, sans-serif;
-  --vw-font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --vw-font-display: 'Grenze Gotisch', 'Grenze Gotisch Fallback', Georgia, serif;
+  --vw-font-ui: 'Alegreya Sans', 'Alegreya Sans Fallback', system-ui, sans-serif;
+  --vw-font-mono: 'IBM Plex Mono', 'IBM Plex Mono Fallback', ui-monospace, monospace;
   /* skala: rozmiar / wysokość linii (desktop → mobile) */
   --vw-fs-display-xl: 128px; --vw-lh-display-xl: .85;   /* mobile 68px */
   --vw-fs-display-l: 72px;   --vw-lh-display-l: .9;     /* mobile 44px */
@@ -91,14 +101,18 @@
   --vw-bg: #F4EFE4; --vw-bg-sunken: #EAE3D3; --vw-panel: #FBF8F1; --vw-panel-raised: #FFFFFF;
   --vw-border: #CFC4AC; --vw-border-subtle: #E2D9C5; --vw-overlay: rgba(30,28,24,.45);
   --vw-text: #1E1C18; --vw-text-soft: #3C3933; --vw-text-muted: #5E5A52; --vw-parchment: #5C4A30;
-  --vw-gold: #7D5F17; --vw-gold-bright: #8A6A1F; --vw-gold-dark: #CDB585;
+  /* S44: złoto ciemniejsze (tekst AA na --vw-bg-sunken), tło złote z białym tekstem */
+  --vw-gold: #6E5212; --vw-gold-bright: #7A5C15; --vw-gold-dark: #CDB585; --vw-text-on-gold: #FFFFFF;
+  --vw-gold-gradient: linear-gradient(#7A5C15, #6E5212);
+  --vw-success: #1C7030; --vw-warning: #74620A; --vw-danger: #B8362B; --vw-info: #245BA6;
+  --vw-danger-text: #9A2A21; --vw-exp: #6A3FB0; --vw-exp-text: #6A3FB0; --vw-zone-red-strong: #B8362B;
   --vw-accent: #2F6FC4; --vw-accent-text: #245BA6;
   --vw-metal-gradient: linear-gradient(#FFFFFF, #F6F1E6);
   --vw-zone-green: #1C7030; --vw-zone-yellow: #74620A; --vw-zone-red: #B8362B; --vw-zone-red-text: #B8362B;
   --vw-elev-1: 0 1px 0 rgba(30,28,24,.06), 0 1px 3px rgba(30,28,24,.08);
   --vw-elev-2: 0 8px 24px rgba(30,28,24,.12);
   --vw-well: inset 0 1px 3px rgba(30,28,24,.12);
-  --vw-focus: 0 0 0 2px #FBF8F1, 0 0 0 4px #7D5F17;
+  --vw-focus: 0 0 0 2px #FBF8F1, 0 0 0 4px #6E5212;
   /* tooltip przedmiotu zostaje ciemny w obu motywach (zgodność z grą) */
 }
 

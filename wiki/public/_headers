@@ -1,0 +1,15 @@
+# Cloudflare Pages headers (S44, docs/WIKI.md "Wdrożenie"). Hashed bundles never change; images daily; search index hourly.
+/_astro/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/img/*
+  Cache-Control: public, max-age=86400
+
+/pagefind/*
+  Cache-Control: public, max-age=3600
+
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: DENY
+  Permissions-Policy: camera=(), microphone=(), geolocation=()

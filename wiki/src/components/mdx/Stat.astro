@@ -12,7 +12,7 @@ interface Props {
   mul?: number;
 }
 const { path, format = "num", decimals, mul = 1 } = Astro.props;
-const lang = (Astro.params.lang ?? "pl") as Lang;
+const lang = (Astro.url.pathname.startsWith("/en/") ? "en" : "pl") as Lang;
 const value = resolveStat(path) * mul;
 ---
 <span class="vw-stat" data-src={path} title={t(lang, "stat.source", { path })}>{formatStat(value, format, lang, decimals)}</span>

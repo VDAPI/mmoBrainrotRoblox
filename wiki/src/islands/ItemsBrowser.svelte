@@ -48,6 +48,7 @@
   let loaded = $state(false);
   let f = $state<ItemFilters>({ ...DEFAULT_ITEM_FILTERS, rarities: [] });
   let mobile = $state(false);
+  let moreOpen = $state(false);
   let tierPick = $state<Record<string, number>>({});
   let open = $state<string>("");
   let tip = $state<TooltipData | null>(initialTip);
@@ -172,8 +173,10 @@
         <button type="button" class="sortbtn" onclick={nextSort}><span class="muted">{labels.sort}</span> <strong>{labels[`sort.${f.sort}`]}</strong></button>
         <button type="button" class="clear" onclick={clear}>{labels.clear}</button>
       </div>
-      <details class="more" open={!mobile}>
-        <summary class="vw-btn">{labels.filters}</summary>
+      <!-- S44: a button + CSS instead of <details open={!mobile}>: the same markup on both widths, so hydration on a
+           phone no longer collapses the filters and moves the list (CLS) -->
+      <button type="button" class="vw-btn morebtn-toggle" aria-expanded={moreOpen} aria-controls="items-more" onclick={() => (moreOpen = !moreOpen)}>{labels.filters}</button>
+      <div class="more" id="items-more" class:is-open={moreOpen}>
         <div class="group">
           <h2 class="vw-label">{labels.slot}</h2>
           <div class="chips">
@@ -198,7 +201,7 @@
         </div>
         <label class="alltiers"><input type="checkbox" checked={f.all} onchange={(e) => set({ all: (e.currentTarget as HTMLInputElement).checked })} /> {labels.allTiers}</label>
         <button type="button" class="clear desk" onclick={clear}>{labels.clear}</button>
-      </details>
+      </div>
     </aside>
 
     <div class="list">
@@ -227,7 +230,7 @@
               <tr aria-selected={f.sel === e.row.id} onclick={() => select(e.row, r)}>
                 <td class="icon"><ItemIcon glyph={e.row.glyph} color={e.row.color} rarity={r} size={38} src={e.row.icon} /></td>
                 <td class="name">
-                  <a href={withR(e.row, r)} style={`color: var(--vw-r-${r}-text)`} onclick={(ev) => { if (!mobile && !ev.ctrlKey && !ev.metaKey) { ev.preventDefault(); select(e.row, r); } }}>{e.row.name}</a>
+                  <a href={withR(e.row, r)} style={`color: var(--vw-r-${r}-text)`} onfocus={() => { if (!mobile) select(e.row, r); }} onclick={(ev) => { if (!mobile && !ev.ctrlKey && !ev.metaKey) { ev.preventDefault(); select(e.row, r); } }}>{e.row.name}</a>
                   <span class="cls">{e.row.allClasses ? labels.anyClass : e.row.classes.map((c) => classes.find((x) => x.id === c)?.name ?? c).join(", ")}</span>
                 </td>
                 <td class="type">{e.row.type}</td>
@@ -290,14 +293,14 @@
   .rar[aria-pressed="true"] .box { background: var(--rc); }
   .chips { display: flex; flex-wrap: wrap; gap: 6px; }
   .chips .vw-chip { min-height: 40px; }
+  @media (pointer: coarse) { .chips .vw-chip { min-height: var(--vw-touch); } }
   .lv { display: flex; align-items: center; gap: 8px; }
   .lv input { width: 90px; height: 44px; padding: 0 10px; background: var(--vw-bg); border: 1px solid var(--vw-border); color: var(--vw-text); font: 700 16px/1 var(--vw-font-ui); }
   .alltiers { display: flex; align-items: center; gap: 10px; min-height: 44px; font-weight: 700; cursor: pointer; }
   .alltiers input { width: 18px; height: 18px; accent-color: var(--vw-gold); }
   .clear { align-self: flex-start; min-height: 44px; padding: 0; background: none; border: 0; color: var(--vw-gold); font: 800 15px/1 var(--vw-font-ui); cursor: pointer; }
   .more { display: flex; flex-direction: column; gap: 24px; }
-  .more > summary { display: none; }
-  .more[open] { display: flex; }
+  .morebtn-toggle { display: none; }
   .more > :global(*) + :global(*) { margin-top: 24px; }
   .mobile-bar { display: none; }
   .muted { color: var(--vw-text-muted); }
@@ -338,7 +341,8 @@
     .rar { flex-shrink: 0; }
     .mobile-bar { display: flex; justify-content: space-between; align-items: center; }
     .sortbtn { min-height: 44px; background: none; border: 0; color: var(--vw-text); font: 500 15px/1 var(--vw-font-ui); padding: 0; cursor: pointer; }
-    .more > summary { display: inline-flex; align-self: flex-start; min-height: 44px; cursor: pointer; }
+    .morebtn-toggle { display: inline-flex; align-self: flex-start; min-height: 44px; cursor: pointer; }
+    .more:not(.is-open) { display: none; }
     .more .group > h2 { display: block; }
     .clear.desk { display: none; }
     .bosslink { text-align: left; }

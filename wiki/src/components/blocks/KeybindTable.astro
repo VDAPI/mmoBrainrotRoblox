@@ -10,7 +10,7 @@ interface Props {
   fixed?: boolean;
 }
 const { groups, fixed = true } = Astro.props;
-const lang = (Astro.params.lang ?? "pl") as Lang;
+const lang = (Astro.url.pathname.startsWith("/en/") ? "en" : "pl") as Lang;
 const binds = load("mechanics").keybinds;
 const order = [...new Set(binds.map((b) => b.group))].filter((g) => !groups || groups.includes(g));
 const FIXED = ["move", "jump", "camera", "chat"];

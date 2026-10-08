@@ -6,7 +6,7 @@ import type { Lang } from "../../i18n/routes";
 import { load } from "../../lib/data";
 import { formatNumber } from "../../lib/format";
 import { name, t } from "../../lib/i18n";
-const lang = (Astro.params.lang ?? "pl") as Lang;
+const lang = (Astro.url.pathname.startsWith("/en/") ? "en" : "pl") as Lang;
 const rows = load("progression").expToNext;
 const regions = load("maps").maps.filter((m) => m.kind === "region").sort((a, b) => a.minLevel - b.minLevel);
 const W = 720;
@@ -51,7 +51,7 @@ const label = t(lang, "block.exp.aria", { from: formatNumber(rows[0].exp, lang),
   <figcaption class="vw-label">{t(lang, "block.exp.caption", { total: formatNumber(total, lang), max: maxLevel + 1 })}</figcaption>
   <details class="vw-chart__data">
     <summary>{t(lang, "block.chart.data")}</summary>
-    <div class="vw-scroll">
+    <div class="vw-scroll" tabindex="0">
       <table class="vw-table vw-table--plain vw-table--dense">
         <caption class="vw-sr">{t(lang, "block.exp.table")}</caption>
         <thead><tr><th scope="col">{t(lang, "block.col.level")}</th><th scope="col">{t(lang, "block.exp.next")}</th><th scope="col">{t(lang, "block.exp.total")}</th></tr></thead>

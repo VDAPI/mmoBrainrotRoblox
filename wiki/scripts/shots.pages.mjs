@@ -1,10 +1,10 @@
 // Pages captured by npm run shots (name -> path). New pages of later sessions add a line here.
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 
 // S39: three random monster pages on every run (ids printed, so a bad page can be reopened).
 const monsterIds = JSON.parse(readFileSync(new URL("../src/data/monsters.json", import.meta.url), "utf8")).monsters.map((m) => m.id);
 const randomMonsters = Array.from({ length: 3 }, () => monsterIds.splice(Math.floor(Math.random() * monsterIds.length), 1)[0]);
-console.log(`random monsters: ${randomMonsters.join(", ")}`);
+export const RANDOM_MONSTERS = randomMonsters;
 
 export const PAGES = [
   { name: "glowna", path: "/pl/" },
@@ -61,4 +61,52 @@ export const PAGES = [
   { name: "poradnik-pierwsze", path: "/pl/poradniki/pierwsze-kroki/" },
   { name: "guide-first-en", path: "/en/guides/first-steps/" },
   { name: "aktualizacje", path: "/pl/aktualizacje/" },
+];
+
+// S44: one page of every kind for the accessibility, keyboard and layout tests (e2e/) and Lighthouse. Ids come from
+// the data, never typed by hand; a section that is not built yet is skipped.
+const data = (file) => JSON.parse(readFileSync(new URL(`../src/data/${file}.json`, import.meta.url), "utf8"));
+const content = (dir) => {
+  try {
+    return readdirSync(new URL(`../src/content/${dir}/pl/`, import.meta.url)).filter((f) => f.endsWith(".mdx")).sort();
+  } catch {
+    return [];
+  }
+};
+const monstersData = data("monsters").monsters;
+const eliteMonster = monstersData.find((m) => m.variants.elite && m.variants.elite.spawns.length > 0) ?? monstersData[0];
+const itemsData = data("items").items;
+const gearItem = itemsData.find((i) => i.category === "equipment" && i.rarities.includes("legendary") && i.requiredLevel >= 30) ?? itemsData[0];
+const bossItem = itemsData.find((i) => i.id.startsWith("unique_"));
+const bossData = data("bosses").bosses[0];
+const cave = data("caves").caves[0];
+const quest = data("quests").main[0];
+const searchWord = monstersData[0].name.pl.split(" ")[0].slice(0, 4).toLowerCase();
+const mechanic = content("mechanics")[0]?.replace(/\.mdx$/, "");
+const guide = content("guides")[0]?.replace(/\.mdx$/, "");
+
+export const KEY_PAGES = [
+  { name: "home", path: "/pl/" },
+  { name: "home-en", path: "/en/" },
+  { name: "search", path: `/pl/szukaj/?q=${encodeURIComponent(searchWord)}` },
+  { name: "bestiary", path: "/pl/bestiariusz/" },
+  { name: "monster-elite", path: `/pl/bestiariusz/${eliteMonster.id}/?v=elite` },
+  { name: "monster-en", path: `/en/bestiary/${eliteMonster.id}/` },
+  { name: "boss", path: `/pl/bossy/${bossData.id}/` },
+  { name: "items", path: "/pl/przedmioty/" },
+  { name: "item", path: `/pl/przedmioty/${gearItem.id}/` },
+  { name: "item-en", path: `/en/items/${gearItem.id}/` },
+  ...(bossItem ? [{ name: "item-boss", path: `/pl/przedmioty/${bossItem.id}/` }] : []),
+  { name: "upgrading", path: "/pl/ulepszanie/" },
+  { name: "crafting", path: "/pl/rzemioslo/" },
+  { name: "class", path: "/pl/klasy/Mage/?b=MAGE34-a535230-2000000" },
+  { name: "map", path: "/pl/mapa/" },
+  { name: "region", path: "/pl/krainy/meadows/" },
+  { name: "cave", path: `/pl/krainy/${cave.region}/${cave.id}/` },
+  { name: "quests", path: "/pl/zadania/" },
+  { name: "quest", path: `/pl/zadania/${quest.id}/` },
+  ...(mechanic ? [{ name: "mechanic", path: `/pl/mechaniki/${mechanic}/` }] : []),
+  ...(guide ? [{ name: "guide", path: `/pl/poradniki/${guide}/` }] : []),
+  { name: "updates", path: "/pl/aktualizacje/" },
+  { name: "404", path: "/pl/404/" },
 ];

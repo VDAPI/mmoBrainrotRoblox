@@ -264,7 +264,8 @@
   .tabs button[aria-selected="true"] { color: var(--vw-text); font-weight: 800; border-bottom-color: var(--vw-gold-bright); }
   .count { padding: 2px 5px; font-size: 12px; background: var(--vw-panel-raised); color: var(--vw-text-muted); }
   .tabs button[aria-selected="true"] .count { background: var(--vw-gold-bright); color: var(--vw-text-on-gold); }
-  .layout { display: grid; grid-template-columns: 1fr 380px; gap: 48px; margin-top: 24px; }
+  /* S44: results load after the page; the reserved height keeps the footer from jumping (CLS) */
+  .layout { display: grid; grid-template-columns: 1fr 380px; gap: 48px; margin-top: 24px; min-height: 100vh; }
   .summary { margin: 0 0 8px; font-size: 15px; color: var(--vw-text-muted); }
   .list { list-style: none; margin: 0; padding: 0; }
   .row { display: flex; gap: 16px; padding: 20px 0; border-bottom: 1px solid var(--vw-border-subtle); }
@@ -273,10 +274,11 @@
   .top { display: flex; align-items: center; gap: 10px; }
   .badge { padding: 2px 6px; border: 1px solid var(--c); color: var(--c); font: 800 12px/1.2 var(--vw-font-ui); letter-spacing: .14em; text-transform: uppercase; }
   .meta { font-size: 15px; color: var(--vw-text-muted); }
-  .name { font: 800 22px/1.2 var(--vw-font-ui); color: var(--vw-text); }
+  .name { display: inline-block; min-height: 24px; font: 800 22px/1.2 var(--vw-font-ui); color: var(--vw-text); }
   .pending { font-size: 13px; color: var(--vw-text-muted); }
   .excerpt { margin: 0; font-size: 16px; color: var(--vw-text-soft); }
-  mark, .excerpt :global(mark) { background: rgba(232, 194, 90, .22); color: inherit; box-shadow: inset 0 -2px 0 var(--vw-gold-bright); }
+  /* S44: highlighted text in the body colour (a rarity colour on the gold tint fell under AA) */
+  mark, .excerpt :global(mark) { background: rgba(232, 194, 90, .22); color: var(--vw-text); box-shadow: inset 0 -2px 0 var(--vw-gold-bright); }
   .vw-empty .title { margin: 0; font: 400 var(--vw-fs-h2)/var(--vw-lh-h2) var(--vw-font-display); color: var(--vw-gold-bright); }
   .vw-empty p { margin: 0; }
   .examples { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }

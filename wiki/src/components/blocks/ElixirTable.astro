@@ -8,7 +8,7 @@ import { formatDuration, formatNumber } from "../../lib/format";
 import { name, t } from "../../lib/i18n";
 import { materialRef } from "../../lib/items";
 import { sectionHref } from "../../lib/sections";
-const lang = (Astro.params.lang ?? "pl") as Lang;
+const lang = (Astro.url.pathname.startsWith("/en/") ? "en" : "pl") as Lang;
 const file = load("blessings");
 ---
 <table class="vw-table vw-table--plain">

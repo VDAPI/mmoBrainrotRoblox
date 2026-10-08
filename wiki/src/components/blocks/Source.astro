@@ -8,7 +8,7 @@ interface Props {
   from: string;
 }
 const { from } = Astro.props;
-const lang = (Astro.params.lang ?? "pl") as Lang;
+const lang = (Astro.url.pathname.startsWith("/en/") ? "en" : "pl") as Lang;
 const { commit, date } = sourceParts();
 ---
 <p class="vw-label vw-source">{t(lang, "block.source", { from, commit, date: formatDate(date, lang) })}</p>

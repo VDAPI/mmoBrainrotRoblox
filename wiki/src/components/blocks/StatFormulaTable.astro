@@ -7,7 +7,7 @@ import { statName } from "../../lib/blocks";
 import { load } from "../../lib/data";
 import { formatNumber } from "../../lib/format";
 import { t, type Key } from "../../lib/i18n";
-const lang = (Astro.params.lang ?? "pl") as Lang;
+const lang = (Astro.url.pathname.startsWith("/en/") ? "en" : "pl") as Lang;
 const f = load("mechanics").formula as Record<string, number>;
 const n = (v: number) => formatNumber(Math.round(v * 1e6) / 1e6, lang);
 const args: Record<string, string> = {};

@@ -7,7 +7,7 @@ import type { Lang } from "../../i18n/routes";
 import { load } from "../../lib/data";
 import { name, t, type Key } from "../../lib/i18n";
 import { renderSrc } from "../../lib/renders";
-const lang = (Astro.params.lang ?? "pl") as Lang;
+const lang = (Astro.url.pathname.startsWith("/en/") ? "en" : "pl") as Lang;
 const file = load("cosmetics");
 const describe = (c: (typeof file.cosmetics)[number]) => {
   const kind = t(lang, `cos.kind.${c.kind}` as Key);

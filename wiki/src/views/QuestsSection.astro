@@ -77,7 +77,7 @@ const kindLine = q ? (side ? name(side.arcName, lang) : t(lang, "quests.mainOf",
 const minLevel = q ? Math.max(1, q.level - (side ? file.sideLevelSlack : file.levelSlack)) : 1;
 ---
 {q ? (
-  <Base lang={lang} title={name(q.title, lang)} description={t(lang, "quests.pageDesc", { title: name(q.title, lang), level: q.level, region: regionName(region) })} section="quests" search={{ type: "quest", meta: { line: `${kindLine} · ${t(lang, "level", { level: q.level })}` } }}>
+  <Base lang={lang} title={`${name(q.title, lang)} · ${t(lang, "search.badge.quest")}`} description={t(lang, "quests.pageDesc", { title: name(q.title, lang), level: q.level, region: regionName(region) })} section="quests" search={{ type: "quest", meta: { line: `${kindLine} · ${t(lang, "level", { level: q.level })}` } }}>
     <div class="vw-container page">
       <Crumbs items={[...crumbsBase, { label: name(q.title, lang) }]} />
       <div class="layout">
@@ -245,7 +245,7 @@ const minLevel = q ? Math.max(1, q.level - (side ? file.sideLevelSlack : file.le
           {DAILY_CHIPS.map((c) => <button type="button" class="vw-chip" data-lv={c} aria-pressed={c === DAILY_DEFAULT ? "true" : "false"}>{c}</button>)}
         </div>
         <h3 class="vw-h3">{t(lang, "quests.dailyTemplates")}</h3>
-        <div class="vw-scroll">
+        <div class="vw-scroll" tabindex="0">
           <table class="vw-table vw-table--plain vw-table--keep">
             <caption class="vw-sr">{t(lang, "quests.dailyTemplates")}</caption>
             <thead><tr><th scope="col">{t(lang, "quests.dailyName")}</th><th scope="col">{t(lang, "quests.dailyFrom")}</th><th scope="col">{t(lang, "quests.dailyGoal")}</th></tr></thead>
@@ -261,7 +261,7 @@ const minLevel = q ? Math.max(1, q.level - (side ? file.sideLevelSlack : file.le
           </table>
         </div>
         <h3 class="vw-h3">{t(lang, "quests.dailyRewards")}</h3>
-        <div class="vw-scroll">
+        <div class="vw-scroll" tabindex="0">
           <table class="vw-table vw-table--plain vw-table--keep">
             <caption class="vw-sr">{t(lang, "quests.dailyRewards")}</caption>
             <thead><tr><th scope="col">{t(lang, "quests.level")}</th><th scope="col" style="text-align: right">{t(lang, "quests.expLabel")}</th><th scope="col" style="text-align: right">{t(lang, "quests.goldLabel")}</th><th scope="col">{t(lang, "quests.itemsLabel")}</th></tr></thead>

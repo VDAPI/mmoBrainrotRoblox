@@ -5,7 +5,7 @@ import Source from "./Source.astro";
 import type { Lang } from "../../i18n/routes";
 import { load } from "../../lib/data";
 import { t, type Key } from "../../lib/i18n";
-const lang = (Astro.params.lang ?? "pl") as Lang;
+const lang = (Astro.url.pathname.startsWith("/en/") ? "en" : "pl") as Lang;
 const bands = load("mechanics").levelBands;
 const sign = (d: number) => (d > 0 ? `+${d}` : d < 0 ? `−${-d}` : "0");
 const range = (i: number) => {

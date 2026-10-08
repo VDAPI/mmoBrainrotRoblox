@@ -1,5 +1,5 @@
 // Wiki sections and whether their pages exist yet (S36). A link to a section that is not ready renders as text with
-// "Soon" (never a 404). Later sessions flip `ready` and add their views in src/views/registry.ts.
+// "Soon" (never a 404). Later sessions flip `ready` and add their views in src/views/paths.ts (then npm run routes).
 import { href, type Lang, type RouteKey } from "../i18n/routes";
 
 export interface Section {

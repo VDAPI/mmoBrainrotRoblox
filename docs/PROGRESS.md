@@ -3437,3 +3437,33 @@ Szczegóły i decyzje: `docs/WIKI.md` (Stan, Decyzje S43, „Pisanie treści”)
 11. Telefon (390 px): poradnik bez przewijania w bok, „Na tej stronie” zwinięte.
 12. `npm run check` w `wiki/` i `scripts/check` przechodzą.
 
+### S44: Wiki 10/10 — jakość, dostępność, SEO, wdrożenie na Cloudflare Pages
+
+Szczegóły: `docs/WIKI.md` → „Wdrożenie”, „Jakość”, Stan (tabela Lighthouse), Decyzje S44, Niedokończone.
+
+**Zrobione**
+- Workflow „Wiki” (build, testy, Playwright, wdrożenie na Cloudflare Pages po dodaniu 2 sekretów; bez nich zielony),
+  `stale-data`, `robots.txt`, `_headers`, favicona, obrazy OG, `SITE_URL`/`PUBLIC_NOINDEX`.
+- `npm run check` z budżetami JS wszystkich stron i audytem (SEO, hreflang, sitemapa, wycieki kodów nagród);
+  `npm run qa` (axe, klawiatura, ruch, układ na telefonie: 131 testów), `npm run lighthouse`, `npm run compare`.
+- Wydajność: trasa na sekcję (CSS strony ×3 mniejszy), paleta Ctrl+K na żądanie, fonty bez blokowania renderu, CLS ≈ 0.
+- Dostępność: kontrasty jasnego motywu i kolorów rzadkości, podkreślone linki w tekście, cele dotyku, fokus na `<main>`.
+
+#### Instrukcja testu S44
+
+1. `cd wiki`, `npm ci` (nowe paczki: Playwright test, axe, Lighthouse CI, yaml), `npx playwright install chromium`.
+2. `npm run check` — na końcu `budgets: …` i `audit: 2270 pages …` bez błędów.
+3. `npm run qa` — 131 testów przechodzi.
+4. `npm run preview`: `/pl/` — Tab najpierw pokazuje „Przejdź do treści”; Ctrl+K otwiera paletę (pierwszy raz po chwili:
+   ładuje się na żądanie), Esc zamyka.
+5. Przełącz motyw na jasny: złote przyciski mają biały tekst, wszystko czytelne.
+6. Telefon (390 px): żadna strona nie przewija się w bok; strona przedmiotu nie „skacze” po wczytaniu fontów.
+7. `/robots.txt`, `/sitemap-index.xml`, `/_headers` są w `dist/`; `/en/cokolwiek` daje angielską 404.
+8. `npm run lighthouse` — raporty w `.lighthouse/`; wynik jak w tabeli w `docs/WIKI.md` → Stan (wydajność 81–98).
+9. `npm run shots` i `npm run compare` — makieta i strona obok siebie w `.shots/compare/`.
+10. **Wdrożenie** (raz): `docs/WIKI.md` → „Wdrożenie”, kroki 1–5: konto Cloudflare, projekt Pages `vaelthorn-wiki`
+    (Direct Upload), token „Cloudflare Pages: Edit”, sekrety `CLOUDFLARE_API_TOKEN` i `CLOUDFLARE_ACCOUNT_ID` w GitHub,
+    Actions → Wiki → Run workflow.
+11. Po ok. 10 min: `https://vaelthorn-wiki.pages.dev/pl/` działa; adres jest w podsumowaniu runu.
+12. Własna domena i `SITE_URL`: kroki 6–7 tamże. `scripts/check` w korzeniu przechodzi.
+

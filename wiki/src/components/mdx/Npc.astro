@@ -8,7 +8,7 @@ interface Props {
   id: string;
 }
 const { id } = Astro.props;
-const lang = (Astro.params.lang ?? "pl") as Lang;
+const lang = (Astro.url.pathname.startsWith("/en/") ? "en" : "pl") as Lang;
 if (!load("npcs").npcs.some((n) => n.id === id)) throw new Error(`<Npc id="${id}">: unknown NPC`);
 const link = npcHref(lang, id);
 ---

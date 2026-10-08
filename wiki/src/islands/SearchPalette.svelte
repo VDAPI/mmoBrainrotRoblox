@@ -1,5 +1,6 @@
 <script lang="ts">
-  // Ctrl+K palette (.vw-palette): Ctrl/Cmd+K or a click on the topbar search field opens it; the entries come from
+  // Ctrl+K palette (.vw-palette): Ctrl/Cmd+K or a click on the topbar search field opens it (S44: Base loads and
+  // mounts this component on the first use, with startOpen; it is not an island any more); the entries come from
   // /<lang>/palette.json on first open; matching = src/lib/search.ts (MapSearch rules). Keyboard: ↑↓ select,
   // Enter open (no selection: search page), Tab cycles the type filter, Esc closes. Focus stays inside.
   import { onMount, tick } from "svelte";
@@ -9,6 +10,8 @@
   interface Props {
     lang: "pl" | "en";
     searchHref: string;
+    /** Open right after mounting (the first Ctrl+K / click that loaded the palette). */
+    startOpen?: boolean;
     labels: {
       label: string;
       placeholder: string;
@@ -20,7 +23,7 @@
     };
   }
 
-  let { lang, searchHref, labels }: Props = $props();
+  let { lang, searchHref, labels, startOpen = false }: Props = $props();
 
   let open = $state(false);
   let query = $state("");
@@ -126,6 +129,7 @@
       }
     };
     openers.forEach((a) => a.addEventListener("click", onClick));
+    if (startOpen) show();
     return () => {
       window.removeEventListener("keydown", onGlobal);
       openers.forEach((a) => a.removeEventListener("click", onClick));

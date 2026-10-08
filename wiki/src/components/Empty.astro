@@ -3,12 +3,14 @@
 interface Props {
   title: string;
   text?: string;
+  /** S44: the page's only heading (404) */
+  heading?: boolean;
 }
-const { title, text } = Astro.props;
+const { title, text, heading = false } = Astro.props;
 ---
 <div class="vw-empty">
   <span class="vw-empty__mark" aria-hidden="true"></span>
-  <p class="title">{title}</p>
+  {heading ? <h1 class="title">{title}</h1> : <p class="title">{title}</p>}
   {text && <p class="text">{text}</p>}
   <slot />
 </div>

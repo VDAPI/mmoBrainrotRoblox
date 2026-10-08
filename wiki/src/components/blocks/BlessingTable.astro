@@ -7,14 +7,14 @@ import { statName, statValue } from "../../lib/blocks";
 import { load, rarities } from "../../lib/data";
 import { name, t, type Key } from "../../lib/i18n";
 import { sectionHref } from "../../lib/sections";
-const lang = (Astro.params.lang ?? "pl") as Lang;
+const lang = (Astro.url.pathname.startsWith("/en/") ? "en" : "pl") as Lang;
 const file = load("blessings");
 const order = rarities().map((r) => r.key).filter((k) => file.blessings.some((b) => b.rarity === k));
 const rarityName = (k: string) => name(rarities().find((r) => r.key === k)?.name, lang);
 const of = (line: string, rarity: string) => file.blessings.find((b) => b.line === line && b.rarity === rarity);
 const prevStats = (line: string, i: number) => (i > 0 ? Object.keys(of(line, order[i - 1])?.stats ?? {}) : []);
 ---
-<div class="vw-scroll">
+<div class="vw-scroll" tabindex="0">
   <table class="vw-table vw-table--plain vw-table--keep vw-bless">
     <caption class="vw-sr">{t(lang, "block.bless.caption")}</caption>
     <thead>

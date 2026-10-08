@@ -203,6 +203,8 @@ const title = name(map.name, lang);
   .list tr:global(.is-sel) td, .mlist li:global(.is-sel), .card:global(.is-sel) { background: color-mix(in srgb, var(--vw-gold) 10%, var(--vw-panel)); }
   .list tr:hover td { background: var(--vw-panel-raised); }
   .profile { color: var(--c); font-weight: 800; white-space: nowrap; }
+  /* S44: data colours are tuned for the dark UI; in the light theme the text is dark and the colour stays on the frame */
+  :global([data-theme="light"]) .profile { color: var(--vw-text); text-decoration: underline 2px var(--c); text-underline-offset: 4px; }
   .mlist { list-style: none; margin: 0; padding: 0; background: var(--vw-panel); border: 1px solid var(--vw-border); }
   .mlist li { display: grid; grid-template-columns: 20px minmax(0, 1fr) auto 90px 16px; align-items: center; gap: 12px; min-height: 44px; padding: 0 16px; border-bottom: 1px solid var(--vw-border-subtle); cursor: pointer; }
   .mlist li:last-child { border-bottom: 0; }

@@ -34,6 +34,9 @@
   let copied = $state(false);
   let loading = $state(false);
   let mobile = $state(false);
+  // S44: the overlay stays hidden until hydrated (its layout depends on the screen width known only in the browser),
+  // so it appears once instead of jumping from the desktop to the phone layout (CLS).
+  let ready = $state(false);
 
   let stage: HTMLElement;
   let pan: HTMLElement;
@@ -450,6 +453,7 @@
     worldHtml = pan.innerHTML;
     const mq = matchMedia("(max-width: 1023px)");
     mobile = mq.matches;
+    ready = true;
     mq.addEventListener("change", () => (mobile = mq.matches));
     try {
       const saved = localStorage.getItem("vw-map-layers");
@@ -540,7 +544,7 @@
 </script>
 
 <!-- Overlay UI over the stage -->
-<div class="ui" class:mobile class:has-card={!!card} data-pagefind-ignore>
+<div class="ui" class:mobile class:ready class:has-card={!!card} data-pagefind-ignore>
   {#if mapId}
     <button type="button" class="back" onclick={() => openMap(null, { select: mapId ? `node-${data?.maps[mapId]?.region ?? mapId}` : null, push: true })}>‹ {L("map.world")}</button>
   {/if}
@@ -823,6 +827,7 @@
   .list .k-npc .dia { border-radius: 50%; transform: none; --c: #e8c25a !important; }
   .list .lv { font-size: 13px; color: var(--vw-text-muted); }
 
+  .ui:not(.ready) { visibility: hidden; }
   /* mobile */
   .mobile .top { left: 0; right: 0; top: 0; width: auto; flex-direction: row; gap: 8px; padding: 8px 10px; overflow-x: auto; scrollbar-width: none; background: linear-gradient(var(--vw-bg), transparent); }
   .mobile .search.open { flex: 1; }

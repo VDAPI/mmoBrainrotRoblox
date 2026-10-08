@@ -12,7 +12,7 @@ interface Props {
   rarity?: string;
 }
 const { id, n, rarity } = Astro.props;
-const lang = (Astro.params.lang ?? "pl") as Lang;
+const lang = (Astro.url.pathname.startsWith("/en/") ? "en" : "pl") as Lang;
 if (!getItem(id)) throw new Error(`<Item id="${id}">: unknown item`);
 const ref = materialRef(id);
 const r = rarity ?? ref.rarity;

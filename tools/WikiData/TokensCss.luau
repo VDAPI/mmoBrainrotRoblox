@@ -1,7 +1,7 @@
 --!strict
 -- wiki/src/styles/tokens.data.css (S34): colours from the game data under the design system's names
 -- (wiki/design/vaelthorn.css): --vw-r-<key> and --vw-glow-<key> per rarity KEY (--vw-r-0/1/2 are radii), a text
--- variant --vw-r-<key>-text with WCAG contrast >= 4.5:1 on --vw-panel (lighter in the dark theme, darker in
+-- variant --vw-r-<key>-text with WCAG contrast >= 5.5:1 on --vw-panel (S44; AA on tinted surfaces too) (lighter in the dark theme, darker in
 -- [data-theme="light"]), --vw-el-<id> from Data/Elements (--vw-el-physical stays in tokens.css), --vw-class-<id>
 -- from Data/Classes and --vw-zone-green|yellow|red from src/client/UI/Theme.luau (read as text).
 
@@ -17,7 +17,7 @@ local TokensCss = {}
 TokensCss.HEADER = "/* GENEROWANE przez tools/wikidump.luau — nie edytuj (kolory z danych gry). */"
 TokensCss.PANEL_DARK = "#1B1D23" -- --vw-panel in wiki/design/vaelthorn.css
 TokensCss.PANEL_LIGHT = "#FBF8F1" -- --vw-panel in [data-theme="light"]
-TokensCss.MIN_CONTRAST = 4.5
+TokensCss.MIN_CONTRAST = 5.5 -- S44: AA also on the tinted chips and callouts (colour-mixed backgrounds)
 
 local function rgb(hex: string): (number, number, number)
 	local r, g, b = string.match(hex, "^#(%x%x)(%x%x)(%x%x)$")

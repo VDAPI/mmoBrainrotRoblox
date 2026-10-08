@@ -10,7 +10,7 @@ import SectionTitle from "../components/SectionTitle.astro";
 import Toc from "../components/Toc.astro";
 import { href, type Lang } from "../i18n/routes";
 import { getItem, getMap, load, rarities } from "../lib/data";
-import { formatChance, formatDuration, formatNumber } from "../lib/format";
+import { formatChance, formatDuration, formatNumber, pluralForm } from "../lib/format";
 import { name, t } from "../lib/i18n";
 import { materialRef } from "../lib/items";
 import { sectionHref } from "../lib/sections";
@@ -78,7 +78,7 @@ const npcLink = (id?: string) => (id ? mapHref(lang, mapLinkFor(id)) : null);
                   </td>
                   <td>
                     <details class="itemsd">
-                      <summary>{t(lang, "craft.items", { n: r.items.length })}</summary>
+                      <summary>{t(lang, `craft.items.${pluralForm(r.items.length, lang)}`, { n: r.items.length })}</summary>
                       <ul>
                         {r.items.map((i) => {
                           const it = getItem(i.item);
@@ -262,8 +262,10 @@ const npcLink = (id?: string) => (id ? mapHref(lang, mapLinkFor(id)) : null);
   .muted { color: var(--vw-text-muted); }
   .mats { display: inline-flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
   .mat { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; }
+  .mat a { display: inline-flex; align-items: center; min-height: 24px; min-width: 24px; }
   .note { font-size: 14px; color: var(--vw-text-muted) !important; }
   .itemsd summary { cursor: pointer; color: var(--vw-gold); font-weight: 800; min-height: 32px; display: flex; align-items: center; }
+  @media (max-width: 767px) { .itemsd summary { min-height: var(--vw-touch); } }
   .itemsd ul { margin: 6px 0 8px; padding-left: 18px; }
   .ores { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; }
   .spots { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }

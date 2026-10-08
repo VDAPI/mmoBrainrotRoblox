@@ -13,7 +13,7 @@ interface Props {
   to: number;
 }
 const { from, to } = Astro.props;
-const lang = (Astro.params.lang ?? "pl") as Lang;
+const lang = (Astro.url.pathname.startsWith("/en/") ? "en" : "pl") as Lang;
 const best = load("progression").bestArea.filter((b) => b.level >= from && b.level <= to);
 if (best.length === 0) throw new Error(`<LevelPath from={${from}} to={${to}}>: no levels`);
 const areas = load("areas").areas;

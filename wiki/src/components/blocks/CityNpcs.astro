@@ -10,7 +10,7 @@ import { name, t } from "../../lib/i18n";
 import { questHref } from "../../lib/links";
 import { npcLabel } from "../../lib/quests";
 import { mapHref, mapLinkFor } from "../../lib/world";
-const lang = (Astro.params.lang ?? "pl") as Lang;
+const lang = (Astro.url.pathname.startsWith("/en/") ? "en" : "pl") as Lang;
 const services = load("npcs").services;
 const quests = [...load("quests").main, ...load("quests").side];
 const npcs = cityNpcs();

@@ -9,7 +9,7 @@ interface Props {
   id: string;
 }
 const { id } = Astro.props;
-const lang = (Astro.params.lang ?? "pl") as Lang;
+const lang = (Astro.url.pathname.startsWith("/en/") ? "en" : "pl") as Lang;
 const quest = questById(id);
 if (!quest) throw new Error(`<Quest id="${id}">: unknown quest`);
 ---

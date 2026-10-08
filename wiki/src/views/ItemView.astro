@@ -100,10 +100,13 @@ const rarityText = (key: string) => name(rarities().find((r) => r.key === key)?.
 const ref = (rid: string) => materialRef(rid);
 const searchLine = [rarityText(rarity), name(d.typeName, lang), t(lang, "level", { level: d.level })].join(" · ");
 const searchTip = JSON.stringify(itemTooltip(id, { lang, rarity }));
+// S44: items that share a name (blessings of one line in several rarities) get the rarity in the <title>.
+const sameName = items().filter((x) => name(x.name, lang) === title).length > 1;
+const pageTitle = sameName ? `${title} (${rarityText(rarity)})` : title;
 ---
 <Base
   lang={lang}
-  title={title}
+  title={pageTitle}
   description={sentences.join(" ")}
   section="items"
   search={{ type: "item", meta: { title, line: searchLine, rarity, level: String(d.level), glyph: d.glyph, color: d.color, tooltip: searchTip } }}
@@ -220,7 +223,7 @@ const searchTip = JSON.stringify(itemTooltip(id, { lang, rarity }));
           <section>
             <SectionTitle>{t(lang, "item.otherTiers")}</SectionTitle>
             <p class="tiers">
-              {tiers.map((x) => <a class="vw-chip" href={href(lang, "items", x.id)} aria-current={x.id === id ? "page" : undefined} aria-pressed={x.id === id ? "true" : undefined}>{x.tier}</a>)}
+              {tiers.map((x) => <a class="vw-chip" href={href(lang, "items", x.id)} aria-current={x.id === id ? "page" : undefined}>{x.tier}</a>)}
             </p>
           </section>
         )}
@@ -237,7 +240,7 @@ const searchTip = JSON.stringify(itemTooltip(id, { lang, rarity }));
   .h1 { margin: 0; font: 800 54px/1.05 var(--vw-font-ui); color: var(--ct); text-shadow: 0 0 28px color-mix(in srgb, var(--c) 45%, transparent); }
   .chips { display: flex; flex-wrap: wrap; gap: 8px; }
   .lead { margin: 0; max-width: 760px; font-size: 19px; line-height: 1.6; color: var(--vw-text-soft); }
-  .flavor { margin: -8px 0 0; font-style: italic; color: #EADDBE; }
+  .flavor { margin: -8px 0 0; font-style: italic; color: var(--vw-parchment); }
   .two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 40px; margin-top: 12px; }
   .cards { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
   .src { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 10px 14px; background: var(--vw-panel); border: 1px solid var(--vw-border); color: var(--vw-text); }

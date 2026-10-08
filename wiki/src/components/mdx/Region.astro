@@ -9,7 +9,7 @@ interface Props {
   plain?: boolean;
 }
 const { id, area, plain = false } = Astro.props;
-const lang = (Astro.params.lang ?? "pl") as Lang;
+const lang = (Astro.url.pathname.startsWith("/en/") ? "en" : "pl") as Lang;
 const target = area ?? id;
 const a = areaOf(target);
 const c = a ? undefined : caveOf(target);

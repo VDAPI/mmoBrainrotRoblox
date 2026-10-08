@@ -246,7 +246,7 @@
     <p class="legend"><span class="sw safe"></span>{labels.legendSafe} <span class="sw drop"></span>{labels.legendDrop}</p>
 
     {#if result}
-      <div class="scroll">
+      <div class="scroll" tabindex="0" role="region" aria-label={labels.ladder}>
       <table class="vw-table steps">
         <caption class="vw-sr">{labels.ladder}</caption>
         <thead><tr><th scope="col">{labels.step}</th><th scope="col">{labels.chance}</th><th scope="col">{labels.avgTries}</th><th scope="col">{labels.gold}</th><th scope="col" class="hide-m">{labels.materials}</th><th scope="col" class="hide-m">{labels.onFail}</th></tr></thead>
@@ -303,7 +303,10 @@
   .chosen { display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 12px; border: 1px solid var(--c); background: color-mix(in srgb, var(--c) 10%, var(--vw-panel)); font-weight: 800; }
   .chips { display: flex; flex-wrap: wrap; gap: 6px; }
   .rchip { min-height: 40px; color: var(--rt); }
+  @media (pointer: coarse) { .rchip { min-height: var(--vw-touch); } }
   .rchip[aria-checked="true"] { background: color-mix(in srgb, var(--rc) 20%, var(--vw-panel)); border-color: var(--rc); font-weight: 800; color: var(--rt); }
+  /* S44: the tinted chip of a light colour is too pale for coloured text: dark text in the light theme */
+  :global([data-theme="light"]) .rchip[aria-checked="true"] { color: var(--vw-text); }
   .chips [aria-checked="true"]:not(.rchip) { background: var(--vw-gold-bright); color: var(--vw-text-on-gold); }
   .levels { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
   .levels button { height: 48px; background: var(--vw-panel); border: 1px solid var(--vw-border); color: var(--vw-text-soft); font: 800 15px/1 var(--vw-font-ui); cursor: pointer; }
@@ -320,22 +323,25 @@
   .result { display: flex; flex-wrap: wrap; gap: 24px 32px; align-items: center; padding: 24px; margin-bottom: 24px; background: var(--vw-metal-gradient, var(--vw-panel)); border: 1px solid var(--vw-gold-dark); }
   .big { display: flex; flex-direction: column; gap: 6px; }
   .pct { font: 800 72px/1 var(--vw-font-ui); }
-  .good { color: var(--vw-success); } .mid { color: var(--vw-warning); } .bad { color: var(--vw-danger); }
+  .good { color: var(--vw-success); } .mid { color: var(--vw-warning); } .bad { color: var(--vw-danger-text); }
   .totals { display: flex; flex-wrap: wrap; gap: 14px 28px; margin: 0; }
   .totals dt { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--vw-text-muted); }
   .totals dd { margin: 4px 0 0; font: 800 26px/1 var(--vw-font-ui); }
   .gold { color: var(--vw-gold-bright); font-weight: 800; }
   .ladder { list-style: none; margin: 10px 0 8px; padding: 0; display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 4px; }
-  .ladder li { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 0 0; background: var(--vw-panel); border: 1px solid var(--vw-border); opacity: .4; --b: var(--vw-warning); }
+  .ladder li { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 0 0; background: var(--vw-panel); border: 1px solid var(--vw-border-subtle); color: var(--vw-text-muted); --b: var(--vw-warning); }
   .ladder li.safe { --b: var(--vw-success); }
-  .ladder li.in { opacity: 1; border-color: var(--b); }
+  /* S44: steps outside the path are dimmed by colour, not opacity (text keeps AA contrast) */
+  .ladder li.in { border-color: var(--b); color: var(--vw-text); }
+  .ladder li:not(.in)::after { opacity: .35; }
   .ladder li::after { content: ""; align-self: stretch; height: 4px; background: var(--b); }
   .lvl { font-weight: 800; }
-  .ch { font-size: 14px; color: var(--vw-text-soft); }
+  .ch { font-size: 14px; }
+  .ladder li.in .ch { color: var(--vw-text-soft); }
   .legend { display: flex; align-items: center; gap: 8px; margin: 0 0 20px; font-size: 13px; color: var(--vw-text-muted); }
   .sw { width: 14px; height: 4px; display: inline-block; }
   .sw.safe { background: var(--vw-success); } .sw.drop { background: var(--vw-warning); margin-left: 12px; }
-  .scroll { max-width: 100%; overflow-x: auto; }
+  .scroll { position: relative; max-width: 100%; overflow-x: auto; }
   .steps td { height: 48px; white-space: nowrap; }
   .mats { white-space: normal !important; }
   .mat { display: inline-flex; align-items: center; gap: 4px; margin-right: 8px; font-weight: 700; white-space: nowrap; }

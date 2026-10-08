@@ -10,7 +10,7 @@ interface Props {
   variant?: "normal" | "elite" | "elite2";
 }
 const { id, variant = "normal" } = Astro.props;
-const lang = (Astro.params.lang ?? "pl") as Lang;
+const lang = (Astro.url.pathname.startsWith("/en/") ? "en" : "pl") as Lang;
 const monster = getMonster(id);
 const boss = monster ? undefined : getBoss(id);
 if (!monster && !boss) throw new Error(`<Monster id="${id}">: unknown monster`);

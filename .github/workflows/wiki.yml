@@ -1,0 +1,130 @@
+# Wiki (S44, docs/WIKI.md "Wdrożenie"): export the game data with Lune, test, build, audit, accessibility checks and
+# deploy wiki/dist to Cloudflare Pages (main = production, other branches and PRs = previews with noindex). Without
+# the two Cloudflare secrets the run stays green and skips the deployment. A weekly run refreshes the "of the week"
+# picks of the home page.
+name: Wiki
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "wiki/**"
+      - "src/shared/**"
+      - "tools/wikidump.luau"
+      - "tools/WikiData/**"
+      - "tools/wikimap.luau"
+      - "tools/WikiMaps/**"
+      - "tools/WikiMap/**"
+      - "art/icons/**"
+      - "tests/wikidump.spec.luau"
+      - "tests/wikimap.spec.luau"
+      - "rokit.toml"
+      - ".github/workflows/wiki.yml"
+  pull_request:
+    paths:
+      - "wiki/**"
+      - "src/shared/**"
+      - "tools/wikidump.luau"
+      - "tools/WikiData/**"
+      - "tools/wikimap.luau"
+      - "tools/WikiMaps/**"
+      - "tools/WikiMap/**"
+      - "art/icons/**"
+      - "tests/wikidump.spec.luau"
+      - "tests/wikimap.spec.luau"
+      - "rokit.toml"
+      - ".github/workflows/wiki.yml"
+  workflow_dispatch:
+  schedule:
+    - cron: "17 4 * * 1"
+
+permissions:
+  contents: read
+  deployments: write
+
+concurrency:
+  group: wiki-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  wiki:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      HAS_CF: ${{ secrets.CLOUDFLARE_API_TOKEN != '' && secrets.CLOUDFLARE_ACCOUNT_ID != '' }}
+    steps:
+      - name: Checkout (full history for the data commit)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install toolchain
+        uses: CompeyDev/setup-rokit@v0.1.2
+
+      - name: Lune version
+        run: lune --version
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: wiki/.nvmrc
+          cache: npm
+          cache-dependency-path: wiki/package-lock.json
+
+      - name: Install wiki dependencies
+        working-directory: wiki
+        run: npm ci
+
+      - name: Export game data, maps and icons
+        working-directory: wiki
+        run: npm run data
+
+      - name: Check for stale data
+        working-directory: wiki
+        run: node scripts/stale-data.mjs
+
+      - name: Lune tests
+        run: lune run tests/run.luau
+
+      - name: Check and build
+        working-directory: wiki
+        env:
+          SITE_URL: ${{ vars.SITE_URL || 'https://vaelthorn-wiki.pages.dev' }}
+          PUBLIC_NOINDEX: ${{ (github.event_name == 'pull_request' || github.ref != 'refs/heads/main') && '1' || '0' }}
+        run: npm run check
+
+      - name: Install Playwright Chromium
+        working-directory: wiki
+        run: npx playwright install --with-deps chromium
+
+      - name: Accessibility, keyboard and layout tests
+        working-directory: wiki
+        run: npm run qa
+
+      - name: Upload the Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: wiki/playwright-report
+
+      - name: Deploy to Cloudflare Pages
+        id: deploy
+        if: env.HAS_CF == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+          wranglerVersion: "4.148.0"
+          command: pages deploy wiki/dist --project-name=${{ vars.CF_PAGES_PROJECT || 'vaelthorn-wiki' }} --branch=${{ github.head_ref || github.ref_name }} --commit-hash=${{ github.sha }}
+
+      - name: Deployment address
+        if: steps.deploy.outcome == 'success'
+        run: |
+          echo "Wiki: ${{ steps.deploy.outputs.deployment-url }}" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: No Cloudflare secrets
+        if: env.HAS_CF != 'true'
+        run: |
+          echo "::notice::Brak sekretów Cloudflare — pomijam wdrożenie (docs/WIKI.md → Wdrożenie)"

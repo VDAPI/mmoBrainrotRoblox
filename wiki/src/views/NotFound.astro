@@ -11,7 +11,7 @@ const { lang } = Astro.props;
 ---
 <Base lang={lang} title={t(lang, "notfound.title")} noindex alternate={lang === "pl" ? "/en/404/" : "/pl/404/"}>
   <div class="vw-container wrap">
-    <Empty title={t(lang, "notfound.title")} text={t(lang, "notfound.text")}>
+    <Empty heading title={t(lang, "notfound.title")} text={t(lang, "notfound.text")}>
       <form class="search" action={href(lang, "search")} method="get" role="search">
         <input class="vw-search" name="q" type="search" placeholder={t(lang, "search.placeholderLong")} aria-label={t(lang, "search.placeholder")} />
       </form>

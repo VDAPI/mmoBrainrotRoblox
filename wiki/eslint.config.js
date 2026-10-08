@@ -5,7 +5,7 @@ import globals from "globals";
 import ts from "typescript-eslint";
 
 export default [
-  { ignores: ["dist/", ".astro/", "node_modules/", "design/", "src/data/", ".shots/", "test-results/"] },
+  { ignores: ["dist/", ".astro/", "node_modules/", "design/", "src/data/", ".shots/", "test-results/", "playwright-report/", ".reports/", ".lighthouse/"] },
   js.configs.recommended,
   ...ts.configs.recommended,
   ...astro.configs.recommended,
@@ -15,5 +15,7 @@ export default [
     languageOptions: { parserOptions: { parser: ts.parser, extraFileExtensions: [".svelte"] } },
   },
   { languageOptions: { globals: { ...globals.browser, ...globals.node } } },
-  { rules: { "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }] } },
+  // CommonJS config files (Lighthouse CI loads them with require)
+  { files: ["**/*.cjs"], rules: { "@typescript-eslint/no-require-imports": "off" } },
+  { rules: { "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }] } },
 ];

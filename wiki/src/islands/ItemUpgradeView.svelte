@@ -198,6 +198,8 @@
   .switch .vw-label { margin-right: 6px; }
   .rchip, .echip { min-height: 44px; color: var(--rt); border-color: color-mix(in srgb, var(--rc) 45%, var(--vw-border)); }
   .rchip[aria-checked="true"], .echip[aria-checked="true"] { background: color-mix(in srgb, var(--rc) 20%, var(--vw-panel)); border-color: var(--rc); color: var(--rt); font-weight: 800; }
+  /* S44: the tinted chip of a light colour is too pale for coloured text: dark text in the light theme */
+  :global([data-theme="light"]) .rchip[aria-checked="true"] { color: var(--vw-text); }
   .ups { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 6px; }
   .up { height: 48px; background: var(--vw-panel); border: 1px solid var(--vw-border); color: var(--vw-text-soft); font: 800 16px/1 var(--vw-font-ui); cursor: pointer; }
   .up:hover { border-color: var(--vw-gold-dark); color: var(--vw-text); }
@@ -205,7 +207,7 @@
   .uptable td { height: 42px; }
   .lv { font-weight: 800; }
   .num { font-weight: 800; font-variant-numeric: tabular-nums; }
-  .good { color: var(--vw-success); } .mid { color: var(--vw-warning); } .bad { color: var(--vw-danger); }
+  .good { color: var(--vw-success); } .mid { color: var(--vw-warning); } .bad { color: var(--vw-danger-text); }
   .muted { color: var(--vw-text-muted); }
   .cost { white-space: nowrap; }
   .gold { color: var(--vw-gold-bright); font-weight: 800; margin-right: 8px; }

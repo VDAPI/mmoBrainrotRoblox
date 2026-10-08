@@ -7,7 +7,7 @@ interface Props {
   action: string;
 }
 const { action } = Astro.props;
-const lang = (Astro.params.lang ?? "pl") as Lang;
+const lang = (Astro.url.pathname.startsWith("/en/") ? "en" : "pl") as Lang;
 const bind = load("mechanics").keybinds.find((k) => k.id === action);
 if (!bind) throw new Error(`<Key action="${action}">: unknown action`);
 ---

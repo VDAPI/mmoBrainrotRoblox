@@ -84,6 +84,9 @@ MMORPG na Roblox (Margonem w 3D). Luau + Rojo + Wally + Fusion 0.3 + ProfileStor
   `npm run check` (typy, lint, testy, build, linki), `npm run data` (eksport danych), `npm run shots` (zrzuty 390/1440),
   `npm run renders` (S38: rendery potworów, bossów i petów + OG; Python, `tools/wiki-renders/README.md`), `npm run renders:test`.
   `npm run build` robi też obrazy OG (S39, `scripts/og-images.mjs`); `SHOTS_ONLY=bestiariusz,boss npm run shots` = tylko wybrane.
+  S44: `npm run qa` (Playwright: axe, klawiatura, układ; po buildzie), `npm run lighthouse`, `npm run compare` (makieta obok
+  zrzutu), `npm run routes` (pliki tras sekcji z `src/views/paths.ts`; nowa sekcja = wpis tam + `npm run routes`),
+  `npm run ci:local` (jak workflow „Wiki”). Wdrożenie i progi jakości: `docs/WIKI.md` → „Wdrożenie”, „Jakość”.
   `npm run images:city` (S43): podglądy miasta z `docs/miasto/img` do `wiki/public/img/city/` (commitowane).
   `npm run icons` (S40, też na końcu `npm run data`): ikony przedmiotów z atlasów S35 do `wiki/public/img/items/` +
   manifest `wiki/src/generated/item-icons.json` (commitowane); po zmianie atlasów albo `Data/ItemIconAtlas` uruchom i zacommituj.

@@ -34,7 +34,7 @@ a:hover { color: #FFE7C2; text-decoration: underline; text-underline-offset: 3px
 .vw-chip { display: inline-flex; align-items: center; gap: var(--vw-s-2); min-height: 36px; padding: 0 var(--vw-s-3); font: 700 15px/1 var(--vw-font-ui);
   color: var(--vw-text-soft); background: var(--vw-panel); border: 1px solid var(--vw-border); cursor: pointer; transition: border-color var(--vw-dur-fast); }
 .vw-chip:hover { border-color: var(--vw-gold-dark); color: var(--vw-text); }
-.vw-chip[aria-pressed="true"] { background: var(--vw-gold-bright); border-color: var(--vw-gold-bright); color: var(--vw-text-on-gold); font-weight: 800; }
+.vw-chip[aria-pressed="true"], a.vw-chip[aria-current="page"] { background: var(--vw-gold-bright); border-color: var(--vw-gold-bright); color: var(--vw-text-on-gold); font-weight: 800; }
 .vw-chip:disabled { opacity: .4; cursor: not-allowed; }
 @media (pointer: coarse) { .vw-chip { min-height: var(--vw-touch); } }
 
@@ -50,7 +50,7 @@ a:hover { color: #FFE7C2; text-decoration: underline; text-underline-offset: 3px
 .vw-rank { display: inline-flex; align-items: center; height: 26px; padding: 0 9px; font: 800 14px/1 var(--vw-font-ui); border: 1px solid var(--vw-border); color: var(--vw-text-soft); }
 .vw-rank--elite { background: var(--vw-gold-bright); border-color: var(--vw-gold-bright); color: var(--vw-text-on-gold); }
 .vw-rank--elite2 { background: var(--vw-r-legendary); border-color: var(--vw-r-legendary); color: var(--vw-text-on-gold); }
-.vw-rank--boss { background: var(--vw-zone-red); border-color: var(--vw-zone-red); color: #fff; }
+.vw-rank--boss { background: var(--vw-zone-red-strong); border-color: var(--vw-zone-red-strong); color: #fff; }
 
 /* ---------- 5. PASKI STATYSTYK ---------- */
 .vw-bar { --c: var(--vw-hp); --v: 100%; position: relative; height: 22px; background: color-mix(in srgb, var(--c) 18%, #0E0F12); border: 1px solid #14161B; box-shadow: 0 0 0 1px var(--vw-border); }
@@ -111,7 +111,9 @@ a:hover { color: #FFE7C2; text-decoration: underline; text-underline-offset: 3px
 .vw-node { position: relative; width: 64px; height: 64px; background: #14161B; border: 1px solid var(--vw-border); cursor: pointer; transition: border-color var(--vw-dur-fast), box-shadow var(--vw-dur-base); }
 .vw-node--active { outline: 1px solid currentColor; outline-offset: 3px; } /* umiejętność aktywna: podwójna ramka */
 .vw-node--capstone { width: 76px; height: 76px; }
-.vw-node[data-state="locked"] { opacity: .45; filter: grayscale(1); cursor: not-allowed; }
+/* S44: a locked node dims its content and frame, not its rank (opacity on the button made the rank unreadable) */
+.vw-node[data-state="locked"] { filter: grayscale(1); cursor: not-allowed; border-color: var(--vw-border-subtle); }
+.vw-node[data-state="locked"] > :not(.vw-node__rank) { opacity: .45; }
 .vw-node[data-state="available"] { border-color: var(--vw-gold-dark); }
 .vw-node[data-state="available"]:hover { border-color: var(--vw-gold-bright); }
 .vw-node[data-state="partial"] { border-color: var(--vw-gold); }
@@ -150,7 +152,7 @@ a:hover { color: #FFE7C2; text-decoration: underline; text-underline-offset: 3px
 .vw-callout--tip { --c: var(--vw-accent-text); }
 .vw-callout--warn { --c: var(--vw-warning); }
 .vw-callout--changed { --c: var(--vw-gold-bright); }
-.vw-callout--spoiler { --c: var(--vw-exp); }
+.vw-callout--spoiler { --c: var(--vw-exp-text); }
 .vw-callout--spoiler .vw-callout__body { filter: blur(6px); user-select: none; transition: filter var(--vw-dur-base); }
 .vw-callout--spoiler[data-open="true"] .vw-callout__body { filter: none; user-select: auto; }
 
@@ -347,6 +349,7 @@ main { flex: 1; }
 .vw-article__title { margin: 0; font: 700 var(--vw-fs-display-l)/var(--vw-lh-display-l) var(--vw-font-display); color: var(--vw-gold-bright); }
 .vw-article__badges { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
 .vw-article__badges > * { min-height: 34px; display: inline-flex; align-items: center; }
+@media (pointer: coarse) { .vw-article__badges > a { min-height: var(--vw-touch); } }
 .vw-article__lead { margin: 18px 0 0; max-width: 72ch; font-size: 20px; line-height: 1.6; color: var(--vw-text-soft); }
 .vw-article__data { margin: 14px 0 0; color: var(--vw-text-muted); }
 .vw-prose { font-size: var(--vw-fs-body-l); line-height: 1.6; color: var(--vw-text-soft); }
@@ -372,7 +375,7 @@ main { flex: 1; }
 .vw-ref--item > a { color: inherit; }
 .vw-ref .vw-item-icon { display: inline-flex; vertical-align: -5px; margin-right: 6px; }
 .vw-ref__meta, .vw-ref__n { font-weight: 400; color: var(--vw-text-muted); }
-.vw-scroll { max-width: 100%; overflow-x: auto; }
+.vw-scroll { position: relative; max-width: 100%; overflow-x: auto; } /* S44: relative keeps .vw-sr captions inside */
 .vw-table--plain tbody tr { cursor: default; }
 .vw-table--plain tbody tr:hover { background: none; }
 .vw-table--dense td { height: 36px; }
@@ -422,3 +425,8 @@ main { flex: 1; }
   .vw-prose > * + .vw-section-title { margin-top: var(--vw-s-8); }
 }
 .vw-chip--static { cursor: default; } .vw-chip--static:hover { border-color: var(--vw-border); color: inherit; }
+main:focus { outline: none; }
+
+/* S44: links inside running text are underlined (not only coloured: WCAG 1.4.1) */
+:where(p, dd, figcaption, td, .vw-callout__body, .vw-prose li, ul.rel li, ul.ores li) a:not(.vw-btn):not(.vw-chip):not([class*="card"]) { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; text-decoration-color: color-mix(in srgb, currentColor 55%, transparent); }
+:where(p, dd, figcaption, td, .vw-callout__body, .vw-prose li, ul.rel li, ul.ores li) a:not(.vw-btn):not(.vw-chip):hover { text-decoration-color: currentColor; }

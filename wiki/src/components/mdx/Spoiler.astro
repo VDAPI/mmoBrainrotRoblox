@@ -6,6 +6,6 @@ interface Props {
   title?: string;
 }
 const { title } = Astro.props;
-const lang = (Astro.params.lang ?? "pl") as Lang;
+const lang = (Astro.url.pathname.startsWith("/en/") ? "en" : "pl") as Lang;
 ---
 <Callout kind="spoiler" title={title} lang={lang}><slot /></Callout>

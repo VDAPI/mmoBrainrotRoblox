@@ -167,6 +167,8 @@ function mechanics(phase: number): Mech[] {
   .type-summon { --c: #A88BE8; } .type-zone { --c: #E8665A; } .type-buff { --c: #E0C23B; } .type-leap { --c: #E8763A; }
   .type-kill { --c: var(--vw-zone-red-text); border: 3px double var(--vw-zone-red); }
   .type { display: block; font: 800 12px/1.4 var(--vw-font-ui); letter-spacing: .14em; text-transform: uppercase; color: var(--c); }
+  /* S44: data colours are tuned for the dark UI; in the light theme the text is dark and the colour stays on the frame */
+  :global([data-theme="light"]) .type { color: var(--vw-text); }
   .mname { display: block; font-size: 17px; font-weight: 800; color: var(--vw-text); }
   .mtext { margin: 4px 0 0; font-size: 15px; color: var(--vw-text-soft); line-height: 1.45; }
   .mtext :global(p) { margin: 0; }

@@ -11,7 +11,7 @@ interface Props {
   compact?: boolean;
 }
 const { compact = false } = Astro.props;
-const lang = (Astro.params.lang ?? "pl") as Lang;
+const lang = (Astro.url.pathname.startsWith("/en/") ? "en" : "pl") as Lang;
 const zones = load("mechanics").zones;
 const maps = load("maps").maps.filter((m) => m.kind !== "other");
 const order = ["green", "yellow", "red"].filter((z) => zones[z]);

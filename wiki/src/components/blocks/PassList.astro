@@ -10,7 +10,7 @@ interface Props {
   shop?: boolean;
 }
 const { shop = false } = Astro.props;
-const lang = (Astro.params.lang ?? "pl") as Lang;
+const lang = (Astro.url.pathname.startsWith("/en/") ? "en" : "pl") as Lang;
 const premium = load("premium");
 ---
 {shop ? (

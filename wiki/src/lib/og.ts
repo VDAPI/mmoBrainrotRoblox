@@ -93,6 +93,41 @@ export function ogManifest(): OgEntry[] {
       render: hero ? ((renderSrc(hero.id, "boss", "hero") ?? renderSrc(hero.id, "boss", "full"))?.replace(/^\//, "") ?? null) : null,
       accent: hero?.aura || RED,
     });
+    // S44: the default share image (home page and every page without its own) and one per section.
+    const heroRender = hero ? ((renderSrc(hero.id, "boss", "hero") ?? renderSrc(hero.id, "boss", "full"))?.replace(/^\//, "") ?? null) : null;
+    const quests = load("quests");
+    out.push({
+      out: `img/og/${lang}/default.jpg`,
+      lang,
+      kicker: "Vaelthorn Wiki",
+      title: t(lang, "og.default.title"),
+      meta: t(lang, "og.default.meta", { items: load("items").items.length, monsters: count, quests: quests.main.length + quests.side.length }),
+      chips: [],
+      render: heroRender,
+      accent: GOLD,
+    });
+    for (const section of OG_SECTIONS) {
+      out.push({
+        out: `img/og/${lang}/section-${section}.jpg`,
+        lang,
+        kicker: "Vaelthorn Wiki",
+        title: t(lang, `nav.${section}` as Key),
+        meta: t(lang, "site.tagline"),
+        chips: [],
+        render: heroRender,
+        accent: GOLD,
+      });
+    }
   }
   return out;
+}
+
+/** Sections with their own share image (S44); other pages without an image use img/og/<lang>/default.jpg. */
+export const OG_SECTIONS = ["items", "map", "classes", "upgrading", "quests", "mechanics", "guides", "crafting", "regions"] as const;
+
+/** Share image of a page: its own, its section's, or the default (paths below the site root). */
+export function ogImageFor(lang: Lang, section: string | undefined, own?: string): string {
+  if (own) return own;
+  if (section && (OG_SECTIONS as readonly string[]).includes(section)) return `/img/og/${lang}/section-${section}.jpg`;
+  return `/img/og/${lang}/default.jpg`;
 }

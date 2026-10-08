@@ -1,23 +1,15 @@
 ---
-// Page layout (S36): <head> (title, description, hreflang, canonical, theme before paint, fonts and styles in the
-// order fonts -> tokens -> tokens.data -> components), skip link, topbar (desktop) / header (mobile), main, footer,
-// bottom tab bar on mobile and the Ctrl+K palette island. `search` marks entity pages for Pagefind.
-import "@fontsource/grenze-gotisch/500.css";
-import "@fontsource/grenze-gotisch/700.css";
-import "@fontsource/alegreya-sans/400.css";
-import "@fontsource/alegreya-sans/400-italic.css";
-import "@fontsource/alegreya-sans/500.css";
-import "@fontsource/alegreya-sans/700.css";
-import "@fontsource/alegreya-sans/800.css";
-import "@fontsource/ibm-plex-mono/400.css";
-import "@fontsource/ibm-plex-mono/500.css";
+// Page layout (S36): <head> (title, description, hreflang, canonical, theme before paint, styles in the order
+// tokens -> tokens.data -> components; S44: web fonts from /fonts/fonts.css without blocking the first paint), skip
+// link, topbar (desktop) / header (mobile), main, footer, bottom tab bar on mobile and the Ctrl+K palette (loaded on
+// first use). `search` marks entity pages for Pagefind.
 import "../styles/tokens.css";
 import "../styles/tokens.data.css";
 import "../styles/components.css";
-import { DISCORD_URL, PLAY_URL, SITE_URL } from "../config";
+import { DISCORD_URL, NOINDEX, PLAY_URL, SITE_URL } from "../config";
+import { ogImageFor } from "../lib/og";
 import { alternate as alternateOf, href, type Lang, type RouteKey } from "../i18n/routes";
 import { translateSlug } from "../lib/content";
-import SearchPalette from "../islands/SearchPalette.svelte";
 import { meta } from "../lib/data";
 import { formatDate } from "../lib/format";
 import { t, type Key } from "../lib/i18n";
@@ -44,7 +36,9 @@ const here = path.startsWith(`/${lang}/`) ? path : href(lang, "home");
 const pagePl = lang === "pl" ? here : alt;
 const pageEn = lang === "en" ? here : alt;
 const fullTitle = title ? `${title} · ${t(lang, "site.name")}` : t(lang, "site.name");
-const ogImage = new URL(og.image ?? "/img/og/default-art.png", SITE_URL).href;
+const ogImage = new URL(ogImageFor(lang, section, og.image), SITE_URL).href;
+const ogAlt = og.alt ?? (og.image ? undefined : title || t(lang, "og.default.alt"));
+const robotsNoindex = noindex || NOINDEX;
 const data = meta();
 const dataDate = formatDate(data.dataDate, lang);
 
@@ -76,6 +70,20 @@ const tabHref = (key: RouteKey) => (key === "home" ? href(lang, "home") : sectio
 const footerSections = SECTIONS.filter((s) => s.ready && s.id !== "styleguide");
 const searchMeta = search?.meta ?? {};
 const navText = (id: string) => t(lang, `nav.${id}` as Key);
+// S44: the Ctrl+K palette is loaded on first use (script below), not hydrated on every page.
+const paletteProps = {
+  lang,
+  searchHref: href(lang, "search"),
+  labels: {
+    label: t(lang, "palette.label"),
+    placeholder: t(lang, "search.placeholder"),
+    hint: t(lang, "palette.hint"),
+    close: t(lang, "palette.close"),
+    all: t(lang, "palette.allTypes"),
+    pending: t(lang, "search.pending"),
+    types: Object.fromEntries((["item", "monster", "boss", "map", "area", "cave", "npc", "quest", "skill", "class", "guide", "mechanic"] as const).map((k) => [k, t(lang, `search.badge.${k}`)])),
+  },
+};
 ---
 <!doctype html>
 <html lang={lang}>
@@ -84,22 +92,27 @@ const navText = (id: string) => t(lang, `nav.${id}` as Key);
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
-    {noindex && <meta name="robots" content="noindex" />}
+    {robotsNoindex && <meta name="robots" content="noindex" />}
     <link rel="canonical" href={new URL(here, SITE_URL).href} />
     <link rel="alternate" hreflang="pl" href={new URL(pagePl, SITE_URL).href} />
     <link rel="alternate" hreflang="en" href={new URL(pageEn, SITE_URL).href} />
     <link rel="alternate" hreflang="x-default" href={new URL(pagePl, SITE_URL).href} />
     <meta name="theme-color" content="#14161B" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <!-- S44: fonts load after the first paint (scripts/fonts.mjs); size-matched local fallbacks until then -->
+    <link rel="stylesheet" href="/fonts/fonts.css" media="print" onload="this.media='all'" />
+    <noscript><link rel="stylesheet" href="/fonts/fonts.css" /></noscript>
     <meta property="og:title" content={title || t(lang, "site.name")} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content={search ? "article" : "website"} />
     <meta property="og:site_name" content={t(lang, "site.name")} />
     <meta property="og:locale" content={lang === "pl" ? "pl_PL" : "en_US"} />
+    <meta property="og:locale:alternate" content={lang === "pl" ? "en_US" : "pl_PL"} />
     <meta property="og:url" content={new URL(here, SITE_URL).href} />
     <meta property="og:image" content={ogImage} />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    {og.alt && <meta property="og:image:alt" content={og.alt} />}
+    {ogAlt && <meta property="og:image:alt" content={ogAlt} />}
     <meta name="twitter:card" content="summary_large_image" />
     <script is:inline>
       try {
@@ -145,7 +158,7 @@ const navText = (id: string) => t(lang, `nav.${id}` as Key);
       </div>
     </header>
 
-    <main id="main" data-pagefind-body={search ? "" : undefined} data-pagefind-filter={search ? `type:${search.type}` : undefined}>
+    <main id="main" tabindex="-1" data-pagefind-body={search ? "" : undefined} data-pagefind-filter={search ? `type:${search.type}` : undefined}>
       {/* value from an attribute: Pagefind splits "key:value" lists on commas (tooltips are JSON) */}
       {search && Object.entries(searchMeta).map(([key, value]) => <span hidden data-pagefind-meta={`${key}[data-v]`} data-v={value}></span>)}
       <slot />
@@ -194,33 +207,36 @@ const navText = (id: string) => t(lang, `nav.${id}` as Key);
       })}
     </nav>
 
-    <SearchPalette
-      client:idle
-      lang={lang}
-      searchHref={href(lang, "search")}
-      labels={{
-        label: t(lang, "palette.label"),
-        placeholder: t(lang, "search.placeholder"),
-        hint: t(lang, "palette.hint"),
-        close: t(lang, "palette.close"),
-        all: t(lang, "palette.allTypes"),
-        pending: t(lang, "search.pending"),
-        types: {
-          item: t(lang, "search.badge.item"),
-          monster: t(lang, "search.badge.monster"),
-          boss: t(lang, "search.badge.boss"),
-          map: t(lang, "search.badge.map"),
-          area: t(lang, "search.badge.area"),
-          cave: t(lang, "search.badge.cave"),
-          npc: t(lang, "search.badge.npc"),
-          quest: t(lang, "search.badge.quest"),
-          skill: t(lang, "search.badge.skill"),
-          class: t(lang, "search.badge.class"),
-          guide: t(lang, "search.badge.guide"),
-          mechanic: t(lang, "search.badge.mechanic"),
-        },
-      }}
-    />
+    <div id="vw-palette-root" data-props={JSON.stringify(paletteProps)}></div>
+    <script>
+      // S44: Ctrl/Cmd+K or a click on the topbar search field loads Svelte and the palette once and opens it; from
+      // then on the palette handles its keys and clicks itself (no Svelte runtime on pages that never use it).
+      let state: "idle" | "loading" | "ready" = "idle";
+      async function load() {
+        if (state !== "idle") return;
+        state = "loading";
+        const root = document.getElementById("vw-palette-root");
+        if (!root) return;
+        const [{ mount }, { default: Palette }] = await Promise.all([import("svelte"), import("../islands/SearchPalette.svelte")]);
+        // the .svelte import is typed as an Astro component here; at runtime it is the Svelte component
+        mount(Palette as unknown as import("svelte").Component<Record<string, unknown>>, { target: root, props: { ...JSON.parse(root.dataset.props ?? "{}"), startOpen: true } });
+        state = "ready";
+      }
+      window.addEventListener("keydown", (event) => {
+        if (state === "ready") return;
+        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
+          event.preventDefault();
+          void load();
+        }
+      });
+      document.querySelectorAll<HTMLElement>(".vw-search[data-palette-open]").forEach((field) =>
+        field.addEventListener("click", (event) => {
+          if (state === "ready") return;
+          event.preventDefault();
+          void load();
+        }),
+      );
+    </script>
 
     <script>
       // Language links remember the choice; the theme button switches and remembers the theme.

@@ -139,7 +139,7 @@ const placeText = (e: (typeof entries)[number]) => e.placeList[0]?.name ?? "";
               {e.rank === "boss" ? (
                 <MonsterCard boss={getBoss(e.id)} lang={lang} href={e.href} />
               ) : (
-                <MonsterCard monster={getMonster(e.id)} variant={e.rank} lang={lang} href={e.href} eager={i < 4} />
+                <MonsterCard monster={getMonster(e.id)} variant={e.rank} lang={lang} href={e.href} eager={i < 2} />
               )}
             </li>
           ))}
