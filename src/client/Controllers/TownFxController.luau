@@ -12,6 +12,11 @@
 --   * S45: the part attribute FxColor (Color3) colours the flames of "fire" and "candle" and the night glow of
 --     "lamp" (violet ritual fire, cold blue flames and lanterns, green witch light); bubbles: bubbles rising and
 --     popping on rot pools and cauldrons (in the FxColor);
+--   * S46 (Ashen Wastes): lava (the Neon plates pulse between dark and bright orange, a rare bubble bursts in
+--     sparks), lavaCrust (dark floes drifting with the flow), lavafall (falling drops, sparks), ember (flickering
+--     coal, rare sparks), vent (heat shimmer, sparks and smoke: fumaroles, the crater), forge (flicker and bursts of
+--     sparks), glow (slow "breathing" brightness of the part and of its lights: the Colossus' eyes, runes, the
+--     pyramid's entrance); lava lights are switched by Controllers/RegionLightController;
 --   * window / lamp: at night (Logic/DayCycle) ~60% of the windows glow warm (chosen by position) and lamps turn
 --     to Neon with their PointLights on; by day both go back to their own colour and material and lamp lights
 --     are off. Switching runs over several frames.
@@ -54,6 +59,16 @@ local originals: { [BasePart]: Original } = {}
 local nightApplied: { [Instance]: boolean } = {}
 local nightQueue: { Instance } = {}
 local isNight = false
+-- S46: pulsing lava, drifting crust, breathing glows, the forges' bursts of sparks
+local LAVA_RADIUS = 260
+local LAVA_DARK = Color3.fromHex("#FF5A1A")
+local LAVA_BRIGHT = Color3.fromHex("#FFB040")
+local pulses: { [BasePart]: number } = {}
+local crusts: { [BasePart]: { base: CFrame, phase: number } } = {}
+local breathers: { [BasePart]: { color: Color3, phase: number } } = {}
+local breathLights: { [PointLight]: { base: number, phase: number } } = {}
+local forges: { [ParticleEmitter]: number } = {}
+local slowClock = 0
 
 local function emitter(parent: Instance, props: { [string]: any }): ParticleEmitter
 	local e = Instance.new("ParticleEmitter")
@@ -254,6 +269,153 @@ local function addFoam(part: BasePart)
 	shimmers[part] = part.Transparency
 end
 
+-- S46 effects -----------------------------------------------------------------------------------------------------
+
+local function phaseOf(part: BasePart): number
+	local p = part.Position
+	return (p.X * 0.11 + p.Z * 0.07) % (math.pi * 2)
+end
+
+local function sparks(part: BasePart, name: string, rate: number, speed: number): ParticleEmitter
+	return emitter(part, {
+		Name = name,
+		Color = ColorSequence.new(Color3.fromHex("#FFE08A"), Color3.fromHex("#FF5A1A")),
+		Transparency = NumberSequence.new(0, 1),
+		Size = NumberSequence.new(0.22, 0.05),
+		Lifetime = NumberRange.new(0.6, 1.4),
+		Rate = rate,
+		Speed = NumberRange.new(speed * 0.6, speed),
+		SpreadAngle = Vector2.new(35, 35),
+		Acceleration = Vector3.new(0, -6, 0),
+		LightEmission = 1,
+		LightInfluence = 0,
+		EmissionDirection = Enum.NormalId.Top,
+	})
+end
+
+local function haze(part: BasePart, rate: number)
+	emitter(part, {
+		Name = "TownHaze",
+		Color = ColorSequence.new(Color3.fromHex("#FFD8B0")),
+		Transparency = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 1),
+			NumberSequenceKeypoint.new(0.3, 0.94),
+			NumberSequenceKeypoint.new(1, 1),
+		}),
+		Size = NumberSequence.new(3, 7),
+		Lifetime = NumberRange.new(2, 3.5),
+		Rate = rate,
+		Speed = NumberRange.new(2, 4),
+		SpreadAngle = Vector2.new(15, 15),
+		LightInfluence = 0.3,
+		EmissionDirection = Enum.NormalId.Top,
+	})
+end
+
+local function addLava(part: BasePart)
+	if pulses[part] then
+		return
+	end
+	pulses[part] = phaseOf(part)
+	if part.Size.X * part.Size.Z > 40 and not part:FindFirstChild("LavaPop") then
+		-- a rare bubble bursting in sparks
+		sparks(part, "LavaPop", 0.25, 9)
+	end
+end
+
+local function addLavafall(part: BasePart)
+	if part:FindFirstChild("TownLavaFall") then
+		return
+	end
+	emitter(part, {
+		Name = "TownLavaFall",
+		Color = ColorSequence.new(LAVA_BRIGHT, LAVA_DARK),
+		Transparency = NumberSequence.new(0.1, 0.8),
+		Size = NumberSequence.new(1.2, 0.6),
+		Lifetime = NumberRange.new(0.6, 1),
+		Rate = 26,
+		Speed = NumberRange.new(3, 6),
+		SpreadAngle = Vector2.new(8, 8),
+		Acceleration = Vector3.new(0, -50, 0),
+		LightEmission = 1,
+		LightInfluence = 0,
+		EmissionDirection = Enum.NormalId.Bottom,
+	})
+	sparks(part, "LavaSparks", 6, 12)
+	pulses[part] = phaseOf(part)
+end
+
+local function addEmber(part: BasePart)
+	if part:FindFirstChild("EmberSparks") then
+		return
+	end
+	sparks(part, "EmberSparks", 0.6, 4)
+	pulses[part] = phaseOf(part)
+end
+
+local function addVent(part: BasePart)
+	if part:FindFirstChild("TownHaze") then
+		return
+	end
+	haze(part, 3)
+	sparks(part, "VentSparks", 4, 10)
+	addSmoke(part)
+	pulses[part] = phaseOf(part)
+end
+
+local function addForge(part: BasePart)
+	if part:FindFirstChild("ForgeSparks") then
+		return
+	end
+	local e = sparks(part, "ForgeSparks", 0, 14)
+	forges[e] = 0
+	breathers[part] = { color = part.Color, phase = phaseOf(part) }
+end
+
+local function addGlow(part: BasePart)
+	if part.Name == "Light" then
+		local light = part:FindFirstChildOfClass("PointLight")
+		if light then
+			breathLights[light] = { base = light.Brightness, phase = phaseOf(part) }
+		end
+		return
+	end
+	breathers[part] = { color = part.Color, phase = phaseOf(part) }
+end
+
+-- Lava pulses, crust drifts, glows breathe (15 times a second, near the camera).
+local function animateLava(now: number, at: Vector3)
+	for part, phase in pulses do
+		if (part.Position - at).Magnitude < LAVA_RADIUS then
+			local k = 0.5 + 0.5 * math.sin(now * 0.9 + phase)
+			part.Color = LAVA_DARK:Lerp(LAVA_BRIGHT, math.clamp(k * 0.8 + 0.2 * math.noise(now * 0.7, phase), 0, 1))
+		end
+	end
+	for part, crust in crusts do
+		if (crust.base.Position - at).Magnitude < LAVA_RADIUS then
+			local off = ((now * 0.7 + crust.phase * 3) % 8) - 4
+			part.CFrame = crust.base * CFrame.new(0, 0, off)
+		end
+	end
+	for part, b in breathers do
+		if (part.Position - at).Magnitude < LAVA_RADIUS * 2 then
+			local k = 0.55 + 0.45 * math.sin(now * 0.8 + b.phase)
+			part.Color = b.color:Lerp(Color3.new(0, 0, 0), (1 - k) * 0.6)
+		end
+	end
+	for light, b in breathLights do
+		light.Brightness = b.base * (0.5 + 0.5 * math.sin(now * 0.8 + b.phase))
+	end
+	for e, nextAt in forges do
+		if not e.Parent then
+			forges[e] = nil
+		elseif now >= nextAt then
+			e:Emit(12)
+			forges[e] = now + 1.5 + (math.noise(now, 0.3) + 0.5) * 2.5
+		end
+	end
+end
+
 local function spinnerKey(build: string, kind: string): string
 	return `{kind}:{build}`
 end
@@ -359,6 +521,22 @@ local function onAdded(instance: Instance)
 		addCandle(part)
 	elseif fx == "bubbles" then
 		addBubbles(part)
+	elseif fx == "lava" then
+		if part.Name ~= "Light" then
+			addLava(part)
+		end
+	elseif fx == "lavaCrust" then
+		crusts[part] = { base = part.CFrame, phase = phaseOf(part) }
+	elseif fx == "lavafall" then
+		addLavafall(part)
+	elseif fx == "ember" then
+		addEmber(part)
+	elseif fx == "vent" then
+		addVent(part)
+	elseif fx == "forge" then
+		addForge(part)
+	elseif fx == "glow" then
+		addGlow(part)
 	elseif fx == "window" then
 		nightParts[part] = "window"
 		applyNight(part)
@@ -379,6 +557,9 @@ local function onRemoved(instance: Instance)
 	local part = instance
 	flags[part] = nil
 	shimmers[part] = nil
+	pulses[part] = nil
+	crusts[part] = nil
+	breathers[part] = nil
 	nightParts[part] = nil
 	lampLights[part] = nil
 	originals[part] = nil
@@ -386,6 +567,7 @@ local function onRemoved(instance: Instance)
 	local light = part:FindFirstChildOfClass("PointLight")
 	if light then
 		flickers[light] = nil
+		breathLights[light] = nil
 	end
 	for key, s in spinners do
 		s.members[part] = nil
@@ -436,6 +618,10 @@ local function animate(now: number)
 	end
 	for part, base in shimmers do
 		part.Transparency = math.clamp(base + 0.08 * math.sin(now * 2.2 + part.Position.X), 0, 1)
+	end
+	if now - slowClock >= 1 / 15 then
+		slowClock = now
+		animateLava(now, at)
 	end
 end
 

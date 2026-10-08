@@ -298,3 +298,243 @@ describe("Duskwood terrain", function()
 		end
 	end)
 end)
+
+-- S46: the desert shapes on small examples (flat ground, no noise), one test each.
+local ShapeTypes = require("../src/shared/Data/Terrain/Types")
+local AreaTypes = require("../src/shared/Data/Areas/Types")
+
+local function testShape(extra: { [string]: any }): ShapeTypes.Shape
+	local s: any = {
+		map = "test",
+		seed = 7,
+		writer = { bottom = -24, top = 72, margin = 0 },
+		lakeLevel = -20,
+		lakeDepth = 3,
+		lakeShore = 8,
+		swell = { amp = 0, scale = 100 },
+		detail = { amp = 0, scale = 50 },
+		fine = { amp = 0, scale = 10 },
+		zones = {},
+		hills = {},
+		ridges = {},
+		plateaus = {},
+		gorges = {},
+		basins = {},
+		marshes = {},
+		flats = {},
+		ramps = {},
+		crossings = {},
+		themes = {},
+		defaultTheme = "plain",
+		themeJitter = 0,
+		patches = {},
+		materialRules = { { mat = "Ground" } },
+		flora = {},
+		respawns = {},
+	}
+	for k, v in extra do
+		s[k] = v
+	end
+	return s
+end
+
+local function testAreas(roads: { AreaTypes.Road }?): AreaTypes.MapAreas
+	return { map = "test", roads = roads or {}, lakes = {}, avoid = {}, caves = {}, areas = {} }
+end
+
+describe("Desert shapes (S46)", function()
+	it("dunes: crests across the wind, flat valleys 40+ studs wide, a steep lee and a gentle windward side", function()
+		local D = RegionTerrain.new(
+			testShape({
+				dunes = {
+					{
+						rect = { -400, -400, 400, 400 },
+						blend = 10,
+						wind = 90,
+						wave = 120,
+						height = 12,
+						lee = 0.2,
+						valley = 0.36,
+						wander = 0,
+						material = "Snow",
+					},
+				},
+				materialRules = { { dune = true, mat = "@dune" }, { mat = "Ground" } },
+			}),
+			testAreas()
+		)
+		local top, flatRun, bestRun = 0, 0, 0
+		local up, down = 0, 0
+		local prev = D.height(-120, 0)
+		for x = -119, 120 do
+			local h = D.height(x, 0)
+			top = math.max(top, h)
+			if h < 0.2 then
+				flatRun += 1
+				bestRun = math.max(bestRun, flatRun)
+			else
+				flatRun = 0
+			end
+			up = math.max(up, h - prev)
+			down = math.max(down, prev - h)
+			prev = h
+		end
+		expect(top >= 12 * 0.6).toBe(true)
+		expect(bestRun >= 40).toBe(true)
+		expect(down > up).toBe(true)
+		expect(D.duneWeight(0, 0)).toBe(1)
+		-- the field's own material (S47: snow drifts)
+		local crest = -120 + 0.8 * 120
+		expect(D.material(crest - 6, 0)).toBe("Snow")
+	end)
+
+	it("mesas: a flat top, walls nobody stands on, a scree skirt, rock layers on the walls", function()
+		local M = RegionTerrain.new(
+			testShape({
+				mesas = {
+					{
+						x = 0,
+						z = 0,
+						rx = 40,
+						rz = 40,
+						rot = 0,
+						top = 30,
+						cliff = 8,
+						ragged = 0,
+						skirt = 10,
+						skirtH = 3,
+					},
+				},
+				strata = { period = 6, base = "Sandstone", bands = { { "Basalt", 0, 0.2 } } },
+				materialRules = { { minSlope = 40, rock = true, mat = "@strata" }, { mat = "Ground" } },
+			}),
+			testAreas()
+		)
+		expect(math.abs(M.height(0, 0) - 30) < 0.5).toBe(true)
+		expect(math.abs(M.height(20, 10) - 30) < 0.5).toBe(true)
+		expect(M.walkable(10, 0)).toBe(true)
+		expect(M.walkable(44, 0)).toBe(false)
+		expect(M.height(50, 0) > 0 and M.height(50, 0) < 3.5).toBe(true)
+		expect(M.height(70, 0)).toBe(0)
+		expect(M.rockAt(44, 0)).toBe(true)
+		expect(M.rockAt(80, 0)).toBe(false)
+		local seen: { [string]: boolean } = {}
+		for x = 40, 48, 0.5 do
+			seen[M.material(x, 3)] = true
+		end
+		expect(seen.Sandstone and seen.Basalt).toBe(true)
+	end)
+
+	it("spires: tall, narrow, steep, a cap of their own material, nothing past their foot", function()
+		local S = RegionTerrain.new(
+			testShape({ spires = { { x = 0, z = 0, r = 12, h = 40, lean = 90, asym = 0.3 } }, capMaterial = "Basalt" }),
+			testAreas()
+		)
+		expect(S.height(0, 0) >= 36).toBe(true)
+		expect(S.height(25, 0)).toBe(0)
+		expect(S.walkable(7, 0)).toBe(false)
+		expect(S.walkable(30, 0)).toBe(true)
+		expect(S.material(0, 0)).toBe("Basalt")
+		-- one side is steeper
+		expect(S.height(-6, 0) > S.height(6, 0)).toBe(true)
+	end)
+
+	it(
+		"lava: a pool and a river falling from it, banks, no standing within 12 studs, a stone bridge for a road",
+		function()
+			local L = RegionTerrain.new(
+				testShape({
+					lava = {
+						pools = { { id = "p", x = 0, z = 0, rx = 20, rz = 20, rot = 0, level = 2, wall = 1, bank = 4 } },
+						rivers = {
+							{
+								id = "r",
+								points = { 0, 0, 100, 0, 200, 0, 300, 0 },
+								widths = { 8, 8, 10, 10 },
+								level = 2,
+								sink = 1.5,
+								wall = 1.2,
+								bank = 5,
+								from = "pool:1",
+								into = "end",
+							},
+						},
+						falls = {},
+					},
+				}),
+				testAreas({ { points = { 150, -100, 150, 100 }, width = 8, material = "Pavement" } })
+			)
+			expect(L.lava(0, 0)).toBe(2)
+			expect(L.height(0, 0)).toBe(2)
+			expect(L.lava(250, 0) ~= nil).toBe(true)
+			expect(L.isWater(250, 0)).toBe(false)
+			expect(L.material(250, 0)).toBe("CrackedLava")
+			expect(L.lavaDistance(0, 0) < 0).toBe(true)
+			expect(L.walkable(0, 28)).toBe(false)
+			expect(L.walkable(250, 14)).toBe(false)
+			expect(L.walkable(250, 40)).toBe(true)
+			local line = L.lavaLine(1)
+			local last = math.huge
+			local s = 0
+			while s <= line.length do
+				local level = L.lavaLevel(1, s)
+				expect(level <= last + 1e-6).toBe(true)
+				last = level
+				s += 4
+			end
+			local crossings = L.crossings()
+			expect(#crossings).toBe(1)
+			expect(crossings[1].lava).toBe(true)
+			expect(crossings[1].kind).toBe("stone")
+			expect(crossings[1].deck > crossings[1].water).toBe(true)
+		end
+	)
+
+	it("cracks: a glowing crack is lava for the groups, a cold one is only a groove", function()
+		local C = RegionTerrain.new(
+			testShape({
+				cracks = {
+					{ points = { -50, 0, 50, 0 }, width = 6, depth = 3, glow = true },
+					{ points = { -50, 100, 50, 100 }, width = 6, depth = 3, glow = false },
+				},
+			}),
+			testAreas()
+		)
+		expect(C.height(0, 0) < -2).toBe(true)
+		expect(C.lavaDistance(0, 0) < 0).toBe(true)
+		expect(C.walkable(0, 9)).toBe(false)
+		expect(C.material(0, 0)).toBe("CrackedLava")
+		expect(C.height(0, 100) < -2).toBe(true)
+		expect(C.lavaDistance(0, 100) > 1e6).toBe(true)
+		expect(C.material(0, 100)).toBe("Basalt")
+	end)
+
+	it("dry lakes: a flat floor under the rim, a salt crust cracked into polygons, the old waterline", function()
+		local Y = RegionTerrain.new(
+			testShape({ drylakes = { { x = 0, z = 0, rx = 100, rz = 70, rot = 0, depth = 4, shore = 20 } } }),
+			testAreas()
+		)
+		local lo, hi = math.huge, -math.huge
+		for x = -50, 50, 10 do
+			for z = -30, 30, 10 do
+				local h = Y.height(x, z)
+				lo, hi = math.min(lo, h), math.max(hi, h)
+			end
+		end
+		expect(hi - lo <= 1).toBe(true)
+		expect(Y.height(140, 0) - hi >= 3).toBe(true)
+		local seen: { [string]: boolean } = {}
+		for x = -60, 60, 2 do
+			seen[Y.material(x, 7)] = true
+		end
+		expect(seen.Concrete and seen.Ground).toBe(true)
+		local line = false
+		for x = 60, 100 do
+			if Y.material(x, 0) == "Sand" then
+				line = true
+			end
+		end
+		expect(line).toBe(true)
+		expect(Y.dryWeight(0, 0)).toBe(1)
+	end)
+end)

@@ -66,6 +66,11 @@ MMORPG na Roblox (Margonem w 3D). Luau + Rojo + Wally + Fusion 0.3 + ProfileStor
   `lune run tools/regiondump.luau <mapa> out.json 8 builds` + `python tools/regionmap.py out.json out.png --overlay`,
   `lune run tools/regionview.luau <mapa> out.json x1 z1 x2 z2` + `python tools/regionview.py out.json out.png --eye … --look … --dusk`.
   Zmiana kształtu Boru = świadomie `lune run tools/fixture_duskwood.luau` (fixture w `tests/regionterrain.spec`).
+  S46 (Spalone Pustkowia): kształty `dunes`, `mesas`, `spires`, `lava` (`rivers`/`pools`/`falls`), `cracks`, `drylakes`,
+  `strata` w `Data/Terrain/<mapa>` (opis pól w `Data/Terrain/Types`); lawa to teren `CrackedLava` + świecenie klienta
+  (tagi `lava`, `lavaCrust`, `lavafall`, `ember`, `vent`, `forge`, `glow`; światła z tagiem `lava` włącza
+  `RegionLightController`); nic nie stoi bliżej niż 12 st. od lawy (`walkable`). Zmiana kształtu Pustkowi = świadomie
+  `lune run tools/fixture_ashen.luau` (fixture w `tests/ashen.spec`). Admin: `/terraininfo`, `/worldfx`.
 
 - **Quest poboczny** (S27): wpis w `Data/Quests/Side.luau` (`side(...)`: giver, turnIn, arc, pages, requires,
   cele `use`/`deliver`/`kill` z `area`…) + teksty `quest.<id>.title/.p1..pN/.progress/.done` (PL i EN); nowy NPC w

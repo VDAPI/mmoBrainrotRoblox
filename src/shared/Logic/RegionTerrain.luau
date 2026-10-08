@@ -39,6 +39,8 @@ RegionTerrain.HALF = 800
 RegionTerrain.WALKABLE_SLOPE = math.tan(math.rad(32)) -- the Meadows' limit
 -- Monster groups and arrivals keep this far from any water of the terrain (marsh pools, basins, streams).
 RegionTerrain.WATER_CLEARANCE = 12
+-- S46: ... and this far from lava and glowing cracks (lava is scenery: no damage, nobody stands next to it).
+RegionTerrain.LAVA_CLEARANCE = 12
 -- Every terrain material a region may paint (the writer converts the names to Enum.Material).
 RegionTerrain.MATERIALS = {
 	"Grass",
@@ -87,6 +89,21 @@ export type Info = {
 	gorge: boolean, -- inside a gorge (floor or walls)
 	plateau: boolean, -- on a plateau's top or edge
 	basin: number, -- 0..1 how deep in a basin
+	-- S46 (math.huge / false / 0 / "" where the shape has none)
+	lava: number, -- distance past the edge of the nearest lava or glowing crack (negative inside)
+	lavaD: number, -- distance past the edge of the nearest lava river or pool
+	lavaLevel: number, -- its surface
+	lavaKind: string, -- "" | "river" | "pool" | "crust" | "island"
+	lavaBank: number, -- its bank width
+	crack: number, -- distance past the edge of the nearest crack
+	crackGlow: boolean,
+	rock: boolean, -- on a mesa or a spire (top, wall or scree)
+	cap: string, -- material of a mesa's or spire's top here ("" elsewhere)
+	dune: number, -- 0..1 weight of a dune field
+	duneMat: string,
+	dry: number, -- 0..1 weight of a dry lake's floor
+	dryE: number, -- normalised distance from the dry lake's centre (1 on the old shore)
+	dryLake: number, -- index of that dry lake (0: none)
 }
 
 export type Crossing = {
@@ -99,7 +116,8 @@ export type Crossing = {
 	water: number,
 	kind: string, -- "stone" | "wood" | "ford"
 	road: number,
-	stream: number,
+	stream: number, -- index of the stream (or of the lava river when `lava`)
+	lava: boolean?, -- S46: a road over a lava river (`water` is the lava surface)
 }
 
 export type Terrain = {
@@ -132,6 +150,15 @@ export type Terrain = {
 	gorgeFloor: (x: number, z: number) -> (boolean, number),
 	plateauAt: (x: number, z: number) -> (boolean, number),
 	basinWeight: (x: number, z: number) -> number,
+	-- S46
+	lava: (x: number, z: number) -> number?,
+	lavaDistance: (x: number, z: number) -> number,
+	crackDistance: (x: number, z: number) -> (number, boolean),
+	lavaLine: (index: number) -> TerrainLayers.Line,
+	lavaLevel: (index: number, s: number) -> number,
+	rockAt: (x: number, z: number) -> boolean,
+	duneWeight: (x: number, z: number) -> number,
+	dryWeight: (x: number, z: number) -> number,
 }
 
 -- Spatial index of polyline segments ---------------------------------------------------------------------------
@@ -221,6 +248,28 @@ local function polygonDist(poly: { number }, x: number, z: number): (number, num
 	end
 	return if inside then -best else best, bestI, bestT
 end
+
+-- S46: seams of a polygon pattern (salt crust, crusted lava): how close (x, z) lies to the border between two cells
+-- of a jittered grid `size` studs wide (0 on the border).
+local function cellSeam(x: number, z: number, size: number, seed: number): number
+	local gx, gz = math.floor(x / size), math.floor(z / size)
+	local d1, d2 = math.huge, math.huge
+	for i = -1, 1 do
+		for k = -1, 1 do
+			local cx, cz = gx + i, gz + k
+			local px = (cx + 0.15 + 0.7 * TerrainLayers.hash(cx, cz, seed)) * size
+			local pz = (cz + 0.15 + 0.7 * TerrainLayers.hash(cx, cz, seed + 7)) * size
+			local d = math.sqrt((x - px) ^ 2 + (z - pz) ^ 2)
+			if d < d1 then
+				d1, d2 = d, d1
+			elseif d < d2 then
+				d2 = d
+			end
+		end
+	end
+	return (d2 - d1) / 2
+end
+RegionTerrain.cellSeam = cellSeam
 
 -- Builds the height function of one map --------------------------------------------------------------------------
 
@@ -330,6 +379,65 @@ function RegionTerrain.new(shape: ShapeTypes.Shape, areas: AreaTypes.MapAreas): 
 	for _, lake in LAKES do
 		local r = lake.r + shape.lakeShore + 10
 		table.insert(lakeBoxes, { lake.x - r, lake.z - r, lake.x + r, lake.z + r })
+	end
+
+	-- S46: dunes, mesas, spires, cracks, dry lakes and lava (all optional; maps without them are unchanged).
+	local DUNES: { ShapeTypes.Dunes } = shape.dunes or {}
+	local MESAS: { ShapeTypes.Mesa } = shape.mesas or {}
+	local SPIRES: { ShapeTypes.Spire } = shape.spires or {}
+	local CRACKS: { ShapeTypes.Crack } = shape.cracks or {}
+	local DRYLAKES: { ShapeTypes.DryLake } = shape.drylakes or {}
+	local LAVA: ShapeTypes.Lava = shape.lava or { rivers = {}, pools = {}, falls = {} }
+	local CAP = shape.capMaterial or "Basalt"
+	local FALLBACK = shape.fallback or "LeafyGrass"
+	local LAVA_REACH = 36 -- lava and crack distances are exact up to this far from the edge
+
+	local mesaBoxes: { { number } } = {}
+	for _, m in MESAS do
+		local reach = m.cliff + m.skirt + m.ragged * 2 + 4
+		local box
+		if m.poly then
+			box = { math.huge, math.huge, -math.huge, -math.huge }
+			for i = 1, #m.poly - 1, 2 do
+				box[1], box[2] = math.min(box[1], m.poly[i]), math.min(box[2], m.poly[i + 1])
+				box[3], box[4] = math.max(box[3], m.poly[i]), math.max(box[4], m.poly[i + 1])
+			end
+		else
+			local r = math.max(m.rx or 0, m.rz or 0)
+			box = { (m.x or 0) - r, (m.z or 0) - r, (m.x or 0) + r, (m.z or 0) + r }
+		end
+		table.insert(mesaBoxes, { box[1] - reach, box[2] - reach, box[3] + reach, box[4] + reach })
+	end
+
+	local crackLines: { TerrainLayers.Line } = {}
+	for _, c in CRACKS do
+		table.insert(crackLines, TerrainLayers.line(TerrainLayers.pairs(c.points)))
+	end
+	local crackGrid = index(crackLines, function(li: number): number
+		return CRACKS[li].width / 2 + LAVA_REACH
+	end)
+
+	local RIVERS = LAVA.rivers
+	local POOLS = LAVA.pools
+	local riverLines: { TerrainLayers.Line } = {}
+	for _, r in RIVERS do
+		table.insert(riverLines, TerrainLayers.line(TerrainLayers.pairs(r.points)))
+	end
+	local riverGrid = index(riverLines, function(li: number): number
+		local widest = 0
+		for _, w in RIVERS[li].widths do
+			widest = math.max(widest, w)
+		end
+		return widest / 2 + math.max(RIVERS[li].bank, LAVA_REACH) + 2
+	end)
+	local poolBoxes: { { number } } = {}
+	for _, p in POOLS do
+		local r = math.max(p.rx, p.rz) * 1.1 + math.max(p.bank, LAVA_REACH) + 2
+		table.insert(poolBoxes, { p.x - r, p.z - r, p.x + r, p.z + r })
+	end
+	local dryEdge: { number } = {}
+	for i, dl in DRYLAKES do
+		dryEdge[i] = math.clamp(dl.shore / ((dl.rx + dl.rz) / 2), 0.05, 0.6)
 	end
 
 	-- Layers --------------------------------------------------------------------------------------------------
@@ -503,12 +611,155 @@ function RegionTerrain.new(shape: ShapeTypes.Shape, areas: AreaTypes.MapAreas): 
 		return if m and m.water then m.water else LAKE
 	end
 
+	-- S46 layers ---------------------------------------------------------------------------------------------------
+
+	-- Dune field: height added, the field's weight and its material.
+	local function dunesAt(x: number, z: number): (number, number, string)
+		for _, d in DUNES do
+			local w = softRect(d.rect, d.blend, x, z)
+			if w > 0 then
+				local b = math.rad(d.wind)
+				local along = x * math.sin(b) - z * math.cos(b) + d.wander * (fbm(x, z, 170, SEED + 50, 2) - 0.5) * 2
+				local u = along / d.wave
+				local f = u - math.floor(u)
+				local prof
+				if f < d.valley then
+					prof = 0
+				elseif f < 1 - d.lee then
+					prof = smoothstep((f - d.valley) / (1 - d.lee - d.valley))
+				else
+					prof = 1 - smoothstep((f - (1 - d.lee)) / d.lee)
+				end
+				local amp = d.height * (0.6 + 0.4 * fbm(x, z, 140, SEED + 52, 2))
+				return amp * prof * w, w, d.material or "Sand"
+			end
+		end
+		return 0, 0, ""
+	end
+
+	-- Body of a mesa over the ground `g`: its height (nil outside) and whether the point is on the flat top.
+	local function mesaHeight(mi: number, x: number, z: number, g: number): (number?, boolean)
+		local m = MESAS[mi]
+		local d
+		if m.poly then
+			d = polygonDist(m.poly, x, z)
+		else
+			local rx, rz = m.rx or 1, m.rz or 1
+			d = (TerrainLayers.ellipse(m.x or 0, m.z or 0, rx, rz, m.rot or 0, x, z) - 1) * (rx + rz) / 2
+		end
+		-- a ragged outline cut by gullies
+		d += m.ragged * ((fbm(x, z, 23, SEED + 60 + mi, 2) - 0.5) * 2 + 0.6 * (fbm(x, z, 8, SEED + 61 + mi, 1) - 0.5) * 2)
+		if d <= 0 then
+			return m.top + 0.6 * (fbm(x, z, 15, SEED + 62, 2) - 0.5), true
+		end
+		local foot = g + m.skirtH
+		if d < m.cliff then
+			return lerp(m.top, foot, smootherstep(d / m.cliff)), false
+		end
+		local s = d - m.cliff
+		if s < m.skirt then
+			return g + m.skirtH * (1 - s / m.skirt) ^ 1.3, false
+		end
+		return nil, false
+	end
+
+	-- Body of a spire over the ground `g`: its height (nil outside) and whether the point is on its cap.
+	local function spireHeight(si: number, x: number, z: number, g: number): (number?, boolean)
+		local s = SPIRES[si]
+		local dx, dz = x - s.x, z - s.z
+		if math.abs(dx) > s.r * 1.5 or math.abs(dz) > s.r * 1.5 then
+			return nil, false
+		end
+		local d = math.sqrt(dx * dx + dz * dz)
+		local a = math.atan2(dz, dx)
+		local wob = fbm(s.x + math.cos(a) * 40, s.z + math.sin(a) * 40, 11, SEED + 70 + si, 2)
+		local rr = s.r * (0.8 + 0.4 * wob)
+		local k = 1
+		if s.lean and s.asym and d > 0.01 then
+			local b = math.rad(s.lean)
+			k = 1 + s.asym * (dx * math.sin(b) - dz * math.cos(b)) / d
+		end
+		local t = d * k / rr
+		local top = s.top or 0.25
+		local f
+		if t <= top then
+			f = 1
+		elseif t < 1 then
+			f = 0.1 + 0.9 * (1 - ((t - top) / (1 - top)) ^ 2.4)
+		elseif t < 1.4 then
+			f = 0.1 * (1 - (t - 1) / 0.4) ^ 2
+		else
+			return nil, false
+		end
+		return g + s.h * f, f > 0.86
+	end
+
+	local function crackAt(x: number, z: number): (number, number)
+		local d, li = nearestIn(crackGrid, x, z)
+		if li == 0 then
+			return math.huge, 0
+		end
+		local half = CRACKS[li].width / 2 * (0.7 + 0.6 * fbm(x, z, 13, SEED + 80, 2))
+		return d - half, li
+	end
+
+	local function dryAt(x: number, z: number): (number, number, number)
+		for i, dl in DRYLAKES do
+			local reach = math.max(dl.rx, dl.rz) * 1.3
+			if math.abs(x - dl.x) < reach and math.abs(z - dl.z) < reach then
+				local e = TerrainLayers.ellipse(dl.x, dl.z, dl.rx, dl.rz, dl.rot, x, z)
+					+ 0.06 * (fbm(x, z, 50, SEED + 90 + i, 2) - 0.5) * 2
+				if e < 1.25 then
+					local edge = dryEdge[i]
+					return 1 - smoothstep((e - (1 - edge)) / edge), e, i
+				end
+			end
+		end
+		return 0, math.huge, 0
+	end
+
+	-- What the last call of `raw` found at its point (read by `sample` right after, never across points).
+	local lastRock, lastCap, lastDune, lastDuneMat = false, "", 0, ""
+	local lastDry, lastDryE, lastDryI, lastCrack, lastCrackI = 0, math.huge, 0, math.huge, 0
+
 	-- Ground before flats, roads and water.
-	local function raw(x: number, z: number): number
+	local dryFloor: { number } = {}
+	local function raw(x: number, z: number, noDry: boolean?): number
 		local h = baseHeight(x, z) + hills(x, z) + ridgeAdd(x, z)
 		local pw, py = plateauOf(x, z)
 		if pw > 0 then
 			h = lerp(h, py, pw)
+		end
+		lastRock, lastCap, lastDune, lastDuneMat = false, "", 0, ""
+		lastDry, lastDryE, lastDryI, lastCrack, lastCrackI = 0, math.huge, 0, math.huge, 0
+		if #DUNES > 0 then
+			local add, w, mat = dunesAt(x, z)
+			h += add
+			lastDune, lastDuneMat = w, mat
+		end
+		if #MESAS > 0 then
+			local g = h
+			for mi, box in mesaBoxes do
+				if inBox(box, x, z) then
+					local mh, onTop = mesaHeight(mi, x, z, g)
+					if mh and mh > h - 0.01 then
+						h = math.max(h, mh)
+						lastRock = true
+						lastCap = if onTop then MESAS[mi].cap or "" else ""
+					end
+				end
+			end
+		end
+		if #SPIRES > 0 then
+			local g = h
+			for si in SPIRES do
+				local sh, onCap = spireHeight(si, x, z, g)
+				if sh and sh > h - 0.01 then
+					h = math.max(h, sh)
+					lastRock = true
+					lastCap = if onCap then SPIRES[si].cap or CAP else ""
+				end
+			end
 		end
 		local d, half, floor, wallW = gorgeAt(x, z)
 		if d then
@@ -533,7 +784,27 @@ function RegionTerrain.new(shape: ShapeTypes.Shape, areas: AreaTypes.MapAreas): 
 				h = marshed
 			end
 		end
+		if #DRYLAKES > 0 and not noDry then
+			local w, e, i = dryAt(x, z)
+			if i > 0 then
+				lastDry, lastDryE, lastDryI = w, e, i
+				if w > 0 then
+					h = lerp(h, dryFloor[i] + 0.3 * (fbm(x, z, 24, SEED + 91, 2) - 0.5), w)
+				end
+			end
+		end
+		if #CRACKS > 0 then
+			local cd, ci = crackAt(x, z)
+			lastCrack, lastCrackI = cd, ci
+			if ci > 0 and cd < 3 then
+				h -= CRACKS[ci].depth * (1 - smoothstep(math.max(cd, 0) / 3))
+			end
+		end
 		return h
+	end
+
+	for i, dl in DRYLAKES do
+		dryFloor[i] = dl.y or raw(dl.x, dl.z, true) - dl.depth
 	end
 
 	local flatTargets: { number } = {}
@@ -837,6 +1108,92 @@ function RegionTerrain.new(shape: ShapeTypes.Shape, areas: AreaTypes.MapAreas): 
 		return d, li, profileAt(streamProfiles[li], s), TerrainLayers.atSegment(STREAMS[li].widths, si, t) / 2
 	end
 
+	-- S46: lava. Pool shores, then the river profiles (like the streams: the lowest ground across the channel minus
+	-- `sink`, never rising downstream, never under the pool it flows into; a river leaving a pool keeps its level
+	-- while inside it).
+	local function poolDist(i: number, x: number, z: number): number
+		local p = POOLS[i]
+		local e = TerrainLayers.ellipse(p.x, p.z, p.rx, p.rz, p.rot, x, z)
+			+ 0.08 * (fbm(x, z, 29, SEED + 101 + i, 2) - 0.5) * 2
+		return (e - 1) * (p.rx + p.rz) / 2
+	end
+
+	local function poolIndex(ref: string?, prefix: string): number?
+		if ref and string.sub(ref, 1, #prefix) == prefix then
+			return tonumber(string.sub(ref, #prefix + 1))
+		end
+		return nil
+	end
+
+	local riverProfiles: { { number } } = {}
+	for ri, river in RIVERS do
+		local line = riverLines[ri]
+		local n = math.floor(line.length / STEP) + 1
+		local profile = table.create(n, 0)
+		local from = poolIndex(river.from, "pool:")
+		local level = river.level
+		for i = 1, n do
+			local x, z, dx, dz = TerrainLayers.pointAt(line, (i - 1) * STEP)
+			if not (from and POOLS[from] and poolDist(from, x, z) < 2) then
+				local _, _, segI, t = TerrainLayers.nearest(line, x, z)
+				local reach = TerrainLayers.atSegment(river.widths, segI, t) / 2 + 2
+				local low = math.min(
+					preStream(x, z),
+					preStream(x - dz * reach, z + dx * reach),
+					preStream(x + dz * reach, z - dx * reach)
+				)
+				level = math.min(level, low - river.sink)
+			end
+			profile[i] = level
+		end
+		local into = poolIndex(river.into, "pool:")
+		if into and POOLS[into] then
+			local floorLevel = POOLS[into].level
+			for i = 1, n do
+				profile[i] = math.max(profile[i], floorLevel)
+			end
+		end
+		for i = n - 1, 1, -1 do
+			profile[i] = math.max(profile[i], profile[i + 1])
+		end
+		riverProfiles[ri] = profile
+	end
+
+	-- Nearest lava: distance past its edge (negative inside), surface, kind, bank width, wall height, lift of a
+	-- crust island.
+	local function lavaAt(x: number, z: number): (number, number, string, number, number, number)
+		local best, level, kind, bank, wall, lift = math.huge, 0, "", 0, 0, 0
+		if #RIVERS > 0 then
+			local d, li, si, t = nearestIn(riverGrid, x, z)
+			if li > 0 then
+				local r = RIVERS[li]
+				local half = TerrainLayers.atSegment(r.widths, si, t) / 2 * (0.9 + 0.2 * fbm(x, z, 17, SEED + 100, 2))
+				best = d - half
+				level = profileAt(riverProfiles[li], arcAt(riverLines[li], si, t))
+				kind, bank, wall = "river", r.bank, r.wall
+			end
+		end
+		for i, p in POOLS do
+			if inBox(poolBoxes[i], x, z) then
+				local pd = poolDist(i, x, z)
+				if pd < best then
+					best, level, bank, wall, lift = pd, p.level, p.bank, p.wall, 0
+					kind = if p.crust then "crust" else "pool"
+					if pd < 0 then
+						for _, isl in p.islands or {} :: { ShapeTypes.Island } do
+							local dd = math.sqrt((x - isl.x) ^ 2 + (z - isl.z) ^ 2)
+								+ 4 * (fbm(x, z, 11, SEED + 102, 2) - 0.5)
+							if dd < isl.r then
+								kind, lift = "island", isl.h * smoothstep((isl.r - dd) / 5)
+							end
+						end
+					end
+				end
+			end
+		end
+		return best, level, kind, bank, wall, lift
+	end
+
 	local T = {} :: Terrain
 	T.map = areas.map
 	T.shape = shape
@@ -849,6 +1206,8 @@ function RegionTerrain.new(shape: ShapeTypes.Shape, areas: AreaTypes.MapAreas): 
 	function T.sample(x: number, z: number): (number, Info)
 		local rd, rhalf, _, rli = roadAt(x, z)
 		local h = roads(x, z, preRoad(x, z))
+		local rock, cap, dune, duneMat = lastRock, lastCap, lastDune, lastDuneMat
+		local dry, dryE, dryI, crack, crackI = lastDry, lastDryE, lastDryI, lastCrack, lastCrackI
 		local pd, phalf, py = rampAt(x, z)
 		if pd < phalf then
 			h = py
@@ -879,10 +1238,44 @@ function RegionTerrain.new(shape: ShapeTypes.Shape, areas: AreaTypes.MapAreas): 
 				h = math.min(h, target)
 			end
 		end
+		-- S46: lava fills its channels and pools (flat surface), low banks hold it, ground over the bank is cut
+		local lavaD, lavaLevel, lavaKind, lavaBank, lavaWall, lift = math.huge, 0, "", 0, 0, 0
+		if #RIVERS > 0 or #POOLS > 0 then
+			lavaD, lavaLevel, lavaKind, lavaBank, lavaWall, lift = lavaAt(x, z)
+			if lavaKind ~= "" then
+				if lavaD < 0 then
+					h = lavaLevel + lift
+				else
+					h = math.min(h, lavaLevel + lavaWall + lavaD * 0.6)
+					if lavaD < lavaBank then
+						h = math.max(h, lavaLevel + lavaWall * (1 - smoothstep(lavaD / lavaBank)))
+					end
+				end
+			end
+		end
+		local crackGlow = crackI > 0 and CRACKS[crackI].glow
+		local lavaAll = math.min(lavaD, if crackGlow then crack else math.huge)
+		if lavaKind == "island" then
+			lavaAll = math.max(lavaAll, 0)
+		end
 		local mw, mi = marshAt(x, z)
 		local pw = plateauOf(x, z)
 		local _, bw = basins(x, z)
 		local info: Info = {
+			lava = lavaAll,
+			lavaD = lavaD,
+			lavaLevel = lavaLevel,
+			lavaKind = lavaKind,
+			lavaBank = lavaBank,
+			crack = crack,
+			crackGlow = crackGlow,
+			rock = rock,
+			cap = cap,
+			dune = dune,
+			duneMat = duneMat,
+			dry = dry,
+			dryE = dryE,
+			dryLake = dryI,
 			road = rd - rhalf,
 			roadMat = if rli > 0 then roadMats[rli] else "Ground",
 			ramp = pd < phalf + 0.5,
@@ -936,9 +1329,47 @@ function RegionTerrain.new(shape: ShapeTypes.Shape, areas: AreaTypes.MapAreas): 
 		return math.sqrt(gx * gx + gz * gz)
 	end
 
-	-- Dry, gentle ground at the point and 4 studs around it.
+	-- S46: distance past the edge of the nearest lava or glowing crack (math.huge on maps without them).
+	function T.lavaDistance(x: number, z: number): number
+		local best = math.huge
+		if #RIVERS > 0 or #POOLS > 0 then
+			best = (lavaAt(x, z))
+		end
+		if #CRACKS > 0 then
+			local cd, ci = crackAt(x, z)
+			if ci > 0 and CRACKS[ci].glow then
+				best = math.min(best, cd)
+			end
+		end
+		return best
+	end
+
+	-- Lava surface over a column (nil when there is no lava; crust islands are not lava).
+	function T.lava(x: number, z: number): number?
+		if #RIVERS == 0 and #POOLS == 0 then
+			return nil
+		end
+		local d, level, kind = lavaAt(x, z)
+		if d < 0 and kind ~= "island" then
+			return level
+		end
+		return nil
+	end
+
+	function T.crackDistance(x: number, z: number): (number, boolean)
+		if #CRACKS == 0 then
+			return math.huge, false
+		end
+		local cd, ci = crackAt(x, z)
+		return cd, ci > 0 and CRACKS[ci].glow
+	end
+
+	-- Dry, gentle ground at the point and 4 studs around it (S46: and LAVA_CLEARANCE from lava and glowing cracks).
 	function T.walkable(x: number, z: number): boolean
 		if T.isWater(x, z) then
+			return false
+		end
+		if T.lavaDistance(x, z) < RegionTerrain.LAVA_CLEARANCE then
 			return false
 		end
 		for _, o in { { 0, 0 }, { 4, 0 }, { -4, 0 }, { 0, 4 }, { 0, -4 } } do
@@ -993,19 +1424,64 @@ function RegionTerrain.new(shape: ShapeTypes.Shape, areas: AreaTypes.MapAreas): 
 		return table.find(want :: { string }, theme) ~= nil
 	end
 
+	-- S46: horizontal rock layers of the mesa and spire walls (rule material "@strata").
+	local function strataAt(x: number, z: number, h: number): string
+		local st = shape.strata
+		if not st then
+			return "Sandstone"
+		end
+		local f = (h + 1.2 * (fbm(x, z, 40, SEED + 112, 2) - 0.5)) / st.period
+		f -= math.floor(f)
+		for _, band in st.bands do
+			if f >= band[2] and f < band[3] then
+				return band[1]
+			end
+		end
+		return st.base
+	end
+
 	-- Surface material (first match wins): water beds, ramps, roads (their own material), stream banks and lake
-	-- shores, painted patches, then the shape's material rules.
+	-- shores, painted patches, then the shape's material rules. S46: lava, crack bottoms and lava banks come before
+	-- the roads, dry lake floors and mesa / spire caps after them.
 	function T.materialAt(x: number, z: number, h: number, slope: number, info: Info): string
 		local n = fbm(x, z, 21, SEED + 20, 2)
 		local water = waterOf(h, info)
 		if water then
 			return if n > 0.7 then "Ground" else "Mud"
 		end
+		-- S46: lava (cooling lakes: dark crust with glowing seams), its basalt banks, crack bottoms
+		if info.lavaKind ~= "" then
+			if info.lavaD < 0 then
+				if info.lavaKind == "island" then
+					return "Basalt"
+				elseif info.lavaKind == "crust" then
+					return if cellSeam(x, z, 10, SEED + 110) < 1.4 then "CrackedLava" else "Basalt"
+				end
+				return "CrackedLava"
+			elseif info.lavaD < info.lavaBank * 0.6 then
+				return "Basalt"
+			end
+		end
+		if info.crack < 0 then
+			return if info.crackGlow then "CrackedLava" else "Basalt"
+		end
 		if info.ramp then
 			return "Ground"
 		end
 		if info.road < -0.6 + 1.6 * (n - 0.5) then
 			return info.roadMat
+		end
+		-- S46: the floor of a dry lake (salt crust cracked into polygons) and its old waterline
+		if info.dry > 0.55 and slope < STEEP then
+			local dl = DRYLAKES[info.dryLake]
+			local line = 1 - dryEdge[info.dryLake]
+			if info.dryE > line - 0.05 and info.dryE < line + 0.07 then
+				return dl.line or "Sand"
+			end
+			return if cellSeam(x, z, 15, SEED + 111) < 0.9 then dl.seam or "Ground" else dl.crust or "Concrete"
+		end
+		if info.cap ~= "" and slope < STEEP then
+			return info.cap
 		end
 		if slope < STEEP then
 			if info.stream > 0 and info.streamD < 2.5 then
@@ -1052,6 +1528,21 @@ function RegionTerrain.new(shape: ShapeTypes.Shape, areas: AreaTypes.MapAreas): 
 			if rule.marsh ~= nil and rule.marsh ~= (info.marsh > 0.3) then
 				continue
 			end
+			if rule.minLava and info.lava < rule.minLava then
+				continue
+			end
+			if rule.maxLava and info.lava > rule.maxLava then
+				continue
+			end
+			if rule.rock ~= nil and rule.rock ~= info.rock then
+				continue
+			end
+			if rule.dune ~= nil and rule.dune ~= (info.dune > 0.5) then
+				continue
+			end
+			if rule.drylake ~= nil and rule.drylake ~= (info.dry > 0.3) then
+				continue
+			end
 			if rule.theme then
 				if not theme then
 					theme = T.themeAt(x, z)
@@ -1060,9 +1551,14 @@ function RegionTerrain.new(shape: ShapeTypes.Shape, areas: AreaTypes.MapAreas): 
 					continue
 				end
 			end
+			if rule.mat == "@strata" then
+				return strataAt(x, z, h)
+			elseif rule.mat == "@dune" then
+				return if info.duneMat ~= "" then info.duneMat else "Sand"
+			end
 			return rule.mat
 		end
-		return "LeafyGrass"
+		return FALLBACK
 	end
 
 	function T.material(x: number, z: number): string
@@ -1147,6 +1643,55 @@ function RegionTerrain.new(shape: ShapeTypes.Shape, areas: AreaTypes.MapAreas): 
 				end
 			end
 		end
+		-- S46: stone bridges where roads cross lava rivers (the span covers the lava and most of its banks)
+		for ri, rline in roadLines do
+			for li, lline in riverLines do
+				local rp, lp = rline.pts, lline.pts
+				for i = 1, #rp - 1 do
+					local a, b = rp[i], rp[i + 1]
+					for k = 1, #lp - 1 do
+						local c, d = lp[k], lp[k + 1]
+						local rx, rz = b[1] - a[1], b[2] - a[2]
+						local sx, sz = d[1] - c[1], d[2] - c[2]
+						local den = rx * sz - rz * sx
+						if math.abs(den) > 1e-9 then
+							local t = ((c[1] - a[1]) * sz - (c[2] - a[2]) * sx) / den
+							local u = ((c[1] - a[1]) * rz - (c[2] - a[2]) * rx) / den
+							if t >= -1e-6 and t <= 1 + 1e-6 and u >= -1e-6 and u <= 1 + 1e-6 then
+								local x, z = a[1] + rx * t, a[2] + rz * t
+								local len = math.sqrt(rx * rx + rz * rz)
+								local river = RIVERS[li]
+								local half = TerrainLayers.atSegment(river.widths, k, u) / 2 * 1.1 + river.bank * 0.5
+								local slen = math.sqrt(sx * sx + sz * sz)
+								local sin = math.max(math.abs(rx * sz - rz * sx) / (len * slen), 0.4)
+								local cos = math.abs(rx * sx + rz * sz) / (len * slen)
+								for _, other in out do
+									if (other.x - x) ^ 2 + (other.z - z) ^ 2 < 36 then
+										x = math.huge
+									end
+								end
+								if x == math.huge then
+									continue
+								end
+								table.insert(out, {
+									x = x,
+									z = z,
+									dirX = rx / len,
+									dirZ = rz / len,
+									span = (2 * (half + 1.5) + ROADS[ri].width * cos) / sin + 4,
+									deck = profileAt(roadProfiles[ri], arcAt(rline, i, t)),
+									water = profileAt(riverProfiles[li], arcAt(lline, k, u)),
+									kind = "stone",
+									road = ri,
+									stream = li,
+									lava = true,
+								})
+							end
+						end
+					end
+				end
+			end
+		end
 		crossingCache = out
 		return out
 	end
@@ -1188,6 +1733,30 @@ function RegionTerrain.new(shape: ShapeTypes.Shape, areas: AreaTypes.MapAreas): 
 	function T.basinWeight(x: number, z: number): number
 		local _, w = basins(x, z)
 		return w
+	end
+
+	function T.lavaLine(i: number): TerrainLayers.Line
+		return riverLines[i]
+	end
+
+	function T.lavaLevel(i: number, s: number): number
+		return profileAt(riverProfiles[i], s)
+	end
+
+	-- On a mesa or a spire (top, wall or scree).
+	function T.rockAt(x: number, z: number): boolean
+		raw(x, z)
+		return lastRock
+	end
+
+	function T.duneWeight(x: number, z: number): number
+		raw(x, z)
+		return lastDune
+	end
+
+	function T.dryWeight(x: number, z: number): number
+		raw(x, z)
+		return lastDry
 	end
 
 	return T

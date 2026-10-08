@@ -965,7 +965,7 @@
     {"id":"flameSmith","key":"kowal plomieni flamesmith","level":63,"name":{"en":"Flamesmith","pl":"Kowal Płomieni"},"type":"monster"},
     {"id":"wasteHyena","key":"hiena pustkowi waste hyena","level":45,"name":{"en":"Waste Hyena","pl":"Hiena Pustkowi"},"type":"monster"},
     {"id":"ashVulture","key":"sep popiolu ash vulture","level":46,"name":{"en":"Ash Vulture","pl":"Sęp Popiołu"},"type":"monster"},
-    {"id":"fireImp","key":"ognisty chochlik fire imp","level":52,"name":{"en":"Fire Imp","pl":"Ognisty Chochlik"},"type":"monster"},
+    {"id":"fireImp","key":"ognisty chochlik fire imp","level":55,"name":{"en":"Fire Imp","pl":"Ognisty Chochlik"},"type":"monster"},
     {"id":"basilisk","key":"bazyliszek basilisk","level":58,"name":{"en":"Basilisk","pl":"Bazyliszek"},"type":"monster"},
     {"id":"desertMummy","key":"mumia pustyni desert mummy","level":55,"name":{"en":"Desert Mummy","pl":"Mumia Pustyni"},"type":"monster"},
     {"id":"iceWolf","key":"lodowy wilk ice wolf","level":70,"name":{"en":"Ice Wolf","pl":"Lodowy Wilk"},"type":"monster"},

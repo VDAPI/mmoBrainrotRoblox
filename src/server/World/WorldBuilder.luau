@@ -65,6 +65,9 @@ local MATERIAL_COLORS: { [Enum.Material]: string } = {
 	[Enum.Material.Salt] = "#8A847A",
 	-- S45: dark red rock of Duskwood's Blood Cliffs (S46's red crags of the Ashen Wastes match it).
 	[Enum.Material.Sandstone] = "#6E2F2A",
+	-- S46: the Ashen Wastes' grey ash and the salt crust of the Dead Oasis (no other map uses them).
+	[Enum.Material.Asphalt] = "#77716C",
+	[Enum.Material.Concrete] = "#D6CFC0",
 }
 
 local function layoutModule(mapId: string): ModuleScript?

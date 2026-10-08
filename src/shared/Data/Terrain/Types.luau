@@ -99,6 +99,13 @@ export type MaterialRule = {
 	gorge: boolean?,
 	plateau: boolean?,
 	marsh: boolean?,
+	-- S46: distance to lava and glowing cracks (charred bands), on a mesa or spire (walls, skirts), inside a dune
+	-- field, on a dry lake's floor
+	minLava: number?,
+	maxLava: number?,
+	rock: boolean?,
+	dune: boolean?,
+	drylake: boolean?,
 }
 
 -- Plants of a theme: big trees on a jittered grid (`spacing`, probability `dense` where the clump noise is over
@@ -114,6 +121,120 @@ export type FloraRule = {
 	fillerKinds: { [string]: number }?,
 	under: { n: number, kinds: { [string]: number } }?,
 }
+
+-- S46 desert shapes -----------------------------------------------------------------------------------------------
+
+-- Field of dunes inside a soft rectangle: crests run across the wind (`wind`: compass bearing in degrees the wind
+-- blows towards, 0 = north/-Z, 90 = east/+X), one every `wave` studs, `height` studs tall (scaled 0.6..1 by noise),
+-- the windward side gentle and the lee side steep (`lee` 0..1: the share of the wave the lee slope takes, ~0.18),
+-- flat valleys between them (`valley` 0..1: the share of the wave that stays flat), crests winding by `wander`
+-- studs. `material` paints the field (default Sand; S47: Snow drifts).
+export type Dunes = {
+	rect: { number },
+	blend: number,
+	wind: number,
+	wave: number,
+	height: number,
+	lee: number,
+	valley: number,
+	wander: number,
+	material: string?,
+}
+
+-- Table mountain with a flat top at `top` (absolute), near-vertical walls `cliff` studs wide (6-12), a ragged
+-- outline (`ragged` studs of noise) cut by gullies, and a scree skirt (`skirt` studs wide, `skirtH` studs tall at
+-- the wall's foot, ~27 degrees). Ellipse (x, z, rx, rz, rot) or polygon `poly` { x1, z1, x2, z2, ... }. `cap`
+-- paints the top (default the region's cap material).
+export type Mesa = {
+	top: number,
+	cliff: number,
+	ragged: number,
+	skirt: number,
+	skirtH: number,
+	x: number?,
+	z: number?,
+	rx: number?,
+	rz: number?,
+	rot: number?,
+	poly: { number }?,
+	cap: string?,
+}
+
+-- Rock spire: base radius `r` (8-20), `h` studs over the ground, a narrow flat top (`top` 0..1 of the radius),
+-- one side steeper (`lean`: bearing of the steep side in degrees, `asym` 0..0.5 how much steeper), an uneven
+-- outline; `cap` paints the top (default the region's cap material).
+export type Spire = {
+	x: number,
+	z: number,
+	r: number,
+	h: number,
+	top: number?,
+	lean: number?,
+	asym: number?,
+	cap: string?,
+}
+
+-- River of lava along points { x1, z1, ... } with a lava width per point; the surface starts at `level` (absolute)
+-- and never rises downstream (the ground under the channel minus `sink`, like the streams); low banks `wall` studs
+-- over the lava, `bank` studs wide. `into` = "pool:<n>" (it ends in a pool at that pool's level) or "end".
+export type LavaRiver = {
+	id: string,
+	points: { number },
+	widths: { number },
+	level: number,
+	sink: number,
+	wall: number,
+	bank: number,
+	into: string,
+	-- "pool:<n>": the river leaves that pool (it keeps the pool's level until it is out of it)
+	from: string?,
+}
+
+-- Pool of lava: soft ellipse with a ragged shore; surface at `level` (absolute); `crust` = a cooling lake (dark
+-- crust with glowing veins); `islands` of crust `h` studs over the surface.
+export type LavaPool = {
+	id: string,
+	x: number,
+	z: number,
+	rx: number,
+	rz: number,
+	rot: number,
+	level: number,
+	wall: number,
+	bank: number,
+	crust: boolean?,
+	islands: { Island }?,
+}
+
+-- Lava fall: where a river leaves the lip at (x, z) falling `drop` studs towards `rot` (degrees, Build convention);
+-- read by the generator (glow, sparks, smoke), the terrain shape comes from the river's profile.
+export type LavaFall = { x: number, z: number, rot: number, drop: number, river: string }
+
+export type Lava = { rivers: { LavaRiver }, pools: { LavaPool }, falls: { LavaFall } }
+
+-- Crack along points { x1, z1, ... }: `width` studs, `depth` studs deep (2-5; under ~8 studs wide it is mostly
+-- paint), `glow` = a bottom of glowing lava (counts like lava for monster groups and arrivals) or cold basalt.
+export type Crack = { points: { number }, width: number, depth: number, glow: boolean }
+
+-- Dry lake: a basin `depth` studs under its rim with a flat bottom (ellipse, ragged shore over `shore` studs);
+-- the floor is a salt crust cracked into polygons, a band of bleached sand marks the old waterline.
+export type DryLake = {
+	x: number,
+	z: number,
+	rx: number,
+	rz: number,
+	rot: number,
+	depth: number,
+	shore: number,
+	y: number?, -- absolute height of the floor (default: the ground at the centre minus `depth`)
+	crust: string?, -- floor material (default Concrete)
+	seam: string?, -- polygon seams (default Ground)
+	line: string?, -- old waterline (default Sand)
+}
+
+-- Horizontal rock layers on the walls of mesas and spires: one layer every `period` studs, `bands` are thin layers
+-- { material, from, to } as fractions 0..1 of the period; the rest is `base`.
+export type Strata = { period: number, base: string, bands: { { any } } }
 
 -- Terrain writer limits (World/TerrainWriter.Options): lowest voxel layer, top of the highest, margin past the edge.
 export type Writer = { bottom: number, top: number, margin: number }
@@ -150,6 +271,17 @@ export type Shape = {
 	respawns: { Respawn },
 	-- Stream valley: max rise per stud beside the water and how far it reaches (Meadows: 0.17, 50).
 	valley: { slope: number, reach: number }?,
+	-- S46 (all optional): dune fields, table mountains, spires, lava, cracks, dry lakes, rock layers, the material
+	-- of mesa and spire tops, the surface of lava and of cooling crust, the fallback material
+	dunes: { Dunes }?,
+	mesas: { Mesa }?,
+	spires: { Spire }?,
+	lava: Lava?,
+	cracks: { Crack }?,
+	drylakes: { DryLake }?,
+	strata: Strata?,
+	capMaterial: string?,
+	fallback: string?,
 }
 
 return nil

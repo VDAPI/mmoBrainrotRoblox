@@ -63,8 +63,9 @@ function RegionLayout.build(ctx: Build.Context, options: Options)
 	log:info("terrain: %d blocks in %.2f s (WriteVoxels %.2f s)", blocks, os.clock() - t0, writing)
 	Build.border(ctx, options.border, options.borderHeight)
 	ctx.height = T.height
+	-- S46: lava and glowing cracks count as wet (signposts and lanterns keep off them)
 	ctx.wet = function(x: number, z: number): boolean
-		return T.isWater(x, z) or T.streamDistance(x, z) < 5
+		return T.isWater(x, z) or T.streamDistance(x, z) < 5 or T.lavaDistance(x, z) < 6
 	end
 	pace()
 

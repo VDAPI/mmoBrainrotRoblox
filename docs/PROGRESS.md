@@ -48,6 +48,7 @@
 | S40 | Wiki 6/10: ikony przedmiotów z atlasów, baza 930 przedmiotów, strona przedmiotu, przedmioty bossów, kalkulator ulepszania, rzemiosło | ● |
 | S35 | Ikony przedmiotów: atlasy z grafikami (kolor progu, akcent żywiołu / mikstury), komponent `ItemIcon` z zapasem na symbole, sloty, duch przeciągania, legenda, mikstury, tooltip, waluty | ● |
 | S45 | Mroczny Bór od nowa + wspólny silnik krain: teren z danych (`RegionTerrain`), generator `DuskwoodGen` (9 expowisk w klimacie potworów, wyloty jaskiń), rejestry `WorldGen` / `Data/Terrain`, budowa w tle, życie, wieczny zmierzch, mapa i wiki | ● |
+| S46 | Spalone Pustkowia od nowa: kształty pustyni w silniku krain (wydmy, mesy, turnie, lawa, szczeliny, suche jezioro), generator `AshenGen` (9 expowisk w klimacie potworów, wyloty jaskiń), świecąca lawa z LOD świateł, życie, dzień i noc, mapa i wiki | ● |
 
 Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana przez właściciela
 
@@ -950,6 +951,42 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
 - **S45** Liczba potworów Boru po nowym rozmieszczeniu: 120 bez profili / 135 z profilami (było 124 / 134;
   `docs/BALANS.md` przegenerowany, nic więcej w balansie nie ruszane). Grupy na obszar bez zmian (razem 57).
 
+- **S46** Lawa jest **dekoracją**: teren `CrackedLava` (nigdy `Water`), nie zadaje obrażeń; `RegionTerrain.walkable`
+  = false bliżej niż `LAVA_CLEARANCE` (12 st.) od lawy i **świecących** szczelin (zimne szczeliny to tylko rowek), więc
+  grupy, przybycia, węzły i drzewa trzymają dystans same; `MapTerrain.walkable` sprawdza też, czy pierścień 10 st. nie
+  leży na lawie. Kamienny most (`crossings()` z `lava = true`) tam, gdzie droga przecina rzekę lawy. Rzeki lawy liczą
+  poziom jak strugi S26 (najniższy grunt w poprzek minus `sink`, nigdy w górę z biegiem; rzeka wychodząca z jeziora
+  trzyma jego poziom, dopóki z niego nie wyjdzie); grunt wyższy niż wał jest ścinany skosem ok. 31°.
+- **S46** Kształty pustyni są **ogólne** i opcjonalne w `Data/Terrain/Types` (`dunes`, `mesas`, `spires`, `lava`,
+  `cracks`, `drylakes`, `strata`, `capMaterial`, `fallback`); mapy bez nich liczą się jak przedtem (fixture Boru bez
+  zmian). Wydmy mają pole `material`, żeby S47 zrobiło nimi zaspy `Snow`; reguła z `mat = "@dune"` bierze materiał
+  pola. Nawisy, łuk skalny i nisze to części `AshenGen` (teren to mapa wysokości). `crackFields` (Voronoi) nie powstały:
+  szczeliny po liniach wystarczyły (siatka z Żarzącego Leja + dwie wzdłuż drogi od portali).
+- **S46** Materiały: `Asphalt` = popiół `#77716C`, `Concrete` = skorupa soli oazy `#D6CFC0` (żadna inna mapa ich nie
+  używa; test); `Sandstone` (turnie, mesy, skarpa wydm) dziedziczy czerwień `#6E2F2A` Krwawych Urwisk z S45, rdzawy
+  charakter dają pasy `Ground`/`Basalt` (`strata`) i ciepłe światło. Woda bajor zostaje w domyślnym kolorze (pole mapy
+  `waterColor` nie powstało).
+- **S46** Obszary: prostokąt Pól Golemów skrócony do z = 390 (było 420): rozkład grup to ten sam algorytm, ale przy
+  nowym terenie losowanie dawało 7 grup chochlików i zero golemów; z = 390 daje 3 grupy prowadzone przez golemy i lepszy
+  rozrzut (test `ashen.spec`). Pozostałe prostokąty bez zmian. Liczba potworów Pustkowi: 138 bez profili / 148 z
+  profilami (było 131 / 138; `docs/BALANS.md` przegenerowany, poza tym balans nieruszany). Grupy na obszar bez zmian (56).
+- **S46** Drogi: nowe stara królewska droga (0, −60) → (590, −310), droga przez Pola Golemów (bruk) z mostem nad Ognistą
+  Żyłą (−60, 281) do placu Ruin, szlak karawan (−520, 0) → brzeg oazy, droga procesyjna (600, 0) → wejście piramidy;
+  droga do kopalni omija płaskowyż orków od południa i zachodu; droga na Turnie dostała punkty (590, −310) i (690, −620)
+  na tej samej linii (styk z królewską drogą, łuk skalny). Trakt główny, portale i wyloty jaskiń bez zmian.
+- **S46** `lakes` Pustkowi to tylko prawdziwa woda: ostatnie bajoro oazy (−560, 612, r 24) i Gorące Źródło (−680, 304,
+  r 22); 5 dawnych „jeziorek lawy” przeszło do `lava` w `Data/Terrain/ashen` (krater, 3 jeziora stygnącej lawy, Żarzący
+  Lej). Poziom wody mapy −2,5, dno oazy −1,2 (powyżej wody, więc woda jest tylko w bajorze).
+- **S46** Dzień i noc: `dayNight`, `nightLighting = LIGHT.ashenNight` (jasność 0,8, ambient `#3A2220` / `#4A2A26`,
+  mgła `#2A1210` do 520 st., atmosfera gęstość 0,48 / mgiełka 2,6, tint `#FFD8C8`, nasycenie −0,1), za dnia niskie
+  popołudniowe słońce `dayClock = { 15.4, 17.2 }` (`DayCycle.duskClock` z S45). `buildLate = true`, `maxParts = 2400`.
+- **S46** LOD świateł: nowy `RegionLightController` (jedyny właściciel `Enabled` świateł z tagiem `lava`; włącza N
+  najbliższych kamery co 0,5 s, `Config.RegionLights = { low = 4, mid = 8, high = 12 }`); S48 dopisze tagi jaskiń w
+  `TAGS`. Fx `glow` („oddychanie” neonu i jego świateł) jest w `TownFxController` (S48 nie dodało jeszcze `pulse`).
+- **S46** Sępy w `WorldLifeController`: `vulturePerch` (siedzi, odlatuje i krąży nad grzędą, wraca) i `vultures`
+  (3–5 krąży wysoko, widać do 300 st.); czarne martwe drzewa Pustkowi sadzają sępy zamiast kruków (`Kit.Ctx.perch`).
+  Nietoperz nad graczem nocą tylko w Borze (`BATS`).
+
 ## Niedokończone
 (Rzeczy z zakresu sesji, które nie zostały zrobione. Następna sesja zaczyna od nich.)
 
@@ -975,7 +1012,8 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
 - **S18** Sprint nie zmienia WalkSpeed lokalnie przed odpowiedzią serwera (opóźnienie o ping).
 
 - **S20** Mapa świata: timer Elity II widać na karcie jaskini (tekst), bez osobnej ikony na rysunku. (Mosty i strugi
-  są od S26 na Łąkach i od S45 w Borze; Pustkowia i Szczyty ich jeszcze nie mają.)
+  są od S26 na Łąkach i od S45 w Borze, rzeki lawy z kamiennym mostem od S46 na Pustkowiach; Szczyty ich jeszcze nie
+  mają.)
 - **S21** Miasto niesprawdzone w Studio: czas `WriteVoxels` całego terenu (225 bloków) i budowy shellu w `Init`, płynność
   detalu klienta na telefonie (`/perf`), kadr kamery wyboru postaci.
 - **S21** Nocą świecą okna, latarnie i ogień, ale nie ma zmiany muzyki ani dźwięków nocy.
@@ -1012,8 +1050,8 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
   bębny goblinów, odgłosy farmy, pszczoły, plusk wody przy brzegu. Muzyka Łąk: `Data/Maps` (`music`, podpowiedź w
   komentarzu).
 - **S26** Mapa świata pokazuje budowle Łąk jako kształty (bez ikon i podpisów punktów charakterystycznych).
-- **S26** Pustkowia i Szczyty dalej na starym, płaskim generatorze z kulami terenu (Bór od S45 na silniku krain;
-  dalej S46/S47).
+- **S26** Szczyty dalej na starym, płaskim generatorze z kulami terenu (Bór od S45, Pustkowia od S46 na silniku krain;
+  dalej S47).
 
 - **S27** Okna questów (NPC, rozmowa, dziennik) sprawdzone w Studio tylko częściowo: przebieg przyjęcie → rozmowa →
   oddanie → wybór nagrody, interakcja z płotem (podpowiedź, pasek, efekt deski, brak powtórki, dystans) i znaczniki
@@ -1059,8 +1097,8 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
   wyboru — pomysł: dodatkowe małe obszary z profilem w przyszłej przebudowie regionów (sesja nie dodaje obszarów).
 - **S33** Jaskinie bez profilu (pole `profile` w `Cave` jest, ale `AreaSpawns.cave` go nie czyta). Model nie liczy
   osobno szybszego respawnu jako „więcej potworów naraz” poza krótszym dojściem.
-- **S33** Opisy obszarów w `docs/SWIAT.md` dla Pustkowi i Szczytów (punkty charakterystyczne) dalej z planu sprzed
-  S19; nowa tabela z kodu stoi nad nimi (Bór opisany od nowa w S45).
+- **S33** Opisy obszarów w `docs/SWIAT.md` dla Szczytów (punkty charakterystyczne) dalej z planu sprzed S19; nowa
+  tabela z kodu stoi nad nimi (Bór opisany od nowa w S45, Pustkowia w S46).
 
 - **S35** Do narysowania (dziś aliasy): `crow_feather`, `toad_venom`. Ikonki walut przy cenach w sklepach, w sklepie
   premium i na ekranie śmierci (dziś tekst / ◆). Gra nie testowana po wgraniu atlasów (robi właściciel, instrukcja S35).
@@ -1082,6 +1120,23 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
   `Cliffs.edgeX`); w Studio sprawdzić, czy nie wiszą w powietrzu ani nie toną w ścianie. Okna dworu „świecą zimno”
   przez tag `lamp` (nie `window`), więc świecą wszystkie, nie 60%.
 - **S45** `/tparea` wypisuje cele wszystkich map (długa lista), bez filtra po mapie wołającego.
+
+- **S46** Pustkowia niesprawdzone w Studio (sesja bez Studio). Do sprawdzenia: czasy `[Ashen] terrain/shell/parts=…` i
+  „background ashen built in … s”, wygląd lawy (płyty Neon nad `CrackedLava`, czy nie giną pod wokselami brzegu),
+  lawospad, światła lawy (LOD), dym widoczny z daleka, sępy, trąby piaskowe, popiół, noc; czy kamienne mosty nad lawą
+  nie mają szczelin przy wałach; ściany mes i turni na wokselach 4 st.
+- **S46** Dźwięki Pustkowi do podpięcia (`Data/Ambience`, `id = ""`, podpowiedzi w `hint`): wiatr z popiołem, pomruk
+  ziemi, trzask żaru, śmiech hien, gorący wiatr w palmach, sępy, nocne owady pustyni, gwar obozu orków, młoty w kuźni,
+  bębny wojenne, ognisko, bulgot lawy, tlące się zgliszcza, wiatr w ruinach, skrzypienie belki, chichot chochlików,
+  wiatr na wydmach, szelest piasku, zimny nocny wiatr, gwizd wiatru w turniach, skrzek wywerny, pylisty wiatr, łopot
+  skrzydeł, osypujące się kamienie, nieruchomy upał, dron grobowca, szepty; punkty: jeziora i rzeka lawy, krater,
+  lawospad, Żarzący Lej, kuźnia orków, bęben (noc), Gorące Źródło, dzwonnica, turnie, Kuźnia Głębin, piramida (noc).
+  Muzyka Pustkowi: `music = ""` w `Data/Maps` (podpowiedź w komentarzu).
+- **S46** Nie zrobione z planu: `crackFields` (Voronoi), smugi piasku z grzbietów wydm, jaszczurki, iskry spod stóp
+  na lawie, kolor wody bajor (`waterColor`), zapis wokseli tylko do najwyższej kolumny (niepotrzebny: woksele Pustkowi
+  1,20 s w Lune), drugorzędne szablony dekoracji (pióra sępów, łuski salamander), `/worldfx devils` przełącza trąby, ale
+  sępy nie mają osobnego stanu „na ziemi przy padlinie”. Ogniki nad dziedzińcami to zwykłe `wisp` (błękitne jak w
+  Borze, nie osobny turkus).
 
 ## Zgłoszone błędy
 (Właściciel wpisuje tu błędy po testach albo przekazuje je przez sesję poprawek.)
@@ -3684,3 +3739,146 @@ TerrainWriter,Prefabs,Layouts/duskwood}`, `Services/{WorldService,GatherService,
 22. Wyloguj się w Borze i wejdź od razu po restarcie serwera: ekran ładowania czeka na Bór (do ~45 s), postać ląduje
     w Borze, a nie w mieście.
 23. `/terrainrebuild duskwood` (pyta): teren przepisuje się bez restartu. Łąki wyglądają i działają jak przed sesją.
+
+### S46: Spalone Pustkowia od nowa
+
+**Zrobione**
+- Silnik krain rozszerzony o kształty pustyni (wszystkie opcjonalne, Bór i Łąki bez zmian w fixture): wydmy z wiatrem,
+  zawietrzną i płaskimi dolinami, mesy (płaski szczyt, ściany, postrzępiony obrys, piarg), turnie (wąskie, asymetryczne,
+  czapa z innego materiału), lawa (rzeki z poziomem spadającym z biegiem, jeziora z wałami, stygnące jeziora ze skorupą
+  w wielokąty i żyłami, wyspy, lawospady), szczeliny (świecące i zimne), suche jezioro (płaskie dno, sól w wielokąty,
+  wybielona linia brzegu), warstwy skały na ścianach, nowe warunki reguł materiałów; kamienne mosty nad lawą w
+  `crossings()`, `walkable` 12 st. od lawy.
+- Teren Pustkowi (`Data/Terrain/ashen`): popielna równina z Żarzącym Lejem i siecią świecących szczelin (dwie biegną
+  wzdłuż drogi od portali), bazaltowe garby, Gorące Źródło w misie; suche dno Martwej Oazy z ostatnim bajorem; bazaltowy
+  płaskowyż orków (16 st.) z rampą główną wzdłuż urwiska i tylną od zachodu, zagłębiony Krwawy Krąg; krater (niska mesa
+  z jeziorem lawy), Ognista Żyła z lawospadem do jezior stygnącej lawy, osobne jezioro, jęzory lawy, Śpiący Kolos
+  (wzgórze + głowa + pięść); pagórek spalonego miasteczka; piaszczysty płaskowyż wydm (skarpa nad nekropolią, droga
+  wcięciem) z wydmami z zachodu; 13 turni + niska turnia kamiennej wywerny, Gniazdowa Mesa z rampą, wysoka mesa z Leżem,
+  mesa przy wschodniej krawędzi; płaska dolina Szlaku Popiołu z jamą bazyliszka; taras piramidy, 2 zagłębione dziedzińce
+  z rampami, Góra Kuźni ze ścianą bramy, grań z kopalnią.
+- Generator `Logic/AshenGen/*` (Flats, Oasis, Warcamp, Lava, Ruins, Dunes, Crags, Road, Necropolis, Mouths, Props, Env):
+  Brama z Żeber (półłuki żeber nad drogą, kręgosłup), czaszka z legowiskiem hien, Żarzący Lej, płyty do wygrzewania,
+  Gorące Źródło; łódź na suchym dnie, pomost przez dno do bajora, cmentarzysko karawany, skrzynia z sępami, krąg
+  martwych palm; forteca orków (palisada z czaszkami po krawędzi płaskowyżu, brama z kłów, 4 wieże, kuźnia z dymem i
+  iskrami, bęben, klatki, Krwawy Krąg, namioty, namiot wodza, ogniska, zrzutowisko padliny); świecąca lawa (płyty Neon,
+  dryfująca skorupa, żyły, paski w szczelinach, światła co ~40 st.), krater widoczny z daleka, lawospad, Śpiący Kolos z
+  oczami i ramieniem, kamienne golemy, kolumny bazaltowe, obsydian, kominy chochlików; spalone domy z piwnicami żaru,
+  aleja kominów, plac z fontanną żaru, brama, świątynia z zapadniętą kopułą, tląca się dzwonnica i pęknięty dzwon, nory
+  skorpionów; Zasypany Kolos (głowa z turkusowymi oczami, uniesiona dłoń), sarkofagi, kolumny, nory; gniazda i iglice na
+  turniach, gniazdo na mesie, Skamieniała Wywerna ze skamieniałymi zwierzętami, łuk skalny nad drogą; Aleja Królów,
+  skamieniała karawana, ograbione wozy, obeliski, jama bazyliszka; piramida z turkusowym wejściem, aleja strażników z
+  głowami bazyliszków, dziedzińce z sarkofagami i ołtarzami, grobowce w skarpie; wyloty: kopalnia (sztolnia, wieża
+  wyciągowa, wózki, hałdy srebra, runy z orczą farbą, psiarnia), Leże (osmalony otwór, sadza, kości, pęknięte jajo),
+  Kuźnia Głębin (brama z królami, runy, łuna, kominy z dymem, strumyk stopionego metalu do sadzawki żużla); kamienny
+  most nad lawą, koksowniki przy drogach, skały wg motywu, ok. 180 martwych drzew (kikuty, szkielety spalonych drzew,
+  martwe palmy, czarne drzewa z sępami), węzły wg klimatu (srebro 12, mithril 10, ogniokwiat 26, łowiska 2 przy gorących
+  źródłach).
+- Serwer: cienki `World/Layouts/ashen` na `World/RegionLayout` (strefy `zone.ashen.*` bez zmian, tablica nazwy przy
+  żebrach), `ctx.wet` obejmuje lawę, budowa w tle; `MATERIAL_COLORS` dla `Asphalt` i `Concrete`.
+- Klient: `TownFxController` (tagi `lava`, `lavaCrust`, `lavafall`, `ember`, `vent`, `forge`, `glow`), nowy
+  `RegionLightController`, `WorldLifeController` (popiół wg motywu, żar, drżące powietrze, para, dym, słupy dymu do
+  480 st., bąble lawy, sępy siedzące i krążące, trąby piaskowe; `/worldfx`), `DecorController` (motywy `ash`,
+  `saltflat`, `warcamp`, `lavafield`, `burnt`, `dunes`, `crags`, `royalroad`, `necropolis` z 27 nowymi szablonami; nic
+  na lawie), `UI/MapSketch` (kolory `crack`, `dune`, `mesa`, `crag`, `pyramid`, `drylake`; tło pustyni popielate).
+- Nastrój: `Data/Ambience` (9 obszarów, mapa, 13 punktów), `Data/Maps` (noc `ashenNight`, `dayNight`, `dayClock`,
+  `buildLate`, `maxParts = 2400`, podpowiedź muzyki).
+- Admin: `/terraininfo` (mapa, wysokość, materiał, motyw, woda, lawa z odległością, nachylenie, czy da się stanąć),
+  `/worldfx <ash|embers|haze|smoke|vultures|devils|lavaglow> <on|off|auto>`; `/tparea`, `/regionstats ashen`,
+  `/terrainrebuild ashen`, `/ambience ashen_*` działają z rejestrów.
+- Mapa świata / minimapa / wiki: szkic z generatora (lawa pomarańczowa, suche jezioro, morze wydm z liniami grzbietów,
+  turnie, mesy, urwiska płaskowyżu i skarpy, palisada, budowle, piramida, mosty); przegenerowane `wiki/src/data/*.json`,
+  `docs/PRZEDMIOTY.md`, `ashen.svg` (33 KB), `docs/BALANS.md`.
+- Testy: `ashen.spec` (28: dane z briefu, wyloty i portale, motywy, nastroje, noc, unikalne `sites`, teren w zakresie
+  writera, materiały i ich wyłączność, determinizm, fixture, lawa ciągła i w dół, mosty, drogi < 15° i poza skałami,
+  droga do każdego obszaru, miejsca do stania 12 st. od lawy, wydmy ≥ 40% do stania, turnie ≥ 25 st., oaza, flood fill
+  od portalu z Boru, grupy, golemy na Polach Golemów, budżet, budowle na ziemi, wyloty, węzły, łowiska, życie, szkic,
+  tagi efektów), `regionterrain.spec` (6 kształtów na małych przykładach), `worldgen.spec` (rejestr z Pustkowiami),
+  fixture `tests/fixtures/ashenHeights.luau` (400 punktów, `tools/fixture_ashen.luau`).
+- Pomiary (Lune): woksele Pustkowi 729 bloków × 24 warstwy (−24…72) 1,20 s (Bór 1,13 s w tym samym pomiarze, Łąki
+  0,7 s), generator 0,21 s, węzły 0,05 s; shell 942 części (budowle ~590, drzewa ~350), detail 7460, fine 2264, 93
+  światła, 523 budowle, 178 dużych drzew. Szacunek „przed” ok. 1500 części (120 martwych drzew po 4, ~290 bali palisad,
+  skały, `extraDecor`, portale, wyloty, drogowskazy, latarnie); „po” ok. 1250 (shell + ~300). Woksele Pustkowi to
+  ~1/3 więcej warstw niż Bór, więc teren w Studio szacunkowo ~3,5 s w tle (Bór ~2,8 s).
+- Obrazy kontrolne (z góry i 3D, nie w repo), poprawione po obejrzeniu: żebra jak spiczasty namiot (teraz półłuki od
+  kręgosłupa nad drogą), brak szczelin w pierwszym kadrze (dwie wzdłuż drogi), głęboki rów wokół rzek lawy (łagodniejsze
+  ścinanie brzegu), Pola Golemów prawie czarne (więcej popiołu i ziemi), za mały i odwrócony Zasypany Kolos (×1,7,
+  twarzą do drogi z Ruin), koksownik na osi drogi procesyjnej, turnia przyklejona do mesy, Kolos bez twarzy i ramienia,
+  za grube szwy soli, liście palm jak deski, 7/7 grup chochlików na Polach Golemów.
+
+**Pliki**: nowe `Data/Terrain/ashen`, `Logic/AshenGen/{init,Env,Props,Flats,Oasis,Warcamp,Lava,Ruins,Dunes,Crags,Road,
+Necropolis,Mouths}`, `Controllers/RegionLightController`, `tests/ashen.spec`, `tests/fixtures/ashenHeights`,
+`tools/fixture_ashen`; zmiany: `Data/Terrain/{Types,init}`, `Data/Areas/ashen`, `Data/{Maps,Ambience,AdminCommands}`,
+lokalizacja (PL, EN), `Config`, `Logic/{RegionTerrain,MapTerrain}`, `Logic/WorldGen/{init,Kit,Flora}`,
+`World/{RegionLayout,WorldBuilder,Layouts/ashen}`, `Admin/Terrain`, `Controllers/{TownFxController,WorldLifeController,
+DecorController}`, `UI/MapSketch`, `tools/{WikiMaps/init,regionmap.py,regionview.py}`, `tests/{regionterrain,worldgen}`,
+dane wiki, `docs/{SWIAT,ARCHITECTURE,DESIGN,BALANS,PRZEDMIOTY}`, `CLAUDE.md`.
+
+**Nazwy dla S47 / S50 (faktyczne pola)**
+- `Data/Terrain/Types`: `dunes {rect, blend, wind (kierunek, w który wieje: 0 = −Z, 90 = +X), wave, height, lee, valley,
+  wander, material?}`; `mesas {top, cliff, ragged, skirt, skirtH, x/z/rx/rz/rot | poly, cap?}`; `spires {x, z, r, h, top?,
+  lean?, asym?, cap?}`; `lava {rivers {id, points, widths, level, sink, wall, bank, into ("pool:<n>" | "end"), from?
+  ("pool:<n>")}, pools {id, x, z, rx, rz, rot, level, wall, bank, crust?, islands? {x, z, r, h}}, falls {x, z, rot,
+  drop, river}}`; `cracks {points, width, depth, glow}`; `drylakes {x, z, rx, rz, rot, depth, shore, y?, crust?, seam?,
+  line?}`; `strata {period, base, bands {{mat, from, to}}}`; `capMaterial` (czapa turni, domyślnie `Basalt`);
+  `fallback` (materiał, gdy żadna reguła nie pasuje); reguły materiałów: `minLava`, `maxLava`, `rock`, `dune`,
+  `drylake`, `mat = "@strata" | "@dune"`.
+- `Logic/RegionTerrain`: `LAVA_CLEARANCE` (12), `cellSeam(x, z, size, seed)`; obiekt: `lava(x, z)` (poziom albo nil),
+  `lavaDistance(x, z)` (lawa i świecące szczeliny, ujemne w środku, `math.huge` bez lawy), `crackDistance(x, z)` →
+  (odległość, świeci?), `lavaLine(i)`, `lavaLevel(i, s)`, `rockAt`, `duneWeight`, `dryWeight`; `Info` z polami `lava`,
+  `lavaD`, `lavaLevel`, `lavaKind` (`river` / `pool` / `crust` / `island`), `lavaBank`, `crack`, `crackGlow`, `rock`,
+  `cap`, `dune`, `duneMat`, `dry`, `dryE`, `dryLake`; `Crossing.lava`.
+- Tagi efektów: `lava`, `lavaCrust`, `lavafall`, `ember`, `vent`, `forge`, `glow`; światła z tagiem `lava` (LOD w
+  `RegionLightController`, `Config.RegionLights = { low = 4, mid = 8, high = 12 }`), z tagiem `glow` „oddychają”.
+- Życie: `vulturePerch`, `vultures`, `embers`, `haze`, `steam`, `smoke`, `smokeColumn` (widać do 480 st.),
+  `lavaBubbles`, `wisp`; pogoda popiołu wg motywu (`ASH`), trąby piaskowe (max 2, `DEVIL_THEMES`).
+- Admin: `/worldfx <ash|embers|haze|smoke|vultures|devils|lavaglow> <on|off|auto>`, `/terraininfo`.
+- Zapis wokseli do najwyższej kolumny: nie zrobiony (niepotrzebny); writer Pustkowi `{ bottom = -24, top = 72 }`.
+
+#### Instrukcja testu S46
+
+1. `rojo serve`, Play. W Output `[WorldBuilder] world built in … s (2 maps left for the background)`: czas startu jak
+   przed sesją (~4,1 s; Bór i Pustkowia budują się w tle).
+2. Potem `[Ashen] terrain: 729 blocks in … s`, `[Ashen] shell: … builds, … parts, … trees`, `[Ashen] parts=… ms=…`
+   i `[WorldBuilder] background ashen built in … s`: zapisz liczby (części ≤ 2400, ok. 1250, bez ostrzeżenia o
+   limicie). Do tego czasu portal do Pustkowi pokazuje „Wkrótce”.
+3. Wejdź portalem z Boru: droga pod łukiem żeber olbrzymiej bestii, świecące szczeliny w popiele po lewej, tablica z
+   nazwą mapy, zwiadowca, w oddali dym nad płaskowyżem orków (lewo), łuna Pól Golemów (prawo), turnie na horyzoncie.
+4. `/daytime 16` (gorące popołudnie, pomarańczowa mgiełka, popiół spada), `/daytime 23` (czerwonawa noc bez gwiazd;
+   świecą lawa, szczeliny, kuźnie, ogniska, runy; da się walczyć).
+5. `/tparea hyenaDen` (czaszka, legowisko, kości, sępy krążą), `/tparea glowPit` (najjaśniejsza lawa, iskry, drżące
+   powietrze), `/tparea hotSpring` (para, siarkowa obwódka, łowisko na północnym brzegu, boje na wodzie).
+6. `/tparea strandedBoat` (łódź na soli w wielokąty), `/tparea oasisJetty` (pomost przez suche dno do parującego
+   bajora; łowisko obok nasady), `/tparea caravanGrave`, `/tparea caravanChest` (sępy nad skrzynią).
+7. `/tparea warcampGate`: rampa wzdłuż bazaltowego urwiska pod bramę z kłów; w środku Krwawy Krąg (`/tparea bloodPit`),
+   kuźnia z iskrami (`/tparea orcForge`), bęben, klatki, namiot wodza; z traktu widać dym kuźni. Tylna rampa od zachodu.
+8. `/tparea lavaBridge`: kamienny most nad Ognistą Żyłą (lawa pulsuje, dryfują płaty skorupy), widok na lawospad z
+   krateru (`/tparea lavafall`) i Śpiącego Kolosa (`/tparea colossus`: oczy powoli „oddychają”).
+9. `/tparea crater`: dym z krateru widoczny z daleka; podejdź do jeziora lawy: bąble i iskry; stań na brzegu: grupy
+   potworów nigdy nie stoją bliżej niż ~12 st. od lawy.
+10. `/worldfx lavaglow off` / `auto`: światła lawy gasną / wracają (porównaj `/perf`); opcje → „Szczegółowość świata”
+    niska: 4 światła lawy, bez sępów i trąb, mniej cząsteczek.
+11. `/tparea belltower`: tląca się dzwonnica (okna żarzą się nocą), dym, pęknięty dzwon; aleja kominów
+    (`/tparea chimneyRow`), plac z fontanną żaru, piwnice z żarem, piasek w uliczkach od wschodu.
+12. `/tparea buriedKing`: głowa króla z turkusowymi oczami i uniesiona dłoń na wydmie, monety; przejdź wydmy: grzbiety i
+    płaskie doliny, trąby piaskowe za dnia.
+13. `/tparea wyvernStone`, potem droga kanionem między turniami pod łukiem skalnym (`/tparea stoneArch`) do portalu na
+    Szczyty; `/tparea nestMesa` (rampa na mesę, gniazdo z jajami).
+14. `/tparea kingsAvenue` (posągi królów, część leży), `/tparea stoneCaravan`, `/tparea robbedWagons`,
+    `/tparea basiliskDen`.
+15. `/tparea pyramid` z drogi procesyjnej (aleja strażników z głowami bazyliszków, turkusowe wejście nocą),
+    `/tparea courtyardWest` (zejście rampą, sarkofagi, ogniki nocą), `/tparea rockTombs` (nisze w skarpie wydm).
+16. Koniec traktu (`/tparea forgeGate`): brama Kuźni Głębin w ścianie Góry Kuźni, posągi z młotami, runy, łuna, dym z
+    kominów, strumyk stopionego metalu do sadzawki żużla; portal do Kuźni działa.
+17. Wyloty: `/tparea mineMouth` (sztolnia, wieża wyciągowa, wózki, hałdy, orcze chorągwie), `/tparea lairMouth`
+    (osmalony otwór w mesie, kości, jajo); portale działają, tablice z nazwą i poziomami stoją przed wylotami.
+18. `/area` i `/terraininfo` w kilku obszarach: grupy na suchym, łagodnym gruncie, nigdy na lawie, w szczelinach ani na
+    ścianach turni i mes; na Polach Golemów grupy golemów i chochlików.
+19. `/nodes count`: srebro 12, mithril 10, ogniokwiat 26, łowiska Pustkowi 2 (boje na wodzie gorących źródeł).
+20. `/regionstats ashen`: części, czasy (z „w tle”), 178 drzew, budowle, światła, węzły, 56 grup.
+21. Mapa (M) i minimapa: pomarańczowe rzeki i jeziora lawy, most, suche jezioro, wydmy z grzbietami, turnie i mesy,
+    płaskowyż z palisadą, piramida, drogi.
+22. `/ambience ashen_golemfields` (czerwono, gęsta mgiełka), `/ambience ashen_dunes` (złoto), `/ambience auto`.
+23. `/worldfx ash off`, `/worldfx vultures off`, `/worldfx devils off` i `auto`: efekty znikają i wracają.
+24. Wyloguj się na Pustkowiach i wejdź po restarcie: ekran ładowania czeka na budowę w tle, postać ląduje na Pustkowiach.
+25. `/terrainrebuild ashen` (pyta): teren przepisuje się bez restartu. Bór i Łąki wyglądają i działają jak przed sesją.

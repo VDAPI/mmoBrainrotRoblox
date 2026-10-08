@@ -401,7 +401,7 @@ Cele (DESIGN §3.6): ⚡ ≥ 1,25× EXP/h ✦; ✦ ≥ 1,6× przedmiotów najwy�
 | --- | --: | --: |
 | meadows | 142 | 145 |
 | duskwood | 120 | 135 |
-| ashen | 131 | 138 |
+| ashen | 138 | 148 |
 | frostpeak | 124 | 134 |
 
 ## Wzory (stan obecny)

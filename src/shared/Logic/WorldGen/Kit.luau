@@ -30,6 +30,7 @@ export type Ctx = {
 	ground: (x: number, z: number) -> number,
 	life: { Life },
 	sketch: { Shape },
+	perch: string?, -- S46: life kind of the birds on black dead trees (default "perch", crows)
 }
 
 Kit.o = Parts.o

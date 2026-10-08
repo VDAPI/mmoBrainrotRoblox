@@ -30,11 +30,11 @@
 | 36–42 | Wiedźmie Moczary | Mroczny Bór |
 | 40–45 | Krwawe Urwiska, **Krypta Zapomnianych** (jaskinia) | Mroczny Bór |
 | 45 | **Boss: Morvane** | Komnata Morvane |
-| 45–52 | Popielne Wydmy, Hienie Rozpadliny | Spalone Pustkowia |
-| 48–56 | Obóz Orków Popiołu, Sępia Grań, **Opuszczona Kopalnia** (jaskinia 49–56) | Spalone Pustkowia |
-| 52–63 | Pole Lawy, Skorpionie Kaniony, **Leże Wywerny** (jaskinia 56–63) | Spalone Pustkowia |
-| 58–67 | Gniazda Wywern, Kamienny Ogród | Spalone Pustkowia |
-| 63–70 | Grobowce Królów, **Kuźnia Głębin** (jaskinia) | Spalone Pustkowia |
+| 45–52 | Równiny Salamander, Martwa Oaza | Spalone Pustkowia |
+| 48–56 | Obóz Popielnych Orków, **Opuszczona Kopalnia** (jaskinia 49–56) | Spalone Pustkowia |
+| 52–63 | Pola Golemów, Spalone Ruiny, Wydmy Skorpionów, **Leże Wywerny** (jaskinia 56–63) | Spalone Pustkowia |
+| 58–67 | Turnie Wywern, Szlak Popiołu | Spalone Pustkowia |
+| 63–70 | Grobowce Pustyni, **Kuźnia Głębin** (jaskinia) | Spalone Pustkowia |
 | 70 | **Boss: Azgor** | Komnata Azgora |
 | 70–78 | Mroźne Podnóża, Lamparcia Przełęcz | Lodowe Szczyty |
 | 74–83 | Zbocza Yeti, Harpie Turnie, **Lodowa Grota** (jaskinia) | Lodowe Szczyty |
@@ -219,19 +219,30 @@ nastrój i dźwięki na obszar (`Data/Ambience`). Dane: `Data/Areas/duskwood` (o
 | Wiedźmie Moczary / Witch Marsh ✦ | 36–42 | Wiedźma Mokradeł, Bagienny Troll | 4 | chata wiedźmy na palach | dym z wygiętego komina, czaszki ze świecami, kocioł z zieloną poświatą, wisielcze drzewo z amuletami i kościanymi dzwonkami, laleczki, krąg świecących grzybów, półki ze słojami i skrzynia amuletów, trop trolla w trzcinach |
 | Krwawe Urwiska / Blood Cliffs | 40–45 | Nietoperz Krwiopijca, Wiedźma Mokradeł | 6 | Brama Krypty (wrota w skale, zakapturzone figury, zimne niebieskie płomienie) | czerwona skarpa z wyżyną (droga wcięciem), nawisy z gniazdami nietoperzy i guanem, piargi, czarny wodospad, białe kości, ciernie, **wejście: Krypta Zapomnianych** (jaskinia bossa) |
 
-### Spalone Pustkowia (45–70), razem ok. 50 grup
+### Spalone Pustkowia (45–70), razem 56 grup (stan po S46)
+
+Mapa ukształtowana (S46, wspólny silnik krain): szara popielna równina z rdzą i bazaltem; od portali na zachodzie droga
+pod Bramą z Żeber, świecące szczeliny z Żarzącego Leja prowadzą wzrok na wschód; na północnym zachodzie forteca
+orków na bazaltowym płaskowyżu (16 st.), w środku Pola Golemów wokół krateru z jeziorem lawy, z którego Ognista Żyła
+spada lawospadem do jezior stygnącej lawy (kamienny most na drodze do Ruin); na południu spalone miasteczko na
+pagórku, na południowym wschodzie morze wydm na piaszczystym płaskowyżu (skarpa nad nekropolią), na północnym wschodzie
+las turni i mesy z drogą kanionem, między nimi Szlak Popiołu (stara królewska droga), na wschodzie nekropolia z
+piramidą, a trakt główny kończy się bramą Kuźni Głębin w Górze Kuźni. Lawa jest dekoracją (nie rani; nic nie stoi
+bliżej niż 12 st.). Gorące popołudnie za dnia, czerwonawa noc bez gwiazd, nastrój i dźwięki na obszar
+(`Data/Ambience`). Dane: `Data/Areas/ashen` (obszary, drogi, woda, budowle), `Data/Terrain/ashen` (kształt terenu,
+lawa, szczeliny, wydmy, mesy, turnie, suche jezioro), budowle `Logic/AshenGen`.
 
 | Obszar | Poziomy | Potwory | Grupy | Punkt charakterystyczny | Inne |
 |---|---|---|---|---|---|
-| Popielne Wydmy / Ash Dunes | 45–50 | Salamandra, Hiena | 6 | szkielet olbrzymiej bestii | przy portalu z Boru |
-| Hienie Rozpadliny / Hyena Gulch | 47–52 | Hiena, Salamandra | 5 | rozpadlina z mostem linowym | |
-| Obóz Orków Popiołu / Ash Orc Warcamp | 48–56 | Ork Popiołu | 7 | palisada z czaszkami | **wejście: Opuszczona Kopalnia** |
-| Sępia Grań / Vulture Ridge | 50–56 | Sęp, Ork | 5 | gniazda na skałach | |
-| Pole Lawy / Lava Fields | 52–60 | Ognisty Golem, Chochlik (55–60) | 6 | strumienie lawy | łowisko (Magmopłetwy) |
-| Skorpionie Kaniony / Scorpion Canyons | 55–63 | Skorpion, Chochlik | 6 | kanion z łukiem skalnym | rudy Srebra |
-| Gniazda Wywern / Wyvern Roost | 58–66 | Wywerna | 5 | gniazdo z jajami | **wejście: Leże Wywerny** |
-| Kamienny Ogród / Stone Garden | 61–67 | Bazyliszek, Skorpion (61–63) | 5 | skamieniałe posągi | |
-| Grobowce Królów / Tombs of Kings | 66–70 | Mumia, Bazyliszek | 5 | piramidalny grobowiec | **wejście: Kuźnia Głębin** |
+| Równiny Salamander / Salamander Flats ⚡ | 45–50 | Salamandra, Hiena Pustkowi | 8 | Brama z Żeber (żebra olbrzymiej bestii łukiem nad drogą od portali) | czaszka wbita w popiół z legowiskiem hien (obgryzione kości, skóry), Żarzący Lej z jeziorkiem lawy i siecią świecących szczelin, bazaltowe płyty do wygrzewania (łuski), zwęglone kikuty i szkielety drzew, Gorące Źródło z siarkową obwódką (łowisko) · **NPC: zwiadowca** |
+| Martwa Oaza / Dead Oasis ✦ | 46–52 | Hiena Pustkowi, Sęp Popiołu | 6 | łódź osiadła na suchym dnie | wyschnięte jezioro (skorupa soli w wielokąty, wybielona linia brzegu), pomost przez suche dno do ostatniego parującego bajora (łowisko), cmentarzysko karawany (podarte namioty, przewrócone wozy, skrzynie, szkielety zwierząt jucznych w siodłach), skrzynia na środku dna z krążącymi sępami, krąg martwych palm |
+| Obóz Popielnych Orków / Ash Orc Warcamp | 48–56 | Ork Popiołu, Sęp Popiołu | 7 | Krwawy Krąg (zagłębiona arena z palami) | forteca na bazaltowym płaskowyżu: palisada z czaszkami, brama z kłów i bali nad rampą, wieże z rdzawymi chorągwiami, kuźnia (żar, kowadła, stojaki z toporami, dym widać z traktu), bęben wojenny, klatki z kośćmi, namiot wodza, zrzutowisko padliny z sępami pod urwiskiem, **wejście: Opuszczona Kopalnia** (krasnoludzka sztolnia w grani, wieża wyciągowa, orcze chorągwie) |
+| Pola Golemów / Golem Fields | 52–60 | Ognisty Golem, Ognisty Chochlik | 7 | Śpiący Kolos (wzgórze w kształcie leżącego golema, żarzące się oczy) | krater z jeziorem lawy, Ognista Żyła z lawospadem, kamienny most, jeziora stygnącej lawy, jęzory zastygłej lawy, kolumny bazaltowe, obsydian, zastygłe kamienne golemy, kominy chochlików (fumarole, gniazda z węgla, sadza) |
+| Spalone Ruiny / Burnt Ruins ⚡ | 55–61 | Ognisty Chochlik, Skorpion Pustyni | 6 | świątynia z zapadniętą kopułą i tlącą się dzwonnicą (okna żarzą się nocą) | osmalone domy bez dachów z piwnicami pełnymi żaru (gniazda chochlików), aleja samotnych kominów, plac z wyschniętą fontanną pełną żaru, brama miasteczka, pęknięty dzwon, piasek wydm w uliczkach, nory skorpionów |
+| Wydmy Skorpionów / Scorpion Dunes ⛁ | 55–63 | Skorpion Pustyni, Mumia Pustyni | 7 | Zasypany Kolos (głowa króla z turkusowymi oczami i uniesiona dłoń) | morze wydm z płaskimi dolinami, odsłonięte sarkofagi (część pusta), złote maski i monety, połamane kolumny, nory skorpionów i zrzucone pancerze |
+| Turnie Wywern / Wyvern Crags ⚡ | 58–66 | Wywerna, Bazyliszek | 6 | Skamieniała Wywerna (zastygła w ryku na niskiej turni przy drodze) | las rdzawych turni z bazaltowymi czapami i gniazdami, Gniazdowa Mesa z rampą (gniazdo z jajami), droga kanionem pod naturalnym łukiem skalnym, wysoka mesa z wylotem Leża, skamieniałe zwierzęta, **wejście: Leże Wywerny** (osmalony otwór, kości, pęknięte jajo) |
+| Szlak Popiołu / Ash Road ⛁ | 61–67 | Bazyliszek, Wywerna | 4 | Aleja Królów (kolosalne posągi, część leży rozbita) | stara królewska droga z płyt, skamieniała karawana (wóz, woły, ludzie), ograbione i spalone wozy z monetami, obeliski jako kamienie milowe, jama bazyliszka ze zrzuconą skórą |
+| Grobowce Pustyni / Desert Tombs | 66–70 | Mumia Pustyni, Bazyliszek | 5 | schodkowa piramida z turkusowym wejściem | droga procesyjna przez aleję strażników z głowami bazyliszków, obeliski, 2 zagłębione dziedzińce z sarkofagami, urnami i ołtarzami (nocą ogniki), grobowce wykute w skarpie wydm, **wejście: Kuźnia Głębin** (brama krasnoludów z posągami królów, świecące runy, łuna z wnętrza, strumyk stopionego metalu) |
 
 ### Lodowe Szczyty (70–100), razem ok. 49 grup
 

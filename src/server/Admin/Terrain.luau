@@ -6,6 +6,8 @@
 --   /terrainrebuild <map>     rewrite the terrain of a map with a height function (city, Meadows, S45 the regions)
 --   /meadowsstats             server parts, build times, Builds, nodes and monster groups of the Meadows
 --   /regionstats <map>        the same for any region of Logic/WorldGen, with the background build time (S45)
+--   /terraininfo              the ground under the caller: height, material, theme, water / lava, slope (S46)
+--   /worldfx <effect> <mode>  switch a world effect on the caller's client (S46)
 
 local Shared = game:GetService("ReplicatedStorage").Shared
 
@@ -252,6 +254,61 @@ commands.regionstats = function(player, args)
 		groups = #(Spawns.byMap[mapId] or {}),
 	})
 	reply(player, "admin.regionstats.nodes", { list = table.concat(list, ", ") })
+	return true
+end
+
+-- S46: the ground under the caller (shaped regions: RegionTerrain; the Meadows and the city: MapTerrain only).
+commands.terraininfo = function(player)
+	local character = Context.services.PlayerStateService.GetCharacter(player)
+	local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart") :: BasePart?
+	local map = character and Maps.get(character.location.map)
+	if not root or not map then
+		reply(player, "admin.needCharacter")
+		return false
+	end
+	local x, z = root.Position.X - map.offset.x, root.Position.Z - map.offset.z
+	local h = MapTerrain.height(map.id, x, z)
+	if not h then
+		reply(player, "admin.terraininfo.none", { map = map.id })
+		return false
+	end
+	local region = RegionTerrain.get(map.id)
+	local water = MapTerrain.water(map.id, x, z)
+	local lava = if region then region.lava(x, z) else nil
+	local lavaDistance = if region then region.lavaDistance(x, z) else math.huge
+	local slope = if region
+		then region.slope(x, z, 2)
+		elseif map.id == "meadows" then MeadowsTerrain.slope(x, z, 2)
+		else 0
+	local round = function(v: number): number
+		return math.floor(v * 10 + 0.5) / 10
+	end
+	reply(player, "admin.terraininfo.ok", {
+		map = map.id,
+		x = math.floor(x),
+		z = math.floor(z),
+		h = round(h),
+		material = if region
+			then region.material(x, z)
+			elseif map.id == "meadows" then MeadowsTerrain.material(x, z)
+			else "—",
+		theme = if region
+			then region.themeAt(x, z)
+			elseif map.id == "meadows" then MeadowsTerrain.themeAt(x, z)
+			else "—",
+		water = if water then tostring(round(water)) else "—",
+		lava = if lava then tostring(round(lava)) else "—",
+		lavaDistance = if lavaDistance < 1e6 then tostring(round(lavaDistance)) else "—",
+		slope = round(math.deg(math.atan(slope))),
+		walkable = tostring(MapTerrain.walkable(map.id, x, z, 10)),
+	})
+	return true
+end
+
+commands.worldfx = function(player, args)
+	local effect, mode = args[1] or "", args[2] or ""
+	Net.Fire(player, "AdminClient", "worldfx", { name = effect, mode = mode })
+	reply(player, "admin.worldfx.ok", { effect = effect, mode = mode })
 	return true
 end
 

@@ -255,6 +255,27 @@ type CharacterData = {
     świec i latarni, `bubbles`), `WorldController` (`MapDef.dayClock`: wieczny zmierzch, `DayCycle.duskClock`);
   - podglądy bez Studio: `tools/regiondump.luau` + `regionmap.py` (mapa z góry), `tools/regionview.luau` +
     `regionview.py` (3D, `--dusk`), fixture `tools/fixture_duskwood.luau` → `tests/fixtures/duskwoodHeights.luau`.
+- Kształty pustyni (S46, Spalone Pustkowia; wszystkie opcjonalne, mapy bez nich liczą się jak przedtem):
+  - `Data/Terrain/Types`: `dunes` (pole wydm: wiatr, długość fali, wysokość, zawietrzna, doliny, kręty grzbiet,
+    materiał), `mesas` (płaski szczyt, prawie pionowe ściany, postrzępiony obrys, piarg; elipsa albo wielokąt),
+    `spires` (turnie: promień, wysokość, asymetria, czapa), `lava` (`rivers` z poziomem spadającym z biegiem jak
+    strugi, `pools` z wałami, stygnące jeziora `crust`, wyspy skorupy, `falls`), `cracks` (szczeliny świecące albo
+    zimne), `drylakes` (suche jezioro: płaskie dno, skorupa soli w wielokąty, linia brzegu), `strata` (warstwy skały na
+    ścianach), `capMaterial`, `fallback`; reguły materiałów z `minLava`/`maxLava`, `rock`, `dune`, `drylake` i
+    materiałami `@strata` / `@dune`;
+  - `RegionTerrain`: zapytania `lava(x, z)`, `lavaDistance`, `crackDistance`, `lavaLine`, `lavaLevel`, `rockAt`,
+    `duneWeight`, `dryWeight`; `walkable` = false bliżej niż `LAVA_CLEARANCE` (12 st.) od lawy i świecących szczelin
+    (`MapTerrain.walkable` sprawdza też pierścień), `crossings()` zwraca kamienne mosty nad lawą (`lava = true`); lawa to
+    zwykły teren `CrackedLava` (nigdy `Water`), świecenie robi klient;
+  - generator `Logic/AshenGen/*` (Flats, Oasis, Warcamp, Lava, Ruins, Dunes, Crags, Road, Necropolis, Mouths, Props,
+    Env) w rejestrze `WorldGen`; `Flora`: `charredStump`, `burntTree`, `deadPalm`, `under.deadBush`, drzewa omijają
+    lawę; `Kit.Ctx.perch` (rodzaj ptaków na martwych drzewach);
+  - klient: `TownFxController` (tagi `lava`, `lavaCrust`, `lavafall`, `ember`, `vent`, `forge`, `glow`),
+    `RegionLightController` (jedyny właściciel `Enabled` świateł z tagiem `lava`: włączone N najbliższych kamery,
+    `Config.RegionLights`), `WorldLifeController` (popiół, żar, drżące powietrze, para, dym i słupy dymu widoczne z
+    daleka, bąble lawy, sępy siedzące i krążące, trąby piaskowe, `/worldfx`), `DecorController` (9 motywów Pustkowi,
+    nic na lawie), `RegionLayout` (`ctx.wet` obejmuje lawę); fixture `tools/fixture_ashen.luau` →
+    `tests/fixtures/ashenHeights.luau`.
 
 ## 9. UI (Fusion 0.3)
 

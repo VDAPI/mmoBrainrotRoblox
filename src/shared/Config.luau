@@ -113,6 +113,9 @@ local Config = {
 	TownFineRadius = { low = 60, mid = 90, high = 120 },
 	TownDetailHysteresis = 40,
 	TownDetailPartsPerFrame = 400,
+	-- S46: lights of the region's lava (and later of the caves) on at once, nearest to the camera first, per
+	-- "World detail" setting (Controllers/RegionLightController).
+	RegionLights = { low = 4, mid = 8, high = 12 },
 	-- Day and night on maps with `dayNight` (S21): one full day in real seconds; night (19:00-6:00) takes
 	-- DayNightShare of it.
 	DayLength = 2400,

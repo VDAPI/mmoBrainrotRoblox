@@ -53,6 +53,13 @@ local COLORS: { [string]: { color: string, transparency: number } } = {
 	basin = { color = "#2A3424", transparency = 0.35 },
 	elderTree = { color = "#4A3A2C", transparency = 0 },
 	ritual = { color = "#5A3A6E", transparency = 0.1 },
+	-- Ashen Wastes (S46): glowing and cold cracks, dune crests, mesas and spires, the pyramid, the dry lake bed.
+	crack = { color = "#3A3436", transparency = 0.2 },
+	dune = { color = "#A8885A", transparency = 0.25 },
+	mesa = { color = "#7A3A30", transparency = 0.2 },
+	crag = { color = "#5A2A24", transparency = 0 },
+	pyramid = { color = "#C8B48A", transparency = 0 },
+	drylake = { color = "#D6CFC0", transparency = 0.3 },
 	-- Large ground patches (S20): "ground:<Material>"
 	["ground:Sand"] = { color = "#C9A870", transparency = 0.2 },
 	["ground:Mud"] = { color = "#4A4232", transparency = 0.25 },
@@ -68,7 +75,7 @@ local BACKGROUND: { [string]: string } = {
 	city = "#4F6A35",
 	grass = "#56743A",
 	forest = "#2E3B26",
-	desert = "#B08A5A",
+	desert = "#8E8076", -- S46: the ash plain (was sand)
 	snow = "#C9D6E3",
 	cave = "#1E1C1A",
 	crypt = "#16141C",

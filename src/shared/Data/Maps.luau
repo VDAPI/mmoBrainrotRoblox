@@ -141,6 +141,19 @@ local LIGHT = {
 		tint = "#FFE2C9",
 		saturation = 0,
 	}),
+	-- Night on the Ashen Wastes (S46): no stars through the ash, a reddish fog, a dark maroon ambient bright enough
+	-- to fight in; the light comes from the lava, the cracks, the forges, the fires and the runes.
+	ashenNight = lighting({
+		clockTime = 0,
+		brightness = 0.8,
+		ambient = "#3A2220",
+		outdoorAmbient = "#4A2A26",
+		fogColor = "#2A1210",
+		fogEnd = 520,
+		atmosphere = { density = 0.48, haze = 2.6, glare = 0, color = "#3A1A16", decay = "#1A0A08" },
+		tint = "#FFD8C8",
+		saturation = -0.1,
+	}),
 	frostpeak = lighting({
 		clockTime = 11,
 		brightness = 2.6,
@@ -306,8 +319,18 @@ map({
 	spawn = { x = -700, y = 4, z = 0 },
 	biome = "desert",
 	lighting = LIGHT.ashen,
+	-- S46: night (lava, cracks and fires light it) and a low afternoon sun by day; the areas' moods on top
+	-- (Data/Ambience).
+	dayNight = true,
+	nightLighting = LIGHT.ashenNight,
+	dayClock = { 15.4, 17.2 },
+	-- Creator Store: "desert dark ambient loop" with war drums and a duduk, 2-3 min, loops.
 	music = "",
 	buildMode = "generated",
+	-- S46: the shaped wastes build in the background; server budget: ~180 big dead trees (2 parts each), buildings
+	-- and props ~850, portals / cave entrances / signposts ~300 (tests/ashen.spec: generator shell + 300 <= maxParts).
+	buildLate = true,
+	maxParts = 2400,
 	worldMap = { x = 0.76, y = 0.6 },
 	links = { "duskwood", "city", "ashen_mine", "ashen_lair", "ashen_cave", "frostpeak" },
 })

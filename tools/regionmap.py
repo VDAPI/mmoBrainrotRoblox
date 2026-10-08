@@ -31,6 +31,8 @@ COLORS = {
     "Snow": (238, 243, 247),
     "Glacier": (168, 216, 240),
     "Ice": (201, 232, 247),
+    "Asphalt": (119, 113, 108),
+    "Concrete": (214, 207, 192),
     "Water": (58, 111, 168),
 }
 
@@ -41,6 +43,9 @@ TREE_COLORS = {
     "mossWillow": (90, 120, 60),
     "giantMushroom": (170, 80, 160),
     "giantOak": (60, 100, 40),
+    "charredStump": (30, 26, 24),
+    "burntTree": (40, 34, 30),
+    "deadPalm": (120, 100, 70),
 }
 
 

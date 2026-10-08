@@ -313,6 +313,11 @@ local UNDER: { [string]: boolean } = {
 	ravineWall = true,
 	plateau = true,
 	cliff = true,
+	-- S46
+	drylake = true,
+	["ground:Sand"] = true,
+	dune = true,
+	mesa = true,
 }
 
 local function region(ctx: Ctx, mapId: string): string

@@ -275,10 +275,127 @@ for id, mood in DUSKWOOD_AREAS do
 	areas[id] = mood
 end
 
+-- Ashen Wastes (S46) ---------------------------------------------------------------------------------------------
+local ASH_WIND = s("desert wind with ash loop (dry gusts, fine grit hissing)", 0.4)
+local EARTH_RUMBLE = s("distant earth rumble loop (deep, slow, volcanic)", 0.25)
+local EMBERS_CRACKLE = s("embers crackling loop (hot coals, small pops)", 0.35)
+local HYENAS = s("hyena laughter distant night loop (cackles, long gaps)", 0.3)
+local HOT_WIND_PALMS = s("hot wind in dry palm leaves loop (rustling, dry)", 0.4)
+local VULTURES = s("vultures calling loop (distant screeches, wings)", 0.3)
+local DESERT_INSECTS = s("desert night insects loop (crickets, dry, sparse)", 0.35)
+local ORC_CAMP = s("orc war camp ambience loop (grunts, chatter, distant fire)", 0.4)
+local FORGE_HAMMERS = s("blacksmith hammering loop (anvil, slow, distant)", 0.35)
+local WAR_DRUMS = s("war drums loop (deep, slow, tribal)", 0.4)
+local CAMPFIRE = s("large bonfire crackle loop", 0.35)
+local LAVA_BUBBLING = s("lava bubbling loop (thick, slow, hissing)", 0.45)
+local SMOULDER = s("smouldering ruins loop (crackling embers, settling debris)", 0.35)
+local RUINS_WIND = s("wind through ruins loop (hollow, whistling gaps)", 0.35)
+local BEAM_CREAK = s("old wooden beam creaking loop (slow, occasional)", 0.25)
+local IMP_GIGGLES = s("small creature giggles loop (impish, distant, eerie)", 0.25)
+local DESERT_WIND = s("desert wind loop (open dunes, steady)", 0.4)
+local SAND_HISS = s("blowing sand loop (fine hiss over dunes)", 0.3)
+local DESERT_NIGHT_WIND = s("cold desert night wind loop (soft, empty)", 0.35)
+local CRAG_WIND = s("wind whistling through rocks loop (canyon, high pitch)", 0.4)
+local WYVERN_SCREECH = s("distant dragon screech loop (rare, echoing)", 0.25)
+local DUSTY_WIND = s("dusty wind and silence loop (empty road, faint gusts)", 0.35)
+local WINGS = s("large wings flapping distant loop (rare)", 0.25)
+local FALLING_STONES = s("small rocks trickling loop (scree, occasional)", 0.25)
+local STILL_HEAT = s("still hot air drone loop (very quiet, low)", 0.25)
+local DRONE_LOW = s("ancient tomb low drone loop (dark, sustained)", 0.3)
+local WHISPERS_TOMB = s("ghostly whispers loop (faint, ancient, tomb)", 0.25)
+
+local ASHEN_AREAS: { [string]: Mood } = {
+	-- ashen grey, slightly drained
+	ashen_flats = {
+		fogColor = "#9A8A7E",
+		fogMix = 0.4,
+		saturation = -0.08,
+		haze = 0.8,
+		sounds = { day = { ASH_WIND, EARTH_RUMBLE }, night = { EMBERS_CRACKLE, HYENAS } },
+	},
+	-- glaring heat
+	ashen_oasis = {
+		brightness = 1.08,
+		tint = "#FFF0D0",
+		tintMix = 0.35,
+		haze = 1.2,
+		sounds = { day = { HOT_WIND_PALMS, VULTURES }, night = { DESERT_INSECTS, HYENAS } },
+	},
+	-- smoky
+	ashen_warcamp = {
+		fogScale = 0.75,
+		fogColor = "#7A4A3A",
+		fogMix = 0.45,
+		haze = 0.8,
+		sounds = { day = { ORC_CAMP, FORGE_HAMMERS }, night = { WAR_DRUMS, CAMPFIRE } },
+	},
+	-- red, hazy, dense
+	ashen_golemfields = {
+		fogScale = 0.7,
+		fogColor = "#B0482A",
+		fogMix = 0.5,
+		tint = "#FFC8A8",
+		tintMix = 0.4,
+		haze = 1.6,
+		density = 0.06,
+		sounds = { day = { LAVA_BUBBLING, EARTH_RUMBLE }, night = { LAVA_BUBBLING, EARTH_RUMBLE, EMBERS_CRACKLE } },
+	},
+	-- grey-brown, drained
+	ashen_burntruins = {
+		fogScale = 0.8,
+		fogColor = "#6A5E56",
+		fogMix = 0.4,
+		saturation = -0.25,
+		sounds = { day = { SMOULDER, RUINS_WIND, BEAM_CREAK }, night = { EMBERS_CRACKLE, IMP_GIGGLES } },
+	},
+	-- bright golden
+	ashen_dunes = {
+		brightness = 1.1,
+		tint = "#FFE8C0",
+		tintMix = 0.35,
+		saturation = 0.1,
+		sounds = { day = { DESERT_WIND, SAND_HISS }, night = { DESERT_NIGHT_WIND } },
+	},
+	-- clearer, warm
+	ashen_crags = {
+		fogScale = 1.15,
+		tint = "#FFE4CC",
+		tintMix = 0.3,
+		sounds = { day = { CRAG_WIND, WYVERN_SCREECH }, night = { CRAG_WIND } },
+	},
+	-- sepia
+	ashen_ashroad = {
+		fogColor = "#A89078",
+		fogMix = 0.45,
+		tint = "#F0E0C8",
+		tintMix = 0.35,
+		saturation = -0.18,
+		sounds = { day = { DUSTY_WIND, WINGS }, night = { DUSTY_WIND, FALLING_STONES } },
+	},
+	-- cooler, a touch of turquoise
+	ashen_tombs = {
+		fogColor = "#8A9A98",
+		fogMix = 0.3,
+		tint = "#E0F4F4",
+		tintMix = 0.3,
+		saturation = -0.12,
+		sounds = { day = { STILL_HEAT, SAND_HISS }, night = { DRONE_LOW, WHISPERS_TOMB } },
+	},
+}
+for id, mood in ASHEN_AREAS do
+	areas[id] = mood
+end
+
 -- Map-wide moods outside every area (paths between the areas keep the map's plain light).
 local maps: { [string]: Mood } = {
 	meadows = { sounds = { day = { BIRDS, WIND_GRASS }, night = { NIGHT_CRICKETS } } },
 	duskwood = { sounds = { day = { OLD_TREES }, night = { DARK_FOREST_NIGHT } } },
+	ashen = {
+		sounds = {
+			day = { DESERT_WIND },
+			night = { DESERT_NIGHT_WIND, s("distant thunder rumble loop (dry storm, long gaps)", 0.25) },
+		},
+	},
 }
 
 -- Positional loops (map-relative).
@@ -317,6 +434,22 @@ local points: { [string]: { Point } } = {
 		{ x = 616, z = -40, radius = 90, sound = s("bat colony squeaks loop (cave, many bats)", 0.35), night = true },
 		{ x = 150, z = 372, radius = 110, sound = s("rotting wood groans and bubbling mud loop (creepy forest)", 0.4) },
 		{ x = 768, z = 0, radius = 80, sound = s("crypt wind howl loop (low, cold, stone)", 0.35) },
+	},
+	-- S46 (positions: Data/Areas/ashen sites, Data/Terrain/ashen lava)
+	ashen = {
+		{ x = 60, z = 262, radius = 80, sound = LAVA_BUBBLING },
+		{ x = -182, z = 300, radius = 80, sound = LAVA_BUBBLING },
+		{ x = -60, z = 281, radius = 70, sound = s("lava flowing loop (slow, thick, crackling crust)", 0.4) },
+		{ x = 130, z = 100, radius = 150, sound = s("volcanic vent roar loop (deep, rumbling)", 0.5) },
+		{ x = 92, z = 138, radius = 90, sound = s("lava fall loop (heavy pouring, hissing)", 0.5) },
+		{ x = -590, z = -190, radius = 70, sound = LAVA_BUBBLING },
+		{ x = -166, z = -540, radius = 80, sound = FORGE_HAMMERS },
+		{ x = -250, z = -640, radius = 160, sound = WAR_DRUMS, night = true },
+		{ x = -680, z = 304, radius = 60, sound = s("bubbling hot spring loop (water, steam hiss)", 0.4) },
+		{ x = 214, z = 604, radius = 80, sound = SMOULDER },
+		{ x = 560, z = -560, radius = 140, sound = CRAG_WIND },
+		{ x = 752, z = 0, radius = 100, sound = s("dwarven forge deep loop (muffled hammers, bellows)", 0.45) },
+		{ x = 610, z = 150, radius = 110, sound = DRONE_LOW, night = true },
 	},
 }
 

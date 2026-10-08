@@ -5,6 +5,7 @@
 -- (World/RegionLayout), the client (TownDetailController, WorldLifeController, DecorController), the tools and the
 -- wiki. (Logic/WorldGen/Kit and Flora do not require this module.)
 
+local AshenGen = require("./AshenGen")
 local DuskwoodGen = require("./DuskwoodGen")
 local MeadowsGen = require("./MeadowsGen")
 
@@ -34,6 +35,7 @@ export type Generator = {
 local REGISTRY: { [string]: Generator } = {
 	meadows = MeadowsGen :: any,
 	duskwood = DuskwoodGen :: any,
+	ashen = AshenGen :: any, -- S46
 }
 
 -- Generator of a map (nil for maps without one).

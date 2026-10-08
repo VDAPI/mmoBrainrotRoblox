@@ -43,7 +43,8 @@ function MapTerrain.has(mapId: string): boolean
 end
 
 -- Whether a monster group or an arriving player can stand here: dry, no cliff within `radius` studs (default 4).
--- On shaped regions (S45) also no water of the terrain (marsh pools, basins) within RegionTerrain.WATER_CLEARANCE.
+-- On shaped regions (S45) also no water of the terrain (marsh pools, basins) within RegionTerrain.WATER_CLEARANCE
+-- and (S46) no lava or glowing crack within RegionTerrain.LAVA_CLEARANCE (region.walkable) or on the ring.
 -- Maps without a height function: always true.
 function MapTerrain.walkable(mapId: string, x: number, z: number, radius: number?): boolean
 	if mapId == "meadows" then
@@ -77,7 +78,7 @@ function MapTerrain.walkable(mapId: string, x: number, z: number, radius: number
 		for i = 0, 7 do
 			local a = i * math.pi / 4
 			local px, pz = x + math.cos(a) * r, z + math.sin(a) * r
-			if region.slope(px, pz, 2) > region.WALKABLE_SLOPE then
+			if region.slope(px, pz, 2) > region.WALKABLE_SLOPE or region.lavaDistance(px, pz) < 0 then
 				return false
 			end
 		end

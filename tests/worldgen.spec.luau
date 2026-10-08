@@ -1,8 +1,10 @@
 --!strict
--- S45: the region engine's registries: Logic/WorldGen knows the Meadows (MeadowsGen unchanged) and Duskwood,
+-- S45: the region engine's registries: Logic/WorldGen knows the Meadows (MeadowsGen unchanged), Duskwood and (S46)
+-- the Ashen Wastes,
 -- Logic/MapTerrain answers for Duskwood what Logic/RegionTerrain does, generator contexts do not share their life
 -- points and sketch, and the eternal dusk clock of Logic/DayCycle.
 
+local AshenGen = require("../src/shared/Logic/AshenGen")
 local DayCycle = require("../src/shared/Logic/DayCycle")
 local DuskwoodGen = require("../src/shared/Logic/DuskwoodGen")
 local Kit = require("../src/shared/Logic/WorldGen/Kit")
@@ -16,12 +18,13 @@ local WorldGen = require("../src/shared/Logic/WorldGen")
 local describe, it, expect = Test.describe, Test.it, Test.expect
 
 describe("WorldGen registry", function()
-	it("knows the Meadows and Duskwood, nothing else yet", function()
+	it("knows the Meadows, Duskwood and the Ashen Wastes (S46), nothing else yet", function()
 		expect(WorldGen.get("meadows") == (MeadowsGen :: any)).toBe(true)
 		expect(WorldGen.get("duskwood") == (DuskwoodGen :: any)).toBe(true)
-		expect(WorldGen.get("ashen")).toBe(nil)
+		expect(WorldGen.get("ashen") == (AshenGen :: any)).toBe(true)
+		expect(WorldGen.get("frostpeak")).toBe(nil)
 		expect(WorldGen.get("city")).toBe(nil)
-		expect(WorldGen.maps()).toEqual({ "duskwood", "meadows" })
+		expect(WorldGen.maps()).toEqual({ "ashen", "duskwood", "meadows" })
 	end)
 
 	it("keeps the Meadows on their own terrain and generator", function()
@@ -34,13 +37,14 @@ describe("WorldGen registry", function()
 		local T = assert(RegionTerrain.get("duskwood"))
 		expect(RegionTerrain.has("duskwood")).toBe(true)
 		expect(MapTerrain.has("duskwood")).toBe(true)
-		expect(MapTerrain.has("ashen")).toBe(false)
+		expect(MapTerrain.has("ashen")).toBe(true)
+		expect(MapTerrain.has("frostpeak")).toBe(false)
 		for _, p in { { 0, 0 }, { 150, 372 }, { 640, -100 }, { 580, 520 }, { -690, -36 } } do
 			expect(MapTerrain.height("duskwood", p[1], p[2])).toBe(T.height(p[1], p[2]))
 			expect(MapTerrain.water("duskwood", p[1], p[2])).toBe(T.water(p[1], p[2]))
 		end
-		expect(MapTerrain.height("ashen", 0, 0)).toBe(nil)
-		expect(MapTerrain.walkable("ashen", 0, 0, 10)).toBe(true)
+		expect(MapTerrain.height("frostpeak", 0, 0)).toBe(nil)
+		expect(MapTerrain.walkable("frostpeak", 0, 0, 10)).toBe(true)
 	end)
 
 	it("gives every generator context its own life points and sketch", function()

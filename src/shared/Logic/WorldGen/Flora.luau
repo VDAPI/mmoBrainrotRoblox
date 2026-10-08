@@ -182,8 +182,125 @@ Flora.species.blackDead = function(bp, x, y, z, s, big, ctx)
 		)
 	end
 	if big then
-		Kit.life(ctx, "perch", tipX, y + h * 0.98 + 0.6, tipZ)
+		Kit.life(ctx, ctx.perch or "perch", tipX, y + h * 0.98 + 0.6, tipZ)
 	end
+end
+
+-- S46 Ashen Wastes ------------------------------------------------------------------------------------------------
+
+-- Charred stump: a short black trunk split at the top, a stub of a branch, ash round its foot.
+Flora.species.charredStump = function(bp, x, y, z, s, big, _ctx)
+	local rng = bp.rng
+	local h = rng:float(2.6, 5) * s
+	local opt = trunk(big)
+	opt.c = "#1F1B19"
+	bp:add("cyl", h, 1.7 * s, 1.7 * s, x, y + h / 2 - 0.4, z, 0, rng:float(0, 90), 90 + rng:float(-6, 6), opt)
+	for i = 1, 3 do
+		local a = i * 2.1 + rng:float(-0.3, 0.3)
+		bp:rbox(
+			0.5 * s,
+			rng:float(0.8, 1.6) * s,
+			0.4 * s,
+			x + math.cos(a) * 0.5 * s,
+			y + h + 0.2,
+			z + math.sin(a) * 0.5 * s,
+			rng:float(-20, 20),
+			0,
+			rng:float(-20, 20),
+			o(Kit.charred, "detail", { col = false, q = false })
+		)
+	end
+	bp:beam(
+		x,
+		y + h * 0.6,
+		z,
+		x + 1.8 * s,
+		y + h * 0.8,
+		z + 0.6 * s,
+		0.35 * s,
+		o(Kit.charred, "detail", { col = false })
+	)
+	bp:add(
+		"ball",
+		3.4 * s,
+		0.5,
+		3.4 * s,
+		x,
+		y + 0.05,
+		z,
+		0,
+		0,
+		0,
+		o({ c = "#3A3634", m = "Slate" }, "fine", { col = false })
+	)
+end
+
+-- Skeleton of a burnt tree: a tall black trunk with bare, broken limbs (no crown), a few glowing cinders in old
+-- wounds near the ground.
+Flora.species.burntTree = function(bp, x, y, z, s, big, _ctx)
+	local rng = bp.rng
+	local h = rng:float(9, 13) * s
+	local opt = trunk(big)
+	opt.c = "#191614"
+	local lean = rng:float(-6, 6)
+	bp:add("cyl", h, 1.2 * s, 1.2 * s, x, y + h / 2 - 0.5, z, 0, rng:float(0, 90), 90 + lean, opt)
+	for i = 1, 5 do
+		local a = i * 1.25 + rng:float(-0.3, 0.3)
+		local by = y + h * rng:float(0.35, 0.92)
+		local len = rng:float(2.2, 4.4) * s
+		bp:beam(
+			x,
+			by,
+			z,
+			x + math.cos(a) * len,
+			by + rng:float(0.6, 2.6) * s,
+			z + math.sin(a) * len,
+			0.32 * s,
+			o(Kit.charred, if i <= 2 then crownLod(big) else "detail", { col = false, q = false })
+		)
+	end
+	if rng:next() < 0.35 then
+		bp:box(0.5, 0.8, 0.12, x, y + 1.2, z - 0.62 * s, {
+			c = "#FF7A1A",
+			m = "Neon",
+			lod = "fine",
+			col = false,
+			tag = "ember",
+			jitter = 0,
+		})
+	end
+end
+
+-- Dead palm: a leaning ringed trunk and a crown of grey, drooping, broken fronds.
+Flora.species.deadPalm = function(bp, x, y, z, s, big, _ctx)
+	local rng = bp.rng
+	local lean = rng:float(8, 20)
+	local yaw = rng:float(0, 360)
+	local h = 12 * s
+	bp:push(x, y, z, 0, yaw, 0)
+	local opt = trunk(big)
+	opt.c = "#6A5A48"
+	local off = h * math.sin(math.rad(lean)) / 2
+	bp:rbox(1.1 * s, h, 1.1 * s, 0, h / 2 - 0.5, off, lean, 0, 0, opt)
+	local tz = off * 2
+	for i = 0, 5 do
+		local a = i * 60 + rng:float(-12, 12)
+		bp:push(0, h - 1, tz, 0, a, 0)
+		bp:rbox(
+			0.8 * s,
+			0.15,
+			5 * s,
+			0,
+			-1.6 * s,
+			-2.2 * s,
+			-(55 + rng:float(0, 30)),
+			0,
+			0,
+			o({ c = "#7A6A50", m = "Grass" }, if i < 2 then crownLod(big) else "detail", { col = false, q = false })
+		)
+		bp:pop()
+	end
+	bp:pop()
 end
 
 -- Willow with beards of moss hanging from a low wide crown.
@@ -412,6 +529,25 @@ Flora.under.thorns = function(bp, x, y, z)
 	bp:add("ball", 2.4, 1.2, 2.4, x, y + 0.4, z, 0, 0, 0, o({ c = "#4A3A2E", m = "Grass" }, "detail", { col = false }))
 end
 
+-- S46: dry grey-brown bush of bare twigs (the Ashen Wastes).
+Flora.under.deadBush = function(bp, x, y, z)
+	local rng = bp.rng
+	for i = 1, 4 do
+		local a = i * 1.6 + rng:float(-0.4, 0.4)
+		bp:beam(
+			x,
+			y,
+			z,
+			x + math.cos(a) * 1.6,
+			y + rng:float(1, 1.8),
+			z + math.sin(a) * 1.6,
+			0.14,
+			o({ c = "#6A5A48", m = "Wood" }, "detail", { col = false })
+		)
+	end
+	bp:add("ball", 1.8, 0.8, 1.8, x, y + 0.3, z, 0, 0, 0, o({ c = "#7A6A4E", m = "Grass" }, "detail", { col = false }))
+end
+
 Flora.under.sapling = function(bp, x, y, z)
 	local rng = bp.rng
 	local s = rng:float(0.45, 0.7)
@@ -490,6 +626,7 @@ export type Ground = {
 	streamDistance: (x: number, z: number) -> number,
 	lakeDistance: (x: number, z: number) -> number,
 	marshWeight: (x: number, z: number) -> number,
+	lavaDistance: ((x: number, z: number) -> number)?, -- S46: nothing grows within 6 studs of lava
 }
 
 export type Options = {
@@ -511,6 +648,10 @@ local function treeGround(g: Ground, half: number, x: number, z: number, maxSlop
 		return false
 	end
 	if g.isWater(x, z) then
+		return false
+	end
+	local lava = g.lavaDistance
+	if lava and lava(x, z) < 6 then
 		return false
 	end
 	return g.slope(x, z, 3) < maxSlope

@@ -31,7 +31,7 @@
   --vw-map-bg-cave: #1E1C1A;
   --vw-map-bg-city: #4F6A35;
   --vw-map-bg-crypt: #16141C;
-  --vw-map-bg-desert: #B08A5A;
+  --vw-map-bg-desert: #8E8076;
   --vw-map-bg-dungeon: #1E1C1A;
   --vw-map-bg-forest: #2E3B26;
   --vw-map-bg-grass: #56743A;
@@ -40,6 +40,10 @@
   --vw-map-building: #B5A488;
   --vw-map-cemetery: #465A3A;
   --vw-map-cliff: #6E2F2A;
+  --vw-map-crack: #3A3436;
+  --vw-map-crag: #5A2A24;
+  --vw-map-drylake: #D6CFC0;
+  --vw-map-dune: #A8885A;
   --vw-map-elder-tree: #4A3A2C;
   --vw-map-field: #B49A5A;
   --vw-map-floor: #5A5650;
@@ -56,9 +60,11 @@
   --vw-map-hill: #3E5A30;
   --vw-map-lava: #E8541A;
   --vw-map-marsh: #3E4A30;
+  --vw-map-mesa: #7A3A30;
   --vw-map-path: #9A8A68;
   --vw-map-plateau: #5A3E36;
   --vw-map-plaza: #8A8070;
+  --vw-map-pyramid: #C8B48A;
   --vw-map-quarry: #7E786C;
   --vw-map-quarry-deep: #5A554C;
   --vw-map-quarry-mid: #6C665C;

@@ -11,6 +11,8 @@
 -- scraps) and ravine (moss, stones). On the Meadows shores come from the height function (Logic/MeadowsTerrain).
 -- S45: Duskwood's themes (thicket, hollow, ruins, rot, cult, mist, bog, witch, cliffs) and, on every shaped region,
 -- the theme and shores from its terrain (Logic/RegionTerrain).
+-- S46: the Ashen Wastes' themes (ash, saltflat, warcamp, lavafield, burnt, dunes, crags, royalroad, necropolis): no
+-- flowers or green grass there; nothing lies on lava.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -392,6 +394,50 @@ local BIOMES: { [string]: { count: number, mix: { { string | number } } } } = {
 	},
 }
 
+-- S46: the Ashen Wastes (ash heaps, charred twigs, basalt and obsidian, salt plates, mud flakes, broken weapons,
+-- rusty scrap, rags, slag, glowing coals, charred planks, potsherds, scorched bricks, sand ripples, carapaces, wyvern
+-- scales, slab and statue chips, coins, linen strips, turquoise pebbles).
+local function item(size: Vector3, color: string, material: Enum.Material, lift: number, tilt: boolean?): Template
+	return { size = size, color = rgb(color), material = material, lift = lift, tilt = tilt }
+end
+T.ashHeap = item(Vector3.new(2.2, 0.5, 1.8), "#8A8480", Enum.Material.Slate, 0.1)
+T.charTwig = item(Vector3.new(2.2, 0.18, 0.18), "#1F1B19", Enum.Material.Wood, 0.08, true)
+T.basaltPebble = item(Vector3.new(0.9, 0.5, 0.7), "#2E2A2C", Enum.Material.Basalt, 0.15, true)
+T.obsidian = item(Vector3.new(0.9, 0.7, 0.4), "#16141C", Enum.Material.Glass, 0.25, true)
+T.saltPlate = item(Vector3.new(1.8, 0.12, 1.4), "#E2DACB", Enum.Material.SmoothPlastic, 0.05, true)
+T.mudFlake = item(Vector3.new(1.4, 0.15, 1.1), "#7A6A4E", Enum.Material.Ground, 0.06, true)
+T.palmLeaf = item(Vector3.new(3.4, 0.08, 0.7), "#7A6A50", Enum.Material.Grass, 0.05, true)
+T.brokenArrow = item(Vector3.new(2, 0.1, 0.1), "#4A3A2C", Enum.Material.Wood, 0.06, true)
+T.spear = item(Vector3.new(4.2, 0.15, 0.15), "#3A2E24", Enum.Material.Wood, 0.08, true)
+T.scrap = item(Vector3.new(1.2, 0.3, 0.9), "#6A3A26", Enum.Material.CorrodedMetal, 0.12, true)
+T.rag = item(Vector3.new(1.4, 0.06, 1), "#6B5048", Enum.Material.Fabric, 0.04, true)
+T.slag = item(Vector3.new(1, 0.5, 0.8), "#3A2E2A", Enum.Material.Basalt, 0.2, true)
+T.coal = {
+	size = Vector3.new(0.35, 0.25, 0.35),
+	color = rgb("#FF6A1A"),
+	material = Enum.Material.Neon,
+	lift = 0.1,
+}
+T.sulphur = item(Vector3.new(1.6, 0.08, 1.2), "#D8C04A", Enum.Material.Sand, 0.04)
+T.charPlank = item(Vector3.new(3, 0.2, 0.6), "#24201C", Enum.Material.WoodPlanks, 0.1, true)
+T.sherd = item(Vector3.new(0.6, 0.12, 0.5), "#9A5A3A", Enum.Material.SmoothPlastic, 0.06, true)
+T.brick = item(Vector3.new(1, 0.5, 0.5), "#4A3A34", Enum.Material.Brick, 0.2, true)
+T.soot = item(Vector3.new(2.4, 0.04, 1.8), "#1A1716", Enum.Material.Slate, 0.02)
+T.ripple = item(Vector3.new(4, 0.12, 0.6), "#B89A6A", Enum.Material.Sand, 0.02)
+T.carapace = item(Vector3.new(1.2, 0.35, 1.6), "#C29A5B", Enum.Material.SmoothPlastic, 0.15, true)
+T.scale = item(Vector3.new(0.6, 0.06, 0.5), "#8A3A2A", Enum.Material.SmoothPlastic, 0.04, true)
+T.scorch = item(Vector3.new(1.2, 0.6, 1), "#2A2420", Enum.Material.Slate, 0.2, true)
+T.slabChip = item(Vector3.new(1.6, 0.4, 1.2), "#7A7468", Enum.Material.Slate, 0.15, true)
+T.statueChip = item(Vector3.new(1.2, 1, 1), "#8A8680", Enum.Material.Slate, 0.4, true)
+T.coin = item(Vector3.new(0.5, 0.08, 0.5), "#C9A45C", Enum.Material.Metal, 0.04)
+T.linen = item(Vector3.new(1.6, 0.04, 0.4), "#D8C9A0", Enum.Material.Fabric, 0.03, true)
+T.turquoise = {
+	size = Vector3.new(0.35, 0.3, 0.35),
+	color = rgb("#6BE0FF"),
+	material = Enum.Material.Neon,
+	lift = 0.12,
+}
+
 -- Area themes (S26, Data/Areas `decor`): items per chunk and the mix.
 local THEMES: { [string]: { count: number, mix: { { string | number } } } } = {
 	meadow = {
@@ -565,6 +611,44 @@ THEMES.witch = {
 THEMES.cliffs = {
 	count = 30,
 	mix = { { "redChip", 7 }, { "thorn", 4 }, { "pebbleRed", 4 }, { "bone", 3 }, { "tuftDry", 4 } },
+}
+
+-- S46: the Ashen Wastes' areas.
+THEMES.ash = {
+	count = 26,
+	mix = { { "ashHeap", 5 }, { "charTwig", 5 }, { "basaltPebble", 5 }, { "bone", 2 }, { "tuftDry", 2 }, { "soot", 2 } },
+}
+THEMES.saltflat = {
+	count = 26,
+	mix = { { "saltPlate", 7 }, { "mudFlake", 6 }, { "bone", 3 }, { "palmLeaf", 3 }, { "tuftDry", 1 } },
+}
+THEMES.warcamp = {
+	count = 28,
+	mix = { { "bone", 5 }, { "brokenArrow", 4 }, { "spear", 2 }, { "scrap", 4 }, { "rag", 3 }, { "ashHeap", 2 } },
+}
+THEMES.lavafield = {
+	count = 26,
+	mix = { { "obsidian", 6 }, { "slag", 5 }, { "coal", 3 }, { "sulphur", 3 }, { "basaltPebble", 5 } },
+}
+THEMES.burnt = {
+	count = 30,
+	mix = { { "charPlank", 6 }, { "sherd", 5 }, { "brick", 5 }, { "soot", 3 }, { "ashHeap", 3 }, { "coal", 1 } },
+}
+THEMES.dunes = {
+	count = 22,
+	mix = { { "ripple", 8 }, { "carapace", 3 }, { "tuftDry", 3 }, { "sherd", 2 } },
+}
+THEMES.crags = {
+	count = 26,
+	mix = { { "redChip", 6 }, { "scale", 4 }, { "bone", 3 }, { "scorch", 4 }, { "pebbleRed", 4 } },
+}
+THEMES.royalroad = {
+	count = 24,
+	mix = { { "slabChip", 6 }, { "statueChip", 3 }, { "coin", 1 }, { "ashHeap", 3 }, { "tuftDry", 2 } },
+}
+THEMES.necropolis = {
+	count = 22,
+	mix = { { "sherd", 5 }, { "linen", 4 }, { "ripple", 4 }, { "pebble", 3 }, { "turquoise", 1 } },
 }
 
 local THEME_MAX = 44
@@ -764,6 +848,10 @@ local function buildChunk(map: Maps.MapDef, cx: number, cz: number): { BasePart 
 		local from = origin + Vector3.new(x, if inCave then 4 else 120, z)
 		local hit = Workspace:Raycast(from, Vector3.new(0, -200, 0), rayParams)
 		if not hit or (hit.Material == Enum.Material.Water) ~= (template.onWater == true) then
+			continue
+		end
+		-- S46: nothing lies on lava
+		if hit.Material == Enum.Material.CrackedLava then
 			continue
 		end
 		if inCity and hit.Material ~= Enum.Material.Grass and hit.Material ~= Enum.Material.LeafyGrass then

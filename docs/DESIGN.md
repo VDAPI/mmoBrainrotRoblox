@@ -158,6 +158,11 @@ Każda strefa terenowa ma też podstrefy (np. łąka, las, ruiny) z innymi pozio
   budżet mapy 3000 części). Ukształtowane krainy budują się **w tle po starcie serwera** (pole mapy `buildLate`):
   start trwa tyle co przed sesją, a portal do krainy pokazuje „Wkrótce”, dopóki budowa się nie skończy (kilka do
   kilkunastu sekund).
+- Lawa (zmiana S46, Spalone Pustkowia) jest **dekoracją**: nie zadaje obrażeń; grupy potworów, drogi, punkty
+  przybycia, węzły, portale i NPC trzymają się co najmniej 12 st. od lawy i świecących szczelin; rzeki lawy przecinają
+  drogi tylko pod kamiennymi mostami, wały przy brzegach prowadzą gracza na most. Świecenie lawy (płyty Neon,
+  pulsowanie, iskry, drżące powietrze) robi klient w promieniu detalu; światła lawy są włączone tylko przy kamerze
+  (4 / 8 / 12 wg „Szczegółowości świata”). Serwer Pustkowi: ok. 180 dużych martwych drzew, budżet mapy 2400 części.
 
 ### 3.8 Miasto startowe (zmiana po testach S20)
 

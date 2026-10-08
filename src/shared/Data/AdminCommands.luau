@@ -227,6 +227,12 @@ for mapId in TerrainShapes.byMap do
 end
 table.sort(REGION_MAPS)
 cmd("world", "terrainrebuild", { enum("map", TERRAIN_MAPS) }, { danger = true })
+-- S46: the ground under the caller and the client's world effects
+cmd("world", "terraininfo", {})
+cmd("world", "worldfx", {
+	enum("effect", { "ash", "embers", "haze", "smoke", "vultures", "devils", "lavaglow" }),
+	enum("mode", { "on", "off", "auto" }),
+})
 
 -- Monsters
 cmd("monsters", "spawn", { ref("monster", "monster"), VARIANT, int("level", 1, MAX_LEVEL, true) })
