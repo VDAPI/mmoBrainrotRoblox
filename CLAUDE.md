@@ -79,7 +79,8 @@ MMORPG na Roblox (Margonem w 3D). Luau + Rojo + Wally + Fusion 0.3 + ProfileStor
 
 - **Jaskinia na silniku jaskiń** (S48): wpis w `Data/CaveShapes` (motyw, materiały, role sal ze słownika `ROLES`,
   `decor`, cechy: `pool`, `stream`, `waterfall`, `skyhole`, `terrace`, `pit`, `pillar`, `stalagmites`, `stalactites`,
-  `niche`; dla jaskiń bossów i komnat `tunnels`/`extraRooms`/`arena`) + moduł ubioru `Logic/CaveDress/<Motyw>` w `THEMES`
+  `niche`; S49 architektura: plany `rect`/`octagon`, stropy `vault`/`corbel`, `masonry`, `chimney`, `dais`, `causeway`,
+  `ring`, `niches`, `pool.inner`; dla jaskiń bossów i komnat `tunnels`/`extraRooms`/`arena`) + moduł ubioru `Logic/CaveDress/<Motyw>` w `THEMES`
   + nastroje sal `Data/Ambience.rooms` + `maxParts` i preset światła w `Data/Maps`; layout buduje się sam
   (`World/CaveLayout`). Spawnery: tylko `y` z podłogi (fixture `tests/fixtures/caveRooms`), rdzeń sali `0,65 r + 8` suchy
   i płaski. Po zmianie kształtu świadomie `lune run tools/fixture_caveshapes.luau` (nowe mapy dopisane, stare bez zmian).

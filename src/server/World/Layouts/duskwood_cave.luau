@@ -6,12 +6,23 @@
 
 local Areas = require(game:GetService("ReplicatedStorage").Shared.Data.Areas)
 local Build = require(script.Parent.Parent.Build)
+local CaveLayout = require(script.Parent.Parent.CaveLayout)
 local Prefabs = require(script.Parent.Parent.Prefabs)
 
 local GHOST = "#9FE0C9"
 local VOID = "#7A3FA0"
 
 return function(ctx: Build.Context)
+	-- S49: the cave engine (Data/CaveShapes.duskwood_cave: the crypt of the forgotten royal house; dressing
+	-- Logic/CaveDress/Crypt); the old carved layout below stays for a cave without a shape
+	if CaveLayout.has("duskwood_cave") then
+		CaveLayout.build(ctx)
+		Prefabs.portalFrom(ctx, "duskwood_cave_exit")
+		Prefabs.dungeonGateFrom(ctx, "duskwood")
+		Build.zone(ctx, "red", nil, -320, -320, 320, 320)
+		Build.spawnPoint(ctx, -240, 0, 0, 0)
+		return
+	end
 	Build.caveShell(ctx, Enum.Material.Slate, 44)
 
 	local rooms = {

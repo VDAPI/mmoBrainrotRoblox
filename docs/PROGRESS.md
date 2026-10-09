@@ -51,6 +51,7 @@
 | S46 | Spalone Pustkowia od nowa: kształty pustyni w silniku krain (wydmy, mesy, turnie, lawa, szczeliny, suche jezioro), generator `AshenGen` (9 expowisk w klimacie potworów, wyloty jaskiń), świecąca lawa z LOD świateł, życie, dzień i noc, mapa i wiki | ● |
 | S47 | Lodowe Szczyty od nowa: kształty gór w silniku krain (podniesienia, poszarpane granie z siodłami, róg, wiatr, zamarznięte jeziora i strugi, lodowce, szczeliny), generator `FrostpeakGen` (9 expowisk w klimacie potworów, wyloty jaskiń), śnieżyca wg wiatru, zorza, dzień i noc, mapa i wiki | ● |
 | S48 | Jaskinie 1/4: silnik jaskiń (teren 3D z danych `CaveShapes` / `CaveTerrain`, ubiór `CaveDress`, LOD świateł, życie, nastrój sal) + Kryjówka Przemytników, Gobliński Kopiec, Jaskinia Mchów i Komnata Grimroka | ● |
+| S49 | Jaskinie 2/4: architektura w silniku jaskiń (plany `rect`/`octagon`, sklepienia, podesty, groble, mozaiki, nisze) + Wilcza Nora, Kurhan Kultystów, Krypta Zapomnianych i Grobowiec Morvane | ● |
 
 Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana przez właściciela
 
@@ -1055,6 +1056,21 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
   Pod ziemią `WorldLifeController` uznaje porę za noc (nietoperze wylatują, świecenie włączone).
 - **S48** Budowa jaskiń zostaje w `Init` (nie w tle): woksele 4 map w Lune 0,05–0,16 s (Jaskinia Mchów 121 bloków × 18
   warstw 0,16 s), więc start serwera rośnie szacunkowo o < 1 s w Studio.
+- **S49** Architektura w silniku jaskiń jest **ogólna**: plany `rect`/`octagon` mają osobną gałąź (`archPart`), więc
+  naturalne sale S48 liczą się bez zmian (fixture kształtów S48 bez zmian, nowe mapy tylko dopisane). Strefa ściany sal
+  architektonicznych ma 2,5 st. (prawie pionowe ściany na wokselach 4 st.); wpisane koło musi być ≥ rdzeń + 2 st. (Galeria
+  Upiorów dostała hz 42 zamiast 38). `vault` = kolebka wzdłuż dłuższej osi (ściany 55% wysokości), `corbel` = kopuła
+  „ula” ze stopniami co 4 st., `masonry` = proste korytarze o stałej szerokości ze sklepieniem (bez szumu i wicia).
+- **S49** Nisze ścienne (`niches`) teren zostawia płaską ścianą; ubiór (`Barrow.niches`, wspólny z Kryptą) stawia półki
+  z płyt, ciemne tło, całuny i czaszki w punktach z `T.niches()` (pomija wyloty korytarzy). Wnęka za ścianą S48 (`niche`)
+  dostała opcjonalnie plan/strop (absydy Krypty i Kurhanu, zalana nawa).
+- **S49** Zalana Krypta: woda to `pool` z `inner` (pierścień r 40–70 od środka sali, poza rdzeniem 37) + nisza nawy; grobla
+  (`causeway`) od zejścia na północy do suchego środka. Studnia Dusz płytka (pit 2 st.), głębię udają światło, mgła i
+  ogniki (flood fill „tam i z powrotem”). Grobowiec: arena r 106 (płasko do r ≥ 80), galeria = taras-pierścień +14 od r 90
+  z przerwami na wejście (południe) i absydę (północ), nieosiągalny (`blend` 1,5).
+- **S49** Presety: `caveDen` (ambient `#262A30`, mgła `#0C0F12` do 200), `barrowViolet` (`#2A2434`, `#0E0A14` do 180,
+  nasycenie −0,2), `cryptGhost` (`#262C30`, `#0A0E10` do 220, −0,25), `dungeonTomb` (`#282236`, `#0C0A12` do 260),
+  jasność 0,32–0,36; `maxParts` Nora/Kurhan 700, Krypta 1000, Grobowiec 450. Kolory materiałów bez zmian.
 
 ## Niedokończone
 (Rzeczy z zakresu sesji, które nie zostały zrobione. Następna sesja zaczyna od nich.)
@@ -1233,6 +1249,15 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
   (B4), cechy `chasm`, smugi światła jako `Beam`/`SpotLight` (są cząsteczki pyłu i światło punktowe), kruki w szybie
   krążące (siedzą: `perch`), sieci jako szablon dekoracji w ziemi zostały z S20, `/caveinfo` nie pokazuje liczby
   aktywnych świateł klienta (pokazuje `/lights` przez wymuszenie). Pozostałe 8 jaskiń i 3 komnaty po staremu (S49–S51).
+- **S49** Jaskinie Boru i Grobowiec niesprawdzone w Studio: proste ściany na wokselach 4 st. (schodki), stropy `vault` /
+  `corbel`, półki nisz przy ścianach, pierścień czarnej wody i grobla, galeria Grobowca, walka z Morvane (pierścień
+  śmierci na równej posadzce, szkielety na posadzce).
+- **S49** Dźwięki Boru do podpięcia: ziemna jaskinia, gryzienie kości i muchy, oddech niedźwiedzia, wycie w jaskini,
+  skrzypiąca latarnia, pszczoły w barci, dron grobowca, skandowanie kultu, kopanie w ziemi, kapanie w krypcie, magiczny
+  ogień, syk węża, dron krypty, wznoszący się upiorny wiatr, grzechot kości i łańcuchów, szepty i zawodzenie, nekromancki
+  szum, niski chór, królewski dron, skrzypienie łańcuchów żyrandola, wiatr w otworze stropu.
+- **S49** Nie zrobione: reakcja koszy Grobowca na fazy bossa (`Shielded`/`Phase`), ćmy w snopie księżyca, muchy nad
+  padliną, „kilwater” węża, kapiący miód, kołysanie chorągwi i żyrandola, podgląd 3D jaskiń.
 
 ## Zgłoszone błędy
 (Właściciel wpisuje tu błędy po testach albo przekazuje je przez sesję poprawek.)
@@ -4249,3 +4274,77 @@ NavController}`, `tools/WikiMaps/init`, `tests/worldgen`, wiki, `docs/{SWIAT,ARC
 15. Mapa (M) i minimapa w jaskiniach: prawdziwy obrys podłogi, jezioro, strumień; wiki `meadows_cave.svg` z obrysem.
 16. `/terrainrebuild meadows_cave` (pyta): teren przepisuje się bez restartu.
 17. Pozostałe jaskinie (Bór, Pustkowia, Szczyty) i ich komnaty wyglądają jak przed sesją.
+
+### S49: Jaskinie 2/4: Wilcza Nora, Kurhan Kultystów, Krypta Zapomnianych + Grobowiec Morvane
+
+**Zrobione**
+- Silnik jaskiń rozszerzony o architekturę (ogólnie, jaskinie Łąk bez zmian w fixture): plany `rect`/`octagon` z obrotem,
+  stropy `vault`/`corbel`/`dome`, `masonry` (proste sklepione korytarze), cechy `chimney`, `dais` (stopnie ≤ 2 st. co 4),
+  `causeway`, `ring` (mozaika: pasy i szprychy materiałów), `niches` (zapytanie `T.niches()`), `pool.inner` (pierścień
+  wody), `terrace.inner/gaps` (taras-pierścień z przerwami), plan i strop dla `niche`; materiały mozaik w `MATERIALS`.
+- Kształty (`Data/CaveShapes`): Wilcza Nora (doły żeru, korzeń palowy, taras Gawry, Księżycowa Komora +6 z otworem w
+  stropie, Mokra Gawra −4 ze stawem we wnęce), Kurhan (dromos `rect`, Krąg Obrzędów `octagon`/`corbel` z mozaiką, Komora
+  Grobowa `rect` z niszami, Serce Kurhanu +2 z absydą, podestem i czarną sadzawką, organiczna Nora Ghuli, Zalana Krypta
+  −5 z pierścieniem wody, nawą i groblą), Krypta (9 sal `rect`/`octagon` na osi z = 0, sklepienia, 10 prostych korytarzy z
+  dawnego layoutu, dwa rzędy filarów w Sali Kolumn, nisze w Krypcie Rodów i Ossuarium, absyda Studni Dusz z kominem,
+  krąg przywołań, pieczęć Morvane), Grobowiec (arena r 106 z mozaiką pasów i 8 szprych, absyda z podestem, galeria +14).
+- Ubiór `Logic/CaveDress`: `Den` (łuk korzeni, biwak myśliwych z tlącą się latarnią, korzenie zwisające ze stropu, kości
+  w dołach, padlina z uprzężą, nory ghuli, znak pazurów, kora na korzeniu palowym, barć z bursztynową poświatą,
+  legowiska, powalony pień, księżycowy kamień i słup światła, krąg czaszek, kurtyna korzeni, trofea ze skór i poroży,
+  świecące grzyby i staw), `Barrow` (dolmen, świeża ofiara z krukiem i świecami, szmaty, kredowe spirale, fioletowy ogień
+  w misie, 9 menhirów ze świecami i runami, szaty kultu, bęben, półki nisz z całunami i czaszkami, trumny z rozbitymi
+  wiekami, nory ghuli, ołtarz na podeście, rogaty idol z fioletowym ogniem w oczach i dłoniach, łańcuchy, chorągwie,
+  wylinki, sterty kości i całunów, zatopione sarkofagi, gniazdo jaj), `Crypt` (portal z czaszkami, zakapturzone płaczki
+  z zimnymi lampami, pochodnie na filarach, sarkofagi w nawach, nisze Krypty Rodów, sarkofagi z odsuniętymi wiekami,
+  mary, stojaki z mieczami i tarczami, chorągiew gwardii, studnia z kratą, poświatą, mgłą i ognikami, łańcuchy,
+  piramidy czaszek, żyrandol z kości, chorągwie Galerii, posągi szlachty, zielone kosze, pulpity, stół z ciałem, klatki,
+  runy kręgu, pieczęć z poświatą, klęczący rycerze, nadproże z czaszek, fioletowe chorągwie, ścieżka świec, upiorne
+  płomienie), `Tomb` (sarkofagi w arkadach, kosze z upiornym płomieniem, żyrandol z łańcuchów i świec, rozbity pusty
+  sarkofag z wiekiem, posąg młodej królowej z koroną z kolców i kosą, chorągwie, płaczki na galerii).
+- Serwer: `duskwood_cave.luau` cienką nakładką na `CaveLayout` (wyjście, brama, odrodzenie); Nora i Kurhan przez
+  `CaveTemplate`, Grobowiec przez gałąź `DungeonArena`.
+- Nastrój: `Data/Ambience.rooms` dla 23 sal (5 + 6 + 9 + 3), `maps` i punkty dźwięku 4 map; presety światła i `maxParts`.
+- Wiki: SVG `duskwood_den`, `duskwood_barrow`, `duskwood_cave` z obrysem; `meta.json`.
+- Testy: `caveterrain.spec` objął 4 nowe mapy (kontrakt S48, kontrakt areny Grobowca, ubiór, nastroje); fixture
+  kształtów dopisany (stare wpisy bez zmian); `worldgen.spec` (rejestr).
+- Pomiary (Lune): woksele Nory 0,13 s, Kurhanu 0,11 s, Krypty 0,13 s, Grobowca 0,05 s; shell 9 / 18 / 39 / 26, detail
+  128 / 237 / 451 / 49, fine 165 / 620 / 1187 / 54, światła 8 / 7 / 21 / 7. Szacunek „przed”: generowane ~90, Krypta
+  ~120, komnata ~80 części.
+- Obrazy kontrolne (`cavemap`): poprawione: taras Gawry na brzegu rdzenia (odsunięty), Galeria Upiorów za wąska dla
+  rdzenia (hz 42), brak materiałów mozaik w zestawie wokseli.
+
+**Pliki**: nowe `Logic/CaveDress/{Den,Barrow,Crypt,Tomb}`; zmiany: `Data/{CaveShapes,Maps,Ambience}`,
+`Logic/{CaveTerrain,CaveDress/init}`, `World/Layouts/duskwood_cave`, `tests/{caveterrain,worldgen}`,
+`tests/fixtures/caveShapes`, wiki, `docs/{SWIAT,ARCHITECTURE}`, `CLAUDE.md`.
+
+**Nazwy dla S50–S51**: role `feeding`, `moon`, `wetden`, `dromos`, `ritual`, `burial`, `altar`, `ghoulden`, `flooded`,
+`columns`, `familycrypt`, `soulwell`, `ossuary`, `sanctum`, `apse`; pola sali `plan` (`rect` z `hx`, `hz`, `rot` |
+`octagon`), `ceil` (`vault` | `corbel` | `dome`); kształt `masonry`; cechy `chimney {x, z, r, h}`, `dais {x, z, r, h,
+dir}`, `causeway {points, width}`, `ring {x, z, bands (band(r1, r2, mat)), spokes {n, width, material, from, to}}`,
+`niches {room, spacing, tiers, w, h}`, `pool.inner`, `terrace.inner`, `terrace.gaps`; zapytanie `T.niches()`; półki nisz
+`CaveDress/Barrow.niches(env, out, room, shrouds, name)`.
+
+#### Instrukcja testu S49
+
+1. Play. W Output `[Cave:duskwood_den]`, `[Cave:duskwood_barrow]`, `[Cave:duskwood_cave]`, `[Cave:dungeon_duskwood]`
+   (terrain, shell, parts): zapisz czasy; `[WorldBuilder] world built in … s` (porównaj z S48).
+2. `/cavestats duskwood_cave` (≤ 1000 części), `duskwood_den`, `duskwood_barrow` (≤ 700), `dungeon_duskwood` (≤ 450).
+3. Wilcza Nora z Boru: łuk korzeni, rozszarpany biwak z tlącą się latarnią, zadrapania; `/tpcave duskwood_den feeding`
+   (doły z kośćmi, padlina, nory), `bearden` (korzeń palowy, barć z bursztynową poświatą, powalony pień),
+   `moon` (słup księżyca na kamieniu w kręgu czaszek, kurtyna korzeni), `wetden` (staw we wnęce, grzyby).
+4. `/e2 spawn` w Księżycowej Komorze: Elita II stoi na podłodze w świetle.
+5. Kurhan: dolmen przy wyjściu, ofiara z krukiem i świecami; `/tpcave duskwood_barrow ritual` (menhiry, fioletowy ogień
+   w mozaice), `burial` (półki nisz z całunami, rozbite trumny), `altar` (podest, ołtarz, rogaty idol z fioletem w oczach),
+   `flooded` (pierścień czarnej wody, grobla do suchego środka, sarkofagi), `ghoulden`.
+6. Krypta: od wyjścia prosta oś przez Salę Kolumn aż do fioletowej łuny pieczęci; `/tpcave duskwood_cave familycrypt`,
+   `barracks`, `soulwell` (studnia z kratą, poświata, mgła i ogniki pod kominem), `ossuary` (nisze z czaszkami, piramidy,
+   żyrandol z kości), `gallery`, `sanctum` (zielone kosze, krąg przywołań), `antechamber` (pieczęć, klęczący rycerze).
+7. Ściany Krypty proste, sklepienia łukowe; nic nie blokuje osi z = 0; potwory na podłodze, rudy przy ścianach.
+8. Brama do Grobowca: posadzka z mozaiką, sarkofagi w arkadach, kosze z upiornym płomieniem, galeria z płaczkami, absyda
+   z pustym sarkofagiem i posągiem królowej, żyrandol nad środkiem.
+9. Walka z Morvane: pociski i klątwa; `/phase 2` (szkielety na posadzce, tarcza), `/phase 3` (pierścień śmierci na równej
+   podłodze aż do brzegu); po walce lądujesz w Krypcie przed bramą.
+10. Niska szczegółowość i `/lights 8`: mniej świateł, płynnie; `/lights auto`.
+11. `/ambience duskwood_cave:5` (Studnia), `/ambience duskwood_barrow:4` (Serce), `/ambience auto`.
+12. Mapa (M) i wiki: obrysy jaskiń Boru, woda Zalanej Krypty.
+13. Jaskinie Łąk i Komnata Grimroka wyglądają i działają jak po S48.

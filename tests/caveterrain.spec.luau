@@ -110,9 +110,15 @@ describe("Cave engine: terrain", function()
 		end
 	end)
 
-	it("knows the four caves of the Meadows on the engine and nothing else yet", function()
-		expect(MAPS).toEqual({ "dungeon_meadows", "meadows_burrow", "meadows_cave", "meadows_hideout" })
-		expect(CaveTerrain.get("duskwood_cave")).toBe(nil)
+	it("knows the caves on the engine (S48 the Meadows, S49 Duskwood)", function()
+		for _, id in { "dungeon_meadows", "meadows_burrow", "meadows_cave", "meadows_hideout" } do
+			expect(table.find(MAPS, id) ~= nil).toBe(true)
+		end
+		-- S49: the caves of Duskwood and the Tomb of Morvane
+		for _, id in { "duskwood_den", "duskwood_barrow", "duskwood_cave", "dungeon_duskwood" } do
+			expect(table.find(MAPS, id) ~= nil).toBe(true)
+		end
+		expect(CaveTerrain.get("ashen_cave")).toBe(nil)
 		expect(MapTerrain.has("meadows_cave")).toBe(true)
 		expect(RegionTerrain.get("meadows_cave")).toBe(nil)
 	end)

@@ -319,6 +319,10 @@ type CharacterData = {
   - **kontrakt aren** (komnaty bossów na silniku): środek walki (0, −10); w promieniu 74 st. podłoga płaska na y 0;
     przeszkody z kolizją tylko ≥ 50 st. od środka; pas wejścia |x| < 14 wolny; wnęka (0, 70), wyjście (0, 78), odrodzenie
     (0, 60), lądowanie drużyny (x, 55), ikona bossa (0, −10) bez zmian (`tests/caveterrain.spec`);
+  - S49 (architektura krypt i kurhanów): plany sal `rect` / `octagon` (proste ściany bez szumu, krótka strefa ściany),
+    stropy `vault` / `corbel` / `dome`, `masonry` (proste sklepione korytarze), cechy `chimney`, `dais`, `causeway`,
+    `ring` (mozaika materiałów), `niches` (pozycje `T.niches()`, półki stawia ubiór), pierścień wody `pool.inner`,
+    taras-pierścień `terrace.inner/gaps`; motywy `Den`, `Barrow`, `Crypt`, `Tomb`;
   - narzędzia: `tools/cavedump.luau` + `cavemap.py` (mapa z góry, `--section`), fixture `tools/fixture_caves.luau`,
     `tools/fixture_caveshapes.luau`; admin `/tpcave`, `/caveinfo`, `/cavestats`, `/lights`, `/ambience <jaskinia>:<sala>`,
     `/terrainrebuild <jaskinia>`.

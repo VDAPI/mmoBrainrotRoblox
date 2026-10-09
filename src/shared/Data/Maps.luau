@@ -235,6 +235,51 @@ local LIGHT = {
 		tint = "#FFD8B8",
 		saturation = 0.02,
 	}),
+	-- S49: presets of Duskwood's caves on the engine
+	caveDen = lighting({
+		clockTime = 0,
+		brightness = 0.32,
+		ambient = "#262A30",
+		outdoorAmbient = "#22262A",
+		fogColor = "#0C0F12",
+		fogEnd = 200,
+		atmosphere = { density = 0.58, haze = 0.3, glare = 0, color = "#141820", decay = "#0A0C10" },
+		tint = "#D8E4F0",
+		saturation = -0.12,
+	}),
+	barrowViolet = lighting({
+		clockTime = 0,
+		brightness = 0.32,
+		ambient = "#2A2434",
+		outdoorAmbient = "#24202E",
+		fogColor = "#0E0A14",
+		fogEnd = 180,
+		atmosphere = { density = 0.6, haze = 0.4, glare = 0, color = "#1A1424", decay = "#0C0A12" },
+		tint = "#E0D0FF",
+		saturation = -0.2,
+	}),
+	cryptGhost = lighting({
+		clockTime = 0,
+		brightness = 0.32,
+		ambient = "#262C30",
+		outdoorAmbient = "#22282C",
+		fogColor = "#0A0E10",
+		fogEnd = 220,
+		atmosphere = { density = 0.58, haze = 0.5, glare = 0, color = "#141C20", decay = "#0A0E10" },
+		tint = "#D0F0E8",
+		saturation = -0.25,
+	}),
+	dungeonTomb = lighting({
+		clockTime = 0,
+		brightness = 0.36,
+		ambient = "#282236",
+		outdoorAmbient = "#221E2E",
+		fogColor = "#0C0A12",
+		fogEnd = 260,
+		atmosphere = { density = 0.55, haze = 0.5, glare = 0, color = "#181424", decay = "#0C0A12" },
+		tint = "#DCD0FF",
+		saturation = -0.15,
+	}),
 	crypt = lighting({
 		clockTime = 0,
 		brightness = 0.3,
@@ -360,13 +405,15 @@ map({
 	size = { x = 640, z = 640 },
 	spawn = { x = -250, y = 4, z = 0 },
 	biome = "crypt",
-	lighting = LIGHT.crypt,
+	lighting = LIGHT.cryptGhost, -- S49
 	music = "",
 	buildMode = "generated",
 	worldMap = { x = 0.67, y = 0.38 },
 	links = { "duskwood" },
 	dungeonEntrance = { x = 250, y = 0, z = 0 },
 	dungeonRegion = "duskwood",
+	-- S49: on the cave engine (Data/CaveShapes); server budget of the dressing's shell + portals and the gate
+	maxParts = 1000,
 })
 
 -- Region 3 and 4 (S11).
@@ -496,7 +543,7 @@ for _, cave in
 			biome = "cave",
 			wx = 0.53,
 			wy = 0.29,
-			light = "cave",
+			light = "caveDen", -- S49
 		},
 		{
 			id = "duskwood_barrow",
@@ -508,7 +555,7 @@ for _, cave in
 			biome = "crypt",
 			wx = 0.6,
 			wy = 0.29,
-			light = "crypt",
+			light = "barrowViolet", -- S49
 		},
 		{
 			id = "ashen_mine",
@@ -576,7 +623,7 @@ do
 		worldMap = { x = cave.wx, y = cave.wy },
 		links = { cave.region },
 		-- S48: caves on the cave engine keep a server part budget (the Meadows' two: 700)
-		maxParts = if cave.region == "meadows" then 700 else nil,
+		maxParts = if cave.region == "meadows" or cave.region == "duskwood" then 700 else nil,
 	})
 end
 
@@ -600,14 +647,15 @@ do
 		spawn = { x = 0, y = 4, z = 60 },
 		biome = "dungeon",
 		lighting = if dungeon.region == "duskwood"
-			then LIGHT.crypt
+			then LIGHT.dungeonTomb -- S49
 			elseif dungeon.region == "meadows" then LIGHT.dungeonGoblin -- S48
 			else LIGHT.cave,
 		music = "",
 		buildMode = "generated",
 		worldMap = { x = 0, y = 0 },
 		links = {},
-		maxParts = if dungeon.region == "meadows" then 450 else nil, -- S48: Grimrok's Chamber on the cave engine
+		-- S48/S49: Grimrok's Chamber and the Tomb of Morvane on the cave engine
+		maxParts = if dungeon.region == "meadows" or dungeon.region == "duskwood" then 450 else nil,
 	})
 end
 

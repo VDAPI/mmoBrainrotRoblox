@@ -514,6 +514,27 @@ local ARENA_DRUMS = s("war drums and roaring crowd loop (goblin arena)", 0.4)
 local FIRE_CRACKLE = s("fire crackling loop (torches and braziers)", 0.3)
 local BOAR_GRUNTS = s("boars grunting in a pen loop (snorts, shuffling)", 0.3)
 
+-- S49 Duskwood's caves
+local EARTH_CAVE = s("underground earth cave ambience loop (low wind, distant drips)", 0.35)
+local GNAWING = s("bones crunching and gnawing loop (flies buzzing, wet)", 0.3)
+local BEAR_BREATH = s("large animal breathing loop (low growl, sleeping bear)", 0.3)
+local WOLF_ECHO = s("distant wolf howl echoing in a cave loop (long gaps)", 0.3)
+local LANTERN_CREAK = s("old lantern creaking loop (metal, slow)", 0.25)
+local BEES = s("bees buzzing in a hive loop (muffled, inside wood)", 0.3)
+local TOMB_DRONE = s("ancient tomb ambience loop (low drone, stone dust)", 0.35)
+local CULT_VOICES = s("cult chanting loop (deep male voices, ritual)", 0.35)
+local DIGGING = s("scratching and digging in earth loop (claws, muffled)", 0.3)
+local DRIP_TOMB = s("dripping water in a stone crypt loop (echo)", 0.3)
+local MAGIC_FIRE = s("magic fire roar loop (low, eerie)", 0.35)
+local SNAKE_HISS = s("snake hissing loop (rare, close)", 0.2)
+local CRYPT_DRONE = s("crypt ambience loop (deep drone, distant whispers)", 0.35)
+local GHOST_RISE = s("ghostly wind whoosh rising loop (well, eerie)", 0.35)
+local BONES_CHAINS = s("bones rattling and chains creaking loop (ossuary)", 0.3)
+local GHOST_WAIL = s("ghost whispers and faint wailing loop", 0.3)
+local NECRO_HUM = s("necromantic hum loop (low, bubbling, magical)", 0.3)
+local CHOIR_HUM = s("low choir hum loop (dark, sacred)", 0.3)
+local ROYAL_DRONE = s("royal tomb low choir drone loop", 0.35)
+
 local function room(o: { [string]: any }): Mood
 	return o :: any
 end
@@ -586,6 +607,73 @@ local rooms: { [string]: { [number]: Mood } } = {
 			sounds = { day = { SPIDER_CLICKS, DRIP_ECHO }, night = {} },
 		}),
 	},
+	-- S49
+	duskwood_den = {
+		room({ tint = "#FFE0B8", tintMix = 0.2, sounds = { day = { EARTH_CAVE, LANTERN_CREAK }, night = {} } }),
+		room({
+			tint = "#D8F0C0",
+			tintMix = 0.3,
+			saturation = -0.1,
+			sounds = { day = { GNAWING, EARTH_CAVE }, night = {} },
+		}),
+		room({ tint = "#FFE4C0", tintMix = 0.25, haze = 0.3, sounds = { day = { BEAR_BREATH, BEES }, night = {} } }),
+		room({
+			brightness = 1.1,
+			tint = "#D8E4FF",
+			tintMix = 0.35,
+			sounds = { day = { WOLF_ECHO, EARTH_CAVE }, night = {} },
+		}),
+		room({ tint = "#C8F0E8", tintMix = 0.3, sounds = { day = { DRIP_ECHO, EARTH_CAVE }, night = {} } }),
+	},
+	duskwood_barrow = {
+		room({ tint = "#E0D0FF", tintMix = 0.25, sounds = { day = { TOMB_DRONE }, night = {} } }),
+		room({ tint = "#D8B8FF", tintMix = 0.4, sounds = { day = { CULT_VOICES, MAGIC_FIRE }, night = {} } }),
+		room({ brightness = 0.85, saturation = -0.2, sounds = { day = { DIGGING, TOMB_DRONE }, night = {} } }),
+		room({
+			tint = "#D0A8FF",
+			tintMix = 0.45,
+			saturation = 0.05,
+			sounds = { day = { CULT_VOICES, MAGIC_FIRE }, night = {} },
+		}),
+		room({
+			brightness = 0.8,
+			tint = "#D8F0B8",
+			tintMix = 0.25,
+			sounds = { day = { GNAWING, DIGGING }, night = {} },
+		}),
+		room({
+			fogScale = 0.7,
+			tint = "#C8C0E0",
+			tintMix = 0.3,
+			sounds = { day = { DRIP_TOMB, SNAKE_HISS }, night = {} },
+		}),
+	},
+	duskwood_cave = {
+		room({ tint = "#D0E0FF", tintMix = 0.25, sounds = { day = { CRYPT_DRONE }, night = {} } }),
+		room({
+			tint = "#D0E8F0",
+			tintMix = 0.25,
+			fogScale = 1.2,
+			sounds = { day = { CRYPT_DRONE, DRIP_TOMB }, night = {} },
+		}),
+		room({
+			tint = "#C8F0FF",
+			tintMix = 0.35,
+			saturation = -0.3,
+			sounds = { day = { GHOST_WAIL, CRYPT_DRONE }, night = {} },
+		}),
+		room({ tint = "#D0D8E8", tintMix = 0.25, sounds = { day = { BONES_CHAINS, CRYPT_DRONE }, night = {} } }),
+		room({ tint = "#C0F0F0", tintMix = 0.4, sounds = { day = { GHOST_RISE, CRYPT_DRONE }, night = {} } }),
+		room({ tint = "#FFE8C8", tintMix = 0.25, sounds = { day = { BONES_CHAINS, CRYPT_DRONE }, night = {} } }),
+		room({ brightness = 0.8, saturation = -0.35, fogScale = 0.8, sounds = { day = { GHOST_WAIL }, night = {} } }),
+		room({ tint = "#C8F0C8", tintMix = 0.4, sounds = { day = { NECRO_HUM, CRYPT_DRONE }, night = {} } }),
+		room({ tint = "#D8C0FF", tintMix = 0.4, sounds = { day = { CHOIR_HUM }, night = {} } }),
+	},
+	dungeon_duskwood = {
+		room({ tint = "#DCD0FF", tintMix = 0.35, sounds = { day = { ROYAL_DRONE }, night = {} } }),
+		room({ tint = "#DCD0FF", tintMix = 0.3, sounds = { day = { ROYAL_DRONE }, night = {} } }),
+		room({ tint = "#D0C0FF", tintMix = 0.45, sounds = { day = { ROYAL_DRONE, CHOIR_HUM }, night = {} } }),
+	},
 	dungeon_meadows = {
 		room({
 			tint = "#FFC8A0",
@@ -616,6 +704,11 @@ local maps: { [string]: Mood } = {
 	meadows_hideout = { sounds = { day = { DRIP_ECHO, CAVE_WIND }, night = {} } },
 	meadows_burrow = { sounds = { day = { DRIP_ECHO, GOBLIN_CHATTER }, night = {} } },
 	dungeon_meadows = { tint = "#FFC8A0", tintMix = 0.3, sounds = { day = { ARENA_DRUMS }, night = {} } },
+	-- S49
+	duskwood_den = { sounds = { day = { EARTH_CAVE }, night = {} } },
+	duskwood_barrow = { tint = "#E0D0FF", tintMix = 0.2, sounds = { day = { TOMB_DRONE }, night = {} } },
+	duskwood_cave = { tint = "#D0F0E8", tintMix = 0.2, sounds = { day = { CRYPT_DRONE }, night = {} } },
+	dungeon_duskwood = { tint = "#DCD0FF", tintMix = 0.3, sounds = { day = { ROYAL_DRONE }, night = {} } },
 }
 
 -- Positional loops (map-relative).
@@ -686,6 +779,26 @@ local points: { [string]: { Point } } = {
 	meadows_burrow = {
 		{ x = 180, z = 0, radius = 50, sound = WINCH_CREAK },
 		{ x = 7, z = -45, radius = 60, sound = PICKAXES },
+	},
+	duskwood_den = {
+		{ x = -175, z = -24, radius = 40, sound = LANTERN_CREAK },
+		{ x = 25, z = -49, radius = 50, sound = BEES },
+		{ x = 134, z = -70, radius = 50, sound = s("wind through a hole in a cave roof loop (soft, night)", 0.25) },
+		{ x = -112, z = 120, radius = 40, sound = DRIP_ECHO },
+	},
+	duskwood_barrow = {
+		{ x = -86, z = -18, radius = 60, sound = MAGIC_FIRE },
+		{ x = 196, z = 50, radius = 60, sound = MAGIC_FIRE },
+		{ x = -69, z = 140, radius = 60, sound = SNAKE_HISS },
+	},
+	duskwood_cave = {
+		{ x = 40, z = -228, radius = 60, sound = GHOST_RISE },
+		{ x = 150, z = 0, radius = 50, sound = NECRO_HUM },
+		{ x = 262, z = 0, radius = 50, sound = CHOIR_HUM },
+		{ x = 40, z = 0, radius = 60, sound = BONES_CHAINS },
+	},
+	dungeon_duskwood = {
+		{ x = 0, z = -10, radius = 100, sound = s("chains creaking loop (chandelier, slow)", 0.25) },
 	},
 	dungeon_meadows = {
 		{ x = -100, z = -10, radius = 90, sound = ARENA_DRUMS },

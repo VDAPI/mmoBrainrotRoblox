@@ -36,7 +36,21 @@
 --   pillar      { kind, x, z, r }: rock from floor to ceiling
 --   stalagmites { kind, x, z, r, spacing, height }: cones of the floor (tall ones reach the ceiling)
 --   stalactites { kind, x, z, r, spacing, length }: cones of the ceiling
---   niche       { kind, x, z, r, h, dy? }: a hollow behind a room's wall (a small extra room)
+--   niche       { kind, x, z, r, h, dy?, plan?, hx?, hz?, rot?, ceil? }: a hollow behind a room's wall (a small extra room)
+-- S49 (architecture: crypts and barrows; natural rooms unchanged):
+--   rooms[i] / extraRooms: plan = "rect" (hx, hz half sizes, rot degrees) | "octagon" (inradius r) with straight walls
+--               without noise (the inscribed circle stays >= the core), ceil = "vault" (barrel vault along the longer
+--               axis) | "corbel" (stepped beehive dome) | "dome" (default)
+--   masonry     true: the tunnels run straight with a constant width and a vaulted ceiling
+--   chimney     { kind, x, z, r, h }: the ceiling raised to h over the floor (a shaft over a well)
+--   dais        { kind, x, z, r, h, dir }: a podium h studs high, stairs (steps <= 2 studs every 4) towards bearing dir
+--               (degrees, 0 = +x, 90 = +z), straight drops on the other sides
+--   causeway    { kind, points, width }: a dry path across a pool (a ring of water with `inner` keeps its middle dry)
+--   ring        { kind, x, z, bands = { { r1, r2, material } }, spokes = { n, width, material, from?, to? } }: a mosaic
+--               of floor materials (bands >= 4 studs wide)
+--   niches      { kind, room, spacing, tiers, w, h }: rows of niches along a room's walls (positions: T.niches(); the
+--               terrain keeps a plain wall, the dressing builds the shelves with skulls and shrouds)
+--   pool.inner  a ring of water from `inner` to `r`; terrace.inner / terrace.gaps a ring terrace with gaps
 
 export type RoomShape = {
 	role: string,
@@ -45,6 +59,11 @@ export type RoomShape = {
 	floor: string?,
 	flat: boolean?,
 	h: number?,
+	plan: string?,
+	hx: number?,
+	hz: number?,
+	rot: number?,
+	ceil: string?,
 }
 
 export type ExtraRoom = {
@@ -57,6 +76,11 @@ export type ExtraRoom = {
 	dy: number?,
 	decor: string?,
 	floor: string?,
+	plan: string?,
+	hx: number?,
+	hz: number?,
+	rot: number?,
+	ceil: string?,
 }
 
 export type Tunnel = { ax: number, az: number, bx: number, bz: number, w: number, h: number? }
@@ -75,6 +99,7 @@ export type Shape = {
 	tunnels: { Tunnel }?,
 	tunnelH: number?,
 	wiggle: number?,
+	masonry: boolean?,
 	extraRooms: { ExtraRoom }?,
 	features: { Feature },
 	arena: { x: number, z: number, r: number }?,
@@ -102,6 +127,22 @@ local ROLES = {
 	"shaft",
 	"spiderpit",
 	"niche",
+	-- S49 Duskwood
+	"feeding",
+	"moon",
+	"wetden",
+	"dromos",
+	"ritual",
+	"burial",
+	"altar",
+	"ghoulden",
+	"flooded",
+	"columns",
+	"familycrypt",
+	"soulwell",
+	"ossuary",
+	"sanctum",
+	"apse",
 }
 
 local function room(r: RoomShape): RoomShape
@@ -110,6 +151,15 @@ end
 
 local function extra(r: ExtraRoom): ExtraRoom
 	return r
+end
+
+local function tunnel(t: Tunnel): Tunnel
+	return t
+end
+
+-- A band of a floor mosaic: { from radius, to radius, material }.
+local function band(r1: number, r2: number, material: string): { any }
+	return { r1, r2, material }
 end
 
 local byMap: { [string]: Shape } = {}
@@ -133,13 +183,13 @@ byMap.meadows_cave = {
 		room({ role = "antechamber", decor = "junk", flat = true }),
 	},
 	tunnels = {
-		{ ax = -215, az = 0, bx = -100, bz = 0, w = 16, h = 18 },
-		{ ax = -150, az = 0, bx = -150, bz = -110, w = 16, h = 16 },
-		{ ax = -150, az = 0, bx = -150, bz = 110, w = 16, h = 16 },
-		{ ax = -30, az = -70, bx = -30, bz = -180, w = 16, h = 16 },
-		{ ax = -30, az = 70, bx = 60, bz = 170, w = 16, h = 16 },
-		{ ax = 40, az = 0, bx = 190, bz = 0, w = 16, h = 18 },
-		{ ax = 100, az = 0, bx = 130, bz = -120, w = 16, h = 16 },
+		tunnel({ ax = -215, az = 0, bx = -100, bz = 0, w = 16, h = 18 }),
+		tunnel({ ax = -150, az = 0, bx = -150, bz = -110, w = 16, h = 16 }),
+		tunnel({ ax = -150, az = 0, bx = -150, bz = 110, w = 16, h = 16 }),
+		tunnel({ ax = -30, az = -70, bx = -30, bz = -180, w = 16, h = 16 }),
+		tunnel({ ax = -30, az = 70, bx = 60, bz = 170, w = 16, h = 16 }),
+		tunnel({ ax = 40, az = 0, bx = 190, bz = 0, w = 16, h = 18 }),
+		tunnel({ ax = 100, az = 0, bx = 130, bz = -120, w = 16, h = 16 }),
 	},
 	tunnelH = 16,
 	features = {
@@ -246,6 +296,207 @@ byMap.dungeon_meadows = {
 		{ kind = "terrace", x = 0, z = -106, r = 13, dy = 4, blend = 4 },
 		{ kind = "terrace", x = -100, z = -10, r = 17, dy = 12, blend = 1.5, unreachable = true },
 		{ kind = "terrace", x = 100, z = -10, r = 17, dy = 12, blend = 1.5, unreachable = true },
+	},
+	arena = { x = 0, z = -10, r = 74 },
+}
+
+-- S49 ---------------------------------------------------------------------------------------------------------------
+
+-- Wolfden Hollow (24-31): an earthen den under the roots of a giant dead oak, dug by werewolves and bears; hanging
+-- roots, claw marks, fur; the Moon Chamber's shaft of moonlight on the moonstone.
+byMap.duskwood_den = {
+	theme = "Den",
+	wall = { amp = 12, scale = 22 },
+	ceiling = { amp = 2.5, scale = 18 },
+	materials = { wall = "Slate", floor = "Ground", accent = "Rock", bed = "Mud", moss = "LeafyGrass" },
+	rooms = {
+		room({ role = "entrance", decor = "den", flat = true }),
+		room({ role = "feeding", decor = "den", dy = -2 }),
+		room({ role = "bearden", decor = "den", h = 32 }),
+		room({ role = "moon", decor = "den", dy = 6, h = 46 }),
+		room({ role = "wetden", decor = "moss", dy = -4, h = 20 }),
+	},
+	tunnelH = 16,
+	wiggle = 8,
+	features = {
+		-- the ghouls' feeding pits by the walls of the Feeding Pit (out of the core)
+		{ kind = "pit", x = -142, z = -66, r = 6, depth = 1.5, blend = 4 },
+		{ kind = "pit", x = -78, z = -114, r = 6, depth = 1.5, blend = 4 },
+		{ kind = "pit", x = -52, z = -100, r = 5, depth = 1.5, blend = 4 },
+		-- the Great Den: the oak's taproot down to the floor by the north wall, the terrace by the north-east wall
+		{ kind = "pillar", x = 20, z = -52, r = 4.5 },
+		{ kind = "terrace", x = 70, z = -44, r = 13, dy = 4, blend = 6 },
+		-- the Moon Chamber: the hole in the vault
+		{ kind = "skyhole", x = 134, z = -70, r = 9 },
+		-- the Wet Den: the spring pool in a niche behind the south wall
+		{ kind = "niche", x = -112, z = 118, r = 12, h = 14, dy = -4 },
+		{ kind = "pool", x = -112, z = 120, r = 8, level = -4.6, depth = 1.4, ragged = 1.5 },
+		{ kind = "stalactites", x = 26, z = -6, r = 60, spacing = 11, length = 4 },
+	},
+}
+
+-- Cultist Barrow (31-38): inside a burial mound of dry stone walls with corbelled vaults, taken by the cult; the
+-- ghouls dug in from the side, the lower crypt is flooded with black water and snakes.
+byMap.duskwood_barrow = {
+	theme = "Barrow",
+	wall = { amp = 9, scale = 20 },
+	ceiling = { amp = 1.5, scale = 18 },
+	materials = { wall = "Slate", floor = "Ground", accent = "Basalt", bed = "Mud" },
+	masonry = true,
+	tunnelH = 15,
+	rooms = {
+		room({ role = "dromos", decor = "barrow", plan = "rect", hx = 34, hz = 26, flat = true, h = 22 }),
+		room({ role = "ritual", decor = "barrow", plan = "octagon", ceil = "corbel", h = 34 }),
+		room({ role = "burial", decor = "barrow", plan = "rect", hx = 48, hz = 46, flat = true, h = 20 }),
+		room({ role = "altar", decor = "barrow", plan = "octagon", ceil = "corbel", dy = 2, h = 40 }),
+		room({ role = "ghoulden", decor = "den" }),
+		room({ role = "flooded", decor = "barrow", plan = "octagon", ceil = "corbel", dy = -5, h = 24 }),
+	},
+	features = {
+		-- the rite circle's mosaic
+		{
+			kind = "ring",
+			x = -86,
+			z = -18,
+			bands = { band(10, 14, "Basalt") },
+			spokes = { n = 6, width = 4, material = "Basalt", from = 0, to = 10 },
+		},
+		{ kind = "niches", room = 3, spacing = 7, tiers = 3, w = 5, h = 5 },
+		-- the Heart of the Barrow: the apse behind the east wall with the altar's dais and the black pool
+		{ kind = "niche", x = 190, z = 50, r = 18, h = 26, dy = 2, plan = "octagon", ceil = "corbel" },
+		{ kind = "dais", x = 188, z = 50, r = 8, h = 4, dir = 180 },
+		{ kind = "pool", x = 200, z = 50, r = 5, level = 1.2, depth = 1.4 },
+		-- the Flooded Crypt: a ring of black water by the walls, the flooded nave behind the south wall, the causeway
+		{ kind = "niche", x = -69, z = 170, r = 18, h = 22, dy = -5, plan = "rect", hx = 16, hz = 14 },
+		{ kind = "pool", x = -69, z = 113, r = 70, inner = 40, level = -4.4, depth = 2.2 },
+		{ kind = "causeway", points = { -73, 62, -71, 82 }, width = 8 },
+	},
+}
+
+-- Crypt of the Forgotten (38-45, boss cave): the crypt of a forgotten royal house, built by hand: straight walls,
+-- barrel vaults, paved floors, the procession axis z = 0 from the entrance to the seal of Morvane.
+byMap.duskwood_cave = {
+	theme = "Crypt",
+	wall = { amp = 0, scale = 30 },
+	ceiling = { amp = 0, scale = 30 },
+	materials = { wall = "Slate", floor = "Basalt", accent = "Basalt", bed = "Mud" },
+	masonry = true,
+	tunnelH = 19,
+	rooms = {
+		room({
+			role = "entrance",
+			decor = "crypt",
+			plan = "rect",
+			hx = 38,
+			hz = 34,
+			ceil = "vault",
+			h = 26,
+			floor = "Pavement",
+		}),
+		room({
+			role = "columns",
+			decor = "crypt",
+			plan = "rect",
+			hx = 70,
+			hz = 66,
+			ceil = "vault",
+			h = 34,
+			floor = "Pavement",
+		}),
+		room({ role = "familycrypt", decor = "crypt", plan = "octagon", ceil = "vault", h = 24 }),
+		room({ role = "barracks", decor = "crypt", plan = "rect", hx = 46, hz = 42, ceil = "vault", h = 24 }),
+		room({ role = "soulwell", decor = "crypt", plan = "octagon", h = 26 }),
+		room({ role = "ossuary", decor = "crypt", plan = "octagon", h = 30, floor = "Pavement" }),
+		room({ role = "gallery", decor = "crypt", plan = "rect", hx = 54, hz = 42, ceil = "vault", h = 26 }),
+		room({ role = "sanctum", decor = "crypt", plan = "octagon", h = 28 }),
+		room({
+			role = "antechamber",
+			decor = "crypt",
+			plan = "rect",
+			hx = 48,
+			hz = 40,
+			flat = true,
+			h = 32,
+			floor = "Pavement",
+		}),
+	},
+	tunnels = {
+		tunnel({ ax = -215, az = 0, bx = -170, bz = 0, w = 14, h = 20 }),
+		tunnel({ ax = -110, az = -60, bx = -110, bz = -130, w = 14 }),
+		tunnel({ ax = -110, az = 60, bx = -110, bz = 130, w = 14 }),
+		tunnel({ ax = -50, az = 0, bx = -10, bz = 0, w = 14, h = 20 }),
+		tunnel({ ax = 40, az = -50, bx = 40, bz = -130, w = 14 }),
+		tunnel({ ax = 40, az = 50, bx = 40, bz = 130, w = 14 }),
+		tunnel({ ax = 90, az = 0, bx = 110, bz = 0, w = 14, h = 20 }),
+		tunnel({ ax = 190, az = 0, bx = 205, bz = 0, w = 14, h = 20 }),
+		tunnel({ ax = -70, az = -170, bx = 0, bz = -170, w = 14 }),
+		tunnel({ ax = -70, az = 170, bx = 0, bz = 170, w = 14 }),
+	},
+	features = {
+		-- the Hall of Columns: two rows of pillars at z = +-52 (a gap at x -110 for the north and south corridors)
+		{ kind = "pillar", x = -164, z = -52, r = 3.5 },
+		{ kind = "pillar", x = -146, z = -52, r = 3.5 },
+		{ kind = "pillar", x = -128, z = -52, r = 3.5 },
+		{ kind = "pillar", x = -92, z = -52, r = 3.5 },
+		{ kind = "pillar", x = -74, z = -52, r = 3.5 },
+		{ kind = "pillar", x = -56, z = -52, r = 3.5 },
+		{ kind = "pillar", x = -164, z = 52, r = 3.5 },
+		{ kind = "pillar", x = -146, z = 52, r = 3.5 },
+		{ kind = "pillar", x = -128, z = 52, r = 3.5 },
+		{ kind = "pillar", x = -92, z = 52, r = 3.5 },
+		{ kind = "pillar", x = -74, z = 52, r = 3.5 },
+		{ kind = "pillar", x = -56, z = 52, r = 3.5 },
+		{ kind = "niches", room = 3, spacing = 8, tiers = 3, w = 5, h = 5 },
+		{ kind = "niches", room = 6, spacing = 6, tiers = 4, w = 4, h = 4 },
+		-- the Soul Well: the apse behind the north wall, the shaft over the well
+		{ kind = "niche", x = 40, z = -226, r = 13, h = 22, plan = "octagon" },
+		{ kind = "pit", x = 40, z = -228, r = 6, depth = 2, blend = 4 },
+		{ kind = "chimney", x = 40, z = -228, r = 9, h = 44 },
+		-- the necromancer's summoning circle, the seal of Morvane before the gate
+		{
+			kind = "ring",
+			x = 150,
+			z = 0,
+			bands = { band(11, 15, "Pavement") },
+			spokes = { n = 5, width = 4, material = "Pavement", from = 0, to = 11 },
+		},
+		{ kind = "ring", x = 262, z = 0, bands = { band(6, 10, "Slate"), band(13, 16, "Pavement") } },
+	},
+}
+
+-- The Tomb of Morvane (boss of Duskwood): a queen's tomb: black floor with a mosaic, sarcophagi under an unreachable
+-- gallery, the apse with the broken sarcophagus and the statue of the young queen; the arena contract holds.
+byMap.dungeon_duskwood = {
+	theme = "Tomb",
+	wall = { amp = 4, scale = 30 },
+	ceiling = { amp = 1.5, scale = 30 },
+	materials = { wall = "Slate", floor = "Basalt", accent = "Basalt", bed = "Mud" },
+	extraRooms = {
+		extra({ x = 0, z = -10, r = 106, h = 56, role = "arena" }),
+		extra({ x = 0, z = 72, r = 20, h = 26, role = "entrance", flat = true }),
+		extra({ x = 0, z = -122, r = 26, h = 36, role = "apse", decor = "crypt" }),
+	},
+	features = {
+		{
+			kind = "ring",
+			x = 0,
+			z = -10,
+			bands = { band(30, 34, "Pavement"), band(60, 64, "Pavement") },
+			spokes = { n = 8, width = 4, material = "Slate", from = 6, to = 74 },
+		},
+		{ kind = "dais", x = 0, z = -128, r = 14, h = 4, dir = 90 },
+		-- the gallery round the arena (+14, no stairs), open to the apse and the entry sector
+		{
+			kind = "terrace",
+			x = 0,
+			z = -10,
+			r = 112,
+			inner = 90,
+			dy = 14,
+			blend = 1.5,
+			gaps = { { 50, 130 }, { 245, 295 } },
+			unreachable = true,
+		},
 	},
 	arena = { x = 0, z = -10, r = 74 },
 }

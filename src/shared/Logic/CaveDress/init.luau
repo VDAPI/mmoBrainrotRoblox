@@ -1,17 +1,21 @@
 --!strict
 -- Cave dressing (S48): Builds of every cave or boss chamber on the cave engine (Data/CaveShapes), by the shape's
--- theme module (Moss, Smugglers, Warren, GoblinThrone; S49-S51 add theirs to THEMES), plus the ore veins along the
+-- theme module (S48 Moss, Smugglers, Warren, GoblinThrone; S49 Den, Barrow, Crypt, Tomb; S50-S51 add theirs), plus the ore veins along the
 -- walls of the fighting rooms, life points and sketch shapes. Pure and deterministic: the server builds the "shell"
 -- level, each client "detail" and "fine" near its camera (TownDetailController through Logic/WorldGen, which wraps
 -- this module per map: `CaveDress.generator(mapId)`). Props that collide stay out of the rooms' cores and clear of
 -- every spawner by its radius + 4, of the exit, the respawn point, the gate and the landing points.
 
+local Barrow = require("@self/Barrow")
 local CaveShapes = require("../Data/CaveShapes")
+local Crypt = require("@self/Crypt")
+local Den = require("@self/Den")
 local GoblinThrone = require("@self/GoblinThrone")
 local Kit = require("@self/Kit")
 local Moss = require("@self/Moss")
 local Rng = require("./Rng")
 local Smugglers = require("@self/Smugglers")
+local Tomb = require("@self/Tomb")
 local Warren = require("@self/Warren")
 
 local CaveDress = {}
@@ -23,6 +27,11 @@ local THEMES: { [string]: { all: (env: Kit.Env, out: { Build }) -> () } } = {
 	Smugglers = Smugglers,
 	Warren = Warren,
 	GoblinThrone = GoblinThrone,
+	-- S49: Duskwood
+	Den = Den,
+	Barrow = Barrow,
+	Crypt = Crypt,
+	Tomb = Tomb,
 }
 
 type State = { builds: { Build }, env: Kit.Env }

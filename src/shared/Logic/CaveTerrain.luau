@@ -49,6 +49,12 @@ export type Room = {
 	fight: boolean,
 	core: number, -- radius of the core (0: none)
 	seed: number,
+	-- S49: architecture (round = the S48 natural room)
+	plan: string, -- "round" | "rect" | "octagon"
+	hx: number, -- rect half sizes (along x and z before `rot`)
+	hz: number,
+	rot: number, -- degrees
+	ceil: string?, -- "vault" | "corbel" | "dome" (default dome; `flat` keeps the S48 flat ceiling)
 }
 
 export type Liquid = { kind: string, level: number }
@@ -78,6 +84,7 @@ export type Cave = {
 	voxels: (x0: number, z0: number, nx: number, nz: number, yBottom: number, ny: number) -> TerrainLayers.Voxels,
 	outline: (step: number) -> { { x: number, z: number, w: number, d: number } },
 	inCore: (x: number, z: number) -> boolean,
+	niches: () -> { { x: number, z: number, yaw: number, room: number, tiers: number, w: number, h: number } },
 	MATERIALS: { string },
 	HALF: number,
 	VOXEL: number,
@@ -125,7 +132,8 @@ local function build(mapId: string, shape: CaveShapes.Shape): Cave
 	local wallAmp, wallScale = shape.wall.amp, shape.wall.scale
 	local ceilAmp, ceilScale = shape.ceiling.amp, shape.ceiling.scale
 	local tunnelH = shape.tunnelH or 14
-	local wiggle = shape.wiggle or 6
+	local masonry = shape.masonry == true -- S49: straight vaulted corridors of constant width
+	local wiggle = if masonry then 0 else shape.wiggle or 6
 
 	-- Rooms: the plan's, then the extra rooms, then the niches (small rooms behind the walls).
 	local cave = Caves.get(mapId)
@@ -159,6 +167,11 @@ local function build(mapId: string, shape: CaveShapes.Shape): Cave
 				fight = fight,
 				core = if fight then r.r * CaveTerrain.CORE_SCALE + CaveTerrain.CORE_PAD else 0,
 				seed = SEED + i * 17,
+				plan = rs and rs.plan or "round",
+				hx = rs and rs.hx or r.r,
+				hz = rs and rs.hz or r.r,
+				rot = rs and rs.rot or 0,
+				ceil = rs and rs.ceil,
 			})
 		end
 	end
@@ -178,6 +191,11 @@ local function build(mapId: string, shape: CaveShapes.Shape): Cave
 			-- flat anyway: arenas have no floor noise)
 			core = if e.role == "arena" then 50 else 0,
 			seed = SEED + 500 + i * 17,
+			plan = e.plan or "round",
+			hx = e.hx or e.r,
+			hz = e.hz or e.r,
+			rot = e.rot or 0,
+			ceil = e.ceil,
 		})
 	end
 	local nRooms = #rooms
@@ -194,6 +212,11 @@ local function build(mapId: string, shape: CaveShapes.Shape): Cave
 				fight = false,
 				core = 0,
 				seed = SEED + 900 + i * 17,
+				plan = f.plan or "round",
+				hx = f.hx or f.r,
+				hz = f.hz or f.r,
+				rot = f.rot or 0,
+				ceil = f.ceil,
 			})
 		end
 	end
@@ -254,7 +277,61 @@ local function build(mapId: string, shape: CaveShapes.Shape): Cave
 	end
 
 	-- One room's contribution: openness 0..1, floor, ceiling.
+	-- S49: an architectural room (rect or octagon): straight walls without noise, a short wall zone (near-vertical
+	-- walls), ceiling profiles vault / corbel / dome / flat. `depth` = distance from the point to the nearest wall.
+	local function archPart(r: Room, x: number, z: number): (number, number, number)
+		local dx, dz = x - r.x, z - r.z
+		local reach = math.max(r.hx, r.hz) * 1.5 + 2
+		if math.abs(dx) > reach or math.abs(dz) > reach then
+			return 0, 0, 0
+		end
+		local a = math.rad(r.rot)
+		local lx = dx * math.cos(a) - dz * math.sin(a)
+		local lz = dx * math.sin(a) + dz * math.cos(a)
+		local depth, inradius
+		if r.plan == "rect" then
+			depth = math.min(r.hx - math.abs(lx), r.hz - math.abs(lz))
+			inradius = math.min(r.hx, r.hz)
+		else
+			local m = math.max(math.abs(lx), math.abs(lz), (math.abs(lx) + math.abs(lz)) / math.sqrt(2))
+			depth = r.r - m
+			inradius = r.r
+		end
+		if depth <= 0 then
+			return 0, 0, 0
+		end
+		local edge = 2.5
+		local o = if depth >= edge then 1 else smoothstep(depth / edge)
+		local base = F + r.dy
+		local fl = base + (1 - o) * 4
+		local h = r.h
+		local dome
+		local kind = if r.flat then "flat" else (r.ceil or "dome")
+		if kind == "flat" then
+			dome = h
+		elseif kind == "vault" then
+			-- a barrel vault along the longer axis: the ceiling rises in an arc from the side walls to the ridge
+			local half = if r.plan == "rect" then math.min(r.hx, r.hz) else r.r
+			local lateral = if r.plan == "rect" and r.hx < r.hz then math.abs(lx) else math.abs(lz)
+			local u = math.clamp(lateral / half, 0, 1)
+			dome = h * (0.55 + 0.45 * math.sqrt(1 - u * u))
+		elseif kind == "corbel" then
+			-- a corbelled vault: the ceiling rises in steps of 4 studs towards the middle (a beehive dome)
+			local t = math.clamp(1 - depth / inradius, 0, 1)
+			local rise = (h * 0.45) * (1 - t)
+			dome = h * 0.55 + math.floor(rise / 4 + 0.5) * 4
+		else
+			local t = math.clamp(1 - depth / inradius, 0, 1)
+			dome = h * (1 - 0.4 * t * t)
+		end
+		local gap = math.max(0, dome) * o ^ 0.6
+		return o, fl, fl + gap
+	end
+
 	local function roomPart(r: Room, x: number, z: number): (number, number, number)
+		if r.plan ~= "round" then
+			return archPart(r, x, z)
+		end
 		local dx, dz = x - r.x, z - r.z
 		local reach = r.r + wallAmp * 1.6 + 1
 		if math.abs(dx) > reach or math.abs(dz) > reach then
@@ -313,6 +390,17 @@ local function build(mapId: string, shape: CaveShapes.Shape): Cave
 		local w = wiggle * math.clamp((fbm(along, td.seed, 36, td.seed, 2) - 0.5) * 4, -1, 1) * math.sin(math.pi * s)
 		-- distance from the winding centre line (w = its sideways shift)
 		local p = math.abs(side * d - w)
+		if masonry then
+			local half = t.w / 2
+			if p >= half then
+				return 0, 0, 0
+			end
+			local o = if p <= half - 1.5 then 1 else smoothstep((half - p) / 1.5)
+			local fl = lerp(td.fa, td.fb, s) + (1 - o) * 3
+			local u = math.clamp(p / half, 0, 1)
+			local h = td.h * (0.7 + 0.3 * math.sqrt(1 - u * u))
+			return o, fl, fl + h * o ^ 0.6
+		end
 		local half = t.w / 2 * (0.88 + 0.24 * fbm(x, z, 16, td.seed + 1, 2))
 		if p >= half then
 			return 0, 0, 0
@@ -357,6 +445,23 @@ local function build(mapId: string, shape: CaveShapes.Shape): Cave
 			end
 		end
 		return math.huge, 0, nil
+	end
+
+	-- S49: dry causeways across liquids.
+	local onCauseway: (x: number, z: number) -> boolean
+	local causeways: { { line: TerrainLayers.Line, half: number } } = {}
+	for _, f in features do
+		if f.kind == "causeway" then
+			table.insert(causeways, { line = TerrainLayers.line(TerrainLayers.pairs(f.points)), half = f.width / 2 })
+		end
+	end
+	onCauseway = function(x: number, z: number): boolean
+		for _, c in causeways do
+			if (TerrainLayers.nearest(c.line, x, z)) < c.half then
+				return true
+			end
+		end
+		return false
 	end
 
 	-- The column at (x, z).
@@ -420,7 +525,16 @@ local function build(mapId: string, shape: CaveShapes.Shape): Cave
 				local dx, dz = x - f.x, z - f.z
 				if math.abs(dx) < f.r + 8 and math.abs(dz) < f.r + 8 then
 					local d = math.sqrt(dx * dx + dz * dz) + (f.ragged or 0) * (fbm(x, z, 10, SEED + 51, 2) - 0.5) * 2
-					if d < f.r then
+					-- S49: a ring of water (`inner`): dry inside, the shore slopes in towards the middle
+					local inner = f.inner or 0
+					if inner > 0 and d < inner then
+						if d > inner - 6 and not onCauseway(x, z) then
+							fl = math.min(fl, lerp(fl, f.level + 0.2, smoothstep((d - (inner - 6)) / 6)))
+						end
+					elseif onCauseway(x, z) then
+						-- a dry causeway across the water
+						fl = math.min(fl, f.level + 0.6)
+					elseif d < f.r then
 						local bed = f.level - f.depth * (1 - (d / f.r) ^ 2) - 0.4
 						fl = math.min(fl, bed)
 						liquid = { kind = f.liquid or "water", level = f.level }
@@ -437,8 +551,22 @@ local function build(mapId: string, shape: CaveShapes.Shape): Cave
 				local dx, dz = x - f.x, z - f.z
 				if math.abs(dx) < f.r and math.abs(dz) < f.r then
 					local d = math.sqrt(dx * dx + dz * dz)
-					if d < f.r then
+					-- S49: a ring terrace (`inner`) with gaps (`gaps` = { { fromDeg, toDeg } }, 0 = +x, 90 = +z)
+					local skip = f.inner ~= nil and d < f.inner
+					if not skip and f.gaps then
+						local deg = math.deg(math.atan2(dz, dx)) % 360
+						for _, g in f.gaps do
+							local a0, a1 = g[1] % 360, g[2] % 360
+							if (a0 <= a1 and deg >= a0 and deg <= a1) or (a0 > a1 and (deg >= a0 or deg <= a1)) then
+								skip = true
+							end
+						end
+					end
+					if d < f.r and not skip then
 						local w = if d <= f.r - f.blend then 1 else 1 - smoothstep((d - (f.r - f.blend)) / f.blend)
+						if f.inner then
+							w = math.min(w, if d >= f.inner + f.blend then 1 else smoothstep((d - f.inner) / f.blend))
+						end
 						if kind == "terrace" then
 							fl += f.dy * w
 						else
@@ -458,6 +586,48 @@ local function build(mapId: string, shape: CaveShapes.Shape): Cave
 			elseif kind == "stalactites" and not core then
 				if math.abs(x - f.x) < f.r + 8 and math.abs(z - f.z) < f.r + 8 then
 					ce -= cones(f, x, z, f.length, SEED + 71)
+				end
+			elseif kind == "chimney" then
+				-- S49: the ceiling raised over a point (a shaft over a well)
+				local dx, dz = x - f.x, z - f.z
+				local d = math.sqrt(dx * dx + dz * dz)
+				if d < f.r then
+					ce = math.max(ce, fl + f.h * (1 - (d / f.r) ^ 2 * 0.3))
+				end
+			elseif kind == "dais" and not core then
+				-- S49: a podium `h` studs high with stairs on one side (`dir`: degrees, 0 = +x, 90 = +z), steps of <= 2
+				-- studs every 4 studs; the other sides drop straight
+				local dx, dz = x - f.x, z - f.z
+				local d = math.sqrt(dx * dx + dz * dz)
+				local run = math.ceil(f.h / 2) * 4
+				if d < f.r then
+					fl += f.h
+				elseif d < f.r + run then
+					local b = math.rad(f.dir or 0)
+					local along = (dx * math.cos(b) + dz * math.sin(b)) / math.max(d, 0.01)
+					if along > 0.8 then
+						local steps = math.ceil(f.h / 2)
+						local k = math.floor((d - f.r) / 4)
+						fl += f.h * (1 - (k + 1) / (steps + 1))
+					end
+				end
+			elseif kind == "ring" then
+				-- S49: a mosaic in the floor material: bands round a centre and spokes
+				local dx, dz = x - f.x, z - f.z
+				local d = math.sqrt(dx * dx + dz * dz)
+				for _, band in f.bands or {} do
+					if d >= band[1] and d <= band[2] then
+						floorMat = band[3]
+					end
+				end
+				local sp = f.spokes
+				if sp and d >= (sp.from or 0) and d <= (sp.to or math.huge) then
+					local a = math.atan2(dz, dx)
+					local sector = 2 * math.pi / sp.n
+					local off = math.abs(((a + sector / 2) % sector) - sector / 2) * d
+					if off < sp.width / 2 then
+						floorMat = sp.material
+					end
 				end
 			elseif kind == "skyhole" then
 				local dx, dz = x - f.x, z - f.z
@@ -500,6 +670,16 @@ local function build(mapId: string, shape: CaveShapes.Shape): Cave
 	for _, r in rooms do
 		if r.floor then
 			matSet[r.floor] = true
+		end
+	end
+	for _, f in features do
+		if f.kind == "ring" then
+			for _, band in f.bands or {} do
+				matSet[band[3]] = true
+			end
+			if f.spokes then
+				matSet[f.spokes.material] = true
+			end
 		end
 	end
 	local list = {}
@@ -623,6 +803,50 @@ local function build(mapId: string, shape: CaveShapes.Shape): Cave
 			materials[i], occupancy[i] = mi, oi
 		end
 		return { materials = materials, occupancy = occupancy }
+	end
+
+	-- S49: places of wall niches (`niches` features: rows along a room's walls): x, z on the floor by the wall, yaw
+	-- facing into the room, the room's index. The terrain keeps a plain wall; the dressing builds the shelves.
+	function T.niches(): { { x: number, z: number, yaw: number, room: number, tiers: number, w: number, h: number } }
+		local out = {}
+		for _, f in features do
+			if f.kind == "niches" then
+				local room = rooms[f.room]
+				if room then
+					local spacing = f.spacing or 8
+					local n = math.floor(2 * math.pi * room.r / spacing)
+					for k = 0, n - 1 do
+						local a = k * 2 * math.pi / n
+						-- walk out to the wall
+						local d = 4
+						local lastX, lastZ = room.x, room.z
+						while d < room.r * 1.6 do
+							local px, pz = room.x + math.cos(a) * d, room.z + math.sin(a) * d
+							local c = column(px, pz)
+							if not c.open or c.ceiling - c.floor < (f.h or 6) * (f.tiers or 1) * 0.6 then
+								break
+							end
+							lastX, lastZ = px, pz
+							d += 1
+						end
+						-- skip tunnel mouths (open ground straight behind the wall)
+						local bx, bz = room.x + math.cos(a) * (d + 4), room.z + math.sin(a) * (d + 4)
+						if not column(bx, bz).open and d > room.r * 0.6 then
+							table.insert(out, {
+								x = lastX,
+								z = lastZ,
+								yaw = math.deg(math.atan2(math.cos(a), math.sin(a))),
+								room = f.room,
+								tiers = f.tiers or 1,
+								w = f.w or 5,
+								h = f.h or 5,
+							})
+						end
+					end
+				end
+			end
+		end
+		return out
 	end
 
 	-- Floor of the map as rectangles on a grid of `step` studs (rows merged greedily), for the map sketch.
