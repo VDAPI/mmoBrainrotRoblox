@@ -296,6 +296,32 @@ type CharacterData = {
     `WorldLifeController` (pióropusze śniegu, lawina, pył z sopli, błyski harpii, orły), `RegionLightController` (tag
     świateł `crystal`), `DecorController` (9 motywów Szczytów, brzeg tafli lodu), `UI/MapSketch` (`ice`, `glacier`,
     `moraine`, `crevasse`, `ridge`, `spire`).
+- Silnik jaskiń (S48; S49–S51 dokładają mapy):
+  - `Data/CaveShapes` (wpis na mapę: `theme`, `floorY`, `wall`, `ceiling`, `materials`, `rooms[i]` z `role` ze słownika
+    `ROLES`, `decor`, `dy`, `floor`, `flat`, `h`; `tunnels` i `extraRooms` dla jaskiń bossów i komnat, `features`: `pool`,
+    `stream`, `waterfall`, `skyhole`, `terrace`, `pit`, `pillar`, `stalagmites`, `stalactites`, `niche`; `arena`); plan
+    sal i potwory dalej z `Data/Areas/Caves` / `CaveGen`;
+  - `Logic/CaveTerrain` (model kolumnowy: jedna szczelina powietrza na kolumnę między `floor` a `ceiling`; ściany sal
+    wybrzuszają się tylko na zewnątrz, strefa ściany nigdy nie wchodzi w rdzeń sali walki `0,65 r + 8`; tunele wiją się;
+    `floor`, `ceiling`, `solid`, `material`, `liquid`, `walkable`, `headroom`, `roomAt`, `column`, `inCore`, `voxels`,
+    `outline`, `rooms`); `Logic/MapTerrain` zwraca podłogę, wodę i `walkable` jaskiń; `AreaSpawns.cave` daje `y`
+    spawnerów z podłogi (x/z bez zmian, fixture `tests/fixtures/caveRooms`);
+  - serwer: `World/CaveTerrainWriter` (nakładka na `TerrainWriter`, margines skały na siatce 4 st.), `World/CaveLayout`
+    (teren, `ctx.height` = podłoga, shelle ubioru, rudy, szkic z obrysu, `BuildStats`), gałęzie w
+    `Layouts/CaveTemplate`, `meadows_cave`, `DungeonArena`; promienie gruntu w `WorldService` startują z podłogi + 6;
+  - ubiór `Logic/CaveDress` (`init`: `all/life/sketch/nodes/counts/generator(mapId)`, rudy przy ścianach sal walki,
+    światło w każdej sali walki; `Kit`: `env`, `free`, `wallSpot`, `spot`, rekwizyty; motywy `Moss`, `Smugglers`,
+    `Warren`, `GoblinThrone`), zarejestrowany per mapa w `WorldGen`;
+  - klient: `RegionLightController` w jaskiniach jest jedynym właścicielem świateł mapy (`Config.CaveLights`),
+    `TownFxController` zapala lampy pod ziemią, `WorldLifeController` (krople, pył w smugach, robaczki, pająki,
+    nietoperze; pod ziemią zawsze „noc”), `AmbienceController` (nastrój sali z `CaveTerrain.roomAt`,
+    `Ambience.rooms`), `DecorController` (podłoga z silnika, motyw z `decor` sali), `NavController`;
+  - **kontrakt aren** (komnaty bossów na silniku): środek walki (0, −10); w promieniu 74 st. podłoga płaska na y 0;
+    przeszkody z kolizją tylko ≥ 50 st. od środka; pas wejścia |x| < 14 wolny; wnęka (0, 70), wyjście (0, 78), odrodzenie
+    (0, 60), lądowanie drużyny (x, 55), ikona bossa (0, −10) bez zmian (`tests/caveterrain.spec`);
+  - narzędzia: `tools/cavedump.luau` + `cavemap.py` (mapa z góry, `--section`), fixture `tools/fixture_caves.luau`,
+    `tools/fixture_caveshapes.luau`; admin `/tpcave`, `/caveinfo`, `/cavestats`, `/lights`, `/ambience <jaskinia>:<sala>`,
+    `/terrainrebuild <jaskinia>`.
 
 ## 9. UI (Fusion 0.3)
 

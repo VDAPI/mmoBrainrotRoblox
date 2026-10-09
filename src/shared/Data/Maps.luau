@@ -189,6 +189,52 @@ local LIGHT = {
 		tint = "#E0F0D8",
 		saturation = -0.1,
 	}),
+	-- S48: presets of the caves on the engine: very dark ambient (never darker than ~#262A26) and short fog in the
+	-- cave's colour; the light of the rooms comes from their lamps, fires, moss and crystals (RegionLightController)
+	caveMoss = lighting({
+		clockTime = 0,
+		brightness = 0.35,
+		ambient = "#2E3A2E",
+		outdoorAmbient = "#283028",
+		fogColor = "#101A12",
+		fogEnd = 240,
+		atmosphere = { density = 0.55, haze = 0.4, glare = 0, color = "#18241A", decay = "#0C140E" },
+		tint = "#D8F4D0",
+		saturation = -0.05,
+	}),
+	caveSmugglers = lighting({
+		clockTime = 0,
+		brightness = 0.35,
+		ambient = "#34302A",
+		outdoorAmbient = "#2A2826",
+		fogColor = "#14120F",
+		fogEnd = 230,
+		atmosphere = { density = 0.55, haze = 0.2, glare = 0, color = "#201C18", decay = "#100E0C" },
+		tint = "#F4E4D0",
+		saturation = -0.08,
+	}),
+	caveWarren = lighting({
+		clockTime = 0,
+		brightness = 0.35,
+		ambient = "#36302A",
+		outdoorAmbient = "#2C2824",
+		fogColor = "#16120E",
+		fogEnd = 210,
+		atmosphere = { density = 0.58, haze = 0.6, glare = 0, color = "#221C16", decay = "#120E0A" },
+		tint = "#F0E4C8",
+		saturation = -0.06,
+	}),
+	dungeonGoblin = lighting({
+		clockTime = 0,
+		brightness = 0.4,
+		ambient = "#3A2E26",
+		outdoorAmbient = "#30261E",
+		fogColor = "#1A100C",
+		fogEnd = 260,
+		atmosphere = { density = 0.5, haze = 0.6, glare = 0, color = "#2A1810", decay = "#140C08" },
+		tint = "#FFD8B8",
+		saturation = 0.02,
+	}),
 	crypt = lighting({
 		clockTime = 0,
 		brightness = 0.3,
@@ -266,13 +312,16 @@ map({
 	size = { x = 640, z = 640 },
 	spawn = { x = -250, y = 4, z = 0 },
 	biome = "cave",
-	lighting = LIGHT.cave,
+	lighting = LIGHT.caveMoss, -- S48
+	-- Creator Store: "dark cave ambient music" with soft drones and distant drips, 2-3 min, loops cleanly.
 	music = "",
 	buildMode = "generated",
 	worldMap = { x = 0.51, y = 0.66 },
 	links = { "meadows" },
 	dungeonEntrance = { x = 250, y = 0, z = 0 },
 	dungeonRegion = "meadows",
+	-- S48: on the cave engine (Data/CaveShapes); server budget of the dressing's shell + portals and the gate
+	maxParts = 1000,
 })
 
 -- Region 2
@@ -423,6 +472,7 @@ for _, cave in
 			biome = "cave",
 			wx = 0.42,
 			wy = 0.71,
+			light = "caveSmugglers", -- S48
 		},
 		{
 			id = "meadows_burrow",
@@ -434,6 +484,7 @@ for _, cave in
 			biome = "cave",
 			wx = 0.47,
 			wy = 0.53,
+			light = "caveWarren", -- S48
 		},
 		{
 			id = "duskwood_den",
@@ -445,6 +496,7 @@ for _, cave in
 			biome = "cave",
 			wx = 0.53,
 			wy = 0.29,
+			light = "cave",
 		},
 		{
 			id = "duskwood_barrow",
@@ -456,6 +508,7 @@ for _, cave in
 			biome = "crypt",
 			wx = 0.6,
 			wy = 0.29,
+			light = "crypt",
 		},
 		{
 			id = "ashen_mine",
@@ -467,6 +520,7 @@ for _, cave in
 			biome = "cave",
 			wx = 0.69,
 			wy = 0.51,
+			light = "cave",
 		},
 		{
 			id = "ashen_lair",
@@ -478,6 +532,7 @@ for _, cave in
 			biome = "cave",
 			wx = 0.81,
 			wy = 0.51,
+			light = "cave",
 		},
 		{
 			id = "frostpeak_grotto",
@@ -489,6 +544,7 @@ for _, cave in
 			biome = "cave",
 			wx = 0.86,
 			wy = 0.25,
+			light = "cave",
 		},
 		{
 			id = "frostpeak_hold",
@@ -500,6 +556,7 @@ for _, cave in
 			biome = "crypt",
 			wx = 0.94,
 			wy = 0.25,
+			light = "crypt",
 		},
 	}
 do
@@ -513,11 +570,13 @@ do
 		size = { x = 480, z = 480 },
 		spawn = { x = -185, y = 4, z = 0 },
 		biome = cave.biome :: Biome,
-		lighting = if cave.biome == "crypt" then LIGHT.crypt else LIGHT.cave,
+		lighting = LIGHT[cave.light], -- S48: a preset per cave (the Meadows' caves on the engine have their own)
 		music = "",
 		buildMode = "generated",
 		worldMap = { x = cave.wx, y = cave.wy },
 		links = { cave.region },
+		-- S48: caves on the cave engine keep a server part budget (the Meadows' two: 700)
+		maxParts = if cave.region == "meadows" then 700 else nil,
 	})
 end
 
@@ -540,11 +599,15 @@ do
 		size = { x = 300, z = 300 },
 		spawn = { x = 0, y = 4, z = 60 },
 		biome = "dungeon",
-		lighting = if dungeon.region == "duskwood" then LIGHT.crypt else LIGHT.cave,
+		lighting = if dungeon.region == "duskwood"
+			then LIGHT.crypt
+			elseif dungeon.region == "meadows" then LIGHT.dungeonGoblin -- S48
+			else LIGHT.cave,
 		music = "",
 		buildMode = "generated",
 		worldMap = { x = 0, y = 0 },
 		links = {},
+		maxParts = if dungeon.region == "meadows" then 450 else nil, -- S48: Grimrok's Chamber on the cave engine
 	})
 end
 

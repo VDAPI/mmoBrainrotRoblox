@@ -316,26 +316,26 @@ nad jarem). EXP: 0,25 poziomu, koniec wątku 0,45 (razem ~40% EXP na 1→20).
 
 W każdej: 2–3 rodzaje zwykłych potworów, **2 rodzaje Elit** (3–5 grup po 1–2 Elity), **1 Elita II naraz** (losuje jeden z 2 rodzajów przy odrodzeniu, 10–20 min), 6–10 rud. ⚑ = Elita potrzebna questom głównej linii (nie przenosić do innej jaskini bez poprawy questa).
 
-| Jaskinia | Poziomy | Zwykłe | Elity | Elita II (jedna z) | Rudy |
-|---|---|---|---|---|---|
-| Kryjówka Przemytników / Smugglers' Hideout | 7–12 | Bandyta (9–12), Wilk (7–9) | Herszt Bandytów, Wilk Wataha | Krwawy Ruben / Alfa Watahy | Miedź |
-| Gobliński Kopiec / Goblin Warren | 12–16 | Goblin Zwiadowca (12–16), Kobold (12–15) | ⚑ Goblin Wojownik, Kobold Brygadzista | Goblin Rzeźnik / Herszt Sztolni | Miedź, Żelazo |
-| Jaskinia Mchów / Mosshollow Cave | 16–20 | Pająk Jaskiniowy, Goblin Szaman | Pająk Matka, Arcyszaman | Królowa Splotu / Wieszcz Kości | Żelazo · **loch Grimroka (20)** |
-| Wilcza Nora / Wolfden Hollow | 24–31 | Wilkołak (24–28), Czarny Niedźwiedź (24–27), Ghul (27–31) | Wilkołak Krwawej Pełni, Niedźwiedź Mroku | Pradawny Wilkołak / Czarnofutry | Żelazo |
-| Kurhan Kultystów / Cultist Barrow | 31–38 | Kultysta Mroku, Ghul (31–33), Szkielet Strażnik (35–38) | Kapłan Mroku, Ghul Grobowy | Arcykapłan Mroku / Pożeracz Zmarłych | Żelazo |
-| Krypta Zapomnianych / Crypt of the Forgotten | 38–45 | Szkielet Strażnik, Upiór, Nekromanta | ⚑ Szkielet Rycerz, Upiór Krzyku | Lisz Zapomnianych / Banshee Krypty | Żelazo, Srebro · **loch Morvane (45)** |
-| Opuszczona Kopalnia / Abandoned Mine | 49–56 | Ork Popiołu, Hiena (49–52), Salamandra (49–52) | Ork Berserker, Ognista Salamandra | Wódz Popiołu / Matka Płomieni | Srebro |
-| Leże Wywerny / Wyvern Lair | 56–63 | Wywerna (58–63), Skorpion, Chochlik (56–61) | Wywerna Popiołu, Skorpion Królewski | Królowa Wywern / Żądło Pustkowi | Srebro |
-| Kuźnia Głębin / Deepforge | 63–70 | Krasnolud Renegat, Golem Magmowy, Kowal Płomieni | ⚑ Krasnolud Weteran, Golem Lawy | Pierwszy Kowal / Serce Wulkanu | Srebro, Mithril · **loch Azgora (70)** |
-| Lodowa Grota / Ice Grotto | 74–83 | Lodowy Wilk (74–78), Yeti, Lampart (74–78) | Wilk Zamieci, Yeti Starszy | Król Gór / Biały Kieł | Mithril |
-| Zamarznięta Twierdza / Frozen Hold | 83–92 | Zamarznięty Rycerz (88–92), Mroźny Olbrzym (83–88), Lodowy Żywiołak | Rycerz Szronu, Olbrzym Lodowca | Lodowy Komtur / Jarl Mrozu | Mithril |
-| Serce Lodowca / Glacier Heart | 92–100 | Kryształowy Strażnik, Młody Smok Lodu, Wyrm Szronu (95–100) | ⚑ Kryształowy Obrońca, Smok Lodu | Starszy Smok Lodu / Kryształowy Tytan | Adamantyt · **loch Vaelgratha (100)** |
+| Jaskinia | Poziomy | Zwykłe | Elity | Elita II (jedna z) | Rudy | Wygląd / punkt charakterystyczny |
+|---|---|---|---|---|---|---|
+| Kryjówka Przemytników / Smugglers' Hideout | 7–12 | Bandyta, Kruk Padlinożerca | Herszt Bandytów, Rozjuszony Dzik | Krwawy Ruben / Czarne Skrzydło | Miedź, Żelazo | dziupla szajki pod Kupieckim Traktem (S48): czaty z barykadą skrzyń, przystań nad czarnym strumieniem z łodzią i żurawiem, **Sala Narad pod Zapadliskiem** (księżyc i kruki w szybie, stół z mapą, taras obserwacyjny), komnata herszta pełna łupów, zagroda dzików bojowych |
+| Gobliński Kopiec / Goblin Warren | 12–16 | Goblin Zwiadowca, Kobold Górnik, Pająk Jaskiniowy | ⚑ Goblin Wojownik, Kobold Brygadzista | Goblin Rzeźnik / Wódz Szybów | Miedź, Żelazo | niska kręta nora (S48): śmieciowa brama, wioska z bud ze złomu z grzędami grzybów i lampami w słojach, wyrobisko z torami i wózkami, **Szyb Wodza** z kołowrotem i klatką kości, pajęcza jama |
+| Jaskinia Mchów / Mosshollow Cave | 16–20 | Pająk Jaskiniowy, Goblin Szaman, Brunatny Niedźwiedź | Goblin Wojownik, Arcyszaman | Królowa Splotu / Wieszcz Kości | Żelazo, Miedź · **loch Grimroka (20)** | zielona grota (S48): wejście za kurtyną wody, **Wielka Grota** z podziemnym jeziorem, wodospadem z pęknięcia i robaczkami na sklepieniu, gawra, koszary, Gniazdo Królowej z lejowatą siecią i kościanym ołtarzem, pajęczarnia, kapliczka szamanów, przedsionek chorągwi przed paszczą bramy |
+| Wilcza Nora / Wolfden Hollow | 24–31 | Wilkołak (24–28), Czarny Niedźwiedź (24–27), Ghul (27–31) | Wilkołak Krwawej Pełni, Niedźwiedź Mroku | Pradawny Wilkołak / Czarnofutry | Żelazo | — |
+| Kurhan Kultystów / Cultist Barrow | 31–38 | Kultysta Mroku, Ghul (31–33), Szkielet Strażnik (35–38) | Kapłan Mroku, Ghul Grobowy | Arcykapłan Mroku / Pożeracz Zmarłych | Żelazo | — |
+| Krypta Zapomnianych / Crypt of the Forgotten | 38–45 | Szkielet Strażnik, Upiór, Nekromanta | ⚑ Szkielet Rycerz, Upiór Krzyku | Lisz Zapomnianych / Banshee Krypty | Żelazo, Srebro · **loch Morvane (45)** | — |
+| Opuszczona Kopalnia / Abandoned Mine | 49–56 | Ork Popiołu, Hiena (49–52), Salamandra (49–52) | Ork Berserker, Ognista Salamandra | Wódz Popiołu / Matka Płomieni | Srebro | — |
+| Leże Wywerny / Wyvern Lair | 56–63 | Wywerna (58–63), Skorpion, Chochlik (56–61) | Wywerna Popiołu, Skorpion Królewski | Królowa Wywern / Żądło Pustkowi | Srebro | — |
+| Kuźnia Głębin / Deepforge | 63–70 | Krasnolud Renegat, Golem Magmowy, Kowal Płomieni | ⚑ Krasnolud Weteran, Golem Lawy | Pierwszy Kowal / Serce Wulkanu | Srebro, Mithril · **loch Azgora (70)** | — |
+| Lodowa Grota / Ice Grotto | 74–83 | Lodowy Wilk (74–78), Yeti, Lampart (74–78) | Wilk Zamieci, Yeti Starszy | Król Gór / Biały Kieł | Mithril | — |
+| Zamarznięta Twierdza / Frozen Hold | 83–92 | Zamarznięty Rycerz (88–92), Mroźny Olbrzym (83–88), Lodowy Żywiołak | Rycerz Szronu, Olbrzym Lodowca | Lodowy Komtur / Jarl Mrozu | Mithril | — |
+| Serce Lodowca / Glacier Heart | 92–100 | Kryształowy Strażnik, Młody Smok Lodu, Wyrm Szronu (95–100) | ⚑ Kryształowy Obrońca, Smok Lodu | Starszy Smok Lodu / Kryształowy Tytan | Adamantyt · **loch Vaelgratha (100)** | — |
 
 ## 5. Bossy
 
 | Boss | Poziom | Gdzie | Unikaty (25% szansy na jeden z nich) |
 |---|---|---|---|
-| Grimrok, Wódz Goblinów | 20 | Jaskinia Mchów → Komnata Grimroka | Rozłupywacz Grimroka (topór 1H), Kieł Wodza (pierścień), Totem Plemienia (talizman) |
+| Grimrok, Wódz Goblinów | 20 | Jaskinia Mchów → Komnata Grimroka (S48: płaska arena z ubitej ziemi pod kopułą, 10 totemów wojennych z pochodniami, tron ze złomu pod czaszką niedźwiedzia na podeście, galerie z bębnami) | Rozłupywacz Grimroka (topór 1H), Kieł Wodza (pierścień), Totem Plemienia (talizman) |
 | Morvane, Królowa Krypt | 45 | Krypta Zapomnianych → Komnata Morvane | Całun Królowej (zbroja lekka), Berło Krypt (berło), Łuk Zawodzących Cieni (łuk) |
 | Azgor, Pan Płomieni | 70 | Kuźnia Głębin → Komnata Azgora | Płomienne Serce (naszyjnik), Kostur Pożogi (kostur), Hełm Pana Płomieni (hełm ciężki) |
 | Vaelgrath, Smok Mrozu | 100 | Serce Lodowca → Komnata Vaelgratha | Kieł Vaelgratha (miecz 2H), Łuska Smoka Mrozu (tarcza), Oko Zimy (orb) |

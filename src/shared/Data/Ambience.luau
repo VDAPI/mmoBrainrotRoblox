@@ -34,6 +34,7 @@ export type Point = {
 	radius: number,
 	sound: Sound,
 	night: boolean?, -- nil = day and night; true = only at night; false = only by day
+	y: number?, -- S48: height (map-relative); default the floor + 6 (caves on the engine) or 6
 }
 
 local function s(hint: string, volume: number?): Sound
@@ -491,6 +492,114 @@ for id, mood in FROST_AREAS do
 	areas[id] = mood
 end
 
+-- S48 caves on the engine (sounds to find): loops per room of Data/CaveShapes (index = the room's index in
+-- Logic/CaveTerrain: the plan's rooms, then the extra rooms); caves have no night, the "day" loops play.
+local DRIP_ECHO = s("cave dripping water with echo loop (slow drops, deep cave)", 0.35)
+local WATERFALL_BEHIND = s("waterfall heard from behind a rock wall loop (muffled roar)", 0.4)
+local UNDERGROUND_FALL = s("underground waterfall loop (cave, echo, splashing into a lake)", 0.45)
+local LAKE_LAP = s("underground lake lapping loop (soft, cave echo)", 0.3)
+local SPIDER_CLICKS = s("giant spiders hissing and clicking loop (creepy, sparse)", 0.35)
+local SHAMAN_CHANT = s("goblin shamans chanting loop (low, tribal, cave echo)", 0.35)
+local TRIBAL_DRUMS = s("tribal war drums loop (slow, deep, cave)", 0.35)
+local BEAR_SNORE = s("bear snoring in a den loop (deep, slow breathing)", 0.3)
+local BOAT_CREAK = s("wooden boat and ropes creaking loop (moored, gentle)", 0.3)
+local STREAM_FLOW = s("underground stream flowing loop (dark water, cave)", 0.35)
+local CROWS_SHAFT = s("crows cawing in a cave shaft loop (echo, sparse)", 0.3)
+local SINKHOLE_WIND = s("wind through a sinkhole loop (soft whistle, night)", 0.3)
+local GOBLIN_CHATTER = s("goblin camp chatter loop (muffled voices, clatter)", 0.35)
+local PICKAXES = s("pickaxes striking rock loop (distant mining, echo)", 0.35)
+local MINECART = s("mine cart rolling on rails loop (rumble, squeak)", 0.3)
+local WINCH_CREAK = s("wooden winch and chain creaking loop (mine shaft)", 0.3)
+local ARENA_DRUMS = s("war drums and roaring crowd loop (goblin arena)", 0.4)
+local FIRE_CRACKLE = s("fire crackling loop (torches and braziers)", 0.3)
+local BOAR_GRUNTS = s("boars grunting in a pen loop (snorts, shuffling)", 0.3)
+
+local function room(o: { [string]: any }): Mood
+	return o :: any
+end
+
+local rooms: { [string]: { [number]: Mood } } = {
+	meadows_cave = {
+		room({ tint = "#D8FFD0", tintMix = 0.3, sounds = { day = { WATERFALL_BEHIND, DRIP_ECHO }, night = {} } }),
+		room({
+			fogScale = 1.3,
+			tint = "#D0FFE0",
+			tintMix = 0.25,
+			sounds = { day = { UNDERGROUND_FALL, LAKE_LAP, DRIP_ECHO }, night = {} },
+		}),
+		room({ tint = "#FFE8C8", tintMix = 0.3, haze = 0.4, sounds = { day = { BEAR_SNORE, DRIP_ECHO }, night = {} } }),
+		room({ tint = "#FFD8B8", tintMix = 0.25, sounds = { day = { TRIBAL_DRUMS, FIRE_CRACKLE }, night = {} } }),
+		room({
+			tint = "#D8F0E8",
+			tintMix = 0.35,
+			saturation = -0.1,
+			sounds = { day = { SPIDER_CLICKS, SHAMAN_CHANT }, night = {} },
+		}),
+		room({
+			fogScale = 0.7,
+			fogColor = "#B8C0B8",
+			fogMix = 0.4,
+			saturation = -0.35,
+			sounds = { day = { SPIDER_CLICKS, DRIP_ECHO }, night = {} },
+		}),
+		room({ tint = "#C8FFB8", tintMix = 0.4, sounds = { day = { SHAMAN_CHANT, FIRE_CRACKLE }, night = {} } }),
+		room({ tint = "#FFC8B0", tintMix = 0.35, sounds = { day = { TRIBAL_DRUMS, FIRE_CRACKLE }, night = {} } }),
+	},
+	meadows_hideout = {
+		room({ tint = "#FFE8C8", tintMix = 0.2, sounds = { day = { DRIP_ECHO, FIRE_CRACKLE }, night = {} } }),
+		room({ tint = "#C8DCFF", tintMix = 0.35, sounds = { day = { STREAM_FLOW, BOAT_CREAK }, night = {} } }),
+		room({
+			tint = "#D8E4FF",
+			tintMix = 0.3,
+			fogScale = 1.2,
+			sounds = { day = { CROWS_SHAFT, SINKHOLE_WIND }, night = {} },
+		}),
+		room({
+			tint = "#FFE0A8",
+			tintMix = 0.4,
+			saturation = 0.1,
+			sounds = { day = { FIRE_CRACKLE, DRIP_ECHO }, night = {} },
+		}),
+		room({
+			tint = "#E8D0B0",
+			tintMix = 0.3,
+			haze = 0.8,
+			fogColor = "#6A5A48",
+			fogMix = 0.3,
+			sounds = { day = { BOAR_GRUNTS, DRIP_ECHO }, night = {} },
+		}),
+	},
+	meadows_burrow = {
+		room({ tint = "#FFE4C0", tintMix = 0.25, sounds = { day = { GOBLIN_CHATTER, DRIP_ECHO }, night = {} } }),
+		room({ tint = "#E0FFC8", tintMix = 0.3, sounds = { day = { GOBLIN_CHATTER, FIRE_CRACKLE }, night = {} } }),
+		room({ haze = 1.2, fogColor = "#7A6A5A", fogMix = 0.35, sounds = { day = { PICKAXES, MINECART }, night = {} } }),
+		room({
+			brightness = 0.85,
+			tint = "#E8D8C0",
+			tintMix = 0.3,
+			sounds = { day = { WINCH_CREAK, DRIP_ECHO }, night = {} },
+		}),
+		room({
+			saturation = -0.3,
+			tint = "#E0ECE0",
+			tintMix = 0.3,
+			sounds = { day = { SPIDER_CLICKS, DRIP_ECHO }, night = {} },
+		}),
+	},
+	dungeon_meadows = {
+		room({
+			tint = "#FFC8A0",
+			tintMix = 0.4,
+			saturation = 0.1,
+			sounds = { day = { ARENA_DRUMS, FIRE_CRACKLE }, night = {} },
+		}),
+		room({ tint = "#FFD8B8", tintMix = 0.3, sounds = { day = { ARENA_DRUMS }, night = {} } }),
+		room({ tint = "#FFB890", tintMix = 0.45, sounds = { day = { ARENA_DRUMS, FIRE_CRACKLE }, night = {} } }),
+		room({ tint = "#FFC8A0", tintMix = 0.4, sounds = { day = { TRIBAL_DRUMS }, night = {} } }),
+		room({ tint = "#FFC8A0", tintMix = 0.4, sounds = { day = { TRIBAL_DRUMS }, night = {} } }),
+	},
+}
+
 -- Map-wide moods outside every area (paths between the areas keep the map's plain light).
 local maps: { [string]: Mood } = {
 	meadows = { sounds = { day = { BIRDS, WIND_GRASS }, night = { NIGHT_CRICKETS } } },
@@ -502,6 +611,11 @@ local maps: { [string]: Mood } = {
 		},
 	},
 	frostpeak = { sounds = { day = { MOUNTAIN_WIND }, night = { HOWLING_WIND } } },
+	-- S48: the tunnels of the caves on the engine
+	meadows_cave = { tint = "#D8FFD0", tintMix = 0.2, sounds = { day = { DRIP_ECHO, CAVE_WIND }, night = {} } },
+	meadows_hideout = { sounds = { day = { DRIP_ECHO, CAVE_WIND }, night = {} } },
+	meadows_burrow = { sounds = { day = { DRIP_ECHO, GOBLIN_CHATTER }, night = {} } },
+	dungeon_meadows = { tint = "#FFC8A0", tintMix = 0.3, sounds = { day = { ARENA_DRUMS }, night = {} } },
 }
 
 -- Positional loops (map-relative).
@@ -557,6 +671,26 @@ local points: { [string]: { Point } } = {
 		{ x = 752, z = 0, radius = 100, sound = s("dwarven forge deep loop (muffled hammers, bellows)", 0.45) },
 		{ x = 610, z = 150, radius = 110, sound = DRONE_LOW, night = true },
 	},
+	-- S48 (caves on the engine; y over the floor)
+	meadows_cave = {
+		{ x = -290, z = 0, radius = 70, sound = WATERFALL_BEHIND },
+		{ x = 58, z = 74, radius = 90, sound = UNDERGROUND_FALL },
+		{ x = 158, z = -200, radius = 60, sound = SPIDER_CLICKS },
+		{ x = 90, z = 278, radius = 60, sound = SHAMAN_CHANT },
+		{ x = 253, z = 0, radius = 70, sound = TRIBAL_DRUMS },
+	},
+	meadows_hideout = {
+		{ x = -110, z = -70, radius = 60, sound = STREAM_FLOW },
+		{ x = -5, z = 72, radius = 50, sound = CROWS_SHAFT },
+	},
+	meadows_burrow = {
+		{ x = 180, z = 0, radius = 50, sound = WINCH_CREAK },
+		{ x = 7, z = -45, radius = 60, sound = PICKAXES },
+	},
+	dungeon_meadows = {
+		{ x = -100, z = -10, radius = 90, sound = ARENA_DRUMS },
+		{ x = 100, z = -10, radius = 90, sound = ARENA_DRUMS },
+	},
 	-- S47 (positions: Data/Areas/frostpeak sites, streams and lakes)
 	frostpeak = {
 		{ x = -610, z = 11, radius = 50, sound = s("water flowing under ice loop (muffled brook, gurgling)", 0.35) },
@@ -576,6 +710,7 @@ local points: { [string]: { Point } } = {
 local Ambience = {
 	areas = areas,
 	maps = maps,
+	rooms = rooms,
 	points = points,
 	MAX_LOOPS = 3,
 	BLEND = 2.5, -- seconds to blend from one mood to the next
@@ -584,6 +719,12 @@ local Ambience = {
 -- Mood of an area, else of the map (nil = plain map light, no loops).
 function Ambience.moodOf(mapId: string, areaId: string?): Mood?
 	return (areaId and areas[areaId]) or maps[mapId]
+end
+
+-- S48: mood of a room of a cave on the engine (nil: no entry; the caller falls back to the map's mood).
+function Ambience.roomMood(mapId: string, index: number?): Mood?
+	local list = rooms[mapId]
+	return if list and index then list[index] else nil
 end
 
 -- Every sound entry (tests, the owner's list of ids to fill in).
@@ -609,6 +750,13 @@ function Ambience.allSounds(): { Sound }
 	for _, list in points do
 		for _, p in list do
 			add(p.sound)
+		end
+	end
+	for _, list in rooms do
+		for _, mood in list do
+			for _, sound in mood.sounds.day do
+				add(sound)
+			end
 		end
 	end
 	return out

@@ -13,6 +13,8 @@
 -- the theme and shores from its terrain (Logic/RegionTerrain).
 -- S46: the Ashen Wastes' themes (ash, saltflat, warcamp, lavafield, burnt, dunes, crags, royalroad, necropolis): no
 -- flowers or green grass there; nothing lies on lava.
+-- S48: caves on the engine (Data/CaveShapes): the floor from Logic/CaveTerrain (no liquids, no rock), the theme
+-- from the room's `decor` (moss, web, den, junk, smugglers, pen, diggings); tunnels take the biome's mix.
 -- S47: the Frost Peaks' themes (snowforest, snowfield, harpyrocks, giants, icelake, tundra, dragontemple, icefort,
 -- wyrmpeak); frozen reeds and ice shards on the shores of the frozen lakes' ice.
 
@@ -22,6 +24,7 @@ local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 
 local AreaSpawns = require(ReplicatedStorage.Shared.Logic.AreaSpawns)
+local CaveTerrain = require(ReplicatedStorage.Shared.Logic.CaveTerrain)
 local Areas = require(ReplicatedStorage.Shared.Data.Areas)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
@@ -396,6 +399,9 @@ local BIOMES: { [string]: { count: number, mix: { { string | number } } } } = {
 	},
 }
 
+-- S48: boss chambers on the cave engine get the cave's small things too (the others have no floor function).
+BIOMES.dungeon = BIOMES.cave
+
 -- S46: the Ashen Wastes (ash heaps, charred twigs, basalt and obsidian, salt plates, mud flakes, broken weapons,
 -- rusty scrap, rags, slag, glowing coals, charred planks, potsherds, scorched bricks, sand ripples, carapaces, wyvern
 -- scales, slab and statue chips, coins, linen strips, turquoise pebbles).
@@ -735,6 +741,42 @@ THEMES.wyrmpeak = {
 	mix = { { "iceSpike", 5 }, { "scaleIce", 4 }, { "bone", 3 }, { "snowLump", 4 } },
 }
 
+-- S48: the rooms of the caves on the engine.
+T.straw = item(Vector3.new(2, 0.2, 1.4), "#B89A55", Enum.Material.Grass, 0.08, true)
+T.ropeBit = item(Vector3.new(1.2, 0.3, 1.2), "#8A7A58", Enum.Material.Fabric, 0.12)
+T.stub =
+	{ size = Vector3.new(0.3, 0.6, 0.3), color = rgb("#E8E0C8"), material = Enum.Material.SmoothPlastic, lift = 0.3 }
+T.scrapBit = item(Vector3.new(1.2, 0.3, 0.8), "#6A5A48", Enum.Material.CorrodedMetal, 0.12, true)
+T.furTuft = item(Vector3.new(0.8, 0.4, 0.6), "#5A4A3A", Enum.Material.Fabric, 0.15, true)
+THEMES.moss = {
+	count = 30,
+	mix = { { "moss", 8 }, { "mushroom", 5 }, { "pebble", 5 }, { "stalactite", 3 }, { "crystal", 1 } },
+}
+THEMES.web = {
+	count = 26,
+	mix = { { "web", 7 }, { "bone", 5 }, { "pebble", 4 }, { "stalactite", 4 } },
+}
+THEMES.den = {
+	count = 24,
+	mix = { { "bone", 6 }, { "furTuft", 4 }, { "twig", 5 }, { "moss", 4 }, { "pebble", 3 } },
+}
+THEMES.junk = {
+	count = 26,
+	mix = { { "scrapBit", 5 }, { "plank", 4 }, { "bone", 3 }, { "straw", 3 }, { "pebble", 4 }, { "stub", 1 } },
+}
+THEMES.smugglers = {
+	count = 24,
+	mix = { { "ropeBit", 4 }, { "plank", 4 }, { "stub", 2 }, { "pebble", 5 }, { "chip", 3 }, { "stalactite", 2 } },
+}
+THEMES.pen = {
+	count = 24,
+	mix = { { "straw", 7 }, { "mudClump", 5 }, { "bone", 3 }, { "twig", 3 } },
+}
+THEMES.diggings = {
+	count = 26,
+	mix = { { "gravel", 7 }, { "chip", 5 }, { "plank", 3 }, { "pebble", 4 }, { "web", 1 } },
+}
+
 local THEME_MAX = 44
 local THEME_JITTER = 40
 
@@ -891,7 +933,7 @@ end
 local function buildChunk(map: Maps.MapDef, cx: number, cz: number): { BasePart }
 	local parts: { BasePart } = {}
 	local biome = BIOMES[map.biome]
-	if not biome then
+	if not biome or (map.biome == "dungeon" and not CaveTerrain.has(map.id)) then
 		return parts
 	end
 	local themed = Areas.byMap[map.id] ~= nil and Areas.byMap[map.id].areas[1].decor ~= nil
@@ -902,7 +944,9 @@ local function buildChunk(map: Maps.MapDef, cx: number, cz: number): { BasePart 
 	local rooms = if cave then AreaSpawns.caveRooms(cave) else nil
 	local inCave = map.biome == "cave" or map.biome == "crypt"
 	local origin = Vector3.new(map.offset.x, map.offset.y, map.offset.z)
-	for _ = 1, if themed then THEME_MAX else biome.count do
+	-- S48: caves on the engine
+	local engine = CaveTerrain.get(map.id)
+	for _ = 1, if themed or engine then THEME_MAX else biome.count do
 		local x = cx * size + rng:NextNumber() * size
 		local z = cz * size + rng:NextNumber() * size
 		local mix = biome.mix
@@ -917,12 +961,29 @@ local function buildChunk(map: Maps.MapDef, cx: number, cz: number): { BasePart 
 				continue
 			end
 		end
+		local floorY: number? = nil
+		if engine then
+			local c = engine.column(x, z)
+			if not c.open or c.liquid then
+				continue
+			end
+			floorY = c.floor
+			local index = c.room
+			local decor = if index then engine.rooms[index].decor else nil
+			local theme = THEMES[decor or ""]
+			if theme then
+				if rng:NextNumber() * THEME_MAX > theme.count then
+					continue
+				end
+				mix = theme.mix
+			end
+		end
 		local key = pick(mix, rng)
 		local template = T[key]
 		if math.abs(x) > map.size.x / 2 - 4 or math.abs(z) > map.size.z / 2 - 4 then
 			continue
 		end
-		if inCave and not inRoom(rooms, x, z) then
+		if inCave and not engine and not inRoom(rooms, x, z) then
 			continue
 		end
 		if areas then
@@ -940,7 +1001,7 @@ local function buildChunk(map: Maps.MapDef, cx: number, cz: number): { BasePart 
 		if insideWalls and (rng:NextNumber() > CITY_INSIDE_SHARE or not TownTerrain.isOpen(x, z, 1)) then
 			continue
 		end
-		local from = origin + Vector3.new(x, if inCave then 4 else 120, z)
+		local from = origin + Vector3.new(x, if floorY then floorY + 3 elseif inCave then 4 else 120, z)
 		local hit = Workspace:Raycast(from, Vector3.new(0, -200, 0), rayParams)
 		if not hit or (hit.Material == Enum.Material.Water) ~= (template.onWater == true) then
 			continue

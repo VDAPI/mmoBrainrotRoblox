@@ -77,6 +77,16 @@ MMORPG na Roblox (Margonem w 3D). Luau + Rojo + Wally + Fusion 0.3 + ProfileStor
   pól w `Data/Terrain/Types`. Pogoda (śnieg, zorza): `FrostWeatherController` na każdej mapie z `winds`. Podgląd 3D bez
   generatora: `tools/regionview.luau` działa też na samym terenie.
 
+- **Jaskinia na silniku jaskiń** (S48): wpis w `Data/CaveShapes` (motyw, materiały, role sal ze słownika `ROLES`,
+  `decor`, cechy: `pool`, `stream`, `waterfall`, `skyhole`, `terrace`, `pit`, `pillar`, `stalagmites`, `stalactites`,
+  `niche`; dla jaskiń bossów i komnat `tunnels`/`extraRooms`/`arena`) + moduł ubioru `Logic/CaveDress/<Motyw>` w `THEMES`
+  + nastroje sal `Data/Ambience.rooms` + `maxParts` i preset światła w `Data/Maps`; layout buduje się sam
+  (`World/CaveLayout`). Spawnery: tylko `y` z podłogi (fixture `tests/fixtures/caveRooms`), rdzeń sali `0,65 r + 8` suchy
+  i płaski. Po zmianie kształtu świadomie `lune run tools/fixture_caveshapes.luau` (nowe mapy dopisane, stare bez zmian).
+  Podgląd: `lune run tools/cavedump.luau <mapa> out.json 4` + `python tools/cavemap.py out.json out.png --overlay
+  [--section x1 z1 x2 z2]`. Komnata bossa: kontrakt aren w `docs/ARCHITECTURE.md` §8. Admin: `/tpcave`, `/caveinfo`,
+  `/cavestats`, `/lights`.
+
 - **Quest poboczny** (S27): wpis w `Data/Quests/Side.luau` (`side(...)`: giver, turnIn, arc, pages, requires,
   cele `use`/`deliver`/`kill` z `area`…) + teksty `quest.<id>.title/.p1..pN/.progress/.done` (PL i EN); nowy NPC w
   `Data/Npcs` (`townsfolk` / `meadowsfolk`, miejsce w mieście w `Data/Town/npcExtra`); interakcja = kotwica

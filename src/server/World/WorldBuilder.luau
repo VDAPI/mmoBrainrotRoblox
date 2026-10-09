@@ -60,8 +60,8 @@ local MATERIAL_COLORS: { [Enum.Material]: string } = {
 	[Enum.Material.CrackedLava] = "#D6542A",
 	-- S21: light warm stone of the city market and temple square (no other map uses it).
 	[Enum.Material.Limestone] = "#B9AE96",
-	-- S26: gravel of the Meadows' quarry terraces and stream beds (no other map uses it; Pebble is a part-only
-	-- material, terrain rejects it).
+	-- S26: grey gravel of the Meadows' quarry terraces and stream beds (S47 the Peaks' moraines and trails, S48 the
+	-- caves' lake and stream beds use the same colour; Pebble is a part-only material, terrain rejects it).
 	[Enum.Material.Salt] = "#8A847A",
 	-- S45: dark red rock of Duskwood's Blood Cliffs (S46's red crags of the Ashen Wastes match it).
 	[Enum.Material.Sandstone] = "#6E2F2A",

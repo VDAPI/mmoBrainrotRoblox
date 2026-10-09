@@ -759,3 +759,5 @@ sam) i wgrywa `wiki/dist` na Cloudflare Pages. Bez sekretów workflow przechodzi
   i pola `iconKey`/`layers`/`layersByElement` przedmiotów są w eksporcie.
 - **S34** Linie `TooltipModel.build` dla przedmiotów spoza ekwipunku i mnożniki profili jako pole łupu potwora nie
   zrobione (profil jest przy obszarze i w `mechanics.areaProfiles`).
+
+- S48: jaskinie na silniku jaskiń (`Data/CaveShapes`) rysują w SVG prawdziwy obrys podłogi (`CaveTerrain.outline`, `m-floor`) i jeziora (`m-water`) zamiast kół sal i drzewa korytarzy; koła `room-<jaskinia>-<n>` (`m-room`) zostają (kontrakt id).

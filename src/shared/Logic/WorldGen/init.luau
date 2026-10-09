@@ -1,11 +1,13 @@
 --!strict
 -- Registry of the region generators (S45): `WorldGen.get(mapId)` returns the generator of a shaped map
 -- ({ all, trees, life, sketch, nodes, counts }) or nil. The Whispering Meadows wrap Logic/MeadowsGen (their Builds
--- are unchanged), Duskwood registers Logic/DuskwoodGen; S46/S47 add their regions here. Read by the server layout
+-- are unchanged), Duskwood registers Logic/DuskwoodGen; S46/S47 add their regions here, S48 the caves on the cave
+-- engine (Logic/CaveDress). Read by the server layout
 -- (World/RegionLayout), the client (TownDetailController, WorldLifeController, DecorController), the tools and the
 -- wiki. (Logic/WorldGen/Kit and Flora do not require this module.)
 
 local AshenGen = require("./AshenGen")
+local CaveDress = require("./CaveDress")
 local DuskwoodGen = require("./DuskwoodGen")
 local FrostpeakGen = require("./FrostpeakGen")
 local MeadowsGen = require("./MeadowsGen")
@@ -39,6 +41,10 @@ local REGISTRY: { [string]: Generator } = {
 	ashen = AshenGen :: any, -- S46
 	frostpeak = FrostpeakGen :: any, -- S47
 }
+-- S48: every cave and boss chamber on the cave engine (Data/CaveShapes) through Logic/CaveDress
+for _, mapId in CaveDress.maps() do
+	REGISTRY[mapId] = CaveDress.generator(mapId)
+end
 
 -- Generator of a map (nil for maps without one).
 function WorldGen.get(mapId: string): Generator?

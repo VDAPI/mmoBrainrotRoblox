@@ -50,6 +50,7 @@
 | S45 | Mroczny Bór od nowa + wspólny silnik krain: teren z danych (`RegionTerrain`), generator `DuskwoodGen` (9 expowisk w klimacie potworów, wyloty jaskiń), rejestry `WorldGen` / `Data/Terrain`, budowa w tle, życie, wieczny zmierzch, mapa i wiki | ● |
 | S46 | Spalone Pustkowia od nowa: kształty pustyni w silniku krain (wydmy, mesy, turnie, lawa, szczeliny, suche jezioro), generator `AshenGen` (9 expowisk w klimacie potworów, wyloty jaskiń), świecąca lawa z LOD świateł, życie, dzień i noc, mapa i wiki | ● |
 | S47 | Lodowe Szczyty od nowa: kształty gór w silniku krain (podniesienia, poszarpane granie z siodłami, róg, wiatr, zamarznięte jeziora i strugi, lodowce, szczeliny), generator `FrostpeakGen` (9 expowisk w klimacie potworów, wyloty jaskiń), śnieżyca wg wiatru, zorza, dzień i noc, mapa i wiki | ● |
+| S48 | Jaskinie 1/4: silnik jaskiń (teren 3D z danych `CaveShapes` / `CaveTerrain`, ubiór `CaveDress`, LOD świateł, życie, nastrój sal) + Kryjówka Przemytników, Gobliński Kopiec, Jaskinia Mchów i Komnata Grimroka | ● |
 
 Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana przez właściciela
 
@@ -1032,6 +1033,29 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
 - **S47** Zapis wokseli tylko do najwyższej kolumny **nie zrobiony**: woksele Szczytów (729 bloków × 48 warstw,
   −24…168) liczą się w Lune 1,53 s (Pustkowia 1,41 s w tym samym pomiarze), bo czas to funkcja wysokości, nie warstwy.
 
+- **S48** Silnik jaskiń = model kolumnowy (jedna szczelina powietrza na kolumnę): łuki, nawisy i mosty skalne robią
+  części ubioru. Ściany sal wybrzuszają się tylko na zewnątrz (sala z planu zawsze otwarta), strefa ściany (podłoga w
+  górę, sufit w dół) nigdy nie wchodzi w rdzeń sali walki `0,65 r + 8`; cechy podłogi (jeziora, tarasy, stalagmity) są
+  wycinane z rdzeni automatycznie. W małych salach (r ≤ 45) legowiska, tarasy i wnęki idą w `niche` za ścianą.
+- **S48** Tunele jaskiń generowanych z `CaveGen` (korytarze planu), jaskinia bossa i komnata mają `tunnels` w
+  `CaveShapes` (7 korytarzy z dawnego layoutu Jaskini Mchów przeniesione 1:1). Cechy to moje pola (`terrace` = koło z
+  rampą `blend`; mała `blend` + `unreachable` = galeria bez dojścia), opisane w nagłówku `Data/CaveShapes`.
+- **S48** Rdzeń areny komnaty = 50 st. (próg kolizji z kontraktu aren); płaskość r 74 daje sama arena (rola `arena`
+  bez szumu podłogi, r 86). Komnata Grimroka: ściany ok. r 86–95, kopuła płaska 40 st., nisza tronu (0, −102) z
+  podestem +4, galerie (±96, −10) z tarasem +12 bez dojścia (`blend` 1,5).
+- **S48** Światło jaskiń: `RegionLightController` (rozszerzony zamiast nowego `CaveLightController`) w jaskini, krypcie i
+  komnacie zarządza **wszystkimi** światłami z tagiem Fx w kwadracie mapy (`Config.CaveLights = { low = 8, mid = 16,
+  high = 24 }`, histereza 10 st., co 0,3 s, `/lights`); `TownFxController` pod ziemią traktuje lampy jak nocą i nie
+  rusza ich `Enabled`. Presety: `LIGHT.caveMoss` (ambient `#2E3A2E`, mgła `#101A12` do 240), `caveSmugglers`
+  (`#34302A`, `#14120F` do 230), `caveWarren` (`#36302A`, `#16120E` do 210), `dungeonGoblin` (`#3A2E26`, `#1A100C` do
+  260), jasność 0,35–0,4, `clockTime = 0`. Każda sala walki ma co najmniej jedno źródło światła (pochodnia dokładana
+  przez `CaveDress`, gdy motyw nie dał). Generowane jaskinie dostały pole `light` w pętli `Data/Maps` (reszta = `cave` /
+  `crypt` jak dotąd).
+- **S48** Fx „pulse” nie powstał osobno: grzyby, worki jaj i oczy używają istniejącego `glow` (S46) — jeden mechanizm.
+  Pod ziemią `WorldLifeController` uznaje porę za noc (nietoperze wylatują, świecenie włączone).
+- **S48** Budowa jaskiń zostaje w `Init` (nie w tle): woksele 4 map w Lune 0,05–0,16 s (Jaskinia Mchów 121 bloków × 18
+  warstw 0,16 s), więc start serwera rośnie szacunkowo o < 1 s w Studio.
+
 ## Niedokończone
 (Rzeczy z zakresu sesji, które nie zostały zrobione. Następna sesja zaczyna od nich.)
 
@@ -1197,6 +1221,18 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
   tylko jako cząsteczki), warunek `convex`, `openings` (otwarta woda z parą) na potoku, para z ust, puch spod butów,
   iskrzenie śniegu, refrakcja brył lodu z łupem (są półprzezroczyste części), drobny detal posągów. Szkic mapy rysuje
   granie jako szerokie linie (bez cieniowania stoków).
+
+- **S48** Jaskinie Łąk i Komnata Grimroka niesprawdzone w Studio (sesja bez Studio): czasy `[Cave:<id>] terrain …`,
+  czy portale, brama i lądowanie stoją na podłodze, wygląd ścian na wokselach 4 st., kurtyna wody przy wejściu,
+  robaczki, LOD świateł, zachowanie potworów (MonsterService: promień z y spawnera + 14 pod sufitem ≥ 16).
+- **S48** Dźwięki jaskiń do podpięcia (`Data/Ambience`, `id = ""`): kapanie z echem, wodospad za skałą, podziemny
+  wodospad, chlupot jeziora, syk i klikanie pająków, skandowanie szamanów, bębny plemienne, chrapanie niedźwiedzia,
+  skrzypienie łodzi i lin, podziemny strumień, kruki w szybie, wiatr w zapadlisku, gwar goblinów, kilofy, wózek na
+  torach, kołowrót, bębny i ryk tłumu areny, trzask ognia, chrząkanie dzików; muzyka Jaskini Mchów (`music = ""`).
+- **S48** Nie zrobione z planu: podgląd 3D `tools/caveview` (jest `cavemap` z przekrojami), wyloty jaskiń na Łąkach
+  (B4), cechy `chasm`, smugi światła jako `Beam`/`SpotLight` (są cząsteczki pyłu i światło punktowe), kruki w szybie
+  krążące (siedzą: `perch`), sieci jako szablon dekoracji w ziemi zostały z S20, `/caveinfo` nie pokazuje liczby
+  aktywnych świateł klienta (pokazuje `/lights` przez wymuszenie). Pozostałe 8 jaskiń i 3 komnaty po staremu (S49–S51).
 
 ## Zgłoszone błędy
 (Właściciel wpisuje tu błędy po testach albo przekazuje je przez sesję poprawek.)
@@ -4084,3 +4120,132 @@ wiki, `docs/{SWIAT,ARCHITECTURE,BALANS,PRZEDMIOTY}`, `CLAUDE.md`.
 24. Wyloguj się na Szczytach i wejdź po restarcie: ekran ładowania czeka na budowę w tle, postać ląduje na Szczytach.
 25. `/terrainrebuild frostpeak` (pyta): teren przepisuje się bez restartu. Bór, Pustkowia i Łąki działają jak przed
     sesją.
+
+### S48: Jaskinie 1/4: silnik jaskiń + 3 jaskinie Łąk + Komnata Grimroka
+
+**Zrobione**
+- Fixture `tests/fixtures/caveRooms.luau` (plany 8 jaskiń generowanych i x/z, wariant, potwory, liczba, promień każdego
+  spawnera 12 jaskiń; `tools/fixture_caves.luau`) zapisany przed zmianami; test, że zmienia się tylko `y`.
+- Silnik jaskiń: `Data/CaveShapes` (motyw, materiały, role sal, tunele, extra sale, cechy, arena; słownik `ROLES`),
+  `Logic/CaveTerrain` (model kolumnowy: organiczne ściany wybrzuszone na zewnątrz, kopuły, kręte tunele, rdzenie sal
+  suche i płaskie, jeziora, strumienie, otwory w sklepieniu, tarasy, zagłębienia, słupy, stalagmity, stalaktyty, nisze;
+  woksele, obrys do szkicu, `roomAt`), `Logic/MapTerrain` (podłoga, woda, `walkable` jaskiń), `AreaSpawns.cave` (y z
+  podłogi), `World/CaveTerrainWriter`, `World/CaveLayout`, gałęzie w `CaveTemplate`, `meadows_cave`, `DungeonArena`;
+  promienie gruntu w `WorldService.GroundCFrame` / `FloorAt` i `NavController` od podłogi.
+- Ubiór `Logic/CaveDress` (Kit + motywy) w rejestrze `WorldGen` (4 mapy):
+  - Jaskinia Mchów: kurtyna wody za wyjściem z zielonym światłem, totem ostrzegawczy; Wielka Grota z podziemnym
+    jeziorem w zatoce, wodospadem z pęknięcia, obozem goblinów nadgryzionym przez pająki, olbrzymimi świecącymi
+    grzybami, stalagmitami, robaczkami na sklepieniu i nietoperzami; gawra (legowiska z mchu, kości, pień, plastry,
+    kołek z amuletami); koszary (stojaki z włóczniami, czerwone tarcze, kukły, bęben); Gniazdo Królowej (lejowata sieć
+    w niszy podświetlona mchem, kościany ołtarz ze spiralą i 6 totemami z zielonym ogniem, nici); pajęczarnia (sieci,
+    kokony z goblińskimi stopami, świecące worki jaj, barykada z tarcz); kapliczka szamanów na tarasie (krąg z zielonym
+    ogniem, totemy z twarzami, świecące odciski dłoni, krąg grzybów); przedsionek chorągwi (szpalery czerwonych
+    chorągwi, bębny, kosze z ogniem, trofea, czaszki, paszcza goblina nad bramą);
+  - Kryjówka Przemytników: czaty z barykadą skrzyń i dzwonkiem, przystań nad czarnym strumieniem (pomost, łódź,
+    żuraw, kontrabanda), kładka w tunelu, Sala Narad pod Zapadliskiem (księżycowe światło, korzenie, lina wyciągu,
+    stół z mapą i świecami, beczka-bar, taras z poręczą, pale z łańcuchami dla dzików, kruki), komnata herszta
+    (skrzynia złota z poświatą, łoże, stojak z bronią i listem gończym, łupy, grzęda z czaszką kruka, żyrandol ze
+    świec), zagroda dzików (płot, siano, kości);
+  - Gobliński Kopiec: śmieciowa brama z kołem i totemem, wioska bud ze złomu z lampami w słojach i grzędami grzybów,
+    kocioł, drabinki do nor, wyrobisko z pętlą torów, wózkami, stemplami i zielonymi latarniami, boczny chodnik z
+    sieciami, Szyb Wodza (czarna tarcza z poświatą rudy, poręcz z bali, kołowrót z klatką kości), pieniek rzeźnika,
+    tron ze złomu, pajęcza jama (sieci, kokon kobolda z kilofem, worki jaj, przewrócony wózek);
+  - Komnata Grimroka: 10 totemów wojennych z czaszkami i ogniem na r 56 (bez totemu na osi wejścia), tron ze złomu i
+    kości pod czaszką niedźwiedzia na podeście ze stopniami z czaszek, chorągwie, kosze z ogniem, galerie z bębnami.
+  - Rudy przy ścianach sal walki (`oreCount`, smugi żyły w skale), światło w każdej sali walki.
+- Klient: `RegionLightController` (LOD wszystkich świateł jaskini, `/lights`), `TownFxController` (lampy pod ziemią),
+  `WorldLifeController` (krople, pył w smugach, robaczki, pająki na niciach, pod ziemią zawsze noc), `AmbienceController`
+  (nastrój sali, punkty nad podłogą), `DecorController` (motywy `moss`, `web`, `den`, `junk`, `smugglers`, `pen`,
+  `diggings` z 5 nowymi szablonami; komnaty na silniku też), `NavController`.
+- Nastrój: `Data/Ambience.rooms` (nastrój każdej sali 4 map), `maps` i `points` jaskiń, `Ambience.roomMood`; presety
+  światła w `Data/Maps`, `maxParts` 1000 / 700 / 700 / 450, podpowiedź muzyki.
+- Admin: `/tpcave <jaskinia> [sala|rola]`, `/caveinfo`, `/cavestats [jaskinia]`, `/lights <n|auto>`,
+  `/ambience <jaskinia>:<sala>`, `/terrainrebuild` dla jaskiń.
+- Mapa świata / minimapa / wiki: szkic z obrysu podłogi (`outline(8)`) + jeziora, strumienie, mosty, punkty
+  charakterystyczne; `tools/WikiMaps` rysuje obrys jaskiń na silniku (koła `room-*` zostają), przegenerowane SVG 3
+  jaskiń i `meta.json`.
+- Testy: `caveterrain.spec` (14: fixture planów i spawnerów, fixture kształtów, mapy na silniku, determinizm i
+  materiały, płaskie lądowania z sufitem ≥ 20, spawnery na podłodze z sufitem ≥ 16 i z dala od wody, suche rdzenie,
+  flood fill tam i z powrotem do każdej sali i bramy, sufit nad podłogą, woksele, obrys, kontrakt aren, budżet, brak
+  kolizji w rdzeniach / przy spawnerach / na punktach lądowania, budowle na podłodze, rudy, życie, nastroje sal,
+  `roomAt`), `worldgen.spec` (rejestr z jaskiniami).
+- Narzędzia: `tools/cavedump.luau` + `cavemap.py` (mapa z góry z nakładkami, przekroje), `tools/fixture_caves.luau`,
+  `tools/fixture_caveshapes.luau`.
+- Pomiary (Lune): woksele Jaskini Mchów 121 bloków × 18 warstw 0,16 s, Kryjówka 0,09 s, Kopiec 0,08 s, Komnata 0,05 s;
+  shell ubioru 51 / 40 / 37 / 18 części, detail 269 / 90 / 141 / 75, fine 245 / 74 / 121 / 343, światła 32 / 6 / 9 / 16.
+  Szacunek „przed” (pochodnie, kryształy, namioty, kamienie, kolumny): Jaskinia Mchów ok. 180, generowane ok. 90,
+  komnata ok. 80 części; „po”: shell + portal, brama, tabliczka (ok. +30–60).
+- Obrazy kontrolne (`cavemap`, nie w repo), poprawione po obejrzeniu: sale jak bańki (silniejszy szum ściany, tylko na
+  zewnątrz), proste tunele (wicie), strefa ściany wchodząca w rdzeń małych sal (start strefy za rdzeniem), za stromy
+  szyb (płytszy, szersza rampa), taras i boczny chodnik w skale (nisze), rekwizyty bez miejsca w małych salach
+  (szukanie kilku kątów i odsunięć).
+
+**Pliki**: nowe `Data/CaveShapes`, `Logic/CaveTerrain`, `Logic/CaveDress/{init,Kit,Moss,Smugglers,Warren,GoblinThrone}`,
+`World/{CaveTerrainWriter,CaveLayout}`, `tests/caveterrain.spec`, `tests/fixtures/{caveRooms,caveShapes}`,
+`tools/{cavedump.luau,cavemap.py,fixture_caves.luau,fixture_caveshapes.luau}`; zmiany: `Data/{Maps,Ambience,
+AdminCommands}`, lokalizacja (PL, EN), `Config`, `Logic/{MapTerrain,AreaSpawns,WorldGen/init}`,
+`World/Layouts/{CaveTemplate,meadows_cave,DungeonArena}`, `Services/WorldService`, `Admin/Terrain`,
+`Controllers/{RegionLightController,TownFxController,WorldLifeController,AmbienceController,DecorController,
+NavController}`, `tools/WikiMaps/init`, `tests/worldgen`, wiki, `docs/{SWIAT,ARCHITECTURE,DESIGN,WIKI}`, `CLAUDE.md`.
+
+**API silnika jaskiń (dla S49–S51)**
+- `Data/CaveShapes`: `byMap[mapId] = { theme, floorY?, wall {amp, scale}, ceiling {amp, scale}, materials {wall, floor,
+  accent, bed, moss?}, rooms[i] {role, decor?, dy?, floor?, flat?, h?}, tunnels? {ax, az, bx, bz, w, h?}, tunnelH?,
+  wiggle?, extraRooms? {x, z, r, h, role, flat?, dy?, decor?, floor?}, features, arena? {x, z, r} }`; cechy `pool {x, z, r,
+  level, depth, ragged?, liquid?}`, `stream {points, width, level, drop, depth, liquid?}`, `waterfall {x, z, top}`,
+  `skyhole {x, z, r}`, `terrace {x, z, r, dy, blend, unreachable?}`, `pit {x, z, r, depth (≤ 8), blend}`, `pillar {x, z, r}`,
+  `stalagmites {x, z, r, spacing, height}`, `stalactites {x, z, r, spacing, length}`, `niche {x, z, r, h, dy?}`; `ROLES`.
+  Ciecz `lava`/`ice` w polu `liquid` (S50/S51; `ice` = chodliwe; zapis wokseli dziś tylko dla wody).
+- `Logic/CaveTerrain`: `get(mapId)`, `has`, `roomAt(mapId, x, z)`, stałe `VOXEL`, `BOTTOM` (−24), `HEADROOM` (12),
+  `CORE_SCALE` (0,65), `CORE_PAD` (8); obiekt: `floor`, `ceiling`, `solid`, `material`, `liquid`, `walkable(x, z, r?)`,
+  `headroom`, `roomAt`, `column` (`{open, floor, ceiling, liquid, floorMat, room}`), `inCore`, `voxels`, `outline(step)`,
+  `rooms` (`{x, z, r, h, role, decor, dy, floor, flat, fight, core, seed}`: najpierw sale planu, potem `extraRooms`,
+  potem nisze), `MATERIALS`, `HALF`, `TOP`, `shape`.
+- `Logic/CaveDress`: `all/life/sketch/nodes/counts/radius`, `generator(mapId)`, `maps()`, `THEMES` (nowy motyw = moduł
+  z `all(env, out)`); `Kit`: `env(mapId)` (`ctx`, `T`, `cave`, `shape`, `spawners`, `keep`, `clearings`, `nodes`),
+  `free(env, x, z, r, collides?)`, `wallSpot(env, room, angle, inset, minHead?)`, `spot(env, room, angle, inset, r,
+  collides?)`, `ceil`, `build`, `gy`, rekwizyty `torch`, `candles`, `crate`, `barrel`, `ropeCoil`, `web`, `cocoon`,
+  `glowCap`, `banner`, `totem`, `vein` + `lantern`, `campfire`, `fire`, `bones`, `skull` z `WorldGen/Kit`; kolory
+  `FIRE`, `GREEN`, `MOSS`, `PALE`.
+- Serwer: `World/CaveLayout.build(ctx)` (+ wywołujący stawia portal, bramę, tabliczkę, strefę, odrodzenie),
+  `CaveTerrainWriter.write(mapId, origin, {yields?, pace?})`, `CaveTerrainWriter.margin(half)`.
+- Klient: `Config.CaveLights = { low = 8, mid = 16, high = 24 }`, `RegionLightController.ForceLights(n?)`,
+  `CaveStats()`; życie `drips`, `dustBeam`, `glowworms`, `spiders` (+ `bats`, `mist`, `perch`, `steam`, `smoke`);
+  `Ambience.rooms[mapId][index]`, `Ambience.roomMood`, punkt dźwięku z `y`.
+- Kontrakt aren: `docs/ARCHITECTURE.md` §8 i test w `caveterrain.spec` (dla każdej mapy z `arena`).
+- Punkt odniesienia startu: przed S48 ~4,1 s (S45: „world built in … s” bez krain w tle); jaskinie Łąk dokładają
+  szacunkowo < 1 s (woksele 0,38 s łącznie w Lune; zmierz w Studio krok 1 instrukcji).
+
+#### Instrukcja testu S48
+
+1. `rojo serve`, Play. W Output `[Cave:meadows_hideout] terrain: … blocks in … s`, to samo dla `meadows_burrow`,
+   `meadows_cave`, `dungeon_meadows`, potem `[Cave:<id>] shell: …` i `parts=… ms=…`; zapisz czasy i
+   `[WorldBuilder] world built in … s` (porównaj z ~4,1 s; dopuszczalne do ~+1,5 s).
+2. `/cavestats meadows_cave`: części ≤ 1000, bloki, czasy, budowle, światła, węzły 8, spawnery; to samo dla
+   `meadows_hideout` (≤ 700), `meadows_burrow` (≤ 700), `dungeon_meadows` (≤ 450).
+3. Wejdź do Jaskini Mchów z Łąk: za portalem wyjścia kurtyna wody z zielonym światłem, totem z czaszką, świecący mech
+   prowadzi na wschód; ściany nierówne, tunel się wije.
+4. `/tpcave meadows_cave grotto`: Wielka Grota: jezioro w zatoce na południowym wschodzie, wodospad z pęknięcia, grzyby
+   na brzegu, robaczki na sklepieniu, nietoperze, rozdarte namioty goblinów, stalagmity przy północnej ścianie.
+5. `/caveinfo` w kilku miejscach: sala, rola, podłoga, sufit, ciecz, nastrój (np. `meadows_cave:2`).
+6. `/tpcave meadows_cave queennest` (lejowata sieć, ołtarz z zielonym ogniem), `spiderhall` (sieci, kokony, świecące
+   worki, pająki zjeżdżają na niciach i uciekają w górę), `shrine` (taras z kręgiem, totemy, odciski dłoni),
+   `bearden`, `barracks`.
+7. `/tpcave meadows_cave antechamber`: szpalery chorągwi, bębny, kosze z ogniem, paszcza nad bramą; wejdź bramą do
+   Grimroka (działa jak przedtem); po walce lądujesz przed bramą na płaskim.
+8. Komnata Grimroka: arena płaska, 10 totemów z ogniem, tron na podeście na północy, galerie z bębnami po bokach;
+   walka (zamach, skok, wir, przywołania 14 st. od środka) działa jak przedtem.
+9. Kryjówka (`/tpcave meadows_hideout`): czaty z barykadą, `landing` (czarny strumień, pomost z łodzią, kładka w
+   tunelu), `council` (księżycowe światło z zapadliska, kruki, stół z mapą, taras), `chief` (złota poświata skrzyni,
+   żyrandol), `pen` (płot, siano).
+10. Kopiec (`/tpcave meadows_burrow`): brama ze złomu, `village` (budy, lampy w słojach), `diggings` (tory, wózki,
+    zielone latarnie), `shaft` (szyb z kołowrotem; zejdź i wyjdź rampą), `spiderpit`.
+11. W każdej jaskini: potwory stoją na podłodze (nie w skale, nie w wodzie), węzły rud na ziemi przy ścianach ze
+    smugą żyły; `/nodes count` (Kryjówka 7, Kopiec 8, Jaskinia Mchów 8).
+12. Zawsze da się wrócić do wyjścia (zejdź do jeziora w Grocie i wyjdź, wejdź na taras kapliczki i zejdź).
+13. Opcje → „Szczegółowość świata” niska: mniej świateł (`/lights 8` → widać różnicę, `/lights auto`), bez nietoperzy
+    i pająków; `/perf` w Grocie.
+14. `/ambience meadows_cave:6` (odbarwiona pajęczarnia), `/ambience auto`.
+15. Mapa (M) i minimapa w jaskiniach: prawdziwy obrys podłogi, jezioro, strumień; wiki `meadows_cave.svg` z obrysem.
+16. `/terrainrebuild meadows_cave` (pyta): teren przepisuje się bez restartu.
+17. Pozostałe jaskinie (Bór, Pustkowia, Szczyty) i ich komnaty wyglądają jak przed sesją.

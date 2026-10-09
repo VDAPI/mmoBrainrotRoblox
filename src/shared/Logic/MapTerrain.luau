@@ -3,8 +3,10 @@
 -- (Logic/MeadowsTerrain) and, since S45, every shaped region with a Data/Terrain/<map> (Logic/RegionTerrain). Maps
 -- without one (built from terrain primitives) answer nil / true, and callers keep their old behaviour (raycasts,
 -- y = 0). Pure: monster groups (Logic/AreaSpawns), arrivals, the server's ground lookups and the client read the
--- same numbers.
+-- same numbers. S48: caves and boss chambers on the cave engine (Data/CaveShapes, Logic/CaveTerrain) answer with
+-- their floor (nil in rock), the water of their pools and streams, and the engine's walkable.
 
+local CaveTerrain = require("./CaveTerrain")
 local MeadowsTerrain = require("./MeadowsTerrain")
 local RegionTerrain = require("./RegionTerrain")
 local TownTerrain = require("./TownTerrain")
@@ -22,6 +24,10 @@ function MapTerrain.height(mapId: string, x: number, z: number): number?
 	if region then
 		return region.height(x, z)
 	end
+	local cave = CaveTerrain.get(mapId)
+	if cave then
+		return cave.floor(x, z)
+	end
 	return nil
 end
 
@@ -34,12 +40,17 @@ function MapTerrain.water(mapId: string, x: number, z: number): number?
 	if region then
 		return region.water(x, z)
 	end
+	local cave = CaveTerrain.get(mapId)
+	if cave then
+		local liquid = cave.liquid(x, z)
+		return if liquid and liquid.kind == "water" then liquid.level else nil
+	end
 	return nil
 end
 
 -- Whether a map has a height function (the layout, decorations and tools read the ground from it).
 function MapTerrain.has(mapId: string): boolean
-	return mapId == "meadows" or mapId == "city" or RegionTerrain.has(mapId)
+	return mapId == "meadows" or mapId == "city" or RegionTerrain.has(mapId) or CaveTerrain.has(mapId)
 end
 
 -- Whether a monster group or an arriving player can stand here: dry, no cliff within `radius` studs (default 4).
@@ -68,6 +79,10 @@ function MapTerrain.walkable(mapId: string, x: number, z: number, radius: number
 	end
 	local region = RegionTerrain.get(mapId)
 	if not region then
+		local cave = CaveTerrain.get(mapId)
+		if cave then
+			return cave.walkable(x, z, radius or 4)
+		end
 		return true
 	end
 	if not region.walkable(x, z) then

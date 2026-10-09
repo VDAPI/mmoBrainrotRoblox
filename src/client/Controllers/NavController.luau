@@ -30,6 +30,7 @@ local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Keybinds = require(script.Parent.Parent.UI.Keybinds)
 local MapRoute = require(ReplicatedStorage.Shared.Logic.MapRoute)
 local MapSketch = require(script.Parent.Parent.UI.MapSketch)
+local MapTerrain = require(ReplicatedStorage.Shared.Logic.MapTerrain)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local NavPath = require(ReplicatedStorage.Shared.Logic.NavPath)
 local NavTarget = require(script.Parent.Parent.UI.NavTarget)
@@ -184,6 +185,15 @@ end
 local function ground(x: number, z: number, refY: number): (number?, Enum.Material?)
 	local inside = indoors()
 	local from = if inside then refY + 5 else refY + 200
+	-- S48: caves on the engine know their floor (a ramp higher than 5 studs would start the ray in rock)
+	local mapId = currentMap()
+	local map = Maps.get(mapId or "")
+	if inside and map and mapId then
+		local floor = MapTerrain.height(mapId, x - map.offset.x, z - map.offset.z)
+		if floor then
+			from = map.offset.y + floor + 5
+		end
+	end
 	local length = if inside then 40 else 420
 	terrainParams.FilterDescendantsInstances = { Workspace.Terrain }
 	local hit = Workspace:Raycast(Vector3.new(x, from, z), Vector3.new(0, -length, 0), terrainParams)

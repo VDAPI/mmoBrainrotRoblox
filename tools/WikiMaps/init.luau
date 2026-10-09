@@ -12,6 +12,7 @@ local Areas = require("../src/shared/Data/Areas")
 local AreaSpawns = require("../src/shared/Logic/AreaSpawns")
 local Bosses = require("../src/shared/Data/Bosses")
 local CaveGen = require("../src/shared/Logic/CaveGen")
+local CaveTerrain = require("../src/shared/Logic/CaveTerrain")
 local Clean = require("./WikiData/Clean")
 local WorldGen = require("../src/shared/Logic/WorldGen")
 local Monsters = require("../src/shared/Data/Monsters")
@@ -549,12 +550,36 @@ local function cave(ctx: Ctx, caveId: string): string
 			)
 		)
 	end
-	local circles = {}
-	for _, r in rooms do
-		table.insert(circles, Svg.circlePath(r.x, r.z, r.r))
+	local water = {}
+	local engine = CaveTerrain.get(caveId)
+	if engine then
+		-- S48: the real floor of a cave on the cave engine (merged cells of the outline) and its liquids
+		floor = {}
+		local d = {}
+		for _, rect in engine.outline(8) do
+			table.insert(
+				d,
+				`M{Svg.n(rect.x - rect.w / 2)} {Svg.n(rect.z - rect.d / 2)}h{Svg.n(rect.w)}v{Svg.n(rect.d)}h{Svg.n(-rect.w)}z`
+			)
+		end
+		table.insert(floor, Svg.el("path", { { "class", "m-floor" }, { "d", table.concat(d) } }))
+		local wd = {}
+		for _, f in engine.shape.features do
+			if f.kind == "pool" then
+				table.insert(wd, Svg.circlePath(f.x, f.z, f.r))
+			end
+		end
+		if #wd > 0 then
+			table.insert(water, Svg.el("path", { { "class", "m-water" }, { "d", table.concat(wd) } }))
+		end
+	else
+		local circles = {}
+		for _, r in rooms do
+			table.insert(circles, Svg.circlePath(r.x, r.z, r.r))
+		end
+		table.insert(floor, Svg.el("path", { { "class", "m-floor" }, { "d", table.concat(circles) } }))
 	end
-	table.insert(floor, Svg.el("path", { { "class", "m-floor" }, { "d", table.concat(circles) } }))
-	table.insert(out, layer("water", {}))
+	table.insert(out, layer("water", water))
 	table.insert(out, layer("roads", floor))
 	table.insert(out, shade(map))
 	local roomEls = {}

@@ -102,7 +102,9 @@ function WorldService.GroundCFrame(mapId: string, x: number, z: number): CFrame
 	local everything: { Instance } = if world then { workspace.Terrain, world } else { workspace.Terrain }
 	local y: number
 	if LOW_RAY_BIOMES[map.biome] then
-		local hit = raycastDown(origin + Vector3.new(x, 16, z), 80, everything)
+		-- S48: on the cave engine the ray starts just over the floor (rooms are not flat any more)
+		local floor = MapTerrain.height(mapId, x, z)
+		local hit = raycastDown(origin + Vector3.new(x, if floor then floor + 6 else 16, z), 80, everything)
 		y = if hit then hit.Position.Y else origin.Y
 	else
 		local ground = raycastDown(origin + Vector3.new(x, 200, z), 400, { workspace.Terrain })
@@ -152,7 +154,9 @@ function WorldService.FloorAt(mapId: string, x: number, z: number, fromY: number
 	local origin = mapOrigin(map)
 	local geometry = mapGeometry(mapId)
 	if LOW_RAY_BIOMES[map.biome] then
-		local hit = castDown(origin + Vector3.new(x, fromY or 16, z), 80, geometry, false)
+		local floor = MapTerrain.height(mapId, x, z)
+		local hit =
+			castDown(origin + Vector3.new(x, fromY or (if floor then floor + 6 else 16), z), 80, geometry, false)
 		return Vector3.new(origin.X + x, if hit then hit.Position.Y else origin.Y, origin.Z + z)
 	end
 	local start: number

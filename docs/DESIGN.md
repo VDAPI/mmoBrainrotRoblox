@@ -91,6 +91,11 @@ Każda strefa terenowa ma też podstrefy (np. łąka, las, ruiny) z innymi pozio
 - Wejście z zewnątrz jest wyraźne: wylot jaskini (skały, łuk, pochodnie), płaski teren wokół portalu, tabliczka z nazwą i poziomami.
 - Ostatnia jaskinia regionu ma wejście do lochu bossa.
 
+**Wygląd jaskiń (S48).** Jaskinie na silniku jaskiń mają prawdziwy kształt: nierówne ściany, podłogę raz wyżej, raz niżej,
+kręte tunele, wnęki, jeziora, strumienie, otwory w sklepieniu; każda sala ma rolę (gawra, pajęczarnia, kapliczka…) i ubiór
+w klimacie swoich mieszkańców, a najgłębsza sala i przedsionek bossa są scenami „wow”. Rdzeń każdej sali walki zostaje
+suchy, płaski i wysoki (tam stoją grupy).
+
 ### 3.6 Obszary potworów (zmiana po testach S17)
 
 - Każda mapa terenowa i jaskinia jest podzielona na **nazwane obszary potworów** (np. „Obóz Bandytów · 9–14”, „Wilcze Wzgórza · 2–6”): prostokąt lub wielokąt, przedział poziomów, 2–3 rodzaje potworów, liczba grup. Obszar jest jednym źródłem prawdy: z niego generują się grupy (§15.1), opisy na mapie i oznaczenia w świecie.
@@ -163,6 +168,9 @@ Każda strefa terenowa ma też podstrefy (np. łąka, las, ruiny) z innymi pozio
   drogi tylko pod kamiennymi mostami, wały przy brzegach prowadzą gracza na most. Świecenie lawy (płyty Neon,
   pulsowanie, iskry, drżące powietrze) robi klient w promieniu detalu; światła lawy są włączone tylko przy kamerze
   (4 / 8 / 12 wg „Szczegółowości świata”). Serwer Pustkowi: ok. 180 dużych martwych drzew, budżet mapy 2400 części.
+
+**Jaskinie przy niskiej szczegółowości (S48).** Światła jaskini: najbliższe 8 / 16 / 24 (niska / średnia / wysoka), neon
+świeci bez światła; bez nietoperzy, pająków i kruków, połowa cząsteczek i robaczków.
 
 ### 3.8 Miasto startowe (zmiana po testach S20)
 

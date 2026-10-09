@@ -9,10 +9,17 @@
 --   /terraininfo              the ground under the caller: height, material, theme, water / lava, slope (S46)
 --   /worldfx <effect> <mode>  switch a world effect on the caller's client (S46; S47 snow, drift, aurora, plume, eagles,
 --                             avalanche, glow)
+--   /tpcave <cave> [room]     teleport into a cave on the cave engine, to a room by index or role (S48)
+--   /caveinfo                 the cave under the caller: room, role, floor, ceiling, liquid, mood, lights (S48)
+--   /cavestats [cave]         terrain and shell timings, blocks, parts vs maxParts, Builds, lights, nodes (S48)
+--   /lights <n|auto>          force the number of cave lights on the caller's client (S48)
 
 local Shared = game:GetService("ReplicatedStorage").Shared
 
+local Ambience = require(Shared.Data.Ambience)
+local AreaSpawns = require(Shared.Logic.AreaSpawns)
 local Areas = require(Shared.Data.Areas)
+local CaveTerrain = require(Shared.Logic.CaveTerrain)
 local MapTerrain = require(Shared.Logic.MapTerrain)
 local Maps = require(Shared.Data.Maps)
 local MeadowsGen = require(Shared.Logic.MeadowsGen)
@@ -23,6 +30,7 @@ local Spawns = require(Shared.Data.Spawns)
 local WorldGen = require(Shared.Logic.WorldGen)
 
 local BuildStats = require(script.Parent.Parent.World.BuildStats)
+local CaveTerrainWriter = require(script.Parent.Parent.World.CaveTerrainWriter)
 local Context = require(script.Parent.Context)
 local TerrainWriter = require(script.Parent.Parent.World.TerrainWriter)
 local TownTerrainWriter = require(script.Parent.Parent.World.TownTerrainWriter)
@@ -122,6 +130,12 @@ end
 
 commands.ambience = function(player, args)
 	local value = args[1] or ""
+	local caveId, roomText = string.match(value, "^([%w_]+):(%d+)$")
+	if caveId and CaveTerrain.has(caveId) and Ambience.roomMood(caveId, tonumber(roomText)) then
+		Net.Fire(player, "AdminClient", "ambience", value)
+		reply(player, "admin.ambience.ok", { mood = value })
+		return true
+	end
 	if value ~= "off" and value ~= "auto" then
 		local known = false
 		for _, data in Areas.byMap do
@@ -144,7 +158,10 @@ end
 commands.terrainrebuild = function(player, args)
 	local mapId = args[1]
 	local map = mapId and Maps.get(mapId)
-	if not map or (mapId ~= "meadows" and mapId ~= "city" and not RegionTerrain.has(mapId)) then
+	if
+		not map
+		or (mapId ~= "meadows" and mapId ~= "city" and not RegionTerrain.has(mapId) and not CaveTerrain.has(mapId))
+	then
 		reply(player, "admin.usage.terrainrebuild")
 		return false, "admin.terrainrebuild.bad"
 	end
@@ -157,7 +174,10 @@ commands.terrainrebuild = function(player, args)
 	task.spawn(function()
 		-- only the map square (the mountains past the edge stay); pauses between blocks keep the server responsive
 		local region = RegionTerrain.get(map.id)
-		if map.id == "meadows" then
+		if CaveTerrain.has(map.id) then
+			-- S48: a cave on the engine (the whole square with its rock margin, pausing between blocks)
+			CaveTerrainWriter.write(map.id, origin, { yields = true })
+		elseif map.id == "meadows" then
 			TerrainWriter.write(origin, map.size.x / 2, MeadowsTerrain.voxels, MeadowsTerrain.MATERIALS, {
 				bottom = -24,
 				top = 48,
@@ -324,6 +344,126 @@ commands.worldfx = function(player, args)
 	local effect, mode = args[1] or "", args[2] or ""
 	Net.Fire(player, "AdminClient", "worldfx", { name = effect, mode = mode })
 	reply(player, "admin.worldfx.ok", { effect = effect, mode = mode })
+	return true
+end
+
+-- S48: caves on the cave engine ----------------------------------------------------------------------------------
+
+commands.tpcave = function(player, args)
+	local caveId, roomArg = args[1] or "", args[2]
+	local T = CaveTerrain.get(caveId)
+	local map = Maps.get(caveId)
+	if not T or not map then
+		reply(player, "admin.usage.tpcave")
+		return false, "admin.usage.tpcave"
+	end
+	local x, z = map.spawn.x, map.spawn.z
+	if roomArg then
+		local index = tonumber(roomArg)
+		if not index then
+			for i, r in T.rooms do
+				if r.role == roomArg then
+					index = i
+					break
+				end
+			end
+		end
+		local room = index and T.rooms[index]
+		if not room then
+			reply(player, "admin.usage.tpcave")
+			return false, "admin.usage.tpcave"
+		end
+		x, z = room.x, room.z
+	end
+	if not WorldService.IsBuilt(caveId) then
+		reply(player, "admin.maps.notBuilt", { map = caveId })
+		return false, "portal.closed"
+	end
+	withCharacter(player, function()
+		task.spawn(TravelService.TeleportToMap, player, caveId, (WorldService.SafeSpot(caveId, x, z)))
+		reply(
+			player,
+			"admin.tpcave.ok",
+			{ map = caveId, room = roomArg or "—", x = math.floor(x), z = math.floor(z) }
+		)
+	end)
+	return true
+end
+
+commands.caveinfo = function(player)
+	local character = Context.services.PlayerStateService.GetCharacter(player)
+	local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart") :: BasePart?
+	local map = character and Maps.get(character.location.map)
+	if not root or not map then
+		reply(player, "admin.needCharacter")
+		return false
+	end
+	local T = CaveTerrain.get(map.id)
+	if not T then
+		reply(player, "admin.caveinfo.none", { map = map.id })
+		return false
+	end
+	local x, z = root.Position.X - map.offset.x, root.Position.Z - map.offset.z
+	local c = T.column(x, z)
+	local index = T.roomAt(x, z)
+	local room = index and T.rooms[index]
+	local round = function(v: number): number
+		return math.floor(v * 10 + 0.5) / 10
+	end
+	reply(player, "admin.caveinfo.ok", {
+		map = map.id,
+		x = math.floor(x),
+		z = math.floor(z),
+		room = if index then tostring(index) else "—",
+		role = if room then room.role else "—",
+		floor = if c.open then tostring(round(c.floor)) else "—",
+		ceiling = if c.open then tostring(round(math.min(c.ceiling, 999))) else "—",
+		liquid = if c.liquid then `{c.liquid.kind} {round(c.liquid.level)}` else "—",
+		mood = if Ambience.roomMood(map.id, index) then `{map.id}:{index}` else map.id,
+	})
+	return true
+end
+
+commands.cavestats = function(player, args)
+	local character = Context.services.PlayerStateService.GetCharacter(player)
+	local caveId = args[1] or (character and character.location.map) or ""
+	local T = CaveTerrain.get(caveId)
+	local gen = WorldGen.get(caveId)
+	local map = Maps.get(caveId)
+	if not T or not gen or not map then
+		reply(player, "admin.usage.cavestats")
+		return false, "admin.usage.cavestats"
+	end
+	local stats = BuildStats[caveId]
+	local counts = gen.counts()
+	local cave = Areas.caves.get(caveId)
+	reply(player, "admin.cavestats.ok", {
+		map = caveId,
+		parts = if stats then stats.parts else WorldService.PartCounts()[caveId] or 0,
+		max = map.maxParts or 0,
+		terrain = if stats then math.floor(stats.terrainMs) else 0,
+		write = if stats then math.floor(stats.writeMs) else 0,
+		blocks = if stats then stats.blocks else 0,
+		shell = if stats then math.floor(stats.shellMs) else 0,
+		builds = counts.builds,
+		detail = counts.detail,
+		fine = counts.fine,
+		lights = counts.lights,
+		nodes = #gen.nodes(),
+		spawners = if cave then #AreaSpawns.cave(cave) else 0,
+	})
+	return true
+end
+
+commands.lights = function(player, args)
+	local value = args[1] or ""
+	local n = tonumber(value)
+	if value ~= "auto" and not (n and n >= 0 and n <= 64) then
+		reply(player, "admin.usage.lights")
+		return false, "admin.usage.lights"
+	end
+	Net.Fire(player, "AdminClient", "lights", if n then math.floor(n) else "auto")
+	reply(player, "admin.lights.ok", { value = value })
 	return true
 end
 

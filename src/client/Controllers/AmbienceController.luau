@@ -16,6 +16,8 @@ local Workspace = game:GetService("Workspace")
 
 local Ambience = require(ReplicatedStorage.Shared.Data.Ambience)
 local AreaState = require(script.Parent.Parent.UI.AreaState)
+local CaveTerrain = require(ReplicatedStorage.Shared.Logic.CaveTerrain)
+local MapTerrain = require(ReplicatedStorage.Shared.Logic.MapTerrain)
 local DayCycle = require(ReplicatedStorage.Shared.Logic.DayCycle)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
@@ -193,7 +195,9 @@ local function buildPoints(mapId: string?)
 			holder.CanTouch = false
 			holder.Transparency = 1
 			holder.Size = Vector3.one
-			holder.Position = Vector3.new(map.offset.x + p.x, map.offset.y + 6, map.offset.z + p.z)
+			-- S48: over the floor of a cave on the engine (or the point's own y)
+			local floor = MapTerrain.height(map.id, p.x, p.z) or 0
+			holder.Position = Vector3.new(map.offset.x + p.x, map.offset.y + (p.y or floor + 6), map.offset.z + p.z)
 			holder.Parent = folder
 			local sound = Instance.new("Sound")
 			sound.SoundId = p.sound.id
@@ -213,6 +217,11 @@ end
 -- Tick -----------------------------------------------------------------------------------------------------------
 
 local lastKey = ""
+
+local function rootPart(): BasePart?
+	local character = game:GetService("Players").LocalPlayer.Character
+	return character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+end
 
 local function isNight(): boolean
 	if not WorldController.HasDayNight() then
@@ -235,6 +244,21 @@ local function step(dt: number)
 		areaId = if area then area.id else nil
 	end
 	local mood = if map and forced ~= "off" then Ambience.moodOf(map, areaId) else nil
+	-- S48: caves on the engine: the mood of the room under the player (tunnels: the map's), "/ambience <cave>:<room>"
+	local roomIndex: number? = nil
+	if map and CaveTerrain.has(map) and forced ~= "off" then
+		local forcedRoom = if forced then tonumber(string.match(forced, ":(%d+)$")) else nil
+		if forcedRoom then
+			roomIndex = forcedRoom
+		else
+			local root = rootPart()
+			local def = Maps.get(map)
+			if root and def then
+				roomIndex = CaveTerrain.roomAt(map, root.Position.X - def.offset.x, root.Position.Z - def.offset.z)
+			end
+		end
+		mood = Ambience.roomMood(map, roomIndex) or Ambience.moodOf(map, nil)
+	end
 	-- light: approach the target (about 95 % after Ambience.BLEND seconds)
 	local target = modOf(mood)
 	if not close(current, target) then
@@ -249,7 +273,7 @@ local function step(dt: number)
 	end
 	-- sound: change the set when the area or day/night changes
 	local night = isNight()
-	local key = `{map or ""}|{areaId or ""}|{night}|{forced or ""}`
+	local key = `{map or ""}|{areaId or ""}|{roomIndex or ""}|{night}|{forced or ""}`
 	if key ~= lastKey then
 		lastKey = key
 		setLoops(if mood then (if night then mood.sounds.night else mood.sounds.day) else {})

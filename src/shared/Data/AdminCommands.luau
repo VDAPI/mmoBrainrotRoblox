@@ -55,6 +55,7 @@ export type Command = {
 
 local Blessings = require("./Blessings")
 local TerrainShapes = require("./Terrain")
+local CaveShapes = require("./CaveShapes")
 
 local MAX_LEVEL = 100
 local BIG = 1e12
@@ -226,7 +227,18 @@ for mapId in TerrainShapes.byMap do
 	table.insert(REGION_MAPS, mapId)
 end
 table.sort(REGION_MAPS)
+-- S48: caves on the cave engine
+local CAVE_MAPS = {}
+for mapId in CaveShapes.byMap do
+	table.insert(CAVE_MAPS, mapId)
+	table.insert(TERRAIN_MAPS, mapId)
+end
+table.sort(CAVE_MAPS)
 cmd("world", "terrainrebuild", { enum("map", TERRAIN_MAPS) }, { danger = true })
+cmd("world", "tpcave", { enum("cave", CAVE_MAPS), str("room", true) })
+cmd("world", "caveinfo", {})
+cmd("world", "cavestats", { enum("cave", CAVE_MAPS, true) })
+cmd("world", "lights", { str("count") })
 -- S46: the ground under the caller and the client's world effects
 cmd("world", "terraininfo", {})
 cmd("world", "worldfx", {

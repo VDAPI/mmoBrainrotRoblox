@@ -29,6 +29,8 @@ local Workspace = game:GetService("Workspace")
 
 local BlueprintBuild = require(ReplicatedStorage.Shared.Util.BlueprintBuild)
 local DayCycle = require(ReplicatedStorage.Shared.Logic.DayCycle)
+local Maps = require(ReplicatedStorage.Shared.Data.Maps)
+local State = require(script.Parent.Parent.UI.State)
 
 local TownFxController = {
 	Name = "TownFxController",
@@ -429,6 +431,14 @@ local function spinner(key: string): Spinner
 	return s :: Spinner
 end
 
+-- S48: on a cave, crypt or boss chamber map (lamps lit, their lights managed by RegionLightController).
+local UNDERGROUND: { [string]: boolean } = { cave = true, crypt = true, dungeon = true }
+local function underground(): boolean
+	local mapId = State.Get({ "character", "location", "map" })
+	local map = if type(mapId) == "string" then Maps.get(mapId) else nil
+	return map ~= nil and UNDERGROUND[map.biome] == true
+end
+
 -- Windows keep their own look by day and ~60% of them glow at night. Lamp glass is Neon in the plan: by day it
 -- is dimmed to plain glass, at night it gets its own colour back.
 local function setNightLook(part: BasePart, kind: string, night: boolean)
@@ -456,7 +466,7 @@ end
 
 local function setLampLight(holder: BasePart, night: boolean)
 	local light = holder:FindFirstChildOfClass("PointLight")
-	if light then
+	if light and not underground() then
 		light.Enabled = night
 	end
 end
@@ -628,7 +638,10 @@ end
 -- Day/night switch: queue every window and lamp, then apply a few per frame.
 local function updateNight()
 	local night = false
-	if WorldController.HasDayNight() then
+	if underground() then
+		-- S48: underground the lamps always glow (their lights belong to RegionLightController's LOD there)
+		night = true
+	elseif WorldController.HasDayNight() then
 		local clock = WorldController.TimeOfDay()
 		night = DayCycle.isNight(clock)
 	end

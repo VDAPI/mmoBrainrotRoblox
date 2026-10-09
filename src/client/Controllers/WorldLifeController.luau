@@ -26,6 +26,9 @@
 --     powder avalanche sliding down the Yeti Slopes' gully (particles only, it hurts nobody), dust falling from the
 --     icicles at the Frozen Falls, the gates and the Grotto, yellow glints of harpies' eyes in the clefts at night,
 --   * eagles circling high over the Harpy Rocks and the Wyrm Spire (not harpies: nothing to click).
+-- S48 (caves on the engine, Logic/CaveDress): drops falling from the stalactites, dust in the light beams of holes,
+-- cracks and waterfalls, glow-worms on the Great Grotto's vault, spiders on threads (they drop down and pull back up
+-- when the player comes close), bats in the high vaults (caves are always "night" for them), crows in the sinkhole.
 -- Admin /worldfx <ash|embers|haze|smoke|vultures|devils|lavaglow|snow|drift|aurora|plume|eagles|avalanche|glow>
 -- <on|off|auto> switches an effect on the caller's client (AdminClient "worldfx").
 -- Only within LIFE_RADIUS; with "World detail" on low there are no animals, half the particles and half the wisps.
@@ -130,9 +133,17 @@ end
 -- Time of day: the real clock (not the dusk clock of the sky) and how dark it is.
 type Time = { clock: number, night: boolean, dusk: boolean, morning: boolean }
 
+local UNDERGROUND: { [string]: boolean } = { cave = true, crypt = true, dungeon = true }
+
 local function timeNow(): Time
 	local clock, nightness = WorldController.TimeOfDay()
 	local night = nightness > 0.5 or DayCycle.isNight(clock)
+	-- S48: underground it is always night (bats out, glows on)
+	local mapId = State.Get({ "character", "location", "map" })
+	local map = if type(mapId) == "string" then Maps.get(mapId) else nil
+	if map and UNDERGROUND[map.biome] then
+		night = true
+	end
 	return {
 		clock = clock,
 		night = night,
@@ -423,6 +434,74 @@ local EMITTERS: { [string]: EmitterKind } = {
 			return if t.night then 1.4 else 1
 		end,
 	},
+	-- S48: drops falling from the stalactites of a cave
+	drips = {
+		size = function(r)
+			return Vector3.new(r * 2, 1, r * 2)
+		end,
+		props = {
+			Color = ColorSequence.new(Color3.fromHex("#BFD8E8")),
+			Transparency = NumberSequence.new(0.3, 0.6),
+			Size = NumberSequence.new(0.14),
+			Lifetime = NumberRange.new(0.9, 1.4),
+			Speed = NumberRange.new(0, 0.5),
+			Acceleration = Vector3.new(0, -50, 0),
+			LightEmission = 0.3,
+			LightInfluence = 0.6,
+			EmissionDirection = Enum.NormalId.Bottom,
+			Rate = 6,
+		},
+		on = always,
+		rate = same,
+	},
+	-- S48: dust drifting in a beam of light (sinkholes, cracks, the waterfall behind the entrance)
+	dustBeam = {
+		size = function(r)
+			return Vector3.new(r, 22, r)
+		end,
+		props = {
+			Color = ColorSequence.new(Color3.fromHex("#F4F0DC")),
+			Transparency = NumberSequence.new({
+				NumberSequenceKeypoint.new(0, 1),
+				NumberSequenceKeypoint.new(0.3, 0.45),
+				NumberSequenceKeypoint.new(0.7, 0.55),
+				NumberSequenceKeypoint.new(1, 1),
+			}),
+			Size = NumberSequence.new(0.16),
+			Lifetime = NumberRange.new(6, 10),
+			Speed = NumberRange.new(0.1, 0.4),
+			SpreadAngle = Vector2.new(180, 180),
+			LightEmission = 0.7,
+			LightInfluence = 0,
+			Rate = 10,
+		},
+		on = always,
+		rate = same,
+	},
+	-- S48: glow-worms on a cave's vault (still, slowly pulsing points)
+	glowworms = {
+		size = function(r)
+			return Vector3.new(r * 2, 1, r * 2)
+		end,
+		props = {
+			Color = ColorSequence.new(Color3.fromHex("#9FF0E8")),
+			Transparency = NumberSequence.new({
+				NumberSequenceKeypoint.new(0, 1),
+				NumberSequenceKeypoint.new(0.2, 0.1),
+				NumberSequenceKeypoint.new(0.5, 0.35),
+				NumberSequenceKeypoint.new(0.8, 0.1),
+				NumberSequenceKeypoint.new(1, 1),
+			}),
+			Size = NumberSequence.new(0.3),
+			Lifetime = NumberRange.new(8, 12),
+			Speed = NumberRange.new(0, 0),
+			LightEmission = 1,
+			LightInfluence = 0,
+			Rate = 40,
+		},
+		on = always,
+		rate = same,
+	},
 	-- S47: snow torn off a summit or a crest by the wind (blowing east, the Peaks' wind), seen from afar
 	snowPlume = {
 		size = function(r)
@@ -576,6 +655,16 @@ local function model(kind: string): (Model, { BasePart })
 		})
 		add({ Name = "WingL", Size = Vector3.new(3, 0.1, 1.1), Color = brown })
 		add({ Name = "WingR", Size = Vector3.new(3, 0.1, 1.1), Color = brown })
+	elseif kind == "spider" then
+		local dark = Color3.fromHex("#2A2420")
+		add({ Name = "Body", Shape = Enum.PartType.Ball, Size = Vector3.new(1.2, 0.9, 1.4), Color = dark })
+		add({
+			Name = "Thread",
+			Size = Vector3.new(0.06, 1, 0.06),
+			Color = Color3.fromHex("#E8E6F0"),
+			Transparency = 0.4,
+		})
+		add({ Name = "Legs", Size = Vector3.new(2.6, 0.12, 1.8), Color = dark })
 	elseif kind == "eagle" then
 		local brown = Color3.fromHex("#3A2E26")
 		add({ Name = "Body", Shape = Enum.PartType.Ball, Size = Vector3.new(1.2, 1, 1.8), Color = brown })
@@ -668,6 +757,12 @@ local function spawnAnimals(origin: Vector3)
 			for _ = 1, 3 + math.floor(rng:NextNumber() * 3) do
 				newAnimal("vulture", home + Vector3.new(0, rng:NextNumber() * 10, 0), p.r or 20, "circle")
 			end
+		elseif p.kind == "spiders" then
+			for k = 1, 3 do
+				local a = k * 2.1
+				local r = (p.r or 12) * 0.6
+				newAnimal("spider", home + Vector3.new(math.cos(a) * r, 0, math.sin(a) * r), 6 + k * 2, "hang")
+			end
 		elseif p.kind == "eagles" then
 			for _ = 1, 2 do
 				newAnimal("eagle", home + Vector3.new(0, rng:NextNumber() * 14, 0), p.r or 40, "circle")
@@ -728,6 +823,13 @@ local function pose(a: Animal, now: number)
 		local flap = if a.state == "fly" then math.sin(now * 22 + a.phase) * 0.9 else 0.15
 		list[3].CFrame = frame * CFrame.new(-0.45, 0.1, 0) * CFrame.Angles(0, 0, flap) * CFrame.new(-0.4, 0, 0)
 		list[4].CFrame = frame * CFrame.new(0.45, 0.1, 0) * CFrame.Angles(0, 0, -flap) * CFrame.new(0.4, 0, 0)
+	elseif a.kind == "spider" then
+		list[1].CFrame = CFrame.new(p)
+		list[3].CFrame = CFrame.new(p + Vector3.new(0, 0.2, 0)) * CFrame.Angles(0, a.phase, 0)
+		local length = math.max(0.5, a.home.Y - p.Y)
+		local thread = list[2]
+		thread.Size = Vector3.new(0.06, length, 0.06)
+		thread.CFrame = CFrame.new(p + Vector3.new(0, length / 2, 0))
 	elseif a.kind == "bat" then
 		if a.state == "rest" then
 			-- hanging head down, wings folded
@@ -796,6 +898,15 @@ local function step(a: Animal, dt: number, now: number, player: Vector3, speed: 
 			end
 			return false
 		end
+		return near
+	elseif a.kind == "spider" then
+		-- drops down its thread slowly, pulls back up when the player comes close
+		local flat = (player - a.home) * Vector3.new(1, 0, 1)
+		local want = if flat.Magnitude < FLEE_RADIUS * 1.3
+			then 0.5
+			else a.radius * (0.7 + 0.3 * math.sin(now * 0.3 + a.phase))
+		a.timer += (want - a.timer) * math.clamp(dt * (if want < a.timer then 3 else 0.5), 0, 1)
+		a.pos = a.home - Vector3.new(0, a.timer, 0)
 		return near
 	elseif a.kind == "bat" then
 		local roost = a.radius <= 6

@@ -116,6 +116,8 @@ local Config = {
 	-- S46: lights of the region's lava (and later of the caves) on at once, nearest to the camera first, per
 	-- "World detail" setting (Controllers/RegionLightController).
 	RegionLights = { low = 4, mid = 8, high = 12 },
+	-- S48: lights on at once in a cave, crypt or boss chamber (nearest the camera; RegionLightController)
+	CaveLights = { low = 8, mid = 16, high = 24 },
 	-- Day and night on maps with `dayNight` (S21): one full day in real seconds; night (19:00-6:00) takes
 	-- DayNightShare of it.
 	DayLength = 2400,

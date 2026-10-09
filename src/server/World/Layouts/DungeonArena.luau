@@ -4,6 +4,7 @@
 -- Each dungeon layout (dungeon_<region>) passes its style.
 
 local Build = require(script.Parent.Parent.Build)
+local CaveLayout = require(script.Parent.Parent.CaveLayout)
 local Prefabs = require(script.Parent.Parent.Prefabs)
 
 export type Style = {
@@ -18,6 +19,17 @@ export type Style = {
 local RADIUS = 62
 
 return function(ctx: Build.Context, style: Style)
+	-- S48: a chamber with an entry in Data/CaveShapes builds on the cave engine (the arena contract: a flat floor of
+	-- radius 74 round the fight's centre (0, -10) at y 0, nothing collidable closer than 50; the dressing goes round
+	-- it); exit, boss icon, zone and respawn point as before
+	if CaveLayout.has(ctx.map.id) then
+		CaveLayout.build(ctx)
+		Prefabs.portalFrom(ctx, `{ctx.map.id}_exit`)
+		Build.icon(ctx, "boss", 0, -10)
+		Build.zone(ctx, "red", nil, -150, -150, 150, 150)
+		Build.spawnPoint(ctx, 0, 60, 0, 0)
+		return
+	end
 	Build.caveShell(ctx, style.rock, 50)
 	Build.carveRoom(ctx, 0, 0, RADIUS, 36)
 	Build.carveRoom(ctx, 0, 70, 22, 22) -- entrance alcove

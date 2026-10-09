@@ -2,12 +2,15 @@
 -- Generated cave layout (S19, DESIGN §3.5): rooms and corridors from Logic/CaveGen (the same plan
 -- Logic/AreaSpawns fills with monster groups), carved from a rock block, lit with torches, decorated by
 -- theme, with ore veins, the exit portal and a red zone. Each generated cave has a one-line module in
--- World/Layouts that calls this with its map id.
+-- World/Layouts that calls this with its map id. S48: a cave with an entry in Data/CaveShapes builds on the cave
+-- engine instead (World/CaveLayout: terrain from Logic/CaveTerrain, the dressing of Logic/CaveDress, ore veins from
+-- the dressing); the exit, the sign, the zone and the respawn point are the same.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Areas = require(ReplicatedStorage.Shared.Data.Areas)
 local Build = require(script.Parent.Parent.Build)
+local CaveLayout = require(script.Parent.Parent.CaveLayout)
 local CaveGen = require(ReplicatedStorage.Shared.Logic.CaveGen)
 local Prefabs = require(script.Parent.Parent.Prefabs)
 
@@ -98,6 +101,25 @@ return function(caveId: string)
 		local cave = Areas.caves.get(caveId)
 		assert(cave, `CaveTemplate: unknown cave {caveId}`)
 		local plan = CaveGen.generate(cave.seed or 1)
+		if CaveLayout.has(caveId) then
+			-- S48: the cave engine
+			CaveLayout.build(ctx)
+			local entrance = plan.rooms[1]
+			Prefabs.portalFrom(ctx, `{caveId}_exit`)
+			Prefabs.signpost(
+				ctx,
+				entrance.x + 6,
+				entrance.z - entrance.r + 12,
+				0,
+				cave.nameKey,
+				cave.levels[1],
+				cave.levels[2]
+			)
+			local half = CaveGen.SIZE / 2
+			Build.zone(ctx, "red", nil, -half, -half, half, half)
+			Build.spawnPoint(ctx, entrance.x + 8, entrance.z, entrance.x + 40, entrance.z)
+			return
+		end
 		local rock = material(cave.material)
 		Build.caveShell(ctx, rock, 42)
 		for _, room in plan.rooms do

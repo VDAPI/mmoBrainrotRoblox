@@ -1,16 +1,30 @@
 --!strict
--- Mosshollow Cave (16–20, red zone, boss cave of the region since S19). Carved from a rock block: entrance hall (west, exit portal and respawn),
+-- Mosshollow Cave (16–20, red zone, boss cave of the region since S19). S48: built on the cave engine (see the branch
+-- below; the dressing names the rooms: entrance behind the waterfall, the Great Grotto, the bear den, the warriors'
+-- barracks, the Queen's nest, the spider hall, the shamans' shrine, the antechamber of banners). Before S48 carved
+-- from a rock block: entrance hall (west, exit portal and respawn),
 -- the great goblin hall in the middle, side dens (wolves north-west, boars south-west, bandit hideout
 -- north-east), the spider nest (north), the shamans' chamber (south) and the antechamber of Grimrok's
 -- dungeon (east). Monster groups, elites and the Elite II come from Data/Areas/Caves (S19).
 
 local Areas = require(game:GetService("ReplicatedStorage").Shared.Data.Areas)
 local Build = require(script.Parent.Parent.Build)
+local CaveLayout = require(script.Parent.Parent.CaveLayout)
 local Prefabs = require(script.Parent.Parent.Prefabs)
 
 local MOSS = "#7ACB3A"
 
 return function(ctx: Build.Context)
+	-- S48: the cave engine (Data/CaveShapes.meadows_cave: rooms' roles, tunnels, the lake, the waterfall; dressing
+	-- Logic/CaveDress/Moss); the old carved layout below stays for a cave without a shape
+	if CaveLayout.has("meadows_cave") then
+		CaveLayout.build(ctx)
+		Prefabs.portalFrom(ctx, "meadows_cave_exit")
+		Prefabs.dungeonGateFrom(ctx, "meadows")
+		Build.zone(ctx, "red", nil, -320, -320, 320, 320)
+		Build.spawnPoint(ctx, -240, 0, 0, 0)
+		return
+	end
 	Build.caveShell(ctx, Enum.Material.Rock, 46)
 
 	local rooms = {

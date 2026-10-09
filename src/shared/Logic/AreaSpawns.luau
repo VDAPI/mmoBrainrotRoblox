@@ -267,7 +267,12 @@ function AreaSpawns.cave(cave: AreaTypes.Cave): { Spawner }
 			members = kinds,
 			variant = variant,
 			level = levelRange(range, kinds),
-			position = { x = math.floor(x + 0.5), y = 0, z = math.floor(z + 0.5) },
+			-- S48: on the cave engine the floor under the spawner (x/z unchanged)
+			position = {
+				x = math.floor(x + 0.5),
+				y = math.floor((MapTerrain.height(cave.id, math.floor(x + 0.5), math.floor(z + 0.5)) or 0) + 0.5),
+				z = math.floor(z + 0.5),
+			},
 			radius = if variant == "elite2" then 4 else rng:int(5, 7),
 			count = #kinds,
 			respawn = respawn,
