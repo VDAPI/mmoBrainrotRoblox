@@ -632,6 +632,9 @@ return {
 	["item.backpack_130.name"] = "Plecak Poszukiwacza Przygód",
 	["item.backpack_160.name"] = "Królewski Plecak",
 	["item.backpack_200.name"] = "Plecak ze Smoczej Skóry",
+	["item.backpack_premium_100.name"] = "Plecak Wędrowca (100)",
+	["item.backpack_premium_150.name"] = "Plecak Kupca Karawan (150)",
+	["item.backpack_premium_200.name"] = "Smoczy Kufer (200)",
 
 	-- Uniques (DESIGN §5.2)
 	["item.unique_grimrok_cleaver.name"] = "Rozłupywacz Grimroka",
@@ -1417,7 +1420,9 @@ return {
 	["dungeon.countdown"] = "{boss} budzi się za {seconds} s...",
 	["dungeon.victory"] = "{boss} pokonany!",
 	["dungeon.wiped"] = "Twoja grupa poległa. {boss} wraca na tron.",
-	["dungeon.timeout"] = "Czas minął. {boss} wypędza was z lochu.",
+	["dungeon.timeout"] = "Czas minął. {boss} wypędza was z lochu. Próba zaliczona, szansa na legendę bez zmian.",
+	["dungeon.timeWarning"] = "Zostało {minutes} min na pokonanie: {boss}!",
+	["boss.timeLeft"] = "Pozostały czas: {time}",
 	["announce.boss"] = "⚔ Grupa gracza {name} pokonała: {boss}!",
 	["boss.phase"] = "Faza {phase}/3",
 	["boss.enraged"] = "SZAŁ",

@@ -66,6 +66,7 @@ export type KillInfo = {
 	mapId: string?,
 	entityId: string,
 	boss: boolean?, -- dungeon bosses: DungeonService hands out the rewards
+	noLoot: boolean?, -- boss helpers: no item drops
 	areaId: string?, -- S27: named area of the monster's group (model attribute AreaId)
 	dropLevel: number?, -- S32: base level for item drops (spawner level without the variant's levels)
 }
@@ -342,15 +343,18 @@ local function onMonsterDied(monster: any)
 	if not monster.isBoss then
 		-- S33: the area profile scales the kill's EXP and gold before the party split (quests are not affected).
 		local mods = AreaProfiles.modsOf(areaId)
-		local total = math.max(
-			1,
-			math.floor(
-				MonsterStats.gold(monster.stats.level, monster.variant, rng:next())
-						* MonsterStats.kindReward(monster.def)
-						* mods.goldMul
-					+ 0.5
+		-- Boss helpers (2026-10-10) give EXP but no gold.
+		local total = if monster.summoned
+			then 0
+			else math.max(
+				1,
+				math.floor(
+					MonsterStats.gold(monster.stats.level, monster.variant, rng:next())
+							* MonsterStats.kindReward(monster.def)
+							* mods.goldMul
+						+ 0.5
+				)
 			)
-		)
 		local shares = PartyLoot.splitGold(total, #credit, rng)
 		for i, player in credit do
 			reward(player, monster, #credit, shares[i], mods.expMul)
@@ -366,6 +370,7 @@ local function onMonsterDied(monster: any)
 		mapId = zone.map,
 		entityId = if monster.entity then monster.entity.id else "",
 		boss = monster.isBoss == true,
+		noLoot = monster.summoned == true,
 		areaId = areaId,
 		dropLevel = Loot.dropBaseLevel(monster.stats.level, monster.variant, monster.levelCap),
 	}

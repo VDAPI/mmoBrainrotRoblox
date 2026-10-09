@@ -100,7 +100,7 @@ export type CharacterData = {
 	e2timers: { Elite2Timer }?,
 }
 
-export type BossRun = { day: number, n: number }
+export type BossRun = { day: number, n: number, k: number? } -- n = attempts, k = kills
 export type BossPity = { leg: number, myth: number }
 
 export type LootLogEntry = {

@@ -332,7 +332,7 @@ function LootService.DistributeToParty(members: { Player }, position: Vector3, i
 end
 
 local function onMonsterKilled(info: any, credit: { Player })
-	if info.boss or #credit == 0 then
+	if info.boss or info.noLoot or #credit == 0 then
 		return
 	end
 	-- One roll per monster with the top damage dealer's bonuses and class preference (also in a party,

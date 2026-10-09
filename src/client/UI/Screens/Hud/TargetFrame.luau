@@ -118,8 +118,10 @@ local function TargetFrame(scope: Scope, props: Props): Instance
 		Size = UDim2.fromOffset(420, 92),
 		BackgroundColor3 = Theme.Colors.Panel,
 		BackgroundTransparency = 0.12,
+		-- A dungeon boss has its own bar at the top of the screen (DungeonController), so no second frame for it.
 		Visible = scope:Computed(function(use): boolean
-			return use(info) ~= nil
+			local i = use(info)
+			return i ~= nil and i.variant ~= "boss"
 		end),
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),

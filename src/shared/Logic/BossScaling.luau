@@ -24,7 +24,8 @@ function BossScaling.phaseFor(hpFraction: number, thresholds: { number }): numbe
 	return phase
 end
 
--- Kills of this boss today (S30: runs store { day = UTC day number, n = kills that day }).
+-- Attempts at this boss today (S30: runs store { day = UTC day number, n = attempts that day }). Since 2026-10-10 a
+-- failed run (timeout or wipe) uses an attempt too; `k` counts the kills only (older entries: k = n).
 function BossScaling.runsToday(runs: { [string]: Types.BossRun }?, bossId: string, now: number): number
 	local entry = runs and runs[bossId]
 	if type(entry) ~= "table" or entry.day ~= Time.dayNumber(now) then
@@ -33,14 +34,32 @@ function BossScaling.runsToday(runs: { [string]: Types.BossRun }?, bossId: strin
 	return math.max(0, tonumber(entry.n) or 0)
 end
 
--- Whether the character used all its kills of this boss today (`limit` defaults to Config.Boss.dailyRuns).
+-- Kills of this boss today (they raise the Legendary / Mythic chances; a failed attempt does not).
+function BossScaling.killsToday(runs: { [string]: Types.BossRun }?, bossId: string, now: number): number
+	local entry = runs and runs[bossId]
+	if type(entry) ~= "table" or entry.day ~= Time.dayNumber(now) then
+		return 0
+	end
+	return math.max(0, tonumber(entry.k) or tonumber(entry.n) or 0)
+end
+
+-- Whether the character used all its attempts at this boss today (`limit` defaults to Config.Boss.dailyRuns).
 function BossScaling.isLocked(runs: { [string]: Types.BossRun }?, bossId: string, now: number, limit: number?): boolean
 	return BossScaling.runsToday(runs, bossId, now) >= (limit or Config.Boss.dailyRuns)
 end
 
--- The runs entry after one more kill now.
-function BossScaling.addRun(runs: { [string]: Types.BossRun }?, bossId: string, now: number): Types.BossRun
-	return { day = Time.dayNumber(now), n = BossScaling.runsToday(runs, bossId, now) + 1 }
+-- The runs entry after one more attempt now (`killed` = the boss died, which also counts a kill).
+function BossScaling.addRun(
+	runs: { [string]: Types.BossRun }?,
+	bossId: string,
+	now: number,
+	killed: boolean?
+): Types.BossRun
+	return {
+		day = Time.dayNumber(now),
+		n = BossScaling.runsToday(runs, bossId, now) + 1,
+		k = BossScaling.killsToday(runs, bossId, now) + (if killed == false then 0 else 1),
+	}
 end
 
 -- Seconds until the daily reset (00:00 UTC).

@@ -165,15 +165,26 @@ local function build(model: Model)
 	end)
 	local trail =
 		scope:Tween(ratio, TweenInfo.new(0.45, Enum.EasingStyle.Quad, Enum.EasingDirection.In, 0, false, 0.15))
+	-- The plate follows a replaced Head (avatar rebuilds, cosmetics) instead of vanishing with the old one.
+	local adornee = scope:Value(head :: Instance?)
+	table.insert(
+		scope,
+		model.ChildAdded:Connect(function(child)
+			if child.Name == "Head" and child:IsA("BasePart") then
+				adornee:set(child)
+			end
+		end)
+	)
 
 	scope:New("BillboardGui")({
 		Name = `Nameplate_{model.Name}`,
 		Parent = folder,
-		Adornee = head,
-		-- FIX 2026-10-09: your own plate stays on top (hair and hats hid it).
+		Adornee = adornee,
+		-- FIX 2026-10-09: your own plate stays on top (hair and hats hid it); 2026-10-10: and has no distance limit
+		-- (the camera zooms out further than MAX_DISTANCE, which hid it).
 		AlwaysOnTop = isLocal,
 		LightInfluence = 0,
-		MaxDistance = MAX_DISTANCE,
+		MaxDistance = if isLocal then math.huge else MAX_DISTANCE,
 		Size = UDim2.fromOffset(260, 92),
 		ResetOnSpawn = false,
 		StudsOffsetWorldSpace = Vector3.new(0, 3.1, 0),

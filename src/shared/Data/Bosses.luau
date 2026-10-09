@@ -8,7 +8,9 @@
 --   count  how many targets get their own area (random targets without repeats)
 --   phases in which phases (1..3) the attack is used; `cooldown` seconds between uses
 --   leap   the boss jumps to the area when it lands
--- Phase thresholds are HP fractions. `summons` happen when a phase starts (and every `every` seconds).
+-- Phase thresholds are HP fractions. `summons` happen when a phase starts (and every `every` seconds). Since
+-- 2026-10-10 every wave is a shield wave: ~10 helpers (+ SUMMON_PER_PLAYER per extra player) attack at once and the
+-- boss is invulnerable and holds still at the arena centre until all of them are dead; helpers drop nothing.
 
 export type Attack = {
 	id: string,
@@ -122,7 +124,8 @@ boss({
 		},
 	},
 	summons = {
-		{ phase = 2, monster = "goblinScout", level = 18, count = 4, every = 20 },
+		{ phase = 2, monster = "goblinScout", level = 19, count = 10, shield = true },
+		{ phase = 3, monster = "goblinScout", level = 20, count = 10, shield = true },
 	},
 	haste = { [3] = 1.25 },
 	enrageAfter = 600,
@@ -195,7 +198,8 @@ boss({
 		},
 	},
 	summons = {
-		{ phase = 2, monster = "skeletonGuard", level = 43, count = 2, shield = true },
+		{ phase = 2, monster = "skeletonGuard", level = 44, count = 10, shield = true },
+		{ phase = 3, monster = "skeletonGuard", level = 45, count = 10, shield = true },
 	},
 	enrageAfter = 600,
 	enrageDamage = 1.6,
@@ -268,7 +272,10 @@ boss({
 			damageKind = "magic",
 		},
 	},
-	summons = { { phase = 2, monster = "fireGolem", level = 66, count = 2, every = 30 } },
+	summons = {
+		{ phase = 2, monster = "fireGolem", level = 69, count = 10, shield = true },
+		{ phase = 3, monster = "fireGolem", level = 70, count = 10, shield = true },
+	},
 	haste = { [3] = 1.2 },
 	enrageAfter = 600,
 	enrageDamage = 1.6,
@@ -349,7 +356,10 @@ boss({
 			damageKind = "magic",
 		},
 	},
-	summons = { { phase = 2, monster = "dragonspawn", level = 95, count = 3, every = 35 } },
+	summons = {
+		{ phase = 2, monster = "dragonspawn", level = 99, count = 10, shield = true },
+		{ phase = 3, monster = "dragonspawn", level = 100, count = 10, shield = true },
+	},
 	haste = { [3] = 1.2 },
 	enrageAfter = 600,
 	enrageDamage = 1.6,
@@ -377,4 +387,6 @@ return table.freeze({
 	ENTRY_RANGE = 20, -- members this close to the leader enter with them
 	RELEASE_AFTER = 60, -- seconds after the kill
 	COUNTDOWN = 5, -- seconds before the boss appears
+	TIME_WARNINGS = { 5, 1 }, -- minutes left when the fighters get a warning
+	SUMMON_PER_PLAYER = 2, -- extra helpers per wave for every player above the first
 })

@@ -1081,3 +1081,16 @@
   który mieści się w 100 (10/10 na poz. 93); test pilnuje, że każda umiejętność dochodzi do maksimum.
 - **FIX 2026-10-09** Prawdziwe modele broni: `WeaponLooks.assets` (id przedmiotu → MeshPart w `Assets.Weapons`), próbnie
   `sword1h_1` = `sword1` (Tripo, uproszczony do 9 tys. trójkątów); import opisany w `docs/ASSETS.md` → „Broń”.
+- **FIX 2026-10-10** Walka z bossem: limit 15 min widoczny pod paskiem bossa („Pozostały czas”, żółty < 3 min, czerwony
+  < 1 min) + ostrzeżenia na 5 i 1 min (`Bosses.TIME_WARNINGS`). Porażka (czas albo wszyscy padli) zużywa dzienną próbę
+  każdego uczestnika, ale nie dodaje zabicia: `bossRuns[id] = { day, n = próby, k = zabicia }`, szansa na legendę / mityka
+  liczy się z `k` (`BossScaling.killsToday`, stare wpisy: k = n). Nadpisuje DESIGN §16.
+- **FIX 2026-10-10** Fale bossa: każdy boss ma 2 fale tarczowe (początek fazy 2 i 3) po 10 pomocników (+2 na każdego
+  gracza ponad 1, `Bosses.SUMMON_PER_PLAYER`) na poziomie bossa −1 / bossa; od razu atakują walczących. Dopóki żyje
+  choć jeden, boss jest nietykalny, stoi w środku areny i nie atakuje. Fale co `every` usunięte z danych.
+- **FIX 2026-10-10** Pomocnicy bossa (`monster.summoned`) nie dają przedmiotów ani złota (EXP zostaje). Bez paska
+  celu dla bossa (`TargetFrame` ukryty dla wariantu `boss`, jest pasek u góry).
+- **FIX 2026-10-10** Sklep premium: plecaki 100 / 150 / 200 miejsc za 300 / 600 / 1000 Smoczych Odłamków
+  (`backpack_premium_*`, bez wymogu poziomu, nie do sprzedania kupcom). Odstępstwo od „bez pay-to-win” na życzenie właściciela.
+- **FIX 2026-10-10** Własna tabliczka nad postacią bez limitu odległości (kamera oddala się dalej niż 80 studów) i
+  podąża za podmienioną głową.

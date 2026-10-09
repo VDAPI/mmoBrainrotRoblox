@@ -18,6 +18,14 @@ local DEFS: { { capacity: number, level: number, buyPrice: number, color: string
 	{ capacity = 200, level = 80, buyPrice = 1200000, color = "#E8C25A" },
 }
 
+-- 2026-10-10: backpacks from the premium shop (Data/Products, Dragon Shards): no level requirement, never sold by
+-- the backpack merchant (buyPrice 0) nor bought by any merchant (noSell; the value only shows in the tooltip).
+local PREMIUM: { { capacity: number, color: string } } = {
+	{ capacity = 100, color = "#5FD3C4" },
+	{ capacity = 150, color = "#C77BFF" },
+	{ capacity = 200, color = "#FF6FAE" },
+}
+
 local LIST: { Types.ItemDef } = {}
 for _, def in DEFS do
 	local id = `backpack_{def.capacity}`
@@ -34,6 +42,24 @@ for _, def in DEFS do
 		price = def.value or math.floor(def.buyPrice / 4),
 		buyPrice = def.buyPrice,
 		capacity = def.capacity,
+	})
+end
+for _, def in PREMIUM do
+	local id = `backpack_premium_{def.capacity}`
+	table.insert(LIST, {
+		id = id,
+		category = "backpack",
+		type = "backpack",
+		slot = "backpack",
+		level = 1,
+		stackable = false,
+		maxStack = 1,
+		nameKey = `item.{id}.name`,
+		icon = { glyph = "▣", color = def.color },
+		price = def.capacity * 10,
+		buyPrice = 0,
+		capacity = def.capacity,
+		noSell = true,
 	})
 end
 

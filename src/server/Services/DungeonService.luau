@@ -76,6 +76,7 @@ type Run = {
 	cleared: boolean,
 	releaseAt: number?,
 	lastState: number,
+	warned: { [number]: boolean }, -- time-left warnings already sent (minutes)
 }
 
 local PlayerStateService: any
@@ -178,8 +179,25 @@ local function finish(run: Run)
 	runs[run.region] = nil
 end
 
+-- A failed run (timeout or wipe) uses one of today's attempts of everyone who entered, without a kill (no bonus to
+-- the Legendary / Mythic chances).
+local function useAttempt(run: Run)
+	local now = Clock.now()
+	for _, member in run.members do
+		local char = member.Parent and character(member)
+		if char then
+			PlayerStateService.Set(
+				member,
+				{ "character", "bossRuns", run.def.id },
+				BossScaling.addRun(char.bossRuns, run.def.id, now, false)
+			)
+		end
+	end
+end
+
 local function fail(run: Run, key: string)
 	log:info("%s dungeon failed (%s)", run.region, key)
+	useAttempt(run)
 	announce(run, key, { boss = `@{run.def.nameKey}` })
 	task.delay(2.5, function()
 		if runs[run.region] == run then
@@ -210,11 +228,12 @@ local function reward(run: Run, position: Vector3)
 	for i, player in winners do
 		local char = character(player)
 		if char then
-			local killsToday = BossScaling.runsToday(char.bossRuns, def.id, now)
+			local killsToday = BossScaling.killsToday(char.bossRuns, def.id, now)
+			local runsToday = BossScaling.runsToday(char.bossRuns, def.id, now)
 			PlayerStateService.Set(
 				player,
 				{ "character", "bossRuns", def.id },
-				BossScaling.addRun(char.bossRuns, def.id, now)
+				BossScaling.addRun(char.bossRuns, def.id, now, true)
 			)
 			local exp = math.floor(baseExp * Exp.levelDiffMultiplier(char.level, def.level) + 0.5)
 			LevelService.GiveExp(player, exp, "boss")
@@ -270,7 +289,7 @@ local function reward(run: Run, position: Vector3)
 					gotMyth = gotMyth,
 					leg = chances.legendary,
 					myth = chances.mythic,
-					runs = killsToday + 1,
+					runs = runsToday + 1,
 					dailyRuns = Config.Boss.dailyRuns,
 				},
 			})
@@ -368,6 +387,7 @@ local function start(region: string, leader: Player, members: { Player }): Run
 		cleared = false,
 		releaseAt = nil,
 		lastState = 0,
+		warned = {},
 	}
 	runs[region] = run
 	for i, member in members do
@@ -426,7 +446,7 @@ local function info(player: Player, region: string): (boolean, string?, any)
 	local members = {}
 	local self = character(player)
 	local now = Clock.now()
-	local chances = Loot.bossChances(def.id, if self then BossScaling.runsToday(self.bossRuns, def.id, now) else 0)
+	local chances = Loot.bossChances(def.id, if self then BossScaling.killsToday(self.bossRuns, def.id, now) else 0)
 	local leaderRoot = player.Character and player.Character:FindFirstChild("HumanoidRootPart") :: BasePart?
 	for _, member in PartyService.Members(player) do
 		local reason, lockLeft = blocker(member, def)
@@ -540,6 +560,15 @@ local function step()
 		end
 		if now >= run.deadline then
 			fail(run, "dungeon.timeout")
+			continue
+		end
+		if run.boss then
+			for _, minutes in Bosses.TIME_WARNINGS do
+				if not run.warned[minutes] and run.deadline - now <= minutes * 60 then
+					run.warned[minutes] = true
+					announce(run, "dungeon.timeWarning", { minutes = minutes, boss = `@{run.def.nameKey}` })
+				end
+			end
 		end
 	end
 end

@@ -56,7 +56,7 @@ local function bossBar(): Instance
 		Name = "BossBar",
 		AnchorPoint = Vector2.new(0.5, 0),
 		Position = UDim2.new(0.5, 0, 0, 16),
-		Size = UDim2.fromOffset(720, 74),
+		Size = UDim2.fromOffset(720, 84),
 		BackgroundTransparency = 1,
 		Visible = scope:Computed(function(use): boolean
 			return type(use(boss)) == "table"
@@ -119,21 +119,30 @@ local function bossBar(): Instance
 					}),
 				},
 			}),
+			-- The fight lasts at most Bosses.timeLimit; the time left turns yellow under 3 min and red under 1 min.
 			scope:New("TextLabel")({
-				Position = UDim2.fromOffset(0, 56),
-				Size = UDim2.new(1, 0, 0, 18),
+				Position = UDim2.fromOffset(0, 58),
+				Size = UDim2.new(1, 0, 0, 26),
 				BackgroundTransparency = 1,
 				Text = scope:Computed(function(use): string
 					local b = use(boss)
 					if type(b) ~= "table" then
 						return ""
 					end
-					return `⌛ {Time.format(Time.remaining(b.endsAt or 0, use(now)))}`
+					local left = Time.format(Time.remaining(b.endsAt or 0, use(now)))
+					return `⌛ {Text.get(use, "boss.timeLeft", { time = left })}`
 				end),
-				FontFace = Theme.Fonts.BodyBold,
-				TextSize = 15,
-				TextColor3 = Theme.Colors.Parchment,
-				TextStrokeTransparency = 0.4,
+				FontFace = Theme.Fonts.Heading,
+				TextSize = 22,
+				TextColor3 = scope:Computed(function(use): Color3
+					local b = use(boss)
+					local left = if type(b) == "table" then Time.remaining(b.endsAt or 0, use(now)) else math.huge
+					return if left <= 60
+						then Theme.Colors.Danger
+						elseif left <= 180 then Theme.Colors.Warning
+						else Theme.Colors.Parchment
+				end),
+				TextStrokeTransparency = 0.25,
 			}),
 		},
 	})

@@ -3203,3 +3203,18 @@ prawdziwych modeli broni w `EquipmentService` (`WeaponLooks.assets`). `.glb` w `
 10. Umiejętność z odblok. 75 (np. Burza meteorów): 10/10 dostępne od poz. 93.
 11. Zabij Elitę II: w prawym dolnym rogu odliczanie mm:ss; po 0 „może się pojawić w każdej chwili”.
 12. Po imporcie `sword1` (ASSETS → „Broń”): nowy wojownik trzyma ten miecz, ostrze do przodu, dłoń na rękojeści.
+
+### Poprawki 2026-10-10 (zgłoszenia właściciela)
+
+| # | Zgłoszenie | Zmiana |
+|---|---|---|
+| 1 | Timer walki z bossem, porażka po 15 min | Duży licznik pod paskiem + ostrzeżenia 5 / 1 min; porażka zużywa próbę bez premii do szansy |
+| 2 | Podwójny pasek HP bossa | Ramka celu ukryta dla bossa |
+| 3 | Trudniejsze fale, boss nietykalny do końca fali | 2 fale po 10+ pomocników, atakują od razu, boss stoi w środku i nie bije |
+| 4 | Pomocnicy bez łupu | Bez przedmiotów i złota |
+| 5 | Nazwa / poziom / VIP nad własną postacią | Brak limitu odległości, śledzenie głowy |
+| 6 | Plecaki 100 / 150 / 200 w sklepie | Sklep premium (Smocze Odłamki) |
+
+Pliki: `Logic/BossScaling`, `Data/Bosses`, `Data/Items/Backpacks`, `Data/Products`, `Entities/Boss`, `Entities/Monster`,
+`DungeonService`, `CombatService`, `LootService`, `Admin/Monsters`, `DungeonController`, `NameplateController`,
+`Hud/TargetFrame`, `PremiumShop`, `DungeonWindow`, `WorldMap/CreatureCards`, lokalizacja, testy `party` / `data`, dane wiki.

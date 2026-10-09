@@ -40,6 +40,10 @@ local SHOP: { ShopEntry } = {
 	{ key = "scroll_unbind", kind = "item", itemId = "scroll_unbind", price = 150 },
 	{ key = "scroll_protection", kind = "item", itemId = "scroll_protection", price = 60, dailyLimit = 5 },
 	{ key = "rename", kind = "rename", price = 400 },
+	-- 2026-10-10: big backpacks without the level requirement.
+	{ key = "backpack_premium_100", kind = "item", itemId = "backpack_premium_100", price = 300 },
+	{ key = "backpack_premium_150", kind = "item", itemId = "backpack_premium_150", price = 600 },
+	{ key = "backpack_premium_200", kind = "item", itemId = "backpack_premium_200", price = 1000 },
 }
 
 local packByKey: { [string]: ShardPack } = {}

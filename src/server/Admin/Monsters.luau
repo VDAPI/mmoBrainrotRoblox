@@ -227,7 +227,8 @@ commands.bosspity = function(player, args)
 		-- FIX 2026-10-09: sets today's kills (they raise the Legendary / Mythic chances).
 		local kills = parseAmount(args[2])
 		if bossId and kills then
-			local value = { day = Time.dayNumber(Clock.now()), n = math.clamp(kills, 0, 100) }
+			local value =
+				{ day = Time.dayNumber(Clock.now()), n = math.clamp(kills, 0, 100), k = math.clamp(kills, 0, 100) }
 			PlayerStateService.Set(player, { "character", "bossRuns", bossId }, value)
 			character = PlayerStateService.GetCharacter(player)
 		end
@@ -241,7 +242,7 @@ commands.bosspity = function(player, args)
 		local now = Clock.now()
 		for _, id in ids do
 			local runs = BossScaling.runsToday(character.bossRuns, id, now)
-			local chances = Loot.bossChances(id, runs)
+			local chances = Loot.bossChances(id, BossScaling.killsToday(character.bossRuns, id, now))
 			reply(player, "admin.bosspity.line", {
 				boss = id,
 				legChance = math.floor(chances.legendary * 100 + 0.5),

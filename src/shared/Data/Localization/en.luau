@@ -632,6 +632,9 @@ return {
 	["item.backpack_130.name"] = "Adventurer's Backpack",
 	["item.backpack_160.name"] = "Royal Backpack",
 	["item.backpack_200.name"] = "Dragonhide Backpack",
+	["item.backpack_premium_100.name"] = "Wanderer's Backpack (100)",
+	["item.backpack_premium_150.name"] = "Caravan Backpack (150)",
+	["item.backpack_premium_200.name"] = "Dragon Chest (200)",
 
 	-- Uniques (DESIGN §5.2)
 	["item.unique_grimrok_cleaver.name"] = "Grimrok's Cleaver",
@@ -1417,7 +1420,9 @@ return {
 	["dungeon.countdown"] = "{boss} awakens in {seconds} s...",
 	["dungeon.victory"] = "{boss} has fallen!",
 	["dungeon.wiped"] = "Your group has fallen. {boss} returns to its throne.",
-	["dungeon.timeout"] = "Time is up. {boss} drives you out.",
+	["dungeon.timeout"] = "Time is up. {boss} drives you out. The attempt counts, the legendary chance stays the same.",
+	["dungeon.timeWarning"] = "{minutes} min left to defeat {boss}!",
+	["boss.timeLeft"] = "Time left: {time}",
 	["announce.boss"] = "⚔ {name}'s group has defeated {boss}!",
 	["boss.phase"] = "Phase {phase}/3",
 	["boss.enraged"] = "ENRAGED",

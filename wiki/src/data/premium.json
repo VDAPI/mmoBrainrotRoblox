@@ -10,6 +10,9 @@
     {"item":"scroll_skillreset","key":"scroll_skillreset","kind":"item","name":{"en":"Scroll of Rebirth","pl":"Zwój Odrodzenia Umiejętności"}},
     {"item":"scroll_unbind","key":"scroll_unbind","kind":"item","name":{"en":"Scroll of Unbinding","pl":"Zwój Rozwiązania"}},
     {"dailyLimit":5,"item":"scroll_protection","key":"scroll_protection","kind":"item","name":{"en":"Scroll of Protection","pl":"Zwój Ochrony"}},
-    {"desc":{"en":"A new unique name for the active character.","pl":"Nowe, unikalne imię aktywnej postaci."},"key":"rename","kind":"rename","name":{"en":"Rename character","pl":"Zmiana imienia"}}
+    {"desc":{"en":"A new unique name for the active character.","pl":"Nowe, unikalne imię aktywnej postaci."},"key":"rename","kind":"rename","name":{"en":"Rename character","pl":"Zmiana imienia"}},
+    {"item":"backpack_premium_100","key":"backpack_premium_100","kind":"item","name":{"en":"Wanderer's Backpack (100)","pl":"Plecak Wędrowca (100)"}},
+    {"item":"backpack_premium_150","key":"backpack_premium_150","kind":"item","name":{"en":"Caravan Backpack (150)","pl":"Plecak Kupca Karawan (150)"}},
+    {"item":"backpack_premium_200","key":"backpack_premium_200","kind":"item","name":{"en":"Dragon Chest (200)","pl":"Smoczy Kufer (200)"}}
   ]
 }

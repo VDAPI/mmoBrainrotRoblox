@@ -305,7 +305,8 @@ function CreatureCards.dungeon(ctx: Context, region: string): Spec?
 	local runs = State.Get({ "character", "bossRuns" })
 	local done = BossScaling.runsToday(if type(runs) == "table" then runs else nil, boss.id, now)
 	local limit = Config.Boss.dailyRuns
-	local chances = Loot.bossChances(boss.id, done)
+	local chances =
+		Loot.bossChances(boss.id, BossScaling.killsToday(if type(runs) == "table" then runs else nil, boss.id, now))
 	local lines: { DetailCard.Line } = {
 		{
 			text = T("worldmap.card.required", { level = required }),

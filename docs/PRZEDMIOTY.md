@@ -1,7 +1,7 @@
 # Vaelthorn: przedmioty
 
 > Plik generowany: `lune run tools/wikidump.luau` (dane gry, te same co wiki). Nie edytuj ręcznie.
-> Odcisk danych cbb4b324 (`wiki/src/data/meta.json`).
+> Odcisk danych 0fceae8e (`wiki/src/data/meta.json`).
 
 ## Rzadkości
 
@@ -1126,6 +1126,9 @@ Legendarne i Mityczne przedmioty dają też osobiste rzuty bossów (S30), a nazw
 | Plecak Wędrowca | Plecak | 8 | 45 miejsc | — | 375 |
 | Plecak Łowcy | Plecak | 15 | 60 miejsc | — | 1250 |
 | Wzmocniony Plecak | Plecak | 25 | 80 miejsc | — | 7500 |
+| Plecak Wędrowca (100) | Plecak | 1 | 100 miejsc | — | 1000 |
+| Plecak Kupca Karawan (150) | Plecak | 1 | 150 miejsc | — | 1500 |
+| Smoczy Kufer (200) | Plecak | 1 | 200 miejsc | — | 2000 |
 | Błogosławieństwo Fortuny | Mikstura | 1 | — | — | 20 |
 | Błogosławieństwo Fortuny | Mikstura | 1 | — | — | 80 |
 | Błogosławieństwo Fortuny | Mikstura | 1 | — | — | 180 |

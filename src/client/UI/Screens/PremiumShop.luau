@@ -182,7 +182,7 @@ local function servicesTab(scope: Scope, props: Props): { Instance }
 				card(
 					scope,
 					i,
-					"📜",
+					if string.sub(itemId, 1, 9) == "backpack_" then "🎒" else "📜",
 					scope:Computed(function(use): string
 						return ItemText.get(use, itemId)
 					end),

@@ -27,6 +27,7 @@ jaskiń, FIX 2026-10-09. Faza teraz: **gameplay**; testy i strojenie po nim.
   panelu admina tylko lokalny. `/tparea` bez filtra po mapie. Ikony `crow_feather`, `toad_venom` to aliasy; brak ikon
   walut przy cenach. Mapa świata: budowle Łąk bez ikon, timer Elity II tylko tekstem.
 - **Prawdziwe modele**: dodatki Elit i nakrycia bossów nie montują się na `Attachment` modelu z assetu.
+- **Na koniec (właściciel, 2026-10-10)**: garderoba graficznie; animacje umiejętności.
 - **Świat (kosmetyka, niski priorytet)**: listy „nie zrobione z planu” S45–S51 w `docs/SESJE.md` (reakcje sal na fazy
   bossów, drobne animacje dekoracji, nowe szablony `DecorController`, `crackFields`, `spurs`, zaspy w rzeźbie).
   Wspólne `Logic/TerrainLines` (algorytmy skopiowane między generatorami) i Łąki na `WorldLifeController`.

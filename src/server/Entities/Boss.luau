@@ -3,7 +3,8 @@
 -- Entities/Monster). This module adds:
 --   * phases by HP thresholds (Data/Bosses), with a per-boss script hook (Entities/BossScripts/<id>),
 --   * the attack schedule: telegraphed areas on chosen targets, resolved after the windup,
---   * summons when a phase starts (optionally repeated, optionally shielding the boss while alive),
+--   * summons when a phase starts (optionally repeated, optionally shielding the boss while alive); helpers attack
+--     the fighters at once and drop nothing; a shielded boss holds still at the arena centre without attacking,
 --   * phase haste and the enrage after `enrageAfter` seconds,
 --   * the Phase attribute (clients tint the look per Data/MonsterLooks phases, S24).
 -- Services are injected (DungeonService), so the module never requires them.
@@ -52,6 +53,7 @@ export type Boss = typeof(setmetatable(
 		nextGlobal: number,
 		summons: { any },
 		shielded: { any },
+		players: number,
 		nextSummon: { [number]: number },
 		baseAttack: number,
 		baseInterval: number,
@@ -107,6 +109,7 @@ function Boss.new(def: Bosses.BossDef, players: number, centre: CFrame, services
 		nextGlobal = os.clock() + 4,
 		summons = {},
 		shielded = {},
+		players = math.max(1, players),
 		nextSummon = {},
 		baseAttack = monster.stats.attack,
 		baseInterval = monster.stats.attackInterval,
@@ -133,21 +136,57 @@ local function applySpeed(self: Boss)
 	self.monster.stats.attack = self.baseAttack * (if self.enraged then self.def.enrageDamage else 1)
 end
 
+-- Helpers go straight for the fighters (spread over them) instead of waiting to be hit.
+local function engageFighters(self: Boss, monster: any)
+	for _, player in self.services.fighters() do
+		monster:AddThreat(player, 1 + self.random:NextNumber())
+	end
+end
+
+-- While shielded the boss stands at the arena centre and neither moves nor attacks (a Monster "cast" state that
+-- never ends); `hold = false` gives it back to the chase.
+local function holdStill(self: Boss, hold: boolean)
+	local monster = self.monster
+	local root = monster.root :: BasePart
+	local humanoid = monster.humanoid :: Humanoid
+	if hold then
+		if monster.state ~= "cast" or monster.castEnd ~= math.huge then
+			monster.state = "cast"
+			monster.castArea = nil
+			monster.castEnd = math.huge
+			monster.model:PivotTo(
+				CFrame.new(self.centre.Position + Vector3.new(0, humanoid.HipHeight + root.Size.Y / 2, 0))
+					* root.CFrame.Rotation
+			)
+		end
+		humanoid:MoveTo(root.Position)
+	elseif monster.state == "cast" and monster.castEnd == math.huge then
+		monster.castEnd = 0
+		monster.state = "chase"
+	end
+end
+
 local function spawnSummons(self: Boss, summon: Bosses.Summon)
-	for i = 1, summon.count do
-		local angle = (i / summon.count) * math.pi * 2 + self.random:NextNumber()
-		local at = self.centre * CFrame.new(math.cos(angle) * 14, 0, math.sin(angle) * 14)
+	local count = summon.count + Bosses.SUMMON_PER_PLAYER * (self.players - 1)
+	for i = 1, count do
+		local angle = (i / count) * math.pi * 2 + self.random:NextNumber()
+		local radius = 14 + self.random:NextNumber() * 6
+		local at = self.centre * CFrame.new(math.cos(angle) * radius, 0, math.sin(angle) * radius)
 		local monster = self.services.spawnMonster(summon.monster, summon.level, at)
 		if monster then
+			monster.summoned = true
+			monster.leashRange = self.monster.leashRange
 			table.insert(self.summons, monster)
 			if summon.shield then
 				table.insert(self.shielded, monster)
 			end
+			engageFighters(self, monster)
 		end
 	end
-	if summon.shield then
+	if summon.shield and #self.shielded > 0 then
 		self.monster.invulnerable = true
 		self.monster.model:SetAttribute("Shielded", true)
+		holdStill(self, true)
 	end
 end
 
@@ -300,7 +339,11 @@ function Boss.Step(self: Boss, now: number)
 		if #alive == 0 then
 			monster.invulnerable = false
 			monster.model:SetAttribute("Shielded", nil)
+			holdStill(self, false)
 			self.services.announce(`boss.{self.def.id}.shieldDown`, nil)
+		else
+			-- A stun could have released it; keep it in place.
+			holdStill(self, true)
 		end
 	end
 	-- Repeating summons
@@ -324,8 +367,8 @@ function Boss.Step(self: Boss, now: number)
 	if self.script.onTick then
 		self.script.onTick(self, now)
 	end
-	-- Attacks (only while chasing and not already casting)
-	if monster.state ~= "chase" or now < self.nextGlobal then
+	-- Attacks (only while chasing and not already casting; never behind the helpers' shield)
+	if #self.shielded > 0 or monster.state ~= "chase" or now < self.nextGlobal then
 		return
 	end
 	for _, attack in self.def.attacks do

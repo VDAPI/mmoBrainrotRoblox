@@ -134,8 +134,21 @@ describe("BossScaling", function()
 		expect(BossScaling.isLocked(nil, "grimrok", now)).toBe(false)
 		expect(BossScaling.runsToday({ grimrok = { day = day, n = 2 } }, "grimrok", now)).toBe(2)
 		expect(BossScaling.runsToday({ grimrok = { day = day - 1, n = 2 } }, "grimrok", now)).toBe(0)
-		expect(BossScaling.addRun({ grimrok = { day = day, n = 2 } }, "grimrok", now)).toEqual({ day = day, n = 3 })
-		expect(BossScaling.addRun({ grimrok = { day = day - 1, n = 3 } }, "grimrok", now)).toEqual({ day = day, n = 1 })
+		expect(BossScaling.addRun({ grimrok = { day = day, n = 2 } }, "grimrok", now)).toEqual({
+			day = day,
+			n = 3,
+			k = 3,
+		})
+		expect(BossScaling.addRun({ grimrok = { day = day - 1, n = 3 } }, "grimrok", now)).toEqual({
+			day = day,
+			n = 1,
+			k = 1,
+		})
+		-- A failed attempt uses the limit but adds no kill.
+		local failed = BossScaling.addRun({ grimrok = { day = day, n = 1, k = 1 } }, "grimrok", now, false)
+		expect(failed).toEqual({ day = day, n = 2, k = 1 })
+		expect(BossScaling.killsToday({ grimrok = failed }, "grimrok", now)).toBe(1)
+		expect(BossScaling.runsToday({ grimrok = failed }, "grimrok", now)).toBe(2)
 		expect(BossScaling.isLocked({ grimrok = { day = day, n = 2 } }, "grimrok", now)).toBe(
 			Config.Boss.dailyRuns <= 2
 		)
@@ -194,10 +207,16 @@ describe("Boss data", function()
 		local grimrok = Bosses.get("grimrok")
 		local morvane = Bosses.get("morvane")
 		assert(grimrok and morvane, "bosses")
-		expect(grimrok.summons[1].count).toBe(4)
-		expect(grimrok.summons[1].every).toBe(20)
 		expect((grimrok.haste or {})[3]).toBe(1.25)
-		expect(morvane.summons[1].shield).toBe(true)
+		-- 2026-10-10: every boss calls two shield waves of 10 helpers (phases 2 and 3).
+		for _, def in Bosses.list do
+			expect(#def.summons).toBe(2)
+			for _, summon in def.summons do
+				expect(summon.count).toBe(10)
+				expect(summon.shield).toBe(true)
+				expect(summon.every).toBe(nil)
+			end
+		end
 		local ring = nil
 		for _, attack in morvane.attacks do
 			if attack.shape == "ring" then

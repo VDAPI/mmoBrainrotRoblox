@@ -67,7 +67,8 @@ local function DungeonWindow(scope: Scope, props: Props): Fusion.Child
 		local runs = use(bossRuns)
 		local t = use(now)
 		local done = BossScaling.runsToday(if type(runs) == "table" then runs else nil, boss.id, t)
-		local chances = Loot.bossChances(boss.id, done)
+		local chances =
+			Loot.bossChances(boss.id, BossScaling.killsToday(if type(runs) == "table" then runs else nil, boss.id, t))
 		local runsLine = Text.get(use, "worldmap.card.runsToday", {
 			n = done,
 			limit = Config.Boss.dailyRuns,

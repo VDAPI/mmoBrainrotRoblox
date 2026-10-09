@@ -91,6 +91,8 @@ export type Monster = typeof(setmetatable(
 		-- Centre of the monster's group (S19): wander and leash around it instead of the own spawn point.
 		home: Vector3?,
 		isBoss: boolean?,
+		-- Boss helpers (2026-10-10): no items and no gold when they die.
+		summoned: boolean?,
 		-- S32: highest level of the monster's spawner (drops never get a higher item level).
 		levelCap: number?,
 		-- S22 leash: last hit by a player, last time the monster moved (or attacked) while chasing and where.
@@ -173,6 +175,7 @@ function Monster.new(
 		leashRange = nil,
 		home = nil,
 		isBoss = nil,
+		summoned = nil,
 		levelCap = nil,
 		lastHit = 0,
 		movedAt = 0,
