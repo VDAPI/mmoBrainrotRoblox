@@ -3214,6 +3214,7 @@ prawdziwych modeli broni w `EquipmentService` (`WeaponLooks.assets`). `.glb` w `
 | 4 | Pomocnicy bez łupu | Bez przedmiotów i złota |
 | 5 | Nazwa / poziom / VIP nad własną postacią | Brak limitu odległości, śledzenie głowy |
 | 6 | Plecaki 100 / 150 / 200 w sklepie | Sklep premium (Smocze Odłamki) |
+| 7 | Przesuwanie mapy w lewo / prawo | Przeciąganie było zablokowane przez okno mapy (`WorldMap/Gestures`) |
 
 Pliki: `Logic/BossScaling`, `Data/Bosses`, `Data/Items/Backpacks`, `Data/Products`, `Entities/Boss`, `Entities/Monster`,
 `DungeonService`, `CombatService`, `LootService`, `Admin/Monsters`, `DungeonController`, `NameplateController`,

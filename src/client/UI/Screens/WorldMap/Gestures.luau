@@ -60,7 +60,14 @@ function Gestures.new(scope: Scope, props: Props): Api
 			return false
 		end
 		for _, object in playerGui:GetGuiObjectsAtPosition(position.X, position.Y) do
-			if object.Visible and object ~= view and not object:IsDescendantOf(view) then
+			-- The window and frames holding the view are under every point of the map too: they are not overlays
+			-- (counting them blocked every drag, 2026-10-10).
+			if
+				object.Visible
+				and object ~= view
+				and not object:IsDescendantOf(view)
+				and not view:IsDescendantOf(object)
+			then
 				if
 					object:IsA("GuiButton")
 					or object:IsA("TextBox")

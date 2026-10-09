@@ -1094,3 +1094,5 @@
   (`backpack_premium_*`, bez wymogu poziomu, nie do sprzedania kupcom). Odstępstwo od „bez pay-to-win” na życzenie właściciela.
 - **FIX 2026-10-10** Własna tabliczka nad postacią bez limitu odległości (kamera oddala się dalej niż 80 studów) i
   podąża za podmienioną głową.
+- **FIX 2026-10-10** Mapa świata: przeciąganie mapy działa (okno i ramki zawierające widok nie liczą się już jako panel nad
+  mapą, `Gestures.overOverlay`, co blokowało każde przeciągnięcie).
