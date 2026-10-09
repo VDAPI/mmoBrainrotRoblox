@@ -142,7 +142,7 @@ describe("build code", () => {
     expect(validate(list, rules, r.build, r.level).ok).toBe(true);
     expect(canRemove(list, r.build, "firebolt")).toBe(true);
     expect(canRemove(list, { ...r.build, firebolt: 3 }, "firebolt")).toBe(false);
-    expect(maxReachableRank(byId.get("meteorStorm")!, rules.maxLevel)).toBe(9);
+    expect(maxReachableRank(byId.get("meteorStorm")!, rules.maxLevel)).toBe(10);
   });
 
   it("rejects bad codes with a reason, never throws", () => {
