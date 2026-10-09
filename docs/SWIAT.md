@@ -29,19 +29,19 @@
 | 32–40 | Trolle Bagno | Mroczny Bór |
 | 36–42 | Wiedźmie Moczary | Mroczny Bór |
 | 40–45 | Krwawe Urwiska, **Krypta Zapomnianych** (jaskinia) | Mroczny Bór |
-| 45 | **Boss: Morvane** | Komnata Morvane |
+| 45 | **Boss: Morvane** | Grobowiec Morvane |
 | 45–52 | Równiny Salamander, Martwa Oaza | Spalone Pustkowia |
 | 48–56 | Obóz Popielnych Orków, **Opuszczona Kopalnia** (jaskinia 49–56) | Spalone Pustkowia |
 | 52–63 | Pola Golemów, Spalone Ruiny, Wydmy Skorpionów, **Leże Wywerny** (jaskinia 56–63) | Spalone Pustkowia |
 | 58–67 | Turnie Wywern, Szlak Popiołu | Spalone Pustkowia |
 | 63–70 | Grobowce Pustyni, **Kuźnia Głębin** (jaskinia) | Spalone Pustkowia |
-| 70 | **Boss: Azgor** | Komnata Azgora |
+| 70 | **Boss: Azgor** | Palenisko Azgora |
 | 70–75 | Dolina Lodowych Wilków | Lodowe Szczyty |
 | 74–83 | Zbocza Yeti, Skały Harpii, **Lodowa Grota** (jaskinia) | Lodowe Szczyty |
 | 78–92 | Przełęcz Olbrzymów, Zamarznięte Jezioro, Mamucia Tundra, **Zamarznięta Twierdza** (jaskinia 83–92) | Lodowe Szczyty |
 | 85–95 | Ruiny Smoczej Świątyni, Lodowa Strażnica | Lodowe Szczyty |
 | 92–100 | Iglica Wyrmów, **Serce Lodowca** (jaskinia) | Lodowe Szczyty |
-| 100 | **Boss: Vaelgrath** | Komnata Vaelgratha |
+| 100 | **Boss: Vaelgrath** | Leże Vaelgratha |
 
 ## 2. Potwory (wszystkie rodzaje)
 
@@ -327,9 +327,9 @@ W każdej: 2–3 rodzaje zwykłych potworów, **2 rodzaje Elit** (3–5 grup po 
 | Opuszczona Kopalnia / Abandoned Mine | 49–56 | Ork Popiołu, Hiena Pustkowi, Sęp Popiołu | Ork Berserker, Hiena Śmiechu | Wódz Popiołu | Srebro, Mithril | krasnoludzka kopalnia zajęta przez orków (S50): tory prowadzą w głąb, Nadszybie z barykadą z wózków, Hala Wyciągu z wieżą i klatką wiszącą krzywo w szybie, Obóz w Komorze Pomp z kołem pompy i namiotami, **Sala Wodza** z tronem z wózka przed świecącą żyłą mithrilu i szybem sępów, Psiarnia przy przebiciu do magmy |
 | Leże Wywerny / Wyvern Lair | 56–63 | Wywerna, Ognisty Chochlik, Skorpion Pustyni | Wywerna Popiołu, Skorpion Królewski | Królowa Wywern | Srebro, Mithril | wulkaniczna jaskinia otwarta do nieba (S50): Osmalona Paszcza z pękniętym jajem, Kominy Chochlików z jeziorkiem lawy i fumarolą, Piaskowe Gniazda ze strugą piasku przez otwór i norami skorpionów, Grzędy Wywern z wielkim otworem i gniazdami na półkach, Spiżarnia z rozbitym wozem i świecącą szczeliną, **Gniazdo Królowej**: świecące jaja na kopcu w kręgu lawy pod kominem |
 | Kuźnia Głębin / Deepforge | 63–70 | Krasnolud Renegat, Golem Magmowy, Kowal Płomieni | ⚑ Krasnolud Weteran, Golem Lawy | Pierwszy Kowal / Serce Wulkanu | Mithril, Adamantyt · **loch Azgora (70)** | krasnoludzka kuźnia zajęta przez renegatów (S50): Wrota Głębin z klęczącymi królami i błękitnymi runami, **Wielka Kuźnia** (ośmiokątna hala, 4 zatoki kuźni, posągi królów ze skutymi twarzami, Wielki Tygiel na łańcuchach), mosty nad Rzeką Ognia w kanionach, Gardziel Magmy z jeziorem lawy i golemami, Huta z kaskadą metalu do form, Odlewnia Golemów, Zbrojownia ze skrzyniami broni dla smoka, **Serce Kuźni** (kula magmy w klatce z łańcuchów), Przedsionek z płonącym znakiem Azgora |
-| Lodowa Grota / Ice Grotto | 74–83 | Lodowy Wilk (74–78), Yeti, Lampart (74–78) | Wilk Zamieci, Yeti Starszy | Król Gór / Biały Kieł | Mithril | — |
-| Zamarznięta Twierdza / Frozen Hold | 83–92 | Zamarznięty Rycerz (88–92), Mroźny Olbrzym (83–88), Lodowy Żywiołak | Rycerz Szronu, Olbrzym Lodowca | Lodowy Komtur / Jarl Mrozu | Mithril | — |
-| Serce Lodowca / Glacier Heart | 92–100 | Kryształowy Strażnik, Młody Smok Lodu, Wyrm Szronu (95–100) | ⚑ Kryształowy Obrońca, Smok Lodu | Starszy Smok Lodu / Kryształowy Tytan | Adamantyt · **loch Vaelgratha (100)** | — |
+| Lodowa Grota / Ice Grotto | 74–83 | Yeti, Lodowy Wilk, Harpia Szczytów | Yeti Starszy, Wilk Zamieci | Król Gór | Mithril, Adamantyt | lodowe nory yeti w lodowcu (S51): Paszcza Sopli z porzuconym obozem traperów i tlącą się latarnią, **Sala Lodospadów** (trzy świecące zamarznięte wodospady, przerębel yeti), **Komin Harpii** (snop księżyca ze śniegiem, gniazda harpii na półkach z linami wspinaczy), Leże Króla Gór z tronem z kłów mamuta i lodowym oknem z zamarzniętym mamutem, Wilcze Legowisko z norami |
+| Zamarznięta Twierdza / Frozen Hold | 83–92 | Zamarznięty Rycerz, Mroźny Olbrzym, Lodowy Żywiołak | Rycerz Lodowej Straży, Olbrzym Lodowca | Komtur Wiecznej Zimy | Mithril, Adamantyt | twierdza zakonu połknięta przez lodowiec (S51): Brama pod Lodem z zamarzniętą kratą i niebieskimi pochodniami, **Wyłom Olbrzymów** (lodowiec wlewa się przez mur, ognisko olbrzymów z ław), Dziedziniec pod Lodowcem z pulsującym Kwiatem Szronu, Kaplica z mieczem w lodzie i lodowymi witrażami, Koszary, **Komnata Komtura** z wysokim krzesłem i Ścianą Poległych |
+| Serce Lodowca / Glacier Heart | 92–100 | Kryształowy Strażnik, Młody Smok Lodu, Wyrm Szronu | ⚑ Kryształowy Obrońca, Smok Lodu | Starszy Smok Lodu / Kryształowy Tytan | Adamantyt, Mithril · **loch Vaelgratha (100)** | wnętrze lodowca, gdzie śpią smoki (S51): prosta Droga Smoka od Rozpadliny ze szczeliną nieba do czerwonej bramy, kryształy pulsują jak bijące serce, Kryształowa Hala z czterema kolosalnymi kryształami, Wylęgarnia z jajami, Lodowe Organy, Nory Wyrmów, Skarbiec Lodu, **Smocza Pieczara** pod żebrami szkieletu smoka, Przedsionek Pazurów ze śladami Vaelgratha |
 
 ## 5. Bossy
 
@@ -338,7 +338,7 @@ W każdej: 2–3 rodzaje zwykłych potworów, **2 rodzaje Elit** (3–5 grup po 
 | Grimrok, Wódz Goblinów | 20 | Jaskinia Mchów → Komnata Grimroka (S48: płaska arena z ubitej ziemi pod kopułą, 10 totemów wojennych z pochodniami, tron ze złomu pod czaszką niedźwiedzia na podeście, galerie z bębnami) | Rozłupywacz Grimroka (topór 1H), Kieł Wodza (pierścień), Totem Plemienia (talizman) |
 | Morvane, Królowa Krypt | 45 | Krypta Zapomnianych → Grobowiec Morvane (S49: czarna posadzka z mozaiką, sarkofagi w arkadach pod nieosiągalną galerią, kosze z upiornym płomieniem, absyda z pustym sarkofagiem i posągiem młodej królowej) | Całun Królowej (zbroja lekka), Berło Krypt (berło), Łuk Zawodzących Cieni (łuk) |
 | Azgor, Pan Płomieni | 70 | Kuźnia Głębin → Palenisko Azgora (S50: płaskie bazaltowe koło w fosie lawy, grobla od wnęki, 10 kolumn-pieców, Gardziel Pieca na północy leje lawę do fosy, rogate dysze i żyły magmy na ścianach, nieosiągalne półki z kowadłami i skutymi krasnoludami) | Płomienne Serce (naszyjnik), Kostur Pożogi (kostur), Hełm Pana Płomieni (hełm ciężki) |
-| Vaelgrath, Smok Mrozu | 100 | Serce Lodowca → Komnata Vaelgratha | Kieł Vaelgratha (miecz 2H), Łuska Smoka Mrozu (tarcza), Oko Zimy (orb) |
+| Vaelgrath, Smok Mrozu | 100 | Serce Lodowca → Leże Vaelgratha (S51: płaska lodowa arena ze spękaniami szronu, cztery koksowniki z kręgami odtajałej skały, korona lodowych kolców, zamrożony skarb i poprzednicy za lodem, gniazdo na półce w księżycowym snopie) | Kieł Vaelgratha (miecz 2H), Łuska Smoka Mrozu (tarcza), Oko Zimy (orb) |
 
 Raz dziennie na postać, grupa 1–5, jedna grupa naraz na serwerze (DESIGN §16). Elita II ma **2%** szansy na unikat bossa swojego regionu.
 

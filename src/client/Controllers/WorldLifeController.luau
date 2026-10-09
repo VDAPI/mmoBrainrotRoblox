@@ -31,6 +31,7 @@
 -- when the player comes close), bats in the high vaults (caves are always "night" for them), crows in the sinkhole.
 -- S50 (caves of the Ashen Wastes): ash falling in the shafts' beams, sand pouring through holes, bursts of forge sparks;
 -- vultures in the mine's shaft (the S46 kinds `vultures` / `vulturePerch`).
+-- S51 (caves of the Frost Peaks): snow in the beams of the shafts and slits, gusts over the floor, glints of ice.
 -- Admin /worldfx <ash|embers|haze|smoke|vultures|devils|lavaglow|snow|drift|aurora|plume|eagles|avalanche|glow|sparks>
 -- <on|off|auto> switches an effect on the caller's client (AdminClient "worldfx").
 -- Only within LIFE_RADIUS; with "World detail" on low there are no animals, half the particles and half the wisps.
@@ -551,6 +552,84 @@ local EMITTERS: { [string]: EmitterKind } = {
 			return if (os.clock() % 2) < 0.6 then 3 else 0
 		end,
 		fx = "sparks",
+	},
+	-- S51: snow falling in the beam of a shaft or slit (flakes drifting down from the point)
+	snowBeam = {
+		size = function(r)
+			return Vector3.new(r * 2, 1, r * 2)
+		end,
+		props = {
+			Color = ColorSequence.new(Color3.fromHex("#F4F8FF")),
+			Transparency = NumberSequence.new({
+				NumberSequenceKeypoint.new(0, 1),
+				NumberSequenceKeypoint.new(0.1, 0.2),
+				NumberSequenceKeypoint.new(0.9, 0.3),
+				NumberSequenceKeypoint.new(1, 1),
+			}),
+			Size = NumberSequence.new(0.25, 0.15),
+			Lifetime = NumberRange.new(6, 9),
+			Speed = NumberRange.new(2.5, 4),
+			SpreadAngle = Vector2.new(12, 12),
+			RotSpeed = NumberRange.new(-60, 60),
+			Acceleration = Vector3.new(0.5, 0, 0.3),
+			LightEmission = 0.4,
+			LightInfluence = 0.5,
+			EmissionDirection = Enum.NormalId.Bottom,
+			Rate = 14,
+		},
+		on = always,
+		rate = same,
+		fx = "snow",
+	},
+	-- S51: gusts of snow blowing over the floor by the entrances
+	snowGust = {
+		size = function(r)
+			return Vector3.new(r * 2, 1, r * 2)
+		end,
+		props = {
+			Color = ColorSequence.new(Color3.fromHex("#EEF3F7")),
+			Transparency = NumberSequence.new({
+				NumberSequenceKeypoint.new(0, 1),
+				NumberSequenceKeypoint.new(0.3, 0.6),
+				NumberSequenceKeypoint.new(1, 1),
+			}),
+			Size = NumberSequence.new(1.5, 4),
+			Lifetime = NumberRange.new(1.5, 2.5),
+			Speed = NumberRange.new(6, 10),
+			SpreadAngle = Vector2.new(20, 5),
+			Acceleration = Vector3.new(0, -1, 0),
+			LightInfluence = 1,
+			EmissionDirection = Enum.NormalId.Right,
+			Rate = 3,
+		},
+		on = always,
+		rate = function(_t)
+			return if (os.clock() % 7) < 2.5 then 2 else 0.2
+		end,
+		fx = "drift",
+	},
+	-- S51: glints on ice and crystals (tiny still sparks)
+	sparkle = {
+		size = function(r)
+			return Vector3.new(r * 2, r, r * 2)
+		end,
+		props = {
+			Color = ColorSequence.new(Color3.fromHex("#E8FBFF")),
+			Transparency = NumberSequence.new({
+				NumberSequenceKeypoint.new(0, 1),
+				NumberSequenceKeypoint.new(0.5, 0),
+				NumberSequenceKeypoint.new(1, 1),
+			}),
+			Size = NumberSequence.new(0.2),
+			Lifetime = NumberRange.new(0.4, 0.8),
+			Speed = NumberRange.new(0, 0),
+			LightEmission = 1,
+			LightInfluence = 0,
+			Rate = 6,
+		},
+		on = always,
+		rate = same,
+		fx = "glow",
 	},
 	-- S48: glow-worms on a cave's vault (still, slowly pulsing points)
 	glowworms = {

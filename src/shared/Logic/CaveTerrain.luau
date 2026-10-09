@@ -15,6 +15,9 @@
 --   rooms                             every room { x, z, r, h, role, fight, core, ... } in that order
 --   voxels(x0, z0, nx, nz, yBottom, ny), outline(step), MATERIALS, HALF, VOXEL, BOTTOM, TOP
 --   lavaDistance(x, z)                S50: distance to the nearest lava of the shape's features (math.huge: none)
+--   icefalls(), windows()             S51: anchors of the frozen waterfalls and of the ice windows for the dressing
+-- S51 ice: a frozen pool (`liquid = "ice"`) is solid Ice floor 0.5 under its shore and walkable (only water is a liquid
+-- for the distance rules); `icefall` puts a frozen pool (and a hole of water) at the foot of a frozen waterfall.
 -- S50 lava: the surface of lava is solid terrain (`materials.lava`, CrackedLava) 1-1.5 studs under its shore, never
 -- Water; `liquid` says { kind = "lava", level } and nothing is walkable on it or within 2 studs. Lava is decoration
 -- (it hurts nobody; the only burning lava is Azgor's disc).
@@ -90,6 +93,8 @@ export type Cave = {
 	inCore: (x: number, z: number) -> boolean,
 	niches: () -> { { x: number, z: number, yaw: number, room: number, tiers: number, w: number, h: number } },
 	lavaDistance: (x: number, z: number) -> number,
+	icefalls: () -> { CaveShapes.Feature },
+	windows: () -> { { x: number, z: number, w: number, h: number, yaw: number } },
 	MATERIALS: { string },
 	HALF: number,
 	VOXEL: number,
@@ -420,10 +425,26 @@ local function build(mapId: string, shape: CaveShapes.Shape): Cave
 		local along = s * td.len
 		-- S50: a carved tunnel (`carved`) runs straight like the masonry ones; `wiggle` overrides the shape's wander
 		local carved = masonry or t.carved == true
-		local wig = if carved then 0 else t.wiggle or wiggle
+		-- S51: `straight` (no sideways wander) and the round `bore` of a wyrm (smooth, no noise)
+		local bore = t.profile == "bore"
+		local wig = if carved or bore or t.straight then 0 else t.wiggle or wiggle
 		local w = wig * math.clamp((fbm(along, td.seed, 36, td.seed, 2) - 0.5) * 4, -1, 1) * math.sin(math.pi * s)
 		-- distance from the winding centre line (w = its sideways shift)
 		local p = math.abs(side * d - w)
+		if bore then
+			-- a round section (height = width) with a flat floor >= 8 studs wide
+			local half = t.w / 2
+			if p >= half then
+				return 0, 0, 0
+			end
+			local flatHalf = math.max(4, half * 0.55)
+			local o = if p <= flatHalf then 1 else math.sqrt(math.max(0, 1 - ((p - flatHalf) / (half - flatHalf)) ^ 2))
+			local fl = lerp(td.fa, td.fb, smoothstep(math.clamp((s - td.s0) / (td.s1 - td.s0), 0, 1)))
+			fl += (1 - o) * half * 0.6
+			local u = math.clamp(p / half, 0, 1)
+			local h = (t.h or t.w) * math.sqrt(math.max(0, 1 - u * u))
+			return math.max(o, 0.03), fl, fl + math.max(h, 2)
+		end
 		if carved then
 			local half = t.w / 2
 			if p >= half then
@@ -547,6 +568,17 @@ local function build(mapId: string, shape: CaveShapes.Shape): Cave
 		return false
 	end
 
+	-- S51: lines of the sky slits and of the painted strips.
+	local slits: { { line: TerrainLayers.Line, f: CaveShapes.Feature } } = {}
+	local paints: { { line: TerrainLayers.Line, f: CaveShapes.Feature } } = {}
+	for _, f in features do
+		if f.kind == "skyhole" and f.points then
+			table.insert(slits, { line = TerrainLayers.line(TerrainLayers.pairs(f.points)), f = f })
+		elseif f.kind == "paint" then
+			table.insert(paints, { line = TerrainLayers.line(TerrainLayers.pairs(f.points)), f = f })
+		end
+	end
+
 	-- The column at (x, z).
 	local function column(x: number, z: number): Column
 		local open, fl, ce = 0, math.huge, -math.huge
@@ -564,6 +596,7 @@ local function build(mapId: string, shape: CaveShapes.Shape): Cave
 				end
 			end
 		end
+		local tunnelMat: string? = nil
 		for _, td in tunnels do
 			local o, f, c = tunnelPart(td, x, z)
 			if o > 0 then
@@ -571,6 +604,9 @@ local function build(mapId: string, shape: CaveShapes.Shape): Cave
 				if o > 0.02 then
 					fl = math.min(fl, f)
 					ce = math.max(ce, c)
+					if td.t.floor and o > best then
+						tunnelMat = td.t.floor
+					end
 				end
 			end
 		end
@@ -581,6 +617,9 @@ local function build(mapId: string, shape: CaveShapes.Shape): Cave
 			if fm then
 				floorMat = fm
 			end
+		elseif tunnelMat then
+			-- S51: a tunnel's own floor material
+			floorMat = tunnelMat
 		end
 		-- a stream carves its own channel
 		local sd, sLevel, sf = streamAt(x, z)
@@ -638,7 +677,12 @@ local function build(mapId: string, shape: CaveShapes.Shape): Cave
 					local d = math.sqrt(dx * dx + dz * dz) + (f.ragged or 0) * (fbm(x, z, 10, SEED + 51, 2) - 0.5) * 2
 					-- S50: a pool of lava has a solid surface LAVA_DROP under its basalt shore
 					local isLava = f.liquid == "lava"
-					local shoreTop = if isLava then f.level + LAVA_DROP else f.level + 0.2
+					-- S51: a frozen pool is solid Ice 0.5 under its shore (walkable)
+					local isIce = f.liquid == "ice"
+					local shoreTop = if isLava
+						then f.level + LAVA_DROP
+						elseif isIce then f.level + 0.5
+						else f.level + 0.2
 					-- S49: a ring of water (`inner`): dry inside, the shore slopes in towards the middle
 					local inner = f.inner or 0
 					if inner > 0 and d < inner then
@@ -649,10 +693,10 @@ local function build(mapId: string, shape: CaveShapes.Shape): Cave
 						-- a dry causeway across the water
 						fl = math.min(fl, if isLava then shoreTop else f.level + 0.6)
 					elseif d < f.r then
-						if isLava then
+						if isLava or isIce then
 							fl = math.min(fl, f.level)
-							liquid = { kind = "lava", level = f.level }
-							floorMat = lavaMat
+							liquid = { kind = f.liquid, level = f.level }
+							floorMat = if isLava then lavaMat else "Ice"
 						else
 							local bed = f.level - f.depth * (1 - (d / f.r) ^ 2) - 0.4
 							fl = math.min(fl, bed)
@@ -705,7 +749,51 @@ local function build(mapId: string, shape: CaveShapes.Shape): Cave
 				end
 			elseif kind == "stalagmites" and not core then
 				if math.abs(x - f.x) < f.r + 8 and math.abs(z - f.z) < f.r + 8 then
-					fl += cones(f, x, z, f.height, SEED + 61)
+					local hgt = cones(f, x, z, f.height, SEED + 61)
+					fl += hgt
+					-- S51: cones of another material (ice spikes)
+					if f.material and hgt > 0.5 then
+						floorMat = f.material
+					end
+				end
+			elseif kind == "icefall" and not core then
+				-- S51: the frozen pool at the foot of a frozen waterfall (solid Ice 0.5 under the floor), a hole of water
+				local dx, dz = x - f.x, z - f.z
+				local pr = f.pool or 7
+				local d = math.sqrt(dx * dx + dz * dz)
+				local hole = f.hole
+				if hole and math.sqrt((x - hole.x) ^ 2 + (z - hole.z) ^ 2) < hole.r then
+					fl = math.min(fl, fl - 1.4)
+					liquid = { kind = "water", level = fl + 1 }
+					floorMat = mats.bed
+				elseif d < pr then
+					fl -= 0.5
+					liquid = { kind = "ice", level = fl }
+					floorMat = "Ice"
+				end
+			elseif kind == "drift" then
+				-- S51: a drift of snow: up to h studs (in a core at most 2 and gentle), Snow on top
+				local dx, dz = x - f.x, z - f.z
+				local d = math.sqrt(dx * dx + dz * dz)
+				if d < f.r then
+					local h = if core then math.min(f.h, 2) else f.h
+					fl += h * (1 - (d / f.r) ^ 2)
+					floorMat = "Snow"
+				end
+			elseif kind == "icewall" and not core then
+				-- S51: a tongue of glacier pressing in by a wall: the floor rises in a mound of Glacier up to h
+				local dx, dz = x - f.x, z - f.z
+				local d = math.sqrt(dx * dx + dz * dz)
+				if d < f.r then
+					fl += f.h * smoothstep(1 - d / f.r)
+					floorMat = mats.glacier or "Glacier"
+				end
+			elseif kind == "paint" then
+				-- S51: a strip of another floor material along a line (a frozen brook, a path): flat, no liquid
+				for _, c in paints do
+					if c.f == f and (TerrainLayers.nearest(c.line, x, z)) < f.width / 2 then
+						floorMat = f.material
+					end
 				end
 			elseif kind == "stalactites" and not core then
 				if math.abs(x - f.x) < f.r + 8 and math.abs(z - f.z) < f.r + 8 then
@@ -792,10 +880,19 @@ local function build(mapId: string, shape: CaveShapes.Shape): Cave
 					end
 				end
 			elseif kind == "skyhole" then
-				local dx, dz = x - f.x, z - f.z
-				local d = math.sqrt(dx * dx + dz * dz)
-				if d < f.r then
-					ce = SKY
+				if f.points then
+					-- S51: a slit of sky along a line (`points`, `width`)
+					for _, c in slits do
+						if c.f == f and (TerrainLayers.nearest(c.line, x, z)) < f.width / 2 then
+							ce = SKY
+						end
+					end
+				else
+					local dx, dz = x - f.x, z - f.z
+					local d = math.sqrt(dx * dx + dz * dz)
+					if d < f.r then
+						ce = SKY
+					end
 				end
 			end
 		end
@@ -847,6 +944,23 @@ local function build(mapId: string, shape: CaveShapes.Shape): Cave
 	if hasLava then
 		matSet[lavaMat] = true
 		matSet[shoreMat] = true
+	end
+	-- S51: ice, snow, glacier and the other floor materials of features and tunnels
+	for _, f in features do
+		if f.kind == "icefall" or (f.kind == "pool" and f.liquid == "ice") then
+			matSet.Ice = true
+		elseif f.kind == "drift" then
+			matSet.Snow = true
+		elseif f.kind == "icewall" then
+			matSet[mats.glacier or "Glacier"] = true
+		elseif (f.kind == "paint" or f.kind == "stalagmites") and f.material then
+			matSet[f.material] = true
+		end
+	end
+	for _, t in corridors do
+		if t.floor then
+			matSet[t.floor] = true
+		end
 	end
 	for _, f in features do
 		if f.bankMat then
@@ -1014,6 +1128,32 @@ local function build(mapId: string, shape: CaveShapes.Shape): Cave
 			best = math.min(best, (TerrainLayers.nearest(c.line, x, z)) - c.half)
 		end
 		return best
+	end
+
+	-- S51: the frozen waterfalls (their features) and the ice windows (`windows` of the icewall features and the
+	-- standalone `window` features): x, z by the wall, width, height, yaw facing into the room.
+	function T.icefalls(): { CaveShapes.Feature }
+		local out = {}
+		for _, f in features do
+			if f.kind == "icefall" then
+				table.insert(out, f)
+			end
+		end
+		return out
+	end
+
+	function T.windows(): { { x: number, z: number, w: number, h: number, yaw: number } }
+		local out = {}
+		for _, f in features do
+			if f.kind == "window" then
+				table.insert(out, { x = f.x, z = f.z, w = f.w or 8, h = f.h or 10, yaw = f.yaw or 0 })
+			elseif f.kind == "icewall" then
+				for _, w in f.windows or {} do
+					table.insert(out, { x = w.x, z = w.z, w = w.w or 8, h = w.h or 10, yaw = w.yaw or 0 })
+				end
+			end
+		end
+		return out
 	end
 
 	-- S49: places of wall niches (`niches` features: rows along a room's walls): x, z on the floor by the wall, yaw

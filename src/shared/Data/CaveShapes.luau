@@ -12,7 +12,8 @@
 --
 -- Fields of an entry:
 --   theme       dressing module (Logic/CaveDress: S48 "Moss", "Smugglers", "Warren", "GoblinThrone"; S49 "Den",
---               "Barrow", "Crypt", "Tomb"; S50 "Mine", "Lair", "Forge", "Furnace")
+--               "Barrow", "Crypt", "Tomb"; S50 "Mine", "Lair", "Forge", "Furnace"; S51 "Grotto", "Hold", "Heart",
+--               "DragonLair")
 --   floorY      floor of the plan (default 0; entrances, the boss antechamber and arenas stay on it)
 --   wall        { amp, scale }: how far the walls bulge out (studs) and the noise scale along the wall
 --   ceiling     { amp, scale }: ceiling noise (studs) outside the cores
@@ -65,6 +66,18 @@
 --   edgeFloors  true: the tunnels' floors blend between the rooms' walls instead of their centres
 --   tunnels[j].carved / wiggle  a dwarven tunnel (straight like masonry) / the wander of one tunnel
 --   rooms[i] carved halls use the S49 plans (`octagon` with the inscribed circle = r, `rect`) and `h` for the dome
+-- S51 (ice; a frozen surface is a walkable floor, only water counts as a liquid for the distance rules):
+--   pool liquid = "ice"   a frozen pool: solid Ice 0.5 under its shore
+--   icefall     { kind, x, z, w, top, pool?, hole? = { x, z, r }, yaw? }: a frozen waterfall by a wall (the curtains and
+--               the glow are the dressing's, T.icefalls()), a frozen pool (r `pool`) at its foot and an ice hole of water
+--   skyhole     points + width: a slit of sky along a line (besides the round { x, z, r })
+--   drift       { kind, x, z, r, h }: a drift of Snow (at most +2 and gentle in a core)
+--   icewall     { kind, x, z, r, h, windows? = { { x, z, w, h, yaw } } }: a tongue of glacier pressing in by a wall (a
+--               mound of Glacier, never in a core); windows = ice panes of the dressing (T.windows())
+--   window      { kind, x, z, w, h, yaw }: an ice window in a wall (the dressing's pane with a silhouette behind)
+--   paint       { kind, points, width, material }: a strip of another floor material (a frozen brook)
+--   stalagmites.material  cones of another material (Ice spikes)
+--   tunnels[j].profile = "bore" (a wyrm's round tunnel), straight, floor (material)
 
 export type RoomShape = {
 	role: string,
@@ -106,6 +119,9 @@ export type Tunnel = {
 	h: number?,
 	carved: boolean?, -- S50: straight, constant width, flat floor, vaulted ceiling (a dwarven tunnel)
 	wiggle: number?, -- S50: sideways wander of this tunnel (default the shape's)
+	profile: string?, -- S51: "bore" = the round smooth tunnel of a wyrm (height = width, flat floor >= 8)
+	straight: boolean?, -- S51: no sideways wander
+	floor: string?, -- S51: floor material of the tunnel
 }
 
 export type Feature = { [string]: any } -- `kind` + the fields of its kind (above)
@@ -118,6 +134,7 @@ export type Materials = {
 	moss: string?,
 	lava: string?, -- S50: the lava's surface (default CrackedLava)
 	shore: string?, -- S50: the rim of the lava (default Basalt)
+	glacier: string?, -- S51: the tongues of glacier (`icewall`, default Glacier)
 }
 
 export type Shape = {
@@ -135,6 +152,7 @@ export type Shape = {
 	extraRooms: { ExtraRoom }?,
 	features: { Feature },
 	arena: { x: number, z: number, r: number }?,
+	braziers: { { number } }?, -- S51: Vaelgrath's braziers (arena points, x/z) for the dressing and the tests
 }
 
 -- Room roles (English ids; S49-S51 extend the list). Used by /tpcave, the dressing, the moods and the wiki.
@@ -174,6 +192,23 @@ local ROLES = {
 	"armory",
 	"heart",
 	"furnace",
+	-- S51 Frost Peaks
+	"icefalls",
+	"chimney",
+	"kingden",
+	"wolfden",
+	"gatehouse",
+	"breach",
+	"courtyard",
+	"chapel",
+	"commandery",
+	"crevasse",
+	"crystalhall",
+	"hatchery",
+	"organ",
+	"burrows",
+	"hoard",
+	"ribcage",
 	-- S49 Duskwood
 	"feeding",
 	"moon",
@@ -820,6 +855,224 @@ byMap.dungeon_ashen = {
 		},
 	},
 	arena = { x = 0, z = -10, r = 74 },
+}
+
+-- S51 ----------------------------------------------------------------------------------------------------------------
+
+-- Ice Grotto (74-83): ice burrows of the yeti under the Yeti Slopes, melted and clawed into the glacier; wolves in a
+-- side burrow, harpies in the chimney. Light comes from the ice; one warm lantern of the trappers by the entrance.
+byMap.frostpeak_grotto = {
+	theme = "Grotto",
+	edgeFloors = true,
+	wall = { amp = 12, scale = 24 },
+	ceiling = { amp = 3, scale = 20 },
+	materials = { wall = "Glacier", floor = "Glacier", accent = "Slate", bed = "Salt" },
+	wiggle = 6,
+	rooms = {
+		room({ role = "entrance", decor = "icecave", plan = "octagon", flat = true, h = 22 }), -- straight faces: the exit stays flat
+		room({ role = "icefalls", decor = "icecave", h = 32 }),
+		room({ role = "chimney", decor = "harpynest", h = 36 }),
+		room({ role = "kingden", decor = "yetiden", dy = 4, h = 32 }),
+		room({ role = "wolfden", decor = "wolfden", dy = -3, h = 18 }),
+	},
+	features = {
+		-- the Mouth of Icicles: a drift blown in from the exit
+		{ kind = "drift", x = -200, z = -16, r = 10, h = 3 },
+		-- the Hall of Icefalls: three frozen waterfalls in bays of the wall, the yeti's ice hole by the northern one
+		{ kind = "niche", x = -95, z = -46, r = 11, h = 30 },
+		{ kind = "niche", x = -56, z = -38, r = 10, h = 28 },
+		{ kind = "niche", x = -107, z = 60, r = 11, h = 30 },
+		{
+			kind = "icefall",
+			x = -95,
+			z = -48,
+			w = 16,
+			top = 28,
+			pool = 7,
+			hole = { x = -90, z = -42, r = 2.5 },
+			yaw = 0,
+		},
+		{ kind = "icefall", x = -55, z = -40, w = 12, top = 26, pool = 6, yaw = 330 },
+		{ kind = "icefall", x = -107, z = 62, w = 14, top = 28, pool = 6, yaw = 180 },
+		-- the Harpies' Chimney: the shaft to the sky, the drift under it, the nests on unreachable ledges
+		{ kind = "skyhole", x = 20, z = 80, r = 11 },
+		{ kind = "drift", x = 20, z = 82, r = 12, h = 3 },
+		{ kind = "terrace", x = -29, z = 59, r = 9, dy = 12, blend = 1.5, unreachable = true },
+		{ kind = "terrace", x = 68, z = 74, r = 9, dy = 12, blend = 1.5, unreachable = true },
+		{ kind = "terrace", x = 50, z = 95, r = 9, dy = 12, blend = 1.5, unreachable = true },
+		-- the Mountain King's Den: the throne niche with its dais, the ice window with the frozen mammoth calf
+		{ kind = "niche", x = 172, z = -14, r = 12, h = 26, dy = 4 },
+		{ kind = "dais", x = 175, z = -14, r = 5, h = 2, dir = 180 },
+		{ kind = "window", x = 129, z = -54, w = 12, h = 12, yaw = 0 },
+		-- the Wolf Den: four burrows in the walls, a frozen brook across the floor
+		{ kind = "niche", x = -22, z = -70, r = 5, h = 10, dy = -3 },
+		{ kind = "niche", x = 5, z = -104, r = 5, h = 10, dy = -3 },
+		{ kind = "niche", x = 52, z = -90, r = 5, h = 10, dy = -3 },
+		{ kind = "niche", x = 58, z = -62, r = 5, h = 10, dy = -3 },
+		{ kind = "paint", points = { -12, -48, 20, -60, 52, -80 }, width = 5, material = "Ice" },
+	},
+}
+
+-- Frozen Hold (83-92): the fortress of the Ice Guard swallowed by the glacier; the knights froze and still keep watch,
+-- giants broke in through breaches, elementals are born of the glacier's crystals. Straight walls and paving, on one
+-- side always the pressing ice; vaulted masonry corridors 22 studs high (giant-sized doors).
+byMap.frostpeak_hold = {
+	theme = "Hold",
+	edgeFloors = true,
+	masonry = true,
+	tunnelH = 22,
+	wall = { amp = 0, scale = 30 },
+	ceiling = { amp = 2, scale = 26 },
+	materials = { wall = "Slate", floor = "Cobblestone", accent = "Basalt", bed = "Salt" },
+	rooms = {
+		room({ role = "gatehouse", decor = "fortress", plan = "rect", hx = 36, hz = 30, ceil = "vault", h = 24 }),
+		room({ role = "breach", decor = "fortress", plan = "rect", hx = 52, hz = 50, ceil = "vault", h = 34 }),
+		room({ role = "courtyard", decor = "crystal", plan = "octagon", h = 42, floor = "Pavement" }),
+		room({
+			role = "chapel",
+			decor = "fortress",
+			plan = "rect",
+			hx = 45,
+			hz = 56,
+			ceil = "vault",
+			h = 32,
+			floor = "Pavement",
+		}),
+		room({ role = "barracks", decor = "fortress", plan = "rect", hx = 50, hz = 48, ceil = "vault", h = 28 }),
+		room({
+			role = "commandery",
+			decor = "fortress",
+			plan = "rect",
+			hx = 56,
+			hz = 46,
+			ceil = "vault",
+			h = 34,
+			dy = 2,
+			floor = "Pavement",
+		}),
+	},
+	features = {
+		-- the Gate under the Ice: the glacier breaks the north wall
+		{ kind = "icewall", x = -185, z = -24, r = 8, h = 5 },
+		-- the Giants' Breach: the frozen wave of the glacier through the south-east wall, a drift at its foot
+		{ kind = "icewall", x = -58, z = 106, r = 12, h = 8 },
+		{ kind = "drift", x = -66, z = 98, r = 6, h = 2 },
+		-- the Courtyard under the Glacier: the slit in the glacier's vault, the rays of frost in the paving
+		{ kind = "skyhole", points = { -22, -5, 36, -5 }, width = 4 },
+		{
+			kind = "ring",
+			x = 7,
+			z = -5,
+			bands = { band(4, 8, "Ice") },
+			spokes = { n = 12, width = 2, material = "Ice", from = 8, to = 30 },
+		},
+		-- the Chapel of Eternal Winter: the altar on its dais, the ice windows, the order's sign in the paving
+		{ kind = "dais", x = 130, z = -77, r = 4, h = 2, dir = 90 },
+		{ kind = "window", x = 130, z = -81, w = 10, h = 16, yaw = 0 },
+		{ kind = "window", x = 173, z = -12, w = 10, h = 16, yaw = 270 },
+		{ kind = "ring", x = 130, z = -26, bands = { band(6, 10, "Slate") } },
+		-- the Barracks: the north wall broken by the giants into the glacier
+		{ kind = "icewall", x = -110, z = -111, r = 6, h = 4 },
+		-- the Commander's Hall: the high chair on its dais, the Wall of the Fallen (half the hall swallowed by ice)
+		{ kind = "dais", x = 208, z = 95, r = 4, h = 2, dir = 180 },
+		{
+			kind = "icewall",
+			x = 114,
+			z = 100,
+			r = 6,
+			h = 5,
+			windows = { { x = 112, z = 100, w = 14, h = 14, yaw = 90 } },
+		},
+	},
+}
+
+-- Heart of the Glacier (92-100, boss cave): the inside of the glacier where the dragons sleep. The Dragon's Way (rooms
+-- 1 -> 2 -> 7 -> 8 and their tunnels on z = 0) runs straight from the respawn to the red gate; the loops are the round
+-- tunnels of the wyrms. The crystals' veins beat with one heart (every 2.4 s).
+byMap.frostpeak_cave = {
+	theme = "Heart",
+	wall = { amp = 8, scale = 26 },
+	ceiling = { amp = 3, scale = 22 },
+	materials = { wall = "Glacier", floor = "Ice", accent = "Slate", bed = "Salt" },
+	wiggle = 4,
+	rooms = {
+		room({ role = "crevasse", decor = "icecave", flat = true, h = 30, floor = "Snow" }),
+		room({ role = "crystalhall", decor = "crystal", h = 44 }),
+		room({ role = "hatchery", decor = "dragon", dy = -2, h = 26 }),
+		room({ role = "organ", decor = "icecave", h = 30 }),
+		room({ role = "burrows", decor = "icecave", h = 26 }),
+		room({ role = "hoard", decor = "hoard", h = 28 }),
+		room({ role = "ribcage", decor = "dragon", h = 48 }),
+		room({ role = "antechamber", decor = "dragon", plan = "rect", hx = 52, hz = 40, ceil = "vault", h = 34 }),
+	},
+	tunnels = {
+		tunnel({ ax = -215, az = 0, bx = -170, bz = 0, w = 22, h = 24, straight = true }),
+		tunnel({ ax = -110, az = -65, bx = -110, bz = -135, w = 18, h = 18, profile = "bore" }),
+		tunnel({ ax = -110, az = 65, bx = -110, bz = 135, w = 18, h = 18, profile = "bore" }),
+		tunnel({ ax = -65, az = -170, bx = 20, bz = -155, w = 18, h = 18, profile = "bore" }),
+		tunnel({ ax = -65, az = 170, bx = 20, bz = 155, w = 18, h = 18, profile = "bore" }),
+		tunnel({ ax = 60, az = -105, bx = 90, bz = -45, w = 18, h = 18, profile = "bore" }),
+		tunnel({ ax = 60, az = 105, bx = 90, bz = 45, w = 18, h = 18, profile = "bore" }),
+		tunnel({ ax = -35, az = 0, bx = 60, bz = 0, w = 22, h = 24, straight = true }),
+		tunnel({ ax = 160, az = 0, bx = 200, bz = 0, w = 22, h = 24, straight = true }),
+	},
+	tunnelH = 20,
+	features = {
+		-- the Crevasse: the walls narrow up into a slit of sky along the axis
+		{ kind = "skyhole", points = { -282, 0, -222, 0 }, width = 4 },
+		-- the Crystal Hall: four colossal crystals on rock shafts on the diagonals (outside the core)
+		{ kind = "pillar", x = -60, z = -40, r = 4 },
+		{ kind = "pillar", x = -60, z = 40, r = 4 },
+		{ kind = "pillar", x = -140, z = -40, r = 4 },
+		{ kind = "pillar", x = -140, z = 40, r = 4 },
+		-- the Hatchery: ice niches with the dragons' eggs
+		{ kind = "niche", x = -110, z = -226, r = 9, h = 14, dy = -2 },
+		{ kind = "niche", x = -154, z = -202, r = 9, h = 14, dy = -2 },
+		{ kind = "niche", x = -68, z = -212, r = 9, h = 14, dy = -2 },
+		-- the Ice Organ: curtains of giant icicles and a frozen waterfall by the south wall
+		{ kind = "niche", x = -110, z = 228, r = 12, h = 28 },
+		{ kind = "icefall", x = -110, z = 232, w = 16, top = 26, pool = 6, yaw = 180 },
+		{ kind = "stalagmites", x = -125, z = 226, r = 5, spacing = 5, height = 7, material = "Ice" },
+		{ kind = "stalagmites", x = -95, z = 226, r = 5, spacing = 5, height = 7, material = "Ice" },
+		-- the Wyrm Burrows: round blind burrows in the walls
+		{ kind = "niche", x = 60, z = -196, r = 5, h = 10 },
+		{ kind = "niche", x = 97, z = -181, r = 5, h = 10 },
+		{ kind = "niche", x = 106, z = -140, r = 5, h = 10 },
+		{ kind = "niche", x = 24, z = -187, r = 5, h = 10 },
+	},
+}
+
+-- Vaelgrath's Lair (boss 100): the frozen lair of the dragon: the flat ice of the fight with four braziers (the only
+-- warm light), a crown of ice spikes behind the circle, the frozen hoard and predecessors, the nest on an unreachable
+-- ledge under a hole in the dome.
+byMap.dungeon_frostpeak = {
+	theme = "DragonLair",
+	wall = { amp = 4, scale = 30 },
+	ceiling = { amp = 3, scale = 26 },
+	materials = { wall = "Glacier", floor = "Ice", accent = "Slate", bed = "Salt" },
+	extraRooms = {
+		extra({ x = 0, z = -10, r = 118, h = 56, role = "arena", decor = "dragon", floor = "Ice" }),
+		extra({ x = 0, z = 72, r = 20, h = 24, role = "entrance", flat = true, decor = "dragon", floor = "Ice" }),
+	},
+	features = {
+		{ kind = "ring", x = 0, z = -10, spokes = { n = 10, width = 2, material = "Glacier", from = 4, to = 72 } },
+		-- the nest on the unreachable ledge in the north and the hole in the dome over it
+		{
+			kind = "terrace",
+			x = 0,
+			z = -10,
+			r = 118,
+			inner = 96,
+			dy = 12,
+			blend = 1.5,
+			gaps = { { 330, 210 } },
+			unreachable = true,
+		},
+		{ kind = "skyhole", x = 0, z = -110, r = 11 },
+	},
+	arena = { x = 0, z = -10, r = 74 },
+	-- the four braziers (the same points as World/Layouts/dungeon_frostpeak and Vaelgrath's script + (0, -10))
+	braziers = { { -32, -32 }, { 32, -32 }, { -32, 28 }, { 32, 28 } },
 }
 
 return table.freeze({

@@ -1,16 +1,9 @@
 --!strict
--- Grimrok's Chamber (boss 20): mossy rock, goblin torches.
+-- Grimrok's Chamber (boss 20): the goblins' chamber on the cave engine (Data/CaveShapes, Logic/CaveDress/GoblinThrone).
 
 local Build = require(script.Parent.Parent.Build)
 local DungeonArena = require(script.Parent.DungeonArena)
 
 return function(ctx: Build.Context)
-	DungeonArena(ctx, {
-		rock = Enum.Material.Rock,
-		floor = Enum.Material.Ground,
-		column = "#5A5650",
-		light = "#FF9A3A",
-		crystal = "#7ACB3A",
-		cave = "meadows_cave",
-	})
+	DungeonArena(ctx)
 end

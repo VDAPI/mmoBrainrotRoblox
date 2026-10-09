@@ -96,6 +96,11 @@ kręte tunele, wnęki, jeziora, strumienie, otwory w sklepieniu; każda sala ma 
 w klimacie swoich mieszkańców, a najgłębsza sala i przedsionek bossa są scenami „wow”. Rdzeń każdej sali walki zostaje
 suchy, płaski i wysoki (tam stoją grupy).
 
+**Lód w jaskiniach (S51)**: zamarznięta tafla to podłoga (da się po niej chodzić i na niej stać), jedyna ciecz to woda
+w przeręblach. Paleta jaskiń Szczytów: chłodny błękit lodu, ciemne pasy skały i jeden ciepły akcent na jaskinię
+(latarnia traperów, ogień olbrzymów, złoto skarbca, koksowniki Leża). **Od S51 wszystkie jaskinie i komnaty są na
+silniku jaskiń** (stary generator S19 usunięty).
+
 **Lawa w jaskiniach (S50)** jest dekoracją jak na Pustkowiach: nie parzy (jedyna parząca lawa to dysk Azgora w 3. fazie);
 jej powierzchnia to twardy teren 1–1,5 st. pod bazaltowym brzegiem, więc z kanału zawsze da się wyjść. Grupy, rdzenie
 sal, tunele i trasy w salach, wyjście, brama, odrodzenie i węzły rud trzymają się co najmniej 6 st. od lawy; rzeki

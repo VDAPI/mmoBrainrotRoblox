@@ -19,7 +19,7 @@ local WorldGen = require("../src/shared/Logic/WorldGen")
 local describe, it, expect = Test.describe, Test.it, Test.expect
 
 describe("WorldGen registry", function()
-	it("knows the Meadows, Duskwood, the Ashen Wastes (S46), the Frost Peaks (S47) and the caves (S48-S50)", function()
+	it("knows the Meadows, Duskwood, the Ashen Wastes (S46), the Frost Peaks (S47) and the caves (S48-S51)", function()
 		expect(WorldGen.get("meadows") == (MeadowsGen :: any)).toBe(true)
 		expect(WorldGen.get("duskwood") == (DuskwoodGen :: any)).toBe(true)
 		expect(WorldGen.get("ashen") == (AshenGen :: any)).toBe(true)
@@ -32,18 +32,22 @@ describe("WorldGen registry", function()
 			"ashen_mine",
 			"dungeon_ashen",
 			"dungeon_duskwood",
+			"dungeon_frostpeak",
 			"dungeon_meadows",
 			"duskwood",
 			"duskwood_barrow",
 			"duskwood_cave",
 			"duskwood_den",
 			"frostpeak",
+			"frostpeak_cave",
+			"frostpeak_grotto",
+			"frostpeak_hold",
 			"meadows",
 			"meadows_burrow",
 			"meadows_cave",
 			"meadows_hideout",
 		})
-		expect(WorldGen.get("frostpeak_cave")).toBe(nil)
+		expect(WorldGen.get("town")).toBe(nil)
 	end)
 
 	it("keeps the Meadows on their own terrain and generator", function()
@@ -58,13 +62,13 @@ describe("WorldGen registry", function()
 		expect(MapTerrain.has("duskwood")).toBe(true)
 		expect(MapTerrain.has("ashen")).toBe(true)
 		expect(MapTerrain.has("frostpeak")).toBe(true) -- S47
-		expect(MapTerrain.has("frostpeak_cave")).toBe(false)
+		expect(MapTerrain.has("frostpeak_cave")).toBe(true) -- S51: the cave engine
 		for _, p in { { 0, 0 }, { 150, 372 }, { 640, -100 }, { 580, 520 }, { -690, -36 } } do
 			expect(MapTerrain.height("duskwood", p[1], p[2])).toBe(T.height(p[1], p[2]))
 			expect(MapTerrain.water("duskwood", p[1], p[2])).toBe(T.water(p[1], p[2]))
 		end
-		expect(MapTerrain.height("frostpeak_cave", 0, 0)).toBe(nil)
-		expect(MapTerrain.walkable("frostpeak_cave", 0, 0, 10)).toBe(true)
+		expect(MapTerrain.height("nowhere", 0, 0)).toBe(nil)
+		expect(MapTerrain.walkable("nowhere", 0, 0, 10)).toBe(true)
 	end)
 
 	it("gives every generator context its own life points and sketch", function()

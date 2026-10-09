@@ -237,7 +237,9 @@ table.sort(CAVE_MAPS)
 cmd("world", "terrainrebuild", { enum("map", TERRAIN_MAPS) }, { danger = true })
 cmd("world", "tpcave", { enum("cave", CAVE_MAPS), str("room", true) })
 cmd("world", "caveinfo", {})
-cmd("world", "cavestats", { enum("cave", CAVE_MAPS, true) })
+local CAVE_STATS = table.clone(CAVE_MAPS)
+table.insert(CAVE_STATS, "all") -- S51: every cave and chamber on the engine
+cmd("world", "cavestats", { enum("cave", CAVE_STATS, true) })
 cmd("world", "lights", { str("count") })
 -- S46: the ground under the caller and the client's world effects
 cmd("world", "terraininfo", {})

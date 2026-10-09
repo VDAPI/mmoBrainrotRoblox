@@ -10,6 +10,7 @@
 --   /worldfx <effect> <mode>  switch a world effect on the caller's client (S46; S47 snow, drift, aurora, plume, eagles,
 --                             avalanche, glow)
 --   /tpcave <cave> [room]     teleport into a cave on the cave engine, to a room by index or role (S48)
+--   /cavestats [cave|all]    S51: `all` lists every cave and chamber on the engine
 --   /caveinfo                 the cave under the caller: room, role, floor, ceiling, liquid, mood, lights (S48), the
 --                             distance to the nearest lava (S50)
 --   /cavestats [cave]         terrain and shell timings, blocks, parts vs maxParts, Builds, lights, nodes (S48)
@@ -20,6 +21,7 @@ local Shared = game:GetService("ReplicatedStorage").Shared
 local Ambience = require(Shared.Data.Ambience)
 local AreaSpawns = require(Shared.Logic.AreaSpawns)
 local Areas = require(Shared.Data.Areas)
+local CaveShapes = require(Shared.Data.CaveShapes)
 local CaveTerrain = require(Shared.Logic.CaveTerrain)
 local MapTerrain = require(Shared.Logic.MapTerrain)
 local Maps = require(Shared.Data.Maps)
@@ -450,15 +452,13 @@ commands.caveinfo = function(player)
 	return true
 end
 
-commands.cavestats = function(player, args)
-	local character = Context.services.PlayerStateService.GetCharacter(player)
-	local caveId = args[1] or (character and character.location.map) or ""
+-- One cave's numbers (false when the map is not on the cave engine).
+local function caveStats(player: Player, caveId: string): boolean
 	local T = CaveTerrain.get(caveId)
 	local gen = WorldGen.get(caveId)
 	local map = Maps.get(caveId)
 	if not T or not gen or not map then
-		reply(player, "admin.usage.cavestats")
-		return false, "admin.usage.cavestats"
+		return false
 	end
 	local stats = BuildStats[caveId]
 	local counts = gen.counts()
@@ -478,6 +478,28 @@ commands.cavestats = function(player, args)
 		nodes = #gen.nodes(),
 		spawners = if cave then #AreaSpawns.cave(cave) else 0,
 	})
+	return true
+end
+
+commands.cavestats = function(player, args)
+	local character = Context.services.PlayerStateService.GetCharacter(player)
+	local caveId = args[1] or (character and character.location.map) or ""
+	-- S51: `all` = every cave and chamber on the engine (the review of the series)
+	if caveId == "all" then
+		local list = {}
+		for id in CaveShapes.byMap do
+			table.insert(list, id)
+		end
+		table.sort(list)
+		for _, id in list do
+			caveStats(player, id)
+		end
+		return true
+	end
+	if not caveStats(player, caveId) then
+		reply(player, "admin.usage.cavestats")
+		return false, "admin.usage.cavestats"
+	end
 	return true
 end
 

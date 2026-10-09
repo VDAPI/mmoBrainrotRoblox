@@ -113,22 +113,29 @@ describe("Cave engine: terrain", function()
 		end
 	end)
 
-	it("knows the caves on the engine (S48 the Meadows, S49 Duskwood, S50 the Ashen Wastes)", function()
-		for _, id in { "dungeon_meadows", "meadows_burrow", "meadows_cave", "meadows_hideout" } do
-			expect(table.find(MAPS, id) ~= nil).toBe(true)
+	it(
+		"knows the caves on the engine (S48 the Meadows, S49 Duskwood, S50 the Ashen Wastes, S51 the Frost Peaks)",
+		function()
+			for _, id in { "dungeon_meadows", "meadows_burrow", "meadows_cave", "meadows_hideout" } do
+				expect(table.find(MAPS, id) ~= nil).toBe(true)
+			end
+			-- S49: the caves of Duskwood and the Tomb of Morvane
+			for _, id in { "duskwood_den", "duskwood_barrow", "duskwood_cave", "dungeon_duskwood" } do
+				expect(table.find(MAPS, id) ~= nil).toBe(true)
+			end
+			-- S50: the caves of the Ashen Wastes and Azgor's Furnace
+			for _, id in { "ashen_mine", "ashen_lair", "ashen_cave", "dungeon_ashen" } do
+				expect(table.find(MAPS, id) ~= nil).toBe(true)
+			end
+			-- S51: the caves of the Frost Peaks and Vaelgrath's Lair
+			for _, id in { "frostpeak_grotto", "frostpeak_hold", "frostpeak_cave", "dungeon_frostpeak" } do
+				expect(table.find(MAPS, id) ~= nil).toBe(true)
+			end
+			expect(CaveTerrain.get("meadows")).toBe(nil)
+			expect(MapTerrain.has("meadows_cave")).toBe(true)
+			expect(RegionTerrain.get("meadows_cave")).toBe(nil)
 		end
-		-- S49: the caves of Duskwood and the Tomb of Morvane
-		for _, id in { "duskwood_den", "duskwood_barrow", "duskwood_cave", "dungeon_duskwood" } do
-			expect(table.find(MAPS, id) ~= nil).toBe(true)
-		end
-		-- S50: the caves of the Ashen Wastes and Azgor's Furnace
-		for _, id in { "ashen_mine", "ashen_lair", "ashen_cave", "dungeon_ashen" } do
-			expect(table.find(MAPS, id) ~= nil).toBe(true)
-		end
-		expect(CaveTerrain.get("frostpeak_cave")).toBe(nil)
-		expect(MapTerrain.has("meadows_cave")).toBe(true)
-		expect(RegionTerrain.get("meadows_cave")).toBe(nil)
-	end)
+	)
 
 	it("is deterministic and paints only terrain materials", function()
 		for _, id in MAPS do
@@ -786,6 +793,177 @@ describe("Cave engine: lava (S50)", function()
 			local lair = kinds("ashen_lair")
 			for _, k in { "ashBeam", "sandfall", "embers" } do
 				expect(lair[k]).toBe(true)
+			end
+		end
+	)
+end)
+
+-- S51: ice, the Frost Peaks' scenes, Vaelgrath's braziers, the whole series on the engine.
+local function bracesPoints(text: string, name: string): { { number } }
+	local body = assert(string.match(text, "local " .. name .. " = (%b{})"), name)
+	local out = {}
+	for a, b, c in string.gmatch(body, "Vector3%.new%(([%-%d%.]+), ([%-%d%.]+), ([%-%d%.]+)%)") do
+		table.insert(out, { tonumber(a) :: number, tonumber(c) :: number })
+		local _ = b
+	end
+	if #out == 0 then
+		for a, b in string.gmatch(body, "{ ([%-%d%.]+), ([%-%d%.]+) }") do
+			table.insert(out, { tonumber(a) :: number, tonumber(b) :: number })
+		end
+	end
+	return out
+end
+
+describe("Cave engine: ice and the Frost Peaks (S51)", function()
+	it("makes frozen pools and icefalls walkable ice; only water keeps spawners away", function()
+		for _, id in { "frostpeak_grotto", "frostpeak_cave" } do
+			local T = assert(CaveTerrain.get(id))
+			local n = 0
+			for _, f in T.icefalls() do
+				n += 1
+				local l = T.liquid(f.x, f.z)
+				expect(l ~= nil and l.kind == "ice").toBe(true)
+				expect(T.column(f.x, f.z).floorMat).toBe("Ice")
+				expect(T.walkable(f.x, f.z, 1)).toBe(true)
+			end
+			expect(n > 0).toBe(true)
+		end
+		local G = assert(CaveTerrain.get("frostpeak_grotto"))
+		local hole = G.liquid(-90, -42)
+		expect(hole ~= nil and hole.kind == "water").toBe(true)
+	end)
+
+	it(
+		"keeps the Grotto: the chimney open to the sky, the King's Den above the Chimney, the nests out of reach",
+		function()
+			local T = assert(CaveTerrain.get("frostpeak_grotto"))
+			expect(T.ceiling(20, 80) or 0).toBe(1e4)
+			local r3, r4 = T.rooms[3], T.rooms[4]
+			expect((T.floor(r4.x, r4.z) or 0) >= (T.floor(r3.x, r3.z) or 0) + 3).toBe(true)
+			for _, p in { { -29, 59 }, { 68, 74 }, { 50, 95 } } do
+				local top = T.floor(p[1], p[2])
+				if top then
+					expect(top >= (T.floor(r3.x, r3.z) or 0) + 8).toBe(true)
+				end
+			end
+		end
+	)
+
+	it("keeps the Hold's tunnels 20+ studs high and its halls architectural", function()
+		local shape = CaveShapes.byMap.frostpeak_hold
+		expect(shape.masonry).toBe(true)
+		expect((shape.tunnelH or 0) >= 20).toBe(true)
+		for _, r in shape.rooms or {} do
+			expect(r.plan == "rect" or r.plan == "octagon").toBe(true)
+			expect((r.h or 0) >= 24).toBe(true)
+		end
+	end)
+
+	it(
+		"keeps the Heart's Dragon's Way free from the respawn to the gate, the skull's passage open, the beat in budget",
+		function()
+			local T = assert(CaveTerrain.get("frostpeak_cave"))
+			for _, b in CaveDress.all("frostpeak_cave") do
+				local rot = math.rad(b.at.rot)
+				for _, p in b.bp.pieces do
+					if p.lod == "shell" and p.col then
+						local lx, lz = p.p[1], p.p[3]
+						local x = b.at.x + math.cos(rot) * lx + math.sin(rot) * lz
+						local z = b.at.z - math.sin(rot) * lx + math.cos(rot) * lz
+						if x > -240 and x < 284 and math.abs(z) < 9 then
+							error(`Heart: {b.name} collides on the Dragon's Way at {math.floor(x)}, {math.floor(z)}`)
+						end
+					end
+				end
+			end
+			for x = 150, 170, 4 do
+				for _, z in { -6, 0, 6 } do
+					expect(T.headroom(x, z) >= 18).toBe(true)
+					expect(T.walkable(x, z, 1)).toBe(true)
+				end
+			end
+			local parts, lights = 0, 0
+			for _, b in CaveDress.all("frostpeak_cave") do
+				for _, p in b.bp.pieces do
+					if p.tag == "heart" then
+						parts += 1
+					end
+				end
+				for _, l in b.bp.lights do
+					if l.tag == "heart" then
+						lights += 1
+					end
+				end
+			end
+			expect(parts > 0 and parts <= 60).toBe(true)
+			expect(lights > 0 and lights <= 12).toBe(true)
+		end
+	)
+
+	it(
+		"keeps Vaelgrath's Lair: the braziers of the layout, the script and the shape agree, warm discs, a high dome",
+		function()
+			local layout = bracesPoints(fs.readFile("src/server/World/Layouts/dungeon_frostpeak.luau"), "BRAZIERS")
+			local scriptText = fs.readFile("src/server/Entities/BossScripts/vaelgrath.luau")
+			local script = bracesPoints(scriptText, "BRAZIERS")
+			local shape = CaveShapes.byMap.dungeon_frostpeak
+			local data = assert(shape.braziers, "braziers")
+			expect(#layout).toBe(4)
+			expect(#script).toBe(4)
+			expect(#data).toBe(4)
+			for i = 1, 4 do
+				expect(script[i][1] + 0).toBe(layout[i][1])
+				expect(script[i][2] - 10).toBe(layout[i][2])
+				expect(data[i][1]).toBe(layout[i][1])
+				expect(data[i][2]).toBe(layout[i][2])
+			end
+			local warm = assert(BossConsts.scriptConsts(scriptText).WARM_RADIUS, "WARM_RADIUS")
+			local T = assert(CaveTerrain.get("dungeon_frostpeak"))
+			local discs = 0
+			for _, b in CaveDress.all("dungeon_frostpeak") do
+				local rot = math.rad(b.at.rot)
+				for _, p in b.bp.pieces do
+					local lx, lz = p.p[1], p.p[3]
+					local x = b.at.x + math.cos(rot) * lx + math.sin(rot) * lz
+					local z = b.at.z - math.sin(rot) * lx + math.cos(rot) * lz
+					if p.lod == "shell" and p.col and math.sqrt(x * x + (z + 10) ^ 2) < 50 then
+						error(`Lair: {b.name} collides within 50 studs of the fight`)
+					end
+					if p.s == "cyl" and math.abs(p.size[2] - warm * 2) < 0.01 then
+						discs += 1
+						expect(p.size[1] <= 0.2).toBe(true)
+					end
+				end
+			end
+			expect(discs).toBe(4)
+			for r = 0, 62, 8 do
+				for a = 0, 7 do
+					local x, z = math.cos(a * math.pi / 4) * r, -10 + math.sin(a * math.pi / 4) * r
+					expect(T.headroom(x, z) >= 40).toBe(true)
+				end
+			end
+			for _, p in data do
+				expect(T.walkable(p[1], p[2], 3)).toBe(true)
+			end
+		end
+	)
+
+	it(
+		"has every cave and boss chamber on the engine with its own preset and moods (the series is complete)",
+		function()
+			local PENDING: { string } = {} -- maps still on the old generator (empty: S48-S51 done)
+			for id, map in Maps.byId do
+				if map.biome == "cave" or map.biome == "crypt" or map.biome == "dungeon" then
+					if not table.find(PENDING, id) then
+						if not CaveShapes.byMap[id] then
+							error(`{id} is not on the cave engine`)
+						end
+					end
+					if map.lighting == nil then
+						error(`{id} has no preset`)
+					end
+					expect(Ambience.maps[id] ~= nil).toBe(true)
+				end
 			end
 		end
 	)

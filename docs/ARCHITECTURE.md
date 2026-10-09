@@ -323,6 +323,13 @@ type CharacterData = {
     stropy `vault` / `corbel` / `dome`, `masonry` (proste sklepione korytarze), cechy `chimney`, `dais`, `causeway`,
     `ring` (mozaika materiałów), `niches` (pozycje `T.niches()`, półki stawia ubiór), pierścień wody `pool.inner`,
     taras-pierścień `terrace.inner/gaps`; motywy `Den`, `Barrow`, `Crypt`, `Tomb`;
+  - S51 (lód; koniec serii, **wszystkie 12 jaskiń i 4 komnaty na silniku**, stara ścieżka S19 usunięta z `CaveTemplate`,
+    `DungeonArena` i layoutów jaskiń bossów): `pool` z `liquid = "ice"` (twarda tafla `Ice`, chodliwa), `icefall`
+    (zamarznięta sadzawka + przerębel; kurtyny i blask to ubiór, `T.icefalls()`), `skyhole` z `points`/`width`
+    (szczelina nieba), `drift` (zaspa `Snow`), `icewall` (jęzor lodowca, nigdy w rdzeniu, `windows`), `window`
+    (`T.windows()`), `paint` (pas materiału), `stalagmites.material`, tunele `profile = "bore"`, `straight`, `floor`;
+    pole `braziers` komnaty Vaelgratha (test porównuje z layoutem i skryptem); motywy `Grotto`, `Hold`, `Heart`,
+    `DragonLair`; puls serca (tag `heart`, `TownFxController`); `/cavestats all`;
   - S50 (lawa, kute sale, mosty): ciecz `lava` w `pool`/`stream` (powierzchnia to twardy `CrackedLava` 1,25 st. pod
     bazaltowym brzegiem, nigdy `Water`; `MapTerrain.water` = nil, `walkable` = false), strumień lawy w kanionie (`bank`,
     `rise`, `roof`), cechy `vent`, `crack`, `moat` (z `gap`/`gaps`), `bridge` (pas, którego strumień nie tnie), `lavafall`

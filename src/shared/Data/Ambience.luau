@@ -566,6 +566,32 @@ local HEART_THUMP = s("deep heartbeat thump loop (huge, magma)", 0.35)
 local FURNACE_DEEP = s("giant furnace roar loop (huge, deep)", 0.4)
 local LAVAFALL = s("lava fall pouring loop (heavy, crackling)", 0.35)
 
+-- S51 the Frost Peaks' caves
+local ICE_CAVE = s("ice cave ambience loop (wind, creaking ice, distant drips)", 0.35)
+local ICE_CRACK = s("frozen waterfall ice cracking creak loop", 0.3)
+local SHAFT_HOWL = s("wind howling through shaft loop", 0.3)
+local BEAST_BREATH = s("large beast breathing low growl loop", 0.3)
+local WOLF_PACK = s("wolves growling low pack loop", 0.3)
+local UNDER_ICE = s("water lapping under ice loop", 0.25)
+local RAPTOR = s("bird of prey screech distant echo (rare)", 0.2)
+local LANTERN_SWAY = s("old lantern creaking in the wind loop", 0.2)
+local FROZEN_CASTLE = s("frozen castle ambience loop (wind through halls, creaking ice, distant metal)", 0.35)
+local GLACIER_GROAN = s("glacier groaning deep ice creak loop", 0.3)
+local CHOIR_FAINT = s("faint choir drone cathedral reverb loop", 0.25)
+local ARMOR_CHAINS = s("armor clanking distant, chains loop", 0.25)
+local ICE_WHISPER = s("faint whispers in ice loop", 0.2)
+local GLACIER_DEEP = s("deep glacier ambience loop (low rumble, ice creaking)", 0.35)
+local HEARTBEAT = s("slow deep heartbeat loop (low, ~25 bpm)", 0.35)
+local CRYSTAL_CHIME = s("crystal chime resonance loop", 0.25)
+local ICE_ORGAN = s("wind through ice organ drone loop", 0.3)
+local ICE_SLITHER = s("ice scraping slither loop", 0.25)
+local DRAGON_BREATH = s("dragon breathing low distant growl loop", 0.3)
+local COINS = s("coins tinkle sparse loop", 0.2)
+local DRAGON_ROAR = s("distant dragon roar echo, cold wind under door loop", 0.3)
+local LAIR_WIND = s("dragon lair ambience (cold wind, deep breathing) loop", 0.35)
+local BRAZIER = s("fire brazier crackle loop", 0.3)
+local HIGH_WIND = s("high wind blizzard loop", 0.3)
+
 local function room(o: { [string]: any }): Mood
 	return o :: any
 end
@@ -637,6 +663,73 @@ local rooms: { [string]: { [number]: Mood } } = {
 			tintMix = 0.3,
 			sounds = { day = { SPIDER_CLICKS, DRIP_ECHO }, night = {} },
 		}),
+	},
+	-- S51
+	frostpeak_grotto = {
+		room({ tint = "#E0F0FF", tintMix = 0.25, sounds = { day = { BLIZZARD, ICE_CAVE }, night = {} } }),
+		room({
+			brightness = 1.05,
+			tint = "#D0ECFF",
+			tintMix = 0.35,
+			sounds = { day = { ICE_CRACK, ICE_CAVE }, night = {} },
+		}),
+		room({
+			brightness = 1.1,
+			fogScale = 1.2,
+			tint = "#DCEAFF",
+			tintMix = 0.3,
+			sounds = { day = { SHAFT_HOWL, RAPTOR }, night = {} },
+		}),
+		room({ tint = "#D4E4F4", tintMix = 0.3, sounds = { day = { BEAST_BREATH, ICE_CAVE }, night = {} } }),
+		room({ brightness = 0.8, tint = "#C8D8E8", tintMix = 0.3, sounds = { day = { WOLF_PACK }, night = {} } }),
+	},
+	frostpeak_hold = {
+		room({ tint = "#D4E2F4", tintMix = 0.25, sounds = { day = { FROZEN_CASTLE, BLIZZARD }, night = {} } }),
+		room({ tint = "#F0E0D0", tintMix = 0.25, sounds = { day = { GLACIER_GROAN, BIG_FIRE }, night = {} } }),
+		room({ tint = "#CCEFFF", tintMix = 0.35, sounds = { day = { CRYSTAL_HUM, FROZEN_CASTLE }, night = {} } }),
+		room({
+			brightness = 1.05,
+			saturation = -0.3,
+			tint = "#E4EEFF",
+			tintMix = 0.3,
+			sounds = { day = { CHOIR_FAINT }, night = {} },
+		}),
+		room({
+			fogScale = 0.8,
+			tint = "#D0DCEC",
+			tintMix = 0.25,
+			sounds = { day = { ARMOR_CHAINS, FROZEN_CASTLE }, night = {} },
+		}),
+		room({ tint = "#C8DCF4", tintMix = 0.35, sounds = { day = { ICE_WHISPER, FROZEN_CASTLE }, night = {} } }),
+	},
+	frostpeak_cave = {
+		room({ tint = "#DCF0FF", tintMix = 0.25, sounds = { day = { BLIZZARD, GLACIER_DEEP }, night = {} } }),
+		room({ tint = "#C8F4FF", tintMix = 0.35, sounds = { day = { CRYSTAL_CHIME, HEARTBEAT }, night = {} } }),
+		room({ tint = "#CCF2FF", tintMix = 0.35, sounds = { day = { HEARTBEAT, GLACIER_DEEP }, night = {} } }),
+		room({ tint = "#D0ECFF", tintMix = 0.3, sounds = { day = { ICE_ORGAN, HEARTBEAT }, night = {} } }),
+		room({
+			brightness = 0.85,
+			tint = "#C8E4F0",
+			tintMix = 0.3,
+			sounds = { day = { ICE_SLITHER, GLACIER_DEEP }, night = {} },
+		}),
+		room({ tint = "#F4ECD8", tintMix = 0.25, sounds = { day = { COINS, GLACIER_DEEP }, night = {} } }),
+		room({
+			fogScale = 1.25,
+			tint = "#CCF0FF",
+			tintMix = 0.35,
+			sounds = { day = { DRAGON_BREATH, HEARTBEAT }, night = {} },
+		}),
+		room({
+			fogScale = 0.75,
+			tint = "#D8E0F0",
+			tintMix = 0.35,
+			sounds = { day = { DRAGON_ROAR, HEARTBEAT }, night = {} },
+		}),
+	},
+	dungeon_frostpeak = {
+		room({ tint = "#D6EEFF", tintMix = 0.35, sounds = { day = { LAIR_WIND }, night = {} } }),
+		room({ tint = "#D6EEFF", tintMix = 0.3, sounds = { day = { LAIR_WIND }, night = {} } }),
 	},
 	-- S50
 	ashen_mine = {
@@ -825,6 +918,11 @@ local maps: { [string]: Mood } = {
 	meadows_hideout = { sounds = { day = { DRIP_ECHO, CAVE_WIND }, night = {} } },
 	meadows_burrow = { sounds = { day = { DRIP_ECHO, GOBLIN_CHATTER }, night = {} } },
 	dungeon_meadows = { tint = "#FFC8A0", tintMix = 0.3, sounds = { day = { ARENA_DRUMS }, night = {} } },
+	-- S51
+	frostpeak_grotto = { tint = "#D8ECFF", tintMix = 0.25, sounds = { day = { ICE_CAVE }, night = {} } },
+	frostpeak_hold = { tint = "#D4E2F4", tintMix = 0.25, sounds = { day = { FROZEN_CASTLE }, night = {} } },
+	frostpeak_cave = { tint = "#CCF2FF", tintMix = 0.3, sounds = { day = { GLACIER_DEEP, HEARTBEAT }, night = {} } },
+	dungeon_frostpeak = { tint = "#D6EEFF", tintMix = 0.3, sounds = { day = { LAIR_WIND }, night = {} } },
 	-- S50
 	ashen_mine = { tint = "#FFE8D0", tintMix = 0.2, sounds = { day = { SHAFT_WIND }, night = {} } },
 	ashen_lair = { tint = "#FFD8C0", tintMix = 0.25, sounds = { day = { VOLCANO_RUMBLE }, night = {} } },
@@ -905,6 +1003,29 @@ local points: { [string]: { Point } } = {
 	meadows_burrow = {
 		{ x = 180, z = 0, radius = 50, sound = WINCH_CREAK },
 		{ x = 7, z = -45, radius = 60, sound = PICKAXES },
+	},
+	-- S51
+	frostpeak_grotto = {
+		{ x = -205, z = 0, radius = 40, sound = BLIZZARD },
+		{ x = -90, z = -42, radius = 30, sound = UNDER_ICE },
+		{ x = 50, z = 80, radius = 50, sound = RAPTOR },
+		{ x = -160, z = 20, radius = 30, sound = LANTERN_SWAY },
+	},
+	frostpeak_hold = {
+		{ x = -80, z = 66, radius = 50, sound = BIG_FIRE },
+		{ x = 7, z = -5, radius = 50, sound = CRYSTAL_HUM },
+		{ x = 112, z = 100, radius = 40, sound = ICE_WHISPER },
+	},
+	frostpeak_cave = {
+		{ x = 80, z = 170, radius = 50, sound = COINS },
+		{ x = 280, z = 0, radius = 50, sound = DRAGON_ROAR },
+	},
+	dungeon_frostpeak = {
+		{ x = -32, z = -32, radius = 24, sound = BRAZIER },
+		{ x = 32, z = -32, radius = 24, sound = BRAZIER },
+		{ x = -32, z = 28, radius = 24, sound = BRAZIER },
+		{ x = 32, z = 28, radius = 24, sound = BRAZIER },
+		{ x = 0, z = -110, radius = 60, sound = HIGH_WIND },
 	},
 	-- S50
 	ashen_mine = {

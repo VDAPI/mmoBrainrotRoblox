@@ -2763,7 +2763,7 @@ return {
 	["admin.usage.caveinfo"] = "/caveinfo: jaskinia pod tobą (sala, rola, podłoga, sufit, ciecz, nastrój, światła)",
 	["admin.caveinfo.none"] = "Mapa {map} nie jest na silniku jaskiń.",
 	["admin.caveinfo.ok"] = "{map} ({x}, {z}): sala {room} ({role}), podłoga {floor}, sufit {ceiling}, ciecz {liquid}, lawa {lava} st., nastrój {mood}.",
-	["admin.usage.cavestats"] = "/cavestats [jaskinia]: teren i shell (czasy, bloki), części wobec maxParts, budowle, światła, węzły, spawnery",
+	["admin.usage.cavestats"] = "/cavestats [jaskinia|all]: teren i shell (czasy, bloki), części wobec maxParts, budowle, światła, węzły, spawnery",
 	["admin.cavestats.ok"] = "{map}: części {parts}/{max}, teren {terrain} ms (WriteVoxels {write} ms, {blocks} bloków), shell {shell} ms, budowle {builds}, detail {detail}, fine {fine}, światła {lights}, węzły {nodes}, spawnery {spawners}.",
 	["admin.usage.lights"] = "/lights <n|auto>: wymuś liczbę świateł jaskini u siebie (porównanie płynności)",
 	["admin.lights.ok"] = "Światła jaskini: {value}.",

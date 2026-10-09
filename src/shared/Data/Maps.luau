@@ -325,6 +325,51 @@ local LIGHT = {
 		tint = "#FFD8C0",
 		saturation = 0.08,
 	}),
+	-- S51: presets of the Frost Peaks' caves on the engine
+	caveIce = lighting({
+		clockTime = 0,
+		brightness = 0.36,
+		ambient = "#26303A",
+		outdoorAmbient = "#222A34",
+		fogColor = "#0E161E",
+		fogEnd = 240,
+		atmosphere = { density = 0.55, haze = 0.4, glare = 0, color = "#16222C", decay = "#0A1016" },
+		tint = "#D8ECFF",
+		saturation = -0.1,
+	}),
+	holdFrozen = lighting({
+		clockTime = 0,
+		brightness = 0.34,
+		ambient = "#262C36",
+		outdoorAmbient = "#222830",
+		fogColor = "#0C1016",
+		fogEnd = 200,
+		atmosphere = { density = 0.58, haze = 0.5, glare = 0, color = "#141A24", decay = "#0A0C12" },
+		tint = "#D4E2F4",
+		saturation = -0.2,
+	}),
+	glacierHeart = lighting({
+		clockTime = 0,
+		brightness = 0.36,
+		ambient = "#22303C",
+		outdoorAmbient = "#1E2A34",
+		fogColor = "#08141C",
+		fogEnd = 260,
+		atmosphere = { density = 0.55, haze = 0.5, glare = 0, color = "#102028", decay = "#060E14" },
+		tint = "#CCF2FF",
+		saturation = -0.05,
+	}),
+	lairFrost = lighting({
+		clockTime = 0,
+		brightness = 0.38,
+		ambient = "#24303E",
+		outdoorAmbient = "#202A36",
+		fogColor = "#0A121A",
+		fogEnd = 280,
+		atmosphere = { density = 0.52, haze = 0.6, glare = 0, color = "#121C26", decay = "#080C12" },
+		tint = "#D6EEFF",
+		saturation = -0.08,
+	}),
 	crypt = lighting({
 		clockTime = 0,
 		brightness = 0.3,
@@ -542,8 +587,9 @@ map({
 	size = { x = 640, z = 640 },
 	spawn = { x = -250, y = 4, z = 0 },
 	biome = "cave",
-	lighting = LIGHT.cave,
-	music = "",
+	lighting = LIGHT.glacierHeart, -- S51
+	maxParts = 1000, -- S51: the Heart of the Glacier on the cave engine
+	music = "", -- S51: hint: frozen cavern ambient, deep strings, 2-3 min (Creator Store)
 	buildMode = "generated",
 	worldMap = { x = 0.98, y = 0.34 },
 	links = { "frostpeak" },
@@ -637,7 +683,7 @@ for _, cave in
 			biome = "cave",
 			wx = 0.86,
 			wy = 0.25,
-			light = "cave",
+			light = "caveIce", -- S51
 		},
 		{
 			id = "frostpeak_hold",
@@ -649,7 +695,7 @@ for _, cave in
 			biome = "crypt",
 			wx = 0.94,
 			wy = 0.25,
-			light = "crypt",
+			light = "holdFrozen", -- S51
 		},
 	}
 do
@@ -673,6 +719,8 @@ do
 			then 700
 			elseif cave.id == "ashen_mine" then 750 -- S50
 			elseif cave.id == "ashen_lair" then 700
+			elseif cave.id == "frostpeak_grotto" then 650 -- S51
+			elseif cave.id == "frostpeak_hold" then 800
 			else nil,
 	})
 end
@@ -699,6 +747,7 @@ do
 		lighting = if dungeon.region == "duskwood"
 			then LIGHT.dungeonTomb -- S49
 			elseif dungeon.region == "ashen" then LIGHT.dungeonFurnace -- S50
+			elseif dungeon.region == "frostpeak" then LIGHT.lairFrost -- S51
 			elseif dungeon.region == "meadows" then LIGHT.dungeonGoblin -- S48
 			else LIGHT.cave,
 		music = "",
@@ -709,7 +758,7 @@ do
 		maxParts = if dungeon.region == "meadows" or dungeon.region == "duskwood"
 			then 450
 			elseif dungeon.region == "ashen" then 500 -- S50: Azgor's Furnace
-			else nil,
+			else 450, -- S51: Vaelgrath's Lair
 	})
 end
 

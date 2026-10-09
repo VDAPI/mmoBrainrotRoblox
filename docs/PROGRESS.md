@@ -53,6 +53,7 @@
 | S48 | Jaskinie 1/4: silnik jaskiń (teren 3D z danych `CaveShapes` / `CaveTerrain`, ubiór `CaveDress`, LOD świateł, życie, nastrój sal) + Kryjówka Przemytników, Gobliński Kopiec, Jaskinia Mchów i Komnata Grimroka | ● |
 | S49 | Jaskinie 2/4: architektura w silniku jaskiń (plany `rect`/`octagon`, sklepienia, podesty, groble, mozaiki, nisze) + Wilcza Nora, Kurhan Kultystów, Krypta Zapomnianych i Grobowiec Morvane | ● |
 | S50 | Jaskinie 3/4: lawa w silniku jaskiń (kanały, kaniony z mostami, fumarole, szczeliny, fosy, lawospady), kute tunele + Opuszczona Kopalnia, Leże Wywerny, Kuźnia Głębin i Palenisko Azgora | ● |
+| S51 | Jaskinie 4/4: lód w silniku jaskiń (tafle, lodospady, szczeliny nieba, zaspy, jęzory lodowca, nory wyrmów) + Lodowa Grota, Zamarznięta Twierdza, Serce Lodowca i Leże Vaelgratha; seria zamknięta, stary generator usunięty | ● |
 
 Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana przez właściciela
 
@@ -1093,6 +1094,24 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
 - **S50** Presety: `caveMine` (`#2E2A26`, mgła `#16120E` do 200), `caveLair` (`#34241E`, `#22100A` do 230), `caveForge`
   (`#2C2420`, `#140A06` do 280), `dungeonFurnace` (`#3A2620`, `#2A100A` do 300); `maxParts` Kopalnia 750, Leże 700,
   Kuźnia 1100, Palenisko 500.
+- **S51** Lód: zamarznięta sadzawka (`pool` z `liquid = "ice"`, `icefall`) to twarda tafla `Ice` 0,5 st. pod brzegiem z
+  `liquid.kind = "ice"`: chodliwa, a reguły odległości S48 liczą tylko wodę (przerębel). Kurtyny lodospadów, sople,
+  szyby i tafle okien to części ubioru (woksel 4 st. jest nieprzezroczysty). Nory wyrmów (`bores` z promptu) to małe
+  nisze S48 (r 5, dno na poziomie sali); `ledge` = `terrace` z `unreachable` (S48); `icewall` to kopiec `Glacier` przy
+  ścianie (bez nawisu: model kolumnowy ma jedną szczelinę powietrza); `lean` kolców zrobiony w ubiorze (korona Leża),
+  nie w terenie.
+- **S51** Wejście Groty to `octagon` z płaskim stropem (inaczej szum ściany dawał spadek przy wyjściu (−211, 0) i strop
+  17 st.); Kaplica `hz` 56 i Komnata Komtura `hx` 56, żeby schody podestów nie wchodziły w rdzeń; Droga Smoka w Sercu ma
+  szerokość 22 (przejście pod czaszką ≥ 12 i strop ≥ 18, test).
+- **S51** Puls serca: jedna wspólna krzywa w `TownFxController` (dwa uderzenia co 2,4 s) zmienia kolor części i jasność
+  świateł z tagiem `heart`; w Sercu 37 części i 10 świateł z tym tagiem (test ≤ 60 / ≤ 12; animowane tylko przy kamerze).
+- **S51** Presety: `caveIce` (`#26303A`, mgła `#0E161E` do 240), `holdFrozen` (`#262C36`, `#0C1016` do 200), `glacierHeart`
+  (`#22303C`, `#08141C` do 260), `lairFrost` (`#24303E`, `#0A121A` do 280); `maxParts` Grota 650, Twierdza 800, Serce
+  1000, Leże 450. Przezroczystych części (`Glass`) jest więcej niż 12 na mapę, bo liczą się też pryzmaty kryształów i
+  bryły lodu; tafli okien jest 1–3 na mapę.
+- **S51** Martwa ścieżka S19 usunięta: `CaveTemplate` i `DungeonArena` budują tylko na silniku (assert, gdy brak wpisu
+  w `Data/CaveShapes`), layouty jaskiń bossów to cienkie nakładki, `dungeon_*` bez stylu; test serii pilnuje, że każda
+  mapa `cave`/`crypt`/`dungeon` ma kształt, preset i `Ambience.maps` (lista `PENDING` pusta).
 
 ## Niedokończone
 (Rzeczy z zakresu sesji, które nie zostały zrobione. Następna sesja zaczyna od nich.)
@@ -1291,6 +1310,18 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
 - **S50** Nie zrobione: kołysanie Tygla, klatki wyciągu i łańcuchów (tween na kliencie), krople metalu jako osobny efekt
   (są iskry), sylwetka wywerny nad otworem Grzęd, chochlikowe ogniki, nowe szablony `DecorController` (żużel, złom,
   węgielek, łuska, skorupa jaja), ujęcia `caveview` (przekroje i mapy z góry tak), reakcja Paleniska na fazy Azgora.
+- **S51** Jaskinie Szczytów i Leże niesprawdzone w Studio: lodowe tafle i lodospady, szczeliny nieba ze śniegiem, nory
+  wyrmów (okrągły przekrój na wokselach 4 st.), żebra i czaszka smoka, puls serca, koksowniki z kręgami odtajałej skały,
+  lot smoka pod kopułą (strop ≥ 40 nad kołem r 62 w danych).
+- **S51** Dźwięki jaskiń S48–S51 do podpięcia (wszystkie z pustym `id` i podpowiedzią `hint` w `Data/Ambience`; listy na
+  jaskinię w sekcjach S48, S49 i S50 oraz tu): Grota (lodowa jaskinia, pękający lód lodospadów, wycie w szybie, oddech
+  bestii, wilki, zamieć, woda pod lodem, drapieżny ptak, latarnia), Twierdza (zamarznięty zamek, jęk lodowca, szum
+  kryształów, chór, zbroje i łańcuchy, ognisko, szepty w lodzie), Serce (głęboki lodowiec, bicie serca ~25 bpm, dzwonienie
+  kryształów, lodowe organy, ślizganie wyrma, oddech smoka, monety, ryk smoka za bramą), Leże (wiatr i oddech smoka,
+  koksowniki, wysoki wiatr); muzyka Serca i Leża (`music` z podpowiedzią w `Data/Maps`).
+- **S51** Nie zrobione: kawki i zorza w kominie, reakcja Leża na fazy Vaelgratha (`Flying`/`Phase`), snopy światła
+  między kryształami Hali, osobne dźwięki „grania” Organów, złoto pod lodem w posadzce, szron sypiący się z sopli przy
+  biegu, pióra w Kominie, nowe szablony `DecorController` (sierść, pióro, łuska, odłamek kryształu), widoki 3D jaskiń.
 
 ## Zgłoszone błędy
 (Właściciel wpisuje tu błędy po testach albo przekazuje je przez sesję poprawek.)
@@ -4481,3 +4512,83 @@ S48 (chodliwy), reszta do zrobienia.
 16. `/ambience ashen_cave:2`, `/ambience ashen_lair:6`, `/ambience auto`.
 17. Mapa (M), minimapa i wiki: obrysy jaskiń Pustkowi z pomarańczową lawą.
 18. Jaskinie Łąk i Boru oraz ich komnaty wyglądają i działają jak po S49.
+
+### S51: Jaskinie 4/4: Lodowa Grota, Zamarznięta Twierdza, Serce Lodowca + Leże Vaelgratha (koniec serii)
+
+**Zrobione**
+- Lód w silniku jaskiń (ogólnie; stare mapy bez zmian w fixture): `pool` z `liquid = "ice"`, `icefall` (zamarznięta
+  sadzawka, przerębel `hole`), `skyhole` wzdłuż łamanej (`points`, `width`), `drift`, `icewall` (+ `windows`), `window`,
+  `paint`, `stalagmites.material`, tunele `profile = "bore"` (okrągły przekrój, płaskie dno ≥ 8), `straight`, `floor`;
+  zapytania `T.icefalls()`, `T.windows()`; materiały lodu w zestawie wokseli.
+- Kształty (`Data/CaveShapes`): Grota (wejście `octagon`, zaspa, 3 zatoki z lodospadami i przerębel, komin do nieba z
+  zaspą, 3 półki gniazd bez dojścia, nisza tronu z podestem, lodowe okno, 4 nory wilków, zamarznięty strumyk), Twierdza
+  (6 sal `rect`/`octagon`, korytarze murowane 22 st., jęzory lodowca w Bramie, Wyłomie, Koszarach i Komnacie, szczelina
+  w sklepieniu Dziedzińca, promienie szronu, ołtarz na podeście, witraże, znak zakonu, podest krzesła, Ściana Poległych),
+  Serce (Droga Smoka: 3 proste tunele szer. 22; 6 nor wyrmów `bore`; szczelina nieba w Rozpadlinie, 4 trzony kryształów,
+  nisze z jajami, Organy z lodospadem i lodowymi kolcami, nory w ścianach, Przedsionek `rect`), Leże (arena r 118 z
+  podłogą `Ice` i spękaniami `Glacier`, półka gniazda na północy, otwór w kopule, pole `braziers`).
+- Ubiór: `Grotto` (kły sopli, obóz traperów z saniami i latarnią, tropy, lodospady z kurtynami i błękitnym blaskiem,
+  przerębel z rybą i bryłami, sople komina, snop księżyca ze śniegiem, gniazda harpii z łupami i linami, czekan, tron z
+  kłów i lodu, trofea, okno z mamutem, spiżarnia, kości, futra, nory z sierścią, skóra lamparta; wspólne `Grotto.icefall`
+  i `Grotto.window`), `Hold` (krata nad wyjściem, puste zbroje w lodzie, chorągwie zakonu, niebieskie pochodnie, jęzory
+  lodowca z gruzem, ognisko olbrzymów z ław, siedzisko z posągu z głową, kości mamuta, głazy, maczuga, arkady, studnia,
+  Kwiat Szronu ze snopem śniegu, kryształy żywiołaków, ołtarz z mieczem w lodzie, witraże, ławy, posągi rycerzy, prycze,
+  stojaki, stół z miskami, ślady olbrzyma, krzesło komtura z chorągwią, Ściana Poległych, zamarznięta uczta z mapą i
+  sztyletem, kosze niebieskiego ognia), `Heart` (łuski i kości na progu, żyły serca w ścianach, 4 kolosalne kryształy,
+  narodziny strażników z kręgami run, jaja w niszach, skorupy, Organy z soplami, ślady wyrmów i wylinki, skarbiec ze
+  złotem i zbrojami w lodzie, szkielet smoka: kręgosłup, żebra łukami ≥ 16 st., ogon, czaszka z otwartą paszczą nad
+  tunelem do Przedsionka, gniazda młodych; ślady pazurów, wachlarz szronu, odciski łap, łuski, lodowe szpony bramy, kosze
+  zimnego ognia, mgła), `DragonLair` (misy koksowników na kościach z ogniem, dyski odtajałej skały r 9 z parą, korona
+  lodowych kolców pochylonych do środka z kośćmi, czaszka olbrzyma, zamrożony skarb, poprzednicy za lodem, gniazdo w
+  snopie księżyca, sople pod sklepieniem).
+- Klient: tag `heart` (wspólny puls) w `TownFxController`; emitery `snowBeam`, `snowGust`, `sparkle`.
+- Nastrój: `Data/Ambience.rooms` dla 21 sal (5 + 6 + 8 + 2), `maps`, punkty dźwięku (koksowniki, otwór w kopule, brama…);
+  presety i `maxParts`.
+- Admin: `/cavestats all` (przegląd serii), role sal w `/tpcave` (`icefalls`, `chimney`, `kingden`, `wolfden`,
+  `gatehouse`, `breach`, `courtyard`, `chapel`, `barracks`, `commandery`, `crevasse`, `crystalhall`, `hatchery`, `organ`,
+  `burrows`, `hoard`, `ribcage`, `antechamber`, `arena`).
+- Zamknięcie serii: stara ścieżka S19 usunięta (`CaveTemplate`, `DungeonArena`, layouty jaskiń bossów: −600 linii);
+  test serii (każda mapa `cave`/`crypt`/`dungeon` na silniku, z presetem i `Ambience.maps`); SWIAT §1, §4 (12 wierszy z
+  wyglądem), §5 (4 komnaty z nazwami z gry i wyglądem); ARCHITECTURE §8, DESIGN §3.5, CLAUDE.md.
+- Wiki: SVG `frostpeak_grotto`, `frostpeak_hold`, `frostpeak_cave` z obrysem.
+- Testy: `caveterrain.spec` objął 4 mapy (kontrakt S48) i blok S51 (lód chodliwy, przerębel to woda, komin do nieba,
+  sala Króla ≥ Komin + 3, gniazda wysoko, korytarze Twierdzy ≥ 20 i sale architektoniczne, Droga Smoka bez kolizji,
+  przejście pod czaszką, budżet pulsu, koksowniki z layoutu, skryptu i kształtu zgodne, dyski = `WARM_RADIUS`, strop ≥ 40
+  nad kołem r 62, seria kompletna); fixture kształtów dopisany; `worldgen.spec`.
+- Pomiary (Lune): woksele Groty 0,11 s, Twierdzy 0,11 s, Serca 0,19 s, Leża 0,05 s; shell 2 / 40 / 15 / 17, detail 142 /
+  210 / 259 / 96, fine 116 / 65 / 110 / 56, światła 8 / 23 / 18 / 9.
+- Obrazy kontrolne: poprawione: spadek i niski strop przy wyjściu Groty, półki gniazd przy rdzeniu Komina, kolce Organów
+  na sadzawce lodospadu, schody podestów Kaplicy i Komnaty w rdzeniu, jęzory lodowca w skale, wąska Droga Smoka pod
+  czaszką, Buildy kryształów Hali w skale.
+
+**Pliki**: nowe `Logic/CaveDress/{Grotto,Hold,Heart,DragonLair}`; zmiany: `Logic/{CaveTerrain,CaveDress/init}`,
+`Data/{CaveShapes,Maps,Ambience,AdminCommands}`, lokalizacja, `World/Layouts/{CaveTemplate,DungeonArena,dungeon_*,
+*_cave}`, `Admin/Terrain`, `Controllers/{TownFxController,WorldLifeController}`, `tests/{caveterrain,worldgen}`,
+`tests/fixtures/caveShapes`, wiki, `docs/{SWIAT,ARCHITECTURE,DESIGN}`, `CLAUDE.md`.
+
+#### Instrukcja testu S51
+
+1. Play. W Output `[Cave:frostpeak_grotto]`, `[Cave:frostpeak_hold]`, `[Cave:frostpeak_cave]`, `[Cave:dungeon_frostpeak]`
+   (terrain, shell, parts) i `[WorldBuilder] world built in … s`: zapisz (porównaj z S50; teraz każda jaskinia jest na
+   silniku).
+2. `/cavestats all`: wszystkie 16 map, części ≤ `maxParts`.
+3. Grota (`/tp frostpeak_grotto`): z punktu odrodzenia latarnia i sanie traperów, kły sopli, w głębi błękitna łuna.
+   `/tpcave frostpeak_grotto icefalls` (trzy świecące lodospady, przerębel), `chimney` (snop księżyca, śnieg, gniazda z
+   linami wysoko), `kingden` (tron z kłów, okno z mamutem), `wolfden` (nory z sierścią, tafla strumyka).
+4. `/e2 spawn` w Leżu Króla Gór: Król Gór stoi na podłodze.
+5. Twierdza: `gatehouse` (krata nad wyjściem, zbroje w lodzie, niebieskie pochodnie), `breach` (lodowiec przez mur,
+   ognisko olbrzymów: jedyne ciepłe światło), `courtyard` (Kwiat Szronu, szczelina ze śniegiem), `chapel` (miecz w lodzie,
+   witraże), `barracks`, `commandery` (krzesło komtura, Ściana Poległych); olbrzymy nie wchodzą w strop korytarzy.
+6. `/e2 spawn` w Komnacie Komtura.
+7. Serce: z punktu odrodzenia prosta oś przez Halę i żebra do czerwonej bramy; kryształy pulsują jak serce (dwa uderzenia
+   co ~2,4 s). `crystalhall`, `hatchery` (jaja), `organ`, `burrows` (okrągłe tunele wyrmów), `hoard` (złoto), `ribcage`
+   (szkielet smoka; `/e2 spawn`), przejście pod czaszką do `antechamber` (ślady pazurów, szron, lodowe szpony bramy).
+8. Leże (`/tp boss vaelgrath`, brama): lodowa arena, cztery koksowniki z kręgami mokrej skały i parą, korona kolców,
+   skarb, poprzednicy za lodem, gniazdo w snopie księżyca na północy.
+9. Walka: `/boss spawn vaelgrath`, `/phase 2` (smok w locie nie wchodzi w strop), `/phase 3`: w kręgu mokrej skały burza
+   nie rani, krok poza krąg i rani; walka jak przed sesją.
+10. Niska szczegółowość i `/lights 8`: płynnie, puls dalej widoczny.
+11. `/ambience frostpeak_cave:7`, `/ambience frostpeak_grotto:3`, `/ambience auto`.
+12. Mapa (M) i minimapa: obrysy jaskiń Szczytów.
+13. Wszystkie wcześniejsze jaskinie i komnaty (Łąki, Bór, Pustkowia) wyglądają i działają jak po S50 (stary generator
+    usunięty: żadna nie może się zbudować „po staremu”).

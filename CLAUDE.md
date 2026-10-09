@@ -81,7 +81,9 @@ MMORPG na Roblox (Margonem w 3D). Luau + Rojo + Wally + Fusion 0.3 + ProfileStor
   `decor`, cechy: `pool`, `stream`, `waterfall`, `skyhole`, `terrace`, `pit`, `pillar`, `stalagmites`, `stalactites`,
   `niche`; S49 architektura: plany `rect`/`octagon`, stropy `vault`/`corbel`, `masonry`, `chimney`, `dais`, `causeway`,
   `ring`, `niches`, `pool.inner`; S50 lawa: `liquid = "lava"` w `pool`/`stream` (kanion `bank`/`rise`/`roof`), `vent`,
-  `crack`, `moat`, `bridge`, `lavafall`, tunele `carved`, `edgeFloors`; wygląd lawy sam z `Kit.lavaGlow`; dla jaskiń
+  `crack`, `moat`, `bridge`, `lavafall`, tunele `carved`, `edgeFloors`; wygląd lawy sam z `Kit.lavaGlow`; S51 lód:
+  `liquid = "ice"`, `icefall`, `skyhole` z `points`, `drift`, `icewall`, `window`, `paint`, tunele `profile = "bore"`,
+  `straight`, `floor`; puls serca tag `heart`; każda jaskinia i komnata MUSI mieć wpis (stary generator usunięty); dla jaskiń
   bossów i komnat `tunnels`/`extraRooms`/`arena`) + moduł ubioru `Logic/CaveDress/<Motyw>` w `THEMES`
   + nastroje sal `Data/Ambience.rooms` + `maxParts` i preset światła w `Data/Maps`; layout buduje się sam
   (`World/CaveLayout`). Spawnery: tylko `y` z podłogi (fixture `tests/fixtures/caveRooms`), rdzeń sali `0,65 r + 8` suchy

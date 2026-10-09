@@ -2765,7 +2765,7 @@ return {
 	["admin.usage.caveinfo"] = "/caveinfo: the cave under you (room, role, floor, ceiling, liquid, mood, lights)",
 	["admin.caveinfo.none"] = "Map {map} is not on the cave engine.",
 	["admin.caveinfo.ok"] = "{map} ({x}, {z}): room {room} ({role}), floor {floor}, ceiling {ceiling}, liquid {liquid}, lava {lava} studs, mood {mood}.",
-	["admin.usage.cavestats"] = "/cavestats [cave]: terrain and shell (times, blocks), parts against maxParts, Builds, lights, nodes, spawners",
+	["admin.usage.cavestats"] = "/cavestats [cave|all]: terrain and shell (times, blocks), parts against maxParts, Builds, lights, nodes, spawners",
 	["admin.cavestats.ok"] = "{map}: parts {parts}/{max}, terrain {terrain} ms (WriteVoxels {write} ms, {blocks} blocks), shell {shell} ms, Builds {builds}, detail {detail}, fine {fine}, lights {lights}, nodes {nodes}, spawners {spawners}.",
 	["admin.usage.lights"] = "/lights <n|auto>: force the number of cave lights on your client (to compare the frame rate)",
 	["admin.lights.ok"] = "Cave lights: {value}.",

@@ -1,8 +1,8 @@
 --!strict
 -- Cave dressing (S48): Builds of every cave or boss chamber on the cave engine (Data/CaveShapes), by the shape's
--- theme module (S48 Moss, Smugglers, Warren, GoblinThrone; S49 Den, Barrow, Crypt, Tomb; S50 Mine, Lair, Forge, Furnace; S51 adds
--- its own), plus the ore veins along the
--- walls of the fighting rooms, life points and sketch shapes. Pure and deterministic: the server builds the "shell"
+-- theme module (S48 Moss, Smugglers, Warren, GoblinThrone; S49 Den, Barrow, Crypt, Tomb; S50 Mine, Lair, Forge,
+-- Furnace; S51 Grotto, Hold, Heart, DragonLair), plus the glow of the lava, the ore veins along the walls of the
+-- fighting rooms, life points and sketch shapes. Pure and deterministic: the server builds the "shell"
 -- level, each client "detail" and "fine" near its camera (TownDetailController through Logic/WorldGen, which wraps
 -- this module per map: `CaveDress.generator(mapId)`). Props that collide stay out of the rooms' cores and clear of
 -- every spawner by its radius + 4, of the exit, the respawn point, the gate and the landing points.
@@ -11,9 +11,13 @@ local Barrow = require("@self/Barrow")
 local CaveShapes = require("../Data/CaveShapes")
 local Crypt = require("@self/Crypt")
 local Den = require("@self/Den")
+local DragonLair = require("@self/DragonLair")
 local Forge = require("@self/Forge")
 local Furnace = require("@self/Furnace")
 local GoblinThrone = require("@self/GoblinThrone")
+local Grotto = require("@self/Grotto")
+local Heart = require("@self/Heart")
+local Hold = require("@self/Hold")
 local Kit = require("@self/Kit")
 local Lair = require("@self/Lair")
 local Mine = require("@self/Mine")
@@ -42,6 +46,11 @@ local THEMES: { [string]: { all: (env: Kit.Env, out: { Build }) -> () } } = {
 	Lair = Lair,
 	Forge = Forge,
 	Furnace = Furnace,
+	-- S51: the Frost Peaks
+	Grotto = Grotto,
+	Hold = Hold,
+	Heart = Heart,
+	DragonLair = DragonLair,
 }
 
 type State = { builds: { Build }, env: Kit.Env }

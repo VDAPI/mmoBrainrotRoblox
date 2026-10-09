@@ -17,6 +17,8 @@
 --     coal, rare sparks), vent (heat shimmer, sparks and smoke: fumaroles, the crater), forge (flicker and bursts of
 --     sparks), glow (slow "breathing" brightness of the part and of its lights: the Colossus' eyes, runes, the
 --     pyramid's entrance); lava lights are switched by Controllers/RegionLightController;
+--   * S51 (Frost Peaks): heart (the crystals of the Heart of the Glacier beat with one shared two-stroke pulse every
+--     2.4 s: the part's colour and its lights);
 --   * window / lamp: at night (Logic/DayCycle) ~60% of the windows glow warm (chosen by position) and lamps turn
 --     to Neon with their PointLights on; by day both go back to their own colour and material and lamp lights
 --     are off. Switching runs over several frames.
@@ -69,6 +71,9 @@ local pulses: { [BasePart]: number } = {}
 local crusts: { [BasePart]: { base: CFrame, phase: number } } = {}
 local breathers: { [BasePart]: { color: Color3, phase: number } } = {}
 local breathLights: { [PointLight]: { base: number, phase: number } } = {}
+local hearts: { [BasePart]: Color3 } = {} -- S51
+local heartLights: { [PointLight]: number } = {}
+local HEART_PERIOD = 2.4
 local forges: { [ParticleEmitter]: number } = {}
 local slowClock = 0
 
@@ -385,8 +390,36 @@ local function addGlow(part: BasePart)
 	breathers[part] = { color = part.Color, phase = phaseOf(part) }
 end
 
+-- S51: one shared heartbeat (two strokes every HEART_PERIOD seconds) for every "heart" part and light.
+local function addHeart(part: BasePart)
+	if part.Name == "Light" then
+		local light = part:FindFirstChildOfClass("PointLight")
+		if light then
+			heartLights[light] = light.Brightness
+		end
+		return
+	end
+	hearts[part] = part.Color
+end
+
+local function heartbeat(now: number): number
+	local t = now % HEART_PERIOD
+	return math.exp(-((t - 0.1) / 0.12) ^ 2) + 0.6 * math.exp(-((t - 0.45) / 0.12) ^ 2)
+end
+
 -- Lava pulses, crust drifts, glows breathe (15 times a second, near the camera).
 local function animateLava(now: number, at: Vector3)
+	if next(hearts) or next(heartLights) then
+		local beat = math.clamp(heartbeat(now), 0, 1)
+		for part, color in hearts do
+			if (part.Position - at).Magnitude < LAVA_RADIUS * 2 then
+				part.Color = color:Lerp(Color3.new(0, 0, 0), (1 - beat) * 0.5)
+			end
+		end
+		for light, base in heartLights do
+			light.Brightness = base * (0.45 + 0.55 * beat)
+		end
+	end
 	for part, phase in pulses do
 		if (part.Position - at).Magnitude < LAVA_RADIUS then
 			local k = 0.5 + 0.5 * math.sin(now * 0.9 + phase)
@@ -547,6 +580,8 @@ local function onAdded(instance: Instance)
 		addForge(part)
 	elseif fx == "glow" then
 		addGlow(part)
+	elseif fx == "heart" then
+		addHeart(part)
 	elseif fx == "window" then
 		nightParts[part] = "window"
 		applyNight(part)
@@ -570,6 +605,7 @@ local function onRemoved(instance: Instance)
 	pulses[part] = nil
 	crusts[part] = nil
 	breathers[part] = nil
+	hearts[part] = nil
 	nightParts[part] = nil
 	lampLights[part] = nil
 	originals[part] = nil
@@ -578,6 +614,7 @@ local function onRemoved(instance: Instance)
 	if light then
 		flickers[light] = nil
 		breathLights[light] = nil
+		heartLights[light] = nil
 	end
 	for key, s in spinners do
 		s.members[part] = nil
