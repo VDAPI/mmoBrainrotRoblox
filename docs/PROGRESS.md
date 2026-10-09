@@ -1113,6 +1113,31 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
   w `Data/CaveShapes`), layouty jaskiń bossów to cienkie nakładki, `dungeon_*` bez stylu; test serii pilnuje, że każda
   mapa `cave`/`crypt`/`dungeon` ma kształt, preset i `Ambience.maps` (lista `PENDING` pusta).
 
+- **FIX 2026-10-09** Przewaga poziomów (`Damage.levelGap`, `Data/Combat.levelGap*`): atakujący 6+ poziomów nad
+  obrońcą ma +10 % obrażeń i +5 pkt proc. szansy na krytyk za każdy poziom od 6. (6 = +10 %, 7 = +20 %…), maks. 10 kroków;
+  działa w obie strony i w PvP (nie dla DoT, cierni i `damageOverride`). Model `FightSim` liczy to samo. Nadpisuje DESIGN §4.5.
+- **FIX 2026-10-09** Bonusy wg rzadkości: Unikat 2, Heroik 3, Legenda 3 + 1 legendarny, Mityk 3 + 2 legendarne + 1 mityczny
+  (nowa pula `Bonuses.pools.mythic`, `myth_*`, pole `mythicLines`; linie mityczne w kolorze Mityka). Heroik `rangeMul` 1.05 → 1.0,
+  próg testu zestawu heroicznego 25 → 26 %. Nadpisuje DESIGN §5.4.
+- **FIX 2026-10-09** Łup z bossa: każdy zwycięzca dostaje dokładnie 1 przedmiot we własnym worku (`Loot.rollBossItem`, worek
+  `personal`, nikt inny go nie widzi ani nie podniesie) + własne materiały i szansa na legendarne błogosławieństwo
+  (20 % / liczba graczy). Mityk 1 %, Legenda 6 %, każde +1 pkt proc. za zabicie tego bossa wcześniej tego dnia (UTC, reset z
+  `bossRuns`); reszta Unikat / Heroik, broń częściej (`LootTables.bossSlots`). Wspólny łup i pity S30 usunięte
+  (`character.bossPity` zostaje w schemacie tylko dla zapisów). `/bosspity [boss] [zabicia]` ustawia dzisiejsze zabicia.
+  Nadpisuje DESIGN §16.
+- **FIX 2026-10-09** Elita II: odrodzenie rośnie z poziomem jaskini (`AreaSpawns.elite2Respawn`: 480 + 12 × poziom s ±15 %,
+  poz. 20 ≈ 12 min, poz. 100 ≈ 28 min); minutnik w prawym dolnym rogu (`Hud/Elite2Timer`) z dokładnym czasem (ten sam rzut co
+  spawner), tylko dla graczy, którzy ją bili. Sekcja timerów zniknęła z trackera questów. Nadpisuje DESIGN §15.3.
+- **FIX 2026-10-09** Atak podstawowy zalicza obrażenia, gdy cios dojdzie albo pocisk doleci (`AttackPose.hitDelay`, wspólne
+  tempo lotu z klientem); klient już nie przetrzymuje liczb (`hitDelay` i `DamageNumbers.maxHitDelay` usunięte). Umiejętności
+  `circleTarget` z pociskiem (kula ognia) czekają na lot (140 st./s, maks. 0,8 s).
+- **FIX 2026-10-09** Potwory omijają przeszkody (`Logic/Steer` + `Monster.steerTo`): dwa promienie (kolano, biodro) na
+  `steerLookAhead` + pół rozmiaru, objazd pod kątami 35/70/105/140°, strona trzymana 0,8 s; strome zbocza blokują, łagodne nie.
+- **FIX 2026-10-09** Wymóg poziomu umiejętności: krok 3 poziomów, ale późne umiejętności (odblok. 75) dostają największy krok,
+  który mieści się w 100 (10/10 na poz. 93); test pilnuje, że każda umiejętność dochodzi do maksimum.
+- **FIX 2026-10-09** Prawdziwe modele broni: `WeaponLooks.assets` (id przedmiotu → MeshPart w `Assets.Weapons`), próbnie
+  `sword1h_1` = `sword1` (Tripo, uproszczony do 9 tys. trójkątów); import opisany w `docs/ASSETS.md` → „Broń”.
+
 ## Niedokończone
 (Rzeczy z zakresu sesji, które nie zostały zrobione. Następna sesja zaczyna od nich.)
 
@@ -1322,6 +1347,9 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
 - **S51** Nie zrobione: kawki i zorza w kominie, reakcja Leża na fazy Vaelgratha (`Flying`/`Phase`), snopy światła
   między kryształami Hali, osobne dźwięki „grania” Organów, złoto pod lodem w posadzce, szron sypiący się z sopli przy
   biegu, pióra w Kominie, nowe szablony `DecorController` (sierść, pióro, łuska, odłamek kryształu), widoki 3D jaskiń.
+
+- **FIX 2026-10-09** Miecz `sword1` czeka na import w Studio (`docs/ASSETS.md` → „Broń”); do tego czasu startowy miecz
+  ma stary wygląd z części. Ataki potworów wciąż zaliczają się od razu (bez zamachu); zrobione tylko ataki graczy.
 
 ## Zgłoszone błędy
 (Właściciel wpisuje tu błędy po testach albo przekazuje je przez sesję poprawek.)
@@ -4592,3 +4620,37 @@ S48 (chodliwy), reszta do zrobienia.
 12. Mapa (M) i minimapa: obrysy jaskiń Szczytów.
 13. Wszystkie wcześniejsze jaskinie i komnaty (Łąki, Bór, Pustkowia) wyglądają i działają jak po S50 (stary generator
     usunięty: żadna nie może się zbudować „po staremu”).
+
+### Poprawki 2026-10-09 (zgłoszenia właściciela)
+
+| # | Zgłoszenie | Przyczyna | Poprawka |
+|---|---|---|---|
+| 1 | NPC w podłodze | Krainy z `buildLate` (Bór, Pustkowia, Szczyty) budują się w tle; `NpcService.Start` stawiał NPC, zanim był teren, promień nic nie trafiał i NPC stał ok. 1 st. pod ziemią | NPC map w budowie czekają na `WorldService.WaitBuilt` |
+| 2 | Potwory wchodzą w skały i drzewa | Prosty `Humanoid:MoveTo` do celu, bez skoku i omijania | `Logic/Steer` + `Monster.steerTo` (pościg, powrót) |
+| 3 | Porównanie z założonym | Tylko tekstowe ↑/↓ | Drugi panel „Założone teraz” obok podpowiedzi (każdy slot poza ekwipunkiem) |
+| 4 | Obrażenia przed końcem animacji / lotu pocisku | Serwer liczył trafienie od razu, klient tylko opóźniał liczbę (maks. 0,5 s) | Serwer czeka `AttackPose.hitDelay`; kula ognia czeka na lot |
+| 5 | Przewaga poziomów | Brak | `Damage.levelGap` (decyzja wyżej) |
+| 6 | Punkty Siła / Zręczność / Witalność / Intelekt | Brak opisu, co daje punkt; awans kasował niezatwierdzony podział | Opis pod każdą cechą (liczby z `Stats.Formula`); awans zachowuje podział |
+| 7 | Łup z bossa | Wspólne 3–4 przedmioty + osobny rzut na legendę i mityka z pity | 1 przedmiot na gracza, szanse 1 % / 6 % +1 % dziennie (decyzja wyżej) |
+| 8 | Bonusy wg rzadkości | Unikat 1–2, Heroik 2–3, Legenda 3–4 + 1, Mityk 4 + 2 | 2 / 3 / 3 + 1 / 3 + 2 + 1 mityczny |
+| 9 | Nazwa, poziom i VIP nad postacią | Tabliczka była, ale VIP widać było tylko po kolorze nicku (własny nick i tak złoty), a włosy / czapki ją zasłaniały | Plakietka „★ VIP”, własna tabliczka zawsze na wierzchu |
+| 10 | Umiejętność wymaga poz. 102 | `unlock + 3·(n−1)` dla odblok. 75 daje 102 na 10/10 | Krok dopasowany do poz. 100 |
+| 11 | Minutnik Elity II | Okno 10–20 min w trackerze questów, stałe dla każdego poziomu | Okienko w rogu z dokładnym czasem; odrodzenie rośnie z poziomem |
+
+Dodatkowo: miecz `sword1.glb` (64 MB, 1,78 mln trójkątów, Tripo) uproszczony do 9 tys. trójkątów (`art/weapons/sword1`), obsługa
+prawdziwych modeli broni w `EquipmentService` (`WeaponLooks.assets`). `.glb` w `.gitignore`.
+
+#### Instrukcja testu poprawek 2026-10-09
+1. Mroczny Bór / Pustkowia / Szczyty: zwiadowca przy portalu stoi na ziemi (Output: `[NpcService] … wait for their map`).
+2. Ściągnij wilka zza skały / drzewa: obchodzi przeszkodę zamiast stać.
+3. Najedź na przedmiot w plecaku przy założonym w tym slocie: obok drugi panel „Założone teraz”.
+4. Mag na 30 st.: HP celu spada, gdy kula doleci; łuk tak samo; kula ognia uderza z doleceniem pocisku.
+5. `/level 30` i potwór poz. 20: wyraźnie większe obrażenia i więcej krytyków (`/simfight` pokazuje to samo).
+6. Okno Postaci: pod Siłą / Zręcznością / Intelektem / Witalnością opis punktu; rozdziel punkty, zdobądź poziom: rozdział zostaje.
+7. Boss (np. `/tpcave` do Komnaty Grimroka): każdy dostaje 1 przedmiot w swoim worku; okno nagrody pokazuje szanse na
+   następne zabicie (+1 pkt proc.); `/bosspity grimrok 2` ustawia dzisiejsze zabicia.
+8. `/give` legendy i mityka: 3 + 1 i 3 + 2 + 1 linii, mityczna w kolorze Mityka.
+9. Kup VIP (albo atrybut `Vip` na graczu): „★ VIP” na tabliczce nad sobą i innymi.
+10. Umiejętność z odblok. 75 (np. Burza meteorów): 10/10 dostępne od poz. 93.
+11. Zabij Elitę II: w prawym dolnym rogu odliczanie mm:ss; po 0 „może się pojawić w każdej chwili”.
+12. Po imporcie `sword1` (ASSETS → „Broń”): nowy wojownik trzyma ten miecz, ostrze do przodu, dłoń na rękojeści.

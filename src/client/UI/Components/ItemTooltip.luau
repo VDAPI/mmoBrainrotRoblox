@@ -7,6 +7,8 @@
 -- Context: `attach(..., getCtx)` may pass a function returning TooltipModel.Ctx fields (`shop`, `shopEntry`,
 -- `potionDiscount`, `merchantOpen`, `hints`); language, character level/class and the equipped item are filled
 -- in here. `ItemTooltip.setMerchantOpen(true)` while a merchant window is open adds "Sells for" everywhere.
+-- FIX 2026-10-09: any slot except the equipment itself also shows the equipped item of that slot in a second
+-- panel next to the first one, so the stats can be compared side by side.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
@@ -48,6 +50,8 @@ local emptyText = moduleScope:Value(nil :: string?)
 local position = moduleScope:Value(Vector2.zero)
 local shownCtx = moduleScope:Value(nil :: TooltipModel.Ctx?)
 local merchantOpen = moduleScope:Value(false)
+local shownSlot = moduleScope:Value(nil :: string?)
+local GAP = 8
 local owner: GuiObject? = nil
 local getters: { [string]: () -> ItemInstance? } = {}
 local ctxGetters: { [string]: () -> TooltipModel.Ctx? } = {}
@@ -94,8 +98,16 @@ end
 
 -- Legendary bonus lines take the Legendary rarity's parchment text colour (S30: from data, not hard-coded).
 local LEGENDARY_LINE = Rarities.get(Rarities.LEGENDARY).textColor
+local MYTHIC_LINE = Rarities.get(Rarities.MYTHIC).textColor
 
-local function bonusRow(s: Scope, order: number, text: string, quality: number, legendary: boolean): Instance
+local function bonusRow(
+	s: Scope,
+	order: number,
+	text: string,
+	quality: number,
+	legendary: boolean,
+	mythic: boolean
+): Instance
 	return s:New("Frame")({
 		LayoutOrder = order,
 		BackgroundTransparency = 1,
@@ -108,7 +120,10 @@ local function bonusRow(s: Scope, order: number, text: string, quality: number, 
 				TextWrapped = true,
 				FontFace = Theme.Fonts.BodyBold,
 				TextSize = Theme.TextSize.Small,
-				TextColor3 = if legendary then LEGENDARY_LINE else Color3.fromHex("#1F4E9A"),
+				TextColor3 = if mythic
+					then MYTHIC_LINE
+					elseif legendary then LEGENDARY_LINE
+					else Color3.fromHex("#1F4E9A"),
 				TextXAlignment = Enum.TextXAlignment.Left,
 			}),
 			s:New("Frame")({
@@ -175,7 +190,10 @@ local function build(
 	local out: { Instance } = {}
 	for order, entry in TooltipModel.build(item, def, ctx).lines do
 		if entry.kind == "bonus" then
-			table.insert(out, bonusRow(s, order, entry.text, entry.quality or 0, entry.legendary == true))
+			table.insert(
+				out,
+				bonusRow(s, order, entry.text, entry.quality or 0, entry.legendary == true, entry.mythic == true)
+			)
 		else
 			local color = if entry.hex then Color3.fromHex(entry.hex) else TONES[entry.tone] or DARK
 			local size = if entry.size then SIZES[entry.size] else nil
@@ -188,8 +206,16 @@ end
 
 -- Show / hide -----------------------------------------------------------------------------------------------
 
-local function show(object: GuiObject, item: ItemInstance?, text: string?, at: Vector2, ctx: TooltipModel.Ctx?)
+local function show(
+	object: GuiObject,
+	item: ItemInstance?,
+	text: string?,
+	at: Vector2,
+	ctx: TooltipModel.Ctx?,
+	slotId: string
+)
 	owner = object
+	shownSlot:set(slotId)
 	shownCtx:set(ctx)
 	shown:set(item)
 	emptyText:set(if item then nil else text)
@@ -223,7 +249,8 @@ function ItemTooltip.attach(
 				local text = if empty then Fusion.peek(empty) else nil
 				local item = getItem()
 				if item or text then
-					show(object, item, text, Scale.toVirtual(Vector2.new(x, y)), if getCtx then getCtx() else nil)
+					local at = Scale.toVirtual(Vector2.new(x, y))
+					show(object, item, text, at, if getCtx then getCtx() else nil, slotId)
 				end
 			end
 		end)
@@ -279,11 +306,12 @@ function ItemTooltip.mount(scope: Scope, parent: Instance)
 		if item then
 			local screen = Fusion.peek(Scale.VirtualSize)
 			owner = nil
+			shownSlot:set(selected)
 			local ctxGetter = selected and ctxGetters[selected]
 			shownCtx:set(if ctxGetter then ctxGetter() else nil)
 			shown:set(item)
 			emptyText:set(nil)
-			position:set(Vector2.new(screen.X / 2 - WIDTH / 2 - OFFSET.X, 70))
+			position:set(Vector2.new(screen.X / 2 - WIDTH - OFFSET.X, 70))
 		else
 			hide(nil)
 		end
@@ -296,25 +324,24 @@ function ItemTooltip.mount(scope: Scope, parent: Instance)
 	local showIcon = scope:Computed(function(use): boolean
 		return use(IconState.Art) and use(shownDef) ~= nil
 	end)
-	scope:New("Frame")({
-		Name = "ItemTooltip",
-		Parent = parent,
+	-- The equipped item of the hovered item's slot (not for the equipment slots themselves).
+	local compared = scope:Computed(function(use): ItemInstance?
+		local item = use(shown)
+		local def = use(shownDef)
+		local slot = use(shownSlot)
+		if not item or not def or (slot and string.sub(slot, 1, 3) == "eq:") then
+			return nil
+		end
+		local equipped = equippedFor(def)
+		return if equipped and equipped.uid ~= item.uid then equipped else nil
+	end)
+	local mainPanel = scope:New("Frame")({
+		Name = "Item",
+		LayoutOrder = 2,
 		Size = UDim2.fromOffset(WIDTH, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,
 		BackgroundColor3 = Theme.Colors.Parchment,
-		Visible = scope:Computed(function(use): boolean
-			return (use(shown) ~= nil or use(emptyText) ~= nil) and use(DragDrop.Dragging) == nil
-		end),
 		ZIndex = 200,
-		Position = scope:Computed(function(use): UDim2
-			local p: Vector2 = use(position)
-			local screen: Vector2 = use(Scale.VirtualSize)
-			local x = p.X + OFFSET.X
-			if x + WIDTH > screen.X - 8 then
-				x = p.X - OFFSET.X - WIDTH
-			end
-			return UDim2.fromOffset(math.max(8, x), math.max(8, math.min(p.Y + OFFSET.Y, screen.Y - 200)))
-		end),
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 			scope:New("UIStroke")({
@@ -368,6 +395,78 @@ function ItemTooltip.mount(scope: Scope, parent: Instance)
 				local text = use(emptyText)
 				return if text then { line(s, 1, text, DARK) } else {}
 			end) :: any,
+		},
+	})
+	local comparePanel = scope:New("Frame")({
+		Name = "Equipped",
+		LayoutOrder = 1,
+		Size = UDim2.fromOffset(WIDTH, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		BackgroundColor3 = Theme.Colors.Parchment,
+		ZIndex = 200,
+		Visible = scope:Computed(function(use): boolean
+			return use(compared) ~= nil
+		end),
+		[Children] = {
+			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
+			scope:New("UIStroke")({
+				Thickness = 2,
+				Color = scope:Computed(function(use): Color3
+					local item = use(compared)
+					return if item then ItemText.rarityColor(item.rarity) else Theme.Colors.GoldDim
+				end),
+			}),
+			scope:New("UIPadding")({
+				PaddingTop = UDim.new(0, 10),
+				PaddingBottom = UDim.new(0, 10),
+				PaddingLeft = UDim.new(0, 12),
+				PaddingRight = UDim.new(0, 12),
+			}),
+			scope:New("UIListLayout")({
+				SortOrder = Enum.SortOrder.LayoutOrder,
+				Padding = UDim.new(0, 3),
+			}),
+			scope:Computed(function(use, s: Scope): { Instance }
+				local item = use(compared)
+				if not item then
+					return {}
+				end
+				local lang = use(Text.Lang)
+				local lines = build(s, item, lang, { hints = false }, use(merchantOpen))
+				table.insert(lines, 1, line(s, 0, Text.get(use, "tooltip.equipped"), MUTED, nil, Theme.Fonts.BodyBold))
+				return lines
+			end) :: any,
+		},
+	})
+	scope:New("Frame")({
+		Name = "ItemTooltip",
+		Parent = parent,
+		BackgroundTransparency = 1,
+		Size = UDim2.fromOffset(0, 0),
+		AutomaticSize = Enum.AutomaticSize.XY,
+		Visible = scope:Computed(function(use): boolean
+			return (use(shown) ~= nil or use(emptyText) ~= nil) and use(DragDrop.Dragging) == nil
+		end),
+		ZIndex = 200,
+		Position = scope:Computed(function(use): UDim2
+			local p: Vector2 = use(position)
+			local screen: Vector2 = use(Scale.VirtualSize)
+			local width = if use(compared) then 2 * WIDTH + GAP else WIDTH
+			local x = p.X + OFFSET.X
+			if x + width > screen.X - 8 then
+				x = p.X - OFFSET.X - width
+			end
+			return UDim2.fromOffset(math.max(8, x), math.max(8, math.min(p.Y + OFFSET.Y, screen.Y - 200)))
+		end),
+		[Children] = {
+			scope:New("UIListLayout")({
+				FillDirection = Enum.FillDirection.Horizontal,
+				SortOrder = Enum.SortOrder.LayoutOrder,
+				VerticalAlignment = Enum.VerticalAlignment.Top,
+				Padding = UDim.new(0, GAP),
+			}),
+			comparePanel,
+			mainPanel,
 		},
 	})
 end

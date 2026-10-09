@@ -13,7 +13,6 @@ local MonsterStats = require("./MonsterStats")
 local Rarities = require("../Data/Rarities")
 local Rng = require("./Rng")
 local ItemRoll = require("./ItemRoll")
-local Types = require("../Types")
 
 -- `forClass`: the class a class-free item (jewellery) rolls its bonuses for (S32).
 export type ItemDrop = { defId: string, ilvl: number, rarity: number, forClass: string? }
@@ -165,120 +164,47 @@ function Loot.dropBaseLevel(level: number, variant: string, cap: number?): numbe
 	return math.max(1, math.floor(base))
 end
 
--- Shared boss loot (DESIGN §16): 3–4 Unique/Heroic items (+1 per player above 3) and materials. Legendary and
--- Mythic items only come from every winner's personal roll (Loot.rollBossPersonal).
-function Loot.rollBossLoot(bossId: string, players: number, rng: Rng.Rng, modifiers: Modifiers?): LootResult
+-- Boss materials and gold (DESIGN §16). FIX 2026-10-09: no shared items any more; every winner gets one item of
+-- their own (Loot.rollBossItem). `items` stays empty.
+function Loot.rollBossLoot(bossId: string, _players: number, rng: Rng.Rng, _modifiers: Modifiers?): LootResult
 	local result: LootResult = { items = {}, materials = {}, gold = 0 }
 	local boss = LootTables.bosses[bossId]
 	if not boss then
 		return result
-	end
-	local mods: Modifiers = modifiers or {}
-	local drops = Rarities.itemDrops.boss
-	local count = rng:int(drops.min, drops.max) + math.max(0, players - 3)
-	for _ = 1, count do
-		local ilvl = ItemRoll.dropLevel(boss.level, rng)
-		local defId = Loot.pickItem(LootTables.byId.wolf.slotWeights, ilvl, 0.8, mods.classId, rng)
-		if defId then
-			table.insert(
-				result.items,
-				{ defId = defId, ilvl = ilvl, rarity = ItemRoll.rollRarity("boss", rng), forClass = mods.classId }
-			)
-		end
 	end
 	rollMaterials(boss.materials, rng, result.materials)
 	result.gold = MonsterStats.gold(boss.level, "boss", rng:next())
 	return result
 end
 
--- Personal boss roll (S30, DESIGN §16) ------------------------------------------------------------------------
+-- Boss item of each winner (FIX 2026-10-09, DESIGN §16) ------------------------------------------------------
 
-export type Pity = Types.BossPity
-export type PersonalRoll = { legendary: boolean, mythic: boolean, pity: Pity }
-
-local function pityOf(entry: Pity?): Pity
-	if type(entry) ~= "table" then
-		return { leg = 0, myth = 0 }
-	end
+-- Chances (0..1) of a Legendary and a Mythic item for a winner who already killed this boss `killsToday` times
+-- today (UTC): the base chance + perKill per kill.
+local function chancesOf(boss: LootTables.BossTable, killsToday: number?): { legendary: number, mythic: number }
+	local kills = math.max(0, math.floor(killsToday or 0))
 	return {
-		leg = math.max(0, math.floor(tonumber(entry.leg) or 0)),
-		myth = math.max(0, math.floor(tonumber(entry.myth) or 0)),
+		legendary = math.clamp(boss.legendaryChance + boss.perKill * kills, 0, 1),
+		mythic = math.clamp(boss.mythicChance + boss.perKill * kills, 0, 1),
 	}
 end
 
--- Chance on the next kill after `misses` kills without a hit: base + step × misses, 1 on the `hard`-th kill.
-local function pityChance(base: number, step: number, hard: number, misses: number): number
-	if misses + 1 >= hard then
-		return 1
-	end
-	return math.clamp(base + step * misses, 0, 1)
-end
-
--- Current chances (0..1) of a Legendary and a Mythic on the next kill of this boss, given the pity counters.
-function Loot.bossChances(bossId: string, pityEntry: Pity?): { legendary: number, mythic: number }
+function Loot.bossChances(bossId: string, killsToday: number?): { legendary: number, mythic: number }
 	local boss = LootTables.bosses[bossId]
 	if not boss then
 		return { legendary = 0, mythic = 0 }
 	end
-	local pity = pityOf(pityEntry)
-	return {
-		legendary = pityChance(boss.legendaryChance, boss.legendaryStep, boss.legendaryHard, pity.leg),
-		mythic = pityChance(boss.mythicChance, boss.mythicStep, boss.mythicHard, pity.myth),
-	}
+	return chancesOf(boss, killsToday)
 end
 
--- One winner's personal roll. A hit resets its counter, a miss adds one. Does not mutate `pity`.
-function Loot.rollBossPersonal(boss: LootTables.BossTable, pity: Pity?, rng: Rng.Rng): PersonalRoll
-	local current = pityOf(pity)
-	local chances = Loot.bossChances(boss.id, current)
-	local legendary = rng:next() < chances.legendary
-	local mythic = rng:next() < chances.mythic
-	return {
-		legendary = legendary,
-		mythic = mythic,
-		pity = {
-			leg = if legendary then 0 else current.leg + 1,
-			myth = if mythic then 0 else current.myth + 1,
-		},
-	}
-end
-
--- Simulates `n` kills of a boss by one character starting from `pity` (admin /bosssim, tests).
-function Loot.simulateBoss(
-	boss: LootTables.BossTable,
-	n: number,
-	rng: Rng.Rng,
-	pity: Pity?
-): { legendary: number, mythic: number, pity: Pity }
-	local current = pityOf(pity)
-	local legendary, mythic = 0, 0
-	for _ = 1, n do
-		local roll = Loot.rollBossPersonal(boss, current, rng)
-		current = roll.pity
-		legendary += if roll.legendary then 1 else 0
-		mythic += if roll.mythic then 1 else 0
-	end
-	return { legendary = legendary, mythic = mythic, pity = current }
-end
-
--- Items of a personal roll for a winner of `classId`: a rolled Legendary (class-usable with
--- Config.BossLoot.legendaryClassShare) and a Mythic (a named item of the boss with Config.BossLoot.mythicNamedShare,
--- otherwise a rolled Mythic of a class-usable base). All at the boss's level.
-function Loot.personalItems(
-	boss: LootTables.BossTable,
-	roll: PersonalRoll,
-	classId: string?,
-	rng: Rng.Rng
-): { ItemDrop }
-	local items: { ItemDrop } = {}
-	local slots = LootTables.byId.wolf.slotWeights
-	if roll.legendary then
-		local defId = Loot.pickItem(slots, boss.level, Config.BossLoot.legendaryClassShare, classId, rng)
-		if defId then
-			table.insert(items, { defId = defId, ilvl = boss.level, rarity = Rarities.LEGENDARY })
-		end
-	end
-	if roll.mythic then
+-- The one item a winner of `classId` gets: Mythic (a named item of the boss with Config.BossLoot.mythicNamedShare,
+-- otherwise a rolled Mythic of a class-usable base), else Legendary (class-usable with
+-- Config.BossLoot.legendaryClassShare), else a Unique / Heroic item. Weapons come first (LootTables.bossSlots).
+function Loot.rollBossItem(boss: LootTables.BossTable, killsToday: number?, classId: string?, rng: Rng.Rng): ItemDrop?
+	local chances = chancesOf(boss, killsToday)
+	local slots = LootTables.bossSlots
+	local roll = rng:next()
+	if roll < chances.mythic then
 		local defId: string? = nil
 		if #boss.named > 0 and rng:chance(Config.BossLoot.mythicNamedShare) then
 			local usable = {}
@@ -289,14 +215,35 @@ function Loot.personalItems(
 			end
 			defId = rng:pick(if #usable > 0 then usable else boss.named)
 		end
-		if not defId then
-			defId = Loot.pickItem(slots, boss.level, 1, classId, rng)
-		end
-		if defId then
-			table.insert(items, { defId = defId, ilvl = boss.level, rarity = Rarities.MYTHIC })
-		end
+		defId = defId or Loot.pickItem(slots, boss.level, 1, classId, rng)
+		return if defId then { defId = defId, ilvl = boss.level, rarity = Rarities.MYTHIC } else nil
 	end
-	return items
+	if roll < chances.mythic + chances.legendary then
+		local defId = Loot.pickItem(slots, boss.level, Config.BossLoot.legendaryClassShare, classId, rng)
+		return if defId then { defId = defId, ilvl = boss.level, rarity = Rarities.LEGENDARY } else nil
+	end
+	local ilvl = ItemRoll.dropLevel(boss.level, rng)
+	local defId = Loot.pickItem(slots, ilvl, Config.BossLoot.legendaryClassShare, classId, rng)
+	return if defId
+		then { defId = defId, ilvl = ilvl, rarity = ItemRoll.rollRarity("boss", rng), forClass = classId }
+		else nil
+end
+
+-- Simulates `n` kills of a boss by one character, `perDay` kills a day (admin /bosssim, tests).
+function Loot.simulateBoss(
+	boss: LootTables.BossTable,
+	n: number,
+	rng: Rng.Rng,
+	perDay: number?
+): { legendary: number, mythic: number }
+	local day = math.max(1, perDay or Config.Boss.dailyRuns)
+	local legendary, mythic = 0, 0
+	for i = 1, n do
+		local drop = Loot.rollBossItem(boss, (i - 1) % day, nil, rng)
+		legendary += if drop and drop.rarity == Rarities.LEGENDARY then 1 else 0
+		mythic += if drop and drop.rarity == Rarities.MYTHIC then 1 else 0
+	end
+	return { legendary = legendary, mythic = mythic }
 end
 
 return Loot

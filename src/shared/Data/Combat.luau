@@ -47,6 +47,18 @@ return table.freeze({
 	-- S32: damage of each member by the size of its group (1-4). The whole group attacks at once, so without this
 	-- a group of 4 dealt ~10x the damage of one monster; tests/balance.spec checks the group targets.
 	groupDamageMul = table.freeze({ 1, 0.85, 0.72, 0.62 }),
+	-- Level advantage (FIX 2026-10-09, Logic/Damage.levelGap): an attacker levelGapFrom+ levels above the defender
+	-- gets +levelGapDmg damage and +levelGapCrit % crit chance per level from levelGapFrom on (6 levels = +10 %,
+	-- 7 = +20 %...), counted up to levelGapMaxSteps steps. Works both ways (player, monster, PvP).
+	levelGapFrom = 6,
+	levelGapDmg = 0.10,
+	levelGapCrit = 5,
+	levelGapMaxSteps = 10,
+	-- Elite II respawn (FIX 2026-10-09, Logic/AreaSpawns.elite2Respawn): base + perLevel x cave level seconds,
+	-- +-spread around it (level 20: ~12 min, level 100: ~28 min; was a flat 10-20 min).
+	elite2RespawnBase = 480,
+	elite2RespawnPerLevel = 12,
+	elite2RespawnSpread = 0.15,
 
 	-- Variants (DESIGN §15.1).
 	variants = table.freeze({
@@ -74,6 +86,11 @@ return table.freeze({
 	leashMax = 150,
 	leashGrace = 5,
 	stuckTime = 5,
+	-- Obstacle steering (FIX 2026-10-09, Logic/Steer + Entities/Monster): probes this far ahead (plus the
+	-- monster's half size), tries these angles to both sides, keeps a detour side this long (seconds).
+	steerLookAhead = 6,
+	steerAngles = table.freeze({ 35, 70, 105, 140 }),
+	steerHold = 0.8,
 	returnSpeedMultiplier = 1.25,
 	returnTimeout = 12,
 	idleRegenDelay = 4,

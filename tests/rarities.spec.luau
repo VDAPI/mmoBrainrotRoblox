@@ -159,14 +159,15 @@ describe("Drop sources S30", function()
 	end)
 end)
 
-describe("Boss personal roll S30", function()
+describe("Boss item per winner (FIX 2026-10-09)", function()
 	local boss = LootTables.bosses.grimrok
 
-	it("every boss has pity numbers and named Mythic items", function()
+	it("every boss has its chances and named Mythic items", function()
 		for id, def in LootTables.bosses do
 			expect(def.id).toBe(id)
-			expect(def.legendaryHard > 1).toBe(true)
-			expect(def.mythicHard > 1).toBe(true)
+			expect(def.mythicChance).toBeNear(0.01)
+			expect(def.legendaryChance).toBeNear(0.06)
+			expect(def.perKill).toBeNear(0.01)
 			expect(#def.named > 0).toBe(true)
 			for _, itemId in def.named do
 				expect((Items.get(itemId) :: any).rarity).toBe(Rarities.MYTHIC)
@@ -174,102 +175,74 @@ describe("Boss personal roll S30", function()
 		end
 	end)
 
-	it("chances grow with misses and hit 100 % at the hard limit", function()
-		expect(Loot.bossChances("grimrok", nil)).toEqual({ legendary = 0.2, mythic = 0.04 })
-		local c = Loot.bossChances("grimrok", { leg = 2, myth = 3 })
-		expect(c.legendary).toBeNear(0.30)
-		expect(c.mythic).toBeNear(0.07)
-		expect(Loot.bossChances("grimrok", { leg = boss.legendaryHard - 1, myth = boss.mythicHard - 1 })).toEqual({
-			legendary = 1,
-			mythic = 1,
-		})
-		expect(Loot.bossChances("nobody", nil)).toEqual({ legendary = 0, mythic = 0 })
+	it("chances: mythic 1 %, legendary 6 %, +1 % each per kill today", function()
+		local c = Loot.bossChances("grimrok", nil)
+		expect(c.legendary).toBeNear(0.06)
+		expect(c.mythic).toBeNear(0.01)
+		c = Loot.bossChances("grimrok", 2)
+		expect(c.legendary).toBeNear(0.08)
+		expect(c.mythic).toBeNear(0.03)
+		expect(Loot.bossChances("nobody", 0)).toEqual({ legendary = 0, mythic = 0 })
 	end)
 
-	it("guarantees at the limit and resets the counter on a hit", function()
-		local rng = Rng.new(31)
-		for _ = 1, 50 do
-			local roll = Loot.rollBossPersonal(boss, { leg = boss.legendaryHard - 1, myth = boss.mythicHard - 1 }, rng)
-			expect(roll.legendary).toBe(true)
-			expect(roll.mythic).toBe(true)
-			expect(roll.pity).toEqual({ leg = 0, myth = 0 })
-		end
-		-- A miss adds one; the input is not mutated.
-		local pity = { leg = 0, myth = 0 }
-		local sawMiss = false
-		for _ = 1, 50 do
-			local roll = Loot.rollBossPersonal(boss, pity, rng)
-			if not roll.legendary then
-				sawMiss = true
-				expect(roll.pity.leg).toBe(1)
-			end
-		end
-		expect(sawMiss).toBe(true)
-		expect(pity).toEqual({ leg = 0, myth = 0 })
-		-- Never more than legendaryHard kills without a legendary.
-		local current = nil
-		local since = 0
-		for _ = 1, 2000 do
-			local roll = Loot.rollBossPersonal(boss, current, rng)
-			current = roll.pity
-			since = if roll.legendary then 0 else since + 1
-			expect(since < boss.legendaryHard).toBe(true)
-		end
-	end)
-
-	it("averages about 3.4 kills per legendary and 9.8 per mythic (100 000 kills)", function()
-		local n = 100000
-		local result = Loot.simulateBoss(boss, n, Rng.new(32))
-		expect(n / result.legendary).toBeNear(3.4, 0.1)
-		expect(n / result.mythic).toBeNear(9.8, 0.35)
-	end)
-
-	it("personal items: Legendary at boss level, Mythic named or rolled with 2 legendary lines", function()
+	it("one item per winner: Unique / Heroic mostly, Legendary and Mythic at their chances", function()
 		local rng = Rng.new(33)
-		local named, rolled, classMatch, legendaries = 0, 0, 0, 0
-		for _ = 1, 400 do
-			local drops =
-				Loot.personalItems(boss, { legendary = true, mythic = true, pity = { leg = 0, myth = 0 } }, "Mage", rng)
-			for _, drop in drops do
+		local n = 40000
+		local counts: { [number]: number } = {}
+		local weapons = 0
+		for _ = 1, n do
+			local drop = Loot.rollBossItem(boss, 0, "Mage", rng) :: any
+			expect(drop ~= nil).toBe(true)
+			counts[drop.rarity] = (counts[drop.rarity] or 0) + 1
+			local def = Items.get(drop.defId) :: any
+			if def.slot == "weapon" then
+				weapons += 1
+			end
+			if drop.rarity >= Rarities.LEGENDARY then
 				expect(drop.ilvl).toBe(boss.level)
-				local def = Items.get(drop.defId) :: any
-				if drop.rarity == Rarities.LEGENDARY then
-					legendaries += 1
-					expect(def.fixedBonuses).toBeNil()
-					if def.classes == nil or table.find(def.classes, "Mage") then
-						classMatch += 1
-					end
-				else
-					expect(drop.rarity).toBe(Rarities.MYTHIC)
-					if def.fixedBonuses then
-						named += 1
-						expect(table.find(boss.named, drop.defId) ~= nil).toBe(true)
-					else
-						rolled += 1
-						local item = ItemRoll.rollItem(drop.defId, drop.ilvl, drop.rarity, rng, uid())
-						local lines = {}
-						for _, bonus in item.bonuses do
-							if table.find(Bonuses.pools.legendary, bonus.stat) then
-								expect(lines[bonus.stat]).toBeNil()
-								lines[bonus.stat] = true
-							end
-						end
-						local count = 0
-						for _ in lines do
-							count += 1
-						end
-						expect(count).toBe(2)
-					end
-				end
+			else
+				expect(drop.rarity).toBeBetween(Rarities.UNIQUE, Rarities.HEROIC)
+				expect(def.fixedBonuses).toBeNil()
 			end
 		end
-		expect(legendaries).toBe(400)
+		expect((counts[Rarities.MYTHIC] or 0) / n).toBeNear(0.01, 0.003)
+		expect((counts[Rarities.LEGENDARY] or 0) / n).toBeNear(0.06, 0.006)
+		expect(weapons / n > 0.3).toBe(true)
+		-- Two kills earlier today: +2 % each.
+		local legendary, mythic = 0, 0
+		for _ = 1, n do
+			local drop = Loot.rollBossItem(boss, 2, nil, rng) :: any
+			legendary += if drop.rarity == Rarities.LEGENDARY then 1 else 0
+			mythic += if drop.rarity == Rarities.MYTHIC then 1 else 0
+		end
+		expect(mythic / n).toBeNear(0.03, 0.005)
+		expect(legendary / n).toBeNear(0.08, 0.007)
+	end)
+
+	it("mythic items: named with Config.BossLoot.mythicNamedShare, otherwise rolled", function()
+		local rng = Rng.new(34)
+		local named, rolled = 0, 0
+		local always = table.clone(boss) :: any
+		always.mythicChance = 1
+		for _ = 1, 400 do
+			local drop = Loot.rollBossItem(always, 0, "Mage", rng) :: any
+			expect(drop.rarity).toBe(Rarities.MYTHIC)
+			if (Items.get(drop.defId) :: any).fixedBonuses then
+				named += 1
+				expect(table.find(boss.named, drop.defId) ~= nil).toBe(true)
+			else
+				rolled += 1
+			end
+		end
 		expect(named / 400).toBeNear(Config.BossLoot.mythicNamedShare, 0.08)
 		expect(named + rolled).toBe(400)
-		expect(classMatch / 400 >= Config.BossLoot.legendaryClassShare - 0.05).toBe(true)
-		expect(#Loot.personalItems(boss, { legendary = false, mythic = false, pity = { leg = 1, myth = 1 } }, nil, rng)).toBe(
-			0
-		)
+	end)
+
+	it("simulation of three kills a day averages the daily chances", function()
+		local n = 60000
+		local result = Loot.simulateBoss(boss, n, Rng.new(32), 3)
+		expect(result.mythic / n).toBeNear(0.02, 0.003)
+		expect(result.legendary / n).toBeNear(0.07, 0.006)
 	end)
 
 	it("the daily limit defaults to 3", function()

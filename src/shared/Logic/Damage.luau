@@ -28,6 +28,7 @@ export type Defender = {
 	mres: number,
 	dodge: number?, -- %
 	res: { [string]: number }?, -- element -> %
+	level: number?, -- for the level advantage (Damage.levelGap); nil = none
 }
 
 export type Params = {
@@ -73,6 +74,16 @@ function Damage.reduction(defense: number, attackerLevel: number): number
 	return def / (def + Combat.reductionPerLevel * attackerLevel + Combat.reductionBase)
 end
 
+-- Level advantage (Data/Combat.levelGap*): damage multiplier and extra crit chance (%) of an attacker
+-- `attackerLevel` against a defender `defenderLevel`. Below Combat.levelGapFrom levels of advantage: (1, 0).
+function Damage.levelGap(attackerLevel: number, defenderLevel: number?): (number, number)
+	if defenderLevel == nil then
+		return 1, 0
+	end
+	local steps = math.clamp(attackerLevel - defenderLevel - Combat.levelGapFrom + 1, 0, Combat.levelGapMaxSteps)
+	return 1 + steps * Combat.levelGapDmg, steps * Combat.levelGapCrit
+end
+
 function Damage.computeDamage(attacker: Attacker, defender: Defender, params: Params, rng: Rng.Rng): Result
 	local element: Element? = params.element
 	if params.canDodge ~= false and not Damage.rollHit(defender.dodge or 0, attacker.accuracy or 0, rng) then
@@ -85,11 +96,13 @@ function Damage.computeDamage(attacker: Attacker, defender: Defender, params: Pa
 	local defense = if params.kind == "magic"
 		then defender.mres
 		else math.max(0, defender.armor - (attacker.armorPen or 0))
-	local amount = raw * (1 - Damage.reduction(defense, attacker.level))
+	local gapMul, gapCrit = Damage.levelGap(attacker.level, defender.level)
+	local amount = raw * (1 - Damage.reduction(defense, attacker.level)) * gapMul
 	amount *= rng:float(Combat.randomMin, Combat.randomMax)
 
 	local crit = false
-	if params.forceCrit or (params.canCrit ~= false and rng:chance(math.clamp(attacker.critChance, 0, 100) / 100)) then
+	local critChance = math.clamp(attacker.critChance + gapCrit, 0, 100) / 100
+	if params.forceCrit or (params.canCrit ~= false and rng:chance(critChance)) then
 		crit = true
 		amount *= math.max(1, attacker.critDmg / 100)
 	end
@@ -119,6 +132,7 @@ function Damage.fromStats(level: number, values: { [string]: number }): (Attacke
 		armorPen = values.armorPen or 0,
 		lifesteal = values.lifesteal or 0,
 	}, {
+		level = level,
 		armor = values.armor or 0,
 		mres = values.mres or 0,
 		dodge = values.dodge or 0,

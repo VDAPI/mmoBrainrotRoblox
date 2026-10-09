@@ -232,8 +232,8 @@ T.describe("Data: Monsters", function()
 					T.expect(def.elites).toBe(true)
 				end
 				if spawner.variant == "elite2" then
-					-- DESIGN §15.1: Elite II respawn 10–20 min
-					T.expect(spawner.respawn.min >= 600 and spawner.respawn.max <= 1200).toBe(true)
+					-- DESIGN §15.1 (FIX 2026-10-09: grows with the cave level): Elite II respawn ~7-33 min
+					T.expect(spawner.respawn.min >= 400 and spawner.respawn.max <= 2000).toBe(true)
 				end
 			end
 		end

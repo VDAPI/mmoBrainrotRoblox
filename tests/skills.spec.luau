@@ -1,6 +1,7 @@
 --!strict
 local AccountSchema = require("../src/shared/Logic/AccountSchema")
 local Classes = require("../src/shared/Data/Classes")
+local Config = require("../src/shared/Config")
 local SkillData = require("../src/shared/Data/Skills")
 local Skills = require("../src/shared/Logic/Skills")
 local T = require("./Test")
@@ -125,6 +126,16 @@ T.describe("Skills logic", function()
 		local cleave = SkillData.get("cleave") :: any
 		T.expect(Skills.levelRequirement(cleave, 1)).toBe(18)
 		T.expect(Skills.levelRequirement(cleave, 10)).toBe(45)
+	end)
+
+	T.it("every skill reaches its max level by the max character level", function()
+		for _, skill in SkillData.byId do
+			local need = Skills.levelRequirement(skill, skill.maxLevel)
+			if need > Config.MaxLevel then
+				error(`{skill.id}: level {skill.maxLevel} needs {need}`)
+			end
+		end
+		T.expect(Skills.levelRequirement(SkillData.get("meteorStorm") :: any, 10)).toBe(93)
 	end)
 
 	T.it("canLearn checks points, class, level and max level", function()

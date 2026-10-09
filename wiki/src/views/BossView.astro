@@ -1,6 +1,6 @@
 ---
 // Boss page (S39, /pl/bossy/<id>/): BossHeader (players 1–5, phases with mechanics and script notes from
-// src/content/bosses), stats for the chosen party size, shared loot, boss items, the personal roll with its pity
+// src/content/bosses), stats for the chosen party size, shared loot, boss items, the Legendary / Mythic chances by kills that day
 // bars, and on the right the entry rules, the gate on the cave mini map and the summons. Also the boss list
 // (/pl/bossy/, page "index"). Behaviour: src/scripts/boss.ts.
 import { getCollection } from "astro:content";
@@ -163,7 +163,7 @@ const pity = boss
                 const w = 100 / n;
                 return (
                   <figure class="pityfig">
-                    <figcaption><span class="vw-label" style={`color: var(--vw-r-${rarity}-text)`}>{t(lang, `boss.pity.${key}`)}</span> {formatChance(line.chance, lang)} → 100%</figcaption>
+                    <figcaption><span class="vw-label" style={`color: var(--vw-r-${rarity}-text)`}>{t(lang, `boss.pity.${key}`)}</span> {formatChance(line.chance, lang)} → {formatChance(line.byMisses[n - 1], lang)}</figcaption>
                     <svg viewBox="0 0 100 40" preserveAspectRatio="none" role="img" aria-label={`${t(lang, `boss.pity.${key}`)}: ${line.byMisses.map((c) => formatChance(c, lang)).join(", ")}`}>
                       {line.byMisses.map((c, i) => (
                         <rect x={(i * w + w * 0.12).toFixed(2)} y={(40 - c * 40).toFixed(2)} width={(w * 0.76).toFixed(2)} height={(c * 40).toFixed(2)} style={`fill: var(--vw-r-${rarity})`}><title>{i}: {formatChance(c, lang)}</title></rect>

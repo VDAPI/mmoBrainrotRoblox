@@ -114,12 +114,6 @@ describe("BossScaling", function()
 		expect(math.abs(BossScaling.hpMultiplier(5) - 102) < 1e-9).toBe(true)
 	end)
 
-	it("adds items above 3 players", function()
-		expect(BossScaling.extraItems(1)).toBe(0)
-		expect(BossScaling.extraItems(3)).toBe(0)
-		expect(BossScaling.extraItems(5)).toBe(2)
-	end)
-
 	it("picks phases by HP", function()
 		local t = { 0.7, 0.35 }
 		expect(BossScaling.phaseFor(1, t)).toBe(1)

@@ -13,10 +13,6 @@ function BossScaling.hpMultiplier(players: number): number
 end
 
 -- Item drops: 3–4 (rolled by the caller) + 1 per player above 3.
-function BossScaling.extraItems(players: number): number
-	return math.max(0, players - 3)
-end
-
 -- Phase (1-based) for an HP fraction and descending thresholds like { 0.7, 0.35 }.
 function BossScaling.phaseFor(hpFraction: number, thresholds: { number }): number
 	local phase = 1

@@ -164,7 +164,8 @@ local function onCast(data: { [string]: any }, skill: SkillData.SkillDef, caster
 				end
 			end)
 		end
-		-- Projectile skills: the shot leaves the hand at the motion's release.
+		-- Projectile skills: the shot leaves the hand at the motion's release (speed 140 and the 0.8 s cap match
+		-- server/Skills/Types/Offense CIRCLE_PROJECTILE_*: the damage lands when the orb arrives).
 		if entry.projectile and skill.type == "circleTarget" and typeof(data.p) == "Vector3" then
 			local release = math.max(0, (motion.release or motion.hit or 0) - 0.05)
 			task.delay(release, function()

@@ -9,12 +9,16 @@
 --            turns it back into the fight), then to its own spot and idle. Bosses keep the old return: their
 --            arena centre, full HP and invulnerable on the way.
 --   dead   : waiting for MonsterService to remove the model
+-- Chasing and going home steer around obstacles (FIX 2026-10-09, Logic/Steer): two short rays (knee and hip
+-- height) probe the way ahead; a blocked way takes the first clear angle to one side and keeps that side a while.
 -- Damage resolution, telegraphs and rewards are delegated to the Context given by MonsterService, so this
 -- module never talks to other services directly.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage.Shared
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
 
 local AreaProfiles = require(Shared.Data.AreaProfiles)
 local Combat = require(Shared.Data.Combat)
@@ -23,6 +27,7 @@ local MonsterAbilities = require(Shared.Data.MonsterAbilities)
 local MonsterStats = require(Shared.Logic.MonsterStats)
 local Monsters = require(Shared.Data.Monsters)
 local RigBuilder = require(script.Parent.RigBuilder)
+local Steer = require(Shared.Logic.Steer)
 
 export type State = "idle" | "chase" | "cast" | "return" | "dead"
 
@@ -93,6 +98,9 @@ export type Monster = typeof(setmetatable(
 		movedAt: number,
 		movedFrom: Vector3,
 		lastStep: number,
+		-- Obstacle steering: the side of the current detour (-1, 0, 1) and until when it is kept.
+		detourSide: number,
+		detourUntil: number,
 	},
 	Monster
 ))
@@ -170,6 +178,8 @@ function Monster.new(
 		movedAt = 0,
 		movedFrom = spawnCFrame.Position,
 		lastStep = os.clock(),
+		detourSide = 0,
+		detourUntil = 0,
 	}, Monster)
 	return self
 end
@@ -224,6 +234,71 @@ local function stop(self: Monster)
 	self.humanoid:MoveTo(self.root.Position)
 end
 
+-- Rays of the steering probe ignore monsters and characters: only the world blocks the way.
+local probeParams = RaycastParams.new()
+probeParams.FilterType = Enum.RaycastFilterType.Exclude
+probeParams.RespectCanCollide = true
+probeParams.IgnoreWater = true
+local probeRefresh = 0
+
+local function refreshProbeFilter()
+	local now = os.clock()
+	if now - probeRefresh < 2 then
+		return
+	end
+	probeRefresh = now
+	local ignore: { Instance } = {}
+	local monsters = Workspace:FindFirstChild("Monsters")
+	if monsters then
+		table.insert(ignore, monsters)
+	end
+	for _, player in Players:GetPlayers() do
+		if player.Character then
+			table.insert(ignore, player.Character)
+		end
+	end
+	probeParams.FilterDescendantsInstances = ignore
+end
+
+-- Whether something solid (not a walkable slope) is within `reach` studs of `self` in the flat direction.
+local function probeBlocked(self: Monster, dx: number, dz: number, reach: number): boolean
+	local root = self.root
+	local direction = Vector3.new(dx, 0, dz) * reach
+	local feet = root.Position.Y - root.Size.Y / 2 - self.humanoid.HipHeight
+	for _, y in { feet + 1.5, root.Position.Y } do
+		local hit = Workspace:Raycast(Vector3.new(root.Position.X, y, root.Position.Z), direction, probeParams)
+		if hit and hit.Normal.Y < 0.6 then
+			return true
+		end
+	end
+	return false
+end
+
+-- Walks towards `goal`, around obstacles (FIX 2026-10-09: straight MoveTo got monsters stuck on rocks and trees).
+local function steerTo(self: Monster, goal: Vector3)
+	local from = self.root.Position
+	local offset = Vector3.new(goal.X - from.X, 0, goal.Z - from.Z)
+	local distance = offset.Magnitude
+	local reach = math.min(distance, Combat.steerLookAhead + self.root.Size.Z / 2)
+	if distance < 2 or reach < 1 then
+		self.humanoid:MoveTo(goal)
+		return
+	end
+	refreshProbeFilter()
+	local now = os.clock()
+	local prefer = if now < self.detourUntil then self.detourSide else nil
+	local dx, dz, side = Steer.choose(offset.X, offset.Z, function(x, z)
+		return probeBlocked(self, x, z, reach)
+	end, prefer)
+	if side == 0 then
+		self.humanoid:MoveTo(goal)
+		return
+	end
+	self.detourSide = side
+	self.detourUntil = now + Combat.steerHold
+	self.humanoid:MoveTo(from + Vector3.new(dx, 0, dz) * (reach + 2))
+end
+
 -- Applies the slow/root factor from status effects (1 = normal speed).
 function Monster.RefreshSpeed(self: Monster, factor: number)
 	self.speedFactor = factor
@@ -261,7 +336,7 @@ function Monster.StartReturn(self: Monster)
 	self.model:SetAttribute("Returning", true)
 	self.humanoid.WalkSpeed = self.def.moveSpeed * Combat.returnSpeedMultiplier * self.speedFactor
 	self.returnStarted = os.clock()
-	self.humanoid:MoveTo(returnPoint(self))
+	steerTo(self, returnPoint(self))
 end
 
 local function finishReturn(self: Monster)
@@ -465,7 +540,7 @@ local function stepChase(self: Monster, now: number)
 		return
 	end
 	if not self.ctx.isRooted(self) then
-		self.humanoid:MoveTo(targetPosition)
+		steerTo(self, targetPosition)
 	end
 end
 
@@ -497,7 +572,7 @@ local function stepReturn(self: Monster, now: number)
 		finishReturn(self)
 		return
 	end
-	self.humanoid:MoveTo(point)
+	steerTo(self, point)
 end
 
 -- Out-of-combat regeneration at home (S22). Back at full HP the damage record is cleared, so a later kill

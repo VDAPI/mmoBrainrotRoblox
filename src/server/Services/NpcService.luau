@@ -206,14 +206,30 @@ function NpcService.Start()
 	local folder = Instance.new("Folder")
 	folder.Name = "Npcs"
 	folder.Parent = world
-	for _, def in Npcs.list do
+	local function place(def: Npcs.NpcDef)
 		if def.body == "board" then
 			buildBoard(def, folder)
 		else
 			build(def, folder)
 		end
 	end
-	log:info("%d NPCs placed", #Npcs.list)
+	-- FIX 2026-10-09: maps built in the background (S45 `buildLate`) have no terrain yet here, so the floor ray
+	-- missed and their NPCs stood under the ground. Those wait for their map.
+	local late = 0
+	for _, def in Npcs.list do
+		if WorldService.IsBuilding(def.map) then
+			late += 1
+			task.spawn(function()
+				if not WorldService.WaitBuilt(def.map, 900) then
+					log:warn("map %s not built, placing %s anyway", def.map, def.id)
+				end
+				place(def)
+			end)
+		else
+			place(def)
+		end
+	end
+	log:info("%d NPCs placed, %d wait for their map", #Npcs.list - late, late)
 end
 
 return NpcService

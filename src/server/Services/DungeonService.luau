@@ -3,10 +3,11 @@
 -- enters at the gate in the cave; party members within 20 studs come along if they meet the level
 -- (boss − 5) and have kills left today (S30: Config.Boss.dailyRuns per boss; others are told why they stay).
 -- After a 5 s countdown the boss appears (Entities/Boss). The run fails after 15 minutes or when nobody is left
--- fighting: everyone is sent out and the boss resets. On a kill: EXP and gold shared, 3–4 Unique/Heroic items
--- split by PartyLoot (20 % legendary blessing), a personal Legendary/Mythic roll with pity for every winner
--- (Loot.rollBossPersonal, own bag), one daily run used for everyone present, a server announcement; the dungeon
--- is released 60 s later or when everybody has left through the exit portal.
+-- fighting: everyone is sent out and the boss resets. On a kill: EXP and gold shared; every winner gets one item
+-- in an own bag nobody else sees (FIX 2026-10-09, Loot.rollBossItem: Mythic 1 %, Legendary 6 %, +1 % each per kill
+-- of this boss today, else Unique / Heroic) with materials and a chance of a legendary blessing; one daily run used
+-- for everyone present, a server announcement; the dungeon is released 60 s later or when everybody has left
+-- through the exit portal.
 -- Fighters see the state branch `boss` = { id, nameKey, hp, maxHp, phase, endsAt, enraged, shielded }.
 
 local HttpService = game:GetService("HttpService")
@@ -35,6 +36,7 @@ local MonsterStats = require(Shared.Logic.MonsterStats)
 local Net = require(Shared.Net)
 local QuestEvents = require(script.Parent.Parent.QuestEvents)
 local PartyLoot = require(Shared.Logic.PartyLoot)
+local Rarities = require(Shared.Data.Rarities)
 local Rng = require(Shared.Logic.Rng)
 local Types = require(Shared.Types)
 
@@ -202,9 +204,13 @@ local function reward(run: Run, position: Vector3)
 	local bossTable = LootTables.bosses[def.id]
 	local baseExp = PartyLoot.splitExp(Exp.monsterExp(def.level, "boss"), n)
 	local shares = PartyLoot.splitGold(MonsterStats.gold(def.level, "boss", rng:next()), n, rng)
+	-- FIX 2026-10-09: every winner gets exactly one item (and the materials) in an own bag only they see and can
+	-- pick up; the Legendary / Mythic chances grow with the character's kills of this boss today.
+	local blessingChance = Bosses.LEGENDARY_BLESSING_CHANCE / n
 	for i, player in winners do
 		local char = character(player)
 		if char then
+			local killsToday = BossScaling.runsToday(char.bossRuns, def.id, now)
 			PlayerStateService.Set(
 				player,
 				{ "character", "bossRuns", def.id },
@@ -219,18 +225,14 @@ local function reward(run: Run, position: Vector3)
 			end)
 			Analytics.gold(player, gold, balance, "boss")
 			Analytics.progression(player, "Bosses", def.level, def.id)
-			-- Personal Legendary / Mythic roll with pity (S30, DESIGN §16): own bag, only this player sees it.
 			local gotLeg, gotMyth = false, false
-			local pity = (char.bossPity or {})[def.id]
 			if bossTable then
-				local roll = Loot.rollBossPersonal(bossTable, pity, rng)
-				pity = roll.pity
-				gotLeg, gotMyth = roll.legendary, roll.mythic
-				PlayerStateService.Set(player, { "character", "bossPity", def.id }, roll.pity)
-				local personal = {}
-				for _, drop in Loot.personalItems(bossTable, roll, char.class :: string, rng) do
+				local items = {}
+				local drop = Loot.rollBossItem(bossTable, killsToday, char.class :: string, rng)
+				if drop then
+					gotLeg, gotMyth = drop.rarity == Rarities.LEGENDARY, drop.rarity == Rarities.MYTHIC
 					table.insert(
-						personal,
+						items,
 						ItemRoll.rollItem(
 							drop.defId,
 							drop.ilvl,
@@ -241,14 +243,23 @@ local function reward(run: Run, position: Vector3)
 						)
 					)
 				end
-				if #personal > 0 then
-					LootService.SpawnBag(player, position + Vector3.new(0, 0, 3), personal, def.id, true)
+				local extra = Loot.rollBossLoot(def.id, n, rng)
+				for _, stack in LootService.InstancesFrom(extra) do
+					table.insert(items, stack)
+				end
+				if rng:chance(blessingChance) then
+					local line = Blessings.lines[rng:int(1, #Blessings.lines)]
+					table.insert(items, ItemRoll.makeStack(`blessing_{line}_5`, 1, HttpService:GenerateGUID(false)))
+				end
+				if #items > 0 then
+					LootService.SpawnBag(player, position + Vector3.new(0, 0, 3), items, def.id, true)
 				end
 				if gotLeg or gotMyth then
 					Analytics.custom(player, if gotMyth then "BossMythic" else "BossLegendary", def.level)
 				end
 			end
-			local chances = Loot.bossChances(def.id, pity)
+			-- The chances of the next kill today.
+			local chances = Loot.bossChances(def.id, killsToday + 1)
 			Net.Fire(player, "CombatFx", {
 				{
 					k = "reward",
@@ -259,23 +270,12 @@ local function reward(run: Run, position: Vector3)
 					gotMyth = gotMyth,
 					leg = chances.legendary,
 					myth = chances.mythic,
-					runs = BossScaling.runsToday(
-						PlayerStateService.Get(player, { "character", "bossRuns" }),
-						def.id,
-						now
-					),
+					runs = killsToday + 1,
 					dailyRuns = Config.Boss.dailyRuns,
 				},
 			})
 		end
 	end
-	local loot = Loot.rollBossLoot(def.id, n, rng, { dropBonus = StatService.GetValue(run.leader, "dropBonus") })
-	local items = LootService.InstancesFrom(loot)
-	if rng:chance(Bosses.LEGENDARY_BLESSING_CHANCE) then
-		local line = Blessings.lines[rng:int(1, #Blessings.lines)]
-		table.insert(items, ItemRoll.makeStack(`blessing_{line}_5`, 1, HttpService:GenerateGUID(false)))
-	end
-	LootService.DistributeToParty(winners, position, items)
 	AnnounceService.Server("announce.boss", { name = run.leaderName, boss = `@{def.nameKey}` })
 end
 
@@ -426,7 +426,7 @@ local function info(player: Player, region: string): (boolean, string?, any)
 	local members = {}
 	local self = character(player)
 	local now = Clock.now()
-	local chances = Loot.bossChances(def.id, if self and self.bossPity then self.bossPity[def.id] else nil)
+	local chances = Loot.bossChances(def.id, if self then BossScaling.runsToday(self.bossRuns, def.id, now) else 0)
 	local leaderRoot = player.Character and player.Character:FindFirstChild("HumanoidRootPart") :: BasePart?
 	for _, member in PartyService.Members(player) do
 		local reason, lockLeft = blocker(member, def)

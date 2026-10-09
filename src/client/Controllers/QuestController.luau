@@ -16,6 +16,7 @@ local QuestJournal = require(script.Parent.Parent.UI.Screens.QuestJournal)
 local QuestText = require(script.Parent.Parent.UI.QuestText)
 local QuestTrack = require(script.Parent.Parent.UI.QuestTrack)
 local NpcQuests = require(script.Parent.Parent.UI.NpcQuests)
+local Elite2Timer = require(script.Parent.Parent.UI.Screens.Hud.Elite2Timer)
 local QuestTracker = require(script.Parent.Parent.UI.Screens.Hud.QuestTracker)
 local Quests = require(ReplicatedStorage.Shared.Data.Quests)
 local SideQuests = require(ReplicatedStorage.Shared.Logic.SideQuests)
@@ -182,6 +183,7 @@ function QuestController.Init(registry)
 		end,
 	}).Parent =
 		UIController.GetLayer("Screens")
+	Elite2Timer(scope).Parent = UIController.GetLayer("Screens")
 end
 
 function QuestController.Start()

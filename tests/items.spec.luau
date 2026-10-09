@@ -25,8 +25,8 @@ T.describe("ItemRoll", function()
 			for _ = 1, 50 do
 				local item = ItemRoll.rollItem("sword1h_30", 31, rarity, rng, uid())
 				local def = Rarities.get(rarity)
-				T.expect(#item.bonuses)
-					.toBeBetween(def.bonusMin + def.legendaryLines, def.bonusMax + def.legendaryLines)
+				local extra = def.legendaryLines + def.mythicLines
+				T.expect(#item.bonuses).toBeBetween(def.bonusMin + extra, def.bonusMax + extra)
 				T.expect(item.rv).toBe(Rarities.RV)
 				local seen = {}
 				for _, bonus in item.bonuses do
@@ -55,22 +55,34 @@ T.describe("ItemRoll", function()
 				T.expect(legendary).toBe(case[2])
 				if case[1] ~= Rarities.HEROIC then
 					local r = Rarities.get(case[1])
-					T.expect(#item.bonuses).toBeBetween(r.bonusMin + case[2], r.bonusMax + case[2])
+					local extra = case[2] + r.mythicLines
+					T.expect(#item.bonuses).toBeBetween(r.bonusMin + extra, r.bonusMax + extra)
 				end
 			end
 		end
 	end)
 
-	T.it("unique rolls 1–2 bonuses and heroic 2–3, both counts happen", function()
+	T.it("bonus lines per rarity: unique 2, heroic 3, legendary 3 + 1, mythic 3 + 2 + 1 mythic", function()
 		local rng = Rng.new(21)
-		for _, case in { { Rarities.UNIQUE, 1, 2 }, { Rarities.HEROIC, 2, 3 } } do
-			local counts = {}
-			for _ = 1, 200 do
+		local cases = {
+			{ Rarities.UNIQUE, 2, 0, 0 },
+			{ Rarities.HEROIC, 3, 0, 0 },
+			{ Rarities.LEGENDARY, 3, 1, 0 },
+			{ Rarities.MYTHIC, 3, 2, 1 },
+		}
+		for _, case in cases do
+			for _ = 1, 50 do
 				local item = ItemRoll.rollItem("sword1h_30", 31, case[1], rng, uid())
-				counts[#item.bonuses] = true
+				local counts = { 0, 0, 0 }
+				for _, bonus in item.bonuses do
+					local slot = if table.find(Bonuses.pools.mythic, bonus.stat)
+						then 3
+						elseif table.find(Bonuses.pools.legendary, bonus.stat) then 2
+						else 1
+					counts[slot] += 1
+				end
+				T.expect(counts).toEqual({ case[2], case[3], case[4] })
 			end
-			T.expect(counts[case[2]]).toBe(true)
-			T.expect(counts[case[3]]).toBe(true)
 		end
 	end)
 
@@ -263,17 +275,13 @@ T.describe("Loot", function()
 		T.expect(usable).toBe(total)
 	end)
 
-	T.it("boss loot: 3–4 items (+1 per player above 3) and materials", function()
+	T.it("boss loot: materials and gold only (FIX 2026-10-09: items come one per winner)", function()
 		local rng = Rng.new(15)
 		for _ = 1, 100 do
 			local loot = Loot.rollBossLoot("grimrok", 5, rng)
-			for _, drop in loot.items do
-				-- Shared boss items: Unique or Heroic; Legendary/Mythic only from the personal roll.
-				T.expect(drop.rarity).toBeBetween(Rarities.UNIQUE, Rarities.HEROIC)
-				T.expect(Items.get(drop.defId).fixedBonuses).toBeNil()
-			end
-			T.expect(#loot.items).toBeBetween(5, 6)
+			T.expect(#loot.items).toBe(0)
 			T.expect(#loot.materials > 0).toBe(true)
+			T.expect(loot.gold > 0).toBe(true)
 		end
 	end)
 

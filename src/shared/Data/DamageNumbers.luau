@@ -33,10 +33,6 @@ local DamageNumbers = {
 	twitch = 4,
 	-- Skill numbers are this many pixels bigger than basic attacks (S28).
 	skillBonus = 6,
-	-- The number of a player's attack waits for its blow / arrival (S22) at most this long ...
-	maxHitDelay = 0.5,
-	-- ... and only when the attack started at most this many seconds ago (older entries are ignored).
-	hitDelayExpiry = 1,
 	-- Billboards kept in the pool.
 	poolSize = 48,
 

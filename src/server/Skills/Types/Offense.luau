@@ -7,6 +7,7 @@
 
 local Context = require(script.Parent.Parent.Context)
 local Push = require(script.Parent.Parent.Push)
+local SkillVfx = require(game:GetService("ReplicatedStorage").Shared.Data.SkillVfx)
 
 type Ctx = Context.Ctx
 type Handler = (ctx: Ctx) -> (boolean, string?)
@@ -14,6 +15,10 @@ type Handler = (ctx: Ctx) -> (boolean, string?)
 local Offense: { [string]: Handler } = {}
 
 local PROJECTILE_SPEED = 90 -- studs per second (visual travel time before the hit lands)
+-- FIX 2026-10-09: circle skills with a projectile (fireball) land when the orb arrives; same speed and cap as
+-- client/Controllers/VfxController ("Projectile skills").
+local CIRCLE_PROJECTILE_SPEED = 140
+local CIRCLE_PROJECTILE_MAX = 0.8
 local PIERCE_REACH = 16 -- studs behind the target a piercing projectile looks for the next enemy
 local PIERCE_WIDTH = 3
 
@@ -236,6 +241,14 @@ Offense.circleTarget = function(ctx)
 	local interval = ctx.skill.interval or 0.5
 	local delay = ctx.skill.delay or 0
 	local storm = hits > 1 and (ctx.skill.delay or 0) > 0 -- meteor storm: separate small impacts
+	local vfx = SkillVfx[ctx.skill.id]
+	if vfx and vfx.projectile then
+		delay += math.clamp(
+			(point - ctx.root.Position).Magnitude / CIRCLE_PROJECTILE_SPEED,
+			0.05,
+			CIRCLE_PROJECTILE_MAX
+		)
+	end
 	local impactRadius = if storm then math.max(4, radius / 3) else radius
 	local random = Random.new()
 	ctx.fx({ p = point, r = radius, d = delay + (hits - 1) * interval, n = hits })

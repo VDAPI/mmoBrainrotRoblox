@@ -27,6 +27,7 @@ export type RarityDef = {
 	baseMul: number, -- base stat multiplier of rolled items
 	rangeMul: number, -- multiplier of random bonus values
 	legendaryLines: number, -- distinct lines from the legendary bonus pool
+	mythicLines: number, -- distinct lines from the mythic bonus pool (FIX 2026-10-09)
 	sellMul: number, -- "mnożnik rzadkości" in the sell price formula (DESIGN §18)
 	frame: FrameStyle,
 	valuable: boolean, -- confirm before selling/dismantling, light at the weapon
@@ -57,6 +58,7 @@ local function def(spec: {
 	baseMul: number,
 	rangeMul: number,
 	legendaryLines: number,
+	mythicLines: number?,
 	sellMul: number,
 	thickness: number,
 	gradient: { string }?,
@@ -88,6 +90,7 @@ local function def(spec: {
 		baseMul = spec.baseMul,
 		rangeMul = spec.rangeMul,
 		legendaryLines = spec.legendaryLines,
+		mythicLines = spec.mythicLines or 0,
 		sellMul = spec.sellMul,
 		frame = table.freeze({ thickness = spec.thickness, gradient = gradient, glow = spec.glow, spin = spec.spin }),
 		valuable = spec.valuable,
@@ -126,7 +129,7 @@ local LIST: { RarityDef } = {
 		key = "unique",
 		hex = "#F2D33A",
 		textHex = "#8C6D00",
-		bonusMin = 1,
+		bonusMin = 2,
 		bonusMax = 2,
 		baseMul = 1.05,
 		rangeMul = 1.0,
@@ -149,10 +152,10 @@ local LIST: { RarityDef } = {
 		key = "heroic",
 		hex = "#3D8BFF",
 		textHex = "#1F5BC2",
-		bonusMin = 2,
+		bonusMin = 3,
 		bonusMax = 3,
 		baseMul = 1.12,
-		rangeMul = 1.05,
+		rangeMul = 1.0, -- FIX 2026-10-09: 3 bonuses always (was 2-3), so no extra range
 		legendaryLines = 0,
 		sellMul = 1.25,
 		thickness = 2.5,
@@ -173,7 +176,7 @@ local LIST: { RarityDef } = {
 		hex = "#FF9F1C",
 		textHex = "#C26A00",
 		bonusMin = 3,
-		bonusMax = 4,
+		bonusMax = 3,
 		baseMul = 1.16,
 		rangeMul = 1.1,
 		legendaryLines = 1,
@@ -197,11 +200,12 @@ local LIST: { RarityDef } = {
 		key = "mythic",
 		hex = "#E5302A",
 		textHex = "#B01E19",
-		bonusMin = 4,
-		bonusMax = 4,
+		bonusMin = 3,
+		bonusMax = 3,
 		baseMul = 1.22,
 		rangeMul = 1.2,
 		legendaryLines = 2,
+		mythicLines = 1,
 		sellMul = 1.70,
 		thickness = 3,
 		gradient = { "#E5302A", "#FF8FB1" },
@@ -224,7 +228,7 @@ local COMMON, UNIQUE, HEROIC, LEGENDARY, MYTHIC = 1, 2, 3, 4, 5
 local MAX = #LIST
 
 -- Rarity weights per drop source (DESIGN §5.5). Weights, not percentages. Never above `CAP[source]`.
--- Boss: the shared items only; Legendary/Mythic come from the personal roll (Loot.rollBossPersonal).
+-- Boss: the rarity of a winner's item when it is not Legendary / Mythic (FIX 2026-10-09, Loot.rollBossItem).
 local DROP_WEIGHTS: { [string]: { [number]: number } } = {
 	-- S32 (docs/BALANS.md): a Unique for the player's class about every 1-2 levels (was 15: one per ~3 levels), a
 	-- Heroic about every 1-2 h of cave Elites (was 15: ~2.5 per hour).
@@ -234,7 +238,7 @@ local DROP_WEIGHTS: { [string]: { [number]: number } } = {
 	boss = { [UNIQUE] = 35, [HEROIC] = 65 },
 }
 
--- Highest rarity each source can ever give (boss through the personal roll).
+-- Highest rarity each source can ever give (boss: Legendary / Mythic through Loot.rollBossItem's own chances).
 local CAP: { [string]: number } = { normal = UNIQUE, elite = HEROIC, elite2 = LEGENDARY, boss = MYTHIC }
 
 -- Chance that a kill drops an item at all, and how many (DESIGN §5.5). Drop bonus multiplies `chance`.
@@ -243,7 +247,7 @@ local ITEM_DROPS: { [string]: { chance: number, min: number, max: number, extra:
 	normal = { chance = 0.20, min = 1, max = 1 },
 	elite = { chance = 0.75, min = 1, max = 1, extra = 0.25 },
 	elite2 = { chance = 1.0, min = 2, max = 3 },
-	boss = { chance = 1.0, min = 3, max = 4 },
+	boss = { chance = 1.0, min = 1, max = 1 }, -- FIX 2026-10-09: one item per winner (was 3-4 shared)
 }
 
 -- Pre-S30 rarity ids (1 common, 2 uncommon, 3 rare, 4 epic, 5 legendary, 6 boss unique) → new ids.

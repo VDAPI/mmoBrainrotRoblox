@@ -140,7 +140,8 @@ T.describe("Balance S32: items", function()
 		for _, classId in B.CLASSES do
 			for _, level in { 5, 10, 20 } do
 				T.expect(B.rarityGain(classId, level, Rarities.UNIQUE)).toBeBetween(0.07, 0.15)
-				T.expect(B.rarityGain(classId, level, Rarities.HEROIC)).toBeBetween(0.15, 0.25)
+				-- FIX 2026-10-09: Heroic always rolls 3 bonuses (was 2-3), up to ~25.1 %
+				T.expect(B.rarityGain(classId, level, Rarities.HEROIC)).toBeBetween(0.15, 0.26)
 				T.expect(B.rarityGain(classId, level, Rarities.LEGENDARY)).toBeBetween(0.25, 0.42)
 				local mythic = B.rarityGain(classId, level, Rarities.MYTHIC)
 				T.expect(mythic > B.rarityGain(classId, level, Rarities.LEGENDARY)).toBe(true)

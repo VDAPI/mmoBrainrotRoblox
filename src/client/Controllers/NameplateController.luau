@@ -170,7 +170,8 @@ local function build(model: Model)
 		Name = `Nameplate_{model.Name}`,
 		Parent = folder,
 		Adornee = head,
-		AlwaysOnTop = false,
+		-- FIX 2026-10-09: your own plate stays on top (hair and hats hid it).
+		AlwaysOnTop = isLocal,
 		LightInfluence = 0,
 		MaxDistance = MAX_DISTANCE,
 		Size = UDim2.fromOffset(260, 92),
@@ -272,6 +273,34 @@ local function build(model: Model)
 							return if use(blessingEnding) and not use(blinkOn) then 0.85 else 0
 						end),
 						TextStrokeTransparency = 0.35,
+					}),
+					-- VIP badge (FIX 2026-10-09): shown on every VIP's plate, your own included.
+					scope:New("TextLabel")({
+						Name = "Vip",
+						LayoutOrder = 4,
+						AutomaticSize = Enum.AutomaticSize.X,
+						Size = UDim2.fromOffset(0, 18),
+						Visible = scope:Computed(function(use): boolean
+							return use(vip) == true
+						end),
+						Text = Text.T(scope, "nameplate.vip"),
+						FontFace = Theme.Fonts.BodyBold,
+						TextSize = 13,
+						TextColor3 = Theme.Colors.GoldBright,
+						BackgroundColor3 = Color3.fromRGB(40, 28, 10),
+						BackgroundTransparency = 0.2,
+						[Children] = {
+							scope:New("UICorner")({ CornerRadius = UDim.new(0, 5) }),
+							scope:New("UIStroke")({
+								Color = Theme.Colors.GoldBright,
+								Thickness = 1,
+								ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+							}),
+							scope:New("UIPadding")({
+								PaddingLeft = UDim.new(0, 5),
+								PaddingRight = UDim.new(0, 5),
+							}),
+						},
 					}),
 				},
 			}),

@@ -456,4 +456,15 @@ function WeaponLooks.get(itemType: string): Look?
 	return looks[itemType]
 end
 
+-- Real weapon models (2026-10-09, docs/ASSETS.md "Broń"): item definition id -> a MeshPart (or a Model with one)
+-- in ReplicatedStorage.Assets.Weapons. The mesh stands upright (+Y, pommel at the bottom); `length` is its length
+-- in the hand (studs) and `grip` the height of the hand on it as a fraction of the length. Without the model the
+-- item keeps its Part look above.
+export type Asset = { model: string, length: number, grip: number }
+
+WeaponLooks.assets = {
+	-- Test: the Warrior's starting sword (Tripo model, assets/Weapons/sword1.glb reduced to 9k triangles).
+	sword1h_1 = { model = "sword1", length = 3.6, grip = 0.2 },
+} :: { [string]: Asset }
+
 return WeaponLooks

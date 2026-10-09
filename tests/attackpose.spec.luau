@@ -133,4 +133,23 @@ describe("AttackPose", function()
 		expect(maxDiff(start, mid) < 1e-6).toBe(true)
 		expect(weight).toBe(1)
 	end)
+
+	it("hit delay: melee at the blow, ranged at the release plus the flight (FIX 2026-10-09)", function()
+		local sword = AttackPose.timing(AttackPose.motionFor("sword1h"))
+		expect(AttackPose.hitDelay("sword1h", 5, false)).toBeNear(sword.hitAt)
+		local bow = AttackPose.timing(AttackPose.motionFor("bow"))
+		expect(AttackPose.hitDelay("bow", 33, true)).toBeNear(bow.hitAt + AttackPose.flightTime("arrow", 33))
+		expect(AttackPose.hitDelay("bow", 200, true)).toBeNear(bow.hitAt + 0.4)
+		expect(AttackPose.projectile("slash1h")).toBeNil()
+		expect(AttackPose.projectile("crossbow")).toBe("bolt")
+	end)
+
+	it("real weapon models belong to existing weapons and fit the hand", function()
+		local Items = require("../src/shared/Data/Items")
+		for defId, asset in WeaponLooks.assets do
+			local def = Items.get(defId) :: any
+			expect(def ~= nil and WeaponLooks.get(def.type) ~= nil).toBe(true)
+			expect(asset.length > 0 and asset.grip >= 0 and asset.grip < 1).toBe(true)
+		end
+	end)
 end)

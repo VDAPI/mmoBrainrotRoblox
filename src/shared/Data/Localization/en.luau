@@ -79,6 +79,7 @@ return {
 
 	-- Nameplates and notifications
 	["nameplate.levelClass"] = "Lv {level} {class}",
+	["nameplate.vip"] = "★ VIP",
 	["toast.enterWorld"] = "Welcome to Vaelthorn, {name}!",
 
 	-- Errors (server answers carry these keys)
@@ -130,6 +131,10 @@ return {
 	["stat.dex"] = "Dexterity",
 	["stat.int"] = "Intellect",
 	["stat.vit"] = "Vitality",
+	["stat.str.desc"] = "+{phys}% melee weapon damage, +{armor} armor",
+	["stat.dex.desc"] = "+{phys}% ranged weapon damage, +{crit}% crit chance, +{speed}% attack speed, +{dodge}% dodge",
+	["stat.int.desc"] = "+{mag}% weapon magic damage, +{mana} mana, +{mres} magic resistance",
+	["stat.vit.desc"] = "+{hp} health, +{armor} armor, +{mres} magic resistance",
 	["stat.physAtk"] = "Physical attack",
 	["stat.magAtk"] = "Magic attack",
 	["stat.critChance"] = "Critical chance",
@@ -718,6 +723,16 @@ return {
 	["bonus.leg_lifesteal"] = "+{v}% Life steal",
 	["bonus.leg_moveSpeed"] = "+{v}% Movement speed",
 	["bonus.leg_critDmg"] = "+{v}% Critical damage",
+	["bonus.myth_bossDamage"] = "+{v}% damage against bosses",
+	["bonus.myth_eliteDamage"] = "+{v}% damage against elites",
+	["bonus.myth_doubleAttack"] = "{v}% chance to strike twice",
+	["bonus.myth_killHeal"] = "Kills heal {v}% of max health",
+	["bonus.myth_executioner"] = "+{v}% damage to targets below 30% health",
+	["bonus.myth_lastStand"] = "-{v}% damage taken below 30% health",
+	["bonus.myth_critDmg"] = "+{v}% Critical damage",
+	["bonus.myth_hpPct"] = "+{v}% Health",
+	["bonus.myth_physAtk"] = "+{v}% Physical attack",
+	["bonus.myth_magAtk"] = "+{v}% Magic attack",
 
 	-- Inventory and tooltips (S04)
 	["inventory.gold"] = "{gold} gold",
@@ -763,6 +778,7 @@ return {
 	["tooltip.restores.mana"] = "Restores {amount} mana",
 	["tooltip.restores.energy"] = "Restores {amount} energy",
 	["tooltip.compare"] = "Compared with equipped:",
+	["tooltip.equipped"] = "Currently equipped",
 	["tooltip.hintEquip"] = "Double-click or hold: equip",
 	["tooltip.hintUse"] = "Double-click or hold: use",
 	-- S31: item categories, value, effects, material usage, shop row line
@@ -2707,7 +2723,7 @@ return {
 	["dungeon.reward.title"] = "Defeated: {boss}",
 	["dungeon.reward.legendary"] = "A legendary item awaits in your bag!",
 	["dungeon.reward.mythic"] = "A mythic item awaits in your bag!",
-	["dungeon.reward.none"] = "No legendary or mythic this time. The chance grows with every kill.",
+	["dungeon.reward.none"] = "Your item awaits in your bag. The legendary and mythic chance grows with every kill today.",
 	["dungeon.reward.next"] = "Next kill: legendary {leg}% · mythic {myth}%",
 	["worldmap.card.bossLevel"] = "level {level} boss",
 	["worldmap.card.nodeLevel"] = "Land level {level}",
@@ -3239,10 +3255,10 @@ return {
 	["admin.icongrid.empty"] = "No icons in group {group}.",
 	["admin.rarities.line"] = "{id} {name} {color}: bonuses {bonuses} + legendary {legendary}, base ×{base}, range ×{range}, sell ×{sell}",
 	["admin.rarities.caps"] = "Rarity caps by source: {list}",
-	["admin.usage.bosspity"] = "/bosspity [boss] [leg] [myth]: show or set the kills without a legendary / mythic",
-	["admin.bosspity.line"] = "{boss}: no legendary {leg}, no mythic {myth} → chance {legChance}% / {mythChance}% · today {runs}/{limit}",
+	["admin.usage.bosspity"] = "/bosspity [boss] [kills]: show or set today's kills of a boss (each +1% to the chances)",
+	["admin.bosspity.line"] = "{boss}: legendary chance {legChance}%, mythic {mythChance}% · today {runs}/{limit}",
 	["admin.usage.bossruns"] = "/bossruns reset [boss]: reset today's boss kills (or one boss)",
 	["admin.bossruns.ok"] = "Today's kills reset ({boss}).",
-	["admin.usage.bosssim"] = "/bosssim <boss> [n]: simulate n kills with the growing chances",
+	["admin.usage.bosssim"] = "/bosssim <boss> [n]: simulate n kills (the daily limit of kills a day)",
 	["admin.bosssim.result"] = "{boss}, {n} kills: legendary {leg} (every {legEvery} on average), mythic {myth} (every {mythEvery} on average).",
 }

@@ -41,7 +41,7 @@ local TOUCH_LEFT_WIDTH = 200
 local TOUCH_SLOT = 56
 local TOUCH_GAP = 8
 -- 4 stat rows (44 + 4) + points line + buttons + spacing.
-local ALLOCATOR_HEIGHT = 290
+local ALLOCATOR_HEIGHT = 316 -- FIX 2026-10-09: rows grew by a description line
 local TAB_HEIGHT = Theme.Size.ButtonHeightSmall
 
 -- "◀ title ▶" picker (S16): cycles through none + the unlocked titles, saved with SetTitle.
@@ -293,9 +293,17 @@ end
 local function CharacterWindow(scope: Scope, props: Props): Fusion.Child
 	local pending = scope:Value({} :: { [string]: number })
 
-	-- Any change of free points (confirm, level-up, reset) starts the allocation over.
+	-- Fewer free points than reserved (reset, spent elsewhere) starts the allocation over. FIX 2026-10-09: a
+	-- level-up (more points) keeps what was reserved; a confirm clears it in StatAllocator.
 	scope:Observer(State.Value({ "character", "statPoints" })):onChange(function()
-		pending:set({})
+		local points = State.Get({ "character", "statPoints" })
+		local reserved = 0
+		for _, v in Fusion.peek(pending) do
+			reserved += v
+		end
+		if type(points) ~= "number" or points < reserved then
+			pending:set({})
+		end
 	end)
 
 	-- The layout follows the input device (touch = full-screen window).

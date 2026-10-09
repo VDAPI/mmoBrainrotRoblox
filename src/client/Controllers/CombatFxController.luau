@@ -88,10 +88,6 @@ local pool: { BillboardGui } = {}
 local MAX_FLASHES = 20
 local flashes: { [Model]: any } = {}
 local flashCount = 0
--- Seconds to hold back the next damage number / flash of an entity (its attack is still swinging / flying),
--- with the moment the attack started: entries older than DamageNumbers.hitDelayExpiry are ignored (S29).
-type HitDelay = { wait: number, at: number }
-local hitDelay: { [string]: HitDelay } = {}
 
 -- Entity lookup ---------------------------------------------------------------------------------------------
 
@@ -602,11 +598,8 @@ local function giveBack(kind: string, part: BasePart)
 	end
 end
 
--- Seconds a projectile of `kind` needs for `distance` studs.
-local function flightTime(kind: string, distance: number): number
-	local speed = if kind == "bolt" then 150 elseif kind == "arrow" then 110 else 85
-	return math.clamp(distance / speed, 0.06, 0.4)
-end
+-- Seconds a projectile of `kind` needs for `distance` studs (shared with the server's hit delay).
+local flightTime = AttackPose.flightTime
 
 local function launch(kind: string, from: Vector3, target: Model, color: Color3?, onArrive: (() -> ())?)
 	local to = centre(target)
@@ -780,7 +773,8 @@ end
 
 local HOLY = { holystaff = true, scepter = true }
 
--- A player's basic attack (S22): the pose, the weapon effects and the delay of its hit.
+-- A player's basic attack (S22): the pose and the weapon effects. FIX 2026-10-09: the server sends the damage
+-- when the blow lands or the shot arrives (AttackPose.hitDelay), so numbers are no longer held back here.
 local function playerAttack(attacker: Model, target: Model, event: { [string]: any })
 	local camera = Workspace.CurrentCamera
 	if camera and (centre(attacker) - camera.CFrame.Position).Magnitude > Config.EffectRadius then
@@ -790,9 +784,7 @@ local function playerAttack(attacker: Model, target: Model, event: { [string]: a
 	local timing = AnimationController.Attack(attacker, weaponType)
 	local weapon = weaponOf(attacker)
 	local motion = AttackPose.motionFor(weaponType)
-	local targetId = event.t :: string
 	if event.st == "melee" then
-		hitDelay[targetId] = { wait = timing.hitAt, at = os.clock() }
 		if motion == "unarmed" or not weapon then
 			task.delay(timing.hitAt * 0.7, swing, attacker, target)
 		else
@@ -812,9 +804,6 @@ local function playerAttack(attacker: Model, target: Model, event: { [string]: a
 	if kind == "magic" then
 		charge(weapon, color, timing.hitAt)
 	end
-	local from0 = attachmentPosition(weapon, if kind == "arrow" then "VaelthornGrip" else "VaelthornTip")
-		or centre(attacker) + Vector3.new(0, 0.8, 0)
-	hitDelay[targetId] = { wait = timing.hitAt + flightTime(kind, (centre(target) - from0).Magnitude), at = os.clock() }
 	task.delay(timing.hitAt, function()
 		if not attacker.Parent or not target.Parent then
 			return
@@ -985,17 +974,6 @@ end
 local function handle(event: { [string]: any })
 	local kind = event.k
 	if kind == "dmg" then
-		-- The number of a player's attack waits for its blow / arrival (S22); stale entries are ignored (S29).
-		local entry = if type(event.e) == "string" and not event.dot then hitDelay[event.e] else nil
-		if entry then
-			hitDelay[event.e] = nil
-			local elapsed = os.clock() - entry.at
-			local remaining = entry.wait - elapsed
-			if elapsed <= DamageNumbers.hitDelayExpiry and remaining > 0 then
-				task.delay(math.min(remaining, DamageNumbers.maxHitDelay), onDamage, event)
-				return
-			end
-		end
 		onDamage(event)
 	elseif kind == "heal" then
 		onHeal(event)
@@ -1063,10 +1041,6 @@ function CombatFxController.Init(registry)
 	for _ = 1, 12 do
 		table.insert(pool, newBillboard())
 	end
-	-- A new character: attacks of the old one no longer hold numbers back.
-	player.CharacterAdded:Connect(function()
-		table.clear(hitDelay)
-	end)
 end
 
 -- Admin /anim (S22): plays a weapon's attack on our own character (no target, no damage).

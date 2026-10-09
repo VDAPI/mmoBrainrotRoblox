@@ -3,7 +3,7 @@
 --
 -- A bonus instance on an item is { stat = <bonus id>, v = <value> }. Each bonus id maps to a StatCalc stat
 -- (`stat`) applied as a flat addition or a percentage multiplier (`mode`), or to a special effect `hook`
--- handled by CombatService/LootService (legendary pool).
+-- handled by CombatService/LootService (legendary and mythic pools).
 --
 -- Value = lerp(min, max, roll) x scale(ilvl) x rarity.rangeMul, where
 --   scale = 1 + ilvl / 20 for "flat" scaling (primary stats),
@@ -100,6 +100,19 @@ bonus("leg_lifesteal", "lifesteal", "flat", 2, 4, "none", 1, true)
 bonus("leg_moveSpeed", "moveSpeed", "flat", 6, 10, "none", 0, true)
 bonus("leg_critDmg", "critDmg", "flat", 20, 30, "none", 0, true)
 
+-- Mythic pool (FIX 2026-10-09: one line on every mythic item, on top of its 2 legendary lines). Stronger
+-- versions of the legendary effects; the hooks add up with legendary lines of the same effect.
+bonus("myth_bossDamage", nil, "flat", 15, 20, "none", 1, true, "bossDamage")
+bonus("myth_eliteDamage", nil, "flat", 18, 25, "none", 1, true, "eliteDamage")
+bonus("myth_doubleAttack", nil, "flat", 8, 12, "none", 1, true, "doubleAttack")
+bonus("myth_killHeal", nil, "flat", 5, 8, "none", 1, true, "killHeal")
+bonus("myth_executioner", nil, "flat", 25, 35, "none", 1, true, "executioner")
+bonus("myth_lastStand", nil, "flat", 25, 35, "none", 1, true, "lastStand")
+bonus("myth_critDmg", "critDmg", "flat", 40, 60, "none", 0, true)
+bonus("myth_hpPct", "maxHp", "pct", 8, 12, "none", 1, true)
+bonus("myth_physAtk", "physAtk", "pct", 8, 12, "none", 1, true)
+bonus("myth_magAtk", "magAtk", "pct", 8, 12, "none", 1, true)
+
 -- Pools per bonus group (item definitions name their group) --------------------------------------------------
 local POOLS: { [string]: { string } } = {
 	weapon = {
@@ -167,6 +180,18 @@ local POOLS: { [string]: { string } } = {
 		"leg_moveSpeed",
 		"leg_critDmg",
 	},
+	mythic = {
+		"myth_bossDamage",
+		"myth_eliteDamage",
+		"myth_doubleAttack",
+		"myth_killHeal",
+		"myth_executioner",
+		"myth_lastStand",
+		"myth_critDmg",
+		"myth_hpPct",
+		"myth_physAtk",
+		"myth_magAtk",
+	},
 }
 
 -- Bonuses only some classes use (S32): an item rolls them only when one of its classes (or, for class-free
@@ -181,6 +206,8 @@ local CLASS_STATS: { [string]: { string } } = {
 	mana = { "Mage", "Cleric" },
 	manaRegen = { "Mage", "Cleric" },
 	leg_manaOnHit = { "Mage", "Cleric" },
+	myth_physAtk = { "Warrior", "Hunter" },
+	myth_magAtk = { "Mage", "Cleric" },
 	energy = { "Warrior", "Hunter" },
 	energyRegen = { "Warrior", "Hunter" },
 }

@@ -14,6 +14,7 @@
 local AreaProfiles = require("../Data/AreaProfiles")
 local AreaTypes = require("../Data/Areas/Types")
 local CaveGen = require("./CaveGen")
+local Combat = require("../Data/Combat")
 local MapTerrain = require("./MapTerrain")
 local Monsters = require("../Data/Monsters")
 local Rng = require("./Rng")
@@ -34,7 +35,15 @@ AreaSpawns.CLIFF_CLEARANCE = 10 -- radius of gentle, dry ground around a group (
 AreaSpawns.EDGE = 40
 AreaSpawns.RESPAWN = { min = 30, max = 45 }
 AreaSpawns.ELITE_RESPAWN = { min = 90, max = 150 }
-AreaSpawns.ELITE2_RESPAWN = { min = 600, max = 1200 }
+
+-- Elite II respawn window (seconds) in a cave whose top level is `level` (FIX 2026-10-09: longer for higher levels).
+function AreaSpawns.elite2Respawn(level: number): { min: number, max: number }
+	local mid = Combat.elite2RespawnBase + Combat.elite2RespawnPerLevel * math.max(1, level)
+	return {
+		min = math.floor(mid * (1 - Combat.elite2RespawnSpread)),
+		max = math.floor(mid * (1 + Combat.elite2RespawnSpread)),
+	}
+end
 
 local function seedOf(text: string): number
 	local seed = 7
@@ -291,7 +300,7 @@ function AreaSpawns.cave(cave: AreaTypes.Cave): { Spawner }
 			deepest = room
 		end
 	end
-	add("elite2", "elite2", { cave.elite2[1] }, deepest, AreaSpawns.ELITE2_RESPAWN, cave.elite2)
+	add("elite2", "elite2", { cave.elite2[1] }, deepest, AreaSpawns.elite2Respawn(range[2]), cave.elite2)
 
 	-- Elite groups, alternating the two kinds, spread over the rooms.
 	for i = 1, cave.eliteGroups do

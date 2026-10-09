@@ -1,8 +1,8 @@
 --!strict
 -- bosses.json (S34): Data/Bosses with HP and attack for 1-5 players (MonsterStats.compute on the kind the server's
 -- Entities/Boss builds: hpMul = BossScaling.hpMultiplier(players) x def.hpMul), attacks with damage min-max like an
--- Elite II ability, summons, phases, enrage, the shared loot (Monte Carlo of Loot.rollBossLoot), the personal roll
--- (S30: Loot.bossChances on every pity count, expected kills) and the dungeon. Fills ctx.bossDrops for items.json.
+-- Elite II ability, summons, phases, enrage, the loot (FIX 2026-10-09: one item per winner, Monte Carlo of
+-- Loot.rollBossItem; Legendary / Mythic chances by kills that day, Loot.bossChances) and the dungeon. Fills ctx.bossDrops for items.json.
 
 local Areas = require("../../src/shared/Data/Areas")
 local BossData = require("../../src/shared/Data/Bosses")
@@ -144,21 +144,25 @@ local function kindFor(def: BossData.BossDef, players: number): any
 	}
 end
 
--- Chance on every pity count (Loot.bossChances) and the expected number of kills until a hit.
-local function pityLine(bossId: string, base: number, step: number, hard: number, field: string): any
+-- Chance by the kills of that boss earlier the same day (Loot.bossChances; field names kept from the S30 pity:
+-- `byMisses` = by kills today, `hard` = the daily limit) and the expected kills until a hit at the daily limit.
+local function dayLine(bossId: string, base: number, step: number, field: string): any
+	local runs = (Config :: any).Boss and (Config :: any).Boss.dailyRuns or 1
 	local chances = {}
-	local expected, reach = 0, 1
-	for misses = 0, hard - 1 do
-		local pity = if field == "legendary" then { leg = misses, myth = 0 } else { leg = 0, myth = misses }
-		local c = (Loot.bossChances(bossId, pity) :: any)[field]
+	local sum = 0
+	for kills = 0, runs - 1 do
+		local c = (Loot.bossChances(bossId, kills) :: any)[field]
 		table.insert(chances, c)
-		expected += reach
-		reach *= 1 - c
-		if reach <= 0 then
-			break
-		end
+		sum += c
 	end
-	return { chance = base, step = step, hard = hard, byMisses = chances, expectedKills = expected }
+	local mean = sum / runs
+	return {
+		chance = base,
+		step = step,
+		hard = runs,
+		byMisses = chances,
+		expectedKills = if mean > 0 then 1 / mean else 0,
+	}
 end
 
 function Bosses.build(ctx: any): any
@@ -178,7 +182,7 @@ function Bosses.build(ctx: any): any
 					mres = s.mres,
 					dmgMin = low,
 					dmgMax = high,
-					extraItems = BossScaling.extraItems(players),
+					extraItems = 0, -- FIX 2026-10-09: one item per winner, no extra shared items
 				})
 			end
 			local stats = MonsterStats.compute(kindFor(def, 1), def.level, "boss")
@@ -190,17 +194,15 @@ function Bosses.build(ctx: any): any
 					Monsters.damageRange(stats, a.damage, a.element, a.damageKind or stats.damageKind)
 				table.insert(attacks, entry)
 			end
-			-- Shared loot: Monte Carlo of one kill (one player; more players add extra items).
+			-- The winner's item: Monte Carlo of the first kill of the day (Unique / Heroic bases; Legendary / Mythic
+			-- are shown by their chances).
 			local rng = Rng.new(StubRng.seedOf(`boss:{def.id}`))
 			local rolls = math.max(1, math.floor(ctx.rolls / 10))
 			local kills: { [string]: number } = {}
 			for _ = 1, rolls do
-				local seen: { [string]: boolean } = {}
-				for _, drop in Loot.rollBossLoot(def.id, 1, rng).items do
-					if not seen[drop.defId] then
-						seen[drop.defId] = true
-						kills[drop.defId] = (kills[drop.defId] or 0) + 1
-					end
+				local drop = if tableDef then Loot.rollBossItem(tableDef, 0, nil, rng) else nil
+				if drop and drop.rarity < Rarities.LEGENDARY then
+					kills[drop.defId] = (kills[drop.defId] or 0) + 1
 				end
 			end
 			local items = {}
@@ -284,20 +286,8 @@ function Bosses.build(ctx: any): any
 					rolls = rolls,
 				},
 				personal = {
-					legendary = pityLine(
-						def.id,
-						tableDef.legendaryChance,
-						tableDef.legendaryStep,
-						tableDef.legendaryHard,
-						"legendary"
-					),
-					mythic = pityLine(
-						def.id,
-						tableDef.mythicChance,
-						tableDef.mythicStep,
-						tableDef.mythicHard,
-						"mythic"
-					),
+					legendary = dayLine(def.id, tableDef.legendaryChance, tableDef.perKill, "legendary"),
+					mythic = dayLine(def.id, tableDef.mythicChance, tableDef.perKill, "mythic"),
 				},
 			})
 		end

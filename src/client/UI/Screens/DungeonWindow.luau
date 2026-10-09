@@ -58,7 +58,6 @@ local function DungeonWindow(scope: Scope, props: Props): Fusion.Child
 	end)
 
 	local bossRuns = State.Value({ "character", "bossRuns" })
-	local bossPity = State.Value({ "character", "bossPity" })
 	local grind = scope:Computed(function(use): string
 		local region = use(props.Region)
 		local boss = if region then Bosses.forRegion(region) else nil
@@ -66,10 +65,9 @@ local function DungeonWindow(scope: Scope, props: Props): Fusion.Child
 			return ""
 		end
 		local runs = use(bossRuns)
-		local pity = use(bossPity)
 		local t = use(now)
 		local done = BossScaling.runsToday(if type(runs) == "table" then runs else nil, boss.id, t)
-		local chances = Loot.bossChances(boss.id, if type(pity) == "table" then pity[boss.id] else nil)
+		local chances = Loot.bossChances(boss.id, done)
 		local runsLine = Text.get(use, "worldmap.card.runsToday", {
 			n = done,
 			limit = Config.Boss.dailyRuns,

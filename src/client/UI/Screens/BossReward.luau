@@ -1,8 +1,8 @@
 --!strict
 -- Post-fight reward card (S30, DESIGN §16): shown to each winner after a boss kill, under the victory message.
--- EXP and gold, whether the personal roll gave a Legendary / Mythic (it lies in the player's own bag), today's
--- runs of this boss ("Dziś: 2/3") with the time to the UTC reset, and the chances for the next kill, which grow
--- with every kill without a hit. "OK" closes it; it also closes by itself after a while.
+-- EXP and gold, whether the winner's one item (in their own bag) is a Legendary / Mythic, today's runs of this
+-- boss ("Dziś: 2/3") with the time to the UTC reset, and the chances for the next kill, which grow with every kill
+-- that day (FIX 2026-10-09). "OK" closes it; it also closes by itself after a while.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 

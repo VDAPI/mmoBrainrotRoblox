@@ -19,6 +19,7 @@ local Shared = ReplicatedStorage.Shared
 local Analytics = require(script.Parent.Parent.Analytics)
 
 local AreaProfiles = require(Shared.Data.AreaProfiles)
+local AttackPose = require(Shared.Logic.AttackPose)
 local Classes = require(Shared.Data.Classes)
 local DamageText = require(Shared.Logic.DamageText)
 local Combat = require(Shared.Data.Combat)
@@ -580,13 +581,30 @@ local function tryBasicAttack(player: Player, state: Attacker, now: number)
 	local derived = PlayerStateService.Get(player, { "derived" })
 	local element = if derived and derived.weapon then derived.weapon.element else nil
 	local params: Damage.Params = { kind = if kind == "magic" then "magic" else "phys", element = element }
-	CombatService.DealDamage(player, target, params, style)
-	local double = hook(player, "doubleAttack")
-	if double > 0 and rng:chance(double / 100) then
-		if target.kind ~= "monster" or (target.monster and target.monster:IsAlive()) then
-			CombatService.DealDamage(player, target, params, style)
-		end
+	-- FIX 2026-10-09: the swing / shot starts now, the damage comes when the blow lands or the projectile
+	-- arrives (AttackPose.hitDelay, the same timing the client animates); before, the HP dropped at once.
+	local weaponType = weaponFx(player)
+	local delay = AttackPose.hitDelay(weaponType, flatDistance(myRoot.Position, targetPosition), ranged)
+	if selfEntity then
+		local _, weaponElement = weaponFx(player)
+		queueFx(
+			targetPosition,
+			{ k = "atk", s = selfEntity.id, t = target.id, st = style, w = weaponType, el = weaponElement }
+		)
 	end
+	local double = hook(player, "doubleAttack")
+	local twice = double > 0 and rng:chance(double / 100)
+	task.delay(delay, function()
+		if
+			not playerAlive(player) or (target.kind == "monster" and not (target.monster and target.monster:IsAlive()))
+		then
+			return
+		end
+		CombatService.DealDamage(player, target, params)
+		if twice and (target.kind ~= "monster" or (target.monster and target.monster:IsAlive())) then
+			CombatService.DealDamage(player, target, params)
+		end
+	end)
 end
 
 -- Monster -> player ------------------------------------------------------------------------------------

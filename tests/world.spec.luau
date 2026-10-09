@@ -274,6 +274,19 @@ describe("World spawns", function()
 		end
 	end)
 
+	it("respawn Elite II later in higher caves (FIX 2026-10-09)", function()
+		local low, high = AreaSpawns.elite2Respawn(10), AreaSpawns.elite2Respawn(90)
+		expect(low.min < low.max).toBe(true)
+		expect(high.min > low.max).toBe(true)
+		for _, cave in Areas.caves.list do
+			for _, spawner in Spawns.byMap[cave.id] do
+				if spawner.variant == "elite2" then
+					expect(spawner.respawn).toEqual(AreaSpawns.elite2Respawn(cave.levels[2]))
+				end
+			end
+		end
+	end)
+
 	it("leave no level without normal monsters (within 2 levels)", function()
 		for level = 1, 100 do
 			local found = false

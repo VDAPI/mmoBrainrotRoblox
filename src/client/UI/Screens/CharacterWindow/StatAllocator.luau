@@ -1,6 +1,7 @@
 --!strict
 -- Primary stats with +/- buttons (DESIGN §4.3). Points are reserved locally (pending) and sent together
 -- with "Confirm"; holding + or - repeats faster. The pending values feed a live preview of derived stats.
+-- FIX 2026-10-09: every stat says what one point gives (numbers from Data/Stats.Formula).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -24,7 +25,24 @@ export type Props = {
 }
 
 local HOLD_DELAY = 0.35
-local ROW_HEIGHT = 44
+local ROW_HEIGHT = 50
+
+-- What one point of a stat gives, as arguments of "stat.<id>.desc" (Data/Stats.Formula).
+local function pct(value: number): string
+	return string.format("%g", math.floor(value * 1000 + 0.5) / 1000)
+end
+local F = Stats.Formula
+local DESC_ARGS: { [string]: { [string]: string } } = {
+	str = { phys = pct(F.physPerStat * 100), armor = pct(F.armorPerStr) },
+	dex = {
+		phys = pct(F.physPerStat * 100),
+		crit = pct(F.critPerDex),
+		speed = pct(F.atkSpeedPerDex * 100),
+		dodge = pct(F.dodgePerDex),
+	},
+	int = { mag = pct(F.magPerInt * 100), mana = pct(F.manaPerInt), mres = pct(F.mresPerInt) },
+	vit = { hp = pct(F.hpPerVit), armor = pct(F.armorPerVit), mres = pct(F.mresPerVit) },
+}
 
 local function total(pending: { [string]: number }): number
 	local sum = 0
@@ -168,16 +186,36 @@ local function StatAllocator(scope: Scope, props: Props): Instance
 						SortOrder = Enum.SortOrder.LayoutOrder,
 						Padding = UDim.new(0, Theme.Padding.Small),
 					}),
-					scope:New("TextLabel")({
+					scope:New("Frame")({
 						Name = "Label",
 						LayoutOrder = 1,
-						Size = UDim2.new(1, -(ROW_HEIGHT * 2 + 90 + Theme.Padding.Small * 3), 1, 0),
+						Size = UDim2.new(1, -(44 * 2 + 90 + Theme.Padding.Small * 3), 1, 0),
 						BackgroundTransparency = 1,
-						Text = Text.T(scope, `stat.{id}`),
-						FontFace = Theme.Fonts.BodyBold,
-						TextSize = Theme.TextSize.Body,
-						TextColor3 = Theme.Colors.Text,
-						TextXAlignment = Enum.TextXAlignment.Left,
+						[Children] = {
+							scope:New("TextLabel")({
+								Name = "Name",
+								Size = UDim2.new(1, 0, 0, 24),
+								BackgroundTransparency = 1,
+								Text = Text.T(scope, `stat.{id}`),
+								FontFace = Theme.Fonts.BodyBold,
+								TextSize = Theme.TextSize.Body,
+								TextColor3 = Theme.Colors.Text,
+								TextXAlignment = Enum.TextXAlignment.Left,
+							}),
+							scope:New("TextLabel")({
+								Name = "Desc",
+								Position = UDim2.fromOffset(0, 24),
+								Size = UDim2.new(1, 0, 1, -24),
+								BackgroundTransparency = 1,
+								Text = Text.T(scope, `stat.{id}.desc`, DESC_ARGS[id]),
+								TextWrapped = true,
+								FontFace = Theme.Fonts.Body,
+								TextSize = 12,
+								TextColor3 = Theme.Colors.TextMuted,
+								TextXAlignment = Enum.TextXAlignment.Left,
+								TextYAlignment = Enum.TextYAlignment.Top,
+							}),
+						},
 					}),
 					stepButton(
 						scope,

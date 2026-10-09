@@ -79,6 +79,7 @@ return {
 
 	-- Nameplates and notifications
 	["nameplate.levelClass"] = "Lv {level} {class}",
+	["nameplate.vip"] = "★ VIP",
 	["toast.enterWorld"] = "Witaj w Vaelthorn, {name}!",
 
 	-- Errors (server answers carry these keys)
@@ -130,6 +131,10 @@ return {
 	["stat.dex"] = "Zręczność",
 	["stat.int"] = "Intelekt",
 	["stat.vit"] = "Witalność",
+	["stat.str.desc"] = "+{phys}% obrażeń broni do walki wręcz, +{armor} pancerza",
+	["stat.dex.desc"] = "+{phys}% obrażeń broni dystansowej, +{crit}% szansy na kryt., +{speed}% szybkości ataku, +{dodge}% uniku",
+	["stat.int.desc"] = "+{mag}% obrażeń magicznych broni, +{mana} many, +{mres} odporności magicznej",
+	["stat.vit.desc"] = "+{hp} życia, +{armor} pancerza, +{mres} odporności magicznej",
 	["stat.physAtk"] = "Atak fizyczny",
 	["stat.magAtk"] = "Atak magiczny",
 	["stat.critChance"] = "Szansa na krytyk",
@@ -718,6 +723,16 @@ return {
 	["bonus.leg_lifesteal"] = "+{v}% Wampiryzmu",
 	["bonus.leg_moveSpeed"] = "+{v}% Szybkości ruchu",
 	["bonus.leg_critDmg"] = "+{v}% Obrażeń krytycznych",
+	["bonus.myth_bossDamage"] = "+{v}% obrażeń przeciw bossom",
+	["bonus.myth_eliteDamage"] = "+{v}% obrażeń przeciw elitom",
+	["bonus.myth_doubleAttack"] = "{v}% szansy na podwójny atak",
+	["bonus.myth_killHeal"] = "Zabicie potwora leczy {v}% maks. życia",
+	["bonus.myth_executioner"] = "+{v}% obrażeń celom poniżej 30% życia",
+	["bonus.myth_lastStand"] = "-{v}% otrzymanych obrażeń poniżej 30% życia",
+	["bonus.myth_critDmg"] = "+{v}% Obrażeń krytycznych",
+	["bonus.myth_hpPct"] = "+{v}% Życia",
+	["bonus.myth_physAtk"] = "+{v}% Ataku fizycznego",
+	["bonus.myth_magAtk"] = "+{v}% Ataku magicznego",
 
 	-- Inventory and tooltips (S04)
 	["inventory.gold"] = "{gold} złota",
@@ -763,6 +778,7 @@ return {
 	["tooltip.restores.mana"] = "Przywraca {amount} many",
 	["tooltip.restores.energy"] = "Przywraca {amount} energii",
 	["tooltip.compare"] = "W porównaniu z założonym:",
+	["tooltip.equipped"] = "Założone teraz",
 	["tooltip.hintEquip"] = "Podwójny klik lub przytrzymanie: załóż",
 	["tooltip.hintUse"] = "Podwójny klik lub przytrzymanie: użyj",
 	-- S31: item categories, value, effects, material usage, shop row line
@@ -2705,7 +2721,7 @@ return {
 	["dungeon.reward.title"] = "Pokonano: {boss}",
 	["dungeon.reward.legendary"] = "Legendarny przedmiot czeka w Twoim worku!",
 	["dungeon.reward.mythic"] = "Mityczny przedmiot czeka w Twoim worku!",
-	["dungeon.reward.none"] = "Tym razem bez legendy i mityka. Szansa rośnie z każdym zabiciem.",
+	["dungeon.reward.none"] = "Twój przedmiot czeka w worku. Szansa na legendę i mityka rośnie z każdym dzisiejszym zabiciem.",
 	["dungeon.reward.next"] = "Następne zabicie: legenda {leg}% · mityk {myth}%",
 	["worldmap.card.bossLevel"] = "boss poziomu {level}",
 	["worldmap.card.nodeLevel"] = "Od poziomu krainy {level}",
@@ -3237,10 +3253,10 @@ return {
 	["admin.icongrid.empty"] = "Brak ikon w grupie {group}.",
 	["admin.rarities.line"] = "{id} {name} {color}: bonusy {bonuses} + legendarne {legendary}, baza ×{base}, zakres ×{range}, sprzedaż ×{sell}",
 	["admin.rarities.caps"] = "Sufity rzadkości wg źródła: {list}",
-	["admin.usage.bosspity"] = "/bosspity [boss] [leg] [myth]: pokaż albo ustaw liczniki zabić bez legendy / mityka",
-	["admin.bosspity.line"] = "{boss}: bez legendy {leg}, bez mityka {myth} → szansa {legChance}% / {mythChance}% · dziś {runs}/{limit}",
+	["admin.usage.bosspity"] = "/bosspity [boss] [zabicia]: pokaż albo ustaw dzisiejsze zabicia bossa (każde +1% do szans)",
+	["admin.bosspity.line"] = "{boss}: szansa na legendę {legChance}%, na mityka {mythChance}% · dziś {runs}/{limit}",
 	["admin.usage.bossruns"] = "/bossruns reset [boss]: wyzeruj dzisiejsze zabicia bossów (albo jednego)",
 	["admin.bossruns.ok"] = "Dzisiejsze zabicia wyzerowane ({boss}).",
-	["admin.usage.bosssim"] = "/bosssim <boss> [n]: symuluj n zabić z licznikami szans",
+	["admin.usage.bosssim"] = "/bosssim <boss> [n]: symuluj n zabić (limit dzienny zabić na dzień)",
 	["admin.bosssim.result"] = "{boss}, {n} zabić: legendy {leg} (średnio co {legEvery}), mityki {myth} (średnio co {mythEvery}).",
 }

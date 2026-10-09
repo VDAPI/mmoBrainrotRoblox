@@ -12,6 +12,7 @@ local Rng = require(Shared.Logic.Rng)
 local Anatomy = require(Shared.Logic.Anatomy)
 local Classes = require(Shared.Data.Classes)
 local Clock = require(Shared.Util.Clock)
+local Time = require(Shared.Logic.Time)
 local Cosmetics = require(Shared.Data.Cosmetics)
 local LookAnim = require(Shared.Logic.LookAnim)
 local MonsterLooks = require(Shared.Data.MonsterLooks)
@@ -223,11 +224,11 @@ commands.bosspity = function(player, args)
 			reply(player, "admin.usage.bosspity")
 			return
 		end
-		local leg, myth = parseAmount(args[2]), parseAmount(args[3])
-		if bossId and leg then
-			local current = (character.bossPity or {})[bossId] or { leg = 0, myth = 0 }
-			local value = { leg = math.clamp(leg, 0, 1000), myth = math.clamp(myth or current.myth or 0, 0, 1000) }
-			PlayerStateService.Set(player, { "character", "bossPity", bossId }, value)
+		-- FIX 2026-10-09: sets today's kills (they raise the Legendary / Mythic chances).
+		local kills = parseAmount(args[2])
+		if bossId and kills then
+			local value = { day = Time.dayNumber(Clock.now()), n = math.clamp(kills, 0, 100) }
+			PlayerStateService.Set(player, { "character", "bossRuns", bossId }, value)
 			character = PlayerStateService.GetCharacter(player)
 		end
 		local ids = {}
@@ -239,15 +240,13 @@ commands.bosspity = function(player, args)
 		table.sort(ids)
 		local now = Clock.now()
 		for _, id in ids do
-			local pity = (character.bossPity or {})[id] or { leg = 0, myth = 0 }
-			local chances = Loot.bossChances(id, pity)
+			local runs = BossScaling.runsToday(character.bossRuns, id, now)
+			local chances = Loot.bossChances(id, runs)
 			reply(player, "admin.bosspity.line", {
 				boss = id,
-				leg = pity.leg,
-				myth = pity.myth,
 				legChance = math.floor(chances.legendary * 100 + 0.5),
 				mythChance = math.floor(chances.mythic * 100 + 0.5),
-				runs = BossScaling.runsToday(character.bossRuns, id, now),
+				runs = runs,
 				limit = Config.Boss.dailyRuns,
 			})
 		end
@@ -271,7 +270,7 @@ commands.bossruns = function(player, args)
 	end)
 end
 
--- S30: /bosssim <boss> <n>: n kills by one character from zero pity.
+-- S30: /bosssim <boss> <n>: n kills by one character, the daily limit of kills a day.
 commands.bosssim = function(player, args)
 	local boss = args[1] and LootTables.bosses[args[1]]
 	if not boss then

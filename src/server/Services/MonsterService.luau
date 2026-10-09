@@ -257,10 +257,10 @@ local function setTimers(player: Player, edit: (list: { Types.Elite2Timer }) -> 
 	PlayerStateService.Set(player, { "character", "e2timers" }, list)
 end
 
--- Everyone who hurt the Elite II gets its respawn window.
-local function startTimers(monster: Monster.Monster, spawner: SpawnerRuntime)
+-- Everyone who hurt the Elite II (and only they) gets its respawn countdown: `delay` seconds from now, the same
+-- roll as the spawner's (FIX 2026-10-09: was the whole min-max window).
+local function startTimers(monster: Monster.Monster, spawner: SpawnerRuntime, delay: number)
 	local now = Workspace:GetServerTimeNow()
-	local respawn = spawner.data.respawn
 	for player in monster.damageBy do
 		if player.Parent ~= nil then
 			setTimers(player, function(list)
@@ -274,8 +274,8 @@ local function startTimers(monster: Monster.Monster, spawner: SpawnerRuntime)
 					spawner = spawner.data.id,
 					kind = monster.def.id,
 					map = spawner.mapId,
-					from = now + respawn.min,
-					to = now + respawn.max,
+					from = now + delay,
+					to = now + delay,
 					job = game.JobId,
 				})
 				return kept
@@ -349,12 +349,13 @@ function MonsterService.OnDied(monster: Monster.Monster)
 	if spawner then
 		removeFrom(spawner.alive, monster)
 		refreshGroupSize(spawner)
-		if monster.variant == "elite2" then
-			startTimers(monster, spawner)
-		end
 		if #spawner.alive == 0 then
 			local respawn = spawner.data.respawn
-			spawner.respawnAt = os.clock() + respawn.min + random:NextNumber() * (respawn.max - respawn.min)
+			local delay = respawn.min + random:NextNumber() * (respawn.max - respawn.min)
+			spawner.respawnAt = os.clock() + delay
+			if monster.variant == "elite2" then
+				startTimers(monster, spawner, delay)
+			end
 		end
 	end
 	fadeAndDestroy(monster)

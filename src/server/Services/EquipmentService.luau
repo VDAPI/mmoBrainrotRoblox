@@ -117,6 +117,41 @@ local function tipOf(look: WeaponLooks.Look): Vector3
 	return best
 end
 
+-- Real model of an item (WeaponLooks.assets) from ReplicatedStorage.Assets.Weapons, as one part standing up the
+-- weapon frame, or nil (no entry / no model: the Part look is used; a missing model warns once).
+local warnedAssets: { [string]: boolean } = {}
+local function assetPart(defId: string): (BasePart?, WeaponLooks.Asset?)
+	local asset = WeaponLooks.assets[defId]
+	if not asset then
+		return nil, nil
+	end
+	local assets = game:GetService("ReplicatedStorage"):FindFirstChild("Assets")
+	local folder = assets and assets:FindFirstChild("Weapons")
+	local source = folder and folder:FindFirstChild(asset.model)
+	local part: BasePart? = nil
+	if source and source:IsA("BasePart") then
+		part = source:Clone()
+	elseif source then
+		local first = source:FindFirstChildWhichIsA("BasePart", true)
+		part = if first then first:Clone() else nil
+	end
+	if not part then
+		if not warnedAssets[asset.model] then
+			warnedAssets[asset.model] = true
+			warn(`[Equipment] Assets.Weapons.{asset.model} not found; {defId} uses its Part look`)
+		end
+		return nil, nil
+	end
+	for _, child in part:GetChildren() do
+		if not child:IsA("SurfaceAppearance") and not child:IsA("SpecialMesh") then
+			child:Destroy()
+		end
+	end
+	local size = part.Size
+	part.Size = size * (asset.length / math.max(0.01, size.Y))
+	return part, asset
+end
+
 -- Builds the held model of `slot` from its look: the first piece is the main part (named after the slot),
 -- the others are welded to it and parented under it. S22: the main part carries Attachments "VaelthornGrip"
 -- (the palm) and "VaelthornTip" (the farthest point) and the attribute "WeaponType" for the client's attack
@@ -144,6 +179,36 @@ local function updateHeldModel(player: Player, slot: "weapon" | "offhand")
 	end
 	local accent = rarityColor(item)
 	local main: BasePart? = nil
+	local real, asset = assetPart((def :: any).id)
+	if real and asset then
+		-- Upright mesh (+Y) turned to point forward (-Z), the hand `grip` of the way up from the pommel.
+		local offset = grip * CFrame.new(0, 0, -(0.5 - asset.grip) * asset.length) * CFrame.Angles(math.rad(-90), 0, 0)
+		real.Name = name
+		real.Anchored = false
+		real.CanCollide = false
+		real.CanTouch = false
+		real.CanQuery = false
+		real.Massless = true
+		real.CastShadow = false
+		real.CFrame = anchor.CFrame * offset
+		local weld = Instance.new("Weld")
+		weld.Part0 = anchor
+		weld.Part1 = real
+		weld.C0 = offset
+		weld.Parent = real
+		local palm = Instance.new("Attachment")
+		palm.Name = "VaelthornGrip"
+		palm.CFrame = (grip:Inverse() * offset):Inverse()
+		palm.Parent = real
+		local tip = Instance.new("Attachment")
+		tip.Name = "VaelthornTip"
+		tip.CFrame = palm.CFrame * CFrame.new(0, 0, -(1 - asset.grip) * asset.length)
+		tip.Parent = real
+		real:SetAttribute("WeaponType", (def :: any).type)
+		real:SetAttribute("Accent", accent)
+		real.Parent = model
+		return
+	end
 	for _, piece in look.pieces do
 		local part = Instance.new("Part")
 		part.Name = if main then piece.name else name

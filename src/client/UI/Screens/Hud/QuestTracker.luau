@@ -1,7 +1,7 @@
 --!strict
 -- Quest tracker (DESIGN §20, right side under the minimap): the tracked side quest (S27, QuestTrack.Focus) and the
 -- main quest with their objectives and an arrow towards the tracked one's target (an NPC or a place on this map, or the portal leading to the target map), plus the
--- daily contracts. The header collapses it.
+-- daily contracts. The header collapses it. Elite II timers moved to Hud/Elite2Timer (FIX 2026-10-09).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -13,7 +13,6 @@ local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local MapRoute = require(ReplicatedStorage.Shared.Logic.MapRoute)
 local MapSketch = require(script.Parent.Parent.Parent.MapSketch)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
-local Monsters = require(ReplicatedStorage.Shared.Data.Monsters)
 local Npcs = require(ReplicatedStorage.Shared.Data.Npcs)
 local QuestLogic = require(ReplicatedStorage.Shared.Logic.QuestLogic)
 local QuestRows = require(ReplicatedStorage.Shared.Logic.QuestRows)
@@ -21,7 +20,6 @@ local QuestText = require(script.Parent.Parent.Parent.QuestText)
 local QuestTrack = require(script.Parent.Parent.Parent.QuestTrack)
 local Quests = require(ReplicatedStorage.Shared.Data.Quests)
 local SideQuests = require(ReplicatedStorage.Shared.Logic.SideQuests)
-local Time = require(ReplicatedStorage.Shared.Logic.Time)
 local State = require(script.Parent.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
@@ -66,22 +64,9 @@ export type Props = {
 
 local function QuestTracker(scope: Scope, props: Props?): Instance
 	local quests = State.Value({ "character", "quests" })
-	local timers = State.Value({ "character", "e2timers" })
-	local now = scope:Value(Workspace:GetServerTimeNow())
-	local clock = 0
-	table.insert(
-		scope,
-		RunService.Heartbeat:Connect(function(dt)
-			clock += dt
-			if clock >= 1 then
-				clock = 0
-				now:set(Workspace:GetServerTimeNow())
-			end
-		end)
-	)
 	local collapsed = scope:Value(false)
 	-- S29: which objective rows were already seen done and when their pulse ends; kept outside the Computed, so a
-	-- recompute (progress, language, the timers' clock) does not pulse them again.
+	-- recompute (progress, language) does not pulse them again.
 	local seen: QuestRows.Seen = {}
 	local pulseUntil: { [string]: number } = {}
 	local arrow = scope:Value(nil :: number?)
@@ -328,34 +313,6 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 					Theme.Fonts.Body,
 					10
 				)
-			end
-		end
-		-- Elite II timers (S20, DESIGN §15.3)
-		local timerList = use(timers)
-		if type(timerList) == "table" and #timerList > 0 then
-			gap()
-			line(Text.get(use, "e2timer.header"), Theme.Colors.Gold, 16, Theme.Fonts.BodyBold)
-			local t = use(now)
-			for _, timer in timerList do
-				local def = Monsters.get(timer.kind)
-				local name = if def then Text.get(use, def.nameKeys.elite2) else timer.kind
-				local map = Maps.get(timer.map)
-				local where = if map then Text.get(use, map.nameKey) else timer.map
-				local state
-				if timer.job ~= game.JobId then
-					state = Text.get(use, "e2timer.otherServer")
-				elseif t < timer.from then
-					state = Text.get(use, "e2timer.window", {
-						from = Time.format(timer.from - t),
-						to = Time.format(timer.to - t),
-					})
-				elseif t < timer.to then
-					state = Text.get(use, "e2timer.soon", { to = Time.format(timer.to - t) })
-				else
-					state = Text.get(use, "e2timer.any")
-				end
-				line(`{name} ({where})`, Theme.Colors.Parchment, 14, Theme.Fonts.BodyMedium, 4)
-				line(state, Theme.Colors.TextMuted, 13, Theme.Fonts.Body, 10)
 			end
 		end
 		return list

@@ -1,23 +1,23 @@
 # Vaelthorn: przedmioty
 
 > Plik generowany: `lune run tools/wikidump.luau` (dane gry, te same co wiki). Nie edytuj ręcznie.
-> Odcisk danych 89d2e7c4 (`wiki/src/data/meta.json`).
+> Odcisk danych cbb4b324 (`wiki/src/data/meta.json`).
 
 ## Rzadkości
 
 | Rzadkość | Kolor | Bonusy | Linie legendarne | Mnożnik statystyk | Mnożnik wartości |
 |---|---|---|---|---|---|
 | Zwykły | `#9DA3AB` | 0 | 0 | ×1 | ×1 |
-| Unikatowy | `#F2D33A` | 1–2 | 0 | ×1,05 | ×1,12 |
-| Heroiczny | `#3D8BFF` | 2–3 | 0 | ×1,12 | ×1,25 |
-| Legendarny | `#FF9F1C` | 3–4 | 1 | ×1,16 | ×1,45 |
-| Mityczny | `#E5302A` | 4 | 2 | ×1,22 | ×1,7 |
+| Unikatowy | `#F2D33A` | 2 | 0 | ×1,05 | ×1,12 |
+| Heroiczny | `#3D8BFF` | 3 | 0 | ×1,12 | ×1,25 |
+| Legendarny | `#FF9F1C` | 3 | 1 | ×1,16 | ×1,45 |
+| Mityczny | `#E5302A` | 3 | 2 | ×1,22 | ×1,7 |
 
 Źródła dropu: szansa przedmiotu na zabicie, liczba i najwyższa możliwa rzadkość (sufit).
 
 | Źródło | Szansa | Liczba | Sufit | Udział rzadkości |
 |---|---|---|---|---|
-| bossowie (wspólny łup) | 100% | 3–4 | Mityczny | Heroiczny 65%, Unikatowy 35% |
+| bossowie (wspólny łup) | 100% | 1 | Mityczny | Heroiczny 65%, Unikatowy 35% |
 | Elity | 75% | 1 | Heroiczny | Zwykły 45%, Heroiczny 6%, Unikatowy 49% |
 | Elity II | 100% | 2–3 | Legendarny | Heroiczny 50%, Legendarny 5%, Unikatowy 45% |
 | zwykłe potwory | 20% | 1 | Unikatowy | Zwykły 70%, Unikatowy 30% |

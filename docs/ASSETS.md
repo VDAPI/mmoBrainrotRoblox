@@ -10,12 +10,32 @@
 | `art/icons/items_*.png` | własne, wygenerowane (`tools/icons`) | własne | 2026-10-07 | — | przebudowa: `tools/icons/README.md` |
 | `wiki/public/img/mobs/*`, `wiki/public/img/og/*` | własne, wygenerowane (`tools/wiki-renders`) | własne | 2026-10-07 | — | przebudowa: `npm run renders` |
 | `wiki/public/img/items/*` | własne, z atlasów S35 (`wiki/scripts/item-icons.mjs`) | własne | 2026-10-07 | — | przebudowa: `npm run icons` |
+| `art/weapons/sword1/*` (z `assets/Weapons/sword1.glb`) | własne, wygenerowane w Tripo AI (właściciel) | własne (warunki Tripo) | 2026-10-09 | — | 1,78 mln → 9 tys. trójkątów (pymeshlab), tekstury 4096 → 1024; `.glb` 64 MB poza repo |
 
 ## Gdzie co leży
 
 - `assets/Monsters/<nazwa>.rbxm` → `ReplicatedStorage.Assets.Monsters.<nazwa>` (Rojo, `default.project.json`).
 - `assets/Pets/<petId>.rbxm` → `ReplicatedStorage.Assets.Pets.<petId>` (statyczny model peta, zastępuje generator bez wpisu w danych).
 - Foldery mają `init.meta.json` z `ignoreUnknownInstances`, więc model wklejony ręcznie w Studio nie znika przy `rojo serve`. Żeby trafił do repozytorium, zapisz go jako `.rbxm` w odpowiednim folderze.
+
+## Broń (2026-10-09)
+
+Prawdziwy model broni zastępuje wygląd z części (`Data/WeaponLooks`) dla jednego przedmiotu: wpis w
+`WeaponLooks.assets` (`id przedmiotu = { model, length, grip }`) + MeshPart w `ReplicatedStorage.Assets.Weapons.<model>`.
+Mesh stoi pionowo (+Y, głowica na dole); gra sama go skaluje do `length`, obraca ostrzem do przodu i chwyta na
+wysokości `grip`. Bez modelu przedmiot ma stary wygląd (jedno ostrzeżenie w Output).
+
+Roblox przyjmuje do ~20 tys. trójkątów na MeshPart. Modele z generatorów (Tripo: 1,8 mln) trzeba najpierw uprościć,
+np. `pymeshlab` (`meshing_decimation_quadric_edge_collapse_with_texture`, kilka przebiegów do ~9 tys.).
+
+**Import (właściciel, raz na model):**
+
+1. Studio → zakładka Home/Model → **Import 3D** → `art/weapons/sword1/sword1.obj` (tekstura `sword1_color.png`
+   obok wczyta się sama; jeśli nie, wpisz jej id w `TextureID` po wgraniu przez Asset Manager).
+2. Rig Type: brak (zwykły mesh). Po imporcie w Workspace pojawi się Model z MeshPartem.
+3. Przenieś **MeshPart** do `ReplicatedStorage.Assets.Weapons` i nazwij go `sword1`.
+4. Prawy klik → **Save to File** → `assets/Weapons/sword1.rbxm` (wtedy Rojo i repo go znają).
+5. Play: nowa postać wojownika (albo `/give sword1h_1` i załóż) ma ten miecz w dłoni.
 
 ## Ikony przedmiotów (S35)
 

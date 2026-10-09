@@ -155,8 +155,14 @@ function ItemRoll.legendaryPool(defId: string, forClass: string?): { string }
 	return filtered(Bonuses.pools.legendary, classes)
 end
 
+function ItemRoll.mythicPool(defId: string, forClass: string?): { string }
+	local def = Items.get(defId)
+	local classes = if def and def.classes then def.classes elseif forClass then { forClass } else nil
+	return filtered(Bonuses.pools.mythic, classes)
+end
+
 -- Rolls an item instance. Equipment gets bonusMin..bonusMax random bonuses of its rarity (no repeats) plus
--- `legendaryLines` distinct lines from the legendary pool; named boss items get their fixed bonuses and fixed
+-- `legendaryLines` distinct lines from the legendary pool and `mythicLines` from the mythic pool; named boss items get their fixed bonuses and fixed
 -- rarity (Mythic); everything else is a single unit of its definition's rarity. `forClass` (S32) is the class a
 -- class-free item (jewellery) dropped for: its bonuses are useful to that class.
 function ItemRoll.rollItem(
@@ -203,6 +209,14 @@ function ItemRoll.rollItem(
 		rng:shuffle(legendary)
 		for i = 1, math.min(rarityDef.legendaryLines, #legendary) do
 			local id = legendary[i]
+			table.insert(bonuses, { stat = id, v = ItemRoll.rollBonusValue(id, level, rarityId, rng:next()) })
+		end
+	end
+	if rarityDef.mythicLines > 0 then
+		local mythic = ItemRoll.mythicPool(defId, forClass)
+		rng:shuffle(mythic)
+		for i = 1, math.min(rarityDef.mythicLines, #mythic) do
+			local id = mythic[i]
 			table.insert(bonuses, { stat = id, v = ItemRoll.rollBonusValue(id, level, rarityId, rng:next()) })
 		end
 	end

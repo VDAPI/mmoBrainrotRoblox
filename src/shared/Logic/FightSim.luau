@@ -33,9 +33,10 @@ function FightSim.dps(p: Player, m: MonsterStats.MonsterStats, skill: number?): 
 	local v = p.values
 	local attack = if p.magic then v.magAtk or 0 else v.physAtk or 0
 	local defense = if p.magic then m.mres else m.armor
-	local critFactor = 1 + math.min(v.critChance or 0, 100) / 100 * ((v.critDmg or 150) / 100 - 1)
+	local gapMul, gapCrit = Damage.levelGap(p.level, m.level)
+	local critFactor = 1 + math.min((v.critChance or 0) + gapCrit, 100) / 100 * ((v.critDmg or 150) / 100 - 1)
 	local double = 1 + (p.hooks.doubleAttack or 0) / 100
-	local perHit = attack * (1 - Damage.reduction(defense, p.level)) * critFactor
+	local perHit = attack * (1 - Damage.reduction(defense, p.level)) * critFactor * gapMul
 	return perHit * math.max(0.1, v.atkSpeed or 1) * double * (skill or 1)
 end
 
@@ -44,9 +45,10 @@ function FightSim.hit(m: any, p: Player, mul: number?, kind: string?, canDodge: 
 	local v = p.values
 	local magic = (kind or m.damageKind) == "magic"
 	local defense = if magic then v.mres or 0 else v.armor or 0
-	local crit = 1 + Combat.monsterCritChance / 100 * (Combat.monsterCritDmg / 100 - 1)
+	local gapMul, gapCrit = Damage.levelGap(m.level, p.level)
+	local crit = 1 + math.min(Combat.monsterCritChance + gapCrit, 100) / 100 * (Combat.monsterCritDmg / 100 - 1)
 	local dodge = if canDodge == false then 0 else math.min(v.dodge or 0, Combat.dodgeCap) / 100
-	return m.attack * (mul or 1) * (1 - Damage.reduction(defense, m.level)) * crit * (1 - dodge)
+	return m.attack * (mul or 1) * (1 - Damage.reduction(defense, m.level)) * crit * gapMul * (1 - dodge)
 end
 
 -- One player against `members` (MonsterStats, optionally with `ability`), killed in order.

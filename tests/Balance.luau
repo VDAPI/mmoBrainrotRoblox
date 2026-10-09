@@ -106,6 +106,13 @@ local function expectedBonuses(defId: string, ilvl: number, rarity: number, clas
 			table.insert(out, { stat = id, v = ItemRoll.rollBonusValue(id, ilvl, rarity, 0.5) * share })
 		end
 	end
+	local mythic = Bonuses.pools.mythic
+	if rarityDef.mythicLines > 0 then
+		local share = rarityDef.mythicLines / #mythic
+		for _, id in mythic do
+			table.insert(out, { stat = id, v = ItemRoll.rollBonusValue(id, ilvl, rarity, 0.5) * share })
+		end
+	end
 	return out
 end
 

@@ -30,6 +30,32 @@ function AttackPose.motionFor(weaponType: string?): MotionName
 	return if weaponType then AttackMotions.byWeapon[weaponType] or "unarmed" else "unarmed"
 end
 
+-- Projectile a ranged motion shoots ("arrow", "bolt" or "magic"); nil for melee motions.
+function AttackPose.projectile(name: MotionName): string?
+	if not AttackMotions.motions[name].ranged then
+		return nil
+	end
+	return if name == "bow" then "arrow" elseif name == "crossbow" then "bolt" else "magic"
+end
+
+-- Seconds a basic attack projectile of `kind` flies over `distance` studs (client flight and server hit agree).
+function AttackPose.flightTime(kind: string, distance: number): number
+	local speed = if kind == "bolt" then 150 elseif kind == "arrow" then 110 else 85
+	return math.clamp(distance / speed, 0.06, 0.4)
+end
+
+-- Seconds from the start of a basic attack with `weaponType` until it lands on a target `distance` studs away:
+-- the blow, or the release plus the flight (FIX 2026-10-09: the server waits this long before the damage).
+function AttackPose.hitDelay(weaponType: string?, distance: number, ranged: boolean): number
+	local motion = AttackPose.motionFor(weaponType)
+	local timing = AttackPose.timing(motion)
+	local kind = AttackPose.projectile(motion)
+	if ranged and kind then
+		return timing.hitAt + AttackPose.flightTime(kind, distance)
+	end
+	return timing.hitAt
+end
+
 -- Timing of a motion; with `interval` (seconds between attacks) shorter than the motion, every phase shrinks
 -- by the same factor (never below 40%).
 function AttackPose.timing(name: MotionName, interval: number?): Timing

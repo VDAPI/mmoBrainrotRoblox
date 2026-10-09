@@ -81,6 +81,7 @@ local function LegendReveal(scope: Scope, props: Props): Instance
 	local rows = {}
 	for i, bonus in stats.bonuses do
 		local bonusDef = Bonuses.get(bonus.id)
+		local mythic = string.sub(bonus.id, 1, 5) == "myth_"
 		local legendary = bonusDef ~= nil and (bonusDef.hook ~= nil or string.sub(bonus.id, 1, 4) == "leg_")
 		table.insert(
 			rows,
@@ -103,7 +104,10 @@ local function LegendReveal(scope: Scope, props: Props): Instance
 				end),
 				FontFace = Theme.Fonts.BodyBold,
 				TextSize = Theme.TextSize.Body,
-				TextColor3 = if legendary then Rarities.get(Rarities.LEGENDARY).color else Theme.Colors.Text,
+				TextColor3 = if mythic
+					then Rarities.get(Rarities.MYTHIC).color
+					elseif legendary then Rarities.get(Rarities.LEGENDARY).color
+					else Theme.Colors.Text,
 			})
 		)
 	end

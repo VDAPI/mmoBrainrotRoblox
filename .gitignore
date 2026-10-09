@@ -24,3 +24,6 @@ build/
 # Wiki renders work folder (tools/wiki-renders)
 tools/wiki-renders/out/
 __pycache__/
+
+# Raw source models (too big for git; reduced copies live in art/)
+assets/**/*.glb

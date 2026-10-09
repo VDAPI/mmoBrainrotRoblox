@@ -129,9 +129,14 @@ function Skills.breakpointKeys(skill: SkillDef): { { level: number, key: string 
 	return out
 end
 
--- Character level needed for skill level n (DESIGN: unlock + 3·(n−1)).
+-- Character level needed for skill level n (DESIGN: unlock + 3·(n−1)). Late skills whose last level would need
+-- more than Config.MaxLevel (FIX 2026-10-09: unlock 75 asked for level 102) use the largest step that fits.
 function Skills.levelRequirement(skill: SkillDef, n: number): number
-	return skill.unlock + 3 * (n - 1)
+	local step = 3
+	if skill.maxLevel > 1 then
+		step = math.min(3, math.floor((Config.MaxLevel - skill.unlock) / (skill.maxLevel - 1)))
+	end
+	return skill.unlock + math.max(1, step) * (n - 1)
 end
 
 function Skills.level(character: Types.CharacterData, skillId: string): number

@@ -55,6 +55,7 @@ export type Line = {
 	font: ("heading" | "bold" | "medium")?,
 	quality: number?,
 	legendary: boolean?,
+	mythic: boolean?, -- line from the mythic pool (FIX 2026-10-09)
 }
 
 export type Ctx = {
@@ -342,13 +343,16 @@ local function equipmentLines(b: Builder, item: ItemInstance, lang: string)
 	end
 	for _, bonus in stats.bonuses do
 		local bonusDef = Bonuses.get(bonus.id)
+		local mythic = string.sub(bonus.id, 1, 5) == "myth_"
 		table.insert(b.lines, {
 			kind = "bonus",
 			role = "bonus",
 			text = bonusText(lang, bonus.id, bonus.v),
 			tone = "bonus",
 			quality = bonus.quality,
-			legendary = bonusDef ~= nil and bonusDef.hook ~= nil or string.sub(bonus.id, 1, 4) == "leg_",
+			legendary = not mythic
+				and (bonusDef ~= nil and bonusDef.hook ~= nil or string.sub(bonus.id, 1, 4) == "leg_"),
+			mythic = mythic,
 		})
 	end
 end

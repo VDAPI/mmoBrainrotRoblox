@@ -23,24 +23,32 @@ export type BossTable = {
 	-- Hand-made Mythic items of this boss (Items/Uniques, ids `unique_*` kept for saves).
 	named: { string },
 	materials: { MaterialDrop },
-	-- Personal roll for every winner (S30, Loot.rollBossPersonal): chance + step per kill without a hit,
-	-- guaranteed on the `Hard`-th kill without one. Legendary avg ≈ 3.4 kills, Mythic ≈ 9.8 kills.
+	-- One item for every winner (FIX 2026-10-09, Loot.rollBossItem): Mythic `mythicChance`, Legendary
+	-- `legendaryChance`, each + `perKill` for every kill of this boss by the character earlier the same UTC day
+	-- (reset at midnight with the daily runs); otherwise a Unique / Heroic item (Rarities dropWeights.boss).
 	legendaryChance: number,
-	legendaryStep: number,
-	legendaryHard: number,
 	mythicChance: number,
-	mythicStep: number,
-	mythicHard: number,
+	perKill: number,
 }
 
--- Default pity numbers (each boss may tune its own).
-local PITY = {
-	legendaryChance = 0.20,
-	legendaryStep = 0.05,
-	legendaryHard = 8,
-	mythicChance = 0.04,
-	mythicStep = 0.01,
-	mythicHard = 30,
+-- Default boss item chances (FIX 2026-10-09; each boss may tune its own).
+local BOSS_ROLL = {
+	legendaryChance = 0.06,
+	mythicChance = 0.01,
+	perKill = 0.01,
+}
+
+-- Slots of boss items (FIX 2026-10-09: more weapons than a monster's drop).
+local BOSS_SLOTS: { [string]: number } = {
+	weapon = 40,
+	offhand = 10,
+	helmet = 8,
+	armor = 8,
+	gloves = 7,
+	boots = 7,
+	necklace = 7,
+	ring = 7,
+	talisman = 6,
 }
 
 local DEFAULT_SLOTS: { [string]: number } = {
@@ -146,8 +154,8 @@ for _, def in Monsters.list do
 	}
 end
 
--- Bosses (S09/S11 add their encounters): shared items come from Rarities.itemDrops.boss; Legendary and Mythic
--- only from the personal roll (S30).
+-- Bosses (S09/S11 add their encounters): one item per winner (FIX 2026-10-09, Loot.rollBossItem) from
+-- BOSS_SLOTS, plus the materials.
 local BOSSES: { [string]: BossTable } = {
 	grimrok = {
 		id = "grimrok",
@@ -160,12 +168,9 @@ local BOSSES: { [string]: BossTable } = {
 			{ id = "scroll_protection", chance = 0.25, min = 1, max = 1 },
 			{ id = "scroll_unbind", chance = 0.08, min = 1, max = 1 },
 		},
-		legendaryChance = PITY.legendaryChance,
-		legendaryStep = PITY.legendaryStep,
-		legendaryHard = PITY.legendaryHard,
-		mythicChance = PITY.mythicChance,
-		mythicStep = PITY.mythicStep,
-		mythicHard = PITY.mythicHard,
+		legendaryChance = BOSS_ROLL.legendaryChance,
+		mythicChance = BOSS_ROLL.mythicChance,
+		perKill = BOSS_ROLL.perKill,
 	},
 	morvane = {
 		id = "morvane",
@@ -178,12 +183,9 @@ local BOSSES: { [string]: BossTable } = {
 			{ id = "scroll_protection", chance = 0.3, min = 1, max = 1 },
 			{ id = "scroll_unbind", chance = 0.1, min = 1, max = 1 },
 		},
-		legendaryChance = PITY.legendaryChance,
-		legendaryStep = PITY.legendaryStep,
-		legendaryHard = PITY.legendaryHard,
-		mythicChance = PITY.mythicChance,
-		mythicStep = PITY.mythicStep,
-		mythicHard = PITY.mythicHard,
+		legendaryChance = BOSS_ROLL.legendaryChance,
+		mythicChance = BOSS_ROLL.mythicChance,
+		perKill = BOSS_ROLL.perKill,
 	},
 	azgor = {
 		id = "azgor",
@@ -195,12 +197,9 @@ local BOSSES: { [string]: BossTable } = {
 			{ id = "scroll_protection", chance = 0.35, min = 1, max = 2 },
 			{ id = "scroll_unbind", chance = 0.12, min = 1, max = 1 },
 		},
-		legendaryChance = PITY.legendaryChance,
-		legendaryStep = PITY.legendaryStep,
-		legendaryHard = PITY.legendaryHard,
-		mythicChance = PITY.mythicChance,
-		mythicStep = PITY.mythicStep,
-		mythicHard = PITY.mythicHard,
+		legendaryChance = BOSS_ROLL.legendaryChance,
+		mythicChance = BOSS_ROLL.mythicChance,
+		perKill = BOSS_ROLL.perKill,
 	},
 	vaelgrath = {
 		id = "vaelgrath",
@@ -212,18 +211,16 @@ local BOSSES: { [string]: BossTable } = {
 			{ id = "scroll_protection", chance = 0.4, min = 1, max = 2 },
 			{ id = "scroll_unbind", chance = 0.15, min = 1, max = 1 },
 		},
-		legendaryChance = PITY.legendaryChance,
-		legendaryStep = PITY.legendaryStep,
-		legendaryHard = PITY.legendaryHard,
-		mythicChance = PITY.mythicChance,
-		mythicStep = PITY.mythicStep,
-		mythicHard = PITY.mythicHard,
+		legendaryChance = BOSS_ROLL.legendaryChance,
+		mythicChance = BOSS_ROLL.mythicChance,
+		perKill = BOSS_ROLL.perKill,
 	},
 }
 
 return table.freeze({
 	byId = TABLES,
 	bosses = BOSSES,
+	bossSlots = BOSS_SLOTS,
 	get = function(id: string): LootTable?
 		return TABLES[id]
 	end,

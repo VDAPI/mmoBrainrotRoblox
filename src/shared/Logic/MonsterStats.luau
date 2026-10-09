@@ -103,7 +103,7 @@ function MonsterStats.asAttacker(stats: MonsterStats): Damage.Attacker
 end
 
 function MonsterStats.asDefender(stats: MonsterStats): Damage.Defender
-	return { armor = stats.armor, mres = stats.mres, dodge = 0, res = {} }
+	return { armor = stats.armor, mres = stats.mres, dodge = 0, res = {}, level = stats.level }
 end
 
 -- EXP and gold factor of a kind (S32): tougher kinds pay more, weak ones less. Bosses use 1.
