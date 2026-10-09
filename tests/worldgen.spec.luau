@@ -19,7 +19,7 @@ local WorldGen = require("../src/shared/Logic/WorldGen")
 local describe, it, expect = Test.describe, Test.it, Test.expect
 
 describe("WorldGen registry", function()
-	it("knows the Meadows, Duskwood, the Ashen Wastes (S46), the Frost Peaks (S47) and the caves (S48, S49)", function()
+	it("knows the Meadows, Duskwood, the Ashen Wastes (S46), the Frost Peaks (S47) and the caves (S48-S50)", function()
 		expect(WorldGen.get("meadows") == (MeadowsGen :: any)).toBe(true)
 		expect(WorldGen.get("duskwood") == (DuskwoodGen :: any)).toBe(true)
 		expect(WorldGen.get("ashen") == (AshenGen :: any)).toBe(true)
@@ -27,6 +27,10 @@ describe("WorldGen registry", function()
 		expect(WorldGen.get("city")).toBe(nil)
 		expect(WorldGen.maps()).toEqual({
 			"ashen",
+			"ashen_cave",
+			"ashen_lair",
+			"ashen_mine",
+			"dungeon_ashen",
 			"dungeon_duskwood",
 			"dungeon_meadows",
 			"duskwood",
@@ -39,7 +43,7 @@ describe("WorldGen registry", function()
 			"meadows_cave",
 			"meadows_hideout",
 		})
-		expect(WorldGen.get("ashen_cave")).toBe(nil)
+		expect(WorldGen.get("frostpeak_cave")).toBe(nil)
 	end)
 
 	it("keeps the Meadows on their own terrain and generator", function()

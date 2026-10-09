@@ -564,13 +564,34 @@ local function cave(ctx: Ctx, caveId: string): string
 		end
 		table.insert(floor, Svg.el("path", { { "class", "m-floor" }, { "d", table.concat(d) } }))
 		local wd = {}
+		-- S50: lava orange (pools, channels, moats), water blue
+		local lava, lavaLines = {}, {}
 		for _, f in engine.shape.features do
-			if f.kind == "pool" then
+			if f.kind == "pool" and f.liquid == "lava" then
+				table.insert(lava, Svg.circlePath(f.x, f.z, f.r))
+			elseif f.kind == "pool" then
 				table.insert(wd, Svg.circlePath(f.x, f.z, f.r))
+			elseif f.kind == "stream" and f.liquid == "lava" then
+				table.insert(lavaLines, { Svg.polyline(f.points), f.width })
+			elseif f.kind == "moat" then
+				table.insert(lavaLines, { Svg.circlePath(f.x, f.z, (f.inner + f.outer) / 2), f.outer - f.inner })
 			end
 		end
 		if #wd > 0 then
 			table.insert(water, Svg.el("path", { { "class", "m-water" }, { "d", table.concat(wd) } }))
+		end
+		if #lava > 0 then
+			table.insert(water, Svg.el("path", { { "class", "m-water" }, { "style", "fill:#E8541A" }, { "d", table.concat(lava) } }))
+		end
+		for _, l in lavaLines do
+			table.insert(
+				water,
+				Svg.el("path", {
+					{ "class", "m-stream" },
+					{ "style", `stroke:#E8541A;stroke-width:{Svg.n(l[2])}` },
+					{ "d", l[1] },
+				})
+			)
 		end
 	else
 		local circles = {}

@@ -5,11 +5,22 @@
 
 local Areas = require(game:GetService("ReplicatedStorage").Shared.Data.Areas)
 local Build = require(script.Parent.Parent.Build)
+local CaveLayout = require(script.Parent.Parent.CaveLayout)
 local Prefabs = require(script.Parent.Parent.Prefabs)
 
 local EMBER = "#FF7A1A"
 
 return function(ctx: Build.Context)
+	-- S50: the cave engine (Data/CaveShapes.ashen_cave: carved dwarven halls, the River of Fire under the bridges,
+	-- lava galleries; dressing Logic/CaveDress/Forge); the old carved layout below stays for a cave without a shape
+	if CaveLayout.has("ashen_cave") then
+		CaveLayout.build(ctx)
+		Prefabs.portalFrom(ctx, "ashen_cave_exit")
+		Prefabs.dungeonGateFrom(ctx, "ashen")
+		Build.zone(ctx, "red", nil, -320, -320, 320, 320)
+		Build.spawnPoint(ctx, -240, 0, 0, 0)
+		return
+	end
 	Build.caveShell(ctx, Enum.Material.Basalt, 46)
 
 	local rooms = {

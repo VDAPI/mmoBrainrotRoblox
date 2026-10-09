@@ -14,6 +14,10 @@
 --   roomAt(x, z)                      index of the room (plan rooms first, then extraRooms) or nil in tunnels and rock
 --   rooms                             every room { x, z, r, h, role, fight, core, ... } in that order
 --   voxels(x0, z0, nx, nz, yBottom, ny), outline(step), MATERIALS, HALF, VOXEL, BOTTOM, TOP
+--   lavaDistance(x, z)                S50: distance to the nearest lava of the shape's features (math.huge: none)
+-- S50 lava: the surface of lava is solid terrain (`materials.lava`, CrackedLava) 1-1.5 studs under its shore, never
+-- Water; `liquid` says { kind = "lava", level } and nothing is walkable on it or within 2 studs. Lava is decoration
+-- (it hurts nobody; the only burning lava is Azgor's disc).
 -- Does not require Logic/AreaSpawns (AreaSpawns -> MapTerrain -> CaveTerrain).
 
 local CaveGen = require("./CaveGen")
@@ -85,6 +89,7 @@ export type Cave = {
 	outline: (step: number) -> { { x: number, z: number, w: number, d: number } },
 	inCore: (x: number, z: number) -> boolean,
 	niches: () -> { { x: number, z: number, yaw: number, room: number, tiers: number, w: number, h: number } },
+	lavaDistance: (x: number, z: number) -> number,
 	MATERIALS: { string },
 	HALF: number,
 	VOXEL: number,
@@ -134,6 +139,10 @@ local function build(mapId: string, shape: CaveShapes.Shape): Cave
 	local tunnelH = shape.tunnelH or 14
 	local masonry = shape.masonry == true -- S49: straight vaulted corridors of constant width
 	local wiggle = if masonry then 0 else shape.wiggle or 6
+	-- S50: lava (solid CrackedLava under its shore) and the basalt rim of its shore
+	local lavaMat = mats.lava or "CrackedLava"
+	local shoreMat = mats.shore or "Basalt"
+	local LAVA_DROP = 1.25 -- the lava's surface under the shore
 
 	-- Rooms: the plan's, then the extra rooms, then the niches (small rooms behind the walls).
 	local cave = Caves.get(mapId)
@@ -224,8 +233,9 @@ local function build(mapId: string, shape: CaveShapes.Shape): Cave
 		table.insert(corridors, t)
 	end
 
-	-- Floor of the room an end of a tunnel lies in (the tunnel's floor blends between them).
-	local function roomFloorAt(x: number, z: number): number
+	-- Floor of the room an end of a tunnel lies in (the tunnel's floor blends between them) and how far the end lies
+	-- inside that room (0 outside).
+	local function roomFloorAt(x: number, z: number): (number, number)
 		local best, bestD = F, math.huge
 		for _, r in rooms do
 			local d = math.sqrt((x - r.x) ^ 2 + (z - r.z) ^ 2) - r.r
@@ -233,18 +243,39 @@ local function build(mapId: string, shape: CaveShapes.Shape): Cave
 				best, bestD = F + r.dy, d
 			end
 		end
-		return best
+		return best, math.max(0, -bestD)
 	end
-	type TunnelData = { t: CaveShapes.Tunnel, fa: number, fb: number, len: number, h: number, seed: number }
+	-- S50 `edgeFloors`: the floor blends between the rooms' walls (not their centres), so that it meets each room's
+	-- floor at its wall (no step where a deep room's wall zone dips under the tunnel)
+	local edgeFloors = shape.edgeFloors == true
+	type TunnelData = {
+		t: CaveShapes.Tunnel,
+		fa: number,
+		fb: number,
+		len: number,
+		h: number,
+		seed: number,
+		s0: number,
+		s1: number,
+	}
 	local tunnels: { TunnelData } = {}
 	for i, t in corridors do
+		local fa, ia = roomFloorAt(t.ax, t.az)
+		local fb, ib = roomFloorAt(t.bx, t.bz)
+		local len = math.sqrt((t.bx - t.ax) ^ 2 + (t.bz - t.az) ^ 2)
+		local s0, s1 = 0, 1
+		if edgeFloors and len > 0 and ia + ib < len - 4 then
+			s0, s1 = ia / len, 1 - ib / len
+		end
 		table.insert(tunnels, {
 			t = t,
-			fa = roomFloorAt(t.ax, t.az),
-			fb = roomFloorAt(t.bx, t.bz),
-			len = math.sqrt((t.bx - t.ax) ^ 2 + (t.bz - t.az) ^ 2),
+			fa = fa,
+			fb = fb,
+			len = len,
 			h = t.h or tunnelH,
 			seed = SEED + 300 + i * 13,
+			s0 = s0,
+			s1 = s1,
 		})
 	end
 
@@ -370,7 +401,7 @@ local function build(mapId: string, shape: CaveShapes.Shape): Cave
 
 	local function tunnelPart(td: TunnelData, x: number, z: number): (number, number, number)
 		local t = td.t
-		local pad = t.w / 2 + wiggle + 4
+		local pad = t.w / 2 + (t.wiggle or wiggle) + 4
 		if
 			x < math.min(t.ax, t.bx) - pad
 			or x > math.max(t.ax, t.bx) + pad
@@ -387,16 +418,19 @@ local function build(mapId: string, shape: CaveShapes.Shape): Cave
 			end
 		end
 		local along = s * td.len
-		local w = wiggle * math.clamp((fbm(along, td.seed, 36, td.seed, 2) - 0.5) * 4, -1, 1) * math.sin(math.pi * s)
+		-- S50: a carved tunnel (`carved`) runs straight like the masonry ones; `wiggle` overrides the shape's wander
+		local carved = masonry or t.carved == true
+		local wig = if carved then 0 else t.wiggle or wiggle
+		local w = wig * math.clamp((fbm(along, td.seed, 36, td.seed, 2) - 0.5) * 4, -1, 1) * math.sin(math.pi * s)
 		-- distance from the winding centre line (w = its sideways shift)
 		local p = math.abs(side * d - w)
-		if masonry then
+		if carved then
 			local half = t.w / 2
 			if p >= half then
 				return 0, 0, 0
 			end
 			local o = if p <= half - 1.5 then 1 else smoothstep((half - p) / 1.5)
-			local fl = lerp(td.fa, td.fb, s) + (1 - o) * 3
+			local fl = lerp(td.fa, td.fb, math.clamp((s - td.s0) / (td.s1 - td.s0), 0, 1)) + (1 - o) * 3
 			local u = math.clamp(p / half, 0, 1)
 			local h = td.h * (0.7 + 0.3 * math.sqrt(1 - u * u))
 			return o, fl, fl + h * o ^ 0.6
@@ -406,7 +440,7 @@ local function build(mapId: string, shape: CaveShapes.Shape): Cave
 			return 0, 0, 0
 		end
 		local o = if p <= half - 3 then 1 else 1 - smoothstep((p - (half - 3)) / 3)
-		local fl = lerp(td.fa, td.fb, smoothstep(s)) + (1 - o) * 3
+		local fl = lerp(td.fa, td.fb, smoothstep(math.clamp((s - td.s0) / (td.s1 - td.s0), 0, 1))) + (1 - o) * 3
 		local h = td.h + 1.5 * (fbm(x, z, 20, td.seed + 2, 2) - 0.5) * 2
 		return o, fl, fl + h * o ^ 0.6
 	end
@@ -438,8 +472,10 @@ local function build(mapId: string, shape: CaveShapes.Shape): Cave
 		for _, st in streams do
 			local f = st.f
 			local d, s = TerrainLayers.nearest(st.line, x, z)
-			local half = f.width / 2 * (0.85 + 0.3 * fbm(x, z, 12, SEED + 41, 2))
-			if d < half + 2 then
+			local half = if f.liquid == "lava"
+				then f.width / 2
+				else f.width / 2 * (0.85 + 0.3 * fbm(x, z, 12, SEED + 41, 2))
+			if d < half + 2 + (f.bank or 0) then
 				local level = f.level - f.drop * (s / st.line.length)
 				return d - half, level, f
 			end
@@ -459,6 +495,53 @@ local function build(mapId: string, shape: CaveShapes.Shape): Cave
 		for _, c in causeways do
 			if (TerrainLayers.nearest(c.line, x, z)) < c.half then
 				return true
+			end
+		end
+		return false
+	end
+
+	-- S50: bridges over lava (a strip of floor where streams do not cut), glowing cracks.
+	local bridges: { { ax: number, az: number, bx: number, bz: number, half: number } } = {}
+	local cracks: { { line: TerrainLayers.Line, half: number } } = {}
+	local hasLava = false
+	for _, f in features do
+		if f.kind == "bridge" then
+			table.insert(bridges, { ax = f.ax, az = f.az, bx = f.bx, bz = f.bz, half = f.width / 2 })
+		elseif f.kind == "crack" then
+			table.insert(cracks, { line = TerrainLayers.line(TerrainLayers.pairs(f.points)), half = f.width / 2 })
+			hasLava = true
+		elseif f.kind == "vent" or f.kind == "moat" or f.liquid == "lava" then
+			hasLava = true
+		end
+	end
+	local function onBridge(x: number, z: number): boolean
+		for _, b in bridges do
+			local d, t = segment(b.ax, b.az, b.bx, b.bz, x, z)
+			if d < b.half and t > 0 and t < 1 then
+				return true
+			end
+		end
+		return false
+	end
+	-- Whether a point lies in the straight gap of a moat (`gap` = { width, dir }: a lane of that width from the
+	-- centre outwards along bearing dir, degrees, 0 = +x, 90 = +z) or in one of its angular `gaps`.
+	local function inMoatGap(f: CaveShapes.Feature, dx: number, dz: number): boolean
+		local g = f.gap
+		if g then
+			local b = math.rad(g.dir or 90)
+			local along = dx * math.cos(b) + dz * math.sin(b)
+			local across = math.abs(-dx * math.sin(b) + dz * math.cos(b))
+			if along > 0 and across < g.width / 2 then
+				return true
+			end
+		end
+		if f.gaps then
+			local deg = math.deg(math.atan2(dz, dx)) % 360
+			for _, a in f.gaps do
+				local a0, a1 = a[1] % 360, a[2] % 360
+				if (a0 <= a1 and deg >= a0 and deg <= a1) or (a0 > a1 and (deg >= a0 or deg <= a1)) then
+					return true
+				end
 			end
 		end
 		return false
@@ -501,7 +584,35 @@ local function build(mapId: string, shape: CaveShapes.Shape): Cave
 		end
 		-- a stream carves its own channel
 		local sd, sLevel, sf = streamAt(x, z)
-		if sf and sd < 0 then
+		if sf and onBridge(x, z) then
+			sf = nil
+		end
+		if sf and sf.liquid == "lava" then
+			-- S50: a channel of lava (its surface solid, LAVA_DROP under the shore), in a canyon with sloping banks
+			-- (`bank` wide, rising `rise` studs) and its own roof `roof` studs over the lava
+			local roof = sLevel + (sf.roof or 9)
+			local bank = sf.bank or 0
+			local h: number? = nil
+			if sd < 0 then
+				h = sLevel
+				liquid = { kind = "lava", level = sLevel }
+				floorMat = lavaMat
+			elseif bank > 0 and sd < bank then
+				h = sLevel + LAVA_DROP + (sf.rise or 0) * sd / bank
+				floorMat = if sd < 3 then shoreMat else sf.bankMat or mats.bed
+			elseif sd < 2 and open > 0.02 then
+				fl = math.min(fl, sLevel + LAVA_DROP)
+				floorMat = shoreMat
+			end
+			if h then
+				if open <= 0.02 then
+					open, fl, ce = 1, h, roof
+				else
+					fl = math.min(fl, h)
+					ce = math.max(ce, roof)
+				end
+			end
+		elseif sf and sd < 0 then
 			local bed = sLevel - sf.depth
 			if open <= 0.02 then
 				open, fl, ce = 1, bed, sLevel + 9
@@ -525,24 +636,37 @@ local function build(mapId: string, shape: CaveShapes.Shape): Cave
 				local dx, dz = x - f.x, z - f.z
 				if math.abs(dx) < f.r + 8 and math.abs(dz) < f.r + 8 then
 					local d = math.sqrt(dx * dx + dz * dz) + (f.ragged or 0) * (fbm(x, z, 10, SEED + 51, 2) - 0.5) * 2
+					-- S50: a pool of lava has a solid surface LAVA_DROP under its basalt shore
+					local isLava = f.liquid == "lava"
+					local shoreTop = if isLava then f.level + LAVA_DROP else f.level + 0.2
 					-- S49: a ring of water (`inner`): dry inside, the shore slopes in towards the middle
 					local inner = f.inner or 0
 					if inner > 0 and d < inner then
 						if d > inner - 6 and not onCauseway(x, z) then
-							fl = math.min(fl, lerp(fl, f.level + 0.2, smoothstep((d - (inner - 6)) / 6)))
+							fl = math.min(fl, lerp(fl, shoreTop, smoothstep((d - (inner - 6)) / 6)))
 						end
 					elseif onCauseway(x, z) then
 						-- a dry causeway across the water
-						fl = math.min(fl, f.level + 0.6)
+						fl = math.min(fl, if isLava then shoreTop else f.level + 0.6)
 					elseif d < f.r then
-						local bed = f.level - f.depth * (1 - (d / f.r) ^ 2) - 0.4
-						fl = math.min(fl, bed)
-						liquid = { kind = f.liquid or "water", level = f.level }
-						floorMat = mats.bed
+						if isLava then
+							fl = math.min(fl, f.level)
+							liquid = { kind = "lava", level = f.level }
+							floorMat = lavaMat
+						else
+							local bed = f.level - f.depth * (1 - (d / f.r) ^ 2) - 0.4
+							fl = math.min(fl, bed)
+							liquid = { kind = f.liquid or "water", level = f.level }
+							floorMat = mats.bed
+						end
 					elseif d < f.r + 6 then
 						-- the shore slopes down to the water
-						fl = math.min(fl, lerp(f.level + 0.2, fl, smoothstep((d - f.r) / 6)))
-						if mats.moss and d < f.r + 4 then
+						fl = math.min(fl, lerp(shoreTop, fl, smoothstep((d - f.r) / 6)))
+						if isLava then
+							if d < f.r + 3 and liquid == nil then
+								floorMat = shoreMat
+							end
+						elseif mats.moss and d < f.r + 4 then
 							floorMat = mats.moss
 						end
 					end
@@ -586,6 +710,44 @@ local function build(mapId: string, shape: CaveShapes.Shape): Cave
 			elseif kind == "stalactites" and not core then
 				if math.abs(x - f.x) < f.r + 8 and math.abs(z - f.z) < f.r + 8 then
 					ce -= cones(f, x, z, f.length, SEED + 71)
+				end
+			elseif (kind == "vent" or kind == "crack") and not core then
+				-- S50: a glowing fissure in the floor (a round vent or a crack along a line): lava, a little sunk
+				local dd: number
+				local half: number
+				if kind == "vent" then
+					dd, half = math.sqrt((x - f.x) ^ 2 + (z - f.z) ^ 2), f.r
+				else
+					dd, half = math.huge, f.width / 2
+					for _, c in cracks do
+						if c.half == half then
+							dd = math.min(dd, (TerrainLayers.nearest(c.line, x, z)))
+						end
+					end
+				end
+				if dd < half then
+					fl -= if kind == "vent" then 0.5 else 0.8
+					liquid = { kind = "lava", level = fl }
+					floorMat = lavaMat
+				elseif dd < half + 1.5 and liquid == nil then
+					floorMat = shoreMat
+				end
+			elseif kind == "moat" and not core then
+				-- S50: a ring of lava from `inner` to `outer` round (x, z) at `level`, with gaps (`gap`, `gaps`)
+				local dx, dz = x - f.x, z - f.z
+				if math.abs(dx) < f.outer + 4 and math.abs(dz) < f.outer + 4 then
+					local d = math.sqrt(dx * dx + dz * dz)
+					if d > f.inner - 3 and d < f.outer + 3 and not inMoatGap(f, dx, dz) then
+						if d >= f.inner and d <= f.outer then
+							fl = math.min(fl, f.level)
+							liquid = { kind = "lava", level = f.level }
+							floorMat = lavaMat
+						elseif liquid == nil then
+							-- the basalt rim stands at least LAVA_DROP over the lava (floor noise never dips to it)
+							fl = math.max(fl, f.level + LAVA_DROP)
+							floorMat = shoreMat
+						end
+					end
 				end
 			elseif kind == "chimney" then
 				-- S49: the ceiling raised over a point (a shaft over a well)
@@ -680,6 +842,15 @@ local function build(mapId: string, shape: CaveShapes.Shape): Cave
 			if f.spokes then
 				matSet[f.spokes.material] = true
 			end
+		end
+	end
+	if hasLava then
+		matSet[lavaMat] = true
+		matSet[shoreMat] = true
+	end
+	for _, f in features do
+		if f.bankMat then
+			matSet[f.bankMat] = true
 		end
 	end
 	local list = {}
@@ -803,6 +974,46 @@ local function build(mapId: string, shape: CaveShapes.Shape): Cave
 			materials[i], occupancy[i] = mi, oi
 		end
 		return { materials = materials, occupancy = occupancy }
+	end
+
+	-- S50: distance from (x, z) to the nearest lava of the features (analytic; bridges are not subtracted).
+	function T.lavaDistance(x: number, z: number): number
+		local best = math.huge
+		for _, f in features do
+			local kind = f.kind
+			if kind == "pool" and f.liquid == "lava" then
+				local d = math.sqrt((x - f.x) ^ 2 + (z - f.z) ^ 2)
+				local inner = f.inner or 0
+				best = math.min(best, if inner > 0 and d < inner then inner - d else d - f.r - (f.ragged or 0))
+			elseif kind == "vent" then
+				best = math.min(best, math.sqrt((x - f.x) ^ 2 + (z - f.z) ^ 2) - f.r)
+			elseif kind == "moat" then
+				local dx, dz = x - f.x, z - f.z
+				local d = math.sqrt(dx * dx + dz * dz)
+				local ring = if d < f.inner then f.inner - d elseif d > f.outer then d - f.outer else 0
+				if inMoatGap(f, dx, dz) then
+					-- inside a gap: the distance to the lava beside the lane (at least the ring's)
+					local g = f.gap
+					if g then
+						local b = math.rad(g.dir or 90)
+						local across = math.abs(-dx * math.sin(b) + dz * math.cos(b))
+						ring = math.max(ring, g.width / 2 - across)
+					else
+						ring = math.max(ring, 6)
+					end
+				end
+				best = math.min(best, ring)
+			end
+		end
+		for _, st in streams do
+			if st.f.liquid == "lava" then
+				best = math.min(best, (TerrainLayers.nearest(st.line, x, z)) - st.f.width / 2)
+			end
+		end
+		for _, c in cracks do
+			best = math.min(best, (TerrainLayers.nearest(c.line, x, z)) - c.half)
+		end
+		return best
 	end
 
 	-- S49: places of wall niches (`niches` features: rows along a room's walls): x, z on the floor by the wall, yaw

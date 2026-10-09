@@ -5,9 +5,12 @@
 -- cores dry, headroom over walkable floor, terrain materials, voxels, the outline, the arena contract, the dressing
 -- (budget, nothing collidable in cores, by spawners or on the kept points, Builds on the floor), life and moods.
 
+local fs = require("@lune/fs")
+
 local Ambience = require("../src/shared/Data/Ambience")
 local AreaSpawns = require("../src/shared/Logic/AreaSpawns")
 local Areas = require("../src/shared/Data/Areas")
+local BossConsts = require("../tools/WikiData/Bosses")
 local CaveDress = require("../src/shared/Logic/CaveDress")
 local CaveGen = require("../src/shared/Logic/CaveGen")
 local CaveShapes = require("../src/shared/Data/CaveShapes")
@@ -110,7 +113,7 @@ describe("Cave engine: terrain", function()
 		end
 	end)
 
-	it("knows the caves on the engine (S48 the Meadows, S49 Duskwood)", function()
+	it("knows the caves on the engine (S48 the Meadows, S49 Duskwood, S50 the Ashen Wastes)", function()
 		for _, id in { "dungeon_meadows", "meadows_burrow", "meadows_cave", "meadows_hideout" } do
 			expect(table.find(MAPS, id) ~= nil).toBe(true)
 		end
@@ -118,7 +121,11 @@ describe("Cave engine: terrain", function()
 		for _, id in { "duskwood_den", "duskwood_barrow", "duskwood_cave", "dungeon_duskwood" } do
 			expect(table.find(MAPS, id) ~= nil).toBe(true)
 		end
-		expect(CaveTerrain.get("ashen_cave")).toBe(nil)
+		-- S50: the caves of the Ashen Wastes and Azgor's Furnace
+		for _, id in { "ashen_mine", "ashen_lair", "ashen_cave", "dungeon_ashen" } do
+			expect(table.find(MAPS, id) ~= nil).toBe(true)
+		end
+		expect(CaveTerrain.get("frostpeak_cave")).toBe(nil)
 		expect(MapTerrain.has("meadows_cave")).toBe(true)
 		expect(RegionTerrain.get("meadows_cave")).toBe(nil)
 	end)
@@ -482,4 +489,304 @@ describe("Cave engine: dressing", function()
 		expect(T.roomAt(300, 300)).toBe(nil)
 		expect(CaveTerrain.roomAt("meadows_cave", -30, 0)).toBe(2)
 	end)
+end)
+
+-- S50: lava (decoration) in the engine: its rules for every map with lava, bridges, Azgor's Furnace.
+local function lavaMaps(): { string }
+	local list = {}
+	for _, id in MAPS do
+		for _, f in CaveShapes.byMap[id].features do
+			if f.liquid == "lava" or f.kind == "vent" or f.kind == "crack" or f.kind == "moat" then
+				table.insert(list, id)
+				break
+			end
+		end
+	end
+	return list
+end
+
+-- Tunnel edges and the routes in the rooms (from each tunnel's end to the centre of its room) of a map.
+local function routes(
+	id: string,
+	T: CaveTerrain.Cave
+): { { ax: number, az: number, bx: number, bz: number, w: number } }
+	local list = {}
+	local cave = Areas.caves.get(id)
+	local tunnels: { any } = {}
+	if cave and cave.seed then
+		for _, c in CaveGen.generate(cave.seed).corridors do
+			table.insert(tunnels, c)
+		end
+	end
+	for _, t in CaveShapes.byMap[id].tunnels or {} do
+		table.insert(tunnels, t)
+	end
+	for _, t in tunnels do
+		table.insert(list, { ax = t.ax, az = t.az, bx = t.bx, bz = t.bz, w = t.w })
+		for _, e in { { t.ax, t.az }, { t.bx, t.bz } } do
+			local i = T.roomAt(e[1], e[2])
+			if i then
+				local r = T.rooms[i]
+				table.insert(list, { ax = e[1], az = e[2], bx = r.x, bz = r.z, w = 0 })
+			end
+		end
+	end
+	return list
+end
+
+local function segDist(ax: number, az: number, bx: number, bz: number, x: number, z: number): number
+	local dx, dz = bx - ax, bz - az
+	local len2 = dx * dx + dz * dz
+	local t = if len2 > 0 then math.clamp(((x - ax) * dx + (z - az) * dz) / len2, 0, 1) else 0
+	return math.sqrt((x - ax - dx * t) ^ 2 + (z - az - dz * t) ^ 2)
+end
+
+describe("Cave engine: lava (S50)", function()
+	it("has the Ashen Wastes' caves with lava", function()
+		local list = lavaMaps()
+		for _, id in { "ashen_mine", "ashen_lair", "ashen_cave", "dungeon_ashen" } do
+			expect(table.find(list, id) ~= nil).toBe(true)
+		end
+	end)
+
+	it("keeps lava away from spawners, cores, tunnels, routes, the kept points and ore nodes", function()
+		for _, id in lavaMaps() do
+			local T = assert(CaveTerrain.get(id))
+			local cave = Areas.caves.get(id)
+			local spawners = if cave then AreaSpawns.cave(cave) else {}
+			local keep = landings(id)
+			local nodes = CaveDress.nodes(id)
+			local lanes = routes(id, T)
+			local bridges = {}
+			for _, f in CaveShapes.byMap[id].features do
+				if f.kind == "bridge" then
+					table.insert(bridges, f)
+				end
+			end
+			local n = 0
+			for x = -T.HALF, T.HALF, 3 do
+				for z = -T.HALF, T.HALF, 3 do
+					local l = T.liquid(x, z)
+					if l and l.kind == "lava" then
+						n += 1
+						if T.inCore(x, z) then
+							error(`{id}: lava in a core at {x}, {z}`)
+						end
+						for _, sp in spawners do
+							local d = math.sqrt((x - sp.position.x) ^ 2 + (z - sp.position.z) ^ 2)
+							if d < sp.radius + 6 then
+								error(`{id}: lava at {x}, {z} by spawner {sp.id}`)
+							end
+						end
+						for _, k in keep do
+							if (x - k.x) ^ 2 + (z - k.z) ^ 2 < 36 then
+								error(`{id}: lava at {x}, {z} on {k.name}`)
+							end
+						end
+						for _, nd in nodes do
+							if (x - nd.x) ^ 2 + (z - nd.z) ^ 2 < 36 then
+								error(`{id}: lava at {x}, {z} by an ore node`)
+							end
+						end
+						local byBridge = false
+						for _, b in bridges do
+							if segDist(b.ax, b.az, b.bx, b.bz, x, z) < 30 then
+								byBridge = true
+							end
+						end
+						if not byBridge then
+							for _, t in lanes do
+								if segDist(t.ax, t.az, t.bx, t.bz, x, z) < t.w / 2 + 6 then
+									error(`{id}: lava at {x}, {z} within 6 studs of a tunnel or a route`)
+								end
+							end
+						end
+						expect(T.walkable(x, z)).toBe(false)
+						expect(MapTerrain.water(id, x, z)).toBe(nil)
+						expect(MapTerrain.walkable(id, x, z, 2)).toBe(false)
+						expect(T.lavaDistance(x, z) <= 3).toBe(true)
+					end
+				end
+			end
+			expect(n > 0).toBe(true)
+		end
+	end)
+
+	it("lays the lava's surface 0.4-2.6 studs under the dry floor beside it, solid CrackedLava, never Water", function()
+		for _, id in lavaMaps() do
+			local T = assert(CaveTerrain.get(id))
+			local probe: { number }? = nil
+			-- glowing cracks and vents follow the floor's slope (they are only a little sunk)
+			local function fissure(x: number, z: number): boolean
+				for _, f in CaveShapes.byMap[id].features do
+					if f.kind == "vent" and (x - f.x) ^ 2 + (z - f.z) ^ 2 < (f.r + 1) ^ 2 then
+						return true
+					elseif f.kind == "crack" then
+						local p = f.points
+						for k = 1, #p - 3, 2 do
+							if segDist(p[k], p[k + 1], p[k + 2], p[k + 3], x, z) < f.width / 2 + 1 then
+								return true
+							end
+						end
+					end
+				end
+				return false
+			end
+			-- the decks of the bridges stand high over the lava beside them
+			local function onBridge(x: number, z: number): boolean
+				for _, f in CaveShapes.byMap[id].features do
+					if f.kind == "bridge" and segDist(f.ax, f.az, f.bx, f.bz, x, z) < f.width / 2 + 1 then
+						return true
+					end
+				end
+				return false
+			end
+			for x = -T.HALF, T.HALF, 2 do
+				for z = -T.HALF, T.HALF, 2 do
+					local l = T.liquid(x, z)
+					if l and l.kind == "lava" then
+						expect(T.column(x, z).floorMat).toBe("CrackedLava")
+						for _, d in if fissure(x, z) then {} else { { 2, 0 }, { -2, 0 }, { 0, 2 }, { 0, -2 } } do
+							local c = T.column(x + d[1], z + d[2])
+							if c.open and c.liquid == nil and not onBridge(x + d[1], z + d[2]) then
+								local drop = c.floor - l.level
+								if drop < 0.4 or drop > 2.6 then
+									error(`{id}: lava at {x}, {z} lies {drop} under the floor beside it`)
+								end
+							end
+						end
+						probe = probe or { x, z }
+					end
+				end
+			end
+			local p = assert(probe, id)
+			local V = T.VOXEL
+			local x0 = math.floor(p[1] / V) * V - V * 4
+			local z0 = math.floor(p[2] / V) * V - V * 4
+			local ny = (T.TOP - T.BOTTOM) // V
+			local vox = T.voxels(x0, z0, 8, 8, T.BOTTOM, ny)
+			local lava = 0
+			for i = 1, 8 do
+				for j = 1, ny do
+					for k = 1, 8 do
+						local m = vox.materials[i][j][k]
+						expect(m == "Water").toBe(false)
+						if m == "CrackedLava" then
+							lava += 1
+						end
+					end
+				end
+			end
+			expect(lava > 0).toBe(true)
+		end
+	end)
+
+	it("lays every bridge as a continuous floor with lava on both sides", function()
+		for _, id in lavaMaps() do
+			local T = assert(CaveTerrain.get(id))
+			for _, f in CaveShapes.byMap[id].features do
+				if f.kind == "bridge" then
+					local len = math.sqrt((f.bx - f.ax) ^ 2 + (f.bz - f.az) ^ 2)
+					local ux, uz = (f.bx - f.ax) / len, (f.bz - f.az) / len
+					local last: number? = nil
+					local both = false
+					local s = 2
+					while s < len - 2 do
+						local x, z = f.ax + ux * s, f.az + uz * s
+						local fl = T.floor(x, z)
+						if fl == nil or T.liquid(x, z) ~= nil then
+							error(`{id}: bridge broken at {x}, {z}`)
+						end
+						if last and math.abs(fl - last) > 2 then
+							error(`{id}: bridge steps at {x}, {z}`)
+						end
+						last = fl
+						local off = f.width / 2 + 3
+						local l1 = T.liquid(x - uz * off, z + ux * off)
+						local l2 = T.liquid(x + uz * off, z - ux * off)
+						if l1 and l2 and l1.kind == "lava" and l2.kind == "lava" then
+							both = true
+						end
+						s += 2
+					end
+					expect(both).toBe(true)
+				end
+			end
+		end
+	end)
+
+	it(
+		"keeps Azgor's Furnace: flat to his burning ring, no liquid within 80, nothing standing in the circle",
+		function()
+			local consts = BossConsts.scriptConsts(fs.readFile("src/server/Entities/BossScripts/azgor.luau"))
+			local lavaR = assert(consts.LAVA_RADIUS, "LAVA_RADIUS")
+			expect(lavaR).toBe(64)
+			local shape = CaveShapes.byMap.dungeon_ashen
+			local arena = assert(shape.arena, "arena")
+			expect(lavaR + 10 <= arena.r).toBe(true)
+			local T = assert(CaveTerrain.get("dungeon_ashen"))
+			for r = 0, 80, 4 do
+				for a = 0, 35 do
+					local x, z = math.cos(a * math.pi / 18) * r, -10 + math.sin(a * math.pi / 18) * r
+					if T.liquid(x, z) then
+						error(`Furnace: liquid at {math.floor(x)}, {math.floor(z)}`)
+					end
+					if r <= lavaR + 10 then
+						local f = T.floor(x, z)
+						if f == nil or math.abs(f) > 0.25 then
+							error(`Furnace: floor {f} at {math.floor(x)}, {math.floor(z)}`)
+						end
+					end
+				end
+			end
+			for _, b in CaveDress.all("dungeon_ashen") do
+				local rot = math.rad(b.at.rot)
+				for _, p in b.bp.pieces do
+					local lx, lz = p.p[1], p.p[3]
+					local x = b.at.x + math.cos(rot) * lx + math.sin(rot) * lz
+					local z = b.at.z - math.sin(rot) * lx + math.cos(rot) * lz
+					local d = math.sqrt(x * x + (z + 10) ^ 2)
+					if p.lod == "shell" and p.col and d < 75 then
+						error(`Furnace: {b.name} collides within 75 studs of the fight`)
+					end
+					if d < arena.r and b.at.y + p.p[2] + p.size[2] / 2 > 0.15 then
+						error(`Furnace: {b.name} stands in the circle at {math.floor(x)}, {math.floor(z)}`)
+					end
+				end
+			end
+			local spots = { { 0, 70 }, { 0, 78 }, { 0, 60 }, { -10, 55 }, { 0, 55 }, { 10, 55 } }
+			for a = 0, 3 do
+				table.insert(spots, { math.cos(a * math.pi / 2) * 14, -10 + math.sin(a * math.pi / 2) * 14 })
+			end
+			for _, sp in spots do
+				expect(T.walkable(sp[1], sp[2], 3)).toBe(true)
+				expect(T.lavaDistance(sp[1], sp[2]) >= 6).toBe(true)
+			end
+		end
+	)
+
+	it(
+		"gives the Forge embers, steam and sparks, the Mine and the Lair ash in the shafts' beams, the Lair sand",
+		function()
+			local function kinds(id: string): { [string]: boolean }
+				local out = {}
+				for _, l in CaveDress.life(id) do
+					out[l.kind] = true
+				end
+				return out
+			end
+			local forge = kinds("ashen_cave")
+			for _, k in { "embers", "steam", "sparks", "haze" } do
+				expect(forge[k]).toBe(true)
+			end
+			local mine = kinds("ashen_mine")
+			for _, k in { "ashBeam", "vultures", "vulturePerch", "bats" } do
+				expect(mine[k]).toBe(true)
+			end
+			local lair = kinds("ashen_lair")
+			for _, k in { "ashBeam", "sandfall", "embers" } do
+				expect(lair[k]).toBe(true)
+			end
+		end
+	)
 end)

@@ -3,7 +3,7 @@
     lune run tools/cavedump.luau meadows_cave c.json 4
     python tools/cavemap.py c.json out.png [--overlay] [--scale 2] [--section x1 z1 x2 z2]
 
-Floor shaded by height (rock black, liquids blue, sky holes pale), with --overlay rooms and their cores, spawners
+Floor shaded by height (rock black, water blue, lava orange, sky holes pale), with --overlay rooms and their cores, spawners
 with radii, ore nodes, portals, dressing footprints, life points and lights. --section draws the floor, ceiling and
 liquid along a line (and a 5-stud figure for scale) under the map.
 """
@@ -54,7 +54,9 @@ def main():
                 shade += 0.08 * ((fx - f) - (fz - f))
             col = base * max(0.35, min(1.6, shade))
             if d["liquid"][k][i] is not False:
-                col = np.array((50, 100, 150), dtype=float)
+                # S50: lava (its surface is CrackedLava) orange, water blue
+                lava = d["material"][k][i] == "CrackedLava"
+                col = np.array((235, 95, 30) if lava else (50, 100, 150), dtype=float)
             if d["ceiling"][k][i] is not False and d["ceiling"][k][i] > 900:
                 col = col * 0.6 + np.array((200, 210, 230)) * 0.4
             img[k, i] = col

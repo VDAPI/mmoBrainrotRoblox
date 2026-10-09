@@ -10,7 +10,8 @@
 --   /worldfx <effect> <mode>  switch a world effect on the caller's client (S46; S47 snow, drift, aurora, plume, eagles,
 --                             avalanche, glow)
 --   /tpcave <cave> [room]     teleport into a cave on the cave engine, to a room by index or role (S48)
---   /caveinfo                 the cave under the caller: room, role, floor, ceiling, liquid, mood, lights (S48)
+--   /caveinfo                 the cave under the caller: room, role, floor, ceiling, liquid, mood, lights (S48), the
+--                             distance to the nearest lava (S50)
 --   /cavestats [cave]         terrain and shell timings, blocks, parts vs maxParts, Builds, lights, nodes (S48)
 --   /lights <n|auto>          force the number of cave lights on the caller's client (S48)
 
@@ -350,7 +351,8 @@ end
 -- S48: caves on the cave engine ----------------------------------------------------------------------------------
 
 commands.tpcave = function(player, args)
-	local caveId, roomArg = args[1] or "", args[2]
+	local caveId = args[1] or ""
+	local roomArg: string? = args[2]
 	local T = CaveTerrain.get(caveId)
 	local map = Maps.get(caveId)
 	if not T or not map then
@@ -358,6 +360,25 @@ commands.tpcave = function(player, args)
 		return false, "admin.usage.tpcave"
 	end
 	local x, z = map.spawn.x, map.spawn.z
+	-- S50: the bridges over the River of Fire (`bridge-n` = the northern one, `bridge-s` = the southern one)
+	if roomArg == "bridge-n" or roomArg == "bridge-s" then
+		local best: { [string]: any }? = nil
+		for _, f in T.shape.features do
+			if f.kind == "bridge" then
+				local mz = (f.az + f.bz) / 2
+				local bz = if best then (best.az + best.bz) / 2 else nil
+				if not bz or (roomArg == "bridge-n" and mz < bz) or (roomArg == "bridge-s" and mz > bz) then
+					best = f
+				end
+			end
+		end
+		if not best then
+			reply(player, "admin.usage.tpcave")
+			return false, "admin.usage.tpcave"
+		end
+		x, z = best.ax, best.az
+		roomArg = nil
+	end
 	if roomArg then
 		local index = tonumber(roomArg)
 		if not index then
@@ -419,6 +440,11 @@ commands.caveinfo = function(player)
 		floor = if c.open then tostring(round(c.floor)) else "—",
 		ceiling = if c.open then tostring(round(math.min(c.ceiling, 999))) else "—",
 		liquid = if c.liquid then `{c.liquid.kind} {round(c.liquid.level)}` else "—",
+		-- S50: lava under the caller or the distance to the nearest
+		lava = if c.liquid and c.liquid.kind == "lava"
+			then "0"
+			elseif T.lavaDistance(x, z) < 1e6 then tostring(round(T.lavaDistance(x, z)))
+			else "—",
 		mood = if Ambience.roomMood(map.id, index) then `{map.id}:{index}` else map.id,
 	})
 	return true

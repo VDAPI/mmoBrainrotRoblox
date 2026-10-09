@@ -29,7 +29,9 @@
 -- S48 (caves on the engine, Logic/CaveDress): drops falling from the stalactites, dust in the light beams of holes,
 -- cracks and waterfalls, glow-worms on the Great Grotto's vault, spiders on threads (they drop down and pull back up
 -- when the player comes close), bats in the high vaults (caves are always "night" for them), crows in the sinkhole.
--- Admin /worldfx <ash|embers|haze|smoke|vultures|devils|lavaglow|snow|drift|aurora|plume|eagles|avalanche|glow>
+-- S50 (caves of the Ashen Wastes): ash falling in the shafts' beams, sand pouring through holes, bursts of forge sparks;
+-- vultures in the mine's shaft (the S46 kinds `vultures` / `vulturePerch`).
+-- Admin /worldfx <ash|embers|haze|smoke|vultures|devils|lavaglow|snow|drift|aurora|plume|eagles|avalanche|glow|sparks>
 -- <on|off|auto> switches an effect on the caller's client (AdminClient "worldfx").
 -- Only within LIFE_RADIUS; with "World detail" on low there are no animals, half the particles and half the wisps.
 
@@ -477,6 +479,78 @@ local EMITTERS: { [string]: EmitterKind } = {
 		},
 		on = always,
 		rate = same,
+	},
+	-- S50: ash falling in the beam of a shaft or hole in the vault (a column from the point down)
+	ashBeam = {
+		size = function(r)
+			return Vector3.new(r * 2, 1, r * 2)
+		end,
+		props = {
+			Color = ColorSequence.new(Color3.fromHex("#B8B0A8"), Color3.fromHex("#6A625C")),
+			Transparency = NumberSequence.new({
+				NumberSequenceKeypoint.new(0, 1),
+				NumberSequenceKeypoint.new(0.15, 0.35),
+				NumberSequenceKeypoint.new(0.85, 0.5),
+				NumberSequenceKeypoint.new(1, 1),
+			}),
+			Size = NumberSequence.new(0.22, 0.12),
+			Lifetime = NumberRange.new(5, 8),
+			Speed = NumberRange.new(3, 5),
+			SpreadAngle = Vector2.new(10, 10),
+			RotSpeed = NumberRange.new(-40, 40),
+			Acceleration = Vector3.new(0.4, 0, 0.2),
+			LightInfluence = 0.6,
+			EmissionDirection = Enum.NormalId.Bottom,
+			Rate = 8,
+		},
+		on = always,
+		rate = same,
+		fx = "ash",
+	},
+	-- S50: a stream of sand pouring through a hole in the vault onto a cone (dense, fast, narrow)
+	sandfall = {
+		size = function(r)
+			return Vector3.new(r, 1, r)
+		end,
+		props = {
+			Color = ColorSequence.new(Color3.fromHex("#D8C08A"), Color3.fromHex("#B89A64")),
+			Transparency = NumberSequence.new(0.2, 0.6),
+			Size = NumberSequence.new(0.35, 0.2),
+			Lifetime = NumberRange.new(1.2, 1.8),
+			Speed = NumberRange.new(4, 8),
+			SpreadAngle = Vector2.new(4, 4),
+			Acceleration = Vector3.new(0, -30, 0),
+			LightInfluence = 0.8,
+			EmissionDirection = Enum.NormalId.Bottom,
+			Rate = 40,
+		},
+		on = always,
+		rate = same,
+	},
+	-- S50: bursts of sparks off anvils, grindstones and the metal falling from the crucible and the Heart
+	sparks = {
+		size = function(r)
+			return Vector3.new(r, 1, r)
+		end,
+		props = {
+			Color = ColorSequence.new(Color3.fromHex("#FFF2B0"), Color3.fromHex("#FF7A1A")),
+			Transparency = NumberSequence.new(0, 1),
+			Size = NumberSequence.new(0.14, 0.04),
+			Lifetime = NumberRange.new(0.4, 0.9),
+			Speed = NumberRange.new(8, 16),
+			SpreadAngle = Vector2.new(70, 70),
+			Acceleration = Vector3.new(0, -40, 0),
+			LightEmission = 1,
+			LightInfluence = 0,
+			EmissionDirection = Enum.NormalId.Top,
+			Rate = 18,
+		},
+		on = always,
+		rate = function(_t)
+			-- in bursts: the hammers' rhythm (on for ~0.6 s of every 2 s)
+			return if (os.clock() % 2) < 0.6 then 3 else 0
+		end,
+		fx = "sparks",
 	},
 	-- S48: glow-worms on a cave's vault (still, slowly pulsing points)
 	glowworms = {

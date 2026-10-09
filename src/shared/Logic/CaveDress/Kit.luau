@@ -12,6 +12,7 @@ local CaveTerrain = require("../CaveTerrain")
 local Caves = require("../../Data/Areas/Caves")
 local Maps = require("../../Data/Maps")
 local Portals = require("../../Data/Portals")
+local TerrainLayers = require("../TerrainLayers")
 local WK = require("../WorldGen/Kit")
 
 local o = WK.o
@@ -222,6 +223,7 @@ Kit.lifeAt = WK.lifeAt
 Kit.rect = WK.rect
 Kit.circle = WK.circle
 Kit.line = WK.line
+Kit.ring = WK.ring
 Kit.campfire = WK.campfire
 Kit.fire = WK.fire
 Kit.candle = WK.candle
@@ -390,6 +392,192 @@ function Kit.vein(bp: BP, x: number, y: number, z: number, kind: string, yaw: nu
 		)
 	end
 	bp:pop()
+end
+
+-- Lava (S50) ---------------------------------------------------------------------------------------------------------
+
+Kit.LAVA = "#FF5A1A"
+Kit.METAL = "#FFC860" -- molten metal in the forges' gutters (brighter)
+Kit.slag = { c = "#2A1A14", m = "Basalt" }
+Kit.basalt = { c = "#2F2B30", m = "Basalt" }
+
+local function lavaOpts(color: string, t: number?, tag: string?, lod: any?): any
+	return {
+		c = color,
+		m = "Neon",
+		lod = lod or "detail",
+		col = false,
+		q = false,
+		t = t or 0.3,
+		tag = tag or "lava",
+		jitter = 0,
+		fxColor = color,
+	}
+end
+Kit.lavaOpts = lavaOpts
+
+local CRUST: any =
+	{ c = "#2A1A14", m = "Basalt", lod = "detail", col = false, q = false, tag = "lavaCrust", jitter = 0.1 }
+
+-- The glow of every lava feature of the cave (client detail, tag "lava": the colour pulses; dark floes "lavaCrust";
+-- falls "lavafall"; lights of kind "lava" every ~36 studs, managed with the cave's lights): one Build per feature,
+-- standing on the lava. Embers and heat haze over the lava, bubbles on the pools. `metal` = molten metal (brighter).
+function Kit.lavaGlow(env: Env, out: { Build })
+	local T = env.T
+	for i, f in env.shape.features do
+		local kind = f.kind
+		local color = if f.metal then Kit.METAL else Kit.LAVA
+		if kind == "pool" and f.liquid == "lava" then
+			local b = Kit.build(env, `LavaPool_{i}`, "lava", f.x, f.z, 0)
+			local y = Kit.gy(env, b, 0, 0)
+			b.bp:add("cyl", 0.2, f.r * 1.9, f.r * 1.9, 0, y + 0.3, 0, 0, 0, 90, lavaOpts(color, 0.3))
+			if f.r >= 5 then
+				for k = 1, math.min(6, math.floor(f.r / 3)) do
+					local a = k * 2.4
+					local d = f.r * 0.5 * ((k % 3) / 3 + 0.3)
+					b.bp:rbox(1.6 + (k % 2), 0.25, 1.1, math.cos(a) * d, y + 0.45, math.sin(a) * d, 0, k * 47, 0, CRUST)
+				end
+			end
+			b.bp:light(0, y + 4, 0, color, math.min(40, 14 + f.r * 2), 1.4, "lava")
+			Kit.lifeAt(env.ctx, b, if f.r >= 5 then "lavaBubbles" else "embers", 0, 0.5, 0, f.r)
+			if f.r >= 8 then
+				Kit.lifeAt(env.ctx, b, "haze", 0, 1, 0, f.r)
+			end
+			table.insert(out, b)
+		elseif kind == "stream" and f.liquid == "lava" then
+			local line = TerrainLayers.line(TerrainLayers.pairs(f.points))
+			local x0, z0 = TerrainLayers.pointAt(line, 0)
+			local b = Kit.build(env, `LavaStream_{i}`, "lava", x0, z0, 0)
+			local s = 0
+			local lightIn = 0
+			local k = 0
+			while s < line.length do
+				local x, z, dx, dz = TerrainLayers.pointAt(line, s)
+				local lx, lz = x - b.at.x, z - b.at.z
+				local liquid = T.liquid(x, z)
+				if liquid and liquid.kind == "lava" then
+					local y = liquid.level - b.at.y
+					local yaw = math.deg(math.atan2(dx, dz))
+					local step = math.min(8, line.length - s)
+					local cx, cz = lx + dx * step / 2, lz + dz * step / 2
+					b.bp:rbox(f.width * 0.9, 0.2, step + 0.6, cx, y + 0.3, cz, 0, yaw, 0, lavaOpts(color, 0.3))
+					k += 1
+					if f.width >= 6 and k % 2 == 0 then
+						local ox, oz = dz * f.width * 0.15, -dx * f.width * 0.15
+						b.bp:rbox(f.width * 0.3, 0.25, 2.2, lx + ox, y + 0.45, lz + oz, 0, yaw + 20, 0, CRUST)
+					end
+					lightIn -= step
+					if lightIn <= 0 then
+						b.bp:light(lx, y + 4, lz, color, if f.width >= 6 then 36 else 20, 1.3, "lava")
+						lightIn = 36
+					end
+					if k % 3 == 1 then
+						Kit.lifeAt(env.ctx, b, "embers", lx, y + 0.5, lz, math.max(2, f.width / 2))
+					end
+					if f.width >= 6 and k % 3 == 2 then
+						Kit.lifeAt(env.ctx, b, "haze", lx, y + 1, lz, f.width)
+					end
+				end
+				s += 8
+			end
+			table.insert(out, b)
+		elseif kind == "vent" then
+			local b = Kit.build(env, `Vent_{i}`, "vent", f.x, f.z, 0)
+			local y = Kit.gy(env, b, 0, 0)
+			b.bp:add("cyl", 0.2, f.r * 2, f.r * 2, 0, y + 0.2, 0, 0, 0, 90, lavaOpts(Kit.LAVA, 0.35, "vent"))
+			for k = 0, 4 do
+				local a = k * 1.3
+				local d = f.r + 0.8
+				b.bp:rbox(
+					1.2,
+					0.6,
+					0.8,
+					math.cos(a) * d,
+					y + 0.2,
+					math.sin(a) * d,
+					0,
+					k * 60,
+					10,
+					o(Kit.slag, "detail", { col = false })
+				)
+			end
+			b.bp:light(0, y + 2, 0, Kit.LAVA, 14, 1, "lava")
+			Kit.lifeAt(env.ctx, b, "steam", 0, 0.5, 0, 2)
+			Kit.lifeAt(env.ctx, b, "embers", 0, 0.5, 0, 2)
+			table.insert(out, b)
+		elseif kind == "crack" then
+			local pts = f.points
+			local b = Kit.build(env, `Crack_{i}`, "lava", pts[1], pts[2], 0)
+			local y0 = Kit.gy(env, b, 0, 0)
+			for k = 1, #pts - 3, 2 do
+				local ax, az = pts[k] - b.at.x, pts[k + 1] - b.at.z
+				local bx, bz = pts[k + 2] - b.at.x, pts[k + 3] - b.at.z
+				local len = math.sqrt((bx - ax) ^ 2 + (bz - az) ^ 2)
+				local mx, mz = (ax + bx) / 2, (az + bz) / 2
+				local yaw = math.deg(math.atan2(bx - ax, bz - az))
+				b.bp:rbox(
+					f.width * 0.8,
+					0.15,
+					len,
+					mx,
+					Kit.gy(env, b, mx, mz) + 0.2,
+					mz,
+					0,
+					yaw,
+					0,
+					lavaOpts(Kit.LAVA, 0.25, "ember")
+				)
+			end
+			b.bp:light(0, y0 + 3, 0, Kit.LAVA, 22, 1.2, "lava")
+			Kit.lifeAt(env.ctx, b, "embers", 0, 0.5, 0, 4)
+			table.insert(out, b)
+		elseif kind == "moat" then
+			-- the Build stands on the lava (on the ring towards +x)
+			local mid = (f.inner + f.outer) / 2
+			local b = Kit.build(env, `LavaMoat_{i}`, "lava", f.x + mid, f.z, 0)
+			local width = f.outer - f.inner
+			local n = math.max(8, math.floor(2 * math.pi * mid / 12))
+			for k = 0, n - 1 do
+				local a = (k + 0.5) * 2 * math.pi / n
+				local wx, wz = f.x + math.cos(a) * mid, f.z + math.sin(a) * mid
+				local liquid = T.liquid(wx, wz)
+				if liquid and liquid.kind == "lava" then
+					local lx, lz = wx - b.at.x, wz - b.at.z
+					local y = liquid.level - b.at.y
+					local seg = 2 * math.pi * mid / n + 0.8
+					b.bp:rbox(width * 0.9, 0.2, seg, lx, y + 0.3, lz, 0, math.deg(-a), 0, lavaOpts(color, 0.3))
+					if k % 3 == 0 then
+						b.bp:light(lx, y + 4, lz, color, math.min(40, 16 + width * 2), 1.3, "lava")
+						Kit.lifeAt(env.ctx, b, "embers", lx, y + 0.5, lz, width / 2)
+					end
+				end
+			end
+			table.insert(out, b)
+		elseif kind == "lavafall" then
+			-- the foot stands on the lava; the sheets lean back towards bearing rot (degrees) up to `top`
+			local b = Kit.build(env, `Lavafall_{i}`, "lavafall", f.x, f.z, f.rot or 0)
+			local y = Kit.gy(env, b, 0, 0)
+			local top = f.top
+			for k = -1, 1 do
+				b.bp:rbox(2.6 - math.abs(k) * 0.8, top, 0.5, k * 1.6, y + top / 2, 1.5, -6, 0, k * 3, {
+					c = color,
+					m = "Neon",
+					lod = "detail",
+					col = false,
+					q = false,
+					t = 0.12 + math.abs(k) * 0.15,
+					tag = if k == 0 then "lavafall" else "lava",
+					jitter = 0,
+					fxColor = color,
+				})
+			end
+			b.bp:add("ball", 6, 1.2, 5, 0, y + 0.4, 0, 0, 0, 0, lavaOpts(color, 0.35, "vent"))
+			b.bp:light(0, y + 4, 0, color, 30, 1.6, "lava")
+			Kit.lifeAt(env.ctx, b, "smoke", 0, 2, 0, 4)
+			Kit.lifeAt(env.ctx, b, "embers", 0, 1, 0, 4)
+			table.insert(out, b)
+		end
+	end
 end
 
 return Kit

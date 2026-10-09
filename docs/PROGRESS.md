@@ -52,6 +52,7 @@
 | S47 | Lodowe Szczyty od nowa: kształty gór w silniku krain (podniesienia, poszarpane granie z siodłami, róg, wiatr, zamarznięte jeziora i strugi, lodowce, szczeliny), generator `FrostpeakGen` (9 expowisk w klimacie potworów, wyloty jaskiń), śnieżyca wg wiatru, zorza, dzień i noc, mapa i wiki | ● |
 | S48 | Jaskinie 1/4: silnik jaskiń (teren 3D z danych `CaveShapes` / `CaveTerrain`, ubiór `CaveDress`, LOD świateł, życie, nastrój sal) + Kryjówka Przemytników, Gobliński Kopiec, Jaskinia Mchów i Komnata Grimroka | ● |
 | S49 | Jaskinie 2/4: architektura w silniku jaskiń (plany `rect`/`octagon`, sklepienia, podesty, groble, mozaiki, nisze) + Wilcza Nora, Kurhan Kultystów, Krypta Zapomnianych i Grobowiec Morvane | ● |
+| S50 | Jaskinie 3/4: lawa w silniku jaskiń (kanały, kaniony z mostami, fumarole, szczeliny, fosy, lawospady), kute tunele + Opuszczona Kopalnia, Leże Wywerny, Kuźnia Głębin i Palenisko Azgora | ● |
 
 Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana przez właściciela
 
@@ -1071,6 +1072,27 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
 - **S49** Presety: `caveDen` (ambient `#262A30`, mgła `#0C0F12` do 200), `barrowViolet` (`#2A2434`, `#0E0A14` do 180,
   nasycenie −0,2), `cryptGhost` (`#262C30`, `#0A0E10` do 220, −0,25), `dungeonTomb` (`#282236`, `#0C0A12` do 260),
   jasność 0,32–0,36; `maxParts` Nora/Kurhan 700, Krypta 1000, Grobowiec 450. Kolory materiałów bez zmian.
+- **S50** Lawa w jaskiniach jest dekoracją (jak S46): powierzchnia to twardy teren `CrackedLava` 1,25 st. pod brzegiem
+  `Basalt` (z kanału da się wyjść), `liquid` = `{ kind = "lava", level }`, nic nie jest chodliwe na lawie i 2 st. od niej;
+  `MapTerrain.water` = nil. Reguły (test): lawa ≥ promień + 6 od spawnerów, poza rdzeniami, ≥ 6 od tuneli i tras w salach
+  (poza 30 st. od mostów), od wyjścia, bramy, odrodzenia, lądowania i węzłów rud (rudy wybierają miejsca ≥ 8 st. od lawy).
+  Powierzchnia 0,4–2,6 st. pod suchą podłogą obok (szczeliny i fumarole idą za spadkiem podłogi i są z tego zwolnione).
+- **S50** Kaniony Rzeki Ognia to strumień lawy z łagodnymi zboczami żużlu (`bank` 16, `rise` 6: spadek ~1,5 st. na 4 st.,
+  zamiast półek i ramp z promptu): po zeskoku z mostu da się wyjść każdym zboczem do tunelu. Most to pas (`bridge`), na
+  którym strumień nie tnie (podłoga tunelu biegnie dalej), łuk i balustrady to ubiór. Tunele 2–3 i 2–4 mają `wiggle = 0`
+  (most musi leżeć na osi tunelu).
+- **S50** Kute sale = plany S49 (`octagon` z kołem wpisanym = r, `rect`) zamiast nowego `carved` dla sal; kute tunele
+  `carved = true` (prosto, stała szerokość, sklepienie); kopułę podnosi istniejące `h` sali (bez `ceilingMul`).
+- **S50** `edgeFloors` (Kopalnia, Leże): podłoga tunelu przechodzi między ścianami sal, nie środkami; bez tego głęboka
+  sala (Gniazdo Królowej −6 pod Grzędami +4) miała uskok 3,5 st. w strefie ściany (test „droga z powrotem”). Stare
+  mapy bez zmian (fixture kształtów).
+- **S50** Palenisko: arena r 118 (płasko do r ≥ 80), fosa 82–96 z przerwą |x| < 34 od południa (grobla), Gardziel Pieca
+  w niszy na północy (jeziorko lawy + strumień przez próg do fosy), półki +12 na wschodzie i zachodzie za fosą
+  (nieosiągalne), pierścień `Slate` r 66–74. Ubiór: 10 kolumn-pieców na r 78 (z kolizją, poza 75), balustrada r 81 bez
+  kolizji; w kole nic wyżej niż 0,15 (test).
+- **S50** Presety: `caveMine` (`#2E2A26`, mgła `#16120E` do 200), `caveLair` (`#34241E`, `#22100A` do 230), `caveForge`
+  (`#2C2420`, `#140A06` do 280), `dungeonFurnace` (`#3A2620`, `#2A100A` do 300); `maxParts` Kopalnia 750, Leże 700,
+  Kuźnia 1100, Palenisko 500.
 
 ## Niedokończone
 (Rzeczy z zakresu sesji, które nie zostały zrobione. Następna sesja zaczyna od nich.)
@@ -1258,6 +1280,17 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
   szum, niski chór, królewski dron, skrzypienie łańcuchów żyrandola, wiatr w otworze stropu.
 - **S49** Nie zrobione: reakcja koszy Grobowca na fazy bossa (`Shielded`/`Phase`), ćmy w snopie księżyca, muchy nad
   padliną, „kilwater” węża, kapiący miód, kołysanie chorągwi i żyrandola, podgląd 3D jaskiń.
+- **S50** Jaskinie Pustkowi i Palenisko niesprawdzone w Studio: wygląd lawy w jaskiniach (płyty neonu nad `CrackedLava`,
+  pulsowanie, kra), kaniony pod mostami, kute ściany ośmiokątów na wokselach 4 st., Tygiel i Serce, walka z Azgorem
+  (dysk lawy na równej posadzce, golemy fazy 2 na płaskim).
+- **S50** Dźwięki Pustkowi do podpięcia: wiatr w szybie, skrzypienie stempli, klatka na łańcuchu, osypujący się żwir,
+  gwar obozu orków, bęben wojenny, śmiech hien, skrzek sępa, ognisko, syk magmy, pomruk wulkanu, bulgot lawy, wiatr nad
+  otworem, wywerny w oddali, chichot chochlików, sypiący się piasek, klikanie skorpionów, pulsowanie jaj, młoty na
+  kowadłach, miechy, ryk paleniska, rzeka lawy, hartowanie, lanie metalu, łańcuchy, toczydło, krasnoludzki śpiew,
+  zgrzyt golemów, bicie Serca, ryk wielkiego pieca, lawospad; muzyka Kuźni (`music` z podpowiedzią w `Data/Maps`).
+- **S50** Nie zrobione: kołysanie Tygla, klatki wyciągu i łańcuchów (tween na kliencie), krople metalu jako osobny efekt
+  (są iskry), sylwetka wywerny nad otworem Grzęd, chochlikowe ogniki, nowe szablony `DecorController` (żużel, złom,
+  węgielek, łuska, skorupa jaja), ujęcia `caveview` (przekroje i mapy z góry tak), reakcja Paleniska na fazy Azgora.
 
 ## Zgłoszone błędy
 (Właściciel wpisuje tu błędy po testach albo przekazuje je przez sesję poprawek.)
@@ -4348,3 +4381,103 @@ dir}`, `causeway {points, width}`, `ring {x, z, bands (band(r1, r2, mat)), spoke
 11. `/ambience duskwood_cave:5` (Studnia), `/ambience duskwood_barrow:4` (Serce), `/ambience auto`.
 12. Mapa (M) i wiki: obrysy jaskiń Boru, woda Zalanej Krypty.
 13. Jaskinie Łąk i Komnata Grimroka wyglądają i działają jak po S48.
+
+### S50: Jaskinie 3/4: Opuszczona Kopalnia, Leże Wywerny, Kuźnia Głębin + Palenisko Azgora
+
+**Zrobione**
+- Lawa w silniku jaskiń (`Logic/CaveTerrain`, ogólnie; stare mapy bez zmian w fixture): `pool`/`stream` z
+  `liquid = "lava"` (twarda powierzchnia `CrackedLava` 1,25 st. pod brzegiem `Basalt`), strumień lawy w kanionie
+  (`bank`, `rise`, `roof`, `bankMat`), `vent`, `crack`, `moat` (`gap = { width, dir }`, `gaps`), `bridge`, `lavafall`
+  (tylko ubiór), `T.lavaDistance(x, z)`, materiały `materials.lava` / `shore`; kute tunele (`carved`), `wiggle` tunelu,
+  `edgeFloors`. Woksele lawy to `CrackedLava`, nigdy `Water`.
+- Wygląd lawy: `CaveDress/Kit.lavaGlow` dla każdej jaskini z lawą (płyty neonu z tagiem `lava`, kra `lavaCrust`,
+  lawospady `lavafall`, fumarole `vent`, szczeliny `ember`, światła `lava` co ~36 st., żar, drżące powietrze, bąble);
+  szkic mapy: lawa `lava` (pomarańczowa), mosty `bridge`.
+- Kształty (`Data/CaveShapes`): Kopalnia (szyb wyciągu, nisza namiotów, taras tronu, szyb sępów, przebicie z lawą),
+  Leże (jeziorko chochlików, fumarole, otwór ze stożkiem piasku i łatą `Sand`, wielki otwór i półki Grzęd, szczelina
+  Spiżarni, kopiec w fosie lawy pod kominem), Kuźnia (8 sal: 6 kutych `octagon`/`rect` z posadzką `Pavement`, 2
+  naturalne; 9 tuneli z layoutu, 5 kutych; rynna Wrót, krąg run pod Tyglem, otwór dymny, 4 zatoki kuźni z rynnami
+  metalu, 2 kaniony Rzeki Ognia z mostami i lawospadami, jezioro Gardzieli, kaskada i rynna Huty, dół odlewniczy, podest
+  kowadła i czasza Serca, 2 rynny Przedsionka), Palenisko (arena, fosa z groblą, Gardziel Pieca, półki).
+- Ubiór: `Mine` (tory i stemple w tunelach 1–2, 2–3, 3–4, sztolnia z runami zamazanymi orczą farbą, barykada z wózków,
+  czaszka na palu, wieża wyciągowa z kołem i krzywą klatką, zerwana lina, obrotnica, wózki z rudą, stojak toporów,
+  rożen, chorągwie, koło pompy z trofeami, namioty ze skór, długie ognisko, koryto i kości, żyła mithrilu, tron z wózka
+  z posągiem bez głowy, gniazda sępów i padlina, przebicie z grodzią i runą ostrzegawczą, budy hien), `Lair` (sadza,
+  bruzdy pazurów, pęknięte jajo, stopiona tarcza, nawiany piasek, gniazda węgla chochlików z czaszkami-latarniami,
+  odciski dłoni, struga piasku, nory skorpionów, pancerze, szkielet wywerny, gniazda na półkach, plandeka, słupy z
+  pazurami, wóz, padlina, bele sukna, skóra wywerny, gniazdo Królowej z 5 świecącymi jajami i pazurem pisklęcia, skarb z
+  koroną, łuski), `Forge` (wrota, klęczący królowie, błękitne runy, juki; 4 zatoki kuźni z paleniskiem, kowadłem,
+  miechem, kadzią z parą, stojakiem i rynną; 8 królów ze skutymi twarzami i znakiem Azgora, chorągwie na łańcuchach,
+  Wielki Tygiel; mosty z łukiem i balustradami, kamienna twarz lawospadu, para z czeluści; słupy bazaltowe,
+  balustrada i golemy w jeziorze, warząchwie i łańcuchy; przechylony tygiel na rusztowaniu, formy sztab od pomarańczu
+  do szarości, hałdy żużlu, sztaby, komin; 3 golemy w ramach, dźwig z ramieniem, tors w dole odlewniczym, czerwone kręgi
+  na błękitnych runach; stojaki broni, zbroje, toczydło z iskrami, skrzynie ze znakiem szponu, wózek na szynach przed
+  żelaznymi drzwiami, prycze, beczki, zdarte chorągwie rodów, latarnie; Serce w klatce z łańcuchów, kowadło Pierwszego
+  Kowala z młotem i runami, czasza metalu, 4 królów z uniesionymi młotami; znak Azgora z lawą w rowkach nad bramą,
+  skuci królowie, kosze ognia, stos hełmów i młotów, drżące powietrze), `Furnace` (kolumny-piece, balustrada, Gardziel
+  Pieca z miechami i znakiem, rogate dysze, żyły magmy, żar z kopuły, półki z kowadłami i skutymi krasnoludami).
+- Serwer: `ashen_cave.luau` cienką nakładką na `CaveLayout` (wyjście, brama, odrodzenie); Kopalnia i Leże przez
+  `CaveTemplate`, Palenisko przez gałąź `DungeonArena`.
+- Klient: emitery `ashBeam` (popiół w smudze szybu), `sandfall` (struga piasku), `sparks` (serie iskier w rytmie
+  młotów) w `WorldLifeController`; `/worldfx sparks`; sępy i nietoperze z istniejących rodzajów.
+- Nastrój: `Data/Ambience.rooms` dla 22 sal (5 + 6 + 8 + 3), `maps`, punkty dźwięku; presety i `maxParts` w `Data/Maps`.
+- Admin: `/tpcave ashen_cave bridge-n|bridge-s`, role sal (`lift`, `camp`, `chief`, `kennel`, `chimneys`, `sands`,
+  `roosts`, `larder`, `queennest`, `greatforge`, `gullet`, `smelter`, `foundry`, `armory`, `heart`, `antechamber`,
+  `arena`, `furnace`), `/caveinfo` z odległością do lawy.
+- Wiki: SVG `ashen_mine`, `ashen_lair`, `ashen_cave` z pomarańczową lawą (pule, kanały, fosy); `tools/cavemap.py`
+  rysuje lawę na pomarańczowo.
+- Testy: `caveterrain.spec` objął 4 mapy (kontrakt S48) i nowy blok lawy (reguły odległości, powierzchnia, woksele,
+  `MapTerrain`, mosty, kontrakt Paleniska z `LAVA_RADIUS` odczytanym z `azgor.luau`, życie); fixture kształtów dopisany;
+  `worldgen.spec`.
+- Pomiary (Lune): woksele Kopalni 0,10 s, Leża 0,12 s, Kuźni 0,20 s, Paleniska 0,04 s; shell 14 / 4 / 79 / 12, detail
+  395 / 186 / 717 / 209, fine 222 / 154 / 173 / 6, światła 14 / 12 / 54 / 32 (zarządzane, N najbliższych). Szacunek
+  „przed”: generowane ~90, Kuźnia ~130, Palenisko ~80 części.
+- Obrazy kontrolne: poprawione: uskok przy ścianie Gniazda Królowej (`edgeFloors`), brama Przedsionka w strefie ściany
+  (hx 52), brzeg fosy pod szumem podłogi (rim ≥ lawa + 1,25), materiał brzegu nadpisywał lawę, rudy przy lawie, korzeń
+  `OreVeins` w skale.
+
+**Pliki**: nowe `Logic/CaveDress/{Mine,Lair,Forge,Furnace}`; zmiany: `Logic/{CaveTerrain,CaveDress/init,CaveDress/Kit}`,
+`Data/{CaveShapes,Maps,Ambience,AdminCommands}`, lokalizacja, `World/Layouts/ashen_cave`, `Admin/Terrain`,
+`Controllers/WorldLifeController`, `tests/{caveterrain,worldgen}`, `tests/fixtures/caveShapes`, `tools/{WikiMaps,cavemap.py}`,
+wiki, `docs/{SWIAT,ARCHITECTURE,DESIGN}`, `CLAUDE.md`.
+
+**Nazwy dla S51**: `pool.liquid` / `stream.liquid` = `"lava"`; strumień: `bank`, `rise`, `roof`, `bankMat`; `vent { x, z, r }`,
+`crack { points, width }`, `moat { x, z, inner, outer, level, gap = { width, dir }, gaps }`, `bridge { ax, az, bx, bz,
+width }`, `lavafall { x, z, top, rot }`, `metal = true` (jaśniejszy kolor); `materials.lava` / `materials.shore`;
+`tunnels[j].carved`, `tunnels[j].wiggle`; kształt `edgeFloors`; `T.lavaDistance(x, z)`; `Kit.lavaGlow(env, out)`,
+`Kit.lavaOpts(color, t, tag)`, `Kit.ring`; życie `ashBeam`, `sandfall`, `sparks`. Lód S51: `liquid = "ice"` jest w API od
+S48 (chodliwy), reszta do zrobienia.
+
+#### Instrukcja testu S50
+
+1. Play. W Output `[Cave:ashen_mine]`, `[Cave:ashen_lair]`, `[Cave:ashen_cave]`, `[Cave:dungeon_ashen]` (terrain, shell,
+   parts): zapisz czasy; `[WorldBuilder] world built in … s` (porównaj z S49).
+2. `/cavestats ashen_cave` (≤ 1100 części), `ashen_mine` (≤ 750), `ashen_lair` (≤ 700), `dungeon_ashen` (≤ 500).
+3. Kuźnia z Pustkowi: za plecami uchylone okute wrota, klęczący królowie przy wyjściu na wschód, błękitne runy, rynna
+   metalu wzdłuż południowej ściany.
+4. `/tpcave ashen_cave greatforge`: ośmiokątna hala, 4 zatoki kuźni (żar, iskry, para z kadzi), 8 królów ze skutymi
+   twarzami i czerwonym znakiem, nad środkiem żarzący się Tygiel na łańcuchach, dym w otworze sklepienia.
+5. `/tpcave ashen_cave bridge-n` i `bridge-s`: most z balustradami, w dole kanion z rzeką lawy, na zachodzie lawospad z
+   kamiennej twarzy, na wschodzie para; zeskocz do kanionu i wyjdź zboczem do tunelu (lawa nie parzy).
+6. `gullet` (jezioro lawy za balustradą, golemy w lawie), `smelter` (przechylony tygiel, kaskada, formy od pomarańczu
+   do szarości), `foundry` (golemy w ramach, dźwig, dół odlewniczy), `armory` (stojaki, toczydło z iskrami, skrzynie ze
+   znakiem szponu, wózek przed żelaznymi drzwiami).
+7. `heart`: kula magmy w klatce z łańcuchów nad środkiem, `/e2 spawn`: Elita II stoi pod nią na podłodze; kowadło na
+   podeście w północnej niszy, czasza metalu w południowej.
+8. `antechamber`: płonący rogaty znak nad bramą, rynny lawy płyną pod wrota, kosze ognia, skuci królowie, stos hełmów.
+9. Żadna grupa nie stoi w lawie ani tuż przy niej (wcześniej 4 grupy stały na malowanej lawie w Gardzieli i Hucie).
+10. `/caveinfo` na lawie i obok: „lawa 0” / odległość; na lawie nie ma obrażeń.
+11. Brama do Paleniska: płaskie bazaltowe koło, fosa lawy z groblą od wnęki, kolumny-piece, Gardziel Pieca na północy leje
+    lawę do fosy, rogate dysze, żyły magmy, półki z kowadłami za fosą.
+12. Walka z Azgorem: `/boss spawn azgor`, `/phase 2` (golemy na płaskim), `/phase 3` (dysk lawy leży równo na posadzce aż
+    do pierścienia; krąg bezpieczny czytelny), po walce lądujesz przed bramą w Kuźni.
+13. Kopalnia: tory od wejścia przez Halę Wyciągu i Obóz do Sali Wodza; `/tpcave ashen_mine lift` (wieża, krzywa klatka,
+    popiół w smudze), `camp` (koło pompy, namioty, ognisko), `chief` (żyła mithrilu, tron, sępy w szybie), `kennel`
+    (przebicie do magmy za grodzią, budy hien).
+14. Leże: `/tpcave ashen_lair chimneys` (jeziorko lawy, gniazda węgla, fumarola), `sands` (struga piasku na stożek, nory
+    skorpionów, szkielet wywerny), `roosts` (wielki otwór, gniazda na półkach), `larder` (wóz, świecąca szczelina),
+    `queennest` (świecące jaja na kopcu w kręgu lawy pod kominem, skarb).
+15. Niska szczegółowość i `/lights 8`: lawa świeci neonem, mniej świateł, bez sępów i nietoperzy; `/worldfx sparks off`.
+16. `/ambience ashen_cave:2`, `/ambience ashen_lair:6`, `/ambience auto`.
+17. Mapa (M), minimapa i wiki: obrysy jaskiń Pustkowi z pomarańczową lawą.
+18. Jaskinie Łąk i Boru oraz ich komnaty wyglądają i działają jak po S49.

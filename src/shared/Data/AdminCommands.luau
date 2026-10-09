@@ -257,6 +257,7 @@ cmd("world", "worldfx", {
 		"eagles",
 		"avalanche",
 		"glow",
+		"sparks", -- S50: forge sparks in the caves
 	}),
 	enum("mode", { "on", "off", "auto" }),
 })

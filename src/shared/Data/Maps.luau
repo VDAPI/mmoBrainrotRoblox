@@ -280,6 +280,51 @@ local LIGHT = {
 		tint = "#DCD0FF",
 		saturation = -0.15,
 	}),
+	-- S50: presets of the Ashen Wastes' caves on the engine
+	caveMine = lighting({
+		clockTime = 0,
+		brightness = 0.34,
+		ambient = "#2E2A26",
+		outdoorAmbient = "#28241F",
+		fogColor = "#16120E",
+		fogEnd = 200,
+		atmosphere = { density = 0.56, haze = 0.8, glare = 0, color = "#2A2018", decay = "#120E0A" },
+		tint = "#FFE8D0",
+		saturation = -0.08,
+	}),
+	caveLair = lighting({
+		clockTime = 0,
+		brightness = 0.36,
+		ambient = "#34241E",
+		outdoorAmbient = "#2E201A",
+		fogColor = "#22100A",
+		fogEnd = 230,
+		atmosphere = { density = 0.55, haze = 1.2, glare = 0, color = "#3A1A10", decay = "#180A06" },
+		tint = "#FFD8C0",
+		saturation = 0.04,
+	}),
+	caveForge = lighting({
+		clockTime = 0,
+		brightness = 0.34,
+		ambient = "#2C2420",
+		outdoorAmbient = "#261E1A",
+		fogColor = "#140A06",
+		fogEnd = 280,
+		atmosphere = { density = 0.5, haze = 0.9, glare = 0, color = "#2A140A", decay = "#100806" },
+		tint = "#FFE0C8",
+		saturation = 0.06,
+	}),
+	dungeonFurnace = lighting({
+		clockTime = 0,
+		brightness = 0.38,
+		ambient = "#3A2620",
+		outdoorAmbient = "#32201A",
+		fogColor = "#2A100A",
+		fogEnd = 300,
+		atmosphere = { density = 0.5, haze = 1.4, glare = 0, color = "#401A0C", decay = "#1A0A06" },
+		tint = "#FFD8C0",
+		saturation = 0.08,
+	}),
 	crypt = lighting({
 		clockTime = 0,
 		brightness = 0.3,
@@ -453,10 +498,11 @@ map({
 	size = { x = 640, z = 640 },
 	spawn = { x = -250, y = 4, z = 0 },
 	biome = "cave",
-	lighting = LIGHT.cave,
-	music = "",
+	lighting = LIGHT.caveForge, -- S50
+	music = "", -- S50: hint: deep dwarven forge, slow drums and anvils, low choir (Creator Store)
 	buildMode = "generated",
 	worldMap = { x = 0.85, y = 0.6 },
+	maxParts = 1100, -- S50: Deepforge on the cave engine
 	links = { "ashen" },
 	dungeonEntrance = { x = 250, y = 0, z = 0 },
 	dungeonRegion = "ashen",
@@ -567,7 +613,7 @@ for _, cave in
 			biome = "cave",
 			wx = 0.69,
 			wy = 0.51,
-			light = "cave",
+			light = "caveMine", -- S50
 		},
 		{
 			id = "ashen_lair",
@@ -579,7 +625,7 @@ for _, cave in
 			biome = "cave",
 			wx = 0.81,
 			wy = 0.51,
-			light = "cave",
+			light = "caveLair", -- S50
 		},
 		{
 			id = "frostpeak_grotto",
@@ -623,7 +669,11 @@ do
 		worldMap = { x = cave.wx, y = cave.wy },
 		links = { cave.region },
 		-- S48: caves on the cave engine keep a server part budget (the Meadows' two: 700)
-		maxParts = if cave.region == "meadows" or cave.region == "duskwood" then 700 else nil,
+		maxParts = if cave.region == "meadows" or cave.region == "duskwood"
+			then 700
+			elseif cave.id == "ashen_mine" then 750 -- S50
+			elseif cave.id == "ashen_lair" then 700
+			else nil,
 	})
 end
 
@@ -648,6 +698,7 @@ do
 		biome = "dungeon",
 		lighting = if dungeon.region == "duskwood"
 			then LIGHT.dungeonTomb -- S49
+			elseif dungeon.region == "ashen" then LIGHT.dungeonFurnace -- S50
 			elseif dungeon.region == "meadows" then LIGHT.dungeonGoblin -- S48
 			else LIGHT.cave,
 		music = "",
@@ -655,7 +706,10 @@ do
 		worldMap = { x = 0, y = 0 },
 		links = {},
 		-- S48/S49: Grimrok's Chamber and the Tomb of Morvane on the cave engine
-		maxParts = if dungeon.region == "meadows" or dungeon.region == "duskwood" then 450 else nil,
+		maxParts = if dungeon.region == "meadows" or dungeon.region == "duskwood"
+			then 450
+			elseif dungeon.region == "ashen" then 500 -- S50: Azgor's Furnace
+			else nil,
 	})
 end
 

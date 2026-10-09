@@ -96,6 +96,11 @@ kręte tunele, wnęki, jeziora, strumienie, otwory w sklepieniu; każda sala ma 
 w klimacie swoich mieszkańców, a najgłębsza sala i przedsionek bossa są scenami „wow”. Rdzeń każdej sali walki zostaje
 suchy, płaski i wysoki (tam stoją grupy).
 
+**Lawa w jaskiniach (S50)** jest dekoracją jak na Pustkowiach: nie parzy (jedyna parząca lawa to dysk Azgora w 3. fazie);
+jej powierzchnia to twardy teren 1–1,5 st. pod bazaltowym brzegiem, więc z kanału zawsze da się wyjść. Grupy, rdzenie
+sal, tunele i trasy w salach, wyjście, brama, odrodzenie i węzły rud trzymają się co najmniej 6 st. od lawy; rzeki
+lawy przecinają tunele tylko pod mostami (kaniony mają łagodne zbocza żużlu, więc po zeskoku da się wrócić).
+
 ### 3.6 Obszary potworów (zmiana po testach S17)
 
 - Każda mapa terenowa i jaskinia jest podzielona na **nazwane obszary potworów** (np. „Obóz Bandytów · 9–14”, „Wilcze Wzgórza · 2–6”): prostokąt lub wielokąt, przedział poziomów, 2–3 rodzaje potworów, liczba grup. Obszar jest jednym źródłem prawdy: z niego generują się grupy (§15.1), opisy na mapie i oznaczenia w świecie.
@@ -171,6 +176,8 @@ suchy, płaski i wysoki (tam stoją grupy).
 
 **Jaskinie przy niskiej szczegółowości (S48).** Światła jaskini: najbliższe 8 / 16 / 24 (niska / średnia / wysoka), neon
 świeci bez światła; bez nietoperzy, pająków i kruków, połowa cząsteczek i robaczków.
+Światła lawy w jaskiniach (S50, rodzaj `lava`) liczą się do tego samego limitu; płyty lawy (neon, pulsowanie, kra) i
+żar zostają przy każdej szczegółowości, sępy w szybie Kopalni i nietoperze znikają przy niskiej.
 
 ### 3.8 Miasto startowe (zmiana po testach S20)
 

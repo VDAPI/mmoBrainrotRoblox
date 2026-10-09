@@ -11,7 +11,8 @@
 -- floor features (pools, terraces, pits, stalagmites) never touch it.
 --
 -- Fields of an entry:
---   theme       dressing module (Logic/CaveDress: "Moss", "Smugglers", "Warren", "GoblinThrone")
+--   theme       dressing module (Logic/CaveDress: S48 "Moss", "Smugglers", "Warren", "GoblinThrone"; S49 "Den",
+--               "Barrow", "Crypt", "Tomb"; S50 "Mine", "Lair", "Forge", "Furnace")
 --   floorY      floor of the plan (default 0; entrances, the boss antechamber and arenas stay on it)
 --   wall        { amp, scale }: how far the walls bulge out (studs) and the noise scale along the wall
 --   ceiling     { amp, scale }: ceiling noise (studs) outside the cores
@@ -51,6 +52,19 @@
 --   niches      { kind, room, spacing, tiers, w, h }: rows of niches along a room's walls (positions: T.niches(); the
 --               terrain keeps a plain wall, the dressing builds the shelves with skulls and shrouds)
 --   pool.inner  a ring of water from `inner` to `r`; terrace.inner / terrace.gaps a ring terrace with gaps
+-- S50 (lava; decoration: it hurts nobody, its surface is solid CrackedLava 1.25 studs under a Basalt shore):
+--   pool / stream liquid = "lava"; a lava stream may lie in a canyon: bank (width of the sloping banks), rise (their
+--               height over the shore), roof (ceiling over the lava), bankMat (their material, default `bed`)
+--   lavafall    { kind, x, z, top, rot? }: lava falling from a crack or a nozzle into the pool below (dressing only)
+--   vent        { kind, x, z, r }: a glowing fumarole in the floor (lava for every distance rule)
+--   crack       { kind, points, width }: a narrow glowing crack along a line (lava, a little sunk)
+--   moat        { kind, x, z, inner, outer, level, gap = { width, dir }?, gaps = { { fromDeg, toDeg } }? }: a ring of
+--               lava with a straight lane (from the centre along bearing dir) and angular gaps left dry
+--   bridge      { kind, ax, az, bx, bz, width }: a strip over a lava stream or canyon where the stream does not cut
+--               (the floor of the tunnel runs on; the arch and railings are the dressing's shell)
+--   edgeFloors  true: the tunnels' floors blend between the rooms' walls instead of their centres
+--   tunnels[j].carved / wiggle  a dwarven tunnel (straight like masonry) / the wander of one tunnel
+--   rooms[i] carved halls use the S49 plans (`octagon` with the inscribed circle = r, `rect`) and `h` for the dome
 
 export type RoomShape = {
 	role: string,
@@ -83,11 +97,28 @@ export type ExtraRoom = {
 	ceil: string?,
 }
 
-export type Tunnel = { ax: number, az: number, bx: number, bz: number, w: number, h: number? }
+export type Tunnel = {
+	ax: number,
+	az: number,
+	bx: number,
+	bz: number,
+	w: number,
+	h: number?,
+	carved: boolean?, -- S50: straight, constant width, flat floor, vaulted ceiling (a dwarven tunnel)
+	wiggle: number?, -- S50: sideways wander of this tunnel (default the shape's)
+}
 
 export type Feature = { [string]: any } -- `kind` + the fields of its kind (above)
 
-export type Materials = { wall: string, floor: string, accent: string, bed: string, moss: string? }
+export type Materials = {
+	wall: string,
+	floor: string,
+	accent: string,
+	bed: string,
+	moss: string?,
+	lava: string?, -- S50: the lava's surface (default CrackedLava)
+	shore: string?, -- S50: the rim of the lava (default Basalt)
+}
 
 export type Shape = {
 	theme: string,
@@ -100,6 +131,7 @@ export type Shape = {
 	tunnelH: number?,
 	wiggle: number?,
 	masonry: boolean?,
+	edgeFloors: boolean?, -- S50: tunnel floors blend between the rooms' walls (deep rooms without a step at the wall)
 	extraRooms: { ExtraRoom }?,
 	features: { Feature },
 	arena: { x: number, z: number, r: number }?,
@@ -127,6 +159,21 @@ local ROLES = {
 	"shaft",
 	"spiderpit",
 	"niche",
+	-- S50 Ashen Wastes
+	"lift",
+	"camp",
+	"kennel",
+	"chimneys",
+	"sands",
+	"roosts",
+	"larder",
+	"greatforge",
+	"gullet",
+	"smelter",
+	"foundry",
+	"armory",
+	"heart",
+	"furnace",
 	-- S49 Duskwood
 	"feeding",
 	"moon",
@@ -495,6 +542,280 @@ byMap.dungeon_duskwood = {
 			dy = 14,
 			blend = 1.5,
 			gaps = { { 50, 130 }, { 245, 295 } },
+			unreachable = true,
+		},
+	},
+	arena = { x = 0, z = -10, r = 74 },
+}
+
+-- S50 ----------------------------------------------------------------------------------------------------------------
+
+-- Abandoned Mine (49-56): a dwarven silver and mithril mine, left when the miners broke through to the magma, taken
+-- by the Ash Orcs with their hyenas and vultures. The rails lead in; deeper is quieter and bluer.
+byMap.ashen_mine = {
+	theme = "Mine",
+	edgeFloors = true,
+	wall = { amp = 10, scale = 26 },
+	ceiling = { amp = 3, scale = 22 },
+	materials = { wall = "Basalt", floor = "Ground", accent = "Slate", bed = "Salt" },
+	wiggle = 5,
+	rooms = {
+		room({ role = "entrance", decor = "mine", flat = true }),
+		room({ role = "lift", decor = "mine" }),
+		room({ role = "camp", decor = "camp", dy = -4 }),
+		room({ role = "chief", decor = "mine", dy = -8, h = 30 }),
+		room({ role = "kennel", decor = "kennel", dy = -8 }),
+	},
+	features = {
+		-- the lift's shaft in the north-west of the Lift Hall
+		{ kind = "niche", x = -112, z = -60, r = 12, h = 26 },
+		{ kind = "skyhole", x = -114, z = -62, r = 5 },
+		-- the tents in the south niche of the Pump Chamber
+		{ kind = "niche", x = 6, z = 100, r = 16, h = 18, dy = -4 },
+		-- the chief's terrace by the mithril vein (+3 over the hall) and the vultures' shaft
+		{ kind = "niche", x = 154, z = 50, r = 14, h = 20, dy = -5 },
+		{ kind = "skyhole", x = 116, z = 26, r = 9 },
+		-- the breakthrough to the magma behind the kennel
+		{ kind = "niche", x = 32, z = -112, r = 12, h = 18, dy = -8 },
+		{ kind = "pool", x = 32, z = -116, r = 6, level = -9.25, depth = 0, liquid = "lava" },
+	},
+}
+
+-- Wyvern Lair (56-63): a volcanic cave open to the sky under the Wyvern Spires; wyverns nest high up, imps tend the
+-- lava, scorpions dig in the sand the wind pours in through the holes.
+byMap.ashen_lair = {
+	theme = "Lair",
+	edgeFloors = true,
+	wall = { amp = 12, scale = 24 },
+	ceiling = { amp = 4, scale = 22 },
+	materials = { wall = "Basalt", floor = "Basalt", accent = "Slate", bed = "Sand" },
+	wiggle = 6,
+	rooms = {
+		room({ role = "entrance", decor = "ash", flat = true }),
+		room({ role = "chimneys", decor = "ash" }),
+		room({ role = "sands", decor = "sand", dy = 2 }),
+		room({ role = "roosts", decor = "bone", dy = 4, h = 42 }),
+		room({ role = "larder", decor = "bone", dy = -4 }),
+		room({ role = "queennest", decor = "ash", dy = -6, h = 36 }),
+	},
+	features = {
+		-- the imps' pool in the north-east niche of the Chimneys and a fumarole by the wall
+		{ kind = "niche", x = -48, z = -88, r = 12, h = 18 },
+		{ kind = "pool", x = -46, z = -89, r = 5, level = -1.25, depth = 0, liquid = "lava" },
+		{ kind = "vent", x = -104, z = -72, r = 1.5 },
+		-- the Sand Nests: the hole in the vault, the cone of sand under it, sand on the floor, a fumarole
+		{ kind = "niche", x = 13, z = 112, r = 16, h = 22, dy = 2 },
+		{ kind = "skyhole", x = 13, z = 116, r = 10 },
+		{ kind = "terrace", x = 13, z = 118, r = 12, dy = 4, blend = 10 },
+		{ kind = "ring", x = 13, z = 108, bands = { band(0, 26, "Sand") } },
+		{ kind = "vent", x = 56, z = 80, r = 1.5 },
+		-- the Roosts: the great hole in the east wall, the unreachable ledges with nests round the walls
+		{ kind = "skyhole", x = 174, z = -14, r = 14 },
+		{
+			kind = "terrace",
+			x = 132,
+			z = -18,
+			r = 62,
+			inner = 44,
+			dy = 8,
+			blend = 2,
+			gaps = { { 120, 170 }, { 250, 300 } },
+			unreachable = true,
+		},
+		-- the Larder's glowing crack by the west wall
+		{ kind = "crack", points = { -124, -148, -127, -158, -125, -168 }, width = 2 },
+		-- the Queen's Nest: the mound in the east niche ringed with lava under a great chimney
+		{ kind = "niche", x = 202, z = -162, r = 20, h = 30, dy = -6 },
+		{ kind = "terrace", x = 202, z = -162, r = 9, dy = 3, blend = 3 },
+		{ kind = "moat", x = 202, z = -162, inner = 10, outer = 15, level = -7.25 },
+		{ kind = "skyhole", x = 202, z = -162, r = 12 },
+	},
+}
+
+-- Deepforge (63-70, boss cave): the dwarves' forge in the deep of the Forge Mountain, taken by Azgor's renegades.
+-- Carved halls (straight walls, paving) between natural caves of magma; old dwarven runes glow cold blue where they
+-- were not chiselled off, Azgor's signs glow red. Wrota -> the Great Forge -> bridges over the River of Fire to the
+-- Gullet and the Smelter -> the Foundry and the Armoury -> the Heart of the Forge -> the Antechamber -> the gate.
+byMap.ashen_cave = {
+	theme = "Forge",
+	wall = { amp = 8, scale = 24 },
+	ceiling = { amp = 3, scale = 22 },
+	materials = { wall = "Basalt", floor = "Basalt", accent = "Slate", bed = "Salt" },
+	wiggle = 5,
+	rooms = {
+		room({ role = "entrance", decor = "forge", plan = "octagon", ceil = "vault", h = 24, floor = "Pavement" }),
+		room({ role = "greatforge", decor = "forge", plan = "octagon", h = 38, floor = "Pavement" }),
+		room({ role = "gullet", decor = "slag", dy = -6, h = 28 }),
+		room({ role = "smelter", decor = "slag", dy = -6, h = 28 }),
+		room({ role = "foundry", decor = "forge", plan = "octagon", dy = 4, h = 28, floor = "Pavement" }),
+		room({ role = "armory", decor = "forge", plan = "octagon", dy = 4, h = 26, floor = "Pavement" }),
+		room({ role = "heart", decor = "forge", plan = "octagon", h = 40, floor = "Pavement" }),
+		room({
+			role = "antechamber",
+			decor = "forge",
+			plan = "rect",
+			hx = 52,
+			hz = 40,
+			ceil = "vault",
+			h = 30,
+			floor = "Pavement",
+		}),
+	},
+	tunnels = {
+		tunnel({ ax = -215, az = 0, bx = -160, bz = 0, w = 16, h = 20, carved = true }),
+		tunnel({ ax = -100, az = -60, bx = -100, bz = -125, w = 16, h = 18, wiggle = 0 }),
+		tunnel({ ax = -100, az = 60, bx = -100, bz = 125, w = 16, h = 18, wiggle = 0 }),
+		tunnel({ ax = -55, az = -165, bx = 20, bz = -155, w = 16, h = 18 }),
+		tunnel({ ax = -55, az = 165, bx = 20, bz = 155, w = 16, h = 18 }),
+		tunnel({ ax = 60, az = -105, bx = 90, bz = -40, w = 16, h = 18, carved = true }),
+		tunnel({ ax = 60, az = 105, bx = 90, bz = 40, w = 16, h = 18, carved = true }),
+		tunnel({ ax = -40, az = 0, bx = 70, bz = 0, w = 16, h = 20, carved = true }),
+		tunnel({ ax = 150, az = 0, bx = 195, bz = 0, w = 16, h = 20, carved = true }),
+	},
+	tunnelH = 18,
+	features = {
+		-- the Gate of the Deep: the gutter of molten metal along the south wall into a crack under the west wall
+		{
+			kind = "stream",
+			points = { -224, 27, -250, 28, -272, 25, -284, 20 },
+			width = 3,
+			level = -1.25,
+			drop = 0,
+			depth = 0,
+			liquid = "lava",
+		},
+		-- the Great Forge: the rune ring under the Crucible, the smoke hole, four forge bays with their troughs
+		{
+			kind = "ring",
+			x = -100,
+			z = 0,
+			bands = { band(14, 18, "Cobblestone"), band(30, 34, "Cobblestone") },
+			spokes = { n = 8, width = 2, material = "Slate", from = 18, to = 30 },
+		},
+		{ kind = "skyhole", x = -100, z = 0, r = 6 },
+		{ kind = "niche", x = -50.5, z = -49.5, r = 11, h = 20 },
+		{ kind = "niche", x = -149.5, z = -49.5, r = 11, h = 20 },
+		{ kind = "niche", x = -50.5, z = 49.5, r = 11, h = 20 },
+		{ kind = "niche", x = -149.5, z = 49.5, r = 11, h = 20 },
+		{ kind = "pool", x = -47.7, z = -52.3, r = 2.5, level = -1.25, depth = 0, liquid = "lava" },
+		{ kind = "pool", x = -152.3, z = -52.3, r = 2.5, level = -1.25, depth = 0, liquid = "lava" },
+		{ kind = "pool", x = -47.7, z = 52.3, r = 2.5, level = -1.25, depth = 0, liquid = "lava" },
+		{ kind = "pool", x = -152.3, z = 52.3, r = 2.5, level = -1.25, depth = 0, liquid = "lava" },
+		-- the River of Fire in two canyons under the bridges of tunnels 2-3 and 2-4
+		{
+			kind = "stream",
+			points = { -185, -92, -140, -95, -100, -92, -60, -90, -22, -94 },
+			width = 12,
+			level = -10,
+			drop = 0,
+			depth = 0,
+			liquid = "lava",
+			bank = 16,
+			rise = 6,
+			roof = 22,
+		},
+		{
+			kind = "stream",
+			points = { -185, 92, -140, 95, -100, 92, -60, 90, -22, 94 },
+			width = 12,
+			level = -10,
+			drop = 0,
+			depth = 0,
+			liquid = "lava",
+			bank = 16,
+			rise = 6,
+			roof = 22,
+		},
+		{ kind = "bridge", ax = -100, az = -66, bx = -100, bz = -118, width = 10 },
+		{ kind = "bridge", ax = -100, az = 66, bx = -100, bz = 118, width = 10 },
+		{ kind = "lavafall", x = -190, z = -92, top = 12, rot = 90 },
+		{ kind = "lavafall", x = -190, z = 92, top = 12, rot = 90 },
+		-- the Gullet: the lake of lava in the gallery north of the room, a lava fall from a high crack
+		{ kind = "niche", x = -105, z = -226, r = 30, h = 26, dy = -6 },
+		{ kind = "pool", x = -105, z = -238, r = 18, level = -7.25, depth = 0, ragged = 3, liquid = "lava" },
+		{ kind = "lavafall", x = -128, z = -252, top = 18, rot = 30 },
+		-- the Smelter: the cascade of metal from the tilted crucible, the gutter to the moulds in the west gallery
+		{ kind = "niche", x = -100, z = 226, r = 28, h = 26, dy = -6 },
+		{ kind = "niche", x = -148, z = 222, r = 20, h = 22, dy = -6 },
+		{ kind = "pool", x = -100, z = 230, r = 8, level = -7.25, depth = 0, liquid = "lava" },
+		{
+			kind = "stream",
+			points = { -106, 232, -130, 228, -160, 224 },
+			width = 3,
+			level = -7.25,
+			drop = 0,
+			depth = 0,
+			liquid = "lava",
+		},
+		{ kind = "lavafall", x = -100, z = 242, top = 20, rot = 180 },
+		-- the Golem Foundry: the casting pit in the north-east niche
+		{ kind = "niche", x = 102, z = -188, r = 14, h = 22, dy = 4 },
+		{ kind = "pool", x = 103, z = -190, r = 7, level = 2.75, depth = 0, liquid = "lava" },
+		-- the Heart of the Forge: the First Smith's anvil on its dais (north niche), the bowl of metal (south niche)
+		{ kind = "niche", x = 110, z = -56, r = 12, h = 22 },
+		{ kind = "dais", x = 110, z = -58, r = 6, h = 3, dir = 90 },
+		{ kind = "niche", x = 110, z = 56, r = 12, h = 22 },
+		{ kind = "pool", x = 110, z = 60, r = 4.5, level = -1.25, depth = 0, liquid = "lava" },
+		-- the Antechamber: two gutters of lava flowing east under the gate
+		{
+			kind = "stream",
+			points = { 202, -30, 240, -31, 278, -28 },
+			width = 4,
+			level = -1.25,
+			drop = 0,
+			depth = 0,
+			liquid = "lava",
+		},
+		{
+			kind = "stream",
+			points = { 202, 30, 240, 31, 278, 28 },
+			width = 4,
+			level = -1.25,
+			drop = 0,
+			depth = 0,
+			liquid = "lava",
+		},
+	},
+}
+
+-- Azgor's Furnace (boss 70): the flat basalt circle of the fight ringed by a moat of lava, open to the south where the
+-- causeway leads in from the niche; the Maw of the Furnace in the north wall pours lava into the moat; unreachable
+-- ledges east and west behind the moat. Azgor's phase 3 disc (r 64, ring to 74) lies on the flat floor.
+byMap.dungeon_ashen = {
+	theme = "Furnace",
+	wall = { amp = 4, scale = 30 },
+	ceiling = { amp = 4, scale = 26 },
+	materials = { wall = "Basalt", floor = "Basalt", accent = "Slate", bed = "Salt" },
+	extraRooms = {
+		extra({ x = 0, z = -10, r = 118, h = 48, role = "arena", decor = "forge" }),
+		extra({ x = 0, z = 72, r = 20, h = 22, role = "entrance", flat = true, decor = "forge" }),
+		extra({ x = 0, z = -134, r = 22, h = 30, role = "furnace", decor = "forge" }),
+	},
+	features = {
+		{ kind = "ring", x = 0, z = -10, bands = { band(66, 74, "Slate") } },
+		{ kind = "moat", x = 0, z = -10, inner = 82, outer = 96, level = -1.25, gap = { width = 68, dir = 90 } },
+		-- the Maw: its pool and the spill over its threshold into the moat
+		{ kind = "pool", x = 0, z = -138, r = 12, level = -1.25, depth = 0, liquid = "lava" },
+		{
+			kind = "stream",
+			points = { 0, -128, 0, -100 },
+			width = 6,
+			level = -1.25,
+			drop = 0,
+			depth = 0,
+			liquid = "lava",
+		},
+		{ kind = "lavafall", x = 0, z = -150, top = 22, rot = 0 },
+		-- the unreachable ledges east and west behind the moat
+		{
+			kind = "terrace",
+			x = 0,
+			z = -10,
+			r = 118,
+			inner = 100,
+			dy = 12,
+			blend = 1.5,
+			gaps = { { 40, 140 }, { 230, 310 } },
 			unreachable = true,
 		},
 	},

@@ -535,6 +535,37 @@ local NECRO_HUM = s("necromantic hum loop (low, bubbling, magical)", 0.3)
 local CHOIR_HUM = s("low choir hum loop (dark, sacred)", 0.3)
 local ROYAL_DRONE = s("royal tomb low choir drone loop", 0.35)
 
+-- S50 the Ashen Wastes' caves
+local SHAFT_WIND = s("wind howling down a mine shaft loop (hollow, low)", 0.3)
+local TIMBER_CREAK = s("old mine timbers creaking loop (wood, slow)", 0.25)
+local CAGE_CHAIN = s("hanging cage swinging on a chain loop (metal creak)", 0.25)
+local GRAVEL = s("gravel trickling down loop (small stones, cave)", 0.2)
+local WAR_DRUM = s("slow tribal war drum loop (distant, echo)", 0.3)
+local HYENA = s("hyena laughing echo loop (cave, distant)", 0.25)
+local VULTURE = s("vulture screech loop (rare, high in a shaft)", 0.2)
+local MAGMA_HISS = s("magma hissing and steam venting loop", 0.3)
+local VOLCANO_RUMBLE = s("deep volcano rumble loop (low, distant)", 0.35)
+local LAVA_BUBBLE = s("lava bubbling loop (thick, slow)", 0.3)
+local WIND_HOLE = s("wind over an opening loop (hot, dry, gusty)", 0.25)
+local WYVERN_WINGS = s("distant wyvern screech and wing flaps loop (rare)", 0.25)
+local IMP_GIGGLE = s("small imps giggling loop (mischievous, echo)", 0.2)
+local SAND_POUR = s("sand pouring down loop (steady hiss)", 0.3)
+local SCORPION = s("scorpion clicking loop (chitin, close)", 0.2)
+local EGG_THROB = s("low pulsing throb loop (deep, organic, slow)", 0.3)
+local ANVILS = s("blacksmith hammers on anvils loop (several, offset, echo)", 0.35)
+local BELLOWS = s("forge bellows breathing loop (slow, leather)", 0.25)
+local FORGE_ROAR = s("furnace roar loop (deep fire)", 0.35)
+local LAVA_RIVER = s("lava river flowing loop (low rumble, crackle)", 0.35)
+local QUENCH = s("hot metal quenching steam hiss loop", 0.25)
+local POUR_METAL = s("molten metal pouring and sizzling loop", 0.3)
+local CHAINS = s("heavy chains clinking loop (slow)", 0.25)
+local GRINDSTONE = s("grindstone sharpening blade loop", 0.25)
+local DWARF_SONG = s("low dwarven work song loop (male voices, distant)", 0.25)
+local GOLEM_GRIND = s("stone grinding loop (golem, heavy, slow)", 0.25)
+local HEART_THUMP = s("deep heartbeat thump loop (huge, magma)", 0.35)
+local FURNACE_DEEP = s("giant furnace roar loop (huge, deep)", 0.4)
+local LAVAFALL = s("lava fall pouring loop (heavy, crackling)", 0.35)
+
 local function room(o: { [string]: any }): Mood
 	return o :: any
 end
@@ -605,6 +636,96 @@ local rooms: { [string]: { [number]: Mood } } = {
 			tint = "#E0ECE0",
 			tintMix = 0.3,
 			sounds = { day = { SPIDER_CLICKS, DRIP_ECHO }, night = {} },
+		}),
+	},
+	-- S50
+	ashen_mine = {
+		room({ tint = "#FFE8C8", tintMix = 0.25, sounds = { day = { SHAFT_WIND, TIMBER_CREAK }, night = {} } }),
+		room({
+			haze = 0.6,
+			tint = "#E8E0D0",
+			tintMix = 0.2,
+			sounds = { day = { CAGE_CHAIN, SHAFT_WIND, GRAVEL }, night = {} },
+		}),
+		room({
+			haze = 0.4,
+			tint = "#FFD8B0",
+			tintMix = 0.3,
+			sounds = { day = { ORC_CAMP, WAR_DRUM, CAMPFIRE }, night = {} },
+		}),
+		room({ tint = "#C8E4FF", tintMix = 0.35, sounds = { day = { VULTURE, TIMBER_CREAK }, night = {} } }),
+		room({
+			tint = "#FFC0A0",
+			tintMix = 0.35,
+			saturation = 0.05,
+			sounds = { day = { HYENA, MAGMA_HISS }, night = {} },
+		}),
+	},
+	ashen_lair = {
+		room({ tint = "#FFE0C0", tintMix = 0.25, sounds = { day = { WIND_HOLE, GRAVEL }, night = {} } }),
+		room({
+			haze = 0.5,
+			tint = "#FFB898",
+			tintMix = 0.4,
+			sounds = { day = { IMP_GIGGLE, LAVA_BUBBLE, MAGMA_HISS }, night = {} },
+		}),
+		room({ haze = 0.6, tint = "#FFE8C8", tintMix = 0.25, sounds = { day = { SAND_POUR, SCORPION }, night = {} } }),
+		room({
+			fogScale = 1.3,
+			tint = "#FFD8B8",
+			tintMix = 0.25,
+			sounds = { day = { WYVERN_WINGS, WIND_HOLE }, night = {} },
+		}),
+		room({
+			brightness = 0.85,
+			tint = "#E0C8B8",
+			tintMix = 0.25,
+			sounds = { day = { GRAVEL, SCORPION }, night = {} },
+		}),
+		room({
+			tint = "#FFC890",
+			tintMix = 0.45,
+			saturation = 0.1,
+			sounds = { day = { EGG_THROB, LAVA_BUBBLE }, night = {} },
+		}),
+	},
+	ashen_cave = {
+		room({ tint = "#D8E8FF", tintMix = 0.3, sounds = { day = { VOLCANO_RUMBLE, LAVA_BUBBLE }, night = {} } }),
+		room({
+			brightness = 1.1,
+			tint = "#FFD8A8",
+			tintMix = 0.35,
+			sounds = { day = { ANVILS, BELLOWS, FORGE_ROAR }, night = {} },
+		}),
+		room({
+			haze = 0.6,
+			tint = "#FFA880",
+			tintMix = 0.45,
+			sounds = { day = { LAVA_RIVER, GOLEM_GRIND }, night = {} },
+		}),
+		room({ tint = "#FFE0A0", tintMix = 0.4, sounds = { day = { POUR_METAL, ANVILS }, night = {} } }),
+		room({ tint = "#FFB0A0", tintMix = 0.4, sounds = { day = { GOLEM_GRIND, CHAINS, QUENCH }, night = {} } }),
+		room({ tint = "#FFD8B8", tintMix = 0.3, sounds = { day = { GRINDSTONE, DWARF_SONG }, night = {} } }),
+		room({
+			tint = "#FFB878",
+			tintMix = 0.45,
+			saturation = 0.1,
+			sounds = { day = { HEART_THUMP, CHAINS }, night = {} },
+		}),
+		room({ tint = "#FF9C88", tintMix = 0.45, sounds = { day = { VOLCANO_RUMBLE, LAVA_BUBBLE }, night = {} } }),
+	},
+	dungeon_ashen = {
+		room({
+			tint = "#FFB080",
+			tintMix = 0.4,
+			saturation = 0.08,
+			sounds = { day = { FURNACE_DEEP, LAVAFALL }, night = {} },
+		}),
+		room({ tint = "#FFB080", tintMix = 0.35, sounds = { day = { FURNACE_DEEP }, night = {} } }),
+		room({
+			tint = "#FFC8A0",
+			tintMix = 0.45,
+			sounds = { day = { FURNACE_DEEP, LAVAFALL, VOLCANO_RUMBLE }, night = {} },
 		}),
 	},
 	-- S49
@@ -704,6 +825,11 @@ local maps: { [string]: Mood } = {
 	meadows_hideout = { sounds = { day = { DRIP_ECHO, CAVE_WIND }, night = {} } },
 	meadows_burrow = { sounds = { day = { DRIP_ECHO, GOBLIN_CHATTER }, night = {} } },
 	dungeon_meadows = { tint = "#FFC8A0", tintMix = 0.3, sounds = { day = { ARENA_DRUMS }, night = {} } },
+	-- S50
+	ashen_mine = { tint = "#FFE8D0", tintMix = 0.2, sounds = { day = { SHAFT_WIND }, night = {} } },
+	ashen_lair = { tint = "#FFD8C0", tintMix = 0.25, sounds = { day = { VOLCANO_RUMBLE }, night = {} } },
+	ashen_cave = { tint = "#FFE0C8", tintMix = 0.25, sounds = { day = { VOLCANO_RUMBLE }, night = {} } },
+	dungeon_ashen = { tint = "#FFB890", tintMix = 0.35, sounds = { day = { FURNACE_DEEP }, night = {} } },
 	-- S49
 	duskwood_den = { sounds = { day = { EARTH_CAVE }, night = {} } },
 	duskwood_barrow = { tint = "#E0D0FF", tintMix = 0.2, sounds = { day = { TOMB_DRONE }, night = {} } },
@@ -779,6 +905,30 @@ local points: { [string]: { Point } } = {
 	meadows_burrow = {
 		{ x = 180, z = 0, radius = 50, sound = WINCH_CREAK },
 		{ x = 7, z = -45, radius = 60, sound = PICKAXES },
+	},
+	-- S50
+	ashen_mine = {
+		{ x = -114, z = -62, radius = 50, sound = CAGE_CHAIN },
+		{ x = 6, z = 60, radius = 60, sound = CAMPFIRE },
+		{ x = 116, z = 26, radius = 50, sound = VULTURE },
+		{ x = 32, z = -116, radius = 40, sound = MAGMA_HISS },
+	},
+	ashen_lair = {
+		{ x = -46, z = -89, radius = 40, sound = LAVA_BUBBLE },
+		{ x = 13, z = 116, radius = 50, sound = SAND_POUR },
+		{ x = 174, z = -14, radius = 70, sound = WIND_HOLE },
+		{ x = 202, z = -162, radius = 50, sound = EGG_THROB },
+	},
+	ashen_cave = {
+		{ x = -100, z = 0, radius = 80, sound = ANVILS },
+		{ x = -100, z = -92, radius = 60, sound = LAVA_RIVER },
+		{ x = -100, z = 92, radius = 60, sound = LAVA_RIVER },
+		{ x = -110, z = -246, radius = 50, sound = LAVAFALL },
+		{ x = -100, z = 236, radius = 50, sound = POUR_METAL },
+		{ x = 110, z = 0, radius = 60, sound = HEART_THUMP },
+	},
+	dungeon_ashen = {
+		{ x = 0, z = -134, radius = 100, sound = FURNACE_DEEP },
 	},
 	duskwood_den = {
 		{ x = -175, z = -24, radius = 40, sound = LANTERN_CREAK },

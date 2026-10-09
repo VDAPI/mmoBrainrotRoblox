@@ -323,6 +323,12 @@ type CharacterData = {
     stropy `vault` / `corbel` / `dome`, `masonry` (proste sklepione korytarze), cechy `chimney`, `dais`, `causeway`,
     `ring` (mozaika materiałów), `niches` (pozycje `T.niches()`, półki stawia ubiór), pierścień wody `pool.inner`,
     taras-pierścień `terrace.inner/gaps`; motywy `Den`, `Barrow`, `Crypt`, `Tomb`;
+  - S50 (lawa, kute sale, mosty): ciecz `lava` w `pool`/`stream` (powierzchnia to twardy `CrackedLava` 1,25 st. pod
+    bazaltowym brzegiem, nigdy `Water`; `MapTerrain.water` = nil, `walkable` = false), strumień lawy w kanionie (`bank`,
+    `rise`, `roof`), cechy `vent`, `crack`, `moat` (z `gap`/`gaps`), `bridge` (pas, którego strumień nie tnie), `lavafall`
+    (tylko ubiór), `T.lavaDistance`, kute tunele `carved` i `wiggle` tunelu, `edgeFloors` (podłoga tunelu między ścianami
+    sal); kute sale to plany S49 (`octagon`, `rect`); wygląd lawy `CaveDress/Kit.lavaGlow` (tagi `lava`, `lavaCrust`,
+    `lavafall`, `vent`, `ember`, światła `lava`); motywy `Mine`, `Lair`, `Forge`, `Furnace`;
   - narzędzia: `tools/cavedump.luau` + `cavemap.py` (mapa z góry, `--section`), fixture `tools/fixture_caves.luau`,
     `tools/fixture_caveshapes.luau`; admin `/tpcave`, `/caveinfo`, `/cavestats`, `/lights`, `/ambience <jaskinia>:<sala>`,
     `/terrainrebuild <jaskinia>`.

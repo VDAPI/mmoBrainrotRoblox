@@ -1,6 +1,7 @@
 --!strict
 -- Cave dressing (S48): Builds of every cave or boss chamber on the cave engine (Data/CaveShapes), by the shape's
--- theme module (S48 Moss, Smugglers, Warren, GoblinThrone; S49 Den, Barrow, Crypt, Tomb; S50-S51 add theirs), plus the ore veins along the
+-- theme module (S48 Moss, Smugglers, Warren, GoblinThrone; S49 Den, Barrow, Crypt, Tomb; S50 Mine, Lair, Forge, Furnace; S51 adds
+-- its own), plus the ore veins along the
 -- walls of the fighting rooms, life points and sketch shapes. Pure and deterministic: the server builds the "shell"
 -- level, each client "detail" and "fine" near its camera (TownDetailController through Logic/WorldGen, which wraps
 -- this module per map: `CaveDress.generator(mapId)`). Props that collide stay out of the rooms' cores and clear of
@@ -10,8 +11,12 @@ local Barrow = require("@self/Barrow")
 local CaveShapes = require("../Data/CaveShapes")
 local Crypt = require("@self/Crypt")
 local Den = require("@self/Den")
+local Forge = require("@self/Forge")
+local Furnace = require("@self/Furnace")
 local GoblinThrone = require("@self/GoblinThrone")
 local Kit = require("@self/Kit")
+local Lair = require("@self/Lair")
+local Mine = require("@self/Mine")
 local Moss = require("@self/Moss")
 local Rng = require("./Rng")
 local Smugglers = require("@self/Smugglers")
@@ -32,6 +37,11 @@ local THEMES: { [string]: { all: (env: Kit.Env, out: { Build }) -> () } } = {
 	Barrow = Barrow,
 	Crypt = Crypt,
 	Tomb = Tomb,
+	-- S50: the Ashen Wastes
+	Mine = Mine,
+	Lair = Lair,
+	Forge = Forge,
+	Furnace = Furnace,
 }
 
 type State = { builds: { Build }, env: Kit.Env }
@@ -54,14 +64,16 @@ local function ores(env: Kit.Env, out: { Build })
 		return
 	end
 	local rng = Rng.new(4800 + #env.mapId)
-	local b = Kit.build(env, "OreVeins", "traces", 0, 0, 0)
+	-- the Build stands in the first fighting room (its frame on the floor), the veins anywhere
+	local b = Kit.build(env, "OreVeins", "traces", fight[1].x, fight[1].z, 0)
 	for i = 1, cave.oreCount do
 		local room = fight[(i - 1) % #fight + 1]
 		local kind = cave.ores[(i - 1) % #cave.ores + 1]
 		for _ = 1, 40 do
 			local a = rng:float(0, math.pi * 2)
 			local x, z = Kit.wallSpot(env, room, a, 6, 16)
-			if x and z and env.T.walkable(x, z, 2) and env.T.headroom(x, z) >= 16 then
+			-- S50: and 8+ studs from lava
+			if x and z and env.T.walkable(x, z, 2) and env.T.headroom(x, z) >= 16 and env.T.lavaDistance(x, z) >= 8 then
 				local ok = true
 				for _, n in env.nodes do
 					if (n.x - x) ^ 2 + (n.z - z) ^ 2 < 24 * 24 then
@@ -79,11 +91,12 @@ local function ores(env: Kit.Env, out: { Build })
 					local nx, nz = math.floor(x + 0.5), math.floor(z + 0.5)
 					if env.T.walkable(nx, nz, 1) and env.T.headroom(nx, nz) >= 16 then
 						table.insert(env.nodes, { kind = kind, x = nx, z = nz })
+						local lx, lz = nx - b.at.x, nz - b.at.z
 						Kit.vein(
 							b.bp,
-							nx + math.cos(a) * 3,
-							Kit.gy(env, b, nx, nz),
-							nz + math.sin(a) * 3,
+							lx + math.cos(a) * 3,
+							Kit.gy(env, b, lx, lz),
+							lz + math.sin(a) * 3,
 							kind,
 							math.deg(-a) + 90
 						)
@@ -105,6 +118,8 @@ local function generate(mapId: string): State
 	local env = Kit.env(mapId)
 	local out: { Build } = {}
 	ores(env, out)
+	-- S50: the glow of the lava (pools, streams, vents, cracks, moats, falls) before the theme
+	Kit.lavaGlow(env, out)
 	local theme = THEMES[env.shape.theme]
 	if theme then
 		theme.all(env, out)
@@ -138,10 +153,15 @@ local function generate(mapId: string): State
 	end
 	-- the sketch: liquids, bridges, landmarks
 	for _, f in env.shape.features do
+		local liquid = if f.liquid == "lava" then "lava" else "water" -- S50: lava orange on the map
 		if f.kind == "pool" then
-			Kit.circle(env.ctx, "water", f.x, f.z, f.r)
+			Kit.circle(env.ctx, liquid, f.x, f.z, f.r)
 		elseif f.kind == "stream" then
-			Kit.line(env.ctx, "water", f.points, f.width)
+			Kit.line(env.ctx, liquid, f.points, f.width)
+		elseif f.kind == "moat" then
+			Kit.ring(env.ctx, "lava", f.x, f.z, (f.inner + f.outer) / 2, 32, f.outer - f.inner)
+		elseif f.kind == "bridge" then
+			Kit.line(env.ctx, "bridge", { f.ax, f.az, f.bx, f.bz }, f.width)
 		end
 	end
 	for _, b in out do
