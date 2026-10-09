@@ -10,7 +10,7 @@ Instalacja narzędzi i uruchomienie gry: `README.md` w katalogu głównym.
 | `docs/DESIGN.md` | Zasady gry i liczby startowe: klasy, staty, formuły, przedmioty, rzadkości, ulepszanie, alchemia, błogosławieństwa, umiejętności, potwory, bossy, PvP, grupa, gildie, aukcja, questy, monetyzacja, UI |
 | `docs/ARCHITECTURE.md` | Narzędzia, struktura repo, loader serwisów, sieć, dane (ProfileStore), replikacja stanu, encje, świat, UI (Fusion), bezpieczeństwo, testy, konwencje |
 | `docs/PROGRESS.md` | Stan sesji, niedokończone, zgłoszone błędy (krótki, czytany na start każdej sesji) |
-| `docs/SESJE.md` | Dziennik sesji: co zrobiono, pliki, „Instrukcja testu SXX”, poprawki po testach |
+| `docs/SESJE.md` | Dziennik sesji: co zrobiono, pliki, poprawki po testach |
 | `docs/DECYZJE.md` | Decyzje z numerem sesji (nadpisują DESIGN i ARCHITECTURE) |
 | `docs/SILNIKI.md` | Faktyczne pola silnika krain i jaskiń (S45–S51) |
 | `docs/sessions/S01–S14.md` | Prompty sesji podstawowych (zrobione) |
@@ -27,7 +27,7 @@ Sesje S15–S17 i S17b nie mają osobnych promptów (zakres był podawany w rozm
 
 1. Nowa sesja Claude Code → wklejasz `SXX.md` (albo każesz przerobić kolejne pliki z `docs/sessions/`) → Claude pracuje
    bez testowania w Studio, commituje i pushuje na `main`.
-2. Ty: `git pull`, `rojo serve`, Play w Studio i przechodzisz „Instrukcję testu SXX” z `docs/SESJE.md` (komendy admina
+2. Ty: `git pull`, `rojo serve`, Play w Studio i testujesz zmiany z `docs/SESJE.md` (komendy admina
    przyspieszają testy, np. `/lvl 50`, `/legend`, `/give`, `/help`).
 3. Błędy wpisujesz w `PROGRESS.md` → „Zgłoszone błędy” albo wypełniasz `FIX.md` i uruchamiasz sesję poprawek.
 

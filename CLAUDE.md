@@ -7,9 +7,12 @@ nadpisują oba), `docs/PROGRESS.md` (stan, niedokończone, błędy).
 ## Zasady
 - Na start sesji czytaj `docs/PROGRESS.md` (krótki). `docs/DECYZJE.md` i `docs/SESJE.md` są duże: grep po module /
   systemie / numerze sesji, nie czytaj w całości.
-- **Nie testuj w Roblox Studio i nie uruchamiaj gry** — robi to właściciel. Testujemy tylko czystą logikę w Lune.
-- Po pracy: `scripts/check.ps1` (Windows) lub `bash scripts/check.sh` musi przejść; dopisz decyzje na końcu
-  `docs/DECYZJE.md`, sekcję sesji z „Instrukcją testu” na końcu `docs/SESJE.md`, stan i niedokończone w `docs/PROGRESS.md`.
+- **Faza: gameplay.** Priorytet to poprawny, kompletny kod. Nie uruchamiaj gry, nie pisz instrukcji testu ani list
+  „do sprawdzenia w Studio” (testy robi właściciel po etapie gameplayu). Lune: tylko istniejące testy w `check`; nowe
+  testy wtedy, gdy logika jest nietrywialna i czysta.
+- Po pracy: `scripts/check.ps1` (Windows) lub `bash scripts/check.sh` musi przejść. Dokumentacja krótko: decyzje
+  (1–3 linie każda) na końcu `docs/DECYZJE.md`, sekcja sesji (co zrobiono, pliki) na końcu `docs/SESJE.md`, w
+  `docs/PROGRESS.md` tylko stan i realne braki w kodzie.
 - Kod i komentarze po angielsku, `--!strict` w każdym pliku. Teksty dla gracza tylko przez `Locale` (oba języki).
 - Liczby balansu tylko w `src/shared/Data/*` i `src/shared/Config.luau`.
 - Serwer jest autorytetem: każdy remote ma typy argumentów i rate-limit w `Net/Definitions.luau`.

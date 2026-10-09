@@ -1,6 +1,6 @@
 # Vaelthorn: dziennik sesji
 
-> Dla każdej sesji: co zrobiono, najważniejsze pliki, „Instrukcja testu SXX”. Nowe sesje i poprawki dopisuj na końcu.
+> Dla każdej sesji: co zrobiono, najważniejsze pliki (bez instrukcji testu od fazy gameplayu). Nowe sesje i poprawki dopisuj na końcu.
 > Stan i niedokończone: `docs/PROGRESS.md`; decyzje: `docs/DECYZJE.md`; API silników: `docs/SILNIKI.md`.
 
 
