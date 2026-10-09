@@ -60,6 +60,14 @@ local COLORS: { [string]: { color: string, transparency: number } } = {
 	crag = { color = "#5A2A24", transparency = 0 },
 	pyramid = { color = "#C8B48A", transparency = 0 },
 	drylake = { color = "#D6CFC0", transparency = 0.3 },
+	-- Frost Peaks (S47): sheets of ice (lakes and the frozen brook), glaciers and their moraines, crevasses, ridges
+	-- and the horn, ice-and-rock spires.
+	ice = { color = "#C9E8F7", transparency = 0.05 },
+	glacier = { color = "#9CCDE8", transparency = 0 },
+	moraine = { color = "#8A847A", transparency = 0.2 },
+	crevasse = { color = "#24425E", transparency = 0 },
+	ridge = { color = "#4A4E56", transparency = 0.05 },
+	spire = { color = "#5E646C", transparency = 0 },
 	-- Large ground patches (S20): "ground:<Material>"
 	["ground:Sand"] = { color = "#C9A870", transparency = 0.2 },
 	["ground:Mud"] = { color = "#4A4232", transparency = 0.25 },

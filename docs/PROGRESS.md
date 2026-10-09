@@ -49,6 +49,7 @@
 | S35 | Ikony przedmiotów: atlasy z grafikami (kolor progu, akcent żywiołu / mikstury), komponent `ItemIcon` z zapasem na symbole, sloty, duch przeciągania, legenda, mikstury, tooltip, waluty | ● |
 | S45 | Mroczny Bór od nowa + wspólny silnik krain: teren z danych (`RegionTerrain`), generator `DuskwoodGen` (9 expowisk w klimacie potworów, wyloty jaskiń), rejestry `WorldGen` / `Data/Terrain`, budowa w tle, życie, wieczny zmierzch, mapa i wiki | ● |
 | S46 | Spalone Pustkowia od nowa: kształty pustyni w silniku krain (wydmy, mesy, turnie, lawa, szczeliny, suche jezioro), generator `AshenGen` (9 expowisk w klimacie potworów, wyloty jaskiń), świecąca lawa z LOD świateł, życie, dzień i noc, mapa i wiki | ● |
+| S47 | Lodowe Szczyty od nowa: kształty gór w silniku krain (podniesienia, poszarpane granie z siodłami, róg, wiatr, zamarznięte jeziora i strugi, lodowce, szczeliny), generator `FrostpeakGen` (9 expowisk w klimacie potworów, wyloty jaskiń), śnieżyca wg wiatru, zorza, dzień i noc, mapa i wiki | ● |
 
 Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana przez właściciela
 
@@ -987,6 +988,50 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
   (3–5 krąży wysoko, widać do 300 st.); czarne martwe drzewa Pustkowi sadzają sępy zamiast kruków (`Kit.Ctx.perch`).
   Nietoperz nad graczem nocą tylko w Borze (`BATS`).
 
+- **S47** Kształty gór są **ogólne** i opcjonalne w `Data/Terrain/Types` (`lifts`, `ridges.jag/cols/noGroups`, `peaks`,
+  `winds`, `frozenLakes`, `glaciers`, `crevasses`, `Stream.frozen`); mapy bez nich liczą się jak przedtem (fixture Boru i
+  Pustkowi bez zmian). `noGroups` domyślnie **false** (niskie grzbiety korzeni Boru zostają do stania); granie Szczytów
+  i ich ostrogi mają `noGroups = true`, róg (`peaks`) i wysokie turnie (> 4 st. nad gruntem) liczą się jako „góra” na
+  mapach z graniami `noGroups` / rogiem (`walkable` = false, `mountainAt`), więc na Pustkowiach nic się nie zmienia.
+- **S47** Nowe **`lifts`** (podniesienia terenu: prostokąt / wielokąt, `blend`, `y`, `ragged`, `linear`, `sides` na
+  bok; z nakładających się wygrywa najwyższy): dodawane **pod** wzgórza, granie i róg, w przeciwieństwie do `plateaus`,
+  które wszystko pod sobą wyrównują (i przy nakładaniu dają pionowy stopień). Stopień Doliny → Przełęcz i Tundra to
+  liniowy spadek ~10% (droga bez wykopu), płaskowyż Iglicy ma długie wejście od zachodu (580 st.) i krótki stok na
+  południe; ławy Zboczy zostały strome (12 st. na 22 st.), a droga do Groty idzie po rampach (`ramps`).
+- **S47** Zamarznięte jezioro: woksele kolumny dno (`Ground`) → `Water` → `Ice` tylko, gdy dno leży ≥ 1,5 woksela
+  pod lodem, więc `depth` jezior Szczytów = 10 (przy 5 cała kolumna była lodem). Przerębel = koło z `lakes` ze środkiem
+  na lodzie: woda 1 st. pod lodem, płytkie zagłębienie (0,3 + 0,3 × odległość od brzegu, szum brzegu ±0,5), bez własnej
+  misy; `lakeDistance` ich nie liczy. Przeręble mają r = 20 (Jezioro) i 18 (Harpi Staw); węzeł łowiska wyszukiwany na
+  suchym lodzie tak, że wszystkie trzy boje wzoru `GatherService` leżą w wodzie ≥ 1 st. od brzegu.
+- **S47** Czoło lodowca liczy przekroczenie **wzdłuż osi** ostatniego odcinka i odległość boczną (ściana w poprzek, nie
+  półkole), morena czołowa obiega obrys z zaokrąglonymi rogami. Nisze wylotów Twierdzy i Serca Lodowca to `flats` z
+  jawnym `y` (płaskie miejsca idą po lodowcach w kolejności warstw).
+- **S47** Materiały: kolory `Snow` / `Glacier` / `Ice` bez zmian (`#EEF3F7`, `#A8D8F0`, `#C9E8F7`; po podglądzie
+  czytelne), więc S51 nie musi przemalowywać jaskiń. Ściany grani `Slate` z pasami `Basalt` (`strata`), róg Iglicy i
+  grzbiety powyżej y 104 białe (`Snow`, smugi `Glacier`), trakt `Ground`, boczne szlaki `Salt`, droga patrolowa i
+  pierścień Strażnicy `Cobblestone`, tarasy `Pavement`/`Cobblestone` (łaty). Reguła `convex` nie powstała (`facing`
+  wystarczył do wywianych grzbietów).
+- **S47** Drogi: trakt główny i odnogi bez zmian przebiegu; odnogi Zboczy połączone w jedną linię (−200, 0) →
+  (−260, −460) → (−300, −720) (styk dwóch dróg na stopniu ławy dawał 21°). Nowe: szlak do Harpiego Stawu wschodnim
+  brzegiem Lodowego Potoku, droga patrolowa północnym brzegiem Jeziora do bramy Strażnicy + pierścień wokół murów, Szlak
+  Kości (290, −560) → płaskowyż Iglicy. Prostokąty obszarów bez zmian. Punkty `arrive` przeliczone (`arrivals_apply.py`):
+  Jezioro i Strażnica przybywają teraz drogą patrolową.
+- **S47** `lakes` Szczytów = tylko 2 przeręble; 4 koła „grani” zniknęły (prawdziwe granie z `noGroups`). Grupy, węzły,
+  przybycia i drzewa omijają granie, róg, iglice i szczeliny przez `walkable` / `mountainAt` / `crevasseDistance`.
+  Liczba potworów Szczytów po nowym rozmieszczeniu: 141 bez profili / 148 z profilami (było 124 / 134; `docs/BALANS.md`
+  przegenerowany, poza tym balans nieruszany). Grupy na obszar bez zmian (57).
+- **S47** Dzień i noc: `dayNight`, `nightLighting = LIGHT.frostpeakNight` (jasność 1,0, ambient `#2E3A55` / `#3A4A6A`,
+  mgła `#1C2A44` do 700 st., atmosfera gęstość 0,4 / mgiełka 1,2, tint `#D0E2FF`, nasycenie −0,08); dzień bez
+  `dayClock` (pełny cykl jak Łąki). `buildLate = true`, `maxParts = 2600`, `Build.border` Szczytów `Snow` 140 (inne mapy
+  bez zmian).
+- **S47** Pogoda w nowym `FrostWeatherController` (nie w `WorldLifeController`, który ma już ~1000 linii): śnieżyca i
+  zamiecie przy ziemi z `RegionTerrain.windAt` (każda mapa z `winds`), zorza z 6 wstęg `Beam` (2 na niskiej
+  szczegółowości) nad północnym horyzontem, przesuwana z kamerą. Pióropusze śniegu, lawina, pył z sopli, błyski harpii i
+  orły to rodzaje życia w `WorldLifeController`. Światła kryształów, run i strzelnic mają tag `crystal` w
+  `RegionLightController` (LOD jak lawa).
+- **S47** Zapis wokseli tylko do najwyższej kolumny **nie zrobiony**: woksele Szczytów (729 bloków × 48 warstw,
+  −24…168) liczą się w Lune 1,53 s (Pustkowia 1,41 s w tym samym pomiarze), bo czas to funkcja wysokości, nie warstwy.
+
 ## Niedokończone
 (Rzeczy z zakresu sesji, które nie zostały zrobione. Następna sesja zaczyna od nich.)
 
@@ -1012,8 +1057,8 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
 - **S18** Sprint nie zmienia WalkSpeed lokalnie przed odpowiedzią serwera (opóźnienie o ping).
 
 - **S20** Mapa świata: timer Elity II widać na karcie jaskini (tekst), bez osobnej ikony na rysunku. (Mosty i strugi
-  są od S26 na Łąkach i od S45 w Borze, rzeki lawy z kamiennym mostem od S46 na Pustkowiach; Szczyty ich jeszcze nie
-  mają.)
+  są od S26 na Łąkach i od S45 w Borze, rzeki lawy z kamiennym mostem od S46 na Pustkowiach, zamarznięty potok z
+  mostami od S47 na Szczytach.)
 - **S21** Miasto niesprawdzone w Studio: czas `WriteVoxels` całego terenu (225 bloków) i budowy shellu w `Init`, płynność
   detalu klienta na telefonie (`/perf`), kadr kamery wyboru postaci.
 - **S21** Nocą świecą okna, latarnie i ogień, ale nie ma zmiany muzyki ani dźwięków nocy.
@@ -1050,8 +1095,6 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
   bębny goblinów, odgłosy farmy, pszczoły, plusk wody przy brzegu. Muzyka Łąk: `Data/Maps` (`music`, podpowiedź w
   komentarzu).
 - **S26** Mapa świata pokazuje budowle Łąk jako kształty (bez ikon i podpisów punktów charakterystycznych).
-- **S26** Szczyty dalej na starym, płaskim generatorze z kulami terenu (Bór od S45, Pustkowia od S46 na silniku krain;
-  dalej S47).
 
 - **S27** Okna questów (NPC, rozmowa, dziennik) sprawdzone w Studio tylko częściowo: przebieg przyjęcie → rozmowa →
   oddanie → wybór nagrody, interakcja z płotem (podpowiedź, pasek, efekt deski, brak powtórki, dystans) i znaczniki
@@ -1097,8 +1140,6 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
   wyboru — pomysł: dodatkowe małe obszary z profilem w przyszłej przebudowie regionów (sesja nie dodaje obszarów).
 - **S33** Jaskinie bez profilu (pole `profile` w `Cave` jest, ale `AreaSpawns.cave` go nie czyta). Model nie liczy
   osobno szybszego respawnu jako „więcej potworów naraz” poza krótszym dojściem.
-- **S33** Opisy obszarów w `docs/SWIAT.md` dla Szczytów (punkty charakterystyczne) dalej z planu sprzed S19; nowa
-  tabela z kodu stoi nad nimi (Bór opisany od nowa w S45, Pustkowia w S46).
 
 - **S35** Do narysowania (dziś aliasy): `crow_feather`, `toad_venom`. Ikonki walut przy cenach w sklepach, w sklepie
   premium i na ekranie śmierci (dziś tekst / ◆). Gra nie testowana po wgraniu atlasów (robi właściciel, instrukcja S35).
@@ -1137,6 +1178,25 @@ Legenda: ○ nie zaczęta · ◐ częściowo · ● gotowa · ✔ przetestowana 
   1,20 s w Lune), drugorzędne szablony dekoracji (pióra sępów, łuski salamander), `/worldfx devils` przełącza trąby, ale
   sępy nie mają osobnego stanu „na ziemi przy padlinie”. Ogniki nad dziedzińcami to zwykłe `wisp` (błękitne jak w
   Borze, nie osobny turkus).
+
+- **S47** Szczyty niesprawdzone w Studio (sesja bez Studio). Do sprawdzenia: czasy `[Frostpeak] terrain/shell/parts=…`
+  i „background frostpeak built in … s”, czy lód jezior nie ma szpar nad wodą (woksele 4 st.), czy boje pływają w
+  przeręblach, mosty nad zamarzniętym potokiem, ściany grani i rogu na wokselach, nisze wylotów w czołach lodowców,
+  posągi Bramy na ostrogach (czy stopa nie wisi), śnieżyca (gęstość, widoczność na Iglicy), zorza (czy mgła jej nie
+  zjada), światła kryształów (LOD), `Build.border` 140 za Iglicą.
+- **S47** Dźwięki Szczytów do podpięcia (`Data/Ambience`, `id = ""`, podpowiedzi w `hint`): wiatr w ośnieżonych
+  świerkach, skrzypienie śniegu, wycie wilków, trzask drzew od mrozu, górski wiatr, odległa lawina, wyjący wiatr, ryki
+  yeti, gwizd wiatru w iglicach, skrzeki harpii, porywy nocą, wiatr w przełęczy, rogi olbrzymów, wielkie ognisko,
+  śpiew lodu, lekki wiatr, dudnienie lodu, wiatr tundry, trąbienie mamutów, dalekie wilki, wiatr w kolumnadzie, lodowe
+  dzwonki, niski pomruk smoka, szum kryształów, wiatr na blankach, skrzypienie zamarzniętych chorągwi, zimny dron,
+  daleki róg, zamieć, ryk wyrma; punkty: woda pod lodem przy mostach, latarnia traperów, ognisko olbrzymów, Zamarznięty
+  Wodospad, przerębel, kryształy (noc), kosze świątyni, brama Strażnicy, wierzchołek Iglicy, wylot Serca Lodowca.
+  Muzyka Szczytów: `music = ""` w `Data/Maps` (podpowiedź w komentarzu).
+- **S47** Nie zrobione z planu: `spurs` (boczne żebra) i pola szczelin (`fields`) w silniku, mosty śnieżne jako części
+  (są przerwy `bridges` w szczelinie z rampami dna), zaspy w rzeźbie (`drifts`/`dunes` ze `Snow`; wiatr jest, zaspy
+  tylko jako cząsteczki), warunek `convex`, `openings` (otwarta woda z parą) na potoku, para z ust, puch spod butów,
+  iskrzenie śniegu, refrakcja brył lodu z łupem (są półprzezroczyste części), drobny detal posągów. Szkic mapy rysuje
+  granie jako szerokie linie (bez cieniowania stoków).
 
 ## Zgłoszone błędy
 (Właściciel wpisuje tu błędy po testach albo przekazuje je przez sesję poprawek.)
@@ -3882,3 +3942,145 @@ dane wiki, `docs/{SWIAT,ARCHITECTURE,DESIGN,BALANS,PRZEDMIOTY}`, `CLAUDE.md`.
 23. `/worldfx ash off`, `/worldfx vultures off`, `/worldfx devils off` i `auto`: efekty znikają i wracają.
 24. Wyloguj się na Pustkowiach i wejdź po restarcie: ekran ładowania czeka na budowę w tle, postać ląduje na Pustkowiach.
 25. `/terrainrebuild ashen` (pyta): teren przepisuje się bez restartu. Bór i Łąki wyglądają i działają jak przed sesją.
+
+### S47: Lodowe Szczyty od nowa
+
+**Zrobione**
+- Silnik krain rozszerzony o kształty gór (wszystkie opcjonalne, fixture Boru i Pustkowi bez zmian): podniesienia terenu
+  `lifts` (pod graniami, z postrzępionym brzegiem, liniowe, szerokość przejścia na bok), poszarpane granie (`jag`) z
+  siodłami (`cols`) i `noGroups`, róg o kilku ścianach z pochyleniem (`peaks`), strefy wiatru (`winds`, `windAt`),
+  zamarznięte jeziora (płaski lód, woda pod lodem w wokselach, przeręble z kół `lakes`), zamarznięte strugi
+  (`Stream.frozen`), jęzory lodowców (wypukły przekrój, czoło w poprzek osi, seraki, moreny boczne i czołowa),
+  szczeliny z rampami dna do końców i mostów śnieżnych; warunki reguł materiałów `facing`, `glacier`, `moraine`,
+  `crevasse`, `ice`, `mountain`; zapytania `ice`, `crevasseDistance`, `glacierAt`, `mountainAt`, `moraineAt`;
+  `walkable` = false na górach i 6 st. od szczelin.
+- Teren Szczytów (`Data/Terrain/frostpeak`): polodowcowa Dolina z zachodnią ścianą za portalami i Lodowym Potokiem z
+  małego lodowca do Harpiego Stawu, Stopień (~10%) do Przełęczy (y 30) między Granią Północną (grzbiet ~105, stroma
+  ściana na południe) i Południową (~90, siodło y ~38 dla drogi nad jezioro, urwisko nad Zamarzniętym Wodospadem),
+  ostrogi Bramy Olbrzymów; trzy ławy Zboczy Yeti; las 12 iglic wokół zamarzniętego Harpiego Stawu; tafla Jeziora (y 22)
+  w dwóch płatach; płaskowyż Tundry (y 48) z jęzorem lodowca nad bramą Twierdzy; płaskowyż Iglicy (y 64) pod rogiem
+  (szczyt ~150, biały); trzy tarasy Świątyni (36, 42, 48) pod wielkim lodowcem z rozpadliną Serca Lodowca; skalny
+  pagórek Strażnicy; 3 szczeliny; nisze wylotów w czołach lodowców.
+- Dane (`Data/Areas/frostpeak`): drogi (szlak do Harpiego Stawu, droga patrolowa z pierścieniem Strażnicy, Szlak Kości,
+  połączona droga na Zbocza), 2 przeręble zamiast 6 „jezior”, Lodowy Potok, 30 `sites`, `avoid` z budowli, `landmark`
+  i `decor` każdego obszaru, przeliczone `arrive`.
+- Generator `Logic/FrostpeakGen/*` (Valley, Slopes, Harpy, Pass, Lake, Tundra, Temple, Fortress, Wyrm, Mouths, Props,
+  Env): kopiec z rogami i wstęgami przy wjeździe, kosz zwiadowcy; opuszczony obóz traperów (chata z zapadniętym dachem,
+  ramy na skóry, wnyki, sanie, tląca się latarnia), Wyjąca Skała z kręgiem tropów, kośćmi i sierścią, półka lampartów z
+  zadrapaniami; Legowisko Yeti pod nawisem (posłanie, kości, sosna-maczuga, odciski dłoni), nory z parą, sterty głazów,
+  lawinisko; gniazdo na Iglicy Królowej ze świecidełkami, gniazda na iglicach, obóz spadłych wspinaczy (namiot, plecaki
+  w lodzie, liny, drabinka); Brama Olbrzymów (dwa siedzące kolosy na ostrogach, jeden bez głowy, głowa przy drodze),
+  Sala Tronów (3 trony wokół ogniska z pni, rożen, kocioł, słup dymu), kamienie z runami, pole głazów, schody olbrzymów,
+  gniazda harpii na ścianach; łódź wmarznięta przy przerębli, Zamarznięty Wodospad (kolumny lodu, sople), ogród
+  kryształów z kręgami gładkiego lodu, skarby w bryłach lodu, szlak mamutów przez lód; Cmentarzysko Mamutów i łuk z
+  kłów nad drogą, obóz łowców olbrzymów (namioty na kościach, włócznie, suszarnia, czaszki, dół-pułapka), głazy z
+  sierścią; Smocze Schody z posągami, koszami niebieskiego ognia i chorągwiami, ściany tarasów, sanktuarium z kolumnadą
+  w lodzie i kolosem smoka, ołtarze ze złotem w lodzie, obozowiska kultu, zbroje poległych; Lodowa Strażnica (mury z
+  blankami pod lodem, 4 wieże, brama z soplami jak krata, zamarznięci wartownicy, oblodzony donżon, strzelnice
+  świecące nocą, chorągwie zamarznięte w pół łopotu, pochodnie niebieskiego ognia przy drodze patrolowej); Szkielet
+  Wyrma (kręgosłup wokół skały, żebra nad Szlakiem Kości, czaszka na półce), nory wyrmów, obelisk kultu; wyloty: Grota
+  (otwór w lodowej ścianie, kły sopli, niebieska poświata, tropy), Twierdza (wieże bramne w lodzie, ciemne przejście,
+  wyrwane wrota), Serce Lodowca (rozpadlina, kryształy, łuski i kości); drewniane mosty nad potokiem, tyczki śnieżne co
+  ~40 st., skały; drzewa z `WorldGen/Flora` (nowe gatunki `snowPine`, `frozenDead`, `iceSpike`, podszyt `snowShrub`;
+  nic powyżej y 62 poza kolcami), węzły wg klimatu (mithril 11, adamantyt 11, szronolist 26, łowiska 2).
+- Serwer: cienki `World/Layouts/frostpeak` na `RegionLayout` (strefy `zone.frostpeak.*` bez zmian kluczy, tablica
+  nazwy przy kopcu, granica `Snow` 140), budowa w tle.
+- Klient: nowy `FrostWeatherController` (śnieżyca wg `windAt` z płynnym przejściem i porywami, zamiecie przy ziemi,
+  zorza z 6 wstęg nocą), `WorldLifeController` (pióropusze śniegu z rogu i grani, lawina w żlebie Zboczy, pył z sopli,
+  błyski harpii nocą, orły nad Skałami Harpii i Iglicą), `RegionLightController` (tag `crystal`), `DecorController`
+  (9 motywów Szczytów, 15 szablonów, brzeg tafli lodu), `UI/MapSketch` (kolory `ice`, `glacier`, `moraine`, `crevasse`,
+  `ridge`, `spire`).
+- Nastrój: `Data/Ambience` (9 obszarów, mapa, 11 punktów, id do podpięcia), `Data/Maps` (noc `frostpeakNight`,
+  `dayNight`, `buildLate`, `maxParts = 2600`, podpowiedź muzyki).
+- Admin: `/worldfx` z efektami `snow`, `drift`, `aurora`, `plume`, `eagles`, `avalanche`, `glow`; `/terraininfo`
+  dopisuje lód, szczelinę, wiatr, górę i lodowiec; `/tparea`, `/regionstats frostpeak`, `/terrainrebuild frostpeak`,
+  `/ambience frostpeak_*` z rejestrów.
+- Mapa świata / minimapa / wiki: szkic z generatora (tafle lodu i potok, przeręble, lodowce z morenami, szczeliny,
+  granie i róg, iglice, tarasy, mury Strażnicy, budowle, mosty, drogi); przegenerowane `wiki/src/data/*.json`,
+  `tokens.data.css`, `docs/PRZEDMIOTY.md`, `frostpeak.svg` (33 KB, bez niebieskich kół w przełęczy), `docs/BALANS.md`.
+- Testy: `frostpeak.spec` (29: dane z briefu, wyloty i portale, motywy i nastroje, noc, unikalne `sites`, przeręble,
+  wiatr na całej mapie, teren w zakresie writera, materiały, determinizm, granie ≥ 45 st. nad przełęczą i róg, siodło,
+  płaski lód z wodą pod spodem i w przeręblach, ciągły zamarznięty potok, szczeliny z wyjściem, czoła lodowców, nisze
+  wylotów, drogi < 15°, droga do każdego obszaru, miejsca do stania, flood fill od portalu z Pustkowi, grupy, budżet,
+  budowle na ziemi, wyloty, węzły, łowiska z bojami w wodzie, życie, szkic, tagi efektów), `worldgen.spec` (rejestr ze
+  Szczytami).
+- Narzędzia: `tools/regionview` bez generatora (sam teren) i kolory śniegu/lodu w `regionview.py`.
+- Pomiary (Lune): woksele Szczytów 729 bloków × 48 warstw 1,53 s (Pustkowia 1,41 s w tym samym pomiarze), generator
+  0,23 s, węzły 0,06 s; shell 1044 części (drzewa ~640, budowle ~400), detail 6656, fine 3818, 41 świateł, 364 budowle,
+  326 dużych drzew. Szacunek „przed” ok. 1900 części (260 sosen po 4, ~60 drzew `extraDecor`, 50 skał, ruiny, kolumny,
+  kryształy, wyloty, latarnie); „po” ok. 1350 (shell + ~300). Teren w Studio szacunkowo ~4 s w tle (dwa razy więcej
+  warstw niż Bór).
+- Obrazy kontrolne (z góry i 3D, nie w repo), poprawione po obejrzeniu: prostokątne krawędzie podniesień (postrzępione
+  brzegi `ragged`, podpisany dystans do prostokąta), droga wcięta w Stopień (liniowe podniesienie ~10%), ostrogi jak
+  ściany (szersze, łagodniejsze), posągi Bramy stojące na płaskim środku przełęczy (przesunięte na końce ostróg, ×1,8, z
+  fundamentem w zboczu), świerki jak jajka (smukły pień korony, 5 szerokich pięter ze śniegiem), ciemny róg Iglicy
+  (biały powyżej y 104), za dużo żwiru na Tundrze, ściany tarasów stojące w środku skarpy (przesunięte do stopy).
+
+**Pliki**: nowe `Data/Terrain/frostpeak`, `Logic/FrostpeakGen/{init,Env,Props,Valley,Slopes,Harpy,Pass,Lake,Tundra,
+Temple,Fortress,Wyrm,Mouths}`, `Controllers/FrostWeatherController`, `tests/frostpeak.spec`; zmiany: `Data/Terrain/{Types,
+init}`, `Data/Areas/{frostpeak,Types}`, `Data/{Maps,Ambience,AdminCommands}`, lokalizacja (PL, EN), `Logic/{RegionTerrain,
+TerrainLayers}`, `Logic/WorldGen/{init,Flora}`, `World/Layouts/frostpeak`, `Admin/Terrain`, `Controllers/{WorldLifeController,
+DecorController,RegionLightController}`, `UI/MapSketch`, `tools/{regionview.luau,regionview.py}`, `tests/worldgen`, dane
+wiki, `docs/{SWIAT,ARCHITECTURE,BALANS,PRZEDMIOTY}`, `CLAUDE.md`.
+
+**Nazwy dla S48–S51 (faktyczne pola)**
+- `Data/Terrain/Types`: `lifts {rect | poly, blend, y, ragged?, linear?, sides? {w, n, e, s}}`; `ridges` + `jag {amp,
+  wave}`, `cols {x, z, depth, width}`, `noGroups`; `peaks {x, z, r, h, faces, sharp?, lean?, leanDir?}`; `winds {rect |
+  x/z/rx/rz, blend, dir, strength, gust}`; `frozenLakes {lobes {x, z, rx, rz, rot}, ice, depth (≥ 7 dla wody w
+  wokselach), ragged, shore}`; `glaciers {pts {x, z, w, top}, bulge, side, front, seracs?, seracReach?, moraine?,
+  moraineW?}`; `crevasses {points, width, depth, bridges?}`; reguły `facing ("windward" | "lee")`, `glacier`, `moraine`,
+  `crevasse`, `ice`, `mountain`; `Data/Areas/Types.Stream.frozen`.
+- `Logic/RegionTerrain`: `CREVASSE_CLEARANCE` (6); obiekt: `windAt(x, z)` → (kierunek, siła, porywistość), `ice`,
+  `crevasseDistance`, `glacierAt`, `mountainAt`, `moraineAt`; `Info` z polami `mountain`, `glacier`, `moraine`,
+  `crevasse`, `frozen`, `ice`, `iceBed`, `bedMat`, `hole`.
+- Życie: `snowPlume` (daleko), `avalanche`, `icicleDust`, `harpyGlint`, `eagles`; tag świateł `crystal`
+  (`RegionLightController`). `Flora.forest` przyjmuje `waterKinds` (gatunki przy strugach zamiast wierzb).
+
+#### Instrukcja testu S47
+
+1. `rojo serve`, Play. W Output `[WorldBuilder] world built in … s (3 maps left for the background)`: czas startu jak
+   przed sesją (~4,1 s; Bór, Pustkowia i Szczyty budują się w tle).
+2. Potem `[Frostpeak] terrain: 729 blocks in … s`, `[Frostpeak] shell: … builds, … parts, … trees`,
+   `[Frostpeak] parts=… ms=…` i `[WorldBuilder] background frostpeak built in … s`: zapisz liczby (części ≤ 2600, ok.
+   1350, bez ostrzeżenia o limicie) i czas tła. Do tego czasu portal na Szczyty pokazuje „Wkrótce”.
+3. Wejdź portalem z Pustkowi: ośnieżone świerki, drewniany most nad zamarzniętym potokiem, kopiec z rogami i wstęgami,
+   tablica z nazwą mapy, zwiadowca przy koszu z ogniem; w głębi poszarpane granie, na północnym wschodzie biały róg
+   Iglicy z pióropuszem śniegu; pada śnieg (duże płatki, spokojnie).
+4. `/daytime 12` (jasno i zimno), `/daytime 23` (niebieska noc, da się walczyć; nad północnym horyzontem faluje zorza;
+   świecą kryształy, runy, ogniska, strzelnice). Zorza w dzień: `/worldfx aurora on`, potem `auto`.
+5. Idź traktem na wschód: Stopień łagodnie w górę do przełęczy między dwiema graniami. `/tparea giantsGate`: dwa
+   siedzące kolosy na końcach ostróg po obu stronach drogi (jeden bez głowy, głowa leży przy drodze).
+6. `/tparea thrones`: trzy trony wokół wielkiego ogniska (dym widać z daleka), kocioł, rożen; kamienie z runami nocą
+   świecą; `/tparea boulderField`.
+7. Droga przez siodło Grani Południowej nad Jezioro: `/tparea frozenBoat`: tafla lodu z rysami (chodzi się po niej),
+   przerębel z ciemną wodą, wmarznięta łódź; łowisko na lodzie przy przerębli: wszystkie trzy boje w wodzie.
+8. `/tparea frozenFalls` (kolumny lodu na urwisku, pył z sopli), `/tparea crystals` (kryształy nocą „oddychają”),
+   `/tparea iceHoard` (skrzynie, tarcza, miecz w bryłach lodu).
+9. Droga patrolowa na wschód do `/tparea icewatchGate`: brama z soplami jak krata, zamarznięci wartownicy, mury i wieże
+   pod lodem, oblodzony donżon (`/tparea keep`), nocą strzelnice świecą błękitem; pochodnie przy drodze.
+10. `/tparea dragonStairs`: schody na tarasy z posągami smoków, koszami niebieskiego ognia i chorągwiami;
+    `/tparea sanctuary` (kolumnada w lodzie, kolos smoka ze skrzydłami), `/tparea offeringAltars` (złoto w lodzie).
+11. Koniec traktu `/tparea glacierMouth`: czoło wielkiego lodowca z rozpadliną, kryształy w głębi, portal do Serca
+    Lodowca działa.
+12. `/tparea mammothGraveyard`: szkielety mamutów, łuk z kłów nad drogą na Tundrę; `/tparea huntingCamp` (namioty na
+    kościach, włócznie, czaszki, dym); zamiecie przy ziemi, gdy wieje mocno.
+13. `/tparea holdGate`: wieże bramne Twierdzy w jęzorze lodowca, wyrwane wrota, niebieskie pochodnie, portal działa.
+14. Szlak Kości na wschód: `/tparea wyrmBones` (żebra nad szlakiem, czaszka na półce), `/tparea wyrmBurrows`; na
+    płaskowyżu gęsta zamieć, ale widać do walki; z daleka nad rogiem (`/tparea summit`) pióropusz śniegu.
+15. `/tparea yetiDen` (nisza pod nawisem, posłanie, kości, maczuga), `/tparea avalanche` (co ~50 s zsuwa się pył
+    lawiny), `/tparea grottoMouth` (kły sopli, niebieska poświata, portal działa).
+16. `/tparea harpyQueen` (najwyższa iglica z gniazdem i świecidełkami), `/tparea climbersCamp`, Harpi Staw z
+    przeręblą i łowiskiem; orły krążą wysoko.
+17. `/area` i `/terraininfo` w kilku obszarach: grupy na płaskim, nigdy na ścianach grani, rogu, iglicach ani przy
+    szczelinach (`/terraininfo` pokazuje szczelinę, wiatr, „góra”).
+18. Wejdź do szczeliny przy lodowcu Świątyni (ok. (790, −95)): wyjdziesz jej końcem albo przy moście śnieżnym.
+19. `/nodes count`: mithril 11, adamantyt 11, szronolist 26, łowiska Szczytów 2.
+20. `/regionstats frostpeak`: części, czasy (z „w tle”), 326 drzew, budowle, światła, węzły, 57 grup.
+21. Mapa (M) i minimapa: tafle lodu i potok, przeręble, lodowce z morenami, szczeliny, granie, iglice, mury Strażnicy,
+    drogi; brak niebieskich kół w przełęczy.
+22. `/ambience frostpeak_wyrmspire` (biała zamieć), `/ambience frostpeak_lake` (bardzo jasno), `/ambience auto`.
+23. `/worldfx snow off`, `/worldfx drift off`, `/worldfx plume off`, `/worldfx eagles off` i `auto`; opcje →
+    „Szczegółowość świata” niska: bez orłów, połowa śniegu, 2 wstęgi zorzy, 4 światła kryształów (`/perf`).
+24. Wyloguj się na Szczytach i wejdź po restarcie: ekran ładowania czeka na budowę w tle, postać ląduje na Szczytach.
+25. `/terrainrebuild frostpeak` (pyta): teren przepisuje się bez restartu. Bór, Pustkowia i Łąki działają jak przed
+    sesją.

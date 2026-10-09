@@ -21,6 +21,8 @@ export type Stream = {
 	shallows: { { x: number, z: number, r: number, depth: number } }?,
 	-- Water level from the centre line only (a stream on a plateau ending at a cliff: the waterfall lip).
 	centreOnly: boolean?,
+	-- S47: frozen over: a flat top of ice at the water level (walkable, no water), the water under it.
+	frozen: boolean?,
 }
 
 -- Place prepared for an NPC of a later session (S26 -> S27): standing point and facing (yaw, degrees; the front

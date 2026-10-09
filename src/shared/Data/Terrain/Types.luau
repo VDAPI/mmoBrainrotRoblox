@@ -18,11 +18,19 @@ export type Hill = { x: number, z: number, rx: number, rz: number, rot: number, 
 -- Ridge along a polyline. Every point is { x, z, h, w }: crest height over the ground and half-width of the gentle
 -- side there. `sharp` (default 1) > 1 makes the crest narrower. `steep` = 1 or -1 makes one side a scarp `cliff`
 -- studs wide: the side left (1) or right (-1) of the direction of travel along the points.
+-- S47 (high ridges, all optional): `jag` = a ragged crest ({ amp, wave }: studs of height and the wave length
+-- along the crest), `cols` = saddles where the crest drops `depth` studs over `width` studs along the line (roads
+-- cross a ridge only at a col), `noGroups` = no monster group, arrival or node where the ridge adds more than 4
+-- studs (default false: the low root ridges of Duskwood stay walkable).
+export type Col = { x: number, z: number, depth: number, width: number }
 export type Ridge = {
 	pts: { { number } },
 	sharp: number?,
 	steep: number?,
 	cliff: number?,
+	jag: { amp: number, wave: number }?,
+	cols: { Col }?,
+	noGroups: boolean?,
 }
 
 -- Flat-topped table at height `y` (absolute). Either an ellipse (x, z, rx, rz, rot) or a polygon `poly`
@@ -106,6 +114,15 @@ export type MaterialRule = {
 	rock: boolean?,
 	dune: boolean?,
 	drylake: boolean?,
+	-- S47: the side facing the wind (`windward`) or sheltered from it (`lee`) by the slope's aspect against
+	-- windAt; on a glacier tongue (body, front) / its moraines; inside or on the lip of a crevasse; on a frozen
+	-- lake's ice (or its snowy shore band); on a peak or a high ridge (where it adds more than 4 studs)
+	facing: ("windward" | "lee")?,
+	glacier: boolean?,
+	moraine: boolean?,
+	crevasse: boolean?,
+	ice: boolean?,
+	mountain: boolean?,
 }
 
 -- Plants of a theme: big trees on a jittered grid (`spacing`, probability `dense` where the clump noise is over
@@ -236,6 +253,83 @@ export type DryLake = {
 -- { material, from, to } as fractions 0..1 of the period; the rest is `base`.
 export type Strata = { period: number, base: string, bands: { { any } } }
 
+-- S47 mountain shapes ---------------------------------------------------------------------------------------------
+
+-- Lift: the ground raised to `y` studs over a rectangle `rect` { x1, z1, x2, z2 } or a polygon `poly`, falling to
+-- nothing over `blend` studs outside (a smootherstep; the edge wanders a little). Where lifts overlap the highest
+-- wins, so nested lifts make benches and steps. Unlike a plateau a lift is added under the ridges, hills and
+-- peaks, which keep their shape on top of it. `ragged` (default 4) = studs the edge wanders (broad noise), so a big
+-- lift does not show a ruled rectangle. `linear` = an even slope over the blend (y / blend, e.g. a road's climb)
+-- instead of the smootherstep, whose steepest part is ~1.9 times the average. `sides` = a blend per side of a
+-- rectangle { west, north, east, south } in place of `blend` (a long even climb on one side, a short fall on others).
+export type Lift = {
+	sides: { number }?,
+	rect: { number }?,
+	poly: { number }?,
+	blend: number,
+	y: number,
+	ragged: number?,
+	linear: boolean?,
+}
+
+-- Horn: a peak of `faces` (3-5) faces, base radius `r` (60-120), `h` studs over the ground, `sharp` > 1 = a thinner
+-- summit, the summit pushed `lean` studs towards bearing `leanDir` (degrees, 0 = north/-Z). The faces meet in
+-- ragged arêtes (ridge noise). No monster groups on it (noGroups).
+export type Peak = {
+	x: number,
+	z: number,
+	r: number,
+	h: number,
+	faces: number,
+	sharp: number?,
+	lean: number?,
+	leanDir: number?,
+}
+
+-- Wind zone: a soft rectangle `rect` (or ellipse x, z, rx, rz) blended over `blend` studs; the wind blows towards
+-- bearing `dir` (degrees, 0 = north/-Z, 90 = east/+X) with `strength` 0..1 and `gust` 0..1 (how much it varies).
+-- One source for the terrain (lee drifts, wind-scoured crests), the client's snowfall, the snow plumes and the
+-- wind's loudness. The strongest zone wins where they overlap (weighted by blend).
+export type Wind = {
+	rect: { number }?,
+	x: number?,
+	z: number?,
+	rx: number?,
+	rz: number?,
+	blend: number,
+	dir: number,
+	strength: number,
+	gust: number,
+}
+
+-- Frozen lake: one or more soft ellipses (`lobes`) with a ragged shore (`ragged` studs of noise); the top of the ice
+-- at `ice` (absolute, flat), its bed `depth` studs lower (water under 4 studs of ice), a snowy shore band `shore`
+-- studs wide where the ground blends down to the ice. Ice holes are the `lakes` circles of Data/Areas/<map> whose
+-- centre lies on the ice: open water 1 stud under the ice top (no bowl of their own).
+export type Lobe = { x: number, z: number, rx: number, rz: number, rot: number }
+export type FrozenLake = { lobes: { Lobe }, ice: number, depth: number, ragged: number, shore: number }
+
+-- Glacier tongue along points { x, z, w, top } (half-width and absolute surface height of the ice on the axis) from
+-- the map's edge to its front (the last point): a convex cross-section `bulge` studs over the edges, sides falling
+-- over `side` studs, a front wall falling over `front` studs (near-vertical when small), seracs (`seracs` studs of
+-- broken ice) over the last `seracReach` studs, lateral and terminal moraines (`moraine` studs high, `moraineW`
+-- wide) of grey gravel. Flats (cave mouths) cut niches into it.
+export type Glacier = {
+	pts: { { number } },
+	bulge: number,
+	side: number,
+	front: number,
+	seracs: number?,
+	seracReach: number?,
+	moraine: number?,
+	moraineW: number?,
+}
+
+-- Crevasse along points { x1, z1, ... }: `width` studs (8-16), `depth` studs (<= 14) with a flat floor; both ends
+-- and every snow bridge (`bridges`: arc lengths along the line) rise to the surface on ramps of at most ~25
+-- degrees, so every stretch of the floor has a way out. Not walkable inside or within 6 studs of the lip.
+export type Crevasse = { points: { number }, width: number, depth: number, bridges: { number }? }
+
 -- Terrain writer limits (World/TerrainWriter.Options): lowest voxel layer, top of the highest, margin past the edge.
 export type Writer = { bottom: number, top: number, margin: number }
 
@@ -282,6 +376,13 @@ export type Shape = {
 	strata: Strata?,
 	capMaterial: string?,
 	fallback: string?,
+	-- S47 (all optional): lifts, horns, wind zones, frozen lakes, glacier tongues, crevasses
+	lifts: { Lift }?,
+	peaks: { Peak }?,
+	winds: { Wind }?,
+	frozenLakes: { FrozenLake }?,
+	glaciers: { Glacier }?,
+	crevasses: { Crevasse }?,
 }
 
 return nil

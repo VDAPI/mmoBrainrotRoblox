@@ -10,6 +10,7 @@ export type Shape = Types.Shape
 local byMap: { [string]: Types.Shape } = {
 	duskwood = require("@self/duskwood"),
 	ashen = require("@self/ashen"), -- S46
+	frostpeak = require("@self/frostpeak"), -- S47
 }
 
 return {

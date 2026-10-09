@@ -7,6 +7,7 @@
 
 local AshenGen = require("./AshenGen")
 local DuskwoodGen = require("./DuskwoodGen")
+local FrostpeakGen = require("./FrostpeakGen")
 local MeadowsGen = require("./MeadowsGen")
 
 local WorldGen = {}
@@ -36,6 +37,7 @@ local REGISTRY: { [string]: Generator } = {
 	meadows = MeadowsGen :: any,
 	duskwood = DuskwoodGen :: any,
 	ashen = AshenGen :: any, -- S46
+	frostpeak = FrostpeakGen :: any, -- S47
 }
 
 -- Generator of a map (nil for maps without one).

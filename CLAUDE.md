@@ -71,6 +71,11 @@ MMORPG na Roblox (Margonem w 3D). Luau + Rojo + Wally + Fusion 0.3 + ProfileStor
   (tagi `lava`, `lavaCrust`, `lavafall`, `ember`, `vent`, `forge`, `glow`; światła z tagiem `lava` włącza
   `RegionLightController`); nic nie stoi bliżej niż 12 st. od lawy (`walkable`). Zmiana kształtu Pustkowi = świadomie
   `lune run tools/fixture_ashen.luau` (fixture w `tests/ashen.spec`). Admin: `/terraininfo`, `/worldfx`.
+  S47 (Lodowe Szczyty): `lifts` (podniesienia pod graniami; stopnie, płaskowyże bez kasowania grani), granie z `jag`,
+  `cols` (siodła dla dróg), `noGroups`, `peaks` (róg), `winds` (wiatr: śnieżyca, wywiane grzbiety), `frozenLakes`
+  (przeręble = koła `lakes` na lodzie; `depth` ≥ 7 dla wody pod lodem), `Stream.frozen`, `glaciers`, `crevasses`; opis
+  pól w `Data/Terrain/Types`. Pogoda (śnieg, zorza): `FrostWeatherController` na każdej mapie z `winds`. Podgląd 3D bez
+  generatora: `tools/regionview.luau` działa też na samym terenie.
 
 - **Quest poboczny** (S27): wpis w `Data/Quests/Side.luau` (`side(...)`: giver, turnIn, arc, pages, requires,
   cele `use`/`deliver`/`kill` z `area`…) + teksty `quest.<id>.title/.p1..pN/.progress/.done` (PL i EN); nowy NPC w

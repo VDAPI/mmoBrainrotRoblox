@@ -42,6 +42,7 @@
   --vw-map-cliff: #6E2F2A;
   --vw-map-crack: #3A3436;
   --vw-map-crag: #5A2A24;
+  --vw-map-crevasse: #24425E;
   --vw-map-drylake: #D6CFC0;
   --vw-map-dune: #A8885A;
   --vw-map-elder-tree: #4A3A2C;
@@ -49,6 +50,7 @@
   --vw-map-floor: #5A5650;
   --vw-map-forest: #22301C;
   --vw-map-garden: #4E6E36;
+  --vw-map-glacier: #9CCDE8;
   --vw-map-ground-basalt: #3A3436;
   --vw-map-ground-glacier: #A8D8F0;
   --vw-map-ground-ground: #7A6A4E;
@@ -58,9 +60,11 @@
   --vw-map-ground-sand: #C9A870;
   --vw-map-ground-snow: #EEF3F7;
   --vw-map-hill: #3E5A30;
+  --vw-map-ice: #C9E8F7;
   --vw-map-lava: #E8541A;
   --vw-map-marsh: #3E4A30;
   --vw-map-mesa: #7A3A30;
+  --vw-map-moraine: #8A847A;
   --vw-map-path: #9A8A68;
   --vw-map-plateau: #5A3E36;
   --vw-map-plaza: #8A8070;
@@ -70,8 +74,10 @@
   --vw-map-quarry-mid: #6C665C;
   --vw-map-ravine: #4E4A40;
   --vw-map-ravine-wall: #2E2C2A;
+  --vw-map-ridge: #4A4E56;
   --vw-map-ritual: #5A3A6E;
   --vw-map-ruins: #7A7468;
+  --vw-map-spire: #5E646C;
   --vw-map-wall: #4A4744;
   --vw-map-water: #3A6FA8;
 }

@@ -276,6 +276,26 @@ type CharacterData = {
     daleka, bąble lawy, sępy siedzące i krążące, trąby piaskowe, `/worldfx`), `DecorController` (9 motywów Pustkowi,
     nic na lawie), `RegionLayout` (`ctx.wet` obejmuje lawę); fixture `tools/fixture_ashen.luau` →
     `tests/fixtures/ashenHeights.luau`.
+- Kształty gór (S47, Lodowe Szczyty; wszystkie opcjonalne, mapy bez nich liczą się jak przedtem):
+  - `Data/Terrain/Types`: `lifts` (podniesienia terenu pod graniami: prostokąt / wielokąt, `blend`, `y`, `ragged`,
+    `linear`, `sides` na bok; z nakładających się wygrywa najwyższy), granie z `jag` (poszarpany grzbiet), `cols`
+    (siodła dla dróg) i `noGroups`, `peaks` (róg o 3–5 ścianach z pochyleniem), `winds` (strefy wiatru: kierunek, siła,
+    porywistość), `frozenLakes` (płaty z postrzępionym brzegiem, wierzch lodu, dno, pas śniegu; przeręble to koła z
+    `lakes` ze środkiem na lodzie), `glaciers` (jęzor: łamana z szerokością i wierzchem, wypukły przekrój, czoło w
+    poprzek osi, seraki, moreny), `crevasses` (szczeliny z rampami dna do końców i do mostów śnieżnych `bridges`);
+    `Data/Areas/Types.Stream.frozen` (zamarznięta struga: płaski lód na poziomie wody); reguły materiałów `facing`
+    (nawietrzna / zawietrzna z `windAt`), `glacier`, `moraine`, `crevasse`, `ice`, `mountain`;
+  - `RegionTerrain`: `windAt(x, z)` (kierunek, siła, porywistość), `ice`, `crevasseDistance`, `glacierAt`,
+    `mountainAt`, `moraineAt`; `walkable` = false na górach (granie `noGroups`, róg, wysokie turnie) i bliżej niż
+    `CREVASSE_CLEARANCE` (6 st.) od szczeliny; woksele kolumny pod lodem: dno → `Water` → `Ice`
+    (`TerrainLayers.voxels`, `Info.iceBed`); w szczelinie nic nie zadaje obrażeń od upadku, wyjście końcem;
+  - generator `Logic/FrostpeakGen/*` (Valley, Slopes, Harpy, Pass, Lake, Tundra, Temple, Fortress, Wyrm, Mouths, Props,
+    Env) w rejestrze `WorldGen`; `Flora`: `snowPine`, `frozenDead`, `iceSpike`, `under.snowShrub`, opcja `waterKinds`
+    (gatunki przy strugach zamiast wierzb);
+  - klient: `FrostWeatherController` (śnieżyca i zamiecie przy ziemi wg `windAt` gracza, zorza z wstęg `Beam` nocą),
+    `WorldLifeController` (pióropusze śniegu, lawina, pył z sopli, błyski harpii, orły), `RegionLightController` (tag
+    świateł `crystal`), `DecorController` (9 motywów Szczytów, brzeg tafli lodu), `UI/MapSketch` (`ice`, `glacier`,
+    `moraine`, `crevasse`, `ridge`, `spire`).
 
 ## 9. UI (Fusion 0.3)
 

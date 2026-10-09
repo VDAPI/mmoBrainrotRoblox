@@ -19,11 +19,11 @@ local x1, z1 = tonumber(args[3]) or -100, tonumber(args[4]) or -100
 local x2, z2 = tonumber(args[5]) or 100, tonumber(args[6]) or 100
 local shellOnly = args[7] == "shell"
 
-local gen = assert(WorldGen.get(mapId), `no generator for {mapId}`)
+local gen = WorldGen.get(mapId) -- nil: terrain only (a region before its generator exists)
 local terrain: any = if mapId == "meadows" then MeadowsTerrain else assert(RegionTerrain.get(mapId))
 
 local pieces = {}
-for _, b in gen.all() do
+for _, b in if gen then gen.all() else {} do
 	local r = math.rad(b.at.rot)
 	local c, s = math.cos(r), math.sin(r)
 	-- CFrame.Angles(0, r, 0) rows

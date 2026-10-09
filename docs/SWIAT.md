@@ -36,11 +36,11 @@
 | 58–67 | Turnie Wywern, Szlak Popiołu | Spalone Pustkowia |
 | 63–70 | Grobowce Pustyni, **Kuźnia Głębin** (jaskinia) | Spalone Pustkowia |
 | 70 | **Boss: Azgor** | Komnata Azgora |
-| 70–78 | Mroźne Podnóża, Lamparcia Przełęcz | Lodowe Szczyty |
-| 74–83 | Zbocza Yeti, Harpie Turnie, **Lodowa Grota** (jaskinia) | Lodowe Szczyty |
-| 78–92 | Dolina Olbrzymów, Mamucie Równiny, Zamarznięte Jezioro, **Zamarznięta Twierdza** (jaskinia 83–92) | Lodowe Szczyty |
-| 85–95 | Ruiny Smoczej Świątyni | Lodowe Szczyty |
-| 92–100 | Szczyt Wyrmów, **Serce Lodowca** (jaskinia) | Lodowe Szczyty |
+| 70–75 | Dolina Lodowych Wilków | Lodowe Szczyty |
+| 74–83 | Zbocza Yeti, Skały Harpii, **Lodowa Grota** (jaskinia) | Lodowe Szczyty |
+| 78–92 | Przełęcz Olbrzymów, Zamarznięte Jezioro, Mamucia Tundra, **Zamarznięta Twierdza** (jaskinia 83–92) | Lodowe Szczyty |
+| 85–95 | Ruiny Smoczej Świątyni, Lodowa Strażnica | Lodowe Szczyty |
+| 92–100 | Iglica Wyrmów, **Serce Lodowca** (jaskinia) | Lodowe Szczyty |
 | 100 | **Boss: Vaelgrath** | Komnata Vaelgratha |
 
 ## 2. Potwory (wszystkie rodzaje)
@@ -244,19 +244,31 @@ lawa, szczeliny, wydmy, mesy, turnie, suche jezioro), budowle `Logic/AshenGen`.
 | Szlak Popiołu / Ash Road ⛁ | 61–67 | Bazyliszek, Wywerna | 4 | Aleja Królów (kolosalne posągi, część leży rozbita) | stara królewska droga z płyt, skamieniała karawana (wóz, woły, ludzie), ograbione i spalone wozy z monetami, obeliski jako kamienie milowe, jama bazyliszka ze zrzuconą skórą |
 | Grobowce Pustyni / Desert Tombs | 66–70 | Mumia Pustyni, Bazyliszek | 5 | schodkowa piramida z turkusowym wejściem | droga procesyjna przez aleję strażników z głowami bazyliszków, obeliski, 2 zagłębione dziedzińce z sarkofagami, urnami i ołtarzami (nocą ogniki), grobowce wykute w skarpie wydm, **wejście: Kuźnia Głębin** (brama krasnoludów z posągami królów, świecące runy, łuna z wnętrza, strumyk stopionego metalu) |
 
-### Lodowe Szczyty (70–100), razem ok. 49 grup
+### Lodowe Szczyty (70–100), razem 57 grup (stan po S47)
+
+Mapa ukształtowana (S47, wspólny silnik krain): świeży śnieg na szarym łupku, teren wznosi się stopniami z niskiego
+zachodu na wysoki wschód. Od portali polodowcowa Dolina w ośnieżonych świerkach z zamarzniętym Lodowym Potokiem (dwa
+drewniane mosty), trakt wspina się Stopniem (~10%) do prawdziwej przełęczy między Granią Północną a Południową, przez
+Bramę Olbrzymów obok Sali Tronów; na północ trzy ławy Zboczy Yeti i wywiana Mamucia Tundra z jęzorem lodowca, na
+południe przez siodło tafla Zamarzniętego Jeziora pod Zamarzniętym Wodospadem i las iglic wokół Harpiego Stawu, na
+wschód tarasy Smoczej Świątyni pod wielkim lodowcem (rozpadlina z Sercem Lodowca kończy trakt), Lodowa Strażnica na
+skalnym pagórku i Iglica Wyrmów, najwyższy róg krainy z pióropuszem śniegu. Grupy stoją tylko na płaskim, nigdy na
+graniach, rogu, iglicach ani przy szczelinach. Śnieżyca wg stref wiatru, za dnia jasno i zimno, nocą niebiesko z zorzą,
+nastrój i dźwięki na obszar (`Data/Ambience`). Dane: `Data/Areas/frostpeak` (obszary, drogi, przeręble, potok,
+budowle), `Data/Terrain/frostpeak` (podniesienia, granie, róg, iglice, wiatr, zamarznięte jeziora, lodowce, szczeliny),
+budowle `Logic/FrostpeakGen`.
 
 | Obszar | Poziomy | Potwory | Grupy | Punkt charakterystyczny | Inne |
 |---|---|---|---|---|---|
-| Mroźne Podnóża / Frost Foothills | 70–75 | Lodowy Wilk, Lampart | 6 | obozowisko traperów | przy portalu z Pustkowi |
-| Lamparcia Przełęcz / Leopard Pass | 72–78 | Lampart, Lodowy Wilk | 5 | most nad przepaścią | **wejście: Lodowa Grota** |
-| Zbocza Yeti / Yeti Slopes | 74–82 | Yeti | 6 | jaskiniowe legowisko | rudy Mithrilu |
-| Harpie Turnie / Harpy Spires | 76–83 | Harpia, Yeti | 5 | lodowe iglice z gniazdami | |
-| Dolina Olbrzymów / Giants' Vale | 78–88 | Mroźny Olbrzym, Mamut (82–88) | 6 | kamienne trony | |
-| Mamucie Równiny / Mammoth Plains | 82–89 | Mamut, Lodowy Żywiołak | 5 | kości mamutów | |
-| Zamarznięte Jezioro / Frozen Lake | 82–92 | Lodowy Żywiołak | 5 | przerębel z łodzią | łowisko (Lodopłetwy), **wejście: Zamarznięta Twierdza** |
-| Ruiny Smoczej Świątyni / Dragon Temple Ruins | 85–95 | Smoczy Pomiot, Zamarznięty Rycerz (88–95) | 6 | ruiny świątyni | rudy Adamantytu |
-| Szczyt Wyrmów / Wyrm Peak | 95–100 | Wyrm Szronu, Smoczy Pomiot (95) | 5 | smocze kości na szczycie | **wejście: Serce Lodowca** |
+| Dolina Lodowych Wilków / Ice Wolf Valley | 70–75 | Lodowy Wilk, Śnieżny Lampart | 8 | opuszczony obóz traperów (chata z zapadniętym dachem, ramy na skóry, wnyki, sanie, tląca się latarnia) | ośnieżone świerki w kępach, zamarznięty Lodowy Potok z drewnianymi mostami, kopiec z rogami i wstęgami przy wjeździe, Wyjąca Skała w kręgu tropów, rozwleczone kości jelenia i bladoniebieska sierść, półka lampartów nad potokiem, zadrapania na pniach · **NPC: zwiadowca** |
+| Zbocza Yeti / Yeti Slopes ⚡ | 74–80 | Yeti, Śnieżny Lampart | 7 | Legowisko Yeti (nisza pod skalnym nawisem, posłanie z futer, kości, sosna-maczuga, odciski dłoni) | trzy śnieżne ławy ze stromymi progami i wychodniami łupku, nory z parą, sterty głazów do rzucania, wielkie tropy, lawinisko u wylotu żlebu (pył lawiny), **wejście: Lodowa Grota** (otwór w lodowej ścianie pod kłami sopli, niebieska poświata) |
+| Skały Harpii / Harpy Rocks ✦ | 76–83 | Harpia Szczytów, Yeti | 6 | Iglica Królowej (najwyższa iglica z gniazdem z gałęzi, kości i piór, świecidełka) | las lodowo-skalnych iglic z czapami śniegu, zamarznięty Harpi Staw z przeręblą (łowisko), obóz spadłych wspinaczy (rozdarty namiot, plecaki w lodzie, liny, czekan, drabinka), gniazda na iglicach, pióra, nocą żółte błyski, orły wysoko |
+| Przełęcz Olbrzymów / Giants' Pass | 78–86 | Mroźny Olbrzym, Harpia Szczytów | 7 | Brama Olbrzymów (dwa siedzące kolosy na ostrogach, jednemu odpadła głowa) | Sala Tronów (trzy trony wokół ogniska z pni, rożen z udźcem mamuta, kocioł, słup dymu), kamienie z runami świecące nocą, pole głazów z kraterami, schody olbrzymów, kości mamuta, gniazda harpii na ścianach grani, oszronione martwe drzewa |
+| Zamarznięte Jezioro / Frozen Lake ✦ | 82–90 | Lodowy Żywiołak, Mamut Lodowy | 6 | przerębel z wmarzniętą łodzią (złamany maszt, sieci, sanie i wędki) | tafla lodu z rysami (chodzi się po niej), łowisko przy przerębli, Zamarznięty Wodospad na urwisku Grani Południowej, ogród kryształów (nocą pulsują), kręgi gładkiego lodu, skarby w bryłach lodu, szlak tropów mamutów przez lód, zmarznięte trzciny |
+| Mamucia Tundra / Mammoth Tundra ⚡ | 82–89 | Mamut Lodowy, Mroźny Olbrzym | 6 | Cmentarzysko Mamutów (pole szkieletów, łuk z kłów nad drogą) | wywiany płaskowyż, cienki śnieg z łatami zmarzniętej ziemi i żwiru, obóz łowiecki olbrzymów (namioty ze skór na kościach, 15-stopowe włócznie, suszarnia, stos czaszek, dół-pułapka, dym), głazy narzutowe z sierścią, żerowiska, zamiecie, **wejście: Zamarznięta Twierdza** (brama połknięta przez jęzor lodowca) |
+| Ruiny Smoczej Świątyni / Dragon Temple Ruins ⛁ | 85–95 | Smoczy Pomiot, Zamarznięty Rycerz | 7 | Smocze Schody (schody procesyjne na tarasy z posągami smoków) | trzy tarasy ze ścianami oporowymi, sanktuarium bez dachu z kolumnadą w lodzie i kolosem smoka (oczy świecą nocą), ołtarze ze złotem w bryłach lodu, chorągwie kultu (granat i złoto), kosze niebieskiego ognia, zbroje poległych, **wejście: Serce Lodowca** (rozpadlina w czole wielkiego lodowca, kryształy w głębi) |
+| Lodowa Strażnica / Ice Watch ⚡ | 88–95 | Zamarznięty Rycerz, Lodowy Żywiołak | 5 | brama w soplach jak w kratach i oblodzony donżon | mury z blankami i 4 wieże pod skorupą lodu, zamarznięci wartownicy, chorągwie zamarznięte w pół łopotu, stojaki z bronią w lodzie, kryształy rozsadzające mury, strzelnice świecą nocą, droga patrolowa z pochodniami niebieskiego ognia |
+| Iglica Wyrmów / Wyrm Spire | 94–100 | Wyrm Szronu, Smoczy Pomiot | 5 | Szkielet Wyrma (kręgosłup wokół skały, żebra nad Szlakiem Kości, czaszka na półce) | najwyższy róg krainy z pióropuszem śniegu, płaskowyż z lodowymi kolcami, gęsta zamieć, nory wyrmów w lodowych skarpach, zrzucone łuski, obelisk kultu z chorągwią |
 
 ### Questy poboczne Szepczących Łąk (S27)
 

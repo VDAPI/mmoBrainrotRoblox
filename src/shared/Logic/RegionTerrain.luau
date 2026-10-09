@@ -41,6 +41,8 @@ RegionTerrain.WALKABLE_SLOPE = math.tan(math.rad(32)) -- the Meadows' limit
 RegionTerrain.WATER_CLEARANCE = 12
 -- S46: ... and this far from lava and glowing cracks (lava is scenery: no damage, nobody stands next to it).
 RegionTerrain.LAVA_CLEARANCE = 12
+-- S47: ... and this far from a crevasse's lip (nobody stands at the edge; nothing to fall into by accident).
+RegionTerrain.CREVASSE_CLEARANCE = 6
 -- Every terrain material a region may paint (the writer converts the names to Enum.Material).
 RegionTerrain.MATERIALS = {
 	"Grass",
@@ -104,6 +106,16 @@ export type Info = {
 	dry: number, -- 0..1 weight of a dry lake's floor
 	dryE: number, -- normalised distance from the dry lake's centre (1 on the old shore)
 	dryLake: number, -- index of that dry lake (0: none)
+	-- S47 (false / math.huge / nil where the shape has none)
+	mountain: boolean, -- on a peak or a noGroups ridge (it adds more than 4 studs here)
+	glacier: boolean, -- on a glacier tongue's ice
+	moraine: boolean, -- on its moraine
+	crevasse: number, -- distance past the lip of the nearest crevasse (negative inside)
+	frozen: number, -- signed distance to the nearest frozen lake's shore (negative on the ice)
+	ice: number?, -- top of the ice of a frozen lake or stream here
+	iceBed: number?, -- bed under the water under that ice (frozen lakes; the voxels put water between)
+	bedMat: string?,
+	hole: number?, -- water level of an ice hole here
 }
 
 export type Crossing = {
@@ -159,6 +171,13 @@ export type Terrain = {
 	rockAt: (x: number, z: number) -> boolean,
 	duneWeight: (x: number, z: number) -> number,
 	dryWeight: (x: number, z: number) -> number,
+	-- S47
+	windAt: (x: number, z: number) -> (number, number, number),
+	ice: (x: number, z: number) -> number?,
+	crevasseDistance: (x: number, z: number) -> number,
+	glacierAt: (x: number, z: number) -> boolean,
+	mountainAt: (x: number, z: number) -> boolean,
+	moraineAt: (x: number, z: number) -> boolean,
 }
 
 -- Spatial index of polyline segments ---------------------------------------------------------------------------
@@ -306,8 +325,14 @@ function RegionTerrain.new(shape: ShapeTypes.Shape, areas: AreaTypes.MapAreas): 
 	end)
 
 	-- Ridges
-	type RidgeData =
-		{ line: TerrainLayers.Line, hs: { number }, ws: { number }, box: { number }, src: ShapeTypes.Ridge }
+	type RidgeData = {
+		line: TerrainLayers.Line,
+		hs: { number },
+		ws: { number },
+		box: { number },
+		src: ShapeTypes.Ridge,
+		cols: { { s: number, depth: number, width: number } },
+	}
 	local ridges: { RidgeData } = {}
 	for _, ridge in shape.ridges do
 		local pts, hs, ws = {}, {}, {}
@@ -319,12 +344,22 @@ function RegionTerrain.new(shape: ShapeTypes.Shape, areas: AreaTypes.MapAreas): 
 			reach = math.max(reach, p[4], ridge.cliff or 0)
 		end
 		local line = TerrainLayers.line(pts)
+		-- S47: saddles by their arc length along the crest
+		local cols = {}
+		for _, col in ridge.cols or {} :: { ShapeTypes.Col } do
+			local _, _, si, t = TerrainLayers.nearest(line, col.x, col.z)
+			table.insert(
+				cols,
+				{ s = line.along[si] + (line.along[si + 1] - line.along[si]) * t, depth = col.depth, width = col.width }
+			)
+		end
 		table.insert(ridges, {
 			line = line,
 			hs = hs,
 			ws = ws,
 			box = { line.box[1] - reach, line.box[2] - reach, line.box[3] + reach, line.box[4] + reach },
 			src = ridge,
+			cols = cols,
 		})
 	end
 
@@ -440,7 +475,129 @@ function RegionTerrain.new(shape: ShapeTypes.Shape, areas: AreaTypes.MapAreas): 
 		dryEdge[i] = math.clamp(dl.shore / ((dl.rx + dl.rz) / 2), 0.05, 0.6)
 	end
 
+	-- S47: peaks, winds, frozen lakes (and the ice holes among the lakes), glaciers, crevasses (all optional).
+	local PEAKS: { ShapeTypes.Peak } = shape.peaks or {}
+	local WINDS: { ShapeTypes.Wind } = shape.winds or {}
+	local FROZEN: { ShapeTypes.FrozenLake } = shape.frozenLakes or {}
+	local GLACIERS: { ShapeTypes.Glacier } = shape.glaciers or {}
+	local CREVASSES: { ShapeTypes.Crevasse } = shape.crevasses or {}
+
+	local frozenBoxes: { { number } } = {}
+	for _, fl in FROZEN do
+		local box = { math.huge, math.huge, -math.huge, -math.huge }
+		for _, lobe in fl.lobes do
+			local r = math.max(lobe.rx, lobe.rz) * 1.15 + fl.shore + fl.ragged + 4
+			box[1], box[2] = math.min(box[1], lobe.x - r), math.min(box[2], lobe.z - r)
+			box[3], box[4] = math.max(box[3], lobe.x + r), math.max(box[4], lobe.z + r)
+		end
+		table.insert(frozenBoxes, box)
+	end
+
+	-- Signed distance to a frozen lake's shore (negative on the ice), studs (approximate, from the lobe ellipses).
+	local function frozenDist(i: number, x: number, z: number): number
+		local fl = FROZEN[i]
+		local best = math.huge
+		for _, lobe in fl.lobes do
+			local e = TerrainLayers.ellipse(lobe.x, lobe.z, lobe.rx, lobe.rz, lobe.rot, x, z)
+			local d = (e - 1) * math.min(lobe.rx, lobe.rz)
+			if d < best then
+				best = d
+			end
+		end
+		return best + fl.ragged * (fbm(x, z, 41, SEED + 130 + i, 2) - 0.5) * 2
+	end
+
+	-- Lakes whose centre lies on a frozen lake are ice holes (open water just under the ice, no bowl of their own).
+	local holeOf: { [number]: number } = {} -- lake index -> frozen lake index
+	for li, lake in LAKES do
+		for fi in FROZEN do
+			if inBox(frozenBoxes[fi], lake.x, lake.z) and frozenDist(fi, lake.x, lake.z) < -lake.r * 0.5 then
+				holeOf[li] = fi
+			end
+		end
+	end
+
+	type GlacierData = {
+		src: ShapeTypes.Glacier,
+		line: TerrainLayers.Line,
+		ws: { number },
+		tops: { number },
+		box: { number },
+	}
+	local glaciers: { GlacierData } = {}
+	for _, g in GLACIERS do
+		local pts, ws, tops = {}, {}, {}
+		local reach = 0
+		for _, p in g.pts do
+			table.insert(pts, { p[1], p[2] })
+			table.insert(ws, p[3])
+			table.insert(tops, p[4])
+			reach = math.max(reach, p[3] + math.max(g.side, g.front) + (g.moraineW or 0) + 6)
+		end
+		local line = TerrainLayers.line(pts)
+		table.insert(glaciers, {
+			src = g,
+			line = line,
+			ws = ws,
+			tops = tops,
+			box = { line.box[1] - reach, line.box[2] - reach, line.box[3] + reach, line.box[4] + reach },
+		})
+	end
+
+	local crevLines: { TerrainLayers.Line } = {}
+	for _, c in CREVASSES do
+		table.insert(crevLines, TerrainLayers.line(TerrainLayers.pairs(c.points)))
+	end
+	local crevGrid = index(crevLines, function(li: number): number
+		return CREVASSES[li].width / 2 + 12
+	end)
+	local HIGH = #PEAKS > 0
+	for _, r in shape.ridges do
+		HIGH = HIGH or r.noGroups == true
+	end
+	local CREVASSE_RAMP = math.tan(math.rad(24)) -- the floor rises to the surface at the ends and to every bridge
+	local BRIDGE_HALF = 5
+
 	-- Layers --------------------------------------------------------------------------------------------------
+
+	-- S47: the highest lift at a point (benches, steps, highlands under the ridges)
+	local LIFTS: { ShapeTypes.Lift } = shape.lifts or {}
+	-- distance outside a rectangle, negative inside (to the nearest edge)
+	local function signedRect(r: { number }, x: number, z: number): number
+		local out = TerrainLayers.rectDist(r, x, z)
+		if out > 0 then
+			return out
+		end
+		return -math.min(x - r[1], r[3] - x, z - r[2], r[4] - z)
+	end
+	local function liftAt(x: number, z: number): number
+		local best = 0
+		local wobble = 4 * (fbm(x, z, 23, SEED + 33, 2) - 0.5)
+		local broad = 2 * (fbm(x, z, 90, SEED + 34, 3) - 0.5)
+		for _, lift in LIFTS do
+			if lift.y > best then
+				local blend = lift.blend
+				local d
+				local sides = lift.sides
+				if sides and lift.rect then
+					-- a blend per side: the distance out of the rectangle scaled to `blend` side by side
+					local r = lift.rect
+					local tx = if x < r[1] then (r[1] - x) / sides[1] elseif x > r[3] then (x - r[3]) / sides[3] else 0
+					local tz = if z < r[2] then (r[2] - z) / sides[2] elseif z > r[4] then (z - r[4]) / sides[4] else 0
+					d = if tx > 0 or tz > 0 then math.sqrt(tx * tx + tz * tz) * blend else signedRect(r, x, z)
+				else
+					d = if lift.poly then (polygonDist(lift.poly, x, z)) else signedRect(lift.rect :: { number }, x, z)
+				end
+				d += wobble + broad * (lift.ragged or 0)
+				if d < blend then
+					local t = d / blend
+					local w = if d <= 0 then 1 elseif lift.linear then 1 - t else 1 - smootherstep(t)
+					best = math.max(best, lift.y * w)
+				end
+			end
+		end
+		return best
+	end
 
 	local function baseHeight(x: number, z: number): number
 		local amp = shape.detail.amp
@@ -450,7 +607,8 @@ function RegionTerrain.new(shape: ShapeTypes.Shape, areas: AreaTypes.MapAreas): 
 				amp = lerp(amp, zone.amp, w)
 			end
 		end
-		return shape.swell.amp * fbm(x, z, shape.swell.scale, SEED, 2)
+		return (if #LIFTS > 0 then liftAt(x, z) else 0)
+			+ shape.swell.amp * fbm(x, z, shape.swell.scale, SEED, 2)
 			+ amp * fbm(x, z, shape.detail.scale, SEED + 1, 3)
 			+ shape.fine.amp * fbm(x, z, shape.fine.scale, SEED + 2, 2)
 	end
@@ -469,9 +627,10 @@ function RegionTerrain.new(shape: ShapeTypes.Shape, areas: AreaTypes.MapAreas): 
 		return add
 	end
 
-	local function ridgeAdd(x: number, z: number): number
-		local add = 0
-		for _, r in ridges do
+	-- Height the ridges add and the part of it from noGroups ridges (S47).
+	local function ridgeAdd(x: number, z: number): (number, number)
+		local add, high = 0, 0
+		for ri, r in ridges do
 			if inBox(r.box, x, z) then
 				local d, _, si, t = TerrainLayers.nearest(r.line, x, z)
 				local w = TerrainLayers.atSegment(r.ws, si, t)
@@ -491,11 +650,30 @@ function RegionTerrain.new(shape: ShapeTypes.Shape, areas: AreaTypes.MapAreas): 
 					if sharp ~= 1 then
 						f = f ^ sharp
 					end
-					add += TerrainLayers.atSegment(r.hs, si, t) * f
+					local crest = TerrainLayers.atSegment(r.hs, si, t)
+					local src = r.src
+					if src.jag or #r.cols > 0 then
+						local s = arcAt(r.line, si, t)
+						local jag = src.jag
+						if jag then
+							crest += jag.amp * (fbm(s, ri * 97, jag.wave, SEED + 120 + ri, 2) - 0.5) * 2
+						end
+						for _, col in r.cols do
+							local off = math.abs(s - col.s)
+							if off < col.width then
+								crest -= col.depth * (1 - smoothstep(off / col.width))
+							end
+						end
+					end
+					local h = crest * f
+					add += h
+					if src.noGroups then
+						high += h
+					end
 				end
 			end
 		end
-		return add
+		return add, high
 	end
 
 	-- Plateau weight 0..1 (1 on the top) and its height, for the strongest plateau at a point.
@@ -718,14 +896,201 @@ function RegionTerrain.new(shape: ShapeTypes.Shape, areas: AreaTypes.MapAreas): 
 		return 0, math.huge, 0
 	end
 
+	-- S47 layers --------------------------------------------------------------------------------------------------
+
+	-- Height a horn adds (faces meeting in ragged aretes; the summit leans).
+	local function peakAdd(x: number, z: number): number
+		local add = 0
+		for pi, p in PEAKS do
+			local reach = p.r * 1.3 + (p.lean or 0)
+			if math.abs(x - p.x) < reach and math.abs(z - p.z) < reach then
+				local b = math.rad(p.leanDir or 0)
+				local cx, cz = p.x + (p.lean or 0) * math.sin(b), p.z - (p.lean or 0) * math.cos(b)
+				-- the base stays round on the ground, the summit is pushed towards the lean
+				local dx0, dz0 = x - p.x, z - p.z
+				local k = math.clamp(1 - math.sqrt(dx0 * dx0 + dz0 * dz0) / p.r, 0, 1)
+				local ox, oz = p.x + (cx - p.x) * k, p.z + (cz - p.z) * k
+				local dx, dz = x - ox, z - oz
+				local d = math.sqrt(dx * dx + dz * dz)
+				local a = math.atan2(dz, dx) + pi * 1.3
+				local n = math.max(p.faces, 3)
+				local sector = 2 * math.pi / n
+				local u = (a % sector) - sector / 2
+				-- distance to the polygon's edge along this bearing: flat faces, sharp aretes at the corners
+				local rr = p.r * math.cos(math.pi / n) / math.cos(u)
+				rr *= 0.9 + 0.2 * fbm(ox + math.cos(a) * 50, oz + math.sin(a) * 50, 13, SEED + 140 + pi, 2)
+				local t = d / rr
+				if t < 1 then
+					local f = (1 - t) ^ (p.sharp or 1.5)
+					local rough = 0.08 * (fbm(x, z, 9, SEED + 141, 2) - 0.5) * 2
+					add += p.h * f * (1 + rough)
+				end
+			end
+		end
+		return add
+	end
+
+	-- Wind at a point: bearing the wind blows towards (degrees), strength 0..1, gustiness 0..1.
+	local function windAt(x: number, z: number): (number, number, number)
+		local vx, vz, wsum, gust = 0, 0, 0, 0
+		for _, w in WINDS do
+			local weight
+			if w.rect then
+				weight = softRect(w.rect, w.blend, x, z)
+			else
+				local rx, rz = w.rx or 1, w.rz or 1
+				local e = TerrainLayers.ellipse(w.x or 0, w.z or 0, rx, rz, 0, x, z)
+				local past = (e - 1) * (rx + rz) / 2
+				weight = if past <= 0 then 1 else 1 - smoothstep(past / w.blend)
+			end
+			if weight > 0 then
+				local b = math.rad(w.dir)
+				vx += weight * w.strength * math.sin(b)
+				vz -= weight * w.strength * math.cos(b)
+				gust += weight * w.gust
+				wsum += weight
+			end
+		end
+		if wsum <= 0 then
+			return 90, 0, 0
+		end
+		vx, vz = vx / wsum, vz / wsum
+		return math.deg(math.atan2(vx, -vz)) % 360, math.min(math.sqrt(vx * vx + vz * vz), 1), gust / wsum
+	end
+
+	-- Nearest frozen lake: signed distance to its shore (negative on the ice) and its index (0: none).
+	local function frozenAt(x: number, z: number): (number, number)
+		local best, bi = math.huge, 0
+		for i in FROZEN do
+			if inBox(frozenBoxes[i], x, z) then
+				local d = frozenDist(i, x, z)
+				if d < best then
+					best, bi = d, i
+				end
+			end
+		end
+		return best, bi
+	end
+
+	-- Nearest ice hole: distance past its edge (negative in the water) and its frozen lake (0: none).
+	local function holeAt(x: number, z: number): (number, number)
+		local best, fi = math.huge, 0
+		for li, f in holeOf do
+			local lake = LAKES[li]
+			local dx, dz = x - lake.x, z - lake.z
+			if math.abs(dx) < lake.r + 8 and math.abs(dz) < lake.r + 8 then
+				local d = math.sqrt(dx * dx + dz * dz) - lake.r + 0.5 * (fbm(x, z, 7, SEED + 133, 2) - 0.5) * 2
+				if d < best then
+					best, fi = d, f
+				end
+			end
+		end
+		return best, fi
+	end
+
+	-- Glacier ice over the ground `g`: surface (nil off the ice) and the moraine height added there.
+	local function glacierAt(x: number, z: number, g: number): (number?, number)
+		local surface: number? = nil
+		local moraine = 0
+		for gi, gl in glaciers do
+			if inBox(gl.box, x, z) then
+				local src = gl.src
+				local d, _, si, t = TerrainLayers.nearest(gl.line, x, z)
+				local pts = gl.line.pts
+				local last = #pts - 1
+				-- past the front: the overshoot along the last segment's axis and the distance beside that axis
+				-- (the tongue ends in a wall across it, not in a half-disc)
+				local over = 0
+				if si == last and t >= 0.999 then
+					local a, b = pts[last], pts[last + 1]
+					local ux, uz = b[1] - a[1], b[2] - a[2]
+					local len = math.sqrt(ux * ux + uz * uz)
+					ux, uz = ux / len, uz / len
+					over = (x - b[1]) * ux + (z - b[2]) * uz
+					d = math.abs((x - b[1]) * uz - (z - b[2]) * ux)
+				end
+				local w = TerrainLayers.atSegment(gl.ws, si, t) * (0.92 + 0.16 * fbm(x, z, 47, SEED + 150 + gi, 2))
+				local top = TerrainLayers.atSegment(gl.tops, si, t)
+				local ice: number? = nil
+				if d < w then
+					local s = arcAt(gl.line, si, t)
+					local body = top + src.bulge * (1 - (d / w) ^ 2)
+					local reach = src.seracReach or 0
+					if src.seracs and reach > 0 then
+						local toFront = gl.line.length - s
+						if toFront < reach then
+							local k = 1 - toFront / reach
+							body += (src.seracs :: number) * k * (fbm(x, z, 7, SEED + 152, 2) - 0.35) * 2
+						end
+					end
+					ice = body
+				elseif d < w + src.side then
+					ice = lerp(top, g, smoothstep((d - w) / src.side))
+				end
+				if ice and over > 0 then
+					ice = if over < src.front then lerp(ice :: number, g, smoothstep(over / src.front)) else nil
+				end
+				if ice and ice > g + 0.4 and (surface == nil or ice > surface :: number) then
+					surface = ice
+				end
+				local mw = src.moraineW or 0
+				local mhMax = src.moraine or 0
+				if mhMax > 0 and mw > 0 then
+					-- distance past the ice's outline (sides and front, rounded corners)
+					local ps, pf = d - (w + src.side), over - src.front
+					local past = if over > 0
+							and ps > 0
+							and pf > 0
+						then math.sqrt(ps * ps + pf * pf)
+						elseif over > 0 then math.max(ps, pf)
+						else ps
+					local off = math.abs(past - mw * 0.4)
+					if off < mw / 2 then
+						local mh = mhMax * (1 - (off / (mw / 2)) ^ 2) * (0.7 + 0.6 * fbm(x, z, 19, SEED + 153, 2))
+						moraine = math.max(moraine, mh)
+					end
+				end
+			end
+		end
+		return surface, moraine
+	end
+
+	-- Nearest crevasse: distance past its lip (negative inside) and the depth of its floor here.
+	local function crevasseAt(x: number, z: number): (number, number)
+		local d, li, si, t = nearestIn(crevGrid, x, z)
+		if li == 0 then
+			return math.huge, 0
+		end
+		local c = CREVASSES[li]
+		local line = crevLines[li]
+		local s = arcAt(line, si, t)
+		local half = c.width / 2 * (0.85 + 0.3 * fbm(x, z, 15, SEED + 160 + li, 2))
+		local taper = c.depth / CREVASSE_RAMP
+		local k = math.min(s, line.length - s) / taper
+		for _, b in c.bridges or {} :: { number } do
+			k = math.min(k, (math.abs(s - b) - BRIDGE_HALF) / taper)
+		end
+		return d - half, c.depth * math.clamp(k, 0, 1)
+	end
+
 	-- What the last call of `raw` found at its point (read by `sample` right after, never across points).
 	local lastRock, lastCap, lastDune, lastDuneMat = false, "", 0, ""
 	local lastDry, lastDryE, lastDryI, lastCrack, lastCrackI = 0, math.huge, 0, math.huge, 0
+	local lastMountain, lastGlacier, lastMoraine, lastCrev = false, false, false, math.huge
+	local lastFrozen, lastFrozenI, lastHole = math.huge, 0, math.huge
 
 	-- Ground before flats, roads and water.
 	local dryFloor: { number } = {}
 	local function raw(x: number, z: number, noDry: boolean?): number
-		local h = baseHeight(x, z) + hills(x, z) + ridgeAdd(x, z)
+		local ra, high = ridgeAdd(x, z)
+		local h = baseHeight(x, z) + hills(x, z) + ra
+		lastMountain, lastGlacier, lastMoraine, lastCrev = high > 4, false, false, math.huge
+		lastFrozen, lastFrozenI, lastHole = math.huge, 0, math.huge
+		if #PEAKS > 0 then
+			local pk = peakAdd(x, z)
+			h += pk
+			lastMountain = lastMountain or pk > 4
+		end
 		local pw, py = plateauOf(x, z)
 		if pw > 0 then
 			h = lerp(h, py, pw)
@@ -756,6 +1121,8 @@ function RegionTerrain.new(shape: ShapeTypes.Shape, areas: AreaTypes.MapAreas): 
 				local sh, onCap = spireHeight(si, x, z, g)
 				if sh and sh > h - 0.01 then
 					h = math.max(h, sh)
+					-- S47: tall spires count as mountains (no groups on them where they rise over 4 studs)
+					lastMountain = lastMountain or sh - g > 4
 					lastRock = true
 					lastCap = if onCap then SPIRES[si].cap or CAP else ""
 				end
@@ -791,6 +1158,45 @@ function RegionTerrain.new(shape: ShapeTypes.Shape, areas: AreaTypes.MapAreas): 
 				if w > 0 then
 					h = lerp(h, dryFloor[i] + 0.3 * (fbm(x, z, 24, SEED + 91, 2) - 0.5), w)
 				end
+			end
+		end
+		-- S47: glacier ice over the ground, moraines beside it, frozen lakes (flat ice, ice holes), crevasses
+		if #GLACIERS > 0 then
+			local ice, moraine = glacierAt(x, z, h)
+			if ice then
+				h = ice
+				lastGlacier = true
+			elseif moraine > 0 then
+				h += moraine
+				lastMoraine = moraine > 0.8
+			end
+		end
+		if #FROZEN > 0 then
+			local fd, fi = frozenAt(x, z)
+			if fi > 0 then
+				local fl = FROZEN[fi]
+				lastFrozen, lastFrozenI = fd, fi
+				if fd <= 0 then
+					h = fl.ice
+					local hd, hf = holeAt(x, z)
+					if hf > 0 then
+						lastHole = hd
+						if hd < 0 then
+							h = fl.ice - math.min(fl.depth, 0.3 + -hd * 0.3)
+						end
+					end
+				elseif fd < fl.shore then
+					h = lerp(fl.ice + 0.25, h, smoothstep(fd / fl.shore))
+				end
+			end
+		end
+		if #CREVASSES > 0 then
+			local cd, depth = crevasseAt(x, z)
+			lastCrev = cd
+			if cd < 0 and depth > 0 then
+				-- a flat floor and steep walls about a quarter of the half-width wide
+				local wall = 1 - smoothstep(math.clamp((cd + 3) / 3, 0, 1))
+				h -= depth * wall
 			end
 		end
 		if #CRACKS > 0 then
@@ -992,7 +1398,7 @@ function RegionTerrain.new(shape: ShapeTypes.Shape, areas: AreaTypes.MapAreas): 
 	local function lakeDist(x: number, z: number): number
 		local best = math.huge
 		for i, lake in LAKES do
-			if inBox(lakeBoxes[i], x, z) then
+			if not holeOf[i] and inBox(lakeBoxes[i], x, z) then
 				local d = math.sqrt((x - lake.x) ^ 2 + (z - lake.z) ^ 2) - lake.r
 				if d < best then
 					best = d
@@ -1208,6 +1614,8 @@ function RegionTerrain.new(shape: ShapeTypes.Shape, areas: AreaTypes.MapAreas): 
 		local h = roads(x, z, preRoad(x, z))
 		local rock, cap, dune, duneMat = lastRock, lastCap, lastDune, lastDuneMat
 		local dry, dryE, dryI, crack, crackI = lastDry, lastDryE, lastDryI, lastCrack, lastCrackI
+		local mountain, glacier, moraine, crev = lastMountain, lastGlacier, lastMoraine, lastCrev
+		local frozenD, frozenI, holeD = lastFrozen, lastFrozenI, lastHole
 		local pd, phalf, py = rampAt(x, z)
 		if pd < phalf then
 			h = py
@@ -1220,11 +1628,27 @@ function RegionTerrain.new(shape: ShapeTypes.Shape, areas: AreaTypes.MapAreas): 
 		local inGorge = gd ~= nil and gd < gHalf + gWall + 12
 		local sd, sIndex, sw, shalf = streamAt(x, z)
 		local depth = 0
+		local iceTop: number? = nil
+		local iceBed: number? = nil
+		local hole: number? = nil
+		if frozenI > 0 and frozenD <= 0 then
+			local fl = FROZEN[frozenI]
+			if holeD < 0 then
+				hole = fl.ice - 1
+			else
+				iceTop, iceBed = fl.ice, fl.ice - fl.depth
+			end
+		end
 		if sIndex > 0 then
 			local stream = STREAMS[sIndex]
 			depth = depthAt(stream, x, z)
 			if sd < shalf then
 				h = math.min(h, sw + 0.2 - (depth + 0.2) * (1 - (sd / shalf) ^ 2))
+				if stream.frozen then
+					-- S47: a flat top of ice at the water level
+					h = sw
+					iceTop = sw
+				end
 			else
 				local over = sd - shalf
 				local target = if inGorge or stream.centreOnly then math.huge else sw + 0.2 + over * VALLEY
@@ -1276,6 +1700,15 @@ function RegionTerrain.new(shape: ShapeTypes.Shape, areas: AreaTypes.MapAreas): 
 			dry = dry,
 			dryE = dryE,
 			dryLake = dryI,
+			mountain = mountain,
+			glacier = glacier,
+			moraine = moraine,
+			crevasse = crev,
+			frozen = frozenD,
+			ice = iceTop,
+			iceBed = iceBed,
+			bedMat = if iceBed then "Ground" else nil,
+			hole = hole,
 			road = rd - rhalf,
 			roadMat = if rli > 0 then roadMats[rli] else "Ground",
 			ramp = pd < phalf + 0.5,
@@ -1299,6 +1732,12 @@ function RegionTerrain.new(shape: ShapeTypes.Shape, areas: AreaTypes.MapAreas): 
 
 	-- Water surface over a column (nil when dry): streams (only as deep as their channel), lakes, marsh pools.
 	local function waterOf(h: number, info: Info): number?
+		if info.hole then
+			return info.hole
+		end
+		if info.ice then
+			return nil
+		end
 		if info.stream > 0 and info.streamD < STREAMS[info.stream].bank and h < info.streamW then
 			if info.streamW - h <= info.streamDepth + 0.8 then
 				return info.streamW
@@ -1370,6 +1809,13 @@ function RegionTerrain.new(shape: ShapeTypes.Shape, areas: AreaTypes.MapAreas): 
 			return false
 		end
 		if T.lavaDistance(x, z) < RegionTerrain.LAVA_CLEARANCE then
+			return false
+		end
+		-- S47: never on a peak or a noGroups ridge, never in or by a crevasse
+		if #CREVASSES > 0 and T.crevasseDistance(x, z) < RegionTerrain.CREVASSE_CLEARANCE then
+			return false
+		end
+		if HIGH and T.mountainAt(x, z) then
 			return false
 		end
 		for _, o in { { 0, 0 }, { 4, 0 }, { -4, 0 }, { 0, 4 }, { 0, -4 } } do
@@ -1465,6 +1911,17 @@ function RegionTerrain.new(shape: ShapeTypes.Shape, areas: AreaTypes.MapAreas): 
 		if info.crack < 0 then
 			return if info.crackGlow then "CrackedLava" else "Basalt"
 		end
+		-- S47: crevasse walls of glacier ice over a snowy floor, the ice of frozen lakes (cracks drawn in glacier
+		-- blue) and streams
+		if info.crevasse < 0 then
+			return if slope < STEEP and info.crevasse < -2.5 then "Snow" else "Glacier"
+		end
+		if info.ice then
+			if info.iceBed and cellSeam(x, z, 26, SEED + 170) < 0.5 then
+				return "Glacier"
+			end
+			return "Ice"
+		end
 		if info.ramp then
 			return "Ground"
 		end
@@ -1543,11 +2000,38 @@ function RegionTerrain.new(shape: ShapeTypes.Shape, areas: AreaTypes.MapAreas): 
 			if rule.drylake ~= nil and rule.drylake ~= (info.dry > 0.3) then
 				continue
 			end
+			if rule.glacier ~= nil and rule.glacier ~= info.glacier then
+				continue
+			end
+			if rule.moraine ~= nil and rule.moraine ~= info.moraine then
+				continue
+			end
+			if rule.crevasse ~= nil and rule.crevasse ~= (info.crevasse < 6) then
+				continue
+			end
+			if rule.ice ~= nil and rule.ice ~= (info.frozen < (if info.frozen < 0 then 0 else 14)) then
+				continue
+			end
+			if rule.mountain ~= nil and rule.mountain ~= info.mountain then
+				continue
+			end
 			if rule.theme then
 				if not theme then
 					theme = T.themeAt(x, z)
 				end
 				if not themeMatches(rule.theme, theme :: string) then
+					continue
+				end
+			end
+			if rule.facing then
+				-- the ground rising along the wind faces it (windward); falling along it is the lee
+				local dir, strength = windAt(x, z)
+				local b = math.rad(dir)
+				local gx = (T.height(x + 3, z) - T.height(x - 3, z)) / 6
+				local gz = (T.height(x, z + 3) - T.height(x, z - 3)) / 6
+				local along = gx * math.sin(b) - gz * math.cos(b)
+				local side = if along > 0.05 then "windward" elseif along < -0.05 then "lee" else ""
+				if strength < 0.15 or side ~= rule.facing then
 					continue
 				end
 			end
@@ -1741,6 +2225,43 @@ function RegionTerrain.new(shape: ShapeTypes.Shape, areas: AreaTypes.MapAreas): 
 
 	function T.lavaLevel(i: number, s: number): number
 		return profileAt(riverProfiles[i], s)
+	end
+
+	-- S47 queries -----------------------------------------------------------------------------------------------
+
+	T.windAt = windAt
+
+	-- Top of the ice of a frozen lake or stream (nil elsewhere and over an ice hole).
+	function T.ice(x: number, z: number): number?
+		if #FROZEN == 0 and #STREAMS == 0 then
+			return nil
+		end
+		local _, info = T.sample(x, z)
+		return info.ice
+	end
+
+	-- Distance past the lip of the nearest crevasse (negative inside; math.huge on maps without them).
+	function T.crevasseDistance(x: number, z: number): number
+		if #CREVASSES == 0 then
+			return math.huge
+		end
+		return (crevasseAt(x, z))
+	end
+
+	function T.glacierAt(x: number, z: number): boolean
+		raw(x, z)
+		return lastGlacier
+	end
+
+	-- On a peak or a high (noGroups) ridge.
+	function T.mountainAt(x: number, z: number): boolean
+		raw(x, z)
+		return lastMountain
+	end
+
+	function T.moraineAt(x: number, z: number): boolean
+		raw(x, z)
+		return lastMoraine
 	end
 
 	-- On a mesa or a spire (top, wall or scree).

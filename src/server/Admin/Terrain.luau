@@ -7,7 +7,8 @@
 --   /meadowsstats             server parts, build times, Builds, nodes and monster groups of the Meadows
 --   /regionstats <map>        the same for any region of Logic/WorldGen, with the background build time (S45)
 --   /terraininfo              the ground under the caller: height, material, theme, water / lava, slope (S46)
---   /worldfx <effect> <mode>  switch a world effect on the caller's client (S46)
+--   /worldfx <effect> <mode>  switch a world effect on the caller's client (S46; S47 snow, drift, aurora, plume, eagles,
+--                             avalanche, glow)
 
 local Shared = game:GetService("ReplicatedStorage").Shared
 
@@ -302,6 +303,20 @@ commands.terraininfo = function(player)
 		slope = round(math.deg(math.atan(slope))),
 		walkable = tostring(MapTerrain.walkable(map.id, x, z, 10)),
 	})
+	-- S47: ice, crevasses, wind and mountains (maps with wind zones)
+	if region and region.shape.winds then
+		local ice = region.ice(x, z)
+		local crevasse = region.crevasseDistance(x, z)
+		local dir, strength = region.windAt(x, z)
+		reply(player, "admin.terraininfo.frost", {
+			ice = if ice then tostring(round(ice)) else "—",
+			crevasse = if crevasse < 1e6 then tostring(round(crevasse)) else "—",
+			wind = math.floor(dir + 0.5),
+			strength = round(strength),
+			mountain = tostring(region.mountainAt(x, z)),
+			glacier = tostring(region.glacierAt(x, z)),
+		})
+	end
 	return true
 end
 

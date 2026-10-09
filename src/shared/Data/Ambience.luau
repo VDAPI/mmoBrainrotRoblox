@@ -386,6 +386,111 @@ for id, mood in ASHEN_AREAS do
 	areas[id] = mood
 end
 
+-- S47 Frost Peaks (sounds to find; one Sound per loop shared between areas)
+local SPRUCE_WIND = s("wind in snowy spruce forest loop (soft gusts, creaking trunks, snow falling off branches)", 0.4)
+local SNOW_CREAK = s("snow crunching and creaking loop (cold, quiet, distant footsteps)", 0.25)
+local WOLVES_NIGHT = s("wolves howling winter night loop (pack, distant, long gaps)", 0.35)
+local FROST_CRACK = s("trees cracking from frost loop (sharp distant cracks, winter night)", 0.25)
+local MOUNTAIN_WIND = s("high mountain wind loop (strong, steady, cold)", 0.45)
+local AVALANCHE_FAR = s("distant avalanche rumble loop (long gaps)", 0.25)
+local HOWLING_WIND = s("howling wind night loop (blizzard, mountains)", 0.45)
+local YETI_ROARS = s("distant beast roars loop (big ape, mountains, long gaps)", 0.3)
+local SPIRE_WIND = s("wind whistling through rocks loop (high pitched, gusty)", 0.4)
+local HARPY_SHRIEKS = s("distant bird of prey shrieks loop (harpy, eerie, echo)", 0.3)
+local GUSTS_NIGHT = s("gusty night wind loop (strong gusts, mountains)", 0.4)
+local PASS_WIND = s("strong wind through a mountain pass loop (roaring, funnelled)", 0.5)
+local GIANT_HORNS = s("distant war horn loop (deep, long, echoing in mountains)", 0.3)
+local BIG_FIRE = s("large bonfire crackling loop (big logs, roaring)", 0.35)
+local ICE_SINGING = s("frozen lake ice cracking and singing loop (pings, booms, eerie)", 0.4)
+local LIGHT_WIND = s("light cold wind loop (calm, open space)", 0.3)
+local ICE_BOOMS = s("deep ice booming loop (frozen lake at night, low thuds)", 0.35)
+local TUNDRA_WIND = s("tundra wind loop (steady, open, cold)", 0.45)
+local MAMMOTH_CALLS = s("distant elephant trumpeting loop (mammoth, long gaps, echo)", 0.3)
+local WOLVES_FAR = s("far wolves howling loop (very distant, faint)", 0.25)
+local COLUMN_WIND = s("wind between stone columns loop (hollow, ruins)", 0.4)
+local ICE_CHIMES = s("ice wind chimes loop (crystal, delicate, magical)", 0.3)
+local LOW_GROWL = s("low draconic rumble loop (deep, slow, distant)", 0.3)
+local CRYSTAL_HUM = s("magical crystal hum loop (soft, shimmering)", 0.3)
+local BATTLEMENT_WIND = s("wind on castle battlements loop (cold, stone, flags)", 0.4)
+local FLAG_CREAK = s("frozen flags creaking loop (stiff fabric, ropes, cold)", 0.25)
+local DARK_DRONE = s("dark cold ambient drone loop (low, ominous)", 0.3)
+local DISTANT_HORN = s("single distant horn call loop (long gaps, lonely)", 0.25)
+local BLIZZARD = s("high altitude blizzard loop (roaring wind, snow hiss)", 0.5)
+local WYRM_ROAR = s("distant dragon roar loop (deep, echoing, long gaps)", 0.3)
+
+local FROST_AREAS: { [string]: Mood } = {
+	-- slightly warm tint in the sun, a little haze
+	frostpeak_valley = {
+		tint = "#FFF4E4",
+		tintMix = 0.2,
+		haze = 0.3,
+		sounds = { day = { SPRUCE_WIND, SNOW_CREAK }, night = { WOLVES_NIGHT, FROST_CRACK } },
+	},
+	-- whiter, blown snow dust
+	frostpeak_slopes = {
+		fogColor = "#F2F6FA",
+		fogMix = 0.4,
+		haze = 0.8,
+		sounds = { day = { MOUNTAIN_WIND, AVALANCHE_FAR }, night = { HOWLING_WIND, YETI_ROARS } },
+	},
+	-- clearer
+	frostpeak_harpyrocks = {
+		fogScale = 1.1,
+		sounds = { day = { SPIRE_WIND, HARPY_SHRIEKS }, night = { GUSTS_NIGHT } },
+	},
+	-- grey-blue
+	frostpeak_pass = {
+		fogScale = 0.8,
+		fogColor = "#A8B8C8",
+		fogMix = 0.4,
+		tint = "#E0E8F0",
+		tintMix = 0.25,
+		sounds = { day = { PASS_WIND, GIANT_HORNS }, night = { PASS_WIND, BIG_FIRE } },
+	},
+	-- very bright, icy blue
+	frostpeak_lake = {
+		brightness = 1.08,
+		tint = "#DDF2FF",
+		tintMix = 0.35,
+		saturation = 0.05,
+		sounds = { day = { ICE_SINGING, LIGHT_WIND }, night = { ICE_BOOMS } },
+	},
+	-- flat light, drained, blown snow
+	frostpeak_tundra = {
+		saturation = -0.1,
+		haze = 0.6,
+		sounds = { day = { TUNDRA_WIND, MAMMOTH_CALLS }, night = { TUNDRA_WIND, WOLVES_FAR } },
+	},
+	-- cold blue with a golden accent
+	frostpeak_temple = {
+		tint = "#E4ECFF",
+		tintMix = 0.25,
+		fogColor = "#C8C0A8",
+		fogMix = 0.15,
+		haze = 0.4,
+		sounds = { day = { COLUMN_WIND, ICE_CHIMES }, night = { LOW_GROWL, CRYSTAL_HUM } },
+	},
+	-- steel
+	frostpeak_icewatch = {
+		fogScale = 0.85,
+		fogColor = "#8A98A8",
+		fogMix = 0.35,
+		saturation = -0.12,
+		sounds = { day = { BATTLEMENT_WIND, FLAG_CREAK }, night = { DARK_DRONE, DISTANT_HORN } },
+	},
+	-- white-out
+	frostpeak_wyrmspire = {
+		fogScale = 0.55,
+		fogColor = "#F4F8FC",
+		fogMix = 0.6,
+		haze = 1.4,
+		sounds = { day = { BLIZZARD }, night = { BLIZZARD, WYRM_ROAR } },
+	},
+}
+for id, mood in FROST_AREAS do
+	areas[id] = mood
+end
+
 -- Map-wide moods outside every area (paths between the areas keep the map's plain light).
 local maps: { [string]: Mood } = {
 	meadows = { sounds = { day = { BIRDS, WIND_GRASS }, night = { NIGHT_CRICKETS } } },
@@ -396,6 +501,7 @@ local maps: { [string]: Mood } = {
 			night = { DESERT_NIGHT_WIND, s("distant thunder rumble loop (dry storm, long gaps)", 0.25) },
 		},
 	},
+	frostpeak = { sounds = { day = { MOUNTAIN_WIND }, night = { HOWLING_WIND } } },
 }
 
 -- Positional loops (map-relative).
@@ -450,6 +556,20 @@ local points: { [string]: { Point } } = {
 		{ x = 560, z = -560, radius = 140, sound = CRAG_WIND },
 		{ x = 752, z = 0, radius = 100, sound = s("dwarven forge deep loop (muffled hammers, bellows)", 0.45) },
 		{ x = 610, z = 150, radius = 110, sound = DRONE_LOW, night = true },
+	},
+	-- S47 (positions: Data/Areas/frostpeak sites, streams and lakes)
+	frostpeak = {
+		{ x = -610, z = 11, radius = 50, sound = s("water flowing under ice loop (muffled brook, gurgling)", 0.35) },
+		{ x = -612, z = 80, radius = 50, sound = s("water flowing under ice loop (muffled brook, gurgling)", 0.35) },
+		{ x = -555, z = -169, radius = 50, sound = s("old lantern creaking in the wind loop (metal, slow)", 0.3) },
+		{ x = 196, z = 104, radius = 130, sound = BIG_FIRE },
+		{ x = 22, z = 352, radius = 120, sound = s("ice cracking and creaking loop (frozen waterfall, icicles)", 0.4) },
+		{ x = 166, z = 584, radius = 60, sound = s("water splashing in an ice hole loop (small, cold)", 0.3) },
+		{ x = 300, z = 640, radius = 90, sound = CRYSTAL_HUM, night = true },
+		{ x = 560, z = 0, radius = 70, sound = s("brazier fire loop (crackling, medium)", 0.35) },
+		{ x = 562, z = 570, radius = 80, sound = FLAG_CREAK },
+		{ x = 690, z = -650, radius = 220, sound = s("wind roaring over a mountain summit loop (very strong)", 0.5) },
+		{ x = 745, z = 0, radius = 100, sound = s("deep glacier cracking loop (groaning ice, low booms)", 0.45) },
 	},
 }
 

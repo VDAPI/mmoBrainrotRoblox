@@ -21,8 +21,13 @@
 --     take off when the player comes close, circle and come back),
 --   * dust devils: wandering columns of dust by day on the dunes, the old road, the plain and the dry oasis (at most
 --     two at a time, none on low detail).
--- Admin /worldfx <ash|embers|haze|smoke|vultures|devils|lavaglow> <on|off|auto> switches an effect on the caller's
--- client (AdminClient "worldfx").
+-- S47 (Frost Peaks; snowfall, ground drifts and the aurora: Controllers/FrostWeatherController):
+--   * snow plumes torn off the horn's summit and the ridges' crests downwind (seen from ~480 studs), now and then a
+--     powder avalanche sliding down the Yeti Slopes' gully (particles only, it hurts nobody), dust falling from the
+--     icicles at the Frozen Falls, the gates and the Grotto, yellow glints of harpies' eyes in the clefts at night,
+--   * eagles circling high over the Harpy Rocks and the Wyrm Spire (not harpies: nothing to click).
+-- Admin /worldfx <ash|embers|haze|smoke|vultures|devils|lavaglow|snow|drift|aurora|plume|eagles|avalanche|glow>
+-- <on|off|auto> switches an effect on the caller's client (AdminClient "worldfx").
 -- Only within LIFE_RADIUS; with "World detail" on low there are no animals, half the particles and half the wisps.
 
 local Players = game:GetService("Players")
@@ -40,11 +45,12 @@ local WorldGen = require(ReplicatedStorage.Shared.Logic.WorldGen)
 
 local WorldLifeController = {
 	Name = "WorldLifeController",
-	Deps = { "WorldController", "RegionLightController" },
+	Deps = { "WorldController", "RegionLightController", "FrostWeatherController" },
 }
 
 local WorldController: any
 local RegionLightController: any
+local FrostWeatherController: any
 
 local LIFE_RADIUS = 160
 local FLEE_RADIUS = 16
@@ -417,6 +423,112 @@ local EMITTERS: { [string]: EmitterKind } = {
 			return if t.night then 1.4 else 1
 		end,
 	},
+	-- S47: snow torn off a summit or a crest by the wind (blowing east, the Peaks' wind), seen from afar
+	snowPlume = {
+		size = function(r)
+			return Vector3.new(6 * r, 4, 6 * r)
+		end,
+		props = {
+			Color = ColorSequence.new(Color3.fromHex("#F4F8FC")),
+			Transparency = NumberSequence.new({
+				NumberSequenceKeypoint.new(0, 1),
+				NumberSequenceKeypoint.new(0.15, 0.45),
+				NumberSequenceKeypoint.new(0.7, 0.75),
+				NumberSequenceKeypoint.new(1, 1),
+			}),
+			Size = NumberSequence.new(6, 22),
+			Lifetime = NumberRange.new(4, 7),
+			Speed = NumberRange.new(4, 9),
+			SpreadAngle = Vector2.new(30, 20),
+			Acceleration = Vector3.new(16, 1.5, 3),
+			Rotation = NumberRange.new(0, 360),
+			RotSpeed = NumberRange.new(-20, 20),
+			LightInfluence = 1,
+			EmissionDirection = Enum.NormalId.Top,
+			Rate = 14,
+		},
+		on = always,
+		rate = same,
+		far = true,
+		fx = "plume",
+	},
+	-- S47: a powder avalanche sliding down the gully for ~6 s every ~50 s
+	avalanche = {
+		size = function(r)
+			return Vector3.new(r, 8, r * 1.6)
+		end,
+		props = {
+			Color = ColorSequence.new(Color3.fromHex("#EEF3F7")),
+			Transparency = NumberSequence.new({
+				NumberSequenceKeypoint.new(0, 1),
+				NumberSequenceKeypoint.new(0.2, 0.3),
+				NumberSequenceKeypoint.new(1, 1),
+			}),
+			Size = NumberSequence.new(5, 14),
+			Lifetime = NumberRange.new(3, 5),
+			Speed = NumberRange.new(10, 18),
+			SpreadAngle = Vector2.new(25, 10),
+			Acceleration = Vector3.new(0, -6, 0),
+			Rotation = NumberRange.new(0, 360),
+			LightInfluence = 1,
+			EmissionDirection = Enum.NormalId.Back,
+			Rate = 40,
+		},
+		on = function(_t)
+			return os.clock() % 50 < 6
+		end,
+		rate = same,
+		far = true,
+		fx = "avalanche",
+	},
+	-- S47: glittering dust falling from icicles
+	icicleDust = {
+		size = function(r)
+			return Vector3.new(r * 2, 2, r * 2)
+		end,
+		props = {
+			Color = ColorSequence.new(Color3.fromHex("#E4F6FF")),
+			Transparency = NumberSequence.new(0.2, 0.9),
+			Size = NumberSequence.new(0.18),
+			Lifetime = NumberRange.new(2, 3.5),
+			Speed = NumberRange.new(0.2, 0.6),
+			SpreadAngle = Vector2.new(20, 20),
+			Acceleration = Vector3.new(0.3, -2.4, 0),
+			LightEmission = 0.8,
+			LightInfluence = 0.6,
+			EmissionDirection = Enum.NormalId.Bottom,
+			Rate = 10,
+		},
+		on = always,
+		rate = same,
+		fx = "glow",
+	},
+	-- S47: yellow glints of harpies' eyes in the clefts at night
+	harpyGlint = {
+		size = function(_r)
+			return Vector3.new(14, 10, 14)
+		end,
+		props = {
+			Color = ColorSequence.new(Color3.fromHex("#E8E25A")),
+			Transparency = NumberSequence.new({
+				NumberSequenceKeypoint.new(0, 1),
+				NumberSequenceKeypoint.new(0.3, 0),
+				NumberSequenceKeypoint.new(0.5, 1),
+				NumberSequenceKeypoint.new(1, 1),
+			}),
+			Size = NumberSequence.new(0.35),
+			Lifetime = NumberRange.new(1, 2),
+			Speed = NumberRange.new(0, 0),
+			LightEmission = 1,
+			LightInfluence = 0,
+			Rate = 1.5,
+		},
+		on = function(t)
+			return t.night
+		end,
+		rate = same,
+		fx = "glow",
+	},
 }
 
 type Holder = { part: BasePart, emitter: ParticleEmitter, kind: EmitterKind }
@@ -464,6 +576,17 @@ local function model(kind: string): (Model, { BasePart })
 		})
 		add({ Name = "WingL", Size = Vector3.new(3, 0.1, 1.1), Color = brown })
 		add({ Name = "WingR", Size = Vector3.new(3, 0.1, 1.1), Color = brown })
+	elseif kind == "eagle" then
+		local brown = Color3.fromHex("#3A2E26")
+		add({ Name = "Body", Shape = Enum.PartType.Ball, Size = Vector3.new(1.2, 1, 1.8), Color = brown })
+		add({
+			Name = "Head",
+			Shape = Enum.PartType.Ball,
+			Size = Vector3.new(0.55, 0.55, 0.65),
+			Color = Color3.fromHex("#E8E4DA"),
+		})
+		add({ Name = "WingL", Size = Vector3.new(3.4, 0.1, 1), Color = brown })
+		add({ Name = "WingR", Size = Vector3.new(3.4, 0.1, 1), Color = brown })
 	elseif kind == "bat" then
 		local dark = Color3.fromHex("#1E1A1E")
 		add({ Name = "Body", Shape = Enum.PartType.Ball, Size = Vector3.new(0.5, 0.7, 0.5), Color = dark })
@@ -545,6 +668,10 @@ local function spawnAnimals(origin: Vector3)
 			for _ = 1, 3 + math.floor(rng:NextNumber() * 3) do
 				newAnimal("vulture", home + Vector3.new(0, rng:NextNumber() * 10, 0), p.r or 20, "circle")
 			end
+		elseif p.kind == "eagles" then
+			for _ = 1, 2 do
+				newAnimal("eagle", home + Vector3.new(0, rng:NextNumber() * 14, 0), p.r or 40, "circle")
+			end
 		end
 	end
 end
@@ -578,7 +705,7 @@ end
 local function pose(a: Animal, now: number)
 	local p = a.pos
 	local list = a.parts
-	if a.kind == "vulture" then
+	if a.kind == "vulture" or a.kind == "eagle" then
 		local dir = if a.state == "circle" or a.state == "away"
 			then Vector3.new(-math.sin(a.timer), 0, math.cos(a.timer))
 			else a.target - (a.from or a.target)
@@ -625,8 +752,8 @@ end
 
 local function step(a: Animal, dt: number, now: number, player: Vector3, speed: number, t: Time): boolean
 	local near = (a.home - player).Magnitude < LIFE_RADIUS
-	if a.kind == "vulture" then
-		if not fxOn("vultures") then
+	if a.kind == "vulture" or a.kind == "eagle" then
+		if not fxOn(if a.kind == "eagle" then "eagles" else "vultures") then
 			return false
 		end
 		local d = (player - a.home).Magnitude
@@ -956,10 +1083,16 @@ end
 -- /worldfx: "on" / "off" force an effect on this client, "auto" gives it back.
 function WorldLifeController.SetFx(name: string, mode: string)
 	fxMode[name] = if mode == "on" then true elseif mode == "off" then false else nil
-	if name == "lavaglow" and RegionLightController then
-		RegionLightController.SetEnabled(mode ~= "off")
+	if name == "lavaglow" or name == "glow" then
+		if RegionLightController then
+			RegionLightController.SetEnabled(mode ~= "off")
+		end
 	end
-	if name == "vultures" or name == "lavaglow" then
+	if FrostWeatherController and (name == "snow" or name == "drift" or name == "aurora") then
+		FrostWeatherController.SetFx(name, mode)
+		return
+	end
+	if name == "vultures" or name == "lavaglow" or name == "eagles" then
 		return
 	end
 	-- emitters re-create themselves with the new switch
@@ -972,6 +1105,7 @@ end
 function WorldLifeController.Init(registry)
 	WorldController = registry.Get("WorldController")
 	RegionLightController = registry.Get("RegionLightController")
+	FrostWeatherController = registry.Get("FrostWeatherController")
 	folder = Instance.new("Folder")
 	folder.Name = "Vaelthorn_WorldLife"
 	folder.Parent = Workspace

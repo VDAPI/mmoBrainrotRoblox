@@ -13,6 +13,8 @@
 -- the theme and shores from its terrain (Logic/RegionTerrain).
 -- S46: the Ashen Wastes' themes (ash, saltflat, warcamp, lavafield, burnt, dunes, crags, royalroad, necropolis): no
 -- flowers or green grass there; nothing lies on lava.
+-- S47: the Frost Peaks' themes (snowforest, snowfield, harpyrocks, giants, icelake, tundra, dragontemple, icefort,
+-- wyrmpeak); frozen reeds and ice shards on the shores of the frozen lakes' ice.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -438,6 +440,43 @@ T.turquoise = {
 	lift = 0.12,
 }
 
+-- S47: the Frost Peaks (snow lumps, ice shards, pine cones and twigs, frozen reeds on the shores of the ice, scales
+-- of the dragonspawn and the wyrms, tufts of fur, footprints, broken shafts, ice spikes).
+T.snowLump = item(Vector3.new(1.6, 0.7, 1.3), "#EEF3F7", Enum.Material.Snow, 0.2, true)
+T.iceShard = {
+	size = Vector3.new(0.6, 1.4, 0.5),
+	color = rgb("#BFE6F7"),
+	material = Enum.Material.Ice,
+	lift = 0.5,
+	tilt = true,
+	transparency = 0.2,
+}
+T.pineCone = item(Vector3.new(0.4, 0.6, 0.4), "#4A3424", Enum.Material.Wood, 0.2, true)
+T.pineTwig = item(Vector3.new(1.8, 0.16, 0.16), "#2E3A2A", Enum.Material.Grass, 0.06, true)
+T.frozenReed = {
+	size = Vector3.new(0.18, 3, 0.18),
+	color = rgb("#B8B49A"),
+	material = Enum.Material.Grass,
+	lift = 1.2,
+	tilt = true,
+	water = true,
+}
+T.scaleNavy = item(Vector3.new(0.6, 0.06, 0.5), "#3A4A6B", Enum.Material.SmoothPlastic, 0.04, true)
+T.scaleIce = item(Vector3.new(0.7, 0.06, 0.6), "#7FD4FF", Enum.Material.SmoothPlastic, 0.04, true)
+T.furBrown = item(Vector3.new(0.8, 0.4, 0.6), "#7A6A5A", Enum.Material.Fabric, 0.15, true)
+T.furPale = item(Vector3.new(0.8, 0.4, 0.6), "#C8DDEB", Enum.Material.Fabric, 0.15, true)
+T.track = item(Vector3.new(1.2, 0.05, 1.8), "#AFC0CC", Enum.Material.Snow, 0.02)
+T.shaft = item(Vector3.new(3.4, 0.16, 0.16), "#4A3E34", Enum.Material.Wood, 0.08, true)
+T.iceSpike = {
+	size = Vector3.new(0.7, 2.6, 0.7),
+	color = rgb("#BFE6F7"),
+	material = Enum.Material.Ice,
+	lift = 1,
+	tilt = true,
+	transparency = 0.15,
+}
+T.frostStone = item(Vector3.new(1.2, 0.7, 1), "#8E9CA8", Enum.Material.Slate, 0.2, true)
+
 -- Area themes (S26, Data/Areas `decor`): items per chunk and the mix.
 local THEMES: { [string]: { count: number, mix: { { string | number } } } } = {
 	meadow = {
@@ -651,6 +690,51 @@ THEMES.necropolis = {
 	mix = { { "sherd", 5 }, { "linen", 4 }, { "ripple", 4 }, { "pebble", 3 }, { "turquoise", 1 } },
 }
 
+-- S47: the Frost Peaks' areas (no flowers or green grass).
+THEMES.snowforest = {
+	count = 30,
+	mix = {
+		{ "snowLump", 6 },
+		{ "pineCone", 4 },
+		{ "pineTwig", 5 },
+		{ "track", 3 },
+		{ "furPale", 1 },
+		{ "frozenReed", 2 },
+	},
+}
+THEMES.snowfield = {
+	count = 24,
+	mix = { { "snowLump", 6 }, { "frostStone", 5 }, { "pebbleSnow", 5 }, { "track", 2 } },
+}
+THEMES.harpyrocks = {
+	count = 24,
+	mix = { { "feather", 6 }, { "frostStone", 5 }, { "bone", 3 }, { "snowLump", 3 }, { "frozenReed", 2 } },
+}
+THEMES.giants = {
+	count = 24,
+	mix = { { "stone", 5 }, { "bone", 4 }, { "pebbleSnow", 5 }, { "snowLump", 3 }, { "furBrown", 1 } },
+}
+THEMES.icelake = {
+	count = 24,
+	mix = { { "iceShard", 5 }, { "frozenReed", 6 }, { "snowLump", 5 }, { "furBrown", 1 } },
+}
+THEMES.tundra = {
+	count = 22,
+	mix = { { "tuftDry", 6 }, { "gravel", 4 }, { "bone", 3 }, { "furBrown", 3 }, { "snowLump", 2 } },
+}
+THEMES.dragontemple = {
+	count = 24,
+	mix = { { "slabChip", 6 }, { "scaleNavy", 4 }, { "coin", 1 }, { "snowLump", 3 }, { "iceShard", 2 } },
+}
+THEMES.icefort = {
+	count = 24,
+	mix = { { "stone", 5 }, { "iceShard", 5 }, { "shaft", 3 }, { "snowLump", 3 }, { "track", 2 } },
+}
+THEMES.wyrmpeak = {
+	count = 22,
+	mix = { { "iceSpike", 5 }, { "scaleIce", 4 }, { "bone", 3 }, { "snowLump", 4 } },
+}
+
 local THEME_MAX = 44
 local THEME_JITTER = 40
 
@@ -788,7 +872,18 @@ local function shore(map: Maps.MapDef, areas: any, x: number, z: number): boolea
 	if region then
 		local sd = region.streamDistance(x, z)
 		local ld = region.lakeDistance(x, z)
-		return (sd > -0.5 and sd < 5) or (ld > -1.5 and ld < 6) or region.marshWeight(x, z) > 0.4
+		if (sd > -0.5 and sd < 5) or (ld > -1.5 and ld < 6) or region.marshWeight(x, z) > 0.4 then
+			return true
+		end
+		-- S47: the snowy shore of a sheet of ice (frozen lakes; the `lakes` circles are only ice holes there)
+		if region.shape.frozenLakes and region.ice(x, z) == nil then
+			for _, o in { { 6, 0 }, { -6, 0 }, { 0, 6 }, { 0, -6 } } do
+				if region.ice(x + o[1], z + o[2]) ~= nil then
+					return true
+				end
+			end
+		end
+		return false
 	end
 	return areas ~= nil and nearWater(areas.lakes, x, z)
 end

@@ -3,7 +3,7 @@
 -- (Logic/AshenGen, light tag "lava", built with the client detail), far more than a scene can afford. Twice a second
 -- this controller turns on only the Config.RegionLights[setting] lights nearest to the camera (4 low, 8 mid, 12 high
 -- "World detail") and turns the others off; it is the only owner of their `Enabled`. Caves (S48) can register their
--- own tags in TAGS.
+-- own tags in TAGS. S47: the Frost Peaks' crystals, rune stones, the Ice Watch's loopholes and the caves' glow (tag "crystal").
 
 local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -19,7 +19,7 @@ local RegionLightController = {
 }
 
 -- Light holder tags (attribute Fx of the "Light" part) managed here.
-local TAGS: { [string]: boolean } = { lava = true }
+local TAGS: { [string]: boolean } = { lava = true, crystal = true } -- S47: crystals, runes, loopholes of the Peaks
 local EVERY = 0.5
 
 local lights: { [BasePart]: PointLight } = {}

@@ -453,6 +453,131 @@ Flora.species.giantOak = function(bp, x, y, z, s, big, _ctx)
 	end
 end
 
+-- S47 Frost Peaks -------------------------------------------------------------------------------------------------
+
+local SNOW: Kit.Swatch = { c = "#EEF3F7", m = "Snow" }
+local FROST: Kit.Swatch = { c = "#C9D6DE", m = "Snow" }
+local ICE: Kit.Swatch = { c = "#BFE6F7", m = "Ice" }
+
+-- Snowy spruce: a straight trunk, dark green tiers narrowing to the top, each under a white cap of snow. The shell
+-- is the trunk and one tall crown lump; tiers, caps and icicles come on the client.
+Flora.species.snowPine = function(bp, x, y, z, s, big, _ctx)
+	local rng = bp.rng
+	local h = 14 * s
+	bp:add("cyl", h, 1.1 * s, 1.1 * s, x, y + h / 2 - 0.5, z, 0, 0, 90, trunk(big))
+	local list = { "#1E3A2C", "#22402F", "#1A3326" }
+	local c = list[rng:int(1, 3)]
+	bp:add(
+		"ball",
+		4.6 * s,
+		14 * s,
+		4.6 * s,
+		x,
+		y + 9.6 * s,
+		z,
+		0,
+		0,
+		0,
+		o(leaf(c), crownLod(big), { col = false, q = false })
+	)
+	local tiers = 5
+	for i = 1, tiers do
+		local k = (i - 1) / (tiers - 1)
+		local r = (10.5 - 8 * k) * s
+		local ty = y + (3 + 2.9 * (i - 1)) * s
+		bp:add(
+			"ball",
+			r,
+			2.6 * s,
+			r,
+			x,
+			ty,
+			z,
+			0,
+			rng:float(0, 90),
+			0,
+			o(leaf(c), "detail", { col = false, q = false })
+		)
+		bp:add(
+			"ball",
+			r * 0.82,
+			1.1 * s,
+			r * 0.82,
+			x,
+			ty + 1.1 * s,
+			z,
+			0,
+			0,
+			0,
+			o(SNOW, "detail", { col = false, q = false })
+		)
+	end
+	bp:add("ball", 1.4 * s, 3 * s, 1.4 * s, x, y + 16.4 * s, z, 0, 0, 0, o(SNOW, "detail", { col = false, q = false }))
+	for i = 1, 3 do
+		local a = i * 2.1 + rng:float(-0.4, 0.4)
+		local r = 6.2 * s
+		bp:add(
+			"cyl",
+			1.2 * s,
+			0.18 * s,
+			0.18 * s,
+			x + math.cos(a) * r,
+			y + 2.2 * s,
+			z + math.sin(a) * r,
+			0,
+			0,
+			90,
+			o(ICE, "fine", { col = false, q = false })
+		)
+	end
+end
+
+-- Frost-killed tree: a grey trunk with bare branches rimed white, a crust of snow on the forks.
+Flora.species.frozenDead = function(bp, x, y, z, s, big, _ctx)
+	local rng = bp.rng
+	local h = 10 * s
+	local opt = trunk(big)
+	opt.c = "#5E5A56"
+	bp:add("cyl", h, 1.2 * s, 1.2 * s, x, y + h / 2 - 0.5, z, 0, rng:float(0, 90), 90 + rng:float(-6, 6), opt)
+	bp:add("ball", 1.6 * s, 0.8 * s, 1.6 * s, x, y + h - 0.4, z, 0, 0, 0, o(SNOW, crownLod(big), { col = false }))
+	for i = 1, 5 do
+		local a = i * 1.3 + rng:float(-0.4, 0.4)
+		local by = y + h * rng:float(0.35, 0.9)
+		local ex, ey, ez = x + math.cos(a) * 3.4 * s, by + rng:float(1, 2.6) * s, z + math.sin(a) * 3.4 * s
+		bp:beam(x, by, z, ex, ey, ez, 0.4 * s, o({ c = "#6A6560", m = "Wood" }, "detail", { col = false, q = false }))
+		bp:beam(
+			ex,
+			ey,
+			ez,
+			ex + math.cos(a + 0.5) * 1.3 * s,
+			ey + 0.9 * s,
+			ez + math.sin(a + 0.5) * 1.3 * s,
+			0.2 * s,
+			o(FROST, "fine", { col = false, q = false })
+		)
+		bp:add("ball", 0.9 * s, 0.45 * s, 0.9 * s, ex, ey + 0.2 * s, ez, 0, 0, 0, o(SNOW, "fine", { col = false }))
+	end
+end
+
+-- A cluster of ice spikes: tall pale-blue shards leaning out from a snowy foot (the shell is the tallest).
+Flora.species.iceSpike = function(bp, x, y, z, s, big, _ctx)
+	local rng = bp.rng
+	local n = rng:int(3, 5)
+	for i = 1, n do
+		local a = i * (2 * math.pi / n) + rng:float(-0.3, 0.3)
+		local d = if i == 1 then 0 else rng:float(1.2, 2.6) * s
+		local h = (if i == 1 then 10 else rng:float(4, 7.5)) * s
+		local w = (if i == 1 then 2.2 else rng:float(1, 1.6)) * s
+		local tilt = if i == 1 then rng:float(-6, 6) else rng:float(12, 26)
+		bp:push(x + math.cos(a) * d, y - 0.6, z + math.sin(a) * d, 0, math.deg(-a), tilt)
+		local lod: Blueprint.Lod = if i == 1 and big then "shell" else "detail"
+		bp:add("wedge", w, h, w, 0, h / 2, -w / 4, 0, 0, 0, o(ICE, lod, { col = i == 1 and big, q = false, t = 0.15 }))
+		bp:add("wedge", w, h, w, 0, h / 2, w / 4, 0, 180, 0, o(ICE, "detail", { col = false, q = false, t = 0.15 }))
+		bp:pop()
+	end
+	bp:add("ball", 5 * s, 1.4 * s, 5 * s, x, y, z, 0, 0, 0, o(SNOW, "detail", { col = false }))
+end
+
 -- Undergrowth (client only) -------------------------------------------------------------------------------------
 
 export type UnderFn = (bp: Kit.BP, x: number, y: number, z: number) -> ()
@@ -548,6 +673,25 @@ Flora.under.deadBush = function(bp, x, y, z)
 	bp:add("ball", 1.8, 0.8, 1.8, x, y + 0.3, z, 0, 0, 0, o({ c = "#7A6A4E", m = "Grass" }, "detail", { col = false }))
 end
 
+-- S47: a low snowed-under shrub (dark twigs sticking out of a drift)
+Flora.under.snowShrub = function(bp, x, y, z)
+	local rng = bp.rng
+	bp:add("ball", 3.2, 1.2, 2.6, x, y + 0.2, z, 0, rng:float(0, 180), 0, o(SNOW, "detail", { col = false }))
+	for i = 1, 4 do
+		local a = i * 1.6 + rng:float(-0.4, 0.4)
+		bp:beam(
+			x,
+			y + 0.4,
+			z,
+			x + math.cos(a) * 1.4,
+			y + rng:float(1.2, 2),
+			z + math.sin(a) * 1.4,
+			0.12,
+			o({ c = "#3A3028", m = "Wood" }, "fine", { col = false })
+		)
+	end
+end
+
 Flora.under.sapling = function(bp, x, y, z)
 	local rng = bp.rng
 	local s = rng:float(0.45, 0.7)
@@ -638,6 +782,8 @@ export type Options = {
 	half: number,
 	-- false where nothing may grow (buildings, groups, crossings...); `extra` grows the clearings
 	clear: (x: number, z: number, extra: number) -> boolean,
+	-- S47: species by streams and marshes (default willows and black dead trees)
+	waterKinds: { [string]: number }?,
 }
 
 local function treeGround(g: Ground, half: number, x: number, z: number, maxSlope: number): boolean
@@ -705,7 +851,7 @@ function Flora.forest(opts: Options): ({ Kit.Build }, { TreeInfo })
 				local weights = rule.kinds
 				-- willows lean over the water, mushrooms ring the rot
 				if g.streamDistance(px, pz) < 14 or g.marshWeight(px, pz) > 0.2 then
-					weights = { mossWillow = 55, blackDead = 45 }
+					weights = opts.waterKinds or { mossWillow = 55, blackDead = 45 }
 				end
 				local kind = r:weighted(weights)
 				local fn = Flora.species[kind] or Flora.species.gnarledOak

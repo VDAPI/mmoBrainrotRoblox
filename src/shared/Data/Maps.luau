@@ -154,6 +154,19 @@ local LIGHT = {
 		tint = "#FFD8C8",
 		saturation = -0.1,
 	}),
+	-- S47: blue moonlight on the snow (it reflects: bright enough to fight); the aurora, crystals, runes, fires and the
+	-- Ice Watch's loopholes give the light
+	frostpeakNight = lighting({
+		clockTime = 0,
+		brightness = 1,
+		ambient = "#2E3A55",
+		outdoorAmbient = "#3A4A6A",
+		fogColor = "#1C2A44",
+		fogEnd = 700,
+		atmosphere = { density = 0.4, haze = 1.2, glare = 0, color = "#1C2A44", decay = "#0E1628" },
+		tint = "#D0E2FF",
+		saturation = -0.08,
+	}),
 	frostpeak = lighting({
 		clockTime = 11,
 		brightness = 2.6,
@@ -363,8 +376,17 @@ map({
 	spawn = { x = -700, y = 4, z = 0 },
 	biome = "snow",
 	lighting = LIGHT.frostpeak,
+	-- S47: day and night (Logic/DayCycle) with the areas' moods on top (Data/Ambience); snowfall and the aurora on
+	-- the client (Controllers/WorldLifeController).
+	dayNight = true,
+	nightLighting = LIGHT.frostpeakNight,
+	-- Creator Store: "frozen mountains ambient loop", low strings and choir pads, 2-3 min, loops cleanly.
 	music = "",
 	buildMode = "generated",
+	-- S47: the shaped peaks build in the background; server budget: ~330 big trees (2 parts each), buildings and
+	-- props ~400, portals / cave entrances / signposts ~300 (tests/frostpeak.spec: generator shell + 300 <= maxParts).
+	buildLate = true,
+	maxParts = 2600,
 	worldMap = { x = 0.9, y = 0.34 },
 	links = { "ashen", "city", "frostpeak_grotto", "frostpeak_hold", "frostpeak_cave" },
 })

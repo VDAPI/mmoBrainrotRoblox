@@ -234,10 +234,23 @@ function TerrainLayers.voxels(
 			local gz = (heights[i][k + 1] - heights[i][k - 1]) / (2 * V)
 			local mat = material(x, z, h, math.sqrt(gx * gx + gz * gz), info)
 			local level = water(x, z, h, info)
+			-- S47: ice over water (frozen lakes and streams): the bed, water up to the ice, at least one full voxel
+			-- of ice under the top
+			local bed = if type(info) == "table" then info.iceBed else nil
 			for j = 1, ny do
 				local y = yBottom + V * (j - 1)
 				local solid = math.clamp((h - y) / V, 0, 1)
-				if solid >= 0.5 or (solid > 0 and level == nil) then
+				if bed and bed < h - V * 1.5 then
+					if solid <= 0 then
+						continue
+					elseif y >= h - V * 1.5 then
+						mi[j][k], oi[j][k] = mat, solid
+					elseif bed - y >= V * 0.5 then
+						mi[j][k], oi[j][k] = info.bedMat or "Ground", math.clamp((bed - y) / V, 0, 1)
+					else
+						mi[j][k], oi[j][k] = "Water", 1
+					end
+				elseif solid >= 0.5 or (solid > 0 and level == nil) then
 					mi[j][k], oi[j][k] = mat, solid
 				elseif level and y < level then
 					mi[j][k], oi[j][k] = "Water", math.clamp((level - y) / V, 0, 1)

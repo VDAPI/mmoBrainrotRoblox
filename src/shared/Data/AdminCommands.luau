@@ -230,7 +230,22 @@ cmd("world", "terrainrebuild", { enum("map", TERRAIN_MAPS) }, { danger = true })
 -- S46: the ground under the caller and the client's world effects
 cmd("world", "terraininfo", {})
 cmd("world", "worldfx", {
-	enum("effect", { "ash", "embers", "haze", "smoke", "vultures", "devils", "lavaglow" }),
+	enum("effect", {
+		"ash",
+		"embers",
+		"haze",
+		"smoke",
+		"vultures",
+		"devils",
+		"lavaglow",
+		"snow",
+		"drift",
+		"aurora",
+		"plume",
+		"eagles",
+		"avalanche",
+		"glow",
+	}),
 	enum("mode", { "on", "off", "auto" }),
 })
 
