@@ -4,7 +4,6 @@
 -- Stackable items (materials, potions, scrolls) merge up to their maxStack (999).
 
 local Items = require("../Data/Items")
-local Rarities = require("../Data/Rarities")
 local Types = require("../Types")
 
 type ItemInstance = Types.ItemInstance
@@ -294,17 +293,6 @@ function Inventory.remove(inv: Inventory, itemId: string, n: number): (number, {
 		table.insert(changed, slot.index)
 	end
 	return removed, changed
-end
-
--- Rarity of the best item in a list (for loot bag glow).
-function Inventory.bestRarity(items: { any }): number
-	local best = Rarities.COMMON
-	for _, item in items do
-		if item.rarity > best then
-			best = item.rarity
-		end
-	end
-	return best
 end
 
 return Inventory

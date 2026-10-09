@@ -88,13 +88,4 @@ function MapRoute.hops(fromMap: string, toMap: string, isOpen: IsOpen?): number?
 	return if route then #route - 1 else nil
 end
 
--- Ways out of a map (for cards and the map legend).
-function MapRoute.exits(mapId: string): { Exit }
-	local out: { Exit } = {}
-	for _, portal in Portals.onMap(mapId) do
-		table.insert(out, { kind = portal.kind, id = portal.id, x = portal.x, z = portal.z, target = portal.target })
-	end
-	return out
-end
-
 return MapRoute

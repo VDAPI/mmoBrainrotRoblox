@@ -3,7 +3,7 @@
 -- is done. Nine arcs, one per Meadows area, each with an NPC who lives there (Data/Npcs, spots from S26) and
 -- something to do in the world besides killing (quest anchors of S26: `use` objectives). Rewards: EXP as a share
 -- of what the quest's level needs (0.25, the arc's last quest 0.45: all of them ~40% of the EXP from level 1 to 20,
--- see PROGRESS "Decyzje" S27), gold half of a main quest's, and the last
+-- see docs/DECYZJE.md S27), gold half of a main quest's, and the last
 -- quest of an arc (★) lets the player pick one of three items for their class. Texts: quest.<id>.title,
 -- .p1..pN (pages), .progress, .done; arcs quest.arc.<arc>; quest items quest.item.<item>.
 

@@ -106,8 +106,4 @@ Theme.BaseResolution = Vector2.new(1920, 1080)
 -- Touch devices use a smaller base so everything renders larger.
 Theme.BaseResolutionTouch = Vector2.new(1280, 720)
 
-function Theme.classColor(hex: string): Color3
-	return Color3.fromHex(hex)
-end
-
 return Theme

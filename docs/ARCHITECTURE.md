@@ -1,6 +1,6 @@
 # Vaelthorn: architektura techniczna
 
-> Obowiązuje we wszystkich sesjach. Zmiany architektury zapisuj w `docs/PROGRESS.md` (sekcja „Decyzje”).
+> Obowiązuje we wszystkich sesjach. Zmiany architektury zapisuj w `docs/DECYZJE.md`.
 
 ## 1. Narzędzia
 
@@ -37,7 +37,7 @@ mmoBrainrotRoblox/
 ├─ rokit.toml  wally.toml  selene.toml  stylua.toml  .luaurc
 ├─ scripts/check.ps1  scripts/check.sh
 ├─ docs/
-│  ├─ DESIGN.md  ARCHITECTURE.md  PROGRESS.md
+│  ├─ DESIGN.md  ARCHITECTURE.md  PROGRESS.md  DECYZJE.md  SESJE.md  SILNIKI.md
 │  └─ sessions/S01..S14.md       # prompty sesji (archiwum)
 ├─ src/
 │  ├─ shared/                    # → ReplicatedStorage.Shared
@@ -84,7 +84,7 @@ mmoBrainrotRoblox/
 ### `require`
 
 - W `shared/Logic` i `shared/Data` używaj **require przez ścieżkę tekstową** (`require("./Exp")`, `require("../Data/Rarities")`), bo działa i w Roblox, i w Lune. Moduły w `Logic` nie mogą dotykać `game`, `workspace`, `Instance`, `task`, `Random.new` z seedem z zewnątrz trzeba przekazać przez `Logic/Rng`.
-- Jeśli require-by-string sprawi kłopot w Roblox dla jakiegoś przypadku: zapisz to w PROGRESS i użyj warstwy `Shared/init.luau`, ale testy Lune muszą dalej działać.
+- Jeśli require-by-string sprawi kłopot w Roblox dla jakiegoś przypadku: zapisz to w `docs/DECYZJE.md` i użyj warstwy `Shared/init.luau`, ale testy Lune muszą dalej działać.
 - Serwisy i kontrolery mogą używać zwykłych `require(script.Parent...)`.
 
 ## 3. Loader serwisów i kontrolerów
@@ -195,7 +195,7 @@ type CharacterData = {
 
 - Detale świata (S20): drobne dekoracje tworzy tylko klient (`DecorController`, chunki 128 st. z seeda mapy, pula
   części, promień wg opcji). Serwer: rekwizyty, drogowskazy i punkty charakterystyczne obszarów z `Data/Areas`
-  (`Prefabs.areaFeatures`, `Prefabs.extraDecor`), dekoracje bez `CanQuery`/`CanTouch`. Streaming: TargetRadius 512,
+  (`Prefabs.areaFeatures`), dekoracje bez `CanQuery`/`CanTouch`. Streaming: TargetRadius 512,
   MinRadius 128, IntegrityMode MinimumRadiusPause. Mapa (M) buforuje statyczną warstwę na mapę, zoom przez `UIScale`.
 
 - Miasto startowe (S21, `docs/miasto/MIASTO.md`): plan w `Shared/Data/Town` (wygenerowany), czyste moduły
@@ -227,8 +227,8 @@ type CharacterData = {
   raycastów). Kotwice questów: części z tagiem `QuestAnchor` (atrybuty `AnchorId`, `MapId`). Klient:
   `DecorController` (motyw z `decor` obszaru), `MeadowsLifeController` (pogoda wokół gracza, zwierzęta, ptaki),
   `AmbienceController` + `Data/Ambience` (nastrój obszaru: modulacja światła w `WorldController.SetModulation`, pętle
-  dźwięków przez `VaelthornAmbientGroup`). Podglądy bez Studio: `tools/meadowsdump.luau` + `meadowsmap.py`,
-  `tools/meadowsview.luau` + `meadowsview.py`.
+  dźwięków przez `VaelthornAmbientGroup`). Podglądy bez Studio: `tools/regiondump.luau meadows` + `regionmap.py`,
+  `tools/regionview.luau meadows` + `regionview.py` (S45 zastąpiły narzędzia S26).
 - Silnik krain (S45, pierwsza: Mroczny Bór; S46/S47 dokładają dane i własne generatory):
   - kształt terenu krainy w `Data/Terrain/<map>` (typy `Data/Terrain/Types`: strefy, wzgórza, grzbiety ze skarpą,
     płaskowyże z urwiskiem na wierzchołek, wąwozy, niecki, mokradła z wyspami, spłaszczenia, rampy, motywy, reguły
@@ -506,4 +506,4 @@ type CharacterData = {
 - Nazwy: PascalCase moduły i serwisy, camelCase zmienne i pola danych, UPPER_SNAKE stałe.
 - Pliki ≤ ~600 linii; większe dziel.
 - Komentarze krótkie, po polsku lub angielsku (spójnie: **kod i komentarze po angielsku**, teksty dla graczy przez lokalizację).
-- Żadnych „TODO: implement later” w zakończonej funkcji. Jeśli czegoś nie zdążysz, zapisz to w PROGRESS → „Niedokończone”.
+- Żadnych „TODO: implement later” w zakończonej funkcji. Jeśli czegoś nie zdążysz, zapisz to w `docs/PROGRESS.md` → „Niedokończone”.

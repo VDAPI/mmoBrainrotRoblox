@@ -2,7 +2,7 @@
 -- Monster and boss loot (DESIGN §5.5). Pure: returns what dropped; services turn it into item instances.
 --   items     : { defId, ilvl, rarity } (equipment only; S30 rarity ids, see Data/Rarities)
 --   materials : { id, n }
---   gold      : gold for the kill (CombatService awards gold immediately, see PROGRESS S04)
+--   gold      : gold for the kill (CombatService awards gold immediately, see docs/DECYZJE.md S04)
 
 local Combat = require("../Data/Combat")
 local Config = require("../Config")

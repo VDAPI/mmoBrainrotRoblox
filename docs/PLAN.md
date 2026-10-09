@@ -9,7 +9,10 @@ Instalacja narzędzi i uruchomienie gry: `README.md` w katalogu głównym.
 |---|---|
 | `docs/DESIGN.md` | Zasady gry i liczby startowe: klasy, staty, formuły, przedmioty, rzadkości, ulepszanie, alchemia, błogosławieństwa, umiejętności, potwory, bossy, PvP, grupa, gildie, aukcja, questy, monetyzacja, UI |
 | `docs/ARCHITECTURE.md` | Narzędzia, struktura repo, loader serwisów, sieć, dane (ProfileStore), replikacja stanu, encje, świat, UI (Fusion), bezpieczeństwo, testy, konwencje |
-| `docs/PROGRESS.md` | Dziennik postępu (stan sesji, decyzje, niedokończone, zgłoszone błędy, instrukcje testów); Claude aktualizuje go po każdej sesji |
+| `docs/PROGRESS.md` | Stan sesji, niedokończone, zgłoszone błędy (krótki, czytany na start każdej sesji) |
+| `docs/SESJE.md` | Dziennik sesji: co zrobiono, pliki, „Instrukcja testu SXX”, poprawki po testach |
+| `docs/DECYZJE.md` | Decyzje z numerem sesji (nadpisują DESIGN i ARCHITECTURE) |
+| `docs/SILNIKI.md` | Faktyczne pola silnika krain i jaskiń (S45–S51) |
 | `docs/sessions/S01–S14.md` | Prompty sesji podstawowych (zrobione) |
 | `docs/sessions/S18–S20.md` | Po testach S17: S18 walka, sterowanie, przedmioty, broń, UI; S19 grupy potworów, jaskinie, nowe potwory; S20 szczegółowa mapa z obszarami potworów, bogatszy i wydajniejszy świat, wygoda łupu |
 | `docs/sessions/S21–S24.md` | Po testach S20: S21 nowe miasto startowe, S22 animacje ataku, smycz, śmierć z wyborem miejsca, wybór expowiska, czytelna mapa; S23 panel developerski; S24 ładne potwory, bossowie i pety |
@@ -18,21 +21,21 @@ Instalacja narzędzi i uruchomienie gry: `README.md` w katalogu głównym.
 | `docs/miasto/MIASTO.md` | Specyfikacja miasta startowego (S21) i narzędzia planu |
 | `docs/sessions/FIX.md` | Szablon sesji poprawek po testach |
 
-Sesje S15–S17 i S17b nie mają osobnych promptów (zakres był podawany w rozmowie); ich opis jest w `PROGRESS.md`.
+Sesje S15–S17 i S17b nie mają osobnych promptów (zakres był podawany w rozmowie); ich opis jest w `SESJE.md`.
 
 ## Rytm pracy
 
 1. Nowa sesja Claude Code → wklejasz `SXX.md` (albo każesz przerobić kolejne pliki z `docs/sessions/`) → Claude pracuje
    bez testowania w Studio, commituje i pushuje na `main`.
-2. Ty: `git pull`, `rojo serve`, Play w Studio i przechodzisz „Instrukcję testu SXX” z `docs/PROGRESS.md` (komendy admina
+2. Ty: `git pull`, `rojo serve`, Play w Studio i przechodzisz „Instrukcję testu SXX” z `docs/SESJE.md` (komendy admina
    przyspieszają testy, np. `/lvl 50`, `/legend`, `/give`, `/help`).
 3. Błędy wpisujesz w `PROGRESS.md` → „Zgłoszone błędy” albo wypełniasz `FIX.md` i uruchamiasz sesję poprawek.
 
 ## Nowe pliki planu
 
 Nowe prompty sesji wrzucaj tylko do `docs/sessions/`, a zmieniony `DESIGN.md` podmieniaj pojedynczo. **Nie kopiuj
-całego folderu `docs/` z archiwum planu na repozytorium**: nadpisuje `PROGRESS.md` (dziennik wszystkich sesji) pustym
-szablonem i `ARCHITECTURE.md` bez decyzji dopisanych w trakcie prac.
+całego folderu `docs/` z archiwum planu na repozytorium**: nadpisuje `PROGRESS.md`, `SESJE.md` i `DECYZJE.md` (stan i dziennik
+wszystkich sesji) pustymi szablonami i `ARCHITECTURE.md` bez decyzji dopisanych w trakcie prac.
 
 ## Ważne
 

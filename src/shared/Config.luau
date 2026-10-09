@@ -201,7 +201,7 @@ local Config = {
 		goldHigh = 40,
 		goldExponent = 1.6,
 	},
-	-- Streaming (S20, decision in PROGRESS): also set in default.project.json (Workspace properties).
+	-- Streaming (S20, decision in docs/DECYZJE.md): also set in default.project.json (Workspace properties).
 	StreamingTargetRadius = 512,
 	StreamingMinRadius = 128,
 }

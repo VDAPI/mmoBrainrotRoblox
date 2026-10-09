@@ -37,10 +37,6 @@ export type Result = {
 -- Yields with task.wait() after every `every` parts (shared across calls); nil never yields.
 export type Pacer = { every: number, left: number }
 
-function BlueprintBuild.pacer(every: number): Pacer
-	return { every = every, left = every }
-end
-
 local colors: { [string]: Color3 } = {}
 local materials: { [string]: Enum.Material } = {}
 

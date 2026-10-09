@@ -1,6 +1,6 @@
 --!strict
 -- Shared data types. Persistent tables use string keys only (DataStore JSON and RemoteEvent
--- serialization both break on sparse numeric arrays), see PROGRESS "Decisions" S01.
+-- serialization both break on sparse numeric arrays), see docs/DECYZJE.md S01.
 
 export type ClassId = "Warrior" | "Hunter" | "Mage" | "Cleric"
 export type StatId = "str" | "dex" | "int" | "vit"

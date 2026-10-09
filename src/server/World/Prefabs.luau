@@ -175,60 +175,6 @@ function Prefabs.bush(ctx: Context, x: number, z: number, color: string?): Model
 	return model
 end
 
-function Prefabs.flowers(ctx: Context, x: number, z: number, color: string): Model
-	local model = newModel(ctx, "Flowers")
-	for _ = 1, 5 do
-		local fx, fz = x + ctx.rng:float(-3, 3), z + ctx.rng:float(-3, 3)
-		part(ctx, model, {
-			Name = "Flower",
-			Shape = Enum.PartType.Ball,
-			Size = Vector3.new(0.7, 0.7, 0.7),
-			CFrame = CFrame.new(Build.ground(ctx, fx, fz) + Vector3.new(0, 0.5, 0)),
-			Color = hex(color),
-			Material = Enum.Material.SmoothPlastic,
-			CanCollide = false,
-		})
-	end
-	return model
-end
-
--- Scatters a prefab over a rectangle, skipping points closer than `clear` to any listed {x, z, r} circle
--- and points where `allow` returns false.
-function Prefabs.scatter(
-	ctx: Context,
-	count: number,
-	x1: number,
-	z1: number,
-	x2: number,
-	z2: number,
-	place: (x: number, z: number) -> (),
-	clear: { { number } }?,
-	allow: ((x: number, z: number) -> boolean)?
-)
-	local placed = 0
-	local tries = 0
-	while placed < count and tries < count * 6 do
-		tries += 1
-		local x, z = ctx.rng:float(x1, x2), ctx.rng:float(z1, z2)
-		local ok = true
-		local circles: { { number } } = clear or {}
-		for _, c in circles do
-			local dx, dz = x - c[1], z - c[2]
-			if dx * dx + dz * dz < c[3] * c[3] then
-				ok = false
-				break
-			end
-		end
-		if ok and allow and not allow(x, z) then
-			ok = false
-		end
-		if ok then
-			place(x, z)
-			placed += 1
-		end
-	end
-end
-
 -- Buildings --------------------------------------------------------------------------------------
 
 export type HouseOptions = {
@@ -855,37 +801,6 @@ function Prefabs.wagon(ctx: Context, x: number, z: number, rot: number?): Model
 	return model
 end
 
-function Prefabs.well(ctx: Context, x: number, z: number): Model
-	local base = baseAt(ctx, x, z)
-	local model = newModel(ctx, "Well")
-	part(ctx, model, {
-		Name = "Ring",
-		Shape = Enum.PartType.Cylinder,
-		Size = Vector3.new(3, 6, 6),
-		CFrame = base * CFrame.new(0, 1.5, 0) * CFrame.Angles(0, 0, math.rad(90)),
-		Color = hex("#7A7468"),
-		Material = Enum.Material.Cobblestone,
-		CanQuery = true,
-	})
-	part(ctx, model, {
-		Name = "Roof",
-		Size = Vector3.new(7, 0.6, 4),
-		CFrame = base * CFrame.new(0, 6.5, 0),
-		Color = hex("#5A3A2A"),
-		Material = Enum.Material.WoodPlanks,
-	})
-	for _, side in { -1, 1 } do
-		part(ctx, model, {
-			Name = "Post",
-			Size = Vector3.new(0.5, 6, 0.5),
-			CFrame = base * CFrame.new(side * 2.8, 3.5, 0),
-			Color = hex("#5A4632"),
-			Material = Enum.Material.Wood,
-		})
-	end
-	return model
-end
-
 -- Landmark of a monster area (S20, DESIGN §3.6): camp, ruins, watchtower, stone circle, wagon wreck,
 -- nest, mine shaft or graveyard.
 function Prefabs.landmark(ctx: Context, kind: string, x: number, z: number, color: string?)
@@ -1070,43 +985,6 @@ function Prefabs.areaFeatures(ctx: Context, data: Areas.MapAreas, color: string?
 			end
 			carried = length - (t - 140)
 		end
-	end
-end
-
--- Extra detail for a region map (S20, DESIGN §3.7): a mix of 4 tree species of the biome, wagons with
--- barrels and crates by the roads, wells near the respawn points. Everything avoids roads, water and caves.
-function Prefabs.extraDecor(ctx: Context, data: Areas.MapAreas, species: { TreeKind }, wells: { { number } }?)
-	local clear = Build.clearOf(data, 8)
-	local hx, hz = ctx.map.size.x / 2 - 20, ctx.map.size.z / 2 - 20
-	Prefabs.scatter(ctx, 60, -hx, -hz, hx, hz, function(x, z)
-		Prefabs.tree(ctx, x, z, species[ctx.rng:int(1, #species)], ctx.rng:float(0.8, 1.3))
-	end, nil, clear)
-	-- Wagons and cargo by the roads
-	local placed = 0
-	for _, road in data.roads do
-		local p = road.points
-		if #p >= 4 and placed < 6 then
-			local i = 1 + 2 * ctx.rng:int(0, math.max(0, #p / 2 - 2))
-			local ax, az, bx, bz = p[i], p[i + 1], p[i + 2], p[i + 3]
-			if bx and bz then
-				local t = ctx.rng:float(0.3, 0.7)
-				local length = math.sqrt((bx - ax) ^ 2 + (bz - az) ^ 2)
-				if length > 1 then
-					local dx, dz = (bx - ax) / length, (bz - az) / length
-					local offset = road.width / 2 + 7
-					local x, z = ax + (bx - ax) * t - dz * offset, az + (bz - az) * t + dx * offset
-					if math.abs(x) < hx and math.abs(z) < hz then
-						Prefabs.wagon(ctx, x, z, math.deg(math.atan2(dx, dz)))
-						Prefabs.barrel(ctx, x + dx * 6, z + dz * 6)
-						Prefabs.crate(ctx, x - dx * 6, z - dz * 6)
-						placed += 1
-					end
-				end
-			end
-		end
-	end
-	for _, w in (wells or {}) :: { { number } } do
-		Prefabs.well(ctx, w[1], w[2])
 	end
 end
 

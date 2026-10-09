@@ -2,7 +2,7 @@
 
 > Jedno źródło prawdy dla treści świata po testach S17. Na tym pliku opierają się S19 (obszary, grupy, jaskinie, nowe potwory) i S20 (mapa). Zasady ogólne są w `DESIGN.md` (§3.5 jaskinie, §3.6 obszary, §5.5 drop, §15 potwory, §16 bossy).
 > Poziom w nawiasie przy potworze = przedział poziomów, w jakim się pojawia w danym miejscu. Elita ma poziom +2, Elita II +4 względem zwykłego (DESIGN §15.1).
-> Liczby są startowe: Claude dopasowuje pozycje i liczby grup do layoutu, ale nazwy, przedziały i przydział Elit trzyma się tej tabeli. Zmiany zapisuje w `PROGRESS.md` → „Decyzje”.
+> Liczby są startowe: Claude dopasowuje pozycje i liczby grup do layoutu, ale nazwy, przedziały i przydział Elit trzyma się tej tabeli. Zmiany zapisuje w `docs/DECYZJE.md`.
 
 ## 1. Ścieżka expienia (szybki przegląd)
 

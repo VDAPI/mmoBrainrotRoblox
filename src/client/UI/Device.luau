@@ -24,8 +24,4 @@ UserInputService.LastInputTypeChanged:Connect(function(inputType)
 	end
 end)
 
-function Device.isTouch(): boolean
-	return Fusion.peek(Device.Touch)
-end
-
 return Device

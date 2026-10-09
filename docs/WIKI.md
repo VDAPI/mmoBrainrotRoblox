@@ -206,7 +206,7 @@ Kolejność wiki: S34 → S36 → dalej po kolei (S37–S41 zależą tylko od S3
 - Na start: ten plik, `CLAUDE.md`, `wiki/design/README.md`, odpowiednie makiety z `wiki/design/frames/`.
 - Bez pytań do właściciela w trakcie; niejasność → rozwiązanie najbliższe makiecie i danym, zapis w **Decyzje**.
 - Kod gry (`src/`) zmieniamy tylko, gdy to konieczne (np. flaga `wiki = false`, brakujący klucz lokalizacji), z uzasadnieniem w **Decyzje**.
-- Po pracy: `npm run check` w `wiki/` (typy, lint, testy, build) i `scripts/check` muszą przejść; zrzuty `npm run shots` na 390 i 1440 px porównane z makietami; aktualizacja tego pliku (Stan, Decyzje, Niedokończone) i sekcji sesji w `docs/PROGRESS.md` z „Instrukcją testu”; commit `SXX: wiki — …` i push.
+- Po pracy: `npm run check` w `wiki/` (typy, lint, testy, build) i `scripts/check` muszą przejść; zrzuty `npm run shots` na 390 i 1440 px porównane z makietami; aktualizacja tego pliku (Stan, Decyzje, Niedokończone) i sekcji sesji w `docs/SESJE.md` z „Instrukcją testu”; commit `SXX: wiki — …` i push.
 - Wdrożenie: domenę, konto Cloudflare i sekrety GitHub podłącza właściciel według sekcji „Wdrożenie” (pisze ją S44); sesje tego nie robią.
 
 
@@ -761,3 +761,29 @@ sam) i wgrywa `wiki/dist` na Cloudflare Pages. Bez sekretów workflow przechodzi
   zrobione (profil jest przy obszarze i w `mechanics.areaProfiles`).
 
 - S48: jaskinie na silniku jaskiń (`Data/CaveShapes`) rysują w SVG prawdziwy obrys podłogi (`CaveTerrain.outline`, `m-floor`) i jeziora (`m-water`) zamiast kół sal i drzewa korytarzy; koła `room-<jaskinia>-<n>` (`m-room`) zostają (kontrakt id).
+
+## Polecenia (wcześniej w CLAUDE.md)
+
+- Decyzje, kontrakt i stan: `docs/WIKI.md`. Strona w `wiki/` (Astro, od S36); makiety tylko do wglądu w `wiki/design/`.
+- Dane wiki: `tools/wikidump.luau` (CLI) + `tools/WikiData/*` (czyste moduły: buildery, `Schema`, `Json`, `Clean`, `Leak`).
+  Wyjście jest generowane i commitowane: `wiki/src/data/*.json` + `types.ts`, `wiki/src/styles/tokens.data.css`,
+  `docs/PRZEDMIOTY.md`. Test: `tests/wikidump.spec.luau`.
+- **Po każdej sesji zmieniającej `src/shared/Data` (albo Logic używaną przez eksport) uruchom `lune run tools/wikidump.luau`**
+  (od S36: `npm run data` w `wiki/`, od S37 robi też mapy SVG `lune run tools/wikimap.luau` → `wiki/public/img/maps/`)
+  i zacommituj zmiany; `--check` mówi, czy dane są aktualne.
+- Strona (S36+): `cd wiki`, `npm install`, `npm run dev` (podgląd), `npm run build` + `npm run preview` (z wyszukiwarką),
+  `npm run check` (typy, lint, testy, build, linki), `npm run data` (eksport danych), `npm run shots` (zrzuty 390/1440),
+  `npm run renders` (S38: rendery potworów, bossów i petów + OG; Python, `tools/wiki-renders/README.md`), `npm run renders:test`.
+  `npm run build` robi też obrazy OG (S39, `scripts/og-images.mjs`); `SHOTS_ONLY=bestiariusz,boss npm run shots` = tylko wybrane.
+  S44: `npm run qa` (Playwright: axe, klawiatura, układ; po buildzie), `npm run lighthouse`, `npm run compare` (makieta obok
+  zrzutu), `npm run routes` (pliki tras sekcji z `src/views/paths.ts`; nowa sekcja = wpis tam + `npm run routes`),
+  `npm run ci:local` (jak workflow „Wiki”). Wdrożenie i progi jakości: `docs/WIKI.md` → „Wdrożenie”, „Jakość”.
+  `npm run images:city` (S43): podglądy miasta z `docs/miasto/img` do `wiki/public/img/city/` (commitowane).
+  `npm run icons` (S40, też na końcu `npm run data`): ikony przedmiotów z atlasów S35 do `wiki/public/img/items/` +
+  manifest `wiki/src/generated/item-icons.json` (commitowane); po zmianie atlasów albo `Data/ItemIconAtlas` uruchom i zacommituj.
+- **Po zmianie skryptu bossa** (`src/server/Entities/BossScripts/*`, stałe `local NAZWA = liczba`): `npm run data` i sprawdź
+  teksty w `wiki/src/content/bosses` (liczby tylko jako `{NAZWA}`; brak stałej wywala build). Nowy atak bossa / zdolność
+  Elity II = klucz `boss.<id>.attack.<atak>` / `ability.<id>.name` (PL i EN, test `localization.spec`).
+  Komponenty i jak dodać stronę: `docs/WIKI.md` → „Komponenty”.
+- Nowe pole gry na wiki = wpis w schemacie buildera (`Schema.rec`) + wartość w builderze. Liczby tylko z funkcji `Logic`
+  i z `Data`; nic z `Data/Codes`, `AdminCommands`, `DevPreset`, `Products` (wyjątek S43: `WikiData/Premium.luau`).

@@ -71,6 +71,7 @@ Model liczbowy: `tests/Balance.luau` (moduły gry, wartości oczekiwane), cele: 
 
 - `docs/DESIGN.md` – zasady gry i liczby
 - `docs/ARCHITECTURE.md` – architektura techniczna
-- `docs/PROGRESS.md` – postęp, decyzje, instrukcje testów po każdej sesji
+- `docs/PROGRESS.md` – stan, niedokończone, zgłoszone błędy; `docs/SESJE.md` – dziennik i instrukcje testów;
+  `docs/DECYZJE.md` – decyzje; `docs/SILNIKI.md` – pola silników krain i jaskiń
 - `docs/BALANS.md` – raport balansu 1–20 (generowany)
 - `CLAUDE.md` – zasady dla Claude Code

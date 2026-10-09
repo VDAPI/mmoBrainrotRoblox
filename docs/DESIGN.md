@@ -1,6 +1,6 @@
 # Vaelthorn: dokument designu gry (GDD)
 
-> Źródło prawdy dla wszystkich sesji Claude Code. Jeśli kod i ten dokument się różnią, wygrywa ten dokument, chyba że `docs/PROGRESS.md` mówi inaczej (decyzje podjęte później).
+> Źródło prawdy dla wszystkich sesji Claude Code. Jeśli kod i ten dokument się różnią, wygrywa ten dokument, chyba że `docs/DECYZJE.md` mówi inaczej (decyzje podjęte później).
 > Wszystkie liczby są **startowe i strojone w plikach `src/shared/Data/*`** i `src/shared/Config.luau`. Nigdy nie wpisuj liczb balansu na sztywno w serwisach.
 
 ## 1. Wizja

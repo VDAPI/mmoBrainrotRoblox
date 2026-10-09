@@ -97,22 +97,6 @@ end
 
 -- Terrain ----------------------------------------------------------------------------------------
 
--- Solid ground slab with its top at y = 0 over a rectangle.
-function Build.fill(
-	ctx: Context,
-	x1: number,
-	z1: number,
-	x2: number,
-	z2: number,
-	material: Enum.Material,
-	depth: number?
-)
-	local d = depth or 16
-	local size = Vector3.new(math.abs(x2 - x1), d, math.abs(z2 - z1))
-	local centre = Build.at(ctx, (x1 + x2) / 2, -d / 2, (z1 + z2) / 2)
-	terrain:FillBlock(CFrame.new(centre), size, material)
-end
-
 -- Paints the top layer of a rectangle (rotated by `angle` radians) with another material.
 function Build.paint(ctx: Context, x: number, z: number, w: number, h: number, angle: number, material: Enum.Material)
 	local cf = CFrame.new(Build.at(ctx, x, -2, z)) * CFrame.Angles(0, angle, 0)
@@ -212,42 +196,6 @@ function Build.boundary(ctx: Context)
 		p.CFrame = CFrame.new(Build.at(ctx, wall[1], 140, wall[2]))
 		p.Parent = ctx.folder
 	end
-end
-
--- Cave: a solid rock block over the whole map; rooms and corridors are carved with `carve*`.
-function Build.caveShell(ctx: Context, material: Enum.Material, height: number)
-	local hx, hz = ctx.map.size.x / 2 + 40, ctx.map.size.z / 2 + 40
-	terrain:FillBlock(
-		CFrame.new(Build.at(ctx, 0, (height - 16) / 2, 0)),
-		Vector3.new(hx * 2, height + 16, hz * 2),
-		material
-	)
-	ctx.rayFrom = 6
-end
-
--- Carves a room (flat floor at y = 0) with a domed ceiling.
-function Build.carveRoom(ctx: Context, x: number, z: number, radius: number, height: number)
-	terrain:FillCylinder(CFrame.new(Build.at(ctx, x, height / 2, z)), height, radius, Enum.Material.Air)
-	terrain:FillBall(Build.at(ctx, x, height * 0.6, z), radius * 0.85, Enum.Material.Air)
-	table.insert(ctx.sketch.shapes, { t = "circle", x = x, z = z, r = radius, c = "floor" })
-end
-
--- Carves a straight corridor between two points.
-function Build.carveCorridor(
-	ctx: Context,
-	ax: number,
-	az: number,
-	bx: number,
-	bz: number,
-	width: number,
-	height: number
-)
-	local dx, dz = bx - ax, bz - az
-	local length = math.sqrt(dx * dx + dz * dz)
-	local cf = CFrame.new(Build.at(ctx, (ax + bx) / 2, height / 2, (az + bz) / 2))
-		* CFrame.Angles(0, math.atan2(-dz, dx), 0)
-	terrain:FillBlock(cf, Vector3.new(length + width, height, width), Enum.Material.Air)
-	table.insert(ctx.sketch.shapes, { t = "line", p = { ax, az, bx, bz }, w = width, c = "floor" })
 end
 
 -- Gameplay markers ---------------------------------------------------------------------------------

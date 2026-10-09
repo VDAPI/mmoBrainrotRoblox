@@ -126,10 +126,6 @@ function Boss.HpFraction(self: Boss): number
 	return math.max(0, self.monster.hp) / math.max(1, self.monster.stats.maxHp)
 end
 
-function Boss.Elapsed(self: Boss): number
-	return os.clock() - self.startedAt
-end
-
 local function applySpeed(self: Boss)
 	local haste = (self.def.haste or {})[self.phase] or 1
 	self.monster.stats.attackInterval = self.baseInterval / haste
