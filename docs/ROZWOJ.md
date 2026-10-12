@@ -301,6 +301,10 @@ Broń każdej ścieżki (uzasadnienie i pokrycie w sekcjach klas):
   aktywnego.
 - `LevelService.SetLevel` w dół robi `Paths.clampToLevel` i przelicza punkty statystyk w obu zestawach (także w
   `buildOther`); testy migracji i admina obejmują nieaktywny zestaw.
+- S58: kopia wymaga tylko żywej postaci poza walką (miejsce dowolne, bo nie zmienia aktywnego zestawu); odstęp
+  przełączania to `Config.BuildSetCooldown` (5 s) na serwerze. Przy awansie nowe aktywne podstawy trafiają też na wolne
+  miejsca paska drugiego zestawu (bez toastu); przy wczytaniu `Paths.cleanSet` czyści pasek i `path.bp` drugiego
+  zestawu, a `SetLevel` w dół robi na nim `cleanSet` + `StatPlan.refit`.
 
 ### 2.10 Zmiany w zestawie i Zwój Nowej Ścieżki
 
@@ -324,6 +328,8 @@ Broń każdej ścieżki (uzasadnienie i pokrycie w sekcjach klas):
 - `Logic/StatPlan.suggest`: każdy wolny punkt idzie do statystyki z największym niedoborem względem proporcji planu
   (liczonej od punktów ponad start). Wynik trafia jako oczekujący do `StatAllocator`; gracz zatwierdza jak dziś
   (`AllocateStats`).
+- S58: wynik w liczbach całkowitych, punkty w statystykach spoza planu liczą się do sumy, remis według `Stats.primary`;
+  przycisk dorzuca resztę wolnych punktów do rezerwacji gracza (jego ręczne rezerwacje zostają).
 
 ## 3. Model danych i mapa kodu
 
@@ -343,8 +349,8 @@ Broń każdej ścieżki (uzasadnienie i pokrycie w sekcjach klas):
 | `Data/Titles` | tytuły ścieżek `path_<pathId>`, `req.kind = "mainPath"` |
 | `Data/Combat` | nowe `pvp` (mnożniki 7.6), `skillSpeedRef` (8) |
 | `Logic/Skills` | `rankLevel`, `rankAt`, `effective(skill, rank, choices, mods)`, `cost(skill, rank, L, classId, mods)`; bez `canLearn`, `spentPoints`, `refundAll` |
-| `Logic/Paths` | nowy: `rowsFor`, `pointsAt`, `free`, `rowOpen`, `canBuy`, `canRefund`, `refund`, `canChooseMain` (z `freeUsed`), `skillRank`, `availableSkills`, `skillUsable`, `skillMods`, `validHotbar`, `passiveTotals`, `activeNodes`, `auras`, `inAura`, `luck`, `clampToLevel`, `weaponOk`, `canEdit(ctx)`; S57 dokłada pomocnicze `pathsOf`, `classHasPaths`, `isPublished`, `findNode`, `spent`, `ranksIn`, `weaponTypesOf`, `nodeValues`, `isTeamNode`, `canPutOnBar`, `canChooseBreakpoint`, `effectiveFor`, `withSource` / `sourceOf` (źródło danych, test na `tests/fixtures/paths.luau`) i `MAIN_LEVEL` |
-| `Logic/Luck`, `PartyBonus`, `StatPlan`, `EffectStack`, `LevelCurves` | nowe, czyste |
+| `Logic/Paths` | nowy: `rowsFor`, `pointsAt`, `free`, `rowOpen`, `canBuy`, `canRefund`, `refund`, `canChooseMain` (z `freeUsed`), `skillRank`, `availableSkills`, `skillUsable`, `skillMods`, `validHotbar`, `passiveTotals`, `activeNodes`, `auras`, `inAura`, `luck`, `clampToLevel`, `weaponOk`, `canEdit(ctx)`; S57 dokłada pomocnicze `pathsOf`, `classHasPaths`, `isPublished`, `findNode`, `spent`, `ranksIn`, `weaponTypesOf`, `nodeValues`, `isTeamNode`, `canPutOnBar`, `canChooseBreakpoint`, `effectiveFor`, `withSource` / `sourceOf` (źródło danych, test na `tests/fixtures/paths.luau`) i `MAIN_LEVEL`; S58 zestawy: `swapSets`, `copySet`, `emptySet`, `otherSet`, `activeSet`, `cloneSet`, `setView`, `cleanSet`, `mainWeaponOk`, `statPlan`, akcje `canEdit` `switchSet` / `copySet` (pola `dead`, `inRun`) |
+| `Logic/Luck`, `PartyBonus`, `StatPlan`, `EffectStack`, `LevelCurves` | nowe, czyste; `StatPlan` (S58): `startOf`, `total`, `spent`, `refit`, `suggest` |
 | `Logic/AccountSchema`, `CharacterFactory`, `Types` | schemat 6 i nowe postacie (5) |
 
 ### 3.2 Typy
@@ -395,7 +401,8 @@ export type ReferenceBuild = {
   `PutOnBar(skillId, slot?)`, `AckRework()`; `SetHotbar` zostaje (`Paths.validHotbar`). Usunięte: `LearnSkill`,
   `ResetSkills`.
 - `PathService` (nowy): te remote'y poza paskiem, zestawy (z `freeUsed`), zwój, sygnał `Changed`, nasłuch
-  `EquipmentService.Changed`, `GetLuck`, warunek wejścia do lochu z nowej `DungeonService.NearAnyEntrance(player)`.
+  `EquipmentService.Changed`, `GetLuck`, warunek wejścia do lochu z nowej `DungeonService.NearAnyEntrance(player)`;
+  S58: `DungeonService.InRun(player)` (członek przebiegu do `finish`), `PathService.AdminSwitch` / `AdminCopy`.
   `PartyAuraService` (nowy, 7.3).
 - Zmiany na serwerze: `SkillService` (rzucanie przez `Paths.skillRank` / `skillUsable`, `Skills.effective` z wyborami
   i `Paths.skillMods`, pasywki i haki z `Paths.passiveTotals`, `PutOnBar`, automatyczne wkładanie na pasek z 5),

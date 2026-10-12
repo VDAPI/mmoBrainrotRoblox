@@ -83,7 +83,8 @@ przedmiotów czyta STATY); odstępstwa idą do `docs/DECYZJE.md`, a kontrakt pop
   serwer, opis i wiki biorą umiejętność z `Skills.effective(skill, rank, choices, mods)` (ROZWOJ 2.7), gracz przez
   `Paths.effectiveFor`. Stawy postaci graczy to `AnimationConstraint` (nie `Motor6D`).
 - **Ścieżka / węzeł** (S57): `Data/Paths/<Klasa>` (kształt: `tests/fixtures/paths.luau`), umiejętność z `path` i
-  `unlock` = poziom rzędu, teksty `path.<pathId>.*`, `wiki = false` do wydania, `paths.spec` sprawdza dane. Reguły
+  `unlock` = poziom rzędu, teksty `path.<pathId>.*`, `wiki = false` do wydania, `statPlan` (plan przycisku „Rozdaj jak
+  zaleca ścieżka”, nigdy na wiki), `paths.spec` sprawdza dane. Reguły
   (punkty, rzędy, broń, pasek, pasywki) tylko w `Logic/Paths`; serwer `PathService`.
 
 ## Typy Fusion

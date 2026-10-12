@@ -9,11 +9,14 @@
 -- Logic/Paths, breakpoint badges from path.bp) and one tab per path of the class ("Paths soon" without paths). A
 -- path tab is a plain list of rows and nodes with "+" / "-" (BuyNode / RefundNode), the main path button and "Refund
 -- all nodes"; every rule comes from Logic/Paths. UI/SkillsTab asks for a tab (Scroll of a New Path).
+-- S58 (ROZWOJ 2.9, 4): the header row starts with the build set switch ("Set 1 / Set 2", "Copy" with a confirmation).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local BuildSetSwitch = require(script.Parent.Parent.Components.BuildSetSwitch)
 local Button = require(script.Parent.Parent.Components.Button)
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
+local Device = require(script.Parent.Parent.Device)
 local DragDrop = require(script.Parent.Parent.DragDrop)
 local Elements = require(ReplicatedStorage.Shared.Data.Elements)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
@@ -42,9 +45,7 @@ local TILE = 44
 local HEADER_HEIGHT = 36
 local PREVIEW_HEIGHT = 150
 local PICK_CELL = 64
-local INFO_HEIGHT = 22
 local TABS_HEIGHT = 30
-local TOP = INFO_HEIGHT + TABS_HEIGHT + 8 -- content below the points line and the tabs
 local NODE_HEIGHT = 40
 
 local GOLD_HEX = "#E8C66A"
@@ -111,6 +112,10 @@ local function SkillsWindow(
 	local picking = scope:Value(nil :: string?)
 	local tab = scope:Value(SkillsTab.take() or "base")
 	local busy = false
+	-- S58: the header row (build set switch, points, main path); taller buttons on touch
+	local touch = Fusion.peek(Device.Touch)
+	local headerHeight = if touch then 52 else 44
+	local top = headerHeight + TABS_HEIGHT + 8 -- content below the header and the tabs
 
 	-- The character as Logic/Paths reads it, tracked by `use`.
 	local function charOf(use: Fusion.Use): Paths.Char
@@ -905,19 +910,36 @@ local function SkillsWindow(
 	})
 
 	return {
-		scope:New("TextLabel")({
-			Name = "Points",
-			Size = UDim2.new(1, 0, 0, INFO_HEIGHT),
+		scope:New("Frame")({
+			Name = "Header",
+			Size = UDim2.new(1, 0, 0, headerHeight),
 			BackgroundTransparency = 1,
-			Text = info,
-			FontFace = Theme.Fonts.BodyBold,
-			TextSize = 14,
-			TextColor3 = Theme.Colors.Gold,
-			TextXAlignment = Enum.TextXAlignment.Left,
+			[Children] = {
+				BuildSetSwitch(scope, {
+					ShowModal = showModal,
+					Height = if touch then Theme.Size.MinTouch else 32,
+					AnchorPoint = Vector2.new(0, 0.5),
+					Position = UDim2.fromScale(0, 0.5),
+					LayoutOrder = 1,
+				}),
+				scope:New("TextLabel")({
+					Name = "Points",
+					AnchorPoint = Vector2.new(1, 0.5),
+					Position = UDim2.fromScale(1, 0.5),
+					Size = UDim2.new(1, -330, 0, 22),
+					BackgroundTransparency = 1,
+					Text = info,
+					FontFace = Theme.Fonts.BodyBold,
+					TextSize = 14,
+					TextColor3 = Theme.Colors.Gold,
+					TextXAlignment = Enum.TextXAlignment.Right,
+					TextTruncate = Enum.TextTruncate.AtEnd,
+				}),
+			},
 		}),
 		scope:New("Frame")({
 			Name = "Tabs",
-			Position = UDim2.fromOffset(0, INFO_HEIGHT + 4),
+			Position = UDim2.fromOffset(0, headerHeight + 4),
 			Size = UDim2.new(1, 0, 0, TABS_HEIGHT),
 			BackgroundTransparency = 1,
 			[Children] = {
@@ -931,8 +953,8 @@ local function SkillsWindow(
 		}),
 		scope:New("Frame")({
 			Name = "Base",
-			Position = UDim2.fromOffset(0, TOP),
-			Size = UDim2.new(1, 0, 1, -TOP),
+			Position = UDim2.fromOffset(0, top),
+			Size = UDim2.new(1, 0, 1, -top),
 			BackgroundTransparency = 1,
 			Visible = scope:Computed(function(use): boolean
 				return use(activeTab) == "base"
@@ -1020,8 +1042,8 @@ local function SkillsWindow(
 		}),
 		scope:New("Frame")({
 			Name = "Soon",
-			Position = UDim2.fromOffset(0, TOP),
-			Size = UDim2.new(1, 0, 1, -TOP),
+			Position = UDim2.fromOffset(0, top),
+			Size = UDim2.new(1, 0, 1, -top),
 			BackgroundTransparency = 1,
 			Visible = scope:Computed(function(use): boolean
 				return use(activeTab) == "soon"
@@ -1056,8 +1078,8 @@ local function SkillsWindow(
 		}),
 		scope:New("ScrollingFrame")({
 			Name = "Path",
-			Position = UDim2.fromOffset(0, TOP),
-			Size = UDim2.new(1, 0, 1, -TOP),
+			Position = UDim2.fromOffset(0, top),
+			Size = UDim2.new(1, 0, 1, -top),
 			CanvasSize = UDim2.new(),
 			AutomaticCanvasSize = Enum.AutomaticSize.Y,
 			BackgroundTransparency = 1,

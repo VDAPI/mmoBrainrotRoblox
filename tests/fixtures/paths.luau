@@ -193,6 +193,7 @@ local storm = {
 	descKey = "path.fxStorm.desc",
 	titleId = "path_fxStorm",
 	weapon = { main = { "staff", "wand" }, offhand = { "orb" } },
+	statPlan = { int = 3, vit = 2 }, -- S58: the path plan; fxRune has none (the class plan applies)
 	rows = {
 		{
 			choice = false,

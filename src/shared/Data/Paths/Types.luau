@@ -47,7 +47,8 @@ export type PathDef = {
 	titleId: string, -- path_<pathId> (the title itself comes in S59)
 	weapon: WeaponReq,
 	rows: { PathRow }, -- 11; level and point requirement come from Paths.rowsFor
-	statPlan: { [string]: number }?, -- S58
+	-- S58: plan of the path as main path; the class plan applies without one; never on the wiki
+	statPlan: { [string]: number }?,
 	itemWeights: any?, -- S67; never on the wiki
 	reference: { ReferenceBuild }, -- model builds; never on the wiki
 	wiki: boolean?, -- false = unpublished on the wiki (ROZWOJ 3.5)

@@ -3,15 +3,21 @@
 -- with "Confirm"; holding + or - repeats faster. The pending values feed a live preview of derived stats.
 -- FIX 2026-10-09: every stat says what one point gives (numbers from Data/Stats.Formula).
 -- S54: DEX crit, speed and dodge per point at the current character level (StatCalc.dexFactor).
+-- S58 (ROZWOJ 2.11): "Spend as the path suggests" adds the free points to the reservation by the plan of the main path
+-- (or the class, Logic/Paths.statPlan; split by Logic/StatPlan.suggest); the player confirms as usual. A line below
+-- the buttons names the plan.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Button = require(script.Parent.Parent.Parent.Components.Button)
+local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Net = require(ReplicatedStorage.Shared.Net)
+local Paths = require(ReplicatedStorage.Shared.Logic.Paths)
 local Sounds = require(script.Parent.Parent.Parent.Sounds)
 local State = require(script.Parent.Parent.Parent.State)
 local StatCalc = require(ReplicatedStorage.Shared.Logic.StatCalc)
+local StatPlan = require(ReplicatedStorage.Shared.Logic.StatPlan)
 local Stats = require(ReplicatedStorage.Shared.Data.Stats)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
@@ -20,6 +26,7 @@ local Toast = require(script.Parent.Parent.Parent.Components.Toast)
 local Children, OnEvent = Fusion.Children, Fusion.OnEvent
 
 type Scope = Fusion.Scope<typeof(Fusion)>
+type PlanInfo = { plan: StatPlan.Plan, pathKey: string? }
 
 export type Props = {
 	-- { str, dex, int, vit } points reserved but not yet confirmed.
@@ -129,6 +136,21 @@ local function StatAllocator(scope: Scope, props: Props): Instance
 	local primary = State.Value({ "derived", "primary" })
 	local busy = scope:Value(false)
 	local level = State.Value({ "character", "level" })
+	local classId = State.Value({ "character", "class" })
+	local pathState = State.Value({ "character", "path" })
+
+	-- The plan of the main path, else of the class; nil without a class or with an empty plan.
+	local planInfo = scope:Computed(function(use): PlanInfo?
+		local c = use(classId)
+		if type(c) ~= "string" or Classes.get(c) == nil then
+			return nil
+		end
+		local plan, def = Paths.statPlan({ class = c, level = 1, path = use(pathState) } :: any)
+		if next(plan) == nil then
+			return nil
+		end
+		return { plan = plan, pathKey = if def then def.nameKey else nil }
+	end)
 
 	-- What one DEX point gives at the current level: ranged damage in full, crit, speed and dodge rated (S54).
 	local function ratedDex(perPoint: number): Fusion.Computed<string>
@@ -160,6 +182,29 @@ local function StatAllocator(scope: Scope, props: Props): Instance
 		pending:set(current)
 		Sounds.play("click")
 		return true
+	end
+
+	-- Adds the rest of the free points by the plan; the player's own reservations stay.
+	local function suggest()
+		local info = Fusion.peek(planInfo)
+		local free = Fusion.peek(available)
+		local class = Classes.get(Fusion.peek(classId) or "")
+		if Fusion.peek(busy) or free <= 0 or info == nil or class == nil then
+			return
+		end
+		local reserved = Fusion.peek(pending)
+		local current: { [string]: number } = {}
+		local base = State.Get({ "character", "stats" })
+		for _, id in Stats.primary do
+			current[id] = (if type(base) == "table" then base[id] or 0 else 0) + (reserved[id] or 0)
+		end
+		local adds = StatPlan.suggest(info.plan, class.startStats :: any, current, free)
+		local nextPending = table.clone(reserved)
+		for id, n in adds do
+			nextPending[id] = (nextPending[id] or 0) + n
+		end
+		pending:set(nextPending)
+		Sounds.play("click")
 	end
 
 	local function confirm()
@@ -321,7 +366,7 @@ local function StatAllocator(scope: Scope, props: Props): Instance
 						LayoutOrder = 1,
 						Text = Text.T(scope, "common.cancel"),
 						Variant = "ghost",
-						Size = UDim2.new(0.5, -Theme.Padding.Small / 2, 1, 0),
+						Size = UDim2.new(0.24, -Theme.Padding.Small * 2 / 3, 1, 0),
 						Disabled = scope:Computed(function(use): boolean
 							return total(use(pending)) == 0 or use(busy)
 						end),
@@ -331,15 +376,55 @@ local function StatAllocator(scope: Scope, props: Props): Instance
 					}),
 					Button(scope, {
 						LayoutOrder = 2,
+						Text = Text.T(scope, "character.suggest"),
+						Variant = "secondary",
+						TextSize = Theme.TextSize.Small,
+						Size = UDim2.new(0.42, -Theme.Padding.Small * 2 / 3, 1, 0),
+						Disabled = scope:Computed(function(use): boolean
+							return use(planInfo) == nil or use(available) <= 0 or use(busy)
+						end),
+						OnClick = suggest,
+					}),
+					Button(scope, {
+						LayoutOrder = 3,
 						Text = Text.T(scope, "common.confirm"),
 						Variant = "primary",
-						Size = UDim2.new(0.5, -Theme.Padding.Small / 2, 1, 0),
+						Size = UDim2.new(0.34, -Theme.Padding.Small * 2 / 3, 1, 0),
 						Disabled = scope:Computed(function(use): boolean
 							return total(use(pending)) == 0 or use(busy)
 						end),
 						OnClick = confirm,
 					}),
 				},
+			}),
+			scope:New("TextLabel")({
+				Name = "Plan",
+				LayoutOrder = 12,
+				Size = UDim2.new(1, 0, 0, 18),
+				BackgroundTransparency = 1,
+				Text = scope:Computed(function(use): string
+					local info = use(planInfo)
+					if info == nil then
+						return ""
+					end
+					local parts: { string } = {}
+					for _, id in Stats.primary do
+						local w = info.plan[id]
+						if w then
+							table.insert(parts, `{Text.get(use, "stat." .. id)} {w}`)
+						end
+					end
+					local plan = table.concat(parts, " · ")
+					if info.pathKey then
+						return Text.get(use, "character.plan.path", { path = Text.get(use, info.pathKey), plan = plan })
+					end
+					return Text.get(use, "character.plan.class", { plan = plan })
+				end),
+				FontFace = Theme.Fonts.Body,
+				TextSize = Theme.TextSize.Small,
+				TextColor3 = Theme.Colors.TextMuted,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				TextTruncate = Enum.TextTruncate.AtEnd,
 			}),
 		},
 	})

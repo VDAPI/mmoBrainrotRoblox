@@ -1,5 +1,5 @@
 --!strict
--- Scrolls (DESIGN §13): Oblivion (refund stat points), New Path (S57, ROZWOJ 2.10: never used up here; the client
+-- Scrolls (DESIGN §13): Oblivion (refund stat points; the active build set only, ROZWOJ 2.9), New Path (S57, ROZWOJ 2.10: never used up here; the client
 -- opens the main path choice and PathService takes the scroll on ChooseMainPath), Unbinding (pick a bound item — UnbindItem — and unbind it, uniques too). Scrolls of Protection are consumed by the
 -- blacksmith; using one from the backpack only explains that.
 

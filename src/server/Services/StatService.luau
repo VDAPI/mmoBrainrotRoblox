@@ -1,6 +1,7 @@
 --!strict
 -- Derived statistics of the active character (Logic/StatCalc). Keeps the result in memory, replicates it
 -- as state branch `derived`, applies WalkSpeed, and handles stat point allocation.
+-- `stats` and `statPoints` are the active build set; the other one sits in `buildOther` (S58).
 --
 -- Later systems plug in without touching this file:
 --   StatService.RegisterModifierSource("gear", function(player, character) return { key = "source.gear",

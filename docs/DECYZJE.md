@@ -1188,3 +1188,17 @@
 - **S57** Okno umiejętności do S59: zakładka ścieżki to prosta lista rzędów i węzłów z „+” / „−”; licznik wolnych
   punktów rośnie od 10. poziomu także w klasach bez ścieżek. DESIGN §14 zastąpione streszczeniem z odsyłaczem do
   ROZWOJ (dawny `docs/DESIGN-14.md`).
+- **S58** Przełączenie zestawu: `Paths.swapSets` liczy całość, potem sześć `Set` (`stats`, `statPoints`, `hotbar`,
+  `path`, `buildOther`, `buildSlot`) w jednym bloku bez `yield`; dalej `validHotbar`, `RefreshPassives`, `Recompute`,
+  `Changed`. Odstęp `Config.BuildSetCooldown` (5 s) pilnuje serwer (`buildset.error.wait`), nie limit remote'u.
+- **S58** Kopia zestawu: żywy i poza walką, w dowolnym miejscu (nie zmienia aktywnego zestawu); `freeUsed` celu
+  zostaje. `DungeonService.InRun` = członek przebiegu od startu do `finish` (także po śmierci i powrocie do miasta).
+- **S58** HP przy przełączeniu bez leczenia: tylko przycięcie w dół do nowych maksimów (`StatService.Changed` →
+  `ResourceService`); HP zostaje liczbą bezwzględną. Odnowienia umiejętności zostają.
+- **S58** Drugi zestaw: +5 punktów statystyk przy awansie, nowe aktywne podstawy na wolne miejsca jego paska (bez
+  toastu i zdarzenia questu; co się nie mieści, przepada), przy wczytaniu `Paths.cleanSet`, przy `SetLevel` w dół
+  `cleanSet` + `StatPlan.refit`. Bez `buildOther` nic: `emptySet` liczy wszystko z poziomu przy pierwszym przełączeniu.
+- **S58** `scroll_oblivion`, `/stats reset` i `/statpoints` działają na aktywnym zestawie.
+- **S58** `StatPlan.suggest`: liczby całkowite, punkty w statystykach spoza planu liczą się do sumy, remis według
+  `Stats.primary`; przycisk dorzuca resztę wolnych punktów do rezerwacji (ręczne zostają). Rezerwacja punktów należy
+  do zestawu: przełączenie ją czyści. `tests/Balance.statsFor` bez zmian do decyzji sesji balansu.

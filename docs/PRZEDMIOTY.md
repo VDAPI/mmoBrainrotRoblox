@@ -1,7 +1,7 @@
 # Vaelthorn: przedmioty
 
 > Plik generowany: `lune run tools/wikidump.luau` (dane gry, te same co wiki). Nie edytuj ręcznie.
-> Odcisk danych 8947a03f (`wiki/src/data/meta.json`).
+> Odcisk danych 2d9c59cf (`wiki/src/data/meta.json`).
 
 ## Rzadkości
 
@@ -1175,7 +1175,7 @@ Legendarne i Mityczne przedmioty dają też osobiste rzuty bossów (S30), a nazw
 | Duża Mikstura Many | Mikstura | 1 | — | 250 | 62 |
 | Wielka Mikstura Many | Mikstura | 1 | — | 900 | 225 |
 | Potężna Mikstura Many | Mikstura | 1 | — | 3000 | 750 |
-| Zwój Zapomnienia | Zwój | 1 | Resetuje punkty statystyk. | 500 | 100 |
+| Zwój Zapomnienia | Zwój | 1 | Resetuje punkty statystyk aktywnego zestawu. | 500 | 100 |
 | Zwój Ochrony | Zwój | 1 | Nieudane ulepszenie nie obniża przedmiotu. | — | 200 |
 | Zwój Nowej Ścieżki | Zwój | 1 | Pozwala wybrać nową ścieżkę główną. Zużywa się przy zmianie ścieżki, tylko w mieście. | — | 100 |
 | Zwój Rozwiązania | Zwój | 1 | Odwiązuje jeden przedmiot. | — | 500 |

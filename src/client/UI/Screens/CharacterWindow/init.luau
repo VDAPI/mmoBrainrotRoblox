@@ -5,10 +5,13 @@
 --     backpack panel, same component as the companion backpack), right (stat points, derived stats);
 --   touch (full screen): equipment on the left (56 px slots), a "Backpack | Statistics" switch on the right.
 -- `Focus` ("backpack" | "stats") is the tab B / C asked for (WindowManager.FocusHint).
+-- S58 (ROZWOJ 2.9, 4): a build set switch under class / level (no "Copy" here: it lives in the skills window); the
+-- stat reservation belongs to a set and clears on a switch.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local BackpackPanel = require(script.Parent.BackpackPanel)
+local BuildSetSwitch = require(script.Parent.Parent.Components.BuildSetSwitch)
 local Button = require(script.Parent.Parent.Components.Button)
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local DerivedList = require(script.DerivedList)
@@ -40,8 +43,8 @@ local MIDDLE_WIDTH = 500
 local TOUCH_LEFT_WIDTH = 200
 local TOUCH_SLOT = 56
 local TOUCH_GAP = 8
--- 4 stat rows (44 + 4) + points line + buttons + spacing.
-local ALLOCATOR_HEIGHT = 316 -- FIX 2026-10-09: rows grew by a description line
+-- 4 stat rows (44 + 4) + points line + buttons + plan line + spacing.
+local ALLOCATOR_HEIGHT = 338 -- FIX 2026-10-09: rows grew by a description line; S58: the plan line
 local TAB_HEIGHT = Theme.Size.ButtonHeightSmall
 
 -- "◀ title ▶" picker (S16): cycles through none + the unlocked titles, saved with SetTitle.
@@ -163,9 +166,14 @@ local function heroColumn(scope: Scope, props: Props, touch: boolean): { Instanc
 			TextColor3 = Theme.Colors.Parchment,
 			TextTruncate = Enum.TextTruncate.AtEnd,
 		}),
-		TitlePicker(scope, 3),
+		BuildSetSwitch(scope, {
+			Height = if touch then Theme.Size.MinTouch else 34,
+			ButtonWidth = if touch then 94 else 122,
+			LayoutOrder = 3,
+		}),
+		TitlePicker(scope, 4),
 		Equipment(scope, {
-			LayoutOrder = 4,
+			LayoutOrder = 5,
 			SlotSize = if touch then TOUCH_SLOT else nil,
 			Gap = if touch then TOUCH_GAP else nil,
 			Unequip = props.Unequip,
@@ -304,6 +312,11 @@ local function CharacterWindow(scope: Scope, props: Props): Fusion.Child
 		if type(points) ~= "number" or points < reserved then
 			pending:set({})
 		end
+	end)
+
+	-- S58: reserved points belong to the build set; a switch starts the allocation over.
+	scope:Observer(State.Value({ "character", "buildSlot" })):onChange(function()
+		pending:set({})
 	end)
 
 	-- The layout follows the input device (touch = full-screen window).

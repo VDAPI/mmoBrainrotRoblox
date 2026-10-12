@@ -3381,3 +3381,25 @@ Pliki: `Data/Paths/*` (nowe), `Logic/Paths` (nowy), `PathService` (nowy), `UI/Sk
 `Admin/Character`, `SkillController`, `ItemController`, `ScreenController`, `SkillsWindow`, `Hud/SkillBar`,
 `SkillInfo`, `ShopWindow`, `WorldMap/Cards`, `tools/WikiData/{Visibility,World}`,
 `tests/{skills,wikidump,data,localization}.spec`, dane wiki, `docs/{DESIGN,ROZWOJ,WIKI,PRZEDMIOTY}.md`, `CLAUDE.md`.
+
+### S58: Fundament 6: dwa zestawy buildu i „Rozdaj jak zaleca ścieżka”
+
+- `Logic/Paths` (zestawy, głębokie kopie): `emptySet`, `cloneSet`, `activeSet`, `otherSet`, `swapSets`, `copySet`,
+  `setView`, `cleanSet`, `mainWeaponOk`, `statPlan`; `canEdit` z akcjami `switchSet` / `copySet` i polami `dead`,
+  `inRun`. Nowy `Logic/StatPlan` (`startOf`, `total`, `spent`, `refit`, `suggest`), `Classes.statPlan` (ROZWOJ 2.11).
+- Serwer: `PathService` (`SwitchBuildSet`, `CopyBuildSet`, odstęp 5 s, ostrzeżenie o broni ścieżki głównej,
+  `cleanSet` drugiego zestawu przy wczytaniu, `AdminSwitch` / `AdminCopy`), `DungeonService.InRun`, `LevelService`
+  (punkty obu zestawów, `SetLevel` w dół przez `StatPlan.refit` dla obu, bez `spentStatPoints`), `SkillService` (nowe
+  aktywne podstawy na pasek drugiego zestawu), `Config.BuildSetCooldown`, remote'y w `Net/Definitions`.
+- Klient: `UI/Components/BuildSetSwitch` (Zestaw 1 / 2, „Kopiuj” z potwierdzeniem), nagłówek `SkillsWindow`
+  (przełącznik + punkty i ścieżka główna), okno postaci (przełącznik, czyszczenie rezerwacji po przełączeniu),
+  `StatAllocator` („Rozdaj jak zaleca ścieżka” i linia planu).
+- Admin `/buildset <1|2|copy>`; teksty `buildset.*`, `character.suggest`, `character.plan.*`, Zwój Zapomnienia mówi o
+  aktywnym zestawie. Testy: blok „Build sets (S58)” w `paths.spec` (1–9), nowy `statplan.spec` (1–7), `"buildset"`
+  w `NAMESPACES`. Fixture `fxStorm.statPlan`. Dane wiki przez `npm run data` (Node był; zmienił się opis zwoju).
+
+Pliki: `Logic/{Paths,StatPlan}`, `Data/{Classes,AdminCommands}`, `Data/Paths/Types`, `Config`, `Net/Definitions`,
+lokalizacja PL / EN, `PathService`, `LevelService`, `SkillService`, `DungeonService`, `ScrollService`, `StatService`,
+`Admin/Character`, `UI/Components/BuildSetSwitch` (nowy), `SkillsWindow`, `CharacterWindow/{init,StatAllocator}`,
+`tests/{paths,statplan,data}.spec`, `tests/fixtures/paths.luau`, dane wiki, `docs/{ROZWOJ,DESIGN,WIKI,PRZEDMIOTY}.md`,
+`CLAUDE.md`.

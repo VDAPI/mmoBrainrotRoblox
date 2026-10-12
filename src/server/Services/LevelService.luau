@@ -2,7 +2,8 @@
 -- Experience and levels (DESIGN §4.6). GiveExp is the single entry point for every EXP source
 -- (monsters S03, quests S11); it applies the character's EXP bonus and handles level-ups:
 -- stat points (skill ranks come from the level, S56; path points are not stored, S57), full resources, the LevelUp
--- effect for nearby players.
+-- effect for nearby players. Stat points go to both build sets (S58, ROZWOJ 2.9); SetLevel down fits both sets to the
+-- level, ResetStats (Scroll of Oblivion, /stats reset) touches only the active one.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -11,13 +12,13 @@ local Shared = ReplicatedStorage.Shared
 
 local Analytics = require(script.Parent.Parent.Analytics)
 
-local Classes = require(Shared.Data.Classes)
 local Config = require(Shared.Config)
 local Exp = require(Shared.Logic.Exp)
 local Log = require(Shared.Util.Log)
 local Net = require(Shared.Net)
 local Paths = require(Shared.Logic.Paths)
 local Signal = require(ReplicatedStorage.Packages.Signal)
+local StatPlan = require(Shared.Logic.StatPlan)
 local Types = require(Shared.Types)
 
 local log = Log.new("LevelService")
@@ -62,6 +63,11 @@ local function onLevelsGained(player: Player, character: Types.CharacterData, fr
 	local statPts = Exp.pointsForLevels(from, to)
 	PlayerStateService.Set(player, { "character", "level" }, to)
 	PlayerStateService.Set(player, { "character", "statPoints" }, character.statPoints + statPts)
+	-- S58: the inactive build set gets the same stat points (ROZWOJ 2.9).
+	local other: any = character.buildOther
+	if type(other) == "table" and type(other.statPoints) == "number" then
+		PlayerStateService.Set(player, { "character", "buildOther", "statPoints" }, other.statPoints + statPts)
+	end
 	setLevelAttribute(player, to)
 	StatService.Recompute(player)
 	ResourceService.Restore(player)
@@ -90,37 +96,20 @@ function LevelService.GiveExp(player: Player, amount: number, _source: string?):
 	return levels
 end
 
--- Points a character should have in total at its level (class start stats are free).
-local function totalPoints(level: number): number
-	return Exp.pointsForLevels(1, level)
-end
-
-local function spentStatPoints(character: Types.CharacterData): number
-	local class = Classes.get(character.class)
-	if not class then
-		return 0
-	end
-	local spent = 0
-	for id, value in character.stats :: any do
-		spent += value - ((class.startStats :: any)[id] or 0)
-	end
-	return spent
-end
-
--- Resets allocated stats to the class start and refunds every point (Scroll of Oblivion, /stats reset).
+-- Resets allocated stats of the active build set to the class start and refunds every point (Scroll of Oblivion,
+-- /stats reset).
 function LevelService.ResetStats(player: Player)
 	local character: Types.CharacterData? = PlayerStateService.GetCharacter(player)
-	local class = character and Classes.get(character.class)
-	if not character or not class then
+	if not character then
 		return
 	end
-	local statTotal = totalPoints(character.level)
-	PlayerStateService.Set(player, { "character", "stats" }, table.clone(class.startStats))
-	PlayerStateService.Set(player, { "character", "statPoints" }, statTotal)
+	PlayerStateService.Set(player, { "character", "stats" }, StatPlan.startOf(character.class))
+	PlayerStateService.Set(player, { "character", "statPoints" }, StatPlan.total(character.level))
 	StatService.Recompute(player)
 end
 
--- Admin: sets the level directly, recalculating free points. Lowering below the allocated amount resets stats.
+-- Admin: sets the level directly, recalculating free points. Lowering fits both build sets to the new level: path ranks
+-- go back (Logic/Paths), stats reset when more is spent than the level grants (StatPlan.refit).
 function LevelService.SetLevel(player: Player, level: number)
 	local character: Types.CharacterData? = PlayerStateService.GetCharacter(player)
 	if not character then
@@ -133,18 +122,19 @@ function LevelService.SetLevel(player: Player, level: number)
 		onLevelsGained(player, character, from, target)
 		return
 	end
-	local statTotal = totalPoints(target)
-	-- S57: path ranks the lower level does not allow go back (the active set; buildOther in S58)
+	-- down: both build sets are clamped to the new level (ROZWOJ 2.9); the active bar follows on LevelChanged
 	PlayerStateService.Set(player, { "character", "path" }, Paths.clampToLevel(character, target))
 	PlayerStateService.Set(player, { "character", "level" }, target)
 	setLevelAttribute(player, target)
-	local freeStat = statTotal - spentStatPoints(character)
-	if freeStat < 0 then
-		LevelService.ResetStats(player)
-	else
-		PlayerStateService.Set(player, { "character", "statPoints" }, freeStat)
-		StatService.Recompute(player)
+	local stats, points = StatPlan.refit(character.class, target, character.stats :: any)
+	PlayerStateService.Set(player, { "character", "stats" }, stats)
+	PlayerStateService.Set(player, { "character", "statPoints" }, points)
+	if type(character.buildOther) == "table" then
+		local other = Paths.cleanSet(character, character.buildOther, target)
+		other.stats, other.statPoints = StatPlan.refit(character.class, target, other.stats :: any)
+		PlayerStateService.Set(player, { "character", "buildOther" }, other)
 	end
+	StatService.Recompute(player)
 	ResourceService.Restore(player)
 	if target ~= from then
 		LevelService.LevelChanged:Fire(player, target, from)

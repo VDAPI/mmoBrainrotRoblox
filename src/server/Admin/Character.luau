@@ -264,4 +264,25 @@ commands.resetskills = function(player)
 	end)
 end
 
+-- S58: /buildset <1|2|copy> (ROZWOJ 3.3): everywhere, no place, combat, death or cooldown checks.
+commands.buildset = function(player, args)
+	local action = args[1]
+	if action ~= "1" and action ~= "2" and action ~= "copy" then
+		reply(player, "admin.usage.buildset")
+		return
+	end
+	withCharacter(player, function()
+		local slot = if PlayerStateService.Get(player, { "character", "buildSlot" }) == 2 then 2 else 1
+		if action == "copy" then
+			PathService.AdminCopy(player)
+			reply(player, "admin.buildset.copied", { from = slot, to = 3 - slot })
+		elseif tonumber(action) == slot then
+			reply(player, "admin.buildset.same", { n = slot })
+		else
+			PathService.AdminSwitch(player)
+			reply(player, "admin.buildset.ok", { n = 3 - slot })
+		end
+	end)
+end
+
 return commands

@@ -10,7 +10,9 @@ local GamePaths = require("../src/shared/Logic/Paths")
 local Progression = require("../src/shared/Data/Progression")
 local SkillData = require("../src/shared/Data/Skills")
 local Skills = require("../src/shared/Logic/Skills")
+local StatPlan = require("../src/shared/Logic/StatPlan")
 local T = require("./Test")
+local TableUtil = require("../src/shared/Util/TableUtil")
 local en = require("../src/shared/Data/Localization/en")
 local pl = require("../src/shared/Data/Localization/pl")
 
@@ -913,5 +915,274 @@ T.describe("Data: Paths (game)", function()
 				checkReference(GamePaths, path, build)
 			end
 		end
+	end)
+end)
+
+-- Build sets (S58, ROZWOJ 2.9, 2.11, 3.4) ----------------------------------------------------------------------------
+
+T.describe("Build sets (S58)", function()
+	local api = P
+
+	local function mage(level: number): any
+		return {
+			class = "Mage",
+			level = level,
+			stats = StatPlan.startOf("Mage"),
+			statPoints = StatPlan.total(level),
+			hotbar = Skills.startHotbar("Mage", level),
+			path = { nodes = {}, bp = {}, freeUsed = false },
+			buildSlot = 1,
+			buildOther = nil,
+			equipment = {},
+		}
+	end
+
+	-- The fxStorm reference build at level 100: nodes, bp, main, freeUsed, 495 stat points spent, a checked bar.
+	local function fullSet(): any
+		local ref = (Fixture.source.path("fxStorm") :: any).reference[1]
+		local nodes: { [string]: number } = {}
+		for _, entry in ref.nodes do
+			nodes[entry[1]] = entry[2]
+		end
+		local c = mage(100)
+		c.path = { main = "fxStorm", nodes = nodes, bp = table.clone(ref.bp), freeUsed = true }
+		local spent = StatPlan.suggest({ int = 3, vit = 2 }, StatPlan.startOf("Mage") :: any, c.stats, 495)
+		for id, n in spent do
+			c.stats[id] += n
+		end
+		c.statPoints = 0
+		c.hotbar["10"] = "fxSpark"
+		local bar, bp = api.validHotbar(c)
+		c.hotbar = bar
+		c.path.bp = bp
+		return api.activeSet(c)
+	end
+
+	local function withActive(set: any, level: number?): any
+		local c = mage(level or 100)
+		c.path = TableUtil.deepCopy(set.path)
+		c.stats = TableUtil.deepCopy(set.stats)
+		c.statPoints = set.statPoints
+		c.hotbar = TableUtil.deepCopy(set.hotbar)
+		return c
+	end
+
+	local function apply(c: any, swap: any)
+		c.stats = swap.active.stats
+		c.statPoints = swap.active.statPoints
+		c.hotbar = swap.active.hotbar
+		c.path = swap.active.path
+		c.buildOther = swap.other
+		c.buildSlot = swap.slot
+	end
+
+	local function statTotal(set: any): number
+		return StatPlan.spent("Mage", set.stats) + set.statPoints
+	end
+
+	T.it("1. the first switch gives an empty set and keeps the old one apart", function()
+		local full = fullSet()
+		T.expect(full.path.bp["fxSpark:5"]).toBe("b")
+		local c = withActive(full)
+		local swap = api.swapSets(c)
+		T.expect(swap.slot).toBe(2)
+		T.expect(swap.active.path).toEqual({ nodes = {}, bp = {}, freeUsed = false })
+		T.expect(swap.active.path.main).toBeNil()
+		T.expect(swap.active.stats).toEqual(StatPlan.startOf("Mage"))
+		T.expect(swap.active.statPoints).toBe(495)
+		T.expect(swap.active.hotbar).toEqual(Skills.startHotbar("Mage", 100))
+		T.expect(swap.other).toEqual(full)
+		T.expect(swap.other.path.nodes ~= c.path.nodes).toBe(true)
+		T.expect(swap.other.stats ~= c.stats).toBe(true)
+		T.expect(swap.other.hotbar ~= c.hotbar).toBe(true)
+		swap.other.stats.int += 50
+		swap.other.path.nodes.fxStorm_focus = nil
+		swap.other.hotbar["1"] = nil
+		T.expect(api.activeSet(c)).toEqual(full)
+	end)
+
+	T.it("2. there and back loses and doubles nothing", function()
+		local full = fullSet()
+		local c = withActive(full)
+		local before = api.spent(c)
+		local first = api.swapSets(c)
+		local empty = TableUtil.deepCopy(first.active)
+		apply(c, first)
+		T.expect(statTotal(c)).toBe(StatPlan.total(100))
+		T.expect(statTotal(c.buildOther)).toBe(StatPlan.total(100))
+		T.expect(api.spent(c)).toBe(0)
+		T.expect(api.spent(api.setView(c, c.buildOther))).toBe(before)
+		local second = api.swapSets(c)
+		apply(c, second)
+		T.expect(second.slot).toBe(1)
+		T.expect(api.activeSet(c)).toEqual(full)
+		T.expect(c.buildOther).toEqual(empty)
+		T.expect(statTotal(c)).toBe(StatPlan.total(100))
+		T.expect(statTotal(c.buildOther)).toBe(StatPlan.total(100))
+		T.expect(api.spent(c)).toBe(before)
+		T.expect(api.spent(api.setView(c, c.buildOther))).toBe(0)
+	end)
+
+	T.it("3. a copy keeps the target's freeUsed", function()
+		local full = fullSet()
+		local c = withActive(full)
+		local copy = api.copySet(c)
+		T.expect(copy.path.main).toBe("fxStorm")
+		T.expect(copy.path.nodes).toEqual(full.path.nodes)
+		T.expect(copy.path.bp).toEqual(full.path.bp)
+		T.expect(copy.hotbar).toEqual(full.hotbar)
+		T.expect(copy.stats).toEqual(full.stats)
+		T.expect(copy.statPoints).toBe(full.statPoints)
+		T.expect(copy.path.freeUsed).toBe(false)
+		T.expect(copy.path.nodes ~= c.path.nodes).toBe(true)
+		T.expect(copy.stats ~= c.stats).toBe(true)
+		T.expect(copy.hotbar ~= c.hotbar).toBe(true)
+		c.buildOther = api.emptySet("Mage", 100)
+		c.buildOther.path.freeUsed = true
+		T.expect(api.copySet(c).path.freeUsed).toBe(true)
+	end)
+
+	T.it("4. copying an empty set does not return the free main path choice", function()
+		local c = mage(30)
+		c.buildOther = api.emptySet("Mage", 30)
+		c.buildOther.path = { main = "fxRune", nodes = {}, bp = {}, freeUsed = true }
+		local copy = api.copySet(c)
+		T.expect(copy.path.main).toBeNil()
+		T.expect(copy.path.freeUsed).toBe(true)
+		T.expect(select(3, api.canChooseMain(api.setView(c, copy), "fxStorm"))).toBe("scroll")
+		c.buildOther = nil
+		T.expect(select(3, api.canChooseMain(api.setView(c, api.copySet(c)), "fxStorm"))).toBe("free")
+	end)
+
+	T.it("5. refunds keep the main path and freeUsed in every set", function()
+		local c = mage(100)
+		c.buildOther = fullSet()
+		local swap = api.swapSets(c)
+		local views = {
+			api.setView(c, swap.active),
+			api.setView(c, c.buildOther),
+		}
+		for _, view in views do
+			for _, opts in { nil, { fromRow = 3 }, { points = 3 } } :: { any } do
+				local state = api.refund(view, opts)
+				T.expect(state.main).toBe("fxStorm")
+				T.expect(state.freeUsed).toBe(true)
+			end
+		end
+	end)
+
+	T.it("6. SetLevel down clamps both sets", function()
+		local full = fullSet()
+		local c = withActive(full)
+		c.buildOther = fullSet()
+		local function levelDown(set: any, level: number): any
+			local out = api.cleanSet(c, set, level)
+			out.stats, out.statPoints = StatPlan.refit("Mage", level, out.stats)
+			return out
+		end
+		for _, set in { api.activeSet(c), c.buildOther } do
+			local out = levelDown(set, 30)
+			local view = api.setView(c, out, 30)
+			T.expect(api.spent(view) <= api.pointsAt(30)).toBe(true)
+			for id in out.path.nodes do
+				local _, _, row = api.findNode(id)
+				T.expect(api.ROWS[row].level <= 30).toBe(true)
+			end
+			for _, id in out.hotbar do
+				T.expect(api.skillRank(view, id) > 0).toBe(true)
+			end
+			for key in out.path.bp do
+				local skillId = string.match(key, "^(.+):%d+$") :: string
+				T.expect(api.skillRank(view, skillId) > 0).toBe(true)
+			end
+			T.expect(out.stats).toEqual(StatPlan.startOf("Mage"))
+			T.expect(out.statPoints).toBe(StatPlan.total(30))
+			T.expect(out.path.main).toBe("fxStorm")
+			T.expect(out.path.freeUsed).toBe(true)
+		end
+		local small = api.emptySet("Mage", 100)
+		small.stats.int += 100
+		small.statPoints = 395
+		local out = levelDown(small, 30)
+		T.expect(out.stats.int).toBe(StatPlan.startOf("Mage").int + 100)
+		T.expect(out.statPoints).toBe(45)
+	end)
+
+	T.it("7. cleanSet on load repairs only what is wrong", function()
+		local full = fullSet()
+		local c = withActive(full)
+		local same, changed = api.cleanSet(c, full, 100)
+		T.expect(changed).toBe(false)
+		T.expect(same).toEqual(full)
+		local base = TableUtil.deepCopy(full)
+		base.hotbar["9"] = nil -- the base bar is full at 100
+		local broken = TableUtil.deepCopy(base)
+		broken.path.nodes.fxGone_x = 2
+		broken.hotbar["9"] = "fxOrphan"
+		broken.path.bp["firebolt:5"] = "b"
+		local fixed, changed2 = api.cleanSet(c, broken, 100)
+		T.expect(changed2).toBe(true)
+		T.expect(fixed.path.nodes.fxGone_x).toBeNil()
+		T.expect(fixed.hotbar["9"]).toBeNil()
+		T.expect(fixed.path.bp["firebolt:5"]).toBeNil()
+		T.expect(fixed).toEqual(base)
+		local repaired = api.cloneSet({ path = nil, stats = nil, statPoints = "x" }, "Mage", 40)
+		T.expect(repaired.path).toEqual({ nodes = {}, bp = {}, freeUsed = false })
+		T.expect(repaired.stats).toEqual(StatPlan.startOf("Mage"))
+		T.expect(repaired.statPoints).toBe(StatPlan.total(40))
+		T.expect(repaired.hotbar).toEqual({})
+	end)
+
+	T.it("8. canEdit for build sets", function()
+		local function ctx(action: string, extra: { [string]: any }): any
+			local out: { [string]: any } = { action = action, inCombat = false, inTown = false, nearGate = false }
+			for key, value in extra do
+				out[key] = value
+			end
+			return out
+		end
+		local town = { inTown = true }
+		T.expect(select(2, api.canEdit(ctx("switchSet", { inTown = true, dead = true })))).toBe("buildset.error.dead")
+		T.expect(select(2, api.canEdit(ctx("switchSet", { nearGate = true, inRun = true })))).toBe("buildset.error.run")
+		T.expect(select(2, api.canEdit(ctx("switchSet", { inTown = true, inCombat = true }))))
+			.toBe("paths.error.combat")
+		T.expect(select(2, api.canEdit(ctx("switchSet", {})))).toBe("paths.error.place")
+		T.expect(api.canEdit(ctx("switchSet", town))).toBe(true)
+		T.expect(api.canEdit(ctx("switchSet", { nearGate = true }))).toBe(true)
+		T.expect(select(2, api.canEdit(ctx("copySet", { dead = true })))).toBe("buildset.error.dead")
+		T.expect(select(2, api.canEdit(ctx("copySet", { inCombat = true })))).toBe("paths.error.combat")
+		T.expect(api.canEdit(ctx("copySet", {}))).toBe(true)
+		-- the S57 actions ignore dead / inRun
+		T.expect(api.canEdit(ctx("buy", {}))).toBe(true)
+		T.expect(select(2, api.canEdit(ctx("refund", {})))).toBe("paths.error.place")
+		T.expect(api.canEdit(ctx("refund", { nearGate = true, dead = true, inRun = true }))).toBe(true)
+		T.expect(select(2, api.canEdit(ctx("changeMain", { nearGate = true })))).toBe("paths.error.town")
+		T.expect(select(2, api.canEdit(ctx("chooseBp", { inCombat = true })))).toBe("paths.error.combat")
+	end)
+
+	T.it("9. the main path weapon and the stat plan", function()
+		local c = mage(40)
+		c.path = { main = "fxStorm", nodes = {}, bp = {}, freeUsed = true }
+		T.expect(api.mainWeaponOk(c, { main = "staff" })).toBe(true)
+		local fits, def = api.mainWeaponOk(c, { main = "wand" })
+		T.expect(fits).toBe(false)
+		T.expect(def and def.id).toBe("fxStorm")
+		T.expect(api.mainWeaponOk(c, { main = "runestaff" })).toBe(false)
+		c.path.main = "fxGone"
+		T.expect(api.mainWeaponOk(c, { main = "runestaff" })).toBe(true)
+		c.path.main = nil
+		T.expect(api.mainWeaponOk(c, {})).toBe(true)
+		c.path.main = "fxStorm"
+		local plan, planDef = api.statPlan(c)
+		T.expect(plan).toEqual({ int = 3, vit = 2 })
+		T.expect(planDef and planDef.id).toBe("fxStorm")
+		c.path.main = "fxRune"
+		local classPlan, none = api.statPlan(c)
+		T.expect(classPlan).toEqual((Classes.get("Mage") :: any).statPlan)
+		T.expect(none).toBeNil()
+		c.path.main = nil
+		T.expect(api.statPlan(c)).toEqual((Classes.get("Mage") :: any).statPlan)
+		c.path = nil
+		T.expect(api.statPlan(c)).toEqual((Classes.get("Mage") :: any).statPlan)
 	end)
 end)

@@ -3,13 +3,18 @@
 -- Scroll of a New Path in town), breakpoint choices, and the checks after every change (hotbar and path.bp through
 -- Logic/Paths.validHotbar, passives, PathService.Changed). The rules live in Logic/Paths; this service only builds
 -- the place context (combat, town, dungeon entrance) and writes the state.
+-- Build sets (ROZWOJ 2.9; S58): two sets, the active one in the character fields, the other in buildOther; switching
+-- (town or a boss gate, out of combat, alive, outside a dungeon run, Config.BuildSetCooldown) swaps them in one write
+-- block, copying puts the active set into buildOther. On load both sets are cleaned.
 -- No service PathService depends on may list it in its Deps (DepSort rejects cycles); a service that needs it later
 -- keeps the registry and calls registry.Get("PathService") during play.
 
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage.Shared
 
+local Config = require(Shared.Config)
 local Net = require(Shared.Net)
 local PathData = require(Shared.Data.Paths)
 local Paths = require(Shared.Logic.Paths)
@@ -30,6 +35,7 @@ local PathService = {
 		"ResourceService",
 		"ZoneService",
 		"LevelService",
+		"StatService",
 	},
 	Changed = Signal.new(), -- (player) nodes, main path, breakpoints, weapon or level changed what the paths give
 }
@@ -45,6 +51,9 @@ local DungeonService: any
 local ResourceService: any
 local ZoneService: any
 local LevelService: any
+local StatService: any
+
+local lastSwitch: { [Player]: number } = {}
 
 local function character(player: Player): Types.CharacterData?
 	return PlayerStateService.GetCharacter(player)
@@ -56,6 +65,8 @@ local function ctxFor(player: Player, action: Paths.EditAction): Paths.EditCtx
 		inCombat = ResourceService.InCombat(player),
 		inTown = ZoneService.GetPvpZone(player) == "green",
 		nearGate = DungeonService.NearAnyEntrance(player),
+		dead = ResourceService.IsDead(player),
+		inRun = DungeonService.InRun(player),
 	}
 end
 
@@ -214,6 +225,65 @@ local function chooseBreakpoint(player: Player, skillId: string, rank: number, o
 	return true, nil
 end
 
+-- Build sets (ROZWOJ 2.9; S58) -------------------------------------------------------------------------------------
+
+-- Both sets change in one block without yields; the client gets one diff batch.
+local function writeSwap(player: Player, swap: Paths.SetSwap)
+	PlayerStateService.Set(player, { "character", "stats" }, swap.active.stats)
+	PlayerStateService.Set(player, { "character", "statPoints" }, swap.active.statPoints)
+	PlayerStateService.Set(player, { "character", "hotbar" }, swap.active.hotbar)
+	PlayerStateService.Set(player, { "character", "path" }, swap.active.path)
+	PlayerStateService.Set(player, { "character", "buildOther" }, swap.other)
+	PlayerStateService.Set(player, { "character", "buildSlot" }, swap.slot)
+end
+
+local function switchSet(player: Player, admin: boolean): (boolean, string?)
+	local char = character(player)
+	if not char then
+		return false, "error.wrongPhase"
+	end
+	if not admin then
+		local ok, err = Paths.canEdit(ctxFor(player, "switchSet"))
+		if not ok then
+			return false, err
+		end
+		local last = lastSwitch[player]
+		if last and os.clock() - last < Config.BuildSetCooldown then
+			return false, "buildset.error.wait"
+		end
+	end
+	local swap = Paths.swapSets(char)
+	writeSwap(player, swap)
+	lastSwitch[player] = os.clock()
+	afterChange(player) -- validHotbar of the new active set, RefreshPassives (hooks + StatService), Changed
+	-- Cooldowns stay; HP and resources are only clamped to the new maxima (ResourceService on StatService.Changed).
+	StatService.Recompute(player)
+	Net.Fire(player, "Toast", "buildset.toast.switched", { n = swap.slot }, "success")
+	-- char is the live profile table, so it already holds the new active set
+	local fits, def = Paths.mainWeaponOk(char, EquipmentService.WeaponTypes(player))
+	if not fits and def then
+		Net.Fire(player, "Toast", "buildset.toast.weapon", { path = "@" .. def.nameKey }, "warning")
+	end
+	return true, nil
+end
+
+local function copySet(player: Player, admin: boolean): (boolean, string?)
+	local char = character(player)
+	if not char then
+		return false, "error.wrongPhase"
+	end
+	if not admin then
+		local ok, err = Paths.canEdit(ctxFor(player, "copySet"))
+		if not ok then
+			return false, err
+		end
+	end
+	PlayerStateService.Set(player, { "character", "buildOther" }, Paths.copySet(char))
+	local from = if char.buildSlot == 2 then 2 else 1
+	Net.Fire(player, "Toast", "buildset.toast.copied", { from = from, to = 3 - from }, "success")
+	return true, nil
+end
+
 -- Admin (Admin/Character): no place or combat rules -----------------------------------------------------------------
 
 -- Sets (or clears) the main path; rows above DIP_ROWS of the old one are refunded, freeUsed stays.
@@ -309,6 +379,15 @@ function PathService.AdminChooseBp(player: Player, skillId: string, rank: number
 	return true, nil
 end
 
+-- /buildset (ROZWOJ 3.3): anywhere, no place, combat, death or cooldown checks.
+function PathService.AdminSwitch(player: Player): boolean
+	return (switchSet(player, true))
+end
+
+function PathService.AdminCopy(player: Player): boolean
+	return (copySet(player, true))
+end
+
 -- Refunds every node and breakpoint choice of the active set; the main path and freeUsed stay.
 function PathService.AdminReset(player: Player): (boolean, string?)
 	local char = character(player)
@@ -341,7 +420,8 @@ local function samePath(a: Types.PathState, b: Types.PathState): boolean
 	return a.main == b.main and a.freeUsed == b.freeUsed and sameMap(a.nodes, b.nodes) and sameMap(a.bp, b.bp)
 end
 
--- Load: the path state as the level allows, then the bar and path.bp (the only bar check on load).
+-- Load: the path state as the level allows, then the bar and path.bp (the only bar check on load); the same for the
+-- inactive build set (ROZWOJ 2.6, 5: class sessions move skills into paths and count on both sets being cleaned).
 local function onEntered(player: Player)
 	local char = character(player)
 	if not char then
@@ -356,6 +436,18 @@ local function onEntered(player: Player)
 	char = character(player) :: Types.CharacterData
 	if checkBar(player, char) then
 		changed = true
+	end
+	if char.buildSlot ~= 1 and char.buildSlot ~= 2 then
+		PlayerStateService.Set(player, { "character", "buildSlot" }, 1)
+	end
+	local other: any = char.buildOther
+	if other ~= nil and type(other) ~= "table" then
+		PlayerStateService.Set(player, { "character", "buildOther" }, nil)
+	elseif type(other) == "table" then
+		local cleaned, otherChanged = Paths.cleanSet(char, other, char.level)
+		if otherChanged then
+			PlayerStateService.Set(player, { "character", "buildOther" }, cleaned)
+		end
 	end
 	SkillService.RefreshPassives(player)
 	if changed then
@@ -373,6 +465,7 @@ function PathService.Init(registry)
 	ResourceService = registry.Get("ResourceService")
 	ZoneService = registry.Get("ZoneService")
 	LevelService = registry.Get("LevelService")
+	StatService = registry.Get("StatService")
 end
 
 function PathService.Start()
@@ -381,6 +474,15 @@ function PathService.Start()
 	Net.Handle("ResetPaths", resetPaths)
 	Net.Handle("ChooseMainPath", chooseMainPath)
 	Net.Handle("ChooseBreakpoint", chooseBreakpoint)
+	Net.Handle("SwitchBuildSet", function(player: Player)
+		return switchSet(player, false)
+	end)
+	Net.Handle("CopyBuildSet", function(player: Player)
+		return copySet(player, false)
+	end)
+	Players.PlayerRemoving:Connect(function(player: Player)
+		lastSwitch[player] = nil
+	end)
 	CharacterService.CharacterEntered:Connect(onEntered)
 	-- The path weapon switches rows 3-11 on and off: passives and hooks again, the bar only greys out.
 	EquipmentService.Changed:Connect(function(player: Player, slot: string)

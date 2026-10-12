@@ -4,6 +4,8 @@
 -- edit rules. Every function reads paths and skills through a Source: the game uses the default module (Data/Paths,
 -- Data/Skills), tests build their own with Paths.withSource(Paths.sourceOf(paths, skills)).
 -- From a character only `class`, `level`, `path`, `hotbar` and `equipment` are read; a missing `path` is empty.
+-- Build sets (S58, ROZWOJ 2.9): swapSets / copySet / cleanSet and friends also read `stats`, `statPoints`,
+-- `buildSlot` and `buildOther`.
 -- Node numbers (B3): values that depend on the node rank sit in node.values ({ rank 1, rank max }); passive / aura /
 -- luck map a stat or field to a values field; in modify.bp any number is { ref = "<values field>" } (inside `mul`
 -- it becomes 1 + (x - 1) * scale, elsewhere x * scale). Team nodes of rows 1..DIP_ROWS work outside the main path
@@ -17,6 +19,8 @@ local PathData = require("../Data/Paths")
 local Progression = require("../Data/Progression")
 local SkillData = require("../Data/Skills")
 local Skills = require("./Skills")
+local StatPlan = require("./StatPlan")
+local TableUtil = require("../Util/TableUtil")
 local Types = require("../Types")
 
 type PathDef = PathData.PathDef
@@ -28,10 +32,28 @@ export type RowKind = PathData.RowKind
 export type WeaponTypes = { main: string?, offhand: string? }
 export type RowInfo = { index: number, level: number, need: number, kind: RowKind, choice: boolean, extra: boolean }
 export type ActiveNode = { node: PathNode, path: PathDef, row: number, rank: number, scale: number }
-export type EditAction = "buy" | "refund" | "chooseMain" | "changeMain" | "chooseBp" | "changeBp"
-export type EditCtx = { action: EditAction, inCombat: boolean, inTown: boolean, nearGate: boolean }
+export type EditAction =
+	"buy"
+	| "refund"
+	| "chooseMain"
+	| "changeMain"
+	| "chooseBp"
+	| "changeBp"
+	| "switchSet"
+	| "copySet"
+-- dead / inRun (S58): only the build set actions read them; nil = false.
+export type EditCtx = {
+	action: EditAction,
+	inCombat: boolean,
+	inTown: boolean,
+	nearGate: boolean,
+	dead: boolean?,
+	inRun: boolean?,
+}
 export type RefundOpts = { path: string?, fromRow: number?, points: number? }
 export type PathState = Types.PathState
+export type BuildSet = Types.BuildSet
+export type SetSwap = { active: BuildSet, other: BuildSet, slot: number } -- slot = the new buildSlot
 -- The part of a character the rules read (S58 / S59 pass narrow views, e.g. the inactive build set).
 export type Char = {
 	class: string,
@@ -174,12 +196,29 @@ local function nodeValues(node: PathNode, rank: number, scale: number?): { [stri
 	return out
 end
 
--- ROZWOJ 2.10 (B5): where an edit may happen. The server builds the context itself.
+-- ROZWOJ 2.10 (B5): where an edit may happen. The server builds the context itself. Build sets (S58, ROZWOJ 2.9):
+-- switching needs a living character outside a dungeon run, out of combat, in town or at a gate; copying only a
+-- living character out of combat (it does not touch the active set).
 local function canEdit(ctx: EditCtx): (boolean, string?)
+	local action = ctx.action
+	if action == "switchSet" or action == "copySet" then
+		if ctx.dead then
+			return false, "buildset.error.dead"
+		end
+		if action == "switchSet" and ctx.inRun then
+			return false, "buildset.error.run"
+		end
+		if ctx.inCombat then
+			return false, "paths.error.combat"
+		end
+		if action == "copySet" or ctx.inTown or ctx.nearGate then
+			return true, nil
+		end
+		return false, "paths.error.place"
+	end
 	if ctx.inCombat then
 		return false, "paths.error.combat"
 	end
-	local action = ctx.action
 	if action == "buy" or action == "chooseMain" or action == "chooseBp" then
 		return true, nil
 	elseif action == "refund" or action == "changeBp" then
@@ -875,6 +914,122 @@ local function buildApi(source: Source)
 		return { main = main, nodes = nodes, bp = table.clone(state.bp or {}), freeUsed = state.freeUsed == true }
 	end
 
+	-- Build sets (ROZWOJ 2.9; S58) ------------------------------------------------------------------------------------
+	-- The active set lives in the character fields (stats, statPoints, hotbar, path), the other one in buildOther.
+	-- Every result is a deep copy: the active set and buildOther never share tables.
+
+	local function emptySet(classId: string, level: number): BuildSet
+		return {
+			path = { main = nil, nodes = {}, bp = {}, freeUsed = false },
+			stats = StatPlan.startOf(classId),
+			statPoints = StatPlan.total(level),
+			hotbar = Skills.startHotbar(classId, level),
+		}
+	end
+
+	-- A deep copy; missing or broken fields are filled as in emptySet (a broken save never stops the server).
+	local function cloneSet(set: any, classId: string, level: number): BuildSet
+		local src: any = if type(set) == "table" then set else {}
+		local pathIn: any = if type(src.path) == "table" then src.path else {}
+		local stats: Types.Stats = if type(src.stats) == "table"
+			then TableUtil.deepCopy(src.stats)
+			else StatPlan.startOf(classId)
+		local points = src.statPoints
+		if type(points) ~= "number" then
+			points = math.max(0, StatPlan.total(level) - StatPlan.spent(classId, stats :: any))
+		end
+		return {
+			path = {
+				main = if type(pathIn.main) == "string" then pathIn.main else nil,
+				nodes = if type(pathIn.nodes) == "table" then TableUtil.deepCopy(pathIn.nodes) else {},
+				bp = if type(pathIn.bp) == "table" then TableUtil.deepCopy(pathIn.bp) else {},
+				freeUsed = pathIn.freeUsed == true,
+			},
+			stats = stats,
+			statPoints = points,
+			hotbar = if type(src.hotbar) == "table" then TableUtil.deepCopy(src.hotbar) else {},
+		}
+	end
+
+	local function activeSet(character: any): BuildSet
+		return cloneSet({
+			path = character.path,
+			stats = character.stats,
+			statPoints = character.statPoints,
+			hotbar = character.hotbar,
+		}, character.class, character.level)
+	end
+
+	local function otherSet(character: any): BuildSet
+		if type(character.buildOther) == "table" then
+			return cloneSet(character.buildOther, character.class, character.level)
+		end
+		return emptySet(character.class, character.level)
+	end
+
+	local function swapSets(character: any): SetSwap
+		return {
+			active = otherSet(character),
+			other = activeSet(character),
+			slot = if character.buildSlot == 2 then 1 else 2,
+		}
+	end
+
+	-- The new buildOther: the active set, but the target keeps its own freeUsed (a copy never returns the free choice).
+	local function copySet(character: any): BuildSet
+		local set = activeSet(character)
+		local other = character.buildOther
+		set.path.freeUsed = type(other) == "table" and type(other.path) == "table" and other.path.freeUsed == true
+		return set
+	end
+
+	-- A character-shaped view of a set for the rules above (they read class, level, path, hotbar, equipment).
+	local function setView(character: any, set: BuildSet, level: number?): any
+		return {
+			class = character.class,
+			level = level or character.level,
+			path = set.path,
+			hotbar = set.hotbar,
+			stats = set.stats,
+			statPoints = set.statPoints,
+			equipment = character.equipment,
+		}
+	end
+
+	-- A set as `level` allows (load, SetLevel down): broken fields repaired, the path clamped, the bar and path.bp
+	-- checked; stats stay. Second value: anything changed.
+	local function cleanSet(character: any, set: any, level: number): (BuildSet, boolean)
+		local out = cloneSet(set, character.class, level)
+		out.path = clampToLevel(setView(character, out, level), level)
+		local bar, bp = validHotbar(setView(character, out, level))
+		out.hotbar = bar
+		out.path.bp = bp
+		return out, not TableUtil.deepEqual(out, set)
+	end
+
+	-- The main path's weapon (ROZWOJ 2.8): false and its PathDef when the weapons do not fit; true without a main path
+	-- or for an id without a PathDef.
+	local function mainWeaponOk(character: Char, weapons: WeaponTypes): (boolean, PathDef?)
+		local main = stateOf(character).main
+		local def = if main then source.path(main) else nil
+		if def and not weaponOk(def.weapon, weapons) then
+			return false, def
+		end
+		return true, nil
+	end
+
+	-- ROZWOJ 2.11: the main path's statPlan (and its PathDef), else the class plan; unknown class {}.
+	local function statPlan(character: Char): ({ [string]: number }, PathDef?)
+		local main = stateOf(character).main
+		local def = if main then source.path(main) else nil
+		local own = def and def.statPlan
+		if def and own and next(own) ~= nil then
+			return own, def
+		end
+		local class = Classes.get(character.class)
+		return if class then class.statPlan else {}, nil
+	end
+
 	return {
 		ROWS = ROWS,
 		DIP_ROWS = DIP_ROWS,
@@ -915,6 +1070,16 @@ local function buildApi(source: Source)
 		weaponOk = weaponOk,
 		weaponTypesOf = weaponTypesOf,
 		canEdit = canEdit,
+		emptySet = emptySet,
+		cloneSet = cloneSet,
+		activeSet = activeSet,
+		otherSet = otherSet,
+		swapSets = swapSets,
+		copySet = copySet,
+		setView = setView,
+		cleanSet = cleanSet,
+		mainWeaponOk = mainWeaponOk,
+		statPlan = statPlan,
 	}
 end
 

@@ -123,6 +123,8 @@ cmd("character", "node", { str("nodeId"), int("rank", 0, 3, true) })
 cmd("character", "pathmax", { str("pathId", true) })
 cmd("character", "bp", { str("skillId"), enum("rank", { "5", "10" }), enum("option", { "a", "b" }) })
 cmd("character", "resetskills", {})
+-- S58: build sets (ROZWOJ 3.3): anywhere; copy overwrites the other set, so the panel asks first
+cmd("character", "buildset", { enum("action", { "1", "2", "copy" }) }, { dangerActions = { "copy" } })
 cmd("combat", "skillpreview", { str("id") })
 cmd("combat", "dummy", { int("level", 1, MAX_LEVEL, true) })
 -- S29: every kind of damage number in turn (look check).

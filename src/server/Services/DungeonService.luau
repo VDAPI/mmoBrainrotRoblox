@@ -575,14 +575,21 @@ end
 
 -- Admin ------------------------------------------------------------------------------------------
 
--- /boss reset: clears the player's daily runs and ends every run.
+-- S58 (ROZWOJ 2.9): a member of a dungeon run from start until finish (also after dying and leaving the cave).
+function DungeonService.InRun(player: Player): boolean
+	for _, run in runs do
+		if table.find(run.members, player) then
+			return true
+		end
+	end
+	return false
+end
+
 -- S57 (ROZWOJ 2.7, 2.9, 2.10): at the entrance of some boss dungeon (on its cave map, within the entering range of
 -- 52 studs) and not a member of a running dungeon. Path refunds, breakpoint changes and (S58) build sets use it.
 function DungeonService.NearAnyEntrance(player: Player): boolean
-	for _, run in runs do
-		if table.find(run.members, player) then
-			return false
-		end
+	if DungeonService.InRun(player) then
+		return false
 	end
 	for _, map in Maps.byId do
 		local region = map.dungeonRegion
@@ -593,6 +600,7 @@ function DungeonService.NearAnyEntrance(player: Player): boolean
 	return false
 end
 
+-- /boss reset: clears the player's daily runs and ends every run.
 function DungeonService.ResetAll(player: Player)
 	PlayerStateService.Set(player, { "character", "bossRuns" }, {})
 	for _, run in runs do

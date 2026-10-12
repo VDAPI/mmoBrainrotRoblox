@@ -40,6 +40,7 @@ local NAMESPACES = {
 	"admin",
 	"paths",
 	"bp",
+	"buildset",
 	"rework",
 	"dev",
 	"daily",

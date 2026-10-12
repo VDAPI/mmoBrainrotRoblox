@@ -223,6 +223,19 @@ local function onLevelChanged(player: Player, newLevel: number, oldLevel: number
 			onBar[place.id] = true
 		end
 	end
+	-- S58 (ROZWOJ 5): the same actives go to free slots of the inactive set's bar; no toast, no quest event, what
+	-- does not fit is dropped. Without buildOther the empty set takes Skills.startHotbar when first switched to.
+	local other: any = char.buildOther
+	if type(other) == "table" and type(other.hotbar) == "table" then
+		local otherPlaced = Skills.placeOnBar(other.hotbar, actives)
+		if #otherPlaced > 0 then
+			local bar = table.clone(other.hotbar)
+			for _, place in otherPlaced do
+				bar[tostring(place.slot)] = place.id
+			end
+			PlayerStateService.Set(player, { "character", "buildOther", "hotbar" }, bar)
+		end
+	end
 	if #fresh > 2 then
 		Net.Fire(player, "Toast", "skills.toast.many", { n = #fresh }, "success")
 		return

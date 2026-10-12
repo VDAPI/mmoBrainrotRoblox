@@ -86,6 +86,8 @@ local Definitions: { [string]: Definition } = {
 	ResetPaths = { kind = "function", dir = "c2s", rate = 0.5, args = {} }, -- refund every node
 	ChooseMainPath = { kind = "function", dir = "c2s", rate = 0.5, args = { "string" } }, -- (pathId)
 	ChooseBreakpoint = { kind = "function", dir = "c2s", rate = 2, args = { "string", "integer", "string" } }, -- (skillId, 5|10, "a"|"b")
+	SwitchBuildSet = { kind = "function", dir = "c2s", rate = 1, args = {} }, -- S58: build set 1 <-> 2 (ROZWOJ 2.9)
+	CopyBuildSet = { kind = "function", dir = "c2s", rate = 1, args = {} }, -- S58: copy the active set onto the other one
 	CastSkill = { kind = "function", dir = "c2s", rate = 8, args = { "string", "string?", "any?" } }, -- (skillId, targetId?, aim: Vector3?)
 	SkillFx = { kind = "event", dir = "s2c" }, -- skill visuals for players nearby
 
