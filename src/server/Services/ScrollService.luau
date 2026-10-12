@@ -1,6 +1,6 @@
 --!strict
--- Scrolls (DESIGN §13): Oblivion (refund stat points), Rebirth (reset the skill tree), Unbinding (pick a
--- bound item — UnbindItem — and unbind it, uniques too). Scrolls of Protection are consumed by the
+-- Scrolls (DESIGN §13): Oblivion (refund stat points), Rebirth (waits for class paths, S57; "soon" without being
+-- used up since S56), Unbinding (pick a bound item — UnbindItem — and unbind it, uniques too). Scrolls of Protection are consumed by the
 -- blacksmith; using one from the backpack only explains that.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -13,13 +13,12 @@ local Types = require(Shared.Types)
 
 local ScrollService = {
 	Name = "ScrollService",
-	Deps = { "PlayerStateService", "InventoryService", "LevelService", "SkillService" },
+	Deps = { "PlayerStateService", "InventoryService", "LevelService" },
 }
 
 local PlayerStateService: any
 local InventoryService: any
 local LevelService: any
-local SkillService: any
 
 local function useScroll(player: Player, index: number, item: Types.ItemInstance): (boolean, string?)
 	local def = Items.get(item.id)
@@ -30,12 +29,8 @@ local function useScroll(player: Player, index: number, item: Types.ItemInstance
 		Net.Fire(player, "Toast", "scroll.oblivion.done", nil, "success")
 		return true, nil
 	elseif target == "skillreset" then
-		-- SkillService consumes one scroll from the backpack itself.
-		local ok, err = SkillService.Reset(player, false)
-		if ok then
-			Net.Fire(player, "Toast", "skills.reset.done", nil, "success")
-		end
-		return ok, err
+		-- S56: no skill points to refund; the scroll returns with class paths (S57). Not used up.
+		return false, "scroll.skillreset.soon"
 	elseif target == "protection" then
 		return false, "scroll.protection.hint"
 	elseif target == "unbind" then
@@ -78,7 +73,6 @@ function ScrollService.Init(registry)
 	PlayerStateService = registry.Get("PlayerStateService")
 	InventoryService = registry.Get("InventoryService")
 	LevelService = registry.Get("LevelService")
-	SkillService = registry.Get("SkillService")
 	InventoryService.UseHandlers.scroll = useScroll
 end
 

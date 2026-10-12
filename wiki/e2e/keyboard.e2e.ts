@@ -47,6 +47,8 @@ test("items: a row is reachable with Tab and its focus shows the tooltip preview
 });
 
 test("skill planner: Enter adds a rank, Delete and Backspace remove it", async ({ page }) => {
+  // S56: the planner is hidden until S82 (ROZWOJ 3.5)
+  test.skip(true, "planner hidden until S82");
   await page.goto("/pl/klasy/Mage/");
   const node = page.locator(".vw-node:not([data-state='locked'])").first();
   const rank = node.locator(".vw-node__rank");

@@ -2,7 +2,8 @@
 -- Skill bar (DESIGN §14.1): 10 slots on keys 1–0. Cooldown as a darkening sweep with seconds left (the
 -- global cooldown too), a flash when it is ready again (S28), red when mana/energy is short, grey with a red key when
 -- the target is out of range. The tooltip is UI/SkillInfo (shape, numbers, next level, breakpoints).
--- Drag skills from the tree or between slots; right-click clears a slot; click casts.
+-- Drag skills from the skill window or between slots; right-click clears a slot; click casts.
+-- S56: ranks come from the character level (Skills.rankFor).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -33,7 +34,8 @@ export type Props = {
 
 local function SkillBar(scope: Scope, props: Props): { Instance }
 	local hotbar = State.Value({ "character", "hotbar" })
-	local skillLevels = State.Value({ "character", "skills" })
+	local classId = State.Value({ "character", "class" })
+	local level = State.Value({ "character", "level" })
 	local cooldowns = State.Value({ "skills" })
 	local now = scope:Value(Workspace:GetServerTimeNow())
 	local tick = scope:Value(0) -- refreshes range / resource checks
@@ -77,10 +79,9 @@ local function SkillBar(scope: Scope, props: Props): { Instance }
 			if not s or left <= 0 then
 				return 0
 			end
-			local levels = use(skillLevels)
-			local level = if type(levels) == "table" then levels[s.id] or 1 else 1
-			local def = Skills.effective(s, level, nil, nil)
-			local total = math.max(SkillData.GCD, Skills.scaled(def, def.cooldown, level))
+			local rank = math.max(1, Skills.rankFor(use(classId), use(level) or 1, s))
+			local def = Skills.effective(s, rank, nil, nil)
+			local total = math.max(SkillData.GCD, Skills.scaled(def, def.cooldown, rank))
 			return math.clamp(left / total, 0, 1)
 		end)
 		-- S28: a short flash when a real cooldown (not just the global one) ends.
@@ -267,9 +268,8 @@ local function SkillBar(scope: Scope, props: Props): { Instance }
 				if not s then
 					return Text.get(use, "hud.skillSlot", { n = key })
 				end
-				local levels = use(skillLevels)
-				local level = if type(levels) == "table" then levels[s.id] or 1 else 1
-				return SkillInfo.tooltip(use, s, level)
+				local rank = math.max(1, Skills.rankFor(use(classId), use(level) or 1, s))
+				return SkillInfo.tooltip(use, s, rank)
 			end)
 		)
 		table.insert(slots, slot)

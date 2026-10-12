@@ -48,6 +48,15 @@ export type SideEntry = {
 	choice: { ItemInstance }?,
 }
 
+-- S56 (ROZWOJ 3.2): the active build set's path state (filled from S57 on).
+export type PathState = {
+	main: string?,
+	nodes: { [string]: number }, -- nodeId -> rank
+	bp: { [string]: "a" | "b" }, -- "<skillId>:<5|10>" -> option; same shape as Logic/Skills.Choices
+	freeUsed: boolean,
+}
+export type BuildSet = { path: PathState, stats: Stats, statPoints: number, hotbar: { [string]: string } }
+
 export type CharacterData = {
 	id: string,
 	name: string,
@@ -56,9 +65,11 @@ export type CharacterData = {
 	exp: number,
 	stats: Stats,
 	statPoints: number,
-	skills: { [string]: number },
-	skillPoints: number,
 	hotbar: { [string]: string }, -- "1".."10" -> skillId
+	path: PathState,
+	buildSlot: number, -- 1 | 2 (S58)
+	buildOther: BuildSet?,
+	reworkNotice: boolean, -- S56: show "Rozwój postaci się zmienił" once
 	potionBar: PotionBar,
 	equipment: { [string]: ItemInstance }, -- Slot -> item
 	inventory: { [string]: ItemInstance }, -- "1".."N" -> item

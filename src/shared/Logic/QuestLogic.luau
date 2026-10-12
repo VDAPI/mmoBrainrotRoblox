@@ -5,6 +5,7 @@
 local Monsters = require("../Data/Monsters")
 local Quests = require("../Data/Quests")
 local Rng = require("./Rng")
+local SkillData = require("../Data/Skills")
 
 local QuestLogic = {}
 
@@ -94,6 +95,21 @@ function QuestLogic.amount(objective: Objective, kind: string, data: { [string]:
 end
 
 -- S27: whether a `use` objective involves this anchor.
+-- S56: the "learn" objective counts a skill put on the bar. The first skill on slots 1..10 other than the
+-- starting one (nil for an empty bar or not a table).
+function QuestLogic.learnedOnBar(hotbar: any, startingId: string?): string?
+	if type(hotbar) ~= "table" then
+		return nil
+	end
+	for slot = 1, SkillData.HOTBAR_SLOTS do
+		local id = hotbar[tostring(slot)]
+		if type(id) == "string" and id ~= startingId then
+			return id
+		end
+	end
+	return nil
+end
+
 function QuestLogic.usesAnchor(objective: Objective, anchor: string): boolean
 	if objective.anchor == anchor then
 		return true

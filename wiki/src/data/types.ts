@@ -981,8 +981,6 @@ export interface ProgressionFile {
   levelDiffRules: LevelDiffRules;
   maxLevel: number;
   monsterExp: MonsterExpRow[];
-  skillPointsFromLevel: number;
-  skillPointsPerLevel: number;
   statPointsPerLevel: number;
   variantExp: Record<string, number>;
 }
@@ -1189,7 +1187,6 @@ export interface Skill {
   angle?: number;
   breakpoints: SkillBreakpoint[];
   class: ClassId;
-  col: number;
   damageKind?: string;
   delay?: number;
   effects?: Json;
@@ -1208,11 +1205,10 @@ export interface Skill {
   passiveSkill: boolean;
   radius?: number;
   range?: number;
+  rankLevels: number[];
   ranks: SkillRank[];
   requiredElement?: ElementId;
-  requires: SkillRequirement[];
   resource?: string;
-  row: number;
   shape: string;
   target: string;
   type: string;
@@ -1240,46 +1236,16 @@ export interface SkillRank {
   values: Record<string, number>;
 }
 
-export interface SkillRequirement {
-  level: number;
-  skill: string; // id in skills.json
+export interface SkillRankRules {
+  capLevel: number;
+  step: number;
 }
 
 export interface SkillRules {
   breakpointLevels: number[];
   breakpointsEnabled: boolean;
   maxLevel: number;
-  pointsByLevel: number[];
-  skillPointsFromLevel: number;
-  skillPointsPerLevel: number;
-  vectors: SkillVectors;
-}
-
-export interface SkillVectorBuild {
-  achievable: boolean;
-  class: ClassId;
-  level: number;
-  skills: Record<string, number>;
-}
-
-export interface SkillVectorResult {
-  detail?: Json;
-  ok: boolean;
-  reason?: string;
-  skill: string; // id in skills.json
-}
-
-export interface SkillVectorState {
-  class: ClassId;
-  level: number;
-  results: SkillVectorResult[];
-  skillPoints: number;
-  skills: Record<string, number>;
-}
-
-export interface SkillVectors {
-  builds: SkillVectorBuild[];
-  states: SkillVectorState[];
+  ranks: SkillRankRules;
 }
 
 export interface SkillsFile {

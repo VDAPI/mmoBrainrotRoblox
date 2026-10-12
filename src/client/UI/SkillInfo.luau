@@ -1,8 +1,9 @@
 --!strict
--- Skill tooltip text (S28, DESIGN §14): name and level, the area's shape with its size, cost / cooldown / range at the
--- current level, the description, the next level's numbers in green, the breakpoints of ranks 5 and 10 (reached ones
--- bright, later ones greyed with "from level N"; the option that works, A until S57) and what the next level needs. Plain text for Components/Tooltip; the skill
--- window draws the same pieces itself.
+-- Skill tooltip text (S28, DESIGN §14): name and rank, the area's shape with its size, cost / cooldown / range at the
+-- current rank, the description, the next rank's numbers with the level it comes at, the breakpoints of ranks 5 and
+-- 10 (reached ones marked, each with its character level; the option that works, A until S57). Plain text for
+-- Components/Tooltip; the skill window draws the same pieces itself.
+-- S56: `rank` comes from the character level (Skills.rankFor), 0 = not unlocked yet.
 -- S54: cost and descriptions at the character level (Skills.cost, heal curve); damage skills show the weapon speed
 -- factor (Skills.speedFactor) when it is not x1.
 
@@ -33,8 +34,8 @@ local SHAPE_GLYPH: { [string]: string } = {
 }
 
 -- "◣ Cone 90° · 10 studs" (empty for skills without an area).
-function SkillInfo.shapeLine(use: any, skill: SkillData.SkillDef, level: number): string
-	local rank = math.max(1, level)
+function SkillInfo.shapeLine(use: any, skill: SkillData.SkillDef, shownRank: number): string
+	local rank = math.max(1, shownRank)
 	local def = Skills.effective(skill, rank, nil, nil)
 	local shape = Skills.shape(skill)
 	if shape == "none" or shape == "target" then
@@ -52,8 +53,8 @@ function SkillInfo.shapeLine(use: any, skill: SkillData.SkillDef, level: number)
 end
 
 -- "15 energy · Cooldown 4 s · Range 8 studs"
-function SkillInfo.costLine(use: any, skill: SkillData.SkillDef, level: number): string
-	local rank = math.max(1, level)
+function SkillInfo.costLine(use: any, skill: SkillData.SkillDef, shownRank: number): string
+	local rank = math.max(1, shownRank)
 	local def = Skills.effective(skill, rank, nil, nil)
 	local parts = {}
 	local cost = Skills.cost(def, rank, levelOf(use), skill.class, nil)
@@ -83,24 +84,29 @@ end
 function SkillInfo.breakpoints(
 	use: any,
 	skill: SkillData.SkillDef,
-	level: number
+	rank: number
 ): { { text: string, reached: boolean } }
 	local out = {}
 	for _, bp in Skills.breakpointKeys(skill) do
 		-- the option that works (A until a choice exists, S57 / S59)
 		if bp.option == Skills.chosen(skill, bp.rank, nil) then
-			local label = Text.get(use, "skills.breakpoint", { level = bp.rank })
-			table.insert(out, { text = `{label}: {Text.get(use, bp.key)}`, reached = level >= bp.rank })
+			local label =
+				Text.get(use, "skills.breakpoint", { rank = bp.rank, level = Skills.rankLevel(skill, bp.rank) })
+			table.insert(out, { text = `{label}: {Text.get(use, bp.key)}`, reached = rank >= bp.rank })
 		end
 	end
 	return out
 end
 
 -- The whole tooltip as plain text (the skill bar).
-function SkillInfo.tooltip(use: any, skill: SkillData.SkillDef, level: number): string
+function SkillInfo.tooltip(use: any, skill: SkillData.SkillDef, rank: number): string
 	local lang = use(Text.Lang)
-	local shown = math.max(1, level)
-	local lines = { `{Text.get(use, skill.nameKey)} ({level}/{skill.maxLevel})` }
+	local shown = math.max(1, rank)
+	local rankText = Text.get(use, "skills.rank", { rank = rank, max = skill.maxLevel })
+	local lines = { `{Text.get(use, skill.nameKey)} · {rankText}` }
+	if rank <= 0 then
+		table.insert(lines, Text.get(use, "skills.unlockAt", { level = skill.unlock }))
+	end
 	local shape = SkillInfo.shapeLine(use, skill, shown)
 	if shape ~= "" then
 		table.insert(lines, shape)
@@ -110,11 +116,12 @@ function SkillInfo.tooltip(use: any, skill: SkillData.SkillDef, level: number): 
 	end
 	local opts = { level = levelOf(use) }
 	table.insert(lines, Skills.formatDescription(skill, shown, lang, opts))
-	if level > 0 and level < skill.maxLevel then
-		local nextText = Skills.formatDescription(skill, level + 1, lang, opts)
-		table.insert(lines, `{Text.get(use, "skills.next")}: {nextText}`)
+	if rank > 0 and rank < skill.maxLevel then
+		local nextText = Skills.formatDescription(skill, rank + 1, lang, opts)
+		local label = Text.get(use, "skills.nextRank", { rank = rank + 1, level = Skills.rankLevel(skill, rank + 1) })
+		table.insert(lines, `{label}: {nextText}`)
 	end
-	for _, bp in SkillInfo.breakpoints(use, skill, level) do
+	for _, bp in SkillInfo.breakpoints(use, skill, rank) do
 		table.insert(lines, (if bp.reached then "✔ " else "· ") .. bp.text)
 	end
 	local element = Skills.requiredElement(skill)

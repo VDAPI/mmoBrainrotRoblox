@@ -22,14 +22,12 @@ local function Character(s: Dev.Scope): Instance
 	local hp = State.Value({ "character", "hp" })
 	local mana = State.Value({ "character", "mana" })
 	local statPoints = State.Value({ "character", "statPoints" })
-	local skillPoints = State.Value({ "character", "skillPoints" })
 
 	local levelInput = s:Value(Fusion.peek(level) or 1)
 	local expInput = s:Value(1000)
 	local goldInput = s:Value(10000)
 	local shardsInput = s:Value(1000)
 	local statInput = s:Value(10)
-	local skillInput = s:Value(5)
 	local speedInput = s:Value(40)
 	local presetLevel = s:Value(50)
 	local presetRarity = s:Value("4" :: string?)
@@ -60,7 +58,6 @@ local function Character(s: Dev.Scope): Instance
 					hp = use(hp) or 0,
 					mana = use(mana) or 0,
 					stat = use(statPoints) or 0,
-					skill = use(skillPoints) or 0,
 				})
 			end),
 			FontFace = Theme.Fonts.BodyBold,
@@ -111,21 +108,9 @@ local function Character(s: Dev.Scope): Instance
 				Dev.run("statpoints", { num(statInput) })
 			end),
 		}),
-		Dev.row(s, 8, Text.T(s, "dev.char.skillPoints"), {
-			NumberInput(s, { Value = skillInput, Min = 1, Max = 1000 }),
-			Dev.button(s, Text.T(s, "dev.add"), function()
-				Dev.run("skillpoints", { num(skillInput) })
-			end),
-		}),
 		Dev.row(s, 9, nil, {
 			Dev.button(s, Text.T(s, "dev.char.resetStats"), function()
 				Dev.run("stats", { "reset" })
-			end, 170),
-			Dev.button(s, Text.T(s, "dev.char.resetSkills"), function()
-				Dev.run("skills", { "reset" })
-			end, 170),
-			Dev.button(s, Text.T(s, "dev.char.allSkills"), function()
-				Dev.run("skills", { "max" })
 			end, 170),
 			Dev.button(s, Text.T(s, "dev.char.heal"), function()
 				Dev.run("heal")

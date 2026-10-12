@@ -1,5 +1,6 @@
 <script lang="ts">
-  // Skill tree node (.vw-node, contract S36; S41: Svelte so the SkillPlanner island and static pages share it).
+  // Skill node (.vw-node, contract S36; Svelte so static pages share it; S56: the planner island is gone until S82,
+  // without `rank` the counter shows the max rank only).
   // `label` is the full accessible name ("Fireball, 2 of 10, available"); extra attributes and event handlers
   // (onclick, oncontextmenu, onkeydown, tabindex, data-*) pass through to the button.
   import type { HTMLButtonAttributes } from "svelte/elements";
@@ -7,7 +8,7 @@
   interface Props extends Omit<HTMLButtonAttributes, "class"> {
     glyph?: string;
     state: "locked" | "available" | "partial" | "max";
-    rank: number;
+    rank?: number | null;
     max: number;
     active?: boolean;
     capstone?: boolean;
@@ -26,7 +27,7 @@
   let {
     glyph = "✦",
     state,
-    rank,
+    rank = null,
     max,
     active = false,
     capstone = false,
@@ -59,7 +60,7 @@
   {:else}
     <span class="glyph" aria-hidden="true">{glyph}</span>
   {/if}
-  <span class="vw-node__rank" aria-hidden="true">{rank}/{max}</span>
+  <span class="vw-node__rank" aria-hidden="true">{rank == null ? max : `${rank}/${max}`}</span>
 </button>
 
 <style>

@@ -1,7 +1,7 @@
 --!strict
 -- Experience and levels (DESIGN §4.6). GiveExp is the single entry point for every EXP source
 -- (monsters S03, quests S11); it applies the character's EXP bonus and handles level-ups:
--- stat/skill points, full resources, the LevelUp effect for nearby players.
+-- stat points (skill ranks come from the level, S56), full resources, the LevelUp effect for nearby players.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -25,6 +25,7 @@ local LevelService = {
 	Deps = { "PlayerStateService", "StatService", "ResourceService" },
 	-- (player, newLevel, levelsGained)
 	LeveledUp = Signal.new(),
+	LevelChanged = Signal.new(), -- (player, newLevel, oldLevel) S56: every level change, also SetLevel down
 }
 
 local PlayerStateService: any
@@ -56,14 +57,14 @@ local function setLevelAttribute(player: Player, level: number)
 end
 
 local function onLevelsGained(player: Player, character: Types.CharacterData, from: number, to: number)
-	local statPts, skillPts = Exp.pointsForLevels(from, to)
+	local statPts = Exp.pointsForLevels(from, to)
 	PlayerStateService.Set(player, { "character", "level" }, to)
 	PlayerStateService.Set(player, { "character", "statPoints" }, character.statPoints + statPts)
-	PlayerStateService.Set(player, { "character", "skillPoints" }, character.skillPoints + skillPts)
 	setLevelAttribute(player, to)
 	StatService.Recompute(player)
 	ResourceService.Restore(player)
-	Net.FireList(nearbyPlayers(player), "LevelUp", player, to, statPts, skillPts)
+	Net.FireList(nearbyPlayers(player), "LevelUp", player, to, statPts)
+	LevelService.LevelChanged:Fire(player, to, from)
 	LevelService.LeveledUp:Fire(player, to, to - from)
 	Analytics.progression(player, "Level", to, `level_{to}`) -- an empty level name is rejected by AnalyticsService
 	log:info("%s reached level %d", player.Name, to)
@@ -87,7 +88,7 @@ function LevelService.GiveExp(player: Player, amount: number, _source: string?):
 end
 
 -- Points a character should have in total at its level (class start stats are free).
-local function totalPoints(level: number): (number, number)
+local function totalPoints(level: number): number
 	return Exp.pointsForLevels(1, level)
 end
 
@@ -99,14 +100,6 @@ local function spentStatPoints(character: Types.CharacterData): number
 	local spent = 0
 	for id, value in character.stats :: any do
 		spent += value - ((class.startStats :: any)[id] or 0)
-	end
-	return spent
-end
-
-local function spentSkillPoints(character: Types.CharacterData): number
-	local spent = 0
-	for _, level in character.skills do
-		spent += level
 	end
 	return spent
 end
@@ -137,11 +130,9 @@ function LevelService.SetLevel(player: Player, level: number)
 		onLevelsGained(player, character, from, target)
 		return
 	end
-	local statTotal, skillTotal = totalPoints(target)
+	local statTotal = totalPoints(target)
 	PlayerStateService.Set(player, { "character", "level" }, target)
 	setLevelAttribute(player, target)
-	local freeSkill = skillTotal - spentSkillPoints(character)
-	PlayerStateService.Set(player, { "character", "skillPoints" }, math.max(0, freeSkill))
 	local freeStat = statTotal - spentStatPoints(character)
 	if freeStat < 0 then
 		LevelService.ResetStats(player)
@@ -150,6 +141,9 @@ function LevelService.SetLevel(player: Player, level: number)
 		StatService.Recompute(player)
 	end
 	ResourceService.Restore(player)
+	if target ~= from then
+		LevelService.LevelChanged:Fire(player, target, from)
+	end
 end
 
 function LevelService.Init(registry)

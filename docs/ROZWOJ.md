@@ -311,7 +311,8 @@ Broń każdej ścieżki (uzasadnienie i pokrycie w sekcjach klas):
   poczty). Użycie otwiera wybór ścieżki; serwer zużywa zwój przy `ChooseMainPath`. Cena u Nauczyciela 400 złota ×
   poziom (jak dziś), od 20. poziomu. Wpis w `Data/Products` (120 Smoczej Waluty) zostaje, zmienia się tylko nazwa;
   zmiana ścieżki nie daje mocy, a `scroll_oblivion` też jest w sklepie. Usunięcie ze sklepu premium tylko na decyzję
-  właściciela (15.1).
+  właściciela (15.1). Od S56 do S81 wpis ma `unavailable = true` (zwój nic nie robi, dopóki klasa nie ma ścieżek);
+  `premium.spec` to sprawdza.
 
 ### 2.11 Przycisk „Rozdaj jak zaleca ścieżka”
 
@@ -419,7 +420,8 @@ export type PathDef = {
   `behind`), test `intercept` (7.6), test `misfortune` (tylko przy `canDodge ~= false`, limity), migracja 6 (oba
   zestawy, nowe postacie z paskiem), test danych 7.3 (czas, promień, odnowienie, wyjątki), `wikidump.spec` (lista
   dozwolonych; żadna umiejętność, węzeł, tytuł ani tekst ścieżki z `wiki = false` nie trafia do eksportu).
-  `premium.spec` (zwoju nie ma w sklepie premium) tylko, jeśli właściciel zgodzi się usunąć zwój ze sklepu.
+  `premium.spec` (zwoju nie ma w sklepie premium) tylko, jeśli właściciel zgodzi się usunąć zwój ze sklepu. Od S56 do
+  S81 wpis ma `unavailable = true` (zwój nic nie robi, dopóki klasa nie ma ścieżek); `premium.spec` to sprawdza.
 
 ### 3.5 Wiki i planer (kontrakt `docs/WIKI.md`)
 

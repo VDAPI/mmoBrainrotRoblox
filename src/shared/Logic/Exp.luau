@@ -50,16 +50,9 @@ function Exp.applyExp(level: number, exp: number, gained: number, maxLevel: numb
 	return newLevel, newExp, newLevel - level
 end
 
--- Points granted when going from `fromLevel` to `toLevel`.
-function Exp.pointsForLevels(fromLevel: number, toLevel: number): (number, number)
-	local stat, skill = 0, 0
-	for l = fromLevel + 1, toLevel do
-		stat += Progression.statPointsPerLevel
-		if l >= Progression.skillPointsFromLevel then
-			skill += Progression.skillPointsPerLevel
-		end
-	end
-	return stat, skill
+-- Stat points granted when going from `fromLevel` to `toLevel` (skill ranks come from the level, S56).
+function Exp.pointsForLevels(fromLevel: number, toLevel: number): number
+	return math.max(0, toLevel - fromLevel) * Progression.statPointsPerLevel
 end
 
 -- Fraction 0..1 of the way to the next level (1 at max level).

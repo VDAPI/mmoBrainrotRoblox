@@ -3301,3 +3301,40 @@ Pliki: `Data/Skills/{init,Build,Types,Warrior,Hunter,Mage,Cleric}`, `Config` (ko
 `SkillService`, `Skills/Context`, `Skills/Types/Support`, `SkillInfo`, `SkillController`, `VfxController`,
 `Hud/SkillBar`, `tests/{skills,skillmotion,effectstack,wikidump}.spec`, `tools/WikiData/Skills`, `wiki/src/lib/{classes,skills}.ts`,
 `SkillPlanner.svelte`, `ClassView.astro`, dane wiki, `docs/PRZEDMIOTY.md`, `docs/WIKI.md`, `CLAUDE.md`.
+
+### S56: Fundament 4: migracja zapisu 6, rangi z poziomu i koniec punktów umiejętności
+
+- Logika: `Skills.rankFor` / `rankOf` (ranga z poziomu postaci), `unlocked`, `startingSkill`, `startHotbar`,
+  `newlyUnlocked`, `firstFreeSlot`, `placeOnBar`, `cleanHotbar`; `validHotbar` i `passiveTotals` liczą rangę z poziomu
+  (drabina przejściowa 2.6); usunięte `levelRequirement`, `level`, `canLearn`, `spentPoints`, `refundAll`.
+  `Exp.pointsForLevels` zwraca same punkty statystyk; `Data/Skills` bez `requires`, `col`, `row`.
+- Zapis: schemat 6 (`MIGRATIONS[6]`), `Types.PathState` / `BuildSet`, pola `path`, `buildSlot`, `buildOther`,
+  `reworkNotice`; nowa postać ma umiejętność startową na miejscu 1.
+- Serwer: `LevelService.LevelChanged`, `LevelUp` bez punktów umiejętności; `SkillService`: remote `PutOnBar(skillId,
+  slot?)` i `AckRework`, auto-włożenie nowych aktywnych z toastami, czyszczenie paska przy wejściu i obniżeniu,
+  rzucanie z rangą z poziomu; bez `LearnSkill`, `ResetSkills`, `Reset`, `LearnAll`. Cel `learn` z paska
+  (`QuestLogic.learnedOnBar`, `catchUp`). Zwój `scroll_skillreset` „wkrótce”, zdjęty u Nauczyciela, wpis premium
+  `unavailable`.
+- Klient: nowe `SkillsWindow` (lista z rangami, 5A / 10A, „Na pasek”, siatka 2 × 5 przy pełnym pasku, podgląd 3D),
+  `ReworkController` (okno „Rozwój postaci się zmienił” raz na postać), rangi z poziomu w `SkillBar`, `SkillController`,
+  `VfxController`, `SkillInfo` (etykieta przełomu z poziomem, linia następnej rangi), toast awansu i panel
+  deweloperski bez punktów umiejętności, sklep premium „Wkrótce”.
+- Admin: bez `/skill`, `/skillall`, `/skills`, `/skillpoints`. Teksty PL / EN z planu, stare klucze usunięte.
+- Wiki: `skills.json` z `rankLevels` i `rules.ranks` (bez wymagań, kolumn, wierszy i wektorów), `progression.json` bez
+  punktów umiejętności, `premium.json` bez zwoju; `lib/skills.ts` (`rankLevel`, `rankAt`) i `skills.test.ts` od nowa,
+  `SkillPlanner` jako zaślepka bez JS („Planer wkrótce”), tabela klasy z „maks. od poz.”, MDX bez punktów
+  umiejętności, e2e planera pominięty. `npx astro check`, `npm test`, `eslint` i `npm run build` zielone.
+- Testy: `Migration 6 (S56)` i nowa postać w `character.spec`, `S56 ranks from the level and the bar` w `skills.spec`,
+  `S56 learn objective` w `quest.spec`, wpis `unavailable` w `premium.spec`, „ranks from the level (S56)” w
+  `wikidump.spec`; listy migracji w `rarities`, `sidequests`, `worldmap`; `exp.spec`.
+- Grep `skillPoints` w `src` trafia tylko w `Logic/AccountSchema` (migracja 6 kasuje to pole), zgodnie z kodem z planu.
+
+Pliki: `Logic/{Skills,AccountSchema,CharacterFactory,Exp,Premium,QuestLogic}`, `Types`, `Net/Definitions`,
+`Data/{Progression,Shops,Products,AdminCommands}`, `Data/Skills/{Types,Build,Warrior,Hunter,Mage,Cleric}`,
+`Data/Quests/{Main,Types}`, lokalizacja PL / EN, `LevelService`, `SkillService`, `QuestService`, `ScrollService`,
+`QuestEvents`, `Admin/Character`, `ReworkController` (nowy), `ScreenController`, `SkillController`, `VfxController`,
+`EffectsController`, `SkillInfo`, `SkillsWindow`, `Hud/SkillBar`, `PremiumShop`, `DevWindow/Character`,
+`tests/{character,skills,quest,premium,exp,wikidump,data,rarities,sidequests,worldmap}.spec`,
+`tools/WikiData/{Skills,Basics,Premium}`, `wiki/src/lib/{skills,skills.test,classes}.ts`, `SkillPlanner.svelte`,
+`SkillNode.svelte`, `ClassView.astro`, `ClassesView.astro`, `wiki/src/i18n`, 4 pliki MDX, `wiki/e2e/keyboard.e2e.ts`,
+`wiki/scripts/{shots.pages,budgets.config}.mjs`, dane wiki, `docs/{PRZEDMIOTY,ARCHITECTURE,DESIGN,ROZWOJ,WIKI}.md`.

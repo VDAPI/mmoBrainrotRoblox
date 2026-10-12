@@ -547,9 +547,12 @@ function VfxController.Preview(model: Model, skillId: string)
 	local id = if type(entity) == "string" then entity else nil
 	local root = model:FindFirstChild("HumanoidRootPart") :: BasePart?
 	local front = if root then root.Position + root.CFrame.LookVector * math.min(skill.range or 10, 12) else nil
-	local level = State.Get({ "character", "skills", skillId }) or 1
-	-- preview: always option A, no nodes (ROZWOJ 2.7)
-	local def = Skills.effective(skill, level, nil, nil)
+	-- S56: rank from the character level (a locked skill previews at rank 1); always option A, no nodes (ROZWOJ 2.7)
+	local rank = math.max(
+		1,
+		Skills.rankFor(State.Get({ "character", "class" }), State.Get({ "character", "level" }) or 1, skill)
+	)
+	local def = Skills.effective(skill, rank, nil, nil)
 	local motion = SkillMotions.get(skillId)
 	onCast({ s = skillId, c = id, p = front, d = if skill.type == "channel" then 2.5 else nil }, skill, model)
 	local delay = if motion then math.min(motion.hit or motion.release or 0, SkillMotions.MAX_HIT) else 0

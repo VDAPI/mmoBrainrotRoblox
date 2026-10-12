@@ -19,7 +19,7 @@
 3. Materiały + złoto → ulepszanie u kowala (+0 do +9, ryzyko spadku poziomu).
 4. Elity w jaskiniach (czerwona strefa, PvP zawsze) → lepszy drop, ryzyko ze strony graczy.
 5. Boss w lochu (do 3 razy dziennie) w grupie do 5 osób → grind legend i mityków (rzut osobisty z rosnącą szansą).
-6. Poziom w górę → punkty statystyk i umiejętności → nowe strefy.
+6. Poziom w górę → punkty statystyk, rangi umiejętności rosną same → nowe strefy.
 7. Społeczne: grupa, gildia z umiejętnościami, handel, aukcja, arena.
 
 ## 3. Świat

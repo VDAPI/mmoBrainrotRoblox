@@ -28,6 +28,4 @@ return table.freeze({
 	maxBonus = 0.2,
 
 	statPointsPerLevel = 5,
-	skillPointsPerLevel = 1,
-	skillPointsFromLevel = 2, -- first skill point when reaching this level
 })

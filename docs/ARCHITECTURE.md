@@ -133,7 +133,7 @@ type CharacterData = {
   id: string, name: string, class: "Warrior"|"Hunter"|"Mage"|"Cleric",
   level: number, exp: number,
   stats: { str: number, dex: number, int: number, vit: number }, statPoints: number,
-  skills: { [string]: number }, skillPoints: number,
+  path { main?, nodes, bp, freeUsed }, buildSlot, buildOther?, reworkNotice,
   hotbar: { [number]: string? },     -- 1..10 skillId
   potionBar: { hp: string?, mana: string?, energy: string? },  -- itemId mikstury
   equipment: { [Slot]: ItemInstance? },  -- w tym "backpack"
@@ -404,8 +404,6 @@ type CharacterData = {
 | `/exp` | character | <amount> | dodaj doświadczenie |
 | `/stats` | character | <reset> | zwróć wszystkie punkty statystyk |
 | `/statpoints` | character | <n> | ustaw liczbę wolnych punktów statystyk |
-| `/skillpoints` | character | <n> | dodaj punkty umiejętności |
-| `/skills` | character | <max|reset> | naucz wszystkie umiejętności tak wysoko, jak pozwala poziom |
 | `/heal` | character |  | odnów życie, manę i energię |
 | `/god` | character |  | włącz/wyłącz nieśmiertelność |
 | `/cd` | character | <off|on> | wyłącz / włącz odnowienie umiejętności |

@@ -15,7 +15,7 @@ Postać ma cztery atrybuty: **Siłę**, **Zręczność**, **Intelekt** i **Wital
 
 ## Punkty za poziom
 
-Za każdy awans dostajesz <Stat path="progression.statPointsPerLevel" /> punktów atrybutów do rozdania w oknie Postaci (<Key action="win_character" />). Od poziomu <Stat path="progression.skillPointsFromLevel" /> dostajesz też <Stat path="progression.skillPointsPerLevel" /> punkt umiejętności na poziom; wydasz go w oknie Umiejętności (<Key action="win_skills" />) albo zaplanujesz w <Link to="classes">planerze klas</Link>.
+Za każdy awans dostajesz <Stat path="progression.statPointsPerLevel" /> punktów atrybutów do rozdania w oknie Postaci (<Key action="win_character" />). Rangi umiejętności rosną same z poziomem postaci (maksimum najpóźniej na poziomie <Stat path="skills.rules.ranks.capLevel" />); w oknie Umiejętności (<Key action="win_skills" />) widzisz, od którego poziomu przyjdzie następna ranga. Punkty ścieżek klas: wkrótce.
 
 ## Wzory
 
@@ -31,4 +31,4 @@ Niektóre statystyki mają górną granicę. Nadmiar ponad limit nic nie daje, w
 
 ## Reset punktów
 
-Rozdane punkty atrybutów cofniesz <Item id="scroll_oblivion" />: kupisz go u nauczyciela w mieście, a cena rośnie z poziomem. Punkty umiejętności resetuje osobny <Item id="scroll_skillreset" />.
+Rozdane punkty atrybutów cofniesz <Item id="scroll_oblivion" />: kupisz go u nauczyciela w mieście, a cena rośnie z poziomem. <Item id="scroll_skillreset" /> na razie nic nie robi: wróci razem ze ścieżkami klas (wkrótce).

@@ -250,8 +250,6 @@
     {"exp":{"boss":100260,"elite":6684,"elite2":20052,"normal":1671},"level":90},
     {"exp":{"boss":114300,"elite":7620,"elite2":22860,"normal":1905},"level":100}
   ],
-  "skillPointsFromLevel": 2,
-  "skillPointsPerLevel": 1,
   "statPointsPerLevel": 5,
   "variantExp": {"boss":60,"elite":4,"elite2":12,"normal":1}
 }

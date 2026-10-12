@@ -1144,3 +1144,26 @@
 - **S55** Wiki: przełomy w `skills.json` jako `{ rank, a = { text, change } }` (nazwy jak w planie S82, który dopisze
   `level` i `b`); liczby rang (wartości, odnowienie) dalej bez przełomów, jak przed S55. `skills.spec` i
   `skillmotion.spec` bez stałych liczb umiejętności (14 na klasę, 56, 45 aktywnych, żywioły Maga).
+- **S56** Migracja 6 (ROZWOJ 5): każda postać traci `skills` / `skillPoints`, dostaje statystyki startowe klasy i
+  5 × (poziom − 1) punktów do rozdania (darmowy reset obejmuje też Zręczność z S54), pusty `path`, `buildSlot = 1`,
+  pasek z aktywnych odblokowanych na jej poziomie i `reworkNotice`. Zapis bez klasy liczony jak szablon (Wojownik);
+  nieznana klasa zachowuje statystyki i ma pusty pasek.
+- **S56** Szablon postaci ma pusty pasek (`reconcile` wpisałby umiejętność szablonu w puste miejsce 1 każdej postaci);
+  miejsce 1 nowej postaci wypełnia `CharacterFactory` (`Skills.startHotbar(classId, 1)`).
+- **S56** Drabina przejściowa (ROZWOJ 2.6): wszystkie 14 umiejętności klasy w podstawie z dzisiejszymi odblokowaniami,
+  pasywki z maksimum do 95., więc klasy są na 60–100 silniejsze niż przed S56, dopóki nie przyjdą ich ścieżki. Nikt nie
+  stroi pod ten stan przed S85–S90.
+- **S56** `LevelService.LevelChanged` przy każdej zmianie poziomu (także `/lvl` w dół): `SkillService` odświeża
+  pasywki i haki, kładzie nowe aktywne na wolne miejsca (toast na umiejętność, przy pełnym pasku tylko toast, więcej
+  niż 2 naraz jeden zbiorczy; toast pasywki ponad plan) i czyści pasek po obniżeniu i przy wejściu
+  (`Skills.cleanHotbar` do S57).
+- **S56** Cel `learn` („wolves”) = umiejętność położona na pasku (każde położenie idzie przez `setHotbar`); `catchUp`
+  zalicza go, gdy na pasku jest coś poza umiejętnością startową (auto-włożenie na 3. poziomie dzieje się przed
+  przyjęciem questa).
+- **S56** `scroll_skillreset`: „wkrótce” bez zużycia, zdjęty u Nauczyciela (wraca w S57 dla klas ze ścieżkami), wpis
+  premium `unavailable = true` do S81 („Wkrótce”, `premium.error.soon`, nie na wiki): odejście od ROZWOJ 2.10.
+- **S56** Admin bez `/skill`, `/skillall`, `/skills`, `/skillpoints` (rangi ustawia `/lvl`). Wiki: planer za „Planer
+  wkrótce” do S82, `skills.json` z `rankLevels` i `rules.ranks`, `ranks[].requiredLevel` = poziom rangi.
+- **S56** Okno umiejętności (minimalne do S59): lista klasy z rangą, „następna na poz.”, znaczkami 5A / 10A i
+  „Na pasek”; pełny pasek otwiera siatkę 2 × 5, wybrane miejsce zostaje zastąpione. Zablokowana umiejętność w
+  szczegółach pokazuje opis rangi 1 pod nagłówkiem „Jeszcze niedostępna”.

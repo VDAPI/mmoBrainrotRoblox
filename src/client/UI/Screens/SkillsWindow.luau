@@ -1,9 +1,10 @@
 --!strict
--- Skills window (K), DESIGN §23: the class tree as a graph (icons with "level/max", requirement lines,
--- locked nodes grey with their unlock level) and a details panel for the selected skill (current and next
--- level, cost, cooldown, range, requirements, "Learn"). Learned active skills can be dragged onto the bar.
--- S28: the area's shape, the breakpoints at 5 and 10, and "Preview": a copy of the character in a viewport plays the
--- skill's animation and effect (VfxController.Preview), so the player sees what the points buy.
+-- Skills window (K), DESIGN §23. S56 (ROZWOJ 3.3, 4): ranks grow with the character level, so the window is a list
+-- of the class's skills (rank "6/10", the level of the next rank or "From lv. 34", breakpoint badges 5A / 10A) with
+-- "To bar", and a details panel for the selected skill (current and next rank, cost, cooldown, range, element,
+-- breakpoints). A full bar opens a 2 x 5 slot picker: the chosen slot is replaced. Unlocked actives can be dragged
+-- onto the bar. The full window (920 x 640, paths) comes in S59.
+-- S28: "Preview": a copy of the character in a viewport plays the skill's animation and effect (VfxController.Preview).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -27,17 +28,15 @@ local Children, OnEvent = Fusion.Children, Fusion.OnEvent
 
 type Scope = Fusion.Scope<typeof(Fusion)>
 
-local NODE = 64
-local COL_STEP = 100
-local ROW_STEP = 94
-local TREE_WIDTH = 4 * COL_STEP
-local TREE_HEIGHT = 6 * ROW_STEP
-
-local function nodeCenter(skill: SkillData.SkillDef): Vector2
-	return Vector2.new((skill.col - 0.5) * COL_STEP, (skill.row - 0.5) * ROW_STEP)
-end
-
+local LIST_WIDTH = 400
+local ROW_HEIGHT = 56
+local TILE = 44
+local HEADER_HEIGHT = 36
 local PREVIEW_HEIGHT = 150
+local PICK_CELL = 64
+
+local GOLD_HEX = "#E8C66A"
+local MUTED_HEX = "#7A746A"
 
 -- A still copy of the local character for the preview viewport (scripts and plates removed, root anchored).
 local function mannequin(): Model?
@@ -72,111 +71,108 @@ local function mannequin(): Model?
 	return copy
 end
 
-local function SkillsWindow(
-	scope: Scope,
-	showModal: (spec: any) -> (),
-	preview: ((model: Model, skillId: string) -> ())?
-): Fusion.Child
+-- Slot ("1".."10") holding `id` on `bar`, or nil.
+local function slotOf(bar: any, id: string): string?
+	if type(bar) ~= "table" then
+		return nil
+	end
+	for slot, existing in bar do
+		if existing == id then
+			return slot
+		end
+	end
+	return nil
+end
+
+local function SkillsWindow(scope: Scope, preview: ((model: Model, skillId: string) -> ())?): Fusion.Child
 	local classId = State.Value({ "character", "class" })
-	local skillLevels = State.Value({ "character", "skills" })
-	local points = State.Value({ "character", "skillPoints" })
 	local level = State.Value({ "character", "level" })
+	local hotbar = State.Value({ "character", "hotbar" })
 	local weaponState = State.Value({ "derived", "weapon" })
 	local selected = scope:Value(nil :: string?)
+	local picking = scope:Value(nil :: string?)
 	local busy = false
 
-	local function levelOf(use: Fusion.Use, id: string): number
-		local levels = use(skillLevels)
-		return if type(levels) == "table" then levels[id] or 0 else 0
+	local function rankOf(use: Fusion.Use, skill: SkillData.SkillDef): number
+		return Skills.rankFor(use(classId), use(level) or 1, skill)
 	end
 
-	local function learn(id: string)
+	local function fail(err: string?)
+		Sounds.play("error")
+		Toast.push(Text.now(err or "error.internal"), "error")
+	end
+
+	-- "To bar": the first free slot, or the 2 x 5 picker when the bar is full.
+	local function toBar(id: string)
 		if busy then
+			return
+		end
+		local bar = Fusion.peek(hotbar)
+		local current = if type(bar) == "table" then bar else {}
+		if slotOf(current, id) == nil and Skills.firstFreeSlot(current) == nil then
+			picking:set(id)
 			return
 		end
 		busy = true
 		task.spawn(function()
-			local ok, err, detail = Net.Invoke("LearnSkill", id)
+			local ok, err = Net.Invoke("PutOnBar", id)
 			busy = false
 			if ok then
-				Sounds.play("levelUp")
 				return
 			end
-			local args: { [string]: any } = {}
-			if type(detail) == "number" then
-				args.level = detail
-			elseif type(detail) == "table" then
-				local other = SkillData.get(detail.skill)
-				args.skill = if other then Text.now(other.nameKey) else detail.skill
-				args.level = detail.level
+			if err == "skills.error.barFull" then
+				picking:set(id)
+			else
+				fail(err)
 			end
-			Sounds.play("error")
-			Toast.push(Text.now(err or "error.internal", args), "error")
 		end)
 	end
 
-	-- Tree (rebuilt when the class changes)
-	local tree = scope:Computed(function(use, s: Scope): { Instance }
+	local function pickSlot(slot: number)
+		local id = Fusion.peek(picking)
+		if busy or not id then
+			return
+		end
+		busy = true
+		task.spawn(function()
+			local ok, err = Net.Invoke("PutOnBar", id, slot)
+			busy = false
+			if ok then
+				picking:set(nil)
+			else
+				fail(err)
+			end
+		end)
+	end
+
+	-- List (rebuilt when the class or the level changes: unlocks decide what can be dragged)
+	local rows = scope:Computed(function(use, s: Scope): { Instance }
 		local list: { Instance } = {}
-		local skills: { SkillData.SkillDef } = SkillData.byClass[use(classId) or ""] or {}
+		local skills: { SkillData.SkillDef } = table.clone(SkillData.byClass[use(classId) or ""] or {})
+		table.sort(skills, function(a, b)
+			return a.order < b.order
+		end)
 		local class = Classes.get(use(classId) or "")
 		local accent = if class then Color3.fromHex(class.color) else Theme.Colors.Gold
-		-- Requirement lines first (under the nodes).
-		for _, skill in skills do
-			local requires: { { skill: string, level: number } } = skill.requires or {}
-			for _, requirement in requires do
-				local other = SkillData.get(requirement.skill)
-				if other then
-					local a, b = nodeCenter(other), nodeCenter(skill)
-					local delta = b - a
-					table.insert(
-						list,
-						s:New("Frame")({
-							Name = `Line_{other.id}_{skill.id}`,
-							AnchorPoint = Vector2.new(0.5, 0.5),
-							Position = UDim2.fromOffset((a.X + b.X) / 2, (a.Y + b.Y) / 2),
-							Size = UDim2.fromOffset(delta.Magnitude, 4),
-							Rotation = math.deg(math.atan2(delta.Y, delta.X)),
-							BackgroundColor3 = s:Computed(function(use2): Color3
-								return if levelOf(use2, other.id) >= requirement.level
-									then Theme.Colors.Gold
-									else Theme.Colors.Border
-							end),
-							BorderSizePixel = 0,
-							ZIndex = 1,
-						})
-					)
-				end
-			end
-		end
-		for _, skill in skills do
-			local center = nodeCenter(skill)
-			local current = s:Computed(function(use2): number
-				return levelOf(use2, skill.id)
+		for i, skill in skills do
+			local rank = rankOf(use, skill)
+			local unlocked = rank > 0
+			local passive = skill.type == "passive"
+			local corner = if passive then Theme.Corner.Round else Theme.Corner.Small
+			local onBarSlot = s:Computed(function(use2): string?
+				return slotOf(use2(hotbar), skill.id)
 			end)
-			local locked = s:Computed(function(use2): boolean
-				return (use2(level) or 1) < skill.unlock
-			end)
-			local node = s:New("TextButton")({
-				Name = skill.id,
-				AnchorPoint = Vector2.new(0.5, 0.5),
-				Position = UDim2.fromOffset(center.X, center.Y),
-				Size = UDim2.fromOffset(NODE, NODE),
-				AutoButtonColor = false,
-				BackgroundColor3 = s:Computed(function(use2): Color3
-					if use2(selected) == skill.id then
-						return Theme.Colors.PanelHover
-					end
-					return if use2(locked) then Theme.Colors.Background else Theme.Colors.PanelRaised
-				end),
-				Text = "",
-				ZIndex = 2,
-				[OnEvent("Activated")] = function()
-					selected:set(skill.id)
-				end,
+			local tile = s:New("Frame")({
+				Name = "Tile",
+				Position = UDim2.fromOffset(6, (ROW_HEIGHT - TILE) / 2),
+				Size = UDim2.fromOffset(TILE, TILE),
+				BackgroundColor3 = if unlocked then Theme.Colors.PanelRaised else Theme.Colors.Background,
 				[Children] = {
-					s:New("UICorner")({
-						CornerRadius = if skill.type == "passive" then Theme.Corner.Round else Theme.Corner.Small,
+					s:New("UICorner")({ CornerRadius = corner }),
+					s:New("UIStroke")({
+						ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+						Thickness = 2,
+						Color = if unlocked then accent else Theme.Colors.Border,
 					}),
 					-- Wrong weapon element (Mage, S18): greyed out.
 					s:New("Frame")({
@@ -192,21 +188,7 @@ local function SkillsWindow(
 								if type(weapon) == "table" then weapon.element else nil
 							)
 						end),
-						[Children] = s:New("UICorner")({
-							CornerRadius = if skill.type == "passive" then Theme.Corner.Round else Theme.Corner.Small,
-						}),
-					}),
-					s:New("UIStroke")({
-						ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-						Thickness = s:Computed(function(use2): number
-							return if use2(selected) == skill.id then 3 else 2
-						end),
-						Color = s:Computed(function(use2): Color3
-							if use2(selected) == skill.id then
-								return Theme.Colors.GoldBright
-							end
-							return if use2(current) > 0 then accent else Theme.Colors.Border
-						end),
+						[Children] = s:New("UICorner")({ CornerRadius = corner }),
 					}),
 					s:New("TextLabel")({
 						BackgroundTransparency = 1,
@@ -214,12 +196,7 @@ local function SkillsWindow(
 						Text = skill.glyph,
 						TextScaled = true,
 						FontFace = Theme.Fonts.BodyBold,
-						TextColor3 = s:Computed(function(use2): Color3
-							if use2(locked) then
-								return Theme.Colors.Border
-							end
-							return if use2(current) > 0 then accent else Theme.Colors.TextMuted
-						end),
+						TextColor3 = if unlocked then accent else Theme.Colors.Border,
 						ZIndex = 3,
 						[Children] = s:New("UIPadding")({
 							PaddingTop = UDim.new(0.18, 0),
@@ -228,29 +205,117 @@ local function SkillsWindow(
 							PaddingRight = UDim.new(0.18, 0),
 						}),
 					}),
-					s:New("TextLabel")({
-						Name = "Level",
-						AnchorPoint = Vector2.new(0.5, 0),
-						Position = UDim2.new(0.5, 0, 1, 2),
-						Size = UDim2.fromOffset(NODE + 20, 18),
-						BackgroundTransparency = 1,
-						Text = s:Computed(function(use2): string
-							if use2(locked) then
-								return `Lv {skill.unlock}`
-							end
-							return `{use2(current)}/{skill.maxLevel}`
-						end),
-						FontFace = Theme.Fonts.BodyBold,
-						TextSize = 13,
-						TextColor3 = s:Computed(function(use2): Color3
-							return if use2(locked) then Theme.Colors.TextMuted else Theme.Colors.Parchment
-						end),
-						ZIndex = 3,
-					}),
 				},
 			})
-			DragDrop.register(s, node :: GuiObject, `skill:{skill.id}`)
-			table.insert(list, node)
+			if unlocked and not passive then
+				DragDrop.register(s, tile :: GuiObject, `skill:{skill.id}`)
+			end
+			table.insert(
+				list,
+				s:New("TextButton")({
+					Name = skill.id,
+					LayoutOrder = i,
+					Size = UDim2.new(1, -8, 0, ROW_HEIGHT),
+					AutoButtonColor = false,
+					BackgroundColor3 = s:Computed(function(use2): Color3
+						return if use2(selected) == skill.id then Theme.Colors.PanelHover else Theme.Colors.PanelRaised
+					end),
+					BackgroundTransparency = s:Computed(function(use2): number
+						return if use2(selected) == skill.id then 0 else 0.6
+					end),
+					Text = "",
+					[OnEvent("Activated")] = function()
+						selected:set(skill.id)
+					end,
+					[Children] = {
+						s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
+						tile,
+						s:New("TextLabel")({
+							Name = "Name",
+							Position = UDim2.fromOffset(TILE + 16, 6),
+							Size = UDim2.new(1, -(TILE + 16 + 110), 0, 22),
+							BackgroundTransparency = 1,
+							RichText = true,
+							Text = s:Computed(function(use2): string
+								local name = Text.get(use2, skill.nameKey)
+								if passive or not skill.breakpoints then
+									return name
+								end
+								-- S56: badges of the breakpoint ranks, gold once reached (option A until S57)
+								local badges = {}
+								for _, at in Skills.BREAKPOINT_LEVELS do
+									if skill.breakpoints[at] then
+										local option = string.upper(Skills.chosen(skill, at, nil))
+										local color = if rank >= at then GOLD_HEX else MUTED_HEX
+										table.insert(badges, `<font color="{color}">{at}{option}</font>`)
+									end
+								end
+								return `{name}  {table.concat(badges, " ")}`
+							end),
+							FontFace = Theme.Fonts.BodyBold,
+							TextSize = Theme.TextSize.Small,
+							TextColor3 = if unlocked then Theme.Colors.Parchment else Theme.Colors.TextMuted,
+							TextXAlignment = Enum.TextXAlignment.Left,
+							TextTruncate = Enum.TextTruncate.AtEnd,
+						}),
+						s:New("TextLabel")({
+							Name = "Rank",
+							Position = UDim2.fromOffset(TILE + 16, 28),
+							Size = UDim2.new(1, -(TILE + 16 + 110), 0, 20),
+							BackgroundTransparency = 1,
+							Text = s:Computed(function(use2): string
+								if not unlocked then
+									return Text.get(use2, "skills.unlockAt", { level = skill.unlock })
+								end
+								local text = Text.get(use2, "skills.rank", { rank = rank, max = skill.maxLevel })
+								local tail = if rank < skill.maxLevel
+									then Text.get(use2, "skills.nextAt", { level = Skills.rankLevel(skill, rank + 1) })
+									else Text.get(use2, "skills.maxed")
+								return `{text} · {tail}`
+							end),
+							FontFace = Theme.Fonts.Body,
+							TextSize = 14,
+							TextColor3 = Theme.Colors.TextMuted,
+							TextXAlignment = Enum.TextXAlignment.Left,
+							TextTruncate = Enum.TextTruncate.AtEnd,
+						}),
+						if unlocked and not passive
+							then Button(s, {
+								AnchorPoint = Vector2.new(1, 0.5),
+								Position = UDim2.new(1, -8, 0.5, 0),
+								Size = UDim2.fromOffset(96, 32),
+								Variant = "secondary",
+								TextSize = 14,
+								Text = Text.T(s, "skills.toBar"),
+								Visible = s:Computed(function(use2): boolean
+									return use2(onBarSlot) == nil
+								end),
+								OnClick = function()
+									toBar(skill.id)
+								end,
+							}) :: any
+							else nil,
+						s:New("TextLabel")({
+							Name = "Status",
+							AnchorPoint = Vector2.new(1, 0.5),
+							Position = UDim2.new(1, -8, 0.5, 0),
+							Size = UDim2.fromOffset(100, 20),
+							BackgroundTransparency = 1,
+							Text = s:Computed(function(use2): string
+								if passive then
+									return Text.get(use2, "skills.passive")
+								end
+								local slot = use2(onBarSlot)
+								return if slot then Text.get(use2, "skills.onBar", { slot = slot }) else ""
+							end),
+							FontFace = Theme.Fonts.Body,
+							TextSize = 14,
+							TextColor3 = Theme.Colors.TextMuted,
+							TextXAlignment = Enum.TextXAlignment.Right,
+						}),
+					},
+				})
+			)
 		end
 		return list
 	end)
@@ -273,7 +338,9 @@ local function SkillsWindow(
 			}
 		end
 		local lang = use(Text.Lang)
-		local current = levelOf(use, skill.id)
+		local rank = rankOf(use, skill)
+		local shown = math.max(1, rank)
+		local opts = { level = use(level) or 1 }
 		local order = 0
 		local out: { Instance } = {}
 		local function line(text: string, color: Color3?, size: number?, font: Font?)
@@ -296,13 +363,15 @@ local function SkillsWindow(
 			)
 		end
 		line(Text.get(use, skill.nameKey), Theme.Colors.Gold, Theme.TextSize.Large, Theme.Fonts.Heading)
-		local header = Text.get(use, "skills.level", { level = current, max = skill.maxLevel })
+		local header = Text.get(use, "skills.rank", { rank = rank, max = skill.maxLevel })
 		if skill.type == "passive" then
 			header ..= ` · {Text.get(use, "skills.passive")}`
 		end
 		line(header, Theme.Colors.Parchment, Theme.TextSize.Body, Theme.Fonts.BodyBold)
+		if rank <= 0 then
+			line(Text.get(use, "skills.unlockAt", { level = skill.unlock }), Theme.Colors.DangerHover)
+		end
 		if skill.type ~= "passive" then
-			local shown = math.max(1, current)
 			local shape = SkillInfo.shapeLine(use, skill, shown)
 			if shape ~= "" then
 				line(shape, Theme.Colors.Parchment)
@@ -321,36 +390,24 @@ local function SkillsWindow(
 		elseif skill.adaptive then
 			line(Text.get(use, "skill.adaptive"), Theme.Colors.Parchment)
 		end
-		line(Text.get(use, "skills.current"), Theme.Colors.Gold, nil, Theme.Fonts.BodyBold)
-		if current > 0 then
-			line(Skills.formatDescription(skill, current, lang, { level = use(level) or 1 }))
-		else
-			line(Text.get(use, "skills.notLearned"), Theme.Colors.TextMuted)
-		end
-		if current < skill.maxLevel then
+		line(
+			Text.get(use, if rank > 0 then "skills.current" else "skills.notLearned"),
+			Theme.Colors.Gold,
+			nil,
+			Theme.Fonts.BodyBold
+		)
+		line(Skills.formatDescription(skill, shown, lang, opts))
+		if rank < skill.maxLevel then
+			local nextRank = rank + 1
 			line(Text.get(use, "skills.next"), Theme.Colors.Gold, nil, Theme.Fonts.BodyBold)
-			line(Skills.formatDescription(skill, current + 1, lang, { level = use(level) or 1 }), Theme.Colors.Success)
-			local needed = Skills.levelRequirement(skill, current + 1)
-			if (use(level) or 1) < needed then
-				line(Text.get(use, "skills.requiresLevel", { level = needed }), Theme.Colors.DangerHover)
-			end
-			local requires: { { skill: string, level: number } } = skill.requires or {}
-			for _, requirement in requires do
-				local other = SkillData.get(requirement.skill)
-				if other and levelOf(use, other.id) < requirement.level then
-					line(
-						Text.get(
-							use,
-							"skills.requires",
-							{ skill = Text.get(use, other.nameKey), level = requirement.level }
-						),
-						Theme.Colors.DangerHover
-					)
-				end
-			end
+			line(
+				Text.get(use, "skills.nextRank", { rank = nextRank, level = Skills.rankLevel(skill, nextRank) }),
+				Theme.Colors.TextMuted
+			)
+			line(Skills.formatDescription(skill, nextRank, lang, opts), Theme.Colors.Success)
 		end
-		-- S28: breakpoints at levels 5 and 10 (reached ones bright, later ones greyed).
-		local bps = SkillInfo.breakpoints(use, skill, current)
+		-- S28: breakpoints at ranks 5 and 10 (reached ones bright, later ones greyed).
+		local bps = SkillInfo.breakpoints(use, skill, rank)
 		if #bps > 0 then
 			line(Text.get(use, "skills.breakpoints"), Theme.Colors.Gold, nil, Theme.Fonts.BodyBold)
 			for _, bp in bps do
@@ -363,17 +420,13 @@ local function SkillsWindow(
 		return out
 	end)
 
-	local canLearn = scope:Computed(function(use): boolean
+	local canPut = scope:Computed(function(use): boolean
 		local id = use(selected)
 		local skill = id and SkillData.get(id)
-		if not skill then
+		if not skill or skill.type == "passive" or rankOf(use, skill) <= 0 then
 			return false
 		end
-		use(skillLevels)
-		use(points)
-		use(level)
-		local char = State.Get({ "character" })
-		return char ~= nil and (Skills.canLearn(char, skill.id))
+		return slotOf(use(hotbar), skill.id) == nil
 	end)
 
 	-- Preview viewport (S28)
@@ -439,36 +492,157 @@ local function SkillsWindow(
 		},
 	})
 
+	-- Slot picker over the window (full bar): 2 x 5 cells with the key and the skill on it.
+	local cells: { Instance } = {}
+	for index = 1, SkillData.HOTBAR_SLOTS do
+		local key = if index == 10 then "0" else tostring(index)
+		local glyph = scope:Computed(function(use): string
+			local bar = use(hotbar)
+			local id = if type(bar) == "table" then bar[tostring(index)] else nil
+			local skill = id and SkillData.get(id)
+			return if skill then skill.glyph else ""
+		end)
+		table.insert(
+			cells,
+			scope:New("TextButton")({
+				Name = `Slot{index}`,
+				LayoutOrder = index,
+				AutoButtonColor = true,
+				BackgroundColor3 = Theme.Colors.PanelRaised,
+				Text = "",
+				[OnEvent("Activated")] = function()
+					pickSlot(index)
+				end,
+				[Children] = {
+					scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
+					scope:New("UIStroke")({
+						ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+						Thickness = 2,
+						Color = Theme.Colors.GoldDim,
+					}),
+					scope:New("TextLabel")({
+						BackgroundTransparency = 1,
+						Size = UDim2.fromScale(1, 1),
+						Text = glyph,
+						TextScaled = true,
+						FontFace = Theme.Fonts.BodyBold,
+						TextColor3 = Theme.Colors.Parchment,
+						[Children] = scope:New("UIPadding")({
+							PaddingTop = UDim.new(0.2, 0),
+							PaddingBottom = UDim.new(0.2, 0),
+							PaddingLeft = UDim.new(0.2, 0),
+							PaddingRight = UDim.new(0.2, 0),
+						}),
+					}),
+					scope:New("TextLabel")({
+						Position = UDim2.fromOffset(4, 2),
+						Size = UDim2.fromOffset(20, 16),
+						BackgroundTransparency = 1,
+						Text = key,
+						FontFace = Theme.Fonts.BodyBold,
+						TextSize = 13,
+						TextColor3 = Theme.Colors.Gold,
+						TextXAlignment = Enum.TextXAlignment.Left,
+					}),
+				},
+			})
+		)
+	end
+	local gridWidth = 5 * PICK_CELL + 4 * 8
+	local picker = scope:New("TextButton")({
+		Name = "Picker",
+		Size = UDim2.fromScale(1, 1),
+		AutoButtonColor = false,
+		BackgroundColor3 = Theme.Colors.Background,
+		BackgroundTransparency = 0.25,
+		Text = "",
+		ZIndex = 20,
+		Visible = scope:Computed(function(use): boolean
+			return use(picking) ~= nil
+		end),
+		[Children] = {
+			scope:New("Frame")({
+				AnchorPoint = Vector2.new(0.5, 0.5),
+				Position = UDim2.fromScale(0.5, 0.5),
+				Size = UDim2.fromOffset(gridWidth + 32, 2 * PICK_CELL + 8 + 40 + Theme.Size.ButtonHeightSmall + 48),
+				BackgroundColor3 = Theme.Colors.PanelRaised,
+				[Children] = {
+					scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
+					scope:New("UIStroke")({ Color = Theme.Colors.GoldDim, Thickness = 2 }),
+					scope:New("TextLabel")({
+						Position = UDim2.fromOffset(16, 12),
+						Size = UDim2.new(1, -32, 0, 32),
+						BackgroundTransparency = 1,
+						Text = Text.T(scope, "skills.pick.title"),
+						TextWrapped = true,
+						FontFace = Theme.Fonts.BodyBold,
+						TextSize = Theme.TextSize.Small,
+						TextColor3 = Theme.Colors.Gold,
+					}),
+					scope:New("Frame")({
+						Position = UDim2.fromOffset(16, 52),
+						Size = UDim2.fromOffset(gridWidth, 2 * PICK_CELL + 8),
+						BackgroundTransparency = 1,
+						[Children] = {
+							scope:New("UIGridLayout")({
+								CellSize = UDim2.fromOffset(PICK_CELL, PICK_CELL),
+								CellPadding = UDim2.fromOffset(8, 8),
+								FillDirectionMaxCells = 5,
+								SortOrder = Enum.SortOrder.LayoutOrder,
+							}),
+							cells :: any,
+						},
+					}),
+					Button(scope, {
+						AnchorPoint = Vector2.new(0.5, 1),
+						Position = UDim2.new(0.5, 0, 1, -12),
+						Size = UDim2.fromOffset(160, Theme.Size.ButtonHeightSmall),
+						Variant = "ghost",
+						TextSize = Theme.TextSize.Small,
+						Text = Text.T(scope, "common.cancel"),
+						OnClick = function()
+							picking:set(nil)
+						end,
+					}),
+				},
+			}),
+		},
+	})
+
 	return {
 		scope:New("TextLabel")({
-			Name = "Points",
-			Size = UDim2.new(1, 0, 0, 30),
+			Name = "Hint",
+			Size = UDim2.new(1, 0, 0, HEADER_HEIGHT),
 			BackgroundTransparency = 1,
-			Text = scope:Computed(function(use): string
-				return Text.get(use, "skills.points", { points = use(points) or 0 })
-			end),
-			FontFace = Theme.Fonts.BodyBold,
-			TextSize = Theme.TextSize.Body,
-			TextColor3 = scope:Computed(function(use): Color3
-				return if (use(points) or 0) > 0 then Theme.Colors.Success else Theme.Colors.TextMuted
-			end),
+			Text = Text.T(scope, "skills.hint"),
+			TextWrapped = true,
+			FontFace = Theme.Fonts.Body,
+			TextSize = 14,
+			TextColor3 = Theme.Colors.TextMuted,
 			TextXAlignment = Enum.TextXAlignment.Left,
 		}),
 		scope:New("ScrollingFrame")({
-			Name = "Tree",
-			Position = UDim2.fromOffset(0, 36),
-			Size = UDim2.new(0, TREE_WIDTH + 12, 1, -36),
-			CanvasSize = UDim2.fromOffset(TREE_WIDTH, TREE_HEIGHT + 20),
+			Name = "List",
+			Position = UDim2.fromOffset(0, HEADER_HEIGHT + 4),
+			Size = UDim2.new(0, LIST_WIDTH + 12, 1, -(HEADER_HEIGHT + 4)),
+			CanvasSize = UDim2.new(),
+			AutomaticCanvasSize = Enum.AutomaticSize.Y,
 			BackgroundTransparency = 1,
 			BorderSizePixel = 0,
 			ScrollBarThickness = 6,
 			ScrollBarImageColor3 = Theme.Colors.GoldDim,
-			[Children] = tree :: any,
+			[Children] = {
+				scope:New("UIListLayout")({
+					SortOrder = Enum.SortOrder.LayoutOrder,
+					Padding = UDim.new(0, 4),
+				}),
+				rows :: any,
+			},
 		}),
 		scope:New("Frame")({
 			Name = "Details",
-			Position = UDim2.fromOffset(TREE_WIDTH + 24, 36),
-			Size = UDim2.new(1, -(TREE_WIDTH + 24), 1, -36),
+			Position = UDim2.fromOffset(LIST_WIDTH + 24, HEADER_HEIGHT + 4),
+			Size = UDim2.new(1, -(LIST_WIDTH + 24), 1, -(HEADER_HEIGHT + 4)),
 			BackgroundColor3 = Theme.Colors.PanelRaised,
 			BackgroundTransparency = 0.3,
 			[Children] = {
@@ -482,7 +656,7 @@ local function SkillsWindow(
 				previewFrame,
 				scope:New("ScrollingFrame")({
 					Position = UDim2.fromOffset(0, PREVIEW_HEIGHT + 8),
-					Size = UDim2.new(1, 0, 1, -(Theme.Size.ButtonHeight * 2 + 20 + PREVIEW_HEIGHT + 8)),
+					Size = UDim2.new(1, 0, 1, -(Theme.Size.ButtonHeight + 12 + PREVIEW_HEIGHT + 8)),
 					CanvasSize = UDim2.new(),
 					AutomaticCanvasSize = Enum.AutomaticSize.Y,
 					BackgroundTransparency = 1,
@@ -498,51 +672,23 @@ local function SkillsWindow(
 				}),
 				Button(scope, {
 					AnchorPoint = Vector2.new(0, 1),
-					Position = UDim2.new(0, 0, 1, -(Theme.Size.ButtonHeight + 8)),
+					Position = UDim2.fromScale(0, 1),
 					Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeight),
 					Variant = "primary",
-					Text = Text.T(scope, "skills.learn"),
+					Text = Text.T(scope, "skills.toBar"),
 					Disabled = scope:Computed(function(use): boolean
-						return not use(canLearn)
+						return not use(canPut)
 					end),
 					OnClick = function()
 						local id = Fusion.peek(selected)
 						if id then
-							learn(id)
+							toBar(id)
 						end
-					end,
-				}),
-				Button(scope, {
-					AnchorPoint = Vector2.new(0, 1),
-					Position = UDim2.fromScale(0, 1),
-					Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeightSmall),
-					Variant = "ghost",
-					TextSize = Theme.TextSize.Small,
-					Text = Text.T(scope, "skills.reset"),
-					OnClick = function()
-						local char = State.Get({ "character" })
-						showModal({
-							Title = Text.now("skills.reset.title"),
-							Message = Text.now(
-								"skills.reset.message",
-								{ points = if char then Skills.spentPoints(char) else 0 }
-							),
-							ConfirmText = Text.now("common.confirm"),
-							CancelText = Text.now("common.cancel"),
-							Variant = "danger",
-							OnConfirm = function(): (boolean, string?)
-								local ok, err = Net.Invoke("ResetSkills")
-								if ok then
-									Toast.push(Text.now("skills.reset.done"), "success")
-									return true, nil
-								end
-								return false, Text.now(err or "error.internal")
-							end,
-						})
 					end,
 				}),
 			},
 		}),
+		picker,
 	}
 end
 

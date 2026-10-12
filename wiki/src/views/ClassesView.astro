@@ -37,7 +37,7 @@ const list = classes();
               <dd>{c.weaponTypes.map((w) => baseName(w, lang)).join(", ")}</dd>
             </div>
           </dl>
-          <a class="plan" href={`${href(lang, "classes", c.id)}#planner`}>{t(lang, "classes.planner")} <small>({t(lang, "classes.skills", { n: skillsOf(c.id).length })})</small></a>
+          <a class="plan" href={`${href(lang, "classes", c.id)}#all-skills`}>{t(lang, "classes.planner")} <small>({t(lang, "classes.skills", { n: skillsOf(c.id).length })})</small></a>
         </li>
       ))}
     </ul>

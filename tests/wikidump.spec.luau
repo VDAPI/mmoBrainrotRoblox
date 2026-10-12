@@ -340,9 +340,18 @@ T.describe("Wiki export: consistency", function()
 		T.expect(whirl.ranks[1].desc.pl ~= whirl.ranks[10].desc.pl).toBe(true)
 	end)
 
-	T.it("gives the planner every rank with texts and parity vectors of every class and reason (S41)", function()
+	T.it("ranks from the level (S56)", function()
+		local SkillLogic = require("../src/shared/Logic/Skills")
+		local cap = d.skills.rules.ranks.capLevel
 		for _, s in d.skills.skills do
 			T.expect(#s.ranks).toBe(s.maxLevel)
+			T.expect(#s.rankLevels).toBe(s.maxLevel)
+			for r = 1, s.maxLevel do
+				local level = SkillLogic.rankLevel(SkillData.get(s.id) :: any, r)
+				T.expect(s.rankLevels[r]).toBe(level)
+				T.expect(s.ranks[r].requiredLevel).toBe(level)
+			end
+			T.expect(s.rankLevels[s.maxLevel] <= cap).toBe(true)
 			for _, rank in s.ranks do
 				for _, lang in { "pl", "en" } do
 					local text = rank.desc[lang]
@@ -352,29 +361,14 @@ T.describe("Wiki export: consistency", function()
 				end
 			end
 		end
-		local vectors = d.skills.rules.vectors
-		local classes, reasons = {}, {}
-		for _, state in vectors.states do
-			classes[state.class] = true
-			for _, r in state.results do
-				reasons[if r.ok then "ok" else r.reason] = true
+		T.expect(d.skills.rules.ranks).toEqual({ step = 4, capLevel = 95 })
+		local text = Json.encode(d.skills)
+		for _, key in { '"vectors"', '"requires"', '"col"', '"pointsByLevel"', '"skillPoints' } do
+			if string.find(text, key, 1, true) then
+				error(`skills.json has {key}`)
 			end
 		end
-		for _, id in { "Warrior", "Hunter", "Mage", "Cleric" } do
-			T.expect(classes[id]).toBe(true)
-		end
-		for _, reason in { "ok", "maxLevel", "noPoints", "level", "requires" } do
-			T.expect(reasons[reason]).toBe(true)
-		end
-		local good, bad = 0, 0
-		for _, b in vectors.builds do
-			if b.achievable then
-				good += 1
-			else
-				bad += 1
-			end
-		end
-		T.expect(good > 0 and bad > 0).toBe(true)
+		T.expect(d.progression.skillPointsPerLevel).toBeNil()
 	end)
 
 	T.it("exports breakpoints as rank + option A (S55)", function()
@@ -447,6 +441,10 @@ T.describe("Wiki export: consistency", function()
 			end
 		end
 		T.expect(#d.premium.passes).toBe(#Products.passes)
+		-- S56: an unavailable service (scroll_skillreset until S81) is not on the wiki
+		for _, service in d.premium.shop do
+			T.expect(service.key ~= "scroll_skillreset").toBe(true)
+		end
 		-- the instant respawn product never reaches the wiki (areaProfiles use a "respawn" key, so only premium.json)
 		T.expect(string.find(Json.encode(d.premium), 'respawn"', 1, true)).toBe(nil)
 		for _, npc in d.npcs.npcs do

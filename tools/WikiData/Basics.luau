@@ -161,8 +161,6 @@ S.file(
 		levelDiff = arr(rec("LevelDiff", { diff = "int", multiplier = "number" })),
 		variantExp = map("number"),
 		statPointsPerLevel = "int",
-		skillPointsPerLevel = "int",
-		skillPointsFromLevel = "int",
 		maxLevel = "int",
 		-- S42: EXP of a monster per level and variant, the best hunting area of every level, level-gap rules
 		monsterExp = arr(rec("MonsterExpRow", { level = "int", exp = map("number") })),
@@ -507,8 +505,6 @@ function Basics.progression(_ctx: any): any
 		levelDiff = diffs,
 		variantExp = Clean.clean(Progression.variantMultiplier),
 		statPointsPerLevel = Progression.statPointsPerLevel,
-		skillPointsPerLevel = Progression.skillPointsPerLevel,
-		skillPointsFromLevel = Progression.skillPointsFromLevel,
 		maxLevel = Config.MaxLevel,
 		monsterExp = Basics.monsterExp(),
 		bestArea = Basics.bestArea(),

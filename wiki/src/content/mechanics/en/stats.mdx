@@ -15,7 +15,7 @@ A character has four attributes: **Strength**, **Dexterity**, **Intellect** and 
 
 ## Points per level
 
-Every level up gives you <Stat path="progression.statPointsPerLevel" /> attribute points to spend in the Character window (<Key action="win_character" />). From level <Stat path="progression.skillPointsFromLevel" /> you also get <Stat path="progression.skillPointsPerLevel" /> skill point per level; spend it in the Skills window (<Key action="win_skills" />) or plan it in the <Link to="classes">class planner</Link>.
+Every level up gives you <Stat path="progression.statPointsPerLevel" /> attribute points to spend in the Character window (<Key action="win_character" />). Skill ranks grow with your character level by themselves (maximum by level <Stat path="skills.rules.ranks.capLevel" /> at the latest); the Skills window (<Key action="win_skills" />) shows the level of the next rank. Class path points: coming soon.
 
 ## Formulas
 
@@ -31,4 +31,4 @@ Some stats have an upper limit. Anything above the limit does nothing, so once y
 
 ## Resetting points
 
-You take back spent attribute points with a <Item id="scroll_oblivion" />: the teacher in the city sells it and the price grows with your level. Skill points are reset by a separate <Item id="scroll_skillreset" />.
+You take back spent attribute points with a <Item id="scroll_oblivion" />: the teacher in the city sells it and the price grows with your level. The <Item id="scroll_skillreset" /> does nothing for now: it returns with class paths (coming soon).

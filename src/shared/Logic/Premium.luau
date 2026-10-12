@@ -23,6 +23,9 @@ function Premium.canBuyShop(key: string, shards: number, limits: DailyLimits, no
 	if not entry then
 		return false, "error.badRequest"
 	end
+	if entry.unavailable then
+		return false, "premium.error.soon"
+	end
 	if shards < entry.price then
 		return false, "premium.error.shards"
 	end

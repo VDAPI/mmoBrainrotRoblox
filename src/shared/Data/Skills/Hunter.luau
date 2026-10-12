@@ -1,5 +1,5 @@
 --!strict
--- Hunter tree (DESIGN §14.3), Energy. Requirements (not given in DESIGN) follow the damage branches.
+-- Hunter skills (DESIGN §14.3), Energy.
 
 local Build = require("./Build")
 
@@ -14,8 +14,6 @@ return Build.class("Hunter", "energy", "phys", {
 		range = 38,
 		values = { dmg = { 170, 310 } },
 		breakpoints = Build.bp2({ a = { pierce = 50 } }, { a = { execute = 30 } }),
-		col = 1,
-		row = 1,
 		glyph = "➶",
 		vfx = "arrow",
 	},
@@ -34,8 +32,6 @@ return Build.class("Hunter", "energy", "phys", {
 			{ a = { add = { hits = 1 } } },
 			{ a = { effect = { kind = "slow", duration = 2, value = 25, category = "enemySlow" } } }
 		),
-		col = 2,
-		row = 1,
 		glyph = "⇉",
 		vfx = "arrow",
 	},
@@ -54,8 +50,6 @@ return Build.class("Hunter", "energy", "phys", {
 			{ a = { trap = { radius = 6, duration = 8, slow = 40 } } },
 			{ a = { values = { bonus = 50 }, add = { effectDuration = -5 } } }
 		),
-		col = 3,
-		row = 1,
 		glyph = "⤺",
 	},
 	{
@@ -74,8 +68,6 @@ return Build.class("Hunter", "energy", "phys", {
 			{ a = { add = { radius = 3 } } },
 			{ a = { effect = { kind = "slow", duration = 2, value = 30, category = "enemySlow" } } }
 		),
-		col = 3,
-		row = 2,
 		glyph = "☔",
 	},
 	{
@@ -85,8 +77,6 @@ return Build.class("Hunter", "energy", "phys", {
 		type = "passive",
 		values = { crit = { 2, 10 }, critDmg = { 10, 30 } },
 		passive = { flat = { critChance = "crit", critDmg = "critDmg" } },
-		col = 4,
-		row = 2,
 		glyph = "👁",
 	},
 	{
@@ -100,10 +90,7 @@ return Build.class("Hunter", "energy", "phys", {
 		element = "poison",
 		values = { dmg = { 120, 210 }, poison = { 50, 120 } },
 		effects = { { kind = "poison", duration = 6, value = "poison" } },
-		requires = { { skill = "aimedShot", level = 3 } },
 		breakpoints = Build.bp2({ a = { values = { poison = 40 } } }, { a = { splash = { radius = 5, pct = 40 } } }),
-		col = 1,
-		row = 3,
 		glyph = "☠",
 		vfx = "arrow",
 	},
@@ -123,8 +110,6 @@ return Build.class("Hunter", "energy", "phys", {
 			{ a = { add = { radius = 2 } } },
 			{ a = { effect = { kind = "freeze", duration = 1 } } }
 		),
-		col = 3,
-		row = 3,
 		glyph = "❄",
 	},
 	{
@@ -134,8 +119,6 @@ return Build.class("Hunter", "energy", "phys", {
 		type = "passive",
 		values = { dodge = { 2, 10 }, move = { 3, 15 } },
 		passive = { flat = { dodge = "dodge", moveSpeed = "move" } },
-		col = 4,
-		row = 3,
 		glyph = "🍃",
 	},
 	{
@@ -148,10 +131,7 @@ return Build.class("Hunter", "energy", "phys", {
 		length = 35,
 		width = 4,
 		values = { dmg = { 200, 360 } },
-		requires = { { skill = "doubleShot", level = 3 } },
 		breakpoints = Build.bp2({ a = { add = { width = 2 } } }, { a = { knockback = 6 } }),
-		col = 2,
-		row = 4,
 		glyph = "➸",
 	},
 	{
@@ -168,8 +148,6 @@ return Build.class("Hunter", "energy", "phys", {
 			{ a = { add = { effectDuration = 5 } } },
 			{ a = { effect = { kind = "slow", duration = 10, value = 20, category = "enemySlow" } } }
 		),
-		col = 1,
-		row = 4,
 		glyph = "🎯",
 	},
 	{
@@ -179,8 +157,6 @@ return Build.class("Hunter", "energy", "phys", {
 		type = "passive",
 		values = { speed = { 3, 15 } },
 		passive = { flat = { atkSpeed = "speed" } },
-		col = 4,
-		row = 4,
 		glyph = "🐾",
 	},
 	{
@@ -194,10 +170,7 @@ return Build.class("Hunter", "energy", "phys", {
 		angle = 60,
 		hits = 7,
 		values = { dmg = { 70, 120 } },
-		requires = { { skill = "arrowRain", level = 3 } },
 		breakpoints = Build.bp2({ a = { add = { hits = 3 } } }, { a = { add = { angle = 30 } } }),
-		col = 3,
-		row = 5,
 		glyph = "⇶",
 	},
 	{
@@ -226,8 +199,6 @@ return Build.class("Hunter", "energy", "phys", {
 				values = { speedBp = 30 },
 			},
 		}),
-		col = 4,
-		row = 5,
 		glyph = "🌫",
 	},
 	{
@@ -241,10 +212,7 @@ return Build.class("Hunter", "energy", "phys", {
 		radius = 8,
 		element = "lightning",
 		values = { dmg = { 400, 650 }, splash = 120 },
-		requires = { { skill = "piercingArrow", level = 5 } },
 		breakpoints = Build.bp2({ a = { add = { radius = 4 } } }, { a = { effect = { kind = "stun", duration = 1 } } }),
-		col = 2,
-		row = 6,
 		glyph = "⚡",
 		vfx = "stormArrow",
 	},

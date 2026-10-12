@@ -42,7 +42,7 @@ local Definitions: { [string]: Definition } = {
 
 	-- Stats and progression
 	AllocateStats = { kind = "function", dir = "c2s", rate = 2, args = { "table" } }, -- ({ str, dex, int, vit })
-	LevelUp = { kind = "event", dir = "s2c" }, -- (player, newLevel, statPoints, skillPoints) to nearby players
+	LevelUp = { kind = "event", dir = "s2c" }, -- (player, newLevel, statPoints); S57 adds the path point
 
 	-- Combat
 	-- (entityId or nil to clear, attack: false keeps the target but stops the auto-attack; S18)
@@ -77,9 +77,9 @@ local Definitions: { [string]: Definition } = {
 	Announce = { kind = "event", dir = "s2c" }, -- (key, args) banner + system chat for everyone
 
 	-- Skills (S05)
-	LearnSkill = { kind = "function", dir = "c2s", rate = 6, args = { "string" } },
 	SetHotbar = { kind = "function", dir = "c2s", rate = 10, args = { "integer", "string?" } }, -- (slot 1..10, skillId?)
-	ResetSkills = { kind = "function", dir = "c2s", rate = 1, args = {} },
+	PutOnBar = { kind = "function", dir = "c2s", rate = 6, args = { "string", "integer?" } }, -- (skillId, slot 1..10?) S56
+	AckRework = { kind = "event", dir = "c2s", rate = 0.5, args = {} }, -- S56: the rework notice was seen
 	CastSkill = { kind = "function", dir = "c2s", rate = 8, args = { "string", "string?", "any?" } }, -- (skillId, targetId?, aim: Vector3?)
 	SkillFx = { kind = "event", dir = "s2c" }, -- skill visuals for players nearby
 

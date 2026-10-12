@@ -120,7 +120,7 @@ local function registerWindows()
 				size = Vector2.new(780, 640),
 				hotkey = HOTKEYS.skills,
 				build = function(scope: Scope)
-					return SkillsWindow(scope, WindowManager.ShowModal, VfxController.Preview)
+					return SkillsWindow(scope, VfxController.Preview)
 				end,
 			})
 		elseif entry.id == "inventory" then

@@ -22,6 +22,7 @@ local QuestEvents = require(script.Parent.Parent.QuestEvents)
 local QuestLogic = require(Shared.Logic.QuestLogic)
 local Quests = require(Shared.Data.Quests)
 local Rng = require(Shared.Logic.Rng)
+local Skills = require(Shared.Logic.Skills)
 local Time = require(Shared.Logic.Time)
 local Types = require(Shared.Types)
 
@@ -170,6 +171,12 @@ local function catchUp(player: Player)
 	end
 	handle(player, "reach", { map = char.location.map })
 	handle(player, "level", { level = char.level })
+	-- S56: "learn" counts a skill on the bar; the level-3 auto-put happens before "wolves" is accepted
+	-- (no daily or side quest has a "learn" objective)
+	local onBar = QuestLogic.learnedOnBar(char.hotbar, Skills.startingSkill(char.class))
+	if onBar then
+		handle(player, "learn", { skillId = onBar })
+	end
 end
 
 local function talk(player: Player, npcId: string): (boolean, string?)

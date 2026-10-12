@@ -325,7 +325,7 @@ describe("Rarity migration S30", function()
 		}
 		local applied = AccountSchema.migrate(data)
 		AccountSchema.now = savedNow
-		expect(applied).toEqual({ 5 })
+		expect(applied).toEqual({ 5, 6 })
 		local char = data.characters["1"]
 		expect(char.equipment.weapon.rarity).toBe(Rarities.LEGENDARY)
 		expect(char.equipment.ring1.rarity).toBe(Rarities.MYTHIC)

@@ -93,7 +93,7 @@ Identyfikatory w URL to **id z danych gry** (stabilne między językami, także 
 | Bestiariusz | `/pl/bestiariusz/` | `/en/bestiary/` |
 | Potwór | `/pl/bestiariusz/<id>/` | `/en/bestiary/<id>/` |
 | Bossy, boss | `/pl/bossy/`, `/pl/bossy/<id>/` | `/en/bosses/`, `/en/bosses/<id>/` |
-| Klasy, klasa z planerem | `/pl/klasy/`, `/pl/klasy/<classId>/` (`?b=<kod buildu>`) | `/en/classes/`, `/en/classes/<classId>/` |
+| Klasy, klasa | `/pl/klasy/`, `/pl/klasy/<classId>/` (planer wkrótce, do S82) | `/en/classes/`, `/en/classes/<classId>/` |
 | Mapa świata | `/pl/mapa/` (`?m=<mapa>&a=<obszar>&x=&z=&s=`) | `/en/map/` |
 | Krainy, kraina | `/pl/krainy/`, `/pl/krainy/<mapId>/` | `/en/regions/`, `/en/regions/<mapId>/` |
 | Obszar / jaskinia | `/pl/krainy/<mapId>/<areaId>/` | `/en/regions/<mapId>/<areaId>/` |
@@ -144,13 +144,13 @@ przełomy umiejętności, `Combat`, `Stats.Formula`) jako `data` (typ `Json`).
 | `npcs.json` | `npcs`: Npc[], `services`: Record<string, Name> | `Data/Npcs`; od S37 `role` (`npc.<id>.role`) i nazwy usług (`npc.service.<id>`); od S43 `building` (`Town.npcSpot(id).at`) i `buildingName` (`town.sign.<at>`, gdy jest) |
 | `portals.json` | `portals`: PortalInfo[] | `Data/Portals` |
 | `premium.json` (S43) | `passes`: PassInfo[], `shop`: PremiumService[] | jedyny moduł czytający `Data/Products`: `tools/WikiData/Premium.luau` (klucz i ikona przepustki, nazwa/opis z `premium.pass.<key>`; usługa: klucz, rodzaj, przedmiot, `dailyLimit`, nazwa z przedmiotu albo `premium.<key>`) |
-| `progression.json` | `expToNext`: LevelExp[], `levelDiff`: LevelDiff[], `maxLevel`: number, `skillPointsFromLevel`: number, `skillPointsPerLevel`: number, `statPointsPerLevel`: number, `variantExp`: Record<string, number>; od S42 `monsterExp`, `bestArea`, `levelDiffRules` | `Exp.expToNext`, `Exp.levelDiffMultiplier` (`diff` = poziom potwora − poziom gracza), `Data/Progression`; S42: `Exp.monsterExp` (poz. 1, 10…100 × normal/elite/elite2/boss), `AreaAdvice.best` dla poziomów 1…100 (mapa regionu z zakresem poziomu, polecany obszar najbliższy środkiem) |
+| `progression.json` | `expToNext`: LevelExp[], `levelDiff`: LevelDiff[], `maxLevel`: number, `statPointsPerLevel`: number, `variantExp`: Record<string, number>; od S42 `monsterExp`, `bestArea`, `levelDiffRules` | `Exp.expToNext`, `Exp.levelDiffMultiplier` (`diff` = poziom potwora − poziom gracza), `Data/Progression`; S42: `Exp.monsterExp` (poz. 1, 10…100 × normal/elite/elite2/boss), `AreaAdvice.best` dla poziomów 1…100 (mapa regionu z zakresem poziomu, polecany obszar najbliższy środkiem) |
 | `quests.json` | `daily`: DailyQuests, `levelSlack`: number, `main`: MainQuest[], `side`: SideQuest[], `sideLevelSlack`: number, `sideMaxActive`: number, `sideChoice` (S42: `count`, `rarity` z `Config.SideQuest`) | `Data/Quests` (główne, poboczne S27, dzienne: `objective(level)`, `Daily.reward(level)`); etykiety celów z kluczy `quest.obj.*` jak `UI/QuestText.objective`; od S37 cel ma `where` = `{ map, area?, cave?, npc? }` (`AreaAdvice.forKind` / `caveFor`, mapa regionu, loch bossa, mapa NPC, kotwica); od S39 `itemName` celów z przedmiotem (`quest.item.<item>`) |
 | `rarities.json` | `rarities`: Rarity[], `sources`: Record<string, DropSource>, `upgradeStatPerLevel`: number | `Data/Rarities` (drabina S30, `itemDrops`, `dropWeights`, `cap`) |
 | `recipes.json` | `groups`: RecipeGroup[], `queueSlots`: number, `recipes`: AlchemyRecipe[] | `Data/Recipes` |
 | `search.json` | `entries`: SearchEntry[], `vectors`: NormalizeVector[] | pozostałe pliki + `MapSearch.normalize` (klucz, wektory testowe) |
 | `shops.json` | `shops`: Shop[], `weaponsmithTiers`: number[] | `Data/Shops`; cena `ItemValue.buyPrice` pod kluczem `gold`; NPC z `Data/Npcs` |
-| `skills.json` | `rules`: SkillRules, `skills`: Skill[] | `Data/Skills` (bez `vfx`); rangi: `Skills.levelRequirement`, `scaled`, `valueAt`, `formatDescription`; koszt rangi `Skills.cost` na `requiredLevel` (S54); przełomy (S55): `{ rank, a: { text, change } }` z `Data/Skills` (`Build.bp2`, tylko opcja A; B, poziom odblokowania i warianty rang od S82); `Exp.pointsForLevels`; od S41 `rules.vectors` (`states`: stan postaci + wynik `Skills.canLearn` każdej umiejętności klasy, `builds`: docelowe buildy z `achievable` odtworzonym punkt po punkcie; ziarno 4141) i `elementNote` umiejętności (`skill.requiresElement` / `skill.adaptive`) |
+| `skills.json` | `rules`: SkillRules, `skills`: Skill[] | `Data/Skills` (bez `vfx`); rangi: `Skills.rankLevel` (`rankLevels`, `ranks[].requiredLevel`), `scaled`, `valueAt`, `formatDescription`; koszt rangi `Skills.cost` na `requiredLevel` (S54); `rules.ranks` (`RANKS`); bez `requires`, `col`, `row` i wektorów (S56); przełomy (S55): `{ rank, a: { text, change } }` z `Data/Skills` (`Build.bp2`, tylko opcja A; B, poziom odblokowania i warianty rang od S82); `elementNote` umiejętności (`skill.requiresElement` / `skill.adaptive`) |
 | `stats.json` | `formula`: Json, `groups`: StatGroupInfo[], `primary`: string[], `primaryNames` (S41), `stats`: StatInfo[] | `Data/Stats` |
 | `titles.json` | `titles`: Title[] | `Data/Titles` |
 | `upgrade.json` | `costs`: Record<string, Record<string, UpgradeCost[]>>, `max`: number, `protection`: string, `steps`: UpgradeStep[], `tiers`: number[], `vectors`: UpgradeVector[] | `Upgrade.chance`, `statMultiplier`, `attempt` (`StubRng` fail), `Upgrade.cost` dla progów i rzadkości; od S40 `vectors` = 3 przypadki × 20 000 symulacji `Upgrade.attempt` + `Upgrade.cost` (kontrola kalkulatora) |
@@ -232,8 +232,8 @@ do HTML bez JS, wyspy importują te same pliki). Dane przez `src/lib/data.ts` (`
 | `BossHeader` | `{ boss, lang, players?: 1-5, notes?: { phase, title, html }[], heading?: "h1"\|"h2" }` — S39: chipy graczy 1–5 (zmieniają każdy `[data-by-players]` na stronie), zakładki faz „Faza 1 · 100–70%” z okrzykiem i obrazkiem `-p2`/`-p3`, panele mechanik (ataki z `Telegraph`, przywołania, tarcza, przyspieszenie, wściekłość, `notes`); bez JS wszystkie fazy pod sobą; zachowanie `src/scripts/boss.ts` |
 | Wyspy S40 | `ItemsBrowser` (lista z filtrami i krokomierzem progów), `ItemTooltipLive` + `ItemUpgradeView` (strona przedmiotu; wspólny stan `src/lib/itemState.ts` i `?r=&up=&el=`), `UpgradeCalc` (kalkulator) — dane wyłącznie z propsów i endpointów `/data/items/<id>.json`, `/<lang>/items-index.json` |
 | `Telegraph` (S39) | `{ shape, radius?, inner?, angle?, length?, width?, origin?, size?, label? }` — SVG kształtu ataku (koło, stożek, pas, pierścień z bezpiecznym środkiem), rzucający jako złoty romb; w `/styleguide#telegraph` |
-| `SkillNode.svelte` / `SkillEdge` | S41: Svelte (Astro renderuje bez JS, planer importuje ten sam plik) `{ glyph?, state, rank, max, active?, capstone?, selected?, invalid?, label, color?, size?, lockText? }` + atrybuty `<button>`; `invalid` = czerwony licznik (ranga wymaga wyższego poziomu) / `{ active? }` |
-| `SkillPlanner.svelte` (S41) | `{ data: PlannerData, labels }` — wycinek jednej klasy w jednym języku z `plannerData(c, lang)` (`src/lib/classes.ts`); reguły w `src/lib/skills.ts` (`canAdd` w kolejności `Skills.canLearn`, `canRemove`, `validate`, `requiredCharLevel`, `maxReachableRank`, `nodeState`, `encodeBuild`/`decodeBuild`); stan `?b=<kod>&s=<id>`, `#s-<id>` |
+| `SkillNode.svelte` / `SkillEdge` | S41: Svelte (Astro renderuje bez JS; S56: `SkillPlanner` to zaślepka bez JS do S82) `{ glyph?, state, rank?, max, active?, capstone?, selected?, invalid?, label, color?, size?, lockText? }` + atrybuty `<button>`; `invalid` = czerwony licznik (ranga wymaga wyższego poziomu) / `{ active? }` |
+| `SkillPlanner.svelte` (S41, S56) | `{ text }` — zaślepka bez JS do S82 („Planer wkrótce”, bez `client:load`); stary planer odszedł z punktami umiejętności. `src/lib/skills.ts`: `rankLevel`, `rankAt` z `rankLevels` |
 | `DataTable` | `{ columns: { key, label, sortable?, align?, mobile?, sort? }[], rows, caption, html? }` |
 | `Chip`, `Pager` | `{ pressed?, disabled?, href?, count? }`, `{ page, pages, hrefFor, lang? }` |
 | `Callout` | `{ kind?: "info"\|"tip"\|"warn"\|"changed"\|"spoiler", title?, date?, lang? }` |
@@ -435,7 +435,8 @@ sam) i wgrywa `wiki/dist` na Cloudflare Pages. Bez sekretów workflow przechodzi
   (wyspa `SkillPlanner`, 33 KB gzip z layoutem i paletą; budżet 35) i tabela „Wszystkie umiejętności” (opisy rangi 1 i
   maks., przełomy 5/10, wymagania, maks. osiągalna ranga). Kod buildu `MAGE34-a535230-2000000`, kopiowanie linku, reset,
   ostrzeżenie przy za niskim poziomie. Zgodność z grą: `rules.vectors` z Lune, Vitest `skills.test.ts`. Sekcja
-  `classes` ma `ready: true`; rekordy umiejętności w Pagefind prowadzą do `?s=<id>#s-<id>`.
+  `classes` ma `ready: true`; rekordy umiejętności w Pagefind prowadzą do `?s=<id>#s-<id>`. S56: planer schowany za
+  „Planer wkrótce” (bez punktów umiejętności; nowy w S82).
 
 - **S42 (zadania, mechaniki):** `/pl/zadania/` (32 główne w kolejności gry pogrupowane w odcinki wg krainy, 28 pobocznych
   wg NPC, 8 rodzajów zleceń z chipami poziomu i tabelą nagród), 60 stron zadań (fakty, minimapa celu, cele z linkami,

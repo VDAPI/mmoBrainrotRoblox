@@ -2,9 +2,12 @@
 -- Persistent data templates and migrations (pure). DataService feeds these to ProfileStore.
 -- When the shape changes: bump CURRENT, add MIGRATIONS[CURRENT], extend the templates.
 
+local Classes = require("../Data/Classes")
 local Config = require("../Config")
+local Exp = require("./Exp")
 local Items = require("../Data/Items")
 local Rarities = require("../Data/Rarities")
+local Skills = require("./Skills")
 local Time = require("./Time")
 local Types = require("../Types")
 local StarterGear = require("./StarterGear")
@@ -15,7 +18,7 @@ type CharacterData = Types.CharacterData
 
 local AccountSchema = {}
 
-AccountSchema.CURRENT = 5
+AccountSchema.CURRENT = 6
 
 function AccountSchema.accountTemplate(): AccountData
 	return {
@@ -66,9 +69,11 @@ function AccountSchema.characterTemplate(): CharacterData
 		exp = 0,
 		stats = { str = 0, dex = 0, int = 0, vit = 0 },
 		statPoints = 0,
-		skills = {},
-		skillPoints = 0,
+		-- stays empty: reconcile would copy a template skill into every empty slot 1; CharacterFactory fills it
 		hotbar = {},
+		path = { nodes = {}, bp = {}, freeUsed = false },
+		buildSlot = 1,
+		reworkNotice = false,
 		potionBar = {},
 		equipment = {},
 		inventory = {},
@@ -215,6 +220,38 @@ MIGRATIONS[5] = function(data, _newId)
 	if type(data.settings) == "table" then
 		data.settings.lootHideBelow = upgradeSetting(data.settings.lootHideBelow)
 		data.settings.lootAutoFrom = upgradeSetting(data.settings.lootAutoFrom)
+	end
+end
+
+-- 6 (S56, ROZWOJ 5): ranks come from the character level and skill points are gone. Every character drops
+-- `skills` / `skillPoints`, gets the class start stats back with every stat point to spend again
+-- (5 x (level - 1)), an empty path state (S57), build slot 1, a hotbar rebuilt from the actives unlocked at
+-- its level and the one-time notice. Idempotent.
+MIGRATIONS[6] = function(data, _newId)
+	if type(data.characters) ~= "table" then
+		return
+	end
+	for _, character in data.characters do
+		if type(character) ~= "table" then
+			continue
+		end
+		character.skills = nil
+		character.skillPoints = nil
+		local level = math.clamp(math.floor(tonumber(character.level) or 1), 1, Config.MaxLevel)
+		-- a save without a class reconciles to the template's "Warrior" right after the migrations
+		local classId = if type(character.class) == "string" then character.class else "Warrior"
+		local class = Classes.get(classId)
+		if class then
+			character.stats = table.clone(class.startStats)
+			character.statPoints = Exp.pointsForLevels(1, level)
+			character.hotbar = Skills.startHotbar(classId, level)
+		else
+			character.hotbar = {} -- unknown class: stats untouched, nothing on the bar
+		end
+		character.path = { nodes = {}, bp = {}, freeUsed = false }
+		character.buildSlot = 1
+		character.buildOther = nil
+		character.reworkNotice = true
 	end
 end
 

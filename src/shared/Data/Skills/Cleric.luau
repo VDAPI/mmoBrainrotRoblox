@@ -1,6 +1,5 @@
 --!strict
--- Cleric tree (DESIGN §14.5), Mana. Heals and buffs only work on the caster and party members.
--- Requirements (not given in DESIGN) follow the healing and holy branches.
+-- Cleric skills (DESIGN §14.5), Mana. Heals and buffs only work on the caster and party members.
 
 local Build = require("./Build")
 
@@ -19,8 +18,6 @@ return Build.class("Cleric", "mana", "magic", {
 			{ a = { splash = { radius = 5, pct = 40 } } },
 			{ a = { effect = { kind = "stun", duration = 0.8 } } }
 		),
-		col = 1,
-		row = 1,
 		glyph = "✚",
 	},
 	{
@@ -33,8 +30,6 @@ return Build.class("Cleric", "mana", "magic", {
 		range = 30,
 		values = { heal = { 120, 260 } },
 		breakpoints = Build.bp2({ a = { secondTarget = 50 } }, { a = { overhealShield = true } }),
-		col = 2,
-		row = 1,
 		glyph = "✙",
 	},
 	{
@@ -47,10 +42,7 @@ return Build.class("Cleric", "mana", "magic", {
 		range = 30,
 		duration = 10,
 		values = { heal = { 200, 400 } },
-		requires = { { skill = "heal", level = 3 } },
 		breakpoints = Build.bp2({ a = { add = { duration = 4 } } }, { a = { cleanse = true } }),
-		col = 2,
-		row = 2,
 		glyph = "❦",
 	},
 	{
@@ -64,8 +56,6 @@ return Build.class("Cleric", "mana", "magic", {
 		holy = true,
 		values = { dmg = { 110, 200 }, heal = 50 },
 		breakpoints = Build.bp2({ a = { add = { radius = 3 } } }, { a = { values = { heal = 50 } } }),
-		col = 1,
-		row = 2,
 		glyph = "☀",
 	},
 	{
@@ -75,8 +65,6 @@ return Build.class("Cleric", "mana", "magic", {
 		type = "passive",
 		values = { heal = { 5, 25 } },
 		passive = { hooks = { healBonus = "heal" } },
-		col = 4,
-		row = 2,
 		glyph = "🙏",
 	},
 	{
@@ -88,7 +76,6 @@ return Build.class("Cleric", "mana", "magic", {
 		cooldown = 15,
 		radius = 14,
 		values = { heal = { 100, 200 } },
-		requires = { { skill = "renew", level = 3 } },
 		breakpoints = Build.bp2({ a = { cleanse = true } }, {
 			a = {
 				allyEffect = {
@@ -100,8 +87,6 @@ return Build.class("Cleric", "mana", "magic", {
 				},
 			},
 		}),
-		col = 2,
-		row = 3,
 		glyph = "◌",
 	},
 	{
@@ -114,8 +99,6 @@ return Build.class("Cleric", "mana", "magic", {
 		range = 30,
 		values = { heal = { 80, 150 } },
 		breakpoints = Build.bp2({ a = { overhealShield = true } }, { a = { secondTarget = 50 } }),
-		col = 3,
-		row = 3,
 		glyph = "✧",
 	},
 	{
@@ -151,8 +134,6 @@ return Build.class("Cleric", "mana", "magic", {
 				values = { armorBp = 10 },
 			},
 		}),
-		col = 3,
-		row = 2,
 		glyph = "♥",
 	},
 	{
@@ -168,8 +149,6 @@ return Build.class("Cleric", "mana", "magic", {
 			{ a = { values = { hp = 20 } } },
 			{ a = { allyEffect = { kind = "invuln", duration = 3, target = "allies" } } }
 		),
-		col = 3,
-		row = 4,
 		glyph = "✝",
 	},
 	{
@@ -183,8 +162,6 @@ return Build.class("Cleric", "mana", "magic", {
 		duration = 8,
 		values = { shield = { 300, 600 } },
 		breakpoints = Build.bp2({ a = { values = { shield = 120 } } }, { a = { secondTarget = 50 } }),
-		col = 4,
-		row = 4,
 		glyph = "🛡",
 	},
 	{
@@ -194,8 +171,6 @@ return Build.class("Cleric", "mana", "magic", {
 		type = "passive",
 		values = { bonus = { 4, 20 } },
 		passive = { hooks = { holyDamage = "bonus", holyStrikeHeal = "bonus" } },
-		col = 4,
-		row = 3,
 		glyph = "⚜",
 	},
 	{
@@ -209,13 +184,10 @@ return Build.class("Cleric", "mana", "magic", {
 		holy = true,
 		values = { dmg = { 280, 500 } },
 		effects = { { kind = "stun", duration = 1 } },
-		requires = { { skill = "holyStrike", level = 5 } },
 		breakpoints = Build.bp2(
 			{ a = { lifesteal = 30 } },
 			{ a = { effect = { kind = "vulnerability", duration = 6, value = 10, category = "enemyWeak" } } }
 		),
-		col = 1,
-		row = 5,
 		glyph = "⚖",
 	},
 	{
@@ -228,8 +200,6 @@ return Build.class("Cleric", "mana", "magic", {
 		duration = 3,
 		values = { mana = { 25, 45 }, group = 10 },
 		breakpoints = Build.bp2({ a = { mul = { cooldown = 0.75 } } }, { a = { values = { group = 10 } } }),
-		col = 4,
-		row = 5,
 		glyph = "🕯",
 	},
 	{
@@ -242,10 +212,7 @@ return Build.class("Cleric", "mana", "magic", {
 		radius = 30,
 		values = { invuln = { 2, 4 }, heal = 30 },
 		effects = { { kind = "invuln", duration = { 2, 4 }, target = "allies" } },
-		requires = { { skill = "circleOfLight", level = 5 } },
 		breakpoints = Build.bp2({ a = { values = { heal = 15 } } }, { a = { add = { radius = 15 } } }),
-		col = 2,
-		row = 6,
 		glyph = "☩",
 	},
 })

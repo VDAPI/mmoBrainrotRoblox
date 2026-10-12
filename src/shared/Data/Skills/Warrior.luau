@@ -1,5 +1,5 @@
 --!strict
--- Warrior tree (DESIGN §14.2), Energy. Values are { rank 1, rank 10 } (passives: rank 5).
+-- Warrior skills (DESIGN §14.2), Energy. Values are { rank 1, rank 10 } (passives: rank 5).
 
 local Build = require("./Build")
 
@@ -14,8 +14,6 @@ return Build.class("Warrior", "energy", "phys", {
 		range = 8,
 		values = { dmg = { 160, 295 } },
 		breakpoints = Build.bp2({ a = { knockback = 6 } }, { a = { splash = { radius = 6, pct = 50 } } }),
-		col = 1,
-		row = 1,
 		glyph = "⚔",
 	},
 	{
@@ -50,8 +48,6 @@ return Build.class("Warrior", "energy", "phys", {
 				values = { armorBp = 12 },
 			},
 		}, { a = { mul = { cooldown = 0.6 } } }),
-		col = 3,
-		row = 1,
 		glyph = "📣",
 	},
 	{
@@ -65,8 +61,6 @@ return Build.class("Warrior", "energy", "phys", {
 		values = { dmg = { 120, 210 } },
 		effects = { { kind = "stun", duration = 0.8 } },
 		breakpoints = Build.bp2({ a = { add = { range = 7 } } }, { a = { stunNear = { radius = 5, duration = 1 } } }),
-		col = 3,
-		row = 2,
 		glyph = "➹",
 	},
 	{
@@ -82,8 +76,6 @@ return Build.class("Warrior", "energy", "phys", {
 		interval = 0.2,
 		values = { dmg = { 37, 67 } },
 		breakpoints = Build.bp2({ a = { castMove = 60 } }, { a = { pull = 12 } }),
-		col = 2,
-		row = 2,
 		glyph = "🌀",
 	},
 	{
@@ -93,8 +85,6 @@ return Build.class("Warrior", "energy", "phys", {
 		type = "passive",
 		values = { armor = { 5, 25 } },
 		passive = { pct = { armor = "armor" } },
-		col = 4,
-		row = 2,
 		glyph = "⛨",
 	},
 	{
@@ -108,10 +98,7 @@ return Build.class("Warrior", "energy", "phys", {
 		angle = 90,
 		values = { dmg = { 140, 250 }, bleed = 30 },
 		effects = { { kind = "bleed", duration = 5, value = "bleed" } },
-		requires = { { skill = "bladeWhirl", level = 3 } },
 		breakpoints = Build.bp2({ a = { add = { angle = 30 } } }, { a = { bleedStacks = 3 } }),
-		col = 2,
-		row = 3,
 		glyph = "🪓",
 	},
 	{
@@ -138,8 +125,6 @@ return Build.class("Warrior", "energy", "phys", {
 			{ a = { add = { radius = 5 } } },
 			{ a = { effect = { kind = "slow", duration = 4, value = 30, category = "enemySlow" } } }
 		),
-		col = 3,
-		row = 3,
 		glyph = "❗",
 	},
 	{
@@ -149,8 +134,6 @@ return Build.class("Warrior", "energy", "phys", {
 		type = "passive",
 		values = { hp = { 4, 20 } },
 		passive = { pct = { maxHp = "hp" } },
-		col = 4,
-		row = 3,
 		glyph = "❤",
 	},
 	{
@@ -163,13 +146,10 @@ return Build.class("Warrior", "energy", "phys", {
 		radius = 12,
 		values = { dmg = { 150, 280 }, slow = 40 },
 		effects = { { kind = "slow", duration = 3, value = "slow", category = "enemySlow" } },
-		requires = { { skill = "cleave", level = 3 } },
 		breakpoints = Build.bp2(
 			{ a = { lingering = { pct = 20, duration = 3, kind = "cracks" } } },
 			{ a = { echo = { delay = 1, pct = 60 } } }
 		),
-		col = 2,
-		row = 4,
 		glyph = "⛰",
 	},
 	{
@@ -201,8 +181,6 @@ return Build.class("Warrior", "energy", "phys", {
 				},
 			},
 		}),
-		col = 3,
-		row = 4,
 		glyph = "🩸",
 	},
 	{
@@ -212,8 +190,6 @@ return Build.class("Warrior", "energy", "phys", {
 		type = "passive",
 		values = { chance = { 4, 12 } },
 		passive = { hooks = { riposte = "chance" } },
-		col = 4,
-		row = 4,
 		glyph = "↺",
 	},
 	{
@@ -226,13 +202,10 @@ return Build.class("Warrior", "energy", "phys", {
 		range = 8,
 		values = { dmg = { 300, 520 }, armorBreak = 30 },
 		effects = { { kind = "armorBreak", duration = 6, value = "armorBreak", category = "enemyArmor" } },
-		requires = { { skill = "mightyStrike", level = 5 } },
 		breakpoints = Build.bp2(
 			{ a = { effect = { kind = "stun", duration = 0.7 } } },
 			{ a = { splash = { radius = 7, pct = 60 } } }
 		),
-		col = 1,
-		row = 5,
 		glyph = "🔨",
 	},
 	{
@@ -248,8 +221,6 @@ return Build.class("Warrior", "energy", "phys", {
 			{ kind = "damageReduction", duration = 6, value = "reduction", target = "self", category = "own" },
 		},
 		breakpoints = Build.bp2({ a = { add = { effectDuration = 2 } } }, { a = { selfHeal = 15 } }),
-		col = 3,
-		row = 5,
 		glyph = "🛡",
 	},
 	{
@@ -263,10 +234,7 @@ return Build.class("Warrior", "energy", "phys", {
 		hits = 3,
 		interval = 0.45,
 		values = { dmg = { 180, 320 } },
-		requires = { { skill = "earthquake", level = 5 } },
 		breakpoints = Build.bp2({ a = { add = { radius = 3 } } }, { a = { stunLast = 1.2 } }),
-		col = 2,
-		row = 6,
 		glyph = "⚡",
 	},
 })

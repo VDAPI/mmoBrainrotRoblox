@@ -1,7 +1,8 @@
 --!strict
--- Skills (DESIGN §14): learning (LearnSkill), the 10-slot hotbar (SetHotbar), tree reset with a Scroll of
--- Rebirth (ResetSkills), passives as a StatService modifier source + combat hooks, and casting:
---   CastSkill(skillId, targetId?, aim?) -> validate (learned, alive, not stunned, GCD 0.5 s, cooldown, cost,
+-- Skills (DESIGN §14): the 10-slot hotbar (SetHotbar, PutOnBar, the auto-put of skills unlocked by a level-up),
+-- ranks from the character level (S56, ROZWOJ 2.5; transitional ladder 2.6 until S57), passives as a StatService
+-- modifier source + combat hooks, and casting:
+--   CastSkill(skillId, targetId?, aim?) -> validate (unlocked, alive, not stunned, GCD 0.5 s, cooldown, cost,
 --   target, range) -> spend -> SkillFx "cast" (everyone nearby plays the skill's animation, Data/SkillMotions) ->
 --   after the motion's hit time (S28, at most 0.6 s) the Skills/Types/* handler -> SkillFx impact events.
 --   S28/S55: the skill works as Logic/Skills.effective makes it at its rank (breakpoints at ranks 5 and 10, option A
@@ -43,8 +44,8 @@ local SkillService = {
 		"PvpService",
 		"PartyService",
 		"DeathService",
-		"InventoryService",
 		"ZoneService",
+		"LevelService",
 	},
 }
 
@@ -62,8 +63,8 @@ local EntityService: any
 local PvpService: any
 local PartyService: any
 local DeathService: any
-local InventoryService: any
 local ZoneService: any
+local LevelService: any
 
 type Handler = (ctx: Context.Ctx) -> (boolean, string?)
 
@@ -142,28 +143,9 @@ local function modifierSource(_player: Player, char: Types.CharacterData): Sourc
 	return { key = "source.passives", flat = totals.flat, pct = totals.pct }
 end
 
--- Learning, hotbar, reset -----------------------------------------------------------------------------
+-- Hotbar and unlocks -----------------------------------------------------------------------------------------
 
-local function learn(player: Player, skillId: string): (boolean, string?, any)
-	local char = character(player)
-	if not char then
-		return false, "error.wrongPhase"
-	end
-	local ok, reason, detail = Skills.canLearn(char, skillId)
-	if not ok then
-		return false, `skills.error.{reason}`, detail
-	end
-	local level = Skills.level(char, skillId) + 1
-	PlayerStateService.Set(player, { "character", "skills", skillId }, level)
-	PlayerStateService.Set(player, { "character", "skillPoints" }, char.skillPoints - 1)
-	local skill = SkillData.get(skillId)
-	if skill and skill.type == "passive" then
-		passivesChanged(player)
-	end
-	QuestEvents.fire(player, "learn", { skillId = skillId })
-	return true, nil
-end
-
+-- Every placement goes through here, so the quest "learn" objective fires once per skill put on the bar.
 local function setHotbar(player: Player, slot: number, skillId: string?): (boolean, string?)
 	local char = character(player)
 	if not char or not Skills.validHotbar(char, slot, skillId) then
@@ -178,28 +160,93 @@ local function setHotbar(player: Player, slot: number, skillId: string?): (boole
 		end
 	end
 	PlayerStateService.Set(player, { "character", "hotbar", tostring(slot) }, skillId)
+	if skillId ~= nil then
+		QuestEvents.fire(player, "learn", { skillId = skillId })
+	end
 	return true, nil
 end
 
--- Resets the tree. `free` skips the scroll (admin).
-function SkillService.Reset(player: Player, free: boolean?): (boolean, string?)
+-- Remote PutOnBar (S56, ROZWOJ 3.3) and the auto-put: without `slot` the first free slot (nothing when the skill is
+-- already on the bar; "skills.error.barFull" when there is no free slot), with `slot` that slot is replaced.
+function SkillService.PutOnBar(player: Player, skillId: string, slot: number?): (boolean, string?)
 	local char = character(player)
 	if not char then
 		return false, "error.wrongPhase"
 	end
-	if not free then
-		if InventoryService.Count(player, "scroll_skillreset") < 1 then
-			return false, "skills.error.noScroll"
-		end
-		InventoryService.Remove(player, "scroll_skillreset", 1)
+	local skill = SkillData.get(skillId)
+	if not skill or skill.type == "passive" or Skills.rankOf(char, skillId) <= 0 then
+		return false, "skills.error.locked"
 	end
-	local refunded = Skills.refundAll(char)
-	PlayerStateService.Set(player, { "character", "skills" }, char.skills)
-	PlayerStateService.Set(player, { "character", "hotbar" }, char.hotbar)
-	PlayerStateService.Set(player, { "character", "skillPoints" }, char.skillPoints)
+	if slot ~= nil then
+		return setHotbar(player, slot, skillId)
+	end
+	for _, existing in char.hotbar do
+		if existing == skillId then
+			return true, nil
+		end
+	end
+	local free = Skills.firstFreeSlot(char.hotbar)
+	if not free then
+		return false, "skills.error.barFull"
+	end
+	return setHotbar(player, free, skillId)
+end
+
+-- Drops what the character may not hold on the bar (lowered level, entering; S57: Paths.validHotbar).
+local function cleanBar(player: Player)
+	local char = character(player)
+	if not char then
+		return
+	end
+	local bar, changed = Skills.cleanHotbar(char.class, char.level, char.hotbar)
+	if changed then
+		PlayerStateService.Set(player, { "character", "hotbar" }, bar)
+	end
+end
+
+-- S56 (ROZWOJ 2.5, 5): ranks follow the level. Passive ranks and hooks are refreshed on every change; going up puts
+-- the new actives on free slots (a toast each, or one for more than 2 at once), going down cleans the bar.
+local function onLevelChanged(player: Player, newLevel: number, oldLevel: number)
 	passivesChanged(player)
-	log:info("%s reset skills (%d points)", player.Name, refunded)
-	return true, nil
+	local char = character(player)
+	if not char then
+		return
+	end
+	if newLevel < oldLevel then
+		cleanBar(player)
+		return
+	end
+	local fresh = Skills.newlyUnlocked(char.class, oldLevel, newLevel)
+	if #fresh == 0 then
+		return
+	end
+	local actives: { string } = {}
+	for _, skill in fresh do
+		if skill.type ~= "passive" then
+			table.insert(actives, skill.id)
+		end
+	end
+	local placed, left = Skills.placeOnBar(char.hotbar, actives)
+	local onBar: { [string]: boolean } = {}
+	for _, place in placed do
+		if setHotbar(player, place.slot, place.id) then
+			onBar[place.id] = true
+		end
+	end
+	if #fresh > 2 then
+		Net.Fire(player, "Toast", "skills.toast.many", { n = #fresh }, "success")
+		return
+	end
+	for _, skill in fresh do
+		local args = { skill = "@" .. skill.nameKey }
+		if skill.type == "passive" then
+			Net.Fire(player, "Toast", "skills.toast.passive", args, "success")
+		elseif onBar[skill.id] then
+			Net.Fire(player, "Toast", "skills.toast.onBar", args, "success")
+		elseif table.find(left, skill.id) then
+			Net.Fire(player, "Toast", "skills.toast.barFull", args, "info")
+		end
+	end
 end
 
 -- Admin helpers --------------------------------------------------------------------------------------------
@@ -218,62 +265,9 @@ function SkillService.SetInfiniteResources(player: Player, enabled: boolean)
 	runtime(player).infiniteResources = enabled
 end
 
--- Admin (S28): passives changed outside learn/reset.
+-- Admin (S28): passives changed outside a level change.
 function SkillService.RefreshPassives(player: Player)
 	passivesChanged(player)
-end
-
--- Admin (S28): puts an active skill on the first free hotbar slot (nothing when it is already there or the bar is full).
-function SkillService.PutOnBar(player: Player, skillId: string)
-	local char = character(player)
-	if not char then
-		return
-	end
-	for _, existing in char.hotbar do
-		if existing == skillId then
-			return
-		end
-	end
-	for slot = 1, SkillData.HOTBAR_SLOTS do
-		if char.hotbar[tostring(slot)] == nil then
-			PlayerStateService.Set(player, { "character", "hotbar", tostring(slot) }, skillId)
-			return
-		end
-	end
-end
-
--- Learns every skill of the class as high as the level allows (spending points first, then free ones).
-function SkillService.LearnAll(player: Player): number
-	local char = character(player)
-	if not char then
-		return 0
-	end
-	local used = 0
-	local progress = true
-	while progress do
-		progress = false
-		local classSkills: { SkillData.SkillDef } = SkillData.byClass[char.class] or {}
-		for _, skill in classSkills do
-			local current = Skills.level(char, skill.id)
-			if current < skill.maxLevel and char.level >= Skills.levelRequirement(skill, current + 1) then
-				local requirementsMet = true
-				local requires: { { skill: string, level: number } } = skill.requires or {}
-				for _, requirement in requires do
-					if Skills.level(char, requirement.skill) < requirement.level then
-						requirementsMet = false
-					end
-				end
-				if requirementsMet then
-					char.skills[skill.id] = current + 1
-					used += 1
-					progress = true
-				end
-			end
-		end
-	end
-	PlayerStateService.Set(player, { "character", "skills" }, char.skills)
-	passivesChanged(player)
-	return used
 end
 
 -- Casting -----------------------------------------------------------------------------------------------------
@@ -391,12 +385,13 @@ local function cast(player: Player, skillId: string, targetId: string?, aim: any
 	if not char or not base or base.class ~= char.class then
 		return false, "error.badRequest"
 	end
-	local rank = Skills.level(char, skillId)
+	-- S56: rank from the character level (ROZWOJ 2.5), ladder 2.6 until S57
+	local rank = Skills.rankOf(char, skillId)
 	if rank <= 0 or base.type == "passive" then
 		return false, "cast.error.notLearned"
 	end
 	-- S28: numbers and behaviours at this rank (breakpoints).
-	-- S55: option A everywhere, no node mods until S57 (Paths.skillMods); rank = learned level until S56
+	-- S55: option A everywhere, no node mods until S57 (Paths.skillMods)
 	local skill, behaviour = Skills.effective(base, rank, nil, nil)
 	local caster = EntityService.GetPlayerEntity(player)
 	local model = player.Character
@@ -590,8 +585,8 @@ function SkillService.Init(registry)
 	PvpService = registry.Get("PvpService")
 	PartyService = registry.Get("PartyService")
 	DeathService = registry.Get("DeathService")
-	InventoryService = registry.Get("InventoryService")
 	ZoneService = registry.Get("ZoneService")
+	LevelService = registry.Get("LevelService")
 
 	services = {
 		Combat = CombatService,
@@ -616,12 +611,18 @@ function SkillService.Start()
 	ResourceService.Died:Connect(function(player: Player)
 		StatService.SetSprint(player, false)
 	end)
-	Net.Handle("LearnSkill", learn)
 	Net.Handle("SetHotbar", setHotbar)
-	Net.Handle("ResetSkills", function(player: Player)
-		return SkillService.Reset(player, false)
+	Net.Handle("PutOnBar", function(player: Player, skillId: string, slot: number?): (boolean, string?)
+		return SkillService.PutOnBar(player, skillId, slot)
 	end)
 	Net.Handle("CastSkill", cast)
+	-- S56: the one-time "character progression has changed" notice was seen.
+	Net.On("AckRework", function(player: Player)
+		if character(player) then
+			PlayerStateService.Set(player, { "character", "reworkNotice" }, false)
+		end
+	end)
+	LevelService.LevelChanged:Connect(onLevelChanged)
 
 	-- Taking damage interrupts channels.
 	ResourceService.Damaged:Connect(function(player: Player, amount: number)
@@ -631,6 +632,7 @@ function SkillService.Start()
 	end)
 	CharacterService.CharacterEntered:Connect(function(player: Player)
 		hookCache[player] = nil
+		cleanBar(player) -- S56: bar check on load (S57: Paths.validHotbar)
 		local rt = runtime(player)
 		table.clear(rt.cooldowns)
 		rt.gcd = 0

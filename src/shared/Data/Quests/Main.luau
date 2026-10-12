@@ -77,6 +77,7 @@ q({
 	level = 3,
 	giver = "scout_meadows",
 	turnIn = "scout_meadows",
+	-- S56: "learn" = a skill put on the bar
 	objectives = { { type = "kill", n = 8, monster = "wolf" }, { type = "learn", n = 1 } },
 	reward = { exp = exp(3, 0.7), gold = gold(3) },
 })

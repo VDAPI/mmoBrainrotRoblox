@@ -5,6 +5,7 @@ local Classes = require("../Data/Classes")
 local Config = require("../Config")
 local Types = require("../Types")
 local AccountSchema = require("./AccountSchema")
+local Skills = require("./Skills")
 local StarterGear = require("./StarterGear")
 
 type CharacterData = Types.CharacterData
@@ -26,6 +27,8 @@ function CharacterFactory.create(classId: Types.ClassId, name: string, ids: Ids)
 	character.class = classId
 	character.level = 1
 	character.stats = table.clone(class.startStats)
+	character.hotbar = Skills.startHotbar(classId, 1) -- slot 1: the unlock-1 skill (ROZWOJ 5)
+	character.reworkNotice = false
 	character.gold = Config.StartingGold
 	character.location = { map = Config.StartingMap, x = 0, y = 0, z = 0 }
 	character.equipment = {}

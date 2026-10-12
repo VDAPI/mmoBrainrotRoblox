@@ -125,7 +125,7 @@ export type Breakpoints = { [number]: BreakpointPair } -- ranks 5 and 10
 export type SkillDef = {
 	id: string,
 	class: string,
-	order: number, -- 1..14 in the class tree (DESIGN table row)
+	order: number, -- position in the class list
 	unlock: number, -- character level for rank 1
 	maxLevel: number, -- explicit in the data: 10 active, 5 passive (ROZWOJ 2.5)
 	type: SkillType,
@@ -156,10 +156,7 @@ export type SkillDef = {
 	allyEffects: { SkillEffect }?,
 	-- Passive stat modifiers: stat id -> value field; `pct` stats multiply.
 	passive: { flat: { [string]: string }?, pct: { [string]: string }?, hooks: { [string]: string }? }?,
-	requires: { { skill: string, level: number } }?,
 	breakpoints: Breakpoints?, -- S55: { [5] = { a, b? }, [10] = { a, b? } }
-	col: number,
-	row: number,
 	glyph: string,
 	vfx: string,
 	nameKey: string,

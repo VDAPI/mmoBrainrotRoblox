@@ -31,6 +31,16 @@ T.describe("Premium shop", function()
 		T.expect({ Premium.canBuyShop("nope", 1e9, limits, 0) }).toEqual({ false, "error.badRequest" })
 	end)
 
+	T.it("an unavailable entry cannot be bought (scroll_skillreset until class paths, S56)", function()
+		local limits = { day = 0, protectScrolls = 0 }
+		T.expect((Products.getShop("scroll_skillreset") :: any).unavailable).toBe(true)
+		T.expect({ Premium.canBuyShop("scroll_skillreset", 1e6, limits, 0) }).toEqual({ false, "premium.error.soon" })
+		T.expect((Premium.canBuyShop("scroll_oblivion", 1e6, limits, 0))).toBe(true)
+		for _, key in { "premium.soon", "premium.error.soon" } do
+			T.expect(pl[key] ~= nil and en[key] ~= nil).toBe(true)
+		end
+	end)
+
 	T.it("cosmetics are bought once and equipped only when owned", function()
 		T.expect((Premium.canBuyCosmetic("pet_fox", {}, 1e6))).toBe(true)
 		T.expect({ Premium.canBuyCosmetic("pet_fox", { pet_fox = true }, 1e6) })

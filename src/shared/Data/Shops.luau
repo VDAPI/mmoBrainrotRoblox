@@ -1,7 +1,7 @@
 --!strict
 -- Shop assortments (DESIGN §9, §13, §18). Prices come from Logic/ItemValue.buyPrice (S31): the entry's
 -- fixed `price`, else the item's fixed `buyPrice`, else value x `buyMul`; `pricePerLevel` makes the price
--- depend on the buyer's level (teacher's reset scrolls). Every shop buys player items (for their value).
+-- depend on the buyer's level (teacher's Oblivion scroll). Every shop buys player items (for their value).
 
 local Bases = require("./Items/Bases")
 local Elements = require("./Elements")
@@ -99,7 +99,6 @@ local SHOPS: { [string]: ShopDef } = {
 		id = "teacher",
 		entries = {
 			{ item = "scroll_oblivion", pricePerLevel = 500 }, -- DESIGN §4.3
-			{ item = "scroll_skillreset", pricePerLevel = 400 },
 		},
 	},
 }

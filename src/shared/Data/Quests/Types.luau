@@ -11,8 +11,8 @@
 --   upgrade  upgrade any item to +`up` or higher
 --   equip    equip an item of rarity >= `rarity` (any when nil)
 --   level    reach character level `level`
---   loot / stats / learn / potion   tutorial actions (pick up loot, spend a stat point, learn a skill,
---            drink a potion)
+--   loot / stats / learn / potion   tutorial actions (pick up loot, spend a stat point, put a skill on the bar
+--            (SkillService: SetHotbar, PutOnBar, auto-put on unlock), drink a potion)
 --   duel     finish `n` duels
 --   use      (S27) hold an interaction at the quest anchor `anchor` (one) or every one of `anchors` (progress =
 --            distinct anchors done); `action` = locale key of the prompt, `hold` seconds, `fx` = what the player

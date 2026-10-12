@@ -154,7 +154,7 @@ function EffectsController.Start()
 			refreshGlows()
 		end
 	end)
-	Net.On("LevelUp", function(player: Player, level: number, statPoints: number, skillPoints: number)
+	Net.On("LevelUp", function(player: Player, level: number, statPoints: number)
 		if typeof(player) ~= "Instance" or not player:IsA("Player") then
 			return
 		end
@@ -164,8 +164,7 @@ function EffectsController.Start()
 		end
 		if player == Players.LocalPlayer then
 			Sounds.play("levelUp")
-			local key = if skillPoints > 0 then "toast.levelUp" else "toast.levelUpNoSkill"
-			Toast.push(Text.now(key, { level = level, stat = statPoints, skill = skillPoints }), "success", 5)
+			Toast.push(Text.now("toast.levelUp", { level = level, stat = statPoints }), "success", 5)
 		end
 	end)
 end

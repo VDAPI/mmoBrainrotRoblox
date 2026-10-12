@@ -9,7 +9,7 @@
 --   equip    { rarity }                                  (EquipmentService)
 --   loot     {}                                          (LootService pickup)
 --   stats    {}                                          (StatService allocation)
---   learn    { skillId }                                 (SkillService)
+--   learn    { skillId }                                 (SkillService: SetHotbar, PutOnBar, auto-put on unlock)
 --   potion   {}                                          (PotionService)
 --   duel     { won }                                     (DuelService, both fighters)
 

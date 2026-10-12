@@ -1,7 +1,7 @@
 ---
 // Class page (S41, /pl/klasy/<classId>/, mock-up Mag-*): static hero (portrait with the class glyph, roles, description,
-// four facts, starting stats and gear), the SkillPlanner island and "All skills" (content without JS and for search
-// engines; Pagefind takes skills from the records, so the list is ignored there).
+// four facts, starting stats and gear), the planner placeholder (S56: hidden until S82) and "All skills" (content
+// without JS and for search engines; Pagefind takes skills from the records, so the list is ignored there).
 import Base from "../layouts/Base.astro";
 import Crumbs from "../components/Crumbs.astro";
 import ItemIcon from "../components/ItemIcon.svelte";
@@ -14,7 +14,6 @@ import {
   baseName,
   getClass,
   hpPerLevel,
-  plannerData,
   resourceLine,
   resourceName,
   roleParts,
@@ -25,6 +24,7 @@ import {
 import { formatNumber } from "../lib/format";
 import { name, t } from "../lib/i18n";
 import { sectionHref } from "../lib/sections";
+import { rankLevel } from "../lib/skills";
 
 interface Props {
   lang: Lang;
@@ -46,7 +46,6 @@ const startStats = ["str", "dex", "int", "vit"]
   .join(" · ");
 const gear = startingGear(c, lang);
 const itemsHref = sectionHref(lang, "items");
-const planner = plannerData(c, lang);
 const rows = skillRows(c, lang);
 const num = (n: number) => formatNumber(n, lang, Number.isInteger(n) ? 0 : 1);
 const range = (a: number, b: number, unit = "") => (a === b ? `${num(a)}${unit}` : `${num(a)}${unit} → ${num(b)}${unit}`);
@@ -98,7 +97,7 @@ const description = t(lang, "class.description", { name: title, role: name(c.rol
 
     <section class="planner" id="planner" aria-labelledby="planner-title" data-pagefind-ignore>
       <SectionTitle id="planner-title">{t(lang, "planner.title")}</SectionTitle>
-      <SkillPlanner client:load data={planner} />
+      <SkillPlanner text={t(lang, "planner.soon")} />
     </section>
 
     <section class="all" aria-labelledby="all-skills" data-pagefind-ignore>
@@ -124,22 +123,20 @@ const description = t(lang, "class.description", { name: title, role: name(c.rol
             return (
               <tr id={`s-${s.id}`}>
                 <th scope="row" class="name"><div class="name__in">
-                  <SkillNode glyph={s.glyph} color={r.color} state="available" rank={0} max={s.maxLevel} active={!s.passiveSkill} label={r.name} size={40} tabindex={-1} aria-hidden="true" />
+                  <SkillNode glyph={s.glyph} color={r.color} state="available" max={s.maxLevel} active={!s.passiveSkill} label={r.name} size={40} tabindex={-1} aria-hidden="true" />
                   <span>
                     <b>{r.name}</b>
                     <small>{t(lang, s.passiveSkill ? "planner.passive" : "planner.active")}{s.elementNote && ` · ${name(s.elementNote, lang)}`}</small>
                   </span>
                 </div></th>
                 <td data-label={t(lang, "skills.col.unlock")}>{s.unlock}</td>
-                <td data-label={t(lang, "skills.col.ranks")}>{s.maxLevel}{r.reachable < s.maxLevel && <small class="warn"> ({t(lang, "skills.reachable", { n: r.reachable })})</small>}</td>
+                <td data-label={t(lang, "skills.col.ranks")}>{s.maxLevel} <small>({t(lang, "skills.maxAt", { n: r.maxAt })})</small></td>
                 <td data-label={t(lang, "skills.col.cost")}>{s.passiveSkill || !resource ? t(lang, "skills.none") : t(lang, `planner.cost.${resource}`, { n: range(first.cost, last.cost) })}</td>
                 <td data-label={t(lang, "skills.col.cooldown")}>{s.passiveSkill || last.cooldown === 0 ? t(lang, "skills.none") : range(first.cooldown, last.cooldown, " s")}</td>
                 <td class="descs">
                   <p><b>{t(lang, "skills.rankN", { n: 1 })}:</b> {name(first.desc, lang)}</p>
                   <p><b>{t(lang, "skills.rankN", { n: s.maxLevel })}:</b> {name(last.desc, lang)}</p>
-                  {s.breakpoints.length > 0 && s.breakpoints.map((b) => <p class="bp"><b>{t(lang, "planner.bp", { n: b.rank })}:</b> {name(b.a.text, lang)}</p>)}
-                  {r.requires.length > 0 && <p class="req">{t(lang, "skills.requires", { list: r.requires.map((q) => t(lang, "planner.reqSkill", { name: q.name, n: q.level })).join(", ") })}</p>}
-                  <a class="plan" href={`?s=${s.id}#planner`} data-plan={s.id}>{t(lang, "skills.plan")} →</a>
+                  {s.breakpoints.length > 0 && s.breakpoints.map((b) => <p class="bp"><b>{t(lang, "planner.bp", { n: b.rank, level: rankLevel(s, b.rank) })}:</b> {name(b.a.text, lang)}</p>)}
                 </td>
               </tr>
             );
@@ -189,9 +186,6 @@ const description = t(lang, "class.description", { name: title, role: name(c.rol
   .skills tbody tr:target { background: color-mix(in srgb, var(--vw-gold) 10%, transparent); }
   .descs p { margin: 0 0 6px; font-size: 15px; line-height: 1.45; }
   .descs .bp { color: var(--vw-text-soft); }
-  .descs .req { color: var(--vw-text-muted); }
-  .warn { color: var(--vw-warning); }
-  .plan { font-weight: 800; font-size: 14px; }
   @media (max-width: 767px) {
     .cls { padding: 0 16px 56px; }
     .hero { grid-template-columns: 88px minmax(0, 1fr); gap: 14px; padding: 20px 0 24px; align-items: end; }

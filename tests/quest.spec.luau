@@ -255,3 +255,28 @@ describe("Daily contracts", function()
 		end
 	end)
 end)
+
+describe("S56 learn objective", function()
+	it("learnedOnBar: the first skill on the bar other than the starting one", function()
+		expect(QuestLogic.learnedOnBar({ ["1"] = "mightyStrike" }, "mightyStrike")).toBeNil()
+		expect(QuestLogic.learnedOnBar({ ["1"] = "mightyStrike", ["2"] = "battleCry" }, "mightyStrike")).toBe(
+			"battleCry"
+		)
+		expect(QuestLogic.learnedOnBar({ ["3"] = "charge" }, nil)).toBe("charge")
+		expect(QuestLogic.learnedOnBar({}, "x")).toBeNil()
+		expect(QuestLogic.learnedOnBar("oops", "x")).toBeNil()
+	end)
+
+	it("wolves asks for a skill on the bar at level 3", function()
+		local wolves = Quests.Main.byId.wolves :: any
+		expect(wolves.level).toBe(3)
+		local found = false
+		for _, objective in wolves.objectives do
+			if objective.type == "learn" then
+				found = objective.n == 1
+			end
+		end
+		expect(found).toBe(true)
+		expect(QuestLogic.amount({ type = "learn", n = 1 } :: any, "learn", { skillId = "battleCry" }, 0)).toBe(1)
+	end)
+end)

@@ -5,6 +5,9 @@ local CharacterFactory = require("../src/shared/Logic/CharacterFactory")
 local Classes = require("../src/shared/Data/Classes")
 local Config = require("../src/shared/Config")
 local T = require("./Test")
+local TableUtil = require("../src/shared/Util/TableUtil")
+
+local START_SKILL = { Warrior = "mightyStrike", Hunter = "aimedShot", Mage = "firebolt", Cleric = "holyStrike" }
 
 local function ids()
 	local n = 0
@@ -26,7 +29,13 @@ T.describe("CharacterFactory", function()
 			T.expect(character.level).toBe(1)
 			T.expect(character.exp).toBe(0)
 			T.expect(character.statPoints).toBe(0)
-			T.expect(character.skillPoints).toBe(0)
+			T.expect((character :: any).skills).toBeNil()
+			T.expect((character :: any).skillPoints).toBeNil()
+			T.expect(character.hotbar).toEqual({ ["1"] = START_SKILL[classId] })
+			T.expect(character.path).toEqual({ nodes = {}, bp = {}, freeUsed = false })
+			T.expect(character.buildSlot).toBe(1)
+			T.expect(character.buildOther).toBeNil()
+			T.expect(character.reworkNotice).toBe(false)
 			T.expect(character.stats).toEqual(class.startStats)
 			T.expect(character.stats == class.startStats).toBe(false) -- copied, not shared
 		end
@@ -127,6 +136,16 @@ T.describe("AccountSchema", function()
 		T.expect(data.characters["1"].quests.daily.list).toEqual({})
 	end)
 
+	T.it("template keeps an empty hotbar (reconcile)", function()
+		T.expect(AccountSchema.characterTemplate().hotbar).toEqual({})
+		local mage = CharacterFactory.create("Mage", "Empty", ids())
+		mage.hotbar = {}
+		local data: any = AccountSchema.accountTemplate()
+		data.characters["1"] = mage
+		AccountSchema.migrate(data)
+		T.expect(mage.hotbar).toEqual({})
+	end)
+
 	T.it("migrate runs pending migrations in order", function()
 		local migrations = AccountSchema._migrations
 		local saved = AccountSchema.CURRENT
@@ -150,6 +169,128 @@ T.describe("AccountSchema", function()
 		T.expect(order).toEqual({ saved + 1, saved + 2 })
 		T.expect(data.marker).toBe("ab")
 		T.expect(data.schema).toBe(saved + 2)
+	end)
+end)
+
+-- Saves of schema 5: a character from the factory with the new fields cleared and the old ones put back.
+local function oldSave(classId: string, level: number, extra: { [string]: any }?): (any, any)
+	local character: any = CharacterFactory.create(classId :: any, "Old", ids())
+	character.level = level
+	character.path = nil
+	character.buildSlot = nil
+	character.reworkNotice = nil
+	character.skills = {}
+	character.skillPoints = 0
+	for key, value in extra or {} do
+		character[key] = value
+	end
+	local data: any = AccountSchema.accountTemplate()
+	data.schema = 5
+	data.characters["1"] = character
+	return data, character
+end
+
+local function newId(): string
+	return "x"
+end
+
+T.describe("Migration 6 (S56)", function()
+	T.it("level 1 Warrior", function()
+		local data, c = oldSave("Warrior", 1, { skills = { mightyStrike = 1 }, skillPoints = 0 })
+		T.expect(AccountSchema.migrate(data)).toEqual({ 6 })
+		T.expect(data.schema).toBe(6)
+		T.expect(c.skills).toBeNil()
+		T.expect(c.skillPoints).toBeNil()
+		T.expect(c.stats).toEqual((Classes.get("Warrior") :: any).startStats)
+		T.expect(c.statPoints).toBe(0)
+		T.expect(c.hotbar).toEqual({ ["1"] = "mightyStrike" })
+		T.expect(c.path).toEqual({ nodes = {}, bp = {}, freeUsed = false })
+		T.expect(c.buildSlot).toBe(1)
+		T.expect(c.buildOther).toBeNil()
+		T.expect(c.reworkNotice).toBe(true)
+	end)
+
+	T.it("level 20 Hunter gets every stat point back and a rebuilt bar", function()
+		local start = (Classes.get("Hunter") :: any).startStats
+		local stats = table.clone(start)
+		stats.dex += 95
+		local data, c = oldSave("Hunter", 20, {
+			stats = stats,
+			statPoints = 0,
+			skillPoints = 3,
+			hotbar = { ["1"] = "aimedShot", ["5"] = "frostTrap" },
+		})
+		AccountSchema.migrate(data)
+		T.expect(c.stats).toEqual(start)
+		T.expect(c.statPoints).toBe(95)
+		T.expect(c.hotbar).toEqual({
+			["1"] = "aimedShot",
+			["2"] = "doubleShot",
+			["3"] = "disengage",
+			["4"] = "arrowRain",
+			["5"] = "venomArrow",
+		})
+	end)
+
+	T.it("level 100 Cleric", function()
+		local data, c = oldSave("Cleric", 100)
+		AccountSchema.migrate(data)
+		T.expect(c.statPoints).toBe(495)
+		T.expect(c.hotbar).toEqual({
+			["1"] = "holyStrike",
+			["2"] = "heal",
+			["3"] = "renew",
+			["4"] = "radiance",
+			["5"] = "circleOfLight",
+			["6"] = "purify",
+			["7"] = "auraOfEndurance",
+			["8"] = "resurrection",
+			["9"] = "shieldOfFaith",
+			["10"] = "judgement",
+		})
+	end)
+
+	T.it("odd saves", function()
+		local migration = AccountSchema._migrations[6]
+		-- not a table
+		local data: any = { characters = { ["1"] = "oops" } }
+		migration(data, newId)
+		T.expect(data.characters["1"]).toBe("oops")
+		-- no class: counted as the template's Warrior
+		local noClass: any = { level = 12, stats = { str = 1, dex = 1, int = 1, vit = 1 }, statPoints = 3 }
+		migration({ characters = { ["1"] = noClass } }, newId)
+		T.expect(noClass.stats).toEqual((Classes.get("Warrior") :: any).startStats)
+		T.expect(noClass.statPoints).toBe(55)
+		T.expect(noClass.hotbar).toEqual({
+			["1"] = "mightyStrike",
+			["2"] = "battleCry",
+			["3"] = "charge",
+			["4"] = "bladeWhirl",
+		})
+		-- unknown class: stats kept, empty bar, new fields
+		local bard: any = { class = "Bard", level = 30, stats = { str = 9, dex = 9, int = 9, vit = 9 }, statPoints = 7 }
+		migration({ characters = { ["1"] = bard } }, newId)
+		T.expect(bard.stats).toEqual({ str = 9, dex = 9, int = 9, vit = 9 })
+		T.expect(bard.statPoints).toBe(7)
+		T.expect(bard.hotbar).toEqual({})
+		T.expect(bard.path).toEqual({ nodes = {}, bp = {}, freeUsed = false })
+		T.expect(bard.buildSlot).toBe(1)
+		T.expect(bard.reworkNotice).toBe(true)
+		-- broken levels
+		local abc: any = { class = "Mage", level = "abc" }
+		migration({ characters = { ["1"] = abc } }, newId)
+		T.expect(abc.statPoints).toBe(0)
+		local high: any = { class = "Mage", level = 250 }
+		migration({ characters = { ["1"] = high } }, newId)
+		T.expect(high.statPoints).toBe(495)
+	end)
+
+	T.it("is idempotent", function()
+		local data, c = oldSave("Mage", 40)
+		AccountSchema.migrate(data)
+		local copy = TableUtil.deepCopy(c)
+		AccountSchema._migrations[6](data, newId)
+		T.expect(data.characters["1"]).toEqual(copy)
 	end)
 end)
 

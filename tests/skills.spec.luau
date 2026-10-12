@@ -2,7 +2,6 @@
 local AccountSchema = require("../src/shared/Logic/AccountSchema")
 local Bases = require("../src/shared/Data/Items/Bases")
 local Classes = require("../src/shared/Data/Classes")
-local Config = require("../src/shared/Config")
 local SkillData = require("../src/shared/Data/Skills")
 local Skills = require("../src/shared/Logic/Skills")
 local StatCalc = require("../src/shared/Logic/StatCalc")
@@ -31,11 +30,10 @@ local VALID_TYPES = {
 	passive = true,
 }
 
-local function character(classId: string, level: number, points: number): any
+local function character(classId: string, level: number): any
 	local c = AccountSchema.characterTemplate()
 	c.class = classId :: any
 	c.level = level
-	c.skillPoints = points
 	return c
 end
 
@@ -89,13 +87,6 @@ T.describe("Data: Skills", function()
 					check(skill.values[field] ~= nil, `stat field {field} missing`)
 				end
 			end
-			for _, requirement in skill.requires or {} do
-				local other = SkillData.get(requirement.skill)
-				check(other ~= nil, `requires unknown {requirement.skill}`)
-				check((other :: any).class == skill.class, "requires another class")
-				check((other :: any).unlock < skill.unlock, "requires a later skill")
-				check(requirement.level <= (other :: any).maxLevel, "requirement above max level")
-			end
 		end
 	end)
 
@@ -125,79 +116,134 @@ T.describe("Data: Skills", function()
 	end)
 end)
 
-T.describe("Skills logic", function()
-	T.it("level requirement = unlock + 3·(n−1)", function()
+T.describe("S56 ranks from the level and the bar", function()
+	local function ids(list: { any }): { string }
+		local out = {}
+		for _, skill in list do
+			table.insert(out, skill.id)
+		end
+		return out
+	end
+
+	T.it("rankFor and rankOf", function()
 		local cleave = SkillData.get("cleave") :: any
-		T.expect(Skills.levelRequirement(cleave, 1)).toBe(18)
-		T.expect(Skills.levelRequirement(cleave, 10)).toBe(45)
+		T.expect(Skills.rankFor("Warrior", 17, cleave)).toBe(0)
+		T.expect(Skills.rankFor("Warrior", 18, cleave)).toBe(1)
+		T.expect(Skills.rankFor("Warrior", 54, cleave)).toBe(10)
+		T.expect(Skills.rankFor("Mage", 54, cleave)).toBe(0)
+		T.expect(Skills.rankOf(character("Warrior", 54), "nope")).toBe(0)
+		T.expect(Skills.rankOf(character("Warrior", 54), "cleave")).toBe(10)
 	end)
 
-	T.it("every skill reaches its max level by the max character level", function()
-		for _, skill in SkillData.byId do
-			local need = Skills.levelRequirement(skill, skill.maxLevel)
-			if need > Config.MaxLevel then
-				error(`{skill.id}: level {skill.maxLevel} needs {need}`)
+	T.it("transitional ladder (ROZWOJ 2.6): every class skill, 19 ranks at level 20", function()
+		for _, classId in Classes.order do
+			local unlocked = Skills.unlocked(classId, 100)
+			T.expect(#unlocked).toBe(#SkillData.byClass[classId])
+			local total = 0
+			for _, skill in SkillData.byClass[classId] do
+				total += Skills.rankFor(classId, 20, skill)
+			end
+			T.expect(total).toBe(19)
+		end
+	end)
+
+	T.it("starting skill and start hotbar", function()
+		for _, classId in Classes.order do
+			local start = Skills.startingSkill(classId) :: string
+			local def = SkillData.get(start) :: any
+			T.expect(def.unlock).toBe(1)
+			T.expect(def.type ~= "passive").toBe(true)
+			local bar = Skills.startHotbar(classId, 100)
+			local n = 0
+			for slot = 1, 10 do
+				local skill = SkillData.get(bar[tostring(slot)]) :: any
+				T.expect(skill.type ~= "passive").toBe(true)
+				n += 1
+			end
+			T.expect(n).toBe(10)
+			for _, id in bar do
+				T.expect(id ~= "titansWrath" and id ~= "stormArrow" and id ~= "meteorStorm").toBe(true)
+				T.expect(id ~= "prayer" and id ~= "divineIntervention").toBe(true)
 			end
 		end
-		T.expect(Skills.levelRequirement(SkillData.get("meteorStorm") :: any, 10)).toBe(93)
+		T.expect(Skills.startHotbar("Warrior", 1)).toEqual({ ["1"] = "mightyStrike" })
+		T.expect(Skills.startHotbar("Hunter", 20)).toEqual({
+			["1"] = "aimedShot",
+			["2"] = "doubleShot",
+			["3"] = "disengage",
+			["4"] = "arrowRain",
+			["5"] = "venomArrow",
+		})
 	end)
 
-	T.it("canLearn checks points, class, level and max level", function()
-		local c = character("Warrior", 1, 1)
-		T.expect((Skills.canLearn(c, "mightyStrike"))).toBe(true)
-		T.expect(select(2, Skills.canLearn(c, "firebolt"))).toBe("wrongClass")
-		T.expect(select(2, Skills.canLearn(c, "battleCry"))).toBe("level")
-		T.expect(select(2, Skills.canLearn(c, "nope"))).toBe("unknown")
-		c.skillPoints = 0
-		T.expect(select(2, Skills.canLearn(c, "mightyStrike"))).toBe("noPoints")
-		c.skillPoints = 5
-		c.skills.mightyStrike = 1
-		-- level 2 of an unlock-1 skill needs character level 4
-		T.expect(select(2, Skills.canLearn(c, "mightyStrike"))).toBe("level")
-		c.level = 100
-		c.skills.mightyStrike = 10
-		T.expect(select(2, Skills.canLearn(c, "mightyStrike"))).toBe("maxLevel")
+	T.it("newlyUnlocked", function()
+		T.expect(ids(Skills.newlyUnlocked("Warrior", 2, 6))).toEqual({ "battleCry", "charge" })
+		T.expect(ids(Skills.newlyUnlocked("Warrior", 13, 14))).toEqual({ "steelSkin" })
+		T.expect(ids(Skills.newlyUnlocked("Warrior", 6, 6))).toEqual({})
 	end)
 
-	T.it("chained requirements", function()
-		local c = character("Warrior", 100, 99)
-		T.expect(select(2, Skills.canLearn(c, "cleave"))).toBe("requires")
-		c.skills.bladeWhirl = 3
-		T.expect((Skills.canLearn(c, "cleave"))).toBe(true)
-		T.expect(select(2, Skills.canLearn(c, "earthquake"))).toBe("requires")
-		c.skills.cleave = 3
-		T.expect((Skills.canLearn(c, "earthquake"))).toBe(true)
-		T.expect(select(2, Skills.canLearn(c, "titansWrath"))).toBe("requires")
+	T.it("firstFreeSlot and placeOnBar", function()
+		T.expect(Skills.firstFreeSlot({})).toBe(1)
+		T.expect(Skills.firstFreeSlot({ ["1"] = "a", ["2"] = "b" })).toBe(3)
+		local full = {}
+		for slot = 1, 10 do
+			full[tostring(slot)] = `s{slot}`
+		end
+		T.expect(Skills.firstFreeSlot(full)).toBeNil()
+		local bar = { ["1"] = "mightyStrike" }
+		local placed, left = Skills.placeOnBar(bar, { "battleCry", "mightyStrike" })
+		T.expect(placed).toEqual({ { slot = 2, id = "battleCry" } })
+		T.expect(left).toEqual({})
+		T.expect(bar).toEqual({ ["1"] = "mightyStrike" })
+		local placed2, left2 = Skills.placeOnBar(full, { "battleCry" })
+		T.expect(placed2).toEqual({})
+		T.expect(left2).toEqual({ "battleCry" })
 	end)
 
-	T.it("refundAll returns every point and clears the hotbar", function()
-		local c = character("Mage", 50, 2)
-		c.skills = { firebolt = 5, iceShard = 3 }
-		c.hotbar = { ["1"] = "firebolt" }
-		T.expect(Skills.refundAll(c)).toBe(8)
-		T.expect(c.skillPoints).toBe(10)
-		T.expect(next(c.skills)).toBeNil()
-		T.expect(next(c.hotbar)).toBeNil()
+	T.it("cleanHotbar", function()
+		local bar, changed = Skills.cleanHotbar("Hunter", 20, {
+			["1"] = "aimedShot",
+			["2"] = "hawkEye",
+			["3"] = "frostTrap",
+			["4"] = "firebolt",
+			["5"] = "aimedShot",
+			["6"] = "nope",
+			["7"] = "doubleShot",
+			["11"] = "disengage",
+		})
+		T.expect(bar).toEqual({ ["1"] = "aimedShot", ["7"] = "doubleShot" })
+		T.expect(changed).toBe(true)
+		local good = { ["1"] = "aimedShot", ["3"] = "doubleShot" }
+		local same, changed2 = Skills.cleanHotbar("Hunter", 20, good)
+		T.expect(same).toEqual(good)
+		T.expect(changed2).toBe(false)
+		local empty, changed3 = Skills.cleanHotbar("Hunter", 20, "oops")
+		T.expect(empty).toEqual({})
+		T.expect(changed3).toBe(true)
 	end)
 
-	T.it("hotbar accepts only learned active skills of the class", function()
-		local c = character("Hunter", 30, 0)
-		c.skills = { aimedShot = 2, hawkEye = 1 }
+	T.it("validHotbar: unlocked actives of the class", function()
+		local c = character("Hunter", 30)
 		T.expect(Skills.validHotbar(c, 1, "aimedShot")).toBe(true)
 		T.expect(Skills.validHotbar(c, 10, nil)).toBe(true)
 		T.expect(Skills.validHotbar(c, 11, "aimedShot")).toBe(false)
 		T.expect(Skills.validHotbar(c, 2, "hawkEye")).toBe(false) -- passive
-		T.expect(Skills.validHotbar(c, 2, "doubleShot")).toBe(false) -- not learned
+		T.expect(Skills.validHotbar(c, 2, "piercingArrow")).toBe(false) -- unlocks at 34
 		T.expect(Skills.validHotbar(c, 2, "firebolt")).toBe(false) -- other class
 	end)
 
-	T.it("passive totals", function()
-		local c = character("Warrior", 50, 0)
-		c.skills = { steelSkin = 5, fortitude = 1, riposte = 3 }
-		local totals = Skills.passiveTotals(c)
-		T.expect(totals.pct.armor).toBe(25)
-		T.expect(totals.pct.maxHp).toBe(4)
-		T.expect(totals.hooks.riposte).toBe(8)
+	T.it("passive totals from the level", function()
+		local at50 = Skills.passiveTotals(character("Warrior", 50))
+		T.expect(at50.pct.armor).toBe(25)
+		T.expect(at50.pct.maxHp).toBe(12)
+		T.expect(at50.hooks.riposte).toBe(4)
+		T.expect(Skills.passiveTotals(character("Warrior", 47)).hooks.riposte).toBeNil()
+		local at13 = Skills.passiveTotals(character("Warrior", 13))
+		T.expect(at13).toEqual({ flat = {}, pct = {}, hooks = {} })
+		local at100 = Skills.passiveTotals(character("Warrior", 100))
+		T.expect(at100.pct.armor).toBe(25)
+		T.expect(at100.pct.maxHp).toBe(20)
+		T.expect(at100.hooks.riposte).toBe(12)
 	end)
 end)
 

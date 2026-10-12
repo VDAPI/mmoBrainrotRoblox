@@ -1,5 +1,5 @@
 --!strict
--- Mage tree (DESIGN §14.4), Mana. Requirements (not given in DESIGN) follow the fire and frost branches.
+-- Mage skills (DESIGN §14.4), Mana.
 -- S18: element skills need a weapon of the same element; Arcane Bolt (id firebolt) and Elemental Fury
 -- (id meteorStorm) are adaptive, Thunderstorm (id firewall) is lightning. Ids are kept so learned levels and
 -- hotbars need no migration.
@@ -18,8 +18,6 @@ return Build.class("Mage", "mana", "magic", {
 		adaptive = true,
 		values = { dmg = { 170, 310 } },
 		breakpoints = Build.bp2({ a = { pierce = 40 } }, { a = { splash = { radius = 4, pct = 50 } } }),
-		col = 1,
-		row = 1,
 		glyph = "✦",
 		vfx = "arcaneBolt",
 	},
@@ -35,8 +33,6 @@ return Build.class("Mage", "mana", "magic", {
 		values = { dmg = { 140, 250 }, slow = 30 },
 		effects = { { kind = "slow", duration = 3, value = "slow", category = "enemySlow" } },
 		breakpoints = Build.bp2({ a = { effect = { kind = "freeze", duration = 0.8 } } }, { a = { pierce = 60 } }),
-		col = 3,
-		row = 1,
 		glyph = "❄",
 		vfx = "iceShard",
 	},
@@ -60,8 +56,6 @@ return Build.class("Mage", "mana", "magic", {
 				},
 			},
 		}, { a = { mul = { cooldown = 0.6 } } }),
-		col = 4,
-		row = 1,
 		glyph = "✧",
 	},
 	{
@@ -75,13 +69,10 @@ return Build.class("Mage", "mana", "magic", {
 		radius = 8,
 		element = "fire",
 		values = { dmg = { 150, 270 } },
-		requires = { { skill = "firebolt", level = 3 } },
 		breakpoints = Build.bp2(
 			{ a = { lingering = { pct = 15, duration = 3, kind = "burn" } } },
 			{ a = { split = { count = 3, pct = 40, radius = 7 } } }
 		),
-		col = 1,
-		row = 2,
 		glyph = "☄",
 	},
 	{
@@ -91,8 +82,6 @@ return Build.class("Mage", "mana", "magic", {
 		type = "passive",
 		values = { mana = { 5, 25 }, regen = { 10, 50 } },
 		passive = { pct = { maxMana = "mana", manaRegen = "regen" } },
-		col = 4,
-		row = 2,
 		glyph = "◉",
 	},
 	{
@@ -107,8 +96,6 @@ return Build.class("Mage", "mana", "magic", {
 		element = "lightning",
 		values = { dmg = { 130, 230 }, jumps = { 3, 6 } },
 		breakpoints = Build.bp2({ a = { add = { jumps = 2 } } }, { a = { stunLast = 1 } }),
-		col = 2,
-		row = 3,
 		glyph = "⚡",
 	},
 	{
@@ -134,8 +121,6 @@ return Build.class("Mage", "mana", "magic", {
 				values = { regenBp = 50 },
 			},
 		}, { a = { add = { effectDuration = 5 } } }),
-		col = 4,
-		row = 3,
 		glyph = "🔵",
 	},
 	{
@@ -145,8 +130,6 @@ return Build.class("Mage", "mana", "magic", {
 		type = "passive",
 		values = { bonus = { 3, 15 } },
 		passive = { hooks = { elementDamage = "bonus" } },
-		col = 3,
-		row = 3,
 		glyph = "✺",
 	},
 	{
@@ -160,13 +143,10 @@ return Build.class("Mage", "mana", "magic", {
 		element = "ice",
 		values = { dmg = { 120, 220 }, freeze = { 1.5, 2.5 } },
 		effects = { { kind = "freeze", duration = { 1.5, 2.5 } } },
-		requires = { { skill = "iceShard", level = 3 } },
 		breakpoints = Build.bp2(
 			{ a = { add = { radius = 3 } } },
 			{ a = { lingering = { pct = 10, duration = 4, kind = "frost", slow = 40 } } }
 		),
-		col = 3,
-		row = 4,
 		glyph = "✳",
 	},
 	{
@@ -181,13 +161,10 @@ return Build.class("Mage", "mana", "magic", {
 		delay = 1,
 		element = "fire",
 		values = { dmg = { 280, 480 } },
-		requires = { { skill = "fireball", level = 3 } },
 		breakpoints = Build.bp2(
 			{ a = { mul = { delay = 0.5 } } },
 			{ a = { lingering = { pct = 20, duration = 4, kind = "burn" } } }
 		),
-		col = 1,
-		row = 4,
 		glyph = "☄",
 	},
 	{
@@ -197,8 +174,6 @@ return Build.class("Mage", "mana", "magic", {
 		type = "passive",
 		values = { crit = { 2, 10 }, critDmg = { 5, 25 } },
 		passive = { flat = { critChance = "crit", critDmg = "critDmg" } },
-		col = 4,
-		row = 4,
 		glyph = "✦",
 	},
 	{
@@ -216,8 +191,6 @@ return Build.class("Mage", "mana", "magic", {
 		element = "lightning",
 		values = { dmg = { 50, 90 } },
 		breakpoints = Build.bp2({ a = { add = { hits = 4 } } }, { a = { effect = { kind = "stun", duration = 0.5 } } }),
-		col = 2,
-		row = 5,
 		glyph = "⛈",
 		vfx = "thunderstorm",
 	},
@@ -231,8 +204,6 @@ return Build.class("Mage", "mana", "magic", {
 		duration = 3,
 		values = { mana = { 30, 50 } },
 		breakpoints = Build.bp2({ a = { mul = { cooldown = 0.75 } } }, { a = { values = { mana = 15 } } }),
-		col = 4,
-		row = 5,
 		glyph = "∞",
 	},
 	{
@@ -249,10 +220,7 @@ return Build.class("Mage", "mana", "magic", {
 		delay = 0.8,
 		adaptive = true,
 		values = { dmg = { 160, 260 } },
-		requires = { { skill = "meteor", level = 5 } },
 		breakpoints = Build.bp2({ a = { add = { hits = 2 } } }, { a = { add = { radius = 4 } } }),
-		col = 1,
-		row = 6,
 		glyph = "✺",
 	},
 })

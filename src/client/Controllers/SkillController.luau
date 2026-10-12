@@ -262,14 +262,18 @@ local function hidePreview()
 	table.clear(previewParts)
 end
 
+-- S56: rank of an own-class skill from the character level (0: not unlocked yet).
+local function rankOf(skill: SkillData.SkillDef): number
+	return Skills.rankFor(State.Get({ "character", "class" }), State.Get({ "character", "level" }) or 1, skill)
+end
+
 -- Draws the preview of `skill` aimed at `point` (world) from the character.
 local function drawPreview(skill: SkillData.SkillDef, point: Vector3?)
 	local root = myRoot()
 	if not root then
 		return
 	end
-	local level = State.Get({ "character", "skills", skill.id }) or 1
-	local def = Skills.effective(skill, level, nil, nil)
+	local def = Skills.effective(skill, math.max(1, rankOf(skill)), nil, nil)
 	local color = Color3.fromHex((Classes.get(skill.class) :: any).color)
 	local feet = root.Position - Vector3.new(0, 2.8, 0)
 	local target = point or (root.Position + root.CFrame.LookVector * 10)
@@ -403,8 +407,7 @@ function SkillController.AimMove(slot: number, drag: Vector2): boolean
 	if dir.Magnitude < 0.01 then
 		return false
 	end
-	local level = State.Get({ "character", "skills", skill.id }) or 1
-	local def = Skills.effective(skill, level, nil, nil)
+	local def = Skills.effective(skill, math.max(1, rankOf(skill)), nil, nil)
 	local reach = def.range or def.length or def.radius or 10
 	local distance = math.clamp(drag.Magnitude / AIM_FULL, 0.15, 1) * reach
 	previewSkill = skill.id
@@ -457,10 +460,9 @@ local function onDrop(from: string, to: string)
 	end
 end
 
-local function learned(skillId: string): boolean
-	local level = State.Get({ "character", "skills", skillId })
+local function unlockedActive(skillId: string): boolean
 	local skill = SkillData.get(skillId)
-	return type(level) == "number" and level > 0 and skill ~= nil and skill.type ~= "passive"
+	return skill ~= nil and skill.type ~= "passive" and rankOf(skill) > 0
 end
 
 function SkillController.Init(registry)
@@ -476,7 +478,7 @@ function SkillController.Init(registry)
 			local kind, rest = parse(slotId)
 			if kind == "bar" then
 				SkillController.CastSlot(tonumber(rest) :: number)
-			elseif kind == "skill" and learned(rest) then
+			elseif kind == "skill" and unlockedActive(rest) then
 				SkillController.Cast(rest, nil)
 			end
 		end,
@@ -485,7 +487,7 @@ function SkillController.Init(registry)
 			if kind == "bar" then
 				return SkillController.SkillInSlot(tonumber(rest) :: number) ~= nil
 			end
-			return kind == "skill" and learned(rest)
+			return kind == "skill" and unlockedActive(rest)
 		end,
 	})
 	UIController.AddDragVisual(function(slotId: string): any
@@ -543,9 +545,9 @@ function SkillController.Usable(skillId: string): (boolean, boolean, boolean)
 	if not skill then
 		return false, false, true
 	end
-	local level = math.max(1, State.Get({ "character", "skills", skillId }) or 0)
-	local def = Skills.effective(skill, level, nil, nil)
-	local cost = Skills.cost(def, level, State.Get({ "character", "level" }) or 1, skill.class, nil)
+	local rank = math.max(1, rankOf(skill))
+	local def = Skills.effective(skill, rank, nil, nil)
+	local cost = Skills.cost(def, rank, State.Get({ "character", "level" }) or 1, skill.class, nil)
 	local current = if skill.resource then State.Get({ "character", skill.resource }) or 0 else math.huge
 	local enoughResource = current >= cost
 	local inRange = skill.target ~= "enemy" or SkillController.TargetDistance() <= (def.range or 10) + 2

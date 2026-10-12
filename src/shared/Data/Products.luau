@@ -14,6 +14,7 @@ export type ShopEntry = {
 	itemId: string?,
 	price: number, -- Dragon Shards
 	dailyLimit: number?, -- per account and UTC day
+	unavailable: boolean?, -- S56: shown as "Wkrótce", cannot be bought, not on the wiki
 }
 
 local SHARD_PACKS: { ShardPack } = {
@@ -36,7 +37,8 @@ local PASSES: { Pass } = {
 
 local SHOP: { ShopEntry } = {
 	{ key = "scroll_oblivion", kind = "item", itemId = "scroll_oblivion", price = 120 },
-	{ key = "scroll_skillreset", kind = "item", itemId = "scroll_skillreset", price = 120 },
+	-- S56: no class has paths yet; S81 restores it (ROZWOJ 2.10)
+	{ key = "scroll_skillreset", kind = "item", itemId = "scroll_skillreset", price = 120, unavailable = true },
 	{ key = "scroll_unbind", kind = "item", itemId = "scroll_unbind", price = 150 },
 	{ key = "scroll_protection", kind = "item", itemId = "scroll_protection", price = 60, dailyLimit = 5 },
 	{ key = "rename", kind = "rename", price = 400 },
