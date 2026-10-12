@@ -1515,3 +1515,20 @@
   przedmiotów (serwer, pasek, opis). `Logic/Skills` czyta `Data/Paths` (bez cyklu).
 - **S73** `PartyAuraService` w kontekście umiejętności przez `registry.Get` bez wpisu w `Deps` (cykl PartyAura → Path →
   Skill); `BehindAnchor` wołany dopiero przy rzucie.
+- **S74** Osłona (`guard`): cel = zaznaczony sojusznik do 25 st. (+5 tolerancji), potem najbardziej ranny sojusznik w
+  aktywnej czerwonej strefie (remis: bliższy), potem najbardziej ranny do 25 st., na końcu sam Strażnik (redukcja
+  `own`); zaznaczony sojusznik poza zasięgiem nie blokuje rzutu; unieruchomiony Strażnik nie rzuci osłony (jak Szarża).
+  10A: drugi najbardziej ranny do `GUARD_SECOND_RADIUS = 15` st. od punktu lądowania; kopie efektów ×udział przełomu.
+- **S74** Okrzyk (`shout`): sojusznicy w `radius` z rzucającym (bez przechwytu na sobie), wrogowie w `hitRadius`; ofensywny
+  tylko z `values.dmg` (`Skills.offensive`), więc Mur Tarcz działa w strefie zielonej, a Rozkaz Natarcia nie. Bez
+  obrażeń efekty wroga (prowokacja) trafiają każdego w kręgu, także bossa.
+- **S74** Sztandar (`banner`): obiekt serwera (`Workspace.Vaelthorn_Banners/Banner_<UserId>`, kotwica z atrybutami, klient
+  rysuje drzewce, płachtę i krąg), strefa na pętli `PartyAuraService` (impuls przy wbiciu i co `AURA.tick`, efekty na
+  `AURA.duration` niezależnie od danych) bez wymogu walki; pada przy śmierci, wyjściu albo nowym sztandarze tego gracza.
+  W regule 7.3 i podłodze odnowienia efekty kręgu trwają tyle co sztandar (`Skills.partyEffects`). Bez celu sztandar
+  staje pod nogami (klient na telefonie i serwer).
+- **S74** Sześć umiejętności Wojownika z `path` (`guardian`, `berserker`, `standard`) i `unlock` 26 / 60, nieosiągalne i
+  ukryte na wiki do S75 (reguła S57, drabina S56 już pomija umiejętności z `path`). `furyConsume` jak w S73: Rozdarcie
+  `furyDmg` (mnożnik ciosu), Rzeź `perFury` w `stats.physAtk` efektu `statBuff` (× zużyte stosy).
+- **S74** Mur Tarcz ma prowokację jako pierwszy efekt na liście (luau-lsp wnioskuje typ tablicy z pierwszego wpisu);
+  kolejność nakładania nie ma znaczenia. Okrzyk w regule `delivery` (data.spec) liczy się jak `circleSelf` (`melee`).

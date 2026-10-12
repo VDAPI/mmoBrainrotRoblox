@@ -8,6 +8,8 @@
 --       splash / stunBurst / pull / fizzle  — extras of adaptive skills and breakpoints
 --   v = dieFace (S70)  a face of Fortune's dice on an ally (aura in the face's colour); angelSave (S70) the Guardian
 --       Angel's save; Roll of the Dice throws two small golden dice from the hand at the motion's release
+--   v = furyConsume (S74)  a red aura on the Warrior who spent Fury; impact events with `al` play the entry's `allies`
+--       pieces on those allies (guard, shout); War Banner objects (Workspace.Vaelthorn_Banners) are drawn here
 -- Pieces come from client/Vfx/Library (pooled parts, Config.Vfx.maxActive at once); effects of other players far
 -- away and low graphics quality use the simple versions. Melee impacts freeze both animations for a moment
 -- (hitstop) and big skills shake the camera of players nearby (setting "Camera shake").
@@ -21,6 +23,7 @@ local Config = require(ReplicatedStorage.Shared.Config)
 local Library = require(script.Parent.Parent.Vfx.Library)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Pool = require(script.Parent.Parent.Vfx.Pool)
+local WeaponLooks = require(ReplicatedStorage.Shared.Data.WeaponLooks)
 local SkillData = require(ReplicatedStorage.Shared.Data.Skills)
 local SkillMotions = require(ReplicatedStorage.Shared.Data.SkillMotions)
 local SkillVfx = require(ReplicatedStorage.Shared.Data.SkillVfx)
@@ -406,6 +409,10 @@ local function piece(
 		if at then
 			Library.lingering(at, 4, "poison", color, 1.2, simple)
 		end
+	elseif name == "tether" then
+		if caster and target and caster ~= target then
+			Library.tether(caster, target, color, seconds)
+		end
 	end
 end
 
@@ -461,6 +468,19 @@ local function onImpact(data: { [string]: any }, skill: SkillData.SkillDef, cast
 	for _, name in entry.impact do
 		if wave == 1 or name == "shockwave" or name == "whirl" or name == "cracks" or name == "pillar" then
 			piece(name, skill, entry, data, color, caster, target, simple)
+		end
+	end
+	-- S74: pieces on the allies the skill covered (guard, shout)
+	local allies = entry.allies
+	if allies and wave == 1 and type(data.al) == "table" then
+		local allyColor = if entry.allyColor then Color3.fromHex(entry.allyColor) else color
+		for _, id in data.al do
+			local model = findModel(id)
+			if model then
+				for _, name in allies do
+					piece(name, skill, entry, data, allyColor, caster, model, simple)
+				end
+			end
 		end
 	end
 	-- Area outline where the blow lands.
@@ -524,6 +544,13 @@ local function onExtra(data: { [string]: any }, skill: SkillData.SkillDef, caste
 			local faceColor = FACE_COLORS[tostring(data.k)] or color
 			Library.aura(model, faceColor, math.min(tonumber(data.d) or 10, 20), simpleAt(centre(model), model))
 			Library.sparkle(model, faceColor, simpleAt(centre(model), model))
+		end
+	elseif v == "furyConsume" then
+		-- S74 (ROZWOJ 10.4): the Fury spent by Rend / Carnage
+		local model = findModel(data.t) or caster
+		if model then
+			Library.aura(model, color, 0.6, simpleAt(centre(model), model))
+			Library.burst(centre(model), 4, color)
 		end
 	elseif not at then
 		return
@@ -616,8 +643,50 @@ function VfxController.Preview(model: Model, skillId: string)
 		elseif skill.type == "buff" or skill.type == "shield" or skill.type == "hot" or skill.type == "channel" then
 			data.t = id
 			data.d = 2
+		elseif skill.type == "guard" then
+			data.t = id
+			data.from = if root then root.Position else nil
+			data.p = front
+			data.d = 2
+		elseif skill.type == "shout" then
+			data.p = if root then root.Position else nil
+			data.r = def.hitRadius or def.radius
+			data.d = 2
+		elseif skill.type == "banner" then
+			data.p = front -- no object: the preview never plants one
+			data.r = def.radius
 		end
 		onImpact(data, skill, model)
+	end)
+end
+
+-- S74 War Banner objects: draw each banner model (also ones planted before we came or streamed in later) until it
+-- leaves the folder.
+local function watchBanner(model: Instance)
+	if not model:IsA("Model") then
+		return
+	end
+	task.spawn(function()
+		local anchor = model:WaitForChild("Anchor", 5)
+		if not anchor or not anchor:IsA("BasePart") or not model.Parent then
+			return
+		end
+		local skillId = model:GetAttribute("SkillId")
+		local skill = SkillData.get(if type(skillId) == "string" then skillId else "")
+		local radius = tonumber(model:GetAttribute("Radius")) or 15
+		local color = if skill then colorOf(skill, SkillVfx[skill.id], nil) else Color3.new(1, 1, 1)
+		local stop = Library.banner(anchor, WeaponLooks.BANNER, radius, color, simpleAt(anchor.Position, nil))
+		local connection: RBXScriptConnection
+		connection = model.AncestryChanged:Connect(function()
+			if not model:IsDescendantOf(Workspace) then
+				connection:Disconnect()
+				stop()
+			end
+		end)
+		if not model.Parent then
+			connection:Disconnect()
+			stop()
+		end
 	end)
 end
 
@@ -635,6 +704,13 @@ function VfxController.Start()
 	Net.On("AdminClient", function(action: any, arg: any)
 		if action == "skillpreview" and type(arg) == "string" and player.Character then
 			VfxController.Preview(player.Character, arg)
+		end
+	end)
+	task.spawn(function()
+		local folder = Workspace:WaitForChild("Vaelthorn_Banners")
+		folder.ChildAdded:Connect(watchBanner)
+		for _, child in folder:GetChildren() do
+			watchBanner(child)
 		end
 	end)
 	Net.On("SkillFx", function(data: any)

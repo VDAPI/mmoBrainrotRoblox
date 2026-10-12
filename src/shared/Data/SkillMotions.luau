@@ -151,6 +151,46 @@ local BOW_LOOSE: Pose = {
 	waist = { 0, -28, 0 },
 }
 
+-- Warrior poses shared by several motions (S74).
+-- Battle Cry: the weapon thrust up, the roar.
+local ROAR: Pose = merge(STAND, {
+	rShoulder = { 175, 0, 10 },
+	rElbow = { 10, 0, 0 },
+	lShoulder = { 60, 0, -40 },
+	lElbow = { 90, 0, 0 },
+	waist = { 18, 0, 0 },
+	root = { 6, 0, 0, 0.2 },
+})
+-- Charge: bent forward, running.
+local CHARGE_RUN: Pose = {
+	root = { -22, 0, 0, -0.3 },
+	waist = { -12, 0, 0 },
+	rShoulder = { -35, 0, 10 },
+	rElbow = { 40, 0, 0 },
+	lShoulder = { 40, 0, -10 },
+	lElbow = { 70, 0, 0 },
+	rHip = { 45, 0, 0 },
+	lHip = { -25, 0, 0 },
+	rKnee = { 60 },
+	lKnee = { 20 },
+}
+-- Bloodlust: the hunch before the roar.
+local HUNCH: Pose = merge(crouch(0.4), {
+	waist = { -22, 0, 0 },
+	rShoulder = { 40, 0, 10 },
+	rElbow = { 115, 0, 0 },
+	lShoulder = { 40, 0, -10 },
+	lElbow = { 115, 0, 0 },
+})
+-- Last Bastion guard: low stance, shield arm forward, weapon held back (shared by Intercept and Shield Wall).
+local GUARD: Pose = merge(crouch(0.45), {
+	lShoulder = { 88, 10, -22 },
+	lElbow = { 72, 0, 0 },
+	rShoulder = { 22, 0, 30 },
+	rElbow = { 65, 0, 0 },
+	waist = { -10, 10, 0 },
+})
+
 local function k(t: number, pose: Pose, ease: Ease?): Key
 	return { t = t, pose = pose, ease = ease }
 end
@@ -194,18 +234,7 @@ motions.mightyStrike = {
 -- Battle Cry: weapon raised, the body arched back, a roar.
 motions.battleCry = {
 	keys = {
-		k(
-			0.25,
-			merge(STAND, {
-				rShoulder = { 175, 0, 10 },
-				rElbow = { 10, 0, 0 },
-				lShoulder = { 60, 0, -40 },
-				lElbow = { 90, 0, 0 },
-				waist = { 18, 0, 0 },
-				root = { 6, 0, 0, 0.2 },
-			}),
-			"out"
-		),
+		k(0.25, ROAR, "out"),
 		k(
 			0.75,
 			merge(STAND, {
@@ -226,18 +255,7 @@ motions.battleCry = {
 -- Charge: bent forward running at the target (the server moves the body), a shoulder bash at the end.
 motions.charge = {
 	keys = {
-		k(0.12, {
-			root = { -22, 0, 0, -0.3 },
-			waist = { -12, 0, 0 },
-			rShoulder = { -35, 0, 10 },
-			rElbow = { 40, 0, 0 },
-			lShoulder = { 40, 0, -10 },
-			lElbow = { 70, 0, 0 },
-			rHip = { 45, 0, 0 },
-			lHip = { -25, 0, 0 },
-			rKnee = { 60 },
-			lKnee = { 20 },
-		}, "out"),
+		k(0.12, CHARGE_RUN, "out"),
 		k(0.24, {
 			root = { -18, -28, 0, -0.2 },
 			waist = { -6, -25, 0 },
@@ -372,17 +390,7 @@ motions.earthquake = {
 -- Bloodlust: hunched, fists clenched, then a roar with the arms out.
 motions.bloodlust = {
 	keys = {
-		k(
-			0.16,
-			merge(crouch(0.4), {
-				waist = { -22, 0, 0 },
-				rShoulder = { 40, 0, 10 },
-				rElbow = { 115, 0, 0 },
-				lShoulder = { 40, 0, -10 },
-				lElbow = { 115, 0, 0 },
-			}),
-			"out"
-		),
+		k(0.16, HUNCH, "out"),
 		k(
 			0.42,
 			merge(STAND, {
@@ -428,19 +436,98 @@ motions.lastBastion = {
 			}),
 			"out"
 		),
-		k(
-			0.8,
-			merge(crouch(0.45), {
-				lShoulder = { 88, 10, -22 },
-				lElbow = { 72, 0, 0 },
-				rShoulder = { 22, 0, 30 },
-				rElbow = { 65, 0, 0 },
-				waist = { -10, 10, 0 },
-			})
-		),
+		k(0.8, GUARD),
 	},
 	recover = 0.3,
 	hit = 0.18,
+}
+
+-- S74 (ROZWOJ 14.2): the six path skills, from the poses above.
+-- Intercept: the Charge sprint to the ally (the server moves the body at the hit), ending in the guard.
+motions.intercept = {
+	keys = { k(0.12, CHARGE_RUN, "out"), k(0.26, GUARD, "in"), k(0.7, GUARD) },
+	recover = 0.3,
+	hit = 0.15,
+}
+
+-- Shield Wall: the guard, the shield raised, then its edge driven into the ground in a crouch.
+local WALL_DOWN: Pose = merge(crouch(0.6), {
+	lShoulder = { 35, 10, -14 },
+	lElbow = { 10, 0, 0 },
+	rShoulder = { 25, 0, 30 },
+	rElbow = { 65, 0, 0 },
+	waist = { -26, 10, 0 },
+	root = { -10, 0, 0, -0.6 },
+})
+motions.shieldWall = {
+	keys = {
+		k(0.18, GUARD, "out"),
+		k(
+			0.34,
+			merge(crouch(0.6), {
+				lShoulder = { 125, 10, -18 },
+				lElbow = { 35, 0, 0 },
+				rShoulder = { 30, 0, 30 },
+				rElbow = { 65, 0, 0 },
+				waist = { 8, 10, 0 },
+			}),
+			"out"
+		),
+		k(0.46, WALL_DOWN, "in"),
+		k(0.9, WALL_DOWN),
+	},
+	recover = 0.35,
+	hit = 0.46,
+	lock = true,
+}
+
+-- Rend: a two-handed swing over the head, a lunge and a diagonal cut down.
+motions.rend = {
+	keys = {
+		k(0.2, merge(STAND, OVERHEAD, { waist = { 14, -10, 0 } }), "out"),
+		k(0.32, merge(lunge(1), SLAMMED, { waist = { -24, 20, 0 }, root = { -10, 0, 0, -0.5 } }), "in"),
+		k(0.46, merge(lunge(1), SLAMMED, { waist = { -20, 16, 0 } })),
+	},
+	recover = 0.3,
+	hit = 0.32,
+	trail = { from = 0.18, to = 0.36 },
+}
+
+-- Carnage: the Bloodlust hunch, then a roar with the weapon raised over the head.
+motions.carnage = {
+	keys = {
+		k(0.16, HUNCH, "out"),
+		k(0.42, merge(STAND, OVERHEAD, { waist = { 24, 0, 0 }, root = { 8, 0, 0, 0.2 } }), "out"),
+		k(0.75, merge(STAND, OVERHEAD, { waist = { 20, 0, 0 } })),
+	},
+	recover = 0.3,
+	hit = 0.4,
+	lock = true,
+}
+
+-- War Banner: the haft raised, a kneel and the banner planted (Earthquake without the jump).
+motions.warBanner = {
+	keys = {
+		k(0.18, merge(STAND, OVERHEAD, { waist = { 10, 0, 0 } }), "out"),
+		k(0.4, merge(crouch(0.5), SLAMMED, { waist = { -24, 0, 0 }, root = { -8, 0, 0, -0.45 } }), "in"),
+		k(0.7, merge(crouch(0.5), SLAMMED, { waist = { -18, 0, 0 } })),
+	},
+	recover = 0.35,
+	hit = 0.4,
+	lock = true,
+}
+
+-- Order to Advance: the Battle Cry roar, then a two-handed blow into the ground.
+motions.advanceOrder = {
+	keys = {
+		k(0.22, ROAR, "out"),
+		k(0.4, merge(STAND, OVERHEAD, { waist = { 14, 0, 0 }, root = { 4, 0, 0, 0.1 } }), "inOut"),
+		k(0.54, merge(crouch(0.8), SLAMMED, { waist = { -26, 0, 0 }, root = { -10, 0, 0, -0.7 } }), "in"),
+		k(0.8, merge(crouch(0.7), SLAMMED, { waist = { -20, 0, 0 } })),
+	},
+	recover = 0.35,
+	hit = 0.54,
+	lock = true,
 }
 
 -- Titan's Wrath: three leaping blows, each landing with a wave (the server's waves 0.45 s apart).

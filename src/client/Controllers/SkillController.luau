@@ -123,6 +123,9 @@ local function aimPoint(skill: SkillData.SkillDef): Vector3?
 		local direction = if move.Magnitude > 0.1 then move.Unit else root.CFrame.LookVector
 		return root.Position + direction * (skill.length or 15)
 	end
+	if skill.type == "banner" then
+		return root.Position -- S74 (ROZWOJ 10.5): no target, the banner stands at the feet
+	end
 	return root.Position + root.CFrame.LookVector * forward
 end
 

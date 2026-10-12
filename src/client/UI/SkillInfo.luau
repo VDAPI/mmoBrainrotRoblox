@@ -86,6 +86,19 @@ function SkillInfo.shapeLine(use: any, skill: SkillData.SkillDef, shownRank: num
 	local rank = math.max(1, shownRank)
 	local def, behaviour = effective(use, skill, rank)
 	local shape = Skills.shape(skill)
+	-- S74: guard, shout and banner have their own line (the target, two radii, the banner's time)
+	if skill.type == "guard" then
+		return `◎ {Text.get(use, "skills.shape.guard", { range = def.range or 25 })}`
+	elseif skill.type == "shout" then
+		local radius = def.radius or 15
+		return `◉ {Text.get(use, "skills.shape.shout", { radius = radius, hitRadius = def.hitRadius or radius })}`
+	elseif skill.type == "banner" then
+		return `◯ {Text.get(use, "skills.shape.banner", {
+			range = def.range or 12,
+			radius = def.radius or 15,
+			duration = Skills.roundArg(Skills.scaled(def, def.duration, rank)),
+		})}`
+	end
 	if shape == "none" and Skills.hasAllyPass(def, behaviour) then
 		return `{SHAPE_GLYPH.self} {Text.get(use, "skills.shape.allies", { radius = Skills.allyRadius(def) })}`
 	end

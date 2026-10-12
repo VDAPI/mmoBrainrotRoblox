@@ -3855,3 +3855,35 @@ Logic/EffectStack}`, `src/server/{Skills/{Context,Types/Support,Types/Offense},S
 StatusEffectService}}`, `src/client/UI/{SkillInfo,Screens/Hud/SkillBar}`, `tests/{skills,effectstack,skillmotion}.spec`,
 `tests/{BreakpointKeys,PartyBuffRules}`, `wiki/src/data/{skills,meta}.json`, `docs/{PRZEDMIOTY,ROZWOJ,DECYZJE,SESJE,
 PROGRESS}.md`, `CLAUDE.md`.
+
+### S74: Wojownik 3: typy osłony, okrzyku i sztandaru i sześć nowych umiejętności
+
+- Typy `guard`, `shout`, `banner` (`Types`, `Build.DEFAULT_TARGET`: `ally` / `none` / `point`), `Skills.shape`
+  (`target` / `self` / `circle`), nowe `Skills.offensive` (lista z `SkillService.cast` + okrzyk z `values.dmg`); `cast`
+  blokuje osłonę przy unieruchomieniu; sztandar bez celu pod nogami (`cast` i `SkillController.aimPoint`).
+  `Skills.partyEffects`: efekty kręgu sztandaru liczone czasem sztandaru (A6 w jednym miejscu, `PartyBuffRules` i
+  podłoga odnowienia go dziedziczą). Drabina przejściowa (E5) bez zmian: `Skills.unlocked` już pomija `path`.
+- Osłona: czysty `Logic/GuardTarget.pick`, `Movement.guard` (doskok przez `clearPath`, `cover` = efekty `allies` ×udział,
+  `allyEffects`, `allyShield`; 10A `secondTarget`, 5B `stunNear`, 10B `tauntNear`; wariant na siebie), stała
+  `SkillData.GUARD_SECOND_RADIUS`.
+- Okrzyk: `Support.shout` (`pull`, `cleanse`, efekty sojuszników bez przechwytu na rzucającym, efekty własne, wrogowie w
+  `hitRadius` z obrażeniami albo bez, `al` w zdarzeniu).
+- Sztandar: `server/Skills/Banner` (folder, model z kotwicą i atrybutami, `ModelStreamingMode.Atomic`),
+  `PartyAuraService.AddZone` / `RemoveZone` / `RemoveZonesOf` (impuls w pętli aur, koniec przy czasie, śmierci
+  `ResourceService.Died`, wyjściu, nowym sztandarze), `Movement.banner` (kopie efektów na `AURA.duration`).
+- Dane: Przechwycenie, Mur Tarcz, Rozdarcie, Rzeź, Sztandar Wojenny, Rozkaz Natarcia (liczby z ROZWOJ 10.3–10.5).
+  `furyConsume` w kształcie S73 (`furyDmg` ciosu, `perFury` w `stats.physAtk`).
+- Ruchy w `SkillMotions` (pozy `ROAR`, `CHARGE_RUN`, `HUNCH`, `GUARD` wspólne z Okrzykiem, Szarżą, Żądzą Krwi i Ostatnim
+  Bastionem), wpisy `SkillVfx` z polami `allies`, `allyColor`, `object`; klient: elementy na sojusznikach z `al`,
+  `tether` (wszedł), gałąź `furyConsume`, podgląd `/skillpreview` dla trzech typów, `Library.banner` (drzewce, płachta z
+  falowaniem, krąg z pulsującą obwódką) z `WeaponLooks.BANNER`, nasłuch `Vaelthorn_Banners` w `VfxController`.
+  Nic nie wycięto.
+- Teksty: 36 kluczy umiejętności i 3 klucze kształtu (`skills.shape.guard/.shout/.banner` w `SkillInfo.shapeLine`), PL i EN.
+- Testy: „Warrior S74” w `skills.spec` (`GuardTarget`, `offensive`, wpisy typów, reguła 7.3 z podstawionymi błędami,
+  nieosiągalność do S75), typy w „well formed”, `shout` → `melee` w `data.spec`, „Warrior S74 motions and looks” i pola
+  wyglądu w `skillmotion.spec`. Dane wiki: zero zmian (`dataHash` ten sam).
+
+Pliki: `src/shared/{Data/Skills/{Types,Build,init,Warrior},Data/{SkillMotions,SkillVfx,WeaponLooks},
+Data/Localization/{pl,en},Logic/{Skills,GuardTarget}}`, `src/server/{Skills/{Banner,Types/Movement,Types/Support},
+Services/{SkillService,PartyAuraService}}`, `src/client/{Controllers/{SkillController,VfxController},Vfx/Library,
+UI/SkillInfo}`, `tests/{skills,skillmotion,data}.spec`, `docs/{DECYZJE,SESJE,PROGRESS}.md`.

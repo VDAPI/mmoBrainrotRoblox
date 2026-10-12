@@ -5,7 +5,9 @@
 -- server event (radius, angle, length, width), so breakpoints that grow an area grow the effect too.
 --   color: "class" | "element" (weapon element for adaptive skills, else the skill's) | "holy" | "heal" | "#hex"
 --   impact pieces: slash, whirl, shockwave, cracks, burst, pillar, sparkle, aura, shield, beam, dash, dust, rune,
---     arrowRain, fan, lineBeam, skyBolt, meteor, smoke, cloud
+--     arrowRain, fan, lineBeam, skyBolt, meteor, smoke, cloud, tether (S74: a line from the caster to the target)
+--   allies (S74): pieces played on every ally of the event's `al` list, in allyColor (default: color)
+--   object (S74): "banner" = the skill leaves a server object the client draws (Vfx/Library.banner)
 --   shake: camera shake strength (0..1) for players near the impact (setting "Camera shake"), hitstop: melee freeze
 --   sound: rbxassetid or "" (none yet: PROGRESS "Niedokończone" lists what to attach)
 
@@ -22,6 +24,9 @@ export type Entry = {
 	shake: number?,
 	hitstop: number?,
 	size: number?,
+	allies: { string }?,
+	allyColor: string?,
+	object: "banner"?,
 }
 
 local function e(def: Entry): Entry
@@ -82,6 +87,36 @@ local SkillVfx: { [string]: Entry } = {
 		telegraph = "circle",
 		shake = 0.7,
 		hitstop = 0.06,
+	}),
+	-- S74 path skills (ROZWOJ 10.3-10.5)
+	intercept = e({ color = "#E8C25A", sound = "", impact = { "dash", "shield", "tether" }, allies = { "shield" } }),
+	shieldWall = e({
+		color = "#E8C25A",
+		sound = "",
+		impact = { "shield", "shockwave", "rune" },
+		allies = { "shield" },
+		telegraph = "circle",
+		shake = 0.35,
+	}),
+	rend = e({
+		color = "#C21F2A",
+		sound = "",
+		trail = true,
+		impact = { "slash", "burst" },
+		slash = { from = 70, to = -70, tilt = 80, radius = 7 },
+		shake = 0.3,
+		hitstop = 0.08,
+	}),
+	carnage = e({ color = "#8E1B1B", sound = "", impact = { "aura", "burst", "smoke" } }),
+	warBanner = e({ color = "class", sound = "", impact = { "shockwave", "dust" }, object = "banner", shake = 0.25 }),
+	advanceOrder = e({
+		color = "class",
+		sound = "",
+		impact = { "shockwave", "burst" },
+		allies = { "aura" },
+		allyColor = "#E8C25A",
+		telegraph = "circle",
+		shake = 0.4,
 	}),
 	-- Hunter
 	aimedShot = e({

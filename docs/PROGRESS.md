@@ -5,7 +5,7 @@
 
 ## Stan
 
-S01–S51 i S53–S73 gotowe (lista i zakres w `docs/SESJE.md`). Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
+S01–S51 i S53–S74 gotowe (lista i zakres w `docs/SESJE.md`). Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
 kategorie efektów drużyny i stos efektów (`Logic/EffectStack`), S54 wzory globalne (`Logic/LevelCurves`), S55 rangi
 i przełomy w kształcie A/B (`Build.bp2`, `Skills.effective` §2.7), S56 koniec punktów umiejętności: rangi z poziomu
 postaci (`Skills.rankFor`, drabina przejściowa ROZWOJ 2.6), zapis w schemacie 6 (darmowy reset statystyk, pasek
@@ -44,9 +44,10 @@ Uzdrowiciel, Kapłan Fortuny i Inkwizytor (`Data/Paths/Cleric`, ukryte na wiki),
 wzorcowe w kształcie `ReferenceBuild` S71, S72 Wojownik: silnik Furii, Rzezi i haków walki gotowy; haki czytają 0 do
 węzłów z S75 (`Logic/Fury`, `Data/Paths.HOOK_RULES`, `/hook`). S73 Wojownik: opcje B 11 aktywnych (Trzęsienie Ziemi 5A /
 10A i Okrzyk Bojowy 10A przycięte do R4), rodzaje przełomów `tauntNear`, `shieldPerHit`, `extendOnKill`, `behindEffect`,
-`allyHeal`, `allyShield`, `hot` z `hpPct`, pola `furyConsume`, `hitRadius`, `allyRadius` (dane: S74–S75). Kapłan na ścieżkach (ukryte na wiki); Wojownik, Łowca i Mag na drabinie
-przejściowej.
-Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`, `docs/STATY.md`), następna S74; testy
+`allyHeal`, `allyShield`, `hot` z `hpPct`, pola `furyConsume`, `hitRadius`, `allyRadius`. S74 Wojownik: silnik ścieżek
+gotowy (Furia, haki, opcje B, typy osłony, okrzyku i sztandaru, 6 nowych umiejętności nieosiągalnych do S75). Kapłan na
+ścieżkach (ukryte na wiki); Wojownik, Łowca i Mag na drabinie przejściowej.
+Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`, `docs/STATY.md`), następna S75; testy
 i strojenie po niej.
 
 ## Niedokończone (kod)

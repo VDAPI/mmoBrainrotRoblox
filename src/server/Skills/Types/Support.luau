@@ -15,10 +15,13 @@
 -- "allies", allyHeal, allyShield) to allies within Skills.allyRadius, the caster included (allyPass), and behindEffect
 -- to allies behind the caster at the cast (Paths.inAura "behind", PartyAuraService.BehindAnchor); shields go through
 -- ctx.shield.
+-- S74 (ROZWOJ 10.3, 10.5, 14.2): shout works around the caster: allies within radius (the caster too; never an
+-- intercept on the caster), enemies within hitRadius (damage only with values.dmg), cleanse and pull breakpoints.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Context = require(script.Parent.Parent.Context)
+local Push = require(script.Parent.Parent.Push)
 local PathData = require(ReplicatedStorage.Shared.Data.Paths)
 local Paths = require(ReplicatedStorage.Shared.Logic.Paths)
 local SkillData = require(ReplicatedStorage.Shared.Data.Skills)
@@ -428,6 +431,75 @@ Support.groupHeal = function(ctx)
 	if zone then
 		ctx.healZone(ctx.root.Position, radius, zone.duration, zone.pct)
 	end
+	return true, nil
+end
+
+-- S74 shout (Shield Wall, Order to Advance): pull (5B), allies' cleanse and effects, the caster's own effects, then
+-- the enemies within hitRadius: damage with values.dmg, the enemy effects on a hit (without damage: on everyone, the
+-- taunt of Shield Wall works on bosses too). selfEffect and selfHeal come from SkillService after the handler.
+Support.shout = function(ctx)
+	local center = ctx.root.Position
+	local radius = ctx.skill.radius or 15
+	local hitRadius = ctx.skill.hitRadius or radius
+	local Entity = ctx.services.Entity
+	local pull = ctx.bp.pull
+	if pull then
+		for _, entity in ctx.enemiesInCircle(center, pull) do
+			Push.pull(entity, center)
+		end
+		ctx.fx({ v = "pull", p = center, r = pull })
+	end
+	local allyEffects: { SkillData.SkillEffect } = ctx.skill.allyEffects or NO_EFFECTS
+	local effects: { SkillData.SkillEffect } = ctx.skill.effects or NO_EFFECTS
+	local shown = 0
+	local ids: { string } = {}
+	for _, ally in ctx.alliesInCircle(center, radius) do
+		local entity = Entity.GetPlayerEntity(ally)
+		if not entity then
+			continue
+		end
+		local isCaster = ally == ctx.player
+		if ctx.bp.cleanse then
+			ctx.services.StatusEffect.Cleanse(entity)
+		end
+		for _, effect in effects do
+			-- intercepting oneself means nothing (S61's filter skips it too) and the icon would mislead
+			if Skills.effectSide(ctx.skill, effect) == "allies" and not (isCaster and effect.kind == "intercept") then
+				ctx.applyEffect(entity, effect)
+				shown = math.max(shown, ctx.scaled(effect.duration))
+			end
+		end
+		for _, effect in allyEffects do
+			ctx.applyEffect(entity, effect)
+			shown = math.max(shown, ctx.scaled(effect.duration))
+		end
+		if not isCaster then
+			table.insert(ids, entity.id)
+		end
+	end
+	ctx.applyEffects(ctx.caster, "self")
+	for _, effect in effects do
+		if Skills.effectSide(ctx.skill, effect) == "self" then
+			shown = math.max(shown, ctx.scaled(effect.duration))
+		end
+	end
+	local hasDamage = ctx.skill.values.dmg ~= nil
+	for _, entity in ctx.enemiesInCircle(center, hitRadius) do
+		if hasDamage then
+			local result = ctx.damage(entity, ctx.value("dmg"), { from = center })
+			if result and not result.dodged then
+				ctx.applyEffects(entity, "enemy")
+			end
+		else
+			ctx.applyEffects(entity, "enemy")
+		end
+	end
+	ctx.fx({
+		p = center,
+		r = hitRadius,
+		d = if shown > 0 then shown else ctx.scaled(ctx.skill.duration),
+		al = if #ids > 0 then ids else nil,
+	})
 	return true, nil
 end
 

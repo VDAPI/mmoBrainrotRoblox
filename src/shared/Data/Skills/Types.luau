@@ -30,6 +30,9 @@ export type SkillType =
 	| "groupBuff" -- effect on allies around
 	| "groupHeal" -- heal allies around
 	| "healZone" -- S70 (ROZWOJ 9.3): a healing field at a point (Sanctuary), on the S69 ctx.healZone loop
+	| "guard" -- leap to an ally and intercept the monster blows aimed at them; no ally: a self variant (ROZWOJ 10.3)
+	| "shout" -- around the caster: effects on allies within `radius`, on enemies within `hitRadius`, optional damage
+	| "banner" -- an object planted on the ground; every second its circle gives the skill's effects (ROZWOJ 10.5)
 	| "passive" -- permanent stat bonus / proc
 
 export type TargetMode = "enemy" | "ally" | "self" | "point" | "deadAlly" | "none"
@@ -128,6 +131,11 @@ export type SkillEffect = {
 --                                           protected ally)
 -- Skill fields: furyConsume (target, buff), hitRadius (shout, S74), allyRadius (buff); `add.hitRadius` works like
 -- `add.radius`, `add.allyRadius` adds to the default reach (30). Numbers typed ValueRef may name a `values` field.
+-- S74 types: guard reads stunNear and tauntNear (around the protected ally), secondTarget (a second wounded ally within
+-- 15 studs of the landing point), allyShield and allyEffect (on the protected allies); shout reads cleanse (allies),
+-- pull (enemies, before the strike), allyEffect and selfHeal; banner reads allyEffect and effect (enemies in the
+-- circle). Effects of a banner's circle last one pulse (Data/Paths AURA.duration) whatever their data says; the
+-- banner refreshes them every AURA.tick while it stands.
 --   effect / selfEffect / allyEffect = SkillEffect   an extra effect on hit enemies / the caster / allies; these
 --                            carry their own category (S53) like the skill's effects. Logic/Skills.effective
 --                            collects them from every source into def.effects / def.selfEffects / def.allyEffects

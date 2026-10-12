@@ -27,6 +27,9 @@ local VALID_TYPES = {
 	groupBuff = true,
 	groupHeal = true,
 	healZone = true, -- S70
+	guard = true, -- S74
+	shout = true,
+	banner = true,
 	passive = true,
 }
 
@@ -64,6 +67,15 @@ T.describe("Data: Skills", function()
 				check((skill.radius or 0) > 0, "needs radius")
 			elseif skill.type == "healZone" then
 				check((skill.radius or 0) > 0 and (skill.range or 0) > 0, "healZone needs radius and range")
+			elseif skill.type == "guard" then
+				check((skill.range or 0) > 0, "guard needs range")
+			elseif skill.type == "shout" then
+				check((skill.radius or 0) > 0, "shout needs radius")
+			elseif skill.type == "banner" then
+				check(
+					(skill.radius or 0) > 0 and (skill.range or 0) > 0 and skill.duration ~= nil,
+					"banner needs radius, range and duration"
+				)
 			elseif skill.type == "line" or skill.type == "blink" then
 				check((skill.length or 0) > 0, "needs length")
 			elseif
@@ -1510,6 +1522,130 @@ T.describe("S73 Warrior B options and breakpoint kinds", function()
 		T.expect(#short > 0).toBe(true)
 		local shield: any = { allyShield = { hpPct = 10, duration = 4 } }
 		T.expect(PartyBuffRules.check(buff({ cooldown = 20, breakpoints = { [10] = { a = shield } } }))).toEqual({})
+	end)
+end)
+
+T.describe("Warrior S74", function()
+	local GuardTarget = require("../src/shared/Logic/GuardTarget")
+	local GamePaths = require("../src/shared/Logic/Paths")
+	local PartyBuffRules = require("./PartyBuffRules")
+
+	local NEW: { [string]: string } = {
+		intercept = "guardian",
+		shieldWall = "guardian",
+		rend = "berserker",
+		carnage = "berserker",
+		warBanner = "standard",
+		advanceOrder = "standard",
+	}
+	local function skill(id: string): SkillData.SkillDef
+		return SkillData.get(id) :: SkillData.SkillDef
+	end
+	local function c(key: string, hp: number, distance: number): GuardTarget.Candidate
+		return { key = key, hpFraction = hp, distance = distance }
+	end
+
+	T.it("GuardTarget.pick: selected, red zone, wounded, self", function()
+		local zone = { c("z1", 0.8, 10), c("z2", 0.5, 12) }
+		T.expect({ GuardTarget.pick(c("sel", 1, 20), zone, c("w", 0.3, 5), 25) }).toEqual({ "sel", "selected" })
+		-- selected out of range falls to the zone
+		T.expect({ GuardTarget.pick(c("sel", 1, 26), zone, c("w", 0.3, 5), 25) }).toEqual({ "z2", "zone" })
+		-- tie on health: the nearer one
+		T.expect({ GuardTarget.pick(nil, { c("a", 0.5, 10), c("b", 0.5, 5) }, nil, 25) }).toEqual({ "b", "zone" })
+		-- a zone candidate out of range is skipped
+		T.expect({ GuardTarget.pick(nil, { c("far", 0.1, 30) }, c("w", 0.9, 8), 25) }).toEqual({ "w", "wounded" })
+		-- full health is not wounded; nobody = self
+		T.expect({ GuardTarget.pick(nil, {}, c("full", 1, 3), 25) }).toEqual({ nil, "self" })
+		T.expect({ GuardTarget.pick(nil, {}, nil, 25) }).toEqual({ nil, "self" })
+	end)
+
+	T.it("Skills.offensive", function()
+		for _, id in { "advanceOrder", "rend", "mightyStrike", "cleave", "bladeWhirl" } do
+			T.expect({ id, Skills.offensive(skill(id)) }).toEqual({ id, true })
+		end
+		for _, id in { "shieldWall", "intercept", "warBanner", "carnage" } do
+			T.expect({ id, Skills.offensive(skill(id)) }).toEqual({ id, false })
+		end
+	end)
+
+	T.it("type entries, paths, unlocks and A/B on ranks 5 and 10", function()
+		T.expect({
+			skill("intercept").target,
+			skill("shieldWall").target,
+			skill("advanceOrder").target,
+			skill("warBanner").target,
+		}).toEqual({ "ally", "none", "none", "point" })
+		T.expect({
+			Skills.shape(skill("intercept")),
+			Skills.shape(skill("shieldWall")),
+			Skills.shape(skill("advanceOrder")),
+			Skills.shape(skill("warBanner")),
+		}).toEqual({ "target", "self", "self", "circle" })
+		for id, path in NEW do
+			local def = skill(id)
+			T.expect({ id, def.class, def.path, def.delivery, def.unlock == 26 or def.unlock == 60 })
+				.toEqual({ id, "Warrior", path, "melee", true })
+			local bps: any = def.breakpoints
+			for _, rank in { 5, 10 } do
+				T.expect({ id, rank, bps[rank].a ~= nil, bps[rank].b ~= nil }).toEqual({ id, rank, true, true })
+			end
+		end
+		T.expect({ skill("shieldWall").hitRadius, skill("advanceOrder").hitRadius }).toEqual({ 15, 10 })
+		T.expect(skill("rend").furyConsume).toBe("furyDmg")
+	end)
+
+	T.it("7.3 rules: the six pass, the exceptions hold and planted errors are caught", function()
+		for id in NEW do
+			T.expect({ id, PartyBuffRules.check(skill(id)) }).toEqual({ id, {} })
+		end
+		-- the banner's circle effects count with the banner's time (12 s, 15 s with 10A), not the 1.5 s pulse
+		local banner = Skills.effective(skill("warBanner"), 10, nil, nil, true)
+		T.expect(Skills.partyDuration(banner, 10)).toBe(15)
+		local function variant(id: string, change: { [string]: any }): SkillData.SkillDef
+			local def: any = table.clone(skill(id))
+			for key, value in change do
+				def[key] = value
+			end
+			return def
+		end
+		local shield: any = { [10] = { a = { allyShield = { hpPct = 15, duration = 4 } } } }
+		T.expect(PartyBuffRules.check(variant("intercept", { breakpoints = shield }))).toEqual({})
+		T.expect(#PartyBuffRules.check(variant("intercept", { breakpoints = shield, cooldown = 3 })) > 0).toBe(true)
+		T.expect(#PartyBuffRules.check(variant("warBanner", { duration = 8, breakpoints = nil })) > 0).toBe(true)
+		T.expect(#PartyBuffRules.check(variant("warBanner", { cooldown = 10, breakpoints = nil })) > 0).toBe(true)
+		local shortCrit = {
+			{
+				kind = "statBuff",
+				duration = 6,
+				stats = { critChance = "crit" },
+				target = "allies",
+				category = "allyCrit",
+			},
+		}
+		T.expect(#PartyBuffRules.check(variant("advanceOrder", { effects = shortCrit, breakpoints = nil })) > 0)
+			.toBe(true)
+	end)
+
+	-- S75 replaces this case: the guardian, berserker and standard paths get their PathDef there.
+	T.it("unreachable until S75 (no PathDef)", function()
+		local hotbar: { [string]: string } = {}
+		local i = 0
+		for id in NEW do
+			i += 1
+			hotbar[tostring(i)] = id
+		end
+		local char: any = {
+			class = "Warrior",
+			level = 100,
+			path = { nodes = {}, bp = {}, freeUsed = false },
+			hotbar = hotbar,
+			equipment = {},
+		}
+		local available = GamePaths.availableSkills(char)
+		for id in NEW do
+			T.expect({ id, table.find(available, id) == nil, GamePaths.skillRank(char, id) }).toEqual({ id, true, 0 })
+		end
+		T.expect(GamePaths.validHotbar(char)).toEqual({})
 	end)
 end)
 

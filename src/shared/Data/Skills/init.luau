@@ -43,6 +43,7 @@ return table.freeze({
 	RANKS = table.freeze({ step = 4, capLevel = 95 }),
 	GCD = 0.5, -- global cooldown (DESIGN §14.1)
 	WOUNDED_RADIUS = 30, -- S69: healWounded looks for the most wounded ally within this radius of the caster
+	GUARD_SECOND_RADIUS = 15, -- S74 (ROZWOJ 10.3): guard 10A covers the second most wounded ally this near the landing
 	-- S71 (ROZWOJ 9.3, 9.4): lowHpHealBonus works on a target below LOW_HP_HEAL % health; a critical heal or shield
 	-- (healCrit) is x HEAL_CRIT_MUL.
 	LOW_HP_HEAL = 35,

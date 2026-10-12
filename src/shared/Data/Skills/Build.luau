@@ -62,6 +62,9 @@ local DEFAULT_TARGET: { [string]: Types.TargetMode } = {
 	groupBuff = "self",
 	groupHeal = "self",
 	healZone = "point",
+	guard = "ally", -- S74 (ROZWOJ 14.2): no selection picks an ally itself (Logic/GuardTarget)
+	shout = "none",
+	banner = "point", -- no aim: at the caster's feet
 	passive = "none",
 }
 

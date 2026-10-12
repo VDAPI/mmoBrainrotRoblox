@@ -831,7 +831,8 @@ T.describe("Data: kind of blow (S64, STATY 6)", function()
 	local SkillData = require("../src/shared/Data/Skills")
 
 	local RANGED_TYPES = { projectile = true, chain = true, circleTarget = true, line = true, trap = true }
-	local MELEE_TYPES = { charge = true, circleSelf = true }
+	-- S74: a shout strikes around the caster like circleSelf; guard and banner deal no damage (any value)
+	local MELEE_TYPES = { charge = true, circleSelf = true, shout = true }
 	local REACH = Combat.meleeRange + Combat.rangeTolerance
 
 	-- The rule of STATY 6 for the types that deal damage; nil for the rest (any value, but one is required).

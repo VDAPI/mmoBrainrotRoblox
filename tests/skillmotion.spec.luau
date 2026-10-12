@@ -59,6 +59,7 @@ for _, name in
 		"meteor",
 		"smoke",
 		"cloud",
+		"tether", -- S74
 	}
 do
 	VFX_PIECES[name] = true
@@ -158,7 +159,53 @@ describe("Skill data (S28)", function()
 			expect(type(entry.sound)).toBe("string")
 			expect((entry.shake or 0) >= 0 and (entry.shake or 0) <= 1).toBe(true)
 			expect((entry.hitstop or 0) <= 0.08).toBe(true)
+			-- S74: pieces on allies, their colour and the server object
+			for _, name in entry.allies or {} do
+				if not VFX_PIECES[name] then
+					error(`{id}: unknown ally piece {name}`)
+				end
+			end
+			local ally = entry.allyColor
+			expect(ally == nil or (string.sub(ally, 1, 1) == "#" and #ally == 7)).toBe(true)
+			expect(entry.object == nil or (entry.object == "banner" and id == "warBanner")).toBe(true)
 		end
+		expect(SkillVfx.warBanner.object).toBe("banner")
+	end)
+end)
+
+describe("Warrior S74 motions and looks", function()
+	local WeaponLooks = require("../src/shared/Data/WeaponLooks")
+	local LOCKED = { shieldWall = true, carnage = true, warBanner = true, advanceOrder = true, intercept = false }
+
+	it("six path skills: motion, visual, lock, texts", function()
+		for _, id in { "intercept", "shieldWall", "rend", "carnage", "warBanner", "advanceOrder" } do
+			local motion = SkillMotions.get(id)
+			expect({ id, motion ~= nil, SkillVfx[id] ~= nil }).toEqual({ id, true, true })
+			local m: any = motion
+			expect({ id, m.hit <= SkillMotions.MAX_HIT }).toEqual({ id, true })
+			if LOCKED[id] ~= nil then
+				expect({ id, m.lock == true }).toEqual({ id, LOCKED[id] })
+			end
+			for _, suffix in { "bp5", "bp5b", "bp10", "bp10b" } do
+				local key = `skill.{id}.{suffix}`
+				expect({ key, (pl :: any)[key] ~= nil, (en :: any)[key] ~= nil }).toEqual({ key, true, true })
+			end
+		end
+	end)
+
+	it("the banner object: materials, colours, a 9-stud pole", function()
+		local pole = nil
+		for _, piece in WeaponLooks.BANNER do
+			expect({ piece.name, table.find(WeaponLooks.MATERIALS, piece.material) ~= nil }).toEqual({
+				piece.name,
+				true,
+			})
+			expect(string.sub(piece.color, 1, 1) == "#" and #piece.color == 7).toBe(true)
+			if piece.name == "Pole" then
+				pole = piece
+			end
+		end
+		expect(pole ~= nil and (pole :: any).size[2] == 9).toBe(true)
 	end)
 end)
 

@@ -5,6 +5,10 @@
 -- category with skillId = the node id, so different categories add up, one category keeps its strongest effect
 -- (Logic/EffectStack) and the same aura of two owners counts once. A circle aura covers its owner (solo too), a behind
 -- aura only the allies behind them.
+-- S74 (ROZWOJ 7.3, 10.5): ground zones (the War Banner) pulse on the same loop after the auras: AddZone with a pulse
+-- closure from the skill handler; a zone ends at endsAt, when its owner dies or leaves, or when the owner plants a new
+-- one with the same key. Zones need no combat and are not auras (no group rule): two banners give two entries and
+-- Logic/EffectStack keeps the strongest per category.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -52,6 +56,18 @@ local nodeAuras: { [Player]: { Paths.Aura } } = {}
 local extras: { [Player]: { [string]: Paths.Aura } } = {}
 -- (receiver, nodeId) -> owner who gave it in the last pass: a tie keeps that owner (no flicker).
 local lastOwner: { [Player]: { [string]: Player } } = {}
+
+export type Zone = {
+	key: string, -- one per owner and skill: "<skillId>:<UserId>"
+	owner: Player,
+	center: Vector3,
+	radius: number,
+	endsAt: number, -- os.clock()
+	pulse: () -> (), -- one pass over the circle (closure of the skill handler)
+	onEnd: (() -> ())?, -- removes the replicated model
+}
+
+local zones: { [string]: Zone } = {}
 
 local function flat(position: Vector3): Paths.Flat
 	return { x = position.X, z = position.Z }
@@ -254,6 +270,75 @@ local function passGroup(players: { Player })
 	end
 end
 
+local function endZone(zone: Zone)
+	if zones[zone.key] == zone then
+		zones[zone.key] = nil
+	end
+	local onEnd = zone.onEnd
+	if onEnd then
+		local ok, err = pcall(function()
+			onEnd()
+		end)
+		if not ok then
+			log:error("zone %s end failed: %s", zone.key, tostring(err))
+		end
+	end
+end
+
+local function pulseZone(zone: Zone)
+	local ok, err = pcall(function()
+		zone.pulse()
+	end)
+	if not ok then
+		log:error("zone %s pulse failed: %s", zone.key, tostring(err))
+	end
+end
+
+-- Adds a ground zone; one with the same key ends first (its onEnd runs). The zone pulses at once.
+function PartyAuraService.AddZone(zone: Zone)
+	local old = zones[zone.key]
+	if old then
+		endZone(old)
+	end
+	zones[zone.key] = zone
+	pulseZone(zone)
+end
+
+function PartyAuraService.RemoveZone(key: string)
+	local zone = zones[key]
+	if zone then
+		endZone(zone)
+	end
+end
+
+function PartyAuraService.RemoveZonesOf(owner: Player)
+	local list: { Zone } = {}
+	for _, zone in zones do
+		if zone.owner == owner then
+			table.insert(list, zone)
+		end
+	end
+	for _, zone in list do
+		endZone(zone)
+	end
+end
+
+local function passZones()
+	local t = os.clock()
+	local list: { Zone } = {}
+	for _, zone in zones do
+		table.insert(list, zone)
+	end
+	for _, zone in list do
+		local owner = zone.owner
+		if t >= zone.endsAt or owner.Parent == nil or ResourceService.IsDead(owner) then
+			endZone(zone)
+		else
+			pulseZone(zone)
+		end
+	end
+end
+
 local function pass()
 	local done: { [number]: boolean } = {}
 	for _, player in Players:GetPlayers() do
@@ -271,6 +356,7 @@ local function pass()
 			log:error("aura pass failed for %s: %s", player.Name, tostring(err))
 		end
 	end
+	passZones()
 end
 
 function PartyAuraService.Init(registry)
@@ -294,9 +380,14 @@ function PartyAuraService.Start()
 		nodeAuras[player] = nil
 		extras[player] = nil
 		lastOwner[player] = nil
+		PartyAuraService.RemoveZonesOf(player)
 	end
 	CharacterService.CharacterLeaving:Connect(leave)
 	Players.PlayerRemoving:Connect(leave)
+	-- S74 (ROZWOJ 10.5): the banner falls at once when its owner dies
+	ResourceService.Died:Connect(function(player: Player)
+		PartyAuraService.RemoveZonesOf(player)
+	end)
 
 	local accumulator = 0
 	RunService.Heartbeat:Connect(function(dt)

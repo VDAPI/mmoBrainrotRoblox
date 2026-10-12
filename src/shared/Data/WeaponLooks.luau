@@ -452,6 +452,21 @@ looks.holystaff = {
 
 WeaponLooks.list = looks
 
+-- War Banner (ROZWOJ 10.5, S74): the object standing on the ground; frame origin at the foot of the pole, +Y up.
+-- Not in `list` (no item uses it); clients draw it on the server's anchor (Vfx/Library.banner).
+WeaponLooks.BANNER = {
+	{ name = "Pole", size = { 0.3, 9, 0.3 }, pos = { 0, 4.5, 0 }, color = DARK_WOOD, material = "Wood" },
+	{ name = "Cloth", size = { 3, 4.5, 0.1 }, pos = { 1.65, 6.4, 0 }, color = "#C0503C", material = "Fabric" },
+	{
+		name = "Finial",
+		size = { 0.5, 0.5, 0.5 },
+		pos = { 0, 9.25, 0 },
+		color = GOLD,
+		material = "Metal",
+		shape = "Ball",
+	},
+} :: { Piece }
+
 function WeaponLooks.get(itemType: string): Look?
 	return looks[itemType]
 end

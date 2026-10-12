@@ -458,13 +458,15 @@ export type PartyEffect = { kind: string, category: string?, duration: number, r
 -- Party effects of a skill (ROZWOJ 7.3): effects on allies, allyEffects and a shield skill's shield on an ally.
 -- `def` is the skill after Skills.effective. The rule tests/PartyBuffRules checks and the cooldown floor use.
 -- S73: with `behaviour` also behindEffect (behind the caster) and allyShield (a shield on the allies).
+-- S74: a banner refreshes its circle effects while it stands, so they last the banner's duration (not one pulse).
 function Skills.partyEffects(def: SkillDef, rank: number, behaviour: Behaviour?): { PartyEffect }
 	local out: { PartyEffect } = {}
-	local function add(effect: SkillData.SkillEffect, radius: number?)
+	local banner = if def.type == "banner" then Skills.scaled(def, def.duration, rank) else nil
+	local function add(effect: SkillData.SkillEffect, radius: number?, pulsed: boolean?)
 		local entry: PartyEffect = {
 			kind = effect.kind :: string,
 			category = effect.category,
-			duration = Skills.scaled(def, effect.duration or def.duration, rank),
+			duration = if pulsed and banner then banner else Skills.scaled(def, effect.duration or def.duration, rank),
 			radius = radius,
 		}
 		table.insert(out, entry)
@@ -472,12 +474,12 @@ function Skills.partyEffects(def: SkillDef, rank: number, behaviour: Behaviour?)
 	local effects: { SkillData.SkillEffect } = def.effects or {}
 	for _, effect in effects do
 		if Skills.effectSide(def, effect) == "allies" then
-			add(effect)
+			add(effect, nil, true)
 		end
 	end
 	local allyEffects: { SkillData.SkillEffect } = def.allyEffects or {}
 	for _, effect in allyEffects do
-		add(effect)
+		add(effect, nil, true)
 	end
 	if def.type == "shield" then
 		table.insert(out, { kind = "shield", duration = Skills.scaled(def, def.duration, rank) })
@@ -696,12 +698,28 @@ function Skills.shape(skill: SkillDef): string
 		return "line"
 	elseif kind == "circleSelf" or kind == "groupHeal" or kind == "groupBuff" then
 		return "self"
-	elseif kind == "circleTarget" or kind == "trap" or kind == "healZone" then
+	elseif kind == "circleTarget" or kind == "trap" or kind == "healZone" or kind == "banner" then
 		return "circle"
+	elseif kind == "shout" then
+		return "self" -- S74
+	elseif kind == "guard" then
+		return "target" -- S74: an ally, or the guard itself (ROZWOJ 14.2)
 	elseif skill.target == "enemy" or skill.target == "ally" or skill.target == "deadAlly" then
 		return "target"
 	end
 	return "none"
+end
+
+-- Types that attack whatever their target mode (SkillService before S74).
+local OFFENSIVE_TYPES: { [string]: boolean } = { cone = true, circleSelf = true, circleTarget = true, line = true }
+
+-- Skills that attack (ROZWOJ 14.2): refused in green zones, and casting one ends the respawn protection.
+-- A shout attacks only with damage (Order to Advance); Shield Wall, guard and banner never do.
+function Skills.offensive(def: SkillDef): boolean
+	if def.target == "enemy" or OFFENSIVE_TYPES[def.type] then
+		return true
+	end
+	return def.type == "shout" and def.values.dmg ~= nil
 end
 
 function Skills.requiredElement(skill: SkillDef): string?

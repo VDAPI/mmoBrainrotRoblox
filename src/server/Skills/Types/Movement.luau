@@ -2,10 +2,18 @@
 -- Movement and placement skill types: charge (dash to the target), blink (teleport; Disengage jumps back),
 -- trap (object on the ground that roots the first enemies to step in).
 -- The server moves the character itself (PivotTo) after raycasting for walls, so clients cannot teleport.
+-- S74 (ROZWOJ 10.3, 10.5, 14.2): guard leaps to an ally (Logic/GuardTarget picks one without a selection) and puts
+-- the intercept on them; banner plants a server object (Skills/Banner) whose circle pulses on PartyAuraService.
 
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 
+local Banner = require(script.Parent.Parent.Banner)
 local Context = require(script.Parent.Parent.Context)
+local GuardTarget = require(ReplicatedStorage.Shared.Logic.GuardTarget)
+local PathsData = require(ReplicatedStorage.Shared.Data.Paths)
+local SkillData = require(ReplicatedStorage.Shared.Data.Skills)
+local Skills = require(ReplicatedStorage.Shared.Logic.Skills)
 
 type Ctx = Context.Ctx
 type Handler = (ctx: Ctx) -> (boolean, string?)
@@ -13,6 +21,12 @@ type Handler = (ctx: Ctx) -> (boolean, string?)
 local Movement: { [string]: Handler } = {}
 
 local TRAP_CHECK = 0.25
+local RANGE_TOLERANCE = 5 -- as SkillService
+local NO_EFFECTS: { SkillData.SkillEffect } = {}
+
+local function flat(v: Vector3): Vector3
+	return Vector3.new(v.X, 0, v.Z)
+end
 
 -- Furthest safe point from `from` toward `to` (stops before walls).
 local function clearPath(ctx: Ctx, from: Vector3, to: Vector3): Vector3
@@ -131,6 +145,213 @@ Movement.trap = function(ctx)
 			end
 		end
 	end)
+	return true, nil
+end
+
+-- Longest effect of the skill on `side` (of `kind` when given) after Skills.effective; 0 without one.
+local function longest(ctx: Ctx, side: "self" | "allies", kind: string?): number
+	local out = 0
+	local effects: { SkillData.SkillEffect } = ctx.skill.effects or NO_EFFECTS
+	for _, effect in effects do
+		if Skills.effectSide(ctx.skill, effect) == side and (kind == nil or effect.kind == kind) then
+			out = math.max(out, ctx.scaled(effect.duration))
+		end
+	end
+	return out
+end
+
+-- A guard candidate: a living ally other than the caster, its HP share and flat distance from `from`.
+local function candidate(ctx: Ctx, ally: Player, from: Vector3): GuardTarget.Candidate?
+	local Entity = ctx.services.Entity
+	local entity = Entity.GetPlayerEntity(ally)
+	local position = entity and Entity.Position(entity)
+	if not entity or not position or ally == ctx.player or ctx.services.Resource.IsDead(ally) then
+		return nil
+	end
+	return {
+		key = ally,
+		hpFraction = Context.hpFraction(entity) or 1,
+		distance = flat(position - from).Magnitude,
+	}
+end
+
+-- The intercept and party effects of a guard on one protected ally at pct % strength (10A: the second ally at the
+-- breakpoint's share): ally-side effects, allyEffects (S75 nodes) and allyShield (Team Shield).
+local function cover(ctx: Ctx, ally: Player, entity: any, pct: number)
+	local opts = { scale = pct / 100 }
+	local effects: { SkillData.SkillEffect } = ctx.skill.effects or NO_EFFECTS
+	for _, effect in effects do
+		if Skills.effectSide(ctx.skill, effect) == "allies" then
+			ctx.applyEffect(entity, effect, opts)
+		end
+	end
+	local allyEffects: { SkillData.SkillEffect } = ctx.skill.allyEffects or NO_EFFECTS
+	for _, effect in allyEffects do
+		ctx.applyEffect(entity, effect, opts)
+	end
+	local shield = ctx.bp.allyShield
+	if shield then
+		local maxHp = ctx.services.Stat.GetValue(ally, "maxHp")
+		ctx.shield(entity, maxHp * ctx.resolve(shield.hpPct) / 100 * pct / 100, shield.duration)
+	end
+end
+
+-- The most wounded living ally below full health within GUARD_SECOND_RADIUS of `at`, other than the caster and
+-- `first` (ctx.wounded skips one player only).
+local function secondAlly(ctx: Ctx, at: Vector3, first: Player): Player?
+	local best, bestFraction = nil, 1
+	for _, other in ctx.alliesInCircle(at, SkillData.GUARD_SECOND_RADIUS) do
+		if other ~= first then
+			local c = candidate(ctx, other, at)
+			if c and c.hpFraction < bestFraction then
+				best, bestFraction = other, c.hpFraction
+			end
+		end
+	end
+	return best
+end
+
+-- Enemies within `radius` of `at` get `kind` from the caster (stun: 5B; taunt: 10B, players ignore it).
+local function nearAlly(ctx: Ctx, at: Vector3, radius: number, kind: string, duration: number)
+	for _, enemy in ctx.enemiesInCircle(at, radius) do
+		ctx.services.StatusEffect.Apply(
+			enemy,
+			kind,
+			{ duration = duration, source = ctx.player, skillId = ctx.skill.id }
+		)
+	end
+end
+
+Movement.guard = function(ctx)
+	local Entity = ctx.services.Entity
+	local from = ctx.root.Position
+	local range = ctx.skill.range or 25
+	local reach = range + RANGE_TOLERANCE
+	-- the selection counts only when it is a living ally (a monster under the cursor = no selection)
+	local selected: GuardTarget.Candidate? = nil
+	local target = ctx.target
+	if
+		target
+		and target.kind == "player"
+		and target.player
+		and ctx.services.Party.AreAllies(ctx.player, target.player)
+	then
+		selected = candidate(ctx, target.player, from)
+	end
+	local inZone: { GuardTarget.Candidate } = {}
+	for _, ally in ctx.alliesInCircle(from, reach) do
+		local entity = Entity.GetPlayerEntity(ally)
+		local position = entity and Entity.Position(entity)
+		local c = if position and ctx.services.Combat.InRedZone(position) ~= nil
+			then candidate(ctx, ally, from)
+			else nil
+		if c then
+			table.insert(inZone, c)
+		end
+	end
+	local woundedAlly = ctx.wounded(from, reach, ctx.player)
+	local wounded = if woundedAlly then candidate(ctx, woundedAlly, from) else nil
+	local ally: Player? = GuardTarget.pick(selected, inZone, wounded, reach)
+	local allyEntity = if ally then Entity.GetPlayerEntity(ally) else nil
+	local allyPosition = allyEntity and Entity.Position(allyEntity)
+	if not ally or not allyEntity or not allyPosition then
+		-- the self variant: the guard's own reduction only
+		ctx.fx({ t = ctx.caster.id, d = longest(ctx, "self") })
+		ctx.applyEffects(ctx.caster, "self")
+		return true, nil
+	end
+
+	-- the leap: 2 studs before the ally on the line, stopped by walls; already close = stay
+	local offset = flat(allyPosition - from)
+	local destination = from
+	if offset.Magnitude > 3 then
+		local stopAt = allyPosition - offset.Unit * 2
+		destination = clearPath(ctx, from, Vector3.new(stopAt.X, from.Y, stopAt.Z))
+		moveTo(ctx, destination, allyPosition)
+	end
+
+	cover(ctx, ally, allyEntity, 100)
+	-- 10A: the same intercept on the second most wounded ally near the landing point
+	local secondIds: { string }? = nil
+	local share = ctx.bp.secondTarget
+	local second = if share then secondAlly(ctx, destination, ally) else nil
+	local secondEntity = if second then Entity.GetPlayerEntity(second) else nil
+	if share and second and secondEntity then
+		cover(ctx, second, secondEntity, share)
+		secondIds = { secondEntity.id }
+	end
+	ctx.fx({ t = allyEntity.id, p = destination, from = from, d = longest(ctx, "allies", "intercept"), al = secondIds })
+
+	local stun = ctx.bp.stunNear
+	if stun then
+		nearAlly(ctx, allyPosition, stun.radius, "stun", stun.duration)
+		ctx.fx({ v = "stunBurst", p = allyPosition, r = stun.radius })
+	end
+	local taunt = ctx.bp.tauntNear
+	if taunt then
+		nearAlly(ctx, allyPosition, taunt.radius, "taunt", taunt.duration)
+	end
+	return true, nil
+end
+
+-- S74 War Banner: a server object at the point (no aim: at the feet) and a zone on PartyAuraService's loop. Every
+-- pulse gives allies in the circle (the owner too) the ally effects and enemies the enemy effects, each for one pulse
+-- (AURA.duration) whatever the data says; a new banner of the same player replaces the old one.
+Movement.banner = function(ctx)
+	local at = ctx.ground(ctx.point or ctx.root.Position)
+	local radius = ctx.skill.radius or 15
+	local duration = ctx.scaled(ctx.skill.duration)
+	local Entity = ctx.services.Entity
+	local allyEffects: { SkillData.SkillEffect } = {}
+	local enemyEffects: { SkillData.SkillEffect } = {}
+	local function pulsed(effect: SkillData.SkillEffect): SkillData.SkillEffect
+		local copy = table.clone(effect)
+		copy.duration = PathsData.AURA.duration
+		return copy
+	end
+	local effects: { SkillData.SkillEffect } = ctx.skill.effects or NO_EFFECTS
+	for _, effect in effects do
+		local side = Skills.effectSide(ctx.skill, effect)
+		if side == "allies" then
+			table.insert(allyEffects, pulsed(effect))
+		elseif side == "enemy" then
+			table.insert(enemyEffects, pulsed(effect))
+		end
+	end
+	local extra: { SkillData.SkillEffect } = ctx.skill.allyEffects or NO_EFFECTS
+	for _, effect in extra do
+		table.insert(allyEffects, pulsed(effect))
+	end
+	local function pulse()
+		for _, ally in ctx.alliesInCircle(at, radius) do
+			local entity = Entity.GetPlayerEntity(ally)
+			if entity then
+				for _, effect in allyEffects do
+					ctx.applyEffect(entity, effect)
+				end
+			end
+		end
+		if #enemyEffects > 0 then
+			for _, enemy in ctx.enemiesInCircle(at, radius) do
+				for _, effect in enemyEffects do
+					ctx.applyEffect(enemy, effect)
+				end
+			end
+		end
+	end
+	local model = Banner.spawn(ctx.player, ctx.skill.id, at, radius, duration)
+	ctx.fx({ p = at, r = radius, d = duration })
+	ctx.services.PartyAura.AddZone({
+		key = ctx.skill.id .. ":" .. ctx.player.UserId,
+		owner = ctx.player,
+		center = at,
+		radius = radius,
+		endsAt = os.clock() + duration,
+		pulse = pulse,
+		onEnd = function()
+			Banner.remove(model)
+		end,
+	})
 	return true, nil
 end
 

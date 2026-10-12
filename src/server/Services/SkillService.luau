@@ -21,6 +21,7 @@ local Workspace = game:GetService("Workspace")
 
 local Shared = ReplicatedStorage.Shared
 
+local Banner = require(script.Parent.Parent.Skills.Banner)
 local Channel = require(Shared.Logic.Channel)
 local Combat = require(Shared.Data.Combat)
 local Context = require(script.Parent.Parent.Skills.Context)
@@ -476,7 +477,11 @@ local function cast(player: Player, skillId: string, targetId: string?, aim: any
 	if not Skills.elementAllowed(skill, weaponElement(player)) then
 		return false, "cast.error.wrongElement"
 	end
-	if (skill.type == "blink" or skill.type == "charge") and StatusEffectService.IsRooted(caster) then
+	-- S74: a rooted guard cannot leap (like Charge); its self variant goes with it
+	if
+		(skill.type == "blink" or skill.type == "charge" or skill.type == "guard")
+		and StatusEffectService.IsRooted(caster)
+	then
 		return false, "cast.error.disabled"
 	end
 	local rt = runtime(player)
@@ -496,11 +501,7 @@ local function cast(player: Player, skillId: string, targetId: string?, aim: any
 		end
 		point = v
 	end
-	local offensive = skill.target == "enemy"
-		or skill.type == "cone"
-		or skill.type == "circleSelf"
-		or skill.type == "circleTarget"
-		or skill.type == "line"
+	local offensive = Skills.offensive(skill) -- S74
 	if offensive and ZoneService.GetPvpZone(player) == "green" then
 		return false, "cast.error.safeZone"
 	end
@@ -523,7 +524,11 @@ local function cast(player: Player, skillId: string, targetId: string?, aim: any
 	elseif skill.target == "point" and skill.type ~= "blink" then
 		if not point then
 			local targetPosition = target and EntityService.Position(target)
-			point = targetPosition or (root.Position + root.CFrame.LookVector * math.min(skill.range or 10, 10))
+			-- S74 (ROZWOJ 10.5): a banner with no aim and no target stands at the caster's feet
+			local ahead = if skill.type == "banner"
+				then root.Position
+				else root.Position + root.CFrame.LookVector * math.min(skill.range or 10, 10)
+			point = targetPosition or ahead
 		end
 		local p = point :: Vector3
 		local offset = p - root.Position
@@ -707,6 +712,8 @@ function SkillService.Init(registry)
 		WeaponElement = weaponElement,
 		WeaponSpeed = weaponSpeed,
 	}
+	-- S74: the banner folder exists before clients wait for it
+	Banner.folder()
 	-- S65: shared helpers of Skills/Context (most wounded ally, heal an ally) for CombatService's Saving Blow.
 	Context.bind(services)
 

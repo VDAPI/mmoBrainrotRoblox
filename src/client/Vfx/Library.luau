@@ -729,6 +729,113 @@ function Library.lingering(at: Vector3, radius: number, kind: string, color: Col
 	Pool.later(disc, seconds + 0.45)
 end
 
+-- S74 War Banner (ROZWOJ 10.5): the pole, the cloth and the finial from `pieces` (WeaponLooks.BANNER, frame origin at
+-- the foot of the pole, +Y up) placed on `anchor`, and the circle on the ground: a faint disc and a Neon rim of
+-- segments. One Heartbeat loop waves the cloth and pulses the rim (not when simple). Returns the stop function.
+function Library.banner(anchor: BasePart, pieces: { any }, radius: number, color: Color3, simple: boolean?): () -> ()
+	local origin = CFrame.new(anchor.Position)
+	local parts: { BasePart } = {}
+	local cloth: BasePart? = nil
+	local clothFrame = CFrame.identity
+	for _, piece in pieces do
+		local size = Vector3.new(piece.size[1], piece.size[2], piece.size[3])
+		local material = (Enum.Material :: any)[piece.material] or Enum.Material.SmoothPlastic
+		local p = Pool.part(piece.shape, Color3.fromHex(piece.color), size, material, piece.transparency or 0)
+		local frame = CFrame.new(piece.pos[1], piece.pos[2], piece.pos[3])
+		p.CFrame = origin * frame
+		table.insert(parts, p)
+		if piece.name == "Cloth" then
+			cloth, clothFrame = p, frame
+		end
+	end
+	local base = ground(anchor.Position) + Vector3.new(0, 0.1, 0)
+	local disc = Pool.part("Cylinder", color, Vector3.new(0.1, radius * 2, radius * 2), Enum.Material.Neon, 0.85)
+	disc.CFrame = CFrame.new(base) * CFrame.Angles(0, 0, math.rad(90))
+	local rim: { BasePart } = {}
+	local count = if simple then 12 else 24
+	local length = 2 * math.pi * radius / count + 0.2
+	for i = 1, count do
+		local a = i / count * math.pi * 2
+		local at = base + Vector3.new(math.cos(a) * radius, 0.05, math.sin(a) * radius)
+		local segment = Pool.part("Block", color, Vector3.new(0.3, 0.15, length), Enum.Material.Neon, 0.3)
+		segment.CFrame = CFrame.lookAt(at, at + Vector3.new(-math.sin(a), 0, math.cos(a)))
+		table.insert(rim, segment)
+	end
+	local connection: RBXScriptConnection? = nil
+	if not simple then
+		local started = os.clock()
+		connection = RunService.Heartbeat:Connect(function()
+			local t = os.clock() - started
+			local c = cloth
+			if c then
+				-- the free edge sways around the pole side (a gentle wave, no physics)
+				local sway = math.sin(t * 2.2) * math.rad(8)
+				local pivot = CFrame.new(0, clothFrame.Position.Y, 0)
+				c.CFrame = origin * pivot * CFrame.Angles(0, sway, 0) * pivot:Inverse() * clothFrame
+			end
+			local glow = 0.3 + 0.2 * (0.5 + 0.5 * math.sin(t * 3))
+			for _, segment in rim do
+				segment.Transparency = glow
+			end
+		end)
+	end
+	local stopped = false
+	return function()
+		if stopped then
+			return
+		end
+		stopped = true
+		if connection then
+			connection:Disconnect()
+		end
+		for _, p in parts do
+			tween(p, 0.4, { Transparency = 1 })
+			Pool.later(p, 0.45)
+		end
+		tween(disc, 0.4, { Transparency = 1 })
+		Pool.later(disc, 0.45)
+		for _, segment in rim do
+			tween(segment, 0.4, { Transparency = 1 })
+			Pool.later(segment, 0.45)
+		end
+	end
+end
+
+-- S74: a thin line from `a` to `b` (roots) for `seconds`, gone early when either model disappears (Intercept).
+function Library.tether(a: Model, b: Model, color: Color3, seconds: number)
+	local rootA = a:FindFirstChild("HumanoidRootPart") :: BasePart?
+	local rootB = b:FindFirstChild("HumanoidRootPart") :: BasePart?
+	if not rootA or not rootB then
+		return
+	end
+	local from = Instance.new("Attachment")
+	from.Parent = rootA
+	local to = Instance.new("Attachment")
+	to.Parent = rootB
+	local beam = Instance.new("Beam")
+	beam.Attachment0 = from
+	beam.Attachment1 = to
+	beam.Color = ColorSequence.new(color)
+	beam.Width0 = 0.15
+	beam.Width1 = 0.15
+	beam.LightEmission = 1
+	beam.FaceCamera = true
+	beam.Transparency = NumberSequence.new(0.2)
+	beam.Parent = rootA
+	local function clear()
+		beam:Destroy()
+		from:Destroy()
+		to:Destroy()
+	end
+	local ending = os.clock() + math.max(0.3, seconds)
+	task.spawn(function()
+		while os.clock() < ending and rootA.Parent and rootB.Parent and beam.Parent do
+			task.wait(0.2)
+		end
+		clear()
+	end)
+end
+
 -- Helpers for the controller
 Library.flat = flat
 
