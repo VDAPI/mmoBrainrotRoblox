@@ -3981,3 +3981,43 @@ Pliki: `src/shared/{Logic/{Vigilance,Damage,Skills},Data/{Paths/init,Skills/{Typ
 Localization/{pl,en}}}`, `src/server/{Skills/{Companion,Context,Types/Support},Services/{SkillService,CombatService,
 StatusEffectService}}`, `src/client/{Controllers/VfxController,Vfx/{Library,Pool},UI/Screens/Hud/EffectIcons}`,
 `tests/{vigilance,damage,skillmotion,skills,data}.spec`, `docs/{ROZWOJ,DECYZJE,SESJE,PROGRESS}.md`.
+
+### S78: Łowca 3: podstawa, ścieżki Strzelec Wyborowy, Traper, Zwiadowca, opcje B i Oko Zwiadowcy
+
+- A: `Data/Skills/Hunter` w kolejności podstawa (8) → `marksman` → `trapper` → `scout`; odblokowania i `path` jak w
+  ROZWOJ 11.2–11.5, Znak Łowcy `vuln = { 6, 8 }`. S77 dało nowym umiejętnościom poprawne `unlock` (26 / 60 / 80); A
+  wszystkich 14 starych bez zmian od S55. `order` czytają tylko sortowania.
+- Gracz: znikają z paska (oba zestawy i `path.bp`, `Paths.validHotbar` przy wczytaniu) Strzała Przebijająca, Pułapka
+  Lodowa, Strzała Burzy, Kamuflaż i Znak Łowcy; Zwinność przestaje działać do kupna węzła. Wcześniej: Salwa 30,
+  Instynkt Drapieżnika 45, rzędy 1 (poz. 10), Strzała Burzy i Kamuflaż 48; później Znak Łowcy 48. Salwa nie wskakuje
+  sama na pasek istniejących postaci 30–55 (auto-wkładanie tylko przy awansie): gracz kładzie ją przyciskiem „Na
+  pasek”. Zwój Nowej Ścieżki u Nauczyciela działa od teraz także dla Łowcy (bramka S57, bez zmian w kodzie).
+- B: 22 opcje B 11 starych aktywnych (`Build.bp2`); wszystkie 17 aktywnych ma A i B na 5 i 10. Odbiorcy (`lifesteal`,
+  `selfEffect`, `selfHeal` w `SkillService`, `add.hits` fal i pułapek, `add.radius` debuffu, listy `effect`) już byli.
+- C: `Data/Paths/Hunter` (3 ścieżki × 11 rzędów, 60 węzłów: 48 z tekstami + 12 `skill`), pierwszy `keystone` w grze
+  (`scout_royalFalcon`, `values.on`, hak `royalFalcon`), broń z 11.1, `statPlan`, `itemWeights` (S67, `validateWeights`
+  puste), `wiki = false`. Typ `ReferenceBuild` dostał `r7Exempt`, komentarz rotacji `notInZone`.
+- D: D1 wszystkie haki mają literał w `src/server` / `Logic` (nowy `minimapEliteBonus` w `PartyService`); D2 jawne
+  `dipScale` na trzech węzłach Zwiadowcy, mechanizm S57 bez zmian; D3 `passiveTotals` sumuje hak węzła `keystone`
+  (Królewski Sokół włącza się kupnem węzła, `Skills/Companion` czyta `royalFalcon > 0`), walidator już dopuszczał
+  `keystone`; D4 nowe: `Skills.effective` scala głęboko równe efekty; D5 `add.<kind>Duration` z S75 wystarczyło; D6
+  `nodeHooks` S68 obejmują wszystkie węzły Trapera (bez zmian); D7 okno ścieżek rysuje `skill` w każdym rzędzie
+  („Na pasek” z `NodeCard`) i ma etykietę `paths.kind.keystone` (bez zmian).
+- E: `Logic/ScoutRange.bonus` (czysta), `HOOK_RULES.scoutEye.shareRange = 80`, `PartyService` publikuje `scoutRange`
+  (leniwy `SkillService.PassiveHook`, bez wpisu w `Deps`), `Hud/Minimap`: własny bonus z wąskich gałęzi stanu, Elity do
+  `140 + bonus` st., do 8 znaczników `▲` na krawędzi (`ELITE_PINS`, ZIndex 7); bez węzła bez zmian.
+- F: buildy `kingslayer`, `eliteHunter`, `poacher`, `poisoner` (`r7Exempt`), `partyHunter`, `tracker`. Dopełnienia
+  rotacji wg listy z planu; „Łowca Elit” bierze B Namierzenia i Strzały Burzy jak „Królobójca” oraz Strzał w Serce
+  5B/10B (Celny Strzał 5A); „Kłusownik” i „Truciciel” poza ścieżką: Strzała Przebijająca 1, Pewna Ręka 3, Zwinność 1,
+  Oko Zwiadowcy 3 (najbliżej pomiaru 11.6).
+- G: tytuły `path_marksman` / `path_trapper` / `path_scout`, 129 kluczy na język (9 ścieżek, 96 węzłów, 22 B, akapit
+  `rework.class.Hunter` w `ReworkController`). Nazwy węzłów bez kolizji z cechami broni.
+- Testy: `paths.spec` („Data: Hunter paths (S78)”: broń i pokrycie, rangi 42 / 42 / 40, haki drużynowe 1/3, buildy,
+  `traitNodes`), `skills.spec` (podstawa 8, B, składanie z węzłami 370 / 230 / 60 / 830 / 155 / 160 z jednym efektem /
+  14 / 9 / 1 s, scalanie efektów, osiągalność `falcon` / `drive` zamiast „nieosiągalne do S78”), `scoutrange.spec`
+  (nowy). Test 7.3 obejmuje Łowcę sam (bramka: klasy z `Data/Paths`). `wikidump`: z `skills.json` zniknęło 6
+  przeniesionych umiejętności, podstawa ma nowe odblokowania.
+
+Pliki: `src/shared/{Data/{Paths/{Hunter,Types,init},Skills/Hunter,Titles,Localization/{pl,en}},Logic/{Skills,
+ScoutRange}}`, `src/server/Services/PartyService`, `src/client/{UI/Screens/Hud/Minimap,Controllers/ReworkController}`,
+`tests/{paths,skills,scoutrange}.spec`, `wiki/src/data/*`, `docs/{ROZWOJ,DECYZJE,SESJE,PROGRESS,PRZEDMIOTY}.md`.

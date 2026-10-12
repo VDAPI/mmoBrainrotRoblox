@@ -339,7 +339,7 @@ Broń każdej ścieżki (uzasadnienie i pokrycie w sekcjach klas):
 |---|---|
 | `Data/Skills/<Klasa>` | podstawa i umiejętności ścieżek; pole `path` (nil = podstawa), przełomy A/B; bez `requires`, `col`, `row` |
 | `Data/Skills/Build`, `Types`, `init` | `Build.bp2`, jawne `maxLevel`, `RANKS`, `HOTBAR_SLOTS = 10` |
-| `Data/Paths/init` | nowy: `ROWS` (tabela 2.2, rzędy 2, 5, 10 z `twoPathExtra`), `DIP_ROWS = 2`, `DIP_SCALE = 1/3`, `list` (wszystkie ścieżki); S61: `AURA` (promienie, kąt `behind`, `fallbackRange`, `tick`, `duration`, `maxRadius`); S72: `HOOK_RULES` (stałe reguł haków ścieżek; S77: klucze Łowcy `vigilance`, `spot`, `weakSpotPerStack`, `royalFalcon`) |
+| `Data/Paths/init` | nowy: `ROWS` (tabela 2.2, rzędy 2, 5, 10 z `twoPathExtra`), `DIP_ROWS = 2`, `DIP_SCALE = 1/3`, `list` (wszystkie ścieżki); S61: `AURA` (promienie, kąt `behind`, `fallbackRange`, `tick`, `duration`, `maxRadius`); S72: `HOOK_RULES` (stałe reguł haków ścieżek; S77: klucze Łowcy `vigilance`, `spot`, `weakSpotPerStack`, `royalFalcon`; S78: `scoutEye.shareRange`) |
 | `Data/Paths/<Klasa>` | nowy: ścieżki klasy (lista 2–3, pole `order`), węzły, buildy wzorcowe |
 | `Data/Luck` | nowy: pola i limity szczęścia (6.3) |
 | `Data/BuffCategories` | nowy: kategorie, ich statystyki, tryb i limity (7.1) |
@@ -391,13 +391,14 @@ export type PathDef = {
 export type ReferenceBuild = {
 	id: string,
 	damageReference: boolean?, -- tylko build Berserkera "fury" (S75)
+	r7Exempt: boolean?, -- S78: build zwolniony z R7 na jednym celu (Traper, 15.4.2); czyta go model balansu, nie gra
 	weapon: { main: string, offhand: string? },
 	nodes: { { any } }, -- { nodeId, ranga } w kolejności kupowania: wg poziomu rzędu, ścieżka główna pierwsza
 	bp: { [string]: "a" | "b" }, -- "<skillId>:5" / "<skillId>:10"; brak wpisu = A
 	stats: { [string]: number }, -- statPlan ścieżki
 	-- lista priorytetów, wygrywa pierwszy wpis do użycia; warunki (dane dla modelu): skill (wymagany), target =
 	-- "tank" | "mostWounded" | "meleeAllies" | "self", minWounded, minEnemies, belowHp, debuff, beforeRedZone, opener,
-	-- elite (kolejne klasy dopisują swoje, np. minFury)
+	-- elite (kolejne klasy dopisują swoje, np. minFury; S78: notInZone = tylko poza czerwoną strefą)
 	rotation: { { [string]: any } },
 }
 -- Zapis postaci (aktywny zestaw w polach postaci, drugi w buildOther; skills i skillPoints usunięte):
@@ -1603,8 +1604,8 @@ odn. 40 s; 5A `add.radius = 4`, 5B `values.dmg = 80`, 10A `effect` ogłuszenie 1
   Strzelca, Zabójcza Precyzja (10 punktów obrażeń, `dipScale` nie dotyczy). PvP: Namierzenie widać na celu, Strzał w
   Serce ma czerwoną linię i 1,5 s na ucieczkę, dobicie na graczach ×1,5, Pogromca nie działa na graczy.
 - Build „Królobójca” (bossy): Pogromca, Dobicie, Śmiertelny Grot; przełomy Celnego Strzału 5B/10A, Namierzenia 5B/10B,
-  Strzały Burzy 5B/10B, Strzału w Serce 5A/10A; poza ścieżką 8 rang: Zwinność 1, Pułapka Lodowa 1, Oznaczenie 3, Jad
-  Myśliwski 3 (42 + 8 = 50). Priorytet: Namierzenie, Strzał w Serce (poza czerwoną strefą), Strzała Burzy, Celny
+  Strzały Burzy 5B/10B, Strzału w Serce 5A/10A; poza ścieżką 8 rang: Zwinność 1, Oko Zwiadowcy 1, Oznaczenie 3, Pułapka
+  Lodowa 1, Jad Myśliwski 2 (42 + 8 = 50; S78: Oznaczenie w rzędzie 2 wymaga 2 punktów w rzędzie 1 Zwiadowcy). Priorytet: Namierzenie, Strzał w Serce (poza czerwoną strefą), Strzała Burzy, Celny
   Strzał, Zatruta Strzała. „Łowca Elit” (solo): Słaby Punkt, Refleks Strzelca, Snajper, przełomy obszarowe (Celny
   Strzał 5A, Strzał w Serce 5B/10B).
 
@@ -1647,10 +1648,10 @@ punktu) i Kamuflaż `camouflage` (rząd 7; 4 s niewidzialności, a następne tra
 | 3 · 20 albo | Zaraza (`trapper_contagion`, passive, nowe `poisonSpread`) | śmierć zatrutego przenosi resztę trucizny na 1 / 2 / 3 najbliższych w 8 st. |
 | 3 · 20 albo | Toksykolog (`trapper_toxicologist`, passive, nowy hak `poisonedGuard`) | 4 / 7 / 10% mniej obrażeń od zatrutych przez Trapera (`own`) |
 | 4 · 26 | Trujące Sidła (`trapper_venomSnare`, skill) | nowa |
-| 4 · 26 | Łowisko (`trapper_huntingGround`, passive, nowy hak `areaSkillDamage`) | +7 / 14 / 20% trafień obszarowych Łowcy (Deszcz Strzał, Salwa, Strzała Przebijająca, pułapki), bez trucizny i ataków podstawowych |
+| 4 · 26 | Łowisko (`trapper_huntingGround`, passive, nowy hak `areaSkillDamage`) | +7 / 13,5 / 20% trafień obszarowych Łowcy (Deszcz Strzał, Salwa, Strzała Przebijająca, pułapki), bez trucizny i ataków podstawowych |
 | 5 · 33 | Kąsające Strzały (`trapper_bitingRain`, modify `arrowRain`: nowe `firstWave`, `lingering` `poison` 4 s) | pierwsza fala +15 / 30 / 45%, trujące pole zadaje 10 / 20 / 30% obrażeń fali na sekundę |
 | 5 · 33 | Łup Kłusownika (`trapper_spoils`, passive, nowy hak `trapEnergy`) | 2 / 3 / 4 energii za każdego wroga złapanego przez pułapkę Łowcy, najwyżej 3 na pułapkę |
-| 6 · 40 albo | Wybuchowa Pułapka (`trapper_blastTrap`, modify `frostTrap` `values.dmg`, `values.poison`) | 50 / 100 / 150% obrażeń przy aktywacji i trucizna 35 / 70 / 100% przez 6 s |
+| 6 · 40 albo | Wybuchowa Pułapka (`trapper_blastTrap`, modify `frostTrap` `values.dmg`, `values.poison`) | 50 / 100 / 150% obrażeń przy aktywacji i trucizna 35 / 67,5 / 100% przez 6 s |
 | 6 · 40 albo | Uwięzienie (`trapper_entrap`, passive, nowy hak `trapRootDuration`) | unieruchomienie z pułapek +0,5 / 1 / 1,5 s (Pułapka Lodowa, Pole Sideł) |
 | 7 · 48 | Kamuflaż (`trapper_camouflage`, skill) | przeniesiona B |
 | 7 · 48 | Zasadzka (`trapper_ambush`, modify `camouflage` `mul.cooldown`) | ×0,9 / 0,8 / 0,7 (Kamuflaż co 42 s) |
@@ -1727,7 +1728,7 @@ Ulepszenie w rzędzie 11: Sokół Władcy.
 | 9 · 70 albo | Szybki Znak (`scout_quickMark`, modify `huntersMark` `mul.cooldown`) | ×0,93 / 0,87 / 0,8 (Znak co 20 s) |
 | 9 · 70 albo | Zgrany Duet (`scout_duet`, passive, nowy hak `falconDamage`) | obrażenia sokoła i nurkowania +10 / 20 / 30% |
 | 10 · 80 | Nagonka (`scout_drive`, skill) | nowa |
-| 10 · 80 | Wytrawny Naganiacz (`scout_beater`, modify `drive` `add.effectDuration`) | +2 / 4 / 6 s podatności i spowolnienia |
+| 10 · 80 | Wytrawny Naganiacz (`scout_beater`, modify `drive` `add.vulnerabilityDuration`, `add.slowDuration`; S78) | +2 / 4 / 6 s podatności i spowolnienia (unieruchomienie 10B bez zmian) |
 | 11 · 90 | Sokół Władcy (`scout_royalFalcon2`, passive, nowe haki `falconInterval` 10 / 20 (% krócej), `spotBonus`, 2 rangi) | uderzenia co 1,8 / 1,6 s, Oznaczenie +1 / 2 pkt proc. |
 
 - Drużyna (7.1, 7.3): Znak i Oznaczenie (`enemyWeak`; liczy się najsilniejszy, więc Oznaczenie działa w przerwach
@@ -2351,7 +2352,8 @@ Kod:
   `vigilance`): konsument w lokalnej funkcji `telegraph()` w `CombatService` (ok. linii 708 przy `05b859d`), którą wołają ataki bossów (`MonsterTelegraph`) i umiejętności Elit II (`MonsterService`); premia na
   `ability.windup + 0,5 s`, drużyna w 40 st., odnowienie 8 s, Czujność (`allyMove`) i Ostrzeżenie (`allyGuard`) z
   osobnym wyzwalaczem; `minimapEliteBonus` (czyta `Hud/Minimap`; Elity poza kołem mapy przypięte do krawędzi, `EDGE`)
-  z polem `scoutRange` w gałęzi `party` (`PartyService`), które czyta minimapa członków drużyny w 80 st.; istniejące
+  z polem `scoutRange` w gałęzi `party` (`PartyService`), które czyta minimapa członków drużyny w 80 st. (S78: czysta
+  `Logic/ScoutRange.bonus`, zasięg `Data/Paths/init.HOOK_RULES.scoutEye.shareRange`); istniejące
   `bossDamage`, `eliteDamage`, `executioner`.
 - Kategoria `allyMove` jest już w fundamencie (7.1). Klient: element `falcon`, ikona `sighted`, licznik stosów
   trucizny, zasięg Elit na minimapie, linia celowania.

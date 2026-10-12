@@ -117,6 +117,7 @@ return table.freeze({
 		-- Royal Falcon: dive % damage, stun seconds (not bosses, never players), seconds it stays after the fight,
 		-- dive points per falconBond second, the shortest strike interval.
 		royalFalcon = table.freeze({ dive = 150, stun = 1, linger = 5, bondDive = 10, minInterval = 0.5 }),
+		scoutEye = table.freeze({ shareRange = 80 }), -- Scout's Eye (ROZWOJ 11.5): party members within this many studs share the Elite range on the minimap
 	}),
 	list = list,
 	byId = byId,

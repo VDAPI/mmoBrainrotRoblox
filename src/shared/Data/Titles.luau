@@ -70,6 +70,25 @@ local list: { TitleDef } = {
 		req = { kind = "mainPath", path = "standard" },
 		color = "#D9A441",
 	},
+	-- S78: Hunter paths
+	{
+		id = "path_marksman",
+		nameKey = "title.path_marksman",
+		req = { kind = "mainPath", path = "marksman" },
+		color = "#E2483A",
+	},
+	{
+		id = "path_trapper",
+		nameKey = "title.path_trapper",
+		req = { kind = "mainPath", path = "trapper" },
+		color = "#7FA650",
+	},
+	{
+		id = "path_scout",
+		nameKey = "title.path_scout",
+		req = { kind = "mainPath", path = "scout" },
+		color = "#7EC4E0",
+	},
 }
 
 -- S59: character.title when the player hid the title; nil = never chose, the main path title shows

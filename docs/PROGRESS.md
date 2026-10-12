@@ -5,7 +5,7 @@
 
 ## Stan
 
-S01–S51 i S53–S77 gotowe (lista i zakres w `docs/SESJE.md`). Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
+S01–S51 i S53–S78 gotowe (lista i zakres w `docs/SESJE.md`). Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
 kategorie efektów drużyny i stos efektów (`Logic/EffectStack`), S54 wzory globalne (`Logic/LevelCurves`), S55 rangi
 i przełomy w kształcie A/B (`Build.bp2`, `Skills.effective` §2.7), S56 koniec punktów umiejętności: rangi z poziomu
 postaci (`Skills.rankFor`, drabina przejściowa ROZWOJ 2.6), zapis w schemacie 6 (darmowy reset statystyk, pasek
@@ -47,12 +47,13 @@ węzłów z S75 (`Logic/Fury`, `Data/Paths.HOOK_RULES`, `/hook`). S73 Wojownik: 
 `allyHeal`, `allyShield`, `hot` z `hpPct`, pola `furyConsume`, `hitRadius`, `allyRadius`. S74 Wojownik: silnik ścieżek
 gotowy (Furia, haki, opcje B, typy osłony, okrzyku i sztandaru, 6 nowych umiejętności). S75 Wojownik: podstawa 8 i ścieżki
 Strażnik, Berserker, Chorąży (`Data/Paths/Warrior`, buildy wzorcowe z odniesieniem obrażeń „Furia”), powrót Furii po
-Rzezi, `add.<kind>Duration`, `add.effectDuration` na kopiach własnych i drużynowych. Wojownik i Kapłan na ścieżkach
-(ukryte na wiki); Łowca i Mag na drabinie przejściowej. S76 Łowca: silnik gotowy (celowanie `castTime`,
+Rzezi, `add.<kind>Duration`, `add.effectDuration` na kopiach własnych i drużynowych. S76 Łowca: silnik gotowy (celowanie `castTime`,
 pułapki z sidłami, ściąganie `ctx.pull`, stosy i przenoszenie trucizny, haki Trapera czytają 0). S77 Łowca: silnik
-ścieżek gotowy (celowanie, pułapki, trucizna, sokół, czujność, haki Strzelca; 6 nowych umiejętności nieosiągalnych do
-S78).
-Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`, `docs/STATY.md`), następna S78; testy
+ścieżek gotowy (celowanie, pułapki, trucizna, sokół, czujność, haki Strzelca). S78 Łowca: podstawa 8 i ścieżki
+Strzelec Wyborowy, Traper, Zwiadowca (`Data/Paths/Hunter`, pierwszy `keystone` Królewski Sokół), opcje B, Znak 6 → 8%,
+scalanie identycznych efektów w `Skills.effective`, Oko Zwiadowcy (`Logic/ScoutRange`, `party.scoutRange`, Elity na
+krawędzi minimapy). Kapłan, Wojownik i Łowca na ścieżkach (ukryte na wiki); Mag na drabinie przejściowej do S81.
+Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`, `docs/STATY.md`), następna S79; testy
 i strojenie po niej.
 
 ## Niedokończone (kod)
@@ -72,11 +73,12 @@ i strojenie po niej.
 - **Gildie / aukcja / poczta**: brak zaproszeń do gildii między serwerami; aukcja bez podpowiedzi ceny, poczta bez
   pobrania.
 - **Przedmioty (S62–S68)**: umiejętności przy odświeżeniu obrażeń w czasie kasują resztę (`accumulate` dla nich w
-  S79); ścieżki Łowcy i Maga bez `itemWeights` (sesje ścieżek); `dmgMul` Kuszy 1,45 (S90).
+  S79); ścieżki Maga bez `itemWeights` (S81); `dmgMul` Kuszy 1,45 (S90).
 - **Kapłan**: cele 9.6 po normalizacji broni: w repo nie ma narzędzia liczącego umiejętności, pomiar S86, strojenie S89.
-- **Umiejętności i ścieżki**: ścieżki klas wkrótce (Łowca S78, Mag S81); do tego czasu
+- **Umiejętności i ścieżki**: ścieżki Maga wkrótce (S81); do tego czasu
   zwój i zakładka ścieżek mówią „wkrótce”, wpis premium zwoju niedostępny do S81. Brak przycisku „Załóż pasującą
-  broń” po przełączeniu zestawu (ROZWOJ 2.8, później); planer wiki wkrótce (S82).
+  broń” po przełączeniu zestawu (ROZWOJ 2.8, później); planer wiki wkrótce (S82). Oko Zwiadowcy widzi tylko Elity
+  wczytane przez streaming (pewnie do 128 st.); pewność dalej wymagałaby remote'u z pozycjami Elit (decyzja właściciela).
 - **UI**: ikona plecaka w HUD nie świeci po otwarciu klawiszem B; Esc nie zamyka menu przytrzymania. Stan przełączników
   panelu admina tylko lokalny. `/tparea` bez filtra po mapie. Ikony `crow_feather`, `toad_venom` to aliasy; brak ikon
   walut przy cenach. Mapa świata: budowle Łąk bez ikon, timer Elity II tylko tekstem.

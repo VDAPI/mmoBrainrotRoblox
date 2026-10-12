@@ -1597,3 +1597,33 @@
 - **S77** Dodatek krytyka Namierzenia (`Damage.critChance`) podnosi szansę najwyżej do limitu `critChance` (60) i nigdy
   jej nie obniża; przewaga poziomu dochodzi ponad limit jak dotąd. Obrażenia krytyczne dostają `critDmgAdd` przed
   `critResist`.
+- **S78** Łowca: podstawa 8 (Celny Strzał 1, Podwójny Strzał 3, Odskok 6, Deszcz Strzał 10, Sokole Oko 14, Zatruta
+  Strzała 18, Salwa 30, Instynkt Drapieżnika 45). Strzała Przebijająca, Pułapka Lodowa i Zwinność są w rzędzie 1 ścieżek
+  (poz. 10), Strzała Burzy, Kamuflaż i Znak Łowcy w rzędzie 7 (poz. 48). Przy wczytaniu `Paths.validHotbar` zdejmuje je
+  z paska obu zestawów i z `path.bp`, dopóki gracz nie kupi węzła.
+- **S78** Odblokowania: wcześniej Salwa 56 → 30, Instynkt Drapieżnika 48 → 45, Strzała Przebijająca 34 → 10, Pułapka
+  Lodowa 23 → 10, Zwinność 28 → 10 (węzły), Strzała Burzy 75 → 48 i Kamuflaż 65 → 48; później Znak Łowcy 40 → 48. Siła
+  na 1–20 się zmienia; stroi ją S91 (`balance.spec` jej nie widzi).
+- **S78** Znak Łowcy 10 → 25% zamieniony na 6 → 8% (10B 10%, 15.4.1): drużyny z dzisiejszym Łowcą tracą kilka procent
+  na bossach. Pole Sideł i Nagonka dzielą z nim kategorię `enemyWeak` (liczy się najsilniejsze).
+- **S78** Traper zwolniony z R7 na jednym celu (15.4.2): pole `r7Exempt = true` w jego buildach wzorcowych; czyta je
+  model balansu, nie gra. Nowy warunek rotacji `notInZone` (Strzał w Serce) to też tylko dane modelu.
+- **S78** Oko Zwiadowcy: zasięg Elit na minimapie (`140 + bonus` st.), znaczniki na krawędzi koła (najbliższe 8), pole
+  `scoutRange` w gałęzi `party`, drużyna do 80 st. (`Data/Paths/init.HOOK_RULES.scoutEye.shareRange`). Działa tylko dla
+  Elit wczytanych przez streaming (pewnie do 128 st., zwykle do 512 st.), bez nowego remote'u; mapa świata bez zmian.
+  Pewność poza streamingiem (remote z pozycjami Elit) do decyzji właściciela.
+- **S78** Korekty ROZWOJ 11: „Królobójca” poza ścieżką: Zwinność 1, Oko 1, Oznaczenie 3, Pułapka Lodowa 1, Jad
+  Myśliwski 2 (wymóg 2 punktów rzędu 2). Łowisko i trucizna Wybuchowej Pułapki liniowo: 7 / 13,5 / 20 i 35 / 67,5 / 100
+  (2.3). Wytrawny Naganiacz na `add.vulnerabilityDuration` i `add.slowDuration`, nie `add.effectDuration` (bez
+  wydłużania unieruchomienia 10B).
+- **S78** Ścieżki Łowcy `wiki = false`: 12 umiejętności ścieżek, węzły, tytuły i teksty `path.*` są ukryte na wiki do
+  decyzji właściciela o publikacji (przed S82).
+- **S78** Oko Zwiadowcy, Oznaczenie i Czujność oznaczone jako drużynowe jawnym `dipScale = 1 / 3` (znacznik S57 B3):
+  poza ścieżką główną 1/3 siły. Nazwy i jednostki haków S77 zgodne z planem (bez korekt D1).
+- **S78** Ten sam efekt z dwóch źródeł (D4): `Skills.effective` nie dopisuje efektu głęboko równego już obecnemu na
+  liście (`effects`, `selfEffects`, `allyEffects`); wartości i tak się sumują (Pułapka Lodowa 5B + Wybuchowa Pułapka:
+  jedna trucizna 160%).
+- **S78** Krwawienie 5B Strzały Przebijającej i trucizna 5B Pułapki Lodowej bez kategorii, jak każdy DoT (7.1, 7.2);
+  test reguły A przepuszcza je bez zmian.
+- **S78** Okno „Rozwój postaci się zmienił”: akapit `rework.class.Hunter` doklejany pod ogólnym tekstem tylko postaci
+  Łowcy (klucz wprost w `ReworkController`); kolejne klasy dopisują swój warunek w tym samym miejscu.

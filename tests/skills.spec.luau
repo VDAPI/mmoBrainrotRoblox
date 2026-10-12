@@ -1841,8 +1841,8 @@ T.describe("Hunter S77", function()
 		T.expect((SkillData.get("snarefield") :: any).target).toBe("point")
 	end)
 
-	-- S78 replaces this case: the paths get their PathDef and the skills their nodes.
-	T.it("unreachable until S78 (no PathDef for their paths)", function()
+	-- S78: their paths have a PathDef; the skills need their node (and the main path above row 2).
+	T.it("reachable with their skill node from S78", function()
 		local hotbar: { [string]: string } = {}
 		local slot = 0
 		for id in NEW do
@@ -1855,8 +1855,171 @@ T.describe("Hunter S77", function()
 			T.expect({ id, table.find(available, id) }).toEqual({ id, nil })
 			T.expect({ id, GamePaths.skillRank(hunter, id) }).toEqual({ id, 0 })
 		end
-		local bar = GamePaths.validHotbar(hunter)
-		T.expect(bar).toEqual({})
+		T.expect((GamePaths.validHotbar(hunter))).toEqual({})
+		hunter.path = { main = "scout", nodes = { scout_falcon = 1, scout_drive = 1 }, bp = {}, freeUsed = true }
+		local withNodes = GamePaths.availableSkills(hunter)
+		T.expect(table.find(withNodes, "falcon") ~= nil).toBe(true)
+		T.expect(table.find(withNodes, "drive") ~= nil).toBe(true)
+		T.expect(table.find(withNodes, "drawBead")).toBeNil()
+		hunter.path.main = "marksman"
+		T.expect(GamePaths.skillRank(hunter, "falcon")).toBe(0) -- row 4 outside the main path
+	end)
+end)
+
+-- S78: the Hunter's base 8, B options and composition with path nodes (ROZWOJ 2.7, 11.2-11.5).
+T.describe("S78 Hunter base, B options and nodes", function()
+	local GamePaths = require("../src/shared/Logic/Paths")
+
+	T.it("base 8 at 1, 3, 6, 10, 14, 18, 30, 45; 12 path skills at their row level; B on every active", function()
+		local base, onPath = {}, {}
+		local actives, passives = 0, 0
+		for _, def in SkillData.byClass.Hunter do
+			if def.path == nil then
+				table.insert(base, `{def.id}:{def.unlock}`)
+				passives += if def.type == "passive" then 1 else 0
+			else
+				onPath[def.id] = `{def.path}:{def.unlock}`
+			end
+			if def.type ~= "passive" then
+				actives += 1
+				for _, at in { 5, 10 } do
+					local pair = def.breakpoints and def.breakpoints[at]
+					T.expect({ def.id, at, pair ~= nil and pair.a ~= nil and pair.b ~= nil })
+						.toEqual({ def.id, at, true })
+				end
+			end
+		end
+		T.expect(base).toEqual({
+			"aimedShot:1",
+			"doubleShot:3",
+			"disengage:6",
+			"arrowRain:10",
+			"hawkEye:14",
+			"venomArrow:18",
+			"volley:30",
+			"predatorInstinct:45",
+		})
+		T.expect(passives).toBe(2)
+		T.expect(onPath).toEqual({
+			piercingArrow = "marksman:10",
+			drawBead = "marksman:26",
+			stormArrow = "marksman:48",
+			heartseeker = "marksman:60",
+			frostTrap = "trapper:10",
+			venomSnare = "trapper:26",
+			camouflage = "trapper:48",
+			snarefield = "trapper:60",
+			agility = "scout:10",
+			falcon = "scout:26",
+			huntersMark = "scout:48",
+			drive = "scout:80",
+		})
+		T.expect(actives).toBe(17)
+	end)
+
+	local function hunter(main: string, nodes: { [string]: number }, bp: { [string]: string }): any
+		return {
+			class = "Hunter",
+			level = 100,
+			path = { main = main, nodes = nodes, bp = bp, freeUsed = true },
+			hotbar = {},
+			equipment = {},
+		}
+	end
+	local function eff(
+		skillId: string,
+		main: string,
+		nodes: { [string]: number },
+		bp: { [string]: string },
+		weapons: any
+	): (any, any)
+		local skill = SkillData.get(skillId) :: any
+		local mods = GamePaths.skillMods(hunter(main, nodes, bp), skillId, weapons)
+		return Skills.effective(skill, 10, bp :: any, mods, true)
+	end
+	local function effectsOf(list: { any }?, kind: string): { any }
+		local out = {}
+		for _, e in list or {} do
+			if e.kind == kind then
+				table.insert(out, e)
+			end
+		end
+		return out
+	end
+	local LONGBOW = { main = "longbow", offhand = "quiver" }
+	local HEAVY = { main = "heavycrossbow" }
+	local CROSSBOW = { main = "crossbow" }
+	local BOW = { main = "bow" }
+
+	T.it("Marksman: Aimed Shot, Heartseeker and the path weapon", function()
+		local aimed = eff("aimedShot", "marksman", { marksman_longShot = 3 }, { ["aimedShot:5"] = "b" }, LONGBOW)
+		T.expect(Skills.valueAt(aimed, "dmg", 10)).toBeNear(370, 1e-9)
+		local _, rhythm = eff("aimedShot", "marksman", { marksman_rhythm = 3 }, {}, LONGBOW)
+		T.expect(rhythm.critCdr).toBeNear(50, 1e-9)
+		local heart = eff("heartseeker", "marksman", { marksman_heartseeker2 = 2 }, { ["heartseeker:5"] = "a" }, HEAVY)
+		T.expect(Skills.valueAt(heart, "dmg", 10)).toBeNear(830, 1e-9)
+		local tip = eff("heartseeker", "marksman", { marksman_deadlyTip = 3 }, {}, HEAVY)
+		T.expect(tip.finisher.hp).toBeNear(35, 1e-9)
+		T.expect(tip.finisher.mul).toBe(2)
+		local sniper = eff("heartseeker", "marksman", { marksman_sniper = 3 }, {}, HEAVY)
+		T.expect(sniper.castTime).toBeNear(0.9, 1e-9)
+		-- a bow does not fit the Marksman: rows 3+ (Long Shot, row 5) are off, the B option still works
+		local bow = eff("aimedShot", "marksman", { marksman_longShot = 3 }, { ["aimedShot:5"] = "b" }, BOW)
+		T.expect(Skills.valueAt(bow, "dmg", 10)).toBeNear(340, 1e-9)
+	end)
+
+	T.it("base B options: Venom Arrow, Volley, Hunter's Mark, Disengage", function()
+		local venom = eff("venomArrow", "trapper", {}, { ["venomArrow:5"] = "a", ["venomArrow:10"] = "b" }, BOW)
+		T.expect(Skills.valueAt(venom, "poison", 10)).toBeNear(230, 1e-9)
+		local volley = eff("volley", "scout", {}, { ["volley:5"] = "b", ["volley:10"] = "b" }, BOW)
+		T.expect(Skills.valueAt(volley, "dmg", 10)).toBeNear(155, 1e-9)
+		local mark = SkillData.get("huntersMark") :: any
+		T.expect(Skills.valueAt(mark, "vuln", 10)).toBeNear(8, 1e-9)
+		local mark10 = eff("huntersMark", "scout", {}, { ["huntersMark:10"] = "b" }, BOW)
+		T.expect(Skills.valueAt(mark10, "vuln", 10)).toBeNear(10, 1e-9)
+		local mark5 = eff("huntersMark", "scout", {}, { ["huntersMark:5"] = "b" }, BOW)
+		T.expect(mark5.radius).toBe(6)
+		local leap = eff("disengage", "scout", {}, { ["disengage:10"] = "b" }, BOW)
+		local buff = leap.selfEffects[1]
+		T.expect({ buff.kind, buff.stats.dodge, buff.duration, buff.category })
+			.toEqual({ "statBuff", "dodgeBp", 4, "own" })
+		T.expect(Skills.valueAt(leap, "dodgeBp", 10)).toBeNear(20, 1e-9)
+	end)
+
+	T.it("Trapper: Frost Trap 5B + Blast Trap merge one poison, Virulence, Biting Rain", function()
+		local trap = eff("frostTrap", "trapper", { trapper_blastTrap = 3 }, { ["frostTrap:5"] = "b" }, CROSSBOW)
+		T.expect(Skills.valueAt(trap, "poison", 10)).toBeNear(160, 1e-9)
+		T.expect(Skills.valueAt(trap, "dmg", 10)).toBeNear(150, 1e-9)
+		T.expect(#effectsOf(trap.effects, "poison")).toBe(1)
+		local arrow, behaviour = eff("venomArrow", "trapper", { trapper_virulence = 3 }, {}, CROSSBOW)
+		T.expect(effectsOf(arrow.effects, "poison")[1].duration).toBeNear(12, 1e-9)
+		T.expect(behaviour.poisonStacks).toBe(3)
+		local _, rain = eff("arrowRain", "trapper", { trapper_bitingRain = 3 }, {}, CROSSBOW)
+		T.expect(rain.firstWave).toBeNear(45, 1e-9)
+		T.expect({ rain.lingering.kind, rain.lingering.duration }).toEqual({ "poison", 4 })
+		T.expect(rain.lingering.pct).toBeNear(30, 1e-9)
+	end)
+
+	T.it("Scout: Falcon with Sharp Talons, the Drive with Seasoned Beater (root stays 1 s)", function()
+		local falcon = eff("falcon", "scout", { scout_talons = 3 }, { ["falcon:10"] = "a" }, BOW)
+		T.expect(Skills.valueAt(falcon, "dmg", 10)).toBeNear(60, 1e-9)
+		local drive = eff("drive", "scout", { scout_beater = 3 }, { ["drive:10"] = "b" }, BOW)
+		T.expect(effectsOf(drive.effects, "vulnerability")[1].duration).toBeNear(14, 1e-9)
+		T.expect(effectsOf(drive.effects, "slow")[1].duration).toBeNear(9, 1e-9)
+		T.expect(effectsOf(drive.effects, "root")[1].duration).toBeNear(1, 1e-9)
+	end)
+
+	T.it("identical effects from two sources merge (ROZWOJ 2.7)", function()
+		local skill = table.clone(SkillData.get("frostTrap") :: any)
+		local poison = { kind = "poison", duration = 6, value = "poison" }
+		local mods = {
+			{ values = { poison = 10 }, effect = table.clone(poison) },
+			{ values = { poison = 5 }, effect = table.clone(poison) },
+			{ effect = { kind = "poison", duration = 4, value = "poison" } },
+		}
+		local def = Skills.effective(skill, 10, {}, mods :: any, true)
+		T.expect(#effectsOf(def.effects, "poison")).toBe(2)
+		T.expect(Skills.valueAt(def, "poison", 10)).toBeNear(15, 1e-9)
 	end)
 end)
 

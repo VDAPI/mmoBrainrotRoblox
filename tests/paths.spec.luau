@@ -714,7 +714,7 @@ T.describe("Paths: hotbar and breakpoints", function()
 		local hunter = char(30, nil, { class = "Hunter" })
 		T.expect(GamePaths.canPutOnBar(hunter, "aimedShot")).toBe(true)
 		T.expect({ GamePaths.canPutOnBar(hunter, "hawkEye") }).toEqual({ false, "skills.error.locked" })
-		T.expect(GamePaths.canPutOnBar(hunter, "piercingArrow")).toBe(false) -- unlocks at 34
+		T.expect(GamePaths.canPutOnBar(hunter, "piercingArrow")).toBe(false) -- S78: a marksman node
 		T.expect(GamePaths.canPutOnBar(hunter, "firebolt")).toBe(false) -- other class
 		local bar, _, changed = GamePaths.validHotbar(char(20, nil, {
 			class = "Hunter",
@@ -1568,6 +1568,182 @@ T.describe("Data: Warrior paths (S75)", function()
 			.toEqual({ 12, "furyRestore", 10 })
 		local plain = eff("carnage", "berserker", {}, {}, AXE)
 		T.expect(Skills.valueAt(plain, "furyRestore", 10)).toBe(0)
+	end)
+end)
+
+-- S78: the Hunter on real paths (ROZWOJ 11) ----------------------------------------------------------------------------
+
+T.describe("Data: Hunter paths (S78)", function()
+	local TooltipModel = require("../src/shared/Logic/TooltipModel")
+
+	local function hunter(main: string?, nodes: { [string]: number }): any
+		return char(100, state(main, nodes, {}, true), { class = "Hunter" })
+	end
+
+	local function ok(pathId: string, main: string?, offhand: string?): boolean
+		return GamePaths.weaponOk((PathData.get(pathId) :: any).weapon, { main = main, offhand = offhand })
+	end
+
+	T.it("weapons of the three paths and their coverage", function()
+		T.expect(ok("marksman", "longbow")).toBe(true)
+		T.expect(ok("marksman", "longbow", "quiver")).toBe(true)
+		T.expect(ok("marksman", "heavycrossbow")).toBe(true)
+		for _, t in { "bow", "crossbow", "shortbow" } do
+			T.expect({ t, ok("marksman", t) }).toEqual({ t, false })
+		end
+		T.expect(ok("trapper", "crossbow")).toBe(true)
+		T.expect(ok("trapper", "bow", "quiver")).toBe(true)
+		for _, t in { "longbow", "heavycrossbow", "shortbow" } do
+			T.expect({ t, ok("trapper", t) }).toEqual({ t, false })
+		end
+		T.expect(ok("scout", "shortbow")).toBe(true)
+		T.expect(ok("scout", "bow")).toBe(true)
+		for _, t in { "longbow", "crossbow", "heavycrossbow" } do
+			T.expect({ t, ok("scout", t) }).toEqual({ t, false })
+		end
+		-- every Hunter weapon fits a path, the bow exactly two, the quiver all three
+		local class = Classes.get("Hunter") :: any
+		for _, t in class.weaponTypes do
+			local fits = {}
+			for _, path in GamePaths.pathsOf("Hunter") do
+				if GamePaths.weaponOk(path.weapon, { main = t, offhand = "quiver" }) then
+					table.insert(fits, path.id)
+				end
+			end
+			T.expect({ t, #fits >= 1 }).toEqual({ t, true })
+			if t == "bow" then
+				T.expect(fits).toEqual({ "trapper", "scout" })
+			end
+		end
+		T.expect(class.offhandTypes).toEqual({ "quiver" })
+		for _, path in GamePaths.pathsOf("Hunter") do
+			T.expect({ path.id, path.weapon.offhand }).toEqual({ path.id, nil })
+		end
+		-- a bow in a Marksman's hands: row 3 (Slayer) is off, row 2 (Rhythm) works
+		local c = hunter("marksman", { marksman_slayer = 3, marksman_rhythm = 3 })
+		local hooks = GamePaths.passiveTotals(c, { main = "bow" }).hooks
+		T.expect(hooks.bossDamage).toBeNil()
+		T.expect(hooks.eliteDamage).toBeNil()
+		local mods = GamePaths.skillMods(c, "aimedShot", { main = "bow" })
+		T.expect(#mods).toBe(1)
+		T.expect(mods[1].critCdr).toBeNear(50, 1e-9)
+	end)
+
+	T.it("ranks: 42 / 42 / 40 per main path, 10 in rows 1-2 of the others, 60 nodes, 12 skill nodes", function()
+		local paths = GamePaths.pathsOf("Hunter")
+		T.expect(#paths).toBe(3)
+		local want = { marksman = 42, trapper = 42, scout = 40 }
+		local nodes, skills = 0, 0
+		for _, main in paths do
+			T.expect(main.wiki).toBe(false)
+			T.expect({ main.id, pathRanks(main, 1, #PathData.ROWS) }).toEqual({ main.id, want[main.id] })
+			local total = want[main.id]
+			for _, other in paths do
+				if other ~= main then
+					T.expect({ other.id, pathRanks(other, 1, PathData.DIP_ROWS) }).toEqual({ other.id, 10 })
+					total += 10
+				end
+			end
+			T.expect(GamePaths.pointsAt(100) / total).toBeBetween(0.75, 0.88)
+			for _, row in main.rows do
+				for _, n in row.nodes do
+					nodes += 1
+					skills += if n.kind == "skill" then 1 else 0
+				end
+			end
+		end
+		T.expect({ nodes, skills }).toEqual({ 60, 12 })
+		T.expect((GamePaths.findNode("scout_royalFalcon") :: any).kind).toBe("keystone")
+	end)
+
+	T.it("team hooks of the Scout's rows 1-2 at 1/3 outside the main path", function()
+		local nodes = { scout_eye = 3, scout_spotting = 3, scout_vigilance = 3 }
+		local outside = GamePaths.passiveTotals(hunter("marksman", nodes), { main = "longbow" }).hooks
+		T.expect(outside.minimapEliteBonus).toBeNear(60, 1e-9)
+		T.expect(outside.spotOnHit).toBeNear(2, 1e-9)
+		T.expect(outside.vigilanceMove).toBeNear(20 / 3, 1e-9)
+		local inside = GamePaths.passiveTotals(hunter("scout", nodes), { main = "bow" }).hooks
+		T.expect(inside.minimapEliteBonus).toBeNear(180, 1e-9)
+		T.expect(inside.spotOnHit).toBeNear(6, 1e-9)
+		T.expect(inside.vigilanceMove).toBeNear(20, 1e-9)
+		local team = {}
+		for _, path in GamePaths.pathsOf("Hunter") do
+			for _, row in path.rows do
+				for _, n in row.nodes do
+					if GamePaths.isTeamNode(n) then
+						table.insert(team, n.id)
+					end
+				end
+			end
+		end
+		table.sort(team)
+		T.expect(team).toEqual({ "scout_eye", "scout_spotting", "scout_vigilance" })
+		-- the keystone's hook counts like any passive
+		local royal = GamePaths.passiveTotals(hunter("scout", { scout_royalFalcon = 1 }), { main = "bow" }).hooks
+		T.expect(royal.royalFalcon).toBe(1)
+	end)
+
+	T.it("model builds spend exactly 50; the Trapper's are R7-exempt; Fury stays the only damage reference", function()
+		local exempt = {}
+		for _, path in GamePaths.pathsOf("Hunter") do
+			T.expect(#path.reference).toBe(2)
+			for _, build in path.reference do
+				T.expect({ build.id, build.damageReference }).toEqual({ build.id, nil })
+				if build.r7Exempt then
+					table.insert(exempt, build.id)
+				end
+				T.expect(build.stats).toEqual(path.statPlan)
+				T.expect(build.weapon.offhand).toBe("quiver")
+				local weapons = { main = build.weapon.main, offhand = build.weapon.offhand }
+				T.expect({ build.id, GamePaths.weaponOk(path.weapon, weapons) }).toEqual({ build.id, true })
+				local nodes: { [string]: number } = {}
+				local c = hunter(path.id, nodes)
+				for _, entry in build.nodes do
+					for _ = 1, entry[2] do
+						local can, why = GamePaths.canBuy(c, entry[1])
+						T.expect({ build.id, entry[1], can, why }).toEqual({ build.id, entry[1], true, nil })
+						nodes[entry[1]] = (nodes[entry[1]] or 0) + 1
+					end
+				end
+				T.expect({ build.id, GamePaths.spent(c) }).toEqual({ build.id, GamePaths.pointsAt(100) })
+				local available = GamePaths.availableSkills(c)
+				for key in build.bp do
+					local skillId, at = string.match(key, "^(.+):(%d+)$")
+					local def = SkillData.get(skillId or "") :: any
+					T.expect({ key, at == "5" or at == "10", def ~= nil and def.type ~= "passive" })
+						.toEqual({ key, true, true })
+					T.expect({ key, table.find(available, skillId or "") ~= nil }).toEqual({ key, true })
+				end
+				for _, step in build.rotation do
+					T.expect({ build.id, step.skill, table.find(available, step.skill) ~= nil })
+						.toEqual({ build.id, step.skill, true })
+				end
+			end
+		end
+		table.sort(exempt)
+		T.expect(exempt).toEqual({ "poacher", "poisoner" })
+		local references = {}
+		for _, path in PathData.list do
+			for _, build in path.reference do
+				if build.damageReference then
+					table.insert(references, build.id)
+				end
+			end
+		end
+		T.expect(references).toEqual({ "fury" })
+	end)
+
+	T.it("weapon traits list the Trapper's nodes (S68 nodeHooks)", function()
+		local trapperPaths = { PathData.get("trapper") }
+		local function names(traitId: string): { string }
+			local out = {}
+			for _, entry in TooltipModel.traitNodes(traitId, trapperPaths, nil, "pl") do
+				table.insert(out, entry.node)
+			end
+			return out
+		end
+		T.expect(names("easyPrey")).toEqual({ "Uwięzienie", "Paraliżujący Jad" })
+		T.expect(names("toxicBarbs")).toEqual({ "Jad Myśliwski", "Zaraza", "Paraliżujący Jad", "Jad Bazyliszka" })
 	end)
 end)
 

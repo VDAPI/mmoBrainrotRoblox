@@ -36,10 +36,12 @@ export type PathRow = { choice: boolean, nodes: { PathNode } }
 -- S71 (ROZWOJ 3.2, 7.5): a model build, the shape every class copies; read by tests and the balance model (S85), never
 -- by the game or the wiki. Rotation entries: `skill` (required) plus optional conditions, data only:
 -- target = "tank" | "mostWounded" | "meleeAllies" | "self" | "allyInZone" (an ally in a red zone, S75), minWounded,
--- minEnemies, belowHp, debuff, beforeRedZone, opener, elite, minFury (at least that many Fury stacks, S75).
+-- minEnemies, belowHp, debuff, beforeRedZone, opener, elite, minFury (at least that many Fury stacks, S75), notInZone
+-- (only while the character stands outside red zones, S78).
 export type ReferenceBuild = {
 	id: string,
 	damageReference: boolean?, -- only the Berserker "fury" build (S75)
+	r7Exempt: boolean?, -- S78 (ROZWOJ 15.4.2): exempt from R7 on one target (Trapper); read by the balance model
 	weapon: { main: string, offhand: string? },
 	nodes: { { any } }, -- { nodeId, rank } in purchase order: by row level, main path first at the same level
 	bp: { [string]: "a" | "b" }, -- "<skillId>:5" / "<skillId>:10"; a missing entry means A

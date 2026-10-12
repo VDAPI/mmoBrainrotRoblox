@@ -2,8 +2,10 @@
 -- Parties (DESIGN §17): up to 5 players on one server. Invites expire after 30 s; the leader can kick and
 -- promote; when the leader leaves, the next member leads; a party of one dissolves. Every member gets the
 -- state branch `party` = { leader, members = { { id, name, class, level, hp, maxHp, mana, maxMana, map,
--- x, z, dead, path } }, luck } refreshed twice a second, and a private TextChannel for party chat. S60: `path` = the
--- member's main path id (or nil); `luck` = the party's Fortune on bosses (Logic/Luck.boss) or nil when neutral.
+-- x, z, dead, path, scoutRange? } }, luck } refreshed twice a second, and a private TextChannel for party chat. S60:
+-- `path` = the member's main path id (or nil); `luck` = the party's Fortune on bosses (Logic/Luck.boss) or nil when
+-- neutral. S78: scoutRange: Scout's Eye bonus in studs (ROZWOJ 11.5), read by the minimaps of members within
+-- HOOK_RULES.scoutEye.shareRange.
 -- Other systems use AreAllies / SameParty / Members / MembersInRange.
 
 local Players = game:GetService("Players")
@@ -45,6 +47,20 @@ local PathService: any
 local function pathService(): any
 	PathService = PathService or Registry.Get("PathService")
 	return PathService
+end
+
+local SkillService: any
+
+-- Lazy: SkillService depends on PartyService (Deps), a Deps entry here would be a cycle
+local function skillService(): any
+	SkillService = SkillService or Registry.Get("SkillService")
+	return SkillService
+end
+
+-- S78: Scout's Eye of a member (hook minimapEliteBonus of its path nodes, already x1/3 outside the main path), nil at 0.
+local function scoutRange(member: Player): number?
+	local bonus = math.floor(skillService().PassiveHook(member, "minimapEliteBonus") + 0.5)
+	return if bonus > 0 then bonus else nil
 end
 
 local nextId = 0
@@ -137,6 +153,7 @@ local function publish(party: Party?, player: Player, luck: Luck.BossLuck?)
 			z = if root then math.floor(root.Position.Z) else 0,
 			dead = ResourceService.IsDead(member),
 			path = if char and char.path then char.path.main else nil,
+			scoutRange = scoutRange(member),
 		})
 	end
 	local value = {

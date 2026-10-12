@@ -13,6 +13,7 @@ local Locale = require("../Util/Locale")
 local PathsData = require("../Data/Paths")
 local SkillData = require("../Data/Skills")
 local Stats = require("../Data/Stats")
+local TableUtil = require("../Util/TableUtil")
 
 type SkillDef = SkillData.SkillDef
 
@@ -133,6 +134,7 @@ local NUMERIC_FIELDS = {
 -- once), `add` sums, `mul` multiplies, `effect` / `selfEffect` / `allyEffect` go to the effects / selfEffects /
 -- allyEffects lists, every other key: the later source wins. `add.effectDuration` lengthens every effect of the
 -- skill (effects, selfEffects, allyEffects; S75), `add.<kind>Duration` only the `effects` of that kind (S75).
+-- S78: an effect deeply equal to one already on its list is not added again (values were summed).
 -- S76: `finisher` merges into def.finisher (each source overrides the fields it gives); castTime stays >= 0.
 -- `enabled = false` (or Config.Skills.breakpoints off) drops the breakpoints, not the mods. `rank` comes from the
 -- character level (S56); consumers call it through Logic/Paths.effectiveFor (choices = path.bp, mods =
@@ -163,6 +165,15 @@ function Skills.effective(
 	local addKind: { [string]: number } = {}
 	local jumps = 0
 	local none: { [string]: number } = {}
+	-- S78: identical effects from several sources merge: their values were already summed (ROZWOJ 2.7)
+	local function addEffect(list: { SkillData.SkillEffect }, effect: SkillData.SkillEffect)
+		for _, present in list do
+			if TableUtil.deepEqual(present, effect) then
+				return
+			end
+		end
+		table.insert(list, effect)
+	end
 	for _, bp in sources do
 		for key, amount in bp.add or none do
 			if key == "effectDuration" then
@@ -197,11 +208,11 @@ function Skills.effective(
 		end
 		for key, v in bp :: any do
 			if key == "effect" then
-				table.insert(effects, v)
+				addEffect(effects, v)
 			elseif key == "selfEffect" then
-				table.insert(selfEffects, v)
+				addEffect(selfEffects, v)
 			elseif key == "allyEffect" then
-				table.insert(allyEffects, v)
+				addEffect(allyEffects, v)
 			elseif key == "finisher" then
 				local merged = if def.finisher then table.clone(def.finisher) else {}
 				for field, x in v do

@@ -1,5 +1,5 @@
 --!strict
--- Hunter skills (DESIGN §14.3), Energy.
+-- Hunter (docs/ROZWOJ.md 11): base 8 and the skills of the marksman, trapper and scout paths. Energy.
 
 local Build = require("./Build")
 local Types = require("./Types")
@@ -11,6 +11,7 @@ local SNAREFIELD_EFFECTS: { Types.SkillEffect } = {
 }
 
 return Build.class("Hunter", "energy", "phys", {
+	-- Base (ROZWOJ 11.2): eight skills, two passives.
 	{
 		id = "aimedShot",
 		unlock = 1,
@@ -21,7 +22,10 @@ return Build.class("Hunter", "energy", "phys", {
 		cooldown = 4,
 		range = 38,
 		values = { dmg = { 170, 310 } },
-		breakpoints = Build.bp2({ a = { pierce = 50 } }, { a = { execute = 30 } }),
+		breakpoints = Build.bp2(
+			{ a = { pierce = 50 }, b = { values = { dmg = 30 } } },
+			{ a = { execute = 30 }, b = { lifesteal = 12 } }
+		),
 		glyph = "➶",
 		vfx = "arrow",
 	},
@@ -37,10 +41,10 @@ return Build.class("Hunter", "energy", "phys", {
 		hits = 2,
 		interval = 0.15,
 		values = { dmg = { 85, 150 } },
-		breakpoints = Build.bp2(
-			{ a = { add = { hits = 1 } } },
-			{ a = { effect = { kind = "slow", duration = 2, value = 25, category = "enemySlow" } } }
-		),
+		breakpoints = Build.bp2({ a = { add = { hits = 1 } }, b = { mul = { cooldown = 0.7 } } }, {
+			a = { effect = { kind = "slow", duration = 2, value = 25, category = "enemySlow" } },
+			b = { values = { dmg = 30 } },
+		}),
 		glyph = "⇉",
 		vfx = "arrow",
 	},
@@ -57,8 +61,21 @@ return Build.class("Hunter", "energy", "phys", {
 		values = { bonus = { 20, 50 } },
 		effects = { { kind = "nextShot", duration = 8, value = "bonus", target = "self", category = "own" } },
 		breakpoints = Build.bp2(
-			{ a = { trap = { radius = 6, duration = 8, slow = 40 } } },
-			{ a = { values = { bonus = 50 }, add = { effectDuration = -5 } } }
+			{ a = { trap = { radius = 6, duration = 8, slow = 40 } }, b = { mul = { cooldown = 0.7 } } },
+			{
+				a = { values = { bonus = 50 }, add = { effectDuration = -5 } },
+				-- dodge is percentage points: flat, not pct
+				b = {
+					selfEffect = {
+						kind = "statBuff",
+						duration = 4,
+						stats = { dodge = "dodgeBp" },
+						target = "self",
+						category = "own",
+					},
+					values = { dodgeBp = 20 },
+				},
+			}
 		),
 		glyph = "⤺",
 	},
@@ -75,10 +92,10 @@ return Build.class("Hunter", "energy", "phys", {
 		hits = 4,
 		interval = 0.5,
 		values = { dmg = { 45, 85 } },
-		breakpoints = Build.bp2(
-			{ a = { add = { radius = 3 } } },
-			{ a = { effect = { kind = "slow", duration = 2, value = 30, category = "enemySlow" } } }
-		),
+		breakpoints = Build.bp2({ a = { add = { radius = 3 } }, b = { values = { dmg = 8 } } }, {
+			a = { effect = { kind = "slow", duration = 2, value = 30, category = "enemySlow" } },
+			b = { add = { hits = 1 } },
+		}),
 		glyph = "☔",
 	},
 	{
@@ -102,81 +119,16 @@ return Build.class("Hunter", "energy", "phys", {
 		element = "poison",
 		values = { dmg = { 120, 210 }, poison = { 50, 120 } },
 		effects = { { kind = "poison", duration = 6, value = "poison" } },
-		breakpoints = Build.bp2({ a = { values = { poison = 40 } } }, { a = { splash = { radius = 5, pct = 40 } } }),
+		breakpoints = Build.bp2(
+			{ a = { values = { poison = 40 } }, b = { values = { dmg = 40 } } },
+			{ a = { splash = { radius = 5, pct = 40 } }, b = { values = { poison = 70 } } }
+		),
 		glyph = "☠",
 		vfx = "arrow",
 	},
 	{
-		id = "frostTrap",
-		unlock = 23,
-		maxLevel = 10,
-		type = "trap",
-		delivery = "ranged",
-		cost = 25,
-		cooldown = 18,
-		radius = 6,
-		duration = 20,
-		element = "ice",
-		values = { root = { 2, 3.5 } },
-		effects = { { kind = "root", duration = { 2, 3.5 } } },
-		breakpoints = Build.bp2(
-			{ a = { add = { radius = 2 } } },
-			{ a = { effect = { kind = "freeze", duration = 1 } } }
-		),
-		glyph = "❄",
-	},
-	{
-		id = "agility",
-		unlock = 28,
-		maxLevel = 5,
-		type = "passive",
-		values = { dodge = { 2, 10 }, move = { 3, 15 } },
-		passive = { flat = { dodge = "dodge", moveSpeed = "move" } },
-		glyph = "🍃",
-	},
-	{
-		id = "piercingArrow",
-		unlock = 34,
-		maxLevel = 10,
-		type = "line",
-		delivery = "ranged",
-		cost = 40,
-		cooldown = 12,
-		length = 35,
-		width = 4,
-		values = { dmg = { 200, 360 } },
-		breakpoints = Build.bp2({ a = { add = { width = 2 } } }, { a = { knockback = 6 } }),
-		glyph = "➸",
-	},
-	{
-		id = "huntersMark",
-		unlock = 40,
-		maxLevel = 10,
-		type = "debuff",
-		delivery = "ranged",
-		cost = 20,
-		cooldown = 25,
-		range = 40,
-		values = { vuln = { 10, 25 } },
-		effects = { { kind = "vulnerability", duration = 10, value = "vuln", category = "enemyWeak" } },
-		breakpoints = Build.bp2(
-			{ a = { add = { effectDuration = 5 } } },
-			{ a = { effect = { kind = "slow", duration = 10, value = 20, category = "enemySlow" } } }
-		),
-		glyph = "🎯",
-	},
-	{
-		id = "predatorInstinct",
-		unlock = 48,
-		maxLevel = 5,
-		type = "passive",
-		values = { speed = { 3, 15 } },
-		passive = { flat = { atkSpeed = "speed" } },
-		glyph = "🐾",
-	},
-	{
 		id = "volley",
-		unlock = 56,
+		unlock = 30,
 		maxLevel = 10,
 		type = "cone",
 		delivery = "ranged",
@@ -186,55 +138,43 @@ return Build.class("Hunter", "energy", "phys", {
 		angle = 60,
 		hits = 7,
 		values = { dmg = { 70, 120 } },
-		breakpoints = Build.bp2({ a = { add = { hits = 3 } } }, { a = { add = { angle = 30 } } }),
+		breakpoints = Build.bp2(
+			{ a = { add = { hits = 3 } }, b = { values = { dmg = 15 } } },
+			{ a = { add = { angle = 30 } }, b = { values = { dmg = 20 } } }
+		),
 		glyph = "⇶",
 	},
 	{
-		id = "camouflage",
-		unlock = 65,
-		maxLevel = 10,
-		type = "buff",
-		delivery = "ranged",
-		cost = 30,
-		cooldown = 60,
-		duration = 4,
-		values = {},
-		effects = {
-			{ kind = "camouflage", duration = 4, target = "self", category = "own" },
-			{ kind = "guaranteedCrit", duration = 10, target = "self", category = "own" },
-		},
-		breakpoints = Build.bp2({ a = { add = { effectDuration = 2 } } }, {
-			a = {
-				selfEffect = {
-					kind = "statBuff",
-					duration = 4,
-					-- moveSpeed already is a % of walk speed (base 0): flat points, not pct (S53).
-					stats = { moveSpeed = "speedBp" },
-					target = "self",
-					category = "own",
-				},
-				values = { speedBp = 30 },
-			},
-		}),
-		glyph = "🌫",
+		id = "predatorInstinct",
+		unlock = 45,
+		maxLevel = 5,
+		type = "passive",
+		values = { speed = { 3, 15 } },
+		passive = { flat = { atkSpeed = "speed" } },
+		glyph = "🐾",
 	},
+	-- Marksman (ROZWOJ 11.3): rows 1, 4, 7, 8. Draw a Bead: only the caster's hits on the target crit more
+	-- (effect `sighted`). Heartseeker (capstone): aimed for castTime (S76), double damage below 20% HP (finisher,
+	-- x1.5 on players).
 	{
-		id = "stormArrow",
-		unlock = 75,
+		id = "piercingArrow",
+		path = "marksman",
+		unlock = 10,
 		maxLevel = 10,
-		type = "projectile",
+		type = "line",
 		delivery = "ranged",
-		cost = 80,
-		cooldown = 40,
-		range = 38,
-		radius = 8,
-		element = "lightning",
-		values = { dmg = { 400, 650 }, splash = 120 },
-		breakpoints = Build.bp2({ a = { add = { radius = 4 } } }, { a = { effect = { kind = "stun", duration = 1 } } }),
-		glyph = "⚡",
-		vfx = "stormArrow",
+		cost = 40,
+		cooldown = 12,
+		length = 35,
+		width = 4,
+		values = { dmg = { 200, 360 } },
+		breakpoints = Build.bp2({
+			a = { add = { width = 2 } },
+			-- no category, like every DoT (ROZWOJ 7.1, 7.2)
+			b = { effect = { kind = "bleed", duration = 6, value = 50 } },
+		}, { a = { knockback = 6 }, b = { mul = { cooldown = 0.8 } } }),
+		glyph = "➸",
 	},
-	-- S77 (ROZWOJ 11.3): Marksman. Draw a Bead: only the caster's hits on the target crit more (effect `sighted`).
 	{
 		id = "drawBead",
 		path = "marksman",
@@ -253,7 +193,26 @@ return Build.class("Hunter", "energy", "phys", {
 		}),
 		glyph = "◎",
 	},
-	-- Heartseeker (capstone): aimed for castTime (S76), double damage below 20% HP (finisher, x1.5 on players).
+	{
+		id = "stormArrow",
+		path = "marksman",
+		unlock = 48,
+		maxLevel = 10,
+		type = "projectile",
+		delivery = "ranged",
+		cost = 80,
+		cooldown = 40,
+		range = 38,
+		radius = 8,
+		element = "lightning",
+		values = { dmg = { 400, 650 }, splash = 120 },
+		breakpoints = Build.bp2(
+			{ a = { add = { radius = 4 } }, b = { values = { dmg = 80 } } },
+			{ a = { effect = { kind = "stun", duration = 1 } }, b = { mul = { cooldown = 0.8 } } }
+		),
+		glyph = "⚡",
+		vfx = "stormArrow",
+	},
 	{
 		id = "heartseeker",
 		path = "marksman",
@@ -273,7 +232,29 @@ return Build.class("Hunter", "energy", "phys", {
 		),
 		glyph = "➹",
 	},
-	-- S77 (ROZWOJ 11.4): Trapper. Venom Snare: a trap thrown to a point, damage + poison + slow.
+	-- Trapper (ROZWOJ 11.4): rows 1, 4, 7, 8. Venom Snare: a trap thrown to a point, damage + poison + slow.
+	-- Snarefield (capstone): five snares in a ring around the point (S76 ringRadius).
+	{
+		id = "frostTrap",
+		path = "trapper",
+		unlock = 10,
+		maxLevel = 10,
+		type = "trap",
+		delivery = "ranged",
+		cost = 25,
+		cooldown = 18,
+		radius = 6,
+		duration = 20,
+		element = "ice",
+		values = { root = { 2, 3.5 } },
+		effects = { { kind = "root", duration = { 2, 3.5 } } },
+		breakpoints = Build.bp2({
+			a = { add = { radius = 2 } },
+			-- the same values.poison and effect as Blast Trap (ROZWOJ 11.4): one effect, summed value (S78 D4)
+			b = { values = { poison = 60 }, effect = { kind = "poison", duration = 6, value = "poison" } },
+		}, { a = { effect = { kind = "freeze", duration = 1 } }, b = { add = { hits = 1 } } }),
+		glyph = "❄",
+	},
 	{
 		id = "venomSnare",
 		path = "trapper",
@@ -299,7 +280,37 @@ return Build.class("Hunter", "energy", "phys", {
 		),
 		glyph = "☣",
 	},
-	-- Snarefield (capstone): five snares in a ring around the point (S76 ringRadius).
+	{
+		id = "camouflage",
+		path = "trapper",
+		unlock = 48,
+		maxLevel = 10,
+		type = "buff",
+		delivery = "ranged",
+		cost = 30,
+		cooldown = 60,
+		duration = 4,
+		values = {},
+		effects = {
+			{ kind = "camouflage", duration = 4, target = "self", category = "own" },
+			{ kind = "guaranteedCrit", duration = 10, target = "self", category = "own" },
+		},
+		breakpoints = Build.bp2({ a = { add = { effectDuration = 2 } }, b = { mul = { cooldown = 0.75 } } }, {
+			a = {
+				selfEffect = {
+					kind = "statBuff",
+					duration = 4,
+					-- moveSpeed already is a % of walk speed (base 0): flat points, not pct (S53).
+					stats = { moveSpeed = "speedBp" },
+					target = "self",
+					category = "own",
+				},
+				values = { speedBp = 30 },
+			},
+			b = { selfHeal = 15 },
+		}),
+		glyph = "🌫",
+	},
 	{
 		id = "snarefield",
 		path = "trapper",
@@ -323,8 +334,19 @@ return Build.class("Hunter", "energy", "phys", {
 		),
 		glyph = "⁂",
 	},
-	-- S77 (ROZWOJ 11.5): Scout. Falcon: a companion (Skills/Companion), first strike after `delay`, then every
-	-- `interval`; `range` = reach of the hunter's target, `radius` = reach of the fallback target.
+	-- Scout (ROZWOJ 11.5): rows 1, 4, 7, 10. Falcon: a companion (Skills/Companion), first strike after `delay`, then
+	-- every `interval`; `range` = reach of the hunter's target, `radius` = reach of the fallback target. The Drive:
+	-- pulls to the point (S76 pull), then one wave with slow and vulnerability.
+	{
+		id = "agility",
+		path = "scout",
+		unlock = 10,
+		maxLevel = 5,
+		type = "passive",
+		values = { dodge = { 2, 10 }, move = { 3, 15 } },
+		passive = { flat = { dodge = "dodge", moveSpeed = "move" } },
+		glyph = "🍃",
+	},
 	{
 		id = "falcon",
 		path = "scout",
@@ -346,7 +368,24 @@ return Build.class("Hunter", "energy", "phys", {
 		}, { a = { values = { dmg = 15 } }, b = { splash = { radius = 5, pct = 50 } } }),
 		glyph = "🦅",
 	},
-	-- The Drive: pulls to the point (S76 pull), then one wave with slow and vulnerability.
+	{
+		id = "huntersMark",
+		path = "scout",
+		unlock = 48,
+		maxLevel = 10,
+		type = "debuff",
+		delivery = "ranged",
+		cost = 20,
+		cooldown = 25,
+		range = 40,
+		values = { vuln = { 6, 8 } }, -- ROZWOJ 11.5, 15.4.1
+		effects = { { kind = "vulnerability", duration = 10, value = "vuln", category = "enemyWeak" } },
+		breakpoints = Build.bp2({ a = { add = { effectDuration = 5 } }, b = { add = { radius = 6 } } }, {
+			a = { effect = { kind = "slow", duration = 10, value = 20, category = "enemySlow" } },
+			b = { values = { vuln = 2 } },
+		}),
+		glyph = "🎯",
+	},
 	{
 		id = "drive",
 		path = "scout",

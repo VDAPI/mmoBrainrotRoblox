@@ -7,6 +7,9 @@
 -- S25: a click / tap opens the world map centred on the player; quest marks (! / ?) over NPCs, own map marks,
 -- the guide target and, when it is out of view (or on another map), an arrow on the edge towards it (or towards
 -- the portal on the way). Moving markers come from pools (no instances created while playing).
+-- S78 Scout's Eye (ROZWOJ 11.5): Elites are shown MONSTER_RANGE + bonus studs away (own minimapEliteBonus hook or the
+-- scoutRange of a party member nearby, Logic/ScoutRange); those beyond the disc get markers pinned to its edge.
+-- Without the node (bonus 0) nothing changes. Only monsters the client has streamed in can be shown.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -27,8 +30,11 @@ local MapRoute = require(ReplicatedStorage.Shared.Logic.MapRoute)
 local NavTarget = require(script.Parent.Parent.Parent.NavTarget)
 local NpcMarkState = require(script.Parent.Parent.Parent.NpcMarkState)
 local Npcs = require(ReplicatedStorage.Shared.Data.Npcs)
+local PathData = require(ReplicatedStorage.Shared.Data.Paths)
+local Paths = require(ReplicatedStorage.Shared.Logic.Paths)
 local QuestTrack = require(script.Parent.Parent.Parent.QuestTrack)
 local State = require(script.Parent.Parent.Parent.State)
+local ScoutRange = require(ReplicatedStorage.Shared.Logic.ScoutRange)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
 
@@ -42,6 +48,7 @@ local MONSTER_RANGE = 140
 local MONSTER_DOTS = 60
 local MAX_MARKS = 8
 local EDGE = SIZE / 2 - 14 -- pixels from the centre where the edge arrow sits
+local ELITE_PINS = 8 -- S78: edge markers of Elites beyond the disc (Scout's Eye)
 local ZONE_COLORS = {
 	green = Theme.Colors.ZoneGreen,
 	yellow = Theme.Colors.ZoneYellow,
@@ -122,6 +129,15 @@ local function Minimap(scope: Scope, props: Props): Instance
 		partyPool[i] = glyph(dynamic, "●", "#4A8FE7", Vector2.zero, 14, 5)
 		partyPool[i].Visible = false
 	end
+	-- S78: Elites beyond the disc (Scout's Eye), nearest first.
+	local elitePins: { TextLabel } = {}
+	for i = 1, ELITE_PINS do
+		local pin = glyph(dynamic, "▲", "#FFFFFF", Vector2.zero, 14, 7)
+		pin.TextColor3 = Theme.Colors.GoldBright
+		pin.TextStrokeTransparency = 0.3
+		pin.Visible = false
+		elitePins[i] = pin
+	end
 	local dotPool: { Frame } = {}
 	for i = 1, MONSTER_DOTS do
 		local dot = Instance.new("Frame")
@@ -155,6 +171,19 @@ local function Minimap(scope: Scope, props: Props): Instance
 	local currentMap = ""
 	local currentLevel = 0
 	local level = State.Value({ "character", "level" })
+	-- S78: own Scout's Eye from narrow branches only (`character` changes with every HP change, as UI/GroupLuck).
+	local pathState = State.Value({ "character", "path" })
+	local equipment = State.Value({ "character", "equipment" })
+	local classId = State.Value({ "character", "class" })
+	local ownBonus = scope:Computed(function(use): number
+		local class, lv = use(classId), use(level)
+		if type(class) ~= "string" or type(lv) ~= "number" then
+			return 0
+		end
+		local char = { class = class, level = lv, path = use(pathState) }
+		local hooks = Paths.passiveTotals(char, Paths.weaponTypesOf(use(equipment))).hooks
+		return math.floor((hooks.minimapEliteBonus or 0) + 0.5)
+	end)
 
 	local function redraw()
 		local id = Fusion.peek(mapId) or ""
@@ -364,7 +393,18 @@ local function Minimap(scope: Scope, props: Props): Instance
 				partyPool[i].Visible = false
 			end
 			-- Monsters nearby (S19: normal ones in the colour of their group size, elites gold).
+			-- S78: Elites up to MONSTER_RANGE + the Scout's Eye bonus; beyond the disc they get edge markers.
+			local eliteBonus = ScoutRange.bonus(
+				Fusion.peek(ownBonus),
+				if type(party) == "table" then party.members else nil,
+				Players.LocalPlayer.UserId,
+				currentMap,
+				root.Position.X,
+				root.Position.Z,
+				PathData.HOOK_RULES.scoutEye.shareRange
+			)
 			local usedDots = 0
+			local pins: { { distance: number, unit: Vector2, size: number } } = {}
 			local monsters = Workspace:FindFirstChild("Monsters")
 			if monsters then
 				for _, model in monsters:GetChildren() do
@@ -373,25 +413,49 @@ local function Minimap(scope: Scope, props: Props): Instance
 					end
 					if model:IsA("Model") and model:GetAttribute("Dead") ~= true then
 						local pivot = model:GetPivot().Position
-						if (pivot - root.Position).Magnitude <= MONSTER_RANGE then
-							usedDots += 1
+						local variant = model:GetAttribute("Variant")
+						local elite = variant == "elite" or variant == "elite2"
+						local distance = (pivot - root.Position).Magnitude
+						if distance <= MONSTER_RANGE + (if elite then eliteBonus else 0) then
 							local local_ = pivot - offset
-							local variant = model:GetAttribute("Variant")
-							local size = if variant == "elite2" then 12 elseif variant == "elite" then 9 else 6
-							local dot = dotPool[usedDots]
 							local p = at(local_.X, local_.Z)
-							dot.Position = UDim2.fromOffset(p.X, p.Y)
-							dot.Size = UDim2.fromOffset(size, size)
-							dot.BackgroundColor3 = if variant == "normal" or variant == nil
-								then GroupColors.of(model:GetAttribute("GroupSize") :: number?)
-								else Theme.Colors.GoldBright
-							dot.Visible = true
+							local direction = p - pixel
+							if elite and eliteBonus > 0 and direction.Magnitude > EDGE then
+								table.insert(pins, {
+									distance = distance,
+									unit = direction.Unit,
+									size = if variant == "elite2" then 17 else 14,
+								})
+							else
+								usedDots += 1
+								local size = if variant == "elite2" then 12 elseif variant == "elite" then 9 else 6
+								local dot = dotPool[usedDots]
+								dot.Position = UDim2.fromOffset(p.X, p.Y)
+								dot.Size = UDim2.fromOffset(size, size)
+								dot.BackgroundColor3 = if variant == "normal" or variant == nil
+									then GroupColors.of(model:GetAttribute("GroupSize") :: number?)
+									else Theme.Colors.GoldBright
+								dot.Visible = true
+							end
 						end
 					end
 				end
 			end
 			for i = usedDots + 1, MONSTER_DOTS do
 				dotPool[i].Visible = false
+			end
+			table.sort(pins, function(a, b): boolean
+				return a.distance < b.distance
+			end)
+			for i, pin in elitePins do
+				local entry = pins[i]
+				pin.Visible = entry ~= nil
+				if entry then
+					local edge = pixel + entry.unit * EDGE
+					pin.Position = UDim2.fromOffset(edge.X, edge.Y)
+					pin.Size = UDim2.fromOffset(entry.size, entry.size)
+					pin.Rotation = math.deg(math.atan2(entry.unit.X, -entry.unit.Y))
+				end
 			end
 		end)
 	)
