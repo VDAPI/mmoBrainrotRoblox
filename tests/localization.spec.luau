@@ -14,6 +14,7 @@ local MODULES: { [string]: any } = {
 	Fish = require("../src/shared/Data/Fish"),
 	GatherNodes = require("../src/shared/Data/GatherNodes"),
 	GuildSkills = require("../src/shared/Data/GuildSkills"),
+	ItemTraits = require("../src/shared/Data/ItemTraits"),
 	Items = require("../src/shared/Data/Items"),
 	Maps = require("../src/shared/Data/Maps"),
 	Market = require("../src/shared/Data/Market"),

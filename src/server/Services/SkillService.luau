@@ -471,7 +471,9 @@ local function cast(player: Player, skillId: string, targetId: string?, aim: any
 	end
 
 	-- Cost (S54: one formula with the bar and the description; Mage mana grows with the character level).
-	local cost = Skills.cost(skill, rank, char.level, char.class, nil)
+	local cost = Skills.cost(skill, rank, char.level, char.class, {
+		costReduce = StatService.GetValue(player, "costReduce"), -- S62 item saving
+	})
 	local resource = skill.resource
 	if cost > 0 and resource and not rt.infiniteResources then
 		local ok = if resource == "mana"

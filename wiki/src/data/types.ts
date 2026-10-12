@@ -115,6 +115,7 @@ export interface BaseInfo {
   glyph: string;
   name: Name;
   slot: SlotGroup;
+  trait?: string;
 }
 
 export interface BasicAttack {
@@ -159,6 +160,7 @@ export interface Bonus {
   ranges: Record<string, Record<string, number[]>>;
   scaling: string;
   stat?: string;
+  tier: string;
 }
 
 export interface BonusesFile {

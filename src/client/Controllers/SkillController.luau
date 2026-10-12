@@ -565,7 +565,9 @@ function SkillController.Usable(skillId: string): (boolean, boolean, boolean)
 	end
 	local rank = math.max(1, rankOf(skill))
 	local def = effective(skill, rank)
-	local cost = Skills.cost(def, rank, State.Get({ "character", "level" }) or 1, skill.class, nil)
+	local cost = Skills.cost(def, rank, State.Get({ "character", "level" }) or 1, skill.class, {
+		costReduce = State.Get({ "derived", "values", "costReduce" }) or 0, -- S62 item saving
+	})
 	local current = if skill.resource then State.Get({ "character", skill.resource }) or 0 else math.huge
 	local enoughResource = current >= cost
 	local inRange = skill.target ~= "enemy" or SkillController.TargetDistance() <= (def.range or 10) + 2

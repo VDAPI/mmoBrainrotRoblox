@@ -25,12 +25,17 @@ local DEFS: { StatDef } = {
 	{ id = "critDmg", group = "offense", format = "pct", decimals = 0 },
 	{ id = "atkSpeed", group = "offense", format = "flat", decimals = 2, cap = 2.5 },
 	{ id = "accuracy", group = "offense", format = "pct", decimals = 1 },
-	{ id = "armorPen", group = "offense", format = "flat", decimals = 0 },
+	{ id = "pierce", group = "offense", format = "pct", decimals = 1, cap = 50 }, -- S62 (STATY 4)
+	{ id = "magicPierce", group = "offense", format = "pct", decimals = 1, cap = 50 }, -- S62 (STATY 4)
 	{ id = "lifesteal", group = "offense", format = "pct", decimals = 1, cap = 15 },
+	{ id = "skillDmg", group = "offense", format = "pct", decimals = 1 }, -- S62 (STATY 4)
+	{ id = "basicDmg", group = "offense", format = "pct", decimals = 1 }, -- S62 (STATY 4)
+	{ id = "healPower", group = "offense", format = "pct", decimals = 1 }, -- S62 (STATY 4)
 	-- Defense
 	{ id = "armor", group = "defense", format = "flat", decimals = 0 },
 	{ id = "mres", group = "defense", format = "flat", decimals = 0 },
 	{ id = "dodge", group = "defense", format = "pct", decimals = 1, cap = 30 },
+	{ id = "critResist", group = "defense", format = "pct", decimals = 1, cap = 50 }, -- S62 (STATY 4)
 	{ id = "resFire", group = "defense", format = "pct", decimals = 0, cap = 75 },
 	{ id = "resIce", group = "defense", format = "pct", decimals = 0, cap = 75 },
 	{ id = "resLightning", group = "defense", format = "pct", decimals = 0, cap = 75 },
@@ -43,6 +48,7 @@ local DEFS: { StatDef } = {
 	{ id = "hpRegenCombat", group = "resources", format = "flat", decimals = 1 },
 	{ id = "manaRegen", group = "resources", format = "flat", decimals = 1 },
 	{ id = "energyRegen", group = "resources", format = "flat", decimals = 1 },
+	{ id = "costReduce", group = "resources", format = "pct", decimals = 1, cap = 20 }, -- S62 (STATY 4)
 	-- Other
 	{ id = "moveSpeed", group = "other", format = "pct", decimals = 0, cap = 30 },
 	{ id = "expBonus", group = "other", format = "pct", decimals = 0 },

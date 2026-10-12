@@ -55,6 +55,7 @@ local function unique(
 		maxStack = 1,
 		base = stats,
 		weapon = weapon,
+		trait = base.trait, -- S62: named weapons carry their type's trait (STATY 9)
 		nameKey = `item.{id}.name`,
 		descKey = `item.{id}.desc`,
 		icon = { glyph = glyph, color = Rarities.get(Rarities.MYTHIC).hex },

@@ -12,6 +12,8 @@
 -- S32: attack bonuses are percentages of the attack (a flat +5 was +50 % at level 1 and +3 % at level 20), and
 -- pools are filtered by class (`CLASS_STATS`): a Warrior's sword never rolls INT or magic attack.
 
+export type BonusTier = "regular" | "legendary" | "mythic"
+
 export type BonusDef = {
 	id: string,
 	nameKey: string,
@@ -23,6 +25,9 @@ export type BonusDef = {
 	scaling: "flat" | "curve" | "pct" | "none",
 	decimals: number,
 	percent: boolean, -- display with %
+	tier: BonusTier, -- row style in the tooltip and the wiki; replaces guessing by hook or prefix (STATY 2C)
+	wiki: boolean, -- exported to the wiki; false for legacy lines
+	replacedBy: string?, -- legacy id read as another line (ItemRoll.itemStats, STATY 12)
 }
 
 local DEFS: { [string]: BonusDef } = {}
@@ -36,7 +41,8 @@ local function bonus(
 	scaling: "flat" | "curve" | "pct" | "none",
 	decimals: number,
 	percent: boolean,
-	hook: string?
+	hook: string?,
+	tier: BonusTier?
 )
 	DEFS[id] = {
 		id = id,
@@ -49,6 +55,8 @@ local function bonus(
 		scaling = scaling,
 		decimals = decimals,
 		percent = percent,
+		tier = tier or "regular",
+		wiki = true,
 	}
 end
 
@@ -68,8 +76,17 @@ bonus("mres", "mres", "flat", 1, 2.5, "curve", 0, false)
 bonus("critChance", "critChance", "flat", 0.5, 1.2, "pct", 1, true)
 bonus("critDmg", "critDmg", "flat", 2, 5, "pct", 0, true)
 bonus("atkSpeed", "atkSpeed", "flat", 1, 2.2, "pct", 1, true)
+-- legacy flat penetration: read as "pierce" with the same roll quality (ItemRoll.itemStats); in no pool
 bonus("armorPen", "armorPen", "flat", 1, 2.5, "curve", 0, false)
 bonus("lifesteal", "lifesteal", "flat", 0.5, 1.5, "pct", 1, true)
+-- S62 (STATY 4): new regular lines; "pierce" replaces the flat "armorPen".
+bonus("pierce", "pierce", "flat", 3, 6, "pct", 1, true) -- % of the target's armour ignored, after armour break
+bonus("magicPierce", "magicPierce", "flat", 3, 6, "pct", 1, true) -- % of the target's magic resistance ignored
+bonus("skillDmg", "skillDmg", "flat", 1, 2.2, "pct", 1, true) -- +% skill damage (params.isSkill)
+bonus("basicDmg", "basicDmg", "flat", 1.5, 3.3, "pct", 1, true) -- +% basic attack damage (params.basic)
+bonus("healPower", "healPower", "flat", 1.5, 3.5, "pct", 1, true) -- +% heals and shields you cast
+bonus("critResist", "critResist", "flat", 3, 6, "pct", 1, true) -- % less crit bonus taken
+bonus("costReduce", "costReduce", "flat", 1.5, 3, "none", 1, true) -- % cheaper skills, no scale (STATY 4)
 bonus("accuracy", "accuracy", "flat", 1, 3, "pct", 1, true)
 bonus("dodge", "dodge", "flat", 0.5, 1.2, "pct", 1, true)
 bonus("resFire", "resFire", "flat", 3, 8, "pct", 0, true)
@@ -85,33 +102,36 @@ bonus("goldBonus", "goldBonus", "flat", 3, 8, "pct", 0, true)
 bonus("dropBonus", "dropBonus", "flat", 2, 5, "pct", 0, true)
 
 -- Legendary pool (one extra bonus on every legendary item) --------------------------------------------------
-bonus("leg_bossDamage", nil, "flat", 6, 10, "none", 1, true, "bossDamage") -- +% damage against bosses
-bonus("leg_eliteDamage", nil, "flat", 8, 12, "none", 1, true, "eliteDamage") -- +% damage against elites
-bonus("leg_doubleAttack", nil, "flat", 4, 6, "none", 1, true, "doubleAttack") -- % chance to hit twice
-bonus("leg_killHeal", nil, "flat", 2, 4, "none", 1, true, "killHeal") -- % max HP healed on kill
-bonus("leg_thorns", nil, "flat", 6, 10, "none", 1, true, "thorns") -- % of damage taken reflected
-bonus("leg_manaOnHit", nil, "flat", 1, 3, "none", 1, true, "manaOnHit") -- % max mana restored per hit
-bonus("leg_executioner", nil, "flat", 12, 18, "none", 1, true, "executioner") -- +% damage below 30 % HP
-bonus("leg_lastStand", nil, "flat", 12, 18, "none", 1, true, "lastStand") -- -% damage taken below 30 % HP
-bonus("leg_expBonus", "expBonus", "flat", 12, 18, "none", 0, true)
-bonus("leg_goldBonus", "goldBonus", "flat", 15, 25, "none", 0, true)
-bonus("leg_dropBonus", "dropBonus", "flat", 10, 15, "none", 0, true)
-bonus("leg_lifesteal", "lifesteal", "flat", 2, 4, "none", 1, true)
-bonus("leg_moveSpeed", "moveSpeed", "flat", 6, 10, "none", 0, true)
-bonus("leg_critDmg", "critDmg", "flat", 20, 30, "none", 0, true)
+bonus("leg_bossDamage", nil, "flat", 6, 10, "none", 1, true, "bossDamage", "legendary") -- +% damage against bosses
+bonus("leg_eliteDamage", nil, "flat", 8, 12, "none", 1, true, "eliteDamage", "legendary") -- +% damage against elites
+bonus("leg_doubleAttack", nil, "flat", 4, 6, "none", 1, true, "doubleAttack", "legendary") -- % chance to hit twice
+bonus("leg_killHeal", nil, "flat", 2, 4, "none", 1, true, "killHeal", "legendary") -- % max HP healed on kill
+bonus("leg_thorns", nil, "flat", 6, 10, "none", 1, true, "thorns", "legendary") -- % of damage taken reflected
+bonus("leg_manaOnHit", nil, "flat", 1, 3, "none", 1, true, "manaOnHit", "legendary") -- % max mana restored per hit
+bonus("leg_executioner", nil, "flat", 12, 18, "none", 1, true, "executioner", "legendary") -- +% damage below 30 % HP
+bonus("leg_lastStand", nil, "flat", 12, 18, "none", 1, true, "lastStand", "legendary") -- -% damage taken below 30 % HP
+bonus("leg_expBonus", "expBonus", "flat", 12, 18, "none", 0, true, nil, "legendary")
+bonus("leg_goldBonus", "goldBonus", "flat", 15, 25, "none", 0, true, nil, "legendary")
+bonus("leg_dropBonus", "dropBonus", "flat", 10, 15, "none", 0, true, nil, "legendary")
+bonus("leg_lifesteal", "lifesteal", "flat", 2, 4, "none", 1, true, nil, "legendary")
+bonus("leg_moveSpeed", "moveSpeed", "flat", 6, 10, "none", 0, true, nil, "legendary")
+bonus("leg_critDmg", "critDmg", "flat", 20, 30, "none", 0, true, nil, "legendary")
 
 -- Mythic pool (FIX 2026-10-09: one line on every mythic item, on top of its 2 legendary lines). Stronger
 -- versions of the legendary effects; the hooks add up with legendary lines of the same effect.
-bonus("myth_bossDamage", nil, "flat", 15, 20, "none", 1, true, "bossDamage")
-bonus("myth_eliteDamage", nil, "flat", 18, 25, "none", 1, true, "eliteDamage")
-bonus("myth_doubleAttack", nil, "flat", 8, 12, "none", 1, true, "doubleAttack")
-bonus("myth_killHeal", nil, "flat", 5, 8, "none", 1, true, "killHeal")
-bonus("myth_executioner", nil, "flat", 25, 35, "none", 1, true, "executioner")
-bonus("myth_lastStand", nil, "flat", 25, 35, "none", 1, true, "lastStand")
-bonus("myth_critDmg", "critDmg", "flat", 40, 60, "none", 0, true)
-bonus("myth_hpPct", "maxHp", "pct", 8, 12, "none", 1, true)
-bonus("myth_physAtk", "physAtk", "pct", 8, 12, "none", 1, true)
-bonus("myth_magAtk", "magAtk", "pct", 8, 12, "none", 1, true)
+bonus("myth_bossDamage", nil, "flat", 15, 20, "none", 1, true, "bossDamage", "mythic")
+bonus("myth_eliteDamage", nil, "flat", 18, 25, "none", 1, true, "eliteDamage", "mythic")
+bonus("myth_doubleAttack", nil, "flat", 8, 12, "none", 1, true, "doubleAttack", "mythic")
+bonus("myth_killHeal", nil, "flat", 5, 8, "none", 1, true, "killHeal", "mythic")
+bonus("myth_executioner", nil, "flat", 25, 35, "none", 1, true, "executioner", "mythic")
+bonus("myth_lastStand", nil, "flat", 25, 35, "none", 1, true, "lastStand", "mythic")
+bonus("myth_critDmg", "critDmg", "flat", 40, 60, "none", 0, true, nil, "mythic")
+bonus("myth_hpPct", "maxHp", "pct", 8, 12, "none", 1, true, nil, "mythic")
+bonus("myth_physAtk", "physAtk", "pct", 8, 12, "none", 1, true, nil, "mythic")
+bonus("myth_magAtk", "magAtk", "pct", 8, 12, "none", 1, true, nil, "mythic")
+
+DEFS.armorPen.wiki = false
+DEFS.armorPen.replacedBy = "pierce"
 
 -- Pools per bonus group (item definitions name their group) --------------------------------------------------
 local POOLS: { [string]: { string } } = {
@@ -121,19 +141,96 @@ local POOLS: { [string]: { string } } = {
 		"critChance",
 		"critDmg",
 		"atkSpeed",
-		"armorPen",
+		"pierce",
 		"lifesteal",
 		"accuracy",
 		"str",
 		"dex",
 		"int",
+		"magicPierce",
+		"skillDmg",
+		"basicDmg",
+		"healPower",
 	},
-	shield = { "armor", "hp", "hpPct", "mres", "vit", "resFire", "resIce", "resLightning", "resPoison", "hpRegen" },
-	quiver = { "physAtk", "critChance", "critDmg", "atkSpeed", "accuracy", "dex", "armorPen" },
-	magicOffhand = { "magAtk", "mana", "manaRegen", "int", "critChance", "critDmg", "mres", "hpRegen" },
-	helmet = { "hp", "armor", "mres", "int", "vit", "manaRegen", "hpRegen", "resIce", "resLightning" },
-	armor = { "hp", "hpPct", "armor", "mres", "vit", "str", "resFire", "resIce", "resLightning", "resPoison" },
-	gloves = { "physAtk", "magAtk", "critChance", "atkSpeed", "accuracy", "str", "dex", "armor" },
+	shield = {
+		"armor",
+		"hp",
+		"hpPct",
+		"mres",
+		"vit",
+		"resFire",
+		"resIce",
+		"resLightning",
+		"resPoison",
+		"hpRegen",
+		"critResist",
+	},
+	quiver = {
+		"physAtk",
+		"critChance",
+		"critDmg",
+		"atkSpeed",
+		"accuracy",
+		"dex",
+		"pierce",
+		"skillDmg",
+		"basicDmg",
+		"costReduce",
+	},
+	magicOffhand = {
+		"magAtk",
+		"mana",
+		"manaRegen",
+		"int",
+		"critChance",
+		"critDmg",
+		"mres",
+		"hpRegen",
+		"magicPierce",
+		"skillDmg",
+		"healPower",
+		"costReduce",
+	},
+	helmet = {
+		"hp",
+		"armor",
+		"mres",
+		"int",
+		"vit",
+		"manaRegen",
+		"hpRegen",
+		"resIce",
+		"resLightning",
+		"healPower",
+		"critResist",
+		"costReduce",
+	},
+	armor = {
+		"hp",
+		"hpPct",
+		"armor",
+		"mres",
+		"vit",
+		"str",
+		"resFire",
+		"resIce",
+		"resLightning",
+		"resPoison",
+		"critResist",
+	},
+	gloves = {
+		"physAtk",
+		"magAtk",
+		"critChance",
+		"atkSpeed",
+		"accuracy",
+		"str",
+		"dex",
+		"armor",
+		"pierce",
+		"magicPierce",
+		"basicDmg",
+	},
 	boots = { "moveSpeed", "dodge", "hp", "armor", "dex", "energyRegen", "resPoison" },
 	necklace = {
 		"str",
@@ -149,6 +246,8 @@ local POOLS: { [string]: { string } } = {
 		"dropBonus",
 		"hpRegen",
 		"manaRegen",
+		"skillDmg",
+		"costReduce",
 	},
 	ring = {
 		"str",
@@ -162,8 +261,22 @@ local POOLS: { [string]: { string } } = {
 		"goldBonus",
 		"dropBonus",
 		"energy",
+		"pierce",
+		"basicDmg",
 	},
-	talisman = { "str", "dex", "int", "vit", "mres", "expBonus", "dropBonus", "energyRegen", "manaRegen", "hpPct" },
+	talisman = {
+		"str",
+		"dex",
+		"int",
+		"vit",
+		"mres",
+		"expBonus",
+		"dropBonus",
+		"energyRegen",
+		"manaRegen",
+		"hpPct",
+		"critResist",
+	},
 	legendary = {
 		"leg_bossDamage",
 		"leg_eliteDamage",
@@ -201,7 +314,9 @@ local CLASS_STATS: { [string]: { string } } = {
 	dex = { "Hunter" },
 	int = { "Mage", "Cleric" },
 	physAtk = { "Warrior", "Hunter" },
-	armorPen = { "Warrior", "Hunter" },
+	pierce = { "Warrior", "Hunter" },
+	magicPierce = { "Mage", "Cleric" },
+	healPower = { "Cleric" },
 	magAtk = { "Mage", "Cleric" },
 	mana = { "Mage", "Cleric" },
 	manaRegen = { "Mage", "Cleric" },

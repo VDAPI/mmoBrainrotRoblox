@@ -13,7 +13,6 @@ local function attacker(overrides: { [string]: any }?): Damage.Attacker
 		critChance = 0,
 		critDmg = 150,
 		accuracy = 0,
-		armorPen = 0,
 		lifesteal = 0,
 	}
 	for k, v in overrides or {} do
@@ -62,15 +61,59 @@ T.describe("Damage", function()
 		T.expect(Damage.reduction(500, 50) < Damage.reduction(500, 5)).toBe(true)
 	end)
 
-	T.it("armor penetration only lowers physical defense", function()
+	T.it("armor pierce only lowers physical defense", function()
 		local rngA, rngB = Rng.new(9), Rng.new(9)
 		local plain = Damage.computeDamage(attacker(), defender({ armor = 300 }), PHYS, rngA)
-		local pierced = Damage.computeDamage(attacker({ armorPen = 300 }), defender({ armor = 300 }), PHYS, rngB)
+		local pierced = Damage.computeDamage(attacker({ pierce = 50 }), defender({ armor = 300 }), PHYS, rngB)
 		T.expect(pierced.amount > plain.amount).toBe(true)
 		local magicA = Damage.computeDamage(attacker(), defender({ mres = 300 }), { kind = "magic" }, Rng.new(4))
 		local magicB =
-			Damage.computeDamage(attacker({ armorPen = 300 }), defender({ mres = 300 }), { kind = "magic" }, Rng.new(4))
+			Damage.computeDamage(attacker({ pierce = 50 }), defender({ mres = 300 }), { kind = "magic" }, Rng.new(4))
 		T.expect(magicA.amount).toBe(magicB.amount)
+	end)
+
+	T.it("S62: defenseOf applies armour break, then pierce (cap 50), magic pierce on mres", function()
+		T.expect(Damage.defenseOf("phys", attacker({ pierce = 20 }), defender({ armor = 1000 }), 30))
+			.toBeNear(560, 1e-9)
+		T.expect(Damage.defenseOf("phys", attacker({ pierce = 80 }), defender({ armor = 1000 }), 30))
+			.toBeNear(350, 1e-9)
+		local magic = Damage.defenseOf(
+			"magic",
+			attacker({ magicPierce = 20, pierce = 50 }),
+			defender({ mres = 1000, armor = 1000 }),
+			30
+		)
+		T.expect(magic).toBeNear(800, 1e-9)
+	end)
+
+	T.it("S62: critResist removes part of the crit bonus", function()
+		T.expect(Damage.critMultiplier(150, 0)).toBeNear(1.5, 1e-9)
+		T.expect(Damage.critMultiplier(150, 50)).toBeNear(1.25, 1e-9)
+		T.expect(Damage.critMultiplier(175, 20)).toBeNear(1.6, 1e-9)
+		T.expect(Damage.critMultiplier(150, 80)).toBeNear(1.25, 1e-9)
+		T.expect(Damage.critMultiplier(90, nil)).toBeNear(1, 1e-9)
+		local resisted = Damage.computeDamage(
+			attacker(),
+			defender({ critResist = 50 }),
+			{ kind = "phys", forceCrit = true },
+			Rng.new(5)
+		)
+		local full = Damage.computeDamage(attacker(), defender(), { kind = "phys", forceCrit = true }, Rng.new(5))
+		T.expect(math.abs(resisted.amount / full.amount - 1.25 / 1.5) < 0.02).toBe(true)
+	end)
+
+	T.it("S62: skillDmg and basicDmg only with their flag", function()
+		local function hit(a: Damage.Attacker, params: Damage.Params): number
+			return Damage.computeDamage(a, defender(), params, Rng.new(11)).amount
+		end
+		local base = hit(attacker(), { kind = "phys" })
+		T.expect(hit(attacker({ skillDmg = 10 }), { kind = "phys" })).toBe(base)
+		T.expect(math.abs(hit(attacker({ skillDmg = 10 }), { kind = "phys", isSkill = true }) - base * 1.1) <= 1)
+			.toBe(true)
+		T.expect(hit(attacker({ basicDmg = 10 }), { kind = "phys" })).toBe(base)
+		T.expect(math.abs(hit(attacker({ basicDmg = 10 }), { kind = "phys", basic = true }) - base * 1.1) <= 1)
+			.toBe(true)
+		T.expect(hit(attacker({ basicDmg = 10 }), { kind = "phys", isSkill = true })).toBe(base)
 	end)
 
 	T.it("crits multiply by critDmg", function()

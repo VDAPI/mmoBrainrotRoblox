@@ -369,24 +369,33 @@ end
 -- Level formulas (S54, ROZWOJ 8) ---------------------------------------------------------------------------------
 
 -- Changes to a skill's cost: costPct = sum of percentage changes (-20 = 20 % cheaper). Later sessions extend it
--- (S62 costReduce, S76 / S79-S80 hooks).
-export type CostMods = { costPct: number? }
+-- (S76 / S79-S80 hooks).
+export type CostMods = {
+	costPct: number?,
+	costReduce: number?, -- % item saving (costReduce stat: Tome trait + lines), capped by Data/Stats
+}
+
+local COST_REDUCE_CAP = (Stats.get("costReduce") :: any).cap :: number
 
 -- Resource cost of `skill` (the def after Skills.effective, so breakpoint cost changes apply) at rank `rank` for a
 -- character of level `level` and class `classId`. Mana skills of a class with a "manaCost.<classId>" level curve cost
 -- more with the level (Mage, owner answer 25). Not rounded: the server and the skill bar compare the same number.
 -- One function for the server, the skill bar, the description and the wiki; `rank` comes from the character level.
-function Skills.cost(skill: SkillDef, rank: number, level: number, classId: string, mods: CostMods?): number
+-- (paid, base): Arcanist power reads the base cost (STATY 3), saving does not weaken it (S80/S81). `paid` is the base
+-- after the item saving (mods.costReduce); a call that keeps one value gets what the player pays.
+function Skills.cost(skill: SkillDef, rank: number, level: number, classId: string, mods: CostMods?): (number, number)
 	local base = Skills.scaled(skill, skill.cost, rank)
 	if base <= 0 then
-		return 0
+		return 0, 0
 	end
 	local curve = "manaCost." .. classId
 	if skill.resource == "mana" and LevelCurves.has(curve) then
 		base *= LevelCurves.at(curve, level)
 	end
 	local pct = if mods and mods.costPct then mods.costPct else 0
-	return base * math.max(0, 1 + pct / 100)
+	base *= math.max(0, 1 + pct / 100)
+	local saving = math.clamp(if mods and mods.costReduce then mods.costReduce else 0, 0, COST_REDUCE_CAP)
+	return base * (1 - saving / 100), base
 end
 
 -- Multiplier of the magic-attack part of heals and shields at character level `level` (ROZWOJ 9.2).
@@ -445,7 +454,8 @@ function Skills.descriptionArgs(base: SkillDef, rank: number, opts: DescOpts?): 
 			args[field] = round(Skills.valueAt(skill, field, rank) * healMul)
 		end
 	end
-	args.cost = round(Skills.cost(skill, rank, L, base.class, nil))
+	local cost = Skills.cost(skill, rank, L, base.class, nil)
+	args.cost = round(cost)
 	args.cooldown = round(Skills.scaled(skill, skill.cooldown, rank))
 	if skill.duration then
 		args.duration = round(Skills.scaled(skill, skill.duration, rank))

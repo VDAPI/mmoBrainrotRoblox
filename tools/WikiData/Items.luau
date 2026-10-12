@@ -15,6 +15,7 @@ local GatherNodes = require("../../src/shared/Data/GatherNodes")
 local ItemRoll = require("../../src/shared/Logic/ItemRoll")
 local ItemValue = require("../../src/shared/Logic/ItemValue")
 local ItemData = require("../../src/shared/Data/Items")
+local ItemTraits = require("../../src/shared/Data/ItemTraits")
 local Json = require("./Json")
 local Names = require("./Names")
 local Rarities = require("../../src/shared/Data/Rarities")
@@ -105,6 +106,7 @@ S.file(
 			elemental = "bool",
 			bonusGroup = "string",
 			glyph = "string",
+			["trait?"] = "string", -- S62: only traits with code (live)
 		})),
 	})
 )
@@ -124,6 +126,7 @@ S.file(
 			min = "number",
 			max = "number",
 			ranges = map(map(arr("number"))),
+			tier = "string", -- S62: regular | legendary | mythic
 		})),
 		pools = map(arr("ref:bonuses")),
 		frequency = map(map(map("number"))),
@@ -429,6 +432,8 @@ function Items.build(ctx: any): any
 	end
 	local bases = {}
 	for _, base in ItemData.bases.list do
+		-- S62: a trait id only when it has code (live = false traits are unreleased content).
+		local traitDef = ItemTraits.get(base.trait)
 		bases[base.type] = {
 			name = Names.of(`itemBase.{base.type}`),
 			slot = base.slot,
@@ -436,6 +441,7 @@ function Items.build(ctx: any): any
 			elemental = base.elemental == true,
 			bonusGroup = base.bonusGroup,
 			glyph = base.glyph,
+			trait = if traitDef and traitDef.live then traitDef.id else nil,
 		}
 	end
 	return { items = list, slots = slots, categories = categories, bases = bases }
@@ -469,6 +475,9 @@ function Items.bonuses(ctx: any): any
 	local list = {}
 	for _, id in Clean.keys(Bonuses.byId) do
 		local b = Bonuses.byId[id]
+		if b.wiki ~= true then
+			continue -- S62: legacy lines (armorPen) stay off the wiki
+		end
 		local ranges = {}
 		for _, tier in tiers do
 			local byRarity = {}
@@ -490,6 +499,7 @@ function Items.bonuses(ctx: any): any
 			min = b.min,
 			max = b.max,
 			ranges = ranges,
+			tier = b.tier,
 		})
 	end
 	-- How often each bonus appears on a rolled item of a pool and rarity (Monte Carlo, fixed seed per pool).

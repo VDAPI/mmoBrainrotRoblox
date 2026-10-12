@@ -1258,3 +1258,22 @@
 - **S61** `DeathService.Kill` zadaje `math.huge` (redukcje i tarcze nie zatrzymują `/die`), pojedynek dalej zostawia 1 HP.
 - **S61** Szczęście w PvP pilnuje opcja `pvp` z S60 (tylko komentarz w `Combat.pvp`). Nowe pola `Data/Combat` trafiają
   do `mechanics.json` wiki (blok `combat` eksportowany w całości).
+- **S62** `critResist` zmniejsza premię krytyka (część ponad ×1), nie całe obrażenia z krytyka:
+  `1 + (critDmg/100 − 1) × (1 − critResist/100)`, limit 50; tekst „Odporność na krytyki {v}%” (przy limicie krytyk
+  150% staje się 125%, nigdy słabszy od zwykłego ciosu).
+- **S62** „Druga ręka” w pulach STATY 4 = kołczan i magiczna druga ręka (księga, kula, relikwia); tarcza zostaje pulą
+  obronną. `magicPierce` przez wspólną pulę `magicOffhand` wypada też na relikwii.
+- **S62** Pula broni Wojownika ma w S62 10 linii (11–13 od S63 i S67); test 11–14 przyjmuje 10 dla Buławy Wojownika,
+  dopóki nie ma `woundChance`.
+- **S62** `Skills.cost` zwraca `(paid, base)`; `costReduce` to statystyka z limitem 20 w `Data/Stats` (razem z
+  Wyuczonymi formułami); opis umiejętności i wiki pokazują koszt bez oszczędności.
+- **S62** `healPower` działa przez `ctx.heal` (więc też w nadwyżce `healOne`), sumę `hot` i `Support.shield`; podnosi
+  też wampiryzm umiejętności i `selfHeal` (wspólne wejście, jak `healBonus`), nie leczenie z `CombatService`.
+- **S62** 18 cech bez kodu ma `live = false` (brak w opisie, statystykach i na wiki); ich haki i `params` są wartościami
+  startowymi, które sesja włączająca cechę może zmienić.
+- **S62** Linie legendarne i mityczne zostają losowane równo (tylko z `classesFor`); wagi typu tylko w zwykłych liniach.
+- **S62** `armorPen` zostaje w `Data/Bonuses` jako linia zapisu (`wiki = false`, `replacedBy = "pierce"`), statystyka
+  `armorPen` usunięta, `ItemScore` waży `pierce`.
+- **S62** STATY 15 P1: Żniwo, Ścięcie, Łatwy cel i Zastawę z `blockCap` robi S64, `dmgMul` Kuszy S90, częstość linii na
+  typ bazy na wiki S68 (podział `docs/sessions`).
+- **S62** Żaden próg S32 w `balance.spec` się nie zmienił (najniższa parzystość Mag `runestaff` L5 0,975 przy progu 0,97).

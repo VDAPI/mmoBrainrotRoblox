@@ -2,6 +2,7 @@
 local Bonuses = require("../src/shared/Data/Bonuses")
 local Inventory = require("../src/shared/Logic/Inventory")
 local ItemRoll = require("../src/shared/Logic/ItemRoll")
+local ItemTraits = require("../src/shared/Data/ItemTraits")
 local Items = require("../src/shared/Data/Items")
 local Loot = require("../src/shared/Logic/Loot")
 local Rarities = require("../src/shared/Data/Rarities")
@@ -389,6 +390,169 @@ T.describe("Inventory", function()
 		T.expect(inv["2"]).toBeNil()
 		T.expect(inv["1"].n).toBe(8)
 		T.expect((Inventory.remove(inv, "essence_dust", 50))).toBe(8)
+	end)
+end)
+
+T.describe("S62 traits and weighted pools", function()
+	local function plain(defId: string, rarity: number, up: number?, bonuses: { any }?): any
+		return {
+			uid = uid(),
+			id = defId,
+			rarity = rarity,
+			ilvl = (Items.get(defId) :: any).level,
+			bonuses = bonuses or {},
+			up = up or 0,
+			bound = false,
+			n = 1,
+			rv = Rarities.RV,
+		}
+	end
+
+	local function has(list: { string }, id: string): boolean
+		return table.find(list, id) ~= nil
+	end
+
+	T.it("pools follow the class the item dropped for", function()
+		local cleric = ItemRoll.bonusPool("mace1h_20", "Cleric")
+		T.expect(has(cleric, "str") or has(cleric, "physAtk") or has(cleric, "pierce")).toBe(false)
+		T.expect(has(cleric, "healPower") and has(cleric, "magicPierce")).toBe(true)
+		local warrior = ItemRoll.bonusPool("mace1h_20", "Warrior")
+		T.expect(has(warrior, "magAtk") or has(warrior, "int") or has(warrior, "healPower")).toBe(false)
+		local both = ItemRoll.bonusPool("mace1h_20")
+		T.expect(has(both, "str") and has(both, "int")).toBe(true)
+		T.expect(has(ItemRoll.bonusPool("ring_20", "Mage"), "pierce")).toBe(false)
+		T.expect(has(ItemRoll.bonusPool("shield_20", "Warrior"), "critResist")).toBe(true)
+		for _, pool in Bonuses.pools do
+			T.expect(has(pool, "armorPen")).toBe(false)
+		end
+		for id in Items.byId do
+			T.expect(has(ItemRoll.bonusPool(id), "armorPen")).toBe(false)
+		end
+	end)
+
+	T.it("pool weights follow the type's trait", function()
+		local w = ItemRoll.poolWeights("longbow_50", "Hunter")
+		T.expect(w.critChance).toBe(3)
+		T.expect(w.critDmg).toBe(3)
+		T.expect(w.skillDmg).toBe(3)
+		T.expect(w.accuracy).toBe(1)
+		T.expect(w.magAtk).toBeNil()
+		T.expect(ItemRoll.poolWeights("mace1h_50", "Cleric").healPower).toBe(3)
+		T.expect(ItemRoll.poolWeights("mace1h_50", "Warrior").lifesteal).toBe(3)
+		T.expect(ItemRoll.poolWeights("mace1h_50", "Cleric").lifesteal).toBe(1)
+		for _, pair in { { "longbow_50", "Hunter" }, { "mace1h_50", "Cleric" }, { "ring_20", "Mage" }, { "orb_50" } } do
+			local weights = ItemRoll.poolWeights(pair[1], pair[2])
+			local pool = ItemRoll.bonusPool(pair[1], pair[2])
+			local n = 0
+			for id in weights do
+				n += 1
+				T.expect(has(pool, id)).toBe(true)
+			end
+			T.expect(n).toBe(#pool)
+		end
+	end)
+
+	T.it("inclusion gives exact chances of weighted draws without replacement", function()
+		local flat: { [string]: number } = {}
+		for i = 1, 10 do
+			flat[`l{i}`] = 1
+		end
+		for _, p in ItemRoll.inclusion(flat, 3) do
+			T.expect(p).toBeNear(0.3, 1e-9)
+		end
+		local weights = ItemRoll.poolWeights("longbow_50", "Hunter")
+		for count = 0, 3 do
+			local sum = 0
+			for _, p in ItemRoll.inclusion(weights, count) do
+				sum += p
+			end
+			T.expect(sum).toBeNear(count, 1e-9)
+		end
+		local zero = ItemRoll.inclusion({ a = 1, b = 0, c = 1 }, 1)
+		T.expect(zero.b).toBe(0)
+		T.expect(zero.a).toBeNear(0.5, 1e-9)
+		T.expect(zero.c).toBeNear(0.5, 1e-9)
+		local three = ItemRoll.inclusion(weights, 3)
+		T.expect(three.critChance > three.accuracy).toBe(true)
+	end)
+
+	T.it("weighted rolls match inclusion", function()
+		local rng = Rng.new(62)
+		local weights = ItemRoll.poolWeights("longbow_50", "Hunter")
+		local expected = ItemRoll.inclusion(weights, 3)
+		local seen: { [string]: number } = {}
+		local N = 4000
+		for _ = 1, N do
+			local item = ItemRoll.rollItem("longbow_50", 50, Rarities.HEROIC, rng, uid(), "Hunter")
+			local once: { [string]: boolean } = {}
+			for _, bonus in item.bonuses do
+				T.expect(once[bonus.stat]).toBeNil()
+				once[bonus.stat] = true
+				seen[bonus.stat] = (seen[bonus.stat] or 0) + 1
+			end
+		end
+		for id, p in expected do
+			T.expect(math.abs((seen[id] or 0) / N - p) <= 0.03).toBe(true)
+		end
+	end)
+
+	T.it("trait strength grows with rarity and upgrades", function()
+		T.expect(ItemRoll.traitPower(Rarities.COMMON, 0)).toBe(1)
+		T.expect(ItemRoll.traitPower(Rarities.MYTHIC, 9)).toBeNear(1.8788, 1e-4)
+		local longbow = plain("longbow_50", Rarities.COMMON)
+		T.expect((ItemRoll.trait(longbow) :: any).id).toBe("criticalForce")
+		T.expect(ItemRoll.itemStats(longbow).flat.critDmg).toBe(25)
+		T.expect(ItemRoll.itemStats(plain("heavycrossbow_50", Rarities.COMMON)).flat.pierce).toBe(20)
+		T.expect(ItemRoll.itemStats(plain("tome_50", Rarities.COMMON)).flat.costReduce).toBe(8)
+		T.expect(ItemRoll.itemStats(plain("orb_50", Rarities.COMMON)).flat.skillDmg).toBe(6)
+		T.expect(ItemRoll.itemStats(plain("scepter_50", Rarities.COMMON)).flat.healPower).toBe(8)
+		T.expect(ItemRoll.itemStats(plain("relic_50", Rarities.COMMON)).flat.dropBonus).toBe(8)
+		T.expect((ItemRoll.trait(plain("orb_50", Rarities.MYTHIC, 9)) :: any).value).toBeNear(11.27, 0.01)
+		local eye = ItemRoll.rollItem("unique_vaelgrath_eye", 1, Rarities.COMMON, Rng.new(1), uid())
+		local trait = ItemRoll.trait(eye) :: any
+		T.expect(trait.power).toBe(1.22)
+		T.expect(trait.value).toBeNear(7.32, 0.01)
+	end)
+
+	T.it("traits without code stay hidden", function()
+		T.expect((Items.get("axe1h_20") :: any).trait).toBe("reaping")
+		for _, base in Items.bases.list do
+			local traitDef = ItemTraits.get(base.trait)
+			if traitDef and not traitDef.live then
+				local item = plain(`{base.type}_20`, Rarities.COMMON)
+				T.expect(ItemRoll.trait(item)).toBeNil()
+				T.expect(ItemRoll.itemStats(item).hooks[traitDef.hook :: string]).toBeNil()
+			end
+		end
+		T.expect(ItemRoll.trait(plain("armor_heavy_10", Rarities.COMMON))).toBeNil()
+	end)
+
+	T.it("legacy armorPen reads as pierce with the same quality", function()
+		local old = ItemRoll.rollBonusValue("armorPen", 50, Rarities.HEROIC, 0.7)
+		local item = plain("sword1h_50", Rarities.HEROIC, 0, { { stat = "armorPen", v = old } })
+		local stats = ItemRoll.itemStats(item)
+		T.expect(#stats.bonuses).toBe(1)
+		T.expect(stats.bonuses[1].id).toBe("pierce")
+		T.expect(stats.bonuses[1].quality).toBeNear(0.7, 0.05)
+		local q = stats.bonuses[1].quality
+		T.expect(stats.flat.pierce).toBe(ItemRoll.rollBonusValue("pierce", 50, Rarities.HEROIC, q))
+		T.expect(stats.flat.armorPen).toBeNil()
+		T.expect(item.bonuses[1].stat).toBe("armorPen")
+	end)
+
+	T.it("saved items keep their rarity and get their trait", function()
+		for _, rarity in { Rarities.LEGENDARY, Rarities.MYTHIC } do
+			local item = plain("sword1h_30", rarity)
+			item.rv = 2
+			Rarities.upgradeItem(item, Items.get(item.id))
+			T.expect(item.rarity).toBe(rarity)
+		end
+		local bow = plain("longbow_30", Rarities.LEGENDARY)
+		bow.rv = 2
+		Rarities.upgradeItem(bow, Items.get(bow.id))
+		local trait = ItemRoll.trait(bow) :: any
+		T.expect(trait.id).toBe("criticalForce")
+		T.expect(trait.power).toBe(1.16)
 	end)
 end)
 

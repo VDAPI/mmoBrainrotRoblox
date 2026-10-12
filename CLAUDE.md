@@ -60,6 +60,9 @@ przedmiotów czyta STATY); odstępstwa idą do `docs/DECYZJE.md`, a kontrakt pop
   Test: `tests/effectstack.spec`.
 - **Krzywa poziomu** (S54): kotwice w `Data/LevelCurves` (tożsamość do 20.), odczyt tylko przez `Logic/LevelCurves.at`;
   wiki bierze wartości z `Logic`, nigdy z `LevelCurves`.
+- **Linia przedmiotu / cecha broni** (S62): linia w `Data/Bonuses` (`bonus(..., tier)`, pula, `CLASS_STATS`, waga w
+  `Data/ItemTraits.affinity`) + statystyka w `Data/Stats` i `StatCalc` albo hak czytany przez `CombatService.Hook`;
+  cecha typu w `Data/ItemTraits` (`live = true` dopiero z kodem) + teksty `trait.<id>.name/.line`.
 - **Prawdziwy model broni**: wpis w `WeaponLooks.assets` + MeshPart w `Assets.Weapons` (`docs/ASSETS.md` → „Broń”).
 - **Portal / przejście między mapami** (S25): wpis w `Data/Portals.luau` (layout stawia go przez
   `Prefabs.portalFrom(ctx, id)`); trasa (`Logic/MapRoute`), mapa świata i prowadzenie widzą go same.

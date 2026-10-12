@@ -3483,3 +3483,38 @@ DamageText,EffectStack,Paths,PvpRules}`, lokalizacja PL / EN, `{Resource,StatusE
 Admin,PartyAura}Service`, `Skills/{Context,Types/Support}`, `Admin/Combat`, `UI/Screens/{BossReward,Hud/EffectIcons}`,
 `CombatFxController`, `tests/{intercept,damage,pvp,paths}.spec`, `tests/PartyBuffRules`, `docs/{ROZWOJ,DESIGN,
 ARCHITECTURE}.md`, dane wiki.
+
+### S62: cechy broni, ważone pule i nowe linie
+
+- Cechy broni: nowe `Data/ItemTraits` (24 cechy, 24 kategorie, `affinity` ×3 i `classAffinity` Buławy, `ICON`,
+  `COLOR`, `weight`), pole `trait` w bazach, definicjach progów i nazwanych przedmiotach. Siła `ItemRoll.traitPower`
+  (rzadkość × ulepszenie, nazwane jak Mityczne), `ItemRoll.trait` (nil dla `live = false`), cecha w `itemStats`
+  (`flat` albo `hooks`, pole `trait`). Działa sześć cech-statystyk: Siła krytyka, Bełt przeciwpancerny, Wyuczone
+  formuły, Soczewka mocy, Namaszczenie, Pomyślność; 18 czeka na S63–S65.
+- Pule: `classesFor` (Buława i Tarcza losują dla klasy łupu), `ItemRoll.poolWeights`, `bonusPool` bez wag 0,
+  losowanie ważone bez powtórzeń (`rng:weighted`), `ItemRoll.inclusion` (dokładne szanse dla lustra). Legendarne i
+  mityczne dalej `shuffle`. Ciąg losowań się zmienił; żaden test z ziarnem nie wymagał zmiany.
+- Linie: `tier`, `wiki`, `replacedBy` w `BonusDef`; nowe `pierce`, `magicPierce`, `skillDmg`, `basicDmg`, `healPower`,
+  `critResist`, `costReduce` w pulach według STATY 4; `armorPen` czytane jako `pierce` z tą samą jakością (zapis bez
+  zmian, `RV` 2). Siedem nowych statystyk w `Data/Stats` / `StatCalc`, statystyka `armorPen` usunięta.
+- Obrażenia: `Damage.defenseOf` (niszczenie, potem przebicie; magia z `magicPierce`), `critMultiplier` (odporność na
+  krytyki), `bonusMul` (`isSkill`, `basic`); niszczenie pancerza potworów przez `Params.armorBreak`. `params.basic` w
+  ataku podstawowym (także drugi cios), `isSkill` w każdym trafieniu umiejętności. Liczba losowań bez zmian.
+- Koszt i leczenie: `Skills.cost` → `(paid, base)` z `CostMods.costReduce` (serwer, pasek, opis paska); `healPower`
+  w `ctx.heal`, `hot`, `shield` (`ctx.healPowerMul`).
+- Opis: sekcja „Cecha” (`TooltipModel.traitArgs` / `traitLine`, ton `trait`), wiersze linii z `tier` (także
+  odsłonięcie legendy), `ItemScore` waży `pierce`.
+- Lustro: `FightSim.dps` z przebiciem i udziałami ataku / umiejętności, `hit` z `critResist`; `Balance.expectedBonuses`
+  z `ItemRoll.inclusion`. G2: najniższa parzystość Mag `runestaff` L5 0,985 → 0,975 (tylko Soczewka mocy z kuli),
+  progi S32 bez zmian.
+- Wiki: `Bonus.tier`, linie z `wiki = true`, `BaseInfo.trait` tylko dla żywych cech; `npm run data` i `npm test` (Node
+  był). Żadnego id ukrytej cechy w danych.
+- Dalej: S63 włącza sześć cech `effect` (`live`, `onHit`, wagi `woundChance` / `poisonChance` / `dotPower`) i przenosi
+  `basic` do `DealOptions`; S64 Fechtunek, Żniwo, Ścięcie, Zastawa, Łatwy cel i linie obronne; S65 pozostałe siedem;
+  S67 wagi `ItemScore`; S68 wiki cech i częstość na typ.
+
+Pliki: `Data/{ItemTraits,Bonuses,Stats,Items/Bases,Items/Generate,Items/Types,Items/Uniques}`, lokalizacja PL / EN,
+`Logic/{ItemRoll,Damage,MonsterStats,FightSim,Skills,StatCalc,TooltipModel,ItemScore}`, `CombatService`,
+`SkillService`, `Skills/{Context,Types/Support}`, `SkillController`, `UI/{SkillInfo,Components/ItemTooltip,
+Screens/LegendReveal}`, `tests/{Balance,items,data,damage,localization}.spec`, `tools/WikiData/Items`, dane wiki,
+`docs/{STATY,DESIGN,WIKI,DECYZJE,SESJE,PROGRESS}.md`, `CLAUDE.md`.

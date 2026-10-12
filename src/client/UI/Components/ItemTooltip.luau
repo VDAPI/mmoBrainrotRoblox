@@ -19,6 +19,7 @@ local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local IconState = require(script.Parent.Parent.IconState)
 local ItemIcon = require(script.Parent.ItemIcon)
 local ItemRoll = require(ReplicatedStorage.Shared.Logic.ItemRoll)
+local ItemTraits = require(ReplicatedStorage.Shared.Data.ItemTraits)
 local ItemText = require(script.Parent.Parent.ItemText)
 local Items = require(ReplicatedStorage.Shared.Data.Items)
 local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
@@ -155,6 +156,7 @@ local TONES: { [string]: Color3 } = {
 	bad = BAD,
 	bonus = Color3.fromHex("#1F4E9A"),
 	legendary = LEGENDARY_LINE,
+	trait = Color3.fromHex(ItemTraits.COLOR), -- S62 trait section
 }
 local SIZES: { [string]: number } = {
 	large = Theme.TextSize.Large,

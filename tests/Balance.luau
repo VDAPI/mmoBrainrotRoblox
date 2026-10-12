@@ -87,16 +87,32 @@ local function poolFor(defId: string, classId: string?): { string }
 	return Bonuses.pools[def.bonusGroup or ""] or {}
 end
 
--- Expected bonus lines of one item: every pool entry gets count / #pool of its middle value.
+-- Expected bonus lines of one item: every pool entry gets its chance to be rolled x its middle value. S62: the chance
+-- is ItemRoll.inclusion of the type-weighted pool, averaged over bonusMin..bonusMax (rng:int); before, count / #pool.
 local function expectedBonuses(defId: string, ilvl: number, rarity: number, classId: string?): { any }
 	local rarityDef = Rarities.get(rarity)
 	local out = {}
-	local pool = poolFor(defId, classId)
-	local count = (rarityDef.bonusMin + rarityDef.bonusMax) / 2
-	if count > 0 and #pool > 0 then
-		local share = math.min(1, count / #pool)
-		for _, id in pool do
-			table.insert(out, { stat = id, v = ItemRoll.rollBonusValue(id, ilvl, rarity, 0.5) * share })
+	local roll: any = ItemRoll
+	if roll.poolWeights and rarityDef.bonusMax > 0 then
+		local weights = roll.poolWeights(defId, classId)
+		local share: { [string]: number } = {}
+		local n = rarityDef.bonusMax - rarityDef.bonusMin + 1
+		for k = rarityDef.bonusMin, rarityDef.bonusMax do
+			for id, p in roll.inclusion(weights, k) do
+				share[id] = (share[id] or 0) + p / n
+			end
+		end
+		for _, id in poolFor(defId, classId) do
+			table.insert(out, { stat = id, v = ItemRoll.rollBonusValue(id, ilvl, rarity, 0.5) * (share[id] or 0) })
+		end
+	else
+		local pool = poolFor(defId, classId)
+		local count = (rarityDef.bonusMin + rarityDef.bonusMax) / 2
+		if count > 0 and #pool > 0 then
+			local share = math.min(1, count / #pool)
+			for _, id in pool do
+				table.insert(out, { stat = id, v = ItemRoll.rollBonusValue(id, ilvl, rarity, 0.5) * share })
+			end
 		end
 	end
 	local legendary = Bonuses.pools.legendary

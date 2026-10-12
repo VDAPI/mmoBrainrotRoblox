@@ -81,8 +81,9 @@ local function LegendReveal(scope: Scope, props: Props): Instance
 	local rows = {}
 	for i, bonus in stats.bonuses do
 		local bonusDef = Bonuses.get(bonus.id)
-		local mythic = string.sub(bonus.id, 1, 5) == "myth_"
-		local legendary = bonusDef ~= nil and (bonusDef.hook ~= nil or string.sub(bonus.id, 1, 4) == "leg_")
+		-- S62 (STATY 2C): row style from the line's tier.
+		local mythic = bonusDef ~= nil and bonusDef.tier == "mythic"
+		local legendary = bonusDef ~= nil and bonusDef.tier == "legendary"
 		table.insert(
 			rows,
 			scope:New("TextLabel")({

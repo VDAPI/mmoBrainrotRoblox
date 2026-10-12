@@ -180,8 +180,12 @@ function StatCalc.compute(input: Input): Result
 	end
 
 	finish("accuracy", 0, {})
-	finish("armorPen", 0, {})
+	finish("pierce", 0, {})
+	finish("magicPierce", 0, {})
 	finish("lifesteal", 0, {})
+	finish("skillDmg", 0, {})
+	finish("basicDmg", 0, {})
+	finish("healPower", 0, {})
 
 	-- Defense
 	finish("armor", F.armorPerVit * VIT + F.armorPerStr * STR, {
@@ -193,6 +197,7 @@ function StatCalc.compute(input: Input): Result
 		{ key = "breakdown.vit", value = F.mresPerVit * VIT },
 	})
 	finish("dodge", F.dodgePerDex * ratedDex, { { key = "breakdown.dex", value = F.dodgePerDex * ratedDex } })
+	finish("critResist", 0, {})
 	for _, id in { "resFire", "resIce", "resLightning", "resPoison" } do
 		finish(id, 0, {})
 	end
@@ -218,6 +223,7 @@ function StatCalc.compute(input: Input): Result
 		{ { key = "breakdown.maxManaPct", value = maxMana * F.manaRegenPct / 100 } }
 	)
 	finish("energyRegen", F.energyRegenBase, { { key = "breakdown.base", value = F.energyRegenBase } })
+	finish("costReduce", 0, {})
 
 	-- Other
 	finish("moveSpeed", 0, {})

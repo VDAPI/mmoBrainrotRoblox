@@ -128,7 +128,7 @@ Support.hot = function(ctx)
 	local player, entity = allyTarget(ctx)
 	local duration = ctx.scaled(ctx.skill.duration)
 	local bonus = ctx.services.PassiveHook(ctx.player, "healBonus")
-	local total = ctx.healAtk() * ctx.value("heal") / 100 * (1 + bonus / 100)
+	local total = ctx.healAtk() * ctx.value("heal") / 100 * (1 + bonus / 100) * ctx.healPowerMul()
 	ctx.fx({ t = entity.id, d = duration })
 	hotOn(ctx, entity, total, duration)
 	local other, otherEntity = second(ctx, player)
@@ -142,7 +142,7 @@ end
 Support.shield = function(ctx)
 	local player, entity = allyTarget(ctx)
 	local duration = ctx.scaled(ctx.skill.duration)
-	local value = ctx.healAtk() * ctx.value("shield") / 100
+	local value = ctx.healAtk() * ctx.value("shield") / 100 * ctx.healPowerMul() -- S62 healPower
 	ctx.fx({ t = entity.id, d = duration })
 	ctx.services.StatusEffect.Apply(
 		entity,

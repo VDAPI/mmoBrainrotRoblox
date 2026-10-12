@@ -46,6 +46,7 @@ export type ItemDef = {
 	weapon: WeaponStats?,
 	elemental: boolean?, -- mage weapon: instances carry an element (S18)
 	bonusGroup: string?, -- Data/Bonuses pool
+	trait: string?, -- S62: weapon / off-hand trait (Data/ItemTraits), from the base type
 	-- Name: a fixed key, or a generated prefix + base noun with Polish gender agreement.
 	nameKey: string?,
 	namePrefix: string?, -- "itemTier.<tier>" (resolved as "<prefix>.<gender>")

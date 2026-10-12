@@ -5,13 +5,17 @@ local fs = require("@lune/fs")
 local Classes = require("../src/shared/Data/Classes")
 local Config = require("../src/shared/Config")
 local Bonuses = require("../src/shared/Data/Bonuses")
+local ItemRoll = require("../src/shared/Logic/ItemRoll")
+local ItemTraits = require("../src/shared/Data/ItemTraits")
 local Items = require("../src/shared/Data/Items")
 local LootTables = require("../src/shared/Data/LootTables")
 local Maps = require("../src/shared/Data/Maps")
 local Rarities = require("../src/shared/Data/Rarities")
 local MonsterAbilities = require("../src/shared/Data/MonsterAbilities")
 local Monsters = require("../src/shared/Data/Monsters")
+local PathData = require("../src/shared/Data/Paths")
 local Spawns = require("../src/shared/Data/Spawns")
+local Stats = require("../src/shared/Data/Stats")
 local T = require("./Test")
 local en = require("../src/shared/Data/Localization/en")
 local pl = require("../src/shared/Data/Localization/pl")
@@ -417,6 +421,207 @@ T.describe("Localization keys used in code", function()
 	T.it("every HUD window has a title", function()
 		for _, id in { "menu", "character", "inventory", "skills", "map", "quests", "guild", "party" } do
 			T.expect({ id = id, ok = hasKey(`window.{id}.title`) }).toEqual({ id = id, ok = true })
+		end
+	end)
+end)
+
+T.describe("Data: item traits and bonus tiers (S62)", function()
+	local OFFHAND_GROUPS = { weapon = true, shield = true, quiver = true, magicOffhand = true }
+	local LIVE = { "criticalForce", "bodkinBolt", "learnedFormulae", "powerLens", "anointment", "prosperity" }
+
+	T.it("every weapon and off-hand base has a trait", function()
+		local owner: { [string]: string } = {}
+		for _, base in Items.bases.list do
+			if OFFHAND_GROUPS[base.bonusGroup] then
+				T.expect({ base.type, ItemTraits.get(base.trait) ~= nil }).toEqual({ base.type, true })
+				T.expect({ base.trait, owner[base.trait or ""] }).toEqual({ base.trait, nil })
+				owner[base.trait :: string] = base.type
+			else
+				T.expect({ base.type, base.trait }).toEqual({ base.type, nil })
+			end
+		end
+		T.expect(#ItemTraits.list).toBe(24)
+		local categories: { [string]: boolean } = {}
+		local live: { string } = {}
+		for _, def in ItemTraits.list do
+			T.expect({ def.id, owner[def.id] ~= nil }).toEqual({ def.id, true })
+			T.expect({ def.id, categories[def.category] }).toEqual({ def.id, nil })
+			categories[def.category] = true
+			T.expect(def.kind == "stat" or def.kind == "hook" or def.kind == "effect").toBe(true)
+			if def.kind == "stat" then
+				T.expect({ def.id, def.stat ~= nil and Stats.get(def.stat) ~= nil, def.hook })
+					.toEqual({ def.id, true, nil })
+			else
+				T.expect({ def.id, def.stat, type(def.hook) == "string" and def.hook ~= "" })
+					.toEqual({ def.id, nil, true })
+			end
+			T.expect(def.pvp >= 0 and def.pvp <= 1 and def.value > 0).toBe(true)
+			if def.live then
+				table.insert(live, def.id)
+			end
+		end
+		table.sort(live)
+		local want = table.clone(LIVE)
+		table.sort(want)
+		T.expect(live).toEqual(want)
+		T.expect((Items.get("orb_50") :: any).trait).toBe("powerLens")
+		T.expect((Items.get("unique_vaelgrath_eye") :: any).trait).toBe("powerLens")
+	end)
+
+	T.it("trait names are localized and unique", function()
+		local LOWER: { [string]: string } = {
+			["Ą"] = "ą",
+			["Ć"] = "ć",
+			["Ę"] = "ę",
+			["Ł"] = "ł",
+			["Ń"] = "ń",
+			["Ó"] = "ó",
+			["Ś"] = "ś",
+			["Ź"] = "ź",
+			["Ż"] = "ż",
+		}
+		local function words(text: string): { string }
+			local lower = string.lower(text)
+			for upper, small in LOWER do
+				lower = string.gsub(lower, upper, small)
+			end
+			local out = {}
+			for word in string.gmatch(lower, "[^%s%p]+") do
+				table.insert(out, word)
+			end
+			return out
+		end
+		-- `inner` appears as whole words inside `outer`.
+		local function contains(outer: { string }, inner: { string }): boolean
+			if #inner == 0 or #inner > #outer then
+				return false
+			end
+			for start = 1, #outer - #inner + 1 do
+				local ok = true
+				for i = 1, #inner do
+					if outer[start + i - 1] ~= inner[i] then
+						ok = false
+						break
+					end
+				end
+				if ok then
+					return true
+				end
+			end
+			return false
+		end
+		for _, lang in { pl, en } :: { any } do
+			local others: { { key: string, words: { string } } } = {}
+			for key, text in lang do
+				if string.match(key, "^skill%.[^%.]+%.name$") or string.match(key, "^effect%.[^%.]+$") then
+					table.insert(others, { key = key, words = words(text) })
+				end
+			end
+			for _, path in PathData.list do
+				for _, row in path.rows do
+					for _, n in row.nodes do
+						if n.nameKey and lang[n.nameKey] then
+							table.insert(others, { key = n.nameKey, words = words(lang[n.nameKey]) })
+						end
+					end
+				end
+			end
+			for _, def in ItemTraits.list do
+				local name = lang[def.nameKey]
+				T.expect({ def.nameKey, type(name) == "string" }).toEqual({ def.nameKey, true })
+				T.expect({ def.nameKey, name == string.match(name, "^%s*(.-)%s*$") }).toEqual({ def.nameKey, true })
+				if def.live then
+					T.expect({ def.lineKey, lang[def.lineKey] ~= nil }).toEqual({ def.lineKey, true })
+				end
+				local mine = words(name)
+				for _, other in others do
+					local clash = contains(mine, other.words) or contains(other.words, mine)
+					T.expect({ def.nameKey, other.key, clash }).toEqual({ def.nameKey, other.key, false })
+				end
+				for _, word in mine do
+					local bad = string.sub(word, 1, #"przebija") == "przebija"
+						or string.sub(word, 1, #"głębok") == "głębok"
+					T.expect({ def.nameKey, word, bad }).toEqual({ def.nameKey, word, false })
+				end
+			end
+		end
+	end)
+
+	T.it("affinity names known lines of the type's pool", function()
+		local function check(baseType: string, weights: { [string]: number }, classId: string?)
+			local base = Items.bases.byType[baseType]
+			T.expect({ baseType, base ~= nil }).toEqual({ baseType, true })
+			local pool = Bonuses.pools[base.bonusGroup] or {}
+			for line, w in weights do
+				T.expect({ baseType, line, Bonuses.get(line) ~= nil, table.find(pool, line) ~= nil }).toEqual({
+					baseType,
+					line,
+					true,
+					true,
+				})
+				T.expect({ baseType, line, w == 0 or w >= 1 }).toEqual({ baseType, line, true })
+			end
+			if classId then
+				T.expect({ baseType, classId, table.find(base.classes or {}, classId) ~= nil }).toEqual({
+					baseType,
+					classId,
+					true,
+				})
+			end
+		end
+		for baseType, weights in ItemTraits.affinity do
+			check(baseType, weights)
+		end
+		for baseType, byClass in ItemTraits.classAffinity do
+			for classId, weights in byClass do
+				check(baseType, weights, classId)
+			end
+		end
+		T.expect(ItemTraits.weight("wand", "basicDmg")).toBe(3)
+		T.expect(ItemTraits.weight("wand", "accuracy")).toBe(1)
+		T.expect(ItemTraits.weight("mace1h", "healPower")).toBe(1)
+		T.expect(ItemTraits.weight("mace1h", "healPower", "Cleric")).toBe(3)
+	end)
+
+	T.it("bonus tiers and wiki flags", function()
+		local inPool: { [string]: string } = {}
+		for group, pool in Bonuses.pools do
+			for _, id in pool do
+				inPool[id] = group
+			end
+		end
+		for id, def in Bonuses.byId do
+			T.expect({ id, def.tier == "regular" or def.tier == "legendary" or def.tier == "mythic" }).toEqual({
+				id,
+				true,
+			})
+			T.expect({ id, type(def.wiki) }).toEqual({ id, "boolean" })
+			local group = inPool[id]
+			if group == "legendary" or group == "mythic" then
+				T.expect({ id, def.tier }).toEqual({ id, group })
+			elseif group then
+				T.expect({ id, def.tier }).toEqual({ id, "regular" })
+			end
+		end
+		local legacy = Bonuses.get("armorPen") :: any
+		T.expect(legacy.wiki).toBe(false)
+		T.expect(legacy.replacedBy).toBe("pierce")
+		T.expect(inPool.armorPen).toBeNil()
+		T.expect(Bonuses.classStats.armorPen).toBeNil()
+	end)
+
+	T.it("mace and shield pools have 11-14 lines per class", function()
+		for _, id in { "mace1h_20", "shield_20" } do
+			for _, classId in (Items.get(id) :: any).classes do
+				-- 10 until S63 adds woundChance and dotPower
+				local low = if id == "mace1h_20"
+						and classId == "Warrior"
+						and Bonuses.get("woundChance") == nil
+					then 10
+					else 11
+				local n = #ItemRoll.bonusPool(id, classId)
+				T.expect({ id, classId, n >= low and n <= 14 }).toEqual({ id, classId, true })
+			end
 		end
 	end)
 end)

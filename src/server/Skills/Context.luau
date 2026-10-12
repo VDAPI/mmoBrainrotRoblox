@@ -50,6 +50,7 @@ export type Ctx = {
 	magAtk: () -> number,
 	healMul: () -> number, -- heal level curve at the caster's level (S54)
 	healAtk: () -> number, -- magic attack x healMul: base of heals and shields (S54)
+	healPowerMul: () -> number, -- S62: 1 + healPower / 100 (lines, Anointment) on heals and shields cast
 	speedMul: number, -- skill damage x weapon speed / Combat.skillSpeedRef (S54)
 	fx: (data: { [string]: any }) -> (),
 	element: string?, -- the skill's element (adaptive: the weapon's), S18
@@ -279,6 +280,10 @@ function Context.new(
 		healAtk = function(): number
 			return (stats().magAtk or 0) * Skills.healMul(character.level)
 		end,
+		-- S62: healPower (lines, Anointment) raises heals and shields this player casts
+		healPowerMul = function(): number
+			return 1 + (stats().healPower or 0) / 100
+		end,
 		speedMul = speedMul,
 		element = element,
 		fx = function(data)
@@ -299,6 +304,8 @@ function Context.new(
 				multiplier = percent / 100,
 				element = element :: any,
 				canDodge = opts.canDodge ~= false,
+				-- S62 skillDmg: every hit of a skill, splashes, ground pulses and arcs included
+				isSkill = true,
 			}
 			-- S28 execute: a guaranteed crit on a wounded target.
 			if behaviour.execute and not opts.plain then
@@ -323,7 +330,10 @@ function Context.new(
 		heal = function(target: Player, amount: number): (number, number)
 			local bonus = services.PassiveHook(player, "healBonus")
 			-- S61: heals on a player in PvP combat are weaker (Combat.pvp.heal).
-			local attempted = amount * (1 + bonus / 100) * services.Pvp.HealScale(target)
+			local attempted = amount
+				* (1 + bonus / 100)
+				* (1 + (stats().healPower or 0) / 100)
+				* services.Pvp.HealScale(target)
 			local healed = services.Resource.Heal(target, attempted, player)
 			if healed > 0 then
 				local entity = Entity.GetPlayerEntity(target)

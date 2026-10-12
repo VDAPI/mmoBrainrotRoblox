@@ -17,7 +17,8 @@
 --
 -- Line fields: `text` (may hold rich text), `role` (what the line is, for tests and the admin dump), `tone`
 -- (colour role), `hex` (explicit colour, overrides tone), `size`, `font`; bonus rows have `kind = "bonus"`,
--- `quality` 0..1 and `legendary`.
+-- `quality` 0..1, `tier` (Data/Bonuses) and `legendary` / `mythic` from it. S62: weapons and off-hands get a "Trait"
+-- section (name + line, Data/ItemTraits colour) after the base stats, only for live traits.
 
 local Blessings = require("../Data/Blessings")
 local Bonuses = require("../Data/Bonuses")
@@ -28,6 +29,7 @@ local Format = require("../Util/Format")
 local GatherNodes = require("../Data/GatherNodes")
 local ItemName = require("./ItemName")
 local ItemRoll = require("./ItemRoll")
+local ItemTraits = require("../Data/ItemTraits")
 local ItemValue = require("./ItemValue")
 local Items = require("../Data/Items")
 local Locale = require("../Util/Locale")
@@ -43,7 +45,7 @@ local Upgrade = require("./Upgrade")
 type ItemInstance = Types.ItemInstance
 type ItemDef = Items.ItemDef
 
-export type Tone = "dark" | "muted" | "good" | "bad" | "rarity" | "bonus" | "legendary"
+export type Tone = "dark" | "muted" | "good" | "bad" | "rarity" | "bonus" | "legendary" | "trait"
 
 export type Line = {
 	kind: "text" | "bonus",
@@ -56,6 +58,7 @@ export type Line = {
 	quality: number?,
 	legendary: boolean?,
 	mythic: boolean?, -- line from the mythic pool (FIX 2026-10-09)
+	tier: string?, -- Bonuses tier of a bonus row (S62)
 }
 
 export type Ctx = {
@@ -106,6 +109,38 @@ local function bonusText(lang: string, id: string, value: number): string
 	local places = if def then def.decimals else 0
 	local v = if places == 0 then tostring(math.floor(value + 0.5)) else decimal(value, places, lang)
 	return Locale.T(`bonus.{id}`, { v = v }, lang)
+end
+
+-- Trait numbers: whole when within 0.05 of an integer, else one decimal (language style).
+local function traitNumber(value: number, lang: string): string
+	local whole = math.floor(value + 0.5)
+	if math.abs(value - whole) < 0.05 then
+		return tostring(whole)
+	end
+	return decimal(value, 1, lang)
+end
+
+-- Placeholders of a trait line: {v} = grown value (value x power), every params field unchanged, language style.
+function TooltipModel.traitArgs(traitId: string, power: number, lang: string): { [string]: string }
+	local def = ItemTraits.get(traitId)
+	local args: { [string]: string } = {}
+	if not def then
+		return args
+	end
+	local params: { [string]: number } = def.params or {}
+	for key, value in params do
+		args[key] = traitNumber(value, lang)
+	end
+	args.v = traitNumber(def.value * power, lang)
+	return args
+end
+
+function TooltipModel.traitLine(traitId: string, power: number, lang: string): string
+	local def = ItemTraits.get(traitId)
+	if not def then
+		return ""
+	end
+	return Locale.T(def.lineKey, TooltipModel.traitArgs(traitId, power, lang), lang)
 end
 
 local function gold(n: number): string
@@ -341,18 +376,30 @@ local function equipmentLines(b: Builder, item: ItemInstance, lang: string)
 	for _, stat in keys do
 		b.add("stat", `{statName(lang, stat)}: <b>{formatStat(stat, stats.base[stat], lang)}</b>`)
 	end
+	-- S62 (STATY 11): the trait section, after damage / defence and before the lines.
+	if stats.trait then
+		local t = stats.trait :: ItemRoll.TraitRoll
+		b.add(
+			"traitName",
+			`{ItemTraits.ICON} {Locale.T("tooltip.trait", { name = Locale.T(t.def.nameKey, nil, lang) }, lang)}`,
+			"trait",
+			{ hex = ItemTraits.COLOR, font = "bold" }
+		)
+		b.add("trait", TooltipModel.traitLine(t.id, t.power, lang), "trait", { hex = ItemTraits.COLOR })
+	end
 	for _, bonus in stats.bonuses do
 		local bonusDef = Bonuses.get(bonus.id)
-		local mythic = string.sub(bonus.id, 1, 5) == "myth_"
+		-- S62 (STATY 2C): the row style comes from the line's tier, never from its id or hook.
+		local tier = if bonusDef then bonusDef.tier else "regular"
 		table.insert(b.lines, {
 			kind = "bonus",
 			role = "bonus",
 			text = bonusText(lang, bonus.id, bonus.v),
 			tone = "bonus",
 			quality = bonus.quality,
-			legendary = not mythic
-				and (bonusDef ~= nil and bonusDef.hook ~= nil or string.sub(bonus.id, 1, 4) == "leg_"),
-			mythic = mythic,
+			legendary = tier == "legendary",
+			mythic = tier == "mythic",
+			tier = tier,
 		})
 	end
 end

@@ -253,7 +253,7 @@ L = poziom postaci, `gear.X` = suma z ekwipunku (z ulepszeniami), `bless.X` = b�
 | Regen Many | `0.5% maxMana/s + gear.manaRegen` |
 | Regen Energii | `8/s + gear.energyRegen` |
 | Wampiryzm | `gear.lifesteal` % zadanych obrażeń (max 15%) |
-| Przebicie pancerza | `gear.armorPen` (płaskie, odejmowane od obrony celu) |
+| Przebicie pancerza | `pierce` (% pancerza celu po niszczeniu, limit 50; stare `armorPen` przeliczane przy odczycie) |
 | Odporności na żywioły | ogień/lód/błyskawica/trucizna, `gear.resX` (max 75%) |
 | Szybkość ruchu | `16 × (1 + gear.moveSpeed)` (max +30%) |
 | Bonus EXP / dropu / złota | `gear.*` + błogosławieństwo + gildia |

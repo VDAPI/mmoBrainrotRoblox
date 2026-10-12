@@ -469,11 +469,10 @@ function CombatService.DealDamage(
 			return nil
 		end
 		local defender = MonsterStats.asDefender(monster.stats)
-		local armorBreak = StatusEffectService.Max(targetEntity, "armorBreak")
-		if armorBreak > 0 then
-			defender.armor *= 1 - math.clamp(armorBreak, 0, 90) / 100
-		end
-		result = Damage.computeDamage(attacker, defender, params, rng)
+		-- S62: armour break goes to Damage.defenseOf (before pierce); same read and cap as before (S63: EffectStack).
+		local monsterParams = table.clone(params)
+		monsterParams.armorBreak = math.clamp(StatusEffectService.Max(targetEntity, "armorBreak"), 0, 90)
+		result = Damage.computeDamage(attacker, defender, monsterParams, rng)
 		if not result.dodged then
 			result.amount = math.max(1, math.floor(result.amount * offensiveMultiplier(player, targetEntity) * extra))
 		end
@@ -629,6 +628,8 @@ local function tryBasicAttack(player: Player, state: Attacker, now: number)
 	local derived = PlayerStateService.Get(player, { "derived" })
 	local element = if derived and derived.weapon then derived.weapon.element else nil
 	local params: Damage.Params = { kind = if kind == "magic" then "magic" else "phys", element = element }
+	-- S62 basicDmg; also the doubleAttack second hit (same params); S63 moves the flag to DealOptions.basic
+	params.basic = true
 	-- FIX 2026-10-09: the swing / shot starts now, the damage comes when the blow lands or the projectile
 	-- arrives (AttackPose.hitDelay, the same timing the client animates); before, the HP dropped at once.
 	local weaponType = weaponFx(player)

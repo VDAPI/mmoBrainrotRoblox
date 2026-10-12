@@ -5,7 +5,7 @@
 
 ## Stan
 
-S01–S51 i S53–S61 gotowe (lista i zakres w `docs/SESJE.md`). Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
+S01–S51 i S53–S62 gotowe (lista i zakres w `docs/SESJE.md`). Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
 kategorie efektów drużyny i stos efektów (`Logic/EffectStack`), S54 wzory globalne (`Logic/LevelCurves`), S55 rangi
 i przełomy w kształcie A/B (`Build.bp2`, `Skills.effective` §2.7), S56 koniec punktów umiejętności: rangi z poziomu
 postaci (`Skills.rankFor`, drabina przejściowa ROZWOJ 2.6), zapis w schemacie 6 (darmowy reset statystyk, pasek
@@ -19,8 +19,9 @@ S60 szczęście drużyny (`Data/Luck`, `Logic/Luck`: wspólny limit +100% na pot
 `party.luck`), premia za różne klasy (`Logic/PartyBonus`), „Podsumowanie walki” na karcie nagrody i `/luck`, S61
 priorytety filtrów obrażeń, przechwyt (`Logic/Intercept`), pech wrogów i wspólny limit uniku (`Damage.avoidance`),
 PvP ×0,7 dla leczenia i tarcz, rejestr czerwonych stref, aury drużyny (`PartyAuraService`), `/intercept`,
-`/misfortune`, `/aura`.
-Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`, `docs/STATY.md`), następna S62; testy
+`/misfortune`, `/aura`, S62 cechy broni (`Data/ItemTraits`, sześć działa), ważone pule, siedem nowych linii
+(`pierce`, `magicPierce`, `skillDmg`, `basicDmg`, `healPower`, `critResist`, `costReduce`).
+Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`, `docs/STATY.md`), następna S63; testy
 i strojenie po niej.
 
 ## Niedokończone (kod)
@@ -39,6 +40,8 @@ i strojenie po niej.
 - **Questy**: EXP z nagród dobrany wzorem, do strojenia.
 - **Gildie / aukcja / poczta**: brak zaproszeń do gildii między serwerami; aukcja bez podpowiedzi ceny, poczta bez
   pobrania.
+- **Przedmioty (S62)**: 18 cech w `Data/ItemTraits` bez kodu (`live = false`, S63–S65); `ItemScore` bez wag nowych
+  linii i cech (S67); częstość linii na wiki liczona na pulę, nie na typ (S68); `dmgMul` Kuszy 1,45 (S90).
 - **Szczęście**: mechanizm Fortuny gotowy, wartości przyjdą z węzłami Kapłana (S71).
 - **Umiejętności i ścieżki**: ścieżki klas wkrótce (Kapłan S71, Wojownik S75, Łowca S78, Mag S81); do tego czasu
   zwój i zakładka ścieżek mówią „wkrótce”, wpis premium zwoju niedostępny do S81. Brak przycisku „Załóż pasującą

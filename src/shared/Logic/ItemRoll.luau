@@ -4,6 +4,7 @@
 local Bonuses = require("../Data/Bonuses")
 local Elements = require("../Data/Elements")
 local ItemValue = require("./ItemValue")
+local ItemTraits = require("../Data/ItemTraits")
 local Items = require("../Data/Items")
 local LootRules = require("../Data/LootRules")
 local Rarities = require("../Data/Rarities")
@@ -16,6 +17,8 @@ local ItemRoll = {}
 
 export type BonusLine = { id: string, v: number, quality: number }
 
+export type TraitRoll = { id: string, def: ItemTraits.TraitDef, power: number, value: number }
+
 export type ItemStats = {
 	-- Non-weapon base stats after rarity and upgrades.
 	base: { [string]: number },
@@ -25,6 +28,7 @@ export type ItemStats = {
 	pct: { [string]: number },
 	hooks: { [string]: number },
 	bonuses: { BonusLine },
+	trait: TraitRoll?, -- S62: the live trait of the base type (already added to flat / hooks)
 }
 
 local function roundTo(value: number, decimals: number): number
@@ -138,27 +142,99 @@ local function filtered(pool: { string }, classes: { string }?): { string }
 	return out
 end
 
+-- S62 (STATY 2B): a base shared by classes (mace1h, shield) rolls for the class it dropped for; class-free items
+-- (jewellery) for `forClass` when known.
+local function classesFor(def: Items.ItemDef, forClass: string?): { string }?
+	if def.classes then
+		if forClass and table.find(def.classes, forClass) then
+			return { forClass }
+		end
+		return def.classes
+	end
+	return if forClass then { forClass } else nil
+end
+
+-- Pool weights of an equipment definition (S62, Data/ItemTraits affinity): the class-filtered pool of its bonus
+-- group, each line weighted by its base type (and by class when exactly one applies). Only weights > 0.
+function ItemRoll.poolWeights(defId: string, forClass: string?): { [string]: number }
+	local def = Items.get(defId)
+	if not def then
+		return {}
+	end
+	local classes = classesFor(def, forClass)
+	local classId = if classes and #classes == 1 then classes[1] else nil
+	local out: { [string]: number } = {}
+	for _, id in filtered(Bonuses.pools[def.bonusGroup or ""] or {}, classes) do
+		local w = ItemTraits.weight(def.type, id, classId)
+		if w > 0 then
+			out[id] = w
+		end
+	end
+	return out
+end
+
 -- Bonus pool of an equipment definition (S32): its bonus group without stats none of its classes use; class-free
--- items (jewellery) filter by `forClass` (the class they dropped for) when given.
+-- items (jewellery) filter by `forClass` (the class they dropped for) when given. S62: shared bases filter by
+-- `forClass` too, and lines weighted 0 for the type are left out. Pool order.
 function ItemRoll.bonusPool(defId: string, forClass: string?): { string }
 	local def = Items.get(defId)
 	if not def then
 		return {}
 	end
-	local classes = def.classes or (if forClass then { forClass } else nil)
-	return filtered(Bonuses.pools[def.bonusGroup or ""] or {}, classes)
+	local weights = ItemRoll.poolWeights(defId, forClass)
+	local out = {}
+	local pool: { string } = Bonuses.pools[def.bonusGroup or ""] or {}
+	for _, id in pool do
+		if weights[id] then
+			table.insert(out, id)
+		end
+	end
+	return out
 end
 
 function ItemRoll.legendaryPool(defId: string, forClass: string?): { string }
 	local def = Items.get(defId)
-	local classes = if def and def.classes then def.classes elseif forClass then { forClass } else nil
+	local classes = if def then classesFor(def, forClass) elseif forClass then { forClass } else nil
 	return filtered(Bonuses.pools.legendary, classes)
 end
 
 function ItemRoll.mythicPool(defId: string, forClass: string?): { string }
 	local def = Items.get(defId)
-	local classes = if def and def.classes then def.classes elseif forClass then { forClass } else nil
+	local classes = if def then classesFor(def, forClass) elseif forClass then { forClass } else nil
 	return filtered(Bonuses.pools.mythic, classes)
+end
+
+-- Exact chance (0..1) that each line is among `count` weighted draws without replacement (Rng.weighted per draw).
+function ItemRoll.inclusion(weights: { [string]: number }, count: number): { [string]: number }
+	local ids: { string } = {}
+	local out: { [string]: number } = {}
+	local total = 0
+	for id, w in weights do
+		out[id] = 0
+		if w > 0 then
+			table.insert(ids, id)
+			total += w
+		end
+	end
+	table.sort(ids)
+	local used: { [string]: boolean } = {}
+	local function walk(p: number, left: number, remaining: number)
+		if left <= 0 or remaining <= 0 then
+			return
+		end
+		for _, id in ids do
+			if not used[id] then
+				local w = weights[id]
+				local q = p * w / remaining
+				out[id] += q
+				used[id] = true
+				walk(q, left - 1, remaining - w)
+				used[id] = false
+			end
+		end
+	end
+	walk(1, math.min(count, #ids), total)
+	return out
 end
 
 -- Rolls an item instance. Equipment gets bonusMin..bonusMax random bonuses of its rarity (no repeats) plus
@@ -197,12 +273,18 @@ function ItemRoll.rollItem(
 	local level = math.max(1, math.floor(ilvl))
 	local bonuses: { Types.Bonus } = {}
 
-	local pool = ItemRoll.bonusPool(defId, forClass)
-	rng:shuffle(pool)
+	-- S62: weighted draw without replacement (Data/ItemTraits affinity); the rng sequence changed, seeded tests that check exact lines were re-based
 	local count = if rarityDef.bonusMax > 0 then rng:int(rarityDef.bonusMin, rarityDef.bonusMax) else 0
-	for i = 1, math.min(count, #pool) do
-		local id = pool[i]
-		table.insert(bonuses, { stat = id, v = ItemRoll.rollBonusValue(id, level, rarityId, rng:next()) })
+	if count > 0 then
+		local remaining = ItemRoll.poolWeights(defId, forClass)
+		for _ = 1, count do
+			if next(remaining) == nil then
+				break
+			end
+			local id = rng:weighted(remaining)
+			remaining[id] = nil
+			table.insert(bonuses, { stat = id, v = ItemRoll.rollBonusValue(id, level, rarityId, rng:next()) })
+		end
 	end
 	if rarityDef.legendaryLines > 0 then
 		local legendary = ItemRoll.legendaryPool(defId, forClass)
@@ -243,6 +325,23 @@ function ItemRoll.elementOf(item: ItemInstance): string?
 		return nil
 	end
 	return if Elements.isWeaponElement(item.el) then item.el else Elements.DEFAULT
+end
+
+-- S62 (STATY 2A, 10): trait strength = rarity baseMul (named boss items too) x (1 + 0.06 x upgrade level).
+function ItemRoll.traitPower(rarity: number, up: number?): number
+	return Rarities.get(rarity).baseMul * (1 + Rarities.upgradeStatPerLevel * (up or 0))
+end
+
+-- The live trait of an item's base type, or nil (no trait, or no code yet: live = false).
+function ItemRoll.trait(item: ItemInstance): TraitRoll?
+	local def = Items.get(item.id)
+	local traitDef = if def then ItemTraits.get(def.trait) else nil
+	if not traitDef or not traitDef.live then
+		return nil
+	end
+	local rarity = math.clamp(math.floor(item.rarity or Rarities.COMMON), Rarities.COMMON, Rarities.MAX)
+	local power = ItemRoll.traitPower(rarity, item.up)
+	return { id = traitDef.id, def = traitDef, power = power, value = traitDef.value * power }
 end
 
 -- A base stat key "<stat>Pct" (S32: off-hands and rings) is a % multiplier of <stat>; anything else is flat.
@@ -297,18 +396,36 @@ function ItemRoll.itemStats(item: ItemInstance): ItemStats
 	for _, bonus in ipairs(bonuses) do
 		local bonusDef = Bonuses.get(bonus.stat)
 		if bonusDef then
-			table.insert(result.bonuses, {
-				id = bonus.stat,
-				v = bonus.v,
-				quality = ItemRoll.bonusQuality(bonus.stat, bonus.v, item.ilvl, item.rarity, named),
-			})
+			local id, v = bonus.stat, bonus.v
+			local quality = ItemRoll.bonusQuality(id, v, item.ilvl, item.rarity, named)
+			local replacement = if bonusDef.replacedBy then Bonuses.get(bonusDef.replacedBy) else nil
+			if replacement then
+				-- STATY 12: a legacy line (flat armorPen) reads as its replacement with the same roll quality; the
+				-- save keeps the old id and the conversion runs on every read.
+				id = replacement.id
+				v = ItemRoll.rollBonusValue(id, item.ilvl, item.rarity, quality)
+				bonusDef = replacement
+			end
+			table.insert(result.bonuses, { id = id, v = v, quality = quality })
 			if bonusDef.hook then
-				result.hooks[bonusDef.hook] = (result.hooks[bonusDef.hook] or 0) + bonus.v
+				result.hooks[bonusDef.hook] = (result.hooks[bonusDef.hook] or 0) + v
 			elseif bonusDef.stat then
 				local target = if bonusDef.mode == "pct" then result.pct else result.flat
-				target[bonusDef.stat] = (target[bonusDef.stat] or 0) + bonus.v
+				target[bonusDef.stat] = (target[bonusDef.stat] or 0) + v
 			end
 		end
+	end
+
+	-- S62: the base type's trait (a stat trait adds like a line; hook / effect traits go to hooks once live).
+	local trait = ItemRoll.trait(item)
+	if trait then
+		local traitDef = trait.def
+		if traitDef.kind == "stat" and traitDef.stat then
+			result.flat[traitDef.stat] = (result.flat[traitDef.stat] or 0) + trait.value
+		elseif traitDef.hook then
+			result.hooks[traitDef.hook] = (result.hooks[traitDef.hook] or 0) + trait.value
+		end
+		result.trait = trait
 	end
 	return result
 end

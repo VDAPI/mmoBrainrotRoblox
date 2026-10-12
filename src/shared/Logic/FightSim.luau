@@ -31,15 +31,19 @@ export type Player = {
 export type Fight = { seconds: number, hpLost: number, playerHp: number }
 
 -- Expected damage per second of the player's basic attacks (x `skill`) against a monster.
+-- S62: pierce, magicPierce, skillDmg (skill share of SKILL_DPS), basicDmg, critResist
 function FightSim.dps(p: Player, m: MonsterStats.MonsterStats, skill: number?): number
 	local v = p.values
+	local attacker = Damage.fromStats(p.level, v)
 	local attack = if p.magic then v.magAtk or 0 else v.physAtk or 0
-	local defense = if p.magic then m.mres else m.armor
+	local defense = Damage.defenseOf(if p.magic then "magic" else "phys", attacker, MonsterStats.asDefender(m), 0)
 	local gapMul, gapCrit = Damage.levelGap(p.level, m.level)
 	local critFactor = 1 + math.min((v.critChance or 0) + gapCrit, 100) / 100 * ((v.critDmg or 150) / 100 - 1)
 	local double = 1 + (p.hooks.doubleAttack or 0) / 100
 	local perHit = attack * (1 - Damage.reduction(defense, p.level)) * critFactor * gapMul
-	return perHit * math.max(0.1, v.atkSpeed or 1) * double * (skill or 1)
+	local s = skill or 1
+	local share = (1 + (v.basicDmg or 0) / 100) + math.max(0, s - 1) * (1 + (v.skillDmg or 0) / 100)
+	return perHit * math.max(0.1, v.atkSpeed or 1) * double * share
 end
 
 -- Expected damage of one monster attack (`mul` x attack) on the player, after armour / magic resistance.
@@ -48,7 +52,8 @@ function FightSim.hit(m: any, p: Player, mul: number?, kind: string?, canDodge: 
 	local magic = (kind or m.damageKind) == "magic"
 	local defense = if magic then v.mres or 0 else v.armor or 0
 	local gapMul, gapCrit = Damage.levelGap(m.level, p.level)
-	local crit = 1 + math.min(Combat.monsterCritChance + gapCrit, 100) / 100 * (Combat.monsterCritDmg / 100 - 1)
+	local critMul = Damage.critMultiplier(Combat.monsterCritDmg, v.critResist)
+	local crit = 1 + math.min(Combat.monsterCritChance + gapCrit, 100) / 100 * (critMul - 1)
 	local dodge = if canDodge == false then 0 else math.min(v.dodge or 0, Combat.dodgeCap) / 100
 	return m.attack * (mul or 1) * (1 - Damage.reduction(defense, m.level)) * crit * gapMul * (1 - dodge)
 end

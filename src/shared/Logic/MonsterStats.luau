@@ -97,7 +97,6 @@ function MonsterStats.asAttacker(stats: MonsterStats): Damage.Attacker
 		critChance = Combat.monsterCritChance,
 		critDmg = Combat.monsterCritDmg,
 		accuracy = 0,
-		armorPen = 0,
 		lifesteal = 0,
 	}
 end

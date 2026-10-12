@@ -25,6 +25,7 @@ local characterClass = State.Value({ "character", "class" })
 local characterPath = State.Value({ "character", "path" })
 local equipment = State.Value({ "character", "equipment" })
 local weapon = State.Value({ "derived", "weapon" })
+local costReduce = State.Value({ "derived", "values", "costReduce" }) -- S62: the bar shows the cost after saving
 
 -- The character as Logic/Paths reads it, tracked by `use`.
 local function charOf(use: any): Paths.Char
@@ -92,7 +93,10 @@ function SkillInfo.costLine(use: any, skill: SkillData.SkillDef, shownRank: numb
 	local rank = math.max(1, shownRank)
 	local def = effective(use, skill, rank)
 	local parts = {}
-	local cost = Skills.cost(def, rank, levelOf(use), skill.class, nil)
+	local saving = use(costReduce)
+	local cost = Skills.cost(def, rank, levelOf(use), skill.class, {
+		costReduce = if type(saving) == "number" then saving else 0,
+	})
 	if cost > 0 and skill.resource then
 		-- The bar needs the full amount, so a fractional cost (Mage above level 20) shows rounded up.
 		local shownCost = math.ceil(cost - 1e-6)

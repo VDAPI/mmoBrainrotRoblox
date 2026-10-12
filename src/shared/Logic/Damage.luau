@@ -1,9 +1,10 @@
 --!strict
 -- Damage formula (DESIGN §4.5). Pure; all randomness comes from the injected Rng.
 --
---   raw        = attack x multiplier + flat
---   effective  = max(0, defense - armorPen)            (penetration only against physical armor)
+--   raw        = (attack x multiplier + flat) x (1 + skillDmg | basicDmg)   (S62: params.isSkill / params.basic)
+--   effective  = armor x (1 - armorBreak) x (1 - pierce)   or   mres x (1 - magicPierce)   (Damage.defenseOf)
 --   reduction  = effective / (effective + 40 x attackerLevel + 200)
+--   crit       = 1 + (critDmg/100 - 1) x (1 - defender critResist)   (S62: Damage.critMultiplier)
 --   damage     = raw x (1 - reduction) x random(0.92..1.08) x crit x (1 - elementRes) x pvp(0.6)
 --   dodge      = clamp(targetDodge - attackerAccuracy, 0, 30 %)
 --   S61: dodge + miss (the attacker's misfortune) + block <= dodgeCap + avoidBonus, one roll (Damage.avoidance)
@@ -11,6 +12,7 @@
 local BuffCategories = require("../Data/BuffCategories")
 local Combat = require("../Data/Combat")
 local Rng = require("./Rng")
+local Stats = require("../Data/Stats")
 
 export type Element = "fire" | "ice" | "lightning" | "poison"
 
@@ -21,7 +23,10 @@ export type Attacker = {
 	critChance: number, -- %
 	critDmg: number, -- %, 150 = x1.5
 	accuracy: number?, -- %
-	armorPen: number?,
+	pierce: number?, -- % armour ignored, cap Data/Stats
+	magicPierce: number?, -- % magic resistance ignored, cap Data/Stats
+	skillDmg: number?, -- % more skill damage (params.isSkill)
+	basicDmg: number?, -- % more basic attack damage (params.basic)
 	lifesteal: number?, -- % of damage dealt
 }
 
@@ -31,6 +36,7 @@ export type Defender = {
 	dodge: number?, -- %
 	res: { [string]: number }?, -- element -> %
 	level: number?, -- for the level advantage (Damage.levelGap); nil = none
+	critResist: number?, -- % of the crit bonus removed
 }
 
 export type Params = {
@@ -43,6 +49,9 @@ export type Params = {
 	canDodge: boolean?, -- default true
 	forceCrit: boolean?, -- always crit (Hunter's Camouflage)
 	miss: number?, -- S61: % chance the attacker misses (misfortune on the attacker; already x0.5 in PvP)
+	armorBreak: number?, -- % armour removed by armour break, before pierce; set by CombatService
+	isSkill: boolean?, -- skill damage: attacker.skillDmg
+	basic: boolean?, -- basic attack (also its double hit): attacker.basicDmg
 }
 
 export type Result = {
@@ -62,6 +71,40 @@ local RES_KEYS: { [string]: string } = {
 	lightning = "resLightning",
 	poison = "resPoison",
 }
+
+local function capOf(id: string): number
+	local def = Stats.get(id)
+	return if def and def.cap then def.cap else 100
+end
+local PIERCE_CAP, MAGIC_PIERCE_CAP, CRIT_RESIST_CAP = capOf("pierce"), capOf("magicPierce"), capOf("critResist")
+
+-- S62 (STATY 4, 13): defence that counts against a hit. Physical: armour after armour break, then pierce; magic:
+-- magic resistance after magic pierce.
+function Damage.defenseOf(kind: "phys" | "magic", attacker: Attacker, defender: Defender, armorBreak: number?): number
+	if kind == "magic" then
+		return math.max(0, defender.mres) * (1 - math.clamp(attacker.magicPierce or 0, 0, MAGIC_PIERCE_CAP) / 100)
+	end
+	return math.max(0, defender.armor)
+		* (1 - math.clamp(armorBreak or 0, 0, 100) / 100)
+		* (1 - math.clamp(attacker.pierce or 0, 0, PIERCE_CAP) / 100)
+end
+
+-- S62: crit multiplier; critResist removes part of the bonus above x1 (not of the whole hit).
+function Damage.critMultiplier(critDmg: number, critResist: number?): number
+	return 1 + math.max(0, critDmg / 100 - 1) * (1 - math.clamp(critResist or 0, 0, CRIT_RESIST_CAP) / 100)
+end
+
+-- S62: skill / basic attack damage bonus of the attacker for this hit.
+function Damage.bonusMul(attacker: Attacker, params: Params): number
+	local mul = 1
+	if params.isSkill then
+		mul *= 1 + (attacker.skillDmg or 0) / 100
+	end
+	if params.basic then
+		mul *= 1 + (attacker.basicDmg or 0) / 100
+	end
+	return mul
+end
 
 -- Chance (0..1) that the defender dodges.
 function Damage.dodgeChance(defenderDodge: number, attackerAccuracy: number): number
@@ -130,11 +173,9 @@ function Damage.computeDamage(attacker: Attacker, defender: Defender, params: Pa
 	end
 
 	local attack = if params.kind == "magic" then attacker.magAtk else attacker.physAtk
-	local raw = math.max(0, attack * (params.multiplier or 1) + (params.flat or 0))
+	local raw = math.max(0, attack * (params.multiplier or 1) + (params.flat or 0)) * Damage.bonusMul(attacker, params)
 
-	local defense = if params.kind == "magic"
-		then defender.mres
-		else math.max(0, defender.armor - (attacker.armorPen or 0))
+	local defense = Damage.defenseOf(params.kind, attacker, defender, params.armorBreak)
 	local gapMul, gapCrit = Damage.levelGap(attacker.level, defender.level)
 	local amount = raw * (1 - Damage.reduction(defense, attacker.level)) * gapMul
 	amount *= rng:float(Combat.randomMin, Combat.randomMax)
@@ -143,7 +184,7 @@ function Damage.computeDamage(attacker: Attacker, defender: Defender, params: Pa
 	local critChance = math.clamp(attacker.critChance + gapCrit, 0, 100) / 100
 	if params.forceCrit or (params.canCrit ~= false and rng:chance(critChance)) then
 		crit = true
-		amount *= math.max(1, attacker.critDmg / 100)
+		amount *= Damage.critMultiplier(attacker.critDmg, defender.critResist)
 	end
 
 	if element and defender.res then
@@ -168,7 +209,10 @@ function Damage.fromStats(level: number, values: { [string]: number }): (Attacke
 		critChance = values.critChance or 0,
 		critDmg = values.critDmg or 150,
 		accuracy = values.accuracy or 0,
-		armorPen = values.armorPen or 0,
+		pierce = values.pierce or 0,
+		magicPierce = values.magicPierce or 0,
+		skillDmg = values.skillDmg or 0,
+		basicDmg = values.basicDmg or 0,
 		lifesteal = values.lifesteal or 0,
 	}, {
 		level = level,
@@ -181,6 +225,7 @@ function Damage.fromStats(level: number, values: { [string]: number }): (Attacke
 			resLightning = values.resLightning or 0,
 			resPoison = values.resPoison or 0,
 		},
+		critResist = values.critResist or 0,
 	}
 end
 

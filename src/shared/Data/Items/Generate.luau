@@ -36,6 +36,7 @@ function Generate.definition(base: Bases.Base, tier: number): Types.ItemDef
 		weapon = if base.weapon then base.weapon(tier) else nil,
 		elemental = base.elemental,
 		bonusGroup = base.bonusGroup,
+		trait = base.trait,
 		namePrefix = `itemTier.{tier}`,
 		nameBase = `itemBase.{base.type}`,
 		gender = base.gender,
