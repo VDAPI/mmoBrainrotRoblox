@@ -4,7 +4,7 @@
 -- weapon points), +Y = up the arm, +X = right. Sizes and positions in studs, rotations in degrees.
 -- The first piece is the main part (named VaelthornWeapon / VaelthornOffhand; weapon cosmetics and the
 -- heroic+ glow attach to it). Colour "rarity" takes the item's rarity colour.
--- A real model can replace these later without touching the item data.
+-- Real models from files replace them per item (WeaponLooks.assets, S52) without touching the item data.
 
 local WeaponLooks = {}
 
@@ -471,15 +471,206 @@ function WeaponLooks.get(itemType: string): Look?
 	return looks[itemType]
 end
 
--- Real weapon models (2026-10-09, docs/ASSETS.md "Broń"): item definition id -> a MeshPart (or a Model with one)
--- in ReplicatedStorage.Assets.Weapons. The mesh stands upright (+Y, pommel at the bottom); `length` is its length
--- in the hand (studs) and `grip` the height of the hand on it as a fraction of the length. Without the model the
--- item keeps its Part look above.
-export type Asset = { model: string, length: number, grip: number }
+-- Real weapon models (2026-10-09, S52; docs/ASSETS.md "Broń", docs/GRAFIKA.md 3): item definition id (or boss item
+-- id) -> a MeshPart named `model` in ReplicatedStorage.Assets.Weapons (anywhere below it, e.g. inside a saved pack).
+-- The mesh is in the Grip frame (tools/weapons/prepare_glb.py turns the .glb files): +Y along the length (tip, head,
+-- front of a crossbow, top edge of an off-hand), +X = edge / head / back of a bow / top of a crossbow / face. The
+-- game scales it to `length` (studs along +Y) and puts the point `grip` (fraction of the length from the bottom) on
+-- the mount of its type (MOUNTS). Items without their own entry take the nearest lower tier of their type
+-- (Logic/ArtTiers); without any model the item keeps its Part look above. `turn` (degrees, X Y Z) turns a mesh whose
+-- axes are not the Grip frame (e.g. one made with the Studio Assistant) into it. `hold` ({ x, z }, fractions of the
+-- length) is the handle centre at the grip height measured from the mesh's box centre line: a MeshPart is centred on
+-- its bounds, so an axe, a bow's riser or a crossbow's stock is off that line (prepare_glb.py measures it).
+export type Asset = { model: string, length: number, grip: number, turn: { number }?, hold: { number }? }
 
+-- Hand-frame directions of the Grip axes per item type (Logic/WeaponMount): `y` / `x` are "+X" .. "-Z"; `at` is the
+-- grip point in the hand frame (studs, default the palm); `tilt` turns the model about it (degrees, X Y Z). Off-hands
+-- use grip 0.5 with `at` = the centre of today's Part look.
+export type Mount = { y: string, x: string, at: { number }?, tilt: { number }? }
+
+local FORWARD: Mount = { y = "-Z", x = "+Y" } -- one- and two-handed weapons, crossbows: tip forward, edge up
+local UPRIGHT: Mount = { y = "+Y", x = "-Z" } -- staffs (head up, ornament forward), bows (back towards the target)
+
+WeaponLooks.MOUNTS = {
+	sword1h = FORWARD,
+	saber1h = FORWARD,
+	axe1h = FORWARD,
+	mace1h = FORWARD,
+	flail1h = FORWARD,
+	scepter = FORWARD,
+	wand = FORWARD,
+	sword2h = FORWARD,
+	axe2h = FORWARD,
+	hammer2h = FORWARD,
+	spear2h = FORWARD,
+	staff = UPRIGHT,
+	runestaff = UPRIGHT,
+	holystaff = UPRIGHT,
+	shortbow = UPRIGHT,
+	bow = UPRIGHT,
+	longbow = UPRIGHT,
+	crossbow = FORWARD,
+	heavycrossbow = FORWARD,
+	shield = { y = "+Y", x = "-X", at = { -0.3, 0.6, 0 } }, -- face outwards, along the forearm
+	tome = { y = "+Y", x = "-Z", at = { 0, 0.1, -0.3 } }, -- clasp forward
+	orb = { y = "+Y", x = "-Z", at = { 0, -0.55, -0.2 } }, -- hangs under the palm
+	relic = { y = "+Y", x = "-Z", at = { 0, 0, -0.35 } },
+	quiver = { y = "+Y", x = "-Z", at = { 0.4, 0.2, 0.75 }, tilt = { 0, 0, -20 } }, -- on the back, strap side in
+} :: { [string]: Mount }
+
+-- Turn (degrees about +Y) of every imported mesh: 0 when Studio keeps the axes of the .glb files. If every shield
+-- shows its back and every axe its spike after the import, set 180 (one switch for all models).
+WeaponLooks.IMPORT_YAW = 0
+
+-- Owner's Tripo models (2026-10-12, Graphics/modele_3d/bronie, 2.6-4.1k triangles each); lengths = today's Part
+-- looks (docs/GRAFIKA.md 3.4), grips and handle offsets measured on the models (tools/weapons/prepare_glb.py).
 WeaponLooks.assets = {
-	-- Test: the Warrior's starting sword (Tripo model, assets/Weapons/sword1.glb reduced to 9k triangles).
-	sword1h_1 = { model = "sword1", length = 3.6, grip = 0.2 },
+	-- sword1h
+	sword1h_1 = { model = "sword1h_1", length = 3.6, grip = 0.19, hold = { 0, -0.01 } },
+	sword1h_5 = { model = "sword1h_5", length = 3.6, grip = 0.2 },
+	sword1h_10 = { model = "sword1h_10", length = 3.6, grip = 0.22, hold = { -0.01, 0.01 } },
+	sword1h_15 = { model = "sword1h_15", length = 3.6, grip = 0.15 },
+	sword1h_20 = { model = "sword1h_20", length = 3.6, grip = 0.14 },
+	-- saber1h
+	saber1h_1 = { model = "saber1h_1", length = 3.5, grip = 0.17 },
+	saber1h_5 = { model = "saber1h_5", length = 3.5, grip = 0.1, hold = { -0.03, 0 } },
+	saber1h_10 = { model = "saber1h_10", length = 3.5, grip = 0.1, hold = { -0.03, 0 } },
+	saber1h_15 = { model = "saber1h_15", length = 3.5, grip = 0.12, hold = { 0.01, 0 } },
+	saber1h_20 = { model = "saber1h_20", length = 3.5, grip = 0.14 },
+	-- axe1h
+	axe1h_1 = { model = "axe1h_1", length = 2.6, grip = 0.15, hold = { -0.02, -0.01 } },
+	axe1h_5 = { model = "axe1h_5", length = 2.6, grip = 0.15, hold = { 0.03, 0 } },
+	axe1h_10 = { model = "axe1h_10", length = 2.6, grip = 0.15, hold = { -0.06, -0.01 } },
+	axe1h_15 = { model = "axe1h_15", length = 2.6, grip = 0.15, hold = { 0.02, 0.03 } },
+	axe1h_20 = { model = "axe1h_20", length = 2.6, grip = 0.15, hold = { -0.07, 0 } },
+	-- mace1h
+	mace1h_1 = { model = "mace1h_1", length = 2.65, grip = 0.15, hold = { -0.03, -0.01 } },
+	mace1h_5 = { model = "mace1h_5", length = 2.65, grip = 0.15, hold = { -0.01, 0.01 } },
+	mace1h_10 = { model = "mace1h_10", length = 2.65, grip = 0.15, hold = { -0.06, 0.01 } },
+	mace1h_15 = { model = "mace1h_15", length = 2.65, grip = 0.15, hold = { 0.02, 0 } },
+	mace1h_20 = { model = "mace1h_20", length = 2.65, grip = 0.15 },
+	-- flail1h
+	flail1h_1 = { model = "flail1h_1", length = 2.5, grip = 0.12, hold = { -0.03, 0 } },
+	flail1h_5 = { model = "flail1h_5", length = 2.5, grip = 0.12, hold = { 0.01, 0 } },
+	flail1h_10 = { model = "flail1h_10", length = 2.5, grip = 0.12, hold = { -0.01, 0 } },
+	flail1h_15 = { model = "flail1h_15", length = 2.5, grip = 0.12, hold = { -0.01, 0.01 } },
+	flail1h_20 = { model = "flail1h_20", length = 2.5, grip = 0.12, hold = { -0.01, 0.01 } },
+	-- scepter
+	scepter_1 = { model = "scepter_1", length = 2.4, grip = 0.18, hold = { 0, 0.01 } },
+	scepter_5 = { model = "scepter_5", length = 2.4, grip = 0.18, hold = { -0.05, 0.01 } },
+	scepter_10 = { model = "scepter_10", length = 2.4, grip = 0.18, hold = { -0.07, 0.06 } },
+	scepter_15 = { model = "scepter_15", length = 2.4, grip = 0.18 },
+	scepter_20 = { model = "scepter_20", length = 2.4, grip = 0.18, hold = { 0, 0.01 } },
+	-- wand
+	wand_1 = { model = "wand_1", length = 1.8, grip = 0.2, hold = { 0, 0.06 } },
+	wand_5 = { model = "wand_5", length = 1.8, grip = 0.2 },
+	wand_10 = { model = "wand_10", length = 1.8, grip = 0.2, hold = { -0.01, -0.01 } },
+	wand_15 = { model = "wand_15", length = 1.8, grip = 0.2, hold = { 0.01, 0 } },
+	wand_20 = { model = "wand_20", length = 1.8, grip = 0.2, hold = { -0.01, 0.01 } },
+	-- sword2h
+	sword2h_1 = { model = "sword2h_1", length = 5.2, grip = 0.22, hold = { -0.01, 0 } },
+	sword2h_5 = { model = "sword2h_5", length = 5.2, grip = 0.17, hold = { -0.01, 0 } },
+	sword2h_10 = { model = "sword2h_10", length = 5.2, grip = 0.23, hold = { 0, 0.01 } },
+	sword2h_15 = { model = "sword2h_15", length = 5.2, grip = 0.25, hold = { -0.07, 0 } },
+	sword2h_20 = { model = "sword2h_20", length = 5.2, grip = 0.17 },
+	-- axe2h
+	axe2h_1 = { model = "axe2h_1", length = 4.25, grip = 0.18, hold = { -0.05, 0 } },
+	axe2h_5 = { model = "axe2h_5", length = 4.25, grip = 0.18, hold = { 0, -0.01 } },
+	axe2h_10 = { model = "axe2h_10", length = 4.25, grip = 0.18, hold = { -0.13, 0.03 } },
+	axe2h_15 = { model = "axe2h_15", length = 4.25, grip = 0.18 },
+	axe2h_20 = { model = "axe2h_20", length = 4.25, grip = 0.18 },
+	-- hammer2h
+	hammer2h_1 = { model = "hammer2h_1", length = 4.3, grip = 0.15 },
+	hammer2h_5 = { model = "hammer2h_5", length = 4.3, grip = 0.15, hold = { 0, -0.01 } },
+	hammer2h_10 = { model = "hammer2h_10", length = 4.3, grip = 0.15, hold = { 0.01, 0.01 } },
+	hammer2h_15 = { model = "hammer2h_15", length = 4.3, grip = 0.15, hold = { -0.04, 0 } },
+	hammer2h_20 = { model = "hammer2h_20", length = 4.3, grip = 0.15, hold = { -0.04, 0 } },
+	-- spear2h
+	spear2h_1 = { model = "spear2h_1", length = 5.8, grip = 0.3, hold = { 0, 0.03 } },
+	spear2h_5 = { model = "spear2h_5", length = 5.8, grip = 0.3 },
+	spear2h_10 = { model = "spear2h_10", length = 5.8, grip = 0.3, hold = { -0.03, 0 } },
+	spear2h_15 = { model = "spear2h_15", length = 5.8, grip = 0.3, hold = { 0, -0.03 } },
+	spear2h_20 = { model = "spear2h_20", length = 5.8, grip = 0.3 },
+	-- staff
+	staff_1 = { model = "staff_1", length = 5.8, grip = 0.35, hold = { 0.01, 0.02 } },
+	staff_5 = { model = "staff_5", length = 5.8, grip = 0.35, hold = { -0.01, 0 } },
+	staff_10 = { model = "staff_10", length = 5.8, grip = 0.35, hold = { -0.04, -0.01 } },
+	staff_15 = { model = "staff_15", length = 5.8, grip = 0.35, hold = { -0.04, -0.01 } },
+	staff_20 = { model = "staff_20", length = 5.8, grip = 0.35, hold = { 0, 0.01 } },
+	-- runestaff
+	runestaff_1 = { model = "runestaff_1", length = 6, grip = 0.35, hold = { 0, 0.07 } },
+	runestaff_5 = { model = "runestaff_5", length = 6, grip = 0.35, hold = { -0.05, 0 } },
+	runestaff_10 = { model = "runestaff_10", length = 6, grip = 0.35 },
+	runestaff_15 = { model = "runestaff_15", length = 6, grip = 0.35, hold = { 0.01, 0.03 } },
+	runestaff_20 = { model = "runestaff_20", length = 6, grip = 0.35 },
+	-- holystaff
+	holystaff_1 = { model = "holystaff_1", length = 5.75, grip = 0.35, hold = { 0, -0.01 } },
+	holystaff_5 = { model = "holystaff_5", length = 5.75, grip = 0.35, hold = { -0.04, 0 } },
+	holystaff_10 = { model = "holystaff_10", length = 5.75, grip = 0.35, hold = { -0.02, 0.02 } },
+	holystaff_15 = { model = "holystaff_15", length = 5.75, grip = 0.35, hold = { -0.01, 0.03 } },
+	holystaff_20 = { model = "holystaff_20", length = 5.75, grip = 0.35 },
+	-- shortbow
+	shortbow_1 = { model = "shortbow_1", length = 3.3, grip = 0.5, hold = { 0.04, -0.01 } },
+	shortbow_5 = { model = "shortbow_5", length = 3.3, grip = 0.5, hold = { 0.04, 0 } },
+	shortbow_10 = { model = "shortbow_10", length = 3.3, grip = 0.5, hold = { 0.01, 0.01 } },
+	shortbow_15 = { model = "shortbow_15", length = 3.3, grip = 0.5, hold = { 0.12, 0 } },
+	shortbow_20 = { model = "shortbow_20", length = 3.3, grip = 0.5, hold = { 0.02, 0 } },
+	-- bow
+	bow_1 = { model = "bow_1", length = 4.1, grip = 0.5, hold = { 0.06, 0 } },
+	bow_5 = { model = "bow_5", length = 4.1, grip = 0.5, hold = { 0.05, 0 } },
+	bow_10 = { model = "bow_10", length = 4.1, grip = 0.5, hold = { 0.06, 0.01 } },
+	bow_15 = { model = "bow_15", length = 4.1, grip = 0.5, hold = { 0.06, 0 } },
+	bow_20 = { model = "bow_20", length = 4.1, grip = 0.5, hold = { 0.06, -0.01 } },
+	-- longbow
+	longbow_1 = { model = "longbow_1", length = 5.1, grip = 0.5, hold = { 0.02, 0 } },
+	longbow_5 = { model = "longbow_5", length = 5.1, grip = 0.5, hold = { 0.05, -0.01 } },
+	longbow_10 = { model = "longbow_10", length = 5.1, grip = 0.5, hold = { 0.06, -0.02 } },
+	longbow_15 = { model = "longbow_15", length = 5.1, grip = 0.5, hold = { 0.03, 0 } },
+	longbow_20 = { model = "longbow_20", length = 5.1, grip = 0.5, hold = { 0.04, 0 } },
+	-- crossbow
+	crossbow_1 = { model = "crossbow_1", length = 2.2, grip = 0.3, hold = { 0.02, -0.1 } },
+	crossbow_5 = { model = "crossbow_5", length = 2.2, grip = 0.3, hold = { 0.01, 0.03 } },
+	crossbow_10 = { model = "crossbow_10", length = 2.2, grip = 0.3, hold = { 0.06, 0.04 } },
+	crossbow_15 = { model = "crossbow_15", length = 2.2, grip = 0.3, hold = { 0.1, -0.02 } },
+	crossbow_20 = { model = "crossbow_20", length = 2.2, grip = 0.3, hold = { 0.02, -0.05 } },
+	-- heavycrossbow
+	heavycrossbow_1 = { model = "heavycrossbow_1", length = 2.75, grip = 0.3, hold = { -0.03, 0 } },
+	heavycrossbow_5 = { model = "heavycrossbow_5", length = 2.75, grip = 0.3, hold = { 0.01, -0.01 } },
+	heavycrossbow_10 = { model = "heavycrossbow_10", length = 2.75, grip = 0.3, hold = { -0.04, -0.03 } },
+	heavycrossbow_15 = { model = "heavycrossbow_15", length = 2.75, grip = 0.3, hold = { -0.09, -0.03 } },
+	heavycrossbow_20 = { model = "heavycrossbow_20", length = 2.75, grip = 0.3, hold = { 0, -0.1 } },
+	-- shield
+	shield_1 = { model = "shield_1", length = 2.2, grip = 0.5 },
+	shield_5 = { model = "shield_5", length = 2.2, grip = 0.5 },
+	shield_10 = { model = "shield_10", length = 2.2, grip = 0.5 },
+	shield_15 = { model = "shield_15", length = 2.2, grip = 0.5 },
+	shield_20 = { model = "shield_20", length = 2.2, grip = 0.5 },
+	-- quiver
+	quiver_1 = { model = "quiver_1", length = 2.5, grip = 0.5 },
+	quiver_5 = { model = "quiver_5", length = 2.5, grip = 0.5 },
+	quiver_10 = { model = "quiver_10", length = 2.5, grip = 0.5 },
+	quiver_15 = { model = "quiver_15", length = 2.5, grip = 0.5 },
+	quiver_20 = { model = "quiver_20", length = 2.5, grip = 0.5 },
+	-- tome
+	tome_1 = { model = "tome_1", length = 1.1, grip = 0.5 },
+	tome_5 = { model = "tome_5", length = 1.1, grip = 0.5 },
+	tome_10 = { model = "tome_10", length = 1.1, grip = 0.5 },
+	tome_15 = { model = "tome_15", length = 1.1, grip = 0.5 },
+	tome_20 = { model = "tome_20", length = 1.1, grip = 0.5 },
+	-- orb
+	orb_1 = { model = "orb_1", length = 0.8, grip = 0.5 },
+	orb_5 = { model = "orb_5", length = 0.8, grip = 0.5 },
+	orb_10 = { model = "orb_10", length = 0.8, grip = 0.5 },
+	orb_15 = { model = "orb_15", length = 0.8, grip = 0.5 },
+	orb_20 = { model = "orb_20", length = 0.8, grip = 0.5 },
+	-- relic
+	relic_1 = { model = "relic_1", length = 1.1, grip = 0.5 },
+	relic_5 = { model = "relic_5", length = 1.1, grip = 0.5 },
+	relic_10 = { model = "relic_10", length = 1.1, grip = 0.5 },
+	relic_15 = { model = "relic_15", length = 1.1, grip = 0.5 },
+	relic_20 = { model = "relic_20", length = 1.1, grip = 0.5 },
+	-- Boss items (S52: before the type's tiers in ArtTiers.modelId)
+	unique_grimrok_cleaver = { model = "unique_grimrok_cleaver", length = 2.8, grip = 0.15, hold = { 0, -0.01 } },
 } :: { [string]: Asset }
 
 return WeaponLooks

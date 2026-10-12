@@ -12,6 +12,7 @@ Research z 5.10.2026 (strony wydawców, dokumentacja Roblox, DevForum) i przegl�
 3. **Bossy (kilka do kilkunastu)** robi się w płatnym AI (Tripo, Meshy) albo na zamówienie. Darmowe wyniki AI są niekomercyjne albo należą do serwisu.
 4. **Przed wgraniem czegokolwiek** włącz w Creator Dashboard **Asset Privacy**. Nowe meshe są domyślnie „Open Use” i tego nie da się cofnąć.
 5. **Kod musi być gotowy na modele:** rejestr wyglądu z miejscem na model i animacje, a gdy modelu brak, lepszy generator proceduralny. Animacje odgrywa klient, z pulą modeli i LOD. To zakres sesji **S24**.
+6. **Broń i ikony z plików** (S52): poradnik i umowa plików w `docs/GRAFIKA.md`, import w `docs/ASSETS.md` („Broń”).
 
 ## 2. Co jest w grze teraz (z kodu)
 
@@ -100,6 +101,8 @@ Wiarygodnych paczek potworów w Toolbox nie znaleziono **(niepewne)**, więc **n
 4. Poprawki w Blenderze.
 
 Surowy wynik AI może nie mieć ochrony prawnej (US Copyright Office, styczeń 2025), więc dodaj ręczne zmiany: kolory, zbroję, łączenie z innymi modelami.
+
+Tabela jest z S24; aktualne ceny i licencje (np. Meshy Free ma dziś tylko 10 pobrań w miesiącu) są w `docs/GRAFIKA.md`.
 
 ### 3.5 Na zamówienie
 
@@ -231,7 +234,8 @@ Roblox Studio ma też **serwer MCP** dla Claude Code (`execute_luau`, `insert_as
 - bossowie i pety w tym samym systemie;
 - `/mobviz`.
 
-Po S24 gra wygląda lepiej nawet bez żadnego modelu, a każdy wgrany model od razu się podmienia.
+Po S24 gra wygląda lepiej nawet bez żadnego modelu, a każdy wgrany model od razu się podmienia (od S52 także broń:
+`Assets.Weapons` + `WeaponLooks.assets`).
 
 **Zrobione w S24 (stan kodu):**
 - `Data/MonsterLooks.luau`: wygląd każdego z 50 rodzajów i 4 bossów (plan ciała, proporcje, 3 tony + akcent, materiały, akcesoria, broń, poświata, cząsteczki, dodatki Elit, fazy bossów), warianty regionalne przez `inherit` + barwę regionu;

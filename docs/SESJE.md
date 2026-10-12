@@ -4877,3 +4877,61 @@ Niedokończone (z opisem): utrata celowania i strumienia przy czerwonych strefac
 i rzędy 4–11 buildów obrażeń, bez rang węzłów na 45 / 70); R4 dla opcji użytkowych (0 w roli); limity Zręczności (D9,
 P2); buildy „tylko w raporcie” poza bazą i R5 (Tarczownik, Rzeźnik, Opiekun, Łowca Elit, Truciciel, Tropiciel, Przeciążenie
 jako osobne wiersze celów).
+
+### S52: Modele broni i ikony właściciela w grze (hak, packer, import)
+
+Sesja z `docs/sessions/S52.md` rozszerzona prośbą właściciela z 2026-10-12: zamiast samego haka gra dostaje już zrobione
+grafiki i modele z folderu `D:/Users/vdapi/Downloads/Graphics`. Kod wygrywa nad planem z S46: model to MeshPart z wpisem
+w `WeaponLooks.assets` (było od 2026-10-09), grafika jest na próg przedmiotu, ikony PNG to warstwa nad SVG (`DECYZJE`, S52).
+- **Rozdzielacz progów** `Logic/ArtTiers` (`pick`, `modelId`, `iconKeys`): własny próg, potem najbliższy niższy tego
+  samego typu, unikat bossa pierwszy; nigdy wyższy.
+- **Modele broni:** `tools/weapons/prepare_glb.py` (numpy + Pillow) obraca 121 `.glb` Tripo w osie Gripa (PCA długości,
+  łuki: grzbiet na +X, kusze: przód na +Y i łęczysko w poprzek, tarcze / relikwie / kule: lico na +X; ręcznie
+  `heavycrossbow_5` i `_10` o 90°), nazywa węzły id przedmiotu, liczy miejsce dłoni mieczy i szabel z profilu rękojeści i
+  zapisuje `assets/Weapons/<id>.glb` (lokalnie, gitignore) z podglądami `build/weapons/<typ>.png` (obejrzane wszystkie 24).
+  Trójkąty 2,6–4,1 tys. (limit 20 tys.), bez upraszczania. `WeaponLooks.assets`: 121 wpisów (`length` = długość brył
+  typu, `grip` z modelu, `hold` = środek uchwytu obok osi pudełka w 79 modelach, opcjonalny `turn`), `MOUNTS` (24 typy),
+  `IMPORT_YAW`; wpis testowy `sword2` zastąpiony
+  modelem `sword1h_1`.
+- **Hak w `EquipmentService`:** `ModelFor` (ArtTiers po wpisach i modelach obecnych w `Assets.Weapons`, szukanie po nazwie
+  rekurencyjnie), `buildFromModel` (kopia MeshPartu bez dzieci poza SurfaceAppearance / SpecialMesh i bez skryptów i
+  dźwięków głębiej, jedno ostrzeżenie na model, skala do `length`, dłoń na `hold`, ułożenie `mountFrame` = `Logic/WeaponMount`, `VaelthornGrip` / `VaelthornTip`) i `buildFromParts` (dzisiejszy kod bez
+  zmian), wspólne atrybuty i światło Heroicznych; jedno ostrzeżenie o braku modelu (albo jedno zbiorcze).
+- **Studio:** `tools/studio/import_weapons.luau` (Command Bar) przenosi zaimportowane MeshParty do
+  `Assets.Weapons.Meadows` pod nazwami przedmiotów; lista właściciela (8 kroków) w `docs/ASSETS.md` → „Broń”.
+- **Ikony:** `tools/icons/atlas_index.py` (zapis indeksu wydzielony z `build_final.py`, identyczny wynik poza nową tabelą
+  `PNG` i `SVG_SHEETS`), `tools/icons/import_png.py` (packer, `--dry-run`, `--key`, `--selftest`: OK, dwa przebiegi bez
+  zmian), `tools/icons/import_graphics.py` (folder Graphics → `art/icons/src` 128 px). Packer uruchomiony naprawdę:
+  `art/icons/items_4..7.png` (246 komórek), podgląd przed i po i atlasy obejrzane. `ItemIcons.candidates` / `pick` /
+  `iconOf` / `resolve(def, el, ready)`, `IconState.Loaded` + `readyIn`, `ItemIcon` i `CurrencyIcon` per atlas;
+  `readyFor` liczy tylko atlasy SVG. Do wgrania atlasów 4–7 gra wygląda co do piksela jak dziś. Broń maga (`elemental`)
+  pomija obrazek bez warstwy akcentu, więc kolor żywiołu zostaje.
+- **Admin:** `/artcoverage`, `/weaponpreview <typ|id> [próg]` (`EquipmentService.Preview`, znika po każdej zmianie
+  ekwipunku i odrodzeniu).
+- **Testy:** `tests/arttiers.spec.luau` (7: progi, modele, klucze ikon, wpisy, konwencja Gripa na bryłach 24 typów,
+  matematyka montażu; +1: `hold`), `tests/artassets.spec.luau` (5: walidator `.rbxm` po `serializeModel` → `deserializeModel`, skan
+  `assets/Weapons` i `art/icons/src`, klucze obrazków używane przez przedmioty, atlas i id na arkusz),
+  `tests/itemicons.spec.luau` (+2: obrazki per atlas z bronią maga, kolejność kluczy). Check: 1401 testów.
+- **Dokumentacja:** `docs/GRAFIKA.md` (progi zamiast etapów, umowa modelu, kierunki, nazwy PNG, wgranie), `docs/ASSETS.md`
+  (rejestr, „Broń”, ikony), `docs/MODELE.md`, `docs/ARCHITECTURE.md` §7, `docs/DESIGN.md` §5.3b, `CLAUDE.md`,
+  `tools/icons/README.md`. Wiki: tylko `npm run data` (lista atlasów; obrazków na wiki jeszcze nie ma).
+
+Zaimportowane (2026-10-13): 121 modeli (24 typy × progi 1, 5, 10, 15, 20 + Rozłupywacz Grimroka) i 246 ikon: `eq` 195
+(broń i druga ręka 120, zbroje i biżuteria 75), `uniq` 3 (Rozłupywacz, Kieł Wodza, Totem Plemienia), `mat` 17, `pot` 13,
+`bless` 5, `misc` 11 (zwoje 4, kamienie 3, plecaki 4), `tool` 2. Pominięte: `saber1h_15_wersja2.png` (gra bierze
+`saber1h_15.png`), `sword1h/_test_start.png`, szkice.
+
+Czeka na właściciela: Import 3D 121 modeli + `import_weapons.luau` + `assets/Weapons/Meadows.rbxm` (`docs/ASSETS.md`),
+wgranie `items_4..7.png` i ich id w `ItemIconSheets.luau`, sprawdzenie `IMPORT_YAW` (jak Studio czyta osie `.glb`).
+
+Obrazki bez miejsca w grze (UI rysuje je znakami, nie ma haka na obrazek): umiejętności 56, efekty 21, HUD 30, mapa 33,
+mapy (wzory układów) 18, klasy 8 (ikony i portrety), gildia 5, profile 3, questy 16, żywioły 4.
+
+Pliki: `src/shared/Logic/ArtTiers.luau`, `src/shared/Logic/WeaponMount.luau`, `src/shared/Logic/ItemIcons.luau`,
+`src/shared/Data/WeaponLooks.luau`, `src/shared/Data/ItemIconAtlas.luau`, `src/shared/Data/ItemIconSheets.luau`,
+`src/shared/Data/AdminCommands.luau`, `src/shared/Data/Localization/{pl,en}.luau`,
+`src/server/Services/EquipmentService.luau`, `src/server/Admin/Items.luau`, `src/client/UI/IconState.luau`,
+`src/client/UI/Components/{ItemIcon,CurrencyIcon}.luau`, `tests/{arttiers,artassets,itemicons}.spec.luau`,
+`tools/icons/{atlas_index,import_png,import_graphics,build_final}.py`, `tools/icons/README.md`,
+`tools/weapons/prepare_glb.py`, `tools/studio/import_weapons.luau`, `art/icons/items_4..7.png`, `art/icons/src/**`,
+dane wiki (`wiki/src/data/icons.json`, `meta.json`, `wiki/src/generated/item-icons.json`, `docs/PRZEDMIOTY.md`).

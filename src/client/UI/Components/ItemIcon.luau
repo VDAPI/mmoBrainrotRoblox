@@ -1,8 +1,9 @@
 --!strict
 -- Item icon (S35, DESIGN §5, §23): up to 3 stacked atlas layers from Logic/ItemIcons (tier-tinted metal, fixed
 -- colours, accent: element / potion / ore colour) while the atlases are loaded (UI/IconState.Art); otherwise the
--- old glyph on its coloured tile. Rarity is never drawn here (the slot frame shows it). Layers are three fixed
--- ImageLabels changed by Computed values, so a slot never rebuilds instances when its item changes.
+-- old glyph on its coloured tile. S52: the owner's picture once its sheet is loaded, the code-drawn icon before.
+-- Rarity is never drawn here (the slot frame shows it). Layers are three fixed ImageLabels changed by Computed
+-- values, so a slot never rebuilds instances when its item changes.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -44,7 +45,7 @@ local function ItemIcon(scope: Scope, props: Props): Instance
 			return nil
 		end
 		local element = if props.Element ~= nil then use(props.Element) else nil
-		return ItemIcons.resolve(def, element)
+		return ItemIcons.resolve(def, element, IconState.readyIn(use))
 	end)
 	local fade = scope:Computed(function(use): number
 		return if props.Transparency ~= nil then use(props.Transparency) else 0

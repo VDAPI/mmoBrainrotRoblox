@@ -4,54 +4,74 @@
 
 ## Rejestr licencji
 
+Wiersz na partię modeli albo ikon: narzędzie, plan (płatny przed generowaniem), data. Faktury i zrzut cennika trzyma
+właściciel (`docs/GRAFIKA.md` 6).
+
 | Plik | Źródło (paczka) | Licencja | Wersja i data pobrania | Link | Uwagi |
 |---|---|---|---|---|---|
 | Fonty wiki: Grenze Gotisch, Alegreya Sans, IBM Plex Mono (`@fontsource`) | Google Fonts przez Fontsource | SIL OFL 1.1 | 5.3.0, 2026-10-07 | fontsource.org | tylko strona wiki (`wiki/`) |
 | `art/icons/items_*.png` | własne, wygenerowane (`tools/icons`) | własne | 2026-10-07 | — | przebudowa: `tools/icons/README.md` |
 | `wiki/public/img/mobs/*`, `wiki/public/img/og/*` | własne, wygenerowane (`tools/wiki-renders`) | własne | 2026-10-07 | — | przebudowa: `npm run renders` |
 | `wiki/public/img/items/*` | własne, z atlasów S35 (`wiki/scripts/item-icons.mjs`) | własne | 2026-10-07 | — | przebudowa: `npm run icons` |
-| `art/weapons/sword1/*` (z `assets/Weapons/sword1.glb`) | własne, wygenerowane w Tripo AI (właściciel) | własne (warunki Tripo) | 2026-10-09 | — | 1,78 mln → 9 tys. trójkątów (pymeshlab), tekstury 4096 → 1024; `.glb` 64 MB poza repo |
+| `art/weapons/sword1/*` (z `assets/Weapons/sword1.glb`) | własne, wygenerowane w Tripo AI (właściciel) | własne (warunki Tripo) | 2026-10-09 | — | test, zastąpiony przez `sword1h_1` (S52), do usunięcia; 1,78 mln → 9 tys. trójkątów (pymeshlab), tekstury 4096 → 1024; `.glb` 64 MB poza repo |
+| `assets/Weapons/*.glb` (121 modeli broni, progi 1–20 i `unique_grimrok_cleaver`) | własne, Tripo AI, konto Pro (właściciel, folder Graphics) | własne (Tripo Pro: prywatne, komercyjne) | 2026-10-12 | — | 2,6–4,1 tys. trójkątów, tekstury w pliku; `.glb` tylko lokalnie (gitignore), w repo dane `WeaponLooks.assets` |
+| `art/icons/src/**`, `art/icons/items_4..7.png` (246 ikon przedmiotów) | własne, ChatGPT / Codex (właściciel, folder Graphics) | własne (warunki OpenAI) | 2026-10-12 | — | kopie 128 px (`tools/icons/import_graphics.py`), oryginały 1024 px poza repo |
 
 ## Gdzie co leży
 
 - `assets/Monsters/<nazwa>.rbxm` → `ReplicatedStorage.Assets.Monsters.<nazwa>` (Rojo, `default.project.json`).
 - `assets/Pets/<petId>.rbxm` → `ReplicatedStorage.Assets.Pets.<petId>` (statyczny model peta, zastępuje generator bez wpisu w danych).
+- `assets/Weapons/<paczka>.rbxm` → `ReplicatedStorage.Assets.Weapons.<paczka>` (folder MeshPartów broni nazwanych jak
+  `model` w `WeaponLooks.assets`; gra szuka po nazwie w całym `Assets.Weapons`). Źródła `.glb` leżą obok tylko lokalnie.
+- `art/icons/src/<grupa>/<klucz>.png` → atlasy `art/icons/items_<n>.png` (packer `tools/icons/import_png.py`).
 - Foldery mają `init.meta.json` z `ignoreUnknownInstances`, więc model wklejony ręcznie w Studio nie znika przy `rojo serve`. Żeby trafił do repozytorium, zapisz go jako `.rbxm` w odpowiednim folderze.
 
-## Broń (2026-10-09)
+## Broń (S52)
 
-Prawdziwy model broni zastępuje wygląd z części (`Data/WeaponLooks`) dla jednego przedmiotu: wpis w
-`WeaponLooks.assets` (`id przedmiotu = { model, length, grip }`) + MeshPart w `ReplicatedStorage.Assets.Weapons.<model>`.
-Mesh stoi pionowo (+Y, głowica na dole); gra sama go skaluje do `length`, obraca ostrzem do przodu i chwyta na
-wysokości `grip`. Bez modelu przedmiot ma stary wygląd (jedno ostrzeżenie w Output).
+Prawdziwy model zastępuje wygląd z klocków (`Data/WeaponLooks`) dla przedmiotu: wpis w `WeaponLooks.assets`
+(`id przedmiotu = { model, length, grip, hold? }`) + MeshPart o nazwie `model` gdziekolwiek w `ReplicatedStorage.Assets.Weapons`.
+Przedmiot bez własnego modelu bierze model najbliższego niższego progu swojego typu (`sword1h_25` → `sword1h_20`), unikat
+bossa najpierw swój. Bez modelu zostają klocki (jedno ostrzeżenie w Output). Mesh leży w osiach Gripa (`docs/GRAFIKA.md`
+3.3; obraca je `tools/weapons/prepare_glb.py`): +Y wzdłuż broni, +X ostrze / głowica / lico. Gra skaluje go do `length`,
+kładzie punkt `grip` (ułamek długości od dołu) przesunięty o `hold` (środek uchwytu) w dłoni wg `WeaponLooks.MOUNTS` i dodaje `VaelthornGrip`, `VaelthornTip`,
+atrybuty i światło jak klockom. Limit Roblox: 20 tys. trójkątów na MeshPart (modele Tripo z 2026-10-12: 2,6–4,1 tys.).
 
-Roblox przyjmuje do ~20 tys. trójkątów na MeshPart. Modele z generatorów (Tripo: 1,8 mln) trzeba najpierw uprościć,
-np. `pymeshlab` (`meshing_decimation_quadric_edge_collapse_with_texture`, kilka przebiegów do ~9 tys.).
+**Lista dla właściciela (raz na paczkę modeli, Studio, tryb Edit):**
 
-**Import (właściciel, raz na model):**
-
-1. Studio → zakładka Home/Model → **Import 3D** → `art/weapons/sword1/sword1.obj` (tekstura `sword1_color.png`
-   obok wczyta się sama; jeśli nie, wpisz jej id w `TextureID` po wgraniu przez Asset Manager).
-2. Rig Type: brak (zwykły mesh). Po imporcie w Workspace pojawi się Model z MeshPartem.
-3. Przenieś **MeshPart** do `ReplicatedStorage.Assets.Weapons` i nazwij go `sword1`.
-4. Prawy klik → **Save to File** → `assets/Weapons/sword1.rbxm` (wtedy Rojo i repo go znają).
-5. Play: nowa postać wojownika (albo `/give sword1h_1` i załóż) ma ten miecz w dłoni.
+1. `py -3 tools/weapons/prepare_glb.py` (z folderu repo; robi to już Claude Code przy imporcie): kopie `.glb` w
+   `assets/Weapons/` pod nazwami przedmiotów, podglądy w `build/weapons/`.
+2. Studio, miejsce gry, Asset Privacy jak w `docs/GRAFIKA.md` 3.2 krok 1. Home → **Import 3D** → zaznacz naraz wszystkie
+   `assets/Weapons/*.glb` (bez starego `sword2.glb`) → Import (Rig: brak, tekstury z pliku).
+3. View → **Command Bar**: wklej cały plik `tools/studio/import_weapons.luau`, Enter. Przenosi MeshParty do
+   `ReplicatedStorage.Assets.Weapons.Meadows` pod nazwami przedmiotów i pisze w Output, ilu brakuje.
+4. Prawy klik na folderze `Meadows` → **Save to File** → `assets/Weapons/Meadows.rbxm`; potem usuń ten folder w Studio
+   (przy `rojo serve` Rojo wstawi plik).
+5. `scripts\check.ps1` (test `artassets` sprawdza plik), Play: `/artcoverage`, `/weaponpreview sword1h 25`,
+   `/weaponpreview shield`, `/weaponpreview unique_grimrok_cleaver`.
+6. Jeśli wszystkie tarcze stoją tyłem, a topory obuchem do góry: `WeaponLooks.IMPORT_YAW = 180`. Pojedynczy model źle
+   obrócony: wpis w `YAW` w `tools/weapons/prepare_glb.py`, kroki 1–4 jeszcze raz.
+7. Commit `assets/Weapons/Meadows.rbxm` (bez `.glb`).
+8. Ikony: wgraj w Asset Manager tylko atlasy z pustym id w `src/shared/Data/ItemIconSheets.luau` (dziś `items_4.png` ..
+   `items_7.png`) i wklej ich id w tej samej kolejności; commit.
 
 ## Ikony przedmiotów (S35)
 
-Trzy atlasy `art/icons/items_1..3.png` (1024×1024, komórki 128 px, 91 ikon w 145 warstwach) i indeks
-`src/shared/Data/ItemIconAtlas.luau`. `art/` leży poza drzewem Rojo: atlasy wgrywa się jako obrazki, a gra zna je po
-id z `src/shared/Data/ItemIconSheets.luau`. Dopóki id są puste, gra pokazuje dotychczasowe symbole. Przebudowa
+Trzy atlasy `art/icons/items_1..3.png` (1024×1024, komórki 128 px, 91 ikon w 145 warstwach, rysowane kodem) i indeks
+`src/shared/Data/ItemIconAtlas.luau`. S52: obrazki właściciela z `art/icons/src` (246 ikon) w atlasach `items_4..7.png`
+(tabela `PNG` indeksu, `py -3 tools/icons/import_png.py`); wgrywa się tylko atlasy, które packer wypisał jako zmienione
+(ich id są puste). Do wgrania gra pokazuje w ich miejscu ikony rysowane kodem.
+`art/` leży poza drzewem Rojo: atlasy wgrywa się jako obrazki, a gra zna je po id z
+`src/shared/Data/ItemIconSheets.luau`. Dopóki id atlasów 1–3 są puste, gra pokazuje dotychczasowe symbole. Przebudowa
 (Python + Pillow + Playwright): `tools/icons/README.md`; każda zmiana położenia komórek wymaga ponownego wgrania.
 
 **Wgranie (właściciel):**
 
 1. Studio, otwarte miejsce gry (to samo konto albo grupa, do której należy gra — inaczej obrazki mogą się nie wczytać
    w grze).
-2. Widok → **Asset Manager** → **Bulk Import** (albo zakładka Images → Import) → wybierz `art/icons/items_1.png`,
-   `items_2.png`, `items_3.png`.
+2. Widok → **Asset Manager** → **Bulk Import** (albo zakładka Images → Import) → wybierz atlasy z pustym id
+   (`art/icons/items_<n>.png`; po S52: `items_4.png` .. `items_7.png`).
 3. Po wgraniu: prawy klik na każdym obrazku → **Copy Asset ID** i wklej do `src/shared/Data/ItemIconSheets.luau` jako
-   `"rbxassetid://<liczba>"` **w kolejności 1, 2, 3**. Zapisz plik (Rojo zsynchronizuje).
+   `"rbxassetid://<liczba>"` w linii z komentarzem tego atlasu (`-- items_<n>.png`). Zapisz plik (Rojo zsynchronizuje).
 4. Moderacja obrazków trwa zwykle kilka minut; do tego czasu ikony mogą być puste. `/icons` pokazuje stan,
    `/icons glyph` wraca do symboli.
 5. Commit zmiany id (`ItemIconSheets.luau`).

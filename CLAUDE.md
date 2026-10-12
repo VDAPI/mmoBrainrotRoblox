@@ -75,7 +75,12 @@ przedmiotów czyta STATY); odstępstwa idą do `docs/DECYZJE.md`, a kontrakt pop
 - **Efekt żywiołu broni** (S65): przepis w `Logic/Traits.elementPlan`, wykonanie w `server/Skills/Elements.luau`
   (umiejętności z `Data/Skills.ADAPTIVE`, Iskra z `ItemTraits.params`), wzmocnienie hakiem `elementRider`; leczenie
   sojusznika spoza umiejętności przez `Context.healFrom`, wybór rannego przez `Context.mostWounded`.
-- **Prawdziwy model broni**: wpis w `WeaponLooks.assets` + MeshPart w `Assets.Weapons` (`docs/ASSETS.md` → „Broń”).
+- **Model broni / ikona PNG** (S52): `.glb` przez `tools/weapons/prepare_glb.py` (osie Gripa, `assets/Weapons/<id>.glb`,
+  tylko lokalnie) + wpis w `WeaponLooks.assets` (`model`, `length`, `grip`, `hold`; ułożenie typu w `WeaponLooks.MOUNTS`) +
+  MeshPart w `Assets.Weapons` (lista właściciela w `docs/ASSETS.md` → „Broń”); próg bez modelu bierze niższy
+  (`Logic/ArtTiers`). Ikona: `art/icons/src/<grupa>/<klucz>.png` (`eq/<typ>@<próg>`, `mat/<id>` …; z folderu Graphics
+  `tools/icons/import_graphics.py`), potem `py -3 tools/icons/import_png.py` i `npm run data`; testy `artassets` /
+  `arttiers`. Umowa plików: `docs/GRAFIKA.md`.
 - **Portal / przejście między mapami** (S25): wpis w `Data/Portals.luau` (layout stawia go przez
   `Prefabs.portalFrom(ctx, id)`); trasa (`Logic/MapRoute`), mapa świata i prowadzenie widzą go same.
 - **Karta na mapie świata** (S25): treść w `UI/Screens/WorldMap/Cards.luau` (albo `CreatureCards`) jako spec

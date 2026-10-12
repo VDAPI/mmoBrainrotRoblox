@@ -8,13 +8,20 @@
 --   blessings       "bless/<line>" (blessing_<line>_<n>)
 --   ore, herb, fish "mat/ore" | "mat/herb" | "mat/fish", accent = def.icon.color; other materials "mat/<id>"
 --   stone, scroll, backpack  "misc/<type>", accent = def.icon.color; tools "tool/<id>"
+-- S52: pictures from art/icons/src (Atlas.PNG) come first when their sheets are ready: boss items "uniq/<id>",
+-- equipment "eq/<type>@<tier>" of the nearest lower tier with a picture (Logic/ArtTiers), other items
+-- "<group>/<item id>" (e.g. "mat/ore_copper"), then the picture of the shared key. Without a ready picture the icon
+-- drawn by code (Atlas.ICONS) is used, so an atlas waiting for its upload never changes how the game looks.
+-- Mage weapons use a picture only when it has an accent layer (the element colour); otherwise the drawn icon.
 
+local ArtTiers = require("./ArtTiers")
 local Atlas = require("../Data/ItemIconAtlas")
 local Elements = require("../Data/Elements")
 local Items = require("../Data/Items")
 local Sheets = require("../Data/ItemIconSheets")
 
 type ItemDef = Items.ItemDef
+type Icon = Atlas.Icon
 
 export type Layer = {
 	image: number, -- sheet number (ItemIcons.sheet(image) is the asset id)
@@ -23,11 +30,15 @@ export type Layer = {
 	tint: string?, -- hex colour multiplied into the layer (ImageColor3); nil = white
 }
 export type Resolved = { key: string, layers: { Layer } }
+-- Whether a sheet can be drawn (client: uploaded and loaded; default: it has an asset id).
+export type Ready = (sheet: number) -> boolean
+export type Candidate = { key: string, data: boolean }
 
 local ItemIcons = {}
 
 ItemIcons.CELL = Atlas.CELL
 ItemIcons.SHEETS = Atlas.SHEETS
+ItemIcons.SVG_SHEETS = Atlas.SVG_SHEETS
 
 local DATA_ACCENT_MATERIALS: { [string]: string } = { ore = "mat/ore", herb = "mat/herb", fish = "mat/fish" }
 local DATA_ACCENT_MISC: { [string]: string } =
@@ -35,7 +46,7 @@ local DATA_ACCENT_MISC: { [string]: string } =
 -- Materials added after the atlas was drawn (S32 parts), shown with the drawn icon of the same thing.
 local MATERIAL_ALIASES: { [string]: string } = { crow_feather = "mat/feather", toad_venom = "mat/venom_sac" }
 
--- Atlas key of a definition and whether the accent comes from def.icon.color.
+-- Code-drawn atlas key (Atlas.ICONS) of a definition and whether the accent comes from def.icon.color.
 function ItemIcons.keyOf(def: ItemDef): (string?, boolean)
 	local kind = def.type
 	if def.category == "equipment" then
@@ -70,6 +81,28 @@ function ItemIcons.keyOf(def: ItemDef): (string?, boolean)
 	return nil, false
 end
 
+-- Atlas keys an item may use, best first (S52): pictures of the item or of its tier, then the shared key.
+function ItemIcons.candidates(def: ItemDef): { Candidate }
+	local base, dataAccent = ItemIcons.keyOf(def)
+	local out: { Candidate } = {}
+	if def.category == "equipment" then
+		table.insert(out, { key = `uniq/{def.id}`, data = false })
+		for _, key in ArtTiers.iconKeys(`eq/{def.type}`, def.tier) do
+			table.insert(out, { key = key, data = false })
+		end
+	elseif base then
+		local group = string.match(base, "^(%a+)/")
+		local own = `{group}/{def.id}`
+		if group and own ~= base then
+			table.insert(out, { key = own, data = true })
+		end
+	end
+	if base then
+		table.insert(out, { key = base, data = dataAccent })
+	end
+	return out
+end
+
 -- Tint of the tier layer: the highest listed tier <= def.tier.
 function ItemIcons.tierTint(tier: number?): string
 	local best, bestTier = Atlas.TIER_TINT[1], 1
@@ -81,11 +114,66 @@ function ItemIcons.tierTint(tier: number?): string
 	return best
 end
 
+-- Asset id of a sheet, or nil while it is not uploaded.
+function ItemIcons.sheet(n: number): string?
+	local id = Sheets[n]
+	return if id and id ~= "" then id else nil
+end
+
+-- True when the sheet has an asset id (the readiness used outside the client: server, wiki export, tests).
+function ItemIcons.hasId(n: number): boolean
+	return ItemIcons.sheet(n) ~= nil
+end
+
+local function drawable(icon: Icon, ready: Ready): boolean
+	for _, layer in icon.layers do
+		if not ready(layer.s) then
+			return false
+		end
+	end
+	return true
+end
+
+local function hasAccent(icon: Icon): boolean
+	for _, layer in icon.layers do
+		if layer.t == "accent" then
+			return true
+		end
+	end
+	return false
+end
+
+-- Icon of an atlas key: the picture (Atlas.PNG) when all its sheets are ready, else the code-drawn icon when ready.
+-- `needAccent` (mage weapons) skips a picture without an accent layer, so the element colour stays visible until
+-- the picture gets its `.a.png` (docs/GRAFIKA.md 4.5).
+function ItemIcons.iconOf(key: string, ready: Ready?, needAccent: boolean?): Icon?
+	local isReady: Ready = ready or ItemIcons.hasId
+	local png = Atlas.PNG[key]
+	if png and drawable(png, isReady) and (not needAccent or hasAccent(png)) then
+		return png
+	end
+	local svg = Atlas.ICONS[key]
+	if svg and drawable(svg, isReady) then
+		return svg
+	end
+	return nil
+end
+
+-- Key and icon an item shows now, and whether its accent comes from the data.
+function ItemIcons.pick(def: ItemDef, ready: Ready?): (string?, Icon?, boolean)
+	for _, c in ItemIcons.candidates(def) do
+		local icon = ItemIcons.iconOf(c.key, ready, def.elemental == true)
+		if icon then
+			return c.key, icon, c.data
+		end
+	end
+	return nil, nil, false
+end
+
 -- Layers of an item, bottom to top, or nil (no icon drawn yet: keep the glyph). `element` is the
--- instance element of mage weapons (ItemRoll.elementOf).
-function ItemIcons.resolve(def: ItemDef, element: string?): Resolved?
-	local key, dataAccent = ItemIcons.keyOf(def)
-	local icon = if key then Atlas.ICONS[key] else nil
+-- instance element of mage weapons (ItemRoll.elementOf); `ready` says which sheets can be drawn.
+function ItemIcons.resolve(def: ItemDef, element: string?, ready: Ready?): Resolved?
+	local key, icon, dataAccent = ItemIcons.pick(def, ready)
 	if not key or not icon then
 		return nil
 	end
@@ -106,15 +194,10 @@ function ItemIcons.resolve(def: ItemDef, element: string?): Resolved?
 	return { key = key, layers = layers }
 end
 
--- Asset id of a sheet, or nil while it is not uploaded.
-function ItemIcons.sheet(n: number): string?
-	local id = Sheets[n]
-	return if id and id ~= "" then id else nil
-end
-
--- True when `ids` has an asset id ("rbxassetid://<digits>") for every sheet (S35, pure: tests pass their own list).
+-- True when `ids` has an asset id ("rbxassetid://<digits>") for every code-drawn sheet 1..SVG_SHEETS (S35, pure:
+-- tests pass their own list). Picture sheets (S52) are ready one by one and fall back to these.
 function ItemIcons.readyFor(ids: { string }): boolean
-	for n = 1, Atlas.SHEETS do
+	for n = 1, Atlas.SVG_SHEETS do
 		local id = ids[n]
 		if type(id) ~= "string" or not string.match(id, "^rbxassetid://%d+$") then
 			return false
@@ -123,9 +206,23 @@ function ItemIcons.readyFor(ids: { string }): boolean
 	return true
 end
 
--- True when every sheet has an asset id (otherwise the UI keeps glyphs everywhere, never a half set).
+-- True when every code-drawn sheet has an asset id (otherwise the UI keeps glyphs everywhere).
 function ItemIcons.ready(): boolean
 	return ItemIcons.readyFor(Sheets :: any)
+end
+
+-- Picture keys (Atlas.PNG) by group ("eq", "mat", ...), sorted, for /artcoverage.
+function ItemIcons.pictures(): { [string]: { string } }
+	local out: { [string]: { string } } = {}
+	for key in Atlas.PNG do
+		local group = string.match(key, "^(%a+)/") or "?"
+		out[group] = out[group] or {}
+		table.insert(out[group], key)
+	end
+	for _, list in out do
+		table.sort(list)
+	end
+	return out
 end
 
 -- What the drag ghost (and other single icons) draw for an item instance: its definition, the element of a mage
@@ -144,8 +241,8 @@ function ItemIcons.visualOf(
 end
 
 -- Icon of a UI currency or other non-item picture ("ui/gold", "ui/exp", "ui/dragon").
-function ItemIcons.named(key: string): Resolved?
-	local icon = Atlas.ICONS[key]
+function ItemIcons.named(key: string, ready: Ready?): Resolved?
+	local icon = ItemIcons.iconOf(key, ready)
 	if not icon then
 		return nil
 	end

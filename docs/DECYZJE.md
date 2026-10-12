@@ -1992,3 +1992,32 @@
   1 / szybkość`); pierwszy po kanale zaczyna nowy rytm. Śmierć gracza w `killTime` i expieniu liczy całe okno (300 s).
 - **S86** Tyknięcia efektów umiejętności obszarowych (`Traits.isAreaSkill`) liczą się do `areaShare`; `channelGuard`
   działa na kanale i strumieniu i schodzi przy przerwaniu; wiersz `all.tsk3` „base” to baza klasy wiersza.
+- **S52** Grafika jest na próg przedmiotu (1, 5, 10, 15, 20 na Łąkach), nie na 3 etapy z `docs/GRAFIKA.md`:
+  `Logic/ArtTiers` bierze model i ikonę własnego progu, a bez nich najbliższy NIŻSZY próg tego samego typu (nigdy
+  wyższy), potem dzisiejszy wygląd. Unikat bossa ma pierwszeństwo. `Config.ArtStages` nie powstał.
+- **S52** Model broni to jeden MeshPart z importu (`WeaponLooks.assets`: id przedmiotu → `model`, `length`, `grip`), nie
+  `.rbxm` z Attachmentem `Grip` w folderach typów: osie Gripa są w plikach `.glb` (obraca je
+  `tools/weapons/prepare_glb.py`), a ułożenie w dłoni w danych (`WeaponLooks.MOUNTS`, `Logic/WeaponMount`).
+- **S52** Konwencja Gripa: +Y = długość (czubek, głowica, przód kuszy, górna krawędź drugiej ręki), +X = ostrze, głowica
+  topora, grzbiet łuku, góra kuszy, lico tarczy, zapięcie księgi. Broń jednoręczna, dwuręczna i kusze: +Y → −Z, +X → +Y;
+  kostury i łuki: +Y → +Y, +X → −Z; druga ręka i kołczan: środek w `at` (środek dzisiejszych klocków), `grip = 0,5`.
+- **S52** `WeaponLooks.IMPORT_YAW` (0 albo 180) to jeden przełącznik na wypadek, gdyby Import 3D obrócił osie `.glb`
+  (wszystkie tarcze tyłem). Model bez `Rarity` (MeshPart z AI nie ma osobnego klejnotu); światło Heroicznych jak klocki.
+- **S52** Modele szukane w całym `Assets.Weapons` po nazwie (rekurencyjnie), więc jeden zapisany folder z importu
+  (`assets/Weapons/Meadows.rbxm`) wystarcza. Brak modelu: jedno ostrzeżenie (albo jedno zbiorcze, gdy folder jest pusty).
+- **S52** Ikony z PNG to osobna warstwa nad SVG: tabela `PNG` w `ItemIconAtlas.luau` i atlasy po SVG (`items_4..7`).
+  Packer nigdy nie rusza atlasów SVG; obrazek bez wgranego i wczytanego atlasu pokazuje dzisiejszą ikonę SVG (nie glif),
+  więc puste id w `ItemIconSheets` niczego nie zmieniają. Zmieniony klucz trzyma swoje komórki, nowe idą na koniec.
+- **S52** Klucze obrazków: `eq/<typ>@<próg>`, `uniq/<id>`, obrazek jednego przedmiotu `<grupa>/<id przedmiotu>`
+  (`mat/ore_copper`, `pot/potion_hp_1`, `misc/stone_return`) przed wspólnym kluczem (`mat/ore`). Gotowość per atlas:
+  atlasy SVG dalej razem (`IconState.Ok`), atlasy PNG każdy osobno (`IconState.Loaded`, `ItemIcons.resolve(def, el, ready)`).
+- **S52** Źródła w `art/icons/src` to gotowe komórki 128 px (`tools/icons/import_graphics.py` z folderu Graphics), nie
+  oryginały 1024 px; packer bierze plik 128×128 bez przeróbki, inne wymagają boku ≥ 256.
+- **S52** Obrazki bez miejsca w grze (umiejętności, efekty, klasy, HUD, mapa, żywioły, gildia, profile, questy) nie są
+  pakowane: UI rysuje je znakami i nie ma haka na obrazek (`CurrencyIcon` jako jedyny hak poza przedmiotami nie ma
+  odpowiednika z alfą). Wiki bez przeróbek (osobny krok); `npm run data` tylko odświeża listę atlasów.
+- **S52** MeshPart jest wyśrodkowany na swoim pudełku, więc dłoń na uchwycie daje pole `hold = { x, z }` w
+  `WeaponLooks.Asset` (ułamki długości, środek przekroju na wysokości `grip`, najszerszy kawałek: majdan, nie cięciwa;
+  mierzy `prepare_glb.py`). Druga ręka bez `hold` (środek w `at`). Kolby kusz zostają w osi z PCA (lekki skos).
+- **S52** Broń maga (`elemental`) używa obrazka tylko z warstwą akcentu (`.a.png`); obrazek jednowarstwowy jest pomijany,
+  żeby żywioł był widać (ikona kodu). Podgląd `/weaponpreview` znika po każdej zmianie ekwipunku, nie tylko broni.

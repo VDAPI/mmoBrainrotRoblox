@@ -180,6 +180,9 @@ cmd(
 	"icongrid",
 	{ enum("group", { "eq", "uniq", "mat", "pot", "misc", "tiers" }, true, "eq"), str("type", true) }
 )
+-- S52: real art (weapon models, picture icons): coverage and a look in the hand without an item.
+cmd("items", "artcoverage", {})
+cmd("items", "weaponpreview", { str("what"), int("tier", 1, MAX_LEVEL, true) })
 cmd("items", "clearinv", {}, { danger = true })
 cmd("items", "bag", { enum("capacity", { "20", "30", "45", "60", "80", "100", "130", "160", "200" }) })
 cmd("items", "up", { str("where"), int("level", 0, 9) })

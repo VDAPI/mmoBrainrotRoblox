@@ -1,6 +1,7 @@
 --!strict
 -- Currency icon (S35): gold, experience or Dragon Currency from the item atlases (ItemIcons.named "ui/gold",
--- "ui/exp", "ui/dragon") while they are loaded, otherwise the glyph the UI used before.
+-- "ui/exp", "ui/dragon") while they are loaded, otherwise the glyph the UI used before. S52: a picture of the key
+-- (art/icons/src/ui) once its sheet is loaded.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -29,14 +30,23 @@ local GLYPHS: { [string]: { glyph: string, color: Color3 } } = {
 	dragon = { glyph = "◆", color = Color3.fromHex("#E5302A") },
 }
 
+local MAX_LAYERS = 3
+
 local function CurrencyIcon(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instance
-	local named = ItemIcons.named(`ui/{props.Currency}`)
+	local key = `ui/{props.Currency}`
 	local fallback = GLYPHS[props.Currency]
-	local art = scope:Computed(function(use): boolean
-		return named ~= nil and use(IconState.Art)
+	local named = scope:Computed(function(use): ItemIcons.Resolved?
+		if not use(IconState.Art) then
+			return nil
+		end
+		return ItemIcons.named(key, IconState.readyIn(use))
 	end)
 	local layers = {}
-	for i, layer in (if named then named.layers else {}) :: { ItemIcons.Layer } do
+	for i = 1, MAX_LAYERS do
+		local layer = scope:Computed(function(use): ItemIcons.Layer?
+			local r = use(named)
+			return if r then r.layers[i] else nil
+		end)
 		table.insert(
 			layers,
 			scope:New("ImageLabel")({
@@ -45,11 +55,22 @@ local function CurrencyIcon(scope: Fusion.Scope<typeof(Fusion)>, props: Props): 
 				BackgroundTransparency = 1,
 				ScaleType = Enum.ScaleType.Fit,
 				ZIndex = i,
-				Visible = art,
-				Image = ItemIcons.sheet(layer.image) or "",
-				ImageRectOffset = Vector2.new(layer.x, layer.y),
+				Visible = scope:Computed(function(use): boolean
+					return use(layer) ~= nil
+				end),
+				Image = scope:Computed(function(use): string
+					local l = use(layer)
+					return if l then ItemIcons.sheet(l.image) or "" else ""
+				end),
+				ImageRectOffset = scope:Computed(function(use): Vector2
+					local l = use(layer)
+					return if l then Vector2.new(l.x, l.y) else Vector2.zero
+				end),
 				ImageRectSize = Vector2.new(ItemIcons.CELL, ItemIcons.CELL),
-				ImageColor3 = if layer.tint then Color3.fromHex(layer.tint) else Color3.new(1, 1, 1),
+				ImageColor3 = scope:Computed(function(use): Color3
+					local l = use(layer)
+					return if l and l.tint then Color3.fromHex(l.tint) else Color3.new(1, 1, 1)
+				end),
 			})
 		)
 	end
@@ -68,7 +89,7 @@ local function CurrencyIcon(scope: Fusion.Scope<typeof(Fusion)>, props: Props): 
 				Size = UDim2.fromScale(1, 1),
 				BackgroundTransparency = 1,
 				Visible = scope:Computed(function(use): boolean
-					return not use(art)
+					return use(named) == nil
 				end),
 				Text = fallback.glyph,
 				TextScaled = true,

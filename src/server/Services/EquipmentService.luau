@@ -2,15 +2,18 @@
 -- Equipping (DESIGN §5.1, §5.6, §5.7). Validates level and class, handles rings (ring1/ring2), two-handed
 -- weapons (they push the off-hand back into the backpack), backpack swaps (only when everything fits) and
 -- binding on equip. Plugs equipment into StatService (modifier source + weapon provider), exposes legendary
--- effect totals (hooks) and shows the weapon and off-hand on the character (placeholder parts, Data/WeaponLooks).
+-- effect totals (hooks) and shows the weapon and off-hand on the character (placeholder parts, Data/WeaponLooks, or
+-- the owner's real models from ReplicatedStorage.Assets.Weapons, S52).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage.Shared
 
+local ArtTiers = require(Shared.Logic.ArtTiers)
 local Inventory = require(Shared.Logic.Inventory)
 local ItemRoll = require(Shared.Logic.ItemRoll)
 local Items = require(Shared.Data.Items)
+local LookBuild = require(Shared.Util.LookBuild)
 local Net = require(Shared.Net)
 local Paths = require(Shared.Logic.Paths)
 local QuestEvents = require(script.Parent.Parent.QuestEvents)
@@ -18,6 +21,7 @@ local Rarities = require(Shared.Data.Rarities)
 local Signal = require(ReplicatedStorage.Packages.Signal)
 local Types = require(Shared.Types)
 local WeaponLooks = require(Shared.Data.WeaponLooks)
+local WeaponMount = require(Shared.Logic.WeaponMount)
 
 type ItemInstance = Types.ItemInstance
 
@@ -69,10 +73,6 @@ end
 
 local HELD_NAMES = { weapon = "VaelthornWeapon", offhand = "VaelthornOffhand" }
 
-local function rarityColor(item: ItemInstance): Color3
-	return Color3.fromHex(Rarities.get(item.rarity).hex)
-end
-
 local function material(name: string): Enum.Material
 	local ok, value = pcall(function()
 		return (Enum.Material :: any)[name]
@@ -119,98 +119,150 @@ local function tipOf(look: WeaponLooks.Look): Vector3
 	return best
 end
 
--- Real model of an item (WeaponLooks.assets) from ReplicatedStorage.Assets.Weapons, as one part standing up the
--- weapon frame, or nil (no entry / no model: the Part look is used; a missing model warns once).
+-- Real weapon models (S52) ------------------------------------------------------------------------------------
+
 local warnedAssets: { [string]: boolean } = {}
-local function assetPart(defId: string): (BasePart?, WeaponLooks.Asset?)
-	local asset = WeaponLooks.assets[defId]
-	if not asset then
-		return nil, nil
-	end
+
+local function weaponsFolder(): Instance?
 	local assets = game:GetService("ReplicatedStorage"):FindFirstChild("Assets")
-	local folder = assets and assets:FindFirstChild("Weapons")
-	local source = folder and folder:FindFirstChild(asset.model)
-	local part: BasePart? = nil
+	return assets and assets:FindFirstChild("Weapons")
+end
+
+-- The MeshPart named `model` anywhere in Assets.Weapons (a single file or a saved pack), or the first part of a
+-- Model of that name.
+local function findModel(model: string): BasePart?
+	local folder = weaponsFolder()
+	local source = folder and folder:FindFirstChild(model, true)
 	if source and source:IsA("BasePart") then
-		part = source:Clone()
+		return source
 	elseif source then
-		local first = source:FindFirstChildWhichIsA("BasePart", true)
-		part = if first then first:Clone() else nil
+		return source:FindFirstChildWhichIsA("BasePart", true)
 	end
-	if not part then
-		if not warnedAssets[asset.model] then
-			warnedAssets[asset.model] = true
-			warn(`[Equipment] Assets.Weapons.{asset.model} not found; {defId} uses its Part look`)
-		end
+	return nil
+end
+
+-- One warning per missing model of an item's own entry; a single one while Assets.Weapons has no model at all.
+local function warnMissing(defId: string, model: string)
+	local folder = weaponsFolder()
+	local any = folder ~= nil and folder:FindFirstChildWhichIsA("BasePart", true) ~= nil
+	local key = if any then model else "*"
+	if warnedAssets[key] then
+		return
+	end
+	warnedAssets[key] = true
+	if any then
+		warn(`[Equipment] Assets.Weapons.{model} not found; {defId} uses a lower tier or its Part look`)
+	else
+		warn("[Equipment] ReplicatedStorage.Assets.Weapons has no weapon models yet; items use their Part looks")
+	end
+end
+
+-- Which real model an item shows (Logic/ArtTiers over WeaponLooks.assets and the models present) and its source
+-- part, or nil (Part look).
+function EquipmentService.ModelFor(def: Items.ItemDef): (string?, BasePart?)
+	local own = WeaponLooks.assets[def.id]
+	if own and not findModel(own.model) then
+		warnMissing(def.id, own.model)
+	end
+	local id = ArtTiers.modelId(def, function(candidate: string): boolean
+		local asset = WeaponLooks.assets[candidate]
+		return asset ~= nil and findModel(asset.model) ~= nil
+	end)
+	if not id then
 		return nil, nil
 	end
+	return id, findModel(WeaponLooks.assets[id].model)
+end
+
+local function axis(name: string): Vector3
+	local v = WeaponMount.axis(name) or { 0, 0, -1 }
+	return Vector3.new(v[1], v[2], v[3])
+end
+
+-- Grip frame of a type in the hand frame (WeaponLooks.MOUNTS, the same maths as Logic/WeaponMount.toHand).
+local function mountFrame(itemType: string): CFrame
+	local mount = WeaponLooks.MOUNTS[itemType] or WeaponLooks.MOUNTS.sword1h
+	local at = mount.at or { 0, 0, 0 }
+	local tilt = mount.tilt or { 0, 0, 0 }
+	local x, y = axis(mount.x), axis(mount.y)
+	return CFrame.new(at[1], at[2], at[3])
+		* CFrame.Angles(math.rad(tilt[1]), math.rad(tilt[2]), math.rad(tilt[3]))
+		* CFrame.fromMatrix(Vector3.zero, x, y, x:Cross(y))
+end
+
+-- Copy of a model scaled to the item's length and placed on the mount of its type, with the palm (VaelthornGrip)
+-- and the far end (VaelthornTip). Only the mesh look survives (SurfaceAppearance / SpecialMesh): scripts, sounds,
+-- decals and any other child are dropped, also when nested under a kept look (one warning per model).
+local function buildFromModel(
+	source: BasePart,
+	asset: WeaponLooks.Asset,
+	itemType: string,
+	anchor: BasePart,
+	grip: CFrame,
+	name: string
+): BasePart
+	local part = source:Clone()
 	for _, child in part:GetChildren() do
 		if not child:IsA("SurfaceAppearance") and not child:IsA("SpecialMesh") then
 			child:Destroy()
 		end
 	end
+	local removed = LookBuild.stripScripts(part)
+	for _, item in part:GetDescendants() do
+		if item:IsA("Sound") then
+			item:Destroy()
+			removed += 1
+		end
+	end
+	if removed > 0 and not warnedAssets[`strip:{asset.model}`] then
+		warnedAssets[`strip:{asset.model}`] = true
+		warn(`[Equipment] removed scripts / sounds from Assets.Weapons.{asset.model}`)
+	end
+	-- The mesh in the Grip frame: the import switch and an optional per-model turn (a mesh made in Studio).
+	local t = asset.turn or { 0, 0, 0 }
+	local turn = CFrame.Angles(0, math.rad(WeaponLooks.IMPORT_YAW), 0)
+		* CFrame.Angles(math.rad(t[1]), math.rad(t[2]), math.rad(t[3]))
+	local up = turn:VectorToObjectSpace(Vector3.yAxis)
 	local size = part.Size
-	part.Size = size * (asset.length / math.max(0.01, size.Y))
-	return part, asset
+	local along = math.abs(up.X) * size.X + math.abs(up.Y) * size.Y + math.abs(up.Z) * size.Z
+	part.Size = size * (asset.length / math.max(0.01, along))
+	local hold = asset.hold or { 0, 0 }
+	local centre = CFrame.new(-hold[1] * asset.length, (0.5 - asset.grip) * asset.length, -hold[2] * asset.length)
+	local offset = grip * mountFrame(itemType) * centre * turn
+	part.Name = name
+	part.Anchored = false
+	part.CanCollide = false
+	part.CanTouch = false
+	part.CanQuery = false
+	part.Massless = true
+	part.CastShadow = false
+	part.CFrame = anchor.CFrame * offset
+	local weld = Instance.new("Weld")
+	weld.Part0 = anchor
+	weld.Part1 = part
+	weld.C0 = offset
+	weld.Parent = part
+	local palm = Instance.new("Attachment")
+	palm.Name = "VaelthornGrip"
+	palm.CFrame = offset:Inverse() * grip
+	palm.Parent = part
+	local tip = Instance.new("Attachment")
+	tip.Name = "VaelthornTip"
+	tip.CFrame = turn:Inverse() * CFrame.new(0, asset.length / 2, 0)
+	tip.Parent = part
+	return part
 end
 
--- Builds the held model of `slot` from its look: the first piece is the main part (named after the slot),
--- the others are welded to it and parented under it. S22: the main part carries Attachments "VaelthornGrip"
--- (the palm) and "VaelthornTip" (the farthest point) and the attribute "WeaponType" for the client's attack
--- animation (trail between them, arrows from the grip of a bow, bolts from the tip of a wand).
-local function updateHeldModel(player: Player, slot: "weapon" | "offhand")
-	local model = player.Character
-	if not model then
-		return
-	end
-	local name = HELD_NAMES[slot]
-	local old = model:FindFirstChild(name)
-	if old then
-		old:Destroy()
-	end
-	local char = character(player)
-	local item = char and (char.equipment :: any)[slot] :: ItemInstance?
-	local def = item and Items.get(item.id)
-	local look = def and WeaponLooks.get(def.type)
-	if not item or not look then
-		return
-	end
-	local anchor, grip = anchorFor(model, look.hand)
-	if not anchor then
-		return
-	end
-	local accent = rarityColor(item)
+-- The look built from Parts (S17b): the first piece is the main part (named after the slot), the others are
+-- welded to it and parented under it; the main part carries the palm and the farthest point as attachments.
+local function buildFromParts(
+	look: WeaponLooks.Look,
+	accent: Color3,
+	anchor: BasePart,
+	grip: CFrame,
+	name: string
+): BasePart
 	local main: BasePart? = nil
-	local real, asset = assetPart((def :: any).id)
-	if real and asset then
-		-- Upright mesh (+Y) turned to point forward (-Z), the hand `grip` of the way up from the pommel.
-		local offset = grip * CFrame.new(0, 0, -(0.5 - asset.grip) * asset.length) * CFrame.Angles(math.rad(-90), 0, 0)
-		real.Name = name
-		real.Anchored = false
-		real.CanCollide = false
-		real.CanTouch = false
-		real.CanQuery = false
-		real.Massless = true
-		real.CastShadow = false
-		real.CFrame = anchor.CFrame * offset
-		local weld = Instance.new("Weld")
-		weld.Part0 = anchor
-		weld.Part1 = real
-		weld.C0 = offset
-		weld.Parent = real
-		local palm = Instance.new("Attachment")
-		palm.Name = "VaelthornGrip"
-		palm.CFrame = (grip:Inverse() * offset):Inverse()
-		palm.Parent = real
-		local tip = Instance.new("Attachment")
-		tip.Name = "VaelthornTip"
-		tip.CFrame = palm.CFrame * CFrame.new(0, 0, -(1 - asset.grip) * asset.length)
-		tip.Parent = real
-		real:SetAttribute("WeaponType", (def :: any).type)
-		real:SetAttribute("Accent", accent)
-		real.Parent = model
-		return
-	end
 	for _, piece in look.pieces do
 		local part = Instance.new("Part")
 		part.Name = if main then piece.name else name
@@ -257,9 +309,50 @@ local function updateHeldModel(player: Player, slot: "weapon" | "offhand")
 	tip.Name = "VaelthornTip"
 	tip.CFrame = firstOffset:Inverse() * CFrame.new(tipOf(look))
 	tip.Parent = held
-	held:SetAttribute("WeaponType", (def :: any).type)
+	return held
+end
+
+-- S52 /weaponpreview: a look shown in the hand without an item, until the next equipment change or respawn.
+local previews: { [Player]: { slot: string, def: Items.ItemDef } } = {}
+
+-- Builds the held model of `slot`. S22: the main part carries Attachments "VaelthornGrip" (the palm) and
+-- "VaelthornTip" (the farthest point) and the attribute "WeaponType" for the client's attack animation (trail
+-- between them, arrows from the grip of a bow, bolts from the tip of a wand). S52: a real model of the item (or of
+-- the nearest lower tier of its type) replaces the Part look; names, attributes and the glow stay the same.
+local function updateHeldModel(player: Player, slot: "weapon" | "offhand")
+	local model = player.Character
+	if not model then
+		return
+	end
+	local name = HELD_NAMES[slot]
+	local old = model:FindFirstChild(name)
+	if old then
+		old:Destroy()
+	end
+	local char = character(player)
+	local item = char and (char.equipment :: any)[slot] :: ItemInstance?
+	local def = item and Items.get(item.id)
+	local rarity = item and item.rarity
+	local preview = previews[player]
+	if preview and preview.slot == slot then
+		def, rarity = preview.def, Rarities.COMMON
+	end
+	local look = def and WeaponLooks.get(def.type)
+	if not def or not look or not rarity then
+		return
+	end
+	local anchor, grip = anchorFor(model, look.hand)
+	if not anchor then
+		return
+	end
+	local accent = Color3.fromHex(Rarities.get(rarity).hex)
+	local modelId, source = EquipmentService.ModelFor(def)
+	local held = if modelId and source
+		then buildFromModel(source, WeaponLooks.assets[modelId], def.type, anchor, grip, name)
+		else buildFromParts(look, accent, anchor, grip, name)
+	held:SetAttribute("WeaponType", def.type)
 	held:SetAttribute("Accent", accent) -- rarity colour (trail)
-	if Rarities.get(item.rarity).valuable then
+	if Rarities.get(rarity).valuable then
 		local light = Instance.new("PointLight")
 		light.Color = accent
 		light.Range = 6
@@ -272,6 +365,18 @@ end
 local function updateWeaponModel(player: Player)
 	updateHeldModel(player, "weapon")
 	updateHeldModel(player, "offhand")
+end
+
+-- S52 /weaponpreview: shows the look of `def` (a held type) in the right slot of the hand without an item. Returns
+-- the slot and the real model it uses (nil = Part look); nil slot when the type is not held.
+function EquipmentService.Preview(player: Player, def: Items.ItemDef): (string?, string?)
+	if not WeaponLooks.get(def.type) then
+		return nil, nil
+	end
+	local slot: "weapon" | "offhand" = if def.slot == "offhand" then "offhand" else "weapon"
+	previews[player] = { slot = slot, def = def }
+	updateHeldModel(player, slot)
+	return slot, (EquipmentService.ModelFor(def))
 end
 
 -- Equip / unequip -----------------------------------------------------------------------------------------
@@ -287,7 +392,10 @@ local function changed(player: Player, slots: { string })
 	end
 	hookCache[player] = nil
 	StatService.Invalidate(player)
-	if table.find(slots, "weapon") or table.find(slots, "offhand") then
+	-- Any equipment change ends a /weaponpreview (S52).
+	local hadPreview = previews[player] ~= nil
+	previews[player] = nil
+	if hadPreview or table.find(slots, "weapon") or table.find(slots, "offhand") then
 		updateWeaponModel(player)
 	end
 end
@@ -529,10 +637,12 @@ function EquipmentService.Start()
 		return EquipmentService.SwapRings(player)
 	end)
 	CharacterService.ModelSpawned:Connect(function(player: Player)
+		previews[player] = nil
 		updateWeaponModel(player)
 	end)
 	CharacterService.CharacterLeaving:Connect(function(player: Player)
 		hookCache[player] = nil
+		previews[player] = nil
 	end)
 end
 

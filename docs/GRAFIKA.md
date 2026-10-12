@@ -1,6 +1,7 @@
 # Grafika: modele broni i ikony PNG
 
-Poradnik dla właściciela i zarazem umowa plików dla sesji **S52**. Po S52 gra czyta pliki według nazw i zasad z tego poradnika. Pliki możesz przygotowywać już teraz. Trudniejsze słowa objaśnia słowniczek na końcu. Ceny i licencje: **stan na 8.10.2026, sprawdź ceny przed zakupem**. To nie jest porada prawna.
+Poradnik dla właściciela i zarazem umowa plików wdrożona w sesji **S52** (2026-10-13; odstępstwa od pierwszej wersji w
+`docs/DECYZJE.md`, wpisy S52). Gra czyta pliki według nazw i zasad z tego poradnika. Pliki możesz przygotowywać już teraz. Trudniejsze słowa objaśnia słowniczek na końcu. Ceny i licencje: **stan na 8.10.2026, sprawdź ceny przed zakupem**. To nie jest porada prawna.
 
 ## 1. W skrócie
 
@@ -17,20 +18,18 @@ Poradnik dla właściciela i zarazem umowa plików dla sesji **S52**. Po S52 gra
 | Ikony, lokalnie | Krita AI Diffusion | 0 USD, karta z min. ok. 6 GB VRAM (pamięci karty graficznej) | zależy od modelu i LoRA |
 
 - **Nie używaj do gry:** Tripo Free (publiczne, niekomercyjne), Hunyuan3D lokalnie (licencja wyklucza UE), FLUX dev (sprzeczna licencja), darmowe Scenario i Recraft (niekomercyjne), Leonardo Free (obrazy publiczne).
-- **Ile tego jest:** 24 typy trzymane w ręce (19 broni + 5 dodatków do drugiej ręki) × 3 etapy wyglądu = do 72 modeli, plus 7 unikatów bossów. Minimum na start: 24 modele, po jednym na typ. Ikon jest 91, plus opcjonalne warianty etapów dla 39 kluczy `eq/*`.
+- **Ile tego jest:** 24 typy trzymane w ręce (19 broni + 5 dodatków do drugiej ręki), model i ikona na próg przedmiotu (na Łąkach progi 1, 5, 10, 15, 20: 120 modeli), plus 7 unikatów bossów. Stan 2026-10-13: 121 modeli (Łąki + Rozłupywacz Grimroka) i 246 ikon w repo, czekają na import w Studio i wgranie atlasów (`docs/ASSETS.md`, „Broń”).
 - **Brak pliku nic nie psuje.** Gra pokazuje wtedy to, co dziś (bryły z kodu, ikony SVG). Dodawaj po jednym.
 
-## 2. Etapy wyglądu (wspólne dla modeli i ikon)
+## 2. Progi wyglądu (wspólne dla modeli i ikon)
 
-Progi etapów są w `src/shared/Config.luau` (nowy wpis S52: `Config.ArtStages = { 1, 35, 70 }`). Nazwy progów z `src/shared/Data/Localization/pl.luau`:
-
-| Etap | Progi | Nazwy progów | Materiały (pomysł) |
-|---|---|---|---|
-| 1 | 1-30 | Prosty, Solidny, Żelazny, Wzmocniony, Stalowy, Hartowany, Srebrny | żelazo, drewno, skóra |
-| 2 | 35-65 | Szlachetny, Runiczny, Mithrilowy, Elfi, Obsydianowy, Adamantytowy, Królewski | stal, runy, srebro, złote okucia |
-| 3 | 70-100 | Płomienny, Gwiezdny, Tytanowy, Pradawny, Niebiański, Eteryczny, Smoczy | smocza kość, żar, magiczne kryształy |
-
-**Gdy brakuje pliku:** gra bierze niższy etap (3 → 2 → 1), potem dzisiejszy wygląd z kodu (bryły, ikona SVG). Wyższego nie bierze: gdy jest tylko `2.rbxm`, progi 1-30 mają bryły. Przykład: są tylko `1.rbxm` i `3.rbxm`, więc przedmiot z progu 50 pokaże `1.rbxm`. Unikat bossa ma pierwszeństwo: plik unikatu, potem typ i etap, potem bryły z kodu.
+Grafika jest na **próg przedmiotu** (ten z nazwy pliku: `sword1h_10` = Żelazny Miecz). Przedmiot bez własnego modelu albo
+ikony bierze najbliższy **niższy** próg swojego typu, który ją ma (`Logic/ArtTiers`): są modele 1, 5, 10, 15 i 20, więc
+miecz z progu 25 albo 100 pokazuje model z progu 20, a z progu 12 model z progu 10. Wyższego progu gra nie bierze; bez
+żadnego zostaje dzisiejszy wygląd (bryły z kodu, ikona rysowana kodem). Unikat bossa ma pierwszeństwo: swój model albo
+ikona, potem typ i próg, potem dzisiejszy wygląd. Nazwy progów są w `src/shared/Data/Localization/pl.luau` (`tier.*`):
+1–30 Prosty … Srebrny (żelazo, drewno, skóra), 35–65 Szlachetny … Królewski (stal, runy, srebro), 70–100 Płomienny …
+Smoczy (smocza kość, żar, kryształy).
 
 ## 3. Modele broni
 
@@ -60,43 +59,57 @@ Progi etapów są w `src/shared/Config.luau` (nowy wpis S52: `Config.ArtStages =
    - Za darmo: `/generate_mesh` z obrazkiem w Asystencie Studio.
 4. **Blender (opcjonalnie; pomiń, jeśli go nie znasz).** Tripo i Meshy same upraszczają siatkę, a Claude Code może napisać skrypt Blendera (`docs/MODELE.md` §5). W Blenderze: zastosuj skalę, Decimate (zmniejszenie liczby trójkątów), punkt obrotu na rękojeści, jeden materiał, UV w 0-1, tekstury 512-1024. Cienkie ostrza i cięciwy często wychodzą połamane: popraw albo zrób z prostej płaszczyzny.
 5. **Import do Studio:** Import 3D (jak w `docs/MODELE.md` §5; FBX, OBJ, glTF/GLB), skala jednostek źródła, opcja Upload to Roblox (wgraj do Roblox) włączona. Albo wtyczka dostawcy, albo wtyczka Roblox do Blendera.
-6. **Ułóż i dopasuj rozmiar (przed `Grip`).** Usuń pomocniczy Part z 3.1, jeśli go użyłeś. Narzędziem Rotate ustaw broń tak, żeby w górę patrzyło to, co w tabeli 3.3 stoi w kolumnie +Y (miecz: czubek, kusza: przód z łęczyskiem). Zaznacz wszystkie części broni, Ctrl+G (powstaje `Model`), i narzędziem Scale ciągnij uchwyt, aż długość będzie jak Y w tabeli 3.4. Model rośnie równo we wszystkich osiach.
-7. **Dodaj `Grip`.** W Explorer najedź na główną część (mesh) → przycisk + → `Attachment` → F2, nazwa `Grip`. Narzędziem Move przesuń go w miejsce z kolumny „Gdzie `Grip`” (tabela 3.3). Kierunek: w Properties Attachmentu rozwiń **WorldCFrame** i w jego polu **Orientation** wpisz `0, 0, 0` (w starszym Studio to pole **WorldOrientation**: kierunek względem świata). Nie wpisuj tego w Orientation pod **CFrame**: ta liczy się względem części, którą mogłeś obrócić. Strzałki: zaznaczony `Grip` ma **żółtą strzałkę = oś X** i **pomarańczową = oś Y** (gdy ich nie widać, włącz View → Show Constraint Details). Pomarańczowa ma wskazywać górę z kroku 6, żółta ostrze albo przód (tabela 3.3). Gdy żółta wskazuje bok, wpisz w tym samym polu `0, 90, 0` (albo `0, 180, 0`, `0, -90, 0`).
-8. **Kolor rzadkości (opcjonalnie):** klejnot albo runy jako osobna część. Najprościej nazwij ją `Rarity`. Albo atrybut: Properties → Attributes → Add Attribute → Boolean, nazwa `Rarity`, potem **zaznacz pole** (nowy atrybut ma wartość false). Mesh z AI to jedna część: klejnot dodaj w Studio jako mały Part (Shape: Ball) i przeciągnij go w Explorer do `Model`. Gra zdejmie z części `Rarity` teksturę i zapali ją w kolorze rzadkości.
-9. **Zapis:**
-   - zapisujesz cały `Model` z kroku 6;
-   - sprawdź w Properties MeshPartu, że `MeshId` (w nowszym Studio może się nazywać `MeshContent`) ma postać `rbxassetid://<liczba>` (mesh jest wgrany do Roblox). Jeśli jest pusty albo wygląda inaczej (może tak być z meshem z Asystenta), zapisz miejsce przez File → Publish to Roblox i sprawdź jeszcze raz; gdy dalej nie ma liczby, napisz w wątku projektu;
-   - prawy klik na tym `Model` w Explorer → *Save to File*, typ **`.rbxm`** (nie `.rbxmx`), np. `D:\Dev\mmoBrainrotRoblox\assets\Weapons\sword1h\1.rbxm`;
-   - w Eksploratorze Windows włącz Widok → Pokaż → Rozszerzenia nazw plików (Windows 10: Widok → Rozszerzenia nazw plików), żeby nie powstał `1.rbxm.rbxm` ani `sword1h.png.png`. Dalej: sekcja 5.
+6. **Do gry (cała paczka naraz):** zapisz `.glb` (albo FBX) w folderze Graphics (`modele_3d/bronie/<typ>/model/<typ>_<próg>.glb`)
+   i poproś Claude Code o import: `tools/weapons/prepare_glb.py` obraca każdy model w osie Gripa (3.3), liczy trójkąty i
+   miejsce dłoni, kopiuje go do `assets/Weapons/<id przedmiotu>.glb` i robi podglądy w `build/weapons/`, a Claude Code
+   dopisuje wpisy `WeaponLooks.assets`. Ręczna część w Studio to jedna lista w `docs/ASSETS.md` („Broń”): Import 3D
+   wszystkich plików naraz, jeden skrypt w Command Bar, Save to File jednego folderu.
+7. **Pojedynczy model z Asystenta Studio:** nazwij MeshPart id przedmiotu (np. `sword1h_25`), przenieś go do
+   `ReplicatedStorage.Assets.Weapons` i poproś Claude Code o wpis w `WeaponLooks.assets` (`length`, `grip`, a gdy siatka
+   nie leży w osiach Gripa, obrót `turn`; `/weaponpreview sword1h_25` pokaże wynik). Rozmiaru ani obrotu nie ustawiasz w
+   Studio: gra skaluje model do długości z tabeli 3.4.
+8. **Zapis:** prawy klik na folderze (albo MeshPart) w `Assets.Weapons` → *Save to File*, typ **`.rbxm`** (nie `.rbxmx`),
+   do `D:\Dev\mmoBrainrotRoblox\assets\Weapons\`. W Eksploratorze Windows włącz Widok → Pokaż → Rozszerzenia nazw plików,
+   żeby nie powstał `Meadows.rbxm.rbxm`. Dalej: sekcja 5.
 
-### 3.3 Umowa pliku modelu (co musi mieć `.rbxm`)
+### 3.3 Umowa modelu (co musi mieć)
 
-- **Ścieżki:** `assets/Weapons/<typ>/<etap>.rbxm` (etap 1, 2 albo 3; jeden model na typ to `1.rbxm`) i `assets/Weapons/unique/<id unikatu>.rbxm`. Rojo wstawia je do `ReplicatedStorage.Assets.Weapons.<typ>.<etap>`. Folder `assets/Weapons/` dodaje S52.
-- **Zawartość:** jeden `Model` albo jeden MeshPart, co najmniej jedna część i dokładnie jeden `Attachment` o nazwie `Grip`. `Tip` (też Attachment) jest opcjonalny; bez niego gra bierze najdalszy punkt wzdłuż +Y. Nie nazywaj żadnej części (Part) `Grip` ani `Tip`: gra szuka tylko Attachmentów o tych nazwach.
-- **Limity:** zalecane do 8 części i do 5000 trójkątów razem; test odrzuca ponad 12 części. Długość (najdłuższy bok modelu): od połowy do dwóch długości Y z tabeli 3.4, inaczej test nie przejdzie (łapie złą skalę, np. ×100 z Blendera). Roblox: max 20 000 trójkątów na mesh. Tekstury 512-1024, SurfaceAppearance może być.
-- **Zakazane:** skrypty, dźwięki, Decal i Texture z zewnętrznym id. Dozwolone tylko tekstury MeshPartu i SurfaceAppearance.
-- **Nie musisz ustawiać:** Massless, CanCollide, CanQuery, CanTouch. Gra robi to sama.
-- **Potwory** z bronią z tej listy (np. Bandyta z Traktu z szablą, Szkielet Strażnik z mieczem, Ork Popiołu z toporem bojowym) też użyją modelu, jeśli S52 to zrobi (priorytet 2).
-- **Gra dba o resztę:** główna część (ta z `Grip`) dostaje nazwę `VaelthornWeapon` albo `VaelthornOffhand`, z `Grip` i `Tip` powstają `VaelthornGrip` i `VaelthornTip`, dochodzą atrybuty `WeaponType` i `Accent` oraz światło dla przedmiotów Heroicznych i lepszych. Na tych nazwach opierają się efekty walki, więc nie nadawaj ich sam.
-- **Kierunki `Grip`** (propozycja; jeśli S52 ją zmieni, poprawi tę tabelę):
+- **Dane:** wpis w `src/shared/Data/WeaponLooks.luau` → `assets`: `<id przedmiotu> = { model = "<nazwa MeshPartu>", length = <studs>, grip = <0..1> }`
+  (unikat: `unique_grimrok_cleaver = { ... }`). `length` = długość w ręce (kolumna Y w 3.4), `grip` = gdzie dłoń, jako
+  ułamek długości od dolnego końca (druga ręka i kołczan: 0,5 = środek). Opcjonalne `hold = { x, z }` (ułamki długości)
+  to środek uchwytu na wysokości `grip` względem osi pudełka modelu (trzonek topora, majdan łuku, kolba kuszy leżą obok
+  niej); mierzy go `tools/weapons/prepare_glb.py`.
+- **Plik:** MeshPart o nazwie `model` gdziekolwiek w `ReplicatedStorage.Assets.Weapons` (Rojo: `assets/Weapons/*.rbxm`,
+  np. jeden folder `Meadows.rbxm` z całą paczką). Z modelu gra bierze tylko ten jeden MeshPart z jego teksturą
+  (SurfaceAppearance albo TextureID); skrypty, dźwięki i inne dzieci wyrzuca. Test `tests/artassets.spec.luau` odrzuca
+  plik ze skryptem, dźwiękiem, Decal / Texture z id, nazwą spoza `WeaponLooks.assets` albo ponad 12 częściami.
+- **Osie Gripa** (siatka w tych osiach; `.glb` obraca `tools/weapons/prepare_glb.py`, pojedynczy model ustawiasz sam):
+  +Y = długość (czubek, głowica), +X = strona z tabeli. Gra skaluje model do `length`, kładzie punkt `grip` w dłoni wg
+  `WeaponLooks.MOUNTS` i dodaje `VaelthornGrip`, `VaelthornTip`, atrybuty `WeaponType` i `Accent` oraz światło dla
+  Heroicznych i lepszych (na tych nazwach opierają się efekty walki). Jeśli po imporcie wszystkie tarcze stoją tyłem,
+  a topory obuchem do góry, jeden przełącznik `WeaponLooks.IMPORT_YAW = 180` obraca wszystkie modele.
+- **Limity:** Roblox max 20 000 trójkątów na MeshPart (modele Tripo z 2026-10-12 mają 2,6–4,1 tys.); tekstury 512–1024.
+- **Zakazane:** skrypty, dźwięki, Decal i Texture z zewnętrznym id.
+- **Potwory** z bronią z tej listy dalej mają broń z brył (modele w rękach potworów: później).
+- **Kierunki** (`WeaponLooks.MOUNTS`, test `tests/arttiers.spec.luau` sprawdza je na dzisiejszych bryłach):
 
-| Grupa | Gdzie `Grip` | +Y (pomarańczowa strzałka, w górę) | +X (żółta strzałka) |
-|---|---|---|---|
-| Broń w prawej ręce (miecze, topory, buława, cep, berło, różdżka, młot, włócznia) | środek uchwytu dłoni | czubek, głowica | krawędź tnąca, obuch, kolce |
-| Kostury (3 typy) | miejsce dłoni, ok. 1/4 długości od dołu | głowica | przód ozdoby |
-| Łuki | środek uchwytu | górny koniec | grzbiet łuku (strona do celu); cięciwa po przeciwnej stronie, do strzelca |
-| Kusze | chwyt pod łożem | przód, łęczysko | góra (rowek na bełt) |
-| Tarcza | uchwyt z tyłu | górna krawędź | lico z herbem |
-| Księga | grzbiet | górna krawędź | brzeg z zapięciem |
-| Kula | środek kuli (gra zawiesza ją pod dłonią jak dziś) | góra | przód |
-| Relikwia | połowa trzonu | góra | przód z klejnotem |
-| Kołczan (plecy) | środek boku przy plecach | wylot z lotkami | strona przy plecach (pochylenie daje gra) |
+| Grupa | Gdzie dłoń (`grip`) | +Y (w górę modelu) | +X | W dłoni |
+|---|---|---|---|---|
+| Broń w prawej ręce (miecze, topory, buława, cep, berło, różdżka, młot, włócznia) | środek uchwytu | czubek, głowica | krawędź tnąca, głowica topora | +Y do przodu, +X do góry |
+| Kostury (3 typy) | ok. 1/3 długości od dołu | głowica | przód ozdoby | +Y do góry, +X do przodu |
+| Łuki | środek (0,5) | górny koniec | grzbiet łuku (do celu); cięciwa po stronie −X | +Y do góry, +X do przodu |
+| Kusze | ok. 0,3 od tyłu | przód, łęczysko | góra (rowek na bełt) | +Y do przodu, +X do góry |
+| Tarcza | środek (0,5), środek tarczy 0,3 na zewnątrz i 0,6 wyżej dłoni | górna krawędź | lico | lico na zewnątrz |
+| Księga | środek, 0,3 przed dłonią | górna krawędź | brzeg z zapięciem | zapięcie do przodu |
+| Kula | środek kuli, 0,55 pod dłonią | góra | przód | jak dziś |
+| Relikwia | środek, 0,35 przed dłonią | góra | przód z klejnotem | klejnot do przodu |
+| Kołczan (plecy) | środek, na plecach jak dziś (pochylenie −20°) | wylot z lotkami | strona przy plecach | jak dziś |
 
-### 3.4 Rozmiary i pomysły na etapy: 24 typy
+### 3.4 Rozmiary i pomysły na progi: 24 typy
 
-Wymiary w studach, policzone z brył w `src/shared/Data/WeaponLooks.luau` (ok., zaokrąglone). Part X × Y × Z to pudełko w osiach `Grip` z 3.3 (Y = długość, X = strona ostrza albo przodu). W Studio (Properties → Size) wpisuj z kropką: `0.9, 3.6, 0.3`. „Grip” to odległość dłoni od dolnego końca. Łuk Krótki, Łuk Długi i Ciężka Kusza to dziś przeskalowane Łuk i Kusza (×0,8, ×1,25, ×1,25): możesz skopiować model i zmienić skalę. Bez aliasów: `longbow` bez własnego pliku nie użyje modelu `bow`.
+Wymiary w studach, policzone z brył w `src/shared/Data/WeaponLooks.luau` (`Logic/WeaponMount.lookSpan`, ok., zaokrąglone). Part X × Y × Z to pudełko w osiach Gripa z 3.3 (Y = długość, X = strona ostrza albo przodu). „Grip” to odległość dłoni od dolnego końca brył; modele dostają `length` = Y i własny `grip` (zmierzony na modelu). Bez aliasów: `longbow` bez własnego modelu nie użyje modelu `bow`.
 
-| Klucz | Nazwa | Ręka | Part X × Y × Z | Grip | Etap 1 / Etap 2 / Etap 3 |
+| Klucz | Nazwa | Ręka | Part X × Y × Z | Grip | Pomysł: progi 1–30 / 35–65 / 70–100 |
 |---|---|---|---|---|---|
 | sword1h | Miecz | prawa | 0,9 × 3,6 × 0,3 | 0,55 | żelazny, skórzana owijka / stal z runą, zdobiony jelec / smocza kość, żarzące się runy |
 | saber1h | Szabla | prawa | 0,8 × 3,5 × 0,2 | 0,5 | wąska stalowa / elfia, srebrne zdobienia / ognista, falisty brzeg |
@@ -125,9 +138,9 @@ Wymiary w studach, policzone z brył w `src/shared/Data/WeaponLooks.luau` (ok., 
 
 ### 3.5 Unikaty bossów trzymane w ręce (7)
 
-Dziś mają wygląd typu bazowego (`src/shared/Data/Items/Uniques.luau`). Plik: `assets/Weapons/unique/<id>.rbxm`. Pozostałe 5 unikatów (pierścień, talizman, naszyjnik, szata, hełm) nie ma modelu 3D, tylko ikonę.
+Bez własnego modelu mają model typu bazowego z najbliższego niższego progu (2), bez niego bryły. Własny model: wpis `WeaponLooks.assets.<id>` + MeshPart o tej nazwie (jest `unique_grimrok_cleaver`, 2026-10-12). Pozostałe 5 unikatów (pierścień, talizman, naszyjnik, szata, hełm) nie ma modelu 3D, tylko ikonę.
 
-| Id (nazwa pliku) | Nazwa | Typ bazowy | Boss, poziom | Rozmiar (ok.) | Pomysł (z opisu w grze) |
+| Id (wpis i MeshPart) | Nazwa | Typ bazowy | Boss, poziom | Rozmiar (ok.) | Pomysł (z opisu w grze) |
 |---|---|---|---|---|---|
 | unique_grimrok_cleaver | Rozłupywacz Grimroka | axe1h, Topór | Grimrok, Wódz Goblinów, 20 | 1,0 × 2,6 × 0,2 | wyszczerbiony goblini topór |
 | unique_morvane_scepter | Berło Krypt | scepter, Berło | Morvane, Królowa Krypt, 45 | 0,65 × 2,4 × 0,65 | grobowe berło, blade światło |
@@ -168,7 +181,7 @@ isolated on a transparent background. Square 1:1, 1024x1024.
 Match the style of the reference icons exactly.
 ```
 
-Dla innego przedmiotu zmieniasz przedmiot (linia 1), materiał i akcent (linia 5). Zbroja: linię 3 zamień na `front 3/4 view,`, mikstury i pierścienie na `front view, slight top-down,`. Narzędzie bez przezroczystości: `transparent` zamień na `flat solid magenta #FF00FF`. Dla etapów zmieniasz tylko przedmiot, np. etap 3: „one-handed sword with a dragon-bone blade and glowing ember runes”. Do warstwy metalu (4.5) dopisz: „metal parts in plain neutral light grey”.
+Dla innego przedmiotu zmieniasz przedmiot (linia 1), materiał i akcent (linia 5). Zbroja: linię 3 zamień na `front 3/4 view,`, mikstury i pierścienie na `front view, slight top-down,`. Narzędzie bez przezroczystości: `transparent` zamień na `flat solid magenta #FF00FF`. Dla progów zmieniasz tylko przedmiot, np. progi 70–100: „one-handed sword with a dragon-bone blade and glowing ember runes”. Do warstwy metalu (4.5) dopisz: „metal parts in plain neutral light grey”.
 
 **Siatka 3×3 (niesprawdzona sztuczka):** poproś ChatGPT o 9 różnych przedmiotów w siatce 3×3 na jednolitym magentowym tle, w równych odstępach. Claude Code napisze skrypt do cięcia. Za każdym razem wgraj zatwierdzoną siatkę jako wzorzec.
 
@@ -176,18 +189,21 @@ Dla innego przedmiotu zmieniasz przedmiot (linia 1), materiał i akcent (linia 5
 
 1. Usuń tło (narzędzie w serwisie, BiRefNet w ComfyUI albo rembg). Obejrzyj ikonę na czarnym tle: jasna obwódka (halo) znaczy, że tło nie zeszło.
 2. Zapisz PNG z kanałem alfa (przezroczystym tłem), min. 256 px, mniej więcej kwadrat. Bez przezroczystości: tło magenta `#FF00FF` i opcja packera `--key FF00FF` (bez `#`, bo w PowerShell `#` zaczyna komentarz).
-3. Resztę robi packer: przycina do zawartości (wszystkie warstwy klucza tak samo), dodaje margines ok. 6% do kwadratu, zmniejsza do 128 px (Lanczos), lekko wyostrza. Te same pliki dają zawsze ten sam wynik.
+3. Resztę robi packer: przycina do zawartości (wszystkie warstwy klucza tak samo), dodaje margines ok. 6% do kwadratu, zmniejsza do 128 px (Lanczos), lekko wyostrza. Te same pliki dają zawsze ten sam wynik. Plik dokładnie 128×128 px jest już gotową komórką i idzie bez zmian (tak zapisuje kopie `tools/icons/import_graphics.py`, który bierze obrazki z folderu Graphics).
 
 ### 4.5 Nazwy plików
 
-- Źródła: `art/icons/src/<klucz>.png` (nowy folder S52), np. `art/icons/src/eq/sword1h.png`, `art/icons/src/uniq/unique_azgor_heart.png`, `art/icons/src/mat/wolf_pelt.png`.
-- **Warianty etapów** (klucze `eq/*`): `eq/sword1h@2.png`, `eq/sword1h@3.png`. Brak wariantu: zasada z sekcji 2.
+- Źródła: `art/icons/src/<klucz>.png` (folder S52), np. `art/icons/src/eq/sword1h.png`, `art/icons/src/uniq/unique_azgor_heart.png`, `art/icons/src/mat/wolf_pelt.png`. Obrazek zastępuje ikonę rysowaną kodem tego klucza dopiero, gdy jego atlas jest wgrany (5).
+- **Warianty progów** (klucze `eq/*`): `eq/sword1h@5.png`, `eq/sword1h@10.png` (próg z listy 1, 5, … 100). Brak wariantu: zasada z sekcji 2; bez żadnego wariantu ikona `eq/sword1h` (rysowana kodem albo z obrazka).
+- **Obrazek jednego przedmiotu** (S52) dla kluczy wspólnych: `<grupa>/<id przedmiotu>.png`, np. `mat/ore_copper.png` (Ruda Miedzi, reszta rud dalej `mat/ore`), `pot/potion_hp_1.png`, `pot/elixir_resFire.png`, `misc/stone_return.png`, `misc/scroll_protection.png`, `misc/backpack_20.png`, `mat/crow_feather.png`. Ma pierwszeństwo przed kluczem wspólnym.
 - **Domyślnie rób jeden kolorowy PNG** (`<klucz>.png` bez `.m.png`). To jedna stała warstwa: próg widać wtedy tylko w nazwie przedmiotu i w dymku (np. „Żelazny Miecz”), nie w kolorze ikony.
 - **Warstwy (opcja zaawansowana), żeby zachować kolory progów:** `<klucz>.m.png` to metal w jasnych szarościach (gra mnoży go przez kolor progu, biel daje czysty kolor). `<klucz>.png` to stałe kolory (drewno, skóra, klejnoty), a metal jest w nim przezroczysty. Opcjonalnie `<klucz>.a.png` to akcent w szarościach.
-- Kolejność od spodu: `.m.png`, `.png`, `.a.png` (akcent na wierzchu). Warstwy jednego klucza mają ten sam rozmiar i położenie. Metal trzeba wyciąć z obrazka ręcznie (np. darmowa Photopea albo GIMP) albo poprosić Claude Code o skrypt. Wariant etapu z warstwami: `eq/sword1h@2.m.png` + `eq/sword1h@2.png`.
+- Kolejność od spodu: `.m.png`, `.png`, `.a.png` (akcent na wierzchu). Warstwy jednego klucza mają ten sam rozmiar i położenie. Metal trzeba wyciąć z obrazka ręcznie (np. darmowa Photopea albo GIMP) albo poprosić Claude Code o skrypt. Wariant progu z warstwami: `eq/sword1h@35.m.png` + `eq/sword1h@35.png`.
 - **Klucze z `*` mają dziś warstwę akcentu** (kolor żywiołu, rudy, mikstury, pieczęci). Jeden kolorowy PNG zrobi wszystkie warianty identyczne (np. 5 rud w jednym kolorze), więc daj dla nich `.a.png`.
 
 ### 4.6 Lista 91 kluczy (`src/shared/Data/ItemIconAtlas.luau`)
+
+Stan 2026-10-13 (`art/icons/src`, 246 obrazków): `eq` 195 (24 typy broni i 15 zbroi i biżuterii, progi 1–20), `uniq` 3 (Rozłupywacz, Kieł Wodza, Totem), `mat` 17, `pot` 13, `bless` 5, `misc` 11 (zwoje, kamienie, plecaki), `tool` 2; `/artcoverage` w grze pokazuje aktualny stan.
 
 - **eq (39), wszystkie barwione progiem (warstwa m):** sword1h Miecz, axe1h Topór, mace1h Buława, saber1h Szabla, sword2h Miecz Dwuręczny, axe2h Topór Bojowy, hammer2h Młot Wojenny, spear2h Włócznia, shortbow Łuk Krótki, bow Łuk, longbow Łuk Długi, crossbow Kusza, heavycrossbow Ciężka Kusza, wand Różdżka*, staff Kostur*, runestaff Kostur Runiczny*, scepter Berło, flail1h Cep, holystaff Kostur Święty, shield Tarcza, quiver Kołczan, tome Księga, orb Kula, relic Relikwia, necklace Naszyjnik, ring Pierścień, talisman Talizman, helmet_heavy Hełm, armor_heavy Zbroja Płytowa, gloves_heavy Rękawice Płytowe, boots_heavy Buty Płytowe, helmet_medium Kaptur, armor_medium Kurta, gloves_medium Karwasze, boots_medium Trzewiki, helmet_light Diadem, armor_light Szata, gloves_light Mitenki, boots_light Sandały.
 - **uniq (12), jedna stała warstwa:** unique_grimrok_cleaver Rozłupywacz Grimroka, unique_grimrok_fang Kieł Wodza, unique_grimrok_totem Totem Plemienia, unique_morvane_shroud Całun Królowej, unique_morvane_scepter Berło Krypt, unique_morvane_bow Łuk Zawodzących Cieni, unique_azgor_heart Płomienne Serce, unique_azgor_staff Kostur Pożogi, unique_azgor_helm Hełm Pana Płomieni, unique_vaelgrath_fang Kieł Vaelgratha, unique_vaelgrath_scale Łuska Smoka Mrozu, unique_vaelgrath_eye Oko Zimy.
@@ -202,17 +218,17 @@ Dla innego przedmiotu zmieniasz przedmiot (linia 1), materiał i akcent (linia 5
 **Ikony:**
 1. Wrzuć PNG do `art/icons/src/...` według 4.5.
 2. Otwórz folder `D:\Dev\mmoBrainrotRoblox` w Eksploratorze, kliknij pasek adresu, wpisz `powershell`, Enter. Wpisz `py -3 tools/icons/import_png.py` (packer, nowy plik S52; podgląd bez zapisu: dodaj `--dry-run`, tło magenta: `--key FF00FF`). Brak Pythona: `winget install -e --id Python.Python.3.12`, zamknij PowerShell, otwórz go znowu tak samo i wpisz `py -3 -m pip install pillow`. Albo poproś Claude Code.
-3. Packer podmienia komórki kluczy z PNG, nie rusza położenia innych ikon, warianty dopisuje na końcu. Zapisuje `art/icons/items_N.png` i `src/shared/Data/ItemIconAtlas.luau` i **wypisuje zmienione arkusze** (atlasy: obrazki `items_N.png` po 64 komórki, czyli warstwy ikon).
+3. Packer kładzie obrazki na osobnych atlasach po atlasach rysowanych kodem (dziś `items_4.png` .. `items_7.png`), nie rusza atlasów 1–3, zmieniony klucz zostaje w swoich komórkach, nowe dopisuje na końcu. Zapisuje `art/icons/items_N.png` i tabelę `PNG` w `src/shared/Data/ItemIconAtlas.luau` i **wypisuje zmienione arkusze** (atlasy: obrazki `items_N.png` po 64 komórki, czyli warstwy ikon) oraz podgląd `build/icons/import_preview.png` (przed i po).
 4. Wgraj tylko zmienione arkusze: Studio → Asset Manager → Bulk Import (jak w `docs/ASSETS.md`; Asset Privacy z 3.2 krok 1 włączone).
-5. Packer wyczyścił id zmienionych arkuszy (zostawił `""`). Otwórz `src/shared/Data/ItemIconSheets.luau` (Notatnik albo VS Code), znajdź linię z komentarzem, np. `-- items_3.png`, i wklej między cudzysłowy `rbxassetid://<liczba>` (w Asset Manager prawy klik na obrazku → Copy Asset ID). Nowy arkusz ma własną linię. Każde wgranie daje nowe id: kopiuj z najnowszego obrazka. Do wklejenia id ikony z tego arkusza pokazują zastępczy symbol, jak przed S35; moderacja obrazka może chwilę potrwać.
+5. Packer wyczyścił id zmienionych arkuszy (zostawił `""`). Otwórz `src/shared/Data/ItemIconSheets.luau` (Notatnik albo VS Code), znajdź linię z komentarzem, np. `-- items_3.png`, i wklej między cudzysłowy `rbxassetid://<liczba>` (w Asset Manager prawy klik na obrazku → Copy Asset ID). Nowy arkusz ma własną linię. Każde wgranie daje nowe id: kopiuj z najnowszego obrazka. Do wklejenia id (i do wczytania obrazka w grze) ikony z tego arkusza pokazują ikonę rysowaną kodem, jak przed wgraniem; moderacja obrazka może chwilę potrwać.
 6. Wiki: w tym samym oknie PowerShell wpisz `cd wiki`, potem `npm run data`, potem `cd ..` (potrzebny Node; bez niego pomiń: CI zbuduje wiki ze świeżych danych i pokaże tylko żółte ostrzeżenie „Nieaktualne dane wiki”). Commit: `art/icons/src`, `art/icons/items_*.png`, `ItemIconAtlas.luau`, `ItemIconSheets.luau` i wygenerowane pliki wiki.
 
-**Modele:**
-1. Zapisz `.rbxm` w `assets/Weapons/<typ>/<etap>.rbxm` albo `assets/Weapons/unique/<id>.rbxm`.
-2. W PowerShell otwartym w folderze repo (jak w kroku 2 ikon) wpisz `.\scripts\check.ps1`. Test `tests/artassets.spec.luau` (nowy plik S52) sprawdza nazwę, `Grip`, liczbę części, długość (3.3) i brak skryptów.
-3. `rojo serve`, połącz Studio, Play. Komenda admina z S52 `/weaponpreview <typ> [próg]` pokazuje ten wygląd w Twojej ręce, np. `/weaponpreview sword1h 50` to etap 2; `/weaponpreview unique_grimrok_cleaver` też działa. Nie tworzy przedmiotu; podgląd znika po zmianie ekwipunku albo odrodzeniu. Jeśli model leżał już w Studio w `Assets.Weapons` przy działającym `rojo serve`, usuń tę ręczną kopię, bo Rojo wstawi plik obok.
-4. Komenda admina z S52 `/artcoverage` pokazuje, które typy, etapy i ikony mają prawdziwą grafikę, a które zastępczą.
-5. Commit plików `.rbxm`.
+**Modele:** lista w `docs/ASSETS.md`, „Broń” (Import 3D wszystkich `assets/Weapons/*.glb`, skrypt
+`tools/studio/import_weapons.luau` w Command Bar, Save to File folderu do `assets/Weapons/<paczka>.rbxm`, `scripts\check.ps1`,
+commit `.rbxm`). Komendy admina z S52: `/weaponpreview <typ|id> [próg]` pokazuje wygląd w Twojej ręce bez tworzenia
+przedmiotu (np. `/weaponpreview sword1h 25` → model progu 20, `/weaponpreview unique_grimrok_cleaver`); znika po zmianie
+ekwipunku albo odrodzeniu. `/artcoverage` pokazuje, które typy i progi mają modele (w danych i w Studio), co biorą wyższe
+progi, ikony z obrazków według grup i atlasy bez id.
 
 ## 6. Licencje i bezpieczeństwo
 

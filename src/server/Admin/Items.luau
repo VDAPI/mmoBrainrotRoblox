@@ -5,6 +5,7 @@
 local Shared = game:GetService("ReplicatedStorage").Shared
 
 local AreaProfiles = require(Shared.Data.AreaProfiles)
+local ArtTiers = require(Shared.Logic.ArtTiers)
 local Bonuses = require(Shared.Data.Bonuses)
 local Classes = require(Shared.Data.Classes)
 local Combat = require(Shared.Data.Combat)
@@ -26,6 +27,7 @@ local Rarities = require(Shared.Data.Rarities)
 local Rng = require(Shared.Logic.Rng)
 local Shops = require(Shared.Data.Shops)
 local TooltipModel = require(Shared.Logic.TooltipModel)
+local WeaponLooks = require(Shared.Data.WeaponLooks)
 
 local Context = require(script.Parent.Context)
 
@@ -157,6 +159,94 @@ commands.icongrid = function(player, args)
 		return
 	end
 	Net.Fire(player, "AdminClient", "icongrid", { group, args[2] })
+end
+
+-- S52: /artcoverage: real art per held type (models in WeaponLooks.assets and present in Assets.Weapons, what each
+-- tier falls back to), boss item models, picture icons per group and sheets still waiting for an asset id.
+commands.artcoverage = function(player)
+	local folder = game:GetService("ReplicatedStorage"):FindFirstChild("Assets")
+	local weapons = folder and folder:FindFirstChild("Weapons")
+	local function present(model: string): boolean
+		local found = weapons and weapons:FindFirstChild(model, true)
+		return found ~= nil and (found:IsA("BasePart") or found:FindFirstChildWhichIsA("BasePart", true) ~= nil)
+	end
+	local types = {}
+	for itemType in WeaponLooks.list do
+		table.insert(types, itemType)
+	end
+	table.sort(types)
+	for _, itemType in types do
+		local tiers, ready = {}, {}
+		for _, t in Items.bases.tiers do
+			local asset = WeaponLooks.assets[`{itemType}_{t}`]
+			if asset then
+				table.insert(tiers, tostring(t))
+				if present(asset.model) then
+					table.insert(ready, tostring(t))
+				end
+			end
+		end
+		if #tiers == 0 then
+			reply(player, "admin.artcoverage.parts", { type = itemType })
+		else
+			reply(player, "admin.artcoverage.type", {
+				type = itemType,
+				tiers = table.concat(tiers, ", "),
+				ready = if #ready > 0 then table.concat(ready, ", ") else "-",
+				top = tiers[#tiers],
+			})
+		end
+	end
+	local uniques = {}
+	for _, def in Items.uniques do
+		local asset = WeaponLooks.assets[def.id]
+		if asset then
+			table.insert(uniques, `{def.id} ({if present(asset.model) then "ok" else "-"})`)
+		end
+	end
+	reply(player, "admin.artcoverage.uniques", { list = if #uniques > 0 then table.concat(uniques, ", ") else "-" })
+	local groups = {}
+	for group, keys in ItemIcons.pictures() do
+		table.insert(groups, `{group} {#keys}`)
+	end
+	table.sort(groups)
+	local waiting = {}
+	for n = 1, ItemIcons.SHEETS do
+		if not ItemIcons.sheet(n) then
+			table.insert(waiting, `items_{n}.png`)
+		end
+	end
+	reply(player, "admin.artcoverage.icons", {
+		groups = if #groups > 0 then table.concat(groups, ", ") else "-",
+		waiting = if #waiting > 0 then table.concat(waiting, ", ") else "-",
+	})
+end
+
+-- S52: /weaponpreview <type|item id> [tier]: that look in the caller's hand (off-hands in the left hand or on the
+-- back) without an item, until the next equipment change or respawn; says which model the tier rule picked.
+commands.weaponpreview = function(player, args)
+	local what = args[1] or ""
+	local def = Items.get(what)
+	if not def and WeaponLooks.get(what) then
+		local tier = ArtTiers.pick(tonumber(args[2]) or 1, function(t: number): boolean
+			return Items.get(`{what}_{t}`) ~= nil
+		end)
+		def = if tier then Items.get(`{what}_{tier}`) else nil
+	end
+	if not def or not WeaponLooks.get(def.type) then
+		reply(player, "admin.weaponpreview.unknown", { what = what })
+		return
+	end
+	withCharacter(player, function()
+		local slot, model = EquipmentService.Preview(player, def :: Items.ItemDef)
+		if not slot then
+			reply(player, "admin.weaponpreview.unknown", { what = what })
+		elseif model then
+			reply(player, "admin.weaponpreview.model", { item = (def :: Items.ItemDef).id, model = model })
+		else
+			reply(player, "admin.weaponpreview.parts", { item = (def :: Items.ItemDef).id })
+		end
+	end)
 end
 
 commands.clearinv = function(player)

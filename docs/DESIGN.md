@@ -341,8 +341,12 @@ Każdy przedmiot ma w tooltipie „Rzadkość · Kategoria” (broń jedno-/dwur
 ### 5.3b Ikony przedmiotów (S35)
 
 - Grafiki z trzech atlasów (`art/icons`, 128 px na komórkę); do czasu wgrania i wczytania wszystkich trzech gra pokazuje
-  wszędzie dawne symbole na kolorowym kafelku (nigdy pół na pół). Logika: `Logic/ItemIcons`, komponent
-  `UI/Components/ItemIcon`.
+  wszędzie dawne symbole na kolorowym kafelku. Logika: `Logic/ItemIcons`, komponent `UI/Components/ItemIcon`.
+- S52: obrazki właściciela (PNG) w osobnych atlasach po tych trzech, gotowość per atlas: przedmiot pokazuje swój obrazek,
+  gdy jego atlas jest wgrany i wczytany, a do tego czasu ikonę rysowaną kodem. Obrazki są na próg (`eq/<typ>@<próg>`;
+  bez własnego najbliższy niższy próg z obrazkiem, `Logic/ArtTiers`) i na przedmiot (`mat/ore_copper` przed `mat/ore`).
+  Obrazek ma stałe kolory: próg widać w nazwie, dymku i rysunku, nie w barwieniu. Broń maga (różdżka, kostury
+  żywiołów) bierze obrazek dopiero z warstwą akcentu (`.a.png`); do tego czasu ikona rysowana kodem w kolorze żywiołu.
 - Ikona to 1–3 warstwy: metal w szarościach barwiony **kolorem progu** (`TIER_TINT`: 21 progów tej samej broni różni się
   kolorem metalu), stałe kolory (drewno, skóra, klejnoty) i **akcent** w szarościach barwiony kolorem z danych: żywioł
   broni maga, kolor mikstury, rudy, zioła, ryby, pieczęci zwoju, kamienia, plecaka. 12 nazwanych Mityków bossów ma własne
