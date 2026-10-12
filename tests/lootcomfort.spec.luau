@@ -5,6 +5,7 @@ local Bonuses = require("../src/shared/Data/Bonuses")
 local ItemScore = require("../src/shared/Logic/ItemScore")
 local ItemTraits = require("../src/shared/Data/ItemTraits")
 local ItemWeights = require("../src/shared/Data/ItemWeights")
+local Items = require("../src/shared/Data/Items")
 local LootFilter = require("../src/shared/Logic/LootFilter")
 local Rarities = require("../src/shared/Data/Rarities")
 local Rng = require("../src/shared/Logic/Rng")
@@ -116,6 +117,59 @@ T.describe("ItemScore", function()
 		local wand, sword = item("wand_10", 10), item("sword1h_10", 10)
 		T.expect(ItemScore.score(wand, "Mage") > ItemScore.score(sword, "Mage")).toBe(true)
 		T.expect(ItemScore.score(sword, "Warrior") > ItemScore.score(wand, "Warrior")).toBe(true)
+	end)
+end)
+
+T.describe("ItemScore percentDelta (S68)", function()
+	local function bare(defId: string, rarity: number, up: number, bonuses: { any }?): any
+		local item = ItemRoll.rollItem(defId, 30, rarity, Rng.new(1), `b{defId}{up}`)
+		item.bonuses = bonuses or {}
+		item.up = up
+		return item
+	end
+
+	T.it("a weapon alone is its relative DPS", function()
+		local new, old = bare("sword1h_35", Rarities.COMMON, 0), bare("sword1h_30", Rarities.COMMON, 0)
+		new.ilvl, old.ilvl = 35, 30
+		local delta = ItemScore.percentDelta(new, { old }, "Warrior") :: ItemScore.Delta
+		local expected = (ItemScore.weaponDps(new, "Warrior") / ItemScore.weaponDps(old, "Warrior") - 1) * 100
+		T.expect(math.abs(delta.dmg - expected) <= 0.1).toBe(true)
+		T.expect(delta.surv).toBe(0)
+	end)
+
+	T.it("the trait counts once", function()
+		local new, old = bare("sword1h_30", Rarities.COMMON, 5), bare("sword1h_30", Rarities.COMMON, 0)
+		local delta = ItemScore.percentDelta(new, { old }, "Warrior") :: ItemScore.Delta
+		local weaponPart = (ItemScore.weaponDps(new, "Warrior") / ItemScore.weaponDps(old, "Warrior") - 1) * 100
+		local traitPart = ItemWeights.traits.swordplay.pct
+			* (ItemRoll.traitPower(Rarities.COMMON, 5) - ItemRoll.traitPower(Rarities.COMMON, 0))
+		T.expect(math.abs(delta.dmg - weaponPart - traitPart) <= 0.1).toBe(true)
+	end)
+
+	T.it("a % line counts its value on its axis", function()
+		local new = bare("helmet_heavy_30", Rarities.COMMON, 0, { { stat = "hpPct", v = 4 } })
+		local old = bare("helmet_heavy_30", Rarities.COMMON, 0)
+		local delta = ItemScore.percentDelta(new, { old }, "Warrior") :: ItemScore.Delta
+		T.expect(delta.surv).toBeNear(4, 0.1)
+	end)
+
+	T.it("a two-hander also replaces the shield; an empty slot has no delta", function()
+		local great = bare("sword2h_30", Rarities.COMMON, 0)
+		local pair = { bare("sword1h_30", Rarities.COMMON, 0), bare("shield_30", Rarities.COMMON, 0) }
+		local delta = ItemScore.percentDelta(great, pair, "Warrior") :: ItemScore.Delta
+		T.expect(delta.surv < 0).toBe(true)
+		T.expect(ItemScore.percentDelta(great, {}, "Warrior")).toBeNil()
+	end)
+
+	T.it("replaced picks the weaker ring and waits for a free ring slot", function()
+		local def = Items.get("ring_30") :: Items.ItemDef
+		local weak = bare("ring_30", Rarities.COMMON, 0)
+		local strong = bare("ring_30", Rarities.LEGENDARY, 9, { { stat = "critChance", v = 5 } })
+		strong.uid = "strong"
+		local ctx = { classId = "Warrior" }
+		T.expect(ItemScore.score(weak, ctx) < ItemScore.score(strong, ctx)).toBe(true)
+		T.expect(ItemScore.replaced(def, { ring1 = strong, ring2 = weak }, ctx)).toBe(weak)
+		T.expect(ItemScore.replaced(def, { ring1 = strong }, ctx)).toBeNil()
 	end)
 end)
 

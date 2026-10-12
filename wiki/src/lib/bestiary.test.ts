@@ -1,7 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { en } from "../i18n/en";
-import { pl } from "../i18n/pl";
-import { bestiaryEntries, occurringVariants, regionTree } from "./bestiary";
+import { bestiaryEntries, familyName, occurringVariants, regionTree } from "./bestiary";
 import { DEFAULT_FILTERS, levelBands, matches, parseFilters, serializeFilters, sortEntries, type Filters } from "./bestiary-filters";
 import { bosses, load, monsters } from "./data";
 
@@ -62,11 +60,12 @@ describe("bestiary", () => {
     for (let i = 1; i < byName.length; i++) expect(collator.compare(byName[i - 1].name, byName[i].name)).toBeLessThanOrEqual(0);
   });
 
-  it("gives every family a Polish and English label", () => {
+  it("gives every family a Polish and English name (S68: monsters.json families)", () => {
+    const families = load("monsters").families;
     for (const m of load("monsters").monsters) {
-      if (!m.family) continue;
-      expect(pl[`family.${m.family}` as keyof typeof pl]).toBeTruthy();
-      expect(en[`family.${m.family}` as keyof typeof en]).toBeTruthy();
+      expect(families[m.family]).toBeTruthy();
+      expect(familyName(m.family, "pl")).toBeTruthy();
+      expect(familyName(m.family, "en")).toBeTruthy();
     }
   });
 });

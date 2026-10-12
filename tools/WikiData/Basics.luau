@@ -18,6 +18,7 @@ local Keybinds = require("../../src/shared/Logic/Keybinds")
 local LevelBand = require("../../src/shared/Logic/LevelBand")
 local Maps = require("../../src/shared/Data/Maps")
 local PvpRules = require("../../src/shared/Logic/PvpRules")
+local Families = require("../../src/shared/Data/Families")
 local Fish = require("../../src/shared/Data/Fish")
 local Guild = require("../../src/shared/Logic/Guild")
 local GuildSkills = require("../../src/shared/Data/GuildSkills")
@@ -87,6 +88,7 @@ S.file(
 			bonusMin = "int",
 			bonusMax = "int",
 			legendaryLines = "int",
+			mythicLines = "int", -- S68
 			baseMul = "number",
 			rangeMul = "number",
 			sellMul = "number",
@@ -388,6 +390,7 @@ function Basics.rarities(_ctx: any): any
 			bonusMin = r.bonusMin,
 			bonusMax = r.bonusMax,
 			legendaryLines = r.legendaryLines,
+			mythicLines = r.mythicLines,
 			baseMul = r.baseMul,
 			rangeMul = r.rangeMul,
 			sellMul = r.sellMul,
@@ -1007,6 +1010,7 @@ function Basics.registerEnums()
 	S.setEnum("RarityKey", keys)
 	S.setEnum("ElementId", Clean.keys(Elements.COLORS))
 	S.setEnum("ClassId", Classes.order)
+	S.setEnum("FamilyId", Families.ids) -- S68: monsters.json family
 end
 
 return Basics

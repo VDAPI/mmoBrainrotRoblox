@@ -198,7 +198,12 @@ cmd("items", "value", {
 	enum("rarity", RARITY_NAMES, true),
 	int("up", 0, 9, true, "0"),
 })
-cmd("items", "tooltip", { ref("item", "item"), enum("lang", { "pl", "en" }, true, "pl") })
+cmd("items", "tooltip", {
+	ref("item", "item"),
+	enum("lang", { "pl", "en" }, true, "pl"),
+	enum("rarity", RARITY_NAMES, true, "common"),
+	enum("mode", { "lines", "details" }, true, "lines"),
+})
 -- S67: equipment rolled like loot of a monster of that family; "Better item!" score and family / class lines.
 cmd("items", "givefam", {
 	ref("item", "item"),

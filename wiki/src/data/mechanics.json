@@ -18,6 +18,7 @@
     {"group":"windows","id":"win_quests","key":"L","name":{"en":"Quests","pl":"Questy"}},
     {"group":"windows","id":"win_guild","key":"G","name":{"en":"Guild","pl":"Gildia"}},
     {"group":"windows","id":"win_party","key":"P","name":{"en":"Party","pl":"Grupa"}},
+    {"group":"windows","id":"item_details","key":"Alt","name":{"en":"Item details","pl":"Szczegóły opisu przedmiotu"}},
     {"group":"combat","id":"skill_1","key":"1","name":{"en":"Skill 1","pl":"Umiejętność 1"}},
     {"group":"combat","id":"skill_2","key":"2","name":{"en":"Skill 2","pl":"Umiejętność 2"}},
     {"group":"combat","id":"skill_3","key":"3","name":{"en":"Skill 3","pl":"Umiejętność 3"}},

@@ -41,7 +41,18 @@ describe("item detail", () => {
 
   it("generated equipment has a bonus pool with ranges on its tier", () => {
     const d = itemDetail("sword2h_35")!;
-    const b = d.pool!.find((x) => x.id === "critChance")!;
+    const b = d.pool!.Warrior.find((x) => x.id === "critChance")!;
     expect(b.range.heroic).toEqual(load("bonuses").bonuses.find((x) => x.id === "critChance")!.ranges["35"].heroic);
+  });
+
+  it("S68: a sword has its trait with ten lines per rarity; a ring pool has the class marker with 4 variants", () => {
+    const sword = itemDetail("sword1h_30")!;
+    expect(sword.trait).toBeDefined();
+    for (const r of load("rarities").rarities) expect(sword.trait!.line[r.key].length).toBe(10);
+    const ring = itemDetail("ring_30")!;
+    expect(ring.poolClasses.length).toBe(load("classes").classes.length);
+    const marker = ring.pool![ring.poolClasses[0].id].find((x) => x.id === "@vsClass")!;
+    expect(marker.variants!.length).toBe(4);
+    expect(marker.over).toBe("class");
   });
 });

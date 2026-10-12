@@ -18,6 +18,8 @@ type Weight = ItemWeights.Weight
 
 export type Context = { classId: string, level: number?, pathId: string?, weights: ItemWeights.ItemWeights? }
 export type Breakdown = { dmg: number, surv: number, support: number, util: number, total: number }
+-- S68: change in % of each axis when the candidate replaces the listed items (percent points, rounded to 0.1).
+export type Delta = { dmg: number, surv: number, support: number }
 
 local ItemScore = {}
 
@@ -88,6 +90,21 @@ local function without(source: { [string]: number }, minus: { [string]: number }
 	return out
 end
 
+local function isMagic(classId: string): boolean
+	local class = Classes.get(classId)
+	return class ~= nil and class.basicAttack.kind == "magic"
+end
+
+-- Weapon damage per second for the class: magic damage for a class with magic basic attacks, else physical,
+-- times attacks per second; 0 for items without a weapon block.
+function ItemScore.weaponDps(item: ItemInstance, classId: string): number
+	local weapon = ItemRoll.itemStats(item).weapon
+	if not weapon then
+		return 0
+	end
+	return (if isMagic(classId) then weapon.mdmg else weapon.dmg) * weapon.speed
+end
+
 -- Points of an item on each axis (before axis multipliers) and the total for the context.
 function ItemScore.breakdown(item: ItemInstance, context: Context | string): Breakdown
 	local ctx = contextOf(context)
@@ -132,11 +149,8 @@ function ItemScore.breakdown(item: ItemInstance, context: Context | string): Bre
 			add(weight.axis, weight.pct * ItemWeights.PCT_POINTS * trait.power * mul)
 		end
 	end
-	local weapon = stats.weapon
-	if weapon then
-		local class = Classes.get(classId)
-		local magic = class ~= nil and class.basicAttack.kind == "magic"
-		add("dmg", (if magic then weapon.mdmg else weapon.dmg) * weapon.speed * ItemWeights.WEAPON)
+	if stats.weapon then
+		add("dmg", ItemScore.weaponDps(item, classId) * ItemWeights.WEAPON)
 	end
 
 	local classAxes: { [string]: number } = ItemWeights.axes[classId] or {}
@@ -174,6 +188,57 @@ function ItemScore.isUpgrade(
 		return true
 	end
 	return ItemScore.score(candidate, ctx) > ItemScore.score(equipped, ctx) * ItemWeights.UPGRADE_MARGIN
+end
+
+local function round1(value: number): number
+	return math.floor(value * 10 + 0.5) / 10
+end
+
+-- S68 (STATY 11): the comparison in the tooltip as % of each axis. The weapon part is the relative DPS change; the
+-- rest are axis points (before the class / path axis multipliers, which only rank items) over PCT_POINTS. nil for
+-- an empty slot (nothing replaced) or an unknown class.
+function ItemScore.percentDelta(candidate: ItemInstance, replaced: { ItemInstance }, context: Context | string): Delta?
+	local ctx = contextOf(context)
+	if #replaced == 0 or not Classes.get(ctx.classId) then
+		return nil
+	end
+	local function axes(item: ItemInstance): (number, number, number, number)
+		local b = ItemScore.breakdown(item, ctx)
+		local dps = ItemScore.weaponDps(item, ctx.classId)
+		return b.dmg - dps * ItemWeights.WEAPON, b.surv, b.support, dps
+	end
+	local dmg, surv, support, newDps = axes(candidate)
+	local oldDps = 0
+	for _, item in replaced do
+		local d, s, p, dps = axes(item)
+		dmg -= d
+		surv -= s
+		support -= p
+		oldDps += dps
+	end
+	local weaponPart = if newDps > 0 and oldDps > 0 then (newDps / oldDps - 1) * 100 else 0
+	return {
+		dmg = round1(weaponPart + dmg / ItemWeights.PCT_POINTS),
+		surv = round1(surv / ItemWeights.PCT_POINTS),
+		support = round1(support / ItemWeights.PCT_POINTS),
+	}
+end
+
+-- Item the candidate would replace: the slot's item; rings: the weaker of ring1 / ring2 by score, nil while a ring
+-- slot is free (the new ring goes there). The "Better item" card, the tooltip and /tooltip all use it.
+function ItemScore.replaced(def: Items.ItemDef, equipment: { [string]: any }, context: Context | string): ItemInstance?
+	if not def.slot or def.slot == "backpack" then
+		return nil
+	end
+	if def.slot == "ring" then
+		local a, b = equipment.ring1, equipment.ring2
+		if not a or not b then
+			return nil
+		end
+		local ctx = contextOf(context)
+		return if ItemScore.score(a, ctx) <= ItemScore.score(b, ctx) then a else b
+	end
+	return equipment[def.slot]
 end
 
 -- Whether a stat / hook key (after resolving line ids) has any weight: common, some class, hooks or a prefix.

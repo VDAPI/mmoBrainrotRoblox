@@ -86,14 +86,16 @@ function ItemsMd.generate(ctx: any): string
 		"",
 		"## Rzadkości",
 		"",
-		"| Rzadkość | Kolor | Bonusy | Linie legendarne | Mnożnik statystyk | Mnożnik wartości |",
-		"|---|---|---|---|---|---|",
+		"| Rzadkość | Kolor | Bonusy | Linie legendarne | Linie mityczne | Mnożnik statystyk | Mnożnik wartości |",
+		"|---|---|---|---|---|---|---|",
 	}
 	for _, r in (d.rarities and d.rarities.rarities or {}) do
 		local bonuses = if r.bonusMin == r.bonusMax then `{r.bonusMin}` else `{r.bonusMin}–{r.bonusMax}`
 		table.insert(
 			out,
-			`| {r.name.pl} | \`{r.color}\` | {bonuses} | {r.legendaryLines} | ×{fmt(r.baseMul)} | ×{fmt(r.sellMul)} |`
+			`| {r.name.pl} | \`{r.color}\` | {bonuses} | {r.legendaryLines} | {r.mythicLines or 0} | ×{fmt(r.baseMul)} | ×{fmt(
+				r.sellMul
+			)} |`
 		)
 	end
 	table.insert(out, "")
@@ -165,6 +167,14 @@ function ItemsMd.generate(ctx: any): string
 					then table.concat(classes, ", ")
 					else "każda klasa"}`
 			)
+			-- S68: the type's trait with its Common +0 line.
+			local traits = d.items and d.items.traits or {}
+			local trait = base.trait and traits[base.trait]
+			if trait then
+				local common = trait.line.common and trait.line.common[1]
+				table.insert(out, "")
+				table.insert(out, `Cecha: **{trait.name.pl}**: {if common then common.pl else ""}`)
+			end
 			table.insert(out, "")
 			table.insert(out, "| Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |")
 			table.insert(out, "|---|---|---|---|---|")

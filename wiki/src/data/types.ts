@@ -6,6 +6,7 @@ export type Json = string | number | boolean | null | Json[] | { [key: string]: 
 export type Category = "backpack" | "consumable" | "equipment" | "material" | "scroll" | "stone" | "tool";
 export type ClassId = "Cleric" | "Hunter" | "Mage" | "Warrior";
 export type ElementId = "fire" | "ice" | "lightning" | "poison";
+export type FamilyId = "animal" | "beast" | "dragon" | "elemental" | "humanoid" | "undead";
 export type RarityKey = "common" | "heroic" | "legendary" | "mythic" | "unique";
 export type SlotGroup = "armor" | "backpack" | "boots" | "gloves" | "helmet" | "necklace" | "offhand" | "ring" | "talisman" | "weapon";
 
@@ -109,11 +110,13 @@ export interface AuctionRules {
 }
 
 export interface BaseInfo {
+  affinity?: Record<string, Record<string, number>>;
   bonusGroup: string;
   classes?: ClassId[];
   elemental: boolean;
   glyph: string;
   name: Name;
+  poolClasses: ClassId[];
   slot: SlotGroup;
   trait?: string;
 }
@@ -156,6 +159,8 @@ export interface Bonus {
   min: number;
   mode: string;
   name: Name;
+  of?: string;
+  param?: string;
   percent: boolean;
   ranges: Record<string, Record<string, number[]>>;
   scaling: string;
@@ -163,10 +168,17 @@ export interface Bonus {
   tier: string;
 }
 
+export interface BonusParam {
+  name: Name;
+  over: string;
+  variants: string[]; // ids in bonuses.json
+}
+
 export interface BonusesFile {
   bonuses: Bonus[];
   classStats: Record<string, ClassId[]>;
-  frequency: Record<string, Record<string, Record<string, number>>>;
+  frequency: Record<string, Record<string, Record<string, Record<string, number>>>>;
+  params: Record<string, BonusParam>;
   pools: Record<string, string[]>;
   rolls: number;
 }
@@ -447,6 +459,10 @@ export interface Elixir {
   stat: string;
 }
 
+export interface FamilyInfo {
+  name: Name;
+}
+
 export interface FishCatch {
   chance: number;
   id: string; // id in items.json
@@ -619,6 +635,7 @@ export interface ItemsFile {
   categories: Record<string, CategoryInfo>;
   items: Item[];
   slots: Record<string, SlotInfo>;
+  traits: Record<string, TraitInfo>;
 }
 
 export interface KeybindInfo {
@@ -790,9 +807,10 @@ export interface Monster {
   classBias: number;
   damageKind: string;
   defMul: number;
+  dodge?: number;
   element?: ElementId;
   elites: boolean;
-  family?: string;
+  family: FamilyId;
   hpMul: number;
   id: string;
   kindReward: number;
@@ -866,6 +884,7 @@ export interface MonsterVariant {
 }
 
 export interface MonstersFile {
+  families: Record<string, FamilyInfo>;
   monsters: Monster[];
 }
 
@@ -1082,6 +1101,7 @@ export interface Rarity {
   id: number;
   key: RarityKey;
   legendaryLines: number;
+  mythicLines: number;
   name: Name;
   rangeMul: number;
   sellMul: number;
@@ -1358,6 +1378,14 @@ export interface TitleReq {
 
 export interface TitlesFile {
   titles: Title[];
+}
+
+export interface TraitInfo {
+  cap?: Name;
+  info: Name;
+  line: Record<string, Name[]>;
+  name: Name;
+  pvp: Name;
 }
 
 export interface UpgradeCost {

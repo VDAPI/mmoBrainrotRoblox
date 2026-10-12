@@ -47,14 +47,27 @@
       {/each}
     </dl>
   {/if}
+  {#if data.trait}
+    <div class="trait">
+      <span class="trait__name">◆ {data.trait.name}</span>
+      <span class="trait__line">{data.trait.line}</span>
+    </div>
+  {/if}
   {#if data.bonuses.length > 0}
     <ul class="vw-tooltip__bonus">
       {#each data.bonuses as bonus, i (i)}
-        <li class:legendary={bonus.legendary} class:random={bonus.random}>{bonus.text}</li>
+        <li class:legendary={bonus.tier === "legendary"} class:mythic={bonus.tier === "mythic"} class:random={bonus.random}>{bonus.text}</li>
       {/each}
     </ul>
   {/if}
   {#if data.flavor}<p class="vw-tooltip__flavor">„{data.flavor}”</p>{/if}
+  {#if data.meta.length > 0}
+    <dl class="vw-tooltip__rows">
+      {#each data.meta as row (row.label)}
+        <div class:is-unmet={row.unmet}><dt>{row.label}</dt><dd>{row.value}</dd></div>
+      {/each}
+    </dl>
+  {/if}
   {#if data.bind && labels.bind}<p class="vw-tooltip__bind">{labels.bind}</p>{/if}
 </article>
 
@@ -65,5 +78,8 @@
   .vw-tooltip__bonus { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 2px; }
   .vw-tooltip__bonus .random { opacity: .8; font-style: italic; }
   .vw-tooltip__bonus .legendary { color: var(--vw-r-legendary-text); }
+  .vw-tooltip__bonus .mythic { color: var(--vw-r-mythic-text); }
+  .trait { display: flex; flex-direction: column; gap: 2px; color: var(--vw-gold-bright); }
+  .trait__name { font-weight: 800; }
   .vw-tooltip__flavor, .vw-tooltip__bind { margin: 0; }
 </style>

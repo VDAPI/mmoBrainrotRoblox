@@ -16,8 +16,12 @@
 
 local Classes = require("./Classes")
 local Families = require("./Families")
+local Types = require("../Types")
 
 export type BonusTier = "regular" | "legendary" | "mythic"
+-- S68 (tooltip details): how a line works against players. same: like any stat (hits x Combat.pvpModifier); none: not
+-- at all; only: only against players; ticks: damage over time x Combat.pvp.dot; half: x Combat.pvp[<stat or hook>].
+export type PvpMode = "same" | "none" | "only" | "ticks" | "half"
 
 export type BonusDef = {
 	id: string,
@@ -35,6 +39,8 @@ export type BonusDef = {
 	replacedBy: string?, -- legacy id read as another line (ItemRoll.itemStats, STATY 12)
 	param: string?, -- S67: the pool marker this variant comes from ("@vsFamily")
 	of: string?, -- S67: family id or class id (Classes.order form, "Mage") of a variant
+	capRef: Types.CapRef?, -- S68: cap enforced outside Data/Stats (a stat with a Stats cap needs none)
+	pvp: PvpMode?, -- S68: nil = "same"; never on the wiki (only the finished detail texts are)
 }
 
 export type Param = { prefix: "vs_" | "res_", over: "family" | "class" }
@@ -154,6 +160,39 @@ bonus("myth_cooldown", nil, "flat", 12, 16, "none", 1, true, "cooldownReduction"
 DEFS.armorPen.wiki = false
 DEFS.armorPen.replacedBy = "pierce"
 
+-- S68: caps and PvP behaviour of the lines for the tooltip details (the numbers stay where they are enforced).
+local function cap(source: "stat" | "combat" | "category" | "luck", key: string): Types.CapRef
+	return table.freeze({ source = source, key = key })
+end
+local function rule(ids: { string }, capRef: Types.CapRef?, pvp: PvpMode?)
+	for _, id in ids do
+		DEFS[id].capRef = capRef
+		DEFS[id].pvp = pvp
+	end
+end
+rule({ "blockChance" }, cap("combat", "blockCap"), "half") -- CombatService: Traits.blockChance(.., pvp) x pvp.block
+rule({ "leg_cooldown", "myth_cooldown" }, cap("combat", "cdrCap"))
+rule({ "leg_executioner", "myth_executioner" }, cap("combat", "executionerCap"))
+rule({ "leg_lastStand", "myth_lastStand" }, cap("category", "damageReduction")) -- own entry under the shared cap (S53)
+rule({ "woundChance", "poisonChance" }, cap("combat", "onHitChanceCap"), "ticks")
+rule({ "dotPower" }, nil, "ticks")
+rule({ "resourceOnHit" }, cap("combat", "resourceOnHitCap"))
+rule({ "dropBonus", "leg_dropBonus" }, cap("luck", "monsterItemCap"), "none")
+rule({
+	"expBonus",
+	"goldBonus",
+	"leg_expBonus",
+	"leg_goldBonus",
+	"leg_killHeal",
+	"myth_killHeal",
+	"leg_bossDamage",
+	"myth_bossDamage",
+	"leg_eliteDamage",
+	"myth_eliteDamage",
+	"leg_thorns",
+}, nil, "none")
+rule({ "lifesteal", "leg_lifesteal" }, nil, "half") -- Damage.computeDamage: x Combat.pvp.lifesteal
+
 -- S67 (STATY 4): lines with a parameter. Each variant is a hook under its own id (summed like other hooks): vs_<family>
 -- read by CombatService on monsters of that family, res_<family> as a damage reduction against them (Combat.familyResCap),
 -- vs_/res_<class> only in PvP (Combat.classLineCap each side).
@@ -190,6 +229,13 @@ for _, paramId in PARAM_ORDER do
 		bonus(id, nil, "flat", range[1], range[2], "pct", 1, true, id)
 		DEFS[id].param = paramId
 		DEFS[id].of = of
+		if param.over == "class" then
+			rule({ id }, cap("combat", "classLineCap"), "only")
+		elseif param.prefix == "res_" then
+			rule({ id }, cap("combat", "familyResCap"), "none")
+		else
+			rule({ id }, nil, "none")
+		end
 		table.insert(list, id)
 	end
 	VARIANTS[paramId] = table.freeze(list)

@@ -2,6 +2,8 @@
   // Item page, right column (S40): rarity and element switches, stats by upgrade level (+0..+9 radio buttons, table
   // with chance, failure result and attempt cost) and the bonus pool of the chosen rarity (ranges and chances from
   // the export) or the fixed bonuses. State shared with ItemTooltipLive (itemState, URL ?r=&up=&el=).
+  // S68: the type's trait (line for the chosen rarity and upgrade, PvP and cap), the pool of the chosen class (x3 lines,
+  // family / class markers with their variants) and the mythic pool.
   import ItemIcon from "../components/ItemIcon.svelte";
   import { formatChance, formatNumber } from "../lib/format";
   import { bonusText, statValue, type ItemDetail, type Lang, type StatRow } from "../lib/item-model";
@@ -10,7 +12,8 @@
   type L = Record<
     | "rarity" | "element" | "stats" | "level" | "chance" | "onFail" | "cost" | "base" | "noRisk" | "dropTo" | "protected"
     | "scroll" | "calc" | "pool" | "poolText" | "poolLegendary" | "poolLegendaryText" | "bonus" | "fixed" | "levels"
-    | "dmg" | "mdmg" | "caption",
+    | "dmg" | "mdmg" | "caption" | "trait" | "traitPvp" | "traitCap" | "poolMythic" | "poolMythicText" | "poolForClass"
+    | "poolBoost" | "variantFamily" | "variantClass",
     string
   >;
 
@@ -41,6 +44,13 @@
   const costs = $derived(detail.upgrade?.costs[state.rarity] ?? []);
   const rarity = $derived(detail.rarities.find((r) => r.key === state.rarity));
   const range = (b: { range: Record<string, [number, number]> }) => b.range[state.rarity];
+  // S68: pool of the chosen class (local state, not in the URL).
+  let cls = $state<string>(detail.poolClasses[0]?.id ?? "");
+  const pool = $derived(detail.pool?.[cls] ?? []);
+  const legendaryPool = $derived(detail.legendaryPool?.[cls] ?? []);
+  const mythicPool = $derived(detail.mythicPool?.[cls] ?? []);
+  const classIndex = $derived(detail.poolClasses.findIndex((c) => c.id === cls));
+  const traitLine = $derived(detail.trait?.line[state.rarity]?.[state.up]);
 
   function keyNav(event: KeyboardEvent, count: number, current: number, pick: (i: number) => void) {
     const delta = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[event.key];
@@ -149,18 +159,46 @@
     </section>
   {/if}
 
+  {#if detail.trait && traitLine}
+    <section class="trait">
+      <h2 class="vw-section-title vw-h2">{labels.trait}: {detail.trait.name[lang]}</h2>
+      <p class="trait__line">◆ {traitLine[lang]}</p>
+      <p class="lead">{detail.trait.info[lang]}</p>
+      <dl class="trait__meta">
+        <div><dt>{labels.traitPvp}</dt><dd>{detail.trait.pvp[lang]}</dd></div>
+        {#if detail.trait.cap}<div><dt>{labels.traitCap}</dt><dd>{detail.trait.cap[lang]}</dd></div>{/if}
+      </dl>
+    </section>
+  {/if}
+
   {#if detail.fixed}
     <section>
       <h2 class="vw-section-title vw-h2">{labels.fixed}</h2>
       <ul class="fixed">
-        {#each detail.fixed as b, i (i)}<li class:legendary={b.legendary}>{b.text[lang]}</li>{/each}
+        {#each detail.fixed as b, i (i)}<li class:legendary={b.tier === "legendary"} class:mythic={b.tier === "mythic"}>{b.text[lang]}</li>{/each}
       </ul>
     </section>
   {:else if detail.pool && rarity}
     <section>
       <h2 class="vw-section-title vw-h2">{labels.pool}</h2>
+      {#if detail.poolClasses.length > 1}
+        <div class="switch" role="radiogroup" aria-label={labels.poolForClass}>
+          <span class="vw-label">{labels.poolForClass}</span>
+          {#each detail.poolClasses as c (c.id)}
+            <button
+              type="button"
+              role="radio"
+              class="vw-chip cchip"
+              aria-checked={c.id === cls}
+              tabindex={c.id === cls ? 0 : -1}
+              onclick={() => (cls = c.id)}
+              onkeydown={(e) => keyNav(e, detail.poolClasses.length, Math.max(0, classIndex), (n) => (cls = detail.poolClasses[n].id))}
+            >{c.name[lang]}</button>
+          {/each}
+        </div>
+      {/if}
       {#if rarity.bonusMax > 0}
-        <p class="lead">{fill(labels.poolText, { n: rarity.bonusMin === rarity.bonusMax ? rarity.bonusMin : `${rarity.bonusMin}–${rarity.bonusMax}` })}{rarity.legendaryLines > 0 ? ` ${fill(labels.poolLegendaryText, { n: rarity.legendaryLines })}` : ""}</p>
+        <p class="lead">{fill(labels.poolText, { n: rarity.bonusMin === rarity.bonusMax ? rarity.bonusMin : `${rarity.bonusMin}–${rarity.bonusMax}` })}{rarity.legendaryLines > 0 ? ` ${fill(labels.poolLegendaryText, { n: rarity.legendaryLines })}` : ""}{rarity.mythicLines > 0 ? ` ${fill(labels.poolMythicText, { n: rarity.mythicLines })}` : ""}</p>
       {:else}
         <p class="lead muted">{fill(labels.poolText, { n: 0 })}</p>
       {/if}
@@ -168,19 +206,44 @@
         <caption class="vw-sr">{labels.pool}</caption>
         <thead><tr><th scope="col">{labels.bonus}</th><th scope="col" class="r">{labels.chance}</th></tr></thead>
         <tbody>
-          {#each detail.pool.filter((b) => range(b) && (rarity.bonusMax === 0 || b.chance[state.rarity] > 0)) as b (b.id)}
-            <tr><td class="bonus">{bonusText(b.name[lang], range(b), lang, b.decimals)}</td><td class="r">{b.chance[state.rarity] ? formatChance(b.chance[state.rarity], lang) : "—"}</td></tr>
+          {#each pool.filter((b) => range(b) && (rarity.bonusMax === 0 || b.chance[state.rarity] > 0)) as b (b.id)}
+            <tr>
+              <td class="bonus">
+                {bonusText(b.name[lang], range(b), lang, b.decimals)}
+                {#if b.boost}<span class="boost" title={labels.poolBoost}>×3</span>{/if}
+                {#if b.variants}
+                  <details class="variants">
+                    <summary>{b.over === "family" ? labels.variantFamily : labels.variantClass}</summary>
+                    <ul>{#each b.variants as v, i (i)}<li>{v[lang]}</li>{/each}</ul>
+                  </details>
+                {/if}
+              </td>
+              <td class="r">{b.chance[state.rarity] ? formatChance(b.chance[state.rarity], lang) : "—"}</td>
+            </tr>
           {/each}
         </tbody>
       </table>
-      {#if detail.legendaryPool && rarity.legendaryLines > 0}
+      {#if legendaryPool.length > 0 && rarity.legendaryLines > 0}
         <details class="legpool">
           <summary class="vw-label">{labels.poolLegendary}</summary>
           <table class="vw-table pool">
             <caption class="vw-sr">{labels.poolLegendary}</caption>
             <tbody>
-              {#each detail.legendaryPool.filter((b) => range(b) && b.chance[state.rarity] > 0) as b (b.id)}
+              {#each legendaryPool.filter((b) => range(b) && b.chance[state.rarity] > 0) as b (b.id)}
                 <tr><td class="bonus leg">{bonusText(b.name[lang], range(b), lang, b.decimals)}</td><td class="r">{b.chance[state.rarity] ? formatChance(b.chance[state.rarity], lang) : "—"}</td></tr>
+              {/each}
+            </tbody>
+          </table>
+        </details>
+      {/if}
+      {#if mythicPool.length > 0 && rarity.mythicLines > 0}
+        <details class="legpool">
+          <summary class="vw-label">{labels.poolMythic}</summary>
+          <table class="vw-table pool">
+            <caption class="vw-sr">{labels.poolMythic}</caption>
+            <tbody>
+              {#each mythicPool.filter((b) => range(b) && b.chance[state.rarity] > 0) as b (b.id)}
+                <tr><td class="bonus myth">{bonusText(b.name[lang], range(b), lang, b.decimals)}</td><td class="r">{b.chance[state.rarity] ? formatChance(b.chance[state.rarity], lang) : "—"}</td></tr>
               {/each}
             </tbody>
           </table>
@@ -217,11 +280,24 @@
   .lead { margin: 0; color: var(--vw-text-soft); }
   .bonus { color: var(--vw-info); font-weight: 700; }
   .bonus.leg { color: var(--vw-r-legendary-text); }
+  .bonus.myth { color: var(--vw-r-mythic-text); }
+  .boost { margin-left: 6px; padding: 0 6px; border: 1px solid var(--vw-gold-dark); color: var(--vw-gold-bright); font-size: 13px; font-weight: 800; }
+  .variants { margin-top: 4px; font-weight: 500; color: var(--vw-text-soft); font-size: 14px; }
+  .variants summary { cursor: pointer; }
+  .variants ul { margin: 4px 0 0; padding-left: 18px; }
+  .cchip { min-height: 44px; }
+  .cchip[aria-checked="true"] { background: color-mix(in srgb, var(--vw-gold) 20%, var(--vw-panel)); border-color: var(--vw-gold); font-weight: 800; }
+  .trait__line { margin: 0; color: var(--vw-gold-bright); font-weight: 800; font-size: 17px; }
+  .trait__meta { margin: 0; display: flex; flex-direction: column; gap: 4px; font-size: 15px; color: var(--vw-text-muted); }
+  .trait__meta > div { display: flex; gap: 8px; }
+  .trait__meta dt { font-weight: 800; }
+  .trait__meta dd { margin: 0; }
   .r { text-align: right; font-weight: 800; }
   .legpool summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; }
   .fixed { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; color: var(--vw-info); font-weight: 700; font-size: 17px; }
   .fixed li::before { content: "◆ "; }
   .fixed li.legendary { color: var(--vw-r-legendary-text); }
+  .fixed li.mythic { color: var(--vw-r-mythic-text); }
   @media (max-width: 767px) {
     .ups { grid-template-columns: repeat(5, minmax(0, 1fr)); }
     .uptable { display: table; width: 100%; }

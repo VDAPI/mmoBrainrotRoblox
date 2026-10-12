@@ -10,6 +10,7 @@ import {
   bonusText,
   buildTooltip,
   mainStat,
+  type BonusTier,
   type ItemDetail,
   type MaterialRef,
   type PoolBonus,
@@ -58,21 +59,45 @@ export function costTier(level: number): string {
   return String(tiers.length > 0 ? tiers[tiers.length - 1] : load("upgrade").tiers[0]);
 }
 
-function poolOf(poolId: string, tier: number, allowed: string[]): PoolBonus[] {
+/** Names of the variants of a family / class marker (families from monsters.json, classes from classes.json). */
+function variantNames(over: string, variants: string[]): { pl: string; en: string }[] {
   const file = load("bonuses");
-  const ids = file.pools[poolId] ?? [];
-  const freq = file.frequency[poolId] ?? {};
-  return ids
-    .map((id) => file.bonuses.find((b) => b.id === id))
-    .filter((b): b is NonNullable<typeof b> => b !== undefined)
-    .map((b) => ({
-      id: b.id,
-      name: b.name,
+  return variants.map((id) => {
+    const of = file.bonuses.find((b) => b.id === id)?.of ?? id;
+    if (over === "family") return load("monsters").families[of]?.name ?? { pl: of, en: of };
+    return load("classes").classes.find((c) => c.id === of)?.name ?? { pl: of, en: of };
+  });
+}
+
+/** Rows of a pool on an item for one class (S68): chances of the item's base type and class, x3 lines, markers. */
+function poolOf(item: Item, group: string, classId: string, tier: number, allowed: string[]): PoolBonus[] {
+  const file = load("bonuses");
+  const ids = file.pools[group] ?? [];
+  const freq = file.frequency[item.type]?.[classId] ?? {};
+  const affinity = load("items").bases[item.type]?.affinity?.[classId] ?? {};
+  const rows: PoolBonus[] = [];
+  for (const id of ids) {
+    const param = file.params[id];
+    // A marker takes its name from the param and its range from the first variant (all variants share it).
+    const b = file.bonuses.find((x) => x.id === (param ? param.variants[0] : id));
+    if (!b) continue;
+    rows.push({
+      id,
+      name: param ? param.name : b.name,
       percent: b.percent,
       decimals: b.decimals,
       range: Object.fromEntries(allowed.filter((r) => b.ranges[String(tier)]?.[r]).map((r) => [r, b.ranges[String(tier)][r] as [number, number]])),
-      chance: Object.fromEntries(allowed.map((r) => [r, freq[r]?.[b.id] ?? 0])),
-    }));
+      chance: Object.fromEntries(allowed.map((r) => [r, freq[r]?.[id] ?? 0])),
+      boost: affinity[id] === 3,
+      variants: param ? variantNames(param.over, param.variants) : undefined,
+      over: param ? (param.over === "family" ? "family" : "class") : undefined,
+    });
+  }
+  return rows;
+}
+
+function byClass(classIds: string[], fn: (classId: string) => PoolBonus[]): Record<string, PoolBonus[]> {
+  return Object.fromEntries(classIds.map((c) => [c, fn(c)]));
 }
 
 export function materialRef(id: string): MaterialRef {
@@ -116,6 +141,11 @@ export function itemDetail(id: string): ItemDetail | undefined {
   }
   for (const c of item.sources.crafting) for (const m of craftRecipe(c.recipe)?.materials ?? []) materials[m.id] ??= materialRef(m.id);
   const elements = item.elemental ? load("elements").elements.filter((e) => e.weapon) : [];
+  const base = equipment ? file.bases[item.type] : undefined;
+  const poolClasses = generated && base ? base.poolClasses : [];
+  const traitInfo = base?.trait ? file.traits[base.trait] : undefined;
+  const rarityInfo = (key: string) => rarities().find((x) => x.key === key);
+  const hasLines = (field: "legendaryLines" | "mythicLines") => allowed.some((r) => (rarityInfo(r)?.[field] ?? 0) > 0);
   const detail: ItemDetail = {
     id: item.id,
     name: item.name,
@@ -134,7 +164,7 @@ export function itemDetail(id: string): ItemDetail | undefined {
     generated,
     rarities: allowed.map((key) => {
       const r = rarities().find((x) => x.key === key)!;
-      return { key, name: r.name, bonusMin: r.bonusMin, bonusMax: r.bonusMax, legendaryLines: r.legendaryLines };
+      return { key, name: r.name, bonusMin: r.bonusMin, bonusMax: r.bonusMax, legendaryLines: r.legendaryLines, mythicLines: r.mythicLines };
     }),
     stats: Object.fromEntries(allowed.map((r) => [r, statRows(item, r)])),
     value: item.value,
@@ -149,11 +179,14 @@ export function itemDetail(id: string): ItemDetail | undefined {
       const def = load("bonuses").bonuses.find((d) => d.id === b.stat);
       return {
         text: { pl: bonusText(def?.name.pl ?? b.stat, b.v, "pl", def?.decimals), en: bonusText(def?.name.en ?? b.stat, b.v, "en", def?.decimals) },
-        legendary: b.stat.startsWith("leg_"),
+        tier: (def?.tier ?? "regular") as BonusTier,
       };
     }),
-    pool: generated && item.bonusGroup ? poolOf(item.bonusGroup, item.tier!, allowed) : undefined,
-    legendaryPool: generated && allowed.some((r) => (rarities().find((x) => x.key === r)?.legendaryLines ?? 0) > 0) ? poolOf("legendary", item.tier!, allowed) : undefined,
+    trait: traitInfo && base?.trait ? { id: base.trait, ...traitInfo } : undefined,
+    poolClasses: poolClasses.map((id) => ({ id, name: classes.find((c) => c.id === id)?.name ?? { pl: id, en: id } })),
+    pool: generated && item.bonusGroup ? byClass(poolClasses, (c) => poolOf(item, item.bonusGroup!, c, item.tier!, allowed)) : undefined,
+    legendaryPool: generated && hasLines("legendaryLines") ? byClass(poolClasses, (c) => poolOf(item, "legendary", c, item.tier!, allowed)) : undefined,
+    mythicPool: generated && hasLines("mythicLines") ? byClass(poolClasses, (c) => poolOf(item, "mythic", c, item.tier!, allowed)) : undefined,
     upgrade,
     materials,
     icon: iconFor(item.id),
@@ -174,6 +207,7 @@ export function tooltipLabels(lang: Lang): TooltipLabels {
     value: t(lang, "tooltip.value"),
     randomBonus: t(lang, "tooltip.randomBonus"),
     legendaryBonus: t(lang, "tooltip.legendaryBonus"),
+    mythicBonus: t(lang, "tooltip.mythicBonus"),
     stack: t(lang, "tooltip.stack"),
   };
 }
@@ -199,6 +233,7 @@ export interface IndexRow {
   base: string; // type for generated equipment (tier group), else the id
   name: string;
   type: string;
+  trait?: string; // S68: the type's trait name in the page language
   slot: string; // slot or category (filter chips)
   category: string;
   classes: string[];
@@ -251,6 +286,7 @@ export function indexRows(lang: Lang, hrefOf: (id: string) => string, normalize:
       base: d.generated ? item.type : item.id,
       name: label,
       type: d.typeName[lang],
+      trait: d.trait?.name[lang],
       slot: item.slot ?? item.category,
       category: item.category,
       classes: d.classes.map((c) => c.id),

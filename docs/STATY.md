@@ -469,6 +469,10 @@ Nowe pole `family` w `Data/Monsters.luau` i `Data/Bosses.luau`, lista i nazwy w 
   limit, czy działa w PvP. Nie przytrzymanie, bo przytrzymanie przedmiotu to już menu akcji (DESIGN, okno Postać).
   Dziś `ItemTooltip` rysuje statyczne linie, więc okienko szczegółów to nowa część `ItemTooltip` i `TooltipModel`.
   Szczegóły cechy pokazują też jej działanie w PvP (8) i węzły ścieżki, które ją wzmacniają (3).
+  S68: na PC opis jedzie za kursorem, więc najechanie wymaga przypięcia: przytrzymanie klawisza „Szczegóły opisu
+  przedmiotu” (`item_details`, domyślnie Alt, zmieniany w opcjach) zatrzymuje opis, a wskazanie linii otwiera szczegóły
+  obok. Na telefonie ikona „i” jest rysowana kształtem (koło z literą), nie znakiem ⓘ, a stuknięcie w otwarty opis
+  nigdy nie trafia w slot pod nim (`DragDrop.SetBlocker`).
 - Porównanie z założonym: zmiana obrażeń i przeżywalności w procentach z `ItemScore`, nie tylko lista liczb.
 - Każda liczba widoczna; żadnych ukrytych premii.
 
@@ -551,7 +555,7 @@ stałe `block` / `riposte` z `fixedHooks`, kontra tylko w zasięgu ataku podstaw
 | `Logic/TooltipModel.luau`, `client/UI/Components/ItemTooltip.luau`, `client/UI/Screens/LegendReveal.luau` | sekcja Cecha z linią `trait.<id>.line`, styl z `tier`, okienko szczegółów linii i cechy po dotknięciu (telefon) i najechaniu (PC) |
 | `Logic/ItemScore.luau`, `Logic/FightSim.luau`, `tests/Balance.luau` | wagi i wartość oczekiwana efektów i cech (tabela 14) |
 | `Data/Localization/pl.luau`, `en.luau` | `bonus.*`, `trait.*` (nazwa, linia, szczegóły; nazwy w obu językach inne niż `skill.*` i `effect.*`, np. Fechtunek / Swordplay, bo „Riposte” to angielska nazwa Kontrataku, i Zastawa / Parry), `family.*` |
-| `tools/WikiData/Items.luau`, `Schema`, `TypesTs`, `Monsters` | `tier`, `affinity`, cechy baz, rodziny, `mythicLines`; częstość linii liczona osobno dla każdego typu broni i drugiej ręki (dziś `sampleOf` bierze jeden przedmiot na pulę, `Items.luau:444-460`), szansa linii rodziny jako „wariant z rodziny potwora”; `wiki = false` ukrywa nieopublikowane |
+| `tools/WikiData/Items.luau`, `Basics`, `Monsters`, `ItemsMd` | S68: `bases.affinity` (wagi ≠ 1 po klasie, broń i druga ręka), `bases.poolClasses`, `items.traits` (linia cechy dla każdej rzadkości i +0…+9 przez `TooltipModel.traitLine`, teksty `does` / `pvp` / `cap` z `TooltipModel.details`), `bonuses.params` (znaczniki z wariantami), częstość linii na typ bazy → klasa → rzadkość (`sampleOfType`, `TYPE_ROLLS` 2000, wariant liczony pod znacznikiem), `rarities.mythicLines`, `monsters.family` = rodzina gry, `monsters.families`, `dodge`; `wiki = false` i `live = false` ukrywają nieopublikowane; `ItemWeights`, `nodeHooks`, `capRef`, `BonusDef.pvp` nie wychodzą (tylko gotowe teksty) |
 | `tests/items.spec`, `data.spec`, `damage.spec`, `balance.spec`, `wikidump.spec`, `traits.spec` (nowy), `effectstack.spec` | pule (buława i tarcza dla każdej klasy 11–14), wagi, limity (`blockCap`, `riposteCap`, `executionerCap`, `enemyDamageDown`, niszczenie z przedmiotów 25% × siła, najwyżej 40%, razem 50%), efekty („30% w 4 s” zadaje razem 30% ciosu, drugie trafienie po 1,5 s nic nie traci; czerwona strefa nigdy nie wywołuje kontry; ogłuszenie z Wstrząsu opóźnia następny atak potwora), rzadkość `rv = 2` bez zmian, przeliczenie `armorPen`, stary topór ma Żniwo, cecha nazwanych na sile Mitycznej, 24 różne kategorie cech, nazwy `trait.*` bez powtórzeń z `skill.*`, `effect.*`, węzłami i odmianami (Przebijający/Przebijająca, Głęboka/Głębokie) w `pl.luau` i `en.luau`, ścieżki z tabeli 3 zgodne z `Logic/Paths.weaponOk`, przebicie po niszczeniu, wybór wroga za celem, Pieczęć gaśnie po kroku, częstość na typ bazy |
 
 ## 14. Co stroją sesje balansu

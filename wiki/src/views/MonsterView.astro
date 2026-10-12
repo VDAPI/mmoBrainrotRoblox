@@ -18,10 +18,10 @@ import SectionTitle from "../components/SectionTitle.astro";
 import Telegraph from "../components/Telegraph.astro";
 import ZoneBadge from "../components/ZoneBadge.astro";
 import { href, type Lang } from "../i18n/routes";
-import { bossHref, finalLevels, monsterHref, placesOf, type MonsterRank } from "../lib/bestiary";
+import { bossHref, familyName, finalLevels, monsterHref, placesOf, type MonsterRank } from "../lib/bestiary";
 import { getMonster, load } from "../lib/data";
 import { formatChance, formatNumber } from "../lib/format";
-import { name, t, type Key } from "../lib/i18n";
+import { name, t } from "../lib/i18n";
 import { abilityText, levelCells, lootRows, neighboursOf, pageVariants, questsFor, respawnText, shapeText, summonedBy } from "../lib/monster";
 import { sectionHref } from "../lib/sections";
 import { tooltipData } from "../lib/tooltip";
@@ -128,7 +128,7 @@ const statCols = [
               <div class="badges">
                 <RankBadge rank={view.v} lang={lang} />
                 <span class="vw-rank">{view.min === view.max ? t(lang, "level", { level: view.min }) : t(lang, "levelRangeCap", { min: view.min, max: view.max })}</span>
-                {m.family && <span class="vw-rank">{t(lang, `family.${m.family}` as Key)}</span>}
+                {m.family && <span class="vw-rank">{familyName(m.family, lang)}</span>}
                 <ElementBadge element={m.element} damageKind={m.damageKind} lang={lang} />
                 <ZoneBadge zone={view.zone} lang={lang} />
               </div>
@@ -158,6 +158,7 @@ const statCols = [
                   <li><span>{t(lang, "monster.stat.range")}</span><strong>{cell.range} st.</strong></li>
                   <li><span>{t(lang, "monster.stat.kind")}</span><strong>{kindText(m.element)}</strong></li>
                   <li><span>{t(lang, "monster.stat.aggro")}</span><strong>{cell.aggro} st.</strong></li>
+                  {(m.dodge ?? 0) > 0 && <li><span>{t(lang, "monster.stat.dodge")}</span><strong>{formatNumber(m.dodge!, lang)}%</strong></li>}
                   <li class="full"><strong>{m.passive ? t(lang, "monster.passive") : t(lang, "monster.gap", { n: gap })}</strong></li>
                 </ul>
               </details>
@@ -211,6 +212,7 @@ const statCols = [
                 </tbody>
               </table>
               <p class="note">{t(lang, "monster.lootNote", { chance: formatChance(view.info.loot.itemChance, lang), count: view.info.loot.itemMin === view.info.loot.itemMax ? view.info.loot.itemMin : `${view.info.loot.itemMin}–${view.info.loot.itemMax}`, bias: formatChance(m.classBias, lang) })}</p>
+              <p class="note">{t(lang, "monster.familyLoot", { family: familyName(m.family, lang) })}</p>
             </section>
 
             <aside class="preview" aria-label={t(lang, "monster.lootPreview")}>

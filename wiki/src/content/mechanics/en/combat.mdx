@@ -11,7 +11,7 @@ tags: [Damage, Monsters]
 
 The server counts everything, in this order:
 
-1. **Hit.** The target's dodge chance minus your accuracy, at most <Stat path="mechanics.combat.dodgeCap" format="pct" />. A dodge means no damage.
+1. **Hit.** The target's dodge chance minus your accuracy, at most <Stat path="mechanics.combat.dodgeCap" format="pct" />. A dodge means no damage. Monsters dodge only your basic attacks (skills always hit them); you can dodge a monster's regular attack (not a red zone) and another player's hits.
 2. **Strength of the blow.** Your attack (physical or magic) times the skill multiplier.
 3. **Armour.** The target's defence (after your armour penetration) stops part of the damage, a smaller part the higher your level. Magic uses magic resistance the same way.
 4. **Randomness.** The result is multiplied by a value from <Stat path="mechanics.combat.randomMin" format="frac" /> to <Stat path="mechanics.combat.randomMax" format="frac" />.

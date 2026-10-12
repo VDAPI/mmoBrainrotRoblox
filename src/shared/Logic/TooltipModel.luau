@@ -14,26 +14,41 @@
 --   potionDiscount: number -- guild potion discount (derived stat), for the shop price
 --   merchantOpen: boolean  -- a merchant window is open: backpack items add "Sells for: X gold"
 --   hints: boolean         -- false hides the "double click: equip/use" hint (default: shown outside shops)
+--   pathId: string         -- S68: character.path.main (ItemScore weights of the main path)
+--   nodes: {[id]: number}  -- S68: character.path.nodes (owned nodes are marked in trait details)
+--   mainHand: ItemInstance -- S68: equipped weapon (Full Draw details; an off-hand against a two-hander)
+--   offhand: ItemInstance  -- S68: equipped off-hand (a two-handed candidate also replaces it)
+--   input: "mouse"|"touch" -- S68: picks the details hint; nil = no hint (tests, admin dump)
+--   detailsKey: string     -- S68: label of the details key on PC (Keybinds.label("item_details"))
 --
 -- Line fields: `text` (may hold rich text), `role` (what the line is, for tests and the admin dump), `tone`
 -- (colour role), `hex` (explicit colour, overrides tone), `size`, `font`; bonus rows have `kind = "bonus"`,
 -- `quality` 0..1, `tier` (Data/Bonuses) and `legendary` / `mythic` from it. S62: weapons and off-hands get a "Trait"
 -- section (name + line, Data/ItemTraits colour) after the base stats, only for live traits.
+-- S68 (STATY 11): equipment goes name, damage / defence, Trait, regular lines, legendary, mythic, description,
+-- requirements, comparison (% of the damage and survival axes from Logic/ItemScore, then the stat list); every bonus
+-- and trait row carries a `detail` reference that `TooltipModel.details` turns into the details panel.
 
 local Blessings = require("../Data/Blessings")
 local Bonuses = require("../Data/Bonuses")
 local Classes = require("../Data/Classes")
 local Combat = require("../Data/Combat")
+local Config = require("../Config")
 local Crafting = require("../Data/Crafting")
 local Elements = require("../Data/Elements")
 local Format = require("../Util/Format")
 local GatherNodes = require("../Data/GatherNodes")
 local ItemName = require("./ItemName")
+local BuffCategories = require("../Data/BuffCategories")
 local ItemRoll = require("./ItemRoll")
+local ItemScore = require("./ItemScore")
 local ItemTraits = require("../Data/ItemTraits")
 local ItemValue = require("./ItemValue")
+local ItemWeights = require("../Data/ItemWeights")
 local Items = require("../Data/Items")
 local Locale = require("../Util/Locale")
+local Luck = require("../Data/Luck")
+local PathData = require("../Data/Paths")
 local Quests = require("../Data/Quests")
 local Rarities = require("../Data/Rarities")
 local Recipes = require("../Data/Recipes")
@@ -48,6 +63,13 @@ type ItemInstance = Types.ItemInstance
 type ItemDef = Items.ItemDef
 
 export type Tone = "dark" | "muted" | "good" | "bad" | "rarity" | "bonus" | "legendary" | "trait"
+export type Tier = "regular" | "legendary" | "mythic"
+
+-- S68: what a row's details panel describes (a bonus line of this item, or the item's trait).
+export type DetailRef = { kind: "bonus", id: string, v: number, quality: number? } | { kind: "trait", id: string }
+export type DetailRow = { role: string, text: string, tone: Tone? }
+export type Details = { title: string, tier: Tier | "trait", rows: { DetailRow } }
+export type TraitNode = { path: string, node: string, nodeId: string, owned: boolean }
 
 export type Line = {
 	kind: "text" | "bonus",
@@ -60,7 +82,8 @@ export type Line = {
 	quality: number?,
 	legendary: boolean?,
 	mythic: boolean?, -- line from the mythic pool (FIX 2026-10-09)
-	tier: string?, -- Bonuses tier of a bonus row (S62)
+	tier: Tier?, -- Bonuses tier of a bonus row (S62)
+	detail: DetailRef?, -- S68: rows that open a details panel
 }
 
 export type Ctx = {
@@ -73,11 +96,20 @@ export type Ctx = {
 	potionDiscount: number?,
 	merchantOpen: boolean?,
 	hints: boolean?,
+	pathId: string?,
+	nodes: { [string]: number }?,
+	mainHand: ItemInstance?,
+	offhand: ItemInstance?,
+	input: ("mouse" | "touch")?,
+	detailsKey: string?,
 }
 
 export type Model = { lines: { Line } }
 
 local TooltipModel = {}
+
+-- S68 (STATY 11): bonus rows sort by tier, then by their index on the item.
+TooltipModel.TIER_ORDER = table.freeze({ regular = 1, legendary = 2, mythic = 3 })
 
 -- Formatting ----------------------------------------------------------------------------------------------
 
@@ -148,8 +180,31 @@ function TooltipModel.traitArgs(traitId: string, power: number, lang: string): {
 		end
 		if onHit.effect == "armorBreak" then
 			args.max = traitNumber(Traits.armorBreakCap(grown, onHit.maxStacks or 1), lang)
+			args.pvpStacks = traitNumber(Combat.pvp.armorBreakStacks, lang)
+		end
+		-- S68: the rest of the on-hit numbers for the details texts (trait.<id>.info / .pvp).
+		if onHit.maxStacks then
+			args.stacks = traitNumber(onHit.maxStacks, lang)
+		end
+		if onHit.attackSlow then
+			args.attackSlow = traitNumber(onHit.attackSlow, lang)
+		end
+		if onHit.healCut then
+			args.healCut = traitNumber(onHit.healCut, lang)
+		end
+		if onHit.gap then
+			args.gap = traitNumber(onHit.gap, lang)
 		end
 	end
+	-- S68: fixed hooks (Frostbite of ice weapons), the grown value against players and the PvP control multiplier.
+	local fixedHooks: { [string]: number } = def.fixedHooks or {}
+	for key, value in fixedHooks do
+		if args[key] == nil then
+			args[key] = traitNumber(value, lang)
+		end
+	end
+	args.pvpV = traitNumber(grown * def.pvp, lang)
+	args.cc = traitNumber(Config.PvpCcMultiplier, lang)
 	return args
 end
 
@@ -351,7 +406,8 @@ local function comparable(item: ItemInstance): { [string]: number }
 	return values
 end
 
-local function equipmentLines(b: Builder, item: ItemInstance, lang: string)
+-- Equipment header block: item level, element, then weapon damage / speed / DPS or the base stats.
+local function equipmentStats(b: Builder, item: ItemInstance, stats: ItemRoll.ItemStats, lang: string)
 	local element = ItemRoll.elementOf(item)
 	b.add("ilvl", Locale.T("tooltip.ilvl", { ilvl = item.ilvl }, lang), "muted")
 	if element then
@@ -362,7 +418,6 @@ local function equipmentLines(b: Builder, item: ItemInstance, lang: string)
 			{ hex = Elements.COLORS[element] or "#FFFFFF" }
 		)
 	end
-	local stats = ItemRoll.itemStats(item)
 	local w = stats.weapon
 	if w then
 		if w.dmg > 0 then
@@ -394,22 +449,48 @@ local function equipmentLines(b: Builder, item: ItemInstance, lang: string)
 	for _, stat in keys do
 		b.add("stat", `{statName(lang, stat)}: <b>{formatStat(stat, stats.base[stat], lang)}</b>`)
 	end
-	-- S62 (STATY 11): the trait section, after damage / defence and before the lines.
-	if stats.trait then
-		local t = stats.trait :: ItemRoll.TraitRoll
-		b.add(
-			"traitName",
-			`{ItemTraits.ICON} {Locale.T("tooltip.trait", { name = Locale.T(t.def.nameKey, nil, lang) }, lang)}`,
-			"trait",
-			{ hex = ItemTraits.COLOR, font = "bold" }
-		)
-		b.add("trait", TooltipModel.traitLine(t.id, t.power, lang), "trait", { hex = ItemTraits.COLOR })
+end
+
+-- S62 (STATY 11): the trait section, after damage / defence and before the lines.
+local function traitLines(b: Builder, stats: ItemRoll.ItemStats, lang: string)
+	if not stats.trait then
+		return
 	end
-	for _, bonus in stats.bonuses do
-		local bonusDef = Bonuses.get(bonus.id)
-		-- S62 (STATY 2C): the row style comes from the line's tier, never from its id or hook.
-		local tier = if bonusDef then bonusDef.tier else "regular"
-		table.insert(b.lines, {
+	local t = stats.trait :: ItemRoll.TraitRoll
+	local detail: DetailRef = { kind = "trait", id = t.id }
+	b.add(
+		"traitName",
+		`{ItemTraits.ICON} {Locale.T("tooltip.trait", { name = Locale.T(t.def.nameKey, nil, lang) }, lang)}`,
+		"trait",
+		{ hex = ItemTraits.COLOR, font = "bold", detail = detail }
+	)
+	b.add("trait", TooltipModel.traitLine(t.id, t.power, lang), "trait", { hex = ItemTraits.COLOR, detail = detail })
+end
+
+local function tierOf(id: string): Tier
+	local def = Bonuses.get(id)
+	return if def then def.tier else "regular"
+end
+
+-- Bonus rows: regular, then legendary, then mythic (S68), each tier in the item's order; the style comes from the
+-- line's tier, never from its id or hook (S62, STATY 2C).
+local function bonusLines(b: Builder, stats: ItemRoll.ItemStats, lang: string)
+	local order: { number } = {}
+	for index in stats.bonuses do
+		table.insert(order, index)
+	end
+	table.sort(order, function(x: number, y: number): boolean
+		local tx = TooltipModel.TIER_ORDER[tierOf(stats.bonuses[x].id)]
+		local ty = TooltipModel.TIER_ORDER[tierOf(stats.bonuses[y].id)]
+		if tx ~= ty then
+			return tx < ty
+		end
+		return x < y
+	end)
+	for _, index in order do
+		local bonus = stats.bonuses[index]
+		local tier: Tier = tierOf(bonus.id)
+		local entry: Line = {
 			kind = "bonus",
 			role = "bonus",
 			text = bonusText(lang, bonus.id, bonus.v),
@@ -418,7 +499,9 @@ local function equipmentLines(b: Builder, item: ItemInstance, lang: string)
 			legendary = tier == "legendary",
 			mythic = tier == "mythic",
 			tier = tier,
-		})
+			detail = { kind = "bonus", id = bonus.id, v = bonus.v, quality = bonus.quality } :: DetailRef,
+		}
+		table.insert(b.lines, entry)
 	end
 end
 
@@ -539,10 +622,7 @@ local function materialLines(b: Builder, def: ItemDef, lang: string)
 	end
 end
 
-local function compareLines(b: Builder, item: ItemInstance, equipped: ItemInstance, lang: string)
-	if equipped.uid == item.uid then
-		return
-	end
+local function compareLines(b: Builder, item: ItemInstance, equipped: ItemInstance, lang: string, titled: boolean)
 	local mine, theirs = comparable(item), comparable(equipped)
 	local keys: { [string]: boolean } = {}
 	for k in mine do
@@ -570,8 +650,78 @@ local function compareLines(b: Builder, item: ItemInstance, equipped: ItemInstan
 	end
 	if #lines > 0 then
 		table.sort(lines)
-		b.add("compareTitle", Locale.T("tooltip.compare", nil, lang), "muted")
+		if not titled then
+			b.add("compareTitle", Locale.T("tooltip.compare", nil, lang), "muted")
+		end
 		b.add("compare", table.concat(lines, "\n"))
+	end
+end
+
+local function isTwoHanded(item: ItemInstance): boolean
+	local weapon = ItemRoll.itemStats(item).weapon
+	return weapon ~= nil and weapon.twoHanded
+end
+
+-- "+4,2%" / "−1,5%" in the language's style.
+local function signedPct(value: number, lang: string): string
+	local sign = if value > 0 then "+" elseif value < 0 then "−" else ""
+	return `{sign}{decimal(math.abs(value), 1, lang)}%`
+end
+
+local PCT_AXES = { "dmg", "surv", "support" }
+
+-- S68 (STATY 11): the comparison block: % change of the damage / survival (and support) axes from ItemScore, then
+-- the stat list. A two-handed candidate also replaces the off-hand; an off-hand cannot go next to a two-hander.
+local function comparison(b: Builder, item: ItemInstance, d: ItemDef, c: Ctx, lang: string)
+	local equipped = c.equipped
+	if equipped and equipped.uid == item.uid then
+		return
+	end
+	if d.slot == "offhand" and c.mainHand and isTwoHanded(c.mainHand) then
+		b.add("compareNote", Locale.T("equip.error.twoHanded", nil, lang), "bad")
+		return
+	end
+	local replaced: { ItemInstance } = {}
+	if equipped then
+		table.insert(replaced, equipped)
+	end
+	local offhand = if d.slot == "weapon" and isTwoHanded(item) then c.offhand else nil
+	if offhand and offhand.uid ~= item.uid then
+		table.insert(replaced, offhand)
+	else
+		offhand = nil
+	end
+	local delta = if c.class
+		then ItemScore.percentDelta(item, replaced, { classId = c.class, level = c.level, pathId = c.pathId })
+		else nil
+	local titled = false
+	if delta then
+		titled = true
+		b.add("compareTitle", Locale.T("tooltip.compare", nil, lang), "muted")
+		for _, axis in PCT_AXES do
+			local v: number = (delta :: any)[axis]
+			if math.abs(v) >= 0.05 then
+				b.add(
+					"comparePct",
+					Locale.T(`tooltip.compare.{axis}`, { v = signedPct(v, lang) }, lang),
+					"dark",
+					{ hex = if v > 0 then "#2E8B3E" else "#B8423A", font = "bold" }
+				)
+			end
+		end
+		b.add("compareNote", Locale.T("tooltip.compare.estimate", nil, lang), "muted", { size = "small" })
+		if offhand then
+			local name = ItemName.get(lang, offhand.id, offhand.up, ItemRoll.elementOf(offhand))
+			b.add(
+				"compareNote",
+				Locale.T("tooltip.compare.offhand", { item = name }, lang),
+				"muted",
+				{ size = "small" }
+			)
+		end
+	end
+	if equipped then
+		compareLines(b, item, equipped, lang, titled)
 	end
 end
 
@@ -610,7 +760,10 @@ function TooltipModel.build(item: ItemInstance, def: ItemDef?, ctx: Ctx?): Model
 	local described = false
 	local use = d.use
 	if d.category == "equipment" then
-		equipmentLines(b, item, lang)
+		local stats = ItemRoll.itemStats(item)
+		equipmentStats(b, item, stats, lang)
+		traitLines(b, stats, lang)
+		bonusLines(b, stats, lang)
 	elseif d.category == "backpack" then
 		b.add("effect", Locale.T("tooltip.capacity", { capacity = d.capacity or 0 }, lang), "dark", { font = "bold" })
 	elseif d.category == "material" then
@@ -656,8 +809,8 @@ function TooltipModel.build(item: ItemInstance, def: ItemDef?, ctx: Ctx?): Model
 		)
 	end
 
-	if c.equipped and d.slot and d.slot ~= "backpack" then
-		compareLines(b, item, c.equipped, lang)
+	if d.slot and d.slot ~= "backpack" then
+		comparison(b, item, d, c, lang)
 	end
 
 	-- Binding
@@ -690,6 +843,23 @@ function TooltipModel.build(item: ItemInstance, def: ItemDef?, ctx: Ctx?): Model
 		b.add("sellFor", Locale.T("tooltip.sellFor", { price = gold(ItemValue.sellPrice(item, d)) }, lang), "good")
 	end
 
+	-- S68: how to open the details of a row (only when the caller says which input is used).
+	if c.input then
+		local any = false
+		for _, entry in b.lines do
+			if entry.detail then
+				any = true
+				break
+			end
+		end
+		if any then
+			local text = if c.input == "touch"
+				then Locale.T("tooltip.detailsHint.touch", nil, lang)
+				else Locale.T("tooltip.detailsHint.mouse", { key = c.detailsKey or "Alt" }, lang)
+			b.add("detailsHint", text, "muted", { size = "small" })
+		end
+	end
+
 	-- Action hint
 	local hints = if c.hints ~= nil then c.hints else c.shopEntry == nil
 	if hints then
@@ -700,6 +870,284 @@ function TooltipModel.build(item: ItemInstance, def: ItemDef?, ctx: Ctx?): Model
 		end
 	end
 	return { lines = b.lines }
+end
+
+-- Details panel (S68, STATY 11) ------------------------------------------------------------------------------
+
+-- The number behind a cap reference; nil when the key is unknown (tooltip.spec keeps every reference resolvable).
+function TooltipModel.capValue(ref: Types.CapRef): number?
+	local value: any = nil
+	if ref.source == "stat" then
+		local def = Stats.get(ref.key)
+		value = def and def.cap
+	elseif ref.source == "combat" then
+		value = (Combat :: any)[ref.key]
+	elseif ref.source == "category" then
+		value = BuffCategories.caps[ref.key]
+	elseif ref.source == "luck" then
+		value = (Luck :: any)[ref.key]
+	end
+	return if type(value) == "number" then value else nil
+end
+
+-- A multiplier like "0,6" (at most two decimals, trailing zeros dropped).
+local function fraction(value: number, lang: string): string
+	local text = string.format("%.2f", value)
+	text = string.gsub(text, "0+$", "")
+	text = string.gsub(text, "%.$", "")
+	return if lang == "pl" then (string.gsub(text, "%.", ",")) else text
+end
+
+-- Cap text: stats format like the Character window, everything else as a percentage.
+local function capText(ref: Types.CapRef, lang: string): string?
+	local cap = TooltipModel.capValue(ref)
+	if not cap then
+		return nil
+	end
+	if ref.source == "stat" then
+		return formatStat(ref.key, cap, lang)
+	end
+	return traitNumber(cap, lang) .. "%"
+end
+
+-- The cap of a bonus line: its capRef, else the cap of its stat in Data/Stats.
+local function bonusCap(def: Bonuses.BonusDef, lang: string): string?
+	if def.capRef then
+		return capText(def.capRef, lang)
+	end
+	local stat = def.stat and (ALIASES[def.stat] or def.stat)
+	local statDef = stat and Stats.get(stat)
+	if statDef and statDef.cap then
+		return formatStat(statDef.id, statDef.cap, lang)
+	end
+	return nil
+end
+
+local function effectOf(def: Bonuses.BonusDef): string
+	local effect = def.hook or def.stat or def.id
+	return ALIASES[effect] or effect
+end
+
+local function className(classId: string, lang: string): string
+	local class = Classes.get(classId)
+	return if class then Locale.T(class.nameKey, nil, lang) else classId
+end
+
+-- "Better item" counts the line at half (Data/ItemWeights: situational hook or prefix).
+local function situational(def: Bonuses.BonusDef): boolean
+	local hook = def.hook
+	if not hook then
+		return false
+	end
+	local weight = ItemWeights.hooks[hook]
+	if weight then
+		return weight.situational == true
+	end
+	for prefix, w in ItemWeights.prefixHooks do
+		if string.sub(hook, 1, #prefix) == prefix then
+			return w.situational == true
+		end
+	end
+	return false
+end
+
+local function valueText(def: Bonuses.BonusDef, value: number, lang: string): string
+	return if def.decimals == 0 then tostring(math.floor(value + 0.5)) else decimal(value, def.decimals, lang)
+end
+
+local function bonusDetails(item: ItemInstance, id: string, v: number, quality: number?, lang: string): Details
+	local def = Bonuses.get(id)
+	if not def then
+		return { title = id, tier = "regular", rows = {} }
+	end
+	local rows: { DetailRow } = {}
+	local cap = bonusCap(def, lang)
+	local mode = def.pvp or "same"
+	local pvpValue = if mode == "ticks"
+		then Combat.pvp.dot
+		elseif mode == "half" then (Combat.pvp :: any)[effectOf(def)] or Combat.pvpModifier
+		else Combat.pvpModifier
+	local args: { [string]: any } = {
+		cap = cap or "",
+		pvp = fraction(pvpValue, lang),
+		threshold = math.floor(Combat.lowHpFraction * 100 + 0.5),
+		gap = traitNumber(Combat.resourceOnHitGap, lang),
+	}
+
+	-- does
+	local param = def.param and Bonuses.params[def.param]
+	local does: string
+	if param and def.of then
+		local key = if param.over == "family"
+			then (if param.prefix == "vs_" then "bonusInfo.vsFamily" else "bonusInfo.resFamily")
+			else (if param.prefix == "vs_" then "bonusInfo.vsClass" else "bonusInfo.resClass")
+		args.family = if param.over == "family" then Locale.T(`family.{def.of}`, nil, lang) else nil
+		args.class = if param.over == "class" then className(def.of, lang) else nil
+		does = Locale.T(key, args, lang)
+	else
+		local key = `bonusInfo.{effectOf(def)}`
+		if Locale.has(key, lang) then
+			does = Locale.T(key, args, lang)
+		else
+			local stat = statName(lang, def.stat or def.id)
+			local shown = valueText(def, v, lang)
+			if def.mode == "pct" then
+				does = Locale.T("tooltip.detail.statPct", { stat = stat, v = shown }, lang)
+			else
+				does = Locale.T(
+					"tooltip.detail.statAdd",
+					{ stat = stat, v = if def.percent then shown .. "%" else shown },
+					lang
+				)
+			end
+		end
+	end
+	table.insert(rows, { role = "does", text = does, tone = "dark" })
+
+	-- range
+	local itemDef = Items.get(item.id)
+	if itemDef and itemDef.fixedBonuses then
+		table.insert(rows, { role = "range", text = Locale.T("tooltip.detail.fixed", nil, lang), tone = "muted" })
+	else
+		local low, high = ItemRoll.bonusRange(id, item.ilvl, item.rarity)
+		local q = quality or ItemRoll.bonusQuality(id, v, item.ilvl, item.rarity)
+		table.insert(rows, {
+			role = "range",
+			text = Locale.T("tooltip.detail.range", {
+				min = valueText(def, low, lang),
+				max = valueText(def, high, lang),
+				q = math.floor(math.clamp(q, 0, 1) * 100 + 0.5),
+			}, lang),
+			tone = "muted",
+		})
+	end
+
+	if cap then
+		table.insert(rows, { role = "cap", text = Locale.T("tooltip.detail.cap", { cap = cap }, lang), tone = "muted" })
+	end
+	table.insert(
+		rows,
+		{ role = "pvp", text = Locale.T(`tooltip.detail.pvp.{mode}`, { pvp = args.pvp }, lang), tone = "muted" }
+	)
+	if situational(def) then
+		table.insert(
+			rows,
+			{ role = "situational", text = Locale.T("tooltip.detail.situational", nil, lang), tone = "muted" }
+		)
+	end
+	return { title = bonusText(lang, id, v), tier = def.tier, rows = rows }
+end
+
+-- Path nodes whose passive hooks strengthen a trait (ItemTraits nodeHooks), in path and row order. `paths` is
+-- Data/Paths.list in the game (tests pass their own).
+function TooltipModel.traitNodes(
+	traitId: string,
+	paths: { any },
+	owned: { [string]: number }?,
+	lang: string
+): { TraitNode }
+	local def = ItemTraits.get(traitId)
+	local hooks: { string } = if def and def.nodeHooks then def.nodeHooks else {}
+	local out: { TraitNode } = {}
+	if #hooks == 0 then
+		return out
+	end
+	local have: { [string]: number } = owned or {}
+	for _, path in paths do
+		for _, row in path.rows or {} do
+			for _, node in row.nodes or {} do
+				local nodeHooks = node.passive and node.passive.hooks
+				local match = false
+				if nodeHooks then
+					for _, hook in hooks do
+						if nodeHooks[hook] ~= nil then
+							match = true
+							break
+						end
+					end
+				end
+				if match then
+					table.insert(out, {
+						path = Locale.T(path.nameKey, nil, lang),
+						node = Locale.T(node.nameKey, nil, lang),
+						nodeId = node.id,
+						owned = (have[node.id] or 0) > 0,
+					})
+				end
+			end
+		end
+	end
+	return out
+end
+
+local function traitDetails(item: ItemInstance, traitId: string, c: Ctx, lang: string): Details
+	local def = ItemTraits.get(traitId)
+	if not def then
+		return { title = traitId, tier = "trait", rows = {} }
+	end
+	local roll = ItemRoll.trait(item)
+	local power = if roll and roll.id == traitId then roll.power else ItemRoll.traitPower(item.rarity, item.up)
+	local args: { [string]: any } = TooltipModel.traitArgs(traitId, power, lang)
+	args.dot = fraction(Combat.pvp.dot, lang)
+	args.frost = fraction(Combat.pvp.frostbite, lang)
+	local rows: { DetailRow } = {}
+	table.insert(rows, { role = "does", text = Locale.T(`trait.{traitId}.info`, args, lang), tone = "dark" })
+	table.insert(
+		rows,
+		{ role = "growth", text = Locale.T("tooltip.detail.traitPower", { power = decimal(power, 2, lang) }, lang) }
+	)
+	-- Full Draw: the bonus with the equipped weapon's speed (the server uses the same Traits.drawBonus).
+	local main = c.mainHand
+	local weapon = main and ItemRoll.itemStats(main).weapon
+	if def.hook == "traitFullDraw" and main and weapon then
+		local bonus = Traits.drawBonus(def.value * power, weapon.speed)
+		table.insert(rows, {
+			role = "weapon",
+			text = Locale.T("tooltip.detail.quiverMain", {
+				weapon = ItemName.get(lang, main.id, main.up, ItemRoll.elementOf(main)),
+				v = traitNumber(bonus, lang),
+			}, lang),
+		})
+	end
+	local cap = def.capRef and capText(def.capRef, lang)
+	if cap then
+		table.insert(rows, { role = "cap", text = Locale.T("tooltip.detail.cap", { cap = cap }, lang), tone = "muted" })
+	end
+	local pvpKey = `trait.{traitId}.pvp`
+	local pvp = if Locale.has(pvpKey, lang)
+		then Locale.T(pvpKey, args, lang)
+		elseif def.pvp <= 0 then Locale.T("tooltip.detail.pvp.none", nil, lang)
+		elseif def.pvp >= 1 then Locale.T(
+			"tooltip.detail.pvp.same",
+			{ pvp = fraction(Combat.pvpModifier, lang) },
+			lang
+		)
+		else Locale.T("tooltip.detail.pvp.mul", { mul = fraction(def.pvp, lang) }, lang)
+	table.insert(rows, { role = "pvp", text = pvp, tone = "muted" })
+	local nodes = TooltipModel.traitNodes(traitId, PathData.list, c.nodes, lang)
+	if #nodes > 0 then
+		local names: { string } = {}
+		for _, node in nodes do
+			local text = `{node.node} ({node.path})`
+			table.insert(names, if node.owned then `<b>{text}</b>` else text)
+		end
+		table.insert(
+			rows,
+			{ role = "nodes", text = Locale.T("tooltip.detail.nodes", { list = table.concat(names, ", ") }, lang) }
+		)
+	end
+	return { title = Locale.T(def.nameKey, nil, lang), tier = "trait", rows = rows }
+end
+
+-- The details of one row of `item`'s tooltip (a bonus line or the trait): what it does, its range, cap and PvP rule.
+function TooltipModel.details(item: ItemInstance, ref: DetailRef, ctx: Ctx?): Details
+	local c: Ctx = ctx or {}
+	local lang = c.lang or Locale.getLanguage()
+	if ref.kind == "trait" then
+		return traitDetails(item, ref.id, c, lang)
+	end
+	local bonus = ref :: { kind: "bonus", id: string, v: number, quality: number? }
+	return bonusDetails(item, bonus.id, bonus.v, bonus.quality, lang)
 end
 
 -- Compact one-line summary for shop rows (S31 C.2), e.g. "Poz. 15 · Obr. 39 · 1,20/s · DPS 46,8".

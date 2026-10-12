@@ -36,6 +36,10 @@ export type ItemInstance = {
 
 export type Stats = { str: number, dex: number, int: number, vit: number }
 
+-- S68: where the cap of an item line or trait is enforced (TooltipModel.capValue): "stat" = Data/Stats cap,
+-- "combat" = Data/Combat[key], "category" = Data/BuffCategories.caps[key], "luck" = Data/Luck[key].
+export type CapRef = { source: "stat" | "combat" | "category" | "luck", key: string }
+
 export type Location = { map: string, x: number, y: number, z: number }
 
 export type PotionBar = { hp: string?, mana: string?, energy: string? }

@@ -20,7 +20,7 @@
   } from "../lib/items-filters";
 
   interface Row {
-    id: string; base: string; name: string; type: string; slot: string; category: string; classes: string[];
+    id: string; base: string; name: string; type: string; trait?: string; slot: string; category: string; classes: string[];
     allClasses: boolean; level: number; tier: number | null; rarities: string[]; stats: Record<string, string>;
     statNum: Record<string, number>; statLabel: string; glyph: string; color: string; icon: string | null; href: string; key: string;
   }
@@ -233,7 +233,7 @@
                   <a href={withR(e.row, r)} style={`color: var(--vw-r-${r}-text)`} onfocus={() => { if (!mobile) select(e.row, r); }} onclick={(ev) => { if (!mobile && !ev.ctrlKey && !ev.metaKey) { ev.preventDefault(); select(e.row, r); } }}>{e.row.name}</a>
                   <span class="cls">{e.row.allClasses ? labels.anyClass : e.row.classes.map((c) => classes.find((x) => x.id === c)?.name ?? c).join(", ")}</span>
                 </td>
-                <td class="type">{e.row.type}</td>
+                <td class="type">{e.row.type}{#if e.row.trait}<span class="trait"> · {e.row.trait}</span>{/if}</td>
                 <td class="lvcell">
                   {#if e.group.tiers.length > 1}
                     <span class="stepper">
@@ -313,6 +313,7 @@
   .name a { display: block; font-weight: 800; font-size: 17px; }
   .cls { display: block; font-size: 13px; color: var(--vw-text-muted); }
   .type { color: var(--vw-text-soft); }
+  .type .trait { color: var(--vw-text-muted); }
   .lvcell { font-weight: 800; white-space: nowrap; }
   .stepper { display: inline-flex; align-items: center; gap: 4px; }
   .stepper button { width: 30px; height: 30px; background: var(--vw-panel-raised); border: 1px solid var(--vw-border); color: var(--vw-gold-bright); font: 800 16px/1 var(--vw-font-ui); cursor: pointer; }

@@ -35,7 +35,7 @@
     detail.fixed
       ? `${detail.fixed.length} ${labels.bonusesFixed}`
       : rarity && detail.equipment
-        ? `${rarity.bonusMin === rarity.bonusMax ? rarity.bonusMin : `${rarity.bonusMin}–${rarity.bonusMax}`}${rarity.legendaryLines ? ` + ${rarity.legendaryLines}` : ""} ${labels.random}`
+        ? `${rarity.bonusMin === rarity.bonusMax ? rarity.bonusMin : `${rarity.bonusMin}–${rarity.bonusMax}`}${rarity.legendaryLines + rarity.mythicLines ? ` + ${rarity.legendaryLines + rarity.mythicLines}` : ""} ${labels.random}`
         : null,
   );
   const value = $derived(detail.value[data.rarity]?.[data.up]);

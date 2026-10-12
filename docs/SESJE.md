@@ -3660,3 +3660,42 @@ Pliki: `Data/{Bonuses,Combat,ItemWeights,AdminCommands,Paths/Types,Localization/
 `Logic/{ItemRoll,Loot,Damage,FightSim,ItemScore}`, `Services/{CombatService,LootService,DungeonService}`,
 `Admin/Items`, `Controllers/LootComfortController`, `tests/{Balance,items,data,lootcomfort,damage,paths}`,
 `tools/WikiData/Leak`, dane wiki, `docs/{STATY,DESIGN,ROZWOJ,DECYZJE,SESJE,PROGRESS}.md`.
+
+### S68: Przedmioty 7: szczegóły linii, porównanie w procentach, przedmioty na wiki
+
+- `Logic/TooltipModel`: kolejność STATY 11 (`equipmentStats`, `traitLines`, `bonusLines` z `TIER_ORDER`), `Line.detail`,
+  nowe pola `Ctx` (`pathId`, `nodes`, `mainHand`, `offhand`, `input`, `detailsKey`), `details` (bonus: `does`, `range`,
+  `cap`, `pvp`, `situational`; cecha: `does`, `growth`, `weapon` dla Naciągu, `cap`, `pvp`, `nodes`), `traitNodes`,
+  `capValue`, podpowiedź `detailsHint`, blok porównania z `comparePct` / `compareNote` (druga ręka przy dwuręcznej,
+  `equip.error.twoHanded` przy drugiej ręce obok dwuręcznej). `traitArgs` z dodatkowymi liczbami danych.
+- `Logic/ItemScore`: `weaponDps`, `percentDelta`, `replaced` (przeniesione z `LootComfortController`).
+- Dane: `Types.CapRef`, `BonusDef.capRef`/`pvp` (tabela A4 S68), `ItemTraits.nodeHooks`/`capRef`; akcja klawisza
+  `item_details` (LeftAlt). Bez zmian zapisu i liczb balansu.
+- Klient: `ItemTooltip` (wiersze `DetailRow` z `Activated`/`MouseEnter`/`MouseLeave`, ikona „i” na dotyku, panel
+  `ItemDetail` w kolorze rzędu z „×” na dotyku, przypięcie klawiszem, `equippedFor` przez `ItemScore.replaced`),
+  `DragDrop.SetBlocker`.
+- Admin: `/tooltip <id> [pl|en] [rzadkość] [lines|details]` (porównanie jak w grze, tryb szczegółów).
+- Teksty PL/EN: `tooltip.detail*`, `tooltip.compare.*`, `tooltip.detailsHint.*`, `keys.itemDetails`, `bonusInfo.*`
+  (każdy hak, znaczniki, linie S62–S64 i statystyki z listy G2), `bonusParam.*`, `trait.<id>.info` (24),
+  `trait.<id>.pvp` (8), `admin.tooltip.detail`.
+- Wiki: eksport (`bonuses.params`, `param`/`of`, częstość na typ → klasa → rzadkość, `bases.affinity`/`poolClasses`,
+  `items.traits`, `rarities.mythicLines`, `monsters.family` = rodzina gry, `families`, `dodge`), `docs/PRZEDMIOTY.md`
+  (kolumna linii mitycznych, linia cechy przy bazie); strony: `item-model.ts` (`trait`, `meta`, `tier`, pule po klasie),
+  `items.ts` (`poolOf` po typie i klasie, znaczniki z wariantami, `boost`), `ItemUpgradeView` (sekcja Cecha, przełącznik
+  klasy, ×3, warianty, pula mityczna), `ItemTooltip`/`ItemTooltipLive` (cecha, mityczne), `ItemsBrowser` (nazwa cechy),
+  `bestiary.familyName` w `MonsterView`/`MonsterCard`/`og.ts`, wiersz „Unik” i zdanie o łupie rodziny, `walka.mdx` /
+  `combat.mdx` (unik potworów tylko na ataki podstawowe). Node był: `npm run data`, `npm test`, `astro check`, `eslint`,
+  `npm run build` i `budgets` przeszły.
+- Testy: `tooltip.spec` (nowy: kolejność, szczegóły każdej linii PL/EN, warianty, `capValue`, cechy Zwykły +0 / Mityczny
+  +9, `traitNodes`, podpowiedź, `comparePct`), `lootcomfort` (`percentDelta`, `replaced`), `wikidump` (częstość na typ i
+  klasę, `affinity`, cechy, rodziny, `mythicLines`, allowlista), wiki `itemDetail.test` i `bestiary.test`.
+- Przekazanie sesjom klas: węzeł, który wzmacnia cechę hakiem spoza jej `ItemTraits.nodeHooks`, dopisuje ten hak do
+  listy (szczegóły cechy pokażą go same). Węzły z `nodeHooks` dziś: brak (lista wypełni się z S71+).
+
+Pliki: `Types`, `Data/{Bonuses,ItemTraits,Keybinds,AdminCommands,Localization/pl,Localization/en}`,
+`Logic/{TooltipModel,ItemScore}`, `client/UI/{DragDrop,Components/ItemTooltip}`,
+`Controllers/LootComfortController`, `Admin/Items`, `tools/WikiData/{Items,Basics,Monsters,ItemsMd,Leak}`,
+`tests/{tooltip,lootcomfort,wikidump}.spec`, `wiki/src/{lib/item-model,lib/items,lib/bestiary,lib/og,lib/itemDetail.test,
+lib/bestiary.test,islands/ItemUpgradeView,islands/ItemTooltipLive,islands/ItemsBrowser,components/ItemTooltip,
+components/MonsterCard,views/ItemView,views/MonsterView,i18n/pl,i18n/en,content/mechanics/*}`, dane wiki,
+`docs/{STATY,WIKI,DECYZJE,SESJE,PROGRESS,PRZEDMIOTY}.md`.

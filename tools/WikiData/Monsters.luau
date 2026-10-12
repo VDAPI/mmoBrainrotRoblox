@@ -17,7 +17,7 @@ local Json = require("./Json")
 local Loot = require("../../src/shared/Logic/Loot")
 local LootTables = require("../../src/shared/Data/LootTables")
 local MonsterAbilities = require("../../src/shared/Data/MonsterAbilities")
-local MonsterLooks = require("../../src/shared/Data/MonsterLooks")
+local Families = require("../../src/shared/Data/Families")
 local MonsterStats = require("../../src/shared/Logic/MonsterStats")
 local MonsterData = require("../../src/shared/Data/Monsters")
 local Names = require("./Names")
@@ -129,7 +129,8 @@ S.file(
 			moveSpeed = "number",
 			lootTable = "string",
 			classBias = "number",
-			["family?"] = "string",
+			family = enum("FamilyId"), -- S68: game family (Data/Families), no longer the body plan of the look
+			["dodge?"] = "number", -- S68: % dodge against basic attacks (MonsterStats, after dodgeCap)
 			["ability?"] = Ability,
 			hpMul = "number",
 			atkMul = "number",
@@ -138,6 +139,7 @@ S.file(
 			kindReward = "number",
 			variants = map(VariantInfo),
 		})),
+		families = map(rec("FamilyInfo", { name = "name" })), -- S68
 	})
 )
 
@@ -304,7 +306,6 @@ function Monsters.build(ctx: any): any
 		if not ctx.hidden[def.id] then
 			local tableDef = LootTables.get(def.lootTable)
 			local abilityDef = if def.ability then MonsterAbilities.get(def.ability) else nil
-			local look = MonsterLooks.get(def.id, def.region)
 			local variants = {}
 			for variant, spawners in spawnersOf(def.id) do
 				-- Spawn levels with their spawner's highest level (drops never above it).
@@ -418,6 +419,7 @@ function Monsters.build(ctx: any): any
 				ability = Clean.clean(abilityDef)
 				ability.name = Names.opt(`ability.{abilityDef.id}.name`)
 			end
+			local dodge = MonsterStats.compute(def, def.levels.min, "normal").dodge
 			table.insert(list, {
 				id = def.id,
 				name = Names.of(def.nameKeys.normal),
@@ -433,7 +435,8 @@ function Monsters.build(ctx: any): any
 				moveSpeed = def.moveSpeed,
 				lootTable = def.lootTable,
 				classBias = if tableDef then tableDef.classBias else 0,
-				family = if look then look.plan else nil,
+				family = def.family,
+				dodge = if dodge > 0 then dodge else nil,
 				ability = ability,
 				hpMul = def.hpMul,
 				atkMul = def.atkMul,
@@ -445,7 +448,11 @@ function Monsters.build(ctx: any): any
 		end
 	end
 	ctx.monsterCount = #list
-	return { monsters = list }
+	local families = {}
+	for _, id in Families.ids do
+		families[id] = { name = Names.of(`family.{id}`) }
+	end
+	return { monsters = list, families = families }
 end
 
 return Monsters

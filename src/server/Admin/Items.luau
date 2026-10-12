@@ -504,7 +504,8 @@ commands.value = function(player, args)
 	})
 end
 
--- S31: /tooltip <id> [lang]: the TooltipModel lines (rich text removed) in the panel console.
+-- S31: /tooltip <id> [lang] [rarity] [lines|details]: the TooltipModel lines (rich text removed) in the panel
+-- console, compared like the game does (S68: ItemScore.replaced, % axes); "details" prints every row's details.
 commands.tooltip = function(player, args)
 	local def = Items.get(args[1] or "")
 	if not def then
@@ -513,16 +514,47 @@ commands.tooltip = function(player, args)
 	end
 	local character = PlayerStateService.GetCharacter(player)
 	local lang = if args[2] == "en" then "en" else "pl"
-	local model = TooltipModel.build(sampleItem(def), def, {
+	local item = sampleItem(def, nil, Rarities.parse(args[3]))
+	local equipment = if character then character.equipment else {}
+	local path = if character then character.path else nil
+	local ctx: TooltipModel.Ctx = {
 		lang = lang,
 		level = if character then character.level else nil,
 		class = if character then character.class else nil,
 		merchantOpen = true,
-	})
+		pathId = if path then path.main else nil,
+		nodes = if path then path.nodes else nil,
+		mainHand = equipment.weapon,
+		offhand = equipment.offhand,
+	}
+	if character then
+		ctx.equipped = ItemScore.replaced(
+			def,
+			equipment,
+			{ classId = character.class, level = character.level, pathId = ctx.pathId }
+		)
+	end
+	local model = TooltipModel.build(item, def, ctx)
+	if args[4] == "details" then
+		for _, line in model.lines do
+			local ref = line.detail
+			if ref and line.role ~= "traitName" then
+				local details = TooltipModel.details(item, ref, ctx)
+				for _, row in details.rows do
+					reply(player, "admin.tooltip.detail", {
+						role = row.role,
+						title = TooltipModel.plain(details.title),
+						text = TooltipModel.plain(row.text),
+					})
+				end
+			end
+		end
+		return
+	end
 	for _, line in model.lines do
 		reply(player, "admin.tooltip.line", { role = line.role, text = TooltipModel.plain(line.text) })
 	end
-	local short = TooltipModel.statLine(sampleItem(def), def, lang)
+	local short = TooltipModel.statLine(item, def, lang)
 	if short then
 		reply(player, "admin.tooltip.line", { role = "statLine", text = short })
 	end

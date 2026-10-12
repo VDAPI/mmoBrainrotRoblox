@@ -39,17 +39,9 @@ local ItemController: any
 local cardScope: Scope? = nil
 local cardToken = 0
 
--- Item in the slot the candidate would replace (rings: the weaker one).
+-- Item in the slot the candidate would replace (rings: the weaker one; S68: shared with the tooltip and /tooltip).
 local function replaced(def: Items.ItemDef, ctx: ItemScore.Context): Types.ItemInstance?
-	local equipment = State.Get({ "character", "equipment" }) or {}
-	if def.slot == "ring" then
-		local a, b = equipment.ring1, equipment.ring2
-		if not a or not b then
-			return nil
-		end
-		return if ItemScore.score(a, ctx) <= ItemScore.score(b, ctx) then a else b
-	end
-	return equipment[def.slot or ""]
+	return ItemScore.replaced(def, State.Get({ "character", "equipment" }) or {}, ctx)
 end
 
 local function inventoryIndex(uid: string): number?

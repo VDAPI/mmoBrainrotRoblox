@@ -1,6 +1,8 @@
 --!strict
 -- Weapon and off-hand traits (docs/STATY.md 2A, 3): one per base type (Data/Items/Bases "trait"); strength from ItemRoll.trait (rarity baseMul x upgrades). Data only.
 
+local Types = require("../Types")
+
 export type TraitKind = "stat" | "hook" | "effect"
 
 -- S63 (STATY 5): what an "effect" trait does to the target it hits. The grown number stays in TraitDef.value (and
@@ -35,6 +37,8 @@ export type TraitDef = {
 	live: boolean, -- false: no code yet; ItemRoll.trait returns nil, tooltip and wiki hide it (all live since S65)
 	chanceCap: boolean?, -- S65: tooltip clamps {v} to Combat.onHitChanceCap (the grown value is a chance)
 	onHit: OnHit?, -- kind "effect" (S63)
+	nodeHooks: { string }?, -- S68: passive hooks of path nodes that strengthen it (tooltip details list those nodes)
+	capRef: Types.CapRef?, -- S68: cap shown in the tooltip details (enforced elsewhere)
 }
 
 -- One live on-hit trait with its effect (no optional field, so callers need no casts).
@@ -262,6 +266,38 @@ local AFFINITY: { [string]: { [string]: number } } = {
 local CLASS_AFFINITY: { [string]: { [string]: { [string]: number } } } = {
 	mace1h = { Warrior = { lifesteal = MATCH }, Cleric = { healPower = MATCH } }, -- shared base (STATY 3)
 }
+
+-- S68 (STATY 3): path node hooks that strengthen a trait and the cap it lives under. A class session that adds a
+-- node strengthening a trait through a hook not listed here adds the hook to the list.
+local function capOf(source: "stat" | "combat" | "category" | "luck", key: string): Types.CapRef
+	return table.freeze({ source = source, key = key })
+end
+local DETAILS: { [string]: { nodeHooks: { string }?, capRef: Types.CapRef? } } = {
+	swordplay = { nodeHooks = { "riposte" }, capRef = capOf("combat", "riposteCap") },
+	parry = { nodeHooks = { "block" }, capRef = capOf("combat", "blockCap") },
+	beheading = { nodeHooks = { "executioner" }, capRef = capOf("combat", "executionerCap") },
+	rendingGash = { nodeHooks = { "bleedDamage" }, capRef = capOf("combat", "onHitChanceCap") },
+	toxicBarbs = {
+		nodeHooks = { "poisonDamage", "poisonSlow", "poisonSpread" },
+		capRef = capOf("combat", "onHitChanceCap"),
+	},
+	easyPrey = { nodeHooks = { "trapRootDuration", "poisonSlow" } },
+	elementalSpark = { nodeHooks = { "elementRider" }, capRef = capOf("combat", "onHitChanceCap") },
+	elementalMight = { nodeHooks = { "elementRider" } },
+	sundering = { capRef = capOf("category", "enemyArmorItem") },
+	bonebreaker = { capRef = capOf("category", "enemyDamageDown") },
+	harrying = { capRef = capOf("category", "enemyAttackSlow") },
+	bodkinBolt = { capRef = capOf("stat", "pierce") },
+	learnedFormulae = { capRef = capOf("stat", "costReduce") },
+	savingBlow = { capRef = capOf("stat", "lifesteal") }, -- healing yourself counts towards the lifesteal cap
+	prosperity = { capRef = capOf("luck", "monsterItemCap") },
+}
+for id, detail in DETAILS do
+	local def = BY_ID[id]
+	assert(def, `ItemTraits: details of unknown trait {id}`)
+	def.nodeHooks = if detail.nodeHooks then table.freeze(detail.nodeHooks) else nil
+	def.capRef = detail.capRef
+end
 
 local function get(id: string?): TraitDef?
 	return if id then BY_ID[id] else nil

@@ -2,7 +2,7 @@
 // in both languages, with the texts and colours scripts/og-images.mjs draws (satori + sharp). Colours are plain hex
 // values (satori cannot read CSS variables): ranks from the design tokens, rarities and zones from the export.
 import { LANGS, type Lang } from "../i18n/routes";
-import { finalLevels, occurringVariants, pageVariantsOrNormal, placesOf } from "./bestiary";
+import { familyName, finalLevels, occurringVariants, pageVariantsOrNormal, placesOf } from "./bestiary";
 import { bosses, getMap, load, monsters } from "./data";
 import { name, t, type Key } from "./i18n";
 import { renderSrc } from "./renders";
@@ -61,7 +61,7 @@ export function ogManifest(): OgEntry[] {
         meta: `${levels} · ${place}`,
         chips: [
           { text: rankName(v, lang), color: rankColor(v), fill: v !== "normal" },
-          ...(m.family ? [{ text: t(lang, `family.${m.family}` as Key), color: "#9A9DA8" }] : []),
+          ...(m.family ? [{ text: familyName(m.family, lang), color: "#9A9DA8" }] : []),
           zoneChip(places[0]?.zone ?? "yellow", lang),
         ],
         render: renderSrc(m.id, v, "full")?.replace(/^\//, "") ?? null,

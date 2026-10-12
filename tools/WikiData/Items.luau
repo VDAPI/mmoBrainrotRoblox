@@ -6,8 +6,13 @@
 -- fishing chest, gathering, dismantling) and, for materials, what they are used for. Bonuses: definitions, pools,
 -- min-max for every tier and rarity (ItemRoll.rollBonusValue with roll 0 and 1) and how often each bonus appears
 -- (Monte Carlo of ItemRoll.rollItem). Icons: only after S35 (Logic/ItemIcons).
+-- S68: frequency per base type and class (a family / class variant counts under its pool marker), the markers with
+-- their variants (`params`), the traits of the types with their line for every rarity and upgrade and the texts of
+-- the tooltip details (TooltipModel, the same strings as the game), `affinity` (x3 / x0 pool weights) and
+-- `poolClasses` of every base type. Never exported: ItemWeights, nodeHooks, capRef, BonusDef.pvp (only texts).
 
 local Bonuses = require("../../src/shared/Data/Bonuses")
+local Classes = require("../../src/shared/Data/Classes")
 local Clean = require("./Clean")
 local Elements = require("../../src/shared/Data/Elements")
 local Fish = require("../../src/shared/Data/Fish")
@@ -23,6 +28,7 @@ local Recipes = require("../../src/shared/Data/Recipes")
 local Rng = require("../../src/shared/Logic/Rng")
 local Schema = require("./Schema")
 local StubRng = require("./StubRng")
+local TooltipModel = require("../../src/shared/Logic/TooltipModel")
 local UpgradeLogic = require("../../src/shared/Logic/Upgrade")
 local CraftData = require("../../src/shared/Data/Crafting")
 
@@ -33,6 +39,7 @@ local Items = {}
 
 Items.UPS = 10 -- +0..+9
 Items.BONUS_TIER_ROLLS = 10000
+Items.TYPE_ROLLS = 2000 -- S68: rolls per base type, class and rarity for the line frequency
 
 local Weapon = rec("ItemWeapon", {
 	dmg = arr("int"),
@@ -107,6 +114,17 @@ S.file(
 			bonusGroup = "string",
 			glyph = "string",
 			["trait?"] = "string", -- S62: only traits with code (live)
+			-- S68: class -> line -> pool weight when not 1 (x3 suits the trait, 0 never on this type); weapons and off-hands
+			["affinity?"] = map(map("number")),
+			poolClasses = arr(enum("ClassId")), -- S68: classes with a line frequency (bonuses.json frequency[type])
+		})),
+		-- S68: live traits (STATY 3): line for every rarity key and upgrade +0..+9, tooltip detail texts of Common +0.
+		traits = map(rec("TraitInfo", {
+			name = "name",
+			info = "name",
+			pvp = "name",
+			["cap?"] = "name",
+			line = map(arr("name")),
 		})),
 	})
 )
@@ -127,9 +145,13 @@ S.file(
 			max = "number",
 			ranges = map(map(arr("number"))),
 			tier = "string", -- S62: regular | legendary | mythic
+			["param?"] = "string", -- S68: the pool marker of a family / class variant ("@vsFamily")
+			["of?"] = "string", -- S68: family id or class id of a variant
 		})),
 		pools = map(arr("ref:bonuses")),
-		frequency = map(map(map("number"))),
+		-- S68: pool markers: name with {v}, what they range over and their variants (same range for all)
+		params = map(rec("BonusParam", { name = "name", over = "string", variants = arr("ref:bonuses") })),
+		frequency = map(map(map(map("number")))), -- S68: base type -> class -> rarity key -> line or marker -> share
 		classStats = map(arr(enum("ClassId"))),
 		rolls = "int",
 	})
@@ -312,6 +334,85 @@ local function sortedDefs(): { any }
 	return list
 end
 
+-- S68: a representative generated item of a base type (tier closest to 50) for the line frequency and the trait texts.
+local function sampleOfType(baseType: string): any
+	local best = nil
+	for _, def in sortedDefs() do
+		if def.type == baseType and def.tier and not def.fixedBonuses then
+			if not best or math.abs(def.tier - 50) < math.abs(best.tier - 50) then
+				best = def
+			end
+		end
+	end
+	return best
+end
+
+-- Classes a base type rolls its pool for: its own classes, or every class (jewellery and class-free armour).
+local function poolClassesOf(base: any): { string }
+	return if base.classes then Clean.clean(base.classes) else table.clone(Classes.order)
+end
+
+-- S68 (STATY 2B): pool weights different from 1 for each class of a weapon or off-hand type.
+local function affinityOf(base: any): { [string]: { [string]: number } }?
+	if base.slot ~= "weapon" and base.slot ~= "offhand" then
+		return nil
+	end
+	local pool: { string } = Bonuses.pools[base.bonusGroup or ""] or {}
+	local out: { [string]: { [string]: number } } = {}
+	local any = false
+	for _, classId in poolClassesOf(base) do
+		local weights: { [string]: number } = {}
+		for _, id in pool do
+			local only = Bonuses.classStats[id]
+			if not only or table.find(only, classId) then
+				local w = ItemTraits.weight(base.type, id, classId)
+				if w ~= 1 then
+					weights[id] = w
+					any = true
+				end
+			end
+		end
+		if next(weights) then
+			out[classId] = weights
+		end
+	end
+	return if any then out else nil
+end
+
+-- S68: a live trait with its line for every rarity and upgrade and the tooltip detail texts at Common +0.
+local function traitInfo(traitId: string, baseType: string): any
+	local def = ItemTraits.get(traitId) :: ItemTraits.TraitDef
+	local lines = {}
+	for _, r in Rarities.list do
+		local ups = {}
+		for up = 0, Items.UPS - 1 do
+			table.insert(
+				ups,
+				Names.combine(function(lang: string): string
+					return TooltipModel.traitLine(traitId, ItemRoll.traitPower(r.id, up), lang)
+				end)
+			)
+		end
+		lines[r.key] = ups
+	end
+	local sample = sampleOfType(baseType)
+	local item = instance(sample, Rarities.COMMON, 0)
+	local function row(role: string): any
+		local found = false
+		local name = Names.combine(function(lang: string): string
+			for _, r in TooltipModel.details(item, { kind = "trait", id = traitId }, { lang = lang }).rows do
+				if r.role == role then
+					found = true
+					return TooltipModel.plain(r.text)
+				end
+			end
+			return ""
+		end)
+		return if found then name else nil
+	end
+	return { name = Names.of(def.nameKey), info = row("does"), pvp = row("pvp"), cap = row("cap"), line = lines }
+end
+
 function Items.build(ctx: any): any
 	local ItemIcons = if ctx.features.itemIcons then (require :: any)("../../src/shared/Logic/ItemIcons") else nil
 	local used = usedForIndex()
@@ -431,9 +532,11 @@ function Items.build(ctx: any): any
 		categories[def.category] = categories[def.category] or { name = Names.of(`category.{def.category}`) }
 	end
 	local bases = {}
+	local traits = {}
 	for _, base in ItemData.bases.list do
 		-- S62: a trait id only when it has code (live = false traits are unreleased content).
 		local traitDef = ItemTraits.get(base.trait)
+		local live = traitDef ~= nil and traitDef.live
 		bases[base.type] = {
 			name = Names.of(`itemBase.{base.type}`),
 			slot = base.slot,
@@ -441,33 +544,15 @@ function Items.build(ctx: any): any
 			elemental = base.elemental == true,
 			bonusGroup = base.bonusGroup,
 			glyph = base.glyph,
-			trait = if traitDef and traitDef.live then traitDef.id else nil,
+			trait = if live and traitDef then traitDef.id else nil,
+			affinity = affinityOf(base),
+			poolClasses = if sampleOfType(base.type) then poolClassesOf(base) else {},
 		}
-	end
-	return { items = list, slots = slots, categories = categories, bases = bases }
-end
-
--- A representative item of a bonus pool (middle tier) for the frequency Monte Carlo.
-local function sampleOf(pool: string): any
-	local best = nil
-	for _, def in sortedDefs() do
-		if def.bonusGroup == pool and def.tier and not def.fixedBonuses and not def.classes then
-			if not best or math.abs(def.tier - 50) < math.abs(best.tier - 50) then
-				best = def
-			end
+		if live and traitDef and not traits[traitDef.id] and sampleOfType(base.type) then
+			traits[traitDef.id] = traitInfo(traitDef.id, base.type)
 		end
 	end
-	if best then
-		return best
-	end
-	for _, def in sortedDefs() do
-		if def.bonusGroup == pool and def.tier and not def.fixedBonuses then
-			if not best or math.abs(def.tier - 50) < math.abs(best.tier - 50) then
-				best = def
-			end
-		end
-	end
-	return best
+	return { items = list, slots = slots, categories = categories, bases = bases, traits = traits }
 end
 
 function Items.bonuses(ctx: any): any
@@ -500,33 +585,52 @@ function Items.bonuses(ctx: any): any
 			max = b.max,
 			ranges = ranges,
 			tier = b.tier,
+			param = b.param,
+			of = b.of,
 		})
 	end
-	-- How often each bonus appears on a rolled item of a pool and rarity (Monte Carlo, fixed seed per pool).
-	local rolls = math.min(Items.BONUS_TIER_ROLLS, ctx.rolls)
+	-- S68: pool markers of the family and class lines.
+	local params = {}
+	for _, id in Clean.keys(Bonuses.params) do
+		local param = Bonuses.params[id]
+		params[id] = {
+			name = Names.of(`bonusParam.{string.sub(id, 2)}`),
+			over = param.over,
+			variants = table.clone(Bonuses.variants(id)),
+		}
+	end
+	-- How often each line appears on a rolled item of a base type, for each class it rolls for, and rarity (Monte
+	-- Carlo, fixed seed per type, class and rarity). A variant counts under its marker (S68, STATY 13).
+	local rolls = math.min(Items.TYPE_ROLLS, ctx.rolls)
 	local frequency = {}
-	for _, pool in Clean.keys(Bonuses.pools) do
-		local sample = sampleOf(pool)
+	for _, base in ItemData.bases.list do
+		local sample = if base.bonusGroup then sampleOfType(base.type) else nil
 		if sample then
-			local byRarity = {}
-			for _, r in Rarities.list do
-				if r.bonusMax > 0 or r.legendaryLines > 0 then
-					local rng = Rng.new(StubRng.seedOf(`bonus:{pool}:{r.key}`))
-					local counts: { [string]: number } = {}
-					for _ = 1, rolls do
-						local item = ItemRoll.rollItem(sample.id, sample.tier, r.id, rng, "wiki")
-						for _, bonus in item.bonuses do
-							counts[bonus.stat] = (counts[bonus.stat] or 0) + 1
+			local byClass = {}
+			for _, classId in poolClassesOf(base) do
+				local byRarity = {}
+				for _, r in Rarities.list do
+					if r.bonusMax > 0 or r.legendaryLines > 0 or r.mythicLines > 0 then
+						local rng = Rng.new(StubRng.seedOf(`bonus:{base.type}:{classId}:{r.key}`))
+						local counts: { [string]: number } = {}
+						for _ = 1, rolls do
+							local item = ItemRoll.rollItem(sample.id, sample.tier, r.id, rng, "wiki", classId)
+							for _, bonus in item.bonuses do
+								local def = Bonuses.get(bonus.stat)
+								local key = if def and def.param then def.param else bonus.stat
+								counts[key] = (counts[key] or 0) + 1
+							end
 						end
+						local shares = {}
+						for _, stat in Clean.keys(counts) do
+							shares[stat] = counts[stat] / rolls
+						end
+						byRarity[r.key] = shares
 					end
-					local shares = {}
-					for _, stat in Clean.keys(counts) do
-						shares[stat] = counts[stat] / rolls
-					end
-					byRarity[r.key] = shares
 				end
+				byClass[classId] = byRarity
 			end
-			frequency[pool] = byRarity
+			frequency[base.type] = byClass
 		end
 	end
 	local classStats = {}
@@ -536,6 +640,7 @@ function Items.bonuses(ctx: any): any
 	return {
 		bonuses = list,
 		pools = Clean.clean(Bonuses.pools),
+		params = params,
 		frequency = frequency,
 		classStats = classStats,
 		rolls = rolls,

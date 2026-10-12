@@ -7,6 +7,8 @@
 -- S31: "view:*" slots (shop rows, buyback, crafting, mail, auction, quest rewards ...) are owned here: no drag,
 -- drop or activation. On touch a tap selects the slot (ItemTooltip shows the selected slot's tooltip); a second
 -- tap on it or a tap anywhere else hides it again. The mouse only hovers them (tooltip on hover).
+-- S68: a blocker (ItemTooltip: its panels) swallows touches on top of slots, so a tap on an open tooltip line never
+-- selects, activates, moves or opens the menu of the slot under it.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -43,6 +45,18 @@ export type Handlers = {
 }
 
 local handlerSets: { Handlers } = {}
+
+-- S68: screen points (pixels) covered by something drawn above the slots that takes touches itself.
+local blocker: ((screenPosition: Vector2) -> boolean)? = nil
+
+function DragDrop.SetBlocker(fn: ((screenPosition: Vector2) -> boolean)?)
+	blocker = fn
+end
+
+local function blocked(position: Vector2): boolean
+	local fn = blocker
+	return fn ~= nil and fn(position)
+end
 
 -- Item getters of registered slots (ItemSlot passes the same getter as its tooltip), for the view slots.
 local itemGetters: { [string]: () -> any } = {}
@@ -142,6 +156,9 @@ function DragDrop.register(ownerScope: Fusion.Scope<any>, object: GuiObject, slo
 					pressed = { slotId = slotId, at = Vector2.new(input.Position.X, input.Position.Y) }
 				end
 			elseif input.UserInputType == Enum.UserInputType.Touch then
+				if blocked(Vector2.new(input.Position.X, input.Position.Y)) then
+					return
+				end
 				local selected = Fusion.peek(DragDrop.Selected)
 				if selected == slotId then
 					DragDrop.Selected:set(nil)
@@ -221,6 +238,8 @@ UserInputService.InputEnded:Connect(function(input)
 			and start
 			and (position - start).Magnitude <= LONG_PRESS_SLOP
 			and slotAt(position) ~= selected
+			and not blocked(start)
+			and not blocked(position)
 		then
 			DragDrop.Selected:set(nil)
 		end

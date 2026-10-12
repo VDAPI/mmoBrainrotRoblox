@@ -33,6 +33,11 @@ export interface BestiaryEntry extends FilterEntry {
   href: string;
 }
 
+/** Name of a game monster family (S68: monsters.json families, Data/Families), "" when unknown. */
+export function familyName(id: string | undefined, lang: Lang): string {
+  return id ? name(load("monsters").families[id]?.name, lang) : "";
+}
+
 /** Variants that live in the world (have spawns), in rank order. */
 export function occurringVariants(m: Monster): MonsterRank[] {
   return VARIANTS.filter((v) => (m.variants[v]?.spawns.length ?? 0) > 0);

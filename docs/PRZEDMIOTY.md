@@ -1,17 +1,17 @@
 # Vaelthorn: przedmioty
 
 > Plik generowany: `lune run tools/wikidump.luau` (dane gry, te same co wiki). Nie edytuj ręcznie.
-> Odcisk danych 9dea04e6 (`wiki/src/data/meta.json`).
+> Odcisk danych 40eb2975 (`wiki/src/data/meta.json`).
 
 ## Rzadkości
 
-| Rzadkość | Kolor | Bonusy | Linie legendarne | Mnożnik statystyk | Mnożnik wartości |
-|---|---|---|---|---|---|
-| Zwykły | `#9DA3AB` | 0 | 0 | ×1 | ×1 |
-| Unikatowy | `#F2D33A` | 2 | 0 | ×1,05 | ×1,12 |
-| Heroiczny | `#3D8BFF` | 3 | 0 | ×1,12 | ×1,25 |
-| Legendarny | `#FF9F1C` | 3 | 1 | ×1,16 | ×1,45 |
-| Mityczny | `#E5302A` | 3 | 2 | ×1,22 | ×1,7 |
+| Rzadkość | Kolor | Bonusy | Linie legendarne | Linie mityczne | Mnożnik statystyk | Mnożnik wartości |
+|---|---|---|---|---|---|---|
+| Zwykły | `#9DA3AB` | 0 | 0 | 0 | ×1 | ×1 |
+| Unikatowy | `#F2D33A` | 2 | 0 | 0 | ×1,05 | ×1,12 |
+| Heroiczny | `#3D8BFF` | 3 | 0 | 0 | ×1,12 | ×1,25 |
+| Legendarny | `#FF9F1C` | 3 | 1 | 0 | ×1,16 | ×1,45 |
+| Mityczny | `#E5302A` | 3 | 2 | 1 | ×1,22 | ×1,7 |
 
 Źródła dropu: szansa przedmiotu na zabicie, liczba i najwyższa możliwa rzadkość (sufit).
 
@@ -378,6 +378,8 @@ Legendarne i Mityczne przedmioty dają też osobiste rzuty bossów (S30), a nazw
 
 #### Kula (`orb`) · Mag
 
+Cecha: **Soczewka mocy**: +6% obrażeń umiejętności
+
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|
 | Prosta Kula | 1 | Atak magiczny % 8 | 5 | — |
@@ -403,6 +405,8 @@ Legendarne i Mityczne przedmioty dają też osobiste rzuty bossów (S30), a nazw
 | Smocza Kula | 100 | Atak magiczny % 12 | 480 | — |
 
 #### Kołczan (`quiver`) · Łowca
+
+Cecha: **Naciąg**: Strzał po umiejętności +30% × szybk.
 
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|
@@ -430,6 +434,8 @@ Legendarne i Mityczne przedmioty dają też osobiste rzuty bossów (S30), a nazw
 
 #### Relikwia (`relic`) · Kapłan
 
+Cecha: **Pomyślność**: +8% szansy na przedmiot
+
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|
 | Prosta Relikwia | 1 | Regeneracja życia (na s) 0,6, Atak magiczny % 5 | 5 | — |
@@ -456,6 +462,8 @@ Legendarne i Mityczne przedmioty dają też osobiste rzuty bossów (S30), a nazw
 
 #### Tarcza (`shield`) · Wojownik, Kapłan
 
+Cecha: **Zastawa**: 5% bloku, blok leczy 0,5% HP
+
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|
 | Prosta Tarcza | 1 | Obrona 5, hp 14 | 5 | — |
@@ -481,6 +489,8 @@ Legendarne i Mityczne przedmioty dają też osobiste rzuty bossów (S30), a nazw
 | Smocza Tarcza | 100 | Obrona 163, hp 410 | 480 | — |
 
 #### Księga (`tome`) · Mag
+
+Cecha: **Wyuczone formuły**: Umiejętności -8% many
 
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|
@@ -566,6 +576,8 @@ Legendarne i Mityczne przedmioty dają też osobiste rzuty bossów (S30), a nazw
 
 #### Topór (`axe1h`) · Wojownik
 
+Cecha: **Żniwo**: Zabicie potwora leczy 1% HP
+
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|
 | Prosty Topór | 1 | obr. 9, szybkość 1,05 | 6 | — |
@@ -591,6 +603,8 @@ Legendarne i Mityczne przedmioty dają też osobiste rzuty bossów (S30), a nazw
 | Smoczy Topór | 100 | obr. 258, szybkość 1,05 | 600 | — |
 
 #### Topór Bojowy (`axe2h`) · Wojownik
+
+Cecha: **Rana rąbana**: 15%: rana 30% ciosu w 4 s
 
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|
@@ -618,6 +632,8 @@ Legendarne i Mityczne przedmioty dają też osobiste rzuty bossów (S30), a nazw
 
 #### Łuk (`bow`) · Łowca
 
+Cecha: **Jadowite groty**: 15%: trucizna 30% w 5 s
+
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|
 | Prosty Łuk | 1 | obr. 9, szybkość 1 | 6 | — |
@@ -643,6 +659,8 @@ Legendarne i Mityczne przedmioty dają też osobiste rzuty bossów (S30), a nazw
 | Smoczy Łuk | 100 | obr. 260, szybkość 1 | 600 | — |
 
 #### Kusza (`crossbow`) · Łowca
+
+Cecha: **Łatwy cel**: +10% na celach pod kontrolą
 
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|
@@ -670,6 +688,8 @@ Legendarne i Mityczne przedmioty dają też osobiste rzuty bossów (S30), a nazw
 
 #### Cep (`flail1h`) · Kapłan
 
+Cecha: **Wstrząs**: 6%: ogłuszenie 0,5 s
+
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|
 | Prosty Cep | 1 | obr. 9, obr. mag. 10, szybkość 0,95 | 6 | — |
@@ -695,6 +715,8 @@ Legendarne i Mityczne przedmioty dają też osobiste rzuty bossów (S30), a nazw
 | Smoczy Cep | 100 | obr. 260, obr. mag. 271, szybkość 0,95 | 600 | — |
 
 #### Młot Wojenny (`hammer2h`) · Wojownik
+
+Cecha: **Niszczenie pancerza**: Pancerz celu −5%, do 25%, 6 s
 
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|
@@ -722,6 +744,8 @@ Legendarne i Mityczne przedmioty dają też osobiste rzuty bossów (S30), a nazw
 
 #### Ciężka Kusza (`heavycrossbow`) · Łowca
 
+Cecha: **Bełt przeciwpancerny**: Ignoruje 20% pancerza
+
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|
 | Prosta Ciężka Kusza | 1 | obr. 15, szybkość 0,62 | 6 | — |
@@ -747,6 +771,8 @@ Legendarne i Mityczne przedmioty dają też osobiste rzuty bossów (S30), a nazw
 | Smocza Ciężka Kusza | 100 | obr. 418, szybkość 0,62 | 600 | — |
 
 #### Kostur Święty (`holystaff`) · Kapłan
+
+Cecha: **Zbawczy cios**: 4% obrażeń leczy rannego
 
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|
@@ -774,6 +800,8 @@ Legendarne i Mityczne przedmioty dają też osobiste rzuty bossów (S30), a nazw
 
 #### Łuk Długi (`longbow`) · Łowca
 
+Cecha: **Siła krytyka**: +25 pkt obrażeń krytycznych
+
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|
 | Prosty Łuk Długi | 1 | obr. 12, szybkość 0,78 | 6 | — |
@@ -799,6 +827,8 @@ Legendarne i Mityczne przedmioty dają też osobiste rzuty bossów (S30), a nazw
 | Smoczy Łuk Długi | 100 | obr. 332, szybkość 0,78 | 600 | — |
 
 #### Buława (`mace1h`) · Wojownik, Kapłan
+
+Cecha: **Łamanie kości**: Trafiony zadaje 6% mniej, 4 s
 
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|
@@ -826,6 +856,8 @@ Legendarne i Mityczne przedmioty dają też osobiste rzuty bossów (S30), a nazw
 
 #### Kostur Runiczny (`runestaff`) · Mag
 
+Cecha: **Pieczęć runiczna**: Stoisz 1,5 s: obrażenia +8%
+
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|
 | Prosty Kostur Runiczny | 1 | obr. 0, obr. mag. 14, szybkość 0,72 | 6 | — |
@@ -851,6 +883,8 @@ Legendarne i Mityczne przedmioty dają też osobiste rzuty bossów (S30), a nazw
 | Smoczy Kostur Runiczny | 100 | obr. 0, obr. mag. 396, szybkość 0,72 | 600 | — |
 
 #### Szabla (`saber1h`) · Wojownik
+
+Cecha: **Podwójne cięcie**: Co 5. cios drugie cięcie 40%
 
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|
@@ -878,6 +912,8 @@ Legendarne i Mityczne przedmioty dają też osobiste rzuty bossów (S30), a nazw
 
 #### Berło (`scepter`) · Kapłan
 
+Cecha: **Namaszczenie**: Leczenie i tarcze +8%
+
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|
 | Proste Berło | 1 | obr. 3, obr. mag. 9, szybkość 1 | 6 | — |
@@ -903,6 +939,8 @@ Legendarne i Mityczne przedmioty dają też osobiste rzuty bossów (S30), a nazw
 | Smocze Berło | 100 | obr. 90, obr. mag. 249, szybkość 1 | 600 | — |
 
 #### Łuk Krótki (`shortbow`) · Łowca
+
+Cecha: **Nękanie**: 15%: cel 20% wolniejszy, 2 s
 
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|
@@ -930,6 +968,8 @@ Legendarne i Mityczne przedmioty dają też osobiste rzuty bossów (S30), a nazw
 
 #### Włócznia (`spear2h`) · Wojownik
 
+Cecha: **Przeszycie**: Wróg za celem dostaje 25%
+
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|
 | Prosta Włócznia | 1 | obr. 13, szybkość 0,88 | 6 | — |
@@ -955,6 +995,8 @@ Legendarne i Mityczne przedmioty dają też osobiste rzuty bossów (S30), a nazw
 | Smocza Włócznia | 100 | obr. 346, szybkość 0,88 | 600 | — |
 
 #### Kostur (`staff`) · Mag
+
+Cecha: **Moc żywiołu**: Efekty żywiołu +30%
 
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|
@@ -982,6 +1024,8 @@ Legendarne i Mityczne przedmioty dają też osobiste rzuty bossów (S30), a nazw
 
 #### Miecz (`sword1h`) · Wojownik
 
+Cecha: **Fechtunek**: 10%: kontra po ciosie, kontry +25%
+
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|
 | Prosty Miecz | 1 | obr. 8, szybkość 1,2 | 6 | — |
@@ -1008,6 +1052,8 @@ Legendarne i Mityczne przedmioty dają też osobiste rzuty bossów (S30), a nazw
 
 #### Miecz Dwuręczny (`sword2h`) · Wojownik
 
+Cecha: **Ścięcie**: +18% obrażeń celom < 30% HP
+
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|
 | Prosty Miecz Dwuręczny | 1 | obr. 13, szybkość 0,85 | 6 | — |
@@ -1033,6 +1079,8 @@ Legendarne i Mityczne przedmioty dają też osobiste rzuty bossów (S30), a nazw
 | Smoczy Miecz Dwuręczny | 100 | obr. 362, szybkość 0,85 | 600 | — |
 
 #### Różdżka (`wand`) · Mag
+
+Cecha: **Iskra żywiołu**: 35%: atak budzi żywioł broni
 
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|

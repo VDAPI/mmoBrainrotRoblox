@@ -1365,3 +1365,32 @@
   `critResist`, `meleeGuard`, `rangedGuard` w `common` (ta sama waga dla każdej klasy).
 - **S67** `PathDef.itemWeights = { axes?, stats?, traits? }`: mnożniki wag klasy (1 = bez zmian, 0 = pomiń), klucz
   `stats` może być id linii (czytany jako jej statystyka albo hak); działa tylko dla ścieżki głównej tej samej klasy.
+- **S68** Opis sprzętu (STATY 11): nagłówek, obrażenia / obrona, Cecha, linie zwykłe, legendarne, mityczne (sortowanie
+  po `TooltipModel.TIER_ORDER` i indeksie w instancji, także `fixedBonuses`), `desc` zaraz po liniach, wymagania,
+  porównanie. Rząd linii zawsze z `BonusDef.tier`. Wiki rysuje tę samą kolejność (`TooltipData.meta` po liniach).
+- **S68** Szczegóły na telefonie: stuknięcie w linię albo ikonę „i” (koło z literą, nie znak ⓘ) w otwartym opisie;
+  przytrzymanie slotu zostaje menu akcji. `DragDrop.SetBlocker` (punkt w panelach opisu, `GetGuiObjectsAtPosition`)
+  odcina stuknięcia w panel od slotów pod nim i od odznaczania slotów `view:*`.
+- **S68** PC: przytrzymanie akcji `item_details` (domyślnie LeftAlt, grupa „windows”, zmieniana w opcjach) przypina opis
+  (nie jedzie za kursorem, `MouseLeave` slotu go nie chowa, inne sloty nie podmieniają), najechanie na linię otwiera
+  szczegóły obok; puszczenie klawisza zamyka szczegóły i chowa opis, gdy kursor nie jest nad slotem. Dopisane w STATY 11.
+- **S68** Procenty porównania: `ItemScore.percentDelta` = względny DPS broni (`weaponDps`, magiczne dla klasy z magicznym
+  atakiem podstawowym) + punkty osi bez broni / `PCT_POINTS`, bez mnożników `axes` (`breakdown` już zwraca osie przed
+  nimi, więc `axisPoints` niepotrzebne); broń dwuręczna odejmuje też drugą rękę. Szacunek do kalibracji w S84/S88.
+- **S68** `Types.CapRef` (`stat`/`combat`/`category`/`luck`), `BonusDef.capRef`/`pvp` i `ItemTraits.nodeHooks`/`capRef`
+  to dane bez liczb (`TooltipModel.capValue`). Limit `lastStand` = `BuffCategories.caps.damageReduction` (S53).
+  `blockChance` dostał `pvp = "half"` (kod: `Traits.blockChance(.., pvp)` × `Combat.pvp.block`); tryb `half` czyta
+  `Combat.pvp[<stat albo hak>]` (wampiryzm, blok), nie zawsze `pvp.lifesteal`.
+- **S68** `traitArgs` podaje też `stacks`, `attackSlow`, `healCut`, `gap`, `pvpStacks` (`Combat.pvp.armorBreakStacks`),
+  stałe haki (`frostbite`), `pvpV` (wartość × `TraitDef.pvp`) i `cc` (`Config.PvpCcMultiplier`), żeby `trait.<id>.info`
+  i `.pvp` nie miały wpisanych liczb. `bonusInfo.*` dostaje `{threshold}`, `{cap}`, `{pvp}`, `{gap}`.
+- **S68** `ItemScore.replaced` to jedyny wybór zastępowanego przedmiotu (karta „Lepszy przedmiot”, opis i drugi panel,
+  `/tooltip`): pierścień słabszy z dwóch, przy wolnym slocie pierścienia brak porównania.
+- **S68** Wiki: częstość linii na typ bazy → klasa → rzadkość (`TYPE_ROLLS` 2000, ziarno `bonus:<typ>:<klasa>:<rzadkość>`,
+  `forClass` w `rollItem`), wariant rodziny / klasy liczony pod znacznikiem; klasy typu = `classes` bazy albo wszystkie.
+  Przełącznik klasy puli tylko lokalny (bez URL).
+- **S68** `monsters.json` `family` = rodzina gry (`Data/Families`, wymagane), `families` z nazwami gry; plan ciała z
+  wyglądu nie jest już eksportowany, 19 etykiet `family.<plan>` usunięte z `wiki/src/i18n`. Unik potwora (`dodge`) z
+  `MonsterStats.compute` na najniższym poziomie rodzaju.
+- **S68** `Leak.FORBIDDEN_KEYS` += `nodeHooks`, `capRef` (pola danych tylko w grze); `reference` i `statPlan` sprawdza
+  sam `wikidump.spec` w trzech plikach (globalnie mogłyby kolidować z innymi kluczami).

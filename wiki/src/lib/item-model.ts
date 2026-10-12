@@ -34,6 +34,20 @@ export interface PoolBonus {
   decimals: number;
   range: Record<string, [number, number]>; // rarity -> value range on this item's tier
   chance: Record<string, number>; // rarity -> chance of the line (export Monte Carlo)
+  boost: boolean; // S68: weight 3 on this type for the chosen class (the line suits the trait)
+  variants?: Name[]; // S68: a family / class marker row: the families or classes it becomes
+  over?: "family" | "class"; // S68: what the variants are
+}
+
+export type BonusTier = "regular" | "legendary" | "mythic";
+
+export interface TraitDetail {
+  id: string;
+  name: Name;
+  info: Name;
+  pvp: Name;
+  cap?: Name;
+  line: Record<string, Name[]>; // rarity -> +0..+9
 }
 
 export interface RarityInfo {
@@ -42,6 +56,7 @@ export interface RarityInfo {
   bonusMin: number;
   bonusMax: number;
   legendaryLines: number;
+  mythicLines: number;
 }
 
 export interface MaterialRef {
@@ -79,9 +94,12 @@ export interface ItemDetail {
   glyph: string;
   color: string;
   desc?: Name;
-  fixed?: { text: Name; legendary: boolean }[];
-  pool?: PoolBonus[];
-  legendaryPool?: PoolBonus[];
+  fixed?: { text: Name; tier: BonusTier }[];
+  trait?: TraitDetail; // S68: the type's trait
+  poolClasses: { id: string; name: Name }[]; // S68: classes with their own pool (chances and x3 weights)
+  pool?: Record<string, PoolBonus[]>; // S68: class -> rows
+  legendaryPool?: Record<string, PoolBonus[]>;
+  mythicPool?: Record<string, PoolBonus[]>;
   upgrade?: { steps: UpgradeStepInfo[]; costs: Record<string, UpgradeCostInfo[]> };
   materials: Record<string, MaterialRef>; // upgrade / crafting materials by id
   icon: string | null; // base URL without "-64.webp" / "-128.webp"
@@ -98,6 +116,7 @@ export interface TooltipLabels {
   value: string;
   randomBonus: string;
   legendaryBonus: string;
+  mythicBonus: string;
   stack: string; // "Stos do {n}"
 }
 
@@ -115,8 +134,10 @@ export interface TooltipData {
   type: string;
   up: number;
   pips: boolean;
-  rows: TooltipRow[];
-  bonuses: { text: string; legendary?: boolean; random?: boolean }[];
+  rows: TooltipRow[]; // weapon / base stats
+  trait?: { name: string; line: string }; // S68: the trait section, after the stats
+  bonuses: { text: string; tier: BonusTier; random?: boolean }[];
+  meta: TooltipRow[]; // S68: requirement, value and stack, after the lines (STATY 11 order, as in the game)
   flavor?: string;
   bind: boolean;
   glyph: string;
@@ -164,7 +185,8 @@ function statLabel(row: StatRow, lang: Lang, L: TooltipLabels): string {
   return row.label?.[lang] ?? row.key;
 }
 
-/** Tooltip lines of an item at a rarity, upgrade level and (mage weapons) element. */
+/** Tooltip lines of an item at a rarity, upgrade level and (mage weapons) element: stats, trait, lines (regular,
+ * legendary, mythic), then requirement and value (S68: the game's order, STATY 11). */
 export function buildTooltip(detail: ItemDetail, options: TooltipOptions, L: TooltipLabels): TooltipData {
   const { lang } = options;
   const rarityKey = pickRarity(detail, options.rarity);
@@ -175,21 +197,27 @@ export function buildTooltip(detail: ItemDetail, options: TooltipOptions, L: Too
     if (row.key === "mdmg" && row.values.every((v) => v === 0)) continue;
     rows.push({ label: statLabel(row, lang, L), value: statValue(row, up, lang) });
   }
+  const meta: TooltipRow[] = [];
   if (detail.equipment || detail.level > 1) {
     const parts = [fill(L.level, { level: detail.level })];
     if (!detail.allClasses && detail.classes.length > 0) parts.push(detail.classes.map((c) => c.name[lang]).join(", "));
-    rows.push({ label: L.req, value: parts.join(" · "), unmet: options.playerLevel !== undefined && options.playerLevel < detail.level });
+    meta.push({ label: L.req, value: parts.join(" · "), unmet: options.playerLevel !== undefined && options.playerLevel < detail.level });
   }
   const value = detail.value[rarityKey]?.[up];
-  if (value !== undefined && !detail.noSell) rows.push({ label: L.value, value: formatNumber(value, lang) });
-  if (detail.stackable && detail.maxStack > 1) rows.push({ label: fill(L.stack, { n: detail.maxStack }), value: "" });
+  if (value !== undefined && !detail.noSell) meta.push({ label: L.value, value: formatNumber(value, lang) });
+  if (detail.stackable && detail.maxStack > 1) meta.push({ label: fill(L.stack, { n: detail.maxStack }), value: "" });
   const bonuses: TooltipData["bonuses"] = [];
+  const order: Record<BonusTier, number> = { regular: 1, legendary: 2, mythic: 3 };
   if (detail.fixed) {
-    for (const b of detail.fixed) bonuses.push({ text: b.text[lang], legendary: b.legendary });
+    const fixed = detail.fixed.map((b, i) => ({ b, i })).sort((x, y) => order[x.b.tier] - order[y.b.tier] || x.i - y.i);
+    for (const { b } of fixed) bonuses.push({ text: b.text[lang], tier: b.tier });
   } else if (detail.equipment && rarity) {
-    for (let i = 0; i < rarity.bonusMax; i++) bonuses.push({ text: L.randomBonus, random: true });
-    for (let i = 0; i < rarity.legendaryLines; i++) bonuses.push({ text: L.legendaryBonus, random: true, legendary: true });
+    for (let i = 0; i < rarity.bonusMax; i++) bonuses.push({ text: L.randomBonus, tier: "regular", random: true });
+    for (let i = 0; i < rarity.legendaryLines; i++) bonuses.push({ text: L.legendaryBonus, tier: "legendary", random: true });
+    for (let i = 0; i < rarity.mythicLines; i++) bonuses.push({ text: L.mythicBonus, tier: "mythic", random: true });
   }
+  const traitLine = detail.trait?.line[rarityKey]?.[up];
+  const trait = detail.trait && traitLine ? { name: detail.trait.name[lang], line: traitLine[lang] } : undefined;
   const element = options.element && detail.nameByElement?.[options.element] ? options.element : undefined;
   const name = element ? detail.nameByElement![element][lang] : detail.name[lang];
   const rarityName = rarity ? rarity.name[lang] : rarityKey;
@@ -202,7 +230,9 @@ export function buildTooltip(detail: ItemDetail, options: TooltipOptions, L: Too
     up,
     pips: detail.equipment,
     rows,
+    trait,
     bonuses,
+    meta,
     flavor: detail.desc?.[lang],
     bind: detail.bind,
     glyph: detail.glyph,

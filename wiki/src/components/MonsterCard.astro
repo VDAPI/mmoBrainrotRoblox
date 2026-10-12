@@ -4,10 +4,10 @@
 // rarest monster part of the variant, a boss's first named item) or "No unique loot". Top border: normal dark gold,
 // elite gold, Elite II orange, boss red. `boss` renders a boss card instead of a monster.
 import type { Boss, Monster } from "../data/types";
-import { finalLevels, placesOf, signatureDrop } from "../lib/bestiary";
+import { familyName, finalLevels, placesOf, signatureDrop } from "../lib/bestiary";
 import { getItem, getMap, load } from "../lib/data";
 import { iconFor } from "../lib/icons";
-import { name, t, type Key } from "../lib/i18n";
+import { name, t } from "../lib/i18n";
 import type { Lang } from "../i18n/routes";
 import ElementBadge from "./ElementBadge.astro";
 import ItemIcon from "./ItemIcon.svelte";
@@ -33,7 +33,7 @@ else if (info) {
   const [min, max] = finalLevels(info);
   levelText = min === max ? t(lang, "level", { level: min }) : t(lang, "levelRangeCap", { min, max });
 }
-const family = monster?.family ? t(lang, `family.${monster.family}` as Key) : boss ? t(lang, "rank.boss") : "";
+const family = monster?.family ? familyName(monster.family, lang) : boss ? t(lang, "rank.boss") : "";
 const places = monster ? placesOf(monster, variant, lang) : [];
 const dungeon = boss ? getMap(boss.dungeon) : undefined;
 const place = boss ? { name: name(dungeon?.name, lang), zone: dungeon?.zone ?? "red" } : places[0] ?? (monster ? { name: name(getMap(monster.regionMap)?.name, lang), zone: getMap(monster.regionMap)?.zone ?? "yellow" } : undefined);

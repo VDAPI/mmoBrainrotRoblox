@@ -6,7 +6,8 @@
 
 local Leak = {}
 
-Leak.FORBIDDEN_KEYS = { "productId", "passId", "robux", "price", "shards", "RespawnNowCost", "itemWeights" } -- S67: path item weights
+Leak.FORBIDDEN_KEYS =
+	{ "productId", "passId", "robux", "price", "shards", "RespawnNowCost", "itemWeights", "nodeHooks", "capRef" } -- S67: path item weights; S68: trait node hooks and cap references (data only)
 
 local function sortedPaths(files: { [string]: string }): { string }
 	local paths = {}

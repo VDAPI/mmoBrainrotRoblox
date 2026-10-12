@@ -17,6 +17,8 @@ local actions: { Action } = {
 	{ id = "win_quests", default = "L", labelKey = "hud.menu.quests", group = "windows" },
 	{ id = "win_guild", default = "G", labelKey = "hud.menu.guild", group = "windows" },
 	{ id = "win_party", default = "P", labelKey = "hud.menu.party", group = "windows" },
+	-- S68: held, pins the item tooltip so the mouse can point at its lines (details panel)
+	{ id = "item_details", default = "LeftAlt", labelKey = "keys.itemDetails", group = "windows" },
 	{ id = "skill_1", default = "One", labelKey = "keys.skill.1", group = "combat" },
 	{ id = "skill_2", default = "Two", labelKey = "keys.skill.2", group = "combat" },
 	{ id = "skill_3", default = "Three", labelKey = "keys.skill.3", group = "combat" },

@@ -566,3 +566,142 @@ T.describe("Wiki export: building blocks", function()
 		end
 	end)
 end)
+
+-- S68: line frequency per base type and class, affinity, traits, families, mythic lines, allowlist.
+T.describe("Wiki export: items and monsters (S68)", function()
+	local Bonuses = require("../src/shared/Data/Bonuses")
+	local Families = require("../src/shared/Data/Families")
+	local ItemRoll = require("../src/shared/Logic/ItemRoll")
+	local ItemTraits = require("../src/shared/Data/ItemTraits")
+	local Rarities = require("../src/shared/Data/Rarities")
+
+	local function sampleId(baseType: string): string?
+		local best: any = nil
+		for _, def in Items.byId do
+			if def.type == baseType and def.tier and not def.fixedBonuses then
+				if
+					not best
+					or math.abs(def.tier - 50) < math.abs(best.tier - 50)
+					or (math.abs(def.tier - 50) == math.abs(best.tier - 50) and def.id < best.id)
+				then
+					best = def
+				end
+			end
+		end
+		return if best then best.id else nil
+	end
+
+	T.it("line frequency per base type and class sums to the line count", function()
+		local frequency = d.bonuses.frequency
+		for baseType, base in d.items.bases do
+			local id = base.bonusGroup and sampleId(baseType)
+			if id then
+				for _, classId in base.poolClasses do
+					local byRarity = frequency[baseType] and frequency[baseType][classId]
+					T.expect({ baseType, classId, byRarity ~= nil }).toEqual({ baseType, classId, true })
+					local pool = #ItemRoll.bonusPool(id, classId)
+					for _, r in Rarities.list do
+						if r.bonusMax > 0 then
+							local sum = 0
+							for line, share in byRarity[r.key] or {} do
+								local def = Bonuses.get(line)
+								T.expect({ line, def == nil or def.param == nil }).toEqual({ line, true })
+								if Bonuses.isParam(line) or (def and def.tier == "regular") then
+									sum += share
+								end
+							end
+							local expected = 0
+							for k = r.bonusMin, r.bonusMax do
+								expected += math.min(k, pool)
+							end
+							expected /= r.bonusMax - r.bonusMin + 1
+							T.expect({ baseType, classId, r.key, math.abs(sum - expected) <= 0.15 }).toEqual({
+								baseType,
+								classId,
+								r.key,
+								true,
+							})
+						end
+					end
+				end
+			end
+		end
+		T.expect((frequency.sword1h.Warrior.heroic["@vsFamily"] or 0) > 0).toBe(true)
+	end)
+
+	T.it("affinity weights the pool: 0 never rolls, x3 rolls more often", function()
+		local frequency = d.bonuses.frequency
+		for baseType, base in d.items.bases do
+			for classId, weights in base.affinity or {} do
+				for line, w in weights do
+					if w == 0 then
+						for _, shares in frequency[baseType][classId] do
+							T.expect({ baseType, classId, line, shares[line] or 0 })
+								.toEqual({ baseType, classId, line, 0 })
+						end
+					end
+				end
+			end
+		end
+		T.expect(d.items.bases.axe2h.affinity.Warrior.woundChance).toBe(3)
+		local axe = frequency.axe2h.Warrior.heroic.woundChance or 0
+		local sword = frequency.sword1h.Warrior.heroic.woundChance or 0
+		T.expect(axe - sword >= 0.1).toBe(true)
+	end)
+
+	T.it("exports every live trait with ten lines per rarity", function()
+		local live = 0
+		for _, def in ItemTraits.list do
+			if def.live then
+				live += 1
+				local info = d.items.traits[def.id]
+				T.expect({ def.id, info ~= nil }).toEqual({ def.id, true })
+				checkName(info.name, def.id)
+				checkName(info.info, `{def.id}.info`)
+				checkName(info.pvp, `{def.id}.pvp`)
+				for _, r in d.rarities.rarities do
+					local lines = info.line[r.key]
+					T.expect({ def.id, r.key, #lines }).toEqual({ def.id, r.key, 10 })
+					for _, line in lines do
+						T.expect(string.find(line.pl .. line.en, "{", 1, true)).toBeNil()
+					end
+				end
+			end
+		end
+		T.expect(count(d.items.traits)).toBe(live)
+		for baseType, base in d.items.bases do
+			if base.trait then
+				T.expect({ baseType, d.items.traits[base.trait] ~= nil }).toEqual({ baseType, true })
+			end
+		end
+	end)
+
+	T.it("monsters carry their game family and the families have names", function()
+		T.expect(count(d.monsters.families)).toBe(#Families.ids)
+		for _, id in Families.ids do
+			checkName(d.monsters.families[id].name, `family.{id}`)
+		end
+		for _, m in d.monsters.monsters do
+			T.expect({ m.id, m.family }).toEqual({ m.id, (Monsters.get(m.id) :: any).family })
+		end
+		for _, r in d.rarities.rarities do
+			T.expect({ r.key, r.mythicLines }).toEqual({ r.key, Rarities.get(r.id).mythicLines })
+		end
+	end)
+
+	T.it("keeps weights, node hooks and cap references out and lists four markers", function()
+		for _, path in { "bonuses.json", "items.json", "monsters.json" } do
+			local text: string? = nil
+			for file, body in result.files do
+				if string.sub(file, -#path) == path then
+					text = body
+				end
+			end
+			T.expect({ path, text ~= nil }).toEqual({ path, true })
+			for _, key in { "itemWeights", "nodeHooks", "capRef", "reference", "statPlan" } do
+				T.expect({ path, key, string.find(text :: string, `"{key}"%s*:`) }).toEqual({ path, key, nil })
+			end
+		end
+		T.expect(count(d.bonuses.params)).toBe(4)
+	end)
+end)
