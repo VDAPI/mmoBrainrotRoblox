@@ -318,8 +318,7 @@ Broń każdej ścieżki (uzasadnienie i pokrycie w sekcjach klas):
   poczty). Użycie otwiera wybór ścieżki; serwer zużywa zwój przy `ChooseMainPath`. Cena u Nauczyciela 400 złota ×
   poziom (jak dziś), od 20. poziomu. Wpis w `Data/Products` (120 Smoczej Waluty) zostaje, zmienia się tylko nazwa;
   zmiana ścieżki nie daje mocy, a `scroll_oblivion` też jest w sklepie. Usunięcie ze sklepu premium tylko na decyzję
-  właściciela (15.1). Od S56 do S81 wpis ma `unavailable = true` (zwój nic nie robi, dopóki klasa nie ma ścieżek);
-  `premium.spec` to sprawdza.
+  właściciela (15.1).
 
 ### 2.11 Przycisk „Rozdaj jak zaleca ścieżka”
 
@@ -454,8 +453,7 @@ export type ReferenceBuild = {
   `behind`), test `intercept` (7.6), test `misfortune` (tylko przy `canDodge ~= false`, limity), migracja 6 (oba
   zestawy, nowe postacie z paskiem), test danych 7.3 (czas, promień, odnowienie, wyjątki), `wikidump.spec` (lista
   dozwolonych; żadna umiejętność, węzeł, tytuł ani tekst ścieżki z `wiki = false` nie trafia do eksportu).
-  `premium.spec` (zwoju nie ma w sklepie premium) tylko, jeśli właściciel zgodzi się usunąć zwój ze sklepu. Od S56 do
-  S81 wpis ma `unavailable = true` (zwój nic nie robi, dopóki klasa nie ma ścieżek); `premium.spec` to sprawdza.
+  `premium.spec` (zwoju nie ma w sklepie premium) tylko, jeśli właściciel zgodzi się usunąć zwój ze sklepu.
 
 ### 3.5 Wiki i planer (kontrakt `docs/WIKI.md`)
 
@@ -1931,19 +1929,19 @@ rezerwa many +4 → 20%, nowa statystyka `manaReserve`, której regeneracja nie 
 |---|---|---|
 | 1 · 10 | Mistrz Żywiołów (`destroyer_elementalist`, skill) | przeniesiona A |
 | 1 · 10 | Rozmach (`destroyer_sweep`, passive, hak `areaDamage`) | +2 / 4 / 6% obrażeń obszarowych (12.3) |
-| 2 · 15 | Ślad Żywiołu (`destroyer_trace`, passive, hak `areaLingering`) | żywioł broni zostaje na ziemi po czarze obszarowym: 0,7 / 1,3 / 2% na s przez 3 s |
+| 2 · 15 | Ślad Żywiołu (`destroyer_trace`, passive, hak `areaLingering`) | żywioł broni zostaje na ziemi po czarze obszarowym: 0,7 / 1,35 / 2% na s przez 3 s |
 | 2 · 15 | Kaskada (`destroyer_cascade`, passive, hak `areaKillMana`) | 0,5 / 1 / 1,5% maks. many za zabicie czarem obszarowym |
 | 2 · 15 | Szerokie Kręgi (`destroyer_wide`, dodatkowy, passive, hak `areaRadius`) | promień czarów obszarowych +5 / 10 / 15% |
 | 3 · 20 albo | Niestabilna Moc (`destroyer_volatile`, passive, haki `areaDamage`, `areaCost`) | +2 / 4 / 6% obrażeń, +10 / 20 / 30% kosztu |
 | 3 · 20 albo | Oszczędny Splot (`destroyer_thrift`, passive, hak `areaCost`) | −4 / 8 / 12% kosztu czarów obszarowych |
-| 4 · 26 | Wir Żywiołów (`destroyer_vortex`, skill → `elementalVortex`) | nowa |
+| 4 · 26 | Wir Żywiołów (`destroyer_elementalVortex`, skill → `elementalVortex`) | nowa |
 | 4 · 26 | Oko Cyklonu (`destroyer_eye`, modify `elementalVortex` `add.hits`) | +1 / 2 / 3 fale (10 → 13) |
 | 5 · 33 | Potęga Zniszczenia (`destroyer_might`, passive pct `magAtk`) | +2 / 4 / 6% |
 | 5 · 33 | Żywioł w Żyłach (`destroyer_veins`, passive, hak `elementRider`) | efekt żywiołu +10 / 20 / 30% (podpalenie 30 → 39%, spowolnienie 2 → 2,6 s, łuk 40 → 52%) |
 | 5 · 33 | Zahartowanie (`destroyer_tempered`, dodatkowy, passive pct `maxHp`) | +4 / 8 / 12% |
 | 6 · 40 albo | Krucha Potęga (`destroyer_frail`, passive: `areaDamage`, pct `maxHp`) | +2 / 4 / 6% obrażeń, HP −4 / 8 / 12% |
 | 6 · 40 albo | Płaszcz Żywiołów (`destroyer_mantle`, passive, hak `vortexGuard`) | przy rzuceniu Wiru 4 / 8 / 12% własnej redukcji obrażeń |
-| 7 · 48 | Gniew Żywiołów (`destroyer_fury`, skill → `meteorStorm`) | przeniesiona B |
+| 7 · 48 | Gniew Żywiołów (`destroyer_meteorStorm`, skill → `meteorStorm`) | przeniesiona B |
 | 7 · 48 | Gniew Burzy (`destroyer_wrath`, modify `meteorStorm`, nowe `cdrPerTarget`) | −1 / 2 / 3 s odnowienia za każdego trafionego wroga, najwyżej 5 (50 → 35 s) |
 | 8 · 60 | Kataklizm (`destroyer_cataclysm`, skill) | zwieńczenie |
 | 9 · 70 albo | Szalejący Wir (`destroyer_raging`, modify `elementalVortex` `values.dmg`) | +0,5 / 1 / 1,5 pkt proc. na falę (13 → 14,5%) |
@@ -2024,8 +2022,8 @@ Przeniesione:
 | 2 · 15 | Opanowanie (`arcanist_composure`, dodatkowy, passive, hak `manaShieldCost`) | −10 / 20 / 30% many za pochłonięte obrażenia |
 | 3 · 20 albo | Rezonans (`arcanist_resonance`, passive, hak `resonance`) | +2 / 4 / 6% obrażeń czarów przy manie ≥ 75% |
 | 3 · 20 albo | Przeciążenie (`arcanist_overload`, passive, haki `spellDamage`, `spellCost`) | +2 / 4 / 6% obrażeń, +10 / 20 / 30% kosztu (opłaca się dopiero z Inwokacją; opis musi to mówić) |
-| 4 · 26 | Wyładowanie Arkanów (`arcanist_discharge`, skill → `arcaneDischarge`) | nowa, włącza Ładunki |
-| 4 · 26 | Pełne Wyładowanie (`arcanist_fullDischarge`, modify `arcaneDischarge` `values.perCharge`) | +3 / 7 / 10 pkt proc. (12 → 27% za Ładunek z 5A) |
+| 4 · 26 | Wyładowanie Arkanów (`arcanist_arcaneDischarge`, skill → `arcaneDischarge`) | nowa, włącza Ładunki |
+| 4 · 26 | Pełne Wyładowanie (`arcanist_fullDischarge`, modify `arcaneDischarge` `values.perCharge`) | +3 / 6,5 / 10 pkt proc. (12 → 27% za Ładunek z 5A) |
 | 5 · 33 | Moc Arkanów (`arcanist_might`, passive pct `magAtk`) | +1 / 2 / 3% |
 | 5 · 33 | Odzysk (`arcanist_reclaim`, passive, hak `chargeReclaim`) | 0,1 / 0,2 / 0,3% maks. many za każdy zużyty Ładunek |
 | 5 · 33 | Nieugięta Wola (`arcanist_will`, dodatkowy, passive pct `maxHp`) | +4 / 8 / 12% |
@@ -2033,7 +2031,7 @@ Przeniesione:
 | 6 · 40 albo | Chłodna Głowa (`arcanist_coolHead`, passive, hak `chargeCost`) | −4 / 8 / 12 pkt proc. kosztu Ładunku (15 → 3%) |
 | 7 · 48 | Inwokacja (`arcanist_evocation`, skill) | przeniesiona B |
 | 7 · 48 | Inwokacja Mocy (`arcanist_invocation`, modify `evocation`, nowy efekt `empowered`, 15 s, S80) | 3 następne czary po kanale +5 / 10 / 15% |
-| 8 · 60 | Strumień Arkanów (`arcanist_torrent`, skill → `arcaneTorrent`) | zwieńczenie |
+| 8 · 60 | Strumień Arkanów (`arcanist_arcaneTorrent`, skill → `arcaneTorrent`) | zwieńczenie |
 | 9 · 70 albo | Rozdzierający Strumień (`arcanist_rending`, modify `arcaneTorrent` `values.growth`) | +0,5 / 1 / 1,5 pkt proc. wzrostu na tyk (3 → 4,5% z 5A) |
 | 9 · 70 albo | Studnia Many (`arcanist_well`, modify `arcaneTorrent` `values.drain`) | −0,25 / 0,5 / 0,75 pkt proc. (1,5 → 0,75% many na tyk) |
 | 10 · 80 | Tajemny Umysł (`arcanist_arcaneMind`, skill) | przeniesiona C |
@@ -2507,14 +2505,16 @@ Każdy punkt ma wartość domyślną, którą sesje wdrażają, dopóki właści
    gdyby kiedyś wróciła.
 2. Broń: domyślnie ścisły podział (Niszczyciel kostur albo różdżka z kulą, Arkanista kostur runiczny albo różdżka z
    księgą), bo punkt 32 podał przykład „Niszczycielowi kostur”. Alternatywa: oba kostury w obu ścieżkach, a o ścieżce
-   decyduje tylko druga ręka przy różdżce; wtedy wymóg prawie nic nie znaczy.
+   decyduje tylko druga ręka przy różdżce; wtedy wymóg prawie nic nie znaczy. Zastosowane w S81 (ścisły podział).
 3. Limit obszaru: domyślnie 3,0 dla Niszczyciela i 2,0 dla reszty buildów (sama podstawa Maga ma dziś 2,1–2,4, a
    Niszczyciel 2,7–3,0). Alternatywa: osłabić obszar podstawy (Kula Ognia 10A, Meteor, rozprysk Pocisku).
 4. Gniew Żywiołów (dziś zwieńczenie na 75.) w rzędzie 7 (48.) z 60 → 80% zamiast 160 → 260% i skracaniem odnowienia za
    trafionych; Tajemny Umysł słabnie do krytyka 1 → 3% i obrażeń krytycznych 3 → 8%; Inwokacja u Arkanisty ma 120 s
-   zamiast 90 s.
+   zamiast 90 s. Zastosowane w S81.
 5. Skupienie wychodzi z podstawy (wyjątek od 2.1), więc Mag na 14–45 ma mniejszą pulę i wolniejszą regenerację.
+   Zastosowane w S81.
 6. Magiczny Pocisk 5B to krótsze odnowienie zamiast tańszego czaru; 10B to drugi pocisk (pole `hits = 1`).
+   Zastosowane w S81.
 7. Podpalenie z żywiołu broni przy ponownym nałożeniu dolicza niezadane obrażenia zamiast je kasować (więcej obrażeń
    ognistego Maga niż dziś).
 8. Strumień Arkanów nie jest przerywany obrażeniami (inaczej niż Inwokacja). Jeśli ma być przerywany, zwieńczenie

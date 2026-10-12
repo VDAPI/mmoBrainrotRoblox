@@ -89,6 +89,19 @@ local list: { TitleDef } = {
 		req = { kind = "mainPath", path = "scout" },
 		color = "#7EC4E0",
 	},
+	-- S81: Mage paths
+	{
+		id = "path_destroyer",
+		nameKey = "title.path_destroyer",
+		req = { kind = "mainPath", path = "destroyer" },
+		color = "#E0743C",
+	},
+	{
+		id = "path_arcanist",
+		nameKey = "title.path_arcanist",
+		req = { kind = "mainPath", path = "arcanist" },
+		color = "#A884FF",
+	},
 }
 
 -- S59: character.title when the player hid the title; nil = never chose, the main path title shows

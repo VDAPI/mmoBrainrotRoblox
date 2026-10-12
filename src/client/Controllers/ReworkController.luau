@@ -32,8 +32,11 @@ local function check()
 	shown = true
 	local message = Text.now("rework.body", { level = SkillData.RANKS.capLevel })
 	-- S78: one paragraph per class whose skills moved to paths since the notice (keys literal for the key test)
-	if State.Get({ "character", "class" }) == "Hunter" then
+	local class = State.Get({ "character", "class" })
+	if class == "Hunter" then
 		message ..= "\n\n" .. Text.now("rework.class.Hunter")
+	elseif class == "Mage" then
+		message ..= "\n\n" .. Text.now("rework.class.Mage") -- S81
 	end
 	WindowManager.ShowModal({
 		Title = Text.now("rework.title"),

@@ -31,13 +31,12 @@ T.describe("Premium shop", function()
 		T.expect({ Premium.canBuyShop("nope", 1e9, limits, 0) }).toEqual({ false, "error.badRequest" })
 	end)
 
-	T.it("an unavailable entry cannot be bought (scroll_skillreset until class paths, S56)", function()
+	T.it("scroll_skillreset is sold again (S81)", function()
 		local limits = { day = 0, protectScrolls = 0 }
-		T.expect((Products.getShop("scroll_skillreset") :: any).unavailable).toBe(true)
-		T.expect({ Premium.canBuyShop("scroll_skillreset", 1e6, limits, 0) }).toEqual({ false, "premium.error.soon" })
-		T.expect((Premium.canBuyShop("scroll_oblivion", 1e6, limits, 0))).toBe(true)
+		T.expect((Premium.canBuyShop("scroll_skillreset", 1000, limits, 0))).toBe(true)
+		T.expect((Products.getShop("scroll_skillreset") :: any).unavailable).toBeNil()
 		for _, key in { "premium.soon", "premium.error.soon" } do
-			T.expect(pl[key] ~= nil and en[key] ~= nil).toBe(true)
+			T.expect({ key, pl[key], en[key] }).toEqual({ key, nil, nil })
 		end
 	end)
 

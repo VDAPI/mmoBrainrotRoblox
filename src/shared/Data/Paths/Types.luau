@@ -37,13 +37,19 @@ export type PathRow = { choice: boolean, nodes: { PathNode } }
 -- by the game or the wiki. Rotation entries: `skill` (required) plus optional conditions, data only:
 -- target = "tank" | "mostWounded" | "meleeAllies" | "self" | "allyInZone" (an ally in a red zone, S75), minWounded,
 -- minEnemies, belowHp, debuff, beforeRedZone, opener, elite, minFury (at least that many Fury stacks, S75), notInZone
--- (only while the character stands outside red zones, S78).
+-- (only while the character stands outside red zones, S78), minCharges (Arcane Charge stacks), minManaPct and
+-- maxManaPct (% of maximum mana; S81 Mage).
 export type ReferenceBuild = {
 	id: string,
 	damageReference: boolean?, -- only the Berserker "fury" build (S75)
 	r7Exempt: boolean?, -- S78 (ROZWOJ 15.4.2): exempt from R7 on one target (Trapper); read by the balance model
+	-- S81 (ROZWOJ 8, 15.5.3): area / single target burst cap of this build (R3 / T-SK3); nil = 2.0. Read by the
+	-- balance model (S86, S90), never by the game.
+	areaCap: number?,
 	weapon: { main: string, offhand: string? },
-	nodes: { { any } }, -- { nodeId, rank } in purchase order: by row level, main path first at the same level
+	-- { nodeId, rank } in purchase order: by row level, main path first at the same level (S71-S78); the Mage (S81)
+	-- lists them in the priority order of ROZWOJ 12.4 / 12.5 (the 12.7 measurement buys them in that order)
+	nodes: { { any } },
 	bp: { [string]: "a" | "b" }, -- "<skillId>:5" / "<skillId>:10"; a missing entry means A
 	stats: { [string]: number }, -- the path statPlan
 	rotation: { { [string]: any } }, -- priority list, first usable wins; conditions are data for the balance model (S85)

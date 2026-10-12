@@ -4107,3 +4107,47 @@ Mage},Localization/{pl,en}}}`, `src/server/{Services/{SkillService,StatusEffectS
 Push,Types/Offense}}`, `src/client/{Controllers/{SkillController,VfxController},Vfx/Library,UI/{SkillInfo,
 Screens/Hud/EffectIcons}}`, `tests/{channel,skills,data,mage,skillmotion}.spec`, `tests/BreakpointKeys`,
 `docs/{DECYZJE,SESJE,PROGRESS,ROZWOJ,STATY}.md`, `CLAUDE.md`.
+
+### S81: Mag 3: podstawa, ścieżki Niszczyciel i Arkanista oraz opcje B
+
+- A: `Data/Skills/Mage` w kolejności podstawa (8) → `destroyer` → `arcanist`; odblokowania i `path` jak w ROZWOJ
+  12.2–12.5; Gniew Żywiołów `dmg = { 60, 80 }`, Tajemny Umysł 1–3 / 3–8, Inwokacja 120 s, Skupienie
+  `pct = { manaReserve = "reserve" }` 4–20. S80 dało nowym umiejętnościom poprawne `unlock` (26 / 60), `firebolt.hits = 1`
+  jest z S79. `order` czytają tylko sortowania.
+- Gracz: znikają z paska (oba zestawy i `path.bp`, `Paths.validHotbar` przy wczytaniu) Tarcza Many, Inwokacja i Gniew
+  Żywiołów; Skupienie, Mistrz Żywiołów i Tajemny Umysł przestają działać do kupna węzła. Wcześniej: Kula Ognia 3,
+  Łańcuch Błyskawic 10, Lodowa Nova 18, Meteor 30, Burza Piorunów 45 (oraz Mistrz Żywiołów i Tarcza Many 10, Gniew i
+  Inwokacja 48); później Lodowy Odłamek 6, Błysk 14, Skupienie i Tajemny Umysł 80. Nowo dostępne umiejętności podstawy
+  nie wskakują same na pasek istniejących postaci (auto-wkładanie tylko przy awansie): gracz kładzie je przyciskiem
+  „Na pasek”. Od teraz każda klasa ma ścieżki; Zwój Nowej Ścieżki jest u Nauczyciela (bramka `needsPaths` z S57 bez
+  zmian, przepuszcza każdą klasę; `paths.soon` zostaje jako zabezpieczenie) i w sklepie premium.
+- B: 22 opcje B 11 starych aktywnych (`Build.bp2`); wszystkie 15 aktywnych ma A i B na 5 i 10. Odbiorcy (`execute`,
+  `trap` z `enemySlow` już w `Movement.blink`, `echo`, `selfEffect`, `selfHeal`, `add.length`, `add.hits`,
+  `channelMove`, `grantCharges`) byli i czytają definicję po `Skills.effective`.
+- C: `Data/Paths/Mage` (2 ścieżki × 11 rzędów, 46 węzłów: 36 z tekstami + 10 `skill`, 6 `extra` w rzędach 2, 5, 10),
+  broń z 12.1, `statPlan`, `itemWeights` (`validateWeights` puste), `wiki = false`. Typ `ReferenceBuild` dostał
+  `areaCap` i komentarz o kolejności węzłów i warunkach rotacji Maga.
+- D: D1 wszystkie 16 haków ma odbiorcę (S79 / S80), znaki kosztu zgodne z `Skills.cost` (nic nie odwracałem); D2
+  `empower` z S80 działa z `{ ref }` węzła; D3 `chargesEnabled` w `SkillService` był; D4 `PathTab` liczy karty z
+  `#row.nodes`; D5 okienko cechy różdżki i kostura pokazuje Żywioł w Żyłach (test); D6 bez zmian. Kodu silnika nie
+  dopisywałem.
+- E: buildy `destroyerExp`, `destroyerBoss` (`areaCap = 3.0`), `arcanistBoss`, `arcanistOverload`. Rotacja
+  „Niszczyciel (boss)”: ROZWOJ jej nie podaje, więc wszystkie czary z obrażeniami na odnowieniu, najsilniejsze pierwsze
+  (Kataklizm, Gniew, Meteor, Burza, Nova, Wir, Kula, Łańcuch, Odłamek, Pocisk).
+- F / G: tytuły `path_destroyer` / `path_arcanist`, 105 kluczy na język (6 ścieżek, 72 węzłów, 22 B, 4 opisy,
+  `rework.class.Mage` w `ReworkController`); nazwy węzłów bez kolizji z cechami broni. Zwój: usunięte `unavailable`
+  z `Data/Products`, gałąź w `Premium.canBuyShop`, przycisk „Wkrótce” w `PremiumShop`, pominięcie w `WikiData/Premium`
+  i klucze `premium.soon` / `premium.error.soon`; zdanie o zwoju w MDX (PL, EN) poprawione.
+- Testy: `paths.spec` („Data: Mage paths (S81)”: broń 12.1 i pokrycie, `twoPathExtra`, rangi 49 / 13, buildy,
+  `traitNodes`; przypadki „firebolt bez B” przeniesione na `fxBolt` z fixture), `skills.spec` (podstawa 8, B, 625 /
+  2 × 186 / 27 / 16,5 i 15 ze złą bronią, haki węzłów, osiągalność zamiast „nieosiągalne do S81”, rangi Gniewu i
+  Inwokacji 64 / 84), `items.spec` (kolumna STATY 3 kontra `weaponOk`, cztery klasy), `premium.spec`, `wikidump.spec`
+  (zwój w `premium.json`). Test 7.3 obejmuje Maga sam (bramka: klasy z `Data/Paths`).
+- Wiki (Node był): `npm run data`; z `skills.json` zniknęło 6 przeniesionych umiejętności, podstawa ma nowe
+  odblokowania (opcji B eksport nie zawiera), w `premium.json` wrócił zwój. `npm test`: `skills.test.ts` używał
+  usuniętych z wiki `cleave` (od S75) i `meteorStorm`; teraz `bloodlust` i `firewall`. `npm run build` przeszedł.
+
+Pliki: `src/shared/{Data/{Paths/{Mage,Types},Skills/Mage,Titles,Products,Localization/{pl,en}},Logic/Premium}`,
+`src/client/{UI/Screens/PremiumShop,Controllers/ReworkController}`, `tools/WikiData/Premium`,
+`tests/{paths,skills,items,premium,wikidump}.spec`, `wiki/src/{data/*,lib/skills.test.ts,content/mechanics/{pl/statystyki,
+en/stats}.mdx}`, `docs/{ROZWOJ,DECYZJE,SESJE,PROGRESS,PRZEDMIOTY}.md`.

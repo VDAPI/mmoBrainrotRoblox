@@ -857,4 +857,81 @@ T.describe("S67 lines with a parameter", function()
 	end)
 end)
 
+-- S81: STATY 3, column "Klasa, ścieżka", against Logic/Paths.weaponOk for every class with paths.
+T.describe("S81 weapon types per path (STATY 3)", function()
+	local Classes = require("../src/shared/Data/Classes")
+	local PathData = require("../src/shared/Data/Paths")
+	local GamePaths = require("../src/shared/Logic/Paths")
+
+	-- mirror of docs/STATY.md section 3, column "Klasa, ścieżka"
+	local STATY3_PATHS: { [string]: { string } } = {
+		sword1h = { "guardian", "standard" },
+		saber1h = { "guardian", "standard" },
+		axe1h = { "guardian" },
+		mace1h = { "guardian", "inquisitor", "fortune" },
+		sword2h = { "berserker" },
+		axe2h = { "berserker" },
+		hammer2h = { "berserker" },
+		spear2h = { "berserker" },
+		shield = { "guardian", "standard", "healer", "inquisitor" },
+		shortbow = { "scout" },
+		bow = { "trapper", "scout" },
+		longbow = { "marksman" },
+		crossbow = { "trapper" },
+		heavycrossbow = { "marksman" },
+		quiver = { "marksman", "trapper", "scout" },
+		wand = { "destroyer", "arcanist" },
+		staff = { "destroyer" },
+		runestaff = { "arcanist" },
+		tome = { "arcanist" },
+		orb = { "destroyer" },
+		scepter = { "healer", "fortune" },
+		holystaff = { "healer" },
+		flail1h = { "inquisitor", "fortune" },
+		relic = { "fortune", "inquisitor", "healer" },
+	}
+
+	T.it("every weapon and off-hand type fits exactly the paths of STATY 3", function()
+		local computed: { [string]: { [string]: boolean } } = {}
+		local function add(t: string, pathId: string)
+			computed[t] = computed[t] or {}
+			computed[t][pathId] = true
+		end
+		for _, path in PathData.list do
+			local class = Classes.get(path.class) :: any
+			for _, t in class.weaponTypes do
+				local fits = GamePaths.weaponOk(path.weapon, { main = t })
+				if not GamePaths.isTwoHanded(t) then
+					for _, o in class.offhandTypes do
+						fits = fits or GamePaths.weaponOk(path.weapon, { main = t, offhand = o })
+					end
+				end
+				if fits then
+					add(t, path.id)
+				end
+			end
+			for _, o in class.offhandTypes do
+				for _, t in class.weaponTypes do
+					if not GamePaths.isTwoHanded(t) and GamePaths.weaponOk(path.weapon, { main = t, offhand = o }) then
+						add(o, path.id)
+					end
+				end
+			end
+		end
+		local count = 0
+		for t, want in STATY3_PATHS do
+			count += 1
+			local set: { [string]: boolean } = {}
+			for _, id in want do
+				set[id] = true
+			end
+			T.expect({ t, computed[t] or {} }).toEqual({ t, set })
+		end
+		for t in computed do
+			T.expect({ t, STATY3_PATHS[t] ~= nil }).toEqual({ t, true })
+		end
+		T.expect(count).toBe(24)
+	end)
+end)
+
 return nil

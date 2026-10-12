@@ -427,13 +427,14 @@ T.describe("S55 ranks (ROZWOJ 2.5)", function()
 		end
 		T.expect(cleaveLevels).toEqual({ 18, 22, 26, 30, 34, 38, 42, 46, 50, 54 })
 		T.expect(Skills.rankLevel(skill("mightyStrike"), 2)).toBe(5)
+		-- S81: row 7 of the Mage paths (ROZWOJ 12.4 / 12.5)
 		T.expect({ Skills.rankLevel(skill("meteorStorm"), 5), Skills.rankLevel(skill("meteorStorm"), 10) }).toEqual({
+			64,
 			84,
-			95,
 		})
 		T.expect({ Skills.rankLevel(skill("evocation"), 5), Skills.rankLevel(skill("evocation"), 10) }).toEqual({
-			78,
-			95,
+			64,
+			84,
 		})
 	end)
 
@@ -2153,8 +2154,7 @@ T.describe("Arcane Charges and beam (S80)", function()
 		T.expect(Skills.descriptionArgs(fireball, 1).ticks).toBeNil()
 	end)
 
-	-- S81 replaces this case: the paths get a PathDef and the skills their nodes.
-	T.it("unreachable until S81 (no PathDef for destroyer / arcanist)", function()
+	T.it("reachable with their skill node from S81", function()
 		local hotbar: { [string]: string } = {}
 		local slot = 0
 		for id in NEW do
@@ -2167,8 +2167,199 @@ T.describe("Arcane Charges and beam (S80)", function()
 			T.expect({ id, table.find(available, id) }).toEqual({ id, nil })
 			T.expect({ id, GamePaths.skillRank(mage, id) }).toEqual({ id, 0 })
 		end
-		T.expect((GamePaths.skillUsable(mage, "arcaneDischarge", GamePaths.weaponTypesOf(mage.equipment)))).toBe(false)
+		T.expect((GamePaths.skillUsable(mage, "arcaneDischarge", { main = "runestaff" }))).toBe(false)
 		T.expect((GamePaths.validHotbar(mage))).toEqual({})
+		mage.path = { main = "arcanist", nodes = { arcanist_arcaneDischarge = 1 }, bp = {}, freeUsed = true }
+		local withNode = GamePaths.availableSkills(mage)
+		T.expect(table.find(withNode, "arcaneDischarge") ~= nil).toBe(true)
+		T.expect(table.find(withNode, "arcaneTorrent")).toBeNil()
+		-- Arcane Charges need the node and the Arcanist's weapon (S80 chargesEnabled)
+		T.expect((GamePaths.skillUsable(mage, "arcaneDischarge", { main = "runestaff" }))).toBe(true)
+		T.expect((GamePaths.skillUsable(mage, "arcaneDischarge", { main = "wand", offhand = "tome" }))).toBe(true)
+		T.expect((GamePaths.skillUsable(mage, "arcaneDischarge", { main = "staff" }))).toBe(false)
+		mage.path.main = "destroyer"
+		T.expect(GamePaths.skillRank(mage, "arcaneDischarge")).toBe(0) -- row 4 outside the main path
+	end)
+end)
+
+-- S81: the Mage's base 8, B options and composition with path nodes (ROZWOJ 2.7, 12.2-12.5).
+T.describe("S81 Mage base, B options and nodes", function()
+	local GamePaths = require("../src/shared/Logic/Paths")
+
+	T.it("base 8 at 1, 3, 6, 10, 14, 18, 30, 45; 10 path skills at their row level; B on every active", function()
+		local base, onPath = {}, {}
+		local actives, passives = 0, 0
+		for _, def in SkillData.byClass.Mage do
+			if def.path == nil then
+				table.insert(base, `{def.id}:{def.unlock}`)
+				passives += if def.type == "passive" then 1 else 0
+			else
+				onPath[def.id] = `{def.path}:{def.unlock}`
+			end
+			if def.type ~= "passive" then
+				actives += 1
+				for _, at in { 5, 10 } do
+					local pair = def.breakpoints and def.breakpoints[at]
+					T.expect({ def.id, at, pair ~= nil and pair.a ~= nil and pair.b ~= nil })
+						.toEqual({ def.id, at, true })
+				end
+			end
+		end
+		T.expect(base).toEqual({
+			"firebolt:1",
+			"fireball:3",
+			"iceShard:6",
+			"chainLightning:10",
+			"blink:14",
+			"frostNova:18",
+			"meteor:30",
+			"firewall:45",
+		})
+		T.expect(passives).toBe(0)
+		T.expect(onPath).toEqual({
+			elementalist = "destroyer:10",
+			elementalVortex = "destroyer:26",
+			meteorStorm = "destroyer:48",
+			cataclysm = "destroyer:60",
+			focus = "destroyer:80",
+			manaShield = "arcanist:10",
+			arcaneDischarge = "arcanist:26",
+			evocation = "arcanist:48",
+			arcaneTorrent = "arcanist:60",
+			arcaneMind = "arcanist:80",
+		})
+		T.expect(actives).toBe(15)
+		-- changed data (ROZWOJ 12.4, 12.5, 15.5.4)
+		local function v(id: string, field: string, rank: number): number
+			return Skills.valueAt(SkillData.get(id) :: any, field, rank)
+		end
+		T.expect({ v("meteorStorm", "dmg", 1), v("meteorStorm", "dmg", 10) }).toEqual({ 60, 80 })
+		T.expect({ v("arcaneMind", "crit", 1), v("arcaneMind", "crit", 5) }).toEqual({ 1, 3 })
+		T.expect({ v("arcaneMind", "critDmg", 1), v("arcaneMind", "critDmg", 5) }).toEqual({ 3, 8 })
+		T.expect({ v("focus", "reserve", 1), v("focus", "reserve", 5) }).toEqual({ 4, 20 })
+		T.expect((SkillData.get("focus") :: any).passive).toEqual({ pct = { manaReserve = "reserve" } })
+		T.expect((SkillData.get("evocation") :: any).cooldown).toBe(120)
+	end)
+
+	local function mage(main: string, nodes: { [string]: number }, bp: { [string]: string }): any
+		return {
+			class = "Mage",
+			level = 100,
+			path = { main = main, nodes = nodes, bp = bp, freeUsed = true },
+			hotbar = {},
+			equipment = {},
+		}
+	end
+	local function eff(
+		skillId: string,
+		main: string,
+		nodes: { [string]: number },
+		bp: { [string]: string },
+		weapons: any
+	): (any, any)
+		local skill = SkillData.get(skillId) :: any
+		local mods = GamePaths.skillMods(mage(main, nodes, bp), skillId, weapons)
+		return Skills.effective(skill, 10, bp :: any, mods, true)
+	end
+	local STAFF = { main = "staff" }
+	local RUNESTAFF = { main = "runestaff" }
+
+	T.it("Meteor 5B + 10B and Magic Bolt 5B / 10B", function()
+		local meteor = eff("meteor", "destroyer", {}, { ["meteor:5"] = "b", ["meteor:10"] = "b" }, STAFF)
+		T.expect(Skills.valueAt(meteor, "dmg", 10)).toBeNear(625, 1e-9)
+		local bolt = eff("firebolt", "destroyer", {}, { ["firebolt:5"] = "b", ["firebolt:10"] = "b" }, STAFF)
+		T.expect(bolt.hits).toBe(2)
+		T.expect(Skills.valueAt(bolt, "dmg", 10)).toBeNear(186, 1e-9)
+		T.expect(Skills.cooldown(bolt, 10)).toBeNear(2.2, 1e-9)
+	end)
+
+	T.it("Arcane Discharge with Full Discharge, Elemental Vortex with Raging Vortex and the path weapon", function()
+		local discharge = eff(
+			"arcaneDischarge",
+			"arcanist",
+			{ arcanist_arcaneDischarge = 1, arcanist_fullDischarge = 3 },
+			{ ["arcaneDischarge:5"] = "a" },
+			RUNESTAFF
+		)
+		T.expect(Skills.valueAt(discharge, "perCharge", 10)).toBeNear(27, 1e-9)
+		local nodes = { destroyer_elementalVortex = 1, destroyer_raging = 3 }
+		local bp = { ["elementalVortex:5"] = "b" }
+		local vortex = eff("elementalVortex", "destroyer", nodes, bp, { main = "wand", offhand = "orb" })
+		T.expect(Skills.valueAt(vortex, "dmg", 10)).toBeNear(16.5, 1e-9)
+		-- a tome in the Destroyer's off-hand: rows 4 and 9 need the path weapon
+		T.expect(
+			GamePaths.skillMods(mage("destroyer", nodes, bp), "elementalVortex", { main = "wand", offhand = "tome" })
+		)
+			.toEqual({})
+		local plain = eff("elementalVortex", "destroyer", nodes, bp, { main = "wand", offhand = "tome" })
+		T.expect(Skills.valueAt(plain, "dmg", 10)).toBeNear(15, 1e-9)
+	end)
+
+	T.it(
+		"node behaviours compose: Storm's Wrath, Swift Cataclysm, Empowering Invocation, Archmage, the Torrent",
+		function()
+			local _, wrath = eff(
+				"meteorStorm",
+				"destroyer",
+				{ destroyer_meteorStorm = 1, destroyer_wrath = 3 },
+				{},
+				STAFF
+			)
+			T.expect(wrath.cdrPerTarget).toEqual({ sec = 3, max = 5 })
+			local cataclysm = eff(
+				"cataclysm",
+				"destroyer",
+				{ destroyer_cataclysm = 1, destroyer_swift = 3, destroyer_cataclysm2 = 2 },
+				{},
+				STAFF
+			)
+			T.expect(Skills.cooldown(cataclysm, 10)).toBeNear(24, 1e-9)
+			T.expect(cataclysm.hits).toBe(7)
+			local nodes = { arcanist_evocation = 1, arcanist_invocation = 3, arcanist_archmage = 3 }
+			local evocation, behaviour = eff("evocation", "arcanist", nodes, { ["evocation:5"] = "a" }, RUNESTAFF)
+			T.expect(behaviour.empower).toEqual({ pct = 15, uses = 3 })
+			T.expect(evocation.duration).toBeNear(1.5, 1e-9)
+			T.expect(Skills.cooldown(evocation, 10)).toBeNear(90, 1e-9)
+			local torrentNodes = { arcanist_arcaneTorrent = 1, arcanist_rending = 3, arcanist_torrent2 = 2 }
+			local torrent = eff("arcaneTorrent", "arcanist", torrentNodes, { ["arcaneTorrent:5"] = "a" }, RUNESTAFF)
+			T.expect(Skills.valueAt(torrent, "growth", 10)).toBeNear(4.5, 1e-9)
+			T.expect(Skills.beamTicks(torrent)).toBe(10)
+			local well = eff(
+				"arcaneTorrent",
+				"arcanist",
+				{ arcanist_arcaneTorrent = 1, arcanist_well = 3 },
+				{},
+				RUNESTAFF
+			)
+			T.expect(Skills.valueAt(well, "drain", 10)).toBeNear(0.75, 1e-9)
+		end
+	)
+
+	T.it("B options of the base and the moved skills", function()
+		local function b(id: string, at: number): any
+			local def = SkillData.get(id) :: any
+			return (Skills.effective(def, 10, { [`{id}:{at}`] = "b" } :: any, nil, true))
+		end
+		T.expect(Skills.cooldown(b("iceShard", 10), 10)).toBeNear(5 * 0.85, 1e-9)
+		T.expect(b("blink", 5).length).toBe(20)
+		local _, trap = Skills.effective(SkillData.get("blink") :: any, 10, { ["blink:10"] = "b" } :: any, nil, true)
+		T.expect(trap.trap).toEqual({ radius = 6, duration = 3, slow = 40 })
+		local _, nova =
+			Skills.effective(SkillData.get("frostNova") :: any, 10, { ["frostNova:10"] = "b" } :: any, nil, true)
+		T.expect(nova.echo).toEqual({ delay = 1.5, pct = 40 })
+		local _, shield =
+			Skills.effective(SkillData.get("manaShield") :: any, 10, { ["manaShield:10"] = "b" } :: any, nil, true)
+		T.expect(shield.selfHeal).toBe(10)
+		local _, evocation = Skills.effective(
+			SkillData.get("evocation") :: any,
+			10,
+			{ ["evocation:5"] = "b", ["evocation:10"] = "b" } :: any,
+			nil,
+			true
+		)
+		T.expect({ evocation.channelMove, evocation.grantCharges }).toEqual({ 50, 4 })
+		T.expect(Skills.valueAt(b("meteorStorm", 10), "dmg", 10)).toBeNear(102, 1e-9)
+		T.expect(Skills.cooldown(b("meteorStorm", 5), 10)).toBeNear(37.5, 1e-9)
 	end)
 end)
 

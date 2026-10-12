@@ -5,7 +5,7 @@
 
 ## Stan
 
-S01–S51 i S53–S80 gotowe (lista i zakres w `docs/SESJE.md`). Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
+S01–S51 i S53–S81 gotowe (lista i zakres w `docs/SESJE.md`). Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
 kategorie efektów drużyny i stos efektów (`Logic/EffectStack`), S54 wzory globalne (`Logic/LevelCurves`), S55 rangi
 i przełomy w kształcie A/B (`Build.bp2`, `Skills.effective` §2.7), S56 koniec punktów umiejętności: rangi z poziomu
 postaci (`Skills.rankFor`, drabina przejściowa ROZWOJ 2.6), zapis w schemacie 6 (darmowy reset statystyk, pasek
@@ -56,8 +56,10 @@ krawędzi minimapy). S79 Mag: silnik tagów obszaru i haków Maga (`Skills.tag`,
 `ctx.damage`, `Skills.castZones`, `Logic/Chain`, haki kosztu `areaCost` / `spellCost`, `manaReserve`, podpalenie z
 `accumulate` i pełnymi 30%); haki czytają 0 do węzłów S81. Kapłan, Wojownik i Łowca na ścieżkach (ukryte na wiki); Mag
 na drabinie przejściowej do S81. S80 Mag: silnik Arkanisty gotowy (typ `beam`, Ładunki Arkanów, Wzmocnienie, haki
-Ładunków; 4 nowe umiejętności nieosiągalne do S81).
-Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`, `docs/STATY.md`), następna S81; testy
+Ładunków). S81 Mag: podstawa 8 i ścieżki Niszczyciel, Arkanista (`Data/Paths/Mage`, węzły `extra` w rzędach 2, 5, 10,
+`areaCap` w buildach), opcje B, Zwój Nowej Ścieżki znowu w sklepie premium. Wszystkie cztery klasy na ścieżkach (ukryte
+na wiki do decyzji właściciela przed S82); następna: S82 planer wiki.
+Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`, `docs/STATY.md`), następna S82; testy
 i strojenie po niej.
 
 ## Niedokończone (kod)
@@ -77,14 +79,11 @@ i strojenie po niej.
 - **Gildie / aukcja / poczta**: brak zaproszeń do gildii między serwerami; aukcja bez podpowiedzi ceny, poczta bez
   pobrania.
 - **Przedmioty (S62–S68)**: krwawienie, trucizna i podpalenie z danych umiejętności przy odświeżeniu kasują resztę
-  (`accumulate` ma od S79 tylko podpalenie z żywiołu broni); ścieżki Maga bez `itemWeights` (S81); `dmgMul` Kuszy 1,45
-  (S90).
+  (`accumulate` ma od S79 tylko podpalenie z żywiołu broni); `dmgMul` Kuszy 1,45 (S90).
 - **Kapłan**: cele 9.6 po normalizacji broni: w repo nie ma narzędzia liczącego umiejętności, pomiar S86, strojenie S89.
-- **Umiejętności i ścieżki**: ścieżki Maga wkrótce (S81); do tego czasu haki Maga z S79 czytają 0, a kanał z
-  `channelMove` nie zwalnia chodu u klienta (zdarzenie `cast` kanału z `mv` w S80);
-  zwój i zakładka ścieżek mówią „wkrótce”, wpis premium zwoju niedostępny do S81. Brak przycisku „Załóż pasującą
-  broń” po przełączeniu zestawu (ROZWOJ 2.8, później); planer wiki wkrótce (S82). Oko Zwiadowcy widzi tylko Elity
-  wczytane przez streaming (pewnie do 128 st.); pewność dalej wymagałaby remote'u z pozycjami Elit (decyzja właściciela).
+- **Umiejętności i ścieżki**: brak przycisku „Załóż pasującą broń” po przełączeniu zestawu (ROZWOJ 2.8, później);
+  planer wiki wkrótce (S82). Oko Zwiadowcy widzi tylko Elity wczytane przez streaming (pewnie do 128 st.); pewność
+  dalej wymagałaby remote'u z pozycjami Elit (decyzja właściciela).
 - **UI**: ikona plecaka w HUD nie świeci po otwarciu klawiszem B; Esc nie zamyka menu przytrzymania. Stan przełączników
   panelu admina tylko lokalny. `/tparea` bez filtra po mapie. Ikony `crow_feather`, `toad_venom` to aliasy; brak ikon
   walut przy cenach. Mapa świata: budowle Łąk bez ikon, timer Elity II tylko tekstem.

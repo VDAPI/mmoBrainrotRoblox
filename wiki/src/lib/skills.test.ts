@@ -24,10 +24,11 @@ describe("skill ranks from the level (S56)", () => {
   });
 
   it("matches the game's control values", () => {
-    expect(byId("cleave").rankLevels).toEqual([18, 22, 26, 30, 34, 38, 42, 46, 50, 54]);
+    expect(byId("bloodlust").rankLevels).toEqual([18, 22, 26, 30, 34, 38, 42, 46, 50, 54]);
     expect(byId("steelSkin").rankLevels).toEqual([14, 23, 32, 41, 50]);
-    expect(rankAt(byId("meteorStorm"), 95)).toBe(10);
-    expect(rankAt(byId("meteorStorm"), 94)).toBe(9);
+    // S81: Elemental Fury moved to a path (hidden on the wiki); Thunderstorm is the latest base skill
+    expect(rankAt(byId("firewall"), 81)).toBe(10);
+    expect(rankAt(byId("firewall"), 80)).toBe(9);
     expect(file.rules.ranks).toEqual({ step: 4, capLevel: 95 });
   });
 });

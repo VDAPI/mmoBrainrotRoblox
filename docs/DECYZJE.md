@@ -1682,3 +1682,26 @@
   ruchu jak inne `lock`).
 - S80 Ładunki i `empowered` mają `category = "own"` i źródło gracza bez `skillId` (jeden wpis na rodzaj); licznik
   Ładunków klient czyta z atrybutu `Effects` (`EffectStack.stacksOf`).
+- S81 Mag: podstawa 8 (Magiczny Pocisk 1, Kula Ognia 3, Lodowy Odłamek 6, Łańcuch Błyskawic 10, Błysk 14, Lodowa Nova
+  18, Meteor 30, Burza Piorunów 45). Mistrz Żywiołów i Tarcza Many w rzędzie 1 (poz. 10), Gniew Żywiołów i Inwokacja w
+  rzędzie 7 (48), Skupienie i Tajemny Umysł w rzędzie 10 (80); przeniesione znikają z paska obu zestawów i z `path.bp`
+  przez `Paths.validHotbar`, dopóki gracz nie kupi węzła.
+- S81 Skupienie poza podstawą (wyjątek 2.1, 15.5.5): Mag na 14–45 ma mniejszą pulę many i wolniejszą regenerację niż
+  przed przebudową; zamierzone. Meteor 40 → 30, Burza Piorunów 56 → 45; wcześniej także Kula Ognia 10 → 3, Łańcuch
+  18 → 10, Lodowa Nova 34 → 18; później Lodowy Odłamek 3 → 6 i Błysk 6 → 14. Siła na 1–20 się zmienia; stroi ją S91.
+- S81 broń Maga: ścisły podział 12.1 (15.5.2, zgodny ze STATY 3); zła broń szarzeje rzędy 3–11 (2.8). Zmiana na luźny
+  podział to pole `weapon` w `Data/Paths/Mage`, kolumna STATY 3, kopia w `items.spec` i `itemWeights`.
+- S81 Gniew Żywiołów 60 → 80% w rzędzie 7, Tajemny Umysł krytyk 1 → 3 i obrażenia krytyczne 3 → 8, Inwokacja 120 s
+  (15.5.4); Skupienie jako rezerwa many `manaReserve` 4 → 20%.
+- S81 limit obszaru: 2,0 dla każdego buildu, Niszczyciel 3,0 (domyślne 15.5.3), zapisany jako `areaCap` w buildach
+  wzorcowych; sprawdzają go S86 i S90.
+- S81 id węzłów `skill` Maga `<pathId>_<skillId>` (2.3, 16.8) zamiast krótkich id z tabel 12.4/12.5; Pełne Wyładowanie
+  liniowo 3 / 6,5 / 10 i Ślad Żywiołu 0,7 / 1,35 / 2 (2.3) zamiast 3 / 7 / 10 i 0,7 / 1,3 / 2; ROZWOJ poprawiony.
+- S81 ścieżki Maga `wiki = false`; wszystkie cztery klasy mają ścieżki ukryte na wiki do decyzji właściciela o
+  publikacji (przed S82). Zwój Nowej Ścieżki wraca do sklepu premium (15.1.6); mechanizm `ShopEntry.unavailable` z S56
+  usunięty razem z kluczami `premium.soon` / `premium.error.soon`.
+- S81 buildy wzorcowe Maga wypisują węzły w kolejności priorytetu z 12.4 / 12.5 (tak liczył pomiar 12.7), nie według
+  poziomu rzędu jak S71–S78; komentarz w typie `ReferenceBuild`. Nowe warunki rotacji `minCharges`, `minManaPct`,
+  `maxManaPct` (tylko dane dla modelu S85).
+- S81 nazwy haków i pól z S79 / S80 pasują do tabel 12.4 / 12.5 bez zmian (D1); wszyscy odbiorcy istnieli, kodu
+  silnika nie trzeba było dopisywać.

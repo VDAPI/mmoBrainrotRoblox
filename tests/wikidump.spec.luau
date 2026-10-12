@@ -450,10 +450,12 @@ T.describe("Wiki export: consistency", function()
 			end
 		end
 		T.expect(#d.premium.passes).toBe(#Products.passes)
-		-- S56: an unavailable service (scroll_skillreset until S81) is not on the wiki
+		-- S81: the New Path Scroll is sold again, so it is on the wiki (key, kind and texts only)
+		local scrolls = 0
 		for _, service in d.premium.shop do
-			T.expect(service.key ~= "scroll_skillreset").toBe(true)
+			scrolls += if service.key == "scroll_skillreset" then 1 else 0
 		end
+		T.expect(scrolls).toBe(1)
 		-- the instant respawn product never reaches the wiki (areaProfiles use a "respawn" key, so only premium.json)
 		T.expect(string.find(Json.encode(d.premium), 'respawn"', 1, true)).toBe(nil)
 		for _, npc in d.npcs.npcs do

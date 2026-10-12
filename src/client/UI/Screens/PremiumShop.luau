@@ -177,19 +177,16 @@ local function servicesTab(scope: Scope, props: Props): { Instance }
 	for i, entry in Products.shop do
 		if entry.kind == "item" and entry.itemId then
 			local itemId = entry.itemId
-			-- S56: an unavailable entry shows "Soon" and cannot be bought
-			local button = if entry.unavailable
-				then buyButton(scope, Text.T(scope, "premium.soon"), true, function() end)
-				else buyButton(
-					scope,
-					`◆ {entry.price}`,
-					scope:Computed(function(use): boolean
-						return (use(shards) or 0) < entry.price
-					end),
-					function()
-						invoke("PremiumBuy", entry.key)
-					end
-				)
+			local button = buyButton(
+				scope,
+				`◆ {entry.price}`,
+				scope:Computed(function(use): boolean
+					return (use(shards) or 0) < entry.price
+				end),
+				function()
+					invoke("PremiumBuy", entry.key)
+				end
+			)
 			table.insert(
 				list,
 				card(

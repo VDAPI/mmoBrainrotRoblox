@@ -675,21 +675,20 @@ end)
 T.describe("Paths: hotbar and breakpoints", function()
 	T.it("validHotbar drops what the character does not have", function()
 		local nodes = fill("fxStorm", 4)
-		local c =
-			char(40, state("fxStorm", nodes, { ["fxSpark:5"] = "b", ["fxSpark:10"] = "a", ["firebolt:5"] = "b" }), {
-				hotbar = {
-					["1"] = "fxSpark",
-					["2"] = "fxBolt",
-					["3"] = "focus", -- passive
-					["4"] = "mightyStrike", -- other class
-					["5"] = "fxSpark",
-					["6"] = "fxOrphan",
-					["7"] = "firebolt",
-				},
-			})
+		local c = char(40, state("fxStorm", nodes, { ["fxSpark:5"] = "b", ["fxSpark:10"] = "a", ["fxBolt:5"] = "b" }), {
+			hotbar = {
+				["1"] = "fxSpark",
+				["2"] = "fxBolt",
+				["3"] = "focus", -- passive
+				["4"] = "mightyStrike", -- other class
+				["5"] = "fxSpark",
+				["6"] = "fxOrphan",
+				["7"] = "firebolt",
+			},
+		})
 		local bar, bp, changed = P.validHotbar(c)
 		T.expect(bar).toEqual({ ["1"] = "fxSpark", ["2"] = "fxBolt", ["7"] = "firebolt" })
-		T.expect(bp).toEqual({ ["fxSpark:5"] = "b" }) -- no B at 10, firebolt has no B
+		T.expect(bp).toEqual({ ["fxSpark:5"] = "b" }) -- no B at 10, fxBolt has no breakpoints (S81: every real skill has B)
 		T.expect(changed).toBe(true)
 		c.hotbar = bar
 		c.path.bp = bp
@@ -805,7 +804,9 @@ T.describe("Paths: edit rules and breakpoints", function()
 		T.expect({ P.canChooseBreakpoint(c, "fxSpark", 5, "a") }).toEqual({ true, nil, true })
 		T.expect(select(2, P.canChooseBreakpoint(c, "fxSpark", 7, "a"))).toBe("error.badRequest")
 		T.expect(select(2, P.canChooseBreakpoint(c, "fxSpark", 5, "c"))).toBe("error.badRequest")
-		T.expect(select(2, P.canChooseBreakpoint(c, "firebolt", 5, "b"))).toBe("bp.error.noOption")
+		-- S81: every real class has B on both ranks, so a fixture skill without breakpoints
+		local bolt = char(70, state("fxStorm", fill("fxStorm", 4)))
+		T.expect(select(2, P.canChooseBreakpoint(bolt, "fxBolt", 5, "b"))).toBe("bp.error.noOption")
 	end)
 end)
 
@@ -1747,6 +1748,175 @@ T.describe("Data: Hunter paths (S78)", function()
 	end)
 end)
 
+-- S81: the Mage on real paths (ROZWOJ 12) ------------------------------------------------------------------------------
+
+T.describe("Data: Mage paths (S81)", function()
+	local TooltipModel = require("../src/shared/Logic/TooltipModel")
+
+	local function mage(main: string?, nodes: { [string]: number }): any
+		return char(100, state(main, nodes, {}, true), { class = "Mage" })
+	end
+
+	local function ok(pathId: string, main: string?, offhand: string?): boolean
+		return GamePaths.weaponOk((PathData.get(pathId) :: any).weapon, { main = main, offhand = offhand })
+	end
+
+	T.it("weapons of ROZWOJ 12.1 and their coverage", function()
+		T.expect(ok("destroyer", "staff")).toBe(true)
+		T.expect(ok("destroyer", "runestaff")).toBe(false)
+		T.expect(ok("destroyer", "wand", "orb")).toBe(true)
+		T.expect(ok("destroyer", "wand", "tome")).toBe(false)
+		T.expect(ok("destroyer", "wand")).toBe(false)
+		T.expect(ok("arcanist", "runestaff")).toBe(true)
+		T.expect(ok("arcanist", "staff")).toBe(false)
+		T.expect(ok("arcanist", "wand", "tome")).toBe(true)
+		T.expect(ok("arcanist", "wand", "orb")).toBe(false)
+		T.expect(ok("arcanist", "wand")).toBe(false)
+		T.expect(ok("fortune", "holystaff")).toBe(false)
+		T.expect(ok("fortune", "mace1h", "relic")).toBe(true)
+		-- staff and orb only for the Destroyer, runestaff and tome only for the Arcanist, the wand for both
+		local function fits(main: string, offhand: string?): { string }
+			local out = {}
+			for _, path in GamePaths.pathsOf("Mage") do
+				if GamePaths.weaponOk(path.weapon, { main = main, offhand = offhand }) then
+					table.insert(out, path.id)
+				end
+			end
+			return out
+		end
+		T.expect(fits("staff")).toEqual({ "destroyer" })
+		T.expect(fits("runestaff")).toEqual({ "arcanist" })
+		T.expect(fits("wand", "orb")).toEqual({ "destroyer" })
+		T.expect(fits("wand", "tome")).toEqual({ "arcanist" })
+		T.expect(fits("wand")).toEqual({})
+		-- a tome in a Destroyer's hands: row 3 (Volatile Power) is off, row 2 (Elemental Trail) works
+		local c = mage("destroyer", { destroyer_volatile = 3, destroyer_trace = 3 })
+		local hooks = GamePaths.passiveTotals(c, { main = "wand", offhand = "tome" }).hooks
+		T.expect(hooks.areaDamage).toBeNil()
+		T.expect(hooks.areaCost).toBeNil()
+		T.expect(hooks.areaLingering).toBeNear(2, 1e-9)
+		for _, weapons in { { main = "runestaff" }, { main = "staff" }, { main = "wand", offhand = "orb" } } do
+			T.expect(GamePaths.passiveTotals(c, weapons).hooks.areaLingering).toBeNear(2, 1e-9)
+		end
+		T.expect(GamePaths.passiveTotals(c, { main = "staff" }).hooks.areaCost).toBeNear(30, 1e-9)
+	end)
+
+	T.it("twoPathExtra rows, ranks 49 / 13, 50 / 62 coverage, 46 nodes, 10 skill nodes", function()
+		local extraRows = {}
+		for _, row in GamePaths.rowsFor("Mage") do
+			if row.extra then
+				table.insert(extraRows, row.index)
+			end
+		end
+		T.expect(extraRows).toEqual({ 2, 5, 10 })
+		local paths = GamePaths.pathsOf("Mage")
+		T.expect(#paths).toBe(2)
+		local nodes, skills = 0, 0
+		for _, main in paths do
+			T.expect(main.wiki).toBe(false)
+			T.expect({ main.id, pathRanks(main, 1, #PathData.ROWS) }).toEqual({ main.id, 49 })
+			local total = 49
+			for _, other in paths do
+				if other ~= main then
+					T.expect({ other.id, pathRanks(other, 1, PathData.DIP_ROWS) }).toEqual({ other.id, 13 })
+					total += 13
+				end
+			end
+			T.expect(total).toBe(62)
+			T.expect(GamePaths.pointsAt(100) / total).toBeBetween(0.75, 0.88)
+			for r, row in main.rows do
+				local extras = 0
+				for i, n in row.nodes do
+					nodes += 1
+					skills += if n.kind == "skill" then 1 else 0
+					if n.extra then
+						extras += 1
+						T.expect({ n.id, i }).toEqual({ n.id, #row.nodes })
+					end
+				end
+				local want = if r == 2 or r == 5 or r == 10 then 1 else 0
+				T.expect({ main.id, r, extras }).toEqual({ main.id, r, want })
+				if want == 1 then
+					T.expect({ main.id, r, #row.nodes }).toEqual({ main.id, r, 3 })
+				end
+			end
+		end
+		T.expect({ nodes, skills }).toEqual({ 46, 10 })
+		-- classes with three paths have no extra nodes
+		for _, path in PathData.list do
+			if path.class ~= "Mage" then
+				for _, row in path.rows do
+					for _, n in row.nodes do
+						T.expect({ n.id, n.extra }).toEqual({ n.id, nil })
+					end
+				end
+			end
+		end
+	end)
+
+	T.it(
+		"model builds spend exactly 50; areaCap 3.0 for the Destroyer; Fury stays the only damage reference",
+		function()
+			local caps = {}
+			for _, path in GamePaths.pathsOf("Mage") do
+				T.expect(#path.reference).toBe(2)
+				for _, build in path.reference do
+					T.expect({ build.id, build.damageReference }).toEqual({ build.id, nil })
+					caps[build.id] = build.areaCap or 2
+					T.expect(build.stats).toEqual(path.statPlan)
+					local weapons = { main = build.weapon.main, offhand = build.weapon.offhand }
+					T.expect({ build.id, GamePaths.weaponOk(path.weapon, weapons) }).toEqual({ build.id, true })
+					local nodes: { [string]: number } = {}
+					local c = mage(path.id, nodes)
+					for _, entry in build.nodes do
+						for _ = 1, entry[2] do
+							local can, why = GamePaths.canBuy(c, entry[1])
+							T.expect({ build.id, entry[1], can, why }).toEqual({ build.id, entry[1], true, nil })
+							nodes[entry[1]] = (nodes[entry[1]] or 0) + 1
+						end
+					end
+					T.expect({ build.id, GamePaths.spent(c) }).toEqual({ build.id, GamePaths.pointsAt(100) })
+					local available = GamePaths.availableSkills(c)
+					for key in build.bp do
+						local skillId, at = string.match(key, "^(.+):(%d+)$")
+						local def = SkillData.get(skillId or "") :: any
+						T.expect({ key, at == "5" or at == "10", def ~= nil and def.type ~= "passive" })
+							.toEqual({ key, true, true })
+						T.expect({ key, table.find(available, skillId or "") ~= nil }).toEqual({ key, true })
+					end
+					for _, step in build.rotation do
+						T.expect({ build.id, step.skill, table.find(available, step.skill) ~= nil })
+							.toEqual({ build.id, step.skill, true })
+					end
+				end
+			end
+			T.expect(caps).toEqual({ destroyerExp = 3, destroyerBoss = 3, arcanistBoss = 2, arcanistOverload = 2 })
+			local references = {}
+			for _, path in PathData.list do
+				for _, build in path.reference do
+					if build.damageReference then
+						table.insert(references, build.id)
+					end
+				end
+			end
+			T.expect(references).toEqual({ "fury" })
+		end
+	)
+
+	T.it("weapon traits list Elements in the Veins (S68 nodeHooks)", function()
+		local destroyerPaths = { PathData.get("destroyer") }
+		local function names(traitId: string): { string }
+			local out = {}
+			for _, entry in TooltipModel.traitNodes(traitId, destroyerPaths, nil, "pl") do
+				table.insert(out, entry.node)
+			end
+			return out
+		end
+		T.expect(names("elementalMight")).toEqual({ "Żywioł w Żyłach" })
+		T.expect(names("elementalSpark")).toEqual({ "Żywioł w Żyłach" })
+	end)
+end)
+
 -- Build sets (S58, ROZWOJ 2.9, 2.11, 3.4) ----------------------------------------------------------------------------
 
 T.describe("Build sets (S58)", function()
@@ -1948,12 +2118,12 @@ T.describe("Build sets (S58)", function()
 		local broken = TableUtil.deepCopy(base)
 		broken.path.nodes.fxGone_x = 2
 		broken.hotbar["9"] = "fxOrphan"
-		broken.path.bp["firebolt:5"] = "b"
+		broken.path.bp["fxBolt:5"] = "b" -- no breakpoints
 		local fixed, changed2 = api.cleanSet(c, broken, 100)
 		T.expect(changed2).toBe(true)
 		T.expect(fixed.path.nodes.fxGone_x).toBeNil()
 		T.expect(fixed.hotbar["9"]).toBeNil()
-		T.expect(fixed.path.bp["firebolt:5"]).toBeNil()
+		T.expect(fixed.path.bp["fxBolt:5"]).toBeNil()
 		T.expect(fixed).toEqual(base)
 		local repaired = api.cloneSet({ path = nil, stats = nil, statPoints = "x" }, "Mage", 40)
 		T.expect(repaired.path).toEqual({ nodes = {}, bp = {}, freeUsed = false })

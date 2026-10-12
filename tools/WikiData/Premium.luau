@@ -41,8 +41,7 @@ function Premium.build(ctx: any): any
 	local shop = {}
 	for _, e in Products.shop do
 		local item = e.itemId
-		-- S56: an unavailable entry (scroll_skillreset until S81) is not on the wiki
-		if not e.unavailable and not (item and ctx.hidden[item]) then
+		if not (item and ctx.hidden[item]) then
 			table.insert(shop, {
 				key = e.key,
 				kind = e.kind,
