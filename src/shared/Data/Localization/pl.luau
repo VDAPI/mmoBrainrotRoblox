@@ -165,6 +165,7 @@ return {
 	["stat.manaRegen"] = "Regeneracja many (na s)",
 	["stat.energyRegen"] = "Regeneracja energii (na s)",
 	["stat.costReduce"] = "Obniżka kosztu umiejętności",
+	["stat.manaReserve"] = "Rezerwa many", -- S79
 	["stat.moveSpeed"] = "Szybkość ruchu",
 	["stat.expBonus"] = "Bonus do doświadczenia",
 	["stat.dropBonus"] = "Bonus do dropu",
@@ -183,6 +184,7 @@ return {
 	["breakdown.weapon"] = "Broń",
 	["breakdown.maxHpPct"] = "Część maks. życia",
 	["breakdown.maxManaPct"] = "Część maks. many",
+	["breakdown.manaReserve"] = "Rezerwa many", -- S79
 	["source.total"] = "Bonusy",
 	["source.gear"] = "Ekwipunek",
 	["source.blessing"] = "Błogosławieństwo",

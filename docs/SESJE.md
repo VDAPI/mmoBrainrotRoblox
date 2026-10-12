@@ -4021,3 +4021,47 @@ StatusEffectService}}`, `src/client/{Controllers/VfxController,Vfx/{Library,Pool
 Pliki: `src/shared/{Data/{Paths/{Hunter,Types,init},Skills/Hunter,Titles,Localization/{pl,en}},Logic/{Skills,
 ScoutRange}}`, `src/server/Services/PartyService`, `src/client/{UI/Screens/Hud/Minimap,Controllers/ReworkController}`,
 `tests/{paths,skills,scoutrange}.spec`, `wiki/src/data/*`, `docs/{ROZWOJ,DECYZJE,SESJE,PROGRESS,PRZEDMIOTY}.md`.
+
+### S79: Mag 1: tagi obszaru, koszt czarów i haki obszaru
+
+Silnik Maga pod S80–S81 (ROZWOJ 12.3, 14.4). Wszystkie haki czytają 0, dopóki S81 nie doda węzłów; gracz widzi tylko
+mocniejsze podpalenie ognistego Maga i wiersz „Rezerwa many” w oknie postaci.
+
+- A: `Logic/Skills`: `tag`, `isSpell`, `areaApplies`, `singleApplies`, `areaCount`, `spellBonus`, `resonanceMul`,
+  `castZones` (typ `Zone`), `zoneKind`, `areaKillMana`, `channelGuard` / `castGuard` (typ `GuardSpec`), `areaRadius`,
+  `manaShieldSplit`; `Skills.cost` czyta `spellCost` i `areaCost` (plus = drożej, w `base` przed `costReduce`);
+  `effective` przepisuje `channelMove` na definicję; `descriptionArgs` liczy `{radius}` z haka `areaRadius`, gdy opis
+  dostaje haki. Stałe `AREA_MIN_HITS`, `AREA_LINGER_SECONDS`, `RESONANCE_MANA`, `VORTEX_SKILL` w `Data/Skills`.
+- B: nowy `Logic/Chain.path` (płaska odległość, remis do niższego indeksu); `Channel.stops`: kanał z `channelMove`
+  trwa w ruchu.
+- C: `Breakpoint.cdrPerTarget`, `Breakpoint.channelMove` (i `SkillDef.channelMove`), `lingering.kind = "element"`
+  w komentarzu typu; `firebolt.hits = 1`; statystyka `manaReserve` (`Data/Stats`, `StatCalc`: pula rośnie, regeneracja
+  nie, limit 40, część `breakdown.manaReserve` w rozbiciu many).
+- D: `Skills/Context`: `ctx.hook` (haki raz na rzucenie), `ctx.tag`, `ctx.manaFraction`; `ctx.damage` z opcjami
+  `areaHits` i `secondary` (premia tagu + `spellDamage` i rezonans poza tykami stref), mana za zabicie czarem
+  obszarowym (`areaKillMana`), `cdrPerTarget` przez `ReduceCooldown` (z S76); `ctx.lingering(center, percent, wave,
+  inCircle)` na `Skills.castZones` i wspólnej pętli `startZone` (strefy żywiołu: rodzaj z `zoneKind`, siła
+  `Elements.power`, lód spowalnia dłużej, `noAdaptive`; trucizna `poison` z S76 bez zmian).
+- E: `Types/Offense`: `hitAll` z `extra { from, areaHits, secondary }`, każdy handler podaje liczbę trafionych,
+  przebicie / rozpryski / `split` jako poboczne, Burza Piorunów liczy krąg i dostaje strefę haka, kręgi wołają
+  `ctx.lingering` w każdej fali (strefy tylko w pierwszej), łańcuch na `Chain.path` (zasięg zapytania
+  `(radius + 1,5) × max(1, jumps − 1)`; najbliższy po płaskiej odległości zamiast 3D).
+- F: `Elements`: łuk umiejętności z `secondary`, podpalenie umiejętności z `accumulate = true` i `exactTicks` z
+  `SkillData.ADAPTIVE`; `elementRider` czytany literałem już od S65 (bez zmian). Regresja ognia w `traits.spec`:
+  `tick` 75 → 100, z `dotBonus = 20` 90 → 120, z `rider = 30` 97,5 → 130; lód, błyskawica i Iskra bez zmian.
+- G: `SkillService`: promień z haka `areaRadius` na kopii definicji (handlery i VFX), mana sprzed kosztu w
+  `ctx.manaFraction`, `channelGuard` na starcie kanału i jedno wyjście `endChannel` (naturalny koniec i każde
+  `interruptChannel`), `vortexGuard` w `finished()`. Koszt już szedł z `hooks` (S76), `refund` / `refundAim` oddają
+  pobrany koszt.
+- H: `StatusEffectService`: `Remove(entity, kind, skillId?)`, Tarcza Many przez `Skills.manaShieldSplit` z hakiem
+  `manaShieldCost` (czytnik `SetHookReader` już istniał).
+- I–J: krążek celowania (`SkillController`) i `SkillInfo.shapeLine` biorą promień z `Skills.areaRadius`; teksty
+  `stat.manaReserve`, `breakdown.manaReserve` (PL, EN). Opisów statystyk pochodnych w dymku nie ma, więc bez opisu.
+- Testy: nowy `tests/mage.spec`, `skills.spec` („S79 spell cost hooks”), `channel.spec` („channelMove (S79)”),
+  `traits.spec` (ogień), `BreakpointKeys` (`cdrPerTarget`, `channelMove`). Dane wiki: `npm run data` (Node był):
+  `hits` Pocisku i statystyka `manaReserve`.
+
+Pliki: `src/shared/{Logic/{Skills,Chain,Channel,StatCalc,Traits},Data/{Stats,Skills/{init,Types,Mage},
+Localization/{pl,en}}}`, `src/server/{Skills/{Context,Elements,Types/Offense},Services/{SkillService,
+StatusEffectService}}`, `src/client/{Controllers/SkillController,UI/SkillInfo}`, `tests/{mage,skills,channel,traits}.spec`,
+`tests/BreakpointKeys`, `wiki/src/data/*`, `docs/{DECYZJE,SESJE,PROGRESS,PRZEDMIOTY}.md`, `CLAUDE.md`.

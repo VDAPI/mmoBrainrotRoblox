@@ -26,6 +26,7 @@
 -- stacks poison (poisonStacks), keeps the poison spread / mark jump of the breakpoint on the effect and sends every
 -- poison through CombatService.ApplyPoison; `lingering` pulses carry `lingering = true` and a poison field counts as
 -- the Hunter's poison (DotBonus).
+-- S79: spell tags (Logic/Skills.tag), areaHits / secondary per hit, Mage hooks (area, single, spell, resonance, Cascade, Elemental Trail zone, cdrPerTarget).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
@@ -79,6 +80,11 @@ export type Ctx = {
 	skipSelfEffects: boolean?,
 	-- S76: the cooldown set at the cast in seconds (0 without; critCdr shortens it by a share)
 	cooldown: number,
+	-- S79: passive hooks of the caster, read once per cast
+	hook: (id: string) -> number,
+	tag: string, -- S79: Logic/Skills.tag of the skill ("area" | "single", ROZWOJ 12.3)
+	-- S79: mana before this cast's cost as a share of max mana (SkillService sets it; resonance)
+	manaFraction: number,
 	services: Services,
 	value: (field: string) -> number,
 	resolve: (ref: SkillData.ValueRef?) -> number, -- S73: Logic/Skills.resolve at this rank
@@ -93,6 +99,8 @@ export type Ctx = {
 	fx: (data: { [string]: any }) -> (),
 	element: string?, -- the skill's element (adaptive: the weapon's), S18
 	isEnemy: (entity: any) -> boolean,
+	-- options: plain, canDodge, consumeShot, primary, from, holy, noAdaptive, noProc, lingering (a zone tick, S76);
+	-- S79: areaHits = enemies hit in this wave by ROZWOJ 12.3 (default 1), secondary = a splash, pierce, arc or split
 	damage: (entity: any, percent: number, options: { [string]: any }?) -> Damage.Result?,
 	-- (HP restored, HP it tried to restore after the heal bonus and the PvP scale, S61)
 	heal: (player: Player, amount: number) -> (number, number),
@@ -104,7 +112,9 @@ export type Ctx = {
 	applyEffect: (entity: any, effect: SkillData.SkillEffect, opts: EffectOptions?) -> (), -- one effect
 	-- S70 (ROZWOJ 9.4): Fortune's dice / wheel for the party around the caster; half = one face, half the duration
 	rollDice: (opts: { half: boolean? }?) -> (),
-	lingering: (center: Vector3, percent: number) -> (), -- the breakpoint's lasting area (S28)
+	-- the lasting areas of a cast (S28): the breakpoint's zone and (S79) the areaLingering zone, both only on wave 1
+	-- (Logic/Skills.castZones); inCircle = enemies in a randomTarget circle (the hook zone's share)
+	lingering: (center: Vector3, percent: number, wave: number?, inCircle: number?) -> (),
 	-- S69: healing field, every second share % of each ally's own heal of this skill; onTick adds extras (S70)
 	healZone: (
 		center: Vector3,
@@ -138,6 +148,7 @@ local ADAPTIVE_SPEC: Traits.ElementSpec = {
 	slowDuration = SkillData.ADAPTIVE.slowDuration,
 	arcPct = SkillData.ADAPTIVE.arcPct,
 	arcRadius = SkillData.ADAPTIVE.arcRadius,
+	exactTicks = SkillData.ADAPTIVE.exactTicks, -- S79: the full burnPct over the real ticks
 }
 
 -- S71 (ROZWOJ 9.5, Holy Wrath): skills whose direct hits heal through Divine Wrath at holyHealAll % strength.
@@ -296,6 +307,32 @@ function Context.new(
 	local behaviour: any = bp or {}
 	local furyUsed = 0 -- S73: stacks spent by ctx.consumeFury in this cast
 	local critCdrUsed = false -- S76: critCdr once per cast
+	-- S79: hooks read once per cast; cdrPerTarget counts distinct enemies hit
+	local hookCache: { [string]: number } = {}
+	local function hook(id: string): number
+		local cached = hookCache[id]
+		if cached == nil then
+			cached = services.PassiveHook(player, id)
+			hookCache[id] = cached
+		end
+		return cached :: number
+	end
+	local spellHookTable: { [string]: number }? = nil
+	local function spellHooks(): { [string]: number }
+		local t = spellHookTable
+		if not t then
+			t = {
+				areaDamage = hook("areaDamage"),
+				singleDamage = hook("singleDamage"),
+				spellDamage = hook("spellDamage"),
+			}
+			spellHookTable = t
+		end
+		return t :: { [string]: number }
+	end
+	local tag = Skills.tag(skill)
+	local struck: { [any]: boolean } = {}
+	local struckCount = 0
 
 	local function value(field: string): number
 		return Skills.valueAt(skill, field, rank)
@@ -408,10 +445,77 @@ function Context.new(
 		if splash then
 			for _, other in ctx.enemiesInCircle(at, splash.radius) do
 				if other ~= entity then
-					ctx.damage(other, percent * splash.pct / 100, { plain = true, consumeShot = false })
+					ctx.damage(
+						other,
+						percent * splash.pct / 100,
+						{ plain = true, consumeShot = false, secondary = true }
+					)
 				end
 			end
 			ctx.fx({ v = "splash", p = at, r = splash.radius })
+		end
+	end
+
+	-- One lasting area (S28; S79 Logic/Skills.Zone): a tick every second for floor(duration) s on the enemies inside.
+	-- A weapon element's zone (zone.element) takes the weapon's element (burn / frost / spark), x Elements.power
+	-- (elementRider: Elemental Might and Elements in the Veins), slows longer on ice and never applies the weapon
+	-- element again (noAdaptive).
+	local function startZone(center: Vector3, zone: Skills.Zone)
+		local radius = zone.radius
+		local pulse = zone.pct
+		local el: string? = nil
+		local kind = zone.kind
+		local power = 1
+		if zone.element then
+			el = element or services.WeaponElement(player)
+			kind = Skills.zoneKind(el)
+			power = Elements.power(services, player)
+			pulse *= power
+			ctx.fx({ v = "lingering", p = center, r = radius, d = zone.duration, k = kind, el = el })
+		else
+			ctx.fx({ v = "lingering", p = center, r = radius, d = zone.duration, k = kind })
+			-- S76 (ROZWOJ 11.4, 11.7): a poison field is the Hunter's poison (dotPower + poisonDamage)
+			if kind == "poison" then
+				pulse *= 1 + services.Combat.DotBonus(player, "poison") / 100
+			end
+		end
+		local frost = zone.element == true and el == "ice"
+		for second = 1, math.floor(zone.duration) do
+			task.delay(second, function()
+				for _, entity in ctx.enemiesInCircle(center, radius) do
+					-- S76: lingering marks a pulse (no areaSkillDamage; S79: no spell bonuses, no resonance)
+					ctx.damage(entity, pulse, {
+						plain = true,
+						canDodge = false,
+						consumeShot = false,
+						lingering = true,
+						noAdaptive = if zone.element then true else nil,
+					})
+					if zone.slow then
+						services.StatusEffect.Apply(entity, "slow", {
+							duration = 1.2,
+							value = zone.slow,
+							source = player,
+							skillId = skill.id,
+							category = "enemySlow",
+						})
+					end
+					if frost and isEnemy(entity) then
+						-- S79: the weapon's ice slow, longer (not stronger) with elementRider, and Frostbite (S65)
+						local duration = 1.2 * power
+						local slowed = services.StatusEffect.Apply(entity, "slow", {
+							duration = duration,
+							value = SkillData.ADAPTIVE.slowPct,
+							source = player,
+							skillId = skill.id,
+							category = "enemySlow",
+						})
+						if slowed then
+							Elements.chill(services, player, entity, duration, services.WeaponElement(player))
+						end
+					end
+				end
+			end)
 		end
 	end
 
@@ -425,6 +529,9 @@ function Context.new(
 		target = nil,
 		point = nil,
 		cooldown = 0,
+		hook = hook,
+		tag = tag,
+		manaFraction = 0,
 		services = services,
 		bp = behaviour,
 		value = value,
@@ -504,6 +611,12 @@ function Context.new(
 			if Traits.isAreaSkill(skill.type) and not (opts.plain or opts.lingering) then
 				multiplier *= 1 + services.Combat.Hook(player, "areaSkillDamage") / 100
 			end
+			-- S79 (ROZWOJ 12.3, 14.4): tag bonuses + spellDamage as one factor, resonance apart; zone ticks have their
+			-- own percent and get neither
+			if not opts.lingering then
+				local bonus = Skills.spellBonus(tag, opts.areaHits or 1, opts.secondary == true, spellHooks())
+				multiplier *= (1 + bonus / 100) * Skills.resonanceMul(ctx.manaFraction, hook("resonance"))
+			end
 			local result = services.Combat.DealDamage(player, entity, params, nil, {
 				multiplier = multiplier,
 				consumeShot = opts.consumeShot ~= false,
@@ -515,8 +628,40 @@ function Context.new(
 				-- S64 (STATY 6): splashes and pulses keep the skill's kind of blow (protection in PvP).
 				delivery = skill.delivery,
 			})
+			-- S79 Cascade: an area spell's kill gives % max mana (zone ticks too; burn ticks never come here)
+			if result and entity.kind == "monster" and entity.monster then
+				local killPct = hook("areaKillMana")
+				if killPct > 0 then
+					local mana = Skills.areaKillMana(
+						tag,
+						not entity.monster:IsAlive(),
+						result.amount,
+						killPct,
+						services.Stat.GetValue(player, "maxMana")
+					)
+					if mana > 0 then
+						services.Resource.Add(player, "mana", mana)
+					end
+				end
+			end
+			-- S79 cdrPerTarget (Storm's Wrath): each distinct enemy hit (players too, no dodges, no zone ticks) takes
+			-- sec seconds off this skill's cooldown, at most max enemies; the cooldown was set before the handler
+			local cdr = behaviour.cdrPerTarget
+			if
+				cdr
+				and result
+				and not result.dodged
+				and not opts.lingering
+				and not struck[entity]
+				and struckCount < cdr.max
+			then
+				struck[entity] = true
+				struckCount += 1
+				services.ReduceCooldown(player, skill.id, cdr.sec)
+			end
 			-- Weapon element of adaptive skills (DESIGN §14.4, S65 Skills/Elements). S63: the hit before the PvP
-			-- multiplier (Result.dotBase); StatusEffectService.Apply adds x0.6 once on players.
+			-- multiplier (Result.dotBase); StatusEffectService.Apply adds x0.6 once on players. S79: a burn adds the
+			-- unpaid rest (accumulate) and pays the full burnPct (ADAPTIVE.exactTicks); the arc is a secondary hit.
 			if skill.adaptive and result and result.amount > 0 and not opts.noAdaptive then
 				Elements.apply(services, {
 					player = player,
@@ -525,8 +670,13 @@ function Context.new(
 					hit = result.dotBase or result.amount,
 					spec = ADAPTIVE_SPEC,
 					skillId = skill.id,
+					accumulate = true,
 					jump = function(other: any, pct: number)
-						ctx.damage(other, percent * pct / 100, { noAdaptive = true, consumeShot = false })
+						ctx.damage(
+							other,
+							percent * pct / 100,
+							{ noAdaptive = true, consumeShot = false, secondary = true }
+						)
 					end,
 					fx = function(from: any, to: any)
 						ctx.fx({ v = "arc", path = { from.id, to.id } })
@@ -728,38 +878,10 @@ function Context.new(
 				end
 			end
 		end,
-		lingering = function(center: Vector3, percent: number)
-			local spec = behaviour.lingering
-			if not spec then
-				return
-			end
-			local radius = spec.radius or skill.radius or 8
-			ctx.fx({ v = "lingering", p = center, r = radius, d = spec.duration, k = spec.kind })
-			-- S76 (ROZWOJ 11.4, 11.7): a poison field is the Hunter's poison (dotPower + poisonDamage)
-			local pulse = percent * spec.pct / 100
-			if spec.kind == "poison" then
-				pulse *= 1 + services.Combat.DotBonus(player, "poison") / 100
-			end
-			for second = 1, math.floor(spec.duration) do
-				task.delay(second, function()
-					for _, entity in ctx.enemiesInCircle(center, radius) do
-						-- S76: lingering marks a pulse (no areaSkillDamage; S79 skips spell bonuses on it)
-						ctx.damage(
-							entity,
-							pulse,
-							{ plain = true, canDodge = false, consumeShot = false, lingering = true }
-						)
-						if spec.slow then
-							services.StatusEffect.Apply(entity, "slow", {
-								duration = 1.2,
-								value = spec.slow,
-								source = player,
-								skillId = skill.id,
-								category = "enemySlow",
-							})
-						end
-					end
-				end)
+		lingering = function(center: Vector3, percent: number, wave: number?, inCircle: number?)
+			-- S79 (ROZWOJ 14.4): the breakpoint's zone and the areaLingering zone (Elemental Trail) of the first wave
+			for _, zone in Skills.castZones(skill, behaviour, wave or 1, percent, hook("areaLingering"), inCircle or 0) do
+				startZone(center, zone)
 			end
 		end,
 		-- S69 (ROZWOJ 9.2, 14.1): every second for floor(duration) s each living ally inside gets share % of their

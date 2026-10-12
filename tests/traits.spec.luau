@@ -189,13 +189,15 @@ T.describe("Traits: rhythm and player state (S65)", function()
 		slowDuration = SkillData.ADAPTIVE.slowDuration,
 		arcPct = SkillData.ADAPTIVE.arcPct,
 		arcRadius = SkillData.ADAPTIVE.arcRadius,
+		exactTicks = SkillData.ADAPTIVE.exactTicks,
 	}
 
-	T.it("adaptive skills keep their pre-S65 numbers without a rider", function()
+	T.it("adaptive skills without a rider (S79: the burn pays the full 30 % over the real ticks)", function()
 		local fire = Traits.elementPlan("fire", ADAPTIVE, 1000, 0, 0, false) :: Traits.ElementPlan
-		T.expect({ fire.kind, fire.pct, fire.duration, fire.tick, fire.sameTarget }).toEqual({ "burn", 30, 4, 75, 0 })
-		-- before S65: max(1, amount x 0.3 / 4) x (1 + dotPower / 100)
-		T.expect((Traits.elementPlan("fire", ADAPTIVE, 1000, 0, 20, false) :: any).tick).toBeNear(90)
+		T.expect({ fire.kind, fire.pct, fire.duration, fire.sameTarget }).toEqual({ "burn", 30, 4, 0 })
+		T.expect(fire.tick :: number).toBeNear(100)
+		-- S79: Traits.dotTick, 30 % of the hit over 3 ticks x (1 + dotPower / 100) (75 / 90 before S79)
+		T.expect((Traits.elementPlan("fire", ADAPTIVE, 1000, 0, 20, false) :: any).tick).toBeNear(120)
 		T.expect((Traits.elementPlan("fire", ADAPTIVE, 10, 0, 0, false) :: any).tick).toBe(1)
 		local ice = Traits.elementPlan("ice", ADAPTIVE, 1000, 0, 0, false) :: Traits.ElementPlan
 		T.expect({ ice.kind, ice.pct, ice.duration, ice.sameTarget }).toEqual({ "slow", 25, 2, 0 })
@@ -208,7 +210,7 @@ T.describe("Traits: rhythm and player state (S65)", function()
 	T.it("Elemental Might strengthens the weapon element", function()
 		local fire = Traits.elementPlan("fire", ADAPTIVE, 1000, 30, 0, true) :: Traits.ElementPlan
 		T.expect(fire.pct).toBeNear(39)
-		T.expect(fire.tick :: number).toBeNear(97.5)
+		T.expect(fire.tick :: number).toBeNear(130)
 		T.expect((Traits.elementPlan("ice", ADAPTIVE, 1000, 30, 0, true) :: any).duration).toBeNear(2.6)
 		local arc = Traits.elementPlan("lightning", ADAPTIVE, 1000, 30, 0, true) :: Traits.ElementPlan
 		T.expect(arc.pct).toBeNear(52)

@@ -5,7 +5,7 @@
 
 ## Stan
 
-S01–S51 i S53–S78 gotowe (lista i zakres w `docs/SESJE.md`). Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
+S01–S51 i S53–S79 gotowe (lista i zakres w `docs/SESJE.md`). Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
 kategorie efektów drużyny i stos efektów (`Logic/EffectStack`), S54 wzory globalne (`Logic/LevelCurves`), S55 rangi
 i przełomy w kształcie A/B (`Build.bp2`, `Skills.effective` §2.7), S56 koniec punktów umiejętności: rangi z poziomu
 postaci (`Skills.rankFor`, drabina przejściowa ROZWOJ 2.6), zapis w schemacie 6 (darmowy reset statystyk, pasek
@@ -52,8 +52,11 @@ pułapki z sidłami, ściąganie `ctx.pull`, stosy i przenoszenie trucizny, haki
 ścieżek gotowy (celowanie, pułapki, trucizna, sokół, czujność, haki Strzelca). S78 Łowca: podstawa 8 i ścieżki
 Strzelec Wyborowy, Traper, Zwiadowca (`Data/Paths/Hunter`, pierwszy `keystone` Królewski Sokół), opcje B, Znak 6 → 8%,
 scalanie identycznych efektów w `Skills.effective`, Oko Zwiadowcy (`Logic/ScoutRange`, `party.scoutRange`, Elity na
-krawędzi minimapy). Kapłan, Wojownik i Łowca na ścieżkach (ukryte na wiki); Mag na drabinie przejściowej do S81.
-Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`, `docs/STATY.md`), następna S79; testy
+krawędzi minimapy). S79 Mag: silnik tagów obszaru i haków Maga (`Skills.tag`, `areaHits` / `secondary` w
+`ctx.damage`, `Skills.castZones`, `Logic/Chain`, haki kosztu `areaCost` / `spellCost`, `manaReserve`, podpalenie z
+`accumulate` i pełnymi 30%); haki czytają 0 do węzłów S81. Kapłan, Wojownik i Łowca na ścieżkach (ukryte na wiki); Mag
+na drabinie przejściowej do S81.
+Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`, `docs/STATY.md`), następna S80; testy
 i strojenie po niej.
 
 ## Niedokończone (kod)
@@ -72,10 +75,12 @@ i strojenie po niej.
 - **Questy**: EXP z nagród dobrany wzorem, do strojenia.
 - **Gildie / aukcja / poczta**: brak zaproszeń do gildii między serwerami; aukcja bez podpowiedzi ceny, poczta bez
   pobrania.
-- **Przedmioty (S62–S68)**: umiejętności przy odświeżeniu obrażeń w czasie kasują resztę (`accumulate` dla nich w
-  S79); ścieżki Maga bez `itemWeights` (S81); `dmgMul` Kuszy 1,45 (S90).
+- **Przedmioty (S62–S68)**: krwawienie, trucizna i podpalenie z danych umiejętności przy odświeżeniu kasują resztę
+  (`accumulate` ma od S79 tylko podpalenie z żywiołu broni); ścieżki Maga bez `itemWeights` (S81); `dmgMul` Kuszy 1,45
+  (S90).
 - **Kapłan**: cele 9.6 po normalizacji broni: w repo nie ma narzędzia liczącego umiejętności, pomiar S86, strojenie S89.
-- **Umiejętności i ścieżki**: ścieżki Maga wkrótce (S81); do tego czasu
+- **Umiejętności i ścieżki**: ścieżki Maga wkrótce (S81); do tego czasu haki Maga z S79 czytają 0, a kanał z
+  `channelMove` nie zwalnia chodu u klienta (zdarzenie `cast` kanału z `mv` w S80);
   zwój i zakładka ścieżek mówią „wkrótce”, wpis premium zwoju niedostępny do S81. Brak przycisku „Załóż pasującą
   broń” po przełączeniu zestawu (ROZWOJ 2.8, później); planer wiki wkrótce (S82). Oko Zwiadowcy widzi tylko Elity
   wczytane przez streaming (pewnie do 128 st.); pewność dalej wymagałaby remote'u z pozycjami Elit (decyzja właściciela).

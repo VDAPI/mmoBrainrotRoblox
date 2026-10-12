@@ -295,6 +295,14 @@ local function drawPreview(skill: SkillData.SkillDef, point: Vector3?)
 		return
 	end
 	local def = effective(skill)
+	-- S79 Broad Rings: the aim circle grows with the areaRadius hook (as the server casts it)
+	local c = me()
+	local grown =
+		Skills.areaRadius(def, Paths.passiveTotals(c, Paths.weaponTypesOf(c.equipment)).hooks["areaRadius"] or 0)
+	if grown ~= def.radius then
+		def = table.clone(def)
+		def.radius = grown
+	end
 	local color = Color3.fromHex((Classes.get(skill.class) :: any).color)
 	local feet = root.Position - Vector3.new(0, 2.8, 0)
 	local target = point or (root.Position + root.CFrame.LookVector * 10)

@@ -137,11 +137,41 @@ function StatCalc.compute(input: Input): Result
 		{ key = "breakdown.level", value = F.hpPerLevel * L },
 		{ key = "breakdown.vit", value = F.hpPerVit * VIT },
 	}, true)
-	finish("maxMana", F.manaBase + F.manaPerLevel * L + F.manaPerInt * INT, {
-		{ key = "breakdown.base", value = F.manaBase },
-		{ key = "breakdown.level", value = F.manaPerLevel * L },
-		{ key = "breakdown.int", value = F.manaPerInt * INT },
-	}, true)
+	-- S79 (ROZWOJ 12.4, 12.5): mana reserve, % points of the mana pool that do not raise mana regeneration. Both forms
+	-- of a source count as points (ROZWOJ names a passive pct, a node may give flat), capped by Data/Stats.
+	local reserve = 0
+	do
+		local parts: { Part } = {}
+		sourceParts("manaReserve", parts, true, true)
+		local def = Stats.get("manaReserve")
+		local cap = if def and def.cap then def.cap else math.huge
+		reserve = math.clamp((flat.manaReserve or 0) + (pct.manaReserve or 0), 0, cap)
+		values.manaReserve = reserve
+		breakdown.manaReserve = parts
+	end
+	-- The pool without the reserve feeds the regeneration; the reserve adds to the pool's percentages (like Focus).
+	local manaPool
+	do
+		local base = F.manaBase + F.manaPerLevel * L + F.manaPerInt * INT
+		local parts: { Part } = {
+			{ key = "breakdown.base", value = F.manaBase },
+			{ key = "breakdown.level", value = F.manaPerLevel * L },
+			{ key = "breakdown.int", value = F.manaPerInt * INT },
+		}
+		sourceParts("maxMana", parts, true, true)
+		if reserve > 0 then
+			table.insert(parts, { key = "breakdown.manaReserve", value = reserve, pct = true })
+		end
+		local def = Stats.get("maxMana")
+		local cap = if def and def.cap then def.cap else math.huge
+		local function whole(value: number): number
+			return math.floor(math.max(0, math.min(value, cap)))
+		end
+		local raw = base + (flat.maxMana or 0)
+		manaPool = whole(raw * (1 + (pct.maxMana or 0) / 100))
+		values.maxMana = whole(raw * (1 + ((pct.maxMana or 0) + reserve) / 100))
+		breakdown.maxMana = parts
+	end
 	finish("maxEnergy", F.energyBase + F.energyPerLevel * L, {
 		{ key = "breakdown.base", value = F.energyBase },
 		{ key = "breakdown.level", value = F.energyPerLevel * L },
@@ -206,7 +236,7 @@ function StatCalc.compute(input: Input): Result
 	finish("rangedGuard", 0, {})
 
 	-- Regeneration (per second)
-	local maxHp, maxMana = values.maxHp, values.maxMana
+	local maxHp, maxMana = values.maxHp, manaPool -- S79: regeneration without the mana reserve
 	finish(
 		"hpRegen",
 		maxHp * F.hpRegenPct / 100,

@@ -2023,4 +2023,35 @@ T.describe("S78 Hunter base, B options and nodes", function()
 	end)
 end)
 
+T.describe("S79 spell cost hooks", function()
+	local firebolt = SkillData.byId.firebolt
+	local meteor = SkillData.byId.meteor
+	local blink = SkillData.byId.blink
+
+	T.it("areaCost and spellCost raise the base cost, plus = dearer, before the item saving", function()
+		local paid, base = Skills.cost(meteor, 1, 20, "Mage", { hooks = { areaCost = -12 } })
+		T.expect(paid).toBeNear(52.8)
+		T.expect(base).toBeNear(52.8)
+		T.expect((Skills.cost(meteor, 1, 20, "Mage", { hooks = { areaCost = -12, spellCost = 30 } }))).toBeNear(70.8)
+		T.expect((Skills.cost(firebolt, 1, 20, "Mage", { hooks = { spellCost = 30 } }))).toBeNear(15.6)
+		T.expect((Skills.cost(firebolt, 1, 20, "Mage", { hooks = { areaCost = -12 } }))).toBeNear(12)
+		T.expect((Skills.cost(blink, 1, 20, "Mage", { hooks = { spellCost = 30 } })))
+			.toBe((Skills.cost(blink, 1, 20, "Mage")))
+		paid, base = Skills.cost(meteor, 1, 20, "Mage", { hooks = { areaCost = -12 }, costReduce = 10 })
+		T.expect(paid).toBeNear(47.52)
+		T.expect(base).toBeNear(52.8)
+		T.expect((Skills.cost(meteor, 1, 20, "Mage"))).toBe(60)
+	end)
+
+	T.it("Bolt has one shot in the data; hits and channelMove come through breakpoints", function()
+		T.expect(firebolt.hits).toBe(1)
+		local fake: any = table.clone(firebolt)
+		fake.breakpoints = Build.bp2({ a = { add = { hits = 1 } } }, { a = { channelMove = 50 } })
+		local def = Skills.effective(fake, 10, nil, nil, true)
+		T.expect(def.hits).toBe(2)
+		T.expect(def.channelMove).toBe(50)
+		T.expect(firebolt.channelMove).toBeNil()
+	end)
+end)
+
 return nil

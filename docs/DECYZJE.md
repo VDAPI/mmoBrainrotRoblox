@@ -1627,3 +1627,28 @@
   test reguły A przepuszcza je bez zmian.
 - **S78** Okno „Rozwój postaci się zmienił”: akapit `rework.class.Hunter` doklejany pod ogólnym tekstem tylko postaci
   Łowcy (klucz wprost w `ReworkController`); kolejne klasy dopisują swój warunek w tym samym miejscu.
+- **S79** Podpalenie z żywiołu broni z umiejętności dolicza niezadaną resztę (`accumulate`) i płaci pełne 30% w
+  rzeczywistych tykach (`exactTicks` w `SkillData.ADAPTIVE`, `Traits.dotTick`, jak model `SkillEngineMag`); ognisty
+  Mag zadaje więcej obrażeń niż przed S79 (zamierzone, ROZWOJ 15.5.7).
+- **S79** `Skills.tag` (12.3: kręgi, stożek, linia, łańcuch = obszar) to inne rozróżnienie niż `Traits.isAreaSkill`
+  z S63 (pułapka obszarowa dla 1/3 szansy cech); obie zostają.
+- **S79** Trafienia poboczne (`secondary`): rozprysk przełomu, przebicie, łuk błyskawicy umiejętności, pęknięcia
+  `split` i rozprysk Burzowej Strzały; `singleDamage` działa na każde główne trafienie czaru w jeden cel (oba pociski
+  Pocisku 10B).
+- **S79** Premia tagu i `spellDamage` to jeden czynnik `1 + suma / 100`, rezonans osobny; ułamek many dla rezonansu
+  liczony przed zapłatą kosztu; tyki stref (pulsy z `lingering = true` z S76) bez premii tagu i rezonansu, tak jak
+  pulsy bez `areaSkillDamage` u Łowcy.
+- **S79** Strefa `areaLingering` tylko w czarach `circleSelf` i `circleTarget` (tam, gdzie była strefa przełomu;
+  łańcuch, stożek i linia bez strefy), 3 s, rodzaj `element`; przy `randomTarget` bez wrogów w kręgu na pierwszej
+  fali strefy nie ma. Strefy żywiołu (też `lingering.kind = "element"`) biją `× Elements.power`, lód spowalnia 25%
+  dłużej o ten sam hak, a ich tyk nie nakłada drugi raz efektu żywiołu broni (`noAdaptive`).
+- **S79** `channelMove`: kanał trwa w ruchu bez limitu odległości (`Channel.stops`); wolniejszy chód do
+  `channelMove`% u klienta daje `mv` zdarzenia `cast` kanału, które dochodzi w S80 C5 (mechanizm `castMove`).
+- **S79** `manaReserve`: punkty procentowe puli (formy `flat` i `pct` źródła sumują się), dodane do procentów
+  `maxMana`, regeneracja od puli bez rezerwy, limit 40 (bezpiecznik: Skupienie 20 + Rezerwa 12 = 32).
+- **S79** `cdrPerTarget` liczy różne trafione cele (gracze też), bez uników i tyków stref, najwyżej `max`.
+- **S79** Znaki haków kosztu: `areaCost`, `spellCost`, `manaShieldCost` plus = drożej (w koszcie bazowym, przed
+  `costReduce`); `trapCost` z S76 plus = taniej (zostaje).
+- **S79** Łańcuch wybiera kolejny cel po odległości płaskiej (`Logic/Chain.path`, wcześniej pełnej 3D); zmienia to
+  wybór tylko przy różnicy wysokości. Osłona `channelGuard` schodzi przy każdym końcu kanału jednym wyjściem
+  (`endChannel`) przez `StatusEffectService.Remove(entity, kind, skillId)`.

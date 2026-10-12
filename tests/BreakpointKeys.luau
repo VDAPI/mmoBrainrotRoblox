@@ -47,6 +47,8 @@ for _, key in
 		"poisonSpread",
 		"markJump",
 		"firstWave",
+		"cdrPerTarget", -- S79
+		"channelMove",
 		"effect",
 		"selfEffect",
 		"allyEffect",

@@ -17,6 +17,9 @@
 -- with the cost and the skill's cooldown back (the GCD stays), damage never; the handler fires at the end.
 -- S77: the Falcon's loop lives in Skills/Companion; death, leaving the character and leaving the game stop it.
 -- ReduceCooldown shortens one running cooldown (critCdr, Mage cdrPerTarget in S79).
+-- S79: circle spells grow with the areaRadius hook (a copy of the definition, the VFX too); the mana share before the
+-- cost goes to ctx.manaFraction (resonance); a channel with channelMove survives moving (Logic/Channel); Master Mind
+-- (channelGuard) guards the whole channel and comes off at its one exit (endChannel); vortexGuard after Elemental Vortex.
 -- Cooldowns replicate as state branch `skills` = { cd = { [skillId] = readyAt }, gcd = readyAt, channel? }
 -- (server time), so the client draws the cooldown sweep.
 
@@ -106,6 +109,7 @@ type Runtime = {
 		def: any,
 		fx: ((data: { [string]: any }) -> ())?,
 		onRefund: (() -> ())?,
+		guard: string?, -- S79: skillId of the channelGuard damage reduction on the caster (removed at the end)
 	}?,
 	channelToken: number,
 	noCooldowns: boolean,
@@ -363,14 +367,30 @@ function SkillService.ReduceCooldown(player: Player, skillId: string, seconds: n
 	publishCooldowns(player)
 end
 
+-- S79: the one exit of a channel (its natural end and every interrupt: damage, moving, death, a new cast, leaving):
+-- clears the state and takes off only the channelGuard entry of this channel (StatusEffectService.Remove by skillId).
+local function endChannel(player: Player, channel: any)
+	local rt = runtimes[player]
+	if rt and rt.channel == channel then
+		rt.channel = nil
+	end
+	PlayerStateService.Set(player, { "skills", "channel" }, nil)
+	local guard = channel.guard
+	if guard then
+		local caster = EntityService.GetPlayerEntity(player)
+		if caster then
+			StatusEffectService.Remove(caster, "damageReduction", guard)
+		end
+	end
+end
+
 -- S76: `refund` gives an aim's cost and cooldown back (Channel.stops); an ended aim clears its line and animation.
 local function interruptChannel(player: Player, reason: string?, refund: boolean?)
 	local rt = runtimes[player]
 	local channel = rt and rt.channel
 	if rt and channel then
-		rt.channel = nil
 		rt.channelToken += 1
-		PlayerStateService.Set(player, { "skills", "channel" }, nil)
+		endChannel(player, channel)
 		if refund and channel.onRefund then
 			channel.onRefund()
 		end
@@ -417,6 +437,7 @@ local function startChannel(ctx: Context.Ctx, onDone: (() -> ())?, onRefund: (()
 		def = ctx.skill,
 		fx = ctx.fx,
 		onRefund = onRefund,
+		guard = nil :: string?,
 	}
 	rt.channel = channel
 	StatService.SetSprint(player, false) -- channelling stops the sprint (S18)
@@ -430,6 +451,18 @@ local function startChannel(ctx: Context.Ctx, onDone: (() -> ())?, onRefund: (()
 	else
 		ctx.fx({ t = ctx.caster.id, d = duration })
 	end
+	-- S79 Master Mind (ROZWOJ 12.5): damage reduction for the whole channel (not for aiming), off at endChannel
+	local guard = Skills.channelGuard(kind, SkillService.PassiveHook(player, "channelGuard"), duration)
+	if guard then
+		StatusEffectService.Apply(ctx.caster, guard.kind, {
+			duration = guard.duration,
+			value = guard.value,
+			source = player,
+			skillId = guard.skillId,
+			category = guard.category,
+		})
+		channel.guard = guard.skillId
+	end
 	task.spawn(function()
 		local endAt = os.clock() + duration
 		while os.clock() < endAt do
@@ -439,7 +472,7 @@ local function startChannel(ctx: Context.Ctx, onDone: (() -> ())?, onRefund: (()
 			end
 			local model = player.Character
 			local root = model and model:FindFirstChild("HumanoidRootPart") :: BasePart?
-			-- S70: Logic/Channel decides (today death and moving always end a channel); S76: a stun too (aiming)
+			-- S70: Logic/Channel decides (death ends a channel, moving unless channelMove, S79); S76: a stun too (aiming)
 			local event: Channel.Event? = if not root or ResourceService.IsDead(player)
 				then "death"
 				elseif (root.Position - ctx.root.Position).Magnitude > CHANNEL_MOVE_LIMIT then "move"
@@ -456,8 +489,7 @@ local function startChannel(ctx: Context.Ctx, onDone: (() -> ())?, onRefund: (()
 		if rt.channelToken ~= token then
 			return
 		end
-		rt.channel = nil
-		PlayerStateService.Set(player, { "skills", "channel" }, nil)
+		endChannel(player, channel)
 		if onDone then
 			onDone()
 			return
@@ -525,6 +557,16 @@ local function cast(player: Player, skillId: string, targetId: string?, aim: any
 	end
 	-- S28/S57: numbers and behaviours at this rank (breakpoints in the chosen option, modify nodes).
 	local skill, behaviour = Paths.effectiveFor(char, skillId, weapons, rank)
+	-- S79 Broad Rings: circle spells grow; the VFX event carries the grown radius. Always on a copy: without sources
+	-- effectiveFor returns the data definition itself.
+	local radiusPct = SkillService.PassiveHook(player, "areaRadius")
+	if radiusPct ~= 0 then
+		local grown = Skills.areaRadius(skill, radiusPct)
+		if grown ~= skill.radius then
+			skill = table.clone(skill)
+			skill.radius = grown
+		end
+	end
 	local caster = EntityService.GetPlayerEntity(player)
 	local model = player.Character
 	local root = model and model:FindFirstChild("HumanoidRootPart") :: BasePart?
@@ -610,6 +652,9 @@ local function cast(player: Player, skillId: string, targetId: string?, aim: any
 		hooks = passiveHooks(player), -- S76: trapCost
 	})
 	local resource = skill.resource
+	-- S79 (resonance): the mana share before this cast pays (also with infinite resources)
+	local _, manaBefore = ResourceService.Get(player)
+	local manaFraction = manaBefore / math.max(1, StatService.GetValue(player, "maxMana"))
 	if cost > 0 and resource and not rt.infiniteResources then
 		local ok = if resource == "mana"
 			then ResourceService.SpendMana(player, cost)
@@ -643,6 +688,7 @@ local function cast(player: Player, skillId: string, targetId: string?, aim: any
 	local ctx = Context.new(player, skill, rank, char, caster, root, services, behaviour)
 	ctx.target = target
 	ctx.point = point
+	ctx.manaFraction = manaFraction
 	if not rt.noCooldowns then
 		rt.gcd = t + SkillData.GCD
 		local cooldown = Skills.cooldown(skill, rank, rt.cdr, behaviour)
@@ -666,6 +712,18 @@ local function cast(player: Player, skillId: string, targetId: string?, aim: any
 		end
 		if behaviour.selfHeal then
 			ctx.heal(player, StatService.GetValue(player, "maxHp") * behaviour.selfHeal / 100)
+		end
+		-- S79 Mantle of Elements (vortexGuard, ROZWOJ 12.4): damage reduction until the last wave of Elemental Vortex;
+		-- its own key (destroyer_mantle), so it multiplies with other reductions under the cap (7.1)
+		local mantle = Skills.castGuard(skill, SkillService.PassiveHook(player, "vortexGuard"))
+		if mantle then
+			StatusEffectService.Apply(caster, mantle.kind, {
+				duration = mantle.duration,
+				value = mantle.value,
+				source = player,
+				skillId = mantle.skillId,
+				category = mantle.category,
+			})
 		end
 		-- S73 extendOnKill: a new cast starts from zero added seconds
 		local extend = behaviour.extendOnKill

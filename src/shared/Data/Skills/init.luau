@@ -42,6 +42,10 @@ return table.freeze({
 	-- U + round((r - 1) * span / (maxLevel - 1)), span = min(9 * step, capLevel - U): every skill is maxed by capLevel.
 	RANKS = table.freeze({ step = 4, capLevel = 95 }),
 	GCD = 0.5, -- global cooldown (DESIGN §14.1)
+	AREA_MIN_HITS = 2, -- S79 (ROZWOJ 12.3): area bonuses need this many enemies hit; secondary hits always count
+	AREA_LINGER_SECONDS = 3, -- S79: the areaLingering zone (Elemental Trail) lasts this long
+	RESONANCE_MANA = 75, -- S79: resonance works while mana before the cast is at least this % of the pool
+	VORTEX_SKILL = "elementalVortex", -- S79: casts of this skill apply vortexGuard (the skill comes in S80)
 	WOUNDED_RADIUS = 30, -- S69: healWounded looks for the most wounded ally within this radius of the caster
 	GUARD_SECOND_RADIUS = 15, -- S74 (ROZWOJ 10.3): guard 10A covers the second most wounded ally this near the landing
 	-- S71 (ROZWOJ 9.3, 9.4): lowHpHealBonus works on a target below LOW_HP_HEAL % health; a critical heal or shield
@@ -57,6 +61,8 @@ return table.freeze({
 		slowDuration = 2,
 		arcPct = 40,
 		arcRadius = 10,
+		-- S79: skill burns pay the full burnPct over the real ticks (Traits.dotTick), like the Mage model
+		exactTicks = true,
 	}),
 	-- S65 (STATY 3): Frostbite, +% damage from you on targets your ice slowed or froze, with any ice weapon;
 	-- the fixed hook "frostbite" of a wand (6) or staff (10) replaces it when higher.

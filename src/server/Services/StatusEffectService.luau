@@ -396,14 +396,15 @@ function StatusEffectService.Apply(entity: any, kind: string, options: ApplyOpti
 	return true
 end
 
-function StatusEffectService.Remove(entity: any, kind: string)
+-- S79: with `skillId` only the entries of that skill (Master Mind's channel guard); without it every entry of the kind.
+function StatusEffectService.Remove(entity: any, kind: string, skillId: string?)
 	local list = entity and effects[entity.id]
 	if not list then
 		return
 	end
 	local removed = false
 	for i = #list, 1, -1 do
-		if list[i].kind == kind then
+		if list[i].kind == kind and (skillId == nil or list[i].skillId == skillId) then
 			table.remove(list, i)
 			removed = true
 		end
@@ -887,13 +888,18 @@ local function damageFilter(player: Player, amount: number, source: string, atta
 			shield.expiresAt = 0
 		end
 	end
-	-- Mana shield: part of the damage drains mana instead.
+	-- Mana shield: part of the damage drains mana instead. S79 Composure (manaShieldCost, plus = more mana per point
+	-- absorbed): Logic/Skills.manaShieldSplit; with the hook 0 both numbers are min(mana, amount x share / 100).
 	local share = StatusEffectService.Max(entity, "manaShield")
 	if share > 0 and amount > 0 then
 		local _, mana = ResourceService.Get(player)
-		local drain = math.min(mana, amount * share / 100)
-		if drain > 0 and ResourceService.SpendMana(player, drain) then
-			amount -= drain
+		local absorbed, spent = Skills.manaShieldSplit(amount, share, mana, hookOf(player, "manaShieldCost"))
+		if spent > 0 then
+			if ResourceService.SpendMana(player, spent) then
+				amount -= absorbed
+			end
+		elseif absorbed > 0 then
+			amount -= absorbed -- a -100 % cost: nothing to pay
 		end
 	end
 	return math.max(0, amount)

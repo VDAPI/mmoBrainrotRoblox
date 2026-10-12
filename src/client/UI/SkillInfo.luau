@@ -94,6 +94,12 @@ local SHAPE_GLYPH: { [string]: string } = {
 function SkillInfo.shapeLine(use: any, skill: SkillData.SkillDef, shownRank: number): string
 	local rank = math.max(1, shownRank)
 	local def, behaviour = effective(use, skill, rank)
+	-- S79 Broad Rings: circle spells grow with the areaRadius hook (as the server casts them)
+	local grown = Skills.areaRadius(def, SkillInfo.hooks(use)["areaRadius"] or 0)
+	if grown ~= def.radius then
+		def = table.clone(def)
+		def.radius = grown
+	end
 	local shape = Skills.shape(skill)
 	-- S74: guard, shout and banner have their own line (the target, two radii, the banner's time)
 	if skill.type == "guard" then

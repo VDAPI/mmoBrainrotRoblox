@@ -9,9 +9,13 @@
 -- too, it counts from the same percent); circleSelf with shieldPerHit shields the caster per taunted monster.
 -- S76 (ROZWOJ 11.4, 16.5): pulls go through ctx.pull (circleSelf to the caster, circleTarget to the point before the
 -- first wave, which waits Push.DURATION); firstWave makes circleTarget's first wave stronger.
+-- S79 (ROZWOJ 12.3, 14.4): every hit carries areaHits (enemies hit in its wave; Thunderstorm counts its circle) and
+-- secondary hits (pierce, splashes, splits) say so; zones come from ctx.lingering on every wave (Skills.castZones
+-- keeps the first); a chain decides its path first (Logic/Chain.path, flat distance).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Chain = require(ReplicatedStorage.Shared.Logic.Chain)
 local Context = require(script.Parent.Parent.Context)
 local Push = require(script.Parent.Parent.Push)
 local SkillVfx = require(ReplicatedStorage.Shared.Data.SkillVfx)
@@ -30,9 +34,15 @@ local CIRCLE_PROJECTILE_MAX = 0.8
 local PIERCE_REACH = 16 -- studs behind the target a piercing projectile looks for the next enemy
 local PIERCE_WIDTH = 3
 
-local function hitAll(ctx: Ctx, list: { any }, percent: number, withEffects: boolean, from: Vector3?)
+-- S79: `extra.areaHits` defaults to #list (the enemies hit together), `extra.secondary` marks a secondary hit.
+type HitExtra = { from: Vector3?, areaHits: number?, secondary: boolean? }
+
+local function hitAll(ctx: Ctx, list: { any }, percent: number, withEffects: boolean, extra: HitExtra?)
+	local from = if extra then extra.from else nil
+	local areaHits = if extra and extra.areaHits then extra.areaHits else #list
+	local secondary = if extra then extra.secondary else nil
 	for _, entity in list do
-		local result = ctx.damage(entity, percent, { from = from })
+		local result = ctx.damage(entity, percent, { from = from, areaHits = areaHits, secondary = secondary })
 		if withEffects and result and not result.dodged then
 			ctx.applyEffects(entity, "enemy")
 		end
@@ -121,7 +131,7 @@ local function pierce(ctx: Ctx, target: any, percent: number)
 	end
 	if best then
 		ctx.fx({ v = "pierce", path = { target.id, best.id } })
-		ctx.damage(best, percent * share / 100, { consumeShot = false, noProc = true })
+		ctx.damage(best, percent * share / 100, { consumeShot = false, noProc = true, secondary = true })
 	end
 end
 
@@ -165,7 +175,7 @@ Offense.projectile = function(ctx)
 							table.insert(others, entity)
 						end
 					end
-					hitAll(ctx, others, ctx.value("splash"), false)
+					hitAll(ctx, others, ctx.value("splash"), false, { secondary = true })
 					ctx.fx({ v = "lightningBurst", p = at, r = radius })
 				end
 			end)
@@ -186,7 +196,7 @@ Offense.cone = function(ctx)
 		for i = 1, hits do
 			local entity = enemies[(i - 1) % #enemies + 1]
 			task.delay(i * 0.06, function()
-				local result = ctx.damage(entity, ctx.value("dmg"), { consumeShot = i == 1 })
+				local result = ctx.damage(entity, ctx.value("dmg"), { consumeShot = i == 1, areaHits = #enemies })
 				if result and not result.dodged and i <= #enemies then
 					ctx.applyEffects(entity, "enemy")
 				end
@@ -247,9 +257,10 @@ Offense.circleSelf = function(ctx)
 					ctx.heal(ally, amount)
 				end
 			end
-			if hasDamage then
-				ctx.lingering(center, percent)
-			end
+		end
+		-- S79: every wave asks; Skills.castZones makes the zones on the first one only (the echo has none)
+		if hasDamage then
+			ctx.lingering(center, percent, n)
 		end
 	end
 	for n = 1, hits do
@@ -311,21 +322,31 @@ Offense.circleTarget = function(ctx)
 					if target then
 						ctx.fx({ v = "lightningBurst", p = target, r = 3 })
 					end
-					hitAll(ctx, { chosen }, if wave == 1 then firstPercent else ctx.value("dmg"), true)
+					-- S79 (ROZWOJ 12.3): the bolt counts the enemies in the circle
+					hitAll(
+						ctx,
+						{ chosen },
+						if wave == 1 then firstPercent else ctx.value("dmg"),
+						true,
+						{ areaHits = Skills.areaCount(ctx.skill, #enemies, 1) }
+					)
 				end
+				-- S79: the areaLingering zone splits among the enemies in the circle (none without enemies)
+				ctx.lingering(impactAt, ctx.value("dmg"), wave, #enemies)
 				return
 			end
 			if storm then
 				ctx.fx({ v = "meteorImpact", p = impactAt, r = impactRadius })
 			end
 			local enemies = ctx.enemiesInCircle(impactAt, impactRadius)
-			hitAll(ctx, enemies, if wave == 1 then firstPercent else ctx.value("dmg"), wave == 1, impactAt)
+			hitAll(ctx, enemies, if wave == 1 then firstPercent else ctx.value("dmg"), wave == 1, { from = impactAt })
 
 			if last then
 				stunLast(ctx, enemies)
 			end
+			-- S79: Skills.castZones keeps the zones of the first wave
+			ctx.lingering(impactAt, ctx.value("dmg"), wave, 0)
 			if wave == 1 then
-				ctx.lingering(impactAt, ctx.value("dmg"))
 				-- Breakpoint: the blast splits into small ones around the point.
 				local split = ctx.bp.split
 				if split then
@@ -336,7 +357,13 @@ Offense.circleTarget = function(ctx)
 						)
 						task.delay(0.15 + i * 0.08, function()
 							ctx.fx({ v = "splitImpact", p = spot, r = 3.5 })
-							hitAll(ctx, ctx.enemiesInCircle(spot, 3.5), ctx.value("dmg") * split.pct / 100, false, spot)
+							hitAll(
+								ctx,
+								ctx.enemiesInCircle(spot, 3.5),
+								ctx.value("dmg") * split.pct / 100,
+								false,
+								{ from = spot, secondary = true }
+							)
 						end)
 					end
 				end
@@ -347,7 +374,7 @@ Offense.circleTarget = function(ctx)
 	if echo then
 		task.delay(delay + (hits - 1) * interval + echo.delay, function()
 			ctx.fx({ v = "echo", p = point, r = radius })
-			hitAll(ctx, ctx.enemiesInCircle(point, radius), ctx.value("dmg") * echo.pct / 100, false, point)
+			hitAll(ctx, ctx.enemiesInCircle(point, radius), ctx.value("dmg") * echo.pct / 100, false, { from = point })
 		end)
 	end
 	return true, nil
@@ -374,6 +401,8 @@ Offense.line = function(ctx)
 	return true, nil
 end
 
+-- S79 (ROZWOJ 12.3, 14.4): the path first (Logic/Chain.path: nearest not yet hit enemy within the radius of the
+-- last one, flat distance), so every hit knows how many enemies the chain hits (areaHits).
 Offense.chain = function(ctx)
 	local first = ctx.target
 	if not first then
@@ -382,37 +411,39 @@ Offense.chain = function(ctx)
 	local Entity = ctx.services.Entity
 	local jumps = math.floor(ctx.value("jumps") + 0.5)
 	local radius = ctx.skill.radius or 12
-	local hit: { [any]: boolean } = {}
-	local current = first
 	local percent = ctx.value("dmg")
+	local targets: { any } = { first }
+	local order: { number } = { 1 }
+	local start = Entity.Position(first)
+	if start then
+		-- 1.5: the margin of enemiesInCircle
+		local reach = (radius + 1.5) * math.max(1, jumps - 1)
+		local points: { Chain.Point } = { { x = start.X, z = start.Z } }
+		for _, entity in ctx.enemiesInCircle(start, reach) do
+			local p = Entity.Position(entity)
+			if entity ~= first and p then
+				table.insert(targets, entity)
+				table.insert(points, { x = p.X, z = p.Z })
+			end
+		end
+		order = Chain.path(points, 1, radius + 1.5, jumps)
+	end
 	local path = { ctx.caster.id }
-	for jump = 1, jumps do
-		hit[current] = true
+	for i, index in order do
+		local current = targets[index]
 		table.insert(path, current.id)
-		local result =
-			ctx.damage(current, percent * (1 - 0.1 * (jump - 1)), { consumeShot = jump == 1, primary = jump == 1 })
+		local result = ctx.damage(
+			current,
+			percent * (1 - 0.1 * (i - 1)),
+			{ consumeShot = i == 1, primary = i == 1, areaHits = #order }
+		)
 		if result and not result.dodged then
 			ctx.applyEffects(current, "enemy")
 		end
-		local from = Entity.Position(current)
-		if not from then
-			break
-		end
-		local nextTarget: any = nil
-		local best = math.huge
-		for _, entity in ctx.enemiesInCircle(from, radius) do
-			local p = Entity.Position(entity)
-			if not hit[entity] and p and (p - from).Magnitude < best then
-				nextTarget = entity
-				best = (p - from).Magnitude
-			end
-		end
-		if not nextTarget or jump == jumps then
+		if i == #order then
 			-- Breakpoint: the last jump stuns.
 			stunLast(ctx, { current })
-			break
 		end
-		current = nextTarget
 	end
 	ctx.fx({ path = path })
 	return true, nil

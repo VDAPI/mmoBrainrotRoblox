@@ -53,4 +53,13 @@ T.describe("castTime (S76)", function()
 	end)
 end)
 
+T.describe("channelMove (S79)", function()
+	T.it("a channel with channelMove survives moving, not damage; aiming still ends with a refund", function()
+		T.expect({ Channel.stops("channel", "move", { channelMove = 50 }) }).toEqual({ false, false })
+		T.expect((Channel.stops("channel", "move", {}))).toBe(true)
+		T.expect((Channel.stops("channel", "damage", { channelMove = 50 }))).toBe(true)
+		T.expect({ Channel.stops("castTime", "move", { channelMove = 50 }) }).toEqual({ true, true })
+	end)
+end)
+
 return nil

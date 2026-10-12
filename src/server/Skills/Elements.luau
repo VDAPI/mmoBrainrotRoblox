@@ -20,7 +20,7 @@ export type Proc = {
 	hit: number, -- items: dotBase; skills: what adaptiveEffect used before S65
 	spec: Traits.ElementSpec,
 	skillId: string?, -- effect key: skill.id as Context passes it since S53, EffectStack.ITEM for the Spark
-	accumulate: boolean?, -- burn refresh adds the unpaid rest (Spark; Mage ignite in S79)
+	accumulate: boolean?, -- burn refresh adds the unpaid rest (Spark; skills since S79)
 	players: boolean?, -- arcs may jump to attackable players (Spark); skills: monsters only, as before
 	jump: (other: any, pct: number) -> (), -- deals the arc through the caller's damage path (noProc)
 	fx: ((from: any, to: any) -> ())?,
@@ -32,7 +32,8 @@ function Elements.rider(services: Services, player: Player): (number, boolean)
 	return services.Combat.Hook(player, "elementRider"), services.Combat.Hook(player, "riderSameTarget") > 0
 end
 
--- Multiplier of the duration of the player's ice control (1 + elementRider / 100).
+-- Multiplier of the duration of the player's ice control (1 + elementRider / 100); S79: also the tick of the weapon
+-- element zones of the player's skills (Skills/Context startZone, STATY 3).
 function Elements.power(services: Services, player: Player): number
 	return 1 + math.max(0, services.Combat.Hook(player, "elementRider")) / 100
 end

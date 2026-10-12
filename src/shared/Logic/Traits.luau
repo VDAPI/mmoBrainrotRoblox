@@ -124,7 +124,7 @@ export type Seal = { x: number, z: number, since: number, lit: boolean }
 export type ElementSpec = {
 	burnPct: number,
 	burnDuration: number,
-	exactTicks: boolean?, -- exactTicks: Traits.dotTick (items); nil: hit x pct / duration (skills, as before S65)
+	exactTicks: boolean?, -- true: Traits.dotTick (items, skills since S79); nil: hit x pct / duration (legacy)
 	slowPct: number,
 	slowDuration: number,
 	arcPct: number,

@@ -103,7 +103,9 @@ export type SkillEffect = {
 --   castMove = %             the caster may move at this % speed while the motion plays (client)
 --   stunNear = { radius, duration }  enemies near the target are stunned too
 --   bleedStacks = n          the skill's bleed stacks up to n times
---   lingering = { pct, duration, radius?, kind, slow? }  the area keeps hurting (pct of the hit per second)
+--   lingering = { pct, duration, radius?, kind, slow? }  the area keeps hurting (pct of the hit per second); kind
+--                            "element": the weapon element's ground (burn / frost / spark), stronger with the
+--                            elementRider hook (Elemental Might and Elements in the Veins) (S79)
 --   echo = { delay, pct }    the area hits again after `delay` seconds for pct
 --   pierce = pct             a projectile also hits the next enemy behind the target
 --   execute = hp%            guaranteed crit on a target below hp%
@@ -145,6 +147,9 @@ export type SkillEffect = {
 --   markJump = studs          S76: the death of a monster with this skill's vulnerability moves it, with the time left,
 --                             to the nearest enemy within the studs
 --   firstWave = pct           S76: the first wave of circleTarget deals pct % more
+--   cdrPerTarget = { sec, max }  S79: after the cast each distinct enemy hit takes sec seconds off this skill's
+--                             cooldown, at most max enemies (SkillService.ReduceCooldown; Storm's Wrath in S81)
+--   channelMove = %           S79: a channel goes on while the caster moves at this % speed (Logic/Channel)
 -- S76 `add` fields: castTime (aim seconds, at least 0), interval, ringRadius; `add.radius` on a debuff: its enemy
 -- effects also land on enemies within that radius of the target.
 -- Skill fields: furyConsume (target, buff), hitRadius (shout, S74), allyRadius (buff); `add.hitRadius` works like
@@ -200,6 +205,11 @@ export type Breakpoint = {
 	poisonSpread: number?,
 	markJump: number?,
 	firstWave: number?,
+	-- S79: after the cast each distinct enemy hit takes sec seconds off this skill's cooldown, at most max enemies
+	-- (SkillService.ReduceCooldown; Storm's Wrath in S81)
+	cdrPerTarget: { sec: number, max: number }?,
+	-- S79: a channel goes on while the caster moves at this % speed (Logic/Channel)
+	channelMove: number?,
 	effect: SkillEffect?,
 	selfEffect: SkillEffect?,
 	allyEffect: SkillEffect?,
@@ -252,6 +262,8 @@ export type SkillDef = {
 	roll: { all: boolean?, enemyRadius: number? }?,
 	-- S70: damage does not end this channel (Logic/Channel); set by the steadfast breakpoint
 	steadfast: boolean?,
+	-- S79: the channel goes on while the caster moves (Logic/Channel); set from the channelMove breakpoint
+	channelMove: number?,
 	-- S76 (ROZWOJ 11.3, 14.3): seconds of aiming before the shot (SkillService.startChannel kind "castTime"); nil / 0 =
 	-- an ordinary cast
 	castTime: number?,

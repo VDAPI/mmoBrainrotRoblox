@@ -4,6 +4,8 @@
 -- S57: which skills a character has, the hotbar and the passive totals live in Logic/Paths (base + paths).
 -- S54 (ROZWOJ 8): the one cost (Skills.cost), heal curve (Skills.healMul) and weapon speed normalisation
 -- (Skills.speedFactor) used by the server, the skill bar, the descriptions and the wiki.
+-- S79 (ROZWOJ 12.3, 14.4): spell tags (Skills.tag), area / single target rules, cast zones, Mage hooks and the spell
+-- cost hooks (areaCost, spellCost) in Skills.cost.
 
 local BuffCategories = require("../Data/BuffCategories")
 local Combat = require("../Data/Combat")
@@ -252,6 +254,10 @@ function Skills.effective(
 		-- S70: channel rules read the definition (Logic/Channel.stops, S76 stores def = ctx.skill)
 		def.steadfast = true
 	end
+	if behaviour.channelMove then
+		-- S79: channel rules read the definition (Logic/Channel.stops: a channel with channelMove survives moving)
+		def.channelMove = behaviour.channelMove
+	end
 	return def :: SkillDef, behaviour
 end
 
@@ -469,9 +475,15 @@ end
 export type CostMods = {
 	costPct: number?,
 	costReduce: number?, -- % item saving (costReduce stat: Tome trait + lines), capped by Data/Stats
-	-- S76: the caster's hooks (Paths.passiveTotals(...).hooks); trapCost makes trap skills cheaper in the base cost
+	-- S76: the caster's hooks (Paths.passiveTotals(...).hooks)
+	-- cost hooks in %: areaCost / spellCost (S79) plus = dearer; trapCost (S76) plus = cheaper (a discount)
 	hooks: { [string]: number }?,
 }
+
+-- A hook from an optional table (0 when missing). Callers name the hook as a literal (paths.spec hook receivers).
+local function hookValue(hooks: { [string]: number }?, id: string): number
+	return if hooks then hooks[id] or 0 else 0
+end
 
 local COST_REDUCE_CAP = (Stats.get("costReduce") :: any).cap :: number
 
@@ -491,6 +503,14 @@ function Skills.cost(skill: SkillDef, rank: number, level: number, classId: stri
 		base *= LevelCurves.at(curve, level)
 	end
 	local pct = if mods and mods.costPct then mods.costPct else 0
+	-- S79 (ROZWOJ 14.4): spell cost hooks in the base (before the item saving), plus = dearer
+	if Skills.isSpell(skill) then
+		local hooks = if mods then mods.hooks else nil
+		pct += hookValue(hooks, "spellCost")
+		if Skills.tag(skill) == "area" then
+			pct += hookValue(hooks, "areaCost")
+		end
+	end
 	base *= math.max(0, 1 + pct / 100)
 	-- S76 (ROZWOJ 11.4, Poacher's Thrift): a node discount, so it sits in the base next to costPct
 	local trapCost = if mods and mods.hooks and skill.type == "trap" then mods.hooks["trapCost"] or 0 else 0
@@ -745,7 +765,10 @@ function Skills.descriptionArgs(base: SkillDef, rank: number, opts: DescOpts?): 
 	for _, effect in effects do
 		args[`{effect.kind}Duration`] = round(Skills.scaled(skill, effect.duration, rank))
 	end
-	args.radius = skill.radius or 0
+	-- S79 Broad Rings: the circle as it grows with the areaRadius hook
+	args.radius = if opts and opts.hooks
+		then Skills.areaRadius(skill, hookValue(opts.hooks, "areaRadius")) or 0
+		else skill.radius or 0
 	args.range = skill.range or 0
 	args.length = skill.length or 0
 	args.hits = skill.hits or 1
@@ -787,6 +810,209 @@ end
 
 function Skills.formatDescription(skill: SkillDef, rank: number, lang: string?, opts: DescOpts?): string
 	return Locale.T(skill.descKey, Skills.descriptionArgs(skill, math.max(1, rank), opts), lang)
+end
+
+-- S79 (ROZWOJ 12.3, 14.4): spell tags, area / single target bonuses, zones and Mage hooks ---------------------------
+
+-- S79 (ROZWOJ 12.3): circle, cone, line and chain spells are "area", everything else "single".
+-- Not Traits.isAreaSkill (S63): that one also counts traps, for the 1/3 on-hit trait share.
+local AREA_TAG_TYPES: { [string]: boolean } =
+	table.freeze({ circleSelf = true, circleTarget = true, cone = true, line = true, chain = true })
+
+export type SpellTag = "area" | "single"
+
+function Skills.tag(def: SkillDef): SpellTag
+	if AREA_TAG_TYPES[def.type] then
+		return "area"
+	end
+	return "single"
+end
+
+-- A spell has values.dmg (spells get spellCost / areaCost and the spell bonuses).
+function Skills.isSpell(def: SkillDef): boolean
+	return def.values ~= nil and def.values.dmg ~= nil
+end
+
+-- "Area" bonuses: a secondary hit (splash, pierce, arc, split) always, an area spell when it hits at least
+-- SkillData.AREA_MIN_HITS enemies.
+function Skills.areaApplies(tag: string, count: number, secondary: boolean): boolean
+	return secondary or (tag == "area" and count >= SkillData.AREA_MIN_HITS)
+end
+
+-- "Single target" bonuses: every main hit of a single-target spell (both bolts of Bolt 10B), never a secondary one.
+function Skills.singleApplies(tag: string, secondary: boolean): boolean
+	return tag == "single" and not secondary
+end
+
+-- Enemies an area wave counts: Thunderstorm (randomTarget) counts the enemies in its circle, though its bolt strikes
+-- one; every other spell the enemies it struck.
+function Skills.areaCount(def: SkillDef, inCircle: number, struck: number): number
+	if def.randomTarget then
+		return inCircle
+	end
+	return struck
+end
+
+-- % bonus of one hit: areaDamage when the area rule holds, singleDamage on a single-target main hit, spellDamage
+-- always. One sum, so the tag bonuses and the spell bonus are one factor (1 + sum / 100).
+function Skills.spellBonus(tag: string, count: number, secondary: boolean, hooks: { [string]: number }?): number
+	local sum = hookValue(hooks, "spellDamage")
+	if Skills.areaApplies(tag, count, secondary) then
+		sum += hookValue(hooks, "areaDamage")
+	end
+	if Skills.singleApplies(tag, secondary) then
+		sum += hookValue(hooks, "singleDamage")
+	end
+	return sum
+end
+
+-- Resonance: x (1 + pct / 100) while the mana before the cast (fraction of the pool) is at least
+-- SkillData.RESONANCE_MANA %.
+function Skills.resonanceMul(manaFraction: number, pct: number): number
+	if pct > 0 and manaFraction * 100 >= SkillData.RESONANCE_MANA then
+		return 1 + pct / 100
+	end
+	return 1
+end
+
+-- A lasting area of a cast: `pct` % of attack per tick (one tick a second), `element` = the weapon element's ground.
+export type Zone = {
+	pct: number,
+	duration: number,
+	radius: number,
+	kind: string,
+	slow: number?,
+	element: boolean?,
+}
+
+-- Zones of wave `wave` of a cast dealing `percent` (ROZWOJ 14.4): only the first wave makes them. The breakpoint's
+-- lingering zone, and next to it (not instead) the areaLingering zone of circle spells: hookPct % of the spell's
+-- value per target (dmg x waves; randomTarget: divided by the enemies `inCircle`, none without enemies) for
+-- SkillData.AREA_LINGER_SECONDS s.
+function Skills.castZones(
+	def: SkillDef,
+	behaviour: Behaviour,
+	wave: number,
+	percent: number,
+	hookPct: number,
+	inCircle: number
+): { Zone }
+	local zones: { Zone } = {}
+	if wave ~= 1 then
+		return zones
+	end
+	local spec = behaviour.lingering
+	if spec then
+		table.insert(zones, {
+			pct = percent * spec.pct / 100,
+			duration = spec.duration,
+			radius = spec.radius or def.radius or 8,
+			kind = spec.kind,
+			slow = spec.slow,
+			element = if spec.kind == "element" then true else nil,
+		})
+	end
+	local circle = def.type == "circleSelf" or def.type == "circleTarget"
+	if hookPct > 0 and circle and Skills.tag(def) == "area" and Skills.isSpell(def) then
+		local share = if def.randomTarget then inCircle else 1
+		if share >= 1 then
+			table.insert(zones, {
+				pct = percent * (def.hits or 1) / share * hookPct / 100,
+				duration = SkillData.AREA_LINGER_SECONDS,
+				radius = def.radius or 8,
+				kind = "element",
+				element = true,
+			})
+		end
+	end
+	return zones
+end
+
+-- Ground kind of a weapon element's zone (the client draws an unknown kind in the element's colour).
+function Skills.zoneKind(element: string?): string
+	if element == "fire" then
+		return "burn"
+	elseif element == "ice" then
+		return "frost"
+	elseif element == "lightning" then
+		return "spark"
+	end
+	return "arcane"
+end
+
+-- Cascade (areaKillMana): mana an area spell's killing hit gives, pct % of max mana.
+function Skills.areaKillMana(tag: string, killed: boolean, dealt: number, pct: number, maxMana: number): number
+	if tag == "area" and killed and dealt > 0 and pct > 0 then
+		return maxMana * pct / 100
+	end
+	return 0
+end
+
+-- An own damage reduction of a Mage hook, as StatusEffectService.Apply options plus its kind.
+export type GuardSpec = {
+	kind: string,
+	value: number,
+	duration: number,
+	category: string,
+	skillId: string,
+	target: string,
+}
+
+-- Master Mind (channelGuard): damage reduction for the whole channel; it ends with the channel (SkillService).
+function Skills.channelGuard(kind: string, value: number, duration: number): GuardSpec?
+	-- S80 adds "beam"
+	if kind ~= "channel" or value <= 0 or duration <= 0 then
+		return nil
+	end
+	return {
+		kind = "damageReduction",
+		value = value,
+		duration = duration,
+		category = "own",
+		skillId = "arcanist_masterMind",
+		target = "self",
+	}
+end
+
+-- Mantle of Elements (vortexGuard): damage reduction until the last wave of Elemental Vortex.
+function Skills.castGuard(def: SkillDef, value: number): GuardSpec?
+	if def.id ~= SkillData.VORTEX_SKILL or value <= 0 then
+		return nil
+	end
+	local duration = ((def.hits or 1) - 1) * (def.interval or 0.4)
+	if duration <= 0 then
+		return nil
+	end
+	return {
+		kind = "damageReduction",
+		value = value,
+		duration = duration,
+		category = "own",
+		skillId = "destroyer_mantle",
+		target = "self",
+	}
+end
+
+-- Broad Rings (areaRadius): the radius of a circle spell grown by pct %; other skills keep theirs (a chain's jump
+-- radius is not a circle).
+function Skills.areaRadius(def: SkillDef, pct: number): number?
+	local circle = def.type == "circleSelf" or def.type == "circleTarget"
+	if circle and Skills.tag(def) == "area" and def.radius ~= nil then
+		return def.radius * (1 + pct / 100)
+	end
+	return def.radius
+end
+
+-- Mana Shield with manaShieldCost (plus = more mana): (damage absorbed, mana spent) of `amount` when the shield takes
+-- `share` % and the player has `mana`. With costPct 0 both are today's min(mana, amount x share / 100).
+function Skills.manaShieldSplit(amount: number, share: number, mana: number, costPct: number): (number, number)
+	local want = amount * share / 100
+	local rate = math.max(0, 1 + costPct / 100)
+	if rate == 0 then
+		return want, 0
+	end
+	local absorbed = math.min(want, mana / rate)
+	return absorbed, absorbed * rate
 end
 
 -- Weapon element a skill needs (DESIGN §5.8, S18): Mage element skills need a weapon of their element;

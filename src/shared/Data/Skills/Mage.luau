@@ -16,6 +16,7 @@ return Build.class("Mage", "mana", "magic", {
 		cost = 12,
 		cooldown = 2.5,
 		range = 38,
+		hits = 1, -- S79 (ROZWOJ 14.4): Bolt 10B adds one (add.hits)
 		adaptive = true,
 		values = { dmg = { 170, 310 } },
 		breakpoints = Build.bp2({ a = { pierce = 40 } }, { a = { splash = { radius = 4, pct = 50 } } }),

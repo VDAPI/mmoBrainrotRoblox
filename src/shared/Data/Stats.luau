@@ -49,6 +49,8 @@ local DEFS: { StatDef } = {
 	{ id = "hpRegen", group = "resources", format = "flat", decimals = 1 },
 	{ id = "hpRegenCombat", group = "resources", format = "flat", decimals = 1 },
 	{ id = "manaRegen", group = "resources", format = "flat", decimals = 1 },
+	-- S79 (ROZWOJ 12.4, 12.5): extra max mana in % points that does not raise mana regeneration (Focus, Deep Reserve)
+	{ id = "manaReserve", group = "resources", format = "pct", decimals = 0, cap = 40 },
 	{ id = "energyRegen", group = "resources", format = "flat", decimals = 1 },
 	{ id = "costReduce", group = "resources", format = "pct", decimals = 1, cap = 20 }, -- S62 (STATY 4)
 	-- Other

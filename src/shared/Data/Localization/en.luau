@@ -165,6 +165,7 @@ return {
 	["stat.manaRegen"] = "Mana regen (per s)",
 	["stat.energyRegen"] = "Energy regen (per s)",
 	["stat.costReduce"] = "Skill cost reduction",
+	["stat.manaReserve"] = "Mana reserve", -- S79
 	["stat.moveSpeed"] = "Movement speed",
 	["stat.expBonus"] = "Experience bonus",
 	["stat.dropBonus"] = "Drop bonus",
@@ -183,6 +184,7 @@ return {
 	["breakdown.weapon"] = "Weapon",
 	["breakdown.maxHpPct"] = "Share of max health",
 	["breakdown.maxManaPct"] = "Share of max mana",
+	["breakdown.manaReserve"] = "Mana reserve", -- S79
 	["source.total"] = "Bonuses",
 	["source.gear"] = "Equipment",
 	["source.blessing"] = "Blessing",
