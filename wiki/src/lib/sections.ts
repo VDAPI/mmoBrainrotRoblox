@@ -38,3 +38,17 @@ export function sectionHref(lang: Lang, id: RouteKey, ...ids: string[]): string 
 export function searchHref(lang: Lang, query: string): string {
   return `${href(lang, "search")}?q=${encodeURIComponent(query)}`;
 }
+
+/** Top navigation (dropdowns on desktop, the Menu panel on phones): every section of the site, grouped. */
+export interface NavGroup {
+  id: "items" | "monsters" | "world" | "character" | "more";
+  sections: RouteKey[];
+}
+
+export const NAV_GROUPS: NavGroup[] = [
+  { id: "items", sections: ["items", "upgrading", "crafting"] },
+  { id: "monsters", sections: ["bestiary", "bosses"] },
+  { id: "world", sections: ["map", "regions", "quests"] },
+  { id: "character", sections: ["classes", "mechanics"] },
+  { id: "more", sections: ["guides", "updates", "search"] },
+];
