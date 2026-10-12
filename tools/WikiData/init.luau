@@ -2,7 +2,7 @@
 -- Wiki data exporter (S34, docs/WIKI.md §5): build(opts) -> { files = { [path]: text }, stats }. Pure: no file
 -- system here (the CLI tools/wikidump.luau reads and writes, tests call build directly). Paths are relative to the
 -- repository root: wiki/src/data/<file>.json, wiki/src/data/types.ts, wiki/src/styles/tokens.data.css,
--- docs/PRZEDMIOTY.md.
+-- docs/PRZEDMIOTY.md and (S82) wiki/test-fixtures/planner.json (the planner test paths, never in wiki/src/data).
 --
 -- opts.rolls     Monte Carlo rolls per monster variant (loot) and per pool and rarity (bonus frequency)
 -- opts.only      { file names }: build only these JSON files (+ what they need), no derived files
@@ -54,6 +54,7 @@ WikiDump.DATA_DIR = "wiki/src/data"
 WikiDump.TYPES_PATH = "wiki/src/data/types.ts"
 WikiDump.TOKENS_PATH = "wiki/src/styles/tokens.data.css"
 WikiDump.ITEMS_MD_PATH = "docs/PRZEDMIOTY.md"
+WikiDump.PLANNER_FIXTURE_PATH = "wiki/test-fixtures/planner.json"
 
 export type Opts = {
 	rolls: number?,
@@ -171,6 +172,7 @@ function WikiDump.build(opts: Opts?): Result
 		bossDrops = {},
 	}
 	ctx.hidden = Visibility.collect()
+	ctx.hiddenPaths = Visibility.collectPaths() -- S82: path ids only (they may equal NPC, shop or quest ids)
 
 	local wanted: { [string]: boolean }? = nil
 	if o.only then
@@ -248,8 +250,21 @@ function WikiDump.build(opts: Opts?): Result
 		files[WikiDump.TYPES_PATH] = TypesTs.generate()
 		files[WikiDump.TOKENS_PATH] = TokensCss.generate(ctx)
 		files[WikiDump.ITEMS_MD_PATH] = ItemsMd.generate(ctx)
-		for _, path in { WikiDump.TYPES_PATH, WikiDump.TOKENS_PATH, WikiDump.ITEMS_MD_PATH } do
+		-- S82: the planner test file (tests/fixtures/paths.luau through the skills export's own records)
+		local fixture = Clean.clean(Skills.plannerFixture(), "planner")
+		local fixtureErrors = Schema.check(fixture, Skills.PlannerFixture, "planner")
+		if #fixtureErrors > 0 then
+			error("WikiDump: planner fixture does not match the schema:\n  " .. table.concat(fixtureErrors, "\n  "), 0)
+		end
+		files[WikiDump.PLANNER_FIXTURE_PATH] = Json.file(fixture)
+		for _, path in
+			{ WikiDump.TYPES_PATH, WikiDump.TOKENS_PATH, WikiDump.ITEMS_MD_PATH, WikiDump.PLANNER_FIXTURE_PATH }
+		do
 			table.insert(stats, { file = path, bytes = #files[path], records = 0 })
+		end
+		local fixtureLeaks = Leak.scanKeys({ [WikiDump.PLANNER_FIXTURE_PATH] = files[WikiDump.PLANNER_FIXTURE_PATH] })
+		if #fixtureLeaks > 0 then
+			error("WikiDump: forbidden keys in the planner fixture:\n  " .. table.concat(fixtureLeaks, "\n  "), 0)
 		end
 	end
 	table.sort(stats, function(a, b)

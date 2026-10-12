@@ -182,7 +182,9 @@ węzła.
 - Wartości jak w umiejętnościach: `{ ranga 1, ranga max }`, liniowo. Wartość punktu mniej więcej stała w całej
   ścieżce; procenty stałe, nierosnące z poziomem (R6). W rzędzie wyboru kupuje się jeden z dwóch węzłów.
 - Węzły `modify` trafiają do umiejętności przez `Paths.skillMods(character, skillId, weaponTypes)` i
-  `Skills.effective(skill, rank, choices, mods)` (2.7), więc serwer, opis i wiki pokazują umiejętność ze zmianami.
+  `Skills.effective(skill, rank, choices, mods)` (2.7), więc serwer i opis w grze pokazują umiejętność ze zmianami. Wiki
+  (S82) pokazuje przy umiejętności listę węzłów `modify`, które ją zmieniają, z ich opisami; opis umiejętności na wiki
+  jest bez zmian z węzłów.
 - Id węzła jest unikalne w grze: `<pathId>_<nazwa>`; węzeł `skill` ma id `<pathId>_<nazwa umiejętności>` (np.
   `healer_renew`). Teksty: `path.<pathId>.<nazwa>.name` i `.desc`.
 
@@ -237,7 +239,8 @@ węzła.
 - Węzeł może wzmocnić jedną wersję (`modify.option`). Trzecia wersja `c` od ścieżki jest zarezerwowana, nie w v1.
 - `Logic/Skills.effective(skill, rank, choices, mods)`: `choices` z `path.bp`, `mods` z `Paths.skillMods(character,
   skillId, weaponTypes)` (węzły `modify` aktywnego zestawu, które działają z założoną bronią). Tej samej funkcji używają
-  serwer (`SkillService`), opis (`SkillInfo`), podgląd (`VfxController`, bez wyborów = A) i eksport wiki. Przełącznik
+  serwer (`SkillService`), opis (`SkillInfo`), podgląd (`VfxController`, bez wyborów = A) i eksport wiki (S82: z
+  wyborami A/B, bez `mods`; węzły `modify` wiki wymienia osobno przy umiejętności). Przełącznik
   `Config.Skills.breakpoints` zostaje do pomiarów.
 - Składanie przełomów i węzłów `modify` w `effective`: wartość bazowa skaluje się raz, potem każda zmiana `values` dodaje
   się do bieżącej wartości pola (`def.values[f] = (def.values[f] or scaled(base)) + amount`; dziś liczy się od
@@ -473,6 +476,10 @@ export type ReferenceBuild = {
   nieopublikowanego. Ścieżki zostają z `wiki = false` do wydania.
 - Planer (`wiki/src/lib/skills.ts`, `SkillPlanner.svelte`) od nowa: suwak poziomu, zakładki ścieżek, ścieżka główna,
   węzły, A/B, licznik punktów; kod buildu `v2` (poziom, ścieżka, węzły, przełomy); stary `?b=` otwiera pusty planer.
+- S82: kod v2 `2<KLASA><poziom>.<główna>.<przełomy>.<segment ścieżki order 1>.<order 2>…` (segmenty pozycyjne według
+  `order`, przełomy umiejętności ścieżki w cyfrze węzła `skill`); reguły w `rules` mają też `pathPointsByLevel` i
+  `mainPathLevel` (bez nich TS powtarzałby wzór gry), a parzystość TS z `Paths.canBuy` sprawdza też plik testowy
+  `wiki/test-fixtures/planner.json` ze ścieżki z `tests/fixtures` (nigdy w `wiki/src/data`).
 - Koszt nowej aktywnej umiejętności: wpis w `Data/Skills`, `Data/SkillMotions`, `Data/SkillVfx`, teksty `name`, `desc`,
   `bp5`, `bp5b`, `bp10`, `bp10b` (PL, EN), węzeł, build wzorcowy. Węzły i przełomy B to głównie dane.
 

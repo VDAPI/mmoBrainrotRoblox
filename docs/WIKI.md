@@ -95,7 +95,7 @@ Identyfikatory w URL to **id z danych gry** (stabilne między językami, także 
 | Bestiariusz | `/pl/bestiariusz/` | `/en/bestiary/` |
 | Potwór | `/pl/bestiariusz/<id>/` | `/en/bestiary/<id>/` |
 | Bossy, boss | `/pl/bossy/`, `/pl/bossy/<id>/` | `/en/bosses/`, `/en/bosses/<id>/` |
-| Klasy, klasa | `/pl/klasy/`, `/pl/klasy/<classId>/` (planer wkrótce, do S82) | `/en/classes/`, `/en/classes/<classId>/` |
+| Klasy, klasa | `/pl/klasy/`, `/pl/klasy/<classId>/?b=<kod buildu v2>&s=<id umiejętności albo węzła>` (S82) | `/en/classes/`, `/en/classes/<classId>/` |
 | Mapa świata | `/pl/mapa/` (`?m=<mapa>&a=<obszar>&x=&z=&s=`) | `/en/map/` |
 | Krainy, kraina | `/pl/krainy/`, `/pl/krainy/<mapId>/` | `/en/regions/`, `/en/regions/<mapId>/` |
 | Obszar / jaskinia | `/pl/krainy/<mapId>/<areaId>/` | `/en/regions/<mapId>/<areaId>/` |
@@ -152,7 +152,7 @@ przełomy umiejętności, `Combat`, `Stats.Formula`) jako `data` (typ `Json`).
 | `recipes.json` | `groups`: RecipeGroup[], `queueSlots`: number, `recipes`: AlchemyRecipe[] | `Data/Recipes` |
 | `search.json` | `entries`: SearchEntry[], `vectors`: NormalizeVector[] | pozostałe pliki + `MapSearch.normalize` (klucz, wektory testowe) |
 | `shops.json` | `shops`: Shop[], `weaponsmithTiers`: number[] | `Data/Shops`; cena `ItemValue.buyPrice` pod kluczem `gold`; NPC z `Data/Npcs` |
-| `skills.json` | `rules`: SkillRules, `skills`: Skill[] | `Data/Skills` (bez `vfx`); rangi: `Skills.rankLevel` (`rankLevels`, `ranks[].requiredLevel`), `scaled`, `valueAt`, `formatDescription`; koszt rangi `Skills.cost` na `requiredLevel` (S54); `rules.ranks` (`RANKS`); bez `requires`, `col`, `row` i wektorów (S56); przełomy (S55): `{ rank, a: { text, change } }` z `Data/Skills` (`Build.bp2`, tylko opcja A; B, poziom odblokowania i warianty rang od S82); `elementNote` umiejętności (`skill.requiresElement` / `skill.adaptive`) |
+| `skills.json` | `rules`: SkillRules, `skills`: Skill[], `paths`: SkillPath[] | `Data/Skills` (bez `vfx`); rangi: `Skills.rankLevel` (`rankLevels`, `ranks[].requiredLevel`); liczby rangi jak `UI/SkillInfo`: `Skills.effective` z wyborami, `Skills.cost` na poziomie rangi, `Skills.cooldown`, `formatDescription` (S82); `ranks[].variants` = te same liczby dla innych wyborów (`"ba"`, `"ab"`, `"bb"`: litera rangi 5 i 10), bez węzłów `modify`; `rules.ranks` (`RANKS`); przełomy `{ rank, level, a: { text, change }, b? }`; `path` = id opublikowanej ścieżki (umiejętności ukrytych ścieżek nie ma); `elementNote`. S82: `paths` tylko z `wiki ~= false` (`Skills.pathEntry`: rzędy z `Paths.rowsFor`, wartości `Paths.nodeValues`, opisy `Paths.nodeArgs`, `dipScale` / `dipDesc` dla węzłów drużynowych rzędów 1–2, broń jako id typów, nigdy `reference`, `itemWeights`, `statPlan`); reguły `pathPointsEvery`, `pathPointsByLevel`, `mainPathLevel`, `rows`, `dipRows`, `dipScale` i `vectors` z `Paths.canBuy` / `canRefund` / `Skills.pathAchievable` (ziarno 8282, tylko opublikowane ścieżki). Plik testowy `wiki/test-fixtures/planner.json` (`{ paths, vectors }` ścieżki testowej z `tests/fixtures/paths.luau`) powstaje razem z danymi i nigdy nie trafia do `wiki/src/data` |
 | `stats.json` | `formula`: Json, `groups`: StatGroupInfo[], `primary`: string[], `primaryNames` (S41), `stats`: StatInfo[] | `Data/Stats` |
 | `titles.json` | `titles`: Title[] | `Data/Titles` |
 | `upgrade.json` | `costs`: Record<string, Record<string, UpgradeCost[]>>, `max`: number, `protection`: string, `steps`: UpgradeStep[], `tiers`: number[], `vectors`: UpgradeVector[] | `Upgrade.chance`, `statMultiplier`, `attempt` (`StubRng` fail), `Upgrade.cost` dla progów i rzadkości; od S40 `vectors` = 3 przypadki × 20 000 symulacji `Upgrade.attempt` + `Upgrade.cost` (kontrola kalkulatora) |
@@ -234,8 +234,8 @@ do HTML bez JS, wyspy importują te same pliki). Dane przez `src/lib/data.ts` (`
 | `BossHeader` | `{ boss, lang, players?: 1-5, notes?: { phase, title, html }[], heading?: "h1"\|"h2" }` — S39: chipy graczy 1–5 (zmieniają każdy `[data-by-players]` na stronie), zakładki faz „Faza 1 · 100–70%” z okrzykiem i obrazkiem `-p2`/`-p3`, panele mechanik (ataki z `Telegraph`, przywołania, tarcza, przyspieszenie, wściekłość, `notes`); bez JS wszystkie fazy pod sobą; zachowanie `src/scripts/boss.ts` |
 | Wyspy S40 | `ItemsBrowser` (lista z filtrami i krokomierzem progów), `ItemTooltipLive` + `ItemUpgradeView` (strona przedmiotu; wspólny stan `src/lib/itemState.ts` i `?r=&up=&el=`), `UpgradeCalc` (kalkulator) — dane wyłącznie z propsów i endpointów `/data/items/<id>.json`, `/<lang>/items-index.json` |
 | `Telegraph` (S39) | `{ shape, radius?, inner?, angle?, length?, width?, origin?, size?, label? }` — SVG kształtu ataku (koło, stożek, pas, pierścień z bezpiecznym środkiem), rzucający jako złoty romb; w `/styleguide#telegraph` |
-| `SkillNode.svelte` / `SkillEdge` | S41: Svelte (Astro renderuje bez JS; S56: `SkillPlanner` to zaślepka bez JS do S82) `{ glyph?, state, rank?, max, active?, capstone?, selected?, invalid?, label, color?, size?, lockText? }` + atrybuty `<button>`; `invalid` = czerwony licznik (ranga wymaga wyższego poziomu) / `{ active? }` |
-| `SkillPlanner.svelte` (S41, S56) | `{ text }` — zaślepka bez JS do S82 („Planer wkrótce”, bez `client:load`); stary planer odszedł z punktami umiejętności. `src/lib/skills.ts`: `rankLevel`, `rankAt` z `rankLevels` |
+| `SkillNode.svelte` / `SkillEdge` | S41: Svelte (Astro renderuje bez JS w tabeli „Wszystkie umiejętności”, wyspa planera używa tego samego) `{ glyph?, state, rank?, max, active?, capstone?, selected?, invalid?, label, color?, size?, lockText?, mark? }` + atrybuty `<button>`; `invalid` = czerwony licznik (węzeł nieosiągalny na tym poziomie); `mark` (S82) = znak w rogu, np. „⅓” węzła drużynowego poza ścieżką główną / `{ active? }` |
+| `SkillPlanner.svelte` (S82) | `{ data: PlannerData }` z `plannerData(c, lang)` (`lib/classes.ts`: umiejętności klasy z wariantami rang i przełomami A/B, opublikowane ścieżki z nazwami broni, reguły, etykiety `planner.*`, Zwój Nowej Ścieżki), `client:load`. Suwak i stepnik poziomu, punkty ścieżek, ścieżka główna, kod v2 z „Kopiuj link” i „Resetuj”, zakładki „Podstawa” + ścieżki (albo „Ścieżki wkrótce”), panel szczegółów z wyborem A/B (`role="radiogroup"`, `data-bp`, `data-option`). Reguły w `src/lib/skills.ts` (lustro `Logic/Paths.canBuy` / `canRefund` z tymi samymi kluczami, `achievable`, `validate`, `setMain`, `pathView`, `baseView`, `encodeBuild` / `decodeBuild`). Kod v2: `2<KLASA><poziom>.<główna>.<przełomy>.<ścieżka order 1>.<order 2>…` (segmenty ścieżek pozycyjne według `order`, cyfra węzła `skill` = 1 + bity przełomów jego umiejętności, końcowe zera ucięte). Adres `?b=<kod>&s=<id>`; stary `?b=` (v1) = pusty planer z ostrzeżeniem |
 | `DataTable` | `{ columns: { key, label, sortable?, align?, mobile?, sort? }[], rows, caption, html? }` |
 | `Chip`, `Pager` | `{ pressed?, disabled?, href?, count? }`, `{ page, pages, hrefFor, lang? }` |
 | `Callout` | `{ kind?: "info"\|"tip"\|"warn"\|"changed"\|"spoiler", title?, date?, lang? }` |
@@ -375,7 +375,7 @@ sam) i wgrywa `wiki/dist` na Cloudflare Pages. Bez sekretów workflow przechodzi
 - `npm run check` (w `wiki/`): `astro check`, ESLint, Vitest (`src/**/*.test.ts` i rdzenie skryptów
   `scripts/**/*.test.mjs`), build (z obrazami OG i Pagefind), `check-links`, **`budgets.mjs`** i **`audit.mjs`**.
   - Budżety JS (gzip) wszystkich stron: tabela `scripts/budgets.config.mjs` (domyślnie 50 KB całego JS strony; mapa 60;
-    planer 35; S39: bestiariusz 8, potwór 5, boss 4, kraina 10 KB „własnego” JS bez plików wspólnych). Ostrzeżenia: CSS
+    strona klasy z planerem 40 (S82: 37 KB); S39: bestiariusz 8, potwór 5, boss 4, kraina 10 KB „własnego” JS bez plików wspólnych). Ostrzeżenia: CSS
     > 60 KB, HTML > 150 KB, obraz > 300 KB, `img/mobs` > 10 MB, `img/items` > 8 MB. Błąd: > 19 000 plików albo plik >
     25 MiB. Raport `.reports/budgets.json` + 20 najcięższych stron.
   - Audyt: `lang`, jeden `<h1>`, unikalne `<title>` w języku, opis, canonical i wzajemne hreflang od `SITE_URL`,
@@ -438,7 +438,27 @@ sam) i wgrywa `wiki/dist` na Cloudflare Pages. Bez sekretów workflow przechodzi
   maks., przełomy 5/10, wymagania, maks. osiągalna ranga). Kod buildu `MAGE34-a535230-2000000`, kopiowanie linku, reset,
   ostrzeżenie przy za niskim poziomie. Zgodność z grą: `rules.vectors` z Lune, Vitest `skills.test.ts`. Sekcja
   `classes` ma `ready: true`; rekordy umiejętności w Pagefind prowadzą do `?s=<id>#s-<id>`. S56: planer schowany za
-  „Planer wkrótce” (bez punktów umiejętności; nowy w S82).
+  „Planer wkrótce” (bez punktów umiejętności). S82: nowy planer (rangi z poziomu, przełomy A/B, ścieżki, kod v2).
+
+- **S82 (planer od nowa):** eksport A/B, wariantów rang, opublikowanych ścieżek, reguł i wektorów `Paths.canBuy`;
+  plik testowy `wiki/test-fixtures/planner.json`; `skills.ts` od nowa (parzystość z Lune na ścieżce testowej, kod v2);
+  wyspa `SkillPlanner` z zakładkami; tabela „Wszystkie umiejętności” z A/B i linkiem „Zaplanuj”. Ścieżki wszystkich klas
+  ukryte do decyzji właściciela (planer pokazuje „Ścieżki wkrótce”). JS strony klasy 37 KB gzip (budżet 40).
+
+### Publikacja ścieżki na wiki (S82)
+
+1. W `Data/Paths/<Klasa>` usuń `wiki = false` (albo ustaw `true`) w wybranych `PathDef` i dopisz decyzję do
+   `docs/DECYZJE.md`.
+2. W tej samej sesji rodzaj tytułu `mainPath`: `TitleReq` w `tools/WikiData/Basics.luau` dostaje
+   `["value?"] = "int", ["path?"] = "string"`, `Basics.titles` eksportuje wymóg `{ kind = "mainPath", path }`,
+   `wiki/src/components/blocks/TitleTable.astro` pokazuje go kluczem `block.titles.req.mainPath` (PL, EN, z nazwą
+   ścieżki). Bez tego eksport głośno odrzuci tytuł `path_<id>` („missing value”, „key path is not in the schema of
+   TitleReq”).
+3. `npm run data` w `wiki/` (ścieżka, jej umiejętności, tytuł i wektory trafiają do `skills.json`), `npm test`
+   (parzystość z `rules.vectors` przestaje się pomijać), `npm run build` i przegląd strony klasy (zakładka ścieżki, opisy
+   węzłów, broń, „⅓”).
+4. `npm run check` i `htmlKb` stron klas w `.reports/budgets.json`: powyżej `warn.htmlKb` (150 KB) opisy rang i węzłów
+   idą do endpointu `src/pages/[lang]/skills/[classId].json.ts` (S82 C7), planer dociąga je po starcie.
 
 - **S42 (zadania, mechaniki):** `/pl/zadania/` (32 główne w kolejności gry pogrupowane w odcinki wg krainy, 28 pobocznych
   wg NPC, 8 rodzajów zleceń z chipami poziomu i tabelą nagród), 60 stron zadań (fakty, minimapa celu, cele z linkami,

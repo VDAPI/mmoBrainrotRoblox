@@ -1748,3 +1748,30 @@
   odepchnięte poza limit kończą się na „move” (bez przywrócenia many).
 - Przegląd S72–S77: opisy Żądzy Krwi, Okrzyku Bojowego i Ostatniego Bastionu pokazują czas efektu
   (`{statBuffDuration}` / `{damageReductionDuration}`, z `add.effectDuration`), nie `duration`.
+
+- **S82** Kod buildu v2: `2<KLASA><poziom>.<główna>.<przełomy>.<segment order 1>.<order 2>…`; segmenty ścieżek są
+  pozycyjne według `order` (nieznana ścieżka = pusty segment), przełomy umiejętności ścieżki siedzą w cyfrze jej węzła
+  `skill` (1 + bity B), końcowe zera i puste segmenty ucięte. Stary kod v1 (`MAGE34-…`) daje błąd `old`: planer
+  otwiera się pusty z ostrzeżeniem.
+- **S82** Plik testowy planera `wiki/test-fixtures/planner.json` (ścieżka z `tests/fixtures/paths.luau` przez te same
+  `Skills.pathEntry` / `pathVectors`) powstaje w `npm run data` poza `wiki/src/data`; `wikidump.spec` wymaga, żeby był
+  aktualny. Wektory w `skills.json` są puste, dopóki żadna ścieżka nie jest opublikowana (test TS się wtedy pomija).
+- **S82** Publikacja ścieżek: brak decyzji właściciela, więc wszystkie `PathDef` zostają z `wiki = false`, `paths` i
+  `rules.vectors` puste, tytuły `path_*` poza wiki, `TitleReq` bez zmian; planer pokazuje „Ścieżki wkrótce”. Lista
+  kroków publikacji: `docs/WIKI.md` → „Publikacja ścieżki na wiki (S82)”.
+- **S82** Reguły spoza listy ROZWOJ 3.5: `rules.pathPointsByLevel` i `rules.mainPathLevel` (`Paths.MAIN_LEVEL`), żeby TS
+  nie powtarzał wzoru gry; dopisane w ROZWOJ 3.5.
+- **S82** Wiki nie składa zmian z węzłów `modify` w opisie umiejętności (planer i eksport liczą `Skills.effective` z
+  wyborami A/B, bez `mods`); przy umiejętności planer wymienia węzły, które ją zmieniają. ROZWOJ 2.3 i 2.7 poprawione.
+- **S82** Ukryte ścieżki: gołe id ścieżek w osobnym zbiorze (`Visibility.fromPaths` zwraca go jako drugą wartość,
+  `Visibility.collectPaths` → `ctx.hiddenPaths`, czyta tylko eksport umiejętności); `ctx.hidden` ma tylko węzły,
+  tytuły i umiejętności, więc NPC, sklep i quest `healer` zostają na wiki.
+- **S82** Liczby rangi A/A w `skills.json` liczone jak `UI/SkillInfo` (wartości i koszt z `Skills.effective`, więc
+  z przełomem A od 5. / 10. rangi); wcześniej `values` rang były bez przełomu A (opisy już go miały). Warianty B tą samą
+  drogą (`ranks[].variants`).
+- **S82** `Leak.FORBIDDEN_KEYS` ma też `reference` (buildy wzorcowe ścieżek).
+- **S82** Budżet JS strony klasy 35 → 40 KB gzip: nowa wyspa (zakładki, ścieżki, A/B, kod v2) to 12,3 KB, cała strona
+  37,1 KB; runtime Svelte ok. 20 KB zostaje.
+- **S82** A/B umiejętności ścieżki wybiera się w planerze tylko przy kupionym węźle `skill` (kod niesie wybór w cyfrze
+  węzła); zwrot węzła do 0 i zmiana ścieżki głównej kasują jej wybory (`pruneChoices`). Węzeł rzędu wyboru zajętego
+  przez drugi węzeł jest „zablokowany” jak w grze (`taken` z `Logic/PathView`).

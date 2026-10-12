@@ -9,7 +9,7 @@ export default {
     { match: /^(pl\/bestiariusz|en\/bestiary)\/index\.html$/, kb: 8, mode: "own", why: "S39: bestiary filters" },
     { match: /^(pl\/bestiariusz|en\/bestiary)\/[^/]+\/index\.html$/, kb: 5, mode: "own", why: "S39: monster page" },
     { match: /^(pl\/bossy|en\/bosses)\/[^/]+\/index\.html$/, kb: 4, mode: "own", why: "S39: boss page" },
-    { match: /^(pl\/klasy|en\/classes)\/[^/]+\/index\.html$/, kb: 35, mode: "all", why: "S56: class page, planner hidden until S82" },
+    { match: /^(pl\/klasy|en\/classes)\/[^/]+\/index\.html$/, kb: 40, mode: "all", why: "S82: class page with the skill planner island (tabs, paths, A/B, code v2: 37 KB)" },
   ],
   // Reported, never counted: Pagefind loads only after a query.
   warn: { cssKb: 60, htmlKb: 150, imageKb: 300, mobsMb: 10, itemsMb: 8 },

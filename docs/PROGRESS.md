@@ -5,7 +5,7 @@
 
 ## Stan
 
-S01–S51 i S53–S81 gotowe (lista i zakres w `docs/SESJE.md`). Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
+S01–S51 i S53–S82 gotowe (lista i zakres w `docs/SESJE.md`). Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
 kategorie efektów drużyny i stos efektów (`Logic/EffectStack`), S54 wzory globalne (`Logic/LevelCurves`), S55 rangi
 i przełomy w kształcie A/B (`Build.bp2`, `Skills.effective` §2.7), S56 koniec punktów umiejętności: rangi z poziomu
 postaci (`Skills.rankFor`, drabina przejściowa ROZWOJ 2.6), zapis w schemacie 6 (darmowy reset statystyk, pasek
@@ -58,9 +58,11 @@ krawędzi minimapy). S79 Mag: silnik tagów obszaru i haków Maga (`Skills.tag`,
 na drabinie przejściowej do S81. S80 Mag: silnik Arkanisty gotowy (typ `beam`, Ładunki Arkanów, Wzmocnienie, haki
 Ładunków). S81 Mag: podstawa 8 i ścieżki Niszczyciel, Arkanista (`Data/Paths/Mage`, węzły `extra` w rzędach 2, 5, 10,
 `areaCap` w buildach), opcje B, Zwój Nowej Ścieżki znowu w sklepie premium. Wszystkie cztery klasy na ścieżkach (ukryte
-na wiki do decyzji właściciela przed S82); następna: S82 planer wiki.
-Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`, `docs/STATY.md`), następna S82; testy
-i strojenie po niej.
+na wiki do decyzji właściciela). S82 planer wiki od nowa: rangi z poziomu, przełomy A/B, zakładki ścieżek, kod buildu
+v2, wektory `Paths.canBuy` i plik testowy `wiki/test-fixtures/planner.json`; ścieżki gotowe w planerze, na wiki ukryte
+(„Ścieżki wkrótce”) do decyzji właściciela o publikacji (`docs/WIKI.md` → „Publikacja ścieżki na wiki”).
+Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`, `docs/STATY.md`), następne sesje
+balansu; testy i strojenie po nich.
 
 ## Niedokończone (kod)
 
@@ -82,7 +84,8 @@ i strojenie po niej.
   (`accumulate` ma od S79 tylko podpalenie z żywiołu broni); `dmgMul` Kuszy 1,45 (S90).
 - **Kapłan**: cele 9.6 po normalizacji broni: w repo nie ma narzędzia liczącego umiejętności, pomiar S86, strojenie S89.
 - **Umiejętności i ścieżki**: brak przycisku „Załóż pasującą broń” po przełączeniu zestawu (ROZWOJ 2.8, później);
-  planer wiki wkrótce (S82). Oko Zwiadowcy widzi tylko Elity wczytane przez streaming (pewnie do 128 st.); pewność
+  wiki: ścieżki ukryte (`wiki = false`) do decyzji o publikacji, tytuł ścieżki nie jest w nagłówku zakładki planera
+  (pole `title` wchodzi z publikacją). Oko Zwiadowcy widzi tylko Elity wczytane przez streaming (pewnie do 128 st.); pewność
   dalej wymagałaby remote'u z pozycjami Elit (decyzja właściciela).
 - **UI**: ikona plecaka w HUD nie świeci po otwarciu klawiszem B; Esc nie zamyka menu przytrzymania. Stan przełączników
   panelu admina tylko lokalny. `/tparea` bez filtra po mapie. Ikony `crow_feather`, `toad_venom` to aliasy; brak ikon

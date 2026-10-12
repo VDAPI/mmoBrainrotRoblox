@@ -1,6 +1,7 @@
 <script lang="ts">
-  // Skill node (.vw-node, contract S36; Svelte so static pages share it; S56: the planner island is gone until S82,
-  // without `rank` the counter shows the max rank only).
+  // Skill node (.vw-node, contract S36; Svelte so static pages share it). Without `rank` the counter shows the max
+  // rank only (the "All skills" table). S82: the planner's path nodes, `mark` = a small sign in the corner (the 1/3
+  // strength of a team node outside the main path).
   // `label` is the full accessible name ("Fireball, 2 of 10, available"); extra attributes and event handlers
   // (onclick, oncontextmenu, onkeydown, tabindex, data-*) pass through to the button.
   import type { HTMLButtonAttributes } from "svelte/elements";
@@ -22,6 +23,8 @@
     size?: number | null;
     /** Text under the lock of a locked node ("lv. 28"). */
     lockText?: string | null;
+    /** Small sign in the corner ("⅓"). */
+    mark?: string | null;
   }
 
   let {
@@ -37,6 +40,7 @@
     color = null,
     size = null,
     lockText = null,
+    mark = null,
     ...rest
   }: Props = $props();
 
@@ -61,6 +65,7 @@
     <span class="glyph" aria-hidden="true">{glyph}</span>
   {/if}
   <span class="vw-node__rank" aria-hidden="true">{rank == null ? max : `${rank}/${max}`}</span>
+  {#if mark}<span class="mark" aria-hidden="true">{mark}</span>{/if}
 </button>
 
 <style>
@@ -89,6 +94,7 @@
   .vw-node--capstone .glyph { font-size: 34px; }
   .lock { position: relative; width: 14px; height: 11px; margin-top: 8px; background: var(--vw-text-muted); }
   .lock::before { content: ""; position: absolute; left: 2px; top: -8px; width: 6px; height: 7px; border: 2px solid var(--vw-text-muted); border-bottom: 0; }
+  .mark { position: absolute; top: 2px; right: 3px; font: 800 12px/1 var(--vw-font-ui); color: var(--vw-text-soft); }
   .lock-text { font: 700 11px/1 var(--vw-font-ui); color: var(--vw-text-muted); white-space: nowrap; }
   @media (prefers-reduced-motion: reduce) {
     .vw-node { transition: none; }

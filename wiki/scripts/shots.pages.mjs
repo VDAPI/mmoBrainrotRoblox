@@ -40,6 +40,8 @@ export const PAGES = [
   { name: "rzemioslo", path: "/pl/rzemioslo/" },
   { name: "klasy", path: "/pl/klasy/" },
   { name: "klasa-mag", path: "/pl/klasy/Mage/" },
+  // S82: the level-34 Mage build of src/lib/skills.test.ts (code v2: option B at rank 5 of the first Mage active).
+  { name: "klasa-mag-build", path: "/pl/klasy/Mage/?b=2MAGE34.0.1&s=firebolt" },
   { name: "klasa-kaplan", path: "/pl/klasy/Cleric/" },
   { name: "class-warrior-en", path: "/en/classes/Warrior/" },
   // S42
@@ -97,7 +99,7 @@ export const KEY_PAGES = [
   ...(bossItem ? [{ name: "item-boss", path: `/pl/przedmioty/${bossItem.id}/` }] : []),
   { name: "upgrading", path: "/pl/ulepszanie/" },
   { name: "crafting", path: "/pl/rzemioslo/" },
-  { name: "class", path: "/pl/klasy/Mage/" },
+  { name: "class", path: "/pl/klasy/Mage/?b=2MAGE34.0.1" },
   { name: "map", path: "/pl/mapa/" },
   { name: "region", path: "/pl/krainy/meadows/" },
   { name: "cave", path: `/pl/krainy/${cave.region}/${cave.id}/` },

@@ -4253,3 +4253,34 @@ Poprawki z przeglądu kodu S72–S77:
 Pliki: `src/server/Services/{CombatService,EquipmentService,SkillService}`, `src/server/Skills/Types/Movement`,
 `src/client/Controllers/VfxController`, `src/shared/Logic/Channel`, `src/shared/Data/Skills/Hunter`,
 `src/shared/Data/Localization/{pl,en}`, `tests/{skills,channel}.spec`, `docs/{DECYZJE,SESJE}.md`.
+
+### S82: Planer wiki od nowa: rangi, przełomy A/B, ścieżki i kod buildu v2
+
+Bez decyzji właściciela o publikacji: wszystkie ścieżki zostają z `wiki = false`, planer pokazuje „Ścieżki wkrótce”.
+- Eksport (`tools/WikiData/Skills`): umiejętności z `path`, przełomy `{ rank, level, a, b? }`, liczby rang jak
+  `UI/SkillInfo` i `ranks[].variants` (`ba`, `ab`, `bb`); `paths` tylko opublikowane (`Skills.pathEntry`); reguły
+  `pathPointsEvery`, `pathPointsByLevel`, `mainPathLevel`, `rows`, `dipRows`, `dipScale`, `vectors`
+  (`Skills.pathVectors` z `Paths.canBuy` / `canRefund`, `Skills.pathAchievable`, ziarno 8282; dziś puste).
+- Plik testowy `wiki/test-fixtures/planner.json` ze ścieżki `tests/fixtures/paths.luau` (wszystkie klucze powodów
+  `canBuy` / `canRefund`, buildy osiągalne i nie), generowany w `WikiDump.build`; CI rusza też na `tests/fixtures/**`.
+- `Visibility`: gołe id ukrytych ścieżek w osobnym zbiorze (`ctx.hiddenPaths`); `Leak` zakazuje klucza `reference`.
+- Wiki: `src/lib/skills.ts` od nowa (lustro `Logic/Paths`, `achievable`, `validate`, `setMain`, widoki, kod v2),
+  wyspa `SkillPlanner` (suwak, punkty, ścieżka główna, kod, zakładki, A/B, węzły z „⅓”), `SkillNode.mark`,
+  `plannerData` i tabela „Wszystkie umiejętności” z poziomami rang 5/10, A/B i „Zaplanuj”, teksty `planner.*` PL i EN,
+  akapity MDX o punktach ścieżek, link „Planer umiejętności →”, style `.sp-*`, zrzuty z kodem `2MAGE34.0.1`.
+- Testy: `wikidump.spec` (A/B i warianty, ścieżki tylko opublikowane, ukrycie węzłów, tytułów i umiejętności przy NPC /
+  sklepie / queście `healer` na wiki, plik testowy aktualny i z kompletem powodów, `reference` w skanerze), Vitest
+  `skills.test.ts` (parzystość z wektorami, widoki, kod v2), Playwright `keyboard.e2e.ts` (suwak, opcja B, węzeł albo
+  „Ścieżki wkrótce”). Uruchomione: `scripts/check`, `npm test`, `astro check`, ESLint, `npm run build`, budżety, linki,
+  audyt, Playwright `keyboard.e2e.ts`. Na próbę (bez commitu) z opublikowanymi ścieżkami Maga przeszły parzystość z
+  `rules.vectors`, testy Lune i E2E węzła.
+- Poprawki z przeglądu: A/B ścieżki tylko z kupionym węzłem (`pruneChoices`), zajęty węzeł rzędu wyboru zablokowany,
+  pole kodu wraca do buildu po każdej zmianie, `?s=` umiejętności ścieżki zaznacza jej węzeł, fokus linku „Zmieniają ją węzły”
+  po `tick()`, bez nieużywanego `planner.pointsShort`, krok rozmiaru HTML w publikacji ścieżki (`docs/WIKI.md`).
+
+Pliki: `tools/WikiData/{Skills,Visibility,Leak,init}.luau`, `tests/wikidump.spec.luau`, `.github/workflows/wiki.yml`,
+`wiki/src/{lib/skills.ts,lib/skills.test.ts,lib/classes.ts,islands/SkillPlanner.svelte,components/SkillNode.svelte,
+views/{ClassView,ClassesView,Styleguide}.astro,styles/components.css,i18n/{pl,en}.ts}`, treści MDX (pierwsze kroki,
+statystyki PL i EN), `wiki/e2e/keyboard.e2e.ts`, `wiki/scripts/{shots.pages,budgets.config}.mjs`, dane
+(`wiki/src/data/{skills,meta}.json`, `types.ts`, `docs/PRZEDMIOTY.md`, `wiki/test-fixtures/planner.json`),
+`docs/{WIKI,ROZWOJ,DECYZJE,SESJE,PROGRESS}.md`.

@@ -67,9 +67,12 @@ T.describe("Wiki export: leaks", function()
 			["b.json"] = '{"owner":123456789}',
 			["c.json"] = '{"price":5}',
 			["d.json"] = '{"name":"WITAJNIK 1234567890"}',
+			["e.json"] = '{"reference":[]}', -- S82: model builds of paths
 		}
 		local found = Leak.scan(fake, { codes = { "WITAJ" }, ids = { 123456789 } })
-		T.expect(#found).toBe(3)
+		T.expect(#found).toBe(4)
+		T.expect(table.find(Leak.FORBIDDEN_KEYS, "reference") ~= nil).toBe(true)
+		T.expect(table.find(Leak.FORBIDDEN_KEYS, "itemWeights") ~= nil).toBe(true)
 	end)
 
 	T.it("rejects a key outside the schema", function()
@@ -372,7 +375,8 @@ T.describe("Wiki export: consistency", function()
 		end
 		T.expect(d.skills.rules.ranks).toEqual({ step = 4, capLevel = 95 })
 		local text = Json.encode(d.skills)
-		for _, key in { '"vectors"', '"requires"', '"col"', '"pointsByLevel"', '"skillPoints' } do
+		-- S82: `vectors` is back in rules (path planner), the S41 tree fields stay gone
+		for _, key in { '"requires"', '"col"', '"pointsByLevel"', '"skillPoints' } do
 			if string.find(text, key, 1, true) then
 				error(`skills.json has {key}`)
 			end
@@ -380,21 +384,28 @@ T.describe("Wiki export: consistency", function()
 		T.expect(d.progression.skillPointsPerLevel).toBeNil()
 	end)
 
-	T.it("exports breakpoints as rank + option A (S55)", function()
+	T.it("exports breakpoints with their level and options A and B (S82)", function()
+		local SkillLogic = require("../src/shared/Logic/Skills")
 		for _, s in d.skills.skills do
+			local def = SkillData.get(s.id) :: any
 			if s.passiveSkill == false then
 				T.expect(#s.breakpoints).toBe(2)
 				for i, bp in s.breakpoints do
 					T.expect(bp.rank).toBe(if i == 1 then 5 else 10)
+					T.expect(bp.level).toBe(SkillLogic.rankLevel(def, bp.rank))
 					T.expect(bp.text).toBeNil()
 					T.expect(bp.change).toBeNil()
-					for _, lang in { "pl", "en" } do
-						local text = bp.a.text[lang]
-						if text == "" or string.find(text, "{", 1, true) then
-							error(`{s.id} breakpoint {bp.rank} {lang}: "{text}"`)
+					T.expect({ s.id, bp.rank, bp.b ~= nil })
+						.toEqual({ s.id, bp.rank, def.breakpoints[bp.rank].b ~= nil })
+					for _, option in { bp.a, bp.b } do
+						for _, lang in { "pl", "en" } do
+							local text = option.text[lang]
+							if text == "" or string.find(text, "{", 1, true) then
+								error(`{s.id} breakpoint {bp.rank} {lang}: "{text}"`)
+							end
 						end
+						T.expect(next(option.change) ~= nil).toBe(true)
 					end
-					T.expect(next(bp.a.change) ~= nil).toBe(true)
 				end
 			else
 				T.expect(#s.breakpoints).toBe(0)
@@ -515,7 +526,7 @@ T.describe("Wiki export: building blocks", function()
 	end)
 
 	T.it("hides unpublished paths, their nodes, title and skills (S57)", function()
-		local hidden = Visibility.fromPaths({
+		local hidden, hiddenPaths = Visibility.fromPaths({
 			{
 				id = "secret",
 				titleId = "path_secret",
@@ -536,6 +547,8 @@ T.describe("Wiki export: building blocks", function()
 			inSecret = true,
 			orphan = true,
 		})
+		-- S82 (A7): the bare path id only in the set of paths, never in the shared one
+		T.expect(hiddenPaths).toEqual({ secret = true })
 		-- game data: nothing hidden is exported (empty sets until a class has paths)
 		local all = Visibility.collect()
 		for _, skill in d.skills.skills do
@@ -718,5 +731,267 @@ T.describe("Wiki export: items and monsters (S68)", function()
 			end
 		end
 		T.expect(count(d.bonuses.params)).toBe(4)
+	end)
+end)
+
+-- S82 (ROZWOJ 3.5, docs/WIKI.md §5): skills with options A/B and rank variants, published paths only, the planner
+-- vectors (Logic/Paths.canBuy / canRefund) and the planner test file from tests/fixtures/paths.luau.
+T.describe("Wiki export: skill planner (S82)", function()
+	local Bases = require("../src/shared/Data/Items/Bases")
+	local GamePaths = require("../src/shared/Logic/Paths")
+	local SkillLogic = require("../src/shared/Logic/Skills")
+	local SkillsExport = require("../tools/WikiData/Skills")
+	local TableUtil = require("../src/shared/Util/TableUtil")
+	local Fixture = require("./fixtures/paths") :: any
+
+	-- Every reason key Logic/Paths.canBuy and canRefund return in the code.
+	local BUY_REASONS = {
+		"paths.error.unknown",
+		"paths.error.maxRank",
+		"paths.error.points",
+		"paths.error.level",
+		"paths.error.main",
+		"paths.error.need",
+		"paths.error.choice",
+	}
+	local REFUND_REASONS = { "paths.error.unknown", "paths.error.noRank", "paths.error.needAbove" }
+
+	local published: { [string]: any } = {}
+	for _, path in PathData.list do
+		if path.wiki ~= false then
+			published[path.id] = path
+		end
+	end
+
+	local function checkText(name: any, what: string)
+		for _, lang in { "pl", "en" } do
+			local text = name[lang]
+			if type(text) ~= "string" or text == "" or string.find(text, "{", 1, true) then
+				error(`{what} {lang}: "{tostring(text)}"`)
+			end
+		end
+	end
+
+	local function checkWeapon(weapon: any, what: string)
+		for _, key in { "main", "offhand" } do
+			for _, kind in weapon[key] or {} do
+				T.expect({ what, kind, Bases.byType[kind] ~= nil }).toEqual({ what, kind, true })
+			end
+		end
+	end
+
+	T.it("exports skills of published paths only and every published path in full", function()
+		for _, s in d.skills.skills do
+			T.expect({ s.id, s.path == nil or published[s.path] ~= nil }).toEqual({ s.id, true })
+		end
+		T.expect(#d.skills.paths).toBe(count(published))
+		for _, path in d.skills.paths do
+			T.expect(published[path.id] ~= nil).toBe(true)
+			T.expect(#path.rows).toBe(#GamePaths.rowsFor(path.class))
+			checkText(path.name, path.id)
+			checkText(path.desc, path.id)
+			checkWeapon(path.weapon, path.id)
+			for _, row in path.rows do
+				for _, node in row.nodes do
+					local ranks = if node.kind == "skill" then 1 else node.maxRank
+					T.expect({ node.id, #node.ranks }).toEqual({ node.id, ranks })
+					checkText(node.name, node.id)
+					for _, rank in node.ranks do
+						checkText(rank.desc, node.id)
+					end
+					if node.weapon then
+						checkWeapon(node.weapon, node.id)
+					end
+				end
+			end
+		end
+	end)
+
+	T.it("has rank variants exactly where a skill has option B, with the numbers B changes", function()
+		-- the numbers an option changes: values, add of a field in values, mul of cost or cooldown
+		local function numeric(option: any, skill: any): any
+			if option == nil then
+				return {}
+			end
+			local add = {}
+			for key, amount in option.add or {} do
+				if skill.values[key] ~= nil then
+					add[key] = amount
+				end
+			end
+			local mul = {}
+			for _, key in { "cost", "cooldown" } do
+				if option.mul and option.mul[key] then
+					mul[key] = option.mul[key]
+				end
+			end
+			return { values = option.values or {}, add = add, mul = mul }
+		end
+		local checked = 0
+		for _, s in d.skills.skills do
+			local def = SkillData.get(s.id) :: any
+			local b5 = def.breakpoints and def.breakpoints[5] and def.breakpoints[5].b ~= nil
+			local b10 = def.breakpoints and def.breakpoints[10] and def.breakpoints[10].b ~= nil
+			for r, rank in s.ranks do
+				local want = {}
+				if b5 and r >= 5 then
+					want.ba = true
+				end
+				if b10 and r >= 10 then
+					want.ab = true
+				end
+				if want.ba and want.ab then
+					want.bb = true
+				end
+				local have = {}
+				for key in rank.variants or {} do
+					have[key] = true
+				end
+				T.expect({ s.id, r, have }).toEqual({ s.id, r, want })
+			end
+			for _, at in SkillLogic.BREAKPOINT_LEVELS do
+				local pair = def.breakpoints and def.breakpoints[at]
+				if pair and pair.b and not TableUtil.deepEqual(numeric(pair.a, def), numeric(pair.b, def)) then
+					local rank = s.ranks[at]
+					local variant = rank.variants[if at == 5 then "ba" else "ab"]
+					local same = variant.cost == rank.cost
+						and variant.cooldown == rank.cooldown
+						and TableUtil.deepEqual(variant.values, rank.values)
+					if same then
+						error(`{s.id} option B at rank {at} changes numbers, but its variant equals A`)
+					end
+					checked += 1
+				end
+			end
+		end
+		T.expect(checked > 0).toBe(true)
+	end)
+
+	T.it("leaves unpublished paths, their nodes, titles and skills out; NPC, shop and quest stay", function()
+		-- Bare path ids are not searched as text: "healer" is also an NPC, a shop and a quest, "fortune" and
+		-- "guardian" are blessing lines. Unique ids (nodes <pathId>_<name>, titles path_<pathId>) are.
+		for _, path in PathData.list do
+			if path.wiki == false then
+				for _, entry in d.skills.paths do
+					T.expect(entry.id ~= path.id).toBe(true)
+				end
+				for _, s in d.skills.skills do
+					T.expect({ s.id, s.path ~= path.id }).toEqual({ s.id, true })
+				end
+				for _, e in d.search.entries do
+					if e.type == "skill" then
+						local def = SkillData.get(e.id) :: any
+						T.expect({ e.id, def == nil or def.path ~= path.id }).toEqual({ e.id, true })
+					end
+				end
+				for file, text in result.files do
+					T.expect({ file, string.find(text, `path_{path.id}`, 1, true) }).toEqual({ file, nil })
+					for _, row in path.rows do
+						for _, node in row.nodes do
+							local found = string.find(text, "%f[%w_]" .. node.id .. "%f[^%w_]")
+							T.expect({ file, node.id, found }).toEqual({ file, node.id, nil })
+						end
+					end
+				end
+			end
+		end
+		-- A7: the hidden path "healer" (S71) must not hide the NPC, the shop and the main quest "healer"
+		local function has(list: { any }, id: string): boolean
+			for _, entry in list do
+				if entry.id == id then
+					return true
+				end
+			end
+			return false
+		end
+		T.expect(has(d.npcs.npcs, "healer")).toBe(true)
+		T.expect(has(d.shops.shops, "healer")).toBe(true)
+		T.expect(has(d.quests.main, "healer")).toBe(true)
+	end)
+
+	T.it("writes the planner test file outside the data folder, valid and up to date", function()
+		local path = WikiDump.PLANNER_FIXTURE_PATH
+		local text = result.files[path]
+		T.expect(text ~= nil).toBe(true)
+		T.expect(string.sub(path, 1, #WikiDump.DATA_DIR + 1) == WikiDump.DATA_DIR .. "/").toBe(false)
+		-- a change of Logic/Paths or of the test paths without `npm run data` fails the check
+		T.expect(fs.isFile(path)).toBe(true)
+		if fs.readFile(path) ~= text then
+			error(`{path} is stale: run npm run data in wiki/ (or lune run tools/wikidump.luau)`)
+		end
+		local fixture = Clean.clean(SkillsExport.plannerFixture())
+		T.expect(Schema.check(fixture, SkillsExport.PlannerFixture)).toEqual({})
+		-- the test paths never reach wiki/src/data
+		for file, body in result.files do
+			if string.sub(file, 1, #WikiDump.DATA_DIR + 1) == WikiDump.DATA_DIR .. "/" then
+				for _, def in Fixture.paths do
+					T.expect({ file, string.find(body, `"{def.id}"`, 1, true) }).toEqual({ file, nil })
+					for _, row in def.rows do
+						for _, node in row.nodes do
+							T.expect({ file, string.find(body, `"{node.id}"`, 1, true) }).toEqual({ file, nil })
+						end
+					end
+				end
+			end
+		end
+		-- every reason key of canBuy and canRefund, achievable and unreachable builds
+		local buy: { [string]: boolean } = {}
+		local refund: { [string]: boolean } = {}
+		for _, state in fixture.vectors.states do
+			for _, r in state.results do
+				buy[r.reason or "ok"] = true
+				refund[r.refundReason or "ok"] = true
+			end
+		end
+		for _, key in BUY_REASONS do
+			T.expect({ key, buy[key] }).toEqual({ key, true })
+		end
+		for _, key in REFUND_REASONS do
+			T.expect({ key, refund[key] }).toEqual({ key, true })
+		end
+		T.expect(buy.ok and refund.ok).toBe(true)
+		local reached: { [boolean]: boolean } = {}
+		for _, b in fixture.vectors.builds do
+			reached[b.achievable] = true
+		end
+		T.expect(reached[true] and reached[false]).toBe(true)
+		-- pathAchievable on hand-made targets
+		local api = GamePaths.withSource(Fixture.source)
+		local achievable = SkillsExport.pathAchievable
+		T.expect(achievable(api, Fixture.paths, "Mage", 1, nil, {})).toBe(true)
+		T.expect(achievable(api, Fixture.paths, "Mage", 19, "fxStorm", {})).toBe(false)
+		T.expect(achievable(api, Fixture.paths, "Mage", 10, nil, { fxStorm_focus = 3 })).toBe(true)
+		T.expect(achievable(api, Fixture.paths, "Mage", 10, nil, { fxStorm_focus = 4 })).toBe(false)
+		T.expect(achievable(api, Fixture.paths, "Mage", 20, nil, { fxStorm_surge = 1 })).toBe(false)
+	end)
+
+	T.it("has vectors in skills.json only for published paths, and the path rules", function()
+		local vectors = d.skills.rules.vectors
+		if count(published) == 0 then
+			T.expect(#vectors.states).toBe(0)
+			T.expect(#vectors.builds).toBe(0)
+		end
+		for _, path in published do
+			local found = false
+			for _, state in vectors.states do
+				if state.class == path.class then
+					found = true
+				end
+			end
+			T.expect({ path.id, found }).toEqual({ path.id, true })
+		end
+		for _, state in vectors.states do
+			for _, r in state.results do
+				local _, owner = GamePaths.findNode(r.node)
+				T.expect({ r.node, owner == nil or published[(owner :: any).id] ~= nil }).toEqual({ r.node, true })
+			end
+		end
+		T.expect(d.skills.rules.mainPathLevel).toBe(GamePaths.MAIN_LEVEL)
+		T.expect(#d.skills.rules.pathPointsByLevel).toBe(Config.MaxLevel)
+		for level, points in d.skills.rules.pathPointsByLevel do
+			T.expect({ level, points }).toEqual({ level, GamePaths.pointsAt(level) })
+		end
+		T.expect(#d.skills.rules.rows).toBe(#PathData.ROWS)
+		T.expect(d.skills.rules.dipRows).toBe(PathData.DIP_ROWS)
 	end)
 end)

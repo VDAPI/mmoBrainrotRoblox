@@ -1225,6 +1225,7 @@ export interface Skill {
   order: number;
   passive?: Json;
   passiveSkill: boolean;
+  path?: string;
   radius?: number;
   range?: number;
   rankLevels: number[];
@@ -1241,12 +1242,97 @@ export interface Skill {
 
 export interface SkillBreakpoint {
   a: SkillOption;
+  b?: SkillOption;
+  level: number;
   rank: number;
 }
 
 export interface SkillOption {
   change: Json;
   text: Name;
+}
+
+export interface SkillPath {
+  class: ClassId;
+  desc: Name;
+  id: string;
+  name: Name;
+  order: number;
+  role: string;
+  rows: SkillPathRow[];
+  title?: string; // id in titles.json
+  weapon: SkillPathWeapon;
+}
+
+export interface SkillPathModify {
+  at?: number;
+  option?: string;
+  skill: string; // id in skills.json
+}
+
+export interface SkillPathNode {
+  dipScale?: number;
+  glyph: string;
+  id: string;
+  kind: string;
+  maxRank: number;
+  modify?: SkillPathModify;
+  name: Name;
+  ranks: SkillPathNodeRank[];
+  skill?: string; // id in skills.json
+  skillB?: number[];
+  weapon?: SkillPathWeapon;
+}
+
+export interface SkillPathNodeRank {
+  desc: Name;
+  dipDesc?: Name;
+  rank: number;
+  values: Record<string, number>;
+}
+
+export interface SkillPathRow {
+  choice: boolean;
+  kind: string;
+  level: number;
+  nodes: SkillPathNode[];
+  required: number;
+  row: number;
+}
+
+export interface SkillPathVectorBuild {
+  achievable: boolean;
+  class: ClassId;
+  level: number;
+  main?: string;
+  nodes: Record<string, number>;
+}
+
+export interface SkillPathVectorResult {
+  node: string;
+  ok: boolean;
+  reason?: string;
+  refund: boolean;
+  refundReason?: string;
+}
+
+export interface SkillPathVectorState {
+  class: ClassId;
+  free: number;
+  level: number;
+  main?: string;
+  nodes: Record<string, number>;
+  results: SkillPathVectorResult[];
+}
+
+export interface SkillPathVectors {
+  builds: SkillPathVectorBuild[];
+  states: SkillPathVectorState[];
+}
+
+export interface SkillPathWeapon {
+  main?: string[];
+  offhand?: string[];
 }
 
 export interface SkillRank {
@@ -1256,6 +1342,7 @@ export interface SkillRank {
   rank: number;
   requiredLevel: number;
   values: Record<string, number>;
+  variants?: Record<string, SkillRankVariant>;
 }
 
 export interface SkillRankRules {
@@ -1263,14 +1350,38 @@ export interface SkillRankRules {
   step: number;
 }
 
+export interface SkillRankVariant {
+  cooldown: number;
+  cost: number;
+  desc: Name;
+  values: Record<string, number>;
+}
+
+export interface SkillRowRule {
+  choice: boolean;
+  kind: string;
+  level: number;
+  required: number;
+  row: number;
+  twoPathExtra?: boolean;
+}
+
 export interface SkillRules {
   breakpointLevels: number[];
   breakpointsEnabled: boolean;
+  dipRows: number;
+  dipScale: number;
+  mainPathLevel: number;
   maxLevel: number;
+  pathPointsByLevel: number[];
+  pathPointsEvery: number;
   ranks: SkillRankRules;
+  rows: SkillRowRule[];
+  vectors: SkillPathVectors;
 }
 
 export interface SkillsFile {
+  paths: SkillPath[];
   rules: SkillRules;
   skills: Skill[];
 }

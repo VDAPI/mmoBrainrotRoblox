@@ -1,5 +1,6 @@
 // Keyboard (S44): skip link, Ctrl+K palette (focus trap, Esc, focus back), bestiary filter with Space, item preview
-// on focus, skill planner keys, map zoom names and arrows, upgrade calculator levels.
+// on focus, skill planner keys (S82: level slider, option B, path nodes), map zoom names and arrows, upgrade
+// calculator levels.
 import { expect, test } from "@playwright/test";
 
 test("the first Tab reaches the skip link and Enter moves focus to <main>", async ({ page }) => {
@@ -46,20 +47,41 @@ test("items: a row is reachable with Tab and its focus shows the tooltip preview
   await expect(page.locator("aside.preview .vw-tooltip")).toBeVisible();
 });
 
-test("skill planner: Enter adds a rank, Delete and Backspace remove it", async ({ page }) => {
-  // S56: the planner is hidden until S82 (ROZWOJ 3.5)
-  test.skip(true, "planner hidden until S82");
+test("skill planner: the level slider moves the ranks and Space picks option B", async ({ page }) => {
   await page.goto("/pl/klasy/Mage/");
-  const node = page.locator(".vw-node:not([data-state='locked'])").first();
+  const slider = page.locator("#sp-slider");
+  const rank = page.locator("[data-skill] .sp-rank").first();
+  await slider.focus();
+  await page.keyboard.press("Home");
+  await expect(rank).toHaveText(/^1\//);
+  await page.keyboard.press("End");
+  await expect(rank).toHaveText("10/10");
+  // the first base skill is selected by default; the first Mage active has option B at rank 5
+  const optionB = page.locator('[data-bp="5"] [data-option="b"]');
+  await optionB.focus();
+  await page.keyboard.press("Space");
+  await expect(optionB).toHaveAttribute("aria-checked", "true");
+  await expect(page).toHaveURL(/[?&]b=2MAGE/);
+});
+
+test("skill planner: a path node takes Enter and Delete, or the paths tab says they come later", async ({ page }) => {
+  await page.goto("/pl/klasy/Mage/");
+  const pathTab = page.locator("[role=tab][data-path]").first();
+  if ((await pathTab.count()) === 0) {
+    const tabs = page.locator(".sp-tabs [role=tab]");
+    await tabs.first().focus();
+    await page.keyboard.press("End");
+    await expect(page.locator(".sp-soon")).toContainText("Ścieżki wkrótce");
+    return;
+  }
+  await pathTab.click();
+  await page.locator(".sp-path__main .sp-btn--gold").click();
+  const node = page.locator(".sp-node .vw-node:not([data-state='locked'])").first();
   const rank = node.locator(".vw-node__rank");
   await node.focus();
   await page.keyboard.press("Enter");
   await expect(rank).toHaveText(/^1\//);
-  await page.keyboard.press("Enter");
-  await expect(rank).toHaveText(/^2\//);
   await page.keyboard.press("Delete");
-  await expect(rank).toHaveText(/^1\//);
-  await page.keyboard.press("Backspace");
   await expect(rank).toHaveText(/^0\//);
 });
 
