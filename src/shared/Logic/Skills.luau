@@ -113,13 +113,27 @@ end
 -- they are on def.effects / def.selfEffects / def.allyEffects.
 export type Behaviour = SkillData.Breakpoint
 
-local NUMERIC_FIELDS = { "range", "radius", "hitRadius", "angle", "length", "width", "hits", "delay" }
+-- S76: castTime, interval and ringRadius (Hunter breakpoints and nodes, ROZWOJ 11)
+local NUMERIC_FIELDS = {
+	"range",
+	"radius",
+	"hitRadius",
+	"angle",
+	"length",
+	"width",
+	"hits",
+	"delay",
+	"castTime",
+	"interval",
+	"ringRadius",
+}
 
 -- The skill as it works at `rank` (ROZWOJ 2.7). Sources in order: breakpoint 5, breakpoint 10 (chosen option, A
 -- without a choice), then `mods` (modify nodes, row order). Rules: `values` add to the current value (the base scales
 -- once), `add` sums, `mul` multiplies, `effect` / `selfEffect` / `allyEffect` go to the effects / selfEffects /
 -- allyEffects lists, every other key: the later source wins. `add.effectDuration` lengthens every effect of the
 -- skill (effects, selfEffects, allyEffects; S75), `add.<kind>Duration` only the `effects` of that kind (S75).
+-- S76: `finisher` merges into def.finisher (each source overrides the fields it gives); castTime stays >= 0.
 -- `enabled = false` (or Config.Skills.breakpoints off) drops the breakpoints, not the mods. `rank` comes from the
 -- character level (S56); consumers call it through Logic/Paths.effectiveFor (choices = path.bp, mods =
 -- Paths.skillMods). Never mutates the data; with no source returns the def itself.
@@ -188,6 +202,12 @@ function Skills.effective(
 				table.insert(selfEffects, v)
 			elseif key == "allyEffect" then
 				table.insert(allyEffects, v)
+			elseif key == "finisher" then
+				local merged = if def.finisher then table.clone(def.finisher) else {}
+				for field, x in v do
+					merged[field] = x
+				end
+				def.finisher = merged
 			elseif key ~= "add" and key ~= "mul" and key ~= "values" then
 				behaviour[key] = v -- later wins: breakpoint 5, breakpoint 10, nodes by row
 			end
@@ -214,6 +234,9 @@ function Skills.effective(
 	def.effects = effects
 	def.selfEffects = if #selfEffects > 0 then selfEffects else nil
 	def.allyEffects = if #allyEffects > 0 then allyEffects else nil
+	if def.castTime ~= nil then
+		def.castTime = math.max(0, def.castTime)
+	end
 	if behaviour.steadfast then
 		-- S70: channel rules read the definition (Logic/Channel.stops, S76 stores def = ctx.skill)
 		def.steadfast = true
@@ -435,6 +458,8 @@ end
 export type CostMods = {
 	costPct: number?,
 	costReduce: number?, -- % item saving (costReduce stat: Tome trait + lines), capped by Data/Stats
+	-- S76: the caster's hooks (Paths.passiveTotals(...).hooks); trapCost makes trap skills cheaper in the base cost
+	hooks: { [string]: number }?,
 }
 
 local COST_REDUCE_CAP = (Stats.get("costReduce") :: any).cap :: number
@@ -456,6 +481,11 @@ function Skills.cost(skill: SkillDef, rank: number, level: number, classId: stri
 	end
 	local pct = if mods and mods.costPct then mods.costPct else 0
 	base *= math.max(0, 1 + pct / 100)
+	-- S76 (ROZWOJ 11.4, Poacher's Thrift): a node discount, so it sits in the base next to costPct
+	local trapCost = if mods and mods.hooks and skill.type == "trap" then mods.hooks["trapCost"] or 0 else 0
+	if trapCost ~= 0 then
+		base *= math.max(0, 1 - trapCost / 100)
+	end
 	local saving = math.clamp(if mods and mods.costReduce then mods.costReduce else 0, 0, COST_REDUCE_CAP)
 	return base * (1 - saving / 100), base
 end
@@ -651,10 +681,32 @@ function Skills.roundArg(value: number): number
 end
 local round = Skills.roundArg
 
+-- S76: numeric breakpoint behaviours a description may name.
+local BEHAVIOUR_ARGS = { "poisonStacks", "critCdr", "poisonSpread", "markJump", "firstWave" }
+
+-- S76 (ROZWOJ 16.5): pull radius of a skill after Skills.effective: the breakpoint's `pull` overrides the skill's; a
+-- number is the radius, true the skill's radius; 0 = no pull. Skills/Context.pull and descriptions read it.
+function Skills.pullRadius(def: SkillDef, behaviour: Behaviour?): number
+	local spec: any = if behaviour and behaviour.pull ~= nil then behaviour.pull else def.pull
+	if spec == true then
+		return def.radius or 0
+	elseif type(spec) == "number" then
+		return spec
+	end
+	return 0
+end
+
 -- Options of a description: `level` = character level (default: the level the rank unlocks at, as on the wiki);
 -- `choices` / `mods` as in Skills.effective (S55; nil = option A, no nodes).
 -- S64: `cdr` = % item cooldown reduction (Skills.cooldown; nil = none, as on the wiki).
-export type DescOpts = { level: number?, choices: Choices?, mods: { SkillMod }?, cdr: number? }
+-- S76: `hooks` = the character's hooks (trapCost; nil = none, as on the wiki).
+export type DescOpts = {
+	level: number?,
+	choices: Choices?,
+	mods: { SkillMod }?,
+	cdr: number?,
+	hooks: { [string]: number }?,
+}
 
 -- Placeholder values for the description of `base` at rank `rank` ({dmg}, {slow}, {duration}, {cost}, ...).
 -- S28: the numbers as the skill works at that rank (breakpoints applied). S54: cost and heal values at the
@@ -672,7 +724,7 @@ function Skills.descriptionArgs(base: SkillDef, rank: number, opts: DescOpts?): 
 			args[field] = round(Skills.valueAt(skill, field, rank) * healMul)
 		end
 	end
-	local cost = Skills.cost(skill, rank, L, base.class, nil)
+	local cost = Skills.cost(skill, rank, L, base.class, if opts and opts.hooks then { hooks = opts.hooks } else nil)
 	args.cost = round(cost)
 	args.cooldown = round(Skills.cooldown(skill, rank, opts and opts.cdr, behaviour))
 	if skill.duration then
@@ -692,6 +744,28 @@ function Skills.descriptionArgs(base: SkillDef, rank: number, opts: DescOpts?): 
 	end
 	if skill.allyRadius then
 		args.allyRadius = Skills.allyRadius(skill)
+	end
+	-- S76 (Hunter, S77-S78 texts): only when the field exists, so a placeholder without data fails the locale test
+	if skill.castTime then
+		args.castTime = round(skill.castTime)
+	end
+	if skill.ringRadius then
+		args.ringRadius = round(skill.ringRadius)
+	end
+	local finisher: any = skill.finisher
+	if finisher and finisher.hp and finisher.mul then
+		args.finisherHp = round(finisher.hp)
+		args.finisherMul = round(finisher.mul)
+	end
+	for _, key in BEHAVIOUR_ARGS do
+		local v = (behaviour :: any)[key]
+		if type(v) == "number" then
+			args[key] = round(v)
+		end
+	end
+	local pull = Skills.pullRadius(skill, behaviour)
+	if pull > 0 then
+		args.pullRadius = round(pull)
 	end
 	return args
 end

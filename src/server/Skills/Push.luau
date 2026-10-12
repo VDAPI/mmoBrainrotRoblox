@@ -12,6 +12,8 @@ local Knockback = require(ReplicatedStorage.Shared.Logic.Knockback)
 local Push = {}
 
 local SECONDS = 0.22
+-- S76: how long a push / pull slides; a pulling trap or circleTarget waits this long before its blow
+Push.DURATION = SECONDS
 local moving: { [Model]: boolean } = {}
 
 -- S65: told after every knockback / pull of an entity (CombatService breaks the Runic Seal of a moved player).

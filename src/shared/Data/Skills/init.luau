@@ -61,4 +61,10 @@ return table.freeze({
 	-- S65 (STATY 3): Frostbite, +% damage from you on targets your ice slowed or froze, with any ice weapon;
 	-- the fixed hook "frostbite" of a wand (6) or staff (10) replaces it when higher.
 	FROSTBITE = 6,
+	-- S76 (ROZWOJ 11.4, Trapper): a second trap without ringRadius stands TRAP_SIDE_OFFSET studs to the side (Frost
+	-- Trap 10B), trapEnergy pays for at most TRAP_ENERGY_MAX enemies per trap, poisonSpread (Contagion) reaches the
+	-- nearest within POISON_SPREAD_RADIUS studs.
+	TRAP_SIDE_OFFSET = 4,
+	TRAP_ENERGY_MAX = 3,
+	POISON_SPREAD_RADIUS = 8,
 })

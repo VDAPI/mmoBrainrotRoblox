@@ -1,6 +1,9 @@
 --!strict
 -- Movement and placement skill types: charge (dash to the target), blink (teleport; Disengage jumps back),
--- trap (object on the ground that roots the first enemies to step in).
+-- trap (S76, ROZWOJ 11.4 / 14.3): `hits` traps (default 1), in a ring of `ringRadius` around the point or side by side
+-- (TRAP_SIDE_OFFSET studs, perpendicular to the hunter -> point line). Each waits `duration` and fires once on the
+-- first enemy inside: pull (ctx.pull), then values.dmg and the skill's enemy effects on everyone caught (on those
+-- hit when it deals damage), trapEnergy, and the breakpoint's echo (damage only).
 -- The server moves the character itself (PivotTo) after raycasting for walls, so clients cannot teleport.
 -- S74 (ROZWOJ 10.3, 10.5, 14.2): guard leaps to an ally (Logic/GuardTarget picks one without a selection) and puts
 -- the intercept on them; banner plants a server object (Skills/Banner) whose circle pulses on PartyAuraService.
@@ -12,7 +15,9 @@ local Banner = require(script.Parent.Parent.Banner)
 local Context = require(script.Parent.Parent.Context)
 local GuardTarget = require(ReplicatedStorage.Shared.Logic.GuardTarget)
 local PathsData = require(ReplicatedStorage.Shared.Data.Paths)
+local Push = require(script.Parent.Parent.Push)
 local SkillData = require(ReplicatedStorage.Shared.Data.Skills)
+local SkillGeom = require(ReplicatedStorage.Shared.Logic.SkillGeom)
 local Skills = require(ReplicatedStorage.Shared.Logic.Skills)
 
 type Ctx = Context.Ctx
@@ -126,25 +131,89 @@ Movement.blink = function(ctx)
 	return true, nil
 end
 
-Movement.trap = function(ctx)
-	local at = ctx.ground(ctx.point or ctx.root.Position)
-	local radius = ctx.skill.radius or 6
-	local lifetime = ctx.scaled(ctx.skill.duration)
-	ctx.fx({ p = at, r = radius, d = lifetime })
+-- One trap fires: damage and the enemy effects on everyone inside (only on those hit when it deals damage; the
+-- trapRootDuration hook lengthens roots), trapEnergy once per trap, then the echo.
+local function fire(ctx: Ctx, at: Vector3, radius: number)
+	local player = ctx.player
+	local Combat = ctx.services.Combat
+	local caught = ctx.enemiesInCircle(at, radius)
+	ctx.fx({ v = "trapTrigger", p = at, r = radius })
+	local hasDamage = ctx.skill.values.dmg ~= nil
+	local rootBonus = Combat.Hook(player, "trapRootDuration")
+	local effects: { SkillData.SkillEffect } = ctx.skill.effects or NO_EFFECTS
+	for _, entity in caught do
+		local hit = true
+		if hasDamage then
+			local result = ctx.damage(entity, ctx.value("dmg"), { from = at })
+			hit = result ~= nil and not result.dodged
+		end
+		if hit then
+			for _, effect in effects do
+				-- the side rule of ctx.applyEffects; dice faces never come from a trap
+				if Skills.effectSide(ctx.skill, effect) == "enemy" and not effect.face then
+					if effect.kind == "root" and rootBonus > 0 then
+						local longer = table.clone(effect)
+						longer.duration = ctx.scaled(effect.duration) + rootBonus
+						ctx.applyEffect(entity, longer)
+					else
+						ctx.applyEffect(entity, effect)
+					end
+				end
+			end
+		end
+	end
+	-- Poacher's Spoils (ROZWOJ 11.4): energy per enemy caught, at most TRAP_ENERGY_MAX per trap
+	local energy = Combat.Hook(player, "trapEnergy")
+	if energy > 0 and #caught > 0 then
+		ctx.services.Resource.Add(player, "energy", energy * math.min(#caught, SkillData.TRAP_ENERGY_MAX))
+	end
+	-- Breakpoint echo: damage only, a part of the area skill (1/3 on-hit chance, S63), no effects, no energy
+	local echo = ctx.bp.echo
+	if echo and hasDamage then
+		task.delay(echo.delay, function()
+			ctx.fx({ v = "echo", p = at, r = radius })
+			for _, entity in ctx.enemiesInCircle(at, radius) do
+				ctx.damage(entity, ctx.value("dmg") * echo.pct / 100, { from = at })
+			end
+		end)
+	end
+end
+
+-- One trap waits `lifetime` for the first enemy; a pulling trap fires after the pull has landed.
+local function arm(ctx: Ctx, at: Vector3, radius: number, lifetime: number, index: number?)
+	ctx.fx({ p = at, r = radius, d = lifetime, n = index })
 	local expires = os.clock() + lifetime
 	task.spawn(function()
 		while os.clock() < expires do
 			task.wait(TRAP_CHECK)
-			local caught = ctx.enemiesInCircle(at, radius)
-			if #caught > 0 then
-				for _, entity in caught do
-					ctx.applyEffects(entity, "enemy")
+			if #ctx.enemiesInCircle(at, radius) > 0 then
+				if ctx.pull(at) then
+					task.wait(Push.DURATION)
 				end
-				ctx.fx({ v = "trapTrigger", p = at, r = radius })
+				fire(ctx, at, radius)
 				return
 			end
 		end
 	end)
+end
+
+Movement.trap = function(ctx)
+	local origin = ctx.root.Position
+	local at = ctx.ground(ctx.point or origin)
+	local radius = ctx.skill.radius or 6
+	local lifetime = ctx.scaled(ctx.skill.duration)
+	local count = math.max(1, math.floor((ctx.skill.hits or 1) + 0.5))
+	if count == 1 then
+		arm(ctx, at, radius, lifetime, nil)
+		return true, nil
+	end
+	local ring = ctx.skill.ringRadius or 0
+	local points: { SkillGeom.Point } = if ring > 0
+		then SkillGeom.ringPoints(at.X, at.Z, ring, count, SkillGeom.angle(origin.X, origin.Z, at.X, at.Z))
+		else SkillGeom.sidePoints(origin.X, origin.Z, at.X, at.Z, count, SkillData.TRAP_SIDE_OFFSET)
+	for i, p in points do
+		arm(ctx, ctx.ground(Vector3.new(p.x, at.Y, p.z)), radius, lifetime, i)
+	end
 	return true, nil
 end
 

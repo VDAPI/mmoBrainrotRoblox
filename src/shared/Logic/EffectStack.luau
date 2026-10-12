@@ -37,14 +37,17 @@ export type StackSpec = {
 	duration: number,
 	now: number,
 	tickInterval: number,
+	-- S76: starting stacks of a moved effect (poison spread): the larger of these and the running ones, the later end
+	stacks: number?,
 }
 
 -- A statBuff being re-applied with the same key (merge).
 export type Timed = { stats: { [string]: number }?, pct: boolean?, expiresAt: number }
 
 -- One effect for the attribute (encode) and one decoded icon entry (decode).
-export type Listed = { kind: string, expiresAt: number, value: number? }
-export type Shown = { kind: string, left: number, value: number? }
+-- S76: `stacks` (more than 1) shows as a number in the icon's corner.
+export type Listed = { kind: string, expiresAt: number, value: number?, stacks: number? }
+export type Shown = { kind: string, left: number, value: number?, stacks: number? }
 
 function EffectStack.isOwn(category: string?): boolean
 	-- An unknown id must never break a fight; the data test makes sure there is none.
@@ -189,6 +192,14 @@ function EffectStack.restack(old: Stack?, spec: StackSpec): Stack
 	if running and limit > 1 then
 		stacks = math.min(limit, (old :: Stack).stacks + 1)
 	end
+	local expiresAt = now + spec.duration
+	if spec.stacks then
+		local start = math.clamp(math.floor(spec.stacks), 1, limit)
+		stacks = if running then math.max((old :: Stack).stacks, start) else start
+		if running then
+			expiresAt = math.max((old :: Stack).expiresAt, expiresAt)
+		end
+	end
 	local tickUnit = spec.tickUnit
 	local nextTick: number? = nil
 	if tickUnit then
@@ -199,7 +210,7 @@ function EffectStack.restack(old: Stack?, spec: StackSpec): Stack
 		stacks = stacks,
 		value = spec.unit * stacks,
 		tickAmount = if tickUnit then tickUnit * stacks else nil,
-		expiresAt = now + spec.duration,
+		expiresAt = expiresAt,
 		nextTick = nextTick,
 	}
 end
@@ -291,7 +302,7 @@ EffectStack.VALUE_KINDS = table.freeze({
 	frostbite = true, -- S65
 } :: { [string]: boolean })
 
-type Group = { kind: string, at: number, value: number? }
+type Group = { kind: string, at: number, value: number?, stacks: number? }
 
 -- Groups by kind (latest / biggest `at`, highest value), sorted by kind.
 local function grouped(items: { Group }): { Group }
@@ -300,13 +311,16 @@ local function grouped(items: { Group }): { Group }
 	for _, item in items do
 		local group = byKind[item.kind]
 		if group == nil then
-			local created: Group = { kind = item.kind, at = item.at, value = item.value }
+			local created: Group = { kind = item.kind, at = item.at, value = item.value, stacks = item.stacks }
 			byKind[item.kind] = created
 			table.insert(order, created)
 		else
 			group.at = math.max(group.at, item.at)
 			if item.value and (group.value == nil or item.value > group.value) then
 				group.value = item.value
+			end
+			if item.stacks and (group.stacks == nil or item.stacks > group.stacks) then
+				group.stacks = item.stacks
 			end
 		end
 	end
@@ -316,21 +330,27 @@ local function grouped(items: { Group }): { Group }
 	return order
 end
 
--- "kind:expiresAt[:value]" per kind (latest end, strongest value), sorted by kind; nil when nothing is active.
+-- "kind:expiresAt[:value[:stacks]]" per kind (latest end, strongest value, most stacks), sorted by kind; nil when
+-- nothing is active. S76: stacks only above 1, the value may be empty then ("poison:12.5::3").
 function EffectStack.encode(list: { Listed }, now: number): string?
 	local items: { Group } = {}
 	for _, effect in list do
 		if effect.expiresAt > now then
 			local value = effect.value
 			local shown = if EffectStack.VALUE_KINDS[effect.kind] and value and value > 0 then value else nil
-			table.insert(items, { kind = effect.kind, at = effect.expiresAt, value = shown })
+			local stacks = if effect.stacks and effect.stacks > 1 then math.floor(effect.stacks) else nil
+			table.insert(items, { kind = effect.kind, at = effect.expiresAt, value = shown, stacks = stacks })
 		end
 	end
 	local parts = {}
 	for _, group in grouped(items) do
 		local ends = math.floor(group.at * 10) / 10
 		local value = group.value
-		table.insert(parts, if value then `{group.kind}:{ends}:{math.floor(value + 0.5)}` else `{group.kind}:{ends}`)
+		local text = if value then `{group.kind}:{ends}:{math.floor(value + 0.5)}` else `{group.kind}:{ends}`
+		if group.stacks then
+			text = if value then `{text}:{group.stacks}` else `{text}::{group.stacks}`
+		end
+		table.insert(parts, text)
 	end
 	return if #parts > 0 then table.concat(parts, ";") else nil
 end
@@ -343,16 +363,22 @@ function EffectStack.decode(raw: any, now: number): { Shown }
 	end
 	local items: { Group } = {}
 	for part in string.gmatch(raw, "[^;]+") do
-		local kind, ends, value = string.match(part, "^(%a+):([%d%.]+):?(%d*)$")
+		local kind, ends, value, stacks = string.match(part, "^(%a+):([%d%.]+):?(%d*):?(%d*)$")
 		local expiresAt = tonumber(ends)
 		if kind and expiresAt and expiresAt > now then
-			table.insert(items, { kind = kind, at = expiresAt, value = if value ~= "" then tonumber(value) else nil })
+			table.insert(items, {
+				kind = kind,
+				at = expiresAt,
+				value = if value ~= "" then tonumber(value) else nil,
+				stacks = if stacks ~= "" then tonumber(stacks) else nil,
+			})
 		end
 	end
 	local out: { Shown } = {}
 	for _, group in grouped(items) do
-		table.insert(out, { kind = group.kind, left = group.at - now, value = group.value })
+		table.insert(out, { kind = group.kind, left = group.at - now, value = group.value, stacks = group.stacks })
 	end
+
 	return out
 end
 

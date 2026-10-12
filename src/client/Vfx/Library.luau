@@ -522,6 +522,53 @@ function Library.beam(a: Vector3, b: Vector3, color: Color3, width: number?, sec
 	Pool.later(p, s + 0.05)
 end
 
+-- S76 (ROZWOJ 11.3): the aiming line of castTime, from the caster's left hand (or 1.5 studs above its centre) to the
+-- target's centre or the point, kept in place every frame for `seconds`. Returns a function that takes it down at
+-- once. Nothing without a target and a point. One part, so the simple version is the same.
+function Library.aimLine(caster: Model, target: Model?, point: Vector3?, color: Color3, seconds: number): () -> ()
+	if not target and not point then
+		return function() end
+	end
+	local p = Pool.part("Block", color, Vector3.new(0.15, 0.15, 1), Enum.Material.Neon, 0.2)
+	local connection: RBXScriptConnection? = nil
+	local done = false
+	local function stop()
+		if done then
+			return
+		end
+		done = true
+		if connection then
+			connection:Disconnect()
+		end
+		Pool.release(p)
+	end
+	local function place()
+		local hand = caster:FindFirstChild("LeftHand", true)
+		local from = if hand and hand:IsA("BasePart") then hand.Position else centre(caster) + Vector3.new(0, 1.5, 0)
+		local to = if target and target.Parent then centre(target) else point
+		if not caster.Parent or not to then
+			stop()
+			return
+		end
+		local length = (to - from).Magnitude
+		if length < 0.1 then
+			return
+		end
+		p.Size = Vector3.new(0.15, 0.15, length)
+		p.CFrame = CFrame.lookAt((from + to) / 2, to)
+	end
+	local ends = os.clock() + seconds
+	place()
+	connection = RunService.Heartbeat:Connect(function()
+		if os.clock() >= ends then
+			stop()
+			return
+		end
+		place()
+	end)
+	return stop
+end
+
 -- S65: Run Through streak: a short thin beam from a to b and a small flash at b (only the beam when simple).
 function Library.lineBeam(a: Vector3, b: Vector3, color: Color3, simple: boolean?)
 	if (b - a).Magnitude < 0.1 then

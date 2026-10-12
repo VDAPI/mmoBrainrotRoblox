@@ -3,6 +3,7 @@
 -- ("kind:expiresAt[:value];..." in server time, written by StatusEffectService, decoded by Logic/EffectStack).
 -- The server sends one entry per kind (latest end, strongest value), so one icon per kind. Used under the
 -- portrait and in the target frame.
+-- S76: stacks above 1 (poison, bleed, armour break) show as a small number in the icon's bottom-right corner.
 -- S72: the "Fury" / "FuryMax" attributes (Fury of the Berserker) add a counter "7/10" first in the row, gold when full.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -63,7 +64,15 @@ local GLYPHS: { [string]: Glyph } = {
 }
 
 -- S72: count / max / full only for the Fury counter.
-type Entry = { kind: string, left: number, value: number?, count: number?, max: number?, full: boolean? }
+type Entry = {
+	kind: string,
+	left: number,
+	value: number?,
+	stacks: number?, -- S76
+	count: number?,
+	max: number?,
+	full: boolean?,
+}
 
 local function read(model: Model?): { Entry }
 	if not model then
@@ -71,7 +80,7 @@ local function read(model: Model?): { Entry }
 	end
 	local list: { Entry } = {}
 	for _, shown in EffectStack.decode(model:GetAttribute("Effects"), Workspace:GetServerTimeNow()) do
-		table.insert(list, { kind = shown.kind, left = shown.left, value = shown.value })
+		table.insert(list, { kind = shown.kind, left = shown.left, value = shown.value, stacks = shown.stacks })
 	end
 	local stacks = model:GetAttribute("Fury")
 	local max = model:GetAttribute("FuryMax")
@@ -147,7 +156,23 @@ local function EffectIcons(scope: Scope, props: Props): Instance
 										else Theme.Colors.Danger,
 									Thickness = if full then 2 else 1,
 								}),
-							},
+								-- S76: stacks in the corner
+								if entry.stacks and entry.stacks > 1
+									then s:New("TextLabel")({
+										AnchorPoint = Vector2.new(1, 1),
+										Position = UDim2.fromScale(1, 1),
+										Size = UDim2.fromOffset(14, 12),
+										BackgroundTransparency = 1,
+										Text = tostring(entry.stacks),
+										FontFace = Theme.Fonts.BodyBold,
+										TextSize = 12,
+										TextXAlignment = Enum.TextXAlignment.Right,
+										TextColor3 = Theme.Colors.Text,
+										TextStrokeTransparency = 0.3,
+										ZIndex = 2,
+									}) :: any
+									else nil,
+							} :: any,
 						}),
 						s:New("TextLabel")({
 							Position = UDim2.fromOffset(0, size),

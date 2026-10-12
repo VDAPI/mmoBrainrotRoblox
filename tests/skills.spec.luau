@@ -1,7 +1,9 @@
 --!strict
 local Bases = require("../src/shared/Data/Items/Bases")
+local Build = require("../src/shared/Data/Skills/Build")
 local Classes = require("../src/shared/Data/Classes")
 local SkillData = require("../src/shared/Data/Skills")
+local SkillGeom = require("../src/shared/Logic/SkillGeom")
 local Skills = require("../src/shared/Logic/Skills")
 local StatCalc = require("../src/shared/Logic/StatCalc")
 local T = require("./Test")
@@ -1728,6 +1730,65 @@ T.describe("S75 Warrior base and path skills", function()
 				end
 			end
 		end
+	end)
+end)
+
+T.describe("Hunter engine fields (S76)", function()
+	T.it("B options add up; castTime and finisher merge through breakpoints", function()
+		local base = SkillData.get("volley") :: any
+		local volley = table.clone(base)
+		volley.breakpoints = Build.bp2(
+			{ a = { add = { hits = 3 } }, b = { values = { dmg = 15 } } },
+			{ a = { add = { angle = 30 } }, b = { values = { dmg = 20 } } }
+		)
+		local def = Skills.effective(volley, 10, { ["volley:5"] = "b", ["volley:10"] = "b" }, nil, true)
+		T.expect(Skills.valueAt(def, "dmg", 10)).toBeNear(155)
+		T.expect(def.hits).toBe(base.hits)
+		T.expect(def.angle).toBe(base.angle)
+
+		local aimed = table.clone(base)
+		aimed.castTime = 1.5
+		aimed.finisher = { hp = 20, mul = 2 }
+		aimed.breakpoints = Build.bp2({ a = { add = { castTime = -0.6 } } }, { a = { finisher = { hp = 30 } } })
+		local five = Skills.effective(aimed, 5, nil, nil, true)
+		T.expect(five.castTime).toBeNear(0.9)
+		T.expect(five.finisher).toEqual({ hp = 20, mul = 2 })
+		local ten = Skills.effective(aimed, 10, nil, nil, true)
+		T.expect(ten.finisher).toEqual({ hp = 30, mul = 2 })
+		T.expect(aimed.finisher).toEqual({ hp = 20, mul = 2 }) -- the data is untouched
+		aimed.breakpoints = Build.bp2({ a = { add = { castTime = -2 } } }, { a = {} })
+		T.expect(Skills.effective(aimed, 5, nil, nil, true).castTime).toBe(0)
+	end)
+
+	T.it("trapCost makes only traps cheaper", function()
+		local trap = SkillData.get("frostTrap") :: any
+		local plain = Skills.cost(trap, 5, 30, trap.class, nil)
+		local cheaper = Skills.cost(trap, 5, 30, trap.class, { hooks = { trapCost = 20 } })
+		T.expect(cheaper).toBeNear(plain * 0.8)
+		local volley = SkillData.get("volley") :: any
+		T.expect(Skills.cost(volley, 5, 60, volley.class, { hooks = { trapCost = 20 } }))
+			.toBeNear(Skills.cost(volley, 5, 60, volley.class, nil))
+	end)
+
+	T.it("SkillGeom.spreadTargets picks the nearest in range, ties by id", function()
+		local candidates = {
+			{ id = "a", x = 3, z = 0 },
+			{ id = "c", x = 0, z = 5 },
+			{ id = "b", x = -5, z = 0 },
+			{ id = "d", x = 7.9, z = 0 },
+			{ id = "e", x = 0, z = 9 },
+		}
+		T.expect(SkillGeom.spreadTargets(0, 0, candidates, 2, 8)).toEqual({ "a", "b" })
+		T.expect(SkillGeom.spreadTargets(0, 0, candidates, 5, 8)).toEqual({ "a", "b", "c", "d" })
+		T.expect(SkillGeom.spreadTargets(0, 0, candidates, 0, 8)).toEqual({})
+	end)
+
+	T.it("SkillGeom.sidePoints puts the second trap to the side of the aim line", function()
+		local points = SkillGeom.sidePoints(0, 0, 0, -10, 2, 4)
+		T.expect(points[1]).toEqual({ x = 0, z = -10 })
+		local dx, dz = points[2].x - points[1].x, points[2].z - points[1].z
+		T.expect(math.sqrt(dx * dx + dz * dz)).toBeNear(4)
+		T.expect(dx * 0 + dz * -1).toBeNear(0) -- perpendicular to the direction (0, -1)
 	end)
 end)
 

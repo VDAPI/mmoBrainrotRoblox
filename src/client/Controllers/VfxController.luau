@@ -6,6 +6,7 @@
 --               { s, c, t?, p?, cf?, r?, a?, l?, w?, d?, n?, path?, from? }
 --   v = arc / lightningBurst / meteorImpact / trapSet / trapTrigger / lingering / pierce / splitImpact / echo /
 --       splash / stunBurst / pull / fizzle  — extras of adaptive skills and breakpoints
+--   v = aim / aimEnd (S76)  the red aiming line of castTime from the caster to the target / point, and its end
 --   v = dieFace (S70)  a face of Fortune's dice on an ally (aura in the face's colour); angelSave (S70) the Guardian
 --       Angel's save; Roll of the Dice throws two small golden dice from the hand at the motion's release
 --   v = furyConsume (S74)  a red aura on the Warrior who spent Fury; impact events with `al` play the entry's `allies`
@@ -53,6 +54,10 @@ local FACE_COLORS: { [string]: Color3 } = {
 	wind = Color3.fromHex("#9FE0FF"),
 	spring = HEAL,
 }
+
+-- S76 (ROZWOJ 11.3): the aiming line (red, like the Mark), one per caster id; a new one takes the old one down.
+local AIM_COLOR = Color3.fromHex("#E2483A")
+local aimLines: { [string]: () -> () } = {}
 
 -- Camera shake handler (CombatFxController.Shake), set in Init.
 local shakeCamera: ((strength: number) -> ())? = nil
@@ -544,6 +549,30 @@ local function onExtra(data: { [string]: any }, skill: SkillData.SkillDef, caste
 			local faceColor = FACE_COLORS[tostring(data.k)] or color
 			Library.aura(model, faceColor, math.min(tonumber(data.d) or 10, 20), simpleAt(centre(model), model))
 			Library.sparkle(model, faceColor, simpleAt(centre(model), model))
+		end
+	elseif v == "aim" then
+		-- S76: everyone nearby sees the line (the target in PvP too: time to step away)
+		local id = tostring(data.c)
+		local old = aimLines[id]
+		if old then
+			old()
+			aimLines[id] = nil
+		end
+		if caster then
+			local stop = Library.aimLine(caster, findModel(data.t), at, AIM_COLOR, tonumber(data.d) or 1.5)
+			aimLines[id] = stop
+			task.delay((tonumber(data.d) or 1.5) + 0.5, function()
+				if aimLines[id] == stop then
+					aimLines[id] = nil
+				end
+			end)
+		end
+	elseif v == "aimEnd" then
+		local id = tostring(data.c)
+		local stop = aimLines[id]
+		if stop then
+			stop()
+			aimLines[id] = nil
 		end
 	elseif v == "furyConsume" then
 		-- S74 (ROZWOJ 10.4): the Fury spent by Rend / Carnage

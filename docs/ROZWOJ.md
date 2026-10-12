@@ -2327,10 +2327,10 @@ Kod:
 - `castTime`: `SkillService.startChannel(ctx, onDone)` (dziś tylko dla `type = "channel"`, bez handlera, na końcu
   przywraca manę) dostaje wariant, który po `castTime` uruchamia zwykły handler. Koszt i odnowienie pobiera się przy
   rozpoczęciu. `Logic/Channel.stops` dostaje rodzaj `castTime`: ruch przerywa ze zwrotem energii i wyzerowaniem
-  odnowienia tej umiejętności (globalne odnowienie zostaje), obrażenia nie. W czasie celowania `CombatService` pomija
-  ataki podstawowe, gdy ustawione jest `skills.channel`, a inna umiejętność jest odrzucana z komunikatem
-  `cast.error.channeling` zamiast przerywać kanał bez zwrotu. Dzisiejsze kanały (Skupienie, Modlitwa) działają jak
-  dziś.
+  odnowienia tej umiejętności (globalne odnowienie zostaje), obrażenia nie; ogłuszenie działa jak ruch (zwrot), cel
+  martwy na końcu celowania zwraca koszt i odnowienie (S76). Ataki podstawowe stoją tylko w czasie celowania
+  (`skills.channel.kind = "castTime"`), a inna umiejętność jest odrzucana z komunikatem `cast.error.channeling`
+  zamiast przerywać kanał bez zwrotu. Dzisiejsze kanały (Skupienie, Modlitwa) działają jak dziś.
 - Składanie według 2.7; `mul.dmg` niepotrzebne, `PathNode.modify` zostaje z jednym polem `skill`. Przypadki w
   `skills.spec`: Salwa 5B + 10B daje `values.dmg` +35; Celny Strzał 5B z Długim Strzałem na 3. randze +60; Zatruta
   Strzała 5A + 10B trucizna +110; Sokół 10A z Ostrymi Szponami na 3. randze +30; Strzał w Serce 5A ze Strzałem

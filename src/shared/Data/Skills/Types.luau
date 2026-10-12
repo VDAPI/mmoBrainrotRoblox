@@ -91,7 +91,8 @@ export type SkillEffect = {
 -- range, length, width, hits, jumps, duration, effectDuration (every effect list), <kind>Duration (only `effects` of
 -- that kind, S75); `mul` cooldown, cost, delay; `values` added to the
 -- skill's values) and behaviours the server applies (Skills/Context, Types/*):
---   pull = radius            enemies within the radius are pulled to the caster at the start
+--   pull = radius | true     enemies within the radius are pulled at the start: circleSelf / shout to the caster,
+--                            circleTarget and trap to the point (S76); true = the skill's radius; overrides skill.pull
 --   knockback = studs        hit enemies are pushed away (bosses immune, players half)
 --   castMove = %             the caster may move at this % speed while the motion plays (client)
 --   stunNear = { radius, duration }  enemies near the target are stunned too
@@ -130,6 +131,16 @@ export type SkillEffect = {
 --   allyHeal = { hpPct }                   buff: allies within allyRadius (caster included) heal hpPct % of their max HP
 --   allyShield = { hpPct, duration }       buff: the same allies get a shield of hpPct % of their max HP (guard, S74: the
 --                                           protected ally)
+--   poisonStacks = n          S76: the skill's poison stacks up to n times (like bleedStacks)
+--   critCdr = pct             S76: the first crit of a cast shortens the skill's cooldown by pct % of the full one
+--   finisher = { hp?, mul? }  S76: overrides the given fields of the skill's finisher (merged into def.finisher)
+--   poisonSpread = n          S76: the death of a monster poisoned by this skill moves the rest of the poison to the n
+--                             nearest (adds to the poisonSpread hook, SkillData.POISON_SPREAD_RADIUS)
+--   markJump = studs          S76: the death of a monster with this skill's vulnerability moves it, with the time left,
+--                             to the nearest enemy within the studs
+--   firstWave = pct           S76: the first wave of circleTarget deals pct % more
+-- S76 `add` fields: castTime (aim seconds, at least 0), interval, ringRadius; `add.radius` on a debuff: its enemy
+-- effects also land on enemies within that radius of the target.
 -- Skill fields: furyConsume (target, buff), hitRadius (shout, S74), allyRadius (buff); `add.hitRadius` works like
 -- `add.radius`, `add.allyRadius` adds to the default reach (30). Numbers typed ValueRef may name a `values` field.
 -- S74 types: guard reads stunNear and tauntNear (around the protected ally), secondTarget (a second wounded ally within
@@ -144,7 +155,7 @@ export type Breakpoint = {
 	add: { [string]: number }?,
 	mul: { [string]: number }?,
 	values: { [string]: number }?,
-	pull: number?,
+	pull: (number | boolean)?,
 	knockback: number?,
 	castMove: number?,
 	stunNear: { radius: number, duration: number }?,
@@ -177,6 +188,12 @@ export type Breakpoint = {
 	behindEffect: SkillEffect?,
 	allyHeal: { hpPct: ValueRef }?,
 	allyShield: { hpPct: ValueRef, duration: number }?,
+	poisonStacks: number?,
+	critCdr: number?,
+	finisher: { hp: number?, mul: number? }?,
+	poisonSpread: number?,
+	markJump: number?,
+	firstWave: number?,
 	effect: SkillEffect?,
 	selfEffect: SkillEffect?,
 	allyEffect: SkillEffect?,
@@ -229,6 +246,15 @@ export type SkillDef = {
 	roll: { all: boolean?, enemyRadius: number? }?,
 	-- S70: damage does not end this channel (Logic/Channel); set by the steadfast breakpoint
 	steadfast: boolean?,
+	-- S76 (ROZWOJ 11.3, 14.3): seconds of aiming before the shot (SkillService.startChannel kind "castTime"); nil / 0 =
+	-- an ordinary cast
+	castTime: number?,
+	-- S76 (ROZWOJ 11.4): a trap with `hits` lays its snares in a ring of this radius around the point
+	ringRadius: number?,
+	-- S76 (ROZWOJ 16.5): circleTarget and trap pull enemies to the point first; a number = pull radius, true = radius
+	pull: (number | boolean)?,
+	-- S76 (ROZWOJ 11.3): hits on a target below hp % of its life deal x mul (players: Combat.pvp.finisher at most)
+	finisher: { hp: number, mul: number }?,
 	-- filled only by Logic/Skills.effective from breakpoints and node mods (ROZWOJ 2.7)
 	selfEffects: { SkillEffect }?,
 	allyEffects: { SkillEffect }?,

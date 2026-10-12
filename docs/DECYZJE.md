@@ -1557,3 +1557,22 @@
   na siebie ustawia `ctx.skipSelfEffects` i `SkillService.finished` pomija wtedy `selfEffects` (`selfHeal` zostaje).
 - **S75** Testy: id ukrytej umiejętności, które jest też id zdolności potwora (`cleave`), nie liczy się jako wyciek w
   `monsters.json` (`wikidump.spec`). Przypadki składania z węzłami Wojownika są w `paths.spec` (pomocniki postaci).
+- **S76** Celowanie (`castTime`): koszt i odnowienie przy starcie; ruch albo ogłuszenie kończy je ze zwrotem kosztu i
+  odnowienia tej umiejętności (GCD zostaje), obrażenia nie; cel martwy na końcu = zwrot. Inna umiejętność dostaje
+  `cast.error.channeling`; ataki podstawowe stoją tylko w czasie celowania, Skupienie i Modlitwa jak dawniej
+  (ROZWOJ 14.3 poprawiony).
+- **S76** Ściąganie: jedna funkcja `ctx.pull` (`Skills.pullRadius`: liczba = promień, `true` = promień umiejętności,
+  przełom nadpisuje) dla `circleSelf`, `circleTarget`, pułapek i (poza planem) okrzyku 5B; przy ściąganiu pierwsza
+  fala i trafienie pułapki czekają `Push.DURATION`.
+- **S76** Pułapki: dodatkowe sidła bez `ringRadius` na przemian w prawo i w lewo co 4 st., w pierścieniu pierwsze w
+  kierunku od Łowcy; każde sidło osobno (energia z `trapEnergy` najwyżej za 3 wrogów, echo tylko obrażenia, z 1/3
+  szansy efektów przy trafieniu jak echo `circleTarget`).
+- **S76** Trucizna: `poisonDamage` w `CombatService.DotBonus` obok `dotPower` i `bleedDamage` (jedno miejsce, przy
+  nałożeniu; trujące pole Kąsających Strzał też); każda trucizna gracza przez `CombatService.ApplyPoison`
+  (`poisonSlow`); `poisonSpread` = hak + pole przełomu, 8 st., przenosi resztę (stosy, czas) tylko przy śmierci
+  potwora, tak samo `markJump`; `poisonedGuard` to wpis `own` dla atakującego zatrutego przez gracza.
+- **S76** `finisher` na graczach najwyżej ×1,5 (`Combat.pvp.finisher`); `firstWave` to % premii do pierwszej fali;
+  `areaSkillDamage` według `Traits.isAreaSkill`, bez pulsów pól, rozprysku, tyknięć i ataków podstawowych; `critCdr`
+  liczy się od odnowienia ustawionego przy rzucie (`ctx.cooldown`).
+- **S76** Poprawka S70: `Build.class` nie przepisywał pola `roll`, więc Rzut Kośćmi i Koło Fortuny nie losowały
+  ścian; teraz przepisuje.

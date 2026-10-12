@@ -3914,3 +3914,39 @@ UI/SkillInfo}`, `tests/{skills,skillmotion,data}.spec`, `docs/{DECYZJE,SESJE,PRO
 Pliki: `src/shared/{Data/Skills/{Warrior,Types},Data/Paths/{Warrior,Types},Data/Titles,Data/Localization/{pl,en},
 Logic/Skills}`, `src/server/{Services/{StatusEffectService,SkillService},Skills/{Context,Types/Movement}}`,
 `tests/{paths,skills,character,wikidump}.spec`, `wiki/src/data/*`, `docs/{ROZWOJ,PRZEDMIOTY,DECYZJE,SESJE,PROGRESS}.md`.
+
+### S76: Łowca 1: celowanie, pułapki, ściąganie i trucizna umiejętności (silnik)
+
+- A: `Logic/Channel.stops` zwraca `(stop, refund)`, rodzaj `castTime` i zdarzenie `disabled`; `SkillService.startChannel
+  (ctx, onDone?, onRefund?)` (celowanie z linią `aim` / `aimEnd`, stan `skills.channel.kind`), `interruptChannel(...,
+  refund)`, `refundAim` (GCD zostaje), `cast.error.channeling` przed odnowieniem, strzał po `castTime` bez
+  `hitDelay`; `CombatService.tryBasicAttack` stoi w czasie celowania. `SkillService.ReduceCooldown` (critCdr, S79).
+- B: pola `castTime`, `ringRadius`, `pull`, `finisher` (SkillDef, `Build.Spec`, `Build.class`), klucze przełomów
+  `poisonStacks`, `critCdr`, `finisher`, `poisonSpread`, `markJump`, `firstWave`, `pull: number | true`; `add`
+  `castTime` (≥ 0), `interval`, `ringRadius`; `finisher` scalany w `def.finisher`; `Skills.pullRadius`; nowe
+  argumenty opisu tylko przy istniejącym polu; stałe `TRAP_SIDE_OFFSET`, `TRAP_ENERGY_MAX`, `POISON_SPREAD_RADIUS`,
+  `Combat.pvp.finisher`.
+- C: `Logic/SkillGeom` (`sidePoints`, `ringPoints`, `angle`, `spreadTargets`); `Movement.trap` z wieloma sidłami,
+  obrażeniami, ściąganiem, echem i hakami `trapRootDuration`, `trapEnergy`; `trapCost` w `Skills.cost` przez
+  `CostMods.hooks` (serwer: bufor haków `SkillService`, klient: `Paths.passiveTotals`, `DescOpts.hooks`).
+- D: `ctx.pull` (lokalne `pull` z `Offense` i pętla okrzyku w `Support` usunięte), `circleTarget` ściąga do punktu i zna
+  `firstWave`, `debuff` z promieniem.
+- E: `poisonStacks` w `Context.applyEffect`, `CombatService.ApplyPoison` (umiejętności, Jadowite groty i linia
+  `poisonChance`, kopie przy śmierci), `poisonDamage` w `DotBonus`, `poisonedGuard` (dostawca redukcji dostał
+  `attacker`, `StatusEffectService.HasFrom`), `Snapshot` + `ApplyOptions.stacks/spread/jump` i przeniesienie przy
+  śmierci potwora (`task.defer`), `areaSkillDamage`, `critCdr`, `finisher`; pulsy pól z `lingering = true`, trujące
+  pole z premią trucizny.
+- F: `Library.aimLine` i `aim` / `aimEnd` w `VfxController`, licznik stosów na ikonach (`EffectStack` z czwartym
+  członem `rodzaj:koniec:wartość:stosy`), pasek „Celowanie: …” w kolorze `Danger`, 5 kluczy na język.
+- Żadna umiejętność nie ma jeszcze `castTime`, `ringRadius`, `pull` w podstawie ani nowych pól przełomów (dane S77–S78);
+  haki Trapera czytają 0 do węzłów S78. Dopasowania: `ReductionProvider` z trzecim argumentem, `StackSpec.stacks`,
+  `Listed/Shown.stacks`. Poprawka S70: `Build.class` gubił `roll` (kości nie losowały).
+- Testy: `channel.spec` (castTime), `skills.spec` (składanie B, `castTime`, `finisher`, `trapCost`, `SkillGeom`),
+  `effectstack.spec` (kodek stosów, przeniesienie stosów), `BreakpointKeys` (+6). Wiki: tylko `pvp.finisher` w
+  `mechanics.json`.
+
+Pliki: `src/shared/{Logic/{Channel,Skills,EffectStack,SkillGeom},Data/{Combat,Skills/{init,Types,Build},
+Localization/{pl,en}}}`, `src/server/{Services/{SkillService,CombatService,StatusEffectService},Skills/{Context,Push,
+Types/{Movement,Offense,Support}}}`, `src/client/{Controllers/{SkillController,VfxController},Vfx/Library,UI/{SkillInfo,
+Screens/Hud/{CastBar,EffectIcons},Screens/SkillsWindow/Details}}`, `tests/{channel,skills,effectstack}.spec`,
+`tests/BreakpointKeys`, `wiki/src/data/*`, `docs/{ROZWOJ,PRZEDMIOTY,DECYZJE,SESJE,PROGRESS}.md`.

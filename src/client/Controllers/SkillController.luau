@@ -568,13 +568,14 @@ function SkillController.Usable(skillId: string): (boolean, boolean, boolean)
 	end
 	local rank = math.max(1, rankOf(skill))
 	local def = effective(skill, rank)
+	local c = me()
 	local cost = Skills.cost(def, rank, State.Get({ "character", "level" }) or 1, skill.class, {
 		costReduce = State.Get({ "derived", "values", "costReduce" }) or 0, -- S62 item saving
+		hooks = Paths.passiveTotals(c, Paths.weaponTypesOf(c.equipment)).hooks, -- S76: trapCost
 	})
 	local current = if skill.resource then State.Get({ "character", skill.resource }) or 0 else math.huge
 	local enoughResource = current >= cost
 	local inRange = skill.target ~= "enemy" or SkillController.TargetDistance() <= (def.range or 10) + 2
-	local c = me()
 	local pathOk = skill.path == nil or Paths.skillUsable(c, skill.id, Paths.weaponTypesOf(c.equipment))
 	return enoughResource, inRange, Skills.elementAllowed(skill, SkillController.WeaponElement()) and pathOk
 end

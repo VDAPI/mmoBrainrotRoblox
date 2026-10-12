@@ -22,10 +22,15 @@
 -- gain in DealDamage, furyDamage and damagePerEnemy in offensiveMultiplier, own reductions guardPerEnemy, furyGuard
 -- and lastStand (also on intercepted parts), threat through MonsterService's threatMultiplier, bleedDamage in DotBonus,
 -- block energy in onBlock (NodeHook), KillInfo.finisher for Carnage.
+--
+-- S76 (ROZWOJ 11.3, 11.4): no basic attacks while aiming (castTime); every poison of a player goes through ApplyPoison
+-- (poisonSlow), poisonDamage sits in DotBonus, poisonedGuard is an own reduction against an attacker the player has
+-- poisoned, and a monster's death moves the rest of its poisons (poisonSpread) and marks (jump) to the nearest.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
 
 local Shared = ReplicatedStorage.Shared
 
@@ -57,6 +62,8 @@ local Paths = require(Shared.Data.Paths)
 local Push = require(script.Parent.Parent.Skills.Push)
 local Rng = require(Shared.Logic.Rng)
 local Signal = require(ReplicatedStorage.Packages.Signal)
+local SkillData = require(Shared.Data.Skills)
+local SkillGeom = require(Shared.Logic.SkillGeom)
 local Traits = require(Shared.Logic.Traits)
 local Types = require(Shared.Types)
 
@@ -394,14 +401,97 @@ end
 
 -- S63: +% damage of the player's damage over time of `kind` (bleed, poison, burn), items and skills alike.
 -- One owner of DoT bonuses (the tick amount is set when the effect is applied): S72 added bleedDamage (Deep and Open
--- Wounds, ROZWOJ 10.4) for every bleed of the player, skills and items; S76 adds poisonDamage.
+-- Wounds, ROZWOJ 10.4) for every bleed of the player, skills and items; S76 poisonDamage (Hunter's Venom, Basilisk
+-- Venom, ROZWOJ 11.4) for every poison of the player: skills, items and Biting Arrows' poison field.
 function CombatService.DotBonus(player: Player, kind: string): number
 	if kind == "bleed" then
 		return hook(player, "dotPower") + hook(player, "bleedDamage")
-	elseif kind == "poison" or kind == "burn" then
+	elseif kind == "poison" then
+		return hook(player, "dotPower") + hook(player, "poisonDamage")
+	elseif kind == "burn" then
 		return hook(player, "dotPower")
 	end
 	return 0
+end
+
+-- S76: every poison of a player (skill, item trait, spread copy) is applied here. tickAmount already holds DotBonus
+-- (dotPower + poisonDamage); this adds poisonSlow (Numbing Venom: slowed while poisoned, enemySlow).
+function CombatService.ApplyPoison(player: Player, entity: any, options: any): boolean
+	local opts = table.clone(options)
+	opts.source = player
+	local applied = StatusEffectService.Apply(entity, "poison", opts)
+	local slow = hook(player, "poisonSlow")
+	if applied and slow > 0 then
+		StatusEffectService.Apply(entity, "slow", {
+			duration = opts.duration,
+			value = slow,
+			source = player,
+			skillId = "poisonSlow",
+			category = "enemySlow",
+		})
+	end
+	return applied
+end
+
+-- S76 (ROZWOJ 11.4): Contagion (poisonSpread hook + the breakpoint's spread) and Wounded Trail (a vulnerability's
+-- jump). `effects` is StatusEffectService.Snapshot of the dead monster, read before it was unregistered; monsters only.
+local function spreadOnDeath(dead: any, position: Vector3, effects: { any })
+	local t = Workspace:GetServerTimeNow()
+	local function candidates(radius: number): { SkillGeom.Candidate }
+		local list: { SkillGeom.Candidate } = {}
+		for _, entity in EntityService.QueryMonsters(position, radius) do
+			local p = EntityService.Position(entity)
+			if entity ~= dead and p and entity.monster and entity.monster:IsAlive() then
+				table.insert(list, { id = entity.id, x = p.X, z = p.Z })
+			end
+		end
+		return list
+	end
+	for _, effect in effects do
+		local source: Player? = effect.source
+		local left = effect.expiresAt - t
+		if not source or source.Parent == nil or left <= 0.1 then
+			continue
+		end
+		if effect.kind == "poison" then
+			local count = hook(source, "poisonSpread") + (effect.spread or 0)
+			if count <= 0 then
+				continue
+			end
+			local radius = SkillData.POISON_SPREAD_RADIUS
+			local stacks = math.max(1, effect.stacks or 1)
+			local unit = effect.unit or effect.value / stacks
+			for _, id in SkillGeom.spreadTargets(position.X, position.Z, candidates(radius), count, radius) do
+				local target = EntityService.Get(id)
+				if target then
+					CombatService.ApplyPoison(source, target, {
+						duration = left,
+						value = unit,
+						tickAmount = if effect.tickAmount then effect.tickAmount / stacks else nil,
+						stacks = stacks,
+						maxStacks = stacks,
+						skillId = effect.skillId,
+						category = effect.category,
+						spread = effect.spread,
+					})
+				end
+			end
+		elseif effect.kind == "vulnerability" and effect.jump and effect.jump > 0 then
+			local radius = effect.jump
+			local id = SkillGeom.spreadTargets(position.X, position.Z, candidates(radius), 1, radius)[1]
+			local target = if id then EntityService.Get(id) else nil
+			if target then
+				StatusEffectService.Apply(target, "vulnerability", {
+					duration = left,
+					value = effect.value,
+					source = source,
+					skillId = effect.skillId,
+					category = effect.category,
+					jump = effect.jump,
+				})
+			end
+		end
+	end
 end
 
 -- Living monsters within HOOK_RULES.perEnemy.radius of the player, at most HOOK_RULES.perEnemy.max
@@ -566,6 +656,16 @@ local function reward(player: Player, monster: any, share: number, goldShare: nu
 end
 
 local function onMonsterDied(monster: any)
+	-- S76: the dead monster's effects now, before MonsterService unregisters it (the move is deferred: a tick may be
+	-- walking the effect table right now)
+	local dead = monster.entity
+	if dead then
+		local effects = StatusEffectService.Snapshot(dead)
+		local at = monster:Position()
+		if #effects > 0 and at then
+			task.defer(spreadOnDeath, dead, at, effects)
+		end
+	end
 	for i = #redZones, 1, -1 do
 		if redZones[i].monster == monster then
 			table.remove(redZones, i)
@@ -708,7 +808,7 @@ local function applyTraitEffect(
 		local pct = if grown > 0 then grown else spec.linePct or 0
 		local bonus = CombatService.DotBonus(player, effect)
 		-- Wound from the line and from the axe share one key: 3 stacks together.
-		StatusEffectService.Apply(target, effect, {
+		local options = {
 			duration = spec.duration,
 			value = pct,
 			source = player,
@@ -718,7 +818,12 @@ local function applyTraitEffect(
 			healCut = if pvp and grown > 0 then spec.healCut else nil,
 			-- S65 (ROZWOJ 7.2): a refresh adds the unpaid rest, at most maxStacks sums of one hit.
 			accumulate = true,
-		})
+		}
+		if effect == "poison" then
+			CombatService.ApplyPoison(player, target, options) -- S76: poisonSlow
+		else
+			StatusEffectService.Apply(target, effect, options)
+		end
 		if grown > 0 and spec.attackSlow then
 			StatusEffectService.Apply(target, "attackSlow", {
 				duration = spec.duration,
@@ -1269,6 +1374,11 @@ local function tryBasicAttack(player: Player, state: Attacker, now: number)
 	if not targetId or not state.attack or now < state.nextAttack or not playerAlive(player) then
 		return
 	end
+	-- S76: no basic attacks while aiming (castTime); Focus / Prayer channels keep them (ROZWOJ 14.3).
+	local channel = PlayerStateService.Get(player, { "skills", "channel" })
+	if type(channel) == "table" and channel.kind == "castTime" then
+		return
+	end
 	local target = EntityService.Get(targetId)
 	if not target then
 		state.target = nil
@@ -1668,7 +1778,20 @@ function CombatService.Init(registry)
 		local per = hook(player, "guardPerEnemy")
 		return if per > 0 then per * enemiesNear(player) else 0
 	end)
+	-- S76 Toxicologist (poisonedGuard, ROZWOJ 11.4): less damage from an attacker the player has poisoned (own).
+	StatusEffectService.RegisterReductionProvider(function(player: Player, source: string, attacker: any?): number
+		local entity = if source == "monster" and attacker
+			then attacker.entity
+			elseif source == "pvp" and attacker then EntityService.GetPlayerEntity(attacker)
+			else nil
+		if not entity then
+			return 0
+		end
+		local guard = hook(player, "poisonedGuard")
+		return if guard > 0 and StatusEffectService.HasFrom(entity, "poison", player) then guard else 0
+	end)
 	-- S72 Relentless: furyGuard % while Fury is full.
+
 	StatusEffectService.RegisterReductionProvider(function(player: Player, source: string): number
 		if not OWN_REDUCTION_SOURCES[source] then
 			return 0

@@ -21,7 +21,6 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Context = require(script.Parent.Parent.Context)
-local Push = require(script.Parent.Parent.Push)
 local PathData = require(ReplicatedStorage.Shared.Data.Paths)
 local Paths = require(ReplicatedStorage.Shared.Logic.Paths)
 local SkillData = require(ReplicatedStorage.Shared.Data.Skills)
@@ -142,6 +141,18 @@ Support.debuff = function(ctx)
 	end
 	ctx.fx({ t = target.id })
 	ctx.applyEffects(target, "enemy")
+	-- S76 (Hunter's Mark 5B, add.radius): the enemy effects also land on enemies within the radius of the target
+	local radius = ctx.skill.radius or 0
+	local at = if radius > 0 then ctx.services.Entity.Position(target) else nil
+	if at then
+		for _, other in ctx.enemiesInCircle(at, radius) do
+			if other ~= target then
+				ctx.applyEffects(other, "enemy")
+			end
+		end
+		ctx.fx({ v = "splash", p = at, r = radius })
+	end
+
 	-- Marking a monster draws its attention like a hit would.
 	if target.kind == "monster" and target.monster then
 		target.monster:AddThreat(ctx.player, 1)
@@ -442,13 +453,7 @@ Support.shout = function(ctx)
 	local radius = ctx.skill.radius or 15
 	local hitRadius = ctx.skill.hitRadius or radius
 	local Entity = ctx.services.Entity
-	local pull = ctx.bp.pull
-	if pull then
-		for _, entity in ctx.enemiesInCircle(center, pull) do
-			Push.pull(entity, center)
-		end
-		ctx.fx({ v = "pull", p = center, r = pull })
-	end
+	ctx.pull(center) -- S76: the one pull (Skills/Context)
 	local allyEffects: { SkillData.SkillEffect } = ctx.skill.allyEffects or NO_EFFECTS
 	local effects: { SkillData.SkillEffect } = ctx.skill.effects or NO_EFFECTS
 	local shown = 0

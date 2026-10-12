@@ -12,6 +12,10 @@
 -- Prayer 5B rolls Roll of the Dice at the end; Guardian Angel's save (StatusEffectService.AngelSaved) plays angelSave.
 -- S73: extendOnKill (Bloodlust with Bloodthirst, S75): after the cast every kill (the killing blow, info.finisher)
 -- lengthens the skill's running effects on the caster (StatusEffectService.Extend) up to the breakpoint's max.
+-- S76 (ROZWOJ 11.3, 14.3): castTime aims before the shot (startChannel kind "castTime"): cost and cooldown at the
+-- start, no basic attacks (CombatService), another skill is refused (cast.error.channeling); moving or a stun ends it
+-- with the cost and the skill's cooldown back (the GCD stays), damage never; the handler fires at the end.
+-- ReduceCooldown shortens one running cooldown (critCdr, Mage cdrPerTarget in S79).
 -- Cooldowns replicate as state branch `skills` = { cd = { [skillId] = readyAt }, gcd = readyAt, channel? }
 -- (server time), so the client draws the cooldown sweep.
 
@@ -91,7 +95,16 @@ type Runtime = {
 	cooldowns: { [string]: number },
 	gcd: number,
 	-- S70: kind for Logic/Channel.stops, def = the channelled skill after Skills.effective (ctx.skill)
-	channel: { skillId: string, token: number, startedAt: Vector3, kind: string, def: any }?,
+	-- S76: kind "castTime" (aiming) with fx (the cast's ctx.fx) and onRefund (gives the cost and the cooldown back)
+	channel: {
+		skillId: string,
+		token: number,
+		startedAt: Vector3,
+		kind: string,
+		def: any,
+		fx: ((data: { [string]: any }) -> ())?,
+		onRefund: (() -> ())?,
+	}?,
 	channelToken: number,
 	noCooldowns: boolean,
 	infiniteResources: boolean,
@@ -334,12 +347,35 @@ function SkillService.ResetCooldown(player: Player, skillId: string): boolean
 	return true
 end
 
-local function interruptChannel(player: Player, reason: string?)
+-- S76: shortens one running cooldown by `seconds` (critCdr; S79 cdrPerTarget). The GCD stays.
+function SkillService.ReduceCooldown(player: Player, skillId: string, seconds: number)
 	local rt = runtimes[player]
-	if rt and rt.channel then
+	if not rt or rt.noCooldowns or seconds <= 0 then
+		return
+	end
+	local ready = rt.cooldowns[skillId]
+	if not ready then
+		return
+	end
+	rt.cooldowns[skillId] = math.max(now(), ready - seconds)
+	publishCooldowns(player)
+end
+
+-- S76: `refund` gives an aim's cost and cooldown back (Channel.stops); an ended aim clears its line and animation.
+local function interruptChannel(player: Player, reason: string?, refund: boolean?)
+	local rt = runtimes[player]
+	local channel = rt and rt.channel
+	if rt and channel then
 		rt.channel = nil
 		rt.channelToken += 1
 		PlayerStateService.Set(player, { "skills", "channel" }, nil)
+		if refund and channel.onRefund then
+			channel.onRefund()
+		end
+		if channel.kind == "castTime" and channel.fx then
+			channel.fx({ v = "aimEnd" })
+			channel.fx({ v = "fizzle" })
+		end
 		if reason then
 			Net.Fire(player, "Toast", reason, nil, "warning")
 		end
@@ -361,22 +397,37 @@ local function prayerDice(ctx: Context.Ctx)
 	diceCtx.rollDice({ half = true })
 end
 
-local function startChannel(ctx: Context.Ctx)
+-- Channels (Evocation, Prayer) and, with `onDone` (S76, ROZWOJ 14.3), aiming: the castTime wait before the shot.
+-- Logic/Channel.stops decides what ends it; an aim stopped with refund calls `onRefund`, a finished one `onDone`.
+local function startChannel(ctx: Context.Ctx, onDone: (() -> ())?, onRefund: (() -> ())?)
 	local player = ctx.player
 	local rt = runtime(player)
 	rt.channelToken += 1
 	local token = rt.channelToken
-	local duration = ctx.scaled(ctx.skill.duration)
-	local channel =
-		{ skillId = ctx.skill.id, token = token, startedAt = ctx.root.Position, kind = "channel", def = ctx.skill }
+	local aiming = onDone ~= nil
+	local kind = if aiming then "castTime" else "channel"
+	local duration = if aiming then ctx.skill.castTime or 0 else ctx.scaled(ctx.skill.duration)
+	local channel = {
+		skillId = ctx.skill.id,
+		token = token,
+		startedAt = ctx.root.Position,
+		kind = kind,
+		def = ctx.skill,
+		fx = ctx.fx,
+		onRefund = onRefund,
+	}
 	rt.channel = channel
 	StatService.SetSprint(player, false) -- channelling stops the sprint (S18)
 	PlayerStateService.Set(
 		player,
 		{ "skills", "channel" },
-		{ skill = ctx.skill.id, endsAt = now() + duration, duration = duration }
+		{ skill = ctx.skill.id, endsAt = now() + duration, duration = duration, kind = kind }
 	)
-	ctx.fx({ t = ctx.caster.id, d = duration })
+	if aiming then
+		ctx.fx({ v = "aim", t = if ctx.target then ctx.target.id else nil, p = ctx.point, d = duration })
+	else
+		ctx.fx({ t = ctx.caster.id, d = duration })
+	end
 	task.spawn(function()
 		local endAt = os.clock() + duration
 		while os.clock() < endAt do
@@ -386,14 +437,18 @@ local function startChannel(ctx: Context.Ctx)
 			end
 			local model = player.Character
 			local root = model and model:FindFirstChild("HumanoidRootPart") :: BasePart?
-			-- S70: Logic/Channel decides (today death and moving always end a channel)
+			-- S70: Logic/Channel decides (today death and moving always end a channel); S76: a stun too (aiming)
 			local event: Channel.Event? = if not root or ResourceService.IsDead(player)
 				then "death"
 				elseif (root.Position - ctx.root.Position).Magnitude > CHANNEL_MOVE_LIMIT then "move"
+				elseif StatusEffectService.IsDisabled(ctx.caster) then "disabled"
 				else nil
-			if event and Channel.stops(channel.kind, event, channel.def) then
-				interruptChannel(player, "cast.interrupted")
-				return
+			if event then
+				local stop, refund = Channel.stops(channel.kind, event, channel.def)
+				if stop then
+					interruptChannel(player, if refund then "cast.aimCancelled" else "cast.interrupted", refund)
+					return
+				end
 			end
 		end
 		if rt.channelToken ~= token then
@@ -401,6 +456,10 @@ local function startChannel(ctx: Context.Ctx)
 		end
 		rt.channel = nil
 		PlayerStateService.Set(player, { "skills", "channel" }, nil)
+		if onDone then
+			onDone()
+			return
+		end
 		-- Evocation / Prayer: restore mana (Prayer also to the party).
 		local maxMana = StatService.GetValue(player, "maxMana")
 		ResourceService.Add(player, "mana", maxMana * ctx.value("mana") / 100)
@@ -485,6 +544,11 @@ local function cast(player: Player, skillId: string, targetId: string?, aim: any
 		return false, "cast.error.disabled"
 	end
 	local rt = runtime(player)
+	-- S76 (ROZWOJ 14.3): another skill never ends an aim (it says so, before the quiet cooldown message: the GCD is
+	-- still running in the first half second); Focus and Prayer are still ended by interruptChannel below.
+	if rt.channel and rt.channel.kind == "castTime" then
+		return false, "cast.error.channeling"
+	end
 	local t = now()
 	if not rt.noCooldowns and (t < rt.gcd or t < (rt.cooldowns[skillId] or 0)) then
 		return false, "cast.error.cooldown"
@@ -541,6 +605,7 @@ local function cast(player: Player, skillId: string, targetId: string?, aim: any
 	-- Cost (S54: one formula with the bar and the description; Mage mana grows with the character level).
 	local cost = Skills.cost(skill, rank, char.level, char.class, {
 		costReduce = StatService.GetValue(player, "costReduce"), -- S62 item saving
+		hooks = passiveHooks(player), -- S76: trapCost
 	})
 	local resource = skill.resource
 	if cost > 0 and resource and not rt.infiniteResources then
@@ -561,6 +626,16 @@ local function cast(player: Player, skillId: string, targetId: string?, aim: any
 			publishCooldowns(player)
 		end
 	end
+	-- S76: a cancelled aim gives the cost and this skill's cooldown back; the GCD stays.
+	local function refundAim()
+		if cost > 0 and resource and not rt.infiniteResources then
+			ResourceService.Add(player, resource, cost)
+		end
+		if not rt.noCooldowns then
+			rt.cooldowns[skillId] = nil
+			publishCooldowns(player)
+		end
+	end
 
 	interruptChannel(player, nil)
 	local ctx = Context.new(player, skill, rank, char, caster, root, services, behaviour)
@@ -568,7 +643,9 @@ local function cast(player: Player, skillId: string, targetId: string?, aim: any
 	ctx.point = point
 	if not rt.noCooldowns then
 		rt.gcd = t + SkillData.GCD
-		rt.cooldowns[skillId] = t + Skills.cooldown(skill, rank, rt.cdr, behaviour)
+		local cooldown = Skills.cooldown(skill, rank, rt.cdr, behaviour)
+		rt.cooldowns[skillId] = t + cooldown
+		ctx.cooldown = cooldown -- S76: critCdr shortens this
 		publishCooldowns(player)
 	end
 	ResourceService.MarkCombat(player)
@@ -642,6 +719,33 @@ local function cast(player: Player, skillId: string, targetId: string?, aim: any
 		return true, nil
 	end
 
+	-- S76 (ROZWOJ 11.3, 14.3): aim first; the shot fires at the end without the motion's hit delay and without a new
+	-- range check (the arrow flies). A target that died or stopped being an enemy meanwhile gives everything back.
+	local castTime = skill.castTime or 0
+	if castTime > 0 then
+		ctx.fx({
+			v = "cast",
+			t = if target then target.id else nil,
+			p = point,
+			mv = behaviour.castMove,
+			ct = castTime,
+		})
+		startChannel(ctx, function()
+			if skill.target == "enemy" and not ctx.isEnemy(ctx.target) then
+				refundAim()
+				ctx.fx({ v = "aimEnd" })
+				Net.Fire(player, "Toast", "cast.error.noTarget", nil, "warning")
+				return
+			end
+			ctx.fx({ v = "aimEnd" })
+			local ok, err = run()
+			if not ok and err then
+				Net.Fire(player, "Toast", err, nil, "warning")
+			end
+		end, refundAim)
+		return true, nil
+	end
+
 	-- S28: everyone nearby starts the animation now; the blow lands at the motion's hit time.
 	local delay = if INSTANT[skill.type] then 0 else SkillMotions.hitDelay(skillId)
 	ctx.fx({
@@ -709,6 +813,7 @@ function SkillService.Init(registry)
 			Net.Fire(p, "Toast", key, args, kind)
 		end,
 		PassiveHook = SkillService.PassiveHook,
+		ReduceCooldown = SkillService.ReduceCooldown, -- S76: critCdr
 		WeaponElement = weaponElement,
 		WeaponSpeed = weaponSpeed,
 	}
@@ -769,8 +874,9 @@ function SkillService.Start()
 	ResourceService.Damaged:Connect(function(player: Player, amount: number)
 		if amount > 0 then
 			-- S70: Logic/Channel decides (Prayer 10B steadfast keeps praying)
+			-- S76: never an aim (Channel.stops "castTime")
 			local channel = runtime(player).channel
-			if channel and Channel.stops(channel.kind, "damage", channel.def) then
+			if channel and (Channel.stops(channel.kind, "damage", channel.def)) then
 				interruptChannel(player, "cast.interrupted")
 			end
 		end

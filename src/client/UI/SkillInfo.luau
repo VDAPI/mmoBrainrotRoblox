@@ -11,6 +11,8 @@
 -- breakpointCards gives the skills window both options of ranks 5 and 10 with their state.
 -- S69: healLine shows the heal / shield of the skill on the player (Skills.healAmount: it depends on the target's HP).
 -- S73: a buff with party copies (Skills.hasAllyPass) shows "◉ Allies within N studs, you included".
+-- S76: the aim time in the cost line, a ring of snares (trap with ringRadius), a debuff with a radius; costs and
+-- descriptions take the character's hooks (trapCost).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -55,7 +57,13 @@ function SkillInfo.cdr(use: any): number
 	return if type(value) == "number" then value else 0
 end
 
--- Description options: the character level, path.bp, the modify nodes and the cooldown reduction.
+-- S76: the character's hooks (path nodes, passives) as the server counts them for costs (trapCost).
+function SkillInfo.hooks(use: any): { [string]: number }
+	local c = charOf(use)
+	return Paths.passiveTotals(c, Paths.weaponTypesOf(c.equipment)).hooks
+end
+
+-- Description options: the character level, path.bp, the modify nodes, the cooldown reduction and the hooks.
 local function descOpts(use: any, skill: SkillData.SkillDef): Skills.DescOpts
 	local c = charOf(use)
 	local state = c.path
@@ -64,6 +72,7 @@ local function descOpts(use: any, skill: SkillData.SkillDef): Skills.DescOpts
 		choices = if state then state.bp else nil,
 		mods = Paths.skillMods(c, skill.id, Paths.weaponTypesOf(c.equipment)),
 		cdr = SkillInfo.cdr(use),
+		hooks = SkillInfo.hooks(use),
 	}
 end
 
@@ -99,6 +108,16 @@ function SkillInfo.shapeLine(use: any, skill: SkillData.SkillDef, shownRank: num
 			duration = Skills.roundArg(Skills.scaled(def, def.duration, rank)),
 		})}`
 	end
+	-- S76: a snare ring (Snare Field) and a debuff spreading around its target (Hunter's Mark 5B)
+	if skill.type == "trap" and (def.ringRadius or 0) > 0 and (def.hits or 1) > 1 then
+		return `{SHAPE_GLYPH.circle} {Text.get(use, "skills.shape.ring", {
+			hits = def.hits,
+			radius = def.radius or 6,
+			ring = def.ringRadius,
+		})}`
+	elseif skill.type == "debuff" and (def.radius or 0) > 0 then
+		return `{SHAPE_GLYPH.circle} {Text.get(use, "skills.shape.circle", { radius = def.radius })}`
+	end
 	if shape == "none" and Skills.hasAllyPass(def, behaviour) then
 		return `{SHAPE_GLYPH.self} {Text.get(use, "skills.shape.allies", { radius = Skills.allyRadius(def) })}`
 	end
@@ -124,6 +143,7 @@ function SkillInfo.costLine(use: any, skill: SkillData.SkillDef, shownRank: numb
 	local saving = use(costReduce)
 	local cost = Skills.cost(def, rank, levelOf(use), skill.class, {
 		costReduce = if type(saving) == "number" then saving else 0,
+		hooks = SkillInfo.hooks(use), -- S76: trapCost
 	})
 	if cost > 0 and skill.resource then
 		-- The bar needs the full amount, so a fractional cost (Mage above level 20) shows rounded up.
@@ -140,6 +160,11 @@ function SkillInfo.costLine(use: any, skill: SkillData.SkillDef, shownRank: numb
 	else
 		table.insert(parts, Text.get(use, "skills.cooldown", { cooldown = cooldown }))
 	end
+	-- S76: aiming before the shot
+	if (def.castTime or 0) > 0 then
+		table.insert(parts, Text.get(use, "skills.castTime", { castTime = Skills.roundArg(def.castTime :: number) }))
+	end
+
 	if def.delivery then
 		table.insert(parts, Text.get(use, `skills.delivery.{def.delivery}`))
 	end

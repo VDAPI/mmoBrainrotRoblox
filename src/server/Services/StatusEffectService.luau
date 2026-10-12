@@ -83,6 +83,10 @@ export type Effect = {
 	element: string?, -- S70: element of the tick numbers (nil = by kind, DamageText.dotElement)
 	initial: number?, -- S71: value at the last (re)application (unit), passed to onEnd
 	onEnd: ((entity: any, initial: number) -> ())?, -- S71: once at expiry / break (see the header)
+	-- S76 (ROZWOJ 11.4): a poison's breakpoint spread (Contagion count) and a vulnerability's jump (studs), carried to
+	-- the copies CombatService makes when the bearer dies
+	spread: number?,
+	jump: number?,
 }
 
 local EntityService: any
@@ -149,7 +153,10 @@ local function publish(entity: any)
 	local listed: { EffectStack.Listed } = {}
 	if list then
 		for _, effect in list do
-			table.insert(listed, { kind = effect.kind, expiresAt = effect.expiresAt, value = effect.value })
+			table.insert(
+				listed,
+				{ kind = effect.kind, expiresAt = effect.expiresAt, value = effect.value, stacks = effect.stacks }
+			)
 		end
 	end
 	local text = EffectStack.encode(listed, t)
@@ -206,6 +213,10 @@ export type ApplyOptions = {
 	-- S71: called once when this application expires or (a shield) breaks: (bearer entity, starting value). A refresh
 	-- replaces it without a call.
 	onEnd: ((entity: any, initial: number) -> ())?,
+	-- S76: starting stacks of a moved poison (the larger of these and the running ones, the later end; EffectStack)
+	stacks: number?,
+	spread: number?, -- S76: kept on the effect (Effect.spread)
+	jump: number?, -- S76: kept on the effect (Effect.jump)
 }
 
 -- S71: runs an effect's end callback once, outside the caller's loop (an error never stops ticking).
@@ -332,6 +343,7 @@ function StatusEffectService.Apply(entity: any, kind: string, options: ApplyOpti
 		duration = duration,
 		now = t,
 		tickInterval = TICK_INTERVAL,
+		stacks = options.stacks,
 	})
 	-- S63: anything the icons or the stats see changed (S61: party auras refresh every second with the same numbers).
 	local structural = not running
@@ -360,6 +372,8 @@ function StatusEffectService.Apply(entity: any, kind: string, options: ApplyOpti
 	end
 	e.healCut = options.healCut
 	e.element = options.element
+	e.spread = options.spread
+	e.jump = options.jump
 	if kind == "statBuff" then
 		-- Same key: the stats merge (Battle Cry's attack + its breakpoint's armor), the later end wins.
 		local timed: EffectStack.Timed? = if running
@@ -436,6 +450,31 @@ end
 
 function StatusEffectService.Has(entity: any, kind: string): boolean
 	return #active(entity, kind) > 0
+end
+
+-- S76 (Toxicologist, poisonedGuard): an active effect of `kind` on `entity` that `player` applied.
+function StatusEffectService.HasFrom(entity: any, kind: string, player: Player): boolean
+	for _, effect in active(entity, kind) do
+		if effect.source == player then
+			return true
+		end
+	end
+	return false
+end
+
+-- S76: copies of the active effects of `entity` (read before it is unregistered: poison spread, mark jump).
+function StatusEffectService.Snapshot(entity: any): { Effect }
+	local out: { Effect } = {}
+	local list = entity and effects[entity.id]
+	if list then
+		local t = now()
+		for _, effect in list do
+			if effect.expiresAt > t then
+				table.insert(out, table.clone(effect))
+			end
+		end
+	end
+	return out
 end
 
 -- Strongest value of an effect kind (e.g. the biggest slow). slow and vulnerability each belong to one category
@@ -792,7 +831,8 @@ end
 
 -- Extra own damage-reduction entries (ROZWOJ 7.1). CombatService registers the "lastStand" hook here in its
 -- Init, so this service never requires CombatService (which depends on it).
-export type ReductionProvider = (player: Player, source: string) -> number
+-- S76: `attacker` is the damage filter's fourth argument (S61: Monster for "monster", Player for "pvp").
+export type ReductionProvider = (player: Player, source: string, attacker: any?) -> number
 
 local reductionProviders: { ReductionProvider } = {}
 
@@ -802,7 +842,7 @@ end
 
 -- ResourceService damage filter: invulnerability, damage reduction (Logic/EffectStack: multiplicative, capped),
 -- absorb shields, mana shield.
-local function damageFilter(player: Player, amount: number, source: string, _attacker: any?): number
+local function damageFilter(player: Player, amount: number, source: string, attacker: any?): number
 	local entity = playerEntity(player)
 	if not entity then
 		return amount
@@ -815,7 +855,8 @@ local function damageFilter(player: Player, amount: number, source: string, _att
 		table.insert(entries, { category = effect.category, value = effect.value, at = effect.appliedAt })
 	end
 	for _, provider in reductionProviders do
-		local r = provider(player, source)
+		local r = provider(player, source, attacker)
+
 		if r > 0 then
 			table.insert(entries, { category = "own", value = r, at = 0 })
 		end

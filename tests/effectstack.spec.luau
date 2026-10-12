@@ -539,3 +539,32 @@ T.describe("Guardian reductions (S72, ROZWOJ 14.2)", function()
 		T.expect(EffectStack.reduction(own({ 60, 17.5 }))).toBeNear(67, 1e-9)
 	end)
 end)
+
+T.describe("EffectStack: stacks in the attribute (S76)", function()
+	T.it("encodes stacks above 1 and still reads the old format", function()
+		local text = EffectStack.encode({ { kind = "poison", expiresAt = 12.5, stacks = 3 } }, 10)
+		T.expect(text).toBe("poison:12.5::3")
+		local shown = EffectStack.decode(text, 10)
+		T.expect(shown[1].stacks).toBe(3)
+		T.expect(shown[1].value).toBeNil()
+		local old = EffectStack.decode("slow:12.5:30", 10)
+		T.expect(old[1].value).toBe(30)
+		T.expect(old[1].stacks).toBeNil()
+	end)
+
+	T.it("a moved poison keeps the larger stacks and the later end", function()
+		local fresh = EffectStack.restack(
+			nil,
+			{ unit = 2, tickUnit = 5, maxStacks = 3, duration = 4, now = 0, tickInterval = 1, stacks = 3 }
+		)
+		T.expect(fresh.stacks).toBe(3)
+		T.expect(fresh.tickAmount).toBe(15)
+		local running = { stacks = 1, value = 2, tickAmount = 5, expiresAt = 8, nextTick = 1 }
+		local merged = EffectStack.restack(
+			running,
+			{ unit = 2, tickUnit = 5, maxStacks = 2, duration = 4, now = 0, tickInterval = 1, stacks = 2 }
+		)
+		T.expect(merged.stacks).toBe(2)
+		T.expect(merged.expiresAt).toBe(8)
+	end)
+end)

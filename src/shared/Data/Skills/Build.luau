@@ -35,6 +35,10 @@ export type Spec = {
 	values: { [string]: Types.Scaled }?,
 	effects: { Types.SkillEffect }?,
 	roll: { all: boolean?, enemyRadius: number? }?, -- S70
+	castTime: number?, -- S76 (ROZWOJ 11.3)
+	ringRadius: number?, -- S76 (ROZWOJ 11.4)
+	pull: (number | boolean)?, -- S76 (ROZWOJ 16.5)
+	finisher: { hp: number, mul: number }?, -- S76 (ROZWOJ 11.3)
 	passive: { flat: { [string]: string }?, pct: { [string]: string }?, hooks: { [string]: string }? }?,
 	breakpoints: Types.Breakpoints?,
 	glyph: string,
@@ -120,6 +124,11 @@ function Build.class(
 			damageKind = spec.damageKind or damageKind,
 			holy = spec.holy,
 			furyConsume = spec.furyConsume,
+			roll = spec.roll, -- S76: was dropped here since S70 (the dice never rolled)
+			castTime = spec.castTime,
+			ringRadius = spec.ringRadius,
+			pull = spec.pull,
+			finisher = spec.finisher,
 			values = spec.values or {},
 			effects = spec.effects,
 			passive = spec.passive,

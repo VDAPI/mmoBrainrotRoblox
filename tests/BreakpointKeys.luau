@@ -41,6 +41,12 @@ for _, key in
 		"behindEffect",
 		"allyHeal",
 		"allyShield",
+		"poisonStacks", -- S76
+		"critCdr",
+		"finisher",
+		"poisonSpread",
+		"markJump",
+		"firstWave",
 		"effect",
 		"selfEffect",
 		"allyEffect",

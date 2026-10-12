@@ -21,6 +21,11 @@
 -- S73 (ROZWOJ 14.2): every shield of a skill goes through `shield` (x healFactor, the one bonus path); `consumeFury`
 -- spends the caster's Fury for furyConsume skills (the stacks feed the furyConsume stats field); a "hot" effect with
 -- hpPct heals that % of the target's max HP per second x healFactor; `resolve` reads a ValueRef at the rank.
+-- S76 (ROZWOJ 11.3, 11.4, 16.4, 16.5): `pull` is the one pull of every skill type (Logic/Skills.pullRadius); `damage`
+-- adds areaSkillDamage on area skills (not pulses or splashes), the finisher multiplier and critCdr; `applyEffect`
+-- stacks poison (poisonStacks), keeps the poison spread / mark jump of the breakpoint on the effect and sends every
+-- poison through CombatService.ApplyPoison; `lingering` pulses carry `lingering = true` and a poison field counts as
+-- the Hunter's poison (DotBonus).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
@@ -50,6 +55,7 @@ export type Services = {
 	PartyAura: any, -- S73: BehindAnchor for behindEffect
 	Fx: (player: Player, data: { [string]: any }) -> (),
 	PassiveHook: (player: Player, id: string) -> number,
+	ReduceCooldown: (player: Player, skillId: string, seconds: number) -> (), -- S76: critCdr
 	WeaponElement: (player: Player) -> string?,
 	WeaponSpeed: (player: Player) -> number?, -- base speed of the equipped weapon (S54)
 	Toast: (player: Player, key: string, args: { [string]: any }?, kind: string?) -> (), -- S70
@@ -70,6 +76,8 @@ export type Ctx = {
 	-- S75: set by a handler whose cast must not get the selfEffects (guard's self variant: Sacrifice protects
 	-- only while intercepting); SkillService.finished reads it
 	skipSelfEffects: boolean?,
+	-- S76: the cooldown set at the cast in seconds (0 without; critCdr shortens it by a share)
+	cooldown: number,
 	services: Services,
 	value: (field: string) -> number,
 	resolve: (ref: SkillData.ValueRef?) -> number, -- S73: Logic/Skills.resolve at this rank
@@ -105,6 +113,8 @@ export type Ctx = {
 		onTick: ((ally: Player, entity: any) -> ())?
 	) -> (),
 	trap: (at: Vector3, radius: number, duration: number, effect: SkillData.SkillEffect) -> (),
+	-- S76: pulls enemies to `center` (Skills.pullRadius); true when it pulled (wait Push.DURATION before the blow)
+	pull: (center: Vector3) -> boolean,
 	wounded: (center: Vector3, radius: number, except: Player?) -> Player?, -- most wounded ally (S28)
 	enemiesInCircle: (center: Vector3, radius: number) -> { any },
 	enemiesInCone: (origin: CFrame, radius: number, angle: number) -> { any },
@@ -284,6 +294,7 @@ function Context.new(
 	bound = bound or services
 	local behaviour: any = bp or {}
 	local furyUsed = 0 -- S73: stacks spent by ctx.consumeFury in this cast
+	local critCdrUsed = false -- S76: critCdr once per cast
 
 	local function value(field: string): number
 		return Skills.valueAt(skill, field, rank)
@@ -412,6 +423,7 @@ function Context.new(
 		root = root,
 		target = nil,
 		point = nil,
+		cooldown = 0,
 		services = services,
 		bp = behaviour,
 		value = value,
@@ -474,8 +486,25 @@ function Context.new(
 					params.forceCrit = true
 				end
 			end
+			-- S76 (ROZWOJ 11.3) finisher: x mul on a target below hp % of its life (players: Combat.pvp.finisher at
+			-- most); a pierce hit is its own target
+			local finisher: any = skill.finisher
+			if finisher and finisher.hp and finisher.mul and not opts.plain then
+				local fraction = hpFraction(entity)
+				if fraction and fraction * 100 < finisher.hp then
+					local mul = if entity.kind == "player"
+						then math.min(finisher.mul, Combat.pvp.finisher)
+						else finisher.mul
+					params.multiplier *= mul
+				end
+			end
+			-- S76 (ROZWOJ 11.4, 16.4) Hunting Ground: hits of area skills (traps too), never pulses or splashes
+			local multiplier = elementalMultiplier(opts.holy) * speedMul
+			if Traits.isAreaSkill(skill.type) and not (opts.plain or opts.lingering) then
+				multiplier *= 1 + services.Combat.Hook(player, "areaSkillDamage") / 100
+			end
 			local result = services.Combat.DealDamage(player, entity, params, nil, {
-				multiplier = elementalMultiplier(opts.holy) * speedMul,
+				multiplier = multiplier,
 				consumeShot = opts.consumeShot ~= false,
 				skill = if opts.plain then nil else skill.id,
 				-- S63 (STATY 5): area skills roll on-hit effects with a share per target; secondary hits (splash,
@@ -505,6 +534,12 @@ function Context.new(
 			end
 			if result and not result.dodged and result.amount > 0 and not opts.plain then
 				onHit(entity, percent, result, opts)
+			end
+			-- S76 (Archer's Rhythm): the first crit of the cast shortens this skill's cooldown by critCdr % of it
+			local critCdr = behaviour.critCdr
+			if critCdr and result and result.crit and not opts.plain and not critCdrUsed and ctx.cooldown > 0 then
+				critCdrUsed = true
+				services.ReduceCooldown(player, skill.id, ctx.cooldown * critCdr / 100)
 			end
 			return result
 		end,
@@ -597,19 +632,30 @@ function Context.new(
 			if chill then
 				duration *= Elements.power(services, player)
 			end
-			local applied = services.StatusEffect.Apply(entity, effect.kind, {
+			local options = {
 				duration = duration,
 				value = effectValue,
 				source = player,
 				tickAmount = tickAmount,
 				stats = statValues,
 				pct = effect.pct,
-				maxStacks = if effect.kind == "bleed" then behaviour.bleedStacks else nil,
+				-- S76: poison stacks like bleed (poisonStacks), on its own key (the bow's poison has "item")
+				maxStacks = if effect.kind == "bleed"
+					then behaviour.bleedStacks
+					elseif effect.kind == "poison" then behaviour.poisonStacks
+					else nil,
 				skillId = skill.id,
 				category = effect.category,
 				notBoss = effect.notBoss, -- S70: for every kind (Hammer of Heaven's stun)
 				element = if effect.kind == "burn" and skill.holy then "holy" else nil,
-			})
+				-- S76: carried to the copies when the bearer dies (CombatService)
+				spread = if effect.kind == "poison" then behaviour.poisonSpread else nil,
+				jump = if effect.kind == "vulnerability" then behaviour.markJump else nil,
+			}
+			-- S76: every poison of a player through CombatService.ApplyPoison (poisonSlow)
+			local applied = if effect.kind == "poison"
+				then services.Combat.ApplyPoison(player, entity, options)
+				else services.StatusEffect.Apply(entity, effect.kind, options)
 			if chill and applied and isEnemy(entity) then
 				Elements.chill(services, player, entity, duration, "ice")
 			end
@@ -688,13 +734,19 @@ function Context.new(
 			end
 			local radius = spec.radius or skill.radius or 8
 			ctx.fx({ v = "lingering", p = center, r = radius, d = spec.duration, k = spec.kind })
+			-- S76 (ROZWOJ 11.4, 11.7): a poison field is the Hunter's poison (dotPower + poisonDamage)
+			local pulse = percent * spec.pct / 100
+			if spec.kind == "poison" then
+				pulse *= 1 + services.Combat.DotBonus(player, "poison") / 100
+			end
 			for second = 1, math.floor(spec.duration) do
 				task.delay(second, function()
 					for _, entity in ctx.enemiesInCircle(center, radius) do
+						-- S76: lingering marks a pulse (no areaSkillDamage; S79 skips spell bonuses on it)
 						ctx.damage(
 							entity,
-							percent * spec.pct / 100,
-							{ plain = true, canDodge = false, consumeShot = false }
+							pulse,
+							{ plain = true, canDodge = false, consumeShot = false, lingering = true }
 						)
 						if spec.slow then
 							services.StatusEffect.Apply(entity, "slow", {
@@ -744,6 +796,20 @@ function Context.new(
 					end
 				end
 			end)
+		end,
+		pull = function(center: Vector3): boolean
+			-- S76 (ROZWOJ 16.5): the one pull of every skill type. The breakpoint's `pull` overrides the skill's; a
+			-- number is the pull radius, true the skill's (effective) radius. Pulls enemies inside to `center`;
+			-- bosses never move (Push).
+			local radius = Skills.pullRadius(skill, behaviour)
+			if radius <= 0 then
+				return false
+			end
+			for _, entity in ctx.enemiesInCircle(center, radius) do
+				Push.pull(entity, center)
+			end
+			ctx.fx({ v = "pull", p = center, r = radius })
+			return true
 		end,
 		wounded = function(center: Vector3, radius: number, except: Player?): Player?
 			return Context.mostWounded(player, center, radius, except)

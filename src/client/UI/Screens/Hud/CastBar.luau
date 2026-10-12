@@ -1,6 +1,8 @@
 --!strict
 -- Channel bar above the skill bar: channelled skills (Evocation, Prayer — state `skills.channel`) and the
--- teleport stones (state `travel`), gathering (state `gather`) and quest interactions (S27, state `questUse`). Fills over the channel time; disappears when done or interrupted.
+-- teleport stones (state `travel`), gathering (state `gather`) and quest interactions (S27, state `questUse`). Fills
+-- over the channel time; disappears when done or interrupted. S76: aiming (castTime, `kind = "castTime"`) reads
+-- "Aiming: <skill>" in the danger colour.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -16,7 +18,7 @@ local Children = Fusion.Children
 
 type Scope = Fusion.Scope<typeof(Fusion)>
 
-type Channel = { label: string, endsAt: number, duration: number }
+type Channel = { label: string, endsAt: number, duration: number, aiming: boolean? }
 
 local function CastBar(scope: Scope): Instance
 	local skillChannel = State.Value({ "skills", "channel" })
@@ -59,10 +61,13 @@ local function CastBar(scope: Scope): Instance
 		local c = use(skillChannel)
 		if type(c) == "table" and c.endsAt then
 			local skill = SkillData.get(c.skill or "")
+			local aiming = c.kind == "castTime"
+			local name = if skill then Text.get(use, skill.nameKey) else Text.get(use, "cast.channel")
 			return {
-				label = if skill then Text.get(use, skill.nameKey) else Text.get(use, "cast.channel"),
+				label = if aiming then Text.get(use, "cast.aiming", { skill = name }) else name,
 				endsAt = c.endsAt,
 				duration = c.duration or 3,
+				aiming = aiming,
 			}
 		end
 		return nil
@@ -92,7 +97,10 @@ local function CastBar(scope: Scope): Instance
 				Size = scope:Computed(function(use): UDim2
 					return UDim2.fromScale(use(progress), 1)
 				end),
-				BackgroundColor3 = Theme.Colors.Accent,
+				BackgroundColor3 = scope:Computed(function(use): Color3
+					local c = use(channel)
+					return if c and c.aiming then Theme.Colors.Danger else Theme.Colors.Accent
+				end),
 				[Children] = scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 			}),
 			scope:New("TextLabel")({

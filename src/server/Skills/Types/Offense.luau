@@ -7,6 +7,8 @@
 -- S71: Final Verdict (stunSplash) in `target`; Divine Wrath's heal moved to Context (onHit).
 -- S73 (ROZWOJ 10.4, 14.2): `target` with furyConsume spends the caster's Fury for x Skills.furyMultiplier (the splash
 -- too, it counts from the same percent); circleSelf with shieldPerHit shields the caster per taunted monster.
+-- S76 (ROZWOJ 11.4, 16.5): pulls go through ctx.pull (circleSelf to the caster, circleTarget to the point before the
+-- first wave, which waits Push.DURATION); firstWave makes circleTarget's first wave stronger.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -35,18 +37,6 @@ local function hitAll(ctx: Ctx, list: { any }, percent: number, withEffects: boo
 			ctx.applyEffects(entity, "enemy")
 		end
 	end
-end
-
--- Breakpoint: enemies around `center` are pulled to it before the blow.
-local function pull(ctx: Ctx, center: Vector3)
-	local radius = ctx.bp.pull
-	if not radius then
-		return
-	end
-	for _, entity in ctx.enemiesInCircle(center, radius) do
-		Push.pull(entity, center)
-	end
-	ctx.fx({ v = "pull", p = center, r = radius })
 end
 
 -- Breakpoint: the last wave stuns what it hits.
@@ -232,7 +222,7 @@ Offense.circleSelf = function(ctx)
 	local hasDamage = ctx.skill.values.dmg ~= nil
 	local hits = ctx.skill.hits or 1
 	local interval = ctx.skill.interval or 0.4
-	pull(ctx, ctx.root.Position)
+	ctx.pull(ctx.root.Position)
 	local function wave(n: number, percent: number, last: boolean)
 		local center = ctx.root.Position
 		ctx.fx({ p = center, r = radius, n = n })
@@ -293,6 +283,12 @@ Offense.circleTarget = function(ctx)
 			CIRCLE_PROJECTILE_MAX
 		)
 	end
+	-- S76: pulled enemies reach the point before the first wave
+	if ctx.pull(point) then
+		delay = math.max(delay, Push.DURATION)
+	end
+	-- S76 (Biting Arrows): firstWave % more on the first wave only (lingering, echo and later waves from dmg)
+	local firstPercent = ctx.value("dmg") * (1 + (ctx.bp.firstWave or 0) / 100)
 	local impactRadius = if storm then math.max(4, radius / 3) else radius
 	local random = Random.new()
 	ctx.fx({ p = point, r = radius, d = delay + (hits - 1) * interval, n = hits })
@@ -315,7 +311,7 @@ Offense.circleTarget = function(ctx)
 					if target then
 						ctx.fx({ v = "lightningBurst", p = target, r = 3 })
 					end
-					hitAll(ctx, { chosen }, ctx.value("dmg"), true)
+					hitAll(ctx, { chosen }, if wave == 1 then firstPercent else ctx.value("dmg"), true)
 				end
 				return
 			end
@@ -323,7 +319,8 @@ Offense.circleTarget = function(ctx)
 				ctx.fx({ v = "meteorImpact", p = impactAt, r = impactRadius })
 			end
 			local enemies = ctx.enemiesInCircle(impactAt, impactRadius)
-			hitAll(ctx, enemies, ctx.value("dmg"), wave == 1, impactAt)
+			hitAll(ctx, enemies, if wave == 1 then firstPercent else ctx.value("dmg"), wave == 1, impactAt)
+
 			if last then
 				stunLast(ctx, enemies)
 			end
