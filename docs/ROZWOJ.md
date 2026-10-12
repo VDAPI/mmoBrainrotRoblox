@@ -350,9 +350,9 @@ Broń każdej ścieżki (uzasadnienie i pokrycie w sekcjach klas):
 | `Logic/Titles` | S59: `meets` z `mainPath`, `pathTitle`, `shown` z domyślnym tytułem ścieżki głównej, opcjonalna lista (testy) |
 | `Data/Combat` | nowe `pvp` (mnożniki 7.6), `skillSpeedRef` (8) |
 | `Logic/Skills` | `rankLevel`, `rankAt`, `effective(skill, rank, choices, mods)`, `cost(skill, rank, L, classId, mods)`; bez `canLearn`, `spentPoints`, `refundAll` |
-| `Logic/Paths` | nowy: `rowsFor`, `pointsAt`, `free`, `rowOpen`, `canBuy`, `canRefund`, `refund`, `canChooseMain` (z `freeUsed`), `skillRank`, `availableSkills`, `skillUsable`, `skillMods`, `validHotbar`, `passiveTotals`, `activeNodes`, `auras`, `inAura`, `luck`, `clampToLevel`, `weaponOk`, `canEdit(ctx)`; S57 dokłada pomocnicze `pathsOf`, `classHasPaths`, `isPublished`, `findNode`, `spent`, `ranksIn`, `weaponTypesOf`, `nodeValues`, `isTeamNode`, `canPutOnBar`, `canChooseBreakpoint`, `effectiveFor`, `withSource` / `sourceOf` (źródło danych, test na `tests/fixtures/paths.luau`) i `MAIN_LEVEL`; S58 zestawy: `swapSets`, `copySet`, `emptySet`, `otherSet`, `activeSet`, `cloneSet`, `setView`, `cleanSet`, `mainWeaponOk`, `statPlan`, akcje `canEdit` `switchSet` / `copySet` (pola `dead`, `inRun`); S59: `source` (pole API), `nodeScale` (reguła ⅓ dla dowolnego węzła, z niej `activeNodes`), `nodeArgs` (argumenty opisu węzła: placeholder = pole `values`, pola z `mul` jako 1 + (v − 1)·scale, zaokrąglenie `Skills.roundArg`), `iconWeapon`, `isTwoHanded` |
+| `Logic/Paths` | nowy: `rowsFor`, `pointsAt`, `free`, `rowOpen`, `canBuy`, `canRefund`, `refund`, `canChooseMain` (z `freeUsed`), `skillRank`, `availableSkills`, `skillUsable`, `skillMods`, `validHotbar`, `passiveTotals`, `activeNodes`, `auras`, `inAura`, `luck`, `clampToLevel`, `weaponOk`, `canEdit(ctx)`; S57 dokłada pomocnicze `pathsOf`, `classHasPaths`, `isPublished`, `findNode`, `spent`, `ranksIn`, `weaponTypesOf`, `nodeValues`, `isTeamNode`, `canPutOnBar`, `canChooseBreakpoint`, `effectiveFor`, `withSource` / `sourceOf` (źródło danych, test na `tests/fixtures/paths.luau`) i `MAIN_LEVEL`; S58 zestawy: `swapSets`, `copySet`, `emptySet`, `otherSet`, `activeSet`, `cloneSet`, `setView`, `cleanSet`, `mainWeaponOk`, `statPlan`, akcje `canEdit` `switchSet` / `copySet` (pola `dead`, `inRun`); S59: `source` (pole API), `nodeScale` (reguła ⅓ dla dowolnego węzła, z niej `activeNodes`), `nodeArgs` (argumenty opisu węzła: placeholder = pole `values`, pola z `mul` jako 1 + (v − 1)·scale, zaokrąglenie `Skills.roundArg`), `iconWeapon`, `isTwoHanded`; S60: `luckOfNodes(activeNodes)` (surowe pola `Data/Luck` z węzłów, bez `scale`) i `luck = luckOfNodes(activeNodes(...))` |
 | `Logic/PathView` | S59, nowy, czysty: `with(api)`, `tabState`, `path` (rzędy z powodem zamknięcia, stany węzłów), `weaponText`, `pendingBreakpoints`, `attention` („!”), `rankUps`, `newBreakpoints` (toasty awansu) |
-| `Logic/Luck`, `PartyBonus`, `StatPlan`, `EffectStack`, `LevelCurves` | nowe, czyste; `StatPlan` (S58): `startOf`, `total`, `spent`, `refit`, `suggest` |
+| `Logic/Luck`, `PartyBonus`, `StatPlan`, `EffectStack`, `LevelCurves` | nowe, czyste; `StatPlan` (S58): `startOf`, `total`, `spent`, `refit`, `suggest`; S60: `Luck.capped`, `best`, `monster`, `boss`, `isNeutral`, `NONE_MONSTER`, `NONE_BOSS` (opcja `pvp`), `PartyBonus.variety`, `expMul` |
 | `Logic/AccountSchema`, `CharacterFactory`, `Types` | schemat 6 i nowe postacie (5) |
 
 ### 3.2 Typy
@@ -413,8 +413,8 @@ export type ReferenceBuild = {
   `StatusEffectService` (7.2), `LevelService` (punkty, `LevelUp(player, newLevel, statPoints, pathPoints, fromLevel)` od S59, `SetLevel` dla obu zestawów), `CombatService` (7.4,
   6.1, `misfortune`), `LootService` i `DungeonService` (6, 7.4, podsumowanie walki z 4), `PotionService` (8),
   `PartyService` (pole `luck` w gałęzi `party`), `TitleService` + `Logic/Titles` (tytuł ścieżki), nowa
-  `EquipmentService.WeaponTypes(player)`, `ScrollService` (zwój), `ResourceService.Healed(target, amount, source)`
-  (nowy sygnał), `Admin/Character` i `Data/AdminCommands` (komendy niżej).
+  `EquipmentService.WeaponTypes(player)`, `ScrollService` (zwój), `ResourceService.Healed(target, amount, source, kind)`
+  (nowy sygnał, S60: `kind` = `"heal"` | `"shield"`, tarcze przez `ResourceService.ShieldAbsorbed`), `Admin/Character` i `Data/AdminCommands` (komendy niżej).
 - Zmiany w kliencie: `UI/Screens/SkillsWindow` (dziś `LearnSkill`, `character.skills`, `skillPoints`, `canLearn`),
   `UI/SkillInfo` (opis z `Skills.effective` z wyborami i zmianami), `Controllers/SkillController` (`Skills.effective`
   w liniach 272, 407, 547), `Controllers/VfxController` (podgląd, linia 551), `UI/Screens/DevWindow/Character`
@@ -440,7 +440,7 @@ export type ReferenceBuild = {
 - `skills.spec` od nowa: krzywa rang, maksimum do 95., A wszędzie i B w klasach ze ścieżkami, podstawa z drabiny 2.1,
   a w klasach bez ścieżek drabina przejściowa 2.6; składanie przełomów i węzłów (2.7, przypadki z sekcji klas);
   `skillmotion.spec`: animacja każdej aktywnej, także nowej.
-- `luck.spec`, `partybonus.spec`, `statplan.spec`, `effectstack.spec` (7.2), `levelcurves.spec`, test `inAura` (kształt
+- `luck.spec` (S60: także premia za różne klasy, osobnego `partybonus.spec` nie ma), `statplan.spec`, `effectstack.spec` (7.2), `levelcurves.spec`, test `inAura` (kształt
   `behind`), test `intercept` (7.6), test `misfortune` (tylko przy `canDodge ~= false`, limity), migracja 6 (oba
   zestawy, nowe postacie z paskiem), test danych 7.3 (czas, promień, odnowienie, wyjątki), `wikidump.spec` (lista
   dozwolonych; żadna umiejętność, węzeł, tytuł ani tekst ścieżki z `wiki = false` nie trafia do eksportu).
@@ -500,7 +500,7 @@ export type ReferenceBuild = {
 - Przy nicku domyślnie tytuł ścieżki głównej (`Titles.shown`), gdy gracz nie wybrał innego; tytuł ścieżki jest też na
   liście wyboru.
 - Karta nagrody po bossie: linie szczęścia (6.4) i „Podsumowanie walki” na członka: udział w obrażeniach, leczenie i
-  tarcze, przejęte obrażenia (`DungeonService` zbiera z mapy obrażeń bossa, `ResourceService.Healed`, `intercept`).
+  tarcze, przejęte obrażenia (`DungeonService` zbiera z mapy obrażeń bossa, `ResourceService.Healed` z `kind` leczenia / tarczy, `intercept`).
 - Okno drużyny i ramki: znak ścieżki przy członku, linie premii za klasy i szczęścia.
 - Elementy klas (liczniki Furii, Ładunków Arkanów, stosów trucizny, liczba „Zablokowano”, sztandar, sokół) opisują
   sekcje klas i sekcja 14.
@@ -577,10 +577,12 @@ szczęścia dają tylko `bossLegendary` (razem ×1,06), pozostałe pola leżą w
   (Legenda ×1,13)”, „Fortuna uszlachetniła przedmiot”, szansa na następne zabicie z premią; dopisek w komunikacie
   zwycięstwa. Ogłoszenie Legendy z aktywną Fortuną: `loot.announceLuck` („{player} zdobywa {item}. Sprzyjała mu
   Fortuna kapłana {cleric}.”), worek niesie `luckFrom`. Bez efektów na postaci.
-- `Logic/Luck.luau` (czysty): `monster(inputs) -> { itemBonus, gold, elite2Mul }`, `boss(inputs) -> { legendaryMul,
-  upgrade, extra, from }`. Wejście z `Logic/Paths.luck(character, weaponTypes)` i `dropBonus`.
+- `Logic/Luck.luau` (czysty): `monster(members) -> { itemBonus, personal, fortune, gold, elite2Mul, from }`,
+  `boss(members) -> { legendaryMul, upgrade, extra, from }`. Wejście z `Logic/Paths.luck(character, weaponTypes)`
+  (serwer: `PathService.GetLuck`) i `dropBonus`.
 - Haki: `LootService.onMonsterKilled` (zamiast `dropBonus` zabójcy), `CombatService.reward` (złoto),
-  `Loot.rollBossItem(..., luck?)`, `Loot.bossChances(..., luck?)`, `DungeonService.reward` i `info`,
+  `Loot.rollBossItem(..., luck?)`, `Loot.rollBossExtra(boss, classId, rng, luck?)` (drugi przedmiot, S60),
+  `Loot.bossChances(..., luck?)`, `DungeonService.reward` i `info`, `LootService.SpawnBag(..., luckFrom?)`,
   `LootService.announceDrop(player, item, luckFrom?)`.
 
 ## 7. Drużyna

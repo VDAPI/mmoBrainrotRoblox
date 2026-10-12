@@ -3,16 +3,23 @@
 -- EXP and gold, whether the winner's one item (in their own bag) is a Legendary / Mythic, today's runs of this
 -- boss ("Dziś: 2/3") with the time to the UTC reset, and the chances for the next kill, which grow with every kill
 -- that day (FIX 2026-10-09). "OK" closes it; it also closes by itself after a while.
+-- S60: the party's Fortune (Legendary multiplier, an ennobled item, a second item) only when it counted, and the
+-- "Fight summary" table: damage share, healing and shields of every member. On short screens the card sits in the
+-- middle and the table scrolls after 4 rows.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local BossScaling = require(ReplicatedStorage.Shared.Logic.BossScaling)
 local Bosses = require(ReplicatedStorage.Shared.Data.Bosses)
 local Button = require(script.Parent.Parent.Components.Button)
+local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local Clock = require(ReplicatedStorage.Shared.Util.Clock)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local GroupLuck = require(script.Parent.Parent.GroupLuck)
 local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
+local Scale = require(script.Parent.Parent.Scale)
+local State = require(script.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
 local Time = require(ReplicatedStorage.Shared.Logic.Time)
@@ -20,6 +27,9 @@ local Time = require(ReplicatedStorage.Shared.Logic.Time)
 local Children = Fusion.Children
 
 type Scope = Fusion.Scope<typeof(Fusion)>
+
+-- n = name, c = class, d = damage share 0..1, h = healing, s = shields (S61 adds the taken-damage column).
+export type SummaryRow = { n: string, c: string?, d: number, h: number, s: number }
 
 export type Reward = {
 	boss: string?,
@@ -31,6 +41,11 @@ export type Reward = {
 	myth: number?,
 	runs: number?,
 	dailyRuns: number?,
+	luckMul: number?, -- S60: the party's Legendary multiplier (shown above 1)
+	luckFrom: string?,
+	upgraded: boolean?, -- Fortune ennobled the item (Unique -> Heroic)
+	extra: boolean?, -- Fortune's second item
+	summary: { SummaryRow }?,
 }
 
 export type Props = {
@@ -40,6 +55,101 @@ export type Props = {
 
 local function percent(value: number?): number
 	return math.floor((tonumber(value) or 0) * 100 + 0.5)
+end
+
+local SUMMARY_ROW = 26
+local SUMMARY_VISIBLE = 4 -- rows before the table scrolls on short screens
+local COLUMNS = { 0.40, 0.20, 0.20, 0.20 }
+
+local function cell(scope: Scope, column: number, text: string, color: Color3, font: Font): Instance
+	local x = 0
+	for i = 1, column - 1 do
+		x += COLUMNS[i]
+	end
+	return scope:New("TextLabel")({
+		Position = UDim2.fromScale(x, 0),
+		Size = UDim2.fromScale(COLUMNS[column], 1),
+		BackgroundTransparency = 1,
+		Text = text,
+		FontFace = font,
+		TextSize = Theme.TextSize.Small,
+		TextColor3 = color,
+		TextXAlignment = if column == 1 then Enum.TextXAlignment.Left else Enum.TextXAlignment.Center,
+		TextTruncate = Enum.TextTruncate.AtEnd,
+	})
+end
+
+-- The fight summary: a header and one row per member (own row in GoldBright).
+local function summaryTable(scope: Scope, rows: { SummaryRow }, compact: boolean): Instance
+	local own = State.Get({ "character", "name" })
+	local header = scope:New("Frame")({
+		LayoutOrder = 0,
+		Size = UDim2.new(1, 0, 0, SUMMARY_ROW),
+		BackgroundTransparency = 1,
+		[Children] = {
+			cell(scope, 1, Text.now("dungeon.summary.member"), Theme.Colors.TextMuted, Theme.Fonts.BodyBold),
+			cell(scope, 2, Text.now("dungeon.summary.damage"), Theme.Colors.TextMuted, Theme.Fonts.BodyBold),
+			cell(scope, 3, Text.now("dungeon.summary.healing"), Theme.Colors.TextMuted, Theme.Fonts.BodyBold),
+			cell(scope, 4, Text.now("dungeon.summary.shields"), Theme.Colors.TextMuted, Theme.Fonts.BodyBold),
+		},
+	})
+	local lines: { Instance } = {}
+	for i, row in rows do
+		local class = if row.c then Classes.get(row.c) else nil
+		local color = if row.n == own then Theme.Colors.GoldBright else Theme.Colors.Parchment
+		local name = if class then `{class.icon} {row.n}` else row.n
+		table.insert(
+			lines,
+			scope:New("Frame")({
+				LayoutOrder = i,
+				Size = UDim2.new(1, 0, 0, SUMMARY_ROW),
+				BackgroundTransparency = 1,
+				[Children] = {
+					cell(scope, 1, name, color, Theme.Fonts.BodyMedium),
+					cell(scope, 2, `{math.floor(row.d * 100 + 0.5)}%`, color, Theme.Fonts.BodyMedium),
+					cell(scope, 3, Format.number(row.h), color, Theme.Fonts.BodyMedium),
+					cell(scope, 4, Format.number(row.s), color, Theme.Fonts.BodyMedium),
+				},
+			})
+		)
+	end
+	local list = { scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder }) :: Instance }
+	for _, line in lines do
+		table.insert(list, line)
+	end
+	local body: Instance
+	if compact and #rows > SUMMARY_VISIBLE then
+		body = scope:New("ScrollingFrame")({
+			LayoutOrder = 1,
+			Size = UDim2.new(1, 0, 0, SUMMARY_ROW * SUMMARY_VISIBLE),
+			BackgroundTransparency = 1,
+			BorderSizePixel = 0,
+			ScrollBarThickness = 4,
+			CanvasSize = UDim2.new(),
+			AutomaticCanvasSize = Enum.AutomaticSize.Y,
+			ScrollingDirection = Enum.ScrollingDirection.Y,
+			[Children] = list :: any,
+		})
+	else
+		body = scope:New("Frame")({
+			LayoutOrder = 1,
+			Size = UDim2.fromScale(1, 0),
+			AutomaticSize = Enum.AutomaticSize.Y,
+			BackgroundTransparency = 1,
+			[Children] = list :: any,
+		})
+	end
+	return scope:New("Frame")({
+		LayoutOrder = 10,
+		Size = UDim2.fromScale(1, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		BackgroundTransparency = 1,
+		[Children] = {
+			scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder }),
+			header,
+			body,
+		},
+	})
 end
 
 local function BossReward(scope: Scope, props: Props): Instance
@@ -74,10 +184,65 @@ local function BossReward(scope: Scope, props: Props): Instance
 		elseif reward.gotLeg then legendary.color
 		else Theme.Colors.TextMuted
 
+	local compact = Fusion.peek(Scale.VirtualSize).Y < 600
+	local luckMul = tonumber(reward.luckMul) or 1
+	local extras: { Instance } = {}
+	if luckMul > 1 then
+		table.insert(
+			extras,
+			label(
+				6,
+				scope:Computed(function(use): string
+					return GroupLuck.line(use, {
+						legendaryMul = luckMul,
+						upgrade = 0,
+						extra = 0,
+						from = reward.luckFrom,
+					}) or ""
+				end),
+				Theme.Colors.GoldBright,
+				Theme.TextSize.Small,
+				Theme.Fonts.BodyBold
+			)
+		)
+	end
+	if reward.upgraded then
+		table.insert(
+			extras,
+			label(
+				7,
+				Text.T(scope, "luck.upgraded"),
+				Rarities.get(Rarities.HEROIC).color,
+				Theme.TextSize.Small,
+				Theme.Fonts.BodyBold
+			)
+		)
+	end
+	if reward.extra then
+		table.insert(
+			extras,
+			label(8, Text.T(scope, "luck.extra"), Theme.Colors.GoldBright, Theme.TextSize.Small, Theme.Fonts.BodyBold)
+		)
+	end
+	local summary = reward.summary
+	if summary and #summary > 0 then
+		table.insert(
+			extras,
+			label(
+				9,
+				Text.T(scope, "dungeon.summary.title"),
+				Theme.Colors.GoldBright,
+				Theme.TextSize.Body,
+				Theme.Fonts.Heading
+			)
+		)
+		table.insert(extras, summaryTable(scope, summary, compact))
+	end
+
 	return scope:New("Frame")({
 		Name = "BossReward",
-		AnchorPoint = Vector2.new(0.5, 0),
-		Position = UDim2.fromScale(0.5, 0.38),
+		AnchorPoint = if compact then Vector2.new(0.5, 0.5) else Vector2.new(0.5, 0),
+		Position = if compact then UDim2.fromScale(0.5, 0.5) else UDim2.fromScale(0.5, 0.38),
 		Size = UDim2.fromOffset(540, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,
 		BackgroundColor3 = Theme.Colors.Panel,
@@ -138,8 +303,9 @@ local function BossReward(scope: Scope, props: Props): Instance
 				Theme.TextSize.Small,
 				Theme.Fonts.BodyBold
 			),
+			extras :: any,
 			Button(scope, {
-				LayoutOrder = 10,
+				LayoutOrder = 11,
 				Text = Text.T(scope, "reveal.ok"),
 				Variant = "secondary",
 				Size = UDim2.fromOffset(140, Theme.Size.ButtonHeight),

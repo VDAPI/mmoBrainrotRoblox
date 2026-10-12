@@ -31,6 +31,8 @@ local MonsterAbilities = require(Shared.Data.MonsterAbilities)
 local MonsterStats = require(Shared.Logic.MonsterStats)
 local Net = require(Shared.Net)
 local Loot = require(Shared.Logic.Loot)
+local Luck = require(Shared.Logic.Luck)
+local PartyBonus = require(Shared.Logic.PartyBonus)
 local PartyLoot = require(Shared.Logic.PartyLoot)
 local Rng = require(Shared.Logic.Rng)
 local Signal = require(ReplicatedStorage.Packages.Signal)
@@ -69,6 +71,7 @@ export type KillInfo = {
 	noLoot: boolean?, -- boss helpers: no item drops
 	areaId: string?, -- S27: named area of the monster's group (model attribute AreaId)
 	dropLevel: number?, -- S32: base level for item drops (spawner level without the variant's levels)
+	luck: Luck.MonsterLuck?, -- S60: luck of the credited group (nil for bosses)
 }
 
 type FxEvent = { [string]: any }
@@ -93,6 +96,15 @@ local ZoneService: any
 local EquipmentService: any
 local StatusEffectService: any
 local PartyService: any
+local Registry: any
+local PathService: any
+
+-- Lazy: PathService depends on DungeonService (NearAnyEntrance), which depends on this service, so a Deps entry here
+-- would be a cycle. Never call during Init.
+local function pathService(): any
+	PathService = PathService or Registry.Get("PathService")
+	return PathService
+end
 
 type Attacker = {
 	target: string?,
@@ -303,8 +315,9 @@ function CombatService.ResolveKillCredit(monster: any): { Player }
 end
 
 -- EXP and gold for one credited player; `share` = number of credited players, `goldShare` = their gold (already
--- with the area's gold multiplier); `expMul` = the area profile's EXP multiplier (S33, before the party split).
-local function reward(player: Player, monster: any, share: number, goldShare: number, expMul: number)
+-- with the area's gold multiplier); `expMul` = the area profile's EXP multiplier (S33) times the class variety bonus
+-- (S60), before the party split; `luckGold` = Fortune's gold % (S60), added to the player's own goldBonus.
+local function reward(player: Player, monster: any, share: number, goldShare: number, expMul: number, luckGold: number)
 	local character: Types.CharacterData? = PlayerStateService.GetCharacter(player)
 	if not character then
 		return
@@ -316,7 +329,7 @@ local function reward(player: Player, monster: any, share: number, goldShare: nu
 	local exp = math.floor(baseExp * Exp.levelDiffMultiplier(character.level, level) + 0.5)
 	local goldBonus = StatService.GetValue(player, "goldBonus")
 	local goldMul = MonsterStats.goldLevelMultiplier(character.level, level)
-	local gold = math.floor(goldShare * goldMul * (1 + goldBonus / 100) + 0.5)
+	local gold = math.floor(goldShare * goldMul * (1 + (goldBonus + luckGold) / 100) + 0.5)
 	local expBonus = StatService.GetValue(player, "expBonus")
 	LevelService.GiveExp(player, exp, "monster")
 	local balance = PlayerStateService.Update(player, { "character", "gold" }, function(current: number)
@@ -334,7 +347,23 @@ end
 local function onMonsterDied(monster: any)
 	local credit = CombatService.ResolveKillCredit(monster)
 	local areaId = monster.model:GetAttribute("AreaId") :: string?
+	local luck: Luck.MonsterLuck? = nil
 	if not monster.isBoss then
+		-- S60: luck of the credited group (best dropBonus + Fortune, one cap) and the class variety bonus.
+		local members: { Luck.Member } = {}
+		local classes: { string } = {}
+		for _, player in credit do
+			local character: Types.CharacterData? = PlayerStateService.GetCharacter(player)
+			table.insert(members, {
+				name = if character then character.name else player.Name,
+				dropBonus = StatService.GetValue(player, "dropBonus"),
+				luck = pathService().GetLuck(player),
+			})
+			table.insert(classes, if character then character.class else "")
+		end
+		local groupLuck = Luck.monster(members)
+		luck = groupLuck
+		local varietyMul = PartyBonus.expMul(classes)
 		-- S33: the area profile scales the kill's EXP and gold before the party split (quests are not affected).
 		local mods = AreaProfiles.modsOf(areaId)
 		-- Boss helpers (2026-10-10) give EXP but no gold.
@@ -351,7 +380,7 @@ local function onMonsterDied(monster: any)
 			)
 		local shares = PartyLoot.splitGold(total, #credit, rng)
 		for i, player in credit do
-			reward(player, monster, #credit, shares[i], mods.expMul)
+			reward(player, monster, #credit, shares[i], mods.expMul * varietyMul, groupLuck.gold)
 		end
 	end
 	local position = monster:Position()
@@ -367,6 +396,7 @@ local function onMonsterDied(monster: any)
 		noLoot = monster.summoned == true,
 		areaId = areaId,
 		dropLevel = Loot.dropBaseLevel(monster.stats.level, monster.variant, monster.levelCap),
+		luck = luck,
 	}
 	CombatService.MonsterKilled:Fire(info, credit, credit[1])
 	-- Clear player targets pointing at the corpse.
@@ -798,6 +828,7 @@ function CombatService.Init(registry)
 	EquipmentService = registry.Get("EquipmentService")
 	StatusEffectService = registry.Get("StatusEffectService")
 	PartyService = registry.Get("PartyService")
+	Registry = registry
 
 	StatusEffectService.RegisterReductionProvider(function(player: Player, source: string): number
 		-- "Last stand" (items, later path nodes) works where it did before S53: monster blows and PvP hits,

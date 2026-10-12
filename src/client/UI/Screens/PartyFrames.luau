@@ -7,6 +7,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local PathBadge = require(script.Parent.Parent.Components.PathBadge)
 local State = require(script.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
@@ -72,6 +73,7 @@ local function PartyFrames(scope: Scope, onSelect: (userId: number) -> ()): Inst
 								FontFace = Theme.Fonts.BodyBold,
 								TextColor3 = Theme.Colors.GoldBright,
 							}),
+							PathBadge.new(s, use, member.path, 14, UDim2.fromOffset(22, 22)) :: any,
 							s:New("TextLabel")({
 								Position = UDim2.fromOffset(40, 4),
 								Size = UDim2.new(1, -46, 0, 20),

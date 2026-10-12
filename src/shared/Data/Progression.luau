@@ -31,4 +31,8 @@ return table.freeze({
 	-- ROZWOJ 2.4 (S57): 1 path point on every even level (pointsAt(L) = floor(L / pathPointsEvery)); the pace waits
 	-- for the owner's approval (ROZWOJ 15.1).
 	pathPointsEvery = 2,
+
+	-- % EXP for each other class among the credited players, at most varietyMax (ROZWOJ 7.4, S60).
+	varietyPerClass = 5,
+	varietyMax = 15,
 })

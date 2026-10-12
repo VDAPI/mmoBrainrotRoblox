@@ -21,6 +21,9 @@ local ResourceService = {
 	Died = Signal.new(),
 	-- (player, amount, source) after damage was applied.
 	Damaged = Signal.new(),
+	-- (target: Player, amount: number, source: Player?, kind: "heal" | "shield") after HP was restored or a shield
+	-- soaked damage (S60: the fight summary of a boss).
+	Healed = Signal.new(),
 }
 
 local PlayerStateService: any
@@ -159,7 +162,9 @@ function ResourceService.Damage(player: Player, amount: number, source: string?)
 end
 
 -- Returns the HP actually restored.
-function ResourceService.Heal(player: Player, amount: number): number
+-- `source` (S60): the player who heals (skills and their effects); nil for potions, regeneration, kill heal and
+-- life steal.
+function ResourceService.Heal(player: Player, amount: number, source: Player?): number
 	local pool = pools[player]
 	if not pool or pool.dead or amount <= 0 or amount ~= amount then
 		return 0
@@ -167,7 +172,18 @@ function ResourceService.Heal(player: Player, amount: number): number
 	local before = pool.hp
 	pool.hp = math.min(maxOf(player, "maxHp"), pool.hp + amount)
 	publish(player, pool)
-	return pool.hp - before
+	local restored = pool.hp - before
+	if restored > 0 then
+		ResourceService.Healed:Fire(player, restored, source, "heal")
+	end
+	return restored
+end
+
+-- A shield of `source` soaked `amount` damage on `target` (S60; StatusEffectService's damage filter).
+function ResourceService.ShieldAbsorbed(target: Player, amount: number, source: Player?)
+	if amount > 0 then
+		ResourceService.Healed:Fire(target, amount, source, "shield")
+	end
 end
 
 local function spend(player: Player, id: "mana" | "energy", amount: number): boolean

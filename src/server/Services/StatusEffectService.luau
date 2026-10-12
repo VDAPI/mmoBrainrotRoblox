@@ -410,6 +410,9 @@ local function damageFilter(player: Player, amount: number, source: string): num
 		local absorbed = math.min(shield.value, amount)
 		shield.value -= absorbed
 		amount -= absorbed
+		if absorbed > 0 then
+			ResourceService.ShieldAbsorbed(player, absorbed, shield.source)
+		end
 		if shield.value <= 0 then
 			shield.expiresAt = 0
 		end
@@ -442,7 +445,7 @@ local function tickEntity(entity: any, list: { Effect }, t: number)
 			effect.nextTick = nextTick + TICK_INTERVAL
 			if effect.kind == "hot" then
 				if entity.kind == "player" and entity.player then
-					local healed = ResourceService.Heal(entity.player, effect.tickAmount)
+					local healed = ResourceService.Heal(entity.player, effect.tickAmount, effect.source)
 					StatusEffectService.Ticked:Fire(entity, effect, healed)
 				end
 			elseif entity.kind == "monster" and entity.monster then

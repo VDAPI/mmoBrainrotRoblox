@@ -12,11 +12,13 @@
 -- with scale node.dipScale or DIP_SCALE.
 -- S59: nodeScale (that rule for any node), nodeArgs (node description arguments), iconWeapon, isTwoHanded; the
 -- window's views live in Logic/PathView.
+-- S60: luckOfNodes / luck (raw Data/Luck fields of the active nodes).
 
 local Bases = require("../Data/Items/Bases")
 local Classes = require("../Data/Classes")
 local EffectStack = require("./EffectStack")
 local Items = require("../Data/Items")
+local LuckData = require("../Data/Luck")
 local PathData = require("../Data/Paths")
 local Progression = require("../Data/Progression")
 local SkillData = require("../Data/Skills")
@@ -756,6 +758,29 @@ local function buildApi(source: Source)
 		return out
 	end
 
+	-- Raw luck fields of active nodes (ROZWOJ 6.3, S60): node.luck maps a Data/Luck field to a node.values field, at
+	-- the node rank and without scale (luck nodes carry their own values for the dip). Unknown fields are skipped;
+	-- Logic/Luck applies the caps.
+	local function luckOfNodes(active: { ActiveNode }): { [string]: number }
+		local out: { [string]: number } = {}
+		for _, entry in active do
+			local luck = entry.node.luck
+			if luck then
+				local values = nodeValues(entry.node, entry.rank)
+				for field, valueKey in luck do
+					if LuckData.fields[field] then
+						out[field] = (out[field] or 0) + (values[valueKey] or 0)
+					end
+				end
+			end
+		end
+		return out
+	end
+
+	local function luck(character: Char, weapons: WeaponTypes): { [string]: number }
+		return luckOfNodes(activeNodes(character, weapons))
+	end
+
 	-- Modify nodes of the skill as resolved breakpoint tables, in row order (ROZWOJ 2.7). A node with modify.option
 	-- works only while that option is chosen at rank modify.at (default 5).
 	local function skillMods(character: Char, skillId: string, weapons: WeaponTypes): { Skills.SkillMod }
@@ -1115,6 +1140,8 @@ local function buildApi(source: Source)
 		availableSkills = availableSkills,
 		skillUsable = skillUsable,
 		activeNodes = activeNodes,
+		luckOfNodes = luckOfNodes,
+		luck = luck,
 		nodeValues = nodeValues,
 		nodeScale = nodeScale,
 		nodeArgs = nodeArgs,

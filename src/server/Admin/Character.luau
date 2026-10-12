@@ -8,6 +8,9 @@ local Config = require(Shared.Config)
 local DevPreset = require(Shared.Logic.DevPreset)
 local Elements = require(Shared.Data.Elements)
 local Items = require(Shared.Data.Items)
+local Luck = require(Shared.Logic.Luck)
+local LuckData = require(Shared.Data.Luck)
+local PartyBonus = require(Shared.Logic.PartyBonus)
 local PathData = require(Shared.Data.Paths)
 
 local Context = require(script.Parent.Context)
@@ -24,6 +27,7 @@ local EquipmentService = Context.services.EquipmentService
 local StatService = Context.services.StatService
 local SkillService = Context.services.SkillService
 local PathService = Context.services.PathService
+local PartyService = Context.services.PartyService
 
 local commands: { [string]: (player: Player, args: { string }) -> ...any } = {}
 
@@ -282,6 +286,65 @@ commands.buildset = function(player, args)
 			PathService.AdminSwitch(player)
 			reply(player, "admin.buildset.ok", { n = 3 - slot })
 		end
+	end)
+end
+
+-- S60: /luck: own luck, the party's (no range) and the class variety bonus (read only).
+local function pct(value: number): number
+	return math.floor(value + 0.5)
+end
+
+local function mul(value: number): string
+	return string.format("%.2f", value)
+end
+
+commands.luck = function(player)
+	withCharacter(player, function()
+		local own = PathService.GetLuck(player)
+		reply(player, "admin.luck.self", {
+			drop = pct(StatService.GetValue(player, "dropBonus")),
+			item = pct(Luck.capped("monsterItem", own.monsterItem)),
+			elite2 = pct(Luck.capped("elite2", own.elite2)),
+			gold = pct(Luck.capped("gold", own.gold)),
+			mul = mul(1 + Luck.capped("bossLegendary", own.bossLegendary) / 100),
+			upgrade = pct(Luck.capped("bossUpgrade", own.bossUpgrade)),
+			extra = pct(Luck.capped("bossExtra", own.bossExtra)),
+		})
+		local members: { Luck.Member } = {}
+		local classes: { string } = {}
+		for _, member in PartyService.Members(player) do
+			local data = PlayerStateService.GetCharacter(member)
+			table.insert(members, {
+				name = if data then data.name else member.Name,
+				dropBonus = StatService.GetValue(member, "dropBonus"),
+				luck = PathService.GetLuck(member),
+			})
+			table.insert(classes, if data then data.class else "")
+		end
+		local monster = Luck.monster(members)
+		local boss = Luck.boss(members)
+		reply(player, "admin.luck.group", {
+			n = #members,
+			itemBonus = pct(monster.itemBonus),
+			personal = pct(monster.personal),
+			fortune = pct(monster.fortune),
+			cap = LuckData.monsterItemCap,
+			gold = pct(monster.gold),
+			elite2 = mul(monster.elite2Mul),
+			mul = mul(boss.legendaryMul),
+			upgrade = pct(boss.upgrade * 100),
+			extra = pct(boss.extra * 100),
+			from = boss.from or "-",
+		})
+		local distinct: { [string]: boolean } = {}
+		local count = 0
+		for _, id in classes do
+			if id ~= "" and not distinct[id] then
+				distinct[id] = true
+				count += 1
+			end
+		end
+		reply(player, "admin.luck.variety", { pct = PartyBonus.variety(classes), classes = count })
 	end)
 end
 

@@ -287,6 +287,16 @@ end
 -- Admin (Admin/Character): no place or combat rules -----------------------------------------------------------------
 
 -- Sets (or clears) the main path; rows above DIP_ROWS of the old one are refunded, freeUsed stays.
+-- Raw luck fields of the active build set (S60, ROZWOJ 6.3); {} without a character. The one server entry to a
+-- character's luck: CombatService, DungeonService, PartyService and admin /luck read it (lazily, see their Init).
+function PathService.GetLuck(player: Player): { [string]: number }
+	local char = character(player)
+	if not char then
+		return {}
+	end
+	return Paths.luck(char, EquipmentService.WeaponTypes(player))
+end
+
 function PathService.AdminSetMain(player: Player, pathId: string?): (boolean, string?)
 	local char = character(player)
 	if not char then

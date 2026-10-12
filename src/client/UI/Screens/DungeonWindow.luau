@@ -2,7 +2,7 @@
 -- Dungeon gate window (DESIGN §16): boss name and level, required level, state (free / taken by X's group
 -- with the time left), every party member with ✓ / ✗ and why (level, daily lockout with the time to reset,
 -- too far), the own grind progress (S30: "Dziś: 1/3" and the current personal Legendary / Mythic chances) and
--- "Enter" for the leader.
+-- "Enter" for the leader. S60: the Legendary chance with the group's Fortune (UI/GroupLuck) and its line.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
@@ -15,6 +15,7 @@ local Loot = require(ReplicatedStorage.Shared.Logic.Loot)
 local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
 local State = require(script.Parent.Parent.State)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local GroupLuck = require(script.Parent.Parent.GroupLuck)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Sounds = require(script.Parent.Parent.Sounds)
 local Text = require(script.Parent.Parent.Text)
@@ -67,8 +68,12 @@ local function DungeonWindow(scope: Scope, props: Props): Fusion.Child
 		local runs = use(bossRuns)
 		local t = use(now)
 		local done = BossScaling.runsToday(if type(runs) == "table" then runs else nil, boss.id, t)
-		local chances =
-			Loot.bossChances(boss.id, BossScaling.killsToday(if type(runs) == "table" then runs else nil, boss.id, t))
+		local luck = GroupLuck.use(use)
+		local chances = Loot.bossChances(
+			boss.id,
+			BossScaling.killsToday(if type(runs) == "table" then runs else nil, boss.id, t),
+			luck
+		)
 		local runsLine = Text.get(use, "worldmap.card.runsToday", {
 			n = done,
 			limit = Config.Boss.dailyRuns,
@@ -78,7 +83,8 @@ local function DungeonWindow(scope: Scope, props: Props): Fusion.Child
 			leg = math.floor(chances.legendary * 100 + 0.5),
 			myth = math.floor(chances.mythic * 100 + 0.5),
 		})
-		return runsLine .. "\n" .. chanceLine
+		local luckLine = GroupLuck.line(use, luck)
+		return runsLine .. "\n" .. chanceLine .. (if luckLine then "\n" .. luckLine else "")
 	end)
 
 	local members = scope:Computed(function(use, s: Scope): { Instance }
@@ -170,7 +176,7 @@ local function DungeonWindow(scope: Scope, props: Props): Fusion.Child
 		scope:New("TextLabel")({
 			Name = "Grind",
 			Position = UDim2.fromOffset(0, 108),
-			Size = UDim2.new(1, 0, 0, 46),
+			Size = UDim2.new(1, 0, 0, 66),
 			BackgroundTransparency = 1,
 			Text = grind,
 			FontFace = Theme.Fonts.BodyBold,
@@ -179,8 +185,8 @@ local function DungeonWindow(scope: Scope, props: Props): Fusion.Child
 			TextWrapped = true,
 		}),
 		scope:New("Frame")({
-			Position = UDim2.fromOffset(0, 160),
-			Size = UDim2.new(1, 0, 1, -230),
+			Position = UDim2.fromOffset(0, 180),
+			Size = UDim2.new(1, 0, 1, -250),
 			BackgroundTransparency = 1,
 			[Children] = {
 				scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 4) }),

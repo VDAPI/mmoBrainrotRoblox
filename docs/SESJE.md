@@ -3429,3 +3429,29 @@ Pliki: `Logic/{Paths,PathView,Skills,Titles}`, `Data/Titles`, `Types`, `Net/Defi
 `TitleService`, `LevelService`, `UI/Screens/SkillsWindow/*` (zamiast `SkillsWindow.luau`), `UI/{SkillInfo,
 SkillsAttention}`, `UI/Components/IconButton`, `Hud/init`, `ScreenController`, `EffectsController`,
 `tests/{pathview,titles,data}.spec`, `docs/{ROZWOJ,DESIGN}.md`, `CLAUDE.md`.
+
+### S60: Fundament 8: szczęście drużyny, premia za różne klasy i podsumowanie walki
+
+- Czysta logika: `Data/Luck` (pola i limity 6.3), `Logic/Luck` (`capped`, `best`, `monster`, `boss`, `isNeutral`,
+  opcja `pvp`), `Logic/PartyBonus` (`variety`, `expMul`; `Progression.varietyPerClass = 5`, `varietyMax = 15`),
+  `Paths.luckOfNodes` / `Paths.luck`, w `Logic/Loot`: `bossChances` i `rollBossItem` z `luck?` (Legenda ×
+  `legendaryMul`, uszlachetnienie Unikatu), nowe `rollBossExtra` (wspólna gałąź `rollCommon`).
+- Serwer: `PathService.GetLuck`; `CombatService` liczy szczęście grupy i premię za klasy na zabicie (`KillInfo.luck`,
+  złoto Fortuny), `LootService` jeden rzut z najlepszym bonusem grupy i wagą Legendy Elit II, `SpawnBag(...,
+  luckFrom?)` i ogłoszenie `loot.announceLuck`; `ResourceService.Healed` / `ShieldAbsorbed` (źródło z `ctx.heal`,
+  `hot`, tarcz); `DungeonService`: Fortuna zwycięzców, premia za klasy w EXP bossa, drugi przedmiot w worku,
+  podsumowanie walki (`sum` w zdarzeniu `reward`), `info` z Fortuną drużyny; `PartyService`: `luck` i `path` członka
+  w gałęzi `party`; admin `/luck`.
+- Klient: `UI/GroupLuck` (solo / drużyna, linia „Szczęście drużyny”), `DungeonWindow` i `CreatureCards` z szansą i
+  linią szczęścia, `BossReward` z liniami Fortuny i tabelą „Podsumowanie walki” (na niskim ekranie na środku, tabela
+  przewija się po 4 wierszach), `CombatFxController` przepisuje nowe pola, karta znika po 20 s; `PartyWindow` z premią
+  za różne klasy, linią szczęścia i znakiem ścieżki, `PartyFrames` ze znakiem ścieżki (`UI/Components/PathBadge`).
+- Do S71 żadna klasa nie ma węzłów szczęścia: linie szczęścia i znak ścieżki nigdzie się nie pokazują, a gracz widzi
+  premię za klasy, wspólny bonus przedmiotów grupy i podsumowanie walki. Bez uproszczeń zakresu.
+- Testy: nowy `luck.spec` (limity, boss, potwory, ścieżka testowa Fortuny ×1,13 / ×1,06, dane węzłów, łup bossa ze
+  szczęściem i bez, premia za klasy). `lune run tools/wikidump.luau`: bez zmian w danych wiki (`dataHash` ten sam).
+
+Pliki: `Data/{Luck,Progression,AdminCommands}`, `Logic/{Luck,PartyBonus,Paths,Loot}`, lokalizacja PL / EN,
+`{Path,Combat,Loot,Resource,StatusEffect,Dungeon,Party,Admin}Service`, `Skills/Context`, `Admin/Character`,
+`UI/{GroupLuck,Components/PathBadge}`, `UI/Screens/{BossReward,DungeonWindow,PartyWindow,PartyFrames,
+WorldMap/CreatureCards}`, `Controllers/{CombatFx,Dungeon}Controller`, `tests/luck.spec`, `docs/ROZWOJ.md`.

@@ -321,7 +321,7 @@ function Context.new(
 		end,
 		heal = function(target: Player, amount: number): number
 			local bonus = services.PassiveHook(player, "healBonus")
-			local healed = services.Resource.Heal(target, amount * (1 + bonus / 100))
+			local healed = services.Resource.Heal(target, amount * (1 + bonus / 100), player)
 			if healed > 0 then
 				local entity = Entity.GetPlayerEntity(target)
 				if entity then

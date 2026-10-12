@@ -15,7 +15,17 @@ local Rng = require("./Rng")
 local ItemRoll = require("./ItemRoll")
 
 -- `forClass`: the class a class-free item (jewellery) rolls its bonuses for (S32).
-export type ItemDrop = { defId: string, ilvl: number, rarity: number, forClass: string? }
+-- `upgraded` / `extra` (S60): Fortune ennobled a Unique boss item / the second boss item.
+export type ItemDrop = {
+	defId: string,
+	ilvl: number,
+	rarity: number,
+	forClass: string?,
+	upgraded: boolean?,
+	extra: boolean?,
+}
+-- Fortune on a boss kill (S60, ROZWOJ 6.2); structurally Logic/Luck.BossLuck. nil = no luck.
+export type BossLuck = { legendaryMul: number?, upgrade: number?, extra: number? }
 export type MaterialDrop = { id: string, n: number }
 export type LootResult = { items: { ItemDrop }, materials: { MaterialDrop }, gold: number }
 
@@ -180,28 +190,51 @@ end
 -- Boss item of each winner (FIX 2026-10-09, DESIGN §16) ------------------------------------------------------
 
 -- Chances (0..1) of a Legendary and a Mythic item for a winner who already killed this boss `killsToday` times
--- today (UTC): the base chance + perKill per kill.
-local function chancesOf(boss: LootTables.BossTable, killsToday: number?): { legendary: number, mythic: number }
+-- today (UTC): the base chance + perKill per kill; Fortune multiplies the Legendary chance only (S60).
+local function chancesOf(
+	boss: LootTables.BossTable,
+	killsToday: number?,
+	luck: BossLuck?
+): { legendary: number, mythic: number }
 	local kills = math.max(0, math.floor(killsToday or 0))
+	local mul = if luck and luck.legendaryMul then luck.legendaryMul else 1
 	return {
-		legendary = math.clamp(boss.legendaryChance + boss.perKill * kills, 0, 1),
+		legendary = math.clamp((boss.legendaryChance + boss.perKill * kills) * mul, 0, 1),
 		mythic = math.clamp(boss.mythicChance + boss.perKill * kills, 0, 1),
 	}
 end
 
-function Loot.bossChances(bossId: string, killsToday: number?): { legendary: number, mythic: number }
+-- The one function every shown and rolled boss chance goes through (dungeon card, world map, reward card, roll).
+function Loot.bossChances(bossId: string, killsToday: number?, luck: BossLuck?): { legendary: number, mythic: number }
 	local boss = LootTables.bosses[bossId]
 	if not boss then
 		return { legendary = 0, mythic = 0 }
 	end
-	return chancesOf(boss, killsToday)
+	return chancesOf(boss, killsToday, luck)
+end
+
+-- A Unique / Heroic boss item (the common branch of rollBossItem and the second item of rollBossExtra).
+local function rollCommon(boss: LootTables.BossTable, classId: string?, rng: Rng.Rng): ItemDrop?
+	local ilvl = ItemRoll.dropLevel(boss.level, rng)
+	local defId = Loot.pickItem(LootTables.bossSlots, ilvl, Config.BossLoot.legendaryClassShare, classId, rng)
+	return if defId
+		then { defId = defId, ilvl = ilvl, rarity = ItemRoll.rollRarity("boss", rng), forClass = classId }
+		else nil
 end
 
 -- The one item a winner of `classId` gets: Mythic (a named item of the boss with Config.BossLoot.mythicNamedShare,
 -- otherwise a rolled Mythic of a class-usable base), else Legendary (class-usable with
 -- Config.BossLoot.legendaryClassShare), else a Unique / Heroic item. Weapons come first (LootTables.bossSlots).
-function Loot.rollBossItem(boss: LootTables.BossTable, killsToday: number?, classId: string?, rng: Rng.Rng): ItemDrop?
-	local chances = chancesOf(boss, killsToday)
+-- Fortune (S60): the Legendary chance times luck.legendaryMul; a Unique becomes Heroic with luck.upgrade (no extra
+-- roll without upgrade, so the Rng sequence is unchanged).
+function Loot.rollBossItem(
+	boss: LootTables.BossTable,
+	killsToday: number?,
+	classId: string?,
+	rng: Rng.Rng,
+	luck: BossLuck?
+): ItemDrop?
+	local chances = chancesOf(boss, killsToday, luck)
 	local slots = LootTables.bossSlots
 	local roll = rng:next()
 	if roll < chances.mythic then
@@ -222,11 +255,27 @@ function Loot.rollBossItem(boss: LootTables.BossTable, killsToday: number?, clas
 		local defId = Loot.pickItem(slots, boss.level, Config.BossLoot.legendaryClassShare, classId, rng)
 		return if defId then { defId = defId, ilvl = boss.level, rarity = Rarities.LEGENDARY } else nil
 	end
-	local ilvl = ItemRoll.dropLevel(boss.level, rng)
-	local defId = Loot.pickItem(slots, ilvl, Config.BossLoot.legendaryClassShare, classId, rng)
-	return if defId
-		then { defId = defId, ilvl = ilvl, rarity = ItemRoll.rollRarity("boss", rng), forClass = classId }
-		else nil
+	local drop = rollCommon(boss, classId, rng)
+	local upgrade = if luck and luck.upgrade then luck.upgrade else 0
+	if drop and drop.rarity == Rarities.UNIQUE and upgrade > 0 and rng:chance(upgrade) then
+		drop.rarity = Rarities.HEROIC
+		drop.upgraded = true
+	end
+	return drop
+end
+
+-- Fortune's second boss item (S60, ROZWOJ 6.2): with luck.extra a Unique / Heroic item marked `extra`, never
+-- ennobled. Without extra > 0 nothing is rolled.
+function Loot.rollBossExtra(boss: LootTables.BossTable, classId: string?, rng: Rng.Rng, luck: BossLuck?): ItemDrop?
+	local extra = if luck and luck.extra then luck.extra else 0
+	if extra <= 0 or not rng:chance(extra) then
+		return nil
+	end
+	local drop = rollCommon(boss, classId, rng)
+	if drop then
+		drop.extra = true
+	end
+	return drop
 end
 
 -- Simulates `n` kills of a boss by one character, `perDay` kills a day (admin /bosssim, tests).

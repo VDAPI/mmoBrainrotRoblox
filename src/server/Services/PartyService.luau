@@ -2,7 +2,8 @@
 -- Parties (DESIGN §17): up to 5 players on one server. Invites expire after 30 s; the leader can kick and
 -- promote; when the leader leaves, the next member leads; a party of one dissolves. Every member gets the
 -- state branch `party` = { leader, members = { { id, name, class, level, hp, maxHp, mana, maxMana, map,
--- x, z, dead } } } refreshed twice a second, and a private TextChannel for party chat.
+-- x, z, dead, path } }, luck } refreshed twice a second, and a private TextChannel for party chat. S60: `path` = the
+-- member's main path id (or nil); `luck` = the party's Fortune on bosses (Logic/Luck.boss) or nil when neutral.
 -- Other systems use AreAllies / SameParty / Members / MembersInRange.
 
 local Players = game:GetService("Players")
@@ -12,6 +13,7 @@ local TextChatService = game:GetService("TextChatService")
 local Shared = ReplicatedStorage.Shared
 
 local Log = require(Shared.Util.Log)
+local Luck = require(Shared.Logic.Luck)
 local Net = require(Shared.Net)
 local Signal = require(ReplicatedStorage.Packages.Signal)
 local Types = require(Shared.Types)
@@ -35,6 +37,15 @@ local PlayerStateService: any
 local CharacterService: any
 local ResourceService: any
 local StatService: any
+local Registry: any
+local PathService: any
+
+-- Lazy: PathService depends on DungeonService, which depends on this service, so a Deps entry here would be a
+-- cycle. Never call during Init.
+local function pathService(): any
+	PathService = PathService or Registry.Get("PathService")
+	return PathService
+end
 
 local nextId = 0
 local partyOf: { [Player]: Party } = {}
@@ -98,7 +109,7 @@ function PartyService.Notify(party: Party, key: string, args: { [string]: any }?
 	end
 end
 
-local function publish(party: Party?, player: Player)
+local function publish(party: Party?, player: Player, luck: Luck.BossLuck?)
 	if not PlayerStateService.HasState(player) then
 		return
 	end
@@ -125,9 +136,16 @@ local function publish(party: Party?, player: Player)
 			x = if root then math.floor(root.Position.X) else 0,
 			z = if root then math.floor(root.Position.Z) else 0,
 			dead = ResourceService.IsDead(member),
+			path = if char and char.path then char.path.main else nil,
 		})
 	end
-	local value = { leader = party.leader.UserId, members = members }
+	local value = {
+		leader = party.leader.UserId,
+		members = members,
+		luck = if luck and not Luck.isNeutral(luck)
+			then { legendaryMul = luck.legendaryMul, upgrade = luck.upgrade, extra = luck.extra, from = luck.from }
+			else nil,
+	}
 	-- Skip identical updates (positions change often, so this mainly saves idle parties).
 	local key = game:GetService("HttpService"):JSONEncode(value)
 	if lastSent[player] == key then
@@ -138,8 +156,14 @@ local function publish(party: Party?, player: Player)
 end
 
 local function publishAll(party: Party)
+	-- S60: the party's Fortune once per refresh, the same for every member.
+	local luckMembers: { Luck.Member } = {}
 	for _, member in party.members do
-		publish(party, member)
+		table.insert(luckMembers, { name = displayName(member), luck = pathService().GetLuck(member) })
+	end
+	local luck = Luck.boss(luckMembers)
+	for _, member in party.members do
+		publish(party, member, luck)
 	end
 end
 
@@ -318,6 +342,7 @@ function PartyService.Init(registry)
 	CharacterService = registry.Get("CharacterService")
 	ResourceService = registry.Get("ResourceService")
 	StatService = registry.Get("StatService")
+	Registry = registry
 end
 
 function PartyService.Start()

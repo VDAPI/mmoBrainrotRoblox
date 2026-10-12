@@ -18,6 +18,7 @@ local Config = require(ReplicatedStorage.Shared.Config)
 local DetailCard = require(script.Parent.DetailCard)
 local Elements = require(ReplicatedStorage.Shared.Data.Elements)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
+local GroupLuck = require(script.Parent.Parent.Parent.GroupLuck)
 local ItemRoll = require(ReplicatedStorage.Shared.Logic.ItemRoll)
 local ItemText = require(script.Parent.Parent.Parent.ItemText)
 local Items = require(ReplicatedStorage.Shared.Data.Items)
@@ -305,8 +306,13 @@ function CreatureCards.dungeon(ctx: Context, region: string): Spec?
 	local runs = State.Get({ "character", "bossRuns" })
 	local done = BossScaling.runsToday(if type(runs) == "table" then runs else nil, boss.id, now)
 	local limit = Config.Boss.dailyRuns
-	local chances =
-		Loot.bossChances(boss.id, BossScaling.killsToday(if type(runs) == "table" then runs else nil, boss.id, now))
+	-- S60: with the group's Fortune (the same function as the roll).
+	local luck = GroupLuck.now()
+	local chances = Loot.bossChances(
+		boss.id,
+		BossScaling.killsToday(if type(runs) == "table" then runs else nil, boss.id, now),
+		luck
+	)
 	local lines: { DetailCard.Line } = {
 		{
 			text = T("worldmap.card.required", { level = required }),
@@ -329,9 +335,13 @@ function CreatureCards.dungeon(ctx: Context, region: string): Spec?
 			color = Rarities.get(Rarities.MYTHIC).color:Lerp(Rarities.get(Rarities.LEGENDARY).color, 0.5),
 			bold = true,
 		},
-		{ text = T("worldmap.card.group"), color = Theme.Colors.TextMuted },
-		whereLine(ctx, gate.map, gate.x, gate.z),
 	}
+	local luckLine = GroupLuck.line(nil, luck)
+	if luckLine then
+		table.insert(lines, { text = luckLine, color = Theme.Colors.GoldBright })
+	end
+	table.insert(lines, { text = T("worldmap.card.group"), color = Theme.Colors.TextMuted })
+	table.insert(lines, whereLine(ctx, gate.map, gate.x, gate.z))
 	local items: { DetailCard.ItemRow } = {}
 	local bossTable = LootTables.bosses[boss.id]
 	for i, unique in (if bossTable then bossTable.named else {}) :: { string } do

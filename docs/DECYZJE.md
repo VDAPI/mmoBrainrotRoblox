@@ -1218,3 +1218,28 @@
   `isTwoHanded`; pole `Api.source` istniało od S57.
 - **S59** `Preview.new` bierze reaktywne `skillId` (`UsedAs<string?>`) zamiast funkcji `getSkillId`, bo przycisk
   podglądu na PC musi gasnąć sam; `Selection` ma kształt `{ kind: "skill" | "node", id }`.
+- **S60** Szczęście na potworach: grupa = zaliczeni do zabicia (najlepszy zadający + drużyna do 80 st.), jeden wspólny
+  rzut z `min(100, najlepszy dropBonus grupy + Fortuna)`; dotąd liczył się bonus zabójcy i nie było limitu, więc
+  drużyna z jednym graczem z wysokim `dropBonus` dostaje teraz jego bonus.
+- **S60** Złoto Fortuny dochodzi do własnego `goldBonus` każdego zaliczonego, poza limitem przedmiotów; Elita II: waga
+  Legendy × `1 + elite2/100` razem z `topTierMul` profilu obszaru.
+- **S60** Bossy: Legenda × `legendaryMul`, uszlachetnienie Unikatu w Heroika i drugi przedmiot przez nowe
+  `Loot.rollBossExtra` (bez uszlachetnienia); przy `luck = nil` albo zerach rzuty i sekwencja `Rng` jak dziś (wiki bez
+  zmian). ROZWOJ 6.4 uzupełniony.
+- **S60** `PathService` pobierany leniwie (`registry.Get` w trakcie gry) w `CombatService`, `DungeonService` i
+  `PartyService` (`LootService` czyta szczęście z `KillInfo.luck`), bo `Deps` dałyby cykl przez `DungeonService` (S57);
+  `AdminService.Deps` ma `PathService` i `PartyService`.
+- **S60** `ResourceService.Healed(target, amount, source, kind)` z `kind = "heal" | "shield"` i
+  `ResourceService.ShieldAbsorbed`; podsumowanie walki liczy leczenie przez `ctx.heal` (także samoleczenie z
+  umiejętności) i `hot` oraz tarcze pochłonięte, gdy boss stoi; bez kradzieży życia, leczenia za zabicie, mikstur i
+  regeneracji. ROZWOJ 3.3 i 4 poprawione.
+- **S60** Premia za różne klasy mnoży `expMul` potwora i EXP bossa przed podziałem i przed `expBonus`; questy bez
+  premii. Okno drużyny pokazuje premię składu (przy zabiciu liczą się członkowie w zasięgu).
+- **S60** Klient solo liczy własne szczęście (`Paths.luck`), w drużynie czyta `party.luck` (gałąź `party` solo dalej
+  nie istnieje); `DungeonService.info` liczy `legChance` z Fortuną całej drużyny. Karta nagrody znika po 20 s (było 14).
+- **S60** Znak ścieżki w oknie i ramkach drużyny = ikona broni z `Paths.iconWeapon` (jak zakładka S59), bez ikony
+  pierwsza litera nazwy; wspólny komponent `UI/Components/PathBadge`, bez nowego pola w `PathDef`.
+- **S60** `Paths.luckOfNodes` jako osobna czysta funkcja (ROZWOJ 3.1); premia za różne klasy testowana w `luck.spec`
+  zamiast osobnego `partybonus.spec` (ROZWOJ 3.4).
+- **S60** `Luck.monster` / `Luck.boss` mają opcję `pvp` (w PvP szczęście nie działa); dziś nie ma łupu z PvP, więc to
+  strażnik dla S61.

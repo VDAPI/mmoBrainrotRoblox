@@ -56,6 +56,7 @@ type Bag = {
 	best: number, -- best equipment rarity (bag colour)
 	personal: boolean?, -- a boss's personal roll (S30)
 	source: string?, -- monster kind (loot log)
+	luckFrom: string?, -- S60: the priest whose Fortune counted on this boss roll
 }
 
 local LOOT_LOG_SIZE = 50
@@ -100,7 +101,8 @@ end
 
 -- Server-wide announcement of an equipment drop whose rarity announces (only `category == "equipment"`, so a
 -- Mythic blessing never does). Returns whether it announced.
-local function announceDrop(player: Player, item: ItemInstance): boolean
+-- `luckFrom` (S60): the priest whose Fortune raised a boss's Legendary chance; named in the Legendary announcement.
+local function announceDrop(player: Player, item: ItemInstance, luckFrom: string?): boolean
 	local kind = Rarities.get(item.rarity).announce
 	if kind == nil or not isEquipment(item) then
 		return false
@@ -113,7 +115,13 @@ local function announceDrop(player: Player, item: ItemInstance): boolean
 		AnnounceService.Global("loot.announceMythic", "loot.announceMythicGlobal", args)
 	else
 		Analytics.custom(player, "LegendaryDrop", item.ilvl)
-		AnnounceService.Global("loot.announce", "loot.announceGlobal", args)
+		if luckFrom then
+			local luckArgs = table.clone(args) :: { [string]: any }
+			luckArgs.cleric = luckFrom
+			AnnounceService.Global("loot.announceLuck", "loot.announceLuckGlobal", luckArgs)
+		else
+			AnnounceService.Global("loot.announce", "loot.announceGlobal", args)
+		end
 	end
 	return true
 end
@@ -144,7 +152,8 @@ function LootService.SpawnBag(
 	position: Vector3,
 	items: { ItemInstance },
 	source: string?,
-	personal: boolean?
+	personal: boolean?,
+	luckFrom: string?
 ): string?
 	local kept = {}
 	for _, item in items do
@@ -176,11 +185,12 @@ function LootService.SpawnBag(
 		best = best,
 		personal = personal,
 		source = source,
+		luckFrom = luckFrom,
 	}
 	bags[bag.id] = bag
 	Net.Fire(owner, "LootSpawn", summary(bag))
 	for _, item in items do
-		announceDrop(owner, item)
+		announceDrop(owner, item, luckFrom)
 	end
 	return bag.id
 end
@@ -335,8 +345,8 @@ local function onMonsterKilled(info: any, credit: { Player })
 	if info.boss or info.noLoot or #credit == 0 then
 		return
 	end
-	-- One roll per monster with the top damage dealer's bonuses and class preference (also in a party,
-	-- before the loot is split; S18); parties share it.
+	-- One roll per monster for the credited group (S60, ROZWOJ 6.1): the best dropBonus of the group plus Fortune
+	-- under one cap (KillInfo.luck), the top damage dealer's class preference; parties share it (S18).
 	local killer = credit[1]
 	local character: Types.CharacterData? = PlayerStateService.GetCharacter(killer)
 	if not character then
@@ -345,11 +355,12 @@ local function onMonsterKilled(info: any, credit: { Player })
 	-- S33: the hunting ground's profile (item chance, top rarity, materials).
 	local area = AreaProfiles.modsOf(info.areaId)
 	local loot = Loot.rollMonsterLoot(info.monsterId, info.variant, info.level, rng, {
-		dropBonus = StatService.GetValue(killer, "dropBonus"),
+		dropBonus = if info.luck then info.luck.itemBonus else StatService.GetValue(killer, "dropBonus"),
 		classId = character.class :: string,
 		dropLevel = info.dropLevel,
 		itemChanceMul = area.itemChanceMul,
-		topTierMul = area.topTierMul,
+		-- Fortune raises the Legendary weight of Elite II together with the area profile.
+		topTierMul = area.topTierMul * (if info.variant == "elite2" and info.luck then info.luck.elite2Mul else 1),
 		materialMul = area.materialMul,
 	})
 	LootService.DistributeToParty(credit, info.position, instancesFrom(loot), info.monsterId)

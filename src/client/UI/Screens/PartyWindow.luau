@@ -8,7 +8,11 @@ local TextChatService = game:GetService("TextChatService")
 local Button = require(script.Parent.Parent.Components.Button)
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local GroupLuck = require(script.Parent.Parent.GroupLuck)
 local Net = require(ReplicatedStorage.Shared.Net)
+local PartyBonus = require(ReplicatedStorage.Shared.Logic.PartyBonus)
+local PathBadge = require(script.Parent.Parent.Components.PathBadge)
+local Progression = require(ReplicatedStorage.Shared.Data.Progression)
 local Sounds = require(script.Parent.Parent.Sounds)
 local State = require(script.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Text)
@@ -102,6 +106,7 @@ local function PartyWindow(scope: Scope): Fusion.Child
 		for i, member in p.members do
 			local class = Classes.get(member.class)
 			local isLeader = member.id == p.leader
+			local pathDef = PathBadge.def(member.path)
 			table.insert(
 				list,
 				s:New("Frame")({
@@ -121,13 +126,16 @@ local function PartyWindow(scope: Scope): Fusion.Child
 							FontFace = Theme.Fonts.BodyBold,
 							[Children] = s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 						}),
+						PathBadge.new(s, use, member.path, 18, UDim2.fromOffset(40, 40)) :: any,
 						s:New("TextLabel")({
 							Position = UDim2.fromOffset(70, 6),
 							Size = UDim2.new(1, -250, 0, 24),
 							BackgroundTransparency = 1,
 							Text = `{if isLeader then "♛ " else ""}{member.name}  ·  {Text.get(use, "hud.level", {
 								level = member.level,
-							})}{if member.dead then " ☠" else ""}`,
+							})}{if pathDef then ` · {Text.get(use, pathDef.nameKey)}` else ""}{if member.dead
+								then " ☠"
+								else ""}`,
 							FontFace = Theme.Fonts.BodyBold,
 							TextSize = Theme.TextSize.Body,
 							TextColor3 = if isLeader then Theme.Colors.GoldBright else Theme.Colors.Text,
@@ -166,6 +174,28 @@ local function PartyWindow(scope: Scope): Fusion.Child
 		return list
 	end)
 
+	-- S60: the class variety bonus of the party (potential: the kill counts members within range) and Fortune.
+	local bonusText = scope:Computed(function(use): string
+		local p = use(party)
+		if type(p) ~= "table" then
+			return ""
+		end
+		local classes: { string } = {}
+		for _, member in p.members do
+			table.insert(classes, if type(member.class) == "string" then member.class else "")
+		end
+		local pct = PartyBonus.variety(classes)
+		local line = if pct > 0
+			then Text.get(use, "party.variety", { pct = pct })
+			else Text.get(
+				use,
+				"party.varietyNone",
+				{ per = Progression.varietyPerClass, max = Progression.varietyMax }
+			)
+		local luckLine = GroupLuck.line(use, GroupLuck.use(use))
+		return if luckLine then line .. "\n" .. luckLine else line
+	end)
+
 	return {
 		scope:New("Frame")({
 			Name = "Invite",
@@ -200,7 +230,7 @@ local function PartyWindow(scope: Scope): Fusion.Child
 		}),
 		scope:New("ScrollingFrame")({
 			Position = UDim2.fromOffset(0, 58),
-			Size = UDim2.new(1, 0, 1, -196),
+			Size = UDim2.new(1, 0, 1, -240),
 			CanvasSize = UDim2.new(),
 			AutomaticCanvasSize = Enum.AutomaticSize.Y,
 			BackgroundTransparency = 1,
@@ -211,6 +241,22 @@ local function PartyWindow(scope: Scope): Fusion.Child
 				scope:New("UIPadding")({ PaddingRight = UDim.new(0, 8) }),
 				rows :: any,
 			},
+		}),
+		scope:New("TextLabel")({
+			Name = "Bonus",
+			Position = UDim2.new(0, 0, 1, -178),
+			Size = UDim2.new(1, 0, 0, 40),
+			BackgroundTransparency = 1,
+			Visible = scope:Computed(function(use): boolean
+				return type(use(party)) == "table"
+			end),
+			Text = bonusText,
+			TextWrapped = true,
+			FontFace = Theme.Fonts.BodyMedium,
+			TextSize = Theme.TextSize.Small,
+			TextColor3 = Theme.Colors.GoldBright,
+			TextXAlignment = Enum.TextXAlignment.Left,
+			TextYAlignment = Enum.TextYAlignment.Top,
 		}),
 		scope:New("TextLabel")({
 			AnchorPoint = Vector2.new(0, 1),

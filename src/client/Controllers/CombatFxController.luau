@@ -89,6 +89,32 @@ local MAX_FLASHES = 20
 local flashes: { [Model]: any } = {}
 local flashCount = 0
 
+-- Same shape as UI/Screens/BossReward.SummaryRow.
+type SummaryRow = { n: string, c: string?, d: number, h: number, s: number }
+
+-- S60: the fight summary rows of a boss reward, type-checked, at most 5.
+local function summaryOf(raw: any): { SummaryRow }?
+	if type(raw) ~= "table" then
+		return nil
+	end
+	local rows: { SummaryRow } = {}
+	for _, row in raw do
+		if #rows >= 5 then
+			break
+		end
+		if type(row) == "table" and type(row.n) == "string" then
+			table.insert(rows, {
+				n = row.n,
+				c = if type(row.c) == "string" then row.c else nil,
+				d = tonumber(row.d) or 0,
+				h = tonumber(row.h) or 0,
+				s = tonumber(row.s) or 0,
+			})
+		end
+	end
+	return rows
+end
+
 -- Entity lookup ---------------------------------------------------------------------------------------------
 
 local function findModel(entityId: string?): Model?
@@ -1022,6 +1048,11 @@ local function handle(event: { [string]: any })
 				myth = tonumber(event.myth),
 				runs = tonumber(event.runs),
 				dailyRuns = tonumber(event.dailyRuns),
+				luckMul = tonumber(event.luckMul),
+				luckFrom = if type(event.luckFrom) == "string" then event.luckFrom else nil,
+				upgraded = event.upgraded == true,
+				extra = event.extra == true,
+				summary = summaryOf(event.sum),
 			})
 		end
 	end

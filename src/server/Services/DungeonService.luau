@@ -8,6 +8,8 @@
 -- of this boss today, else Unique / Heroic) with materials and a chance of a legendary blessing; one daily run used
 -- for everyone present, a server announcement; the dungeon is released 60 s later or when everybody has left
 -- through the exit portal.
+-- S60: Fortune of the winners (Logic/Luck.boss: Legendary multiplier, Unique -> Heroic, a second item), the class
+-- variety bonus on the boss EXP and a fight summary (damage share, healing, shields) on every winner's reward card.
 -- Fighters see the state branch `boss` = { id, nameKey, hp, maxHp, phase, endsAt, enraged, shielded }.
 
 local HttpService = game:GetService("HttpService")
@@ -30,6 +32,8 @@ local ItemRoll = require(Shared.Logic.ItemRoll)
 local Log = require(Shared.Util.Log)
 local Config = require(Shared.Config)
 local Loot = require(Shared.Logic.Loot)
+local Luck = require(Shared.Logic.Luck)
+local PartyBonus = require(Shared.Logic.PartyBonus)
 local LootTables = require(Shared.Data.LootTables)
 local Maps = require(Shared.Data.Maps)
 local MonsterStats = require(Shared.Logic.MonsterStats)
@@ -77,7 +81,12 @@ type Run = {
 	releaseAt: number?,
 	lastState: number,
 	warned: { [number]: boolean }, -- time-left warnings already sent (minutes)
+	healing: { [Player]: number }, -- S60: HP restored by each member while the boss was up
+	shielding: { [Player]: number }, -- S60: damage soaked by each member's shields while the boss was up
 }
+
+-- One row of the fight summary (short keys: it travels in CombatFx); S61 adds the taken-damage column.
+type SummaryRow = { n: string, c: string?, d: number, h: number, s: number }
 
 local PlayerStateService: any
 local PartyService: any
@@ -90,6 +99,15 @@ local LevelService: any
 local LootService: any
 local AnnounceService: any
 local StatService: any
+local Registry: any
+local PathService: any
+
+-- Lazy: PathService depends on this service (NearAnyEntrance), so a Deps entry here would be a cycle. Never call
+-- during Init.
+local function pathService(): any
+	PathService = PathService or Registry.Get("PathService")
+	return PathService
+end
 
 local rng = Rng.new()
 local runs: { [string]: Run } = {}
@@ -211,7 +229,46 @@ local function fail(run: Run, key: string)
 	end
 end
 
-local function reward(run: Run, position: Vector3)
+-- Fortune of `players` (Logic/Luck.boss): the best priest counts for everyone, also solo.
+local function bossLuckOf(players: { Player }): Luck.BossLuck
+	local members: { Luck.Member } = {}
+	for _, player in players do
+		table.insert(members, { name = nameOf(player), luck = pathService().GetLuck(player) })
+	end
+	return Luck.boss(members)
+end
+
+-- Fight summary (S60): every member still in the game, damage share of the boss (0..1), healing and shields; sorted
+-- by damage, then healing.
+local function summaryOf(run: Run, damageBy: { [Player]: number }): { SummaryRow }
+	local total = 0
+	for _, amount in damageBy do
+		total += amount
+	end
+	local rows: { SummaryRow } = {}
+	for _, member in run.members do
+		if member.Parent ~= nil then
+			local char = character(member)
+			local share = if total > 0 then (damageBy[member] or 0) / total else 0
+			table.insert(rows, {
+				n = nameOf(member),
+				c = if char then char.class :: string else nil,
+				d = math.floor(share * 1000 + 0.5) / 1000,
+				h = math.floor(run.healing[member] or 0),
+				s = math.floor(run.shielding[member] or 0),
+			})
+		end
+	end
+	table.sort(rows, function(a, b)
+		if a.d ~= b.d then
+			return a.d > b.d
+		end
+		return a.h > b.h
+	end)
+	return rows
+end
+
+local function reward(run: Run, position: Vector3, damageBy: { [Player]: number })
 	local winners = present(run)
 	local n = #winners
 	if n == 0 then
@@ -220,7 +277,16 @@ local function reward(run: Run, position: Vector3)
 	local def = run.def
 	local now = Clock.now()
 	local bossTable = LootTables.bosses[def.id]
-	local baseExp = PartyLoot.splitExp(Exp.monsterExp(def.level, "boss"), n)
+	-- S60: Fortune once per kill, the same for every winner; the class variety bonus before the split.
+	local bossLuck = bossLuckOf(winners)
+	local luckFrom = if bossLuck.legendaryMul > 1 then bossLuck.from else nil
+	local classes: { string } = {}
+	for _, player in winners do
+		local char = character(player)
+		table.insert(classes, if char then char.class :: string else "")
+	end
+	local summary = summaryOf(run, damageBy)
+	local baseExp = PartyLoot.splitExp(Exp.monsterExp(def.level, "boss") * PartyBonus.expMul(classes), n)
 	local shares = PartyLoot.splitGold(MonsterStats.gold(def.level, "boss", rng:next()), n, rng)
 	-- FIX 2026-10-09: every winner gets exactly one item (and the materials) in an own bag only they see and can
 	-- pick up; the Legendary / Mythic chances grow with the character's kills of this boss today.
@@ -244,23 +310,30 @@ local function reward(run: Run, position: Vector3)
 			end)
 			Analytics.gold(player, gold, balance, "boss")
 			Analytics.progression(player, "Bosses", def.level, def.id)
-			local gotLeg, gotMyth = false, false
+			local gotLeg, gotMyth, upgraded, gotExtra = false, false, false, false
 			if bossTable then
 				local items = {}
-				local drop = Loot.rollBossItem(bossTable, killsToday, char.class :: string, rng)
+				local drop = Loot.rollBossItem(bossTable, killsToday, char.class :: string, rng, bossLuck)
+				local extraDrop = Loot.rollBossExtra(bossTable, char.class :: string, rng, bossLuck)
 				if drop then
 					gotLeg, gotMyth = drop.rarity == Rarities.LEGENDARY, drop.rarity == Rarities.MYTHIC
-					table.insert(
-						items,
-						ItemRoll.rollItem(
-							drop.defId,
-							drop.ilvl,
-							drop.rarity,
-							rng,
-							HttpService:GenerateGUID(false),
-							char.class :: string
+					upgraded = drop.upgraded == true
+				end
+				gotExtra = extraDrop ~= nil
+				for _, rolled in { drop, extraDrop } :: { Loot.ItemDrop? } do
+					if rolled then
+						table.insert(
+							items,
+							ItemRoll.rollItem(
+								rolled.defId,
+								rolled.ilvl,
+								rolled.rarity,
+								rng,
+								HttpService:GenerateGUID(false),
+								char.class :: string
+							)
 						)
-					)
+					end
 				end
 				local extra = Loot.rollBossLoot(def.id, n, rng)
 				for _, stack in LootService.InstancesFrom(extra) do
@@ -271,14 +344,14 @@ local function reward(run: Run, position: Vector3)
 					table.insert(items, ItemRoll.makeStack(`blessing_{line}_5`, 1, HttpService:GenerateGUID(false)))
 				end
 				if #items > 0 then
-					LootService.SpawnBag(player, position + Vector3.new(0, 0, 3), items, def.id, true)
+					LootService.SpawnBag(player, position + Vector3.new(0, 0, 3), items, def.id, true, luckFrom)
 				end
 				if gotLeg or gotMyth then
 					Analytics.custom(player, if gotMyth then "BossMythic" else "BossLegendary", def.level)
 				end
 			end
 			-- The chances of the next kill today.
-			local chances = Loot.bossChances(def.id, killsToday + 1)
+			local chances = Loot.bossChances(def.id, killsToday + 1, bossLuck)
 			Net.Fire(player, "CombatFx", {
 				{
 					k = "reward",
@@ -291,6 +364,11 @@ local function reward(run: Run, position: Vector3)
 					myth = chances.mythic,
 					runs = runsToday + 1,
 					dailyRuns = Config.Boss.dailyRuns,
+					luckMul = bossLuck.legendaryMul,
+					luckFrom = bossLuck.from,
+					upgraded = upgraded,
+					extra = gotExtra,
+					sum = summary,
 				},
 			})
 		end
@@ -310,12 +388,14 @@ local function win(run: Run)
 			end
 		end
 	end
+	-- The damage map before the boss is dropped (fight summary, S60).
+	local damageBy: { [Player]: number } = if boss then table.clone(boss.monster.damageBy) else {}
 	run.boss = nil
 	announce(run, "dungeon.victory", { boss = `@{run.def.nameKey}` })
 	for _, member in present(run) do
 		clearState(member)
 	end
-	reward(run, position)
+	reward(run, position, damageBy)
 	log:info("%s cleared by %s's group (%d)", run.def.id, run.leaderName, #run.members)
 end
 
@@ -388,6 +468,8 @@ local function start(region: string, leader: Player, members: { Player }): Run
 		releaseAt = nil,
 		lastState = 0,
 		warned = {},
+		healing = {},
+		shielding = {},
 	}
 	runs[region] = run
 	for i, member in members do
@@ -446,7 +528,12 @@ local function info(player: Player, region: string): (boolean, string?, any)
 	local members = {}
 	local self = character(player)
 	local now = Clock.now()
-	local chances = Loot.bossChances(def.id, if self then BossScaling.killsToday(self.bossRuns, def.id, now) else 0)
+	-- ROZWOJ 6.4: the chance with the party's Fortune (the whole party; solo the player).
+	local chances = Loot.bossChances(
+		def.id,
+		if self then BossScaling.killsToday(self.bossRuns, def.id, now) else 0,
+		bossLuckOf(PartyService.Members(player))
+	)
 	local leaderRoot = player.Character and player.Character:FindFirstChild("HumanoidRootPart") :: BasePart?
 	for _, member in PartyService.Members(player) do
 		local reason, lockLeft = blocker(member, def)
@@ -651,11 +738,37 @@ function DungeonService.Init(registry)
 	LootService = registry.Get("LootService")
 	AnnounceService = registry.Get("AnnounceService")
 	StatService = registry.Get("StatService")
+	Registry = registry
+end
+
+-- The run in which both players fight a boss that is up (S60: healing and shields of the fight summary).
+local function fightOf(target: Player, source: Player): Run?
+	for _, run in runs do
+		if
+			run.boss ~= nil
+			and not run.cleared
+			and table.find(run.members, target)
+			and table.find(run.members, source)
+		then
+			return run
+		end
+	end
+	return nil
 end
 
 function DungeonService.Start()
 	Net.Handle("DungeonInfo", info)
 	Net.Handle("EnterDungeon", enter)
+	ResourceService.Healed:Connect(function(target: Player, amount: number, source: Player?, kind: string)
+		if not source then
+			return
+		end
+		local run = fightOf(target, source)
+		if run then
+			local book = if kind == "shield" then run.shielding else run.healing
+			book[source] = (book[source] or 0) + amount
+		end
+	end)
 	local accumulator = 0
 	RunService.Heartbeat:Connect(function(dt)
 		accumulator += dt

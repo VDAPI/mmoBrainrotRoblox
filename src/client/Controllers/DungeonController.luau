@@ -33,7 +33,7 @@ local WindowManager: any
 local UIControllerRef: any
 local rewardScope: Fusion.Scope<typeof(Fusion)>? = nil
 
-local REWARD_SECONDS = 14
+local REWARD_SECONDS = 20
 local region = scope:Value(nil :: string?)
 local announceText = scope:Value("")
 local announceAlpha = scope:Value(1)
