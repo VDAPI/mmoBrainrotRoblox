@@ -2170,13 +2170,16 @@ Fundament:
    nie czeka na nie.
 
 Klasy:
-7. Kapłan w 2–3 sesjach: sesja 1 dane (podział umiejętności, 3 ścieżki, węzły, szczęście Fortuny, przełomy B z
-   istniejących zachowań, leczenie od HP celu, teksty PL); sesja 2 nowe zachowania i 6 nowych umiejętności z ruchami i
-   efektami; sesja 3 haki, Modlitwa, `Logic/Channel`, testy, teksty EN i sprawdzenie celów po normalizacji (9.6). Gra
-   losem Fortuny w tej sesji, w której się zmieści.
-8. Wojownik, potem Łowca, potem Mag, każda klasa w 2–3 sesjach według tego samego wzoru (dane i teksty PL; nowe
-   umiejętności, ruchy i efekty; haki, testy, teksty EN). Na klasę: 6 nowych aktywnych (Mag 4), 22–24 opcje B dla
-   istniejących aktywnych, 48 węzłów bez węzłów `skill` (Mag 36).
+7. Kapłan w 3 sesjach (S69–S71); każde zachowanie wchodzi w tej samej sesji co dane, które go używają, a teksty PL i
+   EN zawsze razem. S69: leczenie od HP celu i opcje B 12 istniejących aktywnych z ich zachowaniami (`healWounded`,
+   `chainHeal`, `healZone`, `cleanse` w tarczy i `groupBuff`). S70: sześć nowych umiejętności z mechanikami
+   (`healZone` jako typ, `guardianAngel`, `roll`, `Logic/Channel`, `steadfast`, `burst`, `burn`) i opcje B, które ich
+   potrzebują (Modlitwa 5B i 10B, Oczyszczenie 5B). S71: podział podstawy z nowymi odblokowaniami i obrażeniami z 9.2,
+   ścieżki, węzły, haki węzłów i szczęście Fortuny. Cele z 9.6 mierzy model balansu (S86), stroi S89.
+8. Wojownik, potem Łowca, potem Mag, każda klasa w 3–4 sesjach w tej samej kolejności: silnik klasy i opcje B
+   istniejących aktywnych (haki czytają 0, dopóki nie ma węzłów), potem nowe umiejętności z ruchami i efektami, na
+   końcu podstawa, ścieżki, węzły i haki węzłów; teksty PL i EN w tej samej sesji. Na klasę: 6 nowych aktywnych (Mag
+   4), 22–24 opcje B dla istniejących aktywnych, 48 węzłów bez węzłów `skill` (Mag 36).
 9. Planer wiki od nowa (3.5); potem sesje balansu 20–100 na buildach wzorcowych i nowy fixture 1–20 (S82 planer, S83–S94 balans).
 
 Po każdej sesji: wpisy w `docs/DECYZJE.md`, sekcja w `docs/SESJE.md` (przy sesjach klas: co znika z paska przez

@@ -462,10 +462,15 @@ end
 local HEAL_TYPES: { [string]: boolean } = { heal = true, hot = true, groupHeal = true }
 
 -- Value fields of `skill` computed from magic attack (or, for a damage skill that heals allies, from its own hit)
--- that the heal curve multiplies. Percent-of-HP heals (Divine Intervention), heal bonuses (Devotion) and shares of
+-- that the heal curve multiplies. S69: with the target-HP pair only the magic part (healMag / shieldMag) is on the
+-- curve, never healHp / shieldHp. Percent-of-HP heals (Divine Intervention), heal bonuses (Devotion) and shares of
 -- dealt damage from passive hooks (Holy Strike) are not on the curve.
 function Skills.healFields(skill: SkillDef): { string }
-	if HEAL_TYPES[skill.type] then
+	if skill.values.healMag ~= nil then
+		return { "healMag" }
+	elseif skill.values.shieldMag ~= nil then
+		return { "shieldMag" }
+	elseif HEAL_TYPES[skill.type] then
 		return { "heal" }
 	elseif skill.type == "shield" then
 		return { "shield" }
@@ -473,6 +478,56 @@ function Skills.healFields(skill: SkillDef): { string }
 		return { "heal" }
 	end
 	return {}
+end
+
+-- S69 (ROZWOJ 7.5, 9.2): base heal or shield of `def` (already Skills.effective) at `rank` on a target with
+-- `targetMaxHp`, before heal bonuses, item power and PvP scaling. prefix "heal" reads values.healHp / healMag,
+-- "shield" reads values.shieldHp / shieldMag. Only the magic-attack part follows the heal curve (S54); `level` is
+-- the caster's character level. Data without the Hp / Mag pair keeps the formula from before S69: magic attack x
+-- curve x values[prefix] %.
+function Skills.healAmount(
+	def: SkillDef,
+	rank: number,
+	prefix: "heal" | "shield",
+	targetMaxHp: number,
+	magAtk: number,
+	level: number
+): number
+	local hpField, magField = def.values[prefix .. "Hp"], def.values[prefix .. "Mag"]
+	local curve = Skills.healMul(level)
+	if hpField == nil and magField == nil then
+		return magAtk * curve * Skills.valueAt(def, prefix, rank) / 100
+	end
+	return targetMaxHp * Skills.scaled(def, hpField, rank) / 100
+		+ magAtk * curve * Skills.scaled(def, magField, rank) / 100
+end
+
+-- S69 (ROZWOJ 9.2, Heal 10B chainHeal): order of the next chain targets. `fractions[i]` is the HP share of
+-- candidate i (already without the targets healed in this cast). Only wounded candidates (< 1), the most
+-- wounded first, ties by lower index, at most `jumps`. Returns candidate indices.
+function Skills.chainOrder(fractions: { number }, jumps: number): { number }
+	local order: { number } = {}
+	for i, fraction in fractions do
+		if fraction < 1 then
+			table.insert(order, i)
+		end
+	end
+	table.sort(order, function(a: number, b: number): boolean
+		if fractions[a] ~= fractions[b] then
+			return fractions[a] < fractions[b]
+		end
+		return a < b
+	end)
+	local limit = math.max(0, math.floor(jumps))
+	while #order > limit do
+		table.remove(order)
+	end
+	return order
+end
+
+-- Share of the k-th chain jump (k = 1, 2, ...): (pct / 100) ^ k, e.g. 60 -> 0.6, 0.36.
+function Skills.chainShare(pct: number, k: number): number
+	return (pct / 100) ^ k
 end
 
 -- Skill damage multiplier from the base speed of the equipped weapon (nil = unarmed): weapons with the same damage

@@ -5,7 +5,10 @@
 -- effects in skill.effects / skill.selfEffects / skill.allyEffects) and `bp` the merged behaviours without effects; `damage` applies the on-hit ones (lifesteal, knockback, execute, stun near the target,
 -- splash) and `applyEffect` stacks bleeds; `lingering` and `trap` leave lasting areas.
 -- S54 (ROZWOJ 8): skill hits (`damage`) and attack-based DoTs (`attack`) x Skills.speedFactor of the weapon
--- (`speedMul`); heals and shields from magic attack go through `healAtk` (x the heal level curve), no weapon factor.
+-- (`speedMul`); heals and shields carry no weapon factor.
+-- S69 (ROZWOJ 7.5): heals and shields of a cast come from the target's max HP plus a magic-attack part on the heal
+-- curve (`healAmount` = Logic/Skills.healAmount, per target); `heal` stays the one entry for heal bonuses; `healZone`
+-- is the healing field (Circle of Light 10B, Sanctuary S70); on-hit `healWounded` heals the most wounded ally.
 -- S65: the weapon-element effect of adaptive skills lives in Skills/Elements (numbers in Data/Skills.ADAPTIVE); the
 -- most wounded ally and healing an ally are module functions (Context.bind) CombatService shares (Saving Blow).
 
@@ -53,7 +56,8 @@ export type Ctx = {
 	attack: () -> number, -- physical or magic attack depending on the skill, x speedMul (S54)
 	magAtk: () -> number,
 	healMul: () -> number, -- heal level curve at the caster's level (S54)
-	healAtk: () -> number, -- magic attack x healMul: base of heals and shields (S54)
+	-- S69: base heal / shield of this cast on `target` (max HP part + magic part x healMul), before bonuses
+	healAmount: (target: Player, prefix: "heal" | "shield") -> number,
 	healPowerMul: () -> number, -- S62: 1 + healPower / 100 (lines, Anointment) on heals and shields cast
 	speedMul: number, -- skill damage x weapon speed / Combat.skillSpeedRef (S54)
 	fx: (data: { [string]: any }) -> (),
@@ -65,6 +69,14 @@ export type Ctx = {
 	applyEffects: (entity: any, side: "enemy" | "self" | "allies") -> (),
 	applyEffect: (entity: any, effect: SkillData.SkillEffect) -> (), -- one effect (breakpoint extras)
 	lingering: (center: Vector3, percent: number) -> (), -- the breakpoint's lasting area (S28)
+	-- S69: healing field, every second share % of each ally's own heal of this skill; onTick adds extras (S70)
+	healZone: (
+		center: Vector3,
+		radius: number,
+		duration: number,
+		share: number,
+		onTick: ((ally: Player, entity: any) -> ())?
+	) -> (),
 	trap: (at: Vector3, radius: number, duration: number, effect: SkillData.SkillEffect) -> (),
 	wounded: (center: Vector3, radius: number, except: Player?) -> Player?, -- most wounded ally (S28)
 	enemiesInCircle: (center: Vector3, radius: number) -> { any },
@@ -273,6 +285,13 @@ function Context.new(
 		if behaviour.lifesteal then
 			ctx.heal(player, result.amount * behaviour.lifesteal / 100)
 		end
+		-- S69 (Holy Strike 10B): the most wounded ally nearby (the caster too) heals a share of the main hit.
+		if behaviour.healWounded and opts.primary then
+			local ally = ctx.wounded(root.Position, SkillData.WOUNDED_RADIUS)
+			if ally then
+				ctx.heal(ally, result.amount * behaviour.healWounded / 100)
+			end
+		end
 		if behaviour.knockback then
 			Push.knockback(entity, opts.from or root.Position, behaviour.knockback)
 		end
@@ -328,8 +347,17 @@ function Context.new(
 		healMul = function(): number
 			return Skills.healMul(character.level)
 		end,
-		healAtk = function(): number
-			return (stats().magAtk or 0) * Skills.healMul(character.level)
+		-- S69 (ROZWOJ 7.5): one formula, Logic/Skills.healAmount; bonuses, item power and PvP come later
+		-- (ctx.heal, Support, StatusEffectService).
+		healAmount = function(target: Player, prefix: "heal" | "shield"): number
+			return Skills.healAmount(
+				skill,
+				rank,
+				prefix,
+				services.Stat.GetValue(target, "maxHp"),
+				stats().magAtk or 0,
+				character.level
+			)
 		end,
 		-- S62: healPower (lines, Anointment) raises heals and shields this player casts
 		healPowerMul = function(): number
@@ -477,6 +505,25 @@ function Context.new(
 								skillId = skill.id,
 								category = "enemySlow",
 							})
+						end
+					end
+				end)
+			end
+		end,
+		-- S69 (ROZWOJ 9.2, 14.1): every second for floor(duration) s each living ally inside gets share % of their
+		-- own heal of this skill, counted at the tick (their max HP, the caster's magic attack).
+		healZone = function(center, radius, duration, share, onTick)
+			ctx.fx({ v = "lingering", p = center, r = radius, d = duration, k = "heal" })
+			for second = 1, math.floor(duration) do
+				task.delay(second, function()
+					if player.Parent == nil then
+						return
+					end
+					for _, ally in ctx.alliesInCircle(center, radius) do
+						ctx.heal(ally, ctx.healAmount(ally, "heal") * share / 100)
+						local entity = if onTick then Entity.GetPlayerEntity(ally) else nil
+						if onTick and entity then
+							onTick(ally, entity)
 						end
 					end
 				end)

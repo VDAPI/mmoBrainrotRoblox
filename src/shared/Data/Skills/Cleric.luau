@@ -1,5 +1,7 @@
 --!strict
 -- Cleric skills (DESIGN §14.5), Mana. Heals and buffs only work on the caster and party members.
+-- S69: heals and shields from the target's max HP plus a magic part (healHp / healMag, shieldHp / shieldMag;
+-- Logic/Skills.healAmount), breakpoints A/B per ROZWOJ 9.2–9.5; unlocks and base damage are still today's (S71).
 
 local Build = require("./Build")
 
@@ -16,8 +18,8 @@ return Build.class("Cleric", "mana", "magic", {
 		holy = true,
 		values = { dmg = { 150, 280 } },
 		breakpoints = Build.bp2(
-			{ a = { splash = { radius = 5, pct = 40 } } },
-			{ a = { effect = { kind = "stun", duration = 0.8 } } }
+			{ a = { splash = { radius = 5, pct = 40 } }, b = { execute = 30 } },
+			{ a = { effect = { kind = "stun", duration = 0.8 } }, b = { healWounded = 30 } }
 		),
 		glyph = "✚",
 	},
@@ -30,8 +32,11 @@ return Build.class("Cleric", "mana", "magic", {
 		cost = 20,
 		cooldown = 3,
 		range = 30,
-		values = { heal = { 120, 260 } },
-		breakpoints = Build.bp2({ a = { secondTarget = 50 } }, { a = { overhealShield = true } }),
+		values = { healHp = { 16, 18 }, healMag = { 8, 12 } },
+		breakpoints = Build.bp2(
+			{ a = { secondTarget = 50 }, b = { selfHeal = 6 } },
+			{ a = { overhealShield = true }, b = { chainHeal = { jumps = 2, pct = 60 } } }
+		),
 		glyph = "✙",
 	},
 	{
@@ -44,8 +49,11 @@ return Build.class("Cleric", "mana", "magic", {
 		cooldown = 8,
 		range = 30,
 		duration = 10,
-		values = { heal = { 200, 400 } },
-		breakpoints = Build.bp2({ a = { add = { duration = 4 } } }, { a = { cleanse = true } }),
+		values = { healHp = { 16, 24 }, healMag = { 10, 15 } },
+		breakpoints = Build.bp2(
+			{ a = { add = { duration = 4 } }, b = { secondTarget = 50 } },
+			{ a = { cleanse = true }, b = { values = { healHp = 6 } } }
+		),
 		glyph = "❦",
 	},
 	{
@@ -59,7 +67,10 @@ return Build.class("Cleric", "mana", "magic", {
 		radius = 10,
 		holy = true,
 		values = { dmg = { 110, 200 }, heal = 50 },
-		breakpoints = Build.bp2({ a = { add = { radius = 3 } } }, { a = { values = { heal = 50 } } }),
+		breakpoints = Build.bp2(
+			{ a = { add = { radius = 3 } }, b = { pull = 16 } },
+			{ a = { values = { heal = 50 } }, b = { echo = { delay = 1, pct = 40 } } }
+		),
 		glyph = "☀",
 	},
 	{
@@ -80,8 +91,8 @@ return Build.class("Cleric", "mana", "magic", {
 		cost = 50,
 		cooldown = 15,
 		radius = 14,
-		values = { heal = { 100, 200 } },
-		breakpoints = Build.bp2({ a = { cleanse = true } }, {
+		values = { healHp = { 8, 12 }, healMag = { 6, 10 } },
+		breakpoints = Build.bp2({ a = { cleanse = true }, b = { add = { radius = 4 } } }, {
 			a = {
 				allyEffect = {
 					kind = "damageReduction",
@@ -91,6 +102,7 @@ return Build.class("Cleric", "mana", "magic", {
 					category = "allyGuard",
 				},
 			},
+			b = { healZone = { duration = 4, pct = 25 } },
 		}),
 		glyph = "◌",
 	},
@@ -103,8 +115,12 @@ return Build.class("Cleric", "mana", "magic", {
 		cost = 25,
 		cooldown = 12,
 		range = 30,
-		values = { heal = { 80, 150 } },
-		breakpoints = Build.bp2({ a = { overhealShield = true } }, { a = { secondTarget = 50 } }),
+		values = { healHp = { 8, 12 }, healMag = { 6, 10 } },
+		-- 5B (burst) comes with S70
+		breakpoints = Build.bp2(
+			{ a = { overhealShield = true } },
+			{ a = { secondTarget = 50 }, b = { mul = { cooldown = 0.6 } } }
+		),
 		glyph = "✧",
 	},
 	{
@@ -128,7 +144,20 @@ return Build.class("Cleric", "mana", "magic", {
 				category = "allyVigor",
 			},
 		},
-		breakpoints = Build.bp2({ a = { add = { radius = 10 } } }, {
+		breakpoints = Build.bp2({
+			a = { add = { radius = 10 } },
+			b = {
+				allyEffect = {
+					kind = "statBuff",
+					duration = 60,
+					stats = { mres = "mresBp" },
+					pct = true,
+					target = "allies",
+					category = "allyVigor",
+				},
+				values = { mresBp = 10 },
+			},
+		}, {
 			a = {
 				allyEffect = {
 					kind = "statBuff",
@@ -139,6 +168,17 @@ return Build.class("Cleric", "mana", "magic", {
 					category = "allyVigor",
 				},
 				values = { armorBp = 10 },
+			},
+			b = {
+				allyEffect = {
+					kind = "statBuff",
+					duration = 60,
+					stats = { physAtk = "atkBp", magAtk = "atkBp" },
+					pct = true,
+					target = "allies",
+					category = "allyAttack",
+				},
+				values = { atkBp = 6 },
 			},
 		}),
 		glyph = "♥",
@@ -154,8 +194,8 @@ return Build.class("Cleric", "mana", "magic", {
 		range = 30,
 		values = { hp = { 20, 60 } },
 		breakpoints = Build.bp2(
-			{ a = { values = { hp = 20 } } },
-			{ a = { allyEffect = { kind = "invuln", duration = 3, target = "allies" } } }
+			{ a = { values = { hp = 20 } }, b = { mul = { cooldown = 0.7 } } },
+			{ a = { allyEffect = { kind = "invuln", duration = 3, target = "allies" } }, b = { values = { hp = 25 } } }
 		),
 		glyph = "✝",
 	},
@@ -169,8 +209,11 @@ return Build.class("Cleric", "mana", "magic", {
 		cooldown = 20,
 		range = 30,
 		duration = 8,
-		values = { shield = { 300, 600 } },
-		breakpoints = Build.bp2({ a = { values = { shield = 120 } } }, { a = { secondTarget = 50 } }),
+		values = { shieldHp = { 12, 18 }, shieldMag = { 10, 15 } },
+		breakpoints = Build.bp2(
+			{ a = { values = { shieldHp = 3 } }, b = { cleanse = true } },
+			{ a = { secondTarget = 50 }, b = { add = { duration = 6 }, values = { shieldHp = 3 } } }
+		),
 		glyph = "🛡",
 	},
 	{
@@ -194,10 +237,10 @@ return Build.class("Cleric", "mana", "magic", {
 		holy = true,
 		values = { dmg = { 280, 500 } },
 		effects = { { kind = "stun", duration = 1 } },
-		breakpoints = Build.bp2(
-			{ a = { lifesteal = 30 } },
-			{ a = { effect = { kind = "vulnerability", duration = 6, value = 10, category = "enemyWeak" } } }
-		),
+		breakpoints = Build.bp2({ a = { lifesteal = 30 }, b = { stunNear = { radius = 6, duration = 0.8 } } }, {
+			a = { effect = { kind = "vulnerability", duration = 6, value = 10, category = "enemyWeak" } },
+			b = { values = { dmg = 100 } },
+		}),
 		glyph = "⚖",
 	},
 	{
@@ -210,6 +253,7 @@ return Build.class("Cleric", "mana", "magic", {
 		cooldown = 90,
 		duration = 3,
 		values = { mana = { 25, 45 }, group = 10 },
+		-- 5B (roll.half) and 10B (steadfast) come with S70
 		breakpoints = Build.bp2({ a = { mul = { cooldown = 0.75 } } }, { a = { values = { group = 10 } } }),
 		glyph = "🕯",
 	},
@@ -224,7 +268,18 @@ return Build.class("Cleric", "mana", "magic", {
 		radius = 30,
 		values = { invuln = { 2, 4 }, heal = 30 },
 		effects = { { kind = "invuln", duration = { 2, 4 }, target = "allies" } },
-		breakpoints = Build.bp2({ a = { values = { heal = 15 } } }, { a = { add = { radius = 15 } } }),
+		breakpoints = Build.bp2({ a = { values = { heal = 15 } }, b = { cleanse = true } }, {
+			a = { add = { radius = 15 } },
+			b = {
+				allyEffect = {
+					kind = "damageReduction",
+					duration = 7,
+					value = 25,
+					target = "allies",
+					category = "allyGuard",
+				},
+			},
+		}),
 		glyph = "☩",
 	},
 })

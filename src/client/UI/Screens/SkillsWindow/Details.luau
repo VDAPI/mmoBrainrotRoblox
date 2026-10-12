@@ -209,6 +209,10 @@ function Details.lines(
 		end
 		sub(Text.get(use, if rank > 0 then "skills.current" else "skills.notLearned"))
 		line(Skills.formatDescription(skill, shown, lang, opts))
+		local heal = SkillInfo.healLine(use, skill, shown) -- S69
+		if heal ~= "" then
+			line(heal, Theme.Colors.Parchment)
+		end
 		if rank < skill.maxLevel then
 			local nextRank = rank + 1
 			sub(Text.get(use, "skills.next"))

@@ -87,9 +87,12 @@ export type SkillEffect = {
 --   splash = { radius, pct } a single-target hit also hurts enemies around the target
 --   secondTarget = pct       heal / shield / heal-over-time also on the second most wounded ally
 --   overhealShield = true    healing above full HP becomes an absorb shield
---   cleanse = true           also removes harmful effects
+--   cleanse = true           also removes harmful effects (heal, hot, groupHeal, shield, groupBuff (S69))
 --   lifesteal = pct          the caster heals for pct of the damage dealt
 --   selfHeal = pct           the caster heals pct of max HP on cast
+--   healWounded = pct        S69: the most wounded ally within SkillData.WOUNDED_RADIUS heals pct of the main hit
+--   chainHeal = { jumps, pct }  S69: the heal jumps to `jumps` more wounded allies in range, (pct/100)^k of their heal
+--   healZone = { duration, pct }  S69: a field at the cast point heals allies inside pct of their heal every second
 --   effect / selfEffect / allyEffect = SkillEffect   an extra effect on hit enemies / the caster / allies; these
 --                            carry their own category (S53) like the skill's effects. Logic/Skills.effective
 --                            collects them from every source into def.effects / def.selfEffects / def.allyEffects
@@ -115,6 +118,9 @@ export type Breakpoint = {
 	cleanse: boolean?,
 	lifesteal: number?,
 	selfHeal: number?,
+	healWounded: number?,
+	chainHeal: { jumps: number, pct: number }?,
+	healZone: { duration: number, pct: number }?,
 	effect: SkillEffect?,
 	selfEffect: SkillEffect?,
 	allyEffect: SkillEffect?,

@@ -9,6 +9,7 @@
 -- factor (Skills.speedFactor) when it is not x1.
 -- S59: breakpoints with the player's choice: the line shows the option that works (chosen, else A);
 -- breakpointCards gives the skills window both options of ranks 5 and 10 with their state.
+-- S69: healLine shows the heal / shield of the skill on the player (Skills.healAmount: it depends on the target's HP).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -27,6 +28,8 @@ local equipment = State.Value({ "character", "equipment" })
 local weapon = State.Value({ "derived", "weapon" })
 local costReduce = State.Value({ "derived", "values", "costReduce" }) -- S62: the bar shows the cost after saving
 local cooldownReduction = State.Value({ "skills", "cdr" }) -- S64: % item cooldown reduction (SkillService)
+local maxHpValue = State.Value({ "derived", "values", "maxHp" }) -- S69: healLine
+local magAtkValue = State.Value({ "derived", "values", "magAtk" })
 
 -- The character as Logic/Paths reads it, tracked by `use`.
 local function charOf(use: any): Paths.Char
@@ -209,6 +212,31 @@ function SkillInfo.breakpointCards(
 	return out
 end
 
+local function numberOf(use: any, value: any, default: number): number
+	local v = use(value)
+	return if type(v) == "number" then v else default
+end
+
+-- S69: "On you: about 540 health" for heals / shields from the target's HP (Skills.healAmount, as the server counts
+-- it, before heal bonuses); "" for other skills. `skill` is the base skill, worked out like the description.
+function SkillInfo.healLine(use: any, skill: SkillData.SkillDef, rank: number): string
+	local shown = math.max(1, rank)
+	local def = effective(use, skill, shown)
+	local values = def.values
+	local prefix: "heal" | "shield"
+	if values.shieldHp ~= nil or values.shieldMag ~= nil then
+		prefix = "shield"
+	elseif values.healHp ~= nil or values.healMag ~= nil then
+		prefix = "heal"
+	else
+		return ""
+	end
+	local amount =
+		Skills.healAmount(def, shown, prefix, numberOf(use, maxHpValue, 0), numberOf(use, magAtkValue, 0), levelOf(use))
+	local key = if prefix == "shield" then "skills.shieldOnSelf" else "skills.healOnSelf"
+	return Text.get(use, key, { amount = math.floor(amount + 0.5) })
+end
+
 -- The whole tooltip as plain text (the skill bar); `choices` default: path.bp of the character.
 function SkillInfo.tooltip(use: any, skill: SkillData.SkillDef, rank: number, choices: Skills.Choices?): string
 	local lang = use(Text.Lang)
@@ -227,6 +255,10 @@ function SkillInfo.tooltip(use: any, skill: SkillData.SkillDef, rank: number, ch
 	end
 	local opts = descOpts(use, skill)
 	table.insert(lines, Skills.formatDescription(skill, shown, lang, opts))
+	local heal = SkillInfo.healLine(use, skill, shown)
+	if heal ~= "" then
+		table.insert(lines, heal)
+	end
 	if rank > 0 and rank < skill.maxLevel then
 		local nextText = Skills.formatDescription(skill, rank + 1, lang, opts)
 		local label = Text.get(use, "skills.nextRank", { rank = rank + 1, level = Skills.rankLevel(skill, rank + 1) })

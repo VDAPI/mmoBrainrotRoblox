@@ -260,10 +260,12 @@ T.describe("S54 formulas", function()
 		for level = 1, 20 do
 			T.expect(Skills.healMul(level)).toBe(1)
 		end
-		for _, id in { "heal", "renew", "circleOfLight", "purify", "radiance" } do
-			T.expect({ id = id, fields = Skills.healFields(skill(id)) }).toEqual({ id = id, fields = { "heal" } })
+		-- S69: target-HP heals put only their magic part on the curve
+		for _, id in { "heal", "renew", "circleOfLight", "purify" } do
+			T.expect({ id = id, fields = Skills.healFields(skill(id)) }).toEqual({ id = id, fields = { "healMag" } })
 		end
-		T.expect(Skills.healFields(skill("shieldOfFaith"))).toEqual({ "shield" })
+		T.expect(Skills.healFields(skill("radiance"))).toEqual({ "heal" })
+		T.expect(Skills.healFields(skill("shieldOfFaith"))).toEqual({ "shieldMag" })
 		for _, id in { "devotion", "divineIntervention", "holyStrike" } do
 			T.expect({ id = id, fields = Skills.healFields(skill(id)) }).toEqual({ id = id, fields = {} })
 		end
@@ -281,7 +283,7 @@ T.describe("S54 formulas", function()
 						rank = rank,
 						cost = math.max(0, round(Skills.scaled(effective, effective.cost, rank))),
 					})
-					for _, field in { "heal", "shield" } do
+					for _, field in { "heal", "shield", "healHp", "healMag", "shieldHp", "shieldMag" } do
 						T.expect({ id = def.id, field = field, value = args[field] }).toEqual({
 							id = def.id,
 							field = field,
@@ -760,6 +762,109 @@ T.describe("S64 cooldown reduction (STATY 2C, ROZWOJ 7.3)", function()
 			end
 		end
 	)
+end)
+
+T.describe("S69 Cleric heals and B options", function()
+	local pl = require("../src/shared/Data/Localization/pl")
+	local en = require("../src/shared/Data/Localization/en")
+	local function skill(id: string): SkillData.SkillDef
+		return SkillData.byId[id]
+	end
+
+	T.it("12 actives: A on both ranks, B per ROZWOJ 9.2–9.5", function()
+		-- S70 adds purify 5B (burst) and prayer 5B / 10B (roll, steadfast): flip these then
+		local expected: { [string]: { [number]: string } } = {
+			holyStrike = { [5] = "execute", [10] = "healWounded" },
+			heal = { [5] = "selfHeal", [10] = "chainHeal" },
+			renew = { [5] = "secondTarget", [10] = "values" },
+			radiance = { [5] = "pull", [10] = "echo" },
+			circleOfLight = { [5] = "add", [10] = "healZone" },
+			purify = { [10] = "mul" },
+			auraOfEndurance = { [5] = "allyEffect", [10] = "allyEffect" },
+			resurrection = { [5] = "mul", [10] = "values" },
+			shieldOfFaith = { [5] = "cleanse", [10] = "add" },
+			judgement = { [5] = "stunNear", [10] = "values" },
+			prayer = {},
+			divineIntervention = { [5] = "cleanse", [10] = "allyEffect" },
+		}
+		for id, ranks in expected do
+			local bps = skill(id).breakpoints :: SkillData.Breakpoints
+			for _, at in { 5, 10 } do
+				local pair = bps[at]
+				T.expect({ id, at, pair.a ~= nil }).toEqual({ id, at, true })
+				local key = ranks[at]
+				if key then
+					local b: any = pair.b
+					T.expect({ id, at, b ~= nil and b[key] ~= nil }).toEqual({ id, at, true })
+				else
+					T.expect({ id, at, pair.b == nil }).toEqual({ id, at, true })
+				end
+				local textKey = `skill.{id}.bp{at}b`
+				T.expect({ textKey, (pl :: any)[textKey] ~= nil, (en :: any)[textKey] ~= nil })
+					.toEqual({ textKey, true, true })
+			end
+		end
+		local function b(id: string, at: number): any
+			return ((skill(id).breakpoints :: SkillData.Breakpoints)[at] :: any).b
+		end
+		local function a(id: string, at: number): any
+			return ((skill(id).breakpoints :: SkillData.Breakpoints)[at] :: any).a
+		end
+		T.expect(b("holyStrike", 10).healWounded).toBe(30)
+		T.expect(b("heal", 10).chainHeal).toEqual({ jumps = 2, pct = 60 })
+		T.expect(b("circleOfLight", 10).healZone).toEqual({ duration = 4, pct = 25 })
+		T.expect(b("auraOfEndurance", 5).allyEffect.category).toBe("allyVigor")
+		T.expect(b("auraOfEndurance", 5).allyEffect.stats.mres ~= nil).toBe(true)
+		T.expect(b("auraOfEndurance", 10).allyEffect.category).toBe("allyAttack")
+		T.expect(b("auraOfEndurance", 10).values.atkBp).toBe(6)
+		local guard = b("divineIntervention", 10).allyEffect
+		T.expect({ guard.value, guard.duration, guard.category }).toEqual({ 25, 7, "allyGuard" })
+		T.expect(a("shieldOfFaith", 5).values.shieldHp).toBe(3)
+		for _, id in { "heal", "renew", "circleOfLight", "purify", "shieldOfFaith" } do
+			local values = skill(id).values
+			T.expect({ id, values.heal == nil, values.shield == nil }).toEqual({ id, true, true })
+		end
+	end)
+
+	T.it("Shield of Faith 5A + 10B sums shieldHp", function()
+		local sof = skill("shieldOfFaith")
+		local def = Skills.effective(sof, 10, { ["shieldOfFaith:10"] = "b" }, nil, true)
+		T.expect(Skills.valueAt(def, "shieldHp", 10)).toBeNear(24)
+		T.expect(Skills.scaled(def, def.duration, 10)).toBeNear(14)
+		T.expect(Skills.valueAt(def, "shieldMag", 10)).toBeNear(15)
+		T.expect(Skills.healAmount(def, 10, "shield", 3000, 900, 20)).toBeNear(3000 * 0.24 + 900 * 0.15)
+		local bb, behaviourB =
+			Skills.effective(sof, 10, { ["shieldOfFaith:5"] = "b", ["shieldOfFaith:10"] = "b" }, nil, true)
+		T.expect(Skills.valueAt(bb, "shieldHp", 10)).toBeNear(21)
+		T.expect(behaviourB.cleanse).toBe(true)
+		local aa, behaviourA = Skills.effective(sof, 10, nil, nil, true)
+		T.expect(Skills.valueAt(aa, "shieldHp", 10)).toBeNear(21)
+		T.expect(behaviourA.secondTarget).toBe(50)
+		T.expect(Skills.scaled(aa, aa.duration, 10)).toBeNear(8)
+		local four = Skills.effective(sof, 4, nil, nil, true)
+		T.expect(Skills.valueAt(four, "shieldHp", 4)).toBeNear(12 + 6 * 3 / 9)
+	end)
+
+	T.it("healAmount: target HP plus magic part, old data as before", function()
+		local heal = skill("heal")
+		T.expect(Skills.healAmount(heal, 1, "heal", 1000, 200, 20)).toBeNear(1000 * 0.16 + 200 * 0.08)
+		local renew = Skills.effective(skill("renew"), 10, { ["renew:10"] = "b" }, nil, true)
+		T.expect(Skills.valueAt(renew, "healHp", 10)).toBeNear(30)
+		local old: any = table.clone(heal)
+		old.values = { heal = { 120, 260 } }
+		T.expect(Skills.healAmount(old, 10, "heal", 5000, 900, 20)).toBeNear(900 * 2.6)
+		local args = Skills.descriptionArgs(heal, 1, { level = 20 })
+		T.expect({ args.healHp, args.healMag }).toEqual({ 16, 8 })
+	end)
+
+	T.it("chainHeal order: most wounded first, each once, only wounded", function()
+		T.expect(Skills.chainOrder({ 1, 0.4, 0.7, 0.4, 0.9 }, 2)).toEqual({ 2, 4 })
+		T.expect(Skills.chainOrder({ 1, 0.4, 0.7, 0.4, 0.9 }, 5)).toEqual({ 2, 4, 3, 5 })
+		T.expect(Skills.chainOrder({ 1, 1 }, 2)).toEqual({})
+		T.expect(Skills.chainOrder({}, 2)).toEqual({})
+		T.expect(Skills.chainShare(60, 1)).toBeNear(0.6)
+		T.expect(Skills.chainShare(60, 2)).toBeNear(0.36)
+	end)
 end)
 
 return nil

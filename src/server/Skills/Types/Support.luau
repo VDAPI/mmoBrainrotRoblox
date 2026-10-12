@@ -4,11 +4,15 @@
 -- be interrupted. Healing and buffs only affect the caster and party members (PartyService).
 -- S28 breakpoints: a second wounded ally (secondTarget), overheal into a shield, cleanse, extra effects on allies
 -- (skill.allyEffects, S55).
+-- S69 (ROZWOJ 7.5, 9.2): heals and shields from each target's own max HP plus a magic part (ctx.healAmount, per
+-- target); the heal jumps to more wounded allies (chainHeal), Circle of Light leaves a healing field (healZone),
+-- the shield and groupBuff cleanse too.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Context = require(script.Parent.Parent.Context)
 local SkillData = require(ReplicatedStorage.Shared.Data.Skills)
+local Skills = require(ReplicatedStorage.Shared.Logic.Skills)
 
 local NO_EFFECTS: { SkillData.SkillEffect } = {}
 
@@ -99,15 +103,41 @@ local function second(ctx: Ctx, first: Player): (Player?, any)
 	return other, ctx.services.Entity.GetPlayerEntity(other)
 end
 
+-- S69 (Heal 10B): the heal jumps to more wounded allies in range, each once per cast.
+local function chainHeal(ctx: Ctx, chain: { jumps: number, pct: number }, healed: { [Player]: boolean })
+	local range = (ctx.skill :: any).range or 30
+	local pool: { Player }, fractions: { number } = {}, {}
+	for _, ally in ctx.alliesInCircle(ctx.root.Position, range + RANGE_TOLERANCE) do
+		if not healed[ally] then
+			local maxHp = ctx.services.Stat.GetValue(ally, "maxHp")
+			table.insert(pool, ally)
+			table.insert(fractions, if maxHp > 0 then ctx.services.Resource.Get(ally) / maxHp else 1)
+		end
+	end
+	for k, index in Skills.chainOrder(fractions, chain.jumps) do
+		local ally = pool[index]
+		local entity = ctx.services.Entity.GetPlayerEntity(ally)
+		if entity then
+			ctx.fx({ t = entity.id, n = k + 1 })
+			healOne(ctx, ally, entity, ctx.healAmount(ally, "heal") * Skills.chainShare(chain.pct, k))
+		end
+	end
+end
+
 Support.heal = function(ctx)
 	local player, entity = allyTarget(ctx)
 	ctx.fx({ t = entity.id })
-	local amount = ctx.healAtk() * ctx.value("heal") / 100
-	healOne(ctx, player, entity, amount)
+	healOne(ctx, player, entity, ctx.healAmount(player, "heal"))
+	local healed: { [Player]: boolean } = { [player] = true }
 	local other, otherEntity = second(ctx, player)
 	if other and otherEntity then
 		ctx.fx({ t = otherEntity.id, n = 2 })
-		healOne(ctx, other, otherEntity, amount * (ctx.bp.secondTarget or 0) / 100)
+		healOne(ctx, other, otherEntity, ctx.healAmount(other, "heal") * (ctx.bp.secondTarget or 0) / 100)
+		healed[other] = true
+	end
+	local chain = ctx.bp.chainHeal
+	if chain then
+		chainHeal(ctx, chain, healed)
 	end
 	return true, nil
 end
@@ -128,36 +158,39 @@ Support.hot = function(ctx)
 	local player, entity = allyTarget(ctx)
 	local duration = ctx.scaled(ctx.skill.duration)
 	local bonus = ctx.services.PassiveHook(ctx.player, "healBonus")
-	local total = ctx.healAtk() * ctx.value("heal") / 100 * (1 + bonus / 100) * ctx.healPowerMul()
+	local mul = (1 + bonus / 100) * ctx.healPowerMul()
 	ctx.fx({ t = entity.id, d = duration })
-	hotOn(ctx, entity, total, duration)
+	hotOn(ctx, entity, ctx.healAmount(player, "heal") * mul, duration)
 	local other, otherEntity = second(ctx, player)
 	if other and otherEntity then
 		ctx.fx({ t = otherEntity.id, d = duration, n = 2 })
-		hotOn(ctx, otherEntity, total * (ctx.bp.secondTarget or 0) / 100, duration)
+		hotOn(ctx, otherEntity, ctx.healAmount(other, "heal") * mul * (ctx.bp.secondTarget or 0) / 100, duration)
 	end
 	return true, nil
+end
+
+-- One shield; Shield of Faith 5B cleanses first (S69).
+local function shieldOn(ctx: Ctx, entity: any, value: number, duration: number)
+	if ctx.bp.cleanse then
+		ctx.services.StatusEffect.Cleanse(entity)
+	end
+	ctx.services.StatusEffect.Apply(entity, "shield", {
+		duration = duration,
+		value = value * ctx.healPowerMul(), -- S62 healPower
+		source = ctx.player,
+		skillId = ctx.skill.id,
+	})
 end
 
 Support.shield = function(ctx)
 	local player, entity = allyTarget(ctx)
 	local duration = ctx.scaled(ctx.skill.duration)
-	local value = ctx.healAtk() * ctx.value("shield") / 100 * ctx.healPowerMul() -- S62 healPower
 	ctx.fx({ t = entity.id, d = duration })
-	ctx.services.StatusEffect.Apply(
-		entity,
-		"shield",
-		{ duration = duration, value = value, source = ctx.player, skillId = ctx.skill.id }
-	)
+	shieldOn(ctx, entity, ctx.healAmount(player, "shield"), duration)
 	local other, otherEntity = second(ctx, player)
 	if other and otherEntity then
 		ctx.fx({ t = otherEntity.id, d = duration, n = 2 })
-		ctx.services.StatusEffect.Apply(otherEntity, "shield", {
-			duration = duration,
-			value = value * (ctx.bp.secondTarget or 0) / 100,
-			source = ctx.player,
-			skillId = ctx.skill.id,
-		})
+		shieldOn(ctx, otherEntity, ctx.healAmount(other, "shield") * (ctx.bp.secondTarget or 0) / 100, duration)
 	end
 	return true, nil
 end
@@ -212,6 +245,10 @@ Support.groupBuff = function(ctx)
 	for _, ally in allies do
 		local entity = Entity.GetPlayerEntity(ally)
 		if entity then
+			-- S69 (Divine Intervention 5B): cleanse before the effects land
+			if ctx.bp.cleanse then
+				ctx.services.StatusEffect.Cleanse(entity)
+			end
 			ctx.applyEffects(entity, "allies")
 			for _, effect in ctx.skill.allyEffects or NO_EFFECTS do
 				ctx.applyEffect(entity, effect)
@@ -233,9 +270,8 @@ end
 Support.groupHeal = function(ctx)
 	local radius = ctx.skill.radius or 14
 	ctx.fx({ p = ctx.root.Position, r = radius })
-	local amount = ctx.healAtk() * ctx.value("heal") / 100
 	for _, ally in ctx.alliesInCircle(ctx.root.Position, radius) do
-		ctx.heal(ally, amount)
+		ctx.heal(ally, ctx.healAmount(ally, "heal"))
 		local entity = ctx.services.Entity.GetPlayerEntity(ally)
 		if entity then
 			if ctx.bp.cleanse then
@@ -245,6 +281,11 @@ Support.groupHeal = function(ctx)
 				ctx.applyEffect(entity, effect)
 			end
 		end
+	end
+	-- S69 (Circle of Light 10B): a healing field stays where the circle was cast
+	local zone = ctx.bp.healZone
+	if zone then
+		ctx.healZone(ctx.root.Position, radius, zone.duration, zone.pct)
 	end
 	return true, nil
 end

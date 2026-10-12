@@ -3699,3 +3699,26 @@ Pliki: `Types`, `Data/{Bonuses,ItemTraits,Keybinds,AdminCommands,Localization/pl
 lib/bestiary.test,islands/ItemUpgradeView,islands/ItemTooltipLive,islands/ItemsBrowser,components/ItemTooltip,
 components/MonsterCard,views/ItemView,views/MonsterView,i18n/pl,i18n/en,content/mechanics/*}`, dane wiki,
 `docs/{STATY,WIKI,DECYZJE,SESJE,PROGRESS,PRZEDMIOTY}.md`.
+
+### S69: Kapłan 1: leczenie od HP celu i przełomy B istniejących umiejętności
+
+- `Logic/Skills`: `healAmount` (maks. HP celu × `healHp`% + atak mag. × `healMul(L)` × `healMag`%, tak samo tarcze;
+  dane bez pary jak przed S69), `healFields` zwraca tylko pola `Mag`, `chainOrder` i `chainShare` (łańcuch leczenia).
+- Słownik przełomów: `healWounded`, `chainHeal`, `healZone` (`Data/Skills/Types`, `skillmotion.spec`),
+  `SkillData.WOUNDED_RADIUS = 30`.
+- Serwer: `ctx.healAmount` (zamiast `ctx.healAtk`), `ctx.healZone` (pętla pola leczenia, gotowa dla Sanktuarium S70),
+  `healWounded` w `onHit` (tylko główne trafienie); `Support`: baza leczenia i tarcz osobno dla każdego celu,
+  `chainHeal`, oczyszczenie w tarczy (`shieldOn`) i w `groupBuff`, pole Kręgu Światła 10B.
+- Dane Kapłana: wartości z ROZWOJ 9.2–9.5 (Leczenie, Odnowa, Krąg Światła, Oczyszczenie, Tarcza Wiary), Tarcza 5A
+  `shieldHp = 3`, 21 opcji B. Modlitwa 5B / 10B i Oczyszczenie 5B: tylko teksty, dane w S70. Odblokowania i obrażenia
+  podstawy jeszcze dzisiejsze (S71).
+- Klient: `SkillInfo.healLine` („Na Tobie: ok. X pkt życia”) w podpowiedzi paska i w szczegółach okna umiejętności;
+  wybór B przez istniejące `ChooseBreakpoint` / `/bp` (S57 sprawdza `bp.error.noOption`).
+- Teksty PL i EN: 24 klucze B, 5 opisów, Tarcza 5A, `skills.healOnSelf` / `skills.shieldOnSelf`.
+- Pomiar Leczenia na Wojowniku: L20 ranga 5 219 → 179 HP (22% → 18%), L70 ranga 10 2498 → 659 HP (83% → 22%).
+- Testy: `skills.spec` (`healFields`, nowy blok S69: opcje B, składanie Tarczy, `healAmount`, `chainOrder`),
+  `skillmotion.spec` (nowe klucze). Dane wiki wygenerował `wikidump.luau` (`skills.json`, `meta.json`).
+
+Pliki: `src/shared/{Logic/Skills,Data/Skills/{Cleric,Types,init},Data/Localization/{pl,en}}`,
+`src/server/Skills/{Context,Types/Support}`, `src/client/UI/{SkillInfo,Screens/SkillsWindow/Details}`,
+`tests/{skills,skillmotion}.spec`, dane wiki, `docs/{ROZWOJ,DECYZJE,SESJE,PROGRESS,PRZEDMIOTY}.md`, `CLAUDE.md`.

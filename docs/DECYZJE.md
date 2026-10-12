@@ -1394,3 +1394,22 @@
   `MonsterStats.compute` na najniższym poziomie rodzaju.
 - **S68** `Leak.FORBIDDEN_KEYS` += `nodeHooks`, `capRef` (pola danych tylko w grze); `reference` i `statPlan` sprawdza
   sam `wikidump.spec` w trzech plikach (globalnie mogłyby kolidować z innymi kluczami).
+
+- **S69** Leczenie i tarcze Kapłana od maks. HP celu: `values.healHp` / `healMag` (`shieldHp` / `shieldMag`) przez jedną
+  funkcję `Skills.healAmount` (serwer `ctx.healAmount` osobno dla każdego celu, podpowiedź `SkillInfo.healLine`); krzywa
+  `heal` z S54 mnoży tylko część od ataku mag.; dane bez tych pól liczą się jak przed S69. Światłość dalej leczy udziałem
+  w obrażeniach, Boska Interwencja % HP. `ctx.healAtk` usunięte.
+- **S69** Jedno Leczenie na Wojowniku przed / po (ekwipunek S32, bez Pobożności): L20 ranga 5 219 → 179 HP (22,2% →
+  18,1% HP), L70 ranga 10 2498 → 659 HP (82,6% → 21,8%); L45 1144 → 414 (57% → 20,6%), L100 4834 → 986 (114% → 23,3%).
+  Zamierzone (ROZWOJ 9.2, T-SK5).
+- **S69** Kolejność w klasie inna niż dawne ROZWOJ 13.7: zachowanie wchodzi w tej samej sesji co dane, które go używają;
+  najpierw silnik klasy i opcje B istniejących aktywnych, potem nowe umiejętności, na końcu podstawa, ścieżki, węzły i
+  haki; teksty PL i EN zawsze razem. ROZWOJ 13 poprawiony.
+- **S69** Opcje B 12 dzisiejszych aktywnych działają przed ścieżkami (ROZWOJ 2.6). Modlitwa 5B (`roll.half`), Modlitwa
+  10B (`steadfast`) i Oczyszczenie 5B (`burst`) wchodzą do danych w S70 razem z mechanikami; teksty B są od S69.
+- **S69** `chainHeal`: kandydaci to sojusznicy w zasięgu Leczenia (+6 st.) od rzucającego, każdy najwyżej raz w rzucie
+  (bez celu i drugiego celu), najpierw najmniejszy ułamek HP; skok k leczy własną kwotę celu × (pct/100)^k. `healZone`:
+  pole w miejscu rzucenia, tyka co 1 s przez `floor(duration)` s, `pct`% własnej kwoty każdego sojusznika w środku.
+  `healWounded`: tylko główne trafienie, 30 st. od rzucającego (`SkillData.WOUNDED_RADIUS`).
+- **S69** `SkillInfo.healLine(use, skill, rank)` bierze umiejętność bazową i liczy ją tym samym `Paths.effectiveFor` co
+  opis (zamiast przyjmować gotową definicję); linia „Na Tobie” jest w podpowiedzi paska i w szczegółach okna.
