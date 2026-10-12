@@ -10,6 +10,8 @@
 -- and call StatService.Invalidate(player) whenever their contribution changes.
 -- S63: StatusEffectService registers the walk speed factor (slows, roots, stuns) through SetSpeedFactor and calls
 -- RefreshWalkSpeed when it changes (this service cannot require it: the dependency goes the other way).
+-- S72: InvalidateThrottled(player, interval) recomputes no sooner than `interval` s after the last recompute, for
+-- fast-changing sources (Fury, ROZWOJ 10.4).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -46,6 +48,9 @@ local providers: { [string]: Provider } = {}
 local weaponProvider: WeaponProvider? = nil
 local results: { [Player]: StatCalc.Result } = {}
 local dirty: { [Player]: boolean } = {}
+-- S72: last recompute (os.clock) and the time a throttled invalidation waits for.
+local lastRecompute: { [Player]: number } = {}
+local deferred: { [Player]: number } = {}
 
 function StatService.RegisterModifierSource(name: string, provider: Provider)
 	assert(providers[name] == nil, `StatService: modifier source '{name}' registered twice`)
@@ -136,6 +141,8 @@ end
 -- Recomputes immediately. Returns the result (nil when no character is active).
 function StatService.Recompute(player: Player): StatCalc.Result?
 	dirty[player] = nil
+	deferred[player] = nil
+	lastRecompute[player] = os.clock()
 	local character: Types.CharacterData? = PlayerStateService.GetCharacter(player)
 	if not character then
 		results[player] = nil
@@ -180,6 +187,17 @@ end
 -- Schedules a recompute on the next frame (coalesces bursts, e.g. equipping several items).
 function StatService.Invalidate(player: Player)
 	dirty[player] = true
+end
+
+-- S72: recompute no sooner than `interval` seconds after the last recompute (fast-changing sources such as Fury,
+-- ROZWOJ 10.4). Calls inside the interval collapse into one recompute at its end.
+function StatService.InvalidateThrottled(player: Player, interval: number)
+	local last = lastRecompute[player]
+	if last == nil or os.clock() - last >= interval then
+		dirty[player] = true
+		return
+	end
+	deferred[player] = math.min(deferred[player] or math.huge, last + interval)
 end
 
 -- AllocateStats({ str = 2, vit = 3 }): spends unallocated points. Validated against statPoints.
@@ -232,6 +250,8 @@ function StatService.Start()
 	CharacterService.CharacterLeaving:Connect(function(player: Player)
 		results[player] = nil
 		dirty[player] = nil
+		deferred[player] = nil
+		lastRecompute[player] = nil
 		if PlayerStateService.HasState(player) then
 			PlayerStateService.Set(player, { "derived" }, nil)
 		end
@@ -245,6 +265,13 @@ function StatService.Start()
 	end)
 
 	RunService.Heartbeat:Connect(function()
+		local clock = os.clock()
+		for player, at in deferred do
+			if at <= clock then
+				deferred[player] = nil
+				dirty[player] = true
+			end
+		end
 		for player in dirty do
 			StatService.Recompute(player)
 		end
@@ -254,6 +281,8 @@ function StatService.Start()
 		task.defer(function()
 			results[player] = nil
 			dirty[player] = nil
+			deferred[player] = nil
+			lastRecompute[player] = nil
 			sprinting[player] = nil
 		end)
 	end)

@@ -17,6 +17,11 @@
 -- S65: rhythm and player-state traits: Twin Cut and Full Draw in tryBasicAttack, Run Through and Elemental Spark after
 -- a basic hit (Skills/Elements), Runic Seal polled in Heartbeat (BreakSeal on blinks, pushes and death), Frostbite and
 -- the seal in offensiveMultiplier, Saving Blow at the end of DealDamage (Skills/Context.mostWounded / healFrom).
+--
+-- S72 (ROZWOJ 10.3, 10.4, 14.2): receivers of the Warrior's node hooks (all 0 until the S75 nodes or /hook): Fury
+-- gain in DealDamage, furyDamage and damagePerEnemy in offensiveMultiplier, own reductions guardPerEnemy, furyGuard
+-- and lastStand (also on intercepted parts), threat through MonsterService's threatMultiplier, bleedDamage in DotBonus,
+-- block energy in onBlock (NodeHook), KillInfo.finisher for Carnage.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -48,6 +53,7 @@ local Loot = require(Shared.Logic.Loot)
 local Luck = require(Shared.Logic.Luck)
 local PartyBonus = require(Shared.Logic.PartyBonus)
 local PartyLoot = require(Shared.Logic.PartyLoot)
+local Paths = require(Shared.Data.Paths)
 local Push = require(script.Parent.Parent.Skills.Push)
 local Rng = require(Shared.Logic.Rng)
 local Signal = require(ReplicatedStorage.Packages.Signal)
@@ -55,6 +61,8 @@ local Traits = require(Shared.Logic.Traits)
 local Types = require(Shared.Types)
 
 local log = Log.new("CombatService")
+
+local HOOK_RULES = Paths.HOOK_RULES
 
 local CombatService = {
 	Name = "CombatService",
@@ -88,6 +96,7 @@ export type KillInfo = {
 	areaId: string?, -- S27: named area of the monster's group (model attribute AreaId)
 	dropLevel: number?, -- S32: base level for item drops (spawner level without the variant's levels)
 	luck: Luck.MonsterLuck?, -- S60: luck of the credited group (nil for bosses)
+	finisher: Player?, -- S72: the player who dealt the killing blow (Monster.killedBy); credit is unchanged
 }
 
 type FxEvent = { [string]: any }
@@ -354,13 +363,66 @@ end
 
 CombatService.Hook = hook
 
+-- Hook values from providers only: path nodes and class passives (SkillService.PassiveHook) and the admin /hook,
+-- without items. The block's energy (ROZWOJ 10.3) comes with block nodes, not with a shield's Parry.
+function CombatService.NodeHook(player: Player, id: string): number
+	local total = 0
+	for _, provider in hookProviders do
+		total += provider(player, id)
+	end
+	return total
+end
+
+-- S72: /hook values per player (admin, see Admin/Combat); a provider like the path nodes.
+local adminHooks: { [Player]: { [string]: number } } = {}
+
+function CombatService.SetAdminHook(player: Player, id: string, value: number?)
+	local own = adminHooks[player]
+	if not own then
+		if value == nil then
+			return
+		end
+		own = {}
+		adminHooks[player] = own
+	end
+	local slots: { [string]: number? } = own
+	slots[id] = value
+	if next(own) == nil then
+		adminHooks[player] = nil
+	end
+end
+
 -- S63: +% damage of the player's damage over time of `kind` (bleed, poison, burn), items and skills alike.
--- One owner of DoT bonuses: S72 adds bleedDamage, S76 poisonDamage.
+-- One owner of DoT bonuses (the tick amount is set when the effect is applied): S72 added bleedDamage (Deep and Open
+-- Wounds, ROZWOJ 10.4) for every bleed of the player, skills and items; S76 adds poisonDamage.
 function CombatService.DotBonus(player: Player, kind: string): number
-	if kind == "bleed" or kind == "poison" or kind == "burn" then
+	if kind == "bleed" then
+		return hook(player, "dotPower") + hook(player, "bleedDamage")
+	elseif kind == "poison" or kind == "burn" then
 		return hook(player, "dotPower")
 	end
 	return 0
+end
+
+-- Living monsters within HOOK_RULES.perEnemy.radius of the player, at most HOOK_RULES.perEnemy.max
+-- (ROZWOJ 10.3: Front Line, Menace). Players never count, also in PvP.
+local function enemiesNear(player: Player): number
+	local entity = EntityService.GetPlayerEntity(player)
+	local position = entity and EntityService.Position(entity)
+	if not position then
+		return 0
+	end
+	local rules = HOOK_RULES.perEnemy
+	local count = 0
+	for _, other in EntityService.QueryMonsters(position, rules.radius) do
+		if other.monster and other.monster:IsAlive() then
+			count += 1
+			if count >= rules.max then
+				break
+			end
+		end
+	end
+	return count
 end
 
 local function hpFraction(player: Player): number
@@ -425,6 +487,19 @@ local function offensiveMultiplier(player: Player, targetEntity: any): number
 	local frost = StatusEffectService.SourceValue(targetEntity, "frostbite", player)
 	if frost > 0 then
 		mult += (if pvp then frost * Combat.pvp.frostbite else frost) / 100
+	end
+	-- S72 Menace (ROZWOJ 10.3): +damagePerEnemy % per living monster within 10 studs, at most 5.
+	local perEnemy = hook(player, "damagePerEnemy")
+	if perEnemy > 0 then
+		mult += perEnemy * enemiesNear(player) / 100
+	end
+	-- S72 Fury (ROZWOJ 10.4): +furyDamage % per stack.
+	local stacks = StatusEffectService.FuryStacks(player)
+	if stacks > 0 then
+		local perStack = hook(player, "furyDamage")
+		if perStack > 0 then
+			mult += stacks * perStack / 100
+		end
 	end
 	return mult
 end
@@ -548,6 +623,7 @@ local function onMonsterDied(monster: any)
 		areaId = areaId,
 		dropLevel = Loot.dropBaseLevel(monster.stats.level, monster.variant, monster.levelCap),
 		luck = luck,
+		finisher = monster.killedBy,
 	}
 	CombatService.MonsterKilled:Fire(info, credit, credit[1])
 	-- Clear player targets pointing at the corpse.
@@ -745,6 +821,10 @@ end
 -- S64 (STATY 3): every block heals blockHeal % max HP (Parry trait, grown with rarity); half vs players. No heal
 -- source, like lifesteal and killHeal: no PvP HealScale, not in the fight summary.
 local function onBlock(player: Player, entity: any?, pvp: boolean)
+	-- ROZWOJ 10.3: Block returns energy; only with block from path nodes (Parry alone gives none)
+	if CombatService.NodeHook(player, "block") > 0 then
+		ResourceService.Add(player, "energy", HOOK_RULES.blockEnergy)
+	end
 	local heal = hook(player, "blockHeal")
 	if pvp then
 		heal = Traits.pvpValue(heal, ItemTraits.pvpByHook.blockHeal)
@@ -894,6 +974,7 @@ function CombatService.DealDamage(
 		end
 		if pvpRegular then
 			-- S64 (STATY 8): the target's block, half after blockCap.
+			-- path nodes (Block, Shield Master; S75) join this sum through SkillService.PassiveHook (ROZWOJ 10.3)
 			pvpParams.block = Traits.blockChance(hook(target, "block"), true)
 		end
 		result = Damage.computeDamage(attacker, defender, pvpParams, rng)
@@ -942,6 +1023,10 @@ function CombatService.DealDamage(
 	end
 
 	ResourceService.MarkCombat(player)
+	-- S72 (ROZWOJ 10.4): every hit that dealt damage feeds Fury (ticks, thorns and Retribution never come here).
+	if not result.dodged and result.amount > 0 then
+		StatusEffectService.AddFury(player)
+	end
 	if not result.dodged and result.amount > 0 and not (options and options.noProc) then
 		local alive = if targetEntity.kind == "monster"
 			then targetEntity.monster ~= nil and targetEntity.monster:IsAlive()
@@ -1306,6 +1391,7 @@ local function monsterHitsPlayer(
 			params.miss = math.min(StatusEffectService.Max(monster.entity, "misfortune"), BuffCategories.caps.enemyMiss)
 		end
 		-- S64 (STATY 3, 5): the player's block (shield trait, lines, later nodes), regular blows only.
+		-- path nodes (Block, Shield Master; S75) join this sum through SkillService.PassiveHook (ROZWOJ 10.3)
 		params.block = Traits.blockChance(hook(player, "block"), false)
 	end
 	local result = Damage.computeDamage(MonsterStats.asAttacker(monster.stats), defender, params, rng)
@@ -1556,14 +1642,40 @@ function CombatService.Init(registry)
 	PartyService = registry.Get("PartyService")
 	Registry = registry
 
+	StatusEffectService.SetHookReader(hook)
+	-- S72: /hook values (admin) count like path nodes (NodeHook too, so /hook block gives the block's energy).
+	CombatService.RegisterHookProvider(function(player: Player, id: string): number
+		local own = adminHooks[player]
+		return if own then own[id] or 0 else 0
+	end)
+
+	-- Own damage-reduction entries for monster blows, PvP hits and intercepted parts (ROZWOJ 7.1, 14.2).
+	local OWN_REDUCTION_SOURCES: { [string]: boolean } = { monster = true, pvp = true, intercept = true }
 	StatusEffectService.RegisterReductionProvider(function(player: Player, source: string): number
-		-- "Last stand" (items, later path nodes) works where it did before S53: monster blows and PvP hits,
-		-- now as an own entry under the multiplicative cap (ROZWOJ 7.1).
-		if source ~= "monster" and source ~= "pvp" then
+		-- "Last stand" (items, Clenched Teeth from S75) as an own entry under the multiplicative cap (ROZWOJ 7.1);
+		-- S72: also on the part a guard intercepts.
+		if not OWN_REDUCTION_SOURCES[source] then
 			return 0
 		end
 		local lastStand = hook(player, "lastStand")
 		return if lastStand > 0 and hpFraction(player) < Combat.lowHpFraction then lastStand else 0
+	end)
+	-- S72 Front Line: guardPerEnemy % per living monster within 10 studs, at most 5.
+	StatusEffectService.RegisterReductionProvider(function(player: Player, source: string): number
+		if not OWN_REDUCTION_SOURCES[source] then
+			return 0
+		end
+		local per = hook(player, "guardPerEnemy")
+		return if per > 0 then per * enemiesNear(player) else 0
+	end)
+	-- S72 Relentless: furyGuard % while Fury is full.
+	StatusEffectService.RegisterReductionProvider(function(player: Player, source: string): number
+		if not OWN_REDUCTION_SOURCES[source] then
+			return 0
+		end
+		local guard = hook(player, "furyGuard")
+		local max = StatusEffectService.FuryMax(player)
+		return if guard > 0 and max > 0 and StatusEffectService.FuryStacks(player) >= max then guard else 0
 	end)
 
 	-- S64 (STATY 6): melee / ranged protection is one more own entry of this hit. The hit's facts live in
@@ -1610,6 +1722,11 @@ function CombatService.Init(registry)
 		telegraph = telegraph,
 		resolveAbility = resolveAbility,
 		died = onMonsterDied,
+		-- S72 Menace (ROZWOJ 10.3): the threat hook raises the threat of every damage of the player (not the credit).
+		threatMultiplier = function(_monster: any, player: Player): number
+			local bonus = hook(player, "threat")
+			return if bonus > 0 then 1 + bonus / 100 else 1
+		end,
 	})
 end
 
@@ -1652,10 +1769,21 @@ function CombatService.Start()
 
 	-- S61: the part of a monster blow a guard took shows over the guard (the target's number is already without it).
 	StatusEffectService.Intercepted:Connect(
-		function(guard: Player, _target: Player, _moved: number, taken: number, attacker: any?)
+		function(guard: Player, _target: Player, _moved: number, taken: number, attacker: any?, returned: number?)
 			local guardEntity = EntityService.GetPlayerEntity(guard)
 			if not guardEntity then
 				return
+			end
+			-- S72 Retribution: the number over the monster that struck, like thorns.
+			if returned and returned > 0 and type(attacker) == "table" and attacker.entity then
+				queueFx(attacker:Position(), {
+					k = "dmg",
+					e = attacker.entity.id,
+					s = guardEntity.id,
+					a = math.floor(returned),
+					c = false,
+					d = false,
+				})
 			end
 			local monsterEntity = if attacker and type(attacker) == "table" then attacker.entity else nil
 			local event: FxEvent = {
@@ -1683,10 +1811,12 @@ function CombatService.Start()
 	CharacterService.CharacterLeaving:Connect(function(player: Player)
 		attackers[player] = nil
 		incoming[player] = nil
+		adminHooks[player] = nil
 	end)
 	Players.PlayerRemoving:Connect(function(player)
 		attackers[player] = nil
 		incoming[player] = nil
+		adminHooks[player] = nil
 	end)
 
 	local sealPolled = 0

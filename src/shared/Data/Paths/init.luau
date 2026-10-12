@@ -83,6 +83,30 @@ return table.freeze({
 		duration = 1.5, -- s of each refreshed buff
 		maxRadius = 40, -- data rule (ROZWOJ 7.3)
 	}),
+	-- S72 (ROZWOJ 10.3, 10.4): fixed parts of the path hook rules. Hook values come from the nodes (Warrior: S75);
+	-- these numbers are the rules around them. Not exported to the wiki (Data/Combat is exported whole, so they
+	-- do not live there). Later class engines add their own entries to this table (Hunter: S77).
+	HOOK_RULES = table.freeze({
+		-- Fury of the Berserker: stacks up to the furyMax hook, never above maxStacks; +1 for each hit that deals
+		-- damage (basic attack, skill hit or wave; DoT ticks, thorns and reflections do not count), at most one gain
+		-- per gainInterval seconds; after decayAfter seconds without a hit it loses decayPerSecond stacks per
+		-- second; out of combat it is gone. Stats from Fury recompute at most every statInterval seconds.
+		fury = table.freeze({
+			maxStacks = 10,
+			gainInterval = 0.25,
+			decayAfter = 4,
+			decayPerSecond = 2,
+			statInterval = 0.25,
+		}),
+		-- While Carnage lasts, Fury does not decay and grows by furyGain per hit; every killing blow of the player
+		-- ends the cooldown of these skills.
+		carnage = table.freeze({ furyGain = 2, resets = table.freeze({ "charge", "bladeWhirl" }) }),
+		-- "Per enemy" hooks (guardPerEnemy, damagePerEnemy) count living monsters within `radius` studs of the
+		-- player, at most `max` of them.
+		perEnemy = table.freeze({ radius = 10, max = 5 }),
+		-- Energy a block gives back once the character has block from path nodes (Block, Shield Master).
+		blockEnergy = 5,
+	}),
 	list = list,
 	byId = byId,
 	byClass = byClass,

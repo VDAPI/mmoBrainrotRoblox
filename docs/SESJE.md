@@ -3792,3 +3792,37 @@ Logic/{Skills,Paths}}`, `src/server/{Skills/{Context,Types/Support,Types/Offense
 StatusEffectService}}`, `tests/{paths,skills,luck,damage,character,skillmotion,wikidump}.spec`,
 `tests/{PartyBuffRules,BreakpointKeys}.luau`, `tests/fixtures/paths.luau`, dane wiki,
 `docs/{ROZWOJ,DECYZJE,SESJE,PROGRESS,PRZEDMIOTY}.md`, `CLAUDE.md`.
+
+### S72: Wojownik 1: Furia, Rzeź i haki walki (silnik)
+
+Silnik Wojownika pod węzły Strażnika i Berserkera (S75). Wszystkie haki czytają 0 bez węzłów, więc dla graczy nic się
+nie zmienia; mechaniki ogląda się przez `/hook`.
+
+- Dane i logika: `Data/Paths/init.HOOK_RULES` (`fury`, `carnage`, `perEnemy`, `blockEnergy`; eksporter wiki go nie
+  kopiuje, dane wiki bez zmian), czysty `Logic/Fury` (`new`, `gain`, `step`, `consume`, `set`).
+- Furia na serwerze: `StatusEffectService.SetHookReader` (ustawia `CombatService.Init`), stan obok listy efektów,
+  `FuryMax`, `FuryStacks`, `AddFury`, `ConsumeFury` (S73), `SetFury` (S75), zanik w pętli `Heartbeat`, zerowanie po
+  śmierci, atrybuty `Fury` / `FuryMax`, źródło statystyk `fury` (`furySpeed`, `furyLifesteal`),
+  `StatService.InvalidateThrottled`.
+- Rzeź: rodzaj `carnage` w `EffectKind`, `Monster.killedBy` → `KillInfo.finisher`, `SkillService.ResetCooldown` i
+  nasłuch `MonsterKilled` w `SkillService.Start`.
+- Haki (odbiorcy): przyrost Furii w `DealDamage` po `MarkCombat`; `furyDamage`, `damagePerEnemy` w
+  `offensiveMultiplier` (`enemiesNear`); dostawcy redukcji `guardPerEnemy`, `furyGuard` i `lastStand` na
+  `monster`/`pvp`/`intercept`; `threat` przez `Context.threatMultiplier` w `Monster.TakeDamage` (handler w
+  `MonsterService`, też bossy); `bleedDamage` w `CombatService.DotBonus` (jedyne miejsce; tyknięcie liczone przy
+  nałożeniu, z umiejętności i z przedmiotów).
+- Blok po S64: oba wywołania czytają `hook(…, "block")` (przedmioty + dostawcy), więc węzły trafiają pod `blockCap` i do
+  wspólnego limitu bez zmian w liczeniu (tylko komentarze); w PvP `Traits.blockChance(total, true)` mnoży całą sumę po
+  limicie przez 0,5, czyli część z węzłów raz. `RegisterHookProvider` rejestruje tylko `SkillService.PassiveHook` (i
+  `/hook`), więc `CombatService.NodeHook` = suma dostawców bez argumentu `fromNodes`. Energia w `onBlock`.
+- Przechwyt: `Intercept.split` (Męczennik, Kara), filtr w `StatusEffectService`, odbicie w HP potwora, szósty argument
+  `returned` sygnału `Intercepted` i liczba nad potworem w `CombatService.Start`.
+- Klient: `EffectIcons` z licznikiem Furii „7/10” na początku rzędu (złota obwódka i podpis przy pełnej), ikony
+  `fury` 💢 i `carnage` 💀 (`intercept`, `misfortune` już były).
+- `/hook` weszło (`Data/AdminCommands`, `Admin/Combat`, `CombatService.SetAdminHook`).
+- Testy: `fury.spec` (nowy), „Guardian reductions” w `effectstack.spec`, „Martyr and Retribution” w `intercept.spec`.
+
+Pliki: `src/shared/{Data/Paths/init,Data/Skills/Types,Data/AdminCommands,Data/Localization/{pl,en},Logic/Fury,
+Logic/Intercept}`, `src/server/{Entities/Monster,Services/{StatusEffectService,StatService,CombatService,
+MonsterService,SkillService},Admin/Combat}`, `src/client/UI/Screens/Hud/EffectIcons`,
+`tests/{fury,effectstack,intercept}.spec`, `docs/{ROZWOJ,DECYZJE,SESJE,PROGRESS}.md`.

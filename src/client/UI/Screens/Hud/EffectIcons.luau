@@ -3,6 +3,7 @@
 -- ("kind:expiresAt[:value];..." in server time, written by StatusEffectService, decoded by Logic/EffectStack).
 -- The server sends one entry per kind (latest end, strongest value), so one icon per kind. Used under the
 -- portrait and in the target frame.
+-- S72: the "Fury" / "FuryMax" attributes (Fury of the Berserker) add a counter "7/10" first in the row, gold when full.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -57,9 +58,35 @@ local GLYPHS: { [string]: Glyph } = {
 	nextBasic = { glyph = "➹", good = true }, -- S65: Full Draw, the next basic attack hits harder
 	runeSeal = { glyph = "◈", good = true, lasting = true }, -- S65: glowing Runic Seal
 	frostbite = { glyph = "❅", good = false }, -- S65: takes more damage from the source's ice
+	fury = { glyph = "💢", good = true }, -- S72: Fury stacks (counter, not seconds)
+	carnage = { glyph = "💀", good = true }, -- S72: Carnage, Fury holds and grows faster
 }
 
-type Entry = EffectStack.Shown
+-- S72: count / max / full only for the Fury counter.
+type Entry = { kind: string, left: number, value: number?, count: number?, max: number?, full: boolean? }
+
+local function read(model: Model?): { Entry }
+	if not model then
+		return {}
+	end
+	local list: { Entry } = {}
+	for _, shown in EffectStack.decode(model:GetAttribute("Effects"), Workspace:GetServerTimeNow()) do
+		table.insert(list, { kind = shown.kind, left = shown.left, value = shown.value })
+	end
+	local stacks = model:GetAttribute("Fury")
+	local max = model:GetAttribute("FuryMax")
+	if type(stacks) == "number" and stacks > 0 then
+		local cap = if type(max) == "number" then max else nil
+		table.insert(list, 1, {
+			kind = "fury",
+			left = 0,
+			count = stacks,
+			max = cap,
+			full = cap ~= nil and stacks >= cap,
+		})
+	end
+	return list
+end
 
 local function EffectIcons(scope: Scope, props: Props): Instance
 	local size = props.Size or 30
@@ -73,10 +100,7 @@ local function EffectIcons(scope: Scope, props: Props): Instance
 				return
 			end
 			accumulator = 0
-			local model = Fusion.peek(props.Model)
-			entries:set(
-				if model then EffectStack.decode(model:GetAttribute("Effects"), Workspace:GetServerTimeNow()) else {}
-			)
+			entries:set(read(Fusion.peek(props.Model)))
 		end)
 	)
 
@@ -94,6 +118,13 @@ local function EffectIcons(scope: Scope, props: Props): Instance
 			}),
 			scope:ForValues(entries, function(_use, s: Scope, entry: Entry): Instance
 				local info = GLYPHS[entry.kind] or UNKNOWN
+				local count = entry.count
+				local full = entry.full == true
+				local caption = if count
+					then (if entry.max then `{count}/{entry.max}` else tostring(count))
+					elseif info.lasting then ""
+					elseif entry.left >= 10 then tostring(math.floor(entry.left))
+					else string.format("%.1f", entry.left)
 				local icon = s:New("Frame")({
 					Name = entry.kind,
 					Size = UDim2.fromOffset(size, size + 14),
@@ -110,8 +141,11 @@ local function EffectIcons(scope: Scope, props: Props): Instance
 							[Children] = {
 								s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 								s:New("UIStroke")({
-									Color = if info.good then Theme.Colors.Success else Theme.Colors.Danger,
-									Thickness = 1,
+									Color = if full
+										then Theme.Colors.GoldBright
+										elseif info.good then Theme.Colors.Success
+										else Theme.Colors.Danger,
+									Thickness = if full then 2 else 1,
 								}),
 							},
 						}),
@@ -119,13 +153,10 @@ local function EffectIcons(scope: Scope, props: Props): Instance
 							Position = UDim2.fromOffset(0, size),
 							Size = UDim2.fromOffset(size, 14),
 							BackgroundTransparency = 1,
-							Text = if info.lasting
-								then ""
-								elseif entry.left >= 10 then tostring(math.floor(entry.left))
-								else string.format("%.1f", entry.left),
+							Text = caption,
 							FontFace = Theme.Fonts.BodyBold,
 							TextSize = 12,
-							TextColor3 = Theme.Colors.Text,
+							TextColor3 = if full then Theme.Colors.GoldBright else Theme.Colors.Text,
 							TextStrokeTransparency = 0.3,
 						}),
 					},

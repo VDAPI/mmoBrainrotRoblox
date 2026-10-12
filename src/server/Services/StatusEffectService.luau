@@ -20,6 +20,10 @@
 -- S71: ApplyOptions.onEnd runs once when the effect expires or a shield breaks (tickEntity), with the bearer and the
 -- starting value; never on a refresh, Remove, Cleanse, Clear or the bearer's death (Shattering Shield). The function
 -- lives only in this server table (the client sees the "Effects" text).
+-- S72: Fury of the Berserker (Logic/Fury) is a per-player stack count kept beside the effect list (it has no end time),
+-- published as the model attributes "Fury" / "FuryMax" and feeding the stat source "fury"; combat hooks come through
+-- SetHookReader (CombatService). The "carnage" effect (own) freezes Fury's decay and raises its gain. The intercept
+-- filter applies Martyr (interceptMitigation) and Retribution (interceptThorns) to the moved part.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -33,7 +37,9 @@ local Combat = require(Shared.Data.Combat)
 local Config = require(Shared.Config)
 local Damage = require(Shared.Logic.Damage)
 local EffectStack = require(Shared.Logic.EffectStack)
+local Fury = require(Shared.Logic.Fury)
 local Intercept = require(Shared.Logic.Intercept)
+local Paths = require(Shared.Data.Paths)
 local Skills = require(Shared.Logic.Skills)
 local Traits = require(Shared.Logic.Traits)
 
@@ -42,13 +48,16 @@ local Signal = require(ReplicatedStorage.Packages.Signal)
 
 local log = Log.new("StatusEffects")
 
+local HOOK_RULES = Paths.HOOK_RULES
+
 local StatusEffectService = {
 	Name = "StatusEffectService",
 	Deps = { "EntityService", "ResourceService", "StatService", "CharacterService" },
 	-- (entity, kind) after an effect was applied or removed.
 	Changed = Signal.new(),
-	-- (guard: Player, target: Player, moved: number, taken: number, attacker: any?) after a guard took part of a monster
-	-- blow aimed at an ally (S61): moved = the part before the guard's own reductions, taken = what got through them.
+	-- (guard: Player, target: Player, moved: number, taken: number, attacker: any?, returned: number?) after a guard
+	-- took part of a monster blow aimed at an ally (S61): moved = the part before Martyr and the guard's own
+	-- reductions, taken = what got through them, returned = Retribution's damage on the attacker (S72).
 	Intercepted = Signal.new(),
 	-- S70: (player, caster: Player?) after Guardian Angel left the player at 1 HP.
 	AngelSaved = Signal.new(),
@@ -598,8 +607,142 @@ function StatusEffectService.CleanseOnDeath(player: Player)
 	end
 end
 
--- StatService modifier source: active stat buffs on a player.
+-- Combat hooks (items and path nodes) read through CombatService.Hook. CombatService.Init sets the reader, so this
+-- service never requires CombatService (CombatService depends on it, S53). Default: every hook is 0.
+local hookOf: (player: Player, id: string) -> number = function(_player: Player, _id: string): number
+	return 0
+end
+
+function StatusEffectService.SetHookReader(reader: (player: Player, id: string) -> number)
+	hookOf = reader
+end
+
+-- Fury (S72, ROZWOJ 10.4) -----------------------------------------------------------------------------------
+
+local fury: { [Player]: Fury.State } = {}
+-- Last published "Fury" / "FuryMax" attributes per player (written only on change).
+local furyShown: { [Player]: { model: Instance, stacks: number, max: number } } = {}
+
+-- Fury cap of a player: the furyMax hook (path nodes), at most HOOK_RULES.fury.maxStacks; 0 = no Fury.
+function StatusEffectService.FuryMax(player: Player): number
+	return math.clamp(math.floor(hookOf(player, "furyMax")), 0, HOOK_RULES.fury.maxStacks)
+end
+
+function StatusEffectService.FuryStacks(player: Player): number
+	local state = fury[player]
+	return if state then state.stacks else 0
+end
+
+-- Keeps the state (nil clears it), publishes the attributes and refreshes the stats that read Fury.
+local function store(player: Player, state: Fury.State?)
+	local before = StatusEffectService.FuryStacks(player)
+	local slots: { [Player]: Fury.State? } = fury
+	slots[player] = state
+	local stacks = if state then state.stacks else 0
+	local max = if state then StatusEffectService.FuryMax(player) else 0
+	local entity = playerEntity(player)
+	local model = entity and entity.model
+	if model and model.Parent then
+		local shown = furyShown[player]
+		if not shown or shown.model ~= model or shown.stacks ~= stacks or shown.max ~= max then
+			furyShown[player] = { model = model, stacks = stacks, max = max }
+			model:SetAttribute("Fury", if stacks > 0 then stacks else nil)
+			model:SetAttribute("FuryMax", if max > 0 then max else nil)
+		end
+	end
+	if stacks ~= before and (hookOf(player, "furySpeed") > 0 or hookOf(player, "furyLifesteal") > 0) then
+		StatService.InvalidateThrottled(player, HOOK_RULES.fury.statInterval)
+	end
+end
+
+-- One hit of the player that dealt damage (CombatService.DealDamage). Carnage adds HOOK_RULES.carnage.furyGain.
+function StatusEffectService.AddFury(player: Player)
+	local max = StatusEffectService.FuryMax(player)
+	if max <= 0 then
+		if fury[player] then
+			store(player, nil)
+		end
+		return
+	end
+	local amount = if StatusEffectService.PlayerHas(player, "carnage") then HOOK_RULES.carnage.furyGain else 1
+	store(player, Fury.gain(fury[player] or Fury.new(), os.clock(), max, amount, HOOK_RULES.fury))
+end
+
+-- Spends every stack and returns how many (furyConsume, S73).
+function StatusEffectService.ConsumeFury(player: Player): number
+	local state = fury[player]
+	if not state then
+		return 0
+	end
+	local spent, count = Fury.consume(state)
+	store(player, spent)
+	return count
+end
+
+-- Sets the stacks, clamped to FuryMax (furyRestore after Carnage, S75).
+function StatusEffectService.SetFury(player: Player, stacks: number)
+	local max = StatusEffectService.FuryMax(player)
+	if max <= 0 then
+		if fury[player] then
+			store(player, nil)
+		end
+		return
+	end
+	store(player, Fury.set(fury[player] or Fury.new(), os.clock(), stacks, max))
+end
+
+-- Decay of every player's Fury (one pass of the Heartbeat loop). Changes are written after the loop.
+local function stepFury()
+	local changes: { { player: Player, state: Fury.State? } } = {}
+	local clock = os.clock()
+	for player, state in fury do
+		local ok, err = pcall(function()
+			local max = StatusEffectService.FuryMax(player)
+			local inCombat = ResourceService.InCombat(player) and not ResourceService.IsDead(player)
+			local frozen = StatusEffectService.PlayerHas(player, "carnage")
+			local nextState = Fury.step(state, clock, max, inCombat, frozen, HOOK_RULES.fury)
+			if max <= 0 or (not inCombat and nextState.stacks == 0) then
+				table.insert(changes, { player = player, state = nil })
+			else
+				table.insert(changes, { player = player, state = nextState })
+			end
+		end)
+		if not ok then
+			log:error("fury failed for %s: %s", player.Name, tostring(err))
+		end
+	end
+	for _, change in changes do
+		store(change.player, change.state)
+	end
+end
+
+local function forgetFury(player: Player)
+	fury[player] = nil
+	furyShown[player] = nil
+end
+
+-- StatService modifier source "fury" (ROZWOJ 10.4): furySpeed % attack speed and furyLifesteal points of life steal
+-- per stack. The life steal cap (Data/Stats, 15) still applies.
 type Source = { key: string, flat: { [string]: number }?, pct: { [string]: number }? }
+
+local function furySource(player: Player): Source?
+	local stacks = StatusEffectService.FuryStacks(player)
+	if stacks <= 0 then
+		return nil
+	end
+	local speed = hookOf(player, "furySpeed")
+	local steal = hookOf(player, "furyLifesteal")
+	if speed <= 0 and steal <= 0 then
+		return nil
+	end
+	return {
+		key = "source.fury",
+		pct = if speed > 0 then { atkSpeed = stacks * speed } else nil,
+		flat = if steal > 0 then { lifesteal = stacks * steal } else nil,
+	}
+end
+
+-- StatService modifier source: active stat buffs on a player.
 
 local function modifierSource(player: Player): Source?
 	local entity = playerEntity(player)
@@ -739,8 +882,21 @@ local function interceptFilter(player: Player, amount: number, source: string, a
 	)
 	if chosen and moved > 0 then
 		local guard = chosen.guard :: Player
-		local _, taken = ResourceService.Damage(guard, moved, "intercept", attacker)
-		StatusEffectService.Intercepted:Fire(guard, player, moved, taken, attacker)
+		-- S72 (ROZWOJ 10.3): Martyr lowers the guard's part, Retribution sends a share back; the window above counted
+		-- the part before Martyr.
+		local toGuard, reflected =
+			Intercept.split(moved, hookOf(guard, "interceptMitigation"), hookOf(guard, "interceptThorns"))
+		local taken = 0
+		if toGuard > 0 then
+			local _, filtered = ResourceService.Damage(guard, toGuard, "intercept", attacker)
+			taken = filtered
+		end
+		-- Retribution: back to the monster that struck (the attacker argument from S61); straight to its HP like thorns.
+		local returned = 0
+		if reflected > 0 and type(attacker) == "table" and attacker.IsAlive and attacker:IsAlive() then
+			returned = attacker:TakeDamage(reflected, guard)
+		end
+		StatusEffectService.Intercepted:Fire(guard, player, moved, taken, attacker, returned)
 	end
 	return kept
 end
@@ -836,6 +992,7 @@ function StatusEffectService.Init(registry)
 	StatService = registry.Get("StatService")
 	CharacterService = registry.Get("CharacterService")
 	StatService.RegisterModifierSource("effects", modifierSource)
+	StatService.RegisterModifierSource("fury", furySource)
 	StatService.SetSpeedFactor(function(player: Player): number
 		local entity = playerEntity(player)
 		return if entity then StatusEffectService.SlowFactor(entity) else 1
@@ -856,6 +1013,13 @@ function StatusEffectService.Start()
 			forget(entity.id)
 		end
 		interceptWindows[player] = nil
+		forgetFury(player)
+	end)
+	-- S72: death ends Fury.
+	ResourceService.Died:Connect(function(player: Player)
+		if fury[player] then
+			store(player, nil)
+		end
 	end)
 
 	local accumulator = 0
@@ -883,11 +1047,14 @@ function StatusEffectService.Start()
 				end
 			end
 		end
+		-- S72: Fury decay after the effect ticks (Carnage may just have ended).
+		stepFury()
 	end)
 
 	Players.PlayerRemoving:Connect(function(player)
 		forget(`p{player.UserId}`)
 		interceptWindows[player] = nil
+		forgetFury(player)
 	end)
 end
 

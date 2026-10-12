@@ -1141,6 +1141,8 @@ return {
 	["effect.nextBasic"] = "Napięta cięciwa",
 	["effect.runeSeal"] = "Świecąca runa",
 	["effect.frostbite"] = "Przemarznięcie",
+	["effect.fury"] = "Furia",
+	["effect.carnage"] = "Rzeź",
 	["effect.guardianAngel"] = "Anioł Stróż",
 	["effect.withValue"] = "{name}: {value}%",
 
@@ -1313,6 +1315,7 @@ return {
 	["admin.res.on"] = "Nieskończone zasoby WŁĄCZONE.",
 	["admin.res.off"] = "Nieskończone zasoby WYŁĄCZONE.",
 	["source.effects"] = "Aktywne efekty",
+	["source.fury"] = "Furia",
 
 	-- NPCs (S06)
 	["npc.healer.name"] = "Lekarka Mirela",
@@ -3548,6 +3551,10 @@ return {
 	["admin.usage.aura"] = "/aura <kategoria|off> [wartość] [circle|behind] [promień]: aura jak z węzła ścieżki, działa w walce",
 	["admin.aura.on"] = "Aura {category}: {value}, kształt {shape}, promień {radius} st.",
 	["admin.aura.off"] = "Aura zdjęta",
+	["admin.usage.hook"] = "/hook <id> [wartość|off]: tymczasowy dodatek do haka walki na sobie (np. furyMax 10); bez wartości pokazuje sumę",
+	["admin.hook.show"] = "Hak {id}: razem {total}",
+	["admin.hook.set"] = "Hak {id}: dodatek {value}, razem {total}",
+	["admin.hook.bad"] = "Nieprawidłowa nazwa haka albo wartość",
 	["admin.path.ok"] = "Ścieżka główna: {path}.",
 	["admin.path.unknown"] = "Nieznana ścieżka twojej klasy: {id}.",
 	["admin.node.ok"] = "Węzeł {id}: ranga {rank}.",

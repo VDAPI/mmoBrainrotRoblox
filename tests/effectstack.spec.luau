@@ -502,3 +502,24 @@ T.describe("EffectStack: accumulate (S65, ROZWOJ 7.2, 14.4)", function()
 		T.expect(run(dot, 1, 10)).toBeNear(180, 0.01)
 	end)
 end)
+
+T.describe("Guardian reductions (S72, ROZWOJ 14.2)", function()
+	local function own(values: { number }): { Entry }
+		local out: { Entry } = {}
+		for _, value in values do
+			table.insert(out, { category = "own", value = value, at = 0 })
+		end
+		return out
+	end
+
+	T.it("every Guardian entry together stays under the 75 % cap", function()
+		-- Last Bastion 68 (60 + 5B), Shield Wall 30, Sacrifice 15, lastStand 45, Front Line 3.5 (one enemy).
+		T.expect(EffectStack.reduction(own({ 68, 30, 15, 45, 3.5 }))).toBeNear(75, 1e-9)
+		T.expect(EffectStack.reduction(own({ 68, 30, 15, 30, 15, 3.5 }))).toBeNear(75, 1e-9)
+		T.expect(EffectStack.combine({ 68, 30, 15, 45, 3.5 }, 100)).toBeNear(89.89, 0.01)
+	end)
+
+	T.it("below the cap the entries multiply", function()
+		T.expect(EffectStack.reduction(own({ 60, 17.5 }))).toBeNear(67, 1e-9)
+	end)
+end)

@@ -56,6 +56,9 @@ export type EffectKind =
 	| "attackSlow" -- S63: value = % slower attacks (slow stays movement); category enemyAttackSlow
 	| "weaken" -- S63: value = % less damage the bearer deals; category enemyDamageDown
 	| "guardianAngel" -- S70: a lethal hit from a monster leaves 1 HP and heals value % max HP, once
+	-- S72 (ROZWOJ 10.4): own; Fury does not decay and grows by HOOK_RULES.carnage.furyGain, killing blows reset
+	-- HOOK_RULES.carnage.resets (Data/Paths)
+	| "carnage"
 
 export type SkillEffect = {
 	kind: EffectKind,

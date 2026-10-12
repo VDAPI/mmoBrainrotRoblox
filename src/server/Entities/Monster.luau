@@ -55,6 +55,9 @@ export type Context = {
 	-- and the regeneration delay); nil = only the monster's own hits count.
 	groupLastHit: ((monster: any) -> number)?,
 	attackSlow: ((monster: any) -> number)?, -- % attack slow from status effects (enemyAttackSlow, S63)
+	-- S72 (ROZWOJ 10.3, Menace): threat multiplier of a player's damage (the threat hook); nil = 1. Kill credit
+	-- (damageBy) never uses it.
+	threatMultiplier: ((monster: any, player: Player) -> number)?,
 }
 
 local Monster = {}
@@ -99,6 +102,8 @@ export type Monster = typeof(setmetatable(
 		levelCap: number?,
 		-- S22 leash: last hit by a player, last time the monster moved (or attacked) while chasing and where.
 		lastHit: number,
+		-- S72: the player whose damage brought HP to 0; nil for the environment.
+		killedBy: Player?,
 		movedAt: number,
 		movedFrom: Vector3,
 		lastStep: number,
@@ -647,10 +652,12 @@ function Monster.TakeDamage(self: Monster, amount: number, source: Player?): num
 	if source then
 		self.lastHit = os.clock()
 		self.damageBy[source] = (self.damageBy[source] or 0) + dealt
-		self.threat[source] = (self.threat[source] or 0) + dealt
+		local threatMul = if self.ctx.threatMultiplier then self.ctx.threatMultiplier(self, source) else 1
+		self.threat[source] = (self.threat[source] or 0) + dealt * threatMul
 		engage(self, source)
 	end
 	if self.hp <= 0 then
+		self.killedBy = source
 		self.state = "dead"
 		setTarget(self, nil)
 		self.model:SetAttribute("Dead", true)

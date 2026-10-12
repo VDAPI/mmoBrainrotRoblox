@@ -339,7 +339,7 @@ Broń każdej ścieżki (uzasadnienie i pokrycie w sekcjach klas):
 |---|---|
 | `Data/Skills/<Klasa>` | podstawa i umiejętności ścieżek; pole `path` (nil = podstawa), przełomy A/B; bez `requires`, `col`, `row` |
 | `Data/Skills/Build`, `Types`, `init` | `Build.bp2`, jawne `maxLevel`, `RANKS`, `HOTBAR_SLOTS = 10` |
-| `Data/Paths/init` | nowy: `ROWS` (tabela 2.2, rzędy 2, 5, 10 z `twoPathExtra`), `DIP_ROWS = 2`, `DIP_SCALE = 1/3`, `list` (wszystkie ścieżki); S61: `AURA` (promienie, kąt `behind`, `fallbackRange`, `tick`, `duration`, `maxRadius`) |
+| `Data/Paths/init` | nowy: `ROWS` (tabela 2.2, rzędy 2, 5, 10 z `twoPathExtra`), `DIP_ROWS = 2`, `DIP_SCALE = 1/3`, `list` (wszystkie ścieżki); S61: `AURA` (promienie, kąt `behind`, `fallbackRange`, `tick`, `duration`, `maxRadius`); S72: `HOOK_RULES` (stałe reguł haków ścieżek) |
 | `Data/Paths/<Klasa>` | nowy: ścieżki klasy (lista 2–3, pole `order`), węzły, buildy wzorcowe |
 | `Data/Luck` | nowy: pola i limity szczęścia (6.3) |
 | `Data/BuffCategories` | nowy: kategorie, ich statystyki, tryb i limity (7.1) |
@@ -2277,13 +2277,14 @@ Kod:
 - Nowe rodzaje przełomów i pola (`Data/Skills/Types`, `Build.Spec`): `tauntNear`, `shieldPerHit`, `extendOnKill`,
   `behindEffect`, `allyHeal`, `allyShield`; pola `furyConsume: string?`, `hitRadius: number?`. Razem z
   `Skills.effective` i `SkillInfo`.
-- Nowe efekty (`StatusEffectService`): `fury` (stosy, zanik, źródło statystyk `fury`), `carnage` (zabójstwo odnawia
+- Nowe efekty (`StatusEffectService`): `fury` (stosy, zanik, źródło statystyk `fury`; stan gracza obok listy efektów,
+  atrybuty modelu `Fury` i `FuryMax`), `carnage` (zabójstwo odnawia
   Szarżę i Wir Ostrzy przez nowe `SkillService.ResetCooldown`). Obiekt sztandaru to obiekt serwera, nie efekt.
 - Nowe haki: `block` (zwykłe ataki potworów, `params.canDodge ~= false`, liczba „Zablokowano”, +5 energii, limit
   `Data/Combat.blockCap = 25`, razem z unikiem i chybieniem najwyżej `Combat.dodgeCap + 10`); `guardPerEnemy`,
   `furyGuard` i `lastStand` jako wpisy `own` w `Logic/EffectStack`; `damagePerEnemy` (mnożnik w
   `CombatService.offensiveMultiplier`, wrogowie w 10 st., najwyżej 5); `threat` (mnożnik w `Monster.TakeDamage`),
-  `interceptMitigation` i `interceptThorns` (w filtrze przechwytu), `bleedDamage` (tick krwawienia), `furyMax`,
+  `interceptMitigation` i `interceptThorns` (w filtrze przechwytu), `bleedDamage` (w `CombatService.DotBonus`, kwota tyknięcia przy nałożeniu), `furyMax`,
   `furySpeed`, `furyDamage`, `furyLifesteal`. Istniejące: `riposte`, `executioner`, `bossDamage`, `eliteDamage`,
   `killHeal`.
 - Kara (`interceptThorns`) musi znać potwora, który uderzył: czwarty argument `attacker` w

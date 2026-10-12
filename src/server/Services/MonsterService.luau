@@ -43,6 +43,8 @@ export type Handlers = {
 	telegraph: (monster: Monster.Monster, ability: MonsterAbilities.Ability, area: CFrame) -> (),
 	resolveAbility: (monster: Monster.Monster, ability: MonsterAbilities.Ability, area: CFrame) -> (),
 	died: (monster: Monster.Monster) -> (),
+	-- S72 (ROZWOJ 10.3): threat multiplier of a player's damage (the threat hook); nil = 1.
+	threatMultiplier: ((monster: Monster.Monster, player: Player) -> number)?,
 }
 
 type SpawnerRuntime = {
@@ -186,6 +188,10 @@ local context: Monster.Context = {
 	end,
 	died = function(monster)
 		MonsterService.OnDied(monster)
+	end,
+	threatMultiplier = function(monster, player): number
+		local multiplier = handlers and handlers.threatMultiplier
+		return if multiplier then multiplier(monster, player) else 1
 	end,
 	moved = function(monster)
 		if monster.entity then

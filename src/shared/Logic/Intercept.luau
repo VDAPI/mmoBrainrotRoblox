@@ -80,4 +80,17 @@ function Intercept.resolve(
 	return amount - moved, chosen, moved
 end
 
+-- S72: the part a guard really takes and the damage sent back to the monster that struck (ROZWOJ 10.3). Martyr
+-- (`mitigation` %, interceptMitigation) lowers the guard's part; Retribution (`thorns` %, interceptThorns) returns a
+-- share of the moved part, at least 1 while it is on. Both read the part before mitigation, and the per-second
+-- window (take) counts that part too.
+function Intercept.split(moved: number, mitigation: number, thorns: number): (number, number)
+	if moved <= 0 then
+		return 0, 0
+	end
+	local toGuard = moved * (1 - math.clamp(mitigation, 0, 100) / 100)
+	local reflected = if thorns > 0 then math.max(1, math.floor(moved * thorns / 100)) else 0
+	return toGuard, reflected
+end
+
 return Intercept

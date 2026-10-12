@@ -30,6 +30,7 @@ local StatusEffectService = Context.services.StatusEffectService
 local EntityService = Context.services.EntityService
 local PartyService = Context.services.PartyService
 local PartyAuraService = Context.services.PartyAuraService
+local StatService = Context.services.StatService
 
 local commands: { [string]: (player: Player, args: { string }) -> ...any } = {}
 
@@ -407,6 +408,34 @@ commands.curves = function(player, args)
 	withCharacter(player, function()
 		show(PlayerStateService.GetCharacter(player).level)
 	end)
+end
+
+-- /hook <id> [value|off] (S72): a temporary extra hook value on yourself, to see path-node hooks before the nodes
+-- exist (furyMax, furySpeed, block, threat, interceptThorns...). Without a value: the current total.
+commands.hook = function(player, args)
+	local id = args[1]
+	if type(id) ~= "string" or #id > 32 or not string.match(id, "^%a+$") then
+		reply(player, "admin.hook.bad")
+		return
+	end
+	local raw = args[2]
+	if raw == nil or raw == "" then
+		reply(player, "admin.hook.show", { id = id, total = CombatService.Hook(player, id) })
+		return
+	end
+	local value: number? = nil
+	if raw ~= "off" then
+		local parsed = tonumber(raw)
+		if parsed == nil or parsed ~= parsed or math.abs(parsed) > 1000 then
+			reply(player, "admin.hook.bad")
+			return
+		end
+		value = parsed
+	end
+	CombatService.SetAdminHook(player, id, value)
+	-- Fury and passives show in the stats at once.
+	StatService.Invalidate(player)
+	reply(player, "admin.hook.set", { id = id, value = value or 0, total = CombatService.Hook(player, id) })
 end
 
 return commands

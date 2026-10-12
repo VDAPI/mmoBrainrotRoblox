@@ -1474,3 +1474,23 @@
   decyzji właściciela o publikacji (przed S82).
 - **S71** ROZWOJ 14.1: wartości szczęścia Fortuny są w `node.values` węzłów `luck` (S60), `Data/Luck` ma tylko pola i
   limity (równe 6.3).
+- **S72** Furia: stosy obok listy efektów w `StatusEffectService` (atrybuty modelu `Fury`, `FuryMax`), +1 za trafienie
+  z obrażeniami w `DealDamage` (atak, cios, fala, kontra; bez tyknięć, cierni i odbić), najwyżej 1 na 0,25 s; po 4 s bez
+  trafienia −2 na sekundę, poza walką i po śmierci 0; statystyki ze źródła `fury` przeliczane tylko przy zmianie stosów,
+  najwyżej co 0,25 s (`StatService.InvalidateThrottled`). Stałe w `Data/Paths/init.HOOK_RULES` (nie w `Data/Combat`).
+- **S72** Rzeź: zabójstwo = cios kończący gracza (`Monster.killedBy` → `KillInfo.finisher`, także krwawienie i odbicie);
+  odnawia Szarżę i Wir Ostrzy przez `SkillService.ResetCooldown` (GCD zostaje); w czasie Rzezi Furia nie opada i rośnie
+  o 2 (ten sam odstęp 0,25 s).
+- **S72** „Wrogowie w 10 st.” (`guardPerEnemy`, `damagePerEnemy`) to żywe potwory, najwyżej 5; gracze się nie liczą,
+  także w PvP.
+- **S72** Dostawcy redukcji `own` (`lastStand`, `guardPerEnemy`, `furyGuard`) działają na źródła `monster`, `pvp` i
+  `intercept` (dotąd `lastStand` bez `intercept`).
+- **S72** Blok z węzłów: każdy blok daje 5 energii, gdy postać ma blok z dostawców haków (`CombatService.NodeHook`:
+  węzły, pasywki, `/hook`), także blok z Zastawy; sama tarcza energii nie daje. W PvP część z węzłów ×0,5 przez
+  `Traits.blockChance` z S64 (cała suma po limicie 25%).
+- **S72** Męczennik i Kara czytają przejętą część przed zmniejszeniem; limit 25% maks. HP na sekundę liczy tę samą
+  część; Kara odbija najmniej 1 prosto w HP potwora (jak ciernie).
+- **S72** `bleedDamage` w `CombatService.DotBonus` (jeden właściciel premii do obrażeń w czasie), liczone przy nałożeniu
+  krwawienia z umiejętności i przedmiotów; `threat` mnoży tylko zagrożenie w `Monster.TakeDamage`, nie zasługę do łupu.
+- **S72** `/hook <id> [wartość|off]`: tymczasowe haki admina (dostawca w `CombatService`, jak węzły) do oglądania
+  mechanik przed węzłami S75.

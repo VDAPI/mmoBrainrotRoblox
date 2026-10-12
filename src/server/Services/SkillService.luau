@@ -25,6 +25,7 @@ local Context = require(script.Parent.Parent.Skills.Context)
 local Log = require(Shared.Util.Log)
 local Movement = require(script.Parent.Parent.Skills.Types.Movement)
 local Net = require(Shared.Net)
+local PathData = require(Shared.Data.Paths)
 local Paths = require(Shared.Logic.Paths)
 local QuestEvents = require(script.Parent.Parent.QuestEvents)
 local Offense = require(script.Parent.Parent.Skills.Types.Offense)
@@ -311,6 +312,19 @@ local function publishCooldowns(player: Player)
 	local rt = runtime(player)
 	PlayerStateService.Set(player, { "skills", "cd" }, table.clone(rt.cooldowns))
 	PlayerStateService.Set(player, { "skills", "gcd" }, rt.gcd)
+end
+
+-- Ends one skill's cooldown at once (Carnage kills reset Charge and Blade Whirl, ROZWOJ 10.4). The GCD stays.
+-- True when the skill was cooling down.
+function SkillService.ResetCooldown(player: Player, skillId: string): boolean
+	local rt = runtimes[player]
+	local ready = rt and rt.cooldowns[skillId]
+	if not rt or not ready or ready <= now() then
+		return false
+	end
+	rt.cooldowns[skillId] = nil
+	publishCooldowns(player)
+	return true
 end
 
 local function interruptChannel(player: Player, reason: string?)
@@ -688,6 +702,16 @@ end
 function SkillService.Start()
 	ResourceService.Died:Connect(function(player: Player)
 		StatService.SetSprint(player, false)
+	end)
+	-- S72 Carnage (ROZWOJ 10.4): the killing blow of a player under Carnage ends the cooldowns of its reset skills.
+	-- One boss has no kills, so there only the Fury bonus works; boss helpers are ordinary kills.
+	CombatService.MonsterKilled:Connect(function(info)
+		local finisher = info.finisher
+		if finisher and StatusEffectService.PlayerHas(finisher, "carnage") then
+			for _, id in PathData.HOOK_RULES.carnage.resets do
+				SkillService.ResetCooldown(finisher, id)
+			end
+		end
 	end)
 	Net.Handle("SetHotbar", setHotbar)
 	Net.Handle("PutOnBar", function(player: Player, skillId: string, slot: number?): (boolean, string?)

@@ -1141,6 +1141,8 @@ return {
 	["effect.nextBasic"] = "Taut bowstring",
 	["effect.runeSeal"] = "Glowing rune",
 	["effect.frostbite"] = "Frostbite",
+	["effect.fury"] = "Fury",
+	["effect.carnage"] = "Carnage",
 	["effect.guardianAngel"] = "Guardian Angel",
 	["effect.withValue"] = "{name}: {value}%",
 
@@ -1313,6 +1315,7 @@ return {
 	["admin.res.on"] = "Infinite resources ON.",
 	["admin.res.off"] = "Infinite resources OFF.",
 	["source.effects"] = "Active effects",
+	["source.fury"] = "Fury",
 
 	-- NPCs (S06)
 	["npc.healer.name"] = "Healer Mirela",
@@ -3550,6 +3553,10 @@ return {
 	["admin.usage.aura"] = "/aura <category|off> [value] [circle|behind] [radius]: an aura like a path node's, active in combat",
 	["admin.aura.on"] = "Aura {category}: {value}, shape {shape}, radius {radius} studs",
 	["admin.aura.off"] = "Aura removed",
+	["admin.usage.hook"] = "/hook <id> [value|off]: a temporary extra combat hook value on yourself (e.g. furyMax 10); without a value shows the total",
+	["admin.hook.show"] = "Hook {id}: total {total}",
+	["admin.hook.set"] = "Hook {id}: extra {value}, total {total}",
+	["admin.hook.bad"] = "Invalid hook name or value",
 	["admin.path.ok"] = "Main path: {path}.",
 	["admin.path.unknown"] = "Unknown path of your class: {id}.",
 	["admin.node.ok"] = "Node {id}: rank {rank}.",

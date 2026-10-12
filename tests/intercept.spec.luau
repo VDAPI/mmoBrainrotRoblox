@@ -82,4 +82,32 @@ T.describe("Intercept", function()
 	end)
 end)
 
+T.describe("Martyr and Retribution (S72)", function()
+	T.it("split reads the part before mitigation", function()
+		local function check(moved: number, mitigation: number, thorns: number, guard: number, back: number)
+			local toGuard, reflected = Intercept.split(moved, mitigation, thorns)
+			T.expect(toGuard).toBeNear(guard, 1e-9)
+			T.expect(reflected).toBe(back)
+		end
+		check(100, 30, 0, 70, 0)
+		check(100, 0, 20, 100, 20)
+		check(100, 30, 30, 70, 30)
+		check(3, 0, 10, 3, 1)
+		check(0, 30, 30, 0, 0)
+		check(100, -5, -5, 100, 0)
+		check(100, 150, 0, 0, 0)
+	end)
+
+	T.it("the per-second window counts the part before Martyr", function()
+		local windows: { [any]: Intercept.Window } = {}
+		local expected = { { 180, 126 }, { 70, 49 }, { 0, 0 } }
+		for _, pair in expected do
+			local _, _, moved = Intercept.resolve("monster", 600, { candidate("g", 30, 1) }, windows, 1, maxHp)
+			T.expect(moved).toBeNear(pair[1], 1e-9)
+			local toGuard = Intercept.split(moved, 30, 0)
+			T.expect(toGuard).toBeNear(pair[2], 1e-9)
+		end
+	end)
+end)
+
 return nil

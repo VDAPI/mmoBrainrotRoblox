@@ -333,6 +333,8 @@ cmd("combat", "aura", {
 	enum("shape", { "circle", "behind" }, true, "circle"),
 	int("radius", 1, 40, true),
 })
+-- S72: a temporary extra combat hook value on yourself (path-node hooks before the nodes exist).
+cmd("combat", "hook", { str("id"), str("value", true) })
 
 -- Quests
 cmd("quests", "quest", { enum("action", { "set", "complete" }), ref("id", "quest", true) })
