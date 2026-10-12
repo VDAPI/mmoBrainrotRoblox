@@ -1,9 +1,11 @@
 ---
 // Class index (S41, /pl/klasy/; no mock-up): four cards in Classes.order, styled like the section cards of the home
-// page: portrait with the class glyph, name, roles, description, resource (bar colour), weapons, planner link.
+// page: portrait (owner's picture, WIKI-GRAFIKA; else the class glyph), name, roles, description, resource (bar
+// colour), weapons, planner link.
 import Base from "../layouts/Base.astro";
 import Crumbs from "../components/Crumbs.astro";
 import { href, type Lang } from "../i18n/routes";
+import { artImg } from "../lib/art";
 import { baseName, classes, resourceLine, resourceName, roleParts, skillsOf } from "../lib/classes";
 import { name, t } from "../lib/i18n";
 
@@ -22,7 +24,14 @@ const list = classes();
       {list.map((c) => (
         <li class="card" style={`--cls: var(--vw-class-${c.id})`}>
           <a class="card__link" href={href(lang, "classes", c.id)}>
-            <span class="portrait" aria-hidden="true"><span>{c.icon}</span></span>
+            {(() => {
+              const pic = artImg("portrait", c.id, 300);
+              return pic ? (
+                <span class="portrait has-pic"><img src={pic.src} srcset={pic.srcset} sizes="(max-width: 767px) 88px, (max-width: 1100px) 45vw, 300px" width={pic.width} height={pic.height} alt="" loading="lazy" decoding="async" /></span>
+              ) : (
+                <span class="portrait" aria-hidden="true"><span>{c.icon}</span></span>
+              );
+            })()}
             <span class="name">{name(c.name, lang)}</span>
           </a>
           <ul class="roles">{roleParts(c, lang).map((r) => <li>{r}</li>)}</ul>
@@ -55,6 +64,8 @@ const list = classes();
   .card__link:hover { text-decoration: none; color: var(--vw-gold-bright); }
   .portrait { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; background: repeating-linear-gradient(135deg, var(--vw-bg-sunken) 0 10px, var(--vw-panel) 10px 20px); border: 2px solid var(--vw-gold); box-shadow: 0 0 0 3px var(--vw-bg), 0 0 0 4px var(--vw-gold-dark); }
   .portrait span { font-size: 110px; line-height: 1; color: var(--cls); text-shadow: 0 0 32px color-mix(in srgb, var(--cls) 45%, transparent); }
+  .portrait.has-pic { overflow: hidden; }
+  .portrait img { display: block; width: 100%; height: 100%; object-fit: cover; }
   .name { font: 700 52px/0.9 var(--vw-font-display); }
   .roles { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
   .roles li { padding: 4px 10px; font-size: 14px; font-weight: 700; background: var(--vw-panel); border: 1px solid var(--vw-border); }

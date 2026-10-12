@@ -2021,3 +2021,17 @@
   mierzy `prepare_glb.py`). Druga ręka bez `hold` (środek w `at`). Kolby kusz zostają w osi z PCA (lekki skos).
 - **S52** Broń maga (`elemental`) używa obrazka tylko z warstwą akcentu (`.a.png`); obrazek jednowarstwowy jest pomijany,
   żeby żywioł był widać (ikona kodu). Podgląd `/weaponpreview` znika po każdej zmianie ekwipunku, nie tylko broni.
+- **WIKI-GRAFIKA** Wiki pokazuje ikonę przedmiotu tak, jak gra po wgraniu atlasów 4–7: eksporter liczy
+  `ItemIcons.resolve` z każdym arkuszem gotowym (`WikiData/Items.wikiReady`), bo wiki składa ikony z plików atlasów w repo,
+  a id assetów jej nie dotyczą. Te same zasady co w grze: unikat bossa, najbliższy niższy próg typu, broń maga tylko z `.a.png`.
+- **WIKI-GRAFIKA** Ikony 64 / 128 dalej z atlasów (`npm run icons`, w CI); 256 px dla ekranów 2× ikony 128 na stronie
+  przedmiotu i pozostałe obrazki (klasy, portrety, umiejętności, żywioły, gildia, profile łowisk, przedmioty zadań, usługi
+  NPC, klawisze okien, VIP) robi lokalnie `npm run art` z oryginałów 1024 px folderu Graphics (jak rendery: wynik commitowany,
+  build ich nie potrzebuje). Jedno źródło przypisań: `wiki/scripts/lib/art-core.mjs` (`RULES`), manifest `src/generated/art.json`.
+- **WIKI-GRAFIKA** Obrazek trafia na wiki tylko dla id opublikowanego w `wiki/src/data` (ukryte umiejętności ścieżek, ścieżki,
+  przedmioty nie dostają pliku); `npm run art` bez folderu Graphics tylko usuwa wpisy ukrytych id, a `art.test.ts` wywala
+  się na pliku spoza manifestu albo nieopublikowanym id. Białe znaki HUD i mapy idą jako maska CSS w kolorze tekstu (oba motywy).
+- **WIKI-GRAFIKA** Portrety klas (1024×1536) przycięte do kwadratu z górnej części (15% zapasu od góry), 320 i 640 px; nie
+  używane na wiki: efekty (brak elementu), ikony mapy i znaczniki (mapa to SVG z danych), sloty i reszta HUD, `mapy/_uklad`
+  (wzory do przemalowania, nie grafika), obrazki ukrytych umiejętności. `SkillNode` nie importuje `lib/item-model`
+  (budżet planera).

@@ -5,6 +5,7 @@
 import type { ClassInfo, Skill, SkillPath, SkillPathWeapon } from "../data/types";
 import type { Key } from "../i18n/pl";
 import type { Lang } from "../i18n/routes";
+import { artFor } from "./art";
 import { getItem, load } from "./data";
 import { formatNumber } from "./format";
 import { name, t } from "./i18n";
@@ -148,6 +149,7 @@ export function plannerData(c: ClassInfo, lang: Lang): PlannerData {
     ...ruleSkill(s),
     name: name(s.name, lang),
     glyph: s.glyph,
+    pic: artFor("skill", s.id),
     color: skillColor(s),
     resource: s.resource ?? null,
     range: s.range ?? null,

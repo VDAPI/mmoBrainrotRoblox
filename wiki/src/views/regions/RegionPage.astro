@@ -3,6 +3,7 @@
 // and zone badges, description and PvP rule, areas, monsters (row <-> map highlight), caves, quests, neighbouring
 // regions and the way from the city on the right. The city lists its characters and gates instead of monsters.
 import Base from "../../layouts/Base.astro";
+import ArtIcon from "../../components/ArtIcon.astro";
 import Crumbs from "../../components/Crumbs.astro";
 import MapFrame from "../../components/MapFrame.astro";
 import RankBadge from "../../components/RankBadge.astro";
@@ -70,7 +71,7 @@ const title = name(map.name, lang);
                     <td class="muted nowrap">{levels(lang, a.levelMin, a.levelMax)}</td>
                     <td class="hide-m soft">{kinds.join(", ")}</td>
                     <td class="hide-m muted">{a.groups}</td>
-                    <td>{p ? <span class="profile" style={`--c:${p.color}`} title={name(p.desc, lang)}>{p.icon} {name(p.name, lang)}</span> : "—"}</td>
+                    <td>{p ? <span class="profile" style={`--c:${p.color}`} title={name(p.desc, lang)}><ArtIcon kind="profile" id={a.profile} size={16}>{p.icon}</ArtIcon> {name(p.name, lang)}</span> : "—"}</td>
                   </tr>
                 );
               })}

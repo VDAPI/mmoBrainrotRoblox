@@ -1,10 +1,11 @@
-// Unit tests of the S44 script cores: budgets, audit, stale data, robots.txt and the Wiki workflow.
+// Unit tests of the S44 script cores: budgets, audit, stale data, robots.txt and the Wiki workflow; WIKI-GRAFIKA: art.
 import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { parse } from "yaml";
 import { findLeaks, hreflangProblems, pageFacts, parseAdminIds, parseCodes, pathOf } from "./audit-core.mjs";
 import { budgetFor, closure, gzipSize, pageScripts, staticImports } from "./budgets-core.mjs";
 import { metaWithoutCommit, porcelainPaths, staleFiles } from "./stale-core.mjs";
+import { alphaBounds, cropBox, itemOriginals, outputsOf, planArt, prunePublished, resolveId, safeName } from "./art-core.mjs";
 import config from "../budgets.config.mjs";
 import { robotsTxt } from "../../src/lib/robots.ts";
 
@@ -123,5 +124,95 @@ describe("Wiki workflow", () => {
   it("ships the Cloudflare headers file", () => {
     expect(existsSync("public/_headers")).toBe(true);
     if (existsSync("dist")) expect(existsSync("dist/_headers")).toBe(true);
+  });
+});
+
+describe("art core (WIKI-GRAFIKA)", () => {
+  const published = {
+    class: new Set(["Mage", "Warrior"]),
+    portrait: new Set(["Mage"]),
+    skill: new Set(["fireball"]),
+    element: new Set(["fire"]),
+    guild: new Set([]),
+    profile: new Set([]),
+    quest: new Set(["wolfFang"]),
+    service: new Set(["blacksmith"]),
+    keybind: new Set(["win_map"]),
+    pass: new Set([]),
+    item: new Set(["eq/sword1h@10", "mat/ore", "mat/ore_copper", "eq/wand"]),
+  };
+  const files = [
+    "tylko_2d/klasy/class_mage.png",
+    "tylko_2d/klasy/portrait_mage.png",
+    "tylko_2d/klasy/portrait_hunter.png",
+    "tylko_2d/umiejetnosci/mage/skill_fireball.png",
+    "tylko_2d/umiejetnosci/mage/skill_manaShield.png",
+    "tylko_2d/zywioly/element_fire.png",
+    "tylko_2d/questy/quest_wolfFang.png",
+    "tylko_2d/mapa/service_blacksmith.png",
+    "tylko_2d/mapa/map_boss.png",
+    "tylko_2d/hud/menu_map.png",
+    "tylko_2d/hud/vip.png",
+    "modele_3d/bronie/sword1h/sword1h_10.png",
+    "modele_3d/bronie/wand/wand_1.png",
+    "tylko_2d/materialy/ore_copper.png",
+  ];
+  const pictures = new Set(["eq/sword1h@10", "mat/ore_copper", "eq/wand@1"]);
+
+  it("maps pictures to published ids only; hidden skills, other classes and unknown files stay unused", () => {
+    const { entries, unused } = planArt(files, published, pictures);
+    expect(entries.map((e) => e.key)).toEqual([
+      "class/Mage",
+      "element/fire",
+      "item/eq/sword1h@10",
+      "item/mat/ore_copper",
+      "keybind/win_map",
+      "portrait/Mage",
+      "quest/wolfFang",
+      "service/blacksmith",
+      "skill/fireball",
+    ]);
+    expect(unused).toEqual([
+      "modele_3d/bronie/wand/wand_1.png",
+      "tylko_2d/hud/vip.png",
+      "tylko_2d/klasy/portrait_hunter.png",
+      "tylko_2d/mapa/map_boss.png",
+      "tylko_2d/umiejetnosci/mage/skill_manaShield.png",
+    ]);
+    const sword = entries.find((e) => e.key === "item/eq/sword1h@10");
+    expect(sword.file).toBe("item/eq-sword1h_10");
+    expect(outputsOf(sword)).toEqual(["item/eq-sword1h_10-256.webp"]);
+    expect(entries.find((e) => e.key === "service/blacksmith").mask).toBe(true);
+    expect(outputsOf(entries.find((e) => e.key === "portrait/Mage"))).toEqual(["portrait/Mage-320.webp", "portrait/Mage-640.webp"]);
+  });
+
+  it("finds item originals like tools/icons/import_graphics.py and resolves ids ignoring case", () => {
+    expect(itemOriginals("eq/armor_heavy@20")).toEqual(["modele_3d/bronie/armor_heavy/armor_heavy_20.png", "tylko_2d/ekwipunek/armor_heavy/armor_heavy_20.png"]);
+    expect(itemOriginals("uniq/unique_grimrok_fang")).toContain("tylko_2d/unikaty/unique_grimrok_fang.png");
+    expect(itemOriginals("bless/sage")).toEqual(["tylko_2d/blogoslawienstwa/blessing_sage.png"]);
+    expect(itemOriginals("misc/backpack_20")).toContain("tylko_2d/plecaki/backpack_20.png");
+    expect(itemOriginals("eq/sword1h")).toEqual([]);
+    expect(resolveId("mage", new Set(["Mage"]))).toBe("Mage");
+    expect(resolveId("ab", new Set(["Ab", "aB"]))).toBeNull();
+    expect(resolveId("zz", new Set(["Ab"]))).toBeNull();
+    expect(safeName("eq/sword1h@10")).toBe("eq-sword1h_10");
+  });
+
+  it("drops entries of ids no longer published", () => {
+    const kept = prunePublished({ "skill/fireball": { file: "skill/fireball" }, "skill/prayer": { file: "skill/prayer" } }, published);
+    expect(Object.keys(kept)).toEqual(["skill/fireball"]);
+  });
+
+  it("crops to the picture with a margin, centre squares and the top of portraits", () => {
+    const raw = Buffer.alloc(10 * 10 * 4);
+    for (const [x, y] of [[2, 3], [5, 7]]) raw[(y * 10 + x) * 4 + 3] = 255;
+    const box = alphaBounds(raw, 10, 10);
+    expect(box).toEqual({ left: 2, top: 3, right: 6, bottom: 8 });
+    expect(alphaBounds(Buffer.alloc(16), 2, 2)).toBeNull();
+    const trim = cropBox("trim", 10, 10, box);
+    expect(trim.side).toBe(Math.round(5 / 0.88));
+    expect(trim.top).toBe(3 - Math.floor((trim.side - 5) / 2));
+    expect(cropBox("square", 1024, 1024, null)).toEqual({ left: 0, top: 0, side: 1024 });
+    expect(cropBox("portrait", 1024, 1536, null)).toEqual({ left: 0, top: 77, side: 1024 });
   });
 });

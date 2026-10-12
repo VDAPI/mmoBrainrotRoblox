@@ -88,7 +88,7 @@ export interface MapData {
   quests: MDQuest[];
   zones: Record<string, { name: string; rule: string }>;
   ranks: Record<string, string>;
-  profiles: Record<string, { icon: string; name: string; color: string }>;
+  profiles: Record<string, { icon: string; pic: string | null; name: string; color: string }>; // pic: WIKI-GRAFIKA, base URL (-64.webp)
   search: MDSearch[];
   bestiary: string | null;
   limit: number;

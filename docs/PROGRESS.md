@@ -70,7 +70,9 @@ S84 w `docs/BALANS.md`, fixture `tests/fixtures/balance_items.json`; liczby gry 
 modelu umiejętności, metryki i cele ścieżek 20–100 w `tests/SkillModel.luau`, sekcja „Klasy i ścieżki” w `docs/BALANS.md`,
 fixture `tests/fixtures/balance_paths.json`; gra bez zmian. S52 grafika właściciela w grze: 121 modeli broni
 (`WeaponLooks.assets`, progi przez `Logic/ArtTiers`, ułożenie `Logic/WeaponMount`) i 246 ikon PNG w atlasach `items_4..7`
-(warstwa nad SVG, gotowość per atlas), packer `tools/icons/import_png.py`, `/artcoverage`, `/weaponpreview`.
+(warstwa nad SVG, gotowość per atlas), packer `tools/icons/import_png.py`, `/artcoverage`, `/weaponpreview`. WIKI-GRAFIKA:
+grafiki właściciela na wiki (ikony przedmiotów jak w grze, `npm run art`: klasy, umiejętności, żywioły, gildia, profile
+łowisk, przedmioty zadań, usługi NPC).
 Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`, `docs/STATY.md`), następne sesje
 balansu; testy i strojenie po nich.
 
@@ -84,8 +86,9 @@ balansu; testy i strojenie po nich.
   (jak Studio czyta osie `.glb`). Stary test `art/weapons/sword1` do usunięcia.
 - **Grafika (S52), kod**: potwory trzymają broń z brył (modele w `Anatomy/Weapons` nie podpięte); księgi stoją pochylone
   jak w pliku Tripo, kolby kusz `crossbow_1` i `_10` lekko ukośnie (oś z PCA, dłoń na kolbie przez `hold`); obrazki
-  różdżek i kosturów maga czekają na `.a.png` (do tego czasu ikona kodu w kolorze żywiołu); obrazki umiejętności, efektów, HUD, mapy, klas, gildii, questów i żywiołów nie mają haka w UI;
-  wiki bez obrazków PNG (osobny krok).
+  różdżek i kosturów maga czekają na `.a.png` (do tego czasu ikona kodu w kolorze żywiołu); obrazki umiejętności,
+  efektów, HUD, mapy, klas, gildii, questów i żywiołów nie mają haka w UI gry (na wiki są od WIKI-GRAFIKA, poza efektami,
+  ikonami mapy i resztą HUD).
 - **Walka**: ataki potworów zaliczają się od razu (bez zamachu; gracze mają). Brak „flinch” potwora wg siły ciosu.
   Umiejętności (`Cast`) i strzały łowcy nie używają systemu póz S22. Zręczność od S54 słabnie z poziomem (Łowca L90 3,4 → 5,9 s na
   zabicie bez umiejętności); cele klas stroją S89–S90.

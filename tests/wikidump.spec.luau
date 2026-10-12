@@ -734,6 +734,70 @@ T.describe("Wiki export: items and monsters (S68)", function()
 	end)
 end)
 
+-- WIKI-GRAFIKA: item icons follow the game's picture rule (Logic/ItemIcons, Logic/ArtTiers) with every atlas sheet
+-- counted as ready: own boss picture, else the nearest lower tier picture of the type, mage weapons only with an accent.
+T.describe("Wiki export: owner's pictures (WIKI-GRAFIKA)", function()
+	local ArtTiers = require("../src/shared/Logic/ArtTiers")
+	local Atlas = require("../src/shared/Data/ItemIconAtlas")
+
+	local function hasAccent(icon: any): boolean
+		for _, layer in icon.layers do
+			if layer.t == "accent" then
+				return true
+			end
+		end
+		return false
+	end
+
+	T.it("equipment shows its own or the nearest lower tier picture, mage weapons only with an accent", function()
+		local pictures, checked = 0, 0
+		for _, item in d.items.items do
+			local def = Items.get(item.id)
+			if def and def.category == "equipment" then
+				checked += 1
+				local expected: string? = nil
+				local own = Atlas.PNG[`uniq/{def.id}`]
+				if own and (not def.elemental or hasAccent(own)) then
+					expected = `uniq/{def.id}`
+				elseif not Atlas.ICONS[`uniq/{def.id}`] then
+					for _, key in ArtTiers.iconKeys(`eq/{def.type}`, def.tier) do
+						local png = Atlas.PNG[key]
+						if png and (not def.elemental or hasAccent(png)) then
+							expected = key
+							break
+						end
+					end
+				end
+				if expected then
+					pictures += 1
+					T.expect(item.iconKey).toBe(expected)
+					for _, layer in item.layers do
+						T.expect(layer.image > Atlas.SVG_SHEETS).toBe(true)
+					end
+				else
+					T.expect(Atlas.PNG[item.iconKey] == nil).toBe(true)
+				end
+			end
+		end
+		T.expect(checked > 0).toBe(true)
+		T.expect(pictures > 0).toBe(true)
+	end)
+
+	T.it("other items take their own picture, then the shared key's picture, else the drawn icon", function()
+		for _, item in d.items.items do
+			local def = Items.get(item.id)
+			if def and def.category ~= "equipment" and item.iconKey then
+				local group = string.match(item.iconKey, "^(%a+)/")
+				local own = `{group}/{def.id}`
+				if Atlas.PNG[own] then
+					T.expect(item.iconKey).toBe(own)
+				end
+				T.expect(Atlas.PNG[item.iconKey] ~= nil or Atlas.ICONS[item.iconKey] ~= nil).toBe(true)
+			end
+		end
+	end)
+end)
+
 -- S82 (ROZWOJ 3.5, docs/WIKI.md §5): skills with options A/B and rank variants, published paths only, the planner
 -- vectors (Logic/Paths.canBuy / canRefund) and the planner test file from tests/fixtures/paths.luau.
 T.describe("Wiki export: skill planner (S82)", function()

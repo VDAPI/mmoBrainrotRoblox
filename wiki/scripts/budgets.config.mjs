@@ -12,6 +12,6 @@ export default {
     { match: /^(pl\/klasy|en\/classes)\/[^/]+\/index\.html$/, kb: 40, mode: "all", why: "S82: class page with the skill planner island (tabs, paths, A/B, code v2: 37 KB)" },
   ],
   // Reported, never counted: Pagefind loads only after a query.
-  warn: { cssKb: 60, htmlKb: 150, imageKb: 300, mobsMb: 10, itemsMb: 8 },
+  warn: { cssKb: 60, htmlKb: 150, imageKb: 300, mobsMb: 10, itemsMb: 8, artMb: 8 },
   files: { warn: 15000, max: 19000, maxFileMb: 25 },
 };

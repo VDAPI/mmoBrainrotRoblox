@@ -20,6 +20,7 @@
     "renders": "node scripts/renders.mjs",
     "renders:test": "node scripts/renders.mjs --test",
     "icons": "node scripts/item-icons.mjs",
+    "art": "node scripts/art.mjs",
     "routes": "node scripts/routes.mjs",
     "images:city": "node scripts/city-images.mjs"
   },

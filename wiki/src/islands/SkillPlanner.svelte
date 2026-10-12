@@ -343,7 +343,7 @@
 {#snippet skillDetail(s: PlannerSkill)}
   {@const rank = skillRank(s)}
   <div class="sp-detail__head">
-    <span class="sp-detail__icon" aria-hidden="true"><span style={`color: ${s.color}`}>{s.glyph}</span></span>
+    <span class="sp-detail__icon" aria-hidden="true">{#if s.pic}<img src={`${s.pic}-64.webp`} srcset={`${s.pic}-64.webp 1x, ${s.pic}-128.webp 2x`} alt="" width="62" height="62" />{:else}<span style={`color: ${s.color}`}>{s.glyph}</span>{/if}</span>
     <div class="sp-detail__title">
       <h3 id="sp-detail-name">{s.name}</h3>
       <span class="sp-detail__meta">{metaOf(s, rank)}</span>
@@ -537,7 +537,7 @@
             {@const s = skillById.get(row.id)!}
             <li data-skill={s.id}>
               <button type="button" class="sp-item" aria-pressed={selected === s.id} onclick={() => select(s.id)}>
-                <span class="sp-item__icon" style={`color: ${s.color}`} aria-hidden="true">{s.glyph}</span>
+                <span class="sp-item__icon" style={`color: ${s.color}`} aria-hidden="true">{#if s.pic}<img src={`${s.pic}-64.webp`} srcset={`${s.pic}-64.webp 1x, ${s.pic}-128.webp 2x`} alt="" width="40" height="40" loading="lazy" />{:else}{s.glyph}{/if}</span>
                 <span class="sp-item__text">
                   <b>{s.name}</b>
                   <small>{L.rank} <span class="sp-rank">{row.rank}/{row.max}</span> · {row.next === null ? L.rankMax : T("nextAt", { n: row.next })}</small>
@@ -591,6 +591,7 @@
                   <div class="sp-node" data-node={n.id}>
                     <SkillNode
                       glyph={n.glyph}
+                      pic={n.skill ? (skillById.get(n.skill)?.pic ?? null) : null}
                       color={n.skill ? (skillById.get(n.skill)?.color ?? classColor) : classColor}
                       state={nv.state}
                       invalid={nv.invalid}

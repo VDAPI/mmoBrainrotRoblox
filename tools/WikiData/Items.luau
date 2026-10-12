@@ -413,6 +413,13 @@ local function traitInfo(traitId: string, baseType: string): any
 	return { name = Names.of(def.nameKey), info = row("does"), pvp = row("pvp"), cap = row("cap"), line = lines }
 end
 
+-- WIKI-GRAFIKA: the wiki composes icons from the atlas files in the repository (npm run icons), so every sheet counts
+-- as ready. Items show the owner's pictures (Atlas.PNG, nearest lower tier through Logic/ArtTiers, mage weapons only
+-- with an accent layer) exactly as the game does once their sheets are uploaded; the asset ids never matter here.
+function Items.wikiReady(_sheet: number): boolean
+	return true
+end
+
 function Items.build(ctx: any): any
 	local ItemIcons = if ctx.features.itemIcons then (require :: any)("../../src/shared/Logic/ItemIcons") else nil
 	local used = usedForIndex()
@@ -468,14 +475,14 @@ function Items.build(ctx: any): any
 			-- S35: atlas icon (Logic/ItemIcons.resolve); mage weapons once per weapon element.
 			local iconKey, layers, layersByElement = nil, nil, nil
 			if ItemIcons then
-				local resolved = ItemIcons.resolve(def)
+				local resolved = ItemIcons.resolve(def, nil, Items.wikiReady)
 				if resolved then
 					iconKey, layers = resolved.key, resolved.layers
 				end
 				if def.elemental then
 					layersByElement = {}
 					for _, el in Elements.WEAPON do
-						local r = ItemIcons.resolve(def, el)
+						local r = ItemIcons.resolve(def, el, Items.wikiReady)
 						if r then
 							layersByElement[el] = r.layers
 						end

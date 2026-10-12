@@ -1,0 +1,2346 @@
+{
+  "version": 1,
+  "entries": {
+    "class/Cleric": {
+      "file": "class/Cleric",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "364ac84dd5aca156"
+    },
+    "class/Hunter": {
+      "file": "class/Hunter",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "5855fddb044ba34b"
+    },
+    "class/Mage": {
+      "file": "class/Mage",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "ee6f857947559410"
+    },
+    "class/Warrior": {
+      "file": "class/Warrior",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "c3230fbc59984d91"
+    },
+    "element/fire": {
+      "file": "element/fire",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "10d809a406cdeed8"
+    },
+    "element/ice": {
+      "file": "element/ice",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "4275ea96605cd277"
+    },
+    "element/lightning": {
+      "file": "element/lightning",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "cad8b0200aaa4ac6"
+    },
+    "element/poison": {
+      "file": "element/poison",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "5b1ac37359f3fdce"
+    },
+    "guild/expansion": {
+      "file": "guild/expansion",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "7e07a8099738e5ec"
+    },
+    "guild/fortune": {
+      "file": "guild/fortune",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "38015c41d7a8c0ce"
+    },
+    "guild/healer": {
+      "file": "guild/healer",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "dbb0c465aa88d0c8"
+    },
+    "guild/luck": {
+      "file": "guild/luck",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "79c3caa91b7a4c3a"
+    },
+    "guild/wisdom": {
+      "file": "guild/wisdom",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "bbdb196f0070a91d"
+    },
+    "item/bless/fortune": {
+      "file": "item/bless-fortune",
+      "sizes": [
+        256
+      ],
+      "hash": "cb134e34a4f2a061"
+    },
+    "item/bless/guardian": {
+      "file": "item/bless-guardian",
+      "sizes": [
+        256
+      ],
+      "hash": "33fd95aa6e445945"
+    },
+    "item/bless/hunter": {
+      "file": "item/bless-hunter",
+      "sizes": [
+        256
+      ],
+      "hash": "f62c0c3a86d49d46"
+    },
+    "item/bless/sage": {
+      "file": "item/bless-sage",
+      "sizes": [
+        256
+      ],
+      "hash": "dd5e9840dfe8eb32"
+    },
+    "item/bless/warrior": {
+      "file": "item/bless-warrior",
+      "sizes": [
+        256
+      ],
+      "hash": "fb4fcd32d357622f"
+    },
+    "item/eq/armor_heavy@1": {
+      "file": "item/eq-armor_heavy_1",
+      "sizes": [
+        256
+      ],
+      "hash": "679186625061a7e8"
+    },
+    "item/eq/armor_heavy@10": {
+      "file": "item/eq-armor_heavy_10",
+      "sizes": [
+        256
+      ],
+      "hash": "668298f0f6382616"
+    },
+    "item/eq/armor_heavy@15": {
+      "file": "item/eq-armor_heavy_15",
+      "sizes": [
+        256
+      ],
+      "hash": "06e2b422963c6569"
+    },
+    "item/eq/armor_heavy@20": {
+      "file": "item/eq-armor_heavy_20",
+      "sizes": [
+        256
+      ],
+      "hash": "7cc17e9bdfa246b5"
+    },
+    "item/eq/armor_heavy@5": {
+      "file": "item/eq-armor_heavy_5",
+      "sizes": [
+        256
+      ],
+      "hash": "b4294d1ba4548697"
+    },
+    "item/eq/armor_light@1": {
+      "file": "item/eq-armor_light_1",
+      "sizes": [
+        256
+      ],
+      "hash": "1d6e49444370498a"
+    },
+    "item/eq/armor_light@10": {
+      "file": "item/eq-armor_light_10",
+      "sizes": [
+        256
+      ],
+      "hash": "45776971a6ffa6e6"
+    },
+    "item/eq/armor_light@15": {
+      "file": "item/eq-armor_light_15",
+      "sizes": [
+        256
+      ],
+      "hash": "cb5f98dba8eb8405"
+    },
+    "item/eq/armor_light@20": {
+      "file": "item/eq-armor_light_20",
+      "sizes": [
+        256
+      ],
+      "hash": "8f6fd44ca3a33f87"
+    },
+    "item/eq/armor_light@5": {
+      "file": "item/eq-armor_light_5",
+      "sizes": [
+        256
+      ],
+      "hash": "96a41720491109e7"
+    },
+    "item/eq/armor_medium@1": {
+      "file": "item/eq-armor_medium_1",
+      "sizes": [
+        256
+      ],
+      "hash": "77c13a0e812f7e0d"
+    },
+    "item/eq/armor_medium@10": {
+      "file": "item/eq-armor_medium_10",
+      "sizes": [
+        256
+      ],
+      "hash": "a89bd382b3a925fd"
+    },
+    "item/eq/armor_medium@15": {
+      "file": "item/eq-armor_medium_15",
+      "sizes": [
+        256
+      ],
+      "hash": "0718fc18cf098a2e"
+    },
+    "item/eq/armor_medium@20": {
+      "file": "item/eq-armor_medium_20",
+      "sizes": [
+        256
+      ],
+      "hash": "9297ddb83ac00ced"
+    },
+    "item/eq/armor_medium@5": {
+      "file": "item/eq-armor_medium_5",
+      "sizes": [
+        256
+      ],
+      "hash": "4c1b8a3054248428"
+    },
+    "item/eq/axe1h@1": {
+      "file": "item/eq-axe1h_1",
+      "sizes": [
+        256
+      ],
+      "hash": "2f7b9f6cd3a310d8"
+    },
+    "item/eq/axe1h@10": {
+      "file": "item/eq-axe1h_10",
+      "sizes": [
+        256
+      ],
+      "hash": "82400d3164fb4494"
+    },
+    "item/eq/axe1h@15": {
+      "file": "item/eq-axe1h_15",
+      "sizes": [
+        256
+      ],
+      "hash": "59f9d13df42e750e"
+    },
+    "item/eq/axe1h@20": {
+      "file": "item/eq-axe1h_20",
+      "sizes": [
+        256
+      ],
+      "hash": "740c39aee952e6fa"
+    },
+    "item/eq/axe1h@5": {
+      "file": "item/eq-axe1h_5",
+      "sizes": [
+        256
+      ],
+      "hash": "b4f291461d99baf4"
+    },
+    "item/eq/axe2h@1": {
+      "file": "item/eq-axe2h_1",
+      "sizes": [
+        256
+      ],
+      "hash": "e2577771cf1602cf"
+    },
+    "item/eq/axe2h@10": {
+      "file": "item/eq-axe2h_10",
+      "sizes": [
+        256
+      ],
+      "hash": "3bba5df1e053f0af"
+    },
+    "item/eq/axe2h@15": {
+      "file": "item/eq-axe2h_15",
+      "sizes": [
+        256
+      ],
+      "hash": "933591190d7b0059"
+    },
+    "item/eq/axe2h@20": {
+      "file": "item/eq-axe2h_20",
+      "sizes": [
+        256
+      ],
+      "hash": "853db42a258461e8"
+    },
+    "item/eq/axe2h@5": {
+      "file": "item/eq-axe2h_5",
+      "sizes": [
+        256
+      ],
+      "hash": "28d6da8bc80b97b7"
+    },
+    "item/eq/boots_heavy@1": {
+      "file": "item/eq-boots_heavy_1",
+      "sizes": [
+        256
+      ],
+      "hash": "e4a16cbc271d0c6a"
+    },
+    "item/eq/boots_heavy@10": {
+      "file": "item/eq-boots_heavy_10",
+      "sizes": [
+        256
+      ],
+      "hash": "01b53ee379db485d"
+    },
+    "item/eq/boots_heavy@15": {
+      "file": "item/eq-boots_heavy_15",
+      "sizes": [
+        256
+      ],
+      "hash": "1f119b9e6a3764f6"
+    },
+    "item/eq/boots_heavy@20": {
+      "file": "item/eq-boots_heavy_20",
+      "sizes": [
+        256
+      ],
+      "hash": "45626804d1b157f2"
+    },
+    "item/eq/boots_heavy@5": {
+      "file": "item/eq-boots_heavy_5",
+      "sizes": [
+        256
+      ],
+      "hash": "dafefd4635c4fb0f"
+    },
+    "item/eq/boots_light@1": {
+      "file": "item/eq-boots_light_1",
+      "sizes": [
+        256
+      ],
+      "hash": "3d7365a3dfc43e8f"
+    },
+    "item/eq/boots_light@10": {
+      "file": "item/eq-boots_light_10",
+      "sizes": [
+        256
+      ],
+      "hash": "970ac27b5c5d6c68"
+    },
+    "item/eq/boots_light@15": {
+      "file": "item/eq-boots_light_15",
+      "sizes": [
+        256
+      ],
+      "hash": "fcb10892ac21b3c1"
+    },
+    "item/eq/boots_light@20": {
+      "file": "item/eq-boots_light_20",
+      "sizes": [
+        256
+      ],
+      "hash": "c7c45ec15b64827d"
+    },
+    "item/eq/boots_light@5": {
+      "file": "item/eq-boots_light_5",
+      "sizes": [
+        256
+      ],
+      "hash": "19c110a64d3a1f82"
+    },
+    "item/eq/boots_medium@1": {
+      "file": "item/eq-boots_medium_1",
+      "sizes": [
+        256
+      ],
+      "hash": "26b4a3fc189adb68"
+    },
+    "item/eq/boots_medium@10": {
+      "file": "item/eq-boots_medium_10",
+      "sizes": [
+        256
+      ],
+      "hash": "865ed889cc43c6e5"
+    },
+    "item/eq/boots_medium@15": {
+      "file": "item/eq-boots_medium_15",
+      "sizes": [
+        256
+      ],
+      "hash": "be7f3e8df601ec86"
+    },
+    "item/eq/boots_medium@20": {
+      "file": "item/eq-boots_medium_20",
+      "sizes": [
+        256
+      ],
+      "hash": "fe59e22bdc636224"
+    },
+    "item/eq/boots_medium@5": {
+      "file": "item/eq-boots_medium_5",
+      "sizes": [
+        256
+      ],
+      "hash": "7840a335a321a277"
+    },
+    "item/eq/bow@1": {
+      "file": "item/eq-bow_1",
+      "sizes": [
+        256
+      ],
+      "hash": "737bffa418857267"
+    },
+    "item/eq/bow@10": {
+      "file": "item/eq-bow_10",
+      "sizes": [
+        256
+      ],
+      "hash": "da6ee51b4e191457"
+    },
+    "item/eq/bow@15": {
+      "file": "item/eq-bow_15",
+      "sizes": [
+        256
+      ],
+      "hash": "bfb907dd9985680f"
+    },
+    "item/eq/bow@20": {
+      "file": "item/eq-bow_20",
+      "sizes": [
+        256
+      ],
+      "hash": "6ce6c10775ec903f"
+    },
+    "item/eq/bow@5": {
+      "file": "item/eq-bow_5",
+      "sizes": [
+        256
+      ],
+      "hash": "ed2b300d90723991"
+    },
+    "item/eq/crossbow@1": {
+      "file": "item/eq-crossbow_1",
+      "sizes": [
+        256
+      ],
+      "hash": "9b76bac37b31b6a1"
+    },
+    "item/eq/crossbow@10": {
+      "file": "item/eq-crossbow_10",
+      "sizes": [
+        256
+      ],
+      "hash": "548f1e4e607d2524"
+    },
+    "item/eq/crossbow@15": {
+      "file": "item/eq-crossbow_15",
+      "sizes": [
+        256
+      ],
+      "hash": "abc2c376faf43368"
+    },
+    "item/eq/crossbow@20": {
+      "file": "item/eq-crossbow_20",
+      "sizes": [
+        256
+      ],
+      "hash": "49c2c57096d902f5"
+    },
+    "item/eq/crossbow@5": {
+      "file": "item/eq-crossbow_5",
+      "sizes": [
+        256
+      ],
+      "hash": "e225238953e15f95"
+    },
+    "item/eq/flail1h@1": {
+      "file": "item/eq-flail1h_1",
+      "sizes": [
+        256
+      ],
+      "hash": "c6bc993ee7e708b3"
+    },
+    "item/eq/flail1h@10": {
+      "file": "item/eq-flail1h_10",
+      "sizes": [
+        256
+      ],
+      "hash": "e1dc7fc50d974e26"
+    },
+    "item/eq/flail1h@15": {
+      "file": "item/eq-flail1h_15",
+      "sizes": [
+        256
+      ],
+      "hash": "61ba7f96ee2ae3bd"
+    },
+    "item/eq/flail1h@20": {
+      "file": "item/eq-flail1h_20",
+      "sizes": [
+        256
+      ],
+      "hash": "5b591d5e8e233d7d"
+    },
+    "item/eq/flail1h@5": {
+      "file": "item/eq-flail1h_5",
+      "sizes": [
+        256
+      ],
+      "hash": "adb4c0997c1fdbe4"
+    },
+    "item/eq/gloves_heavy@1": {
+      "file": "item/eq-gloves_heavy_1",
+      "sizes": [
+        256
+      ],
+      "hash": "91355a3daedc3e27"
+    },
+    "item/eq/gloves_heavy@10": {
+      "file": "item/eq-gloves_heavy_10",
+      "sizes": [
+        256
+      ],
+      "hash": "0c5ffd0d0ac9417f"
+    },
+    "item/eq/gloves_heavy@15": {
+      "file": "item/eq-gloves_heavy_15",
+      "sizes": [
+        256
+      ],
+      "hash": "abbfa25295759b3a"
+    },
+    "item/eq/gloves_heavy@20": {
+      "file": "item/eq-gloves_heavy_20",
+      "sizes": [
+        256
+      ],
+      "hash": "2ca35617fec9d175"
+    },
+    "item/eq/gloves_heavy@5": {
+      "file": "item/eq-gloves_heavy_5",
+      "sizes": [
+        256
+      ],
+      "hash": "db5ed80dd2bfb81a"
+    },
+    "item/eq/gloves_light@1": {
+      "file": "item/eq-gloves_light_1",
+      "sizes": [
+        256
+      ],
+      "hash": "1d5bafca769201c4"
+    },
+    "item/eq/gloves_light@10": {
+      "file": "item/eq-gloves_light_10",
+      "sizes": [
+        256
+      ],
+      "hash": "65ee94449b6245c3"
+    },
+    "item/eq/gloves_light@15": {
+      "file": "item/eq-gloves_light_15",
+      "sizes": [
+        256
+      ],
+      "hash": "9f49dc3fc9b82544"
+    },
+    "item/eq/gloves_light@20": {
+      "file": "item/eq-gloves_light_20",
+      "sizes": [
+        256
+      ],
+      "hash": "9e2afb5bc36b3ecf"
+    },
+    "item/eq/gloves_light@5": {
+      "file": "item/eq-gloves_light_5",
+      "sizes": [
+        256
+      ],
+      "hash": "298057c88001bc86"
+    },
+    "item/eq/gloves_medium@1": {
+      "file": "item/eq-gloves_medium_1",
+      "sizes": [
+        256
+      ],
+      "hash": "9b7a144355bd04e6"
+    },
+    "item/eq/gloves_medium@10": {
+      "file": "item/eq-gloves_medium_10",
+      "sizes": [
+        256
+      ],
+      "hash": "f270d9425468f37e"
+    },
+    "item/eq/gloves_medium@15": {
+      "file": "item/eq-gloves_medium_15",
+      "sizes": [
+        256
+      ],
+      "hash": "bda94b45d19abe6b"
+    },
+    "item/eq/gloves_medium@20": {
+      "file": "item/eq-gloves_medium_20",
+      "sizes": [
+        256
+      ],
+      "hash": "237d0532a3e2fc7a"
+    },
+    "item/eq/gloves_medium@5": {
+      "file": "item/eq-gloves_medium_5",
+      "sizes": [
+        256
+      ],
+      "hash": "e8c1073bf0429dc9"
+    },
+    "item/eq/hammer2h@1": {
+      "file": "item/eq-hammer2h_1",
+      "sizes": [
+        256
+      ],
+      "hash": "d0a71474abecaa66"
+    },
+    "item/eq/hammer2h@10": {
+      "file": "item/eq-hammer2h_10",
+      "sizes": [
+        256
+      ],
+      "hash": "620a97ab3d2805c5"
+    },
+    "item/eq/hammer2h@15": {
+      "file": "item/eq-hammer2h_15",
+      "sizes": [
+        256
+      ],
+      "hash": "6cc7dae7522e979c"
+    },
+    "item/eq/hammer2h@20": {
+      "file": "item/eq-hammer2h_20",
+      "sizes": [
+        256
+      ],
+      "hash": "892f4703ec5c294e"
+    },
+    "item/eq/hammer2h@5": {
+      "file": "item/eq-hammer2h_5",
+      "sizes": [
+        256
+      ],
+      "hash": "21038630e4888b72"
+    },
+    "item/eq/heavycrossbow@1": {
+      "file": "item/eq-heavycrossbow_1",
+      "sizes": [
+        256
+      ],
+      "hash": "a6c39da64c5a8fce"
+    },
+    "item/eq/heavycrossbow@10": {
+      "file": "item/eq-heavycrossbow_10",
+      "sizes": [
+        256
+      ],
+      "hash": "2984aefc1c02a5b5"
+    },
+    "item/eq/heavycrossbow@15": {
+      "file": "item/eq-heavycrossbow_15",
+      "sizes": [
+        256
+      ],
+      "hash": "ee956ce96368019f"
+    },
+    "item/eq/heavycrossbow@20": {
+      "file": "item/eq-heavycrossbow_20",
+      "sizes": [
+        256
+      ],
+      "hash": "82cc5e6da21d4c8a"
+    },
+    "item/eq/heavycrossbow@5": {
+      "file": "item/eq-heavycrossbow_5",
+      "sizes": [
+        256
+      ],
+      "hash": "ee73dd190da50268"
+    },
+    "item/eq/helmet_heavy@1": {
+      "file": "item/eq-helmet_heavy_1",
+      "sizes": [
+        256
+      ],
+      "hash": "4d83646812866d2c"
+    },
+    "item/eq/helmet_heavy@10": {
+      "file": "item/eq-helmet_heavy_10",
+      "sizes": [
+        256
+      ],
+      "hash": "c5d4ce4a3b1557f7"
+    },
+    "item/eq/helmet_heavy@15": {
+      "file": "item/eq-helmet_heavy_15",
+      "sizes": [
+        256
+      ],
+      "hash": "2541b20a8c7b70e3"
+    },
+    "item/eq/helmet_heavy@20": {
+      "file": "item/eq-helmet_heavy_20",
+      "sizes": [
+        256
+      ],
+      "hash": "6b914fccdaeb8c47"
+    },
+    "item/eq/helmet_heavy@5": {
+      "file": "item/eq-helmet_heavy_5",
+      "sizes": [
+        256
+      ],
+      "hash": "09363857849b15ec"
+    },
+    "item/eq/helmet_light@1": {
+      "file": "item/eq-helmet_light_1",
+      "sizes": [
+        256
+      ],
+      "hash": "4eb1d402b058315e"
+    },
+    "item/eq/helmet_light@10": {
+      "file": "item/eq-helmet_light_10",
+      "sizes": [
+        256
+      ],
+      "hash": "8cf7c6db6303bed6"
+    },
+    "item/eq/helmet_light@15": {
+      "file": "item/eq-helmet_light_15",
+      "sizes": [
+        256
+      ],
+      "hash": "4f92bf5cfdbfb52f"
+    },
+    "item/eq/helmet_light@20": {
+      "file": "item/eq-helmet_light_20",
+      "sizes": [
+        256
+      ],
+      "hash": "370c4abf167d4822"
+    },
+    "item/eq/helmet_light@5": {
+      "file": "item/eq-helmet_light_5",
+      "sizes": [
+        256
+      ],
+      "hash": "20e8bc500507ac14"
+    },
+    "item/eq/helmet_medium@1": {
+      "file": "item/eq-helmet_medium_1",
+      "sizes": [
+        256
+      ],
+      "hash": "840a5dd9559ae36e"
+    },
+    "item/eq/helmet_medium@10": {
+      "file": "item/eq-helmet_medium_10",
+      "sizes": [
+        256
+      ],
+      "hash": "b47faf520e792561"
+    },
+    "item/eq/helmet_medium@15": {
+      "file": "item/eq-helmet_medium_15",
+      "sizes": [
+        256
+      ],
+      "hash": "508fcd054049578e"
+    },
+    "item/eq/helmet_medium@20": {
+      "file": "item/eq-helmet_medium_20",
+      "sizes": [
+        256
+      ],
+      "hash": "d33b11ad46a54123"
+    },
+    "item/eq/helmet_medium@5": {
+      "file": "item/eq-helmet_medium_5",
+      "sizes": [
+        256
+      ],
+      "hash": "b328100ad33918cd"
+    },
+    "item/eq/holystaff@1": {
+      "file": "item/eq-holystaff_1",
+      "sizes": [
+        256
+      ],
+      "hash": "fca11b0b787d88dc"
+    },
+    "item/eq/holystaff@10": {
+      "file": "item/eq-holystaff_10",
+      "sizes": [
+        256
+      ],
+      "hash": "e6c3b1995e3f2200"
+    },
+    "item/eq/holystaff@15": {
+      "file": "item/eq-holystaff_15",
+      "sizes": [
+        256
+      ],
+      "hash": "1221ea1d55472d9a"
+    },
+    "item/eq/holystaff@20": {
+      "file": "item/eq-holystaff_20",
+      "sizes": [
+        256
+      ],
+      "hash": "af15798ea25bad77"
+    },
+    "item/eq/holystaff@5": {
+      "file": "item/eq-holystaff_5",
+      "sizes": [
+        256
+      ],
+      "hash": "4810f5bfc861fee4"
+    },
+    "item/eq/longbow@1": {
+      "file": "item/eq-longbow_1",
+      "sizes": [
+        256
+      ],
+      "hash": "1efd066a1f095ece"
+    },
+    "item/eq/longbow@10": {
+      "file": "item/eq-longbow_10",
+      "sizes": [
+        256
+      ],
+      "hash": "c30bfbcaab934afd"
+    },
+    "item/eq/longbow@15": {
+      "file": "item/eq-longbow_15",
+      "sizes": [
+        256
+      ],
+      "hash": "38c268c049c204d4"
+    },
+    "item/eq/longbow@20": {
+      "file": "item/eq-longbow_20",
+      "sizes": [
+        256
+      ],
+      "hash": "eb7f6ae61b9a4c3c"
+    },
+    "item/eq/longbow@5": {
+      "file": "item/eq-longbow_5",
+      "sizes": [
+        256
+      ],
+      "hash": "d1114eac3a2ece54"
+    },
+    "item/eq/mace1h@1": {
+      "file": "item/eq-mace1h_1",
+      "sizes": [
+        256
+      ],
+      "hash": "4bee6e9a976e6af2"
+    },
+    "item/eq/mace1h@10": {
+      "file": "item/eq-mace1h_10",
+      "sizes": [
+        256
+      ],
+      "hash": "7a55ea339f87bcd0"
+    },
+    "item/eq/mace1h@15": {
+      "file": "item/eq-mace1h_15",
+      "sizes": [
+        256
+      ],
+      "hash": "9d26093687016bd9"
+    },
+    "item/eq/mace1h@20": {
+      "file": "item/eq-mace1h_20",
+      "sizes": [
+        256
+      ],
+      "hash": "b70a752cf8e9b3ca"
+    },
+    "item/eq/mace1h@5": {
+      "file": "item/eq-mace1h_5",
+      "sizes": [
+        256
+      ],
+      "hash": "8f808477f5b515c7"
+    },
+    "item/eq/necklace@1": {
+      "file": "item/eq-necklace_1",
+      "sizes": [
+        256
+      ],
+      "hash": "fd392e26588973eb"
+    },
+    "item/eq/necklace@10": {
+      "file": "item/eq-necklace_10",
+      "sizes": [
+        256
+      ],
+      "hash": "17fc8e1550cdb0d3"
+    },
+    "item/eq/necklace@15": {
+      "file": "item/eq-necklace_15",
+      "sizes": [
+        256
+      ],
+      "hash": "1d56eefe20246398"
+    },
+    "item/eq/necklace@20": {
+      "file": "item/eq-necklace_20",
+      "sizes": [
+        256
+      ],
+      "hash": "3a8915af6e6bfbc0"
+    },
+    "item/eq/necklace@5": {
+      "file": "item/eq-necklace_5",
+      "sizes": [
+        256
+      ],
+      "hash": "a6fb3128e921e860"
+    },
+    "item/eq/orb@1": {
+      "file": "item/eq-orb_1",
+      "sizes": [
+        256
+      ],
+      "hash": "ebe0549130afc775"
+    },
+    "item/eq/orb@10": {
+      "file": "item/eq-orb_10",
+      "sizes": [
+        256
+      ],
+      "hash": "6ef9a6c8472d886c"
+    },
+    "item/eq/orb@15": {
+      "file": "item/eq-orb_15",
+      "sizes": [
+        256
+      ],
+      "hash": "b25a96ea85acb5f0"
+    },
+    "item/eq/orb@20": {
+      "file": "item/eq-orb_20",
+      "sizes": [
+        256
+      ],
+      "hash": "f9d4a1c8b3ea1907"
+    },
+    "item/eq/orb@5": {
+      "file": "item/eq-orb_5",
+      "sizes": [
+        256
+      ],
+      "hash": "7503176ab9b7953e"
+    },
+    "item/eq/quiver@1": {
+      "file": "item/eq-quiver_1",
+      "sizes": [
+        256
+      ],
+      "hash": "7a24240521b7bc48"
+    },
+    "item/eq/quiver@10": {
+      "file": "item/eq-quiver_10",
+      "sizes": [
+        256
+      ],
+      "hash": "cfc322b658dec20c"
+    },
+    "item/eq/quiver@15": {
+      "file": "item/eq-quiver_15",
+      "sizes": [
+        256
+      ],
+      "hash": "a44e29e74da977a5"
+    },
+    "item/eq/quiver@20": {
+      "file": "item/eq-quiver_20",
+      "sizes": [
+        256
+      ],
+      "hash": "abe6b2ff55e0920f"
+    },
+    "item/eq/quiver@5": {
+      "file": "item/eq-quiver_5",
+      "sizes": [
+        256
+      ],
+      "hash": "dfe0a9f194724e0f"
+    },
+    "item/eq/relic@1": {
+      "file": "item/eq-relic_1",
+      "sizes": [
+        256
+      ],
+      "hash": "ba03b5c7059ed6ac"
+    },
+    "item/eq/relic@10": {
+      "file": "item/eq-relic_10",
+      "sizes": [
+        256
+      ],
+      "hash": "0bba1b3b3477cc83"
+    },
+    "item/eq/relic@15": {
+      "file": "item/eq-relic_15",
+      "sizes": [
+        256
+      ],
+      "hash": "68507daede8c4584"
+    },
+    "item/eq/relic@20": {
+      "file": "item/eq-relic_20",
+      "sizes": [
+        256
+      ],
+      "hash": "6fb7040e4f59faaa"
+    },
+    "item/eq/relic@5": {
+      "file": "item/eq-relic_5",
+      "sizes": [
+        256
+      ],
+      "hash": "e3de14b24c054522"
+    },
+    "item/eq/ring@1": {
+      "file": "item/eq-ring_1",
+      "sizes": [
+        256
+      ],
+      "hash": "a2f9b83699d0474d"
+    },
+    "item/eq/ring@10": {
+      "file": "item/eq-ring_10",
+      "sizes": [
+        256
+      ],
+      "hash": "bbbb9cb2a1ebcdd5"
+    },
+    "item/eq/ring@15": {
+      "file": "item/eq-ring_15",
+      "sizes": [
+        256
+      ],
+      "hash": "240fadbed7876c00"
+    },
+    "item/eq/ring@20": {
+      "file": "item/eq-ring_20",
+      "sizes": [
+        256
+      ],
+      "hash": "bbf7c84947397f62"
+    },
+    "item/eq/ring@5": {
+      "file": "item/eq-ring_5",
+      "sizes": [
+        256
+      ],
+      "hash": "c2df9d4a7b8aff41"
+    },
+    "item/eq/saber1h@1": {
+      "file": "item/eq-saber1h_1",
+      "sizes": [
+        256
+      ],
+      "hash": "1790c39044ebaf98"
+    },
+    "item/eq/saber1h@10": {
+      "file": "item/eq-saber1h_10",
+      "sizes": [
+        256
+      ],
+      "hash": "e1c2d9bc0808bf3e"
+    },
+    "item/eq/saber1h@15": {
+      "file": "item/eq-saber1h_15",
+      "sizes": [
+        256
+      ],
+      "hash": "a201822d56bd2a79"
+    },
+    "item/eq/saber1h@20": {
+      "file": "item/eq-saber1h_20",
+      "sizes": [
+        256
+      ],
+      "hash": "724b5b565a59915c"
+    },
+    "item/eq/saber1h@5": {
+      "file": "item/eq-saber1h_5",
+      "sizes": [
+        256
+      ],
+      "hash": "f9a83b966e71f6f7"
+    },
+    "item/eq/scepter@1": {
+      "file": "item/eq-scepter_1",
+      "sizes": [
+        256
+      ],
+      "hash": "e1234ca7067431af"
+    },
+    "item/eq/scepter@10": {
+      "file": "item/eq-scepter_10",
+      "sizes": [
+        256
+      ],
+      "hash": "2ef54b0fcab5c62b"
+    },
+    "item/eq/scepter@15": {
+      "file": "item/eq-scepter_15",
+      "sizes": [
+        256
+      ],
+      "hash": "031291d767c3164c"
+    },
+    "item/eq/scepter@20": {
+      "file": "item/eq-scepter_20",
+      "sizes": [
+        256
+      ],
+      "hash": "ce3ef72db98f7e06"
+    },
+    "item/eq/scepter@5": {
+      "file": "item/eq-scepter_5",
+      "sizes": [
+        256
+      ],
+      "hash": "8e98dab44a6bba45"
+    },
+    "item/eq/shield@1": {
+      "file": "item/eq-shield_1",
+      "sizes": [
+        256
+      ],
+      "hash": "2117ca8fd005e607"
+    },
+    "item/eq/shield@10": {
+      "file": "item/eq-shield_10",
+      "sizes": [
+        256
+      ],
+      "hash": "2cb7210057f66a34"
+    },
+    "item/eq/shield@15": {
+      "file": "item/eq-shield_15",
+      "sizes": [
+        256
+      ],
+      "hash": "637101e4a139e4b8"
+    },
+    "item/eq/shield@20": {
+      "file": "item/eq-shield_20",
+      "sizes": [
+        256
+      ],
+      "hash": "499e7f8612e33144"
+    },
+    "item/eq/shield@5": {
+      "file": "item/eq-shield_5",
+      "sizes": [
+        256
+      ],
+      "hash": "a624a40d80d02166"
+    },
+    "item/eq/shortbow@1": {
+      "file": "item/eq-shortbow_1",
+      "sizes": [
+        256
+      ],
+      "hash": "9790061111b6686c"
+    },
+    "item/eq/shortbow@10": {
+      "file": "item/eq-shortbow_10",
+      "sizes": [
+        256
+      ],
+      "hash": "cfeb5167a1b76612"
+    },
+    "item/eq/shortbow@15": {
+      "file": "item/eq-shortbow_15",
+      "sizes": [
+        256
+      ],
+      "hash": "b3be0f55623c6ab4"
+    },
+    "item/eq/shortbow@20": {
+      "file": "item/eq-shortbow_20",
+      "sizes": [
+        256
+      ],
+      "hash": "0570111a1b6b8c19"
+    },
+    "item/eq/shortbow@5": {
+      "file": "item/eq-shortbow_5",
+      "sizes": [
+        256
+      ],
+      "hash": "12ac3ebfc182a1a1"
+    },
+    "item/eq/spear2h@1": {
+      "file": "item/eq-spear2h_1",
+      "sizes": [
+        256
+      ],
+      "hash": "fada6f3f18e77f28"
+    },
+    "item/eq/spear2h@10": {
+      "file": "item/eq-spear2h_10",
+      "sizes": [
+        256
+      ],
+      "hash": "adf592fba8f21bf4"
+    },
+    "item/eq/spear2h@15": {
+      "file": "item/eq-spear2h_15",
+      "sizes": [
+        256
+      ],
+      "hash": "348e52372d560ebe"
+    },
+    "item/eq/spear2h@20": {
+      "file": "item/eq-spear2h_20",
+      "sizes": [
+        256
+      ],
+      "hash": "5979a825c365e749"
+    },
+    "item/eq/spear2h@5": {
+      "file": "item/eq-spear2h_5",
+      "sizes": [
+        256
+      ],
+      "hash": "ccbc2c6116d8165a"
+    },
+    "item/eq/sword1h@1": {
+      "file": "item/eq-sword1h_1",
+      "sizes": [
+        256
+      ],
+      "hash": "15ca85fc12224c59"
+    },
+    "item/eq/sword1h@10": {
+      "file": "item/eq-sword1h_10",
+      "sizes": [
+        256
+      ],
+      "hash": "e81715fc6dc34605"
+    },
+    "item/eq/sword1h@15": {
+      "file": "item/eq-sword1h_15",
+      "sizes": [
+        256
+      ],
+      "hash": "446f84e4a2d14176"
+    },
+    "item/eq/sword1h@20": {
+      "file": "item/eq-sword1h_20",
+      "sizes": [
+        256
+      ],
+      "hash": "da288933118cad8f"
+    },
+    "item/eq/sword1h@5": {
+      "file": "item/eq-sword1h_5",
+      "sizes": [
+        256
+      ],
+      "hash": "2342f84d4ff74fd8"
+    },
+    "item/eq/sword2h@1": {
+      "file": "item/eq-sword2h_1",
+      "sizes": [
+        256
+      ],
+      "hash": "120d94ad51267772"
+    },
+    "item/eq/sword2h@10": {
+      "file": "item/eq-sword2h_10",
+      "sizes": [
+        256
+      ],
+      "hash": "4161f0167bb07d45"
+    },
+    "item/eq/sword2h@15": {
+      "file": "item/eq-sword2h_15",
+      "sizes": [
+        256
+      ],
+      "hash": "59731d55f6e20afe"
+    },
+    "item/eq/sword2h@20": {
+      "file": "item/eq-sword2h_20",
+      "sizes": [
+        256
+      ],
+      "hash": "a84532c6ff6d2bde"
+    },
+    "item/eq/sword2h@5": {
+      "file": "item/eq-sword2h_5",
+      "sizes": [
+        256
+      ],
+      "hash": "6ec15dd5775520b4"
+    },
+    "item/eq/talisman@1": {
+      "file": "item/eq-talisman_1",
+      "sizes": [
+        256
+      ],
+      "hash": "b53c5293cb4e4fc3"
+    },
+    "item/eq/talisman@10": {
+      "file": "item/eq-talisman_10",
+      "sizes": [
+        256
+      ],
+      "hash": "2ab3c56bdc3ff064"
+    },
+    "item/eq/talisman@15": {
+      "file": "item/eq-talisman_15",
+      "sizes": [
+        256
+      ],
+      "hash": "a8f13f0d7c778052"
+    },
+    "item/eq/talisman@20": {
+      "file": "item/eq-talisman_20",
+      "sizes": [
+        256
+      ],
+      "hash": "8307d015f3441abf"
+    },
+    "item/eq/talisman@5": {
+      "file": "item/eq-talisman_5",
+      "sizes": [
+        256
+      ],
+      "hash": "19ea10fe87482c67"
+    },
+    "item/eq/tome@1": {
+      "file": "item/eq-tome_1",
+      "sizes": [
+        256
+      ],
+      "hash": "bf6d09879c91afc1"
+    },
+    "item/eq/tome@10": {
+      "file": "item/eq-tome_10",
+      "sizes": [
+        256
+      ],
+      "hash": "ec8b242c62cb1f65"
+    },
+    "item/eq/tome@15": {
+      "file": "item/eq-tome_15",
+      "sizes": [
+        256
+      ],
+      "hash": "bc0c3cc604e5cb55"
+    },
+    "item/eq/tome@20": {
+      "file": "item/eq-tome_20",
+      "sizes": [
+        256
+      ],
+      "hash": "096c1425e5d44039"
+    },
+    "item/eq/tome@5": {
+      "file": "item/eq-tome_5",
+      "sizes": [
+        256
+      ],
+      "hash": "8267dcc906e38094"
+    },
+    "item/mat/boar_tusk": {
+      "file": "item/mat-boar_tusk",
+      "sizes": [
+        256
+      ],
+      "hash": "ad7463a8c7750cec"
+    },
+    "item/mat/crow_feather": {
+      "file": "item/mat-crow_feather",
+      "sizes": [
+        256
+      ],
+      "hash": "f95bf73e87a4a585"
+    },
+    "item/mat/essence_crystal": {
+      "file": "item/mat-essence_crystal",
+      "sizes": [
+        256
+      ],
+      "hash": "ab0a68fc0b5edbc8"
+    },
+    "item/mat/essence_dust": {
+      "file": "item/mat-essence_dust",
+      "sizes": [
+        256
+      ],
+      "hash": "f166a47cf01c50b5"
+    },
+    "item/mat/essence_shard": {
+      "file": "item/mat-essence_shard",
+      "sizes": [
+        256
+      ],
+      "hash": "ba8a1399ef243065"
+    },
+    "item/mat/fish_carp": {
+      "file": "item/mat-fish_carp",
+      "sizes": [
+        256
+      ],
+      "hash": "abe1361fe3e26ad8"
+    },
+    "item/mat/fish_goldfin": {
+      "file": "item/mat-fish_goldfin",
+      "sizes": [
+        256
+      ],
+      "hash": "f4b4dd66abe62f52"
+    },
+    "item/mat/fish_pike": {
+      "file": "item/mat-fish_pike",
+      "sizes": [
+        256
+      ],
+      "hash": "40bd43a44b972c77"
+    },
+    "item/mat/goblin_ear": {
+      "file": "item/mat-goblin_ear",
+      "sizes": [
+        256
+      ],
+      "hash": "c0cf8819040e7723"
+    },
+    "item/mat/herb_meadowsweet": {
+      "file": "item/mat-herb_meadowsweet",
+      "sizes": [
+        256
+      ],
+      "hash": "ce7f1dbc4cefd3eb"
+    },
+    "item/mat/legend_core": {
+      "file": "item/mat-legend_core",
+      "sizes": [
+        256
+      ],
+      "hash": "496ff8433bc568b0"
+    },
+    "item/mat/ore_copper": {
+      "file": "item/mat-ore_copper",
+      "sizes": [
+        256
+      ],
+      "hash": "630e3bbb70f448de"
+    },
+    "item/mat/ore_iron": {
+      "file": "item/mat-ore_iron",
+      "sizes": [
+        256
+      ],
+      "hash": "97d43da8863e224d"
+    },
+    "item/mat/spider_silk": {
+      "file": "item/mat-spider_silk",
+      "sizes": [
+        256
+      ],
+      "hash": "32e5e6b1f1ac8308"
+    },
+    "item/mat/thick_hide": {
+      "file": "item/mat-thick_hide",
+      "sizes": [
+        256
+      ],
+      "hash": "808120fc9d095632"
+    },
+    "item/mat/toad_venom": {
+      "file": "item/mat-toad_venom",
+      "sizes": [
+        256
+      ],
+      "hash": "2f347f0d7b50416d"
+    },
+    "item/mat/wolf_pelt": {
+      "file": "item/mat-wolf_pelt",
+      "sizes": [
+        256
+      ],
+      "hash": "17db4f13e7edf756"
+    },
+    "item/misc/backpack_20": {
+      "file": "item/misc-backpack_20",
+      "sizes": [
+        256
+      ],
+      "hash": "fa4ce37cd7930686"
+    },
+    "item/misc/backpack_30": {
+      "file": "item/misc-backpack_30",
+      "sizes": [
+        256
+      ],
+      "hash": "2042c0fa58718965"
+    },
+    "item/misc/backpack_45": {
+      "file": "item/misc-backpack_45",
+      "sizes": [
+        256
+      ],
+      "hash": "de62ce88ae6d080b"
+    },
+    "item/misc/backpack_60": {
+      "file": "item/misc-backpack_60",
+      "sizes": [
+        256
+      ],
+      "hash": "13cdcde133d956e8"
+    },
+    "item/misc/scroll_oblivion": {
+      "file": "item/misc-scroll_oblivion",
+      "sizes": [
+        256
+      ],
+      "hash": "52555f3fee0e1510"
+    },
+    "item/misc/scroll_protection": {
+      "file": "item/misc-scroll_protection",
+      "sizes": [
+        256
+      ],
+      "hash": "b77cb947a1aebc35"
+    },
+    "item/misc/scroll_skillreset": {
+      "file": "item/misc-scroll_skillreset",
+      "sizes": [
+        256
+      ],
+      "hash": "f5228d6869d664a2"
+    },
+    "item/misc/scroll_unbind": {
+      "file": "item/misc-scroll_unbind",
+      "sizes": [
+        256
+      ],
+      "hash": "4e3e2f36cbf23415"
+    },
+    "item/misc/stone_dungeon_meadows": {
+      "file": "item/misc-stone_dungeon_meadows",
+      "sizes": [
+        256
+      ],
+      "hash": "02d595b8795c99be"
+    },
+    "item/misc/stone_map": {
+      "file": "item/misc-stone_map",
+      "sizes": [
+        256
+      ],
+      "hash": "2e3543d431317c9d"
+    },
+    "item/misc/stone_return": {
+      "file": "item/misc-stone_return",
+      "sizes": [
+        256
+      ],
+      "hash": "1965ef7c23537073"
+    },
+    "item/pot/elixir_resFire": {
+      "file": "item/pot-elixir_resFire",
+      "sizes": [
+        256
+      ],
+      "hash": "d7c979d3ca8568b6"
+    },
+    "item/pot/elixir_resIce": {
+      "file": "item/pot-elixir_resIce",
+      "sizes": [
+        256
+      ],
+      "hash": "e22abb9d606da545"
+    },
+    "item/pot/elixir_resLightning": {
+      "file": "item/pot-elixir_resLightning",
+      "sizes": [
+        256
+      ],
+      "hash": "920977f5accf0a1d"
+    },
+    "item/pot/elixir_resPoison": {
+      "file": "item/pot-elixir_resPoison",
+      "sizes": [
+        256
+      ],
+      "hash": "f83e4bcdbc2a83a5"
+    },
+    "item/pot/potion_energy_1": {
+      "file": "item/pot-potion_energy_1",
+      "sizes": [
+        256
+      ],
+      "hash": "53dc7b04c0298941"
+    },
+    "item/pot/potion_energy_2": {
+      "file": "item/pot-potion_energy_2",
+      "sizes": [
+        256
+      ],
+      "hash": "b6858a25c0157d3c"
+    },
+    "item/pot/potion_energy_3": {
+      "file": "item/pot-potion_energy_3",
+      "sizes": [
+        256
+      ],
+      "hash": "e688253c5d7b40b6"
+    },
+    "item/pot/potion_hp_1": {
+      "file": "item/pot-potion_hp_1",
+      "sizes": [
+        256
+      ],
+      "hash": "12b6d553f0cd440a"
+    },
+    "item/pot/potion_hp_2": {
+      "file": "item/pot-potion_hp_2",
+      "sizes": [
+        256
+      ],
+      "hash": "7ec5d8ab15d34270"
+    },
+    "item/pot/potion_hp_3": {
+      "file": "item/pot-potion_hp_3",
+      "sizes": [
+        256
+      ],
+      "hash": "a8cf3328e706cf63"
+    },
+    "item/pot/potion_mana_1": {
+      "file": "item/pot-potion_mana_1",
+      "sizes": [
+        256
+      ],
+      "hash": "3ffecd80f19e4817"
+    },
+    "item/pot/potion_mana_2": {
+      "file": "item/pot-potion_mana_2",
+      "sizes": [
+        256
+      ],
+      "hash": "59e28065773d0517"
+    },
+    "item/pot/potion_mana_3": {
+      "file": "item/pot-potion_mana_3",
+      "sizes": [
+        256
+      ],
+      "hash": "f56ea8d328d0bc69"
+    },
+    "item/tool/fishing_rod": {
+      "file": "item/tool-fishing_rod",
+      "sizes": [
+        256
+      ],
+      "hash": "e48329f93c17586a"
+    },
+    "item/tool/pickaxe": {
+      "file": "item/tool-pickaxe",
+      "sizes": [
+        256
+      ],
+      "hash": "0926d39a3cad8790"
+    },
+    "item/uniq/unique_grimrok_cleaver": {
+      "file": "item/uniq-unique_grimrok_cleaver",
+      "sizes": [
+        256
+      ],
+      "hash": "b5d5db2c707a0a01"
+    },
+    "item/uniq/unique_grimrok_fang": {
+      "file": "item/uniq-unique_grimrok_fang",
+      "sizes": [
+        256
+      ],
+      "hash": "fce7ee260d51a514"
+    },
+    "item/uniq/unique_grimrok_totem": {
+      "file": "item/uniq-unique_grimrok_totem",
+      "sizes": [
+        256
+      ],
+      "hash": "209d431b723f46bc"
+    },
+    "keybind/sprint": {
+      "file": "keybind/sprint",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "553983de61a87d87",
+      "mask": true
+    },
+    "keybind/win_character": {
+      "file": "keybind/win_character",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "3e7d97ae93306a4c",
+      "mask": true
+    },
+    "keybind/win_guild": {
+      "file": "keybind/win_guild",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "c491df46794d7cc3",
+      "mask": true
+    },
+    "keybind/win_inventory": {
+      "file": "keybind/win_inventory",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "6cbae8618d8fb2b7",
+      "mask": true
+    },
+    "keybind/win_map": {
+      "file": "keybind/win_map",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "99e16e5cbc69dd46",
+      "mask": true
+    },
+    "keybind/win_party": {
+      "file": "keybind/win_party",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "a73882594b53ca5d",
+      "mask": true
+    },
+    "keybind/win_quests": {
+      "file": "keybind/win_quests",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "bcfcc6c091bdb4d5",
+      "mask": true
+    },
+    "keybind/win_skills": {
+      "file": "keybind/win_skills",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "57745bf3bc16d7dc",
+      "mask": true
+    },
+    "pass/vip": {
+      "file": "pass/vip",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "dbabad484a60dd80",
+      "mask": true
+    },
+    "portrait/Cleric": {
+      "file": "portrait/Cleric",
+      "sizes": [
+        320,
+        640
+      ],
+      "hash": "692e38985b02574f"
+    },
+    "portrait/Hunter": {
+      "file": "portrait/Hunter",
+      "sizes": [
+        320,
+        640
+      ],
+      "hash": "c0a9f228f871f803"
+    },
+    "portrait/Mage": {
+      "file": "portrait/Mage",
+      "sizes": [
+        320,
+        640
+      ],
+      "hash": "0beb211e94118884"
+    },
+    "portrait/Warrior": {
+      "file": "portrait/Warrior",
+      "sizes": [
+        320,
+        640
+      ],
+      "hash": "c5095619c56f8999"
+    },
+    "profile/exp": {
+      "file": "profile/exp",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "fd547faba5a2e5e8"
+    },
+    "profile/gold": {
+      "file": "profile/gold",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "056878faeaf7e972"
+    },
+    "profile/loot": {
+      "file": "profile/loot",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "64e9f64e91ac7d9d"
+    },
+    "quest/aleBarrel": {
+      "file": "quest/aleBarrel",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "14b1f643bf6769a1"
+    },
+    "quest/banditOrders": {
+      "file": "quest/banditOrders",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "26f6da077cebcc78"
+    },
+    "quest/bearClaw": {
+      "file": "quest/bearClaw",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "8f259b95c7c4107f"
+    },
+    "quest/boarHaunch": {
+      "file": "quest/boarHaunch",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "e69b0985c61ab257"
+    },
+    "quest/breadBasket": {
+      "file": "quest/breadBasket",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "52710d9f65533939"
+    },
+    "quest/clothBale": {
+      "file": "quest/clothBale",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "ffb0fdc30bb28c27"
+    },
+    "quest/grainOrder": {
+      "file": "quest/grainOrder",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "e79573cc5f19d8b3"
+    },
+    "quest/grainSack": {
+      "file": "quest/grainSack",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "b7e038d2a02017c3"
+    },
+    "quest/hunterSupplies": {
+      "file": "quest/hunterSupplies",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "fc6fda91e18728ee"
+    },
+    "quest/ledger": {
+      "file": "quest/ledger",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "d1ec958b2944c880"
+    },
+    "quest/minerPick": {
+      "file": "quest/minerPick",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "e458a14cbbdbba08"
+    },
+    "quest/sheepBell": {
+      "file": "quest/sheepBell",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "9a2f7a8bcf399d87"
+    },
+    "quest/shinyTrinket": {
+      "file": "quest/shinyTrinket",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "6a552be45debc0cb"
+    },
+    "quest/smithLetter": {
+      "file": "quest/smithLetter",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "5facf5ffdc65a38a"
+    },
+    "quest/toadVenom": {
+      "file": "quest/toadVenom",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "a35982b85f12b23c"
+    },
+    "quest/wolfFang": {
+      "file": "quest/wolfFang",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "08f3e5d9f9a32279"
+    },
+    "service/alchemy": {
+      "file": "service/alchemy",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "b68e39b8c1ef711f",
+      "mask": true
+    },
+    "service/auction": {
+      "file": "service/auction",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "f111b0e92fb90c58",
+      "mask": true
+    },
+    "service/backpacks": {
+      "file": "service/backpacks",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "4cdf91c0177fc5bc",
+      "mask": true
+    },
+    "service/blacksmith": {
+      "file": "service/blacksmith",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "9e7bcdb135b3d741",
+      "mask": true
+    },
+    "service/deposit": {
+      "file": "service/deposit",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "25814a02e67e2660",
+      "mask": true
+    },
+    "service/guild": {
+      "file": "service/guild",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "c491df46794d7cc3",
+      "mask": true
+    },
+    "service/heal": {
+      "file": "service/heal",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "d8c23c4d9d827309",
+      "mask": true
+    },
+    "service/mail": {
+      "file": "service/mail",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "40b99886698b48c2",
+      "mask": true
+    },
+    "service/quests": {
+      "file": "service/quests",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "bcfcc6c091bdb4d5",
+      "mask": true
+    },
+    "service/shop": {
+      "file": "service/shop",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "22ba6c4ab6e85195",
+      "mask": true
+    },
+    "service/story": {
+      "file": "service/story",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "4a99ba8164549ec3",
+      "mask": true
+    },
+    "skill/aimedShot": {
+      "file": "skill/aimedShot",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "8fe88ac7ff2ee02d"
+    },
+    "skill/arrowRain": {
+      "file": "skill/arrowRain",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "d6c76458eee2ccda"
+    },
+    "skill/bladeWhirl": {
+      "file": "skill/bladeWhirl",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "2e34b8f825995c15"
+    },
+    "skill/blink": {
+      "file": "skill/blink",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "415a1dc18b0c7b19"
+    },
+    "skill/bloodlust": {
+      "file": "skill/bloodlust",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "4667e6b4e32e6360"
+    },
+    "skill/chainLightning": {
+      "file": "skill/chainLightning",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "bd78542f7e51cd32"
+    },
+    "skill/charge": {
+      "file": "skill/charge",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "d1e6a9bbc3b6b63c"
+    },
+    "skill/circleOfLight": {
+      "file": "skill/circleOfLight",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "54cfd2cd95c2bb71"
+    },
+    "skill/devotion": {
+      "file": "skill/devotion",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "8c168f4ab0590a13"
+    },
+    "skill/disengage": {
+      "file": "skill/disengage",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "4016df18f1fe7368"
+    },
+    "skill/divineWrath": {
+      "file": "skill/divineWrath",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "09dc4e234caedec5"
+    },
+    "skill/doubleShot": {
+      "file": "skill/doubleShot",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "fef9d200e3fbf3b4"
+    },
+    "skill/earthquake": {
+      "file": "skill/earthquake",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "b4b9c125db6e1bcb"
+    },
+    "skill/fireball": {
+      "file": "skill/fireball",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "2b5d615ea0fb1471"
+    },
+    "skill/firebolt": {
+      "file": "skill/firebolt",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "df065386a7b9309b"
+    },
+    "skill/firewall": {
+      "file": "skill/firewall",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "202c47dfa8e6172a"
+    },
+    "skill/frostNova": {
+      "file": "skill/frostNova",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "fc6393604329b3bc"
+    },
+    "skill/hawkEye": {
+      "file": "skill/hawkEye",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "538bc2261cdcff12"
+    },
+    "skill/heal": {
+      "file": "skill/heal",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "5d7baecd5fb74061"
+    },
+    "skill/holyStrike": {
+      "file": "skill/holyStrike",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "f4ecda4767c3d99f"
+    },
+    "skill/iceShard": {
+      "file": "skill/iceShard",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "ff1225b1a8eb3a13"
+    },
+    "skill/judgement": {
+      "file": "skill/judgement",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "249e0651a0cd327a"
+    },
+    "skill/meteor": {
+      "file": "skill/meteor",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "e150adf02474a7aa"
+    },
+    "skill/mightyStrike": {
+      "file": "skill/mightyStrike",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "68a3e3d8917fc92e"
+    },
+    "skill/predatorInstinct": {
+      "file": "skill/predatorInstinct",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "95410b628db20c6c"
+    },
+    "skill/radiance": {
+      "file": "skill/radiance",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "29f38a97462b305b"
+    },
+    "skill/riposte": {
+      "file": "skill/riposte",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "2f78a81acd407833"
+    },
+    "skill/shieldOfFaith": {
+      "file": "skill/shieldOfFaith",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "acd3f3604eb6d85b"
+    },
+    "skill/steelSkin": {
+      "file": "skill/steelSkin",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "5eeb1749e0c24d00"
+    },
+    "skill/taunt": {
+      "file": "skill/taunt",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "a673655289d46316"
+    },
+    "skill/venomArrow": {
+      "file": "skill/venomArrow",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "2d77592a12cdc8ad"
+    },
+    "skill/volley": {
+      "file": "skill/volley",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "700f19f8d649813c"
+    }
+  }
+}

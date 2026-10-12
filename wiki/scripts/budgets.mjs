@@ -37,6 +37,7 @@ for (const f of files) {
 const dirMb = (d) => (existsSync(d) ? walk(d).reduce((n, f) => n + statSync(f).size, 0) / 1048576 : 0);
 if (dirMb("public/img/mobs") > config.warn.mobsMb) warnings.push(`public/img/mobs ${dirMb("public/img/mobs").toFixed(1)} MB`);
 if (dirMb("public/img/items") > config.warn.itemsMb) warnings.push(`public/img/items ${dirMb("public/img/items").toFixed(1)} MB`);
+if (dirMb("public/img/art") > config.warn.artMb) warnings.push(`public/img/art ${dirMb("public/img/art").toFixed(1)} MB`);
 
 const codeCache = new Map();
 const read = (url) => {

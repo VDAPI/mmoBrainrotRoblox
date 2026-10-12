@@ -647,7 +647,7 @@
         <div class="badges">
           <span class="vw-rank">{levels(a.min, a.max)}</span>
           {#if current}<span class={`vw-zone vw-zone--${current.zone}`}>{data?.zones[current.zone]?.name}</span>{/if}
-          {#if a.profile && data?.profiles[a.profile]}<span class="vw-rank" style={`color:${data.profiles[a.profile].color}`}>{data.profiles[a.profile].icon} {data.profiles[a.profile].name}</span>{/if}
+          {#if a.profile && data?.profiles[a.profile]}{@const pr = data.profiles[a.profile]}<span class="vw-rank" style={`color:${pr.color}`}>{#if pr.pic}<img class="prof-pic" src={`${pr.pic}-64.webp`} alt="" width="16" height="16" />{:else}{pr.icon}{/if} {pr.name}</span>{/if}
         </div>
         <dl class="facts">
           <div><dt>{L("map.groups")}</dt><dd>{a.groups}</dd></div>
@@ -742,6 +742,7 @@
 
 <style>
   .ui { position: absolute; inset: 0; pointer-events: none; font-family: var(--vw-font-ui); }
+  .prof-pic { display: block; width: 16px; height: 16px; flex-shrink: 0; }
   .ui > * { pointer-events: auto; }
   .back {
     position: absolute; left: 428px; top: 24px; z-index: 3; min-height: 44px; padding: 0 16px; font: 800 15px/1 var(--vw-font-ui);

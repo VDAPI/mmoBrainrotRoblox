@@ -133,7 +133,8 @@ przedmiotów czyta STATY); odstępstwa idą do `docs/DECYZJE.md`, a kontrakt pop
 - Dane: `tools/wikidump.luau` + `tools/WikiData/*`; wyjście generowane i commitowane (`wiki/src/data/*.json`, `types.ts`,
   `tokens.data.css`, `docs/PRZEDMIOTY.md`). **Po zmianie `src/shared/Data` (albo Logic używanej przez eksport):
   `npm run data` w `wiki/` (albo `lune run tools/wikidump.luau`) i commit; `--check` mówi, czy dane są aktualne.**
-- Zmiana wyglądu potworów / petów: `npm run renders`; zmiana atlasów ikon: `npm run icons`; skrypt bossa: `npm run data`
+- Zmiana wyglądu potworów / petów: `npm run renders`; zmiana atlasów ikon: `npm run icons`; grafiki właściciela (folder
+  Graphics, lokalnie) i ukrycie / publikacja treści: `npm run art` (WIKI-GRAFIKA); skrypt bossa: `npm run data`
   i teksty w `wiki/src/content/bosses` (liczby tylko jako `{NAZWA}`).
 - Nowe pole gry na wiki = `Schema.rec` + wartość w builderze. Liczby tylko z `Logic` i `Data`; nic z `Data/Codes`,
   `AdminCommands`, `DevPreset`, `Products` (wyjątek: `WikiData/Premium.luau`).

@@ -1,5 +1,7 @@
 ---
-// Starting attributes of the classes (S42): classes.json startStats, main attributes highlighted.
+// Starting attributes of the classes (S42): classes.json startStats, main attributes highlighted; class emblem from the
+// owner's pictures (WIKI-GRAFIKA), else the glyph.
+import ArtIcon from "../ArtIcon.astro";
 import Source from "./Source.astro";
 import type { Lang } from "../../i18n/routes";
 import { statName } from "../../lib/blocks";
@@ -20,7 +22,7 @@ const start = (c: (typeof classes)[number], p: string): number => (c.startStats 
         const h = sectionHref(lang, "classes", c.id);
         return (
           <tr>
-            <th scope="row" class="rowhead"><span style={`color: var(--vw-class-${c.id})`} aria-hidden="true">{c.icon}</span> {h ? <a href={h}>{name(c.name, lang)}</a> : name(c.name, lang)}</th>
+            <th scope="row" class="rowhead"><ArtIcon kind="class" id={c.id} size={24}><span style={`color: var(--vw-class-${c.id})`} aria-hidden="true">{c.icon}</span></ArtIcon> {h ? <a href={h}>{name(c.name, lang)}</a> : name(c.name, lang)}</th>
             {primary.map((p) => <td style="text-align: right" class={c.mainStats.includes(p) ? "gold" : undefined}>{start(c, p)}</td>)}
           </tr>
         );

@@ -103,6 +103,7 @@ export interface ItemDetail {
   upgrade?: { steps: UpgradeStepInfo[]; costs: Record<string, UpgradeCostInfo[]> };
   materials: Record<string, MaterialRef>; // upgrade / crafting materials by id
   icon: string | null; // base URL without "-64.webp" / "-128.webp"
+  iconHd?: string | null; // WIKI-GRAFIKA: 256 px file of an owner's picture (2x screens of the 128 px icon)
   iconByElement?: Record<string, string | null>;
   elements?: { id: string; name: Name }[];
 }
@@ -144,6 +145,7 @@ export interface TooltipData {
   color: string;
   level: number;
   icon?: string | null;
+  iconHd?: string | null;
 }
 
 export interface TooltipOptions {
@@ -239,6 +241,7 @@ export function buildTooltip(detail: ItemDetail, options: TooltipOptions, L: Too
     color: detail.color,
     level: detail.level,
     icon: (element ? detail.iconByElement?.[element] : undefined) ?? detail.icon,
+    iconHd: element && detail.iconByElement ? null : (detail.iconHd ?? null),
   };
 }
 
@@ -260,8 +263,12 @@ export function listRarity(allowed: string[], checked: string[], order: string[]
   return [...allowed].sort((a, b) => order.indexOf(a) - order.indexOf(b))[0] ?? "common";
 }
 
-/** Icon <img> attributes for a size in CSS px from the base URL of an icon. */
-export function iconSources(base: string | null | undefined, size: number): { src: string; srcset?: string } | null {
+/**
+ * Icon <img> attributes for a size in CSS px from the base URL of an icon. `hd` (WIKI-GRAFIKA) = the 256 px file of an
+ * owner's picture, used for 2x screens of icons bigger than 64 px.
+ */
+export function iconSources(base: string | null | undefined, size: number, hd?: string | null): { src: string; srcset?: string } | null {
   if (!base) return null;
-  return size <= 64 ? { src: `${base}-64.webp`, srcset: `${base}-64.webp 1x, ${base}-128.webp 2x` } : { src: `${base}-128.webp` };
+  if (size <= 64) return { src: `${base}-64.webp`, srcset: `${base}-64.webp 1x, ${base}-128.webp 2x` };
+  return hd ? { src: `${base}-128.webp`, srcset: `${base}-128.webp 1x, ${hd} 2x` } : { src: `${base}-128.webp` };
 }

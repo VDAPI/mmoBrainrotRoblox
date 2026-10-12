@@ -1,6 +1,7 @@
 // Builds /<lang>/map-data.json for the world map island (S37): names in one language, ids for everything else,
 // links resolved here. Build time only.
 import type { Lang } from "../i18n/routes";
+import { artFor } from "./art";
 import { load } from "./data";
 import { name, t } from "./i18n";
 import type { MapData, MapRank } from "./mapdata.types";
@@ -110,7 +111,7 @@ export function mapData(lang: Lang): MapData {
   for (const z of Object.keys(zones)) out.zones[z] = { name: name(zones[z].name, lang), rule: name(zones[z].rule, lang) };
   const variants = load("mechanics").variants;
   out.ranks = { normal: name(variants.normal?.name, lang), elite: name(variants.elite?.name, lang), elite2: name(variants.elite2?.name, lang), boss: t(lang, "rank.boss") };
-  for (const [id, p] of Object.entries(load("mechanics").areaProfiles ?? {})) out.profiles[id] = { icon: p.icon, name: name(p.name, lang), color: p.color };
+  for (const [id, p] of Object.entries(load("mechanics").areaProfiles ?? {})) out.profiles[id] = { icon: p.icon, pic: artFor("profile", id), name: name(p.name, lang), color: p.color };
   out.search = load("mapsearch")[lang].map((e) => ({ kind: e.kind, id: e.id, map: e.map, x: e.x, z: e.z, texts: e.texts }));
   return out;
 }

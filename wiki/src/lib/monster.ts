@@ -9,6 +9,7 @@ import { name, t, type Key } from "./i18n";
 import { occurringVariants, placesOf, type MonsterRank } from "./bestiary";
 import { sectionHref } from "./sections";
 import { respawn } from "./world";
+import { artFor } from "./art";
 import { iconFor } from "./icons";
 
 const range = (lang: Lang, min: number, max: number) =>
@@ -190,6 +191,7 @@ export function lootRows(m: Monster, variant: MonsterRank, lang: Lang): LootRow[
         chanceText: formatChance(o.chance, lang),
         glyph: "✉",
         color: "#E8C25A",
+        icon: artFor("quest", o.item), // WIKI-GRAFIKA: owner's picture of the quest item (files -64 / -128)
         href: null,
         questHref: sectionHref(lang, "quests", q.id),
       });

@@ -6,7 +6,7 @@ Oficjalna wiki gry w folderze `wiki/` tego repozytorium. Ten plik jest źródłe
 
 - **Tabel potworów, przedmiotów, umiejętności, questów i map nie piszemy ręcznie.** Liczby są w `src/shared/Data/*`, wzory w `src/shared/Logic/*`; oba działają w Lune. Eksporter `tools/wikidump.luau` zrzuca je do `wiki/src/data/*.json`, licząc wartości funkcjami z `Logic` (statystyki potwora na poziomie, szanse i koszty ulepszania, wartości przedmiotów, szanse łupu). Wiki nie powtarza wzorów w TypeScript.
 - **Nazwy i opisy PL/EN** pochodzą z `src/shared/Data/Localization` (przez `Util/Locale`), więc wiki jest dwujęzyczna od pierwszego dnia. Teksty samego interfejsu wiki („Filtruj”, „Pokaż więcej”) są w `wiki/src/i18n/{pl,en}.ts`.
-- **Obrazki** potworów, bossów i petów generuje `tools/wiki-renders` (na bazie `tools/lookdump.luau` i `docs/miasto/tools/render3d.py`); ikony przedmiotów składa skrypt z atlasów S35 (`art/icons`, `Data/ItemIconAtlas`). Mapy to SVG z `Data/Areas`, `Data/Maps`, `Data/Portals` (te same dane co mapa w grze).
+- **Obrazki** potworów, bossów i petów generuje `tools/wiki-renders` (na bazie `tools/lookdump.luau` i `docs/miasto/tools/render3d.py`); ikony przedmiotów składa skrypt z atlasów S35 i obrazków właściciela S52 (`art/icons`, `Data/ItemIconAtlas`, ta sama zasada co w grze). Pozostałe grafiki właściciela (klasy, umiejętności, żywioły, gildia, profile łowisk, przedmioty zadań, usługi NPC, klawisze okien) i pliki 256 px ikon przedmiotów robi lokalnie `npm run art` (WIKI-GRAFIKA). Mapy to SVG z `Data/Areas`, `Data/Maps`, `Data/Portals` (te same dane co mapa w grze).
 - **Podział pracy:** dane i obrazki generuje skrypt; poradniki i lore pisze człowiek w MDX (`wiki/src/content`); wygląd zaprojektowano w Claude Design (`wiki/design/`).
 
 ## 1. Bezpieczeństwo: nic, co nie jest publiczne
@@ -61,10 +61,10 @@ wiki/
     views/                widoki stron + paths.ts (jeden wpis = nowa sekcja; S44)
     pages/<lang>/<segment>/[...path].astro  GENEROWANE trasy sekcji (npm run routes, S44)
     pages/[lang]/...      główna i endpointy JSON
-    generated/            GENEROWANE manifesty: item-icons.json (S40, npm run icons; commitowany)
+    generated/            GENEROWANE manifesty: item-icons.json (S40, npm run icons), art.json (WIKI-GRAFIKA, npm run art)
     content/              updates, guides, mechanics ({pl,en}/*.mdx), bosses (opisy mechanik)
-  public/img/{mobs,items,maps,og,city}/  GENEROWANE obrazy
-  scripts/                data, shots, search-index, check-links, item-icons, og-images, budgets, audit, stale-data (.mjs)
+  public/img/{mobs,items,maps,og,city,art}/  GENEROWANE obrazy
+  scripts/                data, shots, search-index, check-links, item-icons, art, og-images, budgets, audit, stale-data (.mjs)
   e2e/                    testy Playwright: dostępność, klawiatura, układ (S44)
   package.json            npm run dev | build | check | data | shots | renders | icons | qa | lighthouse
 tools/
@@ -227,14 +227,15 @@ do HTML bez JS, wyspy importują te same pliki). Dane przez `src/lib/data.ts` (`
 | `Button` | `{ variant?: "default"\|"primary"\|"ghost"\|"play", href?, disabled?, type?, class? }` |
 | `SectionTitle`, `Label` | `{ as?, id? }` |
 | `ItemTooltip.svelte` | `{ data: TooltipData, floating?, href?, labels?: { bind } }`; dane: `tooltipData(itemId, { rarity?, upgrade?, lang, playerLevel?, element? })`, `defaultRarity(item)` (`src/lib/tooltip.ts`); od S40 `tooltipData` = `buildTooltip(itemDetail(id), …, tooltipLabels(lang))` — czysta funkcja z `src/lib/item-model.ts` (działa w wyspach na szczegółach z `/data/items/<id>.json`); `TooltipData.icon` = obrazek ikony |
-| `ItemIcon.svelte` | `{ glyph, color, rarity?, size? = 40, src?, alt? }` — S40: `src` = bazowy adres ikony z `iconFor(itemId, element?)` (`src/lib/icons.ts`, tylko build): ≤ 64 px plik `-64.webp` + `-128.webp` dla 2×, większe `-128`; brak `src` → glif |
+| `ItemIcon.svelte` | `{ glyph, color, rarity?, size? = 40, src?, alt?, hd? }` — S40: `src` = bazowy adres ikony z `iconFor(itemId, element?)` (`src/lib/icons.ts`, tylko build): ≤ 64 px plik `-64.webp` + `-128.webp` dla 2×, większe `-128` (+ `hd`, plik 256 px obrazka właściciela, dla 2×: `itemHd(iconKey)`, `TooltipData.iconHd`); brak `src` → glif. Ta sama konwencja `-64`/`-128` działa dla obrazków `artFor(...)` (np. przedmioty zadań w łupie potwora) |
+| `ArtIcon.astro` (WIKI-GRAFIKA) | `{ kind, id, size? = 20, alt? = "", class? }` + slot (dawny glif, gdy brak obrazka) — obrazek właściciela z `src/lib/art.ts` (`artFor`, `artImg` z kandydatami `w`, `artMask`, `itemHd`); rodzaje `mask` (usługi, klawisze, VIP) to biały znak jako maska CSS w kolorze tekstu |
 | `RarityBadge.svelte` | `{ rarity, label }` (nazwa z `rarities.json` podaje wywołujący — komponent działa też w wyspach) |
 | `MonsterImage` | `{ id, variant?, kind?: "monster"\|"boss"\|"pet", stage?: "card"\|"page"\|"portrait"\|"none", size?: "thumb"\|"full", alt, eager?, element?, class? }` (S38: render z `src/lib/renders.ts` na ciemnej scenie, inaczej wzór z rombem; patrz „Obrazy potworów”) |
 | `MonsterCard` | `{ monster?, boss?, variant?, level?, lang, href?, eager? }` — S39: poziomy końcowe „Poz. 2–6 · rodzina”, pierwsze miejsce + „+N”, łup specjalny (`signatureDrop`, u bossa pierwszy nazwany przedmiot); `boss` = karta bossa (czerwona ramka) |
 | `BossHeader` | `{ boss, lang, players?: 1-5, notes?: { phase, title, html }[], heading?: "h1"\|"h2" }` — S39: chipy graczy 1–5 (zmieniają każdy `[data-by-players]` na stronie), zakładki faz „Faza 1 · 100–70%” z okrzykiem i obrazkiem `-p2`/`-p3`, panele mechanik (ataki z `Telegraph`, przywołania, tarcza, przyspieszenie, wściekłość, `notes`); bez JS wszystkie fazy pod sobą; zachowanie `src/scripts/boss.ts` |
 | Wyspy S40 | `ItemsBrowser` (lista z filtrami i krokomierzem progów), `ItemTooltipLive` + `ItemUpgradeView` (strona przedmiotu; wspólny stan `src/lib/itemState.ts` i `?r=&up=&el=`), `UpgradeCalc` (kalkulator) — dane wyłącznie z propsów i endpointów `/data/items/<id>.json`, `/<lang>/items-index.json` |
 | `Telegraph` (S39) | `{ shape, radius?, inner?, angle?, length?, width?, origin?, size?, label? }` — SVG kształtu ataku (koło, stożek, pas, pierścień z bezpiecznym środkiem), rzucający jako złoty romb; w `/styleguide#telegraph` |
-| `SkillNode.svelte` / `SkillEdge` | S41: Svelte (Astro renderuje bez JS w tabeli „Wszystkie umiejętności”, wyspa planera używa tego samego) `{ glyph?, state, rank?, max, active?, capstone?, selected?, invalid?, label, color?, size?, lockText?, mark? }` + atrybuty `<button>`; `invalid` = czerwony licznik (węzeł nieosiągalny na tym poziomie); `mark` (S82) = znak w rogu, np. „⅓” węzła drużynowego poza ścieżką główną / `{ active? }` |
+| `SkillNode.svelte` / `SkillEdge` | S41: Svelte (Astro renderuje bez JS w tabeli „Wszystkie umiejętności”, wyspa planera używa tego samego) `{ glyph?, state, rank?, max, active?, capstone?, selected?, invalid?, label, color?, size?, lockText?, mark?, pic? }` + atrybuty `<button>`; `pic` (WIKI-GRAFIKA) = bazowy adres obrazka umiejętności (`PlannerSkill.pic`) zamiast glifu; `invalid` = czerwony licznik (węzeł nieosiągalny na tym poziomie); `mark` (S82) = znak w rogu, np. „⅓” węzła drużynowego poza ścieżką główną / `{ active? }` |
 | `SkillPlanner.svelte` (S82) | `{ data: PlannerData }` z `plannerData(c, lang)` (`lib/classes.ts`: umiejętności klasy z wariantami rang i przełomami A/B, opublikowane ścieżki z nazwami broni, reguły, etykiety `planner.*`, Zwój Nowej Ścieżki), `client:load`. Suwak i stepnik poziomu, punkty ścieżek, ścieżka główna, kod v2 z „Kopiuj link” i „Resetuj”, zakładki „Podstawa” + ścieżki (albo „Ścieżki wkrótce”), panel szczegółów z wyborem A/B (`role="radiogroup"`, `data-bp`, `data-option`). Reguły w `src/lib/skills.ts` (lustro `Logic/Paths.canBuy` / `canRefund` z tymi samymi kluczami, `achievable`, `validate`, `setMain`, `pathView`, `baseView`, `encodeBuild` / `decodeBuild`). Kod v2: `2<KLASA><poziom>.<główna>.<przełomy>.<ścieżka order 1>.<order 2>…` (segmenty ścieżek pozycyjne według `order`, cyfra węzła `skill` = 1 + bity przełomów jego umiejętności, końcowe zera ucięte). Adres `?b=<kod>&s=<id>`; stary `?b=` (v1) = pusty planer z ostrzeżeniem |
 | `DataTable` | `{ columns: { key, label, sortable?, align?, mobile?, sort? }[], rows, caption, html? }` |
 | `Chip`, `Pager` | `{ pressed?, disabled?, href?, count? }`, `{ page, pages, hrefFor, lang? }` |
@@ -376,7 +377,7 @@ sam) i wgrywa `wiki/dist` na Cloudflare Pages. Bez sekretów workflow przechodzi
   `scripts/**/*.test.mjs`), build (z obrazami OG i Pagefind), `check-links`, **`budgets.mjs`** i **`audit.mjs`**.
   - Budżety JS (gzip) wszystkich stron: tabela `scripts/budgets.config.mjs` (domyślnie 50 KB całego JS strony; mapa 60;
     strona klasy z planerem 40 (S82: 37 KB); S39: bestiariusz 8, potwór 5, boss 4, kraina 10 KB „własnego” JS bez plików wspólnych). Ostrzeżenia: CSS
-    > 60 KB, HTML > 150 KB, obraz > 300 KB, `img/mobs` > 10 MB, `img/items` > 8 MB. Błąd: > 19 000 plików albo plik >
+    > 60 KB, HTML > 150 KB, obraz > 300 KB, `img/mobs` > 10 MB, `img/items` > 8 MB, `img/art` > 8 MB. Błąd: > 19 000 plików albo plik >
     25 MiB. Raport `.reports/budgets.json` + 20 najcięższych stron.
   - Audyt: `lang`, jeden `<h1>`, unikalne `<title>` w języku, opis, canonical i wzajemne hreflang od `SITE_URL`,
     sitemap bez stron `noindex`, `og:image` istnieje, `<img>` z `alt`/`width`/`height`, brak pustych linków, wycieki kodów
@@ -445,6 +446,10 @@ sam) i wgrywa `wiki/dist` na Cloudflare Pages. Bez sekretów workflow przechodzi
   wyspa `SkillPlanner` z zakładkami; tabela „Wszystkie umiejętności” z A/B i linkiem „Zaplanuj”. Ścieżki wszystkich klas
   ukryte do decyzji właściciela (planer pokazuje „Ścieżki wkrótce”). JS strony klasy 37 KB gzip (budżet 40).
 
+- **WIKI-GRAFIKA (grafiki właściciela):** ikony przedmiotów z obrazków S52 tak jak w grze (460 ikon, 920 plików zamiast 1035 ikon, 2070 plików), plik
+  256 px na stronie przedmiotu, `npm run art`: portrety i herby klas, 32 umiejętności, żywioły, gildia, profile łowisk,
+  przedmioty zadań, usługi NPC, klawisze okien, VIP (319 obrazków, 5,3 MB). Lista nieużytych w `docs/SESJE.md`.
+
 ### Publikacja ścieżki na wiki (S82)
 
 1. W `Data/Paths/<Klasa>` usuń `wiki = false` (albo ustaw `true`) w wybranych `PathDef` i dopisz decyzję do
@@ -454,7 +459,8 @@ sam) i wgrywa `wiki/dist` na Cloudflare Pages. Bez sekretów workflow przechodzi
    `wiki/src/components/blocks/TitleTable.astro` pokazuje go kluczem `block.titles.req.mainPath` (PL, EN, z nazwą
    ścieżki). Bez tego eksport głośno odrzuci tytuł `path_<id>` („missing value”, „key path is not in the schema of
    TitleReq”).
-3. `npm run data` w `wiki/` (ścieżka, jej umiejętności, tytuł i wektory trafiają do `skills.json`), `npm test`
+3. `npm run data` w `wiki/` (ścieżka, jej umiejętności, tytuł i wektory trafiają do `skills.json`), `npm run art`
+   (obrazki jej umiejętności, WIKI-GRAFIKA), `npm test`
    (parzystość z `rules.vectors` przestaje się pomijać), `npm run build` i przegląd strony klasy (zakładka ścieżki, opisy
    węzłów, broń, „⅓”).
 4. `npm run check` i `htmlKb` stron klas w `.reports/budgets.json`: powyżej `warn.htmlKb` (150 KB) opisy rang i węzłów
@@ -503,6 +509,10 @@ sam) i wgrywa `wiki/dist` na Cloudflare Pages. Bez sekretów workflow przechodzi
   | mechanika · poradnik · aktualizacje | 92 · 95 · 98 | 100 | 100 | 100 |
 
 ## Decyzje
+
+- **WIKI-GRAFIKA** Wiki pokazuje ikonę jak gra po wgraniu atlasów (eksporter: każdy arkusz gotowy). Ikony 64/128 z atlasów
+  (`npm run icons`, CI), reszta grafik i 256 px z oryginałów lokalnym `npm run art` (jak rendery). Jedno źródło przypisań
+  `scripts/lib/art-core.mjs` (`RULES`), tylko opublikowane id. Publikacja ścieżki (S82, punkt 3): też `npm run art`.
 
 - **S44** Routing: zamiast jednego `src/pages/[lang]/[...path].astro` (który dołączał CSS wszystkich widoków do każdej
   strony: 208 KB / 34 KB gzip) każda sekcja ma plik `src/pages/<lang>/<segment>/[...path].astro` generowany przez
@@ -807,6 +817,10 @@ sam) i wgrywa `wiki/dist` na Cloudflare Pages. Bez sekretów workflow przechodzi
   `npm run images:city` (S43): podglądy miasta z `docs/miasto/img` do `wiki/public/img/city/` (commitowane).
   `npm run icons` (S40, też na końcu `npm run data`): ikony przedmiotów z atlasów S35 do `wiki/public/img/items/` +
   manifest `wiki/src/generated/item-icons.json` (commitowane); po zmianie atlasów albo `Data/ItemIconAtlas` uruchom i zacommituj.
+  `npm run art` (WIKI-GRAFIKA, tylko lokalnie): grafiki właściciela z folderu Graphics (`-- --src <folder>`, domyślnie
+  `D:/Users/vdapi/Downloads/Graphics`; `-- --unused` wypisuje nieużyte) do `wiki/public/img/art/` + `src/generated/art.json`
+  (commitowane). Po nowych obrazkach (także `tools/icons/import_graphics.py`) i po ukryciu albo publikacji czegokolwiek
+  (ścieżka, umiejętność, przedmiot) uruchom i zacommituj; `art.test.ts` pilnuje, że nic nieopublikowanego nie ma pliku.
 - **Po zmianie skryptu bossa** (`src/server/Entities/BossScripts/*`, stałe `local NAZWA = liczba`): `npm run data` i sprawdź
   teksty w `wiki/src/content/bosses` (liczby tylko jako `{NAZWA}`; brak stałej wywala build). Nowy atak bossa / zdolność
   Elity II = klucz `boss.<id>.attack.<atak>` / `ability.<id>.name` (PL i EN, test `localization.spec`).

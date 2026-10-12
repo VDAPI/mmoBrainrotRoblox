@@ -584,6 +584,8 @@ export interface PlannerRank {
 export interface PlannerSkill extends RuleSkill {
   name: string;
   glyph: string;
+  /** WIKI-GRAFIKA: base URL of the owner's skill picture (files -64 / -128), or null for the glyph. */
+  pic: string | null;
   color: string;
   resource: string | null;
   range: number | null;

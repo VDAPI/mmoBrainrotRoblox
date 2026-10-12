@@ -3,6 +3,7 @@
 // area highlighted, facts (groups, monsters, respawn, arrival point), monsters with their levels here, quests with a
 // goal here and other hunting grounds for overlapping levels (areas and caves).
 import Base from "../../layouts/Base.astro";
+import ArtIcon from "../../components/ArtIcon.astro";
 import Crumbs from "../../components/Crumbs.astro";
 import MiniMap from "../../components/MiniMap.astro";
 import RankBadge from "../../components/RankBadge.astro";
@@ -46,7 +47,7 @@ const route = [...(map.route ?? [])];
       <div class="badges">
         <span class="vw-rank">{levels(lang, area.levelMin, area.levelMax)}</span>
         <ZoneBadge zone={map.zone} lang={lang} />
-        {profile && <span class="vw-rank profile" style={`--c:${profile.color}`} title={name(profile.desc, lang)}>{profile.icon} {name(profile.name, lang)}</span>}
+        {profile && <span class="vw-rank profile" style={`--c:${profile.color}`} title={name(profile.desc, lang)}><ArtIcon kind="profile" id={area.profile} size={16}>{profile.icon}</ArtIcon> {name(profile.name, lang)}</span>}
       </div>
       {profile && <p class="soft">{name(profile.desc, lang)} <span class="muted">({t(lang, "area.profileMul", { exp: fmt(profile.expMul), items: fmt(profile.itemChanceMul), gold: fmt(profile.goldMul) })})</span></p>}
     </header>
@@ -101,7 +102,7 @@ const route = [...(map.route ?? [])];
             <a class="card" href={placeHref(lang, o.id)}>
               <span class={`dia ${o.cave ? "red" : ""}`} aria-hidden="true"></span>
               <span class="strong">{name(o.name, lang)}</span>
-              <span class="muted small">{levels(lang, o.min, o.max)} · {o.cave ? t(lang, "map.kind.cave") : m ? name(m.name, lang) : ""}{p ? ` · ${p.icon}` : ""}</span>
+              <span class="muted small">{levels(lang, o.min, o.max)} · {o.cave ? t(lang, "map.kind.cave") : m ? name(m.name, lang) : ""}{p && <Fragment> · <ArtIcon kind="profile" id={o.profile} size={16}>{p.icon}</ArtIcon></Fragment>}</span>
             </a>
           );
         })}

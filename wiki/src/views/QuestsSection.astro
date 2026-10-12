@@ -4,6 +4,7 @@
 // previous / next). Story texts never reach the index page nor the search index.
 import Base from "../layouts/Base.astro";
 import Article from "../components/Article.astro";
+import ArtIcon from "../components/ArtIcon.astro";
 import Callout from "../components/Callout.astro";
 import Crumbs from "../components/Crumbs.astro";
 import ItemIcon from "../components/ItemIcon.svelte";
@@ -14,6 +15,7 @@ import SectionTitle from "../components/SectionTitle.astro";
 import ZoneBadge from "../components/ZoneBadge.astro";
 import type { MainQuest, QuestReward, SideQuest } from "../data/types";
 import { href, type Lang } from "../i18n/routes";
+import { artFor } from "../lib/art";
 import { getItem, load, rarityOf } from "../lib/data";
 import { formatNumber } from "../lib/format";
 import { name, t } from "../lib/i18n";
@@ -109,7 +111,8 @@ const minLevel = q ? Math.max(1, q.level - (side ? file.sideLevelSlack : file.le
             <ul class="goals">
               {q.objectives.map((o) => {
                 const h = objectiveHref(lang, o);
-                return <li>{h ? <a href={h}>{name(o.label, lang)}</a> : name(o.label, lang)}</li>;
+                const pic = o.item ? artFor("quest", o.item) : null;
+                return <li class:list={[{ "has-pic": pic }]}>{pic && <ArtIcon kind="quest" id={o.item} size={22} class="goal-pic" />}{h ? <a href={h}>{name(o.label, lang)}</a> : name(o.label, lang)}</li>;
               })}
             </ul>
           </section>
@@ -318,6 +321,9 @@ const minLevel = q ? Math.max(1, q.level - (side ? file.sideLevelSlack : file.le
   .goals { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; font-size: 18px; }
   .goals li { position: relative; padding-left: 26px; }
   .goals li::before { content: ""; position: absolute; left: 4px; top: .55em; width: 9px; height: 9px; background: var(--vw-gold); transform: rotate(45deg); }
+  .goals li.has-pic { padding-left: 30px; }
+  .goals li.has-pic::before { content: none; }
+  .goals :global(.goal-pic) { position: absolute; left: 0; top: 0.05em; }
   .rewards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
   .reward { position: relative; display: flex; flex-direction: column; gap: 6px; padding: 14px 16px; background: var(--vw-panel); border: 1px solid var(--vw-border); }
   .reward strong { font: 800 24px/1 var(--vw-font-ui); color: var(--vw-text); }

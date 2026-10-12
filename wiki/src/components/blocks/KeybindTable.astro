@@ -1,8 +1,11 @@
 ---
 // Default keys (S42, used by the S43 guides): mechanics.keybinds by group, plus the fixed Roblox keys from the wiki
-// texts (movement, jump, camera, chat). `groups` limits the groups.
+// texts (movement, jump, camera, chat). `groups` limits the groups. WIKI-GRAFIKA: the owner's HUD button sign of a
+// window or action after the key.
+import ArtIcon from "../ArtIcon.astro";
 import Source from "./Source.astro";
 import type { Lang } from "../../i18n/routes";
+import { artMask } from "../../lib/art";
 import { load } from "../../lib/data";
 import { name, t, type Key } from "../../lib/i18n";
 interface Props {
@@ -14,12 +17,13 @@ const lang = (Astro.url.pathname.startsWith("/en/") ? "en" : "pl") as Lang;
 const binds = load("mechanics").keybinds;
 const order = [...new Set(binds.map((b) => b.group))].filter((g) => !groups || groups.includes(g));
 const FIXED = ["move", "jump", "camera", "chat"];
+const withPics = new Set(binds.filter((b) => artMask("keybind", b.id)).map((b) => b.group));
 ---
 <div class="vw-keys">
   {order.map((g) => (
     <section>
       <h4 class="vw-label">{t(lang, `block.keys.${g}` as Key)}</h4>
-      <ul>{binds.filter((b) => b.group === g).map((b) => <li><kbd class="vw-kbd">{b.key}</kbd> {name(b.name, lang)}</li>)}</ul>
+      <ul>{binds.filter((b) => b.group === g).map((b) => <li><kbd class="vw-kbd">{b.key}</kbd>{withPics.has(g) && <ArtIcon kind="keybind" id={b.id} size={18} class="kb-pic"><span class="kb-gap" aria-hidden="true"></span></ArtIcon>}{name(b.name, lang)}</li>)}</ul>
     </section>
   ))}
   {fixed && (
@@ -37,4 +41,6 @@ const FIXED = ["move", "jump", "camera", "chat"];
   .vw-keys ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
   .vw-keys li { display: flex; align-items: center; gap: 10px; }
   .vw-keys .vw-kbd { min-width: 44px; text-align: center; color: var(--vw-text); }
+  .vw-keys :global(.kb-pic) { color: var(--vw-gold); }
+  .kb-gap { width: 18px; flex-shrink: 0; }
 </style>

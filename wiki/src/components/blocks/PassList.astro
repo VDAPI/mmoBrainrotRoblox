@@ -1,6 +1,8 @@
 ---
 // Passes and Dragon Currency services (S43): premium.json (tools/WikiData/Premium.luau: names, descriptions, daily
-// limits — never prices). `shop` = list the services instead of the passes.
+// limits — never prices). `shop` = list the services instead of the passes. WIKI-GRAFIKA: the owner's sign of a pass
+// (VIP) drawn in the icon box instead of the glyph.
+import ArtIcon from "../ArtIcon.astro";
 import Source from "./Source.astro";
 import type { Lang } from "../../i18n/routes";
 import { load } from "../../lib/data";
@@ -32,7 +34,7 @@ const premium = load("premium");
   <ul class="vw-pass">
     {premium.passes.map((p) => (
       <li>
-        <span class="icon" aria-hidden="true">{p.icon}</span>
+        <span class="icon" aria-hidden="true"><ArtIcon kind="pass" id={p.key} size={26}>{p.icon}</ArtIcon></span>
         <span class="txt"><strong>{name(p.name, lang)}</strong><span>{name(p.desc, lang)}</span></span>
       </li>
     ))}

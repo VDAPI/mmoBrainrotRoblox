@@ -44,7 +44,7 @@
 <div class="live" style={`--c: var(--vw-r-${data.rarity}); --g: var(--vw-glow-${data.rarity});`}>
   <div class="stage" aria-hidden="true">
     <div class="vw-beam beam"><span class="glow"></span><span class="core"></span></div>
-    <div class="pic"><ItemIcon glyph={data.glyph} color={data.color} rarity={data.rarity} size={128} src={data.icon} /></div>
+    <div class="pic"><ItemIcon glyph={data.glyph} color={data.color} rarity={data.rarity} size={128} src={data.icon} hd={data.iconHd} /></div>
   </div>
   <ItemTooltip {data} labels={{ bind: labels.bind }} />
   <dl class="tech">

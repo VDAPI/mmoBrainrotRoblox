@@ -217,7 +217,7 @@
         {#each rows as row (row.url)}
           <li class="row">
             {#if row.glyph}
-              <ItemIcon glyph={row.glyph} color={row.color ?? "#C9CED6"} rarity={row.rarity ?? null} size={48} />
+              <ItemIcon glyph={row.glyph} color={row.color ?? "#C9CED6"} rarity={row.rarity ?? null} size={48} src={row.tooltip?.icon ?? null} />
             {:else}
               <span class="mark vw-ph" style={`--c: ${COLORS[row.type] ?? "var(--vw-border)"}`} aria-hidden="true"></span>
             {/if}

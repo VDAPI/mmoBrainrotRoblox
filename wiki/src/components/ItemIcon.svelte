@@ -1,7 +1,8 @@
 <script lang="ts">
   // Item icon (contract S36, S40: pictures): frame in the rarity colour; `src` is the base URL of a generated icon
   // (src/lib/icons.ts iconFor: "/img/items/<file>", files -64.webp / -128.webp) — sizes up to 64 px take the 64 file
-  // with the 128 one for 2x screens, bigger ones the 128 file. Without `src` the item's glyph in its colour.
+  // with the 128 one for 2x screens, bigger ones the 128 file (WIKI-GRAFIKA: `hd`, the 256 px file of an owner's picture,
+  // for 2x screens). Without `src` the item's glyph in its colour.
   import { iconSources } from "../lib/item-model";
 
   interface Props {
@@ -11,10 +12,11 @@
     size?: number;
     src?: string | null;
     alt?: string;
+    hd?: string | null;
   }
 
-  let { glyph, color, rarity = null, size = 40, src = null, alt = "" }: Props = $props();
-  const pic = $derived(iconSources(src, size));
+  let { glyph, color, rarity = null, size = 40, src = null, alt = "", hd = null }: Props = $props();
+  const pic = $derived(iconSources(src, size, hd));
 </script>
 
 <span

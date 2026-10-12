@@ -3,7 +3,8 @@
   // rank only (the "All skills" table). S82: the planner's path nodes, `mark` = a small sign in the corner (the 1/3
   // strength of a team node outside the main path).
   // `label` is the full accessible name ("Fireball, 2 of 10, available"); extra attributes and event handlers
-  // (onclick, oncontextmenu, onkeydown, tabindex, data-*) pass through to the button.
+  // (onclick, oncontextmenu, onkeydown, tabindex, data-*) pass through to the button. WIKI-GRAFIKA: `pic` = base URL of
+  // the owner's skill picture (src/lib/art.ts artFor, files -64 / -128) drawn instead of the glyph.
   import type { HTMLButtonAttributes } from "svelte/elements";
 
   interface Props extends Omit<HTMLButtonAttributes, "class"> {
@@ -25,6 +26,8 @@
     lockText?: string | null;
     /** Small sign in the corner ("⅓"). */
     mark?: string | null;
+    /** Base URL of the skill picture (instead of the glyph). */
+    pic?: string | null;
   }
 
   let {
@@ -41,8 +44,11 @@
     size = null,
     lockText = null,
     mark = null,
+    pic = null,
     ...rest
   }: Props = $props();
+  // Not iconSources() from lib/item-model: that would pull the item model into the planner bundle (budget).
+  const img = $derived(pic ? { src: `${pic}-64.webp`, srcset: `${pic}-64.webp 1x, ${pic}-128.webp 2x` } : null);
 
   const style = $derived(
     [color ? `--node-glyph: ${color}` : "", size ? `width: ${size}px; height: ${size}px` : ""].filter(Boolean).join("; ") || undefined,
@@ -61,6 +67,8 @@
   {#if state === "locked"}
     <span class="lock" aria-hidden="true"></span>
     {#if lockText}<span class="lock-text" aria-hidden="true">{lockText}</span>{/if}
+  {:else if img}
+    <img class="pic" src={img.src} srcset={img.srcset} alt="" width="64" height="64" loading="lazy" decoding="async" />
   {:else}
     <span class="glyph" aria-hidden="true">{glyph}</span>
   {/if}
@@ -92,6 +100,7 @@
   .vw-node.is-invalid :global(.vw-node__rank) { color: var(--vw-danger); border-color: var(--vw-danger); background: var(--vw-bg-sunken); }
   .glyph { font-size: 28px; line-height: 1; color: var(--node-glyph, var(--vw-gold-bright)); }
   .vw-node--capstone .glyph { font-size: 34px; }
+  .pic { position: absolute; inset: 3px; width: calc(100% - 6px); height: calc(100% - 6px); object-fit: cover; pointer-events: none; }
   .lock { position: relative; width: 14px; height: 11px; margin-top: 8px; background: var(--vw-text-muted); }
   .lock::before { content: ""; position: absolute; left: 2px; top: -8px; width: 6px; height: 7px; border: 2px solid var(--vw-text-muted); border-bottom: 0; }
   .mark { position: absolute; top: 2px; right: 3px; font: 800 12px/1 var(--vw-font-ui); color: var(--vw-text-soft); }

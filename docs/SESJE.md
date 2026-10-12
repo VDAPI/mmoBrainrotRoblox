@@ -4935,3 +4935,40 @@ Pliki: `src/shared/Logic/ArtTiers.luau`, `src/shared/Logic/WeaponMount.luau`, `s
 `tools/icons/{atlas_index,import_png,import_graphics,build_final}.py`, `tools/icons/README.md`,
 `tools/weapons/prepare_glb.py`, `tools/studio/import_weapons.luau`, `art/icons/items_4..7.png`, `art/icons/src/**`,
 dane wiki (`wiki/src/data/icons.json`, `meta.json`, `wiki/src/generated/item-icons.json`, `docs/PRZEDMIOTY.md`).
+
+### WIKI-GRAFIKA: grafiki właściciela na wiki
+
+Prośba właściciela z 2026-10-12 („grafiki użyj też na stronie wiki”), po S52.
+- **Ikony przedmiotów:** eksporter (`tools/WikiData/Items.luau`, `Items.wikiReady`) liczy ikonę jak gra po wgraniu atlasów
+  4–7, więc `npm run icons` składa obrazki z `items_4..7.png` (827 przedmiotów): 759 z 831 sztuk ekwipunku bierze obrazek
+  progu albo najbliższego niższego (progi 20–100 = obrazek progu 20), do tego unikaty Grimroka, materiały, mikstury I–III,
+  eliksiry, błogosławieństwa, zwoje, kamienie, plecaki, narzędzia; broń maga zostaje przy ikonie kodu w kolorze żywiołu
+  (jak w grze). Ikony: 460 ikon (920 plików) zamiast 1035 (2070 plików) (3,2 MB zamiast 4,8 MB). Strona przedmiotu (ikona 128) ma plik 256 px dla
+  ekranów 2×.
+- **`npm run art`** (`wiki/scripts/art.mjs`, rdzeń `scripts/lib/art-core.mjs`, manifest `src/generated/art.json`, pliki
+  `public/img/art/<rodzaj>/<id>-<szer>.webp`): z folderu Graphics (oryginały 1024 px, `--src`/`VAELTHORN_GRAPHICS`) tylko
+  obrazki opublikowanych id; bez folderu tylko porządkuje. 319 obrazków, 407 plików, 5,3 MB: klasy 4 (herb), portrety 4
+  (320/640), umiejętności 32, żywioły 4, gildia 5, profile łowisk 3, przedmioty zadań 16, usługi NPC 11, klawisze okien 8,
+  VIP 1, przedmioty 231 (256 px).
+- **Gdzie widać:** portrety w kartach `/klasy/` i hero strony klasy, herb w `ClassStartTable`; umiejętności w tabeli
+  „Wszystkie umiejętności”, liście i panelu planera (`SkillNode` z `pic`); żywioły w `ElementBadge` i `ElementList`;
+  umiejętności gildii w `GuildSkillsTable`; profile łowisk na stronach krain i obszarów, w `LevelPath` i karcie mapy świata;
+  przedmioty zadań w celach zadania i w łupie potwora; usługi NPC na kartach mieszkańców (`CityNpcs`), znaki okien w
+  `KeybindTable`, VIP w `PassList`; wiersze przedmiotów w wyszukiwarce biorą ikonę z podpowiedzi (`SearchPage`). Wspólny komponent `ArtIcon.astro` (obrazek albo maska CSS, inaczej dawny glif), `lib/art.ts`.
+- **Testy:** `tests/wikidump.spec.luau` (+2: obrazki ekwipunku jak w grze, własny obrazek przedmiotu), `src/lib/art.test.ts`
+  (5: tylko opublikowane id, pliki zgodne z manifestem, adresy), `scripts/lib/cores.test.mjs` (+4: przypisania, oryginały,
+  porządkowanie, kadrowanie). `npm run check`, `npm run qa` (133) i `scripts/check` zielone; JS strony klasy 37,7 KB (limit
+  40), 7560 plików w `dist` (było 8303). Obrazy razem +3,6 MB (art 5,3 MB, ikony przedmiotów −1,7 MB).
+
+Nieużyte na wiki (123 pliki): efekty 21, HUD 21 (sloty, przyciski bez klawisza, znaczniki), ikony i znaczniki mapy 22,
+`mapy/_uklad` 18 (wzory), obrazki 24 ukrytych umiejętności (pojawią się po publikacji ścieżek i `npm run art`), różdżki,
+kostury i kostury runiczne 15 (bez `.a.png`), `saber1h_15_wersja2`, `_test_start`.
+
+Pliki: `tools/WikiData/Items.luau`, `tests/wikidump.spec.luau`, `wiki/scripts/{art.mjs,lib/art-core.mjs,lib/cores.test.mjs,
+budgets.mjs,budgets.config.mjs}`, `wiki/package.json`, `wiki/src/lib/{art.ts,art.test.ts,items.ts,item-model.ts,classes.ts,
+skills.ts,monster.ts,mapdata.ts,mapdata.types.ts}`, `wiki/src/components/{ArtIcon.astro,ItemIcon.svelte,SkillNode.svelte,
+ElementBadge.astro}`, bloki `ClassStartTable`, `ElementList`, `GuildSkillsTable`, `PassList`, `CityNpcs`, `KeybindTable`,
+`LevelPath`, widoki `ClassView`, `ClassesView`, `QuestsSection`, `regions/AreaPage`, `regions/RegionPage`, wyspy
+`SkillPlanner`, `WorldMap`, `ItemTooltipLive`, `SearchPage`, `styles/components.css`, dane i obrazy (`wiki/src/data/items.json`,
+`meta.json`, `src/generated/{item-icons,art}.json`, `public/img/items`, `public/img/art`, `docs/PRZEDMIOTY.md`), `docs/WIKI.md`,
+`docs/GRAFIKA.md`, `CLAUDE.md`.

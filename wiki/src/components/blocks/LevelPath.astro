@@ -1,6 +1,7 @@
 ---
 // Where to level (S43, guides): progression.bestArea from..to (AreaAdvice.best on the region maps), consecutive levels
 // with the same area in one row, with the area's hunting profile and the main quests of that level range.
+import ArtIcon from "../ArtIcon.astro";
 import Source from "./Source.astro";
 import type { Lang } from "../../i18n/routes";
 import { load } from "../../lib/data";
@@ -39,7 +40,7 @@ const range = (a: number, b: number) => (a === b ? t(lang, "level", { level: a }
         <span class="lv">{range(r.from, r.to)}</span>
         <span class="body">
           <strong>{h ? <a href={h}>{name(area?.name, lang)}</a> : name(area?.name, lang)}</strong>
-          <span class="meta">{name(map?.name, lang)}{area && ` · ${t(lang, "levelRange", { min: area.levelMin, max: area.levelMax })}`}{profile && <Fragment> · <span class="prof" style={`--pc: ${profile.color}`}>{profile.icon} {name(profile.name, lang)}</span></Fragment>}</span>
+          <span class="meta">{name(map?.name, lang)}{area && ` · ${t(lang, "levelRange", { min: area.levelMin, max: area.levelMax })}`}{profile && <Fragment> · <span class="prof" style={`--pc: ${profile.color}`}><ArtIcon kind="profile" id={area?.profile} size={16}>{profile.icon}</ArtIcon> {name(profile.name, lang)}</span></Fragment>}</span>
           {qs.length > 0 && (
             <span class="qs">{t(lang, "block.path.quests")} {qs.map((q, i) => {
               const qh = questHref(lang, q.id);

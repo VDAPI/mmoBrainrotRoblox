@@ -1,7 +1,8 @@
 ---
 // Element badge (.vw-rank with a diamond in the element colour); no element = "Physical" / "Magic" by `damageKind`
-// (S39) in --vw-text-soft.
+// (S39) in --vw-text-soft. WIKI-GRAFIKA: the owner's element picture in place of the diamond when there is one.
 import { load } from "../lib/data";
+import { artImg } from "../lib/art";
 import { name, t } from "../lib/i18n";
 import type { Lang } from "../i18n/routes";
 interface Props {
@@ -13,9 +14,12 @@ const { element, damageKind, lang } = Astro.props;
 const info = element ? load("elements").elements.find((e) => e.id === element) : undefined;
 const label = info ? name(info.name, lang) : t(lang, damageKind === "magic" ? "element.magic" : "element.physical");
 const color = info ? `var(--vw-el-${info.id})` : "var(--vw-text-soft)";
+const pic = info ? artImg("element", info.id, 16) : null;
 ---
-<span class="vw-rank vw-element" style={`--c: ${color}`}>{label}</span>
+<span class:list={["vw-rank", "vw-element", { "has-pic": pic }]} style={`--c: ${color}`}>{pic && <img src={pic.src} srcset={pic.srcset} sizes={pic.sizes} width={pic.width} height={pic.height} alt="" loading="lazy" decoding="async" />}{label}</span>
 <style>
   .vw-element { gap: 6px; color: var(--c); }
   .vw-element::before { content: ""; width: 7px; height: 7px; background: var(--c); transform: rotate(45deg); }
+  .vw-element.has-pic::before { content: none; }
+  img { display: block; width: 16px; height: 16px; flex-shrink: 0; }
 </style>

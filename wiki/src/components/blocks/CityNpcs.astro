@@ -1,6 +1,8 @@
 ---
 // Townsfolk of the city (S43): one card per NPC (decorations left out) with the anchor #npc-<id> (target of npcHref),
-// role and name, greeting, services, building with its preview (or the mini map), quests they give and a map link.
+// role and name, greeting, services (with the owner's service signs, WIKI-GRAFIKA), building with its preview (or the
+// mini map), quests they give and a map link.
+import ArtIcon from "../ArtIcon.astro";
 import MiniMap from "../MiniMap.astro";
 import Source from "./Source.astro";
 import type { Lang } from "../../i18n/routes";
@@ -33,7 +35,7 @@ const npcs = cityNpcs();
           <p class="vw-label where">{where}</p>
           <h3 class="vw-h3 who"><span class="icon" aria-hidden="true">{n.icon}</span> {npcLabel(n.id, lang)}</h3>
           {n.greeting && <p class="greet">„{name(n.greeting, lang)}”</p>}
-          <div class="chips">{n.services.map((s) => <span class="vw-chip vw-chip--static">{name(services[s], lang) || s}</span>)}</div>
+          <div class="chips">{n.services.map((s) => <span class="vw-chip vw-chip--static"><ArtIcon kind="service" id={s} size={16} />{name(services[s], lang) || s}</span>)}</div>
           {gives.length > 0 && (
             <p class="quests"><span class="vw-label">{t(lang, "city.quests")}</span> {gives.map((q, i) => {
               const h = questHref(lang, q.id);

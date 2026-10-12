@@ -4,6 +4,7 @@
 import type { Item, RarityKey } from "../data/types";
 import type { Lang } from "../i18n/routes";
 import { getItem, items, load, rarities } from "./data";
+import { itemHd } from "./art";
 import { iconFor } from "./icons";
 import { name, t } from "./i18n";
 import {
@@ -190,6 +191,7 @@ export function itemDetail(id: string): ItemDetail | undefined {
     upgrade,
     materials,
     icon: iconFor(item.id),
+    iconHd: iconFor(item.id) ? itemHd(item.iconKey) : null,
     iconByElement: item.elemental ? Object.fromEntries(elements.map((e) => [e.id, iconFor(item.id, e.id)])) : undefined,
     elements: elements.length > 0 ? elements.map((e) => ({ id: e.id, name: e.name })) : undefined,
   };

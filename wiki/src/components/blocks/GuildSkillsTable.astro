@@ -1,5 +1,7 @@
 ---
-// Guild skills (S43): effect and treasury cost of every level (mechanics.guild.skills; Guild.skillEffect).
+// Guild skills (S43): effect and treasury cost of every level (mechanics.guild.skills; Guild.skillEffect); the owner's
+// picture of the skill (WIKI-GRAFIKA), else its glyph.
+import ArtIcon from "../ArtIcon.astro";
 import Source from "./Source.astro";
 import type { Lang } from "../../i18n/routes";
 import { load } from "../../lib/data";
@@ -16,7 +18,7 @@ const levels = Array.from({ length: guild.maxLevel }, (_, i) => i + 1);
     <tbody>
       {guild.skills.map((s) => (
         <tr>
-          <th scope="row" class="rowhead"><span class="icon" aria-hidden="true">{s.icon}</span> {name(s.name, lang)}</th>
+          <th scope="row" class="rowhead"><ArtIcon kind="guild" id={s.id} size={28}><span class="icon" aria-hidden="true">{s.icon}</span></ArtIcon> {name(s.name, lang)}</th>
           {levels.map((l) => (
             <td>
               <strong>{name(s.desc[l - 1], lang)}</strong>

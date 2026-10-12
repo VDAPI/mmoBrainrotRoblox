@@ -1,0 +1,29 @@
+---
+// Owner's picture next to a name (WIKI-GRAFIKA): an <img> of `size` px from src/lib/art.ts, or for the white HUD and
+// map signs (`mask` kinds) a CSS mask drawn in the current text colour (works in both themes). Without a picture the
+// slot (the old glyph). Decorative by default: the name stands next to it, so alt="".
+import { artImg, artMask, type ArtKind } from "../lib/art";
+interface Props {
+  kind: ArtKind;
+  id: string | null | undefined;
+  size?: number;
+  alt?: string;
+  class?: string;
+}
+const { kind, id, size = 20, alt = "", class: cls } = Astro.props;
+const mask = artMask(kind, id);
+const img = mask ? null : artImg(kind, id, size);
+---
+{mask ? (
+  <span class:list={["vw-art", "vw-art--mask", cls]} style={`--m: url(${mask}); width: ${size}px; height: ${size}px`} aria-hidden="true"></span>
+) : img ? (
+  <img class:list={["vw-art", cls]} src={img.src} srcset={img.srcset} sizes={img.sizes} width={img.width} height={img.height} alt={alt} loading="lazy" decoding="async" />
+) : (
+  <slot />
+)}
+<style>
+  .vw-art { display: inline-block; flex-shrink: 0; vertical-align: middle; }
+  img.vw-art { object-fit: contain; }
+  :global(.vw-rank) > .vw-art, :global(.profile) > .vw-art, :global(.prof) > .vw-art { margin-right: 4px; }
+  .vw-art--mask { background: currentColor; -webkit-mask: var(--m) center / contain no-repeat; mask: var(--m) center / contain no-repeat; }
+</style>
