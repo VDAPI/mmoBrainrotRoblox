@@ -14,7 +14,8 @@
 --   v = furyConsume (S74)  a red aura on the Warrior who spent Fury; impact events with `al` play the entry's `allies`
 --       pieces on those allies (guard, shout); War Banner objects (Workspace.Vaelthorn_Banners) are drawn here
 --   S80 (ROZWOJ 12.4, 12.5): a beam (Arcane Torrent) loops its motion for the cast event's `d`; each tick (impact with
---       `n`) draws a ray from the weapon's tip, wider every tick; v = beamEnd stops the loop and gives our walk back.
+--       `n`) draws a ray from the weapon's tip, wider every tick; v = beamEnd stops the loop and gives our walk back
+--       (channelEnd the same for a channel cut short, fizzle also gives the walk back).
 --       `ch` (Arcane Charges spent) grows Arcane Discharge's bolt by the entry's chargeSize; SkillVfx `everyWave`
 --       picks the pieces of later waves, `waves` (Cataclysm) gets one event per wave; a pull raises dust. Arcane
 --       Charges circle every player who has them (orbs from the "Effects" attribute).
@@ -625,9 +626,14 @@ local function onExtra(data: { [string]: any }, skill: SkillData.SkillDef, caste
 	local at = if typeof(data.p) == "Vector3" then data.p else nil
 	local simple = simpleAt(at, caster)
 	local radius = tonumber(data.r) or 6
-	if v == "fizzle" then
+	if v == "fizzle" or v == "beamEnd" or v == "channelEnd" then
+		-- S80: stop the motion's loop and give our walk back: a beam's ray and aura go out by themselves within a
+		-- tick (beamEnd), Evocation / Prayer cut short (channelEnd), a refused beam already locked us (fizzle)
 		if caster then
 			AnimationController.StopSkill(caster)
+			if caster == player.Character then
+				releaseLock()
+			end
 		end
 	elseif v == "arc" or v == "pierce" then
 		local path = data.path
@@ -705,14 +711,6 @@ local function onExtra(data: { [string]: any }, skill: SkillData.SkillDef, caste
 		if id and falcon then
 			falcons[id] = nil
 			falcon.stop()
-		end
-	elseif v == "beamEnd" then
-		-- S80: the ray and the aura go out by themselves within a tick; stop the loop and give our walk back
-		if caster then
-			AnimationController.StopSkill(caster)
-			if caster == player.Character then
-				releaseLock()
-			end
 		end
 	elseif not at then
 		return

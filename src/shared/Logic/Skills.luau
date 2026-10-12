@@ -843,7 +843,7 @@ function Skills.descriptionArgs(base: SkillDef, rank: number, opts: DescOpts?): 
 	end
 	-- S79 Broad Rings: the circle as it grows with the areaRadius hook
 	args.radius = if opts and opts.hooks
-		then Skills.areaRadius(skill, hookValue(opts.hooks, "areaRadius")) or 0
+		then round(Skills.areaRadius(skill, hookValue(opts.hooks, "areaRadius")) or 0)
 		else skill.radius or 0
 	args.range = skill.range or 0
 	args.length = skill.length or 0
@@ -1092,7 +1092,8 @@ function Skills.manaShieldSplit(amount: number, share: number, mana: number, cos
 		return want, 0
 	end
 	local absorbed = math.min(want, mana / rate)
-	return absorbed, absorbed * rate
+	-- clamp: absorbed x rate can land a few ULPs above mana, and SpendMana refuses more than the pool
+	return absorbed, math.min(mana, absorbed * rate)
 end
 
 -- Weapon element a skill needs (DESIGN §5.8, S18): Mage element skills need a weapon of their element;

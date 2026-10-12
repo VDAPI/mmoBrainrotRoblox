@@ -1684,6 +1684,15 @@ T.describe("Data: Hunter paths (S78)", function()
 		T.expect(royal.royalFalcon).toBe(1)
 	end)
 
+	T.it("Falcon Bond text value bondDive follows HOOK_RULES.royalFalcon.bondDive", function()
+		local bond = GamePaths.findNode("scout_bond") :: any
+		local perSecond = (PathData.HOOK_RULES :: any).royalFalcon.bondDive
+		for _, rank in { 1, bond.maxRank } do
+			local args = GamePaths.nodeArgs(bond, rank)
+			T.expect({ rank, args.bondDive }).toEqual({ rank, args.bond * perSecond })
+		end
+	end)
+
 	T.it("model builds spend exactly 50; the Trapper's are R7-exempt; Fury stays the only damage reference", function()
 		local exempt = {}
 		for _, path in GamePaths.pathsOf("Hunter") do

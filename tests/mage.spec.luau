@@ -164,6 +164,16 @@ T.describe("S79 Mage engine", function()
 		absorbed, spent = Skills.manaShieldSplit(100, 50, 1000, 20)
 		T.expect(absorbed).toBeNear(50)
 		T.expect(spent).toBeNear(60)
+		-- mana is the limit: the spent mana never exceeds the pool (SpendMana refuses more)
+		_, spent = Skills.manaShieldSplit(100, 50, 30.37, -10)
+		T.expect(spent <= 30.37).toBe(true)
+		for _, cost in { -30, -20, -10, 10, 20 } do
+			for i = 1, 400 do
+				local mana = i * 0.0731 + 0.37
+				_, spent = Skills.manaShieldSplit(1000, 50, mana, cost)
+				T.expect({ cost, mana, spent <= mana }).toEqual({ cost, mana, true })
+			end
+		end
 	end)
 
 	T.it("areaRadius", function()
@@ -171,6 +181,11 @@ T.describe("S79 Mage engine", function()
 		T.expect(Skills.areaRadius(skill("meteor"), 0)).toBe(10)
 		T.expect(Skills.areaRadius(skill("chainLightning"), 15)).toBe(12)
 		T.expect(Skills.areaRadius(skill("firebolt"), 15)).toBeNil()
+		-- the description shows the grown radius rounded (12 x 1.05 is 12.600000000000001 in floats)
+		local args = Skills.descriptionArgs(skill("cataclysm"), 1, { hooks = { areaRadius = 5 } })
+		T.expect(args.radius).toBe(12.6)
+		args = Skills.descriptionArgs(skill("elementalVortex"), 1, { hooks = { areaRadius = 5 } })
+		T.expect(args.radius).toBe(7.4)
 	end)
 
 	T.it("manaReserve grows the pool, not the regeneration", function()

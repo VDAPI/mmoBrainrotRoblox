@@ -171,25 +171,99 @@ T.describe("S56 ranks from the level and the bar", function()
 	end)
 
 	T.it("transitional ladder (ROZWOJ 2.6): every base skill, 19 ranks at level 20", function()
+		-- Since S81 every class has paths, so the ladder runs on a fixture: each class's 14 skills of 05b859d (before
+		-- S53) with today's unlocks, as base skills of a class id without a PathDef.
 		local GamePaths = require("../src/shared/Logic/Paths")
+		local UNLOCKS = { 1, 3, 6, 10, 14, 18, 23, 28, 34, 40, 48, 56, 65, 75 }
+		local LADDER: { [string]: { string } } = {
+			Warrior = {
+				"mightyStrike",
+				"battleCry",
+				"charge",
+				"bladeWhirl",
+				"steelSkin",
+				"cleave",
+				"taunt",
+				"fortitude",
+				"earthquake",
+				"bloodlust",
+				"riposte",
+				"crushingBlow",
+				"lastBastion",
+				"titansWrath",
+			},
+			Hunter = {
+				"aimedShot",
+				"doubleShot",
+				"disengage",
+				"arrowRain",
+				"hawkEye",
+				"venomArrow",
+				"frostTrap",
+				"agility",
+				"piercingArrow",
+				"huntersMark",
+				"predatorInstinct",
+				"volley",
+				"camouflage",
+				"stormArrow",
+			},
+			Mage = {
+				"firebolt",
+				"iceShard",
+				"blink",
+				"fireball",
+				"focus",
+				"chainLightning",
+				"manaShield",
+				"elementalist",
+				"frostNova",
+				"meteor",
+				"arcaneMind",
+				"firewall",
+				"evocation",
+				"meteorStorm",
+			},
+			Cleric = {
+				"holyStrike",
+				"heal",
+				"renew",
+				"radiance",
+				"devotion",
+				"circleOfLight",
+				"purify",
+				"auraOfEndurance",
+				"resurrection",
+				"shieldOfFaith",
+				"divineWrath",
+				"judgement",
+				"prayer",
+				"divineIntervention",
+			},
+		}
+		local checked = 0
 		for _, classId in Classes.order do
-			if GamePaths.classHasPaths(classId) then
-				continue -- S71: a class on paths has its base 8, not the ladder (tested in "S71 Cleric")
+			T.expect({ classId, GamePaths.classHasPaths(classId) }).toEqual({ classId, true })
+			local ids = LADDER[classId]
+			T.expect({ classId, ids ~= nil }).toEqual({ classId, true })
+			local fixtureClass = `Ladder{classId}`
+			local base, total = 0, 0
+			for i, id in ids do
+				local real = SkillData.get(id)
+				T.expect({ id, real ~= nil }).toEqual({ id, true })
+				local skill = table.clone(real :: any)
+				skill.class = fixtureClass
+				skill.path = nil
+				skill.unlock = UNLOCKS[i]
+				base += if Skills.rankFor(fixtureClass, 100, skill) > 0 then 1 else 0
+				total += Skills.rankFor(fixtureClass, 20, skill)
 			end
-			local unlocked = Skills.unlocked(classId, 100)
-			local base = 0
-			for _, skill in SkillData.byClass[classId] do
-				if skill.path == nil then
-					base += 1
-				end
-			end
-			T.expect(#unlocked).toBe(base) -- path skills (S70) come from Logic/Paths
-			local total = 0
-			for _, skill in SkillData.byClass[classId] do
-				total += Skills.rankFor(classId, 20, skill)
-			end
-			T.expect(total).toBe(19)
+			T.expect({ classId, base }).toEqual({ classId, #ids })
+			T.expect({ classId, total }).toEqual({ classId, 19 })
+			checked += 1
 		end
+		T.expect(checked).toBe(#Classes.order)
+		T.expect(checked > 0).toBe(true)
 	end)
 
 	T.it("starting skill and start hotbar", function()

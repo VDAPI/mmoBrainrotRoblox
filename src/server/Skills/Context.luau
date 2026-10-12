@@ -513,13 +513,15 @@ function Context.new(
 						})
 					end
 					if frost and isEnemy(entity) then
-						-- S79: the weapon's ice slow, longer (not stronger) with elementRider, and Frostbite (S65)
+						-- S79: the weapon's ice slow, longer (not stronger) with elementRider, and Frostbite (S65).
+						-- Own key (skill.id .. ":zone"): it must not overwrite a stronger breakpoint zone slow of the
+						-- same skill; the enemySlow category keeps the strongest (ROZWOJ 14.4).
 						local duration = 1.2 * power
 						local slowed = services.StatusEffect.Apply(entity, "slow", {
 							duration = duration,
 							value = SkillData.ADAPTIVE.slowPct,
 							source = player,
-							skillId = skill.id,
+							skillId = skill.id .. ":zone",
 							category = "enemySlow",
 						})
 						if slowed then

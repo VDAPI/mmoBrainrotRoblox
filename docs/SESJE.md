@@ -4151,3 +4151,24 @@ Pliki: `src/shared/{Data/{Paths/{Mage,Types},Skills/Mage,Titles,Products,Localiz
 `src/client/{UI/Screens/PremiumShop,Controllers/ReworkController}`, `tools/WikiData/Premium`,
 `tests/{paths,skills,items,premium,wikidump}.spec`, `wiki/src/{data/*,lib/skills.test.ts,content/mechanics/{pl/statystyki,
 en/stats}.mdx}`, `docs/{ROZWOJ,DECYZJE,SESJE,PROGRESS,PRZEDMIOTY}.md`.
+
+### Przegląd S78–S81
+
+Poprawki z przeglądu kodu S78–S81 (bez zmian kontraktu):
+- Przerwana Inwokacja / Modlitwa nie zostawia Maga / Kapłana w miejscu: `closeChannel` wysyła `channelEnd`, klient
+  zatrzymuje pętlę ruchu i oddaje chód; `fizzle` (odrzucony Strumień Arkanów) też zwalnia blokadę.
+- Ostatnie użycie `empowered` wzmacnia jeden czar: rezerwacja przy rzucie (`empowerPending`), zwolnienie w
+  `refund` / `refundAim` / przerwanym celowaniu (`ChannelState.onCancel`), zdjęcie stosu w `finished`.
+- Tarcza Many z Opanowaniem: wydana mana przycięta do puli (`Skills.manaShieldSplit`), więc tarcza nie przepuszcza
+  całego ciosu przez błąd zaokrąglenia.
+- Lodowa Nova z 10A i Śladem Żywiołu: spowolnienie strefy żywiołu ma własny klucz, nie obniża 40% do 25%.
+- Kataklizm: zdarzenia fal z `d = 0.2` (meteor spada z obrażeniami fali).
+- Opisy: promień z Szerokimi Kręgami zaokrąglony (`descriptionArgs`, `SkillInfo.shapeLine`); koszt w podpowiedzi i
+  oknie umiejętności śledzi Ładunki Arkanów (Fusion Value z atrybutu `Effects`).
+- Testy: `paths.spec` (tekst `bondDive` Sokolej Więzi = `bond` × `HOOK_RULES.royalFalcon.bondDive`), `mage.spec`
+  (mana tarczy nie przekracza puli, promień zaokrąglony), `skills.spec` (drabina przejściowa 2.6 na fixture: 14
+  umiejętności każdej klasy sprzed S53 na klasie bez ścieżek, 19 rang na 20.; każda prawdziwa klasa ma ścieżki).
+- Wiki: `lune run tools/wikidump.luau` bez zmian danych (hash ten sam).
+
+Pliki: `src/shared/Logic/Skills`, `src/server/{Services/SkillService,Skills/Context,Skills/Types/Offense}`,
+`src/client/{Controllers/VfxController,UI/SkillInfo}`, `tests/{paths,mage,skills}.spec`, `docs/{DECYZJE,SESJE}.md`.

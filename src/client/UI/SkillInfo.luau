@@ -20,6 +20,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 
 local EffectStack = require(ReplicatedStorage.Shared.Logic.EffectStack)
+local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Paths = require(ReplicatedStorage.Shared.Logic.Paths)
 local SkillData = require(ReplicatedStorage.Shared.Data.Skills)
 local Skills = require(ReplicatedStorage.Shared.Logic.Skills)
@@ -39,13 +40,25 @@ local maxHpValue = State.Value({ "derived", "values", "maxHp" }) -- S69: healLin
 local magAtkValue = State.Value({ "derived", "values", "magAtk" })
 local maxManaValue = State.Value({ "derived", "values", "maxMana" }) -- S80: a beam's drain
 
--- S80: Arcane Charges of our own character (SkillController.ArcaneCharges reads the same attribute).
-local function ownCharges(): number
-	local character = Players.LocalPlayer and Players.LocalPlayer.Character
-	if not character then
-		return 0
-	end
+-- S80: Arcane Charges of our own character (SkillController.ArcaneCharges reads the same attribute), as a Fusion
+-- Value fed by the "Effects" attribute, so the cost lines (bar tooltip, skill window) follow the charges (S80 G6).
+local chargesScope = Fusion.scoped(Fusion)
+local chargesValue = chargesScope:Value(0)
+local function chargesOf(character: Model): number
 	return EffectStack.stacksOf(character:GetAttribute("Effects"), "arcaneCharge", Workspace:GetServerTimeNow())
+end
+local function watchCharges(character: Model)
+	chargesValue:set(chargesOf(character))
+	character:GetAttributeChangedSignal("Effects"):Connect(function()
+		chargesValue:set(chargesOf(character))
+	end)
+end
+local localPlayer = Players.LocalPlayer
+if localPlayer then
+	if localPlayer.Character then
+		watchCharges(localPlayer.Character)
+	end
+	localPlayer.CharacterAdded:Connect(watchCharges)
 end
 
 -- The character as Logic/Paths reads it, tracked by `use`.
@@ -108,11 +121,12 @@ local SHAPE_GLYPH: { [string]: string } = {
 function SkillInfo.shapeLine(use: any, skill: SkillData.SkillDef, shownRank: number): string
 	local rank = math.max(1, shownRank)
 	local def, behaviour = effective(use, skill, rank)
-	-- S79 Broad Rings: circle spells grow with the areaRadius hook (as the server casts them)
+	-- S79 Broad Rings: circle spells grow with the areaRadius hook (as the server casts them); the clone is only
+	-- for this text, so the grown radius is rounded like a description argument
 	local grown = Skills.areaRadius(def, SkillInfo.hooks(use)["areaRadius"] or 0)
 	if grown ~= def.radius then
 		def = table.clone(def)
-		def.radius = grown
+		def.radius = if grown then Skills.roundArg(grown) else nil
 	end
 	local shape = Skills.shape(skill)
 	-- S74: guard, shout and banner have their own line (the target, two radii, the banner's time)
@@ -164,7 +178,7 @@ function SkillInfo.costLine(use: any, skill: SkillData.SkillDef, shownRank: numb
 	local mods: Skills.CostMods = {
 		costReduce = if type(saving) == "number" then saving else 0,
 		hooks = SkillInfo.hooks(use), -- S76: trapCost
-		charges = ownCharges(), -- S80
+		charges = use(chargesValue), -- S80
 	}
 	local cost = Skills.cost(def, rank, levelOf(use), skill.class, mods)
 	if def.type == "beam" then

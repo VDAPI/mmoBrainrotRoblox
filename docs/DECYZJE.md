@@ -1705,3 +1705,9 @@
   `maxManaPct` (tylko dane dla modelu S85).
 - S81 nazwy haków i pól z S79 / S80 pasują do tabel 12.4 / 12.5 bez zmian (D1); wszyscy odbiorcy istnieli, kodu
   silnika nie trzeba było dopisywać.
+- Przegląd S78–S81: spowolnienie lodu strefy żywiołu broni (`areaLingering`) ma własny klucz `skillId .. ":zone"`, więc
+  nie nadpisuje silniejszego spowolnienia strefy przełomu (kategoria `enemySlow` bierze najsilniejsze, 14.4).
+- Przegląd S78–S81: `empowered` rezerwuje użycie przy rzucie (`Runtime.empowerPending`), zdejmuje je po trafieniu,
+  zwalnia przy zwrocie / przerwaniu; czar z opóźnieniem trafienia dłuższym niż GCD nie dzieli już użycia z następnym.
+- Przegląd S78–S81: kanał przerwany przed czasem wysyła `channelEnd`, a `fizzle` też oddaje chód (odrzucony Strumień);
+  fale Kataklizmu mają `d = 0.2`, więc meteor spada razem z obrażeniami.

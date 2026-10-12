@@ -119,6 +119,7 @@ type ChannelState = {
 	guard: string?, -- S79: skillId of the channelGuard damage reduction on the caster (removed at the end)
 	ctx: Context.Ctx,
 	onDone: (() -> ())?,
+	onCancel: (() -> ())?, -- S80 review: an aim cut short without a refund (frees the cast's empowered use)
 	target: any?,
 	beam: Beam?,
 }
@@ -133,6 +134,8 @@ type Runtime = {
 	cdr: number, -- S64: % item cooldown reduction (Skills.cooldownReduction), published as { "skills", "cdr" }
 	-- S73 extendOnKill per skillId: seconds per kill, the cap and the seconds added since the cast
 	extend: { [string]: { seconds: number, max: number, added: number } },
+	-- S80 review: empowered uses taken by casts whose hit has not landed yet (a hit delay longer than the GCD)
+	empowerPending: number,
 }
 
 local runtimes: { [Player]: Runtime } = {}
@@ -156,6 +159,7 @@ local function runtime(player: Player): Runtime
 			infiniteResources = false,
 			cdr = 0,
 			extend = {},
+			empowerPending = 0,
 		}
 		runtimes[player] = rt
 	end
@@ -471,7 +475,8 @@ local function completeChannel(player: Player, ctx: Context.Ctx)
 end
 
 -- S80: the only way a channel ends (time up, Logic/Channel stop, another cast, death, leaving). Clears the state,
--- removes what the channel put on the caster (channelGuard, S79) and tells the clients (beamEnd / aimEnd + fizzle).
+-- removes what the channel put on the caster (channelGuard, S79) and tells the clients (beamEnd / aimEnd + fizzle /
+-- channelEnd).
 -- `completed`: the channel ran its full time (aiming shoots, Evocation / Prayer restore); `refund` gives an aim's cost
 -- and cooldown back (S76).
 local function closeChannel(player: Player, completed: boolean, reason: string?, refund: boolean?)
@@ -497,6 +502,8 @@ local function closeChannel(player: Player, completed: boolean, reason: string?,
 		else
 			if refund and channel.onRefund then
 				channel.onRefund()
+			elseif channel.onCancel then
+				channel.onCancel()
 			end
 			if fx then
 				fx({ v = "aimEnd" })
@@ -509,6 +516,8 @@ local function closeChannel(player: Player, completed: boolean, reason: string?,
 		end
 	elseif completed then
 		completeChannel(player, channel.ctx)
+	elseif fx then
+		fx({ v = "channelEnd" }) -- cut short: the clients stop the motion's loop and give the caster's walk back
 	end
 	if reason then
 		Net.Fire(player, "Toast", reason, nil, "warning")
@@ -844,7 +853,21 @@ local function cast(player: Player, skillId: string, targetId: string?, aim: any
 			return false, `cast.error.resource.{resource}`
 		end
 	end
+	-- S80 review: the empowered use this cast reserved (see the snapshot below); `consume` takes the stack off, else
+	-- the reservation is just freed (refund, fizzle). Runs at most once per cast.
+	local empowerReserved = false
+	local function releaseEmpower(consume: boolean)
+		if not empowerReserved then
+			return
+		end
+		empowerReserved = false
+		rt.empowerPending = math.max(0, rt.empowerPending - 1)
+		if consume then
+			StatusEffectService.UseStack(caster, "empowered")
+		end
+	end
 	local function refund()
+		releaseEmpower(false)
 		if cost > 0 and resource and not rt.infiniteResources then
 			ResourceService.Add(player, resource, cost)
 		end
@@ -856,6 +879,7 @@ local function cast(player: Player, skillId: string, targetId: string?, aim: any
 	end
 	-- S76: a cancelled aim gives the cost and this skill's cooldown back; the GCD stays.
 	local function refundAim()
+		releaseEmpower(false)
 		if cost > 0 and resource and not rt.infiniteResources then
 			ResourceService.Add(player, resource, cost)
 		end
@@ -886,12 +910,13 @@ local function cast(player: Player, skillId: string, targetId: string?, aim: any
 	elseif spell and charges > 0 then
 		castMul *= Skills.chargeDamageFactor(charges, ctx.hook("chargeDamage"))
 	end
-	local usedEmpower = false
 	if spell then
+		-- one use per damaging spell: uses already reserved by casts still before their hit do not count again
 		local uses, _, pct = StatusEffectService.Stacks(caster, "empowered")
-		if uses > 0 then
+		if uses > rt.empowerPending then
 			castMul *= 1 + pct / 100
-			usedEmpower = true
+			empowerReserved = true
+			rt.empowerPending += 1
 		end
 	end
 	ctx.castMul = castMul
@@ -943,9 +968,7 @@ local function cast(player: Player, skillId: string, targetId: string?, aim: any
 		elseif spell and chargesEnabled(char) then
 			giveCharges(player, caster, nil)
 		end
-		if usedEmpower then
-			StatusEffectService.UseStack(caster, "empowered")
-		end
+		releaseEmpower(true)
 		-- S73 extendOnKill: a new cast starts from zero added seconds
 		local extend = behaviour.extendOnKill
 		if extend then
@@ -1032,6 +1055,12 @@ local function cast(player: Player, skillId: string, targetId: string?, aim: any
 				Net.Fire(player, "Toast", err, nil, "warning")
 			end
 		end, refundAim)
+		local aiming = rt.channel
+		if aiming then
+			aiming.onCancel = function()
+				releaseEmpower(false)
+			end
+		end
 		return true, nil
 	end
 

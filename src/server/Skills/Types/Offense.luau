@@ -345,7 +345,8 @@ Offense.circleTarget = function(ctx)
 				ctx.fx({ v = "meteorImpact", p = impactAt, r = impactRadius })
 			end
 			if perWave then
-				ctx.fx({ p = impactAt, r = radius, n = wave })
+				-- d: the falling pieces (meteor) land with this wave's damage, not a second later
+				ctx.fx({ p = impactAt, r = radius, n = wave, d = 0.2 })
 			end
 			local enemies = ctx.enemiesInCircle(impactAt, impactRadius)
 			hitAll(ctx, enemies, if wave == 1 then firstPercent else ctx.value("dmg"), wave == 1, { from = impactAt })
