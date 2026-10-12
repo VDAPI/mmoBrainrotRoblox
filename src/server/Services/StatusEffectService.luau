@@ -87,7 +87,11 @@ local DEBUFFS = {
 	misfortune = true, -- S61: the enemy misses regular attacks (category enemyMiss)
 	attackSlow = true, -- S63: slower attacks (category enemyAttackSlow)
 	weaken = true, -- S63: the bearer deals less (category enemyDamageDown)
+	frostbite = true, -- S65: the source's ice: +% damage from that player (SourceValue); lives as long as the slow
 }
+-- S65 kinds without a table entry: nextBasic (one-shot bonus of the next basic attack, Full Draw; only a basic attack
+-- consumes it, so it never collides with nextShot), runeSeal (marker of a glowing Runic Seal; CombatService puts it
+-- on and takes it off).
 
 -- S63: damage over time; a player's ticks on a player are x Combat.pvp.dot (Apply).
 local DOT_KINDS: { [string]: boolean } = { bleed = true, poison = true, burn = true }
@@ -177,6 +181,7 @@ export type ApplyOptions = {
 	radius: number?,
 	healCut: number?, -- S63: % less healing and shields on this player (Rending Gash, PvP)
 	notBoss: boolean?, -- S63: bosses and Elite II ignore it; SkillEffect.notBoss (S70) maps here
+	accumulate: boolean?, -- S65: a refresh adds the unpaid rest of the running DoT (EffectStack.accumulate)
 }
 
 -- S61 (ROZWOJ 7.6): heal and shield multipliers of a player in PvP combat. PvpService sets them in its Init (it
@@ -194,7 +199,9 @@ function StatusEffectService.SetPvpScales(heal: Scale, shield: Scale)
 end
 
 -- Effects shortened in PvP (S63: attack slow too, STATY 8).
-local CROWD_CONTROL: { [string]: boolean } = { stun = true, root = true, slow = true, freeze = true, attackSlow = true }
+-- S65: frostbite lives as long as the ice slow that set it, so PvP halves it the same way.
+local CROWD_CONTROL: { [string]: boolean } =
+	{ stun = true, root = true, slow = true, freeze = true, attackSlow = true, frostbite = true }
 
 -- Applies (or refreshes) an effect. True when it was applied; callers may ignore the result.
 function StatusEffectService.Apply(entity: any, kind: string, options: ApplyOptions): boolean
@@ -264,6 +271,12 @@ function StatusEffectService.Apply(entity: any, kind: string, options: ApplyOpti
 		unit *= shieldScale(entity.player)
 	end
 	local running = e.expiresAt > t
+	-- S65: the running schedule before restack, for accumulate.
+	local schedule: EffectStack.Running? = if running
+			and e.tickAmount
+			and e.nextTick
+		then { tickAmount = e.tickAmount :: number, nextTick = e.nextTick :: number, expiresAt = e.expiresAt }
+		else nil
 	local old: EffectStack.Stack? = if running
 		then {
 			stacks = e.stacks or 1,
@@ -294,6 +307,18 @@ function StatusEffectService.Apply(entity: any, kind: string, options: ApplyOpti
 	e.radius = options.radius
 	e.tickAmount = state.tickAmount
 	e.nextTick = state.nextTick
+	if options.accumulate and tickAmount then
+		-- S65 (ROZWOJ 7.2): the tick comes only from accumulate (stacks x tick would count earlier hits twice).
+		local total = tickAmount * EffectStack.ticksBetween(t + TICK_INTERVAL, t + duration, TICK_INTERVAL)
+		local maxStacks = options.maxStacks or 1
+		e.tickAmount, e.nextTick = EffectStack.accumulate(schedule, {
+			total = total,
+			limit = if maxStacks > 1 then maxStacks else nil,
+			duration = duration,
+			now = t,
+			interval = TICK_INTERVAL,
+		})
+	end
 	e.healCut = options.healCut
 	if kind == "statBuff" then
 		-- Same key: the stats merge (Battle Cry's attack + its breakpoint's armor), the later end wins.
@@ -392,6 +417,17 @@ function StatusEffectService.PvpArmorBreak(entity: any): number
 	for _, effect in active(entity, "armorBreak") do
 		if effect.skillId == EffectStack.ITEM then
 			best = math.max(best, Damage.pvpArmorBreak(effect.unit or 0, effect.stacks or 1))
+		end
+	end
+	return best
+end
+
+-- S65: the biggest value of the active effects of `kind` that `player` applied (Frostbite), 0 without one.
+function StatusEffectService.SourceValue(entity: any, kind: string, player: Player): number
+	local best = 0
+	for _, effect in active(entity, kind) do
+		if effect.source == player then
+			best = math.max(best, effect.value)
 		end
 	end
 	return best

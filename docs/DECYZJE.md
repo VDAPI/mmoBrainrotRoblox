@@ -1316,3 +1316,23 @@
   bloku, skrócenie odnowienia poza lustrem do S84/S88).
 - **S64** `balance.spec` „two-handed weapons match 1H + off-hand”: dolny próg 0,97 → 0,93 (Zastawa i ochrony na
   tarczy: Wojownik 0,943–0,973, Kapłan 0,937–0,950). `hpRegen` usunięte z puli tarczy (13 linii; STATY 9 poprawione).
+- **S65** `accumulate` (niezadana reszta do nowej sumy, `nextTick` stoi) także dla ran i trucizn z przedmiotów
+  (limit `maxStacks` sum jednego trafienia) i podpalenia Iskry (bez limitu); umiejętności bez niego do S79.
+- **S65** Przeskoki umiejętności tylko na potwory (jak przed S65), przeskok Iskry także na graczy przy `CanAttack`;
+  szansa Iskry przez `Traits.chance` (limit 40, opis przycina `{v}` przez `TraitDef.chanceCap`).
+- **S65** Moc żywiołu wydłuża czas kontroli lodem (nie wartość spowolnienia) przy lodowej broni, także nieadaptacyjne
+  `slow` / `freeze` umiejętności; pola i Łańcuch Błyskawic bez zmian (S79). Hak stały `riderSameTarget` Kostura.
+- **S65** Przemarznięcie: każda lodowa broń, od każdego spowolnienia / zamrożenia lodem tego gracza (baza
+  `SkillData.FROSTBITE` 6, stały hak `frostbite` Różdżki 6 i Kostura 10 przez `max`), znacznik `frostbite` w
+  `CROWD_CONTROL` (PvP krócej), premia ×`Combat.pvp.frostbite` 0,5 na graczach; Łowca bez niego.
+- **S65** Przeszycie i przeskok / ten sam cel Iskry to ciosy `basic` z `noProc` i `consumeShot = false` (liczą
+  `basicDmg`, bez efektów). Podwójne cięcie także po uniku głównego ciosu.
+- **S65** Naciąg (`nextBasic`) po umiejętności ofensywnej i po pułapce (`SkillService.finished`), zużywa go następny
+  atak podstawowy, także chybiony (jak `nextShot`); Odskok go nie daje.
+- **S65** Pieczęć: odpytywanie co 0,1 s w `Heartbeat`, znacznik `runeSeal` (ikona bez licznika, runa u klienta); gaszą
+  ją krok > 1 st., Błysk (`Movement.blink`), każdy odrzut / przyciągnięcie (`Push.OnMoved`) i śmierć.
+- **S65** Zbawczy cios: sojusznik przez `Context.healFrom` (premia leczenia, `healPower`, `HealScale`); noszący jak
+  wampiryzm, bez mnożników, tylko w miejscu pod limitem 15% (STATY 13 poprawione). Wspólne `Context.bind` /
+  `hpFraction` / `alliesInCircle` / `mostWounded` / `healFrom`; `ctx.*` tylko delegują.
+- **S65** Stałe cech w `ItemTraits.params` (nie `Data/Combat`, STATY 13 poprawione); lustro cech rytmu w S84.
+  `balance.spec` bez zmian progów.

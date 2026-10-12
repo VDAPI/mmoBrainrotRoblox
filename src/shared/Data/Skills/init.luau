@@ -41,4 +41,17 @@ return table.freeze({
 	-- U + round((r - 1) * span / (maxLevel - 1)), span = min(9 * step, capLevel - U): every skill is maxed by capLevel.
 	RANKS = table.freeze({ step = 4, capLevel = 95 }),
 	GCD = 0.5, -- global cooldown (DESIGN §14.1)
+	-- S65 (DESIGN §14.4): weapon-element effect of adaptive skills (server/Skills/Elements): fire burns burnPct % of
+	-- the hit over burnDuration s, ice slows slowPct % for slowDuration s, lightning arcs within arcRadius for arcPct %.
+	ADAPTIVE = table.freeze({
+		burnPct = 30,
+		burnDuration = 4,
+		slowPct = 25,
+		slowDuration = 2,
+		arcPct = 40,
+		arcRadius = 10,
+	}),
+	-- S65 (STATY 3): Frostbite, +% damage from you on targets your ice slowed or froze, with any ice weapon;
+	-- the fixed hook "frostbite" of a wand (6) or staff (10) replaces it when higher.
+	FROSTBITE = 6,
 })

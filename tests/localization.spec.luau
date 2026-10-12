@@ -29,7 +29,9 @@ local MODULES: { [string]: any } = {
 }
 
 -- Fields that hold localization keys. Generated item names use namePrefix/nameBase (checked by data.spec).
-local KEY_FIELDS = { nameKey = true, descKey = true, greetingKey = true, titleKey = true, textKey = true }
+-- lineKey: item trait lines (S65).
+local KEY_FIELDS =
+	{ nameKey = true, descKey = true, greetingKey = true, titleKey = true, textKey = true, lineKey = true }
 
 local function walk(value: any, seen: { [any]: boolean }, found: { [string]: boolean })
 	if type(value) ~= "table" or seen[value] then

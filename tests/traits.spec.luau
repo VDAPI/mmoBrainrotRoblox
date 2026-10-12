@@ -1,6 +1,8 @@
 --!strict
 local Combat = require("../src/shared/Data/Combat")
 local Damage = require("../src/shared/Logic/Damage")
+local ItemTraits = require("../src/shared/Data/ItemTraits")
+local SkillData = require("../src/shared/Data/Skills")
 local Rng = require("../src/shared/Logic/Rng")
 local Traits = require("../src/shared/Logic/Traits")
 local T = require("./Test")
@@ -114,6 +116,138 @@ T.describe("Traits: block, counter, execute and controlled targets (S64)", funct
 		T.expect(Traits.controlledBonus(10, 0.8, nil)).toBe(10)
 		T.expect(Traits.controlledBonus(10, 1, nil)).toBe(0)
 		T.expect(Traits.controlledBonus(10, 0, 0.5)).toBe(5)
+	end)
+end)
+
+T.describe("Traits: rhythm and player state (S65)", function()
+	T.it("Twin Cut strikes again on the fifth attack", function()
+		local count, twin = 0, false
+		for i = 1, 4 do
+			count, twin = Traits.twinCut(count, if i == 1 then nil else i - 1, i, 5, 5)
+			T.expect({ count, twin }).toEqual({ i, false })
+		end
+		count, twin = Traits.twinCut(count, 4, 5, 5, 5)
+		T.expect({ count, twin }).toEqual({ 0, true })
+		T.expect({ Traits.twinCut(4, 0, 5.1, 5, 5) }).toEqual({ 1, false })
+		T.expect({ Traits.twinCut(4, 0, 5, 5, 5) }).toEqual({ 0, true })
+		T.expect({ Traits.twinCut(3, nil, 10, 5, 5) }).toEqual({ 1, false })
+	end)
+
+	T.it("Run Through finds the nearest enemy behind the target", function()
+		local me, at = { x = 0, z = 0 }, { x = 0, z = 10 }
+		local function one(x: number, z: number): number?
+			return Traits.behind(me, at, 1, { { x = x, z = z } }, 4, 4)
+		end
+		T.expect(one(0, 13)).toBe(1)
+		T.expect(one(0, 15)).toBe(1)
+		T.expect(one(1.9, 12)).toBe(1)
+		T.expect(one(0, 15.5)).toBeNil()
+		T.expect(one(2.1, 12)).toBeNil()
+		T.expect(one(0, 9)).toBeNil()
+		T.expect(Traits.behind(me, at, 1, { { x = 0, z = 14 }, { x = 0, z = 12 } }, 4, 4)).toBe(2)
+		T.expect(Traits.behind(me, at, 1, { { x = 0, z = 12 }, { x = 0, z = 12 } }, 4, 4)).toBe(1)
+		local diag = { x = 10, z = 10 }
+		T.expect(Traits.behind(me, diag, 1, { { x = 12, z = 12 } }, 4, 4)).toBe(1)
+		T.expect(Traits.behind(me, diag, 1, { { x = 13, z = 11 } }, 4, 4)).toBe(1)
+		T.expect(Traits.behind(me, diag, 1, { { x = 14, z = 10 } }, 4, 4)).toBeNil()
+		T.expect(Traits.behind(at, at, 1, { { x = 0, z = 12 } }, 4, 4)).toBeNil()
+		T.expect(Traits.behind(me, at, 1, {}, 4, 4)).toBeNil()
+	end)
+
+	T.it("Runic Seal glows after standing still", function()
+		local seal = Traits.sealStep(nil, 0, 0, 0, 1.5, 1)
+		T.expect(seal.lit).toBe(false)
+		seal = Traits.sealStep(seal, 0, 0, 1.4, 1.5, 1)
+		T.expect(seal.lit).toBe(false)
+		seal = Traits.sealStep(seal, 0, 0, 1.5, 1.5, 1)
+		T.expect(seal.lit).toBe(true)
+		seal = Traits.sealStep(seal, 0.9, 0, 2, 1.5, 1)
+		T.expect(seal.lit).toBe(true)
+		seal = Traits.sealStep(seal, 1.2, 0, 2.1, 1.5, 1)
+		T.expect({ seal.lit, seal.x, seal.since }).toEqual({ false, 1.2, 2.1 })
+		seal = Traits.sealStep(seal, 1.2, 0, 3.6, 1.5, 1)
+		T.expect(seal.lit).toBe(true)
+	end)
+
+	T.it("Full Draw scales with weapon speed, Saving Blow fits under lifesteal", function()
+		T.expect(Traits.drawBonus(30, 1.3)).toBeNear(39)
+		T.expect(Traits.drawBonus(30, 1.0)).toBe(30)
+		T.expect(Traits.drawBonus(30, 0.62)).toBeNear(18.6)
+		T.expect(Traits.drawBonus(30, 1.3, 0.5)).toBeNear(19.5)
+		T.expect(Traits.drawBonus(30, nil)).toBe(30)
+		T.expect(Traits.savingSelfShare(4, 0)).toBe(4)
+		T.expect(Traits.savingSelfShare(4, 13)).toBe(2)
+		T.expect(Traits.savingSelfShare(4, 15)).toBe(0)
+		T.expect(Traits.savingSelfShare(4, 20)).toBe(0)
+		T.expect(Traits.savingSelfShare(2, 14)).toBe(1)
+	end)
+
+	local ADAPTIVE: Traits.ElementSpec = {
+		burnPct = SkillData.ADAPTIVE.burnPct,
+		burnDuration = SkillData.ADAPTIVE.burnDuration,
+		slowPct = SkillData.ADAPTIVE.slowPct,
+		slowDuration = SkillData.ADAPTIVE.slowDuration,
+		arcPct = SkillData.ADAPTIVE.arcPct,
+		arcRadius = SkillData.ADAPTIVE.arcRadius,
+	}
+
+	T.it("adaptive skills keep their pre-S65 numbers without a rider", function()
+		local fire = Traits.elementPlan("fire", ADAPTIVE, 1000, 0, 0, false) :: Traits.ElementPlan
+		T.expect({ fire.kind, fire.pct, fire.duration, fire.tick, fire.sameTarget }).toEqual({ "burn", 30, 4, 75, 0 })
+		-- before S65: max(1, amount x 0.3 / 4) x (1 + dotPower / 100)
+		T.expect((Traits.elementPlan("fire", ADAPTIVE, 1000, 0, 20, false) :: any).tick).toBeNear(90)
+		T.expect((Traits.elementPlan("fire", ADAPTIVE, 10, 0, 0, false) :: any).tick).toBe(1)
+		local ice = Traits.elementPlan("ice", ADAPTIVE, 1000, 0, 0, false) :: Traits.ElementPlan
+		T.expect({ ice.kind, ice.pct, ice.duration, ice.sameTarget }).toEqual({ "slow", 25, 2, 0 })
+		local arc = Traits.elementPlan("lightning", ADAPTIVE, 1000, 0, 0, false) :: Traits.ElementPlan
+		T.expect({ arc.kind, arc.pct, arc.sameTarget }).toEqual({ "arc", 40, 0 })
+		T.expect(Traits.elementPlan("holy", ADAPTIVE, 1000, 0, 0, false)).toBeNil()
+		T.expect(Traits.elementPlan(nil, ADAPTIVE, 1000, 0, 0, false)).toBeNil()
+	end)
+
+	T.it("Elemental Might strengthens the weapon element", function()
+		local fire = Traits.elementPlan("fire", ADAPTIVE, 1000, 30, 0, true) :: Traits.ElementPlan
+		T.expect(fire.pct).toBeNear(39)
+		T.expect(fire.tick :: number).toBeNear(97.5)
+		T.expect((Traits.elementPlan("ice", ADAPTIVE, 1000, 30, 0, true) :: any).duration).toBeNear(2.6)
+		local arc = Traits.elementPlan("lightning", ADAPTIVE, 1000, 30, 0, true) :: Traits.ElementPlan
+		T.expect(arc.pct).toBeNear(52)
+		T.expect(arc.sameTarget).toBeNear(12)
+		T.expect((Traits.elementPlan("lightning", ADAPTIVE, 1000, 30, 0, false) :: any).sameTarget).toBe(0)
+	end)
+
+	T.it("Elemental Spark uses its params and exact ticks", function()
+		local p = (ItemTraits.get("elementalSpark") :: any).params
+		local spec: Traits.ElementSpec = {
+			burnPct = p.burnPct,
+			burnDuration = p.burnDuration,
+			exactTicks = true,
+			slowPct = p.slowPct,
+			slowDuration = p.slowDuration,
+			arcPct = p.arcPct,
+			arcRadius = p.arcRadius,
+			sameTargetPct = p.sameTargetPct,
+		}
+		T.expect((Traits.elementPlan("fire", spec, 1000, 0, 0, false) :: any).tick).toBeNear(300)
+		T.expect((Traits.elementPlan("fire", spec, 1000, 0, 10, false) :: any).tick).toBeNear(330)
+		local ice = Traits.elementPlan("ice", spec, 1000, 0, 0, false) :: Traits.ElementPlan
+		T.expect({ ice.pct, ice.duration }).toEqual({ 20, 2 })
+		local arc = Traits.elementPlan("lightning", spec, 1000, 0, 0, false) :: Traits.ElementPlan
+		T.expect({ arc.pct, arc.sameTarget }).toEqual({ 40, 20 })
+		local strong = Traits.elementPlan("lightning", spec, 1000, 30, 0, false) :: Traits.ElementPlan
+		T.expect(strong.pct).toBeNear(52)
+		T.expect(strong.sameTarget).toBeNear(26)
+	end)
+
+	T.it("PvP multipliers come from the data", function()
+		local byHook = ItemTraits.pvpByHook
+		for _, id in { "traitFullDraw", "traitRuneSeal", "traitSavingBlow" } do
+			T.expect({ id, byHook[id] }).toEqual({ id, 0.5 })
+		end
+		for _, id in { "traitTwinCut", "traitRunThrough", "traitSpark", "elementRider" } do
+			T.expect({ id, byHook[id] or 1 }).toEqual({ id, 1 })
+		end
+		T.expect(Combat.pvp.frostbite * 6).toBe(3)
 	end)
 end)
 

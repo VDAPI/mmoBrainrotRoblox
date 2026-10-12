@@ -3,6 +3,7 @@
 -- protection (S22) on every character whose "Effects" attribute lists "respawnShield" (not on low quality).
 -- S59 (ROZWOJ 4): after the local level-up toast, toasts for path points, skill ranks and new breakpoints to choose
 -- (Logic/PathView.rankUps / newBreakpoints between LevelUp's fromLevel and the new level).
+-- S65: the lasting rune of a glowing Runic Seal ("runeSeal" in "Effects") under every such character.
 
 local Debris = game:GetService("Debris")
 local Players = game:GetService("Players")
@@ -21,6 +22,7 @@ local Sounds = require(script.Parent.Parent.UI.Sounds)
 local Text = require(script.Parent.Parent.UI.Text)
 local Theme = require(script.Parent.Parent.UI.Theme)
 local Toast = require(script.Parent.Parent.UI.Components.Toast)
+local Library = require(script.Parent.Parent.Vfx.Library)
 
 local EffectsController = {
 	Name = "EffectsController",
@@ -93,6 +95,15 @@ end
 
 local GLOW = "VaelthornRespawnGlow"
 
+local function hasEffect(model: Model, kind: string): boolean
+	for _, entry in EffectStack.decode(model:GetAttribute("Effects"), Workspace:GetServerTimeNow()) do
+		if entry.kind == kind then
+			return true
+		end
+	end
+	return false
+end
+
 local function hasShield(model: Model): boolean
 	for _, entry in EffectStack.decode(model:GetAttribute("Effects"), Workspace:GetServerTimeNow()) do
 		if entry.kind == "respawnShield" then
@@ -133,8 +144,32 @@ local function addGlow(model: Model, root: BasePart)
 	):Play()
 end
 
+-- S65: Runic Seal runes by character model (cleanup of Library.sealRune).
+local SEAL_COLOR = Color3.fromHex("#8FB8FF")
+local seals: { [Model]: () -> () } = {}
+
+local function refreshSeals(low: boolean)
+	local seen: { [Model]: boolean } = {}
+	for _, player in Players:GetPlayers() do
+		local model = player.Character
+		if model and model.Parent and hasEffect(model, "runeSeal") then
+			seen[model] = true
+			if not seals[model] then
+				seals[model] = Library.sealRune(model, SEAL_COLOR, low)
+			end
+		end
+	end
+	for model, cleanup in seals do
+		if not seen[model] then
+			cleanup()
+			seals[model] = nil
+		end
+	end
+end
+
 local function refreshGlows()
 	local low = State.Get({ "account", "settings", "quality" }) == "low"
+	refreshSeals(low)
 	for _, player in Players:GetPlayers() do
 		local model = player.Character
 		local root = model and model:FindFirstChild("HumanoidRootPart") :: BasePart?

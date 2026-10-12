@@ -522,6 +522,60 @@ function Library.beam(a: Vector3, b: Vector3, color: Color3, width: number?, sec
 	Pool.later(p, s + 0.05)
 end
 
+-- S65: Run Through streak: a short thin beam from a to b and a small flash at b (only the beam when simple).
+function Library.lineBeam(a: Vector3, b: Vector3, color: Color3, simple: boolean?)
+	if (b - a).Magnitude < 0.1 then
+		return
+	end
+	Library.beam(a, b, color, 0.15, 0.15)
+	if not simple then
+		Library.burst(b, 1.2, color, 0.2)
+	end
+end
+
+-- S65: Runic Seal: a lasting rune under a character's feet that follows it and turns slowly. Returns the cleanup.
+function Library.sealRune(model: Model, color: Color3, simple: boolean?): () -> ()
+	local root = model:FindFirstChild("HumanoidRootPart") :: BasePart?
+	if not root then
+		return function() end
+	end
+	local humanoid = model:FindFirstChildOfClass("Humanoid")
+	local drop = root.Size.Y / 2 + (if humanoid then humanoid.HipHeight else 2) - 0.08
+	local radius = 2.6
+	local disc = Pool.part("Cylinder", color, Vector3.new(0.1, radius * 2, radius * 2), Enum.Material.Neon, 0.8)
+	local spokes: { BasePart } = {}
+	local count = if simple then 3 else 6
+	for _ = 1, count do
+		table.insert(spokes, Pool.part("Block", color, Vector3.new(0.2, 0.12, radius * 1.8), Enum.Material.Neon, 0.35))
+	end
+	local angle = 0
+	local connection = RunService.Heartbeat:Connect(function(dt: number)
+		if not root.Parent then
+			return
+		end
+		angle += dt * 0.8
+		local base = root.Position - Vector3.new(0, drop, 0)
+		disc.CFrame = CFrame.new(base) * CFrame.Angles(0, 0, math.rad(90))
+		for i, spoke in spokes do
+			spoke.CFrame = CFrame.new(base + Vector3.new(0, 0.03, 0)) * CFrame.Angles(0, angle + i / count * math.pi, 0)
+		end
+	end)
+	local done = false
+	return function()
+		if done then
+			return
+		end
+		done = true
+		connection:Disconnect()
+		tween(disc, 0.3, { Transparency = 1 })
+		Pool.later(disc, 0.35)
+		for _, spoke in spokes do
+			tween(spoke, 0.3, { Transparency = 1 })
+			Pool.later(spoke, 0.35)
+		end
+	end
+end
+
 -- Afterimages along a dash.
 function Library.dash(a: Vector3, b: Vector3, color: Color3, simple: boolean?)
 	local count = if simple then 2 else 5

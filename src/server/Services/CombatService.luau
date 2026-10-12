@@ -13,6 +13,10 @@
 -- S64: the block (regular blows only, healing with Parry) and the counter (tryCounter) live in monsterHitsPlayer and
 -- the PvP branch of DealDamage; melee / ranged protection is a reduction provider fed by `incoming`. Their caps
 -- (blockCap, riposteCap, executionerCap, cdrCap, pvp.block / pvp.counter) are in Data/Combat.
+--
+-- S65: rhythm and player-state traits: Twin Cut and Full Draw in tryBasicAttack, Run Through and Elemental Spark after
+-- a basic hit (Skills/Elements), Runic Seal polled in Heartbeat (BreakSeal on blinks, pushes and death), Frostbite and
+-- the seal in offensiveMultiplier, Saving Blow at the end of DealDamage (Skills/Context.mostWounded / healFrom).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -26,10 +30,12 @@ local AreaProfiles = require(Shared.Data.AreaProfiles)
 local AttackPose = require(Shared.Logic.AttackPose)
 local BuffCategories = require(Shared.Data.BuffCategories)
 local Classes = require(Shared.Data.Classes)
+local Context = require(script.Parent.Parent.Skills.Context)
 local DamageText = require(Shared.Logic.DamageText)
 local Combat = require(Shared.Data.Combat)
 local Damage = require(Shared.Logic.Damage)
 local EffectStack = require(Shared.Logic.EffectStack)
+local Elements = require(script.Parent.Parent.Skills.Elements)
 local Exp = require(Shared.Logic.Exp)
 local ItemTraits = require(Shared.Data.ItemTraits)
 local Items = require(Shared.Data.Items)
@@ -41,6 +47,7 @@ local Loot = require(Shared.Logic.Loot)
 local Luck = require(Shared.Logic.Luck)
 local PartyBonus = require(Shared.Logic.PartyBonus)
 local PartyLoot = require(Shared.Logic.PartyLoot)
+local Push = require(script.Parent.Parent.Skills.Push)
 local Rng = require(Shared.Logic.Rng)
 local Signal = require(ReplicatedStorage.Packages.Signal)
 local Traits = require(Shared.Logic.Traits)
@@ -123,10 +130,39 @@ type Attacker = {
 	outOfRangeSince: number?, -- standing still out of range since (for the "too far" message)
 	shockAt: { [string]: number }, -- S63: last Concussion stun (os.clock) per target entity id
 	resourceAt: number?, -- S63: last resourceOnHit refund (os.clock)
+	twinCount: number?, -- S65: Twin Cut: basic attacks counted since the last extra cut
+	twinAt: number?, -- S65: Twin Cut: last counted basic attack (os.clock)
+	seal: Traits.Seal?, -- S65: Runic Seal anchor (os.clock)
 }
 
 local REJECT_INTERVAL = 2
 local TOO_FAR_AFTER = 1
+local SEAL_POLL = 0.1 -- polling rate, not a balance number
+local SEAL_MARKER = 3600 -- marker lives until the seal breaks
+
+-- S65: services of Skills/Elements (set in Init).
+local elementServices: Elements.Services
+
+-- S65: a fixed number of a trait (Data/ItemTraits params); never a number in code.
+local function traitParam(id: string, key: string): number
+	local def = ItemTraits.get(id)
+	local params = def and def.params
+	local value = params and params[key]
+	assert(value ~= nil, `ItemTraits: {id}.params.{key} is missing`)
+	return value
+end
+
+-- S65: Elemental Spark's recipe (its params) with exact item ticks.
+local sparkSpec: Traits.ElementSpec = {
+	burnPct = traitParam("elementalSpark", "burnPct"),
+	burnDuration = traitParam("elementalSpark", "burnDuration"),
+	exactTicks = true,
+	slowPct = traitParam("elementalSpark", "slowPct"),
+	slowDuration = traitParam("elementalSpark", "slowDuration"),
+	arcPct = traitParam("elementalSpark", "arcPct"),
+	arcRadius = traitParam("elementalSpark", "arcRadius"),
+	sameTargetPct = traitParam("elementalSpark", "sameTargetPct"),
+}
 
 local attackers: { [Player]: Attacker } = {}
 local rng = Rng.new()
@@ -359,6 +395,18 @@ local function offensiveMultiplier(player: Player, targetEntity: any): number
 		local traitPvp = if pvp then ItemTraits.pvpByHook.controlledDamage else nil
 		mult += Traits.controlledBonus(controlled, StatusEffectService.SlowFactor(targetEntity), traitPvp) / 100
 	end
+	-- S65 (STATY 5): a glowing Runic Seal raises all the player's damage (ticks take dotBase after this).
+	local state = attackers[player]
+	local seal = state and state.seal
+	if seal and seal.lit then
+		local value = hook(player, "traitRuneSeal")
+		mult += (if pvp then Traits.pvpValue(value, ItemTraits.pvpByHook.traitRuneSeal) else value) / 100
+	end
+	-- S65 (STATY 3): Frostbite on targets this player's ice slowed or froze.
+	local frost = StatusEffectService.SourceValue(targetEntity, "frostbite", player)
+	if frost > 0 then
+		mult += (if pvp then frost * Combat.pvp.frostbite else frost) / 100
+	end
 	return mult
 end
 
@@ -573,6 +621,8 @@ local function applyTraitEffect(
 			maxStacks = spec.maxStacks,
 			skillId = EffectStack.ITEM,
 			healCut = if pvp and grown > 0 then spec.healCut else nil,
+			-- S65 (ROZWOJ 7.2): a refresh adds the unpaid rest, at most maxStacks sums of one hit.
+			accumulate = true,
 		})
 		if grown > 0 and spec.attackSlow then
 			StatusEffectService.Apply(target, "attackSlow", {
@@ -691,6 +741,32 @@ end
 
 -- Defined after DealDamage (it calls it); the PvP branch of DealDamage calls it too.
 local tryCounter: (defender: Player, attackerEntity: any, pvp: boolean) -> ()
+
+-- S65 (STATY 5): Saving Blow: `amount` x pct % heals the most wounded ally within the radius (heal multipliers of
+-- Context.healFrom), or the bearer like lifesteal: no multipliers, only the room left under the lifesteal cap.
+local function savingBlow(player: Player, selfEntity: any, attacker: Damage.Attacker, amount: number, pvp: boolean)
+	local value = hook(player, "traitSavingBlow")
+	local position = selfEntity and EntityService.Position(selfEntity)
+	if value <= 0 or not position then
+		return
+	end
+	local pct = if pvp then Traits.pvpValue(value, ItemTraits.pvpByHook.traitSavingBlow) else value
+	local ally = Context.mostWounded(player, position, traitParam("savingBlow", "radius"), nil)
+	if not ally then
+		return
+	end
+	if ally ~= player then
+		Context.healFrom(player, ally, amount * pct / 100)
+		return
+	end
+	-- The same lifesteal Damage.computeDamage used for this hit (halved against players, S63).
+	local lifesteal = (attacker.lifesteal or 0) * (if pvp then Combat.pvp.lifesteal else 1)
+	local share = Traits.savingSelfShare(pct, lifesteal)
+	local healed = ResourceService.Heal(player, math.floor(amount * share / 100))
+	if healed > 0 then
+		queueFx(position, { k = "heal", e = selfEntity.id, s = selfEntity.id, a = math.floor(healed) })
+	end
+end
 
 function CombatService.DealDamage(
 	player: Player,
@@ -860,6 +936,9 @@ function CombatService.DealDamage(
 			)
 		end
 	end
+	if not result.dodged and result.amount > 0 and not (options and options.noProc) then
+		savingBlow(player, selfEntity, attacker, result.amount, targetEntity.kind == "player")
+	end
 	-- S64 (STATY 6, 8): a regular PvP hit may be countered (never a counter, second hit or splash: noProc).
 	if
 		pvpTarget
@@ -913,6 +992,164 @@ local function reject(player: Player, state: Attacker, now: number, reason: stri
 	end
 	state.rejectedAt = now
 	Net.Fire(player, "AttackRejected", reason)
+end
+
+-- True while a monster target lives (players: DealDamage checks them).
+local function targetAlive(target: any): boolean
+	return target.kind ~= "monster" or (target.monster ~= nil and target.monster:IsAlive())
+end
+
+-- Base speed of the main weapon (nil = unarmed), S54 derived stats.
+local function weaponSpeed(player: Player): number?
+	local weapon = PlayerStateService.Get(player, { "derived", "weapon" })
+	return if type(weapon) == "table" and type(weapon.speed) == "number" then weapon.speed else nil
+end
+
+-- S65 (STATY 5): Run Through: the nearest enemy in the band behind the target takes value % of the blow as a
+-- secondary basic hit (basicDmg counts, no on-hit effects); players only when attackable.
+local function runThrough(player: Player, target: any, params: Damage.Params, delivery: "melee" | "ranged")
+	local value = hook(player, "traitRunThrough")
+	local myRoot = rootOf(player.Character)
+	local at = EntityService.Position(target)
+	if value <= 0 or not myRoot or not at then
+		return
+	end
+	local width, depth = traitParam("runThrough", "width"), traitParam("runThrough", "depth")
+	local radius = entityRadius(target)
+	local reach = radius + depth + width
+	local victims: { any } = {}
+	local spots: { Traits.Spot } = {}
+	local function consider(entity: any)
+		local p = EntityService.Position(entity)
+		if p then
+			table.insert(victims, entity)
+			table.insert(spots, { x = p.X, z = p.Z })
+		end
+	end
+	for _, entity in EntityService.QueryMonsters(at, reach) do
+		if entity ~= target and entity.monster and entity.monster:IsAlive() then
+			consider(entity)
+		end
+	end
+	for _, entity in EntityService.QueryPlayers(at, reach) do
+		local other = entity.player
+		if
+			entity ~= target
+			and other
+			and other ~= player
+			and playerAlive(other)
+			and PvpService.CanAttack(player, other)
+		then
+			consider(entity)
+		end
+	end
+	local me = myRoot.Position
+	local index = Traits.behind({ x = me.X, z = me.Z }, { x = at.X, z = at.Z }, radius, spots, width, depth)
+	if not index then
+		return
+	end
+	local victim = victims[index]
+	queueFx(at, { k = "trait", v = "runThrough", s = target.id, t = victim.id })
+	CombatService.DealDamage(player, victim, params, nil, {
+		basic = true,
+		noProc = true,
+		consumeShot = false,
+		multiplier = value / 100,
+		delivery = delivery,
+	})
+end
+
+-- S65 (STATY 5): Elemental Spark: a chance (capped like on-hit effects) to wake the weapon's element on a basic hit.
+local function spark(
+	player: Player,
+	target: any,
+	params: Damage.Params,
+	result: Damage.Result,
+	delivery: "melee" | "ranged"
+)
+	local chance = Traits.chance(hook(player, "traitSpark"), 0, 1)
+	if not params.element or not roll(chance) then
+		return
+	end
+	Elements.apply(elementServices, {
+		player = player,
+		element = params.element,
+		target = target,
+		hit = result.dotBase or result.amount,
+		spec = sparkSpec,
+		skillId = EffectStack.ITEM,
+		accumulate = true,
+		players = true,
+		jump = function(other: any, pct: number)
+			CombatService.DealDamage(player, other, params, nil, {
+				basic = true,
+				noProc = true,
+				consumeShot = false,
+				multiplier = pct / 100,
+				delivery = delivery,
+			})
+		end,
+		fx = function(from: any, to: any)
+			queueFx(EntityService.Position(from), { k = "trait", v = "arc", s = from.id, t = to.id })
+		end,
+	})
+end
+
+-- S65 (STATY 5): Full Draw: an offensive skill or a trap readies the next basic attack (a new skill refreshes it).
+function CombatService.PrimeFullDraw(player: Player)
+	local value = hook(player, "traitFullDraw")
+	local entity = EntityService.GetPlayerEntity(player)
+	if value <= 0 or not entity then
+		return
+	end
+	StatusEffectService.Apply(
+		entity,
+		"nextBasic",
+		{ duration = traitParam("fullDraw", "window"), value = value, source = player }
+	)
+end
+
+-- S65: shows (value) or hides (nil) the glowing seal marker "runeSeal" (icon, rune under the Mage).
+local function showSeal(player: Player, value: number?)
+	local entity = EntityService.GetPlayerEntity(player)
+	if not entity then
+		return
+	end
+	if value then
+		StatusEffectService.Apply(entity, "runeSeal", { duration = SEAL_MARKER, value = value, source = player })
+	else
+		StatusEffectService.Remove(entity, "runeSeal")
+	end
+end
+
+-- S65: the Runic Seal breaks (blink, knockback / pull, death); any other move beyond the step is caught by pollSeal.
+function CombatService.BreakSeal(player: Player)
+	local state = attackers[player]
+	local seal = state and state.seal
+	if not state or not seal then
+		return
+	end
+	state.seal = nil
+	if seal.lit then
+		showSeal(player, nil)
+	end
+end
+
+local function pollSeal(player: Player, now: number)
+	local value = hook(player, "traitRuneSeal")
+	local root = rootOf(player.Character)
+	if value <= 0 or not root or not playerAlive(player) then
+		CombatService.BreakSeal(player)
+		return
+	end
+	local state = attackerState(player)
+	local wasLit = state.seal ~= nil and (state.seal :: Traits.Seal).lit
+	local still, step = traitParam("runicSeal", "still"), traitParam("runicSeal", "step")
+	local seal = Traits.sealStep(state.seal, root.Position.X, root.Position.Z, now, still, step)
+	state.seal = seal
+	if seal.lit ~= wasLit then
+		showSeal(player, if seal.lit then value else nil)
+	end
 end
 
 local function tryBasicAttack(player: Player, state: Attacker, now: number)
@@ -976,16 +1213,43 @@ local function tryBasicAttack(player: Player, state: Attacker, now: number)
 	end
 	local double = hook(player, "doubleAttack")
 	local twice = double > 0 and rng:chance(double / 100)
+	-- S65 (STATY 5): Twin Cut counts every basic swing of a saber; the fifth one strikes again.
+	local twinValue = hook(player, "traitTwinCut")
+	local twin = false
+	if twinValue > 0 then
+		local every, reset = traitParam("twinCut", "every"), traitParam("twinCut", "reset")
+		state.twinCount, twin = Traits.twinCut(state.twinCount or 0, state.twinAt, now, every, reset)
+		state.twinAt = now
+	end
 	task.delay(delay, function()
-		if
-			not playerAlive(player) or (target.kind == "monster" and not (target.monster and target.monster:IsAlive()))
-		then
+		if not playerAlive(player) or not targetAlive(target) then
 			return
 		end
-		CombatService.DealDamage(player, target, params, nil, { basic = true, delivery = delivery })
-		if twice and (target.kind ~= "monster" or (target.monster and target.monster:IsAlive())) then
+		local options: DealOptions = { basic = true, delivery = delivery }
+		-- S65: Full Draw: the shot after an offensive skill, consumed by this attack even when it misses.
+		local draw = if selfEntity then StatusEffectService.Consume(selfEntity, "nextBasic") else nil
+		if draw and draw > 0 then
+			local traitPvp = if target.kind == "player" then ItemTraits.pvpByHook.traitFullDraw else nil
+			options.multiplier = 1 + Traits.drawBonus(draw, weaponSpeed(player), traitPvp) / 100
+		end
+		local result = CombatService.DealDamage(player, target, params, nil, options)
+		if twice and targetAlive(target) then
 			-- S63: the second hit keeps basicDmg but rolls no on-hit effects.
 			CombatService.DealDamage(player, target, params, nil, { basic = true, noProc = true, delivery = delivery })
+		end
+		if twin and targetAlive(target) then
+			-- S65: the extra cut of Twin Cut, also after a dodged main hit.
+			CombatService.DealDamage(player, target, params, nil, {
+				basic = true,
+				noProc = true,
+				consumeShot = false,
+				multiplier = twinValue / 100,
+				delivery = delivery,
+			})
+		end
+		if result and not result.dodged and result.amount > 0 then
+			runThrough(player, target, params, delivery)
+			spark(player, target, params, result, delivery)
 		end
 	end)
 end
@@ -1289,6 +1553,19 @@ function CombatService.Init(registry)
 		)
 	end)
 
+	elementServices = {
+		StatusEffect = StatusEffectService,
+		Entity = EntityService,
+		Combat = CombatService,
+		Pvp = PvpService,
+	}
+	-- S65: every knockback and pull breaks the Runic Seal of a moved player.
+	Push.OnMoved(function(entity: any)
+		if entity.kind == "player" and entity.player then
+			CombatService.BreakSeal(entity.player)
+		end
+	end)
+
 	MonsterService.SetCombatHandlers({
 		basicAttack = monsterBasicAttack,
 		telegraph = telegraph,
@@ -1358,6 +1635,7 @@ function CombatService.Start()
 	)
 
 	ResourceService.Died:Connect(function(player: Player)
+		CombatService.BreakSeal(player)
 		local state = attackers[player]
 		if state then
 			state.target = nil
@@ -1372,8 +1650,21 @@ function CombatService.Start()
 		incoming[player] = nil
 	end)
 
+	local sealPolled = 0
 	RunService.Heartbeat:Connect(function()
 		local now = os.clock()
+		-- S65: Runic Seal of every player (attacks below still run only for states with a target).
+		if now - sealPolled >= SEAL_POLL then
+			sealPolled = now
+			for _, player in Players:GetPlayers() do
+				local ok, err = pcall(function()
+					pollSeal(player, now)
+				end)
+				if not ok then
+					log:error("seal failed for %s: %s", player.Name, tostring(err))
+				end
+			end
+		end
 		for player, state in attackers do
 			if state.target then
 				local ok, err = pcall(function()

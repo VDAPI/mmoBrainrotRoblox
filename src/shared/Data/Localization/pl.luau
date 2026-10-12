@@ -875,6 +875,13 @@ return {
 	["trait.bonebreaker.line"] = "Trafiony zadaje {v}% mniej, {s} s",
 	["trait.harrying.line"] = "{v}%: cel {slow}% wolniejszy, {s} s",
 	["trait.concussion.line"] = "{v}%: ogłuszenie {s} s",
+	["trait.twinCut.line"] = "Co {every}. cios drugie cięcie {v}%",
+	["trait.runThrough.line"] = "Wróg za celem dostaje {v}%",
+	["trait.fullDraw.line"] = "Strzał po umiejętności +{v}% × szybk.",
+	["trait.elementalSpark.line"] = "{v}%: atak budzi żywioł broni",
+	["trait.elementalMight.line"] = "Efekty żywiołu +{v}%",
+	["trait.runicSeal.line"] = "Stoisz {still} s: obrażenia +{v}%",
+	["trait.savingBlow.line"] = "{v}% obrażeń leczy rannego",
 	["tooltip.value"] = "Wartość: {price} złota",
 	["tooltip.valueEach"] = "({price} za sztukę)",
 	["tooltip.buyPrice"] = "Cena: {price} złota",
@@ -1098,6 +1105,9 @@ return {
 	["effect.attackSlow"] = "Spowolnione ataki",
 	["effect.weaken"] = "Osłabienie",
 	["effect.burn"] = "Podpalenie",
+	["effect.nextBasic"] = "Napięta cięciwa",
+	["effect.runeSeal"] = "Świecąca runa",
+	["effect.frostbite"] = "Przemarznięcie",
 	["effect.withValue"] = "{name}: {value}%",
 
 	-- Skills window and casting (S05)

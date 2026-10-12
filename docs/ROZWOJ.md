@@ -1926,7 +1926,7 @@ rezerwa many +4 → 20%, nowa statystyka `manaReserve`, której regeneracja nie 
 | 4 · 26 | Wir Żywiołów (`destroyer_vortex`, skill → `elementalVortex`) | nowa |
 | 4 · 26 | Oko Cyklonu (`destroyer_eye`, modify `elementalVortex` `add.hits`) | +1 / 2 / 3 fale (10 → 13) |
 | 5 · 33 | Potęga Zniszczenia (`destroyer_might`, passive pct `magAtk`) | +2 / 4 / 6% |
-| 5 · 33 | Żywioł w Żyłach (`destroyer_veins`, passive, hak `elementRider`) | efekt żywiołu +10 / 20 / 30% (podpalenie 30 → 39%, spowolnienie 25 → 32,5%, łuk 40 → 52%) |
+| 5 · 33 | Żywioł w Żyłach (`destroyer_veins`, passive, hak `elementRider`) | efekt żywiołu +10 / 20 / 30% (podpalenie 30 → 39%, spowolnienie 2 → 2,6 s, łuk 40 → 52%) |
 | 5 · 33 | Zahartowanie (`destroyer_tempered`, dodatkowy, passive pct `maxHp`) | +4 / 8 / 12% |
 | 6 · 40 albo | Krucha Potęga (`destroyer_frail`, passive: `areaDamage`, pct `maxHp`) | +2 / 4 / 6% obrażeń, HP −4 / 8 / 12% |
 | 6 · 40 albo | Płaszcz Żywiołów (`destroyer_mantle`, passive, hak `vortexGuard`) | przy rzuceniu Wiru 4 / 8 / 12% własnej redukcji obrażeń |

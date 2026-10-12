@@ -875,6 +875,13 @@ return {
 	["trait.bonebreaker.line"] = "Struck foes deal {v}% less, {s} s",
 	["trait.harrying.line"] = "{v}%: target {slow}% slower, {s} s",
 	["trait.concussion.line"] = "{v}%: stun for {s} s",
+	["trait.twinCut.line"] = "Every {every}th hit strikes again for {v}%",
+	["trait.runThrough.line"] = "The enemy behind the target takes {v}%",
+	["trait.fullDraw.line"] = "Shot after a skill +{v}% × speed",
+	["trait.elementalSpark.line"] = "{v}%: attacks wake the weapon's element",
+	["trait.elementalMight.line"] = "Element effects +{v}%",
+	["trait.runicSeal.line"] = "Stand still {still} s: damage +{v}%",
+	["trait.savingBlow.line"] = "{v}% of damage heals the wounded",
 	["tooltip.value"] = "Value: {price} gold",
 	["tooltip.valueEach"] = "({price} each)",
 	["tooltip.buyPrice"] = "Price: {price} gold",
@@ -1098,6 +1105,9 @@ return {
 	["effect.attackSlow"] = "Slowed attacks",
 	["effect.weaken"] = "Weakened",
 	["effect.burn"] = "Burning",
+	["effect.nextBasic"] = "Taut bowstring",
+	["effect.runeSeal"] = "Glowing rune",
+	["effect.frostbite"] = "Frostbite",
 	["effect.withValue"] = "{name}: {value}%",
 
 	-- Skills window and casting (S05)

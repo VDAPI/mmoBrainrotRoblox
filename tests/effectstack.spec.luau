@@ -428,3 +428,77 @@ T.describe("Data: skill effect categories", function()
 		T.expect(#problems(flatParty) > 0).toBe(true)
 	end)
 end)
+
+T.describe("EffectStack: accumulate (S65, ROZWOJ 7.2, 14.4)", function()
+	T.it("counts the ticks a schedule still deals", function()
+		T.expect(EffectStack.ticksBetween(1, 4, 1)).toBe(3)
+		T.expect(EffectStack.ticksBetween(2, 4, 1)).toBe(2)
+		T.expect(EffectStack.ticksBetween(4, 4, 1)).toBe(0)
+		T.expect(EffectStack.ticksBetween(1, 2.5, 1)).toBe(2)
+		T.expect(EffectStack.ticksBetween(5, 4, 1)).toBe(0)
+	end)
+
+	T.it("starts a new schedule", function()
+		local tick, nextTick = EffectStack.accumulate(nil, { total = 100, duration = 4, now = 0, interval = 1 })
+		T.expect(tick).toBeNear(100 / 3, 0.01)
+		T.expect(nextTick).toBe(1)
+	end)
+
+	-- Ticks like StatusEffectService.tickEntity: the effect ends before a tick on its end, then one tick per call.
+	type Dot = { tickAmount: number, nextTick: number, expiresAt: number }
+	local function apply(dot: Dot?, total: number, duration: number, now: number, limit: number?): Dot
+		local running = if dot and dot.expiresAt > now then dot else nil
+		local tick, nextTick = EffectStack.accumulate(
+			running,
+			{ total = total, limit = limit, duration = duration, now = now, interval = 1 }
+		)
+		return { tickAmount = tick, nextTick = nextTick, expiresAt = now + duration }
+	end
+	local function run(dot: Dot, from: number, to: number): number
+		local dealt = 0
+		local t = from
+		while t <= to + 1e-9 do
+			if dot.expiresAt <= t then
+				break
+			end
+			if t >= dot.nextTick - 1e-9 then
+				dealt += dot.tickAmount
+				dot.nextTick += 1
+			end
+			t += 0.5
+		end
+		return dealt
+	end
+
+	T.it("a refresh adds the unpaid rest and keeps nextTick", function()
+		local dot = apply(nil, 100, 4, 0)
+		local dealt = run(dot, 0, 1)
+		dot = apply(dot, 100, 4, 1)
+		T.expect(dot.nextTick).toBe(2)
+		dealt += run(dot, 1.5, 10)
+		T.expect(dealt).toBeNear(200, 0.01)
+	end)
+
+	T.it("the limit caps the pending sum", function()
+		local dot: Dot? = nil
+		for _ = 1, 4 do
+			dot = apply(dot, 100, 4, 0, 3)
+		end
+		T.expect(run(dot :: Dot, 0, 10)).toBeNear(300, 0.01)
+	end)
+
+	T.it("a short burn refreshed before its tick", function()
+		local dot = apply(nil, 30, 2, 0)
+		dot = apply(dot, 30, 2, 0.5)
+		T.expect(dot.nextTick).toBe(1)
+		T.expect(run(dot, 0.5, 10)).toBeNear(60, 0.01)
+	end)
+
+	T.it("a due tick not dealt yet belongs to the rest", function()
+		local dot = apply(nil, 90, 4, 0)
+		-- at t = 1 the loop has not ticked yet: 3 ticks of 30 are unpaid
+		dot = apply(dot, 90, 4, 1)
+		T.expect(dot.nextTick).toBe(1)
+		T.expect(run(dot, 1, 10)).toBeNear(180, 0.01)
+	end)
+end)

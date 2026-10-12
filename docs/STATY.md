@@ -166,8 +166,10 @@ i pasek. Pole `tier = "regular" | "legendary" | "mythic"` w `BonusDef` zastępuj
   - Moc żywiołu i Iskra żywiołu: Żywioł w Żyłach Niszczyciela (`elementRider`, sumuje się z cechą);
   - Wstrząs: bez węzła; Sąd Ostateczny (`kaplan.md`) wysadza cel ogłuszony także przez sam Sąd, więc cep nic mu nie
     dodaje, a wartość Wstrząsu to opóźniony atak ogłuszonego potwora.
-- Przemarznięcie (lód): cel spowolniony przez lód z Twojej broni albo umiejętności dostaje od Ciebie +6% obrażeń (z
-  Kostura +10%), żeby broń lodowa miała wartość obrażeń jak ogień i błyskawice. `adaptiveEffect` wychodzi z
+- Przemarznięcie (lód): cel spowolniony albo zamrożony przez lód z Twojej broni albo umiejętności dostaje od Ciebie
+  +6% obrażeń (z Kostura +10%), żeby broń lodowa miała wartość obrażeń jak ogień i błyskawice. Działa tylko przy broni
+  lodowej (czyli u Maga: Różdżka, Kostur, Kostur Runiczny; baza `Data/Skills.FROSTBITE`, stały hak `frostbite`
+  Różdżki 6 i Kostura 10 przez `max`); Łowca (Pułapka Lodowa) broni z żywiołem nie ma, więc go nie daje (S65). `adaptiveEffect` wychodzi z
   `Skills/Context.luau` do wspólnej funkcji (np. `server/Skills/Elements.luau`), którą wołają umiejętności i
   `CombatService` przy ataku podstawowym (Iskra żywiołu). Iskra podaje jej własny czas podpalenia (2 s), więc
   umiejętności zostają przy 4 s. Drabina obrażeń w czasie: podpalenie 2 s (najmocniejsze tyknięcie), rana 4 s
@@ -255,7 +257,7 @@ bo w PvP ma połowę, we wspólnym `executionerCap`). Łowca z kołczanem losuje
   Nękanie, Wstrząs, Iskra żywiołu. Szansa przy zwykłym ataku w Ciebie (także zablokowanym i unikniętym, nigdy przy
   czerwonej strefie): Fechtunek, Zastawa. Każde trafienie: Niszczenie pancerza (stos), Łamanie kości (odświeża czas),
   Zbawczy cios. Rytm: Podwójne cięcie co 5. atak podstawowy (licznik w `CombatService`, zeruje się po 5 s bez ataku).
-  Każdy atak podstawowy: Przeszycie; następny po umiejętności ofensywnej: Naciąg. Stan gracza: Pieczęć runiczna (1,5 s
+  Każdy atak podstawowy: Przeszycie; następny po umiejętności ofensywnej albo pułapce: Naciąg (S65). Stan gracza: Pieczęć runiczna (1,5 s
   bez ruchu). Zabicie potwora: Żniwo.
 - **Które ciosy.** Atak podstawowy i umiejętność w jeden cel: pełna szansa. Umiejętność obszarowa: 1/3 szansy na każdy
   trafiony cel. Tylko atak podstawowy: Podwójne cięcie, Przeszycie, Naciąg, Iskra żywiołu. Nie wyzwalają efektów:
@@ -277,7 +279,8 @@ bo w PvP ma połowę, we wspólnym `executionerCap`). Łowca z kołczanem losuje
   (`ApplyOptions.accumulate`, `Logic/EffectStack.accumulate` z `mag.md`), a `nextTick` się nie przesuwa; dziś `Apply`
   kasuje resztę i przesuwa `nextTick` (1). Suma rany albo trucizny najwyżej 3 sumy jednego trafienia (3 stosy). Stosy
   mnożą nowo także `value` (Niszczenie pancerza; dziś `Apply` mnoży tylko `tickAmount`). Od S63 trwający efekt ze
-  stosami nie przesuwa `nextTick` (`EffectStack.restack`); dopisanie niezadanej reszty (`accumulate`) w S65. `StatusEffectService`
+  stosami nie przesuwa `nextTick` (`EffectStack.restack`); od S65 rana, trucizna i podpalenie Iskry dopisują
+  niezadaną resztę (`accumulate`), umiejętności jeszcze nie (S79). `StatusEffectService`
   wywołuje `publish()` (atrybut `Effects`, u potworów `RefreshSpeed`) tylko przy zmianie liczby stosów albo najwyżej
   raz na ok. 1 s, a nie przy samym odświeżeniu czasu pełnego stosu; inaczej boss bity młotami przez kilku graczy
   przesyła atrybut wiele razy na sekundę.
@@ -522,14 +525,14 @@ broni głównej, np. „z Łukiem Krótkim +39%”):
 | `Data/Items/Bases.luau`, `Generate.luau` | pole `trait` w definicji typu; `crossbow` `dmgMul` 1,45 → ok. 1,53 (`lowca.md` ryzyko 1: atak podstawowy Kuszy na sekundę 1,09 zamiast 1,15 Łuku, czyli ok. 5% mniej obrażeń Trapera) |
 | `Data/Bonuses.luau` | nowe linie, `tier`, `wiki`, linie z parametrem, `CLASS_STATS`, pule |
 | `Data/Families.luau` (nowy), `Data/Monsters.luau`, `Data/Bosses.luau` | `family`, `mresMul`, `dodge`, `defMul` |
-| `Data/Combat.luau`, `Data/BuffCategories.luau` | limity (przebicie 50, niszczenie 50 z częścią z przedmiotów 25 × siła, najwyżej 40, `blockCap = 25`, `riposteCap = 30`, `executionerCap` 60, odporności (limit ochron 30 leży w `Data/Stats` jak `dodge`), `vs_<klasa>`, `cdrCap = 20`), przerwa Wstrząsu 8 s i opóźnienie ataku po nim (0,5 × `attackInterval`), kategorie `enemyAttackSlow` (20%) i `enemyDamageDown` (15%), stałe cech (Podwójne cięcie co 5. i 5 s, Przeszycie: pas 4 st. szerokości do 4 st. za celem, Naciąg 4 s, Pieczęć 1,5 s i 1 st., Zbawczy cios 30 st.), mnożniki PvP |
+| `Data/Combat.luau`, `Data/BuffCategories.luau`, `Data/ItemTraits.luau` | stałe cech w `ItemTraits.params` (S65, nie w `Data/Combat`); limity (przebicie 50, niszczenie 50 z częścią z przedmiotów 25 × siła, najwyżej 40, `blockCap = 25`, `riposteCap = 30`, `executionerCap` 60, odporności (limit ochron 30 leży w `Data/Stats` jak `dodge`), `vs_<klasa>`, `cdrCap = 20`), przerwa Wstrząsu 8 s i opóźnienie ataku po nim (0,5 × `attackInterval`), kategorie `enemyAttackSlow` (20%) i `enemyDamageDown` (15%), stałe cech (Podwójne cięcie co 5. i 5 s, Przeszycie: pas 4 st. szerokości do 4 st. za celem, Naciąg 4 s, Pieczęć 1,5 s i 1 st., Zbawczy cios 30 st.), mnożniki PvP |
 | `Data/Skills/*.luau`, `Data/MonsterAbilities.luau` | pole `delivery = "melee" \| "ranged"` umiejętności graczy; rodzaj ciosu zdolności potworów (domyślnie żaden) |
 | `Data/Stats.luau`, `Logic/StatCalc.luau` | nowe statystyki z `finish()` i limitami |
 | `Logic/ItemRoll.luau` | ważone losowanie, `bonusPool` po `forClass ∩ def.classes`, warianty z kontekstu (rodzina potwora), `ItemRoll.trait(item)` z `baseMul` rzadkości także dla nazwanych; cecha-statystyka do `result.flat`, cecha z hakiem do `itemStats(item).hooks` (sumuje `EquipmentService.GetHooks`, czyta `CombatService.Hook`); przeliczenie `armorPen` → `pierce` w `itemStats` |
 | `Logic/Damage.luau` | przebicie po niszczeniu (`pancerz × (1 − armorBreak) × (1 − pierce/100)`), `critResist`, `params.isSkill`, ochrony |
 | `Logic/EffectStack.luau` (z global K) | `enemyArmor` i `enemyDamageDown`: najsilniejsza umiejętność plus najsilniejszy przedmiot, z limitem |
 | `Logic/Traits.luau` (nowy, czysty) | wybór wroga za celem dla Przeszycia (pas 4 st. szerokości i 4 st. długości od tylnej krawędzi celu, `entityRadius`, jak `line` w `insideArea`; wymiary po pomiarze grup w `FightSim`), licznik Podwójnego cięcia, stan Pieczęci, przerwa Wstrząsu, mnożniki PvP cech; testowany w `traits.spec` |
-| `server/Services/CombatService.luau`: trafienie | blok efektów po trafieniu (obok `manaOnHit` :513, pomijany przy `noProc`): rana, trucizna, niszczenie, `weaken`, Nękanie, Wstrząs (bez bossów i Elit II, obszar 1/3), Zbawczy cios (`ResourceService.Heal` z mnożnikami leczenia; leczenie noszącego w limicie wampiryzmu 15%); nowe `DealOptions.noProc` i `DealOptions.basic`; `offensiveMultiplier` (:264): hak `traitExecute` (połowa na graczach), `controlledDamage` (`SlowFactor < 1`), Przemarznięcie, Pieczęć; rodziny i klasy w mnożnikach |
+| `server/Services/CombatService.luau`: trafienie | blok efektów po trafieniu (obok `manaOnHit` :513, pomijany przy `noProc`): rana, trucizna, niszczenie, `weaken`, Nękanie, Wstrząs (bez bossów i Elit II, obszar 1/3), Zbawczy cios (sojusznik przez `Context.mostWounded` / `Context.healFrom` z mnożnikami leczenia; noszący jak wampiryzm, bez mnożników, w limicie 15%); nowe `DealOptions.noProc` i `DealOptions.basic`; `offensiveMultiplier` (:264): hak `traitExecute` (połowa na graczach), `controlledDamage` (`SlowFactor < 1`), Przemarznięcie, Pieczęć; rodziny i klasy w mnożnikach |
 | `server/Services/CombatService.luau`: atak podstawowy | `tryBasicAttack` (:538): licznik Podwójnego cięcia (drugie `DealDamage` z `multiplier = 0,4`, wzór `doubleAttack` :600-613), Przeszycie (`EntityService.QueryMonsters`, `PvpService.CanAttack`, `multiplier = 0,25`), zużycie `nextBasic` (Naciąg, premia × `weapon.speed` broni głównej), Iskra przez `Elements`; `attackerState` (:113): licznik, pozycja i czas bez ruchu, przerwy Wstrząsu na cel |
 | `server/Services/CombatService.luau`: obrona | `monsterHitsPlayer` (:617): hak `block` z `blockCap` (tylko `canDodge ~= false`, liczba „Zablokowano”, leczenie Zastawy), rzut na kontrę z `riposteCap` i `noProc` (:648-650; tylko przy `canDodge ~= false`, także po bloku i uniku, więc poza dzisiejszym warunkiem `taken > 0`; premia Fechtunku do obrażeń kontry; S64: haki `blockHeal`, `counterDamage`, `controlledDamage`, `traitExecute`,
 stałe `block` / `riposte` z `fixedHooks`, kontra tylko w zasięgu ataku podstawowego obrońcy), `amount × (1 − weaken)` napastnika, ochrony, `critResist`; gałąź PvP `DealDamage`: blok, kontra, `armorBreak` (3 stosy), `weaken` atakującego, połowy PvP; `reward` (:332-334): Żniwo przez hak `killHeal` (także za pomocników bossa, `monster.summoned`) |

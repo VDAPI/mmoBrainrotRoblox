@@ -32,6 +32,7 @@ return table.freeze({
 		-- S64 (STATY 8):
 		block = 0.5, -- block chance after blockCap: 2.5 % from the shield, at most 12.5 %
 		counter = 0.5, -- counter chance after riposteCap: 5 % from the sword, at most 15 %
+		frostbite = 0.5, -- S65 (STATY 8): Frostbite bonus vs players: +3 % (6 %), +5 % with the staff (10 %)
 	}),
 	-- S64 (STATY 3, 5, 6, 8): defensive and conditional item traits.
 	blockCap = 25, -- % block chance from every source (Parry trait, blockChance lines, Block / Shield Master nodes)

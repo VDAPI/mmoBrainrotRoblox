@@ -535,6 +535,10 @@ local function cast(player: Player, skillId: string, targetId: string?, aim: any
 		if behaviour.selfHeal then
 			ctx.heal(player, StatService.GetValue(player, "maxHp") * behaviour.selfHeal / 100)
 		end
+		-- S65 (STATY 5): Full Draw after an offensive skill or a trap (a trap is an attack too).
+		if offensive or skill.type == "trap" then
+			CombatService.PrimeFullDraw(player)
+		end
 	end
 
 	if skill.type == "channel" then
@@ -626,6 +630,8 @@ function SkillService.Init(registry)
 		WeaponElement = weaponElement,
 		WeaponSpeed = weaponSpeed,
 	}
+	-- S65: shared helpers of Skills/Context (most wounded ally, heal an ally) for CombatService's Saving Blow.
+	Context.bind(services)
 
 	StatService.RegisterModifierSource("passives", modifierSource)
 	CombatService.RegisterHookProvider(SkillService.PassiveHook)

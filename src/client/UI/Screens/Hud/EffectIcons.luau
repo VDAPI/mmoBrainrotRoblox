@@ -25,7 +25,10 @@ export type Props = {
 	Size: number?,
 }
 
-local GLYPHS: { [string]: { glyph: string, good: boolean } } = {
+-- lasting (S65): no seconds counter (markers that live until something breaks them).
+type Glyph = { glyph: string, good: boolean, lasting: boolean? }
+local UNKNOWN: Glyph = { glyph = "?", good = true }
+local GLYPHS: { [string]: Glyph } = {
 	stun = { glyph = "✶", good = false },
 	root = { glyph = "⛓", good = false },
 	slow = { glyph = "🐌", good = false },
@@ -50,6 +53,9 @@ local GLYPHS: { [string]: { glyph: string, good: boolean } } = {
 	misfortune = { glyph = "✗", good = false }, -- S61: misses regular attacks
 	attackSlow = { glyph = "⧗", good = false }, -- S63: slower attacks
 	weaken = { glyph = "⇓", good = false }, -- S63: deals less damage
+	nextBasic = { glyph = "➹", good = true }, -- S65: Full Draw, the next basic attack hits harder
+	runeSeal = { glyph = "◈", good = true, lasting = true }, -- S65: glowing Runic Seal
+	frostbite = { glyph = "❅", good = false }, -- S65: takes more damage from the source's ice
 }
 
 type Entry = EffectStack.Shown
@@ -86,7 +92,7 @@ local function EffectIcons(scope: Scope, props: Props): Instance
 				Padding = UDim.new(0, 4),
 			}),
 			scope:ForValues(entries, function(_use, s: Scope, entry: Entry): Instance
-				local info = GLYPHS[entry.kind] or { glyph = "?", good = true }
+				local info = GLYPHS[entry.kind] or UNKNOWN
 				local icon = s:New("Frame")({
 					Name = entry.kind,
 					Size = UDim2.fromOffset(size, size + 14),
@@ -112,8 +118,9 @@ local function EffectIcons(scope: Scope, props: Props): Instance
 							Position = UDim2.fromOffset(0, size),
 							Size = UDim2.fromOffset(size, 14),
 							BackgroundTransparency = 1,
-							Text = if entry.left >= 10
-								then tostring(math.floor(entry.left))
+							Text = if info.lasting
+								then ""
+								elseif entry.left >= 10 then tostring(math.floor(entry.left))
 								else string.format("%.1f", entry.left),
 							FontFace = Theme.Fonts.BodyBold,
 							TextSize = 12,

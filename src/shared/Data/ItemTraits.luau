@@ -32,7 +32,8 @@ export type TraitDef = {
 	params: { [string]: number }?, -- fixed numbers of the trait (chance %, s, studs); never scaled
 	fixedHooks: { [string]: number }?, -- S64: hooks added as is, never scaled (STATY 10: rarity and upgrades raise only the grown value)
 	pvp: number, -- multiplier against players (STATY 8): 1 like a line, 0.5 half, 0 none
-	live: boolean, -- false: no code yet (S64-S65); ItemRoll.trait returns nil, tooltip and wiki hide it
+	live: boolean, -- false: no code yet; ItemRoll.trait returns nil, tooltip and wiki hide it (all live since S65)
+	chanceCap: boolean?, -- S65: tooltip clamps {v} to Combat.onHitChanceCap (the grown value is a chance)
 	onHit: OnHit?, -- kind "effect" (S63)
 }
 
@@ -46,6 +47,7 @@ type Extra = {
 	fixedHooks: { [string]: number }?,
 	pvp: number,
 	live: boolean?,
+	chanceCap: boolean?,
 	onHit: OnHit?,
 }
 
@@ -70,13 +72,14 @@ local function trait(id: string, kind: TraitKind, category: string, value: numbe
 		fixedHooks = if extra.fixedHooks then table.freeze(extra.fixedHooks) else nil,
 		pvp = extra.pvp,
 		live = extra.live == true,
+		chanceCap = extra.chanceCap,
 		onHit = if extra.onHit then table.freeze(extra.onHit) else nil,
 	}
 	table.insert(LIST, def)
 	BY_ID[id] = def
 end
 
--- Hooks and params of traits that are not live are starting values (STATY 3); the session that makes a trait live may rename its hook or move a constant shared with path nodes to Data/Combat (STATY 13).
+-- All 24 traits are live since S65; numbers are starting values for S84 / S88.
 -- S64: the fixed chance of Swordplay and Parry is both the text placeholder {chance} and a fixed hook.
 local SWORDPLAY_CHANCE = 10
 local PARRY_CHANCE = 5
@@ -87,7 +90,14 @@ trait("swordplay", "hook", "counter", 25, {
 	pvp = 0.5,
 	live = true,
 })
-trait("twinCut", "hook", "rhythm", 40, { hook = "traitTwinCut", params = { every = 5, reset = 5 }, pvp = 1 })
+-- every: the n-th basic attack strikes again; reset: s without a basic attack that restart the count
+trait(
+	"twinCut",
+	"hook",
+	"rhythm",
+	40,
+	{ hook = "traitTwinCut", params = { every = 5, reset = 5 }, pvp = 1, live = true }
+)
 trait("reaping", "hook", "killHeal", 1, { hook = "killHeal", pvp = 0, live = true })
 trait("bonebreaker", "effect", "weaken", 6, {
 	hook = "traitWeaken",
@@ -128,7 +138,8 @@ trait(
 	"hook",
 	"pierceBehind",
 	25,
-	{ hook = "traitRunThrough", params = { width = 4, depth = 4 }, pvp = 1 }
+	-- width x depth studs of the band behind the target's back edge
+	{ hook = "traitRunThrough", params = { width = 4, depth = 4 }, pvp = 1, live = true }
 )
 trait("parry", "hook", "block", 0.5, {
 	hook = "blockHeal",
@@ -139,6 +150,7 @@ trait("parry", "hook", "block", 0.5, {
 })
 trait("harrying", "effect", "harass", 15, {
 	hook = "traitHarass",
+	chanceCap = true,
 	pvp = 1,
 	live = true,
 	onHit = { effect = "harass", duration = 2, slow = 20, attackSlow = 20 },
@@ -160,16 +172,57 @@ trait("toxicBarbs", "effect", "poison", 30, {
 trait("criticalForce", "stat", "critDamage", 25, { stat = "critDmg", pvp = 1, live = true })
 trait("easyPrey", "hook", "controlled", 10, { hook = "controlledDamage", pvp = 0.5, live = true })
 trait("bodkinBolt", "stat", "armorPierce", 20, { stat = "pierce", pvp = 1, live = true })
-trait("fullDraw", "hook", "nextBasic", 30, { hook = "traitFullDraw", params = { window = 4 }, pvp = 0.5 })
-trait("elementalSpark", "hook", "elementProc", 35, { hook = "traitSpark", pvp = 1 })
-trait("elementalMight", "hook", "elementPower", 30, { hook = "elementRider", pvp = 1 })
-trait("runicSeal", "hook", "standStill", 8, { hook = "traitRuneSeal", params = { still = 1.5, step = 1 }, pvp = 0.5 })
+-- window: s the drawn shot waits for the next basic attack (x main weapon speed)
+trait("fullDraw", "hook", "nextBasic", 30, { hook = "traitFullDraw", params = { window = 4 }, pvp = 0.5, live = true })
+-- Grown value = chance %, capped by Combat.onHitChanceCap; params: Logic/Traits.ElementSpec of the Spark.
+trait("elementalSpark", "hook", "elementProc", 35, {
+	hook = "traitSpark",
+	params = {
+		burnPct = 30,
+		burnDuration = 2,
+		slowPct = 20,
+		slowDuration = 2,
+		arcPct = 40,
+		sameTargetPct = 20,
+		arcRadius = 10,
+	},
+	-- fixed: Frostbite % with an ice weapon, replaces SkillData.FROSTBITE when higher (today the same 6; S88 may
+	-- raise it on its own, STATY 14)
+	fixedHooks = { frostbite = 6 },
+	chanceCap = true,
+	pvp = 1,
+	live = true,
+})
+trait("elementalMight", "hook", "elementPower", 30, {
+	hook = "elementRider",
+	-- fixed: Frostbite % with an ice weapon (instead of 6); riderSameTarget: a skill arc with no second enemy hits
+	-- the same target for arcPct x elementRider %
+	fixedHooks = { frostbite = 10, riderSameTarget = 1 },
+	pvp = 1,
+	live = true,
+})
+-- still: s without moving before the seal glows; step: studs a move may take without breaking it
+trait(
+	"runicSeal",
+	"hook",
+	"standStill",
+	8,
+	{ hook = "traitRuneSeal", params = { still = 1.5, step = 1 }, pvp = 0.5, live = true }
+)
 trait("learnedFormulae", "stat", "costReduce", 8, { stat = "costReduce", pvp = 1, live = true })
 trait("powerLens", "stat", "skillDamage", 6, { stat = "skillDmg", pvp = 1, live = true })
 trait("anointment", "stat", "healPower", 8, { stat = "healPower", pvp = 1, live = true })
-trait("savingBlow", "hook", "damageHeal", 4, { hook = "traitSavingBlow", params = { radius = 30 }, pvp = 0.5 })
+-- radius: studs to the most wounded ally
+trait(
+	"savingBlow",
+	"hook",
+	"damageHeal",
+	4,
+	{ hook = "traitSavingBlow", params = { radius = 30 }, pvp = 0.5, live = true }
+)
 trait("concussion", "effect", "shock", 6, {
 	hook = "traitShock",
+	chanceCap = true,
 	pvp = 1,
 	live = true,
 	onHit = { effect = "shock", duration = 0.5, gap = 8, notBoss = true, delayShare = 0.5 },

@@ -96,6 +96,8 @@ Movement.blink = function(ctx)
 	ctx.fx({ p = destination, from = from })
 	local lookAt = if ctx.skill.id == "disengage" then from else destination + direction.Unit
 	moveTo(ctx, destination, lookAt)
+	-- S65: a blink breaks the Runic Seal (any longer walk breaks it through CombatService's polling).
+	ctx.services.Combat.BreakSeal(ctx.player)
 	ctx.applyEffects(ctx.caster, "self")
 	-- S28 breakpoint: a slowing trap where the caster stood.
 	local trap = ctx.bp.trap

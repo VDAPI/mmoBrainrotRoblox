@@ -241,6 +241,37 @@ function EffectStack.value(entries: { Entry }, categoryId: string): number
 	return if cap then math.min(total, cap) else total
 end
 
+-- S65 (ROZWOJ 7.2, 14.4): damage over time refreshed with the unpaid rest ----------------------------------------
+
+export type Running = { tickAmount: number, nextTick: number, expiresAt: number }
+export type AccumulateSpec = { total: number, limit: number?, duration: number, now: number, interval: number }
+
+-- Ticks a schedule still deals: at nextTick, nextTick + interval, ... while < expiresAt (tickEntity removes
+-- the effect before a tick that falls on expiresAt).
+function EffectStack.ticksBetween(nextTick: number, expiresAt: number, interval: number): number
+	return math.max(0, math.ceil((expiresAt - nextTick) / interval - 1e-9))
+end
+
+-- S65 (ROZWOJ 7.2): refreshing a running DoT adds the unpaid rest to the new total; nextTick does not move.
+-- `limit`: the pending sum is at most limit x total (3 sums of one hit for item bleeds and poisons).
+-- Returns the new tickAmount and nextTick.
+function EffectStack.accumulate(old: Running?, spec: AccumulateSpec): (number, number)
+	local now, interval = spec.now, spec.interval
+	local expiresAt = now + spec.duration
+	if old == nil or old.expiresAt <= now then
+		local nextTick = now + interval
+		return spec.total / math.max(1, EffectStack.ticksBetween(nextTick, expiresAt, interval)), nextTick
+	end
+	-- A tick already due but not dealt yet belongs to the unpaid rest; nextTick keeps it.
+	local unpaid = old.tickAmount * EffectStack.ticksBetween(old.nextTick, old.expiresAt, interval)
+	local pending = unpaid + spec.total
+	if spec.limit then
+		pending = math.min(pending, spec.limit * spec.total)
+	end
+	local nextTick = old.nextTick
+	return pending / math.max(1, EffectStack.ticksBetween(nextTick, expiresAt, interval)), nextTick
+end
+
 -- Attribute "Effects" ----------------------------------------------------------------------------------------
 
 -- Kinds whose value is a percentage shown to the player (an absorb shield keeps its remaining points in value).
@@ -255,6 +286,9 @@ EffectStack.VALUE_KINDS = table.freeze({
 	misfortune = true, -- S61
 	attackSlow = true, -- S63
 	weaken = true, -- S63
+	nextBasic = true, -- S65
+	runeSeal = true, -- S65
+	frostbite = true, -- S65
 } :: { [string]: boolean })
 
 type Group = { kind: string, at: number, value: number? }

@@ -427,27 +427,6 @@ end)
 
 T.describe("Data: item traits and bonus tiers (S62)", function()
 	local OFFHAND_GROUPS = { weapon = true, shield = true, quiver = true, magicOffhand = true }
-	local LIVE = {
-		"criticalForce",
-		"bodkinBolt",
-		"learnedFormulae",
-		"powerLens",
-		"anointment",
-		"prosperity",
-		-- S63: on-hit effects
-		"rendingGash",
-		"toxicBarbs",
-		"sundering",
-		"bonebreaker",
-		"harrying",
-		"concussion",
-		-- S64: defensive and conditional
-		"swordplay",
-		"parry",
-		"reaping",
-		"beheading",
-		"easyPrey",
-	}
 
 	T.it("every weapon and off-hand base has a trait", function()
 		local owner: { [string]: string } = {}
@@ -462,7 +441,6 @@ T.describe("Data: item traits and bonus tiers (S62)", function()
 		end
 		T.expect(#ItemTraits.list).toBe(24)
 		local categories: { [string]: boolean } = {}
-		local live: { string } = {}
 		for _, def in ItemTraits.list do
 			T.expect({ def.id, owner[def.id] ~= nil }).toEqual({ def.id, true })
 			T.expect({ def.id, categories[def.category] }).toEqual({ def.id, nil })
@@ -476,14 +454,9 @@ T.describe("Data: item traits and bonus tiers (S62)", function()
 					.toEqual({ def.id, nil, true })
 			end
 			T.expect(def.pvp >= 0 and def.pvp <= 1 and def.value > 0).toBe(true)
-			if def.live then
-				table.insert(live, def.id)
-			end
+			-- S65: every trait works
+			T.expect({ def.id, def.live }).toEqual({ def.id, true })
 		end
-		table.sort(live)
-		local want = table.clone(LIVE)
-		table.sort(want)
-		T.expect(live).toEqual(want)
 		T.expect((Items.get("orb_50") :: any).trait).toBe("powerLens")
 		T.expect((Items.get("unique_vaelgrath_eye") :: any).trait).toBe("powerLens")
 	end)
@@ -550,9 +523,7 @@ T.describe("Data: item traits and bonus tiers (S62)", function()
 				local name = lang[def.nameKey]
 				T.expect({ def.nameKey, type(name) == "string" }).toEqual({ def.nameKey, true })
 				T.expect({ def.nameKey, name == string.match(name, "^%s*(.-)%s*$") }).toEqual({ def.nameKey, true })
-				if def.live then
-					T.expect({ def.lineKey, lang[def.lineKey] ~= nil }).toEqual({ def.lineKey, true })
-				end
+				T.expect({ def.lineKey, lang[def.lineKey] ~= nil }).toEqual({ def.lineKey, true })
 				local mine = words(name)
 				for _, other in others do
 					local clash = contains(mine, other.words) or contains(other.words, mine)
@@ -563,6 +534,141 @@ T.describe("Data: item traits and bonus tiers (S62)", function()
 						or string.sub(word, 1, #"głębok") == "głębok"
 					T.expect({ def.nameKey, word, bad }).toEqual({ def.nameKey, word, false })
 				end
+			end
+		end
+	end)
+
+	-- S65: a trait name is no inflected form of a skill, effect or node name in the same language (S68 audit).
+	T.it("trait names are no inflections of skill, effect or node names (S65)", function()
+		local LOWER: { [string]: string } = {
+			["Ą"] = "ą",
+			["Ć"] = "ć",
+			["Ę"] = "ę",
+			["Ł"] = "ł",
+			["Ń"] = "ń",
+			["Ó"] = "ó",
+			["Ś"] = "ś",
+			["Ź"] = "ź",
+			["Ż"] = "ż",
+		}
+		-- Known false alarms ("trait key|other key"), each with a DECYZJE line.
+		local ALLOWED: { [string]: boolean } = {}
+		local function chars(word: string): { string }
+			local out = {}
+			for _, code in utf8.codes(word) do
+				table.insert(out, utf8.char(code))
+			end
+			return out
+		end
+		local function words(text: string): { { string } }
+			local lower = string.lower(text)
+			for upper, small in LOWER do
+				lower = string.gsub(lower, upper, small)
+			end
+			local out = {}
+			for word in string.gmatch(lower, "[^%s%p]+") do
+				table.insert(out, chars(word))
+			end
+			return out
+		end
+		local function variant(a: { string }, b: { string }): boolean
+			local same = #a == #b
+			local prefix = 0
+			for i = 1, math.min(#a, #b) do
+				if a[i] ~= b[i] then
+					same = false
+					break
+				end
+				prefix = i
+			end
+			if same then
+				return true
+			end
+			local shorter = math.min(#a, #b)
+			return shorter >= 4 and prefix >= math.max(3, shorter - 2)
+		end
+		local function inflected(x: { { string } }, y: { { string } }): boolean
+			if #x == #y then
+				for i = 1, #x do
+					if not variant(x[i], y[i]) then
+						return false
+					end
+				end
+				return #x > 0
+			end
+			local short, long = if #x < #y then x else y, if #x < #y then y else x
+			if #short < 2 then
+				return false
+			end
+			for start = 1, #long - #short + 1 do
+				local ok = true
+				for i = 1, #short do
+					if not variant(short[i], long[start + i - 1]) then
+						ok = false
+						break
+					end
+				end
+				if ok then
+					return true
+				end
+			end
+			return false
+		end
+		T.expect(inflected(words("Podwójne cięcie"), words("Podwójny Strzał"))).toBe(false)
+		T.expect(inflected(words("Podwójne cięcie"), words("Podwójnego cięcia"))).toBe(true)
+		T.expect(inflected(words("Łuk"), words("łuk"))).toBe(true)
+		for _, lang in { pl, en } :: { any } do
+			local others: { { key: string, words: { { string } } } } = {}
+			for key, text in lang do
+				if string.match(key, "^skill%.[^%.]+%.name$") or string.match(key, "^effect%.[^%.]+$") then
+					table.insert(others, { key = key, words = words(text) })
+				end
+			end
+			for _, path in PathData.list do
+				for _, row in path.rows do
+					for _, n in row.nodes do
+						if n.nameKey and lang[n.nameKey] then
+							table.insert(others, { key = n.nameKey, words = words(lang[n.nameKey]) })
+						end
+					end
+				end
+			end
+			for _, def in ItemTraits.list do
+				local mine = words(lang[def.nameKey])
+				for _, other in others do
+					local clash = inflected(mine, other.words) and not ALLOWED[`{def.nameKey}|{other.key}`]
+					T.expect({ def.nameKey, other.key, clash }).toEqual({ def.nameKey, other.key, false })
+				end
+			end
+		end
+	end)
+
+	-- S65: every hook a trait adds is read by code (or the trait is an on-hit effect CombatService rolls).
+	T.it("every trait hook has a reader in code (S65)", function()
+		local texts: { string } = {}
+		for _, dir in { "src/server", "src/shared/Logic" } do
+			for _, path in sources(dir, {}) do
+				table.insert(texts, fs.readFile(path))
+			end
+		end
+		local function used(hookId: string): boolean
+			local literal = `"{hookId}"`
+			for _, text in texts do
+				if string.find(text, literal, 1, true) then
+					return true
+				end
+			end
+			return false
+		end
+		local combat = fs.readFile("src/server/Services/CombatService.luau")
+		for _, def in ItemTraits.list do
+			if def.kind ~= "stat" then
+				local ok = used(def.hook :: string)
+					or (def.onHit ~= nil and string.find(combat, "onHitList", 1, true) ~= nil)
+				T.expect({ def.id, def.hook, ok }).toEqual({ def.id, def.hook, true })
+			end
+			for hookId in def.fixedHooks or {} do
+				T.expect({ def.id, hookId, used(hookId) }).toEqual({ def.id, hookId, true })
 			end
 		end
 	end)

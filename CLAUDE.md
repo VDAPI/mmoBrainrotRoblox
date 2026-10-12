@@ -68,6 +68,9 @@ przedmiotów czyta STATY); odstępstwa idą do `docs/DECYZJE.md`, a kontrakt pop
   `trait.<id>.line` przez `TooltipModel.traitArgs`), rozgałęzienie w `CombatService.applyTraitEffect`, efekty z
   `skillId = "item"` i stosami przez `EffectStack.restack`; ciosy wtórne z `DealOptions.noProc`; pomocniki i testy w
   `Logic/Traits` / `tests/traits.spec`.
+- **Efekt żywiołu broni** (S65): przepis w `Logic/Traits.elementPlan`, wykonanie w `server/Skills/Elements.luau`
+  (umiejętności z `Data/Skills.ADAPTIVE`, Iskra z `ItemTraits.params`), wzmocnienie hakiem `elementRider`; leczenie
+  sojusznika spoza umiejętności przez `Context.healFrom`, wybór rannego przez `Context.mostWounded`.
 - **Prawdziwy model broni**: wpis w `WeaponLooks.assets` + MeshPart w `Assets.Weapons` (`docs/ASSETS.md` → „Broń”).
 - **Portal / przejście między mapami** (S25): wpis w `Data/Portals.luau` (layout stawia go przez
   `Prefabs.portalFrom(ctx, id)`); trasa (`Logic/MapRoute`), mapa świata i prowadzenie widzą go same.

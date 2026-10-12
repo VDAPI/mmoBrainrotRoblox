@@ -14,6 +14,13 @@ local Push = {}
 local SECONDS = 0.22
 local moving: { [Model]: boolean } = {}
 
+-- S65: told after every knockback / pull of an entity (CombatService breaks the Runic Seal of a moved player).
+local movedHandlers: { (entity: any) -> () } = {}
+
+function Push.OnMoved(handler: (entity: any) -> ())
+	table.insert(movedHandlers, handler)
+end
+
 local function blockers(): RaycastParams
 	local params = RaycastParams.new()
 	params.FilterType = Enum.RaycastFilterType.Exclude
@@ -81,6 +88,9 @@ local function slide(entity: any, model: Model, root: BasePart, goal: Vector3)
 			end
 			if entity.kind == "monster" and entity.monster and entity.monster.humanoid then
 				entity.monster.humanoid:MoveTo(root.Position)
+			end
+			for _, handler in movedHandlers do
+				handler(entity)
 			end
 		end
 	end)

@@ -3572,3 +3572,34 @@ Localization/en}`, `Logic/{Traits,Damage,Skills,ItemRoll,StatCalc,DamageText,Fig
 SkillService}`, `Skills/Context`, `Entities/Boss`, `Controllers/CombatFxController`, `UI/{SkillInfo,Screens/Hud/SkillBar,
 Screens/SkillsWindow/Details}`, `tools/WikiData/Skills`, `tests/*`, dane wiki, `docs/{STATY,DECYZJE,SESJE,PROGRESS}.md`,
 `CLAUDE.md`.
+
+### S65: Przedmioty 4: cechy rytmu i stanu gracza
+
+- Siedem cech żywych (wszystkie 24 działają): Podwójne cięcie (`saber1h`, co 5. atak podstawowy drugie cięcie 40%,
+  licznik zeruje się po 5 s), Przeszycie (`spear2h`, najbliższy wróg w pasie 4 × 4 st. za celem 25%), Naciąg
+  (`quiver`, `nextBasic` po umiejętności ofensywnej / pułapce: +30% × szybkość broni), Iskra żywiołu (`wand`, 35%,
+  limit 40), Moc żywiołu (`staff`, `elementRider` 30, Przemarznięcie 10, `riderSameTarget`), Pieczęć runiczna
+  (`runestaff`, 1,5 s bez ruchu: +8%), Zbawczy cios (`holystaff`, 4% obrażeń leczy najbardziej rannego).
+- `Data/Skills.ADAPTIVE` i `FROSTBITE`, `Data/Combat.pvp.frostbite`, `ItemTraits.params` / `fixedHooks` / `chanceCap`.
+- `Logic/Traits`: `twinCut`, `behind`, `sealStep`, `drawBonus`, `savingSelfShare`, `elementPlan`; `Logic/EffectStack`:
+  `ticksBetween`, `accumulate`. `StatusEffectService`: `ApplyOptions.accumulate`, rodzaje `nextBasic`, `runeSeal`,
+  `frostbite`, `SourceValue`.
+- Nowy `server/Skills/Elements.luau` (żywioł broni umiejętności adaptacyjnych i Iskry, Przemarznięcie `chill`);
+  `adaptiveEffect` usunięte z `Skills/Context`, które ma wspólne `bind`, `hpFraction`, `alliesInCircle`, `mostWounded`,
+  `healFrom` (`ctx.*` delegują). Lód umiejętności przy lodowej broni trwa dłużej o `elementRider` i daje Przemarznięcie.
+- `CombatService`: cechy w `tryBasicAttack` (`runThrough`, `spark`), `PrimeFullDraw`, `BreakSeal`, odpytywanie Pieczęci,
+  Pieczęć i Przemarznięcie w `offensiveMultiplier`, `savingBlow`, `accumulate` ran i trucizn z przedmiotów.
+  `SkillService` (`Context.bind`, Naciąg), `Movement.blink` i `Push.OnMoved` gaszą Pieczęć.
+- Klient: `Library.lineBeam`, `Library.sealRune` (runa w `EffectsController`), gałąź `k = "trait"` w
+  `CombatFxController`, ikony `nextBasic`, `runeSeal` (bez licznika), `frostbite`. Teksty linii i efektów PL/EN.
+- Testy: `traits`, `effectstack` (accumulate, ROZWOJ 14.4), `items`, `data` (24 żywe cechy, odmiany nazw, haki w kodzie),
+  `localization` (`lineKey`). Wiki: `npm run data` (Node był): `items.json`, `mechanics.json`, `meta.json`,
+  `docs/PRZEDMIOTY.md`.
+- Przekazanie: S68 `Traits.drawBonus` w opisie kołczanu, S69 `Context.mostWounded` / `healFrom`, S79 `accumulate` i
+  `elementRider` dla pól, S81 węzeł `elementRider`, S84 lustro cech rytmu.
+
+Pliki: `Data/{Combat,ItemTraits,Skills/init,Localization/pl,Localization/en}`, `Logic/{Traits,EffectStack,
+TooltipModel}`, `Services/{CombatService,StatusEffectService,SkillService}`, `Skills/{Elements,Context,Push,
+Types/Movement}`, `Controllers/{CombatFxController,EffectsController}`, `Vfx/Library`, `UI/Screens/Hud/EffectIcons`,
+`tests/{traits,effectstack,items,data,localization}.spec`, dane wiki, `docs/{STATY,ROZWOJ,DECYZJE,SESJE,PROGRESS}.md`,
+`CLAUDE.md`.

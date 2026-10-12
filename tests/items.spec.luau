@@ -561,16 +561,9 @@ T.describe("S62 traits and weighted pools", function()
 		T.expect(Bonuses.classStats.resourceOnHit).toBeNil()
 	end)
 
-	T.it("traits without code stay hidden", function()
+	-- S65: every trait is live, so no base hides its trait any more.
+	T.it("weapons carry their trait, armour none", function()
 		T.expect((Items.get("axe1h_20") :: any).trait).toBe("reaping")
-		for _, base in Items.bases.list do
-			local traitDef = ItemTraits.get(base.trait)
-			if traitDef and not traitDef.live then
-				local item = plain(`{base.type}_20`, Rarities.COMMON)
-				T.expect(ItemRoll.trait(item)).toBeNil()
-				T.expect(ItemRoll.itemStats(item).hooks[traitDef.hook :: string]).toBeNil()
-			end
-		end
 		T.expect(ItemRoll.trait(plain("armor_heavy_10", Rarities.COMMON))).toBeNil()
 	end)
 
@@ -659,6 +652,69 @@ T.describe("S64 defensive and conditional traits, new lines", function()
 			T.expect({ id, byHook[id] }).toEqual({ id, 0.5 })
 		end
 		T.expect(byHook.killHeal).toBe(0)
+	end)
+end)
+
+T.describe("S65 rhythm and player-state traits", function()
+	local function plain(defId: string, rarity: number, up: number?): any
+		return {
+			uid = uid(),
+			id = defId,
+			rarity = rarity,
+			ilvl = (Items.get(defId) :: any).level,
+			bonuses = {},
+			up = up or 0,
+			bound = false,
+			n = 1,
+			rv = Rarities.RV,
+		}
+	end
+
+	local GROWN = {
+		{ "saber1h_50", "traitTwinCut", 40 },
+		{ "spear2h_50", "traitRunThrough", 25 },
+		{ "quiver_50", "traitFullDraw", 30 },
+		{ "wand_50", "traitSpark", 35 },
+		{ "staff_50", "elementRider", 30 },
+		{ "runestaff_50", "traitRuneSeal", 8 },
+		{ "holystaff_50", "traitSavingBlow", 4 },
+	}
+	local FIXED = {
+		{ "wand_50", "frostbite", 6 },
+		{ "staff_50", "frostbite", 10 },
+		{ "staff_50", "riderSameTarget", 1 },
+	}
+
+	T.it("Common +0 hooks and fixed hooks", function()
+		for _, row in GROWN do
+			local hooks = ItemRoll.itemStats(plain(row[1], Rarities.COMMON)).hooks
+			T.expect({ row[1], row[2], hooks[row[2]] }).toEqual({ row[1], row[2], row[3] })
+		end
+		for _, row in FIXED do
+			local hooks = ItemRoll.itemStats(plain(row[1], Rarities.COMMON)).hooks
+			T.expect({ row[1], row[2], hooks[row[2]] }).toEqual({ row[1], row[2], row[3] })
+		end
+	end)
+
+	T.it("Mythic +9 grows the trait value, never the fixed hooks", function()
+		for _, row in GROWN do
+			local hooks = ItemRoll.itemStats(plain(row[1], Rarities.MYTHIC, 9)).hooks
+			T.expect(hooks[row[2]] / row[3]).toBeNear(1.88, 0.02)
+		end
+		for _, row in FIXED do
+			local hooks = ItemRoll.itemStats(plain(row[1], Rarities.MYTHIC, 9)).hooks
+			T.expect({ row[1], row[2], hooks[row[2]] }).toEqual({ row[1], row[2], row[3] })
+		end
+	end)
+
+	T.it("an old wand gets Elemental Spark without a migration", function()
+		local wand = plain("wand_50", Rarities.COMMON)
+		wand.rv = 2
+		Rarities.upgradeItem(wand, Items.get(wand.id))
+		local stats = ItemRoll.itemStats(wand)
+		T.expect((stats.trait :: any).id).toBe("elementalSpark")
+		T.expect(stats.hooks.traitSpark).toBe(35)
+		T.expect(stats.hooks.frostbite).toBe(6)
 	end)
 
 	T.it("new lines sit in their pools", function()

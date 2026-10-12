@@ -33,6 +33,7 @@ local Sounds = require(script.Parent.Parent.UI.Sounds)
 local State = require(script.Parent.Parent.UI.State)
 local Text = require(script.Parent.Parent.UI.Text)
 local Theme = require(script.Parent.Parent.UI.Theme)
+local Library = require(script.Parent.Parent.Vfx.Library)
 
 local CombatFxController = {
 	Name = "CombatFxController",
@@ -999,6 +1000,30 @@ local function onHeal(event: { [string]: any })
 	showNumber(model, event.e, result, false)
 end
 
+-- S65: flashes of item traits: "arc" (Elemental Spark jump) and "runThrough" (Run Through streak), s -> t.
+local RUN_THROUGH_COLOR = Color3.fromHex("#E8E4D8")
+
+local function modelCentre(model: Model): Vector3?
+	local root = model:FindFirstChild("HumanoidRootPart") :: BasePart?
+	return if root then root.Position else nil
+end
+
+local function traitFx(event: { [string]: any })
+	local from = findModel(event.s)
+	local to = findModel(event.t)
+	local a = from and modelCentre(from)
+	local b = to and modelCentre(to)
+	if not a or not b then
+		return
+	end
+	local simple = State.Get({ "account", "settings", "quality" }) == "low"
+	if event.v == "arc" then
+		Library.lightning(a, b, ELEMENT_COLORS.lightning, 0.3, simple)
+	elseif event.v == "runThrough" then
+		Library.lineBeam(a, b, RUN_THROUGH_COLOR, simple)
+	end
+end
+
 local function handle(event: { [string]: any })
 	local kind = event.k
 	if kind == "dmg" then
@@ -1023,6 +1048,8 @@ local function handle(event: { [string]: any })
 				Sounds.play("hit")
 			end
 		end
+	elseif kind == "trait" then
+		traitFx(event)
 	elseif kind == "tele" then
 		telegraph(event)
 		local caster = findModel(event.e)

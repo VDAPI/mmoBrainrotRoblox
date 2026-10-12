@@ -6,6 +6,7 @@
 
 local BuffCategories = require("../Data/BuffCategories")
 local Combat = require("../Data/Combat")
+local Stats = require("../Data/Stats")
 
 local Traits = {}
 
@@ -114,6 +115,126 @@ function Traits.resourceOnHit(linePct: number, maxResource: number, last: number
 		return 0
 	end
 	return math.max(0, maxResource) * math.min(linePct, Combat.resourceOnHitCap) / 100
+end
+
+-- Rhythm and player state traits (S65, STATY 5) ----------------------------------------------------------------
+
+export type Spot = { x: number, z: number }
+export type Seal = { x: number, z: number, since: number, lit: boolean }
+export type ElementSpec = {
+	burnPct: number,
+	burnDuration: number,
+	exactTicks: boolean?, -- exactTicks: Traits.dotTick (items); nil: hit x pct / duration (skills, as before S65)
+	slowPct: number,
+	slowDuration: number,
+	arcPct: number,
+	arcRadius: number,
+	sameTargetPct: number?, -- sameTargetPct: arc on the same target when nobody is near (Spark)
+}
+export type ElementPlan = {
+	kind: "burn" | "slow" | "arc",
+	pct: number, -- burn: % of the hit in total; slow: slow %; arc: % of the hit for the jump
+	duration: number, -- burn / slow seconds (0 for arcs)
+	tick: number?, -- burn: damage per tick
+	sameTarget: number, -- arc with no second enemy: % of the hit on the same target, 0 = nothing
+}
+
+-- Twin Cut: counts basic attacks; the `every`-th one strikes again. A pause longer than `reset` s (or no previous
+-- attack) restarts the count. Returns the new count and whether this attack is the extra cut.
+function Traits.twinCut(count: number, last: number?, now: number, every: number, reset: number): (number, boolean)
+	local current = if last == nil or now - last > reset then 0 else count
+	current += 1
+	if current >= every then
+		return 0, true
+	end
+	return current, false
+end
+
+-- Run Through: index of the candidate closest behind the target in a band `width` wide reaching `depth` studs past
+-- the target's back edge (flat, along attacker -> target); lower index on a tie. nil: none, or no direction.
+function Traits.behind(
+	attacker: Spot,
+	target: Spot,
+	targetRadius: number,
+	candidates: { Spot },
+	width: number,
+	depth: number
+): number?
+	local dx, dz = target.x - attacker.x, target.z - attacker.z
+	local length = math.sqrt(dx * dx + dz * dz)
+	if length < 0.5 then
+		return nil
+	end
+	dx, dz = dx / length, dz / length
+	local best: number? = nil
+	local bestAlong = math.huge
+	for i, c in candidates do
+		local ox, oz = c.x - target.x, c.z - target.z
+		local along = ox * dx + oz * dz
+		local side = math.abs(ox * dz - oz * dx)
+		if along > 0 and along <= targetRadius + depth and side <= width / 2 and along < bestAlong then
+			best, bestAlong = i, along
+		end
+	end
+	return best
+end
+
+-- Runic Seal: the anchor stays while the player moves at most `step` studs (flat) from it and glows after `still` s;
+-- a longer move (or no state) sets a new, unlit anchor.
+function Traits.sealStep(state: Seal?, x: number, z: number, now: number, still: number, step: number): Seal
+	if state == nil or math.sqrt((x - state.x) ^ 2 + (z - state.z) ^ 2) > step then
+		return { x = x, z = z, since = now, lit = false }
+	end
+	return { x = state.x, z = state.z, since = state.since, lit = now - state.since >= still }
+end
+
+-- Full Draw: % bonus of the drawn shot, x the main weapon's base speed (unarmed speed without one). The only formula
+-- of the bonus (the tooltip detail of S68 uses it too).
+function Traits.drawBonus(value: number, weaponSpeed: number?, pvpMultiplier: number?): number
+	return Traits.pvpValue(value, pvpMultiplier) * (weaponSpeed or Stats.Formula.unarmed.speed)
+end
+
+-- Saving Blow on the bearer: the part of `pct` that fits under the lifesteal cap left by the bearer's lifesteal.
+function Traits.savingSelfShare(pct: number, lifesteal: number): number
+	local def = Stats.get("lifesteal")
+	local cap = if def and def.cap then def.cap else 0
+	return math.clamp(cap - math.clamp(lifesteal, 0, cap), 0, math.max(0, pct))
+end
+
+-- Weapon-element effect of a hit (adaptive skills, Elemental Spark), strengthened by `rider` % (elementRider):
+-- fire burns longer-lasting damage, ice slows longer, lightning arcs harder. `staffArc`: with no second enemy a
+-- skill arc hits the same target for arcPct x rider % (Elemental Might). nil for other elements.
+function Traits.elementPlan(
+	element: string?,
+	spec: ElementSpec,
+	hit: number,
+	rider: number,
+	dotBonus: number,
+	staffArc: boolean
+): ElementPlan?
+	local r = math.max(0, rider)
+	if element == "fire" then
+		local pct = spec.burnPct * (1 + r / 100)
+		local tick = if spec.exactTicks
+			then Traits.dotTick(hit, pct, spec.burnDuration, dotBonus)
+			else math.max(1, hit * pct / 100 / spec.burnDuration) * (1 + dotBonus / 100)
+		return { kind = "burn", pct = pct, duration = spec.burnDuration, tick = tick, sameTarget = 0 }
+	elseif element == "ice" then
+		return {
+			kind = "slow",
+			pct = spec.slowPct,
+			duration = spec.slowDuration * (1 + r / 100),
+			sameTarget = 0,
+		}
+	elseif element == "lightning" then
+		local sameTargetPct = spec.sameTargetPct
+		local sameTarget = if sameTargetPct
+			then sameTargetPct * (1 + r / 100)
+			elseif staffArc and r > 0 then spec.arcPct * r / 100
+			else 0
+		return { kind = "arc", pct = spec.arcPct * (1 + r / 100), duration = 0, sameTarget = sameTarget }
+	end
+	return nil
 end
 
 return Traits

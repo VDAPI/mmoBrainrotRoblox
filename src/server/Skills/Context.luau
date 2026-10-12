@@ -6,6 +6,8 @@
 -- splash) and `applyEffect` stacks bleeds; `lingering` and `trap` leave lasting areas.
 -- S54 (ROZWOJ 8): skill hits (`damage`) and attack-based DoTs (`attack`) x Skills.speedFactor of the weapon
 -- (`speedMul`); heals and shields from magic attack go through `healAtk` (x the heal level curve), no weapon factor.
+-- S65: the weapon-element effect of adaptive skills lives in Skills/Elements (numbers in Data/Skills.ADAPTIVE); the
+-- most wounded ally and healing an ally are module functions (Context.bind) CombatService shares (Saving Blow).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
@@ -13,6 +15,7 @@ local Workspace = game:GetService("Workspace")
 local Shared = ReplicatedStorage.Shared
 
 local Damage = require(Shared.Logic.Damage)
+local Elements = require(script.Parent.Elements)
 local Push = require(script.Parent.Push)
 local SkillData = require(Shared.Data.Skills)
 local Skills = require(Shared.Logic.Skills)
@@ -74,8 +77,102 @@ export type Ctx = {
 
 local Context = {}
 
+-- S65: the weapon-element recipe of adaptive skills (numbers in Data/Skills.ADAPTIVE).
+local ADAPTIVE_SPEC: Traits.ElementSpec = {
+	burnPct = SkillData.ADAPTIVE.burnPct,
+	burnDuration = SkillData.ADAPTIVE.burnDuration,
+	slowPct = SkillData.ADAPTIVE.slowPct,
+	slowDuration = SkillData.ADAPTIVE.slowDuration,
+	arcPct = SkillData.ADAPTIVE.arcPct,
+	arcRadius = SkillData.ADAPTIVE.arcRadius,
+}
+
 local function flat(v: Vector3): Vector3
 	return Vector3.new(v.X, 0, v.Z)
+end
+
+-- S65: services of the shared helpers below (SkillService.Init binds them).
+local bound: Services? = nil
+
+function Context.bind(services: Services)
+	bound = services
+end
+
+local function need(): Services
+	local services = bound
+	assert(services, "Skills/Context: Context.bind(services) was not called")
+	return services
+end
+
+-- Share of HP left (monsters and players), nil when unknown.
+function Context.hpFraction(entity: any): number?
+	local services = need()
+	if entity.kind == "monster" and entity.monster then
+		local monster = entity.monster
+		return monster.hp / math.max(1, monster.stats.maxHp)
+	elseif entity.kind == "player" and entity.player then
+		local hp = services.Resource.Get(entity.player)
+		local maxHp = services.Stat.GetValue(entity.player, "maxHp")
+		return if maxHp > 0 then hp / maxHp else nil
+	end
+	return nil
+end
+
+-- Living party members of `player` within `radius` (flat) of `center`; without a party the player alone.
+function Context.alliesInCircle(player: Player, center: Vector3, radius: number): { Player }
+	local services = need()
+	local Entity = services.Entity
+	local list = {}
+	for _, member in services.Party.Members(player) do
+		local entity = Entity.GetPlayerEntity(member)
+		local p = entity and Entity.Position(entity)
+		if p and flat(p - center).Magnitude <= radius and not services.Resource.IsDead(member) then
+			table.insert(list, member)
+		end
+	end
+	return list
+end
+
+-- The ally (the player included) with the lowest HP share below full within `radius`; nil when nobody is wounded.
+function Context.mostWounded(player: Player, center: Vector3, radius: number, except: Player?): Player?
+	local services = need()
+	local best, bestFraction = nil, 1
+	for _, ally in Context.alliesInCircle(player, center, radius) do
+		if ally ~= except then
+			local hp = services.Resource.Get(ally)
+			local maxHp = services.Stat.GetValue(ally, "maxHp")
+			local fraction = if maxHp > 0 then hp / maxHp else 1
+			if fraction < bestFraction then
+				best, bestFraction = ally, fraction
+			end
+		end
+	end
+	return best
+end
+
+-- `healer` heals `target` for `amount` with the heal bonus (passives), healPower (S62) and the PvP scale (S61); the
+-- heal source makes the fight summary and the heal cut (S63) work. Returns (HP restored, HP it tried to restore).
+function Context.healFrom(healer: Player, target: Player, amount: number): (number, number)
+	local services = need()
+	local Entity = services.Entity
+	local bonus = services.PassiveHook(healer, "healBonus")
+	local result = services.Stat.Get(healer)
+	local healPower = if result then result.values.healPower or 0 else 0
+	-- S61: heals on a player in PvP combat are weaker (Combat.pvp.heal).
+	local attempted = amount * (1 + bonus / 100) * (1 + healPower / 100) * services.Pvp.HealScale(target)
+	local healed = services.Resource.Heal(target, attempted, healer)
+	if healed > 0 then
+		local entity = Entity.GetPlayerEntity(target)
+		if entity then
+			-- S29: `s` (the healer) lets "mine and received" damage numbers show our heals on allies.
+			local caster = Entity.GetPlayerEntity(healer)
+			services.Combat.QueueFx(
+				Entity.Position(entity),
+				{ k = "heal", e = entity.id, s = caster and caster.id, a = math.floor(healed) }
+			)
+		end
+	end
+	return healed, attempted
 end
 
 local function inCone(origin: CFrame, position: Vector3, radius: number, angle: number): boolean
@@ -111,6 +208,7 @@ function Context.new(
 ): Ctx
 	local ctx: Ctx
 	local Entity = services.Entity
+	bound = bound or services
 	local behaviour: any = bp or {}
 
 	local function value(field: string): number
@@ -151,6 +249,7 @@ function Context.new(
 	end
 
 	local onHit: (entity: any, percent: number, result: Damage.Result, opts: { [string]: any }) -> ()
+	local hpFraction = Context.hpFraction
 
 	local function enemiesWhere(center: Vector3, reach: number, test: (position: Vector3) -> boolean): { any }
 		local found = {}
@@ -167,56 +266,6 @@ function Context.new(
 			end
 		end
 		return found
-	end
-
-	-- Extra effect of adaptive skills by weapon element (DESIGN §14.4): fire burns for 30 % of the hit over
-	-- 4 s, ice slows by 25 % for 2 s, lightning arcs to one enemy nearby for 40 %. S63: `amount` is the hit before
-	-- the PvP multiplier (Result.dotBase); StatusEffectService.Apply adds x0.6 once on players.
-	local function adaptiveEffect(entity: any, percent: number, amount: number)
-		if element == "fire" then
-			services.StatusEffect.Apply(entity, "burn", {
-				duration = 4,
-				value = 30,
-				source = player,
-				tickAmount = math.max(1, amount * 0.3 / 4) * (1 + services.Combat.DotBonus(player, "burn") / 100),
-				skillId = skill.id,
-			})
-		elseif element == "ice" then
-			services.StatusEffect.Apply(
-				entity,
-				"slow",
-				{ duration = 2, value = 25, source = player, skillId = skill.id, category = "enemySlow" }
-			)
-		elseif element == "lightning" then
-			local from = Entity.Position(entity)
-			if not from then
-				return
-			end
-			local best, bestDistance = nil, 10
-			for _, other in Entity.QueryMonsters(from, 10) do
-				local p = Entity.Position(other)
-				if other ~= entity and p and isEnemy(other) and (p - from).Magnitude <= bestDistance then
-					best, bestDistance = other, (p - from).Magnitude
-				end
-			end
-			if best then
-				ctx.fx({ v = "arc", path = { entity.id, best.id } })
-				ctx.damage(best, percent * 0.4, { noAdaptive = true, consumeShot = false })
-			end
-		end
-	end
-
-	-- Share of HP left (monsters and players), nil when unknown.
-	local function hpFraction(entity: any): number?
-		if entity.kind == "monster" and entity.monster then
-			local monster = entity.monster
-			return monster.hp / math.max(1, monster.stats.maxHp)
-		elseif entity.kind == "player" and entity.player then
-			local hp = services.Resource.Get(entity.player)
-			local maxHp = services.Stat.GetValue(entity.player, "maxHp")
-			return if maxHp > 0 then hp / maxHp else nil
-		end
-		return nil
 	end
 
 	-- On-hit breakpoint behaviours (S28). `opts.primary`: the cast's main target (stun near it, splash around it).
@@ -327,8 +376,23 @@ function Context.new(
 				-- S64 (STATY 6): splashes and pulses keep the skill's kind of blow (protection in PvP).
 				delivery = skill.delivery,
 			})
+			-- Weapon element of adaptive skills (DESIGN §14.4, S65 Skills/Elements). S63: the hit before the PvP
+			-- multiplier (Result.dotBase); StatusEffectService.Apply adds x0.6 once on players.
 			if skill.adaptive and result and result.amount > 0 and not opts.noAdaptive then
-				adaptiveEffect(entity, percent, result.dotBase or result.amount)
+				Elements.apply(services, {
+					player = player,
+					element = element,
+					target = entity,
+					hit = result.dotBase or result.amount,
+					spec = ADAPTIVE_SPEC,
+					skillId = skill.id,
+					jump = function(other: any, pct: number)
+						ctx.damage(other, percent * pct / 100, { noAdaptive = true, consumeShot = false })
+					end,
+					fx = function(from: any, to: any)
+						ctx.fx({ v = "arc", path = { from.id, to.id } })
+					end,
+				})
 			end
 			if result and not result.dodged and result.amount > 0 and not opts.plain then
 				onHit(entity, percent, result, opts)
@@ -336,25 +400,7 @@ function Context.new(
 			return result
 		end,
 		heal = function(target: Player, amount: number): (number, number)
-			local bonus = services.PassiveHook(player, "healBonus")
-			-- S61: heals on a player in PvP combat are weaker (Combat.pvp.heal).
-			local attempted = amount
-				* (1 + bonus / 100)
-				* (1 + (stats().healPower or 0) / 100)
-				* services.Pvp.HealScale(target)
-			local healed = services.Resource.Heal(target, attempted, player)
-			if healed > 0 then
-				local entity = Entity.GetPlayerEntity(target)
-				if entity then
-					-- S29: `s` (the healer) lets "mine and received" damage numbers show our heals on allies.
-					local caster = Entity.GetPlayerEntity(player)
-					services.Combat.QueueFx(
-						Entity.Position(entity),
-						{ k = "heal", e = entity.id, s = caster and caster.id, a = math.floor(healed) }
-					)
-				end
-			end
-			return healed, attempted
+			return Context.healFrom(player, target, amount)
 		end,
 		applyEffects = function(entity: any, side: "enemy" | "self" | "allies")
 			local skillEffects: { SkillData.SkillEffect } = skill.effects or {}
@@ -385,7 +431,15 @@ function Context.new(
 				end
 				statValues = resolved
 			end
-			services.StatusEffect.Apply(entity, effect.kind, {
+			-- S65 (STATY 3): with an ice weapon the player's ice control lasts longer (elementRider) and chills
+			-- (Frostbite) enemies; `element` is the weapon's for adaptive skills.
+			local chill = element == "ice"
+				and services.WeaponElement(player) == "ice"
+				and (effect.kind == "slow" or effect.kind == "freeze")
+			if chill then
+				duration *= Elements.power(services, player)
+			end
+			local applied = services.StatusEffect.Apply(entity, effect.kind, {
 				duration = duration,
 				value = effectValue,
 				source = player,
@@ -396,6 +450,9 @@ function Context.new(
 				skillId = skill.id,
 				category = effect.category,
 			})
+			if chill and applied and isEnemy(entity) then
+				Elements.chill(services, player, entity, duration, "ice")
+			end
 		end,
 		lingering = function(center: Vector3, percent: number)
 			local spec = behaviour.lingering
@@ -443,18 +500,7 @@ function Context.new(
 			end)
 		end,
 		wounded = function(center: Vector3, radius: number, except: Player?): Player?
-			local best, bestFraction = nil, 1
-			for _, ally in ctx.alliesInCircle(center, radius) do
-				if ally ~= except then
-					local hp = services.Resource.Get(ally)
-					local maxHp = services.Stat.GetValue(ally, "maxHp")
-					local fraction = if maxHp > 0 then hp / maxHp else 1
-					if fraction < bestFraction then
-						best, bestFraction = ally, fraction
-					end
-				end
-			end
-			return best
+			return Context.mostWounded(player, center, radius, except)
 		end,
 		enemiesInCircle = function(center: Vector3, radius: number): { any }
 			return enemiesWhere(center, radius, function(p)
@@ -472,15 +518,7 @@ function Context.new(
 			end)
 		end,
 		alliesInCircle = function(center: Vector3, radius: number): { Player }
-			local list = {}
-			for _, member in services.Party.Members(player) do
-				local entity = Entity.GetPlayerEntity(member)
-				local p = entity and Entity.Position(entity)
-				if p and flat(p - center).Magnitude <= radius and not services.Resource.IsDead(member) then
-					table.insert(list, member)
-				end
-			end
-			return list
+			return Context.alliesInCircle(player, center, radius)
 		end,
 		facing = function(): CFrame
 			local from = root.Position

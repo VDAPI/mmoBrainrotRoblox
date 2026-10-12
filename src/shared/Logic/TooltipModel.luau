@@ -23,6 +23,7 @@
 local Blessings = require("../Data/Blessings")
 local Bonuses = require("../Data/Bonuses")
 local Classes = require("../Data/Classes")
+local Combat = require("../Data/Combat")
 local Crafting = require("../Data/Crafting")
 local Elements = require("../Data/Elements")
 local Format = require("../Util/Format")
@@ -133,7 +134,8 @@ function TooltipModel.traitArgs(traitId: string, power: number, lang: string): {
 		args[key] = traitNumber(value, lang)
 	end
 	local grown = def.value * power
-	args.v = traitNumber(grown, lang)
+	-- S65: a grown chance shows at most the on-hit chance cap (Elemental Spark, Harrying, Concussion).
+	args.v = traitNumber(if def.chanceCap then math.min(grown, Combat.onHitChanceCap) else grown, lang)
 	-- S63: fixed numbers of an on-hit trait (Data/ItemTraits onHit), styled like {v}.
 	local onHit = def.onHit
 	if onHit then
