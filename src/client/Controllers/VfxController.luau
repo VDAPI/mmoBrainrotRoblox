@@ -70,6 +70,7 @@ local AIM_COLOR = Color3.fromHex("#E2483A")
 local aimLines: { [string]: () -> () } = {}
 -- S77: the Scout's falcon, one per caster id; it flies away by itself when events stop coming.
 local falcons: { [string]: Library.Falcon } = {}
+local PREVIEW_FALCON = "preview" -- falcon key of a preview model without an EntityId (skills window)
 
 -- Camera shake handler (CombatFxController.Shake), set in Init.
 local shakeCamera: ((strength: number) -> ())? = nil
@@ -868,6 +869,15 @@ function VfxController.Preview(model: Model, skillId: string)
 		elseif skill.type == "companion" then
 			data.t = id -- S77: the falcon circles over the model for a while
 			data.d = 4
+			if not id then
+				-- the skills window's copy has no EntityId: one falcon under a preview key, the previous one leaves
+				local previous = falcons[PREVIEW_FALCON]
+				if previous then
+					falcons[PREVIEW_FALCON] = nil
+					previous.stop()
+				end
+				data.c = PREVIEW_FALCON
+			end
 		end
 		onImpact(data, skill, model)
 	end)

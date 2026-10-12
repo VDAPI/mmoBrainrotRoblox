@@ -4234,3 +4234,22 @@ Poprawki z przeglądu kodu S66–S71:
 Pliki: `src/server/Entities/Monster`, `src/client/UI/Components/ItemTooltip`, `src/shared/Logic/{TooltipModel,Skills}`,
 `src/shared/Data/Localization/{pl,en}`, `tests/{EffectCategoryRules,balance.spec,effectstack.spec,paths.spec,
 tooltip.spec}`, `docs/{DECYZJE,SESJE}.md`.
+
+### Przegląd S72–S77
+
+Poprawki z przeglądu kodu S72–S77:
+- Furia: trafienie PvP zatrzymane nieśmiertelnością celu nie daje stosu (`pvpImmune` w `CombatService.DealDamage`).
+- Zagrożenie (`threatMultiplier`) nie czyta haków źródła bez postaci; `EquipmentService.GetHooks` i
+  `SkillService.passiveHooks` nie zapamiętują `{}` bez postaci (po zmianie postaci haki przedmiotów nie znikały już do
+  zmiany ekwipunku, gracz po wyjściu nie zostaje w pamięci).
+- Opisy Żądzy Krwi (5B), Okrzyku Bojowego (10B) i Ostatniego Bastionu (5A) z czasem efektu (PL, EN).
+- Osłona: ranny i czerwona strefa do 25 st. (`Movement.guard`).
+- Lodowa Pułapka 10B: bazowe `hits = 1`, druga pułapka się pojawia.
+- Kanał: `Channel.firstStop` sprawdza wszystkie zdarzenia (ogłuszenie nie zasłania ruchu).
+- Podgląd Sokoła w oknie umiejętności: kopia bez `EntityId` dostaje klucz `preview`, ptak krąży (poprzedni odlatuje).
+- Testy: `skills.spec` (czasy w opisach, Lodowa Pułapka 10B, planowany błąd tarczy Przechwycenia łapany tylko przez
+  `allyShield`), `channel.spec` (`firstStop`). Wiki: dane bez zmian (`dataHash` ten sam).
+
+Pliki: `src/server/Services/{CombatService,EquipmentService,SkillService}`, `src/server/Skills/Types/Movement`,
+`src/client/Controllers/VfxController`, `src/shared/Logic/Channel`, `src/shared/Data/Skills/Hunter`,
+`src/shared/Data/Localization/{pl,en}`, `tests/{skills,channel}.spec`, `docs/{DECYZJE,SESJE}.md`.

@@ -47,12 +47,13 @@ function EquipmentService.GetHooks(player: Player): { [string]: number }
 	end
 	local hooks: { [string]: number } = {}
 	local char = character(player)
-	if char then
-		for slot, item in char.equipment do
-			if slot ~= "backpack" then
-				for hook, value in ItemRoll.itemStats(item).hooks do
-					hooks[hook] = (hooks[hook] or 0) + value
-				end
+	if not char then
+		return hooks -- not cached: a late read (DoT tick after leaving) must not pin the player or a stale {}
+	end
+	for slot, item in char.equipment do
+		if slot ~= "backpack" then
+			for hook, value in ItemRoll.itemStats(item).hooks do
+				hooks[hook] = (hooks[hook] or 0) + value
 			end
 		end
 	end

@@ -1737,3 +1737,14 @@
   (`Monster.TakeDamage` / `AddThreat` wołają `engage` przed zapisem zagrożenia).
 - Przegląd S66–S71: dymek założonego przedmiotu nie porównuje go z niczym (pierścień z drugim pierścieniem); broń
   dwuręczna na pusty slot broni obok tarczy nie pokazuje bloku % (jak każdy pusty slot).
+- Przegląd S72–S77: trafienie PvP, które cel w całości zatrzymał nieśmiertelnością (`invuln`, `respawnShield`, god),
+  nie daje stosu Furii (jak nietykalny boss); cios w całości wchłonięty przez tarcze dalej się liczy.
+- Przegląd S72–S77: zagrożenie od haka `threat` liczy się tylko, gdy źródło ma postać (tyk DoT po wyjściu / zmianie
+  postaci = ×1); `EquipmentService.GetHooks` i haki pasywek nie zapamiętują pustej listy bez postaci.
+- Przegląd S72–S77: Osłona szuka rannego i sojusznika w czerwonej strefie do `range` (25 st.); +5 tolerancji tylko dla
+  zaznaczonego sojusznika i sprawdzenia w `GuardTarget.pick`.
+- Przegląd S72–S77: Lodowa Pułapka ma bazowe `hits = 1`, więc 10B (`add.hits = 1`) stawia drugą pułapkę.
+- Przegląd S72–S77: kanał liczy wszystkie zdarzenia tyknięcia (`Channel.firstStop`): ogłuszona Modlitwa / Przywołanie
+  odepchnięte poza limit kończą się na „move” (bez przywrócenia many).
+- Przegląd S72–S77: opisy Żądzy Krwi, Okrzyku Bojowego i Ostatniego Bastionu pokazują czas efektu
+  (`{statBuffDuration}` / `{damageReductionDuration}`, z `add.effectDuration`), nie `duration`.

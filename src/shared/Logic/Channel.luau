@@ -67,6 +67,19 @@ function Channel.stops(kind: string, event: Event, def: Def?): (boolean, boolean
 	return true, false -- unknown kind: stop, to be safe
 end
 
+-- Every event of one check counts: the first in `events` that stops the channel wins, so a stunned Prayer still ends
+-- when it is pushed away. Returns (event, refund); nil when none stops it.
+function Channel.firstStop(kind: string, events: { string }, def: Def?): (Event?, boolean)
+	for _, name in events do
+		local event: Event = name :: any -- an array of literals widens to string in the type checker
+		local stop, refund = Channel.stops(kind, event, def)
+		if stop then
+			return event, refund
+		end
+	end
+	return nil, false
+end
+
 -- Did moving `distance` studs from the start end this channel? (Config.Skills.channelMoveLimit)
 function Channel.afterMove(kind: string, distance: number, def: Def?): boolean
 	if distance <= Config.Skills.channelMoveLimit then

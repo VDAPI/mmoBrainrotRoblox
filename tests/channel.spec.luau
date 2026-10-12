@@ -109,4 +109,19 @@ T.describe("beam (S80)", function()
 	end)
 end)
 
+T.describe("Channel.firstStop (review S76)", function()
+	T.it("every event counts: a stunned Prayer pushed away still stops on move", function()
+		T.expect({ Channel.firstStop("channel", { "disabled", "move" }, {}) }).toEqual({ "move", false })
+		T.expect({ Channel.firstStop("channel", { "disabled" }, {}) }).toEqual({ nil, false })
+		-- a walking channel ignores both
+		T.expect({ Channel.firstStop("channel", { "disabled", "move" }, { channelMove = 50 }) }).toEqual({ nil, false })
+		-- aiming: the first stopping event gives the reason and the refund
+		T.expect({ Channel.firstStop("castTime", { "disabled", "move" }, {}) }).toEqual({ "disabled", true })
+		-- a walking beam still stops on a stun
+		T.expect({ Channel.firstStop("beam", { "disabled", "move" }, { channelMove = 50 }) })
+			.toEqual({ "disabled", false })
+		T.expect({ Channel.firstStop("beam", {}, {}) }).toEqual({ nil, false })
+	end)
+end)
+
 return nil

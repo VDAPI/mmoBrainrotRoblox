@@ -308,7 +308,8 @@ Movement.guard = function(ctx)
 		selected = candidate(ctx, target.player, from)
 	end
 	local inZone: { GuardTarget.Candidate } = {}
-	for _, ally in ctx.alliesInCircle(from, reach) do
+	-- the search reaches `range` (ROZWOJ 10.3); the +5 tolerance only for the selected ally and GuardTarget.pick
+	for _, ally in ctx.alliesInCircle(from, range) do
 		local entity = Entity.GetPlayerEntity(ally)
 		local position = entity and Entity.Position(entity)
 		local c = if position and ctx.services.Combat.InRedZone(position) ~= nil
@@ -318,7 +319,7 @@ Movement.guard = function(ctx)
 			table.insert(inZone, c)
 		end
 	end
-	local woundedAlly = ctx.wounded(from, reach, ctx.player)
+	local woundedAlly = ctx.wounded(from, range, ctx.player)
 	local wounded = if woundedAlly then candidate(ctx, woundedAlly, from) else nil
 	local ally: Player? = GuardTarget.pick(selected, inZone, wounded, reach)
 	local allyEntity = if ally then Entity.GetPlayerEntity(ally) else nil

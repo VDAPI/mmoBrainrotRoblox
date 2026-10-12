@@ -245,6 +245,7 @@ return Build.class("Hunter", "energy", "phys", {
 		cooldown = 18,
 		radius = 6,
 		duration = 20,
+		hits = 1, -- 10B adds one (add.hits sums onto the base: without it the second trap never appears)
 		element = "ice",
 		values = { root = { 2, 3.5 } },
 		effects = { { kind = "root", duration = { 2, 3.5 } } },

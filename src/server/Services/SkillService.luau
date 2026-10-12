@@ -191,7 +191,10 @@ local function passiveHooks(player: Player): { [string]: number }
 		return cached
 	end
 	local char = character(player)
-	local hooks = if char then Paths.passiveTotals(char, Paths.weaponTypesOf(char.equipment)).hooks else {}
+	if not char then
+		return {} -- not cached (see EquipmentService.GetHooks)
+	end
+	local hooks = Paths.passiveTotals(char, Paths.weaponTypesOf(char.equipment)).hooks
 	hookCache[player] = hooks
 	return hooks
 end
@@ -608,30 +611,33 @@ local function startChannel(ctx: Context.Ctx, onDone: (() -> ())?, onRefund: (()
 			end
 			local model = player.Character
 			local root = model and model:FindFirstChild("HumanoidRootPart") :: BasePart?
-			-- S70 / S76 / S80: Logic/Channel decides; the checks go before the tick, so no tick lands after a reason
-			local event: Channel.Event? = nil
+			-- S70 / S76 / S80: Logic/Channel decides; the checks go before the tick, so no tick lands after a reason.
+			-- Every event that applies counts (a stunned Prayer pushed away still ends on "move").
+			local events: { string } = {} -- Channel.Event names
 			if not root or ResourceService.IsDead(player) then
-				event = "death"
-			elseif StatusEffectService.IsDisabled(ctx.caster) then
-				event = "disabled"
-			elseif Channel.afterMove(kind, (root.Position - channel.startedAt).Magnitude, channel.def) then
-				event = "move"
-			elseif beam then
-				if not ctx.isEnemy(beam.target) then
-					event = "target"
-				else
-					local at = Entity.Position(beam.target)
-					if not at or (at - root.Position).Magnitude > beam.range + RANGE_TOLERANCE then
-						event = "range"
+				table.insert(events, "death")
+			else
+				if StatusEffectService.IsDisabled(ctx.caster) then
+					table.insert(events, "disabled")
+				end
+				if Channel.afterMove(kind, (root.Position - channel.startedAt).Magnitude, channel.def) then
+					table.insert(events, "move")
+				end
+				if beam then
+					if not ctx.isEnemy(beam.target) then
+						table.insert(events, "target")
+					else
+						local at = Entity.Position(beam.target)
+						if not at or (at - root.Position).Magnitude > beam.range + RANGE_TOLERANCE then
+							table.insert(events, "range")
+						end
 					end
 				end
 			end
+			local event, refund = Channel.firstStop(kind, events, channel.def)
 			if event then
-				local stop, refund = Channel.stops(kind, event, channel.def)
-				if stop then
-					closeChannel(player, false, stopReason(event, refund), refund)
-					return
-				end
+				closeChannel(player, false, stopReason(event :: any, refund), refund)
+				return
 			end
 			if beam then
 				local elapsed = os.clock() - started

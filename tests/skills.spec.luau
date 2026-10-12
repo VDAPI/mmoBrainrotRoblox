@@ -1630,6 +1630,21 @@ T.describe("S73 Warrior B options and breakpoint kinds", function()
 		local shield: any = { allyShield = { hpPct = 10, duration = 4 } }
 		T.expect(PartyBuffRules.check(buff({ cooldown = 20, breakpoints = { [10] = { a = shield } } }))).toEqual({})
 	end)
+
+	-- add.effectDuration lengthens the effects, not `duration`: the texts show the effect's time
+	T.it("descriptions show the lengthened effect time (Bloodlust 5B, Battle Cry 10B, Last Bastion 5A)", function()
+		local bloodlust = Skills.descriptionArgs(skill("bloodlust"), 5, { choices = { ["bloodlust:5"] = "b" } })
+		T.expect(bloodlust.statBuffDuration).toBe(14)
+		local cry = Skills.descriptionArgs(skill("battleCry"), 10, { choices = { ["battleCry:10"] = "b" } })
+		T.expect(cry.statBuffDuration).toBe(24)
+		T.expect(Skills.descriptionArgs(skill("lastBastion"), 5).damageReductionDuration).toBe(8)
+		for _, texts in { pl, en } do
+			T.expect(string.find(texts["skill.bloodlust.desc"], "{statBuffDuration}", 1, true) ~= nil).toBe(true)
+			T.expect(string.find(texts["skill.battleCry.desc"], "{statBuffDuration}", 1, true) ~= nil).toBe(true)
+			T.expect(string.find(texts["skill.lastBastion.desc"], "{damageReductionDuration}", 1, true) ~= nil)
+				.toBe(true)
+		end
+	end)
 end)
 
 T.describe("Warrior S74", function()
@@ -1717,7 +1732,13 @@ T.describe("Warrior S74", function()
 		end
 		local shield: any = { [10] = { a = { allyShield = { hpPct = 15, duration = 4 } } } }
 		T.expect(PartyBuffRules.check(variant("intercept", { breakpoints = shield }))).toEqual({})
-		T.expect(#PartyBuffRules.check(variant("intercept", { breakpoints = shield, cooldown = 3 })) > 0).toBe(true)
+		-- a shield longer than the cooldown (12 s at rank 10) is the only thing that breaks the rule: it counts for guard
+		local long: any = { [10] = { a = { allyShield = { hpPct = 15, duration = 20 } } } }
+		local problems = PartyBuffRules.check(variant("intercept", { breakpoints = long }))
+		T.expect(#problems > 0).toBe(true)
+		for _, problem in problems do
+			T.expect({ problem, string.find(problem, "of shield", 1, true) ~= nil }).toEqual({ problem, true })
+		end
 		T.expect(#PartyBuffRules.check(variant("warBanner", { duration = 8, breakpoints = nil })) > 0).toBe(true)
 		T.expect(#PartyBuffRules.check(variant("warBanner", { cooldown = 10, breakpoints = nil })) > 0).toBe(true)
 		local shortCrit = {
@@ -1877,6 +1898,12 @@ T.describe("Hunter engine fields (S76)", function()
 		T.expect(SkillGeom.spreadTargets(0, 0, candidates, 2, 8)).toEqual({ "a", "b" })
 		T.expect(SkillGeom.spreadTargets(0, 0, candidates, 5, 8)).toEqual({ "a", "b", "c", "d" })
 		T.expect(SkillGeom.spreadTargets(0, 0, candidates, 0, 8)).toEqual({})
+	end)
+
+	T.it("Frost Trap 10B lays two traps", function()
+		local trap = SkillData.get("frostTrap") :: any
+		T.expect(Skills.effective(trap, 10, nil, nil, true).hits or 1).toBe(1)
+		T.expect(Skills.effective(trap, 10, { ["frostTrap:10"] = "b" }, nil, true).hits).toBe(2)
 	end)
 
 	T.it("SkillGeom.sidePoints puts the second trap to the side of the aim line", function()

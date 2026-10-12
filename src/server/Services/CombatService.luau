@@ -1052,6 +1052,7 @@ function CombatService.DealDamage(
 	local result: Damage.Result
 	local pvpTarget: Player? = nil -- S64: the target player of the PvP branch (counter)
 	local pvpRegular = false
+	local pvpImmune = false -- the PvP target took nothing through invulnerability (no Fury, like an invulnerable boss)
 
 	if targetEntity.kind == "monster" then
 		local monster = targetEntity.monster
@@ -1165,6 +1166,7 @@ function CombatService.DealDamage(
 			incoming[target] = nil
 			taken = filtered
 		end
+		pvpImmune = not result.dodged and taken <= 0 and blockedFlag(target) == "im"
 		-- S29 (changes S22): a hit stopped in full by shields shows "Absorbed", by invulnerability "Immune".
 		local event = playerHitEvent(target, targetEntity.id, if selfEntity then selfEntity.id else nil, result, taken)
 		event.sk = options and options.skill
@@ -1185,7 +1187,8 @@ function CombatService.DealDamage(
 		CombatService.Spot(player, targetEntity)
 	end
 	-- S72 (ROZWOJ 10.4): every hit that dealt damage feeds Fury (ticks, thorns and Retribution never come here).
-	if not result.dodged and result.amount > 0 then
+	-- A hit absorbed in full by shields still counts; one stopped by invulnerability does not.
+	if not result.dodged and result.amount > 0 and not pvpImmune then
 		StatusEffectService.AddFury(player)
 	end
 	if not result.dodged and result.amount > 0 and not (options and options.noProc) then
@@ -1985,6 +1988,10 @@ function CombatService.Init(registry)
 		died = onMonsterDied,
 		-- S72 Menace (ROZWOJ 10.3): the threat hook raises the threat of every damage of the player (not the credit).
 		threatMultiplier = function(_monster: any, player: Player): number
+			-- a DoT tick can outlive its source (logout, character switch): no hook reads then
+			if player.Parent == nil or not PlayerStateService.GetCharacter(player) then
+				return 1
+			end
 			local bonus = hook(player, "threat")
 			return if bonus > 0 then 1 + bonus / 100 else 1
 		end,
