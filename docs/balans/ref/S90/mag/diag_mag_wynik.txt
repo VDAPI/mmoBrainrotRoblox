@@ -1,0 +1,70 @@
+== L20
+Baza (kostur)                  | boss    646 x1.00 | 3 cele 60 s x1.00, 8 s x1.00 | obszar/1 cel 8 s 1.40 | exp 32.2 s/potwór, walka 2/3/4: 7.7/11.5/15.2 s | mana 1.76 (+evo 1.76), strata 1.00
+Niszczyciel (kostur)           | boss    635 x0.98 | 3 cele 60 s x1.01, 8 s x1.01 | obszar/1 cel 8 s 1.44 | exp 32.4 s/potwór, walka 2/3/4: 7.5/11.2/14.1 s | mana 1.96 (+evo 1.96), strata 1.00
+Niszczyciel, Płaszcz          | boss    635 x0.98 | 3 cele 60 s x1.01, 8 s x1.01 | obszar/1 cel 8 s 1.44 | exp 32.4 s/potwór, walka 2/3/4: 7.5/11.2/14.1 s | mana 1.96 (+evo 1.96), strata 1.00
+Niszczyciel, Oszczędny Splot  | boss    635 x0.98 | 3 cele 60 s x0.99, 8 s x0.99 | obszar/1 cel 8 s 1.41 | exp 32.9 s/potwór, walka 2/3/4: 7.7/11.7/15.2 s | mana 1.69 (+evo 1.69), strata 1.00
+Niszczyciel (różdżka+kula)  | boss    638 x0.99 | 3 cele 60 s x1.01, 8 s x1.03 | obszar/1 cel 8 s 1.44 | exp 32.6 s/potwór, walka 2/3/4: 7.4/11.1/13.7 s | mana 1.96 (+evo 1.96), strata 1.00
+Arkanista (k. runiczny)        | boss    659 x1.02 | 3 cele 60 s x1.00, 8 s x1.00 | obszar/1 cel 8 s 1.34 | exp 32.0 s/potwór, walka 2/3/4: 7.4/11.0/14.6 s | mana 1.76 (+evo 1.76), strata 0.98
+Arkanista, Przeciążenie      | boss    666 x1.03 | 3 cele 60 s x1.00, 8 s x1.00 | obszar/1 cel 8 s 1.34 | exp 32.0 s/potwór, walka 2/3/4: 7.4/11.0/14.6 s | mana 2.12 (+evo 2.12), strata 0.99
+Arkanista, Chłodna Głowa     | boss    659 x1.02 | 3 cele 60 s x1.00, 8 s x1.00 | obszar/1 cel 8 s 1.34 | exp 32.0 s/potwór, walka 2/3/4: 7.4/11.0/14.6 s | mana 1.76 (+evo 1.76), strata 0.98
+Arkanista, Studnia Many        | boss    659 x1.02 | 3 cele 60 s x1.00, 8 s x1.00 | obszar/1 cel 8 s 1.34 | exp 32.0 s/potwór, walka 2/3/4: 7.4/11.0/14.6 s | mana 1.76 (+evo 1.76), strata 0.98
+Arkanista (różdżka+księga) | boss    639 x0.99 | 3 cele 60 s x0.96, 8 s x0.97 | obszar/1 cel 8 s 1.34 | exp 33.8 s/potwór, walka 2/3/4: 7.7/11.6/15.6 s | mana 1.67 (+evo 1.67), strata 0.99
+A/N(boss) 1.04, Przeciążenie/N(boss) 1.05 | A/N boss: 1.04, Przeciążenie/N 1.05, różdżki 1.00; N/A 3 cele 60 s (exp) 1.02; N/A exp czas 1.01
+żywioły (ogień / lód / błyskawica): Baza boss 720/643/575, 3 cele 1081/794/933 | N boss 708/631/566, 3 cele 1099/793/949 | A boss 736/655/588, 3 cele 1069/804/923
+
+== L26
+Baza (kostur)                  | boss   1097 x1.00 | 3 cele 60 s x1.00, 8 s x1.00 | obszar/1 cel 8 s 1.42 | exp 35.2 s/potwór, walka 2/3/4: 7.8/12.4/15.6 s | mana 1.51 (+evo 1.51), strata 1.00
+Niszczyciel (kostur)           | boss   1096 x1.00 | 3 cele 60 s x1.14, 8 s x1.23 | obszar/1 cel 8 s 1.64 | exp 28.3 s/potwór, walka 2/3/4: 6.2/9.9/12.4 s | mana 2.33 (+evo 2.33), strata 0.97
+Niszczyciel, Płaszcz          | boss   1096 x1.00 | 3 cele 60 s x1.14, 8 s x1.23 | obszar/1 cel 8 s 1.64 | exp 28.3 s/potwór, walka 2/3/4: 6.2/9.9/12.4 s | mana 2.33 (+evo 2.33), strata 0.97
+Niszczyciel, Oszczędny Splot  | boss   1135 x1.03 | 3 cele 60 s x1.11, 8 s x1.19 | obszar/1 cel 8 s 1.59 | exp 29.8 s/potwór, walka 2/3/4: 7.1/10.1/13.3 s | mana 1.89 (+evo 1.89), strata 1.00
+Niszczyciel (różdżka+kula)  | boss   1102 x1.00 | 3 cele 60 s x1.15, 8 s x1.25 | obszar/1 cel 8 s 1.63 | exp 28.7 s/potwór, walka 2/3/4: 6.2/9.7/12.4 s | mana 2.33 (+evo 2.33), strata 0.97
+Arkanista (k. runiczny)        | boss   1187 x1.08 | 3 cele 60 s x1.10, 8 s x1.12 | obszar/1 cel 8 s 1.32 | exp 30.3 s/potwór, walka 2/3/4: 6.4/10.5/13.4 s | mana 2.59 (+evo 2.59), strata 0.89
+Arkanista, Przeciążenie      | boss   1051 x0.96 | 3 cele 60 s x1.12, 8 s x1.12 | obszar/1 cel 8 s 1.32 | exp 30.3 s/potwór, walka 2/3/4: 6.4/10.5/13.4 s | mana 3.37 (+evo 3.37), strata 0.79
+Arkanista, Chłodna Głowa     | boss   1187 x1.08 | 3 cele 60 s x1.10, 8 s x1.12 | obszar/1 cel 8 s 1.32 | exp 30.3 s/potwór, walka 2/3/4: 6.4/10.5/13.4 s | mana 2.59 (+evo 2.59), strata 0.89
+Arkanista, Studnia Many        | boss   1187 x1.08 | 3 cele 60 s x1.10, 8 s x1.12 | obszar/1 cel 8 s 1.32 | exp 30.3 s/potwór, walka 2/3/4: 6.4/10.5/13.4 s | mana 2.59 (+evo 2.59), strata 0.89
+Arkanista (różdżka+księga) | boss   1177 x1.07 | 3 cele 60 s x1.07, 8 s x1.09 | obszar/1 cel 8 s 1.32 | exp 32.1 s/potwór, walka 2/3/4: 7.2/10.7/14.2 s | mana 2.46 (+evo 2.46), strata 0.92
+A/N(boss) 1.05, Przeciążenie/N(boss) 0.93 | A/N boss: 1.08, Przeciążenie/N 0.96, różdżki 1.07; N/A 3 cele 60 s (exp) 1.04; N/A exp czas 0.94
+żywioły (ogień / lód / błyskawica): Baza boss 1208/1105/979, 3 cele 1815/1357/1598 | N boss 1213/1075/999, 3 cele 2090/1516/1847 | A boss 1297/1149/1116, 3 cele 1970/1544/1749
+
+== L45
+Baza (kostur)                  | boss   4168 x1.00 | 3 cele 60 s x1.00, 8 s x1.00 | obszar/1 cel 8 s 2.44 | exp 19.5 s/potwór, walka 2/3/4: 3.7/5.5/6.3 s | mana 1.38 (+evo 1.38), strata 1.00
+Niszczyciel (kostur)           | boss   4417 x1.06 | 3 cele 60 s x1.21, 8 s x1.23 | obszar/1 cel 8 s 2.74 | exp 19.0 s/potwór, walka 2/3/4: 2.7/4.1/5.1 s | mana 2.06 (+evo 2.06), strata 0.99
+Niszczyciel, Płaszcz          | boss   4417 x1.06 | 3 cele 60 s x1.17, 8 s x1.19 | obszar/1 cel 8 s 2.64 | exp 17.2 s/potwór, walka 2/3/4: 3.0/4.8/5.1 s | mana 2.06 (+evo 2.06), strata 0.99
+Niszczyciel, Oszczędny Splot  | boss   4454 x1.07 | 3 cele 60 s x1.17, 8 s x1.19 | obszar/1 cel 8 s 2.64 | exp 20.3 s/potwór, walka 2/3/4: 3.0/4.8/5.1 s | mana 1.64 (+evo 1.64), strata 1.00
+Niszczyciel (różdżka+kula)  | boss   4422 x1.06 | 3 cele 60 s x1.21, 8 s x1.24 | obszar/1 cel 8 s 2.72 | exp 18.7 s/potwór, walka 2/3/4: 2.6/3.8/4.9 s | mana 2.06 (+evo 2.06), strata 0.99
+Arkanista (k. runiczny)        | boss   5130 x1.23 | 3 cele 60 s x1.11, 8 s x1.08 | obszar/1 cel 8 s 2.09 | exp 18.3 s/potwór, walka 2/3/4: 3.2/4.5/6.1 s | mana 2.02 (+evo 2.02), strata 0.96
+Arkanista, Przeciążenie      | boss   4652 x1.12 | 3 cele 60 s x1.12, 8 s x1.08 | obszar/1 cel 8 s 2.09 | exp 18.3 s/potwór, walka 2/3/4: 3.0/4.5/6.3 s | mana 2.62 (+evo 2.62), strata 0.88
+Arkanista, Chłodna Głowa     | boss   5101 x1.22 | 3 cele 60 s x1.10, 8 s x1.06 | obszar/1 cel 8 s 2.09 | exp 19.6 s/potwór, walka 2/3/4: 3.6/4.9/6.5 s | mana 1.62 (+evo 1.62), strata 0.97
+Arkanista, Studnia Many        | boss   5130 x1.23 | 3 cele 60 s x1.11, 8 s x1.08 | obszar/1 cel 8 s 2.09 | exp 18.3 s/potwór, walka 2/3/4: 2.9/4.5/6.1 s | mana 2.02 (+evo 2.02), strata 0.96
+Arkanista (różdżka+księga) | boss   4983 x1.20 | 3 cele 60 s x1.08, 8 s x1.05 | obszar/1 cel 8 s 2.08 | exp 19.5 s/potwór, walka 2/3/4: 3.5/4.9/6.7 s | mana 1.91 (+evo 1.91), strata 0.97
+A/N(boss) 1.15, Przeciążenie/N(boss) 1.04 | A/N boss: 1.16, Przeciążenie/N 1.05, różdżki 1.13; N/A 3 cele 60 s (exp) 1.09; N/A exp czas 1.04
+żywioły (ogień / lód / błyskawica): Baza boss 4703/4048/3752, 3 cele 9239/6633/8052 | N boss 4950/4277/4024, 3 cele 11109/7871/9861 | A boss 5674/5051/4666, 3 cele 10183/7431/8955
+
+== L70
+Baza (kostur)                  | boss  10343 x1.00 | 3 cele 60 s x1.00, 8 s x1.00 | obszar/1 cel 8 s 2.20 | exp 19.2 s/potwór, walka 2/3/4: 3.9/5.8/6.7 s | mana 1.27 (+evo 1.27), strata 1.00
+Niszczyciel (kostur)           | boss  10745 x1.04 | 3 cele 60 s x1.38, 8 s x1.78 | obszar/1 cel 8 s 2.93 | exp 16.8 s/potwór, walka 2/3/4: 2.4/2.6/2.9 s | mana 2.81 (+evo 2.81), strata 0.91
+Niszczyciel, Płaszcz          | boss  10745 x1.04 | 3 cele 60 s x1.32, 8 s x1.71 | obszar/1 cel 8 s 2.81 | exp 14.6 s/potwór, walka 2/3/4: 2.4/2.7/3.0 s | mana 2.81 (+evo 2.81), strata 0.91
+Niszczyciel, Oszczędny Splot  | boss  11798 x1.14 | 3 cele 60 s x1.32, 8 s x1.71 | obszar/1 cel 8 s 2.81 | exp 17.0 s/potwór, walka 2/3/4: 2.4/2.7/3.0 s | mana 2.11 (+evo 2.11), strata 0.99
+Niszczyciel (różdżka+kula)  | boss  10812 x1.05 | 3 cele 60 s x1.38, 8 s x1.79 | obszar/1 cel 8 s 2.91 | exp 16.7 s/potwór, walka 2/3/4: 2.3/2.6/2.9 s | mana 2.81 (+evo 2.81), strata 0.91
+Arkanista (k. runiczny)        | boss  14105 x1.36 | 3 cele 60 s x1.22, 8 s x1.16 | obszar/1 cel 8 s 1.98 | exp 18.4 s/potwór, walka 2/3/4: 3.3/4.5/5.9 s | mana 2.32 (+evo 1.32), strata 0.96
+Arkanista, Przeciążenie      | boss  14382 x1.39 | 3 cele 60 s x1.21, 8 s x1.16 | obszar/1 cel 8 s 1.98 | exp 18.4 s/potwór, walka 2/3/4: 3.3/4.3/5.9 s | mana 2.75 (+evo 1.56), strata 0.98
+Arkanista, Chłodna Głowa     | boss  13879 x1.34 | 3 cele 60 s x1.20, 8 s x1.14 | obszar/1 cel 8 s 1.98 | exp 18.4 s/potwór, walka 2/3/4: 3.4/4.3/5.9 s | mana 2.01 (+evo 1.14), strata 0.96
+Arkanista, Studnia Many        | boss  14068 x1.36 | 3 cele 60 s x1.22, 8 s x1.16 | obszar/1 cel 8 s 1.98 | exp 18.4 s/potwór, walka 2/3/4: 3.3/4.3/5.9 s | mana 1.87 (+evo 1.06), strata 0.96
+Arkanista (różdżka+księga) | boss  13652 x1.32 | 3 cele 60 s x1.18, 8 s x1.13 | obszar/1 cel 8 s 1.97 | exp 17.8 s/potwór, walka 2/3/4: 3.3/4.5/5.9 s | mana 2.24 (+evo 1.27), strata 0.95
+A/N(boss) 1.20, Przeciążenie/N(boss) 1.22 | A/N boss: 1.31, Przeciążenie/N 1.34, różdżki 1.26; N/A 3 cele 60 s (exp) 1.13; N/A exp czas 0.91
+żywioły (ogień / lód / błyskawica): Baza boss 11801/9651/9578, 3 cele 24205/16331/19927 | N boss 12175/10481/9579, 3 cele 32697/22180/28274 | A boss 15369/13666/13281, 3 cele 28846/20405/24245
+
+== L100
+Baza (kostur)                  | boss  20997 x1.00 | 3 cele 60 s x1.00, 8 s x1.00 | obszar/1 cel 8 s 2.14 | exp 21.1 s/potwór, walka 2/3/4: 4.4/5.8/6.8 s | mana 1.18 (+evo 1.18), strata 1.00
+Niszczyciel (kostur)           | boss  24197 x1.15 | 3 cele 60 s x1.46, 8 s x2.06 | obszar/1 cel 8 s 3.00 | exp 14.3 s/potwór, walka 2/3/4: 2.3/2.5/2.7 s | mana 2.46 (+evo 2.46), strata 0.97
+Niszczyciel, Płaszcz          | boss  24197 x1.15 | 3 cele 60 s x1.41, 8 s x1.97 | obszar/1 cel 8 s 2.88 | exp 12.9 s/potwór, walka 2/3/4: 2.4/2.6/2.8 s | mana 2.46 (+evo 2.46), strata 0.97
+Niszczyciel, Oszczędny Splot  | boss  25007 x1.19 | 3 cele 60 s x1.41, 8 s x1.97 | obszar/1 cel 8 s 2.88 | exp 14.6 s/potwór, walka 2/3/4: 2.4/2.6/2.8 s | mana 1.82 (+evo 1.82), strata 1.00
+Niszczyciel (różdżka+kula)  | boss  24533 x1.17 | 3 cele 60 s x1.48, 8 s x2.09 | obszar/1 cel 8 s 2.99 | exp 14.0 s/potwór, walka 2/3/4: 2.1/2.5/2.5 s | mana 2.46 (+evo 2.46), strata 0.97
+Arkanista (k. runiczny)        | boss  30965 x1.47 | 3 cele 60 s x1.24, 8 s x1.18 | obszar/1 cel 8 s 1.94 | exp 16.6 s/potwór, walka 2/3/4: 3.3/4.5/5.9 s | mana 2.40 (+evo 1.08), strata 0.97
+Arkanista, Przeciążenie      | boss  31884 x1.52 | 3 cele 60 s x1.24, 8 s x1.18 | obszar/1 cel 8 s 1.94 | exp 16.6 s/potwór, walka 2/3/4: 3.3/4.5/5.9 s | mana 2.79 (+evo 1.26), strata 1.00
+Arkanista, Chłodna Głowa     | boss  30352 x1.45 | 3 cele 60 s x1.22, 8 s x1.17 | obszar/1 cel 8 s 1.94 | exp 17.0 s/potwór, walka 2/3/4: 3.7/5.4/6.4 s | mana 2.12 (+evo 0.96), strata 0.97
+Arkanista, Studnia Many        | boss  30646 x1.46 | 3 cele 60 s x1.24, 8 s x1.18 | obszar/1 cel 8 s 1.94 | exp 16.6 s/potwór, walka 2/3/4: 3.3/4.5/5.9 s | mana 1.84 (+evo 0.83), strata 0.97
+Arkanista (różdżka+księga) | boss  30205 x1.44 | 3 cele 60 s x1.21, 8 s x1.16 | obszar/1 cel 8 s 1.93 | exp 16.7 s/potwór, walka 2/3/4: 3.6/4.8/5.9 s | mana 2.33 (+evo 1.05), strata 0.97
+A/N(boss) 1.24, Przeciążenie/N(boss) 1.27 | A/N boss: 1.28, Przeciążenie/N 1.32, różdżki 1.23; N/A 3 cele 60 s (exp) 1.18; N/A exp czas 0.86
+żywioły (ogień / lód / błyskawica): Baza boss 23523/19238/20232, 3 cele 48249/32554/41184 | N boss 27362/22707/22521, 3 cele 68945/47295/62359 | A boss 32923/29310/30661, 3 cele 58922/41679/51021
+
