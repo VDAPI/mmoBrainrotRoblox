@@ -39,6 +39,9 @@ return table.freeze({
 	riposteCap = 30, -- % counter chance (Swordplay trait, riposte passive, Retaliation and Requital nodes); unlimited before S64
 	executionerCap = 60, -- % bonus below lowHpFraction (Beheading, Executioner node, leg_/myth_executioner); unlimited before S64
 	cdrCap = 20, -- % skill cooldown reduction from items (leg_cooldown, myth_cooldown)
+	-- S67 (STATY 4, 8): lines with a parameter.
+	familyResCap = 30, -- % sum of res_<family> lines from items against one monster family
+	classLineCap = 20, -- % each side in PvP: the attacker's vs_<target class> sum, the target's res_<attacker class> sum
 	-- S63 (STATY 4, 5): on-hit effects of items.
 	onHitChanceCap = 40, -- % total chance of one on-hit effect (trait + line)
 	areaProcShare = 1 / 3, -- share of the chance per target of an area skill

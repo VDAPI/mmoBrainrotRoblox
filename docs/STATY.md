@@ -432,7 +432,9 @@ Nowe pole `family` w `Data/Monsters.luau` i `Data/Bosses.luau`, lista i nazwy w 
 - Pule po filtrze klas mają 11–14 linii (`data.spec`: co najmniej `max(bonusMax, 5)`), np. broń Wojownika 13: physAtk,
   critChance, critDmg, atkSpeed, pierce, lifesteal, accuracy, str, woundChance, dotPower, skillDmg, basicDmg,
   `@vsFamily`. Zbroja 14, tarcza 14 (S64: bez `hpRegen`, żeby z `blockChance`, `meleeGuard`, `rangedGuard` zostało 13
-  przed `@resFamily`), naszyjnik i pierścień ok. 12 dla klasy. Stan po S62: broń Wojownika 10,
+  przed `@resFamily`), naszyjnik i pierścień ok. 12 dla klasy. S67: naszyjnik bez `manaRegen` (Mag miał 15 z
+  `@vsFamily`); po S67 broń W 13, Ł 14, M i K 12; zbroja W 14, reszta 13; hełm K 14; pierścień W i Ł 14, M i K 12;
+  talizman 11; naszyjnik M 14, reszta 13. Stan po S62: broń Wojownika 10,
   Kapłana 11, tarcza 11, kołczan 10, magiczna druga ręka Maga 11 i Kapłana 12; S63 i S67 dopełniają do 11–14.
 - `affinity` w `Data/ItemTraits.luau` (tabela 3, ostatnia kolumna) dla broni i drugiej ręki; Buława ma część wag
   zależną od klasy (W: `lifesteal`, K: `healPower`). Zbroje i biżuteria bez wag.
@@ -638,7 +640,7 @@ w `docs/sessions` (S62–S68) ma pierwszeństwo przed P1–P4 niżej.
    `Elements.luau` i Przemarznięciem, Zbawczy cios (wspólne `wounded`). Test: co 5. cios szablą tnie drugi raz,
    włócznia trafia wroga za celem, Pieczęć gaśnie po kroku, Kostur Święty leczy rannego sojusznika.
 4. **P4 PvE i PvP:** rodziny, obrona i unik potworów z kompensatą życia, linie rodzin i klas, ochrony z `delivery`,
-   `ItemScore`, `FightSim` z tabelą 14, aktualizacja `balance.spec`. Test: pierścień „Silny przeciw nieumarłym” na
+   `ItemScore`, `FightSim` z tabelą 14, aktualizacja `balance.spec`. Test: naszyjnik „Silny przeciw nieumarłym” na
    szkieletach, młot i Ciężka Kusza na opancerzonych.
 
 Miejsce: po global K1–K6 (kategorie E1, klucz efektów E2, wspólny limit szczęścia), przed sesjami klas, żeby węzły

@@ -1,7 +1,10 @@
 --!strict
 local Dismantle = require("../src/shared/Logic/Dismantle")
 local ItemRoll = require("../src/shared/Logic/ItemRoll")
+local Bonuses = require("../src/shared/Data/Bonuses")
 local ItemScore = require("../src/shared/Logic/ItemScore")
+local ItemTraits = require("../src/shared/Data/ItemTraits")
+local ItemWeights = require("../src/shared/Data/ItemWeights")
 local LootFilter = require("../src/shared/Logic/LootFilter")
 local Rarities = require("../src/shared/Data/Rarities")
 local Rng = require("../src/shared/Logic/Rng")
@@ -32,6 +35,81 @@ T.describe("ItemScore", function()
 		T.expect(ItemScore.isUpgrade(item("bow_1", 3), nil, "Warrior", 10)).toBe(false)
 		T.expect(ItemScore.isUpgrade(item("sword1h_10", 12), nil, "Warrior", 10)).toBe(false)
 		T.expect(ItemScore.isUpgrade(item("sword1h_10", 10), nil, "Warrior", 10)).toBe(true)
+	end)
+
+	local function made(defId: string, bonuses: { any }): any
+		return {
+			uid = "m" .. defId,
+			id = defId,
+			rarity = Rarities.HEROIC,
+			ilvl = 30,
+			bonuses = bonuses,
+			up = 0,
+			bound = false,
+			n = 1,
+			rv = Rarities.RV,
+		}
+	end
+
+	T.it("S67: a family line is worth half an attack line for every class", function()
+		local cases = {
+			{ "Warrior", "sword1h_30", "physAtk" },
+			{ "Hunter", "bow_30", "physAtk" },
+			{ "Mage", "wand_30", "magAtk" },
+			{ "Cleric", "mace1h_30", "magAtk" },
+		}
+		for _, case in cases do
+			local classId, defId, attack = case[1], case[2], case[3]
+			local bare = ItemScore.score(made(defId, {}), classId)
+			local family = ItemScore.score(made(defId, { { stat = "vs_undead", v = 4 } }), classId)
+			local atk = ItemScore.score(made(defId, { { stat = attack, v = 4 } }), classId)
+			T.expect({ classId, bare < family, family < atk }).toEqual({ classId, true, true })
+			T.expect(family - bare).toBeNear((atk - bare) / 2, 1e-9)
+		end
+	end)
+
+	T.it("S67: path weights change the axes; an unknown path changes nothing", function()
+		local hp = made("helmet_heavy_30", { { stat = "hpPct", v = 4 } })
+		local crit = made("helmet_heavy_30", { { stat = "critChance", v = 4 } })
+		T.expect(ItemScore.score(hp, "Warrior") < ItemScore.score(crit, "Warrior")).toBe(true)
+		local tank = { classId = "Warrior", weights = { axes = { surv = 2 } } }
+		T.expect(ItemScore.score(hp, tank) > ItemScore.score(crit, tank)).toBe(true)
+		T.expect(ItemScore.score(hp, { classId = "Warrior", pathId = "nope" })).toBe(ItemScore.score(hp, "Warrior"))
+		local b = ItemScore.breakdown(crit, "Warrior")
+		T.expect(b.dmg + b.surv + b.support + b.util).toBeNear(b.total, 1e-9)
+	end)
+
+	T.it("S67: every line and trait has a weight", function()
+		local function classHas(key: string): boolean
+			for _, byClass in ItemWeights.class do
+				if byClass[key] then
+					return true
+				end
+			end
+			return false
+		end
+		for id, def in Bonuses.byId do
+			if not def.replacedBy then
+				local ok
+				if def.hook then
+					local prefixed = false
+					for prefix in ItemWeights.prefixHooks do
+						if string.sub(def.hook, 1, #prefix) == prefix then
+							prefixed = true
+						end
+					end
+					ok = ItemWeights.hooks[def.hook] ~= nil or classHas(def.hook) or prefixed
+				else
+					local stat = def.stat :: string
+					ok = ItemWeights.common[stat] ~= nil or classHas(stat)
+				end
+				T.expect({ id, ok }).toEqual({ id, true })
+			end
+		end
+		for _, def in ItemTraits.list do
+			T.expect({ def.id, ItemWeights.traits[def.id] ~= nil }).toEqual({ def.id, true })
+		end
+		T.expect(#ItemScore.validateWeights({ axes = { foo = 1 } })).toBe(1)
 	end)
 
 	T.it("a mage values magic damage, a warrior physical", function()

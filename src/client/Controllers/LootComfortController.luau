@@ -40,14 +40,14 @@ local cardScope: Scope? = nil
 local cardToken = 0
 
 -- Item in the slot the candidate would replace (rings: the weaker one).
-local function replaced(def: Items.ItemDef, classId: string): Types.ItemInstance?
+local function replaced(def: Items.ItemDef, ctx: ItemScore.Context): Types.ItemInstance?
 	local equipment = State.Get({ "character", "equipment" }) or {}
 	if def.slot == "ring" then
 		local a, b = equipment.ring1, equipment.ring2
 		if not a or not b then
 			return nil
 		end
-		return if ItemScore.score(a, classId) <= ItemScore.score(b, classId) then a else b
+		return if ItemScore.score(a, ctx) <= ItemScore.score(b, ctx) then a else b
 	end
 	return equipment[def.slot or ""]
 end
@@ -159,15 +159,22 @@ local function onPicked(items: any)
 	if type(classId) ~= "string" then
 		return
 	end
+	-- S67: the score follows the class and the main path's item weights
+	local mainPath = State.Get({ "character", "path", "main" })
+	local ctx: ItemScore.Context = {
+		classId = classId,
+		level = level,
+		pathId = if type(mainPath) == "string" then mainPath else nil,
+	}
 	local best: Types.ItemInstance? = nil
 	local bestCurrent: Types.ItemInstance? = nil
 	local bestGain = 0
 	for _, item in items do
 		local def = if type(item) == "table" then Items.get(item.id) else nil
 		if def and def.slot then
-			local current = replaced(def, classId)
-			if ItemScore.isUpgrade(item, current, classId, level) then
-				local gain = ItemScore.score(item, classId) - (if current then ItemScore.score(current, classId) else 0)
+			local current = replaced(def, ctx)
+			if ItemScore.isUpgrade(item, current, ctx, level) then
+				local gain = ItemScore.score(item, ctx) - (if current then ItemScore.score(current, ctx) else 0)
 				if gain > bestGain then
 					best, bestCurrent, bestGain = item, current, gain
 				end

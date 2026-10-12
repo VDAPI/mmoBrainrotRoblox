@@ -18,6 +18,7 @@ local Bonuses = require("../src/shared/Data/Bonuses")
 local Bosses = require("../src/shared/Data/Bosses")
 local BossScaling = require("../src/shared/Logic/BossScaling")
 local Classes = require("../src/shared/Data/Classes")
+local Families = require("../src/shared/Data/Families")
 local Combat = require("../src/shared/Data/Combat")
 local Exp = require("../src/shared/Logic/Exp")
 local FightSim = require("../src/shared/Logic/FightSim")
@@ -87,6 +88,25 @@ local function poolFor(defId: string, classId: string?): { string }
 	return Bonuses.pools[def.bonusGroup or ""] or {}
 end
 
+-- S67: a family line works on the matching family in half of the fights (STATY 10: situational lines count half).
+local FAMILY_MATCH = 0.5
+
+-- Expected lines of one pool entry with chance `share`. S67: a family marker spreads half its middle value over each
+-- family's variant (the model reads only the line of the monster's family); a class marker is worth 0 in PvE but
+-- keeps its place in the pool.
+local function expectedLines(out: { any }, id: string, ilvl: number, rarity: number, share: number)
+	local param = Bonuses.params[id]
+	if not param then
+		table.insert(out, { stat = id, v = ItemRoll.rollBonusValue(id, ilvl, rarity, 0.5) * share })
+	elseif param.over == "family" then
+		for _, family in Families.ids do
+			local variant = Bonuses.familyLine(param.prefix, family)
+			local v = ItemRoll.rollBonusValue(variant, ilvl, rarity, 0.5) * share * FAMILY_MATCH
+			table.insert(out, { stat = variant, v = v })
+		end
+	end
+end
+
 -- Expected bonus lines of one item: every pool entry gets its chance to be rolled x its middle value. S62: the chance
 -- is ItemRoll.inclusion of the type-weighted pool, averaged over bonusMin..bonusMax (rng:int); before, count / #pool.
 local function expectedBonuses(defId: string, ilvl: number, rarity: number, classId: string?): { any }
@@ -103,7 +123,7 @@ local function expectedBonuses(defId: string, ilvl: number, rarity: number, clas
 			end
 		end
 		for _, id in poolFor(defId, classId) do
-			table.insert(out, { stat = id, v = ItemRoll.rollBonusValue(id, ilvl, rarity, 0.5) * (share[id] or 0) })
+			expectedLines(out, id, ilvl, rarity, share[id] or 0)
 		end
 	else
 		local pool = poolFor(defId, classId)
@@ -111,7 +131,7 @@ local function expectedBonuses(defId: string, ilvl: number, rarity: number, clas
 		if count > 0 and #pool > 0 then
 			local share = math.min(1, count / #pool)
 			for _, id in pool do
-				table.insert(out, { stat = id, v = ItemRoll.rollBonusValue(id, ilvl, rarity, 0.5) * share })
+				expectedLines(out, id, ilvl, rarity, share)
 			end
 		end
 	end
@@ -248,7 +268,9 @@ end
 
 -- Monsters ------------------------------------------------------------------------------------------------
 
-Balance.GENERIC = { hpMul = 1, atkMul = 1, defMul = 1, speed = 1, attack = "melee" }
+Balance.FAMILY_MATCH = FAMILY_MATCH
+-- S67: a family so family lines count; in the model every family gives the same (FAMILY_MATCH spreads the lines).
+Balance.GENERIC = { hpMul = 1, atkMul = 1, defMul = 1, speed = 1, attack = "melee", family = Families.ids[1] }
 
 -- Stats of a monster kind (Data/Monsters id or a kind table) at spawner level `level`.
 function Balance.monster(kind: any, level: number, variant: string?, groupSize: number?): any

@@ -11,6 +11,11 @@
 --           1 + ilvl / 60 for "pct" scaling (percentages).
 -- S32: attack bonuses are percentages of the attack (a flat +5 was +50 % at level 1 and +3 % at level 20), and
 -- pools are filtered by class (`CLASS_STATS`): a Warrior's sword never rolls INT or magic attack.
+-- S67 (STATY 4): a pool entry starting with "@" is a parameter marker ("@vsFamily", "@resFamily", "@vsClass",
+-- "@resClass"); ItemRoll.rollItem expands it to one variant line ("vs_undead", "res_mage") before saving.
+
+local Classes = require("./Classes")
+local Families = require("./Families")
 
 export type BonusTier = "regular" | "legendary" | "mythic"
 
@@ -28,7 +33,11 @@ export type BonusDef = {
 	tier: BonusTier, -- row style in the tooltip and the wiki; replaces guessing by hook or prefix (STATY 2C)
 	wiki: boolean, -- exported to the wiki; false for legacy lines
 	replacedBy: string?, -- legacy id read as another line (ItemRoll.itemStats, STATY 12)
+	param: string?, -- S67: the pool marker this variant comes from ("@vsFamily")
+	of: string?, -- S67: family id or class id (Classes.order form, "Mage") of a variant
 }
+
+export type Param = { prefix: "vs_" | "res_", over: "family" | "class" }
 
 local DEFS: { [string]: BonusDef } = {}
 
@@ -145,6 +154,47 @@ bonus("myth_cooldown", nil, "flat", 12, 16, "none", 1, true, "cooldownReduction"
 DEFS.armorPen.wiki = false
 DEFS.armorPen.replacedBy = "pierce"
 
+-- S67 (STATY 4): lines with a parameter. Each variant is a hook under its own id (summed like other hooks): vs_<family>
+-- read by CombatService on monsters of that family, res_<family> as a damage reduction against them (Combat.familyResCap),
+-- vs_/res_<class> only in PvP (Combat.classLineCap each side).
+local PARAMS: { [string]: Param } = {
+	["@vsFamily"] = { prefix = "vs_", over = "family" },
+	["@resFamily"] = { prefix = "res_", over = "family" },
+	["@vsClass"] = { prefix = "vs_", over = "class" },
+	["@resClass"] = { prefix = "res_", over = "class" },
+}
+local PARAM_RANGES: { [string]: { number } } = {
+	["@vsFamily"] = { 2, 4.4 },
+	["@resFamily"] = { 2, 4 },
+	["@vsClass"] = { 1.5, 3.5 },
+	["@resClass"] = { 1.5, 3.5 },
+}
+local PARAM_ORDER = { "@vsFamily", "@resFamily", "@vsClass", "@resClass" }
+
+local function familyLine(prefix: "vs_" | "res_", familyId: string): string
+	return prefix .. familyId
+end
+
+local function classLine(prefix: "vs_" | "res_", classId: string): string
+	return prefix .. string.lower(classId)
+end
+
+local VARIANTS: { [string]: { string } } = {}
+for _, paramId in PARAM_ORDER do
+	local param = PARAMS[paramId]
+	local range = PARAM_RANGES[paramId]
+	local list: { string } = {}
+	local sources: { string } = if param.over == "family" then Families.ids :: any else Classes.order :: any
+	for _, of in sources do
+		local id = if param.over == "family" then familyLine(param.prefix, of) else classLine(param.prefix, of)
+		bonus(id, nil, "flat", range[1], range[2], "pct", 1, true, id)
+		DEFS[id].param = paramId
+		DEFS[id].of = of
+		table.insert(list, id)
+	end
+	VARIANTS[paramId] = table.freeze(list)
+end
+
 -- Pools per bonus group (item definitions name their group) --------------------------------------------------
 local POOLS: { [string]: { string } } = {
 	weapon = {
@@ -166,6 +216,7 @@ local POOLS: { [string]: { string } } = {
 		"woundChance",
 		"poisonChance",
 		"dotPower",
+		"@vsFamily",
 	},
 	shield = {
 		"armor",
@@ -181,6 +232,7 @@ local POOLS: { [string]: { string } } = {
 		"blockChance", -- S64; hpRegen left the shield pool to keep it at 13 lines (STATY 9)
 		"meleeGuard",
 		"rangedGuard",
+		"@resFamily",
 	},
 	quiver = {
 		"physAtk",
@@ -224,6 +276,7 @@ local POOLS: { [string]: { string } } = {
 		"critResist",
 		"costReduce",
 		"rangedGuard",
+		"@resFamily",
 	},
 	armor = {
 		"hp",
@@ -239,6 +292,7 @@ local POOLS: { [string]: { string } } = {
 		"critResist",
 		"meleeGuard",
 		"rangedGuard",
+		"@resFamily",
 	},
 	gloves = {
 		"physAtk",
@@ -270,10 +324,10 @@ local POOLS: { [string]: { string } } = {
 		"goldBonus",
 		"dropBonus",
 		"hpRegen",
-		"manaRegen",
 		"skillDmg",
 		"costReduce",
 		"dotPower",
+		"@vsFamily", -- S67: manaRegen left the necklace to keep the Mage pool at 14 (STATY 9)
 	},
 	ring = {
 		"str",
@@ -290,6 +344,8 @@ local POOLS: { [string]: { string } } = {
 		"pierce",
 		"basicDmg",
 		"resourceOnHit",
+		"@vsClass",
+		"@resClass",
 	},
 	talisman = {
 		"str",
@@ -303,6 +359,9 @@ local POOLS: { [string]: { string } } = {
 		"manaRegen",
 		"hpPct",
 		"critResist",
+		"@resFamily",
+		"@vsClass",
+		"@resClass",
 	},
 	legendary = {
 		"leg_bossDamage",
@@ -367,5 +426,16 @@ return table.freeze({
 	classStats = CLASS_STATS,
 	get = function(id: string): BonusDef?
 		return DEFS[id]
+	end,
+	-- S67: pool markers and their variants.
+	params = table.freeze(PARAMS),
+	isParam = function(id: string): boolean
+		return PARAMS[id] ~= nil
+	end,
+	familyLine = familyLine,
+	classLine = classLine,
+	-- Variant ids of a marker in a fixed order (Families.ids / Classes.order); empty for anything else.
+	variants = function(paramId: string): { string }
+		return VARIANTS[paramId] or {}
 	end,
 })

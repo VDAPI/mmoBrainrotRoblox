@@ -383,7 +383,7 @@ export type PathDef = {
 	nameKey: string, descKey: string, titleId: string, weapon: WeaponReq,
 	rows: { { choice: boolean, nodes: { PathNode } } }, -- 11; poziom i wymóg punktów z Paths.rowsFor
 	statPlan: { [string]: number }?, -- S58
-	itemWeights: any?, -- S67, nigdy na wiki
+	itemWeights: ItemWeights?, -- S67: { axes?, stats?, traits? }, mnożniki wag klasy w Logic/ItemScore (1 = bez zmian, 0 = pomiń); nigdy na wiki
 	reference: { ReferenceBuild }, -- buildy wzorcowe dla modelu, nigdy na wiki
 	wiki: boolean?, -- false = nieopublikowana: ukrywa ścieżkę, jej umiejętności, węzły, tytuł i teksty (3.5)
 }

@@ -28,6 +28,7 @@ local Analytics = require(script.Parent.Parent.Analytics)
 
 local AreaProfiles = require(Shared.Data.AreaProfiles)
 local AttackPose = require(Shared.Logic.AttackPose)
+local Bonuses = require(Shared.Data.Bonuses)
 local BuffCategories = require(Shared.Data.BuffCategories)
 local Classes = require(Shared.Data.Classes)
 local Context = require(script.Parent.Parent.Skills.Context)
@@ -368,6 +369,19 @@ local function hpFraction(player: Player): number
 	return hp / maxHp
 end
 
+-- S67 (STATY 8): the attacker's vs_<target class> and the target's res_<attacker class>; 1 without both characters.
+local function classLineMul(player: Player, target: Player): number
+	local mine: Types.CharacterData? = PlayerStateService.GetCharacter(player)
+	local theirs: Types.CharacterData? = PlayerStateService.GetCharacter(target)
+	if not mine or not theirs then
+		return 1
+	end
+	return Damage.classLineMul(
+		hook(player, Bonuses.classLine("vs_", theirs.class :: string)),
+		hook(target, Bonuses.classLine("res_", mine.class :: string))
+	)
+end
+
 -- Damage multiplier from the attacker's legendary effects against this target.
 local function offensiveMultiplier(player: Player, targetEntity: any): number
 	local mult = 1
@@ -378,6 +392,11 @@ local function offensiveMultiplier(player: Player, targetEntity: any): number
 			mult += hook(player, "eliteDamage") / 100
 		elseif monster.variant == "boss" then
 			mult += hook(player, "bossDamage") / 100
+		end
+		-- S67 (STATY 4): vs_<family> lines against monsters of that family (bosses and their adds too), no cap.
+		local family = monster.def and monster.def.family
+		if family then
+			mult += hook(player, Bonuses.familyLine("vs_", family)) / 100
 		end
 		low = monster.hp / math.max(1, monster.stats.maxHp) < Combat.lowHpFraction
 	elseif targetEntity.player then
@@ -886,8 +905,11 @@ function CombatService.DealDamage(
 			local weakenMul = 1
 				- (if selfEntity then StatusEffectService.CategoryValue(selfEntity, "enemyDamageDown") else 0) / 100
 			local mul = offensiveMultiplier(player, targetEntity) * extra * weakenMul
-			result.amount = math.max(1, math.floor(result.amount * mul))
-			result.dotBase = math.max(1, math.floor((result.dotBase or result.amount) * mul))
+			-- S67 (STATY 8): class lines only here, after CanAttack (on top of the 0.6 of computeDamage). Ticks
+			-- take dotBase from before the class lines (S63 keeps them on the bare hit).
+			local dotBase = math.max(1, math.floor((result.dotBase or result.amount) * mul))
+			result.amount = math.max(1, math.floor(result.amount * mul * classLineMul(player, target)))
+			result.dotBase = dotBase
 		else
 			result.dotBase = 0
 		end
@@ -1556,6 +1578,18 @@ function CombatService.Init(registry)
 			StatService.GetValue(player, "meleeGuard"),
 			StatService.GetValue(player, "rangedGuard")
 		)
+	end)
+
+	-- S67 (STATY 4, 6, 7): res_<family> lines against the family of the monster of this hit, capped at
+	-- Combat.familyResCap; one more own entry under the 75 % damage reduction cap.
+	StatusEffectService.RegisterReductionProvider(function(player: Player, source: string): number
+		local hit = incoming[player]
+		local monster = if source == "monster" and hit then hit.monster else nil
+		local family = monster and monster.def and monster.def.family
+		if not family then
+			return 0
+		end
+		return (1 - Damage.familyResMul(hook(player, Bonuses.familyLine("res_", family)))) * 100
 	end)
 
 	elementServices = {

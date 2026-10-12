@@ -5,12 +5,17 @@
 local Shared = game:GetService("ReplicatedStorage").Shared
 
 local AreaProfiles = require(Shared.Data.AreaProfiles)
+local Bonuses = require(Shared.Data.Bonuses)
+local Classes = require(Shared.Data.Classes)
+local Combat = require(Shared.Data.Combat)
 local Config = require(Shared.Config)
 local DevPreset = require(Shared.Logic.DevPreset)
 local Elements = require(Shared.Data.Elements)
+local Families = require(Shared.Data.Families)
 local Inventory = require(Shared.Logic.Inventory)
 local ItemIcons = require(Shared.Logic.ItemIcons)
 local ItemRoll = require(Shared.Logic.ItemRoll)
+local ItemScore = require(Shared.Logic.ItemScore)
 local ItemValue = require(Shared.Logic.ItemValue)
 local Items = require(Shared.Data.Items)
 local Loot = require(Shared.Logic.Loot)
@@ -521,6 +526,142 @@ commands.tooltip = function(player, args)
 	if short then
 		reply(player, "admin.tooltip.line", { role = "statLine", text = short })
 	end
+end
+
+local function round1(v: number): number
+	return math.floor(v * 10 + 0.5) / 10
+end
+
+-- S67: "vs_undead 6.2, res_mage 3" of the family and class lines of one item; nil without any.
+local function paramLines(item: any): string?
+	local parts: { string } = {}
+	for _, bonus in item.bonuses or {} do
+		local def = Bonuses.get(bonus.stat)
+		if def and def.param then
+			table.insert(parts, `{bonus.stat} {bonus.v}`)
+		end
+	end
+	return if #parts > 0 then table.concat(parts, ", ") else nil
+end
+
+-- S67: /givefam <item> <family|random> [rarity] [ilvl]: equipment rolled like loot of a monster of that family.
+commands.givefam = function(player, args)
+	local def = Items.get(args[1] or "")
+	local familyArg = args[2]
+	local family = if familyArg == "random" then nil else familyArg
+	if
+		not def
+		or def.category ~= "equipment"
+		or def.fixedBonuses
+		or not familyArg
+		or (family and not Families.get(family))
+	then
+		reply(player, "admin.usage.givefam")
+		return
+	end
+	withCharacter(player, function()
+		local character = PlayerStateService.GetCharacter(player)
+		local rarity = Rarities.parse(args[3]) or Rarities.HEROIC
+		local ilvl = math.clamp(parseAmount(args[4]) or character.level, 1, Config.MaxLevel)
+		local item = ItemRoll.rollItem(
+			def.id,
+			ilvl,
+			rarity,
+			Rng.new(),
+			InventoryService.NewUid(),
+			character.class :: string,
+			{ family = family }
+		)
+		if InventoryService.AddItem(player, item) > 0 then
+			reply(player, "inventory.full")
+			return
+		end
+		reply(player, "admin.givefam.ok", {
+			item = `#item:{def.id}:0`,
+			lines = paramLines(item) or "@admin.itemscore.none",
+		})
+	end)
+end
+
+-- S67: sums of hooks with `prefix` per family / class after their caps ("undead 6/4").
+local function lineSums(hooks: { [string]: number }, over: "family" | "class"): string
+	local parts: { string } = {}
+	local ids: { string } = if over == "family" then Families.ids :: any else Classes.order :: any
+	for _, id in ids do
+		local vsId = if over == "family" then Bonuses.familyLine("vs_", id) else Bonuses.classLine("vs_", id)
+		local resId = if over == "family" then Bonuses.familyLine("res_", id) else Bonuses.classLine("res_", id)
+		local vs, res = hooks[vsId] or 0, hooks[resId] or 0
+		if over == "class" then
+			vs = math.min(vs, Combat.classLineCap)
+		end
+		res = math.min(res, if over == "family" then Combat.familyResCap else Combat.classLineCap)
+		if vs > 0 or res > 0 then
+			table.insert(parts, `{id} +{round1(vs)}/-{round1(res)}`)
+		end
+	end
+	return if #parts > 0 then table.concat(parts, ", ") else "@admin.itemscore.none"
+end
+
+-- S67: /itemscore: "Better item!" score of the worn items (by axis), family and class lines after their caps, and
+-- up to 5 better items from the backpack.
+commands.itemscore = function(player, _args)
+	withCharacter(player, function()
+		local character = PlayerStateService.GetCharacter(player)
+		local path = character.path
+		local mainPath = if path and type(path.main) == "string" then path.main else nil
+		local ctx: ItemScore.Context =
+			{ classId = character.class :: string, level = character.level, pathId = mainPath }
+		local hooks = EquipmentService.GetHooks(player)
+		reply(player, "admin.itemscore.head", {
+			path = if mainPath then `@path.{mainPath}.name` else "@admin.itemscore.none",
+			families = lineSums(hooks, "family"),
+			classes = lineSums(hooks, "class"),
+		})
+		for _, slot in Items.equipmentSlots do
+			local item = character.equipment[slot]
+			if item then
+				local b = ItemScore.breakdown(item, ctx)
+				reply(player, "admin.itemscore.slot", {
+					slot = `@slot.{slot}`,
+					item = `#item:{item.id}:{item.up or 0}`,
+					total = round1(b.total),
+					dmg = round1(b.dmg),
+					surv = round1(b.surv),
+					support = round1(b.support),
+					util = round1(b.util),
+				})
+			end
+		end
+		local better: { { item: any, gain: number } } = {}
+		for _, item in character.inventory do
+			local def = Items.get(item.id)
+			if def and def.slot and def.category == "equipment" then
+				local current: any
+				if def.slot == "ring" then
+					local a, b = character.equipment.ring1, character.equipment.ring2
+					current = if a and b
+						then (if ItemScore.score(a, ctx) <= ItemScore.score(b, ctx) then a else b)
+						else nil
+				else
+					current = character.equipment[def.slot]
+				end
+				if ItemScore.isUpgrade(item, current, ctx, character.level) then
+					local gain = ItemScore.score(item, ctx) - (if current then ItemScore.score(current, ctx) else 0)
+					table.insert(better, { item = item, gain = gain })
+				end
+			end
+		end
+		table.sort(better, function(a, b)
+			return a.gain > b.gain
+		end)
+		for i = 1, math.min(5, #better) do
+			local entry = better[i]
+			reply(player, "admin.itemscore.better", {
+				item = `#item:{entry.item.id}:{entry.item.up or 0}`,
+				gain = round1(entry.gain),
+			})
+		end
+	end)
 end
 
 return commands

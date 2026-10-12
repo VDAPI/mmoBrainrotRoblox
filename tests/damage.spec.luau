@@ -535,4 +535,16 @@ T.describe("Damage: block and protection (S64)", function()
 	end)
 end)
 
+T.describe("Damage: family and class lines (S67)", function()
+	T.it("class lines and family resistance with their caps", function()
+		T.expect(Damage.classLineMul(50, 0)).toBeNear(1.2, 1e-9)
+		T.expect(Damage.classLineMul(0, 50)).toBeNear(0.8, 1e-9)
+		T.expect(Damage.classLineMul(10, 10)).toBeNear(0.99, 1e-9)
+		T.expect(Damage.familyResMul(45)).toBeNear(0.7, 1e-9)
+		T.expect(Damage.familyResMul(-5)).toBeNear(1, 1e-9)
+		T.expect(Combat.familyResCap).toBe(30)
+		T.expect(Combat.classLineCap).toBe(20)
+	end)
+end)
+
 return nil

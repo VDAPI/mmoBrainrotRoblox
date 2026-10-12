@@ -57,6 +57,7 @@ local Blessings = require("./Blessings")
 local BuffCategories = require("./BuffCategories")
 local TerrainShapes = require("./Terrain")
 local CaveShapes = require("./CaveShapes")
+local Families = require("./Families")
 
 local MAX_LEVEL = 100
 local BIG = 1e12
@@ -83,6 +84,8 @@ end
 local VARIANT = enum("variant", { "0", "1", "2" }, true, "0")
 -- S30: rarities by name (or 1-5 typed in the chat; the panel offers the names).
 local RARITY_NAMES = { "common", "unique", "heroic", "legendary", "mythic" }
+local FAMILY_ARGS = table.clone(Families.ids :: any) :: { string }
+table.insert(FAMILY_ARGS, "random")
 
 local list: { Command } = {}
 
@@ -196,6 +199,14 @@ cmd("items", "value", {
 	int("up", 0, 9, true, "0"),
 })
 cmd("items", "tooltip", { ref("item", "item"), enum("lang", { "pl", "en" }, true, "pl") })
+-- S67: equipment rolled like loot of a monster of that family; "Better item!" score and family / class lines.
+cmd("items", "givefam", {
+	ref("item", "item"),
+	enum("family", FAMILY_ARGS),
+	enum("rarity", RARITY_NAMES, true, "heroic"),
+	int("ilvl", 1, MAX_LEVEL, true),
+})
+cmd("items", "itemscore", {})
 
 -- World
 cmd("world", "tp", { str("target"), str("a", true), str("b", true) })

@@ -5,7 +5,7 @@
 
 ## Stan
 
-S01–S51 i S53–S65 gotowe (lista i zakres w `docs/SESJE.md`). Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
+S01–S51 i S53–S67 gotowe (lista i zakres w `docs/SESJE.md`). Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
 kategorie efektów drużyny i stos efektów (`Logic/EffectStack`), S54 wzory globalne (`Logic/LevelCurves`), S55 rangi
 i przełomy w kształcie A/B (`Build.bp2`, `Skills.effective` §2.7), S56 koniec punktów umiejętności: rangi z poziomu
 postaci (`Skills.rankFor`, drabina przejściowa ROZWOJ 2.6), zapis w schemacie 6 (darmowy reset statystyk, pasek
@@ -28,8 +28,11 @@ Zastawa, Żniwo, Ścięcie, Łatwy cel), blok i kontra z limitami, ochrony przed
 skrócenie odnowienia z legend (`Skills.cooldown`), S65 cechy rytmu i stanu gracza (wszystkie 24 cechy działają:
 Podwójne cięcie, Przeszycie, Naciąg, Iskra i Moc żywiołu, Pieczęć runiczna, Zbawczy cios), `server/Skills/Elements`,
 Przemarznięcie lodowej broni, `accumulate` ran, trucizn i podpalenia z przedmiotów, S66 rodziny potworów (`Data/Families`), pancerz 10·L i
-odporność 8·L (`mresMul`), unik zwinnych rodzajów tylko na ataki podstawowe, kompensata życia `monsterHpComp`, `/mobdef`.
-Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`, `docs/STATY.md`), następna S67; testy
+odporność 8·L (`mresMul`), unik zwinnych rodzajów tylko na ataki podstawowe, kompensata życia `monsterHpComp`, `/mobdef`,
+S67 linie przeciw rodzinom (broń, naszyjnik; odporność na zbroi, hełmie, tarczy, talizmanie, limit 30%) i klasom
+(pierścień, talizman, tylko PvP, limit 20% na stronę), rodzina z łupu potwora / bossa, „Lepszy przedmiot” na
+`Data/ItemWeights` (osie, ścieżka główna, `PathDef.itemWeights`), `/givefam`, `/itemscore`.
+Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`, `docs/STATY.md`), następna S68; testy
 i strojenie po niej.
 
 ## Niedokończone (kod)
@@ -48,9 +51,9 @@ i strojenie po niej.
 - **Questy**: EXP z nagród dobrany wzorem, do strojenia.
 - **Gildie / aukcja / poczta**: brak zaproszeń do gildii między serwerami; aukcja bez podpowiedzi ceny, poczta bez
   pobrania.
-- **Przedmioty (S62–S65)**: umiejętności przy odświeżeniu obrażeń w czasie kasują resztę (`accumulate` dla nich w
-  S79); `ItemScore` bez wag nowych
-  linii i cech (S67); częstość linii na wiki liczona na pulę, nie na typ (S68); rodziny, cechy i unik potworów nie są na wiki, a
+- **Przedmioty (S62–S67)**: umiejętności przy odświeżeniu obrażeń w czasie kasują resztę (`accumulate` dla nich w
+  S79); opis przedmiotu bez szczegółów linii rodzin / klas i bez porównania w procentach, wiki bez wariantów linii
+  (S68); ścieżki bez `itemWeights` (sesje ścieżek); częstość linii na wiki liczona na pulę, nie na typ (S68); rodziny, cechy i unik potworów nie są na wiki, a
   `walka.mdx` / `combat.mdx` mówią, że unik działa na każde trafienie (S68); `dmgMul` Kuszy 1,45 (S90).
 - **Szczęście**: mechanizm Fortuny gotowy, wartości przyjdą z węzłami Kapłana (S71).
 - **Umiejętności i ścieżki**: ścieżki klas wkrótce (Kapłan S71, Wojownik S75, Łowca S78, Mag S81); do tego czasu

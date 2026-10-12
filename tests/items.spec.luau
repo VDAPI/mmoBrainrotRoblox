@@ -488,7 +488,9 @@ T.describe("S62 traits and weighted pools", function()
 			for _, bonus in item.bonuses do
 				T.expect(once[bonus.stat]).toBeNil()
 				once[bonus.stat] = true
-				seen[bonus.stat] = (seen[bonus.stat] or 0) + 1
+				-- S67: a family / class variant counts for the pool marker it came from
+				local key = (Bonuses.get(bonus.stat) :: any).param or bonus.stat
+				seen[key] = (seen[key] or 0) + 1
 			end
 		end
 		for id, p in expected do
@@ -741,8 +743,116 @@ T.describe("S65 rhythm and player-state traits", function()
 		T.expect({ myth.tier, myth.hook }).toEqual({ "mythic", "cooldownReduction" })
 		for _, classId in { "Warrior", "Cleric" } do
 			local pool = ItemRoll.bonusPool("shield_50", classId)
-			T.expect({ classId, #pool <= 13 }).toEqual({ classId, true })
+			T.expect({ classId, #pool <= 14 }).toEqual({ classId, true }) -- S67: 14 with @resFamily
 			T.expect({ classId, table.find(pool, "blockChance") ~= nil }).toEqual({ classId, true })
+		end
+	end)
+end)
+
+T.describe("S67 lines with a parameter", function()
+	local Families = require("../src/shared/Data/Families")
+	local Monsters = require("../src/shared/Data/Monsters")
+
+	local function familyOf(stat: string): string?
+		local def = Bonuses.get(stat) :: any
+		return if def and def.param and Bonuses.params[def.param].over == "family" then def.of else nil
+	end
+
+	local function classLine(stat: string): boolean
+		local def = Bonuses.get(stat) :: any
+		return def ~= nil and def.param ~= nil and Bonuses.params[def.param].over == "class"
+	end
+
+	T.it("a drop's family picks the variant", function()
+		local rng = Rng.new(1)
+		local found = 0
+		for _ = 1, 300 do
+			local item =
+				ItemRoll.rollItem("sword1h_30", 30, Rarities.HEROIC, rng, uid(), "Warrior", { family = "undead" })
+			for _, bonus in item.bonuses do
+				if familyOf(bonus.stat) then
+					T.expect(bonus.stat).toBe("vs_undead")
+					found += 1
+				end
+			end
+		end
+		T.expect(found > 0).toBe(true)
+	end)
+
+	T.it("no context rolls a random family, never a marker", function()
+		local rng = Rng.new(2)
+		local families: { [string]: boolean } = {}
+		local count = 0
+		for _ = 1, 600 do
+			local item = ItemRoll.rollItem("necklace_30", 30, Rarities.HEROIC, rng, uid(), "Mage")
+			for _, bonus in item.bonuses do
+				T.expect(Bonuses.get(bonus.stat) ~= nil).toBe(true)
+				T.expect(string.sub(bonus.stat, 1, 1) ~= "@").toBe(true)
+				local family = familyOf(bonus.stat)
+				if family then
+					if not families[family] then
+						count += 1
+					end
+					families[family] = true
+				end
+			end
+		end
+		T.expect(count >= 2).toBe(true)
+		for _ = 1, 300 do
+			local item = ItemRoll.rollItem("necklace_30", 30, Rarities.HEROIC, rng, uid(), "Mage", { family = "nope" })
+			for _, bonus in item.bonuses do
+				T.expect(Bonuses.get(bonus.stat) ~= nil).toBe(true)
+				local family = familyOf(bonus.stat)
+				if family then
+					T.expect(Families.get(family) ~= nil).toBe(true)
+				end
+			end
+		end
+	end)
+
+	T.it("markers sit only in their pools; class lines only on rings and talismans", function()
+		local expected = {
+			["@vsFamily"] = { "necklace", "weapon" },
+			["@resFamily"] = { "armor", "helmet", "shield", "talisman" },
+			["@vsClass"] = { "ring", "talisman" },
+			["@resClass"] = { "ring", "talisman" },
+		}
+		for marker, groups in expected do
+			local found: { string } = {}
+			for group, pool in Bonuses.pools do
+				if table.find(pool, marker) then
+					table.insert(found, group)
+				end
+			end
+			table.sort(found)
+			T.expect({ marker, found }).toEqual({ marker, groups })
+		end
+		local rng = Rng.new(3)
+		for _ = 1, 300 do
+			local item = ItemRoll.rollItem("armor_heavy_30", 30, Rarities.HEROIC, rng, uid(), "Warrior")
+			for _, bonus in item.bonuses do
+				T.expect(classLine(bonus.stat)).toBe(false)
+			end
+		end
+		local classLines = 0
+		for _ = 1, 300 do
+			local item = ItemRoll.rollItem("ring_30", 30, Rarities.HEROIC, rng, uid(), "Warrior")
+			for _, bonus in item.bonuses do
+				if classLine(bonus.stat) then
+					classLines += 1
+				end
+			end
+		end
+		T.expect(classLines > 0).toBe(true)
+	end)
+
+	T.it("monster loot carries the monster's family", function()
+		local family = (Monsters.get("skeletonGuard") :: any).family
+		T.expect(family ~= nil).toBe(true)
+		local loot = Loot.rollMonsterLoot("skeletonGuard", "normal", 40, Rng.new(9), { dropBonus = 100000 })
+		T.expect(#loot.items > 0).toBe(true)
+		for _, drop in loot.items do
+			T.expect(drop.family).toBe(family)
 		end
 	end)
 end)

@@ -8,6 +8,7 @@ local Fixture = require("./fixtures/paths")
 local PartyBuffRules = require("./PartyBuffRules")
 local PathData = require("../src/shared/Data/Paths")
 local GamePaths = require("../src/shared/Logic/Paths")
+local ItemScore = require("../src/shared/Logic/ItemScore")
 local Progression = require("../src/shared/Data/Progression")
 local SkillData = require("../src/shared/Data/Skills")
 local Skills = require("../src/shared/Logic/Skills")
@@ -956,6 +957,20 @@ T.describe("Paths: party auras (S61)", function()
 end)
 
 T.describe("Data: Paths (game)", function()
+	-- S67: item weights of paths name known axes, stats and traits (Logic/ItemScore.validateWeights).
+	T.it("item weights of paths are valid", function()
+		for _, path in PathData.list do
+			if path.itemWeights then
+				T.expect({ path.id, ItemScore.validateWeights(path.itemWeights) }).toEqual({ path.id, {} })
+			end
+		end
+		for _, path in Fixture.paths do
+			if path.itemWeights then
+				T.expect({ path.id, ItemScore.validateWeights(path.itemWeights) }).toEqual({ path.id, {} })
+			end
+		end
+	end)
+
 	local function isTeamEffect(effect: any): boolean
 		return type(effect) == "table" and not EffectStack.isOwn(effect.category)
 	end

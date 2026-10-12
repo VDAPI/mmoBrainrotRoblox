@@ -180,6 +180,17 @@ function Damage.guard(delivery: string?, melee: number, ranged: number): number
 	return 0
 end
 
+-- S67 (STATY 4, 7): share of a monster family's damage left after the defender's res_<family> lines.
+function Damage.familyResMul(res: number): number
+	return 1 - math.clamp(res, 0, Combat.familyResCap) / 100
+end
+
+-- S67 (STATY 8): PvP class lines on top of pvpModifier, each side capped at Combat.classLineCap.
+function Damage.classLineMul(vs: number, res: number): number
+	local cap = Combat.classLineCap
+	return (1 + math.clamp(vs, 0, cap) / 100) * (1 - math.clamp(res, 0, cap) / 100)
+end
+
 -- Fraction of damage removed by `defense` against an attacker of `attackerLevel`.
 function Damage.reduction(defense: number, attackerLevel: number): number
 	local def = math.max(0, defense)

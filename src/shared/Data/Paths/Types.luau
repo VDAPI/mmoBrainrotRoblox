@@ -2,6 +2,7 @@
 -- Class path shapes (ROZWOJ 3.2, S57). Rows and their level / point requirements come from Data/Paths ROWS through
 -- Logic/Paths.rowsFor; the class files only fill the nodes. Shape example: tests/fixtures/paths.luau.
 
+local ItemWeights = require("../ItemWeights")
 local SkillTypes = require("../Skills/Types")
 
 export type Scaled = SkillTypes.Scaled -- { rank 1, rank max } or a constant, as in skills
@@ -54,7 +55,7 @@ export type PathDef = {
 	rows: { PathRow }, -- 11; level and point requirement come from Paths.rowsFor
 	-- S58: plan of the path as main path; the class plan applies without one; never on the wiki
 	statPlan: { [string]: number }?,
-	itemWeights: any?, -- S67; never on the wiki
+	itemWeights: ItemWeights.ItemWeights?, -- S67: multipliers on the class weights of Logic/ItemScore; never on the wiki
 	reference: { ReferenceBuild }, -- model builds; never on the wiki
 	wiki: boolean?, -- false = unpublished on the wiki (ROZWOJ 3.5)
 }

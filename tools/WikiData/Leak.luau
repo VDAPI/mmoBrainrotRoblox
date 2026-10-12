@@ -6,7 +6,7 @@
 
 local Leak = {}
 
-Leak.FORBIDDEN_KEYS = { "productId", "passId", "robux", "price", "shards", "RespawnNowCost" }
+Leak.FORBIDDEN_KEYS = { "productId", "passId", "robux", "price", "shards", "RespawnNowCost", "itemWeights" } -- S67: path item weights
 
 local function sortedPaths(files: { [string]: string }): { string }
 	local paths = {}

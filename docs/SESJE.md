@@ -3632,3 +3632,31 @@ Pliki: `Data/{Families,Monsters,Bosses,Combat,AdminCommands,Localization/pl,Loca
 `Logic/{MonsterStats,Damage,FightSim}`, `Services/CombatService`, `Entities/Boss`, `Admin/{Monsters,Combat}`,
 `UI/Screens/WorldMap/CreatureCards`, `tests/{Balance,balance,damage,data,localization}`, `tools/{balance_report,
 WikiData/Bosses}`, dane wiki, `docs/{STATY,DESIGN,ARCHITECTURE,DECYZJE,SESJE,PROGRESS}.md`, `CLAUDE.md`.
+
+### S67: Przedmioty 6: linie przeciw rodzinom i klasom, „Lepszy przedmiot”
+
+- `Data/Bonuses`: 20 wariantów (`vs_`/`res_` × 6 rodzin, × 4 klasy) z pętli po `Families.ids` i `Classes.order`, hak
+  pod własnym id, pola `param` i `of`; znaczniki w pulach (broń, naszyjnik / zbroja, hełm, tarcza, talizman / pierścień,
+  talizman), `params`, `isParam`, `familyLine`, `classLine`, `variants`. `Data/Combat`: `familyResCap`, `classLineCap`.
+- `Logic/ItemRoll`: `RollContext`, siódmy argument `rollItem`, rozwinięcie znacznika (`rng:pick` tylko wtedy);
+  `TraitRoll.contrib` (wkład cechy w `flat` / `hooks`). `Logic/Loot`: `ItemDrop.family` z rodzaju potwora.
+  `LootService.instancesFrom` i `DungeonService.reward` podają rodzinę; pozostałe wywołania bez kontekstu.
+- Walka: `Damage.familyResMul`, `Damage.classLineMul`; `CombatService`: `vs_<rodzina>` w `offensiveMultiplier`,
+  dostawca redukcji `res_<rodzina>` (przez `incoming[player].monster`), `classLineMul` w gałęzi PvP.
+- „Lepszy przedmiot”: `Data/ItemWeights` (nowy), `Logic/ItemScore` od nowa (`breakdown`, `score`, `isUpgrade`,
+  `validateWeights`, kontekst klasa + ścieżka), `PathDef.itemWeights` typowane, karta w `LootComfortController` z
+  kontekstem ścieżki głównej.
+- Lustro: `FightSim.dps` / `hit` czytają linie rodzin, `Balance.expectedBonuses` rozkłada znacznik rodziny na 6
+  wariantów × `FAMILY_MATCH` 0,5, znacznik klasy zajmuje miejsce i nic nie daje; `Balance.GENERIC.family`.
+  `balance.spec` przeszedł bez przesuwania progów.
+- Admin: `/givefam`, `/itemscore` (sumy linii po limitach, osie każdego slotu, do 5 lepszych z plecaka).
+- Testy: `items` (wariant z kontekstu, losowa rodzina, pule znaczników, rodzina w łupie; „weighted rolls” liczy
+  wariant pod znacznikiem, tarcza ≤ 14), `data` (znaczniki w testach pul i tierów), `lootcomfort` (kolejność dla klas,
+  wagi ścieżki, kompletność wag), `damage` (mnożniki z limitami), `paths` (`validateWeights` ścieżek gry i fixture'ów).
+- Wiki: `npm run data` (Node był): `bonuses.json`, `mechanics.json`, `meta.json`, `docs/PRZEDMIOTY.md`; `itemWeights`
+  w `Leak.FORBIDDEN_KEYS`. Eksportera nie zmieniano.
+
+Pliki: `Data/{Bonuses,Combat,ItemWeights,AdminCommands,Paths/Types,Localization/pl,Localization/en}`,
+`Logic/{ItemRoll,Loot,Damage,FightSim,ItemScore}`, `Services/{CombatService,LootService,DungeonService}`,
+`Admin/Items`, `Controllers/LootComfortController`, `tests/{Balance,items,data,lootcomfort,damage,paths}`,
+`tools/WikiData/Leak`, dane wiki, `docs/{STATY,DESIGN,ROZWOJ,DECYZJE,SESJE,PROGRESS}.md`.

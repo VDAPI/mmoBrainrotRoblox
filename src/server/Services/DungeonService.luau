@@ -334,7 +334,8 @@ local function reward(run: Run, position: Vector3, damageBy: { [Player]: number 
 								rolled.rarity,
 								rng,
 								HttpService:GenerateGUID(false),
-								char.class :: string
+								char.class :: string,
+								{ family = def.family :: string? } -- S67: family lines take the boss's family
 							)
 						)
 					end

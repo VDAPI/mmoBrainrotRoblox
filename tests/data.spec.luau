@@ -389,13 +389,20 @@ T.describe("Data: Items", function()
 		end
 		for group, pool in Bonuses.pools do
 			T.expect({ group = group, ok = #pool >= maxCount }).toEqual({ group = group, ok = true })
-			for _, id in pool do
-				local def = Bonuses.get(id)
-				if not def then
-					fail(group, `unknown bonus {id}`)
+			for _, entry in pool do
+				-- S67: a marker stands for its variants, each a known, localized line
+				local ids = if Bonuses.isParam(entry) then Bonuses.variants(entry) else { entry }
+				if Bonuses.isParam(entry) then
+					T.expect({ entry, #ids > 0 }).toEqual({ entry, true })
 				end
-				if not hasKey((def :: any).nameKey) then
-					fail(group, `missing {(def :: any).nameKey}`)
+				for _, id in ids do
+					local def = Bonuses.get(id)
+					if not def then
+						fail(group, `unknown bonus {id}`)
+					end
+					if not hasKey((def :: any).nameKey) then
+						fail(group, `missing {(def :: any).nameKey}`)
+					end
 				end
 			end
 		end
@@ -782,7 +789,10 @@ T.describe("Data: item traits and bonus tiers (S62)", function()
 		local inPool: { [string]: string } = {}
 		for group, pool in Bonuses.pools do
 			for _, id in pool do
-				inPool[id] = group
+				-- S67: markers stand for their variants (regular lines)
+				for _, variant in if Bonuses.isParam(id) then Bonuses.variants(id) else { id } do
+					inPool[variant] = group
+				end
 			end
 		end
 		for id, def in Bonuses.byId do

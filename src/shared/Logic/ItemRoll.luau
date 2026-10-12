@@ -2,7 +2,9 @@
 -- Item rolling and item statistics (DESIGN §5.2–§5.4). Pure; randomness from Logic/Rng, uids injected.
 
 local Bonuses = require("../Data/Bonuses")
+local Classes = require("../Data/Classes")
 local Elements = require("../Data/Elements")
+local Families = require("../Data/Families")
 local ItemValue = require("./ItemValue")
 local ItemTraits = require("../Data/ItemTraits")
 local Items = require("../Data/Items")
@@ -17,7 +19,19 @@ local ItemRoll = {}
 
 export type BonusLine = { id: string, v: number, quality: number }
 
-export type TraitRoll = { id: string, def: ItemTraits.TraitDef, power: number, value: number }
+-- S67: what itemStats added from the trait (flat / hooks), so ItemScore can value the trait once.
+export type TraitContrib = { flat: { [string]: number }, hooks: { [string]: number } }
+
+export type TraitRoll = {
+	id: string,
+	def: ItemTraits.TraitDef,
+	power: number,
+	value: number,
+	contrib: TraitContrib?, -- filled by itemStats
+}
+
+-- S67: the context of a drop; `family` is the family of the monster or boss that dropped the item.
+export type RollContext = { family: string? }
 
 export type ItemStats = {
 	-- Non-weapon base stats after rarity and upgrades.
@@ -237,17 +251,33 @@ function ItemRoll.inclusion(weights: { [string]: number }, count: number): { [st
 	return out
 end
 
+-- S67 (STATY 4, 7): the variant line of a pool marker. Family: the drop's family when known, else a random one;
+-- class: always a random class (the wearer's too). Never nil, never a marker.
+local function expandParam(id: string, rng: Rng.Rng, ctx: RollContext?): string
+	local param = Bonuses.params[id]
+	if param.over == "family" then
+		local family = ctx and ctx.family
+		if not family or not Families.get(family) then
+			family = rng:pick(Families.ids :: any) :: string
+		end
+		return Bonuses.familyLine(param.prefix, family :: string)
+	end
+	return Bonuses.classLine(param.prefix, rng:pick(Classes.order :: any) :: string)
+end
+
 -- Rolls an item instance. Equipment gets bonusMin..bonusMax random bonuses of its rarity (no repeats) plus
 -- `legendaryLines` distinct lines from the legendary pool and `mythicLines` from the mythic pool; named boss items get their fixed bonuses and fixed
 -- rarity (Mythic); everything else is a single unit of its definition's rarity. `forClass` (S32) is the class a
--- class-free item (jewellery) dropped for: its bonuses are useful to that class.
+-- class-free item (jewellery) dropped for: its bonuses are useful to that class. `ctx` (S67): the family of the
+-- monster that dropped it; without it a family marker rolls a random family.
 function ItemRoll.rollItem(
 	defId: string,
 	ilvl: number,
 	rarity: number,
 	rng: Rng.Rng,
 	uid: string,
-	forClass: string?
+	forClass: string?,
+	ctx: RollContext?
 ): ItemInstance
 	local def = Items.get(defId)
 	assert(def, `ItemRoll: unknown item {defId}`)
@@ -283,6 +313,9 @@ function ItemRoll.rollItem(
 			end
 			local id = rng:weighted(remaining)
 			remaining[id] = nil
+			if Bonuses.isParam(id) then
+				id = expandParam(id, rng, ctx)
+			end
 			table.insert(bonuses, { stat = id, v = ItemRoll.rollBonusValue(id, level, rarityId, rng:next()) })
 		end
 	end
@@ -420,16 +453,21 @@ function ItemRoll.itemStats(item: ItemInstance): ItemStats
 	local trait = ItemRoll.trait(item)
 	if trait then
 		local traitDef = trait.def
+		local contrib: TraitContrib = { flat = {}, hooks = {} }
 		if traitDef.kind == "stat" and traitDef.stat then
 			result.flat[traitDef.stat] = (result.flat[traitDef.stat] or 0) + trait.value
+			contrib.flat[traitDef.stat] = trait.value
 		elseif traitDef.hook then
 			result.hooks[traitDef.hook] = (result.hooks[traitDef.hook] or 0) + trait.value
+			contrib.hooks[traitDef.hook] = trait.value
 		end
 		-- S64: fixed hooks (Swordplay's counter, Parry's block chance) never grow with the trait strength.
 		local fixedHooks: { [string]: number } = traitDef.fixedHooks or {}
 		for hookId, v in fixedHooks do
 			result.hooks[hookId] = (result.hooks[hookId] or 0) + v
+			contrib.hooks[hookId] = (contrib.hooks[hookId] or 0) + v
 		end
+		trait.contrib = contrib
 		result.trait = trait
 	end
 	return result

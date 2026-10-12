@@ -414,7 +414,7 @@ Każdy przedmiot ma w tooltipie „Rzadkość · Kategoria” (broń jedno-/dwur
 
 ### 5.9 Wygoda łupu (dodatek po testach S17)
 
-- **„Lepszy przedmiot!”**: gdy podniesiony przedmiot jest lepszy od założonego (suma ważonych statystyk wg klasy) i gracz może go założyć, pojawia się mała karta z porównaniem i przyciskiem „Załóż” (znika po 8 s; wyłączalne w opcjach).
+- **„Lepszy przedmiot!”**: gdy podniesiony przedmiot jest lepszy od założonego (`Logic/ItemScore`: wagi klasy i ścieżki głównej z `Data/ItemWeights`, linie sytuacyjne w połowie, S67) i gracz może go założyć, pojawia się mała karta z porównaniem i przyciskiem „Załóż” (znika po 8 s; wyłączalne w opcjach).
 - **Filtr łupu** (opcje): automatyczne podnoszenie od wybranej rzadkości (dla gamepassa Auto-łup) i ukrywanie worków ze zwykłymi przedmiotami poniżej wybranej rzadkości (materiały i złoto zawsze widoczne).
 - **Dziennik łupu**: ostatnie 50 zdobytych przedmiotów z czasem i źródłem (potwór, mapa), dostępny z plecaka.
 - **Szybka sprzedaż**: u każdego kupca przycisk „Sprzedaj zwykłe” i „Sprzedaj zwykłe i unikaty”, pomija przedmioty założone, związane, zablokowane i przedmioty bossów.

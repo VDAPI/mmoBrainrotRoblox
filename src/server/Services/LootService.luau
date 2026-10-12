@@ -198,9 +198,11 @@ end
 local function instancesFrom(loot: Loot.LootResult): { ItemInstance }
 	local items: { ItemInstance } = {}
 	for _, drop in loot.items do
+		local uid = HttpService:GenerateGUID(false)
+		-- S67: family lines take the dropping monster's family
 		table.insert(
 			items,
-			ItemRoll.rollItem(drop.defId, drop.ilvl, drop.rarity, rng, HttpService:GenerateGUID(false), drop.forClass)
+			ItemRoll.rollItem(drop.defId, drop.ilvl, drop.rarity, rng, uid, drop.forClass, { family = drop.family })
 		)
 	end
 	for _, material in loot.materials do

@@ -1349,3 +1349,19 @@
 - **S66** Unik potworów tylko przy `options.basic` (atak podstawowy, drugi cios, kontra, Przeszycie, przeskok Iskry);
   reszta przez `Damage.paramsVsMonster` z `canDodge = false`. Uniknięty cios wciąga potwora i grupę (`AddThreat(0)`);
   premie zużyte przed rzutem (strzał, Naciąg) przepadają jak w PvP. `kindReward` nie liczy obrony ani uniku (S92).
+- **S67** Linie z parametrem: znacznik w puli (`@vsFamily`, `@resFamily`, `@vsClass`, `@resClass`, waga ×1) rozwija
+  `ItemRoll.rollItem` przed rzutem wartości; rodzina z dropu (`Loot.ItemDrop.family`, boss: `def.family` w
+  `DungeonService.reward`), bez kontekstu albo z nieznaną rodziną losowa; klasa zawsze losowa. Nigdy znacznik w zapisie.
+- **S67** `familyResCap` 30 i `classLineCap` 20 w `Data/Combat`; „20% razem” = suma z przedmiotów, każda strona osobno
+  (`vs_` napastnika i `res_` celu), nie wspólny limit. Oba klucze trafiają na wiki z całym `Data/Combat` (jak S64).
+- **S67** Linie rodzin tylko na potworach (`offensiveMultiplier` addytywnie; `res_` jako osobny wpis redukcji pod 75%,
+  źródło `"monster"`, więc też czerwone strefy, bez tyknięć i odbicia); linie klas tylko w gałęzi PvP po `CanAttack`,
+  mnożone na końcu ciosu (tyknięcia biorą `dotBase` sprzed nich, `damageOverride` admina bez nich).
+- **S67** Naszyjnik bez `manaRegen` (Mag miał 15 linii z `@vsFamily`; zostaje na hełmie, talizmanie i drugiej ręce).
+  Test S64 „tarcza ≤ 13” → ≤ 14 (miejsce na `@resFamily`, STATY 9). Granice 11–14 bez zmian; `balance.spec` bez zmian.
+- **S67** `ItemScore` od nowa (nadpisuje DESIGN §5.9): wagi w `Data/ItemWeights`, osie `dmg`/`surv`/`support`/`util`,
+  linie sytuacyjne (rodziny, klasy, bossowie, Elity) ×0,5, każda cecha raz szacunkiem STATY 14 (`TraitRoll.contrib`
+  odejmuje wkład cechy z `itemStats`), haki S20 z własnymi wagami zamiast `HOOK_WEIGHT = 2`, `pierce` 0,4 zamiast 2.
+  `critResist`, `meleeGuard`, `rangedGuard` w `common` (ta sama waga dla każdej klasy).
+- **S67** `PathDef.itemWeights = { axes?, stats?, traits? }`: mnożniki wag klasy (1 = bez zmian, 0 = pomiń), klucz
+  `stats` może być id linii (czytany jako jej statystyka albo hak); działa tylko dla ścieżki głównej tej samej klasy.

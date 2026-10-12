@@ -11,6 +11,7 @@
 -- Easy Prey, Reaping, the block's heal and cooldown reduction stay out of the model (the balance sessions weigh them).
 
 local AreaSpawns = require("./AreaSpawns")
+local Bonuses = require("../Data/Bonuses")
 local Combat = require("../Data/Combat")
 local Damage = require("./Damage")
 local MonsterAbilities = require("../Data/MonsterAbilities")
@@ -43,12 +44,14 @@ function FightSim.dps(p: Player, m: MonsterStats.MonsterStats, skill: number?): 
 	local gapMul, gapCrit = Damage.levelGap(p.level, m.level)
 	local critFactor = 1 + math.min((v.critChance or 0) + gapCrit, 100) / 100 * ((v.critDmg or 150) / 100 - 1)
 	local double = 1 + (p.hooks.doubleAttack or 0) / 100
+	-- S67: vs_<family> lines against the monster's family (additive like the game's offensiveMultiplier)
+	local familyMul = if m.family then 1 + (p.hooks[Bonuses.familyLine("vs_", m.family)] or 0) / 100 else 1
 	local perHit = attack * (1 - Damage.reduction(defense, p.level)) * critFactor * gapMul
 	-- S66: monsters dodge only basic attacks (Damage.paramsVsMonster); skills always land.
 	local hitShare = 1 - Damage.dodgeChance(m.dodge or 0, v.accuracy or 0)
 	local s = skill or 1
 	local share = (1 + (v.basicDmg or 0) / 100) * hitShare + math.max(0, s - 1) * (1 + (v.skillDmg or 0) / 100)
-	return perHit * math.max(0.1, v.atkSpeed or 1) * double * share
+	return perHit * math.max(0.1, v.atkSpeed or 1) * double * share * familyMul
 end
 
 -- Expected damage of one monster attack (`mul` x attack) on the player, after armour / magic resistance. Regular
@@ -66,7 +69,16 @@ function FightSim.hit(m: any, p: Player, mul: number?, kind: string?, canDodge: 
 		avoid = d + b
 		guard = Damage.guard(m.delivery, v.meleeGuard or 0, v.rangedGuard or 0) / 100
 	end
-	return m.attack * (mul or 1) * (1 - Damage.reduction(defense, m.level)) * crit * gapMul * (1 - avoid) * (1 - guard)
+	-- S67: res_<family> counts by source, so abilities too
+	local familyRes = if m.family then Damage.familyResMul(p.hooks[Bonuses.familyLine("res_", m.family)] or 0) else 1
+	return m.attack
+		* (mul or 1)
+		* (1 - Damage.reduction(defense, m.level))
+		* crit
+		* gapMul
+		* (1 - avoid)
+		* (1 - guard)
+		* familyRes
 end
 
 -- One player against `members` (MonsterStats, optionally with `ability`), killed in order.

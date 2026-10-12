@@ -15,12 +15,14 @@ local Rng = require("./Rng")
 local ItemRoll = require("./ItemRoll")
 
 -- `forClass`: the class a class-free item (jewellery) rolls its bonuses for (S32).
+-- `family` (S67): the dropping monster's family; family lines of the item roll it.
 -- `upgraded` / `extra` (S60): Fortune ennobled a Unique boss item / the second boss item.
 export type ItemDrop = {
 	defId: string,
 	ilvl: number,
 	rarity: number,
 	forClass: string?,
+	family: string?, -- S67: family of the monster that dropped it (ItemRoll.RollContext)
 	upgraded: boolean?,
 	extra: boolean?,
 }
@@ -152,6 +154,7 @@ function Loot.rollMonsterLoot(
 					ilvl = ilvl,
 					rarity = ItemRoll.rollRarity(variant, rng, mods.topTierMul),
 					forClass = mods.classId,
+					family = def.family :: string?,
 				})
 			end
 		end
