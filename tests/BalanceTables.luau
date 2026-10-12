@@ -8,6 +8,7 @@
 --   tablesItems()          S84: items, upgrades and materials, loot and luck, monster defence 20-100 (bands
 --                          "S84-items", "S84-upgrades", "S84-loot", "S84-defence"; tests/fixtures/balance_items.json)
 --   tablesSkills()         S85: T-SK1..6 of the class bases and reference builds (band "S85-skills"; tests/SkillModel)
+--   tablesPaths()          S86: classes and paths (band "S86-paths"; tests/SkillModel; tests/fixtures/balance_paths.json)
 --   values(tables, fixtureOnly?)  flat map "title|label|column" -> number (NaN cells skipped: JSON stores them as
 --                          null); fixtureOnly skips tables and rows marked fixture = false
 --
@@ -1142,6 +1143,9 @@ function BalanceTables.tablesAll(): { Table }
 	for _, t in BalanceTables.tablesSkills() do
 		table.insert(out, t)
 	end
+	for _, t in BalanceTables.tablesPaths() do
+		table.insert(out, t)
+	end
 	return out
 end
 
@@ -1193,7 +1197,7 @@ BalanceTables.SKILL_CAUSES = {
 } :: { [string]: string }
 
 local SKILL_NOTE =
-	"Liczby wstępne do mechanik S86 (Furia, Ładunki, pułapki, typy drużynowe, cechy-haki w `unmodelled`)."
+	"S86: z mechanikami klas (Furia, Ładunki, pułapki, typy drużynowe, cechy na zdarzeniu); tabele S85 zostają pod swoimi kluczami."
 
 local function weaponLabel(build: SkillModel.Build): string
 	return if build.weapon.offhand then `{build.weapon.main} + {build.weapon.offhand}` else build.weapon.main
@@ -1462,6 +1466,623 @@ function BalanceTables.tablesSkills(): { Table }
 	end
 	BalanceTables.skillSeconds = os.clock() - started
 	return tb.tables
+end
+
+-- Classes and paths (S86) -------------------------------------------------------------------------------------------
+
+local ItemTraits = require("../src/shared/Data/ItemTraits")
+local SkillData = require("../src/shared/Data/Skills")
+local Skills = require("../src/shared/Logic/Skills")
+
+-- S86 (G): builds "do celów" of docs/sessions/S86.md (the guards, situations and the model / ROZWOJ table read them).
+BalanceTables.TARGET_BUILDS = {
+	Warrior = { "berserker.fury", "guardian.defender", "guardian.loner", "standard.commander" },
+	Hunter = { "marksman.kingslayer", "trapper.poacher", "scout.partyHunter" },
+	Mage = { "destroyer.destroyerExp", "destroyer.destroyerBoss", "arcanist.arcanistBoss" },
+	Cleric = { "inquisitor.solo", "healer.dungeon", "healer.solo", "fortune.plunder" },
+} :: { [string]: { string } }
+
+-- S86 (D10): the cause of a model / ROZWOJ difference above ~10% per target id, one phrase (docs/SESJE.md S86 has the
+-- full lines); a fixed part of the label (the snapshot key).
+BalanceTables.PATH_CAUSES = {
+	["berserker.base"] = "Furia krok po kroku, baza z przełomami buildu",
+	["guardian.dps"] = "rotacja z danych: okrzyki i ochrona zjadają energię",
+	["guardian.ehp"] = "węzły i Furia Strażnika w EHP",
+	["guardian.group"] = "Furia Berserkera w grupie, rotacja z danych",
+	["standard.support"] = "sztandar raz (opener), Rozkaz bez energii",
+	["standard.S"] = "Furia Berserkera",
+	["warrior.solo"] = "grupa Furii po S86",
+	["inquisitor.ratio"] = "normalizacja broni, Piętno jako podpalenie",
+	["healer.dps"] = "rotacja z danych (Sanktuarium tylko w drużynie)",
+	["fortune.dps"] = "kości w rotacji, normalizacja",
+	["fortune.healLess"] = "węzły leczenia tej kolejności",
+	["cleric.solo"] = "walka, w której potwory oddają, i Leczenie między walkami",
+	["marksman.base"] = "baza z przełomami Strzelca, cechy broni",
+	["marksman.r7"] = "Furia krok po kroku",
+	["trapper.aoe"] = "pułapki z danymi S76 (obrażenia, pierścień)",
+	["trapper.single"] = "pułapki z obrażeniami na jednym celu",
+	["scout.support"] = "Znak i Oznaczenie w modelu",
+	["scout.S"] = "Królobójca z cechami",
+	["scout.solo"] = "Traper z pułapkami w grupie",
+	["destroyer.aoe"] = "próg obszaru i Kaskada w modelu",
+	["destroyer.single"] = "baza z przełomami buildu",
+	["arcanist.single"] = "Ładunki, Strumień, Wzmocnienie w modelu",
+	["arcanist.vsDestroyer"] = "Ładunki, Strumień, Wzmocnienie w modelu",
+	["mage.tsk4"] = "koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą",
+} :: { [string]: string }
+
+local PATHS_INTRO =
+	"S86: mechaniki klas w `tests/SkillModel.luau` (każda z `mirrors`), ekwipunek konwencji S32 z cechami na zdarzeniu; raport, asertują S87 (G10), S89 (Kapłan, Wojownik), S90 (Łowca, Mag), S91 (L20), S92–S94 (regiony i bossy)."
+
+-- S86 (G): the tables of the section "Klasy i ścieżki" (band "S86-paths"), in report order; every number comes from
+-- tests/SkillModel.luau. The values are the fixture tests/fixtures/balance_paths.json.
+function BalanceTables.tablesPaths(): { Table }
+	local started = os.clock()
+	local tb = BalanceTables.builder("S86-paths")
+	local section, row = tb.section, tb.row
+	local LEVELS = SkillModel.METRIC_LEVELS
+	local byKey = SkillModel.byKey
+
+	-- D2: the "Furia" reference
+	section(
+		"Odniesienie Berserkera „Furia”",
+		{
+			"poziom",
+			"1 cel 60 s",
+			"atak podst.",
+			"R1",
+			"wybuch 8 s",
+			"grupa 3 · 8 s",
+			"maks. HP",
+			"EHP",
+			"EHP czerwone",
+			"Furia 1 cel",
+			"Furia grupa",
+			"Furia ROZWOJ",
+			"kradzież / obrażenia w grupie",
+			"× baza (topór)",
+		},
+		"Berserker `berserker.fury` z toporem dwuręcznym (ROZWOJ 7.5, 10.4, 10.6): mianownik każdego stosunku „× Berserker”. Furia krok po kroku (`Logic/Fury`, `HOOK_RULES.fury`), średnia stosów obok 7,5 z ROZWOJ 10.6; bilans kradzieży życia w walce z 3 potworami, które oddają (leczenie z kradzieży / przyjęte obrażenia); × baza = 1 cel 60 s / baza Wojownika z toporem. "
+			.. PATHS_INTRO
+	)
+	for _, L in LEVELS do
+		local f = SkillModel.furyReference(L)
+		row(`L{L}`, {
+			{ f.single60 },
+			{ f.basic },
+			{ f.r1, "2" },
+			{ f.burst8 },
+			{ f.group },
+			{ f.maxHp },
+			{ f.ehp },
+			{ f.ehpRed },
+			{ f.furyMean, "2" },
+			{ f.furyMeanGroup, "2" },
+			{ 7.5, "1" },
+			{ f.lifesteal, "2" },
+			{ f.vsBase, "2", 1.25, 1.35 },
+		})
+	end
+
+	-- E: path targets
+	local results = SkillModel.evaluateTargets()
+	section(
+		"Cele ścieżek: podsumowanie",
+		{ "klasa · poziom", "w paśmie", "wierszy" },
+		"Wiersze `SkillModel.PATH_TARGETS` (bez R4–R6) na 20 / 45 / 70 / 100; na 20 tylko druk (S91). Blok „Balance 20-100: paths” w `balance.spec` czyta tę samą `SkillModel.evaluateTargets`. "
+			.. PATHS_INTRO
+	)
+	for _, c in B.CLASSES do
+		for _, L in LEVELS do
+			local ok, all = 0, 0
+			for _, r in results do
+				if r.classId == c and r.L == L then
+					all += 1
+					ok += if r.pass then 1 else 0
+				end
+			end
+			row(`{CLASS_PL[c]} · {L}`, { { ok }, { all } })
+		end
+	end
+	for _, c in B.CLASSES do
+		section(
+			`Cele ścieżek: {CLASS_PL[c]}`,
+			{ "cel · build · poziom", "wartość", "mieści się", "projekt (ROZWOJ)", "różnica", "źródło" },
+			"Wartość z pasmem (poza pasmem pogrubiona), 1 = mieści się; projekt = liczba z tabeli ROZWOJ dla tego buildu i poziomu, różnica ponad 10% pogrubiona (przyczyna w SESJE S86, „model a ROZWOJ”). Źródło: sekcja ROZWOJ (kolumna = numer sekcji). "
+				.. PATHS_INTRO
+		)
+		for _, r in results do
+			if r.classId == c then
+				local label = `{r.id} · {r.build}{if r.note then ` ({r.note})` else ""} · {r.L}`
+				local src = tonumber(string.match(r.source, "(%d+%.?%d*)")) or 0
+				row(label, {
+					{ r.value, "2", r.low, r.high },
+					{ if r.pass then 1 else 0 },
+					{ r.project or 0 / 0, "2" },
+					{ if r.project then r.value / r.project - 1 else 0 / 0, "%", -0.1, 0.1 },
+					{ src, "1" },
+				})
+			end
+		end
+	end
+
+	-- B: mechanics control cases
+	section(
+		"Mechaniki: przypadki kontrolne",
+		{ "przypadek", "wartość" },
+		"Liczby kontrolne mechanik B (testy w bloku „SkillModel: class mechanics (S86)”): kwota Leczenia na „Obrońcy”, kości i koło (`Roll`), podpalenie (Piętno Światła), średnia Furia, pułapki i kontrola, sokół, koszt z Ładunkami, kumulowanie. "
+			.. PATHS_INTRO
+	)
+	do
+		local healer = byKey("healer.dungeon")
+		row(
+			"B1 Leczenie Uzdrowiciela L45 / maks. HP „Obrońcy”",
+			{ { SkillModel.oneHeal(healer, 45, SkillModel.defenderTank(45)), "%" } }
+		)
+		local dice = SkillModel.diceExpected(3, 0, false, 0)
+		local double = SkillModel.diceExpected(3, 30, false, 0)
+		local wheel = SkillModel.diceExpected(3, 0, true, 50)
+		row("B2 kości: ściana (bez rollDouble)", { { dice[1], "2" } })
+		row("B2 kości: ściana (rollDouble 30)", { { double[1], "2" } })
+		row("B2 koło: ściana (boost 50)", { { wheel[1], "2" } })
+		local inq = SkillModel.metrics(byKey("inquisitor.solo"), 45)
+		row("B3 Piętno Światła: udział w 1 cel 60 s L45", { { inq.shares.brandOfLight or 0, "%" } })
+		for _, L in { 45, 70, 100 } do
+			row(`B5 średnia Furia „Furia” L{L} (ROZWOJ 7,5)`, { { SkillModel.fury(L).furyMean, "2" } })
+		end
+		local poacher = SkillModel.metrics(byKey("trapper.poacher"), 70)
+		row("B8 Kłusownik L70: pułapki na minutę", { { poacher.trapsPerMinute, "1" } })
+		row("B8 Kłusownik L70: kontrola celu", { { poacher.controlled, "%" } })
+		local scout = SkillModel.metrics(byKey("scout.partyHunter"), 70)
+		row("B9 Łowczy drużyny L70: uderzenia sokoła na minutę", { { scout.falconPerMinute, "1" } })
+		local arc = SkillModel.metrics(byKey("arcanist.arcanistBoss"), 70)
+		row("B12 Arkanista L70: średnio Ładunków", { { arc.chargesMean, "2" } })
+		local discharge = SkillData.get("arcaneDischarge") :: any
+		row(
+			"B12 koszt czaru przy 4 Ładunkach / bez (Skills.chargeCostFactor)",
+			{ { Skills.chargeCostFactor(4, 0), "2" } }
+		)
+		row("B12 Wyładowanie przy 4 Ładunkach (Skills.dischargeFactor)", {
+			{ Skills.dischargeFactor(Skills.valueAt(discharge, "perCharge", 10), 4), "2" },
+		})
+		row("B13 kumulowanie: 100 i 100 po 1 s (suma)", { { SkillModel.accumulateCase(100, 100, 1, 4), "i" } })
+	end
+
+	-- C3: measured situations
+	section(
+		"Sytuacje zmierzone (C3)",
+		{
+			"build · poziom",
+			"atak podst. 1 cel",
+			"atak podst. grupa",
+			"odstęp rzutów s",
+			"żywioł broni",
+			"lód: kontrola",
+			"obszar w grupie",
+			"kontrola 1 cel",
+			"kontrola boss",
+			"bez ruchu",
+			"bez ruchu boss",
+			"mana (boss 180 s)",
+			"leczenie / s tanka",
+		},
+		`Założenia S84 (Balance.SITUATIONS) w kolumnach obok: atak podst. {B.SITUATIONS.basicShare.Warrior} (Mag {B.SITUATIONS.basicShare.Mage}), odstęp {B.SITUATIONS.skillInterval} s, żywioł {B.SITUATIONS.elementShare}, lód {B.SITUATIONS.iceUptime}, kontrola {B.SITUATIONS.controlled}, bez ruchu {B.SITUATIONS.still}, obszar {B.SITUATIONS.areaShare}. Zmierzone na buildach „do celów” (\`SkillModel.situations\`); \`Balance.traitTerms\` przyjmuje je czwartym argumentem, przełączenie domyślnych sytuacji to decyzja S88. `
+			.. PATHS_INTRO
+	)
+	for _, c in B.CLASSES do
+		for _, key in BalanceTables.TARGET_BUILDS[c] do
+			for _, L in { 45, 70, 100 } do
+				local s = SkillModel.situations(byKey(key), L)
+				row(`{key} · {L}`, {
+					{ s.basicShare, "%" },
+					{ s.basicShareGroup, "%" },
+					{ s.skillInterval, "1" },
+					{ s.elementShare, "%" },
+					{ s.iceUptime, "%" },
+					{ s.areaShare, "%" },
+					{ s.controlled, "%" },
+					{ s.controlledBoss, "%" },
+					{ s.still, "%" },
+					{ s.stillBoss, "%" },
+					{ s.mana or 0 / 0, "%" },
+					{ s.dungeon or 0 / 0 },
+				})
+			end
+		end
+	end
+
+	-- C6: traits in the skill model
+	section(
+		"Cechy w modelu umiejętności (C6)",
+		{
+			"cecha · build · sytuacja · poziom · rzadkość",
+			"S84",
+			"S84 z sytuacją zmierzoną",
+			"model umiejętności",
+			"STATY 14",
+			"model − STATY",
+		},
+		"Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitValue`, ta sama z sytuacją zmierzoną (`traitTerms`, czwarty argument), model umiejętności na zdarzeniu (Fechtunek, Zastawa, Łamanie kości, Nękanie, Wstrząs, Żniwo przez `traitTerms` z sytuacją zmierzoną), szacunek STATY 14. Różnica ponad 1,5 pkt pogrubiona (lista „Dla S88”). Zwykły +0 i Mityczny +9. "
+			.. PATHS_INTRO
+	)
+	for _, L in { 45, 70, 100 } do
+		for _, rr in { { 1, 0, "Zwykły +0" }, { 5, 9, "Mityczny +9" } } do
+			for _, def in ItemTraits.list do
+				local t = SkillModel.traitRow(def.id, L, rr[1], rr[2])
+				row(`{def.id} · {t.build} · {t.situation} · {L} · {rr[3]}`, {
+					{ t.s84, "%" },
+					{ t.measured, "%" },
+					{ t.model, "%" },
+					{ t.staty, "%" },
+					{ t.model - t.staty, "%", -0.015, 0.015 },
+				})
+			end
+		end
+	end
+
+	-- F2: guards
+	local d1 = SkillModel.GUARD_D1
+	section(
+		"Strażniki T-SK (F2)",
+		{ "build · poziom", "T-SK1 / własne L20", "T-SK2 / własne L20", "T-SK3 / areaCap", "T-SK1 L20", "T-SK2 L20" },
+		`\`SkillModel.guards\`: progi ≤ 1,15, ≤ 1,25, ≤ 1,0 (pogrubione ponad); „własne L20” = ten sam build przycięty do L20. Odniesienia L20 planu (D1, sprzed przebudowy): T-SK1 W / Ł / M / K {d1.tsk1.Warrior} / {d1.tsk1.Hunter} / {d1.tsk1.Mage} / {d1.tsk1.Cleric}, T-SK2 {d1.tsk2.Warrior} / {d1.tsk2.Hunter} / {d1.tsk2.Mage} / {d1.tsk2.Cleric}, T-SK3 {d1.tsk3.Warrior} / {d1.tsk3.Hunter} / {d1.tsk3.Mage} / {d1.tsk3.Cleric}. Asertują S92 (25–44), S93 (45–69), S94 (70–100) po kotwicy S91. `
+			.. PATHS_INTRO
+	)
+	for _, c in B.CLASSES do
+		local keys = { "base" }
+		for _, k in BalanceTables.TARGET_BUILDS[c] do
+			table.insert(keys, k)
+		end
+		for _, key in keys do
+			local build = SkillModel.build(key, c) :: SkillModel.Build
+			local at20 = SkillModel.metrics(build, 20)
+			for _, L in SkillModel.GUARD_LEVELS do
+				local g = SkillModel.guards(build, L)
+				row(`{c} {key} · {L}`, {
+					{ g.tsk1rel, "2", nil, SkillModel.GUARD_LIMITS.tsk1rel },
+					{ g.tsk2rel, "2", nil, SkillModel.GUARD_LIMITS.tsk2rel },
+					{ g.tsk3cap, "2", nil, SkillModel.GUARD_LIMITS.tsk3cap },
+					{ at20.tsk1, "2" },
+					{ at20.tsk2, "2" },
+				})
+			end
+		end
+	end
+
+	-- F3 / F4
+	section(
+		"G10 w modelu S86 (F3)",
+		{ "wiersz", "wartość", "asertuje S87" },
+		"`SkillModel.targetsG10`: T-SK4 z Ładunkami i biernymi zwrotami, T-SK5 z premiami B1; bez pola `report` tylko T-SK4 `destroyer.destroyerExp` i `arcanist.arcanistBoss` oraz T-SK5 `healer.dungeon` na `guardian.defender` (1 w ostatniej kolumnie). "
+			.. PATHS_INTRO
+	)
+	for _, r in SkillModel.targetsG10() do
+		row(r.label, { { r.value, "2", r.low, r.high }, { if (r :: any).report == nil then 1 else 0 } })
+	end
+	section(
+		"Łąki na L20 w modelu S86 (F4)",
+		{ "wiersz", "wartość", "asertowany" },
+		"`SkillModel.targetsMeadows`: wiersze w paśmie asertuje blok regionów (1), reszta drukowana z powodem w kodzie (`MEADOWS_REPORT`, lista „Dla S91”). "
+			.. PATHS_INTRO
+	)
+	for _, r in SkillModel.targetsMeadows() do
+		row(r.label, { { r.value, "2", r.low, r.high }, { if (r :: any).report == nil then 1 else 0 } })
+	end
+
+	-- D7: R4 / R5 / R6
+	section(
+		"R4: wartość opcji przełomu",
+		{ "build · umiejętność · ranga · opcja · poziom", "zysk", "w buildzie" },
+		"`SkillModel.optionGain`: wartość umiejętności w roli (60 s na odnowieniu, 1 cel albo 3 cele z obrażeniami w czasie; leczenie na „Obrońcy”) z opcją / bez tego przełomu − 1, na pierwszym z 45 / 70 / 100, na którym ranga go ma. Pasma ROZWOJ 0: przełom 5 +10–15%, przełom 10 +20–25% (ustala S89); 0 = opcja bez wartości w tej roli (użytkowa). "
+			.. PATHS_INTRO
+	)
+	for _, r in SkillModel.r4Rows() do
+		local band = SkillModel.R4_BANDS[r.at]
+		row(`{r.build} · {r.skill} · {r.at} · {r.choice} · {r.L}`, {
+			{ r.value, "%", band[1], band[2] },
+			{ if r.chosen then 1 else 0 },
+		})
+	end
+	section(
+		"R5: rozrzut ścieżek i broni",
+		{ "rodzaj · build · broń · poziom", "zysk" },
+		"`SkillModel.r5Rows`: (a) ścieżka bojowa w swojej metryce / średnia pary klasy w tej metryce − 1 (Łowca: Strzelec 1 cel, Traper obszar 8 s; Mag: Niszczyciel obszar 60 s, Arkanista boss 180 s); (b) każda broń ścieżki / średnia broni − 1. Pasmo R5 ±10% (ROZWOJ 0; ustalają S89–S90). "
+			.. PATHS_INTRO
+	)
+	for _, r in SkillModel.r5Rows() do
+		row(`{r.kind} · {r.build} · {r.weapon} · {r.L}`, { { r.value, "%", -0.1, 0.1 } })
+	end
+	section(
+		"R6: wartość punktu (L100)",
+		{ "build · węzeł", "rangi", "zysk na punkt", "× średnia ścieżki" },
+		"`SkillModel.r6Rows` (P2): zysk metryki ścieżki z węzła rzędów 4–11 ścieżki głównej (pasywka albo modyfikacja; build bez jego rang) na punkt, wobec średniej węzłów buildu; ROZWOJ 0: „mniej więcej stała” (0 = węzeł bez wartości w tej metryce: obronny albo użytkowy). "
+			.. PATHS_INTRO
+	)
+	for _, r in SkillModel.r6Rows() do
+		row(`{r.build} · {r.node}`, { { r.ranks }, { r.perPoint, "%" }, { r.value, "2" } })
+	end
+
+	-- E3 Elites
+	section(
+		"Elity i Elity II (E3)",
+		{
+			"build · poziom",
+			"Elita wygrana",
+			"Elita czas s",
+			"Elita HP na końcu",
+			"Elita II wygrana",
+			"Elita II czas s",
+			"Elita II HP na końcu",
+		},
+		"`SkillModel.duel`: pojedynek z miksturami z Elitą i Elitą II regionu poziomu L (jaskinie `Balance.caveElites`, zdolność Elity II), potwór oddaje. Cel ROZWOJ 7.5: Elity wygrane, Elity II przegrane; wynik zależy od kotwic Elit S87 i potworów S92–S94, więc raport. "
+			.. PATHS_INTRO
+	)
+	for _, key in { "guardian.loner", "standard.commander", "healer.solo", "fortune.plunder", "scout.partyHunter" } do
+		for _, L in LEVELS do
+			local elite, elite2 = SkillModel.eliteKinds(L)
+			if elite and elite2 then
+				local a = SkillModel.duel(byKey(key), L, elite, "elite")
+				local b = SkillModel.duel(byKey(key), L, elite2, "elite2")
+				row(`{key} · {L}`, {
+					{ if a.won then 1 else 0 },
+					{ a.seconds, "s" },
+					{ a.hpEnd, "%" },
+					{ if b.won then 1 else 0 },
+					{ b.seconds, "s" },
+					{ b.hpEnd, "%" },
+				})
+			end
+		end
+	end
+
+	-- B7 intercept
+	section(
+		"Przechwyt w modelu bossa (B7)",
+		{
+			"boss pasma (poziom)",
+			"cios w Maga / HP",
+			"z Przechwyceniem",
+			"z Przechwyceniem i Osłoną",
+			"część Strażnika / jego HP",
+			"Mur Tarcz bez limitu",
+			"Mur Tarcz z limitem",
+		},
+		"`SkillModel.interceptReport` (`Logic/Intercept`: `resolve`, `part`, `take` z `caps.interceptPerSecond`, `split` z Męczennikiem): największy cios bossa pasma w Maga drużyny domyślnej i czerwona strefa na całą drużynę z Murem Tarcz „Obrońcy”. ROZWOJ 10.6 na L100: cios 115% HP Maga → 80% (z Osłoną 72%), Mur Tarcz bez limitu ok. 116% HP Strażnika, z limitem ok. 74%. "
+			.. PATHS_INTRO
+	)
+	for _, L in LEVELS do
+		local r = SkillModel.interceptReport(L)
+		row(`{SkillModel.BOSS_AT[L]} ({L})`, {
+			{ r.mageHit, "%" },
+			{ r.mageKept, "%" },
+			{ r.mageCovered, "%" },
+			{ r.guardTook, "%" },
+			{ r.wallNoCap, "%" },
+			{ r.wallCap, "%" },
+		})
+	end
+
+	-- B2 Fortune
+	section(
+		"Premia Fortuny dla drużyny (B2)",
+		{ "poziom", "kości", "koło", "pech wroga: udział czasu", "pech wroga: średnio %" },
+		"`SkillModel.fortuneBonus`: średnie w czasie 180 s ścian kości i koła (krytyk, szybkość ataku) na sojuszniku przeliczone na obrażenia „Furii” i pech (`misfortune`) na bossie. Projekt ROZWOJ 9.6: kości ok. +2%, koło ok. +12% na 10 s co 90 s, wróg chybia do 15%. "
+			.. PATHS_INTRO
+	)
+	for _, L in LEVELS do
+		local f = SkillModel.fortuneBonus(byKey("fortune.plunder"), L)
+		row(`L{L}`, { { f.dice, "%" }, { f.wheel, "%" }, { f.missUptime, "%" }, { f.missMean, "1" } })
+	end
+
+	-- B8.4 traps
+	section(
+		"Pułapki: model a natychmiastowe koła (B8)",
+		{ "build · poziom", "obszar 8 s", "obszar 8 s: koła", "1 cel 60 s", "1 cel 60 s: koła" },
+		"„Kłusownik” z pułapkami według `Movement.trap` (sprawdzenie co `TRAP_CHECK`, czekanie na ściągnięcie) i z wyzwoleniem w chwili postawienia (ROZWOJ 11.6, „dla Trapera optymistycznie”). "
+			.. PATHS_INTRO
+	)
+	for _, L in { 45, 70, 100 } do
+		local a, b, c, d = SkillModel.trapTiming(byKey("trapper.poacher"), L)
+		row(`trapper.poacher · {L}`, { { a }, { b }, { c }, { d } })
+	end
+
+	-- B of the support paths
+	section(
+		"Wsparcie: B na źródła",
+		{ "build · poziom · źródło", "B" },
+		"Chorąży (`SkillModel.standardSupport`): średnie w czasie premii drużynowych × `ASSUMPTIONS.bannerUptime`, każda przeliczona na obrażenia „Furii”; Zwiadowca (`SkillModel.scoutSupport`): średnia `enemyWeak` na bossie (najsilniejszy wpis). Projekt: Chorąży na 100. Głos 2%, Sztandar 1,8%, Natchnienie 0,7%, Miażdżący Cios 1,5%, Rozkaz 3,5% (× 0,9); Zwiadowca 6 / 6,8 / 9,5% na 45 / 70 / 100. "
+			.. PATHS_INTRO
+	)
+	for _, entry in
+		{
+			{ "standard.commander", false },
+			{ "scout.partyHunter", true },
+		}
+	do
+		for _, L in { 45, 70, 100 } do
+			local build = byKey(entry[1])
+			local s = if entry[2] then SkillModel.scoutSupport(build, L) else SkillModel.standardSupport(build, L)
+			local names = {}
+			for name in s.sources do
+				table.insert(names, name)
+			end
+			table.sort(names)
+			for _, name in names do
+				row(`{entry[1]} · {L} · {name}`, { { s.sources[name], "%" } })
+			end
+			row(`{entry[1]} · {L} · razem`, { { s.B, "%" } })
+		end
+	end
+
+	-- D10: model and ROZWOJ
+	section(
+		"Model a ROZWOJ (D10)",
+		{ "cel · build · poziom (przyczyna)", "model", "projekt", "różnica" },
+		"Wiersze celów z liczbą z tabeli ROZWOJ (9.6, 10.6, 11.6, 12.7) dla tego samego buildu i poziomu; różnica ponad 10% pogrubiona, przyczyna w etykiecie (stała, klucz migawki) i w SESJE S86. Model jest prawdą, chyba że różnica wskazała błąd odwzorowania serwera. "
+			.. PATHS_INTRO
+	)
+	for _, r in results do
+		if r.project then
+			row(
+				`{r.id} · {r.build} · {r.L}{if r.note then ` ({r.note})` else ""} ({BalanceTables.PATH_CAUSES[r.id] or "–"})`,
+				{
+					{ r.value, "2" },
+					{ r.project, "2" },
+					{ r.value / r.project - 1, "%", -0.1, 0.1 },
+				}
+			)
+		end
+	end
+	BalanceTables.pathSeconds = os.clock() - started
+	return tb.tables
+end
+
+-- Paths fixture (S86 H1) --------------------------------------------------------------------------------------------
+
+BalanceTables.PATHS_FIXTURE_PATH = "tests/fixtures/balance_paths.json"
+-- Modules the S86 skill model reads (dataHash): a change in any of them may change the tables (S87 and later).
+BalanceTables.PATH_MODEL_MODULES = {
+	"Skills/Cleric",
+	"Skills/Hunter",
+	"Skills/Mage",
+	"Skills/Warrior",
+	"Skills/init",
+	"Paths/Cleric",
+	"Paths/Hunter",
+	"Paths/Mage",
+	"Paths/Warrior",
+	"Paths/init",
+	"SkillCurves",
+	"LevelCurves",
+	"Classes",
+	"Combat",
+	"BuffCategories",
+	"Stats",
+	"ItemTraits",
+	"Items/Bases",
+	"Items/Consumables",
+	"Bonuses",
+	"Rarities",
+	"Monsters",
+	"MonsterAbilities",
+	"Bosses",
+	"Families",
+	-- read too: hit delays (SkillMotions.hitDelay), the Elite caves and the region kinds (Balance.caveElites,
+	-- kindAtRegion; the Areas modules hash their picked numbers), STATY 14 of the trait table (ItemWeights)
+	"SkillMotions",
+	"Areas/Caves",
+	"Areas/meadows",
+	"Areas/duskwood",
+	"Areas/frostpeak",
+	"Areas/ashen",
+	"AreaProfiles",
+	"ItemWeights",
+	"Config",
+}
+
+-- dataHash of a fixture: per module, FNV-1a of the sorted "key=%.10g" lines of its Balance.dataDump part (the
+-- entries of tools/balance_reasons.luau; Config with CONFIG_KEYS and `configExtra`).
+function BalanceTables.dataHashOf(modules: { string }, configExtra: { string }): { [string]: string }
+	local Reasons = (require :: any)("../tools/balance_reasons")
+	local entries = {}
+	for _, name in modules do
+		if name ~= "Config" then
+			local path = `Data/{name}`
+			local found: any = { path = path }
+			for _, entry in Reasons.BALANCE_MODULES do
+				if entry.path == path then
+					found = entry
+				end
+			end
+			table.insert(entries, found)
+		end
+	end
+	local config = table.clone(Reasons.CONFIG_KEYS)
+	for _, key in configExtra do
+		table.insert(config, key)
+	end
+	local skipped = B.skippedFunctions
+	local dump = B.dataDump({ BALANCE_MODULES = entries, CONFIG_KEYS = config, NOT_BALANCE = {}, reasons = {} })
+	B.skippedFunctions = skipped
+	local lines: { [string]: { string } } = {}
+	for key, v in dump do
+		local module = string.match(key, "^([^:]+):") :: string
+		lines[module] = lines[module] or {}
+		table.insert(lines[module], `{key}={string.format("%.10g", v)}`)
+	end
+	local out: { [string]: string } = {}
+	for _, name in modules do
+		local list = lines[name] or {}
+		table.sort(list)
+		out[name] = string.format("%08x", BalanceTables.fnv1a(table.concat(list, "\n")))
+	end
+	return out
+end
+
+function BalanceTables.pathDataHash(): { [string]: string }
+	return BalanceTables.dataHashOf(BalanceTables.PATH_MODEL_MODULES, { "Skills" })
+end
+
+function BalanceTables.readPathsFixture(): any?
+	if not fs.isFile(BalanceTables.PATHS_FIXTURE_PATH) then
+		return nil
+	end
+	return serde.decode("json", fs.readFile(BalanceTables.PATHS_FIXTURE_PATH))
+end
+
+-- The S86 tables against tests/fixtures/balance_paths.json (the shape of itemsFixtureDiff).
+function BalanceTables.pathsFixtureDiff(now: { [string]: number }?, tolerance: number?): ItemsFixtureReport
+	local file = BalanceTables.readPathsFixture()
+	local before: { [string]: number } = if file then file.values or {} else {}
+	local values = now or BalanceTables.values(BalanceTables.tablesPaths())
+	local tol = tolerance
+		or (if file and file.meta then file.meta.tolerance else nil)
+		or BalanceTables.FIXTURE_TOLERANCE
+	local hash = BalanceTables.pathDataHash()
+	local changed: { string } = {}
+	for _, name in BalanceTables.PATH_MODEL_MODULES do
+		if not file or not file.dataHash or file.dataHash[name] ~= hash[name] then
+			table.insert(changed, name)
+		end
+	end
+	local diffs: { FixtureDiff } = {}
+	local missing: { string } = {}
+	local added: { string } = {}
+	local count = 0
+	for key, b in before do
+		count += 1
+		local a = values[key]
+		if a == nil then
+			table.insert(missing, key)
+		else
+			local rel = BalanceTables.relative(a, b)
+			if rel > tol then
+				table.insert(diffs, { key = key, before = b, after = a, rel = rel, allowed = false })
+			end
+		end
+	end
+	for key in values do
+		if before[key] == nil then
+			table.insert(added, key)
+		end
+	end
+	table.sort(diffs, function(x, y)
+		if x.rel ~= y.rel then
+			return x.rel > y.rel
+		end
+		return x.key < y.key
+	end)
+	table.sort(missing)
+	table.sort(added)
+	return {
+		found = file ~= nil,
+		sameData = file ~= nil and #changed == 0,
+		changedModules = changed,
+		count = count,
+		diffs = diffs,
+		missing = missing,
+		added = added,
+	}
 end
 
 -- 1-20 fixture (S83) --------------------------------------------------------------------------------------------

@@ -1925,3 +1925,70 @@
 - **S85** Klucze migawki tabel S85 nie zależą od liczb: porównanie ma stałą przyczynę w etykiecie (różnica ponad 10%
   pogrubiona przez pasmo komórki), udziały w obrażeniach to wiersz na umiejętność (pięć największych), nie rangi 1.–5.
 - **S85** Raport nie pokazuje „a → b”, gdy liczba różni się od migawki tylko zaokrągleniem JSON (`Balance.sameNumber`).
+- **S86** Mechaniki klas w `tests/SkillModel.luau`: każda jako nazwana funkcja z `-- mirrors <plik>:<funkcja>` serwera,
+  liczby z danych przez funkcje gry.
+- **S86** Stałe istniejące tylko w serwerze (`TRAP_CHECK` 0,25, `Push` `SECONDS` 0,22, `task.wait(0.1)` kanału,
+  `TICK_INTERVAL`, tolerancja 1,5, rozbicie 3,5) w `SkillModel.SERVER_CONSTANTS`; `balance.spec` czyta plik serwera.
+- **S86** Furia w modelu krok po kroku (`Logic/Fury` z `HOOK_RULES.fury` / `carnage`, jak `StatusEffectService.AddFury` /
+  `stepFury`): +1 (Rzeź +2) za trafienie z obrażeniami, bez tyknięć; źródło statystyk `fury` odświeżane najwyżej co
+  `statInterval`; `furyConsume` zużywa stosy (Rozdarcie × `Skills.furyMultiplier`, Rzeź × stosy w polu statystyk).
+- **S86** Szansa „na zdarzeniu” (cechy przy trafieniu, Iskra, Wstrząs, Nękanie) w modelu to stała częstotliwość: licznik
+  startuje od 0,5 i odpala przy przekroczeniu 1, więc w walce ląduje dokładnie `szansa × próby` efektów (wartość oczekiwana
+  rzutu gry); krytyk, unik i blok zostają wartością oczekiwaną.
+- **S86** Kości i koło jako wartość oczekiwana: `SkillModel.diceExpected` wylicza wszystkie wyniki `Roll.pick` (lub
+  wskazanej ściany koła) z prawdopodobieństwami i `Roll.multipliers`; ściana działa z wartością × oczekiwany mnożnik.
+- **S86** Walka z potworami, które oddają (`fight` z `retaliate`): cios `FightSim.hit` z pechem wroga, osłabieniem,
+  redukcjami `own` przez `EffectStack.reduction`, tarcze przed HP, energia z bloku tylko z blokiem z węzłów, kontra, ciernie.
+- **S86** Leczenie w walce `retaliate` liczy się do brakującego HP (`healEff`); licznik T-SK5 / T-SK6 bez ucinania (S85).
+- **S86** Założenia pomiaru (`ASSUMPTIONS`): `redZoneMove` 1,5 s na czerwoną strefę (STATY 3, ROZWOJ 12.8),
+  `bannerUptime` 0,9 (10.6), `zoneInside` (tank i wręcz tak, dystans nie, solo Kapłan tak; 9.3), `groupSpread` 0,5 (11.4).
+- **S86** Okna pomiaru: boss 180 s (12.7), pojedynek do 300 s, 20 walk expienia, Leczenie 3 s / 20 many, odpoczynek 0,5%/s
+  (9.6), `behindShare` jak S84.
+- **S86** Pułapki: rozstawienie `SkillGeom`, sprawdzenie po `TRAP_CHECK`, ściągnięcie czeka `Push.DURATION`; manekiny
+  stoją w punkcie celowania, więc pierwsza pułapka (pierścienia: ta, w którą wchodzi grupa) łapie wszystkich, każda dalsza
+  `floor(groupSpread × n)`; pojedynczy cel stoi tylko w pierwszej.
+- **S86** Warunki rotacji: `minFury` i `minCharges` czytają stan; `meleeAllies` w trybie leczenia prawda (tank), solo tylko
+  przy ranie na osi HP; `allyInZone` i `beforeRedZone` fałsz (manekin bez czerwonych stref; Przechwycenie i Anioł Stróż
+  nie wchodzą do metryk); `belowHp` i `mostWounded` solo z osi HP walki `retaliate`.
+- **S86** Definicje metryk (`SkillModel.metrics`): 1 cel 60 s = `sustained60` (`single60`), R1 = T-SK1, wybuch 8 s,
+  T-SK2, obszar 3 cele 8 / 60 s, T-SK3 = obszar 8 s / 1 cel 8 s, boss 180 s od pełnej puli z pulą jako limitem.
+- **S86** EHP = maks. HP / oczekiwany cios po pancerzu, uniku, bloku i redukcjach `own` (3 wrogów, `furyGuard` przez udział
+  czasu z pełną Furią w grupie, `lastStand` na ostatnich 30%); EHP czerwone = to samo bez uniku i bloku.
+- **S86** Metryki między buildami (`SkillModel.TARGET_METRICS`): stosunki „× Furia” na tym samym poziomie; T-SK4 =
+  zapotrzebowanie na odnowieniu / (regeneracja + bierne zwroty: Odzysk, Kaskada, `manaOnHit`, `resourceOnHit`), koszt z
+  Ładunkami; Kaskada (manekin nie ginie) = mana z walki na odnowieniu z 3 potworami `GENERIC`, które giną, / (czas tej
+  walki + `walk` 6 s, tempo 10.6); T-SK5 na „Obrońcy”; T-SK6 jak S85 (drużyna S92 dla wiersza `healer.tsk6`); `manaReserve` jest w `StatCalc`.
+- **S86** B Chorążego = średnie w czasie (180 s) premii `allyAttack`, `allyHaste`, `allyCrit` (najsilniejsza w kategorii)
+  i osłabienia pancerza celu, każda przeliczona na obrażenia „Furii” (`Balance.dps`), × `bannerUptime`.
+- **S86** B Zwiadowcy = średnia `enemyWeak` na bossie (najsilniejszy wpis); S = 1 cel 60 s / Furia (Zwiadowca: /
+  Królobójca z łukiem długim); wartość wsparcia = 4 × (1 + B) + S.
+- **S86** Tempo solo Wojownika `(6 + 8/g) / 14`, g = grupa 8 s / grupa Furii; Zwiadowca (a) to samo wobec najszybszego
+  z Królobójcy i Kłusownika na obu broniach, (b) `(6 + t) / (6 + t_min)`, t = zabicie 3 potworów, które oddają, z
+  miksturami. Expienie Kapłana = 20 walk z grupami regionu (rozmiary `AreaSpawns`), HP i mana przechodzą, Leczenie między.
+- **S86** Bazy klas `SkillModel.BASES` / `baseFor(build)`: baza S85 z bronią pomiaru klasy (topór, kostur, buława +
+  tarcza; Łowca broń porównywanego buildu z kołczanem), przełomami buildu na wspólnych umiejętnościach (reszta A) i
+  rotacją buildu ograniczoną do umiejętności bazy, potem reszta rotacji bazy S85. `SkillModel.BASE` S85 bez zmian.
+- **S86** Cechy w modelu umiejętności: na zdarzeniu (Naciąg, Iskra, Moc żywiołu, Łatwy cel, Pieczęć, Ścięcie, rany i
+  trucizny, Niszczenie pancerza, Podwójne cięcie, Przeszycie, Zbawczy cios, cechy-statystyki); Fechtunek, Zastawa,
+  Łamanie kości, Nękanie, Wstrząs i Żniwo przez `Balance.traitTerms` z sytuacją zmierzoną (`TRAIT_VIA_TERMS`).
+- **S86** `Balance.traitTerms(p, m, situation, measured?)`: czwarty argument (`Balance.Measured`: `basicShare`,
+  `skillInterval`, `elementShare`, `iceUptime`, `controlled`, `still`, `areaShare`) zastępuje założenia S84; bez niego
+  wynik co do bitu jak S84 (fixture S84 bez zmian). Przełączenie domyślnych sytuacji to decyzja S88.
+- **S86** Sytuacje zmierzone (`SkillModel.situations`): udział ataku podstawowego (1 cel i grupa), odstęp rzutów
+  ofensywnych, udział żywiołu broni, lód (kontrola żywiołu lodu), obszar w grupie, kontrola (1 cel i boss), bez ruchu
+  (1 cel i boss z `redZoneMove`), mana (boss 180 s z limitem / bez), leczenie / s tanka (licznik T-SK6).
+- **S86** `PATH_TARGETS` (na górze `tests/SkillModel.luau`: cel, build, broń, poziomy, pasma, źródło ROZWOJ, projekt);
+  `evaluateTargets` czytają raport i blok „Balance 20-100: paths”. R4–R6 to wiersze `heavy`, tylko w raporcie.
+- **S86** `PATHS_TUNED` same `false` (S89 przełącza Kapłana i Wojownika, S90 Łowcę i Maga); L20 zawsze tylko druk (S91).
+- **S86** G10: bez pola `report` zostają T-SK4 `destroyer.destroyerExp` i `arcanist.arcanistBoss` (2,0–3,0) oraz T-SK5
+  `healer.dungeon` na `guardian.defender` (0,25–0,35); reszta `report = true` (`SkillModel.G10_ASSERTED`). Asertuje S87.
+- **S86** Łąki na L20: T-SK3 wszystkich baz i buildów (w paśmie) asertowane w bloku regionów; T-SK6 Grimroka wszystkich
+  buildów Kapłana (0,00–0,25) drukowane do S91 (`SkillModel.MEADOWS_REPORT` z wartością przy każdym wierszu).
+- **S86** Fixture ścieżek `tests/fixtures/balance_paths.json` (`--fixture-paths`, bez commita i daty, `dataHash` modułów
+  `PATH_MODEL_MODULES`): przy tych samych danych każda wartość w 0,5%, przy zmienionych blok tylko drukuje różnice.
+- **S86** Elity i Elity II (`SkillModel.duel`, wiersz `support.elites`) tylko w raporcie: wynik zależy od kotwic Elit S87 i
+  potworów S92–S94. R4 liczone na pierwszym z 45 / 70 / 100 z daną rangą, R6 tylko na 100. dla buildów obrażeń (P2).
+- **S86** Atak podstawowy pominięty w czasie celowania lub strumienia przepada (jak `tryBasicAttack`: `nextAttack = now +
+  1 / szybkość`); pierwszy po kanale zaczyna nowy rytm. Śmierć gracza w `killTime` i expieniu liczy całe okno (300 s).
+- **S86** Tyknięcia efektów umiejętności obszarowych (`Traits.isAreaSkill`) liczą się do `areaShare`; `channelGuard`
+  działa na kanale i strumieniu i schodzi przy przerwaniu; wiersz `all.tsk3` „base” to baza klasy wiersza.

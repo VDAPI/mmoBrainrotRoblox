@@ -4643,3 +4643,237 @@ Niedokończone: nic z listy „Nie wolno odłożyć”; P2 zrobione (udziały, p
 
 Pliki: `tests/{SkillModel,Balance,BalanceTables,balance.spec}.luau`, `tools/{balance_report.luau,balance_before.json}`,
 `docs/{BALANS,DECYZJE,SESJE,PROGRESS}.md`.
+
+### S86: Mechaniki klas i cele ścieżek w modelu
+
+Sesja balansu bez strojenia: `src/` bez zmian, księga „Zmiany danych” bez wierszy S86 (`tools/balance_reasons.luau` bez
+wpisów), `tools/wiki_keys_diff.luau` pusty; `npm run data` niepotrzebne, bo `src/shared/Data` się nie zmieniło.
+- **A. Start** na `4121fd2` (S85): wymagania są, migawka `lune run tools/balance_report.luau snapshot S86`
+  (`tools/balance_before.json`), `scripts/check` zielony przed zmianami (94 pliki, 1333 testy, 50 s); zrzut wyjściowy
+  `build/s86_start.json` (surowe T-SK S85), `--fixture-items` identyczny, 1–20: 0 różnic na starcie i na końcu.
+- **B.** 14 mechanik w `tests/SkillModel.luau` (każda z `-- mirrors`): leczenie i tarcze od HP celu z `healFactor`
+  (`oneHeal` przez tę samą ścieżkę), `shieldPerHit`, `allyHeal` / `allyShield`, `chainHeal`, `shieldBurst`, nadmiar w
+  tarczę na osi HP; kości i koło (`diceExpected`, Modlitwa 5B); `burn`; `healZone` (Sanktuarium, Krąg 10B); Furia krok po
+  kroku (`Logic/Fury`, Rzeź, Rozdarcie, powrót Furii, źródło statystyk co 0,25 s); blok z energią i Zastawą; przechwyt
+  (`Logic/Intercept` w raporcie bossa); pułapki (`SkillGeom`, `TRAP_CHECK`, ściąganie, echo, `trapEnergy`,
+  `trapRootDuration`); sokół (`Companion`, Królewski Sokół, nurkowanie przy Znaku, Oznaczenie); celowanie `castTime`;
+  strumień `beam` (siatka 0,1 s, `drain`, `channelGuard`); Ładunki i Wzmocnienie; `accumulate`; próg obszaru (`spellBonus`,
+  rezonans, `castMul`, Kaskada). Do tego typy `guard`, `shout`, `banner`, `companion`, Pieczęć, Przemarznięcie,
+  `poisonSlow`, kontra, ciernie, zabójstwa (`killHeal`, reset Rzezi) i walka `retaliate` (potwory oddają).
+- **C.** Cechy na zdarzeniu (Naciąg, Iskra, Moc żywiołu, Łatwy cel, Pieczęć, Ścięcie, rany i trucizny przedmiotów z
+  `accumulate`, Niszczenie pancerza, Podwójne cięcie, Przeszycie, Zbawczy cios, `resourceOnHit`); 6 cech obronnych przez
+  `traitTerms` z sytuacją zmierzoną; `Balance.traitTerms` z czwartym argumentem `measured`; `situations`, `traitValue`,
+  `traitValueMeasured`, `traitRow` (tabela 24 cech na 45 / 70 / 100, Zwykły +0 i Mityczny +9).
+- **D–F.** `metrics` z polami PathMetrics, `BASES` / `baseFor`, `withWeapon`, `furyReference`, `standardSupport`,
+  `scoutSupport`, `fortuneBonus`, `pace`, `scoutPace`, `killTime`, `grind`, `eliteKinds` / `duel`, `interceptReport`,
+  `clearTime` / `arcanistExp`, `PATH_TARGETS` (z projektem ROZWOJ przy wierszach) i `evaluateTargets`, `guards`,
+  `optionGain` / `r4Rows`, `r5Rows`, `r6Rows`, `trapTiming`; G10 z `report = true` poza trzema wierszami na poziom
+  (`G10_ASSERTED`); Łąki: T-SK3 asertowane, T-SK6 drukowane (`MEADOWS_REPORT`).
+- **G–H.** `BalanceTables.tablesPaths()` (pasmo `S86-paths`, 21 tabel, 5782 klucze, ok. 19 s, w `tablesAll`), sekcja
+  „Klasy i ścieżki (S86)” w `docs/BALANS.md` (cały raport 24 s), tryb `--fixture-paths` i `tests/fixtures/balance_paths.json`
+  (`PATH_MODEL_MODULES`, `BalanceTables.dataHashOf`), bloki `balance.spec` „SkillModel: class mechanics (S86)” (19
+  przypadków ze strażnikami tekstowymi) i „Balance 20-100: paths” (`PATHS_TUNED`, kształt, definicje, fixture). Check:
+  1386 testów, 66 s (+16 s).
+
+Inwentarz (A3): (a) `fight(sp, opts)` krok 0,05 s z kolejką zdarzeń, krytyk jako wartość oczekiwana, GCD i odnowienie
+przy rzucie, `hitDelay` z `SkillMotions`, kanał stoi swój czas, mikstury zasobu, budowa przez `character` (prefiks
+`nodes` przez `Paths.canBuy`) i `player`; (b) z mechanik B były: `hot` z `hpPct`, kwota `healAmount` w `oneHeal` /
+`healerVsBoss` (zgodna z serwerem, dopisany test), resztę dopisano; (c) walki z oddającym potworem nie było (dodana
+`retaliate`), baza i tanki T-SK5 / T-SK6 były, fixture T-SK nie (S85 J3), blok S85 był; (d) `traitTerms` nie przyjmował
+sytuacji z zewnątrz (dodany czwarty argument); (e) czyste funkcje gry istnieją pod nazwami planu (`Logic/Fury`, `Roll`,
+`Channel`, `Intercept`, `SkillGeom`, `Skills.*` Ładunków, strumienia i obszaru, `EffectStack.accumulate`, `Traits.*`);
+tylko w serwerze żyją: pętla pułapki (`TRAP_CHECK`), czekanie po ściągnięciu (`Push` `SECONDS`), odstęp i nurkowanie
+sokoła, tyknięcia pola leczenia, pętla strumienia (0,1 s), tyknięcia `StatusEffectService` (`TICK_INTERVAL`), kości w
+`Context.rollDice`, odpływ kanału obrażeniami, `onBlock`, `tryCounter`, `savingBlow`, `runThrough`, `spark`, `PrimeFullDraw`.
+
+S85 → S86 (surowe liczby S85 z migawki A2 / `build/s86_start.json`; Mag: średnia żywiołów):
+
+| klucz | przed | po | mechanika |
+|---|---|---|---|
+| `berserker.fury` 1 cel 60 s 45 / 100 | 1932 / 10352 | 2294 / 13192 | Furia (szybkość z `furySpeed`), Rozdarcie i Rzeź z `furyConsume`, Rana rąbana na zdarzeniu |
+| `berserker.fury` T-SK1 / T-SK3 100 | 3,58 / 2,58 | 3,36 / 2,01 | atak podstawowy z Furią rośnie bardziej niż umiejętności; obszar bez stałej Furii |
+| `berserker.butcher` 1 cel 60 s 100 | 10352 | 13608 | jw. (`furyDamage`, `furyGuard`) |
+| `guardian.loner` T-SK1 / T-SK4 100 | 2,86 / 2,10 | 2,47 / 2,39 | Furia 10 (Rytm) przyspiesza atak podstawowy; Przechwycenie i Mur Tarcz w rotacji (`guard`, `shout`) |
+| `standard.commander` T-SK2 100 | 5,16 | 6,11 | Sztandar (`banner`) i Rozkaz (`shout`) na sobie |
+| `trapper.poacher` 1 cel 60 s 100 | 9670 | 12409 | pułapki z obrażeniami, pierścieniem i echem (S76–S78) |
+| `trapper.poacher` T-SK2 / T-SK3 100 | 6,44 / 1,71 | 8,72 / 2,08 | jw. (Pole Sideł na otwarcie) |
+| `trapper.poisoner` T-SK3 100 | 1,93 | 2,52 | jw. |
+| `marksman.kingslayer` T-SK2 / T-SK3 100 | 6,59 / 1,33 | 7,85 / 1,17 | Strzał w Serce z celowaniem `castTime` (wcześniej pominięty; ataki z czasu celowania przepadają) |
+| `scout.partyHunter` 1 cel 60 s 100 | 8776 | 10749 | sokół, Znak z nurkowaniem, Oznaczenie |
+| `arcanist.arcanistBoss` 1 cel 60 s 45 / 100 | 3704 / 19489 | 5294 / 29197 | Ładunki (koszt i obrażenia), Wyładowanie, strumień (ataki z jego czasu przepadają), Wzmocnienie, Pieczęć runiczna |
+| `arcanist.arcanistBoss` T-SK4 45 / 100 | 1,42 / 1,23 | 2,31 / 2,78 | koszt z Ładunkami i odpływ strumienia |
+| `arcanist.arcanistOverload` T-SK4 100 | 1,60 | 3,61 | jw. |
+| `destroyer.destroyerExp` T-SK3 45 / 100 | 2,43 / 2,70 | 2,66 / 2,95 | próg obszaru (`areaDamage` od 2 wrogów), podpalenie z `accumulate` |
+| baza Maga T-SK1 100 | 4,15 | 4,36 | `accumulate` podpalenia, Moc żywiołu (kostur) i Przemarznięcie na zdarzeniu |
+| `inquisitor.solo` 1 cel 60 s 100 | 12249 | 13107 | Piętno Światła jako podpalenie (`burn`) |
+| `fortune.plunder` 1 cel 60 s 100 | 6008 | 6246 | kości na sobie (krytyk, szybkość) |
+| T-SK6 `healer.dungeon` 45 / 100 | 1,85 / 4,50 | 1,81 / 4,96 | Sanktuarium (`healZone`), Tarcza z rozbiciem, łańcuch Leczenia (na Kapłanie, poza licznikiem) |
+| T-SK6 `healer.solo` 20 / 100 | 0,00 / 2,78 | 0,25 / 3,50 | `mostWounded` / `meleeAllies` w trybie leczenia |
+| Łowca, baza 1 cel 60 s 100 | 10626 | 11654 | Naciąg (kołczan) na zdarzeniu |
+| T-SK4 `destroyer.destroyerExp` 45 / 70 / 100 | 1,60 / 2,50 / 2,20 | 1,48 / 1,19 / 0,94 | Kaskada w dochodzie (walka z grupą, która ginie) |
+| T-SK4 `destroyer.destroyerBoss` 45 / 70 / 100 | 1,96 / 2,50 / 2,16 | 1,61 / 1,25 / 0,90 | jw. |
+| T-SK4 baza Maga (kostur / `base.loadout`) 70 / 100 | 1,25 / 1,16 | 0,85 / 0,79 i 0,77 / 0,88 | jw. (Kaskada to rząd 2 bazy) |
+| T-SK5 (wszystkie) | – | bez zmian | `oneHeal` na ścieżce `healFactor` (ta sama liczba) |
+
+Pozostałe komórki tabel S85 w `docs/BALANS.md` (każda pokazana tam jako „przed → po” z migawki A2), według mechaniki:
+- T-SK1–3 i „Zasoby”, Wojownik: `base` (topór) i `berserker.*` (Furia, Rozdarcie, Rzeź, Rana rąbana), `guardian.*`
+  (Furia z Rytmu, typy `guard` / `shout` w rotacji zjadają energię, blok z energią), `standard.*` (Sztandar, Rozkaz,
+  Okrzyk na sobie, cechy szabli i miecza na zdarzeniu); mikstury / min i zapotrzebowanie / regeneracja z nowych rzutów.
+- T-SK1–3 i „Zasoby”, Łowca: `base` (Naciąg kołczanu), `marksman.*` (celowanie, ataki z czasu celowania przepadają),
+  `trapper.*` (pułapki z obrażeniami, pierścieniem, echem, `trapEnergy`), `scout.*` (sokół, Znak, Oznaczenie).
+- T-SK1–3, „Mag: żywioły broni” i „Zasoby”, Mag: `base` / `base.loadout` (`accumulate` podpalenia, Moc żywiołu,
+  Przemarznięcie, Kaskada w T-SK4), `destroyer.*` (próg obszaru, `spellBonus`, rezonans, Kaskada), `arcanist.*` (Ładunki,
+  Wzmocnienie, strumień, Pieczęć runiczna).
+- T-SK1–3 i „Zasoby”, Kapłan: `fortune.plunder` (kości na sobie), `inquisitor.*` (Piętno jako `burn`, cechy buławy).
+- „Brak do S86”: liczba pozycji `unmodelled` i pominiętych rzutów spada do zera tam, gdzie doszła mechanika B.
+- „Udziały w obrażeniach 60 s”: przesunięcia między umiejętnościami z tych samych mechanik (każdy build).
+- T-SK6: Sanktuarium, Tarcza z rozbiciem, łańcuch Leczenia, `mostWounded` / `meleeAllies` (wiersze w tabeli wyżej).
+- „Porównanie z diagnozą i ROZWOJ”: wiersze L20 Łowcy i Maga (Naciąg, `accumulate`) oraz T-SK4 bazy Maga (Kaskada).
+
+Kluczowe liczby (45 / 70 / 100): „Furia” 1 cel 60 s 2294 / 6212 / 13192, R1 2,89 / 3,13 / 3,36, × baza z toporem
+1,14 / 1,33 / 1,42, średnia Furia 6,98 / 7,06 / 7,12 w 1 cel i 6,98 / 7,30 / 7,38 w grupie (projekt 7,5; na 20. 0, bo
+Rytm przychodzi z rzędem 2), kradzież / obrażenia w grupie 3,2 / 8,1 / 13,9. Cele ścieżek w paśmie (20 / 45 / 70 / 100):
+Wojownik 14/21, 11/19, 6/21, 3/21; Łowca 18/26, 17/26, 15/26, 17/26; Mag 9/19, 8/19, 8/19, 6/19; Kapłan 8/19, 11/19,
+9/19, 5/19 (wiersz `all.tsk3` bazy każdej klasy liczony na jej bazie). Najgorsze: Strażnik 1 cel 0,29–0,39 Furii (cel 0,60–0,75), Strażnik grupa 0,29 na 100, `warrior.solo`
+„Samotnika” 2,39 na 100, `cleric.solo` Fortuny 2,59 na 100, R1 wszystkich buildów 2,3–6,9 (cel 1,6–2,0), T-SK6
+Uzdrowiciela (drużyna S92) 2,6 / 6,2 / 8,6, Elity II wygrywa każda ścieżka wsparcia (cel: przegrana). G10: 161/276
+(asertowane trzy na poziom: 22/41; poza: T-SK5 Uzdrowiciela na Obrońcy 20–30 i 90–100, T-SK4 Niszczyciela 45–100,
+Arkanisty 55).
+
+Model a ROZWOJ (D10; różnice ponad ok. 10% przy tym samym buildzie i poziomie, przyczyna z `docs/balans/ref/S89/`,
+`S90/`):
+- `guardian.dps` 0,29–0,56 wobec 0,67–0,80: diagnoza liczyła Furię Berserkera jako 7,5 stosu tylko w szybkości ataku i
+  rotację Strażnika według siły; model liczy Furię krok po kroku z `furyConsume` (Furia 1,14–1,42 bazy) i rotację z
+  danych (Prowokacja, Mur Tarcz, Okrzyk zjadają energię Obrońcy).
+- `guardian.ehp` 1,89–2,22 wobec 1,57–1,8: model liczy blok Bloku i Mistrza Tarczy z blokiem Zastawy tarczy (razem pod
+  `blockCap`), pancerz i HP Weterana i Niezłomności; projekt brał Blok 19% i Pierwszą Linię na HP z tarczy.
+- `guardian.group` i `warrior.solo` („Samotnik” 1,43–2,39, „Dowódca” 1,23–1,60): grupa Furii rośnie z Rzezią i Wirem
+  Ostrzy (2,01 T-SK3 na 100), a Strażnik ma w rotacji umiejętności bez obrażeń.
+- `inquisitor.ratio` 0,87–1,00 wobec 0,78–0,90: diagnoza Kapłana bez normalizacji broni (buława 1,0 / 0,8 = ×1,25
+  umiejętności) i Piętno bez podpalenia z `burn`.
+- `healer.dps` / `fortune.dps`: na 20–45 wyżej (normalizacja), na 100 niżej (rotacja z danych: Uzdrowiciel rzuca
+  Sanktuarium i Tarczę także solo w drużynowej rotacji, Fortuna kości).
+- `fortune.healLess` 0,11 / 0,27 wobec 0,21: kolejność kupowania węzłów leczenia w buildach wzorcowych (premie
+  leczenia obu ścieżek dochodzą na różnych poziomach); projekt liczył pełne buildy.
+- `cleric.solo` Fortuny 1,41–2,59 wobec 1,11–1,35: expienie z walką, w której potwory oddają, i grupami regionu; projekt
+  liczył grupy jak `AreaSpawns` bez ich obrażeń w czasie walki.
+- `trapper.aoe` 0,87 na 45, 1,45 na 70: pułapki z prawdziwym rozstawieniem (pierścień: dalsze sidła łapią
+  `groupSpread`), Pole Sideł dopiero od 60; projekt miał natychmiastowe koła.
+- `scout.S` 0,61–0,72 wobec 0,83–0,86 i `scout.solo` (a) do 1,95: Królobójca z celowaniem i cechami na zdarzeniu, Traper z
+  pułapkami w grupie; B Zwiadowcy zgodne (6 / 6 / 9,5%).
+- `arcanist.single` 1,51–1,69 i `arcanist.vsDestroyer` 1,23–1,50 wobec 1,23–1,47 i 1,15–1,24: Pieczęć runiczna
+  (runestaff) na zdarzeniu, Wzmocnienie po Inwokacji i Ładunki z węzłami; diagnoza bez cech S62–S67.
+- `mage.tsk4`: Niszczyciel exp 1,48 / 1,19 / 0,94 wobec 1,97 / 2,48 / 2,18 i `destroyerBoss` 1,25 / 0,90 na 70 / 100
+  (−41 / −50%): diagnoza (`diag_mag`) liczyła dochód na manekinie bez Kaskady, model dolicza Kaskadę z walki z grupą
+  (ROZWOJ 12.7 wymienia ją w dochodzie); na 45 też rotacja z danych bez Kataklizmu przed 60. Arkanista 2,31–2,78
+  (+14–16%: koszt z Ładunkami liczony na każdym czarze), warianty +19–29%.
+- `standard.S` 0,53 wobec 0,74 na 100 (−28%): S = 1 cel 60 s / Furia = 7039 / 13 192; mianownik to Furia krok po kroku
+  z `furyConsume` (1,42 bazy z toporem), diagnoza miała Furię jako 7,5 stosu w szybkości ataku.
+- `cleric.solo` Uzdrowiciela 0,84 wobec 1,06 na 45 (−21%) i 1,36 wobec 1,07 na 100 (+27%): expienie z walką, w której
+  potwory oddają, i Leczeniem między walkami (mianownik Inkwizytor); na 45 Uzdrowiciel walczy 79 s i leczy się 15 s
+  wobec 87 s i 24 s Inkwizytora, na 100 walczy 87 s wobec 49 s (bez leczenia między walkami, Inkwizytor 15 s).
+- `marksman.base` na 20 1,01 wobec 1,15: na 20. Strzelec ma tylko świeżo wybraną ścieżkę (10 punktów), baza ma rzędy 1.
+
+Pomiar nie wskazał błędu odwzorowania serwera; model zostaje prawdą (D10).
+
+Poprawki z przeglądu (przed commitem): wiersz `all.tsk3` bazy liczy bazę swojej klasy (wcześniej każda klasa dostawała
+bazę Wojownika; klucz pamięci z klasą); ataki podstawowe pominięte w czasie celowania i strumienia przepadają (bez
+nadrabiania, jak `tryBasicAttack`); tyknięcia efektów umiejętności obszarowych liczą się do `areaShare`; Kaskada w
+dochodzie T-SK4 (walka z grupą, która ginie); Leczenie między walkami expienia z osią HP (`lowHpHealBonus`); śmierć w
+`killTime` i expieniu liczy całe okno; `channelGuard` także na Inwokacji i zdjęty przy przerwaniu kanału; limit kradzieży
+życia z `Data/Stats` (strażnik tekstowy na `Damage`); `PATH_MODEL_MODULES` z `SkillMotions`, `Areas/*`, `AreaProfiles`,
+`ItemWeights`; testy B3 (śmierć celu ucina tyknięcia), B4 (oś HP ucina pole leczenia), B10 / B11 (bez nadrabiania).
+
+Pliki: `tests/{SkillModel,Balance,BalanceTables,balance.spec}.luau`, `tests/fixtures/balance_paths.json`,
+`tools/{balance_report.luau,balance_before.json}`, `docs/{BALANS,DECYZJE,SESJE,PROGRESS}.md`.
+
+Dla S87:
+- Wzory serwera do przeniesienia do `Logic` (model je odwzorowuje): pętla pułapki (`Movement.arm` / `fire`,
+  `TRAP_CHECK`), czekanie po ściągnięciu (`Push` `SECONDS`), harmonogram sokoła (`Companion.start` / `tick` / `dive`),
+  tyknięcia pola leczenia (`Context.healZone`), pętla strumienia (`SkillService.startChannel` z krokiem 0,1 s i odpływem),
+  kości (`Context.rollDice`), `CombatService` `onBlock`, `tryCounter`, `savingBlow`, `runThrough`, `spark`,
+  `PrimeFullDraw`, odpływ kanału obrażeniami; Furia jest już w `Logic/Fury`. `Damage.computeDamage` ma limit
+  kradzieży życia jako liczbę 15 (to `cap` z `Data/Stats`, który czyta model; strażnik tekstowy pilnuje zgodności).
+- G10 poza pasmem: T-SK5 `healer.dungeon` na Obrońcy 0,23 / 0,23 / 0,25 na 20 / 25 / 30 i 0,365 na 90–100; T-SK4
+  `destroyer.destroyerExp` 1,48 na 45, 1,58–1,22 na 50–65 i 1,24–0,94 na 70–100 (Kaskada w dochodzie),
+  `arcanist.arcanistBoss` 1,96 na 55. Wiersze T-SK4 na 20–40 nie istnieją (ROZWOJ
+  12.7: „od 45. poziomu”; plan balansu chce 2,0–3,0 na każdym poziomie: decyzja S87). T-SK4 bazy Maga po 45: 0,79–1,41
+  (z Kaskadą od 70; ROZWOJ 8 i 12.7: sama podstawa ok. 1,05–1,4).
+
+Dla S88:
+- Sytuacje zmierzone wobec założeń S84 (tabela „Sytuacje zmierzone (C3)”): udział ataku podstawowego 0,14–0,18 u
+  Arkanisty (założenie Maga 0,4), odstęp rzutów 1,2–1,3 s (założenie 2,5), żywioł broni 3–4% (0,175), bez ruchu 0,97
+  (0,70) i na bossie 0,40–0,44; kontrola celu u Trapera i Zwiadowcy (tabela) wobec 0,65. Rekomendacja: przełączyć `skillInterval`, `basicShare`
+  i `still` na zmierzone, `controlled` i `elementShare` po S89–S90 (zależą od rotacji ścieżek).
+- Cechy z różnicą ponad 1,5 pkt wobec STATY 14 (tabela „Cechy w modelu umiejętności (C6)”, Zwykły +0, 70.): Siła krytyka
+  7,1% (STATY 4,5%: krytyk trafień umiejętności), Jadowite groty 4,6% na zdarzeniu (S84 12,3% liczy też EHP), Moc
+  żywiołu 5,1%, Iskra 1,5% (STATY 4,5%: atak podstawowy Maga to 15–18% obrażeń), Pieczęć 7,7% (STATY 5,5%), Namaszczenie
+  8,3% (dungeon), Zbawczy cios solo 0 (Uzdrowiciel z kosturem nie traci HP w pojedynku ze zwykłym potworem; S84 357%),
+  Fechtunek przez `traitTerms` z sytuacją zmierzoną 2,8% (S84 5,7%).
+- Udział obszaru w grupie (`areaShare`, z tyknięciami trucizn i krwawień umiejętności obszarowych) wchodzi do `procHits`
+  przez czwarty argument; w S84 0. Kłusownik 0,26 / 0,47 / 0,53.
+
+Dla S89:
+- Kapłan i Wojownik poza pasmem (wartości na 45 / 70 / 100): `berserker.base` 1,14 / 1,33 / 1,42; `guardian.dps`
+  0,39 / 0,33 / 0,29; `guardian.ehp` 1,89 / 2,15 / 2,22; `guardian.ehpRed` 1,61 / 1,63 / 1,69; `guardian.group`
+  „Samotnik” 0,57 / 0,41 / 0,29, „Dowódca” 0,71 / 0,51 / 0,49; `standard.support` 4,62 / 4,71 (miecz, 70 / 100), S
+  0,59 / 0,50 / 0,53; `warrior.solo` „Samotnik” 1,43 / 1,81 / 2,39; `inquisitor.ratio` 1,00 / 0,94 / 0,99,
+  `inquisitor.hp` 1,06 / 1,09 / 1,00; `healer.dps` berło 0,51 / 0,43 / 0,39, kostur 0,61 / 0,56 / 0,54; `fortune.dps`
+  0,59 / 0,52 / 0,47; `fortune.healLess` 0,11 / 0,20 / 0,27; `cleric.solo` Fortuny 1,41 / 1,62 / 2,59; `healer.tsk6`
+  (S92) 2,6 / 6,2 / 8,6; `all.r1` Furii 2,9–3,4, Inkwizytora 4,2–5,4.
+- Średnia Furia 7,0–7,4 wobec 7,5; bilans kradzieży życia w grupie 3,2 / 8,1 / 13,9 (kradzież leczy wielokrotność
+  przyjętych obrażeń); Groźba Strażnika: T-SK3 „Obrońcy” 2,00–2,23 (10.6 mówi 2,01).
+- B Chorążego na źródła (tabela „Wsparcie: B na źródła”): na 100 Głos 1,8%, Sztandar 0,9%, Natchnienie 0,01%, Rozkaz 1,0%,
+  Miażdżący Cios 0,7% (razem 4,5% wobec 8,6% projektu): Sztandar ma w rotacji `opener` (raz na walkę), a tanie umiejętności
+  wyprzedzają droższe przy braku energii (Rozkaz raz na 180 s).
+- R4 / R5 / R6 Kapłana i Wojownika w raporcie (opcje bez wartości w roli mają 0).
+
+Dla S90:
+- Łowca i Mag poza pasmem (45 / 70 / 100): `marksman.base` 1,22 / 1,38 / 1,44–1,45; `trapper.aoe` 0,87–0,90 na 45;
+  `trapper.single` 0,95–0,97 na 45 i 1,16 (kusza) na 70; `scout.support` 4,83–4,85 na 70; `scout.solo` (a) 1,52 / 1,94–1,95
+  na 70 / 100; `destroyer.aoe` 1,16 na 45 i 1,51 na 100; `destroyer.single` 1,25 na 100; `destroyer.clear` 1,4–2,2 (czas bez
+  odpoczynku, manekiny giną w 1–2 s: liczy się kolejność pierwszych rzutów); `arcanist.single` 1,51 / 1,62 / 1,69;
+  `arcanist.vsDestroyer` 1,39 / 1,50 / 1,35; `mage.tsk4` Niszczyciel exp 1,48 / 1,19 / 0,94 (z Kaskadą); T-SK3 bazy Maga 2,24 / 2,26 / 2,23
+  (cel `areaCap` 2,0); R1 Strzelca 3,6–4,0, Trapera 3,2–4,6,
+  Maga 3,9–6,9.
+- Obecne R7 (Strzelec / Furia): 1,22–1,31 w paśmie dla obu broni.
+- Pułapki modelu wobec natychmiastowych kół (tabela „Pułapki”): różnica poniżej 1% (sprawdzenie co 0,25 s i 0,22 s
+  ściągnięcia), większą różnicę robi `groupSpread` pierścienia.
+- B Zwiadowcy: Oznaczenie 6% na 45 i 70, Znak 7,5% + Oznaczenie 2% na 100; mana Maga: boss 180 s z limitem / bez 0,90–0,96
+  (Arkanista).
+
+Dla S91:
+- Metryki na L20 w raporcie (`evaluateTargets` liczy każdy wiersz na 20, blok ścieżek tylko drukuje); Łąki: T-SK6
+  Grimroka 0,00–0,25 drukowane z powodem w `MEADOWS_REPORT` (na 19. nie ma Sanktuarium, Święte Uderzenie zjada manę,
+  Inkwizytor nie leczy tanka); T-SK3 Łąk asertowane (27/27).
+- Strażniki z „własnym L20” (tabela „Strażniki T-SK (F2)”) liczone na danych sprzed S91; na 20. buildy mają świeżo
+  wybraną ścieżkę (Furia 0, bo Rytm to rząd 2).
+
+Dla S92–S94:
+- `SkillModel.guards(build, L)` (tsk1rel, tsk2rel, tsk3cap; progi `GUARD_LIMITS`) i `targetsG10()` jak w raporcie; T-SK6
+  Uzdrowiciela: `healerVsBoss(build, bossId, { team = "s92" })` na każdym bossie; Elity i Elity II ścieżek wsparcia i
+  tanka: `SkillModel.duel` (dziś każda wygrywa obie); przechwyt w modelu bossa: `interceptReport` (Vaelgrath: cios w
+  Maga 114% → 80%, z Osłoną 72%; Mur Tarcz 71% bez limitu, 56% z limitem).
+- Utrata celowania i strumienia przy czerwonych strefach nie jest w modelu (P2, odłożone).
+
+Dla właściciela:
+- Różnice z projektem, które zmieniają obraz ścieżki: Strażnik zadaje 0,3–0,4 Furii (rotacja z okrzykami), Furia ma
+  średnio 7,0–7,4 stosu (blisko 7,5, ale na 20. 0), Traper z prawdziwymi pułapkami jest słabszy na 45 (0,87 Strzelca) i
+  mocniejszy od 70; Arkanista bije Niszczyciela na bossie o 35–50%; `areaCap` Niszczyciela 3,0 dalej jego decyzja
+  (15.5.3; T-SK3 `destroyerExp` 2,66–2,95).
+- Projekt danych (nie błąd kodu): Pole Sideł ma sidła w pierścieniu 8 st. wokół punktu przy promieniu 3,5, więc cel
+  stojący w punkcie celowania nie wchodzi w żadne sidło; Sztandar ma w buildach `opener` (raz na walkę).
+- Błędów w kodzie gry przy odwzorowaniu nie znaleziono.
+- Decyzja: ROZWOJ 12.7 liczy Kaskadę w dochodzie T-SK4, a pasma 2–3 zmierzono bez niej (manekin). Z Kaskadą (1,5%
+  maks. many za zabicie, grupa 3 co walkę + 6 s marszu) Niszczyciel ma T-SK4 0,9–1,5, a baza Maga od 70. ok. 0,8. Albo
+  Kaskada wychodzi z T-SK4 (poprawka 12.7), albo S87 / S90 stroją kosztem many i Kaskadą.
+
+Pominięte mechaniki bez wpływu na metryki (z powodem): `guardianAngel` (Anioł Stróż ratuje przed śmiercią, `beforeRedZone`
+bez harmonogramu bossa w walce), `vigilance*` (czujność na czerwone strefy), `scoutRange` / `minimapEliteBonus` (minimapa),
+`threat` (prowokacja), `poisonSpread` i `markJump` (przenoszenie przy śmierci w grupie), `extendOnKill`, `areaRadius`
+(manekiny w zasięgu), `manaShieldCost`, `allyGuard` Sanktuarium 10B i Kręgu 10A (redukcja tanka poza licznikiem T-SK6).
+
+Niedokończone (z opisem): utrata celowania i strumienia przy czerwonych strefach (B10.4, B11.3, P2); pełne R6 (tylko 100.
+i rzędy 4–11 buildów obrażeń, bez rang węzłów na 45 / 70); R4 dla opcji użytkowych (0 w roli); limity Zręczności (D9,
+P2); buildy „tylko w raporcie” poza bazą i R5 (Tarczownik, Rzeźnik, Opiekun, Łowca Elit, Truciciel, Tropiciel, Przeciążenie
+jako osobne wiersze celów).

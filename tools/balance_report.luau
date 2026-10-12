@@ -10,6 +10,8 @@
 --   --fixture-items [note]  (S84, also without "--") writes tests/fixtures/balance_items.json = { meta, values,
 --                    dataHash } of BalanceTables.tablesItems() (tests/balance.spec "Balance 20-100: items, loot,
 --                    defence (S84)"); no commit or date in it, so a second run gives the same bytes.
+--   --fixture-paths [note]  (S86, also without "--") writes tests/fixtures/balance_paths.json of
+--                    BalanceTables.tablesPaths() the same way (tests/balance.spec "Balance 20-100: paths").
 -- The report starts with the ledger ("Zmiany danych"): a changed number of tools/balance_reasons.luau's modules
 -- without a reason marks the row and exits 1 after writing the file (like balance.spec).
 
@@ -72,6 +74,22 @@ if mode == "fixture" then
 	}
 	fs.writeFile(BalanceTables.FIXTURE_PATH, serde.encode("json", file, true))
 	print(`wrote {BalanceTables.FIXTURE_PATH}`)
+	return
+end
+
+if mode == "--fixture-paths" or mode == "fixture-paths" then
+	local file = {
+		meta = {
+			session = "S86",
+			tolerance = BalanceTables.FIXTURE_TOLERANCE,
+			note = process.args[2]
+				or "S86: mechaniki klas i cele ścieżek w modelu umiejętności (tests/BalanceTables.tablesPaths)",
+		},
+		values = BalanceTables.values(BalanceTables.tablesPaths()),
+		dataHash = BalanceTables.pathDataHash(),
+	}
+	fs.writeFile(BalanceTables.PATHS_FIXTURE_PATH, serde.encode("json", file, true))
+	print(`wrote {BalanceTables.PATHS_FIXTURE_PATH}`)
 	return
 end
 
@@ -374,7 +392,8 @@ local function targetRows(rows: { B.TargetRow }, who: string): { { string } }
 			fmtValue(row.value, "2"),
 			band,
 			if B.inBand(row) then "w paśmie" else "**poza**",
-			row.report or who,
+			-- S86: G10 rows outside S87's asserted three carry report = true
+			if type(row.report) == "string" then row.report elseif row.report then `{who} (raport)` else who,
 		})
 	end
 	return out
@@ -507,16 +526,16 @@ do
 	add("## Umiejętności: T-SK na buildach wzorcowych (S85)")
 	add()
 	add(
-		"Silnik `tests/SkillModel.luau` rzuca prawdziwe umiejętności bazy każdej klasy (rzędy 1 wszystkich ścieżek, Mag 1–2, broń z pomiarów ROZWOJ i `base.loadout` z bronią `Balance.LOADOUT`) i każdego buildu `PathDef.reference` (klucz `<pathId>.<id>`) na poziomach 20 / 45 / 70 / 100: rangi z poziomu, przełomy A/B, węzły, rotacja z danych, koszt `Skills.cost`, normalizacja broni, mikstury. Bez umiejętności daje `FightSim.dps` (kontrola w `balance.spec`). Liczby są wstępne do mechanik S86; to raport, nic tu nie jest asertowane (model główny celów G zostaje ×1,2)."
+		"Silnik `tests/SkillModel.luau` rzuca prawdziwe umiejętności bazy każdej klasy (rzędy 1 wszystkich ścieżek, Mag 1–2, broń z pomiarów ROZWOJ i `base.loadout` z bronią `Balance.LOADOUT`) i każdego buildu `PathDef.reference` (klucz `<pathId>.<id>`) na poziomach 20 / 45 / 70 / 100: rangi z poziomu, przełomy A/B, węzły, rotacja z danych, koszt `Skills.cost`, normalizacja broni, mikstury. Bez umiejętności daje `FightSim.dps` (kontrola w `balance.spec`). S86 dołożyło mechaniki klas i cechy na zdarzeniu (sekcja „Klasy i ścieżki”); to raport, nic tu nie jest asertowane (model główny celów G zostaje ×1,2)."
 	)
 	add()
 	for _, t in byBand["S85-skills"] or {} do
 		renderTable(t, "###")
 	end
-	add("### Brak do S86 (na build, poziom 100)")
+	add("### Poza modelem (na build, poziom 100)")
 	add()
 	add(
-		"Mechaniki z `unmodelled` (typy, zachowania, efekty, haki i cechy, których model jeszcze nie liczy), wpisy rotacji pominięte z powodem (liczba rzutów w 60 s na 1 manekinie; wpis pominięty tylko w walce obszarowej: na 3 manekinach) i aktywne umiejętności buildu spoza rotacji."
+		"Pozycje `unmodelled` (po S86 tylko nieznane klucze; haki bez wpływu na metryki są w `HOOKS_NONE`), wpisy rotacji pominięte z powodem (liczba rzutów w 60 s na 1 manekinie; wpis pominięty tylko w walce obszarowej: na 3 manekinach) i aktywne umiejętności buildu spoza rotacji."
 	)
 	add()
 	for _, c in B.CLASSES do
@@ -553,14 +572,30 @@ do
 	tableOut({ "cel", "wartość", "próg", "wynik", "kto asertuje" }, targetRows(out, "S87"))
 	local meadows = SkillModel.targetsMeadows()
 	local mOk, mAll = countIn(meadows)
-	add("### Łąki na L20: T-SK3 i T-SK6 (tylko drukowane)")
+	add("### Łąki na L20: T-SK3 i T-SK6")
 	add()
 	add(
-		`{mOk}/{mAll} w paśmie; blok regionów \`balance.spec\` drukuje je mimo \`TUNED.meadows\` (asercje włącza S86 po mechanikach albo S91).`
+		`{mOk}/{mAll} w paśmie; S86: blok regionów \`balance.spec\` asertuje wiersze bez \`report\`, reszta drukowana do S91.`
 	)
 	add()
-	tableOut({ "cel", "wartość", "próg", "wynik", "kto asertuje" }, targetRows(meadows, "S86"))
+	tableOut({ "cel", "wartość", "próg", "wynik", "kto asertuje" }, targetRows(meadows, "S86 (asercja)"))
 	add(`Tabele S85 liczą się {fmtValue(BalanceTables.skillSeconds or 0, "1")} s (siatka, leczenie, porównania).`)
+	add()
+end
+
+-- Classes and paths (S86) ------------------------------------------------------------------------------------------
+
+do
+	add("## Klasy i ścieżki (S86)")
+	add()
+	add(
+		"Mechaniki klas S69–S81 w silniku `tests/SkillModel.luau` (leczenie i tarcze od maks. HP celu, kości i koło jako wartość oczekiwana, podpalenie, pole leczenia, Furia krok po kroku, blok, przechwyt, pułapki, sokół, celowanie, strumień, Ładunki Arkanów, kumulowanie, próg obszaru; każda z `-- mirrors`), cechy broni na zdarzeniu na ekwipunku konwencji S32 (Zwykły, ilvl = poziom − 2), walka z potworami, które oddają, metryki ścieżek i cele ROZWOJ jako wiersze `PATH_TARGETS`. To tylko raport: G10 asertuje S87, ścieżki Kapłana i Wojownika S89, Łowcy i Maga S90, L20 S91, regiony i bossy S92–S94. Fixture: `tests/fixtures/balance_paths.json` (`lune run tools/balance_report.luau --fixture-paths`)."
+	)
+	add()
+	for _, t in byBand["S86-paths"] or {} do
+		renderTable(t, "###")
+	end
+	add(`Tabele S86 liczą się {fmtValue(BalanceTables.pathSeconds or 0, "1")} s.`)
 	add()
 end
 

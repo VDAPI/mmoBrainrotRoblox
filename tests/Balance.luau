@@ -3065,7 +3065,19 @@ end
 -- Expected value of every trait of `p` (and of the lines sharing its mechanism and cap, B6) in a situation:
 -- STATY 14 situations through Logic/Traits and the game numbers of Data/ItemTraits, Data/Combat, Data/BuffCategories.
 -- Each contribution counts once: stat traits are in the stats already (inStats), Parry's block in FightSim.hit.
-function Balance.traitTerms(p: Player, m: any, situation: string | SituationCtx): TraitTerms
+-- S86 (C3, A5): measured situations of tests/SkillModel (SkillModel.situations) instead of the S84 assumptions;
+-- a missing field keeps the assumption, no table = S84 exactly.
+export type Measured = {
+	basicShare: number?,
+	skillInterval: number?,
+	elementShare: number?,
+	iceUptime: number?,
+	controlled: number?,
+	still: number?,
+	areaShare: number?,
+}
+
+function Balance.traitTerms(p: Player, m: any, situation: string | SituationCtx, measured: Measured?): TraitTerms
 	local ctx: SituationCtx
 	if type(situation) == "string" then
 		ctx = table.clone(Balance.situationCtx(p, situation))
@@ -3074,6 +3086,17 @@ function Balance.traitTerms(p: Player, m: any, situation: string | SituationCtx)
 		ctx = situation :: SituationCtx
 	end
 	local S = Balance.SITUATIONS
+	local mz: Measured = measured or {}
+	if measured and (mz.controlled ~= nil or mz.still ~= nil) then
+		ctx = table.clone(ctx)
+		ctx.controlled = if mz.controlled ~= nil then mz.controlled else ctx.controlled
+		ctx.still = if mz.still ~= nil then mz.still else ctx.still
+	end
+	local skillInterval = mz.skillInterval or S.skillInterval
+	local elementShare = mz.elementShare or S.elementShare
+	local iceUptimeAssumed = mz.iceUptime or S.iceUptime
+	-- area skills roll on-hit effects with Combat.areaProcShare per target (S63); 0 in the S32 convention
+	local areaShare = mz.areaShare or 0
 	local v, hooks = p.values, p.hooks
 	local traits = p.traits or {}
 	local byTrait: { [string]: TraitTerm } = {}
@@ -3096,13 +3119,13 @@ function Balance.traitTerms(p: Player, m: any, situation: string | SituationCtx)
 			byTrait[id] = emptyTerm(true)
 		end
 	end
-	local bs = S.basicShare[p.classId] or 0.5
+	local bs = mz.basicShare or S.basicShare[p.classId] or 0.5
 	local maxHp = math.max(1, v.maxHp or 1)
 	local swings = math.max(0.1, v.atkSpeed or 1)
 	local double = 1 + (hooks.doubleAttack or 0) / 100
 	local hitShare = 1 - Damage.dodgeChance(m.dodge or 0, v.accuracy or 0)
 	-- hits that roll on-hit effects: basic attacks that land (no double or secondary hits) and one-target skills
-	local procHits = swings * hitShare + 1 / S.skillInterval
+	local procHits = swings * hitShare + 1 / skillInterval * ((1 - areaShare) + areaShare * Combat.areaProcShare)
 
 	-- Sundering (hammer2h): a stack of `value` % per hit (one duration, refreshed by every hit), mean over the time
 	-- on the target, capped by enemyArmorItem; physical attackers only (mirrors CombatService.applyTraitEffect).
@@ -3164,7 +3187,7 @@ function Balance.traitTerms(p: Player, m: any, situation: string | SituationCtx)
 	-- CombatService:tryBasicAttack).
 	local draw = traits.fullDraw
 	if draw then
-		local casts = math.min(swings, 1 / S.skillInterval)
+		local casts = math.min(swings, 1 / skillInterval)
 		local bonus = Traits.drawBonus(draw.value, p.weaponSpeed)
 		addHit(termOf("fullDraw", ""), casts * bonus / 100 * swing / baseDps)
 	end
@@ -3260,9 +3283,9 @@ function Balance.traitTerms(p: Player, m: any, situation: string | SituationCtx)
 		for _, element in list do
 			if element == "ice" then
 				local frost = math.max(SkillData.FROSTBITE, hooks.frostbite or 0)
-				sum += S.iceUptime * (frost - SkillData.FROSTBITE) / 100
+				sum += iceUptimeAssumed * (frost - SkillData.FROSTBITE) / 100
 			else
-				sum += S.elementShare * might.value / 100
+				sum += elementShare * might.value / 100
 			end
 		end
 		addHit(termOf("elementalMight", ""), sum / #list)

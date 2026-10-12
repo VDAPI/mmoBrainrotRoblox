@@ -9,6 +9,8 @@
 --   * The balance ledger (S83, balance plan 2.6): always asserted.
 --   * S85: G10 (T-SK4, T-SK5 of tests/SkillModel) in the global block, the Meadows' T-SK3 / T-SK6 printed in the
 --     region block, the block "Skill model (S85)" at the end.
+--   * S86: the Meadows' T-SK rows without `report` asserted, the blocks "SkillModel: class mechanics (S86)" and
+--     "Balance 20-100: paths" (PATHS_TUNED, tests/fixtures/balance_paths.json) at the end.
 --   * Items, loot and monster defence 20-100 (S84): the tables of BalanceTables.tablesItems against
 --     tests/fixtures/balance_items.json, S32 compatibility and Monte Carlo on the game's functions; D5 rows in the
 --     region block (REGION_TARGETS.d5, under TUNED).
@@ -315,10 +317,20 @@ T.describe("Balance 20-100: regions", function()
 			T.expect(#rows > 0).toBe(true)
 		end)
 		if mapId == "meadows" then
-			-- S85 (J2): T-SK3 and T-SK6 at L20 printed only, though the Meadows are tuned (S86 or S91 assert them)
-			T.it("meadows: T-SK3 and T-SK6 at L20 (printed, S86)", function()
-				local skillRows = (require :: any)("./SkillModel").targetsMeadows()
-				printReport("region meadows T-SK (S85)", skillRows, 8)
+			-- S85 (J2) / S86 (F4): T-SK3 and T-SK6 at L20; the rows without `report` are asserted (the Meadows are
+			-- tuned), the rest printed until S91 (SkillModel.MEADOWS_REPORT names each with its value)
+			local skillRows = (require :: any)("./SkillModel").targetsMeadows()
+			for _, row in skillRows do
+				if row.report == nil then
+					T.it(`{row.id}`, function()
+						if not B.inBand(row) then
+							error(describeRow(row), 0)
+						end
+					end)
+				end
+			end
+			T.it("meadows: T-SK3 and T-SK6 at L20 (asserted without report, the rest printed)", function()
+				printReport("region meadows T-SK (S85-S86)", skillRows, 8)
 				T.expect(#skillRows > 0).toBe(true)
 			end)
 		end
@@ -875,7 +887,7 @@ T.describe("Skill model (S85)", function()
 		end
 	)
 
-	T.it("rotation from the data: order, stateless conditions skipped, minEnemies on 3 dummies", function()
+	T.it("rotation from the data: order, minFury from the Fury state, minEnemies on 3 dummies", function()
 		local base = SkillModel.builds("Warrior")[1]
 		local a = variant(base, "test.order.a", { rotation = { { skill = "mightyStrike" }, { skill = "bladeWhirl" } } })
 		local b = variant(base, "test.order.b", { rotation = { { skill = "bladeWhirl" }, { skill = "mightyStrike" } } })
@@ -886,9 +898,9 @@ T.describe("Skill model (S85)", function()
 		T.expect(rb.firstCasts[1]).toBe("bladeWhirl")
 		local fury = variant(base, "test.fury", { rotation = { { skill = "mightyStrike", minFury = 5 } } })
 		local rf = SkillModel.fight(SkillModel.player(fury, 45), { targets = one, unlimited = true })
+		-- S86: minFury reads the Fury state (B5); the base has no Fury (no furyMax), so the entry never fires
 		T.expect(rf.casts.mightyStrike).toBe(nil)
-		T.expect(rf.skipped.mightyStrike ~= nil and string.find(rf.skipped.mightyStrike.reason, "minFury") ~= nil)
-			.toBe(true)
+		T.expect(rf.skipped.mightyStrike).toBe(nil)
 		local area = variant(base, "test.area", { rotation = { { skill = "bladeWhirl", minEnemies = 2 } } })
 		local sp = SkillModel.player(area, 45)
 		T.expect(SkillModel.fight(sp, { targets = one, unlimited = true }).casts.bladeWhirl).toBe(nil)
@@ -1002,6 +1014,797 @@ T.describe("Skill model (S85)", function()
 					T.expect(type(text)).toBe("string")
 				end
 			end
+		end
+	end)
+end)
+
+-- Class mechanics and path targets (S86) -------------------------------------------------------------------------
+-- tests/SkillModel.luau: each class mechanic on a case computed by hand from the data (the numbers come from the
+-- game's functions in the test, never from the model), its edge case, Monte Carlo of Logic/Roll for the dice, the
+-- text guards of the server-only constants, the block against FightSim.hit, the control of lines and stat traits
+-- against FightSim.dps, the cross test of the traits on the event against traitTerms with the measured situation.
+
+local Channel = require("../src/shared/Logic/Channel")
+local EffectStack = require("../src/shared/Logic/EffectStack")
+local Intercept = require("../src/shared/Logic/Intercept")
+local ItemTraits = require("../src/shared/Data/ItemTraits")
+local PathData = require("../src/shared/Data/Paths")
+local Roll = require("../src/shared/Logic/Roll")
+local Combat = require("../src/shared/Data/Combat")
+local BuffCategories = require("../src/shared/Data/BuffCategories")
+local Damage = require("../src/shared/Logic/Damage")
+local SkillMotions = require("../src/shared/Data/SkillMotions")
+
+local function near1(a: number, b: number, rel: number?): boolean
+	return math.abs(a - b) <= (rel or 0.01) * math.max(1e-9, math.abs(b))
+end
+
+-- A build variant with only `skillId` in the rotation (and an optional def override).
+local function only(build: SkillModel.Build, skillId: string, extra: { [string]: any }?): SkillModel.Build
+	local changes: { [string]: any } = { rotation = { { skill = skillId } } }
+	for k, v in extra or {} do
+		changes[k] = v
+	end
+	return variant(build, `test.only.{build.key}.{skillId}`, changes)
+end
+
+-- The step times of the basic swings of a fight (each new state.lastSwing), and the swing interval at the start.
+local function swingTimes(sp: any, opts: { [string]: any }): { number }
+	local times: { number } = {}
+	local last: any = nil
+	local o = table.clone(opts)
+	o.sample = function(state: any)
+		if state.lastSwing ~= last then
+			last = state.lastSwing
+			table.insert(times, state.t)
+		end
+	end
+	SkillModel.fight(sp, o)
+	return times
+end
+
+-- No two swings closer than the interval (less one step): a swing missed in a channel is lost, not caught up
+-- (CombatService.tryBasicAttack: nextAttack = now + 1 / speed).
+local function noCatchUp(times: { number }, interval: number): boolean
+	for i = 2, #times do
+		if times[i] - times[i - 1] < interval - SkillModel.ASSUMPTIONS.dt - 1e-9 then
+			return false
+		end
+	end
+	return true
+end
+
+local function effective(sp: any, skillId: string): (any, any, number)
+	local rank = Paths.skillRank(sp.character, skillId)
+	local def, bp = Paths.effectiveFor(sp.character, skillId, sp.weapons, rank)
+	return def, bp, rank
+end
+
+T.describe("SkillModel: class mechanics (S86)", function()
+	T.it("text guards: the server-only constants of the model equal the server files", function()
+		for _, guard in SkillModel.SERVER_CONSTANTS do
+			local text = fs.readFile(guard.file)
+			local found = string.match(text, guard.pattern)
+			if not found or tonumber(found) ~= guard.value then
+				error(`{guard.file}: {guard.pattern} is {tostring(found)}, the model has {guard.value}`, 0)
+			end
+		end
+	end)
+
+	T.it(
+		"B1 heals: Heal at L45 = Skills.healAmount x healFactor; Fortune and Healer differ by their factors",
+		function()
+			local tank = SkillModel.defenderTank(45)
+			local function byHand(key: string): number
+				local sp = SkillModel.player(SkillModel.byKey(key), 45)
+				local def, _, rank = effective(sp, "heal")
+				-- maxHp(tank) x healHp % + magAtk x Skills.healMul(45) x healMag %, then (1 + healPower %) x (1 + heal
+				-- bonuses %) x (1 + crit share x 0.5)
+				local amount = tank.values.maxHp * Skills.valueAt(def, "healHp", rank) / 100
+					+ (sp.p.values.magAtk or 0) * Skills.healMul(45) * Skills.valueAt(def, "healMag", rank) / 100
+				T.expect(
+					near1(
+						amount,
+						Skills.healAmount(def, rank, "heal", tank.values.maxHp, sp.p.values.magAtk or 0, 45),
+						1e-9
+					)
+				).toBe(true)
+				local v = sp.p.values
+				local bonus = (sp.pathHooks.healBonus or 0) + (sp.pathHooks.allyHealBonus or 0)
+				local crit = math.clamp((v.critChance or 0) * (sp.pathHooks.healCrit or 0) / 10000, 0, 1)
+				return amount
+					* (1 + (v.healPower or 0) / 100)
+					* (1 + bonus / 100)
+					* (1 + crit * (SkillData.HEAL_CRIT_MUL - 1))
+					/ tank.values.maxHp
+			end
+			local healer, fortune = byHand("healer.dungeon"), byHand("fortune.plunder")
+			T.expect(near1(SkillModel.oneHeal(SkillModel.byKey("healer.dungeon"), 45, tank), healer, 1e-9)).toBe(true)
+			T.expect(near1(SkillModel.oneHeal(SkillModel.byKey("fortune.plunder"), 45, tank), fortune, 1e-9)).toBe(true)
+			T.expect(fortune < healer).toBe(true)
+		end
+	)
+
+	T.it("B1 shields soak damage before HP; heals restore at most the missing HP (retaliate)", function()
+		local cleric = SkillModel.builds("Cleric")[1]
+		local L = 45
+		local m = B.monster(B.GENERIC, L)
+		local plain = SkillModel.fight(SkillModel.player(cleric, L), {
+			targets = { m },
+			retaliate = true,
+			skills = false,
+			seconds = 6,
+		})
+		local shielded = only(cleric, "shieldOfFaith", { rotation = { { skill = "shieldOfFaith", target = "self" } } })
+		local sp = SkillModel.player(shielded, L)
+		local r = SkillModel.fight(sp, { targets = { m }, retaliate = true, seconds = 6 })
+		local def, _, rank = effective(sp, "shieldOfFaith")
+		local shield = Skills.healAmount(def, rank, "shield", sp.p.values.maxHp, sp.p.values.magAtk or 0, L)
+			* SkillModel.healFactor({ sp = sp, p = sp.p, selfDirty = false, self = { effects = {} } }, "self", true)
+		-- the same blows: what the shield soaked is missing from `taken`, at most the shield's value
+		local soaked = plain.taken - r.taken
+		T.expect(soaked > 0).toBe(true)
+		T.expect(soaked <= shield + 1e-6).toBe(true)
+		T.expect(r.healEff <= (r.healTo.self or 0) + 1e-9).toBe(true)
+		-- a heal on a caster at full HP restores nothing (the first step: before any blow)
+		local first = SkillModel.fight(SkillModel.player(cleric, L), {
+			targets = { m },
+			retaliate = true,
+			seconds = SkillModel.ASSUMPTIONS.dt,
+		})
+		T.expect(first.healEff).toBe(0)
+	end)
+
+	T.it("B2 dice: 1/3 a face, 1.3/3 with rollDouble 30 (Monte Carlo of Roll.pick), the wheel 1 + boost/3", function()
+		local d = SkillModel.diceExpected(3, 0, false, 0)
+		for i = 1, 3 do
+			T.expect(math.abs(d[i] - 1 / 3) < 1e-12).toBe(true)
+		end
+		local dd = SkillModel.diceExpected(3, 30, false, 0)
+		for i = 1, 3 do
+			T.expect(math.abs(dd[i] - 1.3 / 3) < 1e-12).toBe(true)
+		end
+		local rng = Rng.new(86)
+		local counts = { 0, 0, 0 }
+		local n = 20000
+		for _ = 1, n do
+			for _, face in Roll.pick(rng, 3, 30) do
+				counts[face] += 1
+			end
+		end
+		for i = 1, 3 do
+			local p = dd[i]
+			local sd = math.sqrt(p * (1 - p) / n)
+			T.expect(math.abs(counts[i] / n - p) <= math.max(3 * sd, 0.03 * p)).toBe(true)
+		end
+		local wheel = SkillModel.diceExpected(3, 0, true, 50)
+		for i = 1, 3 do
+			T.expect(math.abs(wheel[i] - (1 + 0.5 / 3)) < 1e-12).toBe(true)
+		end
+	end)
+
+	T.it(
+		"B3 burn: Brand of Light's ticks = Traits.ticks(duration) x max(1, attack x value / duration) x DotBonus",
+		function()
+			local inq = SkillModel.byKey("inquisitor.solo")
+			local L = 45
+			local sp = SkillModel.player(inq, L)
+			local def, bp, rank = effective(sp, "brandOfLight")
+			local burn = (def.effects :: any)[1]
+			T.expect(burn.kind).toBe("burn")
+			local noBurn = table.clone(def)
+			noBurn.effects = {}
+			local function run(d: any): number
+				local b = only(inq, "brandOfLight")
+				local r = SkillModel.fight(SkillModel.player(b, L), {
+					targets = { B.monster(B.GENERIC, L) },
+					seconds = 9,
+					override = { brandOfLight = { def = d, bp = bp } },
+				})
+				return r.by.brandOfLight or 0
+			end
+			local ticks = run(def) - run(noBurn)
+			local duration = Skills.scaled(def, burn.duration, rank)
+			local value = Skills.valueAt(def, burn.value, rank)
+			local attack = sp.p.values.magAtk * sp.speedMul
+			local dot = (sp.p.hooks.dotPower or 0)
+			local expected = Traits.ticks(duration)
+				* math.max(1, attack * value / 100 / math.max(1, duration))
+				* (1 + dot / 100)
+			T.expect(near1(ticks, expected, 0.01)).toBe(true)
+			-- a dying target: no tick after its death. The first target has the hit plus 1.5 ticks of HP (it dies on a
+			-- tick while the burn still runs); a second, living target keeps the fight going past that death.
+			local hitOnly = SkillModel.fight(SkillModel.player(only(inq, "brandOfLight"), L), {
+				targets = { B.monster(B.GENERIC, L) },
+				seconds = 9,
+				override = { brandOfLight = { def = noBurn, bp = bp } },
+			})
+			local hit = (hitOnly.by.brandOfLight or 0) / math.max(1, hitOnly.casts.brandOfLight or 1)
+			local tick = expected / Traits.ticks(duration)
+			local weak = table.clone(B.monster(B.GENERIC, L))
+			weak.maxHp = hit + 1.5 * tick
+			local strong = table.clone(B.monster(B.GENERIC, L))
+			strong.maxHp = 1e12
+			local diedAt: number?, hpAtDeath: number?, burning = nil, nil, false
+			local hpEnd = 0
+			SkillModel.fight(SkillModel.player(only(inq, "brandOfLight"), L), {
+				targets = { weak, strong },
+				dummy = false,
+				seconds = 9,
+				sample = function(state: any)
+					local first = state.targets[1]
+					if diedAt == nil and first.hp <= 0 then
+						diedAt, hpAtDeath = state.t, first.hp
+						for _, e in first.effects do
+							if e.kind == "burn" and e.expiresAt > state.t + 1e-6 then
+								burning = true
+							end
+						end
+					end
+					hpEnd = first.hp
+				end,
+			})
+			T.expect(diedAt ~= nil and (diedAt :: number) < 8).toBe(true)
+			T.expect(burning).toBe(true) -- the burn outlived the target: the case tests the cut
+			T.expect(hpEnd).toBe(hpAtDeath)
+		end
+	)
+
+	T.it("B4 heal zone: Sanctuary with add.duration 2 ticks 8 times; the HP track cuts a heal at full HP", function()
+		local healer = SkillModel.byKey("healer.dungeon")
+		local L = 70
+		local sp = SkillModel.player(healer, L)
+		local rank = Paths.skillRank(sp.character, "sanctuary")
+		local choices = table.clone(sp.character.path.bp)
+		choices[Skills.choiceKey("sanctuary", 10)] = "a" -- 10A: add.duration = 2
+		local def, bp = Skills.effective(SkillData.get("sanctuary") :: any, rank, choices)
+		T.expect(Skills.scaled(def, def.duration, rank)).toBe(8)
+		local tank = SkillModel.defenderTank(L)
+		local b = only(healer, "sanctuary", { rotation = { { skill = "sanctuary", target = "meleeAllies" } } })
+		local r = SkillModel.fight(SkillModel.player(b, L), {
+			targets = { B.monster(B.GENERIC, L, "boss") },
+			seconds = 10,
+			heal = { tank = tank, team = 5 },
+			override = { sanctuary = { def = def, bp = bp } },
+		})
+		local one = Skills.healAmount(def, rank, "heal", tank.values.maxHp, sp.p.values.magAtk or 0, L)
+			* SkillModel.healFactor({ sp = sp, p = sp.p, selfDirty = false, self = { effects = {} } }, "tank", false)
+		T.expect(math.abs((r.healTo.tank or 0) / one - SkillModel.zoneTicks(8)) < 1e-6).toBe(true)
+		T.expect(SkillModel.zoneTicks(8)).toBe(8)
+		-- solo on the HP track (retaliate, a monster that deals nothing): at full HP the zone's ticks reach healTo
+		-- (T-SK6 counts them) but restore nothing; with 1.5 ticks of HP missing only the missing HP counts
+		local selfZone = only(healer, "sanctuary", { rotation = { { skill = "sanctuary", target = "self" } } })
+		local spSelf = SkillModel.player(selfZone, L)
+		local harmless = table.clone(B.monster(B.GENERIC, L))
+		harmless.attack = 0
+		local full = SkillModel.fight(spSelf, { targets = { harmless }, seconds = 4, retaliate = true })
+		T.expect((full.healTo.self or 0) > 0).toBe(true)
+		T.expect(full.healEff).toBe(0)
+		local maxHp = spSelf.p.values.maxHp
+		local tickSelf = Skills.healAmount(def, rank, "heal", maxHp, spSelf.p.values.magAtk or 0, L)
+			* SkillModel.healFactor(
+				{ sp = spSelf, p = spSelf.p, selfDirty = false, self = { effects = {} } },
+				"self",
+				false
+			)
+		local missing = 1.5 * tickSelf
+		local low = SkillModel.fight(
+			spSelf,
+			{ targets = { harmless }, seconds = 4, retaliate = true, startHp = 1 - missing / maxHp }
+		)
+		T.expect(low.healEff <= missing + 1e-6).toBe(true)
+		T.expect(low.healEff < (low.healTo.self or 0) - 0.4 * tickSelf).toBe(true)
+		T.expect(low.hpEnd > 1 - 1e-9).toBe(true)
+	end)
+
+	T.it(
+		"B5 Fury: 10 stacks after 10 hits a second apart; at most 4 a second; decay after 4 s; Carnage +2 frozen",
+		function()
+			local rules = PathData.HOOK_RULES.fury
+			local hits = {}
+			for i = 0, 9 do
+				table.insert(hits, i)
+			end
+			local trace = SkillModel.furySim(hits, 20, rules.maxStacks)
+			T.expect(trace[10]).toBe(10) -- second 9: the tenth hit
+			-- 4 s without a hit (to 13 s), then decayPerSecond a second: 2 lost by 14, 0 by 18
+			T.expect(trace[14]).toBe(10)
+			T.expect(trace[15]).toBe(10 - rules.decayPerSecond)
+			T.expect(trace[19]).toBe(0)
+			local fast = {}
+			for i = 0, 9 do
+				table.insert(fast, i * 0.1)
+			end
+			local burst = SkillModel.furySim(fast, 1, rules.maxStacks)
+			T.expect(burst[2] <= math.ceil(1 / rules.gainInterval)).toBe(true)
+			-- Carnage: + HOOK_RULES.carnage.furyGain a hit, no decay while it lasts
+			local carnage = SkillModel.furySim({ 0, 1, 2 }, 10, rules.maxStacks, { 0, 10 })
+			T.expect(carnage[3]).toBe(3 * PathData.HOOK_RULES.carnage.furyGain)
+			T.expect(carnage[10]).toBe(3 * PathData.HOOK_RULES.carnage.furyGain)
+			-- Rend at 10 stacks: the direct hit x Skills.furyMultiplier(furyDmg, 10)
+			local fury = SkillModel.byKey("berserker.fury")
+			local sp = SkillModel.player(fury, 70)
+			local def, bp = effective(sp, "rend")
+			local hitOnly = table.clone(def)
+			hitOnly.effects = {}
+			local plainHit = table.clone(hitOnly)
+			plainHit.furyConsume = nil
+			local function rendHit(d: any): number
+				local r = SkillModel.fight(SkillModel.player(only(fury, "rend"), 70), {
+					targets = { B.monster(B.GENERIC, 70) },
+					seconds = 1,
+					startFury = 10,
+					override = { rend = { def = d, bp = bp } },
+				})
+				return r.by.rend or 0
+			end
+			local mul =
+				Skills.furyMultiplier(Skills.valueAt(def, def.furyConsume, Paths.skillRank(sp.character, "rend")), 10)
+			-- the same Fury in both fights (10 stacks); only the furyConsume multiplier differs
+			T.expect(near1(rendHit(hitOnly) / rendHit(plainHit), mul, 0.01)).toBe(true)
+		end
+	)
+
+	T.it(
+		"B6 block: EHP = max HP / FightSim.hit without own reductions; avoidance under the cap; red zones unblocked",
+		function()
+			local p = SkillModel.player(SkillModel.byKey("guardian.defender"), 70).p
+			local bare: any = table.clone(p)
+			bare.hooks = table.clone(p.hooks)
+			bare.hooks.guardPerEnemy, bare.hooks.lastStand, bare.hooks.furyGuard = 0, 0, 0
+			local m = B.monster(B.GENERIC, 70)
+			T.expect(near1(SkillModel.ehpOf(bare, 70, false), bare.values.maxHp / FightSim.hit(m, bare), 0.01))
+				.toBe(true)
+			local d, mm, b = Damage.avoidance(bare.values.dodge or 0, 0, 15, Traits.blockChance(100, false))
+			T.expect(d + mm + b <= (Combat.dodgeCap + Combat.avoidBonus) / 100 + 1e-9).toBe(true)
+			local noBlock: any = table.clone(bare)
+			noBlock.hooks = table.clone(bare.hooks)
+			noBlock.hooks.block = 0
+			T.expect(FightSim.hit(m, bare, nil, nil, false)).toBe(FightSim.hit(m, noBlock, nil, nil, false))
+			T.expect(FightSim.hit(m, bare) <= FightSim.hit(m, noBlock)).toBe(true)
+		end
+	)
+
+	T.it(
+		"B7 intercept: the per-second cap leaves the rest on the target; only monster blows; = Intercept.resolve",
+		function()
+			local guardHp = 1000
+			local cap = guardHp * BuffCategories.caps.interceptPerSecond / 100
+			local windows = {}
+			local candidates = { { guard = "g", share = 30, radius = 20, distance = 5, alive = true } }
+			local amount = cap * 3
+			local kept1, _, moved1 = Intercept.resolve("monster", amount, candidates, windows, 0, function()
+				return guardHp
+			end)
+			local kept2, _, moved2 = Intercept.resolve("monster", amount, candidates, windows, 0.5, function()
+				return guardHp
+			end)
+			T.expect(math.abs(moved1 + moved2 - cap) < 1e-9).toBe(true)
+			T.expect(kept1 + kept2 > 2 * amount * (1 - BuffCategories.caps.intercept / 100)).toBe(true)
+			local keptPvp = Intercept.resolve("pvp", amount, candidates, {}, 0, function()
+				return guardHp
+			end)
+			T.expect(keptPvp).toBe(amount)
+			local report = SkillModel.interceptReport(100)
+			T.expect(report.mageKept <= report.mageHit + 1e-9).toBe(true)
+			T.expect(report.wallCap <= report.wallNoCap + 1e-9).toBe(true)
+		end
+	)
+
+	T.it(
+		"B8 traps: a trap fires TRAP_CHECK after landing; a pull waits Push.DURATION; overlaps count once; bosses 0",
+		function()
+			local poacher = SkillModel.byKey("trapper.poacher")
+			local L = 45
+			local sp = SkillModel.player(only(poacher, "frostTrap"), L)
+			local check = SkillModel.SERVER_CONSTANTS[1].value
+			local pull = SkillModel.SERVER_CONSTANTS[2].value
+			local delay = SkillMotions.hitDelay("frostTrap")
+			local function rooted(b: SkillModel.Build, t: number): number
+				return SkillModel.fight(SkillModel.player(b, L), { targets = { B.monster(B.GENERIC, L) }, seconds = t }).controlled
+			end
+			-- nothing before the first check, control right after it
+			T.expect(rooted(only(poacher, "frostTrap"), delay + check - 0.06)).toBe(0)
+			T.expect(rooted(only(poacher, "frostTrap"), delay + check + 0.3) > 0).toBe(true)
+			local snare = only(poacher, "venomSnare")
+			local sDef, sBp = effective(SkillModel.player(snare, L), "venomSnare")
+			T.expect(Skills.pullRadius(sDef, sBp) > 0).toBe(true)
+			local sDelay = SkillMotions.hitDelay("venomSnare")
+			T.expect(rooted(snare, sDelay + check + pull - 0.06)).toBe(0)
+			T.expect(sp.p ~= nil).toBe(true)
+			-- control share is a union of the windows (never above 1); a boss takes no notBoss root
+			local m = SkillModel.metrics(SkillModel.byKey("trapper.poisoner"), 100)
+			T.expect(m.controlled <= 1 + 1e-9).toBe(true)
+			local field = only(SkillModel.byKey("trapper.poacher"), "snarefield")
+			local onBoss = SkillModel.fight(SkillModel.player(field, 70), {
+				targets = { B.monster(B.GENERIC, 70, "boss") },
+				seconds = 10,
+			})
+			T.expect(onBoss.controlled).toBe(0)
+			T.expect(SkillModel.trapCatch(1, 3)).toBe(3)
+			T.expect(SkillModel.trapCatch(2, 1)).toBe(0)
+		end
+	)
+
+	T.it(
+		"B9 falcon: strikes in 15 s from interval x (1 - falconInterval) and delay; the strongest enemyWeak only",
+		function()
+			local scout = SkillModel.byKey("scout.partyHunter")
+			local L = 70 -- the falcon's node (row 4) is bought after 45 in this build
+			local b = only(scout, "falcon")
+			local sp = SkillModel.player(b, L)
+			local def = effective(sp, "falcon")
+			local interval = SkillModel.falconInterval(def, sp.p.hooks.falconInterval or 0)
+			T.expect(interval).toBe(
+				math.max(
+					PathData.HOOK_RULES.royalFalcon.minInterval,
+					(def.interval or 2) * (1 - (sp.p.hooks.falconInterval or 0) / 100)
+				)
+			)
+			local r = SkillModel.fight(sp, { targets = { B.monster(B.GENERIC, L) }, seconds = 15 })
+			local duration = Skills.scaled(def, def.duration, Paths.skillRank(sp.character, "falcon"))
+				+ (sp.p.hooks.falconBond or 0)
+			local delay = SkillMotions.hitDelay("falcon")
+			local expected = 0
+			local t = (def.delay or 1)
+			while t < duration - 1e-9 and delay + t < 15 - 1e-9 do
+				expected += 1
+				t += interval
+			end
+			T.expect(r.falconStrikes).toBe(expected)
+			-- two vulnerabilities on one target: the hit takes the strongest (StatusEffectService.Max)
+			local entries = {
+				{ category = "enemyWeak", value = 8, at = 0 },
+				{ category = "enemyWeak", value = 5, at = 1 },
+			}
+			T.expect(EffectStack.value(entries, "enemyWeak")).toBe(8)
+		end
+	)
+
+	T.it(
+		"B10 aiming: no basic attack while aiming, cost at the start; damage never stops it, moving refunds",
+		function()
+			local kingslayer = SkillModel.byKey("marksman.kingslayer")
+			local L = 100
+			local b = only(kingslayer, "heartseeker")
+			local sp = SkillModel.player(b, L)
+			local def, _, rank = effective(sp, "heartseeker")
+			local castTime = def.castTime :: number
+			local r = SkillModel.fight(
+				sp,
+				{ targets = { B.monster(B.GENERIC, L) }, seconds = castTime - 0.06, unlimited = true }
+			)
+			local interval = 1 / math.max(0.2, sp.p.values.atkSpeed or 1)
+			local swing =
+				SkillModel.fight(sp, { targets = { B.monster(B.GENERIC, L) }, seconds = interval, skills = false })
+			-- the swing at t = 0 lands before the cast; none during the aim (the end-of-window fix counts none either)
+			T.expect(r.basicDealt <= swing.dealt * (1 + 1e-6)).toBe(true)
+			T.expect(r.basicDealt > 0).toBe(true)
+			T.expect(near1(r.spent, SkillModel.costWith(sp, def, rank, 0), 1e-9)).toBe(true)
+			-- after the aim the swings start a new cadence: none caught up
+			local times = swingTimes(
+				sp,
+				{ targets = { B.monster(B.GENERIC, L) }, seconds = castTime + 4 * interval, unlimited = true }
+			)
+			T.expect(#times >= 3).toBe(true)
+			T.expect(noCatchUp(times, interval)).toBe(true)
+			local hit = SkillModel.fight(
+				sp,
+				{ targets = { B.monster(B.GENERIC, L) }, seconds = castTime + 1, retaliate = true }
+			)
+			T.expect((hit.by.heartseeker or 0) > 0).toBe(true)
+			local stop, refund = Channel.stops("castTime", "move", def)
+			T.expect(stop and refund).toBe(true)
+			T.expect((Channel.stops("castTime", "damage", def))).toBe(false)
+		end
+	)
+
+	T.it(
+		"B11 beam: the sum follows beamTickPct, mana drains per tick and ends the beam; damage does not stop it",
+		function()
+			local arc = SkillModel.byKey("arcanist.arcanistBoss")
+			local L = 100
+			local b = only(arc, "arcaneTorrent")
+			-- lightning: on one target the weapon element adds nothing to the ticks (fire would burn, ice chill); the
+			-- runestaff's Runic Seal off (it lights after 1.5 s of standing and would raise the later ticks)
+			local sp =
+				SkillModel.player(b, L, { element = "lightning", gear = { traitScale = { runicSeal = 0 } } :: any })
+			local def, _, rank = effective(sp, "arcaneTorrent")
+			local ticks = Skills.beamTicks(def)
+			local interval = def.interval or 0.5
+			local seconds = ticks * interval + 0.2
+			local r =
+				SkillModel.fight(sp, { targets = { B.monster(B.GENERIC, L) }, seconds = seconds, unlimited = true })
+			T.expect(r.beamTicks).toBe(ticks)
+			local swing = 1 / math.max(0.2, sp.p.values.atkSpeed or 1)
+			local times = swingTimes(
+				sp,
+				{ targets = { B.monster(B.GENERIC, L) }, seconds = seconds + 4 * swing, unlimited = true }
+			)
+			T.expect(#times >= 3).toBe(true)
+			T.expect(noCatchUp(times, swing)).toBe(true)
+			local drain = Skills.drain(
+				def,
+				rank,
+				r.poolMax,
+				{ costReduce = sp.p.values.costReduce or 0, hooks = sp.pathHooks, charges = 0 }
+			)
+			T.expect(near1(r.spent, drain * ticks, 1e-6)).toBe(true)
+			local dmg, growth = Skills.valueAt(def, "dmg", rank), Skills.valueAt(def, "growth", rank)
+			local first = SkillModel.fight(
+				sp,
+				{ targets = { B.monster(B.GENERIC, L) }, seconds = interval + 0.05, unlimited = true }
+			)
+			local series = 0
+			for n = 1, ticks do
+				series += Skills.beamTickPct(dmg, growth, n) / Skills.beamTickPct(dmg, growth, 1)
+			end
+			-- charges and empowered stay at their start for the whole beam (the cast's snapshot); no other hit
+			T.expect(near1((r.by.arcaneTorrent or 0) / (first.by.arcaneTorrent or 1), series, 0.02)).toBe(true)
+			local short = SkillModel.fight(
+				sp,
+				{ targets = { B.monster(B.GENERIC, L) }, seconds = seconds, startPool = drain * 2.5 / r.poolMax }
+			)
+			T.expect(short.beamTicks < ticks).toBe(true)
+			local hit = SkillModel.fight(
+				sp,
+				{ targets = { B.monster(B.GENERIC, L) }, seconds = seconds, unlimited = true, retaliate = true }
+			)
+			T.expect(hit.beamTicks).toBe(ticks)
+		end
+	)
+
+	T.it(
+		"B12 Arcane Charges: cost with 4 = Skills.cost(charges 4); Discharge x dischargeFactor; gone after 15 s",
+		function()
+			local arc = SkillModel.byKey("arcanist.arcanistBoss")
+			local L = 70
+			local sp = SkillModel.player(arc, L, { element = "fire" })
+			local def, _, rank = effective(sp, "firebolt")
+			local plain = SkillModel.costWith(sp, def, rank, 0)
+			local charged = SkillModel.costWith(sp, def, rank, 4)
+			T.expect(near1(
+				charged,
+				Skills.cost(def, rank, L, "Mage", {
+					costReduce = sp.p.values.costReduce or 0,
+					hooks = sp.pathHooks,
+					charges = 4,
+				}),
+				1e-12
+			)).toBe(true)
+			T.expect(charged > plain).toBe(true)
+			local b = only(arc, "arcaneDischarge")
+			local bsp = SkillModel.player(b, L, { element = "fire" })
+			local dDef, _, dRank = effective(bsp, "arcaneDischarge")
+			local function discharge(k: number): number
+				return SkillModel.fight(bsp, { targets = { B.monster(B.GENERIC, L) }, seconds = 1, startCharges = k }).by.arcaneDischarge
+					or 0
+			end
+			local factor = Skills.dischargeFactor(Skills.valueAt(dDef, "perCharge", dRank), 4)
+			T.expect(near1(discharge(4) / discharge(0), factor, 0.02)).toBe(true)
+			local idle = SkillModel.fight(
+				bsp,
+				{ targets = { B.monster(B.GENERIC, L) }, seconds = 16, skills = false, startCharges = 4 }
+			)
+			T.expect(idle.chargesEnd).toBe(0)
+			T.expect(Skills.chargesNow(4, 15, 10, false)).toBe(0)
+		end
+	)
+
+	T.it("B13 accumulate: 100 and 100 a second apart give 200; three waves give the sum of the three", function()
+		T.expect(math.abs(SkillModel.accumulateCase(100, 100, 1, 4) - 200) < 1e-6).toBe(true)
+		local per = Traits.ticks(4)
+		local ticks = SkillModel.timeline({
+			{ t = 0, kind = "burn", duration = 4, tick = 100 / per, accumulate = true },
+			{ t = 0.4, kind = "burn", duration = 4, tick = 100 / per, accumulate = true },
+			{ t = 0.8, kind = "burn", duration = 4, tick = 100 / per, accumulate = true },
+		}, 8)
+		local sum = 0
+		for _, tick in ticks do
+			sum += tick[2]
+		end
+		T.expect(math.abs(sum - 300) < 1e-6).toBe(true)
+		-- the game's function directly: a refresh adds the unpaid rest
+		local tick = EffectStack.accumulate(nil, { total = 100, duration = 4, now = 0, interval = 1 })
+		T.expect(math.abs(tick * EffectStack.ticksBetween(1, 4, 1) - 100) < 1e-9).toBe(true)
+	end)
+
+	T.it(
+		"B14 area rule: Thunderstorm on 3 counts 3, a chain on 2 counts 2, a single bolt takes singleDamage",
+		function()
+			local storm: any = nil
+			for _, def in SkillData.byId do
+				if def.randomTarget then
+					storm = def
+				end
+			end
+			assert(storm, "no randomTarget skill")
+			T.expect(Skills.areaCount(storm, 3, 1)).toBe(3)
+			local chainDef = SkillData.get("chainLightning") :: any
+			T.expect(Skills.areaCount(chainDef, 0, 2)).toBe(2)
+			local hooks = { areaDamage = 5, singleDamage = 7, spellDamage = 0 }
+			T.expect(Skills.spellBonus("single", 1, false, hooks)).toBe(7)
+			T.expect(Skills.spellBonus("area", 3, false, hooks)).toBe(5)
+			T.expect(Skills.spellBonus("area", 1, false, hooks)).toBe(0)
+			T.expect((SkillData.get("firebolt") :: any).hits).toBe(1)
+			T.expect(Skills.tag(SkillData.get("firebolt") :: any)).toBe("single")
+		end
+	)
+
+	T.it("C4 control: lines and stat traits (Mythic +9) without skills give FightSim.dps within 1 %", function()
+		for _, classId in B.CLASSES do
+			for _, L in SkillModel.LEVELS do
+				local p = B.player(classId, L, { rarity = 5, up = 9 } :: any)
+				local sp = SkillModel.wrap(p)
+				local m = B.monster(B.GENERIC, L)
+				local model = SkillModel.fight(sp, { skills = false, control = true, targets = { m } }).dps
+				local expected = FightSim.dps(p, m)
+				if not near1(model, expected, 0.01) then
+					error(`{classId} {L}: model {model}, FightSim.dps {expected}`, 0)
+				end
+			end
+		end
+	end)
+
+	T.it(
+		"C5 cross test: Power Lens and Full Draw on the event within 1 point of traitTerms with the measured situation",
+		function()
+			for _, id in { "powerLens", "fullDraw" } do
+				for _, L in { 45, 70, 100 } do
+					local row = SkillModel.traitRow(id, L, 1, 0)
+					if math.abs(row.model - row.measured) > 0.01 then
+						error(`{id} {L}: model {row.model}, traitTerms {row.measured}`, 0)
+					end
+				end
+			end
+		end
+	)
+
+	T.it("traitScale with every trait at 1 gives the same fight as no traitScale", function()
+		local ones = {}
+		for _, def in ItemTraits.list do
+			ones[def.id] = 1
+		end
+		for _, classId in B.CLASSES do
+			local build = SkillModel.builds(classId)[2] or SkillModel.builds(classId)[1]
+			local a = SkillModel.player(build, 70, { gear = {} :: any, element = "fire" })
+			local b = SkillModel.player(build, 70, { gear = { traitScale = ones } :: any, element = "fire" })
+			local ra = SkillModel.fight(a, {})
+			local rb = SkillModel.fight(b, {})
+			T.expect(math.abs(ra.dps - rb.dps) < 1e-6 * ra.dps).toBe(true)
+		end
+	end)
+end)
+
+-- Balance 20-100: paths (S86) ---------------------------------------------------------------------------------------
+-- PATH_TARGETS of tests/SkillModel.luau: printed with the same pass / fail as docs/BALANS.md; a class asserts its rows
+-- (above 20) once PATHS_TUNED says so (S89: Cleric, Warrior; S90: Hunter, Mage). Asserted now: the shape, the
+-- dependencies of the definitions and the fixture tests/fixtures/balance_paths.json with the same data.
+
+local PATHS_TUNED = { Cleric = false, Warrior = false, Hunter = false, Mage = false }
+
+T.describe("Balance 20-100: paths", function()
+	local results = SkillModel.evaluateTargets()
+	for _, classId in B.CLASSES do
+		if PATHS_TUNED[classId] then
+			for _, r in results do
+				if r.classId == classId and r.asserted then
+					T.it(`{r.build} L{r.L} {r.id}`, function()
+						if not r.pass then
+							error(
+								`{r.build} L{r.L} {r.id} {string.format("%.3f", r.value)} not in {r.low or "-"}-{r.high or "-"} ({r.source})`,
+								0
+							)
+						end
+					end)
+				end
+			end
+		end
+		T.it(`paths {classId} (printed{if PATHS_TUNED[classId] then "" else ", not tuned"})`, function()
+			local ok, all, out = 0, 0, {}
+			for _, r in results do
+				if r.classId == classId then
+					all += 1
+					if r.pass then
+						ok += 1
+					else
+						table.insert(out, r)
+					end
+				end
+			end
+			print(`paths {classId}: {ok}/{all} w paśmie`)
+			for i = 1, math.min(15, #out) do
+				local r = out[i]
+				print(
+					`  {r.build} L{r.L} {r.id} {string.format("%.3f", r.value)} not in {r.low or "-"}-{r.high or "-"} ({r.source})`
+				)
+			end
+			T.expect(all > 0).toBe(true)
+		end)
+	end
+
+	T.it("shape: every PATH_TARGETS row has a source, a known metric and an existing build", function()
+		for _, row in SkillModel.PATH_TARGETS do
+			T.expect(type(row.source) == "string" and #row.source > 0).toBe(true)
+			if not row.heavy then
+				T.expect(SkillModel.TARGET_METRICS[row.metric] ~= nil).toBe(true)
+			end
+			T.expect(SkillModel.build(row.build, row.classId) ~= nil).toBe(true)
+		end
+		local baseAt45: { [string]: number } = {}
+		for _, r in results do
+			if not finite(r.value) then
+				error(`{r.id} {r.build} L{r.L}: not finite`, 0)
+			end
+			if r.id == "all.tsk3" and r.build == "base" and r.L == 45 then
+				T.expect(baseAt45[r.classId]).toBe(nil)
+				baseAt45[r.classId] = r.value
+			end
+		end
+		-- every class's "base" row is its own base (not the first class's)
+		local seen: { [number]: boolean } = {}
+		for _, classId in B.CLASSES do
+			local v = baseAt45[classId]
+			T.expect(v ~= nil).toBe(true)
+			T.expect(seen[v :: number]).toBe(nil)
+			seen[v :: number] = true
+		end
+	end)
+
+	T.it("definitions: Furia / Furia = 1, T-SK5 > 0, support = 4 x (1 + B) + S, mean Fury <= furyMax", function()
+		local fury = SkillModel.byKey("berserker.fury")
+		local commander = SkillModel.byKey("standard.commander")
+		for _, L in SkillModel.METRIC_LEVELS do
+			local row = { metric = "single60/fury", build = "berserker.fury", levels = { L } } :: any
+			T.expect(math.abs(SkillModel.TARGET_METRICS["single60/fury"](row, L) - 1) < 1e-12).toBe(true)
+			T.expect(SkillModel.oneHeal(SkillModel.byKey("healer.dungeon"), L, SkillModel.defenderTank(L)) > 0)
+				.toBe(true)
+			local s = SkillModel.standardSupport(commander, L)
+			T.expect(math.abs(s.value - (4 * (1 + s.B) + s.S)) < 1e-12).toBe(true)
+			local m = SkillModel.metrics(fury, L)
+			local max = SkillModel.furyMax({ p = SkillModel.player(fury, L).p, selfDirty = false })
+			T.expect(m.furyMean <= max + 1e-9 and m.furyMeanGroup <= max + 1e-9).toBe(true)
+		end
+	end)
+
+	T.it("fixture: the S86 tables equal tests/fixtures/balance_paths.json while the data is the same", function()
+		local values = BalanceTables.values(BalanceTables.tablesPaths())
+		local fixture = BalanceTables.readPathsFixture()
+		T.expect(fixture ~= nil).toBe(true)
+		local report = BalanceTables.pathsFixtureDiff(values)
+		for key, v in values do
+			if not finite(v) then
+				error(`{key}: not finite`, 0)
+			end
+		end
+		if not report.sameData then
+			-- S87 and later change the data: printed only (those sessions regenerate the fixture)
+			print(
+				`paths fixture: data changed ({table.concat(report.changedModules, ", ")}); {#report.diffs} values moved, `
+					.. "regenerate with `lune run tools/balance_report.luau --fixture-paths` and note it in docs/SESJE.md"
+			)
+			for i = 1, math.min(10, #report.diffs) do
+				local d = report.diffs[i]
+				print(`  {d.key}: {d.before} → {d.after}`)
+			end
+			return
+		end
+		local problems = {}
+		for _, key in report.missing do
+			table.insert(problems, `missing {key}`)
+		end
+		for _, key in report.added do
+			table.insert(problems, `new {key}`)
+		end
+		for _, d in report.diffs do
+			table.insert(problems, `{d.key}: {d.before} → {d.after}`)
+		end
+		if #problems > 0 then
+			error(
+				"model się zmienił przy tych samych danych: sprawdź zmianę albo wygeneruj `--fixture-paths` i opisz w SESJE "
+					.. `({#problems}): {table.concat(problems, "; ", 1, math.min(8, #problems))}`,
+				0
+			)
 		end
 	end)
 end)
