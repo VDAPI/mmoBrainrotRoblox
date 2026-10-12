@@ -7,6 +7,7 @@ local Build = {}
 
 export type Spec = {
 	id: string,
+	path: string?, -- S57: path id (unlock = the row level); nil = class base
 	unlock: number,
 	maxLevel: number,
 	type: Types.SkillType,
@@ -84,6 +85,7 @@ function Build.class(
 			id = spec.id,
 			class = classId,
 			order = order,
+			path = spec.path,
 			unlock = spec.unlock,
 			maxLevel = spec.maxLevel,
 			type = spec.type,

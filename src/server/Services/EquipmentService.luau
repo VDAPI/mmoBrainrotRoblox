@@ -12,6 +12,7 @@ local Inventory = require(Shared.Logic.Inventory)
 local ItemRoll = require(Shared.Logic.ItemRoll)
 local Items = require(Shared.Data.Items)
 local Net = require(Shared.Net)
+local Paths = require(Shared.Logic.Paths)
 local QuestEvents = require(script.Parent.Parent.QuestEvents)
 local Rarities = require(Shared.Data.Rarities)
 local Signal = require(ReplicatedStorage.Packages.Signal)
@@ -496,6 +497,15 @@ local function weaponProvider(
 		ranged = weapon.ranged,
 		element = weapon.element,
 	}
+end
+
+-- S57 (ROZWOJ 2.8): base types in the weapon and off-hand slots, for the path weapon rules (Logic/Paths.weaponOk).
+function EquipmentService.WeaponTypes(player: Player): Paths.WeaponTypes
+	local char = character(player)
+	if not char then
+		return {}
+	end
+	return Paths.weaponTypesOf(char.equipment)
 end
 
 function EquipmentService.Init(registry)

@@ -51,6 +51,7 @@ local AdminService = {
 		"LootService",
 		"StatService",
 		"SkillService",
+		"PathService",
 		"NpcService",
 		"AlchemyService",
 		"BlessingService",

@@ -1,6 +1,6 @@
 --!strict
--- Scrolls (DESIGN §13): Oblivion (refund stat points), Rebirth (waits for class paths, S57; "soon" without being
--- used up since S56), Unbinding (pick a bound item — UnbindItem — and unbind it, uniques too). Scrolls of Protection are consumed by the
+-- Scrolls (DESIGN §13): Oblivion (refund stat points), New Path (S57, ROZWOJ 2.10: never used up here; the client
+-- opens the main path choice and PathService takes the scroll on ChooseMainPath), Unbinding (pick a bound item — UnbindItem — and unbind it, uniques too). Scrolls of Protection are consumed by the
 -- blacksmith; using one from the backpack only explains that.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -9,6 +9,7 @@ local Shared = ReplicatedStorage.Shared
 
 local Items = require(Shared.Data.Items)
 local Net = require(Shared.Net)
+local Paths = require(Shared.Logic.Paths)
 local Types = require(Shared.Types)
 
 local ScrollService = {
@@ -29,8 +30,12 @@ local function useScroll(player: Player, index: number, item: Types.ItemInstance
 		Net.Fire(player, "Toast", "scroll.oblivion.done", nil, "success")
 		return true, nil
 	elseif target == "skillreset" then
-		-- S56: no skill points to refund; the scroll returns with class paths (S57). Not used up.
-		return false, "scroll.skillreset.soon"
+		-- S57: Scroll of a New Path. Not used up on use; ChooseMainPath takes it.
+		local char: Types.CharacterData? = PlayerStateService.GetCharacter(player)
+		if not char or not Paths.classHasPaths(char.class) then
+			return false, "paths.soon"
+		end
+		return false, "paths.scroll.hint"
 	elseif target == "protection" then
 		return false, "scroll.protection.hint"
 	elseif target == "unbind" then

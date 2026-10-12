@@ -126,6 +126,7 @@ export type SkillDef = {
 	id: string,
 	class: string,
 	order: number, -- position in the class list
+	path: string?, -- S57 (ROZWOJ 2.2): the path that gives the skill (a node of kind "skill"); nil = class base
 	unlock: number, -- character level for rank 1
 	maxLevel: number, -- explicit in the data: 10 active, 5 passive (ROZWOJ 2.5)
 	type: SkillType,

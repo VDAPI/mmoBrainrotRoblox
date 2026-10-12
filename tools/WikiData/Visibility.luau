@@ -2,6 +2,10 @@
 -- Unreleased entities (S34, docs/WIKI.md §1): an entity with `hidden == true` or `wiki == false` in the game data
 -- is left out of the wiki together with every reference to it. collect() gathers their ids from the data lists;
 -- fromLists() is the pure part (tested on made-up data).
+-- S57 (ROZWOJ 3.5): a path with `wiki == false` hides its title and its nodes, and a skill whose `path` has no PathDef
+-- (or an unpublished one) is hidden too (fromPaths). Path ids themselves never enter the set: ctx.hidden is one id
+-- space for every entity and path ids may equal NPC, shop or guild skill ids (healer, fortune); the path export
+-- (S82) filters on PathDef.wiki itself.
 
 local Blessings = require("../../src/shared/Data/Blessings")
 local Bosses = require("../../src/shared/Data/Bosses")
@@ -10,6 +14,7 @@ local Items = require("../../src/shared/Data/Items")
 local Maps = require("../../src/shared/Data/Maps")
 local Monsters = require("../../src/shared/Data/Monsters")
 local Npcs = require("../../src/shared/Data/Npcs")
+local PathData = require("../../src/shared/Data/Paths")
 local Quests = require("../../src/shared/Data/Quests")
 local SkillData = require("../../src/shared/Data/Skills")
 local Titles = require("../../src/shared/Data/Titles")
@@ -33,8 +38,32 @@ function Visibility.fromLists(lists: { any }): { [string]: boolean }
 	return out
 end
 
+-- Ids hidden by unpublished paths: their title and nodes, and the skills of unpublished or missing paths.
+function Visibility.fromPaths(paths: { any }, skills: { [string]: any }): { [string]: boolean }
+	local out: { [string]: boolean } = {}
+	local published: { [string]: boolean } = {}
+	for _, path in paths do
+		if path.wiki == false then
+			out[path.titleId] = true
+			for _, row in path.rows do
+				for _, node in row.nodes do
+					out[node.id] = true
+				end
+			end
+		else
+			published[path.id] = true
+		end
+	end
+	for id, skill in skills do
+		if type(skill) == "table" and skill.path ~= nil and not published[skill.path] then
+			out[id] = true
+		end
+	end
+	return out
+end
+
 function Visibility.collect(): { [string]: boolean }
-	return Visibility.fromLists({
+	local out = Visibility.fromLists({
 		Items.byId,
 		Monsters.list,
 		Bosses.list,
@@ -47,6 +76,10 @@ function Visibility.collect(): { [string]: boolean }
 		Blessings.list,
 		Cosmetics.list,
 	})
+	for id in Visibility.fromPaths(PathData.list, SkillData.byId) do
+		out[id] = true
+	end
+	return out
 end
 
 return Visibility

@@ -5,6 +5,7 @@
 
 local ItemValue = require("./ItemValue")
 local Items = require("../Data/Items")
+local Paths = require("./Paths")
 local Shops = require("../Data/Shops")
 local Stats = require("../Data/Stats")
 
@@ -14,6 +15,12 @@ function ShopPrice.isPotion(itemId: string): boolean
 	local def = Items.get(itemId)
 	local use = def and (def :: any).use
 	return use ~= nil and use.kind == "potion"
+end
+
+-- S57: whether the entry is sold to a character of `classId` (needsPaths: only classes with paths, the Scroll of a
+-- New Path).
+function ShopPrice.offered(entry: Shops.Entry, classId: string): boolean
+	return not entry.needsPaths or Paths.classHasPaths(classId)
 end
 
 function ShopPrice.unit(entry: Shops.Entry, level: number, potionDiscount: number?, shop: Shops.ShopDef?): number

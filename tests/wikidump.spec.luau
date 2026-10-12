@@ -12,6 +12,7 @@ local Items = require("../src/shared/Data/Items")
 local Json = require("../tools/WikiData/Json")
 local Leak = require("../tools/WikiData/Leak")
 local Monsters = require("../src/shared/Data/Monsters")
+local PathData = require("../src/shared/Data/Paths")
 local Quests = require("../src/shared/Data/Quests")
 local Schema = require("../tools/WikiData/Schema")
 local SkillData = require("../src/shared/Data/Skills")
@@ -204,7 +205,15 @@ T.describe("Wiki export: consistency", function()
 		T.expect(#d.monsters.monsters).toBe(#Monsters.list)
 		T.expect(#d.quests.main).toBe(#Quests.Main.list)
 		T.expect(#d.quests.side).toBe(#Quests.Side.list)
-		T.expect(#d.skills.skills).toBe(count(SkillData.byId))
+		-- S57: skills of unpublished or missing paths are hidden
+		local hiddenSet = Visibility.collect()
+		local shown = 0
+		for id in SkillData.byId do
+			if not hiddenSet[id] then
+				shown += 1
+			end
+		end
+		T.expect(#d.skills.skills).toBe(shown)
 	end)
 
 	T.it("labels objectives without placeholders and keeps chances in 0..1", function()
@@ -501,6 +510,51 @@ T.describe("Wiki export: building blocks", function()
 		local loot = Clean.dropRefs({ { id = "a" }, { id = "b" }, { id = "c" } }, hidden, "id")
 		T.expect(#loot).toBe(1)
 		T.expect(Clean.dropRefs({ "a", "c" }, hidden)).toEqual({ "a" })
+	end)
+
+	T.it("hides unpublished paths, their nodes, title and skills (S57)", function()
+		local hidden = Visibility.fromPaths({
+			{
+				id = "secret",
+				titleId = "path_secret",
+				wiki = false,
+				rows = { { nodes = { { id = "secret_a" } } }, { nodes = { { id = "secret_b" } } } },
+			},
+			{ id = "open", titleId = "path_open", rows = { { nodes = { { id = "open_a" } } } } },
+		}, {
+			inSecret = { id = "inSecret", path = "secret" },
+			orphan = { id = "orphan", path = "gone" },
+			base = { id = "base" },
+			inOpen = { id = "inOpen", path = "open" },
+		})
+		T.expect(hidden).toEqual({
+			path_secret = true,
+			secret_a = true,
+			secret_b = true,
+			inSecret = true,
+			orphan = true,
+		})
+		-- game data: nothing hidden is exported (empty sets until a class has paths)
+		local all = Visibility.collect()
+		for _, skill in d.skills.skills do
+			T.expect(all[skill.id]).toBeNil()
+		end
+		for _, title in d.titles.titles do
+			T.expect(all[title.id]).toBeNil()
+		end
+		for _, path in PathData.list do
+			if path.wiki == false then
+				for _, row in path.rows do
+					for _, node in row.nodes do
+						for file, text in result.files do
+							if string.find(text, `"{node.id}"`, 1, true) then
+								error(`{node.id} leaks into {file}`)
+							end
+						end
+					end
+				end
+			end
+		end
 	end)
 
 	T.it("gives the same bytes twice", function()

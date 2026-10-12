@@ -1,14 +1,16 @@
 --!strict
 -- Skill tooltip text (S28, DESIGN §14): name and rank, the area's shape with its size, cost / cooldown / range at the
 -- current rank, the description, the next rank's numbers with the level it comes at, the breakpoints of ranks 5 and
--- 10 (reached ones marked, each with its character level; the option that works, A until S57). Plain text for
+-- 10 (reached ones marked, each with its character level; the option that works). Plain text for
 -- Components/Tooltip; the skill window draws the same pieces itself.
--- S56: `rank` comes from the character level (Skills.rankFor), 0 = not unlocked yet.
+-- S57: `rank` comes from Logic/Paths.skillRank (0 = not available yet); numbers and descriptions through
+-- Paths.effectiveFor / Paths.skillMods with the chosen breakpoints (path.bp) and the modify nodes.
 -- S54: cost and descriptions at the character level (Skills.cost, heal curve); damage skills show the weapon speed
 -- factor (Skills.speedFactor) when it is not x1.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Paths = require(ReplicatedStorage.Shared.Logic.Paths)
 local SkillData = require(ReplicatedStorage.Shared.Data.Skills)
 local Skills = require(ReplicatedStorage.Shared.Logic.Skills)
 local State = require(script.Parent.State)
@@ -17,7 +19,38 @@ local Text = require(script.Parent.Text)
 local SkillInfo = {}
 
 local characterLevel = State.Value({ "character", "level" })
+local characterClass = State.Value({ "character", "class" })
+local characterPath = State.Value({ "character", "path" })
+local equipment = State.Value({ "character", "equipment" })
 local weapon = State.Value({ "derived", "weapon" })
+
+-- The character as Logic/Paths reads it, tracked by `use`.
+local function charOf(use: any): Paths.Char
+	local level = use(characterLevel)
+	return {
+		class = use(characterClass) or "",
+		level = if type(level) == "number" then level else 1,
+		path = use(characterPath),
+		equipment = use(equipment),
+	}
+end
+
+-- The skill as it works for the character at `rank` (chosen breakpoints, modify nodes).
+local function effective(use: any, skill: SkillData.SkillDef, rank: number): SkillData.SkillDef
+	local c = charOf(use)
+	return (Paths.effectiveFor(c, skill.id, Paths.weaponTypesOf(c.equipment), rank))
+end
+
+-- Description options: the character level, path.bp and the modify nodes.
+local function descOpts(use: any, skill: SkillData.SkillDef): Skills.DescOpts
+	local c = charOf(use)
+	local state = c.path
+	return {
+		level = c.level,
+		choices = if state then state.bp else nil,
+		mods = Paths.skillMods(c, skill.id, Paths.weaponTypesOf(c.equipment)),
+	}
+end
 
 local function levelOf(use: any): number
 	local level = use(characterLevel)
@@ -36,7 +69,7 @@ local SHAPE_GLYPH: { [string]: string } = {
 -- "◣ Cone 90° · 10 studs" (empty for skills without an area).
 function SkillInfo.shapeLine(use: any, skill: SkillData.SkillDef, shownRank: number): string
 	local rank = math.max(1, shownRank)
-	local def = Skills.effective(skill, rank, nil, nil)
+	local def = effective(use, skill, rank)
 	local shape = Skills.shape(skill)
 	if shape == "none" or shape == "target" then
 		return ""
@@ -55,7 +88,7 @@ end
 -- "15 energy · Cooldown 4 s · Range 8 studs"
 function SkillInfo.costLine(use: any, skill: SkillData.SkillDef, shownRank: number): string
 	local rank = math.max(1, shownRank)
-	local def = Skills.effective(skill, rank, nil, nil)
+	local def = effective(use, skill, rank)
 	local parts = {}
 	local cost = Skills.cost(def, rank, levelOf(use), skill.class, nil)
 	if cost > 0 and skill.resource then
@@ -87,9 +120,11 @@ function SkillInfo.breakpoints(
 	rank: number
 ): { { text: string, reached: boolean } }
 	local out = {}
+	local state = charOf(use).path
+	local choices = if state then state.bp else nil
 	for _, bp in Skills.breakpointKeys(skill) do
-		-- the option that works (A until a choice exists, S57 / S59)
-		if bp.option == Skills.chosen(skill, bp.rank, nil) then
+		-- the option that works (A without a choice)
+		if bp.option == Skills.chosen(skill, bp.rank, choices) then
 			local label =
 				Text.get(use, "skills.breakpoint", { rank = bp.rank, level = Skills.rankLevel(skill, bp.rank) })
 			table.insert(out, { text = `{label}: {Text.get(use, bp.key)}`, reached = rank >= bp.rank })
@@ -114,7 +149,7 @@ function SkillInfo.tooltip(use: any, skill: SkillData.SkillDef, rank: number): s
 	if skill.type ~= "passive" then
 		table.insert(lines, SkillInfo.costLine(use, skill, shown))
 	end
-	local opts = { level = levelOf(use) }
+	local opts = descOpts(use, skill)
 	table.insert(lines, Skills.formatDescription(skill, shown, lang, opts))
 	if rank > 0 and rank < skill.maxLevel then
 		local nextText = Skills.formatDescription(skill, rank + 1, lang, opts)

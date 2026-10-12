@@ -19,6 +19,7 @@ local MODULES: { [string]: any } = {
 	Market = require("../src/shared/Data/Market"),
 	Monsters = require("../src/shared/Data/Monsters"),
 	Npcs = require("../src/shared/Data/Npcs"),
+	Paths = require("../src/shared/Data/Paths"),
 	Quests = require("../src/shared/Data/Quests"),
 	Rarities = require("../src/shared/Data/Rarities"),
 	Recipes = require("../src/shared/Data/Recipes"),

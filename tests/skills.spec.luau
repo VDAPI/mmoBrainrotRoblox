@@ -1,5 +1,4 @@
 --!strict
-local AccountSchema = require("../src/shared/Logic/AccountSchema")
 local Bases = require("../src/shared/Data/Items/Bases")
 local Classes = require("../src/shared/Data/Classes")
 local SkillData = require("../src/shared/Data/Skills")
@@ -29,13 +28,6 @@ local VALID_TYPES = {
 	groupHeal = true,
 	passive = true,
 }
-
-local function character(classId: string, level: number): any
-	local c = AccountSchema.characterTemplate()
-	c.class = classId :: any
-	c.level = level
-	return c
-end
 
 T.describe("Data: Skills", function()
 	T.it("every class has skills of its own", function()
@@ -125,14 +117,19 @@ T.describe("S56 ranks from the level and the bar", function()
 		return out
 	end
 
-	T.it("rankFor and rankOf", function()
+	T.it("rankFor (base only)", function()
 		local cleave = SkillData.get("cleave") :: any
 		T.expect(Skills.rankFor("Warrior", 17, cleave)).toBe(0)
 		T.expect(Skills.rankFor("Warrior", 18, cleave)).toBe(1)
 		T.expect(Skills.rankFor("Warrior", 54, cleave)).toBe(10)
 		T.expect(Skills.rankFor("Mage", 54, cleave)).toBe(0)
-		T.expect(Skills.rankOf(character("Warrior", 54), "nope")).toBe(0)
-		T.expect(Skills.rankOf(character("Warrior", 54), "cleave")).toBe(10)
+		local onPath = table.clone(cleave)
+		onPath.path = "somePath"
+		T.expect(Skills.rankFor("Warrior", 54, onPath)).toBe(0) -- path skills: Logic/Paths.skillRank
+		T.expect(Skills.validSlot(1)).toBe(true)
+		T.expect(Skills.validSlot(10)).toBe(true)
+		T.expect(Skills.validSlot(11)).toBe(false)
+		T.expect(Skills.validSlot(1.5)).toBe(false)
 	end)
 
 	T.it("transitional ladder (ROZWOJ 2.6): every class skill, 19 ranks at level 20", function()
@@ -198,52 +195,6 @@ T.describe("S56 ranks from the level and the bar", function()
 		local placed2, left2 = Skills.placeOnBar(full, { "battleCry" })
 		T.expect(placed2).toEqual({})
 		T.expect(left2).toEqual({ "battleCry" })
-	end)
-
-	T.it("cleanHotbar", function()
-		local bar, changed = Skills.cleanHotbar("Hunter", 20, {
-			["1"] = "aimedShot",
-			["2"] = "hawkEye",
-			["3"] = "frostTrap",
-			["4"] = "firebolt",
-			["5"] = "aimedShot",
-			["6"] = "nope",
-			["7"] = "doubleShot",
-			["11"] = "disengage",
-		})
-		T.expect(bar).toEqual({ ["1"] = "aimedShot", ["7"] = "doubleShot" })
-		T.expect(changed).toBe(true)
-		local good = { ["1"] = "aimedShot", ["3"] = "doubleShot" }
-		local same, changed2 = Skills.cleanHotbar("Hunter", 20, good)
-		T.expect(same).toEqual(good)
-		T.expect(changed2).toBe(false)
-		local empty, changed3 = Skills.cleanHotbar("Hunter", 20, "oops")
-		T.expect(empty).toEqual({})
-		T.expect(changed3).toBe(true)
-	end)
-
-	T.it("validHotbar: unlocked actives of the class", function()
-		local c = character("Hunter", 30)
-		T.expect(Skills.validHotbar(c, 1, "aimedShot")).toBe(true)
-		T.expect(Skills.validHotbar(c, 10, nil)).toBe(true)
-		T.expect(Skills.validHotbar(c, 11, "aimedShot")).toBe(false)
-		T.expect(Skills.validHotbar(c, 2, "hawkEye")).toBe(false) -- passive
-		T.expect(Skills.validHotbar(c, 2, "piercingArrow")).toBe(false) -- unlocks at 34
-		T.expect(Skills.validHotbar(c, 2, "firebolt")).toBe(false) -- other class
-	end)
-
-	T.it("passive totals from the level", function()
-		local at50 = Skills.passiveTotals(character("Warrior", 50))
-		T.expect(at50.pct.armor).toBe(25)
-		T.expect(at50.pct.maxHp).toBe(12)
-		T.expect(at50.hooks.riposte).toBe(4)
-		T.expect(Skills.passiveTotals(character("Warrior", 47)).hooks.riposte).toBeNil()
-		local at13 = Skills.passiveTotals(character("Warrior", 13))
-		T.expect(at13).toEqual({ flat = {}, pct = {}, hooks = {} })
-		local at100 = Skills.passiveTotals(character("Warrior", 100))
-		T.expect(at100.pct.armor).toBe(25)
-		T.expect(at100.pct.maxHp).toBe(20)
-		T.expect(at100.hooks.riposte).toBe(12)
 	end)
 end)
 

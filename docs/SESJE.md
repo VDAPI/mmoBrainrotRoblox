@@ -3338,3 +3338,46 @@ Pliki: `Logic/{Skills,AccountSchema,CharacterFactory,Exp,Premium,QuestLogic}`, `
 `tools/WikiData/{Skills,Basics,Premium}`, `wiki/src/lib/{skills,skills.test,classes}.ts`, `SkillPlanner.svelte`,
 `SkillNode.svelte`, `ClassView.astro`, `ClassesView.astro`, `wiki/src/i18n`, 4 pliki MDX, `wiki/e2e/keyboard.e2e.ts`,
 `wiki/scripts/{shots.pages,budgets.config}.mjs`, dane wiki, `docs/{PRZEDMIOTY,ARCHITECTURE,DESIGN,ROZWOJ,WIKI}.md`.
+
+### S57: Fundament 5: rdzeń ścieżek, wybór przełomów i Zwój Nowej Ścieżki
+
+- Dane: `Data/Paths/{init,Types,Warrior,Hunter,Mage,Cleric}` (`ROWS` z `twoPathExtra` w rzędach 2, 5, 10,
+  `DIP_ROWS = 2`, `DIP_SCALE = 1/3`, `list` / `byId` / `byClass` z asercjami; listy klas puste do S71 / S75 / S78 /
+  S81), `SkillDef.path` (+ `Build`), `Progression.pathPointsEvery = 2`, wpis Nauczyciela `scroll_skillreset`
+  z `needsPaths`.
+- `Logic/Paths` (czysty, źródło danych `withSource` / `sourceOf`): `pathsOf`, `classHasPaths`, `isPublished`,
+  `findNode`, `rowsFor`, `ranksIn`, `pointsAt`, `spent`, `free`, `rowOpen`, `canBuy`, `canRefund`, `refund`,
+  `canChooseMain`, `skillRank`, `availableSkills`, `skillUsable`, `activeNodes`, `nodeValues`, `isTeamNode`,
+  `skillMods`, `effectiveFor`, `passiveTotals`, `validHotbar`, `canPutOnBar`, `canChooseBreakpoint`, `clampToLevel`,
+  `weaponOk`, `weaponTypesOf`, `canEdit`, `MAIN_LEVEL`. `Logic/Skills`: drabina tylko dla podstawy, `validSlot`,
+  `addPassive` (bez `rankOf`, `cleanHotbar`, `validHotbar`, `passiveTotals`).
+- Serwer: nowy `PathService` (`BuyNode`, `RefundNode`, `ResetPaths`, `ChooseMainPath` ze zwojem, `ChooseBreakpoint`,
+  sygnał `Changed`, `clampToLevel` + `validHotbar` przy wejściu, nasłuch broni i `LevelChanged`, funkcje admina),
+  `EquipmentService.WeaponTypes`, `DungeonService.NearAnyEntrance`; `SkillService` rzuca przez `Paths.skillRank` /
+  `skillUsable` (`cast.error.pathWeapon`) / `effectiveFor`, pasywki z `Paths.passiveTotals`, pasek przez
+  `Paths.canPutOnBar`, bez czyszczenia paska; `LevelService`: `LevelUp` z punktami ścieżek, `SetLevel` w dół przycina
+  ścieżki; `ScrollService` (zwój bez zużycia), `ShopService` (`shop.error.unavailable`).
+- Klient: `SkillController`, `Hud/SkillBar`, `SkillInfo` przez `Paths.effectiveFor` / `skillRank` (opis z `path.bp`
+  i `skillMods`, pasek szarzeje bez broni ścieżki); `SkillsWindow` z `showModal`: licznik punktów i ścieżka główna,
+  zakładki „Podstawa” / „Ścieżki wkrótce” / ścieżki (prosta lista rzędów i węzłów z „+” / „−”, wybór ścieżki
+  głównej, „Zwróć wszystkie węzły”); `UI/SkillsTab` (zwój otwiera zakładkę), `ItemController`, `ShopWindow` i
+  `WorldMap/Cards` pomijają wpisy `needsPaths` (`ShopPrice.offered`).
+- Admin: `/path`, `/node`, `/pathmax`, `/bp`, `/resetskills`. Teksty PL / EN (`paths.*`, `bp.error.*`,
+  `cast.error.pathWeapon`, `shop.error.unavailable`, zwój), usunięty `scroll.skillreset.soon`.
+- Wiki: `Visibility.fromPaths` (tytuł i węzły ścieżek z `wiki = false`, umiejętności ścieżek nieopublikowanych i bez
+  `PathDef`; bez samych id ścieżek), `World.shops` pomija `needsPaths` bez opublikowanych ścieżek; dane wiki: nowa
+  nazwa i opis zwoju.
+- Testy: `tests/fixtures/paths.luau` (Mag z `fxStorm` i `fxRune`, 49 rang na ścieżkę, `fxOrphan`),
+  `tests/paths.spec.luau` (punkty 1–13 planu), przypadki paska i pasywek przeniesione ze `skills.spec`,
+  `wikidump.spec` (ukrywanie, liczba umiejętności bez ukrytych), `data.spec` (`paths`, `bp`), `localization.spec`
+  (`Data/Paths`). Zakładka ścieżki uproszczona do listy węzłów (S59 ją przepisze).
+- Docs: DESIGN §14 z `DESIGN-14.md` (plik usunięty) i wzmianki o drzewku, ROZWOJ §2.2, §3.1, §3.2, `CLAUDE.md`,
+  `WIKI.md` §1.
+
+Pliki: `Data/Paths/*` (nowe), `Logic/Paths` (nowy), `PathService` (nowy), `UI/SkillsTab` (nowy),
+`tests/fixtures/paths.luau`, `tests/paths.spec.luau` (nowe), `Logic/{Skills,ShopPrice}`,
+`Data/{Progression,Shops,AdminCommands}`, `Data/Skills/{Types,Build}`, `Net/Definitions`, lokalizacja PL / EN,
+`SkillService`, `LevelService`, `EquipmentService`, `DungeonService`, `ScrollService`, `ShopService`, `AdminService`,
+`Admin/Character`, `SkillController`, `ItemController`, `ScreenController`, `SkillsWindow`, `Hud/SkillBar`,
+`SkillInfo`, `ShopWindow`, `WorldMap/Cards`, `tools/WikiData/{Visibility,World}`,
+`tests/{skills,wikidump,data,localization}.spec`, dane wiki, `docs/{DESIGN,ROZWOJ,WIKI,PRZEDMIOTY}.md`, `CLAUDE.md`.

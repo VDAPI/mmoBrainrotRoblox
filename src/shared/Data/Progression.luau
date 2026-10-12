@@ -28,4 +28,7 @@ return table.freeze({
 	maxBonus = 0.2,
 
 	statPointsPerLevel = 5,
+	-- ROZWOJ 2.4 (S57): 1 path point on every even level (pointsAt(L) = floor(L / pathPointsEvery)); the pace waits
+	-- for the owner's approval (ROZWOJ 15.1).
+	pathPointsEvery = 2,
 })

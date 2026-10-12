@@ -152,8 +152,9 @@ węzła.
 | 10 · 80 | zwykły: 2 węzły (3 + 3) albo nowa umiejętność (1) + węzeł (3) | 6 albo 4 | 24 |
 | 11 · 90 | ulepszenie zwieńczenia: 1 węzeł (2) | 2 | 28 |
 
-- Rzędy 1–2 są otwarte w każdej ścieżce, rzędy 3–11 tylko w ścieżce głównej. „Wymóg pkt” to rangi kupione w tej
-  ścieżce; zwieńczenia nie da się wziąć jednym punktem.
+- Rzędy 1–2 są otwarte w każdej ścieżce, rzędy 3–11 tylko w ścieżce głównej. „Wymóg pkt” to rangi kupione w
+  niższych rzędach tej ścieżki (S57: rangi w rzędzie albo wyżej go nie otwierają, więc zwrot „od góry” i `canRefund`
+  są spójne); zwieńczenia nie da się wziąć jednym punktem.
 - Klasa z 3 ścieżkami: ścieżka główna 42 rangi (40 z nową umiejętnością w rzędzie 10), pierwsze rzędy każdej innej 10;
   razem 62 (60), pokrycie 81% (83%).
 - Klasa z 2 ścieżkami (dziś Mag): rzędy 2, 5 i 10 mają po jednym dodatkowym węźle z 3 rangami (`ROWS[i].twoPathExtra`,
@@ -169,7 +170,9 @@ węzła.
   do każdego Łowcy i Wojownika za 1 punkt.
 - Efekty drużynowe w rzędach 1–2 (aury i efekty z kategorią inną niż `own` w węzłach `passive` i `modify`) działają
   poza ścieżką główną z siłą `node.dipScale` (domyślnie `DIP_SCALE = 1/3`). Węzły szczęścia mają własne wartości dla
-  początków Fortuny (6.3) i `dipScale` ich nie dotyczy.
+  początków Fortuny (6.3) i `dipScale` ich nie dotyczy. S57: węzeł drużynowy (`Paths.isTeamNode`) to aura, węzeł
+  `modify` z efektem o kategorii innej niż `own` albo węzeł z jawnym `dipScale` (tak oznacza się drużynowy hak w
+  `passive`); efekt bez kategorii (leczenie, tarcza, nietykalność, leczenie w czasie) działa w pełni.
 
 ### 2.3 Węzły
 
@@ -340,7 +343,7 @@ Broń każdej ścieżki (uzasadnienie i pokrycie w sekcjach klas):
 | `Data/Titles` | tytuły ścieżek `path_<pathId>`, `req.kind = "mainPath"` |
 | `Data/Combat` | nowe `pvp` (mnożniki 7.6), `skillSpeedRef` (8) |
 | `Logic/Skills` | `rankLevel`, `rankAt`, `effective(skill, rank, choices, mods)`, `cost(skill, rank, L, classId, mods)`; bez `canLearn`, `spentPoints`, `refundAll` |
-| `Logic/Paths` | nowy: `rowsFor`, `pointsAt`, `free`, `rowOpen`, `canBuy`, `canRefund`, `refund`, `canChooseMain` (z `freeUsed`), `skillRank`, `availableSkills`, `skillUsable`, `skillMods`, `validHotbar`, `passiveTotals`, `activeNodes`, `auras`, `inAura`, `luck`, `clampToLevel`, `weaponOk`, `canEdit(ctx)` |
+| `Logic/Paths` | nowy: `rowsFor`, `pointsAt`, `free`, `rowOpen`, `canBuy`, `canRefund`, `refund`, `canChooseMain` (z `freeUsed`), `skillRank`, `availableSkills`, `skillUsable`, `skillMods`, `validHotbar`, `passiveTotals`, `activeNodes`, `auras`, `inAura`, `luck`, `clampToLevel`, `weaponOk`, `canEdit(ctx)`; S57 dokłada pomocnicze `pathsOf`, `classHasPaths`, `isPublished`, `findNode`, `spent`, `ranksIn`, `weaponTypesOf`, `nodeValues`, `isTeamNode`, `canPutOnBar`, `canChooseBreakpoint`, `effectiveFor`, `withSource` / `sourceOf` (źródło danych, test na `tests/fixtures/paths.luau`) i `MAIN_LEVEL` |
 | `Logic/Luck`, `PartyBonus`, `StatPlan`, `EffectStack`, `LevelCurves` | nowe, czyste |
 | `Logic/AccountSchema`, `CharacterFactory`, `Types` | schemat 6 i nowe postacie (5) |
 
@@ -355,20 +358,30 @@ export type PathNode = {
 	skill: string?, -- umiejętność z path == ta ścieżka, unlock == poziom rzędu
 	values: { [string]: Scaled }?,
 	passive: { flat: { [string]: string }?, pct: { [string]: string }?, hooks: { [string]: string }? }?,
-	modify: { skill: string, option: ("a" | "b")?, bp: Breakpoint }?,
+	-- at: ranga przełomu, której dotyczy option (domyślnie 5); w bp liczba zależna od rangi węzła to
+	-- { ref = "<pole values>" } (w mul: 1 + (x − 1)·scale, gdzie indziej x·scale), także zagnieżdżona (S57)
+	modify: { skill: string, option: ("a" | "b")?, at: number?, bp: Breakpoint }?,
 	-- tryb (% albo pkt proc.) i dozwolone statystyki bierze z kategorii w Data/BuffCategories
 	aura: { category: string, stats: { [string]: string }, radius: number?, shape: ("circle" | "behind")? }?,
 	luck: { [string]: string }?, -- pole Data/Luck -> pole values
 	weapon: WeaponReq?,
 	dipScale: number?, -- siła efektów drużynowych w rzędach 1–2 poza ścieżką główną (domyślnie DIP_SCALE)
+	extra: boolean?, -- węzeł twoPathExtra rzędów 2, 5, 10 (ostatni w rzędzie), S57
 	glyph: string, nameKey: string, descKey: string, -- path.<pathId>.<nazwa>.name / .desc
 }
 export type PathDef = {
 	id: string, class: string, order: number, role: "damage" | "tank" | "healer" | "support" | "luck",
-	nameKey: string, descKey: string, titleId: string, weapon: WeaponReq, statPlan: { [string]: number },
+	nameKey: string, descKey: string, titleId: string, weapon: WeaponReq,
 	rows: { { choice: boolean, nodes: { PathNode } } }, -- 11; poziom i wymóg punktów z Paths.rowsFor
-	reference: { any }, -- buildy wzorcowe dla modelu, nigdy na wiki
+	statPlan: { [string]: number }?, -- S58
+	itemWeights: any?, -- S67, nigdy na wiki
+	reference: { ReferenceBuild }, -- buildy wzorcowe dla modelu, nigdy na wiki
 	wiki: boolean?, -- false = nieopublikowana: ukrywa ścieżkę, jej umiejętności, węzły, tytuł i teksty (3.5)
+}
+-- S57: build wzorcowy; nodes = { { "nodeId", ranga } } w kolejności kupowania
+export type ReferenceBuild = {
+	id: string, weapon: { main: string?, offhand: string? }, nodes: { { any } },
+	bp: { [string]: string }?, stats: { [string]: number }?, rotation: { string }?, damageReference: number?,
 }
 -- Zapis postaci (aktywny zestaw w polach postaci, drugi w buildOther; skills i skillPoints usunięte):
 -- path = { main: string?, nodes: { [nodeId]: rank }, bp: { ["<skillId>:5"]: "a" | "b" }, freeUsed: boolean }

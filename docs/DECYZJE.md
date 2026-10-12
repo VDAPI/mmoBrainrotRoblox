@@ -1167,3 +1167,24 @@
 - **S56** Okno umiejętności (minimalne do S59): lista klasy z rangą, „następna na poz.”, znaczkami 5A / 10A i
   „Na pasek”; pełny pasek otwiera siatkę 2 × 5, wybrane miejsce zostaje zastąpione. Zablokowana umiejętność w
   szczegółach pokazuje opis rangi 1 pod nagłówkiem „Jeszcze niedostępna”.
+- **S57** Węzeł: liczby zależne od rangi w `node.values` (`{ ranga 1, ranga max }`); w `modify.bp` odwołanie
+  `{ ref = "<pole>" }` (w `mul`: `1 + (x − 1)·scale`, gdzie indziej `x·scale`). Drużynowy = aura, `modify` z efektem
+  kategorii innej niż `own` albo jawne `dipScale`; efekt bez kategorii działa w pełni, szczęście nigdy (ROZWOJ 2.2).
+- **S57** Wymóg punktów rzędu liczy rangi w niższych rzędach tej ścieżki (zwrot „od góry” i `canRefund` spójne).
+  `modify.at` (domyślnie 5) mówi, której rangi przełomu dotyczy `modify.option`. `modify.bp` ma typ `any` (odwołania).
+- **S57** `Paths.isPublished` w grze = istnieje `PathDef`; wiki patrzy na `wiki ~= false`. Id ścieżek nie wchodzą do
+  `ctx.hidden` (kolizje z `healer`, `fortune`). Umiejętność z `path` bez `PathDef` jest nieosiągalna i ukryta.
+- **S57** Broń z ekwipunku jako `WeaponTypes = { main, offhand }` (typy baz, `Paths.weaponTypesOf`); dwuręczna
+  wymieniona w `main` nie potrzebuje drugiej ręki. Miasto = strefa zielona (`ZoneService.GetPvpZone`), brama =
+  `DungeonService.NearAnyEntrance` (52 st., nie w trakcie przebiegu).
+- **S57** Zwój Nowej Ścieżki (`scroll_skillreset`): użycie nic nie zużywa (bez ścieżek „Ścieżki tej klasy wkrótce”,
+  z nimi klient otwiera zakładkę ścieżki); `ChooseMainPath` zdejmuje go tuż przed zapisem. U Nauczyciela wpis
+  `needsPaths` (400 × poziom, od 20.), sprzedawany tylko klasom ze ścieżkami (`ShopPrice.offered`).
+- **S57** Drabina S56 (`Skills.unlocked`, `startHotbar`, `newlyUnlocked`, `rankFor`) tylko dla podstawy (`path == nil`);
+  rangę umiejętności ścieżki zna `Paths.skillRank`. Pasek i `path.bp` sprawdza tylko `PathService` (`validHotbar` przy
+  wejściu, po zmianie poziomu i węzłów); `SkillService` nie czyści paska. Pasywki i haki z `Paths.passiveTotals`.
+- **S57** Wejście postaci: `Paths.clampToLevel` (przycina też stan z `/node`); `SetLevel` w dół przycina aktywny
+  zestaw przed przeliczeniem statystyk. `ChooseBreakpoint` tylko dla rang, które mają opcję B (`bp.error.noOption`).
+- **S57** Okno umiejętności do S59: zakładka ścieżki to prosta lista rzędów i węzłów z „+” / „−”; licznik wolnych
+  punktów rośnie od 10. poziomu także w klasach bez ścieżek. DESIGN §14 zastąpione streszczeniem z odsyłaczem do
+  ROZWOJ (dawny `docs/DESIGN-14.md`).

@@ -1,6 +1,7 @@
 --!strict
 -- Skill rules (DESIGN §14.1). Pure.
--- S56 (ROZWOJ 2.5): ranks come from the character level (rankAt / rankFor / rankOf); no skill points, no learning.
+-- S56 (ROZWOJ 2.5): ranks come from the character level (rankAt / rankFor); no skill points, no learning.
+-- S57: which skills a character has, the hotbar and the passive totals live in Logic/Paths (base + paths).
 -- S54 (ROZWOJ 8): the one cost (Skills.cost), heal curve (Skills.healMul) and weapon speed normalisation
 -- (Skills.speedFactor) used by the server, the skill bar, the descriptions and the wiki.
 
@@ -10,7 +11,6 @@ local LevelCurves = require("./LevelCurves")
 local Locale = require("../Util/Locale")
 local SkillData = require("../Data/Skills")
 local Stats = require("../Data/Stats")
-local Types = require("../Types")
 
 type SkillDef = SkillData.SkillDef
 
@@ -97,8 +97,8 @@ local NUMERIC_FIELDS = { "range", "radius", "angle", "length", "width", "hits", 
 -- once), `add` sums, `mul` multiplies, `effect` / `selfEffect` / `allyEffect` go to the effects / selfEffects /
 -- allyEffects lists, every other key: the later source wins. `add.effectDuration` lengthens `effects` only.
 -- `enabled = false` (or Config.Skills.breakpoints off) drops the breakpoints, not the mods. `rank` comes from the
--- character level (S56); until S57 every caller passes `choices = nil`, `mods = nil`. Never mutates the data; with no source
--- returns the def itself.
+-- character level (S56); consumers call it through Logic/Paths.effectiveFor (choices = path.bp, mods =
+-- Paths.skillMods). Never mutates the data; with no source returns the def itself.
 function Skills.effective(
 	skill: SkillDef,
 	rank: number,
@@ -230,19 +230,13 @@ end
 
 -- S56 (ROZWOJ 2.5, 2.6): ranks come from the character level; no skill points ------------------------------------
 
--- Rank of `skill` for a character of `classId` at `level` (0: other class or not unlocked yet).
--- transitional ladder (ROZWOJ 2.6) until S57 (Logic/Paths)
+-- Rank of a class base skill for a character of `classId` at `level` (0: other class or not unlocked yet).
+-- base only; path skills: Logic/Paths (Paths.skillRank is the rank every consumer asks for)
 function Skills.rankFor(classId: string?, level: number, skill: SkillDef): number
-	if skill.class ~= classId then
+	if skill.class ~= classId or skill.path ~= nil then
 		return 0
 	end
 	return Skills.rankAt(skill, level)
-end
-
--- transitional ladder (ROZWOJ 2.6) until S57 (Logic/Paths)
-function Skills.rankOf(character: Types.CharacterData, skillId: string): number
-	local skill = SkillData.get(skillId)
-	return if skill then Skills.rankFor(character.class, character.level, skill) else 0
 end
 
 local function byUnlock(a: SkillDef, b: SkillDef): boolean
@@ -252,13 +246,14 @@ local function byUnlock(a: SkillDef, b: SkillDef): boolean
 	return a.order < b.order
 end
 
--- Skills of the class unlocked at `level`, by unlock level (tie: order).
--- transitional ladder (ROZWOJ 2.6) until S57 (Logic/Paths)
+-- Base skills of the class unlocked at `level`, by unlock level (tie: order). A class without paths keeps all its
+-- skills here (transitional ladder, ROZWOJ 2.6).
+-- base only; path skills: Logic/Paths
 function Skills.unlocked(classId: string, level: number): { SkillDef }
 	local out: { SkillDef } = {}
 	local list: { SkillDef } = SkillData.byClass[classId] or {}
 	for _, skill in list do
-		if skill.unlock <= level then
+		if skill.path == nil and skill.unlock <= level then
 			table.insert(out, skill)
 		end
 	end
@@ -266,21 +261,19 @@ function Skills.unlocked(classId: string, level: number): { SkillDef }
 	return out
 end
 
--- The class's active skill with the lowest unlock (on slot 1 of a new character).
--- transitional ladder (ROZWOJ 2.6) until S57 (Logic/Paths)
+-- The class's base active skill with the lowest unlock (on slot 1 of a new character).
 function Skills.startingSkill(classId: string): string?
 	local best: SkillDef? = nil
 	local list: { SkillDef } = SkillData.byClass[classId] or {}
 	for _, skill in list do
-		if skill.type ~= "passive" and (best == nil or byUnlock(skill, best)) then
+		if skill.path == nil and skill.type ~= "passive" and (best == nil or byUnlock(skill, best)) then
 			best = skill
 		end
 	end
 	return if best then best.id else nil
 end
 
--- A hotbar with the actives unlocked at `level` on "1", "2", ... in unlock order (at most HOTBAR_SLOTS; ROZWOJ 5).
--- transitional ladder (ROZWOJ 2.6) until S57 (Logic/Paths)
+-- A hotbar with the base actives unlocked at `level` on "1", "2", ... in unlock order (at most HOTBAR_SLOTS; ROZWOJ 5).
 function Skills.startHotbar(classId: string, level: number): { [string]: string }
 	local bar: { [string]: string } = {}
 	local slot = 0
@@ -293,8 +286,8 @@ function Skills.startHotbar(classId: string, level: number): { [string]: string 
 	return bar
 end
 
--- Skills of the class with fromLevel < unlock <= toLevel, in unlock order.
--- transitional ladder (ROZWOJ 2.6) until S57 (Logic/Paths)
+-- Base skills of the class with fromLevel < unlock <= toLevel, in unlock order (path skills reach the bar when their
+-- node is bought, never on a level-up).
 function Skills.newlyUnlocked(classId: string, fromLevel: number, toLevel: number): { SkillDef }
 	local out: { SkillDef } = {}
 	for _, skill in Skills.unlocked(classId, toLevel) do
@@ -342,42 +335,9 @@ function Skills.placeOnBar(hotbar: { [string]: string }, ids: { string }): ({ Pl
 	return placed, left
 end
 
--- The hotbar with only slots "1".."10" holding an unlocked active of the class, without repeats (the lower slot
--- wins). Returns a new table and whether anything was dropped. Not a table: {}, true.
--- transitional ladder (ROZWOJ 2.6) until S57 (Logic/Paths)
-function Skills.cleanHotbar(classId: string?, level: number, hotbar: any): ({ [string]: string }, boolean)
-	local out: { [string]: string } = {}
-	if type(hotbar) ~= "table" then
-		return out, true
-	end
-	local kept = 0
-	local seen: { [string]: boolean } = {}
-	for slot = 1, SkillData.HOTBAR_SLOTS do
-		local id = hotbar[tostring(slot)]
-		local skill = if type(id) == "string" then SkillData.get(id) else nil
-		if skill and skill.type ~= "passive" and not seen[skill.id] and Skills.rankFor(classId, level, skill) > 0 then
-			seen[skill.id] = true
-			out[tostring(slot)] = skill.id
-			kept += 1
-		end
-	end
-	local total = 0
-	for _ in hotbar do
-		total += 1
-	end
-	return out, total ~= kept
-end
-
--- Slot "1".."10" may hold an unlocked active skill of the character's class (or nil to clear).
-function Skills.validHotbar(character: Types.CharacterData, slot: number, skillId: string?): boolean
-	if slot ~= math.floor(slot) or slot < 1 or slot > SkillData.HOTBAR_SLOTS then
-		return false
-	end
-	if skillId == nil then
-		return true
-	end
-	local skill = SkillData.get(skillId)
-	return skill ~= nil and skill.type ~= "passive" and Skills.rankOf(character, skillId) > 0
+-- A hotbar slot number 1..HOTBAR_SLOTS. Which skill may sit there: Logic/Paths.canPutOnBar / validHotbar.
+function Skills.validSlot(slot: number): boolean
+	return slot == math.floor(slot) and slot >= 1 and slot <= SkillData.HOTBAR_SLOTS
 end
 
 export type PassiveTotals = {
@@ -386,30 +346,24 @@ export type PassiveTotals = {
 	hooks: { [string]: number },
 }
 
--- Stat modifiers and proc values from the class's passives at the character's level (rank > 0).
--- transitional ladder (ROZWOJ 2.6) until S57 (Logic/Paths)
-function Skills.passiveTotals(character: Types.CharacterData): PassiveTotals
-	local totals: PassiveTotals = { flat = {}, pct = {}, hooks = {} }
-	local list: { SkillDef } = SkillData.byClass[character.class] or {}
-	for _, skill in list do
-		local passive = skill.passive
-		local rank = Skills.rankFor(character.class, character.level, skill)
-		if passive and rank > 0 then
-			local flat: { [string]: string } = passive.flat or {}
-			local pct: { [string]: string } = passive.pct or {}
-			local hooks: { [string]: string } = passive.hooks or {}
-			for stat, field in flat do
-				totals.flat[stat] = (totals.flat[stat] or 0) + Skills.valueAt(skill, field, rank)
-			end
-			for stat, field in pct do
-				totals.pct[stat] = (totals.pct[stat] or 0) + Skills.valueAt(skill, field, rank)
-			end
-			for hook, field in hooks do
-				totals.hooks[hook] = (totals.hooks[hook] or 0) + Skills.valueAt(skill, field, rank)
-			end
-		end
+-- Adds `skill.passive` at `rank` to `totals` (rank <= 0: nothing). Which skills count: Logic/Paths.passiveTotals.
+function Skills.addPassive(totals: PassiveTotals, skill: SkillDef, rank: number)
+	local passive = skill.passive
+	if not passive or rank <= 0 then
+		return
 	end
-	return totals
+	local flat: { [string]: string } = passive.flat or {}
+	local pct: { [string]: string } = passive.pct or {}
+	local hooks: { [string]: string } = passive.hooks or {}
+	for stat, field in flat do
+		totals.flat[stat] = (totals.flat[stat] or 0) + Skills.valueAt(skill, field, rank)
+	end
+	for stat, field in pct do
+		totals.pct[stat] = (totals.pct[stat] or 0) + Skills.valueAt(skill, field, rank)
+	end
+	for hook, field in hooks do
+		totals.hooks[hook] = (totals.hooks[hook] or 0) + Skills.valueAt(skill, field, rank)
+	end
 end
 
 -- Level formulas (S54, ROZWOJ 8) ---------------------------------------------------------------------------------

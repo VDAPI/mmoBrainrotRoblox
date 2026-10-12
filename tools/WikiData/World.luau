@@ -5,12 +5,14 @@
 -- World.areasData() are plain functions so tools/wikimap.luau (S37) can reuse them.
 
 local Areas = require("../../src/shared/Data/Areas")
+local Classes = require("../../src/shared/Data/Classes")
 local Clean = require("./Clean")
 local ItemValue = require("../../src/shared/Logic/ItemValue")
 local Json = require("./Json")
 local Maps = require("../../src/shared/Data/Maps")
 local Names = require("./Names")
 local Npcs = require("../../src/shared/Data/Npcs")
+local PathData = require("../../src/shared/Data/Paths")
 local Places = require("./Places")
 local Portals = require("../../src/shared/Data/Portals")
 local Rarities = require("../../src/shared/Data/Rarities")
@@ -400,13 +402,28 @@ function World.shops(ctx: any): any
 			table.insert(npcsOf[n.shop], n.id)
 		end
 	end
+	-- S57: entries sold only to classes with paths (needsPaths) go out with the classes whose paths are published
+	-- (wiki ~= false); with no such class, not at all (as in the game).
+	local pathClasses: { string } = {}
+	for _, classId in Classes.order do
+		for _, path in PathData.byClass[classId] or {} do
+			if path.wiki ~= false then
+				table.insert(pathClasses, classId)
+				break
+			end
+		end
+	end
 	local list = {}
 	ctx.shopItems = {}
 	for _, id in Clean.keys(Shops.byId) do
 		local shop = Shops.byId[id]
 		local entries = {}
 		for _, e in shop.entries do
-			if not ctx.hidden[e.item] then
+			local classes = e.classes
+			if e.needsPaths then
+				classes = pathClasses
+			end
+			if not ctx.hidden[e.item] and not (e.needsPaths and #pathClasses == 0) then
 				local item = ItemValue.entryItem(e)
 				local entry = {
 					item = e.item,
@@ -416,7 +433,7 @@ function World.shops(ctx: any): any
 					rarity = Rarities.get(item.rarity).key,
 					el = e.el,
 					level = e.level,
-					classes = if e.classes then Clean.clean(e.classes) else nil,
+					classes = if classes then Clean.clean(classes) else nil,
 					key = e.key,
 				}
 				table.insert(entries, entry)

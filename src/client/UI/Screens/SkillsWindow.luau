@@ -5,6 +5,10 @@
 -- breakpoints). A full bar opens a 2 x 5 slot picker: the chosen slot is replaced. Unlocked actives can be dragged
 -- onto the bar. The full window (920 x 640, paths) comes in S59.
 -- S28: "Preview": a copy of the character in a viewport plays the skill's animation and effect (VfxController.Preview).
+-- S57 (ROZWOJ 4): free path points and the main path on top; tabs "Base" (skills without a path, rank from
+-- Logic/Paths, breakpoint badges from path.bp) and one tab per path of the class ("Paths soon" without paths). A
+-- path tab is a plain list of rows and nodes with "+" / "-" (BuyNode / RefundNode), the main path button and "Refund
+-- all nodes"; every rule comes from Logic/Paths. UI/SkillsTab asks for a tab (Scroll of a New Path).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -14,15 +18,19 @@ local DragDrop = require(script.Parent.Parent.DragDrop)
 local Elements = require(ReplicatedStorage.Shared.Data.Elements)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Net = require(ReplicatedStorage.Shared.Net)
+local PathData = require(ReplicatedStorage.Shared.Data.Paths)
+local Paths = require(ReplicatedStorage.Shared.Logic.Paths)
 local Pool = require(script.Parent.Parent.Parent.Vfx.Pool)
 local SkillData = require(ReplicatedStorage.Shared.Data.Skills)
 local SkillInfo = require(script.Parent.Parent.SkillInfo)
+local SkillsTab = require(script.Parent.Parent.SkillsTab)
 local Skills = require(ReplicatedStorage.Shared.Logic.Skills)
 local Sounds = require(script.Parent.Parent.Sounds)
 local State = require(script.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
 local Toast = require(script.Parent.Parent.Components.Toast)
+local Tooltip = require(script.Parent.Parent.Components.Tooltip)
 
 local Children, OnEvent = Fusion.Children, Fusion.OnEvent
 
@@ -34,6 +42,10 @@ local TILE = 44
 local HEADER_HEIGHT = 36
 local PREVIEW_HEIGHT = 150
 local PICK_CELL = 64
+local INFO_HEIGHT = 22
+local TABS_HEIGHT = 30
+local TOP = INFO_HEIGHT + TABS_HEIGHT + 8 -- content below the points line and the tabs
+local NODE_HEIGHT = 40
 
 local GOLD_HEX = "#E8C66A"
 local MUTED_HEX = "#7A746A"
@@ -84,18 +96,53 @@ local function slotOf(bar: any, id: string): string?
 	return nil
 end
 
-local function SkillsWindow(scope: Scope, preview: ((model: Model, skillId: string) -> ())?): Fusion.Child
+local function SkillsWindow(
+	scope: Scope,
+	showModal: (spec: any) -> (),
+	preview: ((model: Model, skillId: string) -> ())?
+): Fusion.Child
 	local classId = State.Value({ "character", "class" })
 	local level = State.Value({ "character", "level" })
 	local hotbar = State.Value({ "character", "hotbar" })
+	local pathState = State.Value({ "character", "path" })
+	local equipment = State.Value({ "character", "equipment" })
 	local weaponState = State.Value({ "derived", "weapon" })
 	local selected = scope:Value(nil :: string?)
 	local picking = scope:Value(nil :: string?)
+	local tab = scope:Value(SkillsTab.take() or "base")
 	local busy = false
 
-	local function rankOf(use: Fusion.Use, skill: SkillData.SkillDef): number
-		return Skills.rankFor(use(classId), use(level) or 1, skill)
+	-- The character as Logic/Paths reads it, tracked by `use`.
+	local function charOf(use: Fusion.Use): Paths.Char
+		return {
+			class = use(classId) or "",
+			level = use(level) or 1,
+			path = use(pathState),
+			hotbar = use(hotbar),
+			equipment = use(equipment),
+		}
 	end
+
+	local function rankOf(use: Fusion.Use, skill: SkillData.SkillDef): number
+		return Paths.skillRank(charOf(use), skill.id)
+	end
+
+	scope:Observer(SkillsTab.Requested):onChange(function()
+		local wanted = SkillsTab.take()
+		if wanted then
+			tab:set(wanted)
+		end
+	end)
+	-- The tab shown: the chosen one while it still belongs to the class.
+	local activeTab = scope:Computed(function(use): string
+		local wanted = use(tab)
+		local id = use(classId) or ""
+		if wanted == "soon" and not Paths.classHasPaths(id) then
+			return "soon"
+		end
+		local path = PathData.get(wanted)
+		return if path and path.class == id then wanted else "base"
+	end)
 
 	local function fail(err: string?)
 		Sounds.play("error")
@@ -148,10 +195,19 @@ local function SkillsWindow(scope: Scope, preview: ((model: Model, skillId: stri
 	-- List (rebuilt when the class or the level changes: unlocks decide what can be dragged)
 	local rows = scope:Computed(function(use, s: Scope): { Instance }
 		local list: { Instance } = {}
-		local skills: { SkillData.SkillDef } = table.clone(SkillData.byClass[use(classId) or ""] or {})
+		-- S57: base skills only; path skills live on their path's tab
+		local skills: { SkillData.SkillDef } = {}
+		local classSkills: { SkillData.SkillDef } = SkillData.byClass[use(classId) or ""] or {}
+		for _, skill in classSkills do
+			if skill.path == nil then
+				table.insert(skills, skill)
+			end
+		end
 		table.sort(skills, function(a, b)
 			return a.order < b.order
 		end)
+		local state = use(pathState)
+		local choices = if type(state) == "table" then state.bp else nil
 		local class = Classes.get(use(classId) or "")
 		local accent = if class then Color3.fromHex(class.color) else Theme.Colors.Gold
 		for i, skill in skills do
@@ -241,11 +297,11 @@ local function SkillsWindow(scope: Scope, preview: ((model: Model, skillId: stri
 								if passive or not skill.breakpoints then
 									return name
 								end
-								-- S56: badges of the breakpoint ranks, gold once reached (option A until S57)
+								-- S56: badges of the breakpoint ranks, gold once reached (S57: the chosen option)
 								local badges = {}
 								for _, at in Skills.BREAKPOINT_LEVELS do
 									if skill.breakpoints[at] then
-										local option = string.upper(Skills.chosen(skill, at, nil))
+										local option = string.upper(Skills.chosen(skill, at, choices))
 										local color = if rank >= at then GOLD_HEX else MUTED_HEX
 										table.insert(badges, `<font color="{color}">{at}{option}</font>`)
 									end
@@ -340,7 +396,12 @@ local function SkillsWindow(scope: Scope, preview: ((model: Model, skillId: stri
 		local lang = use(Text.Lang)
 		local rank = rankOf(use, skill)
 		local shown = math.max(1, rank)
-		local opts = { level = use(level) or 1 }
+		local me = charOf(use)
+		local opts: Skills.DescOpts = {
+			level = me.level,
+			choices = if me.path then me.path.bp else nil,
+			mods = Paths.skillMods(me, skill.id, Paths.weaponTypesOf(me.equipment)),
+		}
 		local order = 0
 		local out: { Instance } = {}
 		local function line(text: string, color: Color3?, size: number?, font: Font?)
@@ -492,6 +553,240 @@ local function SkillsWindow(scope: Scope, preview: ((model: Model, skillId: stri
 		},
 	})
 
+	-- S57: paths ---------------------------------------------------------------------------------------------------
+
+	local function invoke(remote: string, ...: any)
+		if busy then
+			return
+		end
+		busy = true
+		local args = table.pack(...)
+		task.spawn(function()
+			local ok, err = Net.Invoke(remote, table.unpack(args, 1, args.n))
+			busy = false
+			if not ok then
+				fail(err)
+			end
+		end)
+	end
+
+	local function confirm(titleKey: string, messageKey: string, args: { [string]: any }?, run: () -> ())
+		showModal({
+			Title = Text.now(titleKey),
+			Message = Text.now(messageKey, args),
+			ConfirmText = Text.now("common.confirm"),
+			CancelText = Text.now("common.cancel"),
+			OnConfirm = function(): (boolean, string?)
+				run()
+				return true, nil
+			end,
+		})
+	end
+
+	-- "Free path points: n · Main path: name"
+	local info = scope:Computed(function(use): string
+		local me = charOf(use)
+		local points = Text.get(use, "paths.points", { n = math.max(0, Paths.free(me)) })
+		local main = me.path and me.path.main
+		local path = if main then PathData.get(main) else nil
+		local mainText = if path
+			then Text.get(use, "paths.main", { name = Text.get(use, path.nameKey) })
+			else Text.get(use, "paths.mainNone")
+		return `{points} · {mainText}`
+	end)
+
+	local tabButtons = scope:Computed(function(use, s: Scope): { Instance }
+		local id = use(classId) or ""
+		local list: { { id: string, text: string } } = { { id = "base", text = Text.get(use, "paths.tab.base") } }
+		local paths = Paths.pathsOf(id)
+		if #paths == 0 then
+			table.insert(list, { id = "soon", text = Text.get(use, "paths.tab.soon") })
+		end
+		for _, path in paths do
+			table.insert(list, { id = path.id, text = Text.get(use, path.nameKey) })
+		end
+		local out: { Instance } = {}
+		for i, entry in list do
+			table.insert(
+				out,
+				Button(s, {
+					LayoutOrder = i,
+					Size = UDim2.fromOffset(150, TABS_HEIGHT),
+					TextSize = 14,
+					Text = entry.text,
+					Variant = s:Computed(function(use2): Button.Variant
+						return if use2(activeTab) == entry.id then "primary" else "secondary"
+					end) :: any,
+					OnClick = function()
+						tab:set(entry.id)
+					end,
+				})
+			)
+		end
+		return out
+	end)
+
+	local function label(s: Scope, text: string, color: Color3?, font: Font?): Instance
+		return s:New("TextLabel")({
+			BackgroundTransparency = 1,
+			Size = UDim2.fromScale(1, 0),
+			AutomaticSize = Enum.AutomaticSize.Y,
+			Text = text,
+			TextWrapped = true,
+			FontFace = font or Theme.Fonts.Body,
+			TextSize = Theme.TextSize.Small,
+			TextColor3 = color or Theme.Colors.Text,
+			TextXAlignment = Enum.TextXAlignment.Left,
+		})
+	end
+
+	-- A small node button with the reason it is off in its tooltip.
+	local function action(
+		s: Scope,
+		text: string,
+		x: number,
+		width: number,
+		ok: boolean,
+		why: string?,
+		run: () -> ()
+	): any
+		local button = Button(s, {
+			AnchorPoint = Vector2.new(1, 0.5),
+			Position = UDim2.new(1, x, 0.5, 0),
+			Size = UDim2.fromOffset(width, 30),
+			TextSize = 14,
+			Variant = "secondary",
+			Text = text,
+			Disabled = not ok,
+			OnClick = run,
+		})
+		if not ok and why then
+			Tooltip.attach(s, button :: any, Text.now(why))
+		end
+		return button
+	end
+
+	-- The selected path's tab: role and weapon, the main path button, rows of nodes, "Refund all nodes".
+	local pathContent = scope:Computed(function(use, s: Scope): { Instance }
+		local path = PathData.get(use(activeTab))
+		if not path then
+			return {}
+		end
+		local me = charOf(use)
+		local state = me.path
+		local out: { Instance } = {}
+		local function add(item: any)
+			item.LayoutOrder = #out + 1
+			table.insert(out, item)
+		end
+		local weaponOk = Paths.weaponOk(path.weapon, Paths.weaponTypesOf(me.equipment))
+		add(label(s, Text.get(use, `paths.role.{path.role}`), Theme.Colors.Gold, Theme.Fonts.BodyBold))
+		add(
+			label(
+				s,
+				Text.get(use, if weaponOk then "paths.weapon.ok" else "paths.weapon.missing"),
+				if weaponOk then Theme.Colors.Success else Theme.Colors.DangerHover
+			)
+		)
+		local name = Text.get(use, path.nameKey)
+		local isMain = state ~= nil and state.main == path.id
+		if me.level < Paths.MAIN_LEVEL then
+			add(label(s, Text.get(use, "paths.mainFrom", { level = Paths.MAIN_LEVEL }), Theme.Colors.TextMuted))
+		elseif not isMain then
+			local paid = state ~= nil and state.freeUsed
+			add(Button(s, {
+				Size = UDim2.fromOffset(240, Theme.Size.ButtonHeightSmall),
+				TextSize = 14,
+				Variant = "primary",
+				Text = Text.get(use, if paid then "paths.changeMain" else "paths.chooseMain"),
+				OnClick = function()
+					local title = if paid then "paths.confirm.change.title" else "paths.confirm.choose.title"
+					local message = if paid then "paths.confirm.change.message" else "paths.confirm.choose.message"
+					confirm(title, message, { name = name }, function()
+						invoke("ChooseMainPath", path.id)
+					end)
+				end,
+			}))
+		end
+		local bar = me.hotbar or {}
+		for _, row in Paths.rowsFor(path.class) do
+			local def = path.rows[row.index]
+			add(label(
+				s,
+				Text.get(use, "paths.row", {
+					row = row.index,
+					level = row.level,
+					have = Paths.ranksIn(me, path.id, row.index),
+					need = row.need,
+				}),
+				Theme.Colors.Parchment,
+				Theme.Fonts.BodyBold
+			))
+			for i, node in def.nodes do
+				if row.choice and i > 1 then
+					add(label(s, Text.get(use, "paths.row.or"), Theme.Colors.TextMuted))
+				end
+				local rank = if state then state.nodes[node.id] or 0 else 0
+				local canBuy, buyWhy = Paths.canBuy(me, node.id)
+				local canRefund, refundWhy = Paths.canRefund(me, node.id)
+				local skillId = if node.kind == "skill" then node.skill else nil
+				local showToBar = skillId ~= nil and Paths.canPutOnBar(me, skillId) and slotOf(bar, skillId) == nil
+				add(s:New("Frame")({
+					Size = UDim2.new(1, -8, 0, NODE_HEIGHT),
+					BackgroundColor3 = Theme.Colors.PanelRaised,
+					BackgroundTransparency = if rank > 0 then 0.2 else 0.6,
+					[Children] = {
+						s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
+						s:New("TextLabel")({
+							Position = UDim2.fromOffset(10, 0),
+							Size = UDim2.new(1, -330, 1, 0),
+							BackgroundTransparency = 1,
+							Text = `{node.glyph}  {Text.get(use, node.nameKey)}`,
+							FontFace = Theme.Fonts.BodyBold,
+							TextSize = 14,
+							TextColor3 = if rank > 0 then Theme.Colors.Parchment else Theme.Colors.TextMuted,
+							TextXAlignment = Enum.TextXAlignment.Left,
+							TextTruncate = Enum.TextTruncate.AtEnd,
+						}),
+						s:New("TextLabel")({
+							AnchorPoint = Vector2.new(1, 0.5),
+							Position = UDim2.new(1, -220, 0.5, 0),
+							Size = UDim2.fromOffset(50, 20),
+							BackgroundTransparency = 1,
+							Text = `{rank}/{node.maxRank}`,
+							FontFace = Theme.Fonts.Body,
+							TextSize = 14,
+							TextColor3 = Theme.Colors.TextMuted,
+						}),
+						action(s, "+", -180, 34, canBuy, buyWhy, function()
+							invoke("BuyNode", node.id)
+						end),
+						action(s, "−", -140, 34, canRefund, refundWhy, function()
+							invoke("RefundNode", node.id)
+						end),
+						if showToBar and skillId
+							then action(s, Text.get(use, "skills.toBar"), -6, 96, true, nil, function()
+								toBar(skillId)
+							end)
+							else nil,
+					} :: any,
+				}))
+			end
+		end
+		add(Button(s, {
+			Size = UDim2.fromOffset(240, Theme.Size.ButtonHeightSmall),
+			TextSize = 14,
+			Variant = "danger",
+			Text = Text.get(use, "paths.resetAll"),
+			OnClick = function()
+				confirm("paths.confirm.reset.title", "paths.confirm.reset.message", nil, function()
+					invoke("ResetPaths")
+				end)
+			end,
+		}))
+		return out
+	end)
+
 	-- Slot picker over the window (full bar): 2 x 5 cells with the key and the skill on it.
 	local cells: { Instance } = {}
 	for index = 1, SkillData.HOTBAR_SLOTS do
@@ -611,81 +906,171 @@ local function SkillsWindow(scope: Scope, preview: ((model: Model, skillId: stri
 
 	return {
 		scope:New("TextLabel")({
-			Name = "Hint",
-			Size = UDim2.new(1, 0, 0, HEADER_HEIGHT),
+			Name = "Points",
+			Size = UDim2.new(1, 0, 0, INFO_HEIGHT),
 			BackgroundTransparency = 1,
-			Text = Text.T(scope, "skills.hint"),
-			TextWrapped = true,
-			FontFace = Theme.Fonts.Body,
+			Text = info,
+			FontFace = Theme.Fonts.BodyBold,
 			TextSize = 14,
-			TextColor3 = Theme.Colors.TextMuted,
+			TextColor3 = Theme.Colors.Gold,
 			TextXAlignment = Enum.TextXAlignment.Left,
 		}),
+		scope:New("Frame")({
+			Name = "Tabs",
+			Position = UDim2.fromOffset(0, INFO_HEIGHT + 4),
+			Size = UDim2.new(1, 0, 0, TABS_HEIGHT),
+			BackgroundTransparency = 1,
+			[Children] = {
+				scope:New("UIListLayout")({
+					FillDirection = Enum.FillDirection.Horizontal,
+					SortOrder = Enum.SortOrder.LayoutOrder,
+					Padding = UDim.new(0, 6),
+				}),
+				tabButtons :: any,
+			},
+		}),
+		scope:New("Frame")({
+			Name = "Base",
+			Position = UDim2.fromOffset(0, TOP),
+			Size = UDim2.new(1, 0, 1, -TOP),
+			BackgroundTransparency = 1,
+			Visible = scope:Computed(function(use): boolean
+				return use(activeTab) == "base"
+			end),
+			[Children] = {
+				scope:New("TextLabel")({
+					Name = "Hint",
+					Size = UDim2.new(1, 0, 0, HEADER_HEIGHT),
+					BackgroundTransparency = 1,
+					Text = Text.T(scope, "skills.hint"),
+					TextWrapped = true,
+					FontFace = Theme.Fonts.Body,
+					TextSize = 14,
+					TextColor3 = Theme.Colors.TextMuted,
+					TextXAlignment = Enum.TextXAlignment.Left,
+				}),
+				scope:New("ScrollingFrame")({
+					Name = "List",
+					Position = UDim2.fromOffset(0, HEADER_HEIGHT + 4),
+					Size = UDim2.new(0, LIST_WIDTH + 12, 1, -(HEADER_HEIGHT + 4)),
+					CanvasSize = UDim2.new(),
+					AutomaticCanvasSize = Enum.AutomaticSize.Y,
+					BackgroundTransparency = 1,
+					BorderSizePixel = 0,
+					ScrollBarThickness = 6,
+					ScrollBarImageColor3 = Theme.Colors.GoldDim,
+					[Children] = {
+						scope:New("UIListLayout")({
+							SortOrder = Enum.SortOrder.LayoutOrder,
+							Padding = UDim.new(0, 4),
+						}),
+						rows :: any,
+					},
+				}),
+				scope:New("Frame")({
+					Name = "Details",
+					Position = UDim2.fromOffset(LIST_WIDTH + 24, HEADER_HEIGHT + 4),
+					Size = UDim2.new(1, -(LIST_WIDTH + 24), 1, -(HEADER_HEIGHT + 4)),
+					BackgroundColor3 = Theme.Colors.PanelRaised,
+					BackgroundTransparency = 0.3,
+					[Children] = {
+						scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
+						scope:New("UIPadding")({
+							PaddingTop = UDim.new(0, Theme.Padding.Medium),
+							PaddingBottom = UDim.new(0, Theme.Padding.Medium),
+							PaddingLeft = UDim.new(0, Theme.Padding.Medium),
+							PaddingRight = UDim.new(0, Theme.Padding.Medium),
+						}),
+						previewFrame,
+						scope:New("ScrollingFrame")({
+							Position = UDim2.fromOffset(0, PREVIEW_HEIGHT + 8),
+							Size = UDim2.new(1, 0, 1, -(Theme.Size.ButtonHeight + 12 + PREVIEW_HEIGHT + 8)),
+							CanvasSize = UDim2.new(),
+							AutomaticCanvasSize = Enum.AutomaticSize.Y,
+							BackgroundTransparency = 1,
+							BorderSizePixel = 0,
+							ScrollBarThickness = 4,
+							[Children] = {
+								scope:New("UIListLayout")({
+									SortOrder = Enum.SortOrder.LayoutOrder,
+									Padding = UDim.new(0, 6),
+								}),
+								details :: any,
+							},
+						}),
+						Button(scope, {
+							AnchorPoint = Vector2.new(0, 1),
+							Position = UDim2.fromScale(0, 1),
+							Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeight),
+							Variant = "primary",
+							Text = Text.T(scope, "skills.toBar"),
+							Disabled = scope:Computed(function(use): boolean
+								return not use(canPut)
+							end),
+							OnClick = function()
+								local id = Fusion.peek(selected)
+								if id then
+									toBar(id)
+								end
+							end,
+						}),
+					},
+				}),
+			},
+		}),
+		scope:New("Frame")({
+			Name = "Soon",
+			Position = UDim2.fromOffset(0, TOP),
+			Size = UDim2.new(1, 0, 1, -TOP),
+			BackgroundTransparency = 1,
+			Visible = scope:Computed(function(use): boolean
+				return use(activeTab) == "soon"
+			end),
+			[Children] = {
+				scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 8) }),
+				scope:New("TextLabel")({
+					LayoutOrder = 1,
+					BackgroundTransparency = 1,
+					Size = UDim2.fromScale(1, 0),
+					AutomaticSize = Enum.AutomaticSize.Y,
+					Text = Text.T(scope, "paths.soon"),
+					TextWrapped = true,
+					FontFace = Theme.Fonts.Heading,
+					TextSize = Theme.TextSize.Large,
+					TextColor3 = Theme.Colors.Gold,
+					TextXAlignment = Enum.TextXAlignment.Left,
+				}),
+				scope:New("TextLabel")({
+					LayoutOrder = 2,
+					BackgroundTransparency = 1,
+					Size = UDim2.fromScale(1, 0),
+					AutomaticSize = Enum.AutomaticSize.Y,
+					Text = Text.T(scope, "paths.soon.body"),
+					TextWrapped = true,
+					FontFace = Theme.Fonts.Body,
+					TextSize = Theme.TextSize.Small,
+					TextColor3 = Theme.Colors.Text,
+					TextXAlignment = Enum.TextXAlignment.Left,
+				}),
+			},
+		}),
 		scope:New("ScrollingFrame")({
-			Name = "List",
-			Position = UDim2.fromOffset(0, HEADER_HEIGHT + 4),
-			Size = UDim2.new(0, LIST_WIDTH + 12, 1, -(HEADER_HEIGHT + 4)),
+			Name = "Path",
+			Position = UDim2.fromOffset(0, TOP),
+			Size = UDim2.new(1, 0, 1, -TOP),
 			CanvasSize = UDim2.new(),
 			AutomaticCanvasSize = Enum.AutomaticSize.Y,
 			BackgroundTransparency = 1,
 			BorderSizePixel = 0,
 			ScrollBarThickness = 6,
 			ScrollBarImageColor3 = Theme.Colors.GoldDim,
+			Visible = scope:Computed(function(use): boolean
+				local current = use(activeTab)
+				return current ~= "base" and current ~= "soon"
+			end),
 			[Children] = {
-				scope:New("UIListLayout")({
-					SortOrder = Enum.SortOrder.LayoutOrder,
-					Padding = UDim.new(0, 4),
-				}),
-				rows :: any,
-			},
-		}),
-		scope:New("Frame")({
-			Name = "Details",
-			Position = UDim2.fromOffset(LIST_WIDTH + 24, HEADER_HEIGHT + 4),
-			Size = UDim2.new(1, -(LIST_WIDTH + 24), 1, -(HEADER_HEIGHT + 4)),
-			BackgroundColor3 = Theme.Colors.PanelRaised,
-			BackgroundTransparency = 0.3,
-			[Children] = {
-				scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
-				scope:New("UIPadding")({
-					PaddingTop = UDim.new(0, Theme.Padding.Medium),
-					PaddingBottom = UDim.new(0, Theme.Padding.Medium),
-					PaddingLeft = UDim.new(0, Theme.Padding.Medium),
-					PaddingRight = UDim.new(0, Theme.Padding.Medium),
-				}),
-				previewFrame,
-				scope:New("ScrollingFrame")({
-					Position = UDim2.fromOffset(0, PREVIEW_HEIGHT + 8),
-					Size = UDim2.new(1, 0, 1, -(Theme.Size.ButtonHeight + 12 + PREVIEW_HEIGHT + 8)),
-					CanvasSize = UDim2.new(),
-					AutomaticCanvasSize = Enum.AutomaticSize.Y,
-					BackgroundTransparency = 1,
-					BorderSizePixel = 0,
-					ScrollBarThickness = 4,
-					[Children] = {
-						scope:New("UIListLayout")({
-							SortOrder = Enum.SortOrder.LayoutOrder,
-							Padding = UDim.new(0, 6),
-						}),
-						details :: any,
-					},
-				}),
-				Button(scope, {
-					AnchorPoint = Vector2.new(0, 1),
-					Position = UDim2.fromScale(0, 1),
-					Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeight),
-					Variant = "primary",
-					Text = Text.T(scope, "skills.toBar"),
-					Disabled = scope:Computed(function(use): boolean
-						return not use(canPut)
-					end),
-					OnClick = function()
-						local id = Fusion.peek(selected)
-						if id then
-							toBar(id)
-						end
-					end,
-				}),
+				scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 4) }),
+				pathContent :: any,
 			},
 		}),
 		picker,

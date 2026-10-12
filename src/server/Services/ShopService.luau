@@ -101,6 +101,9 @@ local function buy(player: Player, npcId: string, itemId: string, n: number): (b
 	if not entry or not def then
 		return false, "shop.error.notSold"
 	end
+	if not ShopPrice.offered(entry, char.class) then
+		return false, "shop.error.unavailable"
+	end
 	if entry.level and char.level < entry.level then
 		return false, "shop.error.level"
 	end

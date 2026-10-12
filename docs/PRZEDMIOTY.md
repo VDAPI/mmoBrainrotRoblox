@@ -1,7 +1,7 @@
 # Vaelthorn: przedmioty
 
 > Plik generowany: `lune run tools/wikidump.luau` (dane gry, te same co wiki). Nie edytuj ręcznie.
-> Odcisk danych 66aeeccf (`wiki/src/data/meta.json`).
+> Odcisk danych 8947a03f (`wiki/src/data/meta.json`).
 
 ## Rzadkości
 
@@ -1177,7 +1177,7 @@ Legendarne i Mityczne przedmioty dają też osobiste rzuty bossów (S30), a nazw
 | Potężna Mikstura Many | Mikstura | 1 | — | 3000 | 750 |
 | Zwój Zapomnienia | Zwój | 1 | Resetuje punkty statystyk. | 500 | 100 |
 | Zwój Ochrony | Zwój | 1 | Nieudane ulepszenie nie obniża przedmiotu. | — | 200 |
-| Zwój Odrodzenia Umiejętności | Zwój | 1 | Na razie nic nie robi: wróci razem ze ścieżkami klas (wkrótce). | — | 100 |
+| Zwój Nowej Ścieżki | Zwój | 1 | Pozwala wybrać nową ścieżkę główną. Zużywa się przy zmianie ścieżki, tylko w mieście. | — | 100 |
 | Zwój Rozwiązania | Zwój | 1 | Odwiązuje jeden przedmiot. | — | 500 |
 | Kamień Lochu | Kamień teleportu | 1 | Teleportuje przed wejście do lochu. | — | 150 |
 | Kamień Lochu: Kuźnia Głębin | Kamień teleportu | 1 | Teleportuje przed wejście do lochu bossa w: Kuźnia Głębin. | — | 150 |

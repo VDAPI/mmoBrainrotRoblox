@@ -628,8 +628,11 @@ local function ShopWindow(scope: Scope, props: Props): Fusion.Child
 				end
 				afterBuild()
 			elseif shop and id then
+				local classId = State.Get({ "character", "class" }) or ""
 				for i, entry in shop.entries do
-					table.insert(rows, buyRow(s, id, shop, entry, i, props.ShowModal))
+					if ShopPrice.offered(entry, classId) then
+						table.insert(rows, buyRow(s, id, shop, entry, i, props.ShowModal))
+					end
 				end
 			end
 			return rows

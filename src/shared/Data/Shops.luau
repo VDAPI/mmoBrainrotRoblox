@@ -18,6 +18,7 @@ export type Entry = {
 	el: string?, -- element of a mage weapon
 	level: number?, -- character level needed to buy
 	classes: { string }?, -- classes that can use it (class tabs)
+	needsPaths: boolean?, -- S57: sold only to classes that have paths in Data/Paths (Logic/ShopPrice.offered)
 }
 
 export type ShopDef = {
@@ -99,6 +100,8 @@ local SHOPS: { [string]: ShopDef } = {
 		id = "teacher",
 		entries = {
 			{ item = "scroll_oblivion", pricePerLevel = 500 }, -- DESIGN §4.3
+			-- S57 (ROZWOJ 2.10): Scroll of a New Path, only for classes with paths
+			{ item = "scroll_skillreset", pricePerLevel = 400, level = 20, needsPaths = true },
 		},
 	},
 }

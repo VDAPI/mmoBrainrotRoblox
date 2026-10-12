@@ -21,6 +21,7 @@ local DragDrop = require(script.Parent.Parent.UI.DragDrop)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Keybinds = require(script.Parent.Parent.UI.Keybinds)
 local Net = require(ReplicatedStorage.Shared.Net)
+local Paths = require(ReplicatedStorage.Shared.Logic.Paths)
 local SkillData = require(ReplicatedStorage.Shared.Data.Skills)
 local Skills = require(ReplicatedStorage.Shared.Logic.Skills)
 local Sounds = require(script.Parent.Parent.UI.Sounds)
@@ -262,9 +263,26 @@ local function hidePreview()
 	table.clear(previewParts)
 end
 
--- S56: rank of an own-class skill from the character level (0: not unlocked yet).
+-- S57: the character as Logic/Paths reads it (class, level, path, hotbar, equipment).
+local function me(): Paths.Char
+	return {
+		class = State.Get({ "character", "class" }) or "",
+		level = State.Get({ "character", "level" }) or 1,
+		path = State.Get({ "character", "path" }),
+		hotbar = State.Get({ "character", "hotbar" }),
+		equipment = State.Get({ "character", "equipment" }),
+	}
+end
+
+-- Rank of an own-class skill (0: not available; base from the level, path skills from their node).
 local function rankOf(skill: SkillData.SkillDef): number
-	return Skills.rankFor(State.Get({ "character", "class" }), State.Get({ "character", "level" }) or 1, skill)
+	return Paths.skillRank(me(), skill.id)
+end
+
+-- The skill as it works for the character (rank at least 1, chosen breakpoints, modify nodes).
+local function effective(skill: SkillData.SkillDef, rank: number?): SkillData.SkillDef
+	local c = me()
+	return (Paths.effectiveFor(c, skill.id, Paths.weaponTypesOf(c.equipment), rank))
 end
 
 -- Draws the preview of `skill` aimed at `point` (world) from the character.
@@ -273,7 +291,7 @@ local function drawPreview(skill: SkillData.SkillDef, point: Vector3?)
 	if not root then
 		return
 	end
-	local def = Skills.effective(skill, math.max(1, rankOf(skill)), nil, nil)
+	local def = effective(skill)
 	local color = Color3.fromHex((Classes.get(skill.class) :: any).color)
 	local feet = root.Position - Vector3.new(0, 2.8, 0)
 	local target = point or (root.Position + root.CFrame.LookVector * 10)
@@ -407,7 +425,7 @@ function SkillController.AimMove(slot: number, drag: Vector2): boolean
 	if dir.Magnitude < 0.01 then
 		return false
 	end
-	local def = Skills.effective(skill, math.max(1, rankOf(skill)), nil, nil)
+	local def = effective(skill)
 	local reach = def.range or def.length or def.radius or 10
 	local distance = math.clamp(drag.Magnitude / AIM_FULL, 0.15, 1) * reach
 	previewSkill = skill.id
@@ -539,19 +557,21 @@ function SkillController.WeaponElement(): string?
 	return if type(weapon) == "table" then weapon.element else nil
 end
 
--- (enough resource, in range, weapon element fits)
+-- (enough resource, in range, weapon fits: the Mage element and, S57, the path weapon of a path skill)
 function SkillController.Usable(skillId: string): (boolean, boolean, boolean)
 	local skill = SkillData.get(skillId)
 	if not skill then
 		return false, false, true
 	end
 	local rank = math.max(1, rankOf(skill))
-	local def = Skills.effective(skill, rank, nil, nil)
+	local def = effective(skill, rank)
 	local cost = Skills.cost(def, rank, State.Get({ "character", "level" }) or 1, skill.class, nil)
 	local current = if skill.resource then State.Get({ "character", skill.resource }) or 0 else math.huge
 	local enoughResource = current >= cost
 	local inRange = skill.target ~= "enemy" or SkillController.TargetDistance() <= (def.range or 10) + 2
-	return enoughResource, inRange, Skills.elementAllowed(skill, SkillController.WeaponElement())
+	local c = me()
+	local pathOk = skill.path == nil or Paths.skillUsable(c, skill.id, Paths.weaponTypesOf(c.equipment))
+	return enoughResource, inRange, Skills.elementAllowed(skill, SkillController.WeaponElement()) and pathOk
 end
 
 -- Theme colour of a skill's class (for icons).

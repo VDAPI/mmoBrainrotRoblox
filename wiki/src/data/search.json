@@ -717,7 +717,7 @@
     {"id":"scepter_95","key":"eteryczne berlo ethereal scepter","level":95,"name":{"en":"Ethereal Scepter","pl":"Eteryczne Berło"},"rarity":"mythic","type":"item"},
     {"id":"scroll_oblivion","key":"zwoj zapomnienia scroll of oblivion","level":1,"name":{"en":"Scroll of Oblivion","pl":"Zwój Zapomnienia"},"rarity":"common","type":"item"},
     {"id":"scroll_protection","key":"zwoj ochrony scroll of protection","level":1,"name":{"en":"Scroll of Protection","pl":"Zwój Ochrony"},"rarity":"common","type":"item"},
-    {"id":"scroll_skillreset","key":"zwoj odrodzenia umiejetnosci scroll of rebirth","level":1,"name":{"en":"Scroll of Rebirth","pl":"Zwój Odrodzenia Umiejętności"},"rarity":"common","type":"item"},
+    {"id":"scroll_skillreset","key":"zwoj nowej sciezki scroll of a new path","level":1,"name":{"en":"Scroll of a New Path","pl":"Zwój Nowej Ścieżki"},"rarity":"common","type":"item"},
     {"id":"scroll_unbind","key":"zwoj rozwiazania scroll of unbinding","level":1,"name":{"en":"Scroll of Unbinding","pl":"Zwój Rozwiązania"},"rarity":"common","type":"item"},
     {"id":"shield_1","key":"prosta tarcza crude shield","level":1,"name":{"en":"Crude Shield","pl":"Prosta Tarcza"},"rarity":"mythic","type":"item"},
     {"id":"shield_10","key":"zelazna tarcza iron shield","level":10,"name":{"en":"Iron Shield","pl":"Żelazna Tarcza"},"rarity":"mythic","type":"item"},

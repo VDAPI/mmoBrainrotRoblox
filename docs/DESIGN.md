@@ -5,7 +5,7 @@
 
 ## 1. Wizja
 
-- **Vaelthorn** to MMORPG na Roblox działające jak **Margonem, tylko w 3D**: klasy, ręczne rozdawanie statystyk, jedno drzewko umiejętności na klasę, potwory z elitami (Elita, Elita II), bossy w lochach raz na dzień, łup z losowanymi bonusami, ulepszanie +0 do +9, strefy PvP zielona / żółta / czerwona.
+- **Vaelthorn** to MMORPG na Roblox działające jak **Margonem, tylko w 3D**: klasy, ręczne rozdawanie statystyk, podstawa klasy i ścieżki rozwoju, potwory z elitami (Elita, Elita II), bossy w lochach raz na dzień, łup z losowanymi bonusami, ulepszanie +0 do +9, strefy PvP zielona / żółta / czerwona.
 - **Klimat: poważne fantasy.** Normalny świat, potwory, miasto, jaskinie. Zero memów w treści. „Brainrot” oznacza wyłącznie **uzależniającą pętlę rozgrywki**: ciągły drop, losowanie statystyk, dreszcz przy ulepszaniu, efektowny drop legendy.
 - **Najważniejszy moment gry (core loop): drop legendarnego przedmiotu.** Musi być spektakularny (słup światła, dźwięk, ogłoszenie na serwerze, animacja odsłonięcia statystyk).
 - Platformy: **PC + mobile** od pierwszego dnia (każde UI ma działać dotykiem, przyciski min. 44 px, przewidziane miejsce na przyciski skilli na ekranie).
@@ -19,7 +19,7 @@
 3. Materiały + złoto → ulepszanie u kowala (+0 do +9, ryzyko spadku poziomu).
 4. Elity w jaskiniach (czerwona strefa, PvP zawsze) → lepszy drop, ryzyko ze strony graczy.
 5. Boss w lochu (do 3 razy dziennie) w grupie do 5 osób → grind legend i mityków (rzut osobisty z rosnącą szansą).
-6. Poziom w górę → punkty statystyk, rangi umiejętności rosną same → nowe strefy.
+6. Poziom w górę → punkty statystyk i ścieżek, rangi umiejętności rosną same → nowe strefy.
 7. Społeczne: grupa, gildia z umiejętnościami, handel, aukcja, arena.
 
 ## 3. Świat
@@ -406,7 +406,7 @@ Każdy przedmiot ma w tooltipie „Rzadkość · Kategoria” (broń jedno-/dwur
   - Kapłan: buława, berło, **cep 1H**, **kostur święty 2H**.
 - **Każda broń maga ma żywioł**: Ogień, Lód albo Błyskawice. W dropie żywioł losowany przy tworzeniu przedmiotu, w sklepie i u kowala wybierany (osobna pozycja na każdy żywioł). Żywioł widać w nazwie („Stalowa Różdżka Ognia”), w kolorze ikony i jako linia tooltipa „Żywioł: Ogień”.
 - Atak podstawowy maga zadaje obrażenia żywiołu broni.
-- **Umiejętności żywiołowe maga wymagają broni z tym samym żywiołem** (jak w Margonem). Bez niej umiejętność jest wyszarzona na pasku i w drzewku, a tooltip mówi „Wymaga broni: Lód”. Umiejętności bez żywiołu i dwie umiejętności „adaptacyjne” (§14.4) działają z każdą bronią maga.
+- **Umiejętności żywiołowe maga wymagają broni z tym samym żywiołem** (jak w Margonem). Bez niej umiejętność jest wyszarzona na pasku i w oknie umiejętności, a tooltip mówi „Wymaga broni: Lód”. Umiejętności bez żywiołu i dwie umiejętności „adaptacyjne” (§14.4) działają z każdą bronią maga.
 - Startowa broń maga: Różdżka Ognia.
 
 ### 5.9 Wygoda łupu (dodatek po testach S17)
@@ -492,115 +492,106 @@ Każdy przedmiot ma w tooltipie „Rzadkość · Kategoria” (broń jedno-/dwur
 - **Kamień Powrotu**: teleport do miasta (kanałowanie 5 s, przerywane obrażeniami). Tani u kupca.
 - **Kamień Mapy (X)**: teleport na wybraną mapę (do jej punktu odrodzenia).
 - **Kamień Lochu (X)**: teleport przed wejście do konkretnego lochu bossa.
-- **Zwój Zapomnienia** (reset statów), **Zwój Odrodzenia Umiejętności** (reset drzewka), **Zwój Rozwiązania**, **Zwój Ochrony**.
+- **Zwój Zapomnienia** (reset statów), **Zwój Nowej Ścieżki** (zmiana ścieżki głównej), **Zwój Rozwiązania**, **Zwój Ochrony**.
 
 ## 14. Umiejętności
 
+Od 2026-10-09 rozwój postaci opisuje `docs/ROZWOJ.md` (kontrakt przebudowy: zasady, dane, liczby, kolejność sesji). Ta
+sekcja to krótkie streszczenie. Przy każdej różnicy wygrywa `docs/ROZWOJ.md`, a nad nim `docs/DECYZJE.md`. Liczby w
+`docs/ROZWOJ.md` to wartości startowe, które stroją sesje balansu 20–100.
+
 ### 14.1 Zasady
 
-- **Jedno drzewko na klasę** (jak Margonem): 14 umiejętności, każda odblokowuje się od poziomu postaci, niektóre wymagają innej na poziomie ≥ X.
-- **1 punkt umiejętności na poziom** od poziomu 2 (łącznie 99). Każda aktywna umiejętność ma poziomy 1–10, pasywna 1–5. Punktów jest mniej niż potrzeba na wszystko → wybory buildów.
-- Poziom N umiejętności wymaga poziomu postaci `odblokowanie + 3·(N−1)`.
-- Brak poziomów mistrzowskich.
-- Reset: Zwój Odrodzenia Umiejętności.
-- Pasek: **10 slotów** (klawisze 1–0), gracz przeciąga dowolną aktywną umiejętność do dowolnego slotu. Mobile: 10 przycisków w łuku wokół przycisku ataku (z możliwością przewijania 2×5).
-- Umiejętności: koszt zasobu, cooldown, globalny cooldown 0.5 s, zasięg; typy: pojedynczy cel, stożek, okrąg wokół siebie, okrąg w punkcie celu, pocisk, szarża, buff, leczenie, przywołanie efektu.
-- Skalowanie: `mnożnik = baza + przyrost·(poziom−1)`; buffy: wartość i czas rosną z poziomem.
-- **Przełomy (S28)**: każda aktywna umiejętność na poziomie 5 i 10 zmienia działanie, nie tylko liczby (większy
-  obszar, dodatkowy efekt, ruch podczas rzucania, dodatkowy cel, przyciąganie, odrzut, echo, płonąca ziemia…).
-  Widoczne w opisie od początku (wyszarzone „od poz. 5/10”). To nie są nowe poziomy — „brak poziomów mistrzowskich”
-  zostaje. Siła: przełom 5 ≈ +10–15%, przełom 10 ≈ +20–25%. Da się je wyłączyć jednym przełącznikiem.
-- **Animacje i efekty (S28)**: każda aktywna umiejętność ma własną animację postaci (proceduralną, całe ciało: obroty,
-  skoki, przysiady, salta) i własny efekt (smuga broni, łuk cięcia, fala, pęknięcia, pocisk z ogonem, błyskawica,
-  słup światła, runa, tarcza, aura). Obrażenia lądują w chwili trafienia w animacji (najwyżej 0,6 s po rzuceniu).
-  Trafienia czuć: krótkie zatrzymanie animacji (hitstop), odrzut przy części umiejętności, wstrząs kamery przy dużych
-  (opcja „Wstrząsy kamery”), większe liczby z nazwą umiejętności, złoty błysk krytyka. Dwie umiejętności tego samego
-  typu wyglądają inaczej. Celowanie: przytrzymanie klawisza pokazuje obszar (koło / stożek / linię), na telefonie
-  przeciągnięcie przycisku; jedna umiejętność może czekać w kolejce 0,4 s przed końcem odnowienia.
+- **Podstawa i ścieżki.** Klasa ma podstawę z 8 umiejętności (odblokowanie na poziomach 1, 3, 6, 10, 14, 18, 30, 45,
+  bez punktów) i 3 ścieżki rozwoju (Mag 2 większe; dane mieszczą trzecią). Ścieżka ma 11 rzędów na poziomach 10–90 z
+  przeniesionymi i nowymi umiejętnościami oraz węzłami (ROZWOJ §2).
+- **Rangi rosną same.** Aktywne umiejętności mają rangi 1–10, pasywne 1–5; ranga przychodzi z poziomem postaci
+  (`Logic/Skills.rankLevel`), maksimum najpóźniej na 95. poziomie. Punktów umiejętności już nie ma. Brak poziomów
+  mistrzowskich.
+- **Punkty ścieżek.** 1 punkt na każdym parzystym poziomie (50 na 100.), tylko na węzły ścieżek (rangi 1–3). Pokrycie
+  ok. 81% wszystkich rang, więc build to wybór. Tempo punktów czeka na zgodę właściciela (ROZWOJ §15.1).
+- **Ścieżka główna.** Rzędy 1–2 (poziomy 10 i 15) są otwarte we wszystkich ścieżkach, rzędy 3–11 tylko w ścieżce
+  głównej, którą gracz wybiera od 20. poziomu. Rzędy 3, 6 i 9 to wybór 1 z 2, rząd 8 (60.) to zwieńczenie, rząd 11
+  (90.) jego ulepszenie. Efekty drużynowe z rzędów 1–2 działają poza ścieżką główną w 1/3 siły.
+- **Broń ścieżki.** Rzędy 3–11 ścieżki głównej działają tylko z bronią tej ścieżki (tabela w ROZWOJ §2.8). Podstawa i
+  rzędy 1–2 każdej ścieżki działają z każdą bronią klasy. Wymóg żywiołu broni dla czarów Maga (§5.8) zostaje.
+- **Przełomy (S28, od 2026-10-09 wybór A albo B).** Każda aktywna umiejętność na randze 5 i 10 zmienia działanie, nie
+  tylko liczby. A to dzisiejszy przełom, B nowy; bez wyboru działa A. Siła: przełom 5 ok. +10–15%, przełom 10 ok.
+  +20–25% wartości umiejętności w jej roli. Pierwszy wybór poza walką, zmiana za darmo w mieście albo przy wejściu do
+  lochu bossa. Przełącznik `Config.Skills.breakpoints` zostaje do pomiarów.
+- **Dwa zestawy.** Zestaw pamięta ścieżkę główną, węzły, przełomy, pasek i statystyki (nie ekwipunek). Przełączanie w
+  mieście albo przy wejściu do lochu, poza walką. Pierwszy wybór ścieżki głównej w zestawie jest darmowy, każda
+  następna zmiana zużywa Zwój Nowej Ścieżki (dzisiejszy `scroll_skillreset`). Zwrot węzłów jest darmowy w mieście albo przy wejściu do lochu.
+- **Pasek.** 10 miejsc (klawisze 1–0), przeciąganie na PC i przycisk „Na pasek” w oknie umiejętności. Telefon: 5
+  okrągłych przycisków w łuku wokół przycisku ataku z przełączaniem strony (2 × 5). Nowo odblokowana umiejętność sama
+  trafia na wolne miejsce.
+- **Działanie umiejętności.** Koszt zasobu, odnowienie, globalne odnowienie 0,5 s, zasięg. Typy: pojedynczy cel, stożek,
+  okrąg wokół siebie, okrąg w punkcie celu, pocisk, linia, szarża, teleport, wzmocnienie, osłabienie, leczenie, leczenie w
+  czasie, tarcza, kanał, pułapka, wskrzeszenie, pasywka. Wartości to pary `{ranga 1, ranga 10}` liczone liniowo;
+  przełomy i węzły ścieżek składa `Logic/Skills.effective`, więc serwer, opis i wiki pokazują to samo.
+- **Animacje i efekty (S28) zostają.** Każda aktywna umiejętność ma własną animację całego ciała i własny efekt.
+  Obrażenia lądują w chwili trafienia w animacji (najwyżej 0,6 s po rzuceniu); hitstop, odrzut przy części umiejętności,
+  wstrząs kamery przy dużych (opcja „Wstrząsy kamery”), złoty błysk krytyka. Przytrzymanie klawisza pokazuje obszar,
+  na telefonie przeciągnięcie przycisku; jedna umiejętność może czekać w kolejce 0,4 s przed końcem odnowienia. Nowe
+  umiejętności ścieżek dostają ruchy i efekty według sekcji 14 w ROZWOJ.
+- **Drużyna i szczęście.** Wzmocnienia i osłabienia mają kategorie: w kategorii liczy się najsilniejsze, kategorie się
+  sumują, redukcja obrażeń łączy się mnożnikowo z limitem 75% (ROZWOJ §7). Szczęście drużyny daje Kapłan Fortuny
+  (ROZWOJ §6). Premia za różne klasy w drużynie: +5% doświadczenia za każdą inną klasę, najwyżej +15%.
+- **Przejście.** Zapis w schemacie 6 daje każdej postaci darmowy reset umiejętności, statystyk i paska (ROZWOJ §5).
+  Klasa, której sesja jeszcze nie przeszła, ma wszystkie 14 dzisiejszych umiejętności jako podstawę (ROZWOJ §2.6).
 
 ### 14.2 Wojownik (Energia)
 
-| # | Odbl. | Nazwa PL / EN | Typ | Opis (poziom 1 → 10) | Koszt / CD |
-|---|---|---|---|---|---|
-| 1 | 1 | Potężne Uderzenie / Mighty Strike | cel | 160% → 295% ataku fiz. | 15 en / 4 s |
-| 2 | 3 | Okrzyk Bojowy / Battle Cry | buff | +10% → +28% ataku, 20 s | 25 en / 40 s |
-| 3 | 6 | Szarża / Charge | szarża | doskok do celu (do 25 st.), 120% → 210%, ogłuszenie 0.8 s | 20 en / 12 s |
-| 4 | 10 | Wir Ostrzy / Blade Whirl | okrąg 8 st. | 110% → 200% wszystkim wokół | 30 en / 8 s |
-| 5 | 14 | Stalowa Skóra / Steel Skin | pasywna (1–5) | +5% → +25% obrony | – |
-| 6 | 18 | Rozpłatanie / Cleave | stożek 90° 10 st. | 140% → 250% + krwawienie 30% przez 5 s | 30 en / 7 s |
-| 7 | 23 | Prowokacja / Taunt | okrąg 15 st. | potwory atakują Ciebie 6 s, +20% → +40% obrony | 20 en / 20 s |
-| 8 | 28 | Niezłomność / Fortitude | pasywna | +4% → +20% max HP | – |
-| 9 | 34 | Trzęsienie Ziemi / Earthquake | okrąg 12 st. | 150% → 280%, spowolnienie 40% 3 s | 45 en / 14 s |
-| 10 | 40 | Krwawy Szał / Bloodlust | buff | +15% → +35% szybkości ataku, +5% wampiryzmu, 12 s | 40 en / 60 s |
-| 11 | 48 | Kontratak / Riposte | pasywna | 4% → 12% szansy na kontratak 100% obrażeń | – |
-| 12 | 56 | Miażdżący Cios / Crushing Blow | cel | 300% → 520%, −30% obrony celu 6 s | 50 en / 16 s |
-| 13 | 65 | Ostatni Bastion / Last Bastion | buff | −40% → −60% otrzymywanych obrażeń 6 s | 40 en / 90 s |
-| 14 | 75 | Gniew Tytana / Titan's Wrath | okrąg 14 st. | 3 uderzenia po 180% → 320% | 80 en / 45 s |
+Podstawa: Potężne Uderzenie 1, Szarża 3, Wir Ostrzy 6, Prowokacja 10, Stalowa Skóra 14 (pasywna), Krwawy Szał 18,
+Trzęsienie Ziemi 30, Kontratak 45 (pasywna).
 
-Wymagania: Rozpłatanie ← Wir Ostrzy 3; Trzęsienie ← Rozpłatanie 3; Miażdżący Cios ← Potężne Uderzenie 5; Gniew Tytana ← Trzęsienie 5.
+| Ścieżka | Rola i broń | Zwieńczenie (60.) |
+|---|---|---|
+| Strażnik | tank; broń jednoręczna z tarczą | Mur Tarcz |
+| Berserker | obrażenia wręcz, Furia; broń dwuręczna | Rzeź |
+| Chorąży | wsparcie bojowe; szabla albo miecz | Rozkaz Natarcia |
+
+Szczegóły, węzły i cele: ROZWOJ §10.
 
 ### 14.3 Łowca (Energia)
 
-| # | Odbl. | Nazwa | Typ | Opis | Koszt / CD |
-|---|---|---|---|---|---|
-| 1 | 1 | Celny Strzał / Aimed Shot | pocisk | 170% → 310% | 15 / 4 s |
-| 2 | 3 | Podwójny Strzał / Double Shot | pocisk ×2 | 2 × 85% → 2 × 150% | 20 / 6 s |
-| 3 | 6 | Odskok / Disengage | ruch | skok 15 st. w tył, następny strzał +20% → +50% | 15 / 10 s |
-| 4 | 10 | Deszcz Strzał / Arrow Rain | okrąg 9 st. w punkcie | 4 fale po 45% → 85% | 35 / 10 s |
-| 5 | 14 | Sokole Oko / Hawk Eye | pasywna | +2% → +10% kryt., +10% → +30% obr. kryt. | – |
-| 6 | 18 | Zatruta Strzała / Venom Arrow | pocisk | 120% → 210% + trucizna 50% → 120% przez 6 s | 25 / 8 s |
-| 7 | 23 | Pułapka Lodowa / Frost Trap | pułapka | unieruchamia 2 → 3.5 s w promieniu 6 st. | 25 / 18 s |
-| 8 | 28 | Zwinność / Agility | pasywna | +2% → +10% uniku, +3% → +15% szybkości ruchu | – |
-| 9 | 34 | Strzała Przebijająca / Piercing Arrow | linia 35 st. | 200% → 360% wszystkim w linii | 40 / 12 s |
-| 10 | 40 | Znak Łowcy / Hunter's Mark | debuff | cel otrzymuje +10% → +25% obrażeń 10 s | 20 / 25 s |
-| 11 | 48 | Instynkt Drapieżnika / Predator Instinct | pasywna | +3% → +15% szybkości ataku | – |
-| 12 | 56 | Salwa / Volley | stożek 60° 25 st. | 7 strzał po 70% → 120% | 50 / 14 s |
-| 13 | 65 | Kamuflaż / Camouflage | buff | utrata aggro, niewidzialność dla potworów 4 s, następny strzał gwarantowany kryt | 30 / 60 s |
-| 14 | 75 | Strzała Burzy / Storm Arrow | pocisk + okrąg | 400% → 650% w cel, błyskawice 120% wokół | 80 / 40 s |
+Podstawa: Celny Strzał 1, Podwójny Strzał 3, Odskok 6, Deszcz Strzał 10, Sokole Oko 14 (pasywna), Zatruta Strzała 18,
+Salwa 30, Instynkt Drapieżnika 45 (pasywna).
+
+| Ścieżka | Rola i broń | Zwieńczenie (60.) |
+|---|---|---|
+| Strzelec Wyborowy | jeden cel; Łuk Długi albo Ciężka Kusza | Strzał w Serce |
+| Traper | obszar, trucizna, pułapki; Kusza albo Łuk | Pole Sideł |
+| Zwiadowca | wsparcie bojowe, sokół, znaki; Łuk Krótki albo Łuk | Królewski Sokół |
+
+Kołczan pasuje do każdej ścieżki. Szczegóły: ROZWOJ §11.
 
 ### 14.4 Mag (Mana)
 
-Zmienione po testach S17 (żywioł broni, §5.8). Kolumna „Żywioł”: umiejętność wymaga broni z tym żywiołem; „adapt.” = przyjmuje żywioł broni (wygląd i dodatkowy efekt: ogień = podpalenie 30% przez 4 s, lód = spowolnienie 25% 2 s, błyskawice = przeskok 40% na 1 cel obok); „–” = bez wymagań.
+Podstawa: Magiczny Pocisk 1, Kula Ognia 3, Lodowy Odłamek 6, Łańcuch Błyskawic 10, Błysk 14, Lodowa Nova 18, Meteor 30,
+Burza Piorunów 45. Każdy żywioł zachowuje w podstawie swoje dwa czary.
 
-| # | Odbl. | Nazwa | Żywioł | Typ | Opis | Koszt / CD |
-|---|---|---|---|---|---|---|
-| 1 | 1 | Magiczny Pocisk / Arcane Bolt | adapt. | pocisk | 170% → 310% ataku mag. + efekt żywiołu | 12 mana / 2.5 s |
-| 2 | 3 | Lodowy Odłamek / Ice Shard | Lód | pocisk | 140% → 250%, spowolnienie 30% 3 s | 15 / 5 s |
-| 3 | 6 | Błysk / Blink | – | teleport | 15 st. w kierunku ruchu | 20 / 12 s |
-| 4 | 10 | Kula Ognia / Fireball | Ogień | okrąg 8 st. w celu | 150% → 270% | 35 / 8 s |
-| 5 | 14 | Skupienie / Focus | – | pasywna | +5% → +25% max many, +10% → +50% regeneracji many | – |
-| 6 | 18 | Łańcuch Błyskawic / Chain Lightning | Błyskawice | skoki do 3 → 6 celów | 130% → 230%, −10% na skok | 35 / 9 s |
-| 7 | 23 | Tarcza Many / Mana Shield | – | buff | 50% obrażeń z many zamiast HP, 8 → 15 s | 30 / 40 s |
-| 8 | 28 | Mistrz Żywiołów / Elementalist | – | pasywna | +3% → +15% obrażeń żywiołów | – |
-| 9 | 34 | Lodowa Nova / Frost Nova | Lód | okrąg 10 st. | 120% → 220%, zamrożenie 1.5 → 2.5 s | 45 / 18 s |
-| 10 | 40 | Meteor | Ogień | okrąg 10 st., opóźnienie 1 s | 280% → 480% | 60 / 20 s |
-| 11 | 48 | Tajemny Umysł / Arcane Mind | – | pasywna | +2% → +10% kryt. mag., +5% → +25% obr. kryt. | – |
-| 12 | 56 | Burza Piorunów / Thunderstorm | Błyskawice | okrąg 12 st., 5 s | 50% → 90% co 0.5 s losowym celom w kręgu | 55 / 22 s |
-| 13 | 65 | Inwokacja / Evocation | – | kanał 3 s | przywraca 30% → 50% many | 0 / 90 s |
-| 14 | 75 | Gniew Żywiołów / Elemental Fury | adapt. | okrąg 16 st. | 6 uderzeń po 160% → 260% (ogień: meteory, lód: lodowe kolce, błyskawice: pioruny) | 120 / 50 s |
+| Ścieżka | Rola i broń | Zwieńczenie (60.) |
+|---|---|---|
+| Niszczyciel | obszar; kostur albo różdżka z kulą | Kataklizm |
+| Arkanista | jeden cel, Ładunki Arkanów; kostur runiczny albo różdżka z księgą | Strumień Arkanów |
 
-Zmiany względem wersji S05: Ognisty Pocisk → Magiczny Pocisk (adapt.), Ściana Ognia → Burza Piorunów, Deszcz Meteorów → Gniew Żywiołów (adapt.). Każdy żywioł ma 2 własne umiejętności + 2 adaptacyjne.
+Umiejętności adaptacyjne (Magiczny Pocisk w podstawie, Gniew Żywiołów w rzędzie 7 Niszczyciela) biorą żywioł broni i
+działają z każdą bronią Maga (§5.8). Właściciel wybrał 2 ścieżki; dane mieszczą trzecią (ROZWOJ §12.6). Szczegóły: ROZWOJ §12.
 
 ### 14.5 Kapłan (Mana)
 
-| # | Odbl. | Nazwa | Typ | Opis | Koszt / CD |
-|---|---|---|---|---|---|
-| 1 | 1 | Święte Uderzenie / Holy Strike | cel | 150% → 280% ataku mag. (światło) | 12 / 3 s |
-| 2 | 3 | Leczenie / Heal | sojusznik/ja | leczy 120% → 260% ataku mag. | 20 / 3 s |
-| 3 | 6 | Odnowa / Renew | HoT | 200% → 400% przez 10 s | 25 / 8 s |
-| 4 | 10 | Światłość / Radiance | okrąg 10 st. | 110% → 200% wrogom, leczy sojuszników o 50% tej wartości | 35 / 10 s |
-| 5 | 14 | Pobożność / Devotion | pasywna | +5% → +25% leczenia | – |
-| 6 | 18 | Krąg Światła / Circle of Light | okrąg 14 st. | leczy grupę 100% → 200% | 50 / 15 s |
-| 7 | 23 | Oczyszczenie / Purify | sojusznik | usuwa efekty negatywne + leczy 80% → 150% | 25 / 12 s |
-| 8 | 28 | Aura Wytrwałości / Aura of Endurance | buff grupy 60 s | +5% → +15% max HP grupy (w zasięgu 30 st.) | 40 / 60 s |
-| 9 | 34 | Wskrzeszenie / Resurrection | martwy sojusznik | wskrzesza z 20% → 60% HP, pomija licznik | 80 / 120 → 60 s |
-| 10 | 40 | Tarcza Wiary / Shield of Faith | sojusznik | tarcza 300% → 600% ataku mag., 8 s | 40 / 20 s |
-| 11 | 48 | Boski Gniew / Divine Wrath | pasywna | +4% → +20% obrażeń światła, Święte Uderzenie leczy 10% zadanych | – |
-| 12 | 56 | Sąd / Judgement | cel | 280% → 500%, ogłuszenie 1 s | 55 / 15 s |
-| 13 | 65 | Modlitwa / Prayer | kanał 3 s | odnawia 25% → 45% many sobie i 10% grupie | 0 / 90 s |
-| 14 | 75 | Boska Interwencja / Divine Intervention | grupa | nietykalność grupy 2 → 4 s + leczenie 30% HP | 100 / 120 s |
+Podstawa: Święte Uderzenie 1, Leczenie 3, Światłość 6, Pobożność 10 (pasywna), Krąg Światła 14, Tarcza Wiary 18,
+Boski Gniew 30 (pasywna), Sąd 45.
 
-Leczenie/buffy kapłana działają tylko na członków grupy i na siebie.
+| Ścieżka | Rola i broń | Zwieńczenie (60.) |
+|---|---|---|
+| Uzdrowiciel | leczenie; berło albo kostur kapłański | Anioł Stróż |
+| Kapłan Fortuny | szczęście drużyny; relikwia w drugiej ręce | Koło Fortuny |
+| Inkwizytor | obrażenia; buława albo korbacz | Młot Niebios |
+
+Leczenie i tarcze liczą się od maks. HP celu plus część ataku magicznego. Leczenie i wzmocnienia Kapłana działają
+tylko na niego i członków jego drużyny. Szczegóły: ROZWOJ §9.
 
 ## 15. Potwory
 
@@ -759,7 +750,7 @@ Po testach S17: **więcej rodzajów na każdej mapie (min. 8–10 na mapę teren
 ## 21. Monetyzacja (bez pay-to-win)
 
 - **Smocza Waluta** (Developer Products: 100 / 550 / 1 200 / 2 600 / 7 000).
-- Za Smoczą Walutę: kosmetyki (stroje, aury, efekty broni), pety (tylko wygląd), natychmiastowe odrodzenie, Zwój Zapomnienia, Zwój Odrodzenia Umiejętności, Zwój Rozwiązania, Zwój Ochrony (limit 5 dziennie, żeby nie był pay-to-win), zmiana nazwy postaci.
+- Za Smoczą Walutę: kosmetyki (stroje, aury, efekty broni), pety (tylko wygląd), natychmiastowe odrodzenie, Zwój Zapomnienia, Zwój Nowej Ścieżki (zmiana ścieżki głównej), Zwój Rozwiązania, Zwój Ochrony (limit 5 dziennie, żeby nie był pay-to-win), zmiana nazwy postaci.
 - **Gamepassy**: Auto-łup, Skarbiec (+60 depozytu), Szybki Powrót (−50% czasu odrodzenia), VIP (złota ramka czatu, kolorowy nick, +1 kolejka u alchemika).
 - Brak sprzedaży EXP, statystyk, przedmiotów z bonusami.
 - Odrodzenie natychmiastowe także jako osobny Developer Product (bez kupowania waluty).
@@ -772,7 +763,7 @@ Po testach S17: **więcej rodzajów na każdej mapie (min. 8–10 na mapę teren
 
 - Styl: **poważne fantasy**. Ciemne panele (grafit `#1B1D23`, `#252832`), złote obramowania `#C9A45C`, pergamin dla tooltipów `#EADDBE` z ciemnym tekstem, akcent niebieski `#4A8FE7` dla przycisków akcji. Czcionki: nagłówki Fondamento (lub Cinzel-podobna dostępna w Roblox), tekst BuilderSans. Wyraźne, duże przyciski, czytelne ikony, delikatne cienie i gradienty, animacje 0.15–0.25 s.
 - **HUD**: lewy górny: portret, poziom, paski HP / Mana / Energia, ikona błogosławieństwa. Dół: pasek EXP na całej szerokości, nad nim 10 slotów umiejętności + 3 mikstury. Prawy górny: minimapa z nazwą mapy i kolorem strefy, przyciski menu (Postać C, Plecak B, Umiejętności K, Mapa M, Questy L, Gildia G, Grupa P, Opcje Esc). Prawy dolny: przełącznik PvP. Lewy dolny: czat. Nad celem: ramka celu (nazwa, poziom, HP, typ elity).
-- **Okna**: Postać (S29: jedno okno z ekwipunkiem, plecakiem i statystykami, ok. 1240×700; B i C otwierają to samo okno; przeciąganie plecak ↔ ekwipunek z podświetleniem pasujących slotów, zamiana pierścieni; na dotyku ekwipunek + zakładki „Plecak | Statystyki”, tap → tap zakłada, przytrzymanie = menu akcji), Plecak (sam plecak jako towarzysz okien usług), Umiejętności (drzewko jako graf z liniami wymagań), Mapa świata, Kowal (zakładki: Wytwarzanie / Ulepszanie / Rozbijanie), Alchemik, Lekarz, Sklep, Depozyt, Handel, Aukcja, Poczta, Gildia, Grupa, Questy, Sklep premium, Garderoba, Opcje (język, głośność, jakość, czułość kamery, pokazywanie liczb obrażeń).
+- **Okna**: Postać (S29: jedno okno z ekwipunkiem, plecakiem i statystykami, ok. 1240×700; B i C otwierają to samo okno; przeciąganie plecak ↔ ekwipunek z podświetleniem pasujących slotów, zamiana pierścieni; na dotyku ekwipunek + zakładki „Plecak | Statystyki”, tap → tap zakłada, przytrzymanie = menu akcji), Plecak (sam plecak jako towarzysz okien usług), Umiejętności (podstawa klasy i zakładki ścieżek, ROZWOJ §4), Mapa świata, Kowal (zakładki: Wytwarzanie / Ulepszanie / Rozbijanie), Alchemik, Lekarz, Sklep, Depozyt, Handel, Aukcja, Poczta, Gildia, Grupa, Questy, Sklep premium, Garderoba, Opcje (język, głośność, jakość, czułość kamery, pokazywanie liczb obrażeń).
 - Tooltip przedmiotu: nazwa w kolorze rzadkości, typ, slot, wymagania (czerwone gdy niespełnione), statystyki bazowe (+ulepszenie), bonusy z jakością rzutu, porównanie z założonym (zielone ↑ / czerwone ↓), związany/niezwiązany, cena.
 - Liczby obrażeń nad celami (S29): każde rozstrzygnięte trafienie ma liczbę. Moje duże białe, krytyk „KRYT! 1 234” pomarańczowo-złoty z wyskokiem, cudze mniejsze i przygaszone, otrzymane czerwone, „Pochłonięto” (tarcza), „Odporny”, „Unik”, leczenie i HoT zielone, ticki DoT małe w kolorze żywiołu. Liczby układają się w stos nad celem (maks. 6, powyżej 8/s łączą się w sumę), żyją ok. 1,2 s. Opcja: wszystkie / moje i otrzymane / wyłączone.
 - **Jedno główne okno naraz**: otwarcie okna zamyka poprzednie. Wyjątek: okna usług (sklep, kowal, alchemik, handel, aukcja, poczta, plecakarz) otwierają się razem z plecakiem-towarzyszem, który znika razem z ostatnią usługą (✕, Esc, odejście od NPC, koniec handlu, śmierć, zmiana mapy), chyba że gracz otworzył go sam wcześniej (S29). Depozyt ma własną siatkę plecaka.

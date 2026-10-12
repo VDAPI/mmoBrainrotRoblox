@@ -1,0 +1,6 @@
+--!strict
+-- Warrior paths (ROZWOJ 2.2, 3.2). Empty until S75 fills them; the shape is shown by tests/fixtures/paths.luau.
+
+local Types = require("./Types")
+
+return {} :: { Types.PathDef }

@@ -86,7 +86,13 @@ local function shopSection(shopId: string, level: number, class: string): Sectio
 		return nil
 	end
 	local usable: { Shops.Entry } = {}
+	local offered: { Shops.Entry } = {}
 	for _, entry in shop.entries do
+		if ShopPrice.offered(entry, class) then
+			table.insert(offered, entry)
+		end
+	end
+	for _, entry in offered do
 		local item = previewItem(entry)
 		local need = entry.level or ItemRoll.requiredLevel(item)
 		local classOk = entry.classes == nil or table.find(entry.classes, class) ~= nil
@@ -100,8 +106,8 @@ local function shopSection(shopId: string, level: number, class: string): Sectio
 		end)
 	end
 	if #usable == 0 then
-		for i = 1, math.min(SHOP_PREVIEW, #shop.entries) do
-			table.insert(usable, shop.entries[i])
+		for i = 1, math.min(SHOP_PREVIEW, #offered) do
+			table.insert(usable, offered[i])
 		end
 	end
 	local discount = State.Get({ "derived", "values", "potionDiscount" }) or 0

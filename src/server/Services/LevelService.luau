@@ -1,7 +1,8 @@
 --!strict
 -- Experience and levels (DESIGN §4.6). GiveExp is the single entry point for every EXP source
 -- (monsters S03, quests S11); it applies the character's EXP bonus and handles level-ups:
--- stat points (skill ranks come from the level, S56), full resources, the LevelUp effect for nearby players.
+-- stat points (skill ranks come from the level, S56; path points are not stored, S57), full resources, the LevelUp
+-- effect for nearby players.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -15,6 +16,7 @@ local Config = require(Shared.Config)
 local Exp = require(Shared.Logic.Exp)
 local Log = require(Shared.Util.Log)
 local Net = require(Shared.Net)
+local Paths = require(Shared.Logic.Paths)
 local Signal = require(ReplicatedStorage.Packages.Signal)
 local Types = require(Shared.Types)
 
@@ -63,7 +65,8 @@ local function onLevelsGained(player: Player, character: Types.CharacterData, fr
 	setLevelAttribute(player, to)
 	StatService.Recompute(player)
 	ResourceService.Restore(player)
-	Net.FireList(nearbyPlayers(player), "LevelUp", player, to, statPts)
+	local pathPts = Paths.pointsAt(to) - Paths.pointsAt(from)
+	Net.FireList(nearbyPlayers(player), "LevelUp", player, to, statPts, pathPts)
 	LevelService.LevelChanged:Fire(player, to, from)
 	LevelService.LeveledUp:Fire(player, to, to - from)
 	Analytics.progression(player, "Level", to, `level_{to}`) -- an empty level name is rejected by AnalyticsService
@@ -131,6 +134,8 @@ function LevelService.SetLevel(player: Player, level: number)
 		return
 	end
 	local statTotal = totalPoints(target)
+	-- S57: path ranks the lower level does not allow go back (the active set; buildOther in S58)
+	PlayerStateService.Set(player, { "character", "path" }, Paths.clampToLevel(character, target))
 	PlayerStateService.Set(player, { "character", "level" }, target)
 	setLevelAttribute(player, target)
 	local freeStat = statTotal - spentStatPoints(character)

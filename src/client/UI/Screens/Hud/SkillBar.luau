@@ -3,7 +3,7 @@
 -- global cooldown too), a flash when it is ready again (S28), red when mana/energy is short, grey with a red key when
 -- the target is out of range. The tooltip is UI/SkillInfo (shape, numbers, next level, breakpoints).
 -- Drag skills from the skill window or between slots; right-click clears a slot; click casts.
--- S56: ranks come from the character level (Skills.rankFor).
+-- S57: rank and numbers through Logic/Paths (skillRank, effectiveFor: chosen breakpoints, modify nodes).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -12,6 +12,7 @@ local Workspace = game:GetService("Workspace")
 local DragDrop = require(script.Parent.Parent.Parent.DragDrop)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Keybinds = require(script.Parent.Parent.Parent.Keybinds)
+local Paths = require(ReplicatedStorage.Shared.Logic.Paths)
 local SkillData = require(ReplicatedStorage.Shared.Data.Skills)
 local Skills = require(ReplicatedStorage.Shared.Logic.Skills)
 local State = require(script.Parent.Parent.Parent.State)
@@ -36,6 +37,17 @@ local function SkillBar(scope: Scope, props: Props): { Instance }
 	local hotbar = State.Value({ "character", "hotbar" })
 	local classId = State.Value({ "character", "class" })
 	local level = State.Value({ "character", "level" })
+	local pathState = State.Value({ "character", "path" })
+	local equipment = State.Value({ "character", "equipment" })
+	-- The character as Logic/Paths reads it, tracked by `use`.
+	local function charOf(use: any): Paths.Char
+		return {
+			class = use(classId) or "",
+			level = use(level) or 1,
+			path = use(pathState),
+			equipment = use(equipment),
+		}
+	end
 	local cooldowns = State.Value({ "skills" })
 	local now = scope:Value(Workspace:GetServerTimeNow())
 	local tick = scope:Value(0) -- refreshes range / resource checks
@@ -79,8 +91,9 @@ local function SkillBar(scope: Scope, props: Props): { Instance }
 			if not s or left <= 0 then
 				return 0
 			end
-			local rank = math.max(1, Skills.rankFor(use(classId), use(level) or 1, s))
-			local def = Skills.effective(s, rank, nil, nil)
+			local c = charOf(use)
+			local rank = math.max(1, Paths.skillRank(c, s.id))
+			local def = Paths.effectiveFor(c, s.id, Paths.weaponTypesOf(c.equipment), rank)
 			local total = math.max(SkillData.GCD, Skills.scaled(def, def.cooldown, rank))
 			return math.clamp(left / total, 0, 1)
 		end)
@@ -268,7 +281,7 @@ local function SkillBar(scope: Scope, props: Props): { Instance }
 				if not s then
 					return Text.get(use, "hud.skillSlot", { n = key })
 				end
-				local rank = math.max(1, Skills.rankFor(use(classId), use(level) or 1, s))
+				local rank = math.max(1, Paths.skillRank(charOf(use), s.id))
 				return SkillInfo.tooltip(use, s, rank)
 			end)
 		)

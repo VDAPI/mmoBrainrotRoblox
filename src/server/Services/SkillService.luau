@@ -1,12 +1,13 @@
 --!strict
--- Skills (DESIGN §14): the 10-slot hotbar (SetHotbar, PutOnBar, the auto-put of skills unlocked by a level-up),
--- ranks from the character level (S56, ROZWOJ 2.5; transitional ladder 2.6 until S57), passives as a StatService
--- modifier source + combat hooks, and casting:
+-- Skills (DESIGN §14): the 10-slot hotbar (SetHotbar, PutOnBar, the auto-put of base skills unlocked by a level-up),
+-- passives as a StatService modifier source + combat hooks, and casting. S57: which skills a character has, their
+-- rank, the path weapon, the passives and the skill changes of path nodes come from Logic/Paths (base + paths); the
+-- bar check on load and on level changes is PathService's (Paths.validHotbar).
 --   CastSkill(skillId, targetId?, aim?) -> validate (unlocked, alive, not stunned, GCD 0.5 s, cooldown, cost,
 --   target, range) -> spend -> SkillFx "cast" (everyone nearby plays the skill's animation, Data/SkillMotions) ->
 --   after the motion's hit time (S28, at most 0.6 s) the Skills/Types/* handler -> SkillFx impact events.
---   S28/S55: the skill works as Logic/Skills.effective makes it at its rank (breakpoints at ranks 5 and 10, option A
---   until S57).
+--   S28/S55/S57: the skill works as Logic/Paths.effectiveFor makes it (breakpoints at ranks 5 and 10 in the chosen
+--   option, modify nodes).
 -- Cooldowns replicate as state branch `skills` = { cd = { [skillId] = readyAt }, gcd = readyAt, channel? }
 -- (server time), so the client draws the cooldown sweep.
 
@@ -21,6 +22,7 @@ local Context = require(script.Parent.Parent.Skills.Context)
 local Log = require(Shared.Util.Log)
 local Movement = require(script.Parent.Parent.Skills.Types.Movement)
 local Net = require(Shared.Net)
+local Paths = require(Shared.Logic.Paths)
 local QuestEvents = require(script.Parent.Parent.QuestEvents)
 local Offense = require(script.Parent.Parent.Skills.Types.Offense)
 local SkillData = require(Shared.Data.Skills)
@@ -119,7 +121,7 @@ local function passiveHooks(player: Player): { [string]: number }
 		return cached
 	end
 	local char = character(player)
-	local hooks = if char then Skills.passiveTotals(char).hooks else {}
+	local hooks = if char then Paths.passiveTotals(char, Paths.weaponTypesOf(char.equipment)).hooks else {}
 	hookCache[player] = hooks
 	return hooks
 end
@@ -136,7 +138,7 @@ end
 type Source = { key: string, flat: { [string]: number }?, pct: { [string]: number }? }
 
 local function modifierSource(_player: Player, char: Types.CharacterData): Source?
-	local totals = Skills.passiveTotals(char)
+	local totals = Paths.passiveTotals(char, Paths.weaponTypesOf(char.equipment))
 	if next(totals.flat) == nil and next(totals.pct) == nil then
 		return nil
 	end
@@ -148,7 +150,7 @@ end
 -- Every placement goes through here, so the quest "learn" objective fires once per skill put on the bar.
 local function setHotbar(player: Player, slot: number, skillId: string?): (boolean, string?)
 	local char = character(player)
-	if not char or not Skills.validHotbar(char, slot, skillId) then
+	if not char or not Skills.validSlot(slot) or (skillId ~= nil and not Paths.canPutOnBar(char, skillId)) then
 		return false, "error.badRequest"
 	end
 	-- A skill sits in one slot only: moving it clears the old slot.
@@ -173,9 +175,9 @@ function SkillService.PutOnBar(player: Player, skillId: string, slot: number?): 
 	if not char then
 		return false, "error.wrongPhase"
 	end
-	local skill = SkillData.get(skillId)
-	if not skill or skill.type == "passive" or Skills.rankOf(char, skillId) <= 0 then
-		return false, "skills.error.locked"
+	local ok, err = Paths.canPutOnBar(char, skillId)
+	if not ok then
+		return false, err
 	end
 	if slot ~= nil then
 		return setHotbar(player, slot, skillId)
@@ -192,20 +194,9 @@ function SkillService.PutOnBar(player: Player, skillId: string, slot: number?): 
 	return setHotbar(player, free, skillId)
 end
 
--- Drops what the character may not hold on the bar (lowered level, entering; S57: Paths.validHotbar).
-local function cleanBar(player: Player)
-	local char = character(player)
-	if not char then
-		return
-	end
-	local bar, changed = Skills.cleanHotbar(char.class, char.level, char.hotbar)
-	if changed then
-		PlayerStateService.Set(player, { "character", "hotbar" }, bar)
-	end
-end
-
 -- S56 (ROZWOJ 2.5, 5): ranks follow the level. Passive ranks and hooks are refreshed on every change; going up puts
--- the new actives on free slots (a toast each, or one for more than 2 at once), going down cleans the bar.
+-- the new base actives on free slots (a toast each, or one for more than 2 at once). Going down, PathService cleans
+-- the bar (S57: Paths.validHotbar).
 local function onLevelChanged(player: Player, newLevel: number, oldLevel: number)
 	passivesChanged(player)
 	local char = character(player)
@@ -213,7 +204,6 @@ local function onLevelChanged(player: Player, newLevel: number, oldLevel: number
 		return
 	end
 	if newLevel < oldLevel then
-		cleanBar(player)
 		return
 	end
 	local fresh = Skills.newlyUnlocked(char.class, oldLevel, newLevel)
@@ -265,7 +255,7 @@ function SkillService.SetInfiniteResources(player: Player, enabled: boolean)
 	runtime(player).infiniteResources = enabled
 end
 
--- Admin (S28): passives changed outside a level change.
+-- Passives changed outside a level change (admin S28; S57 PathService: nodes, main path, weapon).
 function SkillService.RefreshPassives(player: Player)
 	passivesChanged(player)
 end
@@ -385,14 +375,18 @@ local function cast(player: Player, skillId: string, targetId: string?, aim: any
 	if not char or not base or base.class ~= char.class then
 		return false, "error.badRequest"
 	end
-	-- S56: rank from the character level (ROZWOJ 2.5), ladder 2.6 until S57
-	local rank = Skills.rankOf(char, skillId)
+	-- S57: rank from Logic/Paths (base from the level, path skills from their node), then the path weapon
+	local rank = Paths.skillRank(char, skillId)
 	if rank <= 0 or base.type == "passive" then
 		return false, "cast.error.notLearned"
 	end
-	-- S28: numbers and behaviours at this rank (breakpoints).
-	-- S55: option A everywhere, no node mods until S57 (Paths.skillMods)
-	local skill, behaviour = Skills.effective(base, rank, nil, nil)
+	local weapons = Paths.weaponTypesOf(char.equipment)
+	local usable, usableErr = Paths.skillUsable(char, skillId, weapons)
+	if not usable then
+		return false, usableErr
+	end
+	-- S28/S57: numbers and behaviours at this rank (breakpoints in the chosen option, modify nodes).
+	local skill, behaviour = Paths.effectiveFor(char, skillId, weapons, rank)
 	local caster = EntityService.GetPlayerEntity(player)
 	local model = player.Character
 	local root = model and model:FindFirstChild("HumanoidRootPart") :: BasePart?
@@ -632,7 +626,6 @@ function SkillService.Start()
 	end)
 	CharacterService.CharacterEntered:Connect(function(player: Player)
 		hookCache[player] = nil
-		cleanBar(player) -- S56: bar check on load (S57: Paths.validHotbar)
 		local rt = runtime(player)
 		table.clear(rt.cooldowns)
 		rt.gcd = 0

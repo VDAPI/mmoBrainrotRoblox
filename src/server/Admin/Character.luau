@@ -8,6 +8,7 @@ local Config = require(Shared.Config)
 local DevPreset = require(Shared.Logic.DevPreset)
 local Elements = require(Shared.Data.Elements)
 local Items = require(Shared.Data.Items)
+local PathData = require(Shared.Data.Paths)
 
 local Context = require(script.Parent.Context)
 
@@ -22,6 +23,7 @@ local InventoryService = Context.services.InventoryService
 local EquipmentService = Context.services.EquipmentService
 local StatService = Context.services.StatService
 local SkillService = Context.services.SkillService
+local PathService = Context.services.PathService
 
 local commands: { [string]: (player: Player, args: { string }) -> ...any } = {}
 
@@ -179,6 +181,86 @@ commands.preset = function(player, args)
 			end
 		end
 		reply(player, "admin.preset.ok", { level = level, rarity = rarity, up = up, n = equipped })
+	end)
+end
+
+-- S57: class paths -----------------------------------------------------------------------------------------------
+
+commands.path = function(player, args)
+	local id = args[1]
+	if not id then
+		reply(player, "admin.usage.path")
+		return
+	end
+	withCharacter(player, function()
+		local pathId = if string.lower(id) == "none" then nil else id
+		local ok = PathService.AdminSetMain(player, pathId)
+		if not ok then
+			reply(player, "admin.path.unknown", { id = id })
+			return
+		end
+		local path = if pathId then PathData.get(pathId) else nil
+		if path then
+			reply(player, "admin.path.ok", { path = "@" .. path.nameKey })
+		else
+			reply(player, "paths.mainNone")
+		end
+	end)
+end
+
+commands.node = function(player, args)
+	local id = args[1]
+	local rank = if args[2] then tonumber(args[2]) else nil
+	if not id or (args[2] and rank == nil) then
+		reply(player, "admin.usage.node")
+		return
+	end
+	withCharacter(player, function()
+		if not PathService.AdminSetNode(player, id, rank) then
+			reply(player, "admin.node.unknown", { id = id })
+			return
+		end
+		local now = PlayerStateService.Get(player, { "character", "path", "nodes", id }) or 0
+		reply(player, "admin.node.ok", { id = id, rank = now })
+	end)
+end
+
+commands.pathmax = function(player, args)
+	withCharacter(player, function()
+		local bought, err = PathService.AdminMax(player, args[1])
+		if err == "admin.path.unknown" then
+			reply(player, err, { id = args[1] })
+			return
+		end
+		local main = PlayerStateService.Get(player, { "character", "path", "main" })
+		if bought == 0 and main == nil then
+			reply(player, "admin.pathmax.noPath")
+			return
+		end
+		reply(player, "admin.pathmax.ok", { bought = bought })
+	end)
+end
+
+commands.bp = function(player, args)
+	local skillId, rank, option = args[1], tonumber(args[2]), args[3]
+	if not skillId or (rank ~= 5 and rank ~= 10) or (option ~= "a" and option ~= "b") then
+		reply(player, "admin.usage.bp")
+		return
+	end
+	withCharacter(player, function()
+		local ok, err = PathService.AdminChooseBp(player, skillId, rank :: number, option)
+		if not ok then
+			reply(player, err or "admin.usage.bp")
+			return
+		end
+		reply(player, "admin.bp.ok", { key = `{skillId}:{rank}`, option = string.upper(option) })
+	end)
+end
+
+commands.resetskills = function(player)
+	withCharacter(player, function()
+		PathService.AdminReset(player)
+		reply(player, "admin.resetskills.ok")
 	end)
 end
 
