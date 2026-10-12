@@ -20,7 +20,7 @@ T.describe("Traits: on-hit chances (S63)", function()
 		for _, kind in { "target", "projectile", "charge" } do
 			T.expect({ kind, Traits.isAreaSkill(kind) }).toEqual({ kind, false })
 		end
-		for _, kind in { "cone", "circleSelf", "circleTarget", "line", "chain" } do
+		for _, kind in { "cone", "circleSelf", "circleTarget", "line", "chain", "trap", "shout" } do
 			T.expect({ kind, Traits.isAreaSkill(kind) }).toEqual({ kind, true })
 		end
 		T.expect(Traits.isAreaSkill(nil)).toBe(false)

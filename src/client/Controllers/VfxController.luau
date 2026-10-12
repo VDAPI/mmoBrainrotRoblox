@@ -123,13 +123,19 @@ local function weaponTip(model: Model): Vector3
 	return centre(model) + Vector3.new(0, 0.5, 0)
 end
 
+-- The last walk speed the server set (StatService.applyWalkSpeed), else `fallback`.
+local function serverSpeed(humanoid: Humanoid, fallback: number): number
+	local value = humanoid:GetAttribute("ServerWalkSpeed")
+	return if type(value) == "number" then value else fallback
+end
+
 -- S80: gives our walk back now (a beam ended early); a server change of the speed meanwhile is kept.
 local function releaseLock()
 	local humanoid = lockHumanoid
 	lockToken += 1
 	lockHumanoid = nil
-	if humanoid and humanoid.Parent and humanoid.WalkSpeed == lockLocked then
-		humanoid.WalkSpeed = lockSpeed
+	if humanoid and humanoid.Parent then
+		humanoid.WalkSpeed = serverSpeed(humanoid, lockSpeed)
 	end
 end
 
@@ -295,9 +301,10 @@ local function onCast(data: { [string]: any }, skill: SkillData.SkillDef, caster
 			lockToken += 1
 			local token = lockToken
 			-- S80: a lock still running (a beam cast on top) keeps the speed from before it
-			local speed = if lockHumanoid == humanoid and humanoid.WalkSpeed == lockLocked
-				then lockSpeed
-				else humanoid.WalkSpeed
+			local speed = serverSpeed(
+				humanoid,
+				if lockHumanoid == humanoid and humanoid.WalkSpeed == lockLocked then lockSpeed else humanoid.WalkSpeed
+			)
 			local locked = if move then speed * move / 100 else 0
 			humanoid.WalkSpeed = locked
 			lockHumanoid = humanoid
@@ -306,9 +313,10 @@ local function onCast(data: { [string]: any }, skill: SkillData.SkillDef, caster
 			local seconds = (motion.keys[#motion.keys].t + motion.recover * 0.5)
 				+ (if loopUntil and motion.loop then math.max(0, loopUntil - motion.loop.to) else 0)
 			task.delay(seconds, function()
-				-- S63: the server changed the speed meanwhile (a slow started or ended): keep the server's value.
-				if lockToken == token and humanoid.Parent and humanoid.WalkSpeed == locked then
-					humanoid.WalkSpeed = speed
+				-- S63: the server may have changed the speed meanwhile (a slow, stun or root started or ended): restore
+				-- the server's last value, not a comparison with `locked` (a stun's 0 equals a full lock's 0).
+				if lockToken == token and humanoid.Parent then
+					humanoid.WalkSpeed = serverSpeed(humanoid, speed)
 				end
 				if lockToken == token then
 					lockHumanoid = nil

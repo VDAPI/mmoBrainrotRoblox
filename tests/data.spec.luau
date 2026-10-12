@@ -827,37 +827,12 @@ end)
 
 T.describe("Data: kind of blow (S64, STATY 6)", function()
 	local Bosses = require("../src/shared/Data/Bosses")
-	local Combat = require("../src/shared/Data/Combat")
 	local SkillData = require("../src/shared/Data/Skills")
+	local Skills = require("../src/shared/Logic/Skills")
 
-	-- S77: the Falcon (companion) strikes from the air like a trap: ranged
-	-- S80: a beam (Arcane Torrent) is ranged
-	local RANGED_TYPES = {
-		projectile = true,
-		chain = true,
-		circleTarget = true,
-		line = true,
-		trap = true,
-		companion = true,
-		beam = true,
-	}
-	-- S74: a shout strikes around the caster like circleSelf; guard and banner deal no damage (any value)
-	local MELEE_TYPES = { charge = true, circleSelf = true, shout = true }
-	local REACH = Combat.meleeRange + Combat.rangeTolerance
-
-	-- The rule of STATY 6 for the types that deal damage; nil for the rest (any value, but one is required).
-	local function expected(skill: any): string?
-		if RANGED_TYPES[skill.type] then
-			return "ranged"
-		elseif MELEE_TYPES[skill.type] then
-			return "melee"
-		elseif skill.type == "target" then
-			return if (skill.range or 0) <= REACH then "melee" else "ranged"
-		elseif skill.type == "cone" then
-			return if (skill.radius or 0) <= REACH then "melee" else "ranged"
-		end
-		return nil
-	end
+	-- The rule of STATY 6 lives in Logic/Skills.deliveryRule (the skill window shows the label by it too); nil for the
+	-- types that deal no damage (any value, but one is required).
+	local expected = Skills.deliveryRule
 
 	T.it("every active skill has a delivery that follows the rule", function()
 		for id, skill in SkillData.byId do

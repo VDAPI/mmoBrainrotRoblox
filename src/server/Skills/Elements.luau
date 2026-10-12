@@ -12,7 +12,7 @@ local Traits = require(Shared.Logic.Traits)
 
 local Elements = {}
 
-export type Services = { StatusEffect: any, Entity: any, Combat: any, Pvp: any }
+export type Services = { StatusEffect: any, Entity: any, Combat: any, Pvp: any, Resource: any }
 export type Proc = {
 	player: Player,
 	element: string?, -- weapon element: "fire" | "ice" | "lightning"
@@ -45,10 +45,15 @@ function Elements.chill(services: Services, player: Player, entity: any, duratio
 		return
 	end
 	local value = math.max(SkillData.FROSTBITE, services.Combat.Hook(player, "frostbite"))
-	services.StatusEffect.Apply(entity, "frostbite", { duration = duration, value = value, source = player })
+	-- One key per player for every ice slow: a shorter slow never cuts short the Frostbite of a longer one.
+	services.StatusEffect.Apply(
+		entity,
+		"frostbite",
+		{ duration = duration, value = value, source = player, keepLonger = true }
+	)
 end
 
--- Nearest other enemy within `radius` of the target: living monsters (3D), and attackable players when allowed.
+-- Nearest other enemy within `radius` of the target: living monsters (3D), and living attackable players when allowed.
 local function nearestOther(services: Services, proc: Proc, from: Vector3, radius: number): any?
 	local Entity = services.Entity
 	local best, bestDistance = nil, radius
@@ -67,6 +72,7 @@ local function nearestOther(services: Services, proc: Proc, from: Vector3, radiu
 				other ~= proc.target
 				and victim
 				and victim ~= proc.player
+				and not services.Resource.IsDead(victim)
 				and p
 				and (p - from).Magnitude <= bestDistance
 				and services.Pvp.CanAttack(proc.player, victim)

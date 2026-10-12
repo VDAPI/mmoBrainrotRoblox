@@ -39,6 +39,8 @@ export type StackSpec = {
 	tickInterval: number,
 	-- S76: starting stacks of a moved effect (poison spread): the larger of these and the running ones, the later end
 	stacks: number?,
+	-- A refresh never ends the running effect sooner (Frostbite lives as long as the longest ice slow that set it).
+	keepLonger: boolean?,
 }
 
 -- A statBuff being re-applied with the same key (merge).
@@ -199,6 +201,8 @@ function EffectStack.restack(old: Stack?, spec: StackSpec): Stack
 		if running then
 			expiresAt = math.max((old :: Stack).expiresAt, expiresAt)
 		end
+	elseif spec.keepLonger and running then
+		expiresAt = math.max((old :: Stack).expiresAt, expiresAt)
 	end
 	local tickUnit = spec.tickUnit
 	local nextTick: number? = nil

@@ -21,6 +21,7 @@ Traits.AREA_TYPES = table.freeze({
 	line = true,
 	chain = true,
 	trap = true,
+	shout = true, -- a damaging shout (values.dmg) hits every enemy around the caster
 } :: { [string]: boolean })
 
 function Traits.isAreaSkill(skillType: string?): boolean

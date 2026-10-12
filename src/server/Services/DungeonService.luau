@@ -638,6 +638,13 @@ local function step()
 				continue
 			end
 			boss:Step(now)
+			if boss.monster.state == "return" then
+				-- A leashed boss walks home at full HP with a cleared damage record (Monster.StartReturn): the fight
+				-- summary starts over with it, so healing, shields and intercepts match the damage of the last attempt.
+				table.clear(run.healing)
+				table.clear(run.shielding)
+				table.clear(run.intercepted)
+			end
 			if now - run.lastState >= STATE_INTERVAL then
 				run.lastState = now
 				publish(run)
@@ -748,11 +755,14 @@ function DungeonService.Init(registry)
 	Registry = registry
 end
 
--- The run in which both players fight a boss that is up (S60: healing and shields of the fight summary).
+-- The run in which both players fight a boss that is up and not walking home after a leash (S60: healing and
+-- shields of the fight summary).
 local function fightOf(target: Player, source: Player): Run?
 	for _, run in runs do
+		local boss = run.boss
 		if
-			run.boss ~= nil
+			boss ~= nil
+			and boss.monster.state ~= "return"
 			and not run.cleared
 			and table.find(run.members, target)
 			and table.find(run.members, source)

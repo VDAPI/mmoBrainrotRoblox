@@ -144,6 +144,15 @@ local function now(): number
 	return Workspace:GetServerTimeNow()
 end
 
+-- S63: value categories whose combat value is not simply the strongest entry (skill + item split, a cap): their icon
+-- shows StatusEffectService.CategoryValue, the number combat reads.
+local COMBINED_CATEGORIES: { [string]: boolean } = {}
+for _, category in BuffCategories.list do
+	if category.mode == "value" and (category.split or BuffCategories.caps[category.id] ~= nil) then
+		COMBINED_CATEGORIES[category.id] = true
+	end
+end
+
 local function publish(entity: any)
 	local model = entity.model
 	if not model or not model.Parent then
@@ -156,10 +165,21 @@ local function publish(entity: any)
 	local list = effects[id]
 	local listed: { EffectStack.Listed } = {}
 	if list then
+		local combined: { [string]: number } = {}
 		for _, effect in list do
+			local value = effect.value
+			local categoryId = effect.category
+			if categoryId and COMBINED_CATEGORIES[categoryId] then
+				local total = combined[categoryId]
+				if total == nil then
+					total = StatusEffectService.CategoryValue(entity, categoryId)
+					combined[categoryId] = total
+				end
+				value = total
+			end
 			table.insert(
 				listed,
-				{ kind = effect.kind, expiresAt = effect.expiresAt, value = effect.value, stacks = effect.stacks }
+				{ kind = effect.kind, expiresAt = effect.expiresAt, value = value, stacks = effect.stacks }
 			)
 		end
 	end
@@ -221,6 +241,7 @@ export type ApplyOptions = {
 	stacks: number?,
 	spread: number?, -- S76: kept on the effect (Effect.spread)
 	jump: number?, -- S76: kept on the effect (Effect.jump)
+	keepLonger: boolean?, -- a refresh never ends the running effect sooner (EffectStack.restack; Frostbite)
 }
 
 -- S71: runs an effect's end callback once, outside the caller's loop (an error never stops ticking).
@@ -348,6 +369,7 @@ function StatusEffectService.Apply(entity: any, kind: string, options: ApplyOpti
 		now = t,
 		tickInterval = TICK_INTERVAL,
 		stacks = options.stacks,
+		keepLonger = options.keepLonger,
 	})
 	-- S63: anything the icons or the stats see changed (S61: party auras refresh every second with the same numbers).
 	local structural = not running
@@ -967,6 +989,9 @@ local function interceptFilter(player: Player, amount: number, source: string, a
 	local entity = playerEntity(player)
 	if not entity then
 		return amount
+	end
+	if StatusEffectService.Has(entity, "invuln") or StatusEffectService.Has(entity, "respawnShield") then
+		return amount -- an immune target's own filter zeroes the blow: nothing to take over
 	end
 	local list = active(entity, "intercept")
 	if #list == 0 then

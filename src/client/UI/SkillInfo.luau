@@ -208,7 +208,8 @@ function SkillInfo.costLine(use: any, skill: SkillData.SkillDef, shownRank: numb
 		table.insert(parts, Text.get(use, "skills.castTime", { castTime = Skills.roundArg(def.castTime :: number) }))
 	end
 
-	if def.delivery then
+	-- S64: the kind of blow only where it means something (the skill deals damage, Skills.deliveryRule)
+	if def.delivery and Skills.deliveryRule(def) ~= nil then
 		table.insert(parts, Text.get(use, `skills.delivery.{def.delivery}`))
 	end
 	if def.range then

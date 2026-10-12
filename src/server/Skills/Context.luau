@@ -643,9 +643,9 @@ function Context.new(
 				consumeShot = opts.consumeShot ~= false,
 				skill = if opts.plain then nil else skill.id,
 				-- S63 (STATY 5): area skills roll on-hit effects with a share per target; secondary hits (splash,
-				-- ground pulses, the lightning arc, the second pierce target) roll none.
+				-- ground pulses, the lightning arc, the second pierce target, Storm Arrow's splash, split impacts) roll none.
 				area = Traits.isAreaSkill(skill.type),
-				noProc = opts.plain == true or opts.noAdaptive == true or opts.noProc == true,
+				noProc = opts.plain == true or opts.noAdaptive == true or opts.noProc == true or opts.secondary == true,
 				-- S64 (STATY 6): splashes and pulses keep the skill's kind of blow (protection in PvP).
 				delivery = skill.delivery,
 			})

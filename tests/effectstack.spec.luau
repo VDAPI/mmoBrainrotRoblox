@@ -269,6 +269,17 @@ T.describe("EffectStack: stacks and publication (S63)", function()
 		T.expect(EffectStack.restack(old, spec(2.6, nil)).nextTick).toBeNil()
 	end)
 
+	T.it("keepLonger never ends a running effect sooner", function()
+		local old: EffectStack.Stack = { stacks = 1, value = 6, expiresAt = 3 }
+		local function spec(now: number, duration: number, keep: boolean?): EffectStack.StackSpec
+			return { unit = 6, duration = duration, now = now, tickInterval = 1, keepLonger = keep }
+		end
+		T.expect(EffectStack.restack(old, spec(0.2, 2, true)).expiresAt).toBe(3)
+		T.expect(EffectStack.restack(old, spec(0.2, 2)).expiresAt).toBeNear(2.2)
+		T.expect(EffectStack.restack(old, spec(2, 2, true)).expiresAt).toBe(4)
+		T.expect(EffectStack.restack(old, spec(5, 2, true)).expiresAt).toBe(7)
+	end)
+
 	T.it("publishes a refresh at most once per interval", function()
 		T.expect(EffectStack.publishDue(true, 0.5, 1, 1)).toBe(true)
 		T.expect(EffectStack.publishDue(false, 0.5, 1, 1)).toBe(false)

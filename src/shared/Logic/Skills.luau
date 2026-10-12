@@ -597,6 +597,41 @@ function Skills.beamTickPct(dmg: number, growth: number, n: number): number
 	return dmg * (1 + growth / 100 * (n - 1))
 end
 
+-- S64 (STATY 6): types whose damage is a ranged / melee blow. S74: a shout strikes around the caster like circleSelf;
+-- S77: the Falcon (companion) strikes from the air like a trap; S80: a beam is ranged.
+local RANGED_TYPES: { [string]: boolean } = table.freeze({
+	projectile = true,
+	chain = true,
+	circleTarget = true,
+	line = true,
+	trap = true,
+	companion = true,
+	beam = true,
+} :: { [string]: boolean })
+local MELEE_TYPES: { [string]: boolean } =
+	table.freeze({ charge = true, circleSelf = true, shout = true } :: { [string]: boolean })
+
+-- S64 (STATY 6): the kind of blow the rule gives a skill that deals damage; nil for the rest (buffs, heals, blinks,
+-- a shout without values.dmg...: any value, data.spec still requires one). The skill window shows the label only
+-- where this is not nil.
+function Skills.deliveryRule(def: SkillDef): ("melee" | "ranged")?
+	local kind = def.type
+	if kind == "shout" and (def.values == nil or def.values.dmg == nil) then
+		return nil
+	elseif RANGED_TYPES[kind] then
+		return "ranged"
+	elseif MELEE_TYPES[kind] then
+		return "melee"
+	end
+	local reach = Combat.meleeRange + Combat.rangeTolerance
+	if kind == "target" then
+		return if (def.range or 0) <= reach then "melee" else "ranged"
+	elseif kind == "cone" then
+		return if (def.radius or 0) <= reach then "melee" else "ranged"
+	end
+	return nil
+end
+
 -- S64 (STATY 2C, owner answer 26): item cooldown reduction, capped by Combat.cdrCap.
 function Skills.cooldownReduction(total: number): number
 	return math.clamp(total, 0, Combat.cdrCap)

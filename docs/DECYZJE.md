@@ -1719,3 +1719,17 @@
   klas pojawią się wkrótce” (wszystkie klasy mają ścieżki od S81).
 - Przegląd S54–S59: panel szczegółów na PC pokazuje powody wszystkich nieaktywnych przycisków (` · `), a każdy
   nieaktywny przycisk ma swój powód w podpowiedzi (S59 zasada 6).
+- Przegląd S60–S65: powrót bossa po smyczy (pełne HP, czysta lista obrażeń) zeruje też leczenie, tarcze i przejęcia
+  podsumowania walki; w czasie powrotu nic się nie liczy.
+- Przegląd S60–S65: przejęcie Strażnika (S61) nie działa, gdy cel ma `invuln` / `respawnShield`; cios i tak nie
+  zrobiłby mu nic, więc strażnik nic nie bierze.
+- Przegląd S60–S65: każde trafienie `secondary` jest `noProc` (rozprysk Burzowej Strzały, pęknięcia `split` meteoru),
+  a okrzyk z obrażeniami (`shout`) to umiejętność obszarowa (1/3 szansy efektów, `Traits.AREA_TYPES`).
+- Przegląd S60–S65: ikona efektu kategorii `value` z podziałem albo limitem (pancerz, osłabienie, spowolnienie ataku,
+  pech) pokazuje `CategoryValue`, czyli liczbę, którą czyta walka (PvP: bez osobnego odczytu `PvpArmorBreak`).
+- Przegląd S60–S65: Przemarznięcie odświeża się z `keepLonger` (`EffectStack.restack`): krótsze spowolnienie lodu nie
+  skraca go, gdy trwa dłuższe.
+- Przegląd S60–S65: serwer zapisuje `ServerWalkSpeed` na Humanoidzie; klient po blokadzie ruchu umiejętności wraca do
+  tej wartości, a nie porównuje `WalkSpeed` z blokadą (ogłuszenie 0 = blokada 0).
+- Przegląd S60–S65: etykieta Wręcz / Z dystansu w oknie umiejętności tylko przy umiejętnościach z obrażeniami
+  (`Skills.deliveryRule`, ta sama reguła co `data.spec`; okrzyk bez `dmg` nie ma reguły).

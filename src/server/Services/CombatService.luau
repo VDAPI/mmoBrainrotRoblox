@@ -1422,6 +1422,12 @@ local function pollSeal(player: Player, now: number)
 	state.seal = seal
 	if seal.lit ~= wasLit then
 		showSeal(player, if seal.lit then value else nil)
+	elseif seal.lit then
+		-- The marker expired (SEAL_MARKER) while the seal stays lit: show it again.
+		local entity = EntityService.GetPlayerEntity(player)
+		if entity and not StatusEffectService.Has(entity, "runeSeal") then
+			showSeal(player, value)
+		end
 	end
 end
 
@@ -1963,6 +1969,7 @@ function CombatService.Init(registry)
 		Entity = EntityService,
 		Combat = CombatService,
 		Pvp = PvpService,
+		Resource = ResourceService,
 	}
 	-- S65: every knockback and pull breaks the Runic Seal of a moved player.
 	Push.OnMoved(function(entity: any)

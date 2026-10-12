@@ -77,8 +77,13 @@ local function aurasOf(player: Player): { Paths.Aura }
 	local cached = nodeAuras[player]
 	if cached == nil then
 		local character: Types.CharacterData? = PlayerStateService.GetCharacter(player)
-		cached = if character then Paths.auras(character, EquipmentService.WeaponTypes(player)) else {}
-		nodeAuras[player] = cached
+		if character then
+			cached = Paths.auras(character, EquipmentService.WeaponTypes(player))
+			nodeAuras[player] = cached
+		else
+			-- Loading or on character select: nothing to cache yet (the next character must read its own nodes).
+			cached = {}
+		end
 	end
 	local extra = extras[player]
 	if extra == nil or next(extra) == nil then
@@ -384,6 +389,9 @@ function PartyAuraService.Start()
 	end
 	CharacterService.CharacterLeaving:Connect(leave)
 	Players.PlayerRemoving:Connect(leave)
+	CharacterService.CharacterEntered:Connect(function(player: Player)
+		forget(player)
+	end)
 	-- S74 (ROZWOJ 10.5): the banner falls at once when its owner dies
 	ResourceService.Died:Connect(function(player: Player)
 		PartyAuraService.RemoveZonesOf(player)

@@ -82,12 +82,19 @@ local function applyWalkSpeed(player: Player)
 	local model = player.Character
 	local humanoid = model and model:FindFirstChildOfClass("Humanoid")
 	local override = speedOverride[player]
+	local speed: number? = nil
 	if humanoid and override then
-		humanoid.WalkSpeed = override
+		speed = override
 	elseif result and humanoid then
 		local sprint = sprinting[player] == true and humanoid.Health > 0
 		local factor = if speedFactor then speedFactor(player) else 1
-		humanoid.WalkSpeed = result.walkSpeed * (if sprint then Config.SprintMultiplier else 1) * factor
+		speed = result.walkSpeed * (if sprint then Config.SprintMultiplier else 1) * factor
+	end
+	if humanoid and speed then
+		humanoid.WalkSpeed = speed
+		-- The client restores this after its own movement lock (VfxController): a server write equal to the locked
+		-- value (0 under a stun) does not replicate as a change, so comparing WalkSpeed cannot tell it apart.
+		humanoid:SetAttribute("ServerWalkSpeed", speed)
 	end
 end
 

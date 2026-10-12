@@ -4190,3 +4190,27 @@ Poprawki z przeglądu kodu S54–S59:
 Pliki: `src/shared/{Logic/Paths,Net/Definitions,Data/Localization/{pl,en}}`, `src/server/Services/StatService`,
 `src/client/{Controllers/VfxController,UI/Screens/CharacterWindow/StatAllocator,UI/Screens/SkillsWindow/{init,BarPicker}}`,
 `tests/paths.spec`, `wiki/src/i18n/{pl,en}.ts`, `docs/{DECYZJE,SESJE}.md`.
+
+### Przegląd S60–S65
+
+Poprawki z przeglądu kodu S60–S65:
+- Podsumowanie walki z bossem: powrót bossa po smyczy zeruje leczenie, tarcze i przejęcia, w czasie powrotu nic się
+  nie liczy (`DungeonService.step`, `fightOf`).
+- Aury węzłów po wejściu postacią: `PartyAuraService.aurasOf` nie zapamiętuje pustej listy bez postaci, a
+  `CharacterEntered` czyści pamięć (Osłona Wojownika działała dopiero po zmianie węzła / broni).
+- Przejęcie (S61) pomija cel z `invuln` / `respawnShield`.
+- Blokada ruchu umiejętności nie oddaje chodu w czasie ogłuszenia / unieruchomienia: atrybut `ServerWalkSpeed`
+  (`StatService.applyWalkSpeed`), klient wraca do niego po blokadzie i w `releaseLock`.
+- Ikona przełamania pancerza, osłabienia, spowolnienia ataku i pecha pokazuje wartość kategorii (`CategoryValue`).
+- Rozprysk Burzowej Strzały i pęknięcia meteoru nie wywołują efektów przedmiotów (`secondary` → `noProc`); okrzyk z
+  obrażeniami (Rozkaz Natarcia) losuje je z 1/3 szansy (`shout` w `Traits.AREA_TYPES`).
+- Etykieta Wręcz / Z dystansu tylko przy umiejętnościach z obrażeniami (`Skills.deliveryRule`, wspólna z `data.spec`).
+- Łuk Iskry żywiołów nie wybiera martwego gracza (`Elements.Services.Resource`).
+- Przemarznięcie nie skraca się od krótszego spowolnienia lodu (`keepLonger` w `ApplyOptions` i `EffectStack.restack`).
+- Znacznik Pieczęci Run wraca, gdy wygasł, a pieczęć dalej świeci (`pollSeal`).
+- Testy: `traits.spec` (pułapka i okrzyk obszarowe), `effectstack.spec` (`keepLonger`), `data.spec` (reguła z
+  `Skills.deliveryRule`). Wiki: `lune run tools/wikidump.luau --check` bez zmian danych.
+
+Pliki: `src/shared/Logic/{Skills,Traits,EffectStack}`, `src/server/Services/{DungeonService,PartyAuraService,
+StatusEffectService,StatService,CombatService}`, `src/server/Skills/{Context,Elements}`,
+`src/client/{Controllers/VfxController,UI/SkillInfo}`, `tests/{traits,effectstack,data}.spec`, `docs/{DECYZJE,SESJE}.md`.
