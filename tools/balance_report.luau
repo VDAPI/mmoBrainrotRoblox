@@ -6,6 +6,9 @@
 --                    "### S<n>" of docs/SESJE.md + 1. Balance sessions S83-S94 start with it.
 --   fixture [S<n> [note]]  writes tests/fixtures/balance_1_20.json (the 1-20 reference of tests/balance1_20.spec);
 --                    the session as for snapshot, the note optional.
+--   --fixture-items [note]  (S84, also without "--") writes tests/fixtures/balance_items.json = { meta, values,
+--                    dataHash } of BalanceTables.tablesItems() (tests/balance.spec "Balance 20-100: items, loot,
+--                    defence (S84)"); no commit or date in it, so a second run gives the same bytes.
 -- The report starts with the ledger ("Zmiany danych"): a changed number of tools/balance_reasons.luau's modules
 -- without a reason marks the row and exits 1 after writing the file (like balance.spec).
 
@@ -67,6 +70,22 @@ if mode == "fixture" then
 	}
 	fs.writeFile(BalanceTables.FIXTURE_PATH, serde.encode("json", file, true))
 	print(`wrote {BalanceTables.FIXTURE_PATH}`)
+	return
+end
+
+if mode == "--fixture-items" or mode == "fixture-items" then
+	local file = {
+		meta = {
+			session = "S84",
+			tolerance = BalanceTables.FIXTURE_TOLERANCE,
+			note = process.args[2]
+				or "S84: model przedmiotów, łupu i obrony potworów 20–100 (tests/BalanceTables.tablesItems)",
+		},
+		values = BalanceTables.values(BalanceTables.tablesItems()),
+		dataHash = BalanceTables.itemDataHash(),
+	}
+	fs.writeFile(BalanceTables.ITEMS_FIXTURE_PATH, serde.encode("json", file, true))
+	print(`wrote {BalanceTables.ITEMS_FIXTURE_PATH}`)
 	return
 end
 
@@ -164,6 +183,11 @@ local function renderTable(t: BalanceTables.Table, level: string)
 			if old ~= nil and fmtValue(old, c.fmt) ~= now then
 				text = `{fmtValue(old, c.fmt)} → {now}`
 			end
+			-- S84: a value outside the cell's band in bold
+			local v = c.value
+			if v == v and ((c.low ~= nil and v < c.low) or (c.high ~= nil and v > c.high)) then
+				text = `**{text}**`
+			end
 			table.insert(cells, text)
 		end
 		table.insert(rows, cells)
@@ -188,10 +212,16 @@ else
 	add(`> „a → b” = stara migawka w płaskim formacie (sprzed S83, bez księgi) → teraz.`)
 end
 add("> Tryby: `lune run tools/balance_report.luau snapshot [S<n>]` (nowa migawka „przed”: tabele i zrzut danych")
-add("> księgi), `lune run tools/balance_report.luau fixture [S<n>]` (fixture 1–20 dla `tests/balance1_20.spec.luau`).")
+add(
+	"> księgi), `lune run tools/balance_report.luau fixture [S<n>]` (fixture 1–20 dla `tests/balance1_20.spec.luau`)."
+)
 add()
-add("Założenia: ekwipunek „na poziomie” = broń + druga ręka + 4 części zbroi + naszyjnik + 2 pierścienie + talizman,")
-add("Zwykłe, ilvl = poziom − 2, oczekiwane bonusy; wszystkie punkty w główną statystykę; zwykłe ataki + 1–2 umiejętności")
+add(
+	"Założenia: ekwipunek „na poziomie” = broń + druga ręka + 4 części zbroi + naszyjnik + 2 pierścienie + talizman,"
+)
+add(
+	"Zwykłe, ilvl = poziom − 2, oczekiwane bonusy; wszystkie punkty w główną statystykę; zwykłe ataki + 1–2 umiejętności"
+)
 add("(×1,2 obrażeń); potwór uderza od razu, potem co swój interwał; regeneracja w walce 0,1%/s.")
 add(`Stałe walki: redukcja = def / (def + {Combat.reductionPerLevel}·poziom atakującego + {Combat.reductionBase}).`)
 add()
@@ -261,7 +291,9 @@ end
 if #B.skippedFunctions > 0 then
 	add("### Księga: pominięte funkcje")
 	add()
-	add("Funkcje modułów księgi, które dla poziomów 1, 20, 45, 70, 100 nie zwracają liczby ani tabeli (np. `get(id)`):")
+	add(
+		"Funkcje modułów księgi, które dla poziomów 1, 20, 45, 70, 100 nie zwracają liczby ani tabeli (np. `get(id)`):"
+	)
 	add(`{table.concat(B.skippedFunctions, ", ")}.`)
 	add()
 end
@@ -270,8 +302,12 @@ end
 
 add("## Własność pasm umiejętności")
 add()
-add("Ranga należy do pasma swojego poziomu `Skills.rankLevel` (≤ 20 → strojenie 1–20 w S91; 21–45, 46–70, 71–100 →")
-add("sesje regionów). Sesja zmienia wartość tylko na rangach swojego pasma (rangę 1 przy odblokowaniu w paśmie, rangę")
+add(
+	"Ranga należy do pasma swojego poziomu `Skills.rankLevel` (≤ 20 → strojenie 1–20 w S91; 21–45, 46–70, 71–100 →"
+)
+add(
+	"sesje regionów). Sesja zmienia wartość tylko na rangach swojego pasma (rangę 1 przy odblokowaniu w paśmie, rangę"
+)
 add("maks. gdy osiągana jest w paśmie, resztę węzłem `Data/SkillCurves`).")
 add()
 for _, classId in B.CLASSES do
@@ -357,7 +393,9 @@ local function globalFor(lo: number, hi: number): { B.TargetRow }
 	for _, row in globalRows do
 		local L = row.level
 		local inside
-		if row.id == "G13.band" then
+		if row.group == "G7" or row.group == "G8" or row.group == "G9" then
+			inside = false -- S84: in the item sections
+		elseif row.id == "G13.band" then
 			inside = L == lo
 		elseif row.group == "G13" then
 			inside = lo == 20
@@ -424,6 +462,42 @@ for i, band in B.BANDS do
 	tableOut({ "cel", "wartość", "próg", "wynik", "kto asertuje" }, cele)
 end
 
+-- Items, loot and monster defence (S84) -------------------------------------------------------------------------
+
+do
+	local items: { B.TargetRow } = {}
+	for _, row in globalRows do
+		if row.group == "G7" or row.group == "G8" or row.group == "G9" then
+			table.insert(items, row)
+		end
+	end
+	for _, section in BalanceTables.ITEM_BANDS do
+		add(`## {section.title}`)
+		add()
+		add(section.intro)
+		add()
+		for _, t in byBand[section.band] or {} do
+			renderTable(t, "###")
+		end
+		if section.band == "S84-upgrades" then
+			local ok, all = countIn(items)
+			local out = {}
+			for _, row in items do
+				if not B.inBand(row) then
+					table.insert(out, row)
+				end
+			end
+			add("### Cele G7–G9 (S84, raport do S87)")
+			add()
+			add(
+				`{ok}/{all} w paśmie (G7: kolumna „z cechami”, G8: MIX „bez cech” i „z cechami”, G9: +1…+3 / dochód i +1…+9 z ochroną). Poza pasmem:`
+			)
+			add()
+			tableOut({ "cel", "wartość", "próg", "wynik", "kto asertuje" }, targetRows(out, "S87"))
+		end
+	end
+end
+
 -- Formulas ------------------------------------------------------------------------------------------------------
 
 add("## Wzory (stan obecny)")
@@ -456,12 +530,23 @@ for _, L in { 20, 45, 70, 100 } do
 	table.insert(curve, `{L}: {fmtValue(Config.PotionCooldown * LevelCurves.at("potionCooldown", L), "1")} s`)
 end
 add(
-	`- Mikstury (S54): odstęp \`Potions.interval\` = {Config.PotionCooldown} s × krzywa \`potionCooldown\` ({table.concat(curve, ", ")}).`
+	`- Mikstury (S54): odstęp \`Potions.interval\` = {Config.PotionCooldown} s × krzywa \`potionCooldown\` ({table.concat(
+		curve,
+		", "
+	)}).`
 )
-add("  Model łańcuchowy: regeneracja poza walką w przerwie, potem najtańsza dozwolona jakość (`level` ≤ poziom), której")
-add("  łyki mieszczą się w przerwie (pierwszy od razu), inaczej największa z czekaniem (łyki − mieszczące) × odstęp.")
-add("- Zadania 1–100 (S83): na swoim poziomie (główne + połowa pobocznych; bossowie w polu `boss`, w tempie tylko z")
-add("  `bosses`), bez rozkładania na pasmo; nadmiar EXP przechodzi na następny poziom. Tabele S32 1–20 zostają przy")
+add(
+	"  Model łańcuchowy: regeneracja poza walką w przerwie, potem najtańsza dozwolona jakość (`level` ≤ poziom), której"
+)
+add(
+	"  łyki mieszczą się w przerwie (pierwszy od razu), inaczej największa z czekaniem (łyki − mieszczące) × odstęp."
+)
+add(
+	"- Zadania 1–100 (S83): na swoim poziomie (główne + połowa pobocznych; bossowie w polu `boss`, w tempie tylko z"
+)
+add(
+	"  `bosses`), bez rozkładania na pasmo; nadmiar EXP przechodzi na następny poziom. Tabele S32 1–20 zostają przy"
+)
 add("  rozkładaniu według potrzebnego EXP (`Balance.questRewards`).")
 add(
 	`- Drużyna (S83): bije osobno na tym samym łowisku i dzieli zaliczenie, bez synergii; EXP/h członka = średnia solowych × (1 + min({Progression.varietyMax}, {Progression.varietyPerClass}·(klasy − 1))/100); \`floor\` z \`PartyLoot.splitExp\` pominięty.`

@@ -8565,9 +8565,9 @@
     "Stats:byId.skillDmg.order": 10
   },
   "meta": {
-    "commit": "1eef4ee",
+    "commit": "1c292d8",
     "date": "2026-10-12",
-    "session": "S83"
+    "session": "S84"
   },
   "tables": {
     "1 na 1 z potworem na poziomie gracza|10|Kapłan HP": 0.1156774216132393,

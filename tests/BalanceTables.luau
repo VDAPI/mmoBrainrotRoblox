@@ -5,6 +5,8 @@
 --
 --   tables1_20()           the S32 report tables of levels 1-20, in report order (band "1-20")
 --   tablesBand(lo, hi)     the S83 world model tables of a band 20-45 / 45-70 / 70-100 (levels lo, lo + 5, ..., hi)
+--   tablesItems()          S84: items, upgrades and materials, loot and luck, monster defence 20-100 (bands
+--                          "S84-items", "S84-upgrades", "S84-loot", "S84-defence"; tests/fixtures/balance_items.json)
 --   values(tables, fixtureOnly?)  flat map "title|label|column" -> number (NaN cells skipped: JSON stores them as
 --                          null); fixtureOnly skips tables and rows marked fixture = false
 --
@@ -28,7 +30,8 @@ local Spawns = require("../src/shared/Data/Spawns")
 
 local BalanceTables = {}
 
-export type Cell = { key: string, value: number, fmt: string }
+-- S84: low / high = the cell's target band (the report prints a value outside it in bold)
+export type Cell = { key: string, value: number, fmt: string, low: number?, high: number? }
 export type Row = { label: string, cells: { Cell }, fixture: boolean? }
 export type Table = {
 	title: string,
@@ -63,7 +66,13 @@ function BalanceTables.builder(band: string): Builder
 			local out: { Cell } = {}
 			for i, c in cells do
 				local key = `{t.title}|{label}|{t.columns[i + 1] or i}`
-				table.insert(out, { key = key, value = c[1] :: number, fmt = (c[2] or "i") :: string })
+				table.insert(out, {
+					key = key,
+					value = c[1] :: number,
+					fmt = (c[2] or "i") :: string,
+					low = c[3] :: number?,
+					high = c[4] :: number?,
+				})
 			end
 			table.insert(t.rows, { label = label, cells = out, fixture = fixture })
 		end,
@@ -1112,7 +1121,7 @@ function BalanceTables.tablesBand(lo: number, hi: number): { Table }
 	return tb.tables
 end
 
--- Every table of the report 1-100 (1-20, the Meadows' region tables, the three bands).
+-- Every table of the report 1-100 (1-20, the Meadows' region tables, the three bands, the S84 item tables).
 function BalanceTables.tablesAll(): { Table }
 	local out = BalanceTables.tables1_20()
 	for _, t in BalanceTables.regionTables("meadows", "1-20") do
@@ -1124,6 +1133,9 @@ function BalanceTables.tablesAll(): { Table }
 				table.insert(out, t)
 			end
 		end
+	end
+	for _, t in BalanceTables.tablesItems() do
+		table.insert(out, t)
 	end
 	return out
 end
@@ -1197,6 +1209,779 @@ function BalanceTables.fixtureDiff(allowed: { [string]: any }?, tolerance: numbe
 		missing = missing,
 		added = added,
 		unexpected = unexpected,
+	}
+end
+
+-- Items, loot and monster defence 20-100 (S84) ------------------------------------------------------------------
+
+local RARITY_PL = { "Zwykły", "Unikatowy", "Heroiczny", "Legendarny", "Mityczny" }
+BalanceTables.RARITY_PL = RARITY_PL
+-- Section titles of the four S84 bands (the report prints them after the S83 bands).
+BalanceTables.ITEM_BANDS = {
+	{
+		band = "S84-items",
+		title = "Przedmioty 20–100 (S84)",
+		intro = "Zysk mocy z rzadkości (G7), parytet broni dwuręcznej (G8), wartość cech broni i ranking broni Łowcy w konwencji S32 (pełny zestaw, ilvl = poziom − 2, oczekiwane linie), z cechami jako wartościami oczekiwanymi w sytuacjach ze STATY 14 (`Balance.SITUATIONS`); G7 asertuje S87 na kolumnie „z cechami”, G8 S87 na „bez cech” (z cechami nie ponad pasmo), wartości cech S88.",
+	},
+	{
+		band = "S84-upgrades",
+		title = "Ulepszenia i materiały (S84)",
+		intro = "Koszt ulepszeń z `Upgrade.cost` i `Upgrade.chance` wobec dochodu poziomu z modelu S83 (G9, asertuje S87: +1…+3 / dochód i +1…+9 z ochroną samym złotem), popyt i podaż materiałów, godziny na +9 i Rdzenie Legendy (raport dla S87).",
+	},
+	{
+		band = "S84-loot",
+		title = "Łup i szczęście (S84)",
+		intro = "Drop na godzinę przez `AreaRates.itemsPerKill`, `Logic/Luck` i udział przedmiotów dla klasy (`Balance.usableShare`, odwzorowanie `Loot.pickItem`) w tempie S83, z profilami szczęścia K0–K3 z Fortuną i bez (D5: K0 bez Fortuny, asertują S92–S94 przez `TUNED`; szczęście S88), boss z Fortuną, luki poziomu przedmiotów i trwałość.",
+	},
+	{
+		band = "S84-defence",
+		title = "Rodziny i obrona potworów (S84)",
+		intro = "Udział pancerza i odporności magicznej (`Damage.reduction`) potworów z cechami obrony rodzin (`Data/Families`) i bossów, walka 1 na 1 gracza ze zwykłym zestawem, wpływ uniku i kompensaty życia (S66) oraz zysk z Niszczenia pancerza, Bełtu i linii przebicia (asertuje S88).",
+	},
+}
+
+-- The S84 tables (bands "S84-items", "S84-upgrades", "S84-loot", "S84-defence"), in report order.
+function BalanceTables.tablesItems(): { Table }
+	local out: { Table } = {}
+	local function band(name: string): (any, any)
+		local tb = BalanceTables.builder(name)
+		return tb, function()
+			for _, t in tb.tables do
+				table.insert(out, t)
+			end
+		end
+	end
+
+	-- Items ------------------------------------------------------------------------------------------------------
+	local tb, flush = band("S84-items")
+	for _, c in B.CLASSES do
+		tb.section(
+			`G7: zysk mocy z rzadkości, {CLASS_PL[c]}`,
+			{ "poziom · rzadkość", "S32", "bez cech", "z cechami", "sama baza", "same linie" },
+			"Pełny domyślny zestaw rzadkości R wobec Zwykłego, ten sam ilvl. S32: `power` bez opcji; bez cech / z cechami: model cech w sytuacji `single` (wszystkie cechy wyłączone / jak w grze); sama baza: bez losowych linii; same linie: z cechami − sama baza. Cel G7: Unikatowy 8–15%, Heroiczny 15–25%, Legendarny 25–40% (Łowca do 43%), Mityczny ponad Legendarny tej klasy i poziomu."
+		)
+		for _, L in B.GLOBAL_LEVELS do
+			for rarity = 2, 5 do
+				local g = B.rarityGainAt(c, L, rarity)
+				local low, high = B.g7Band(c, L, rarity)
+				tb.row(`{L} · {RARITY_PL[rarity]}`, {
+					{ g.s32, "%", low, high },
+					{ g.noTraits, "%", low, high },
+					{ g.traits, "%", low, high },
+					{ g.baseOnly, "%" },
+					{ g.linesOnly, "%" },
+				})
+			end
+		end
+	end
+	for _, pair in B.G8_PAIRS do
+		tb.section(
+			`G8: {CLASS_PL[pair.classId]} {pair.weapon} wobec zestawu domyślnego`,
+			{
+				"rzadkość · ulepszenie · poziom",
+				"S32",
+				"bez cech (MIX)",
+				"z cechami (MIX)",
+				"single",
+				"group",
+				"elite",
+				"boss",
+				"najgorsza",
+			},
+			"moc² zestawu z bronią dwuręczną (bez drugiej ręki) / moc² zestawu domyślnego klasy, cały zestaw tej samej rzadkości i ulepszenia. S32: `power` bez opcji (jak `weaponScore` i diagnoza); MIX: `Balance.powerMix` (group 0,5, elite 0,3, boss 0,2); sytuacje i najgorsza z nich z cechami. Cel G8: 0,97–1,035 (Kostur Święty na +9 do 1,06)."
+		)
+		for _, rarity in B.GEAR_RARITIES do
+			for _, up in { 0, 9 } do
+				for _, L in B.ITEM_LEVELS do
+					local low, high = B.g8Band(pair.weapon, up)
+					local nt = B.twoHandedParity(pair.classId, L, pair.weapon, rarity, up, { traits = false })
+					local t = B.twoHandedParity(pair.classId, L, pair.weapon, rarity, up)
+					tb.row(`{RARITY_PL[rarity]} · +{up} · {L}`, {
+						{ B.twoHandedS32(pair.classId, L, pair.weapon, rarity, up), "2", low, high },
+						{ nt.mix, "2", low, high },
+						{ t.mix, "2", low, high },
+						{ t.single, "2" },
+						{ t.group, "2" },
+						{ t.elite, "2" },
+						{ t.boss, "2" },
+						{ t.worst, "2" },
+					})
+				end
+			end
+		end
+	end
+	tb.section(
+		"G8: broń dwuręczna wobec zestawu jednoręcznego tej samej ścieżki (raport)",
+		{ "broń · zestaw ścieżki · rzadkość · poziom", "bez cech (MIX)", "z cechami (MIX)" },
+		"Dla S89–S90: moc² w MIX wobec jednoręcznej z drugą ręką tej samej ścieżki (Niszczyciel: różdżka + kula, Arkanista: różdżka + księga, Uzdrowiciel: berło + tarcza)."
+	)
+	for _, pair in B.G8_PAIRS do
+		local path = pair.path
+		if path then
+			for _, spec in { { 1, 0 }, { 5, 9 } } do
+				for _, L in B.ITEM_LEVELS do
+					local rarity, up = spec[1], spec[2]
+					local nt =
+						B.twoHandedParity(pair.classId, L, pair.weapon, rarity, up, { traits = false, ref = path })
+					local t = B.twoHandedParity(pair.classId, L, pair.weapon, rarity, up, { ref = path })
+					tb.row(
+						`{pair.weapon} · {path.weapon} + {path.offhand} · {RARITY_PL[rarity]} +{up} · {L}`,
+						{ { nt.mix, "2" }, { t.mix, "2" } }
+					)
+				end
+			end
+		end
+	end
+	local hunterColumns = { "rzadkość · poziom" }
+	for _, w in B.HUNTER_WEAPONS do
+		table.insert(hunterColumns, w)
+	end
+	tb.section(
+		"Bronie Łowcy z kołczanem (MIX, moc² / Łuk)",
+		hunterColumns,
+		"Łowca nie ma broni dwuręcznej (poza G8): ranking pięciu broni z kołczanem z cechami w MIX wobec Łuku, cały zestaw tej samej rzadkości i ulepszenia (dla S90)."
+	)
+	for _, spec in { { 1, 0 }, { 5, 9 } } do
+		for _, L in B.ITEM_LEVELS do
+			local rarity, up = spec[1], spec[2]
+			local bow = B.powerMix(B.itemPlayer("Hunter", L, { weapon = "bow", rarity = rarity, up = up }))
+			local cells: { { any } } = {}
+			for _, w in B.HUNTER_WEAPONS do
+				local p = B.itemPlayer("Hunter", L, { weapon = w, rarity = rarity, up = up })
+				table.insert(cells, { (B.powerMix(p) / bow) ^ 2, "2" })
+			end
+			tb.row(`{RARITY_PL[rarity]} +{up} · {L}`, cells)
+		end
+	end
+	local traitColumns = { "cecha · poziom (klasa, zestaw)" }
+	for _, name in B.SITUATION_LIST do
+		table.insert(traitColumns, name)
+	end
+	table.insert(traitColumns, "MIX")
+	table.insert(traitColumns, "zestaw bez cech (MIX)")
+	table.insert(traitColumns, "STATY 14")
+	for _, spec in { { 1, 0 }, { 5, 9 } } do
+		local rarity, up = spec[1], spec[2]
+		tb.section(
+			`Cechy broni: {RARITY_PL[rarity]} +{up}`,
+			traitColumns,
+			"Wartość cechy = M(z cechą) / M(bez niej) − 1 (`Balance.traitValue`; druga cecha zestawu zostaje): moc² w sytuacjach mocy i w MIX, EHP w `tank`, utrata HP na zabicie w `solo` (bez / z − 1); puste = sytuacja spoza wiersza STATY 14. Zestaw: klasa i ścieżka z kolumny STATY 3. „Zestaw bez cech”: obie cechy zestawu razem (wobec `NO_TRAITS`). Iskra i Moc żywiołu: średnia żywiołów i każdy osobno. STATY 14: szacunek startowy z `Data/ItemWeights` (bez węzłów)."
+		)
+		for _, L in B.ITEM_LEVELS do
+			for _, r in B.traitTable(L, rarity, up) do
+				local cells: { { any } } = {}
+				for _, name in B.SITUATION_LIST do
+					table.insert(cells, { r.values[name], "%" })
+				end
+				table.insert(cells, { r.values.mix, "%" })
+				table.insert(cells, { r.setNoTraits, "%" })
+				table.insert(cells, { r.staty, "%" })
+				local element = if r.element then ` ({r.element})` else ""
+				tb.row(`{r.traitId}{element} · {L} ({CLASS_PL[r.classId]}, {r.set})`, cells)
+			end
+		end
+	end
+	local behinds = table.clone(B.SITUATIONS.behindReport)
+	table.insert(behinds, 2, B.SITUATIONS.behindShare)
+	local runColumns = { "rzadkość · poziom" }
+	for _, situation in { "group", "boss" } do
+		for _, behind in behinds do
+			table.insert(runColumns, `{situation} {behind}`)
+		end
+	end
+	tb.section(
+		"Przeszycie: udział trafień z wrogiem w pasie za celem",
+		runColumns,
+		"Wartość Przeszycia (`Balance.runThroughValue`, moc² jak w tabeli cech) przy `behindShare` 0,15, 0,3 (model) i 0,5: wymiary pasa czekają na pomiar właściciela. Na bossie udział mnoży się przez czas fal tarczy."
+	)
+	for _, spec in { { 1, 0 }, { 5, 9 } } do
+		local rarity, up = spec[1], spec[2]
+		for _, L in B.ITEM_LEVELS do
+			local cells: { { any } } = {}
+			for _, situation in { "group", "boss" } do
+				for _, behind in behinds do
+					table.insert(cells, { B.runThroughValue(L, rarity, up, behind, situation), "%" })
+				end
+			end
+			tb.row(`{RARITY_PL[rarity]} +{up} · {L}`, cells)
+		end
+	end
+	flush()
+
+	-- Upgrades and materials ------------------------------------------------------------------------------------
+	tb, flush = band("S84-upgrades")
+	tb.section(
+		"G9: ulepszenia broni wobec dochodu poziomu",
+		{
+			"klasa · poziom",
+			"dochód poziomu",
+			"+1…+3 / dochód",
+			"+1…+6 / dochód",
+			"+1…+9 z ochroną (poziomy)",
+			"+1…+9 bez ochrony (poziomy)",
+			"zestaw +9 bez ochrony (poziomy)",
+			"goldEq +9 z ochroną (poziomy)",
+			"zwoje +9",
+		},
+		"Broń domyślna klasy z ilvl poziom − 2, Zwykła. Dochód poziomu (`Balance.levelIncome`) = (złoto z zabić + sprzedaż dropu na godzinę, `economyAt`) × godziny poziomu, z EXP i złotem zadań pasma rozłożonymi na jego poziomy według potrzebnego EXP (jak dochód S32 i diagnoza; zadania na swoim poziomie dają poziomy bez expienia). Złoto: porażka powtarza krok (jak `upgradeGold`); bez ochrony: łańcuch Markowa z cofnięciem o poziom; goldEq: złoto + zwoje + materiały (pył ze sklepu, odłamek i kryształ z przetopienia). Cel G9: +1…+3 0,45–1,05; +1…+9 z ochroną 12–25 poziomów."
+	)
+	for _, L in B.GLOBAL_LEVELS do
+		for _, u in B.upgradeVsIncome(L) do
+			tb.row(`{CLASS_PL[u.classId]} · {L}`, {
+				{ u.income, "i" },
+				{ u.up3, "2", 0.45, 1.05 },
+				{ u.up6, "2" },
+				{ u.up9, "1", 12, 25 },
+				{ u.up9Unprotected, "1" },
+				{ u.set9Unprotected, "i" },
+				{ u.goldEq9, "1" },
+				{ u.scrolls9, "1" },
+			})
+		end
+	end
+	tb.section(
+		"Koszt +1…+9 jednej broni (Legendarnej, ilvl = poziom − 2)",
+		{
+			"poziom · wariant",
+			"złoto",
+			"próby",
+			"pył",
+			"odłamki",
+			"kryształy",
+			"Rdzenie",
+			"Rdzenie od +8 (S87)",
+			"zwoje",
+			"złoto zwojów",
+			"złoto materiałów",
+			"goldEq",
+			"udział materiałów",
+		},
+		"`Balance.upgradePlan`. Rdzeń Legendy na każdą próbę od progu `Upgrade.cost` (dziś +7); „od +8” podmienia tylko wynik `Upgrade.cost` w modelu (bez zmiany danych). Zwój na każdą próbę kroku z szansą poniżej 100% (`BlacksmithService.upgrade`). Udział materiałów = złoto materiałów / (złoto + złoto materiałów)."
+	)
+	for _, L in B.ITEM_LEVELS do
+		local ilvl = math.max(1, L - B.GEAR_GAP)
+		local item = B.makeItem(B.tierId("sword1h", ilvl), ilvl, 4, 0, {})
+		for _, protect in { true, false } do
+			local plan = B.upgradePlan(item, 9, protect)
+			local core8 = B.upgradePlan(item, 9, protect, { coreFrom = 8 })
+			tb.row(`{L} · {if protect then "z ochroną" else "bez ochrony"}`, {
+				{ plan.gold, "i" },
+				{ plan.attempts, "1" },
+				{ plan.materials.essence_dust or 0, "1" },
+				{ plan.materials.essence_shard or 0, "1" },
+				{ plan.materials.essence_crystal or 0, "1" },
+				{ plan.cores, "1" },
+				{ core8.cores, "1" },
+				{ plan.scrolls, "1" },
+				{ plan.scrollGold, "i" },
+				{ plan.materialGold, "i" },
+				{ plan.goldEq, "i" },
+				{ plan.materialGold / (plan.gold + plan.materialGold), "%" },
+			})
+		end
+	end
+	tb.section(
+		"Popyt na materiały (+6 i +9)",
+		{
+			"rzadkość · przedmioty · cel · wariant",
+			"pył",
+			"odłamki",
+			"kryształy",
+			"Rdzenie",
+			"zwoje",
+			"odłamki na zwoje",
+		},
+		"Z `Balance.upgradePlan` (materiały nie zależą od ilvl). Zestaw z jednoręczną: 10 przedmiotów, z dwuręczną: 9. Zwój ochrony z receptury `scroll_protection` (2 odłamki, 2 księżycowe płatki, 2000 złota)."
+	)
+	for _, need in B.materialDemand() do
+		tb.row(need.label, {
+			{ need.dust, "1" },
+			{ need.shards, "1" },
+			{ need.crystals, "1" },
+			{ need.cores, "1" },
+			{ need.scrolls, "1" },
+			{ need.scrollShards, "1" },
+		})
+	end
+	tb.section(
+		"Podaż materiałów (Wojownik)",
+		{ "poziom · źródło", "pył", "odłamki", "kryształy", "zwoje", "Rdzenie" },
+		"Wartości oczekiwane z tabel łupu (szansa × średnia ilość, jak `Loot.rollMonsterLoot`) w tempie S83: expienie (`paceAt`, materiały zabić i rozbiórka wszystkich przedmiotów), Elity w jaskini poziomu (`elitesPerHour`), Elita II na zabicie i na godzinę jednego odrodzenia (`AreaSpawns.elite2Respawn`), boss regionu (`Config.Boss.dailyRuns` × 7 zabić, same materiały)."
+	)
+	local supplies: { [number]: any } = {}
+	for _, L in B.ITEM_LEVELS do
+		local s = B.materialSupply("Warrior", L)
+		supplies[L] = s
+		for _, source in
+			{
+				{ "expienie / h", s.normal, 1 },
+				{ "Elity / h", s.elite, 1 },
+				{ "Elita II / zabicie", s.elite2, 1 },
+				{ "Elita II / h odrodzeń", s.elite2, s.elite2PerHour },
+				{ "boss / tydzień", s.bossWeek, 1 },
+			}
+		do
+			local t = source[2] :: { [string]: number }
+			local mul = source[3] :: number
+			tb.row(`{L} · {source[1]}`, {
+				{ (t.essence_dust or 0) * mul, "1" },
+				{ (t.essence_shard or 0) * mul, "2" },
+				{ (t.essence_crystal or 0) * mul, "2" },
+				{ (t.scroll_protection or 0) * mul, "2" },
+				{ (t.legend_core or 0) * mul, "2" },
+			})
+		end
+	end
+	tb.section(
+		"Godziny na +9 broni, Rdzenie i zwoje (Wojownik)",
+		{
+			"poziom",
+			"h expienia +9 z ochroną",
+			"h expienia +9 bez ochrony",
+			"h Elit +9 z ochroną",
+			"h Elit +9 bez ochrony",
+			"Rdzenie / tydzień (boss)",
+			"Rdzenie na Legendę +9 z ochroną",
+			"zwoje / Elita II",
+			"zwoje na +9 z ochroną",
+			"udział materiałów w goldEq +9 bez ochrony",
+		},
+		"Godziny: materiały +9 jednej broni (odłamki zwojów z receptury przy ochronie) z podaży źródła z przetopieniem `Data/Recipes` (10 pyłu → odłamek od 20., 8 odłamków → kryształ od 45.; poniżej 45. kryształy tylko z łupu; „–” = źródło nie daje potrzebnego materiału). Udział materiałów jak diagnoza (75% na ilvl 18, 5% na 98)."
+	)
+	local demand: { [string]: any } = {}
+	for _, need in B.materialDemand() do
+		demand[need.label] = need
+	end
+	for _, L in B.ITEM_LEVELS do
+		local s = supplies[L]
+		local prot = demand["legendary · broń · +9 · z ochroną"]
+		local unprot = demand["legendary · broń · +9 · bez ochrony"]
+		local ilvl = math.max(1, L - B.GEAR_GAP)
+		local item = B.makeItem(B.tierId("sword1h", ilvl), ilvl, 1, 0, {})
+		local plan = B.upgradePlan(item, 9, false)
+		tb.row(tostring(L), {
+			{ B.materialHours(prot, s.normal, L), "1" },
+			{ B.materialHours(unprot, s.normal, L), "1" },
+			{ B.materialHours(prot, s.elite, L), "1" },
+			{ B.materialHours(unprot, s.elite, L), "1" },
+			{ s.bossWeek.legend_core or 0, "2" },
+			{ prot.cores, "1" },
+			{ s.elite2.scroll_protection or 0, "2" },
+			{ prot.scrolls, "1" },
+			{ plan.materialGold / (plan.gold + plan.materialGold), "%" },
+		})
+	end
+	flush()
+
+	-- Loot and luck ---------------------------------------------------------------------------------------------
+	tb, flush = band("S84-loot")
+	tb.section(
+		"Profile szczęścia (Kapłan Fortuny: berło + relikwia)",
+		{
+			"profil · poziom",
+			"linie dropBonus",
+			"leg_dropBonus",
+			"błogosławieństwo",
+			"gildia",
+			"relikwia",
+			"osobiste (dropBonus)",
+			"Fortuna (monsterItem)",
+			"suma przed limitem",
+			"itemBonus",
+			"ucięte przez limit",
+		},
+		"`Balance.LUCK_PROFILES`; liczby z `Bonuses`, `Blessings`, `GuildSkills` i `ItemRoll.trait`. Fortuna = `Paths.luckOfNodes` węzłów szczęścia ścieżki Fortuny na randze maks. jako drugi `Member` z `luck`; `Luck.monster` przycina do `Data/Luck.monsterItemCap` (model niczego nie przycina sam). Cel (S88): K1 i K2 z Fortuną ≤ 100."
+	)
+	for _, profile in B.LUCK_PROFILES do
+		for _, L in { 25, 45, 70, 100 } do
+			local lp = B.luckProfile(profile.id, L)
+			local luck = B.monsterLuck(profile.id, L, "full")
+			tb.row(`{profile.id} ({profile.label}) · {L}`, {
+				{ lp.lines, "1" },
+				{ lp.legendary, "1" },
+				{ lp.blessing, "1" },
+				{ lp.guild, "1" },
+				{ lp.relic, "1" },
+				{ luck.personal, "1" },
+				{ luck.fortune, "1" },
+				{
+					luck.personal + luck.fortune,
+					"1",
+					nil,
+					if profile.id == "K1" or profile.id == "K2" then 100 else nil,
+				},
+				{ luck.itemBonus, "1" },
+				{ luck.personal + luck.fortune - luck.itemBonus, "1" },
+			})
+		end
+	end
+	tb.section(
+		"Pola szczęścia Fortuny (`Paths.luckOfNodes`)",
+		{
+			"wariant",
+			"monsterItem",
+			"elite2",
+			"gold",
+			"bossLegendary",
+			"bossUpgrade",
+			"bossExtra",
+		},
+		"Pełna Fortuna: wszystkie węzły szczęścia ścieżki `fortune` na randze maks.; początek: tylko rzędy otwarte poza ścieżką główną (`DIP_ROWS`). ROZWOJ 6.3: +30 / +20 / +15 / ×1,13 / 35% / 15%; początek ×1,06."
+	)
+	for _, kind in { "full", "start" } do
+		local luck = B.fortuneLuck(kind :: any)
+		local cells: { { any } } = {}
+		for _, field in { "monsterItem", "elite2", "gold", "bossLegendary", "bossUpgrade", "bossExtra" } do
+			table.insert(cells, { luck[field] or 0, "1" })
+		end
+		tb.row(if kind == "full" then "pełna" else "początek (rzędy 1–2)", cells)
+	end
+	for _, c in B.CLASSES do
+		tb.section(
+			`D5: drop na godzinę, {CLASS_PL[c]}`,
+			{
+				"poziom · profil",
+				"Unikaty / h expienia",
+				"Unikaty z Fortuną",
+				"Fortuna / bez (Unikaty)",
+				"Heroiki / h Elit",
+				"Heroiki z Fortuną",
+				"Legendy / Elita II",
+				"Legendy / Elita II z Fortuną",
+				"premia ucięta na Elitach (pkt, z Fortuną)",
+				"zabicia / h",
+				"Elity / h",
+			},
+			"Przedmioty dla klasy: zabicia na godzinę (`paceAt`) × `AreaRates.itemsPerKill` z `itemBonus` × udział najwyższej rzadkości × `usableShare`; Elity na godzinę = 3600 (1 + q) / ((1 − q) t₁ + q t₂) w jaskini poziomu; Elita II: `topTierMul × elite2Mul`. Premia ucięta: szansa Elity 0,75 przy min(1, …) w `Loot.rollMonsterLoot` nie korzysta z premii ponad +33%. Cel D5 (K0 bez Fortuny): Unikaty 2–4 na godzinę, Heroiki 0,5–1,5 na godzinę Elit; K1 Fortuna / bez 1,20–1,35 (S88)."
+		)
+		for L = 25, 100, 5 do
+			for _, profile in B.LUCK_PROFILES do
+				local d0 = B.dropsPerHour(c, L, profile.id, false)
+				local d1 = B.dropsPerHour(c, L, profile.id, "full")
+				local k0 = profile.id == "K0"
+				local k1 = profile.id == "K1"
+				tb.row(`{L} · {profile.id}`, {
+					{ d0.unique, "2", if k0 then 2 else nil, if k0 then 4 else nil },
+					{ d1.unique, "2" },
+					{ d1.unique / math.max(1e-9, d0.unique), "2", if k1 then 1.2 else nil, if k1 then 1.35 else nil },
+					{ d0.heroic, "2", if k0 then 0.5 else nil, if k0 then 1.5 else nil },
+					{ d1.heroic, "2" },
+					{ d0.legendaryPerElite2, "2" },
+					{ d1.legendaryPerElite2, "2" },
+					{ d1.eliteCut, "1" },
+					{ d0.killsPerHour, "1" },
+					{ d0.elitesPerHour, "1" },
+				})
+			end
+		end
+	end
+	tb.section(
+		"Boss z Fortuną: przedmioty dla klasy na dzień",
+		{
+			"boss · klasa · Fortuna",
+			"Legendy",
+			"Mityki",
+			"Heroiki",
+			"drugi przedmiot (Heroik)",
+			"Legendy na tydzień",
+		},
+		"`Config.Boss.dailyRuns` zabić dziennie, `Loot.bossChances` z `Luck.boss` (szczęście z przedmiotów na bossy nie działa, ROZWOJ 6.2, więc profile K nie zmieniają wyniku); Legenda dla klasy z `legendaryClassShare`, Mityk z nazwanych (`mythicNamedShare`) albo losowany dla klasy."
+	)
+	for _, def in Bosses.list do
+		for _, c in B.CLASSES do
+			for _, fortune in { "bez", "początek", "pełna" } do
+				local kind: any = if fortune == "pełna" then "full" elseif fortune == "początek" then "start" else nil
+				local d = B.bossDrops(c, def.id, kind)
+				tb.row(`{def.id} · {CLASS_PL[c]} · {fortune}`, {
+					{ d.legendary, "2" },
+					{ d.mythic, "2" },
+					{ d.heroic, "2" },
+					{ d.extra, "2" },
+					{ d.legendary * 7, "2" },
+				})
+			end
+		end
+	end
+	tb.section(
+		"Luki poziomu przedmiotów",
+		{
+			"poziom",
+			"zwykły potwór",
+			"Elita: spawner",
+			"Elita: luka",
+			"Elita II: spawner",
+			"Elita II: luka",
+			"boss: luka",
+		},
+		"Luka = poziom gracza − średni ilvl dropu (`Loot.dropBaseLevel`, `ItemRoll.dropLevelRange`). Elita i Elita II: najwyższy poziom spawnera ≤ poziom gracza we wszystkich jaskiniach do tego regionu (`Data/Spawns`); boss: poziom − poziom ostatniego bossa (Legenda i Mityk na poziomie bossa). Dla S92–S94: dziury po każdym bossie i krótkie zakresy Elit."
+	)
+	for r = 2, #B.BANDS do
+		for _, g in B.ilvlGaps(r) do
+			tb.row(tostring(g.level), {
+				{ g.normal, "1" },
+				{ g.eliteSpawner, "i" },
+				{ g.elite, "1" },
+				{ g.elite2Spawner, "i" },
+				{ g.elite2, "1" },
+				{ g.boss, "i" },
+			})
+		end
+	end
+	tb.section(
+		"Trwałość przedmiotów (P2)",
+		{ "klasa · rzadkość · ilvl", "do poziomu", "poziomów" },
+		"Do którego poziomu pełny zestaw rzadkości R z ilvl X ma moc (S32) co najmniej taką jak zestaw rzadkości R − 1 z poziomu − 2 (jak `diag_longevity`)."
+	)
+	for _, c in { "Warrior", "Mage" } do
+		for rarity = 3, 5 do
+			for _, ilvl in { 20, 45, 70 } do
+				local until_ = B.longevity(c, rarity, ilvl)
+				tb.row(`{CLASS_PL[c]} · {RARITY_PL[rarity]} · {ilvl}`, { { until_, "i" }, { until_ - ilvl, "i" } })
+			end
+		end
+	end
+	flush()
+
+	-- Defence ---------------------------------------------------------------------------------------------------
+	tb, flush = band("S84-defence")
+	local defenceColumns = { "rodzaj" }
+	for _, L in B.ITEM_LEVELS do
+		table.insert(defenceColumns, `pancerz {L}`)
+	end
+	for _, L in B.ITEM_LEVELS do
+		table.insert(defenceColumns, `odporność {L}`)
+	end
+	table.insert(defenceColumns, "unik %")
+	tb.section(
+		"Udział pancerza i odporności magicznej",
+		defenceColumns,
+		"`Balance.armorShare` = `Damage.reduction(pancerz albo odporność potwora poziomu L, L)` dla gracza poziomu L, potwory z `MonsterStats.compute` (rodzaj zwykły z cechą obrony rodziny; bossy na swoim poziomie, kolumna ich poziomu). Cel (S88): pancerz zwykły 15–21%, opancerzony 25–33%; odporność magiczna zwykła 12–17%, `mresMul` 1,8 21–27% (raport)."
+	)
+	for _, entry in B.defenceKinds() do
+		local cells: { { any } } = {}
+		local kind = entry.kind
+		-- the 25-33 % band is the `armored` trait's only (dragon `scaled` x1.4 has no band, like its resistance)
+		local armoredBand = entry.defence == "armored"
+		local wardedBand = (kind.mresMul or 1) >= 1.8
+		for _, L in B.ITEM_LEVELS do
+			local m = B.monster(kind, L)
+			if armoredBand then
+				table.insert(cells, { B.armorShare(m, L, false), "%", 0.25, 0.33 })
+			elseif (kind.defMul or 1) == 1 then
+				table.insert(cells, { B.armorShare(m, L, false), "%", 0.15, 0.21 })
+			else
+				table.insert(cells, { B.armorShare(m, L, false), "%" })
+			end
+		end
+		for _, L in B.ITEM_LEVELS do
+			local m = B.monster(kind, L)
+			if wardedBand then
+				table.insert(cells, { B.armorShare(m, L, true), "%", 0.21, 0.27 })
+			elseif (kind.mresMul or 1) == 1 then
+				table.insert(cells, { B.armorShare(m, L, true), "%", 0.12, 0.17 })
+			else
+				table.insert(cells, { B.armorShare(m, L, true), "%" })
+			end
+		end
+		table.insert(cells, { kind.dodge or 0, "1" })
+		tb.row(entry.id, cells)
+	end
+	for _, def in Bosses.list do
+		local m = B.monster(B.bossKind(def, 1), def.level, "boss")
+		local cells: { { any } } = {}
+		for _, L in B.ITEM_LEVELS do
+			table.insert(cells, { if L == def.level then B.armorShare(m, L, false) else 0 / 0, "%" })
+		end
+		for _, L in B.ITEM_LEVELS do
+			table.insert(cells, { if L == def.level then B.armorShare(m, L, true) else 0 / 0, "%" })
+		end
+		table.insert(cells, { m.dodge or 0, "1" })
+		tb.row(`boss {def.id} (L{def.level})`, cells)
+	end
+	for _, c in B.CLASSES do
+		tb.section(
+			`Walka 1 na 1 z obroną rodzin, {CLASS_PL[c]}`,
+			{
+				"poziom · rodzaj",
+				"s",
+				"HP",
+				"udział obrony",
+				"udział uniku",
+				"s bez kompensaty",
+				"HP bez kompensaty",
+			},
+			"Zwykły zestaw, potwór poziomu gracza z cechą obrony (to samo życie i atak). Udział obrony: `Damage.reduction` obrony liczonej przeciw graczowi (pancerz albo odporność według rodzaju ataku, po przebiciu z linii); udział uniku: część DPS utracona przez unik potwora (tylko ataki podstawowe, `FightSim`); bez kompensaty: życie bez `Combat.monsterHpComp` (ile oddaje kompensata S66)."
+		)
+		for _, L in B.ITEM_LEVELS do
+			for _, r in B.defenceAt(c, L) do
+				tb.row(`{L} · {r.id}`, {
+					{ r.seconds, "s" },
+					{ r.hpLost, "%" },
+					{ r.defenceShare, "%" },
+					{ r.dodgeShare, "%" },
+					{ r.secondsNoComp, "s" },
+					{ r.hpLostNoComp, "%" },
+				})
+			end
+		end
+	end
+	tb.section(
+		"Przeciw obronie: zysk DPS",
+		{ "poziom · źródło", "zwykły", "opancerzony / odporny" },
+		"Zysk obrażeń przy stałym niszczeniu albo przebiciu (`Damage.reduction`): Niszczenie pancerza na pełnych stosach (`Traits.armorBreakCap`), Bełt przeciwpancerny (limit `pierce` z `Data/Stats`), linie `pierce` / `magicPierce` ze środka rzutu Legendarnego; opancerzony = nieumarły `armored`, odporny = nieumarły `warded`. STATY 7: niszczenie 50% na opancerzonym ok. +17%, przebicie 20% ok. +6%."
+	)
+	for _, L in B.ITEM_LEVELS do
+		for _, r in B.vsDefence(L) do
+			tb.row(`{L} · {r.label}`, { { r.generic, "%" }, { r.defended, "%" } })
+		end
+	end
+	flush()
+	return out
+end
+
+-- Items fixture (S84 K1) ------------------------------------------------------------------------------------------
+
+BalanceTables.ITEMS_FIXTURE_PATH = "tests/fixtures/balance_items.json"
+-- Modules the S84 model reads (dataHash): a change in any of them may change the tables (S87 and later).
+BalanceTables.ITEM_MODEL_MODULES = {
+	"ItemTraits",
+	"Families",
+	"Luck",
+	"Recipes",
+	"LootTables",
+	"Rarities",
+	"Bonuses",
+	"Combat",
+	"BuffCategories",
+	"Stats",
+	"Items/Bases",
+	"Blessings",
+	"GuildSkills",
+	"Shops",
+	"Paths/Cleric",
+	"Monsters",
+	"Bosses",
+	"Areas/Caves",
+	"AreaProfiles",
+	"Config",
+}
+
+-- FNV-1a 32 bit of a text (exact in doubles: the product is split into a shift and a small multiple).
+function BalanceTables.fnv1a(text: string): number
+	local hash = 2166136261
+	for i = 1, #text do
+		hash = bit32.bxor(hash, string.byte(text, i))
+		hash = (bit32.lshift(hash, 24) + hash * 403) % 4294967296
+	end
+	return hash
+end
+
+-- dataHash of the items fixture: per module, FNV-1a of the sorted "key=%.10g" lines of its Balance.dataDump part
+-- (the entries of tools/balance_reasons.luau, Config with its CONFIG_KEYS and Boss).
+function BalanceTables.itemDataHash(): { [string]: string }
+	local Reasons = (require :: any)("../tools/balance_reasons")
+	local entries = {}
+	for _, name in BalanceTables.ITEM_MODEL_MODULES do
+		if name ~= "Config" then
+			local path = `Data/{name}`
+			local found: any = { path = path }
+			for _, entry in Reasons.BALANCE_MODULES do
+				if entry.path == path then
+					found = entry
+				end
+			end
+			table.insert(entries, found)
+		end
+	end
+	local config = table.clone(Reasons.CONFIG_KEYS)
+	table.insert(config, "Boss")
+	local skipped = B.skippedFunctions
+	local dump = B.dataDump({ BALANCE_MODULES = entries, CONFIG_KEYS = config, NOT_BALANCE = {}, reasons = {} })
+	B.skippedFunctions = skipped
+	local lines: { [string]: { string } } = {}
+	for key, v in dump do
+		local module = string.match(key, "^([^:]+):") :: string
+		lines[module] = lines[module] or {}
+		table.insert(lines[module], `{key}={string.format("%.10g", v)}`)
+	end
+	local out: { [string]: string } = {}
+	for _, name in BalanceTables.ITEM_MODEL_MODULES do
+		local list = lines[name] or {}
+		table.sort(list)
+		out[name] = string.format("%08x", BalanceTables.fnv1a(table.concat(list, "\n")))
+	end
+	return out
+end
+
+export type ItemsFixtureReport = {
+	found: boolean,
+	sameData: boolean, -- every dataHash equal to the fixture's
+	changedModules: { string },
+	count: number,
+	diffs: { FixtureDiff }, -- relative difference above the tolerance, biggest first
+	missing: { string },
+	added: { string },
+}
+
+function BalanceTables.readItemsFixture(): any?
+	if not fs.isFile(BalanceTables.ITEMS_FIXTURE_PATH) then
+		return nil
+	end
+	return serde.decode("json", fs.readFile(BalanceTables.ITEMS_FIXTURE_PATH))
+end
+
+-- The S84 tables against tests/fixtures/balance_items.json.
+function BalanceTables.itemsFixtureDiff(now: { [string]: number }?, tolerance: number?): ItemsFixtureReport
+	local file = BalanceTables.readItemsFixture()
+	local before: { [string]: number } = if file then file.values or {} else {}
+	local values = now or BalanceTables.values(BalanceTables.tablesItems())
+	local tol = tolerance
+		or (if file and file.meta then file.meta.tolerance else nil)
+		or BalanceTables.FIXTURE_TOLERANCE
+	local hash = BalanceTables.itemDataHash()
+	local changed: { string } = {}
+	for _, name in BalanceTables.ITEM_MODEL_MODULES do
+		if not file or not file.dataHash or file.dataHash[name] ~= hash[name] then
+			table.insert(changed, name)
+		end
+	end
+	local diffs: { FixtureDiff } = {}
+	local missing: { string } = {}
+	local added: { string } = {}
+	local count = 0
+	for key, b in before do
+		count += 1
+		local a = values[key]
+		if a == nil then
+			table.insert(missing, key)
+		else
+			local rel = BalanceTables.relative(a, b)
+			if rel > tol then
+				table.insert(diffs, { key = key, before = b, after = a, rel = rel, allowed = false })
+			end
+		end
+	end
+	for key in values do
+		if before[key] == nil then
+			table.insert(added, key)
+		end
+	end
+	table.sort(diffs, function(x, y)
+		if x.rel ~= y.rel then
+			return x.rel > y.rel
+		end
+		return x.key < y.key
+	end)
+	table.sort(missing)
+	table.sort(added)
+	return {
+		found = file ~= nil,
+		sameData = file ~= nil and #changed == 0,
+		changedModules = changed,
+		count = count,
+		diffs = diffs,
+		missing = missing,
+		added = added,
 	}
 end
 

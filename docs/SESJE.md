@@ -4353,3 +4353,133 @@ Pliki: `tests/{Balance,BalanceTables,balance.spec,balance1_20.spec,balancemodel.
 `tests/fixtures/balance_1_20.json`, `tools/{balance_report,balance_reasons,wiki_keys_diff}.luau`,
 `tools/balance_before.json`, `src/shared/Data/SkillCurves.luau`, `src/shared/Logic/Skills.luau`,
 `scripts/check.{sh,ps1}`, `docs/{BALANS,DECYZJE,SESJE,PROGRESS}.md`, `CLAUDE.md`, `README.md`.
+
+### S84: Model przedmiotów, łupu i obrony potworów 20–100
+
+Sesja balansu bez strojenia: `src/` bez zmian, księga „Zmiany danych” bez wierszy S84 (`tools/balance_reasons.luau`
+bez wpisów), `tools/wiki_keys_diff.luau` pusty; `npm run data` niepotrzebne, bo `src/shared/Data` się nie zmieniło.
+- **A. Start** na `1c292d8` (S83): wymagania są, migawka `lune run tools/balance_report.luau snapshot S84`
+  (`tools/balance_before.json`), `scripts/check` zielony (94 pliki, 1301 testów, 46 s), 1–20: 0 różnic na starcie
+  i na końcu (`build/s84_1_20_start.txt`).
+- **Inwentarz (A3).** (a) S83: `paceAt` (s/zabicie, zabicia, godziny poziomu z zadaniami na swoim poziomie),
+  `economyAt` (złoto z zabić, sprzedaż dropu i mikstury na godzinę, złoto zadań na poziom, bez ulepszeń i materiałów),
+  `questsAt`, `kindAtRegion`, `caveElites` (Elity solo i w parze na min / środku / maks. spawnera, q z prawdziwych
+  spawnerów, Elita II dla 1–4 graczy), `bossFight` (harmonogram, fale tarczy, tank HP/s). (b) S62–S67 w modelu:
+  cechy-statystyki przez `itemStats` → `StatCalc`, blok (`Traits.blockChance(hooks.block)`) i ochrony w `FightSim.hit`,
+  przebicie przez `Damage.defenseOf`, `vs_` / `res_` rodzin z `FAMILY_MATCH` 0,5, rodzina `GENERIC` (zwierzę), unik
+  potworów tylko na ataku podstawowym, `share` = (1 + basicDmg)·trafienia + (s − 1)(1 + skillDmg); `expectedBonuses`
+  ma już wagi pul S62 (`poolWeights` + `inclusion`), więc poprawki A3 b nie było. (c) `ItemRoll.trait(item)` =
+  `{ id, def, power, value }` (siła = `baseMul` rzadkości także dla nazwanych × (1 + 0,06 × ulepszenie)), `itemStats`
+  dopisuje cechę do `flat` / `hooks` i daje `trait.contrib`; serwer czyta haki przez `CombatService.Hook`, efekty przez
+  `Logic/Traits`, żywioły w `server/Skills/Elements`. (d) `Luck.monster({ name, dropBonus?, luck? })` →
+  `{ itemBonus, personal, fortune, gold, elite2Mul }`, `Luck.boss` → `{ legendaryMul, upgrade, extra }`; Fortuna z
+  `Paths.luckOfNodes`. (e) S83 nie miało dochodu poziomu 20–100 z ulepszeniami ani materiałów; drop sprzedawany po
+  cenie kupca. Pozycja S83 „Dla S84” (przedmioty, łup ze szczęściem, obrona i rodziny w tabelach) zrobiona tutaj.
+- **B. Cechy:** `Player.traits`, `weaponSpeed`, `element`; `GearOpts.traitScale` / `element`, `NO_TRAITS`,
+  `SITUATIONS`, `SITUATION_LIST`, `MIX`, `situationCtx`, `traitTerms` (24 cechy, pola `dpsMul`, `takenMul`, `sustain`,
+  `killHealHp`, `armorMul`, `byTrait`, `lines`), `power(p, L, PowerOpts)`, `situationPower`, `situationMeasure`
+  (`solo`: leczenie za zabicie raz na zabicie), `powerMix`, `traitValue`, `runThroughValue` (Przeszycie przy
+  `behindShare` 0,15 / 0,3 / 0,5), `TRAIT_SETS`, `traitTable`; `itemPlayer` (bufor postaci), pamięć `expectedBonuses`.
+- **C–I:** `rarityGainAt`, `g7Band`, `twoHandedParity`, `twoHandedS32`, `g8Band`, `materialPrices`, `upgradePlan`
+  (z ochroną i bez, `coreFrom` dla S87), `levelIncome`, `upgradeVsIncome`, `materialsPerKill`, `dismantlePerItem`,
+  `caveSpawners`, `caveAt`, `elitesPerHour`, `materialDemand`, `materialSupply`, `materialHours`, `ilvlGaps`,
+  `longevity` (P2), `dropMods`, `fortuneLuck`, `luckProfile`, `monsterLuck`, `usableShare`, `usableAt`, `dropsPerHour`,
+  `bossDrops` (P2), `armorShare`, `defenceKinds`, `defenceAt`, `vsDefence`, `itemTargets` (G7–G9 w `targetsGlobal`),
+  `REGION_TARGETS.d5` i wiersze D5 w `targetsRegion`; `bossFight` z opcją `level`.
+- **J–K:** `BalanceTables.tablesItems()` (36 tabel w czterech sekcjach raportu, wartości poza pasmem pogrubione),
+  `ITEM_MODEL_MODULES`, `itemDataHash`, `itemsFixtureDiff`; tryb `--fixture-items` (10 336 wartości, 0,97 MB, drugie
+  uruchomienie identyczne bajt w bajt). Materiały z zabić × `materialMul` z `dropMods` (dziś 1). Blok `balance.spec`
+  „Balance 20-100: items, loot, defence (S84)”: 8 przypadków tabel (przy zmienionych danych brak / nowy klucz tylko
+  drukuje), 9 zależności i zgodności z S32, 4 Monte Carlo (`rollMonsterLoot`, `Upgrade.attempt`, `pickItem`,
+  `rollItem`). Check: 1324 testy, 48,5 s (+2,6 s); tabele S84 ok. 1,1 s, cały raport 1,9 s.
+
+Kluczowe liczby (konwencja S32, zestaw Zwykły ilvl − 2; G7 „z cechami”, Legenda / Mityk):
+
+| | 45 | 70 | 100 |
+|---|---|---|---|
+| G7 Wojownik | 33,7 / 66,9% | 37,3 / 70,4% | 41,1 / 76,0% |
+| G7 Łowca | 38,0 / 74,7% | 42,7 / 78,4% | 47,4 / 85,9% |
+| G7 Mag | 33,7 / 66,3% | 37,5 / 69,9% | 41,5 / 75,8% |
+| G7 Kapłan | 31,8 / 64,2% | 35,4 / 68,1% | 39,1 / 73,5% |
+| G8 najgorsza: bez cech / z cechami | 0,87 / 0,79 (axe2h Mityk +9) | 0,87 / 0,78 (axe2h M +9) | 0,85 (staff M +9) / 0,76 (axe2h M +9) |
+| G9 +1…+3 / dochód; +1…+9 z ochroną | 0,92; 21,6 poz. | 1,18; 27,8 | 1,68; 39,8 |
+| D5 K0 (Wojownik): Unikaty / Heroiki na h | 4,66 / 1,14 | 5,20 / 1,37 | 4,97 / 1,22 |
+| D5 K1 z Fortuną (Wojownik) | 6,94 / 1,52 | 7,79 / 1,82 | 7,56 / 1,62 |
+| Pancerz zwykły / opancerzony (nieumarły) | 18,4 / 28,8% | 18,9 / 29,6% | 19,2 / 30,0% |
+| Odporność zwykła / `warded` | 15,3 / 24,5% | 15,7 / 25,1% | 16,0 / 25,5% |
+
+Porównanie z diagnozą `3f935c1`: zyski rzadkości wyższe (Legenda Wojownika na 100: 41,5 → 41,1%, Mityk 58 → 76%,
+Łowca 51,6 → 47,4%, Mityk 74 → 86%): linie mityczne i legendarne w pulach z wagami S62, cechy rosną z `baseMul`, a
+Wojownik i Kapłan mają w zestawie Zastawę (blok i leczenie). Dwuręczne bez cech jak w diagnozie (Zwykły 0,98–1,01,
+Mityk +9 0,85–0,92); z cechami niżej, bo dwuręczna ma jedną cechę, a jednoręczna z drugą ręką dwie. G9: +1…+3 na 45
+1,05 → 0,92, na 100 1,81 → 1,68, +9 z ochroną 42,6 → 39,8 poziomu (dochód z rozłożonymi zadaniami ok. 7% wyższy).
+Unikaty na godzinę 3,1–5,8 (diagnoza na poziom 2,9–4,6; teraz na godzinę), Heroiki 0,8–1,6 na godzinę Elit (diagnoza
+1,1–2,1, inna liczba Elit na godzinę z prawdziwych jaskiń i par). Obrona: pancerz 17–19% zamiast 6–9% przed S66.
+
+Dla S85–S86:
+- Funkcje do `SkillModel`: `traitTerms`, `traitValue`, `situationCtx`, `situationMeasure`, `SITUATIONS`, `MIX`,
+  `powerMix`, `PowerOpts`; do zastąpienia założenia `basicShare` (0,5 / Mag 0,4), `skillInterval` 2,5 s,
+  `elementShare` 0,175, `iceUptime` 0,65, `controlled` 0,65, `still` 0,70, `mana` (Wyuczone formuły = 0), `dungeon`
+  (Namaszczenie = 0, Zbawczy cios na sojuszników), `areaShare` 0 (`Combat.areaProcShare`).
+- Wzory serwera odwzorowane w modelu: lista w DECYZJE S84 (kontra, Ścięcie / Łatwy cel / Pieczęć, blok, Zbawczy cios,
+  efekty przy trafieniu, Podwójne cięcie, Naciąg, Przeszycie, Iskra, `Monster.DelayAttack`, `Loot` SLOT_TIER).
+
+Dla S87:
+- G7: 183/272 w paśmie. Unikat ponad 15% od 45 (Łowca), 60 (Mag), 70 (Wojownik), 80 (Kapłan), do 16–20% na 100;
+  Heroik ponad 25% od 25 (Łowca, do 36,1%), 45 (Wojownik, Mag, do 31–32%), 60 (Kapłan, 29,7%); Legenda ponad 40% od
+  95 (Wojownik 41,1, Mag 41,5 na 100), Łowca ponad 43% od 80 (47,4% na 100). Mityk zawsze nad Legendą (+30–39 pkt).
+- G8: 58/560 w paśmie. Bez cech: Zwykły +0 0,98–1,01, Legenda +0 0,92–0,99, Mityk +9 0,85–0,92; z cechami 0,76–0,97
+  (Kostur Święty 1,1–3,7 przez Zbawczy cios). Potrzebny mnożnik linii dwuręcznych (D4) nie policzony.
+- G9: +1…+3 / dochód w paśmie na 25–45 (0,53–0,93), na 20 0,44, od 50 ponad 1,05 (1,11 → 1,68 na 100); +1…+9 z
+  ochroną w paśmie 12–25 na 25–45, od 50 26–40 poziomów. Rdzeń od +8 (`upgradePlan` z `coreFrom = 8`, tylko w modelu):
+  Legenda +9 z ochroną 10,8 → 8,3 Rdzenia, bez ochrony 53,3 → 21,7; zwojów bez zmian (18,3).
+- Model: `expectedBonuses` bierze pule legendarną i mityczną bez filtra klasy (`ItemRoll.legendaryPool` /
+  `mythicPool` filtrują `leg_manaOnHit`, `myth_physAtk`, `myth_magAtk`), więc linie Legend i Mityków są o 1/15 i 1/11
+  rzadsze niż w grze; poprawka zmieni 1–20 (zasada 5: `ALLOWED_1_20_DIFFS`).
+
+Dla S88:
+- Cechy (Zwykły +0, sytuacja z pierwszej kolumny STATY 14; różnica ponad 1,5 pkt): Jadowite groty `single` 12,3%
+  (moc² sumuje 4,4% obrażeń i spowolnienie ataku 10%; STATY 4,5% i 10% osobno), Nękanie `solo` 10,9% (STATY 7–8%
+  rzadziej: spowolnienie 20% przy czasie utrzymania ok. 50%), Fechtunek `boss` 6,7% (STATY 3,5–4%: model liczy ataki
+  bossa co 2 s i fale pomocników), Siła krytyka 2,4% (STATY 4,5% przy 20% krytyka; Łowca w konwencji ma ok. 10%),
+  Moc żywiołu lód 2,6% (STATY 3,5%: tylko Przemarznięcie 10 − 6 przy lodzie 65% walki), Pieczęć runiczna w MIX 1,1%
+  (tylko boss 20%), Wyuczone formuły i Namaszczenie 0 (konwencja), Zbawczy cios `solo` 49% (20.), 164% (45.), 357% (70.):
+  leczy 6–9% maks. HP na zabicie jak w STATY, ale to prawie cała utrata (8,9% → 1,9% na 70.). Mityczny +9 mnoży
+  cechy ×1,88 (Ścięcie 13%, Jadowite groty 25%, Żniwo z liniami `killHeal` kasuje utratę solo). Fechtunek `elite`
+  2,8–2,9% (STATY 6,5–7% z grupą: Elita atakuje jak jeden zwykły potwór, więc kontr tyle co w `single`), Żniwo `solo`
+  7,6 / 9,3 / 10,8 / 12,6% na 20 / 45 / 70 / 100 (STATY 4–8%: 1% maks. HP raz na zabicie, a utrata na zabicie maleje
+  z poziomem), Żniwo `boss` 0,3–0,5% (ok. 20 zabić fal na walkę wobec obrażeń całej walki), Przeszycie `boss` 0,9–1,3%
+  (STATY 2–5%: pas za celem tylko w czasie fal tarczy; przy 0,5 do 2%, tabela „Przeszycie” w BALANS).
+- Pancerz zwykły 16,7 / 18,4 / 18,9 / 19,2% na 20 / 45 / 70 / 100 (pasmo 15–21%), opancerzony humanoid 24,2–27,6%
+  (na 20. pod 25%), nieumarły 26,5–30,0%, żywiołak 28,6–32,3%, smok (`scaled`, bez pasma) 21,9–25,0%; odporność zwykła 13,8–16,0%,
+  `warded` 22,4–25,5% (w pasmach).
+- Przeciw obronie na 70: Niszczenie Zwykłe +5,0% / opancerzony +8,0%, Mityczne +9 +8,2 / +13,4%; Bełt +3,9 / +6,3%
+  (Mityczny +9 +7,7 / +12,5%); linia `pierce` Legendarna +2,0 / +3,2%, `magicPierce` +1,7 / +2,7%.
+- Szczęście: K1 z Fortuną 48–52 (≤ 100), K2 z Fortuną 91 / 99 / 103 / 111 na 25 / 45 / 70 / 100 (limit ucina 3 i 11
+  pkt), K3 254–286 (ucina 154–186); K1 Fortuna / bez dla Unikatów 1,25 (pasmo 1,20–1,35). Fortuna z węzłów zgodna z
+  ROZWOJ 6.3 (+30 / +20 / +15 / ×1,13 / 35% / 15%, początek ×1,06).
+- Wzory do przeniesienia do `Logic`: lista odwzorowań w DECYZJE S84; mechanizmy samych linii (`lifesteal`, `killHeal`)
+  poza konwencją: wampiryzm Legendarnego zestawu podnosił G7 do +100–200%, więc S88 ocenia je osobno.
+
+Dla S92–S94:
+- D5 K0 (wszystkie klasy, co 5 poziomów): Bór 20–40 Unikaty 3,1–5,4 / h, Heroiki 0,83–1,43 (31/40 w paśmie);
+  Pustkowia 45–65 3,8–5,1 i 1,10–1,56 (20/40); Szczyty 70–95 4,2–5,8 i 1,19–1,51 (22/48). Unikaty ponad 4 / h od ok. 30.
+- Luki ilvl: Elity po bossach 3–6 poziomów (46–48: spawner 43, 71–73: 68), na 22–23 tylko Elity Łąk (20), Elita II
+  na 85–87 z 82 (luka 4–6); boss Legendą na poziomie bossa, luka rośnie do 25 przed następnym.
+- Obrona w walce 1 na 1: opancerzeni +10–19% czasu, zwinni +11–14% (unik 10–12,5% DPS), kompensata życia S66 dodaje
+  ok. 10% czasu; prawdziwe rodzaje regionów z cechami w tabelach pasm S83 i w `defenceAt` (P2 I4 nie zrobione).
+
+Dla właściciela:
+- Szansa przedmiotu z Elity 0,75 z `min(1, …)` w `Loot.rollMonsterLoot` nie korzysta z premii szczęścia ponad +33%:
+  K1 z Fortuną traci na Elitach 15–19 pkt, K2 z Fortuną 58–67 pkt; Heroiki z Elit przy K2 i K3 nie rosną z Fortuną.
+- Zbawczy cios na noszącym (4% obrażeń w limicie wampiryzmu) prawie zeruje utratę HP Uzdrowiciela solo od 45.
+  poziomu; do decyzji w S88 (np. mniejszy udział na sobie).
+- Unikaty dla klasy 3–6 na godzinę expienia: cel D5 2–4 na godzinę przekroczony od ok. 30. (strojenie `dropFactor` w
+  S92–S94 albo wybór celu „na poziom”).
+
+Niedokończone: kolumna „z hakami linii” w G7 (`eliteDamage`, `bossDamage`, `lastStand`, `thorns`; B6, P2), kolumna
+„potrzebny mnożnik linii dwuręcznych” w G8 (D4, P3), prawdziwe rodzaje regionu z `hpMul`, `atkMul` i rodziną w
+obronie (I4, P2).
+
+Pliki: `tests/{Balance,BalanceTables,balance.spec}.luau`, `tests/fixtures/balance_items.json`,
+`tools/{balance_report.luau,balance_before.json}`, `docs/{BALANS,DECYZJE,SESJE,PROGRESS}.md`.

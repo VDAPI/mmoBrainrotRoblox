@@ -1813,3 +1813,54 @@
   G13 zostają z zadaniami i przeniesieniem (`paceBand`).
 - **S83** Księga: wpisy klucza i najdłuższego pasującego prefiksu `*` liczą się razem (nowsze hurtowe przesunięcie
   tabeli tłumaczy klucz ze starszym własnym wpisem). Tryb `fixture [S<n> [note]]` bierze sesję jak `snapshot`.
+- **S84** Cechy broni w modelu jako wartości oczekiwane w sytuacjach `Balance.SITUATIONS` (dane testu, każda liczba
+  ze STATY 14 „Do pomiaru”): `basicShare` 0,5 (Mag 0,4), umiejętność co 2,5 s, `elementShare` 0,175, lód skilli 0,65,
+  `behindShare` 0,3 w grupie (raport także 0,15 i 0,5: `runThroughValue`), tank 1,25 i 0,6 ataku/s, zabicie co 8 s,
+  `controlled` 0,65, `still` 0,70, obszar 0, `single` 60 s; boss = boss `regionAt(L)` na poziomie L z falami tarczy z
+  danych (`bossFight`, drużyna 3). Do S85–S86.
+- **S84** `GearOpts.traitScale` (0..1 na cechę, przed `StatCalc`; stałe haki znikają tylko przy 0), `NO_TRAITS`,
+  `PowerOpts { traits, situation }`, `MIX` (group 0,5 / elite 0,3 / boss 0,2). DPS z cechami =
+  `FightSim.dps(p, m', 1/basicShare) × basicShare × SKILL_DPS × dpsMul` (przy zerowych liniach dokładnie DPS konwencji);
+  EHP = maks. HP / (cios × takenMul − podtrzymanie na cios ≤ 0,8 ciosu). Bez opcji `power` liczy jak S32.
+- **S84** Każda cecha wyceniona raz: cechy-statystyki (`kind = "stat"`) i blok Zastawy działają przez `StatCalc` /
+  `FightSim.hit` (`inStats`), a ich wartość daje sam `traitScale`. Mechanizmy linii bez cechy (`lifesteal`,
+  `killHeal`, `executioner`, `woundChance`, `poisonChance`, `riposte`) zostają poza konwencją jak w S32 (pole
+  `lines`, poza sumą); z cechą, która dzieli z nimi limit, liczą się razem z nią (B6). Bez tego wampiryzm linii
+  Legendarnych podnosił G7 do +100–200% (podtrzymanie przy 0,8 ciosu).
+- **S84** Wartość cechy (`traitValue`) = M(z) / M(bez) − 1 przy `traitScale[id] = 0`: M = moc² (DPS × EHP) w
+  sytuacjach mocy i w MIX, EHP w `tank`, utrata HP na zabicie w `solo` (bez / z − 1; leczenie za zabicie raz na
+  zabicie, reszta podtrzymania przez czas pojedynku). Moc² sumuje obrażenia i
+  przeżycie, więc cecha z obu (Jadowite groty: obrażenia i spowolnienie ataku) wychodzi wyżej niż pojedynczy szacunek.
+- **S84** `powerMix(p)` = Σ waga × moc w sytuacji / moc domyślnego zestawu Zwykłego klasy na tym poziomie w tej
+  sytuacji (indeks, 1 = zestaw domyślny): każda sytuacja waży swoją wagą MIX niezależnie od skali (boss bije ×6).
+- **S84** Miara G7 = kolumna „z cechami” (`rarityGainAt`, sytuacja `single`), pełny zestaw rzadkości R wobec Zwykłego,
+  ilvl poziom − 2; Mityk: próg dolny = Legenda tej klasy i poziomu. Wiersze w `targetsGlobal` (raport do S87).
+- **S84** Miara G8 = (powerMix(dwuręczna bez drugiej ręki) / powerMix(domyślny zestaw klasy))², cały zestaw tej samej
+  rzadkości i ulepszenia; kolumny „bez cech” (S87 stroi na niej) i „z cechami”; para ścieżki tylko w raporcie, Łowca
+  poza G8 (ranking pięciu broni z kołczanem).
+- **S84** Miara G9: złoto +1…+3 broni / dochód poziomu i złoto +1…+9 z ochroną w poziomach dochodu (porażka powtarza
+  krok, jak `upgradeGold`); zwój na każdą próbę kroku z szansą < 100%; `goldEq` (pył po 40 ze sklepu, odłamek i
+  kryształ z przetopienia, zwój z receptury, płatki po `price` 120; Rdzenie poza) tylko w raporcie.
+- **S84** Dochód poziomu G9 (`levelIncome`): złoto z zabić i sprzedaż dropu na godzinę (`economyAt`) × godziny poziomu,
+  z EXP i złotem zadań pasma rozłożonymi na poziomy według potrzebnego EXP, jak dochód S32 i diagnoza. Zadania na
+  swoim poziomie (`paceAt.hours`) dawały poziomy bez expienia (dochód 30. poziomu 1410, 50. 2310 złota).
+- **S84** Miara D5: profil K0 bez Fortuny, Unikaty dla klasy na godzinę expienia (`paceAt`) i Heroiki na godzinę Elit
+  jaskini poziomu (3600 (1 + q) / ((1 − q) t₁ + q t₂)), udział dla klasy z `usableShare` (odwzorowanie `Loot.pickItem`);
+  wiersze w bloku regionów pod `TUNED` (Bór, Pustkowia, Szczyty co 5 poziomów).
+- **S84** `LUCK_PROFILES` K0–K3 (K1 Heroiczna biżuteria, błogosławieństwo 3, relikwia Zwykła; K2 relikwia Mityczna +9,
+  4 linie Legendarne ze środka, 1 `leg_dropBonus`, błogosławieństwo 4, gildia 5; K3 góra zakresu Mitycznego,
+  `leg_dropBonus` na każdym przedmiocie, błogosławieństwo Legendarne, gildia 5); Fortuna = `Paths.luckOfNodes` węzłów
+  szczęścia na randze maks. jako drugi `Member` (początek: rzędy 1–2). Limity przycina tylko `Logic/Luck`.
+- **S84** Udział pancerza = `Damage.reduction(pancerz albo odporność potwora, L)` dla gracza poziomu L; w walce 1 na 1
+  udział obrony liczonej przeciw graczowi (po jego przebiciu), unik jako część DPS utracona na atakach podstawowych.
+  Pasmo 25–33% tylko dla cechy `armored`; smok `scaled` (×1,4) bez pasma, jak jego odporność.
+- **S84** Fixture przedmiotów (`tests/fixtures/balance_items.json`, `--fixture-items`): ścisła zgodność (0,5%) tylko przy
+  tych samych danych (`dataHash`: FNV-1a części `dataDump` 20 modułów, Config z `Boss`); gdy dane się zmieniły (S87+),
+  blok S84 drukuje zmienione moduły, największe różnice i zmienione klucze (komórki NaN nie są kluczami) i nie zawodzi.
+- **S84** Odwzorowania serwera w modelu (do `Logic` w S88, komentarz `-- mirrors`): kontra (`CombatService` tryCounter),
+  Ścięcie, Łatwy cel i Pieczęć (`offensiveMultiplier`), leczenie z bloku (`onBlock`) i za zabicie (`reward`), Zbawczy
+  cios na noszącym (`savingBlow`), efekty przy trafieniu (`applyTraitEffect`), Podwójne cięcie, Naciąg i Przeszycie
+  (`tryBasicAttack`, `runThrough`), Iskra (`spark`, `Skills/Elements`), opóźnienie ataku po Wstrząsie
+  (`Monster.DelayAttack`), `Loot` SLOT_TIER (`usableShare`).
+- **S84** `Balance.bossFight` dostał opcję `level` (boss i fale tarczy przesunięte o tyle samo poziomów) i pola
+  `shieldAttacks`, `shieldKills`, `shieldSeconds`, `activeSeconds`; bez opcji wynik jak w S83.

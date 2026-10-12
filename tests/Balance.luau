@@ -14,41 +14,60 @@
 --   caveElites / team / bossCadence / bossFight  -> cave Elites from the real spawners, the bosses' schedule
 --   targets1_20 / targetsGlobal / targetsRegion  -> target rows for balance.spec and the report (TUNED, REGION_TARGETS)
 --   dataDump / rankDump / ledger                 -> the balance ledger (tools/balance_reasons.luau)
+-- S84 (items, loot and monster defence 20-100; test data SITUATIONS, MIX, G8_PAIRS, LUCK_PROFILES below):
+--   traitTerms / power(p, L, PowerOpts) / powerMix / traitValue -> item traits as expected values in situations
+--   rarityGainAt / twoHandedParity / upgradePlan / upgradeVsIncome -> G7, G8, G9
+--   materialDemand / materialSupply / ilvlGaps / longevity       -> materials, item level gaps, longevity
+--   luckProfile / dropsPerHour / usableShare / bossDrops          -> drops per hour with luck (D5)
+--   armorShare / defenceAt / vsDefence                            -> monster families, armour, dodge
 --
 -- Fights use basic attacks plus `SKILL_DPS` (1-2 skills on cooldown) and no potions. Monsters swing once at the
 -- start and then every interval; the player regenerates its in-combat regen.
 
 local fs = require("@lune/fs")
 
+local AreaProfiles = require("../src/shared/Data/AreaProfiles")
 local AreaRates = require("../src/shared/Logic/AreaRates")
 local AreaSpawns = require("../src/shared/Logic/AreaSpawns")
 local Areas = require("../src/shared/Data/Areas")
 local Bases = require("../src/shared/Data/Items/Bases")
+local Blessings = require("../src/shared/Data/Blessings")
 local Bonuses = require("../src/shared/Data/Bonuses")
 local Bosses = require("../src/shared/Data/Bosses")
 local BossScaling = require("../src/shared/Logic/BossScaling")
+local BuffCategories = require("../src/shared/Data/BuffCategories")
 local Classes = require("../src/shared/Data/Classes")
+local Config = require("../src/shared/Config")
+local Damage = require("../src/shared/Logic/Damage")
 local Families = require("../src/shared/Data/Families")
 local Combat = require("../src/shared/Data/Combat")
 local Exp = require("../src/shared/Logic/Exp")
 local FightSim = require("../src/shared/Logic/FightSim")
+local GuildSkills = require("../src/shared/Data/GuildSkills")
 local ItemRoll = require("../src/shared/Logic/ItemRoll")
+local ItemTraits = require("../src/shared/Data/ItemTraits")
 local ItemValue = require("../src/shared/Logic/ItemValue")
 local Items = require("../src/shared/Data/Items")
+local Loot = require("../src/shared/Logic/Loot")
 local LootTables = require("../src/shared/Data/LootTables")
+local Luck = require("../src/shared/Logic/Luck")
 local MonsterAbilities = require("../src/shared/Data/MonsterAbilities")
 local MonsterStats = require("../src/shared/Logic/MonsterStats")
 local Monsters = require("../src/shared/Data/Monsters")
 local PartyBonus = require("../src/shared/Logic/PartyBonus")
+local PathData = require("../src/shared/Data/Paths")
+local Paths = require("../src/shared/Logic/Paths")
 local Potions = require("../src/shared/Logic/Potions")
 local Quests = require("../src/shared/Data/Quests")
 local Rarities = require("../src/shared/Data/Rarities")
+local Recipes = require("../src/shared/Data/Recipes")
 local Shops = require("../src/shared/Data/Shops")
 local SkillData = require("../src/shared/Data/Skills")
 local Spawns = require("../src/shared/Data/Spawns")
 local Skills = require("../src/shared/Logic/Skills")
 local StatCalc = require("../src/shared/Logic/StatCalc")
 local Stats = require("../src/shared/Data/Stats")
+local Traits = require("../src/shared/Logic/Traits")
 local Upgrade = require("../src/shared/Logic/Upgrade")
 
 local Balance = {}
@@ -78,6 +97,81 @@ Balance.WALK = 6
 Balance.ARMOR_SLOTS = { "helmet", "armor", "gloves", "boots" }
 Balance.JEWELLERY = { "necklace", "ring", "ring", "talisman" }
 
+-- S84 test data (assumptions of the item model, not game numbers: never in BALANCE_MODULES or on the wiki) --------
+
+-- Situations of the trait model (S84 B3; the names S88 measures with). Every number is a STATY 14 assumption ("Do
+-- pomiaru"); S85-S86 replace basicShare, controlled, still, mana, dungeon and areaShare with their skill model.
+Balance.SITUATIONS = {
+	-- share of the basic attack in the damage: ~50 % (Swordplay, Twin Cut), the Mage 35-50 % (Elemental Spark)
+	basicShare = { Warrior = 0.5, Hunter = 0.5, Mage = 0.4, Cleric = 0.5 } :: { [string]: number },
+	skillInterval = 2.5, -- s between offensive skills (Full Draw: a skill every 2-3 s)
+	elementShare = 0.175, -- share of the weapon-element effects in the Mage's damage (Elemental Might: 15-20 %)
+	iceUptime = 0.65, -- share of the fight the Mage's ice skills slow the target (Elemental Might: 60-70 %)
+	-- Run Through: share of basic hits with an enemy in the band behind the target (group; 0 on one target and on
+	-- the boss itself, the boss's shield waves count as a group); the report adds 0.15 and 0.5 (band not measured)
+	behindShare = 0.3,
+	behindReport = { 0.15, 0.5 },
+	tankRates = { 1.25, 0.6 }, -- attacks per s on a tank: in a group 1-1.5, one target 0.5-0.7 (Swordplay, Parry)
+	killEvery = 8, -- s per kill in `solo` (Reaping: a kill every 6-10 s)
+	bossTeam = 3, -- players of the boss fight (S32 Grimrok: 3-5); its shield waves (2 x ~10, STATY 7) from Data/Bosses
+	controlled = 0.65, -- share of the fight the target is controlled (Easy Prey: 60-70 %)
+	still = 0.70, -- share of the fight the Mage stands still (Runic Seal: 60-75 %)
+	areaShare = 0, -- share of area skills: the S32 convention has none (Combat.areaProcShare once S85-S86 add them)
+	singleSeconds = 60, -- `single`: one generic monster of the player's level, a 60 s exchange
+}
+-- Every situation of traitValue: power situations measure power², `tank` EHP, `solo` HP lost per kill.
+Balance.SITUATION_LIST =
+	{ "single", "group", "elite", "boss", "armored", "tank", "solo", "controlled", "still", "mana", "dungeon" }
+-- Weights of the situations in powerMix (S88 uses the same table).
+Balance.MIX = { group = 0.5, elite = 0.3, boss = 0.2 } :: { [string]: number }
+
+-- G8 (S84 D): two-handed weapon (no off-hand) against the class default loadout (LOADOUT); `path` = the one-handed set
+-- of the same path (report only, S89-S90). The Hunter has no two-handed weapon (HUNTER_WEAPONS: report ranking).
+Balance.G8_PAIRS = {
+	{ classId = "Warrior", weapon = "sword2h" },
+	{ classId = "Warrior", weapon = "axe2h" },
+	{ classId = "Warrior", weapon = "hammer2h" },
+	{ classId = "Warrior", weapon = "spear2h" },
+	{ classId = "Mage", weapon = "staff", path = { weapon = "wand", offhand = "orb" } },
+	{ classId = "Mage", weapon = "runestaff", path = { weapon = "wand", offhand = "tome" } },
+	{ classId = "Cleric", weapon = "holystaff", path = { weapon = "scepter", offhand = "shield" } },
+} :: { { classId: string, weapon: string, path: { weapon: string, offhand: string }? } }
+Balance.HUNTER_WEAPONS = { "bow", "shortbow", "longbow", "crossbow", "heavycrossbow" }
+
+-- D5 and luck (S84 H1; S88 G1 uses the same profiles). The player is a Priest of Fortune (scepter + relic); every
+-- number comes from the data (Bonuses, Blessings, GuildSkills, ItemRoll.trait) through Balance.luckProfile.
+--   jewellery: "heroic" = expected dropBonus lines of a Heroic set (expectedBonuses); "legendary" = one dropBonus
+--              line of a middle Legendary roll on each of the 4 jewellery items; "mythic" = top of the Mythic range
+--   legendaryLines: leg_dropBonus lines (middle Legendary roll) or "all" (top Mythic roll on every item that can roll it)
+Balance.LUCK_PROFILES = {
+	{ id = "K0", label = "bez szczęścia" },
+	{ id = "K1", label = "zwykły", jewellery = "heroic", blessing = 3, guild = 0, relic = { rarity = 1, up = 0 } },
+	{
+		id = "K2",
+		label = "łowca łupu",
+		jewellery = "legendary",
+		legendaryLines = 1,
+		blessing = 4,
+		guild = 5,
+		relic = { rarity = 5, up = 9 },
+	},
+	{
+		id = "K3",
+		label = "maks.",
+		jewellery = "mythic",
+		legendaryLines = "all",
+		blessing = 5,
+		guild = 5,
+		relic = { rarity = 5, up = 9 },
+	},
+} :: { any }
+
+-- traitScale with all 24 traits off: the "bez cech" columns of G7, G8 and the trait table.
+Balance.NO_TRAITS = {} :: { [string]: number }
+for _, def in ItemTraits.list do
+	Balance.NO_TRAITS[def.id] = 0
+end
+
 export type GearOpts = {
 	ilvl: number?, -- default level - GEAR_GAP
 	weaponIlvl: number?, -- weapon and off-hand (shop tiers), default ilvl
@@ -88,6 +182,9 @@ export type GearOpts = {
 	jewellery: boolean?, -- default true
 	armor: boolean?, -- default true
 	bonuses: boolean?, -- expected random bonuses (default true)
+	-- S84: strength of each trait (trait id -> 0 off .. 1 as in the game); nil = every trait as in the game
+	traitScale: { [string]: number }?,
+	element: string?, -- S84: element of a Mage weapon ("fire" | "ice" | "lightning"); nil = the model averages them
 }
 
 local function tierId(baseType: string, ilvl: number): string
@@ -125,7 +222,19 @@ end
 
 -- Expected bonus lines of one item: every pool entry gets its chance to be rolled x its middle value. S62: the chance
 -- is ItemRoll.inclusion of the type-weighted pool, averaged over bonusMin..bonusMax (rng:int); before, count / #pool.
+-- S84: memoised (a pure function of its arguments; nobody changes the returned list).
+local expectedCache: { [string]: { any } } = {}
+local expectedBonusesRaw: (string, number, number, string?) -> { any }
 local function expectedBonuses(defId: string, ilvl: number, rarity: number, classId: string?): { any }
+	local key = `{defId}|{ilvl}|{rarity}|{classId}`
+	local cached = expectedCache[key]
+	if not cached then
+		cached = expectedBonusesRaw(defId, ilvl, rarity, classId)
+		expectedCache[key] = cached
+	end
+	return cached
+end
+expectedBonusesRaw = function(defId: string, ilvl: number, rarity: number, classId: string?): { any }
 	local rarityDef = Rarities.get(rarity)
 	local out = {}
 	local roll: any = ItemRoll
@@ -199,6 +308,9 @@ function Balance.gear(classId: string, level: number, opts: GearOpts?): { any }
 	local weaponIlvl = math.max(1, math.floor(o.weaponIlvl or ilvl))
 	local weaponType = o.weapon or loadout.weapon
 	add(tierId(weaponType, weaponIlvl), weaponIlvl)
+	if o.element then
+		items[1].el = o.element -- S84: ItemRoll.elementOf reads it on elemental weapons only
+	end
 	local weaponBase = Bases.byType[weaponType] :: any
 	local twoHanded = weaponBase.weapon(1).twoHanded
 	local offhand = if o.offhand == false then nil else (o.offhand or loadout.offhand)
@@ -236,15 +348,54 @@ export type Player = {
 	values: { [string]: number },
 	hooks: { [string]: number },
 	magic: boolean,
+	-- S84: the live traits of the items (ItemRoll.trait through itemStats, scaled by GearOpts.traitScale; a trait
+	-- at 0 is left out), the main weapon's base speed (Full Draw) and its element when the gear names it
+	traits: { [string]: ItemRoll.TraitRoll }?,
+	weaponSpeed: number?,
+	element: string?,
 }
 
-function Balance.playerFromItems(classId: string, level: number, items: { any }): Player
+-- `traitScale` (S84): strength of each trait; the grown part of a trait (ItemRoll.trait value in flat[stat] or
+-- hooks[hook]) shrinks by (1 - scale) x value before StatCalc, fixed hooks (Swordplay's riposte, Parry's block) go
+-- only at 0. nil or 1 leaves the item stats untouched (bit for bit).
+function Balance.playerFromItems(
+	classId: string,
+	level: number,
+	items: { any },
+	traitScale: { [string]: number }?
+): Player
 	local flat: { [string]: number } = {}
 	local pct: { [string]: number } = {}
 	local hooks: { [string]: number } = {}
 	local weapon: any = nil
+	local traits: { [string]: ItemRoll.TraitRoll } = {}
+	local element: string? = nil
 	for _, item in items do
 		local stats = ItemRoll.itemStats(item)
+		local trait = stats.trait
+		local scale = if trait and traitScale then traitScale[trait.id] else nil
+		if trait and scale and scale ~= 1 then
+			local def = trait.def
+			local cut = (1 - scale) * trait.value
+			if def.kind == "stat" and def.stat then
+				stats.flat[def.stat] = (stats.flat[def.stat] or 0) - cut
+			elseif def.hook then
+				stats.hooks[def.hook] = (stats.hooks[def.hook] or 0) - cut
+			end
+			if scale == 0 then
+				for hookId, v in def.fixedHooks or {} do
+					stats.hooks[hookId] = (stats.hooks[hookId] or 0) - v
+				end
+			end
+			if scale ~= 0 then
+				local copy = table.clone(trait)
+				copy.value = trait.value * scale
+				copy.power = trait.power * scale
+				traits[trait.id] = copy
+			end
+		elseif trait then
+			traits[trait.id] = trait
+		end
 		for id, v in stats.flat do
 			flat[id] = (flat[id] or 0) + v
 		end
@@ -256,6 +407,7 @@ function Balance.playerFromItems(classId: string, level: number, items: { any })
 		end
 		if stats.weapon then
 			weapon = stats.weapon
+			element = if item.el then stats.weapon.element else nil
 		end
 	end
 	local class = Classes.get(classId) :: Classes.ClassDef
@@ -275,11 +427,14 @@ function Balance.playerFromItems(classId: string, level: number, items: { any })
 		values = result.values,
 		hooks = hooks,
 		magic = class.basicAttack.kind == "magic",
+		traits = traits,
+		weaponSpeed = weapon.speed,
+		element = element,
 	}
 end
 
 function Balance.player(classId: string, level: number, opts: GearOpts?): Player
-	return Balance.playerFromItems(classId, level, Balance.gear(classId, level, opts))
+	return Balance.playerFromItems(classId, level, Balance.gear(classId, level, opts), opts and opts.traitScale)
 end
 
 -- Monsters ------------------------------------------------------------------------------------------------
@@ -411,8 +566,15 @@ function Balance.boss(bossId: string, team: { Player }): any
 	}
 end
 
+-- S84: `traits` = the trait model (traitTerms) in `situation` (Balance.SITUATIONS, default "single"); without opts
+-- the S32 convention as before (stat traits already in the stats, no hook or effect trait).
+export type PowerOpts = { traits: boolean?, situation: string? }
+
 -- Character power: sqrt(DPS x effective HP) against a generic monster of the player's level.
-function Balance.power(p: Player, level: number?): number
+function Balance.power(p: Player, level: number?, opts: PowerOpts?): number
+	if opts and opts.traits then
+		return Balance.situationPower(p, Balance.situationCtx(p, opts.situation or "single", level))
+	end
 	local m = Balance.monster(Balance.GENERIC, level or p.level)
 	local hit = Balance.hit(m, p)
 	local ehp = p.values.maxHp / math.max(hit, 1e-6)
@@ -1490,6 +1652,8 @@ export type BossOpts = {
 	specialHit: number?, -- share of telegraphed attacks that land (SPECIAL_HIT)
 	hazardShare: number?, -- share of the hazard ticks taken (0: players stand safe)
 	cadence: CadenceOpts?,
+	-- S84: the boss at this level (its shield waves move by the same number of levels); nil = Data/Bosses level
+	level: number?,
 }
 export type BossFight = {
 	hp: number,
@@ -1503,6 +1667,12 @@ export type BossFight = {
 	potionHps: number,
 	shieldTankHp: number, -- HP the tank loses to the helpers of all shield waves (share of max HP)
 	hazards: { phase: number, perTick: { [string]: number }, hps: { [string]: number }, every: number }?,
+	-- S84: regular attacks of the shield helpers on the tank, helpers killed, seconds of shield waves, seconds of
+	-- active fighting (all phases)
+	shieldAttacks: number,
+	shieldKills: number,
+	shieldSeconds: number,
+	activeSeconds: number,
 }
 
 -- Boss fight of `team` (team[1] is the tank): HP and armour as Balance.boss, phases by HP (def.phases), the real
@@ -1514,6 +1684,18 @@ export type BossFight = {
 function Balance.bossFight(bossId: string, team: { Player }, opts: BossOpts?): BossFight
 	local o: BossOpts = opts or {}
 	local def = Bosses.byId[bossId] :: any
+	if o.level and o.level ~= def.level then
+		local shift = o.level - def.level
+		def = table.clone(def)
+		def.level = o.level
+		local summons = {}
+		for _, summon in def.summons do
+			local copy = table.clone(summon)
+			copy.level = math.clamp(summon.level + shift, 1, 100)
+			table.insert(summons, copy)
+		end
+		def.summons = summons
+	end
 	local n = #team
 	local specialHit = o.specialHit or Balance.SPECIAL_HIT
 	local m = Balance.monster(Balance.bossKind(def, n), def.level, "boss")
@@ -1532,6 +1714,7 @@ function Balance.bossFight(bossId: string, team: { Player }, opts: BossOpts?): B
 	local enrageAt: number? = nil
 	local phases: { BossPhase } = {}
 	local tankTotal, fightingTotal, shieldTankHp = 0, 0, 0
+	local shieldAttacks, shieldKills, shieldTotal = 0, 0, 0
 	local biggest: { [string]: number } = {}
 	for phase = 1, #thresholds - 1 do
 		local share = thresholds[phase] - thresholds[phase + 1]
@@ -1544,7 +1727,7 @@ function Balance.bossFight(bossId: string, team: { Player }, opts: BossOpts?): B
 				local waves = 1 + (if summon.every then math.floor(fighting / summon.every) else 0)
 				local helperDef = Monsters.get(summon.monster) :: any
 				local members = FightSim.group(helperDef, summon.level, count)
-				local lost = 0
+				local lost, attacks = 0, 0
 				for k, member in members do
 					local teamDps = 0
 					for _, p in team do
@@ -1554,9 +1737,12 @@ function Balance.bossFight(bossId: string, team: { Player }, opts: BossOpts?): B
 					shieldSeconds += duration * waves
 					for j = k, #members do
 						lost += Balance.hit(members[j], tank) * duration / members[j].attackInterval
+						attacks += duration / members[j].attackInterval
 					end
 				end
 				shieldTankHp += lost * waves / tank.values.maxHp
+				shieldAttacks += attacks * waves
+				shieldKills += count * waves
 			end
 		end
 		-- Vaelgrath (phase 2): FLIGHT_SECONDS invulnerable from the phase start, overlapping the shield wave; past
@@ -1612,6 +1798,7 @@ function Balance.bossFight(bossId: string, team: { Player }, opts: BossOpts?): B
 		tankTotal += tankPerSecond * active
 		fightingTotal += active
 		elapsed += shieldSeconds + active
+		shieldTotal += shieldSeconds
 		table.insert(phases, {
 			share = share,
 			seconds = active,
@@ -1657,6 +1844,10 @@ function Balance.bossFight(bossId: string, team: { Player }, opts: BossOpts?): B
 		potionHps = Balance.potionHps(def.level),
 		shieldTankHp = shieldTankHp,
 		hazards = hazards,
+		shieldAttacks = shieldAttacks,
+		shieldKills = shieldKills,
+		shieldSeconds = shieldTotal,
+		activeSeconds = fightingTotal,
 	}
 end
 
@@ -2185,6 +2376,10 @@ function Balance.targetsGlobal(): { TargetRow }
 			)
 		end
 	end
+	-- G7-G9 (S84): rarity gain, two-handed parity, upgrades against income (S87 asserts them)
+	for _, row in Balance.itemTargets() do
+		table.insert(rows, row)
+	end
 	return rows
 end
 
@@ -2199,6 +2394,9 @@ Balance.REGION_TARGETS = {
 	elite2 = { solo = 1.80, duo = 1.50, trio = { 0.60, 1.00 } },
 	kinds = { expPerSecond = { 0.85, 1.20 }, casterHpPerExp = 1.25 }, -- caster HP per EXP vs the region average
 	bossCadence = 0.5,
+	-- S84 (D5): Uniques for the class per hour of grinding, Heroics for the class per hour of cave Elites (profile K0,
+	-- no Fortune; S92-S94 set dropFactor per region)
+	d5 = { uniquePerHour = { 2, 4 }, heroicPerHour = { 0.5, 1.5 } },
 }
 
 -- Rows of one region (group = eliteSingle / eliteEncounter / elite2 / kinds / bossCadence). The Meadows use the S32
@@ -2358,6 +2556,19 @@ function Balance.targetsRegion(mapId: string, targets: any?): { TargetRow }
 						def.level
 					)
 				end
+			end
+		end
+	end
+	-- S84 (D5): drops per hour, profile K0 without Fortune, regions 2-4 (the band's levels every 5)
+	local r = table.find(Balance.REGION_IDS, mapId) :: number
+	if T.d5 and r > 1 then
+		local band = Balance.BANDS[r]
+		for L = band[1], band[2] - 1, 5 do
+			for _, c in Balance.CLASSES do
+				local d = Balance.dropsPerHour(c, L, "K0", false)
+				local u, h = T.d5.uniquePerHour, T.d5.heroicPerHour
+				add("d5", `d5.{c}.{L}.unique`, `{c} {L}: Unikaty dla klasy na h expienia`, d.unique, u[1], u[2], c, L)
+				add("d5", `d5.{c}.{L}.heroic`, `{c} {L}: Heroiki dla klasy na h Elit`, d.heroic, h[1], h[2], c, L)
 			end
 		end
 	end
@@ -2581,6 +2792,1897 @@ function Balance.ledgerData(reasonsModule: LedgerReasons): { [string]: number }
 		out[k] = v
 	end
 	return out
+end
+
+-- Items, loot and monster defence 20-100 (S84) ------------------------------------------------------------------
+-- Item traits as expected values in the STATY 14 situations, rarity gain (G7), two-handed parity (G8), upgrades
+-- against income (G9), materials, item level gaps, drops per hour with the luck profiles (D5) and the defence of
+-- monster families. Game formulas only (ItemRoll, Logic/Traits, Damage, FightSim, Upgrade, Loot, AreaRates,
+-- Logic/Luck); the assumptions are the test data at the top (SITUATIONS, MIX, G8_PAIRS, LUCK_PROFILES).
+
+Balance.makeItem = makeItem
+Balance.tierId = tierId
+Balance.expectedBonuses = expectedBonuses
+Balance.ITEM_LEVELS = { 20, 45, 70, 100 }
+Balance.GEAR_RARITIES = { Rarities.COMMON, Rarities.UNIQUE, Rarities.HEROIC, Rarities.LEGENDARY, Rarities.MYTHIC }
+local ELEMENTS = { "fire", "ice", "lightning" }
+
+local function optsKey(o: GearOpts?): string
+	if not o then
+		return ""
+	end
+	local scale = ""
+	if o.traitScale then
+		local parts = {}
+		for _, id in sortedKeys(o.traitScale) do
+			table.insert(parts, `{id}={o.traitScale[id]}`)
+		end
+		scale = table.concat(parts, ",")
+	end
+	return `{o.ilvl}|{o.weaponIlvl}|{o.rarity}|{o.up}|{o.weapon}|{o.offhand}|{o.jewellery}|{o.armor}|{o.bonuses}|{o.element}|{scale}`
+end
+
+local itemPlayers: { [string]: Player } = {}
+-- Balance.player cached by class, level and every gear option (the S84 grids ask for the same sets many times).
+function Balance.itemPlayer(classId: string, level: number, opts: GearOpts?): Player
+	local key = `{classId}|{level}|{optsKey(opts)}`
+	local p = itemPlayers[key]
+	if not p then
+		p = Balance.player(classId, level, opts)
+		itemPlayers[key] = p
+	end
+	return p
+end
+
+-- A copy of `base` with the fields of `extra`.
+function Balance.withOpts(base: GearOpts?, extra: { [string]: any }): GearOpts
+	local out: any = table.clone(base or {})
+	for k, v in extra do
+		out[k] = v
+	end
+	return out
+end
+
+-- A copy of `base` with trait `traitId` off (traitValue: "M(with) / M(without)", the other trait stays).
+function Balance.withoutTrait(base: GearOpts?, traitId: string): GearOpts
+	local scale = table.clone((base and base.traitScale) or {})
+	scale[traitId] = 0
+	return Balance.withOpts(base, { traitScale = scale })
+end
+
+-- Situations ------------------------------------------------------------------------------------------------------
+
+export type SituationCtx = {
+	name: string,
+	level: number,
+	m: any, -- the monster the player hits (DPS) and that hits the player (its regular attack)
+	hit: number, -- expected damage of one regular attack on the player (FightSim.hit; group: mean over the sizes)
+	attacks: number, -- regular attacks on the player per s of fighting
+	seconds: number, -- s on one target (ticks before its death, armour break stacks)
+	kills: number, -- kills per s (Reaping)
+	targetShare: number, -- share of the attacks coming from the target being hit (weaken, attack slow, stun)
+	othersAlive: number, -- share of the time another enemy stands near (Spark's lightning)
+	behind: number, -- Run Through: share of basic hits with an enemy in the band behind the target
+	controlled: number, -- Easy Prey: share of the fight others keep the target controlled
+	still: number, -- Runic Seal: share of the fight the Mage stands still
+	bossLike: boolean, -- bosses and Elite II: immune to Concussion
+	measure: string, -- "power" (moc²), "ehp" (tank) or "loss" (HP lost per kill, solo)
+	rates: { { attacks: number, targetShare: number } }?, -- tank: the attack rates averaged
+}
+
+local bossFights: { [string]: BossFight } = {}
+-- S83 boss fight of the region boss of regionAt(level) at `level`, a team of SITUATIONS.bossTeam with `classId`
+-- first (the tank) and the next classes of CLASSES; once per (boss, class, level).
+function Balance.bossFightAt(classId: string, level: number): (any, BossFight)
+	local def = Bosses.forRegion(Balance.REGION_IDS[Balance.regionAt(level)]) :: any
+	local key = `{def.id}|{classId}|{level}`
+	local f = bossFights[key]
+	if not f then
+		local team = { Balance.cachedPlayer(classId, level) }
+		for _, c in Balance.CLASSES do
+			if c ~= classId and #team < Balance.SITUATIONS.bossTeam then
+				table.insert(team, Balance.cachedPlayer(c, level))
+			end
+		end
+		f = Balance.bossFight(def.id, team, { level = level })
+		bossFights[key] = f
+	end
+	return def, f :: BossFight
+end
+
+-- Group of the S83 model at the player's level: attacks on the player, kills, the target's share of the attacks and
+-- the time another member lives (members killed one by one, each living member swings at once, then every interval).
+local function groupStats(p: Player, kind: any, level: number): any
+	local first = Balance.monster(kind, level)
+	local d = first.maxHp / math.max(1e-6, FightSim.dps(p :: any, first, Balance.SKILL_DPS))
+	local hits, attacks, seconds, kills, target, others = 0, 0, 0, 0, 0, 0
+	for n, w in AreaSpawns.GROUP_SIZE_WEIGHTS do
+		local members = FightSim.group(kind, level, n)
+		local m = members[1]
+		local a, t = n, 1
+		for k = 1, n do
+			a += (n - k + 1) * d / m.attackInterval
+			t += d / m.attackInterval
+		end
+		hits += w * FightSim.hit(m, p :: any) * a
+		attacks += w * a
+		seconds += w * n * d
+		kills += w * n
+		target += w * t
+		others += w * (n - 1) * d
+	end
+	return {
+		monster = first,
+		hit = hits / attacks,
+		attacks = attacks / seconds,
+		seconds = d,
+		kills = kills / seconds,
+		targetShare = target / attacks,
+		othersAlive = others / seconds,
+	}
+end
+
+local situations: { [any]: { [string]: SituationCtx } } = setmetatable({}, { __mode = "k" }) :: any
+
+-- The situation `name` of SITUATION_LIST for player `p` (monster level `level`, default p.level). Cached per player.
+function Balance.situationCtx(p: Player, name: string, level: number?): SituationCtx
+	local L = level or p.level
+	local byPlayer = situations[p]
+	if not byPlayer then
+		byPlayer = {}
+		situations[p] = byPlayer
+	end
+	local key = `{name}|{L}`
+	local cached = byPlayer[key]
+	if cached then
+		return cached
+	end
+	local S = Balance.SITUATIONS
+	local function make(m: any, seconds: number, measure: string): SituationCtx
+		return {
+			name = name,
+			level = L,
+			m = m,
+			hit = FightSim.hit(m, p :: any),
+			attacks = 1 / m.attackInterval,
+			seconds = seconds,
+			kills = 1 / seconds,
+			targetShare = 1,
+			othersAlive = 0,
+			behind = 0,
+			controlled = 0,
+			still = 0,
+			bossLike = false,
+			measure = measure,
+			rates = nil,
+		}
+	end
+	local function duelSeconds(m: any): number
+		return m.maxHp / math.max(1e-6, FightSim.dps(p :: any, m, Balance.SKILL_DPS))
+	end
+	local ctx: SituationCtx
+	if name == "group" then
+		local g = groupStats(p, Balance.GENERIC, L)
+		ctx = make(g.monster, g.seconds, "power")
+		ctx.hit, ctx.attacks, ctx.kills = g.hit, g.attacks, g.kills
+		ctx.targetShare, ctx.othersAlive, ctx.behind = g.targetShare, g.othersAlive, S.behindShare
+	elseif name == "elite" then
+		local m = Balance.monster(Balance.GENERIC, L, "elite")
+		local d = duelSeconds(m)
+		ctx = make(m, d, "power")
+		ctx.attacks = (1 + d / m.attackInterval) / d
+	elseif name == "boss" then
+		local def, f = Balance.bossFightAt(p.classId, L)
+		local m = Balance.monster(Balance.bossKind(def, S.bossTeam), L, "boss")
+		ctx = make(m, f.seconds, "power")
+		local wave = f.shieldSeconds / math.max(1e-9, f.seconds)
+		ctx.attacks = (f.activeSeconds / m.attackInterval + f.shieldAttacks) / math.max(1e-9, f.seconds)
+		ctx.kills = f.shieldKills / math.max(1e-9, f.seconds)
+		ctx.othersAlive = wave
+		ctx.behind = S.behindShare * wave
+		ctx.still = S.still
+		ctx.bossLike = true
+	elseif name == "armored" then
+		local defence = Families.defence("undead", "armored") :: Families.Defence
+		local kind = table.clone(Balance.GENERIC) :: any
+		kind.defMul = defence.defMul or 1
+		ctx = make(Balance.monster(kind, L), S.singleSeconds, "power")
+	elseif name == "tank" then
+		local m = Balance.monster(Balance.GENERIC, L)
+		local g = groupStats(p, Balance.GENERIC, L)
+		ctx = make(m, duelSeconds(m), "ehp")
+		ctx.rates = {
+			{ attacks = S.tankRates[1], targetShare = g.targetShare },
+			{ attacks = S.tankRates[2], targetShare = 1 },
+		}
+	elseif name == "solo" then
+		local m = Balance.monster(Balance.GENERIC, L)
+		local d = duelSeconds(m)
+		ctx = make(m, d, "loss")
+		ctx.attacks = (1 + d / m.attackInterval) / d
+		ctx.kills = 1 / S.killEvery
+	else -- single, controlled, still, mana, dungeon
+		ctx = make(Balance.monster(Balance.GENERIC, L), S.singleSeconds, "power")
+		if name == "controlled" then
+			ctx.controlled = S.controlled
+		elseif name == "still" then
+			ctx.still = S.still
+		end
+	end
+	byPlayer[key] = ctx
+	return ctx
+end
+
+-- Trait terms (S84 B4) ---------------------------------------------------------------------------------------------
+
+export type TraitTerm = {
+	dps: number, -- added share of the DPS (0.04 = +4 %)
+	takenMul: number, -- multiplier of the damage taken per second
+	sustain: number, -- HP per s of fighting
+	armorMul: number, -- multiplier of the target's armour (back to Damage through m.armor)
+	inStats: boolean, -- a stat trait (StatCalc) or Parry's block (FightSim.hit): its value comes from traitScale only
+}
+export type TraitTerms = {
+	dpsMul: number,
+	takenMul: number,
+	sustain: number,
+	killHealHp: number, -- HP healed per kill inside `sustain` (sustain holds it x ctx.kills per s)
+	armorMul: number,
+	dps: number, -- FightSim.dps on the changed armour x basicShare x SKILL_DPS x dpsMul
+	baseDps: number, -- the same before dpsMul
+	byTrait: { [string]: TraitTerm },
+	-- the same mechanisms from lines alone (woundChance, killHeal, lifesteal, executioner, ...): outside the S32
+	-- convention, so not in the totals; with the trait they count in its term (shared cap, B6)
+	lines: { [string]: TraitTerm },
+}
+
+local STAT_TRAITS = { criticalForce = true, bodkinBolt = true, learnedFormulae = true, powerLens = true }
+STAT_TRAITS.anointment = true
+STAT_TRAITS.prosperity = true
+
+local function emptyTerm(inStats: boolean?): TraitTerm
+	return { dps = 0, takenMul = 1, sustain = 0, armorMul = 1, inStats = inStats == true }
+end
+
+-- Expected value of every trait of `p` (and of the lines sharing its mechanism and cap, B6) in a situation:
+-- STATY 14 situations through Logic/Traits and the game numbers of Data/ItemTraits, Data/Combat, Data/BuffCategories.
+-- Each contribution counts once: stat traits are in the stats already (inStats), Parry's block in FightSim.hit.
+function Balance.traitTerms(p: Player, m: any, situation: string | SituationCtx): TraitTerms
+	local ctx: SituationCtx
+	if type(situation) == "string" then
+		ctx = table.clone(Balance.situationCtx(p, situation))
+		ctx.m = m
+	else
+		ctx = situation :: SituationCtx
+	end
+	local S = Balance.SITUATIONS
+	local v, hooks = p.values, p.hooks
+	local traits = p.traits or {}
+	local byTrait: { [string]: TraitTerm } = {}
+	local lines: { [string]: TraitTerm } = {}
+	-- a line mechanism without its trait stays outside the S32 convention (shown in `lines`, not in the totals)
+	local lineOnly: { [TraitTerm]: boolean } = {}
+	local function termOf(traitId: string?, lineId: string): TraitTerm
+		local list = if traitId then byTrait else lines
+		local id = traitId or lineId
+		local t = list[id]
+		if not t then
+			t = emptyTerm()
+			list[id] = t
+			lineOnly[t] = traitId == nil
+		end
+		return t
+	end
+	for id in traits do
+		if STAT_TRAITS[id] or id == "parry" then
+			byTrait[id] = emptyTerm(true)
+		end
+	end
+	local bs = S.basicShare[p.classId] or 0.5
+	local maxHp = math.max(1, v.maxHp or 1)
+	local swings = math.max(0.1, v.atkSpeed or 1)
+	local double = 1 + (hooks.doubleAttack or 0) / 100
+	local hitShare = 1 - Damage.dodgeChance(m.dodge or 0, v.accuracy or 0)
+	-- hits that roll on-hit effects: basic attacks that land (no double or secondary hits) and one-target skills
+	local procHits = swings * hitShare + 1 / S.skillInterval
+
+	-- Sundering (hammer2h): a stack of `value` % per hit (one duration, refreshed by every hit), mean over the time
+	-- on the target, capped by enemyArmorItem; physical attackers only (mirrors CombatService.applyTraitEffect).
+	local armorMul = 1
+	local sunder = traits.sundering
+	if sunder and not p.magic then
+		local onHit = sunder.def.onHit :: ItemTraits.OnHit
+		local cap = math.min(onHit.maxStacks or 1, BuffCategories.caps.enemyArmorItem / math.max(1e-9, sunder.value))
+		local full = cap / procHits
+		local T = ctx.seconds
+		local mean = if T <= full then procHits * T / 2 else cap - cap * full / (2 * T)
+		local broken = math.min(sunder.value * mean, BuffCategories.caps.enemyArmor)
+		armorMul = 1 - broken / 100
+		termOf("sundering", "").armorMul = armorMul
+	end
+	local target = m
+	if armorMul ~= 1 then
+		target = table.clone(m)
+		target.armor = m.armor * armorMul
+	end
+	local baseDps = FightSim.dps(p :: any, target, 1 / bs) * bs * Balance.SKILL_DPS
+	local basicDps = FightSim.dps(p :: any, target, 1) * bs * Balance.SKILL_DPS
+	local skillDps = baseDps - basicDps
+	-- one basic swing in the model's scale (dodge counted): extra basic hits copy it
+	local swing = basicDps / (swings * double)
+	local hitAdd, dotAdd = 0, 0
+	local function addHit(t: TraitTerm, share: number)
+		t.dps += share
+		hitAdd += if lineOnly[t] then 0 else share
+	end
+	local function addDot(t: TraitTerm, share: number)
+		t.dps += share
+		dotAdd += if lineOnly[t] then 0 else share
+	end
+
+	-- Swordplay: every regular attack on the player rolls Traits.counterChance(riposte) for an instant basic hit
+	-- x (1 + counterDamage %) (mirrors CombatService tryCounter).
+	local riposte = hooks.riposte or 0
+	if riposte > 0 then
+		local chance = Traits.counterChance(riposte, false) / 100
+		local bonus = hooks.counterDamage or 0
+		local t = termOf(if traits.swordplay then "swordplay" else nil, "riposte")
+		addHit(t, ctx.attacks * chance * (1 + bonus / 100) * swing / baseDps)
+	end
+	-- Twin Cut: every `every`-th basic swing strikes again for value % (Traits.twinCut; mirrors
+	-- CombatService:tryBasicAttack).
+	local twin = traits.twinCut
+	if twin then
+		local every = (twin.def.params :: any).every
+		addHit(termOf("twinCut", ""), swings / every * twin.value / 100 * swing / baseDps)
+	end
+	-- Run Through: a landed basic hit with an enemy in the band hits it for value % (a dodgeable basic hit; mirrors
+	-- CombatService:runThrough).
+	local run = traits.runThrough
+	if run then
+		addHit(termOf("runThrough", ""), swings * hitShare * ctx.behind * run.value / 100 * swing / baseDps)
+	end
+	-- Full Draw: one boosted basic attack per offensive skill, + Traits.drawBonus(value, weapon speed) % (mirrors
+	-- CombatService:tryBasicAttack).
+	local draw = traits.fullDraw
+	if draw then
+		local casts = math.min(swings, 1 / S.skillInterval)
+		local bonus = Traits.drawBonus(draw.value, p.weaponSpeed)
+		addHit(termOf("fullDraw", ""), casts * bonus / 100 * swing / baseDps)
+	end
+	-- Beheading + executioner lines: below Combat.lowHpFraction the damage is x (1 + Traits.executeBonus): the fight
+	-- takes (1 - f) / D + f / (D x (1 + b)) of its time (mirrors CombatService:offensiveMultiplier).
+	local execute = Traits.executeBonus(hooks.executioner or 0, hooks.traitExecute or 0) / 100
+	if execute > 0 then
+		local f = Combat.lowHpFraction
+		local mul = 1 / ((1 - f) + f / (1 + execute))
+		addHit(termOf(if traits.beheading then "beheading" else nil, "executioner"), mul - 1)
+	end
+	-- Bleed (Rending Gash, woundChance) and poison (Toxic Barbs, poisonChance): Traits.chance per hit, pct % of the
+	-- hit over the duration in Traits.ticks ticks (+ dotPower), ticks after the target's death lost, maxStacks sums.
+	local attackSlow: { [string]: number } = {}
+	for _, entry in ItemTraits.onHitList do
+		local spec = entry.onHit
+		if spec.effect == "bleed" or spec.effect == "poison" then
+			local trait = traits[entry.trait.id]
+			local grown = if trait then trait.value else 0
+			local line = if spec.line then hooks[spec.line] or 0 else 0
+			if grown > 0 or line > 0 then
+				local chance = Traits.chance(if grown > 0 then spec.chance or 0 else 0, line, 1) / 100
+				local pct = if grown > 0 then grown else spec.linePct or 0
+				local ticks = Traits.ticks(spec.duration)
+				local inFlight = chance * procHits * spec.duration
+				local capped = math.min(1, (spec.maxStacks or 1) / math.max(1e-9, inFlight))
+				local delivered = math.clamp(1 - (ticks + 1) / 2 / ctx.seconds, 0, 1)
+				local share = chance
+					* pct
+					/ 100
+					* (1 + (hooks.dotPower or 0) / 100)
+					* (basicDps / double + skillDps)
+					* capped
+					* delivered
+					/ baseDps
+				addDot(termOf(if grown > 0 then entry.trait.id else nil, spec.line or spec.effect), share)
+				if grown > 0 and spec.attackSlow then
+					attackSlow[entry.trait.id] = 1 - (1 - chance) ^ (procHits * spec.duration)
+				end
+			end
+		end
+	end
+	-- Elemental Spark (wand): Traits.chance(value) per landed basic hit wakes the weapon element (Traits.elementPlan
+	-- with the Spark params, elementRider, dotPower); every element on its own, the mean when the gear names none
+	-- (mirrors CombatService:spark and Skills/Elements:apply).
+	local spark = traits.elementalSpark
+	local iceUptime = 0
+	if spark then
+		local params = spark.def.params :: any
+		local spec: Traits.ElementSpec = {
+			burnPct = params.burnPct,
+			burnDuration = params.burnDuration,
+			exactTicks = true,
+			slowPct = params.slowPct,
+			slowDuration = params.slowDuration,
+			arcPct = params.arcPct,
+			arcRadius = params.arcRadius,
+			sameTargetPct = params.sameTargetPct,
+		}
+		local chance = Traits.chance(spark.value, 0, 1) / 100
+		local rate = swings * hitShare * chance
+		local list = if p.element then { p.element } else ELEMENTS
+		local hit, dmg = 0, 0
+		for _, element in list do
+			local plan = Traits.elementPlan(element, spec, 1, hooks.elementRider or 0, hooks.dotPower or 0, false)
+			if plan and plan.kind == "burn" then
+				local ticks = Traits.ticks(plan.duration)
+				local capped = math.min(1, 1 / math.max(1e-9, rate * plan.duration))
+				local delivered = math.clamp(1 - (ticks + 1) / 2 / ctx.seconds, 0, 1)
+				local share = rate / hitShare * plan.pct / 100 * (1 + (hooks.dotPower or 0) / 100)
+				dmg += share * swing * capped * delivered / baseDps
+			elseif plan and plan.kind == "slow" then
+				-- Frostbite: +max(FROSTBITE, frostbite hook) % from you on targets your ice slowed
+				local uptime = 1 - (1 - chance) ^ (swings * hitShare * plan.duration)
+				local frost = math.max(SkillData.FROSTBITE, hooks.frostbite or 0)
+				hit += uptime * frost / 100
+				iceUptime += uptime / #list
+			elseif plan and plan.kind == "arc" then
+				local pct = ctx.othersAlive * plan.pct + (1 - ctx.othersAlive) * plan.sameTarget
+				hit += rate * pct / 100 * swing / baseDps
+			end
+		end
+		local t = termOf("elementalSpark", "")
+		addHit(t, hit / #list)
+		addDot(t, dmg / #list)
+	end
+	-- Elemental Might (staff): element effects of skills + value % (elementShare of the damage); ice: Frostbite of the
+	-- staff above SkillData.FROSTBITE while the skills slow the target (iceUptime).
+	local might = traits.elementalMight
+	if might then
+		local list = if p.element then { p.element } else ELEMENTS
+		local sum = 0
+		for _, element in list do
+			if element == "ice" then
+				local frost = math.max(SkillData.FROSTBITE, hooks.frostbite or 0)
+				sum += S.iceUptime * (frost - SkillData.FROSTBITE) / 100
+			else
+				sum += S.elementShare * might.value / 100
+			end
+		end
+		addHit(termOf("elementalMight", ""), sum / #list)
+	end
+	-- Harrying: Traits.chance(value) per hit, attack slow for the duration; with poison: enemyAttackSlow keeps the
+	-- strongest (Traits.slowedInterval caps it).
+	local harry = traits.harrying
+	local harryUptime = 0
+	if harry then
+		local onHit = harry.def.onHit :: ItemTraits.OnHit
+		local chance = Traits.chance(harry.value, 0, 1) / 100
+		harryUptime = 1 - (1 - chance) ^ (procHits * onHit.duration)
+		local slow = math.min(onHit.attackSlow or 0, BuffCategories.caps.enemyAttackSlow)
+		termOf("harrying", "").takenMul *= 1 - ctx.targetShare * harryUptime * slow / 100
+	end
+	for traitId, uptime in attackSlow do
+		local onHit = (ItemTraits.get(traitId) :: ItemTraits.TraitDef).onHit :: ItemTraits.OnHit
+		local slow = math.min(onHit.attackSlow or 0, BuffCategories.caps.enemyAttackSlow)
+		termOf(traitId, "").takenMul *= 1 - ctx.targetShare * uptime * (1 - harryUptime) * slow / 100
+	end
+	-- Easy Prey: + Traits.controlledBonus while the target is controlled (others in `controlled`, own slows; mirrors
+	-- CombatService:offensiveMultiplier).
+	local prey = traits.easyPrey
+	if prey then
+		local share = math.max(ctx.controlled, harryUptime, iceUptime)
+		addHit(termOf("easyPrey", ""), share * Traits.controlledBonus(prey.value, 0.5) / 100)
+	end
+	-- Runic Seal: + value % while the Mage stands still (mirrors CombatService:pollSeal and offensiveMultiplier).
+	local seal = traits.runicSeal
+	if seal then
+		addHit(termOf("runicSeal", ""), ctx.still * seal.value / 100)
+	end
+	-- Bonebreaker: every hit weakens the target by value % (cap enemyDamageDown) for the duration.
+	local bone = traits.bonebreaker
+	if bone then
+		local onHit = bone.def.onHit :: ItemTraits.OnHit
+		local uptime = math.min(1, procHits * onHit.duration)
+		local weaken = math.min(bone.value, BuffCategories.caps.enemyDamageDown)
+		termOf("bonebreaker", "").takenMul *= 1 - ctx.targetShare * uptime * weaken / 100
+	end
+	-- Concussion: stuns every 1 / (gap + 1 / (chance x hits)) s; the next attack moves to stun + delayShare x
+	-- interval (mirrors Monster.DelayAttack: expected delay a² / 2I, a - I / 2 above the interval). Bosses immune.
+	local shock = traits.concussion
+	if shock and not ctx.bossLike then
+		local onHit = shock.def.onHit :: ItemTraits.OnHit
+		local chance = Traits.chance(shock.value, 0, 1) / 100
+		local interval = m.attackInterval
+		local a = onHit.duration + (onHit.delayShare or 0) * interval
+		local delay = if a <= interval then a * a / (2 * interval) else a - interval / 2
+		local per = 1 / ((onHit.gap or 0) + 1 / math.max(1e-9, chance * procHits))
+		termOf("concussion", "").takenMul *= 1 - ctx.targetShare * math.min(1, per * delay)
+	end
+
+	-- Sustain: Reaping + killHeal lines (on every kill), Parry's heal on every block, lifesteal and Saving Blow on the
+	-- bearer under the lifesteal cap (Traits.savingSelfShare).
+	-- mirrors CombatService:reward (killHeal % of max HP per kill)
+	local killHeal = hooks.killHeal or 0
+	local killHealHp = 0
+	if killHeal > 0 then
+		termOf(if traits.reaping then "reaping" else nil, "killHeal").sustain += killHeal * maxHp * ctx.kills / 100
+		killHealHp = if traits.reaping then killHeal * maxHp / 100 else 0
+	end
+	-- mirrors CombatService:onBlock (blockHeal % of max HP per block)
+	local blockHeal = hooks.blockHeal or 0
+	if blockHeal > 0 then
+		local _, _, block = Damage.avoidance(v.dodge or 0, 0, 0, Traits.blockChance(hooks.block or 0, false))
+		termOf(if traits.parry then "parry" else nil, "blockHeal").sustain += ctx.attacks * block * blockHeal / 100 * maxHp
+	end
+	local hitDps = baseDps * (1 + hitAdd)
+	local lifesteal = v.lifesteal or 0
+	local lsDef = Stats.get("lifesteal")
+	local lsCap = if lsDef and lsDef.cap then lsDef.cap else 100
+	local saving = traits.savingBlow
+	if lifesteal > 0 then
+		termOf(if saving then "savingBlow" else nil, "lifesteal").sustain += math.min(lifesteal, lsCap) / 100 * hitDps
+	end
+	if saving then -- mirrors CombatService:savingBlow
+		termOf("savingBlow", "").sustain += Traits.savingSelfShare(saving.value, lifesteal) / 100 * hitDps
+	end
+
+	local dpsMul, takenMul, sustain = 1 + hitAdd + dotAdd, 1, 0
+	for _, id in sortedKeys(byTrait) do
+		local t = byTrait[id]
+		takenMul *= t.takenMul
+		sustain += t.sustain
+	end
+	return {
+		dpsMul = dpsMul,
+		takenMul = takenMul,
+		sustain = sustain,
+		killHealHp = killHealHp,
+		armorMul = armorMul,
+		dps = baseDps * dpsMul,
+		baseDps = baseDps,
+		byTrait = byTrait,
+		lines = lines,
+	}
+end
+
+-- Power, EHP and HP lost per kill in a situation (S84 B5) ----------------------------------------------------------
+
+-- sqrt(DPS x EHP) with the trait terms: DPS = traitTerms.dps, EHP = max HP / (hit x takenMul - sustain per hit), the
+-- sustain at most 0.8 of the hit (EHP never infinite).
+function Balance.situationPower(p: Player, ctx: SituationCtx): number
+	local t = Balance.traitTerms(p, ctx.m, ctx)
+	local taken = ctx.hit * t.takenMul
+	local net = taken - math.min(t.sustain / math.max(1e-9, ctx.attacks), 0.8 * taken)
+	return math.sqrt(t.dps * p.values.maxHp / math.max(1e-9, net))
+end
+
+-- The measure M of a situation and its kind: "power" = moc² (DPS x EHP), "ehp" = EHP of the tank (mean over the
+-- attack rates), "loss" = HP lost per kill in a duel (share of max HP; lower is better).
+function Balance.situationMeasure(p: Player, situation: string, level: number?): (number, string)
+	local ctx = Balance.situationCtx(p, situation, level)
+	if ctx.measure == "ehp" then
+		local sum = 0
+		local rates = ctx.rates :: { { attacks: number, targetShare: number } }
+		for _, r in rates do
+			local c = table.clone(ctx)
+			c.attacks, c.targetShare = r.attacks, r.targetShare
+			local t = Balance.traitTerms(p, ctx.m, c)
+			local taken = c.attacks * ctx.hit * t.takenMul
+			sum += p.values.maxHp / math.max(1e-9, taken - math.min(t.sustain, 0.8 * taken))
+		end
+		return sum / #rates, "ehp"
+	elseif ctx.measure == "loss" then
+		local t = Balance.traitTerms(p, ctx.m, ctx)
+		local seconds = ctx.m.maxHp / math.max(1e-9, t.dps)
+		local incoming = ctx.hit * t.takenMul * (1 + seconds / ctx.m.attackInterval)
+		-- the kill heal once per kill, the rest of the sustain per second of the duel
+		local perSecond = t.sustain - t.killHealHp * ctx.kills
+		local heal = (perSecond + (p.values.hpRegenCombat or 0)) * seconds + t.killHealHp
+		return (incoming - math.min(heal, 0.8 * incoming)) / p.values.maxHp, "loss"
+	end
+	return Balance.situationPower(p, ctx) ^ 2, "power"
+end
+
+-- Power in MIX (B5): sum of weight x power in the situation / power of the class's default Common set of the same
+-- level in that situation, over the weights (a unitless index, 1 = the default Common set; every situation counts
+-- with its MIX weight whatever its scale).
+function Balance.powerMix(p: Player, mix: { [string]: number }?): number
+	local weights = mix or Balance.MIX
+	local base = Balance.itemPlayer(p.classId, p.level)
+	local total, sum = 0, 0
+	for _, name in sortedKeys(weights) do
+		local w = weights[name]
+		local opts: PowerOpts = { traits = true, situation = name }
+		total += w * Balance.power(p, nil, opts) / Balance.power(base, nil, opts)
+		sum += w
+	end
+	return total / sum
+end
+
+-- Value of trait `traitId` (B5, S88 definition): M(with) / M(without) - 1 with traitScale[traitId] = 0 (the other
+-- trait of the set stays); M = moc² (power situations and "mix"), EHP (`tank`); `solo`: loss without / loss with - 1.
+function Balance.traitValue(
+	classId: string,
+	level: number,
+	gearOpts: GearOpts?,
+	traitId: string,
+	situation: string
+): number
+	local with = Balance.itemPlayer(classId, level, gearOpts)
+	local without = Balance.itemPlayer(classId, level, Balance.withoutTrait(gearOpts, traitId))
+	if situation == "mix" then
+		return (Balance.powerMix(with) / Balance.powerMix(without)) ^ 2 - 1
+	end
+	local a, kind = Balance.situationMeasure(with, situation)
+	local b = Balance.situationMeasure(without, situation)
+	if kind == "loss" then
+		return b / math.max(1e-9, a) - 1
+	end
+	return a / math.max(1e-9, b) - 1
+end
+
+-- Run Through with another band share `behind` instead of SITUATIONS.behindShare (B3: the band is not measured, so
+-- the report also shows SITUATIONS.behindReport); `group` or `boss` (its shield waves scale the share the same way).
+function Balance.runThroughValue(level: number, rarity: number, up: number, behind: number, situation: string): number
+	local classId, gear = Balance.traitGear("runThrough", rarity, up)
+	local function measure(p: Player): number
+		local ctx = table.clone(Balance.situationCtx(p, situation))
+		ctx.behind *= behind / Balance.SITUATIONS.behindShare
+		return Balance.situationPower(p, ctx) ^ 2
+	end
+	local with = Balance.itemPlayer(classId, level, gear)
+	local without = Balance.itemPlayer(classId, level, Balance.withoutTrait(gear, "runThrough"))
+	return measure(with) / math.max(1e-9, measure(without)) - 1
+end
+
+-- Trait table (S84 B7) ---------------------------------------------------------------------------------------------
+
+-- Class and set of each trait (STATY 3, first path: a one-handed weapon with the class's off-hand, an off-hand with
+-- the class's weapon, the relic with the Priest of Fortune's scepter) and the situations of its STATY 14 row.
+Balance.TRAIT_SETS = {
+	swordplay = { "Warrior", "sword1h", "shield", { "group", "elite", "boss", "single" } },
+	twinCut = { "Warrior", "saber1h", "shield", { "single", "elite" } },
+	reaping = { "Warrior", "axe1h", "shield", { "solo", "boss" } },
+	bonebreaker = { "Warrior", "mace1h", "shield", { "tank", "single", "boss" } },
+	beheading = { "Warrior", "sword2h", false, { "single", "group", "elite", "boss" } },
+	rendingGash = { "Warrior", "axe2h", false, { "single", "elite" } },
+	sundering = { "Warrior", "hammer2h", false, { "armored", "single" } },
+	runThrough = { "Warrior", "spear2h", false, { "group", "boss" } },
+	parry = { "Warrior", "sword1h", "shield", { "tank" } },
+	harrying = { "Hunter", "shortbow", "quiver", { "solo" } },
+	toxicBarbs = { "Hunter", "bow", "quiver", { "single", "elite" } },
+	criticalForce = { "Hunter", "longbow", "quiver", { "single", "group", "elite", "boss" } },
+	easyPrey = { "Hunter", "crossbow", "quiver", { "controlled" } },
+	bodkinBolt = { "Hunter", "heavycrossbow", "quiver", { "armored", "single" } },
+	fullDraw = { "Hunter", "bow", "quiver", { "single", "group", "elite", "boss" } },
+	elementalSpark = { "Mage", "wand", "orb", { "single", "group", "boss" } },
+	elementalMight = { "Mage", "staff", false, { "single", "group", "boss" } },
+	runicSeal = { "Mage", "runestaff", false, { "still", "boss" } },
+	learnedFormulae = { "Mage", "wand", "tome", { "mana" } },
+	powerLens = { "Mage", "wand", "orb", { "single", "group", "elite", "boss" } },
+	anointment = { "Cleric", "scepter", "shield", { "dungeon" } },
+	savingBlow = { "Cleric", "holystaff", false, { "solo" } },
+	concussion = { "Cleric", "flail1h", "shield", { "group", "single" } },
+	prosperity = { "Cleric", "scepter", "relic", {} },
+} :: { [string]: { any } }
+
+export type TraitRow = {
+	traitId: string,
+	classId: string,
+	set: string,
+	element: string?,
+	values: { [string]: number }, -- situation (or "mix") -> traitValue; NaN outside the trait's situations
+	setNoTraits: number, -- moc² in MIX of the set with its traits / with NO_TRAITS - 1 (both traits of the set)
+	staty: number, -- STATY 14 starting estimate (Data/ItemWeights.traits pct / 100)
+}
+
+-- Gear options of a trait's set.
+function Balance.traitGear(traitId: string, rarity: number, up: number, element: string?): (string, GearOpts)
+	local spec = Balance.TRAIT_SETS[traitId]
+	return spec[1] :: string,
+		{ weapon = spec[2], offhand = spec[3], rarity = rarity, up = up, element = element } :: GearOpts
+end
+
+-- Every trait at `level` with `rarity` and `up` (24 rows, + one row per element of Spark and Might).
+function Balance.traitTable(level: number, rarity: number, up: number): { TraitRow }
+	local ItemWeights = require("../src/shared/Data/ItemWeights") :: any
+	local out: { TraitRow } = {}
+	local function row(traitId: string, element: string?)
+		local classId, gear = Balance.traitGear(traitId, rarity, up, element)
+		local spec = Balance.TRAIT_SETS[traitId]
+		local values: { [string]: number } = {}
+		for _, name in Balance.SITUATION_LIST do
+			values[name] = if table.find(spec[4], name)
+				then Balance.traitValue(classId, level, gear, traitId, name)
+				else 0 / 0
+		end
+		values.mix = Balance.traitValue(classId, level, gear, traitId, "mix")
+		local with = Balance.itemPlayer(classId, level, gear)
+		local without = Balance.itemPlayer(classId, level, Balance.withOpts(gear, { traitScale = Balance.NO_TRAITS }))
+		local weight = ItemWeights.traits[traitId]
+		table.insert(out, {
+			traitId = traitId,
+			classId = classId,
+			set = `{spec[2]}{if spec[3] then " + " .. spec[3] else ""}`,
+			element = element,
+			values = values,
+			setNoTraits = (Balance.powerMix(with) / Balance.powerMix(without)) ^ 2 - 1,
+			staty = if weight then weight.pct / 100 else 0 / 0,
+		})
+	end
+	for _, def in ItemTraits.list do
+		row(def.id)
+		if def.id == "elementalSpark" or def.id == "elementalMight" then
+			for _, element in ELEMENTS do
+				row(def.id, element)
+			end
+		end
+	end
+	return out
+end
+
+-- G7: rarity gain (S84 C) --------------------------------------------------------------------------------------------
+
+export type RarityGain = {
+	s32: number, -- Balance.rarityGain (power without options)
+	noTraits: number, -- trait model in `single`, NO_TRAITS on both sets
+	traits: number, -- trait model in `single` (the G7 measure S87 asserts)
+	baseOnly: number, -- the same without random bonuses (rarity baseMul and trait strength)
+	linesOnly: number, -- traits - baseOnly
+}
+
+local rarityGains: { [string]: RarityGain } = {}
+-- A full default set of `rarity` against Common, same ilvl (level - 2).
+function Balance.rarityGainAt(classId: string, level: number, rarity: number, opts: { situation: string? }?): RarityGain
+	local situation = (opts and opts.situation) or "single"
+	local key = `{classId}|{level}|{rarity}|{situation}`
+	local cached = rarityGains[key]
+	if cached then
+		return cached
+	end
+	local P: PowerOpts = { traits = true, situation = situation }
+	local function gain(o: GearOpts?): number
+		local common = Balance.itemPlayer(classId, level, o)
+		local rare = Balance.itemPlayer(classId, level, Balance.withOpts(o, { rarity = rarity }))
+		return Balance.power(rare, nil, P) / Balance.power(common, nil, P) - 1
+	end
+	local traits = gain(nil)
+	local baseOnly = gain({ bonuses = false })
+	local result: RarityGain = {
+		s32 = Balance.rarityGain(classId, level, rarity),
+		noTraits = gain({ traitScale = Balance.NO_TRAITS }),
+		traits = traits,
+		baseOnly = baseOnly,
+		linesOnly = traits - baseOnly,
+	}
+	rarityGains[key] = result
+	return result
+end
+
+-- G7 band of a rarity (low, high); Mythic: above the Legendary of the same class and level (no high).
+function Balance.g7Band(classId: string, level: number, rarity: number): (number?, number?)
+	if rarity == Rarities.UNIQUE then
+		return 0.08, 0.15
+	elseif rarity == Rarities.HEROIC then
+		return 0.15, 0.25
+	elseif rarity == Rarities.LEGENDARY then
+		return 0.25, if classId == "Hunter" then 0.43 else 0.40
+	end
+	return Balance.rarityGainAt(classId, level, Rarities.LEGENDARY).traits, nil
+end
+
+-- G8: two-handed parity (S84 D) --------------------------------------------------------------------------------------
+
+export type Parity = { mix: number, single: number, group: number, elite: number, boss: number, worst: number }
+
+local parities: { [string]: Parity } = {}
+-- moc² of the set with the two-handed `weapon` (no off-hand) / moc² of the reference (default LOADOUT, or opts.ref),
+-- the whole set of `rarity` +`up`; opts.traits = false: NO_TRAITS on both. mix = (powerMix / powerMix)².
+function Balance.twoHandedParity(
+	classId: string,
+	level: number,
+	weapon: string,
+	rarity: number,
+	up: number,
+	opts: { traits: boolean?, ref: { weapon: string, offhand: string }? }?
+): Parity
+	local o = opts or {}
+	local scale = if o.traits == false then Balance.NO_TRAITS else nil
+	local key = `{classId}|{level}|{weapon}|{rarity}|{up}|{o.traits}|{o.ref and o.ref.weapon}|{o.ref and o.ref.offhand}`
+	local cached = parities[key]
+	if cached then
+		return cached
+	end
+	local two = Balance.itemPlayer(
+		classId,
+		level,
+		{ weapon = weapon, offhand = false, rarity = rarity, up = up, traitScale = scale }
+	)
+	local ref = Balance.itemPlayer(classId, level, {
+		weapon = o.ref and o.ref.weapon,
+		offhand = o.ref and o.ref.offhand,
+		rarity = rarity,
+		up = up,
+		traitScale = scale,
+	})
+	local result: any = { mix = (Balance.powerMix(two) / Balance.powerMix(ref)) ^ 2 }
+	local worst = math.huge
+	for _, name in { "single", "group", "elite", "boss" } do
+		local P: PowerOpts = { traits = true, situation = name }
+		local r = (Balance.power(two, nil, P) / Balance.power(ref, nil, P)) ^ 2
+		result[name] = r
+		worst = math.min(worst, r)
+	end
+	result.worst = worst
+	parities[key] = result
+	return result :: Parity
+end
+
+-- The S32 column of G8: (power / power)² without options (weaponScore and the diagnosis), the same rarity and upgrade.
+function Balance.twoHandedS32(classId: string, level: number, weapon: string, rarity: number, up: number): number
+	local two = Balance.itemPlayer(classId, level, { weapon = weapon, offhand = false, rarity = rarity, up = up })
+	local ref = Balance.itemPlayer(classId, level, { rarity = rarity, up = up })
+	return (Balance.power(two) / Balance.power(ref)) ^ 2
+end
+
+-- G8 band (0.97-1.035; the holy staff at +9 up to 1.06).
+function Balance.g8Band(weapon: string, up: number): (number, number)
+	return 0.97, if weapon == "holystaff" and up >= 9 then 1.06 else 1.035
+end
+
+-- G9: upgrades against income (S84 E) -------------------------------------------------------------------------------
+
+local priceCache: { [string]: number }? = nil
+-- Gold of one unit (goldEq): essence dust at the lowest merchant price (Data/Shops), shards and crystals by
+-- transmutation and the protection scroll by its recipe (Data/Recipes: ingredients + gold), the rest (herbs) at
+-- its Items price.
+function Balance.materialPrices(): { [string]: number }
+	if priceCache then
+		return priceCache
+	end
+	local prices: { [string]: number } = {}
+	local function shopPrice(id: string): number?
+		local best: number? = nil
+		for _, shopId in sortedKeys(Shops.byId) do
+			for _, entry in (Shops.byId[shopId] :: any).entries do
+				if entry.item == id and entry.price then
+					best = math.min(best or math.huge, entry.price)
+				end
+			end
+		end
+		return best
+	end
+	local function price(id: string): number
+		local known = prices[id]
+		if known then
+			return known
+		end
+		local value = shopPrice(id)
+		if not value then
+			for _, recipe in Recipes.list do
+				if recipe.result.id == id and recipe.group ~= "blessing" then
+					local sum = recipe.gold
+					for _, ingredient in recipe.ingredients do
+						sum += ingredient.n * price(ingredient.id)
+					end
+					value = sum / recipe.result.n
+					break
+				end
+			end
+		end
+		if not value then
+			local def = Items.get(id) :: any
+			value = if def then def.price or 0 else 0
+		end
+		prices[id] = value :: number
+		return value :: number
+	end
+	for _, id in { "essence_dust", "essence_shard", "essence_crystal", "scroll_protection", "legend_core" } do
+		price(id)
+	end
+	prices.legend_core = nil -- not sold: Legend Cores stay outside goldEq
+	priceCache = prices
+	return prices
+end
+
+export type UpgradePlan = {
+	gold: number,
+	attempts: number,
+	scrolls: number, -- protection scrolls (one per attempt of a step below 100 %)
+	materials: { [string]: number }, -- essences (not Legend Cores)
+	cores: number, -- Legend Cores
+	scrollGold: number,
+	materialGold: number,
+	goldEq: number, -- gold + scrollGold + materialGold (Legend Cores outside)
+}
+
+-- Expected cost of `item` from +0 to +`to` on Upgrade.cost and Upgrade.chance only. protect: step n takes 1 / p_n
+-- attempts and a scroll on each attempt of a step below 100 % (BlacksmithService takes the scroll on every protected
+-- attempt); without: a failure drops one level, T_k = (c_k + (1 - p_k) T_(k-1)) / p_k for gold, attempts and every
+-- material. The Legend Core threshold comes from Upgrade.cost; opts.coreFrom (report for S87) moves it by rewriting
+-- only the result of Upgrade.cost here (no data changes).
+function Balance.upgradePlan(item: any, to: number, protect: boolean, opts: { coreFrom: number? }?): UpgradePlan
+	local coreFrom = opts and opts.coreFrom
+	local function costOf(n: number): Upgrade.Cost
+		local cost = Upgrade.cost(item, n)
+		if not coreFrom then
+			return cost
+		end
+		local materials = {}
+		for _, mat in cost.materials do
+			if mat.id ~= "legend_core" then
+				table.insert(materials, mat)
+			end
+		end
+		if n >= coreFrom and Rarities.get(item.rarity).legendCore then
+			table.insert(materials, { id = "legend_core", n = 1 })
+		end
+		return { gold = cost.gold, materials = materials }
+	end
+	local gold, attempts, scrolls, cores = 0, 0, 0, 0
+	local materials: { [string]: number } = {}
+	local function addMaterial(id: string, n: number)
+		if id == "legend_core" then
+			cores += n
+		else
+			materials[id] = (materials[id] or 0) + n
+		end
+	end
+	if protect then
+		for n = 1, to do
+			local cost = costOf(n)
+			local p = Upgrade.chance(n) / 100
+			gold += cost.gold / p
+			attempts += 1 / p
+			if p < 1 then
+				scrolls += 1 / p
+			end
+			for _, mat in cost.materials do
+				addMaterial(mat.id, mat.n / p)
+			end
+		end
+	else
+		local previous: { [string]: number } = {}
+		for k = 1, to do
+			local cost = costOf(k)
+			local p = Upgrade.chance(k) / 100
+			local step: { [string]: number } = { gold = cost.gold, attempts = 1 }
+			for _, mat in cost.materials do
+				step[mat.id] = (step[mat.id] or 0) + mat.n
+			end
+			local keys: { [string]: boolean } = {}
+			for id in step do
+				keys[id] = true
+			end
+			for id in previous do
+				keys[id] = true
+			end
+			local T: { [string]: number } = {}
+			for _, id in sortedKeys(keys) do
+				local value = ((step[id] or 0) + (1 - p) * (previous[id] or 0)) / p
+				T[id] = value
+				if id == "gold" then
+					gold += value
+				elseif id == "attempts" then
+					attempts += value
+				else
+					addMaterial(id, value)
+				end
+			end
+			previous = T
+		end
+	end
+	local prices = Balance.materialPrices()
+	local materialGold = 0
+	for _, id in sortedKeys(materials) do
+		materialGold += materials[id] * (prices[id] or 0)
+	end
+	local scrollGold = scrolls * prices.scroll_protection
+	return {
+		gold = gold,
+		attempts = attempts,
+		scrolls = scrolls,
+		materials = materials,
+		cores = cores,
+		scrollGold = scrollGold,
+		materialGold = materialGold,
+		goldEq = gold + scrollGold + materialGold,
+	}
+end
+
+local incomes: { [string]: number } = {}
+-- Gold of a level for G9 (S84): kill gold + drop sales per hour (economyAt) x the hours of the level, with the quest
+-- EXP and gold of its band (BANDS, questsAt without bosses) spread over the band's levels by the EXP they need, like
+-- the S32 income (questRewards) and the diagnosis. Quests on their own level (paceAt) give levels of ~0 hours.
+function Balance.levelIncome(classId: string, level: number): number
+	local key = `{classId}|{level}`
+	local cached = incomes[key]
+	if cached then
+		return cached
+	end
+	local band = Balance.BANDS[Balance.regionAt(level)]
+	local exp, gold, need = 0, 0, 0
+	for l = band[1], band[2] - 1 do
+		local q = Balance.questsAt(l)
+		exp += q.exp
+		gold += q.gold
+		need += Exp.expToNext(l)
+	end
+	local share = Exp.expToNext(level) / math.max(1, need)
+	local e = Balance.economyAt(classId, level)
+	local kills = math.max(0, Exp.expToNext(level) - exp * share) / e.pace.expPerKill
+	local income = e.incomePerHour * kills * e.pace.secondsPerKill / 3600 + gold * share
+	incomes[key] = income
+	return income
+end
+
+export type UpgradeIncome = {
+	classId: string,
+	level: number,
+	income: number, -- gold of the level (Balance.levelIncome)
+	up3: number, -- +1..+3 of the weapon (gold, failures repeat the step) / income
+	up6: number,
+	up9: number, -- +1..+9 with protection, gold only, in levels of income (G9)
+	up9Unprotected: number,
+	set9Unprotected: number, -- the whole set (10 items) +9 without protection
+	goldEq9: number, -- +1..+9 with protection: gold + scrolls + materials, in levels of income
+	scrolls9: number,
+}
+
+local upgradeIncomes: { [number]: { UpgradeIncome } } = {}
+-- The class's default weapon of ilvl level - 2 against the gold of the level (levelIncome, gross like the S32 income:
+-- potions apart).
+function Balance.upgradeVsIncome(level: number): { UpgradeIncome }
+	local cached = upgradeIncomes[level]
+	if cached then
+		return cached
+	end
+	local out: { UpgradeIncome } = {}
+	local ilvl = math.max(1, level - Balance.GEAR_GAP)
+	for _, c in Balance.CLASSES do
+		local item = makeItem(tierId(Balance.LOADOUT[c].weapon, ilvl), ilvl, Rarities.COMMON, 0, {})
+		local income = math.max(1e-9, Balance.levelIncome(c, level))
+		local p9 = Balance.upgradePlan(item, 9, true)
+		local u9 = Balance.upgradePlan(item, 9, false)
+		local setSize = 2 + #Balance.ARMOR_SLOTS + #Balance.JEWELLERY
+		table.insert(out, {
+			classId = c,
+			level = level,
+			income = income,
+			up3 = Balance.upgradePlan(item, 3, true).gold / income,
+			up6 = Balance.upgradePlan(item, 6, true).gold / income,
+			up9 = p9.gold / income,
+			up9Unprotected = u9.gold / income,
+			set9Unprotected = setSize * u9.gold / income,
+			goldEq9 = p9.goldEq / income,
+			scrolls9 = p9.scrolls,
+		})
+	end
+	upgradeIncomes[level] = out
+	return out
+end
+
+-- Materials (S84 F) -------------------------------------------------------------------------------------------------
+
+Balance.ESSENCES = { "essence_dust", "essence_shard", "essence_crystal", "scroll_protection", "legend_core" }
+
+local function addExpected(list: { any }, mul: number, into: { [string]: number })
+	for _, drop in list do
+		into[drop.id] = (into[drop.id] or 0) + (drop.chance or 1) * (drop.min + drop.max) / 2 * mul
+	end
+end
+
+-- Expected materials of one kill of `kind` (mirrors Loot.rollMonsterLoot: the kind's table + the variant's, x the
+-- area's materialMul `mul`, default 1).
+function Balance.materialsPerKill(kind: string, variant: string, mul: number?): { [string]: number }
+	local def = Monsters.get(kind) :: any
+	local tableDef = LootTables.byId[def.lootTable]
+	local out: { [string]: number } = {}
+	addExpected(tableDef.materials, mul or 1, out)
+	addExpected(tableDef.variantMaterials[variant] or {}, mul or 1, out)
+	return out
+end
+
+-- Expected materials of dismantling one dropped +0 item of `variant` (rarity weights; the expected value of
+-- Logic/Dismantle.roll: Rarities dismantle, chance x mean amount).
+function Balance.dismantlePerItem(variant: string, topTierMul: number?): { [string]: number }
+	local weights = ItemRoll.rarityWeights(variant, topTierMul)
+	local total = 0
+	for _, w in weights do
+		total += w
+	end
+	local out: { [string]: number } = {}
+	for _, rarity in sortedKeys(weights) do
+		addExpected(Rarities.get(rarity).dismantle, weights[rarity] / total, out)
+	end
+	return out
+end
+
+export type CaveSpawners = {
+	id: string,
+	levels: { number },
+	q: number, -- share of Elite spawners with two members
+	elites: { { kind: string, min: number, max: number } },
+	elite2: { min: number, max: number }?,
+}
+
+local caveSpawnerCache: { [string]: { CaveSpawners } } = {}
+-- The caves of a region from Data/Spawns (Elite kinds with their spawner levels, the Elite II spawner, q pairs).
+function Balance.caveSpawners(mapId: string): { CaveSpawners }
+	local cached = caveSpawnerCache[mapId]
+	if cached then
+		return cached
+	end
+	local out: { CaveSpawners } = {}
+	for _, cave in Areas.caves.list do
+		if cave.region == mapId then
+			local groups, paired = 0, 0
+			local elites = {}
+			local elite2 = nil
+			for _, s in Spawns.byMap[cave.id] or {} do
+				if s.variant == "elite" then
+					groups += 1
+					paired += if s.count >= 2 then 1 else 0
+					local known = false
+					for _, e in elites do
+						known = known or e.kind == s.monster
+					end
+					if not known then
+						table.insert(elites, { kind = s.monster, min = s.level.min, max = s.level.max })
+					end
+				elseif s.variant == "elite2" then
+					elite2 = { min = s.level.min, max = s.level.max }
+				end
+			end
+			table.insert(out, {
+				id = cave.id,
+				levels = cave.levels,
+				q = if groups > 0 then paired / groups else 0,
+				elites = elites,
+				elite2 = elite2,
+			})
+		end
+	end
+	caveSpawnerCache[mapId] = out
+	return out
+end
+
+-- The cave of regionAt(level) whose Elite spawners hold the level, else the one nearest to it.
+function Balance.caveAt(level: number): CaveSpawners
+	local best, bestGap = nil, math.huge
+	for _, cave in Balance.caveSpawners(Balance.REGION_IDS[Balance.regionAt(level)]) do
+		if #cave.elites > 0 then
+			local low, high = math.huge, -math.huge
+			for _, e in cave.elites do
+				low, high = math.min(low, e.min), math.max(high, e.max)
+			end
+			local gap = math.max(low - level, level - high, 0)
+			if gap < bestGap then
+				best, bestGap = cave, gap
+			end
+		end
+	end
+	return best :: CaveSpawners
+end
+
+local eliteRates: { [string]: number } = {}
+-- Cave Elites per hour at `level`: 3600 (1 + q) / ((1 - q) t1 + q t2), t1 / t2 = a single / a pair of the cave's
+-- Elite kinds (mean) with the rest from regeneration, BREAK and WALK (like paceAt); a pair is two kills.
+function Balance.elitesPerHour(classId: string, level: number): (number, CaveSpawners)
+	local cave = Balance.caveAt(level)
+	local key = `{classId}|{level}`
+	local cached = eliteRates[key]
+	if cached then
+		return cached, cave
+	end
+	local p = Balance.cachedPlayer(classId, level)
+	local regen = Stats.Formula.hpRegenPct / 100
+	local free = Balance.BREAK + Balance.WALK
+	local t1, t2 = 0, 0
+	for _, e in cave.elites do
+		local def = Monsters.get(e.kind) :: any
+		local single = Balance.elite(p, def, level)
+		local pair = Balance.groupFight(p, FightSim.group(def, level, 2, "elite"))
+		t1 += single.seconds + single.hpLost / regen + free
+		t2 += pair.seconds + pair.hpLost / regen + free
+	end
+	t1 /= #cave.elites
+	t2 /= #cave.elites
+	local q = cave.q
+	local rate = 3600 * (1 + q) / ((1 - q) * t1 + q * t2)
+	eliteRates[key] = rate
+	return rate, cave
+end
+
+-- Upgrade materials of one weapon and of a full set to +6 and +9 (Heroic and Legendary, with and without protection),
+-- plus the shards of the protection scrolls (their recipe).
+export type MaterialNeed = {
+	label: string,
+	dust: number,
+	shards: number,
+	crystals: number,
+	cores: number,
+	scrolls: number,
+	scrollShards: number,
+}
+function Balance.materialDemand(): { MaterialNeed }
+	local out: { MaterialNeed } = {}
+	local scroll = Recipes.get("scroll_protection") :: Recipes.Recipe
+	local scrollShards = 0
+	for _, ingredient in scroll.ingredients do
+		if ingredient.id == "essence_shard" then
+			scrollShards += ingredient.n / scroll.result.n
+		end
+	end
+	for _, rarity in { Rarities.HEROIC, Rarities.LEGENDARY } do
+		local item = makeItem("sword1h_1", 50, rarity, 0, {})
+		for _, spec in
+			{
+				{ "broń", 1 },
+				{ "zestaw z jednoręczną", 2 + #Balance.ARMOR_SLOTS + #Balance.JEWELLERY },
+				{ "zestaw z dwuręczną", 1 + #Balance.ARMOR_SLOTS + #Balance.JEWELLERY },
+			}
+		do
+			for _, to in { 6, 9 } do
+				for _, protect in { true, false } do
+					local plan = Balance.upgradePlan(item, to, protect)
+					local n = spec[2] :: number
+					local label = `{Rarities.get(rarity).key} · {spec[1]} · +{to} · {if protect
+						then "z ochroną"
+						else "bez ochrony"}`
+					table.insert(out, {
+						label = label,
+						dust = n * (plan.materials.essence_dust or 0),
+						shards = n * (plan.materials.essence_shard or 0),
+						crystals = n * (plan.materials.essence_crystal or 0),
+						cores = n * plan.cores,
+						scrolls = n * plan.scrolls,
+						scrollShards = n * plan.scrolls * scrollShards,
+					})
+				end
+			end
+		end
+	end
+	return out
+end
+
+export type MaterialSupply = {
+	level: number,
+	killsPerHour: number,
+	elitesPerHour: number,
+	normal: { [string]: number }, -- per hour of grinding: kill materials + dismantled drops
+	elite: { [string]: number }, -- per hour of cave Elites
+	elite2: { [string]: number }, -- per Elite II kill (materials + dismantled drops)
+	elite2PerHour: number, -- Elite II kills per hour of one cave's respawn (AreaSpawns.elite2Respawn)
+	bossWeek: { [string]: number }, -- Config.Boss.dailyRuns x 7 kills of the region boss (materials only)
+}
+
+-- Materials per hour of `classId` at `level` (expected values; paceAt and elitesPerHour of the same level).
+function Balance.materialSupply(classId: string, level: number): MaterialSupply
+	local mods = Balance.dropMods(Balance.REGION_IDS[Balance.regionAt(level)])
+	local pace = Balance.paceAt(classId, level)
+	local kills = 3600 / pace.secondsPerKill
+	local normal: { [string]: number } = {}
+	for id, n in Balance.materialsPerKill(pace.kind, "normal", mods.materialMul) do
+		normal[id] = n * kills
+	end
+	local items = AreaRates.itemsPerKill("normal", mods, 0) * kills
+	for id, n in Balance.dismantlePerItem("normal") do
+		normal[id] = (normal[id] or 0) + n * items
+	end
+	local eph, cave = Balance.elitesPerHour(classId, level)
+	local eliteKind = cave.elites[1].kind
+	local elite: { [string]: number } = {}
+	for id, n in Balance.materialsPerKill(eliteKind, "elite", mods.materialMul) do
+		elite[id] = n * eph
+	end
+	local eliteItems = AreaRates.itemsPerKill("elite", mods, 0) * eph
+	for id, n in Balance.dismantlePerItem("elite") do
+		elite[id] = (elite[id] or 0) + n * eliteItems
+	end
+	local elite2: { [string]: number } = Balance.materialsPerKill(eliteKind, "elite2", mods.materialMul)
+	local items2 = AreaRates.itemsPerKill("elite2", mods, 0)
+	for id, n in Balance.dismantlePerItem("elite2") do
+		elite2[id] = (elite2[id] or 0) + n * items2
+	end
+	local respawn = AreaSpawns.elite2Respawn(if cave.elite2 then cave.elite2.max else level)
+	local bossId = LootTables.regionBoss[Balance.regionAt(level)]
+	local bossWeek: { [string]: number } = {}
+	addExpected(LootTables.bosses[bossId].materials, Config.Boss.dailyRuns * 7, bossWeek)
+	return {
+		level = level,
+		killsPerHour = kills,
+		elitesPerHour = eph,
+		normal = normal,
+		elite = elite,
+		elite2 = elite2,
+		elite2PerHour = 3600 / ((respawn.min + respawn.max) / 2),
+		bossWeek = bossWeek,
+	}
+end
+
+-- Hours of a source to gather `need` (dust, shards, crystals) with transmutation (Data/Recipes: 10 dust -> shard,
+-- 8 shards -> crystal, each from its recipe level): dust equivalents; below the crystal recipe the crystals come
+-- only from drops. NaN when the source never gives a needed material.
+function Balance.materialHours(need: MaterialNeed, perHour: { [string]: number }, level: number): number
+	local shardRecipe = Recipes.get("transmute_shard") :: Recipes.Recipe
+	local crystalRecipe = Recipes.get("transmute_crystal") :: Recipes.Recipe
+	local dustPerShard = shardRecipe.ingredients[1].n / shardRecipe.result.n
+	local shardsPerCrystal = crystalRecipe.ingredients[1].n / crystalRecipe.result.n
+	local d, s, c = perHour.essence_dust or 0, perHour.essence_shard or 0, perHour.essence_crystal or 0
+	local shardsNeed = need.shards + need.scrollShards
+	local function per(amount: number, rate: number): number
+		if amount <= 0 then
+			return 0
+		end
+		return if rate > 0 then amount / rate else 0 / 0
+	end
+	local function maxOf(a: number, b: number): number
+		return if a ~= a or b ~= b then 0 / 0 else math.max(a, b)
+	end
+	if level < shardRecipe.level then
+		return maxOf(maxOf(per(need.dust, d), per(shardsNeed, s)), per(need.crystals, c))
+	end
+	local function eq(dust: number, shards: number, crystals: number, withCrystal: boolean): number
+		return dust + dustPerShard * shards + (if withCrystal then dustPerShard * shardsPerCrystal * crystals else 0)
+	end
+	if level >= crystalRecipe.level then
+		return per(eq(need.dust, shardsNeed, need.crystals, true), eq(d, s, c, true))
+	end
+	return maxOf(per(eq(need.dust, shardsNeed, 0, false), eq(d, s, 0, false)), per(need.crystals, c))
+end
+
+-- Item level gaps and longevity (S84 G) -----------------------------------------------------------------------------
+
+export type IlvlGap = {
+	level: number,
+	normal: number, -- level - mean ilvl of a normal monster of the level (ItemRoll.dropLevelRange)
+	eliteSpawner: number, -- the highest Elite spawner level <= level (any cave up to this region), NaN = none
+	elite: number, -- level - mean ilvl of its drop (Loot.dropBaseLevel)
+	elite2Spawner: number,
+	elite2: number,
+	boss: number, -- level - the level of the last boss at or below the level (Legendary / Mythic at the boss level)
+}
+
+-- Gaps between the player's level and the item level of each source, every level of the region's band.
+function Balance.ilvlGaps(region: number): { IlvlGap }
+	local band = Balance.BANDS[region]
+	local last = if region == #Balance.BANDS then band[2] else band[2] - 1
+	local elites, elite2s = {}, {}
+	for r = 1, region do
+		for _, cave in Balance.caveSpawners(Balance.REGION_IDS[r]) do
+			for _, e in cave.elites do
+				table.insert(elites, e)
+			end
+			if cave.elite2 then
+				table.insert(elite2s, cave.elite2)
+			end
+		end
+	end
+	local function meanDrop(level: number, variant: string, cap: number): number
+		local base = Loot.dropBaseLevel(level, variant, cap)
+		local low, high = ItemRoll.dropLevelRange(base, variant)
+		return (low + high) / 2
+	end
+	-- the best spawner level <= L among `ranges`, the mean ilvl of its drop
+	local function best(ranges: { any }, L: number, variant: string): (number, number)
+		local top, cap = 0 / 0, 0
+		for _, range in ranges do
+			if range.min <= L then
+				local s = math.min(L, range.max)
+				if top ~= top or s > top then
+					top, cap = s, range.max
+				end
+			end
+		end
+		if top ~= top then
+			return 0 / 0, 0 / 0
+		end
+		local add = (Combat.variants :: any)[variant].levelAdd
+		return top, L - meanDrop(top + add, variant, cap)
+	end
+	local out: { IlvlGap } = {}
+	for L = band[1], last do
+		local low, high = ItemRoll.dropLevelRange(L, "normal")
+		local eliteSpawner, eliteGap = best(elites, L, "elite")
+		local elite2Spawner, elite2Gap = best(elite2s, L, "elite2")
+		local boss = 0 / 0
+		for _, def in Bosses.list do
+			if def.level <= L and (boss ~= boss or L - def.level < boss) then
+				boss = L - def.level
+			end
+		end
+		table.insert(out, {
+			level = L,
+			normal = L - (low + high) / 2,
+			eliteSpawner = eliteSpawner,
+			elite = eliteGap,
+			elite2Spawner = elite2Spawner,
+			elite2 = elite2Gap,
+			boss = boss,
+		})
+	end
+	return out
+end
+
+-- P2 (diag_longevity): the highest level up to which a full set of `rarity` with item level `ilvl` keeps at least
+-- the power (S32) of a set of rarity - 1 at level - 2 (the drops of that level).
+function Balance.longevity(classId: string, rarity: number, ilvl: number): number
+	local last = ilvl + Balance.GEAR_GAP
+	for L = ilvl + Balance.GEAR_GAP, 100 do
+		local old = Balance.power(Balance.itemPlayer(classId, L, { ilvl = ilvl, rarity = rarity }))
+		local new = Balance.power(Balance.itemPlayer(classId, L, { rarity = rarity - 1 }))
+		if old < new then
+			break
+		end
+		last = L
+	end
+	return last
+end
+
+-- Drops per hour with luck (S84 H) ----------------------------------------------------------------------------------
+
+-- Hunting ground multipliers of a region's drops: AreaProfiles.NEUTRAL (S87 adds dropFactor[region] here).
+function Balance.dropMods(_region: string): AreaProfiles.Mods
+	return AreaProfiles.NEUTRAL
+end
+
+local fortunes: { [string]: { [string]: number } } = {}
+-- Raw luck fields of the Priest of Fortune (Paths.luckOfNodes of the luck nodes of the `fortune` path at their top
+-- rank); "start" = only the rows open outside the main path (PathData.DIP_ROWS).
+function Balance.fortuneLuck(kind: "full" | "start"): { [string]: number }
+	local cached = fortunes[kind]
+	if cached then
+		return cached
+	end
+	local path = PathData.byId.fortune :: any
+	local active = {}
+	for r, row in path.rows do
+		if kind == "full" or r <= PathData.DIP_ROWS then
+			for _, node in row.nodes do
+				if node.luck then
+					table.insert(active, { node = node, path = path, row = r, rank = node.maxRank, scale = 1 })
+				end
+			end
+		end
+	end
+	local luck = Paths.luckOfNodes(active :: any)
+	fortunes[kind] = luck
+	return luck
+end
+
+export type LuckProfile = {
+	id: string,
+	dropBonus: number, -- the player's dropBonus (Luck Member.dropBonus)
+	lines: number, -- dropBonus lines of the jewellery
+	legendary: number, -- leg_dropBonus lines
+	blessing: number,
+	guild: number,
+	relic: number, -- Prosperity of the relic (ItemRoll.trait)
+}
+
+-- A profile of LUCK_PROFILES at `level`: every number from the data.
+function Balance.luckProfile(id: string, level: number): LuckProfile
+	local spec: any = nil
+	for _, p in Balance.LUCK_PROFILES do
+		if p.id == id then
+			spec = p
+		end
+	end
+	assert(spec, `Balance: unknown luck profile {id}`)
+	local ilvl = math.max(1, level - Balance.GEAR_GAP)
+	local lines, legendary, blessing, guild, relic = 0, 0, 0, 0, 0
+	if spec.jewellery == "heroic" then
+		for _, slot in Balance.JEWELLERY do
+			for _, line in expectedBonuses(tierId(slot, ilvl), ilvl, Rarities.HEROIC, "Cleric") do
+				if line.stat == "dropBonus" then
+					lines += line.v
+				end
+			end
+		end
+	elseif spec.jewellery == "legendary" then
+		lines = #Balance.JEWELLERY * ItemRoll.rollBonusValue("dropBonus", ilvl, Rarities.LEGENDARY, 0.5)
+	elseif spec.jewellery == "mythic" then
+		lines = #Balance.JEWELLERY * ItemRoll.rollBonusValue("dropBonus", ilvl, Rarities.MYTHIC, 1)
+	end
+	if type(spec.legendaryLines) == "number" then
+		legendary = spec.legendaryLines * ItemRoll.rollBonusValue("leg_dropBonus", ilvl, Rarities.LEGENDARY, 0.5)
+	elseif spec.legendaryLines == "all" then
+		local set = { "scepter", "relic" }
+		for _, slot in Balance.ARMOR_SLOTS do
+			table.insert(set, `{slot}_{Balance.LOADOUT.Cleric.weight}`)
+		end
+		for _, slot in Balance.JEWELLERY do
+			table.insert(set, slot)
+		end
+		for _, base in set do
+			if table.find(ItemRoll.legendaryPool(tierId(base, ilvl), "Cleric"), "leg_dropBonus") then
+				legendary += ItemRoll.rollBonusValue("leg_dropBonus", ilvl, Rarities.MYTHIC, 1)
+			end
+		end
+	end
+	if spec.blessing then
+		local def = Blessings.of("fortune", spec.blessing) :: any
+		blessing = def.stats.dropBonus or 0
+	end
+	if spec.guild then
+		guild = spec.guild * (GuildSkills.byId.luck :: any).perLevel
+	end
+	if spec.relic then
+		local item = makeItem(tierId("relic", ilvl), ilvl, spec.relic.rarity, spec.relic.up, {})
+		local trait = ItemRoll.trait(item)
+		relic = if trait then trait.value else 0
+	end
+	return {
+		id = id,
+		dropBonus = lines + legendary + blessing + guild + relic,
+		lines = lines,
+		legendary = legendary,
+		blessing = blessing,
+		guild = guild,
+		relic = relic,
+	}
+end
+
+-- Monster luck of a party: the player with the profile's dropBonus, plus a Priest of Fortune ("full" / "start")
+-- as a second Member with luck, as LootService passes them (Logic/Luck.monster caps; the model never does).
+function Balance.monsterLuck(profileId: string, level: number, fortune: ("full" | "start")?): Luck.MonsterLuck
+	local members: { Luck.Member } =
+		{ { name = "player", dropBonus = Balance.luckProfile(profileId, level).dropBonus } }
+	if fortune then
+		table.insert(members, { name = "fortune", luck = Balance.fortuneLuck(fortune) })
+	end
+	return Luck.monster(members)
+end
+
+local slotTierCache: { [string]: { [number]: { string } } }? = nil
+-- mirrors Logic/Loot SLOT_TIER (local there): equipment definitions by slot group and tier, named items excluded.
+local function slotTiers(): { [string]: { [number]: { string } } }
+	if slotTierCache then
+		return slotTierCache
+	end
+	local out: { [string]: { [number]: { string } } } = {}
+	for id, def in Items.byId do
+		if def.category == "equipment" and def.slot and def.tier and not def.fixedBonuses then
+			out[def.slot] = out[def.slot] or {}
+			out[def.slot][def.tier] = out[def.slot][def.tier] or {}
+			table.insert(out[def.slot][def.tier], id)
+		end
+	end
+	slotTierCache = out
+	return out
+end
+
+-- Expected share of the items Loot.pickItem gives that `classId` can wear (slot from the weights, candidates of the
+-- tier of `ilvl`, with `classBias` only the class's items; a slot without candidates gives nothing).
+function Balance.usableShare(
+	slotWeights: { [string]: number },
+	ilvl: number,
+	classBias: number,
+	classId: string
+): number
+	local tiers = slotTiers()
+	local tier = Items.generate.tierFor(ilvl)
+	local total = 0
+	for _, w in slotWeights do
+		total += w
+	end
+	local sum = 0
+	for _, slot in sortedKeys(slotWeights) do
+		local candidates = tiers[slot] and tiers[slot][tier]
+		if candidates and #candidates > 0 then
+			local usable = 0
+			for _, id in candidates do
+				local def = Items.get(id) :: any
+				if def.classes == nil or table.find(def.classes, classId) then
+					usable += 1
+				end
+			end
+			local share = (if usable > 0 then classBias else 0) + (1 - classBias) * usable / #candidates
+			sum += slotWeights[slot] / total * share
+		end
+	end
+	return sum
+end
+
+-- usableShare over the item levels of a drop of base level `level` (ItemRoll.dropLevelRange, uniform).
+local function usableAt(slotWeights: { [string]: number }, level: number, classBias: number, classId: string): number
+	local low, high = ItemRoll.dropLevelRange(level)
+	local sum = 0
+	for ilvl = low, high do
+		sum += Balance.usableShare(slotWeights, ilvl, classBias, classId)
+	end
+	return sum / (high - low + 1)
+end
+Balance.usableAt = usableAt
+
+export type Drops = {
+	unique: number, -- Uniques for the class per hour of grinding (paceAt)
+	heroic: number, -- Heroics for the class per hour of cave Elites (elitesPerHour)
+	legendaryPerElite2: number, -- Legendaries for the class per Elite II kill (topTierMul x elite2Mul)
+	killsPerHour: number,
+	elitesPerHour: number,
+	luck: Luck.MonsterLuck,
+	beforeCap: number, -- personal + fortune
+	capCut: number, -- points the monsterItemCap cut
+	eliteCut: number, -- points of itemBonus above what the Elite's item chance can use (min(1, ...) in Loot)
+}
+
+local dropCache: { [string]: Drops } = {}
+-- D5: drops per hour of `classId` at `level` with luck profile `profileId` and a Priest of Fortune (`fortune`).
+function Balance.dropsPerHour(
+	classId: string,
+	level: number,
+	profileId: string,
+	fortune: ("full" | "start" | false)?
+): Drops
+	local key = `{classId}|{level}|{profileId}|{fortune}`
+	local cached = dropCache[key]
+	if cached then
+		return cached
+	end
+	local luck = Balance.monsterLuck(profileId, level, if fortune then fortune else nil)
+	local mods = Balance.dropMods(Balance.REGION_IDS[Balance.regionAt(level)])
+	local pace = Balance.paceAt(classId, level)
+	local kills = 3600 / pace.secondsPerKill
+	local normalTable = LootTables.byId[(Monsters.get(pace.kind) :: any).lootTable]
+	local count, top = AreaRates.itemsPerKill("normal", mods, luck.itemBonus)
+	local unique = kills * count * top * usableAt(normalTable.slotWeights, level, normalTable.classBias, classId)
+	local eph, cave = Balance.elitesPerHour(classId, level)
+	local eliteTable = LootTables.byId[(Monsters.get(cave.elites[1].kind) :: any).lootTable]
+	local eliteMax = -math.huge
+	for _, e in cave.elites do
+		eliteMax = math.max(eliteMax, e.max)
+	end
+	local eliteBase = Loot.dropBaseLevel(level + (Combat.variants :: any).elite.levelAdd, "elite", eliteMax)
+	local eCount, eTop = AreaRates.itemsPerKill("elite", mods, luck.itemBonus)
+	local heroic = eph * eCount * eTop * usableAt(eliteTable.slotWeights, eliteBase, eliteTable.classBias, classId)
+	local mods2 = table.clone(mods) :: any
+	mods2.topTierMul = mods.topTierMul * luck.elite2Mul
+	local c2, t2 = AreaRates.itemsPerKill("elite2", mods2, luck.itemBonus)
+	local base2 = Loot.dropBaseLevel(level + (Combat.variants :: any).elite2.levelAdd, "elite2", level)
+	local legendary = c2 * t2 * usableAt(eliteTable.slotWeights, base2, eliteTable.classBias, classId)
+	local eliteChance = Rarities.itemDrops.elite.chance * mods.itemChanceMul
+	local result: Drops = {
+		unique = unique,
+		heroic = heroic,
+		legendaryPerElite2 = legendary,
+		killsPerHour = kills,
+		elitesPerHour = eph,
+		luck = luck,
+		beforeCap = luck.personal + luck.fortune,
+		capCut = luck.personal + luck.fortune - luck.itemBonus,
+		eliteCut = math.max(0, luck.itemBonus - (1 / eliteChance - 1) * 100),
+	}
+	dropCache[key] = result
+	return result
+end
+
+export type BossDrops = { legendary: number, mythic: number, heroic: number, extra: number }
+-- P2 (H5): items for the class per day of Config.Boss.dailyRuns kills of `bossId` (Loot.bossChances with Luck.boss
+-- of a Priest of Fortune; item luck never counts on bosses, ROZWOJ 6.2). Unique / Heroic items: the boss weights,
+-- a Unique ennobled with luck.upgrade, a second item with luck.extra.
+function Balance.bossDrops(classId: string, bossId: string, fortune: ("full" | "start")?): BossDrops
+	local members: { Luck.Member } = { { name = "player" } }
+	if fortune then
+		table.insert(members, { name = "fortune", luck = Balance.fortuneLuck(fortune) })
+	end
+	local luck = Luck.boss(members)
+	local boss = LootTables.bosses[bossId]
+	local slots = LootTables.bossSlots
+	local legendaryUsable = Balance.usableShare(slots, boss.level, Config.BossLoot.legendaryClassShare, classId)
+	local namedUsable = 0
+	for _, id in boss.named do
+		local def = Items.get(id) :: any
+		if def and (def.classes == nil or table.find(def.classes, classId)) then
+			namedUsable = 1
+		end
+	end
+	local mythicUsable = Config.BossLoot.mythicNamedShare * namedUsable
+		+ (1 - Config.BossLoot.mythicNamedShare) * Balance.usableShare(slots, boss.level, 1, classId)
+	local weights = Rarities.dropWeights.boss
+	local total = 0
+	for _, w in weights do
+		total += w
+	end
+	local heroicShare = (weights[Rarities.HEROIC] or 0) / total
+	local uniqueShare = (weights[Rarities.UNIQUE] or 0) / total
+	local commonUsable = usableAt(slots, boss.level, Config.BossLoot.legendaryClassShare, classId)
+	local legendary, mythic, heroic = 0, 0, 0
+	for k = 0, Config.Boss.dailyRuns - 1 do
+		local chances = Loot.bossChances(bossId, k, luck)
+		legendary += chances.legendary * legendaryUsable
+		mythic += chances.mythic * mythicUsable
+		local rest = math.max(0, 1 - chances.legendary - chances.mythic)
+		heroic += rest * (heroicShare + uniqueShare * luck.upgrade) * commonUsable
+	end
+	local extra = Config.Boss.dailyRuns * luck.extra * heroicShare * commonUsable
+	return { legendary = legendary, mythic = mythic, heroic = heroic, extra = extra }
+end
+
+-- Monster defence (S84 I) -------------------------------------------------------------------------------------------
+
+-- Share of the damage `m`'s armour (or magic resistance) removes from a player of `level` (Damage.reduction).
+function Balance.armorShare(m: any, level: number, magic: boolean): number
+	return Damage.reduction(if magic then m.mres else m.armor, level)
+end
+
+-- The generic kind and one kind per (family, defence) of Data/Families with the trait's defMul / mresMul / dodge
+-- (same HP and attack: only the defence differs).
+function Balance.defenceKinds(): { { id: string, defence: string?, kind: any } }
+	local out: { { id: string, defence: string?, kind: any } } = { { id = "zwykły", kind = Balance.GENERIC } }
+	for _, family in Families.ids do
+		local defences = (Families.byId[family] :: Families.FamilyDef).defences
+		for _, defenceId in sortedKeys(defences) do
+			local d = defences[defenceId]
+			local kind = table.clone(Balance.GENERIC) :: any
+			kind.family = family
+			kind.defMul = d.defMul or 1
+			kind.mresMul = d.mresMul or 1
+			kind.dodge = d.dodge or 0
+			table.insert(out, { id = `{family} · {defenceId}`, defence = defenceId, kind = kind })
+		end
+	end
+	return out
+end
+
+export type DefenceRow = {
+	id: string,
+	seconds: number,
+	hpLost: number,
+	defenceShare: number, -- Damage.reduction of the defence that counts against the player (after its pierce)
+	dodgeShare: number, -- share of the DPS lost to the monster's dodge (basic attacks only, FightSim)
+	secondsNoComp: number, -- the same fight without the S66 HP compensation (report)
+	hpLostNoComp: number,
+}
+
+-- 1 on 1 of the default Common player of `level` against every defence kind of the level.
+function Balance.defenceAt(classId: string, level: number): { DefenceRow }
+	local p = Balance.cachedPlayer(classId, level)
+	local attacker = Damage.fromStats(level, p.values)
+	local out: { DefenceRow } = {}
+	for _, entry in Balance.defenceKinds() do
+		local m = Balance.monster(entry.kind, level)
+		local f = Balance.duel(p, m)
+		local defence = Damage.defenseOf(if p.magic then "magic" else "phys", attacker, MonsterStats.asDefender(m), 0)
+		local noDodge = table.clone(m)
+		noDodge.dodge = 0
+		-- mirrors MonsterStats.baseHp (S66): the level part of the HP without Combat.monsterHpComp
+		local base = MonsterStats.baseHp(m.level)
+		local raw = table.clone(m)
+		raw.maxHp = m.maxHp * (Combat.monsterHpBase + (base - Combat.monsterHpBase) / Combat.monsterHpComp) / base
+		local g = Balance.duel(p, raw)
+		table.insert(out, {
+			id = entry.id,
+			seconds = f.seconds,
+			hpLost = f.hpLost,
+			defenceShare = Damage.reduction(defence, level),
+			dodgeShare = 1 - Balance.dps(p, m) / Balance.dps(p, noDodge),
+			secondsNoComp = g.seconds,
+			hpLostNoComp = g.hpLost,
+		})
+	end
+	return out
+end
+
+export type VsDefence = { label: string, generic: number, defended: number }
+-- DPS gain from breaking or ignoring defence against the generic kind and the defended one (armour: undead armored;
+-- magic resistance: undead warded) of `level`, at a constant share (Damage.reduction; STATY 7: Sundering 50 % on
+-- armored ~ +17 %, pierce 20 % ~ +6 %).
+function Balance.vsDefence(level: number): { VsDefence }
+	local ilvl = math.max(1, level - Balance.GEAR_GAP)
+	local generic = Balance.monster(Balance.GENERIC, level)
+	local function defended(defenceId: string): any
+		local d = Families.defence("undead", defenceId) :: Families.Defence
+		local kind = table.clone(Balance.GENERIC) :: any
+		kind.defMul = d.defMul or 1
+		kind.mresMul = d.mresMul or 1
+		return Balance.monster(kind, level)
+	end
+	local armored, warded = defended("armored"), defended("warded")
+	local function gain(defence: number, share: number): number
+		return (1 - Damage.reduction(defence * (1 - share), level)) / (1 - Damage.reduction(defence, level)) - 1
+	end
+	local function traitValue(base: string, rarity: number, up: number): number
+		local trait = ItemRoll.trait(makeItem(tierId(base, ilvl), ilvl, rarity, up, {})) :: ItemRoll.TraitRoll
+		return trait.value
+	end
+	local out: { VsDefence } = {}
+	local function add(label: string, share: number, magic: boolean)
+		local a = if magic then generic.mres else generic.armor
+		local b = if magic then warded.mres else armored.armor
+		table.insert(out, { label = label, generic = gain(a, share), defended = gain(b, share) })
+	end
+	local sunderOnHit = (ItemTraits.get("sundering") :: ItemTraits.TraitDef).onHit :: ItemTraits.OnHit
+	local stacks = sunderOnHit.maxStacks or 1
+	add(
+		"Niszczenie pancerza, Zwykły +0, pełne stosy",
+		Traits.armorBreakCap(traitValue("hammer2h", Rarities.COMMON, 0), stacks) / 100,
+		false
+	)
+	add(
+		"Niszczenie pancerza, Mityczny +9, pełne stosy",
+		Traits.armorBreakCap(traitValue("hammer2h", Rarities.MYTHIC, 9), stacks) / 100,
+		false
+	)
+	local pierceCap = (Stats.get("pierce") :: any).cap or 100
+	add(
+		"Bełt przeciwpancerny, Zwykły +0",
+		math.min(traitValue("heavycrossbow", Rarities.COMMON, 0), pierceCap) / 100,
+		false
+	)
+	add(
+		"Bełt przeciwpancerny, Mityczny +9",
+		math.min(traitValue("heavycrossbow", Rarities.MYTHIC, 9), pierceCap) / 100,
+		false
+	)
+	add(
+		"linia pierce (Legendarny, środek rzutu)",
+		ItemRoll.rollBonusValue("pierce", ilvl, Rarities.LEGENDARY, 0.5) / 100,
+		false
+	)
+	add(
+		"linia magicPierce (Legendarny, środek rzutu)",
+		ItemRoll.rollBonusValue("magicPierce", ilvl, Rarities.LEGENDARY, 0.5) / 100,
+		true
+	)
+	return out
+end
+
+-- Target rows G7-G9 (S84; report until S87) ------------------------------------------------------------------------
+
+local itemTargetCache: { TargetRow }? = nil
+-- G7 (the "z cechami" column), G8 ("bez cech" and "z cechami" in MIX) and G9 (+1..+3 / income, +1..+9 with
+-- protection in levels of income) for balance.spec's global block (GLOBAL_ASSERT) and the report.
+function Balance.itemTargets(): { TargetRow }
+	if itemTargetCache then
+		return itemTargetCache
+	end
+	local rows: { TargetRow } = {}
+	local function add(id: string, label: string, value: number, low: number?, high: number?, c: string?, L: number?)
+		table.insert(rows, {
+			id = id,
+			group = string.match(id, "^(G%d+)") or id,
+			label = label,
+			value = value,
+			low = low,
+			high = high,
+			classId = c,
+			level = L,
+		})
+	end
+	for _, c in Balance.CLASSES do
+		for _, L in Balance.GLOBAL_LEVELS do
+			for rarity = Rarities.UNIQUE, Rarities.MYTHIC do
+				local low, high = Balance.g7Band(c, L, rarity)
+				local name = Rarities.get(rarity).key
+				add("G7", `{c} {L}: {name} (z cechami)`, Balance.rarityGainAt(c, L, rarity).traits, low, high, c, L)
+			end
+		end
+	end
+	for _, pair in Balance.G8_PAIRS do
+		for _, L in Balance.ITEM_LEVELS do
+			for _, rarity in Balance.GEAR_RARITIES do
+				for _, up in { 0, 9 } do
+					local low, high = Balance.g8Band(pair.weapon, up)
+					local name = Rarities.get(rarity).key
+					local label = `{pair.classId} {pair.weapon} {name} +{up} L{L}`
+					local noTraits =
+						Balance.twoHandedParity(pair.classId, L, pair.weapon, rarity, up, { traits = false })
+					local traits = Balance.twoHandedParity(pair.classId, L, pair.weapon, rarity, up)
+					add("G8", `{label}: bez cech`, noTraits.mix, low, high, pair.classId, L)
+					add("G8", `{label}: z cechami`, traits.mix, low, high, pair.classId, L)
+				end
+			end
+		end
+	end
+	for _, L in Balance.GLOBAL_LEVELS do
+		for _, u in Balance.upgradeVsIncome(L) do
+			add("G9.up3", `{u.classId} {L}: +1…+3 broni / dochód poziomu`, u.up3, 0.45, 1.05, u.classId, L)
+			add("G9.up9", `{u.classId} {L}: +1…+9 z ochroną (poziomy dochodu)`, u.up9, 12, 25, u.classId, L)
+		end
+	end
+	itemTargetCache = rows
+	return rows
 end
 
 return Balance
