@@ -87,6 +87,11 @@ bonus("basicDmg", "basicDmg", "flat", 1.5, 3.3, "pct", 1, true) -- +% basic atta
 bonus("healPower", "healPower", "flat", 1.5, 3.5, "pct", 1, true) -- +% heals and shields you cast
 bonus("critResist", "critResist", "flat", 3, 6, "pct", 1, true) -- % less crit bonus taken
 bonus("costReduce", "costReduce", "flat", 1.5, 3, "none", 1, true) -- % cheaper skills, no scale (STATY 4)
+-- S63 (STATY 4): on-hit lines. Hooks summed by EquipmentService and read by CombatService, not StatCalc stats.
+bonus("woundChance", nil, "flat", 2, 4, "pct", 1, true, "woundChance") -- % chance of a deep wound
+bonus("poisonChance", nil, "flat", 2, 4, "pct", 1, true, "poisonChance") -- % chance to poison
+bonus("dotPower", nil, "flat", 4, 8, "pct", 1, true, "dotPower") -- +% damage of your bleeds, poisons and burns
+bonus("resourceOnHit", nil, "flat", 0.2, 0.5, "none", 2, true, "resourceOnHit") -- % max mana / energy per hit
 bonus("accuracy", "accuracy", "flat", 1, 3, "pct", 1, true)
 bonus("dodge", "dodge", "flat", 0.5, 1.2, "pct", 1, true)
 bonus("resFire", "resFire", "flat", 3, 8, "pct", 0, true)
@@ -151,6 +156,9 @@ local POOLS: { [string]: { string } } = {
 		"skillDmg",
 		"basicDmg",
 		"healPower",
+		"woundChance",
+		"poisonChance",
+		"dotPower",
 	},
 	shield = {
 		"armor",
@@ -176,6 +184,8 @@ local POOLS: { [string]: { string } } = {
 		"skillDmg",
 		"basicDmg",
 		"costReduce",
+		"woundChance",
+		"poisonChance",
 	},
 	magicOffhand = {
 		"magAtk",
@@ -230,6 +240,9 @@ local POOLS: { [string]: { string } } = {
 		"pierce",
 		"magicPierce",
 		"basicDmg",
+		"woundChance",
+		"poisonChance",
+		"resourceOnHit",
 	},
 	boots = { "moveSpeed", "dodge", "hp", "armor", "dex", "energyRegen", "resPoison" },
 	necklace = {
@@ -248,6 +261,7 @@ local POOLS: { [string]: { string } } = {
 		"manaRegen",
 		"skillDmg",
 		"costReduce",
+		"dotPower",
 	},
 	ring = {
 		"str",
@@ -263,6 +277,7 @@ local POOLS: { [string]: { string } } = {
 		"energy",
 		"pierce",
 		"basicDmg",
+		"resourceOnHit",
 	},
 	talisman = {
 		"str",
@@ -325,6 +340,10 @@ local CLASS_STATS: { [string]: { string } } = {
 	myth_magAtk = { "Mage", "Cleric" },
 	energy = { "Warrior", "Hunter" },
 	energyRegen = { "Warrior", "Hunter" },
+	-- S63: no Cleric until the Cleric has damage over time (S70 adds them with the burn).
+	woundChance = { "Warrior", "Hunter" },
+	poisonChance = { "Hunter" },
+	dotPower = { "Warrior", "Hunter", "Mage" },
 }
 
 return table.freeze({

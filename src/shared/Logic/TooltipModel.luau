@@ -39,6 +39,7 @@ local Recipes = require("../Data/Recipes")
 local ShopPrice = require("./ShopPrice")
 local Shops = require("../Data/Shops")
 local Stats = require("../Data/Stats")
+local Traits = require("./Traits")
 local Types = require("../Types")
 local Upgrade = require("./Upgrade")
 
@@ -131,7 +132,22 @@ function TooltipModel.traitArgs(traitId: string, power: number, lang: string): {
 	for key, value in params do
 		args[key] = traitNumber(value, lang)
 	end
-	args.v = traitNumber(def.value * power, lang)
+	local grown = def.value * power
+	args.v = traitNumber(grown, lang)
+	-- S63: fixed numbers of an on-hit trait (Data/ItemTraits onHit), styled like {v}.
+	local onHit = def.onHit
+	if onHit then
+		args.s = traitNumber(onHit.duration, lang)
+		if onHit.chance then
+			args.chance = traitNumber(onHit.chance, lang)
+		end
+		if onHit.slow then
+			args.slow = traitNumber(onHit.slow, lang)
+		end
+		if onHit.effect == "armorBreak" then
+			args.max = traitNumber(Traits.armorBreakCap(grown, onHit.maxStacks or 1), lang)
+		end
+	end
 	return args
 end
 

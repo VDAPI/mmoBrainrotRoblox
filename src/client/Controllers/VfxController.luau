@@ -188,11 +188,13 @@ local function onCast(data: { [string]: any }, skill: SkillData.SkillDef, caster
 			lockToken += 1
 			local token = lockToken
 			local speed = humanoid.WalkSpeed
-			humanoid.WalkSpeed = if move then speed * move / 100 else 0
+			local locked = if move then speed * move / 100 else 0
+			humanoid.WalkSpeed = locked
 			local seconds = (motion.keys[#motion.keys].t + motion.recover * 0.5)
 				+ (if loopUntil and motion.loop then math.max(0, loopUntil - motion.loop.to) else 0)
 			task.delay(seconds, function()
-				if lockToken == token and humanoid.Parent then
+				-- S63: the server changed the speed meanwhile (a slow started or ended): keep the server's value.
+				if lockToken == token and humanoid.Parent and humanoid.WalkSpeed == locked then
 					humanoid.WalkSpeed = speed
 				end
 			end)

@@ -28,6 +28,7 @@ local MonsterStats = require(Shared.Logic.MonsterStats)
 local Monsters = require(Shared.Data.Monsters)
 local RigBuilder = require(script.Parent.RigBuilder)
 local Steer = require(Shared.Logic.Steer)
+local Traits = require(Shared.Logic.Traits)
 
 export type State = "idle" | "chase" | "cast" | "return" | "dead"
 
@@ -53,6 +54,7 @@ export type Context = {
 	-- Most recent time (os.clock) a player hit any monster of this one's group (S22: the group shares the leash
 	-- and the regeneration delay); nil = only the monster's own hits count.
 	groupLastHit: ((monster: any) -> number)?,
+	attackSlow: ((monster: any) -> number)?, -- % attack slow from status effects (enemyAttackSlow, S63)
 }
 
 local Monster = {}
@@ -493,6 +495,18 @@ local function noteMovement(self: Monster, now: number, attacking: boolean)
 	end
 end
 
+-- S63: interval between regular attacks under attack slow (bosses' special abilities keep their own cooldowns).
+local function attackInterval(self: Monster): number
+	local slow = if self.ctx.attackSlow then self.ctx.attackSlow(self) else 0
+	return Traits.slowedInterval(self.stats.attackInterval, slow)
+end
+
+-- S63: after a Concussion stun the monster strikes at the earliest `share` of its interval later (like stepCast);
+-- a stun alone never moves nextAttack (Step returns early), so it would strike right after the stun.
+function Monster.DelayAttack(self: Monster, stunSeconds: number, share: number)
+	self.nextAttack = math.max(self.nextAttack, os.clock() + stunSeconds + attackInterval(self) * share)
+end
+
 local function stepChase(self: Monster, now: number)
 	local position = self.root.Position
 	local target = pickTarget(self)
@@ -531,7 +545,7 @@ local function stepChase(self: Monster, now: number)
 		stop(self)
 		face(self, targetPosition)
 		if now >= self.nextAttack then
-			self.nextAttack = now + self.stats.attackInterval
+			self.nextAttack = now + attackInterval(self)
 			self.ctx.basicAttack(self, target)
 		end
 		return
@@ -557,7 +571,7 @@ local function stepCast(self: Monster, now: number)
 	self.castArea = nil
 	if ability and area then
 		self.nextAbility = now + ability.cooldown
-		self.nextAttack = now + self.stats.attackInterval * 0.5
+		self.nextAttack = now + attackInterval(self) * 0.5
 		self.ctx.resolveAbility(self, ability, area)
 	end
 end

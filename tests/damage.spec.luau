@@ -344,6 +344,38 @@ T.describe("MonsterStats", function()
 		T.expect(MonsterStats.isAggressiveTowards(5, 19)).toBe(true)
 		T.expect(MonsterStats.isAggressiveTowards(5, 20)).toBe(false)
 	end)
+
+	T.it("S63: dotBase, PvP lifesteal and resistance", function()
+		local rng = Rng.new(11)
+		for _ = 1, 50 do
+			local r = Damage.computeDamage(attacker({ lifesteal = 10 }), defender(), PHYS, rng)
+			T.expect(r.dotBase).toBe(r.amount)
+			T.expect(r.lifesteal).toBe(math.floor(r.amount * 10 / 100))
+		end
+		for _ = 1, 50 do
+			local r = Damage.computeDamage(attacker({ lifesteal = 10 }), defender(), { kind = "phys", pvp = true }, rng)
+			T.expect(r.lifesteal).toBe(math.floor(math.floor(r.amount * 10 / 100) * Combat.pvp.lifesteal))
+			T.expect(math.abs(r.amount - (r.dotBase :: number) * Combat.pvpModifier) <= 1).toBe(true)
+		end
+		for _ = 1, 300 do
+			local r = Damage.computeDamage(attacker(), defender({ dodge = 30 }), PHYS, rng)
+			if r.dodged then
+				T.expect(r.dotBase).toBe(0)
+			end
+		end
+		T.expect(Damage.resMul(0)).toBe(1)
+		T.expect(Damage.resMul(30)).toBeNear(0.7)
+		T.expect(Damage.resMul(90)).toBeNear(0.25)
+		T.expect(Damage.resMul(-10)).toBe(1)
+	end)
+
+	T.it("S63: armour break on players", function()
+		T.expect(Damage.pvpArmorBreak(5, 5)).toBe(15)
+		T.expect(Damage.pvpArmorBreak(5, 2)).toBe(10)
+		T.expect(Damage.pvpArmorBreak(9.4, 3)).toBeNear(28.2)
+		T.expect(Damage.pvpArmorBreak(20, 3)).toBe(40)
+		T.expect(Damage.pvpArmorBreak(5, 0)).toBe(0)
+	end)
 end)
 
 return nil

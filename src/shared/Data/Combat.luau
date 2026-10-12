@@ -25,7 +25,16 @@ return table.freeze({
 		misfortune = 0.5, -- the attacker's misfortune in the PvP branch of DealDamage
 		fortuneBuff = 0.5, -- Fortune's random party buffs (dice and wheel, read from S70)
 		-- luck: none in PvP, enforced by Logic/Luck options.pvp (S60); no loot comes from players
+		-- S63 (STATY 8):
+		dot = 0.6, -- every damage-over-time tick of a player on a player (items and skills), applied once
+		armorBreakStacks = 3, -- most armour break stacks from items on a player
+		lifesteal = 0.5, -- the attacker's lifesteal stat against players (not a skill's behaviour.lifesteal)
 	}),
+	-- S63 (STATY 4, 5): on-hit effects of items.
+	onHitChanceCap = 40, -- % total chance of one on-hit effect (trait + line)
+	areaProcShare = 1 / 3, -- share of the chance per target of an area skill
+	resourceOnHitCap = 1, -- % of max mana / energy per hit from the resourceOnHit line
+	resourceOnHitGap = 0.5, -- s between two resourceOnHit refunds
 	-- S61: the Guardian's intercept (Logic/Intercept; share caps in Data/BuffCategories).
 	interceptRadius = 20, -- studs: default radius of an intercept effect (the guard must stand this close)
 	interceptWindow = 1, -- s: window of BuffCategories.caps.interceptPerSecond

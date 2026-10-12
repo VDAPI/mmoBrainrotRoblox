@@ -514,6 +514,53 @@ T.describe("S62 traits and weighted pools", function()
 		T.expect(trait.value).toBeNear(7.32, 0.01)
 	end)
 
+	T.it("S63: on-hit traits and lines", function()
+		local effectIds = { "rendingGash", "toxicBarbs", "sundering", "bonebreaker", "harrying", "concussion" }
+		for _, def in ItemTraits.list do
+			local isOnHit = table.find(effectIds, def.id) ~= nil
+			T.expect({ def.id, def.onHit ~= nil }).toEqual({ def.id, isOnHit })
+			if isOnHit then
+				T.expect({ def.id, def.kind, def.live }).toEqual({ def.id, "effect", true })
+			end
+		end
+		local order = { "bleed", "poison", "armorBreak", "weaken", "harass", "shock" }
+		T.expect(#ItemTraits.onHitList).toBe(6)
+		local hooks: { [string]: boolean } = {}
+		for i, entry in ItemTraits.onHitList do
+			T.expect(entry.onHit.effect).toBe(order[i])
+			local hook = entry.trait.hook :: string
+			T.expect(hooks[hook]).toBeNil()
+			hooks[hook] = true
+			local line = entry.onHit.line
+			if line then
+				T.expect({ line, (Bonuses.get(line) :: any).hook }).toEqual({ line, line })
+			end
+		end
+		T.expect(ItemRoll.itemStats(plain("hammer2h_50", Rarities.COMMON)).hooks.traitArmorBreak).toBe(5)
+		T.expect(ItemRoll.itemStats(plain("axe2h_50", Rarities.COMMON)).hooks.traitWound).toBe(30)
+		T.expect(ItemRoll.itemStats(plain("mace1h_50", Rarities.COMMON)).hooks.traitWeaken).toBe(6)
+		T.expect(ItemRoll.itemStats(plain("hammer2h_50", Rarities.MYTHIC, 9)).hooks.traitArmorBreak)
+			.toBeNear(9.39, 0.05)
+		local pools = {
+			woundChance = { "weapon", "gloves", "quiver" },
+			poisonChance = { "weapon", "gloves", "quiver" },
+			dotPower = { "weapon", "necklace" },
+			resourceOnHit = { "gloves", "ring" },
+		}
+		for id, groups in pools do
+			local def = Bonuses.get(id) :: any
+			T.expect({ id, def.tier, def.hook }).toEqual({ id, "regular", id })
+			for group, pool in Bonuses.pools do
+				T.expect({ id, group, table.find(pool, id) ~= nil })
+					.toEqual({ id, group, table.find(groups, group) ~= nil })
+			end
+		end
+		T.expect(Bonuses.classStats.woundChance).toEqual({ "Warrior", "Hunter" })
+		T.expect(Bonuses.classStats.poisonChance).toEqual({ "Hunter" })
+		T.expect(Bonuses.classStats.dotPower).toEqual({ "Warrior", "Hunter", "Mage" })
+		T.expect(Bonuses.classStats.resourceOnHit).toBeNil()
+	end)
+
 	T.it("traits without code stay hidden", function()
 		T.expect((Items.get("axe1h_20") :: any).trait).toBe("reaping")
 		for _, base in Items.bases.list do

@@ -10,6 +10,11 @@
 -- S61: the intercept filter (Logic/Intercept, FilterPriority.intercept) runs before the mitigation filter
 -- (FilterPriority.mitigation); heals over time and absorb shields on a player in PvP combat are scaled through
 -- SetPvpScales (PvpService); a refreshed statBuff with unchanged numbers does not invalidate stats (party auras).
+-- S63 (STATY 5): effects from items carry skillId "item" (EffectStack.ITEM); a running effect with maxStacks > 1
+-- gains a stack, all stacks share one end time and multiply value and tickAmount (EffectStack.restack). A new,
+-- removed or changed effect publishes "Effects" at once; a mere refresh at most once per PUBLISH_INTERVAL. Category
+-- reads with the skill / item split go through CategoryValue; every DoT tick of a player on a player is x0.6 once
+-- (Apply); the player's walk speed follows SlowFactor (StatService.SetSpeedFactor).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -18,10 +23,13 @@ local Workspace = game:GetService("Workspace")
 
 local Shared = ReplicatedStorage.Shared
 
+local BuffCategories = require(Shared.Data.BuffCategories)
 local Combat = require(Shared.Data.Combat)
 local Config = require(Shared.Config)
+local Damage = require(Shared.Logic.Damage)
 local EffectStack = require(Shared.Logic.EffectStack)
 local Intercept = require(Shared.Logic.Intercept)
+local Traits = require(Shared.Logic.Traits)
 
 local Log = require(Shared.Util.Log)
 local Signal = require(ReplicatedStorage.Packages.Signal)
@@ -42,7 +50,8 @@ export type Effect = {
 	kind: string,
 	source: Player?,
 	sourceKey: string, -- "p<userId>" or "env"
-	value: number,
+	value: number, -- unit x stacks (S63)
+	unit: number?, -- S63: value of one stack
 	expiresAt: number, -- server time
 	tickAmount: number?, -- damage / heal per tick
 	nextTick: number?,
@@ -53,6 +62,7 @@ export type Effect = {
 	category: string?, -- S53: Data/BuffCategories id; part of the key
 	radius: number?, -- S61: intercept: studs the guard may stand from the target (nil = Combat.interceptRadius)
 	appliedAt: number, -- server time of the last (re)application; a tie in a category goes to the newer one
+	healCut: number?, -- S63: % less healing and shields on this player (Rending Gash, PvP)
 }
 
 local EntityService: any
@@ -75,9 +85,28 @@ local DEBUFFS = {
 	vulnerability = true,
 	taunt = true,
 	misfortune = true, -- S61: the enemy misses regular attacks (category enemyMiss)
+	attackSlow = true, -- S63: slower attacks (category enemyAttackSlow)
+	weaken = true, -- S63: the bearer deals less (category enemyDamageDown)
 }
 
+-- S63: damage over time; a player's ticks on a player are x Combat.pvp.dot (Apply).
+local DOT_KINDS: { [string]: boolean } = { bleed = true, poison = true, burn = true }
+
 local TICK_INTERVAL = 1
+-- S63: a refresh that changes nothing but the end publishes "Effects" at most this often (s).
+local PUBLISH_INTERVAL = 1
+
+-- S63: publication state per entity id: refresh waiting, last publish (server time), last text per model.
+local pending: { [string]: boolean } = {}
+local lastPublish: { [string]: number } = {}
+local lastEncoded: { [string]: { model: Instance, text: string? } } = {}
+
+local function forget(id: string)
+	effects[id] = nil
+	pending[id] = nil
+	lastPublish[id] = nil
+	lastEncoded[id] = nil
+end
 
 local function now(): number
 	return Workspace:GetServerTimeNow()
@@ -88,21 +117,41 @@ local function publish(entity: any)
 	if not model or not model.Parent then
 		return
 	end
-	local list = effects[entity.id]
+	local id = entity.id
+	local t = now()
+	lastPublish[id] = t
+	pending[id] = nil
+	local list = effects[id]
 	local listed: { EffectStack.Listed } = {}
 	if list then
 		for _, effect in list do
 			table.insert(listed, { kind = effect.kind, expiresAt = effect.expiresAt, value = effect.value })
 		end
 	end
-	model:SetAttribute("Effects", EffectStack.encode(listed, now()))
+	local text = EffectStack.encode(listed, t)
+	local last = lastEncoded[id]
+	if last and last.model == model and last.text == text then
+		return
+	end
+	lastEncoded[id] = { model = model, text = text }
+	model:SetAttribute("Effects", text)
 end
+
+-- Kinds that change the player's stats (StatService modifier source) and walk speed.
+local STAT_KINDS: { [string]: boolean } = { statBuff = true, attackSlow = true, expired = true, cleanse = true }
+local MOVE_KINDS: { [string]: boolean } =
+	{ slow = true, root = true, stun = true, freeze = true, expired = true, cleanse = true }
 
 local function changed(entity: any, kind: string)
 	publish(entity)
 	-- "expired": a stat buff may have run out; Invalidate is cheap (batched per frame).
-	if entity.kind == "player" and entity.player and (kind == "statBuff" or kind == "expired") then
-		StatService.Invalidate(entity.player)
+	if entity.kind == "player" and entity.player then
+		if STAT_KINDS[kind] then
+			StatService.Invalidate(entity.player)
+		end
+		if MOVE_KINDS[kind] then
+			StatService.RefreshWalkSpeed(entity.player)
+		end
 	end
 	if entity.kind == "monster" and entity.monster then
 		entity.monster:RefreshSpeed(StatusEffectService.SlowFactor(entity))
@@ -126,6 +175,8 @@ export type ApplyOptions = {
 	category: string?,
 	-- S61: intercept only: studs the guard (source) may stand from the target; nil = Combat.interceptRadius.
 	radius: number?,
+	healCut: number?, -- S63: % less healing and shields on this player (Rending Gash, PvP)
+	notBoss: boolean?, -- S63: bosses and Elite II ignore it; SkillEffect.notBoss (S70) maps here
 }
 
 -- S61 (ROZWOJ 7.6): heal and shield multipliers of a player in PvP combat. PvpService sets them in its Init (it
@@ -142,31 +193,41 @@ function StatusEffectService.SetPvpScales(heal: Scale, shield: Scale)
 	shieldScale = shield
 end
 
--- Effects shortened in PvP.
-local CROWD_CONTROL: { [string]: boolean } = { stun = true, root = true, slow = true, freeze = true }
+-- Effects shortened in PvP (S63: attack slow too, STATY 8).
+local CROWD_CONTROL: { [string]: boolean } = { stun = true, root = true, slow = true, freeze = true, attackSlow = true }
 
-function StatusEffectService.Apply(entity: any, kind: string, options: ApplyOptions)
+-- Applies (or refreshes) an effect. True when it was applied; callers may ignore the result.
+function StatusEffectService.Apply(entity: any, kind: string, options: ApplyOptions): boolean
 	if not entity or options.duration <= 0 then
-		return
+		return false
 	end
 	if entity.kind == "monster" and entity.monster and not entity.monster:IsAlive() then
-		return
+		return false
+	end
+	if options.notBoss and StatusEffectService.IsBossLike(entity) then
+		return false
 	end
 	-- Invulnerable (or freshly respawned, S22) targets ignore debuffs.
 	if
 		DEBUFFS[kind]
 		and (StatusEffectService.Has(entity, "invuln") or StatusEffectService.Has(entity, "respawnShield"))
 	then
-		return
+		return false
 	end
 	local duration = options.duration
+	local tickAmount = options.tickAmount
 	if entity.kind == "player" and options.source and options.source ~= entity.player then
 		-- Taunt only works on monsters; crowd control from players is shorter on players (S10).
 		if kind == "taunt" then
-			return
+			return false
 		end
 		if CROWD_CONTROL[kind] then
 			duration *= Config.PvpCcMultiplier
+		end
+		-- S63 (STATY 8, owner answer 18): the only place where a player's damage over time on a player gets x0.6
+		-- (items and skills); the bases computed elsewhere never contain Combat.pvpModifier.
+		if tickAmount and DOT_KINDS[kind] then
+			tickAmount = Traits.pvpTick(tickAmount)
 		end
 	end
 	local list = effects[entity.id]
@@ -178,12 +239,7 @@ function StatusEffectService.Apply(entity: any, kind: string, options: ApplyOpti
 	local t = now()
 	local effect: Effect? = nil
 	for _, existing in list do
-		if
-			existing.kind == kind
-			and existing.sourceKey == sourceKey
-			and existing.skillId == options.skillId
-			and existing.category == options.category
-		then
+		if EffectStack.sameKey(existing, kind, sourceKey, options.skillId, options.category) then
 			effect = existing
 			break
 		end
@@ -203,42 +259,61 @@ function StatusEffectService.Apply(entity: any, kind: string, options: ApplyOpti
 		table.insert(list, created)
 	end
 	local e = effect :: Effect
-	local value = options.value or 0
+	local unit = options.value or 0
 	if kind == "shield" and entity.kind == "player" and entity.player then
-		value *= shieldScale(entity.player)
+		unit *= shieldScale(entity.player)
 	end
-	-- S61: a refresh that changes nothing but the end (party auras every second) must not recompute stats.
-	local sameNumbers = e.expiresAt > t
-		and e.value == value
-		and (e.pct == true) == (options.pct == true)
-		and EffectStack.sameStats(e.stats, options.stats)
-	local stacks = 1
-	if options.maxStacks and options.maxStacks > 1 and e.expiresAt > t then
-		stacks = math.min(options.maxStacks, (e.stacks or 1) + 1)
-	end
-	e.stacks = stacks
-	e.value = value
+	local running = e.expiresAt > t
+	local old: EffectStack.Stack? = if running
+		then {
+			stacks = e.stacks or 1,
+			value = e.value,
+			tickAmount = e.tickAmount,
+			expiresAt = e.expiresAt,
+			nextTick = e.nextTick,
+		}
+		else nil
+	local state = EffectStack.restack(old, {
+		unit = unit,
+		tickUnit = tickAmount,
+		maxStacks = options.maxStacks,
+		duration = duration,
+		now = t,
+		tickInterval = TICK_INTERVAL,
+	})
+	-- S63: anything the icons or the stats see changed (S61: party auras refresh every second with the same numbers).
+	local structural = not running
+		or (e.stacks or 1) ~= state.stacks
+		or e.value ~= state.value
+		or (e.pct == true) ~= (options.pct == true)
+		or not EffectStack.sameStats(e.stats, options.stats)
+		or e.healCut ~= options.healCut
+	e.stacks = state.stacks
+	e.unit = unit
+	e.value = state.value
 	e.radius = options.radius
-	e.tickAmount = if options.tickAmount then options.tickAmount * stacks else nil
-	e.nextTick = if options.tickAmount then t + TICK_INTERVAL else nil
+	e.tickAmount = state.tickAmount
+	e.nextTick = state.nextTick
+	e.healCut = options.healCut
 	if kind == "statBuff" then
 		-- Same key: the stats merge (Battle Cry's attack + its breakpoint's armor), the later end wins.
-		local old: EffectStack.Timed? = if e.expiresAt > t
+		local timed: EffectStack.Timed? = if running
 			then { stats = e.stats, pct = e.pct, expiresAt = e.expiresAt }
 			else nil
 		e.stats, e.expiresAt =
-			EffectStack.merge(old, { stats = options.stats, pct = options.pct, expiresAt = t + duration }, t)
+			EffectStack.merge(timed, { stats = options.stats, pct = options.pct, expiresAt = state.expiresAt }, t)
 	else
-		e.expiresAt = t + duration
+		e.expiresAt = state.expiresAt
 		e.stats = options.stats
 	end
 	e.pct = options.pct
 	e.appliedAt = t
-	if kind == "statBuff" and sameNumbers and stacks == 1 then
-		publish(entity)
-		return
+	if structural then
+		changed(entity, kind)
+	else
+		pending[entity.id] = true
 	end
-	changed(entity, kind)
+	return true
 end
 
 function StatusEffectService.Remove(entity: any, kind: string)
@@ -276,15 +351,78 @@ function StatusEffectService.Has(entity: any, kind: string): boolean
 	return #active(entity, kind) > 0
 end
 
--- Strongest value of an effect kind (e.g. the biggest slow). slow, vulnerability and armorBreak each belong to one
--- category (enemySlow, enemyWeak, enemyArmor) and manaShield has a single own source, so the biggest value is
--- exactly what Logic/EffectStack would pick; only damageReduction needs the full rule (damageFilter).
+-- Strongest value of an effect kind (e.g. the biggest slow). slow and vulnerability each belong to one category
+-- (enemySlow, enemyWeak) and manaShield has a single own source, so the biggest value is exactly what
+-- Logic/EffectStack would pick; damageReduction needs the full rule (damageFilter), and since S63 armorBreak,
+-- weaken and attackSlow are read through CategoryValue (skill + item split, caps).
 function StatusEffectService.Max(entity: any, kind: string): number
 	local best = 0
 	for _, effect in active(entity, kind) do
 		best = math.max(best, effect.value)
 	end
 	return best
+end
+
+-- S63 (STATY 5): working value of a "value" category (Data/BuffCategories) on the entity: EffectStack.value over the
+-- active effects of the category's kind (split categories: strongest skill + strongest item). Unknown id: 0.
+function StatusEffectService.CategoryValue(entity: any, categoryId: string): number
+	local category = BuffCategories.get(categoryId)
+	local kind = category and category.kind
+	if not kind then
+		return 0
+	end
+	local entries: { EffectStack.Entry } = {}
+	for _, effect in active(entity, kind) do
+		if effect.category == categoryId then
+			table.insert(entries, {
+				category = categoryId,
+				value = effect.value,
+				at = effect.appliedAt,
+				item = effect.skillId == EffectStack.ITEM,
+			})
+		end
+	end
+	return EffectStack.value(entries, categoryId)
+end
+
+-- S63 (STATY 8): armour break on a player: only the item part, at most Combat.pvp.armorBreakStacks stacks (skills
+-- never break the armour of players).
+function StatusEffectService.PvpArmorBreak(entity: any): number
+	local best = 0
+	for _, effect in active(entity, "armorBreak") do
+		if effect.skillId == EffectStack.ITEM then
+			best = math.max(best, Damage.pvpArmorBreak(effect.unit or 0, effect.stacks or 1))
+		end
+	end
+	return best
+end
+
+-- S63: % less healing and shields on a player (strongest, no sum).
+function StatusEffectService.HealCut(player: Player): number
+	local entity = EntityService.GetPlayerEntity(player)
+	local list = entity and effects[entity.id]
+	local best = 0
+	if list then
+		local t = now()
+		for _, effect in list do
+			if effect.healCut and effect.expiresAt > t then
+				best = math.max(best, effect.healCut)
+			end
+		end
+	end
+	return best
+end
+
+-- S63: bosses and Elite II (not boss helpers, not players).
+function StatusEffectService.IsBossLike(entity: any): boolean
+	if not entity or entity.kind ~= "monster" or not entity.monster then
+		return false
+	end
+	local monster = entity.monster
+	if monster.summoned then
+		return false
+	end
+	return monster.isBoss == true or monster.variant == "boss" or monster.variant == "elite2"
 end
 
 -- Removes the effect and returns its value (one-shot effects: nextShot, guaranteedCrit).
@@ -342,8 +480,10 @@ function StatusEffectService.Clear(entity: any)
 	if entity and effects[entity.id] then
 		effects[entity.id] = nil
 		publish(entity)
+		forget(entity.id)
 		if entity.kind == "player" and entity.player then
 			StatService.Invalidate(entity.player)
+			StatService.RefreshWalkSpeed(entity.player)
 		end
 	end
 end
@@ -402,6 +542,11 @@ local function modifierSource(player: Player): Source?
 		)
 	end
 	local flat, pct = EffectStack.stats(entries)
+	-- S63 (STATY 5): attack slow is negative attack speed (percentage points of the attack speed multiplier).
+	local attackSlow = StatusEffectService.CategoryValue(entity, "enemyAttackSlow")
+	if attackSlow > 0 then
+		flat.atkSpeed = (flat.atkSpeed or 0) - attackSlow
+	end
 	if next(flat) == nil and next(pct) == nil then
 		return nil
 	end
@@ -554,7 +699,12 @@ local function tickEntity(entity: any, list: { Effect }, t: number)
 			elseif entity.kind == "player" and entity.player then
 				-- S29: the number shows what got through (after shields); 0 = absorbed / immune. No attacker on purpose
 				-- (S61): intercept and thorns never work on damage over time.
-				local _, filtered = ResourceService.Damage(entity.player, effect.tickAmount, effect.kind)
+				local amount = effect.tickAmount
+				if effect.kind == "poison" then
+					-- S63 (STATY 5): poison resistance weakens every poison tick (items and skills).
+					amount *= Damage.resMul(StatService.GetValue(entity.player, "resPoison"))
+				end
+				local _, filtered = ResourceService.Damage(entity.player, amount, effect.kind)
 				StatusEffectService.Ticked:Fire(entity, effect, filtered)
 			end
 		end
@@ -574,18 +724,22 @@ function StatusEffectService.Init(registry)
 	StatService = registry.Get("StatService")
 	CharacterService = registry.Get("CharacterService")
 	StatService.RegisterModifierSource("effects", modifierSource)
+	StatService.SetSpeedFactor(function(player: Player): number
+		local entity = playerEntity(player)
+		return if entity then StatusEffectService.SlowFactor(entity) else 1
+	end)
 	ResourceService.SetDamageFilter(interceptFilter, ResourceService.FilterPriority.intercept)
 	ResourceService.SetDamageFilter(damageFilter, ResourceService.FilterPriority.mitigation)
 end
 
 function StatusEffectService.Start()
 	EntityService.Unregistered:Connect(function(entity)
-		effects[entity.id] = nil
+		forget(entity.id)
 	end)
 	CharacterService.CharacterLeaving:Connect(function(player: Player)
 		local entity = playerEntity(player)
 		if entity then
-			effects[entity.id] = nil
+			forget(entity.id)
 		end
 		interceptWindows[player] = nil
 	end)
@@ -601,10 +755,14 @@ function StatusEffectService.Start()
 		for id, list in effects do
 			local entity = EntityService.Get(id)
 			if not entity then
-				effects[id] = nil
+				forget(id)
 			else
 				local ok, err = pcall(function()
 					tickEntity(entity, list, t)
+					-- S63: a refresh waiting for publication (at most once per PUBLISH_INTERVAL).
+					if pending[id] and EffectStack.publishDue(false, lastPublish[id], t, PUBLISH_INTERVAL) then
+						publish(entity)
+					end
 				end)
 				if not ok then
 					log:error("tick failed for %s: %s", id, tostring(err))
@@ -614,7 +772,7 @@ function StatusEffectService.Start()
 	end)
 
 	Players.PlayerRemoving:Connect(function(player)
-		effects[`p{player.UserId}`] = nil
+		forget(`p{player.UserId}`)
 		interceptWindows[player] = nil
 	end)
 end

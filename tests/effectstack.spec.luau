@@ -171,9 +171,102 @@ T.describe("EffectStack: Effects attribute", function()
 	end)
 end)
 
+T.describe("EffectStack: categories with a skill / item split (S63)", function()
+	local function e(category: string, value: number, item: boolean?): Entry
+		return { category = category, value = value, at = 0, item = item }
+	end
+
+	T.it("adds the strongest skill and the strongest item, with caps", function()
+		T.expect(EffectStack.value({ e("enemyArmor", 30), e("enemyArmor", 25, true) }, "enemyArmor")).toBe(50)
+		T.expect(EffectStack.value({
+			e("enemyArmor", 30),
+			e("enemyArmor", 20),
+			e("enemyArmor", 15, true),
+		}, "enemyArmor")).toBe(45)
+		T.expect(EffectStack.value({ e("enemyArmor", 25, true), e("enemyArmor", 10, true) }, "enemyArmor")).toBe(25)
+		T.expect(EffectStack.value({ e("enemyArmor", 47, true) }, "enemyArmor")).toBe(40)
+		T.expect(EffectStack.value({ e("enemyArmor", 30), e("enemyArmor", 40, true) }, "enemyArmor")).toBe(50)
+		T.expect(EffectStack.value({ e("enemyDamageDown", 10), e("enemyDamageDown", 11.3, true) }, "enemyDamageDown"))
+			.toBe(15)
+		T.expect(EffectStack.value({ e("enemyDamageDown", 6, true) }, "enemyDamageDown")).toBe(6)
+	end)
+
+	T.it("takes the strongest entry of a category without a split", function()
+		T.expect(
+			EffectStack.value({ e("enemyAttackSlow", 20, true), e("enemyAttackSlow", 10, true) }, "enemyAttackSlow")
+		)
+			.toBe(20)
+		T.expect(EffectStack.value({ e("enemyAttackSlow", 30, true) }, "enemyAttackSlow")).toBe(20)
+		T.expect(EffectStack.value({ e("enemySlow", 40), e("enemySlow", 25, true) }, "enemySlow")).toBe(40)
+		T.expect(EffectStack.value({ e("enemySlow", -5) }, "enemySlow")).toBe(0)
+	end)
+
+	T.it("keeps item effects apart from skill effects", function()
+		local skill = { kind = "bleed", sourceKey = "p1", skillId = "cleave" }
+		T.expect(EffectStack.sameKey(skill, "bleed", "p1", EffectStack.ITEM, nil)).toBe(false)
+		T.expect(EffectStack.sameKey(skill, "bleed", "p1", "cleave", nil)).toBe(true)
+		local item = { kind = "bleed", sourceKey = "p1", skillId = EffectStack.ITEM }
+		T.expect(EffectStack.sameKey(item, "bleed", "p1", "item", nil)).toBe(true)
+		T.expect(EffectStack.sameKey(item, "bleed", "p1", "cleave", nil)).toBe(false)
+		T.expect(EffectStack.sameKey(item, "bleed", "p1", "item", "enemyArmor")).toBe(false)
+	end)
+end)
+
+T.describe("EffectStack: stacks and publication (S63)", function()
+	T.it("stacks without ticks share one end", function()
+		local function spec(now: number): EffectStack.StackSpec
+			return { unit = 5, maxStacks = 5, duration = 6, now = now, tickInterval = 1 }
+		end
+		local first = EffectStack.restack(nil, spec(0))
+		T.expect(first.stacks).toBe(1)
+		T.expect(first.value).toBe(5)
+		T.expect(first.nextTick).toBeNil()
+		local second = EffectStack.restack(first, spec(1.5))
+		T.expect(second.stacks).toBe(2)
+		T.expect(second.value).toBe(10)
+		T.expect(second.expiresAt).toBe(7.5)
+		local state = second
+		for i = 1, 5 do
+			state = EffectStack.restack(state, spec(1.5 + i))
+		end
+		T.expect(state.stacks).toBe(5)
+		T.expect(state.value).toBe(25)
+		local late = EffectStack.restack(state, spec(state.expiresAt + 1))
+		T.expect(late.stacks).toBe(1)
+	end)
+
+	T.it("stacks with ticks keep the tick", function()
+		local function spec(now: number, maxStacks: number?): EffectStack.StackSpec
+			return { unit = 0, tickUnit = 100, maxStacks = maxStacks, duration = 4, now = now, tickInterval = 1 }
+		end
+		local first = EffectStack.restack(nil, spec(10, 3))
+		T.expect(first.tickAmount).toBe(100)
+		T.expect(first.nextTick).toBe(11)
+		local second = EffectStack.restack(first, spec(11.5, 3))
+		T.expect(second.stacks).toBe(2)
+		T.expect(second.tickAmount).toBe(200)
+		T.expect(second.nextTick).toBe(11)
+		local fourth = EffectStack.restack(EffectStack.restack(second, spec(12, 3)), spec(12.5, 3))
+		T.expect(fourth.stacks).toBe(3)
+		T.expect(fourth.tickAmount).toBe(300)
+		T.expect(first.stacks).toBe(1)
+		T.expect(first.tickAmount).toBe(100)
+		local single = EffectStack.restack(EffectStack.restack(nil, spec(10)), spec(11.5))
+		T.expect(single.stacks).toBe(1)
+		T.expect(single.nextTick).toBe(12.5)
+	end)
+
+	T.it("publishes a refresh at most once per interval", function()
+		T.expect(EffectStack.publishDue(true, 0.5, 1, 1)).toBe(true)
+		T.expect(EffectStack.publishDue(false, 0.5, 1, 1)).toBe(false)
+		T.expect(EffectStack.publishDue(false, 0, 1, 1)).toBe(true)
+		T.expect(EffectStack.publishDue(false, nil, 1, 1)).toBe(true)
+	end)
+end)
+
 T.describe("Data: BuffCategories", function()
-	T.it("declares the 11 categories with kinds, stats and caps", function()
-		T.expect(#BuffCategories.list).toBe(11)
+	T.it("declares the 13 categories with kinds, stats and caps", function()
+		T.expect(#BuffCategories.list).toBe(13)
 		local seen: { [string]: boolean } = {}
 		for _, category in BuffCategories.list do
 			T.expect(seen[category.id]).toBeNil()
@@ -190,8 +283,22 @@ T.describe("Data: BuffCategories", function()
 			end
 		end
 		T.expect(seen[BuffCategories.OWN]).toBe(true)
-		T.expect(table.clone(BuffCategories.caps))
-			.toEqual({ damageReduction = 75, enemyMiss = 15, allyMove = 30, intercept = 30, interceptPerSecond = 25 })
+		T.expect(table.clone(BuffCategories.caps)).toEqual({
+			damageReduction = 75,
+			enemyMiss = 15,
+			allyMove = 30,
+			intercept = 30,
+			interceptPerSecond = 25,
+			enemyArmor = 50,
+			enemyArmorItem = 40,
+			enemyDamageDown = 15,
+			enemyAttackSlow = 20,
+		})
+		T.expect((BuffCategories.get("enemyDamageDown") :: any).kind).toBe("weaken")
+		T.expect((BuffCategories.get("enemyAttackSlow") :: any).kind).toBe("attackSlow")
+		T.expect((BuffCategories.get("enemyArmor") :: any).split).toBe(true)
+		T.expect((BuffCategories.get("enemyDamageDown") :: any).split).toBe(true)
+		T.expect((BuffCategories.get("enemyAttackSlow") :: any).split).toBeNil()
 	end)
 end)
 

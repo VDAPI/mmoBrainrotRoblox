@@ -11,6 +11,9 @@ local BuffCategories = require("../Data/BuffCategories")
 
 local EffectStack = {}
 
+-- S63 (STATY 5): skillId of effects from items; their key is (kind, player, "item", category).
+EffectStack.ITEM = "item"
+
 local NO_STATS: { [string]: number } = table.freeze({})
 
 export type Entry = {
@@ -19,6 +22,21 @@ export type Entry = {
 	stats: { [string]: number }?, -- statBuff
 	pct: boolean?, -- statBuff: percentage modifiers instead of flat
 	at: number, -- when it was (re)applied; a tie goes to the newer one
+	item: boolean?, -- S63: from an item (skillId "item"): the item part of a split category
+}
+
+-- S63: the key of an effect (ROZWOJ 7.2).
+export type Key = { kind: string, sourceKey: string, skillId: string?, category: string? }
+
+-- S63: state of an effect under one key (restack).
+export type Stack = { stacks: number, value: number, tickAmount: number?, expiresAt: number, nextTick: number? }
+export type StackSpec = {
+	unit: number,
+	tickUnit: number?,
+	maxStacks: number?,
+	duration: number,
+	now: number,
+	tickInterval: number,
 }
 
 -- A statBuff being re-applied with the same key (merge).
@@ -47,8 +65,8 @@ function EffectStack.strength(entry: Entry): number
 	return entry.value or 0
 end
 
--- The strongest entry of every category (own entries excluded). The one place that decides a category's winner,
--- so a later split (skill part / item part, STATY 5) changes only this function.
+-- The strongest entry of every category (own entries excluded). The one place that decides a category's winner of
+-- stat buffs; value categories with a skill / item split are read through EffectStack.value (S63).
 local function winners(entries: { Entry }): { [string]: Entry }
 	local best: { [string]: Entry } = {}
 	local bestStrength: { [string]: number } = {}
@@ -151,6 +169,78 @@ function EffectStack.sameStats(a: { [string]: number }?, b: { [string]: number }
 	return true
 end
 
+-- S63: true when the effect's key equals (kind, sourceKey, skillId, category); nil equals nil. StatusEffectService
+-- finds an effect only through this, so the key rule has one owner.
+function EffectStack.sameKey(entry: Key, kind: string, sourceKey: string, skillId: string?, category: string?): boolean
+	return entry.kind == kind
+		and entry.sourceKey == sourceKey
+		and entry.skillId == skillId
+		and entry.category == category
+end
+
+-- State of an effect applied under a key (STATY 5): a running effect with maxStacks > 1 gains a stack, all stacks
+-- share one end time, stacks multiply value and tickAmount, a running stacked effect keeps nextTick. old = nil: new.
+-- Returns a new table.
+function EffectStack.restack(old: Stack?, spec: StackSpec): Stack
+	local now = spec.now
+	local running = old ~= nil and old.expiresAt > now
+	local limit = math.max(1, spec.maxStacks or 1)
+	local stacks = 1
+	if running and limit > 1 then
+		stacks = math.min(limit, (old :: Stack).stacks + 1)
+	end
+	local tickUnit = spec.tickUnit
+	local nextTick: number? = nil
+	if tickUnit then
+		local keep = if running and limit > 1 then (old :: Stack).nextTick else nil
+		nextTick = keep or now + spec.tickInterval
+	end
+	return {
+		stacks = stacks,
+		value = spec.unit * stacks,
+		tickAmount = if tickUnit then tickUnit * stacks else nil,
+		expiresAt = now + spec.duration,
+		nextTick = nextTick,
+	}
+end
+
+-- S63: publish the "Effects" attribute now? Structural changes always; a mere refresh at most once per interval.
+function EffectStack.publishDue(structural: boolean, lastPublish: number?, now: number, interval: number): boolean
+	return structural or lastPublish == nil or now - lastPublish >= interval
+end
+
+-- S63 (STATY 5, owner answer 14): the working value of a "value" category: the strongest entry, capped by
+-- caps[id]; a split category adds the strongest skill entry and the strongest item entry (item part capped by
+-- caps[id .. "Item"] when it exists), the sum capped by caps[id]. Negative values count as 0; an unknown category
+-- has no cap.
+function EffectStack.value(entries: { Entry }, categoryId: string): number
+	local category = BuffCategories.get(categoryId)
+	-- Strongest entry of the part `item` (nil = both parts).
+	local function strongest(item: boolean?): number
+		local top = 0
+		for _, entry in entries do
+			if entry.category == categoryId and (item == nil or (entry.item == true) == item) then
+				top = math.max(top, EffectStack.strength(entry))
+			end
+		end
+		return top
+	end
+	local total: number
+	if category and category.split then
+		local skillPart = strongest(false)
+		local itemPart = strongest(true)
+		local itemCap = BuffCategories.caps[categoryId .. "Item"]
+		if itemCap then
+			itemPart = math.min(itemPart, itemCap)
+		end
+		total = skillPart + itemPart
+	else
+		total = strongest(nil)
+	end
+	local cap = BuffCategories.caps[categoryId]
+	return if cap then math.min(total, cap) else total
+end
+
 -- Attribute "Effects" ----------------------------------------------------------------------------------------
 
 -- Kinds whose value is a percentage shown to the player (an absorb shield keeps its remaining points in value).
@@ -163,6 +253,8 @@ EffectStack.VALUE_KINDS = table.freeze({
 	nextShot = true,
 	intercept = true, -- S61
 	misfortune = true, -- S61
+	attackSlow = true, -- S63
+	weaken = true, -- S63
 } :: { [string]: boolean })
 
 type Group = { kind: string, at: number, value: number? }

@@ -427,7 +427,21 @@ end)
 
 T.describe("Data: item traits and bonus tiers (S62)", function()
 	local OFFHAND_GROUPS = { weapon = true, shield = true, quiver = true, magicOffhand = true }
-	local LIVE = { "criticalForce", "bodkinBolt", "learnedFormulae", "powerLens", "anointment", "prosperity" }
+	local LIVE = {
+		"criticalForce",
+		"bodkinBolt",
+		"learnedFormulae",
+		"powerLens",
+		"anointment",
+		"prosperity",
+		-- S63: on-hit effects
+		"rendingGash",
+		"toxicBarbs",
+		"sundering",
+		"bonebreaker",
+		"harrying",
+		"concussion",
+	}
 
 	T.it("every weapon and off-hand base has a trait", function()
 		local owner: { [string]: string } = {}
@@ -613,14 +627,8 @@ T.describe("Data: item traits and bonus tiers (S62)", function()
 	T.it("mace and shield pools have 11-14 lines per class", function()
 		for _, id in { "mace1h_20", "shield_20" } do
 			for _, classId in (Items.get(id) :: any).classes do
-				-- 10 until S63 adds woundChance and dotPower
-				local low = if id == "mace1h_20"
-						and classId == "Warrior"
-						and Bonuses.get("woundChance") == nil
-					then 10
-					else 11
 				local n = #ItemRoll.bonusPool(id, classId)
-				T.expect({ id, classId, n >= low and n <= 14 }).toEqual({ id, classId, true })
+				T.expect({ id, classId, n >= 11 and n <= 14 }).toEqual({ id, classId, true })
 			end
 		end
 	end)

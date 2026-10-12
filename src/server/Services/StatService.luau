@@ -8,6 +8,8 @@
 --       flat = {...}, pct = {...} } end)     -- S04 items, S05 passives, S07 blessings, S12 guild
 --   StatService.SetWeaponProvider(function(player, character) return { dmg, mdmg, speed, ranged } end)
 -- and call StatService.Invalidate(player) whenever their contribution changes.
+-- S63: StatusEffectService registers the walk speed factor (slows, roots, stuns) through SetSpeedFactor and calls
+-- RefreshWalkSpeed when it changes (this service cannot require it: the dependency goes the other way).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -68,6 +70,8 @@ local sprinting: { [Player]: boolean? } = {}
 -- Admin /speed (S23): a fixed walk speed that wins over stats and sprint.
 local speedOverride: { [Player]: number? } = {}
 
+local speedFactor: ((player: Player) -> number)? = nil
+
 local function applyWalkSpeed(player: Player)
 	local result = results[player]
 	local model = player.Character
@@ -77,8 +81,19 @@ local function applyWalkSpeed(player: Player)
 		humanoid.WalkSpeed = override
 	elseif result and humanoid then
 		local sprint = sprinting[player] == true and humanoid.Health > 0
-		humanoid.WalkSpeed = result.walkSpeed * (if sprint then Config.SprintMultiplier else 1)
+		local factor = if speedFactor then speedFactor(player) else 1
+		humanoid.WalkSpeed = result.walkSpeed * (if sprint then Config.SprintMultiplier else 1) * factor
 	end
+end
+
+-- S63: walk speed factor of status effects (StatusEffectService.SlowFactor of the player).
+function StatService.SetSpeedFactor(fn: (player: Player) -> number)
+	speedFactor = fn
+end
+
+-- S63: re-applies WalkSpeed (a slow started or ended).
+function StatService.RefreshWalkSpeed(player: Player)
+	applyWalkSpeed(player)
 end
 
 -- Fixed walk speed for an admin (nil = back to normal).

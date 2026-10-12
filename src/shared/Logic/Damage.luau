@@ -61,6 +61,9 @@ export type Result = {
 	missed: boolean?, -- S61: the attacker missed (misfortune), shown as "Miss"
 	element: Element?,
 	lifesteal: number, -- HP the attacker heals
+	-- S63: the hit before Combat.pvpModifier, after armor, crit and resistances: base of damage over time (0 when
+	-- nothing landed; equal to amount outside PvP).
+	dotBase: number?,
 }
 
 local Damage = {}
@@ -104,6 +107,19 @@ function Damage.bonusMul(attacker: Attacker, params: Params): number
 		mul *= 1 + (attacker.basicDmg or 0) / 100
 	end
 	return mul
+end
+
+-- S63: damage multiplier of an elemental resistance (capped at 75 %); also poison ticks against resPoison.
+function Damage.resMul(res: number): number
+	return 1 - math.clamp(res, 0, 75) / 100
+end
+
+-- S63 (STATY 8): armour break from items on a player: at most Combat.pvp.armorBreakStacks stacks, item cap.
+function Damage.pvpArmorBreak(unit: number, stacks: number): number
+	return math.min(
+		math.max(0, unit) * math.clamp(stacks, 0, Combat.pvp.armorBreakStacks),
+		BuffCategories.caps.enemyArmorItem
+	)
 end
 
 -- Chance (0..1) that the defender dodges.
@@ -168,6 +184,7 @@ function Damage.computeDamage(attacker: Attacker, defender: Defender, params: Pa
 				missed = outcome == "miss",
 				element = element,
 				lifesteal = 0,
+				dotBase = 0,
 			}
 		end
 	end
@@ -189,15 +206,27 @@ function Damage.computeDamage(attacker: Attacker, defender: Defender, params: Pa
 
 	if element and defender.res then
 		local res = defender.res[RES_KEYS[element] or element] or 0
-		amount *= 1 - math.clamp(res, 0, 75) / 100
+		amount *= Damage.resMul(res)
 	end
+	local dotBase = math.max(Combat.minDamage, math.floor(amount + 0.5))
 	if params.pvp then
 		amount *= Combat.pvpModifier
 	end
 
 	local final = math.max(Combat.minDamage, math.floor(amount + 0.5))
 	local lifesteal = math.floor(final * math.clamp(attacker.lifesteal or 0, 0, 15) / 100)
-	return { amount = final, crit = crit, dodged = false, element = element, lifesteal = lifesteal }
+	if params.pvp then
+		-- S63 (STATY 8): lifesteal against players heals half.
+		lifesteal = math.floor(lifesteal * Combat.pvp.lifesteal)
+	end
+	return {
+		amount = final,
+		crit = crit,
+		dodged = false,
+		element = element,
+		lifesteal = lifesteal,
+		dotBase = dotBase,
+	}
 end
 
 -- Builds Attacker/Defender tables from StatCalc values (players).

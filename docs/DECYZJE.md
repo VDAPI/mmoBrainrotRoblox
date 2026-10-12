@@ -1277,3 +1277,25 @@
 - **S62** STATY 15 P1: Żniwo, Ścięcie, Łatwy cel i Zastawę z `blockCap` robi S64, `dmgMul` Kuszy S90, częstość linii na
   typ bazy na wiki S68 (podział `docs/sessions`).
 - **S62** Żaden próg S32 w `balance.spec` się nie zmienił (najniższa parzystość Mag `runestaff` L5 0,975 przy progu 0,97).
+- **S63** Efekty z przedmiotów: klucz `(kind, gracz, "item", kategoria)`, stosy jednego gracza z jednym czasem
+  (`EffectStack.restack`), stosy mnożą `value` i `tickAmount`; trwający efekt ze stosami nie przesuwa tyknięcia (także
+  krwawienie Rozpłatania 10). `Effects` od razu przy nowym, zdjętym albo zmienionym efekcie, przy samym przedłużeniu
+  najwyżej raz na 1 s (`publishDue`). Niezadana reszta przy odświeżeniu: `accumulate` w S65.
+- **S63** `DealOptions.noProc / basic / area`: atak podstawowy i umiejętność w jeden cel pełna szansa, obszarowa
+  `areaProcShare` (1/3) na cel; bez efektów: drugi cios podwójnego ataku, kontra, rozprysk, łuk błyskawicy, drugi cel
+  przełomu `pierce`, pulsy pól. Suma szans jednego efektu ≤ 40%. `params.basic` ustawia tylko `DealDamage`.
+- **S63** DoT z przedmiotów od trafienia przed `pvpModifier` (`Result.dotBase`), dzielone przez tyknięcia, które padną
+  (4 s → 3). W PvP każde tyknięcie gracza na graczu ×0,6 raz w `StatusEffectService.Apply`, także krwawienie i trucizna
+  umiejętności (były 100%); podpalenie adaptacyjne od `dotBase`, więc zostaje na 60%. `resPoison` osłabia tyknięcia
+  trucizny na graczu. Wampiryzm (`lifesteal`) w PvP ×`Combat.pvp.lifesteal` 0,5; `behaviour.lifesteal` zostaje ×0,7.
+- **S63** `enemyArmor` = najsilniejsza umiejętność + najsilniejszy przedmiot (przedmioty ≤ 40, razem ≤ 50; było:
+  największa, limit 90). W PvP tylko część z przedmiotów, najwyżej 3 stosy (`PvpArmorBreak`).
+- **S63** Łamanie kości: `weaken` / `enemyDamageDown` (umiejętność + przedmiot, ≤ 15) zmniejsza ciosy potworów, także
+  czerwone strefy i bossów; na graczu (tylko od graczy) ×0,5 przy nałożeniu, odczyt wyłącznie w gałęzi PvP.
+- **S63** `attackSlow` / `enemyAttackSlow` (najsilniejsze, ≤ 20): potwór `attackInterval / (1 − v)` przy ustawianiu
+  `nextAttack`, gracz ujemne `atkSpeed`; `slow` zostaje ruchem. Ruch gracza × `SlowFactor` (`StatService.SetSpeedFactor`),
+  więc spowolnienie, unieruchomienie i ogłuszenie z PvP działają na ruch. Wstrząs: `ApplyOptions.notBoss` (bossy i
+  Elity II, nie pomocnicy), przerwa 8 s na cel, `Monster.DelayAttack`.
+- **S63** Nowe linie to haki (`woundChance`, `poisonChance`, `dotPower`, `resourceOnHit`), nie statystyki `StatCalc`;
+  `dotPower` bez Kapłana, dopóki nie ma obrażeń w czasie (S70); STATY 4 poprawione. Leczenie z rany rąbanej: `HealCut`
+  mnoży `PvpService.HealScale` / `ShieldScale`. Progi `balance.spec` bez zmian.

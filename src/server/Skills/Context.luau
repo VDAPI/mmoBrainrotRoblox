@@ -16,6 +16,7 @@ local Damage = require(Shared.Logic.Damage)
 local Push = require(script.Parent.Push)
 local SkillData = require(Shared.Data.Skills)
 local Skills = require(Shared.Logic.Skills)
+local Traits = require(Shared.Logic.Traits)
 local Types = require(Shared.Types)
 
 export type Services = {
@@ -169,14 +170,15 @@ function Context.new(
 	end
 
 	-- Extra effect of adaptive skills by weapon element (DESIGN §14.4): fire burns for 30 % of the hit over
-	-- 4 s, ice slows by 25 % for 2 s, lightning arcs to one enemy nearby for 40 %.
+	-- 4 s, ice slows by 25 % for 2 s, lightning arcs to one enemy nearby for 40 %. S63: `amount` is the hit before
+	-- the PvP multiplier (Result.dotBase); StatusEffectService.Apply adds x0.6 once on players.
 	local function adaptiveEffect(entity: any, percent: number, amount: number)
 		if element == "fire" then
 			services.StatusEffect.Apply(entity, "burn", {
 				duration = 4,
 				value = 30,
 				source = player,
-				tickAmount = math.max(1, amount * 0.3 / 4),
+				tickAmount = math.max(1, amount * 0.3 / 4) * (1 + services.Combat.DotBonus(player, "burn") / 100),
 				skillId = skill.id,
 			})
 		elseif element == "ice" then
@@ -318,9 +320,13 @@ function Context.new(
 				multiplier = elementalMultiplier() * speedMul,
 				consumeShot = opts.consumeShot ~= false,
 				skill = if opts.plain then nil else skill.id,
+				-- S63 (STATY 5): area skills roll on-hit effects with a share per target; secondary hits (splash,
+				-- ground pulses, the lightning arc, the second pierce target) roll none.
+				area = Traits.isAreaSkill(skill.type),
+				noProc = opts.plain == true or opts.noAdaptive == true or opts.noProc == true,
 			})
 			if skill.adaptive and result and result.amount > 0 and not opts.noAdaptive then
-				adaptiveEffect(entity, percent, result.amount)
+				adaptiveEffect(entity, percent, result.dotBase or result.amount)
 			end
 			if result and not result.dodged and result.amount > 0 and not opts.plain then
 				onHit(entity, percent, result, opts)
@@ -365,8 +371,9 @@ function Context.new(
 				else 0
 			local tickAmount: number? = nil
 			if effect.kind == "bleed" or effect.kind == "poison" then
-				-- value % of attack spread over the duration, one tick per second
+				-- value % of attack spread over the duration, one tick per second; S63: + dotPower (STATY 4)
 				tickAmount = math.max(1, ctx.attack() * effectValue / 100 / math.max(1, duration))
+					* (1 + services.Combat.DotBonus(player, effect.kind) / 100)
 			end
 			local statValues: { [string]: number }? = nil
 			if effect.stats then

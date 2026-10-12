@@ -63,6 +63,11 @@ przedmiotów czyta STATY); odstępstwa idą do `docs/DECYZJE.md`, a kontrakt pop
 - **Linia przedmiotu / cecha broni** (S62): linia w `Data/Bonuses` (`bonus(..., tier)`, pula, `CLASS_STATS`, waga w
   `Data/ItemTraits.affinity`) + statystyka w `Data/Stats` i `StatCalc` albo hak czytany przez `CombatService.Hook`;
   cecha typu w `Data/ItemTraits` (`live = true` dopiero z kodem) + teksty `trait.<id>.name/.line`.
+- **Efekt przy trafieniu z przedmiotu** (S63): pole `onHit` cechy w `Data/ItemTraits` i `live = true` (hak
+  `TraitDef.hook` z wartością rosnącą trafia do `ItemRoll.itemStats.hooks`; stałe liczby `onHit` idą do linii
+  `trait.<id>.line` przez `TooltipModel.traitArgs`), rozgałęzienie w `CombatService.applyTraitEffect`, efekty z
+  `skillId = "item"` i stosami przez `EffectStack.restack`; ciosy wtórne z `DealOptions.noProc`; pomocniki i testy w
+  `Logic/Traits` / `tests/traits.spec`.
 - **Prawdziwy model broni**: wpis w `WeaponLooks.assets` + MeshPart w `Assets.Weapons` (`docs/ASSETS.md` → „Broń”).
 - **Portal / przejście między mapami** (S25): wpis w `Data/Portals.luau` (layout stawia go przez
   `Prefabs.portalFrom(ctx, id)`); trasa (`Logic/MapRoute`), mapa świata i prowadzenie widzą go same.

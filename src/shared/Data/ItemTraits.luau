@@ -3,6 +3,23 @@
 
 export type TraitKind = "stat" | "hook" | "effect"
 
+-- S63 (STATY 5): what an "effect" trait does to the target it hits. The grown number stays in TraitDef.value (and
+-- reaches CombatService through TraitDef.hook); everything here is fixed.
+export type OnHit = {
+	effect: "bleed" | "poison" | "armorBreak" | "weaken" | "harass" | "shock",
+	line: string?, -- regular line adding chance to the same effect
+	linePct: number?, -- % of the hit when only the line procs
+	chance: number?, -- fixed % chance; nil: the grown value is the chance (harass, shock) or every hit
+	duration: number, -- s, one duration for all stacks
+	maxStacks: number?, -- stacks from one player
+	slow: number?, -- % move slow
+	attackSlow: number?, -- % attack slow
+	healCut: number?, -- % less healing and shields on a player (PvP)
+	gap: number?, -- shock: s per target
+	notBoss: boolean?, -- shock: bosses and Elite II are immune
+	delayShare: number?, -- shock: share of the monster's attack interval added after the stun
+}
+
 export type TraitDef = {
 	id: string,
 	nameKey: string, -- trait.<id>.name
@@ -14,8 +31,12 @@ export type TraitDef = {
 	hook: string?, -- kind "hook" / "effect": itemStats.hooks key (provisional until the trait goes live)
 	params: { [string]: number }?, -- fixed numbers of the trait (chance %, s, studs); never scaled
 	pvp: number, -- multiplier against players (STATY 8): 1 like a line, 0.5 half, 0 none
-	live: boolean, -- false: no code yet (S63-S65); ItemRoll.trait returns nil, tooltip and wiki hide it
+	live: boolean, -- false: no code yet (S64-S65); ItemRoll.trait returns nil, tooltip and wiki hide it
+	onHit: OnHit?, -- kind "effect" (S63)
 }
+
+-- One live on-hit trait with its effect (no optional field, so callers need no casts).
+export type OnHitEntry = { trait: TraitDef, onHit: OnHit }
 
 type Extra = {
 	stat: string?,
@@ -23,6 +44,7 @@ type Extra = {
 	params: { [string]: number }?,
 	pvp: number,
 	live: boolean?,
+	onHit: OnHit?,
 }
 
 -- Section icon and colour of the "Trait" block in the tooltip.
@@ -45,6 +67,7 @@ local function trait(id: string, kind: TraitKind, category: string, value: numbe
 		params = extra.params,
 		pvp = extra.pvp,
 		live = extra.live == true,
+		onHit = if extra.onHit then table.freeze(extra.onHit) else nil,
 	}
 	table.insert(LIST, def)
 	BY_ID[id] = def
@@ -54,10 +77,33 @@ end
 trait("swordplay", "hook", "counter", 25, { hook = "counterDamage", params = { chance = 10 }, pvp = 0.5 })
 trait("twinCut", "hook", "rhythm", 40, { hook = "traitTwinCut", params = { every = 5, reset = 5 }, pvp = 1 })
 trait("reaping", "hook", "killHeal", 1, { hook = "killHeal", pvp = 0 })
-trait("bonebreaker", "effect", "weaken", 6, { hook = "traitWeaken", pvp = 0.5 })
+trait("bonebreaker", "effect", "weaken", 6, {
+	hook = "traitWeaken",
+	pvp = 0.5,
+	live = true,
+	onHit = { effect = "weaken", duration = 4 },
+})
 trait("beheading", "hook", "execute", 18, { hook = "traitExecute", params = { threshold = 30 }, pvp = 0.5 })
-trait("rendingGash", "effect", "bleed", 30, { hook = "traitWound", pvp = 1 })
-trait("sundering", "effect", "armorBreak", 5, { hook = "traitArmorBreak", pvp = 1 })
+trait("rendingGash", "effect", "bleed", 30, {
+	hook = "traitWound",
+	pvp = 1,
+	live = true,
+	onHit = {
+		effect = "bleed",
+		line = "woundChance",
+		linePct = 20,
+		chance = 15,
+		duration = 4,
+		maxStacks = 3,
+		healCut = 20,
+	},
+})
+trait("sundering", "effect", "armorBreak", 5, {
+	hook = "traitArmorBreak",
+	pvp = 1,
+	live = true,
+	onHit = { effect = "armorBreak", duration = 6, maxStacks = 5 },
+})
 trait(
 	"runThrough",
 	"hook",
@@ -66,8 +112,26 @@ trait(
 	{ hook = "traitRunThrough", params = { width = 4, depth = 4 }, pvp = 1 }
 )
 trait("parry", "hook", "block", 0.5, { hook = "blockHeal", params = { chance = 5 }, pvp = 0.5 })
-trait("harrying", "effect", "harass", 15, { hook = "traitHarass", pvp = 1 })
-trait("toxicBarbs", "effect", "poison", 30, { hook = "traitPoison", pvp = 1 })
+trait("harrying", "effect", "harass", 15, {
+	hook = "traitHarass",
+	pvp = 1,
+	live = true,
+	onHit = { effect = "harass", duration = 2, slow = 20, attackSlow = 20 },
+})
+trait("toxicBarbs", "effect", "poison", 30, {
+	hook = "traitPoison",
+	pvp = 1,
+	live = true,
+	onHit = {
+		effect = "poison",
+		line = "poisonChance",
+		linePct = 20,
+		chance = 15,
+		duration = 5,
+		maxStacks = 3,
+		attackSlow = 10,
+	},
+})
 trait("criticalForce", "stat", "critDamage", 25, { stat = "critDmg", pvp = 1, live = true })
 trait("easyPrey", "hook", "controlled", 10, { hook = "controlledDamage", pvp = 0.5 })
 trait("bodkinBolt", "stat", "armorPierce", 20, { stat = "pierce", pvp = 1, live = true })
@@ -79,31 +143,35 @@ trait("learnedFormulae", "stat", "costReduce", 8, { stat = "costReduce", pvp = 1
 trait("powerLens", "stat", "skillDamage", 6, { stat = "skillDmg", pvp = 1, live = true })
 trait("anointment", "stat", "healPower", 8, { stat = "healPower", pvp = 1, live = true })
 trait("savingBlow", "hook", "damageHeal", 4, { hook = "traitSavingBlow", params = { radius = 30 }, pvp = 0.5 })
-trait("concussion", "effect", "shock", 6, { hook = "traitShock", pvp = 1 })
+trait("concussion", "effect", "shock", 6, {
+	hook = "traitShock",
+	pvp = 1,
+	live = true,
+	onHit = { effect = "shock", duration = 0.5, gap = 8, notBoss = true, delayShare = 0.5 },
+})
 trait("prosperity", "stat", "itemFind", 8, { stat = "dropBonus", pvp = 0, live = true })
 
 local MATCH = 3 -- STATY 2B: a line that suits the type's trait rolls 3x as often; 0 = never on this type
 
--- Pool weights per base type (STATY 3, last column); lines not listed weigh 1. S63/S64 add woundChance,
--- poisonChance, dotPower, meleeGuard and blockChance (1).
+-- Pool weights per base type (STATY 3, last column); lines not listed weigh 1. S64 adds meleeGuard and blockChance.
 local AFFINITY: { [string]: { [string]: number } } = {
 	sword1h = { critChance = MATCH, accuracy = MATCH, basicDmg = MATCH },
 	saber1h = { atkSpeed = MATCH, basicDmg = MATCH, lifesteal = MATCH },
-	axe1h = { lifesteal = MATCH, atkSpeed = MATCH },
+	axe1h = { lifesteal = MATCH, atkSpeed = MATCH, woundChance = MATCH },
 	mace1h = { skillDmg = MATCH, critChance = MATCH },
 	sword2h = { critChance = MATCH, critDmg = MATCH, skillDmg = MATCH },
-	axe2h = { lifesteal = MATCH },
+	axe2h = { lifesteal = MATCH, woundChance = MATCH, dotPower = MATCH },
 	hammer2h = { skillDmg = MATCH, pierce = MATCH, critDmg = MATCH },
 	spear2h = { basicDmg = MATCH, atkSpeed = MATCH, pierce = MATCH },
 	shield = { critResist = MATCH, hpPct = MATCH },
 	shortbow = { atkSpeed = MATCH, basicDmg = MATCH, accuracy = MATCH },
-	bow = { atkSpeed = MATCH },
+	bow = { atkSpeed = MATCH, poisonChance = MATCH, dotPower = MATCH },
 	longbow = { critChance = MATCH, critDmg = MATCH, skillDmg = MATCH },
-	crossbow = { skillDmg = MATCH },
+	crossbow = { skillDmg = MATCH, poisonChance = MATCH, dotPower = MATCH },
 	heavycrossbow = { pierce = MATCH, critChance = MATCH, skillDmg = MATCH },
-	quiver = { atkSpeed = MATCH, basicDmg = MATCH },
+	quiver = { atkSpeed = MATCH, basicDmg = MATCH, poisonChance = MATCH },
 	wand = { basicDmg = MATCH, atkSpeed = MATCH, critChance = MATCH },
-	staff = { skillDmg = MATCH, magAtk = MATCH },
+	staff = { skillDmg = MATCH, magAtk = MATCH, dotPower = MATCH },
 	runestaff = { skillDmg = MATCH, critDmg = MATCH, magicPierce = MATCH },
 	tome = { costReduce = MATCH, manaRegen = MATCH, mana = MATCH },
 	orb = { skillDmg = MATCH, critDmg = MATCH, magicPierce = MATCH },
@@ -137,8 +205,22 @@ local function weight(baseType: string, lineId: string, classId: string?): numbe
 	return 1
 end
 
+-- S63: live on-hit traits in a fixed order (it fixes the sequence of rolls in CombatService): bleed, poison, armour
+-- break, weaken, harass, shock.
+local ON_HIT_ORDER = { "bleed", "poison", "armorBreak", "weaken", "harass", "shock" }
+local ON_HIT_LIST: { OnHitEntry } = {}
+for _, effect in ON_HIT_ORDER do
+	for _, def in LIST do
+		local onHit = def.onHit
+		if def.live and onHit and onHit.effect == effect then
+			table.insert(ON_HIT_LIST, table.freeze({ trait = def, onHit = onHit }))
+		end
+	end
+end
+
 return table.freeze({
 	list = LIST,
+	onHitList = table.freeze(ON_HIT_LIST),
 	byId = BY_ID,
 	affinity = AFFINITY,
 	classAffinity = CLASS_AFFINITY,

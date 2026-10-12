@@ -111,7 +111,7 @@ local function pierce(ctx: Ctx, target: any, percent: number)
 	end
 	if best then
 		ctx.fx({ v = "pierce", path = { target.id, best.id } })
-		ctx.damage(best, percent * share / 100, { consumeShot = false })
+		ctx.damage(best, percent * share / 100, { consumeShot = false, noProc = true })
 	end
 end
 

@@ -25,7 +25,9 @@ local Classes = require(Shared.Data.Classes)
 local DamageText = require(Shared.Logic.DamageText)
 local Combat = require(Shared.Data.Combat)
 local Damage = require(Shared.Logic.Damage)
+local EffectStack = require(Shared.Logic.EffectStack)
 local Exp = require(Shared.Logic.Exp)
+local ItemTraits = require(Shared.Data.ItemTraits)
 local Items = require(Shared.Data.Items)
 local Log = require(Shared.Util.Log)
 local MonsterAbilities = require(Shared.Data.MonsterAbilities)
@@ -37,6 +39,7 @@ local PartyBonus = require(Shared.Logic.PartyBonus)
 local PartyLoot = require(Shared.Logic.PartyLoot)
 local Rng = require(Shared.Logic.Rng)
 local Signal = require(ReplicatedStorage.Packages.Signal)
+local Traits = require(Shared.Logic.Traits)
 local Types = require(Shared.Types)
 
 local log = Log.new("CombatService")
@@ -114,6 +117,8 @@ type Attacker = {
 	damageOverride: number?,
 	rejectedAt: number, -- last AttackRejected sent (rate limit)
 	outOfRangeSince: number?, -- standing still out of range since (for the "too far" message)
+	shockAt: { [string]: number }, -- S63: last Concussion stun (os.clock) per target entity id
+	resourceAt: number?, -- S63: last resourceOnHit refund (os.clock)
 }
 
 local REJECT_INTERVAL = 2
@@ -130,7 +135,15 @@ local redZones: { RedZone } = {}
 local function attackerState(player: Player): Attacker
 	local state = attackers[player]
 	if not state then
-		state = { target = nil, attack = false, nextAttack = 0, damageOverride = nil, rejectedAt = 0 }
+		state = {
+			target = nil,
+			attack = false,
+			nextAttack = 0,
+			damageOverride = nil,
+			rejectedAt = 0,
+			shockAt = {},
+			resourceAt = nil,
+		}
 		attackers[player] = state
 	end
 	return state
@@ -273,6 +286,15 @@ local function hook(player: Player, id: string): number
 end
 
 CombatService.Hook = hook
+
+-- S63: +% damage of the player's damage over time of `kind` (bleed, poison, burn), items and skills alike.
+-- One owner of DoT bonuses: S72 adds bleedDamage, S76 poisonDamage.
+function CombatService.DotBonus(player: Player, kind: string): number
+	if kind == "bleed" or kind == "poison" or kind == "burn" then
+		return hook(player, "dotPower")
+	end
+	return 0
+end
 
 local function hpFraction(player: Player): number
 	local hp = ResourceService.Get(player)
@@ -429,7 +451,175 @@ export type DealOptions = {
 	multiplier: number?,
 	consumeShot: boolean?, -- default true: consumes "nextShot" / "guaranteedCrit"
 	skill: string?, -- S28: skill id shown with the damage number (bigger numbers, the name on the first hit)
+	noProc: boolean?, -- S63: no on-hit effects: second hits, counters, splashes, arcs, pierce, pulses
+	basic: boolean?, -- S63: basic attack: full on-hit chance; S62 basicDmg; S65 rhythm
+	area: boolean?, -- S63: area skill hit: chance x Combat.areaProcShare per target
 }
+
+-- On-hit effects of item traits and lines (S63, STATY 5) -----------------------------------------------------
+
+local function maxResourceOf(player: Player): (Types.ResourceId?, number)
+	local character: Types.CharacterData? = PlayerStateService.GetCharacter(player)
+	local class = character and Classes.get(character.class)
+	if not class then
+		return nil, 0
+	end
+	local id = if class.resource == "mana" then "maxMana" else "maxEnergy"
+	return class.resource, StatService.GetValue(player, id)
+end
+
+-- resourceOnHit (STATY 4, 6): at most Combat.resourceOnHitCap % of the maximum per hit, once per resourceOnHitGap.
+-- The legendary manaOnHit stays separate.
+local function refundResource(player: Player)
+	local pct = hook(player, "resourceOnHit")
+	if pct <= 0 then
+		return
+	end
+	local state = attackerState(player)
+	local resource, maxResource = maxResourceOf(player)
+	local amount = Traits.resourceOnHit(pct, maxResource, state.resourceAt, os.clock())
+	if resource and amount > 0 then
+		ResourceService.Add(player, resource, amount)
+		state.resourceAt = os.clock()
+	end
+end
+
+-- Rolls `chance` % (no roll at 0).
+local function roll(chance: number): boolean
+	return chance > 0 and rng:chance(chance / 100)
+end
+
+-- Every-hit effects of an area skill still roll the area share.
+local function everyHit(share: number): boolean
+	return share >= 1 or rng:chance(share)
+end
+
+local function applyTraitEffect(
+	player: Player,
+	target: any,
+	entry: ItemTraits.OnHitEntry,
+	grown: number,
+	line: number,
+	share: number,
+	hit: number,
+	pvp: boolean
+)
+	local spec = entry.onHit
+	local effect = spec.effect
+	if effect == "bleed" or effect == "poison" then
+		local chance = Traits.chance(if grown > 0 then spec.chance or 0 else 0, line, share)
+		if not roll(chance) then
+			return
+		end
+		-- The trait's grown % when the weapon carries it; the line alone gives its own %.
+		local pct = if grown > 0 then grown else spec.linePct or 0
+		local bonus = CombatService.DotBonus(player, effect)
+		-- Wound from the line and from the axe share one key: 3 stacks together.
+		StatusEffectService.Apply(target, effect, {
+			duration = spec.duration,
+			value = pct,
+			source = player,
+			tickAmount = Traits.dotTick(hit, pct, spec.duration, bonus),
+			maxStacks = spec.maxStacks,
+			skillId = EffectStack.ITEM,
+			healCut = if pvp and grown > 0 then spec.healCut else nil,
+		})
+		if grown > 0 and spec.attackSlow then
+			StatusEffectService.Apply(target, "attackSlow", {
+				duration = spec.duration,
+				value = spec.attackSlow,
+				source = player,
+				skillId = EffectStack.ITEM,
+				category = "enemyAttackSlow",
+			})
+		end
+	elseif effect == "armorBreak" then
+		if grown <= 0 or not everyHit(share) then
+			return
+		end
+		StatusEffectService.Apply(target, "armorBreak", {
+			duration = spec.duration,
+			value = grown,
+			source = player,
+			maxStacks = if pvp then Combat.pvp.armorBreakStacks else spec.maxStacks,
+			skillId = EffectStack.ITEM,
+			category = "enemyArmor",
+		})
+	elseif effect == "weaken" then
+		if grown <= 0 or not everyHit(share) then
+			return
+		end
+		StatusEffectService.Apply(target, "weaken", {
+			duration = spec.duration,
+			value = if pvp then Traits.pvpValue(grown, entry.trait.pvp) else grown,
+			source = player,
+			skillId = EffectStack.ITEM,
+			category = "enemyDamageDown",
+		})
+	elseif effect == "harass" then
+		if not roll(Traits.chance(grown, 0, share)) then
+			return
+		end
+		StatusEffectService.Apply(target, "slow", {
+			duration = spec.duration,
+			value = spec.slow,
+			source = player,
+			skillId = EffectStack.ITEM,
+			category = "enemySlow",
+		})
+		StatusEffectService.Apply(target, "attackSlow", {
+			duration = spec.duration,
+			value = spec.attackSlow,
+			source = player,
+			skillId = EffectStack.ITEM,
+			category = "enemyAttackSlow",
+		})
+	elseif effect == "shock" then
+		local state = attackerState(player)
+		local clock = os.clock()
+		local gap = spec.gap or 0
+		if
+			StatusEffectService.IsBossLike(target)
+			or not Traits.gapReady(state.shockAt[target.id], clock, gap)
+			or not roll(Traits.chance(grown, 0, share))
+		then
+			return
+		end
+		local stunned = StatusEffectService.Apply(target, "stun", {
+			duration = spec.duration,
+			source = player,
+			skillId = EffectStack.ITEM,
+			notBoss = spec.notBoss,
+		})
+		if stunned then
+			for id, at in state.shockAt do
+				if clock - at >= gap then
+					state.shockAt[id] = nil
+				end
+			end
+			state.shockAt[target.id] = clock
+			if target.kind == "monster" and target.monster then
+				target.monster:DelayAttack(spec.duration, spec.delayShare or 0)
+			end
+		end
+	end
+end
+
+-- S63 (STATY 5): on-hit effects of item traits and lines; `hit` is the hit before Combat.pvpModifier.
+local function applyOnHit(player: Player, target: any, hit: number, options: DealOptions?, pvp: boolean)
+	local share = Traits.procShare(options)
+	if share <= 0 then
+		return
+	end
+	for _, entry in ItemTraits.onHitList do
+		local grown = hook(player, entry.trait.hook :: string) -- trait value x strength, 0 without the weapon
+		local line = if entry.onHit.line then hook(player, entry.onHit.line) else 0
+		if grown > 0 or line > 0 then
+			applyTraitEffect(player, target, entry, grown, line, share, hit, pvp)
+		end
+	end
+	refundResource(player)
+end
 
 function CombatService.DealDamage(
 	player: Player,
@@ -446,6 +636,9 @@ function CombatService.DealDamage(
 	StatusEffectService.BreakRespawnShield(player)
 	local selfEntity = EntityService.GetPlayerEntity(player)
 	local params = table.clone(baseParams)
+	if options and options.basic then
+		params.basic = true -- S62 basicDmg
+	end
 	local extra = if options and options.multiplier then options.multiplier else 1
 	-- One-shot buffs from the Hunter tree.
 	if selfEntity and not (options and options.consumeShot == false) then
@@ -469,9 +662,9 @@ function CombatService.DealDamage(
 			return nil
 		end
 		local defender = MonsterStats.asDefender(monster.stats)
-		-- S62: armour break goes to Damage.defenseOf (before pierce); same read and cap as before (S63: EffectStack).
+		-- S62: armour break goes to Damage.defenseOf (before pierce). S63: strongest skill + strongest item (<= 50).
 		local monsterParams = table.clone(params)
-		monsterParams.armorBreak = math.clamp(StatusEffectService.Max(targetEntity, "armorBreak"), 0, 90)
+		monsterParams.armorBreak = StatusEffectService.CategoryValue(targetEntity, "enemyArmor")
 		result = Damage.computeDamage(attacker, defender, monsterParams, rng)
 		if not result.dodged then
 			result.amount = math.max(1, math.floor(result.amount * offensiveMultiplier(player, targetEntity) * extra))
@@ -483,6 +676,7 @@ function CombatService.DealDamage(
 		if monster.invulnerable then
 			result.amount = 0
 		end
+		result.dotBase = if result.dodged then 0 else result.amount
 		if style and selfEntity then
 			local weaponType, element = weaponFx(player)
 			queueFx(
@@ -516,6 +710,8 @@ function CombatService.DealDamage(
 		end
 		local pvpParams = table.clone(params)
 		pvpParams.pvp = true
+		-- S63 (STATY 8): only the item part of armour break counts on players, at most 3 stacks.
+		pvpParams.armorBreak = StatusEffectService.PvpArmorBreak(targetEntity)
 		if params.canDodge ~= false and selfEntity then
 			-- S61: misfortune on the attacking player, category cap first, then the PvP multiplier.
 			local miss = math.min(StatusEffectService.Max(selfEntity, "misfortune"), BuffCategories.caps.enemyMiss)
@@ -523,12 +719,19 @@ function CombatService.DealDamage(
 		end
 		result = Damage.computeDamage(attacker, defender, pvpParams, rng)
 		if not result.dodged then
-			local amount = math.floor(result.amount * offensiveMultiplier(player, targetEntity) * extra)
-			result.amount = math.max(1, amount)
+			-- S63: Bonebreaker on the attacker (from players only) counts in PvP alone; monsters take full hits.
+			local weakenMul = 1
+				- (if selfEntity then StatusEffectService.CategoryValue(selfEntity, "enemyDamageDown") else 0) / 100
+			local mul = offensiveMultiplier(player, targetEntity) * extra * weakenMul
+			result.amount = math.max(1, math.floor(result.amount * mul))
+			result.dotBase = math.max(1, math.floor((result.dotBase or result.amount) * mul))
+		else
+			result.dotBase = 0
 		end
 		local override = attackerState(player).damageOverride
 		if override and not result.dodged then
 			result.amount = math.floor(override * Combat.pvpModifier)
+			result.dotBase = override
 		end
 		if style and selfEntity then
 			local weaponType, element = weaponFx(player)
@@ -552,6 +755,14 @@ function CombatService.DealDamage(
 	end
 
 	ResourceService.MarkCombat(player)
+	if not result.dodged and result.amount > 0 and not (options and options.noProc) then
+		local alive = if targetEntity.kind == "monster"
+			then targetEntity.monster ~= nil and targetEntity.monster:IsAlive()
+			else targetEntity.player ~= nil and playerAlive(targetEntity.player)
+		if alive then
+			applyOnHit(player, targetEntity, result.dotBase or result.amount, options, targetEntity.kind == "player")
+		end
+	end
 	local manaOnHit = hook(player, "manaOnHit")
 	if manaOnHit > 0 and result.amount > 0 then
 		ResourceService.Add(player, "mana", StatService.GetValue(player, "maxMana") * manaOnHit / 100)
@@ -628,8 +839,6 @@ local function tryBasicAttack(player: Player, state: Attacker, now: number)
 	local derived = PlayerStateService.Get(player, { "derived" })
 	local element = if derived and derived.weapon then derived.weapon.element else nil
 	local params: Damage.Params = { kind = if kind == "magic" then "magic" else "phys", element = element }
-	-- S62 basicDmg; also the doubleAttack second hit (same params); S63 moves the flag to DealOptions.basic
-	params.basic = true
 	-- FIX 2026-10-09: the swing / shot starts now, the damage comes when the blow lands or the projectile
 	-- arrives (AttackPose.hitDelay, the same timing the client animates); before, the HP dropped at once.
 	local weaponType = weaponFx(player)
@@ -649,9 +858,10 @@ local function tryBasicAttack(player: Player, state: Attacker, now: number)
 		then
 			return
 		end
-		CombatService.DealDamage(player, target, params)
+		CombatService.DealDamage(player, target, params, nil, { basic = true })
 		if twice and (target.kind ~= "monster" or (target.monster and target.monster:IsAlive())) then
-			CombatService.DealDamage(player, target, params)
+			-- S63: the second hit keeps basicDmg but rolls no on-hit effects.
+			CombatService.DealDamage(player, target, params, nil, { basic = true, noProc = true })
 		end
 	end)
 end
@@ -672,6 +882,14 @@ local function monsterHitsPlayer(monster: any, player: Player, params: Damage.Pa
 		params.miss = math.min(StatusEffectService.Max(monster.entity, "misfortune"), BuffCategories.caps.enemyMiss)
 	end
 	local result = Damage.computeDamage(MonsterStats.asAttacker(monster.stats), defender, params, rng)
+	if not result.dodged and monster.entity then
+		-- S63 (STATY 6): Bonebreaker on the monster; red zones and bosses come this way too.
+		local weaken = StatusEffectService.CategoryValue(monster.entity, "enemyDamageDown")
+		if weaken > 0 then
+			result.amount = math.max(1, math.floor(result.amount * (1 - weaken / 100)))
+		end
+	end
+	-- S64 adds the block and protections here.
 	local playerEntity = EntityService.GetPlayerEntity(player)
 	local position = EntityService.Position(playerEntity or { model = player.Character } :: any)
 	if style and monster.entity and playerEntity then
@@ -693,7 +911,13 @@ local function monsterHitsPlayer(monster: any, player: Player, params: Damage.Pa
 	if taken > 0 then
 		local riposte = hook(player, "riposte")
 		if riposte > 0 and monster:IsAlive() and monster.entity and rng:chance(riposte / 100) then
-			CombatService.DealDamage(player, monster.entity, { kind = "phys" }, "melee", { consumeShot = false })
+			CombatService.DealDamage(
+				player,
+				monster.entity,
+				{ kind = "phys" },
+				"melee",
+				{ consumeShot = false, noProc = true }
+			)
 		end
 		local thorns = hook(player, "thorns")
 		if thorns > 0 and monster:IsAlive() then

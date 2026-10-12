@@ -48,6 +48,8 @@ local GLYPHS: { [string]: { glyph: string, good: boolean } } = {
 	respawnShield = { glyph = "✧", good = true },
 	intercept = { glyph = "⇆", good = true }, -- S61: a guard takes part of the blows
 	misfortune = { glyph = "✗", good = false }, -- S61: misses regular attacks
+	attackSlow = { glyph = "⧗", good = false }, -- S63: slower attacks
+	weaken = { glyph = "⇓", good = false }, -- S63: deals less damage
 }
 
 type Entry = EffectStack.Shown

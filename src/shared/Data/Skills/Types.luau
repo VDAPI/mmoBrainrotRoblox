@@ -52,6 +52,8 @@ export type EffectKind =
 	| "burn"
 	| "intercept" -- S61: value = share % of monster blows the source (guard) takes; no category
 	| "misfortune" -- S61: value = % the bearer misses regular attacks; category enemyMiss
+	| "attackSlow" -- S63: value = % slower attacks (slow stays movement); category enemyAttackSlow
+	| "weaken" -- S63: value = % less damage the bearer deals; category enemyDamageDown
 
 export type SkillEffect = {
 	kind: EffectKind,

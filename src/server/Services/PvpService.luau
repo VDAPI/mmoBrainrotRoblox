@@ -151,12 +151,17 @@ function PvpService.InPvpCombat(player: Player): boolean
 	return rt ~= nil and PvpRules.inPvpCombat(now(), rt.lastPvpCombat, Combat.pvp.combatWindow)
 end
 
+-- S63 (STATY 5): Rending Gash cuts heals and shields on top (strongest cut, no sum; with x0.7 together x0.56).
+local function healCut(player: Player): number
+	return 1 - StatusEffectService.HealCut(player) / 100
+end
+
 function PvpService.HealScale(player: Player): number
-	return if PvpService.InPvpCombat(player) then Combat.pvp.heal else 1
+	return (if PvpService.InPvpCombat(player) then Combat.pvp.heal else 1) * healCut(player)
 end
 
 function PvpService.ShieldScale(player: Player): number
-	return if PvpService.InPvpCombat(player) then Combat.pvp.shield else 1
+	return (if PvpService.InPvpCombat(player) then Combat.pvp.shield else 1) * healCut(player)
 end
 
 -- Whether `attacker` may hit `target` right now (zone of the target, party and guild protection).

@@ -163,6 +163,9 @@ local context: Monster.Context = {
 	taunter = function(monster): Player?
 		return if monster.entity then StatusEffectService.Taunter(monster.entity) else nil
 	end,
+	attackSlow = function(monster): number
+		return if monster.entity then StatusEffectService.CategoryValue(monster.entity, "enemyAttackSlow") else 0
+	end,
 	isSafePosition = function(position: Vector3): boolean
 		return ZoneService.ZoneAt(position, Config.StartingMap).pvp == "green"
 	end,

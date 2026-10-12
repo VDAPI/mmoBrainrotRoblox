@@ -206,7 +206,7 @@ każda liczba linii podana jest dla 100. poziomu albo z dopiskiem, że rośnie z
 | `poisonChance` | +{v}% szansy na zatrucie | trucizna razem 20% ciosu w 5 s (albo siła Jadowitych grotów, gdy nosisz Łuk) | 2–4 | broń, rękawice, kołczan | Ł | szansa 40% |
 | `pierce` | Przebicie pancerza {v}% | ignoruje część pancerza (zastępuje `armorPen`; jak Bełt przeciwpancerny) | 3–6 | broń, kołczan, rękawice, pierścień | W, Ł | 50% |
 | `magicPierce` | Przebicie magii {v}% | ignoruje część odporności magicznej | 3–6 | broń, księga, kula, rękawice | M, K | 50% |
-| `dotPower` | +{v}% obrażeń ran, trucizn i podpaleń | mnoży tyknięcia | 4–8 | broń, naszyjnik | wszystkie | brak |
+| `dotPower` | +{v}% obrażeń ran, trucizn i podpaleń | mnoży tyknięcia | 4–8 | broń, naszyjnik | W, Ł, M (K od sesji, która da Kapłanowi podpalenie, S70) | brak |
 | `skillDmg` | +{v}% obrażeń umiejętności | mnożnik przy `params.isSkill` (jak Soczewka mocy) | 1–2,2 | broń, druga ręka, naszyjnik | wszystkie | brak |
 | `basicDmg` | +{v}% obrażeń ataku podstawowego | mnożnik ataku podstawowego | 1,5–3,3 | broń, kołczan, rękawice, pierścień | wszystkie | brak |
 | `healPower` | +{v}% mocy leczenia | leczenie i tarcze rzucane (jak Namaszczenie) | 1,5–3,5 | broń, druga ręka, hełm | K | brak |
@@ -275,7 +275,8 @@ bo w PvP ma połowę, we wspólnym `executionerCap`). Łowca z kołczanem losuje
   czasu na stos. Przy odświeżeniu rany, trucizny i podpalenia z przedmiotu niezadana reszta dolicza się do nowej sumy
   (`ApplyOptions.accumulate`, `Logic/EffectStack.accumulate` z `mag.md`), a `nextTick` się nie przesuwa; dziś `Apply`
   kasuje resztę i przesuwa `nextTick` (1). Suma rany albo trucizny najwyżej 3 sumy jednego trafienia (3 stosy). Stosy
-  mnożą nowo także `value` (Niszczenie pancerza; dziś `Apply` mnoży tylko `tickAmount`). `StatusEffectService`
+  mnożą nowo także `value` (Niszczenie pancerza; dziś `Apply` mnoży tylko `tickAmount`). Od S63 trwający efekt ze
+  stosami nie przesuwa `nextTick` (`EffectStack.restack`); dopisanie niezadanej reszty (`accumulate`) w S65. `StatusEffectService`
   wywołuje `publish()` (atrybut `Effects`, u potworów `RefreshSpeed`) tylko przy zmianie liczby stosów albo najwyżej
   raz na ok. 1 s, a nie przy samym odświeżeniu czasu pełnego stosu; inaczej boss bity młotami przez kilku graczy
   przesyła atrybut wiele razy na sekundę.
@@ -385,7 +386,8 @@ Nowe pole `family` w `Data/Monsters.luau` i `Data/Bosses.luau`, lista i nazwy w 
 - Tyknięcia ran, trucizn i podpaleń z przedmiotów w PvP ×0,6 od trafienia przed `pvpModifier` (5), czyli jeden raz.
   Dziś podpalenie żywiołu już liczy się od trafienia po ×0,6, a krwawienie i trucizna z umiejętności tykają na 100%
   (1). Rany i trucizny z umiejętności (Rozpłatanie, Zatruta Strzała) też tykają w PvP ×0,6, raz (odpowiedź 18:
-  słabsze, jak zwykłe ciosy, także z umiejętności); robi to S63. Wampiryzm o połowę słabszy.
+  słabsze, jak zwykłe ciosy, także z umiejętności); robi to S63. Wampiryzm o połowę słabszy (`Combat.pvp.lifesteal`,
+  S63).
 - Cechy w PvP: cechy-statystyki działają jak linie, premie warunkowe i efekty obronne mają połowę, kontrola trwa ×0,5,
   leczenie i tarcze w walce PvP ×0,7 (E6):
   - jak linie (potem zwykłe ×0,6): Siła krytyka (działa linia odporności na krytyki), Bełt przeciwpancerny (pancerz
@@ -403,7 +405,7 @@ Nowe pole `family` w `Data/Monsters.luau` i `Data/Bosses.luau`, lista i nazwy w 
     Moc żywiołu w granicach PvP efektu. Spowolnienie ruchu gracza zaczyna działać: `StatService.applyWalkSpeed` mnoży
     szybkość przez `SlowFactor` (dziś go nie czyta, 1, 13);
   - Niszczenie pancerza najwyżej 3 stosy (15% × siła) na graczu (dziś `armorBreak` działa tylko na potwory, więc to
-    nowy odczyt w gałęzi PvP);
+    nowy odczyt w gałęzi PvP); liczy się tylko część z przedmiotów; umiejętności nie zdejmują pancerza graczom;
   - nie działają: Żniwo (hak czyta tylko nagrodę za potwora) i Pomyślność (szczęście poza PvP, E6).
 - Nowe odczyty w gałęzi PvP `DealDamage`: hak `block` (Zastawa), `riposte` (Fechtunek), `armorBreak` (Młot), `weaken`
   atakującego (Łamanie kości) i `pierce`.

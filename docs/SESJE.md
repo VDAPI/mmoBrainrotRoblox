@@ -3518,3 +3518,30 @@ Pliki: `Data/{ItemTraits,Bonuses,Stats,Items/Bases,Items/Generate,Items/Types,It
 `SkillService`, `Skills/{Context,Types/Support}`, `SkillController`, `UI/{SkillInfo,Components/ItemTooltip,
 Screens/LegendReveal}`, `tests/{Balance,items,data,damage,localization}.spec`, `tools/WikiData/Items`, dane wiki,
 `docs/{STATY,DESIGN,WIKI,DECYZJE,SESJE,PROGRESS}.md`, `CLAUDE.md`.
+
+### S63: Przedmioty 2: efekty przy trafieniu i ich odczyty w PvP
+
+- Sześć cech `effect` żywych (`onHit` w `Data/ItemTraits`, `onHitList`): Rana rąbana, Jadowite groty, Niszczenie
+  pancerza, Łamanie kości, Nękanie, Wstrząs. Cztery linie-haki `woundChance`, `poisonChance`, `dotPower`,
+  `resourceOnHit` (pule i klasy wg STATY 4, wagi w `affinity`).
+- `BuffCategories`: `split`, `enemyDamageDown` (`weaken`), `enemyAttackSlow` (`attackSlow`), cztery nowe limity.
+  `Data/Combat`: `onHitChanceCap`, `areaProcShare`, `resourceOnHit*`, `pvp.dot`, `pvp.armorBreakStacks`,
+  `pvp.lifesteal`.
+- `EffectStack`: `ITEM`, `sameKey`, `restack`, `publishDue`, `value` (umiejętność + przedmiot). Nowy `Logic/Traits`.
+  `Damage`: `dotBase`, `resMul`, `pvpArmorBreak`, wampiryzm ×0,5 w PvP.
+- `StatusEffectService`: `Apply` zwraca `boolean`, stosy przez `restack`, `notBoss`, `healCut`, ×0,6 tyknięć w PvP,
+  rzadsze publikowanie, `CategoryValue`, `PvpArmorBreak`, `HealCut`, `IsBossLike`, spowolnienie ataku w `atkSpeed`,
+  `resPoison` na tyknięciach trucizny, czynnik ruchu dla `StatService`.
+- `CombatService`: `DealOptions.noProc/basic/area`, `applyOnHit` / `applyTraitEffect`, `DotBonus`, odczyty pancerza
+  i osłabienia, osłabienie ciosów potworów. `Monster.DelayAttack` i spowolnienie ataku potworów, `PvpService` z
+  `HealCut`, `VfxController` nie nadpisuje szybkości z serwera, `Skills/Context` (`area`, `noProc`, `dotBase`,
+  `dotPower`), drugi cel przełomu `pierce` bez efektów.
+- Ikony `attackSlow`, `weaken`; teksty efektów, linii i cech; `TooltipModel.traitArgs` z `onHit`.
+- Testy: nowy `traits.spec`, przypadki w `effectstack`, `damage`, `items`, `data`. Wiki: `npm run data` (Node był):
+  `bonuses.json`, `items.json` (cechy sześciu typów), `mechanics.json`, `meta.json`, `docs/PRZEDMIOTY.md`.
+
+Pliki: `Data/{BuffCategories,Combat,ItemTraits,Bonuses,Skills/Types,Localization/pl,Localization/en}`,
+`Logic/{EffectStack,Traits,Damage,TooltipModel}`, `Services/{StatusEffectService,CombatService,StatService,PvpService,
+MonsterService}`, `Entities/Monster`, `Skills/{Context,Types/Offense}`, `Controllers/VfxController`,
+`UI/Screens/Hud/EffectIcons`, `tests/{traits,effectstack,damage,items,data}.spec`, dane wiki,
+`docs/{STATY,DECYZJE,SESJE,PROGRESS}.md`, `CLAUDE.md`.
