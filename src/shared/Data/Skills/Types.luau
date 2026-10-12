@@ -50,6 +50,8 @@ export type EffectKind =
 	| "manaShield"
 	| "respawnShield" -- S22: after a respawn; no damage, ignored by monsters, no PvP; ends on any attack
 	| "burn"
+	| "intercept" -- S61: value = share % of monster blows the source (guard) takes; no category
+	| "misfortune" -- S61: value = % the bearer misses regular attacks; category enemyMiss
 
 export type SkillEffect = {
 	kind: EffectKind,

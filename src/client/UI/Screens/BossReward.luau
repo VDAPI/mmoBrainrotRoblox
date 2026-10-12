@@ -5,7 +5,7 @@
 -- that day (FIX 2026-10-09). "OK" closes it; it also closes by itself after a while.
 -- S60: the party's Fortune (Legendary multiplier, an ennobled item, a second item) only when it counted, and the
 -- "Fight summary" table: damage share, healing and shields of every member. On short screens the card sits in the
--- middle and the table scrolls after 4 rows.
+-- middle and the table scrolls after 4 rows. S61: an "Intercepted" column when anyone took over blows from allies.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -29,7 +29,7 @@ local Children = Fusion.Children
 type Scope = Fusion.Scope<typeof(Fusion)>
 
 -- n = name, c = class, d = damage share 0..1, h = healing, s = shields (S61 adds the taken-damage column).
-export type SummaryRow = { n: string, c: string?, d: number, h: number, s: number }
+export type SummaryRow = { n: string, c: string?, d: number, h: number, s: number, i: number? }
 
 export type Reward = {
 	boss: string?,
@@ -60,15 +60,23 @@ end
 local SUMMARY_ROW = 26
 local SUMMARY_VISIBLE = 4 -- rows before the table scrolls on short screens
 local COLUMNS = { 0.40, 0.20, 0.20, 0.20 }
+local COLUMNS_INTERCEPT = { 0.32, 0.17, 0.17, 0.17, 0.17 } -- S61: with the "Intercepted" column
 
-local function cell(scope: Scope, column: number, text: string, color: Color3, font: Font): Instance
+local function cell(
+	scope: Scope,
+	columns: { number },
+	column: number,
+	text: string,
+	color: Color3,
+	font: Font
+): Instance
 	local x = 0
 	for i = 1, column - 1 do
-		x += COLUMNS[i]
+		x += columns[i]
 	end
 	return scope:New("TextLabel")({
 		Position = UDim2.fromScale(x, 0),
-		Size = UDim2.fromScale(COLUMNS[column], 1),
+		Size = UDim2.fromScale(columns[column], 1),
 		BackgroundTransparency = 1,
 		Text = text,
 		FontFace = font,
@@ -82,34 +90,51 @@ end
 -- The fight summary: a header and one row per member (own row in GoldBright).
 local function summaryTable(scope: Scope, rows: { SummaryRow }, compact: boolean): Instance
 	local own = State.Get({ "character", "name" })
+	local intercept = false
+	for _, row in rows do
+		if (row.i or 0) > 0 then
+			intercept = true
+		end
+	end
+	local columns = if intercept then COLUMNS_INTERCEPT else COLUMNS
+	local muted, bold = Theme.Colors.TextMuted, Theme.Fonts.BodyBold
+	local headerCells: { Instance } = {
+		cell(scope, columns, 1, Text.now("dungeon.summary.member"), muted, bold),
+		cell(scope, columns, 2, Text.now("dungeon.summary.damage"), muted, bold),
+		cell(scope, columns, 3, Text.now("dungeon.summary.healing"), muted, bold),
+		cell(scope, columns, 4, Text.now("dungeon.summary.shields"), muted, bold),
+	}
+	if intercept then
+		table.insert(headerCells, cell(scope, columns, 5, Text.now("dungeon.summary.intercepted"), muted, bold))
+	end
 	local header = scope:New("Frame")({
 		LayoutOrder = 0,
 		Size = UDim2.new(1, 0, 0, SUMMARY_ROW),
 		BackgroundTransparency = 1,
-		[Children] = {
-			cell(scope, 1, Text.now("dungeon.summary.member"), Theme.Colors.TextMuted, Theme.Fonts.BodyBold),
-			cell(scope, 2, Text.now("dungeon.summary.damage"), Theme.Colors.TextMuted, Theme.Fonts.BodyBold),
-			cell(scope, 3, Text.now("dungeon.summary.healing"), Theme.Colors.TextMuted, Theme.Fonts.BodyBold),
-			cell(scope, 4, Text.now("dungeon.summary.shields"), Theme.Colors.TextMuted, Theme.Fonts.BodyBold),
-		},
+		[Children] = headerCells :: any,
 	})
 	local lines: { Instance } = {}
 	for i, row in rows do
 		local class = if row.c then Classes.get(row.c) else nil
 		local color = if row.n == own then Theme.Colors.GoldBright else Theme.Colors.Parchment
 		local name = if class then `{class.icon} {row.n}` else row.n
+		local font = Theme.Fonts.BodyMedium
+		local cells: { Instance } = {
+			cell(scope, columns, 1, name, color, font),
+			cell(scope, columns, 2, `{math.floor(row.d * 100 + 0.5)}%`, color, font),
+			cell(scope, columns, 3, Format.number(row.h), color, font),
+			cell(scope, columns, 4, Format.number(row.s), color, font),
+		}
+		if intercept then
+			table.insert(cells, cell(scope, columns, 5, Format.number(row.i or 0), color, font))
+		end
 		table.insert(
 			lines,
 			scope:New("Frame")({
 				LayoutOrder = i,
 				Size = UDim2.new(1, 0, 0, SUMMARY_ROW),
 				BackgroundTransparency = 1,
-				[Children] = {
-					cell(scope, 1, name, color, Theme.Fonts.BodyMedium),
-					cell(scope, 2, `{math.floor(row.d * 100 + 0.5)}%`, color, Theme.Fonts.BodyMedium),
-					cell(scope, 3, Format.number(row.h), color, Theme.Fonts.BodyMedium),
-					cell(scope, 4, Format.number(row.s), color, Theme.Fonts.BodyMedium),
-				},
+				[Children] = cells :: any,
 			})
 		)
 	end

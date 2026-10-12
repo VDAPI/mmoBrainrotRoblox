@@ -54,6 +54,7 @@ export type Command = {
 }
 
 local Blessings = require("./Blessings")
+local BuffCategories = require("./BuffCategories")
 local TerrainShapes = require("./Terrain")
 local CaveShapes = require("./CaveShapes")
 
@@ -300,6 +301,21 @@ cmd("combat", "pvp", { str("a"), str("b", true), str("c", true) })
 cmd("combat", "die", {})
 cmd("combat", "shield", { int("seconds", 1, 600, true) })
 cmd("combat", "anim", { str("kind") })
+-- S61: the party effect engine before any class has nodes or skills that use it.
+cmd("combat", "intercept", { int("share", 1, 100, true, "30"), int("seconds", 1, 600, true, "10") })
+cmd("combat", "misfortune", { int("value", 1, 100, true, "15"), int("seconds", 1, 600, true, "10") })
+local auraCategories: { string } = { "off" }
+for _, category in BuffCategories.list do
+	if category.side == "ally" then
+		table.insert(auraCategories, category.id)
+	end
+end
+cmd("combat", "aura", {
+	enum("category", auraCategories),
+	int("value", 1, 100, true, "10"),
+	enum("shape", { "circle", "behind" }, true, "circle"),
+	int("radius", 1, 40, true),
+})
 
 -- Quests
 cmd("quests", "quest", { enum("action", { "set", "complete" }), ref("id", "quest", true) })

@@ -56,8 +56,14 @@ local caps: { [string]: number } = table.freeze({
 	interceptPerSecond = 25,
 })
 
+-- ROZWOJ 7.3 (S61): data rules of active party buffs (tests/PartyBuffRules): 10-60 s, radius up to 40 studs when cast,
+-- cooldown never shorter than the duration; below rescueBelow s only rescue effects (invuln, guardianAngel, allyGuard,
+-- intercept, shield) may go.
+local rules = table.freeze({ minDuration = 10, maxDuration = 60, maxRadius = 40, rescueBelow = 10 })
+
 return table.freeze({
 	list = table.freeze(list),
+	rules = rules,
 	byId = table.freeze(byId),
 	OWN = OWN,
 	caps = caps,

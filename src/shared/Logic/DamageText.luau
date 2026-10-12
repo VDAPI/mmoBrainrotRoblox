@@ -67,6 +67,9 @@ function DamageText.format(event: { [string]: any }, myEntityId: string?, lang: 
 		}
 	end
 
+	if event.mi then
+		return { text = Locale.T("combat.miss", nil, lang), style = "dodge", crit = false, amount = 0 }
+	end
 	if event.d then
 		return { text = Locale.T("combat.dodge", nil, lang), style = "dodge", crit = false, amount = 0 }
 	end

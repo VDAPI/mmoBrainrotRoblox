@@ -13,6 +13,7 @@
 -- S59: nodeScale (that rule for any node), nodeArgs (node description arguments), iconWeapon, isTwoHanded; the
 -- window's views live in Logic/PathView.
 -- S60: luckOfNodes / luck (raw Data/Luck fields of the active nodes).
+-- S61: auras (party auras of the active nodes) and inAura (pure geometry, also Paths.inAura on the module).
 
 local Bases = require("../Data/Items/Bases")
 local Classes = require("../Data/Classes")
@@ -36,6 +37,15 @@ export type RowKind = PathData.RowKind
 export type WeaponTypes = { main: string?, offhand: string? }
 export type RowInfo = { index: number, level: number, need: number, kind: RowKind, choice: boolean, extra: boolean }
 export type ActiveNode = { node: PathNode, path: PathDef, row: number, rank: number, scale: number }
+-- S61: flat positions (Logic has no Vector3) and a resolved party aura.
+export type Flat = { x: number, z: number }
+export type Aura = {
+	nodeId: string, -- buff skillId; "admin_aura" for /aura
+	category: string, -- Data/BuffCategories ally category
+	stats: { [string]: number }, -- resolved at the node's rank (x dipScale outside the main path); value categories: { value = n }
+	shape: "circle" | "behind",
+	radius: number,
+}
 export type EditAction =
 	"buy"
 	| "refund"
@@ -87,6 +97,59 @@ for _, base in Bases.list do
 	if weapon and weapon(1).twoHanded then
 		TWO_HANDED[base.type] = true
 	end
+end
+
+local AURA = PathData.AURA
+
+local function flatDistance(a: Flat, b: Flat): number
+	local dx, dz = a.x - b.x, a.z - b.z
+	return math.sqrt(dx * dx + dz * dz)
+end
+
+-- ROZWOJ 7.3 (S61): is `receiver` inside the aura of `owner`? circle: flat distance <= radius (default AURA.radius).
+-- behind: the anchor is `threat`, else the nearest of `monsters` within AURA.fallbackRange of the owner (none: false);
+-- the receiver is within radius (default AURA.behindRadius) of the owner, farther from the anchor than the owner, and
+-- at most AURA.behindAngle / 2 off the anchor -> owner line. The facing of the character never counts.
+local function inAura(
+	aura: { shape: string?, radius: number? },
+	owner: Flat,
+	receiver: Flat,
+	threat: Flat?,
+	monsters: { Flat }?
+): boolean
+	if aura.shape ~= "behind" then
+		return flatDistance(owner, receiver) <= (aura.radius or AURA.radius)
+	end
+	local anchor = threat
+	if anchor == nil and monsters then
+		local best = AURA.fallbackRange
+		for _, m in monsters do
+			local d = flatDistance(owner, m)
+			if d <= best then
+				best = d
+				anchor = m
+			end
+		end
+	end
+	if anchor == nil then
+		return false
+	end
+	local distance = flatDistance(owner, receiver)
+	if distance > (aura.radius or AURA.behindRadius) or distance <= 0 then
+		return false
+	end
+	local ax, az = owner.x - anchor.x, owner.z - anchor.z
+	local along = math.sqrt(ax * ax + az * az)
+	if along <= 0 then
+		return false
+	end
+	if flatDistance(anchor, receiver) <= along then
+		return false
+	end
+	local rx, rz = receiver.x - owner.x, receiver.z - owner.z
+	local cos = (rx * ax + rz * az) / (distance * along)
+	local angle = math.deg(math.acos(math.clamp(cos, -1, 1)))
+	return angle <= AURA.behindAngle / 2 + 1e-9
 end
 
 local EMPTY: PathState = table.freeze({ main = nil, nodes = table.freeze({}), bp = table.freeze({}), freeUsed = false })
@@ -781,6 +844,33 @@ local function buildApi(source: Source)
 		return luckOfNodes(activeNodes(character, weapons))
 	end
 
+	-- Party auras of the active aura nodes (ROZWOJ 7.3, S61): stats at the node rank times entry.scale (already the
+	-- dip scale outside the main path), shape and radius with their defaults.
+	local function auras(character: Char, weapons: WeaponTypes): { Aura }
+		local out: { Aura } = {}
+		for _, entry in activeNodes(character, weapons) do
+			local node = entry.node
+			local def = node.aura
+			if node.kind ~= "aura" or def == nil then
+				continue
+			end
+			local values = nodeValues(node, entry.rank, entry.scale)
+			local stats: { [string]: number } = {}
+			for stat, field in def.stats do
+				stats[stat] = values[field] or 0
+			end
+			local shape: "circle" | "behind" = if def.shape == "behind" then "behind" else "circle"
+			table.insert(out, {
+				nodeId = node.id,
+				category = def.category,
+				stats = stats,
+				shape = shape,
+				radius = def.radius or (if shape == "behind" then AURA.behindRadius else AURA.radius),
+			})
+		end
+		return out
+	end
+
 	-- Modify nodes of the skill as resolved breakpoint tables, in row order (ROZWOJ 2.7). A node with modify.option
 	-- works only while that option is chosen at rank modify.at (default 5).
 	local function skillMods(character: Char, skillId: string, weapons: WeaponTypes): { Skills.SkillMod }
@@ -1142,6 +1232,9 @@ local function buildApi(source: Source)
 		activeNodes = activeNodes,
 		luckOfNodes = luckOfNodes,
 		luck = luck,
+		auras = auras,
+		inAura = inAura,
+		AURA = AURA,
 		nodeValues = nodeValues,
 		nodeScale = nodeScale,
 		nodeArgs = nodeArgs,

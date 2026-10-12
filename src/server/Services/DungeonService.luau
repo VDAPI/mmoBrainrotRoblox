@@ -60,6 +60,7 @@ local DungeonService = {
 		"LootService",
 		"AnnounceService",
 		"StatService",
+		"StatusEffectService",
 	},
 }
 
@@ -83,10 +84,11 @@ type Run = {
 	warned: { [number]: boolean }, -- time-left warnings already sent (minutes)
 	healing: { [Player]: number }, -- S60: HP restored by each member while the boss was up
 	shielding: { [Player]: number }, -- S60: damage soaked by each member's shields while the boss was up
+	intercepted: { [Player]: number }, -- S61: blows each member took over from allies (before their own reductions)
 }
 
--- One row of the fight summary (short keys: it travels in CombatFx); S61 adds the taken-damage column.
-type SummaryRow = { n: string, c: string?, d: number, h: number, s: number }
+-- One row of the fight summary (short keys: it travels in CombatFx); i = damage taken over from allies (S61).
+type SummaryRow = { n: string, c: string?, d: number, h: number, s: number, i: number }
 
 local PlayerStateService: any
 local PartyService: any
@@ -98,6 +100,7 @@ local ResourceService: any
 local LevelService: any
 local LootService: any
 local AnnounceService: any
+local StatusEffectService: any
 local StatService: any
 local Registry: any
 local PathService: any
@@ -256,6 +259,7 @@ local function summaryOf(run: Run, damageBy: { [Player]: number }): { SummaryRow
 				d = math.floor(share * 1000 + 0.5) / 1000,
 				h = math.floor(run.healing[member] or 0),
 				s = math.floor(run.shielding[member] or 0),
+				i = math.floor(run.intercepted[member] or 0),
 			})
 		end
 	end
@@ -470,6 +474,7 @@ local function start(region: string, leader: Player, members: { Player }): Run
 		warned = {},
 		healing = {},
 		shielding = {},
+		intercepted = {},
 	}
 	runs[region] = run
 	for i, member in members do
@@ -738,6 +743,7 @@ function DungeonService.Init(registry)
 	LootService = registry.Get("LootService")
 	AnnounceService = registry.Get("AnnounceService")
 	StatService = registry.Get("StatService")
+	StatusEffectService = registry.Get("StatusEffectService")
 	Registry = registry
 end
 
@@ -767,6 +773,13 @@ function DungeonService.Start()
 		if run then
 			local book = if kind == "shield" then run.shielding else run.healing
 			book[source] = (book[source] or 0) + amount
+		end
+	end)
+	-- S61: the summary counts the part a guard took before their own reductions (ROZWOJ 10.6).
+	StatusEffectService.Intercepted:Connect(function(guard: Player, target: Player, moved: number)
+		local run = fightOf(target, guard)
+		if run then
+			run.intercepted[guard] = (run.intercepted[guard] or 0) + moved
 		end
 	end)
 	local accumulator = 0

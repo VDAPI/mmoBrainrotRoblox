@@ -307,13 +307,13 @@ function DeathService.Revive(player: Player, hpPct: number): boolean
 end
 
 -- Kills the active character through the normal death flow (/kill me, /die). Removes the respawn protection
--- first, otherwise the damage filter would stop it.
+-- first, otherwise the damage filter would stop it. S61: math.huge, so reductions and shields cannot leave HP (they
+-- subtract or multiply by at most 0.25..1, never 0 x inf); a duel still leaves its duelist 1 HP.
 function DeathService.Kill(player: Player)
 	StatusEffectService.BreakRespawnShield(player)
-	local hp = ResourceService.Get(player)
 	local wasGod = ResourceService.IsGod(player)
 	ResourceService.SetGod(player, false)
-	ResourceService.Damage(player, hp + 1, "admin")
+	ResourceService.Damage(player, math.huge, "admin")
 	ResourceService.SetGod(player, wasGod)
 end
 

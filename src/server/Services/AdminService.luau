@@ -53,6 +53,7 @@ local AdminService = {
 		"SkillService",
 		"PathService",
 		"PartyService",
+		"PartyAuraService",
 		"NpcService",
 		"AlchemyService",
 		"BlessingService",

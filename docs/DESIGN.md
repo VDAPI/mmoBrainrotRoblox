@@ -275,6 +275,8 @@ obrażenia = surowe × (1 − redukcja) × losowe(0.92..1.08) × kryt × (1 − 
 modPvP = 0.6 (gracz vs gracz)
 ```
 Trafienie: `szansaUniku = clamp(unikCelu − celność, 0, 30%)`. Wszystko liczone na serwerze w czystym module `Logic/Damage`.
+W walce PvP (10 s od ciosu gracza) leczenie i tarcze na celu działają ×0,7, a pech (`misfortune`) atakującego ×0,5;
+unik, pech wroga i blok razem najwyżej 40% (S61).
 
 ### 4.6 Doświadczenie
 

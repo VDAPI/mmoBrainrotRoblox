@@ -1243,3 +1243,18 @@
   zamiast osobnego `partybonus.spec` (ROZWOJ 3.4).
 - **S60** `Luck.monster` / `Luck.boss` mają opcję `pvp` (w PvP szczęście nie działa); dziś nie ma łupu z PvP, więc to
   strażnik dla S61.
+- **S61** Filtry obrażeń gracza mają priorytety `ResourceService.FilterPriority`: przechwyt 10, redukcje i tarcze 20,
+  Anioł Stróż 90, nokaut pojedynku 100 (ostatni, widzi kwotę po tarczach). ROZWOJ 7.6 poprawione.
+- **S61** ×0,7 w PvP tylko dla leczenia z umiejętności (`ctx.heal`), tyknięć `hot` i tarcz nakładanych na gracza;
+  mikstury, kradzież życia ze statystyki i `killHeal` bez zmian. Walka PvP = 10 s od ostatniego trafienia gracza w
+  dowolną stronę (`PvpRules.inPvpCombat`). `ctx.heal` zwraca też kwotę próbowaną (nadwyżka na tarczę liczy się od niej).
+- **S61** Unik, chybienie i blok przycinane w tej kolejności do `dodgeCap + avoidBonus` (`Damage.avoidance`), jedno
+  losowanie (`rollAvoid`); chybienie ma `dodged = true` i pokazuje „Pudło”. Bez pecha ciąg losowań jak przed S61.
+- **S61** Przechwyt: jeden na cel (najwyższy udział, przy remisie bliższy), po wyczerpaniu limitu Strażnika nie szukamy
+  drugiego; okno limitu stałe od pierwszego przejęcia; podsumowanie walki liczy część przed redukcjami Strażnika.
+- **S61** Aura `circle` obejmuje właściciela (solo też), `behind` tylko sojuszników i wymaga potwora jako kotwicy (cel
+  albo najbliższy potwór walczący z właścicielem). Konwencja `aura.stats`: statystyki kategorii albo jedno `value`
+  (`allyGuard`). Odświeżenie efektu bez zmiany liczb nie unieważnia statystyk. ROZWOJ 3.1 i 3.2 poprawione.
+- **S61** `DeathService.Kill` zadaje `math.huge` (redukcje i tarcze nie zatrzymują `/die`), pojedynek dalej zostawia 1 HP.
+- **S61** Szczęście w PvP pilnuje opcja `pvp` z S60 (tylko komentarz w `Combat.pvp`). Nowe pola `Data/Combat` trafiają
+  do `mechanics.json` wiki (blok `combat` eksportowany w całości).

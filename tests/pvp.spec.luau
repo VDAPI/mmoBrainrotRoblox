@@ -75,4 +75,12 @@ T.describe("PvP indicator", function()
 	end)
 end)
 
+T.describe("PvpRules.inPvpCombat (S61)", function()
+	T.it("10 s after the last player hit", function()
+		T.expect(PvpRules.inPvpCombat(100, nil, 10)).toBe(false)
+		T.expect(PvpRules.inPvpCombat(105, 100, 10)).toBe(true)
+		T.expect(PvpRules.inPvpCombat(110.5, 100, 10)).toBe(false)
+	end)
+end)
+
 return nil

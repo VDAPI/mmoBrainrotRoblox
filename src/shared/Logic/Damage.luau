@@ -6,7 +6,9 @@
 --   reduction  = effective / (effective + 40 x attackerLevel + 200)
 --   damage     = raw x (1 - reduction) x random(0.92..1.08) x crit x (1 - elementRes) x pvp(0.6)
 --   dodge      = clamp(targetDodge - attackerAccuracy, 0, 30 %)
+--   S61: dodge + miss (the attacker's misfortune) + block <= dodgeCap + avoidBonus, one roll (Damage.avoidance)
 
+local BuffCategories = require("../Data/BuffCategories")
 local Combat = require("../Data/Combat")
 local Rng = require("./Rng")
 
@@ -40,12 +42,14 @@ export type Params = {
 	canCrit: boolean?, -- default true
 	canDodge: boolean?, -- default true
 	forceCrit: boolean?, -- always crit (Hunter's Camouflage)
+	miss: number?, -- S61: % chance the attacker misses (misfortune on the attacker; already x0.5 in PvP)
 }
 
 export type Result = {
 	amount: number,
 	crit: boolean,
-	dodged: boolean,
+	dodged: boolean, -- also true on a miss: nothing landed
+	missed: boolean?, -- S61: the attacker missed (misfortune), shown as "Miss"
 	element: Element?,
 	lifesteal: number, -- HP the attacker heals
 }
@@ -68,6 +72,29 @@ function Damage.rollHit(defenderDodge: number, attackerAccuracy: number, rng: Rn
 	return not rng:chance(Damage.dodgeChance(defenderDodge, attackerAccuracy))
 end
 
+-- S61 (ROZWOJ 7.6): chances (0..1) of dodge, miss and block. Their sum is capped at dodgeCap + avoidBonus, cut in
+-- this order: the dodge stays, the miss gets at most the rest, the block what is left.
+function Damage.avoidance(dodge: number, accuracy: number, miss: number?, block: number?): (number, number, number)
+	local total = (Combat.dodgeCap + Combat.avoidBonus) / 100
+	local d = Damage.dodgeChance(dodge, accuracy)
+	local m = math.min(math.clamp(miss or 0, 0, BuffCategories.caps.enemyMiss) / 100, math.max(0, total - d))
+	local b = math.min(math.max(0, block or 0) / 100, math.max(0, total - d - m))
+	return d, m, b
+end
+
+-- Exactly one roll, like rollHit: with miss and block 0 the outcome and the roll sequence are the same as before S61.
+function Damage.rollAvoid(dodge: number, miss: number, block: number, rng: Rng.Rng): ("dodge" | "miss" | "block")?
+	local r = rng:next()
+	if r < dodge then
+		return "dodge"
+	elseif r < dodge + miss then
+		return "miss"
+	elseif r < dodge + miss + block then
+		return "block"
+	end
+	return nil
+end
+
 -- Fraction of damage removed by `defense` against an attacker of `attackerLevel`.
 function Damage.reduction(defense: number, attackerLevel: number): number
 	local def = math.max(0, defense)
@@ -86,8 +113,20 @@ end
 
 function Damage.computeDamage(attacker: Attacker, defender: Defender, params: Params, rng: Rng.Rng): Result
 	local element: Element? = params.element
-	if params.canDodge ~= false and not Damage.rollHit(defender.dodge or 0, attacker.accuracy or 0, rng) then
-		return { amount = 0, crit = false, dodged = true, element = element, lifesteal = 0 }
+	if params.canDodge ~= false then
+		local d, m = Damage.avoidance(defender.dodge or 0, attacker.accuracy or 0, params.miss)
+		-- The block does not come back from here yet (S64).
+		local outcome = Damage.rollAvoid(d, m, 0, rng)
+		if outcome == "dodge" or outcome == "miss" then
+			return {
+				amount = 0,
+				crit = false,
+				dodged = true,
+				missed = outcome == "miss",
+				element = element,
+				lifesteal = 0,
+			}
+		end
 	end
 
 	local attack = if params.kind == "magic" then attacker.magAtk else attacker.physAtk

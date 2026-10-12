@@ -20,6 +20,7 @@ local Analytics = require(script.Parent.Parent.Analytics)
 
 local AreaProfiles = require(Shared.Data.AreaProfiles)
 local AttackPose = require(Shared.Logic.AttackPose)
+local BuffCategories = require(Shared.Data.BuffCategories)
 local Classes = require(Shared.Data.Classes)
 local DamageText = require(Shared.Logic.DamageText)
 local Combat = require(Shared.Data.Combat)
@@ -122,6 +123,10 @@ local attackers: { [Player]: Attacker } = {}
 local rng = Rng.new()
 local fxQueue: { { position: Vector3, event: FxEvent } } = {}
 
+-- S61: telegraphed areas until they resolve (see telegraph).
+export type RedZone = { monster: any, ability: MonsterAbilities.Ability, area: CFrame, endsAt: number }
+local redZones: { RedZone } = {}
+
 local function attackerState(player: Player): Attacker
 	local state = attackers[player]
 	if not state then
@@ -191,6 +196,9 @@ local function playerHitEvent(
 ): FxEvent
 	local event: FxEvent =
 		{ k = "dmg", e = targetId, s = attackerId, a = math.floor(taken), c = result.crit, d = result.dodged }
+	if result.missed then
+		event.mi = true -- S61: the attacker missed (misfortune), "Miss"
+	end
 	if not result.dodged and taken <= 0 then
 		event[blockedFlag(target)] = true
 	end
@@ -345,6 +353,11 @@ local function reward(player: Player, monster: any, share: number, goldShare: nu
 end
 
 local function onMonsterDied(monster: any)
+	for i = #redZones, 1, -1 do
+		if redZones[i].monster == monster then
+			table.remove(redZones, i)
+		end
+	end
 	local credit = CombatService.ResolveKillCredit(monster)
 	local areaId = monster.model:GetAttribute("AreaId") :: string?
 	local luck: Luck.MonsterLuck? = nil
@@ -504,6 +517,11 @@ function CombatService.DealDamage(
 		end
 		local pvpParams = table.clone(params)
 		pvpParams.pvp = true
+		if params.canDodge ~= false and selfEntity then
+			-- S61: misfortune on the attacking player, category cap first, then the PvP multiplier.
+			local miss = math.min(StatusEffectService.Max(selfEntity, "misfortune"), BuffCategories.caps.enemyMiss)
+			pvpParams.miss = miss * Combat.pvp.misfortune
+		end
 		result = Damage.computeDamage(attacker, defender, pvpParams, rng)
 		if not result.dodged then
 			local amount = math.floor(result.amount * offensiveMultiplier(player, targetEntity) * extra)
@@ -525,7 +543,7 @@ function CombatService.DealDamage(
 		PvpService.RecordHit(player, target)
 		local taken = 0
 		if result.amount > 0 then
-			local _, filtered = ResourceService.Damage(target, result.amount, "pvp")
+			local _, filtered = ResourceService.Damage(target, result.amount, "pvp", player)
 			taken = filtered
 		end
 		-- S29 (changes S22): a hit stopped in full by shields shows "Absorbed", by invulnerability "Immune".
@@ -647,6 +665,11 @@ local function monsterHitsPlayer(monster: any, player: Player, params: Damage.Pa
 	if not defender then
 		return
 	end
+	if params.canDodge ~= false and monster.entity then
+		-- S61: misfortune on the monster (regular attacks only; red zones come with canDodge = false and never miss).
+		params = table.clone(params)
+		params.miss = math.min(StatusEffectService.Max(monster.entity, "misfortune"), BuffCategories.caps.enemyMiss)
+	end
 	local result = Damage.computeDamage(MonsterStats.asAttacker(monster.stats), defender, params, rng)
 	local playerEntity = EntityService.GetPlayerEntity(player)
 	local position = EntityService.Position(playerEntity or { model = player.Character } :: any)
@@ -657,7 +680,7 @@ local function monsterHitsPlayer(monster: any, player: Player, params: Damage.Pa
 	-- "Absorbed" / "Immune" instead of nothing.
 	local taken = 0
 	if result.amount > 0 then
-		local _, filtered = ResourceService.Damage(player, result.amount, "monster")
+		local _, filtered = ResourceService.Damage(player, result.amount, "monster", monster)
 		taken = filtered
 	end
 	if playerEntity then
@@ -727,7 +750,30 @@ local function insideArea(ability: MonsterAbilities.Ability, area: CFrame, posit
 	return false
 end
 
+-- Red zones (S61, ROZWOJ 14.2): every telegraphed area until it resolves (the cover's target choice S74, vigilance S77
+-- read it). A cast that never resolves (boss killed in the windup, Elite II stunned) drops out after its windup plus
+-- Combat.redZoneGrace, or when its monster dies.
+local function zoneAlive(zone: RedZone, now: number): boolean
+	return zone.endsAt >= now and zone.monster ~= nil and zone.monster:IsAlive()
+end
+
+-- Drops expired zones and zones of dead monsters.
+local function pruneZones()
+	local now = os.clock()
+	for i = #redZones, 1, -1 do
+		if not zoneAlive(redZones[i], now) then
+			table.remove(redZones, i)
+		end
+	end
+end
+
 local function telegraph(monster: any, ability: MonsterAbilities.Ability, area: CFrame)
+	table.insert(redZones, {
+		monster = monster,
+		ability = ability,
+		area = area,
+		endsAt = os.clock() + ability.windup + Combat.redZoneGrace,
+	})
 	queueFx(area.Position, {
 		k = "tele",
 		e = if monster.entity then monster.entity.id else nil,
@@ -758,6 +804,29 @@ local function resolveAbility(monster: any, ability: MonsterAbilities.Ability, a
 			monsterHitsPlayer(monster, player, params, nil)
 		end
 	end
+	for i, zone in redZones do
+		if zone.monster == monster and zone.ability == ability and zone.area == area then
+			table.remove(redZones, i)
+			break
+		end
+	end
+end
+
+-- Active red zones (a copy).
+function CombatService.RedZones(): { RedZone }
+	pruneZones()
+	return table.clone(redZones)
+end
+
+-- The first active red zone that holds `position`, or nil.
+function CombatService.InRedZone(position: Vector3): RedZone?
+	pruneZones()
+	for _, zone in redZones do
+		if insideArea(zone.ability, zone.area, position) then
+			return zone
+		end
+	end
+	return nil
 end
 
 -- Boss attacks (DungeonService): the same telegraph and area damage as Elite II abilities.
@@ -884,6 +953,29 @@ function CombatService.Start()
 		end
 		queueFx(position, event)
 	end)
+
+	-- S61: the part of a monster blow a guard took shows over the guard (the target's number is already without it).
+	StatusEffectService.Intercepted:Connect(
+		function(guard: Player, _target: Player, _moved: number, taken: number, attacker: any?)
+			local guardEntity = EntityService.GetPlayerEntity(guard)
+			if not guardEntity then
+				return
+			end
+			local monsterEntity = if attacker and type(attacker) == "table" then attacker.entity else nil
+			local event: FxEvent = {
+				k = "dmg",
+				e = guardEntity.id,
+				s = if monsterEntity then monsterEntity.id else nil,
+				a = math.floor(taken),
+				c = false,
+				d = false,
+			}
+			if taken <= 0 then
+				event[blockedFlag(guard)] = true
+			end
+			queueFx(EntityService.Position(guardEntity), event)
+		end
+	)
 
 	ResourceService.Died:Connect(function(player: Player)
 		local state = attackers[player]

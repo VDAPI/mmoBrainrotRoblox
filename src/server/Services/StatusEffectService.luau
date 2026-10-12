@@ -7,6 +7,9 @@
 -- damage reduction, absorb shields, mana shield). Monsters read slows/stuns/taunts through the queries below.
 -- The model attribute "Effects" ("kind:expiresAt[:value]", one entry per kind, EffectStack.encode) feeds the
 -- client icons.
+-- S61: the intercept filter (Logic/Intercept, FilterPriority.intercept) runs before the mitigation filter
+-- (FilterPriority.mitigation); heals over time and absorb shields on a player in PvP combat are scaled through
+-- SetPvpScales (PvpService); a refreshed statBuff with unchanged numbers does not invalidate stats (party auras).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -15,8 +18,10 @@ local Workspace = game:GetService("Workspace")
 
 local Shared = ReplicatedStorage.Shared
 
+local Combat = require(Shared.Data.Combat)
 local Config = require(Shared.Config)
 local EffectStack = require(Shared.Logic.EffectStack)
+local Intercept = require(Shared.Logic.Intercept)
 
 local Log = require(Shared.Util.Log)
 local Signal = require(ReplicatedStorage.Packages.Signal)
@@ -28,6 +33,9 @@ local StatusEffectService = {
 	Deps = { "EntityService", "ResourceService", "StatService", "CharacterService" },
 	-- (entity, kind) after an effect was applied or removed.
 	Changed = Signal.new(),
+	-- (guard: Player, target: Player, moved: number, taken: number, attacker: any?) after a guard took part of a monster
+	-- blow aimed at an ally (S61): moved = the part before the guard's own reductions, taken = what got through them.
+	Intercepted = Signal.new(),
 }
 
 export type Effect = {
@@ -43,6 +51,7 @@ export type Effect = {
 	stacks: number?, -- S28: stacking damage over time (Cleave's bleed at level 10)
 	skillId: string?, -- S53: skill (or later path node / "item") that applied it; part of the key
 	category: string?, -- S53: Data/BuffCategories id; part of the key
+	radius: number?, -- S61: intercept: studs the guard may stand from the target (nil = Combat.interceptRadius)
 	appliedAt: number, -- server time of the last (re)application; a tie in a category goes to the newer one
 }
 
@@ -65,6 +74,7 @@ local DEBUFFS = {
 	armorBreak = true,
 	vulnerability = true,
 	taunt = true,
+	misfortune = true, -- S61: the enemy misses regular attacks (category enemyMiss)
 }
 
 local TICK_INTERVAL = 1
@@ -114,7 +124,23 @@ export type ApplyOptions = {
 	-- Data/BuffCategories id (nil = own).
 	skillId: string?,
 	category: string?,
+	-- S61: intercept only: studs the guard (source) may stand from the target; nil = Combat.interceptRadius.
+	radius: number?,
 }
+
+-- S61 (ROZWOJ 7.6): heal and shield multipliers of a player in PvP combat. PvpService sets them in its Init (it
+-- depends on this service, so this one cannot require it); 1 until then.
+type Scale = (player: Player) -> number
+local function one(_player: Player): number
+	return 1
+end
+local healScale: Scale = one
+local shieldScale: Scale = one
+
+function StatusEffectService.SetPvpScales(heal: Scale, shield: Scale)
+	healScale = heal
+	shieldScale = shield
+end
 
 -- Effects shortened in PvP.
 local CROWD_CONTROL: { [string]: boolean } = { stun = true, root = true, slow = true, freeze = true }
@@ -177,12 +203,22 @@ function StatusEffectService.Apply(entity: any, kind: string, options: ApplyOpti
 		table.insert(list, created)
 	end
 	local e = effect :: Effect
+	local value = options.value or 0
+	if kind == "shield" and entity.kind == "player" and entity.player then
+		value *= shieldScale(entity.player)
+	end
+	-- S61: a refresh that changes nothing but the end (party auras every second) must not recompute stats.
+	local sameNumbers = e.expiresAt > t
+		and e.value == value
+		and (e.pct == true) == (options.pct == true)
+		and EffectStack.sameStats(e.stats, options.stats)
 	local stacks = 1
 	if options.maxStacks and options.maxStacks > 1 and e.expiresAt > t then
 		stacks = math.min(options.maxStacks, (e.stacks or 1) + 1)
 	end
 	e.stacks = stacks
-	e.value = options.value or 0
+	e.value = value
+	e.radius = options.radius
 	e.tickAmount = if options.tickAmount then options.tickAmount * stacks else nil
 	e.nextTick = if options.tickAmount then t + TICK_INTERVAL else nil
 	if kind == "statBuff" then
@@ -198,6 +234,10 @@ function StatusEffectService.Apply(entity: any, kind: string, options: ApplyOpti
 	end
 	e.pct = options.pct
 	e.appliedAt = t
+	if kind == "statBuff" and sameNumbers and stacks == 1 then
+		publish(entity)
+		return
+	end
 	changed(entity, kind)
 end
 
@@ -380,7 +420,7 @@ end
 
 -- ResourceService damage filter: invulnerability, damage reduction (Logic/EffectStack: multiplicative, capped),
 -- absorb shields, mana shield.
-local function damageFilter(player: Player, amount: number, source: string): number
+local function damageFilter(player: Player, amount: number, source: string, _attacker: any?): number
 	local entity = playerEntity(player)
 	if not entity then
 		return amount
@@ -429,6 +469,65 @@ local function damageFilter(player: Player, amount: number, source: string): num
 	return math.max(0, amount)
 end
 
+-- S61 (ROZWOJ 7.6): the Guardian's intercept. Part of a monster blow on `player` goes to the guard of the strongest
+-- intercept effect on them; that part runs through every filter of the guard (source "intercept", which this filter
+-- skips), the rest goes on through the target's own filters. Windows of the per-second cap per guard.
+local interceptWindows: { [Player]: Intercept.Window } = {}
+
+local function interceptFilter(player: Player, amount: number, source: string, attacker: any?): number
+	if not Intercept.applies(source) then
+		return amount
+	end
+	local entity = playerEntity(player)
+	if not entity then
+		return amount
+	end
+	local list = active(entity, "intercept")
+	if #list == 0 then
+		return amount
+	end
+	local position = EntityService.Position(entity)
+	if not position then
+		return amount
+	end
+	local candidates: { Intercept.Candidate } = {}
+	for _, effect in list do
+		local guard = effect.source
+		if not guard or guard == player then
+			continue
+		end
+		local guardEntity = playerEntity(guard)
+		local guardPosition = guardEntity and EntityService.Position(guardEntity)
+		if not guardPosition then
+			continue
+		end
+		local offset = guardPosition - position
+		table.insert(candidates, {
+			guard = guard,
+			share = effect.value,
+			radius = effect.radius or Combat.interceptRadius,
+			distance = Vector3.new(offset.X, 0, offset.Z).Magnitude,
+			alive = not ResourceService.IsDead(guard),
+		})
+	end
+	local kept, chosen, moved = Intercept.resolve(
+		source,
+		amount,
+		candidates,
+		interceptWindows,
+		os.clock(),
+		function(g: any): number
+			return StatService.GetValue(g, "maxHp")
+		end
+	)
+	if chosen and moved > 0 then
+		local guard = chosen.guard :: Player
+		local _, taken = ResourceService.Damage(guard, moved, "intercept", attacker)
+		StatusEffectService.Intercepted:Fire(guard, player, moved, taken, attacker)
+	end
+	return kept
+end
+
 -- Ticking ---------------------------------------------------------------------------------------------------
 
 local function tickEntity(entity: any, list: { Effect }, t: number)
@@ -445,14 +544,16 @@ local function tickEntity(entity: any, list: { Effect }, t: number)
 			effect.nextTick = nextTick + TICK_INTERVAL
 			if effect.kind == "hot" then
 				if entity.kind == "player" and entity.player then
-					local healed = ResourceService.Heal(entity.player, effect.tickAmount, effect.source)
+					local amount = effect.tickAmount * healScale(entity.player)
+					local healed = ResourceService.Heal(entity.player, amount, effect.source)
 					StatusEffectService.Ticked:Fire(entity, effect, healed)
 				end
 			elseif entity.kind == "monster" and entity.monster then
 				local dealt = entity.monster:TakeDamage(effect.tickAmount, effect.source)
 				StatusEffectService.Ticked:Fire(entity, effect, if type(dealt) == "number" then dealt else nil)
 			elseif entity.kind == "player" and entity.player then
-				-- S29: the number shows what got through (after shields); 0 = absorbed / immune.
+				-- S29: the number shows what got through (after shields); 0 = absorbed / immune. No attacker on purpose
+				-- (S61): intercept and thorns never work on damage over time.
 				local _, filtered = ResourceService.Damage(entity.player, effect.tickAmount, effect.kind)
 				StatusEffectService.Ticked:Fire(entity, effect, filtered)
 			end
@@ -473,7 +574,8 @@ function StatusEffectService.Init(registry)
 	StatService = registry.Get("StatService")
 	CharacterService = registry.Get("CharacterService")
 	StatService.RegisterModifierSource("effects", modifierSource)
-	ResourceService.SetDamageFilter(damageFilter)
+	ResourceService.SetDamageFilter(interceptFilter, ResourceService.FilterPriority.intercept)
+	ResourceService.SetDamageFilter(damageFilter, ResourceService.FilterPriority.mitigation)
 end
 
 function StatusEffectService.Start()
@@ -485,6 +587,7 @@ function StatusEffectService.Start()
 		if entity then
 			effects[entity.id] = nil
 		end
+		interceptWindows[player] = nil
 	end)
 
 	local accumulator = 0
@@ -512,6 +615,7 @@ function StatusEffectService.Start()
 
 	Players.PlayerRemoving:Connect(function(player)
 		effects[`p{player.UserId}`] = nil
+		interceptWindows[player] = nil
 	end)
 end
 

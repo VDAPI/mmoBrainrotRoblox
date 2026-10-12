@@ -133,6 +133,24 @@ function EffectStack.merge(old: Timed?, new: Timed, now: number): ({ [string]: n
 	return if new.stats then table.clone(new.stats) else nil, new.expiresAt
 end
 
+-- True when two stat tables hold the same numbers (nil = empty). A refresh with the same stats keeps the stat cache
+-- (S61, party auras every second).
+function EffectStack.sameStats(a: { [string]: number }?, b: { [string]: number }?): boolean
+	local left: { [string]: number } = a or NO_STATS
+	local right: { [string]: number } = b or NO_STATS
+	for stat, value in left do
+		if right[stat] ~= value then
+			return false
+		end
+	end
+	for stat in right do
+		if left[stat] == nil then
+			return false
+		end
+	end
+	return true
+end
+
 -- Attribute "Effects" ----------------------------------------------------------------------------------------
 
 -- Kinds whose value is a percentage shown to the player (an absorb shield keeps its remaining points in value).
@@ -143,6 +161,8 @@ EffectStack.VALUE_KINDS = table.freeze({
 	damageReduction = true,
 	manaShield = true,
 	nextShot = true,
+	intercept = true, -- S61
+	misfortune = true, -- S61
 } :: { [string]: boolean })
 
 type Group = { kind: string, at: number, value: number? }

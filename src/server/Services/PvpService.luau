@@ -12,6 +12,7 @@ local Workspace = game:GetService("Workspace")
 
 local Shared = ReplicatedStorage.Shared
 
+local Combat = require(Shared.Data.Combat)
 local Config = require(Shared.Config)
 local Net = require(Shared.Net)
 local PvpRules = require(Shared.Logic.PvpRules)
@@ -143,6 +144,21 @@ function PvpService.MarkPvpCombat(player: Player)
 	publish(player, nil)
 end
 
+-- S61 (ROZWOJ 7.6): in PvP combat (Combat.pvp.combatWindow s after the last player hit, duels too), heals, heal
+-- over time and absorb shields on the player are weaker.
+function PvpService.InPvpCombat(player: Player): boolean
+	local rt = runtimes[player]
+	return rt ~= nil and PvpRules.inPvpCombat(now(), rt.lastPvpCombat, Combat.pvp.combatWindow)
+end
+
+function PvpService.HealScale(player: Player): number
+	return if PvpService.InPvpCombat(player) then Combat.pvp.heal else 1
+end
+
+function PvpService.ShieldScale(player: Player): number
+	return if PvpService.InPvpCombat(player) then Combat.pvp.shield else 1
+end
+
 -- Whether `attacker` may hit `target` right now (zone of the target, party and guild protection).
 function PvpService.CanAttack(attacker: Player, target: Player): (boolean, string?)
 	if attacker == target then
@@ -217,6 +233,7 @@ function PvpService.Init(registry)
 	ResourceService = registry.Get("ResourceService")
 	GuildService = registry.Get("GuildService")
 	StatusEffectService = registry.Get("StatusEffectService")
+	StatusEffectService.SetPvpScales(PvpService.HealScale, PvpService.ShieldScale)
 end
 
 local function nameOf(player: Player): string

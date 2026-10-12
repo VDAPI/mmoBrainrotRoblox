@@ -17,6 +17,11 @@ export type PathNode = {
 	-- option: works only while that option is chosen at rank `at` (default 5) of the target skill. Every number in
 	-- `bp` that depends on the node rank is { ref = "<values field>" } (Logic/Paths.skillMods resolves it).
 	modify: { skill: string, option: ("a" | "b")?, at: number?, bp: any }?,
+	-- S61: a party aura (PartyAuraService). category = a Data/BuffCategories ally* id. For categories with stats
+	-- (allyAttack, allyHaste, allyCrit, allyMove, allyVigor) the keys of `stats` are the category's stats (stat -> values
+	-- field); for a value category (allyGuard) `stats` holds exactly one key, `value`, e.g. the Guardian's cover:
+	-- { category = "allyGuard", stats = { value = "cover" }, radius = 15, shape = "behind" }. Radius default: AURA.radius
+	-- for circle, AURA.behindRadius for behind.
 	aura: { category: string, stats: { [string]: string }, radius: number?, shape: ("circle" | "behind")? }?,
 	luck: { [string]: string }?, -- Data/Luck field -> values field (S60)
 	weapon: WeaponReq?, -- own requirement, valid in every row

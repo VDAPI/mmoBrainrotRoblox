@@ -3455,3 +3455,31 @@ Pliki: `Data/{Luck,Progression,AdminCommands}`, `Logic/{Luck,PartyBonus,Paths,Lo
 `{Path,Combat,Loot,Resource,StatusEffect,Dungeon,Party,Admin}Service`, `Skills/Context`, `Admin/Character`,
 `UI/{GroupLuck,Components/PathBadge}`, `UI/Screens/{BossReward,DungeonWindow,PartyWindow,PartyFrames,
 WorldMap/CreatureCards}`, `Controllers/{CombatFx,Dungeon}Controller`, `tests/luck.spec`, `docs/ROZWOJ.md`.
+
+### S61: Fundament 9: aury drużyny, przechwyt, pech wrogów i zasady PvP
+
+- Filtry obrażeń gracza: `ResourceService.SetDamageFilter(filter, priority)` z `FilterPriority` (przechwyt 10,
+  redukcje i tarcze 20, Anioł Stróż 90, pojedynek 100), czwarty argument `attacker` w `Damage` i w typie filtra
+  (potwór, gracz w PvP); `DeathService.Kill` zadaje `math.huge`.
+- Przechwyt: czysty `Logic/Intercept` (`applies`, `pick`, `part`, `take`, `resolve`), filtr w `StatusEffectService`
+  (rodzaj `intercept`, `ApplyOptions.radius`, sygnał `Intercepted`), liczba nad Strażnikiem, kolumna „Przejęte” w
+  „Podsumowaniu walki” (`i` w wierszu, pięć kolumn tylko gdy ktoś coś przejął).
+- Pech: rodzaj `misfortune` (kategoria `enemyMiss`, w `DEBUFFS`), `Damage.avoidance` / `rollAvoid` (wspólny limit
+  `dodgeCap + avoidBonus`, jedno losowanie), odczyt w `monsterHitsPlayer` (tylko zwykłe ataki) i w gałęzi PvP
+  (×0,5), „Pudło” (`mi`). Ikony `⇆` i `✗`, typy `EffectKind`.
+- PvP: `Data/Combat.pvp`, `PvpRules.inPvpCombat`, `PvpService.InPvpCombat` / `HealScale` / `ShieldScale` przez
+  `StatusEffectService.SetPvpScales`; ×0,7 dla `ctx.heal` (zwraca też kwotę próbowaną), `hot` i tarcz.
+- Rejestr czerwonych stref: `CombatService.RedZones()` / `InRedZone(pos)` (wpis w telegrafie, usunięcie po
+  rozstrzygnięciu, przy śmierci potwora i po `windup + redZoneGrace`).
+- Aury: `Data/Paths.AURA`, `Paths.inAura` (`circle`, `behind`) i `Paths.auras`, nowy `PartyAuraService` (pętla co 1 s,
+  `SetExtra`, `BehindAnchor`); odświeżenie efektu bez zmiany liczb nie unieważnia statystyk (`EffectStack.sameStats`).
+- Dane 7.3: `BuffCategories.rules`, pomocnik `tests/PartyBuffRules` (`check`, `checkAuras`) w `paths.spec` dla klas ze
+  ścieżkami. Admin: `/intercept`, `/misfortune`, `/aura`.
+- Testy: nowy `intercept.spec`, przypadki w `damage.spec`, `pvp.spec`, `paths.spec`. `npm run data`: zmienił się tylko
+  blok `combat` w `mechanics.json` (i odcisk danych).
+
+Pliki: `Data/{Combat,BuffCategories,AdminCommands,Paths/init,Paths/Types,Skills/Types}`, `Logic/{Intercept,Damage,
+DamageText,EffectStack,Paths,PvpRules}`, lokalizacja PL / EN, `{Resource,StatusEffect,Combat,Pvp,Duel,Death,Dungeon,
+Admin,PartyAura}Service`, `Skills/{Context,Types/Support}`, `Admin/Combat`, `UI/Screens/{BossReward,Hud/EffectIcons}`,
+`CombatFxController`, `tests/{intercept,damage,pvp,paths}.spec`, `tests/PartyBuffRules`, `docs/{ROZWOJ,DESIGN,
+ARCHITECTURE}.md`, dane wiki.

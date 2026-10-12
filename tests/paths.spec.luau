@@ -5,6 +5,7 @@
 local Classes = require("../src/shared/Data/Classes")
 local EffectStack = require("../src/shared/Logic/EffectStack")
 local Fixture = require("./fixtures/paths")
+local PartyBuffRules = require("./PartyBuffRules")
 local PathData = require("../src/shared/Data/Paths")
 local GamePaths = require("../src/shared/Logic/Paths")
 local Progression = require("../src/shared/Data/Progression")
@@ -816,6 +817,144 @@ T.describe("Paths: reference builds", function()
 	end)
 end)
 
+T.describe("Paths: party auras (S61)", function()
+	local O = { x = 0, z = 0 }
+	local TARGET = { x = 0, z = -10 }
+	local BEHIND = { shape = "behind" }
+
+	T.it("inAura circle", function()
+		T.expect(GamePaths.inAura({}, O, { x = 29, z = 0 })).toBe(true)
+		T.expect(GamePaths.inAura({ shape = "circle" }, O, { x = 31, z = 0 })).toBe(false)
+		T.expect(GamePaths.inAura({ radius = 10 }, O, { x = 0, z = 11 })).toBe(false)
+		T.expect(P.inAura({ radius = 10 }, O, { x = 6, z = 6 })).toBe(true)
+	end)
+
+	T.it("inAura behind: a cone behind the owner on the target -> owner line", function()
+		T.expect(GamePaths.inAura(BEHIND, O, { x = 0, z = 5 }, TARGET)).toBe(true)
+		T.expect(GamePaths.inAura(BEHIND, O, { x = 0, z = -5 }, TARGET)).toBe(false)
+		T.expect(GamePaths.inAura(BEHIND, O, { x = 5, z = 5 }, TARGET)).toBe(true)
+		T.expect(GamePaths.inAura(BEHIND, O, { x = 10, z = 3 }, TARGET)).toBe(false)
+		T.expect(GamePaths.inAura(BEHIND, O, { x = 0, z = 16 }, TARGET)).toBe(false)
+		T.expect(GamePaths.inAura(BEHIND, O, { x = 0, z = 5 })).toBe(false)
+		T.expect(GamePaths.inAura(BEHIND, O, { x = 0, z = 5 }, nil, {})).toBe(false)
+		local monsters = { { x = 0, z = -8 }, { x = 0, z = 30 } }
+		T.expect(GamePaths.inAura(BEHIND, O, { x = 0, z = 5 }, nil, monsters)).toBe(true)
+		T.expect(GamePaths.inAura(BEHIND, O, { x = 0, z = 5 }, { x = 0, z = 30 })).toBe(false)
+		T.expect(GamePaths.inAura(BEHIND, O, { x = 0, z = 5 }, nil, { { x = 0, z = -45 } })).toBe(false)
+		T.expect(GamePaths.inAura(BEHIND, O, O, TARGET)).toBe(false)
+		T.expect(GamePaths.inAura(BEHIND, O, { x = 0, z = 5 }, O)).toBe(false)
+	end)
+
+	T.it("auras of rows 1-2: full in the main path, dip scale outside", function()
+		local beacon = P.findNode("fxStorm_beacon") :: any
+		local nodes = { fxStorm_beacon = 3 }
+		local inside = P.auras(char(20, state("fxStorm", nodes)), {})
+		T.expect(#inside).toBe(1)
+		T.expect(inside[1].nodeId).toBe("fxStorm_beacon")
+		T.expect(inside[1].category).toBe("allyAttack")
+		T.expect(inside[1].shape).toBe("circle")
+		T.expect(inside[1].radius).toBe(PathData.AURA.radius)
+		T.expect(inside[1].stats.magAtk).toBeNear(P.nodeValues(beacon, 3, 1).atk, 1e-9)
+		local outside = P.auras(char(20, state("fxRune", nodes)), {})
+		T.expect(outside[1].stats.magAtk).toBeNear(P.nodeValues(beacon, 3, 1 / 3).atk, 1e-9)
+		T.expect(P.auras(char(20), {})).toEqual({})
+		T.expect(GamePaths.auras(char(40, nil, { class = "Warrior" }), {})).toEqual({})
+	end)
+
+	T.it("auras of deeper rows need the main path and its weapon", function()
+		local copy = deepCopy(Fixture.paths)
+		local found = false
+		for _, row in copy[1].rows do
+			for i, node in row.nodes do
+				if node.id == "fxStorm_grit" then
+					row.nodes[i] = {
+						id = node.id,
+						kind = "aura",
+						maxRank = 3,
+						values = { atk = { 2, 6 } },
+						aura = { category = "allyAttack", stats = { physAtk = "atk", magAtk = "atk" } },
+						extra = true,
+						glyph = node.glyph,
+						nameKey = node.nameKey,
+						descKey = node.descKey,
+					}
+					found = true
+				end
+			end
+		end
+		T.expect(found).toBe(true)
+		local api = GamePaths.withSource(GamePaths.sourceOf(copy, Fixture.skills))
+		local c = char(40, state("fxStorm", { fxStorm_grit = 3 }))
+		local list = api.auras(c, { main = "staff" })
+		T.expect(#list).toBe(1)
+		T.expect(list[1].stats).toEqual({ physAtk = 6, magAtk = 6 })
+		T.expect(list[1].shape).toBe("circle")
+		T.expect(list[1].radius).toBe(30)
+		T.expect(api.auras(c, { main = "runestaff" })).toEqual({})
+		T.expect(api.auras(char(40, state("fxRune", { fxStorm_grit = 3 })), { main = "staff" })).toEqual({})
+	end)
+
+	T.it("ROZWOJ 7.3: party buff rules", function()
+		local function buff(id: string, duration: number, cooldown: number, extra: { [string]: any }?): any
+			local def: { [string]: any } = {
+				id = id,
+				class = "Mage",
+				order = 1,
+				unlock = 1,
+				maxLevel = 10,
+				type = "groupBuff",
+				target = "self",
+				cost = 10,
+				cooldown = cooldown,
+				radius = 20,
+				duration = duration,
+				values = { v = 10 },
+				effects = {
+					{
+						kind = "statBuff",
+						duration = duration,
+						stats = { physAtk = "v" },
+						pct = true,
+						target = "allies",
+						category = "allyAttack",
+					},
+				},
+				glyph = "*",
+				vfx = "",
+				nameKey = "x",
+				descKey = "x",
+			}
+			for key, value in extra or {} do
+				def[key] = value
+			end
+			return def
+		end
+		local function team(kind: string, duration: number, cooldown: number, category: string?): any
+			return buff(kind, duration, cooldown, {
+				effects = { { kind = kind, duration = duration, value = "v", target = "allies", category = category } },
+			})
+		end
+		T.expect(#PartyBuffRules.check(buff("ok", 20, 30))).toBe(0)
+		T.expect(#PartyBuffRules.check(buff("short", 6, 30)) > 0).toBe(true)
+		T.expect(#PartyBuffRules.check(buff("long", 70, 90)) > 0).toBe(true)
+		T.expect(#PartyBuffRules.check(buff("wide", 20, 30, { radius = 45 })) > 0).toBe(true)
+		T.expect(#PartyBuffRules.check(buff("spam", 20, 15)) > 0).toBe(true)
+		T.expect(PartyBuffRules.check(team("damageReduction", 6, 20, "allyGuard"))).toEqual({})
+		T.expect(PartyBuffRules.check(team("intercept", 4, 20))).toEqual({})
+		T.expect(PartyBuffRules.check(team("invuln", 3, 30))).toEqual({})
+		T.expect(PartyBuffRules.check(buff("shield", 4, 12, { type = "shield", effects = {} }))).toEqual({})
+		T.expect(#PartyBuffRules.check(team("damageReduction", 12, 8, "allyGuard")) > 0).toBe(true)
+		-- own effects of a group buff are not party effects
+		local own = buff("own", 3, 30)
+		own.effects[1].target = nil
+		own.effects[1].category = "own"
+		T.expect(PartyBuffRules.check(own)).toEqual({})
+		for _, path in Fixture.paths do
+			T.expect(PartyBuffRules.checkAuras(path)).toEqual({})
+		end
+	end)
+end)
+
 T.describe("Data: Paths (game)", function()
 	local function isTeamEffect(effect: any): boolean
 		return type(effect) == "table" and not EffectStack.isOwn(effect.category)
@@ -830,6 +969,13 @@ T.describe("Data: Paths (game)", function()
 			local paths = GamePaths.pathsOf(classId)
 			T.expect(#paths >= 2 and #paths <= 3).toBe(true)
 			T.expect(problems(GamePaths, classId)).toEqual({})
+			-- S61 (ROZWOJ 7.3): party buff rules for every skill and aura of a class with paths
+			for _, skill in SkillData.byClass[classId] or {} do
+				T.expect(PartyBuffRules.check(skill)).toEqual({})
+			end
+			for _, path in paths do
+				T.expect(PartyBuffRules.checkAuras(path)).toEqual({})
+			end
 			-- coverage of each path as the main one
 			for _, main in paths do
 				local total = pathRanks(main, 1, #PathData.ROWS)

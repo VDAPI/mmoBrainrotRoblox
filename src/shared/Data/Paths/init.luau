@@ -73,6 +73,16 @@ return table.freeze({
 	ROWS = ROWS,
 	DIP_ROWS = 2, -- rows open in every path (ROZWOJ 2.2); the rest only in the main path
 	DIP_SCALE = 1 / 3, -- team effect strength of rows 1..DIP_ROWS outside the main path
+	-- ROZWOJ 7.3: party auras from path nodes (PartyAuraService, Logic/Paths.inAura).
+	AURA = table.freeze({
+		radius = 30, -- "circle" default
+		behindRadius = 15, -- "behind": receivers up to this far from the owner
+		behindAngle = 120, -- cone behind the owner (60 degrees each side of the threat -> owner line)
+		fallbackRange = 40, -- no target: nearest monster fighting the owner within this range
+		tick = 1, -- s between PartyAuraService passes
+		duration = 1.5, -- s of each refreshed buff
+		maxRadius = 40, -- data rule (ROZWOJ 7.3)
+	}),
 	list = list,
 	byId = byId,
 	byClass = byClass,

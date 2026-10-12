@@ -55,7 +55,8 @@ export type Ctx = {
 	element: string?, -- the skill's element (adaptive: the weapon's), S18
 	isEnemy: (entity: any) -> boolean,
 	damage: (entity: any, percent: number, options: { [string]: any }?) -> Damage.Result?,
-	heal: (player: Player, amount: number) -> number,
+	-- (HP restored, HP it tried to restore after the heal bonus and the PvP scale, S61)
+	heal: (player: Player, amount: number) -> (number, number),
 	applyEffects: (entity: any, side: "enemy" | "self" | "allies") -> (),
 	applyEffect: (entity: any, effect: SkillData.SkillEffect) -> (), -- one effect (breakpoint extras)
 	lingering: (center: Vector3, percent: number) -> (), -- the breakpoint's lasting area (S28)
@@ -319,9 +320,11 @@ function Context.new(
 			end
 			return result
 		end,
-		heal = function(target: Player, amount: number): number
+		heal = function(target: Player, amount: number): (number, number)
 			local bonus = services.PassiveHook(player, "healBonus")
-			local healed = services.Resource.Heal(target, amount * (1 + bonus / 100), player)
+			-- S61: heals on a player in PvP combat are weaker (Combat.pvp.heal).
+			local attempted = amount * (1 + bonus / 100) * services.Pvp.HealScale(target)
+			local healed = services.Resource.Heal(target, attempted, player)
 			if healed > 0 then
 				local entity = Entity.GetPlayerEntity(target)
 				if entity then
@@ -333,7 +336,7 @@ function Context.new(
 					)
 				end
 			end
-			return healed
+			return healed, attempted
 		end,
 		applyEffects = function(entity: any, side: "enemy" | "self" | "allies")
 			local skillEffects: { SkillData.SkillEffect } = skill.effects or {}

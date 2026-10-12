@@ -4,6 +4,7 @@
 -- disabled by the empty StarterCharacterScripts/Health script.
 --
 -- API: Damage, Heal, SpendMana, SpendEnergy, Restore, MarkCombat, InCombat, IsDead, Revive, SetGod.
+-- Damage(player, amount, source?, attacker?) runs the damage filters in FilterPriority order (S61, ROZWOJ 7.6).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -43,13 +44,27 @@ type Pool = {
 
 local pools: { [Player]: Pool } = {}
 
--- Optional filter applied to incoming damage (StatusEffectService: invulnerability, shields, reductions).
-type DamageFilter = (player: Player, amount: number, source: string) -> number
-local damageFilters: { DamageFilter } = {}
+-- Filters applied to incoming damage (S61). `attacker` is the Monster object for "monster" (also red zones and boss
+-- hazards), the attacking Player for "pvp", and for "intercept" the monster that hit the ally; nil for damage over time
+-- (source = the effect kind), "admin" and "world".
+export type DamageFilter = (player: Player, amount: number, source: string, attacker: any?) -> number
+type FilterEntry = { filter: DamageFilter, priority: number }
+local damageFilters: { FilterEntry } = {}
 
--- Adds a filter that may reduce incoming damage (shields, duels). Filters run in registration order.
-function ResourceService.SetDamageFilter(filter: DamageFilter)
-	table.insert(damageFilters, filter)
+-- Code order, not balance. ROZWOJ 7.6: intercept, then the target's reductions and shields, then Guardian Angel; the
+-- duel knockout sees the final amount.
+ResourceService.FilterPriority = table.freeze({ intercept = 10, mitigation = 20, guardianAngel = 90, duel = 100 })
+
+-- Adds a filter that may reduce incoming damage. Lower priority runs first; equal priorities keep registration order.
+function ResourceService.SetDamageFilter(filter: DamageFilter, priority: number)
+	local at = #damageFilters + 1
+	for i, entry in damageFilters do
+		if entry.priority > priority then
+			at = i
+			break
+		end
+	end
+	table.insert(damageFilters, at, { filter = filter, priority = priority })
 end
 
 local function maxOf(player: Player, id: string): number
@@ -131,7 +146,7 @@ end
 
 -- Applies damage. Returns the HP actually removed and the damage left after the filters (shields, mana
 -- shield, protection), before clamping to the remaining HP: the number to show over the head (S22).
-function ResourceService.Damage(player: Player, amount: number, source: string?): (number, number)
+function ResourceService.Damage(player: Player, amount: number, source: string?, attacker: any?): (number, number)
 	local pool = pools[player]
 	if not pool or pool.dead or amount <= 0 or amount ~= amount then
 		return 0, 0
@@ -140,8 +155,8 @@ function ResourceService.Damage(player: Player, amount: number, source: string?)
 	if pool.god then
 		return 0, 0
 	end
-	for _, filter in damageFilters do
-		amount = filter(player, amount, source or "unknown")
+	for _, entry in damageFilters do
+		amount = entry.filter(player, amount, source or "unknown", attacker)
 		if amount <= 0 then
 			return 0, 0
 		end

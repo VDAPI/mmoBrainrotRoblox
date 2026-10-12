@@ -315,8 +315,9 @@ function DuelService.Init(registry)
 		return nil
 	end)
 
-	-- A blow that would kill a duelist leaves 1 HP and ends the duel.
-	ResourceService.SetDamageFilter(function(player: Player, amount: number, _source: string): number
+	-- A blow that would kill a duelist leaves 1 HP and ends the duel. Runs last (FilterPriority.duel): the knockout must
+	-- see the amount after reductions and shields, or a blow a shield would soak ends the duel.
+	ResourceService.SetDamageFilter(function(player: Player, amount: number, _source: string, _attacker: any?): number
 		local duel = current
 		if not duel or duel.phase ~= "fight" or (player ~= duel.a and player ~= duel.b) then
 			return amount
@@ -327,7 +328,7 @@ function DuelService.Init(registry)
 			return math.max(0, hp - 1)
 		end
 		return amount
-	end)
+	end, ResourceService.FilterPriority.duel)
 end
 
 function DuelService.Start()

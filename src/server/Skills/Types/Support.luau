@@ -72,10 +72,10 @@ local function healOne(ctx: Ctx, player: Player, entity: any, amount: number)
 	if ctx.skill.id == "purify" or ctx.bp.cleanse then
 		ctx.services.StatusEffect.Cleanse(entity)
 	end
-	local healed = ctx.heal(player, amount)
+	local healed, attempted = ctx.heal(player, amount)
 	if ctx.bp.overhealShield then
-		local bonus = ctx.services.PassiveHook(ctx.player, "healBonus")
-		local overflow = amount * (1 + bonus / 100) - healed
+		-- S61: from the amount after the PvP scale, so the cut part never turns into a shield.
+		local overflow = attempted - healed
 		if overflow > 1 then
 			ctx.services.StatusEffect.Apply(
 				entity,

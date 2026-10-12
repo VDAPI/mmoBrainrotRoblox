@@ -101,6 +101,56 @@ T.describe("Damage", function()
 		T.expect(dodged / 4000).toBeNear(0.3, 0.03)
 	end)
 
+	T.it("avoidance: dodge, miss and block share dodgeCap + avoidBonus (S61)", function()
+		local d, m, b = Damage.avoidance(80, 0, 15)
+		T.expect(d).toBeNear(0.30)
+		T.expect(m).toBeNear(0.10)
+		T.expect(b).toBe(0)
+		T.expect((Damage.avoidance(20, 5))).toBeNear(0.15)
+		local _, capped = Damage.avoidance(0, 0, 50)
+		T.expect(capped).toBeNear(0.15)
+		local _, _, block = Damage.avoidance(30, 0, 15, 20)
+		T.expect(block).toBe(0)
+	end)
+
+	T.it("misfortune: misses count as dodges, never with canDodge=false (S61)", function()
+		local rng = Rng.new(11)
+		for _ = 1, 200 do
+			local r = Damage.computeDamage(
+				attacker(),
+				defender(),
+				{ kind = "phys", canDodge = false, miss = 100 } :: Damage.Params,
+				rng
+			)
+			T.expect(r.dodged).toBe(false)
+			T.expect(r.amount > 0).toBe(true)
+		end
+		local missed = 0
+		for _ = 1, 4000 do
+			local r = Damage.computeDamage(attacker(), defender(), { kind = "phys", miss = 15 } :: Damage.Params, rng)
+			if r.missed then
+				missed += 1
+				T.expect(r.dodged).toBe(true)
+				T.expect(r.amount).toBe(0)
+			end
+		end
+		T.expect(missed / 4000).toBeNear(0.15, 0.03)
+	end)
+
+	T.it("miss nil and miss 0 roll the same sequence (S61)", function()
+		local a, b = Rng.new(21), Rng.new(21)
+		for _ = 1, 200 do
+			local x = Damage.computeDamage(attacker({ critChance = 20 }), defender({ dodge = 30 }), PHYS, a)
+			local y = Damage.computeDamage(
+				attacker({ critChance = 20 }),
+				defender({ dodge = 30 }),
+				{ kind = "phys", miss = 0 } :: Damage.Params,
+				b
+			)
+			T.expect({ x.dodged, x.amount, x.crit }).toEqual({ y.dodged, y.amount, y.crit })
+		end
+	end)
+
 	T.it("dodged attacks deal 0 and canDodge=false always hits", function()
 		local rng = Rng.new(6)
 		local seenDodge = false

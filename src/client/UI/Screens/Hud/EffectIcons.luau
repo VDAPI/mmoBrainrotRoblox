@@ -46,6 +46,8 @@ local GLYPHS: { [string]: { glyph: string, good: boolean } } = {
 	guaranteedCrit = { glyph = "✦", good = true },
 	manaShield = { glyph = "🔵", good = true },
 	respawnShield = { glyph = "✧", good = true },
+	intercept = { glyph = "⇆", good = true }, -- S61: a guard takes part of the blows
+	misfortune = { glyph = "✗", good = false }, -- S61: misses regular attacks
 }
 
 type Entry = EffectStack.Shown

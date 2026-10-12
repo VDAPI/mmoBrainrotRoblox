@@ -9,12 +9,28 @@ return table.freeze({
 	randomMax = 1.08,
 	pvpModifier = 0.6,
 	dodgeCap = 30, -- % after subtracting accuracy
+	avoidBonus = 10, -- S61: dodge + miss + block <= dodgeCap + avoidBonus (%), Logic/Damage.avoidance
 	minDamage = 1,
 	-- "Below 30 % HP" threshold of the executioner and last-stand effects (Data/Bonuses hooks).
 	lowHpFraction = 0.3,
 	-- S54 (ROZWOJ 8): skill damage x base weapon speed / skillSpeedRef (two-handed axe = x1); basic attacks unchanged.
 	-- The balance sessions own the value.
 	skillSpeedRef = 0.8,
+
+	-- S61 (ROZWOJ 7.6): PvP rules. Control keeps Config.PvpCcMultiplier.
+	pvp = table.freeze({
+		combatWindow = 10, -- s after the last player hit (dealt or taken) that count as PvP combat
+		heal = 0.7, -- heals and heal-over-time ticks on a player in PvP combat
+		shield = 0.7, -- absorb shields applied to a player in PvP combat
+		misfortune = 0.5, -- the attacker's misfortune in the PvP branch of DealDamage
+		fortuneBuff = 0.5, -- Fortune's random party buffs (dice and wheel, read from S70)
+		-- luck: none in PvP, enforced by Logic/Luck options.pvp (S60); no loot comes from players
+	}),
+	-- S61: the Guardian's intercept (Logic/Intercept; share caps in Data/BuffCategories).
+	interceptRadius = 20, -- studs: default radius of an intercept effect (the guard must stand this close)
+	interceptWindow = 1, -- s: window of BuffCategories.caps.interceptPerSecond
+	-- S61: red zone registry (CombatService.RedZones).
+	redZoneGrace = 0.5, -- s a red zone stays registered after its windup when the cast never resolves
 
 	-- Basic attack ranges in studs (DESIGN §24) and the lag tolerance the server allows on top.
 	meleeRange = 7,

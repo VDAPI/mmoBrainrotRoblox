@@ -179,6 +179,10 @@ type CharacterData = {
 - **Prawdziwe modele (S24, `docs/ASSETS.md`):** Rojo mapuje `assets/` na `ReplicatedStorage.Assets` (`ignoreUnknownInstances`, więc modele wklejone w Studio zostają). Gdy wpis ma `asset` i `Assets.Monsters.<model>` istnieje, klient klonuje model, usuwa z kopii wszystkie skrypty, zamienia `Humanoid` na `AnimationController` + `Animator`, skaluje raz (`ScaleTo`) i spawa `PrimaryPart` z HRP. `asset.rig`: `animator` (klipy z `asset.anims`, wybór `Logic/LookAnim`: death > hit > atak/cast > run/walk > idle, zastępstwa, prędkość chodu = prędkość / `walkSpeed`), `gait` (motory `Gait_*`) albo `static`. Bez pliku: generator, jedno ostrzeżenie. Pety: `Assets.Pets.<id>` (statyczne).
 - **Kontrakt modelu potwora (nie łam):** potwory to bezpośrednie dzieci `Workspace.Monsters`; HRP to hitbox (`max(X,Z)/2` = promień walki); ziemia = `HRP.Y − HipHeight − HRP.Size.Y/2`; atrybuty `MonsterId`, `Variant`, `NameKey`, `Level`, `MaxHp`, `Hp`, `Look*` przed parentowaniem, `EntityId` po; klik idzie w górę do Modelu z `EntityId`.
 - Liczby obrażeń, efekty uderzeń, telegrafy: wysyłane eventem do klientów w zasięgu, rysowane lokalnie.
+- **Filtry obrażeń gracza (S61):** `ResourceService.SetDamageFilter(filter, priority)` z `FilterPriority` (przechwyt 10,
+  redukcje i tarcze 20, Anioł Stróż 90, nokaut pojedynku 100); filtr dostaje `(player, amount, source, attacker?)`.
+- **Aury i strefy (S61):** `PartyAuraService` co 1 s odświeża krótkie wzmocnienia aur drużyny (`Paths.auras`,
+  `Paths.inAura`); `CombatService.RedZones()` / `InRedZone(pos)` to rejestr aktywnych telegrafów Elit II i bossów.
 
 ## 8. Świat
 

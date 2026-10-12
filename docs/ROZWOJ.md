@@ -339,7 +339,7 @@ Broń każdej ścieżki (uzasadnienie i pokrycie w sekcjach klas):
 |---|---|
 | `Data/Skills/<Klasa>` | podstawa i umiejętności ścieżek; pole `path` (nil = podstawa), przełomy A/B; bez `requires`, `col`, `row` |
 | `Data/Skills/Build`, `Types`, `init` | `Build.bp2`, jawne `maxLevel`, `RANKS`, `HOTBAR_SLOTS = 10` |
-| `Data/Paths/init` | nowy: `ROWS` (tabela 2.2, rzędy 2, 5, 10 z `twoPathExtra`), `DIP_ROWS = 2`, `DIP_SCALE = 1/3`, `list` (wszystkie ścieżki) |
+| `Data/Paths/init` | nowy: `ROWS` (tabela 2.2, rzędy 2, 5, 10 z `twoPathExtra`), `DIP_ROWS = 2`, `DIP_SCALE = 1/3`, `list` (wszystkie ścieżki); S61: `AURA` (promienie, kąt `behind`, `fallbackRange`, `tick`, `duration`, `maxRadius`) |
 | `Data/Paths/<Klasa>` | nowy: ścieżki klasy (lista 2–3, pole `order`), węzły, buildy wzorcowe |
 | `Data/Luck` | nowy: pola i limity szczęścia (6.3) |
 | `Data/BuffCategories` | nowy: kategorie, ich statystyki, tryb i limity (7.1) |
@@ -348,7 +348,7 @@ Broń każdej ścieżki (uzasadnienie i pokrycie w sekcjach klas):
 | `Data/Classes` | `statPlan` |
 | `Data/Titles` | tytuły ścieżek `path_<pathId>`, `req.kind = "mainPath"`; S59: wariant typu i stała `NONE` (wpisy dopisują sesje klas) |
 | `Logic/Titles` | S59: `meets` z `mainPath`, `pathTitle`, `shown` z domyślnym tytułem ścieżki głównej, opcjonalna lista (testy) |
-| `Data/Combat` | nowe `pvp` (mnożniki 7.6), `skillSpeedRef` (8) |
+| `Data/Combat` | nowe `pvp` (mnożniki 7.6: `combatWindow`, `heal`, `shield`, `misfortune`, `fortuneBuff`), `skillSpeedRef` (8); S61: `interceptRadius`, `interceptWindow`, `avoidBonus`, `redZoneGrace` |
 | `Logic/Skills` | `rankLevel`, `rankAt`, `effective(skill, rank, choices, mods)`, `cost(skill, rank, L, classId, mods)`; bez `canLearn`, `spentPoints`, `refundAll` |
 | `Logic/Paths` | nowy: `rowsFor`, `pointsAt`, `free`, `rowOpen`, `canBuy`, `canRefund`, `refund`, `canChooseMain` (z `freeUsed`), `skillRank`, `availableSkills`, `skillUsable`, `skillMods`, `validHotbar`, `passiveTotals`, `activeNodes`, `auras`, `inAura`, `luck`, `clampToLevel`, `weaponOk`, `canEdit(ctx)`; S57 dokłada pomocnicze `pathsOf`, `classHasPaths`, `isPublished`, `findNode`, `spent`, `ranksIn`, `weaponTypesOf`, `nodeValues`, `isTeamNode`, `canPutOnBar`, `canChooseBreakpoint`, `effectiveFor`, `withSource` / `sourceOf` (źródło danych, test na `tests/fixtures/paths.luau`) i `MAIN_LEVEL`; S58 zestawy: `swapSets`, `copySet`, `emptySet`, `otherSet`, `activeSet`, `cloneSet`, `setView`, `cleanSet`, `mainWeaponOk`, `statPlan`, akcje `canEdit` `switchSet` / `copySet` (pola `dead`, `inRun`); S59: `source` (pole API), `nodeScale` (reguła ⅓ dla dowolnego węzła, z niej `activeNodes`), `nodeArgs` (argumenty opisu węzła: placeholder = pole `values`, pola z `mul` jako 1 + (v − 1)·scale, zaokrąglenie `Skills.roundArg`), `iconWeapon`, `isTwoHanded`; S60: `luckOfNodes(activeNodes)` (surowe pola `Data/Luck` z węzłów, bez `scale`) i `luck = luckOfNodes(activeNodes(...))` |
 | `Logic/PathView` | S59, nowy, czysty: `with(api)`, `tabState`, `path` (rzędy z powodem zamknięcia, stany węzłów), `weaponText`, `pendingBreakpoints`, `attention` („!”), `rankUps`, `newBreakpoints` (toasty awansu) |
@@ -369,7 +369,8 @@ export type PathNode = {
 	-- at: ranga przełomu, której dotyczy option (domyślnie 5); w bp liczba zależna od rangi węzła to
 	-- { ref = "<pole values>" } (w mul: 1 + (x − 1)·scale, gdzie indziej x·scale), także zagnieżdżona (S57)
 	modify: { skill: string, option: ("a" | "b")?, at: number?, bp: Breakpoint }?,
-	-- tryb (% albo pkt proc.) i dozwolone statystyki bierze z kategorii w Data/BuffCategories
+	-- tryb (% albo pkt proc.) i dozwolone statystyki bierze z kategorii w Data/BuffCategories; S61: klucze stats to
+	-- statystyki kategorii, a dla kategorii w trybie value (allyGuard) jeden klucz `value` (stats = { value = "cover" })
 	aura: { category: string, stats: { [string]: string }, radius: number?, shape: ("circle" | "behind")? }?,
 	luck: { [string]: string }?, -- pole Data/Luck -> pole values
 	weapon: WeaponReq?,
@@ -691,8 +692,9 @@ do sprawdzenia w sesji balansu.
 - `misfortune` (wróg chybia z szansą `value`): odczyt w `CombatService.monsterHitsPlayer` (i w ścieżce PvP z mnożnikiem
   0,5) tylko wtedy, gdy `params.canDodge ~= false`, czyli przy zwykłych atakach. Ataki z czerwoną strefą
   (`resolveAbility`, `canDodge = false`) nigdy nie chybiają przez Fortunę, bo każdego bossa ma się dać pokonać bez
-  wsparcia. Limit `enemyMiss` 15%, a łączna szansa na unik, chybienie i blok Wojownika najwyżej `Combat.dodgeCap + 10`
-  (dziś 40%).
+  wsparcia. Limit `enemyMiss` 15%, a łączna szansa na unik, chybienie i blok Wojownika najwyżej
+  `Combat.dodgeCap + Combat.avoidBonus` (dziś 40%; S61 `Damage.avoidance`, przycinane w kolejności unik, chybienie,
+  blok). Chybienie liczy się jak unik (`dodged`, kontra i trafienie umiejętności go nie widzą) i pokazuje „Pudło”.
 - `intercept` (część obrażeń sojusznika przechodzi na źródło efektu, Strażnik), filtr obrażeń `ResourceService`
   rejestrowany przed redukcjami celu:
   - działa tylko na obrażenia ze źródła `"monster"`, także z ataków z czerwoną strefą; nigdy w PvP, w pojedynkach, na
@@ -707,7 +709,8 @@ do sprawdzenia w sesji balansu.
     kolejności trafień; nadwyżka zostaje na celu, więc czerwona strefa na całą drużynę nie zabija tanka;
   - test: dwóch Strażników przechwytujących nawzajem, Strażnik martwy i daleko, obrażenia w czasie i PvP pominięte,
     limit na sekundę.
-- Kolejność filtrów obrażeń gracza: przechwyt, potem redukcje i tarcze celu, na końcu ocalenie Anioła Stróża (9.3).
+- Kolejność filtrów obrażeń gracza: przechwyt, potem redukcje i tarcze celu, ocalenie Anioła Stróża (9.3), a po nim
+  jeszcze nokaut pojedynku (S61: `ResourceService.FilterPriority` 10 / 20 / 90 / 100; nokaut widzi kwotę po tarczach).
 - Furię, kości Fortuny, pułapki, sokoła i Ładunki Arkanów projektują sekcje klas.
 
 ## 8. Zmiany globalnych wzorów

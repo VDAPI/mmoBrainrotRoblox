@@ -90,7 +90,7 @@ local flashes: { [Model]: any } = {}
 local flashCount = 0
 
 -- Same shape as UI/Screens/BossReward.SummaryRow.
-type SummaryRow = { n: string, c: string?, d: number, h: number, s: number }
+type SummaryRow = { n: string, c: string?, d: number, h: number, s: number, i: number? }
 
 -- S60: the fight summary rows of a boss reward, type-checked, at most 5.
 local function summaryOf(raw: any): { SummaryRow }?
@@ -109,6 +109,7 @@ local function summaryOf(raw: any): { SummaryRow }?
 				d = tonumber(row.d) or 0,
 				h = tonumber(row.h) or 0,
 				s = tonumber(row.s) or 0,
+				i = tonumber(row.i),
 			})
 		end
 	end

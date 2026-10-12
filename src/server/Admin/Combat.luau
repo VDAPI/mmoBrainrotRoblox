@@ -4,11 +4,15 @@
 
 local Shared = game:GetService("ReplicatedStorage").Shared
 
+local BuffCategories = require(Shared.Data.BuffCategories)
+local Combat = require(Shared.Data.Combat)
 local Config = require(Shared.Config)
 local FightSim = require(Shared.Logic.FightSim)
 local LevelCurves = require(Shared.Logic.LevelCurves)
 local Monsters = require(Shared.Data.Monsters)
 local Net = require(Shared.Net)
+local PathData = require(Shared.Data.Paths)
+local Paths = require(Shared.Logic.Paths)
 local Potions = require(Shared.Logic.Potions)
 
 local Context = require(script.Parent.Context)
@@ -24,6 +28,8 @@ local PvpService = Context.services.PvpService
 local CombatService = Context.services.CombatService
 local StatusEffectService = Context.services.StatusEffectService
 local EntityService = Context.services.EntityService
+local PartyService = Context.services.PartyService
+local PartyAuraService = Context.services.PartyAuraService
 
 local commands: { [string]: (player: Player, args: { string }) -> ...any } = {}
 
@@ -134,6 +140,103 @@ commands.shield = function(player, args)
 	withCharacter(player, function()
 		StatusEffectService.ApplyRespawnShield(player, seconds)
 		reply(player, "admin.shield.ok", { seconds = seconds })
+	end)
+end
+
+-- S61: the caller guards the targeted player, or without a player target every other party member within
+-- Combat.interceptRadius. A share above the cap is allowed, so the cap shows when it is read.
+commands.intercept = function(player, args)
+	local share = math.clamp(tonumber(args[1]) or 30, 1, 100)
+	local seconds = math.clamp(tonumber(args[2]) or 10, 1, 600)
+	withCharacter(player, function()
+		local allies: { Player } = {}
+		local target = CombatService.GetTarget(player)
+		if target and target.kind == "player" and target.player and target.player ~= player then
+			table.insert(allies, target.player)
+		else
+			local entity = EntityService.GetPlayerEntity(player)
+			local position = entity and EntityService.Position(entity)
+			if position then
+				for _, member in PartyService.MembersInRange(player, position, Combat.interceptRadius) do
+					if member ~= player then
+						table.insert(allies, member)
+					end
+				end
+			end
+		end
+		local n = 0
+		for _, ally in allies do
+			local entity = EntityService.GetPlayerEntity(ally)
+			if entity then
+				StatusEffectService.Apply(entity, "intercept", {
+					duration = seconds,
+					value = share,
+					source = player,
+					radius = Combat.interceptRadius,
+					skillId = "admin",
+				})
+				n += 1
+			end
+		end
+		if n == 0 then
+			reply(player, "admin.intercept.none", { radius = Combat.interceptRadius })
+		else
+			reply(player, "admin.intercept.ok", { n = n, share = share, seconds = seconds })
+		end
+	end)
+end
+
+-- S61: misfortune on the current target (monster or player).
+commands.misfortune = function(player, args)
+	local value = math.clamp(tonumber(args[1]) or 15, 1, 100)
+	local seconds = math.clamp(tonumber(args[2]) or 10, 1, 600)
+	withCharacter(player, function()
+		local target = CombatService.GetTarget(player)
+		if not target then
+			reply(player, "admin.misfortune.noTarget")
+			return
+		end
+		StatusEffectService.Apply(target, "misfortune", {
+			duration = seconds,
+			value = value,
+			source = player,
+			category = "enemyMiss",
+			skillId = "admin",
+		})
+		reply(player, "admin.misfortune.ok", { value = value, seconds = seconds, cap = BuffCategories.caps.enemyMiss })
+	end)
+end
+
+-- S61: an aura like a path node's (PartyAuraService.SetExtra, key "admin"); every stat of the category gets `value`.
+commands.aura = function(player, args)
+	withCharacter(player, function()
+		local id = args[1]
+		if id == "off" then
+			PartyAuraService.SetExtra(player, "admin", nil)
+			reply(player, "admin.aura.off")
+			return
+		end
+		local category = BuffCategories.get(id)
+		if not category or category.side ~= "ally" then
+			reply(player, "admin.usage.aura")
+			return
+		end
+		local value = math.clamp(tonumber(args[2]) or 10, 1, 100)
+		local shape: "circle" | "behind" = if args[3] == "behind" then "behind" else "circle"
+		local default = if shape == "behind" then PathData.AURA.behindRadius else PathData.AURA.radius
+		local radius = math.clamp(tonumber(args[4]) or default, 1, PathData.AURA.maxRadius)
+		local stats: { [string]: number } = {}
+		if category.stats then
+			for _, stat in category.stats do
+				stats[stat] = value
+			end
+		else
+			stats.value = value
+		end
+		local aura: Paths.Aura =
+			{ nodeId = "admin_aura", category = category.id, stats = stats, shape = shape, radius = radius }
+		PartyAuraService.SetExtra(player, "admin", aura)
+		reply(player, "admin.aura.on", { category = category.id, value = value, shape = shape, radius = radius })
 	end)
 end
 

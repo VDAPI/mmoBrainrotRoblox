@@ -85,4 +85,9 @@ function PvpRules.indicator(
 	return if enabled then "on" else "off"
 end
 
+-- S61 (ROZWOJ 7.6): a player is in PvP combat within `window` seconds of the last player hit (dealt or taken).
+function PvpRules.inPvpCombat(now: number, lastPvpCombat: number?, window: number): boolean
+	return lastPvpCombat ~= nil and now - lastPvpCombat <= window
+end
+
 return PvpRules
