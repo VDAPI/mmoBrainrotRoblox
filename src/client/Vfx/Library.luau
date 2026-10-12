@@ -883,6 +883,194 @@ function Library.tether(a: Model, b: Model, color: Color3, seconds: number)
 	end)
 end
 
+-- S77: the Falcon (Scout). A bird of three pooled parts (a body and two wedge wings) circling over its hunter;
+-- `strike` flies to the target and back with a small claw slash and a burst, a dive starts high above the target,
+-- faster and bigger. Not a character: no collisions, no queries. Ends on `stop`, when the hunter's model leaves,
+-- or when `keep` runs out (no event from the server).
+export type Falcon = {
+	keep: (seconds: number) -> (),
+	strike: (target: Model?, dive: boolean) -> (),
+	stop: () -> (),
+	alive: () -> boolean,
+}
+
+local FALCON_RADIUS = 4
+local FALCON_HEIGHT = 8
+local FALCON_SPEED = 1.4 -- rad/s around the hunter
+local FALCON_FLAP = math.rad(25)
+
+type Leg = { from: Vector3, to: () -> Vector3?, start: number, dur: number, done: (() -> ())? }
+
+function Library.falcon(caster: Model, color: Color3, simple: boolean): Falcon?
+	if not Pool.take() then
+		return nil
+	end
+	local dark = color:Lerp(Color3.new(0, 0, 0), 0.35)
+	local body = Pool.part("Block", dark, Vector3.new(0.45, 0.4, 1.2), Enum.Material.SmoothPlastic, 0)
+	local wings = {
+		Pool.part("Wedge", color, Vector3.new(0.1, 0.45, 1.3), Enum.Material.SmoothPlastic, 0),
+		Pool.part("Wedge", color, Vector3.new(0.1, 0.45, 1.3), Enum.Material.SmoothPlastic, 0),
+	}
+	local born = os.clock()
+	local keepUntil = born + 2
+	local legs: { Leg } = {}
+	local leaving: { from: Vector3, start: number }? = nil
+	local finished = false
+	local position = centre(caster) + Vector3.new(FALCON_RADIUS, FALCON_HEIGHT, 0)
+	local heading = Vector3.new(0, 0, -1)
+	local connection: RBXScriptConnection? = nil
+
+	local function circlePoint(t: number): Vector3?
+		if not caster.Parent then
+			return nil
+		end
+		local a = (t - born) * FALCON_SPEED
+		return centre(caster) + Vector3.new(math.cos(a) * FALCON_RADIUS, FALCON_HEIGHT, math.sin(a) * FALCON_RADIUS)
+	end
+
+	local function release()
+		if finished then
+			return
+		end
+		finished = true
+		if connection then
+			connection:Disconnect()
+		end
+		Pool.release(body)
+		for _, wing in wings do
+			Pool.release(wing)
+		end
+		Pool.done()
+	end
+
+	local function leave()
+		if not leaving and not finished then
+			leaving = { from = position, start = os.clock() }
+			table.clear(legs)
+		end
+	end
+
+	local function place(t: number)
+		local look = if heading.Magnitude > 0.01 then heading.Unit else Vector3.new(0, 0, -1)
+		local frame = CFrame.lookAt(position, position + look)
+		body.CFrame = frame
+		local flap = if simple then 0 else FALCON_FLAP * math.sin(12 * t)
+		for i, wing in wings do
+			local side = if i == 1 then -1 else 1
+			wing.CFrame = frame
+				* CFrame.new(side * 0.2, 0.05, 0)
+				* CFrame.Angles(0, 0, side * flap)
+				* CFrame.new(side * 0.65, 0, 0)
+				* CFrame.Angles(0, side * math.pi / 2, 0)
+				* CFrame.Angles(0, 0, math.pi / 2)
+		end
+	end
+
+	connection = RunService.Heartbeat:Connect(function()
+		local t = os.clock()
+		local nextPosition: Vector3? = nil
+		local away = leaving
+		if away then
+			local u = math.clamp((t - away.start) / 0.4, 0, 1)
+			nextPosition = away.from + Vector3.new(6 * u, 10 * u, 6 * u)
+			if u >= 1 then
+				release()
+				return
+			end
+		elseif not caster.Parent or t >= keepUntil then
+			leave()
+			return
+		else
+			local leg = legs[1]
+			if leg then
+				local to = leg.to()
+				local u = math.clamp((t - leg.start) / leg.dur, 0, 1)
+				if to then
+					nextPosition = leg.from:Lerp(to, u)
+				end
+				if u >= 1 or not to then
+					table.remove(legs, 1)
+					local after = legs[1]
+					if after then
+						after.from = nextPosition or position
+						after.start = t
+					end
+					if leg.done then
+						leg.done()
+					end
+				end
+			else
+				nextPosition = circlePoint(t)
+			end
+		end
+		if nextPosition then
+			local delta = nextPosition - position
+			if delta.Magnitude > 0.01 then
+				heading = delta
+			end
+			position = nextPosition
+		end
+		place(t)
+	end)
+	place(born)
+
+	local falcon: Falcon = {
+		keep = function(seconds: number)
+			keepUntil = math.max(keepUntil, os.clock() + seconds)
+		end,
+		strike = function(target: Model?, dive: boolean)
+			if finished or leaving or not target or not target.Parent then
+				return
+			end
+			local function at(): Vector3?
+				return if target.Parent then centre(target) + Vector3.new(0, 1, 0) else nil
+			end
+			local now = os.clock()
+			table.clear(legs)
+			local start = position
+			if dive then
+				local above = at()
+				if above then
+					start = above + Vector3.new(0, 14, 0)
+					position = start
+				end
+			end
+			table.insert(legs, {
+				from = start,
+				to = at,
+				start = now,
+				dur = if dive then 0.18 else 0.22,
+				done = function()
+					local hit = at()
+					if not hit then
+						return
+					end
+					local look = if heading.Magnitude > 0.01 then heading.Unit else Vector3.new(0, 0, -1)
+					Library.slash(CFrame.lookAt(hit, hit + look), 2, 60, -60, color, 30, simple)
+					Library.burst(hit, 3, color)
+					if dive then
+						Library.burst(hit, 6, color)
+						Library.shockwave(hit, 3, color, 0.35, simple)
+					end
+				end,
+			})
+			table.insert(legs, {
+				from = start,
+				to = function(): Vector3?
+					return circlePoint(os.clock())
+				end,
+				start = now,
+				dur = 0.35,
+			})
+		end,
+		stop = leave,
+		alive = function(): boolean
+			return not finished and leaving == nil
+		end,
+	}
+	return falcon
+end
+
 -- Helpers for the controller
 Library.flat = flat
 

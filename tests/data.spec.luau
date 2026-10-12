@@ -830,7 +830,9 @@ T.describe("Data: kind of blow (S64, STATY 6)", function()
 	local Combat = require("../src/shared/Data/Combat")
 	local SkillData = require("../src/shared/Data/Skills")
 
-	local RANGED_TYPES = { projectile = true, chain = true, circleTarget = true, line = true, trap = true }
+	-- S77: the Falcon (companion) strikes from the air like a trap: ranged
+	local RANGED_TYPES =
+		{ projectile = true, chain = true, circleTarget = true, line = true, trap = true, companion = true }
 	-- S74: a shout strikes around the caster like circleSelf; guard and banner deal no damage (any value)
 	local MELEE_TYPES = { charge = true, circleSelf = true, shout = true }
 	local REACH = Combat.meleeRange + Combat.rangeTolerance

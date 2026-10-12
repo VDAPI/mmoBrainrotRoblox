@@ -1576,3 +1576,24 @@
   liczy się od odnowienia ustawionego przy rzucie (`ctx.cooldown`).
 - **S76** Poprawka S70: `Build.class` nie przepisywał pola `roll`, więc Rzut Kośćmi i Koło Fortuny nie losowały
   ścian; teraz przepisuje.
+- **S77** Haki Zwiadowcy: `vigilanceMove` (Czujność, punkty `moveSpeed`, `allyMove`) i `vigilanceGuard` (Ostrzeżenie,
+  `damageReduction`, `allyGuard`) zamiast jednego `vigilance`, każdy z osobnym odnowieniem; czasy odnowienia leżą w
+  `CombatService` i zerują się po odrodzeniu. `falconBond` w sekundach (z Królewskim Sokołem: nurkowanie +10 pkt proc.
+  za sekundę), `falconInterval` = % krótszy odstęp (10 / 20 = 1,8 / 1,6 s), `royalFalcon` > 0 = zwieńczenie włączone,
+  `spotOnHit` i `spotBonus` w punktach, `weakSpot` = liczba stosów. Haki drużynowe rzędów 1–2 skaluje jawne `dipScale`
+  węzła (znacznik S57; węzły oznacza S78).
+- **S77** Stałe reguł haków Łowcy to cztery klucze tabeli `Data/Paths/init.HOOK_RULES` z S72 (`vigilance`, `spot`,
+  `weakSpotPerStack`, `royalFalcon`), nie `Data/Combat` (eksportowany na wiki w całości).
+- **S77** Sokół: cel Łowcy tylko do 40 st. (`range`); zapasowy cel tylko wśród potworów, z którymi walczy Łowca albo
+  jego drużyna (tabela zagrożenia), więc sam nie zaczyna walk (bez farmy AFK); gracz tylko jako zaznaczony cel; w strefie
+  zielonej nie uderza; uderzenia `noProc` (bez cech przedmiotów i Słabego Punktu) i `consumeShot = false`; pierwsze
+  uderzenie po `delay = 1` s; Królewski Sokół odlatuje 5 s po końcu walki (`InCombat`), nigdy przed zwykłym końcem;
+  nurkowanie tylko przy aktywnym ptaku. Tik planuje następny przed uderzeniem (błąd uderzenia nie zrywa pętli).
+- **S77** Wygląd: Strzał w Serce `beam` + `burst` zamiast `lineBeam` i `telegraph = "line"` (pocisk nie ma `cf`,
+  telegraf zastępuje linia celowania S76); Pole Sideł bez koła telegrafu; pułapki z `trigger` grają własne elementy przy
+  złapaniu; każde sidło pułapki gra pełny zestaw (`n` pułapki to numer sidła, nie fala).
+- **S77** Oznaczenie bez węzła `spotOnHit` nie działa także z `spotBonus` i przy Królewskim Sokole; Słaby Punkt liczy tylko
+  trafienia w zaznaczony cel i zeruje się przy każdej zmianie celu (także jego braku) i śmierci.
+- **S77** Dodatek krytyka Namierzenia (`Damage.critChance`) podnosi szansę najwyżej do limitu `critChance` (60) i nigdy
+  jej nie obniża; przewaga poziomu dochodzi ponad limit jak dotąd. Obrażenia krytyczne dostają `critDmgAdd` przed
+  `critResist`.

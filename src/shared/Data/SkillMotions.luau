@@ -812,6 +812,206 @@ motions.stormArrow = {
 	lock = true,
 }
 
+-- S77 (ROZWOJ 11.3-11.5): path skills of the Hunter.
+-- Draw a Bead: the prey pointed out, then a slow draw held still.
+motions.drawBead = {
+	keys = {
+		k(
+			0.2,
+			merge(STAND, {
+				lShoulder = { 95, 20, 0 },
+				lElbow = { 0, 0, 0 },
+				rShoulder = { 125, 25, 0 },
+				rElbow = { 135, 0, 0 },
+				waist = { 0, -15, 0 },
+			}),
+			"out"
+		),
+		k(0.55, merge(STAND, BOW_DRAW, { rElbow = { 140, 0, 0 }, waist = { 0, -32, 0 } }), "inOut"),
+		k(0.7, merge(STAND, BOW_DRAW, { rElbow = { 142, 0, 0 }, waist = { 0, -32, 0 } })),
+	},
+	recover = 0.3,
+	hit = 0.25,
+}
+
+-- Heartseeker: kneeling, a full draw held (the loop lasts the aim, castTime), then the release. The shot comes from
+-- the server at the end of the aim: no hit, no release, no lock (moving cancels the aim).
+motions.heartseeker = {
+	keys = {
+		k(0.3, merge(KNEEL, BOW_DRAW, { waist = { -4, -40, 0 } }), "out"),
+		k(
+			0.5,
+			merge(KNEEL, BOW_DRAW, { rElbow = { 145, 0, 0 }, rShoulder = { 90, -50, 0 }, waist = { -4, -42, 0 } }),
+			"inOut"
+		),
+		k(0.8, merge(KNEEL, BOW_DRAW, { rElbow = { 147, 0, 0 }, rShoulder = { 90, -51, 0 }, waist = { -4, -43, 0 } })),
+		k(0.86, merge(KNEEL, BOW_LOOSE, { waist = { 6, -42, 0 } }), "out"),
+	},
+	recover = 0.4,
+	loop = { from = 0.5, to = 0.8 },
+}
+
+-- Venom Snare: kneeling, the snare thrown underhand.
+motions.venomSnare = {
+	keys = {
+		k(
+			0.16,
+			merge(KNEEL, {
+				rShoulder = { -35, 0, 15 },
+				rElbow = { 45, 0, 0 },
+				lShoulder = { 30, 0, -20 },
+				waist = { -15, 10, 0 },
+			}),
+			"out"
+		),
+		k(
+			0.34,
+			merge(KNEEL, {
+				rShoulder = { 75, 0, 10 },
+				rElbow = { 10, 0, 0 },
+				lShoulder = { 30, 0, -20 },
+				waist = { -25, -10, 0 },
+			}),
+			"out"
+		),
+		k(
+			0.5,
+			merge(
+				KNEEL,
+				{ rShoulder = { 60, 0, 10 }, rElbow = { 15, 0, 0 }, lShoulder = { 32, 0, -20 }, waist = { -22, -8, 0 } }
+			)
+		),
+	},
+	recover = 0.3,
+	hit = 0.34,
+	lock = true,
+}
+
+-- Snarefield: crouched, the snares scattered in a sweep from right to left.
+motions.snarefield = {
+	keys = {
+		k(
+			0.15,
+			merge(crouch(0.8), {
+				rShoulder = { 40, 40, 0 },
+				rElbow = { 60, 0, 0 },
+				lShoulder = { 30, 0, -20 },
+				waist = { -20, 30, 0 },
+				root = { 0, 25, 0, -0.72 },
+			}),
+			"out"
+		),
+		k(
+			0.45,
+			merge(crouch(0.8), {
+				rShoulder = { 60, -60, 0 },
+				rElbow = { 10, 0, 0 },
+				lShoulder = { 30, 0, -20 },
+				waist = { -20, -40, 0 },
+				root = { 0, -25, 0, -0.72 },
+			}),
+			"linear"
+		),
+		k(
+			0.6,
+			merge(crouch(0.8), {
+				rShoulder = { 45, -50, 0 },
+				rElbow = { 15, 0, 0 },
+				lShoulder = { 30, 0, -20 },
+				waist = { -18, -35, 0 },
+				root = { 0, -20, 0, -0.72 },
+			})
+		),
+	},
+	recover = 0.35,
+	hit = 0.45,
+	lock = true,
+}
+
+-- Falcon: the left forearm raised, the bird released upwards.
+motions.falcon = {
+	keys = {
+		k(
+			0.15,
+			merge(STAND, {
+				lShoulder = { 60, 0, -10 },
+				lElbow = { 95, 0, 0 },
+				rShoulder = { 20, 0, 10 },
+				rElbow = { 10, 0, 0 },
+				waist = { 0, -10, 0 },
+			}),
+			"out"
+		),
+		k(
+			0.35,
+			merge(STAND, {
+				lShoulder = { 165, 10, -10 },
+				lElbow = { 10, 0, 0 },
+				rShoulder = { 20, 0, 10 },
+				rElbow = { 10, 0, 0 },
+				waist = { 8, -10, 0 },
+			}),
+			"out"
+		),
+		k(
+			0.6,
+			merge(STAND, {
+				lShoulder = { 150, 10, -10 },
+				lElbow = { 15, 0, 0 },
+				rShoulder = { 20, 0, 10 },
+				rElbow = { 10, 0, 0 },
+				waist = { 5, -10, 0 },
+			})
+		),
+	},
+	recover = 0.3,
+	hit = 0.35,
+}
+
+-- The Drive: the bow raised to the sky, a sweep of arrows driving the quarry in.
+motions.drive = {
+	keys = {
+		k(
+			0.2,
+			merge(STAND, {
+				lShoulder = { 165, 20, 0 },
+				lElbow = { 0, 0, 0 },
+				rShoulder = { 150, -35, 0 },
+				rElbow = { 120, 0, 0 },
+				waist = { 25, 15, 0 },
+				root = { 6, 25, 0, 0 },
+			}),
+			"out"
+		),
+		k(
+			0.38,
+			merge(STAND, {
+				lShoulder = { 170, 20, 0 },
+				lElbow = { 0, 0, 0 },
+				rShoulder = { 140, -60, 0 },
+				rElbow = { 150, 0, 0 },
+				waist = { 28, -45, 0 },
+				root = { 6, -25, 0, 0 },
+			}),
+			"linear"
+		),
+		k(
+			0.5,
+			merge(STAND, {
+				lShoulder = { 168, 20, 0 },
+				lElbow = { 0, 0, 0 },
+				rShoulder = { 140, -58, 0 },
+				rElbow = { 148, 0, 0 },
+				waist = { 26, -42, 0 },
+				root = { 5, -22, 0, 0 },
+			})
+		),
+	},
+	recover = 0.3,
+	release = 0.38,
+	hit = 0.38,
+}
+
 -- Mage ---------------------------------------------------------------------------------------------------------
 
 -- Arcane Bolt (firebolt): a quick flick of the weapon.

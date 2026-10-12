@@ -749,6 +749,10 @@ function Skills.descriptionArgs(base: SkillDef, rank: number, opts: DescOpts?): 
 	if skill.castTime then
 		args.castTime = round(skill.castTime)
 	end
+	-- S77: the Falcon's strike interval; only for companions (other skills with `interval` keep their wiki args)
+	if skill.type == "companion" and skill.interval then
+		args.interval = round(skill.interval)
+	end
 	if skill.ringRadius then
 		args.ringRadius = round(skill.ringRadius)
 	end
@@ -787,8 +791,8 @@ function Skills.shape(skill: SkillDef): string
 		return "self"
 	elseif kind == "circleTarget" or kind == "trap" or kind == "healZone" or kind == "banner" then
 		return "circle"
-	elseif kind == "shout" then
-		return "self" -- S74
+	elseif kind == "shout" or kind == "companion" then
+		return "self" -- S74; S77: the Falcon's fallback reach around the caster
 	elseif kind == "guard" then
 		return "target" -- S74: an ally, or the guard itself (ROZWOJ 14.2)
 	elseif skill.target == "enemy" or skill.target == "ally" or skill.target == "deadAlly" then
@@ -805,6 +809,9 @@ local OFFENSIVE_TYPES: { [string]: boolean } = { cone = true, circleSelf = true,
 function Skills.offensive(def: SkillDef): boolean
 	if def.target == "enemy" or OFFENSIVE_TYPES[def.type] then
 		return true
+	end
+	if def.type == "companion" then
+		return true -- S77: the Falcon attacks
 	end
 	return def.type == "shout" and def.values.dmg ~= nil
 end

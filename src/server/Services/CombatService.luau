@@ -66,6 +66,7 @@ local SkillData = require(Shared.Data.Skills)
 local SkillGeom = require(Shared.Logic.SkillGeom)
 local Traits = require(Shared.Logic.Traits)
 local Types = require(Shared.Types)
+local Vigilance = require(Shared.Logic.Vigilance)
 
 local log = Log.new("CombatService")
 
@@ -150,6 +151,11 @@ type Attacker = {
 	twinCount: number?, -- S65: Twin Cut: basic attacks counted since the last extra cut
 	twinAt: number?, -- S65: Twin Cut: last counted basic attack (os.clock)
 	seal: Traits.Seal?, -- S65: Runic Seal anchor (os.clock)
+	-- S77 Weak Spot: the selected target the stacks belong to and how many (each +weakSpotPerStack % on it)
+	weakTarget: string?,
+	weakStacks: number?,
+	-- S77 Vigilance / Warning: os.clock() of this Scout's last trigger of each kind (move, guard)
+	vigilance: { [string]: number }?,
 }
 
 local REJECT_INTERVAL = 2
@@ -736,6 +742,23 @@ end
 
 -- Damage pipeline --------------------------------------------------------------------------------------
 
+-- S77 (ROZWOJ 11.5): Spotting. Basic attacks, Aimed Shot and the Royal Falcon's strikes leave a short vulnerability
+-- (enemyWeak: the strongest counts, so it fills the gaps between Hunter's Marks). Nothing without the node.
+function CombatService.Spot(player: Player, entity: any)
+	local value = hook(player, "spotOnHit")
+	if value <= 0 then
+		return
+	end
+	value += hook(player, "spotBonus")
+	StatusEffectService.Apply(entity, "vulnerability", {
+		duration = HOOK_RULES.spot.duration,
+		value = value,
+		source = player,
+		skillId = "scout_spotting",
+		category = "enemyWeak",
+	})
+end
+
 -- Deals damage from a player to an entity with the given params. Returns the Damage.Result or nil when the
 -- hit was not allowed. Skills (S05) use this too.
 export type DealOptions = {
@@ -1002,8 +1025,29 @@ function CombatService.DealDamage(
 			extra *= 1 + bonus / 100
 		end
 	end
+	-- S77: Draw a Bead, only the caster's hits (ROZWOJ 11.3).
+	local sight = StatusEffectService.FromSource(targetEntity, "sighted", player)
+	if sight and sight.stats then
+		params.critAdd = sight.stats.critChance
+		params.critDmgAdd = sight.stats.critDmg
+	end
 	-- Hunter's Mark and other vulnerabilities on the target.
 	extra *= 1 + StatusEffectService.Max(targetEntity, "vulnerability") / 100
+	-- S77: Weak Spot. Hits on the selected target build stacks (+1% each, up to the hook); a new target resets them.
+	-- Hits on other enemies neither build nor reset; noProc hits (falcon, splash, a pierce's second target) do not count.
+	local weakState: Attacker? = nil
+	local maxStacks = hook(player, "weakSpot")
+	if maxStacks > 0 and not (options and options.noProc) then
+		local state = attackerState(player)
+		if state.target == targetEntity.id then
+			if state.weakTarget ~= targetEntity.id then
+				state.weakTarget = targetEntity.id
+				state.weakStacks = 0
+			end
+			extra *= 1 + (state.weakStacks or 0) * HOOK_RULES.weakSpotPerStack / 100
+			weakState = state
+		end
+	end
 	local targetPosition = EntityService.Position(targetEntity)
 	local result: Damage.Result
 	local pvpTarget: Player? = nil -- S64: the target player of the PvP branch (counter)
@@ -1128,6 +1172,18 @@ function CombatService.DealDamage(
 	end
 
 	ResourceService.MarkCombat(player)
+	if weakState and not result.dodged then
+		weakState.weakStacks = math.min(maxStacks, (weakState.weakStacks or 0) + 1)
+	end
+	-- S77: Spotting from basic attacks and Aimed Shot (HOOK_RULES.spot.skills); the falcon calls Spot itself.
+	local skillId = options and options.skill
+	if
+		not result.dodged
+		and result.amount > 0
+		and ((options and options.basic) or (skillId and HOOK_RULES.spot.skills[skillId]))
+	then
+		CombatService.Spot(player, targetEntity)
+	end
 	-- S72 (ROZWOJ 10.4): every hit that dealt damage feeds Fury (ticks, thorns and Retribution never come here).
 	if not result.dodged and result.amount > 0 then
 		StatusEffectService.AddFury(player)
@@ -1620,6 +1676,70 @@ local function pruneZones()
 	end
 end
 
+-- S77 (ROZWOJ 11.5, 7.3): Vigilance (vigilanceMove, allyMove) and Warning (vigilanceGuard, allyGuard). A red zone
+-- started by a monster within 30 studs of a Scout gives the Scout's party within 40 studs a short bonus for the
+-- windup + 0.5 s; each kind has its own trigger, at most once per 8 s per Scout. Monsters only (no PvP zones).
+local VIGILANCE = {
+	{ hook = "vigilanceMove", key = "move" },
+	{ hook = "vigilanceGuard", key = "guard" },
+}
+
+local function vigilance(monster: any, ability: MonsterAbilities.Ability)
+	local at = if monster.entity then EntityService.Position(monster.entity) else nil
+	if not at then
+		return
+	end
+	local rules = HOOK_RULES.vigilance
+	local windup = ability.windup or 0
+	local duration = Vigilance.duration(windup)
+	for _, entity in EntityService.QueryPlayers(at, rules.monsterRange) do
+		local scout = entity.player :: Player?
+		local position = EntityService.Position(entity)
+		if not scout or not position or not playerAlive(scout) then
+			continue
+		end
+		local zone: Vigilance.Zone = {
+			windup = windup,
+			monsterDistance = Vector3.new(position.X - at.X, 0, position.Z - at.Z).Magnitude,
+		}
+		local state = attackerState(scout)
+		local now = os.clock()
+		for _, kind in VIGILANCE do
+			local value = hook(scout, kind.hook)
+			local times = state.vigilance or {}
+			if value <= 0 or not Vigilance.ready(times[kind.key], now, zone) then
+				continue
+			end
+			times[kind.key] = now
+			state.vigilance = times
+			for _, member in PartyService.MembersInRange(scout, position, rules.partyRange) do
+				local target = EntityService.GetPlayerEntity(member)
+				if not target then
+					continue
+				end
+				if kind.key == "move" then
+					-- moveSpeed has base 0: points, not pct (S53)
+					StatusEffectService.Apply(target, "statBuff", {
+						duration = duration,
+						stats = { moveSpeed = value },
+						source = scout,
+						skillId = "scout_vigilance",
+						category = "allyMove",
+					})
+				else
+					StatusEffectService.Apply(target, "damageReduction", {
+						duration = duration,
+						value = value,
+						source = scout,
+						skillId = "scout_warning",
+						category = "allyGuard",
+					})
+				end
+			end
+		end
+	end
+end
+
 local function telegraph(monster: any, ability: MonsterAbilities.Ability, area: CFrame)
 	table.insert(redZones, {
 		monster = monster,
@@ -1640,6 +1760,7 @@ local function telegraph(monster: any, ability: MonsterAbilities.Ability, area: 
 		t = ability.windup,
 		el = ability.element,
 	})
+	vigilance(monster, ability)
 end
 
 local function resolveAbility(monster: any, ability: MonsterAbilities.Ability, area: CFrame)
@@ -1709,8 +1830,17 @@ end
 
 -- Remote --------------------------------------------------------------------------------------------------
 
+-- S77: Weak Spot stacks end with the selected target (a new one, none, death).
+local function resetWeakSpot(state: Attacker)
+	state.weakTarget = nil
+	state.weakStacks = 0
+end
+
 local function onSetTarget(player: Player, entityId: string?, attack: boolean?)
 	local state = attackerState(player)
+	if state.target ~= entityId then
+		resetWeakSpot(state)
+	end
 	if entityId == nil then
 		state.target = nil
 		state.attack = false
@@ -1929,6 +2059,7 @@ function CombatService.Start()
 		local state = attackers[player]
 		if state then
 			state.target = nil
+			resetWeakSpot(state)
 		end
 	end)
 	CharacterService.CharacterLeaving:Connect(function(player: Player)

@@ -17,9 +17,11 @@
 -- ctx.shield.
 -- S74 (ROZWOJ 10.3, 10.5, 14.2): shout works around the caster: allies within radius (the caster too; never an
 -- intercept on the caster), enemies within hitRadius (damage only with values.dmg), cleanse and pull breakpoints.
+-- S77 (ROZWOJ 11.5): companion is the Falcon (Skills/Companion); Hunter's Mark sends a Royal Falcon diving.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Companion = require(script.Parent.Parent.Companion)
 local Context = require(script.Parent.Parent.Context)
 local PathData = require(ReplicatedStorage.Shared.Data.Paths)
 local Paths = require(ReplicatedStorage.Shared.Logic.Paths)
@@ -152,11 +154,22 @@ Support.debuff = function(ctx)
 		end
 		ctx.fx({ v = "splash", p = at, r = radius })
 	end
+	-- S77: Royal Falcon dives on the marked target (ROZWOJ 11.5); nothing without an active falcon and the keystone.
+	if ctx.skill.id == "huntersMark" then
+		Companion.dive(ctx.player, target)
+	end
 
 	-- Marking a monster draws its attention like a hit would.
 	if target.kind == "monster" and target.monster then
 		target.monster:AddThreat(ctx.player, 1)
 	end
+	return true, nil
+end
+
+-- companion (S77, ROZWOJ 11.5 / 14.3): the Falcon. Not a character: a damage loop on the server (Skills/Companion)
+-- and a bird drawn by the clients. It cannot be hit, has no HP and draws no attention by itself.
+Support.companion = function(ctx)
+	Companion.start(ctx)
 	return true, nil
 end
 

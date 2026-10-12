@@ -15,6 +15,7 @@
 -- S76 (ROZWOJ 11.3, 14.3): castTime aims before the shot (startChannel kind "castTime"): cost and cooldown at the
 -- start, no basic attacks (CombatService), another skill is refused (cast.error.channeling); moving or a stun ends it
 -- with the cost and the skill's cooldown back (the GCD stays), damage never; the handler fires at the end.
+-- S77: the Falcon's loop lives in Skills/Companion; death, leaving the character and leaving the game stop it.
 -- ReduceCooldown shortens one running cooldown (critCdr, Mage cdrPerTarget in S79).
 -- Cooldowns replicate as state branch `skills` = { cd = { [skillId] = readyAt }, gcd = readyAt, channel? }
 -- (server time), so the client draws the cooldown sweep.
@@ -28,6 +29,7 @@ local Shared = ReplicatedStorage.Shared
 local Banner = require(script.Parent.Parent.Skills.Banner)
 local Channel = require(Shared.Logic.Channel)
 local Combat = require(Shared.Data.Combat)
+local Companion = require(script.Parent.Parent.Skills.Companion)
 local Context = require(script.Parent.Parent.Skills.Context)
 local Log = require(Shared.Util.Log)
 local Movement = require(script.Parent.Parent.Skills.Types.Movement)
@@ -808,6 +810,7 @@ function SkillService.Init(registry)
 		Party = PartyService,
 		Death = DeathService,
 		PartyAura = PartyAuraService,
+		Zone = ZoneService,
 		Fx = sendFx,
 		Toast = function(p: Player, key: string, args: { [string]: any }?, kind: string?)
 			Net.Fire(p, "Toast", key, args, kind)
@@ -829,6 +832,7 @@ end
 function SkillService.Start()
 	ResourceService.Died:Connect(function(player: Player)
 		StatService.SetSprint(player, false)
+		Companion.stop(player) -- S77
 	end)
 	-- S72 Carnage (ROZWOJ 10.4): the killing blow of a player under Carnage ends the cooldowns of its reset skills.
 	-- One boss has no kills, so there only the Fury bonus works; boss helpers are ordinary kills.
@@ -909,6 +913,7 @@ function SkillService.Start()
 	CharacterService.CharacterLeaving:Connect(function(player: Player)
 		hookCache[player] = nil
 		interruptChannel(player, nil)
+		Companion.stop(player) -- S77
 		local rt = runtimes[player]
 		if rt then
 			table.clear(rt.extend)
@@ -918,6 +923,7 @@ function SkillService.Start()
 		end
 	end)
 	Players.PlayerRemoving:Connect(function(player)
+		Companion.stop(player, true) -- S77: the entity is gone
 		task.defer(function()
 			runtimes[player] = nil
 			hookCache[player] = nil

@@ -61,6 +61,7 @@ local GLYPHS: { [string]: Glyph } = {
 	frostbite = { glyph = "❅", good = false }, -- S65: takes more damage from the source's ice
 	fury = { glyph = "💢", good = true }, -- S72: Fury stacks (counter, not seconds)
 	carnage = { glyph = "💀", good = true }, -- S72: Carnage, Fury holds and grows faster
+	sighted = { glyph = "⌖", good = false }, -- S77: Draw a Bead, the source's hits on the bearer crit more
 }
 
 -- S72: count / max / full only for the Fury counter.

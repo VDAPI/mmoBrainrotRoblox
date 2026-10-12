@@ -5,7 +5,9 @@
 -- server event (radius, angle, length, width), so breakpoints that grow an area grow the effect too.
 --   color: "class" | "element" (weapon element for adaptive skills, else the skill's) | "holy" | "heal" | "#hex"
 --   impact pieces: slash, whirl, shockwave, cracks, burst, pillar, sparkle, aura, shield, beam, dash, dust, rune,
---     arrowRain, fan, lineBeam, skyBolt, meteor, smoke, cloud, tether (S74: a line from the caster to the target)
+--     arrowRain, fan, lineBeam, skyBolt, meteor, smoke, cloud, tether (S74: a line from the caster to the target),
+--     falcon (S77: the Scout's bird over the caster, Vfx/Library.falcon)
+--   trigger (S77, traps only): pieces when a trap springs instead of the default shockwave + burst
 --   allies (S74): pieces played on every ally of the event's `al` list, in allyColor (default: color)
 --   object (S74): "banner" = the skill leaves a server object the client draws (Vfx/Library.banner)
 --   shake: camera shake strength (0..1) for players near the impact (setting "Camera shake"), hitstop: melee freeze
@@ -27,6 +29,7 @@ export type Entry = {
 	allies: { string }?,
 	allyColor: string?,
 	object: "banner"?,
+	trigger: { string }?, -- S77: pieces of a trap's trapTrigger event (default: shockwave + burst)
 }
 
 local function e(def: Entry): Entry
@@ -150,6 +153,27 @@ local SkillVfx: { [string]: Entry } = {
 		projectile = "bolt",
 		impact = { "skyBolt", "burst" },
 		shake = 0.35,
+	}),
+	-- S77 (ROZWOJ 11.3-11.5): path skills of the Hunter
+	drawBead = e({ color = "#E2483A", sound = "", impact = { "rune", "sparkle" }, size = 0.5 }),
+	heartseeker = e({
+		color = "#E2483A",
+		sound = "",
+		glow = { hand = "l", dur = 1.5 },
+		projectile = "arrow",
+		impact = { "beam", "burst" },
+		shake = 0.3,
+		size = 0.8,
+	}),
+	venomSnare = e({ color = "element", sound = "", impact = { "rune" }, trigger = { "cloud", "burst" } }),
+	snarefield = e({ color = "class", sound = "", impact = { "rune" }, trigger = { "cracks", "burst" } }),
+	falcon = e({ color = "#C8A060", sound = "", impact = { "dust", "sparkle", "falcon" }, size = 0.6 }),
+	drive = e({
+		color = "class",
+		sound = "",
+		impact = { "arrowRain", "shockwave", "dust" },
+		telegraph = "circle",
+		shake = 0.25,
 	}),
 	-- Mage
 	firebolt = e({

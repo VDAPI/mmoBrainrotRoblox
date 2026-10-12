@@ -55,6 +55,8 @@ export type Params = {
 	isSkill: boolean?, -- skill damage: attacker.skillDmg
 	basic: boolean?, -- basic attack (also its double hit): attacker.basicDmg
 	block: number?, -- % chance the defender blocks; already capped and PvP-scaled by the caller (Traits.blockChance)
+	critAdd: number?, -- S77: points of crit chance on this hit (Draw a Bead), up to the critChance cap
+	critDmgAdd: number?, -- S77: points of crit damage on this hit (Draw a Bead)
 }
 
 export type Result = {
@@ -84,6 +86,7 @@ local function capOf(id: string): number
 	return if def and def.cap then def.cap else 100
 end
 local PIERCE_CAP, MAGIC_PIERCE_CAP, CRIT_RESIST_CAP = capOf("pierce"), capOf("magicPierce"), capOf("critResist")
+local CRIT_CAP = capOf("critChance")
 
 -- S62 (STATY 4, 13): defence that counts against a hit. Physical: armour after armour break, then pierce; magic:
 -- magic resistance after magic pierce.
@@ -207,6 +210,14 @@ function Damage.levelGap(attackerLevel: number, defenderLevel: number?): (number
 	return 1 + steps * Combat.levelGapDmg, steps * Combat.levelGapCrit
 end
 
+-- S77: crit chance (%) of one hit. `critAdd` (Draw a Bead) raises the attacker's chance up to the critChance cap
+-- (Data/Stats) and never lowers it; the level advantage (gapCrit) comes on top, as before.
+function Damage.critChance(attacker: Attacker, params: Params, gapCrit: number): number
+	local base = attacker.critChance
+	local withSight = math.max(base, math.min(CRIT_CAP, base + (params.critAdd or 0)))
+	return math.clamp(withSight + gapCrit, 0, 100)
+end
+
 function Damage.computeDamage(attacker: Attacker, defender: Defender, params: Params, rng: Rng.Rng): Result
 	local element: Element? = params.element
 	if params.canDodge ~= false then
@@ -235,10 +246,10 @@ function Damage.computeDamage(attacker: Attacker, defender: Defender, params: Pa
 	amount *= rng:float(Combat.randomMin, Combat.randomMax)
 
 	local crit = false
-	local critChance = math.clamp(attacker.critChance + gapCrit, 0, 100) / 100
+	local critChance = Damage.critChance(attacker, params, gapCrit) / 100
 	if params.forceCrit or (params.canCrit ~= false and rng:chance(critChance)) then
 		crit = true
-		amount *= Damage.critMultiplier(attacker.critDmg, defender.critResist)
+		amount *= Damage.critMultiplier(attacker.critDmg + (params.critDmgAdd or 0), defender.critResist)
 	end
 
 	if element and defender.res then

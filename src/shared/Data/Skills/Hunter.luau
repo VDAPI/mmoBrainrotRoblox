@@ -2,6 +2,13 @@
 -- Hunter skills (DESIGN §14.3), Energy.
 
 local Build = require("./Build")
+local Types = require("./Types")
+
+-- S77: typed apart (luau-lsp rejects a literal list of effects of different shapes)
+local SNAREFIELD_EFFECTS: { Types.SkillEffect } = {
+	{ kind = "vulnerability", duration = 6, value = "vuln", category = "enemyWeak" },
+	{ kind = "root", duration = { 1.5, 2.5 }, notBoss = true },
+}
 
 return Build.class("Hunter", "energy", "phys", {
 	{
@@ -226,5 +233,141 @@ return Build.class("Hunter", "energy", "phys", {
 		breakpoints = Build.bp2({ a = { add = { radius = 4 } } }, { a = { effect = { kind = "stun", duration = 1 } } }),
 		glyph = "⚡",
 		vfx = "stormArrow",
+	},
+	-- S77 (ROZWOJ 11.3): Marksman. Draw a Bead: only the caster's hits on the target crit more (effect `sighted`).
+	{
+		id = "drawBead",
+		path = "marksman",
+		unlock = 26,
+		maxLevel = 10,
+		type = "debuff",
+		delivery = "ranged",
+		cost = 15,
+		cooldown = 25,
+		range = 40,
+		values = { crit = { 12, 20 }, critDmg = { 15, 30 } },
+		effects = { { kind = "sighted", duration = 10, stats = { critChance = "crit", critDmg = "critDmg" } } },
+		breakpoints = Build.bp2({ a = { add = { effectDuration = 2 } }, b = { values = { critDmg = 15 } } }, {
+			a = { mul = { cooldown = 0.8 } },
+			b = { selfEffect = { kind = "guaranteedCrit", duration = 5, target = "self", category = "own" } },
+		}),
+		glyph = "◎",
+	},
+	-- Heartseeker (capstone): aimed for castTime (S76), double damage below 20% HP (finisher, x1.5 on players).
+	{
+		id = "heartseeker",
+		path = "marksman",
+		unlock = 60,
+		maxLevel = 10,
+		type = "projectile",
+		delivery = "ranged",
+		cost = 50,
+		cooldown = 30,
+		range = 40,
+		castTime = 1.5,
+		finisher = { hp = 20, mul = 2 },
+		values = { dmg = { 400, 650 } },
+		breakpoints = Build.bp2(
+			{ a = { values = { dmg = 60 } }, b = { pierce = 60 } },
+			{ a = { mul = { cooldown = 0.8 } }, b = { splash = { radius = 6, pct = 50 } } }
+		),
+		glyph = "➹",
+	},
+	-- S77 (ROZWOJ 11.4): Trapper. Venom Snare: a trap thrown to a point, damage + poison + slow.
+	{
+		id = "venomSnare",
+		path = "trapper",
+		unlock = 26,
+		maxLevel = 10,
+		type = "trap",
+		target = "point",
+		delivery = "ranged",
+		cost = 25,
+		cooldown = 10,
+		range = 30,
+		radius = 6,
+		duration = 20,
+		element = "poison",
+		values = { dmg = { 130, 220 }, poison = { 60, 110 }, slow = 30 },
+		effects = {
+			{ kind = "poison", duration = 6, value = "poison" },
+			{ kind = "slow", duration = 3, value = "slow", category = "enemySlow" },
+		},
+		breakpoints = Build.bp2(
+			{ a = { add = { radius = 2 } }, b = { pull = 8 } },
+			{ a = { echo = { delay = 1, pct = 60 } }, b = { values = { poison = 50 } } }
+		),
+		glyph = "☣",
+	},
+	-- Snarefield (capstone): five snares in a ring around the point (S76 ringRadius).
+	{
+		id = "snarefield",
+		path = "trapper",
+		unlock = 60,
+		maxLevel = 10,
+		type = "trap",
+		target = "point",
+		delivery = "ranged",
+		cost = 45,
+		cooldown = 40,
+		range = 30,
+		radius = 3.5,
+		ringRadius = 8,
+		hits = 5,
+		duration = 15,
+		values = { dmg = { 90, 150 }, vuln = { 5, 8 }, root = { 1.5, 2.5 } },
+		effects = SNAREFIELD_EFFECTS,
+		breakpoints = Build.bp2(
+			{ a = { add = { radius = 1 } }, b = { values = { vuln = 2 } } },
+			{ a = { values = { dmg = 25 } }, b = { pull = 6 } }
+		),
+		glyph = "⁂",
+	},
+	-- S77 (ROZWOJ 11.5): Scout. Falcon: a companion (Skills/Companion), first strike after `delay`, then every
+	-- `interval`; `range` = reach of the hunter's target, `radius` = reach of the fallback target.
+	{
+		id = "falcon",
+		path = "scout",
+		unlock = 26,
+		maxLevel = 10,
+		type = "companion",
+		delivery = "ranged",
+		cost = 30,
+		cooldown = 30,
+		duration = 20,
+		interval = 2,
+		delay = 1,
+		range = 40,
+		radius = 30,
+		values = { dmg = { 15, 30 } },
+		breakpoints = Build.bp2({
+			a = { add = { duration = 4 } },
+			b = { effect = { kind = "slow", duration = 2, value = 15, category = "enemySlow" } },
+		}, { a = { values = { dmg = 15 } }, b = { splash = { radius = 5, pct = 50 } } }),
+		glyph = "🦅",
+	},
+	-- The Drive: pulls to the point (S76 pull), then one wave with slow and vulnerability.
+	{
+		id = "drive",
+		path = "scout",
+		unlock = 80,
+		maxLevel = 10,
+		type = "circleTarget",
+		delivery = "ranged",
+		cost = 40,
+		cooldown = 30,
+		range = 30,
+		radius = 12,
+		pull = 10,
+		values = { dmg = { 80, 120 }, slow = 30, vuln = 6 },
+		effects = {
+			{ kind = "slow", duration = 3, value = "slow", category = "enemySlow" },
+			{ kind = "vulnerability", duration = 8, value = "vuln", category = "enemyWeak" },
+		},
+		breakpoints = Build.bp2(
+			{ a = { add = { radius = 3 } }, b = { mul = { cooldown = 0.8 } } },
+			{ a = { values = { dmg = 25 } }, b = { effect = { kind = "root", duration = 1, notBoss = true } } }
+		),
+		glyph = "⇲",
 	},
 })

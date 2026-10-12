@@ -9,6 +9,8 @@
 --   v = aim / aimEnd (S76)  the red aiming line of castTime from the caster to the target / point, and its end
 --   v = dieFace (S70)  a face of Fortune's dice on an ally (aura in the face's colour); angelSave (S70) the Guardian
 --       Angel's save; Roll of the Dice throws two small golden dice from the hand at the motion's release
+--   v = falconStrike / falconDive / falconCircle / falconEnd (S77)  the Scout's falcon (one bird per caster id, kept
+--       `d` seconds after each event); traps with a `trigger` list play it when they spring (S77)
 --   v = furyConsume (S74)  a red aura on the Warrior who spent Fury; impact events with `al` play the entry's `allies`
 --       pieces on those allies (guard, shout); War Banner objects (Workspace.Vaelthorn_Banners) are drawn here
 -- Pieces come from client/Vfx/Library (pooled parts, Config.Vfx.maxActive at once); effects of other players far
@@ -58,6 +60,8 @@ local FACE_COLORS: { [string]: Color3 } = {
 -- S76 (ROZWOJ 11.3): the aiming line (red, like the Mark), one per caster id; a new one takes the old one down.
 local AIM_COLOR = Color3.fromHex("#E2483A")
 local aimLines: { [string]: () -> () } = {}
+-- S77: the Scout's falcon, one per caster id; it flies away by itself when events stop coming.
+local falcons: { [string]: Library.Falcon } = {}
 
 -- Camera shake handler (CombatFxController.Shake), set in Init.
 local shakeCamera: ((strength: number) -> ())? = nil
@@ -153,10 +157,37 @@ end
 
 -- Cast ---------------------------------------------------------------------------------------------------------
 
+local function casterKey(data: { [string]: any }): string?
+	return if type(data.c) == "string" then data.c else nil
+end
+
+-- S77: the falcon of `casterId` kept for `seconds` (created when missing, e.g. a player who came later).
+local function falconOf(
+	casterId: string?,
+	caster: Model?,
+	color: Color3,
+	simple: boolean,
+	seconds: number
+): Library.Falcon?
+	if not casterId or not caster then
+		return nil
+	end
+	local falcon: Library.Falcon? = falcons[casterId]
+	if not falcon or not falcon.alive() then
+		falcon = Library.falcon(caster, color, simple)
+		falcons[casterId] = falcon :: any
+	end
+	if falcon then
+		falcon.keep(seconds)
+	end
+	return falcon
+end
+
 local function onCast(data: { [string]: any }, skill: SkillData.SkillDef, caster: Model)
 	local entry = SkillVfx[skill.id]
 	local color = colorOf(skill, entry, data.el)
-	local loopUntil = if skill.type == "channel" then tonumber(data.d) else nil
+	-- S77: the aim of castTime (S76 `ct`) holds the draw loop as long as the aim lasts (Heartseeker)
+	local loopUntil = if skill.type == "channel" then tonumber(data.d) else tonumber(data.ct)
 	local motion = AnimationController.Skill(caster, skill.id, loopUntil)
 	local simple = simpleAt(centre(caster), caster)
 	if not Pool.take() then
@@ -418,6 +449,8 @@ local function piece(
 		if caster and target and caster ~= target then
 			Library.tether(caster, target, color, seconds)
 		end
+	elseif name == "falcon" then
+		falconOf(casterKey(data), caster, color, simple, seconds)
 	end
 end
 
@@ -468,8 +501,9 @@ local function onImpact(data: { [string]: any }, skill: SkillData.SkillDef, cast
 		playSound(entry, caster)
 		return
 	end
-	-- Circle waves of the same cast: only the first plays the full set (later waves: the ring).
-	local wave = tonumber(data.n) or 1
+	-- Circle waves of the same cast: only the first plays the full set (later waves: the ring). S77: `n` of a trap
+	-- is the snare's index (S76), so every snare plays the full set.
+	local wave = if kind == "trap" then 1 else tonumber(data.n) or 1
 	for _, name in entry.impact do
 		if wave == 1 or name == "shockwave" or name == "whirl" or name == "cracks" or name == "pillar" then
 			piece(name, skill, entry, data, color, caster, target, simple)
@@ -581,6 +615,26 @@ local function onExtra(data: { [string]: any }, skill: SkillData.SkillDef, caste
 			Library.aura(model, color, 0.6, simpleAt(centre(model), model))
 			Library.burst(centre(model), 4, color)
 		end
+	elseif v == "falconStrike" or v == "falconDive" then
+		-- S77: the bird flies to the target and back (a dive starts high above it)
+		local falcon = falconOf(casterKey(data), caster, color, simple, tonumber(data.d) or 4)
+		if falcon then
+			falcon.strike(findModel(data.t), v == "falconDive")
+		else
+			local target = findModel(data.t)
+			if target then
+				Library.burst(centre(target), 3, color)
+			end
+		end
+	elseif v == "falconCircle" then
+		falconOf(casterKey(data), caster, color, simple, tonumber(data.d) or 4)
+	elseif v == "falconEnd" then
+		local id = casterKey(data)
+		local falcon = if id then falcons[id] else nil
+		if id and falcon then
+			falcons[id] = nil
+			falcon.stop()
+		end
 	elseif not at then
 		return
 	elseif v == "angelSave" then
@@ -596,8 +650,16 @@ local function onExtra(data: { [string]: any }, skill: SkillData.SkillDef, caste
 	elseif v == "trapSet" then
 		Library.rune(at, radius, color, math.min(tonumber(data.d) or 8, 30), simple)
 	elseif v == "trapTrigger" then
-		Library.shockwave(at, radius, color, 0.5, simple)
-		Library.burst(at, 6, color)
+		local trigger = entry and entry.trigger
+		if entry and trigger then
+			-- S77: the trap's own pieces (Venom Snare's cloud, Snarefield's cracks)
+			for _, name in trigger do
+				piece(name, skill, entry, data, color, caster, nil, simple)
+			end
+		else
+			Library.shockwave(at, radius, color, 0.5, simple)
+			Library.burst(at, 6, color)
+		end
 	elseif v == "lingering" then
 		Library.lingering(at, radius, tostring(data.k or "burn"), color, tonumber(data.d) or 3, simple)
 	elseif v == "splitImpact" then
@@ -654,8 +716,17 @@ function VfxController.Preview(model: Model, skillId: string)
 	)
 	local def = Skills.effective(skill, rank, nil, nil)
 	local motion = SkillMotions.get(skillId)
-	onCast({ s = skillId, c = id, p = front, d = if skill.type == "channel" then 2.5 else nil }, skill, model)
-	local delay = if motion then math.min(motion.hit or motion.release or 0, SkillMotions.MAX_HIT) else 0
+	-- S77: an aimed skill loops its draw for castTime and lands after it
+	local castTime = if (def.castTime or 0) > 0 then def.castTime else nil
+	onCast(
+		{ s = skillId, c = id, p = front, d = if skill.type == "channel" then 2.5 else nil, ct = castTime },
+		skill,
+		model
+	)
+	local delay = if castTime
+		then castTime
+		elseif motion then math.min(motion.hit or motion.release or 0, SkillMotions.MAX_HIT)
+		else 0
 	task.delay(delay, function()
 		local data: { [string]: any } =
 			{ s = skillId, c = id, r = def.radius, a = def.angle, l = def.length, w = def.width }
@@ -684,6 +755,9 @@ function VfxController.Preview(model: Model, skillId: string)
 		elseif skill.type == "banner" then
 			data.p = front -- no object: the preview never plants one
 			data.r = def.radius
+		elseif skill.type == "companion" then
+			data.t = id -- S77: the falcon circles over the model for a while
+			data.d = 4
 		end
 		onImpact(data, skill, model)
 	end)

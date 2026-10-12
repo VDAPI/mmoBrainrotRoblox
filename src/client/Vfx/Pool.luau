@@ -13,7 +13,7 @@ local Pool = {}
 local folder: Folder? = nil
 -- S28: effects of the skill window preview go into its viewport's WorldModel while it plays.
 local override: Instance? = nil
-local free: { [string]: { BasePart } } = { Block = {}, Ball = {}, Cylinder = {} }
+local free: { [string]: { BasePart } } = { Block = {}, Ball = {}, Cylinder = {}, Wedge = {} } -- S77: Wedge (falcon)
 local active = 0
 local MAX_FREE = 120
 
@@ -39,7 +39,7 @@ function Pool.setOverride(target: Instance?)
 	override = target
 end
 
--- A clean anchored part of the shape (Block / Ball / Cylinder), parented and visible.
+-- A clean anchored part of the shape (Block / Ball / Cylinder / Wedge), parented and visible.
 function Pool.part(
 	shape: string?,
 	color: Color3,

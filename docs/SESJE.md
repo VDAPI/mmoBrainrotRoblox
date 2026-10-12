@@ -3950,3 +3950,34 @@ Localization/{pl,en}}}`, `src/server/{Services/{SkillService,CombatService,Statu
 Types/{Movement,Offense,Support}}}`, `src/client/{Controllers/{SkillController,VfxController},Vfx/Library,UI/{SkillInfo,
 Screens/Hud/{CastBar,EffectIcons},Screens/SkillsWindow/Details}}`, `tests/{channel,skills,effectstack}.spec`,
 `tests/BreakpointKeys`, `wiki/src/data/*`, `docs/{ROZWOJ,PRZEDMIOTY,DECYZJE,SESJE,PROGRESS}.md`.
+
+### S77: Łowca 2: sokół, czujność, haki Strzelca i sześć nowych umiejętności
+
+- A: typ `companion` (`SkillType`, `DEFAULT_TARGET = "none"`, `Skills.shape` → `"self"`, `Skills.offensive`), efekt
+  `sighted`, argument opisu `interval` tylko dla `companion`; `Build.class` już przepisywał wszystkie pola.
+- B: `server/Skills/Companion.luau` (jedna pętla `task.delay` z tokenem na gracza, cel z `GetTarget` w 40 st. albo
+  najbliższy potwór walczący z drużyną w 30 st., strefa zielona, Kamuflaż w PvP, Królewski Sokół do końca walki + 5 s,
+  `dive` przy Znaku z ogłuszeniem `notBoss`), `Support.companion`, nurkowanie w `Support.debuff`, `services.Zone`,
+  `Companion.stop` przy `Died`, `CharacterLeaving` i `PlayerRemoving`.
+- C: `Logic/Vigilance` (`ready`, `duration`), konsument `vigilance()` na końcu `telegraph()` w `CombatService`
+  (`vigilanceMove` → `statBuff moveSpeed` `allyMove`, `vigilanceGuard` → `damageReduction` `allyGuard`).
+- D–E: `StatusEffectService.FromSource` (`HasFrom` przez nią), `sighted` w `DEBUFFS`, `Damage.critChance` i
+  `Params.critAdd` / `critDmgAdd`, odczyt w `DealDamage`; Słaby Punkt (`weakSpot`, stan `weakTarget` / `weakStacks`,
+  zerowanie w `onSetTarget` i przy śmierci); `CombatService.Spot` (ataki podstawowe, Celny Strzał, Królewski Sokół).
+- F: `drawBead`, `heartseeker`, `venomSnare`, `snarefield`, `falcon`, `drive` w `Data/Skills/Hunter` (ścieżki bez
+  `PathDef`: nieosiągalne i ukryte na wiki do S78). G: sześć ruchów w `SkillMotions` (liczby wprost, bez wyciągania póz).
+- H: wpisy `SkillVfx` z polem `trigger`, `Vfx/Library.falcon` (tułów + dwa skrzydła `Wedge`, `Pool.free.Wedge`),
+  `falconStrike` / `falconDive` / `falconCircle` / `falconEnd` w `VfxController`, `loopUntil` z `ct` (S76 tego nie
+  robiło), pełny zestaw dla każdego sidła (S76 grało tylko pierścień dla `n > 1`), podgląd `companion` i `castTime` w
+  `Preview`, ikona `sighted`. I: 37 kluczy na język.
+- C4 (sprawdzenie): jawne `dipScale` robi węzeł drużynowym (`isTeamNode`), a `passiveTotals` sumuje `passive.hooks`
+  każdego aktywnego węzła z jego `scale`, także `keystone`; `Logic/Paths` bez zmian. S78 oznacza Oznaczenie i Czujność
+  jawnym `dipScale`, zwieńczenie `scout_royalFalcon` dostaje `passive.hooks.royalFalcon`.
+- Testy: `vigilance.spec` (nowy), `damage.spec` (Namierzenie, wynik bez dodatku bit w bit), `skillmotion.spec`
+  (`falcon`, `trigger`, sześć ruchów), `skills.spec` (typ `companion`, „Hunter S77”, nieosiągalne do S78), `data.spec`
+  (`companion` → `ranged`). `npm run data`: zero zmian w danych wiki.
+
+Pliki: `src/shared/{Logic/{Vigilance,Damage,Skills},Data/{Paths/init,Skills/{Types,Build,Hunter},SkillMotions,SkillVfx,
+Localization/{pl,en}}}`, `src/server/{Skills/{Companion,Context,Types/Support},Services/{SkillService,CombatService,
+StatusEffectService}}`, `src/client/{Controllers/VfxController,Vfx/{Library,Pool},UI/Screens/Hud/EffectIcons}`,
+`tests/{vigilance,damage,skillmotion,skills,data}.spec`, `docs/{ROZWOJ,DECYZJE,SESJE,PROGRESS}.md`.

@@ -60,6 +60,7 @@ for _, name in
 		"smoke",
 		"cloud",
 		"tether", -- S74
+		"falcon", -- S77
 	}
 do
 	VFX_PIECES[name] = true
@@ -168,6 +169,17 @@ describe("Skill data (S28)", function()
 			local ally = entry.allyColor
 			expect(ally == nil or (string.sub(ally, 1, 1) == "#" and #ally == 7)).toBe(true)
 			expect(entry.object == nil or (entry.object == "banner" and id == "warBanner")).toBe(true)
+			-- S77: trap trigger pieces, only on traps
+			local trigger = entry.trigger
+			if trigger then
+				local skill = SkillData.get(id)
+				expect({ id, skill ~= nil and skill.type == "trap" }).toEqual({ id, true })
+				for _, name in trigger do
+					if not VFX_PIECES[name] then
+						error(`{id}: unknown trigger piece {name}`)
+					end
+				end
+			end
 		end
 		expect(SkillVfx.warBanner.object).toBe("banner")
 	end)
@@ -206,6 +218,26 @@ describe("Warrior S74 motions and looks", function()
 			end
 		end
 		expect(pole ~= nil and (pole :: any).size[2] == 9).toBe(true)
+	end)
+end)
+
+describe("Hunter S77 motions and looks", function()
+	it("six path skills: motion, visual, lock, loop, texts", function()
+		for _, id in { "drawBead", "heartseeker", "venomSnare", "snarefield", "falcon", "drive" } do
+			local motion = SkillMotions.get(id)
+			expect({ id, motion ~= nil, SkillVfx[id] ~= nil }).toEqual({ id, true, true })
+			for _, suffix in { "bp5", "bp5b", "bp10", "bp10b" } do
+				local key = `skill.{id}.{suffix}`
+				expect({ key, (pl :: any)[key] ~= nil, (en :: any)[key] ~= nil }).toEqual({ key, true, true })
+			end
+		end
+		-- Heartseeker: the draw loops for the aim; the shot comes from the server, moving cancels it
+		local heart: any = SkillMotions.get("heartseeker")
+		expect({ heart.loop ~= nil, heart.lock, heart.hit, heart.release }).toEqual({ true, nil, nil, nil })
+		for _, id in { "venomSnare", "snarefield" } do
+			local m: any = SkillMotions.get(id)
+			expect({ id, m.lock }).toEqual({ id, true })
+		end
 	end)
 end)
 

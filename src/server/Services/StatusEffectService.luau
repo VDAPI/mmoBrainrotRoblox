@@ -112,6 +112,7 @@ local DEBUFFS = {
 	attackSlow = true, -- S63: slower attacks (category enemyAttackSlow)
 	weaken = true, -- S63: the bearer deals less (category enemyDamageDown)
 	frostbite = true, -- S65: the source's ice: +% damage from that player (SourceValue); lives as long as the slow
+	sighted = true, -- S77: Draw a Bead, the source's crit on the bearer (FromSource); never the bearer's stats
 }
 -- S65 kinds without a table entry: nextBasic (one-shot bonus of the next basic attack, Full Draw; only a basic attack
 -- consumes it, so it never collides with nextShot), runeSeal (marker of a glowing Runic Seal; CombatService puts it
@@ -452,14 +453,20 @@ function StatusEffectService.Has(entity: any, kind: string): boolean
 	return #active(entity, kind) > 0
 end
 
--- S76 (Toxicologist, poisonedGuard): an active effect of `kind` on `entity` that `player` applied.
-function StatusEffectService.HasFrom(entity: any, kind: string, player: Player): boolean
+-- S77: the active effect of `kind` on `entity` that `player` applied (the longest one when there are several).
+function StatusEffectService.FromSource(entity: any, kind: string, player: Player): Effect?
+	local best: Effect? = nil
 	for _, effect in active(entity, kind) do
-		if effect.source == player then
-			return true
+		if effect.source == player and (best == nil or effect.expiresAt > best.expiresAt) then
+			best = effect
 		end
 	end
-	return false
+	return best
+end
+
+-- S76 (Toxicologist, poisonedGuard): an active effect of `kind` on `entity` that `player` applied.
+function StatusEffectService.HasFrom(entity: any, kind: string, player: Player): boolean
+	return StatusEffectService.FromSource(entity, kind, player) ~= nil
 end
 
 -- S76: copies of the active effects of `entity` (read before it is unregistered: poison spread, mark jump).

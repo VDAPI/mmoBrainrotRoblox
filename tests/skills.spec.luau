@@ -32,6 +32,7 @@ local VALID_TYPES = {
 	guard = true, -- S74
 	shout = true,
 	banner = true,
+	companion = true, -- S77
 	passive = true,
 }
 
@@ -77,6 +78,15 @@ T.describe("Data: Skills", function()
 				check(
 					(skill.radius or 0) > 0 and (skill.range or 0) > 0 and skill.duration ~= nil,
 					"banner needs radius, range and duration"
+				)
+			elseif skill.type == "companion" then
+				check(
+					skill.duration ~= nil
+						and (skill.interval or 0) > 0
+						and (skill.range or 0) > 0
+						and (skill.radius or 0) > 0
+						and skill.values.dmg ~= nil,
+					"companion needs duration, interval, range, radius and values.dmg"
 				)
 			elseif skill.type == "line" or skill.type == "blink" then
 				check((skill.length or 0) > 0, "needs length")
@@ -1789,6 +1799,64 @@ T.describe("Hunter engine fields (S76)", function()
 		local dx, dz = points[2].x - points[1].x, points[2].z - points[1].z
 		T.expect(math.sqrt(dx * dx + dz * dz)).toBeNear(4)
 		T.expect(dx * 0 + dz * -1).toBeNear(0) -- perpendicular to the direction (0, -1)
+	end)
+end)
+
+T.describe("Hunter S77", function()
+	local GamePaths = require("../src/shared/Logic/Paths")
+	local NEW = {
+		drawBead = { path = "marksman", unlock = 26 },
+		heartseeker = { path = "marksman", unlock = 60 },
+		venomSnare = { path = "trapper", unlock = 26 },
+		snarefield = { path = "trapper", unlock = 60 },
+		falcon = { path = "scout", unlock = 26 },
+		drive = { path = "scout", unlock = 80 },
+	}
+
+	T.it("six path skills: path, delivery, unlock, A and B on 5 and 10", function()
+		for id, want in NEW do
+			local skill = SkillData.get(id) :: any
+			T.expect({ id, skill.class, skill.path, skill.unlock, skill.delivery }).toEqual({
+				id,
+				"Hunter",
+				want.path,
+				want.unlock,
+				"ranged",
+			})
+			for _, at in { 5, 10 } do
+				local pair = skill.breakpoints[at]
+				T.expect({ id, at, pair.a ~= nil, pair.b ~= nil }).toEqual({ id, at, true, true })
+			end
+		end
+	end)
+
+	T.it("Falcon: no target, self shape, offensive, interval only for companions", function()
+		local falcon = SkillData.get("falcon") :: any
+		T.expect(falcon.target).toBe("none")
+		T.expect(Skills.shape(falcon)).toBe("self")
+		T.expect(Skills.offensive(falcon)).toBe(true)
+		T.expect(Skills.descriptionArgs(falcon, 1).interval).toBe(2)
+		T.expect(Skills.descriptionArgs(SkillData.get("doubleShot") :: any, 1).interval).toBeNil()
+		T.expect((SkillData.get("venomSnare") :: any).target).toBe("point")
+		T.expect((SkillData.get("snarefield") :: any).target).toBe("point")
+	end)
+
+	-- S78 replaces this case: the paths get their PathDef and the skills their nodes.
+	T.it("unreachable until S78 (no PathDef for their paths)", function()
+		local hotbar: { [string]: string } = {}
+		local slot = 0
+		for id in NEW do
+			slot += 1
+			hotbar[tostring(slot)] = id
+		end
+		local hunter: any = { class = "Hunter", level = 100, path = nil, hotbar = hotbar, equipment = {} }
+		local available = GamePaths.availableSkills(hunter)
+		for id in NEW do
+			T.expect({ id, table.find(available, id) }).toEqual({ id, nil })
+			T.expect({ id, GamePaths.skillRank(hunter, id) }).toEqual({ id, 0 })
+		end
+		local bar = GamePaths.validHotbar(hunter)
+		T.expect(bar).toEqual({})
 	end)
 end)
 

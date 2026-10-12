@@ -33,6 +33,9 @@ export type SkillType =
 	| "guard" -- leap to an ally and intercept the monster blows aimed at them; no ally: a self variant (ROZWOJ 10.3)
 	| "shout" -- around the caster: effects on allies within `radius`, on enemies within `hitRadius`, optional damage
 	| "banner" -- an object planted on the ground; every second its circle gives the skill's effects (ROZWOJ 10.5)
+	-- S77: a companion (the Falcon): a damage loop every `interval` for `duration` on the server, drawn by clients;
+	-- not a character
+	| "companion"
 	| "passive" -- permanent stat bonus / proc
 
 export type TargetMode = "enemy" | "ally" | "self" | "point" | "deadAlly" | "none"
@@ -66,6 +69,9 @@ export type EffectKind =
 	-- S72 (ROZWOJ 10.4): own; Fury does not decay and grows by HOOK_RULES.carnage.furyGain, killing blows reset
 	-- HOOK_RULES.carnage.resets (Data/Paths)
 	| "carnage"
+	-- S77 (ROZWOJ 11.3): Draw a Bead; stats { critChance, critDmg } add to the crit of the source's hits on the bearer
+	-- only (CombatService.DealDamage, Logic/Damage.critChance); no category
+	| "sighted"
 
 export type SkillEffect = {
 	kind: EffectKind,

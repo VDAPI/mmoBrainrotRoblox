@@ -69,6 +69,7 @@ local DEFAULT_TARGET: { [string]: Types.TargetMode } = {
 	guard = "ally", -- S74 (ROZWOJ 14.2): no selection picks an ally itself (Logic/GuardTarget)
 	shout = "none",
 	banner = "point", -- no aim: at the caster's feet
+	companion = "none", -- S77: the Falcon picks its own target (Skills/Companion)
 	passive = "none",
 }
 

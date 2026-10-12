@@ -32,6 +32,35 @@ end
 local PHYS: Damage.Params = { kind = "phys" }
 
 T.describe("Damage", function()
+	T.it("S77: Draw a Bead adds crit up to the cap", function()
+		local sighted: Damage.Params = { kind = "phys", critAdd = 20 }
+		T.expect(Damage.critChance(attacker({ critChance = 26 }), sighted, 0)).toBe(46)
+		T.expect(Damage.critChance(attacker({ critChance = 55 }), sighted, 0)).toBe(60)
+		T.expect(Damage.critChance(attacker({ critChance = 55 }), sighted, 6)).toBe(66)
+		T.expect(Damage.critChance(attacker({ critChance = 62 }), sighted, 0)).toBe(62)
+		T.expect(Damage.critChance(attacker({ critChance = 26 }), PHYS, 3)).toBe(29)
+
+		local strong = attacker({ critDmg = 150 })
+		local plain = Damage.computeDamage(strong, defender(), { kind = "phys", forceCrit = true }, Rng.new(7))
+		local bead =
+			Damage.computeDamage(strong, defender(), { kind = "phys", forceCrit = true, critDmgAdd = 30 }, Rng.new(7))
+		T.expect(bead.amount).toBeNear(plain.amount * 1.2, 1)
+
+		-- without the new fields: the formula before S77 on the same seed (one avoidance roll, the band, the crit)
+		local a = attacker({ critChance = 30 })
+		local rng, ref = Rng.new(11), Rng.new(11)
+		for _ = 1, 50 do
+			local r = Damage.computeDamage(a, defender(), PHYS, rng)
+			ref:next()
+			local amount = a.physAtk * ref:float(Combat.randomMin, Combat.randomMax)
+			local crit = ref:chance(0.3)
+			if crit then
+				amount *= Damage.critMultiplier(a.critDmg, nil)
+			end
+			T.expect({ r.amount, r.crit }).toEqual({ math.max(Combat.minDamage, math.floor(amount + 0.5)), crit })
+		end
+	end)
+
 	T.it("no defense: damage stays within the random band", function()
 		local rng = Rng.new(1)
 		for _ = 1, 200 do

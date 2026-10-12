@@ -339,7 +339,7 @@ Broń każdej ścieżki (uzasadnienie i pokrycie w sekcjach klas):
 |---|---|
 | `Data/Skills/<Klasa>` | podstawa i umiejętności ścieżek; pole `path` (nil = podstawa), przełomy A/B; bez `requires`, `col`, `row` |
 | `Data/Skills/Build`, `Types`, `init` | `Build.bp2`, jawne `maxLevel`, `RANKS`, `HOTBAR_SLOTS = 10` |
-| `Data/Paths/init` | nowy: `ROWS` (tabela 2.2, rzędy 2, 5, 10 z `twoPathExtra`), `DIP_ROWS = 2`, `DIP_SCALE = 1/3`, `list` (wszystkie ścieżki); S61: `AURA` (promienie, kąt `behind`, `fallbackRange`, `tick`, `duration`, `maxRadius`); S72: `HOOK_RULES` (stałe reguł haków ścieżek) |
+| `Data/Paths/init` | nowy: `ROWS` (tabela 2.2, rzędy 2, 5, 10 z `twoPathExtra`), `DIP_ROWS = 2`, `DIP_SCALE = 1/3`, `list` (wszystkie ścieżki); S61: `AURA` (promienie, kąt `behind`, `fallbackRange`, `tick`, `duration`, `maxRadius`); S72: `HOOK_RULES` (stałe reguł haków ścieżek; S77: klucze Łowcy `vigilance`, `spot`, `weakSpotPerStack`, `royalFalcon`) |
 | `Data/Paths/<Klasa>` | nowy: ścieżki klasy (lista 2–3, pole `order`), węzły, buildy wzorcowe |
 | `Data/Luck` | nowy: pola i limity szczęścia (6.3) |
 | `Data/BuffCategories` | nowy: kategorie, ich statystyki, tryb i limity (7.1) |
@@ -653,8 +653,8 @@ do sprawdzenia w sesji balansu.
   niż czas działania (test danych). Solo działają na rzucającego.
 - Wyjątki od dolnej granicy czasu (promień do 40 st. i odnowienie obowiązują je tak samo): efekty ratunkowe
   (nietykalność `invuln`, ocalenie `guardianAngel`, redukcja obrażeń `allyGuard` krótsza niż 10 s), przechwyt
-  `intercept` i tarcze pochłaniające `shield` (bez kategorii), a także pasywne reakcje na czerwoną strefę (hak
-  `vigilance` Zwiadowcy: `allyMove` i `allyGuard` na czas zamachu + 0,5 s, raz na 8 s). Test danych pomija dla nich
+  `intercept` i tarcze pochłaniające `shield` (bez kategorii), a także pasywne reakcje na czerwoną strefę (haki
+  `vigilanceMove` i `vigilanceGuard` Zwiadowcy: `allyMove` i `allyGuard` na czas zamachu + 0,5 s, każdy raz na 8 s). Test danych pomija dla nich
   dolną granicę czasu.
 - Aury z węzłów: nowy `PartyAuraService` co 1 s nakłada `statBuff` na 1,5 s z kategorią aury, `skillId` = id węzła.
   Działa tylko wtedy, gdy właściciel aury żyje i jest w walce (`ResourceService.InCombat`, rzucanie już oznacza walkę),
@@ -1567,13 +1567,14 @@ odn. 40 s; 5A `add.radius = 4`, 5B `values.dmg = 80`, 10A `effect` ogłuszenie 1
 
 **Strzał w Serce / Heartseeker** (`heartseeker`, nowa, zwieńczenie, poz. 60)
 - Typ `projectile` z nowym `castTime = 1.5` (mierzy stojąc, bez ataków podstawowych). Ruch przerywa, obrażenia nie
-  (`steadfast`); przerwanie ruchem zwraca energię i zeruje odnowienie (14.3). 400 → 650%, nowe `finisher = { hp = 20,
+  (po S76 `Channel.stops("castTime", "damage")` nigdy nie przerywa, `steadfast` zbędne); przerwanie ruchem zwraca energię i zeruje odnowienie (14.3). 400 → 650%, nowe `finisher = { hp = 20,
   mul = 2 }` (cel poniżej 20% HP: ×2). Koszt 50, odn. 30 s, zasięg 40.
 - Przełomy: 5A `values.dmg = 60` (ok. +12%); 5B `pierce = 60` (następny cel na linii, do 16 st. za celem, za 60%); 10A
   `mul.cooldown = 0.8`; 10B `splash = { radius = 6, pct = 50 }`. Handler: `Offense.projectile`, uruchamiany przez
   `SkillService.startChannel(ctx, onDone)` po `castTime`.
 - Animacja: `KNEEL` z `frostTrap`, długie `BOW_DRAW` z `piercingArrow`, `BOW_LOOSE`; efekty `glow` lewej ręki 1,5 s,
-  pocisk `arrow`, `lineBeam` i `burst`, `shake = 0.3`, `telegraph = "line"`.
+  pocisk `arrow`, `beam` (od łucznika do celu) i `burst`, `shake = 0.3`; bez `lineBeam` i `telegraph = "line"` (S77:
+  pocisk nie ma `cf`, telegraf zastępuje czerwona linia celowania S76).
 
 | Rząd · poz. | Węzeł | Rangi 1 / 2 / 3 i działanie |
 |---|---|---|
@@ -1634,8 +1635,8 @@ punktu) i Kamuflaż `camouflage` (rząd 7; 4 s niewidzialności, a następne tra
   Zwiadowcy), unieruchomienie 1,5 → 2,5 s z `notBoss` (bossy i Elity II dostają tylko obrażenia i podatność).
 - Przełomy: 5A `add.radius = 1`; 5B `values.vuln = 2`; 10A `values.dmg = 25`; 10B `pull = 6`. Handler: `Movement.trap`
   z `hits`, nowym `ringRadius` i `notBoss`.
-- Animacja: `crouch(0.8)` i obrót tułowia jak w `volley`; efekty `rune` na sidłach, `cracks` i `burst` przy złapaniu,
-  `telegraph = "circle"`.
+- Animacja: `crouch(0.8)` i obrót tułowia jak w `volley`; efekty `rune` na sidłach, `cracks` i `burst` przy złapaniu
+  (`trigger`, S77); bez `telegraph = "circle"` (rysowałby koło jednego sidła).
 
 | Rząd · poz. | Węzeł | Rangi 1 / 2 / 3 i działanie |
 |---|---|---|
@@ -1682,7 +1683,9 @@ Przeniesione: Zwinność `agility` (rząd 1, pasywka `own`, unik +2 → 10 pkt p
 
 **Sokół / Falcon** (`falcon`, nowa, rząd 4, poz. 26)
 - Nowy typ `companion`: przez 20 s sokół co 2 s uderza obecny cel Łowcy (czytany w każdym uderzeniu, także po zmianie
-  celu), a bez celu najbliższego wroga w 30 st. od Łowcy, za 15 → 30% obrażeń broni; bez wroga krąży nad Łowcą.
+  celu, do 40 st. = `range`), a bez celu najbliższego potwora w 30 st. od Łowcy, z którym walczy Łowca albo jego drużyna
+  (tabela zagrożenia; S77), za 15 → 30% obrażeń broni; bez wroga krąży nad Łowcą. Pierwsze uderzenie po `delay = 1` s,
+  w strefie zielonej nie uderza.
   Koszt 30, odn. 30 s. W PvP uderzenie zdejmuje Kamuflaż z celu. Sokół to obraz i pętla obrażeń na serwerze, nie
   postać: nie można go trafić, nie ma HP.
 - Przełomy: 5A `add.duration = 4`; 5B `effect` spowolnienie 15% 2 s (`enemySlow`); 10A `values.dmg = 15`; 10B
@@ -1700,23 +1703,24 @@ Przeniesione: Zwinność `agility` (rząd 1, pasywka `own`, unik +2 → 10 pkt p
   `telegraph = "circle"`.
 
 **Królewski Sokół** (`scout_royalFalcon`, zwieńczenie, poz. 60, `keystone`): po użyciu Sokoła ptak zostaje do końca
-walki (odlatuje 5 s po niej), jego uderzenia nakładają Oznaczenie, a Znak Łowcy wysyła go w nurkowanie na oznaczony
-cel: 150% obrażeń i ogłuszenie 1 s (`notBoss`). Ulepszenie w rzędzie 11: Sokół Władcy.
+walki (odlatuje 5 s po niej, nigdy przed zwykłym końcem), jego uderzenia nakładają Oznaczenie, a Znak Łowcy wysyła go
+w nurkowanie na oznaczony cel: 150% obrażeń i ogłuszenie 1 s (`notBoss`). Hak `royalFalcon` (> 0 = włączone, S77).
+Ulepszenie w rzędzie 11: Sokół Władcy.
 
 | Rząd · poz. | Węzeł | Rangi 1 / 2 / 3 i działanie |
 |---|---|---|
 | 1 · 10 | Zwinność (`scout_agility`, skill, pasywka) | przeniesiona A |
 | 1 · 10 | Oko Zwiadowcy (`scout_eye`, passive, nowy hak `minimapEliteBonus`) | Elity i Elity II na minimapie +60 / 120 / 180 st. dalej niż dzisiejsze 140 st.; poza kołem mapy przypięte do krawędzi jak strzałka celu questu (`EDGE`); drużyna w 80 st. widzi to samo przez pole `scoutRange` gałęzi `party`; poza główną +20 / 40 / 60 st. |
 | 2 · 15 | Oznaczenie (`scout_spotting`, passive, nowy hak `spotOnHit`, `enemyWeak`) | ataki podstawowe i Celny Strzał: podatność 2 / 4 / 6% na 5 s; poza główną 0,7 / 1,3 / 2% |
-| 2 · 15 | Czujność (`scout_vigilance`, passive, nowy hak `vigilance`, `allyMove`) | potwór w 30 st. zaczyna czerwoną strefę: drużyna w 40 st. ma +10 / 15 / 20% ruchu na czas zamachu + 0,5 s, raz na 8 s; poza główną 3,3 / 5 / 6,7% |
+| 2 · 15 | Czujność (`scout_vigilance`, passive, nowy hak `vigilanceMove`, `allyMove`) | potwór w 30 st. zaczyna czerwoną strefę: drużyna w 40 st. ma +10 / 15 / 20% ruchu na czas zamachu + 0,5 s, raz na 8 s; poza główną 3,3 / 5 / 6,7% |
 | 3 · 20 albo | Szybkie Palce (`scout_quickFingers`, passive pct `atkSpeed`) | +3 / 6 / 9% |
 | 3 · 20 albo | Lekka Stopa (`scout_lightStep`, passive `dodge`) | +2 / 4 / 6 pkt proc. |
 | 4 · 26 | Sokół (`scout_falcon`, skill) | nowa |
 | 4 · 26 | Ostre Szpony (`scout_talons`, modify `falcon` `values.dmg`) | +5 / 10 / 15 pkt proc. |
-| 5 · 33 | Sokola Więź (`scout_bond`, passive, nowy hak `falconBond`) | Sokół trwa +2 / 4 / 6 s; z Królewskim Sokołem zamiast tego nurkowanie +20 / 40 / 60 pkt proc. |
+| 5 · 33 | Sokola Więź (`scout_bond`, passive, nowy hak `falconBond` w sekundach) | Sokół trwa +2 / 4 / 6 s; z Królewskim Sokołem zamiast tego nurkowanie +20 / 40 / 60 pkt proc. |
 | 5 · 33 | Wytrwały Zwiadowca (`scout_hardy`, passive pct `maxHp`) | +3 / 6 / 9% |
 | 6 · 40 albo | Odwrót (`scout_retreat`, modify `disengage` `mul.cooldown`) | ×0,9 / 0,8 / 0,7 |
-| 6 · 40 albo | Ostrzeżenie (`scout_warning`, passive, hak `vigilance` z `allyGuard`) | potwór w 30 st. zaczyna czerwoną strefę: drużyna w 40 st. ma 5 / 10 / 15% redukcji obrażeń na czas zamachu + 0,5 s, raz na 8 s; działa też bez Czujności, z nią oba efekty naraz |
+| 6 · 40 albo | Ostrzeżenie (`scout_warning`, passive, nowy hak `vigilanceGuard`, `allyGuard`) | potwór w 30 st. zaczyna czerwoną strefę: drużyna w 40 st. ma 5 / 10 / 15% redukcji obrażeń na czas zamachu + 0,5 s, raz na 8 s; działa też bez Czujności, z nią oba efekty naraz |
 | 7 · 48 | Znak Łowcy (`scout_huntersMark`, skill) | przeniesiona B |
 | 7 · 48 | Tropem Rannego (`scout_trail`, modify `huntersMark`, nowe `markJump`) | śmierć oznaczonego przenosi znak z resztą czasu na najbliższego wroga w 10 / 15 / 20 st. |
 | 8 · 60 | Królewski Sokół (`scout_royalFalcon`, keystone) | zwieńczenie |
@@ -1724,7 +1728,7 @@ cel: 150% obrażeń i ogłuszenie 1 s (`notBoss`). Ulepszenie w rzędzie 11: Sok
 | 9 · 70 albo | Zgrany Duet (`scout_duet`, passive, nowy hak `falconDamage`) | obrażenia sokoła i nurkowania +10 / 20 / 30% |
 | 10 · 80 | Nagonka (`scout_drive`, skill) | nowa |
 | 10 · 80 | Wytrawny Naganiacz (`scout_beater`, modify `drive` `add.effectDuration`) | +2 / 4 / 6 s podatności i spowolnienia |
-| 11 · 90 | Sokół Władcy (`scout_royalFalcon2`, passive, nowe haki `falconInterval`, `spotBonus`, 2 rangi) | uderzenia co 1,8 / 1,6 s, Oznaczenie +1 / 2 pkt proc. |
+| 11 · 90 | Sokół Władcy (`scout_royalFalcon2`, passive, nowe haki `falconInterval` 10 / 20 (% krócej), `spotBonus`, 2 rangi) | uderzenia co 1,8 / 1,6 s, Oznaczenie +1 / 2 pkt proc. |
 
 - Drużyna (7.1, 7.3): Znak i Oznaczenie (`enemyWeak`; liczy się najsilniejszy, więc Oznaczenie działa w przerwach
   Znaku), Nagonka (`enemyWeak`, `enemySlow`), Czujność (`allyMove`), Ostrzeżenie (`allyGuard`). Znak trwa 10–15 s przy
@@ -2316,8 +2320,9 @@ i trucizny (`ctx.attack()`).
 
 Kod:
 - Typ `companion` w nowym `Support.companion`: pętla obrażeń co `interval` przez `duration` (`task.delay` jak tik
-  `lingering`); w każdym tiku cel z `CombatService.GetTarget(player)`, bez celu najbliższy wróg w 30 st. od Łowcy, bez
-  wroga sokół krąży; bez obiektu w świecie. Królewski Sokół: do końca walki, Oznaczenie przy uderzeniu, nurkowanie przy
+  `lingering`; S77: `Skills/Companion`, jedna pętla z tokenem na gracza); w każdym tiku cel z
+  `CombatService.GetTarget(player)` do 40 st., bez celu najbliższy potwór w 30 st. walczący z drużyną Łowcy, bez wroga
+  sokół krąży; bez obiektu w świecie. Królewski Sokół: do końca walki, Oznaczenie przy uderzeniu, nurkowanie przy
   Znaku. Haki z węzłów: `falconDamage`, `falconBond`, `falconInterval`, `spotBonus`.
 - `Movement.trap` (`Skills/Types/Movement.luau`) dostaje `values.dmg`, `hits` z `ringRadius`, `pull`, `echo` i
   `notBoss` oraz haki `trapRootDuration` i `trapEnergy`; druga pułapka z 10B Pułapki Lodowej stoi 4 st. w bok od
@@ -2342,8 +2347,8 @@ Kod:
 - Haki: `poisonDamage`, `poisonSlow`, `weakSpot` (stosy na celu), `poisonedGuard` (`damageFilter`), `spotOnHit`,
   `areaSkillDamage` (Łowisko: trafienia umiejętności obszarowych Łowcy, w tym pułapek, bez progu liczby wrogów, bez
   trucizny i ataków podstawowych), `trapCost`, `trapRootDuration`, `trapEnergy`, `falconDamage`, `falconBond`,
-  `falconInterval`, `spotBonus`; `vigilance`: konsument w lokalnej funkcji `telegraph()` w `CombatService` (ok. linii
-  703), którą wołają ataki bossów (`MonsterTelegraph`) i umiejętności Elit II (`MonsterService`); premia na
+  `falconInterval`, `spotBonus`, `royalFalcon`; `vigilanceMove` i `vigilanceGuard` (S77: dwa haki zamiast jednego
+  `vigilance`): konsument w lokalnej funkcji `telegraph()` w `CombatService` (ok. linii 708 przy `05b859d`), którą wołają ataki bossów (`MonsterTelegraph`) i umiejętności Elit II (`MonsterService`); premia na
   `ability.windup + 0,5 s`, drużyna w 40 st., odnowienie 8 s, Czujność (`allyMove`) i Ostrzeżenie (`allyGuard`) z
   osobnym wyzwalaczem; `minimapEliteBonus` (czyta `Hud/Minimap`; Elity poza kołem mapy przypięte do krawędzi, `EDGE`)
   z polem `scoutRange` w gałęzi `party` (`PartyService`), które czyta minimapa członków drużyny w 80 st.; istniejące
@@ -2512,8 +2517,8 @@ globalna wygrywa, chyba że projekt klasy zapisał potrzebną zmianę):
    11.6).
 2. Kategoria `allyMove` (Czujność Zwiadowcy) dopisana do tabeli 7.1 i do `Data/BuffCategories` w kroku 1 fundamentu,
    z limitem 30%.
-3. Wyjątek od dolnej granicy czasu w 7.3 obejmuje też pasywne reakcje na czerwoną strefę (hak `vigilance`: Czujność i
-   Ostrzeżenie), które trwają zamach + 0,5 s; projekt Łowcy uznał je za nieaktywne wzmocnienia, a test danych by ich
+3. Wyjątek od dolnej granicy czasu w 7.3 obejmuje też pasywne reakcje na czerwoną strefę (haki `vigilanceMove` i
+   `vigilanceGuard`: Czujność i Ostrzeżenie), które trwają zamach + 0,5 s; projekt Łowcy uznał je za nieaktywne wzmocnienia, a test danych by ich
    nie przepuścił.
 4. Hak `areaDamage` miał w projektach dwie zasady: u Maga działa przy co najmniej 2 trafionych wrogach albo na
    trafieniu pobocznym, u Łowcy (Łowisko) na każde trafienie umiejętności obszarowej, także pułapki. Łowisko dostaje

@@ -53,6 +53,7 @@ export type Services = {
 	Party: any,
 	Death: any,
 	PartyAura: any, -- S73: BehindAnchor for behindEffect
+	Zone: any, -- S77: the Falcon does not strike in green zones
 	Fx: (player: Player, data: { [string]: any }) -> (),
 	PassiveHook: (player: Player, id: string) -> number,
 	ReduceCooldown: (player: Player, skillId: string, seconds: number) -> (), -- S76: critCdr

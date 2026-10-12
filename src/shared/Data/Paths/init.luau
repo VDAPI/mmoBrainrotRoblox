@@ -106,6 +106,17 @@ return table.freeze({
 		perEnemy = table.freeze({ radius = 10, max = 5 }),
 		-- Energy a block gives back once the character has block from path nodes (Block, Shield Master).
 		blockEnergy = 5,
+		-- S77 (ROZWOJ 11.3 / 11.5): Hunter path hooks. Hook values come from the nodes (S78); these are the fixed
+		-- parts of the rules. Not exported to the wiki (the planner, S82, reads ROWS / DIP_* only).
+		-- Vigilance / Warning: a red zone of a monster within monsterRange of the Scout gives the party within
+		-- partyRange the bonus for the windup + extra seconds, each kind at most once per cooldown seconds.
+		vigilance = table.freeze({ monsterRange = 30, partyRange = 40, extra = 0.5, cooldown = 8 }),
+		-- Spotting: seconds of the vulnerability and the skills (besides basic attacks) whose hits spot.
+		spot = table.freeze({ duration = 5, skills = table.freeze({ aimedShot = true }) }),
+		weakSpotPerStack = 1, -- % damage per Weak Spot stack on the selected target
+		-- Royal Falcon: dive % damage, stun seconds (not bosses, never players), seconds it stays after the fight,
+		-- dive points per falconBond second, the shortest strike interval.
+		royalFalcon = table.freeze({ dive = 150, stun = 1, linger = 5, bondDive = 10, minInterval = 0.5 }),
 	}),
 	list = list,
 	byId = byId,
