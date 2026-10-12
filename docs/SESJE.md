@@ -3403,3 +3403,29 @@ lokalizacja PL / EN, `PathService`, `LevelService`, `SkillService`, `DungeonServ
 `Admin/Character`, `UI/Components/BuildSetSwitch` (nowy), `SkillsWindow`, `CharacterWindow/{init,StatAllocator}`,
 `tests/{paths,statplan,data}.spec`, `tests/fixtures/paths.luau`, dane wiki, `docs/{ROZWOJ,DESIGN,WIKI,PRZEDMIOTY}.md`,
 `CLAUDE.md`.
+
+### S59: Fundament 7: pełne okno umiejętności (PC i telefon) i tytuły ścieżek
+
+- `Logic/Paths`: `nodeScale`, `nodeArgs`, `iconWeapon`, `isTwoHanded` (+ `Skills.roundArg`). Nowe czyste
+  `Logic/PathView` (`with`, `tabState`, `path`, `weaponText`, `pendingBreakpoints`, `attention`, `rankUps`,
+  `newBreakpoints`).
+- Tytuły: wariant `mainPath` i `NONE` w `Data/Titles` (bez wpisów), `Logic/Titles.pathTitle` i domyślny tytuł ścieżki
+  w `shown` (opcjonalna lista), `TitleService` (`PathService` w `Deps`, odświeżanie na `Changed`, „bez tytułu” = `NONE`).
+- Okno umiejętności jako folder: PC 920 × 640 (nagłówek z `BuildSetSwitch`, punktami i ścieżką główną; zakładki z
+  ikoną broni, stanem i kropką „!”; lista 510 px: podstawa albo ścieżka z nagłówkiem, paskiem złej broni, rzędami i
+  kartami węzłów z 1–3 kartami i „albo”; szczegóły 354 px z podglądem 3D, opisem umiejętności lub węzła, kartami A/B,
+  Kup / Zwróć / Na pasek z powodem); telefon: jedna kolumna, arkusz na całą szerokość z przypiętym rzędem A/B i paskiem
+  akcji, podgląd na żądanie; siatka 2 × 5 na obu.
+- „!” na przycisku K (`IconButton.Badge`, `Hud.MenuEntry.badge`, `UI/SkillsAttention`); `LevelUp` z `fromLevel`,
+  toasty punktów ścieżki, rang i nowych przełomów w `EffectsController`; `SkillInfo.breakpointCards` i wybory w
+  `breakpoints` / `tooltip`.
+- Dziś gracz widzi podstawę i „Ścieżki wkrótce” oraz toasty rang; zakładki ścieżek, karty B, „!” i tytuły ścieżek
+  pojawią się same z danymi klas (S69, S71+). Test powiązania tytułów z `PathDef.titleId` jest już w `titles.spec`
+  (S71 go nie dubluje). Usunięty nieużywany klucz `paths.weapon.ok`. Bez uproszczeń zakresu.
+- Testy: nowy `pathview.spec` (7 przypadków), blok „Path titles (S59)” w `titles.spec`, `"title"` w `NAMESPACES`.
+  `wikidump --check`: up to date (bez zmian w danych wiki).
+
+Pliki: `Logic/{Paths,PathView,Skills,Titles}`, `Data/Titles`, `Types`, `Net/Definitions`, lokalizacja PL / EN,
+`TitleService`, `LevelService`, `UI/Screens/SkillsWindow/*` (zamiast `SkillsWindow.luau`), `UI/{SkillInfo,
+SkillsAttention}`, `UI/Components/IconButton`, `Hud/init`, `ScreenController`, `EffectsController`,
+`tests/{pathview,titles,data}.spec`, `docs/{ROZWOJ,DESIGN}.md`, `CLAUDE.md`.

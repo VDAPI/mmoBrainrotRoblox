@@ -1202,3 +1202,19 @@
 - **S58** `StatPlan.suggest`: liczby całkowite, punkty w statystykach spoza planu liczą się do sumy, remis według
   `Stats.primary`; przycisk dorzuca resztę wolnych punktów do rezerwacji (ręczne zostają). Rezerwacja punktów należy
   do zestawu: przełączenie ją czyści. `tests/Balance.statsFor` bez zmian do decyzji sesji balansu.
+- **S59** Okno umiejętności to folder `UI/Screens/SkillsWindow/` (13 plików); liczy tylko przez `Logic/Paths` i nowe
+  czyste `Logic/PathView`. Stan zakładki: główna = ścieżka główna, zamknięta = poniżej 10. poziomu, początki = reszta.
+- **S59** Telefon: A/B jako przypięty rząd przełączników nad paskiem akcji arkusza (dotknięcie niewybranej opcji, także
+  A bez wpisu, woła `ChooseBreakpoint`); pełne teksty kart w treści arkusza bez przycisków. Powody nieaktywnych
+  przycisków arkusza idą na koniec treści.
+- **S59** `LevelUp` ma piąty argument `fromLevel`; toasty rang i przełomów liczy klient (`PathView.rankUps` /
+  `newBreakpoints`), toast punktu ścieżki dostają też klasy bez ścieżek (wariant „wkrótce”). „!” tylko przy wolnym
+  punkcie z węzłem, który `canBuy` przepuszcza, albo opcji B osiągniętej rangi bez wyboru.
+- **S59** Tytuły ścieżek: `req = { kind = "mainPath", path = "<pathId>" }`; `character.title = Data/Titles.NONE` =
+  gracz ukrył tytuł, `nil` = domyślny tytuł ścieżki głównej (dotychczasowe `nil` też go dostaje). Wpisy dopiszą sesje
+  klas. `TitleService` odświeża tytuł na `PathService.Changed`.
+- **S59** `Paths.nodeScale` (jedno miejsce reguły ⅓, z niej `activeNodes`), `nodeArgs` (placeholder opisu węzła =
+  pole `node.values`, pola wskazane w `mul` jako 1 + (v − 1)·scale, zaokrąglenie `Skills.roundArg`), `iconWeapon`,
+  `isTwoHanded`; pole `Api.source` istniało od S57.
+- **S59** `Preview.new` bierze reaktywne `skillId` (`UsedAs<string?>`) zamiast funkcji `getSkillId`, bo przycisk
+  podglądu na PC musi gasnąć sam; `Selection` ma kształt `{ kind: "skill" | "node", id }`.

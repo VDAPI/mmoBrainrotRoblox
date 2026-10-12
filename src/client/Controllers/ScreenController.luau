@@ -14,6 +14,7 @@ local Config = require(ReplicatedStorage.Shared.Config)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local GameMenu = require(script.Parent.Parent.UI.Screens.GameMenu)
 local BackpackPanel = require(script.Parent.Parent.UI.Screens.BackpackPanel)
+local SkillsAttention = require(script.Parent.Parent.UI.SkillsAttention)
 local SkillsWindow = require(script.Parent.Parent.UI.Screens.SkillsWindow)
 local Hud = require(script.Parent.Parent.UI.Screens.Hud)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
@@ -54,7 +55,7 @@ local VfxController: any
 local MENU: { Hud.MenuEntry } = {
 	{ id = "character", icon = "♜", hotkey = "C", tooltipKey = "hud.menu.character" },
 	{ id = "inventory", icon = "▣", hotkey = "B", tooltipKey = "hud.menu.inventory" },
-	{ id = "skills", icon = "✦", hotkey = "K", tooltipKey = "hud.menu.skills" },
+	{ id = "skills", icon = "✦", hotkey = "K", tooltipKey = "hud.menu.skills", badge = SkillsAttention.badge },
 	{ id = "map", icon = "⌖", hotkey = "M", tooltipKey = "hud.menu.map" },
 	{ id = "quests", icon = "✎", hotkey = "L", tooltipKey = "hud.menu.quests" },
 	{ id = "guild", icon = "⚑", hotkey = "G", tooltipKey = "hud.menu.guild" },
@@ -117,10 +118,10 @@ local function registerWindows()
 			WindowManager.Register({
 				id = "skills",
 				titleKey = "window.skills.title",
-				size = Vector2.new(780, 640),
+				size = Vector2.new(920, 640),
 				hotkey = HOTKEYS.skills,
 				build = function(scope: Scope)
-					return SkillsWindow(scope, WindowManager.ShowModal, VfxController.Preview)
+					return SkillsWindow(scope, { ShowModal = WindowManager.ShowModal, Preview = VfxController.Preview })
 				end,
 			})
 		elseif entry.id == "inventory" then

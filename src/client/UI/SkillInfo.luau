@@ -7,6 +7,8 @@
 -- Paths.effectiveFor / Paths.skillMods with the chosen breakpoints (path.bp) and the modify nodes.
 -- S54: cost and descriptions at the character level (Skills.cost, heal curve); damage skills show the weapon speed
 -- factor (Skills.speedFactor) when it is not x1.
+-- S59: breakpoints with the player's choice: the line shows the option that works (chosen, else A);
+-- breakpointCards gives the skills window both options of ranks 5 and 10 with their state.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -113,15 +115,23 @@ function SkillInfo.costLine(use: any, skill: SkillData.SkillDef, shownRank: numb
 	return table.concat(parts, " · ")
 end
 
--- Lines of the breakpoints: { text, reached }.
+local function choicesOf(use: any, choices: Skills.Choices?): Skills.Choices?
+	if choices then
+		return choices
+	end
+	local state = charOf(use).path
+	return if state then state.bp else nil
+end
+
+-- Lines of the breakpoints: { text, reached }; `choices` default: path.bp of the character.
 function SkillInfo.breakpoints(
 	use: any,
 	skill: SkillData.SkillDef,
-	rank: number
+	rank: number,
+	choices: Skills.Choices?
 ): { { text: string, reached: boolean } }
 	local out = {}
-	local state = charOf(use).path
-	local choices = if state then state.bp else nil
+	choices = choicesOf(use, choices)
 	for _, bp in Skills.breakpointKeys(skill) do
 		-- the option that works (A without a choice)
 		if bp.option == Skills.chosen(skill, bp.rank, choices) then
@@ -133,8 +143,51 @@ function SkillInfo.breakpoints(
 	return out
 end
 
--- The whole tooltip as plain text (the skill bar).
-function SkillInfo.tooltip(use: any, skill: SkillData.SkillDef, rank: number): string
+export type BpOption = { option: SkillData.BreakpointOption, text: string }
+export type BpCard = {
+	at: number,
+	level: number, -- character level of the rank
+	reached: boolean,
+	chosen: SkillData.BreakpointOption?, -- saved in path.bp
+	working: SkillData.BreakpointOption, -- chosen, else A
+	options: { BpOption }, -- A, and B when the breakpoint has it
+}
+
+-- Both options of the breakpoints at ranks 5 and 10 (S59; passives have none).
+function SkillInfo.breakpointCards(
+	use: any,
+	skill: SkillData.SkillDef,
+	rank: number,
+	choices: Skills.Choices?
+): { BpCard }
+	local out: { BpCard } = {}
+	if skill.type == "passive" or not skill.breakpoints then
+		return out
+	end
+	choices = choicesOf(use, choices)
+	for _, at in Skills.BREAKPOINT_LEVELS do
+		local pair = skill.breakpoints[at]
+		if pair then
+			local options: { BpOption } =
+				{ { option = "a", text = Text.get(use, Skills.breakpointKey(skill.id, at, "a")) } }
+			if pair.b then
+				table.insert(options, { option = "b", text = Text.get(use, Skills.breakpointKey(skill.id, at, "b")) })
+			end
+			table.insert(out, {
+				at = at,
+				level = Skills.rankLevel(skill, at),
+				reached = rank >= at,
+				chosen = if choices then choices[Skills.choiceKey(skill.id, at)] else nil,
+				working = Skills.chosen(skill, at, choices),
+				options = options,
+			})
+		end
+	end
+	return out
+end
+
+-- The whole tooltip as plain text (the skill bar); `choices` default: path.bp of the character.
+function SkillInfo.tooltip(use: any, skill: SkillData.SkillDef, rank: number, choices: Skills.Choices?): string
 	local lang = use(Text.Lang)
 	local shown = math.max(1, rank)
 	local rankText = Text.get(use, "skills.rank", { rank = rank, max = skill.maxLevel })
@@ -156,7 +209,7 @@ function SkillInfo.tooltip(use: any, skill: SkillData.SkillDef, rank: number): s
 		local label = Text.get(use, "skills.nextRank", { rank = rank + 1, level = Skills.rankLevel(skill, rank + 1) })
 		table.insert(lines, `{label}: {nextText}`)
 	end
-	for _, bp in SkillInfo.breakpoints(use, skill, rank) do
+	for _, bp in SkillInfo.breakpoints(use, skill, rank, choices) do
 		table.insert(lines, (if bp.reached then "✔ " else "· ") .. bp.text)
 	end
 	local element = Skills.requiredElement(skill)

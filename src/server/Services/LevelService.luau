@@ -72,7 +72,7 @@ local function onLevelsGained(player: Player, character: Types.CharacterData, fr
 	StatService.Recompute(player)
 	ResourceService.Restore(player)
 	local pathPts = Paths.pointsAt(to) - Paths.pointsAt(from)
-	Net.FireList(nearbyPlayers(player), "LevelUp", player, to, statPts, pathPts)
+	Net.FireList(nearbyPlayers(player), "LevelUp", player, to, statPts, pathPts, from)
 	LevelService.LevelChanged:Fire(player, to, from)
 	LevelService.LeveledUp:Fire(player, to, to - from)
 	Analytics.progression(player, "Level", to, `level_{to}`) -- an empty level name is rejected by AnalyticsService

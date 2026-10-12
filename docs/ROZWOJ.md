@@ -346,10 +346,12 @@ Broń każdej ścieżki (uzasadnienie i pokrycie w sekcjach klas):
 | `Data/LevelCurves` | nowy, jeśli sesja balansu go jeszcze nie dodała (8) |
 | `Data/Progression` | `pathPointsEvery`, `varietyPerClass`, `varietyMax` |
 | `Data/Classes` | `statPlan` |
-| `Data/Titles` | tytuły ścieżek `path_<pathId>`, `req.kind = "mainPath"` |
+| `Data/Titles` | tytuły ścieżek `path_<pathId>`, `req.kind = "mainPath"`; S59: wariant typu i stała `NONE` (wpisy dopisują sesje klas) |
+| `Logic/Titles` | S59: `meets` z `mainPath`, `pathTitle`, `shown` z domyślnym tytułem ścieżki głównej, opcjonalna lista (testy) |
 | `Data/Combat` | nowe `pvp` (mnożniki 7.6), `skillSpeedRef` (8) |
 | `Logic/Skills` | `rankLevel`, `rankAt`, `effective(skill, rank, choices, mods)`, `cost(skill, rank, L, classId, mods)`; bez `canLearn`, `spentPoints`, `refundAll` |
-| `Logic/Paths` | nowy: `rowsFor`, `pointsAt`, `free`, `rowOpen`, `canBuy`, `canRefund`, `refund`, `canChooseMain` (z `freeUsed`), `skillRank`, `availableSkills`, `skillUsable`, `skillMods`, `validHotbar`, `passiveTotals`, `activeNodes`, `auras`, `inAura`, `luck`, `clampToLevel`, `weaponOk`, `canEdit(ctx)`; S57 dokłada pomocnicze `pathsOf`, `classHasPaths`, `isPublished`, `findNode`, `spent`, `ranksIn`, `weaponTypesOf`, `nodeValues`, `isTeamNode`, `canPutOnBar`, `canChooseBreakpoint`, `effectiveFor`, `withSource` / `sourceOf` (źródło danych, test na `tests/fixtures/paths.luau`) i `MAIN_LEVEL`; S58 zestawy: `swapSets`, `copySet`, `emptySet`, `otherSet`, `activeSet`, `cloneSet`, `setView`, `cleanSet`, `mainWeaponOk`, `statPlan`, akcje `canEdit` `switchSet` / `copySet` (pola `dead`, `inRun`) |
+| `Logic/Paths` | nowy: `rowsFor`, `pointsAt`, `free`, `rowOpen`, `canBuy`, `canRefund`, `refund`, `canChooseMain` (z `freeUsed`), `skillRank`, `availableSkills`, `skillUsable`, `skillMods`, `validHotbar`, `passiveTotals`, `activeNodes`, `auras`, `inAura`, `luck`, `clampToLevel`, `weaponOk`, `canEdit(ctx)`; S57 dokłada pomocnicze `pathsOf`, `classHasPaths`, `isPublished`, `findNode`, `spent`, `ranksIn`, `weaponTypesOf`, `nodeValues`, `isTeamNode`, `canPutOnBar`, `canChooseBreakpoint`, `effectiveFor`, `withSource` / `sourceOf` (źródło danych, test na `tests/fixtures/paths.luau`) i `MAIN_LEVEL`; S58 zestawy: `swapSets`, `copySet`, `emptySet`, `otherSet`, `activeSet`, `cloneSet`, `setView`, `cleanSet`, `mainWeaponOk`, `statPlan`, akcje `canEdit` `switchSet` / `copySet` (pola `dead`, `inRun`); S59: `source` (pole API), `nodeScale` (reguła ⅓ dla dowolnego węzła, z niej `activeNodes`), `nodeArgs` (argumenty opisu węzła: placeholder = pole `values`, pola z `mul` jako 1 + (v − 1)·scale, zaokrąglenie `Skills.roundArg`), `iconWeapon`, `isTwoHanded` |
+| `Logic/PathView` | S59, nowy, czysty: `with(api)`, `tabState`, `path` (rzędy z powodem zamknięcia, stany węzłów), `weaponText`, `pendingBreakpoints`, `attention` („!”), `rankUps`, `newBreakpoints` (toasty awansu) |
 | `Logic/Luck`, `PartyBonus`, `StatPlan`, `EffectStack`, `LevelCurves` | nowe, czyste; `StatPlan` (S58): `startOf`, `total`, `spent`, `refit`, `suggest` |
 | `Logic/AccountSchema`, `CharacterFactory`, `Types` | schemat 6 i nowe postacie (5) |
 
@@ -392,6 +394,8 @@ export type ReferenceBuild = {
 -- Zapis postaci (aktywny zestaw w polach postaci, drugi w buildOther; skills i skillPoints usunięte):
 -- path = { main: string?, nodes: { [nodeId]: rank }, bp: { ["<skillId>:5"]: "a" | "b" }, freeUsed: boolean }
 -- buildSlot = 1, buildOther = { path, stats, statPoints, hotbar }?, reworkNotice = boolean
+-- S59: tytuł ścieżki: Data/Titles { id = "path_<pathId>", req = { kind = "mainPath", path = "<pathId>" } };
+-- character.title: nil = gracz nie wybrał (przy nicku tytuł ścieżki głównej), Data/Titles.NONE = ukrył tytuł
 ```
 
 ### 3.3 Remote'y, serwisy, klient, admin
@@ -406,7 +410,7 @@ export type ReferenceBuild = {
   `PartyAuraService` (nowy, 7.3).
 - Zmiany na serwerze: `SkillService` (rzucanie przez `Paths.skillRank` / `skillUsable`, `Skills.effective` z wyborami
   i `Paths.skillMods`, pasywki i haki z `Paths.passiveTotals`, `PutOnBar`, automatyczne wkładanie na pasek z 5),
-  `StatusEffectService` (7.2), `LevelService` (punkty, `LevelUp`, `SetLevel` dla obu zestawów), `CombatService` (7.4,
+  `StatusEffectService` (7.2), `LevelService` (punkty, `LevelUp(player, newLevel, statPoints, pathPoints, fromLevel)` od S59, `SetLevel` dla obu zestawów), `CombatService` (7.4,
   6.1, `misfortune`), `LootService` i `DungeonService` (6, 7.4, podsumowanie walki z 4), `PotionService` (8),
   `PartyService` (pole `luck` w gałęzi `party`), `TitleService` + `Logic/Titles` (tytuł ścieżki), nowa
   `EquipmentService.WeaponTypes(player)`, `ScrollService` (zwój), `ResourceService.Healed(target, amount, source)`
@@ -485,6 +489,13 @@ export type ReferenceBuild = {
   na wolne miejsce (5).
 - „!” na przycisku okna przy wolnych punktach z otwartym węzłem albo przy przełomie bez wyboru. Toasty: „+1 punkt
   ścieżki”, „Kula Ognia: ranga 6”, „Nowy przełom do wyboru”, „Nowa umiejętność na pasku: Szarża”.
+- S59 (stan po wdrożeniu): stan zakładki ścieżki: główna = ścieżka główna aktywnego zestawu, zamknięta = postać poniżej
+  poziomu rzędu 1 (10.), początki = reszta (`PathView.tabState`). „!” (`PathView.attention`): wolny punkt i co
+  najmniej jeden węzeł klasy, który `canBuy` przepuszcza, albo opcja B osiągniętej rangi bez wpisu w `path.bp`; kropka
+  także na zakładce (podstawa albo ścieżka umiejętności). Telefon: A/B jako przypięty rząd przełączników nad paskiem
+  akcji arkusza (dotknięcie niewybranej opcji, także A bez wpisu, woła `ChooseBreakpoint`), pełne teksty kart w treści
+  arkusza bez przycisków. Toast punktu ścieżki także klasie bez ścieżek (wariant „ścieżki tej klasy wkrótce”); toasty
+  rang i przełomów liczy klient z `fromLevel` zdarzenia `LevelUp`.
 - Okno postaci: przełącznik zestawów i „Rozdaj jak zaleca ścieżka” obok „Zatwierdź”.
 - Przy nicku domyślnie tytuł ścieżki głównej (`Titles.shown`), gdy gracz nie wybrał innego; tytuł ścieżki jest też na
   liście wyboru.

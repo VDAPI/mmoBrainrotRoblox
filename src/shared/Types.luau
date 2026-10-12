@@ -98,7 +98,7 @@ export type CharacterData = {
 	guildId: string?,
 	auctions: { [string]: boolean }, -- S13: ids of this character's auction listings
 	guideDone: boolean, -- S14: the HUD guide was shown (or skipped)
-	title: string?, -- S16: chosen title id (Data/Titles), shown while unlocked
+	title: string?, -- S16 chosen title id; S59: nil = never chose (the main path title shows), Data/Titles.NONE = hidden
 	pvpEnabled: boolean,
 	elixirs: { [string]: number }, -- resistance stat -> expiresAt (Clock time)
 	pvp: { kills: number, deaths: number, duelsWon: number, duelsLost: number },

@@ -1,12 +1,17 @@
 --!strict
 -- Character titles (S16): shown above the name on the nameplate. Each one unlocks from a milestone the
 -- character data already tracks. Names: title.<id> (Localization). Order = display order in the picker.
+-- S59 (ROZWOJ 3.1, 16.7): path titles have the id path_<pathId> (= PathDef.titleId), the name key title.path_<pathId>
+-- and req = { kind = "mainPath", path = "<pathId>" }; a class session adds them together with its PathDef, at the
+-- end of the list, e.g. id path_healer, req { kind = "mainPath", path = "healer" }, color "#8FE0B8". Unpublished
+-- paths hide them on the wiki (tools/WikiData/Visibility).
 
 export type Requirement =
 	{ kind: "level", value: number }
 	| { kind: "pvpKills", value: number }
 	| { kind: "duelsWon", value: number }
 	| { kind: "mainDone", value: number }
+	| { kind: "mainPath", path: string } -- S59: unlocked while the active set's main path is this path id
 
 export type TitleDef = {
 	id: string,
@@ -29,12 +34,18 @@ local list: { TitleDef } = {
 	{ id = "warlord", nameKey = "title.warlord", req = { kind = "pvpKills", value = 100 }, color = "#B8322A" },
 }
 
+-- S59: character.title when the player hid the title; nil = never chose, the main path title shows
+local NONE = "none"
+
 local byId: { [string]: TitleDef } = {}
 for _, def in list do
+	assert(def.id ~= NONE, `Titles: "{NONE}" is reserved`)
+	assert(byId[def.id] == nil, `Titles: duplicate id {def.id}`)
 	byId[def.id] = def
 end
 
 return table.freeze({
+	NONE = NONE,
 	list = list,
 	get = function(id: string): TitleDef?
 		return byId[id]

@@ -1,6 +1,6 @@
 --!strict
 -- Square button with a glyph icon (placeholder until real icons exist), optional hotkey badge and
--- tooltip text. Minimum size respects the 44 px touch target.
+-- tooltip text. Minimum size respects the 44 px touch target. S59: optional "!" badge in the top-right corner.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -23,6 +23,7 @@ export type Props = {
 	AnchorPoint: UsedAs<Vector2>?,
 	LayoutOrder: UsedAs<number>?,
 	Active: UsedAs<boolean>?, -- highlighted (e.g. window open)
+	Badge: UsedAs<boolean>?, -- S59: red "!" in the corner (something waits in the window)
 	Name: string?,
 }
 
@@ -90,6 +91,22 @@ local function IconButton(scope: Fusion.Scope<typeof(Fusion)>, props: Props): In
 					TextSize = 13,
 					TextColor3 = Theme.Colors.TextMuted,
 					TextXAlignment = Enum.TextXAlignment.Right,
+				}) :: any
+				else nil,
+			if props.Badge
+				then scope:New("TextLabel")({
+					Name = "Badge",
+					AnchorPoint = Vector2.new(1, 0),
+					Position = UDim2.new(1, 4, 0, -4),
+					Size = UDim2.fromOffset(18, 18),
+					BackgroundColor3 = Theme.Colors.Danger,
+					Text = "!",
+					FontFace = Theme.Fonts.BodyBold,
+					TextSize = 14,
+					TextColor3 = Theme.Colors.Text,
+					ZIndex = 3,
+					Visible = props.Badge,
+					[Children] = scope:New("UICorner")({ CornerRadius = Theme.Corner.Round }),
 				}) :: any
 				else nil,
 		},

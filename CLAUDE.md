@@ -86,6 +86,9 @@ przedmiotów czyta STATY); odstępstwa idą do `docs/DECYZJE.md`, a kontrakt pop
   `unlock` = poziom rzędu, teksty `path.<pathId>.*`, `wiki = false` do wydania, `statPlan` (plan przycisku „Rozdaj jak
   zaleca ścieżka”, nigdy na wiki), `paths.spec` sprawdza dane. Reguły
   (punkty, rzędy, broń, pasek, pasywki) tylko w `Logic/Paths`; serwer `PathService`.
+- **Tytuł ścieżki** (S59): wpis w `Data/Titles` (`id = "path_<pathId>"`, `req = { kind = "mainPath", path = "<pathId>" }`)
+  i `title.path_<pathId>` (PL, EN); okno umiejętności rysuje ścieżkę samo z `Data/Paths` (`Logic/PathView`), opis
+  węzła dostaje argumenty z `Paths.nodeArgs`.
 
 ## Typy Fusion
 - luau-lsp nie lubi mieszanych tablic w `[Children]`: tablice instancji, `if ... else nil`, `ForValues`

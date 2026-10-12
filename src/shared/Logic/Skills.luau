@@ -416,12 +416,14 @@ function Skills.speedFactor(weaponSpeed: number?): number
 	return (weaponSpeed or Stats.Formula.unarmed.speed) / Combat.skillSpeedRef
 end
 
-local function round(value: number): number
+-- A description argument: a whole number stays, anything else gets one decimal (S59: also path node texts).
+function Skills.roundArg(value: number): number
 	if math.abs(value - math.floor(value + 0.5)) < 1e-6 then
 		return math.floor(value + 0.5)
 	end
 	return math.floor(value * 10 + 0.5) / 10
 end
+local round = Skills.roundArg
 
 -- Options of a description: `level` = character level (default: the level the rank unlocks at, as on the wiki);
 -- `choices` / `mods` as in Skills.effective (S55; nil = option A, no nodes).

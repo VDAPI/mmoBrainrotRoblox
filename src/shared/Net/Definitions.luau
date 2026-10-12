@@ -42,7 +42,7 @@ local Definitions: { [string]: Definition } = {
 
 	-- Stats and progression
 	AllocateStats = { kind = "function", dir = "c2s", rate = 2, args = { "table" } }, -- ({ str, dex, int, vit })
-	LevelUp = { kind = "event", dir = "s2c" }, -- (player, newLevel, statPoints, pathPoints) S57: path points gained
+	LevelUp = { kind = "event", dir = "s2c" }, -- (player, newLevel, statPoints, pathPoints, fromLevel) to nearby players; S59 adds fromLevel
 
 	-- Combat
 	-- (entityId or nil to clear, attack: false keeps the target but stops the auto-attack; S18)
@@ -55,7 +55,7 @@ local Definitions: { [string]: Definition } = {
 	AdminRun = { kind = "function", dir = "c2s", rate = 6, args = { "string", "table" } }, -- (command, args) dev panel, admins only (S23)
 	MobViz = { kind = "event", dir = "s2c" }, -- ("show", {target, variant, anim}) | ("clear") | ("stats"): admin look preview (S24)
 	AttackRejected = { kind = "event", dir = "s2c" }, -- (reason locale key), at most one per 2 s (S18)
-	SetTitle = { kind = "function", dir = "c2s", rate = 2, args = { "string?" } }, -- (titleId or nil), S16
+	SetTitle = { kind = "function", dir = "c2s", rate = 2, args = { "string?" } }, -- (titleId or nil = no title), S16; S59 stores Data/Titles.NONE
 	CombatFx = { kind = "event", dir = "s2c" }, -- batched { k = "dmg" | "heal" | "atk" | "tele" | "reward", ... }
 
 	-- Items (S04). Functions answer (ok, errorKey?).

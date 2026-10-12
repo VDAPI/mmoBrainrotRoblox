@@ -10,6 +10,8 @@
 -- luck map a stat or field to a values field; in modify.bp any number is { ref = "<values field>" } (inside `mul`
 -- it becomes 1 + (x - 1) * scale, elsewhere x * scale). Team nodes of rows 1..DIP_ROWS work outside the main path
 -- with scale node.dipScale or DIP_SCALE.
+-- S59: nodeScale (that rule for any node), nodeArgs (node description arguments), iconWeapon, isTwoHanded; the
+-- window's views live in Logic/PathView.
 
 local Bases = require("../Data/Items/Bases")
 local Classes = require("../Data/Classes")
@@ -254,6 +256,59 @@ local function resolveRefs(value: any, values: { [string]: number }, scale: numb
 		out[key] = resolveRefs(inner, values, scale, key == "mul")
 	end
 	return out
+end
+
+-- values fields referenced as { ref = field } inside any `mul` table of a modify.bp (they scale as 1 + (x - 1) * s).
+local function mulRefs(value: any, inMul: boolean, out: { [string]: boolean })
+	if type(value) ~= "table" then
+		return
+	end
+	if type(value.ref) == "string" then
+		if inMul then
+			out[value.ref] = true
+		end
+		return
+	end
+	for key, inner in value do
+		mulRefs(inner, inMul or key == "mul", out)
+	end
+end
+
+-- Arguments of node.descKey at `rank` (S59): one per node.values field (the placeholder = the field name), scaled as
+-- skillMods resolves references (a field used inside modify.bp `mul` as 1 + (v - 1) * scale, others v * scale) and
+-- rounded as skill descriptions (Skills.roundArg). A node without values gives {}.
+local function nodeArgs(node: PathNode, rank: number, scale: number?): { [string]: number }
+	local s = scale or 1
+	local inMul: { [string]: boolean } = {}
+	if node.modify then
+		mulRefs(node.modify.bp, false, inMul)
+	end
+	local out: { [string]: number } = {}
+	for field, v in nodeValues(node, rank, 1) do
+		local x = if inMul[field] then 1 + (v - 1) * s else v * s
+		out[field] = Skills.roundArg(x)
+	end
+	return out
+end
+
+-- The weapon type of a path's icon (S59, S60 path sign): the first main type, else the first off-hand type, else nil
+-- (the UI shows the class glyph).
+local function iconWeapon(def: PathDef): string?
+	local req = def.weapon
+	if req == nil then
+		return nil
+	end
+	if req.main and req.main[1] then
+		return req.main[1]
+	end
+	if req.offhand and req.offhand[1] then
+		return req.offhand[1]
+	end
+	return nil
+end
+
+local function isTwoHanded(itemType: string): boolean
+	return TWO_HANDED[itemType] == true
 end
 
 -- Sources -----------------------------------------------------------------------------------------------------------
@@ -659,8 +714,10 @@ local function buildApi(source: Source)
 		return true, nil
 	end
 
-	local function scaleOf(state: PathState, path: PathDef, row: number, node: PathNode): number
-		if row <= DIP_ROWS and state.main ~= path.id and isTeamNode(node) then
+	-- B3 for any node, bought or not (S59): a team node of rows 1..DIP_ROWS outside the main path (also without one)
+	-- works at node.dipScale or DIP_SCALE, everything else at 1. The one place of the rule (activeNodes, the window).
+	local function nodeScale(character: Char, pathId: string, row: number, node: PathNode): number
+		if row <= DIP_ROWS and stateOf(character).main ~= pathId and isTeamNode(node) then
 			return node.dipScale or DIP_SCALE
 		end
 		return 1
@@ -690,7 +747,7 @@ local function buildApi(source: Source)
 							path = path,
 							row = r,
 							rank = rank,
-							scale = scaleOf(state, path, r, node),
+							scale = nodeScale(character, path.id, r, node),
 						})
 					end
 				end
@@ -1059,6 +1116,10 @@ local function buildApi(source: Source)
 		skillUsable = skillUsable,
 		activeNodes = activeNodes,
 		nodeValues = nodeValues,
+		nodeScale = nodeScale,
+		nodeArgs = nodeArgs,
+		iconWeapon = iconWeapon,
+		isTwoHanded = isTwoHanded,
 		isTeamNode = isTeamNode,
 		skillMods = skillMods,
 		effectiveFor = effectiveFor,

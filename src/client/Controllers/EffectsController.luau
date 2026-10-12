@@ -1,6 +1,8 @@
 --!strict
 -- World effects drawn locally: level-up pillar of light (DESIGN §4.6); the golden glow of the respawn
 -- protection (S22) on every character whose "Effects" attribute lists "respawnShield" (not on low quality).
+-- S59 (ROZWOJ 4): after the local level-up toast, toasts for path points, skill ranks and new breakpoints to choose
+-- (Logic/PathView.rankUps / newBreakpoints between LevelUp's fromLevel and the new level).
 
 local Debris = game:GetService("Debris")
 local Players = game:GetService("Players")
@@ -11,6 +13,9 @@ local Workspace = game:GetService("Workspace")
 
 local EffectStack = require(ReplicatedStorage.Shared.Logic.EffectStack)
 local Net = require(ReplicatedStorage.Shared.Net)
+local PathView = require(ReplicatedStorage.Shared.Logic.PathView)
+local Paths = require(ReplicatedStorage.Shared.Logic.Paths)
+local SkillData = require(ReplicatedStorage.Shared.Data.Skills)
 local State = require(script.Parent.Parent.UI.State)
 local Sounds = require(script.Parent.Parent.UI.Sounds)
 local Text = require(script.Parent.Parent.UI.Text)
@@ -145,6 +150,48 @@ local function refreshGlows()
 	end
 end
 
+local MAX_RANK_TOASTS = 3
+local MAX_BP_TOASTS = 2
+
+local function skillName(skillId: string): string
+	local skill = SkillData.get(skillId)
+	return if skill then Text.now(skill.nameKey) else skillId
+end
+
+-- Path points, rank-ups and new breakpoints of a local level-up (the event comes before the state diff, so the
+-- character is the class and path from State with the new level).
+local function progressToasts(from: number, to: number, pathPoints: number?)
+	local class = State.Get({ "character", "class" })
+	if type(class) ~= "string" or class == "" then
+		return
+	end
+	local points = if type(pathPoints) == "number" then pathPoints else 0
+	if points > 0 then
+		local soon = not Paths.classHasPaths(class)
+		local key = if points == 1
+			then (if soon then "paths.toast.pointSoon" else "paths.toast.point")
+			else (if soon then "paths.toast.pointsSoon" else "paths.toast.points")
+		Toast.push(Text.now(key, { n = points }), "success", 4)
+	end
+	local character = { class = class, level = to, path = State.Get({ "character", "path" }) }
+	local ranks = PathView.rankUps(character, from, to)
+	if #ranks > MAX_RANK_TOASTS then
+		Toast.push(Text.now("skills.toast.ranks", { n = #ranks }), "info")
+	else
+		for _, up in ranks do
+			Toast.push(Text.now("skills.toast.rank", { skill = skillName(up.skillId), rank = up.rank }), "info")
+		end
+	end
+	local fresh = PathView.newBreakpoints(character, from, to)
+	if #fresh > MAX_BP_TOASTS then
+		Toast.push(Text.now("bp.toast.many", { n = #fresh }), "warning")
+	else
+		for _, bp in fresh do
+			Toast.push(Text.now("bp.toast.new", { skill = skillName(bp.skillId), rank = bp.at }), "warning")
+		end
+	end
+end
+
 function EffectsController.Start()
 	local glowCheck = 0
 	RunService.Heartbeat:Connect(function(dt: number)
@@ -154,19 +201,23 @@ function EffectsController.Start()
 			refreshGlows()
 		end
 	end)
-	Net.On("LevelUp", function(player: Player, level: number, statPoints: number)
-		if typeof(player) ~= "Instance" or not player:IsA("Player") then
-			return
+	Net.On(
+		"LevelUp",
+		function(player: Player, level: number, statPoints: number, pathPoints: number?, fromLevel: number?)
+			if typeof(player) ~= "Instance" or not player:IsA("Player") then
+				return
+			end
+			local model = player.Character
+			if model then
+				pillar(model)
+			end
+			if player == Players.LocalPlayer then
+				Sounds.play("levelUp")
+				Toast.push(Text.now("toast.levelUp", { level = level, stat = statPoints }), "success", 5)
+				progressToasts(if type(fromLevel) == "number" then fromLevel else level - 1, level, pathPoints)
+			end
 		end
-		local model = player.Character
-		if model then
-			pillar(model)
-		end
-		if player == Players.LocalPlayer then
-			Sounds.play("levelUp")
-			Toast.push(Text.now("toast.levelUp", { level = level, stat = statPoints }), "success", 5)
-		end
-	end)
+	)
 end
 
 return EffectsController

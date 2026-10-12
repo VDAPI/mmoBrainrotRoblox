@@ -45,6 +45,7 @@ export type MenuEntry = {
 	icon: string,
 	hotkey: string?, -- label shown on the button
 	tooltipKey: string,
+	badge: ((scope: Scope) -> Fusion.UsedAs<boolean>)?, -- S59: "!" on the button (skills window)
 }
 
 export type Props = {
@@ -244,6 +245,7 @@ local function menu(scope: Scope, props: Props): Instance
 				Hotkey = if entry.hotkey then Keybinds.Label(scope, `win_{entry.id}`) else nil,
 				Tooltip = Text.T(scope, entry.tooltipKey),
 				Active = props.IsOpen(entry.id),
+				Badge = if entry.badge then entry.badge(scope) else nil,
 				OnClick = function()
 					props.OpenWindow(entry.id)
 				end,

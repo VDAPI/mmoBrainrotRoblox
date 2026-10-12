@@ -1,6 +1,8 @@
 --!strict
 -- Character titles (S16): the player picks one of the unlocked titles (Logic/Titles); it is saved on the
 -- character and mirrored to the "Title" attribute of the character model for the nameplates.
+-- S59: the main path title shows by default (Titles.shown), refreshed on PathService.Changed (main path chosen or
+-- changed, build set switched); "no title" is saved as Titles.NONE.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -11,11 +13,12 @@ local Types = require(Shared.Types)
 
 local TitleService = {
 	Name = "TitleService",
-	Deps = { "PlayerStateService", "CharacterService" },
+	Deps = { "PlayerStateService", "CharacterService", "PathService" },
 }
 
 local PlayerStateService: any
 local CharacterService: any
+local PathService: any
 
 -- Writes the shown title onto the character model (nil hides it).
 function TitleService.Refresh(player: Player)
@@ -31,7 +34,13 @@ local function setTitle(player: Player, id: string?): (boolean, string?)
 	if not character then
 		return false, "error.internal"
 	end
-	if id ~= nil and not Titles.isUnlocked(character, id) then
+	if id == nil or id == Titles.NONE then
+		-- nil in the save means "never chose" (the main path title shows), so hiding stores NONE
+		PlayerStateService.Set(player, { "character", "title" }, Titles.NONE)
+		TitleService.Refresh(player)
+		return true
+	end
+	if not Titles.isUnlocked(character, id) then
 		return false, "title.error.locked"
 	end
 	PlayerStateService.Set(player, { "character", "title" }, id)
@@ -42,11 +51,15 @@ end
 function TitleService.Init(registry)
 	PlayerStateService = registry.Get("PlayerStateService")
 	CharacterService = registry.Get("CharacterService")
+	PathService = registry.Get("PathService")
 end
 
 function TitleService.Start()
 	Net.Handle("SetTitle", setTitle)
 	CharacterService.ModelSpawned:Connect(function(player: Player)
+		TitleService.Refresh(player)
+	end)
+	PathService.Changed:Connect(function(player: Player)
 		TitleService.Refresh(player)
 	end)
 end

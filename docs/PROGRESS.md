@@ -5,7 +5,7 @@
 
 ## Stan
 
-S01–S51 i S53–S58 gotowe (lista i zakres w `docs/SESJE.md`). Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
+S01–S51 i S53–S59 gotowe (lista i zakres w `docs/SESJE.md`). Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
 kategorie efektów drużyny i stos efektów (`Logic/EffectStack`), S54 wzory globalne (`Logic/LevelCurves`), S55 rangi
 i przełomy w kształcie A/B (`Build.bp2`, `Skills.effective` §2.7), S56 koniec punktów umiejętności: rangi z poziomu
 postaci (`Skills.rankFor`, drabina przejściowa ROZWOJ 2.6), zapis w schemacie 6 (darmowy reset statystyk, pasek
@@ -13,8 +13,10 @@ ułożony od nowa, okno „Rozwój postaci się zmienił”), `PutOnBar` i auto-
 (`Data/Paths`, `Logic/Paths`, `PathService`: punkty co parzysty poziom, węzły, ścieżka główna, przełomy, broń ścieżki,
 Zwój Nowej Ścieżki; żadna klasa nie ma jeszcze ścieżek), S58 dwa zestawy buildu (przełączanie w mieście albo przy
 bramie lochu, „Kopiuj”, punkty obu zestawów, `cleanSet` przy wczytaniu) i „Rozdaj jak zaleca ścieżka”
-(`Logic/StatPlan`, plany klas; plany ścieżek przyjdą z sesjami klas). Faza teraz: **gameplay**; przebudowa rozwoju
-postaci S53–S94 (`docs/ROZWOJ.md`, `docs/STATY.md`), następna S59; testy i strojenie po niej.
+(`Logic/StatPlan`, plany klas; plany ścieżek przyjdą z sesjami klas), S59 pełne okno umiejętności (PC i telefon,
+`Logic/PathView`), „!” na przycisku K, toasty rang i punktów ścieżki, tytuły ścieżek (`mainPath`, `Titles.NONE`).
+Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`, `docs/STATY.md`), następna S60; testy
+i strojenie po niej.
 
 ## Niedokończone (kod)
 
@@ -33,10 +35,8 @@ postaci S53–S94 (`docs/ROZWOJ.md`, `docs/STATY.md`), następna S59; testy i st
 - **Gildie / aukcja / poczta**: brak zaproszeń do gildii między serwerami; aukcja bez podpowiedzi ceny, poczta bez
   pobrania.
 - **Umiejętności i ścieżki**: ścieżki klas wkrótce (Kapłan S71, Wojownik S75, Łowca S78, Mag S81); do tego czasu
-  zwój i zakładka ścieżek mówią „wkrótce”, wpis premium zwoju niedostępny do S81. Okno umiejętności minimalne (pełne
-  w S59, zakładka ścieżki to prosta lista węzłów), toast „+1 punkt ścieżki” w S59; brak przycisku „Załóż pasującą broń” po przełączeniu zestawu (ROZWOJ 2.8,
-  później); planer wiki
-  wkrótce (S82).
+  zwój i zakładka ścieżek mówią „wkrótce”, wpis premium zwoju niedostępny do S81. Brak przycisku „Załóż pasującą
+  broń” po przełączeniu zestawu (ROZWOJ 2.8, później); planer wiki wkrótce (S82).
 - **UI**: ikona plecaka w HUD nie świeci po otwarciu klawiszem B; Esc nie zamyka menu przytrzymania. Stan przełączników
   panelu admina tylko lokalny. `/tparea` bez filtra po mapie. Ikony `crow_feather`, `toad_venom` to aliasy; brak ikon
   walut przy cenach. Mapa świata: budowle Łąk bez ikon, timer Elity II tylko tekstem.

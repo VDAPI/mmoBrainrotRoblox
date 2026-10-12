@@ -39,6 +39,7 @@ end
 local NAMESPACES = {
 	"admin",
 	"paths",
+	"title",
 	"bp",
 	"buildset",
 	"rework",
