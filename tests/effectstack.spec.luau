@@ -253,16 +253,20 @@ local function problems(skill: any): { string }
 		check(effect, Skills.effectSide(skill, effect), "effects")
 	end
 	for _, level in Skills.BREAKPOINT_LEVELS do
-		local bp = skill.breakpoints and skill.breakpoints[level]
-		if bp then
-			if bp.effect then
-				check(bp.effect, Skills.effectSide(skill, bp.effect), `bp{level}`)
-			end
-			if bp.selfEffect then
-				check(bp.selfEffect, "self", `bp{level}`)
-			end
-			if bp.allyEffect then
-				check(bp.allyEffect, "allies", `bp{level}`)
+		local pair = skill.breakpoints and skill.breakpoints[level]
+		for _, option in { "a", "b" } do
+			local bp = pair and (pair :: any)[option]
+			if bp then
+				local where = `bp{level}{option}`
+				if bp.effect then
+					check(bp.effect, Skills.effectSide(skill, bp.effect), where)
+				end
+				if bp.selfEffect then
+					check(bp.selfEffect, "self", where)
+				end
+				if bp.allyEffect then
+					check(bp.allyEffect, "allies", where)
+				end
 			end
 		end
 	end
@@ -284,8 +288,8 @@ T.describe("Data: skill effect categories", function()
 		local byId: any = SkillData.byId
 		T.expect(byId.battleCry.effects[1].category).toBe("own")
 		T.expect(byId.auraOfEndurance.effects[1].category).toBe("allyVigor")
-		T.expect(byId.auraOfEndurance.breakpoints[10].allyEffect.category).toBe("allyVigor")
-		T.expect(byId.circleOfLight.breakpoints[10].allyEffect.category).toBe("allyGuard")
+		T.expect(byId.auraOfEndurance.breakpoints[10].a.allyEffect.category).toBe("allyVigor")
+		T.expect(byId.circleOfLight.breakpoints[10].a.allyEffect.category).toBe("allyGuard")
 		T.expect(byId.crushingBlow.effects[1].category).toBe("enemyArmor")
 		T.expect(byId.huntersMark.effects[1].category).toBe("enemyWeak")
 		T.expect(byId.earthquake.effects[1].category).toBe("enemySlow")

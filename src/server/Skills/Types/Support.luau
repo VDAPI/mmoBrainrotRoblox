@@ -2,9 +2,15 @@
 -- Support skill types: buff, debuff, heal (Purify also cleanses), hot, shield, resurrect, groupBuff,
 -- groupHeal. Channel skills (Evocation, Prayer) are handled by SkillService because they span time and can
 -- be interrupted. Healing and buffs only affect the caster and party members (PartyService).
--- S28 breakpoints: a second wounded ally (secondTarget), overheal into a shield, cleanse, extra effects on allies.
+-- S28 breakpoints: a second wounded ally (secondTarget), overheal into a shield, cleanse, extra effects on allies
+-- (skill.allyEffects, S55).
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Context = require(script.Parent.Parent.Context)
+local SkillData = require(ReplicatedStorage.Shared.Data.Skills)
+
+local NO_EFFECTS: { SkillData.SkillEffect } = {}
 
 type Ctx = Context.Ctx
 type Handler = (ctx: Ctx) -> (boolean, string?)
@@ -180,12 +186,14 @@ Support.resurrect = function(ctx)
 				ctx.fx({ t = entity.id })
 				ctx.services.Death.Revive(member, ctx.value("hp"))
 				-- S28 breakpoint: the revived ally is protected for a moment.
-				local extra = ctx.bp.allyEffect
-				if extra then
+				local extras = ctx.skill.allyEffects
+				if extras then
 					task.defer(function()
 						local revived = Entity.GetPlayerEntity(member)
 						if revived then
-							ctx.applyEffect(revived, extra)
+							for _, effect in extras do
+								ctx.applyEffect(revived, effect)
+							end
 						end
 					end)
 				end
@@ -205,8 +213,8 @@ Support.groupBuff = function(ctx)
 		local entity = Entity.GetPlayerEntity(ally)
 		if entity then
 			ctx.applyEffects(entity, "allies")
-			if ctx.bp.allyEffect then
-				ctx.applyEffect(entity, ctx.bp.allyEffect)
+			for _, effect in ctx.skill.allyEffects or NO_EFFECTS do
+				ctx.applyEffect(entity, effect)
 			end
 		end
 	end
@@ -233,8 +241,8 @@ Support.groupHeal = function(ctx)
 			if ctx.bp.cleanse then
 				ctx.services.StatusEffect.Cleanse(entity)
 			end
-			if ctx.bp.allyEffect then
-				ctx.applyEffect(entity, ctx.bp.allyEffect)
+			for _, effect in ctx.skill.allyEffects or NO_EFFECTS do
+				ctx.applyEffect(entity, effect)
 			end
 		end
 	end

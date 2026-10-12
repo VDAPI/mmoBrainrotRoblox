@@ -137,7 +137,7 @@ const description = t(lang, "class.description", { name: title, role: name(c.rol
                 <td class="descs">
                   <p><b>{t(lang, "skills.rankN", { n: 1 })}:</b> {name(first.desc, lang)}</p>
                   <p><b>{t(lang, "skills.rankN", { n: s.maxLevel })}:</b> {name(last.desc, lang)}</p>
-                  {s.breakpoints.length > 0 && s.breakpoints.map((b) => <p class="bp"><b>{t(lang, "planner.bp", { n: b.level })}:</b> {name(b.text, lang)}</p>)}
+                  {s.breakpoints.length > 0 && s.breakpoints.map((b) => <p class="bp"><b>{t(lang, "planner.bp", { n: b.rank })}:</b> {name(b.a.text, lang)}</p>)}
                   {r.requires.length > 0 && <p class="req">{t(lang, "skills.requires", { list: r.requires.map((q) => t(lang, "planner.reqSkill", { name: q.name, n: q.level })).join(", ") })}</p>}
                   <a class="plan" href={`?s=${s.id}#planner`} data-plan={s.id}>{t(lang, "skills.plan")} →</a>
                 </td>

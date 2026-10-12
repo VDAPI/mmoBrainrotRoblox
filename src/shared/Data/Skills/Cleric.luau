@@ -8,13 +8,17 @@ return Build.class("Cleric", "mana", "magic", {
 	{
 		id = "holyStrike",
 		unlock = 1,
+		maxLevel = 10,
 		type = "target",
 		cost = 12,
 		cooldown = 3,
 		range = 12,
 		holy = true,
 		values = { dmg = { 150, 280 } },
-		breakpoints = Build.bp({ splash = { radius = 5, pct = 40 } }, { effect = { kind = "stun", duration = 0.8 } }),
+		breakpoints = Build.bp2(
+			{ a = { splash = { radius = 5, pct = 40 } } },
+			{ a = { effect = { kind = "stun", duration = 0.8 } } }
+		),
 		col = 1,
 		row = 1,
 		glyph = "✚",
@@ -22,12 +26,13 @@ return Build.class("Cleric", "mana", "magic", {
 	{
 		id = "heal",
 		unlock = 3,
+		maxLevel = 10,
 		type = "heal",
 		cost = 20,
 		cooldown = 3,
 		range = 30,
 		values = { heal = { 120, 260 } },
-		breakpoints = Build.bp({ secondTarget = 50 }, { overhealShield = true }),
+		breakpoints = Build.bp2({ a = { secondTarget = 50 } }, { a = { overhealShield = true } }),
 		col = 2,
 		row = 1,
 		glyph = "✙",
@@ -35,6 +40,7 @@ return Build.class("Cleric", "mana", "magic", {
 	{
 		id = "renew",
 		unlock = 6,
+		maxLevel = 10,
 		type = "hot",
 		cost = 25,
 		cooldown = 8,
@@ -42,7 +48,7 @@ return Build.class("Cleric", "mana", "magic", {
 		duration = 10,
 		values = { heal = { 200, 400 } },
 		requires = { { skill = "heal", level = 3 } },
-		breakpoints = Build.bp({ add = { duration = 4 } }, { cleanse = true }),
+		breakpoints = Build.bp2({ a = { add = { duration = 4 } } }, { a = { cleanse = true } }),
 		col = 2,
 		row = 2,
 		glyph = "❦",
@@ -50,13 +56,14 @@ return Build.class("Cleric", "mana", "magic", {
 	{
 		id = "radiance",
 		unlock = 10,
+		maxLevel = 10,
 		type = "circleSelf",
 		cost = 35,
 		cooldown = 10,
 		radius = 10,
 		holy = true,
 		values = { dmg = { 110, 200 }, heal = 50 },
-		breakpoints = Build.bp({ add = { radius = 3 } }, { values = { heal = 50 } }),
+		breakpoints = Build.bp2({ a = { add = { radius = 3 } } }, { a = { values = { heal = 50 } } }),
 		col = 1,
 		row = 2,
 		glyph = "☀",
@@ -64,6 +71,7 @@ return Build.class("Cleric", "mana", "magic", {
 	{
 		id = "devotion",
 		unlock = 14,
+		maxLevel = 5,
 		type = "passive",
 		values = { heal = { 5, 25 } },
 		passive = { hooks = { healBonus = "heal" } },
@@ -74,19 +82,22 @@ return Build.class("Cleric", "mana", "magic", {
 	{
 		id = "circleOfLight",
 		unlock = 18,
+		maxLevel = 10,
 		type = "groupHeal",
 		cost = 50,
 		cooldown = 15,
 		radius = 14,
 		values = { heal = { 100, 200 } },
 		requires = { { skill = "renew", level = 3 } },
-		breakpoints = Build.bp({ cleanse = true }, {
-			allyEffect = {
-				kind = "damageReduction",
-				duration = 4,
-				value = 15,
-				target = "allies",
-				category = "allyGuard",
+		breakpoints = Build.bp2({ a = { cleanse = true } }, {
+			a = {
+				allyEffect = {
+					kind = "damageReduction",
+					duration = 4,
+					value = 15,
+					target = "allies",
+					category = "allyGuard",
+				},
 			},
 		}),
 		col = 2,
@@ -96,12 +107,13 @@ return Build.class("Cleric", "mana", "magic", {
 	{
 		id = "purify",
 		unlock = 23,
+		maxLevel = 10,
 		type = "heal",
 		cost = 25,
 		cooldown = 12,
 		range = 30,
 		values = { heal = { 80, 150 } },
-		breakpoints = Build.bp({ overhealShield = true }, { secondTarget = 50 }),
+		breakpoints = Build.bp2({ a = { overhealShield = true } }, { a = { secondTarget = 50 } }),
 		col = 3,
 		row = 3,
 		glyph = "✧",
@@ -109,6 +121,7 @@ return Build.class("Cleric", "mana", "magic", {
 	{
 		id = "auraOfEndurance",
 		unlock = 28,
+		maxLevel = 10,
 		type = "groupBuff",
 		cost = 40,
 		cooldown = 60,
@@ -125,16 +138,18 @@ return Build.class("Cleric", "mana", "magic", {
 				category = "allyVigor",
 			},
 		},
-		breakpoints = Build.bp({ add = { radius = 10 } }, {
-			allyEffect = {
-				kind = "statBuff",
-				duration = 60,
-				stats = { armor = "armorBp" },
-				pct = true,
-				target = "allies",
-				category = "allyVigor",
+		breakpoints = Build.bp2({ a = { add = { radius = 10 } } }, {
+			a = {
+				allyEffect = {
+					kind = "statBuff",
+					duration = 60,
+					stats = { armor = "armorBp" },
+					pct = true,
+					target = "allies",
+					category = "allyVigor",
+				},
+				values = { armorBp = 10 },
 			},
-			values = { armorBp = 10 },
 		}),
 		col = 3,
 		row = 2,
@@ -143,14 +158,15 @@ return Build.class("Cleric", "mana", "magic", {
 	{
 		id = "resurrection",
 		unlock = 34,
+		maxLevel = 10,
 		type = "resurrect",
 		cost = 80,
 		cooldown = { 120, 60 },
 		range = 30,
 		values = { hp = { 20, 60 } },
-		breakpoints = Build.bp(
-			{ values = { hp = 20 } },
-			{ allyEffect = { kind = "invuln", duration = 3, target = "allies" } }
+		breakpoints = Build.bp2(
+			{ a = { values = { hp = 20 } } },
+			{ a = { allyEffect = { kind = "invuln", duration = 3, target = "allies" } } }
 		),
 		col = 3,
 		row = 4,
@@ -159,13 +175,14 @@ return Build.class("Cleric", "mana", "magic", {
 	{
 		id = "shieldOfFaith",
 		unlock = 40,
+		maxLevel = 10,
 		type = "shield",
 		cost = 40,
 		cooldown = 20,
 		range = 30,
 		duration = 8,
 		values = { shield = { 300, 600 } },
-		breakpoints = Build.bp({ values = { shield = 120 } }, { secondTarget = 50 }),
+		breakpoints = Build.bp2({ a = { values = { shield = 120 } } }, { a = { secondTarget = 50 } }),
 		col = 4,
 		row = 4,
 		glyph = "🛡",
@@ -173,6 +190,7 @@ return Build.class("Cleric", "mana", "magic", {
 	{
 		id = "divineWrath",
 		unlock = 48,
+		maxLevel = 5,
 		type = "passive",
 		values = { bonus = { 4, 20 } },
 		passive = { hooks = { holyDamage = "bonus", holyStrikeHeal = "bonus" } },
@@ -183,6 +201,7 @@ return Build.class("Cleric", "mana", "magic", {
 	{
 		id = "judgement",
 		unlock = 56,
+		maxLevel = 10,
 		type = "target",
 		cost = 55,
 		cooldown = 15,
@@ -191,9 +210,9 @@ return Build.class("Cleric", "mana", "magic", {
 		values = { dmg = { 280, 500 } },
 		effects = { { kind = "stun", duration = 1 } },
 		requires = { { skill = "holyStrike", level = 5 } },
-		breakpoints = Build.bp(
-			{ lifesteal = 30 },
-			{ effect = { kind = "vulnerability", duration = 6, value = 10, category = "enemyWeak" } }
+		breakpoints = Build.bp2(
+			{ a = { lifesteal = 30 } },
+			{ a = { effect = { kind = "vulnerability", duration = 6, value = 10, category = "enemyWeak" } } }
 		),
 		col = 1,
 		row = 5,
@@ -202,12 +221,13 @@ return Build.class("Cleric", "mana", "magic", {
 	{
 		id = "prayer",
 		unlock = 65,
+		maxLevel = 10,
 		type = "channel",
 		cost = 0,
 		cooldown = 90,
 		duration = 3,
 		values = { mana = { 25, 45 }, group = 10 },
-		breakpoints = Build.bp({ mul = { cooldown = 0.75 } }, { values = { group = 10 } }),
+		breakpoints = Build.bp2({ a = { mul = { cooldown = 0.75 } } }, { a = { values = { group = 10 } } }),
 		col = 4,
 		row = 5,
 		glyph = "🕯",
@@ -215,6 +235,7 @@ return Build.class("Cleric", "mana", "magic", {
 	{
 		id = "divineIntervention",
 		unlock = 75,
+		maxLevel = 10,
 		type = "groupBuff",
 		cost = 100,
 		cooldown = 120,
@@ -222,7 +243,7 @@ return Build.class("Cleric", "mana", "magic", {
 		values = { invuln = { 2, 4 }, heal = 30 },
 		effects = { { kind = "invuln", duration = { 2, 4 }, target = "allies" } },
 		requires = { { skill = "circleOfLight", level = 5 } },
-		breakpoints = Build.bp({ values = { heal = 15 } }, { add = { radius = 15 } }),
+		breakpoints = Build.bp2({ a = { values = { heal = 15 } } }, { a = { add = { radius = 15 } } }),
 		col = 2,
 		row = 6,
 		glyph = "☩",

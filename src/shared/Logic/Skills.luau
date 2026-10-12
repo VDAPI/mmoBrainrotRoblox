@@ -15,7 +15,7 @@ type SkillDef = SkillData.SkillDef
 
 local Skills = {}
 
--- Linear interpolation of a { level 1, max level } pair; constants pass through.
+-- Linear interpolation of a { rank 1, max rank } pair; constants pass through.
 function Skills.scaled(skill: SkillDef, value: SkillData.Scaled?, level: number): number
 	if value == nil then
 		return 0
@@ -35,13 +35,38 @@ function Skills.valueAt(skill: SkillDef, field: string, level: number): number
 	return Skills.scaled(skill, skill.values[field], level)
 end
 
--- Breakpoints (S28) -----------------------------------------------------------------------------------------------
+-- Breakpoints (S28, S55: ROZWOJ 2.7) -------------------------------------------------------------------------------
 
 Skills.BREAKPOINT_LEVELS = { 5, 10 }
 
--- Active breakpoints of a skill at a level, lowest first (none when Config.Skills.breakpoints is off; `enabled`
--- overrides the switch, for tests).
-function Skills.breakpointsAt(skill: SkillDef, level: number, enabled: boolean?): { SkillData.Breakpoint }
+-- S55 (ROZWOJ 2.7, 3.2): breakpoint choices in the shape of the saved path.bp: ["<skillId>:<rank>"] = "a" | "b".
+-- A missing entry, or "b" on a rank without option B, means A.
+export type Choices = { [string]: SkillData.BreakpointOption }
+-- One modify node as a resolved breakpoint table (Paths.skillMods, S57, settles the node rank, the weapon and
+-- modify.option). Applied after the breakpoints, in row order.
+export type SkillMod = SkillData.Breakpoint
+
+function Skills.choiceKey(skillId: string, at: number): string
+	return `{skillId}:{at}`
+end
+
+-- The option that works at breakpoint rank `at`.
+function Skills.chosen(skill: SkillDef, at: number, choices: Choices?): SkillData.BreakpointOption
+	local pair = skill.breakpoints and skill.breakpoints[at]
+	if choices and pair and pair.b and choices[Skills.choiceKey(skill.id, at)] == "b" then
+		return "b"
+	end
+	return "a"
+end
+
+-- Breakpoints that work at `rank`, rank 5 first, each in the chosen option (none when Config.Skills.breakpoints is
+-- off; `enabled` overrides the switch, for tests and measurements).
+function Skills.breakpointsAt(
+	skill: SkillDef,
+	rank: number,
+	choices: Choices?,
+	enabled: boolean?
+): { SkillData.Breakpoint }
 	local out = {}
 	local list = skill.breakpoints
 	local on = if enabled == nil then Config.Skills.breakpoints else enabled
@@ -49,77 +74,106 @@ function Skills.breakpointsAt(skill: SkillDef, level: number, enabled: boolean?)
 		return out
 	end
 	for _, at in Skills.BREAKPOINT_LEVELS do
-		local bp = list[at]
-		if bp and level >= at then
-			table.insert(out, bp)
+		local pair = list[at]
+		if pair and rank >= at then
+			local bp = if Skills.chosen(skill, at, choices) == "b" then pair.b else pair.a
+			if bp then
+				table.insert(out, bp)
+			end
 		end
 	end
 	return out
 end
 
--- Behaviours of the active breakpoints merged into one table (later breakpoints win on the same key).
+-- Behaviours of every source merged into one table (later sources win on the same key). Extra effects are not here:
+-- they are on def.effects / def.selfEffects / def.allyEffects.
 export type Behaviour = SkillData.Breakpoint
 
 local NUMERIC_FIELDS = { "range", "radius", "angle", "length", "width", "hits", "delay" }
 
--- The skill as it works at `level`: numbers changed by the breakpoints (add / mul / values, extra effects with
--- their durations) and the merged behaviours. Never mutates the data; without breakpoints returns the def itself.
-function Skills.effective(skill: SkillDef, level: number, enabled: boolean?): (SkillDef, Behaviour)
-	local active = Skills.breakpointsAt(skill, level, enabled)
+-- The skill as it works at `rank` (ROZWOJ 2.7). Sources in order: breakpoint 5, breakpoint 10 (chosen option, A
+-- without a choice), then `mods` (modify nodes, row order). Rules: `values` add to the current value (the base scales
+-- once), `add` sums, `mul` multiplies, `effect` / `selfEffect` / `allyEffect` go to the effects / selfEffects /
+-- allyEffects lists, every other key: the later source wins. `add.effectDuration` lengthens `effects` only.
+-- `enabled = false` (or Config.Skills.breakpoints off) drops the breakpoints, not the mods. Until S56 `rank` is the
+-- learned level; until S57 every caller passes `choices = nil`, `mods = nil`. Never mutates the data; with no source
+-- returns the def itself.
+function Skills.effective(
+	skill: SkillDef,
+	rank: number,
+	choices: Choices?,
+	mods: { SkillMod }?,
+	enabled: boolean?
+): (SkillDef, Behaviour)
+	local sources = Skills.breakpointsAt(skill, rank, choices, enabled)
+	if mods then
+		for _, mod in mods do
+			table.insert(sources, mod)
+		end
+	end
 	local behaviour: any = {}
-	if #active == 0 then
+	if #sources == 0 then
 		return skill, behaviour
 	end
 	local def: any = table.clone(skill)
 	def.values = table.clone(skill.values)
 	local effects: { SkillData.SkillEffect } = table.clone(skill.effects or {})
+	local selfEffects: { SkillData.SkillEffect } = {}
+	local allyEffects: { SkillData.SkillEffect } = {}
 	local addDuration = 0
 	local jumps = 0
 	local none: { [string]: number } = {}
-	for _, bp in active do
+	for _, bp in sources do
 		for key, amount in bp.add or none do
 			if key == "effectDuration" then
 				addDuration += amount
 			elseif key == "jumps" then
 				jumps += amount
 			elseif key == "duration" then
-				def.duration = Skills.scaled(skill, def.duration, level) + amount
+				def.duration = Skills.scaled(skill, def.duration, rank) + amount
 			elseif table.find(NUMERIC_FIELDS, key) then
 				def[key] = (def[key] or 0) + amount
 			end
 		end
 		for key, factor in bp.mul or none do
 			if key == "cooldown" then
-				def.cooldown = Skills.scaled(skill, def.cooldown, level) * factor
+				def.cooldown = Skills.scaled(skill, def.cooldown, rank) * factor
 			elseif key == "cost" then
-				def.cost = Skills.scaled(skill, def.cost, level) * factor
+				def.cost = Skills.scaled(skill, def.cost, rank) * factor
 			elseif key == "delay" then
 				def.delay = (def.delay or 0) * factor
 			end
 		end
 		for field, amount in bp.values or none do
-			def.values[field] = Skills.scaled(skill, skill.values[field], level) + amount
+			-- ROZWOJ 2.7: every change adds to the current value (the base scales once)
+			def.values[field] = Skills.scaled(skill, def.values[field], rank) + amount
 		end
 		for key, v in bp :: any do
-			if key ~= "add" and key ~= "mul" and key ~= "values" then
-				behaviour[key] = v
+			if key == "effect" then
+				table.insert(effects, v)
+			elseif key == "selfEffect" then
+				table.insert(selfEffects, v)
+			elseif key == "allyEffect" then
+				table.insert(allyEffects, v)
+			elseif key ~= "add" and key ~= "mul" and key ~= "values" then
+				behaviour[key] = v -- later wins: breakpoint 5, breakpoint 10, nodes by row
 			end
 		end
 	end
 	if jumps ~= 0 then
-		def.values.jumps = Skills.valueAt(skill, "jumps", level) + jumps
+		def.values.jumps = Skills.scaled(skill, def.values.jumps, rank) + jumps
 	end
-	if behaviour.effect then
-		table.insert(effects, behaviour.effect)
-	end
+	-- add.effectDuration lengthens `effects` only, as before S55 (not selfEffects / allyEffects)
 	if addDuration ~= 0 then
 		for i, effect in effects do
 			local copy = table.clone(effect)
-			copy.duration = math.max(0.5, Skills.scaled(skill, effect.duration, level) + addDuration)
+			copy.duration = math.max(0.5, Skills.scaled(skill, effect.duration, rank) + addDuration)
 			effects[i] = copy
 		end
 	end
 	def.effects = effects
+	def.selfEffects = if #selfEffects > 0 then selfEffects else nil
+	def.allyEffects = if #allyEffects > 0 then allyEffects else nil
 	return def :: SkillDef, behaviour
 end
 
@@ -128,15 +182,49 @@ function Skills.effectSide(skill: SkillDef, effect: SkillData.SkillEffect): "ene
 	return effect.target or (if skill.type == "buff" or skill.type == "groupBuff" then "self" else "enemy")
 end
 
--- Locale keys of a skill's breakpoints with their level: { { level, key } }.
-function Skills.breakpointKeys(skill: SkillDef): { { level: number, key: string } }
-	local out = {}
+-- Locale key of a breakpoint option's text: skill.<id>.bp5 / .bp10 (A), .bp5b / .bp10b (B).
+function Skills.breakpointKey(skillId: string, at: number, option: SkillData.BreakpointOption): string
+	return if option == "b" then `skill.{skillId}.bp{at}b` else `skill.{skillId}.bp{at}`
+end
+
+-- Locale keys of a skill's breakpoints, rank by rank, A before B (B only where it exists).
+export type BreakpointKey = { rank: number, option: SkillData.BreakpointOption, key: string }
+
+function Skills.breakpointKeys(skill: SkillDef): { BreakpointKey }
+	local out: { BreakpointKey } = {}
 	for _, at in Skills.BREAKPOINT_LEVELS do
-		if skill.breakpoints and skill.breakpoints[at] then
-			table.insert(out, { level = at, key = `skill.{skill.id}.bp{at}` })
+		local pair = skill.breakpoints and skill.breakpoints[at]
+		if pair then
+			table.insert(out, { rank = at, option = "a", key = Skills.breakpointKey(skill.id, at, "a") })
+			if pair.b then
+				table.insert(out, { rank = at, option = "b", key = Skills.breakpointKey(skill.id, at, "b") })
+			end
 		end
 	end
 	return out
+end
+
+-- S55 (ROZWOJ 2.5): character level at which `skill` reaches rank r (actives 1..10, passives 1..5; a passive's last
+-- rank comes where an active's rank 10 does). Every skill is maxed by Data/Skills RANKS.capLevel.
+function Skills.rankLevel(skill: SkillDef, r: number): number
+	if skill.maxLevel <= 1 or r <= 1 then
+		return skill.unlock
+	end
+	local ranks = SkillData.RANKS
+	-- nine steps: an active skill's ranks 1..10
+	local span = math.max(0, math.min(9 * ranks.step, ranks.capLevel - skill.unlock))
+	local n = math.min(r, skill.maxLevel)
+	return skill.unlock + math.floor((n - 1) * span / (skill.maxLevel - 1) + 0.5)
+end
+
+-- Rank of `skill` at character level `level` (0 before the unlock).
+function Skills.rankAt(skill: SkillDef, level: number): number
+	for r = skill.maxLevel, 1, -1 do
+		if level >= Skills.rankLevel(skill, r) then
+			return r
+		end
+	end
+	return 0
 end
 
 -- Character level needed for skill level n (DESIGN: unlock + 3·(n−1)). Late skills whose last level would need
@@ -304,14 +392,15 @@ local function round(value: number): number
 	return math.floor(value * 10 + 0.5) / 10
 end
 
--- Options of a description: `level` = character level (default: the level the rank unlocks at, as on the wiki).
-export type DescOpts = { level: number? }
+-- Options of a description: `level` = character level (default: the level the rank unlocks at, as on the wiki);
+-- `choices` / `mods` as in Skills.effective (S55; nil = option A, no nodes).
+export type DescOpts = { level: number?, choices: Choices?, mods: { SkillMod }? }
 
 -- Placeholder values for the description of `base` at rank `rank` ({dmg}, {slow}, {duration}, {cost}, ...).
 -- S28: the numbers as the skill works at that rank (breakpoints applied). S54: cost and heal values at the
 -- character level from `opts` (Skills.cost, Skills.healMul).
 function Skills.descriptionArgs(base: SkillDef, rank: number, opts: DescOpts?): { [string]: number }
-	local skill = Skills.effective(base, rank)
+	local skill = Skills.effective(base, rank, opts and opts.choices, opts and opts.mods)
 	local L = if opts and opts.level then opts.level else Skills.levelRequirement(base, rank)
 	local args: { [string]: number } = {}
 	for field in skill.values do

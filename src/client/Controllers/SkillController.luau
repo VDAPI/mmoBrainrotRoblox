@@ -269,7 +269,7 @@ local function drawPreview(skill: SkillData.SkillDef, point: Vector3?)
 		return
 	end
 	local level = State.Get({ "character", "skills", skill.id }) or 1
-	local def = Skills.effective(skill, level)
+	local def = Skills.effective(skill, level, nil, nil)
 	local color = Color3.fromHex((Classes.get(skill.class) :: any).color)
 	local feet = root.Position - Vector3.new(0, 2.8, 0)
 	local target = point or (root.Position + root.CFrame.LookVector * 10)
@@ -404,7 +404,7 @@ function SkillController.AimMove(slot: number, drag: Vector2): boolean
 		return false
 	end
 	local level = State.Get({ "character", "skills", skill.id }) or 1
-	local def = Skills.effective(skill, level)
+	local def = Skills.effective(skill, level, nil, nil)
 	local reach = def.range or def.length or def.radius or 10
 	local distance = math.clamp(drag.Magnitude / AIM_FULL, 0.15, 1) * reach
 	previewSkill = skill.id
@@ -544,7 +544,7 @@ function SkillController.Usable(skillId: string): (boolean, boolean, boolean)
 		return false, false, true
 	end
 	local level = math.max(1, State.Get({ "character", "skills", skillId }) or 0)
-	local def = Skills.effective(skill, level)
+	local def = Skills.effective(skill, level, nil, nil)
 	local cost = Skills.cost(def, level, State.Get({ "character", "level" }) or 1, skill.class, nil)
 	local current = if skill.resource then State.Get({ "character", skill.resource }) or 0 else math.huge
 	local enoughResource = current >= cost

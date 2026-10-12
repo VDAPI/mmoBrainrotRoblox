@@ -78,8 +78,9 @@ przedmiotów czyta STATY); odstępstwa idą do `docs/DECYZJE.md`, a kontrakt pop
   `tests/sidequests.spec`. Admin: `/side`, `/anchor`, `/npc`.
 - **Umiejętność: animacja / efekt / przełom** (S28): animacja w `Data/SkillMotions` (klucze póz, `hit`, `lock`;
   podgląd bez Studio: `lune run tools/posedump.luau out.json <skillId>` + `render3d.py`), wygląd w `Data/SkillVfx`
-  (składniki z `client/Vfx/Library`), przełomy `breakpoints = Build.bp({...}, {...})` w `Data/Skills/<Klasa>` ze
-  słownika w `Data/Skills/Types` + teksty `skill.<id>.bp5/.bp10`; serwer stosuje je w `Skills/Context` i `Types/*`.
+  (składniki z `client/Vfx/Library`), przełomy `breakpoints = Build.bp2({ a = {...}, b = {...}? }, { a = {...}, b = {...}? })`
+  w `Data/Skills/<Klasa>` ze słownika w `Data/Skills/Types` + teksty `skill.<id>.bp5/.bp10` (A) i `.bp5b/.bp10b` (B);
+  serwer, opis i wiki biorą umiejętność z `Skills.effective(skill, rank, choices, mods)` (ROZWOJ 2.7).
   Stawy postaci graczy to `AnimationConstraint` (nie `Motor6D`).
 
 ## Typy Fusion

@@ -377,6 +377,28 @@ T.describe("Wiki export: consistency", function()
 		T.expect(good > 0 and bad > 0).toBe(true)
 	end)
 
+	T.it("exports breakpoints as rank + option A (S55)", function()
+		for _, s in d.skills.skills do
+			if s.passiveSkill == false then
+				T.expect(#s.breakpoints).toBe(2)
+				for i, bp in s.breakpoints do
+					T.expect(bp.rank).toBe(if i == 1 then 5 else 10)
+					T.expect(bp.text).toBeNil()
+					T.expect(bp.change).toBeNil()
+					for _, lang in { "pl", "en" } do
+						local text = bp.a.text[lang]
+						if text == "" or string.find(text, "{", 1, true) then
+							error(`{s.id} breakpoint {bp.rank} {lang}: "{text}"`)
+						end
+					end
+					T.expect(next(bp.a.change) ~= nil).toBe(true)
+				end
+			else
+				T.expect(#s.breakpoints).toBe(0)
+			end
+		end
+	end)
+
 	T.it("exports keys, the full PvP matrix and a best area for every level (S42)", function()
 		local KeybindData = require("../src/shared/Data/Keybinds")
 		local PvpRules = require("../src/shared/Logic/PvpRules")

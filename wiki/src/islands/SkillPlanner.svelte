@@ -475,8 +475,8 @@
       {#if sel.breakpoints.length > 0}
         <div class="sp-detail__bps">
           <span class="sp-label">{L.breakpoints}</span>
-          {#each sel.breakpoints as bp (bp.level)}
-            <p class:is-on={selRank >= bp.level}><b>{T("bp", { n: bp.level })}:</b> {bp.text}</p>
+          {#each sel.breakpoints as bp (bp.rank)}
+            <p class:is-on={selRank >= bp.rank}><b>{T("bp", { n: bp.rank })}:</b> {bp.a}</p>
           {/each}
         </div>
       {/if}

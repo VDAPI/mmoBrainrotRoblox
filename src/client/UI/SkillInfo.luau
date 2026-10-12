@@ -1,7 +1,7 @@
 --!strict
 -- Skill tooltip text (S28, DESIGN §14): name and level, the area's shape with its size, cost / cooldown / range at the
--- current level, the description, the next level's numbers in green, both breakpoints (reached ones bright, later
--- ones greyed with "from level N") and what the next level needs. Plain text for Components/Tooltip; the skill
+-- current level, the description, the next level's numbers in green, the breakpoints of ranks 5 and 10 (reached ones
+-- bright, later ones greyed with "from level N"; the option that works, A until S57) and what the next level needs. Plain text for Components/Tooltip; the skill
 -- window draws the same pieces itself.
 -- S54: cost and descriptions at the character level (Skills.cost, heal curve); damage skills show the weapon speed
 -- factor (Skills.speedFactor) when it is not x1.
@@ -34,7 +34,8 @@ local SHAPE_GLYPH: { [string]: string } = {
 
 -- "◣ Cone 90° · 10 studs" (empty for skills without an area).
 function SkillInfo.shapeLine(use: any, skill: SkillData.SkillDef, level: number): string
-	local def = Skills.effective(skill, math.max(1, level))
+	local rank = math.max(1, level)
+	local def = Skills.effective(skill, rank, nil, nil)
 	local shape = Skills.shape(skill)
 	if shape == "none" or shape == "target" then
 		return ""
@@ -52,16 +53,16 @@ end
 
 -- "15 energy · Cooldown 4 s · Range 8 studs"
 function SkillInfo.costLine(use: any, skill: SkillData.SkillDef, level: number): string
-	local shown = math.max(1, level)
-	local def = Skills.effective(skill, shown)
+	local rank = math.max(1, level)
+	local def = Skills.effective(skill, rank, nil, nil)
 	local parts = {}
-	local cost = Skills.cost(def, shown, levelOf(use), skill.class, nil)
+	local cost = Skills.cost(def, rank, levelOf(use), skill.class, nil)
 	if cost > 0 and skill.resource then
 		-- The bar needs the full amount, so a fractional cost (Mage above level 20) shows rounded up.
 		local shownCost = math.ceil(cost - 1e-6)
 		table.insert(parts, Text.get(use, `skills.cost.{skill.resource}`, { cost = shownCost }))
 	end
-	local cooldown = math.floor(Skills.scaled(def, def.cooldown, shown) * 10 + 0.5) / 10
+	local cooldown = math.floor(Skills.scaled(def, def.cooldown, rank) * 10 + 0.5) / 10
 	table.insert(parts, Text.get(use, "skills.cooldown", { cooldown = cooldown }))
 	if def.range then
 		table.insert(parts, Text.get(use, "skills.range", { range = def.range }))
@@ -86,9 +87,11 @@ function SkillInfo.breakpoints(
 ): { { text: string, reached: boolean } }
 	local out = {}
 	for _, bp in Skills.breakpointKeys(skill) do
-		local reached = level >= bp.level
-		local label = Text.get(use, "skills.breakpoint", { level = bp.level })
-		table.insert(out, { text = `{label}: {Text.get(use, bp.key)}`, reached = reached })
+		-- the option that works (A until a choice exists, S57 / S59)
+		if bp.option == Skills.chosen(skill, bp.rank, nil) then
+			local label = Text.get(use, "skills.breakpoint", { level = bp.rank })
+			table.insert(out, { text = `{label}: {Text.get(use, bp.key)}`, reached = level >= bp.rank })
+		end
 	end
 	return out
 end

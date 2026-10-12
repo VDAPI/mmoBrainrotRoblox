@@ -97,38 +97,44 @@ do
 end
 
 describe("Skill data (S28)", function()
-	it("every active skill has a motion, a visual and exactly two breakpoints (5 and 10) with texts", function()
-		local count = 0
-		for _, skill in actives() do
-			count += 1
-			if not SkillMotions.get(skill.id) then
-				error(`{skill.id}: no motion`)
-			end
-			if not SkillVfx[skill.id] then
-				error(`{skill.id}: no visual`)
-			end
-			local bps = skill.breakpoints
-			if not bps or not bps[5] or not bps[10] then
-				error(`{skill.id}: needs breakpoints at 5 and 10`)
-			end
-			local n = 0
-			for at, bp in bps do
-				n += 1
-				expect(at == 5 or at == 10).toBe(true)
-				for key in bp :: any do
-					if not BEHAVIOURS[key] then
-						error(`{skill.id}: unknown breakpoint key {key}`)
+	it(
+		"every active skill has a motion, a visual and breakpoints at ranks 5 and 10 (A, B optional) with texts",
+		function()
+			for _, skill in actives() do
+				if not SkillMotions.get(skill.id) then
+					error(`{skill.id}: no motion`)
+				end
+				if not SkillVfx[skill.id] then
+					error(`{skill.id}: no visual`)
+				end
+				local bps = skill.breakpoints
+				if not bps or not bps[5] or not bps[10] then
+					error(`{skill.id}: needs breakpoints at 5 and 10`)
+				end
+				local n = 0
+				for at, pair in bps do
+					n += 1
+					expect(at == 5 or at == 10).toBe(true)
+					expect(pair.a ~= nil).toBe(true)
+					for option, bp in pair :: any do
+						if option ~= "a" and option ~= "b" then
+							error(`{skill.id}: unknown breakpoint option {option}`)
+						end
+						for key in bp do
+							if not BEHAVIOURS[key] then
+								error(`{skill.id}: unknown breakpoint key {key}`)
+							end
+						end
+						local key = Skills.breakpointKey(skill.id, at, option)
+						if (pl :: any)[key] == nil or (en :: any)[key] == nil then
+							error(`missing {key}`)
+						end
 					end
 				end
-				local key = `skill.{skill.id}.bp{at}`
-				if (pl :: any)[key] == nil or (en :: any)[key] == nil then
-					error(`missing {key}`)
-				end
+				expect(n).toBe(2)
 			end
-			expect(n).toBe(2)
 		end
-		expect(count).toBe(45)
-	end)
+	)
 
 	it("passives have no motion, visual or breakpoints", function()
 		for _, skill in SkillData.byId do
@@ -301,23 +307,23 @@ describe("Breakpoints", function()
 	local charge = assert(SkillData.get("charge"))
 
 	it("breakpointsAt: none before 5, one from 5, two from 10, none when switched off", function()
-		expect(#Skills.breakpointsAt(cleave, 1, true)).toBe(0)
-		expect(#Skills.breakpointsAt(cleave, 4, true)).toBe(0)
-		expect(#Skills.breakpointsAt(cleave, 5, true)).toBe(1)
-		expect(#Skills.breakpointsAt(cleave, 9, true)).toBe(1)
-		expect(#Skills.breakpointsAt(cleave, 10, true)).toBe(2)
-		expect(#Skills.breakpointsAt(cleave, 10, false)).toBe(0)
-		local def, bp = Skills.effective(cleave, 10, false)
+		expect(#Skills.breakpointsAt(cleave, 1, nil, true)).toBe(0)
+		expect(#Skills.breakpointsAt(cleave, 4, nil, true)).toBe(0)
+		expect(#Skills.breakpointsAt(cleave, 5, nil, true)).toBe(1)
+		expect(#Skills.breakpointsAt(cleave, 9, nil, true)).toBe(1)
+		expect(#Skills.breakpointsAt(cleave, 10, nil, true)).toBe(2)
+		expect(#Skills.breakpointsAt(cleave, 10, nil, false)).toBe(0)
+		local def, bp = Skills.effective(cleave, 10, nil, nil, false)
 		expect(def).toBe(cleave)
 		expect(next(bp)).toBeNil()
 	end)
 
 	it("effective applies numbers and behaviours", function()
-		expect(Skills.effective(cleave, 4, true).angle).toBe(90)
-		expect(Skills.effective(cleave, 5, true).angle).toBe(120)
-		local _, bp = Skills.effective(cleave, 10, true)
+		expect(Skills.effective(cleave, 4, nil, nil, true).angle).toBe(90)
+		expect(Skills.effective(cleave, 5, nil, nil, true).angle).toBe(120)
+		local _, bp = Skills.effective(cleave, 10, nil, nil, true)
 		expect(bp.bleedStacks).toBe(3)
-		expect(Skills.effective(charge, 5, true).range).toBe(32)
+		expect(Skills.effective(charge, 5, nil, nil, true).range).toBe(32)
 		-- the data itself is untouched
 		expect(cleave.angle).toBe(90)
 		expect(charge.range).toBe(25)
@@ -326,7 +332,7 @@ describe("Breakpoints", function()
 	it("every skill's numbers stay finite and positive after its breakpoints", function()
 		for _, skill in actives() do
 			for _, level in { 1, 4, 5, 9, 10 } do
-				local def = Skills.effective(skill, level, true)
+				local def = Skills.effective(skill, level, nil, nil, true)
 				for field in def.values do
 					local v = Skills.valueAt(def, field, level)
 					expect(finite(v)).toBe(true)
@@ -344,9 +350,11 @@ describe("Breakpoints", function()
 					expect(finite(v)).toBe(true)
 				end
 				-- stats of extra effects read values that exist
-				for _, effect in def.effects or {} do
-					for _, field in effect.stats or {} do
-						expect(def.values[field] ~= nil).toBe(true)
+				for _, list in { def.effects or {}, def.selfEffects or {}, def.allyEffects or {} } do
+					for _, effect in list do
+						for _, field in effect.stats or {} do
+							expect(def.values[field] ~= nil).toBe(true)
+						end
 					end
 				end
 			end

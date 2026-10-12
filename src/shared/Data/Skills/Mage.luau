@@ -10,13 +10,14 @@ return Build.class("Mage", "mana", "magic", {
 	{
 		id = "firebolt",
 		unlock = 1,
+		maxLevel = 10,
 		type = "projectile",
 		cost = 12,
 		cooldown = 2.5,
 		range = 38,
 		adaptive = true,
 		values = { dmg = { 170, 310 } },
-		breakpoints = Build.bp({ pierce = 40 }, { splash = { radius = 4, pct = 50 } }),
+		breakpoints = Build.bp2({ a = { pierce = 40 } }, { a = { splash = { radius = 4, pct = 50 } } }),
 		col = 1,
 		row = 1,
 		glyph = "✦",
@@ -25,6 +26,7 @@ return Build.class("Mage", "mana", "magic", {
 	{
 		id = "iceShard",
 		unlock = 3,
+		maxLevel = 10,
 		type = "projectile",
 		cost = 15,
 		cooldown = 5,
@@ -32,7 +34,7 @@ return Build.class("Mage", "mana", "magic", {
 		element = "ice",
 		values = { dmg = { 140, 250 }, slow = 30 },
 		effects = { { kind = "slow", duration = 3, value = "slow", category = "enemySlow" } },
-		breakpoints = Build.bp({ effect = { kind = "freeze", duration = 0.8 } }, { pierce = 60 }),
+		breakpoints = Build.bp2({ a = { effect = { kind = "freeze", duration = 0.8 } } }, { a = { pierce = 60 } }),
 		col = 3,
 		row = 1,
 		glyph = "❄",
@@ -41,15 +43,23 @@ return Build.class("Mage", "mana", "magic", {
 	{
 		id = "blink",
 		unlock = 6,
+		maxLevel = 10,
 		type = "blink",
 		cost = 20,
 		cooldown = 12,
 		length = 15,
 		values = {},
-		breakpoints = Build.bp(
-			{ selfEffect = { kind = "damageReduction", duration = 2, value = 30, target = "self", category = "own" } },
-			{ mul = { cooldown = 0.6 } }
-		),
+		breakpoints = Build.bp2({
+			a = {
+				selfEffect = {
+					kind = "damageReduction",
+					duration = 2,
+					value = 30,
+					target = "self",
+					category = "own",
+				},
+			},
+		}, { a = { mul = { cooldown = 0.6 } } }),
 		col = 4,
 		row = 1,
 		glyph = "✧",
@@ -57,6 +67,7 @@ return Build.class("Mage", "mana", "magic", {
 	{
 		id = "fireball",
 		unlock = 10,
+		maxLevel = 10,
 		type = "circleTarget",
 		cost = 35,
 		cooldown = 8,
@@ -65,9 +76,9 @@ return Build.class("Mage", "mana", "magic", {
 		element = "fire",
 		values = { dmg = { 150, 270 } },
 		requires = { { skill = "firebolt", level = 3 } },
-		breakpoints = Build.bp(
-			{ lingering = { pct = 15, duration = 3, kind = "burn" } },
-			{ split = { count = 3, pct = 40, radius = 7 } }
+		breakpoints = Build.bp2(
+			{ a = { lingering = { pct = 15, duration = 3, kind = "burn" } } },
+			{ a = { split = { count = 3, pct = 40, radius = 7 } } }
 		),
 		col = 1,
 		row = 2,
@@ -76,6 +87,7 @@ return Build.class("Mage", "mana", "magic", {
 	{
 		id = "focus",
 		unlock = 14,
+		maxLevel = 5,
 		type = "passive",
 		values = { mana = { 5, 25 }, regen = { 10, 50 } },
 		passive = { pct = { maxMana = "mana", manaRegen = "regen" } },
@@ -86,6 +98,7 @@ return Build.class("Mage", "mana", "magic", {
 	{
 		id = "chainLightning",
 		unlock = 18,
+		maxLevel = 10,
 		type = "chain",
 		cost = 35,
 		cooldown = 9,
@@ -93,7 +106,7 @@ return Build.class("Mage", "mana", "magic", {
 		radius = 12,
 		element = "lightning",
 		values = { dmg = { 130, 230 }, jumps = { 3, 6 } },
-		breakpoints = Build.bp({ add = { jumps = 2 } }, { stunLast = 1 }),
+		breakpoints = Build.bp2({ a = { add = { jumps = 2 } } }, { a = { stunLast = 1 } }),
 		col = 2,
 		row = 3,
 		glyph = "⚡",
@@ -101,23 +114,26 @@ return Build.class("Mage", "mana", "magic", {
 	{
 		id = "manaShield",
 		unlock = 23,
+		maxLevel = 10,
 		type = "buff",
 		cost = 30,
 		cooldown = 40,
 		duration = { 8, 15 },
 		values = {},
 		effects = { { kind = "manaShield", duration = { 8, 15 }, value = 50, target = "self", category = "own" } },
-		breakpoints = Build.bp({
-			selfEffect = {
-				kind = "statBuff",
-				duration = 15,
-				stats = { manaRegen = "regenBp" },
-				pct = true,
-				target = "self",
-				category = "own",
+		breakpoints = Build.bp2({
+			a = {
+				selfEffect = {
+					kind = "statBuff",
+					duration = 15,
+					stats = { manaRegen = "regenBp" },
+					pct = true,
+					target = "self",
+					category = "own",
+				},
+				values = { regenBp = 50 },
 			},
-			values = { regenBp = 50 },
-		}, { add = { effectDuration = 5 } }),
+		}, { a = { add = { effectDuration = 5 } } }),
 		col = 4,
 		row = 3,
 		glyph = "🔵",
@@ -125,6 +141,7 @@ return Build.class("Mage", "mana", "magic", {
 	{
 		id = "elementalist",
 		unlock = 28,
+		maxLevel = 5,
 		type = "passive",
 		values = { bonus = { 3, 15 } },
 		passive = { hooks = { elementDamage = "bonus" } },
@@ -135,6 +152,7 @@ return Build.class("Mage", "mana", "magic", {
 	{
 		id = "frostNova",
 		unlock = 34,
+		maxLevel = 10,
 		type = "circleSelf",
 		cost = 45,
 		cooldown = 18,
@@ -143,9 +161,9 @@ return Build.class("Mage", "mana", "magic", {
 		values = { dmg = { 120, 220 }, freeze = { 1.5, 2.5 } },
 		effects = { { kind = "freeze", duration = { 1.5, 2.5 } } },
 		requires = { { skill = "iceShard", level = 3 } },
-		breakpoints = Build.bp(
-			{ add = { radius = 3 } },
-			{ lingering = { pct = 10, duration = 4, kind = "frost", slow = 40 } }
+		breakpoints = Build.bp2(
+			{ a = { add = { radius = 3 } } },
+			{ a = { lingering = { pct = 10, duration = 4, kind = "frost", slow = 40 } } }
 		),
 		col = 3,
 		row = 4,
@@ -154,6 +172,7 @@ return Build.class("Mage", "mana", "magic", {
 	{
 		id = "meteor",
 		unlock = 40,
+		maxLevel = 10,
 		type = "circleTarget",
 		cost = 60,
 		cooldown = 20,
@@ -163,7 +182,10 @@ return Build.class("Mage", "mana", "magic", {
 		element = "fire",
 		values = { dmg = { 280, 480 } },
 		requires = { { skill = "fireball", level = 3 } },
-		breakpoints = Build.bp({ mul = { delay = 0.5 } }, { lingering = { pct = 20, duration = 4, kind = "burn" } }),
+		breakpoints = Build.bp2(
+			{ a = { mul = { delay = 0.5 } } },
+			{ a = { lingering = { pct = 20, duration = 4, kind = "burn" } } }
+		),
 		col = 1,
 		row = 4,
 		glyph = "☄",
@@ -171,6 +193,7 @@ return Build.class("Mage", "mana", "magic", {
 	{
 		id = "arcaneMind",
 		unlock = 48,
+		maxLevel = 5,
 		type = "passive",
 		values = { crit = { 2, 10 }, critDmg = { 5, 25 } },
 		passive = { flat = { critChance = "crit", critDmg = "critDmg" } },
@@ -181,6 +204,7 @@ return Build.class("Mage", "mana", "magic", {
 	{
 		id = "firewall",
 		unlock = 56,
+		maxLevel = 10,
 		type = "circleTarget",
 		cost = 55,
 		cooldown = 22,
@@ -191,7 +215,7 @@ return Build.class("Mage", "mana", "magic", {
 		randomTarget = true,
 		element = "lightning",
 		values = { dmg = { 50, 90 } },
-		breakpoints = Build.bp({ add = { hits = 4 } }, { effect = { kind = "stun", duration = 0.5 } }),
+		breakpoints = Build.bp2({ a = { add = { hits = 4 } } }, { a = { effect = { kind = "stun", duration = 0.5 } } }),
 		col = 2,
 		row = 5,
 		glyph = "⛈",
@@ -200,12 +224,13 @@ return Build.class("Mage", "mana", "magic", {
 	{
 		id = "evocation",
 		unlock = 65,
+		maxLevel = 10,
 		type = "channel",
 		cost = 0,
 		cooldown = 90,
 		duration = 3,
 		values = { mana = { 30, 50 } },
-		breakpoints = Build.bp({ mul = { cooldown = 0.75 } }, { values = { mana = 15 } }),
+		breakpoints = Build.bp2({ a = { mul = { cooldown = 0.75 } } }, { a = { values = { mana = 15 } } }),
 		col = 4,
 		row = 5,
 		glyph = "∞",
@@ -213,6 +238,7 @@ return Build.class("Mage", "mana", "magic", {
 	{
 		id = "meteorStorm",
 		unlock = 75,
+		maxLevel = 10,
 		type = "circleTarget",
 		cost = 120,
 		cooldown = 50,
@@ -224,7 +250,7 @@ return Build.class("Mage", "mana", "magic", {
 		adaptive = true,
 		values = { dmg = { 160, 260 } },
 		requires = { { skill = "meteor", level = 5 } },
-		breakpoints = Build.bp({ add = { hits = 2 } }, { add = { radius = 4 } }),
+		breakpoints = Build.bp2({ a = { add = { hits = 2 } } }, { a = { add = { radius = 4 } } }),
 		col = 1,
 		row = 6,
 		glyph = "✺",

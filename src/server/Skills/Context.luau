@@ -1,8 +1,8 @@
 --!strict
--- Everything a skill handler needs while resolving one cast: the caster, resolved target / point, level
+-- Everything a skill handler needs while resolving one cast: the caster, resolved target / point, rank
 -- values, and helpers for areas, damage, healing, effects and visuals. Built by SkillService per cast.
--- S28: `skill` is the skill as it works at its level (Logic/Skills.effective: breakpoint numbers applied) and `bp`
--- the breakpoint behaviours; `damage` applies the on-hit ones (lifesteal, knockback, execute, stun near the target,
+-- S28/S55: `skill` is the skill as it works at its rank (Logic/Skills.effective: breakpoint numbers applied, extra
+-- effects in skill.effects / skill.selfEffects / skill.allyEffects) and `bp` the merged behaviours without effects; `damage` applies the on-hit ones (lifesteal, knockback, execute, stun near the target,
 -- splash) and `applyEffect` stacks bleeds; `lingering` and `trap` leave lasting areas.
 -- S54 (ROZWOJ 8): skill hits (`damage`) and attack-based DoTs (`attack`) x Skills.speedFactor of the weapon
 -- (`speedMul`); heals and shields from magic attack go through `healAtk` (x the heal level curve), no weapon factor.
@@ -36,7 +36,7 @@ export type Services = {
 export type Ctx = {
 	player: Player,
 	skill: SkillData.SkillDef,
-	level: number,
+	rank: number,
 	character: Types.CharacterData,
 	caster: any, -- player entity
 	root: BasePart,
@@ -45,7 +45,7 @@ export type Ctx = {
 	services: Services,
 	value: (field: string) -> number,
 	scaled: (value: SkillData.Scaled?) -> number,
-	bp: SkillData.Breakpoint, -- S28: merged breakpoint behaviours at this level
+	bp: SkillData.Breakpoint, -- S28: merged breakpoint behaviours at this rank
 	attack: () -> number, -- physical or magic attack depending on the skill, x speedMul (S54)
 	magAtk: () -> number,
 	healMul: () -> number, -- heal level curve at the caster's level (S54)
@@ -99,7 +99,7 @@ end
 function Context.new(
 	player: Player,
 	skill: SkillData.SkillDef,
-	level: number,
+	rank: number,
 	character: Types.CharacterData,
 	caster: any,
 	root: BasePart,
@@ -111,7 +111,7 @@ function Context.new(
 	local behaviour: any = bp or {}
 
 	local function value(field: string): number
-		return Skills.valueAt(skill, field, level)
+		return Skills.valueAt(skill, field, rank)
 	end
 
 	local function isEnemy(entity: any): boolean
@@ -252,7 +252,7 @@ function Context.new(
 	ctx = {
 		player = player,
 		skill = skill,
-		level = level,
+		rank = rank,
 		character = character,
 		caster = caster,
 		root = root,
@@ -262,7 +262,7 @@ function Context.new(
 		bp = behaviour,
 		value = value,
 		scaled = function(v)
-			return Skills.scaled(skill, v, level)
+			return Skills.scaled(skill, v, rank)
 		end,
 		attack = function(): number
 			local values = stats()
@@ -345,7 +345,7 @@ function Context.new(
 			end
 		end,
 		applyEffect = function(entity: any, effect: SkillData.SkillEffect)
-			local duration = Skills.scaled(skill, effect.duration, level)
+			local duration = Skills.scaled(skill, effect.duration, rank)
 			local effectValue = if type(effect.value) == "string"
 				then value(effect.value)
 				elseif type(effect.value) == "number" then effect.value

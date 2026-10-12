@@ -4,7 +4,8 @@
 --   CastSkill(skillId, targetId?, aim?) -> validate (learned, alive, not stunned, GCD 0.5 s, cooldown, cost,
 --   target, range) -> spend -> SkillFx "cast" (everyone nearby plays the skill's animation, Data/SkillMotions) ->
 --   after the motion's hit time (S28, at most 0.6 s) the Skills/Types/* handler -> SkillFx impact events.
---   S28: the skill works as Logic/Skills.effective makes it at its level (breakpoints at 5 and 10).
+--   S28/S55: the skill works as Logic/Skills.effective makes it at its rank (breakpoints at ranks 5 and 10, option A
+--   until S57).
 -- Cooldowns replicate as state branch `skills` = { cd = { [skillId] = readyAt }, gcd = readyAt, channel? }
 -- (server time), so the client draws the cooldown sweep.
 
@@ -390,12 +391,13 @@ local function cast(player: Player, skillId: string, targetId: string?, aim: any
 	if not char or not base or base.class ~= char.class then
 		return false, "error.badRequest"
 	end
-	local level = Skills.level(char, skillId)
-	if level <= 0 or base.type == "passive" then
+	local rank = Skills.level(char, skillId)
+	if rank <= 0 or base.type == "passive" then
 		return false, "cast.error.notLearned"
 	end
-	-- S28: numbers and behaviours at this level (breakpoints).
-	local skill, behaviour = Skills.effective(base, level)
+	-- S28: numbers and behaviours at this rank (breakpoints).
+	-- S55: option A everywhere, no node mods until S57 (Paths.skillMods); rank = learned level until S56
+	local skill, behaviour = Skills.effective(base, rank, nil, nil)
 	local caster = EntityService.GetPlayerEntity(player)
 	local model = player.Character
 	local root = model and model:FindFirstChild("HumanoidRootPart") :: BasePart?
@@ -467,7 +469,7 @@ local function cast(player: Player, skillId: string, targetId: string?, aim: any
 	end
 
 	-- Cost (S54: one formula with the bar and the description; Mage mana grows with the character level).
-	local cost = Skills.cost(skill, level, char.level, char.class, nil)
+	local cost = Skills.cost(skill, rank, char.level, char.class, nil)
 	local resource = skill.resource
 	if cost > 0 and resource and not rt.infiniteResources then
 		local ok = if resource == "mana"
@@ -489,12 +491,12 @@ local function cast(player: Player, skillId: string, targetId: string?, aim: any
 	end
 
 	interruptChannel(player, nil)
-	local ctx = Context.new(player, skill, level, char, caster, root, services, behaviour)
+	local ctx = Context.new(player, skill, rank, char, caster, root, services, behaviour)
 	ctx.target = target
 	ctx.point = point
 	if not rt.noCooldowns then
 		rt.gcd = t + SkillData.GCD
-		rt.cooldowns[skillId] = t + Skills.scaled(skill, skill.cooldown, level)
+		rt.cooldowns[skillId] = t + Skills.scaled(skill, skill.cooldown, rank)
 		publishCooldowns(player)
 	end
 	ResourceService.MarkCombat(player)
@@ -505,8 +507,11 @@ local function cast(player: Player, skillId: string, targetId: string?, aim: any
 
 	-- After a successful handler: breakpoint effects on the caster.
 	local function finished()
-		if behaviour.selfEffect then
-			ctx.applyEffect(caster, behaviour.selfEffect)
+		local selfEffects = skill.selfEffects
+		if selfEffects then
+			for _, effect in selfEffects do
+				ctx.applyEffect(caster, effect)
+			end
 		end
 		if behaviour.selfHeal then
 			ctx.heal(player, StatService.GetValue(player, "maxHp") * behaviour.selfHeal / 100)

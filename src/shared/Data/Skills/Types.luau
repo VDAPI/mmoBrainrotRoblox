@@ -1,5 +1,5 @@
 --!strict
--- Skill definition shape (DESIGN §14). Values that grow with the skill level are { level 1, max level } pairs,
+-- Skill definition shape (DESIGN §14). Values that grow with the rank are { rank 1, max rank } pairs,
 -- interpolated linearly by Logic/Skills.valueAt (DESIGN: "mnożnik = baza + przyrost·(poziom−1)").
 
 -- { valueAtLevel1, valueAtMaxLevel } or a constant.
@@ -65,7 +65,7 @@ export type SkillEffect = {
 	category: string?,
 }
 
--- Breakpoint (S28, DESIGN §14): what changes when the skill reaches level 5 / 10 — numbers (`add` to radius, angle,
+-- Breakpoint (S28, ROZWOJ 2.7): what changes when the skill reaches rank 5 / 10 — numbers (`add` to radius, angle,
 -- range, length, width, hits, jumps, duration, effectDuration; `mul` cooldown, cost, delay; `values` added to the
 -- skill's values) and behaviours the server applies (Skills/Context, Types/*):
 --   pull = radius            enemies within the radius are pulled to the caster at the start
@@ -87,7 +87,8 @@ export type SkillEffect = {
 --   lifesteal = pct          the caster heals for pct of the damage dealt
 --   selfHeal = pct           the caster heals pct of max HP on cast
 --   effect / selfEffect / allyEffect = SkillEffect   an extra effect on hit enemies / the caster / allies; these
---                            carry their own category (S53) like the skill's effects
+--                            carry their own category (S53) like the skill's effects. Logic/Skills.effective
+--                            collects them from every source into def.effects / def.selfEffects / def.allyEffects
 export type Breakpoint = {
 	add: { [string]: number }?,
 	mul: { [string]: number }?,
@@ -115,12 +116,18 @@ export type Breakpoint = {
 	allyEffect: SkillEffect?,
 }
 
+export type BreakpointOption = "a" | "b"
+-- S55 (ROZWOJ 2.7): a breakpoint rank offers option A (today's breakpoint, texts skill.<id>.bp5 / .bp10) and
+-- optionally B (class sessions, texts .bp5b / .bp10b). No choice = A.
+export type BreakpointPair = { a: Breakpoint, b: Breakpoint? }
+export type Breakpoints = { [number]: BreakpointPair } -- ranks 5 and 10
+
 export type SkillDef = {
 	id: string,
 	class: string,
 	order: number, -- 1..14 in the class tree (DESIGN table row)
-	unlock: number, -- character level for skill level 1
-	maxLevel: number, -- 10 active, 5 passive
+	unlock: number, -- character level for rank 1
+	maxLevel: number, -- explicit in the data: 10 active, 5 passive (ROZWOJ 2.5)
 	type: SkillType,
 	target: TargetMode,
 	resource: ("mana" | "energy")?,
@@ -144,10 +151,13 @@ export type SkillDef = {
 	holy: boolean?, -- light damage (Cleric, Divine Wrath)
 	values: { [string]: Scaled },
 	effects: { SkillEffect }?,
+	-- filled only by Logic/Skills.effective from breakpoints and node mods (ROZWOJ 2.7)
+	selfEffects: { SkillEffect }?,
+	allyEffects: { SkillEffect }?,
 	-- Passive stat modifiers: stat id -> value field; `pct` stats multiply.
 	passive: { flat: { [string]: string }?, pct: { [string]: string }?, hooks: { [string]: string }? }?,
 	requires: { { skill: string, level: number } }?,
-	breakpoints: { [number]: Breakpoint }?, -- S28: at skill level 5 and 10 (texts skill.<id>.bp5 / .bp10)
+	breakpoints: Breakpoints?, -- S55: { [5] = { a, b? }, [10] = { a, b? } }
 	col: number,
 	row: number,
 	glyph: string,

@@ -1,5 +1,5 @@
 --!strict
--- Small helper to declare skills compactly: fills ids, keys, max level and defaults.
+-- Small helper to declare skills compactly: fills ids, keys and defaults; maxLevel comes from the data.
 
 local Types = require("./Types")
 
@@ -8,6 +8,7 @@ local Build = {}
 export type Spec = {
 	id: string,
 	unlock: number,
+	maxLevel: number,
 	type: Types.SkillType,
 	target: Types.TargetMode?,
 	cost: Types.Scaled?,
@@ -30,7 +31,7 @@ export type Spec = {
 	effects: { Types.SkillEffect }?,
 	passive: { flat: { [string]: string }?, pct: { [string]: string }?, hooks: { [string]: string }? }?,
 	requires: { { skill: string, level: number } }?,
-	breakpoints: { [number]: Types.Breakpoint }?,
+	breakpoints: Types.Breakpoints?,
 	col: number,
 	row: number,
 	glyph: string,
@@ -60,8 +61,13 @@ local DEFAULT_TARGET: { [string]: Types.TargetMode } = {
 	passive = "none",
 }
 
--- Breakpoints at skill levels 5 and 10 (S28). Untyped arguments: every breakpoint has its own shape.
-function Build.bp(five: any, ten: any): { [number]: Types.Breakpoint }
+-- S55 (ROZWOJ 2.7): breakpoints at ranks 5 and 10, each { a = Breakpoint, b = Breakpoint? }. Untyped arguments:
+-- every breakpoint has its own shape (tests/skills.spec checks them).
+function Build.bp2(five: any, ten: any): Types.Breakpoints
+	assert(
+		type(five) == "table" and five.a ~= nil and type(ten) == "table" and ten.a ~= nil,
+		"Build.bp2: option a is required"
+	)
 	return { [5] = five, [10] = ten }
 end
 
@@ -76,12 +82,13 @@ function Build.class(
 	local list: { Types.SkillDef } = {}
 	for order, spec in specs do
 		local passive = spec.type == "passive"
+		assert(type(spec.maxLevel) == "number", `Skills: {spec.id} needs maxLevel`)
 		table.insert(list, {
 			id = spec.id,
 			class = classId,
 			order = order,
 			unlock = spec.unlock,
-			maxLevel = if passive then 5 else 10,
+			maxLevel = spec.maxLevel,
 			type = spec.type,
 			target = spec.target or DEFAULT_TARGET[spec.type] or "none",
 			resource = if passive then nil else resource,

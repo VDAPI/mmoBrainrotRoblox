@@ -7,12 +7,13 @@ return Build.class("Hunter", "energy", "phys", {
 	{
 		id = "aimedShot",
 		unlock = 1,
+		maxLevel = 10,
 		type = "projectile",
 		cost = 15,
 		cooldown = 4,
 		range = 38,
 		values = { dmg = { 170, 310 } },
-		breakpoints = Build.bp({ pierce = 50 }, { execute = 30 }),
+		breakpoints = Build.bp2({ a = { pierce = 50 } }, { a = { execute = 30 } }),
 		col = 1,
 		row = 1,
 		glyph = "➶",
@@ -21,6 +22,7 @@ return Build.class("Hunter", "energy", "phys", {
 	{
 		id = "doubleShot",
 		unlock = 3,
+		maxLevel = 10,
 		type = "projectile",
 		cost = 20,
 		cooldown = 6,
@@ -28,9 +30,9 @@ return Build.class("Hunter", "energy", "phys", {
 		hits = 2,
 		interval = 0.15,
 		values = { dmg = { 85, 150 } },
-		breakpoints = Build.bp(
-			{ add = { hits = 1 } },
-			{ effect = { kind = "slow", duration = 2, value = 25, category = "enemySlow" } }
+		breakpoints = Build.bp2(
+			{ a = { add = { hits = 1 } } },
+			{ a = { effect = { kind = "slow", duration = 2, value = 25, category = "enemySlow" } } }
 		),
 		col = 2,
 		row = 1,
@@ -40,6 +42,7 @@ return Build.class("Hunter", "energy", "phys", {
 	{
 		id = "disengage",
 		unlock = 6,
+		maxLevel = 10,
 		type = "blink",
 		target = "none",
 		cost = 15,
@@ -47,9 +50,9 @@ return Build.class("Hunter", "energy", "phys", {
 		length = 15,
 		values = { bonus = { 20, 50 } },
 		effects = { { kind = "nextShot", duration = 8, value = "bonus", target = "self", category = "own" } },
-		breakpoints = Build.bp(
-			{ trap = { radius = 6, duration = 8, slow = 40 } },
-			{ values = { bonus = 50 }, add = { effectDuration = -5 } }
+		breakpoints = Build.bp2(
+			{ a = { trap = { radius = 6, duration = 8, slow = 40 } } },
+			{ a = { values = { bonus = 50 }, add = { effectDuration = -5 } } }
 		),
 		col = 3,
 		row = 1,
@@ -58,6 +61,7 @@ return Build.class("Hunter", "energy", "phys", {
 	{
 		id = "arrowRain",
 		unlock = 10,
+		maxLevel = 10,
 		type = "circleTarget",
 		cost = 35,
 		cooldown = 10,
@@ -66,9 +70,9 @@ return Build.class("Hunter", "energy", "phys", {
 		hits = 4,
 		interval = 0.5,
 		values = { dmg = { 45, 85 } },
-		breakpoints = Build.bp(
-			{ add = { radius = 3 } },
-			{ effect = { kind = "slow", duration = 2, value = 30, category = "enemySlow" } }
+		breakpoints = Build.bp2(
+			{ a = { add = { radius = 3 } } },
+			{ a = { effect = { kind = "slow", duration = 2, value = 30, category = "enemySlow" } } }
 		),
 		col = 3,
 		row = 2,
@@ -77,6 +81,7 @@ return Build.class("Hunter", "energy", "phys", {
 	{
 		id = "hawkEye",
 		unlock = 14,
+		maxLevel = 5,
 		type = "passive",
 		values = { crit = { 2, 10 }, critDmg = { 10, 30 } },
 		passive = { flat = { critChance = "crit", critDmg = "critDmg" } },
@@ -87,6 +92,7 @@ return Build.class("Hunter", "energy", "phys", {
 	{
 		id = "venomArrow",
 		unlock = 18,
+		maxLevel = 10,
 		type = "projectile",
 		cost = 25,
 		cooldown = 8,
@@ -95,7 +101,7 @@ return Build.class("Hunter", "energy", "phys", {
 		values = { dmg = { 120, 210 }, poison = { 50, 120 } },
 		effects = { { kind = "poison", duration = 6, value = "poison" } },
 		requires = { { skill = "aimedShot", level = 3 } },
-		breakpoints = Build.bp({ values = { poison = 40 } }, { splash = { radius = 5, pct = 40 } }),
+		breakpoints = Build.bp2({ a = { values = { poison = 40 } } }, { a = { splash = { radius = 5, pct = 40 } } }),
 		col = 1,
 		row = 3,
 		glyph = "☠",
@@ -104,6 +110,7 @@ return Build.class("Hunter", "energy", "phys", {
 	{
 		id = "frostTrap",
 		unlock = 23,
+		maxLevel = 10,
 		type = "trap",
 		cost = 25,
 		cooldown = 18,
@@ -112,7 +119,10 @@ return Build.class("Hunter", "energy", "phys", {
 		element = "ice",
 		values = { root = { 2, 3.5 } },
 		effects = { { kind = "root", duration = { 2, 3.5 } } },
-		breakpoints = Build.bp({ add = { radius = 2 } }, { effect = { kind = "freeze", duration = 1 } }),
+		breakpoints = Build.bp2(
+			{ a = { add = { radius = 2 } } },
+			{ a = { effect = { kind = "freeze", duration = 1 } } }
+		),
 		col = 3,
 		row = 3,
 		glyph = "❄",
@@ -120,6 +130,7 @@ return Build.class("Hunter", "energy", "phys", {
 	{
 		id = "agility",
 		unlock = 28,
+		maxLevel = 5,
 		type = "passive",
 		values = { dodge = { 2, 10 }, move = { 3, 15 } },
 		passive = { flat = { dodge = "dodge", moveSpeed = "move" } },
@@ -130,6 +141,7 @@ return Build.class("Hunter", "energy", "phys", {
 	{
 		id = "piercingArrow",
 		unlock = 34,
+		maxLevel = 10,
 		type = "line",
 		cost = 40,
 		cooldown = 12,
@@ -137,7 +149,7 @@ return Build.class("Hunter", "energy", "phys", {
 		width = 4,
 		values = { dmg = { 200, 360 } },
 		requires = { { skill = "doubleShot", level = 3 } },
-		breakpoints = Build.bp({ add = { width = 2 } }, { knockback = 6 }),
+		breakpoints = Build.bp2({ a = { add = { width = 2 } } }, { a = { knockback = 6 } }),
 		col = 2,
 		row = 4,
 		glyph = "➸",
@@ -145,15 +157,16 @@ return Build.class("Hunter", "energy", "phys", {
 	{
 		id = "huntersMark",
 		unlock = 40,
+		maxLevel = 10,
 		type = "debuff",
 		cost = 20,
 		cooldown = 25,
 		range = 40,
 		values = { vuln = { 10, 25 } },
 		effects = { { kind = "vulnerability", duration = 10, value = "vuln", category = "enemyWeak" } },
-		breakpoints = Build.bp(
-			{ add = { effectDuration = 5 } },
-			{ effect = { kind = "slow", duration = 10, value = 20, category = "enemySlow" } }
+		breakpoints = Build.bp2(
+			{ a = { add = { effectDuration = 5 } } },
+			{ a = { effect = { kind = "slow", duration = 10, value = 20, category = "enemySlow" } } }
 		),
 		col = 1,
 		row = 4,
@@ -162,6 +175,7 @@ return Build.class("Hunter", "energy", "phys", {
 	{
 		id = "predatorInstinct",
 		unlock = 48,
+		maxLevel = 5,
 		type = "passive",
 		values = { speed = { 3, 15 } },
 		passive = { flat = { atkSpeed = "speed" } },
@@ -172,6 +186,7 @@ return Build.class("Hunter", "energy", "phys", {
 	{
 		id = "volley",
 		unlock = 56,
+		maxLevel = 10,
 		type = "cone",
 		cost = 50,
 		cooldown = 14,
@@ -180,7 +195,7 @@ return Build.class("Hunter", "energy", "phys", {
 		hits = 7,
 		values = { dmg = { 70, 120 } },
 		requires = { { skill = "arrowRain", level = 3 } },
-		breakpoints = Build.bp({ add = { hits = 3 } }, { add = { angle = 30 } }),
+		breakpoints = Build.bp2({ a = { add = { hits = 3 } } }, { a = { add = { angle = 30 } } }),
 		col = 3,
 		row = 5,
 		glyph = "⇶",
@@ -188,6 +203,7 @@ return Build.class("Hunter", "energy", "phys", {
 	{
 		id = "camouflage",
 		unlock = 65,
+		maxLevel = 10,
 		type = "buff",
 		cost = 30,
 		cooldown = 60,
@@ -197,16 +213,18 @@ return Build.class("Hunter", "energy", "phys", {
 			{ kind = "camouflage", duration = 4, target = "self", category = "own" },
 			{ kind = "guaranteedCrit", duration = 10, target = "self", category = "own" },
 		},
-		breakpoints = Build.bp({ add = { effectDuration = 2 } }, {
-			selfEffect = {
-				kind = "statBuff",
-				duration = 4,
-				-- moveSpeed already is a % of walk speed (base 0): flat points, not pct (S53).
-				stats = { moveSpeed = "speedBp" },
-				target = "self",
-				category = "own",
+		breakpoints = Build.bp2({ a = { add = { effectDuration = 2 } } }, {
+			a = {
+				selfEffect = {
+					kind = "statBuff",
+					duration = 4,
+					-- moveSpeed already is a % of walk speed (base 0): flat points, not pct (S53).
+					stats = { moveSpeed = "speedBp" },
+					target = "self",
+					category = "own",
+				},
+				values = { speedBp = 30 },
 			},
-			values = { speedBp = 30 },
 		}),
 		col = 4,
 		row = 5,
@@ -215,6 +233,7 @@ return Build.class("Hunter", "energy", "phys", {
 	{
 		id = "stormArrow",
 		unlock = 75,
+		maxLevel = 10,
 		type = "projectile",
 		cost = 80,
 		cooldown = 40,
@@ -223,7 +242,7 @@ return Build.class("Hunter", "energy", "phys", {
 		element = "lightning",
 		values = { dmg = { 400, 650 }, splash = 120 },
 		requires = { { skill = "piercingArrow", level = 5 } },
-		breakpoints = Build.bp({ add = { radius = 4 } }, { effect = { kind = "stun", duration = 1 } }),
+		breakpoints = Build.bp2({ a = { add = { radius = 4 } } }, { a = { effect = { kind = "stun", duration = 1 } } }),
 		col = 2,
 		row = 6,
 		glyph = "⚡",

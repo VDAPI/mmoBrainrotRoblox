@@ -168,7 +168,7 @@ local Config = {
 		useRange = 10,
 		useMoveLimit = 3,
 	},
-	-- Skills (S28, DESIGN §14): `breakpoints` turns the level 5 / 10 breakpoints on (off = numbers only).
+	-- Skills (S28, DESIGN §14): `breakpoints` turns the rank 5 / 10 breakpoints on (off = numbers only).
 	Skills = {
 		breakpoints = true,
 		-- Seconds a skill pressed during the global cooldown / the cast waits to fire (client queue).

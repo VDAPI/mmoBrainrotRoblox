@@ -5,10 +5,12 @@
 
 ## Stan
 
-S01–S51, S53 i S54 gotowe (lista i zakres w `docs/SESJE.md`). Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
+S01–S51 i S53–S55 gotowe (lista i zakres w `docs/SESJE.md`). Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
 kategorie efektów drużyny i stos efektów (`Logic/EffectStack`), S54 wzory globalne (`Logic/LevelCurves`: Zręczność,
-mana Maga, mikstury, krzywa leczenia; obrażenia umiejętności × szybkość broni). Faza teraz: **gameplay**; przebudowa
-rozwoju postaci S53–S94 (`docs/ROZWOJ.md`, `docs/STATY.md`), następna S55; testy i strojenie po niej.
+mana Maga, mikstury, krzywa leczenia; obrażenia umiejętności × szybkość broni), S55 rangi z poziomu
+(`Skills.rankLevel` / `rankAt`, jeszcze nieużywane) i przełomy w kształcie A/B (`Build.bp2`, składanie
+`Skills.effective` §2.7), bez zmian dla gracza. Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94
+(`docs/ROZWOJ.md`, `docs/STATY.md`), następna S56; testy i strojenie po niej.
 
 ## Niedokończone (kod)
 

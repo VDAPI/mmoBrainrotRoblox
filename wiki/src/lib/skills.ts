@@ -240,7 +240,8 @@ export interface PlannerSkill extends RuleSkill {
   range: number | null;
   elementNote: string | null;
   ranks: { requiredLevel: number; cost: number; cooldown: number; desc: string }[];
-  breakpoints: { level: number; text: string }[];
+  /** Option A text by breakpoint rank (S55); option B comes with the S82 planner. */
+  breakpoints: { rank: number; a: string }[];
 }
 
 export interface PlannerData {

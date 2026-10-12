@@ -1131,3 +1131,16 @@
 - **S54** Wiki: koszt rangi = `Skills.cost` na poziomie odblokowania rangi; `tools/WikiData` nie czyta `LevelCurves`,
   tylko `Logic/Skills`, `Logic/Potions`, `Logic/StatCalc`.
 - **S54** Kolejność: wzory z ROZWOJ §8 (krok 6 z §13) weszły jako S54, zaraz po S53 (ROZWOJ §13 już to zapowiada).
+- **S55** Przełomy w kształcie `{ [5] = { a, b? }, [10] = { a, b? } }` (`Build.bp2`); A = dzisiejszy przełom (teksty
+  `.bp5` / `.bp10`), B dodają sesje klas (`.bp5b` / `.bp10b`). `choices` ma kształt `path.bp` (`"<skillId>:<ranga>"` →
+  `"a" | "b"`); brak wpisu albo brak B działa jak A. Do S57 wszyscy odbiorcy podają `choices = nil`, `mods = nil`.
+- **S55** `Skills.effective(skill, rank, choices, mods, enabled?)` składa według ROZWOJ 2.7 (wartości od bieżącej, `add`
+  sumy, `mul` iloczyny, `effect` / `selfEffect` / `allyEffect` na listy `effects` / `selfEffects` / `allyEffects`, reszta:
+  późniejszy wygrywa). `add.effectDuration` wydłuża tylko `effects`, jak przed S55. `mods` = gotowe tabele `Breakpoint`
+  w kolejności rzędów (rangę węzła, broń i `modify.option` rozlicza `Paths.skillMods`, S57). `Config.Skills.breakpoints`
+  i `enabled = false` wyłączają przełomy, nie węzły.
+- **S55** Rangi z poziomu: `Skills.rankLevel` / `rankAt` (`RANKS = { step = 4, capLevel = 95 }`, aktywne 1–10, pasywki
+  1–5) są gotowe, ale do S56 gra liczy rangę z nauczonego poziomu; `maxLevel` jest jawne w danych każdej umiejętności.
+- **S55** Wiki: przełomy w `skills.json` jako `{ rank, a = { text, change } }` (nazwy jak w planie S82, który dopisze
+  `level` i `b`); liczby rang (wartości, odnowienie) dalej bez przełomów, jak przed S55. `skills.spec` i
+  `skillmotion.spec` bez stałych liczb umiejętności (14 na klasę, 56, 45 aktywnych, żywioły Maga).

@@ -2,8 +2,8 @@
 -- skills.json (S34): every skill (Data/Skills without `vfx`) with its ranks 1..maxLevel (required character level
 -- from Skills.levelRequirement, cost from Skills.cost at that level (S54: Mage mana grows with the level), cooldown
 -- from Skills.scaled, values from Skills.valueAt, description in both languages from Skills.formatDescription at that
--- level with the breakpoints applied) and the S28 breakpoints with their texts, plus the point rules for the planner
--- (S41). Field names are a contract for the planner. Level curves only through Logic/Skills, never the curve data.
+-- level with the breakpoints applied) and the breakpoints in the S55 shape (rank, option A with its text and change),
+-- plus the point rules for the planner (S41). Field names are a contract for the planner. Level curves only through Logic/Skills, never the curve data.
 
 local AccountSchema = require("../../src/shared/Logic/AccountSchema")
 local Clean = require("./Clean")
@@ -59,7 +59,10 @@ S.file(
 			values = "data",
 			["effects?"] = "data",
 			["passive?"] = "data",
-			breakpoints = arr(rec("SkillBreakpoint", { level = "int", text = "name", change = "data" })),
+			-- S55 (ROZWOJ 2.7): one entry per breakpoint rank, option A only; S82 adds the unlock level and option B
+			breakpoints = arr(
+				rec("SkillBreakpoint", { rank = "int", a = rec("SkillOption", { text = "name", change = "data" }) })
+			),
 			ranks = arr(rec("SkillRank", {
 				rank = "int",
 				requiredLevel = "int",
@@ -338,12 +341,17 @@ function Skills.build(ctx: any): any
 				})
 			end
 			local breakpoints = {}
-			for _, bp in SkillLogic.breakpointKeys(skill) do
-				table.insert(breakpoints, {
-					level = bp.level,
-					text = Names.of(bp.key),
-					change = Clean.clean((skill.breakpoints :: any)[bp.level]),
-				})
+			for _, at in SkillLogic.BREAKPOINT_LEVELS do
+				local pair = skill.breakpoints and skill.breakpoints[at]
+				if pair then
+					table.insert(breakpoints, {
+						rank = at,
+						a = {
+							text = Names.of(SkillLogic.breakpointKey(skill.id, at, "a")),
+							change = Clean.clean(pair.a),
+						},
+					})
+				end
 			end
 			table.insert(list, {
 				id = skill.id,

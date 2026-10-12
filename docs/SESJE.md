@@ -3277,3 +3277,27 @@ Pliki: `Data/LevelCurves` (nowy), `Logic/LevelCurves` (nowy), `Logic/Potions` (n
 `SkillInfo`, `SkillsWindow`, `CharacterWindow/StatAllocator`, `Hud/PotionBar`, lokalizacja PL / EN,
 `tests/levelcurves.spec` (nowy), `tests/statcalc.spec`, `tests/skills.spec`, `tools/WikiData/{Basics,Skills}`,
 `StatFormulaTable.astro`, `wiki/src/i18n`, 4 pliki MDX, dane wiki, `docs/{DESIGN,ARCHITECTURE,WIKI}.md`, `CLAUDE.md`.
+
+### S55: Fundament 3: rangi i przełomy A w nowym kształcie danych (krok bez zmian dla gracza)
+
+- Dane: typy `BreakpointOption`, `BreakpointPair`, `Breakpoints`, pola `selfEffects` / `allyEffects` w `SkillDef`;
+  `Build.bp2` zamiast `Build.bp` (wymaga opcji `a`), jawne `maxLevel` w każdym wpisie (`Build.class` bez niego zgłasza
+  błąd), `RANKS = { step = 4, capLevel = 95 }` w `Data/Skills`; 45 przełomów przepisanych mechanicznie na `{ a = … }`
+  z tagami S53.
+- `Logic/Skills`: `rankLevel` / `rankAt` (ROZWOJ 2.5, jeszcze nieużywane w grze), `Choices`, `SkillMod`, `choiceKey`,
+  `chosen`, `breakpointsAt(skill, rank, choices, enabled)`, `effective(skill, rank, choices, mods, enabled)` ze
+  składaniem §2.7, `breakpointKey` i `breakpointKeys` z opcją, `DescOpts` z `choices` / `mods`.
+- Odbiorcy: `SkillService.cast` (ranga, `selfEffects` z listy), `Skills/Context` (`level` → `rank`), `Types/Support`
+  (`allyEffects` w `groupBuff`, `groupHeal`, `resurrect`), `SkillInfo`, `SkillController`, `VfxController`,
+  `Hud/SkillBar`: jedno wywołanie `effective(…, nil, nil)` na odbiorcę.
+- Testy: `skills.spec` (`S55 ranks`, `S55 breakpoints and composition` z testem neutralności względem kopii
+  `effective` z S54 dla rang 1 / 5 / 10 każdej umiejętności; bez stałych liczb umiejętności), `skillmotion.spec`,
+  `effectstack.spec`, `wikidump.spec` (kształt przełomów).
+- Wiki: przełomy `{ rank, a: { text, change } }` w `skills.json` i `types.ts` (`SkillOption`), odbiorcy w `classes.ts`,
+  `skills.ts`, `SkillPlanner.svelte`, `ClassView.astro`. Porównanie `skills.json` bez przełomów przed i po: identyczne
+  (przełomy przeniesione 1:1). `npx astro check`, `npm test` i `npm run build` uruchomione, zielone.
+
+Pliki: `Data/Skills/{init,Build,Types,Warrior,Hunter,Mage,Cleric}`, `Config` (komentarz), `Logic/Skills`,
+`SkillService`, `Skills/Context`, `Skills/Types/Support`, `SkillInfo`, `SkillController`, `VfxController`,
+`Hud/SkillBar`, `tests/{skills,skillmotion,effectstack,wikidump}.spec`, `tools/WikiData/Skills`, `wiki/src/lib/{classes,skills}.ts`,
+`SkillPlanner.svelte`, `ClassView.astro`, dane wiki, `docs/PRZEDMIOTY.md`, `docs/WIKI.md`, `CLAUDE.md`.

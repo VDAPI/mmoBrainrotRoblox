@@ -132,7 +132,7 @@ export function plannerData(c: ClassInfo, lang: Lang): PlannerData {
     range: s.range ?? null,
     elementNote: s.elementNote ? name(s.elementNote, lang) : null,
     ranks: s.ranks.map((r) => ({ requiredLevel: r.requiredLevel, cost: r.cost, cooldown: r.cooldown, desc: name(r.desc, lang) })),
-    breakpoints: file.rules.breakpointsEnabled ? s.breakpoints.map((b) => ({ level: b.level, text: name(b.text, lang) })) : [],
+    breakpoints: file.rules.breakpointsEnabled ? s.breakpoints.map((b) => ({ rank: b.rank, a: name(b.a.text, lang) })) : [],
   }));
   const labels: Record<string, string> = Object.fromEntries(PLANNER_KEYS.map((k) => [k, t(lang, `planner.${k}` as Key)]));
   labels.warn = t(lang, "callout.warn");

@@ -548,7 +548,8 @@ function VfxController.Preview(model: Model, skillId: string)
 	local root = model:FindFirstChild("HumanoidRootPart") :: BasePart?
 	local front = if root then root.Position + root.CFrame.LookVector * math.min(skill.range or 10, 12) else nil
 	local level = State.Get({ "character", "skills", skillId }) or 1
-	local def = Skills.effective(skill, level)
+	-- preview: always option A, no nodes (ROZWOJ 2.7)
+	local def = Skills.effective(skill, level, nil, nil)
 	local motion = SkillMotions.get(skillId)
 	onCast({ s = skillId, c = id, p = front, d = if skill.type == "channel" then 2.5 else nil }, skill, model)
 	local delay = if motion then math.min(motion.hit or motion.release or 0, SkillMotions.MAX_HIT) else 0

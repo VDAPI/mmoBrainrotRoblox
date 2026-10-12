@@ -1222,8 +1222,12 @@ export interface Skill {
 }
 
 export interface SkillBreakpoint {
+  a: SkillOption;
+  rank: number;
+}
+
+export interface SkillOption {
   change: Json;
-  level: number;
   text: Name;
 }
 

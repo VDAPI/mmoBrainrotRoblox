@@ -79,7 +79,7 @@ local function SkillBar(scope: Scope, props: Props): { Instance }
 			end
 			local levels = use(skillLevels)
 			local level = if type(levels) == "table" then levels[s.id] or 1 else 1
-			local def = Skills.effective(s, level)
+			local def = Skills.effective(s, level, nil, nil)
 			local total = math.max(SkillData.GCD, Skills.scaled(def, def.cooldown, level))
 			return math.clamp(left / total, 0, 1)
 		end)
