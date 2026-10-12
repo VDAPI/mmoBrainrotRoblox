@@ -4214,3 +4214,23 @@ Poprawki z przeglądu kodu S60–S65:
 Pliki: `src/shared/Logic/{Skills,Traits,EffectStack}`, `src/server/Services/{DungeonService,PartyAuraService,
 StatusEffectService,StatService,CombatService}`, `src/server/Skills/{Context,Elements}`,
 `src/client/{Controllers/VfxController,UI/SkillInfo}`, `tests/{traits,effectstack,data}.spec`, `docs/{DECYZJE,SESJE}.md`.
+
+### Przegląd S66–S71
+
+Poprawki z przeglądu kodu S66–S71:
+- Cios albo unik pierwszego kontaktu wciąga grupę potwora (`engage` przed zapisem zagrożenia w `Monster.TakeDamage`
+  i `AddThreat`; wcześniej `ctx.engaged` nie ruszał, bo zagrożenie było już zapisane).
+- Dymek założonego pierścienia nie porównuje go z drugim pierścieniem (`ItemTooltip.build`: przedmiot założony bez
+  `equipped`).
+- Dwuręczna broń na pusty slot broni obok tarczy: bez bloku % (`TooltipModel.comparison` dolicza drugą rękę tylko,
+  gdy jest broń do porównania).
+- Promień pecha Koła Fortuny w opisie z danych (`{enemyRadius}` z `roll.enemyRadius`, `Skills.descriptionArgs`).
+- `balance.spec`: obniżony próg pojedynku Maga (5,4 s) tylko na 2. poziomie, jak w DECYZJE S66.
+- Efekty węzłów ścieżek przechodzą pełne reguły kategorii S53 (strona, rodzaj, statystyki, tryb %), także
+  `behindEffect`: `problems` przeniesione do `tests/EffectCategoryRules.luau`, używa go `effectstack.spec` i
+  `paths.spec`.
+- Testy: `tooltip.spec` (dwuręczna obok tarczy), `effectstack.spec` (efekty węzłów). Wiki: dane bez zmian.
+
+Pliki: `src/server/Entities/Monster`, `src/client/UI/Components/ItemTooltip`, `src/shared/Logic/{TooltipModel,Skills}`,
+`src/shared/Data/Localization/{pl,en}`, `tests/{EffectCategoryRules,balance.spec,effectstack.spec,paths.spec,
+tooltip.spec}`, `docs/{DECYZJE,SESJE}.md`.

@@ -309,11 +309,18 @@ local function build(
 	local equipment = State.Get({ "character", "equipment" })
 	local gear: { [string]: any } = if type(equipment) == "table" then equipment else {}
 	local touch = Fusion.peek(Device.Touch)
+	-- A worn item is not compared against anything (e.g. the other ring).
+	local worn = false
+	for _, other in gear do
+		if type(other) == "table" and other.uid == item.uid then
+			worn = true
+		end
+	end
 	local ctx: TooltipModel.Ctx = {
 		lang = lang,
 		level = State.Get({ "character", "level" }) or 1,
 		class = State.Get({ "character", "class" }),
-		equipped = if def then equippedFor(def) else nil,
+		equipped = if def and not worn then equippedFor(def) else nil,
 		merchantOpen = merchant,
 		pathId = State.Get({ "character", "path", "main" }),
 		nodes = State.Get({ "character", "path", "nodes" }),

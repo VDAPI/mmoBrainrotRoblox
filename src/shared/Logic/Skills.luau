@@ -905,6 +905,10 @@ function Skills.descriptionArgs(base: SkillDef, rank: number, opts: DescOpts?): 
 	if skill.ringRadius then
 		args.ringRadius = round(skill.ringRadius)
 	end
+	-- S70 Wheel of Fortune: the misfortune circle (Skills/Context reads the same field)
+	if skill.roll and skill.roll.enemyRadius then
+		args.enemyRadius = round(skill.roll.enemyRadius)
+	end
 	local finisher: any = skill.finisher
 	if finisher and finisher.hp and finisher.mul then
 		args.finisherHp = round(finisher.hp)

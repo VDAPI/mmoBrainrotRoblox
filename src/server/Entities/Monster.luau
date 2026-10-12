@@ -653,8 +653,9 @@ function Monster.TakeDamage(self: Monster, amount: number, source: Player?): num
 		self.lastHit = os.clock()
 		self.damageBy[source] = (self.damageBy[source] or 0) + dealt
 		local threatMul = if self.ctx.threatMultiplier then self.ctx.threatMultiplier(self, source) else 1
-		self.threat[source] = (self.threat[source] or 0) + dealt * threatMul
+		-- Engage first: it pulls the group only while this player has no threat entry yet.
 		engage(self, source)
+		self.threat[source] = (self.threat[source] or 0) + dealt * threatMul
 	end
 	if self.hp <= 0 then
 		self.killedBy = source
@@ -672,8 +673,9 @@ function Monster.AddThreat(self: Monster, player: Player, amount: number)
 	if self.state == "dead" or self.state == "return" then
 		return
 	end
-	self.threat[player] = (self.threat[player] or 0) + amount
+	-- Engage first: it pulls the group only while this player has no threat entry yet.
 	engage(self, player)
+	self.threat[player] = (self.threat[player] or 0) + amount
 end
 
 -- Player who dealt the most damage (DESIGN §15.1); parties extend this in S09.

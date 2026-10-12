@@ -36,7 +36,7 @@ T.describe("Balance S32: one monster and groups", function()
 					local slow = if classId == "Cleric" then 11 else 10
 					local low = if classId == "Cleric" then 0.09 else 0.1
 					-- S66: the Mage's level 2 duel sits at ~5.49 s after the new monster defence (DECYZJE).
-					local fast = if classId == "Mage" then 5.4 else 5.5
+					local fast = if classId == "Mage" and level == 2 then 5.4 else 5.5
 					T.expect(f.seconds).toBeBetween(fast, slow)
 					T.expect(f.hpLost).toBeBetween(low, 0.25)
 				else

@@ -1143,7 +1143,7 @@ return {
 	["skill.fortuneDice.name"] = "Roll of the Dice",
 	["skill.fortuneDice.desc"] = "You roll the dice for your party within {radius} studs: each gets one random face for {statBuffDuration} s: Blade (+{crit} percentage points of critical chance), Wind (+{haste}% attack speed) or Spring ({regen}% of max health every second).",
 	["skill.wheelOfFortune.name"] = "Wheel of Fortune",
-	["skill.wheelOfFortune.desc"] = "Your party within {radius} studs gets all three faces for {statBuffDuration} s (critical chance +{crit} percentage points, attack speed +{haste}%, {regen}% of max health every second), and the face the wheel points to is {boost}% stronger. Enemies within 15 studs miss normal attacks with a {miss}% chance.",
+	["skill.wheelOfFortune.desc"] = "Your party within {radius} studs gets all three faces for {statBuffDuration} s (critical chance +{crit} percentage points, attack speed +{haste}%, {regen}% of max health every second), and the face the wheel points to is {boost}% stronger. Enemies within {enemyRadius} studs miss normal attacks with a {miss}% chance.",
 	["skill.brandOfLight.name"] = "Brand of Light",
 	["skill.brandOfLight.desc"] = "Brands the target with light for {dmg}% of magic attack and sets it alight: {dot}% of magic attack over {burnDuration} s.",
 	["skill.hammerOfHeaven.name"] = "Hammer of Heaven",

@@ -685,7 +685,8 @@ local function comparison(b: Builder, item: ItemInstance, d: ItemDef, c: Ctx, la
 	if equipped then
 		table.insert(replaced, equipped)
 	end
-	local offhand = if d.slot == "weapon" and isTwoHanded(item) then c.offhand else nil
+	-- An empty weapon slot is no comparison (percentDelta nil), even with an off-hand worn.
+	local offhand = if equipped and d.slot == "weapon" and isTwoHanded(item) then c.offhand else nil
 	if offhand and offhand.uid ~= item.uid then
 		table.insert(replaced, offhand)
 	else

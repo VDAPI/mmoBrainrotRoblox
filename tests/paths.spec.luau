@@ -3,6 +3,7 @@
 -- every class in Data/Paths must pass.
 
 local Classes = require("../src/shared/Data/Classes")
+local EffectCategoryRules = require("./EffectCategoryRules")
 local EffectStack = require("../src/shared/Logic/EffectStack")
 local Fixture = require("./fixtures/paths")
 local PartyBuffRules = require("./PartyBuffRules")
@@ -1117,7 +1118,6 @@ end)
 T.describe("Data: Cleric paths (S71)", function()
 	local fs = require("@lune/fs")
 	local BreakpointKeys = require("./BreakpointKeys")
-	local BuffCategories = require("../src/shared/Data/BuffCategories")
 	local Locale = require("../src/shared/Util/Locale")
 
 	local function cleric(main: string?, nodes: { [string]: number }): any
@@ -1294,26 +1294,35 @@ T.describe("Data: Cleric paths (S71)", function()
 		end
 	end)
 
-	T.it("modify.bp keys are breakpoint keys and node effects have known categories", function()
-		local function checkEffect(id: string, effect: any)
-			if type(effect) == "table" and effect.category ~= nil then
-				local known = effect.category == BuffCategories.OWN or BuffCategories.byId[effect.category] ~= nil
-				T.expect({ id, effect.category, known }).toEqual({ id, effect.category, true })
-			end
-		end
+	T.it("modify.bp keys are breakpoint keys and node effects follow the S53 category rules", function()
+		-- S71: node effects pass the same rules as skill breakpoints (EffectCategoryRules), per skill
+		local bySkill: { [string]: { { id: string, bp: any } } } = {}
 		for _, path in PathData.list do
 			for _, row in path.rows do
 				for _, n in row.nodes do
 					local bp = n.modify and n.modify.bp
-					for key, value in bp or {} do
+					for key in bp or {} do
 						T.expect({ n.id, key, BreakpointKeys[key] == true }).toEqual({ n.id, key, true })
-						if key == "effect" or key == "selfEffect" or key == "allyEffect" then
-							checkEffect(n.id, value)
-						end
+					end
+					if n.modify and bp then
+						local list = bySkill[n.modify.skill] or {}
+						bySkill[n.modify.skill] = list
+						table.insert(list, { id = n.id, bp = bp })
 					end
 				end
 			end
 		end
+		local all: { string } = {}
+		for skillId, nodes in bySkill do
+			local skill = SkillData.byId[skillId]
+			T.expect({ skillId, skill ~= nil }).toEqual({ skillId, true })
+			if skill then
+				for _, problem in EffectCategoryRules.problems(skill, nodes) do
+					table.insert(all, problem)
+				end
+			end
+		end
+		T.expect(all).toEqual({})
 	end)
 
 	T.it("node descriptions resolve every placeholder; multipliers give <field>Pct", function()

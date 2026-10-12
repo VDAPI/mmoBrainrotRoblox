@@ -1733,3 +1733,7 @@
   tej wartości, a nie porównuje `WalkSpeed` z blokadą (ogłuszenie 0 = blokada 0).
 - Przegląd S60–S65: etykieta Wręcz / Z dystansu w oknie umiejętności tylko przy umiejętnościach z obrażeniami
   (`Skills.deliveryRule`, ta sama reguła co `data.spec`; okrzyk bez `dmg` nie ma reguły).
+- Przegląd S66–S71: pierwszy kontakt z potworem przez cios, unik albo prowokację wciąga całą grupę
+  (`Monster.TakeDamage` / `AddThreat` wołają `engage` przed zapisem zagrożenia).
+- Przegląd S66–S71: dymek założonego przedmiotu nie porównuje go z niczym (pierścień z drugim pierścieniem); broń
+  dwuręczna na pusty slot broni obok tarczy nie pokazuje bloku % (jak każdy pusty slot).

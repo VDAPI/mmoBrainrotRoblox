@@ -1143,7 +1143,7 @@ return {
 	["skill.fortuneDice.name"] = "Rzut Kośćmi",
 	["skill.fortuneDice.desc"] = "Rzucasz kośćmi dla drużyny w promieniu {radius} st.: każdy dostaje na {statBuffDuration} s jedną losową ścianę: Ostrze (+{crit} pkt. proc. szansy na krytyk), Wiatr (+{haste}% szybkości ataku) albo Źródło ({regen}% maks. życia co sekundę).",
 	["skill.wheelOfFortune.name"] = "Koło Fortuny",
-	["skill.wheelOfFortune.desc"] = "Drużyna w promieniu {radius} st. dostaje na {statBuffDuration} s wszystkie trzy ściany (krytyk +{crit} pkt. proc., szybkość ataku +{haste}%, {regen}% maks. życia co sekundę), a ściana wskazana przez koło działa o {boost}% mocniej. Wrogowie do 15 st. chybiają zwykłe ataki z szansą {miss}%.",
+	["skill.wheelOfFortune.desc"] = "Drużyna w promieniu {radius} st. dostaje na {statBuffDuration} s wszystkie trzy ściany (krytyk +{crit} pkt. proc., szybkość ataku +{haste}%, {regen}% maks. życia co sekundę), a ściana wskazana przez koło działa o {boost}% mocniej. Wrogowie do {enemyRadius} st. chybiają zwykłe ataki z szansą {miss}%.",
 	["skill.brandOfLight.name"] = "Piętno Światła",
 	["skill.brandOfLight.desc"] = "Piętnuje cel światłem za {dmg}% ataku magicznego i podpala go: {dot}% ataku magicznego przez {burnDuration} s.",
 	["skill.hammerOfHeaven.name"] = "Młot Niebios",

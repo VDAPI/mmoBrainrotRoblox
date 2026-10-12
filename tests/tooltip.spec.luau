@@ -251,4 +251,12 @@ T.describe("TooltipModel hint and comparison (S68)", function()
 		local without = TooltipModel.build(better, nil, { lang = "pl", equipped = worn }).lines
 		T.expect(count(without, "comparePct")).toBe(0)
 	end)
+
+	T.it("a two-hander into an empty weapon slot shows no % block, even next to a shield", function()
+		local axe = made("axe2h_50", Rarities.COMMON, {}, 0)
+		local shield = made("shield_50", Rarities.COMMON, {}, 0)
+		local lines = TooltipModel.build(axe, nil, { lang = "pl", class = "Warrior", offhand = shield }).lines
+		T.expect(count(lines, "comparePct")).toBe(0)
+		T.expect(count(lines, "compareTitle")).toBe(0)
+	end)
 end)
