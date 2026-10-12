@@ -1,8 +1,9 @@
 --!strict
 -- skills.json (S34): every skill (Data/Skills without `vfx`) with its ranks 1..maxLevel (required character level
--- from Skills.levelRequirement, cost and cooldown from Skills.scaled, values from Skills.valueAt, description in both
--- languages from Skills.formatDescription with the breakpoints applied) and the S28 breakpoints with their texts,
--- plus the point rules for the planner (S41). Field names are a contract for the planner.
+-- from Skills.levelRequirement, cost from Skills.cost at that level (S54: Mage mana grows with the level), cooldown
+-- from Skills.scaled, values from Skills.valueAt, description in both languages from Skills.formatDescription at that
+-- level with the breakpoints applied) and the S28 breakpoints with their texts, plus the point rules for the planner
+-- (S41). Field names are a contract for the planner. Level curves only through Logic/Skills, never the curve data.
 
 local AccountSchema = require("../../src/shared/Logic/AccountSchema")
 local Clean = require("./Clean")
@@ -324,14 +325,15 @@ function Skills.build(ctx: any): any
 				for _, field in Clean.keys(skill.values) do
 					values[field] = SkillLogic.valueAt(skill, field, n)
 				end
+				local required = SkillLogic.levelRequirement(skill, n)
 				table.insert(ranks, {
 					rank = n,
-					requiredLevel = SkillLogic.levelRequirement(skill, n),
-					cost = SkillLogic.scaled(skill, skill.cost, n),
+					requiredLevel = required,
+					cost = SkillLogic.cost(skill, n, required, skill.class, nil),
 					cooldown = SkillLogic.scaled(skill, skill.cooldown, n),
 					values = values,
 					desc = Names.combine(function(lang: string): string
-						return SkillLogic.formatDescription(skill, n, lang)
+						return SkillLogic.formatDescription(skill, n, lang, { level = required })
 					end),
 				})
 			end

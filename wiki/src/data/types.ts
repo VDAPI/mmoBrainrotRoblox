@@ -757,11 +757,13 @@ export interface MechanicsFile {
   bossDailyRuns: number;
   combat: Json;
   config: Record<string, number>;
+  dexRatingLevel: number;
   formula: Json;
   guild: GuildInfo;
   keybinds: KeybindInfo[];
   levelBands: LevelBandInfo[];
   market: MarketInfo;
+  potionInterval: PotionInterval[];
   pvp: PvpInfo;
   reduction: ReductionTable;
   variants: Record<string, VariantInfo>;
@@ -950,6 +952,12 @@ export interface PortalInfo {
 
 export interface PortalsFile {
   portals: PortalInfo[];
+}
+
+export interface PotionInterval {
+  id: string;
+  level: number;
+  seconds: number;
 }
 
 export interface PremiumFile {

@@ -3,7 +3,7 @@ title: Stats
 description: "The four attributes, points per level, how attributes turn into health, attack and defence, stat limits and resetting points."
 key: stats
 order: 2
-updated: 2026-10-08
+updated: 2026-10-12
 tags: [Attributes, Character]
 ---
 
@@ -19,7 +19,7 @@ Every level up gives you <Stat path="progression.statPointsPerLevel" /> attribut
 
 ## Formulas
 
-Attributes turn into stats by the game's formulas. Bonuses from gear, blessings and the guild are added on top.
+Attributes turn into stats by the game's formulas. Bonuses from gear, blessings and the guild are added on top. Dexterity gives its full crit chance, attack speed and dodge up to <Stat path="mechanics.dexRatingLevel" format="lvl" />; after that each point gives proportionally less, while attack from Dexterity stays the same.
 
 <StatFormulaTable />
 

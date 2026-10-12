@@ -2,6 +2,7 @@
 -- Primary stats with +/- buttons (DESIGN §4.3). Points are reserved locally (pending) and sent together
 -- with "Confirm"; holding + or - repeats faster. The pending values feed a live preview of derived stats.
 -- FIX 2026-10-09: every stat says what one point gives (numbers from Data/Stats.Formula).
+-- S54: DEX crit, speed and dodge per point at the current character level (StatCalc.dexFactor).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -10,6 +11,7 @@ local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Sounds = require(script.Parent.Parent.Parent.Sounds)
 local State = require(script.Parent.Parent.Parent.State)
+local StatCalc = require(ReplicatedStorage.Shared.Logic.StatCalc)
 local Stats = require(ReplicatedStorage.Shared.Data.Stats)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
@@ -32,14 +34,9 @@ local function pct(value: number): string
 	return string.format("%g", math.floor(value * 1000 + 0.5) / 1000)
 end
 local F = Stats.Formula
-local DESC_ARGS: { [string]: { [string]: string } } = {
+-- DEX crit, speed and dodge depend on the character level and are built in the component.
+local DESC_ARGS: { [string]: Text.ArgsIn } = {
 	str = { phys = pct(F.physPerStat * 100), armor = pct(F.armorPerStr) },
-	dex = {
-		phys = pct(F.physPerStat * 100),
-		crit = pct(F.critPerDex),
-		speed = pct(F.atkSpeedPerDex * 100),
-		dodge = pct(F.dodgePerDex),
-	},
 	int = { mag = pct(F.magPerInt * 100), mana = pct(F.manaPerInt), mres = pct(F.mresPerInt) },
 	vit = { hp = pct(F.hpPerVit), armor = pct(F.armorPerVit), mres = pct(F.mresPerVit) },
 }
@@ -131,6 +128,22 @@ local function StatAllocator(scope: Scope, props: Props): Instance
 	local stats = State.Value({ "character", "stats" })
 	local primary = State.Value({ "derived", "primary" })
 	local busy = scope:Value(false)
+	local level = State.Value({ "character", "level" })
+
+	-- What one DEX point gives at the current level: ranged damage in full, crit, speed and dodge rated (S54).
+	local function ratedDex(perPoint: number): Fusion.Computed<string>
+		return scope:Computed(function(use): string
+			local L = use(level)
+			return pct(perPoint * StatCalc.dexFactor(if type(L) == "number" then L else 1))
+		end)
+	end
+	local descArgs: { [string]: Text.ArgsIn } = table.clone(DESC_ARGS)
+	descArgs.dex = {
+		phys = pct(F.physPerStat * 100),
+		crit = ratedDex(F.critPerDex),
+		speed = ratedDex(F.atkSpeedPerDex * 100),
+		dodge = ratedDex(F.dodgePerDex),
+	}
 
 	local available = scope:Computed(function(use): number
 		local points = use(statPoints)
@@ -207,7 +220,7 @@ local function StatAllocator(scope: Scope, props: Props): Instance
 								Position = UDim2.fromOffset(0, 24),
 								Size = UDim2.new(1, 0, 1, -24),
 								BackgroundTransparency = 1,
-								Text = Text.T(scope, `stat.{id}.desc`, DESC_ARGS[id]),
+								Text = Text.T(scope, `stat.{id}.desc`, descArgs[id]),
 								TextWrapped = true,
 								FontFace = Theme.Fonts.Body,
 								TextSize = 12,

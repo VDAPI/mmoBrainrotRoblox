@@ -25,12 +25,14 @@ local Auction = require("../../src/shared/Logic/Auction")
 local Market = require("../../src/shared/Data/Market")
 local GatherNodes = require("../../src/shared/Data/GatherNodes")
 local Places = require("./Places")
+local Potions = require("../../src/shared/Logic/Potions")
 local Items = require("../../src/shared/Data/Items")
 local Names = require("./Names")
 local Progression = require("../../src/shared/Data/Progression")
 local Rarities = require("../../src/shared/Data/Rarities")
 local Recipes = require("../../src/shared/Data/Recipes")
 local Schema = require("./Schema")
+local StatCalc = require("../../src/shared/Logic/StatCalc")
 local Stats = require("../../src/shared/Data/Stats")
 local Titles = require("../../src/shared/Data/Titles")
 local World = require("./World")
@@ -256,6 +258,9 @@ S.file(
 			categories = arr(rec("AuctionCategory", { id = "string", name = "name" })),
 			examples = arr(rec("AuctionExample", { gold = "int", deposit = "int", fee = "int", payout = "int" })),
 		}),
+		-- S54: DEX rating level (StatCalc) and the potion interval of every level (Potions.interval).
+		dexRatingLevel = "int",
+		potionInterval = arr(rec("PotionInterval", { id = "string", level = "int", seconds = "number" })),
 	})
 )
 
@@ -598,6 +603,19 @@ function Basics.zoneColors(themeText: string?, warnings: { string }): { [string]
 	return out
 end
 
+-- S54: the potion interval at every level (rounded to 0.1 s for the wiki only); id = the level for <Stat> paths.
+function Basics.potionInterval(): { any }
+	local rows = {}
+	for level = 1, Config.MaxLevel do
+		table.insert(rows, {
+			id = tostring(level),
+			level = level,
+			seconds = math.floor(Potions.interval(level) * 10 + 0.5) / 10,
+		})
+	end
+	return rows
+end
+
 function Basics.mechanics(ctx: any): any
 	local config = {}
 	for _, key in Basics.CONFIG_KEYS do
@@ -667,6 +685,8 @@ function Basics.mechanics(ctx: any): any
 		pvp = Basics.pvp(),
 		guild = Basics.guild(),
 		market = Basics.market(),
+		dexRatingLevel = StatCalc.dexRatingLevel(),
+		potionInterval = Basics.potionInterval(),
 	}
 end
 

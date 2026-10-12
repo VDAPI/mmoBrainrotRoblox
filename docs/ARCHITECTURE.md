@@ -456,6 +456,7 @@ type CharacterData = {
 | `/mstats` | monsters | [level] | HP i atak zwykłego potwora oraz czas zabicia go przez ciebie |
 | `/simfight` | combat | <monster> <level> [n] [variant] | S32: przewidywana walka z grupą n (`Logic/FightSim`, twoje statystyki) |
 | `/balance` | combat | – | S32: twoja postać względem celów balansu (1 potwór, grupy, Elita) |
+| `/curves` | combat | [level] | S54: wartości `Data/LevelCurves` na poziomie, Zręczność, odstęp mikstur |
 | `/e2` | monsters | <spawn> | od razu odródź Elitę II w tej jaskini |
 | `/e2timer` | monsters |  | twoje timery Elit II |
 | `/boss` | monsters | <reset|spawn> [boss:boss] | /boss reset | spawn <grimrok|morvane> |

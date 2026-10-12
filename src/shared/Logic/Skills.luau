@@ -1,9 +1,14 @@
 --!strict
 -- Skill rules (DESIGN §14.1). Pure.
+-- S54 (ROZWOJ 8): the one cost (Skills.cost), heal curve (Skills.healMul) and weapon speed normalisation
+-- (Skills.speedFactor) used by the server, the skill bar, the descriptions and the wiki.
 
+local Combat = require("../Data/Combat")
 local Config = require("../Config")
+local LevelCurves = require("./LevelCurves")
 local Locale = require("../Util/Locale")
 local SkillData = require("../Data/Skills")
+local Stats = require("../Data/Stats")
 local Types = require("../Types")
 
 type SkillDef = SkillData.SkillDef
@@ -241,6 +246,57 @@ function Skills.passiveTotals(character: Types.CharacterData): PassiveTotals
 	return totals
 end
 
+-- Level formulas (S54, ROZWOJ 8) ---------------------------------------------------------------------------------
+
+-- Changes to a skill's cost: costPct = sum of percentage changes (-20 = 20 % cheaper). Later sessions extend it
+-- (S62 costReduce, S76 / S79-S80 hooks).
+export type CostMods = { costPct: number? }
+
+-- Resource cost of `skill` (the def after Skills.effective, so breakpoint cost changes apply) at rank `rank` for a
+-- character of level `level` and class `classId`. Mana skills of a class with a "manaCost.<classId>" level curve cost
+-- more with the level (Mage, owner answer 25). Not rounded: the server and the skill bar compare the same number.
+-- One function for the server, the skill bar, the description and the wiki; until S56 `rank` is the learned level,
+-- then the rank from the character level.
+function Skills.cost(skill: SkillDef, rank: number, level: number, classId: string, mods: CostMods?): number
+	local base = Skills.scaled(skill, skill.cost, rank)
+	if base <= 0 then
+		return 0
+	end
+	local curve = "manaCost." .. classId
+	if skill.resource == "mana" and LevelCurves.has(curve) then
+		base *= LevelCurves.at(curve, level)
+	end
+	local pct = if mods and mods.costPct then mods.costPct else 0
+	return base * math.max(0, 1 + pct / 100)
+end
+
+-- Multiplier of the magic-attack part of heals and shields at character level `level` (ROZWOJ 9.2).
+function Skills.healMul(level: number): number
+	return LevelCurves.at("heal", level)
+end
+
+local HEAL_TYPES: { [string]: boolean } = { heal = true, hot = true, groupHeal = true }
+
+-- Value fields of `skill` computed from magic attack (or, for a damage skill that heals allies, from its own hit)
+-- that the heal curve multiplies. Percent-of-HP heals (Divine Intervention), heal bonuses (Devotion) and shares of
+-- dealt damage from passive hooks (Holy Strike) are not on the curve.
+function Skills.healFields(skill: SkillDef): { string }
+	if HEAL_TYPES[skill.type] then
+		return { "heal" }
+	elseif skill.type == "shield" then
+		return { "shield" }
+	elseif skill.type ~= "passive" and skill.values.heal ~= nil and skill.values.dmg ~= nil then
+		return { "heal" }
+	end
+	return {}
+end
+
+-- Skill damage multiplier from the base speed of the equipped weapon (nil = unarmed): weapons with the same damage
+-- per second give skills the same damage. Combat.skillSpeedRef (two-handed axe) = x1.
+function Skills.speedFactor(weaponSpeed: number?): number
+	return (weaponSpeed or Stats.Formula.unarmed.speed) / Combat.skillSpeedRef
+end
+
 local function round(value: number): number
 	if math.abs(value - math.floor(value + 0.5)) < 1e-6 then
 		return math.floor(value + 0.5)
@@ -248,22 +304,33 @@ local function round(value: number): number
 	return math.floor(value * 10 + 0.5) / 10
 end
 
--- Placeholder values for the description of `skill` at `level` ({dmg}, {slow}, {duration}, {cost}, ...).
--- S28: the numbers as the skill works at that level (breakpoints applied).
-function Skills.descriptionArgs(base: SkillDef, level: number): { [string]: number }
-	local skill = Skills.effective(base, level)
+-- Options of a description: `level` = character level (default: the level the rank unlocks at, as on the wiki).
+export type DescOpts = { level: number? }
+
+-- Placeholder values for the description of `base` at rank `rank` ({dmg}, {slow}, {duration}, {cost}, ...).
+-- S28: the numbers as the skill works at that rank (breakpoints applied). S54: cost and heal values at the
+-- character level from `opts` (Skills.cost, Skills.healMul).
+function Skills.descriptionArgs(base: SkillDef, rank: number, opts: DescOpts?): { [string]: number }
+	local skill = Skills.effective(base, rank)
+	local L = if opts and opts.level then opts.level else Skills.levelRequirement(base, rank)
 	local args: { [string]: number } = {}
 	for field in skill.values do
-		args[field] = round(Skills.valueAt(skill, field, level))
+		args[field] = round(Skills.valueAt(skill, field, rank))
 	end
-	args.cost = round(Skills.scaled(skill, skill.cost, level))
-	args.cooldown = round(Skills.scaled(skill, skill.cooldown, level))
+	local healMul = Skills.healMul(L)
+	for _, field in Skills.healFields(base) do
+		if skill.values[field] ~= nil then
+			args[field] = round(Skills.valueAt(skill, field, rank) * healMul)
+		end
+	end
+	args.cost = round(Skills.cost(skill, rank, L, base.class, nil))
+	args.cooldown = round(Skills.scaled(skill, skill.cooldown, rank))
 	if skill.duration then
-		args.duration = round(Skills.scaled(skill, skill.duration, level))
+		args.duration = round(Skills.scaled(skill, skill.duration, rank))
 	end
 	local effects: { SkillData.SkillEffect } = skill.effects or {}
 	for _, effect in effects do
-		args[`{effect.kind}Duration`] = round(Skills.scaled(skill, effect.duration, level))
+		args[`{effect.kind}Duration`] = round(Skills.scaled(skill, effect.duration, rank))
 	end
 	args.radius = skill.radius or 0
 	args.range = skill.range or 0
@@ -272,8 +339,8 @@ function Skills.descriptionArgs(base: SkillDef, level: number): { [string]: numb
 	return args
 end
 
-function Skills.formatDescription(skill: SkillDef, level: number, lang: string?): string
-	return Locale.T(skill.descKey, Skills.descriptionArgs(skill, math.max(1, level)), lang)
+function Skills.formatDescription(skill: SkillDef, rank: number, lang: string?, opts: DescOpts?): string
+	return Locale.T(skill.descKey, Skills.descriptionArgs(skill, math.max(1, rank), opts), lang)
 end
 
 -- Weapon element a skill needs (DESIGN §5.8, S18): Mage element skills need a weapon of their element;

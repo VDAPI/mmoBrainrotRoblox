@@ -6,8 +6,10 @@ local Shared = game:GetService("ReplicatedStorage").Shared
 
 local Config = require(Shared.Config)
 local FightSim = require(Shared.Logic.FightSim)
+local LevelCurves = require(Shared.Logic.LevelCurves)
 local Monsters = require(Shared.Data.Monsters)
 local Net = require(Shared.Net)
+local Potions = require(Shared.Logic.Potions)
 
 local Context = require(script.Parent.Context)
 
@@ -266,6 +268,35 @@ commands.balance = function(player)
 			el = percent(elite.hpLost),
 		})
 		reply(player, "admin.balance.targets")
+	end)
+end
+
+-- /curves [level]: every level curve (Data/LevelCurves), the DEX factor and the potion interval at a level
+-- (yours by default), S54.
+commands.curves = function(player, args)
+	local function show(level: number)
+		local L = math.clamp(level, 1, Config.MaxLevel)
+		reply(player, "admin.curves.head", { level = L })
+		for _, id in LevelCurves.ids() do
+			reply(player, "admin.curves.line", { id = id, value = string.format("%.3f", LevelCurves.at(id, L)) })
+		end
+		reply(player, "admin.curves.derived", {
+			dex = string.format("%.2f", LevelCurves.dexFactor(L)),
+			dexLevel = LevelCurves.dexRatingLevel(),
+			potion = string.format("%.1f", Potions.interval(L)),
+		})
+	end
+	if args[1] ~= nil then
+		local level = parseAmount(args[1])
+		if not level then
+			reply(player, "admin.usage.curves")
+			return
+		end
+		show(level)
+		return
+	end
+	withCharacter(player, function()
+		show(PlayerStateService.GetCharacter(player).level)
 	end)
 end
 

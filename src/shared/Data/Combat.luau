@@ -12,6 +12,9 @@ return table.freeze({
 	minDamage = 1,
 	-- "Below 30 % HP" threshold of the executioner and last-stand effects (Data/Bonuses hooks).
 	lowHpFraction = 0.3,
+	-- S54 (ROZWOJ 8): skill damage x base weapon speed / skillSpeedRef (two-handed axe = x1); basic attacks unchanged.
+	-- The balance sessions own the value.
+	skillSpeedRef = 0.8,
 
 	-- Basic attack ranges in studs (DESIGN §24) and the lag tolerance the server allows on top.
 	meleeRange = 7,

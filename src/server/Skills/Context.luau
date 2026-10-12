@@ -4,6 +4,8 @@
 -- S28: `skill` is the skill as it works at its level (Logic/Skills.effective: breakpoint numbers applied) and `bp`
 -- the breakpoint behaviours; `damage` applies the on-hit ones (lifesteal, knockback, execute, stun near the target,
 -- splash) and `applyEffect` stacks bleeds; `lingering` and `trap` leave lasting areas.
+-- S54 (ROZWOJ 8): skill hits (`damage`) and attack-based DoTs (`attack`) x Skills.speedFactor of the weapon
+-- (`speedMul`); heals and shields from magic attack go through `healAtk` (x the heal level curve), no weapon factor.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
@@ -28,6 +30,7 @@ export type Services = {
 	Fx: (player: Player, data: { [string]: any }) -> (),
 	PassiveHook: (player: Player, id: string) -> number,
 	WeaponElement: (player: Player) -> string?,
+	WeaponSpeed: (player: Player) -> number?, -- base speed of the equipped weapon (S54)
 }
 
 export type Ctx = {
@@ -43,8 +46,11 @@ export type Ctx = {
 	value: (field: string) -> number,
 	scaled: (value: SkillData.Scaled?) -> number,
 	bp: SkillData.Breakpoint, -- S28: merged breakpoint behaviours at this level
-	attack: () -> number, -- physical or magic attack depending on the skill
+	attack: () -> number, -- physical or magic attack depending on the skill, x speedMul (S54)
 	magAtk: () -> number,
+	healMul: () -> number, -- heal level curve at the caster's level (S54)
+	healAtk: () -> number, -- magic attack x healMul: base of heals and shields (S54)
+	speedMul: number, -- skill damage x weapon speed / Combat.skillSpeedRef (S54)
 	fx: (data: { [string]: any }) -> (),
 	element: string?, -- the skill's element (adaptive: the weapon's), S18
 	isEnemy: (entity: any) -> boolean,
@@ -123,6 +129,9 @@ function Context.new(
 		local result = services.Stat.Get(player)
 		return if result then result.values else {}
 	end
+
+	-- S54 (ROZWOJ 8): skill damage follows the weapon's speed-normalised damage
+	local speedMul = Skills.speedFactor(services.WeaponSpeed(player))
 
 	-- Adaptive skills take the weapon's element (S18).
 	local element: string? = if skill.adaptive then services.WeaponElement(player) else skill.element
@@ -257,11 +266,19 @@ function Context.new(
 		end,
 		attack = function(): number
 			local values = stats()
-			return if skill.damageKind == "magic" then values.magAtk or 0 else values.physAtk or 0
+			local base = if skill.damageKind == "magic" then values.magAtk or 0 else values.physAtk or 0
+			return base * speedMul
 		end,
 		magAtk = function(): number
 			return stats().magAtk or 0
 		end,
+		healMul = function(): number
+			return Skills.healMul(character.level)
+		end,
+		healAtk = function(): number
+			return (stats().magAtk or 0) * Skills.healMul(character.level)
+		end,
+		speedMul = speedMul,
 		element = element,
 		fx = function(data)
 			data.s = skill.id
@@ -290,7 +307,7 @@ function Context.new(
 				end
 			end
 			local result = services.Combat.DealDamage(player, entity, params, nil, {
-				multiplier = elementalMultiplier(),
+				multiplier = elementalMultiplier() * speedMul,
 				consumeShot = opts.consumeShot ~= false,
 				skill = if opts.plain then nil else skill.id,
 			})

@@ -243,10 +243,10 @@ L = poziom postaci, `gear.X` = suma z ekwipunku (z ulepszeniami), `bless.X` = b�
 | Atak magiczny | `(broń.mdmg × (1 + 0.025·INT) + gear.magAtk) × (1 + gear.magAtk%)` |
 | Obrona | `gear.armor + 1·WIT + 0.5·SIŁ` |
 | Odporność magiczna | `gear.mres + 1·INT·0.5 + 0.5·WIT` |
-| Szansa kryt. | `5% + 0.05%·ZRĘ + gear.crit` (max 60%) |
+| Szansa kryt. | `5% + 0.05%·ZRĘ × min(1, 20/L) + gear.crit` (max 60%) (S54) |
 | Obrażenia kryt. | `150% + gear.critDmg` |
-| Szybkość ataku | `broń.speed × (1 + 0.002·ZRĘ + gear.atkSpeed)` (max 2.5 ataku/s) |
-| Unik | `0.03%·ZRĘ + gear.dodge` (max 30%) |
+| Szybkość ataku | `broń.speed × (1 + 0.002·ZRĘ × min(1, 20/L) + gear.atkSpeed)` (max 2.5 ataku/s) (S54) |
+| Unik | `0.03%·ZRĘ × min(1, 20/L) + gear.dodge` (max 30%) (S54) |
 | Celność | `gear.accuracy` (odejmuje się od uniku celu) |
 | Regen HP | `0.5% maxHP/s` poza walką (5 s bez obrażeń), `0.1%/s` w walce, + `gear.hpRegen` |
 | Regen Many | `0.5% maxMana/s + gear.manaRegen` |
@@ -453,7 +453,7 @@ Każdy przedmiot ma w tooltipie „Rzadkość · Kategoria” (broń jedno-/dwur
 
 - Trzy rodzaje: Życie (HP), Mana, Energia. Pięć jakości: Mała, Średnia, Duża, Wielka, Potężna. Przywracają odpowiednio 150 / 500 / 1 500 / 4 000 / 10 000 punktów (energia: 30/60/100/150/250). Ceny: 10 / 60 / 250 / 900 / 3 000 złota.
 - Każdą jakość można kupić od razu (bez wymagań poziomu), tylko za złoto.
-- 3 sloty mikstur na pasku (HP / Mana / Energia), klawisze Z / X / C, na mobile 3 okrągłe przyciski. Wspólny cooldown na rodzaj 1.5 s. Gracz wybiera, którą jakość podpiąć.
+- 3 sloty mikstur na pasku (HP / Mana / Energia), klawisze Z / X / C, na mobile 3 okrągłe przyciski. Wspólny odstęp na rodzaj: 1,5 s × krzywa poziomu (1,5 s do 20., 6 s na 45., ok. 10 s od 70.; `Logic/Potions.interval`, S54). Gracz wybiera, którą jakość podpiąć.
 - Gildia może dawać zniżkę u lekarza.
 
 ## 10. Alchemik

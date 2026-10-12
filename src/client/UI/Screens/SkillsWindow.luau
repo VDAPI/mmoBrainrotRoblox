@@ -323,13 +323,13 @@ local function SkillsWindow(
 		end
 		line(Text.get(use, "skills.current"), Theme.Colors.Gold, nil, Theme.Fonts.BodyBold)
 		if current > 0 then
-			line(Skills.formatDescription(skill, current, lang))
+			line(Skills.formatDescription(skill, current, lang, { level = use(level) or 1 }))
 		else
 			line(Text.get(use, "skills.notLearned"), Theme.Colors.TextMuted)
 		end
 		if current < skill.maxLevel then
 			line(Text.get(use, "skills.next"), Theme.Colors.Gold, nil, Theme.Fonts.BodyBold)
-			line(Skills.formatDescription(skill, current + 1, lang), Theme.Colors.Success)
+			line(Skills.formatDescription(skill, current + 1, lang, { level = use(level) or 1 }), Theme.Colors.Success)
 			local needed = Skills.levelRequirement(skill, current + 1)
 			if (use(level) or 1) < needed then
 				line(Text.get(use, "skills.requiresLevel", { level = needed }), Theme.Colors.DangerHover)

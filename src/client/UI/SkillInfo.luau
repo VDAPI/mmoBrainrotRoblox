@@ -3,14 +3,25 @@
 -- current level, the description, the next level's numbers in green, both breakpoints (reached ones bright, later
 -- ones greyed with "from level N") and what the next level needs. Plain text for Components/Tooltip; the skill
 -- window draws the same pieces itself.
+-- S54: cost and descriptions at the character level (Skills.cost, heal curve); damage skills show the weapon speed
+-- factor (Skills.speedFactor) when it is not x1.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local SkillData = require(ReplicatedStorage.Shared.Data.Skills)
 local Skills = require(ReplicatedStorage.Shared.Logic.Skills)
+local State = require(script.Parent.State)
 local Text = require(script.Parent.Text)
 
 local SkillInfo = {}
+
+local characterLevel = State.Value({ "character", "level" })
+local weapon = State.Value({ "derived", "weapon" })
+
+local function levelOf(use: any): number
+	local level = use(characterLevel)
+	return if type(level) == "number" then level else 1
+end
 
 local SHAPE_GLYPH: { [string]: string } = {
 	circle = "◯",
@@ -44,14 +55,25 @@ function SkillInfo.costLine(use: any, skill: SkillData.SkillDef, level: number):
 	local shown = math.max(1, level)
 	local def = Skills.effective(skill, shown)
 	local parts = {}
-	local cost = Skills.scaled(def, def.cost, shown)
+	local cost = Skills.cost(def, shown, levelOf(use), skill.class, nil)
 	if cost > 0 and skill.resource then
-		table.insert(parts, Text.get(use, `skills.cost.{skill.resource}`, { cost = math.floor(cost) }))
+		-- The bar needs the full amount, so a fractional cost (Mage above level 20) shows rounded up.
+		local shownCost = math.ceil(cost - 1e-6)
+		table.insert(parts, Text.get(use, `skills.cost.{skill.resource}`, { cost = shownCost }))
 	end
 	local cooldown = math.floor(Skills.scaled(def, def.cooldown, shown) * 10 + 0.5) / 10
 	table.insert(parts, Text.get(use, "skills.cooldown", { cooldown = cooldown }))
 	if def.range then
 		table.insert(parts, Text.get(use, "skills.range", { range = def.range }))
+	end
+	if skill.values.dmg ~= nil then
+		local equipped = use(weapon)
+		local speed = if type(equipped) == "table" and type(equipped.speed) == "number" then equipped.speed else nil
+		local factor = Skills.speedFactor(speed)
+		if math.abs(factor - 1) > 0.005 then
+			local mul = math.floor(factor * 100 + 0.5) / 100
+			table.insert(parts, Text.get(use, "skills.weaponSpeed", { mul = mul }))
+		end
 	end
 	return table.concat(parts, " · ")
 end
@@ -83,9 +105,11 @@ function SkillInfo.tooltip(use: any, skill: SkillData.SkillDef, level: number): 
 	if skill.type ~= "passive" then
 		table.insert(lines, SkillInfo.costLine(use, skill, shown))
 	end
-	table.insert(lines, Skills.formatDescription(skill, shown, lang))
+	local opts = { level = levelOf(use) }
+	table.insert(lines, Skills.formatDescription(skill, shown, lang, opts))
 	if level > 0 and level < skill.maxLevel then
-		table.insert(lines, `{Text.get(use, "skills.next")}: {Skills.formatDescription(skill, level + 1, lang)}`)
+		local nextText = Skills.formatDescription(skill, level + 1, lang, opts)
+		table.insert(lines, `{Text.get(use, "skills.next")}: {nextText}`)
 	end
 	for _, bp in SkillInfo.breakpoints(use, skill, level) do
 		table.insert(lines, (if bp.reached then "✔ " else "· ") .. bp.text)

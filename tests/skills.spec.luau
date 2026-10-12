@@ -1,9 +1,11 @@
 --!strict
 local AccountSchema = require("../src/shared/Logic/AccountSchema")
+local Bases = require("../src/shared/Data/Items/Bases")
 local Classes = require("../src/shared/Data/Classes")
 local Config = require("../src/shared/Config")
 local SkillData = require("../src/shared/Data/Skills")
 local Skills = require("../src/shared/Logic/Skills")
+local StatCalc = require("../src/shared/Logic/StatCalc")
 local T = require("./Test")
 
 local VALID_TYPES = {
@@ -232,6 +234,110 @@ T.describe("Mage weapon elements (S18)", function()
 		end
 		T.expect(counts).toEqual({ fire = 2, ice = 2, lightning = 2 })
 		T.expect(adaptive).toBe(2)
+	end)
+end)
+
+T.describe("S54 formulas", function()
+	local function skill(id: string): SkillData.SkillDef
+		return SkillData.get(id) :: SkillData.SkillDef
+	end
+	-- Same rounding as the description placeholders (whole numbers, else one decimal).
+	local function round(value: number): number
+		if math.abs(value - math.floor(value + 0.5)) < 1e-6 then
+			return math.floor(value + 0.5)
+		end
+		return math.floor(value * 10 + 0.5) / 10
+	end
+
+	T.it("Mage mana follows the level curve, Cleric and energy stay flat", function()
+		local firebolt = skill("firebolt")
+		T.expect(Skills.cost(firebolt, 1, 20, "Mage")).toBe(12)
+		T.expect(Skills.cost(firebolt, 1, 45, "Mage")).toBeNear(1.4 * Skills.cost(firebolt, 1, 20, "Mage"))
+		T.expect(Skills.cost(firebolt, 1, 45, "Mage")).toBeNear(16.8)
+		T.expect(Skills.cost(firebolt, 1, 100, "Mage")).toBeNear(30)
+		for _, def in SkillData.byId do
+			if def.class == "Mage" and def.type ~= "passive" then
+				for _, rank in { 1, def.maxLevel } do
+					local flat = Skills.scaled(def, def.cost, rank)
+					for level = 1, 20 do
+						T.expect(Skills.cost(def, rank, level, "Mage")).toBe(math.max(0, flat))
+					end
+				end
+			end
+		end
+		local heal = skill("heal")
+		local clericBase = Skills.cost(heal, 1, 20, "Cleric")
+		T.expect(Skills.cost(heal, 1, 45, "Cleric")).toBe(clericBase)
+		T.expect(Skills.cost(heal, 1, 100, "Cleric")).toBe(clericBase)
+		local strike = skill("mightyStrike")
+		T.expect(Skills.cost(strike, 1, 100, "Warrior")).toBe(Skills.cost(strike, 1, 1, "Warrior"))
+		T.expect(Skills.cost(firebolt, 1, 20, "Mage", { costPct = -20 })).toBeNear(12 * 0.8)
+		T.expect(Skills.cost(firebolt, 1, 20, "Mage", { costPct = -200 })).toBe(0)
+	end)
+
+	T.it("heal curve: identity up to 20 and only magic-attack heals", function()
+		for level = 1, 20 do
+			T.expect(Skills.healMul(level)).toBe(1)
+		end
+		for _, id in { "heal", "renew", "circleOfLight", "purify", "radiance" } do
+			T.expect({ id = id, fields = Skills.healFields(skill(id)) }).toEqual({ id = id, fields = { "heal" } })
+		end
+		T.expect(Skills.healFields(skill("shieldOfFaith"))).toEqual({ "shield" })
+		for _, id in { "devotion", "divineIntervention", "holyStrike" } do
+			T.expect({ id = id, fields = Skills.healFields(skill(id)) }).toEqual({ id = id, fields = {} })
+		end
+	end)
+
+	T.it("descriptionArgs keep today's numbers up to level 20", function()
+		for _, def in SkillData.byId do
+			for _, rank in { 1, 5, 10 } do
+				if rank <= def.maxLevel then
+					local effective = Skills.effective(def, rank)
+					local args = Skills.descriptionArgs(def, rank, { level = 20 })
+					local plain = Skills.descriptionArgs(def, rank)
+					T.expect({ id = def.id, rank = rank, cost = args.cost }).toEqual({
+						id = def.id,
+						rank = rank,
+						cost = math.max(0, round(Skills.scaled(effective, effective.cost, rank))),
+					})
+					for _, field in { "heal", "shield" } do
+						T.expect({ id = def.id, field = field, value = args[field] }).toEqual({
+							id = def.id,
+							field = field,
+							value = if effective.values[field] ~= nil
+								then round(Skills.valueAt(effective, field, rank))
+								else nil,
+						})
+					end
+					if def.class ~= "Mage" then
+						T.expect({ id = def.id, cost = plain.cost }).toEqual({ id = def.id, cost = args.cost })
+					end
+				end
+			end
+		end
+	end)
+
+	T.it("skill damage is normalised to weapon speed", function()
+		local stats = { str = 5, dex = 100, int = 3, vit = 8 }
+		local function skillAttack(weaponType: string, level: number): number
+			local w = (Bases.byType[weaponType].weapon :: any)(level)
+			local result = StatCalc.compute({
+				level = level,
+				stats = stats,
+				weapon = { dmg = w.dmg, mdmg = w.mdmg, speed = w.speed, ranged = w.ranged },
+			})
+			return result.values.physAtk * Skills.speedFactor(w.speed)
+		end
+		-- Below level 12 the rounding of weapon damage (round(curve x mul)) alone makes up to 3.8 % difference.
+		for _, level in { 20, 45, 70, 100 } do
+			local heavy, long = skillAttack("heavycrossbow", level), skillAttack("longbow", level)
+			T.expect({ level = level, close = math.abs(heavy / long - 1) < 0.01 }).toEqual({
+				level = level,
+				close = true,
+			})
+		end
+		T.expect(Skills.speedFactor(0.8)).toBe(1)
+		T.expect(Skills.speedFactor(nil)).toBe(1.25)
 	end)
 end)
 

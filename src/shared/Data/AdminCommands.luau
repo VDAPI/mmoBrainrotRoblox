@@ -133,6 +133,8 @@ cmd("combat", "simfight", {
 	enum("variant", { "normal", "elite", "elite2" }, true, "normal"),
 })
 cmd("combat", "balance", {})
+-- S54: level curves (Data/LevelCurves) at a level.
+cmd("combat", "curves", { int("level", 1, MAX_LEVEL, true) })
 
 -- Items
 cmd(

@@ -5,6 +5,8 @@
 --
 -- A fight: the player kills the members one by one; every living member attacks (one swing right away, then
 -- every interval); Elite II abilities land `specialHit` of the time; in-combat regeneration heals.
+-- Player values come from Logic/StatCalc (from S54 DEX crit, speed and dodge fall off above level 20). Skills count as
+-- a flat SKILL_DPS share, so the weapon speed normalisation of skill damage (S54) does not change the model.
 
 local AreaSpawns = require("./AreaSpawns")
 local Combat = require("../Data/Combat")

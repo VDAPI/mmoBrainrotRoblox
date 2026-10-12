@@ -58,6 +58,8 @@ przedmiotów czyta STATY); odstępstwa idą do `docs/DECYZJE.md`, a kontrakt pop
   na sobie), reguła łączenia w `Logic/EffectStack` (w kategorii najsilniejszy, `own` się sumuje, redukcja mnożnikowo z
   limitem 75%), klucz efektu `(kind, sourceKey, skillId, category)`; każde `Apply` z umiejętności podaje `skillId`.
   Test: `tests/effectstack.spec`.
+- **Krzywa poziomu** (S54): kotwice w `Data/LevelCurves` (tożsamość do 20.), odczyt tylko przez `Logic/LevelCurves.at`;
+  wiki bierze wartości z `Logic`, nigdy z `LevelCurves`.
 - **Prawdziwy model broni**: wpis w `WeaponLooks.assets` + MeshPart w `Assets.Weapons` (`docs/ASSETS.md` → „Broń”).
 - **Portal / przejście między mapami** (S25): wpis w `Data/Portals.luau` (layout stawia go przez
   `Prefabs.portalFrom(ctx, id)`); trasa (`Logic/MapRoute`), mapa świata i prowadzenie widzą go same.

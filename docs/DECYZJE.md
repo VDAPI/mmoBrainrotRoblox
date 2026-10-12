@@ -1114,3 +1114,20 @@
 - **S53** `allyMove` w trybie punktów procentowych, nie `pct` (`moveSpeed` ma bazę 0, więc procent nic by nie dał);
   ROZWOJ 7.1 poprawiony. Kamuflaż 10 daje płaskie +30 `moveSpeed` (było `pct`, czyli +30% samego bonusu z pasywek i
   przedmiotów).
+- **S54** Obrażenia umiejętności (trafienia przez `ctx.damage` i DoT-y od `ctx.attack()`) × szybkość bazy założonej
+  broni / `Combat.skillSpeedRef` (0,8); atak podstawowy, leczenie i tarcze bez mnożnika (poza leczeniem sojuszników
+  Światłością, które jest udziałem w jej obrażeniach). Zmienia obrażenia umiejętności także na 1–20 (np. różdżka ×1,44,
+  Ciężka Kusza ×0,78); `balance.spec` tego nie widzi (FightSim liczy umiejętności jako ×1,2).
+- **S54** Zręczność: krytyk, szybkość ataku i unik z `ZRĘ × min(1, 20/L)` (`LevelCurves.dexRatingLevel`), atak ze
+  Zręczności bez zmian. Zmiana wchodzi przed migracją zapisu 6 (S56), więc jej darmowy reset statystyk obejmuje też ją.
+- **S54** Koszt many Maga × krzywa `manaCost.Mage` (1 / 1,4 / 1,9 / 2,5 na 20 / 45 / 70 / 100) od poziomu postaci;
+  Kapłan i energia bez zmian. Jedna funkcja `Skills.cost(skill, rank, L, classId, mods)`; do S56 `rank` = nauczony
+  poziom. Koszt nie jest zaokrąglany (serwer i pasek porównują tę samą liczbę), podpowiedź pokazuje go w górę.
+- **S54** Mikstury: odstęp `Config.PotionCooldown × potionCooldown(L)` (1,5 s do 20., 6 s na 45., ok. 10 s od 70.) z
+  `Logic/Potions.interval` (odpowiedź właściciela 28; opcja B ze szkicu balansu).
+- **S54** Krzywa `heal` (na razie 1 wszędzie, kotwice ustawi S87) mnoży część od ataku magicznego Leczenia, Odnowy,
+  Oczyszczenia, Kręgu Światła, Tarczy Wiary i leczenie sojuszników Światłością (`ctx.healAtk`, `ctx.healMul`); nie
+  leczenie Świętego Uderzenia, wampiryzm, `selfHeal` ani Boską Interwencję (% HP). `ctx.heal` bez zmian.
+- **S54** Wiki: koszt rangi = `Skills.cost` na poziomie odblokowania rangi; `tools/WikiData` nie czyta `LevelCurves`,
+  tylko `Logic/Skills`, `Logic/Potions`, `Logic/StatCalc`.
+- **S54** Kolejność: wzory z ROZWOJ §8 (krok 6 z §13) weszły jako S54, zaraz po S53 (ROZWOJ §13 już to zapowiada).

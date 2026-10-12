@@ -1,13 +1,12 @@
 --!strict
 -- Potion bar (DESIGN §9): three slots (health Z, mana X, energy V) showing the assigned potion, how many
--- are left and the cooldown. Click / tap drinks; drop a potion from the backpack to assign it; right-click
--- (or long-press on touch) opens a picker with the qualities you carry.
+-- are left and the cooldown (Logic/Potions.interval of the character level). Click / tap drinks; drop a potion
+-- from the backpack to assign it; right-click (or long-press on touch) opens a picker with the qualities you carry.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 
-local Config = require(ReplicatedStorage.Shared.Config)
 local DragDrop = require(script.Parent.Parent.Parent.DragDrop)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Keybinds = require(script.Parent.Parent.Parent.Keybinds)
@@ -15,6 +14,7 @@ local IconState = require(script.Parent.Parent.Parent.IconState)
 local ItemIcon = require(script.Parent.Parent.Parent.Components.ItemIcon)
 local ItemText = require(script.Parent.Parent.Parent.ItemText)
 local Items = require(ReplicatedStorage.Shared.Data.Items)
+local Potions = require(ReplicatedStorage.Shared.Logic.Potions)
 local State = require(script.Parent.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
@@ -44,6 +44,7 @@ local function PotionBar(scope: Scope, props: Props): Instance
 	local inventory = State.Value({ "character", "inventory" })
 	local potionBar = State.Value({ "character", "potionBar" })
 	local cooldowns = State.Value({ "potions" })
+	local level = State.Value({ "character", "level" })
 	local now = scope:Value(Workspace:GetServerTimeNow())
 	local picker = scope:Value(nil :: string?)
 
@@ -91,7 +92,8 @@ local function PotionBar(scope: Scope, props: Props): Instance
 			if not ready then
 				return 0
 			end
-			return math.clamp((ready - use(now)) / Config.PotionCooldown, 0, 1)
+			-- S54: the interval grows with the character level (Logic/Potions, same function as the server).
+			return math.clamp((ready - use(now)) / Potions.interval(use(level) or 1), 0, 1)
 		end)
 		local pressToken = 0
 

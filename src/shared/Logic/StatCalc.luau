@@ -5,7 +5,9 @@
 -- stat id (Data/Stats ids plus "str"/"dex"/"int"/"vit"/"hp"/"mana"/"energy"). pct values are percent
 -- points that sum additively, then multiply: final = (base + flat) x (1 + pct/100), then the cap.
 -- "hp"/"mana"/"energy" are accepted as aliases of maxHp/maxMana/maxEnergy (item bonus naming).
+-- DEX gives crit, attack speed and dodge in full up to LevelCurves.dexRatingLevel, then less with the level (S54).
 
+local LevelCurves = require("./LevelCurves")
 local Stats = require("../Data/Stats")
 local Types = require("../Types")
 
@@ -125,6 +127,8 @@ function StatCalc.compute(input: Input): Result
 	end
 	local L = input.level
 	local STR, DEX, INT, VIT = primary.str, primary.dex, primary.int, primary.vit
+	-- S54 (ROZWOJ 8): DEX counts in full up to LevelCurves.dexRatingLevel, then x rating level / L (crit, speed, dodge)
+	local ratedDex = DEX * LevelCurves.dexFactor(L)
 	local weapon = input.weapon or F.unarmed
 
 	-- Resources
@@ -155,9 +159,9 @@ function StatCalc.compute(input: Input): Result
 		{ key = "breakdown.weapon", value = weapon.mdmg },
 		{ key = "breakdown.int", value = magScale },
 	})
-	finish("critChance", F.critBase + F.critPerDex * DEX, {
+	finish("critChance", F.critBase + F.critPerDex * ratedDex, {
 		{ key = "breakdown.base", value = F.critBase },
-		{ key = "breakdown.dex", value = F.critPerDex * DEX },
+		{ key = "breakdown.dex", value = F.critPerDex * ratedDex },
 	})
 	finish("critDmg", F.critDmgBase, { { key = "breakdown.base", value = F.critDmgBase } })
 
@@ -165,10 +169,10 @@ function StatCalc.compute(input: Input): Result
 	do
 		local parts: { Part } = {
 			{ key = "breakdown.weapon", value = weapon.speed },
-			{ key = "breakdown.dex", value = F.atkSpeedPerDex * DEX * 100, pct = true },
+			{ key = "breakdown.dex", value = F.atkSpeedPerDex * ratedDex * 100, pct = true },
 		}
 		sourceParts("atkSpeed", parts, true, false)
-		local multiplier = 1 + F.atkSpeedPerDex * DEX + (flat.atkSpeed or 0) / 100 + (pct.atkSpeed or 0) / 100
+		local multiplier = 1 + F.atkSpeedPerDex * ratedDex + (flat.atkSpeed or 0) / 100 + (pct.atkSpeed or 0) / 100
 		local value = weapon.speed * multiplier
 		local def = Stats.get("atkSpeed")
 		values.atkSpeed = math.max(0, math.min(value, if def and def.cap then def.cap else math.huge))
@@ -188,7 +192,7 @@ function StatCalc.compute(input: Input): Result
 		{ key = "breakdown.int", value = F.mresPerInt * INT },
 		{ key = "breakdown.vit", value = F.mresPerVit * VIT },
 	})
-	finish("dodge", F.dodgePerDex * DEX, { { key = "breakdown.dex", value = F.dodgePerDex * DEX } })
+	finish("dodge", F.dodgePerDex * ratedDex, { { key = "breakdown.dex", value = F.dodgePerDex * ratedDex } })
 	for _, id in { "resFire", "resIce", "resLightning", "resPoison" } do
 		finish(id, 0, {})
 	end
@@ -228,6 +232,16 @@ function StatCalc.compute(input: Input): Result
 		breakdown = breakdown,
 		walkSpeed = F.walkSpeed * (1 + values.moveSpeed / 100),
 	}
+end
+
+-- Share of DEX that counts for crit, attack speed and dodge at `level` (client stat hints, wiki; S54).
+function StatCalc.dexFactor(level: number): number
+	return LevelCurves.dexFactor(level)
+end
+
+-- Up to this level DEX counts in full (wiki formula table).
+function StatCalc.dexRatingLevel(): number
+	return LevelCurves.dexRatingLevel()
 end
 
 -- Sums sources into single flat/pct tables (sent to the client so it can preview stat allocation).

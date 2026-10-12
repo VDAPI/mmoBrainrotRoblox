@@ -1,6 +1,7 @@
 ---
 // How attributes become stats (S42): text formulas from the wiki i18n (block.formula.<stat>) filled with the constants
-// of Stats.Formula (mechanics.formula). Same rules as Logic/StatCalc; numbers never typed by hand.
+// of Stats.Formula (mechanics.formula). Same rules as Logic/StatCalc (from S54 DEX crit, speed and dodge by level,
+// mechanics.dexRatingLevel); numbers never typed by hand.
 import Source from "./Source.astro";
 import type { Lang } from "../../i18n/routes";
 import { statName } from "../../lib/blocks";
@@ -16,6 +17,8 @@ for (const [k, v] of Object.entries(f)) if (typeof v === "number") args[k] = n(v
 args.physPct = n(f.physPerStat * 100);
 args.magPct = n(f.magPerInt * 100);
 args.atkPct = n(f.atkSpeedPerDex * 100);
+// S54: above this level a DEX point gives less crit, speed and dodge (x dexLevel / character level)
+args.dexLevel = n(load("mechanics").dexRatingLevel as number);
 const rows = ["maxHp", "maxMana", "maxEnergy", "physAtk", "magAtk", "critChance", "critDmg", "atkSpeed", "armor", "mres", "dodge", "hpRegen", "hpRegenCombat", "manaRegen", "energyRegen"];
 ---
 <table class="vw-table vw-table--plain">

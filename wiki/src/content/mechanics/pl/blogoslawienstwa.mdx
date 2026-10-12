@@ -3,7 +3,7 @@ title: Błogosławieństwa
 description: "Pięć linii błogosławieństw w pięciu rzadkościach, jak długo działają, eliksiry odporności i mikstury."
 key: blessings
 order: 5
-updated: 2026-10-08
+updated: 2026-10-12
 tags: [Wzmocnienia, Mikstury]
 ---
 
@@ -29,6 +29,6 @@ Eliksir podnosi jedną odporność na żywioł. Działa niezależnie od błogos�
 
 ## Mikstury
 
-Mikstury przywracają życie, manę albo energię od razu. Każdy rodzaj mikstury ma osobne odnowienie: <Stat path="mechanics.config.PotionCooldown" format="s" />. Domyślne klawisze to <Key action="potion_hp" />, <Key action="potion_mana" /> i <Key action="potion_energy" />.
+Mikstury przywracają życie, manę albo energię od razu. Każdy rodzaj mikstury ma osobne odnowienie, zależne od poziomu postaci: <Stat path="mechanics.potionInterval[20].seconds" format="s" /> do <Stat path="mechanics.potionInterval[20].level" format="lvl" />, <Stat path="mechanics.potionInterval[45].seconds" format="s" /> na <Stat path="mechanics.potionInterval[45].level" format="lvl" /> i <Stat path="mechanics.potionInterval[70].seconds" format="s" /> od <Stat path="mechanics.potionInterval[70].level" format="lvl" />. Domyślne klawisze to <Key action="potion_hp" />, <Key action="potion_mana" /> i <Key action="potion_energy" />.
 
 <PotionTable />

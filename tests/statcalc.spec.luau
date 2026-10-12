@@ -20,17 +20,19 @@ local function statsFor(classId: string, level: number): any
 end
 
 local function expected(stats: any, level: number)
+	-- S54: DEX rating for crit, dodge and speed falls off above level 20 (independent mirror of the formula).
+	local f = math.min(1, 20 / level)
 	return {
 		maxHp = math.floor(80 + 20 * level + 12 * stats.vit),
 		maxMana = math.floor(40 + 6 * level + 8 * stats.int),
 		maxEnergy = 100 + level,
 		armor = stats.vit + 0.5 * stats.str,
 		mres = 0.5 * stats.int + 0.5 * stats.vit,
-		critChance = math.min(60, 5 + 0.05 * stats.dex),
-		dodge = math.min(30, 0.03 * stats.dex),
+		critChance = math.min(60, 5 + 0.05 * stats.dex * f),
+		dodge = math.min(30, 0.03 * stats.dex * f),
 		physAtk = F.unarmed.dmg * (1 + 0.02 * stats.str),
 		magAtk = F.unarmed.mdmg * (1 + 0.025 * stats.int),
-		atkSpeed = math.min(2.5, F.unarmed.speed * (1 + 0.002 * stats.dex)),
+		atkSpeed = math.min(2.5, F.unarmed.speed * (1 + 0.002 * stats.dex * f)),
 	}
 end
 
@@ -117,6 +119,22 @@ T.describe("StatCalc", function()
 			StatCalc.compute({ level = 10, stats = stats, weapon = { dmg = 10, mdmg = 0, speed = 1, ranged = false } })
 		T.expect(bow.values.physAtk).toBeNear(10 * (1 + 0.02 * 40))
 		T.expect(sword.values.physAtk).toBeNear(10 * (1 + 0.02 * 20))
+	end)
+
+	T.it("DEX gives less crit, speed and dodge above level 20", function()
+		local stats = { str = 5, dex = 100, int = 3, vit = 8 }
+		local bow = { dmg = 30, mdmg = 0, speed = 1, ranged = true }
+		local at20 = StatCalc.compute({ level = 20, stats = stats, weapon = bow })
+		local at40 = StatCalc.compute({ level = 40, stats = stats, weapon = bow })
+		T.expect(at20.values.critChance).toBeNear(5 + 0.05 * 100)
+		T.expect(at40.values.critChance - 5).toBeNear((at20.values.critChance - 5) / 2)
+		T.expect(at40.values.dodge).toBeNear(at20.values.dodge / 2)
+		T.expect(at20.values.atkSpeed).toBeNear(1 + 0.002 * 100)
+		T.expect(at40.values.atkSpeed).toBeNear(1 + 0.002 * 50)
+		T.expect(at40.values.physAtk).toBe(at20.values.physAtk)
+		T.expect(StatCalc.dexFactor(20)).toBe(1)
+		T.expect(StatCalc.dexFactor(40)).toBeNear(0.5)
+		T.expect(StatCalc.dexRatingLevel()).toBe(20)
 	end)
 
 	T.it("every stat definition gets a value and a breakdown", function()

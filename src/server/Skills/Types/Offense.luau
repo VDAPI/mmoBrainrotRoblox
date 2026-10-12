@@ -212,7 +212,7 @@ Offense.circleSelf = function(ctx)
 			-- Radiance: allies are healed for a share of the damage value.
 			local healShare = ctx.skill.values.heal
 			if healShare and hasDamage then
-				local amount = ctx.attack() * ctx.value("dmg") / 100 * ctx.value("heal") / 100
+				local amount = ctx.attack() * ctx.value("dmg") / 100 * ctx.value("heal") / 100 * ctx.healMul()
 				for _, ally in ctx.alliesInCircle(center, radius) do
 					ctx.heal(ally, amount)
 				end

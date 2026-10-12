@@ -1,7 +1,7 @@
 --!strict
 -- Potions (DESIGN §9): three bar slots (hp / mana / energy) holding a chosen potion id, a shared cooldown
--- per kind (Config.PotionCooldown) and drinking from the backpack. Cooldowns replicate as state branch
--- `potions` = { [kind] = server time when ready }.
+-- per kind (Logic/Potions.interval of the character level, S54) and drinking from the backpack. Cooldowns replicate
+-- as state branch `potions` = { [kind] = server time when ready }.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -9,9 +9,9 @@ local Workspace = game:GetService("Workspace")
 
 local Shared = ReplicatedStorage.Shared
 
-local Config = require(Shared.Config)
 local Items = require(Shared.Data.Items)
 local Net = require(Shared.Net)
+local Potions = require(Shared.Logic.Potions)
 local QuestEvents = require(script.Parent.Parent.QuestEvents)
 local Types = require(Shared.Types)
 
@@ -47,6 +47,10 @@ local function drink(player: Player, index: number): (boolean, string?)
 		return false, "inventory.cannotUse"
 	end
 	local resource = use.resource :: "hp" | "mana" | "energy"
+	local character: Types.CharacterData? = PlayerStateService.GetCharacter(player)
+	if not character then
+		return false, "error.wrongPhase"
+	end
 	if ResourceService.IsDead(player) then
 		return false, "error.wrongPhase"
 	end
@@ -61,7 +65,7 @@ local function drink(player: Player, index: number): (boolean, string?)
 	end
 	InventoryService.ConsumeAt(player, index)
 	ResourceService.Add(player, resource, use.amount or 0)
-	timers[resource] = t + Config.PotionCooldown
+	timers[resource] = t + Potions.interval(character.level)
 	PlayerStateService.Set(player, { "potions", resource }, timers[resource])
 	QuestEvents.fire(player, "potion", nil)
 	return true, nil

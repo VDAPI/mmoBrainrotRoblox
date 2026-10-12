@@ -3,7 +3,7 @@ title: Blessings
 description: "Five lines of blessings in five rarities, how long they last, resistance elixirs and potions."
 key: blessings
 order: 5
-updated: 2026-10-08
+updated: 2026-10-12
 tags: [Buffs, Potions]
 ---
 
@@ -29,6 +29,6 @@ An elixir raises one elemental resistance. It works on its own, next to a blessi
 
 ## Potions
 
-Potions restore health, mana or energy at once. Each kind of potion has its own cooldown: <Stat path="mechanics.config.PotionCooldown" format="s" />. The default keys are <Key action="potion_hp" />, <Key action="potion_mana" /> and <Key action="potion_energy" />.
+Potions restore health, mana or energy at once. Each kind of potion has its own cooldown, which depends on your level: <Stat path="mechanics.potionInterval[20].seconds" format="s" /> up to <Stat path="mechanics.potionInterval[20].level" format="lvl" />, <Stat path="mechanics.potionInterval[45].seconds" format="s" /> at <Stat path="mechanics.potionInterval[45].level" format="lvl" /> and <Stat path="mechanics.potionInterval[70].seconds" format="s" /> from <Stat path="mechanics.potionInterval[70].level" format="lvl" /> on. The default keys are <Key action="potion_hp" />, <Key action="potion_mana" /> and <Key action="potion_energy" />.
 
 <PotionTable />

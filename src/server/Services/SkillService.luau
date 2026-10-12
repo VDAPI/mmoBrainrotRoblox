@@ -375,6 +375,12 @@ local function weaponElement(player: Player): string?
 	return if type(weapon) == "table" then weapon.element else nil
 end
 
+-- Base speed of the equipped weapon (nil = unarmed), for the skill damage normalisation (S54, Skills.speedFactor).
+local function weaponSpeed(player: Player): number?
+	local weapon = PlayerStateService.Get(player, { "derived", "weapon" })
+	return if type(weapon) == "table" and type(weapon.speed) == "number" then weapon.speed else nil
+end
+
 -- Types whose handler may still refuse (no dead ally): they run at once, so the refusal reaches the caster.
 local INSTANT: { [string]: boolean } = { resurrect = true, channel = true }
 
@@ -460,8 +466,8 @@ local function cast(player: Player, skillId: string, targetId: string?, aim: any
 		end
 	end
 
-	-- Cost
-	local cost = Skills.scaled(skill, skill.cost, level)
+	-- Cost (S54: one formula with the bar and the description; Mage mana grows with the character level).
+	local cost = Skills.cost(skill, level, char.level, char.class, nil)
 	local resource = skill.resource
 	if cost > 0 and resource and not rt.infiniteResources then
 		local ok = if resource == "mana"
@@ -594,6 +600,7 @@ function SkillService.Init(registry)
 		Fx = sendFx,
 		PassiveHook = SkillService.PassiveHook,
 		WeaponElement = weaponElement,
+		WeaponSpeed = weaponSpeed,
 	}
 
 	StatService.RegisterModifierSource("passives", modifierSource)

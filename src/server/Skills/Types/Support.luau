@@ -96,7 +96,7 @@ end
 Support.heal = function(ctx)
 	local player, entity = allyTarget(ctx)
 	ctx.fx({ t = entity.id })
-	local amount = ctx.magAtk() * ctx.value("heal") / 100
+	local amount = ctx.healAtk() * ctx.value("heal") / 100
 	healOne(ctx, player, entity, amount)
 	local other, otherEntity = second(ctx, player)
 	if other and otherEntity then
@@ -122,7 +122,7 @@ Support.hot = function(ctx)
 	local player, entity = allyTarget(ctx)
 	local duration = ctx.scaled(ctx.skill.duration)
 	local bonus = ctx.services.PassiveHook(ctx.player, "healBonus")
-	local total = ctx.magAtk() * ctx.value("heal") / 100 * (1 + bonus / 100)
+	local total = ctx.healAtk() * ctx.value("heal") / 100 * (1 + bonus / 100)
 	ctx.fx({ t = entity.id, d = duration })
 	hotOn(ctx, entity, total, duration)
 	local other, otherEntity = second(ctx, player)
@@ -136,7 +136,7 @@ end
 Support.shield = function(ctx)
 	local player, entity = allyTarget(ctx)
 	local duration = ctx.scaled(ctx.skill.duration)
-	local value = ctx.magAtk() * ctx.value("shield") / 100
+	local value = ctx.healAtk() * ctx.value("shield") / 100
 	ctx.fx({ t = entity.id, d = duration })
 	ctx.services.StatusEffect.Apply(
 		entity,
@@ -225,7 +225,7 @@ end
 Support.groupHeal = function(ctx)
 	local radius = ctx.skill.radius or 14
 	ctx.fx({ p = ctx.root.Position, r = radius })
-	local amount = ctx.magAtk() * ctx.value("heal") / 100
+	local amount = ctx.healAtk() * ctx.value("heal") / 100
 	for _, ally in ctx.alliesInCircle(ctx.root.Position, radius) do
 		ctx.heal(ally, amount)
 		local entity = ctx.services.Entity.GetPlayerEntity(ally)

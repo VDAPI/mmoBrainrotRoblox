@@ -5,9 +5,10 @@
 
 ## Stan
 
-S01–S51 i S53 gotowe (lista i zakres w `docs/SESJE.md`). Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
-kategorie efektów drużyny i stos efektów (`Logic/EffectStack`). Faza teraz: **gameplay**; przebudowa rozwoju postaci
-S53–S94 (`docs/ROZWOJ.md`, `docs/STATY.md`), następna S54; testy i strojenie po niej.
+S01–S51, S53 i S54 gotowe (lista i zakres w `docs/SESJE.md`). Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
+kategorie efektów drużyny i stos efektów (`Logic/EffectStack`), S54 wzory globalne (`Logic/LevelCurves`: Zręczność,
+mana Maga, mikstury, krzywa leczenia; obrażenia umiejętności × szybkość broni). Faza teraz: **gameplay**; przebudowa
+rozwoju postaci S53–S94 (`docs/ROZWOJ.md`, `docs/STATY.md`), następna S55; testy i strojenie po niej.
 
 ## Niedokończone (kod)
 
@@ -15,7 +16,8 @@ S53–S94 (`docs/ROZWOJ.md`, `docs/STATY.md`), następna S54; testy i strojenie 
   `sound` w `Data/SkillVfx`; muzyka `music = ""` w `Data/Maps`; dźwięki UI w `UI/Sounds.luau` to placeholdery;
   kosmetyki (stroje, aury, ślady) to Party; miecz `sword1` czeka na import (`docs/ASSETS.md` → „Broń”).
 - **Walka**: ataki potworów zaliczają się od razu (bez zamachu; gracze mają). Brak „flinch” potwora wg siły ciosu.
-  Umiejętności (`Cast`) i strzały łowcy nie używają systemu póz S22. Łowca 60+ zabija za szybko (strojenie klas).
+  Umiejętności (`Cast`) i strzały łowcy nie używają systemu póz S22. Zręczność od S54 słabnie z poziomem (Łowca L90 3,4 → 5,9 s na
+  zabicie bez umiejętności); cele klas stroją S89–S90.
 - **Ruch**: sprint nie zmienia WalkSpeed lokalnie przed odpowiedzią serwera. Serwer nie kontroluje prędkości ani
   teleportów gracza.
 - **Dane**: brak słabości żywiołowych potworów. Jaskinie bez profilu expowiska (`Cave.profile` nieczytane przez

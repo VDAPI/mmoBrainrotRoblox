@@ -3247,3 +3247,33 @@ Pliki: `Data/BuffCategories` (nowy), `Logic/EffectStack` (nowy), `Data/Combat`, 
 Cleric}`, `Logic/Skills`, `StatusEffectService`, `CombatService`, `Skills/Context`, `Skills/Types/{Support,Offense,
 Movement}`, `Hud/EffectIcons`, `EffectsController`, lokalizacja PL / EN, `tests/effectstack.spec`, `CLAUDE.md`,
 `docs/ROZWOJ.md`, `docs/STATY.md`, dane wiki.
+
+### S54: Fundament 2: wzory globalne (krzywe poziomu, Zręczność, mana Maga, leczenie, mikstury, normalizacja do szybkości broni)
+
+- Krzywe poziomu: `Data/LevelCurves` (`dexRatingLevel = 20`, krzywe `manaCost.Mage`, `potionCooldown`, `heal`, kotwice
+  20 / 45 / 70 / 100) i czysty `Logic/LevelCurves` (`at` z interpolacją log-log i dokładną jedynką do 20., `has`,
+  `ids`, `anchors`, `dexRatingLevel`, `dexFactor`); `Logic/Potions.interval`.
+- Zręczność: `StatCalc` liczy krytyk, szybkość ataku i unik z `ZRĘ × dexFactor(L)` (atak dystansowy z pełnej), eksport
+  `StatCalc.dexFactor/dexRatingLevel`; opis punktu Zręczności w oknie postaci na obecnym poziomie; lustro w
+  `statcalc.spec`, notka w nagłówku `FightSim`.
+- Koszt i leczenie: `Skills.cost`, `Skills.healMul`, `Skills.healFields`, `DescOpts` w `descriptionArgs` /
+  `formatDescription`; `SkillService` (koszt i zwrot), `SkillController.Usable`, `SkillInfo` (koszt w górę, opisy z
+  poziomem postaci), `SkillsWindow`; `ctx.healAtk` / `ctx.healMul` w `Support.heal/hot/shield/groupHeal` i Światłości.
+- Normalizacja: `Combat.skillSpeedRef = 0.8`, `Skills.speedFactor`, `SkillService.weaponSpeed` → `Context.speedMul`
+  (`ctx.attack()` i `multiplier` w `ctx.damage`); podpowiedź umiejętności z obrażeniami pokazuje „obrażenia ×N
+  (szybkość broni)”.
+- Mikstury: `PotionService.drink` i `Hud/PotionBar` z `Potions.interval(poziom)`.
+- Admin `/curves [poziom]`; wiki: koszt rang z `Skills.cost`, `mechanics.dexRatingLevel` i `mechanics.potionInterval`,
+  wzory Zręczności w `StatFormulaTable`, zdania o miksturach i Zręczności przez `<Stat>`.
+- Pas S18 (`B.fight`, bez umiejętności) przed → po, L30 / 60 / 90 / 100: Łowca 6,82 → 7,49 s, 4,70 → 6,59 s,
+  3,41 → 5,88 s, 3,11 → 5,69 s; Wojownik 8,80 → 8,84 s, 7,72 → 7,77 s, 6,87 → 6,93 s, 6,65 → 6,71 s; Mag i Kapłan
+  +0,03–0,08 s. Progi `balance.spec` bez zmian.
+- `docs/BALANS.md` celowo nie był regenerowany (odświeża go S83). Wiki: `npm run data`, `npm test` i `npm run build`
+  uruchomione; zmiany danych tylko w kosztach rang Maga od 21. poziomu, `mechanics.json` i typach.
+
+Pliki: `Data/LevelCurves` (nowy), `Logic/LevelCurves` (nowy), `Logic/Potions` (nowy), `Data/Combat`,
+`Data/AdminCommands`, `Logic/StatCalc`, `Logic/Skills`, `Logic/FightSim`, `SkillService`, `PotionService`,
+`CombatService` (komentarz), `Skills/Context`, `Skills/Types/{Support,Offense}`, `Admin/Combat`, `SkillController`,
+`SkillInfo`, `SkillsWindow`, `CharacterWindow/StatAllocator`, `Hud/PotionBar`, lokalizacja PL / EN,
+`tests/levelcurves.spec` (nowy), `tests/statcalc.spec`, `tests/skills.spec`, `tools/WikiData/{Basics,Skills}`,
+`StatFormulaTable.astro`, `wiki/src/i18n`, 4 pliki MDX, dane wiki, `docs/{DESIGN,ARCHITECTURE,WIKI}.md`, `CLAUDE.md`.

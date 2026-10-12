@@ -382,7 +382,8 @@ end
 -- Deals damage from a player to an entity with the given params. Returns the Damage.Result or nil when the
 -- hit was not allowed. Skills (S05) use this too.
 export type DealOptions = {
-	multiplier: number?, -- extra multiplier (skill passives: elementalist, divine wrath)
+	-- extra multiplier: skill passives (elementalist, divine wrath) x weapon speed normalisation (S54, Skills.speedFactor)
+	multiplier: number?,
 	consumeShot: boolean?, -- default true: consumes "nextShot" / "guaranteedCrit"
 	skill: string?, -- S28: skill id shown with the damage number (bigger numbers, the name on the first hit)
 }
