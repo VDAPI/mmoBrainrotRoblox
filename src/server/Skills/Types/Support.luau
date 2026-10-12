@@ -71,7 +71,11 @@ local function healOne(ctx: Ctx, player: Player, entity: any, amount: number)
 		local bonus = ctx.services.PassiveHook(ctx.player, "healBonus")
 		local overflow = amount * (1 + bonus / 100) - healed
 		if overflow > 1 then
-			ctx.services.StatusEffect.Apply(entity, "shield", { duration = 8, value = overflow, source = ctx.player })
+			ctx.services.StatusEffect.Apply(
+				entity,
+				"shield",
+				{ duration = 8, value = overflow, source = ctx.player, skillId = ctx.skill.id }
+			)
 		end
 	end
 end
@@ -110,6 +114,7 @@ local function hotOn(ctx: Ctx, entity: any, total: number, duration: number)
 		duration = duration,
 		source = ctx.player,
 		tickAmount = total / math.max(1, duration),
+		skillId = ctx.skill.id,
 	})
 end
 
@@ -133,7 +138,11 @@ Support.shield = function(ctx)
 	local duration = ctx.scaled(ctx.skill.duration)
 	local value = ctx.magAtk() * ctx.value("shield") / 100
 	ctx.fx({ t = entity.id, d = duration })
-	ctx.services.StatusEffect.Apply(entity, "shield", { duration = duration, value = value, source = ctx.player })
+	ctx.services.StatusEffect.Apply(
+		entity,
+		"shield",
+		{ duration = duration, value = value, source = ctx.player, skillId = ctx.skill.id }
+	)
 	local other, otherEntity = second(ctx, player)
 	if other and otherEntity then
 		ctx.fx({ t = otherEntity.id, d = duration, n = 2 })
@@ -141,6 +150,7 @@ Support.shield = function(ctx)
 			duration = duration,
 			value = value * (ctx.bp.secondTarget or 0) / 100,
 			source = ctx.player,
+			skillId = ctx.skill.id,
 		})
 	end
 	return true, nil
@@ -200,6 +210,8 @@ Support.groupBuff = function(ctx)
 			end
 		end
 	end
+	-- Own effects of the skill stay on the caster alone (S53; the party copy above is a separate entry).
+	ctx.applyEffects(ctx.caster, "self")
 	-- Divine Intervention also heals a share of maximum health.
 	if ctx.skill.id == "divineIntervention" then
 		for _, ally in allies do

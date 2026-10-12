@@ -25,7 +25,16 @@ return Build.class("Warrior", "energy", "phys", {
 		cooldown = 40,
 		duration = 20,
 		values = { atk = { 10, 28 } },
-		effects = { { kind = "statBuff", duration = 20, stats = { physAtk = "atk" }, pct = true, target = "self" } },
+		effects = {
+			{
+				kind = "statBuff",
+				duration = 20,
+				stats = { physAtk = "atk" },
+				pct = true,
+				target = "self",
+				category = "own",
+			},
+		},
 		breakpoints = Build.bp({
 			selfEffect = {
 				kind = "statBuff",
@@ -33,6 +42,7 @@ return Build.class("Warrior", "energy", "phys", {
 				stats = { armor = "armorBp" },
 				pct = true,
 				target = "self",
+				category = "own",
 			},
 			values = { armorBp = 12 },
 		}, { mul = { cooldown = 0.6 } }),
@@ -106,9 +116,19 @@ return Build.class("Warrior", "energy", "phys", {
 		values = { armor = { 20, 40 } },
 		effects = {
 			{ kind = "taunt", duration = 6 },
-			{ kind = "statBuff", duration = 6, stats = { armor = "armor" }, pct = true, target = "self" },
+			{
+				kind = "statBuff",
+				duration = 6,
+				stats = { armor = "armor" },
+				pct = true,
+				target = "self",
+				category = "own",
+			},
 		},
-		breakpoints = Build.bp({ add = { radius = 5 } }, { effect = { kind = "slow", duration = 4, value = 30 } }),
+		breakpoints = Build.bp(
+			{ add = { radius = 5 } },
+			{ effect = { kind = "slow", duration = 4, value = 30, category = "enemySlow" } }
+		),
 		col = 3,
 		row = 3,
 		glyph = "❗",
@@ -131,7 +151,7 @@ return Build.class("Warrior", "energy", "phys", {
 		cooldown = 14,
 		radius = 12,
 		values = { dmg = { 150, 280 }, slow = 40 },
-		effects = { { kind = "slow", duration = 3, value = "slow" } },
+		effects = { { kind = "slow", duration = 3, value = "slow", category = "enemySlow" } },
 		requires = { { skill = "cleave", level = 3 } },
 		breakpoints = Build.bp(
 			{ lingering = { pct = 20, duration = 3, kind = "cracks" } },
@@ -155,11 +175,12 @@ return Build.class("Warrior", "energy", "phys", {
 				duration = 12,
 				stats = { atkSpeed = "speed", lifesteal = "lifesteal" },
 				target = "self",
+				category = "own",
 			},
 		},
 		breakpoints = Build.bp(
 			{ values = { lifesteal = 3 } },
-			{ selfEffect = { kind = "damageReduction", duration = 12, value = 15, target = "self" } }
+			{ selfEffect = { kind = "damageReduction", duration = 12, value = 15, target = "self", category = "own" } }
 		),
 		col = 3,
 		row = 4,
@@ -183,7 +204,7 @@ return Build.class("Warrior", "energy", "phys", {
 		cooldown = 16,
 		range = 8,
 		values = { dmg = { 300, 520 }, armorBreak = 30 },
-		effects = { { kind = "armorBreak", duration = 6, value = "armorBreak" } },
+		effects = { { kind = "armorBreak", duration = 6, value = "armorBreak", category = "enemyArmor" } },
 		requires = { { skill = "mightyStrike", level = 5 } },
 		breakpoints = Build.bp({ effect = { kind = "stun", duration = 0.7 } }, { splash = { radius = 7, pct = 60 } }),
 		col = 1,
@@ -198,7 +219,9 @@ return Build.class("Warrior", "energy", "phys", {
 		cooldown = 90,
 		duration = 6,
 		values = { reduction = { 40, 60 } },
-		effects = { { kind = "damageReduction", duration = 6, value = "reduction", target = "self" } },
+		effects = {
+			{ kind = "damageReduction", duration = 6, value = "reduction", target = "self", category = "own" },
+		},
 		breakpoints = Build.bp({ add = { effectDuration = 2 } }, { selfHeal = 15 }),
 		col = 3,
 		row = 5,

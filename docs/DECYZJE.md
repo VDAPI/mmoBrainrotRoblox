@@ -1096,3 +1096,21 @@
   podąża za podmienioną głową.
 - **FIX 2026-10-10** Mapa świata: przeciąganie mapy działa (okno i ramki zawierające widok nie liczą się już jako panel nad
   mapą, `Gestures.overOverlay`, co blokowało każde przeciągnięcie).
+- **S53** Efekty: klucz `(kind, sourceKey, skillId, category)`; ten sam klucz `statBuff` scala `stats` (nowsza wartość,
+  dłuższy czas). Kategorie w `Data/BuffCategories`, reguła w `Logic/EffectStack`: w kategorii najsilniejszy (suma
+  zadeklarowanych statystyk albo wartość, remis = nowszy), kategorie, wpisy `own` i efekty bez kategorii się sumują; te
+  same wzmocnienia drużyny od kilku graczy już się nie sumują. Nadpisuje S05 („jeden efekt na rodzaj na źródło”).
+- **S53** Redukcja obrażeń `1 − Π(1 − r)` (najsilniejsza w kategorii, każdy wpis `own`), limit 75% (było: największa,
+  limit 90%), np. Ostatni Bastion 60% + Krąg Światła 15% = 66%. `lastStand` z przedmiotów to wpis `own` od dostawcy z
+  `CombatService.Init` (ciosy potworów i PvP jak dawniej); słabnie przy wysokich sumach, bo działał przed filtrami z
+  osobnym limitem 80%, a teraz wchodzi pod wspólny limit 75%.
+- **S53** Obrażenia w czasie i tarcze pochłaniające z różnych umiejętności jednego gracza są osobnymi efektami
+  (podpalenie Magicznego Pocisku i Gniewu Żywiołów tyka osobno, tarcza z nadmiaru leczenia nie kasuje Tarczy Wiary); do
+  sprawdzenia w sesji balansu (ROZWOJ 7.1).
+- **S53** Atrybut `Effects` = `rodzaj:koniec[:wartość]`, jeden wpis na rodzaj (najdłuższy czas, najsilniejsza wartość;
+  `EffectStack.encode/decode`), ikony grupują po rodzaju. Nadpisuje format z S05.
+- **S53** Kategorie dzisiejszych efektów wg ROZWOJ 7.1 (25 w danych, 3 spowolnienia w kodzie); efekty `self` mają
+  `own`, efekt `self` umiejętności `groupBuff` nie trafia już do sojuszników (`Skills.effectSide`).
+- **S53** `allyMove` w trybie punktów procentowych, nie `pct` (`moveSpeed` ma bazę 0, więc procent nic by nie dał);
+  ROZWOJ 7.1 poprawiony. Kamuflaż 10 daje płaskie +30 `moveSpeed` (było `pct`, czyli +30% samego bonusu z pasywek i
+  przedmiotów).

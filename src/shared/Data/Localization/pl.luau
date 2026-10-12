@@ -1018,6 +1018,8 @@ return {
 	["effect.nextShot"] = "Pewny strzał",
 	["effect.guaranteedCrit"] = "Śmiertelny cel",
 	["effect.manaShield"] = "Tarcza many",
+	["effect.burn"] = "Podpalenie",
+	["effect.withValue"] = "{name}: {value}%",
 
 	-- Skills window and casting (S05)
 	["skills.points"] = "Punkty umiejętności: {points}",

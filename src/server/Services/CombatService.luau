@@ -270,23 +270,17 @@ local function offensiveMultiplier(player: Player, targetEntity: any): number
 		elseif monster.variant == "boss" then
 			mult += hook(player, "bossDamage") / 100
 		end
-		if monster.hp / math.max(1, monster.stats.maxHp) < 0.3 then
+		if monster.hp / math.max(1, monster.stats.maxHp) < Combat.lowHpFraction then
 			mult += hook(player, "executioner") / 100
 		end
-	elseif targetEntity.player and hpFraction(targetEntity.player) < 0.3 then
+	elseif targetEntity.player and hpFraction(targetEntity.player) < Combat.lowHpFraction then
 		mult += hook(player, "executioner") / 100
 	end
 	return mult
 end
 
--- Damage taken after the defender's "last stand" effect.
-local function defensiveAmount(player: Player, amount: number): number
-	local lastStand = hook(player, "lastStand")
-	if lastStand > 0 and hpFraction(player) < 0.3 then
-		return math.max(1, math.floor(amount * (1 - math.min(lastStand, 80) / 100)))
-	end
-	return amount
-end
+-- The defender's "last stand" is an own damage-reduction entry in StatusEffectService since S53 (the provider
+-- registered in Init), under the shared multiplicative cap.
 
 -- Kill credit and rewards ----------------------------------------------------------------------------
 
@@ -482,7 +476,7 @@ function CombatService.DealDamage(
 		result = Damage.computeDamage(attacker, defender, pvpParams, rng)
 		if not result.dodged then
 			local amount = math.floor(result.amount * offensiveMultiplier(player, targetEntity) * extra)
-			result.amount = defensiveAmount(target, math.max(1, amount))
+			result.amount = math.max(1, amount)
 		end
 		local override = attackerState(player).damageOverride
 		if override and not result.dodged then
@@ -623,9 +617,6 @@ local function monsterHitsPlayer(monster: any, player: Player, params: Damage.Pa
 		return
 	end
 	local result = Damage.computeDamage(MonsterStats.asAttacker(monster.stats), defender, params, rng)
-	if not result.dodged then
-		result.amount = defensiveAmount(player, result.amount)
-	end
 	local playerEntity = EntityService.GetPlayerEntity(player)
 	local position = EntityService.Position(playerEntity or { model = player.Character } :: any)
 	if style and monster.entity and playerEntity then
@@ -806,6 +797,16 @@ function CombatService.Init(registry)
 	EquipmentService = registry.Get("EquipmentService")
 	StatusEffectService = registry.Get("StatusEffectService")
 	PartyService = registry.Get("PartyService")
+
+	StatusEffectService.RegisterReductionProvider(function(player: Player, source: string): number
+		-- "Last stand" (items, later path nodes) works where it did before S53: monster blows and PvP hits,
+		-- now as an own entry under the multiplicative cap (ROZWOJ 7.1).
+		if source ~= "monster" and source ~= "pvp" then
+			return 0
+		end
+		local lastStand = hook(player, "lastStand")
+		return if lastStand > 0 and hpFraction(player) < Combat.lowHpFraction then lastStand else 0
+	end)
 
 	MonsterService.SetCombatHandlers({
 		basicAttack = monsterBasicAttack,

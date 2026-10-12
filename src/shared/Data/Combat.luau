@@ -10,6 +10,8 @@ return table.freeze({
 	pvpModifier = 0.6,
 	dodgeCap = 30, -- % after subtracting accuracy
 	minDamage = 1,
+	-- "Below 30 % HP" threshold of the executioner and last-stand effects (Data/Bonuses hooks).
+	lowHpFraction = 0.3,
 
 	-- Basic attack ranges in studs (DESIGN §24) and the lag tolerance the server allows on top.
 	meleeRange = 7,

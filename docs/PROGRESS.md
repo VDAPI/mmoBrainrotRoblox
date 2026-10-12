@@ -5,8 +5,9 @@
 
 ## Stan
 
-S01–S51 gotowe (lista i zakres w `docs/SESJE.md`). Ostatnie: S45–S47 krainy od nowa (silnik krain), S48–S51 silnik
-jaskiń, FIX 2026-10-09. Faza teraz: **gameplay**; testy i strojenie po nim.
+S01–S51 i S53 gotowe (lista i zakres w `docs/SESJE.md`). Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
+kategorie efektów drużyny i stos efektów (`Logic/EffectStack`). Faza teraz: **gameplay**; przebudowa rozwoju postaci
+S53–S94 (`docs/ROZWOJ.md`, `docs/STATY.md`), następna S54; testy i strojenie po niej.
 
 ## Niedokończone (kod)
 

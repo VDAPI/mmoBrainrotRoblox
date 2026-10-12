@@ -166,9 +166,14 @@ function Context.new(
 				value = 30,
 				source = player,
 				tickAmount = math.max(1, amount * 0.3 / 4),
+				skillId = skill.id,
 			})
 		elseif element == "ice" then
-			services.StatusEffect.Apply(entity, "slow", { duration = 2, value = 25, source = player })
+			services.StatusEffect.Apply(
+				entity,
+				"slow",
+				{ duration = 2, value = 25, source = player, skillId = skill.id, category = "enemySlow" }
+			)
 		elseif element == "lightning" then
 			local from = Entity.Position(entity)
 			if not from then
@@ -216,7 +221,11 @@ function Context.new(
 		local near = behaviour.stunNear
 		if near then
 			for _, other in ctx.enemiesInCircle(at, near.radius) do
-				services.StatusEffect.Apply(other, "stun", { duration = near.duration, source = player })
+				services.StatusEffect.Apply(
+					other,
+					"stun",
+					{ duration = near.duration, source = player, skillId = skill.id }
+				)
 			end
 			ctx.fx({ v = "stunBurst", p = at, r = near.radius })
 		end
@@ -312,9 +321,8 @@ function Context.new(
 		applyEffects = function(entity: any, side: "enemy" | "self" | "allies")
 			local skillEffects: { SkillData.SkillEffect } = skill.effects or {}
 			for _, effect in skillEffects do
-				local effectSide = effect.target
-					or (if skill.type == "buff" or skill.type == "groupBuff" then "self" else "enemy")
-				if effectSide == side or (side == "allies" and effectSide == "self" and skill.type == "groupBuff") then
+				-- S53: a "self" effect stays on the caster (own); the party copy is a separate "allies" effect.
+				if Skills.effectSide(skill, effect) == side then
 					ctx.applyEffect(entity, effect)
 				end
 			end
@@ -346,6 +354,8 @@ function Context.new(
 				stats = statValues,
 				pct = effect.pct,
 				maxStacks = if effect.kind == "bleed" then behaviour.bleedStacks else nil,
+				skillId = skill.id,
+				category = effect.category,
 			})
 		end,
 		lingering = function(center: Vector3, percent: number)
@@ -364,11 +374,13 @@ function Context.new(
 							{ plain = true, canDodge = false, consumeShot = false }
 						)
 						if spec.slow then
-							services.StatusEffect.Apply(
-								entity,
-								"slow",
-								{ duration = 1.2, value = spec.slow, source = player }
-							)
+							services.StatusEffect.Apply(entity, "slow", {
+								duration = 1.2,
+								value = spec.slow,
+								source = player,
+								skillId = skill.id,
+								category = "enemySlow",
+							})
 						end
 					end
 				end)

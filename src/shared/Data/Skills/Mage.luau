@@ -31,7 +31,7 @@ return Build.class("Mage", "mana", "magic", {
 		range = 38,
 		element = "ice",
 		values = { dmg = { 140, 250 }, slow = 30 },
-		effects = { { kind = "slow", duration = 3, value = "slow" } },
+		effects = { { kind = "slow", duration = 3, value = "slow", category = "enemySlow" } },
 		breakpoints = Build.bp({ effect = { kind = "freeze", duration = 0.8 } }, { pierce = 60 }),
 		col = 3,
 		row = 1,
@@ -47,7 +47,7 @@ return Build.class("Mage", "mana", "magic", {
 		length = 15,
 		values = {},
 		breakpoints = Build.bp(
-			{ selfEffect = { kind = "damageReduction", duration = 2, value = 30, target = "self" } },
+			{ selfEffect = { kind = "damageReduction", duration = 2, value = 30, target = "self", category = "own" } },
 			{ mul = { cooldown = 0.6 } }
 		),
 		col = 4,
@@ -106,7 +106,7 @@ return Build.class("Mage", "mana", "magic", {
 		cooldown = 40,
 		duration = { 8, 15 },
 		values = {},
-		effects = { { kind = "manaShield", duration = { 8, 15 }, value = 50, target = "self" } },
+		effects = { { kind = "manaShield", duration = { 8, 15 }, value = 50, target = "self", category = "own" } },
 		breakpoints = Build.bp({
 			selfEffect = {
 				kind = "statBuff",
@@ -114,6 +114,7 @@ return Build.class("Mage", "mana", "magic", {
 				stats = { manaRegen = "regenBp" },
 				pct = true,
 				target = "self",
+				category = "own",
 			},
 			values = { regenBp = 50 },
 		}, { add = { effectDuration = 5 } }),

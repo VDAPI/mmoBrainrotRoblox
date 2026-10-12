@@ -556,7 +556,7 @@ szczęścia dają tylko `bossLegendary` (razem ×1,06), pozostałe pola leżą w
 
 Każdy efekt na sojuszników (`target = "allies"`) i każde osłabienie wroga, z którego korzysta drużyna, ma
 `SkillEffect.category` (`Data/BuffCategories.luau`). Każda kategoria w danych deklaruje listę swoich statystyk (albo
-rodzaj efektu) i jeden tryb: procent statystyki (`pct`), a przy `allyCrit` punkty procentowe szansy na krytyk. Test
+rodzaj efektu) i jeden tryb: procent statystyki (`pct`), a przy `allyCrit` i `allyMove` punkty procentowe (szansa na krytyk; `moveSpeed` to już procent prędkości chodu z bazą 0). Test
 danych pilnuje, żeby każdy efekt kategorii używał tylko jej statystyk i jej trybu. W kategorii działa najsilniejszy
 efekt (siła = suma wartości po zadeklarowanych statystykach, przy remisie nowszy); kategorie się sumują. Własne
 wzmocnienia (`target = "self"`) mają kategorię `own`: ich statystyki (także płaskie) sumują się ze wszystkim, bo to
@@ -575,7 +575,7 @@ filtrami i poza limitem, do `Logic/EffectStack` jako wpis `own`. Inne limity w t
 | `allyAttack` | `physAtk`, `magAtk` (%) | dziś brak; Chorąży, Aura Inkwizytora 10B |
 | `allyHaste` | `atkSpeed` (%) | dziś brak; Sztandar, kości Fortuny |
 | `allyCrit` | `critChance` (pkt proc.) | dziś brak; Rozkaz Natarcia, Natchnienie, kości |
-| `allyMove` | `moveSpeed` (%, limit 30) | nowa; Czujność Zwiadowcy |
+| `allyMove` | `moveSpeed` (pkt proc., limit 30) | nowa; Czujność Zwiadowcy |
 | `allyGuard` | `damageReduction` (mnożnikowo, limit 75%) | Krąg Światła przełom 10; Strażnik, Uzdrowiciel, Zwiadowca |
 | `allyVigor` | `maxHp`, `armor`, `mres` (%) | Aura Wytrwałości (z przełomem 10) |
 | `enemyWeak` | `vulnerability` | Znak Łowcy, Sąd przełom 10 |

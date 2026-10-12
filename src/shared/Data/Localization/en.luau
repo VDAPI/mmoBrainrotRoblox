@@ -1018,6 +1018,8 @@ return {
 	["effect.nextShot"] = "Steady aim",
 	["effect.guaranteedCrit"] = "Deadly aim",
 	["effect.manaShield"] = "Mana shield",
+	["effect.burn"] = "Burning",
+	["effect.withValue"] = "{name}: {value}%",
 
 	-- Skills window and casting (S05)
 	["skills.points"] = "Skill points: {points}",

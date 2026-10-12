@@ -80,10 +80,15 @@ return Build.class("Cleric", "mana", "magic", {
 		radius = 14,
 		values = { heal = { 100, 200 } },
 		requires = { { skill = "renew", level = 3 } },
-		breakpoints = Build.bp(
-			{ cleanse = true },
-			{ allyEffect = { kind = "damageReduction", duration = 4, value = 15, target = "allies" } }
-		),
+		breakpoints = Build.bp({ cleanse = true }, {
+			allyEffect = {
+				kind = "damageReduction",
+				duration = 4,
+				value = 15,
+				target = "allies",
+				category = "allyGuard",
+			},
+		}),
 		col = 2,
 		row = 3,
 		glyph = "◌",
@@ -110,7 +115,16 @@ return Build.class("Cleric", "mana", "magic", {
 		radius = 30,
 		duration = 60,
 		values = { hp = { 5, 15 } },
-		effects = { { kind = "statBuff", duration = 60, stats = { maxHp = "hp" }, pct = true, target = "allies" } },
+		effects = {
+			{
+				kind = "statBuff",
+				duration = 60,
+				stats = { maxHp = "hp" },
+				pct = true,
+				target = "allies",
+				category = "allyVigor",
+			},
+		},
 		breakpoints = Build.bp({ add = { radius = 10 } }, {
 			allyEffect = {
 				kind = "statBuff",
@@ -118,6 +132,7 @@ return Build.class("Cleric", "mana", "magic", {
 				stats = { armor = "armorBp" },
 				pct = true,
 				target = "allies",
+				category = "allyVigor",
 			},
 			values = { armorBp = 10 },
 		}),
@@ -176,7 +191,10 @@ return Build.class("Cleric", "mana", "magic", {
 		values = { dmg = { 280, 500 } },
 		effects = { { kind = "stun", duration = 1 } },
 		requires = { { skill = "holyStrike", level = 5 } },
-		breakpoints = Build.bp({ lifesteal = 30 }, { effect = { kind = "vulnerability", duration = 6, value = 10 } }),
+		breakpoints = Build.bp(
+			{ lifesteal = 30 },
+			{ effect = { kind = "vulnerability", duration = 6, value = 10, category = "enemyWeak" } }
+		),
 		col = 1,
 		row = 5,
 		glyph = "⚖",

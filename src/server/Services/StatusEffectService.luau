@@ -1,9 +1,12 @@
 --!strict
--- Buffs and debuffs on entities, players and monsters alike (S05). One effect per kind per source; applying
--- again refreshes it. Ticking effects (bleed, poison, hot) act every second. Players get stat buffs through
+-- Buffs and debuffs on entities, players and monsters alike (S05). An effect's key is (kind, sourceKey, skillId,
+-- category) (S53); applying the same key again refreshes it, and a statBuff merges its stats. How effects of
+-- different keys combine (strongest per category, own entries add up, multiplicative damage reduction) is
+-- Logic/EffectStack. Ticking effects (bleed, poison, hot) act every second. Players get stat buffs through
 -- StatService (modifier source "effects") and damage filtering through ResourceService (invulnerability,
 -- damage reduction, absorb shields, mana shield). Monsters read slows/stuns/taunts through the queries below.
--- The model attribute "Effects" lists "kind:expiresAt" (server time) for the client icons.
+-- The model attribute "Effects" ("kind:expiresAt[:value]", one entry per kind, EffectStack.encode) feeds the
+-- client icons.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -13,6 +16,7 @@ local Workspace = game:GetService("Workspace")
 local Shared = ReplicatedStorage.Shared
 
 local Config = require(Shared.Config)
+local EffectStack = require(Shared.Logic.EffectStack)
 
 local Log = require(Shared.Util.Log)
 local Signal = require(ReplicatedStorage.Packages.Signal)
@@ -37,6 +41,9 @@ export type Effect = {
 	stats: { [string]: number }?, -- statBuff: stat -> value
 	pct: boolean?,
 	stacks: number?, -- S28: stacking damage over time (Cleave's bleed at level 10)
+	skillId: string?, -- S53: skill (or later path node / "item") that applied it; part of the key
+	category: string?, -- S53: Data/BuffCategories id; part of the key
+	appliedAt: number, -- server time of the last (re)application; a tie in a category goes to the newer one
 }
 
 local EntityService: any
@@ -72,18 +79,19 @@ local function publish(entity: any)
 		return
 	end
 	local list = effects[entity.id]
-	local parts = {}
+	local listed: { EffectStack.Listed } = {}
 	if list then
 		for _, effect in list do
-			table.insert(parts, `{effect.kind}:{math.floor(effect.expiresAt * 10) / 10}`)
+			table.insert(listed, { kind = effect.kind, expiresAt = effect.expiresAt, value = effect.value })
 		end
 	end
-	model:SetAttribute("Effects", if #parts > 0 then table.concat(parts, ";") else nil)
+	model:SetAttribute("Effects", EffectStack.encode(listed, now()))
 end
 
 local function changed(entity: any, kind: string)
 	publish(entity)
-	if entity.kind == "player" and entity.player and kind == "statBuff" then
+	-- "expired": a stat buff may have run out; Invalidate is cheap (batched per frame).
+	if entity.kind == "player" and entity.player and (kind == "statBuff" or kind == "expired") then
 		StatService.Invalidate(entity.player)
 	end
 	if entity.kind == "monster" and entity.monster then
@@ -101,6 +109,11 @@ export type ApplyOptions = {
 	pct: boolean?,
 	-- S28: re-applying from the same source adds a stack (tick amount x stacks) up to this many.
 	maxStacks: number?,
+	-- S53 (ROZWOJ 7.2): both are part of the key, so effects of different skills (and the caster's own copy vs the
+	-- party copy of one skill) never overwrite each other. skillId = skill, path node or "item"; category =
+	-- Data/BuffCategories id (nil = own).
+	skillId: string?,
+	category: string?,
 }
 
 -- Effects shortened in PvP.
@@ -139,14 +152,27 @@ function StatusEffectService.Apply(entity: any, kind: string, options: ApplyOpti
 	local t = now()
 	local effect: Effect? = nil
 	for _, existing in list do
-		if existing.kind == kind and existing.sourceKey == sourceKey then
+		if
+			existing.kind == kind
+			and existing.sourceKey == sourceKey
+			and existing.skillId == options.skillId
+			and existing.category == options.category
+		then
 			effect = existing
 			break
 		end
 	end
 	if not effect then
-		local created: Effect =
-			{ kind = kind, source = options.source, sourceKey = sourceKey, value = 0, expiresAt = 0 }
+		local created: Effect = {
+			kind = kind,
+			source = options.source,
+			sourceKey = sourceKey,
+			value = 0,
+			expiresAt = 0,
+			skillId = options.skillId,
+			category = options.category,
+			appliedAt = t,
+		}
 		effect = created
 		table.insert(list, created)
 	end
@@ -157,11 +183,21 @@ function StatusEffectService.Apply(entity: any, kind: string, options: ApplyOpti
 	end
 	e.stacks = stacks
 	e.value = options.value or 0
-	e.expiresAt = t + duration
 	e.tickAmount = if options.tickAmount then options.tickAmount * stacks else nil
 	e.nextTick = if options.tickAmount then t + TICK_INTERVAL else nil
-	e.stats = options.stats
+	if kind == "statBuff" then
+		-- Same key: the stats merge (Battle Cry's attack + its breakpoint's armor), the later end wins.
+		local old: EffectStack.Timed? = if e.expiresAt > t
+			then { stats = e.stats, pct = e.pct, expiresAt = e.expiresAt }
+			else nil
+		e.stats, e.expiresAt =
+			EffectStack.merge(old, { stats = options.stats, pct = options.pct, expiresAt = t + duration }, t)
+	else
+		e.expiresAt = t + duration
+		e.stats = options.stats
+	end
 	e.pct = options.pct
+	e.appliedAt = t
 	changed(entity, kind)
 end
 
@@ -200,7 +236,9 @@ function StatusEffectService.Has(entity: any, kind: string): boolean
 	return #active(entity, kind) > 0
 end
 
--- Strongest value of an effect kind (e.g. the biggest slow).
+-- Strongest value of an effect kind (e.g. the biggest slow). slow, vulnerability and armorBreak each belong to one
+-- category (enemySlow, enemyWeak, enemyArmor) and manaShield has a single own source, so the biggest value is
+-- exactly what Logic/EffectStack would pick; only damageReduction needs the full rule (damageFilter).
 function StatusEffectService.Max(entity: any, kind: string): number
 	local best = 0
 	for _, effect in active(entity, kind) do
@@ -316,23 +354,33 @@ local function modifierSource(player: Player): Source?
 	if not entity then
 		return nil
 	end
-	local flat: { [string]: number } = {}
-	local pct: { [string]: number } = {}
+	local entries: { EffectStack.Entry } = {}
 	for _, effect in active(entity, "statBuff") do
-		local target = if effect.pct then pct else flat
-		local stats: { [string]: number } = effect.stats or {}
-		for stat, value in stats do
-			target[stat] = (target[stat] or 0) + value
-		end
+		table.insert(
+			entries,
+			{ category = effect.category, stats = effect.stats, pct = effect.pct, at = effect.appliedAt }
+		)
 	end
+	local flat, pct = EffectStack.stats(entries)
 	if next(flat) == nil and next(pct) == nil then
 		return nil
 	end
 	return { key = "source.effects", flat = flat, pct = pct }
 end
 
--- ResourceService damage filter: invulnerability, damage reduction, absorb shields, mana shield.
-local function damageFilter(player: Player, amount: number, _source: string): number
+-- Extra own damage-reduction entries (ROZWOJ 7.1). CombatService registers the "lastStand" hook here in its
+-- Init, so this service never requires CombatService (which depends on it).
+export type ReductionProvider = (player: Player, source: string) -> number
+
+local reductionProviders: { ReductionProvider } = {}
+
+function StatusEffectService.RegisterReductionProvider(provider: ReductionProvider)
+	table.insert(reductionProviders, provider)
+end
+
+-- ResourceService damage filter: invulnerability, damage reduction (Logic/EffectStack: multiplicative, capped),
+-- absorb shields, mana shield.
+local function damageFilter(player: Player, amount: number, source: string): number
 	local entity = playerEntity(player)
 	if not entity then
 		return amount
@@ -340,9 +388,19 @@ local function damageFilter(player: Player, amount: number, _source: string): nu
 	if StatusEffectService.Has(entity, "invuln") or StatusEffectService.Has(entity, "respawnShield") then
 		return 0
 	end
-	local reduction = StatusEffectService.Max(entity, "damageReduction")
+	local entries: { EffectStack.Entry } = {}
+	for _, effect in active(entity, "damageReduction") do
+		table.insert(entries, { category = effect.category, value = effect.value, at = effect.appliedAt })
+	end
+	for _, provider in reductionProviders do
+		local r = provider(player, source)
+		if r > 0 then
+			table.insert(entries, { category = "own", value = r, at = 0 })
+		end
+	end
+	local reduction = EffectStack.reduction(entries)
 	if reduction > 0 then
-		amount *= 1 - math.clamp(reduction, 0, 90) / 100
+		amount *= 1 - reduction / 100
 	end
 	-- Absorb shields soak damage first.
 	for _, shield in active(entity, "shield") do

@@ -50,7 +50,11 @@ local function stunLast(ctx: Ctx, list: { any })
 		return
 	end
 	for _, entity in list do
-		ctx.services.StatusEffect.Apply(entity, "stun", { duration = seconds, source = ctx.player })
+		ctx.services.StatusEffect.Apply(
+			entity,
+			"stun",
+			{ duration = seconds, source = ctx.player, skillId = ctx.skill.id }
+		)
 	end
 end
 

@@ -1,12 +1,14 @@
 --!strict
 -- Row of buff / debuff icons with seconds left, read from a model's "Effects" attribute
--- ("kind:expiresAt;..." in server time, written by StatusEffectService). Used under the portrait and in the
--- target frame.
+-- ("kind:expiresAt[:value];..." in server time, written by StatusEffectService, decoded by Logic/EffectStack).
+-- The server sends one entry per kind (latest end, strongest value), so one icon per kind. Used under the
+-- portrait and in the target frame.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 
+local EffectStack = require(ReplicatedStorage.Shared.Logic.EffectStack)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
@@ -46,27 +48,7 @@ local GLYPHS: { [string]: { glyph: string, good: boolean } } = {
 	respawnShield = { glyph = "✧", good = true },
 }
 
-type Entry = { kind: string, left: number }
-
-local function parse(raw: any, t: number): { Entry }
-	local list = {}
-	if type(raw) ~= "string" then
-		return list
-	end
-	local seen: { [string]: boolean } = {}
-	for part in string.gmatch(raw, "[^;]+") do
-		local kind, expires = string.match(part, "^(%a+):([%d%.]+)$")
-		local left = (tonumber(expires) or 0) - t
-		if kind and left > 0 and not seen[kind] then
-			seen[kind] = true
-			table.insert(list, { kind = kind, left = left })
-		end
-	end
-	table.sort(list, function(a, b)
-		return a.kind < b.kind
-	end)
-	return list
-end
+type Entry = EffectStack.Shown
 
 local function EffectIcons(scope: Scope, props: Props): Instance
 	local size = props.Size or 30
@@ -81,7 +63,9 @@ local function EffectIcons(scope: Scope, props: Props): Instance
 			end
 			accumulator = 0
 			local model = Fusion.peek(props.Model)
-			entries:set(if model then parse(model:GetAttribute("Effects"), Workspace:GetServerTimeNow()) else {})
+			entries:set(
+				if model then EffectStack.decode(model:GetAttribute("Effects"), Workspace:GetServerTimeNow()) else {}
+			)
 		end)
 	)
 
@@ -134,7 +118,17 @@ local function EffectIcons(scope: Scope, props: Props): Instance
 						}),
 					},
 				})
-				Tooltip.attach(s, icon :: GuiObject, Text.T(s, `effect.{entry.kind}`))
+				local value = entry.value
+				local tip = if value
+					then s:Computed(function(use): string
+						return Text.get(
+							use,
+							"effect.withValue",
+							{ name = Text.get(use, `effect.{entry.kind}`), value = value }
+						)
+					end)
+					else Text.T(s, `effect.{entry.kind}`)
+				Tooltip.attach(s, icon :: GuiObject, tip)
 				return icon
 			end) :: any,
 		},

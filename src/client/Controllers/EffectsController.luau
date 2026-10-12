@@ -9,6 +9,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
 
+local EffectStack = require(ReplicatedStorage.Shared.Logic.EffectStack)
 local Net = require(ReplicatedStorage.Shared.Net)
 local State = require(script.Parent.Parent.UI.State)
 local Sounds = require(script.Parent.Parent.UI.Sounds)
@@ -88,8 +89,12 @@ end
 local GLOW = "VaelthornRespawnGlow"
 
 local function hasShield(model: Model): boolean
-	local raw = model:GetAttribute("Effects")
-	return type(raw) == "string" and string.find(raw, "respawnShield:", 1, true) ~= nil
+	for _, entry in EffectStack.decode(model:GetAttribute("Effects"), Workspace:GetServerTimeNow()) do
+		if entry.kind == "respawnShield" then
+			return true
+		end
+	end
+	return false
 end
 
 local function addGlow(model: Model, root: BasePart)

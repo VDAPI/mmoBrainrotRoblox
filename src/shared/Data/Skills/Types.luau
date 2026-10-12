@@ -60,6 +60,9 @@ export type SkillEffect = {
 	stats: { [string]: string }?,
 	pct: boolean?,
 	target: ("enemy" | "self" | "allies")?, -- default: enemy for damage skills, self for buffs
+	-- S53: Data/BuffCategories id (Logic/EffectStack: strongest per category, own entries add up); "own" for every
+	-- effect on the caster. No category: crowd control, taunt, invulnerability, shields, heal and damage over time.
+	category: string?,
 }
 
 -- Breakpoint (S28, DESIGN §14): what changes when the skill reaches level 5 / 10 — numbers (`add` to radius, angle,
@@ -83,7 +86,8 @@ export type SkillEffect = {
 --   cleanse = true           also removes harmful effects
 --   lifesteal = pct          the caster heals for pct of the damage dealt
 --   selfHeal = pct           the caster heals pct of max HP on cast
---   effect / selfEffect / allyEffect = SkillEffect   an extra effect on hit enemies / the caster / allies
+--   effect / selfEffect / allyEffect = SkillEffect   an extra effect on hit enemies / the caster / allies; these
+--                            carry their own category (S53) like the skill's effects
 export type Breakpoint = {
 	add: { [string]: number }?,
 	mul: { [string]: number }?,

@@ -3,6 +3,9 @@
 MMORPG na Roblox (Margonem w 3D). Luau + Rojo + Wally + Fusion 0.3 + ProfileStore.
 Źródła prawdy: `docs/DESIGN.md` (gra, liczby), `docs/ARCHITECTURE.md` (technika), `docs/DECYZJE.md` (decyzje z sesji,
 nadpisują oba), `docs/PROGRESS.md` (stan, niedokończone, błędy).
+Przebudowa rozwoju postaci (sesje S53–S94): kontrakt klas, ścieżek, drużyny i wzorów `docs/ROZWOJ.md`, kontrakt
+statystyk przedmiotów `docs/STATY.md` (sesja klasy czyta ROZWOJ 1–8, swoją sekcję klasy, swoją część 14 i 15–16; sesja
+przedmiotów czyta STATY); odstępstwa idą do `docs/DECYZJE.md`, a kontrakt poprawia się w tym samym commicie.
 
 ## Zasady
 - Na start sesji czytaj `docs/PROGRESS.md` (krótki). `docs/DECYZJE.md` i `docs/SESJE.md` są duże: grep po module /
@@ -51,6 +54,10 @@ nadpisują oba), `docs/PROGRESS.md` (stan, niedokończone, błędy).
   `lune run tools/lookdump.luau out.json <id>` + `docs/miasto/tools/render3d.py`. Prawdziwy model: `docs/ASSETS.md`.
   Po zmianie wyglądu (`Data/MonsterLooks`, pety w `Data/Cosmetics`): `npm run renders` w `wiki/` i commit obrazków z
   `tools/wiki-renders/manifest.json` (S38).
+- **Efekt drużyny / osłabienie wroga** (S53): `category` w `SkillEffect` z `Data/BuffCategories` (`own` dla efektów
+  na sobie), reguła łączenia w `Logic/EffectStack` (w kategorii najsilniejszy, `own` się sumuje, redukcja mnożnikowo z
+  limitem 75%), klucz efektu `(kind, sourceKey, skillId, category)`; każde `Apply` z umiejętności podaje `skillId`.
+  Test: `tests/effectstack.spec`.
 - **Prawdziwy model broni**: wpis w `WeaponLooks.assets` + MeshPart w `Assets.Weapons` (`docs/ASSETS.md` → „Broń”).
 - **Portal / przejście między mapami** (S25): wpis w `Data/Portals.luau` (layout stawia go przez
   `Prefabs.portalFrom(ctx, id)`); trasa (`Logic/MapRoute`), mapa świata i prowadzenie widzą go same.

@@ -3219,3 +3219,31 @@ prawdziwych modeli broni w `EquipmentService` (`WeaponLooks.assets`). `.glb` w `
 Pliki: `Logic/BossScaling`, `Data/Bosses`, `Data/Items/Backpacks`, `Data/Products`, `Entities/Boss`, `Entities/Monster`,
 `DungeonService`, `CombatService`, `LootService`, `Admin/Monsters`, `DungeonController`, `NameplateController`,
 `Hud/TargetFrame`, `PremiumShop`, `DungeonWindow`, `WorldMap/CreatureCards`, lokalizacja, testy `party` / `data`, dane wiki.
+
+### S53: Fundament 1: kategorie efektów drużyny i stos efektów
+
+- `Data/BuffCategories` (11 kategorii: strona, rodzaj, statystyki, tryb; limity 75 / 15 / 30 / 30 / 25) i czysty
+  `Logic/EffectStack` (`select`, `strength`, `stats`, `combine`, `reduction`, `merge`, kodek atrybutu `encode/decode`).
+- `StatusEffectService`: klucz `(kind, sourceKey, skillId, category)`, `ApplyOptions.skillId/category`, `appliedAt`,
+  scalanie `statBuff` przez `EffectStack.merge`, źródło statystyk i filtr redukcji przez `EffectStack` (limit 75%,
+  mnożnikowo), `RegisterReductionProvider`; atrybut `Effects` jeden wpis na rodzaj z wartością procentową.
+- **Naprawiony błąd:** po wygaśnięciu wzmocnienia statystyki gracza nie liczyły się od nowa (`changed` unieważnia
+  `StatService` także przy `expired`).
+- `CombatService`: `defensiveAmount` usunięte, `lastStand` jako dostawca redukcji `own` (tylko `monster` i `pvp`);
+  `Combat.lowHpFraction = 0.3` w `offensiveMultiplier` i dostawcy.
+- Umiejętności: `SkillEffect.category`, `Skills.effectSide`, `skillId` w każdym `Apply` z `Skills/*` (jedyne bez:
+  `respawnShield`), 25 tagów w danych + `enemySlow` dla lodu z broni, pola Lodowej Novy 10 i pułapki Odskoku 5;
+  Kamuflaż 10 płaskie +30 `moveSpeed`.
+- Klient: `Hud/EffectIcons` przez `EffectStack.decode` (ikona na rodzaj, najdłuższy czas, dymek z wartością
+  `effect.withValue`), klucz `effect.burn`; `EffectsController.hasShield` przez dekoder (z czasem).
+- Kontrakty: ROZWOJ 7.1 (`allyMove` w punktach), STATY 13 (bez „i Studio”); ROZWOJ 1.24 i 15.5.1 już były zgodne.
+  `CLAUDE.md`: wskazanie ROZWOJ / STATY i punkt „Efekt drużyny” w „Jak dodać”.
+- Test: `tests/effectstack.spec` (redukcja, wybór, kopie własne i drużynowe, scalanie, kodek, dane kategorii, tagi
+  efektów w danych z kontrolą podstawionej pomyłki).
+- Wiki: Node był, `npm run data` zmienił `skills.json` (pole `category`), `mechanics.json` (`combat.lowHpFraction`) oraz
+  odcisk w `meta.json` i `docs/PRZEDMIOTY.md`.
+
+Pliki: `Data/BuffCategories` (nowy), `Logic/EffectStack` (nowy), `Data/Combat`, `Data/Skills/{Types,Warrior,Hunter,Mage,
+Cleric}`, `Logic/Skills`, `StatusEffectService`, `CombatService`, `Skills/Context`, `Skills/Types/{Support,Offense,
+Movement}`, `Hud/EffectIcons`, `EffectsController`, lokalizacja PL / EN, `tests/effectstack.spec`, `CLAUDE.md`,
+`docs/ROZWOJ.md`, `docs/STATY.md`, dane wiki.

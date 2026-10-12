@@ -28,7 +28,10 @@ return Build.class("Hunter", "energy", "phys", {
 		hits = 2,
 		interval = 0.15,
 		values = { dmg = { 85, 150 } },
-		breakpoints = Build.bp({ add = { hits = 1 } }, { effect = { kind = "slow", duration = 2, value = 25 } }),
+		breakpoints = Build.bp(
+			{ add = { hits = 1 } },
+			{ effect = { kind = "slow", duration = 2, value = 25, category = "enemySlow" } }
+		),
 		col = 2,
 		row = 1,
 		glyph = "⇉",
@@ -43,7 +46,7 @@ return Build.class("Hunter", "energy", "phys", {
 		cooldown = 10,
 		length = 15,
 		values = { bonus = { 20, 50 } },
-		effects = { { kind = "nextShot", duration = 8, value = "bonus", target = "self" } },
+		effects = { { kind = "nextShot", duration = 8, value = "bonus", target = "self", category = "own" } },
 		breakpoints = Build.bp(
 			{ trap = { radius = 6, duration = 8, slow = 40 } },
 			{ values = { bonus = 50 }, add = { effectDuration = -5 } }
@@ -63,7 +66,10 @@ return Build.class("Hunter", "energy", "phys", {
 		hits = 4,
 		interval = 0.5,
 		values = { dmg = { 45, 85 } },
-		breakpoints = Build.bp({ add = { radius = 3 } }, { effect = { kind = "slow", duration = 2, value = 30 } }),
+		breakpoints = Build.bp(
+			{ add = { radius = 3 } },
+			{ effect = { kind = "slow", duration = 2, value = 30, category = "enemySlow" } }
+		),
 		col = 3,
 		row = 2,
 		glyph = "☔",
@@ -144,10 +150,10 @@ return Build.class("Hunter", "energy", "phys", {
 		cooldown = 25,
 		range = 40,
 		values = { vuln = { 10, 25 } },
-		effects = { { kind = "vulnerability", duration = 10, value = "vuln" } },
+		effects = { { kind = "vulnerability", duration = 10, value = "vuln", category = "enemyWeak" } },
 		breakpoints = Build.bp(
 			{ add = { effectDuration = 5 } },
-			{ effect = { kind = "slow", duration = 10, value = 20 } }
+			{ effect = { kind = "slow", duration = 10, value = 20, category = "enemySlow" } }
 		),
 		col = 1,
 		row = 4,
@@ -188,16 +194,17 @@ return Build.class("Hunter", "energy", "phys", {
 		duration = 4,
 		values = {},
 		effects = {
-			{ kind = "camouflage", duration = 4, target = "self" },
-			{ kind = "guaranteedCrit", duration = 10, target = "self" },
+			{ kind = "camouflage", duration = 4, target = "self", category = "own" },
+			{ kind = "guaranteedCrit", duration = 10, target = "self", category = "own" },
 		},
 		breakpoints = Build.bp({ add = { effectDuration = 2 } }, {
 			selfEffect = {
 				kind = "statBuff",
 				duration = 4,
+				-- moveSpeed already is a % of walk speed (base 0): flat points, not pct (S53).
 				stats = { moveSpeed = "speedBp" },
-				pct = true,
 				target = "self",
+				category = "own",
 			},
 			values = { speedBp = 30 },
 		}),

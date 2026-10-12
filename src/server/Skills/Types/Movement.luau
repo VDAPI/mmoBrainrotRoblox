@@ -100,7 +100,12 @@ Movement.blink = function(ctx)
 	-- S28 breakpoint: a slowing trap where the caster stood.
 	local trap = ctx.bp.trap
 	if trap then
-		ctx.trap(ctx.ground(from), trap.radius, trap.duration, { kind = "slow", duration = 3, value = trap.slow })
+		ctx.trap(ctx.ground(from), trap.radius, trap.duration, {
+			kind = "slow",
+			duration = 3,
+			value = trap.slow,
+			category = "enemySlow",
+		})
 	end
 	return true, nil
 end

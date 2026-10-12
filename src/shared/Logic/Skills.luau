@@ -118,6 +118,11 @@ function Skills.effective(skill: SkillDef, level: number, enabled: boolean?): (S
 	return def :: SkillDef, behaviour
 end
 
+-- Who an effect of the skill lands on (S53): its own target, or self for buffs and enemies for the rest.
+function Skills.effectSide(skill: SkillDef, effect: SkillData.SkillEffect): "enemy" | "self" | "allies"
+	return effect.target or (if skill.type == "buff" or skill.type == "groupBuff" then "self" else "enemy")
+end
+
 -- Locale keys of a skill's breakpoints with their level: { { level, key } }.
 function Skills.breakpointKeys(skill: SkillDef): { { level: number, key: string } }
 	local out = {}
