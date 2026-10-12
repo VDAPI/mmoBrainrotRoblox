@@ -110,6 +110,8 @@ przedmiotów czyta STATY); odstępstwa idą do `docs/DECYZJE.md`, a kontrakt pop
   `ctx.damage`; strefy przez `Skills.castZones` i `ctx.lingering(center, percent, wave, inCircle)`.
 - **Zachowanie przełomu z liczbą od węzła** (S73): pole typu `ValueRef` (liczba albo nazwa pola `values`,
   `Skills.resolve` / `ctx.resolve`); tarcze z umiejętności tylko przez `ctx.shield`.
+- **Wiązka / kanał z tykami** (S80): typ `beam` (`Offense.beam` → `services.Beam`), koniec tylko przez `closeChannel` i
+  `Logic/Channel.stops`; stosy z licznikiem przez `StatusEffectService.Stacks` / `UseStack` i `ApplyOptions.stacks` (S76).
 - **Tytuł ścieżki** (S59): wpis w `Data/Titles` (`id = "path_<pathId>"`, `req = { kind = "mainPath", path = "<pathId>" }`)
   i `title.path_<pathId>` (PL, EN); okno umiejętności rysuje ścieżkę samo z `Data/Paths` (`Logic/PathView`), opis
   węzła dostaje argumenty z `Paths.nodeArgs`.

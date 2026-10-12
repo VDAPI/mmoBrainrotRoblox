@@ -13,9 +13,13 @@
 -- S73: a buff with party copies (Skills.hasAllyPass) shows "◉ Allies within N studs, you included".
 -- S76: the aim time in the cost line, a ring of snares (trap with ringRadius), a debuff with a radius; costs and
 -- descriptions take the character's hooks (trapCost).
+-- S80: the cost counts our Arcane Charges (Skills.cost); a beam shows its mana per tick (Skills.drain, % of max mana).
 
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
 
+local EffectStack = require(ReplicatedStorage.Shared.Logic.EffectStack)
 local Paths = require(ReplicatedStorage.Shared.Logic.Paths)
 local SkillData = require(ReplicatedStorage.Shared.Data.Skills)
 local Skills = require(ReplicatedStorage.Shared.Logic.Skills)
@@ -33,6 +37,16 @@ local costReduce = State.Value({ "derived", "values", "costReduce" }) -- S62: th
 local cooldownReduction = State.Value({ "skills", "cdr" }) -- S64: % item cooldown reduction (SkillService)
 local maxHpValue = State.Value({ "derived", "values", "maxHp" }) -- S69: healLine
 local magAtkValue = State.Value({ "derived", "values", "magAtk" })
+local maxManaValue = State.Value({ "derived", "values", "maxMana" }) -- S80: a beam's drain
+
+-- S80: Arcane Charges of our own character (SkillController.ArcaneCharges reads the same attribute).
+local function ownCharges(): number
+	local character = Players.LocalPlayer and Players.LocalPlayer.Character
+	if not character then
+		return 0
+	end
+	return EffectStack.stacksOf(character:GetAttribute("Effects"), "arcaneCharge", Workspace:GetServerTimeNow())
+end
 
 -- The character as Logic/Paths reads it, tracked by `use`.
 local function charOf(use: any): Paths.Char
@@ -147,11 +161,20 @@ function SkillInfo.costLine(use: any, skill: SkillData.SkillDef, shownRank: numb
 	local def, behaviour = effective(use, skill, rank)
 	local parts = {}
 	local saving = use(costReduce)
-	local cost = Skills.cost(def, rank, levelOf(use), skill.class, {
+	local mods: Skills.CostMods = {
 		costReduce = if type(saving) == "number" then saving else 0,
 		hooks = SkillInfo.hooks(use), -- S76: trapCost
-	})
-	if cost > 0 and skill.resource then
+		charges = ownCharges(), -- S80
+	}
+	local cost = Skills.cost(def, rank, levelOf(use), skill.class, mods)
+	if def.type == "beam" then
+		-- S80: mana per tick as the server drains it; without the character's pool (preview) the data's percent
+		local maxMana = use(maxManaValue)
+		local drain = if type(maxMana) == "number" and maxMana > 0
+			then Skills.drain(def, rank, maxMana, mods) / maxMana * 100
+			else Skills.valueAt(def, "drain", rank)
+		table.insert(parts, Text.get(use, "skills.cost.drain", { drain = math.floor(drain * 10 + 0.5) / 10 }))
+	elseif cost > 0 and skill.resource then
 		-- The bar needs the full amount, so a fractional cost (Mage above level 20) shows rounded up.
 		local shownCost = math.ceil(cost - 1e-6)
 		table.insert(parts, Text.get(use, `skills.cost.{skill.resource}`, { cost = shownCost }))

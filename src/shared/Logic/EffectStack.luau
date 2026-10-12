@@ -382,4 +382,15 @@ function EffectStack.decode(raw: any, now: number): { Shown }
 	return out
 end
 
+-- S80: stacks of the shown entry of `kind` in the attribute (1 when the text has no count, 0 without the kind):
+-- Arcane Charges on the skill bar, the tooltip and the orbs around the mage.
+function EffectStack.stacksOf(raw: any, kind: string, now: number): number
+	for _, shown in EffectStack.decode(raw, now) do
+		if shown.kind == kind then
+			return shown.stacks or 1
+		end
+	end
+	return 0
+end
+
 return EffectStack

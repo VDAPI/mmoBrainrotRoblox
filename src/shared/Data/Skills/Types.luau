@@ -36,6 +36,9 @@ export type SkillType =
 	-- S77: a companion (the Falcon): a damage loop every `interval` for `duration` on the server, drawn by clients;
 	-- not a character
 	| "companion"
+	-- S80 (ROZWOJ 12.5, 14.4): a channelled ray on one enemy: damage ticks every `interval` for `duration`, each tick
+	-- growing by values.growth % and draining values.drain % of max mana (Logic/Channel kind "beam")
+	| "beam"
 	| "passive" -- permanent stat bonus / proc
 
 export type TargetMode = "enemy" | "ally" | "self" | "point" | "deadAlly" | "none"
@@ -72,6 +75,8 @@ export type EffectKind =
 	-- S77 (ROZWOJ 11.3): Draw a Bead; stats { critChance, critDmg } add to the crit of the source's hits on the bearer
 	-- only (CombatService.DealDamage, Logic/Damage.critChance); no category
 	| "sighted"
+	| "arcaneCharge" -- S80: Arcane Charges of the arcanist, stacks 0..4 (Data/Skills ARCANE_CHARGES)
+	| "empowered" -- S80: Empowering Invocation, value = damage %, stacks = uses left
 
 export type SkillEffect = {
 	kind: EffectKind,
@@ -150,6 +155,9 @@ export type SkillEffect = {
 --   cdrPerTarget = { sec, max }  S79: after the cast each distinct enemy hit takes sec seconds off this skill's
 --                             cooldown, at most max enemies (SkillService.ReduceCooldown; Storm's Wrath in S81)
 --   channelMove = %           S79: a channel goes on while the caster moves at this % speed (Logic/Channel)
+--   grantCharges = n          S80: Arcane Charges granted when the channel completes (Evocation 10B)
+--   empower = { pct, uses }   S80: the effect "empowered" (pct % for the next `uses` damaging spells) when the channel
+--                             completes (Empowering Invocation, S81)
 -- S76 `add` fields: castTime (aim seconds, at least 0), interval, ringRadius; `add.radius` on a debuff: its enemy
 -- effects also land on enemies within that radius of the target.
 -- Skill fields: furyConsume (target, buff), hitRadius (shout, S74), allyRadius (buff); `add.hitRadius` works like
@@ -210,6 +218,11 @@ export type Breakpoint = {
 	cdrPerTarget: { sec: number, max: number }?,
 	-- S79: a channel goes on while the caster moves at this % speed (Logic/Channel)
 	channelMove: number?,
+	-- S80: Arcane Charges granted when the channel completes (Evocation 10B)
+	grantCharges: number?,
+	-- S80: the effect "empowered" (pct % for the next `uses` damaging spells) when the channel completes (Empowering
+	-- Invocation, S81)
+	empower: { pct: number, uses: number }?,
 	effect: SkillEffect?,
 	selfEffect: SkillEffect?,
 	allyEffect: SkillEffect?,

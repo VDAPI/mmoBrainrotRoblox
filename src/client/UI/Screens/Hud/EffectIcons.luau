@@ -62,7 +62,11 @@ local GLYPHS: { [string]: Glyph } = {
 	fury = { glyph = "💢", good = true }, -- S72: Fury stacks (counter, not seconds)
 	carnage = { glyph = "💀", good = true }, -- S72: Carnage, Fury holds and grows faster
 	sighted = { glyph = "⌖", good = false }, -- S77: Draw a Bead, the source's hits on the bearer crit more
+	arcaneCharge = { glyph = "❖", good = true }, -- S80: Arcane Charges (count in the corner)
+	empowered = { glyph = "✪", good = true }, -- S80: Empowering Invocation (uses left in the corner)
 }
+-- S80 (ROZWOJ 12.5): counters, so the corner shows the count from a single stack
+local ALWAYS_COUNT: { [string]: boolean } = { arcaneCharge = true, empowered = true }
 
 -- S72: count / max / full only for the Fury counter.
 type Entry = {
@@ -81,7 +85,8 @@ local function read(model: Model?): { Entry }
 	end
 	local list: { Entry } = {}
 	for _, shown in EffectStack.decode(model:GetAttribute("Effects"), Workspace:GetServerTimeNow()) do
-		table.insert(list, { kind = shown.kind, left = shown.left, value = shown.value, stacks = shown.stacks })
+		local stacks = if ALWAYS_COUNT[shown.kind] then shown.stacks or 1 else shown.stacks
+		table.insert(list, { kind = shown.kind, left = shown.left, value = shown.value, stacks = stacks })
 	end
 	local stacks = model:GetAttribute("Fury")
 	local max = model:GetAttribute("FuryMax")
@@ -158,7 +163,7 @@ local function EffectIcons(scope: Scope, props: Props): Instance
 									Thickness = if full then 2 else 1,
 								}),
 								-- S76: stacks in the corner
-								if entry.stacks and entry.stacks > 1
+								if entry.stacks and (entry.stacks > 1 or ALWAYS_COUNT[entry.kind])
 									then s:New("TextLabel")({
 										AnchorPoint = Vector2.new(1, 1),
 										Position = UDim2.fromScale(1, 1),

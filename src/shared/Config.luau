@@ -174,6 +174,8 @@ local Config = {
 		breakpoints = true,
 		-- Seconds a skill pressed during the global cooldown / the cast waits to fire (client queue).
 		queueWindow = 0.4,
+		-- studs a channel / beam / aim may drift from where it started (SkillService, Logic/Channel)
+		channelMoveLimit = 2.5,
 	},
 	-- Skill visuals (S28): at most `maxActive` effects at once on a client; effects of other players farther than
 	-- `simpleBeyond` studs use the simple version; low graphics quality halves particles and drops weapon trails.

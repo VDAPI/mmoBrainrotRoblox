@@ -134,8 +134,12 @@ T.describe("S79 Mage engine", function()
 		T.expect(guard.skillId).toBe("arcanist_masterMind")
 		T.expect(Skills.channelGuard("castTime", 12, 1.5)).toBeNil()
 		T.expect(Skills.channelGuard("channel", 0, 3)).toBeNil()
-		-- the guard comes off with the channel at its one exit (SkillService endChannel); damage ends a channel
-		-- S80: add the beam case (Torrent ignores damage, the guard still ends with it)
+		-- the guard comes off with the channel at its one exit (SkillService closeChannel); damage ends a channel
+		-- S80: the beam case (Torrent ignores damage, the guard still ends with it)
+		local beam = Skills.channelGuard("beam", 12, 4) :: Skills.GuardSpec
+		T.expect(beam.value).toBe(12)
+		T.expect(beam.duration).toBe(4)
+		T.expect(beam.skillId).toBe("arcanist_masterMind")
 		T.expect((Channel.stops("channel", "damage", {}))).toBe(true)
 	end)
 

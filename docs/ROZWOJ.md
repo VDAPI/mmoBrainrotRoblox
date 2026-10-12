@@ -1917,7 +1917,7 @@ rezerwa many +4 → 20%, nowa statystyka `manaReserve`, której regeneracja nie 
   bez `lock`. Efekty: kolor `element`, `rune` pod Magiem na starcie, `whirl` i `aura` przy każdej fali.
 
 **Kataklizm / Cataclysm** (`cataclysm`, nowa, zwieńczenie, poz. 60)
-- Typ `circleTarget` bez opóźnienia (zwykłe fale), `adaptive`, promień 12 st. Najpierw ściąga wrogów z całego promienia
+- Typ `circleTarget` bez opóźnienia (zwykłe fale), `adaptive`, zasięg 38 st. (S80), promień 12 st. Najpierw ściąga wrogów z całego promienia
   do środka (pole `pull = true`, 14.4; bossowie odporni, jak już robi `Push.pull`), potem 5 fal co 0,6 s po 60 → 70%
   (300 → 350% na cel, z Ostatecznym Kataklizmem 7 fal, do 490%). Koszt 90, odn. 30 s. Ściągnięta grupa stoi potem w
   Wirze i pod Meteorem.
@@ -2005,8 +2005,10 @@ Przeniesione:
 - Tyki są mocne, bo kanał zajmuje Maga na 8 globalnych odnowień (GCD 0,5 s), a w tym czasie inne czary czekają;
   Strumień musi zadać więcej niż to, co wypiera. Daje ×1,03 na 70. i ×1,08 na 100. (14% i 21% obrażeń Arkanisty).
 - Przerwanie (`Logic/Channel.stops`, 14.4): Strumień kończy się tylko wtedy, gdy Mag jest ogłuszony, zamrożony albo
-  odrzucony, odejdzie dalej niż 2,5 st. od miejsca rzucenia (bez `channelMove`), cel zginie albo wyjdzie poza 30 st.,
-  zabraknie many na tyk albo Mag rzuci inną umiejętność. Otrzymane obrażenia go nie przerywają (15.5).
+  odrzucony, odejdzie dalej niż 2,5 st. od miejsca rzucenia (bez `channelMove`), cel zginie albo wyjdzie poza 30 st.
+  (z tolerancją 5 st. jak przy rzucie, S80), zabraknie many na tyk albo Mag rzuci inną umiejętność. Otrzymane
+  obrażenia go nie przerywają (15.5). Pobór idzie przez te same modyfikatory kosztu co `Skills.cost` (haki, Ładunki,
+  oszczędność; `Skills.drain`, S80).
 - Przełomy: 5A `values.growth = 1`; 5B `channelMove = 50`; 10A `values.dmg = 30` (+18%); 10B `splash = { radius = 4,
   pct = 35 }`.
 - Animacja z `evocation` bez uniesienia: broń w obu dłoniach wysunięta przed pierś, `loop` przez cały kanał, `lock`
@@ -2030,7 +2032,7 @@ Przeniesione:
 | 6 · 40 albo | Narastająca Moc (`arcanist_mounting`, passive, hak `chargeDamage`) | +0,5 / 1 / 1,5 pkt proc. za Ładunek (2 → 3,5%) |
 | 6 · 40 albo | Chłodna Głowa (`arcanist_coolHead`, passive, hak `chargeCost`) | −4 / 8 / 12 pkt proc. kosztu Ładunku (15 → 3%) |
 | 7 · 48 | Inwokacja (`arcanist_evocation`, skill) | przeniesiona B |
-| 7 · 48 | Inwokacja Mocy (`arcanist_invocation`, modify `evocation`, nowy efekt `empowered`) | 3 następne czary po kanale +5 / 10 / 15% |
+| 7 · 48 | Inwokacja Mocy (`arcanist_invocation`, modify `evocation`, nowy efekt `empowered`, 15 s, S80) | 3 następne czary po kanale +5 / 10 / 15% |
 | 8 · 60 | Strumień Arkanów (`arcanist_torrent`, skill → `arcaneTorrent`) | zwieńczenie |
 | 9 · 70 albo | Rozdzierający Strumień (`arcanist_rending`, modify `arcaneTorrent` `values.growth`) | +0,5 / 1 / 1,5 pkt proc. wzrostu na tyk (3 → 4,5% z 5A) |
 | 9 · 70 albo | Studnia Many (`arcanist_well`, modify `arcaneTorrent` `values.drain`) | −0,25 / 0,5 / 0,75 pkt proc. (1,5 → 0,75% many na tyk) |
@@ -2380,7 +2382,9 @@ Kod:
   `Skills.areaApplies(tag, count, secondary)`, Burza Piorunów z 3 wrogami w kręgu liczy 3, łańcuch z 2 wrogami w
   zasięgu liczy 2.
 - Koszt: `Skills.cost(skill, rank, L, classId, mods)` czyta haki `areaCost`, `spellCost`, `chargeCost` i Ładunki
-  (serwer, pasek, opis i wiki z jednej funkcji).
+  (serwer, pasek, opis i wiki z jednej funkcji). S80: Ładunki to osobny mnożnik `1 + n × max(0, 15 + chargeCost) / 100`
+  po sumie haków S79, w koszcie bazowym przed `costReduce`; `Skills.drain` (pobór Strumienia) dzieli z nim te same
+  modyfikatory.
 - Składanie według 2.7. Testy w `skills.spec`: Meteor B/B na 10. randze = 625%; `perCharge` Wyładowania z 5A i pełnym
   Pełnym Wyładowaniem = 27; Wir z 5B i pełnym Szalejącym Wirem na 10. randze = 16,5%; Pocisk 10B = 2 trafienia po 186%.
 - Nowe haki: `areaLingering` (strefa żywiołu broni raz na rzucenie, przy pierwszej fali jak dziś `ctx.lingering`;
@@ -2402,20 +2406,28 @@ Kod:
   czystej funkcji `Logic/EffectStack.accumulate`: dwa nałożenia 100 i 100 w odstępie 1 s dają razem 200 obrażeń.
 - Nowe statystyki: `manaReserve` (Skupienie, Rezerwa; `StatCalc` liczy regenerację od puli bez rezerwy).
 - Nowe efekty: `arcaneCharge` (stosy 0–4, 15 s, znika poza walką, premia +2% dla czarów innych niż Wyładowanie i koszt
-  +15%; zużywa go wartość `perCharge`), `empowered` (3 następne czary z obrażeniami, licznik użyć).
+  +15%; zużywa go wartość `perCharge`), `empowered` (3 następne czary z obrażeniami, licznik użyć). S80: `empowered`
+  trwa 15 s (`Data/Skills.EMPOWERED`), wartość i liczbę użyć daje klucz przełomu `empower = { pct, uses }`; oba efekty
+  czyta `StatusEffectService.Stacks` / `UseStack`; `grantCharges` i `empower` działają tylko po pełnym kanale.
 - Nowy typ `beam` (`Offense.beam` na infrastrukturze kanału z `SkillService`, jak Inwokacja): tyki, `growth`, `drain` w
   % maks. many, `loop` animacji po stronie klienta. `Logic/Channel.stops` dostaje rodzaj `beam`: ignoruje
   `ResourceService.Damaged`, kończy się na ogłuszeniu i zamrożeniu (sprawdzane w pętli kanału), na ruchu ponad
   `CHANNEL_MOVE_LIMIT` (odrzucenie też), na śmierci celu, wyjściu poza 30 st., braku many na tyk i na innym rzucie
   (`interruptChannel(player, nil)` na starcie rzutu, jak dziś). Test: `beam` + obrażenia = trwa, `channel` + obrażenia
   = koniec, `beam` + ogłuszenie = koniec, `beam` + rzut = koniec, `beam` + ruch 3 st. bez `channelMove` = koniec.
+  S80: zdarzenia `Channel.stops` to `damage`, `move`, `death`, `disabled`, `knockback`, `cast`, `target`, `range`,
+  `noMana`; ruch sprawdza `Channel.afterMove` (`Config.Skills.channelMoveLimit`); odrzucenie i ściągnięcie gracza
+  zgłasza `Push.Moved` (kończy tylko wiązkę); każdy koniec kanału idzie przez `SkillService.closeChannel`; ataki
+  podstawowe stoją w czasie wiązki.
 - Nowe rodzaje przełomów i pola (`Data/Skills/Types`, `Build.Spec`): `cdrPerTarget = { sec, max }` (nowe
   `SkillService.ReduceCooldown` po rzucie według liczby trafionych), `channelMove`, `grantCharges`; ściąganie na
   `circleTarget` z pola `pull` (wspólne z Łowcą: liczba = promień ściągania, `true` = promień umiejętności, przełom
   `pull` nadpisuje; do punktu, przed pierwszą falą); `lingering.kind = "element"`. Dane: `firebolt.hits = 1`.
 - Kategorie: tylko istniejące (`enemySlow`, `own`).
 - Klient: licznik Ładunków i 1–4 kule wokół Maga (opcjonalny element `orbit`), rozmiar pocisku Wyładowania z `ch` w
-  zdarzeniu `SkillFx`, komunikat `cast.error.beamRange`.
+  zdarzeniu `SkillFx`, komunikat `cast.error.beamRange`. S80: pola `SkillVfx` `everyWave` (części kolejnych fal),
+  `waves` (zdarzenie na falę `circleTarget`), `chargeSize` (przyrost pocisku za Ładunek); licznik na ikonie
+  `arcaneCharge` i `empowered` od 1 stosu; promień od czubka broni, zdarzenie `beamEnd`.
 
 Animacje i efekty: 4 nowe ruchy w `SkillMotions` (`elementalVortex`, `cataclysm`, `arcaneDischarge`, `arcaneTorrent`;
 z `evocation`, `meteor`, `fireball` oraz póz `crouch`, `SLAMMED`), 4 wpisy `SkillVfx` z istniejących części, 0 nowych

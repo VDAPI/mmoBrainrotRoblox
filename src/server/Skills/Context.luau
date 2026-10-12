@@ -27,6 +27,9 @@
 -- poison through CombatService.ApplyPoison; `lingering` pulses carry `lingering = true` and a poison field counts as
 -- the Hunter's poison (DotBonus).
 -- S79: spell tags (Logic/Skills.tag), areaHits / secondary per hit, Mage hooks (area, single, spell, resonance, Cascade, Elemental Trail zone, cdrPerTarget).
+-- S80 (ROZWOJ 12.5): `castMul` (Arcane Charges and empowered of this cast, a snapshot SkillService takes at the cast)
+-- multiplies every hit but zone ticks; `chargesSpent` (Arcane Discharge) goes to the clients as `ch`; `costMods` is
+-- the CostMods the cast paid with (Arcane Torrent drains with the same); services.Beam starts a beam channel.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
@@ -61,6 +64,9 @@ export type Services = {
 	WeaponElement: (player: Player) -> string?,
 	WeaponSpeed: (player: Player) -> number?, -- base speed of the equipped weapon (S54)
 	Toast: (player: Player, key: string, args: { [string]: any }?, kind: string?) -> (), -- S70
+	-- S80 (ROZWOJ 12.5): starts the beam channel of `ctx` on `target` (SkillService owns the loop and its ends);
+	-- `tick(n)` deals tick n. (false, errorKey) without mana for one tick.
+	Beam: (ctx: Ctx, target: any, tick: (n: number) -> ()) -> (boolean, string?),
 }
 
 -- S70: options of ctx.applyEffect: value (and resolved stats) x scale, duration x durationMul.
@@ -85,6 +91,12 @@ export type Ctx = {
 	tag: string, -- S79: Logic/Skills.tag of the skill ("area" | "single", ROZWOJ 12.3)
 	-- S79: mana before this cast's cost as a share of max mana (SkillService sets it; resonance)
 	manaFraction: number,
+	-- S80: Arcane Charges and empowered of this cast, 1 = none
+	castMul: number,
+	-- S80: Arcane Charges Arcane Discharge consumed (the clients grow the bolt, `ch`)
+	chargesSpent: number?,
+	-- S80: the CostMods this cast paid with (Arcane Torrent drains with the same)
+	costMods: Skills.CostMods?,
 	services: Services,
 	value: (field: string) -> number,
 	resolve: (ref: SkillData.ValueRef?) -> number, -- S73: Logic/Skills.resolve at this rank
@@ -532,6 +544,9 @@ function Context.new(
 		hook = hook,
 		tag = tag,
 		manaFraction = 0,
+		castMul = 1,
+		chargesSpent = nil,
+		costMods = nil,
 		services = services,
 		bp = behaviour,
 		value = value,
@@ -571,6 +586,10 @@ function Context.new(
 			data.v = data.v or skill.vfx
 			data.c = caster.id
 			data.el = data.el or element
+			local spent = ctx.chargesSpent
+			if spent and spent > 0 then
+				data.ch = spent -- S80: the clients grow Arcane Discharge's bolt
+			end
 			services.Fx(player, data)
 		end,
 		isEnemy = isEnemy,
@@ -612,10 +631,10 @@ function Context.new(
 				multiplier *= 1 + services.Combat.Hook(player, "areaSkillDamage") / 100
 			end
 			-- S79 (ROZWOJ 12.3, 14.4): tag bonuses + spellDamage as one factor, resonance apart; zone ticks have their
-			-- own percent and get neither
+			-- own percent and get neither. S80: nor Arcane Charges and empowered (castMul)
 			if not opts.lingering then
 				local bonus = Skills.spellBonus(tag, opts.areaHits or 1, opts.secondary == true, spellHooks())
-				multiplier *= (1 + bonus / 100) * Skills.resonanceMul(ctx.manaFraction, hook("resonance"))
+				multiplier *= (1 + bonus / 100) * Skills.resonanceMul(ctx.manaFraction, hook("resonance")) * ctx.castMul
 			end
 			local result = services.Combat.DealDamage(player, entity, params, nil, {
 				multiplier = multiplier,

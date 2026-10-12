@@ -623,6 +623,50 @@ function Library.sealRune(model: Model, color: Color3, simple: boolean?): () -> 
 	end
 end
 
+-- S80 (ROZWOJ 12.5): Arcane Charges, `count` small glowing orbs circling the chest of a character (one turn in about
+-- 2 s). Returns the cleanup.
+local ORBIT_RADIUS = 2.2
+local ORBIT_TURN = 2
+local ORBIT_SIZE = 0.35
+function Library.orbit(model: Model, count: number, color: Color3, simple: boolean?): () -> ()
+	local root = model:FindFirstChild("HumanoidRootPart") :: BasePart?
+	if not root or count <= 0 then
+		return function() end
+	end
+	local orbs: { BasePart } = {}
+	for _ = 1, count do
+		local orb = Pool.part("Ball", color, Vector3.one * ORBIT_SIZE, Enum.Material.Neon, 0.1)
+		if not simple then
+			light(orb, color, 4, 0.6)
+		end
+		table.insert(orbs, orb)
+	end
+	local angle = 0
+	local connection = RunService.Heartbeat:Connect(function(dt: number)
+		if not root.Parent then
+			return
+		end
+		angle += dt * math.pi * 2 / ORBIT_TURN
+		local centreAt = root.Position + Vector3.new(0, 0.6, 0)
+		for i, orb in orbs do
+			local a = angle + (i - 1) / count * math.pi * 2
+			orb.CFrame = CFrame.new(centreAt + Vector3.new(math.cos(a) * ORBIT_RADIUS, 0, math.sin(a) * ORBIT_RADIUS))
+		end
+	end)
+	local done = false
+	return function()
+		if done then
+			return
+		end
+		done = true
+		connection:Disconnect()
+		for _, orb in orbs do
+			tween(orb, 0.25, { Transparency = 1 })
+			Pool.later(orb, 0.3)
+		end
+	end
+end
+
 -- Afterimages along a dash.
 function Library.dash(a: Vector3, b: Vector3, color: Color3, simple: boolean?)
 	local count = if simple then 2 else 5

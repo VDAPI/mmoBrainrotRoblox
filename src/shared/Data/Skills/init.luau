@@ -42,6 +42,13 @@ return table.freeze({
 	-- U + round((r - 1) * span / (maxLevel - 1)), span = min(9 * step, capLevel - U): every skill is maxed by capLevel.
 	RANKS = table.freeze({ step = 4, capLevel = 95 }),
 	GCD = 0.5, -- global cooldown (DESIGN §14.1)
+	-- S80 (ROZWOJ 12.5): Arcane Charges. Every damaging spell but the consumer adds one (up to `max`, for `duration`
+	-- seconds, lost out of combat and on death); each charge gives +`damage` % to spells other than the consumer and
+	-- +`cost` % to the cost of every damaging spell. Charges exist only for a caster who may use `consumer`
+	-- (Logic/Paths.skillUsable: the node bought and the arcanist's weapon). Not exported to the wiki.
+	ARCANE_CHARGES = table.freeze({ max = 4, duration = 15, damage = 2, cost = 15, consumer = "arcaneDischarge" }),
+	-- S80: Empowering Invocation lasts this long; its value and uses come from the channel's `empower`.
+	EMPOWERED = table.freeze({ duration = 15 }),
 	AREA_MIN_HITS = 2, -- S79 (ROZWOJ 12.3): area bonuses need this many enemies hit; secondary hits always count
 	AREA_LINGER_SECONDS = 3, -- S79: the areaLingering zone (Elemental Trail) lasts this long
 	RESONANCE_MANA = 75, -- S79: resonance works while mana before the cast is at least this % of the pool

@@ -12,6 +12,8 @@
 -- S79 (ROZWOJ 12.3, 14.4): every hit carries areaHits (enemies hit in its wave; Thunderstorm counts its circle) and
 -- secondary hits (pierce, splashes, splits) say so; zones come from ctx.lingering on every wave (Skills.castZones
 -- keeps the first); a chain decides its path first (Logic/Chain.path, flat distance).
+-- S80 (ROZWOJ 12.4, 12.5): `beam` (Arcane Torrent) starts a beam channel through services.Beam; circleTarget with
+-- SkillVfx `waves` (Cataclysm) sends one impact event per wave instead of one at the start.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -302,7 +304,11 @@ Offense.circleTarget = function(ctx)
 	local firstPercent = ctx.value("dmg") * (1 + (ctx.bp.firstWave or 0) / 100)
 	local impactRadius = if storm then math.max(4, radius / 3) else radius
 	local random = Random.new()
-	ctx.fx({ p = point, r = radius, d = delay + (hits - 1) * interval, n = hits })
+	-- S80: `waves` (Cataclysm) sends one event per wave below; others one event at the start
+	local perWave = vfx ~= nil and vfx.waves == true
+	if not perWave then
+		ctx.fx({ p = point, r = radius, d = delay + (hits - 1) * interval, n = hits })
+	end
 	for wave = 1, hits do
 		local at = point
 		if storm then
@@ -337,6 +343,9 @@ Offense.circleTarget = function(ctx)
 			end
 			if storm then
 				ctx.fx({ v = "meteorImpact", p = impactAt, r = impactRadius })
+			end
+			if perWave then
+				ctx.fx({ p = impactAt, r = radius, n = wave })
 			end
 			local enemies = ctx.enemiesInCircle(impactAt, impactRadius)
 			hitAll(ctx, enemies, if wave == 1 then firstPercent else ctx.value("dmg"), wave == 1, { from = impactAt })
@@ -447,6 +456,20 @@ Offense.chain = function(ctx)
 	end
 	ctx.fx({ path = path })
 	return true, nil
+end
+
+-- S80 (ROZWOJ 12.5): Arcane Torrent. Starts a beam channel on the target (SkillService owns the loop and every way
+-- it ends, Logic/Channel kind "beam"); each tick deals dmg x (1 + growth% x (n - 1)) and may splash (10B).
+Offense.beam = function(ctx)
+	local target = ctx.target
+	if not target or not ctx.isEnemy(target) then
+		return false, "cast.error.noTarget"
+	end
+	local dmg, growth = ctx.value("dmg"), ctx.value("growth")
+	return ctx.services.Beam(ctx, target, function(n: number)
+		ctx.fx({ t = target.id, n = n })
+		ctx.damage(target, Skills.beamTickPct(dmg, growth, n), { primary = true, consumeShot = n == 1 })
+	end)
 end
 
 return Offense

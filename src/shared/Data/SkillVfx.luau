@@ -12,6 +12,9 @@
 --   object (S74): "banner" = the skill leaves a server object the client draws (Vfx/Library.banner)
 --   shake: camera shake strength (0..1) for players near the impact (setting "Camera shake"), hitstop: melee freeze
 --   sound: rbxassetid or "" (none yet: PROGRESS "Niedokończone" lists what to attach)
+--   S80: everyWave = impact pieces every wave plays (default: shockwave, whirl, cracks, pillar; the first wave plays
+--     all); waves = circleTarget sends one impact event per wave (`n` = the wave) instead of one at the start;
+--     chargeSize = the projectile grows by this much per Arcane Charge spent (`ch` of the event)
 
 export type Entry = {
 	color: string,
@@ -30,6 +33,9 @@ export type Entry = {
 	allyColor: string?,
 	object: "banner"?,
 	trigger: { string }?, -- S77: pieces of a trap's trapTrigger event (default: shockwave + burst)
+	everyWave: { string }?, -- S80: pieces of every wave (subset of impact)
+	waves: boolean?, -- S80: circleTarget, one impact event per wave
+	chargeSize: number?, -- S80: projectile size per Arcane Charge spent
 }
 
 local function e(def: Entry): Entry
@@ -236,6 +242,32 @@ local SkillVfx: { [string]: Entry } = {
 		telegraph = "circle",
 		shake = 0.5,
 	}),
+	-- S80 (ROZWOJ 12.4, 12.5)
+	elementalVortex = e({
+		color = "element",
+		sound = "",
+		impact = { "rune", "whirl", "aura" },
+		everyWave = { "whirl", "aura" },
+	}),
+	cataclysm = e({
+		color = "element",
+		sound = "",
+		glow = { hand = "both", dur = 0.8 },
+		impact = { "meteor", "shockwave", "cracks", "rune" },
+		telegraph = "circle",
+		waves = true,
+		shake = 0.7,
+	}),
+	arcaneDischarge = e({
+		color = "#B07CFF",
+		sound = "",
+		glow = { hand = "both", dur = 0.35 },
+		projectile = "orb",
+		size = 0.8,
+		chargeSize = 0.15,
+		impact = { "burst", "sparkle", "shockwave" },
+	}),
+	arcaneTorrent = e({ color = "#B07CFF", sound = "", impact = { "beam", "sparkle", "aura" } }),
 	-- Cleric
 	holyStrike = e({
 		color = "holy",

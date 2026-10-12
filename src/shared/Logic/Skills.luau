@@ -6,6 +6,8 @@
 -- (Skills.speedFactor) used by the server, the skill bar, the descriptions and the wiki.
 -- S79 (ROZWOJ 12.3, 14.4): spell tags (Skills.tag), area / single target rules, cast zones, Mage hooks and the spell
 -- cost hooks (areaCost, spellCost) in Skills.cost.
+-- S80 (ROZWOJ 12.5): Arcane Charges (cost, damage, decay), Arcane Torrent's drain and ticks (Skills.drain,
+-- beamTicks, beamTickPct); Skills.cost and Skills.drain share one modifier rule (applyCostMods).
 
 local BuffCategories = require("../Data/BuffCategories")
 local Combat = require("../Data/Combat")
@@ -476,8 +478,11 @@ export type CostMods = {
 	costPct: number?,
 	costReduce: number?, -- % item saving (costReduce stat: Tome trait + lines), capped by Data/Stats
 	-- S76: the caster's hooks (Paths.passiveTotals(...).hooks)
-	-- cost hooks in %: areaCost / spellCost (S79) plus = dearer; trapCost (S76) plus = cheaper (a discount)
+	-- cost hooks in %: areaCost / spellCost (S79) plus = dearer; trapCost (S76) plus = cheaper (a discount);
+	-- chargeCost (S80): percentage points per charge, plus = dearer
 	hooks: { [string]: number }?,
+	-- S80: Arcane Charges the caster holds (they raise the cost of spells only, Skills.isSpell)
+	charges: number?,
 }
 
 -- A hook from an optional table (0 when missing). Callers name the hook as a literal (paths.spec hook receivers).
@@ -487,12 +492,77 @@ end
 
 local COST_REDUCE_CAP = (Stats.get("costReduce") :: any).cap :: number
 
+-- S80 (ROZWOJ 12.5) Arcane Charges --------------------------------------------------------------------------------
+
+local CHARGES = SkillData.ARCANE_CHARGES
+
+-- Cost factor of `charges` Arcane Charges; chargeCost = the hook in percentage points per charge (minus = cheaper).
+function Skills.chargeCostFactor(charges: number, chargeCost: number?): number
+	return 1 + charges * math.max(0, CHARGES.cost + (chargeCost or 0)) / 100
+end
+
+-- Damage factor of `charges` Arcane Charges on a spell other than the consumer (chargeDamage hook in points).
+function Skills.chargeDamageFactor(charges: number, chargeDamage: number?): number
+	return 1 + charges * (CHARGES.damage + (chargeDamage or 0)) / 100
+end
+
+-- Arcane Discharge: +perCharge % for each charge it consumes.
+function Skills.dischargeFactor(perCharge: number, charges: number): number
+	return 1 + perCharge * charges / 100
+end
+
+-- Charges after gaining `gain` (0..max).
+function Skills.chargesAfterGain(current: number, gain: number): number
+	return math.clamp(current + gain, 0, CHARGES.max)
+end
+
+-- Charges that still count: none out of combat or after the entry's end (15 s).
+function Skills.chargesNow(stacks: number, expiresAt: number, now: number, inCombat: boolean): number
+	if not inCombat or expiresAt <= now then
+		return 0
+	end
+	return stacks
+end
+
+-- The skill consumes Arcane Charges (Arcane Discharge: values.perCharge; no fixed id in code).
+function Skills.consumesCharges(def: SkillDef): boolean
+	return def.values ~= nil and def.values.perCharge ~= nil
+end
+
+-- (paid, base) from a base cost: the S79 hooks (areaCost / spellCost), then Arcane Charges (damaging spells),
+-- then the saving (costReduce, S62). Charges raise the base cost; the saving applies to them too (STATY 3, S80).
+local function applyCostMods(skill: SkillDef, base: number, mods: CostMods?): (number, number)
+	local hooks = if mods then mods.hooks else nil
+	local pct = if mods and mods.costPct then mods.costPct else 0
+	local spell = Skills.isSpell(skill)
+	-- S79 (ROZWOJ 14.4): spell cost hooks in the base (before the item saving), plus = dearer
+	if spell then
+		pct += hookValue(hooks, "spellCost")
+		if Skills.tag(skill) == "area" then
+			pct += hookValue(hooks, "areaCost")
+		end
+	end
+	base *= math.max(0, 1 + pct / 100)
+	-- S76 (ROZWOJ 11.4, Poacher's Thrift): a node discount, so it sits in the base next to costPct
+	local trapCost = if skill.type == "trap" then hookValue(hooks, "trapCost") else 0
+	if trapCost ~= 0 then
+		base *= math.max(0, 1 - trapCost / 100)
+	end
+	-- S80: Arcane Charges, a factor of its own after the S79 hooks
+	local charges = if mods and mods.charges then mods.charges else 0
+	if spell and charges > 0 then
+		base *= Skills.chargeCostFactor(charges, hookValue(hooks, "chargeCost"))
+	end
+	local saving = math.clamp(if mods and mods.costReduce then mods.costReduce else 0, 0, COST_REDUCE_CAP)
+	return base * (1 - saving / 100), base
+end
+
 -- Resource cost of `skill` (the def after Skills.effective, so breakpoint cost changes apply) at rank `rank` for a
 -- character of level `level` and class `classId`. Mana skills of a class with a "manaCost.<classId>" level curve cost
 -- more with the level (Mage, owner answer 25). Not rounded: the server and the skill bar compare the same number.
 -- One function for the server, the skill bar, the description and the wiki; `rank` comes from the character level.
--- (paid, base): Arcanist power reads the base cost (STATY 3), saving does not weaken it (S80/S81). `paid` is the base
--- after the item saving (mods.costReduce); a call that keeps one value gets what the player pays.
+-- (paid, base): base holds the curve, the S79 cost hooks and Arcane Charges; the saving (costReduce) comes last
+-- (STATY 3, S80). A call that keeps one value gets what the player pays.
 function Skills.cost(skill: SkillDef, rank: number, level: number, classId: string, mods: CostMods?): (number, number)
 	local base = Skills.scaled(skill, skill.cost, rank)
 	if base <= 0 then
@@ -502,23 +572,29 @@ function Skills.cost(skill: SkillDef, rank: number, level: number, classId: stri
 	if skill.resource == "mana" and LevelCurves.has(curve) then
 		base *= LevelCurves.at(curve, level)
 	end
-	local pct = if mods and mods.costPct then mods.costPct else 0
-	-- S79 (ROZWOJ 14.4): spell cost hooks in the base (before the item saving), plus = dearer
-	if Skills.isSpell(skill) then
-		local hooks = if mods then mods.hooks else nil
-		pct += hookValue(hooks, "spellCost")
-		if Skills.tag(skill) == "area" then
-			pct += hookValue(hooks, "areaCost")
-		end
+	return applyCostMods(skill, base, mods)
+end
+
+-- S80: Arcane Torrent's mana per tick. Percent of max mana, so no mana curve (ROZWOJ 12.5); the same modifiers as
+-- Skills.cost (one rule for the server, the bar and the tooltip).
+function Skills.drain(skill: SkillDef, rank: number, maxMana: number, mods: CostMods?): (number, number)
+	local pct = if skill.values.drain ~= nil then Skills.valueAt(skill, "drain", rank) else 0
+	local base = maxMana * pct / 100
+	if base <= 0 then
+		return 0, 0
 	end
-	base *= math.max(0, 1 + pct / 100)
-	-- S76 (ROZWOJ 11.4, Poacher's Thrift): a node discount, so it sits in the base next to costPct
-	local trapCost = if mods and mods.hooks and skill.type == "trap" then mods.hooks["trapCost"] or 0 else 0
-	if trapCost ~= 0 then
-		base *= math.max(0, 1 - trapCost / 100)
-	end
-	local saving = math.clamp(if mods and mods.costReduce then mods.costReduce else 0, 0, COST_REDUCE_CAP)
-	return base * (1 - saving / 100), base
+	return applyCostMods(skill, base, mods)
+end
+
+-- S80: ticks of a beam (after Skills.effective: Inexhaustible Torrent's +1 s gives 10).
+function Skills.beamTicks(def: SkillDef): number
+	local duration = if type(def.duration) == "number" then def.duration else 0
+	return math.max(1, math.floor(duration / (def.interval or 0.5) + 1e-6))
+end
+
+-- S80: tick n of a beam deals dmg x (1 + growth % x (n - 1)).
+function Skills.beamTickPct(dmg: number, growth: number, n: number): number
+	return dmg * (1 + growth / 100 * (n - 1))
 end
 
 -- S64 (STATY 2C, owner answer 26): item cooldown reduction, capped by Combat.cdrCap.
@@ -787,6 +863,10 @@ function Skills.descriptionArgs(base: SkillDef, rank: number, opts: DescOpts?): 
 	if skill.type == "companion" and skill.interval then
 		args.interval = round(skill.interval)
 	end
+	-- S80: only for beams (other skills keep their wiki args)
+	if skill.type == "beam" then
+		args.ticks = Skills.beamTicks(skill)
+	end
 	if skill.ringRadius then
 		args.ringRadius = round(skill.ringRadius)
 	end
@@ -959,9 +1039,9 @@ export type GuardSpec = {
 }
 
 -- Master Mind (channelGuard): damage reduction for the whole channel; it ends with the channel (SkillService).
+-- S80 (ROZWOJ 14.4): on a "channel" or a "beam" (Arcane Torrent); never on aiming.
 function Skills.channelGuard(kind: string, value: number, duration: number): GuardSpec?
-	-- S80 adds "beam"
-	if kind ~= "channel" or value <= 0 or duration <= 0 then
+	if (kind ~= "channel" and kind ~= "beam") or value <= 0 or duration <= 0 then
 		return nil
 	end
 	return {

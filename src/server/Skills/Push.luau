@@ -2,12 +2,14 @@
 -- Knockback and pull of skills (S28): moves a monster (or a player in PvP, half the distance) along the ground over a
 -- short moment. Bosses do not move. A ray along the path stops the move before walls (Logic/Knockback gets the free
 -- fraction); the body is put back on the ground at the end and the monster's AI walks on from there.
+-- S80: Push.Moved tells SkillService when a player starts being moved (a beam ends, Logic/Channel "knockback").
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 
 local Knockback = require(ReplicatedStorage.Shared.Logic.Knockback)
+local Signal = require(ReplicatedStorage.Packages.Signal)
 
 local Push = {}
 
@@ -22,6 +24,9 @@ local movedHandlers: { (entity: any) -> () } = {}
 function Push.OnMoved(handler: (entity: any) -> ())
 	table.insert(movedHandlers, handler)
 end
+
+-- S80: fired when a knockback or a pull starts moving a player (channels end, Logic/Channel "knockback")
+Push.Moved = Signal.new()
 
 local function blockers(): RaycastParams
 	local params = RaycastParams.new()
@@ -62,6 +67,9 @@ local function slide(entity: any, model: Model, root: BasePart, goal: Vector3)
 		return
 	end
 	moving[model] = true
+	if entity.kind == "player" then
+		Push.Moved:Fire(entity)
+	end
 	local start = root.Position
 	local offset = model:GetPivot().Position - start
 	local params = blockers()

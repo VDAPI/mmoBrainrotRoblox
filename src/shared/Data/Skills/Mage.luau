@@ -235,4 +235,89 @@ return Build.class("Mage", "mana", "magic", {
 		breakpoints = Build.bp2({ a = { add = { hits = 2 } } }, { a = { add = { radius = 4 } } }),
 		glyph = "✺",
 	},
+	-- S80 (ROZWOJ 12.4): Destroyer. Elemental Vortex follows the mage (circleSelf re-centres every wave) and does not
+	-- block other spells; the weapon's element adds its effect.
+	{
+		id = "elementalVortex",
+		path = "destroyer",
+		unlock = 26,
+		maxLevel = 10,
+		type = "circleSelf",
+		delivery = "melee",
+		cost = 40,
+		cooldown = 12,
+		radius = 7,
+		hits = 10,
+		interval = 0.4,
+		adaptive = true,
+		values = { dmg = { 12, 13 } },
+		breakpoints = Build.bp2({ a = { add = { radius = 2 } }, b = { values = { dmg = 2 } } }, {
+			a = { add = { hits = 3 } },
+			b = {
+				selfEffect = { kind = "damageReduction", duration = 6, value = 20, target = "self", category = "own" },
+			},
+		}),
+		glyph = "❋",
+	},
+	-- Cataclysm (capstone): pulls the whole circle to the point first (bosses immune), then 5 waves.
+	{
+		id = "cataclysm",
+		path = "destroyer",
+		unlock = 60,
+		maxLevel = 10,
+		type = "circleTarget",
+		delivery = "ranged",
+		cost = 90,
+		cooldown = 30,
+		range = 38,
+		radius = 12,
+		hits = 5,
+		interval = 0.6,
+		pull = true,
+		adaptive = true,
+		values = { dmg = { 60, 70 } },
+		breakpoints = Build.bp2({ a = { add = { radius = 3 } }, b = { values = { dmg = 7 } } }, {
+			a = { lingering = { pct = 25, duration = 4, kind = "element" } },
+			b = { echo = { delay = 0.8, pct = 100 } },
+		}),
+		glyph = "✵",
+	},
+	-- S80 (ROZWOJ 12.5): Arcanist. Arcane Discharge: pure magic, consumes every Arcane Charge for +perCharge % each.
+	{
+		id = "arcaneDischarge",
+		path = "arcanist",
+		unlock = 26,
+		maxLevel = 10,
+		type = "projectile",
+		delivery = "ranged",
+		cost = 20,
+		cooldown = 6,
+		range = 38,
+		values = { dmg = { 140, 230 }, perCharge = 12 },
+		breakpoints = Build.bp2(
+			{ a = { values = { perCharge = 5 } }, b = { mul = { cooldown = 0.8 } } },
+			{ a = { execute = 35 }, b = { splash = { radius = 5, pct = 40 } } }
+		),
+		glyph = "✴",
+	},
+	-- Arcane Torrent (capstone): a beam (Logic/Channel "beam"): damage does not break it; mana per tick, no cost.
+	{
+		id = "arcaneTorrent",
+		path = "arcanist",
+		unlock = 60,
+		maxLevel = 10,
+		type = "beam",
+		delivery = "ranged",
+		cost = 0,
+		cooldown = 25,
+		range = 30,
+		duration = 4,
+		interval = 0.5,
+		values = { dmg = { 160, 170 }, growth = 2, drain = 1.5 },
+		breakpoints = Build.bp2(
+			{ a = { values = { growth = 1 } }, b = { channelMove = 50 } },
+			{ a = { values = { dmg = 30 } }, b = { splash = { radius = 4, pct = 35 } } }
+		),
+		glyph = "≋",
+	},
 })

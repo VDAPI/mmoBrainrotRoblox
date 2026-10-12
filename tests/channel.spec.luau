@@ -62,4 +62,51 @@ T.describe("channelMove (S79)", function()
 	end)
 end)
 
+T.describe("beam (S80)", function()
+	local function pair(kind: string, event: any, def: any): { boolean }
+		local stop, refund = Channel.stops(kind, event, def)
+		return { stop, refund }
+	end
+
+	T.it("damage never ends a beam; a channel still ends on damage", function()
+		T.expect(pair("beam", "damage", {})).toEqual({ false, false })
+		T.expect((Channel.stops("channel", "damage", {}))).toBe(true)
+	end)
+
+	T.it("a stun ends a beam, not a channel; another cast ends a beam, not an aim", function()
+		T.expect(pair("beam", "disabled", {})).toEqual({ true, false })
+		T.expect((Channel.stops("channel", "disabled", {}))).toBe(false)
+		T.expect(pair("beam", "cast", {})).toEqual({ true, false })
+		T.expect((Channel.stops("castTime", "cast", {}))).toBe(false)
+	end)
+
+	T.it("moving 3 studs ends a beam without channelMove", function()
+		T.expect(Channel.afterMove("beam", 3, {})).toBe(true)
+		T.expect(Channel.afterMove("beam", 3, { channelMove = 50 })).toBe(false)
+		T.expect(Channel.afterMove("beam", 2, {})).toBe(false)
+	end)
+
+	T.it("a knockback ends only a beam (with channelMove too)", function()
+		T.expect(pair("beam", "knockback", { channelMove = 50 })).toEqual({ true, false })
+		T.expect((Channel.stops("channel", "knockback", {}))).toBe(false)
+		T.expect((Channel.stops("castTime", "knockback", {}))).toBe(false)
+	end)
+
+	T.it("target, range, mana and death end a beam without a refund", function()
+		for _, event in { "target", "range", "noMana", "death" } do
+			T.expect({ event, pair("beam", event, {}) }).toEqual({ event, { true, false } })
+		end
+		T.expect((Channel.stops("channel", "range", {}))).toBe(false)
+	end)
+
+	T.it("Torrent 5B walks: channelMove on the definition", function()
+		local torrent = SkillData.byId.arcaneTorrent
+		local walking = Skills.effective(torrent, 10, { ["arcaneTorrent:5"] = "b" }, nil, true)
+		T.expect(walking.channelMove).toBe(50)
+		T.expect(Channel.afterMove("beam", 3, walking)).toBe(false)
+		local chosenA = Skills.effective(torrent, 10, { ["arcaneTorrent:5"] = "a" }, nil, true)
+		T.expect(chosenA.channelMove).toBeNil()
+	end)
+end)
+
 return nil

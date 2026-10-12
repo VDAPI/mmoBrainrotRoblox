@@ -24,6 +24,9 @@
 -- published as the model attributes "Fury" / "FuryMax" and feeding the stat source "fury"; combat hooks come through
 -- SetHookReader (CombatService). The "carnage" effect (own) freezes Fury's decay and raises its gain. The intercept
 -- filter applies Martyr (interceptMitigation) and Retribution (interceptThorns) to the moved part.
+-- S80: Arcane Charges ("arcaneCharge") and Empowering Invocation ("empowered") are ordinary own entries with stacks
+-- (S63 / S76); Stacks reads one, UseStack takes one stack off. Neither is a debuff, so death and Purify keep them
+-- (SkillService takes them off on death and out of combat).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -495,6 +498,53 @@ function StatusEffectService.Max(entity: any, kind: string): number
 		best = math.max(best, effect.value)
 	end
 	return best
+end
+
+-- S80 (ROZWOJ 12.5): stacks, end and the value of one stack of the running entry of `kind` with the most stacks
+-- (Arcane Charges, empowered); 0, 0, 0 without one. One stack's value, since `value` is unit x stacks (S63).
+function StatusEffectService.Stacks(entity: any, kind: string): (number, number, number)
+	local best: Effect? = nil
+	for _, effect in active(entity, kind) do
+		if best == nil or (effect.stacks or 1) > (best.stacks or 1) then
+			best = effect
+		end
+	end
+	if not best then
+		return 0, 0, 0
+	end
+	local stacks = best.stacks or 1
+	local unit = if best.unit ~= nil then best.unit else best.value / stacks
+	return stacks, best.expiresAt, unit
+end
+
+-- S80: takes one stack off the running entry of `kind` with the most stacks and returns one stack's value; the last
+-- stack removes the entry. The icons see the change at once (S63).
+function StatusEffectService.UseStack(entity: any, kind: string): number?
+	local best: Effect? = nil
+	for _, effect in active(entity, kind) do
+		if best == nil or (effect.stacks or 1) > (best.stacks or 1) then
+			best = effect
+		end
+	end
+	if not best then
+		return nil
+	end
+	local e = best :: Effect
+	local stacks = e.stacks or 1
+	local unit = if e.unit ~= nil then e.unit else e.value / stacks
+	if stacks <= 1 then
+		local list = effects[entity.id]
+		local index = list and table.find(list, e)
+		if list and index then
+			table.remove(list, index)
+		end
+	else
+		e.stacks = stacks - 1
+		e.unit = unit
+		e.value = unit * (stacks - 1)
+	end
+	changed(entity, kind)
+	return unit
 end
 
 -- S63 (STATY 5): working value of a "value" category (Data/BuffCategories) on the entity: EffectStack.value over the

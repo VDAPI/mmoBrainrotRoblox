@@ -23,7 +23,7 @@
 -- and lastStand (also on intercepted parts), threat through MonsterService's threatMultiplier, bleedDamage in DotBonus,
 -- block energy in onBlock (NodeHook), KillInfo.finisher for Carnage.
 --
--- S76 (ROZWOJ 11.3, 11.4): no basic attacks while aiming (castTime); every poison of a player goes through ApplyPoison
+-- S76 (ROZWOJ 11.3, 11.4): no basic attacks while aiming (castTime, S80: and beams); every poison of a player goes through ApplyPoison
 -- (poisonSlow), poisonDamage sits in DotBonus, poisonedGuard is an own reduction against an attacker the player has
 -- poisoned, and a monster's death moves the rest of its poisons (poisonSpread) and marks (jump) to the nearest.
 
@@ -1431,8 +1431,9 @@ local function tryBasicAttack(player: Player, state: Attacker, now: number)
 		return
 	end
 	-- S76: no basic attacks while aiming (castTime); Focus / Prayer channels keep them (ROZWOJ 14.3).
+	-- S80: nor during a beam (the ray comes from the weapon; a swing would break the channel's animation loop).
 	local channel = PlayerStateService.Get(player, { "skills", "channel" })
-	if type(channel) == "table" and channel.kind == "castTime" then
+	if type(channel) == "table" and (channel.kind == "castTime" or channel.kind == "beam") then
 		return
 	end
 	local target = EntityService.Get(targetId)

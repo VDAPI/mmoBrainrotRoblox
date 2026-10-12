@@ -447,4 +447,40 @@ describe("Knockback", function()
 	end)
 end)
 
+describe("Mage S80 motions and looks", function()
+	it("four path skills: motion, visual, lock, loop, release, texts", function()
+		for _, id in { "elementalVortex", "cataclysm", "arcaneDischarge", "arcaneTorrent" } do
+			local motion = SkillMotions.get(id)
+			expect({ id, motion ~= nil, SkillVfx[id] ~= nil }).toEqual({ id, true, true })
+			for _, suffix in { "bp5", "bp5b", "bp10", "bp10b" } do
+				local key = `skill.{id}.{suffix}`
+				expect({ key, (pl :: any)[key] ~= nil, (en :: any)[key] ~= nil }).toEqual({ key, true, true })
+			end
+		end
+		local torrent: any = SkillMotions.get("arcaneTorrent")
+		expect(torrent.loop ~= nil and torrent.lock == true).toBe(true)
+		local cataclysm: any = SkillMotions.get("cataclysm")
+		expect(cataclysm.lock == true and cataclysm.hit <= SkillMotions.MAX_HIT).toBe(true)
+		local vortex: any = SkillMotions.get("elementalVortex")
+		expect(vortex.lock).toBeNil()
+		local discharge: any = SkillMotions.get("arcaneDischarge")
+		expect(discharge.release ~= nil).toBe(true)
+	end)
+
+	it("everyWave within impact, waves only on circleTarget, chargeSize only with a projectile", function()
+		for id, entry in SkillVfx do
+			for _, name in entry.everyWave or {} do
+				expect({ id, name, table.find(entry.impact, name) ~= nil }).toEqual({ id, name, true })
+			end
+			if entry.waves then
+				local skill = SkillData.get(id)
+				expect({ id, skill ~= nil and skill.type == "circleTarget" }).toEqual({ id, true })
+			end
+			if entry.chargeSize then
+				expect({ id, entry.projectile ~= nil }).toEqual({ id, true })
+			end
+		end
+	end)
+end)
+
 return nil

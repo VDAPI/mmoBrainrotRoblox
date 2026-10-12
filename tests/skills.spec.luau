@@ -33,6 +33,7 @@ local VALID_TYPES = {
 	shout = true,
 	banner = true,
 	companion = true, -- S77
+	beam = true, -- S80
 	passive = true,
 }
 
@@ -87,6 +88,16 @@ T.describe("Data: Skills", function()
 						and (skill.radius or 0) > 0
 						and skill.values.dmg ~= nil,
 					"companion needs duration, interval, range, radius and values.dmg"
+				)
+			elseif skill.type == "beam" then
+				check(
+					(skill.range or 0) > 0
+						and skill.duration ~= nil
+						and (skill.interval or 0) > 0
+						and skill.values.dmg ~= nil
+						and skill.values.growth ~= nil
+						and skill.values.drain ~= nil,
+					"beam needs range, duration, interval and values.dmg, growth, drain"
 				)
 			elseif skill.type == "line" or skill.type == "blink" then
 				check((skill.length or 0) > 0, "needs length")
@@ -2051,6 +2062,113 @@ T.describe("S79 spell cost hooks", function()
 		T.expect(def.hits).toBe(2)
 		T.expect(def.channelMove).toBe(50)
 		T.expect(firebolt.channelMove).toBeNil()
+	end)
+end)
+
+-- S80 (ROZWOJ 12.4, 12.5): Arcane Charges, the beam and the four new Mage skills.
+T.describe("Arcane Charges and beam (S80)", function()
+	local GamePaths = require("../src/shared/Logic/Paths")
+	local fireball = SkillData.byId.fireball
+	local blink = SkillData.byId.blink
+	local torrent = SkillData.byId.arcaneTorrent
+	local NEW = {
+		elementalVortex = { path = "destroyer", unlock = 26, delivery = "melee" },
+		cataclysm = { path = "destroyer", unlock = 60, delivery = "ranged" },
+		arcaneDischarge = { path = "arcanist", unlock = 26, delivery = "ranged" },
+		arcaneTorrent = { path = "arcanist", unlock = 60, delivery = "ranged" },
+	}
+
+	T.it("charges raise the base cost of damaging spells, the saving applies after them", function()
+		local paid0, base0 = Skills.cost(fireball, 10, 60, "Mage")
+		local paid4, base4 = Skills.cost(fireball, 10, 60, "Mage", { charges = 4 })
+		T.expect(base4).toBeNear(base0 * 1.6)
+		T.expect(paid4).toBeNear(paid0 * 1.6)
+		local _, cool = Skills.cost(fireball, 10, 60, "Mage", { charges = 4, hooks = { chargeCost = -12 } })
+		T.expect(cool).toBeNear(base0 * 1.12)
+		local paid, base = Skills.cost(fireball, 10, 60, "Mage", { charges = 4, costReduce = 20 })
+		T.expect(paid / base).toBeNear(0.8)
+		T.expect({ Skills.cost(blink, 10, 60, "Mage", { charges = 4 }) })
+			.toEqual({ Skills.cost(blink, 10, 60, "Mage") })
+		T.expect({ Skills.cost(fireball, 10, 60, "Mage", { charges = 0 }) }).toEqual({ paid0, base0 })
+	end)
+
+	T.it("damage factors, decay and the cap", function()
+		T.expect(Skills.chargeDamageFactor(4, 0)).toBeNear(1.08)
+		T.expect(Skills.chargeDamageFactor(4, 1.5)).toBeNear(1.14)
+		T.expect(Skills.dischargeFactor(12, 4)).toBeNear(1.48)
+		T.expect(Skills.dischargeFactor(27, 4)).toBeNear(2.08)
+		T.expect(Skills.chargesNow(3, 110, 100, true)).toBe(3)
+		T.expect(Skills.chargesNow(3, 110, 100, false)).toBe(0)
+		T.expect(Skills.chargesNow(3, 90, 100, true)).toBe(0)
+		T.expect(Skills.chargesAfterGain(3, 1)).toBe(4)
+		T.expect(Skills.chargesAfterGain(4, 1)).toBe(4)
+		T.expect(Skills.chargesAfterGain(1, 4)).toBe(4)
+		T.expect(Skills.chargesAfterGain(0, 1)).toBe(1)
+	end)
+
+	T.it("damaging spells and the consumer", function()
+		for id in NEW do
+			T.expect({ id, Skills.isSpell(SkillData.byId[id]) }).toEqual({ id, true })
+		end
+		T.expect(Skills.consumesCharges(SkillData.byId.arcaneDischarge)).toBe(true)
+		for _, id in { "firebolt", "arcaneTorrent", "evocation" } do
+			T.expect({ id, Skills.consumesCharges(SkillData.byId[id]) }).toEqual({ id, false })
+		end
+	end)
+
+	T.it("Arcane Torrent: ticks, growth and the drain without the mana curve", function()
+		local def = Skills.effective(torrent, 1, nil, nil, true)
+		T.expect(Skills.beamTicks(def)).toBe(8)
+		local longer = Skills.effective(torrent, 1, nil, { { add = { duration = 1 } } }, true)
+		T.expect(Skills.beamTicks(longer)).toBe(10)
+		T.expect(Skills.beamTickPct(160, 2, 1)).toBeNear(160)
+		T.expect(Skills.beamTickPct(160, 2, 8)).toBeNear(182.4)
+		T.expect({ Skills.drain(torrent, 1, 1000, nil) }).toEqual({ 15, 15 })
+		T.expect((Skills.drain(torrent, 1, 1000, { charges = 4 }))).toBeNear(24)
+		local paid, base = Skills.drain(torrent, 1, 1000, { charges = 4, costReduce = 20 })
+		T.expect(paid).toBeNear(19.2)
+		T.expect(base).toBeNear(24)
+		T.expect({ Skills.drain(torrent, 10, 1000, nil) }).toEqual({ Skills.drain(torrent, 1, 1000, nil) })
+		T.expect(Skills.tag(torrent)).toBe("single")
+	end)
+
+	T.it("four path skills: path, delivery, unlock, A and B on 5 and 10", function()
+		for id, want in NEW do
+			local skill = SkillData.byId[id] :: any
+			T.expect({ id, skill.class, skill.path, skill.unlock, skill.delivery }).toEqual({
+				id,
+				"Mage",
+				want.path,
+				want.unlock,
+				want.delivery,
+			})
+			for _, at in { 5, 10 } do
+				local pair = skill.breakpoints[at]
+				T.expect({ id, at, pair.a ~= nil, pair.b ~= nil }).toEqual({ id, at, true, true })
+			end
+		end
+		T.expect((SkillData.byId.cataclysm :: any).pull).toBe(true)
+		T.expect(torrent.target).toBe("enemy")
+		T.expect(Skills.descriptionArgs(torrent, 1).ticks).toBe(8)
+		T.expect(Skills.descriptionArgs(fireball, 1).ticks).toBeNil()
+	end)
+
+	-- S81 replaces this case: the paths get a PathDef and the skills their nodes.
+	T.it("unreachable until S81 (no PathDef for destroyer / arcanist)", function()
+		local hotbar: { [string]: string } = {}
+		local slot = 0
+		for id in NEW do
+			slot += 1
+			hotbar[tostring(slot)] = id
+		end
+		local mage: any = { class = "Mage", level = 100, path = nil, hotbar = hotbar, equipment = {} }
+		local available = GamePaths.availableSkills(mage)
+		for id in NEW do
+			T.expect({ id, table.find(available, id) }).toEqual({ id, nil })
+			T.expect({ id, GamePaths.skillRank(mage, id) }).toEqual({ id, 0 })
+		end
+		T.expect((GamePaths.skillUsable(mage, "arcaneDischarge", GamePaths.weaponTypesOf(mage.equipment)))).toBe(false)
+		T.expect((GamePaths.validHotbar(mage))).toEqual({})
 	end)
 end)
 

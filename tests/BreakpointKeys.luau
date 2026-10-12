@@ -49,6 +49,8 @@ for _, key in
 		"firstWave",
 		"cdrPerTarget", -- S79
 		"channelMove",
+		"grantCharges", -- S80
+		"empower",
 		"effect",
 		"selfEffect",
 		"allyEffect",

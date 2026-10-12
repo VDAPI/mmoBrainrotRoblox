@@ -1652,3 +1652,33 @@
 - **S79** Łańcuch wybiera kolejny cel po odległości płaskiej (`Logic/Chain.path`, wcześniej pełnej 3D); zmienia to
   wybór tylko przy różnicy wysokości. Osłona `channelGuard` schodzi przy każdym końcu kanału jednym wyjściem
   (`endChannel`) przez `StatusEffectService.Remove(entity, kind, skillId)`.
+
+- S80 pobór Strumienia: % maks. many bez krzywej many z S54 (ROZWOJ 12.5), ale przez te same modyfikatory co koszt
+  (`Skills.drain` i `Skills.cost` dzielą `applyCostMods`: haki S79, Ładunki, `costReduce`); plan sesji prosił o krzywą,
+  kontrakt wygrywa.
+- S80 Ładunki podnoszą koszt bazowy (przed oszczędnością) osobnym mnożnikiem `1 + n × max(0, 15 + chargeCost) / 100`
+  po sumie haków S79 (nie dodają się do niej), więc Wyuczone formuły i `costReduce` zmniejszają też dopłatę. Moc
+  Arkanisty pochodzi z Ładunków (+2% za Ładunek, `perCharge` Wyładowania), nie z wydanej many: STATY 3 zamknięte.
+- S80 Ładunki: migawka z chwili rzutu (koszt, premia, `perCharge`); +1 po udanym rzucie czaru z obrażeniami poza
+  Wyładowaniem (Strumień na starcie wiązki); Wyładowanie zdejmuje wszystkie po udanym rzucie; powstają tylko przy
+  `Paths.skillUsable(char, ARCANE_CHARGES.consumer, broń)`; zmiana broni i koniec walki zdejmują je na rzucie, a
+  pętla co 1 s i śmierć także bez rzutu.
+- S80 `empowered`: 15 s (kontrakt nie podaje czasu), wartość i liczba użyć z klucza `empower = { pct, uses }` (`pct`
+  przez `ctx.resolve`); jedno użycie na rzut czaru z obrażeniami (Wyładowanie i Strumień też); `grantCharges` i
+  `empower` działają tylko po pełnym kanale.
+- S80 wiązka: koniec przy celu dalej niż zasięg + 5 st. (tolerancja rzutu), bez zwrotu odnowienia przy żadnym powodzie;
+  ogłuszenie, zamrożenie i odrzucenie kończą ją także z `channelMove`; nieudany inny rzut jej nie przerywa; ataki
+  podstawowe stoją w czasie wiązki; błąd tyku kończy wiązkę (nie zostawia Maga w kanale).
+- S80 nazwy zdarzeń `Logic/Channel.stops`: `knockback`, `cast`, `target`, `range`, `noMana` (obok `damage`, `move`,
+  `death` z S70 i `disabled` z S76), `Channel.afterMove`; sygnał `Push.Moved` (na starcie przesunięcia gracza);
+  `Config.Skills.channelMoveLimit`. `knockback` kończy tylko wiązkę: Inwokacja, Modlitwa i celowanie Łowcy zostają
+  przy regule odległości.
+- S80 reużycia: „czar z obrażeniami” z 12.5 to `Skills.isSpell` z S79; wspólne wyjście kanału S79 (`endChannel`)
+  rozbudowane i nazwane `closeChannel` (`interruptChannel` to nakładka); `ApplyOptions.stacks` z S76. Premia Ładunków i
+  Wzmocnienia (`ctx.castMul`) pomija tyki stref, jak premie czarów S79 (`not opts.lingering`).
+- S80 Kataklizm: `range = 38` (12.4 nie podaje zasięgu; jak Meteor i Wyładowanie).
+- S80 wygląd: pola `SkillVfx` `everyWave`, `waves`, `chargeSize`; Kataklizm wysyła zdarzenie na falę; kurz przy każdym
+  ściąganiu; zdarzenie `cast` kanału niesie `d` i `mv` (pętla animacji Inwokacji gra, Inwokacja blokuje ruch na czas
+  ruchu jak inne `lock`).
+- S80 Ładunki i `empowered` mają `category = "own"` i źródło gracza bez `skillId` (jeden wpis na rodzaj); licznik
+  Ładunków klient czyta z atrybutu `Effects` (`EffectStack.stacksOf`).

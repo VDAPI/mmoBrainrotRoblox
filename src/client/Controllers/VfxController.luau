@@ -13,6 +13,11 @@
 --       `d` seconds after each event); traps with a `trigger` list play it when they spring (S77)
 --   v = furyConsume (S74)  a red aura on the Warrior who spent Fury; impact events with `al` play the entry's `allies`
 --       pieces on those allies (guard, shout); War Banner objects (Workspace.Vaelthorn_Banners) are drawn here
+--   S80 (ROZWOJ 12.4, 12.5): a beam (Arcane Torrent) loops its motion for the cast event's `d`; each tick (impact with
+--       `n`) draws a ray from the weapon's tip, wider every tick; v = beamEnd stops the loop and gives our walk back.
+--       `ch` (Arcane Charges spent) grows Arcane Discharge's bolt by the entry's chargeSize; SkillVfx `everyWave`
+--       picks the pieces of later waves, `waves` (Cataclysm) gets one event per wave; a pull raises dust. Arcane
+--       Charges circle every player who has them (orbs from the "Effects" attribute).
 -- Pieces come from client/Vfx/Library (pooled parts, Config.Vfx.maxActive at once); effects of other players far
 -- away and low graphics quality use the simple versions. Melee impacts freeze both animations for a moment
 -- (hitstop) and big skills shake the camera of players nearby (setting "Camera shake").
@@ -23,6 +28,7 @@ local Workspace = game:GetService("Workspace")
 
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local Config = require(ReplicatedStorage.Shared.Config)
+local EffectStack = require(ReplicatedStorage.Shared.Logic.EffectStack)
 local Library = require(script.Parent.Parent.Vfx.Library)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Pool = require(script.Parent.Parent.Vfx.Pool)
@@ -67,6 +73,15 @@ local falcons: { [string]: Library.Falcon } = {}
 local shakeCamera: ((strength: number) -> ())? = nil
 -- Local movement lock while our own `lock` motion plays (released by the motion's end).
 local lockToken = 0
+-- S80: the running lock (humanoid, speed before it, speed it set), so beamEnd can give the walk back at once.
+local lockHumanoid: Humanoid? = nil
+local lockSpeed = 0
+local lockLocked = 0
+
+-- S80: the beam's ray (looks only): width of the first tick and growth per tick; the Arcane Charge orbs' colour.
+local BEAM_WIDTH = 0.25
+local BEAM_WIDTH_STEP = 0.06
+local CHARGE_COLOR = Color3.fromHex("#B07CFF")
 
 -- Helpers ---------------------------------------------------------------------------------------------------
 
@@ -95,6 +110,26 @@ local function findModel(entityId: string?): Model?
 end
 
 local centre = Library.centre
+
+-- S80: the tip of a model's weapon (VaelthornTip, EquipmentService), else half a stud above its centre.
+local function weaponTip(model: Model): Vector3
+	local weapon = model:FindFirstChild("VaelthornWeapon")
+	local tip = weapon and weapon:FindFirstChild("VaelthornTip")
+	if tip and tip:IsA("Attachment") then
+		return tip.WorldPosition
+	end
+	return centre(model) + Vector3.new(0, 0.5, 0)
+end
+
+-- S80: gives our walk back now (a beam ended early); a server change of the speed meanwhile is kept.
+local function releaseLock()
+	local humanoid = lockHumanoid
+	lockToken += 1
+	lockHumanoid = nil
+	if humanoid and humanoid.Parent and humanoid.WalkSpeed == lockLocked then
+		humanoid.WalkSpeed = lockSpeed
+	end
+end
 
 local function colorOf(skill: SkillData.SkillDef, entry: SkillVfx.Entry?, element: any): Color3
 	local kind = if entry then entry.color else "class"
@@ -186,8 +221,9 @@ end
 local function onCast(data: { [string]: any }, skill: SkillData.SkillDef, caster: Model)
 	local entry = SkillVfx[skill.id]
 	local color = colorOf(skill, entry, data.el)
-	-- S77: the aim of castTime (S76 `ct`) holds the draw loop as long as the aim lasts (Heartseeker)
-	local loopUntil = if skill.type == "channel" then tonumber(data.d) else tonumber(data.ct)
+	-- S77: the aim of castTime (S76 `ct`) holds the draw loop as long as the aim lasts (Heartseeker); S80: a beam
+	-- loops for its whole time (beamEnd stops it early)
+	local loopUntil = if skill.type == "channel" or skill.type == "beam" then tonumber(data.d) else tonumber(data.ct)
 	local motion = AnimationController.Skill(caster, skill.id, loopUntil)
 	local simple = simpleAt(centre(caster), caster)
 	if not Pool.take() then
@@ -256,15 +292,24 @@ local function onCast(data: { [string]: any }, skill: SkillData.SkillDef, caster
 		if humanoid then
 			lockToken += 1
 			local token = lockToken
-			local speed = humanoid.WalkSpeed
+			-- S80: a lock still running (a beam cast on top) keeps the speed from before it
+			local speed = if lockHumanoid == humanoid and humanoid.WalkSpeed == lockLocked
+				then lockSpeed
+				else humanoid.WalkSpeed
 			local locked = if move then speed * move / 100 else 0
 			humanoid.WalkSpeed = locked
+			lockHumanoid = humanoid
+			lockSpeed = speed
+			lockLocked = locked
 			local seconds = (motion.keys[#motion.keys].t + motion.recover * 0.5)
 				+ (if loopUntil and motion.loop then math.max(0, loopUntil - motion.loop.to) else 0)
 			task.delay(seconds, function()
 				-- S63: the server changed the speed meanwhile (a slow started or ended): keep the server's value.
 				if lockToken == token and humanoid.Parent and humanoid.WalkSpeed == locked then
 					humanoid.WalkSpeed = speed
+				end
+				if lockToken == token then
+					lockHumanoid = nil
 				end
 			end)
 		end
@@ -470,11 +515,33 @@ local function onImpact(data: { [string]: any }, skill: SkillData.SkillDef, cast
 	end
 	Pool.done(TELEGRAPH_SECONDS + 1)
 	local kind = skill.type
+	-- S80: a beam tick, a ray from the weapon's tip, wider every tick; every piece lives one tick
+	if kind == "beam" then
+		if caster and target then
+			local n = tonumber(data.n) or 1
+			local interval = skill.interval or 0.5
+			Library.beam(
+				weaponTip(caster),
+				centre(target),
+				color,
+				BEAM_WIDTH + BEAM_WIDTH_STEP * (n - 1),
+				interval + 0.05
+			)
+			Library.sparkle(target, color, simple)
+			Library.aura(caster, color, interval + 0.1, simple)
+			if n == 1 then
+				playSound(entry, caster)
+			end
+		end
+		return
+	end
 	-- Projectiles fly to the target; the pieces play on arrival.
 	if kind == "projectile" and caster and target then
 		local from = centre(caster) + Vector3.new(0, 0.8, 0)
+		-- S80: Arcane Discharge grows with the charges it spent
+		local size = (entry.size or 1) + (entry.chargeSize or 0) * (tonumber(data.ch) or 0)
 		Library.projectile(from, target, entry.projectile or "orb", color, {
-			size = entry.size,
+			size = size,
 			simple = simple,
 			onArrive = function()
 				for _, name in entry.impact do
@@ -504,8 +571,12 @@ local function onImpact(data: { [string]: any }, skill: SkillData.SkillDef, cast
 	-- Circle waves of the same cast: only the first plays the full set (later waves: the ring). S77: `n` of a trap
 	-- is the snare's index (S76), so every snare plays the full set.
 	local wave = if kind == "trap" then 1 else tonumber(data.n) or 1
+	local everyWave = entry.everyWave -- S80: the entry's own pieces of later waves
 	for _, name in entry.impact do
-		if wave == 1 or name == "shockwave" or name == "whirl" or name == "cracks" or name == "pillar" then
+		local again = if everyWave
+			then table.find(everyWave, name) ~= nil
+			else name == "shockwave" or name == "whirl" or name == "cracks" or name == "pillar"
+		if wave == 1 or again then
 			piece(name, skill, entry, data, color, caster, target, simple)
 		end
 	end
@@ -635,6 +706,14 @@ local function onExtra(data: { [string]: any }, skill: SkillData.SkillDef, caste
 			falcons[id] = nil
 			falcon.stop()
 		end
+	elseif v == "beamEnd" then
+		-- S80: the ray and the aura go out by themselves within a tick; stop the loop and give our walk back
+		if caster then
+			AnimationController.StopSkill(caster)
+			if caster == player.Character then
+				releaseLock()
+			end
+		end
 	elseif not at then
 		return
 	elseif v == "angelSave" then
@@ -677,6 +756,7 @@ local function onExtra(data: { [string]: any }, skill: SkillData.SkillDef, caste
 	elseif v == "pull" then
 		Library.shockwave(at, radius, color, 0.35, simple)
 		Library.rune(at, radius * 0.5, color, 0.5, true)
+		Library.dust(at, 1, simple) -- S80 (ROZWOJ 12.4): dust of the dragged enemies
 	end
 end
 
@@ -716,6 +796,22 @@ function VfxController.Preview(model: Model, skillId: string)
 	)
 	local def = Skills.effective(skill, rank, nil, nil)
 	local motion = SkillMotions.get(skillId)
+	-- S80: a beam loops its motion for 2 s with three rays from the weapon's tip to a point 10 studs ahead
+	if skill.type == "beam" then
+		onCast({ s = skillId, c = id, d = 2 }, skill, model)
+		local entry = SkillVfx[skill.id]
+		local color = colorOf(skill, entry, nil)
+		for i = 1, 3 do
+			task.delay((i - 1) * 0.5 + (if motion then motion.hit or 0 else 0), function()
+				local base = model:FindFirstChild("HumanoidRootPart") :: BasePart?
+				if base then
+					local ahead = base.Position + base.CFrame.LookVector * 10
+					Library.beam(weaponTip(model), ahead, color, BEAM_WIDTH + BEAM_WIDTH_STEP * (i - 1), 0.55)
+				end
+			end)
+		end
+		return
+	end
 	-- S77: an aimed skill loops its draw for castTime and lands after it
 	local castTime = if (def.castTime or 0) > 0 then def.castTime else nil
 	onCast(
@@ -793,6 +889,55 @@ local function watchBanner(model: Instance)
 	end)
 end
 
+-- S80 (ROZWOJ 12.5, 14.4): Arcane Charge orbs around every character with charges (the "Effects" attribute); none far
+-- away or on low graphics.
+local orbits: { [Model]: { count: number, stop: () -> () } } = {}
+
+local function refreshOrbit(model: Model)
+	local count = EffectStack.stacksOf(model:GetAttribute("Effects"), "arcaneCharge", Workspace:GetServerTimeNow())
+	if model.Parent == nil then
+		count = 0
+	end
+	local root = model:FindFirstChild("HumanoidRootPart") :: BasePart?
+	if count > 0 and simpleAt(if root then root.Position else nil, model) then
+		count = 0
+	end
+	local current = orbits[model]
+	if current and current.count == count then
+		return
+	end
+	if current then
+		current.stop()
+		orbits[model] = nil
+	end
+	if count > 0 then
+		orbits[model] = { count = count, stop = Library.orbit(model, count, CHARGE_COLOR, false) }
+	end
+end
+
+local function watchCharacter(model: Model)
+	refreshOrbit(model)
+	model:GetAttributeChangedSignal("Effects"):Connect(function()
+		refreshOrbit(model)
+	end)
+	model.AncestryChanged:Connect(function()
+		if not model:IsDescendantOf(Workspace) then
+			local current = orbits[model]
+			if current then
+				current.stop()
+				orbits[model] = nil
+			end
+		end
+	end)
+end
+
+local function watchPlayer(other: Player)
+	if other.Character then
+		watchCharacter(other.Character)
+	end
+	other.CharacterAdded:Connect(watchCharacter)
+end
+
 -- Hooked by CombatFxController (camera shake with the setting applied).
 function VfxController.SetShake(fn: (strength: number) -> ())
 	shakeCamera = fn
@@ -809,6 +954,11 @@ function VfxController.Start()
 			VfxController.Preview(player.Character, arg)
 		end
 	end)
+	-- S80: Arcane Charge orbs
+	for _, other in Players:GetPlayers() do
+		watchPlayer(other)
+	end
+	Players.PlayerAdded:Connect(watchPlayer)
 	task.spawn(function()
 		local folder = Workspace:WaitForChild("Vaelthorn_Banners")
 		folder.ChildAdded:Connect(watchBanner)

@@ -70,6 +70,7 @@ local DEFAULT_TARGET: { [string]: Types.TargetMode } = {
 	shout = "none",
 	banner = "point", -- no aim: at the caster's feet
 	companion = "none", -- S77: the Falcon picks its own target (Skills/Companion)
+	beam = "enemy", -- S80: Arcane Torrent
 	passive = "none",
 }
 

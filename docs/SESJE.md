@@ -4065,3 +4065,45 @@ Pliki: `src/shared/{Logic/{Skills,Chain,Channel,StatCalc,Traits},Data/{Stats,Ski
 Localization/{pl,en}}}`, `src/server/{Skills/{Context,Elements,Types/Offense},Services/{SkillService,
 StatusEffectService}}`, `src/client/{Controllers/SkillController,UI/SkillInfo}`, `tests/{mage,skills,channel,traits}.spec`,
 `tests/BreakpointKeys`, `wiki/src/data/*`, `docs/{DECYZJE,SESJE,PROGRESS,PRZEDMIOTY}.md`, `CLAUDE.md`.
+
+### S80: Mag 2: Strumień Arkanów, Ładunki Arkanów i cztery nowe umiejętności
+
+Silnik Arkanisty i cztery umiejętności ścieżek Maga (ROZWOJ 12.4, 12.5, 14.4). Wir Żywiołów, Kataklizm, Wyładowanie
+Arkanów i Strumień Arkanów mają `path` bez `PathDef`, więc do S81 są nieosiągalne i ukryte na wiki; Ładunki powstają
+tylko z Wyładowaniem i bronią Arkanisty, haki `chargeCost`, `chargeDamage`, `chargeReclaim` czytają 0.
+
+- A: `SkillType.beam`, efekty `arcaneCharge` i `empowered`, przełomy `grantCharges` i `empower = { pct, uses }`
+  (`BreakpointKeys`), `DEFAULT_TARGET.beam`, stałe `ARCANE_CHARGES` i `EMPOWERED` w `Data/Skills`,
+  `Config.Skills.channelMoveLimit` (lokalna stała `SkillService` usunięta). `Skills.effective` przepuszcza nowe klucze
+  bez zmian; `channelMove` S79 już było na definicji.
+- B: `Logic/Channel`: rodzaj `beam`, zdarzenia `knockback`, `cast`, `target`, `range`, `noMana`, `Channel.afterMove`
+  (pętla kanału sprawdza nim ruch każdego rodzaju). `Logic/Skills`: `consumesCharges`, `chargeCostFactor`,
+  `chargeDamageFactor`, `dischargeFactor`, `chargesAfterGain`, `chargesNow`, `drain`, `beamTicks`, `beamTickPct`,
+  wspólne `applyCostMods` dla `cost` i `drain`, `CostMods.charges`, `channelGuard` dla `beam`, `descriptionArgs.ticks`
+  tylko dla `beam`. `EffectStack.stacksOf` (licznik dla klienta).
+- C: `SkillService`: `endChannel` S79 rozbudowane do `closeChannel` (jedyne wyjście: stan, `channelGuard`, `beamEnd`,
+  `aimEnd` + `fizzle`, `onDone`, przywrócenie many, `grantCharges`, `empower`), `startChannel(ctx, onDone?, onRefund?,
+  beam?)` z tykami, poborem i sprawdzeniami przed tykiem, `services.Beam` (`startBeam`), `INSTANT.beam`, inny rzut
+  pyta `Channel.stops(…, "cast")`, `fizzle` przy odmowie wiązki. `Offense.beam`. `Push.Moved` (sygnał na starcie
+  przesunięcia gracza); poza `Push` graczy przesuwają tylko ich własne umiejętności ruchu (`Movement`), które i tak są
+  innym rzutem. `CombatService`: brak ataków podstawowych w czasie wiązki.
+- C5: pętla animacji Inwokacji naprawiona: zdarzenie `cast` kanału wysyła `d` i `mv` (S70–S79 tego nie zmieniły).
+- D: `StatusEffectService.Stacks` / `UseStack`; Ładunki i Wzmocnienie na rzucie (migawka, `ctx.castMul`,
+  `ctx.chargesSpent` → `ch`, `ctx.costMods`), po rzucie (+1, zużycie, `chargeReclaim`, użycie Wzmocnienia), po pełnym
+  kanale, przy śmierci i poza walką (pętla co 1 s po `chargeHolders`). `vortexGuard` dostaje Wir po `effective`, id w
+  `VORTEX_SKILL` zgadza się z danymi; `selfEffect` Wiru 10B ma klucz `skillId = elementalVortex`, Płaszcz
+  `destroyer_mantle`, więc trwają naraz.
+- E–F: cztery wpisy w `Data/Skills/Mage` i cztery ruchy w `Data/SkillMotions`.
+- G: `SkillVfx` (`everyWave`, `waves`, `chargeSize` i cztery wpisy), Kataklizm wysyła zdarzenie na falę,
+  `VfxController` (promień od `VaelthornTip` coraz szerszy, `beamEnd` z oddaniem ruchu, pocisk z `ch`, reguła fal,
+  kurz przy ściąganiu, podgląd `beam`, kule Ładunków), `Library.orbit`, ikony i liczniki `arcaneCharge` / `empowered`,
+  koszt z Ładunkami i pobór na tyk w `SkillController.Usable` (`ArcaneCharges`) i `SkillInfo.costLine`.
+- H: 28 kluczy PL i EN. Testy: `channel.spec` (`beam (S80)`), `skills.spec` (`Arcane Charges and beam (S80)`, typ
+  `beam` w „well formed”), `data.spec` (`beam` → `ranged`), `mage.spec` (osłona wiązki), `skillmotion.spec`.
+- Wiki: `npm run data` bez zmian w danych (poza znacznikiem commitu w `meta.json`, cofniętym).
+
+Pliki: `src/shared/{Config,Logic/{Channel,Skills,EffectStack},Data/{SkillMotions,SkillVfx,Skills/{init,Types,Build,
+Mage},Localization/{pl,en}}}`, `src/server/{Services/{SkillService,StatusEffectService,CombatService},Skills/{Context,
+Push,Types/Offense}}`, `src/client/{Controllers/{SkillController,VfxController},Vfx/Library,UI/{SkillInfo,
+Screens/Hud/EffectIcons}}`, `tests/{channel,skills,data,mage,skillmotion}.spec`, `tests/BreakpointKeys`,
+`docs/{DECYZJE,SESJE,PROGRESS,ROZWOJ,STATY}.md`, `CLAUDE.md`.

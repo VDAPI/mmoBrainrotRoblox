@@ -174,9 +174,8 @@ i pasek. Pole `tier = "regular" | "legendary" | "mythic"` w `BonusDef` zastępuj
   `CombatService` przy ataku podstawowym (Iskra żywiołu). Iskra podaje jej własny czas podpalenia (2 s), więc
   umiejętności zostają przy 4 s. Drabina obrażeń w czasie: podpalenie 2 s (najmocniejsze tyknięcie), rana 4 s
   (osłabia leczenie w PvP), trucizna 5 s (spowalnia atak, słabnie od odporności).
-- Arkanista (moc z wydawanej many, global J) liczy moc od kosztu przed oszczędnością: `Skills.cost` zwraca koszt
-  bazowy i koszt po oszczędności, więc Wyuczone formuły i `costReduce` nie osłabiają Arkanisty. Do potwierdzenia w
-  sesji Maga.
+- Arkanista nie liczy mocy z wydanej many: moc dają Ładunki Arkanów (ROZWOJ 12.5). Ładunki podnoszą koszt bazowy, a
+  `costReduce` i Wyuczone formuły obniżają koszt po nich, więc oszczędność pomaga Arkaniście, a nie go osłabia (S80).
 - Trzy cechy to premie do obrażeń z innym warunkiem: Ścięcie (cel poniżej 30% HP), Łatwy cel (cel pod kontrolą) i
   Pieczęć runiczna (Mag stoi w miejscu). Każda wymaga innej gry, ale Ścięcie i Łatwy cel liczą się w tym samym miejscu
   (`offensiveMultiplier`) i różnią tylko warunkiem i liczbą. Kusza ma domyślnie Łatwy cel; zapasowa zamiana, jeśli

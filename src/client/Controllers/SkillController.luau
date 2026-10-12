@@ -18,6 +18,7 @@ local Workspace = game:GetService("Workspace")
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local Device = require(script.Parent.Parent.UI.Device)
 local DragDrop = require(script.Parent.Parent.UI.DragDrop)
+local EffectStack = require(ReplicatedStorage.Shared.Logic.EffectStack)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Keybinds = require(script.Parent.Parent.UI.Keybinds)
 local Net = require(ReplicatedStorage.Shared.Net)
@@ -568,6 +569,15 @@ function SkillController.WeaponElement(): string?
 	return if type(weapon) == "table" then weapon.element else nil
 end
 
+-- S80 (ROZWOJ 12.5): Arcane Charges of our own character (stacks of "arcaneCharge" in the Effects attribute).
+function SkillController.ArcaneCharges(): number
+	local character = player.Character
+	if not character then
+		return 0
+	end
+	return EffectStack.stacksOf(character:GetAttribute("Effects"), "arcaneCharge", Workspace:GetServerTimeNow())
+end
+
 -- (enough resource, in range, weapon fits: the Mage element and, S57, the path weapon of a path skill)
 function SkillController.Usable(skillId: string): (boolean, boolean, boolean)
 	local skill = SkillData.get(skillId)
@@ -577,10 +587,16 @@ function SkillController.Usable(skillId: string): (boolean, boolean, boolean)
 	local rank = math.max(1, rankOf(skill))
 	local def = effective(skill, rank)
 	local c = me()
-	local cost = Skills.cost(def, rank, State.Get({ "character", "level" }) or 1, skill.class, {
+	local mods: Skills.CostMods = {
 		costReduce = State.Get({ "derived", "values", "costReduce" }) or 0, -- S62 item saving
-		hooks = Paths.passiveTotals(c, Paths.weaponTypesOf(c.equipment)).hooks, -- S76: trapCost
-	})
+		hooks = Paths.passiveTotals(c, Paths.weaponTypesOf(c.equipment)).hooks, -- S76 / S79 / S80 cost hooks
+		charges = SkillController.ArcaneCharges(), -- S80
+	}
+	local cost = Skills.cost(def, rank, State.Get({ "character", "level" }) or 1, skill.class, mods)
+	if def.type == "beam" then
+		-- S80: a beam needs the mana of one tick (Skills.drain, as the server counts it)
+		cost = Skills.drain(def, rank, State.Get({ "derived", "values", "maxMana" }) or 0, mods)
+	end
 	local current = if skill.resource then State.Get({ "character", skill.resource }) or 0 else math.huge
 	local enoughResource = current >= cost
 	local inRange = skill.target ~= "enemy" or SkillController.TargetDistance() <= (def.range or 10) + 2

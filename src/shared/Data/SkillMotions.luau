@@ -1316,6 +1316,140 @@ motions.meteorStorm = {
 	lock = true,
 }
 
+-- S80 (ROZWOJ 12.4, 12.5): the four path skills of the Mage.
+-- Elemental Vortex: both hands circling at the waist, a short call (the vortex follows the mage).
+motions.elementalVortex = {
+	keys = {
+		k(0.15, {
+			rShoulder = { 50, 30, 35 },
+			rElbow = { 70, 0, 0 },
+			lShoulder = { 50, -30, -35 },
+			lElbow = { 70, 0, 0 },
+			waist = { 0, 25, 0 },
+		}, "out"),
+		k(0.3, {
+			rShoulder = { 60, -20, 40 },
+			rElbow = { 50, 0, 0 },
+			lShoulder = { 60, 20, -40 },
+			lElbow = { 50, 0, 0 },
+			waist = { 0, -25, 0 },
+		}, "inOut"),
+		k(0.5, {
+			rShoulder = { 45, 0, 35 },
+			rElbow = { 60, 0, 0 },
+			lShoulder = { 45, 0, -35 },
+			lElbow = { 60, 0, 0 },
+			waist = { 0, 0, 0 },
+		}, "inOut"),
+	},
+	recover = 0.3,
+	hit = 0.3,
+}
+
+-- Cataclysm: a long call with both arms raised, ended with a crouch and the slammed pose as the circle strikes.
+motions.cataclysm = {
+	keys = {
+		k(
+			0.4,
+			merge(STAND, {
+				rShoulder = { 176, 0, 20 },
+				rElbow = { 10, 0, 0 },
+				lShoulder = { 176, 0, -20 },
+				lElbow = { 10, 0, 0 },
+				waist = { 20, 0, 0 },
+				root = { 4, 0, 0, 0.3 },
+			}),
+			"inOut"
+		),
+		k(
+			0.5,
+			merge(STAND, {
+				rShoulder = { 178, 0, 25 },
+				rElbow = { 5, 0, 0 },
+				lShoulder = { 178, 0, -25 },
+				lElbow = { 5, 0, 0 },
+				waist = { 22, 0, 0 },
+				root = { 5, 0, 0, 0.35 },
+			})
+		),
+		k(0.6, merge(crouch(0.6), SLAMMED, { waist = { -18, 0, 0 } }), "in"),
+		k(0.85, merge(crouch(0.6), SLAMMED, { waist = { -14, 0, 0 } })),
+	},
+	recover = 0.35,
+	hit = 0.6,
+	lock = true,
+}
+
+-- Arcane Discharge: energy gathered with both hands at the hip, pushed forward hard.
+motions.arcaneDischarge = {
+	keys = {
+		k(
+			0.3,
+			merge(STAND, {
+				rShoulder = { 30, 20, 35 },
+				rElbow = { 95, 0, 0 },
+				lShoulder = { 35, -40, 10 },
+				lElbow = { 95, 0, 0 },
+				waist = { 0, -32, 0 },
+				root = { 0, -10, 0, -0.25 },
+			}),
+			"inOut"
+		),
+		k(
+			0.42,
+			merge(lunge(0.6), {
+				rShoulder = { 95, 5, 0 },
+				rElbow = { 0, 0, 0 },
+				lShoulder = { 95, -5, 0 },
+				lElbow = { 0, 0, 0 },
+				waist = { -8, 20, 0 },
+			}),
+			"out"
+		),
+	},
+	recover = 0.3,
+	release = 0.4,
+	hit = 0.4,
+}
+
+-- Arcane Torrent: the weapon held in both hands before the chest for the whole beam (no legs: with 5B the mage walks).
+motions.arcaneTorrent = {
+	keys = {
+		k(0.25, {
+			rShoulder = { 85, 25, 0 },
+			rElbow = { 30, 0, 0 },
+			lShoulder = { 85, -25, 0 },
+			lElbow = { 30, 0, 0 },
+			waist = { -6, 0, 0 },
+		}, "out"),
+		k(0.6, {
+			rShoulder = { 90, 22, 0 },
+			rElbow = { 22, 0, 0 },
+			lShoulder = { 90, -22, 0 },
+			lElbow = { 22, 0, 0 },
+			waist = { -9, 0, 0 },
+		}, "inOut"),
+		k(0.95, {
+			rShoulder = { 85, 25, 0 },
+			rElbow = { 30, 0, 0 },
+			lShoulder = { 85, -25, 0 },
+			lElbow = { 30, 0, 0 },
+			waist = { -6, 0, 0 },
+		}, "inOut"),
+		k(1.3, {
+			rShoulder = { 20, 0, 12 },
+			rElbow = { 10, 0, 0 },
+			lShoulder = { 20, 0, -12 },
+			lElbow = { 10, 0, 0 },
+			waist = { 0, 0, 0 },
+		}, "inOut"),
+	},
+	recover = 0.3,
+	hit = 0.25,
+	loop = { from = 0.25, to = 0.95 },
+	lock = true,
+}
+
 -- Cleric -------------------------------------------------------------------------------------------------------
 
 -- Holy Strike: the mace raised high and brought down.
