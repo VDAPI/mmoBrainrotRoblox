@@ -18,6 +18,9 @@
 -- S71 (ROZWOJ 9.3-9.5): Context.healFactor is the one heal / shield multiplier (healBonus + allyHealBonus +
 -- lowHpHealBonus on heals, healPower, the healCrit roll); healFrom and Types/Support use it. Divine Wrath's heal lives
 -- in onHit (holyStrikeHeal; holyHealAll for HOLY_HEAL_SKILLS).
+-- S73 (ROZWOJ 14.2): every shield of a skill goes through `shield` (x healFactor, the one bonus path); `consumeFury`
+-- spends the caster's Fury for furyConsume skills (the stacks feed the furyConsume stats field); a "hot" effect with
+-- hpPct heals that % of the target's max HP per second x healFactor; `resolve` reads a ValueRef at the rank.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
@@ -44,6 +47,7 @@ export type Services = {
 	Pvp: any,
 	Party: any,
 	Death: any,
+	PartyAura: any, -- S73: BehindAnchor for behindEffect
 	Fx: (player: Player, data: { [string]: any }) -> (),
 	PassiveHook: (player: Player, id: string) -> number,
 	WeaponElement: (player: Player) -> string?,
@@ -65,6 +69,7 @@ export type Ctx = {
 	point: Vector3?,
 	services: Services,
 	value: (field: string) -> number,
+	resolve: (ref: SkillData.ValueRef?) -> number, -- S73: Logic/Skills.resolve at this rank
 	scaled: (value: SkillData.Scaled?) -> number,
 	bp: SkillData.Breakpoint, -- S28: merged breakpoint behaviours at this rank
 	attack: () -> number, -- physical or magic attack depending on the skill, x speedMul (S54)
@@ -79,6 +84,10 @@ export type Ctx = {
 	damage: (entity: any, percent: number, options: { [string]: any }?) -> Damage.Result?,
 	-- (HP restored, HP it tried to restore after the heal bonus and the PvP scale, S61)
 	heal: (player: Player, amount: number) -> (number, number),
+	-- S73: an absorb shield of `amount` x healFactor (shield) on `entity`; opts = extra StatusEffectService options
+	shield: (entity: any, amount: number, duration: number, opts: { [string]: any }?) -> (),
+	-- S73: spends every Fury stack of the caster, returns how many (also kept for the furyConsume stats field)
+	consumeFury: () -> number,
 	applyEffects: (entity: any, side: "enemy" | "self" | "allies") -> (),
 	applyEffect: (entity: any, effect: SkillData.SkillEffect, opts: EffectOptions?) -> (), -- one effect
 	-- S70 (ROZWOJ 9.4): Fortune's dice / wheel for the party around the caster; half = one face, half the duration
@@ -271,6 +280,7 @@ function Context.new(
 	local Entity = services.Entity
 	bound = bound or services
 	local behaviour: any = bp or {}
+	local furyUsed = 0 -- S73: stacks spent by ctx.consumeFury in this cast
 
 	local function value(field: string): number
 		return Skills.valueAt(skill, field, rank)
@@ -402,6 +412,9 @@ function Context.new(
 		services = services,
 		bp = behaviour,
 		value = value,
+		resolve = function(ref: SkillData.ValueRef?): number
+			return Skills.resolve(skill, ref, rank)
+		end,
 		scaled = function(v)
 			return Skills.scaled(skill, v, rank)
 		end,
@@ -495,6 +508,35 @@ function Context.new(
 		heal = function(target: Player, amount: number): (number, number)
 			return Context.healFrom(player, target, amount)
 		end,
+		shield = function(entity: any, amount: number, duration: number, opts: { [string]: any }?)
+			if amount <= 0 or duration <= 0 then
+				return
+			end
+			-- healPower and the healCrit roll on a player bearer; PvP x0.7 comes in StatusEffectService.Apply (S61)
+			local mul = if entity.kind == "player" and entity.player
+				then Context.healFactor(player, entity.player, true)
+				else 1
+			local options: { [string]: any } = {
+				duration = duration,
+				value = amount * mul,
+				source = player,
+				skillId = skill.id,
+			}
+			if opts then
+				for key, v in opts do
+					options[key] = v
+				end
+			end
+			services.StatusEffect.Apply(entity, "shield", options)
+		end,
+		consumeFury = function(): number
+			local stacks = services.StatusEffect.ConsumeFury(player)
+			furyUsed = stacks
+			if stacks >= 1 then
+				ctx.fx({ v = "furyConsume", t = caster.id, n = stacks })
+			end
+			return stacks
+		end,
 		applyEffects = function(entity: any, side: "enemy" | "self" | "allies")
 			local skillEffects: { SkillData.SkillEffect } = skill.effects or {}
 			for _, effect in skillEffects do
@@ -520,6 +562,15 @@ function Context.new(
 				-- too (Brand of Light); PvP x0.6 comes once in StatusEffectService.Apply
 				tickAmount = math.max(1, ctx.attack() * effectValue / 100 / math.max(1, duration))
 					* (1 + services.Combat.DotBonus(player, effect.kind) / 100)
+			elseif effect.kind == "hot" and effect.hpPct ~= nil and entity.kind == "player" and entity.player then
+				-- S73 (ROZWOJ 7.5, 14.2): hpPct % of the target's max HP per second with the caster's heal bonuses,
+				-- healPower and one crit roll at the application (Context.healFactor); PvP x0.7 on the tick (S61)
+				local factor = Context.healFactor(player, entity.player, false)
+				tickAmount = services.Stat.GetValue(entity.player, "maxHp")
+					* ctx.resolve(effect.hpPct)
+					/ 100
+					* factor
+					* scale
 			elseif effect.kind == "hot" and entity.kind == "player" and entity.player then
 				-- S70 (dice face Spring): value % of the target's max HP every second; no heal bonus (a Fortune buff,
 				-- not a heal spell); PvP x0.7 comes on the tick (S61)
@@ -529,7 +580,9 @@ function Context.new(
 			if effect.stats then
 				local resolved: { [string]: number } = {}
 				for stat, field in effect.stats do
-					resolved[stat] = value(field) * scale
+					-- S73: the furyConsume field counts once per Fury stack spent by this cast (Carnage, S74)
+					local base = if field == skill.furyConsume then value(field) * furyUsed else value(field)
+					resolved[stat] = base * scale
 				end
 				statValues = resolved
 			end

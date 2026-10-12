@@ -634,7 +634,7 @@ T.describe("S55 breakpoints and composition (ROZWOJ 2.7)", function()
 		local active = Skills.breakpointsAt(cleave, 10, { ["cleave:5"] = "b" }, true)
 		T.expect(#active).toBe(2)
 		local bps: any = cleave.breakpoints
-		T.expect(active[1]).toBe(bps[5].a)
+		T.expect(active[1]).toBe(bps[5].b) -- S73: Cleave has option B
 		T.expect(active[2]).toBe(bps[10].a)
 		T.expect(Skills.breakpointKey("cleave", 5, "a")).toBe("skill.cleave.bp5")
 		T.expect(Skills.breakpointKey("cleave", 10, "b")).toBe("skill.cleave.bp10b")
@@ -1166,6 +1166,350 @@ T.describe("S71 Cleric base and paths", function()
 		T.expect(Skills.healCritChance(9, 100 / 3)).toBeNear(0.03)
 		T.expect(Skills.healCritChance(60, 0)).toBe(0)
 		T.expect(Skills.healCritChance(200, 100)).toBe(1)
+	end)
+end)
+
+T.describe("S73 Warrior B options and breakpoint kinds", function()
+	local Build = require("../src/shared/Data/Skills/Build")
+	local PartyBuffRules = require("./PartyBuffRules")
+	local pl = require("../src/shared/Data/Localization/pl")
+	local en = require("../src/shared/Data/Localization/en")
+
+	local function skill(id: string): SkillData.SkillDef
+		return SkillData.get(id) :: SkillData.SkillDef
+	end
+	-- choices in the shape of path.bp
+	local function pick(id: string, five: string?, ten: string?): Skills.Choices
+		local out: any = {}
+		if five then
+			out[Skills.choiceKey(id, 5)] = five
+		end
+		if ten then
+			out[Skills.choiceKey(id, 10)] = ten
+		end
+		return out
+	end
+	local function at(id: string, rank: number, five: string?, ten: string?, mods: { any }?): (any, any)
+		return Skills.effective(skill(id), rank, pick(id, five, ten), mods, true)
+	end
+	local function v(def: any, field: string): number
+		return Skills.valueAt(def, field, 10)
+	end
+	local function cd(def: any, rank: number?): number
+		return Skills.scaled(def, def.cooldown, rank or 10)
+	end
+
+	local B_KEYS: { [string]: { [number]: string } } = {
+		mightyStrike = { [5] = "execute", [10] = "effect" },
+		charge = { [5] = "mul", [10] = "splash" },
+		bladeWhirl = { [5] = "lifesteal", [10] = "add" },
+		taunt = { [5] = "selfHeal", [10] = "add" },
+		bloodlust = { [5] = "add", [10] = "values" },
+		earthquake = { [5] = "pull", [10] = "values" },
+		lastBastion = { [5] = "values", [10] = "mul" },
+		cleave = { [5] = "values", [10] = "lifesteal" },
+		titansWrath = { [5] = "values", [10] = "add" },
+		battleCry = { [5] = "values", [10] = "selfEffect" },
+		crushingBlow = { [5] = "values", [10] = "mul" },
+	}
+
+	T.it("11 actives: A and B on both ranks", function()
+		local count = 0
+		for id, keys in B_KEYS do
+			count += 1
+			local bps: any = skill(id).breakpoints
+			for _, rank in { 5, 10 } do
+				T.expect({ id, rank, bps[rank].a ~= nil }).toEqual({ id, rank, true })
+				local b = bps[rank].b
+				T.expect({ id, rank, b ~= nil and b[keys[rank]] ~= nil }).toEqual({ id, rank, true })
+				local key = Skills.breakpointKey(id, rank, "b")
+				T.expect({ key, (pl :: any)[key] ~= nil, (en :: any)[key] ~= nil }).toEqual({ key, true, true })
+			end
+		end
+		T.expect(count).toBe(11)
+	end)
+
+	T.it("A fixes (R4)", function()
+		local _, quake = at("earthquake", 10)
+		T.expect(quake.lingering.pct).toBe(5)
+		T.expect(quake.echo.pct).toBe(25)
+		local cry = at("battleCry", 10)
+		T.expect(cd(cry)).toBeNear(30)
+	end)
+
+	T.it("control values at rank 10", function()
+		local d, b = at("earthquake", 10, "b", "b")
+		T.expect(b.pull).toBe(10)
+		T.expect(v(d, "dmg")).toBeNear(340)
+		T.expect(b.lingering).toBeNil()
+		T.expect(b.echo).toBeNil()
+		d, b = at("earthquake", 10, "a", "b")
+		T.expect(b.lingering.pct).toBe(5)
+		T.expect(v(d, "dmg")).toBeNear(340)
+
+		d, b = at("titansWrath", 10, "a", "b")
+		T.expect(d.radius).toBe(17)
+		T.expect(d.hits).toBe(4)
+		T.expect(v(d, "dmg")).toBeNear(295)
+		d, b = at("titansWrath", 10, "b", "a")
+		T.expect(v(d, "dmg")).toBeNear(345)
+		T.expect(d.hits).toBe(3)
+		T.expect(b.stunLast).toBe(1.2)
+
+		d, b = at("bladeWhirl", 10, "b", "b")
+		T.expect(d.hits).toBe(4)
+		T.expect(v(d, "dmg")).toBeNear(60)
+		T.expect(b.lifesteal).toBe(8)
+		d, b = at("bladeWhirl", 10, "a", "a")
+		T.expect(d.hits).toBe(3)
+		T.expect(b.castMove).toBe(60)
+		T.expect(b.pull).toBe(12)
+
+		d, b = at("taunt", 10, "a", "b")
+		T.expect(d.radius).toBe(20)
+		T.expect(#d.effects).toBe(2)
+		for _, effect in d.effects do
+			T.expect(Skills.scaled(d, effect.duration, 10)).toBeNear(9)
+		end
+		d, b = at("taunt", 10, "b", "a")
+		T.expect(b.selfHeal).toBe(8)
+
+		d, b = at("bloodlust", 10, "b", "b")
+		T.expect(Skills.scaled(d, d.effects[1].duration, 10)).toBeNear(14)
+		T.expect(v(d, "speed")).toBeNear(43)
+		T.expect(v(d, "lifesteal")).toBeNear(5)
+		d, b = at("bloodlust", 10, "a", "a")
+		T.expect(v(d, "lifesteal")).toBeNear(8)
+		T.expect(#d.selfEffects).toBe(1)
+		T.expect({ d.selfEffects[1].kind, d.selfEffects[1].value, d.selfEffects[1].category }).toEqual({
+			"damageReduction",
+			15,
+			"own",
+		})
+
+		d, b = at("lastBastion", 10, "b", "b")
+		T.expect(v(d, "reduction")).toBeNear(68)
+		T.expect(cd(d)).toBeNear(67.5)
+		T.expect(b.selfHeal).toBeNil()
+		d, b = at("lastBastion", 10, "a", "a")
+		T.expect(Skills.scaled(d, d.effects[1].duration, 10)).toBeNear(8)
+		T.expect(b.selfHeal).toBe(15)
+		T.expect(v(d, "reduction")).toBeNear(60)
+
+		d, b = at("cleave", 10, "b", "b")
+		T.expect(v(d, "bleed")).toBeNear(50)
+		T.expect(b.lifesteal).toBe(12)
+		T.expect(d.angle).toBe(90)
+		T.expect(b.bleedStacks).toBeNil()
+
+		d, b = at("crushingBlow", 10, "b", "b")
+		T.expect(v(d, "dmg")).toBeNear(560)
+		T.expect(cd(d)).toBeNear(12.8)
+		d, b = at("crushingBlow", 10, "a", "a")
+		local kinds: { [string]: number } = {}
+		for _, effect in d.effects do
+			kinds[effect.kind] = Skills.scaled(d, effect.duration, 10)
+		end
+		T.expect(kinds.stun).toBeNear(0.7)
+		T.expect(kinds.armorBreak ~= nil).toBe(true)
+		T.expect(b.splash.radius).toBe(7)
+
+		d, b = at("mightyStrike", 10, "b", "b")
+		T.expect(b.execute).toBe(30)
+		local bleed = d.effects[#d.effects]
+		T.expect({ bleed.kind, bleed.value, bleed.duration }).toEqual({ "bleed", 90, 6 })
+		d, b = at("charge", 10, "b", "b")
+		T.expect(cd(d)).toBeNear(9.6)
+		T.expect(b.splash.pct).toBe(60)
+		T.expect(d.range).toBe(25)
+
+		d, b = at("battleCry", 10, "b", "b")
+		T.expect(v(d, "atk")).toBeNear(31)
+		T.expect(Skills.scaled(d, d.effects[1].duration, 10)).toBeNear(24)
+		T.expect(#d.selfEffects).toBe(1)
+		T.expect(d.selfEffects[1].stats.atkSpeed).toBe("speedBp")
+		T.expect(v(d, "speedBp")).toBeNear(10)
+		T.expect(cd(d)).toBeNear(40)
+		d = at("battleCry", 10, "a", "b")
+		T.expect(#d.selfEffects).toBe(2)
+		d = at("battleCry", 5, "b")
+		T.expect(Skills.valueAt(d, "atk", 5)).toBeNear(10 + 18 * 4 / 9 + 3)
+	end)
+
+	T.it("new kinds compose without nodes", function()
+		local kill: any = { extendOnKill = { seconds = 1, max = "killTest" }, values = { killTest = 6 } }
+		local d, b = at("bloodlust", 10, nil, nil, { kill })
+		T.expect(b.extendOnKill.seconds).toBe(1)
+		T.expect(Skills.resolve(d, b.extendOnKill.max, 10)).toBe(6)
+		T.expect(Skills.resolve(d, 4, 10)).toBe(4)
+		T.expect(Skills.resolve(d, nil, 10)).toBe(0)
+		T.expect(Skills.resolve(d, "missing", 10)).toBe(0)
+
+		local oath: any = { shieldPerHit = { hpPct = 8, max = 5, duration = 6 } }
+		d, b = at("taunt", 10, nil, "b", { oath })
+		T.expect(b.shieldPerHit.max).toBe(5)
+		for _, effect in d.effects do
+			T.expect(Skills.scaled(d, effect.duration, 10)).toBeNear(9)
+		end
+
+		local guard: any = {
+			behindEffect = {
+				kind = "damageReduction",
+				duration = 10,
+				value = 20,
+				target = "allies",
+				category = "allyGuard",
+			},
+		}
+		d, b = at("lastBastion", 10, nil, nil, { guard })
+		T.expect(b.behindEffect.category).toBe("allyGuard")
+		T.expect(#d.effects).toBe(1)
+		T.expect(d.allyEffects).toBeNil()
+		T.expect(Skills.hasAllyPass(d, b)).toBe(false)
+
+		d, b = at("battleCry", 10)
+		T.expect(Skills.hasAllyPass(d, b)).toBe(false)
+		local command: any = {
+			allyEffect = {
+				kind = "statBuff",
+				duration = 20,
+				stats = { physAtk = "cmd", magAtk = "cmd" },
+				pct = true,
+				target = "allies",
+				category = "allyAttack",
+			},
+			values = { cmd = 3 },
+		}
+		local rally: any = { allyHeal = { hpPct = 9 } }
+		d, b = at("battleCry", 10, nil, nil, { command, rally })
+		T.expect(#d.allyEffects).toBe(1)
+		T.expect(b.allyHeal.hpPct).toBe(9)
+		T.expect(Skills.hasAllyPass(d, b)).toBe(true)
+		T.expect(Skills.allyRadius(d)).toBe(30)
+		local wider: any = { add = { allyRadius = 5 } }
+		d = at("battleCry", 10, nil, nil, { command, rally, wider })
+		T.expect(d.allyRadius).toBe(35)
+		local widest: any = { add = { allyRadius = 20 } }
+		d = at("battleCry", 10, nil, nil, { command, rally, widest })
+		T.expect(Skills.allyRadius(d)).toBe(40)
+
+		local near8: any = { tauntNear = { radius = 8, duration = 3 } }
+		local near10: any = { tauntNear = { radius = 10, duration = 3 } }
+		_, b = at("taunt", 10, nil, nil, { near8, near10 })
+		T.expect(b.tauntNear.radius).toBe(10)
+
+		local fake = Build.class("Warrior", "energy", "phys", {
+			{
+				id = "fakeShout",
+				unlock = 1,
+				maxLevel = 10,
+				type = "buff",
+				delivery = "melee",
+				cost = 10,
+				cooldown = 30,
+				radius = 20,
+				hitRadius = 10,
+				allyRadius = 20,
+				furyConsume = "furyDmg",
+				values = { furyDmg = 5 },
+				glyph = "x",
+			},
+		})[1]
+		T.expect({ fake.hitRadius, fake.allyRadius, fake.furyConsume }).toEqual({ 10, 20, "furyDmg" })
+		local louder: any = { add = { hitRadius = 5 } }
+		local grown = Skills.effective(fake, 10, nil, { louder }, true)
+		T.expect(grown.hitRadius).toBe(15)
+		local args = Skills.descriptionArgs(fake, 10)
+		T.expect({ args.hitRadius, args.allyRadius }).toEqual({ 10, 20 })
+		local strike = Skills.descriptionArgs(skill("mightyStrike"), 10)
+		T.expect({ strike.hitRadius, strike.allyRadius }).toEqual({})
+
+		T.expect(Skills.furyMultiplier(8, 10)).toBeNear(1.8)
+		T.expect(Skills.furyMultiplier(8, 0)).toBe(1)
+	end)
+
+	T.it("every Warrior choice combination stays sane", function()
+		local function finite(x: number): boolean
+			return x == x and x ~= math.huge and x ~= -math.huge
+		end
+		for id in B_KEYS do
+			local base = skill(id)
+			for _, rank in { 5, 10 } do
+				local sets: { { string } } = if rank == 5
+					then { { "a" }, { "b" } }
+					else { { "a", "a" }, { "a", "b" }, { "b", "a" }, { "b", "b" } }
+				for _, set in sets do
+					local choices = pick(id, set[1], set[2])
+					local def = Skills.effective(base, rank, choices, nil, true)
+					local where = `{id} {rank} {table.concat(set)}`
+					for field in def.values do
+						local ok = finite(Skills.valueAt(def, field, rank))
+						T.expect({ where, field, ok }).toEqual({ where, field, true })
+					end
+					T.expect({ where, cd(def, rank) > 0, (def.hits or 1) >= 1 }).toEqual({ where, true, true })
+					for _, list in { def.effects or {}, def.selfEffects or {}, def.allyEffects or {} } do
+						for _, effect in list do
+							for _, field in effect.stats or {} do
+								T.expect({ where, field, def.values[field] ~= nil }).toEqual({ where, field, true })
+							end
+						end
+					end
+					for _, lang in { "pl", "en" } do
+						local text = Skills.formatDescription(base, rank, lang, { choices = choices })
+						T.expect({ where, lang, string.find(text, "{", 1, true) }).toEqual({ where, lang })
+					end
+				end
+			end
+		end
+	end)
+
+	T.it("7.3 helper reads buff reach and behind", function()
+		local function buff(spec: { [string]: any }): SkillData.SkillDef
+			local base: { [string]: any } = {
+				id = "fakeRally",
+				unlock = 1,
+				maxLevel = 10,
+				type = "buff",
+				delivery = "melee",
+				cost = 10,
+				duration = 10,
+				values = {},
+				glyph = "x",
+			}
+			for key, value in spec do
+				base[key] = value
+			end
+			return Build.class("Warrior", "energy", "phys", { base })[1]
+		end
+		local attack: any = {
+			allyEffect = {
+				kind = "statBuff",
+				duration = 20,
+				stats = { physAtk = "cmd" },
+				pct = true,
+				target = "allies",
+				category = "allyAttack",
+			},
+			values = { cmd = 3 },
+		}
+		local ok = PartyBuffRules.check(buff({ cooldown = 40, breakpoints = { [10] = { a = attack } } }))
+		T.expect(ok).toEqual({})
+		local far =
+			PartyBuffRules.check(buff({ cooldown = 40, allyRadius = 45, breakpoints = { [10] = { a = attack } } }))
+		T.expect(#far > 0).toBe(true)
+		local guard: any = {
+			behindEffect = {
+				kind = "damageReduction",
+				duration = 10,
+				value = 20,
+				target = "allies",
+				category = "allyGuard",
+			},
+		}
+		local short = PartyBuffRules.check(buff({ cooldown = 8, breakpoints = { [10] = { a = guard } } }))
+		T.expect(#short > 0).toBe(true)
+		local shield: any = { allyShield = { hpPct = 10, duration = 4 } }
+		T.expect(PartyBuffRules.check(buff({ cooldown = 20, breakpoints = { [10] = { a = shield } } }))).toEqual({})
 	end)
 end)
 

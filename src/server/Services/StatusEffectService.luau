@@ -398,6 +398,28 @@ function StatusEffectService.Remove(entity: any, kind: string)
 	end
 end
 
+-- S73 extendOnKill: every running effect on `entity` that `source` applied with `skillId` lasts `seconds` longer.
+-- Stats do not change, so only the icons are refreshed (pending, like a plain refresh). True when one was extended.
+function StatusEffectService.Extend(entity: any, source: Player, skillId: string, seconds: number): boolean
+	local list = entity and effects[entity.id]
+	if not list or seconds <= 0 then
+		return false
+	end
+	local sourceKey = `p{source.UserId}`
+	local t = now()
+	local extended = false
+	for _, effect in list do
+		if effect.sourceKey == sourceKey and effect.skillId == skillId and effect.expiresAt > t then
+			effect.expiresAt += seconds
+			extended = true
+		end
+	end
+	if extended then
+		pending[entity.id] = true
+	end
+	return extended
+end
+
 local function active(entity: any, kind: string): { Effect }
 	local result = {}
 	local list = entity and effects[entity.id]

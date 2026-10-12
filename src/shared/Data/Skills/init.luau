@@ -9,6 +9,7 @@ local Warrior = require("@self/Warrior")
 
 export type SkillDef = Types.SkillDef
 export type Scaled = Types.Scaled
+export type ValueRef = Types.ValueRef
 export type SkillEffect = Types.SkillEffect
 export type Breakpoint = Types.Breakpoint
 export type Breakpoints = Types.Breakpoints

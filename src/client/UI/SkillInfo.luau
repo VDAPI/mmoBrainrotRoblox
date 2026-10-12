@@ -10,6 +10,7 @@
 -- S59: breakpoints with the player's choice: the line shows the option that works (chosen, else A);
 -- breakpointCards gives the skills window both options of ranks 5 and 10 with their state.
 -- S69: healLine shows the heal / shield of the skill on the player (Skills.healAmount: it depends on the target's HP).
+-- S73: a buff with party copies (Skills.hasAllyPass) shows "◉ Allies within N studs, you included".
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -42,10 +43,10 @@ local function charOf(use: any): Paths.Char
 	}
 end
 
--- The skill as it works for the character at `rank` (chosen breakpoints, modify nodes).
-local function effective(use: any, skill: SkillData.SkillDef, rank: number): SkillData.SkillDef
+-- The skill as it works for the character at `rank` (chosen breakpoints, modify nodes) and its behaviours.
+local function effective(use: any, skill: SkillData.SkillDef, rank: number): (SkillData.SkillDef, Skills.Behaviour)
 	local c = charOf(use)
-	return (Paths.effectiveFor(c, skill.id, Paths.weaponTypesOf(c.equipment), rank))
+	return Paths.effectiveFor(c, skill.id, Paths.weaponTypesOf(c.equipment), rank)
 end
 
 -- S64: % item cooldown reduction the server publishes (0 before it arrives).
@@ -83,8 +84,11 @@ local SHAPE_GLYPH: { [string]: string } = {
 -- "◣ Cone 90° · 10 studs" (empty for skills without an area).
 function SkillInfo.shapeLine(use: any, skill: SkillData.SkillDef, shownRank: number): string
 	local rank = math.max(1, shownRank)
-	local def = effective(use, skill, rank)
+	local def, behaviour = effective(use, skill, rank)
 	local shape = Skills.shape(skill)
+	if shape == "none" and Skills.hasAllyPass(def, behaviour) then
+		return `{SHAPE_GLYPH.self} {Text.get(use, "skills.shape.allies", { radius = Skills.allyRadius(def) })}`
+	end
 	if shape == "none" or shape == "target" then
 		return ""
 	end
@@ -102,7 +106,7 @@ end
 -- "15 energy · Cooldown 4 s · Range 8 studs"
 function SkillInfo.costLine(use: any, skill: SkillData.SkillDef, shownRank: number): string
 	local rank = math.max(1, shownRank)
-	local def = effective(use, skill, rank)
+	local def, behaviour = effective(use, skill, rank)
 	local parts = {}
 	local saving = use(costReduce)
 	local cost = Skills.cost(def, rank, levelOf(use), skill.class, {
@@ -114,8 +118,8 @@ function SkillInfo.costLine(use: any, skill: SkillData.SkillDef, shownRank: numb
 		table.insert(parts, Text.get(use, `skills.cost.{skill.resource}`, { cost = shownCost }))
 	end
 	-- S64: the cooldown after the item reduction (Skills.cooldown, as the server counts it).
-	local base = Skills.cooldown(def, rank, 0)
-	local reduced = Skills.cooldown(def, rank, SkillInfo.cdr(use))
+	local base = Skills.cooldown(def, rank, 0, behaviour)
+	local reduced = Skills.cooldown(def, rank, SkillInfo.cdr(use), behaviour)
 	local cooldown = math.floor(reduced * 10 + 0.5) / 10
 	if base > 0 and reduced < base - 1e-6 then
 		local pct = math.floor((1 - reduced / base) * 100 + 1e-6)

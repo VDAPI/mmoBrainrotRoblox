@@ -1494,3 +1494,24 @@
   krwawienia z umiejętności i przedmiotów; `threat` mnoży tylko zagrożenie w `Monster.TakeDamage`, nie zasługę do łupu.
 - **S72** `/hook <id> [wartość|off]`: tymczasowe haki admina (dostawca w `CombatService`, jak węzły) do oglądania
   mechanik przed węzłami S75.
+- **S73** Trzęsienie Ziemi 5A (pęknięcia 20 → 5%/s) i 10A (drugi wstrząs 60 → 25%) oraz Okrzyk Bojowy 10A (odnowienie
+  ×0,6 → ×0,75, czas działania z 83 do 67% odnowienia) to zmiana balansu dzisiejszego Wojownika (R4, ROZWOJ 10.2,
+  10.5, 14.2), od ok. 50. / 70. i 39. poziomu, od teraz z równą opcją B.
+- **S73** Okrzyk 10B: szybkość ataku jako `own` `statBuff` z `pct` i tym samym kluczem co premia Okrzyku (scalanie S53),
+  więc trwa tyle co okrzyk (24 s).
+- **S73** Kształty: `ValueRef` = liczba albo nazwa pola `values` (`Skills.resolve` / `ctx.resolve`); `shieldPerHit`
+  liczy tylko potwory z pierwszej fali; `extendOnKill`: zabójca = cios kończący (`info.finisher`, jak Rzeź S72),
+  wydłuża wszystkie trwające efekty tej umiejętności na rzucającym (`StatusEffectService.Extend`); `behindEffect` w
+  chwili rzucenia, bez rzucającego, bez potwora-kotwicy nikt; kopie drużynowe `buff` w `allyRadius` (domyślnie 30,
+  `add.allyRadius` liczy od 30, najwyżej 40), z rzucającym.
+- **S73** Tarcze z umiejętności przez jedno `ctx.shield(entity, amount, duration, opts?)` (mnożnik `healFactor(…, true)`;
+  `opts` niesie `onEnd` Pękającej Tarczy, więc działa jak po S71); nadmiar leczenia (`overhealShield`) zostaje osobno,
+  bo ma już premie leczenia. `furyConsume`: cios ×`(1 + perStack × stosy / 100)` (także rozprysk), w `buff`
+  statystyki pola `furyConsume` × stosy; Furia przepada także przy uniku.
+- **S73** Odświeżenie trwającego efektu z tyknięciem nie przesuwa `nextTick` także przy jednym stosie
+  (`EffectStack.restack`); test S63 „stacks with ticks keep the tick” poprawiony na nową regułę.
+- **S73** `Skills.partyEffects` / `partyDuration` / `cooldown` biorą opcjonalne `behaviour`: `behindEffect` (z promieniem
+  `AURA.behindRadius`) i `allyShield` liczą się do reguły 7.3 i do dolnej granicy odnowienia przy skróceniu z
+  przedmiotów (serwer, pasek, opis). `Logic/Skills` czyta `Data/Paths` (bez cyklu).
+- **S73** `PartyAuraService` w kontekście umiejętności przez `registry.Get` bez wpisu w `Deps` (cykl PartyAura → Path →
+  Skill); `BehindAnchor` wołany dopiero przy rzucie.

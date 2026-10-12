@@ -179,8 +179,8 @@ function EffectStack.sameKey(entry: Key, kind: string, sourceKey: string, skillI
 end
 
 -- State of an effect applied under a key (STATY 5): a running effect with maxStacks > 1 gains a stack, all stacks
--- share one end time, stacks multiply value and tickAmount, a running stacked effect keeps nextTick. old = nil: new.
--- Returns a new table.
+-- share one end time, stacks multiply value and tickAmount, a running effect keeps nextTick (S73: one stack too, so a
+-- refresh never pushes the tick away). old = nil or expired: nextTick = now + tickInterval. Returns a new table.
 function EffectStack.restack(old: Stack?, spec: StackSpec): Stack
 	local now = spec.now
 	local running = old ~= nil and old.expiresAt > now
@@ -192,7 +192,7 @@ function EffectStack.restack(old: Stack?, spec: StackSpec): Stack
 	local tickUnit = spec.tickUnit
 	local nextTick: number? = nil
 	if tickUnit then
-		local keep = if running and limit > 1 then (old :: Stack).nextTick else nil
+		local keep = if running then (old :: Stack).nextTick else nil
 		nextTick = keep or now + spec.tickInterval
 	end
 	return {

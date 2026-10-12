@@ -17,6 +17,8 @@ export type Spec = {
 	cooldown: Types.Scaled?,
 	range: number?,
 	radius: number?,
+	hitRadius: number?, -- S73: a shout's enemy radius (S74)
+	allyRadius: number?, -- S73: reach of a buff's party copies
 	angle: number?,
 	length: number?,
 	width: number?,
@@ -29,6 +31,7 @@ export type Spec = {
 	randomTarget: boolean?,
 	damageKind: ("phys" | "magic")?,
 	holy: boolean?,
+	furyConsume: string?, -- S73 (ROZWOJ 10.4)
 	values: { [string]: Types.Scaled }?,
 	effects: { Types.SkillEffect }?,
 	roll: { all: boolean?, enemyRadius: number? }?, -- S70
@@ -99,6 +102,8 @@ function Build.class(
 			cooldown = spec.cooldown or 0,
 			range = spec.range,
 			radius = spec.radius,
+			hitRadius = spec.hitRadius,
+			allyRadius = spec.allyRadius,
 			angle = spec.angle,
 			length = spec.length,
 			width = spec.width,
@@ -111,6 +116,7 @@ function Build.class(
 			randomTarget = spec.randomTarget,
 			damageKind = spec.damageKind or damageKind,
 			holy = spec.holy,
+			furyConsume = spec.furyConsume,
 			values = spec.values or {},
 			effects = spec.effects,
 			passive = spec.passive,

@@ -95,8 +95,9 @@ local function SkillBar(scope: Scope, props: Props): { Instance }
 			local cdr = if type(state) == "table" and type(state.cdr) == "number" then state.cdr else 0
 			local c = charOf(use)
 			local rank = math.max(1, Paths.skillRank(c, s.id))
-			local def = Paths.effectiveFor(c, s.id, Paths.weaponTypesOf(c.equipment), rank)
-			local total = math.max(SkillData.GCD, Skills.cooldown(def, rank, cdr)) -- S64: as the server counts it
+			local def, behaviour = Paths.effectiveFor(c, s.id, Paths.weaponTypesOf(c.equipment), rank)
+			-- S64: as the server counts it
+			local total = math.max(SkillData.GCD, Skills.cooldown(def, rank, cdr, behaviour))
 			return math.clamp(left / total, 0, 1)
 		end)
 		-- S28: a short flash when a real cooldown (not just the global one) ends.

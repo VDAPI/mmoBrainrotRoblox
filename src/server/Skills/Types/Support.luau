@@ -11,10 +11,16 @@
 -- (skill.roll, ctx.rollDice); Purify 5B bursts light around the healed ally (burst).
 -- S71: heals over time and shields take Context.healFactor (heal bonuses, healPower, the healCrit roll) per target;
 -- Shattering Shield (shieldBurst) heals allies around the bearer when the shield breaks or expires.
+-- S73 (ROZWOJ 7.3, 14.2): buff spends Fury first (furyConsume), gives its party copies (allyEffects, effects on
+-- "allies", allyHeal, allyShield) to allies within Skills.allyRadius, the caster included (allyPass), and behindEffect
+-- to allies behind the caster at the cast (Paths.inAura "behind", PartyAuraService.BehindAnchor); shields go through
+-- ctx.shield.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Context = require(script.Parent.Parent.Context)
+local PathData = require(ReplicatedStorage.Shared.Data.Paths)
+local Paths = require(ReplicatedStorage.Shared.Logic.Paths)
 local SkillData = require(ReplicatedStorage.Shared.Data.Skills)
 local Skills = require(ReplicatedStorage.Shared.Logic.Skills)
 
@@ -46,9 +52,74 @@ local function allyTarget(ctx: Ctx): (Player, any)
 	return ctx.player, ctx.caster
 end
 
+-- S73: the buff's party copies on every living ally within Skills.allyRadius, the caster included (solo: the caster
+-- alone, like groupBuff). The copy on the caster has its own ally category and adds to its own effect (ROZWOJ 7.2).
+-- Returns the entity ids of the allies other than the caster (fx `al`).
+local function allyPass(ctx: Ctx): { string }
+	local ids: { string } = {}
+	if not Skills.hasAllyPass(ctx.skill, ctx.bp) then
+		return ids
+	end
+	local Entity = ctx.services.Entity
+	local allyEffects: { SkillData.SkillEffect } = ctx.skill.allyEffects or NO_EFFECTS
+	local heal, shield = ctx.bp.allyHeal, ctx.bp.allyShield
+	for _, ally in ctx.alliesInCircle(ctx.root.Position, Skills.allyRadius(ctx.skill)) do
+		local entity = Entity.GetPlayerEntity(ally)
+		if not entity then
+			continue
+		end
+		ctx.applyEffects(entity, "allies")
+		for _, effect in allyEffects do
+			ctx.applyEffect(entity, effect)
+		end
+		local maxHp = ctx.services.Stat.GetValue(ally, "maxHp")
+		if heal then
+			ctx.heal(ally, maxHp * ctx.resolve(heal.hpPct) / 100)
+		end
+		if shield then
+			ctx.shield(entity, maxHp * ctx.resolve(shield.hpPct) / 100, shield.duration)
+		end
+		if ally ~= ctx.player then
+			table.insert(ids, entity.id)
+		end
+	end
+	return ids
+end
+
+local function flatOf(position: Vector3): Paths.Flat
+	return { x = position.X, z = position.Z }
+end
+
+-- S73 behindEffect (Party Bastion, S75): allies other than the caster standing behind it at the cast, the same
+-- geometry as a "behind" aura (S61). Without a monster as the anchor nobody gets it.
+local function behind(ctx: Ctx)
+	local effect = ctx.bp.behindEffect
+	if not effect then
+		return
+	end
+	local Entity = ctx.services.Entity
+	local threat, monsters = ctx.services.PartyAura.BehindAnchor(ctx.player)
+	if threat == nil and #monsters == 0 then
+		return
+	end
+	local owner = flatOf(ctx.root.Position)
+	for _, ally in ctx.alliesInCircle(ctx.root.Position, PathData.AURA.behindRadius) do
+		local entity = if ally ~= ctx.player then Entity.GetPlayerEntity(ally) else nil
+		local at = entity and Entity.Position(entity)
+		if entity and at and Paths.inAura({ shape = "behind" }, owner, flatOf(at), threat, monsters) then
+			ctx.applyEffect(entity, effect)
+		end
+	end
+end
+
 Support.buff = function(ctx)
-	ctx.fx({ t = ctx.caster.id, d = ctx.scaled(ctx.skill.duration) })
+	if ctx.skill.furyConsume then
+		ctx.consumeFury() -- before the effects: Carnage's stats read the stacks (S74)
+	end
 	ctx.applyEffects(ctx.caster, "self")
+	local allies = allyPass(ctx)
+	behind(ctx)
+	ctx.fx({ t = ctx.caster.id, d = ctx.scaled(ctx.skill.duration), al = if #allies > 0 then allies else nil })
 	-- Camouflage: monsters forget the hunter.
 	if ctx.skill.id == "camouflage" then
 		for _, entity in ctx.services.Entity.QueryMonsters(ctx.root.Position, 120) do
@@ -85,6 +156,7 @@ local function healOne(ctx: Ctx, player: Player, entity: any, amount: number)
 		-- S61: from the amount after the PvP scale, so the cut part never turns into a shield.
 		local overflow = attempted - healed
 		if overflow > 1 then
+			-- not ctx.shield: the overflow already carries the heal bonuses (S71)
 			ctx.services.StatusEffect.Apply(
 				entity,
 				"shield",
@@ -209,31 +281,25 @@ local function burstOnEnd(ctx: Ctx): ((bearer: any, initial: number) -> ())?
 	end
 end
 
--- One shield; Shield of Faith 5B cleanses first (S69). S71: x Context.healFactor (healPower, crit).
-local function shieldOn(ctx: Ctx, player: Player, entity: any, value: number, duration: number)
+-- One shield; Shield of Faith 5B cleanses first (S69). S71: x Context.healFactor (healPower, crit), S73: through
+-- ctx.shield.
+local function shieldOn(ctx: Ctx, entity: any, value: number, duration: number)
 	if ctx.bp.cleanse then
 		ctx.services.StatusEffect.Cleanse(entity)
 	end
-	local mul = Context.healFactor(ctx.player, player, true)
-	ctx.services.StatusEffect.Apply(entity, "shield", {
-		duration = duration,
-		value = value * mul,
-		source = ctx.player,
-		skillId = ctx.skill.id,
-		onEnd = burstOnEnd(ctx),
-	})
+	ctx.shield(entity, value, duration, { onEnd = burstOnEnd(ctx) })
 end
 
 Support.shield = function(ctx)
 	local player, entity = allyTarget(ctx)
 	local duration = ctx.scaled(ctx.skill.duration)
 	ctx.fx({ t = entity.id, d = duration })
-	shieldOn(ctx, player, entity, ctx.healAmount(player, "shield"), duration)
+	shieldOn(ctx, entity, ctx.healAmount(player, "shield"), duration)
 	local other, otherEntity = second(ctx, player)
 	if other and otherEntity then
 		ctx.fx({ t = otherEntity.id, d = duration, n = 2 })
 		local value = ctx.healAmount(other, "shield") * (ctx.bp.secondTarget or 0) / 100
-		shieldOn(ctx, other, otherEntity, value, duration)
+		shieldOn(ctx, otherEntity, value, duration)
 	end
 	return true, nil
 end

@@ -10,6 +10,8 @@
 --   option, modify nodes).
 -- S70: whether a channel ends early is Logic/Channel.stops (Prayer 10B steadfast keeps praying through damage);
 -- Prayer 5B rolls Roll of the Dice at the end; Guardian Angel's save (StatusEffectService.AngelSaved) plays angelSave.
+-- S73: extendOnKill (Bloodlust with Bloodthirst, S75): after the cast every kill (the killing blow, info.finisher)
+-- lengthens the skill's running effects on the caster (StatusEffectService.Extend) up to the breakpoint's max.
 -- Cooldowns replicate as state branch `skills` = { cd = { [skillId] = readyAt }, gcd = readyAt, channel? }
 -- (server time), so the client draws the cooldown sweep.
 
@@ -73,6 +75,7 @@ local PartyService: any
 local DeathService: any
 local ZoneService: any
 local LevelService: any
+local PartyAuraService: any
 
 type Handler = (ctx: Context.Ctx) -> (boolean, string?)
 
@@ -92,6 +95,8 @@ type Runtime = {
 	noCooldowns: boolean,
 	infiniteResources: boolean,
 	cdr: number, -- S64: % item cooldown reduction (Skills.cooldownReduction), published as { "skills", "cdr" }
+	-- S73 extendOnKill per skillId: seconds per kill, the cap and the seconds added since the cast
+	extend: { [string]: { seconds: number, max: number, added: number } },
 }
 
 local runtimes: { [Player]: Runtime } = {}
@@ -112,6 +117,7 @@ local function runtime(player: Player): Runtime
 			noCooldowns = false,
 			infiniteResources = false,
 			cdr = 0,
+			extend = {},
 		}
 		runtimes[player] = rt
 	end
@@ -557,7 +563,7 @@ local function cast(player: Player, skillId: string, targetId: string?, aim: any
 	ctx.point = point
 	if not rt.noCooldowns then
 		rt.gcd = t + SkillData.GCD
-		rt.cooldowns[skillId] = t + Skills.cooldown(skill, rank, rt.cdr)
+		rt.cooldowns[skillId] = t + Skills.cooldown(skill, rank, rt.cdr, behaviour)
 		publishCooldowns(player)
 	end
 	ResourceService.MarkCombat(player)
@@ -576,6 +582,11 @@ local function cast(player: Player, skillId: string, targetId: string?, aim: any
 		end
 		if behaviour.selfHeal then
 			ctx.heal(player, StatService.GetValue(player, "maxHp") * behaviour.selfHeal / 100)
+		end
+		-- S73 extendOnKill: a new cast starts from zero added seconds
+		local extend = behaviour.extendOnKill
+		if extend then
+			rt.extend[skillId] = { seconds = extend.seconds, max = ctx.resolve(extend.max), added = 0 }
 		end
 		-- S65 (STATY 5): Full Draw after an offensive skill or a trap (a trap is an attack too).
 		if offensive or skill.type == "trap" then
@@ -674,6 +685,9 @@ function SkillService.Init(registry)
 	DeathService = registry.Get("DeathService")
 	ZoneService = registry.Get("ZoneService")
 	LevelService = registry.Get("LevelService")
+	-- S73: not in Deps: PartyAuraService -> PathService -> SkillService would be a cycle. Deps only order Init and
+	-- BehindAnchor is called on a cast, after every Init.
+	PartyAuraService = registry.Get("PartyAuraService")
 
 	services = {
 		Combat = CombatService,
@@ -684,6 +698,7 @@ function SkillService.Init(registry)
 		Pvp = PvpService,
 		Party = PartyService,
 		Death = DeathService,
+		PartyAura = PartyAuraService,
 		Fx = sendFx,
 		Toast = function(p: Player, key: string, args: { [string]: any }?, kind: string?)
 			Net.Fire(p, "Toast", key, args, kind)
@@ -710,6 +725,19 @@ function SkillService.Start()
 		if finisher and StatusEffectService.PlayerHas(finisher, "carnage") then
 			for _, id in PathData.HOOK_RULES.carnage.resets do
 				SkillService.ResetCooldown(finisher, id)
+			end
+		end
+		-- S73 extendOnKill: monsters only (no PvP), the killing blow like Carnage
+		local rt = if finisher then runtimes[finisher] else nil
+		local casterEntity = if finisher then EntityService.GetPlayerEntity(finisher) else nil
+		if finisher and rt and casterEntity then
+			for id, spec in rt.extend do
+				local step = math.min(spec.seconds, spec.max - spec.added)
+				if step > 0 and StatusEffectService.Extend(casterEntity, finisher, id, step) then
+					spec.added += step
+				else
+					rt.extend[id] = nil -- the buff ended or the cap is reached
+				end
 			end
 		end
 	end)
@@ -760,6 +788,7 @@ function SkillService.Start()
 		hookCache[player] = nil
 		local rt = runtime(player)
 		table.clear(rt.cooldowns)
+		table.clear(rt.extend)
 		rt.gcd = 0
 		rt.cdr = Skills.cooldownReduction(CombatService.Hook(player, "cooldownReduction"))
 		PlayerStateService.Set(player, { "skills" }, { cd = {}, gcd = 0, cdr = rt.cdr })
@@ -767,6 +796,10 @@ function SkillService.Start()
 	CharacterService.CharacterLeaving:Connect(function(player: Player)
 		hookCache[player] = nil
 		interruptChannel(player, nil)
+		local rt = runtimes[player]
+		if rt then
+			table.clear(rt.extend)
+		end
 		if PlayerStateService.HasState(player) then
 			PlayerStateService.Set(player, { "skills" }, nil)
 		end

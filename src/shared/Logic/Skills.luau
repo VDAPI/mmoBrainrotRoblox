@@ -5,10 +5,12 @@
 -- S54 (ROZWOJ 8): the one cost (Skills.cost), heal curve (Skills.healMul) and weapon speed normalisation
 -- (Skills.speedFactor) used by the server, the skill bar, the descriptions and the wiki.
 
+local BuffCategories = require("../Data/BuffCategories")
 local Combat = require("../Data/Combat")
 local Config = require("../Config")
 local LevelCurves = require("./LevelCurves")
 local Locale = require("../Util/Locale")
+local PathsData = require("../Data/Paths")
 local SkillData = require("../Data/Skills")
 local Stats = require("../Data/Stats")
 
@@ -34,6 +36,27 @@ end
 
 function Skills.valueAt(skill: SkillDef, field: string, level: number): number
 	return Skills.scaled(skill, skill.values[field], level)
+end
+
+-- A ValueRef at a rank: numbers pass, strings read def.values (0 when missing), nil is 0 (S73).
+function Skills.resolve(def: SkillDef, ref: SkillData.ValueRef?, rank: number): number
+	if ref == nil then
+		return 0
+	elseif type(ref) == "number" then
+		return ref
+	end
+	return Skills.valueAt(def, ref, rank)
+end
+
+-- Reach of a buff's party copies: allyRadius or BuffCategories.rules.allyRadius, never above rules.maxRadius
+-- (ROZWOJ 7.3).
+function Skills.allyRadius(def: SkillDef): number
+	return math.min(def.allyRadius or BuffCategories.rules.allyRadius, BuffCategories.rules.maxRadius)
+end
+
+-- Hit multiplier of a skill with furyConsume: +perStack % per consumed stack (Rend: 8 % x 10 stacks = x1.8).
+function Skills.furyMultiplier(perStack: number, stacks: number): number
+	return 1 + perStack * math.max(0, stacks) / 100
 end
 
 -- Breakpoints (S28, S55: ROZWOJ 2.7) -------------------------------------------------------------------------------
@@ -90,7 +113,7 @@ end
 -- they are on def.effects / def.selfEffects / def.allyEffects.
 export type Behaviour = SkillData.Breakpoint
 
-local NUMERIC_FIELDS = { "range", "radius", "angle", "length", "width", "hits", "delay" }
+local NUMERIC_FIELDS = { "range", "radius", "hitRadius", "angle", "length", "width", "hits", "delay" }
 
 -- The skill as it works at `rank` (ROZWOJ 2.7). Sources in order: breakpoint 5, breakpoint 10 (chosen option, A
 -- without a choice), then `mods` (modify nodes, row order). Rules: `values` add to the current value (the base scales
@@ -132,6 +155,9 @@ function Skills.effective(
 				jumps += amount
 			elseif key == "duration" then
 				def.duration = Skills.scaled(skill, def.duration, rank) + amount
+			elseif key == "allyRadius" then
+				-- S73: from the default reach (30), so a node's +5 gives 35
+				def.allyRadius = (def.allyRadius or BuffCategories.rules.allyRadius) + amount
 			elseif table.find(NUMERIC_FIELDS, key) then
 				def[key] = (def[key] or 0) + amount
 			end
@@ -185,6 +211,25 @@ end
 -- Who an effect of the skill lands on (S53): its own target, or self for buffs and enemies for the rest.
 function Skills.effectSide(skill: SkillDef, effect: SkillData.SkillEffect): "enemy" | "self" | "allies"
 	return effect.target or (if skill.type == "buff" or skill.type == "groupBuff" then "self" else "enemy")
+end
+
+-- Whether a buff gives anything to allies around (Support.buff, SkillInfo): allyEffects, allyHeal, allyShield or an
+-- effect whose side is "allies" (Skills.effectSide, S53). behindEffect is separate (its own geometry). Other types
+-- have their own loops (groupBuff, groupHeal, from S74 shout and guard).
+function Skills.hasAllyPass(def: SkillDef, behaviour: Behaviour): boolean
+	if def.type ~= "buff" then
+		return false
+	end
+	if (def.allyEffects and #def.allyEffects > 0) or behaviour.allyHeal ~= nil or behaviour.allyShield ~= nil then
+		return true
+	end
+	local effects: { SkillData.SkillEffect } = def.effects or {}
+	for _, effect in effects do
+		if Skills.effectSide(def, effect) == "allies" then
+			return true
+		end
+	end
+	return false
 end
 
 -- Locale key of a breakpoint option's text: skill.<id>.bp5 / .bp10 (A), .bp5b / .bp10b (B).
@@ -407,17 +452,20 @@ function Skills.cooldownReduction(total: number): number
 	return math.clamp(total, 0, Combat.cdrCap)
 end
 
-export type PartyEffect = { kind: string, category: string?, duration: number }
+-- `radius` (S73): the effect's own reach (behindEffect: AURA.behindRadius); nil = the skill's reach.
+export type PartyEffect = { kind: string, category: string?, duration: number, radius: number? }
 
 -- Party effects of a skill (ROZWOJ 7.3): effects on allies, allyEffects and a shield skill's shield on an ally.
 -- `def` is the skill after Skills.effective. The rule tests/PartyBuffRules checks and the cooldown floor use.
-function Skills.partyEffects(def: SkillDef, rank: number): { PartyEffect }
+-- S73: with `behaviour` also behindEffect (behind the caster) and allyShield (a shield on the allies).
+function Skills.partyEffects(def: SkillDef, rank: number, behaviour: Behaviour?): { PartyEffect }
 	local out: { PartyEffect } = {}
-	local function add(effect: SkillData.SkillEffect)
+	local function add(effect: SkillData.SkillEffect, radius: number?)
 		local entry: PartyEffect = {
 			kind = effect.kind :: string,
 			category = effect.category,
 			duration = Skills.scaled(def, effect.duration or def.duration, rank),
+			radius = radius,
 		}
 		table.insert(out, entry)
 	end
@@ -434,13 +482,19 @@ function Skills.partyEffects(def: SkillDef, rank: number): { PartyEffect }
 	if def.type == "shield" then
 		table.insert(out, { kind = "shield", duration = Skills.scaled(def, def.duration, rank) })
 	end
+	if behaviour and behaviour.behindEffect then
+		add(behaviour.behindEffect, PathsData.AURA.behindRadius)
+	end
+	if behaviour and behaviour.allyShield then
+		table.insert(out, { kind = "shield", duration = behaviour.allyShield.duration })
+	end
 	return out
 end
 
 -- Longest party effect of the skill in s, 0 without one.
-function Skills.partyDuration(def: SkillDef, rank: number): number
+function Skills.partyDuration(def: SkillDef, rank: number, behaviour: Behaviour?): number
 	local longest = 0
-	for _, effect in Skills.partyEffects(def, rank) do
+	for _, effect in Skills.partyEffects(def, rank, behaviour) do
 		longest = math.max(longest, effect.duration)
 	end
 	return longest
@@ -448,14 +502,15 @@ end
 
 -- S64: cooldown of `def` (after Skills.effective) at `rank` with `reduction` % item cooldown reduction. A party buff
 -- never comes back sooner than it lasts (ROZWOJ 7.3), and the floor never lifts the cooldown above its base. One
--- function for the server, the skill bar, the description and the wiki.
-function Skills.cooldown(def: SkillDef, rank: number, reduction: number?): number
+-- function for the server, the skill bar, the description and the wiki. S73: with `behaviour` its party effects
+-- (behindEffect, allyShield) count for the floor too.
+function Skills.cooldown(def: SkillDef, rank: number, reduction: number?, behaviour: Behaviour?): number
 	local base = Skills.scaled(def, def.cooldown, rank)
 	local pct = Skills.cooldownReduction(reduction or 0)
 	if pct <= 0 then
 		return base
 	end
-	return math.max(base * (1 - pct / 100), math.min(base, Skills.partyDuration(def, rank)))
+	return math.max(base * (1 - pct / 100), math.min(base, Skills.partyDuration(def, rank, behaviour)))
 end
 
 -- S70 Guardian Angel (ROZWOJ 7.6, 9.3): a lethal hit from a monster leaves 1 HP. Only "monster" and
@@ -590,7 +645,7 @@ export type DescOpts = { level: number?, choices: Choices?, mods: { SkillMod }?,
 -- S28: the numbers as the skill works at that rank (breakpoints applied). S54: cost and heal values at the
 -- character level from `opts` (Skills.cost, Skills.healMul).
 function Skills.descriptionArgs(base: SkillDef, rank: number, opts: DescOpts?): { [string]: number }
-	local skill = Skills.effective(base, rank, opts and opts.choices, opts and opts.mods)
+	local skill, behaviour = Skills.effective(base, rank, opts and opts.choices, opts and opts.mods)
 	local L = if opts and opts.level then opts.level else Skills.rankLevel(base, rank)
 	local args: { [string]: number } = {}
 	for field in skill.values do
@@ -604,7 +659,7 @@ function Skills.descriptionArgs(base: SkillDef, rank: number, opts: DescOpts?): 
 	end
 	local cost = Skills.cost(skill, rank, L, base.class, nil)
 	args.cost = round(cost)
-	args.cooldown = round(Skills.cooldown(skill, rank, opts and opts.cdr))
+	args.cooldown = round(Skills.cooldown(skill, rank, opts and opts.cdr, behaviour))
 	if skill.duration then
 		args.duration = round(Skills.scaled(skill, skill.duration, rank))
 	end
@@ -616,6 +671,13 @@ function Skills.descriptionArgs(base: SkillDef, rank: number, opts: DescOpts?): 
 	args.range = skill.range or 0
 	args.length = skill.length or 0
 	args.hits = skill.hits or 1
+	-- S73: only for skills that have them (today's descriptions and the wiki keep their arguments)
+	if skill.hitRadius then
+		args.hitRadius = skill.hitRadius
+	end
+	if skill.allyRadius then
+		args.allyRadius = Skills.allyRadius(skill)
+	end
 	return args
 end
 

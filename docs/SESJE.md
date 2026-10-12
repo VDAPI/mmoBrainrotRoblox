@@ -3826,3 +3826,32 @@ Pliki: `src/shared/{Data/Paths/init,Data/Skills/Types,Data/AdminCommands,Data/Lo
 Logic/Intercept}`, `src/server/{Entities/Monster,Services/{StatusEffectService,StatService,CombatService,
 MonsterService,SkillService},Admin/Combat}`, `src/client/UI/Screens/Hud/EffectIcons`,
 `tests/{fury,effectstack,intercept}.spec`, `docs/{ROZWOJ,DECYZJE,SESJE,PROGRESS}.md`.
+
+### S73: Wojownik 2: nowe rodzaje przełomów i opcje B istniejących umiejętności
+
+- Dane: 22 opcje B 11 aktywnych Wojownika z ROZWOJ 10.2–10.5 (`Build.bp2`); poprawki A ponad R4: Trzęsienie Ziemi 5A
+  `lingering.pct = 5`, 10A `echo.pct = 25`, Okrzyk Bojowy 10A `mul.cooldown = 0.75`. Odblokowania jeszcze dzisiejsze
+  (S75). E4: `Paths.canChooseBreakpoint` nie ma listy klas, okno S59 i `SkillInfo` biorą `.bp5b` / `.bp10b` dla każdej
+  klasy, więc `/bp earthquake 5 b` i okno działają bez zmian.
+- Słownik: `ValueRef`, `SkillEffect.hpPct`, pola `hitRadius`, `allyRadius`, `furyConsume` (`Types`, `Build`), rodzaje
+  `tauntNear`, `shieldPerHit`, `extendOnKill`, `behindEffect`, `allyHeal`, `allyShield`; `Skills.resolve`, `allyRadius`,
+  `hasAllyPass`, `furyMultiplier`, `add.hitRadius` / `add.allyRadius` (od 30); `BuffCategories.rules.allyRadius = 30`;
+  `partyEffects` / `cooldown` z opcjonalnym `behaviour`.
+- Serwer: `ctx.resolve`, `ctx.shield` (też `Support.shield` / `shieldOn` z `onEnd` Pękającej Tarczy), `ctx.consumeFury`
+  (API S72 `StatusEffectService.ConsumeFury`, zdarzenie `furyConsume`), `hot` z `hpPct` i statystyki `furyConsume` w
+  `applyEffect`; `Support.buff` (Furia, `allyPass`, `behind` przez `Paths.inAura` i `PartyAuraService.BehindAnchor`,
+  `al` w fx), `Offense.target` (Furia), `Offense.circleSelf` (`shieldPerHit`); `StatusEffectService.Extend`,
+  `extendOnKill` w `SkillService` (`Runtime.extend`, nasłuch `MonsterKilled` z `info.finisher`); `PartyAura` przez
+  `registry.Get` bez `Deps` (cykl przez `PathService`); `EffectStack.restack` trzyma `nextTick` trwającego efektu.
+- Klient: linia „◉ Sojusznicy do N st., także ty” w `SkillInfo.shapeLine`; odnowienie z `behaviour` w `SkillInfo` i
+  `SkillBar`. Teksty: 22 klucze B, 3 poprawione A, `skills.shape.allies` (PL, EN).
+- Testy: „S73 Warrior B options and breakpoint kinds” w `skills.spec`, „a running ticking effect keeps nextTick” w
+  `effectstack.spec`, `behindEffect` w teście kategorii, nowe klucze w `BreakpointKeys`, pola w `skillmotion.spec`,
+  zasięg `buff`, `behindEffect` i `allyShield` w `PartyBuffRules`. Dane wiki z `lune run tools/wikidump.luau` (zmiana
+  tylko w przełomach A Trzęsienia i Okrzyku).
+
+Pliki: `src/shared/{Data/Skills/{Types,Build,init,Warrior},Data/BuffCategories,Data/Localization/{pl,en},Logic/Skills,
+Logic/EffectStack}`, `src/server/{Skills/{Context,Types/Support,Types/Offense},Services/{SkillService,
+StatusEffectService}}`, `src/client/UI/{SkillInfo,Screens/Hud/SkillBar}`, `tests/{skills,effectstack,skillmotion}.spec`,
+`tests/{BreakpointKeys,PartyBuffRules}`, `wiki/src/data/{skills,meta}.json`, `docs/{PRZEDMIOTY,ROZWOJ,DECYZJE,SESJE,
+PROGRESS}.md`, `CLAUDE.md`.

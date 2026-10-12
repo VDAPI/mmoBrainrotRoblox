@@ -6,7 +6,8 @@
 --     intercept, shield and allyGuard below rescueBelow s) skip the lower duration bound only. Own effects and enemy
 --     debuffs are not checked. The vigilance hook (S77, ROZWOJ 16.3) is a passive reaction, not a skill effect, so it
 --     never shows up here. S71: `mods` (resolved modify nodes, Logic/Paths.skillMods) are applied on top of every A/B
---     combination, so a class with paths is checked with its nodes.
+--     combination, so a class with paths is checked with its nodes. S73: a buff's copies reach allyRadius (default
+--     BuffCategories.rules.allyRadius), behindEffect AURA.behindRadius; allyShield counts like a shield on an ally.
 --   checkAuras(path): every aura node has an ally* category, a known shape, a radius up to maxRadius and stats keys
 --     that follow the convention of Data/Paths/Types (the category's stats, or one `value` for a value category).
 
@@ -59,12 +60,15 @@ function PartyBuffRules.check(skill: SkillDef, mods: { Skills.SkillMod }?): { st
 			continue
 		end
 		for _, choices in choiceSets(skill, rank) do
-			local def = Skills.effective(skill, rank, choices, mods, true)
+			local def, behaviour = Skills.effective(skill, rank, choices, mods, true)
 			local where = `{skill.id} rank {rank} ({describe(choices)})`
-			local d: any = def
-			local radius = d.allyRadius or def.radius or def.range or 0
+			-- S73: a buff's party copies reach allyRadius (default 30; raw, so data above 40 shows up)
+			local reach = if def.type == "buff"
+				then def.allyRadius or RULES.allyRadius
+				else def.allyRadius or def.radius or def.range or 0
 			local cooldown = Skills.scaled(def, def.cooldown, rank)
-			for _, team in Skills.partyEffects(def, rank) do
+			for _, team in Skills.partyEffects(def, rank, behaviour) do
+				local radius = team.radius or reach
 				local rescue = RESCUE_KINDS[team.kind] == true
 					or (team.category == "allyGuard" and team.duration < RULES.rescueBelow)
 				if team.duration < RULES.minDuration and not rescue then

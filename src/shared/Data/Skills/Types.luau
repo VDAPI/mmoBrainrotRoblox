@@ -5,6 +5,10 @@
 -- { valueAtLevel1, valueAtMaxLevel } or a constant.
 export type Scaled = { number } | number
 
+-- A number, or the name of a `values` field read at the skill's rank (like SkillEffect.value). Path nodes reach a
+-- behaviour's number through it: the node adds to `values.<field>` and the behaviour names the field (S71, S73).
+export type ValueRef = number | string
+
 export type SkillType =
 	"target" -- single enemy hit
 	| "projectile" -- single enemy hit after travel time
@@ -76,6 +80,8 @@ export type SkillEffect = {
 	face: string?,
 	-- S70: bosses and Elite II ignore it (StatusEffectService ApplyOptions.notBoss, S63)
 	notBoss: boolean?,
+	-- "hot": heals hpPct % of the target's max HP per second (ROZWOJ 7.5, 14.2)
+	hpPct: ValueRef?,
 }
 
 -- Breakpoint (S28, ROZWOJ 2.7): what changes when the skill reaches rank 5 / 10 — numbers (`add` to radius, angle,
@@ -111,6 +117,17 @@ export type SkillEffect = {
 --                                take values.stunSplash % of the skill's damage (Final Verdict)
 --   shieldBurst = { radius }      S71: when the shield breaks or expires, allies within radius of its bearer heal
 --                                values.shieldBurst % of its starting value, once per shield (Shattering Shield)
+--   tauntNear = { radius, duration }       guard (S74): enemies near the protected ally are taunted onto the caster
+--   shieldPerHit = { hpPct, max, duration } circleSelf: an absorb shield on the caster, hpPct % of its max HP per taunted
+--                                           monster (at most `max` monsters), through ctx.shield
+--   extendOnKill = { seconds, max }        buff: every kill while it lasts lengthens the skill's effects by `seconds`,
+--                                           at most `max` seconds in total (SkillService, StatusEffectService.Extend)
+--   behindEffect = SkillEffect             buff: the effect on allies behind the caster at the cast (Paths.inAura "behind")
+--   allyHeal = { hpPct }                   buff: allies within allyRadius (caster included) heal hpPct % of their max HP
+--   allyShield = { hpPct, duration }       buff: the same allies get a shield of hpPct % of their max HP (guard, S74: the
+--                                           protected ally)
+-- Skill fields: furyConsume (target, buff), hitRadius (shout, S74), allyRadius (buff); `add.hitRadius` works like
+-- `add.radius`, `add.allyRadius` adds to the default reach (30). Numbers typed ValueRef may name a `values` field.
 --   effect / selfEffect / allyEffect = SkillEffect   an extra effect on hit enemies / the caster / allies; these
 --                            carry their own category (S53) like the skill's effects. Logic/Skills.effective
 --                            collects them from every source into def.effects / def.selfEffects / def.allyEffects
@@ -145,6 +162,12 @@ export type Breakpoint = {
 	burst: { radius: number, pct: number }?,
 	stunSplash: { radius: number }?,
 	shieldBurst: { radius: number }?,
+	tauntNear: { radius: number, duration: number }?,
+	shieldPerHit: { hpPct: ValueRef, max: number, duration: number }?,
+	extendOnKill: { seconds: number, max: ValueRef }?,
+	behindEffect: SkillEffect?,
+	allyHeal: { hpPct: ValueRef }?,
+	allyShield: { hpPct: ValueRef, duration: number }?,
 	effect: SkillEffect?,
 	selfEffect: SkillEffect?,
 	allyEffect: SkillEffect?,
@@ -172,6 +195,9 @@ export type SkillDef = {
 	cooldown: Scaled,
 	range: number?,
 	radius: number?,
+	hitRadius: number?, -- enemies' radius of a shout (S74); `radius` is the allies' one (ROZWOJ 14.2)
+	-- reach of a buff's party copies (allyEffect, allyHeal, allyShield); default BuffCategories.rules.allyRadius
+	allyRadius: number?,
 	angle: number?,
 	length: number?,
 	width: number?,
@@ -186,6 +212,7 @@ export type SkillDef = {
 	randomTarget: boolean?,
 	damageKind: ("phys" | "magic")?,
 	holy: boolean?, -- light damage (Cleric, Divine Wrath)
+	furyConsume: string?, -- values field: bonus % per Fury stack; the cast consumes every stack (ROZWOJ 10.4)
 	values: { [string]: Scaled },
 	effects: { SkillEffect }?,
 	-- S70 (ROZWOJ 9.4): effects with face are dice faces; all = every face with one pointed face stronger, and

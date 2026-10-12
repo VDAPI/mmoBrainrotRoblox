@@ -1,5 +1,6 @@
 --!strict
 -- Warrior skills (DESIGN §14.2), Energy. Values are { rank 1, rank 10 } (passives: rank 5).
+-- S73: breakpoint options A/B from ROZWOJ 10.2-10.5; unlock levels are still today's (paths: S75).
 
 local Build = require("./Build")
 
@@ -14,7 +15,11 @@ return Build.class("Warrior", "energy", "phys", {
 		cooldown = 4,
 		range = 8,
 		values = { dmg = { 160, 295 } },
-		breakpoints = Build.bp2({ a = { knockback = 6 } }, { a = { splash = { radius = 6, pct = 50 } } }),
+		breakpoints = Build.bp2({ a = { knockback = 6 }, b = { execute = 30 } }, {
+			a = { splash = { radius = 6, pct = 50 } },
+			-- no category (ROZWOJ 7.1); every strike renews it (no bleedStacks)
+			b = { effect = { kind = "bleed", duration = 6, value = 90 } },
+		}),
 		glyph = "⚔",
 	},
 	{
@@ -49,7 +54,23 @@ return Build.class("Warrior", "energy", "phys", {
 				},
 				values = { armorBp = 12 },
 			},
-		}, { a = { mul = { cooldown = 0.6 } } }),
+			b = { values = { atk = 3 } },
+		}, {
+			a = { mul = { cooldown = 0.75 } }, -- S73: was 0.6 (R4, ROZWOJ 10.5)
+			b = {
+				add = { effectDuration = 4 }, -- the own attack bonus 20 -> 24 s
+				-- Same key as the cry's own statBuff (S53 merges stats, longer time wins), so it lasts as long as the cry.
+				selfEffect = {
+					kind = "statBuff",
+					duration = 20,
+					stats = { atkSpeed = "speedBp" },
+					pct = true,
+					target = "self",
+					category = "own",
+				},
+				values = { speedBp = 10 },
+			},
+		}),
 		glyph = "📣",
 	},
 	{
@@ -63,7 +84,10 @@ return Build.class("Warrior", "energy", "phys", {
 		range = 25,
 		values = { dmg = { 120, 210 } },
 		effects = { { kind = "stun", duration = 0.8 } },
-		breakpoints = Build.bp2({ a = { add = { range = 7 } } }, { a = { stunNear = { radius = 5, duration = 1 } } }),
+		breakpoints = Build.bp2(
+			{ a = { add = { range = 7 } }, b = { mul = { cooldown = 0.8 } } },
+			{ a = { stunNear = { radius = 5, duration = 1 } }, b = { splash = { radius = 6, pct = 60 } } }
+		),
 		glyph = "➹",
 	},
 	{
@@ -79,7 +103,10 @@ return Build.class("Warrior", "energy", "phys", {
 		hits = 3,
 		interval = 0.2,
 		values = { dmg = { 37, 67 } },
-		breakpoints = Build.bp2({ a = { castMove = 60 } }, { a = { pull = 12 } }),
+		breakpoints = Build.bp2(
+			{ a = { castMove = 60 }, b = { lifesteal = 8 } },
+			{ a = { pull = 12 }, b = { add = { hits = 1 }, values = { dmg = -7 } } } -- 4 x 60 % at rank 10
+		),
 		glyph = "🌀",
 	},
 	{
@@ -103,7 +130,10 @@ return Build.class("Warrior", "energy", "phys", {
 		angle = 90,
 		values = { dmg = { 140, 250 }, bleed = 30 },
 		effects = { { kind = "bleed", duration = 5, value = "bleed" } },
-		breakpoints = Build.bp2({ a = { add = { angle = 30 } } }, { a = { bleedStacks = 3 } }),
+		breakpoints = Build.bp2(
+			{ a = { add = { angle = 30 } }, b = { values = { bleed = 20 } } },
+			{ a = { bleedStacks = 3 }, b = { lifesteal = 12 } }
+		),
 		glyph = "🪓",
 	},
 	{
@@ -127,10 +157,10 @@ return Build.class("Warrior", "energy", "phys", {
 				category = "own",
 			},
 		},
-		breakpoints = Build.bp2(
-			{ a = { add = { radius = 5 } } },
-			{ a = { effect = { kind = "slow", duration = 4, value = 30, category = "enemySlow" } } }
-		),
+		breakpoints = Build.bp2({ a = { add = { radius = 5 } }, b = { selfHeal = 8 } }, {
+			a = { effect = { kind = "slow", duration = 4, value = 30, category = "enemySlow" } },
+			b = { add = { effectDuration = 3 } }, -- taunt and armor 9 s
+		}),
 		glyph = "❗",
 	},
 	{
@@ -154,8 +184,10 @@ return Build.class("Warrior", "energy", "phys", {
 		values = { dmg = { 150, 280 }, slow = 40 },
 		effects = { { kind = "slow", duration = 3, value = "slow", category = "enemySlow" } },
 		breakpoints = Build.bp2(
-			{ a = { lingering = { pct = 20, duration = 3, kind = "cracks" } } },
-			{ a = { echo = { delay = 1, pct = 60 } } }
+			-- S73: was pct = 20 (R4, ROZWOJ 10.2)
+			{ a = { lingering = { pct = 5, duration = 3, kind = "cracks" } }, b = { pull = 10 } },
+			-- S73: was pct = 60 (R4, ROZWOJ 10.2)
+			{ a = { echo = { delay = 1, pct = 25 } }, b = { values = { dmg = 60 } } }
 		),
 		glyph = "⛰",
 	},
@@ -178,7 +210,7 @@ return Build.class("Warrior", "energy", "phys", {
 				category = "own",
 			},
 		},
-		breakpoints = Build.bp2({ a = { values = { lifesteal = 3 } } }, {
+		breakpoints = Build.bp2({ a = { values = { lifesteal = 3 } }, b = { add = { effectDuration = 2 } } }, {
 			a = {
 				selfEffect = {
 					kind = "damageReduction",
@@ -188,6 +220,7 @@ return Build.class("Warrior", "energy", "phys", {
 					category = "own",
 				},
 			},
+			b = { values = { speed = 8 } },
 		}),
 		glyph = "🩸",
 	},
@@ -212,8 +245,8 @@ return Build.class("Warrior", "energy", "phys", {
 		values = { dmg = { 300, 520 }, armorBreak = 30 },
 		effects = { { kind = "armorBreak", duration = 6, value = "armorBreak", category = "enemyArmor" } },
 		breakpoints = Build.bp2(
-			{ a = { effect = { kind = "stun", duration = 0.7 } } },
-			{ a = { splash = { radius = 7, pct = 60 } } }
+			{ a = { effect = { kind = "stun", duration = 0.7 } }, b = { values = { dmg = 40 } } },
+			{ a = { splash = { radius = 7, pct = 60 } }, b = { mul = { cooldown = 0.8 } } }
 		),
 		glyph = "🔨",
 	},
@@ -230,7 +263,10 @@ return Build.class("Warrior", "energy", "phys", {
 		effects = {
 			{ kind = "damageReduction", duration = 6, value = "reduction", target = "self", category = "own" },
 		},
-		breakpoints = Build.bp2({ a = { add = { effectDuration = 2 } } }, { a = { selfHeal = 15 } }),
+		breakpoints = Build.bp2(
+			{ a = { add = { effectDuration = 2 } }, b = { values = { reduction = 8 } } },
+			{ a = { selfHeal = 15 }, b = { mul = { cooldown = 0.75 } } }
+		),
 		glyph = "🛡",
 	},
 	{
@@ -245,7 +281,10 @@ return Build.class("Warrior", "energy", "phys", {
 		hits = 3,
 		interval = 0.45,
 		values = { dmg = { 180, 320 } },
-		breakpoints = Build.bp2({ a = { add = { radius = 3 } } }, { a = { stunLast = 1.2 } }),
+		breakpoints = Build.bp2(
+			{ a = { add = { radius = 3 } }, b = { values = { dmg = 25 } } },
+			{ a = { stunLast = 1.2 }, b = { add = { hits = 1 }, values = { dmg = -25 } } } -- 4 x 295 % at rank 10
+		),
 		glyph = "⚡",
 	},
 })

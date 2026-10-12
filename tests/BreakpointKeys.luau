@@ -35,6 +35,12 @@ for _, key in
 		"burst",
 		"stunSplash", -- S71
 		"shieldBurst",
+		"tauntNear", -- S73
+		"shieldPerHit",
+		"extendOnKill",
+		"behindEffect",
+		"allyHeal",
+		"allyShield",
 		"effect",
 		"selfEffect",
 		"allyEffect",

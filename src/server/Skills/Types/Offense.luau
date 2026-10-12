@@ -5,10 +5,15 @@
 -- S28 breakpoints (ctx.bp): pull at the start, pierce (projectiles), lingering areas, echo waves, the last wave /
 -- jump stuns, split impacts; on-hit ones (knockback, splash, stun near, lifesteal, execute) live in Context.damage.
 -- S71: Final Verdict (stunSplash) in `target`; Divine Wrath's heal moved to Context (onHit).
+-- S73 (ROZWOJ 10.4, 14.2): `target` with furyConsume spends the caster's Fury for x Skills.furyMultiplier (the splash
+-- too, it counts from the same percent); circleSelf with shieldPerHit shields the caster per taunted monster.
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Context = require(script.Parent.Parent.Context)
 local Push = require(script.Parent.Parent.Push)
-local SkillVfx = require(game:GetService("ReplicatedStorage").Shared.Data.SkillVfx)
+local SkillVfx = require(ReplicatedStorage.Shared.Data.SkillVfx)
+local Skills = require(ReplicatedStorage.Shared.Logic.Skills)
 
 type Ctx = Context.Ctx
 type Handler = (ctx: Ctx) -> (boolean, string?)
@@ -85,7 +90,12 @@ Offense.target = function(ctx)
 		return false, "cast.error.noTarget"
 	end
 	ctx.fx({ t = target.id })
-	local result = ctx.damage(target, ctx.value("dmg"), { primary = true })
+	local percent = ctx.value("dmg")
+	if ctx.skill.furyConsume then
+		-- spent even when the blow is dodged (the cast happened)
+		percent *= Skills.furyMultiplier(ctx.value(ctx.skill.furyConsume), ctx.consumeFury())
+	end
+	local result = ctx.damage(target, percent, { primary = true })
 	if result and not result.dodged then
 		ctx.applyEffects(target, "enemy")
 		stunSplash(ctx, target)
@@ -198,6 +208,25 @@ Offense.cone = function(ctx)
 	return true, nil
 end
 
+-- S73 shieldPerHit (Defender's Oath, S75): a shield on the caster, hpPct % of its max HP per monster in the first wave
+-- (taunt works on monsters only), at most `max` of them.
+local function shieldPerHit(ctx: Ctx, enemies: { any })
+	local spec = ctx.bp.shieldPerHit
+	if not spec then
+		return
+	end
+	local count = 0
+	for _, entity in enemies do
+		if entity.kind == "monster" then
+			count += 1
+		end
+	end
+	if count > 0 then
+		local maxHp = ctx.services.Stat.GetValue(ctx.player, "maxHp")
+		ctx.shield(ctx.caster, maxHp * ctx.resolve(spec.hpPct) / 100 * math.min(count, spec.max), spec.duration)
+	end
+end
+
 Offense.circleSelf = function(ctx)
 	local radius = ctx.skill.radius or 8
 	local hasDamage = ctx.skill.values.dmg ~= nil
@@ -219,6 +248,7 @@ Offense.circleSelf = function(ctx)
 			stunLast(ctx, enemies)
 		end
 		if n == 1 then
+			shieldPerHit(ctx, enemies)
 			-- Radiance: allies are healed for a share of the damage value.
 			local healShare = ctx.skill.values.heal
 			if healShare and hasDamage then

@@ -307,7 +307,9 @@ describe("Breakpoints", function()
 					local v = Skills.valueAt(def, field, level)
 					expect(finite(v)).toBe(true)
 				end
-				for _, field in { "radius", "angle", "range", "length", "width", "hits", "delay" } do
+				for _, field in
+					{ "radius", "hitRadius", "allyRadius", "angle", "range", "length", "width", "hits", "delay" }
+				do
 					local v = (def :: any)[field]
 					if v ~= nil then
 						expect(finite(v) and v >= 0).toBe(true)

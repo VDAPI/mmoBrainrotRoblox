@@ -253,7 +253,20 @@ T.describe("EffectStack: stacks and publication (S63)", function()
 		T.expect(first.tickAmount).toBe(100)
 		local single = EffectStack.restack(EffectStack.restack(nil, spec(10)), spec(11.5))
 		T.expect(single.stacks).toBe(1)
-		T.expect(single.nextTick).toBe(12.5)
+		T.expect(single.nextTick).toBe(11) -- S73: a running effect keeps its tick
+	end)
+
+	T.it("a running ticking effect keeps nextTick", function()
+		local old: EffectStack.Stack = { stacks = 1, value = 0, tickAmount = 10, expiresAt = 5, nextTick = 3 }
+		local function spec(now: number, tickUnit: number?): EffectStack.StackSpec
+			return { unit = 0, tickUnit = tickUnit, maxStacks = nil, duration = 4, now = now, tickInterval = 1 }
+		end
+		local refreshed = EffectStack.restack(old, spec(2.6, 10))
+		T.expect(refreshed.nextTick).toBe(3)
+		T.expect(refreshed.expiresAt).toBeNear(6.6)
+		local expired = EffectStack.restack(old, spec(6, 10))
+		T.expect(expired.nextTick).toBe(7)
+		T.expect(EffectStack.restack(old, spec(2.6, nil)).nextTick).toBeNil()
 	end)
 
 	T.it("publishes a refresh at most once per interval", function()
@@ -373,6 +386,9 @@ local function problems(skill: any): { string }
 				end
 				if bp.allyEffect then
 					check(bp.allyEffect, "allies", where)
+				end
+				if bp.behindEffect then -- S73 (Party Bastion, S75)
+					check(bp.behindEffect, "allies", where)
 				end
 			end
 		end

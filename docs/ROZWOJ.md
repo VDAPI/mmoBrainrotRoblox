@@ -2210,7 +2210,8 @@ Kod:
   (S60; `Data/Luck` ma tylko pola i limity).
 - Leczenie: `Support.heal` (także Oczyszczenie, które leczy przez `Support.heal` z warunkiem na id), `hot`, `shield` i
   `groupHeal` czytają `healHp`/`healMag` przez `Skills/Context.heal` (7.5); haki `allyHealBonus`, `lowHpHealBonus`,
-  `healCrit` w tym samym miejscu. Światłość zostaje przy leczeniu udziałem zadanych obrażeń w `Offense.circleSelf`
+  `healCrit` w tym samym miejscu (S71: jeden pomocnik `Context.healFactor` liczy premie leczenia i tarcz; S73: tarcze
+  z umiejętności idą przez `ctx.shield(entity, amount, duration, opts?)`). Światłość zostaje przy leczeniu udziałem zadanych obrażeń w `Offense.circleSelf`
   (`Offense.luau:208`), bez `healHp`.
 - `cleanse` także w `Support.shield` (Tarcza Wiary 5B) i w `Support.groupBuff` (Boska Interwencja 5B); dziś czytają go
   tylko `heal`, `hot` i `groupHeal`.
@@ -2270,7 +2271,8 @@ Kod:
   usunięcie po `resolveAbility`; czyta go wybór celu `guard`.
 - Leczenie i tarcze od maks. HP celu (7.5): nowe zachowania `allyHeal = { hpPct }` (Okrzyk Wiecu), `allyShield = {
   hpPct, duration }` (Tarcza Drużyny), `hot` z `hpPct` (Sztandar 5B) i `shieldPerHit` (Przysięga Obrońcy), przez
-  `Context.heal` i efekt `shield`.
+  `Context.heal` i efekt `shield`; tarcze zawsze przez `ctx.shield(entity, amount, duration, opts?)`, premie leczenia
+  i tarcz liczy jeden pomocnik `Context.healFactor` (S71, S73).
 - Zmiany w handlerach: `Offense.target` i `Support.buff` czytają `furyConsume`; `Support.buff` obsługuje `allyEffect` z
   promieniem (`allyRadius`, domyślnie 30) dla Okrzyku, także na rzucającym (jak `Support.groupBuff`), i `behindEffect`
   dla Ostatniego Bastionu; Prowokacja (`circleSelf`) obsługuje `shieldPerHit`; Krwawy Szał `extendOnKill`.
