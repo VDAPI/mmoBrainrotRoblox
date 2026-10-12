@@ -5,6 +5,8 @@ local fs = require("@lune/fs")
 local Classes = require("../src/shared/Data/Classes")
 local Config = require("../src/shared/Config")
 local Bonuses = require("../src/shared/Data/Bonuses")
+local Bosses = require("../src/shared/Data/Bosses")
+local Families = require("../src/shared/Data/Families")
 local ItemRoll = require("../src/shared/Logic/ItemRoll")
 local ItemTraits = require("../src/shared/Data/ItemTraits")
 local Items = require("../src/shared/Data/Items")
@@ -202,7 +204,10 @@ T.describe("Data: Monsters", function()
 				check(hasKey(def.nameKeys[variant]), `missing name {def.nameKeys[variant]}`)
 			end
 			check(def.levels.min >= 1 and def.levels.max <= 100 and def.levels.min <= def.levels.max, "levels")
-			check(def.hpMul > 0 and def.atkMul > 0 and def.defMul > 0 and def.speed > 0, "multipliers")
+			check(
+				def.hpMul > 0 and def.atkMul > 0 and def.defMul > 0 and def.mresMul > 0 and def.speed > 0,
+				"multipliers"
+			)
 			check(def.attack == "melee" or def.attack == "ranged", "attack type")
 			check(def.size >= 0.4 and def.size <= 2.5, "size")
 			if def.elites then
@@ -210,6 +215,70 @@ T.describe("Data: Monsters", function()
 			end
 			check(def.lootTable ~= "", "loot table id")
 		end
+	end)
+
+	T.it("every kind and boss has a family (S66, STATY 7)", function()
+		local CombatData = require("../src/shared/Data/Combat")
+		T.expect(Families.ids).toEqual({ "animal", "humanoid", "undead", "beast", "elemental", "dragon" })
+		for _, id in Families.ids do
+			local family = Families.byId[id]
+			T.expect(family.nameKey).toBe("family." .. id)
+			T.expect({ key = family.nameKey, ok = hasKey(family.nameKey) }).toEqual({ key = family.nameKey, ok = true })
+			for defenceId in family.defences do
+				for _, key in { `monsterDefence.{defenceId}.name`, `monsterDefence.{defenceId}.line` } do
+					T.expect({ key = key, ok = hasKey(key) }).toEqual({ key = key, ok = true })
+				end
+			end
+		end
+		T.expect(hasKey("family.none") and hasKey("monsterDefence.none.name")).toBe(true)
+
+		local counts: { [string]: number } = {}
+		local traits: { [string]: { string } } = {}
+		for _, def in Monsters.list do
+			T.expect({ id = def.id, ok = Families.get(def.family) ~= nil }).toEqual({ id = def.id, ok = true })
+			counts[def.family] = (counts[def.family] or 0) + 1
+			if def.defence then
+				local trait = assert(Families.defence(def.family, def.defence), def.id)
+				traits[def.defence] = traits[def.defence] or {}
+				table.insert(traits[def.defence], def.id)
+				T.expect({ def.id, def.defMul, def.mresMul, def.dodge })
+					.toEqual({ def.id, trait.defMul or 1, trait.mresMul or 1, trait.dodge or 0 })
+			else
+				T.expect({ def.id, def.mresMul, def.dodge }).toEqual({ def.id, 1, 0 })
+			end
+			T.expect(def.dodge >= 0 and def.dodge <= CombatData.dodgeCap).toBe(true)
+		end
+		T.expect(counts).toEqual({ animal = 17, humanoid = 12, undead = 6, beast = 5, elemental = 6, dragon = 4 })
+		for _, list in traits do
+			table.sort(list)
+		end
+		local function sorted(list: { string }): { string }
+			table.sort(list)
+			return list
+		end
+		T.expect(traits).toEqual({
+			armored = sorted({
+				"renegadeDwarf",
+				"ashOrc",
+				"skeletonGuard",
+				"frozenKnight",
+				"fireGolem",
+				"magmaGolem",
+				"crystalGuardian",
+			}),
+			warded = sorted({ "forestWraith", "specter" }),
+			scaled = sorted({ "wyvern", "dragonspawn", "youngFrostDragon", "frostWyrm" }),
+			agile = sorted({ "lynx", "bloodBat", "snowLeopard", "peakHarpy" }),
+		})
+
+		local bosses: { [string]: string } = {}
+		for _, def in Bosses.list do
+			T.expect(Families.get(def.family) ~= nil).toBe(true)
+			bosses[def.id] = def.family
+		end
+		T.expect(bosses)
+			.toEqual({ grimrok = "humanoid", morvane = "undead", azgor = "elemental", vaelgrath = "dragon" })
+		T.expect(Bosses.byId.vaelgrath.mresMul).toBe(1.4)
 	end)
 
 	T.it("abilities are well formed", function()

@@ -3603,3 +3603,32 @@ TooltipModel}`, `Services/{CombatService,StatusEffectService,SkillService}`, `Sk
 Types/Movement}`, `Controllers/{CombatFxController,EffectsController}`, `Vfx/Library`, `UI/Screens/Hud/EffectIcons`,
 `tests/{traits,effectstack,items,data,localization}.spec`, dane wiki, `docs/{STATY,ROZWOJ,DECYZJE,SESJE,PROGRESS}.md`,
 `CLAUDE.md`.
+
+### S66: Przedmioty 5: rodziny potworów i obrona potworów
+
+- `Data/Families` (sześć rodzin, cechy `armored` / `warded` / `scaled` / `agile`); każdy z 50 rodzajów ma `family`,
+  15 z cechą (`defence`, wartości tylko z `Data/Families`); bossowie `family`, Vaelgrath `mresMul` 1,4.
+- Obrona: `monsterArmorPerLevel` 10, `monsterMresPerLevel` 8, odporność × `mresMul`, `dodge` w `MonsterStats.compute`
+  i `asDefender`; `monsterHpComp` 0,9 w `baseHp` (część z poziomu).
+- `Damage.paramsVsMonster`: potwory unikają tylko `options.basic`; gałąź potwora w `DealDamage` bierze bramkę, a
+  uniknięty cios woła `AddThreat(player, 0)`. `Boss.kindFor` z `family`, `mresMul`, `dodge`.
+- Lustro: `FightSim.dps` mnoży część ataku podstawowego przez `1 − dodgeChance`; `Balance.boss` i `WikiData/Bosses`
+  z `mresMul`; „Wzory” w `tools/balance_report` (raport nieuruchamiany).
+- `/mobdef`, druga linia `/target info` (`admin.target.family`), rodzina i cecha na karcie potwora mapy świata.
+  Teksty PL/EN: `family.*`, `monsterDefence.*`, `worldmap.card.family`, `admin.mobdef.info`.
+- Testy: `damage` (wzory od stałych, pasma redukcji L20/50/100, `paramsVsMonster`, 4000 rzutów, `FightSim.dps`),
+  `data` (rodziny, liczby, zbiory cech, bossowie), `localization` (`Families`), próg Maga L2 w `balance`.
+- Sonda (przed → po, `monsterHpComp` 0,9): pojedynek L20 Wojownik 7,58 → 7,61, Łowca 6,08 → 6,10, Mag 6,08 → 6,02,
+  Kapłan 10,40 → 10,28 s; Mag L2 5,53 → 5,50 s. Grimrok 3/4/5: 5,01/5,28/5,19 → 5,08/5,31/5,25 min. Pas S18
+  Wojownika L30/60/90: 8,84/7,77/6,93 → 8,91/7,89/7,05 s. Przegląd 0,86–0,94: mediana 0,950 … 1,029 (0,90 → 0,990).
+- Dla S84 / S88 / S92 (rodzaj z cechą wobec zwykłego tego poziomu, przed → po): ryś L5 ×1,00 → ×1,11 (wszyscy);
+  szkielet L38 ×1,03 → ×1,14 fizyczni, ×1,00 Mag/Kapłan; zjawa L27 ×0,80 → ×0,80 fizyczni, ×0,89 Mag/Kapłan; ork L52
+  ×1,20 → ×1,33 fizyczni; golem ognisty L56 ×1,67 → ×1,90 fizyczni, ×1,60 Mag; wywerna L62 ×1,10 → ×1,18; lampart L74
+  ×1,00 → ×1,11; strażnik kryształowy L93 ×1,82 → ×2,03 fizyczni, ×1,70 Mag. `kindReward` tego nie liczy.
+- Wiki: `npm run data` (Node był): `monsters.json`, `bosses.json`, `mechanics.json`, `meta.json`, `docs/PRZEDMIOTY.md`;
+  bez zmian w `Schema`.
+
+Pliki: `Data/{Families,Monsters,Bosses,Combat,AdminCommands,Localization/pl,Localization/en}`,
+`Logic/{MonsterStats,Damage,FightSim}`, `Services/CombatService`, `Entities/Boss`, `Admin/{Monsters,Combat}`,
+`UI/Screens/WorldMap/CreatureCards`, `tests/{Balance,balance,damage,data,localization}`, `tools/{balance_report,
+WikiData/Bosses}`, dane wiki, `docs/{STATY,DESIGN,ARCHITECTURE,DECYZJE,SESJE,PROGRESS}.md`, `CLAUDE.md`.

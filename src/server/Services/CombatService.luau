@@ -814,6 +814,8 @@ function CombatService.DealDamage(
 		-- S62: armour break goes to Damage.defenseOf (before pierce). S63: strongest skill + strongest item (<= 50).
 		local monsterParams = table.clone(params)
 		monsterParams.armorBreak = StatusEffectService.CategoryValue(targetEntity, "enemyArmor")
+		-- S66 (STATY 6): monsters dodge only basic attacks (and their second hits and counters, all `basic`).
+		monsterParams = Damage.paramsVsMonster(monsterParams, options ~= nil and options.basic == true)
 		result = Damage.computeDamage(attacker, defender, monsterParams, rng)
 		if not result.dodged then
 			result.amount = math.max(1, math.floor(result.amount * offensiveMultiplier(player, targetEntity) * extra))
@@ -846,6 +848,9 @@ function CombatService.DealDamage(
 		})
 		if result.amount > 0 then
 			monster:TakeDamage(result.amount, player)
+		end
+		if result.dodged and not monster.invulnerable then
+			monster:AddThreat(player, 0) -- S66: a dodged hit still starts the fight and pulls the group
 		end
 	else
 		local target = targetEntity.player :: Player

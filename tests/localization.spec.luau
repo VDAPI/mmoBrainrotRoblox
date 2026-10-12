@@ -11,6 +11,7 @@ local MODULES: { [string]: any } = {
 	Bosses = require("../src/shared/Data/Bosses"),
 	Classes = require("../src/shared/Data/Classes"),
 	Cosmetics = require("../src/shared/Data/Cosmetics"),
+	Families = require("../src/shared/Data/Families"),
 	Fish = require("../src/shared/Data/Fish"),
 	GatherNodes = require("../src/shared/Data/GatherNodes"),
 	GuildSkills = require("../src/shared/Data/GuildSkills"),

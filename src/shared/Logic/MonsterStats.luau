@@ -12,6 +12,9 @@ export type Kind = {
 	hpMul: number,
 	atkMul: number,
 	defMul: number,
+	mresMul: number?, -- S66: magic resistance multiplier (default 1)
+	dodge: number?, -- S66: % dodge against players' basic attacks
+	family: string?, -- S66: Data/Families id
 	speed: number, -- attack speed multiplier (2 = twice as fast)
 	attack: "melee" | "ranged",
 	damageKind: ("phys" | "magic")?,
@@ -30,12 +33,14 @@ export type MonsterStats = {
 	scale: number,
 	variant: Variant,
 	damageKind: "phys" | "magic",
+	dodge: number, -- S66: % against basic attacks only
+	family: string?, -- S66: Data/Families id (read by S67 / S68)
 }
 
 local MonsterStats = {}
 
 function MonsterStats.baseHp(level: number): number
-	return Combat.monsterHpBase + Combat.monsterHpFactor * level ^ Combat.monsterHpExponent
+	return Combat.monsterHpBase + Combat.monsterHpComp * Combat.monsterHpFactor * level ^ Combat.monsterHpExponent
 end
 
 function MonsterStats.baseAttack(level: number): number
@@ -77,14 +82,17 @@ function MonsterStats.compute(
 			* variantMods.dmgMul
 			* atkMul
 			* MonsterStats.groupDamageMul(groupSize),
+		-- S66 (STATY 7): magic resistance has its own multiplier; dodge only against basic attacks (Damage.paramsVsMonster)
 		armor = Combat.monsterArmorPerLevel * finalLevel * kind.defMul,
-		mres = Combat.monsterMresPerLevel * finalLevel * kind.defMul,
+		mres = Combat.monsterMresPerLevel * finalLevel * (kind.mresMul or 1),
 		attackInterval = Combat.monsterAttackInterval / math.max(0.1, kind.speed),
 		range = kind.range or (if kind.attack == "ranged" then 30 else Combat.meleeRange),
 		aggroRange = variantMods.aggroRange,
 		scale = variantMods.scale,
 		variant = v,
 		damageKind = (kind.damageKind or "phys") :: "phys" | "magic",
+		dodge = math.clamp(kind.dodge or 0, 0, Combat.dodgeCap),
+		family = kind.family,
 	}
 end
 
@@ -102,7 +110,7 @@ function MonsterStats.asAttacker(stats: MonsterStats): Damage.Attacker
 end
 
 function MonsterStats.asDefender(stats: MonsterStats): Damage.Defender
-	return { armor = stats.armor, mres = stats.mres, dodge = 0, res = {}, level = stats.level }
+	return { armor = stats.armor, mres = stats.mres, dodge = stats.dodge, res = {}, level = stats.level }
 end
 
 -- EXP and gold factor of a kind (S32): tougher kinds pay more, weak ones less. Bosses use 1.

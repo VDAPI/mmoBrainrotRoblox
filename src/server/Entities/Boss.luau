@@ -73,6 +73,10 @@ local function kindFor(def: Bosses.BossDef, players: number): Monsters.MonsterDe
 		hpMul = BossScaling.hpMultiplier(players) * (def.hpMul or 1),
 		atkMul = def.atkMul,
 		defMul = def.defMul,
+		mresMul = def.mresMul or 1, -- S66
+		dodge = 0, -- S66: bosses never dodge
+		family = def.family, -- S66 (S67 reads monster.def.family)
+		defence = nil,
 		speed = def.speed,
 		moveSpeed = def.moveSpeed,
 		attack = def.attack,

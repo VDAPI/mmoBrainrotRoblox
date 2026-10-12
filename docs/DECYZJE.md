@@ -1336,3 +1336,16 @@
   `hpFraction` / `alliesInCircle` / `mostWounded` / `healFrom`; `ctx.*` tylko delegują.
 - **S65** Stałe cech w `ItemTraits.params` (nie `Data/Combat`, STATY 13 poprawione); lustro cech rytmu w S84.
   `balance.spec` bez zmian progów.
+- **S66** Sześć rodzin w `Data/Families` z cechami obrony; rodzaj nazywa cechę swojej rodziny (`defence`), wartości
+  tylko tam. Zwierzęta unik 12 (STATY: 10–15), harpia 15. Bossowie mają rodzinę bez cechy i uniku; Vaelgrath
+  `mresMul` 1,4.
+- **S66** Odporność magiczna ma własne `mresMul` i nie rośnie już z `defMul` (`boar`, `koboldMiner`, `rotEnt`,
+  `basilisk`, Grimrok, Morvane, Azgor). Pancerz 10·L zatrzymuje ok. 17–19%, odporność 8·L ok. 14%.
+- **S66** `Combat.monsterHpComp` = 0,9 tylko na części życia z poziomu zamiast ×0,85 z STATY 7: najmniejsza wartość z
+  medianą czasów pojedynków L5–20 w 0,98–1,02 (0,9 → 0,990; 0,89 → 0,9797, tuż pod pasmem). 0,85 skracało walki
+  1–20 o ok. 5%. Nowy klucz `Data/Combat` trafia na wiki (`mechanics.json`) świadomie.
+- **S66** Próg `balance.spec` pojedynku Maga na 2. poziomie 5,5 → 5,4 s: przy 0,90–0,92 wychodzi 5,495 s (pancerz
+  wyższy, życie na L2 to głównie stała 55); inne progi bez zmian.
+- **S66** Unik potworów tylko przy `options.basic` (atak podstawowy, drugi cios, kontra, Przeszycie, przeskok Iskry);
+  reszta przez `Damage.paramsVsMonster` z `canDodge = false`. Uniknięty cios wciąga potwora i grupę (`AddThreat(0)`);
+  premie zużyte przed rzutem (strzał, Naciąg) przepadają jak w PvP. `kindReward` nie liczy obrony ani uniku (S92).

@@ -278,6 +278,7 @@ cmd("monsters", "killall", { int("radius", 1, 2000, true) }, { danger = true })
 cmd("monsters", "monsters", {})
 cmd("monsters", "groups", {})
 cmd("monsters", "mstats", { int("level", 1, MAX_LEVEL, true) })
+cmd("monsters", "mobdef", { ref("monster", "monster"), VARIANT, int("level", 1, MAX_LEVEL, true) }) -- S66
 cmd("monsters", "e2", { enum("action", { "spawn" }) })
 cmd("monsters", "e2timer", {})
 cmd("monsters", "boss", { enum("action", { "reset", "spawn" }), ref("boss", "boss", true) })

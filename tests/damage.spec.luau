@@ -281,10 +281,13 @@ T.describe("MonsterStats", function()
 	T.it("base formulas", function()
 		local s = MonsterStats.compute(kind, 10, "normal")
 		T.expect(s.level).toBe(10)
-		T.expect(s.maxHp)
-			.toBe(math.floor(Combat.monsterHpBase + Combat.monsterHpFactor * 10 ^ Combat.monsterHpExponent + 0.5))
+		local hp = Combat.monsterHpBase + Combat.monsterHpComp * Combat.monsterHpFactor * 10 ^ Combat.monsterHpExponent
+		T.expect(s.maxHp).toBe(math.floor(hp + 0.5))
 		T.expect(s.attack).toBeNear(Combat.monsterAtkBase + Combat.monsterAtkFactor * 10 ^ Combat.monsterAtkExponent)
-		T.expect(s.armor).toBe(40)
+		T.expect(s.armor).toBe(Combat.monsterArmorPerLevel * 10)
+		T.expect(s.mres).toBe(Combat.monsterMresPerLevel * 10)
+		T.expect(s.dodge).toBe(0)
+		T.expect(s.family).toBe(nil)
 		T.expect(s.attackInterval).toBeNear(Combat.monsterAttackInterval)
 		T.expect(s.range).toBe(7)
 		T.expect(s.aggroRange).toBe(Combat.variants.normal.aggroRange)
@@ -307,16 +310,88 @@ T.describe("MonsterStats", function()
 	end)
 
 	T.it("kind multipliers apply", function()
-		local tough = MonsterStats.compute(
-			{ hpMul = 2, atkMul = 0.5, defMul = 3, speed = 2, attack = "ranged", range = 28 },
-			20,
-			"normal"
-		)
+		local tough = MonsterStats.compute({
+			hpMul = 2,
+			atkMul = 0.5,
+			defMul = 3,
+			mresMul = 2,
+			dodge = 12,
+			family = "undead",
+			speed = 2,
+			attack = "ranged",
+			range = 28,
+		}, 20, "normal")
 		T.expect(tough.maxHp).toBe(math.floor(MonsterStats.baseHp(20) * 2 + 0.5))
 		T.expect(tough.attack).toBeNear(MonsterStats.baseAttack(20) * 0.5)
-		T.expect(tough.armor).toBe(240)
+		T.expect(tough.armor).toBe(Combat.monsterArmorPerLevel * 20 * 3)
+		T.expect(tough.mres).toBe(Combat.monsterMresPerLevel * 20 * 2)
+		T.expect(tough.dodge).toBe(12)
+		T.expect(tough.family).toBe("undead")
+		T.expect(MonsterStats.asDefender(tough).dodge).toBe(12)
+		local agile =
+			MonsterStats.compute({ hpMul = 1, atkMul = 1, defMul = 1, dodge = 80, speed = 1, attack = "melee" }, 5)
+		T.expect(agile.dodge).toBe(Combat.dodgeCap)
 		T.expect(tough.attackInterval).toBeNear(Combat.monsterAttackInterval / 2)
 		T.expect(tough.range).toBe(28)
+	end)
+
+	T.it("S66: monster defence stops the STATY 7 share at levels 20-100", function()
+		for _, L in { 20, 50, 100 } do
+			local plain = MonsterStats.compute(kind, L)
+			local armored = MonsterStats.compute(
+				{ hpMul = 1, atkMul = 1, defMul = 1.8, mresMul = 1.8, speed = 1, attack = "melee" },
+				L
+			)
+			T.expect(Damage.reduction(plain.armor, L)).toBeBetween(0.15, 0.21)
+			T.expect(Damage.reduction(armored.armor, L)).toBeBetween(0.25, 0.33)
+			T.expect(Damage.reduction(plain.mres, L)).toBeBetween(0.12, 0.17)
+			T.expect(Damage.reduction(armored.mres, L)).toBeBetween(0.21, 0.27)
+		end
+	end)
+
+	T.it("S66: monsters dodge only basic attacks", function()
+		T.expect(Damage.paramsVsMonster(PHYS, true)).toBe(PHYS)
+		local skill = Damage.paramsVsMonster(PHYS, false)
+		T.expect(skill.canDodge).toBe(false)
+		T.expect(PHYS.canDodge).toBe(nil)
+		local locked: Damage.Params = { kind = "phys", canDodge = false }
+		T.expect(Damage.paramsVsMonster(locked, false)).toBe(locked)
+		local agile = defender({ dodge = 15 })
+		local rng = Rng.new(66)
+		local basic, skills, aimed = 0, 0, 0
+		for _ = 1, 4000 do
+			if Damage.computeDamage(attacker(), agile, Damage.paramsVsMonster(PHYS, true), rng).dodged then
+				basic += 1
+			end
+			if Damage.computeDamage(attacker(), agile, Damage.paramsVsMonster(PHYS, false), rng).dodged then
+				skills += 1
+			end
+			if
+				Damage.computeDamage(attacker({ accuracy = 15 }), agile, Damage.paramsVsMonster(PHYS, true), rng).dodged
+			then
+				aimed += 1
+			end
+		end
+		T.expect(basic / 4000).toBeNear(0.15, 0.03)
+		T.expect(skills).toBe(0)
+		T.expect(aimed).toBe(0)
+	end)
+
+	T.it("S66: FightSim.dps loses the dodge on the basic attack share only", function()
+		local Balance = require("./Balance")
+		local FightSim = require("../src/shared/Logic/FightSim")
+		local base = Balance.player("Warrior", 20)
+		local values = table.clone(base.values)
+		values.accuracy, values.basicDmg, values.skillDmg = 0, 0, 0
+		local p: any = table.clone(base)
+		p.values = values
+		local m: any = table.clone(MonsterStats.compute(kind, 20))
+		local agile: any = table.clone(m)
+		agile.dodge = 15
+		T.expect(FightSim.dps(p, agile, 1.2) / FightSim.dps(p, m, 1.2)).toBeNear(0.875, 0.001)
+		T.expect(FightSim.dps(p, agile, 1) / FightSim.dps(p, m, 1)).toBeNear(0.85, 0.001)
+		values.accuracy = 15
+		T.expect(FightSim.dps(p, agile, 1.2) / FightSim.dps(p, m, 1.2)).toBeNear(1, 0.001)
 	end)
 
 	T.it("rejects unknown variants", function()

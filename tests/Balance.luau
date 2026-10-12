@@ -331,6 +331,8 @@ function Balance.boss(bossId: string, team: { Player }): any
 		hpMul = BossScaling.hpMultiplier(#team) * (def.hpMul or 1),
 		atkMul = def.atkMul,
 		defMul = def.defMul,
+		mresMul = def.mresMul, -- S66
+		family = def.family, -- S66
 		speed = def.speed,
 		attack = def.attack,
 		damageKind = def.damageKind,

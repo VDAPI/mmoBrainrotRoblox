@@ -17,6 +17,7 @@ local Clock = require(ReplicatedStorage.Shared.Util.Clock)
 local Config = require(ReplicatedStorage.Shared.Config)
 local DetailCard = require(script.Parent.DetailCard)
 local Elements = require(ReplicatedStorage.Shared.Data.Elements)
+local Families = require(ReplicatedStorage.Shared.Data.Families)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local GroupLuck = require(script.Parent.Parent.Parent.GroupLuck)
 local ItemRoll = require(ReplicatedStorage.Shared.Logic.ItemRoll)
@@ -119,7 +120,23 @@ function CreatureCards.monster(ctx: Context, kind: string, extra: any?): Spec?
 			text = T(if def.attack == "ranged" then "worldmap.card.ranged" else "worldmap.card.melee"),
 			color = Theme.Colors.TextMuted,
 		},
+		-- S66: the family (S67 lines "Strong against ...") and the defence trait.
+		{
+			text = T("worldmap.card.family", { family = T("family." .. def.family) }),
+			color = Theme.Colors.TextMuted,
+		},
 	}
+	local trait = if def.defence then Families.defence(def.family, def.defence) else nil
+	if def.defence and trait then
+		local mul = if def.defence == "warded" then trait.mresMul or 1 else trait.defMul or 1
+		table.insert(statLines, {
+			text = T(
+				"monsterDefence." .. def.defence .. ".line",
+				{ pct = math.floor((mul - 1) * 100 + 0.5), dodge = trait.dodge or 0 }
+			),
+			color = Theme.Colors.Parchment,
+		})
+	end
 	if def.element then
 		table.insert(statLines, {
 			text = T("worldmap.card.element", { element = T(Elements.nameKey(def.element)) }),

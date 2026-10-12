@@ -148,6 +148,47 @@ commands.mstats = function(player, args)
 	end)
 end
 
+-- S66: /mobdef <monster> [variant] [level]: family, defence trait, armour and magic resistance after your pierce,
+-- dodge and your miss chance after accuracy.
+commands.mobdef = function(player, args)
+	local monsterId = args[1]
+	if not monsterId then
+		reply(player, "admin.usage.mobdef")
+		return
+	end
+	local def = Monsters.get(monsterId)
+	if not def then
+		reply(player, "admin.spawn.unknown", { id = monsterId })
+		return
+	end
+	local variant = VARIANTS[tonumber(args[2]) or 0] or "normal"
+	local level = math.clamp(parseAmount(args[3]) or def.levels.min, 1, Config.MaxLevel)
+	withCharacter(player, function()
+		local character = PlayerStateService.GetCharacter(player) :: any
+		local s = MonsterStats.compute(def, level, variant :: MonsterStats.Variant)
+		local values = (StatService.Get(player) or { values = {} }).values
+		local attacker = Damage.fromStats(character.level, values)
+		local defender = MonsterStats.asDefender(s)
+		local function pct(kind: "phys" | "magic"): string
+			local defense = Damage.defenseOf(kind, attacker, defender, 0)
+			return string.format("%.1f", Damage.reduction(defense, character.level) * 100)
+		end
+		reply(player, "admin.mobdef.info", {
+			name = "@" .. (def.nameKeys :: any)[variant],
+			family = "@family." .. def.family,
+			defence = "@monsterDefence." .. (def.defence or "none") .. ".name",
+			level = s.level,
+			hp = s.maxHp,
+			armor = math.floor(s.armor + 0.5),
+			armorPct = pct("phys"),
+			mres = math.floor(s.mres + 0.5),
+			mresPct = pct("magic"),
+			dodge = s.dodge,
+			miss = string.format("%.1f", Damage.dodgeChance(s.dodge, attacker.accuracy or 0) * 100),
+		})
+	end)
+end
+
 commands.groups = function(player)
 	local character = PlayerStateService.GetCharacter(player)
 	local mapId = character and character.location.map or nil

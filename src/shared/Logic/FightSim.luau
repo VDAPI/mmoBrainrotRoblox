@@ -44,8 +44,10 @@ function FightSim.dps(p: Player, m: MonsterStats.MonsterStats, skill: number?): 
 	local critFactor = 1 + math.min((v.critChance or 0) + gapCrit, 100) / 100 * ((v.critDmg or 150) / 100 - 1)
 	local double = 1 + (p.hooks.doubleAttack or 0) / 100
 	local perHit = attack * (1 - Damage.reduction(defense, p.level)) * critFactor * gapMul
+	-- S66: monsters dodge only basic attacks (Damage.paramsVsMonster); skills always land.
+	local hitShare = 1 - Damage.dodgeChance(m.dodge or 0, v.accuracy or 0)
 	local s = skill or 1
-	local share = (1 + (v.basicDmg or 0) / 100) + math.max(0, s - 1) * (1 + (v.skillDmg or 0) / 100)
+	local share = (1 + (v.basicDmg or 0) / 100) * hitShare + math.max(0, s - 1) * (1 + (v.skillDmg or 0) / 100)
 	return perHit * math.max(0.1, v.atkSpeed or 1) * double * share
 end
 

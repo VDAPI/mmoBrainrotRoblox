@@ -70,16 +70,20 @@ return table.freeze({
 	kindRewardHpExponent = 0.75,
 	kindRewardAtkExponent = 0.25,
 
-	-- Monster base stats (DESIGN §15.1, lowered after the S17 tests): HP = 55 + 15 L^1.55, attack = 4 + 2.5 L^0.88,
-	-- armor = 4 L. tests/balance.spec checks fight length and HP lost against the design target.
+	-- Monster base stats (DESIGN §15.1, lowered after the S17 tests): HP = 55 + monsterHpComp x 15 L^1.55,
+	-- attack = 4 + 2.5 L^0.88, armour = 10 L x defMul, magic resistance = 8 L x mresMul (S66, STATY 7).
+	-- tests/balance.spec checks fight length and HP lost against the design target.
 	monsterHpBase = 55,
 	monsterHpFactor = 15,
+	-- S66: monster HP compensation for the higher armour (10 L) and magic resistance (8 L), on the level part only
+	-- (STATY 7 start 0.85, measured 0.9: tests/balance.spec 1-20 keeps its fight times); tuned in S84 / S88
+	monsterHpComp = 0.9,
 	monsterHpExponent = 1.55,
 	monsterAtkBase = 4,
 	monsterAtkFactor = 2.5,
 	monsterAtkExponent = 0.88,
-	monsterArmorPerLevel = 4,
-	monsterMresPerLevel = 3,
+	monsterArmorPerLevel = 10,
+	monsterMresPerLevel = 8,
 	monsterAttackInterval = 2.0, -- seconds between attacks before the kind's speed multiplier
 	monsterCritChance = 5,
 	monsterCritDmg = 150,

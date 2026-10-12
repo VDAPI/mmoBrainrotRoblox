@@ -456,6 +456,7 @@ type CharacterData = {
 | `/monsters` | monsters |  | licznik aktywnych i uśpionych potworów |
 | `/groups` | monsters |  | grupy potworów na tej mapie (liczba, rozkład 1–4, aktywne) |
 | `/mstats` | monsters | [level] | HP i atak zwykłego potwora oraz czas zabicia go przez ciebie |
+| `/mobdef` | monsters | <monster> [variant] [level] | S66: rodzina, pancerz, odporność i unik potwora wobec twojej postaci |
 | `/simfight` | combat | <monster> <level> [n] [variant] | S32: przewidywana walka z grupą n (`Logic/FightSim`, twoje statystyki) |
 | `/balance` | combat | – | S32: twoja postać względem celów balansu (1 potwór, grupy, Elita) |
 | `/curves` | combat | [level] | S54: wartości `Data/LevelCurves` na poziomie, Zręczność, odstęp mikstur |

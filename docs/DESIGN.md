@@ -602,9 +602,10 @@ tylko na niego i członków jego drużyny. Szczegóły: ROZWOJ §9.
 
 - Każdy **rodzaj** potwora ma 3 warianty: **zwykły**, **Elita** (poziom +2, HP ×3, obrażenia ×1.25, większy model ×1.25, czerwona nazwa), **Elita II** (poziom +4, HP ×10, obrażenia ×1.35, model ×1.5, fioletowa aura, 1 specjalna zdolność z telegrafem). (S32; wcześniej ×4 / ×1.5 i ×12 / ×2.)
 - Elity i Elity II **tylko w jaskiniach** (czerwone strefy), zasady w §3.5: 2 rodzaje Elit i dokładnie 1 Elita II na jaskinię, odrodzenie Elity II 10–20 min (losowo), ogłoszenie na mapie przy pojawieniu się.
-- Statystyki z poziomu (od S18, `Data/Combat`): `HP = 55 + 15·L^1.55`, `atak = 4 + 2.5·L^0.88`, `obrona = 4·L`,
-  `odporność magiczna = 3·L`, atak co 2,0 s / szybkość rodzaju. Mnożniki per rodzaj (`hpMul`, `atkMul`, `defMul`,
-  `speed`) w danych. **Członek grupy** zadaje obrażenia × `1 / 0,85 / 0,72 / 0,62` dla grupy 1 / 2 / 3 / 4 (S32,
+- Statystyki z poziomu (od S18, `Data/Combat`): `HP = 55 + c·15·L^1.55` (c = `monsterHpComp`, S66),
+  `atak = 4 + 2.5·L^0.88`, `obrona = 10·L × defMul`, `odporność magiczna = 8·L × mresMul` (S66), atak co 2,0 s /
+  szybkość rodzaju. Mnożniki per rodzaj (`hpMul`, `atkMul`, `defMul`, `mresMul`, `speed`) w danych. Rodzina z
+  `Data/Families`; rodzaje zwinne mają unik, ale tylko na ataki podstawowe graczy (S66). **Członek grupy** zadaje obrażenia × `1 / 0,85 / 0,72 / 0,62` dla grupy 1 / 2 / 3 / 4 (S32,
   `Combat.groupDamageMul`): cała grupa bije naraz, więc grupa 4 zadawała ok. 10× tyle co jeden potwór.
 - **Cele balansu** (S32, model `tests/Balance.luau`, sprawdza `balance.spec`, raport `docs/BALANS.md`; gracz używa
   zwykłych ataków + 1–2 umiejętności, bez mikstur, „ekwipunek na poziomie” = broń + druga ręka + 4 części zbroi +

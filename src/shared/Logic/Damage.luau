@@ -135,6 +135,17 @@ function Damage.rollHit(defenderDodge: number, attackerAccuracy: number, rng: Rn
 	return not rng:chance(Damage.dodgeChance(defenderDodge, attackerAccuracy))
 end
 
+-- S66 (STATY 6, 7): monsters dodge only players' basic attacks; any other player hit on a monster cannot be dodged.
+-- Never changes `params` (an area skill reuses it for the next targets).
+function Damage.paramsVsMonster(params: Params, basic: boolean?): Params
+	if basic or params.canDodge == false then
+		return params
+	end
+	local copy = table.clone(params)
+	copy.canDodge = false
+	return copy
+end
+
 -- S61 (ROZWOJ 7.6): chances (0..1) of dodge, miss and block. Their sum is capped at dodgeCap + avoidBonus, cut in
 -- this order: the dodge stays, the miss gets at most the rest, the block what is left.
 function Damage.avoidance(dodge: number, accuracy: number, miss: number?, block: number?): (number, number, number)

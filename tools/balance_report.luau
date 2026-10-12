@@ -603,7 +603,7 @@ table.insert(lines, "## Wzory (stan obecny)")
 table.insert(lines, "")
 table.insert(
 	lines,
-	`- Potwór: HP = {Combat.monsterHpBase} + {Combat.monsterHpFactor}·L^{Combat.monsterHpExponent}, atak = {Combat.monsterAtkBase} + {Combat.monsterAtkFactor}·L^{Combat.monsterAtkExponent}, pancerz {Combat.monsterArmorPerLevel}·L, atak co {Combat.monsterAttackInterval} s / szybkość.`
+	`- Potwór: HP = {Combat.monsterHpBase} + {Combat.monsterHpComp}·{Combat.monsterHpFactor}·L^{Combat.monsterHpExponent}, atak = {Combat.monsterAtkBase} + {Combat.monsterAtkFactor}·L^{Combat.monsterAtkExponent}, pancerz {Combat.monsterArmorPerLevel}·L × defMul, odporność magiczna {Combat.monsterMresPerLevel}·L × mresMul, atak co {Combat.monsterAttackInterval} s / szybkość.`
 )
 local groupMul = (Combat :: any).groupDamageMul
 if groupMul then

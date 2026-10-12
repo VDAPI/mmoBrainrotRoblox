@@ -35,7 +35,9 @@ T.describe("Balance S32: one monster and groups", function()
 					-- Clerics fight slower but take less damage (S18 band).
 					local slow = if classId == "Cleric" then 11 else 10
 					local low = if classId == "Cleric" then 0.09 else 0.1
-					T.expect(f.seconds).toBeBetween(5.5, slow)
+					-- S66: the Mage's level 2 duel sits at ~5.49 s after the new monster defence (DECYZJE).
+					local fast = if classId == "Mage" then 5.4 else 5.5
+					T.expect(f.seconds).toBeBetween(fast, slow)
 					T.expect(f.hpLost).toBeBetween(low, 0.25)
 				else
 					-- Level 1 is a gentle start.

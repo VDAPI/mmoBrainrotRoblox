@@ -359,7 +359,7 @@ Nowe pole `family` w `Data/Monsters.luau` i `Data/Bosses.luau`, lista i nazwy w 
 
 | Rodzina | Rodzaje | Poziomy | Bossy | Cecha rodziny (propozycja) |
 |---|---|---|---|---|
-| Zwierzęta `animal` | królik, wilk, dzik, ryś, ropucha, kruk, 2 niedźwiedzie, pająk, wąż, nietoperz, skorpion, hiena, sęp, lodowy wilk, lampart, mamut (17) | 1–89 | brak | ryś, nietoperz, lampart: unik 10–15% |
+| Zwierzęta `animal` | królik, wilk, dzik, ryś, ropucha, kruk, 2 niedźwiedzie, pająk, wąż, nietoperz, skorpion, hiena, sęp, lodowy wilk, lampart, mamut (17) | 1–89 | brak | ryś, nietoperz, lampart: unik 12% (S66) |
 | Ludzie i plemiona `humanoid` | bandyta, 2 gobliny, kobold, kultysta, troll, nekromanta, wiedźma, ork, krasnolud, kowal płomieni, olbrzym (12) | 9–88 | Grimrok | krasnolud, ork: pancerz ×1,6 |
 | Nieumarli `undead` | zjawa, szkielet, upiór, ghul, mumia, zamarznięty rycerz (6) | 23–95 | Morvane | szkielet, rycerz: pancerz ×1,8; zjawa, upiór: odporność magiczna ×1,8 |
 | Bestie `beast` | wilkołak, ent, bazyliszek, yeti, harpia (5) | 20–83 | brak | harpia: unik 15% |
@@ -368,13 +368,17 @@ Nowe pole `family` w `Data/Monsters.luau` i `Data/Bosses.luau`, lista i nazwy w 
 
 - Obrona potworów: `monsterArmorPerLevel` 4 → 10, `monsterMresPerLevel` 3 → 8, `defMul`/nowe `mresMul`
   według tabeli; zwykły potwór traci wtedy ok. 18% obrażeń, opancerzony ok. 29%. Życie potworów spada tak, żeby czas
-  walki w `tests/balance.spec` został (wstępnie ×0,85). Niszczenie 50% na opancerzonym daje wtedy ok. +17% obrażeń,
+  walki w `tests/balance.spec` został: S66 mnoży tylko część z poziomu przez `Combat.monsterHpComp` = 0,9 (zamiast
+  wstępnego ×0,85, które skracało walki 1–20 o 5–6%). Odporność magiczna ma własne `mresMul` (nie rośnie z `defMul`);
+  rodzaj nazywa cechę swojej rodziny (`defence`), wartości cech tylko w `Data/Families`; bossowie mają rodzinę, ale
+  bez cechy i uniku (Vaelgrath `mresMul` 1,4). Niszczenie 50% na opancerzonym daje wtedy ok. +17% obrażeń,
   przebicie 20% ok. +6%. Od tej zmiany zależą tylko dwie cechy, Niszczenie pancerza (Młot Wojenny) i Bełt
   przeciwpancerny (Ciężka Kusza), oraz linie `pierce` i `magicPierce`; przy dzisiejszej obronie są warte ok. 1%, więc
   obrona potworów rośnie w tej samej wersji co cechy. Pozostałe 22 cechy nie zależą od pancerza: Łamanie kości,
   Przeszycie, Łatwy cel i Pieczęć runiczna zastąpiły dawne Miażdżenie, przebicie Włóczni i Kuszy oraz przebicie magii
   Kostura Runicznego.
-- Unik potworów: nowe pole `dodge` (domyślnie 0), limit `Combat.dodgeCap` 30. Odporności na żywioły potworów: nie w
+- Unik potworów: nowe pole `dodge` (domyślnie 0), limit `Combat.dodgeCap` 30, tylko na ataki podstawowe graczy
+  (`Damage.paramsVsMonster`, S66); uniknięty cios wciąga potwora i grupę do walki. Odporności na żywioły potworów: nie w
   tej wersji (Mag ma żywioł z broni i nie zmienia go w walce).
 - Cechy sytuacyjne w PvE: walka z bossem ma dwie fale tarczy po ok. 10 pomocników (1), więc Żniwo leczy za ich
   zabicie (ok. 20 zabić na bossa, więcej w drużynie), a Przeszycie i Wstrząs działają na fale; na samym bossie nic nie
@@ -524,8 +528,8 @@ broni głównej, np. „z Łukiem Krótkim +39%”):
 | `Data/ItemTraits.luau` (nowy) | 24 cechy (id, kategoria, wartości, która liczba rośnie, rodzaj: statystyka, hak albo efekt, mnożnik PvP), `affinity` dla typów (Buława z częścią po klasie) |
 | `Data/Items/Bases.luau`, `Generate.luau` | pole `trait` w definicji typu; `crossbow` `dmgMul` 1,45 → ok. 1,53 (`lowca.md` ryzyko 1: atak podstawowy Kuszy na sekundę 1,09 zamiast 1,15 Łuku, czyli ok. 5% mniej obrażeń Trapera) |
 | `Data/Bonuses.luau` | nowe linie, `tier`, `wiki`, linie z parametrem, `CLASS_STATS`, pule |
-| `Data/Families.luau` (nowy), `Data/Monsters.luau`, `Data/Bosses.luau` | `family`, `mresMul`, `dodge`, `defMul` |
-| `Data/Combat.luau`, `Data/BuffCategories.luau`, `Data/ItemTraits.luau` | stałe cech w `ItemTraits.params` (S65, nie w `Data/Combat`); limity (przebicie 50, niszczenie 50 z częścią z przedmiotów 25 × siła, najwyżej 40, `blockCap = 25`, `riposteCap = 30`, `executionerCap` 60, odporności (limit ochron 30 leży w `Data/Stats` jak `dodge`), `vs_<klasa>`, `cdrCap = 20`), przerwa Wstrząsu 8 s i opóźnienie ataku po nim (0,5 × `attackInterval`), kategorie `enemyAttackSlow` (20%) i `enemyDamageDown` (15%), stałe cech (Podwójne cięcie co 5. i 5 s, Przeszycie: pas 4 st. szerokości do 4 st. za celem, Naciąg 4 s, Pieczęć 1,5 s i 1 st., Zbawczy cios 30 st.), mnożniki PvP |
+| `Data/Families.luau` (nowy), `Data/Monsters.luau`, `Data/Bosses.luau` | `family`, `defence` (cecha rodziny; wartości cech `defMul` / `mresMul` / `dodge` tylko w `Data/Families`), `mresMul`, `dodge`, `defMul` |
+| `Data/Combat.luau`, `Data/BuffCategories.luau`, `Data/ItemTraits.luau` | `monsterArmorPerLevel` 10, `monsterMresPerLevel` 8, `monsterHpComp` (S66); stałe cech w `ItemTraits.params` (S65, nie w `Data/Combat`); limity (przebicie 50, niszczenie 50 z częścią z przedmiotów 25 × siła, najwyżej 40, `blockCap = 25`, `riposteCap = 30`, `executionerCap` 60, odporności (limit ochron 30 leży w `Data/Stats` jak `dodge`), `vs_<klasa>`, `cdrCap = 20`), przerwa Wstrząsu 8 s i opóźnienie ataku po nim (0,5 × `attackInterval`), kategorie `enemyAttackSlow` (20%) i `enemyDamageDown` (15%), stałe cech (Podwójne cięcie co 5. i 5 s, Przeszycie: pas 4 st. szerokości do 4 st. za celem, Naciąg 4 s, Pieczęć 1,5 s i 1 st., Zbawczy cios 30 st.), mnożniki PvP |
 | `Data/Skills/*.luau`, `Data/MonsterAbilities.luau` | pole `delivery = "melee" \| "ranged"` umiejętności graczy; rodzaj ciosu zdolności potworów (domyślnie żaden) |
 | `Data/Stats.luau`, `Logic/StatCalc.luau` | nowe statystyki z `finish()` i limitami |
 | `Logic/ItemRoll.luau` | ważone losowanie, `bonusPool` po `forClass ∩ def.classes`, warianty z kontekstu (rodzina potwora), `ItemRoll.trait(item)` z `baseMul` rzadkości także dla nazwanych; cecha-statystyka do `result.flat`, cecha z hakiem do `itemStats(item).hooks` (sumuje `EquipmentService.GetHooks`, czyta `CombatService.Hook`); przeliczenie `armorPen` → `pierce` w `itemStats` |

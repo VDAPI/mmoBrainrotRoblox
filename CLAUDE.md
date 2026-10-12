@@ -53,7 +53,8 @@ przedmiotów czyta STATY); odstępstwa idą do `docs/DECYZJE.md`, a kontrakt pop
   `inherit`); test pilnuje budżetu części i unikalności w regionie. Podgląd: `/mobviz <id>` albo
   `lune run tools/lookdump.luau out.json <id>` + `docs/miasto/tools/render3d.py`. Prawdziwy model: `docs/ASSETS.md`.
   Po zmianie wyglądu (`Data/MonsterLooks`, pety w `Data/Cosmetics`): `npm run renders` w `wiki/` i commit obrazków z
-  `tools/wiki-renders/manifest.json` (S38).
+  `tools/wiki-renders/manifest.json` (S38). Rodzaj w `Data/Monsters` ma `family` (`Data/Families`) i opcjonalnie
+  `defence` z cech tej rodziny; boss ma `family` w `Data/Bosses` (S66; `data.spec` pilnuje).
 - **Efekt drużyny / osłabienie wroga** (S53): `category` w `SkillEffect` z `Data/BuffCategories` (`own` dla efektów
   na sobie), reguła łączenia w `Logic/EffectStack` (w kategorii najsilniejszy, `own` się sumuje, redukcja mnożnikowo z
   limitem 75%), klucz efektu `(kind, sourceKey, skillId, category)`; każde `Apply` z umiejętności podaje `skillId`.

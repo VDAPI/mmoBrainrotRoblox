@@ -54,6 +54,12 @@ commands.target = function(player, args)
 			armor = math.floor(m.stats.armor),
 			mres = math.floor(m.stats.mres),
 		})
+		-- S66: family, defence trait and dodge of the monster.
+		reply(player, "admin.target.family", {
+			family = "@family." .. (m.def.family or "none"),
+			defence = "@monsterDefence." .. (m.def.defence or "none") .. ".name",
+			dodge = m.stats.dodge or 0,
+		})
 	else
 		local other = target.player
 		local character = other and PlayerStateService.GetCharacter(other)

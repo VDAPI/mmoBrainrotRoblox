@@ -27,8 +27,9 @@ spowolnieniem, PvP: ×0,6 tyknięć, połowa wampiryzmu, ≤ 3 stosy pancerza), 
 Zastawa, Żniwo, Ścięcie, Łatwy cel), blok i kontra z limitami, ochrony przed wręcz / dystansem (`delivery`),
 skrócenie odnowienia z legend (`Skills.cooldown`), S65 cechy rytmu i stanu gracza (wszystkie 24 cechy działają:
 Podwójne cięcie, Przeszycie, Naciąg, Iskra i Moc żywiołu, Pieczęć runiczna, Zbawczy cios), `server/Skills/Elements`,
-Przemarznięcie lodowej broni, `accumulate` ran, trucizn i podpalenia z przedmiotów.
-Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`, `docs/STATY.md`), następna S66; testy
+Przemarznięcie lodowej broni, `accumulate` ran, trucizn i podpalenia z przedmiotów, S66 rodziny potworów (`Data/Families`), pancerz 10·L i
+odporność 8·L (`mresMul`), unik zwinnych rodzajów tylko na ataki podstawowe, kompensata życia `monsterHpComp`, `/mobdef`.
+Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`, `docs/STATY.md`), następna S67; testy
 i strojenie po niej.
 
 ## Niedokończone (kod)
@@ -49,7 +50,8 @@ i strojenie po niej.
   pobrania.
 - **Przedmioty (S62–S65)**: umiejętności przy odświeżeniu obrażeń w czasie kasują resztę (`accumulate` dla nich w
   S79); `ItemScore` bez wag nowych
-  linii i cech (S67); częstość linii na wiki liczona na pulę, nie na typ (S68); `dmgMul` Kuszy 1,45 (S90).
+  linii i cech (S67); częstość linii na wiki liczona na pulę, nie na typ (S68); rodziny, cechy i unik potworów nie są na wiki, a
+  `walka.mdx` / `combat.mdx` mówią, że unik działa na każde trafienie (S68); `dmgMul` Kuszy 1,45 (S90).
 - **Szczęście**: mechanizm Fortuny gotowy, wartości przyjdą z węzłami Kapłana (S71).
 - **Umiejętności i ścieżki**: ścieżki klas wkrótce (Kapłan S71, Wojownik S75, Łowca S78, Mag S81); do tego czasu
   zwój i zakładka ścieżek mówią „wkrótce”, wpis premium zwoju niedostępny do S81. Brak przycisku „Załóż pasującą

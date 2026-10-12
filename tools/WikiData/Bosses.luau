@@ -137,6 +137,7 @@ local function kindFor(def: BossData.BossDef, players: number): any
 		hpMul = BossScaling.hpMultiplier(players) * (def.hpMul or 1),
 		atkMul = def.atkMul,
 		defMul = def.defMul,
+		mresMul = def.mresMul, -- S66: magic resistance like in the game
 		speed = def.speed,
 		attack = def.attack,
 		damageKind = def.damageKind,

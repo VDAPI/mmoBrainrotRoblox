@@ -12,6 +12,8 @@
 -- 2026-10-10 every wave is a shield wave: ~10 helpers (+ SUMMON_PER_PLAYER per extra player) attack at once and the
 -- boss is invulnerable and holds still at the arena centre until all of them are dead; helpers drop nothing.
 
+local Families = require("./Families")
+
 export type Attack = {
 	id: string,
 	shape: "circle" | "cone" | "line" | "ring",
@@ -50,6 +52,8 @@ export type BossDef = {
 	hpMul: number?, -- S32: on top of BossScaling.hpMultiplier (fight length), default 1
 	atkMul: number,
 	defMul: number,
+	mresMul: number?, -- S66: magic resistance multiplier, default 1; armour keeps defMul
+	family: Families.FamilyId, -- S66: monster family (Data/Families); bosses have no defence trait or dodge
 	speed: number, -- attack speed multiplier
 	moveSpeed: number,
 	attack: "melee" | "ranged",
@@ -77,6 +81,7 @@ end
 
 boss({
 	id = "grimrok",
+	family = "humanoid",
 	nameKey = "boss.grimrok.name",
 	region = "meadows",
 	level = 20,
@@ -138,6 +143,7 @@ boss({
 
 boss({
 	id = "morvane",
+	family = "undead",
 	nameKey = "boss.morvane.name",
 	region = "duskwood",
 	level = 45,
@@ -212,6 +218,7 @@ boss({
 -- Arenas for these two are built in S11.
 boss({
 	id = "azgor",
+	family = "elemental",
 	nameKey = "boss.azgor.name",
 	region = "ashen",
 	level = 70,
@@ -287,6 +294,8 @@ boss({
 
 boss({
 	id = "vaelgrath",
+	family = "dragon",
+	mresMul = 1.4, -- S66: dragons get armour and magic resistance x1.4
 	nameKey = "boss.vaelgrath.name",
 	region = "frostpeak",
 	level = 100,
