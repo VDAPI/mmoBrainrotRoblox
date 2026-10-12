@@ -1,53 +1,109 @@
 --!strict
--- Balance report (S32): `lune run tools/balance_report.luau` writes docs/BALANS.md from the model in
--- tests/Balance.luau (the game's own modules). `lune run tools/balance_report.luau snapshot` stores the current
--- numbers in tools/balance_before.json; the report shows "before → after" wherever a number changed.
+-- Balance report 1-100 (S32, S83): `lune run tools/balance_report.luau` writes docs/BALANS.md from the model in
+-- tests/Balance.luau and the tables in tests/BalanceTables.luau (the game's own modules).
+--   snapshot [S<n>]  stores tools/balance_before.json = { meta, tables, data }: every report number ("before" of the
+--                    next report) and the ledger dump (Balance.dataDump + rankDump). Without S<n>: the last
+--                    "### S<n>" of docs/SESJE.md + 1. Balance sessions S83-S94 start with it.
+--   fixture [S<n> [note]]  writes tests/fixtures/balance_1_20.json (the 1-20 reference of tests/balance1_20.spec);
+--                    the session as for snapshot, the note optional.
+-- The report starts with the ledger ("Zmiany danych"): a changed number of tools/balance_reasons.luau's modules
+-- without a reason marks the row and exits 1 after writing the file (like balance.spec).
 
 local fs = require("@lune/fs")
 local process = require("@lune/process")
 local serde = require("@lune/serde")
 
-local AreaSpawns = require("../src/shared/Logic/AreaSpawns")
-local Areas = require("../src/shared/Data/Areas")
 local B = require("../tests/Balance")
+local BalanceTables = require("../tests/BalanceTables")
 local Bosses = require("../src/shared/Data/Bosses")
 local Combat = require("../src/shared/Data/Combat")
-local Exp = require("../src/shared/Logic/Exp")
-local Items = require("../src/shared/Data/Items")
-local ItemValue = require("../src/shared/Logic/ItemValue")
-local Maps = require("../src/shared/Data/Maps")
+local Config = require("../src/shared/Config")
+local LevelCurves = require("../src/shared/Logic/LevelCurves")
 local MonsterStats = require("../src/shared/Logic/MonsterStats")
-local Monsters = require("../src/shared/Data/Monsters")
-local Rarities = require("../src/shared/Data/Rarities")
-local Spawns = require("../src/shared/Data/Spawns")
+local Progression = require("../src/shared/Data/Progression")
+local Reasons = require("./balance_reasons")
+local SkillData = require("../src/shared/Data/Skills")
+local Skills = require("../src/shared/Logic/Skills")
 
 local SNAPSHOT = "tools/balance_before.json"
 local OUT = "docs/BALANS.md"
-local LEVELS = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20 }
-local KEY_LEVELS = { 1, 2, 5, 10, 15, 18, 20 }
+local started = os.clock()
 
-type Cell = { key: string, value: number, fmt: string }
-type Table = { title: string, note: string?, columns: { string }, rows: { { label: string, cells: { Cell } } } }
-
-local tables: { Table } = {}
-local current: Table
-local values: { [string]: number } = {}
-
-local function section(title: string, columns: { string }, note: string?)
-	current = { title = title, note = note, columns = columns, rows = {} }
-	table.insert(tables, current)
+local function gitCommit(): string
+	local ok, result = pcall(process.exec, "git", { "rev-parse", "--short", "HEAD" })
+	if ok and result.ok then
+		return (string.gsub(result.stdout, "%s+$", ""))
+	end
+	return "unknown"
 end
 
--- fmt: "i" integer, "1" one decimal, "2" two decimals, "%" percent, "s" seconds (one decimal)
-local function row(label: string, cells: { { any } })
-	local out = {}
-	for i, c in cells do
-		local key = `{current.title}|{label}|{current.columns[i + 1] or i}`
-		local value = c[1] :: number
-		values[key] = value
-		table.insert(out, { key = key, value = value, fmt = c[2] or "i" })
+-- The session a snapshot without an argument belongs to: the last "### S<n>" of docs/SESJE.md + 1.
+local function nextSession(): string
+	local last = 0
+	if fs.isFile("docs/SESJE.md") then
+		for n in string.gmatch(fs.readFile("docs/SESJE.md"), "\n### S(%d+)") do
+			last = math.max(last, tonumber(n) or 0)
+		end
 	end
-	table.insert(current.rows, { label = label, cells = out })
+	return `S{last + 1}`
+end
+
+local mode = process.args[1]
+
+if mode == "fixture" then
+	local session = process.args[2]
+	if session == nil or not B.sessionNumber(session) then
+		session = nextSession()
+		print(`fixture: session {session} (last ### S<n> in docs/SESJE.md + 1)`)
+	end
+	local file = {
+		meta = {
+			session = session,
+			commit = gitCommit(),
+			tolerance = BalanceTables.FIXTURE_TOLERANCE,
+			note = process.args[3],
+		},
+		values = BalanceTables.values(BalanceTables.tables1_20(), true),
+	}
+	fs.writeFile(BalanceTables.FIXTURE_PATH, serde.encode("json", file, true))
+	print(`wrote {BalanceTables.FIXTURE_PATH}`)
+	return
+end
+
+local tables = BalanceTables.tablesAll()
+local data = B.ledgerData(Reasons :: any)
+
+if mode == "snapshot" then
+	local session = process.args[2]
+	if session == nil or not B.sessionNumber(session) then
+		session = nextSession()
+		print(`snapshot: session {session} (last ### S<n> in docs/SESJE.md + 1)`)
+	end
+	local file = {
+		meta = { session = session, commit = gitCommit(), date = os.date("!%Y-%m-%d") },
+		tables = BalanceTables.values(tables),
+		data = data,
+	}
+	local text = serde.encode("json", file, true)
+	fs.writeFile(SNAPSHOT, text)
+	print(`wrote {SNAPSHOT} ({#tables} tables, {string.format("%.2f", #text / 1048576)} MB)`)
+	return
+end
+
+-- Snapshot -----------------------------------------------------------------------------------------------------
+
+local beforeTables: { [string]: number } = {}
+local beforeData: { [string]: number }? = nil
+local meta: any = nil
+if fs.isFile(SNAPSHOT) then
+	local decoded = serde.decode("json", fs.readFile(SNAPSHOT))
+	if type(decoded.meta) == "table" then
+		meta = decoded.meta
+		beforeTables = decoded.tables or {}
+		beforeData = decoded.data
+	else
+		beforeTables = decoded -- the flat format before S83: tables only, no ledger
+	end
 end
 
 local function fmtValue(value: number, fmt: string): string
@@ -61,6 +117,8 @@ local function fmtValue(value: number, fmt: string): string
 		text = string.format("%.1f", value)
 	elseif fmt == "2" then
 		text = string.format("%.2f", value)
+	elseif fmt == "g" then
+		text = string.format("%.4g", value)
 	else
 		local n = math.floor(value + 0.5)
 		text = tostring(n)
@@ -71,564 +129,355 @@ local function fmtValue(value: number, fmt: string): string
 	return (string.gsub(text, "%.", ","))
 end
 
--- Model ------------------------------------------------------------------------------------------------------
-
-local function kindDef(id: string): any
-	return Monsters.get(id)
+local lines: { string } = {}
+local function add(line: string?)
+	table.insert(lines, line or "")
 end
 
-section("Gracz z ekwipunkiem na poziomie (Zwykły, ilvl = poziom − 2)", {
-	"poziom",
-	"Wojownik HP",
-	"Wojownik DPS",
-	"Łowca HP",
-	"Łowca DPS",
-	"Mag HP",
-	"Mag DPS",
-	"Kapłan HP",
-	"Kapłan DPS",
-}, "DPS z 1–2 umiejętnościami (×1,2) przeciw zwykłemu potworowi tego samego poziomu.")
-for _, L in LEVELS do
-	local cells = {}
-	for _, c in B.CLASSES do
-		local p = B.player(c, L)
-		local m = B.monster(B.GENERIC, L)
-		table.insert(cells, { p.values.maxHp, "i" })
-		table.insert(cells, { B.dps(p, m), "i" })
-	end
-	row(tostring(L), cells)
-end
-
-section(
-	"Zwykły potwór (mnożniki rodzaju 1)",
-	{ "poziom", "HP", "atak", "pancerz", "EXP", "złoto", "EXP do poziomu" }
-)
-for _, L in LEVELS do
-	local m = B.monster(B.GENERIC, L)
-	row(tostring(L), {
-		{ m.maxHp, "i" },
-		{ m.attack, "1" },
-		{ m.armor, "i" },
-		{ B.killExp(L, B.GENERIC, L), "i" },
-		{ B.killGold(L, B.GENERIC, L), "1" },
-		{ Exp.expToNext(L), "i" },
-	})
-end
-
-section("1 na 1 z potworem na poziomie gracza", {
-	"poziom",
-	"Wojownik s",
-	"Wojownik HP",
-	"Łowca s",
-	"Łowca HP",
-	"Mag s",
-	"Mag HP",
-	"Kapłan s",
-	"Kapłan HP",
-}, "Cel: 6–10 s, 12–25% HP.")
-for _, L in LEVELS do
-	local cells = {}
-	for _, c in B.CLASSES do
-		local f = B.duel(B.player(c, L), B.monster(B.GENERIC, L))
-		table.insert(cells, { f.seconds, "s" })
-		table.insert(cells, { f.hpLost, "%" })
-	end
-	row(tostring(L), cells)
-end
-
-section("Grupy na poziomie gracza (strata HP na całe starcie)", {
-	"klasa · poziom",
-	"1",
-	"2",
-	"3",
-	"4",
-	"średnio",
-	"czas średnio s",
-}, "Wagi rozmiarów z `AreaSpawns`. Cel: średnio 35–60% (Mag ≤ 70%), grupa 4 ≤ 110%.")
-for _, c in B.CLASSES do
-	for _, L in KEY_LEVELS do
-		local g = B.expectedGroup(B.player(c, L), B.GENERIC, L)
-		row(`{c} {L}`, {
-			{ g.bySize[1].hpLost, "%" },
-			{ g.bySize[2].hpLost, "%" },
-			{ g.bySize[3].hpLost, "%" },
-			{ g.bySize[4].hpLost, "%" },
-			{ g.hpLost, "%" },
-			{ g.seconds, "s" },
-		})
-	end
-end
-
-section("Trzy wilki na poziomie gracza (bez umiejętności)", { "klasa · poziom", "s", "HP" })
-do
-	local skill = B.SKILL_DPS
-	B.SKILL_DPS = 1
-	for _, c in B.CLASSES do
-		for _, L in { 3, 5, 6 } do
-			local f = B.groupFight(B.player(c, L), B.group("wolf", L, 3))
-			row(`{c} {L}`, { { f.seconds, "s" }, { f.hpLost, "%" } })
-		end
-	end
-	B.SKILL_DPS = skill
-end
-
-section("Luka sprzętowa (Wojownik, przedmioty o k poziomów za nisko)", {
-	"poziom",
-	"k=0 s",
-	"k=0 HP",
-	"k=4 s",
-	"k=4 HP",
-	"k=9 s",
-	"k=9 HP",
-	"start s",
-	"start HP",
-}, "Cel dla k ≤ 9: ≤ 15 s, ≤ 35% HP. „start” = tylko broń i napierśnik z poziomu 1.")
-for _, L in { 5, 10, 14, 15, 20 } do
-	local cells = {}
-	for _, k in { 0, 4, 9 } do
-		local f = B.duel(B.player("Warrior", L, { ilvl = math.max(1, L - k) }), B.monster(B.GENERIC, L))
-		table.insert(cells, { f.seconds, "s" })
-		table.insert(cells, { f.hpLost, "%" })
-	end
-	local items = {
-		{ uid = "s", id = "sword1h_1", rarity = 1, ilvl = 1, bonuses = {}, up = 0, bound = false, n = 1 },
-		{ uid = "a", id = "armor_heavy_1", rarity = 1, ilvl = 1, bonuses = {}, up = 0, bound = false, n = 1 },
-	}
-	local f = B.duel(B.playerFromItems("Warrior", L, items), B.monster(B.GENERIC, L))
-	table.insert(cells, { f.seconds, "s" })
-	table.insert(cells, { f.hpLost, "%" })
-	row(tostring(L), cells)
-end
-
-section("Elity solo (poziom spawnera = poziom gracza, +2)", {
-	"klasa · poziom",
-	"s",
-	"HP",
-}, "Cel: 20–35 s, 60–90% HP (z miksturą wygrywa).")
-for _, c in B.CLASSES do
-	for _, L in { 10, 15, 18, 20 } do
-		local f = B.elite(B.player(c, L), B.GENERIC, L)
-		row(`{c} {L}`, { { f.seconds, "s" }, { f.hpLost, "%" } })
-	end
-end
-
-section("Elita II (drużyna Wojownik + Mag + Łowca, obrażenia na Wojownika)", {
-	"rodzaj · poziom spawnera",
-	"solo s",
-	"solo HP",
-	"2 graczy s",
-	"2 graczy HP",
-	"3 graczy s",
-	"3 graczy HP",
-}, "Cel: 2–3 graczy na poziomie. Połowa ciosów specjalnych trafia.")
-for _, spec in { { "bandit", 12 }, { "goblinScout", 16 }, { "caveSpider", 18 }, { "goblinShaman", 18 } } do
-	local kind, L = spec[1] :: string, spec[2] :: number
-	local pl = math.min(20, L + 2)
-	local w, m, h = B.player("Warrior", pl), B.player("Mage", pl), B.player("Hunter", pl)
-	local solo = B.elite2({ w }, kind, L)
-	local duo = B.elite2({ w, m }, kind, L)
-	local trio = B.elite2({ w, m, h }, kind, L)
-	row(`{kind} {L}`, {
-		{ solo.seconds, "s" },
-		{ solo.hpLost, "%" },
-		{ duo.seconds, "s" },
-		{ duo.hpLost, "%" },
-		{ trio.seconds, "s" },
-		{ trio.hpLost, "%" },
-	})
-end
-
-section("Grimrok (poziom 20)", {
-	"drużyna",
-	"HP bossa",
-	"walka min",
-	"max cios Mag",
-	"max cios Wojownik",
-	"zwykły cios Mag",
-	"tank HP/min",
-}, "Cel: 3–5 graczy L18–20, żaden cios > 70% HP Maga, 4–6 min. 75% czasu na biciu.")
-do
-	local order = { "Warrior", "Mage", "Hunter", "Cleric", "Warrior" }
-	for _, n in { 1, 2, 3, 4, 5 } do
-		local team = {}
-		for i = 1, n do
-			table.insert(team, B.player(order[i], 19))
-		end
-		local r = B.boss("grimrok", team)
-		local mageShare, warriorShare, mageBasic = 0 / 0, r.biggest[1].share, 0 / 0
-		for _, b in r.biggest do
-			if b.classId == "Mage" then
-				mageShare, mageBasic = b.share, b.basic
-			end
-		end
-		if n == 1 then
-			local mage = B.boss("grimrok", { B.player("Mage", 19) })
-			mageShare, mageBasic = mage.biggest[1].share, mage.biggest[1].basic
-		end
-		row(`{n}`, {
-			{ r.hp, "i" },
-			{ r.seconds / 60, "1" },
-			{ mageShare, "%" },
-			{ warriorShare, "%" },
-			{ mageBasic, "%" },
-			{ r.tankHpPerMinute, "%" },
-		})
-	end
-end
-
-section("Moc przedmiotów (pełny komplet tej rzadkości vs Zwykły, ten sam ilvl)", {
-	"klasa · poziom",
-	"Unikatowy",
-	"Heroiczny",
-	"Legendarny",
-	"Mityczny",
-}, "Moc = √(DPS × efektywne HP). Cel: Unikatowy +8–15%, Heroiczny +15–25%, Legendarny +25–40%.")
-for _, c in B.CLASSES do
-	for _, L in { 5, 10, 20 } do
-		row(`{c} {L}`, {
-			{ B.rarityGain(c, L, Rarities.UNIQUE), "%" },
-			{ B.rarityGain(c, L, Rarities.HEROIC), "%" },
-			{ B.rarityGain(c, L, Rarities.LEGENDARY), "%" },
-			{ B.rarityGain(c, L, Rarities.MYTHIC), "%" },
-		})
-	end
-end
-
-section("Broń dwuręczna vs jednoręczna + druga ręka (moc, poziom 20)", {
-	"broń",
-	"moc / domyślny zestaw",
-}, "Cel: ±3%.")
-do
-	local pairs = {
-		{ "Warrior", "sword1h", "shield" },
-		{ "Warrior", "sword2h", false },
-		{ "Warrior", "axe2h", false },
-		{ "Warrior", "hammer2h", false },
-		{ "Warrior", "spear2h", false },
-		{ "Mage", "wand", "orb" },
-		{ "Mage", "wand", "tome" },
-		{ "Mage", "staff", false },
-		{ "Mage", "runestaff", false },
-		{ "Cleric", "mace1h", "shield" },
-		{ "Cleric", "mace1h", "relic" },
-		{ "Cleric", "holystaff", false },
-	}
-	local base: { [string]: number } = {}
-	for _, c in B.CLASSES do
-		base[c] = B.power(B.player(c, 20))
-	end
-	for _, spec in pairs do
-		local c, w, o = spec[1] :: string, spec[2] :: string, spec[3] :: any
-		local p = B.player(c, 20, { weapon = w, offhand = o })
-		row(`{c} {w}{if o then " + " .. o else ""}`, { { B.power(p) / base[c], "2" } })
-	end
-end
-
-section("Tempo (Wojownik): zabicia i czas na poziom", {
-	"poziom · rodzaj",
-	"EXP/zabicie",
-	"zabicia",
-	"s/zabicie",
-	"godziny",
-	"EXP/h",
-	"złoto/h",
-	"odpoczynek",
-}, "Grupy rodzaju z poziomu, odpoczynek z regeneracji 0,5%/s, 1 s przerwy i 6 s marszu; EXP z questów odjęty.")
-for _, L in { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19 } do
-	local pace = B.pace("Warrior", L)
-	row(`{L} {pace.kind}`, {
-		{ pace.expPerKill, "i" },
-		{ pace.kills, "i" },
-		{ pace.secondsPerKill, "s" },
-		{ pace.hours, "2" },
-		{ pace.expPerHour, "i" },
-		{ pace.goldPerHour, "i" },
-		{ pace.restShare, "%" },
-	})
-end
-
-section("Złoto 1→20 (Wojownik)", {
-	"poziom",
-	"z zabić",
-	"ze sprzedaży dropu",
-	"z questów",
-	"mikstury",
-	"+1 broni",
-	"+1…+3 broni",
-	"+1…+9 broni",
-}, "Ulepszanie broni ilvl = poziom − 2, oczekiwana liczba prób (bez spadków).")
-do
-	local eco = B.economy("Warrior", 20)
-	for _, r in eco.rows do
-		row(tostring(r.level), {
-			{ r.kills, "i" },
-			{ r.drops, "i" },
-			{ r.pace.questGold, "i" },
-			{ r.potions, "i" },
-			{ r.up1, "i" },
-			{ r.up3, "i" },
-			{ r.up9, "i" },
-		})
-	end
-	row("suma", {
-		{ eco.killGold, "i" },
-		{ eco.dropGold, "i" },
-		{ eco.questGold, "i" },
-		{ eco.potionGold, "i" },
-		{ 0 / 0, "i" },
-		{ eco.upgradeGold, "i" },
-		{ 0 / 0, "i" },
-	})
-end
-
-section("Kara złota za różnicę poziomów (gracz 20)", { "poziom potwora", "złoto", "EXP" })
-for _, L in { 10, 14, 15, 18, 20 } do
-	row(tostring(L), { { B.killGold(20, B.GENERIC, L), "1" }, { B.killExp(20, B.GENERIC, L), "1" } })
-end
-
-section("Rodzaje Łąk: nagroda względem wytrzymałości", {
-	"rodzaj",
-	"mnożnik HP",
-	"mnożnik ataku",
-	"szybkość",
-	"mnożnik nagrody",
-	"EXP/s ÷ zwykły",
-}, "EXP na sekundę walki 1 na 1 (Wojownik) na środkowym poziomie rodzaju względem potwora z mnożnikami 1.")
-for _, def in Monsters.list do
-	if def.region == 1 then
-		local L = math.floor((def.levels.min + def.levels.max) / 2)
-		local p = B.player("Warrior", L)
-		local f = B.duel(p, B.monster(def, L))
-		local g = B.duel(p, B.monster(B.GENERIC, L))
-		row(def.id, {
-			{ def.hpMul, "2" },
-			{ def.atkMul, "2" },
-			{ def.speed, "2" },
-			{ B.kindReward(def), "2" },
-			{ (B.killExp(L, def, L) / f.seconds) / (B.killExp(L, B.GENERIC, L) / g.seconds), "2" },
-		})
-	end
-end
-
-section("Drop: poziom przedmiotów i rzadkości", {
-	"poziom",
-	"śr. ilvl zwykłego",
-	"da się założyć",
-	"śr. ilvl Elity",
-	"śr. ilvl Elity II",
-	"zabicia (grind + questy)",
-	"Unikatowe do klasy/poziom",
-	"Heroiczne do klasy/h (Elity)",
-}, "Wojownik. Elity: walka + odpoczynek do pełna + marsz; Unikatowe ze zwykłych potworów z poziomu.")
-for _, L in KEY_LEVELS do
-	local pace = B.pace("Warrior", L)
-	local kills = pace.kills + B.questKills(L)
-	row(tostring(L), {
-		{ B.dropIlvl(L, "normal"), "1" },
-		{ B.wearableShare(L), "%" },
-		{ B.dropIlvl(L, "elite"), "1" },
-		{ B.dropIlvl(L, "elite2"), "1" },
-		{ kills, "1" },
-		{ kills * B.itemsPerKill("normal", Rarities.UNIQUE), "2" },
-		{ 3600 / B.eliteCadence("Warrior", L) * B.itemsPerKill("elite", Rarities.HEROIC), "2" },
-	})
-end
-
-section("Elita II: przedmioty na zabicie", { "rzadkość", "na zabicie (do klasy)" })
-for _, r in { Rarities.UNIQUE, Rarities.HEROIC, Rarities.LEGENDARY } do
-	row(Rarities.get(r).key, { { B.itemsPerKill("elite2", r), "2" } })
-end
-
-section("Ceny", { "przedmiot", "cena kupna", "wartość" })
-for _, id in
-	{
-		"potion_hp_1",
-		"potion_hp_2",
-		"potion_hp_3",
-		"backpack_30",
-		"backpack_45",
-		"backpack_60",
-		"stone_return",
-		"scroll_protection",
-	}
-do
-	local def = Items.get(id) :: any
-	if def then
-		local item = {
-			uid = "x",
-			id = id,
-			rarity = def.rarity or 1,
-			ilvl = def.level,
-			bonuses = {},
-			up = 0,
-			bound = false,
-			n = 1,
-		}
-		row(id, { { def.buyPrice or 0, "i" }, { ItemValue.value(item :: any), "i" } })
-	end
-end
-for _, L in { 5, 10, 15, 20 } do
-	local def = Items.get(`sword1h_{Items.generate.tierFor(L)}`) :: any
-	row(
-		`miecz ilvl {L}`,
-		{ { ItemValue.equipment(def, L, 1, 0) * ItemValue.BUY_MUL, "i" }, { ItemValue.equipment(def, L, 1, 0), "i" } }
-	)
-end
-
--- S33: hunting ground profiles --------------------------------------------------------------------------------
-
-local PROFILE_LABELS = { none = "brak", exp = "⚡ szybki exp", loot = "✦ lepszy drop", gold = "⛁ więcej złota" }
-
-section(
-	"Expowiska z profilem: godzina expienia (Wojownik, S33)",
-	{
-		"poziom · profil",
-		"s / zabicie",
-		"EXP/h",
-		"złoto/h (z dropem)",
-		"monety/h",
-		"przedmioty/h",
-		"najlepsze/h",
-	},
-	"Cele (DESIGN §3.6): ⚡ ≥ 1,25× EXP/h ✦; ✦ ≥ 1,6× przedmiotów najwyższej rzadkości/h pozostałych; ⛁ ≥ 1,5× złota/h pozostałych (licząc sprzedaż dropu). Model: Logic/AreaRates (walka S32 + rozmiary grup, HP i atak profilu, odpoczynek, dojście do grupy krótsze przy szybszym respawnie)."
-)
-for _, L in { 4, 8, 12, 16, 19 } do
-	for _, id in { "none", "exp", "loot", "gold" } do
-		local r = B.areaRates("Warrior", L, if id == "none" then nil else id)
-		row(`{L} · {PROFILE_LABELS[id]}`, {
-			{ r.secondsPerKill, "s" },
-			{ r.expPerHour, "i" },
-			{ r.goldPerHour, "i" },
-			{ r.coinGoldPerHour, "i" },
-			{ r.itemsPerHour, "1" },
-			{ r.topPerHour, "2" },
-		})
-	end
-end
-for _, L in { 30, 55, 85 } do
-	for _, id in { "none", "exp", "loot", "gold" } do
-		local r = B.areaRates("Warrior", L, if id == "none" then nil else id, B.GENERIC)
-		row(`{L} (rodzaj 1) · {PROFILE_LABELS[id]}`, {
-			{ r.secondsPerKill, "s" },
-			{ r.expPerHour, "i" },
-			{ r.goldPerHour, "i" },
-			{ r.coinGoldPerHour, "i" },
-			{ r.itemsPerHour, "1" },
-			{ r.topPerHour, "2" },
-		})
-	end
-end
-
-section("Potwory na mapach regionów (wszystkie grupy żywe naraz, S33)", { "mapa", "bez profili", "z profilami" })
-for _, mapId in { "meadows", "duskwood", "ashen", "frostpeak" } do
-	local data = Areas.byMap[mapId]
-	local plain = table.clone(data) :: any
-	plain.areas = {}
-	for _, area in data.areas do
-		local copy = table.clone(area) :: any
-		copy.profile = nil
-		table.insert(plain.areas, copy)
-	end
-	local function count(list: { any }): number
-		local n = 0
-		for _, spawner in list do
-			n += spawner.count
-		end
-		return n
-	end
-	row(mapId, {
-		{ count(AreaSpawns.region(plain, (Maps.get(mapId) :: any).size)), "i" },
-		{ count(Spawns.byMap[mapId]), "i" },
-	})
-end
-
--- Output -------------------------------------------------------------------------------------------------------
-
-local mode = process.args[1]
-if mode == "snapshot" then
-	fs.writeFile(SNAPSHOT, serde.encode("json", values, true))
-	print(`wrote {SNAPSHOT} ({#tables} tables)`)
-	return
-end
-
-local before: { [string]: number } = {}
-if fs.isFile(SNAPSHOT) then
-	before = serde.decode("json", fs.readFile(SNAPSHOT))
-end
-
-local lines = {
-	"# Vaelthorn: balans poziomów 1–20",
-	"",
-	"> Plik generowany: `lune run tools/balance_report.luau` (model `tests/Balance.luau`, moduły gry).",
-	"> „a → b” = przed S32 → teraz (migawka `tools/balance_before.json`). Nie edytuj ręcznie.",
-	"",
-	"Założenia: ekwipunek „na poziomie” = broń + druga ręka + 4 części zbroi + naszyjnik + 2 pierścienie + talizman,",
-	"Zwykłe, ilvl = poziom − 2, oczekiwane bonusy; wszystkie punkty w główną statystykę; zwykłe ataki + 1–2 umiejętności",
-	"(×1,2 obrażeń), bez mikstur; potwór uderza od razu, potem co swój interwał; regeneracja w walce 0,1%/s.",
-	`Stałe walki: redukcja = def / (def + {Combat.reductionPerLevel}·poziom atakującego + {Combat.reductionBase}).`,
-	"",
-}
-
-for _, t in tables do
-	table.insert(lines, `## {t.title}`)
-	table.insert(lines, "")
-	if t.note then
-		table.insert(lines, t.note)
-		table.insert(lines, "")
-	end
-	table.insert(lines, "| " .. table.concat(t.columns, " | ") .. " |")
+local function tableOut(columns: { string }, rows: { { string } })
+	add("| " .. table.concat(columns, " | ") .. " |")
 	local sep = {}
-	for i = 1, #t.columns do
+	for i = 1, #columns do
 		sep[i] = if i == 1 then "---" else "--:"
 	end
-	table.insert(lines, "| " .. table.concat(sep, " | ") .. " |")
+	add("| " .. table.concat(sep, " | ") .. " |")
+	for _, r in rows do
+		add("| " .. table.concat(r, " | ") .. " |")
+	end
+	add()
+end
+
+local function renderTable(t: BalanceTables.Table, level: string)
+	add(`{level} {t.title}`)
+	add()
+	if t.note then
+		add(t.note)
+		add()
+	end
+	local rows = {}
 	for _, r in t.rows do
 		local cells = { r.label }
 		for _, c in r.cells do
 			local now = fmtValue(c.value, c.fmt)
-			local old = before[c.key]
+			local old = beforeTables[c.key]
 			local text = now
 			if old ~= nil and fmtValue(old, c.fmt) ~= now then
 				text = `{fmtValue(old, c.fmt)} → {now}`
 			end
 			table.insert(cells, text)
 		end
-		table.insert(lines, "| " .. table.concat(cells, " | ") .. " |")
+		table.insert(rows, cells)
 	end
-	table.insert(lines, "")
+	tableOut(t.columns, rows)
 end
 
--- Monster kinds and bosses used above, for reference.
-table.insert(lines, "## Wzory (stan obecny)")
-table.insert(lines, "")
-table.insert(
-	lines,
+local function bandOfRank(skill: any, r: number): string
+	local L = Skills.rankLevel(skill, r)
+	return if L <= 20 then "≤ 20" elseif L <= 45 then "21–45" elseif L <= 70 then "46–70" else "71–100"
+end
+
+-- Header --------------------------------------------------------------------------------------------------------
+
+add("# Vaelthorn: balans poziomów 1–100")
+add()
+add("> Plik generowany: `lune run tools/balance_report.luau` (model `tests/Balance.luau`, tabele")
+add("> `tests/BalanceTables.luau`, moduły gry). Nie edytuj ręcznie.")
+if meta then
+	add(`> „a → b” = migawka {meta.session} (commit {meta.commit}, {meta.date}) → teraz (\`{SNAPSHOT}\`).`)
+else
+	add(`> „a → b” = stara migawka w płaskim formacie (sprzed S83, bez księgi) → teraz.`)
+end
+add("> Tryby: `lune run tools/balance_report.luau snapshot [S<n>]` (nowa migawka „przed”: tabele i zrzut danych")
+add("> księgi), `lune run tools/balance_report.luau fixture [S<n>]` (fixture 1–20 dla `tests/balance1_20.spec.luau`).")
+add()
+add("Założenia: ekwipunek „na poziomie” = broń + druga ręka + 4 części zbroi + naszyjnik + 2 pierścienie + talizman,")
+add("Zwykłe, ilvl = poziom − 2, oczekiwane bonusy; wszystkie punkty w główną statystykę; zwykłe ataki + 1–2 umiejętności")
+add("(×1,2 obrażeń); potwór uderza od razu, potem co swój interwał; regeneracja w walce 0,1%/s.")
+add(`Stałe walki: redukcja = def / (def + {Combat.reductionPerLevel}·poziom atakującego + {Combat.reductionBase}).`)
+add()
+
+-- Ledger --------------------------------------------------------------------------------------------------------
+
+local unexplained: { string } = {}
+add("## Zmiany danych (księga, `tools/balance_reasons.luau`)")
+add()
+if beforeData == nil then
+	add("Migawka bez zrzutu danych (płaski format sprzed S83): księga pominięta.")
+	add()
+else
+	local result = B.ledger(beforeData :: any, data, Reasons.reasons, meta.session)
+	unexplained = result.unexplained
+	local function reasonCells(line: B.LedgerLine): (string, string)
+		if line.reason then
+			return line.reason.session, line.reason.why
+		end
+		return "–", "**BRAK POWODU**"
+	end
+	local function num(v: number?): string
+		return if v == nil then "–" else fmtValue(v, "g")
+	end
+	local changed, ranks = {}, {}
+	for _, line in result.changed do
+		local skillId, field, r = string.match(line.key, "^Rangi:([^%.]+)%.([^@]+)@(%d+)$")
+		if skillId then
+			local skill = SkillData.byId[skillId]
+			local band = if skill then bandOfRank(skill, tonumber(r) :: number) else "?"
+			local warn = if band == "≤ 20" then " **UWAGA: pasmo 1–20**" else ""
+			table.insert(ranks, { `{skillId}.{field}`, r :: string, band .. warn, num(line.before), num(line.after) })
+		else
+			local session, why = reasonCells(line)
+			table.insert(changed, { `\`{line.key}\``, num(line.before), num(line.after), session, why })
+		end
+	end
+	if #changed == 0 and #result.added == 0 and #result.removed == 0 and #ranks == 0 then
+		add(`Brak zmian liczb balansu od migawki {meta.session}.`)
+		add()
+	else
+		if #changed > 0 then
+			tableOut({ "klucz", "przed", "po", "sesja", "powód" }, changed)
+		end
+		for _, part in { { "Nowe klucze", result.added }, { "Usunięte klucze", result.removed } } do
+			local list = part[2] :: { B.LedgerLine }
+			local rows = {}
+			for _, line in list do
+				if string.sub(line.key, 1, 6) ~= "Rangi:" then
+					local session, why = reasonCells(line)
+					table.insert(rows, { `\`{line.key}\``, num(line.before or line.after), session, why })
+				end
+			end
+			if #rows > 0 then
+				add(`### {part[1]}`)
+				add()
+				tableOut({ "klucz", "wartość", "sesja", "powód" }, rows)
+			end
+		end
+		if #ranks > 0 then
+			add("### Rangi (liczby pochodne, bez osobnego powodu)")
+			add()
+			tableOut({ "umiejętność.pole", "ranga", "pasmo rangi", "przed", "po" }, ranks)
+		end
+	end
+end
+if #B.skippedFunctions > 0 then
+	add("### Księga: pominięte funkcje")
+	add()
+	add("Funkcje modułów księgi, które dla poziomów 1, 20, 45, 70, 100 nie zwracają liczby ani tabeli (np. `get(id)`):")
+	add(`{table.concat(B.skippedFunctions, ", ")}.`)
+	add()
+end
+
+-- Rank bands ----------------------------------------------------------------------------------------------------
+
+add("## Własność pasm umiejętności")
+add()
+add("Ranga należy do pasma swojego poziomu `Skills.rankLevel` (≤ 20 → strojenie 1–20 w S91; 21–45, 46–70, 71–100 →")
+add("sesje regionów). Sesja zmienia wartość tylko na rangach swojego pasma (rangę 1 przy odblokowaniu w paśmie, rangę")
+add("maks. gdy osiągana jest w paśmie, resztę węzłem `Data/SkillCurves`).")
+add()
+for _, classId in B.CLASSES do
+	local list = {}
+	for _, skill in SkillData.byClass[classId] do
+		table.insert(list, skill)
+	end
+	table.sort(list, function(a, b)
+		if a.unlock ~= b.unlock then
+			return a.unlock < b.unlock
+		end
+		return a.id < b.id
+	end)
+	local rows = {}
+	for _, skill in list do
+		local levels, last20 = {}, "–"
+		local inBand: { [string]: { string } } = { ["21–45"] = {}, ["46–70"] = {}, ["71–100"] = {} }
+		for r = 1, skill.maxLevel do
+			local L = Skills.rankLevel(skill, r)
+			table.insert(levels, tostring(L))
+			local band = bandOfRank(skill, r)
+			if band == "≤ 20" then
+				last20 = tostring(r)
+			else
+				table.insert(inBand[band], tostring(r))
+			end
+		end
+		local function joined(t: { string }): string
+			return if #t > 0 then table.concat(t, ", ") else "–"
+		end
+		table.insert(rows, {
+			`{skill.id}{if skill.path then ` ({skill.path})` else ""}`,
+			tostring(skill.unlock),
+			table.concat(levels, " / "),
+			last20,
+			joined(inBand["21–45"]),
+			joined(inBand["46–70"]),
+			joined(inBand["71–100"]),
+		})
+	end
+	add(`### {BalanceTables.CLASS_PL[classId]}`)
+	add()
+	tableOut({ "umiejętność", "odblok.", "poziomy rang", "ostatnia ≤ 20", "21–45", "46–70", "71–100" }, rows)
+end
+
+-- Targets -------------------------------------------------------------------------------------------------------
+
+local function bound(v: number?): string
+	return if v == nil then "" else fmtValue(v, "2")
+end
+
+local function targetRows(rows: { B.TargetRow }, who: string): { { string } }
+	local out = {}
+	for _, row in rows do
+		local band = if row.low and row.high
+			then `{bound(row.low)}–{bound(row.high)}`
+			elseif row.low then `≥ {bound(row.low)}`
+			else `≤ {bound(row.high)}`
+		table.insert(out, {
+			row.label,
+			fmtValue(row.value, "2"),
+			band,
+			if B.inBand(row) then "w paśmie" else "**poza**",
+			row.report or who,
+		})
+	end
+	return out
+end
+
+local function countIn(rows: { B.TargetRow }): (number, number)
+	local ok = 0
+	for _, row in rows do
+		ok += if B.inBand(row) then 1 else 0
+	end
+	return ok, #rows
+end
+
+local globalRows = B.targetsGlobal()
+-- Global rows of a band: G1-G6 by level (lo <= L < hi, 100 in the last band), G11 by the boss level, G13 in 20-45
+-- (the band sums in their own band), G12 in 1-20.
+local function globalFor(lo: number, hi: number): { B.TargetRow }
+	local out = {}
+	for _, row in globalRows do
+		local L = row.level
+		local inside
+		if row.id == "G13.band" then
+			inside = L == lo
+		elseif row.group == "G13" then
+			inside = lo == 20
+		elseif row.group == "G12" then
+			inside = lo == 1
+		else
+			inside = L ~= nil and L >= lo and (L < hi or (hi == 100 and L == 100))
+		end
+		if inside then
+			table.insert(out, row)
+		end
+	end
+	return out
+end
+
+-- Bands ---------------------------------------------------------------------------------------------------------
+
+local byBand: { [string]: { BalanceTables.Table } } = {}
+for _, t in tables do
+	byBand[t.band] = byBand[t.band] or {}
+	table.insert(byBand[t.band], t)
+end
+
+local REGION_SESSION = { "S91", "S92", "S93", "S94" }
+for i, band in B.BANDS do
+	local lo, hi = band[1], band[2]
+	local mapId = B.REGION_IDS[i]
+	local tuned = B.TUNED[mapId]
+	local untuned = if tuned then "" else ": raport, nie strojone"
+	add(`## Pasmo {lo}–{hi} ({mapId}){untuned}`)
+	add()
+	for _, t in byBand[`{lo}-{hi}`] or {} do
+		renderTable(t, "###")
+	end
+	if lo == 1 then
+		local s32 = B.targets1_20()
+		local ok, all = countIn(s32)
+		add("### Cele 1–20 (S32, raport do S91)")
+		add()
+		add(`{ok}/{all} w paśmie. Bloki S32 w \`balance.spec\` są do S91 raportem (odpowiedź właściciela 4).`)
+		add()
+		tableOut({ "cel", "wartość", "próg", "wynik", "kto asertuje" }, targetRows(s32, "S91"))
+		local fixture = BalanceTables.fixtureDiff()
+		local tolerance = fmtValue(BalanceTables.FIXTURE_TOLERANCE * 100, "1")
+		add(
+			`G12 (fixture 1–20): {#fixture.diffs} różnic powyżej {tolerance}%, {#fixture.missing} brakujących kluczy `
+				.. "(`tests/balance1_20.spec.luau`, asertuje S91)."
+		)
+		add()
+	end
+	local gRows = globalFor(lo, hi)
+	local regionRows = B.targetsRegion(mapId)
+	local cele = targetRows(gRows, "S87")
+	local regionWho = if tuned then "S83 (rodzaje, harmonogram) / S91" else REGION_SESSION[i]
+	for _, r in targetRows(regionRows, regionWho) do
+		table.insert(cele, r)
+	end
+	local gOk, gAll = countIn(gRows)
+	local rOk, rAll = countIn(regionRows)
+	add(`### Cele ({lo}–{hi}){untuned}`)
+	add()
+	add(`Globalne (G): {gOk}/{gAll} w paśmie; regionu: {rOk}/{rAll} w paśmie.`)
+	add()
+	tableOut({ "cel", "wartość", "próg", "wynik", "kto asertuje" }, cele)
+end
+
+-- Formulas ------------------------------------------------------------------------------------------------------
+
+add("## Wzory (stan obecny)")
+add()
+add(
 	`- Potwór: HP = {Combat.monsterHpBase} + {Combat.monsterHpComp}·{Combat.monsterHpFactor}·L^{Combat.monsterHpExponent}, atak = {Combat.monsterAtkBase} + {Combat.monsterAtkFactor}·L^{Combat.monsterAtkExponent}, pancerz {Combat.monsterArmorPerLevel}·L × defMul, odporność magiczna {Combat.monsterMresPerLevel}·L × mresMul, atak co {Combat.monsterAttackInterval} s / szybkość.`
 )
 local groupMul = (Combat :: any).groupDamageMul
 if groupMul then
-	table.insert(lines, `- Obrażenia członka grupy wg rozmiaru 1–4: {table.concat(groupMul, " / ")}.`)
+	add(`- Obrażenia członka grupy wg rozmiaru 1–4: {table.concat(groupMul, " / ")}.`)
 end
 for _, variant in { "normal", "elite", "elite2", "boss" } do
 	local v = Combat.variants[variant]
-	table.insert(lines, `- Wariant {variant}: +{v.levelAdd} poz., HP ×{v.hpMul}, obrażenia ×{v.dmgMul}.`)
+	add(`- Wariant {variant}: +{v.levelAdd} poz., HP ×{v.hpMul}, obrażenia ×{v.dmgMul}.`)
 end
-local grimrok = Bosses.byId.grimrok :: any
-local attacks = {}
-for _, a in grimrok.attacks do
-	table.insert(attacks, `{a.id} ×{a.damage}`)
+for _, def in Bosses.list do
+	local attacks = {}
+	for _, a in def.attacks do
+		table.insert(attacks, `{a.id} ×{a.damage}`)
+	end
+	add(`- {def.id} (L{def.level}): atak ×{def.atkMul}, ciosy {table.concat(attacks, ", ")}.`)
 end
-table.insert(lines, `- Grimrok: atak ×{grimrok.atkMul}, ciosy {table.concat(attacks, ", ")}.`)
 local stats: any = MonsterStats
 if stats.kindReward then
-	table.insert(
-		lines,
-		`- EXP i złoto rodzaju × mnożnik HP^{(Combat :: any).kindRewardHpExponent} × (mnożnik ataku × szybkość)^{(
-			Combat :: any
-		).kindRewardAtkExponent}.`
-	)
+	local hpExp, atkExp = (Combat :: any).kindRewardHpExponent, (Combat :: any).kindRewardAtkExponent
+	add(`- EXP i złoto rodzaju × mnożnik HP^{hpExp} × (mnożnik ataku × szybkość)^{atkExp}.`)
 end
-table.insert(lines, "")
+local curve = {}
+for _, L in { 20, 45, 70, 100 } do
+	table.insert(curve, `{L}: {fmtValue(Config.PotionCooldown * LevelCurves.at("potionCooldown", L), "1")} s`)
+end
+add(
+	`- Mikstury (S54): odstęp \`Potions.interval\` = {Config.PotionCooldown} s × krzywa \`potionCooldown\` ({table.concat(curve, ", ")}).`
+)
+add("  Model łańcuchowy: regeneracja poza walką w przerwie, potem najtańsza dozwolona jakość (`level` ≤ poziom), której")
+add("  łyki mieszczą się w przerwie (pierwszy od razu), inaczej największa z czekaniem (łyki − mieszczące) × odstęp.")
+add("- Zadania 1–100 (S83): na swoim poziomie (główne + połowa pobocznych; bossowie w polu `boss`, w tempie tylko z")
+add("  `bosses`), bez rozkładania na pasmo; nadmiar EXP przechodzi na następny poziom. Tabele S32 1–20 zostają przy")
+add("  rozkładaniu według potrzebnego EXP (`Balance.questRewards`).")
+add(
+	`- Drużyna (S83): bije osobno na tym samym łowisku i dzieli zaliczenie, bez synergii; EXP/h członka = średnia solowych × (1 + min({Progression.varietyMax}, {Progression.varietyPerClass}·(klasy − 1))/100); \`floor\` z \`PartyLoot.splitExp\` pominięty.`
+)
+add(
+	`- Harmonogram bossa: \`Boss.Step\` co 0,05 s; gdy t ≥ nextGlobal, pierwszy gotowy atak fazy w kolejności listy; potem nextAttack = t + odnowienie, nextGlobal = t + zamach + {B.BOSS_GLOBAL_GAP} s; pierwszy atak po 4 s, pierwsze użycie każdego średnio po 5 s. Przyspieszenie fazy dzieli tylko odstęp ataku podstawowego, wściekłość mnoży wszystkie ciosy.`
+)
+add()
 
 fs.writeFile(OUT, table.concat(lines, "\n"))
-print(`wrote {OUT}`)
+print(`wrote {OUT} ({#tables} tables, {string.format("%.1f", os.clock() - started)} s)`)
+
+if #unexplained > 0 then
+	print(`BRAK POWODU ({#unexplained}): dopisz wpisy do tools/balance_reasons.luau:`)
+	for i = 1, math.min(50, #unexplained) do
+		print(`  {unexplained[i]}`)
+	end
+	process.exit(1)
+end

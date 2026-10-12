@@ -60,7 +60,10 @@ na drabinie przejściowej do S81. S80 Mag: silnik Arkanisty gotowy (typ `beam`, 
 `areaCap` w buildach), opcje B, Zwój Nowej Ścieżki znowu w sklepie premium. Wszystkie cztery klasy na ścieżkach (ukryte
 na wiki do decyzji właściciela). S82 planer wiki od nowa: rangi z poziomu, przełomy A/B, zakładki ścieżek, kod buildu
 v2, wektory `Paths.canBuy` i plik testowy `wiki/test-fixtures/planner.json`; ścieżki gotowe w planerze, na wiki ukryte
-(„Ścieżki wkrótce”) do decyzji właściciela o publikacji (`docs/WIKI.md` → „Publikacja ścieżki na wiki”).
+(„Ścieżki wkrótce”) do decyzji właściciela o publikacji (`docs/WIKI.md` → „Publikacja ścieżki na wiki”). S83
+narzędzia balansu 1–100: księga zmian (`tools/balance_reasons.luau`, migawka `{ meta, tables, data }`), fixture 1–20 w
+trybie raportu, `tools/wiki_keys_diff.luau` w `scripts/check`, węzły `Data/SkillCurves` (puste), model świata i
+bossów w `tests/Balance.luau`, raport 1–100 w `docs/BALANS.md`; liczby gry bez zmian.
 Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`, `docs/STATY.md`), następne sesje
 balansu; testy i strojenie po nich.
 
@@ -75,8 +78,10 @@ balansu; testy i strojenie po nich.
 - **Ruch**: sprint nie zmienia WalkSpeed lokalnie przed odpowiedzią serwera. Serwer nie kontroluje prędkości ani
   teleportów gracza.
 - **Dane**: brak słabości żywiołowych potworów. Jaskinie bez profilu expowiska (`Cave.profile` nieczytane przez
-  `AreaSpawns.cave`). Rodzaje S19 regionów 2–4 (np. czarny niedźwiedź, ghul) bez części. Regiony 2–4 niestrojone
-  (S32 zrobił tylko 1–20); Morvane, Azgor, Vaelgrath mają stare mnożniki ciosów.
+  `AreaSpawns.cave`). Rodzaje S19 regionów 2–4 (np. czarny niedźwiedź, ghul) bez części. Regiony 2–4 niestrojone:
+  cele G i regionów poza pasmem w `docs/BALANS.md` (poprawki globalne S87, przedmioty S84 i S88, ścieżki S89–S90,
+  1–20 S91, regiony S92–S94); Morvane, Azgor, Vaelgrath mają stare mnożniki ciosów, inferno Azgora nie wchodzi w
+  fazie 3, lot Vaelgratha zdejmuje nietykalność mimo żywej tarczy (S87).
 - **Questy**: EXP z nagród dobrany wzorem, do strojenia.
 - **Gildie / aukcja / poczta**: brak zaproszeń do gildii między serwerami; aukcja bez podpowiedzi ceny, poczta bez
   pobrania.

@@ -19,6 +19,9 @@ przedmiotów czyta STATY); odstępstwa idą do `docs/DECYZJE.md`, a kontrakt pop
 - Kod i komentarze po angielsku, `--!strict` w każdym pliku. Teksty dla gracza tylko przez `Locale` (oba języki).
 - Liczby balansu tylko w `src/shared/Data/*` i `src/shared/Config.luau`.
 - Serwer jest autorytetem: każdy remote ma typy argumentów i rate-limit w `Net/Definitions.luau`.
+- Liczba w module z `BALANCE_MODULES` (`tools/balance_reasons.luau`) zmienia się tylko z wpisem powodu `{ session, why }`;
+  sesje balansu S83–S94 zaczynają od `lune run tools/balance_report.luau snapshot`; `tools/wiki_keys_diff.luau` musi być
+  pusty (S83).
 
 ## Gdzie co leży
 - `src/shared` → `ReplicatedStorage.Shared`: `Config`, `Types`, `Net/`, `Data/` (tabele), `Logic/` (czyste funkcje), `Util/`.

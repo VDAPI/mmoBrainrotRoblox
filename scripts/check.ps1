@@ -27,4 +27,5 @@ Invoke-Step "luau-lsp analyze" {
 		--ignore="Packages/**" --ignore="ServerPackages/**" src
 }
 Invoke-Step "Lune tests" { lune run tests/run.luau }
+Invoke-Step "Wiki keys" { lune run tools/wiki_keys_diff.luau }
 Write-Host "All checks passed." -ForegroundColor Green

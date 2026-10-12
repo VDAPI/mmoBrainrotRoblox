@@ -20,4 +20,6 @@ luau-lsp analyze --platform=roblox --sourcemap=sourcemap.json --definitions:@rob
 	--ignore="Packages/**" --ignore="ServerPackages/**" src
 echo "==> Lune tests"
 lune run tests/run.luau
+echo "==> Wiki keys"
+lune run tools/wiki_keys_diff.luau
 echo "All checks passed."

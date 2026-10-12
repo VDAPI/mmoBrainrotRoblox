@@ -53,19 +53,23 @@ Studio → Test → Clients and Servers → liczba graczy 2 → Start.
 ```powershell
 .\scripts\check.ps1
 ```
-Kolejno: StyLua (format), Selene (lint), sourcemap Rojo, luau-lsp (typy), testy Lune.
+Kolejno: StyLua (format), Selene (lint), sourcemap Rojo, luau-lsp (typy), testy Lune i klucze wiki
+(`tools/wiki_keys_diff.luau`: zbiory kluczy `wiki/src/data/*.json` jak w `HEAD`; celowa zmiana przez `WIKI_KEYS_ALLOW`).
 Przy pierwszym uruchomieniu pobiera `globalTypes.d.luau` (definicje API Roblox dla luau-lsp).
 Na Linux/macOS/CI: `bash scripts/check.sh`.
 
 Formatowanie automatycznie: `stylua src tests`.
 
-## Balans (S32)
+## Balans (S32, S83)
 
 ```powershell
-lune run tools/balance_report.luau            # generuje docs/BALANS.md (przed → po)
-lune run tools/balance_report.luau snapshot   # zapisuje bieżące liczby jako „przed” (tools/balance_before.json)
+lune run tools/balance_report.luau                 # generuje docs/BALANS.md 1–100 (księga, przed → po)
+lune run tools/balance_report.luau snapshot [S<n>] # migawka „przed” { meta, tables, data } (tools/balance_before.json)
+lune run tools/balance_report.luau fixture [S<n>]  # fixture 1–20 (tests/fixtures/balance_1_20.json)
 ```
-Model liczbowy: `tests/Balance.luau` (moduły gry, wartości oczekiwane), cele: `tests/balance.spec.luau`.
+Model liczbowy: `tests/Balance.luau` (moduły gry, wartości oczekiwane), tabele: `tests/BalanceTables.luau`, cele:
+`tests/balance.spec.luau`, `tests/balance1_20.spec.luau`, `tests/balancemodel.spec.luau`; powody zmian liczb:
+`tools/balance_reasons.luau`.
 
 ## Dokumentacja
 
@@ -73,5 +77,5 @@ Model liczbowy: `tests/Balance.luau` (moduły gry, wartości oczekiwane), cele: 
 - `docs/ARCHITECTURE.md` – architektura techniczna
 - `docs/PROGRESS.md` – stan, niedokończone, zgłoszone błędy; `docs/SESJE.md` – dziennik sesji;
   `docs/DECYZJE.md` – decyzje; `docs/SILNIKI.md` – pola silników krain i jaskiń
-- `docs/BALANS.md` – raport balansu 1–20 (generowany)
+- `docs/BALANS.md` – raport balansu 1–100 (generowany)
 - `CLAUDE.md` – zasady dla Claude Code

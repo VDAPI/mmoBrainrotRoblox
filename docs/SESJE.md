@@ -4284,3 +4284,72 @@ views/{ClassView,ClassesView,Styleguide}.astro,styles/components.css,i18n/{pl,en
 statystyki PL i EN), `wiki/e2e/keyboard.e2e.ts`, `wiki/scripts/{shots.pages,budgets.config}.mjs`, dane
 (`wiki/src/data/{skills,meta}.json`, `types.ts`, `docs/PRZEDMIOTY.md`, `wiki/test-fixtures/planner.json`),
 `docs/{WIKI,ROZWOJ,DECYZJE,SESJE,PROGRESS}.md`.
+
+### S83: Księga zmian balansu, fixture 1–20 i model świata 1–100
+
+Sesja narzędziowa: żadna liczba w `src/shared/Data` ani `Config` się nie zmieniła (jedyny nowy plik danych to pusty
+`Data/SkillCurves`); `lune run tools/wikidump.luau --check` „up to date”, `git diff wiki/src/data` pusty.
+- **A. Start** na `1eef4ee` (S82): `scripts/check` zielony (92 pliki, 1277 testów, cały `balance.spec` zielony),
+  dane wiki aktualne (bez osobnego commitu), `grep SkillCurves|LevelCurves tools/WikiData` pusty, `B.fight` wołał
+  tylko `balance.spec` (pasmo S18).
+- **B. Fixture 1–20:** tabele raportu przeniesione do `tests/BalanceTables.luau` (`builder`, `tables1_20`, `values`,
+  `fixtureDiff`). Dowód B2: `values(tables1_20())` wobec migawki startowej (`build/s83_start_tables.json`, 1435 kluczy
+  po odrzuceniu dwóch `null`) ma te same 1435 klucze; po tym samym zapisie JSON wszystkie wartości równe co do bitu
+  (bez zapisu 129 różni się o ostatni bit: tak zaokrągla `serde`). Fixture (`lune run tools/balance_report.luau
+  fixture`) ma 1355 wartości (bez liczby potworów na mapach i profili na 30 / 55 / 85), `balance1_20.spec` drukuje
+  0 różnic. Cele S32 w `Balance.targets1_20()`: 474/474 w paśmie; `balance.spec` w trybie raportu (`S32_ASSERT`).
+- **C. Księga:** `tools/balance_reasons.luau` (49 modułów + 4 klucze `Config`, `NOT_BALANCE` z wzorcami `*`),
+  `Balance.dataDump` / `rankDump` / `ledger` / `ledgerData`, migawka `{ meta, tables, data }` (S83: 0,83 MB, ok. 8,5
+  tys. liczb danych, 930 kluczy `Rangi:`, 4,5 tys. liczb tabel). Próba: `monsterHpBase` 55 → 56 bez powodu wywala
+  blok „Balance ledger (S83)” (cofnięte). Pominięte funkcje (np. `get(id)`) wypisuje raport.
+- **D. `tools/wiki_keys_diff.luau`** w `scripts/check.sh` i `check.ps1`: czyste drzewo 0 różnic (32 pliki); kopia
+  w `build/` z `classes[1].testKey` daje 1 różnicę `+ classes: classes.classes[].testKey` i kod 1, a z
+  `WIKI_KEYS_ALLOW="classes:classes.classes[].testKey"` przechodzi.
+- **E.** `Data/SkillCurves` (pusty, zamrożony), `Skills.interpolate`, `Skills.valueAt` przez węzły (bez węzłów
+  dokładnie `scaled`), `effective` (wartości i `jumps`) i `healAmount` przez `valueAt`. Test: `valueAt` = `scaled` co do
+  bitu dla każdej umiejętności, pola i rangi; przełomy A i B dają liczby sprzed zmiany.
+- **F–G. Model 1–100** w `tests/Balance.luau`: `regionAt`, `kindAtRegion`, `kindRates`, `questsAt`, `paceAt`,
+  `paceBand`, `potionsAt`, `potionHps`, `economyAt`, `caveElites` (q par per jaskinia z prawdziwych spawnerów: 0,75 /
+  0,5 / 0,2 / 0,5 / 1,0 / 0,6 / 0,5 / 0,25 / 0,6 / 0,5 / 0,75 / 0,4, jak w pomiarach kontrolnych), `team`,
+  `bossCadence` (z `opts.pick`), `bossFight`, `HAZARDS`, `BOSS_GLOBAL_GAP`, `targetsGlobal`, `targetsRegion`.
+  Harmonogram odtwarza wszystkie liczby kontrolne co do 0,1/min (Grimrok f1 7,5 / 3,7, f3 6,4 / 4,3 / 4,2 i rzucanie
+  35%; Morvane f3 8,0 / 4,0 / 4,0; Azgor f3 5,6 / 5,6 / 5,5 / inferno 0; Vaelgrath f3 5,5 / 3,6 / 3,6 / 1,8 / 1,8);
+  z regułą S87 (`pick` najdłużej czekający) inferno 2,9/min. Tempo 1–19: `paceBand(…, { bosses = true })` 2,15 h,
+  `Balance.pace` (S32) 2,23 h (−3,3%, tylko położenie zadań); zadania 1–19 sumują się co do EXP z `questRewards`.
+- **H. Raport** `docs/BALANS.md` 1–100: księga, pominięte funkcje, własność pasm umiejętności, pasma 1–20 (tabele S32,
+  region Łąk, Cele 1–20, G12) i 20–45 / 45–70 / 70–100 (gracz, potwór, G1–G6, tempo z wariantami, zadania, premia za
+  klasy, ekonomia, mikstury, rodzaje, jaskinie, Elita II, harmonogram i walka z bossem w wariantach „połowa” i
+  „wszystkie” (`specialHit = 1`, `hazardShare = 1`), zagrożenia skryptów, Cele); ok. 0,7 s.
+- **I.** `balance.spec`: S32 (raport), kontrole strukturalne, księga, blok globalny (raport), regiony z `TUNED`;
+  `tests/balancemodel.spec.luau`: harmonogram, `pick`, stałe bossów tekstem, `kindAtRegion`, `questsAt`, przeniesienie
+  EXP, `potionsAt`, `caveElites`; `skills.spec`: węzły.
+- **Cele G z raportu** (Wojownik / Łowca / Mag / Kapłan, sprzęt Zwykły ilvl − 2): 20 wszystko w paśmie. G1 czas za
+  krótki u Maga od 35, Łowcy od 40, Wojownika od 85; G1 HP poniżej 10% (Kapłan 9%) u Kapłana od 55, Wojownika od 80,
+  Łowcy od 90. G2 średnia grupa poniżej 35% (Kapłan 30%) u Kapłana od 35, Wojownika od 40, Łowcy od 45, Maga od 65;
+  grupa 4 wszędzie ≤ 110%. G3 poniżej 40% u Kapłana od 65, Wojownika i Łowcy na 100. G4, G5 (DPS 1,15–1,35, moc
+  0,95–1,10) i G6 w paśmie na 20–100. G11: Azgor f3 inferno 0%, Vaelgrath f3 blizzard 48%, glacialRing 45% (reszta
+  ≥ 50%). G12: 0 różnic. G13: h/poziom rodzaju ogólnego bez zadań spada raz na 25–99 (85.; z zadaniami 12 razy), sumy
+  pasm 15,7 / 20,9 / 31,1 h wobec 14 / 25 / 41 h (wszystkie w ±25%, 70–100 na granicy). Razem G 458/568; regiony:
+  Łąki 136/164 (rodzaje 12/12, Grimrok 7/7 asertowane), Bór 132/170, Pustkowia 111/157, Szczyty 110/158.
+- **Dla S84:** model przedmiotów 20–100 (G7–G9) dopina się do `economyAt` (bez ulepszeń i materiałów) i `caveElites`;
+  dropu z wariantami szczęścia, obrony i rodzin w tabelach pasm jeszcze nie ma.
+- **Dla S87:** `vaelgrath`: `Vaelgrath.onPhase(2)` po 12 s lotu ustawia `invulnerable = false` bez względu na falę
+  tarczy dragonspawn, a `Boss.Step` przy żywej tarczy nie przywraca nietykalności (model liczy tarczę jak w danych;
+  dziś fala trwa 22–25 s, więc boss przez resztę fali jest do bicia). Inferno Azgora nigdy nie wchodzi w fazie 3
+  (kolejność listy), blizzard i glacialRing Vaelgratha poniżej 50% (G11). Największy cios Morvane / Vaelgratha na Magu
+  i Łowcy 100–121% HP (stare mnożniki ciosów). Pomocnicy fal tarczy w modelu zabierają tankowi 3,6–4,3 maks. HP na
+  walkę (wszyscy biją tanka). G13 „rosnące h/poziom” liczone bez zadań (zadanie główne daje cały poziom, h = 0;
+  DECYZJE). Walki 1 na 1 i grupy powyżej ok. 40 za krótkie i za tanie (G1, G2).
+- **Dla S91:** spotkania Elit Łąk za drogie: `meadows_hideout` (q 0,75) Wojownik 149–226%, Mag 169–243%; Elita dzika
+  na 7–8 dla Łowcy i Maga 111–114% HP, szaman goblinów na 20 dla Kapłana 44%; w paśmie 20–36 s i 55–95% tylko 54% walk
+  Elit solo (cel 72%). Elita II Łąk w paśmie. Na starcie wszystkie 474 cele S32 w paśmie.
+- **Regiony 2–4 (S92–S94):** wolne rodzaje (EXP/s ÷ zwykły poniżej 0,85): rotEnt 0,80, fireGolem 0,70, magmaGolem
+  0,69, crystalGuardian 0,70, frostGiant 0,83, frozenKnight 0,84; Elita II dla 3 graczy za łatwa (47–60% HP) w
+  `duskwood_cave`, `ashen_lair`, `ashen_cave`, `frostpeak_*`, a solo `flameSmith` i `frozenKnight` poniżej 180%.
+- Nie uruchomiono: gry i Studio (faza gameplay), `npm run data` (zamiast niego `lune run tools/wikidump.luau --check`:
+  dane bez zmian).
+
+Pliki: `tests/{Balance,BalanceTables,balance.spec,balance1_20.spec,balancemodel.spec,skills.spec}.luau`,
+`tests/fixtures/balance_1_20.json`, `tools/{balance_report,balance_reasons,wiki_keys_diff}.luau`,
+`tools/balance_before.json`, `src/shared/Data/SkillCurves.luau`, `src/shared/Logic/Skills.luau`,
+`scripts/check.{sh,ps1}`, `docs/{BALANS,DECYZJE,SESJE,PROGRESS}.md`, `CLAUDE.md`, `README.md`.

@@ -1775,3 +1775,41 @@
 - **S82** A/B umiejętności ścieżki wybiera się w planerze tylko przy kupionym węźle `skill` (kod niesie wybór w cyfrze
   węzła); zwrot węzła do 0 i zmiana ścieżki głównej kasują jej wybory (`pruneChoices`). Węzeł rzędu wyboru zajętego
   przez drugi węzeł jest „zablokowany” jak w grze (`taken` z `Logic/PathView`).
+- **S83** Bloki S32 w `balance.spec` i fixture 1–20 (`tests/fixtures/balance_1_20.json`, `tests/balance1_20.spec`)
+  są do S91 tylko raportem (odpowiedź właściciela 4: `S32_ASSERT = false`, `FIXTURE_ASSERT = false`). Asertowane
+  zostają kontrole strukturalne S32 (malejące `groupDamageMul`, pule premii klas, poziom dropu, `kindReward(GENERIC)`,
+  kara złota) oraz kształt fixture (plik, ≥ 1000 wartości, brak brakujących kluczy, brak martwych wpisów dozwolonych).
+- **S83** Progi S32 w jednym miejscu: `Balance.targets1_20()` (474 wiersze, wszystkie w paśmie na starcie); ścisłe
+  nierówności testu (`< 0,15`, `> 1`, `> 1,1`) jako próg z odstępem 1e-9, „Mityczny > Legendarny” jako różnica > 0.
+- **S83** Pasmo S18 („Monster balance (S18 band, levels 30-90)”) i `Balance.fight` usunięte (nie miały innych
+  odbiorców); zastępuje je blok globalny 20–100 (`Balance.targetsGlobal`, G1–G6, G11–G13), raport do S87
+  (`GLOBAL_ASSERT`). G12 (fixture) zostaje raportem także po S87: asertuje go `balance1_20.spec` z listą dozwolonych.
+- **S83** Księga zmian (plan balansu 2.6): liczba z modułu `BALANCE_MODULES` (`tools/balance_reasons.luau`) zmienia
+  się tylko z wpisem `{ session, why }` o numerze sesji co najmniej sesji migawki `tools/balance_before.json`; prefiks
+  `*` tylko dla nowych modułów i hurtowych przesunięć tabeli; klucze `Rangi:` są pochodne i nie wymagają powodu.
+  Sprawdzenie jest w jednym miejscu (`balance.spec`, blok „Balance ledger (S83)”), nie także w `balance1_20.spec`.
+- **S83** Porównanie księgi z tolerancją względną 1e-9: `serde` zapisuje liczby z utratą ostatniego bitu (129 z 1435
+  liczb tabel różniło się o 1 ULP po samym zapisie JSON), więc ta sama wartość po odczycie migawki nie jest równa co do
+  bitu. Fixture 1–20 ma własną tolerancję 0,5%.
+- **S83** `Data/Skills/init` w księdze przez `omit = { byId, byClass }` (zamiast `pick` RANKS / GCD / HOTBAR_SLOTS),
+  żeby stałe `ARCANE_CHARGES`, `LOW_HP_HEAL`, `HEAL_CRIT_MUL` itd. też miały powód; `Data/Paths/init` przez
+  `omit = { list, byId, byClass }`, `Data/Items/init` przez `pick = { startingPotions }` (reszta to wygenerowane
+  `byId`). `Data/Items/Generate` jest w `NOT_BALANCE` („generator”), `Data/Elements`, `Titles`, `Cosmetics` jako wygląd.
+- **S83** Zadania w modelu 1–100 liczą się na swoim poziomie, a nadmiar EXP zadania przechodzi na następny poziom
+  (`paceAt` z `carry`, `paceBand`); funkcje S32 (`pace`, `questRewards`) zostają przy rozkładaniu na pasmo 1–19.
+  Złoto zadań w `economyAt` jest na poziom, nie na godzinę (zadanie główne potrafi dać cały poziom, wtedy godzin 0).
+- **S83** Premia za różne klasy w modelu: drużyna bije osobno na tym samym łowisku i dzieli zaliczenie, bez synergii;
+  EXP/h członka = średnia solowych × `PartyBonus.expMul`, bez `floor` z `PartyLoot.splitExp`. Synergie liczą S85–S86.
+- **S83** Blok regionów: `TUNED` i `REGION_TARGETS` są w `tests/Balance.luau` (spec i raport czytają te same tabele).
+  Łąki (`TUNED.meadows = true`) asertują w S83 tylko rodzaje (EXP/s 0,85–1,20, zbiór S32 z królikiem) i harmonogram
+  Grimroka; Elity, pary i Elitę II Łąk tylko drukują (należą do S91). Progi Elity II czytane jak w S32: solo ≥ 180%,
+  2 graczy ≤ 150%, 3 graczy 60–100%.
+- **S83** HP/EXP rodzaju (`kindRates`) liczone względem zwykłego potwora tego samego poziomu, dopiero potem względem
+  średniej regionu: sama strata HP na EXP maleje z poziomem, więc rodzaje z dołu regionu wychodziłyby „drogie”.
+- **S83** Model bossa: fale tarczy (`count + 2·(n − 1)` pomocników) biją tanka jak grupa; lot Vaelgratha w fazie 2
+  liczy się tylko ponad czas fali tarczy (zgodnie z danymi: przy żywej tarczy boss stoi i nie atakuje).
+- **S83** G13 „rosnące h/poziom” liczy samo bicie rodzaju ogólnego bez zadań (`expToNext / expPerKill ·
+  secondsPerKill`): zadanie główne potrafi dać cały poziom (h = 0) i spadków nie usunie strojenie krzywej. Sumy pasm
+  G13 zostają z zadaniami i przeniesieniem (`paceBand`).
+- **S83** Księga: wpisy klucza i najdłuższego pasującego prefiksu `*` liczą się razem (nowsze hurtowe przesunięcie
+  tabeli tłumaczy klucz ze starszym własnym wpisem). Tryb `fixture [S<n> [note]]` bierze sesję jak `snapshot`.

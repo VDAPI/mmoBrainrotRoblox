@@ -2464,4 +2464,77 @@ T.describe("S81 Mage base, B options and nodes", function()
 	end)
 end)
 
+T.describe("Skill value knots (S83, Data/SkillCurves)", function()
+	local SkillCurves = require("../src/shared/Data/SkillCurves")
+
+	T.it("without knots valueAt is exactly Skills.scaled for every skill, field and rank", function()
+		for id, skill in SkillData.byId do
+			if SkillCurves.knots[id] == nil then
+				for field, value in skill.values do
+					for rank = 1, skill.maxLevel do
+						T.expect(Skills.valueAt(skill, field, rank)).toBe(Skills.scaled(skill, value, rank))
+					end
+				end
+			end
+		end
+	end)
+
+	T.it("interpolate is linear between the points and clamped outside", function()
+		local points = { { 1, 100 }, { 5, 150 }, { 10, 190 } }
+		local expected = { [1] = 100, [3] = 125, [5] = 150, [7] = 166, [10] = 190, [0] = 100, [12] = 190 }
+		for rank, value in expected do
+			T.expect(Skills.interpolate(points, rank)).toBeNear(value, 1e-9)
+		end
+	end)
+
+	T.it("every knot is on a { rank 1, max rank } pair of an existing skill, rank 2..max - 1, finite", function()
+		for skillId, fields in SkillCurves.knots do
+			local skill = SkillData.byId[skillId]
+			T.expect(skill ~= nil).toBe(true)
+			if skill then
+				for field, knots in fields do
+					local pair = skill.values[field]
+					T.expect(type(pair) == "table" and #(pair :: any) == 2).toBe(true)
+					for rank, value in knots do
+						local ok = rank == math.floor(rank) and rank >= 2 and rank <= skill.maxLevel - 1
+						T.expect(ok and value == value and math.abs(value) ~= math.huge).toBe(true)
+					end
+				end
+			end
+		end
+	end)
+
+	T.it("breakpoints change values exactly as before the knots (the pre-S83 arithmetic)", function()
+		for _, skill in SkillData.byId do
+			if skill.breakpoints then
+				for _, option in { "a", "b" } do
+					local choices: Skills.Choices = {}
+					for _, at in Skills.BREAKPOINT_LEVELS do
+						choices[Skills.choiceKey(skill.id, at)] = option :: any
+					end
+					for rank = 1, skill.maxLevel do
+						local def = Skills.effective(skill, rank, choices, nil, true)
+						local values: { [string]: any } = table.clone(skill.values) :: any
+						local jumps = 0
+						for _, bp in Skills.breakpointsAt(skill, rank, choices, true) do
+							for field, amount in (bp.values or {}) :: { [string]: number } do
+								values[field] = Skills.scaled(skill, values[field], rank) + amount
+							end
+							jumps += ((bp.add or {}) :: any).jumps or 0
+						end
+						if jumps ~= 0 then
+							values.jumps = Skills.scaled(skill, values.jumps, rank) + jumps
+						end
+						for field, value in values do
+							if type(value) == "number" then
+								T.expect(def.values[field]).toBe(value)
+							end
+						end
+					end
+				end
+			end
+		end
+	end)
+end)
+
 return nil

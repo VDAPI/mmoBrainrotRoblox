@@ -1,64 +1,71 @@
 --!strict
--- Balance targets of levels 1-20 (S32, DESIGN §15.1), checked with the model in tests/Balance.luau (expected
--- values from the game's own modules). Also keeps the S18 single-fight band for the higher levels.
+-- Balance targets, checked with the model in tests/Balance.luau (expected values from the game's own modules).
+--   * S32 targets of levels 1-20 (Balance.targets1_20): a report until S91 retunes 1-20 (owner answer 4); the
+--     structural checks of the S32 blocks stay asserted. The 1-20 numbers themselves: tests/balance1_20.spec.
+--   * Global targets 20-100 (Balance.targetsGlobal, G1-G6, G11-G13): a report until S87 sets GLOBAL_ASSERT.
+--   * Regions (Balance.targetsRegion): asserted where Balance.TUNED says so (S83: the Meadows' kinds and Grimrok's
+--     schedule only), printed elsewhere.
+--   * The balance ledger (S83, balance plan 2.6): always asserted.
+-- Model checks (boss schedule, quests, potions, cave Elites, boss constants): tests/balancemodel.spec.
+local fs = require("@lune/fs")
+local serde = require("@lune/serde")
+
 local B = require("./Balance")
-local Bosses = require("../src/shared/Data/Bosses")
-local Items = require("../src/shared/Data/Items")
 local ItemRoll = require("../src/shared/Logic/ItemRoll")
 local Loot = require("../src/shared/Logic/Loot")
 local MonsterStats = require("../src/shared/Logic/MonsterStats")
-local Monsters = require("../src/shared/Data/Monsters")
-local Rarities = require("../src/shared/Data/Rarities")
-local Shops = require("../src/shared/Data/Shops")
 local T = require("./Test")
 
-local LEVELS = { 1, 2, 5, 10, 15, 18, 20 }
-local MAIN = { "Warrior", "Hunter", "Mage" }
+local S32_ASSERT = false -- S83: report mode until S91 (owner answer 4)
+local GLOBAL_ASSERT = false -- S87 turns this on
+-- Region switches and thresholds live in tests/Balance.luau (TUNED, REGION_TARGETS: the report reads them too).
+local TUNED = B.TUNED
+local REGION_TARGETS = B.REGION_TARGETS
 
--- Highest weapon merchant tier at or below `level` (the starting weapon below the first tier).
-local function shopTier(level: number): number
-	local best = 1
-	for _, tier in Shops.WEAPONSMITH_TIERS do
-		if tier <= level then
-			best = tier
-		end
-	end
-	return best
+local function fmt(v: number?): string
+	return if v == nil then "–" else string.format("%.3f", v)
 end
 
-T.describe("Balance S32: one monster and groups", function()
-	for _, classId in B.CLASSES do
-		T.it(`{classId}: one monster of its level takes 6-10 s and 12-25 % HP (levels 2-20)`, function()
-			for _, level in LEVELS do
-				local f = B.duel(B.player(classId, level), B.monster(B.GENERIC, level))
-				if level >= 2 then
-					-- Clerics fight slower but take less damage (S18 band).
-					local slow = if classId == "Cleric" then 11 else 10
-					local low = if classId == "Cleric" then 0.09 else 0.1
-					-- S66: the Mage's level 2 duel sits at ~5.49 s after the new monster defence (DECYZJE).
-					local fast = if classId == "Mage" and level == 2 then 5.4 else 5.5
-					T.expect(f.seconds).toBeBetween(fast, slow)
-					T.expect(f.hpLost).toBeBetween(low, 0.25)
-				else
-					-- Level 1 is a gentle start.
-					T.expect(f.hpLost < 0.15).toBe(true)
-				end
-			end
-		end)
+local function describeRow(row: B.TargetRow): string
+	return `{row.id} ({row.label}): {fmt(row.value)} poza [{fmt(row.low)}, {fmt(row.high)}]`
+end
 
-		T.it(`{classId}: an average group costs 35-60 % HP, a group of 4 at most 110 % (levels 5-20)`, function()
-			for _, level in LEVELS do
-				local g = B.expectedGroup(B.player(classId, level), B.GENERIC, level)
-				local high = if classId == "Mage" then 0.7 else 0.6
-				local low = if classId == "Cleric" then 0.3 else 0.35
-				if level >= 5 then
-					T.expect(g.hpLost).toBeBetween(low, high)
+-- Prints "<title>: x/y w paśmie" and up to `limit` rows out of band.
+local function printReport(title: string, rows: { B.TargetRow }, limit: number)
+	local out = {}
+	for _, row in rows do
+		if not B.inBand(row) then
+			table.insert(out, row)
+		end
+	end
+	print(`{title}: {#rows - #out}/{#rows} w paśmie`)
+	for i = 1, math.min(limit, #out) do
+		print(`  {describeRow(out[i])}`)
+	end
+	if #out > limit then
+		print(`  … i {#out - limit} więcej (docs/BALANS.md)`)
+	end
+end
+
+T.describe("Balance S32: targets 1-20 (report until S91)", function()
+	local rows = B.targets1_20()
+	if S32_ASSERT then
+		for _, row in rows do
+			T.it(`{row.id}: {row.label}`, function()
+				if not B.inBand(row) then
+					error(describeRow(row), 0)
 				end
-				T.expect(g.bySize[4].hpLost <= 1.1).toBe(true)
-			end
+			end)
+		end
+	else
+		T.it("S32 targets (report until S91)", function()
+			printReport("S32", rows, 40)
+			T.expect(#rows > 400).toBe(true)
 		end)
 	end
+end)
 
+T.describe("Balance S32: structural checks", function()
 	T.it("bigger groups hit softer per member", function()
 		local last = math.huge
 		for n = 1, 4 do
@@ -68,132 +75,6 @@ T.describe("Balance S32: one monster and groups", function()
 		end
 		T.expect(MonsterStats.groupDamageMul(nil)).toBe(1)
 		T.expect(MonsterStats.groupDamageMul(9)).toBe(MonsterStats.groupDamageMul(4))
-	end)
-
-	T.it("three wolves of the player's level are hard but winnable without skills", function()
-		local skill = B.SKILL_DPS
-		B.SKILL_DPS = 1
-		for _, classId in B.CLASSES do
-			for _, level in { 3, 5, 6 } do
-				local f = B.groupFight(B.player(classId, level), B.group("wolf", level, 3))
-				T.expect(f.hpLost).toBeBetween(0.4, 0.95)
-			end
-		end
-		B.SKILL_DPS = skill
-	end)
-
-	T.it("gear from the shops (up to 9 levels too low) still kills a monster in <= 15 s with <= 35 % HP", function()
-		for _, classId in B.CLASSES do
-			for level = 2, 20 do
-				local p = B.player(classId, level, {
-					ilvl = Items.generate.tierFor(level),
-					weaponIlvl = shopTier(level),
-				})
-				local f = B.duel(p, B.monster(B.GENERIC, level))
-				-- Clerics are slow on purpose (and lose the least HP).
-				T.expect(f.seconds <= (if classId == "Cleric" then 20 else 15.5)).toBe(true)
-				T.expect(f.hpLost <= 0.36).toBe(true)
-			end
-		end
-	end)
-end)
-
-T.describe("Balance S32: elites, Elite II, Grimrok", function()
-	T.it("an Elite solo (level +2) takes 20-35 s and 55-95 % HP", function()
-		for _, classId in MAIN do
-			for _, level in { 10, 15, 18, 20 } do
-				local f = B.elite(B.player(classId, level), B.GENERIC, level)
-				T.expect(f.seconds).toBeBetween(20, 36)
-				T.expect(f.hpLost).toBeBetween(0.55, 0.95)
-			end
-		end
-	end)
-
-	T.it("an Elite II needs 2-3 players: solo it kills, three players win", function()
-		for _, spec in { { "bandit", 12 }, { "goblinScout", 16 }, { "caveSpider", 18 }, { "goblinShaman", 18 } } do
-			local kind, spawner = spec[1] :: string, spec[2] :: number
-			local level = math.min(20, spawner + 2)
-			local w, m, h = B.player("Warrior", level), B.player("Mage", level), B.player("Hunter", level)
-			T.expect(B.elite2({ w }, kind, spawner).hpLost > 1.5).toBe(true)
-			T.expect(B.elite2({ w, m }, kind, spawner).hpLost <= 1.5).toBe(true)
-			T.expect(B.elite2({ w, m, h }, kind, spawner).hpLost <= 1.0).toBe(true)
-		end
-	end)
-
-	T.it("Grimrok: 3-5 players of level 19 need 4-6 min; no hit takes more than 70 % of a level 20 Mage", function()
-		local order = { "Warrior", "Mage", "Hunter", "Cleric", "Warrior" }
-		for n = 3, 5 do
-			local team = {}
-			for i = 1, n do
-				table.insert(team, B.player(order[i], 19))
-			end
-			T.expect(B.boss("grimrok", team).seconds / 60).toBeBetween(4, 6)
-		end
-		local mage = B.boss("grimrok", { B.player("Mage", 20) })
-		T.expect(mage.biggest[1].share <= 0.7).toBe(true)
-		-- A level 18 Mage survives one hit too.
-		T.expect(B.boss("grimrok", { B.player("Mage", 18) }).biggest[1].share < 1).toBe(true)
-		T.expect((Bosses.byId.grimrok :: any).hpMul ~= nil).toBe(true)
-	end)
-end)
-
-T.describe("Balance S32: items", function()
-	T.it("a full set of a rarity beats Common: Unique +8-15 %, Heroic +15-25 %, Legendary +25-40 %", function()
-		for _, classId in B.CLASSES do
-			for _, level in { 5, 10, 20 } do
-				T.expect(B.rarityGain(classId, level, Rarities.UNIQUE)).toBeBetween(0.07, 0.15)
-				-- FIX 2026-10-09: Heroic always rolls 3 bonuses (was 2-3), up to ~25.1 %
-				T.expect(B.rarityGain(classId, level, Rarities.HEROIC)).toBeBetween(0.15, 0.26)
-				T.expect(B.rarityGain(classId, level, Rarities.LEGENDARY)).toBeBetween(0.25, 0.42)
-				local mythic = B.rarityGain(classId, level, Rarities.MYTHIC)
-				T.expect(mythic > B.rarityGain(classId, level, Rarities.LEGENDARY)).toBe(true)
-			end
-		end
-	end)
-
-	T.it("two-handed weapons match 1H + off-hand within -7 / +3.5 % of DPS x survivability", function()
-		local cases = {
-			{ "Warrior", { "sword2h", "axe2h", "hammer2h", "spear2h" } },
-			{ "Mage", { "staff", "runestaff" } },
-			{ "Cleric", { "holystaff" } },
-		}
-		for _, case in cases do
-			local classId = case[1] :: string
-			for _, level in { 5, 10, 20 } do
-				local base = B.power(B.player(classId, level)) ^ 2
-				for _, weapon in case[2] :: { string } do
-					local score = B.power(B.player(classId, level, { weapon = weapon, offhand = false })) ^ 2
-					-- S64: the shield's Parry (5 % block) and the protection lines on the shield pull 1H + shield ahead
-					-- (Warrior 0.943-0.973, Cleric 0.937-0.950); the lower bound was 0.97 before. S84/S88 rebalance.
-					T.expect(score / base).toBeBetween(0.93, 1.035)
-				end
-			end
-		end
-	end)
-
-	T.it("Grimrok's Mythic cleaver beats a Legendary axe of level 20", function()
-		local cleaver = B.playerFromItems("Warrior", 20, {
-			{
-				uid = "c",
-				id = "unique_grimrok_cleaver",
-				rarity = 5,
-				ilvl = 20,
-				bonuses = {},
-				up = 0,
-				bound = false,
-				n = 1,
-			},
-		})
-		local legendary = B.player("Warrior", 20, {
-			ilvl = 20,
-			weapon = "axe1h",
-			rarity = Rarities.LEGENDARY,
-			offhand = false,
-			armor = false,
-			jewellery = false,
-		})
-		local m = B.monster(B.GENERIC, 20)
-		T.expect(B.dps(cleaver, m) > B.dps(legendary, m)).toBe(true)
 	end)
 
 	T.it("weapon bonuses never roll stats of another class", function()
@@ -209,19 +90,6 @@ T.describe("Balance S32: items", function()
 		T.expect(table.find(ItemRoll.bonusPool("ring_20"), "int") ~= nil).toBe(true)
 	end)
 
-	T.it("the Mage's light armour has HP and jewellery helps every class", function()
-		T.expect((Items.bases.byType.armor_light.stats :: any)(20).hp > 0).toBe(true)
-		local talisman = (Items.bases.byType.talisman.stats :: any)(20)
-		T.expect(talisman.hp > 0 and talisman.armor > 0).toBe(true)
-		for _, classId in B.CLASSES do
-			local with = B.power(B.player(classId, 20))
-			local without = B.power(B.player(classId, 20, { jewellery = false }))
-			T.expect(with / without - 1).toBeBetween(0.08, 0.3)
-		end
-	end)
-end)
-
-T.describe("Balance S32: drops, rewards, gold", function()
 	T.it("drops are never above the monster's level; Elites drop at their spawner's level", function()
 		for level = 1, 20 do
 			local low, high = ItemRoll.dropLevelRange(level)
@@ -235,32 +103,9 @@ T.describe("Balance S32: drops, rewards, gold", function()
 		T.expect(Loot.dropBaseLevel(10, "normal", nil)).toBe(10)
 	end)
 
-	T.it("a Unique for the class about every 1-2 levels, a Heroic about every 1-2 h of cave Elites", function()
-		for _, level in { 10, 15, 18 } do
-			local pace = B.pace("Warrior", level)
-			local uniques = (pace.kills + B.questKills(level)) * B.itemsPerKill("normal", Rarities.UNIQUE)
-			T.expect(uniques).toBeBetween(0.5, 1.6)
-			local heroicPerHour = 3600 / B.eliteCadence("Warrior", level) * B.itemsPerKill("elite", Rarities.HEROIC)
-			T.expect(heroicPerHour).toBeBetween(0.5, 1.5)
-		end
-	end)
-
-	T.it("tougher kinds pay more EXP and gold, weak ones less", function()
-		local bear = MonsterStats.kindReward(Monsters.get("brownBear") :: any)
-		local rabbit = MonsterStats.kindReward(Monsters.get("rabbit") :: any)
-		T.expect(bear > 1.1).toBe(true)
-		T.expect(rabbit < 0.7).toBe(true)
+	T.it("the generic kind pays exactly 1", function()
 		T.expect(MonsterStats.kindReward(B.GENERIC :: any)).toBe(1)
-		-- EXP per second of fighting stays close between the kinds of the Meadows.
-		for _, def in Monsters.list do
-			if def.region == 1 then
-				local level = math.floor((def.levels.min + def.levels.max) / 2)
-				local p = B.player("Warrior", level)
-				local own = B.killExp(level, def, level) / B.duel(p, B.monster(def, level)).seconds
-				local generic = B.killExp(level, B.GENERIC, level) / B.duel(p, B.monster(B.GENERIC, level)).seconds
-				T.expect(own / generic).toBeBetween(0.85, 1.2)
-			end
-		end
+		T.expect(B.kindReward(B.GENERIC)).toBe(1)
 	end)
 
 	T.it("gold from monsters far below the player drops (half the EXP penalty)", function()
@@ -271,37 +116,193 @@ T.describe("Balance S32: drops, rewards, gold", function()
 		T.expect(mul).toBeBetween(0.5, 0.75)
 		T.expect(B.killGold(20, B.GENERIC, 20) > B.killGold(20, B.GENERIC, 10)).toBe(true)
 	end)
+end)
 
-	T.it("+1..+3 on the weapon fits a level's income; potions <= 15 %, drop sales 30-50 % of kill gold", function()
-		for _, classId in B.CLASSES do
-			local eco = B.economy(classId, 20)
-			for _, row in eco.rows do
-				if row.level >= 4 then
-					T.expect(row.up3 <= row.income * 1.05).toBe(true)
+-- Balance ledger (S83, balance plan 2.6) ------------------------------------------------------------------------
+
+local Reasons = (require :: any)("../tools/balance_reasons")
+local SNAPSHOT = "tools/balance_before.json"
+
+local function listDataFiles(dir: string, prefix: string, out: { string })
+	for _, name in fs.readDir(dir) do
+		local path = `{dir}/{name}`
+		if fs.isDir(path) then
+			listDataFiles(path, `{prefix}{name}/`, out)
+		else
+			local base = string.match(name, "^(.+)%.luau$")
+			if base then
+				table.insert(out, `{prefix}{base}`)
+			end
+		end
+	end
+end
+
+-- NOT_BALANCE pattern: `*` stands for exactly one whole path segment.
+local function matchesPattern(path: string, pattern: string): boolean
+	local a, b = string.split(path, "/"), string.split(pattern, "/")
+	if #a ~= #b then
+		return false
+	end
+	for i, seg in b do
+		if seg ~= "*" and seg ~= a[i] then
+			return false
+		end
+	end
+	return true
+end
+
+T.describe("Balance ledger (S83)", function()
+	local dump: { [string]: number } = {}
+
+	T.it("every BALANCE_MODULES module loads", function()
+		for _, entry in Reasons.BALANCE_MODULES do
+			local ok, err = pcall(B.requireShared, entry.path)
+			if not ok then
+				error(`{entry.path}: {err}`, 0)
+			end
+		end
+		dump = B.ledgerData(Reasons)
+		T.expect(next(dump) ~= nil).toBe(true)
+	end)
+
+	T.it("every Data module is on exactly one list", function()
+		local files = {}
+		listDataFiles("src/shared/Data", "Data/", files)
+		table.sort(files)
+		local wrong = {}
+		for _, path in files do
+			local balance = 0
+			for _, entry in Reasons.BALANCE_MODULES do
+				if entry.path == path then
+					balance += 1
 				end
 			end
-			local income = eco.killGold + eco.dropGold + eco.questGold
-			T.expect(eco.potionGold / income <= 0.15).toBe(true)
-			T.expect(eco.dropGold / eco.killGold).toBeBetween(0.3, 0.55)
+			local other = 0
+			for pattern in Reasons.NOT_BALANCE do
+				if matchesPattern(path, pattern) then
+					other = 1
+				end
+			end
+			if balance + other ~= 1 then
+				table.insert(wrong, `{path} ({balance} x BALANCE_MODULES, {other} x NOT_BALANCE)`)
+			end
+		end
+		for _, entry in Reasons.BALANCE_MODULES do
+			if not table.find(files, entry.path) then
+				table.insert(wrong, `{entry.path}: no such Data file`)
+			end
+		end
+		if #wrong > 0 then
+			error(table.concat(wrong, "; "), 0)
+		end
+	end)
+
+	T.it("the dump holds no secrets", function()
+		for key in dump do
+			local bad = string.sub(key, 1, 6) == "Codes:"
+				or string.sub(key, 1, 9) == "Products:"
+				or string.sub(key, 1, 14) == "AdminCommands:"
+				or string.find(key, "AdminUserIds", 1, true) ~= nil
+			if bad then
+				error(`secret in the ledger dump: {key}`, 0)
+			end
+		end
+	end)
+
+	T.it("a newer * prefix explains a key with an older own entry", function()
+		local before = { ["Monsters:[wolf].hpMul"] = 1, ["Monsters:[bear].hpMul"] = 1 }
+		local now = { ["Monsters:[wolf].hpMul"] = 1.1, ["Monsters:[bear].hpMul"] = 1.1 }
+		local reasons = {
+			["Monsters:[wolf].hpMul"] = { { session = "S84", why = "old" } },
+			["Monsters:*"] = { { session = "S88", why = "bulk" } },
+		}
+		local result = B.ledger(before, now, reasons, "S88")
+		T.expect(#result.unexplained).toBe(0)
+		for _, line in result.changed do
+			T.expect(line.reason and line.reason.why).toBe("bulk")
+		end
+		reasons["Monsters:*"] = nil
+		T.expect(#B.ledger(before, now, reasons, "S88").unexplained).toBe(2)
+	end)
+
+	T.it("every reason names a session and why", function()
+		for key, list in Reasons.reasons do
+			T.expect(#list > 0).toBe(true)
+			for _, entry in list do
+				if not (B.sessionNumber(entry.session) and type(entry.why) == "string" and entry.why ~= "") then
+					error(`reasons[{key}]: session "S<n>" and a non-empty why`, 0)
+				end
+			end
+		end
+	end)
+
+	T.it("every changed balance number since the snapshot has a reason", function()
+		if not fs.isFile(SNAPSHOT) then
+			print(`ledger: no {SNAPSHOT} (lune run tools/balance_report.luau snapshot)`)
+			return
+		end
+		local snapshot = serde.decode("json", fs.readFile(SNAPSHOT))
+		if type(snapshot.meta) ~= "table" or type(snapshot.data) ~= "table" then
+			print(`ledger: {SNAPSHOT} has the old flat format (before S83): ledger skipped`)
+			return
+		end
+		local result = B.ledger(snapshot.data, dump, Reasons.reasons, snapshot.meta.session)
+		if #result.unexplained > 0 then
+			local lines = {}
+			for i = 1, math.min(10, #result.unexplained) do
+				local key = result.unexplained[i]
+				table.insert(lines, `{key}: {snapshot.data[key] or "–"} → {dump[key] or "–"}`)
+			end
+			error(
+				`{#result.unexplained} balance number(s) changed without a reason in tools/balance_reasons.luau `
+					.. `(snapshot {snapshot.meta.session}): {table.concat(lines, "; ")}`,
+				0
+			)
 		end
 	end)
 end)
 
--- The S18 band (weapon + 4 armour pieces of the same level, no off-hand, jewellery or skills) at higher levels.
-T.describe("Monster balance (S18 band, levels 30-90)", function()
-	for _, level in { 30, 60, 90 } do
-		T.it(`Warrior level {level}: 6-10 s per kill, 10-30% HP lost`, function()
-			local fight = B.fight("Warrior", level)
-			T.expect(fight.killSeconds).toBeBetween(6, 10)
-			T.expect(fight.hpLost).toBeBetween(0.10, 0.30)
-		end)
-	end
+-- 20-100 ---------------------------------------------------------------------------------------------------------
 
-	T.it("no class dies to one monster of its level", function()
-		for classId in B.LOADOUT do
-			for _, level in { 2, 5, 10, 30, 60, 90 } do
-				T.expect(B.fight(classId, level).hpLost < 0.5).toBe(true)
+T.describe("Balance 20-100: global (report until S87)", function()
+	local rows = B.targetsGlobal()
+	if GLOBAL_ASSERT then
+		for _, row in rows do
+			if row.report == nil then
+				T.it(`{row.id} {row.label}`, function()
+					if not B.inBand(row) then
+						error(describeRow(row), 0)
+					end
+				end)
 			end
 		end
+	end
+	T.it("global targets G1-G6, G11-G13 (printed)", function()
+		printReport("G", rows, 15)
+		T.expect(#rows > 0).toBe(true)
 	end)
+end)
+
+T.describe("Balance 20-100: regions", function()
+	for _, mapId in B.REGION_IDS do
+		local rows = B.targetsRegion(mapId, REGION_TARGETS)
+		if TUNED[mapId] then
+			-- S83: the Meadows assert the kinds and Grimrok's schedule; their Elites, pairs and Elite II belong to the
+			-- 1-20 retune (S91) and are only printed.
+			local asserted = if mapId == "meadows" then { kinds = true, bossCadence = true } else nil
+			for _, row in rows do
+				if asserted == nil or asserted[row.group] then
+					T.it(`{row.id}`, function()
+						if not B.inBand(row) then
+							error(describeRow(row), 0)
+						end
+					end)
+				end
+			end
+		end
+		T.it(`{mapId}: region targets (printed{if TUNED[mapId] then "" else ", not tuned"})`, function()
+			printReport(`region {mapId}`, rows, 8)
+			T.expect(#rows > 0).toBe(true)
+		end)
+	end
 end)

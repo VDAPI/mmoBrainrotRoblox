@@ -15,6 +15,7 @@ local Config = require("../Config")
 local LevelCurves = require("./LevelCurves")
 local Locale = require("../Util/Locale")
 local PathsData = require("../Data/Paths")
+local SkillCurves = require("../Data/SkillCurves")
 local SkillData = require("../Data/Skills")
 local Stats = require("../Data/Stats")
 local TableUtil = require("../Util/TableUtil")
@@ -39,8 +40,47 @@ function Skills.scaled(skill: SkillDef, value: SkillData.Scaled?, level: number)
 	return first + (last - first) * t
 end
 
+-- Linear interpolation over points { rank, value } sorted by rank; clamped to the end points (S83).
+function Skills.interpolate(points: { { number } }, rank: number): number
+	local first, last = points[1], points[#points]
+	if rank <= first[1] then
+		return first[2]
+	elseif rank >= last[1] then
+		return last[2]
+	end
+	for i = 2, #points do
+		local a, b = points[i - 1], points[i]
+		if rank <= b[1] then
+			if b[1] == a[1] then
+				return b[2]
+			end
+			return a[2] + (b[2] - a[2]) * (rank - a[1]) / (b[1] - a[1])
+		end
+	end
+	return last[2]
+end
+
+-- A `values` field at `level` (rank). S83 (balance plan 2.2): a { rank 1, max rank } pair with knots in
+-- Data/SkillCurves goes through them (Skills.interpolate); without knots it is exactly Skills.scaled. Every scaling
+-- of a `values` field goes through here (cost, cooldown and durations stay on Skills.scaled).
 function Skills.valueAt(skill: SkillDef, field: string, level: number): number
-	return Skills.scaled(skill, skill.values[field], level)
+	local value = skill.values[field]
+	local byField = SkillCurves.knots[skill.id]
+	local knots = byField and byField[field]
+	if knots == nil or type(value) ~= "table" then
+		return Skills.scaled(skill, value, level)
+	end
+	local points: { { number } } = { { 1, value[1] } }
+	local ranks: { number } = {}
+	for rank in knots do
+		table.insert(ranks, rank)
+	end
+	table.sort(ranks)
+	for _, rank in ranks do
+		table.insert(points, { rank, knots[rank] })
+	end
+	table.insert(points, { math.max(1, skill.maxLevel), value[2] or value[1] })
+	return Skills.interpolate(points, level)
 end
 
 -- A ValueRef at a rank: numbers pass, strings read def.values (0 when missing), nil is 0 (S73).
@@ -208,7 +248,7 @@ function Skills.effective(
 		end
 		for field, amount in bp.values or none do
 			-- ROZWOJ 2.7: every change adds to the current value (the base scales once)
-			def.values[field] = Skills.scaled(skill, def.values[field], rank) + amount
+			def.values[field] = Skills.valueAt(def, field, rank) + amount
 		end
 		for key, v in bp :: any do
 			if key == "effect" then
@@ -229,7 +269,7 @@ function Skills.effective(
 		end
 	end
 	if jumps ~= 0 then
-		def.values.jumps = Skills.scaled(skill, def.values.jumps, rank) + jumps
+		def.values.jumps = Skills.valueAt(def, "jumps", rank) + jumps
 	end
 	-- S75: add.effectDuration lengthens every list (the self and party copies last as long as the skill);
 	-- add.<kind>Duration only `effects` of that kind
@@ -750,13 +790,14 @@ function Skills.healAmount(
 	magAtk: number,
 	level: number
 ): number
-	local hpField, magField = def.values[prefix .. "Hp"], def.values[prefix .. "Mag"]
+	local hpField, magField = prefix .. "Hp", prefix .. "Mag"
 	local curve = Skills.healMul(level)
-	if hpField == nil and magField == nil then
+	if def.values[hpField] == nil and def.values[magField] == nil then
 		return magAtk * curve * Skills.valueAt(def, prefix, rank) / 100
 	end
-	return targetMaxHp * Skills.scaled(def, hpField, rank) / 100
-		+ magAtk * curve * Skills.scaled(def, magField, rank) / 100
+	-- S83: through valueAt (knots of Data/SkillCurves); a missing field is 0 as before
+	return targetMaxHp * Skills.valueAt(def, hpField, rank) / 100
+		+ magAtk * curve * Skills.valueAt(def, magField, rank) / 100
 end
 
 -- S71 (ROZWOJ 9.3, 9.4): heal bonus in % of a heal on a target with `fraction` of its health before the heal.
