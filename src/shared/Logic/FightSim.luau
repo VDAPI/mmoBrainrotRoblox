@@ -7,12 +7,15 @@
 -- every interval); Elite II abilities land `specialHit` of the time; in-combat regeneration heals.
 -- Player values come from Logic/StatCalc (from S54 DEX crit, speed and dodge fall off above level 20). Skills count as
 -- a flat SKILL_DPS share, so the weapon speed normalisation of skill damage (S54) does not change the model.
+-- S64: regular blows count the block (hooks.block) and melee / ranged protection (m.delivery); counters, Beheading,
+-- Easy Prey, Reaping, the block's heal and cooldown reduction stay out of the model (the balance sessions weigh them).
 
 local AreaSpawns = require("./AreaSpawns")
 local Combat = require("../Data/Combat")
 local Damage = require("./Damage")
 local MonsterAbilities = require("../Data/MonsterAbilities")
 local MonsterStats = require("./MonsterStats")
+local Traits = require("./Traits")
 
 local FightSim = {}
 
@@ -46,7 +49,8 @@ function FightSim.dps(p: Player, m: MonsterStats.MonsterStats, skill: number?): 
 	return perHit * math.max(0.1, v.atkSpeed or 1) * double * share
 end
 
--- Expected damage of one monster attack (`mul` x attack) on the player, after armour / magic resistance.
+-- Expected damage of one monster attack (`mul` x attack) on the player, after armour / magic resistance. Regular
+-- blows (canDodge ~= false) also lose the dodge, block and protection share; abilities have no delivery.
 function FightSim.hit(m: any, p: Player, mul: number?, kind: string?, canDodge: boolean?): number
 	local v = p.values
 	local magic = (kind or m.damageKind) == "magic"
@@ -54,8 +58,13 @@ function FightSim.hit(m: any, p: Player, mul: number?, kind: string?, canDodge: 
 	local gapMul, gapCrit = Damage.levelGap(m.level, p.level)
 	local critMul = Damage.critMultiplier(Combat.monsterCritDmg, v.critResist)
 	local crit = 1 + math.min(Combat.monsterCritChance + gapCrit, 100) / 100 * (critMul - 1)
-	local dodge = if canDodge == false then 0 else math.min(v.dodge or 0, Combat.dodgeCap) / 100
-	return m.attack * (mul or 1) * (1 - Damage.reduction(defense, m.level)) * crit * gapMul * (1 - dodge)
+	local avoid, guard = 0, 0
+	if canDodge ~= false then
+		local d, _, b = Damage.avoidance(v.dodge or 0, 0, 0, Traits.blockChance(p.hooks.block or 0, false))
+		avoid = d + b
+		guard = Damage.guard(m.delivery, v.meleeGuard or 0, v.rangedGuard or 0) / 100
+	end
+	return m.attack * (mul or 1) * (1 - Damage.reduction(defense, m.level)) * crit * gapMul * (1 - avoid) * (1 - guard)
 end
 
 -- One player against `members` (MonsterStats, optionally with `ability`), killed in order.
@@ -95,6 +104,7 @@ function FightSim.group(
 	local members = {}
 	for _ = 1, n do
 		local m: any = table.clone(MonsterStats.compute(kind, level, v, n, mods))
+		m.delivery = kind.attack -- S64: kind of the basic attack for melee / ranged protection
 		if v == "elite2" and kind.ability then
 			m.ability = MonsterAbilities.get(kind.ability)
 		end

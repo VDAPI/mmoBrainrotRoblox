@@ -29,7 +29,15 @@ return table.freeze({
 		dot = 0.6, -- every damage-over-time tick of a player on a player (items and skills), applied once
 		armorBreakStacks = 3, -- most armour break stacks from items on a player
 		lifesteal = 0.5, -- the attacker's lifesteal stat against players (not a skill's behaviour.lifesteal)
+		-- S64 (STATY 8):
+		block = 0.5, -- block chance after blockCap: 2.5 % from the shield, at most 12.5 %
+		counter = 0.5, -- counter chance after riposteCap: 5 % from the sword, at most 15 %
 	}),
+	-- S64 (STATY 3, 5, 6, 8): defensive and conditional item traits.
+	blockCap = 25, -- % block chance from every source (Parry trait, blockChance lines, Block / Shield Master nodes)
+	riposteCap = 30, -- % counter chance (Swordplay trait, riposte passive, Retaliation and Requital nodes); unlimited before S64
+	executionerCap = 60, -- % bonus below lowHpFraction (Beheading, Executioner node, leg_/myth_executioner); unlimited before S64
+	cdrCap = 20, -- % skill cooldown reduction from items (leg_cooldown, myth_cooldown)
 	-- S63 (STATY 4, 5): on-hit effects of items.
 	onHitChanceCap = 40, -- % total chance of one on-hit effect (trait + line)
 	areaProcShare = 1 / 3, -- share of the chance per target of an area skill

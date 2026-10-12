@@ -1299,3 +1299,20 @@
 - **S63** Nowe linie to haki (`woundChance`, `poisonChance`, `dotPower`, `resourceOnHit`), nie statystyki `StatCalc`;
   `dotPower` bez Kapłana, dopóki nie ma obrażeń w czasie (S70); STATY 4 poprawione. Leczenie z rany rąbanej: `HealCut`
   mnoży `PvpService.HealScale` / `ShieldScale`. Progi `balance.spec` bez zmian.
+- **S64** Blok to trzeci wynik jednego losowania `rollAvoid` (tylko `canDodge ~= false`); `blocked` ustawia też
+  `dodged`, więc kradzież życia, efekty przy trafieniu i osłabienie traktują go jak brak trafienia. Leczenie Zastawy
+  bez źródła (bez `HealScale`, poza podsumowaniem walki), jak kradzież życia i `killHeal`.
+- **S64** Kontra po każdym zwykłym ataku (też zablokowanym, chybionym, unikniętym), atakiem podstawowym obrońcy tylko w
+  jego zasięgu, nie przy ogłuszeniu / zamrożeniu, nigdy na `noProc`. `riposteCap = 30` i `executionerCap = 60`:
+  wcześniej bez limitu (Kontratak, `leg_` / `myth_executioner`).
+- **S64** PvP: połowa szansy bloku i kontry liczona od sumy po limicie (najwyżej 12,5% i 15%); Ścięcie w PvP połowa
+  tylko z cechy, `executioner` z legend pełny, pod tym samym limitem. Mnożniki z `ItemTraits.pvpByHook`.
+- **S64** Ochrony: wpis `own` przez dostawcę redukcji (`incoming` tylko wokół `ResourceService.Damage`), limit 30 w
+  `Data/Stats`. `delivery`: stożek liczy się jak cel (zasięg ≤ 11 = wręcz), więc Salwa jest dystansem (STATY 6
+  poprawione). Haki: `blockHeal`, `counterDamage`, `traitExecute`, `controlledDamage` rosną; `block` i `riposte` stałe
+  przez nowe pole `fixedHooks`.
+- **S64** Odnowienie: `Skills.cooldown` = `max(baza × (1 − cdr), min(baza, najdłuższy efekt drużyny))`; serwer
+  publikuje `{ "skills", "cdr" }`. `FightSim` liczy tylko blok i ochrony (kontra, Ścięcie, Łatwy cel, Żniwo, leczenie
+  bloku, skrócenie odnowienia poza lustrem do S84/S88).
+- **S64** `balance.spec` „two-handed weapons match 1H + off-hand”: dolny próg 0,97 → 0,93 (Zastawa i ochrony na
+  tarczy: Wojownik 0,943–0,973, Kapłan 0,937–0,950). `hpRegen` usunięte z puli tarczy (13 linii; STATY 9 poprawione).

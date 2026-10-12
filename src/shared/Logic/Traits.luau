@@ -1,6 +1,7 @@
 --!strict
 -- On-hit effects of item traits and lines (S63, docs/STATY.md 5, 8, 13). Pure helpers CombatService and
--- StatusEffectService use; the numbers live in Data/Combat, Data/BuffCategories and Data/ItemTraits. S65 adds the
+-- StatusEffectService use; the numbers live in Data/Combat, Data/BuffCategories and Data/ItemTraits. S64 adds the
+-- defensive and conditional traits (block, counter, execute, controlled targets). S65 adds the
 -- rhythm traits and the player's trait state here.
 
 local BuffCategories = require("../Data/BuffCategories")
@@ -64,6 +65,31 @@ end
 -- A trait value against a player (TraitDef.pvp; nil = 1).
 function Traits.pvpValue(value: number, multiplier: number?): number
 	return value * (if multiplier == nil then 1 else multiplier)
+end
+
+-- S64 (STATY 5, 8): block chance in % for one regular hit; pvp halves it after the cap.
+function Traits.blockChance(total: number, pvp: boolean): number
+	return math.clamp(total, 0, Combat.blockCap) * (if pvp then Combat.pvp.block else 1)
+end
+
+-- S64: counter chance in % after a regular attack; the same with riposteCap and pvp.counter.
+function Traits.counterChance(total: number, pvp: boolean): number
+	return math.clamp(total, 0, Combat.riposteCap) * (if pvp then Combat.pvp.counter else 1)
+end
+
+-- S64: bonus % below Combat.lowHpFraction: executioner (nodes, legends) + Beheading; traitPvp = the trait's
+-- multiplier against players, nil against monsters. Only the trait part is halved in PvP.
+function Traits.executeBonus(executioner: number, trait: number, traitPvp: number?): number
+	local bonus = math.max(0, executioner) + Traits.pvpValue(math.max(0, trait), traitPvp)
+	return math.min(bonus, Combat.executionerCap)
+end
+
+-- S64: Easy Prey: `value` when the target is slowed, rooted, frozen or stunned (StatusEffectService.SlowFactor < 1).
+function Traits.controlledBonus(value: number, slowFactor: number, traitPvp: number?): number
+	if slowFactor >= 1 then
+		return 0
+	end
+	return Traits.pvpValue(math.max(0, value), traitPvp)
 end
 
 -- Armour break from items at `stacks` stacks of `unit` %.

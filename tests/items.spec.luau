@@ -603,4 +603,92 @@ T.describe("S62 traits and weighted pools", function()
 	end)
 end)
 
+T.describe("S64 defensive and conditional traits, new lines", function()
+	local Combat = require("../src/shared/Data/Combat")
+
+	local function plain(defId: string, rarity: number, up: number?): any
+		return {
+			uid = uid(),
+			id = defId,
+			rarity = rarity,
+			ilvl = (Items.get(defId) :: any).level,
+			bonuses = {},
+			up = up or 0,
+			bound = false,
+			n = 1,
+			rv = Rarities.RV,
+		}
+	end
+
+	T.it("an old axe gets Reaping without a migration", function()
+		local axe = plain("axe1h_50", Rarities.COMMON)
+		axe.rv = 2
+		Rarities.upgradeItem(axe, Items.get(axe.id))
+		local stats = ItemRoll.itemStats(axe)
+		T.expect((stats.trait :: any).id).toBe("reaping")
+		T.expect(stats.hooks.killHeal).toBe(1)
+		local mythic = plain("axe1h_50", Rarities.MYTHIC, 9)
+		T.expect(ItemRoll.itemStats(mythic).hooks.killHeal).toBeNear(1.88, 0.02)
+	end)
+
+	T.it("fixed hooks never grow, the grown value does", function()
+		local sword = ItemRoll.itemStats(plain("sword1h_50", Rarities.COMMON)).hooks
+		T.expect(sword.riposte).toBe(10)
+		T.expect(sword.counterDamage).toBe(25)
+		local swordMyth = ItemRoll.itemStats(plain("sword1h_50", Rarities.MYTHIC, 9)).hooks
+		T.expect(swordMyth.riposte).toBe(10)
+		T.expect(swordMyth.counterDamage).toBeNear(47, 0.5)
+		local shield = ItemRoll.itemStats(plain("shield_50", Rarities.COMMON)).hooks
+		T.expect(shield.block).toBe(5)
+		T.expect(shield.blockHeal).toBe(0.5)
+		local shieldMyth = ItemRoll.itemStats(plain("shield_50", Rarities.MYTHIC, 9)).hooks
+		T.expect(shieldMyth.block).toBe(5)
+		T.expect(shieldMyth.blockHeal).toBeNear(0.94, 0.01)
+		T.expect(ItemRoll.itemStats(plain("sword2h_50", Rarities.COMMON)).hooks.traitExecute).toBe(18)
+		T.expect(ItemRoll.itemStats(plain("crossbow_50", Rarities.COMMON)).hooks.controlledDamage).toBe(10)
+	end)
+
+	T.it("trait params match the code's constants", function()
+		local swordplay = ItemTraits.get("swordplay") :: any
+		T.expect(swordplay.fixedHooks.riposte).toBe(swordplay.params.chance)
+		local parry = ItemTraits.get("parry") :: any
+		T.expect(parry.fixedHooks.block).toBe(parry.params.chance)
+		T.expect((ItemTraits.get("beheading") :: any).params.threshold).toBeNear(Combat.lowHpFraction * 100)
+		local byHook = ItemTraits.pvpByHook
+		for _, id in { "counterDamage", "blockHeal", "traitExecute", "controlledDamage" } do
+			T.expect({ id, byHook[id] }).toEqual({ id, 0.5 })
+		end
+		T.expect(byHook.killHeal).toBe(0)
+	end)
+
+	T.it("new lines sit in their pools", function()
+		local function pools(id: string): { string }
+			local out = {}
+			for group, list in Bonuses.pools do
+				if table.find(list, id) then
+					table.insert(out, group)
+				end
+			end
+			table.sort(out)
+			return out
+		end
+		T.expect(pools("blockChance")).toEqual({ "shield" })
+		T.expect(Bonuses.classStats.blockChance).toEqual({ "Warrior", "Cleric" })
+		T.expect((Bonuses.get("blockChance") :: any).hook).toBe("block")
+		T.expect(pools("meleeGuard")).toEqual({ "armor", "boots", "shield" })
+		T.expect(pools("rangedGuard")).toEqual({ "armor", "helmet", "shield" })
+		T.expect(pools("leg_cooldown")).toEqual({ "legendary" })
+		T.expect(pools("myth_cooldown")).toEqual({ "mythic" })
+		local leg = Bonuses.get("leg_cooldown") :: any
+		local myth = Bonuses.get("myth_cooldown") :: any
+		T.expect({ leg.tier, leg.hook }).toEqual({ "legendary", "cooldownReduction" })
+		T.expect({ myth.tier, myth.hook }).toEqual({ "mythic", "cooldownReduction" })
+		for _, classId in { "Warrior", "Cleric" } do
+			local pool = ItemRoll.bonusPool("shield_50", classId)
+			T.expect({ classId, #pool <= 13 }).toEqual({ classId, true })
+			T.expect({ classId, table.find(pool, "blockChance") ~= nil }).toEqual({ classId, true })
+		end
+	end)
+end)
+
 return nil

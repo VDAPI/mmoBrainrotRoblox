@@ -398,6 +398,62 @@ function Skills.cost(skill: SkillDef, rank: number, level: number, classId: stri
 	return base * (1 - saving / 100), base
 end
 
+-- S64 (STATY 2C, owner answer 26): item cooldown reduction, capped by Combat.cdrCap.
+function Skills.cooldownReduction(total: number): number
+	return math.clamp(total, 0, Combat.cdrCap)
+end
+
+export type PartyEffect = { kind: string, category: string?, duration: number }
+
+-- Party effects of a skill (ROZWOJ 7.3): effects on allies, allyEffects and a shield skill's shield on an ally.
+-- `def` is the skill after Skills.effective. The rule tests/PartyBuffRules checks and the cooldown floor use.
+function Skills.partyEffects(def: SkillDef, rank: number): { PartyEffect }
+	local out: { PartyEffect } = {}
+	local function add(effect: SkillData.SkillEffect)
+		local entry: PartyEffect = {
+			kind = effect.kind :: string,
+			category = effect.category,
+			duration = Skills.scaled(def, effect.duration or def.duration, rank),
+		}
+		table.insert(out, entry)
+	end
+	local effects: { SkillData.SkillEffect } = def.effects or {}
+	for _, effect in effects do
+		if Skills.effectSide(def, effect) == "allies" then
+			add(effect)
+		end
+	end
+	local allyEffects: { SkillData.SkillEffect } = def.allyEffects or {}
+	for _, effect in allyEffects do
+		add(effect)
+	end
+	if def.type == "shield" then
+		table.insert(out, { kind = "shield", duration = Skills.scaled(def, def.duration, rank) })
+	end
+	return out
+end
+
+-- Longest party effect of the skill in s, 0 without one.
+function Skills.partyDuration(def: SkillDef, rank: number): number
+	local longest = 0
+	for _, effect in Skills.partyEffects(def, rank) do
+		longest = math.max(longest, effect.duration)
+	end
+	return longest
+end
+
+-- S64: cooldown of `def` (after Skills.effective) at `rank` with `reduction` % item cooldown reduction. A party buff
+-- never comes back sooner than it lasts (ROZWOJ 7.3), and the floor never lifts the cooldown above its base. One
+-- function for the server, the skill bar, the description and the wiki.
+function Skills.cooldown(def: SkillDef, rank: number, reduction: number?): number
+	local base = Skills.scaled(def, def.cooldown, rank)
+	local pct = Skills.cooldownReduction(reduction or 0)
+	if pct <= 0 then
+		return base
+	end
+	return math.max(base * (1 - pct / 100), math.min(base, Skills.partyDuration(def, rank)))
+end
+
 -- Multiplier of the magic-attack part of heals and shields at character level `level` (ROZWOJ 9.2).
 function Skills.healMul(level: number): number
 	return LevelCurves.at("heal", level)
@@ -436,7 +492,8 @@ local round = Skills.roundArg
 
 -- Options of a description: `level` = character level (default: the level the rank unlocks at, as on the wiki);
 -- `choices` / `mods` as in Skills.effective (S55; nil = option A, no nodes).
-export type DescOpts = { level: number?, choices: Choices?, mods: { SkillMod }? }
+-- S64: `cdr` = % item cooldown reduction (Skills.cooldown; nil = none, as on the wiki).
+export type DescOpts = { level: number?, choices: Choices?, mods: { SkillMod }?, cdr: number? }
 
 -- Placeholder values for the description of `base` at rank `rank` ({dmg}, {slow}, {duration}, {cost}, ...).
 -- S28: the numbers as the skill works at that rank (breakpoints applied). S54: cost and heal values at the
@@ -456,7 +513,7 @@ function Skills.descriptionArgs(base: SkillDef, rank: number, opts: DescOpts?): 
 	end
 	local cost = Skills.cost(skill, rank, L, base.class, nil)
 	args.cost = round(cost)
-	args.cooldown = round(Skills.scaled(skill, skill.cooldown, rank))
+	args.cooldown = round(Skills.cooldown(skill, rank, opts and opts.cdr))
 	if skill.duration then
 		args.duration = round(Skills.scaled(skill, skill.duration, rank))
 	end

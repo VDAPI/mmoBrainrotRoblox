@@ -378,4 +378,86 @@ T.describe("MonsterStats", function()
 	end)
 end)
 
+T.describe("Damage: block and protection (S64)", function()
+	local EffectStack = require("../src/shared/Logic/EffectStack")
+
+	T.it("avoidance: the block is capped and cut last", function()
+		local _, _, b0 = Damage.avoidance(0, 0, 0, 40)
+		T.expect(b0).toBeNear(0.25)
+		local d1, m1, b1 = Damage.avoidance(30, 0, 15, 25)
+		T.expect(d1).toBeNear(0.30)
+		T.expect(m1).toBeNear(0.10)
+		T.expect(b1).toBe(0)
+		local d2, m2, b2 = Damage.avoidance(10, 0, 0, 25)
+		T.expect(d2).toBeNear(0.10)
+		T.expect(m2).toBe(0)
+		T.expect(b2).toBeNear(0.25)
+		local d3, m3, b3 = Damage.avoidance(20, 0, 15, 25)
+		T.expect(d3).toBeNear(0.20)
+		T.expect(m3).toBeNear(0.15)
+		T.expect(b3).toBeNear(0.05)
+	end)
+
+	T.it("never blocks a hit that cannot be dodged", function()
+		local rng = Rng.new(31)
+		for _ = 1, 200 do
+			local r = Damage.computeDamage(
+				attacker(),
+				defender(),
+				{ kind = "phys", canDodge = false, block = 100 } :: Damage.Params,
+				rng
+			)
+			T.expect(r.blocked == true).toBe(false)
+			T.expect(r.amount > 0).toBe(true)
+		end
+	end)
+
+	T.it("blocks about the chance, with nothing landing", function()
+		local rng = Rng.new(32)
+		local blocked = 0
+		for _ = 1, 4000 do
+			local r = Damage.computeDamage(attacker(), defender(), { kind = "phys", block = 25 } :: Damage.Params, rng)
+			if r.blocked then
+				blocked += 1
+				T.expect(r.dodged).toBe(true)
+				T.expect(r.amount).toBe(0)
+				T.expect(r.missed).toBe(false)
+			end
+		end
+		T.expect(blocked / 4000).toBeNear(0.25, 0.03)
+	end)
+
+	T.it("block nil and block 0 roll the same sequence", function()
+		local a, b = Rng.new(33), Rng.new(33)
+		for _ = 1, 200 do
+			local x = Damage.computeDamage(attacker({ critChance = 20 }), defender({ dodge = 30 }), PHYS, a)
+			local y = Damage.computeDamage(
+				attacker({ critChance = 20 }),
+				defender({ dodge = 30 }),
+				{ kind = "phys", block = 0 } :: Damage.Params,
+				b
+			)
+			T.expect({ x.dodged, x.amount, x.crit }).toEqual({ y.dodged, y.amount, y.crit })
+		end
+	end)
+
+	T.it("guard picks the protection of the blow", function()
+		T.expect(Damage.guard("melee", 12, 30)).toBe(12)
+		T.expect(Damage.guard("ranged", 12, 30)).toBe(30)
+		T.expect(Damage.guard(nil, 12, 30)).toBe(0)
+	end)
+
+	T.it("protection multiplies with other reduction under the cap", function()
+		T.expect(EffectStack.reduction({
+			{ category = "own", value = 30, at = 0 },
+			{ category = "allyGuard", value = 15, at = 0 },
+		})).toBeNear(40.5)
+		T.expect(EffectStack.reduction({
+			{ category = "own", value = 30, at = 0 },
+			{ category = "allyGuard", value = 15, at = 0 },
+			{ category = "own", value = 60, at = 0 },
+		})).toBe(75)
+	end)
+end)
+
 return nil

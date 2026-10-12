@@ -30,6 +30,7 @@ export type TraitDef = {
 	stat: string?, -- kind "stat": Data/Stats id (flat addition)
 	hook: string?, -- kind "hook" / "effect": itemStats.hooks key (provisional until the trait goes live)
 	params: { [string]: number }?, -- fixed numbers of the trait (chance %, s, studs); never scaled
+	fixedHooks: { [string]: number }?, -- S64: hooks added as is, never scaled (STATY 10: rarity and upgrades raise only the grown value)
 	pvp: number, -- multiplier against players (STATY 8): 1 like a line, 0.5 half, 0 none
 	live: boolean, -- false: no code yet (S64-S65); ItemRoll.trait returns nil, tooltip and wiki hide it
 	onHit: OnHit?, -- kind "effect" (S63)
@@ -42,6 +43,7 @@ type Extra = {
 	stat: string?,
 	hook: string?,
 	params: { [string]: number }?,
+	fixedHooks: { [string]: number }?,
 	pvp: number,
 	live: boolean?,
 	onHit: OnHit?,
@@ -65,6 +67,7 @@ local function trait(id: string, kind: TraitKind, category: string, value: numbe
 		stat = extra.stat,
 		hook = extra.hook,
 		params = extra.params,
+		fixedHooks = if extra.fixedHooks then table.freeze(extra.fixedHooks) else nil,
 		pvp = extra.pvp,
 		live = extra.live == true,
 		onHit = if extra.onHit then table.freeze(extra.onHit) else nil,
@@ -74,16 +77,32 @@ local function trait(id: string, kind: TraitKind, category: string, value: numbe
 end
 
 -- Hooks and params of traits that are not live are starting values (STATY 3); the session that makes a trait live may rename its hook or move a constant shared with path nodes to Data/Combat (STATY 13).
-trait("swordplay", "hook", "counter", 25, { hook = "counterDamage", params = { chance = 10 }, pvp = 0.5 })
+-- S64: the fixed chance of Swordplay and Parry is both the text placeholder {chance} and a fixed hook.
+local SWORDPLAY_CHANCE = 10
+local PARRY_CHANCE = 5
+trait("swordplay", "hook", "counter", 25, {
+	hook = "counterDamage",
+	params = { chance = SWORDPLAY_CHANCE },
+	fixedHooks = { riposte = SWORDPLAY_CHANCE },
+	pvp = 0.5,
+	live = true,
+})
 trait("twinCut", "hook", "rhythm", 40, { hook = "traitTwinCut", params = { every = 5, reset = 5 }, pvp = 1 })
-trait("reaping", "hook", "killHeal", 1, { hook = "killHeal", pvp = 0 })
+trait("reaping", "hook", "killHeal", 1, { hook = "killHeal", pvp = 0, live = true })
 trait("bonebreaker", "effect", "weaken", 6, {
 	hook = "traitWeaken",
 	pvp = 0.5,
 	live = true,
 	onHit = { effect = "weaken", duration = 4 },
 })
-trait("beheading", "hook", "execute", 18, { hook = "traitExecute", params = { threshold = 30 }, pvp = 0.5 })
+-- threshold is text only; the code reads Combat.lowHpFraction (items.spec keeps them equal)
+trait(
+	"beheading",
+	"hook",
+	"execute",
+	18,
+	{ hook = "traitExecute", params = { threshold = 30 }, pvp = 0.5, live = true }
+)
 trait("rendingGash", "effect", "bleed", 30, {
 	hook = "traitWound",
 	pvp = 1,
@@ -111,7 +130,13 @@ trait(
 	25,
 	{ hook = "traitRunThrough", params = { width = 4, depth = 4 }, pvp = 1 }
 )
-trait("parry", "hook", "block", 0.5, { hook = "blockHeal", params = { chance = 5 }, pvp = 0.5 })
+trait("parry", "hook", "block", 0.5, {
+	hook = "blockHeal",
+	params = { chance = PARRY_CHANCE },
+	fixedHooks = { block = PARRY_CHANCE },
+	pvp = 0.5,
+	live = true,
+})
 trait("harrying", "effect", "harass", 15, {
 	hook = "traitHarass",
 	pvp = 1,
@@ -133,7 +158,7 @@ trait("toxicBarbs", "effect", "poison", 30, {
 	},
 })
 trait("criticalForce", "stat", "critDamage", 25, { stat = "critDmg", pvp = 1, live = true })
-trait("easyPrey", "hook", "controlled", 10, { hook = "controlledDamage", pvp = 0.5 })
+trait("easyPrey", "hook", "controlled", 10, { hook = "controlledDamage", pvp = 0.5, live = true })
 trait("bodkinBolt", "stat", "armorPierce", 20, { stat = "pierce", pvp = 1, live = true })
 trait("fullDraw", "hook", "nextBasic", 30, { hook = "traitFullDraw", params = { window = 4 }, pvp = 0.5 })
 trait("elementalSpark", "hook", "elementProc", 35, { hook = "traitSpark", pvp = 1 })
@@ -153,7 +178,7 @@ trait("prosperity", "stat", "itemFind", 8, { stat = "dropBonus", pvp = 0, live =
 
 local MATCH = 3 -- STATY 2B: a line that suits the type's trait rolls 3x as often; 0 = never on this type
 
--- Pool weights per base type (STATY 3, last column); lines not listed weigh 1. S64 adds meleeGuard and blockChance.
+-- Pool weights per base type (STATY 3, last column); lines not listed weigh 1. blockChance on a shield weighs 1.
 local AFFINITY: { [string]: { [string]: number } } = {
 	sword1h = { critChance = MATCH, accuracy = MATCH, basicDmg = MATCH },
 	saber1h = { atkSpeed = MATCH, basicDmg = MATCH, lifesteal = MATCH },
@@ -163,7 +188,7 @@ local AFFINITY: { [string]: { [string]: number } } = {
 	axe2h = { lifesteal = MATCH, woundChance = MATCH, dotPower = MATCH },
 	hammer2h = { skillDmg = MATCH, pierce = MATCH, critDmg = MATCH },
 	spear2h = { basicDmg = MATCH, atkSpeed = MATCH, pierce = MATCH },
-	shield = { critResist = MATCH, hpPct = MATCH },
+	shield = { critResist = MATCH, hpPct = MATCH, meleeGuard = MATCH },
 	shortbow = { atkSpeed = MATCH, basicDmg = MATCH, accuracy = MATCH },
 	bow = { atkSpeed = MATCH, poisonChance = MATCH, dotPower = MATCH },
 	longbow = { critChance = MATCH, critDmg = MATCH, skillDmg = MATCH },
@@ -218,8 +243,18 @@ for _, effect in ON_HIT_ORDER do
 	end
 end
 
+-- S64: trait multiplier against players by hook (hooks of traits are unique), so the code never writes 0.5.
+local PVP_BY_HOOK: { [string]: number } = {}
+for _, def in LIST do
+	if def.hook then
+		PVP_BY_HOOK[def.hook] = def.pvp
+	end
+end
+table.freeze(PVP_BY_HOOK)
+
 return table.freeze({
 	list = LIST,
+	pvpByHook = PVP_BY_HOOK,
 	onHitList = table.freeze(ON_HIT_LIST),
 	byId = BY_ID,
 	affinity = AFFINITY,

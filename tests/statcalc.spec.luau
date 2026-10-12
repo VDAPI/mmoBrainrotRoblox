@@ -111,6 +111,16 @@ T.describe("StatCalc", function()
 		T.expect(result.walkSpeed).toBeNear(20.8)
 	end)
 
+	T.it("melee and ranged protection are capped at 30 (S64)", function()
+		local result = StatCalc.compute({
+			level = 10,
+			stats = { str = 1, dex = 1, int = 1, vit = 1 },
+			sources = { { key = "source.gear", flat = { meleeGuard = 45, rangedGuard = 12 } } },
+		})
+		T.expect(result.values.meleeGuard).toBe(30)
+		T.expect(result.values.rangedGuard).toBe(12)
+	end)
+
 	T.it("ranged weapons scale with DEX, melee with STR", function()
 		local stats = { str = 20, dex = 40, int = 1, vit = 1 }
 		local bow =

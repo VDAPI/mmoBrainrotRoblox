@@ -425,6 +425,11 @@ function ItemRoll.itemStats(item: ItemInstance): ItemStats
 		elseif traitDef.hook then
 			result.hooks[traitDef.hook] = (result.hooks[traitDef.hook] or 0) + trait.value
 		end
+		-- S64: fixed hooks (Swordplay's counter, Parry's block chance) never grow with the trait strength.
+		local fixedHooks: { [string]: number } = traitDef.fixedHooks or {}
+		for hookId, v in fixedHooks do
+			result.hooks[hookId] = (result.hooks[hookId] or 0) + v
+		end
 		result.trait = trait
 	end
 	return result

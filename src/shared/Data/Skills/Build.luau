@@ -11,6 +11,7 @@ export type Spec = {
 	unlock: number,
 	maxLevel: number,
 	type: Types.SkillType,
+	delivery: ("melee" | "ranged")?, -- S64 (STATY 6)
 	target: Types.TargetMode?,
 	cost: Types.Scaled?,
 	cooldown: Types.Scaled?,
@@ -90,6 +91,7 @@ function Build.class(
 			maxLevel = spec.maxLevel,
 			type = spec.type,
 			target = spec.target or DEFAULT_TARGET[spec.type] or "none",
+			delivery = spec.delivery,
 			resource = if passive then nil else resource,
 			cost = spec.cost or 0,
 			cooldown = spec.cooldown or 0,

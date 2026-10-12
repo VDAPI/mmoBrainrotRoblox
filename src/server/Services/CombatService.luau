@@ -9,6 +9,10 @@
 --
 -- Later systems: skills (S05) call CombatService.DealDamage; loot (S04) and quests (S11) listen to
 -- MonsterKilled; parties (S09) extend ResolveKillCredit.
+--
+-- S64: the block (regular blows only, healing with Parry) and the counter (tryCounter) live in monsterHitsPlayer and
+-- the PvP branch of DealDamage; melee / ranged protection is a reduction provider fed by `incoming`. Their caps
+-- (blockCap, riposteCap, executionerCap, cdrCap, pvp.block / pvp.counter) are in Data/Combat.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -132,6 +136,10 @@ local fxQueue: { { position: Vector3, event: FxEvent } } = {}
 export type RedZone = { monster: any, ability: MonsterAbilities.Ability, area: CFrame, endsAt: number }
 local redZones: { RedZone } = {}
 
+-- S64: the facts of the hit a player is taking, set only around ResourceService.Damage ("monster" / "pvp") so the
+-- protection provider (Init) knows the kind of blow.
+local incoming: { [Player]: { delivery: string?, monster: any? } } = {}
+
 local function attackerState(player: Player): Attacker
 	local state = attackers[player]
 	if not state then
@@ -212,6 +220,9 @@ local function playerHitEvent(
 	if result.missed then
 		event.mi = true -- S61: the attacker missed (misfortune), "Miss"
 	end
+	if result.blocked then
+		event.bl = true -- S64: the defender blocked, "Blocked" (d stays true)
+	end
 	if not result.dodged and taken <= 0 then
 		event[blockedFlag(target)] = true
 	end
@@ -268,6 +279,25 @@ local function entityRadius(entity: Entity): number
 	return if root then math.max(root.Size.X, root.Size.Z) / 2 else 1
 end
 
+-- Damage params of the player's basic attack: its kind and the weapon's element (S18: Mage weapons).
+local function basicParams(player: Player): Damage.Params
+	local kind = basicAttackProfile(player)
+	local derived = PlayerStateService.Get(player, { "derived" })
+	local element = if derived and derived.weapon then derived.weapon.element else nil
+	return { kind = if kind == "magic" then "magic" else "phys", element = element }
+end
+
+-- True when `targetEntity` stands within the player's basic attack reach (weapon range + lag tolerance).
+local function inBasicReach(player: Player, targetEntity: any, ranged: boolean): boolean
+	local myRoot = rootOf(player.Character)
+	local targetPosition = EntityService.Position(targetEntity)
+	if not myRoot or not targetPosition then
+		return false
+	end
+	local range = (if ranged then Combat.rangedRange else Combat.meleeRange) + Combat.rangeTolerance
+	return flatDistance(myRoot.Position, targetPosition) - entityRadius(targetEntity) <= range
+end
+
 -- Legendary effects (Data/Bonuses hooks) ---------------------------------------------------------------
 
 -- Other systems (skill passives) add hook values through providers.
@@ -305,6 +335,7 @@ end
 -- Damage multiplier from the attacker's legendary effects against this target.
 local function offensiveMultiplier(player: Player, targetEntity: any): number
 	local mult = 1
+	local low, pvp = false, false
 	if targetEntity.kind == "monster" then
 		local monster = targetEntity.monster
 		if monster.variant == "elite" or monster.variant == "elite2" then
@@ -312,11 +343,21 @@ local function offensiveMultiplier(player: Player, targetEntity: any): number
 		elseif monster.variant == "boss" then
 			mult += hook(player, "bossDamage") / 100
 		end
-		if monster.hp / math.max(1, monster.stats.maxHp) < Combat.lowHpFraction then
-			mult += hook(player, "executioner") / 100
-		end
-	elseif targetEntity.player and hpFraction(targetEntity.player) < Combat.lowHpFraction then
-		mult += hook(player, "executioner") / 100
+		low = monster.hp / math.max(1, monster.stats.maxHp) < Combat.lowHpFraction
+	elseif targetEntity.player then
+		low = hpFraction(targetEntity.player) < Combat.lowHpFraction
+		pvp = true
+	end
+	-- S64 (STATY 3, 5): executioner (legends, later the node) + Beheading, capped by Combat.executionerCap.
+	if low then
+		local traitPvp = if pvp then ItemTraits.pvpByHook.traitExecute else nil
+		mult += Traits.executeBonus(hook(player, "executioner"), hook(player, "traitExecute"), traitPvp) / 100
+	end
+	-- S64: Easy Prey on slowed, rooted, frozen or stunned targets, whoever controlled them.
+	local controlled = hook(player, "controlledDamage")
+	if controlled > 0 then
+		local traitPvp = if pvp then ItemTraits.pvpByHook.controlledDamage else nil
+		mult += Traits.controlledBonus(controlled, StatusEffectService.SlowFactor(targetEntity), traitPvp) / 100
 	end
 	return mult
 end
@@ -366,9 +407,17 @@ local function reward(player: Player, monster: any, share: number, goldShare: nu
 		return current + gold
 	end)
 	Analytics.gold(player, gold, balance, "monster")
+	-- killHeal: lines, legends and Reaping (S64, the axe's trait); monsters only, so never in PvP.
 	local killHeal = hook(player, "killHeal")
 	if killHeal > 0 then
-		ResourceService.Heal(player, StatService.GetValue(player, "maxHp") * killHeal / 100)
+		local healed = ResourceService.Heal(player, StatService.GetValue(player, "maxHp") * killHeal / 100)
+		local entity = EntityService.GetPlayerEntity(player)
+		if healed > 0 and entity then
+			queueFx(
+				EntityService.Position(entity),
+				{ k = "heal", e = entity.id, s = entity.id, a = math.floor(healed) }
+			)
+		end
 	end
 	local shownExp = if character.level >= 100 then 0 else math.floor(exp * (1 + expBonus / 100))
 	Net.Fire(player, "CombatFx", { { k = "reward", exp = shownExp, gold = gold } })
@@ -454,6 +503,7 @@ export type DealOptions = {
 	noProc: boolean?, -- S63: no on-hit effects: second hits, counters, splashes, arcs, pierce, pulses
 	basic: boolean?, -- S63: basic attack: full on-hit chance; S62 basicDmg; S65 rhythm
 	area: boolean?, -- S63: area skill hit: chance x Combat.areaProcShare per target
+	delivery: ("melee" | "ranged")?, -- S64: kind of blow for the target's melee / ranged protection (PvP)
 }
 
 -- On-hit effects of item traits and lines (S63, STATY 5) -----------------------------------------------------
@@ -621,6 +671,27 @@ local function applyOnHit(player: Player, target: any, hit: number, options: Dea
 	refundResource(player)
 end
 
+-- Block and counter (S64) ----------------------------------------------------------------------------------
+
+-- S64 (STATY 3): every block heals blockHeal % max HP (Parry trait, grown with rarity); half vs players. No heal
+-- source, like lifesteal and killHeal: no PvP HealScale, not in the fight summary.
+local function onBlock(player: Player, entity: any?, pvp: boolean)
+	local heal = hook(player, "blockHeal")
+	if pvp then
+		heal = Traits.pvpValue(heal, ItemTraits.pvpByHook.blockHeal)
+	end
+	if heal <= 0 then
+		return
+	end
+	local healed = ResourceService.Heal(player, StatService.GetValue(player, "maxHp") * heal / 100)
+	if healed > 0 and entity then
+		queueFx(EntityService.Position(entity), { k = "heal", e = entity.id, s = entity.id, a = math.floor(healed) })
+	end
+end
+
+-- Defined after DealDamage (it calls it); the PvP branch of DealDamage calls it too.
+local tryCounter: (defender: Player, attackerEntity: any, pvp: boolean) -> ()
+
 function CombatService.DealDamage(
 	player: Player,
 	targetEntity: any,
@@ -655,6 +726,8 @@ function CombatService.DealDamage(
 	extra *= 1 + StatusEffectService.Max(targetEntity, "vulnerability") / 100
 	local targetPosition = EntityService.Position(targetEntity)
 	local result: Damage.Result
+	local pvpTarget: Player? = nil -- S64: the target player of the PvP branch (counter)
+	local pvpRegular = false
 
 	if targetEntity.kind == "monster" then
 		local monster = targetEntity.monster
@@ -708,6 +781,8 @@ function CombatService.DealDamage(
 		if not defender then
 			return nil
 		end
+		pvpTarget = target
+		pvpRegular = params.canDodge ~= false
 		local pvpParams = table.clone(params)
 		pvpParams.pvp = true
 		-- S63 (STATY 8): only the item part of armour break counts on players, at most 3 stacks.
@@ -717,7 +792,14 @@ function CombatService.DealDamage(
 			local miss = math.min(StatusEffectService.Max(selfEntity, "misfortune"), BuffCategories.caps.enemyMiss)
 			pvpParams.miss = miss * Combat.pvp.misfortune
 		end
+		if pvpRegular then
+			-- S64 (STATY 8): the target's block, half after blockCap.
+			pvpParams.block = Traits.blockChance(hook(target, "block"), true)
+		end
 		result = Damage.computeDamage(attacker, defender, pvpParams, rng)
+		if result.blocked then
+			onBlock(target, targetEntity, true)
+		end
 		if not result.dodged then
 			-- S63: Bonebreaker on the attacker (from players only) counts in PvP alone; monsters take full hits.
 			local weakenMul = 1
@@ -745,7 +827,9 @@ function CombatService.DealDamage(
 		PvpService.RecordHit(player, target)
 		local taken = 0
 		if result.amount > 0 then
+			incoming[target] = { delivery = options and options.delivery }
 			local _, filtered = ResourceService.Damage(target, result.amount, "pvp", player)
+			incoming[target] = nil
 			taken = filtered
 		end
 		-- S29 (changes S22): a hit stopped in full by shields shows "Absorbed", by invulnerability "Immune".
@@ -776,7 +860,50 @@ function CombatService.DealDamage(
 			)
 		end
 	end
+	-- S64 (STATY 6, 8): a regular PvP hit may be countered (never a counter, second hit or splash: noProc).
+	if
+		pvpTarget
+		and pvpRegular
+		and not (options and options.noProc)
+		and selfEntity
+		and playerAlive(player)
+		and playerAlive(pvpTarget)
+	then
+		tryCounter(pvpTarget, selfEntity, true)
+	end
 	return result
+end
+
+-- S64 (STATY 3, 5): after a regular attack on `defender` (also blocked, missed or dodged; never a red zone):
+-- min(riposte, riposteCap) % (x pvp.counter vs players) for an instant basic attack without on-hit effects, in the
+-- reach of the defender's weapon and not while stunned or frozen.
+tryCounter = function(defender: Player, attackerEntity: any, pvp: boolean)
+	if not playerAlive(defender) then
+		return
+	end
+	local chance = Traits.counterChance(hook(defender, "riposte"), pvp)
+	if chance <= 0 or not rng:chance(chance / 100) then
+		return
+	end
+	local selfEntity = EntityService.GetPlayerEntity(defender)
+	if not selfEntity or StatusEffectService.IsDisabled(selfEntity) then
+		return
+	end
+	local _, ranged, style = basicAttackProfile(defender)
+	if not inBasicReach(defender, attackerEntity, ranged) then
+		return
+	end
+	local bonus = hook(defender, "counterDamage")
+	if pvp then
+		bonus = Traits.pvpValue(bonus, ItemTraits.pvpByHook.counterDamage)
+	end
+	CombatService.DealDamage(defender, attackerEntity, basicParams(defender), style, {
+		consumeShot = false,
+		noProc = true,
+		basic = true,
+		multiplier = 1 + bonus / 100,
+		delivery = if ranged then "ranged" else "melee",
+	})
 end
 
 -- Tells the client why its auto-attack does nothing (at most once per REJECT_INTERVAL).
@@ -817,9 +944,8 @@ local function tryBasicAttack(player: Player, state: Attacker, now: number)
 		reject(player, state, now, "combat.reject.stunned")
 		return
 	end
-	local kind, ranged, style = basicAttackProfile(player)
-	local range = (if ranged then Combat.rangedRange else Combat.meleeRange) + Combat.rangeTolerance
-	if flatDistance(myRoot.Position, targetPosition) - entityRadius(target) > range then
+	local _, ranged, style = basicAttackProfile(player)
+	if not inBasicReach(player, target, ranged) then
 		-- Walking into range is normal; only complain when the player stands still out of range.
 		local velocity = myRoot.AssemblyLinearVelocity
 		if Vector3.new(velocity.X, 0, velocity.Z).Magnitude < 1 then
@@ -835,10 +961,8 @@ local function tryBasicAttack(player: Player, state: Attacker, now: number)
 	state.outOfRangeSince = nil
 	local speed = math.max(0.2, StatService.GetValue(player, "atkSpeed"))
 	state.nextAttack = now + 1 / speed
-	-- Mage weapons hit with their element (S18).
-	local derived = PlayerStateService.Get(player, { "derived" })
-	local element = if derived and derived.weapon then derived.weapon.element else nil
-	local params: Damage.Params = { kind = if kind == "magic" then "magic" else "phys", element = element }
+	local params = basicParams(player)
+	local delivery: "melee" | "ranged" = if ranged then "ranged" else "melee"
 	-- FIX 2026-10-09: the swing / shot starts now, the damage comes when the blow lands or the projectile
 	-- arrives (AttackPose.hitDelay, the same timing the client animates); before, the HP dropped at once.
 	local weaponType = weaponFx(player)
@@ -858,17 +982,24 @@ local function tryBasicAttack(player: Player, state: Attacker, now: number)
 		then
 			return
 		end
-		CombatService.DealDamage(player, target, params, nil, { basic = true })
+		CombatService.DealDamage(player, target, params, nil, { basic = true, delivery = delivery })
 		if twice and (target.kind ~= "monster" or (target.monster and target.monster:IsAlive())) then
 			-- S63: the second hit keeps basicDmg but rolls no on-hit effects.
-			CombatService.DealDamage(player, target, params, nil, { basic = true, noProc = true })
+			CombatService.DealDamage(player, target, params, nil, { basic = true, noProc = true, delivery = delivery })
 		end
 	end)
 end
 
 -- Monster -> player ------------------------------------------------------------------------------------
 
-local function monsterHitsPlayer(monster: any, player: Player, params: Damage.Params, style: string?)
+-- `delivery`: kind of blow for melee / ranged protection (S64; nil for red zones).
+local function monsterHitsPlayer(
+	monster: any,
+	player: Player,
+	baseParams: Damage.Params,
+	style: string?,
+	delivery: string?
+)
 	if not playerAlive(player) then
 		return
 	end
@@ -876,10 +1007,15 @@ local function monsterHitsPlayer(monster: any, player: Player, params: Damage.Pa
 	if not defender then
 		return
 	end
-	if params.canDodge ~= false and monster.entity then
-		-- S61: misfortune on the monster (regular attacks only; red zones come with canDodge = false and never miss).
-		params = table.clone(params)
-		params.miss = math.min(StatusEffectService.Max(monster.entity, "misfortune"), BuffCategories.caps.enemyMiss)
+	local regular = baseParams.canDodge ~= false
+	local params = table.clone(baseParams)
+	if regular then
+		if monster.entity then
+			-- S61: misfortune on the monster (regular attacks only; red zones come with canDodge = false, never miss).
+			params.miss = math.min(StatusEffectService.Max(monster.entity, "misfortune"), BuffCategories.caps.enemyMiss)
+		end
+		-- S64 (STATY 3, 5): the player's block (shield trait, lines, later nodes), regular blows only.
+		params.block = Traits.blockChance(hook(player, "block"), false)
 	end
 	local result = Damage.computeDamage(MonsterStats.asAttacker(monster.stats), defender, params, rng)
 	if not result.dodged and monster.entity then
@@ -889,9 +1025,11 @@ local function monsterHitsPlayer(monster: any, player: Player, params: Damage.Pa
 			result.amount = math.max(1, math.floor(result.amount * (1 - weaken / 100)))
 		end
 	end
-	-- S64 adds the block and protections here.
 	local playerEntity = EntityService.GetPlayerEntity(player)
 	local position = EntityService.Position(playerEntity or { model = player.Character } :: any)
+	if result.blocked then
+		onBlock(player, playerEntity, false)
+	end
 	if style and monster.entity and playerEntity then
 		queueFx(position, { k = "atk", s = monster.entity.id, t = playerEntity.id, st = style })
 	end
@@ -899,7 +1037,10 @@ local function monsterHitsPlayer(monster: any, player: Player, params: Damage.Pa
 	-- "Absorbed" / "Immune" instead of nothing.
 	local taken = 0
 	if result.amount > 0 then
+		-- S64: melee / ranged protection reads the blow's kind through `incoming` (reduction provider in Init).
+		incoming[player] = { delivery = delivery, monster = monster }
 		local _, filtered = ResourceService.Damage(player, result.amount, "monster", monster)
+		incoming[player] = nil
 		taken = filtered
 	end
 	if playerEntity then
@@ -908,17 +1049,11 @@ local function monsterHitsPlayer(monster: any, player: Player, params: Damage.Pa
 			playerHitEvent(player, playerEntity.id, if monster.entity then monster.entity.id else nil, result, taken)
 		)
 	end
+	-- S64 (STATY 6): the counter answers every regular blow, also a blocked, missed or dodged one.
+	if regular and monster:IsAlive() and monster.entity then
+		tryCounter(player, monster.entity, false)
+	end
 	if taken > 0 then
-		local riposte = hook(player, "riposte")
-		if riposte > 0 and monster:IsAlive() and monster.entity and rng:chance(riposte / 100) then
-			CombatService.DealDamage(
-				player,
-				monster.entity,
-				{ kind = "phys" },
-				"melee",
-				{ consumeShot = false, noProc = true }
-			)
-		end
 		local thorns = hook(player, "thorns")
 		if thorns > 0 and monster:IsAlive() then
 			local reflected = math.max(1, math.floor(taken * thorns / 100))
@@ -943,7 +1078,13 @@ local function monsterBasicAttack(monster: any, player: Player)
 	local style = if monster.def.attack == "ranged"
 		then (if monster.def.damageKind == "magic" then "bolt" else "arrow")
 		else "melee"
-	monsterHitsPlayer(monster, player, { kind = monster.stats.damageKind, element = monster.def.element }, style)
+	monsterHitsPlayer(
+		monster,
+		player,
+		{ kind = monster.stats.damageKind, element = monster.def.element },
+		style,
+		monster.def.attack
+	)
 end
 
 local function insideArea(ability: MonsterAbilities.Ability, area: CFrame, position: Vector3): boolean
@@ -1026,7 +1167,7 @@ local function resolveAbility(monster: any, ability: MonsterAbilities.Ability, a
 		local player = entity.player :: Player
 		local position = EntityService.Position(entity)
 		if position and insideArea(ability, area, position) then
-			monsterHitsPlayer(monster, player, params, nil)
+			monsterHitsPlayer(monster, player, params, nil, ability.delivery)
 		end
 	end
 	for i, zone in redZones do
@@ -1134,6 +1275,20 @@ function CombatService.Init(registry)
 		return if lastStand > 0 and hpFraction(player) < Combat.lowHpFraction then lastStand else 0
 	end)
 
+	-- S64 (STATY 6): melee / ranged protection is one more own entry of this hit. The hit's facts live in
+	-- `incoming` only during ResourceService.Damage; S67 joins family resistance here the same way.
+	StatusEffectService.RegisterReductionProvider(function(player: Player, source: string): number
+		local hit = incoming[player]
+		if not hit or (source ~= "monster" and source ~= "pvp") then
+			return 0
+		end
+		return Damage.guard(
+			hit.delivery,
+			StatService.GetValue(player, "meleeGuard"),
+			StatService.GetValue(player, "rangedGuard")
+		)
+	end)
+
 	MonsterService.SetCombatHandlers({
 		basicAttack = monsterBasicAttack,
 		telegraph = telegraph,
@@ -1210,9 +1365,11 @@ function CombatService.Start()
 	end)
 	CharacterService.CharacterLeaving:Connect(function(player: Player)
 		attackers[player] = nil
+		incoming[player] = nil
 	end)
 	Players.PlayerRemoving:Connect(function(player)
 		attackers[player] = nil
+		incoming[player] = nil
 	end)
 
 	RunService.Heartbeat:Connect(function()

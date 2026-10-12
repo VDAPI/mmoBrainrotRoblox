@@ -441,6 +441,12 @@ T.describe("Data: item traits and bonus tiers (S62)", function()
 		"bonebreaker",
 		"harrying",
 		"concussion",
+		-- S64: defensive and conditional
+		"swordplay",
+		"parry",
+		"reaping",
+		"beheading",
+		"easyPrey",
 	}
 
 	T.it("every weapon and off-hand base has a trait", function()
@@ -629,6 +635,57 @@ T.describe("Data: item traits and bonus tiers (S62)", function()
 			for _, classId in (Items.get(id) :: any).classes do
 				local n = #ItemRoll.bonusPool(id, classId)
 				T.expect({ id, classId, n >= 11 and n <= 14 }).toEqual({ id, classId, true })
+			end
+		end
+	end)
+end)
+
+T.describe("Data: kind of blow (S64, STATY 6)", function()
+	local Bosses = require("../src/shared/Data/Bosses")
+	local Combat = require("../src/shared/Data/Combat")
+	local SkillData = require("../src/shared/Data/Skills")
+
+	local RANGED_TYPES = { projectile = true, chain = true, circleTarget = true, line = true, trap = true }
+	local MELEE_TYPES = { charge = true, circleSelf = true }
+	local REACH = Combat.meleeRange + Combat.rangeTolerance
+
+	-- The rule of STATY 6 for the types that deal damage; nil for the rest (any value, but one is required).
+	local function expected(skill: any): string?
+		if RANGED_TYPES[skill.type] then
+			return "ranged"
+		elseif MELEE_TYPES[skill.type] then
+			return "melee"
+		elseif skill.type == "target" then
+			return if (skill.range or 0) <= REACH then "melee" else "ranged"
+		elseif skill.type == "cone" then
+			return if (skill.radius or 0) <= REACH then "melee" else "ranged"
+		end
+		return nil
+	end
+
+	T.it("every active skill has a delivery that follows the rule", function()
+		for id, skill in SkillData.byId do
+			if skill.type == "passive" then
+				continue
+			end
+			local delivery = skill.delivery
+			T.expect({ id, delivery == "melee" or delivery == "ranged" }).toEqual({ id, true })
+			local want = expected(skill)
+			if want then
+				T.expect({ id, delivery }).toEqual({ id, want })
+			end
+		end
+	end)
+
+	T.it("monster abilities and boss attacks have no delivery or a valid one", function()
+		for id, ability in MonsterAbilities.byId do
+			local d = ability.delivery
+			T.expect({ id, d == nil or d == "melee" or d == "ranged" }).toEqual({ id, true })
+		end
+		for _, boss in Bosses.list do
+			for _, attack in boss.attacks do
+				local d = attack.delivery
+				T.expect({ attack.id, d == nil or d == "melee" or d == "ranged" }).toEqual({ attack.id, true })
 			end
 		end
 	end)

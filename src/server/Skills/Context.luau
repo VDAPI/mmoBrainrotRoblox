@@ -324,6 +324,8 @@ function Context.new(
 				-- ground pulses, the lightning arc, the second pierce target) roll none.
 				area = Traits.isAreaSkill(skill.type),
 				noProc = opts.plain == true or opts.noAdaptive == true or opts.noProc == true,
+				-- S64 (STATY 6): splashes and pulses keep the skill's kind of blow (protection in PvP).
+				delivery = skill.delivery,
 			})
 			if skill.adaptive and result and result.amount > 0 and not opts.noAdaptive then
 				adaptiveEffect(entity, percent, result.dotBase or result.amount)

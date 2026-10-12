@@ -3545,3 +3545,30 @@ Pliki: `Data/{BuffCategories,Combat,ItemTraits,Bonuses,Skills/Types,Localization
 MonsterService}`, `Entities/Monster`, `Skills/{Context,Types/Offense}`, `Controllers/VfxController`,
 `UI/Screens/Hud/EffectIcons`, `tests/{traits,effectstack,damage,items,data}.spec`, dane wiki,
 `docs/{STATY,DECYZJE,SESJE,PROGRESS}.md`, `CLAUDE.md`.
+
+### S64: Przedmioty 3: cechy obronne i warunkowe, ochrony, skrócenie odnowienia
+
+- Pięć cech żywych: Fechtunek (`sword1h`, kontra 10%, kontry +25%), Zastawa (`shield`, blok 5%, blok leczy 0,5%),
+  Żniwo (`axe1h`, zabicie potwora leczy 1%), Ścięcie (`sword2h`, +18% poniżej 30% HP), Łatwy cel (`crossbow`, +10% na
+  celach pod kontrolą). `TraitDef.fixedHooks`, `ItemTraits.pvpByHook`, `meleeGuard` w wagach tarczy.
+- Linie `blockChance` (tarcza, W/K), `meleeGuard`, `rangedGuard` (statystyki z limitem 30), `leg_cooldown`,
+  `myth_cooldown` (hak `cooldownReduction`); `hpRegen` poza pulą tarczy.
+- `Data/Combat`: `blockCap`, `riposteCap`, `executionerCap`, `cdrCap`, `pvp.block`, `pvp.counter`.
+- `Logic`: `Traits.blockChance/counterChance/executeBonus/controlledBonus`, `Damage.Params.block`, `Result.blocked`,
+  `Damage.guard`, `Skills.cooldownReduction/partyEffects/partyDuration/cooldown`, `DescOpts.cdr`, `ItemRoll` haki
+  stałe, `StatCalc` ochrony, `DamageText` „Zablokowano”, `FightSim` blok i ochrony.
+- `CombatService`: `basicParams`, `inBasicReach`, `onBlock`, `tryCounter` (potwory i PvP), `incoming` + dostawca
+  ochron, `DealOptions.delivery`, Ścięcie i Łatwy cel w `offensiveMultiplier`, liczba leczenia za `killHeal`.
+  `SkillService`: `rt.cdr`, `{ "skills", "cdr" }`, odnowienie przez `Skills.cooldown`. `Skills/Context` przekazuje
+  `delivery`. `delivery` na 45 aktywnych umiejętnościach, w typach zdolności potworów i bossów (`Boss.cast`).
+- Klient: pierścień paska i opis z `Skills.cooldown`, „Odnowienie … (−x%)”, etykieta „Wręcz / Z dystansu”, kolor
+  `blocked`. Teksty PL/EN.
+- Testy: `traits`, `damage`, `damagetext`, `statcalc`, `skills`, `items`, `data`; `PartyBuffRules` przez
+  `Skills.partyEffects`; jeden próg `balance.spec` (DECYZJE). Wiki: `npm run data` (Node był): `bonuses.json`,
+  `items.json`, `mechanics.json`, `stats.json`, `skills.json` (opis Kontrataku), `meta.json`, `docs/PRZEDMIOTY.md`.
+
+Pliki: `Data/{Combat,ItemTraits,Bonuses,Stats,DamageNumbers,MonsterAbilities,Bosses,Skills/*,Localization/pl,
+Localization/en}`, `Logic/{Traits,Damage,Skills,ItemRoll,StatCalc,DamageText,FightSim}`, `Services/{CombatService,
+SkillService}`, `Skills/Context`, `Entities/Boss`, `Controllers/CombatFxController`, `UI/{SkillInfo,Screens/Hud/SkillBar,
+Screens/SkillsWindow/Details}`, `tools/WikiData/Skills`, `tests/*`, dane wiki, `docs/{STATY,DECYZJE,SESJE,PROGRESS}.md`,
+`CLAUDE.md`.

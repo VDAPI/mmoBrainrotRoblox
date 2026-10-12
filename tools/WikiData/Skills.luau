@@ -116,7 +116,7 @@ function Skills.build(ctx: any): any
 					rank = n,
 					requiredLevel = required,
 					cost = SkillLogic.cost(skill, n, required, skill.class, nil),
-					cooldown = SkillLogic.scaled(skill, skill.cooldown, n),
+					cooldown = SkillLogic.cooldown(skill, n),
 					values = values,
 					desc = Names.combine(function(lang: string): string
 						return SkillLogic.formatDescription(skill, n, lang, { level = required })

@@ -201,6 +201,9 @@ function StatCalc.compute(input: Input): Result
 	for _, id in { "resFire", "resIce", "resLightning", "resPoison" } do
 		finish(id, 0, {})
 	end
+	-- S64 (STATY 6): melee / ranged protection from lines (cap in Data/Stats).
+	finish("meleeGuard", 0, {})
+	finish("rangedGuard", 0, {})
 
 	-- Regeneration (per second)
 	local maxHp, maxMana = values.maxHp, values.maxMana

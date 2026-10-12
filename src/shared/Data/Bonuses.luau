@@ -92,6 +92,10 @@ bonus("woundChance", nil, "flat", 2, 4, "pct", 1, true, "woundChance") -- % chan
 bonus("poisonChance", nil, "flat", 2, 4, "pct", 1, true, "poisonChance") -- % chance to poison
 bonus("dotPower", nil, "flat", 4, 8, "pct", 1, true, "dotPower") -- +% damage of your bleeds, poisons and burns
 bonus("resourceOnHit", nil, "flat", 0.2, 0.5, "none", 2, true, "resourceOnHit") -- % max mana / energy per hit
+-- S64 (STATY 4): defensive lines.
+bonus("blockChance", nil, "flat", 1, 2, "pct", 1, true, "block") -- % block chance, shared blockCap with Parry
+bonus("meleeGuard", "meleeGuard", "flat", 1, 2.5, "pct", 1, true) -- -% damage from melee blows
+bonus("rangedGuard", "rangedGuard", "flat", 1, 2.5, "pct", 1, true) -- -% damage from arrows and ranged spells
 bonus("accuracy", "accuracy", "flat", 1, 3, "pct", 1, true)
 bonus("dodge", "dodge", "flat", 0.5, 1.2, "pct", 1, true)
 bonus("resFire", "resFire", "flat", 3, 8, "pct", 0, true)
@@ -121,6 +125,8 @@ bonus("leg_dropBonus", "dropBonus", "flat", 10, 15, "none", 0, true, nil, "legen
 bonus("leg_lifesteal", "lifesteal", "flat", 2, 4, "none", 1, true, nil, "legendary")
 bonus("leg_moveSpeed", "moveSpeed", "flat", 6, 10, "none", 0, true, nil, "legendary")
 bonus("leg_critDmg", "critDmg", "flat", 20, 30, "none", 0, true, nil, "legendary")
+-- S64 (STATY 2C, owner answer 26): no scaling like the other leg_/myth_ lines, capped by Combat.cdrCap.
+bonus("leg_cooldown", nil, "flat", 6, 10, "none", 1, true, "cooldownReduction", "legendary") -- -% skill cooldowns
 
 -- Mythic pool (FIX 2026-10-09: one line on every mythic item, on top of its 2 legendary lines). Stronger
 -- versions of the legendary effects; the hooks add up with legendary lines of the same effect.
@@ -134,6 +140,7 @@ bonus("myth_critDmg", "critDmg", "flat", 40, 60, "none", 0, true, nil, "mythic")
 bonus("myth_hpPct", "maxHp", "pct", 8, 12, "none", 1, true, nil, "mythic")
 bonus("myth_physAtk", "physAtk", "pct", 8, 12, "none", 1, true, nil, "mythic")
 bonus("myth_magAtk", "magAtk", "pct", 8, 12, "none", 1, true, nil, "mythic")
+bonus("myth_cooldown", nil, "flat", 12, 16, "none", 1, true, "cooldownReduction", "mythic")
 
 DEFS.armorPen.wiki = false
 DEFS.armorPen.replacedBy = "pierce"
@@ -170,8 +177,10 @@ local POOLS: { [string]: { string } } = {
 		"resIce",
 		"resLightning",
 		"resPoison",
-		"hpRegen",
 		"critResist",
+		"blockChance", -- S64; hpRegen left the shield pool to keep it at 13 lines (STATY 9)
+		"meleeGuard",
+		"rangedGuard",
 	},
 	quiver = {
 		"physAtk",
@@ -214,6 +223,7 @@ local POOLS: { [string]: { string } } = {
 		"healPower",
 		"critResist",
 		"costReduce",
+		"rangedGuard",
 	},
 	armor = {
 		"hp",
@@ -227,6 +237,8 @@ local POOLS: { [string]: { string } } = {
 		"resLightning",
 		"resPoison",
 		"critResist",
+		"meleeGuard",
+		"rangedGuard",
 	},
 	gloves = {
 		"physAtk",
@@ -244,7 +256,7 @@ local POOLS: { [string]: { string } } = {
 		"poisonChance",
 		"resourceOnHit",
 	},
-	boots = { "moveSpeed", "dodge", "hp", "armor", "dex", "energyRegen", "resPoison" },
+	boots = { "moveSpeed", "dodge", "hp", "armor", "dex", "energyRegen", "resPoison", "meleeGuard" },
 	necklace = {
 		"str",
 		"dex",
@@ -307,6 +319,7 @@ local POOLS: { [string]: { string } } = {
 		"leg_lifesteal",
 		"leg_moveSpeed",
 		"leg_critDmg",
+		"leg_cooldown",
 	},
 	mythic = {
 		"myth_bossDamage",
@@ -319,6 +332,7 @@ local POOLS: { [string]: { string } } = {
 		"myth_hpPct",
 		"myth_physAtk",
 		"myth_magAtk",
+		"myth_cooldown",
 	},
 }
 
@@ -344,6 +358,7 @@ local CLASS_STATS: { [string]: { string } } = {
 	woundChance = { "Warrior", "Hunter" },
 	poisonChance = { "Hunter" },
 	dotPower = { "Warrior", "Hunter", "Mage" },
+	blockChance = { "Warrior", "Cleric" }, -- S64: shields only
 }
 
 return table.freeze({

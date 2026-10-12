@@ -284,6 +284,7 @@ local function cast(self: Boss, attack: Bosses.Attack)
 		cooldown = attack.cooldown,
 		element = attack.element,
 		damageKind = attack.damageKind,
+		delivery = attack.delivery,
 	}
 	-- The boss stands still while it winds up (Monster "cast" state without its own ability).
 	monster.state = "cast"

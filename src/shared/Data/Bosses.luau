@@ -29,6 +29,8 @@ export type Attack = {
 	element: ("fire" | "ice" | "lightning" | "poison")?,
 	damageKind: ("phys" | "magic")?,
 	leap: boolean?,
+	-- S64 (STATY 6): nil = neither (telegraphed areas); melee / ranged protection only when set
+	delivery: ("melee" | "ranged")?,
 }
 
 export type Summon = {

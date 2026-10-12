@@ -84,6 +84,7 @@ type Runtime = {
 	channelToken: number,
 	noCooldowns: boolean,
 	infiniteResources: boolean,
+	cdr: number, -- S64: % item cooldown reduction (Skills.cooldownReduction), published as { "skills", "cdr" }
 }
 
 local runtimes: { [Player]: Runtime } = {}
@@ -103,10 +104,24 @@ local function runtime(player: Player): Runtime
 			channelToken = 0,
 			noCooldowns = false,
 			infiniteResources = false,
+			cdr = 0,
 		}
 		runtimes[player] = rt
 	end
 	return rt
+end
+
+-- S64 (STATY 2C): item cooldown reduction (leg_cooldown, myth_cooldown) for casts, the skill bar and descriptions.
+local function refreshCdr(player: Player)
+	local rt = runtime(player)
+	local cdr = Skills.cooldownReduction(CombatService.Hook(player, "cooldownReduction"))
+	if cdr == rt.cdr then
+		return
+	end
+	rt.cdr = cdr
+	if PlayerStateService.HasState(player) and PlayerStateService.Get(player, { "skills" }) ~= nil then
+		PlayerStateService.Set(player, { "skills", "cdr" }, cdr)
+	end
 end
 
 local function character(player: Player): Types.CharacterData?
@@ -260,7 +275,7 @@ function SkillService.SetNoCooldowns(player: Player, enabled: boolean)
 	if enabled then
 		table.clear(rt.cooldowns)
 		rt.gcd = 0
-		PlayerStateService.Set(player, { "skills" }, { cd = {}, gcd = 0 })
+		PlayerStateService.Set(player, { "skills" }, { cd = {}, gcd = 0, cdr = rt.cdr })
 	end
 end
 
@@ -500,7 +515,7 @@ local function cast(player: Player, skillId: string, targetId: string?, aim: any
 	ctx.point = point
 	if not rt.noCooldowns then
 		rt.gcd = t + SkillData.GCD
-		rt.cooldowns[skillId] = t + Skills.scaled(skill, skill.cooldown, rank)
+		rt.cooldowns[skillId] = t + Skills.cooldown(skill, rank, rt.cdr)
 		publishCooldowns(player)
 	end
 	ResourceService.MarkCombat(player)
@@ -632,6 +647,10 @@ function SkillService.Start()
 		end
 	end)
 	LevelService.LevelChanged:Connect(onLevelChanged)
+	-- S64: equipment changes clear EquipmentService's hook cache before StatService.Invalidate, so the value is fresh.
+	StatService.Changed:Connect(function(player: Player)
+		refreshCdr(player)
+	end)
 
 	-- Taking damage interrupts channels.
 	ResourceService.Damaged:Connect(function(player: Player, amount: number)
@@ -644,7 +663,8 @@ function SkillService.Start()
 		local rt = runtime(player)
 		table.clear(rt.cooldowns)
 		rt.gcd = 0
-		PlayerStateService.Set(player, { "skills" }, { cd = {}, gcd = 0 })
+		rt.cdr = Skills.cooldownReduction(CombatService.Hook(player, "cooldownReduction"))
+		PlayerStateService.Set(player, { "skills" }, { cd = {}, gcd = 0, cdr = rt.cdr })
 	end)
 	CharacterService.CharacterLeaving:Connect(function(player: Player)
 		hookCache[player] = nil

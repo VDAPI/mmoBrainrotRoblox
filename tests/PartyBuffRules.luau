@@ -15,7 +15,6 @@ local SkillData = require("../src/shared/Data/Skills")
 local Skills = require("../src/shared/Logic/Skills")
 
 type SkillDef = SkillData.SkillDef
-type SkillEffect = SkillData.SkillEffect
 
 local RULES = BuffCategories.rules
 local AURA = PathData.AURA
@@ -52,32 +51,6 @@ local function describe(choices: Skills.Choices): string
 	return if #parts > 0 then table.concat(parts, ",") else "A"
 end
 
-type Team = { kind: string, category: string?, duration: number }
-
--- Party effects of the effective skill at `rank`.
-local function teamEffects(def: SkillDef, rank: number): { Team }
-	local out: { Team } = {}
-	local function add(effect: SkillEffect)
-		table.insert(out, {
-			kind = effect.kind,
-			category = effect.category,
-			duration = Skills.scaled(def, effect.duration or def.duration, rank),
-		})
-	end
-	for _, effect in def.effects or {} do
-		if Skills.effectSide(def, effect) == "allies" then
-			add(effect)
-		end
-	end
-	for _, effect in def.allyEffects or {} do
-		add(effect)
-	end
-	if def.type == "shield" then
-		table.insert(out, { kind = "shield", duration = Skills.scaled(def, def.duration, rank) })
-	end
-	return out
-end
-
 function PartyBuffRules.check(skill: SkillDef): { string }
 	local problems: { string } = {}
 	for _, rank in { 1, 5, 10 } do
@@ -90,7 +63,7 @@ function PartyBuffRules.check(skill: SkillDef): { string }
 			local d: any = def
 			local radius = d.allyRadius or def.radius or def.range or 0
 			local cooldown = Skills.scaled(def, def.cooldown, rank)
-			for _, team in teamEffects(def, rank) do
+			for _, team in Skills.partyEffects(def, rank) do
 				local rescue = RESCUE_KINDS[team.kind] == true
 					or (team.category == "allyGuard" and team.duration < RULES.rescueBelow)
 				if team.duration < RULES.minDuration and not rescue then

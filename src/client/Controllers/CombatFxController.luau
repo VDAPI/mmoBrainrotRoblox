@@ -65,6 +65,7 @@ local STYLE_COLORS: { [string]: Color3 } = {
 	absorbed = Color3.fromHex("#A9B2BD"),
 	immune = Color3.fromHex("#C9C3E6"),
 	dodge = Color3.fromHex("#B8B4AA"),
+	blocked = Color3.fromHex("#9FB7D9"), -- S64: cool steel, unlike dodge and absorbed
 	heal = Color3.fromHex("#5BD66B"),
 	hot = Color3.fromHex("#8FE39A"),
 	dot = Color3.fromHex("#C9A0FF"),

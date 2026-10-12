@@ -40,6 +40,8 @@ local DEFS: { StatDef } = {
 	{ id = "resIce", group = "defense", format = "pct", decimals = 0, cap = 75 },
 	{ id = "resLightning", group = "defense", format = "pct", decimals = 0, cap = 75 },
 	{ id = "resPoison", group = "defense", format = "pct", decimals = 0, cap = 75 },
+	{ id = "meleeGuard", group = "defense", format = "pct", decimals = 1, cap = 30 }, -- S64: -% melee damage taken
+	{ id = "rangedGuard", group = "defense", format = "pct", decimals = 1, cap = 30 }, -- S64: -% ranged damage taken
 	-- Resources
 	{ id = "maxHp", group = "resources", format = "flat", decimals = 0 },
 	{ id = "maxMana", group = "resources", format = "flat", decimals = 0 },

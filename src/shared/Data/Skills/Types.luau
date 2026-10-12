@@ -135,6 +135,8 @@ export type SkillDef = {
 	maxLevel: number, -- explicit in the data: 10 active, 5 passive (ROZWOJ 2.5)
 	type: SkillType,
 	target: TargetMode,
+	-- S64 (STATY 6): kind of blow for melee / ranged protection; required on every non-passive skill (data.spec)
+	delivery: ("melee" | "ranged")?,
 	resource: ("mana" | "energy")?,
 	cost: Scaled,
 	cooldown: Scaled,

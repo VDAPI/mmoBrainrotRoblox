@@ -8,6 +8,8 @@
 --   damage     = raw x (1 - reduction) x random(0.92..1.08) x crit x (1 - elementRes) x pvp(0.6)
 --   dodge      = clamp(targetDodge - attackerAccuracy, 0, 30 %)
 --   S61: dodge + miss (the attacker's misfortune) + block <= dodgeCap + avoidBonus, one roll (Damage.avoidance)
+--   S64: the block (regular hits only) is the third outcome of that roll; melee / ranged protection is a reduction
+--        entry in CombatService (Damage.guard), not part of this formula
 
 local BuffCategories = require("../Data/BuffCategories")
 local Combat = require("../Data/Combat")
@@ -52,6 +54,7 @@ export type Params = {
 	armorBreak: number?, -- % armour removed by armour break, before pierce; set by CombatService
 	isSkill: boolean?, -- skill damage: attacker.skillDmg
 	basic: boolean?, -- basic attack (also its double hit): attacker.basicDmg
+	block: number?, -- % chance the defender blocks; already capped and PvP-scaled by the caller (Traits.blockChance)
 }
 
 export type Result = {
@@ -59,6 +62,7 @@ export type Result = {
 	crit: boolean,
 	dodged: boolean, -- also true on a miss: nothing landed
 	missed: boolean?, -- S61: the attacker missed (misfortune), shown as "Miss"
+	blocked: boolean?, -- S64: the defender blocked (dodged is true too: nothing landed), shown as "Blocked"
 	element: Element?,
 	lifesteal: number, -- HP the attacker heals
 	-- S63: the hit before Combat.pvpModifier, after armor, crit and resistances: base of damage over time (0 when
@@ -137,7 +141,7 @@ function Damage.avoidance(dodge: number, accuracy: number, miss: number?, block:
 	local total = (Combat.dodgeCap + Combat.avoidBonus) / 100
 	local d = Damage.dodgeChance(dodge, accuracy)
 	local m = math.min(math.clamp(miss or 0, 0, BuffCategories.caps.enemyMiss) / 100, math.max(0, total - d))
-	local b = math.min(math.max(0, block or 0) / 100, math.max(0, total - d - m))
+	local b = math.min(math.clamp(block or 0, 0, Combat.blockCap) / 100, math.max(0, total - d - m))
 	return d, m, b
 end
 
@@ -152,6 +156,17 @@ function Damage.rollAvoid(dodge: number, miss: number, block: number, rng: Rng.R
 		return "block"
 	end
 	return nil
+end
+
+-- S64 (STATY 6): % melee / ranged protection that counts against a blow of `delivery` (nil: neither, e.g. red
+-- zones). The cap of 30 comes from Data/Stats through StatCalc.
+function Damage.guard(delivery: string?, melee: number, ranged: number): number
+	if delivery == "melee" then
+		return math.clamp(melee, 0, 100)
+	elseif delivery == "ranged" then
+		return math.clamp(ranged, 0, 100)
+	end
+	return 0
 end
 
 -- Fraction of damage removed by `defense` against an attacker of `attackerLevel`.
@@ -173,15 +188,15 @@ end
 function Damage.computeDamage(attacker: Attacker, defender: Defender, params: Params, rng: Rng.Rng): Result
 	local element: Element? = params.element
 	if params.canDodge ~= false then
-		local d, m = Damage.avoidance(defender.dodge or 0, attacker.accuracy or 0, params.miss)
-		-- The block does not come back from here yet (S64).
-		local outcome = Damage.rollAvoid(d, m, 0, rng)
-		if outcome == "dodge" or outcome == "miss" then
+		local d, m, b = Damage.avoidance(defender.dodge or 0, attacker.accuracy or 0, params.miss, params.block)
+		local outcome = Damage.rollAvoid(d, m, b, rng)
+		if outcome ~= nil then
 			return {
 				amount = 0,
 				crit = false,
 				dodged = true,
 				missed = outcome == "miss",
+				blocked = if outcome == "block" then true else nil,
 				element = element,
 				lifesteal = 0,
 				dotBase = 0,

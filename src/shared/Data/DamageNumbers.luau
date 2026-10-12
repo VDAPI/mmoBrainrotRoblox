@@ -46,6 +46,7 @@ local DamageNumbers = {
 		absorbed = { size = 20 },
 		immune = { size = 20 },
 		dodge = { size = 22 },
+		blocked = { size = 22 }, -- S64
 		heal = { size = 24, mergeable = true },
 		hot = { size = 20, mergeable = true },
 		dot = { size = 18, mergeable = true },

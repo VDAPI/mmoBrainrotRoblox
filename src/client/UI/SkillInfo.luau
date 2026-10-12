@@ -26,6 +26,7 @@ local characterPath = State.Value({ "character", "path" })
 local equipment = State.Value({ "character", "equipment" })
 local weapon = State.Value({ "derived", "weapon" })
 local costReduce = State.Value({ "derived", "values", "costReduce" }) -- S62: the bar shows the cost after saving
+local cooldownReduction = State.Value({ "skills", "cdr" }) -- S64: % item cooldown reduction (SkillService)
 
 -- The character as Logic/Paths reads it, tracked by `use`.
 local function charOf(use: any): Paths.Char
@@ -44,7 +45,13 @@ local function effective(use: any, skill: SkillData.SkillDef, rank: number): Ski
 	return (Paths.effectiveFor(c, skill.id, Paths.weaponTypesOf(c.equipment), rank))
 end
 
--- Description options: the character level, path.bp and the modify nodes.
+-- S64: % item cooldown reduction the server publishes (0 before it arrives).
+function SkillInfo.cdr(use: any): number
+	local value = use(cooldownReduction)
+	return if type(value) == "number" then value else 0
+end
+
+-- Description options: the character level, path.bp, the modify nodes and the cooldown reduction.
 local function descOpts(use: any, skill: SkillData.SkillDef): Skills.DescOpts
 	local c = charOf(use)
 	local state = c.path
@@ -52,6 +59,7 @@ local function descOpts(use: any, skill: SkillData.SkillDef): Skills.DescOpts
 		level = c.level,
 		choices = if state then state.bp else nil,
 		mods = Paths.skillMods(c, skill.id, Paths.weaponTypesOf(c.equipment)),
+		cdr = SkillInfo.cdr(use),
 	}
 end
 
@@ -102,8 +110,19 @@ function SkillInfo.costLine(use: any, skill: SkillData.SkillDef, shownRank: numb
 		local shownCost = math.ceil(cost - 1e-6)
 		table.insert(parts, Text.get(use, `skills.cost.{skill.resource}`, { cost = shownCost }))
 	end
-	local cooldown = math.floor(Skills.scaled(def, def.cooldown, rank) * 10 + 0.5) / 10
-	table.insert(parts, Text.get(use, "skills.cooldown", { cooldown = cooldown }))
+	-- S64: the cooldown after the item reduction (Skills.cooldown, as the server counts it).
+	local base = Skills.cooldown(def, rank, 0)
+	local reduced = Skills.cooldown(def, rank, SkillInfo.cdr(use))
+	local cooldown = math.floor(reduced * 10 + 0.5) / 10
+	if base > 0 and reduced < base - 1e-6 then
+		local pct = math.floor((1 - reduced / base) * 100 + 1e-6)
+		table.insert(parts, Text.get(use, "skills.cooldownReduced", { cooldown = cooldown, pct = pct }))
+	else
+		table.insert(parts, Text.get(use, "skills.cooldown", { cooldown = cooldown }))
+	end
+	if def.delivery then
+		table.insert(parts, Text.get(use, `skills.delivery.{def.delivery}`))
+	end
 	if def.range then
 		table.insert(parts, Text.get(use, "skills.range", { range = def.range }))
 	end

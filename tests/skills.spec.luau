@@ -703,4 +703,63 @@ T.describe("S55 breakpoints and composition (ROZWOJ 2.7)", function()
 	end)
 end)
 
+T.describe("S64 cooldown reduction (STATY 2C, ROZWOJ 7.3)", function()
+	local Combat = require("../src/shared/Data/Combat")
+
+	local function synthetic(skillType: string, cooldown: number, effects: { any }?, duration: number?): any
+		return {
+			id = "fakeCd",
+			class = "Warrior",
+			order = 1,
+			unlock = 1,
+			maxLevel = 10,
+			type = skillType,
+			target = "self",
+			cost = 0,
+			cooldown = cooldown,
+			duration = duration,
+			values = {},
+			effects = effects,
+		}
+	end
+
+	T.it("caps the reduction", function()
+		T.expect(Skills.cooldownReduction(25)).toBe(20)
+		T.expect(Skills.cooldownReduction(-5)).toBe(0)
+	end)
+
+	T.it("shortens plain skills and keeps party buffs at their duration", function()
+		local plain = synthetic("target", 40)
+		T.expect(Skills.cooldown(plain, 1, 20)).toBeNear(32)
+		T.expect(Skills.cooldown(plain, 1, 50)).toBeNear(32)
+		T.expect(Skills.cooldown(plain, 1, 0)).toBe(40)
+		local buff30 = { { kind = "statBuff", duration = 30, target = "allies" } }
+		T.expect(Skills.cooldown(synthetic("groupBuff", 30, buff30), 1, 20)).toBe(30)
+		T.expect(Skills.cooldown(synthetic("groupBuff", 60, buff30), 1, 20)).toBeNear(48)
+		T.expect(Skills.cooldown(synthetic("groupBuff", 36, buff30), 1, 20)).toBe(30)
+		local allies = { { kind = "damageReduction", duration = 20, value = 10, target = "allies" } }
+		T.expect(Skills.cooldown(synthetic("buff", 22, allies), 1, 20)).toBe(20)
+	end)
+
+	T.it(
+		"every active of every class: no reduction keeps the base, the cap never goes below the party floor",
+		function()
+			for id, skill in SkillData.byId do
+				if skill.type == "passive" then
+					continue
+				end
+				for _, rank in { 1, skill.maxLevel } do
+					local def = Skills.effective(skill, rank)
+					local base = Skills.scaled(def, def.cooldown, rank)
+					T.expect({ id, rank, Skills.cooldown(def, rank, 0) }).toEqual({ id, rank, base })
+					local capped = Skills.cooldown(def, rank, Combat.cdrCap)
+					local floor = math.min(base, Skills.partyDuration(def, rank))
+					T.expect({ id, rank, capped >= floor - 1e-9, capped <= base + 1e-9 })
+						.toEqual({ id, rank, true, true })
+				end
+			end
+		end
+	)
+end)
+
 return nil

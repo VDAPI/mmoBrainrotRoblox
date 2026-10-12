@@ -20,6 +20,8 @@ export type Ability = {
 	cooldown: number,
 	element: ("fire" | "ice" | "lightning" | "poison")?,
 	damageKind: ("phys" | "magic")?,
+	-- S64 (STATY 6): nil = neither (telegraphed areas); melee / ranged protection only when set
+	delivery: ("melee" | "ranged")?,
 }
 
 local ABILITIES: { [string]: Ability } = {

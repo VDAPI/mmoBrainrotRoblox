@@ -171,6 +171,7 @@ function Details.lines(
 			level = character.level,
 			choices = choices,
 			mods = Paths.skillMods(character, skill.id, weapons),
+			cdr = SkillInfo.cdr(use), -- S64
 		}
 		heading(Text.get(use, skill.nameKey))
 		local header = Text.get(use, "skills.rank", { rank = rank, max = skill.maxLevel })

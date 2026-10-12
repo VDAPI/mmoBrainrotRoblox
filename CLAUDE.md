@@ -89,7 +89,8 @@ przedmiotów czyta STATY); odstępstwa idą do `docs/DECYZJE.md`, a kontrakt pop
   (składniki z `client/Vfx/Library`), przełomy `breakpoints = Build.bp2({ a = {...}, b = {...}? }, { a = {...}, b = {...}? })`
   w `Data/Skills/<Klasa>` ze słownika w `Data/Skills/Types` + teksty `skill.<id>.bp5/.bp10` (A) i `.bp5b/.bp10b` (B);
   serwer, opis i wiki biorą umiejętność z `Skills.effective(skill, rank, choices, mods)` (ROZWOJ 2.7), gracz przez
-  `Paths.effectiveFor`. Stawy postaci graczy to `AnimationConstraint` (nie `Motor6D`).
+  `Paths.effectiveFor`. Każda aktywna umiejętność ma `delivery = "melee" | "ranged"` (S64; `data.spec` sprawdza regułę
+  z `docs/STATY.md` 6); odnowienie zawsze przez `Skills.cooldown`. Stawy postaci graczy to `AnimationConstraint` (nie `Motor6D`).
 - **Ścieżka / węzeł** (S57): `Data/Paths/<Klasa>` (kształt: `tests/fixtures/paths.luau`), umiejętność z `path` i
   `unlock` = poziom rzędu, teksty `path.<pathId>.*`, `wiki = false` do wydania, `statPlan` (plan przycisku „Rozdaj jak
   zaleca ścieżka”, nigdy na wiki), `paths.spec` sprawdza dane. Reguły
