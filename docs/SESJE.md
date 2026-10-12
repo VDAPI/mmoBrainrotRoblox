@@ -4483,3 +4483,163 @@ obronie (I4, P2).
 
 Pliki: `tests/{Balance,BalanceTables,balance.spec}.luau`, `tests/fixtures/balance_items.json`,
 `tools/{balance_report.luau,balance_before.json}`, `docs/{BALANS,DECYZJE,SESJE,PROGRESS}.md`.
+
+### S85: Silnik umiejętności na buildach wzorcowych (T-SK1..6)
+
+Sesja balansu bez strojenia: `src/` bez zmian, księga „Zmiany danych” bez wierszy S85 (`tools/balance_reasons.luau` bez
+wpisów), `tools/wiki_keys_diff.luau` pusty; `npm run data` niepotrzebne, bo `src/shared/Data` się nie zmieniło.
+- **A. Start** na `728d19b` (S84): wymagania są, migawka `lune run tools/balance_report.luau snapshot S85`
+  (`tools/balance_before.json`), `scripts/check` zielony (94 pliki, 1324 testy, 47,7 s); 1–20: 0 różnic, fixture
+  przedmiotów S84 zgodny na starcie i na końcu (`build/s85_start.txt`).
+- **B–G.** Nowy `tests/SkillModel.luau`: `ASSUMPTIONS`, `BASE`, `LEVELS`, `BOSS_AT`, `G10_LEVELS`, `builds` (baza,
+  `base.loadout` dla Wojownika i Maga, 22 buildy `reference`, klucz `<pathId>.<id>`), `build`, `character` (awans przez
+  `Paths.canChooseMain` / `canBuy`), `player` (`Balance.gear` z bronią buildu, `StatPlan.suggest`, `Paths.passiveTotals`,
+  aury `circle`), `wrap` (gracz konwencji), `fight` (krok 0,05 s, zdarzenia, tyknięcia, atak podstawowy, rotacja,
+  zasoby, mikstury, tryb leczenia), `metrics`, `oneHeal`, `defenderTank`, `healerVsBoss`, `stormShare`, `timeline`,
+  `targetsG10`, `targetsMeadows`, rejestry `HANDLERS` i `BEHAVIOURS`. Każda reguła serwera z komentarzem `-- mirrors`.
+- **B5.** `Balance.playerFromItems` ma opcjonalny piąty parametr `extra` (`stats`, `sources`, `hooks`); bez niego co do
+  bitu to samo (test). Aury `circle` węzłów działają na właściciela (`PartyAuraService`: „covers its owner, solo too”).
+- **H1.** Bez umiejętności model daje `FightSim.dps` co do bitu na bazie i na graczu konwencji, 4 klasy × 20 / 45 / 70 /
+  100, na rodzaju ogólnym i zwinnym (unik rodziny). Zamachy w czasach nominalnych: zaokrąglanie do kroku dawało −1…−5%.
+- **I–J.** `BalanceTables.tablesSkills()` (pasmo `S85-skills`, 16 tabel, w `tablesAll`, więc w migawce), sekcja raportu
+  „Umiejętności: T-SK na buildach wzorcowych (S85)” z listą „Brak do S86”, celami G10 i wierszami Łąk; blok
+  `balance.spec` „Skill model (S85)” (7 przypadków), G10 w bloku globalnym, T-SK3 / T-SK6 Łąk drukowane w bloku
+  regionów. Check: 1332 testy, ok. 51 s (+3 s); tabele S85 ok. 1,1 s, cały raport 4,1 s.
+
+Inwentarz (A3; liczby = wystąpienia w `Data/Skills` / węzłach `modify`; grupa: S85 = w modelu, S86, — = bez wpływu na
+manekinie z powodem):
+
+| | S85 | S86 | bez wpływu |
+|---|---|---|---|
+| typy | target 6, projectile 8, cone 2, circleSelf 7, circleTarget 8, line 1, chain 1, charge 1, buff 6, debuff 2, heal 2, hot 1, shield 1, channel 2, groupBuff 5 (bez kości), groupHeal 1, trap 3 (kształt `05b859d`), blink 2, resurrect 1 (bez martwego sojusznika nie rzuca) | guard 1, shout 2, banner 1, companion 1, beam 1, healZone 1 | passive 11 (przez `passiveTotals`) |
+| zachowania | splash 12, pierce 4, lingering 6+1, echo 6, split 1, execute 6+1, finisher 1, firstWave 1, bleedStacks 1, poisonStacks 1, lifesteal 6, secondTarget 5 (F2: nie liczy się), overhealShield 2 (bez osi HP), selfHeal 7, healWounded 1, burst 1, stunSplash 1, cdrPerTarget 1, critCdr 1, effect 18+4, selfEffect 11+1, allyEffect 8+4 | shieldPerHit 1, allyHeal 1, allyShield 1, behindEffect 1, chainHeal 1, healZone 1, roll 1, rollDouble 1, grantCharges 1, empower 1, shieldBurst 1 | pull 6, knockback 2, castMove 1, stunNear 3, stunLast 2, trap 2 (ruch / kontrola), cleanse 7, markJump 1, extendOnKill 1 (zabicia), steadfast 1, channelMove 2 (ruch), tauntNear 1 |
+| haki | elementDamage, holyDamage, areaSkillDamage, eliteDamage, bossDamage, executioner, vs_<rodzina>, damagePerEnemy, weakSpot, dotPower, bleedDamage, poisonDamage, elementRider, riderSameTarget, doubleAttack, manaOnHit, cooldownReduction, zealCdr, healBonus, allyHealBonus, lowHpHealBonus, healCrit, holyStrikeHeal, holyHealAll, areaLingering, koszt (trapCost, areaCost, spellCost przez `Skills.cost`) | Furia (furyMax, furyDamage, furySpeed, furyLifesteal, furyGuard), Sokół (falcon*, royalFalcon), spotBonus, spotOnHit, trapEnergy, areaDamage, singleDamage, spellDamage, resonance, chargeCost / chargeDamage / chargeReclaim, areaKillMana, cechy broni (24, np. traitWound, traitFullDraw, traitRuneSeal, frostbite, blockHeal) | block, riposte, guardPerEnemy, lastStand, threat, interceptMitigation, interceptThorns, killHeal, channelGuard, vortexGuard, manaShieldCost, areaRadius, vigilance*, poisonedGuard, poisonSpread, poisonSlow, trapRootDuration, minimapEliteBonus (obrona, ruch, zabicia, minimapa) |
+| efekty | statBuff 22 (`EffectStack`), bleed 4, poison 5, armorBreak 1 (`enemyArmor`), vulnerability 5 (max), nextShot 1, guaranteedCrit 2, sighted 1, hot 3, shield (kwota) | burn 1 (Piętno Światła), carnage 1, arcaneCharge, empowered, accumulate podpalenia | stun 7, root 3, slow 10, freeze 3, taunt 2, invuln 2, damageReduction 14, camouflage 1, manaShield 1, intercept 2, misfortune 3, guardianAngel 1 |
+| warunki rotacji | skill 176, minEnemies 18, target 12 (tank, mostWounded, self), opener 6, belowHp 3, debuff 2, minWounded 2, notInZone 2, minManaPct 2, maxManaPct 2, beforeRedZone 1, elite 1 | minFury 4, minCharges 2, target meleeAllies / allyInZone | — |
+
+Człony trafienia (C3, A3 f): atak × procent (× wykańczanie), `skillDmg` (każde trafienie umiejętności: rozpryski, pola,
+łuki) / `basicDmg`, obrona `Damage.defenseOf` (pancerz × (1 − `armorBreak` z `enemyArmor`) × (1 − `pierce`), odporność ×
+(1 − `magicPierce`)), `Damage.reduction`, `levelGap` (mnożnik i krytyk), krytyk `Damage.critChance` (+ Namierzenie
+`sighted`) i `critMultiplier` (+ `critDmgAdd`), `forceCrit` (egzekucja, `guaranteedCrit`), unik tylko na ataku
+podstawowym, `DealOptions.multiplier` = `elementDamage` / `holyDamage` × `speedFactor` × (1 + `areaSkillDamage`),
+`nextShot`, wrażliwość (max), Słaby punkt, `offensiveMultiplier` (Elita / boss, `vs_<rodzina>`, `executioner`,
+`damagePerEnemy`), `doubleAttack`; tyknięcia `max(1, atak × speedFactor × wartość / 100 / max(1, czas)) × (1 + DotBonus)`
+bez pancerza. `FightSim.dps` (S62–S67): atak, `defenseOf`, `reduction`, `levelGap`, krytyk, `doubleAttack`, unik,
+`basicDmg`, `skillDmg` (udział ×1,2), `vs_<rodzina>`; w modelu wszystkie. S86: `spellBonus`, rezonans, `castMul`, Furia,
+Łatwy cel, Pieczęć, Przemarznięcie, Ścięcie, Naciąg, Podwójne cięcie, Przeszycie, Iskra, efekty przy trafieniu, Zbawczy cios.
+
+Kluczowe liczby (Mag: średnia żywiołów; `rel` = wobec L20 tego buildu; cele: T-SK1 rel ≤ 1,15, T-SK2 rel ≤ 1,25):
+
+| | 20 | 45 | 70 | 100 |
+|---|---|---|---|---|
+| T-SK1 / T-SK2 baza Wojownika (`axe2h`) | 2,08 / 2,76 | 2,71 / 4,03 (rel 1,30 / 1,46) | 2,85 / 4,72 (1,37 / 1,71) | 2,89 / 4,71 (1,39 / 1,71) |
+| T-SK1 / T-SK2 baza Łowcy | 2,23 / 2,92 | 2,88 / 4,21 (1,29 / 1,44) | 3,01 / 5,31 (1,35 / 1,82) | 2,96 / 5,48 (1,33 / 1,88) |
+| T-SK1 / T-SK2 baza Maga | 2,79 / 2,75 | 3,75 / 4,01 (1,34 / 1,46) | 4,10 / 4,79 (1,47 / 1,74) | 4,15 / 4,91 (1,49 / 1,79) |
+| T-SK1 / T-SK2 baza Kapłana | 2,06 / 2,19 | 2,81 / 3,25 (1,36 / 1,48) | 3,19 / 3,83 (1,55 / 1,75) | 3,39 / 4,20 (1,64 / 1,92) |
+| najgorszy build: W `standard.commander` | 2,20 / 2,47 | rel 1,43 / 1,48 | 1,48 / 2,00 | 1,67 / 2,09 |
+| najgorszy build: Ł `trapper.poacher` (T-SK2), `marksman.kingslayer` (T-SK1) | 2,24 / 2,93; 2,32 / 3,29 | 1,24 / 1,48; 1,48 / 1,77 | 1,33 / 2,05; 1,63 / 1,83 | 1,36 / 2,19; 1,62 / 2,00 |
+| najgorszy build: M `destroyer.destroyerBoss` (T-SK1), `destroyerExp` (T-SK2) | 3,00 / 3,22; 2,79 / 2,75 | 1,58 / 1,51; 1,34 / 1,46 | 1,85 / 2,16; 1,59 / 2,25 | 2,03 / 2,59; 1,78 / 2,78 |
+| najgorszy build: K `inquisitor.solo` | 2,21 / 2,36 | 1,76 / 1,92 | 2,00 / 2,26 | 2,30 / 2,54 |
+| T-SK3 ponad `areaCap` | — | baza Maga 2,16–2,17, Strażnik 2,02 | baza Maga 2,18–2,19, Strażnik 2,24 | baza Maga 2,15–2,16, Strażnik 2,24, Furia 2,58, Inkwizytor 2,23–2,24 |
+| T-SK4 baza Maga / Niszczyciel exp / boss / Arkanista boss / przeciążenie | 1,77 / 1,83 / 2,08 / 1,83 / 2,01 | 1,41 / 1,60 / 1,96 / 1,42 / 1,85 | 1,25 / 2,50 / 2,50 / 1,33 / 1,73 | 1,16 / 2,20 / 2,16 / 1,23 / 1,60 |
+| T-SK5 Uzdrowiciel „Lochowy” (tank W / Obrońca) | 23 / 23% | 29 / 27% | 36 / 32% | 43 / 36% |
+| T-SK6 Uzdrowiciel „Lochowy” (drużyna domyślna / S92) | Grimrok 0,23 / 0,32 | Morvane 1,85 / 2,65 | Azgor 3,57 / 5,78 | Vaelgrath 4,50 / 7,53 |
+
+Porównanie z diagnozą i ROZWOJ (H2, H3; tabela w `docs/BALANS.md`, przyczyny bez strojenia):
+- Baza `base.loadout` na L20 wobec D1: T-SK1 W 2,08 / 1,90 (+10%), Ł 2,23 / 2,12, M 2,82 / 2,37 (+19%), K 2,06 / 1,83
+  (+13%); T-SK2 W +20%, Ł +13%, M +6%, K +12%; T-SK3 W −7%, Ł +18%, M +27%, K +21%. Przyczyny: **węzły** rzędów 1
+  (Wojownik ma Rozpłatanie z Berserkera i Okrzyk Bojowy z Chorążego, Łowca Strzałę Przebijającą i trucizny Trapera, które
+  diagnoza bez ścieżek nie miała); **rangi** z poziomu (Mag: Magiczny Pocisk ranga 5 na 20. z przełomem przebicia, Kula
+  Ognia z polem 5A na 3 celach; diagnoza miała zachłanne rangi z punktów); **normalizacja** broni (Kapłan: buława 1,0
+  / 0,8 = ×1,25 umiejętności, 9.6 mierzono bez niej); **rotacja** z danych (Kapłan: Światłość od 2 wrogów tylko w
+  obszarze). Dalej: korekta zamachów (−1,4% diagnozy), tyknięcia `ceil(d) − 1` z jednym efektem na klucz, opóźnienia
+  `hitDelay`, efekt adaptacyjny z `exactTicks`, `elementDamage` Mistrza Żywiołów (rząd 1 Niszczyciela).
+- T-SK4 Maga L20 1,77 wobec 2,8 (−37%): rotacja z danych i żywioł broni (ogień rzuca tylko Magiczny Pocisk i Kulę Ognia, lód i
+  błyskawica swoje; diagnoza z ogniem miała zachłanne rangi i rotację według siły). T-SK5 Kapłana L20 22% wobec 28%:
+  **wzór** S69 (`healHp` od HP celu + mała część magiczna). T-SK6 bazy na Grimroku 0,21 wobec 1,11: **rotacja** z danych
+  (Święte Uderzenie zjada manę, której potem brakuje na leczenie przez 370 s walki z modelu S83; diagnoza leczyła
+  tylko), bez Sanktuarium (S86).
+- ROZWOJ 2.5 (baza z bronią ROZWOJ) T-SK1 L20: W 2,08 / 1,84, Ł 2,23 / 1,97 (+13%, węzły), M 2,79 / 2,22 (+26%, rangi),
+  K 2,06 / 1,74 (+18%, normalizacja).
+- ROZWOJ 9.6 (P2): Uzdrowiciel 23 / 29 / 36 / 43% wobec 21 / 30 / 33 / 38% (+12% na 20., +13% na 100.: węzły leczenia
+  tej kolejności kupowania i tank konwencji), Fortuna 20 / 26 / 29 / 31% wobec 20 / 26 / 28 / 30% (zgodne). ROZWOJ 11.6:
+  baza Łowcy obszar / jeden cel 1,52 / 1,32 / 1,45 / 1,42 wobec 1,52 / 1,40 / 1,40 / 1,30 (w 10%). ROZWOJ 12.7: T-SK4
+  bazy Maga 1,41 / 1,25 / 1,16 wobec exp 1,28 / 1,13 / 1,05 (+10–11%: średnia żywiołów zamiast rotacji exp) i boss
+  1,38 / 1,27 / 1,18 (w 2%).
+- Różnice portu wobec diagnozy (README paczki): tyknięcia (serwer: jeden efekt na klucz, `restack` zachowuje
+  `nextTick`, d ≤ 1 s nie tyka, choć `Traits.ticks` mówi 1), korekta ostatniego zamachu, opóźnienia trafień bez lotu,
+  rotacja z danych zamiast `E.potency`, normalizacja broni, Zręczność z oceną, krzywa many, rangi z poziomu, węzły rzędów
+  1, cechy-statystyki ekwipunku, żywioł (średnia), rozbicie meteoru 7 st. od punktu nie trafia manekinów w punkcie
+  (diagnoza: połowa).
+- `npm run data` niepotrzebne: `src/shared/Data` bez zmian (wiki bez nowych pól, `tools/wiki_keys_diff.luau` 0 różnic).
+
+Dla S86:
+- API: `SkillModel.builds`, `build`, `character` (build przycięty do L, prefiks listy `nodes`), `player` (z
+  `opts.gear`: rzadkość, ulepszenie, `traitScale` dla sytuacji `mana` i `dungeon` S84), `wrap`, `fight` (opcje
+  `targets`, `dummy`, `seconds`, `skills`, `startPool`, `unlimited`, `potions`, `control`, `heal`), `metrics`, `oneHeal`,
+  `defenderTank`, `healerVsBoss` (`team = "s92"`), `targetsG10`, `targetsMeadows`, `timeline`, `stormShare`; rejestry
+  `HANDLERS` (typy) i `BEHAVIOURS` (zachowania) to miejsce na mechaniki.
+- Mechaniki z `unmodelled` (68 pozycji; liczba buildów): typy shout 4, guard 2, banner 2, companion 2, beam 2, healZone 1;
+  castTime 2 (Strzał w Serce); Furia (minFury 2, furyMax / furySpeed 6, furyDamage 1, furyConsume); Ładunki (minCharges 2,
+  chargeDamage / chargeReclaim 2, empower 2); accumulate podpalenia 6 i Przemarznięcie 6 (Mag); efekt burn 2
+  (Inkwizytor); pułapki S76–S78 2; kości 1; Sokół 2 (falconBond / falconInterval 2, royalFalcon 2); spotOnHit 4 /
+  spotBonus 2; trapEnergy 2; areaDamage / singleDamage 4, areaKillMana 4, spellDamage 1, resonance 1; chainHeal 2,
+  healZone, shieldBurst, shieldPerHit, allyHeal, allyShield, rollDouble po 1; cechy broni (parry 8, fullDraw 7,
+  bonebreaker 4, swordplay 4, elementalMight 3, rendingGash 3, toxicBarbs 3, runicSeal 2, easyPrey, elementalSpark,
+  harrying, savingBlow, twinCut po 1; `Balance.traitTerms` S84 do podłączenia).
+- Warunki bez stanu: `minFury` (Rzeź, Rozdarcie), `minCharges` (Wyładowanie Arkanów), `beforeRedZone` (Anioł Stróż),
+  drużynowe `target = "meleeAllies"` (Sanktuarium) / `"allyInZone"` (Przechwycenie).
+- Aktywne poza rotacją (na 100.): Strażnik Szarża, Krwawy Szał, Ostatni Bastion; Berserker Prowokacja; Chorąży Szarża,
+  Prowokacja, Krwawy Szał, Trzęsienie Ziemi; Łowcy Odskok (wszyscy), Strzelec Pułapka Lodowa, Traper Kamuflaż; Mag Błysk
+  i Tarcza Many (wszyscy); Uzdrowiciel „Lochowy” Światłość, Sąd, Boska Interwencja, Oczyszczenie, „Samotny” Krąg
+  Światła, Tarcza Wiary, Odnowa, Sanktuarium, Boska Interwencja, Anioł Stróż; Fortuna Światłość, Tarcza Wiary, Sąd,
+  Odnowa, Modlitwa, Oczyszczenie; Inkwizytor Leczenie, Krąg Światła, Tarcza Wiary, Odnowa. Dane rotacji do uzupełnienia
+  w S86 albo sesji klasy.
+- Wiersze Łąk na L20 do asercji (`targetsMeadows`, dziś `report = "S86"`): T-SK3 27/27 w paśmie, T-SK6 Grimroka 0/6
+  (0,00–0,23; `healer.solo` i oba Inkwizytory 0,00, bo ich rotacje nie leczą tanka); G10: pole `report = true` poza trzema na poziom (`destroyer.destroyerExp`, `arcanist.arcanistBoss`,
+  `healer.dungeon` na `guardian.defender`).
+
+Dla S87:
+- G10 (T-SK4 Maga od 45., T-SK5 Kapłana od 20. na obu tankach): 194/276 w paśmie; poza (82): wszystkie buildy Kapłana
+  na 20–25 (19–24%, oba tanki), na 30–35 większość (21–25%), na 40 baza i Fortuna na Obrońcy, Fortuna na Obrońcy na 45
+  (24%); Uzdrowiciel (`dungeon`, `solo`) na Wojowniku 36–44% od 65. i na Obrońcy 35–36% od 90.; T-SK4 bazy Maga
+  (`base`, `base.loadout`) 1,41 na 45., Niszczyciel exp 1,60 na 45., Arkanista boss 1,23–1,43 od 45. (bez Ładunków i
+  Strumienia Arkanów).
+- Luki `FightSim.dps` wobec ataku podstawowego serwera (model liczy je, kontrola `control = true` je wyłącza):
+  `eliteDamage` / `bossDamage`, `executioner` poniżej 30% HP, `damagePerEnemy` (Groźba), Słaby punkt.
+- Wzory serwera do przeniesienia do `Logic` (model je odwzorowuje): reguła tyknięć i kluczy efektów
+  (`StatusEffectService.Apply` / `tickEntity` na `EffectStack.restack`), mnożniki `DealDamage` (`nextShot`,
+  `guaranteedCrit`, wrażliwość, Słaby punkt, `offensiveMultiplier`), `Context.healFactor`, `CombatService.DotBonus`,
+  geometria burzy meteorów i rozbicia (`Offense.circleTarget`, 3,5 st.), listy `HOLY_HEAL_SKILLS`, `ZEAL_SKILLS`,
+  `INSTANT` i `TICK_INTERVAL`.
+
+Dla S89–S90:
+- Ścieżki wobec 9.6 / 10.6 / 11.6 / 12.7 (raport S85, liczby wstępne): Uzdrowiciel T-SK5 ponad 35% od 65. na tanku
+  Wojowniku (43% na 100.); baza Maga T-SK3 2,15–2,19 od 45. (cel 2,0; S90); Inkwizytor T-SK1 rel 1,76–2,30 i T-SK3 2,23 na 100.; Berserker T-SK3 2,58 na 100. (Furia S86);
+  Strażnik T-SK3 2,02–2,24 od 45.; Niszczyciel boss T-SK1 rel 2,03 na 100.; Arkanista bez Ładunków i Strumienia Arkanów.
+- Różnice z portu: rotacja z danych (aktywne poza rotacją, Święte Uderzenie Uzdrowiciela zjada manę), normalizacja broni
+  (szybka broń = mniej trafień umiejętności w tym samym DPS), tyknięcia `ceil(d) − 1` i odświeżenie bez reszty.
+
+Dla S91:
+- Kotwica „własne L20”: T-SK1 bazy W / Ł / M / K 2,08 / 2,23 / 2,79 / 2,06, T-SK2 2,76 / 2,92 / 2,75 / 2,19; buildy na
+  L20 mają ścieżkę główną świeżo wybraną (10 punktów, prefiks listy).
+- Model działa na każdym L (5 / 10 / 15 bez zmian: `metrics(build, L)`; poniżej 20. bez ścieżki głównej, `rel` liczony
+  wobec 20.).
+
+Dla S92–S94:
+- T-SK6 Uzdrowiciela „Lochowego” (drużyna domyślna / S92): Grimrok 0,23 / 0,32, Morvane 1,85 / 2,65, Azgor 3,57 / 5,78,
+  Vaelgrath 4,50 / 7,53; „bez nadleczenia” w DECYZJE (bez drugiego celu, innych członków i nadmiaru w tarczę; kwoty
+  nieprzycinane do braku HP).
+
+Dla właściciela:
+- Błędów danych nie ma: każdy build wydaje na 100. dokładnie 50 punktów, każda rotacja wskazuje umiejętność, którą build
+  ma na 100. z właściwą bronią.
+- Do decyzji (bez pytań w trakcie): czy rotacje buildów mają wymieniać wszystkie aktywne (dziś np. Uzdrowiciel nie
+  rzuca Boskiej Interwencji, Strażnik Ostatniego Bastionu), i czy Uzdrowiciel „Lochowy” ma w rotacji Święte Uderzenie
+  (na Grimroku zjada manę na leczenie).
+
+Niedokończone: nic z listy „Nie wolno odłożyć”; P2 zrobione (udziały, porównania 9.6 / 11.6 / 12.7, kolumna
+`base.loadout`).
+
+Pliki: `tests/{SkillModel,Balance,BalanceTables,balance.spec}.luau`, `tools/{balance_report.luau,balance_before.json}`,
+`docs/{BALANS,DECYZJE,SESJE,PROGRESS}.md`.

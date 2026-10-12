@@ -1864,3 +1864,64 @@
   (`Monster.DelayAttack`), `Loot` SLOT_TIER (`usableShare`).
 - **S84** `Balance.bossFight` dostał opcję `level` (boss i fale tarczy przesunięte o tyle samo poziomów) i pola
   `shieldAttacks`, `shieldKills`, `shieldSeconds`, `activeSeconds`; bez opcji wynik jak w S83.
+- **S85** Miary silnika umiejętności (`tests/SkillModel.luau`, plan balansu D1): „atak podst.” = DPS 60 s samego ataku
+  podstawowego na 1 manekinie `GENERIC` poziomu L; „na odnowieniu” = 60 s z rotacją bez limitu zasobu (koszt liczy się
+  do `spent`); „wybuch 8 s” i „60 s” od pełnej puli z limitem, bez mikstur; „obszar 3” = łączny DPS na 3 manekinach.
+- **S85** T-SK1 = 60 s / atak podst., T-SK2 = wybuch 8 s / atak podst., `rel` = to samo względem L20 tego buildu (build
+  na L20 = symulacja awansu do 20.); T-SK3 = obszar 3 w 8 s / jeden cel w 8 s wobec `areaCap` (`nil` = 2,0); T-SK4 =
+  zapotrzebowanie zasobu na odnowieniu / regeneracja `StatCalc` (zwroty z węzłów to S86); Mag: średnia trzech żywiołów.
+- **S85** Baza klasy (`SkillModel.BASE`): bez ścieżki głównej, wszystkie węzły rzędów 1 ścieżek klasy (Mag 1–2) w
+  kolejności `Paths.pathsOf` z pełnymi rangami, przez `Paths.canBuy` (nadwyżka punktów wolna), przełomy A, plan
+  `Classes.statPlan`, broń ROZWOJ (W `axe2h`, Ł `bow` + `quiver`, M `staff`, K `mace1h` + `shield`); `base.loadout` z
+  bronią `Balance.LOADOUT` tylko tam, gdzie się różni (Wojownik, Mag).
+- **S85** Rotacja bazy z danych: rotacje `reference` klasy w kolejności ścieżek i buildów, pierwsze wystąpienie
+  umiejętności wygrywa (z warunkami), tylko umiejętności podstawy i węzłów bazy. Aktywne spoza rotacji nie są rzucane
+  („poza rotacją” w raporcie); model nie sortuje ani nie filtruje priorytetu.
+- **S85** Build przycięty do L (`SkillModel.character`): awans 1 → L, ścieżka główna buildu na 20. przez
+  `Paths.canChooseMain`, przy każdym punkcie pierwsza ranga z `ref.nodes` przyjęta przez `Paths.canBuy` (wpis czeka,
+  następne mogą przejść); `bp` z buildu; statystyki `StatPlan.suggest(plan, start, start, StatPlan.total(L))`.
+- **S85** Założenia pomiaru (`SkillModel.ASSUMPTIONS`): krok 0,05 s; okna 8 i 60 s; 3 manekiny bez końca HP w punkcie
+  celowania, w zasięgu każdego obszaru (przebicie trafia drugi, gdy są co najmniej 2; łańcuch po kolejnych; rozbicie
+  meteoru 7 st. od punktu ich nie trafia); lot pocisku, lot kuli i czekanie na ściągnięcie pominięte.
+- **S85** Egzekucja, wykańczanie i `executioner` na manekinie: udział trafień poniżej progu = próg / 100 (HP spada
+  liniowo, jak `belowFraction` diagnozy; przełącznik `ASSUMPTIONS.executeShare`, `"hp"` = bez udziału); burza meteorów: udział `min(1, (r_i + 1,5) / (r − r_i))`, Burza Piorunów 1 / n
+  na cel; opóźnienie trafienia `SkillMotions.hitDelay` (bez typów `INSTANT`), szarża 0,15 s, fale i `delay` z danych.
+- **S85** Atak podstawowy: zamachy w czasach nominalnych (`nextBasic += 1 / szybkość`, nie zaokrąglane do kroku) i na
+  końcu okna liczy się tylko część ostatniego zamachu w oknie, więc bez umiejętności suma = T × szybkość × cios
+  (kontrola z `FightSim.dps` co do bitu); `AttackPose.hitDelay` pominięte, bo przy tej korekcie nie zmienia sumy.
+- **S85** Trafienie jako wartość oczekiwana: krytyk `(1 − f)(1 + p(k − 1)) + f·k` (f = udział `forceCrit`), unik tylko
+  na ataku podstawowym, rozrzut 0,92–1,08 ze średnią 1; `floor`, `minDamage` i zaokrąglenia pominięte.
+- **S85** Warunki rotacji (D2): `minEnemies` = żywe manekiny; `elite` = wariant celu elite / elite2 / boss; `debuff` =
+  efekt tego rodzaju na celu wpisu (`target = "self"`: gracz); `opener` = umiejętność jeszcze nierzucona w tej walce;
+  `belowHp` fałsz (pełne HP, brak osi HP); `minManaPct` / `maxManaPct` = procent puli; `notInZone` prawda.
+- **S85** Warunki rotacji c.d.: `beforeRedZone` fałsz (bez harmonogramu bossa); `target = "tank"` / `"mostWounded"` i
+  `minWounded` tylko w trybie leczenia (wszyscy członkowie ranni, cel: tank), solo fałsz; `target = "meleeAllies"` /
+  `"allyInZone"`, `minFury`, `minCharges` i nieznane klucze: brak stanu → wpis w `skipped` („S86”), raz na odnowienie.
+- **S85** Mikstury tylko w kolumnie „60 s z miksturami” (poza T-SK1..4): największa jakość z `level ≤ L` (reguła
+  `Balance.potionHps`), co `Potions.interval(L)`, pita gdy pula ≤ maks. − ilość albo gdy gotowemu rzutowi brakuje
+  zasobu (mikstura many 10 000 jest większa od każdej puli).
+- **S85** Granica leczenia S85 / S86: S85 liczy kwotę (`Skills.healAmount`, `healPower`, `healBonus` + `allyHealBonus` +
+  `lowHpHealBonus`, oczekiwany `healCrit`, tarcze po kwocie, HoT po tyknięciach); rozkład na drużynę, nadleczenie,
+  pochłanianie tarcz, `healZone`, łańcuchy i kości to S86. Cel leczenia przed leczeniem ponad 35% HP (bez premii).
+- **S85** T-SK5 = jedno Leczenie buildu / maks. HP tanka na dwóch tankach: Wojownik konwencji `Balance.player` i
+  Strażnik „Obrońca” (`guardian.defender`, `SkillModel.defenderTank`); premie na innego gracza liczą się.
+- **S85** T-SK6 = leczenie na tanku na sekundę / `tankDps` z tego samego `Balance.bossFight`: boss pasma
+  (`BOSS_AT`), drużyna na poziomie bossa − 1 (domyślna W, M, Ł, K, W; S92: Obrońca, Kapłan buildu, Furia, Królobójca),
+  Kapłan = gracz buildu, rotacja buildu z jego maną przez `bossFight.seconds`, bez mikstur.
+- **S85** „Bez nadleczenia” (T-SK6, S92–S94): nie liczy się drugi cel (`secondTarget`), leczenie innych członków ani
+  nadmiar zamieniony w tarczę (`overhealShield`); kwot nie przycina się do brakującego HP (brak osi HP, S86); leczenie
+  grupowe i `healWounded` liczą część tanka, wpisy bez celu leczą tanka.
+- **S85** Wiersze Łąk T-SK3 i T-SK6 na L20 (`SkillModel.targetsMeadows`) blok regionów tylko drukuje, mimo
+  `TUNED.meadows`; asercje włącza S86 po mechanikach albo S91. G10 (`SkillModel.targetsG10`): T-SK4 Maga od 45. (cel
+  po 45., ROZWOJ 8), T-SK5 Kapłana od 20., w bloku globalnym w trybie raportu do S87.
+- **S85** Bez fixture'u T-SK: S86 celowo zmieni te liczby; „przed → po” pokazuje migawka `tools/balance_before.json`
+  (tabele S85 są w `BalanceTables.tablesAll`, pasmo `S85-skills`).
+- **S85** `Balance.playerFromItems(classId, L, items, traitScale?, extra?)`: opcjonalny piąty parametr `extra`
+  (`stats` zamiast `statsFor`, `sources` po ekwipunku, `hooks`); bez niego wynik co do bitu jak przed S85 (test).
+- **S85** Aury węzłów: aura `circle` z kategorią `statBuff` działa na właściciela (PartyAuraService obejmuje go także
+  solo) i wchodzi do `EffectStack` z wzmocnieniami; aura `behind` i `allyGuard` nie zmieniają obrażeń na manekinie.
+- **S85** Jednorazowe `guaranteedCrit` / `nextShot` w modelu zdejmują wszystkie efekty rodzaju naraz (jak
+  `StatusEffectService.Consume` / `Remove`), liczy się wartość pierwszego.
+- **S85** Klucze migawki tabel S85 nie zależą od liczb: porównanie ma stałą przyczynę w etykiecie (różnica ponad 10%
+  pogrubiona przez pasmo komórki), udziały w obrażeniach to wiersz na umiejętność (pięć największych), nie rangi 1.–5.
+- **S85** Raport nie pokazuje „a → b”, gdy liczba różni się od migawki tylko zaokrągleniem JSON (`Balance.sameNumber`).

@@ -5,7 +5,7 @@
 
 ## Stan
 
-S01–S51 i S53–S84 gotowe (lista i zakres w `docs/SESJE.md`). Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
+S01–S51 i S53–S85 gotowe (lista i zakres w `docs/SESJE.md`). Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
 kategorie efektów drużyny i stos efektów (`Logic/EffectStack`), S54 wzory globalne (`Logic/LevelCurves`), S55 rangi
 i przełomy w kształcie A/B (`Build.bp2`, `Skills.effective` §2.7), S56 koniec punktów umiejętności: rangi z poziomu
 postaci (`Skills.rankFor`, drabina przejściowa ROZWOJ 2.6), zapis w schemacie 6 (darmowy reset statystyk, pasek
@@ -65,7 +65,8 @@ narzędzia balansu 1–100: księga zmian (`tools/balance_reasons.luau`, migawka
 trybie raportu, `tools/wiki_keys_diff.luau` w `scripts/check`, węzły `Data/SkillCurves` (puste), model świata i
 bossów w `tests/Balance.luau`, raport 1–100 w `docs/BALANS.md`; liczby gry bez zmian. S84 model przedmiotów, łupu i
 obrony 20–100 w `tests/Balance.luau` (cechy w sytuacjach, G7–G9, materiały, drop ze szczęściem, obrona rodzin), sekcje
-S84 w `docs/BALANS.md`, fixture `tests/fixtures/balance_items.json`; liczby gry bez zmian.
+S84 w `docs/BALANS.md`, fixture `tests/fixtures/balance_items.json`; liczby gry bez zmian. S85 silnik umiejętności
+`tests/SkillModel.luau` z buildami wzorcowymi, T-SK1..6 w `docs/BALANS.md`, liczby wstępne do mechanik S86; gra bez zmian.
 Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`, `docs/STATY.md`), następne sesje
 balansu; testy i strojenie po nich.
 
@@ -93,7 +94,8 @@ balansu; testy i strojenie po nich.
 - **Model balansu (S84)**: brak kolumny „potrzebny mnożnik linii dwuręcznych” w G8 (dla S87).
 - **Model balansu (S84)**: obrona potworów liczona na rodzaju ogólnym, bez prawdziwych rodzajów regionu (`hpMul`,
   `atkMul`, rodzina).
-- **Kapłan**: cele 9.6 po normalizacji broni: w repo nie ma narzędzia liczącego umiejętności, pomiar S86, strojenie S89.
+- **Kapłan**: cele 9.6: S85 liczy T-SK5 (Uzdrowiciel 23 / 29 / 36 / 43% tanka Wojownika na 20 / 45 / 70 / 100) i T-SK6
+  bez Sanktuarium i rozkładu na drużynę (mechaniki S86); strojenie S89.
 - **Umiejętności i ścieżki**: brak przycisku „Załóż pasującą broń” po przełączeniu zestawu (ROZWOJ 2.8, później);
   wiki: ścieżki ukryte (`wiki = false`) do decyzji o publikacji, tytuł ścieżki nie jest w nagłówku zakładki planera
   (pole `title` wchodzi z publikacją). Oko Zwiadowcy widzi tylko Elity wczytane przez streaming (pewnie do 128 st.); pewność

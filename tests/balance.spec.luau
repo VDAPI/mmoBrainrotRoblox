@@ -7,6 +7,8 @@
 --   * Regions (Balance.targetsRegion): asserted where Balance.TUNED says so (S83: the Meadows' kinds and Grimrok's
 --     schedule only), printed elsewhere.
 --   * The balance ledger (S83, balance plan 2.6): always asserted.
+--   * S85: G10 (T-SK4, T-SK5 of tests/SkillModel) in the global block, the Meadows' T-SK3 / T-SK6 printed in the
+--     region block, the block "Skill model (S85)" at the end.
 --   * Items, loot and monster defence 20-100 (S84): the tables of BalanceTables.tablesItems against
 --     tests/fixtures/balance_items.json, S32 compatibility and Monte Carlo on the game's functions; D5 rows in the
 --     region block (REGION_TARGETS.d5, under TUNED).
@@ -270,6 +272,10 @@ end)
 
 T.describe("Balance 20-100: global (report until S87)", function()
 	local rows = B.targetsGlobal()
+	-- S85 (J2): G10 = T-SK4 (Mage) and T-SK5 (Cleric) from tests/SkillModel, in the same mode
+	for _, row in (require :: any)("./SkillModel").targetsG10() do
+		table.insert(rows, row)
+	end
 	if GLOBAL_ASSERT then
 		for _, row in rows do
 			if row.report == nil then
@@ -281,7 +287,7 @@ T.describe("Balance 20-100: global (report until S87)", function()
 			end
 		end
 	end
-	T.it("global targets G1-G9, G11-G13 (printed)", function()
+	T.it("global targets G1-G13 (printed)", function()
 		printReport("G", rows, 15)
 		T.expect(#rows > 0).toBe(true)
 	end)
@@ -308,6 +314,14 @@ T.describe("Balance 20-100: regions", function()
 			printReport(`region {mapId}`, rows, 8)
 			T.expect(#rows > 0).toBe(true)
 		end)
+		if mapId == "meadows" then
+			-- S85 (J2): T-SK3 and T-SK6 at L20 printed only, though the Meadows are tuned (S86 or S91 assert them)
+			T.it("meadows: T-SK3 and T-SK6 at L20 (printed, S86)", function()
+				local skillRows = (require :: any)("./SkillModel").targetsMeadows()
+				printReport("region meadows T-SK (S85)", skillRows, 8)
+				T.expect(#skillRows > 0).toBe(true)
+			end)
+		end
 	end
 end)
 
@@ -726,6 +740,266 @@ T.describe("Balance 20-100: items, loot, defence (S84)", function()
 				local mean, sd = stats(list)
 				if not near(mean, expected[stat], sd, n) then
 					error(`{defId} {stat}: mean {mean}, expectedBonuses {expected[stat]}`, 0)
+				end
+			end
+		end
+	end)
+end)
+
+-- Skill model (S85) ---------------------------------------------------------------------------------------------
+-- tests/SkillModel.luau: the control against FightSim.dps, the server rules it mirrors (ticks, restack, meteor storm),
+-- the builds through Paths.canBuy, the rotation read from the data, costs / normalisation / DEX rating from the game's
+-- functions and the shape of the T-SK numbers. The T-SK grid itself is a report (docs/BALANS.md), no fixture (S86
+-- changes it on purpose).
+
+local LevelCurves = require("../src/shared/Logic/LevelCurves")
+local Paths = require("../src/shared/Logic/Paths")
+local SkillData = require("../src/shared/Data/Skills")
+local SkillModel = require("./SkillModel")
+local Skills = require("../src/shared/Logic/Skills")
+local StatCalc = require("../src/shared/Logic/StatCalc")
+local Stats = require("../src/shared/Data/Stats")
+local Traits = require("../src/shared/Logic/Traits")
+
+local function finite(v: number): boolean
+	return v == v and v ~= math.huge and v ~= -math.huge
+end
+
+-- A copy of a build with another key, rotation or weapon (the model caches by key).
+local function variant(build: SkillModel.Build, key: string, changes: { [string]: any }): SkillModel.Build
+	local copy: any = table.clone(build)
+	copy.key = key
+	for k, v in changes do
+		copy[k] = v
+	end
+	return copy
+end
+
+T.describe("Skill model (S85)", function()
+	T.it("control: without skills the model gives FightSim.dps within 1 % (4 classes x 20 / 45 / 70 / 100)", function()
+		local agile: any = nil
+		for _, entry in B.defenceKinds() do
+			if entry.defence == "agile" then
+				agile = entry.kind
+				break
+			end
+		end
+		assert(agile, "no agile family kind")
+		for _, classId in B.CLASSES do
+			for _, L in SkillModel.LEVELS do
+				local base = SkillModel.builds(classId)[1]
+				local players = {
+					{ "base", SkillModel.player(base, L, if classId == "Mage" then { element = "fire" } else nil) },
+					{ "convention", SkillModel.wrap(B.player(classId, L)) },
+				}
+				for _, entry in players do
+					local sp = entry[2]
+					for _, kind in { B.GENERIC, agile } do
+						local m = B.monster(kind, L)
+						local model = SkillModel.fight(sp, { skills = false, control = true, targets = { m } }).dps
+						local expected = FightSim.dps(sp.p, m)
+						if math.abs(model / expected - 1) > 0.01 then
+							error(`{classId} {L} {entry[1]} {kind.family}: model {model}, FightSim.dps {expected}`, 0)
+						end
+					end
+				end
+			end
+		end
+	end)
+
+	T.it("ticks: a 4 s bleed gives Traits.ticks(4) ticks; a refresh restacks without the old ticks", function()
+		local ticks = SkillModel.timeline({ { t = 0, duration = 4, tick = 10 } }, 10)
+		T.expect(#ticks).toBe(Traits.ticks(4))
+		for _, tick in ticks do
+			T.expect(tick[2]).toBe(10)
+		end
+		-- a 1 s effect: the server removes it before its first tick (Traits.ticks says 1, the timeline 0)
+		T.expect(#SkillModel.timeline({ { t = 0, duration = 1, tick = 10 } }, 5)).toBe(0)
+		-- bleedStacks 3, a second bleed after 2 s: 2 stacks, ends at 6, one tick a second (no old schedule left)
+		local refreshed, left = SkillModel.timeline({
+			{ t = 0, duration = 4, tick = 10, maxStacks = 3 },
+			{ t = 2, duration = 4, tick = 10, maxStacks = 3 },
+		}, 10)
+		local times, total = {}, 0
+		for _, tick in refreshed do
+			table.insert(times, tick[1])
+			total += tick[2]
+		end
+		T.expect(#refreshed).toBe(5) -- 1, 2 (one stack), 3, 4, 5 (two stacks); expired at 6
+		T.expect(math.abs(total - (2 * 10 + 3 * 20)) < 1e-6).toBe(true)
+		for i = 2, #times do
+			T.expect(math.abs(times[i] - times[i - 1] - 1) < 1e-6).toBe(true)
+		end
+		T.expect(next(left)).toBe(nil)
+	end)
+
+	T.it("meteor storm: share of impacts from Offense.circleTarget's geometry", function()
+		local storm = SkillData.get("meteorStorm") :: any
+		local r = storm.radius or 8
+		local ri = math.max(4, r / 3)
+		local expected = math.min(1, (ri + 1.5) / (r - ri))
+		T.expect(math.abs(SkillModel.stormShare(storm) - expected) < 1e-9).toBe(true)
+		T.expect(expected < 1).toBe(true)
+		T.expect(SkillModel.stormShare(SkillData.get("fireball") :: any)).toBe(1)
+	end)
+
+	T.it(
+		"builds: reference ranks through Paths.canBuy, at most pointsAt(100); main path from 20; base rows only",
+		function()
+			for _, classId in B.CLASSES do
+				for _, build in SkillModel.builds(classId) do
+					local at100 = SkillModel.character(build, 100)
+					if at100.spent > Paths.pointsAt(100) or at100.rankChecks ~= at100.spent then
+						error(`{classId} {build.key}: spent {at100.spent}, canBuy {at100.rankChecks}`, 0)
+					end
+					T.expect(SkillModel.character(build, 19).character.path.main).toBe(nil)
+					local at20 = SkillModel.character(build, 20)
+					if at20.spent ~= Paths.pointsAt(20) and #at20.unbought == 0 then
+						error(`{classId} {build.key}: {at20.spent} of {Paths.pointsAt(20)} at 20 without a reason`, 0)
+					end
+					if build.base then
+						T.expect(at20.character.path.main).toBe(nil)
+						local rows = SkillModel.BASE[classId].rows
+						for nodeId in at100.character.path.nodes do
+							local _, _, row = Paths.findNode(nodeId)
+							if (row or 99) > rows then
+								error(`{classId} base buys {nodeId} in row {row}`, 0)
+							end
+						end
+					else
+						T.expect(at20.character.path.main).toBe(build.pathId)
+						T.expect(at100.spent).toBe(Paths.pointsAt(100))
+					end
+				end
+			end
+		end
+	)
+
+	T.it("rotation from the data: order, stateless conditions skipped, minEnemies on 3 dummies", function()
+		local base = SkillModel.builds("Warrior")[1]
+		local a = variant(base, "test.order.a", { rotation = { { skill = "mightyStrike" }, { skill = "bladeWhirl" } } })
+		local b = variant(base, "test.order.b", { rotation = { { skill = "bladeWhirl" }, { skill = "mightyStrike" } } })
+		local one = { B.monster(B.GENERIC, 45) }
+		local ra = SkillModel.fight(SkillModel.player(a, 45), { targets = one, unlimited = true })
+		local rb = SkillModel.fight(SkillModel.player(b, 45), { targets = one, unlimited = true })
+		T.expect(ra.firstCasts[1]).toBe("mightyStrike")
+		T.expect(rb.firstCasts[1]).toBe("bladeWhirl")
+		local fury = variant(base, "test.fury", { rotation = { { skill = "mightyStrike", minFury = 5 } } })
+		local rf = SkillModel.fight(SkillModel.player(fury, 45), { targets = one, unlimited = true })
+		T.expect(rf.casts.mightyStrike).toBe(nil)
+		T.expect(rf.skipped.mightyStrike ~= nil and string.find(rf.skipped.mightyStrike.reason, "minFury") ~= nil)
+			.toBe(true)
+		local area = variant(base, "test.area", { rotation = { { skill = "bladeWhirl", minEnemies = 2 } } })
+		local sp = SkillModel.player(area, 45)
+		T.expect(SkillModel.fight(sp, { targets = one, unlimited = true }).casts.bladeWhirl).toBe(nil)
+		local three = { B.monster(B.GENERIC, 45), B.monster(B.GENERIC, 45), B.monster(B.GENERIC, 45) }
+		T.expect((SkillModel.fight(sp, { targets = three, unlimited = true }).casts.bladeWhirl or 0) > 0).toBe(true)
+	end)
+
+	T.it("resources and formulas: Skills.cost, flat energy / Cleric mana, weapon normalisation, DEX rating", function()
+		-- Mage mana per cast = Skills.cost (the manaCost curve), Cleric and energy flat
+		for _, spec in { { "Mage", "firebolt", 70 }, { "Cleric", "holyStrike", 70 }, { "Warrior", "mightyStrike", 70 } } do
+			local classId, skillId, L = spec[1], spec[2], spec[3]
+			local base = SkillModel.builds(classId)[1]
+			local only = variant(base, `test.cost.{skillId}`, { rotation = { { skill = skillId } } })
+			local sp = SkillModel.player(only, L, if classId == "Mage" then { element = "fire" } else nil)
+			local r = SkillModel.fight(sp, { targets = { B.monster(B.GENERIC, L) }, unlimited = true })
+			local rank = Paths.skillRank(sp.character, skillId)
+			local def = Paths.effectiveFor(sp.character, skillId, sp.weapons, rank)
+			local cost = Skills.cost(def, rank, L, classId, {
+				costReduce = sp.p.values.costReduce or 0,
+				hooks = sp.pathHooks,
+				charges = 0,
+			})
+			local casts = r.casts[skillId] or 0
+			T.expect(casts > 0).toBe(true)
+			T.expect(math.abs(r.spent / casts - cost) < 1e-6).toBe(true)
+			local flat = Skills.scaled(def, def.cost, rank)
+			if classId == "Mage" then
+				T.expect(math.abs(cost / flat - LevelCurves.at("manaCost.Mage", L)) < 1e-6).toBe(true)
+			else
+				T.expect(math.abs(cost - flat) < 1e-6).toBe(true)
+			end
+		end
+		-- the skill attack of the same Hunter with a heavy crossbow and a long bow (S54 case) within 1 %
+		local hunter = SkillModel.builds("Hunter")[1]
+		local heavy = variant(hunter, "test.heavycrossbow", { weapon = { main = "heavycrossbow", offhand = "quiver" } })
+		local long = variant(hunter, "test.longbow", { weapon = { main = "longbow", offhand = "quiver" } })
+		for _, L in SkillModel.LEVELS do
+			local a, b = SkillModel.player(heavy, L), SkillModel.player(long, L)
+			local attackA = a.p.values.physAtk * a.speedMul
+			local attackB = b.p.values.physAtk * b.speedMul
+			if math.abs(attackA / attackB - 1) > 0.01 then
+				error(`Hunter {L}: heavy crossbow {attackA}, long bow {attackB}`, 0)
+			end
+		end
+		-- the Hunter's crit at 100 is StatCalc's with the DEX rating (the model adds nothing)
+		local sp = SkillModel.player(hunter, 100)
+		local bare = StatCalc.compute({ level = 100, stats = sp.stats })
+		local F = Stats.Formula
+		local rated = F.critBase + F.critPerDex * bare.primary.dex * StatCalc.dexFactor(100)
+		T.expect(math.abs(bare.values.critChance - rated) < 1e-6).toBe(true)
+		T.expect(StatCalc.dexFactor(100) < 1).toBe(true)
+		local flat: { [string]: number }, pct: { [string]: number } = {}, {}
+		for _, item in sp.items do
+			local itemStats = ItemRoll.itemStats(item)
+			for id, v in itemStats.flat do
+				flat[id] = (flat[id] or 0) + v
+			end
+			for id, v in itemStats.pct do
+				pct[id] = (pct[id] or 0) + v
+			end
+		end
+		local weapon = sp.p.weaponSpeed and ItemRoll.itemStats(sp.items[1]).weapon
+		local full = StatCalc.compute({
+			level = 100,
+			stats = sp.stats,
+			sources = {
+				{ key = "gear", flat = flat, pct = pct },
+				{ key = "passives", flat = sp.passives.flat, pct = sp.passives.pct },
+			},
+			weapon = if weapon
+				then { dmg = weapon.dmg, mdmg = weapon.mdmg, speed = weapon.speed, ranged = weapon.ranged }
+				else nil,
+		})
+		T.expect(math.abs(full.values.critChance - sp.p.values.critChance) < 1e-9).toBe(true)
+	end)
+
+	T.it("player: the element of opts.gear stays when opts.element is not given", function()
+		local mage = SkillModel.builds("Mage")[1]
+		T.expect(SkillModel.player(mage, 45, { gear = { element = "ice" } :: any }).element).toBe("ice")
+		T.expect(SkillModel.player(mage, 45, { element = "fire", gear = { element = "ice" } :: any }).element)
+			.toBe("fire")
+	end)
+
+	T.it("compatibility: playerFromItems without extra unchanged; T-SK numbers at L45 finite", function()
+		for _, classId in B.CLASSES do
+			local items = B.gear(classId, 45)
+			local plain = B.playerFromItems(classId, 45, items)
+			local empty = B.playerFromItems(classId, 45, items, nil, {})
+			local same = B.playerFromItems(classId, 45, items, nil, { stats = B.statsFor(classId, 45) })
+			for id, v in plain.values do
+				if empty.values[id] ~= v or same.values[id] ~= v then
+					error(`{classId} {id}: {v} / {empty.values[id]} / {same.values[id]}`, 0)
+				end
+			end
+			for _, build in SkillModel.builds(classId) do
+				local m = SkillModel.metrics(build, 45)
+				for _, v in { m.basic, m.onCooldown, m.burst8, m.sustained60, m.aoe3burst, m.tsk1, m.tsk2, m.tsk3 } do
+					if not finite(v) or v <= 0 then
+						error(`{classId} {build.key}: not finite`, 0)
+					end
+				end
+				if classId == "Mage" then
+					T.expect(finite(m.tsk4) and m.tsk4 > 0).toBe(true)
+				end
+				if classId == "Cleric" then
+					T.expect(finite(SkillModel.oneHeal(build, 45))).toBe(true)
+					T.expect(finite(SkillModel.oneHeal(build, 45, SkillModel.defenderTank(45)))).toBe(true)
+					T.expect(finite(SkillModel.healerVsBoss(build, "morvane").tsk6)).toBe(true)
+				end
+				for _, text in m.unmodelled do
+					T.expect(type(text)).toBe("string")
 				end
 			end
 		end

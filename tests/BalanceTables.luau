@@ -7,6 +7,7 @@
 --   tablesBand(lo, hi)     the S83 world model tables of a band 20-45 / 45-70 / 70-100 (levels lo, lo + 5, ..., hi)
 --   tablesItems()          S84: items, upgrades and materials, loot and luck, monster defence 20-100 (bands
 --                          "S84-items", "S84-upgrades", "S84-loot", "S84-defence"; tests/fixtures/balance_items.json)
+--   tablesSkills()         S85: T-SK1..6 of the class bases and reference builds (band "S85-skills"; tests/SkillModel)
 --   values(tables, fixtureOnly?)  flat map "title|label|column" -> number (NaN cells skipped: JSON stores them as
 --                          null); fixtureOnly skips tables and rows marked fixture = false
 --
@@ -1121,7 +1122,8 @@ function BalanceTables.tablesBand(lo: number, hi: number): { Table }
 	return tb.tables
 end
 
--- Every table of the report 1-100 (1-20, the Meadows' region tables, the three bands, the S84 item tables).
+-- Every table of the report 1-100 (1-20, the Meadows' region tables, the three bands, the S84 item tables, the S85
+-- skill tables).
 function BalanceTables.tablesAll(): { Table }
 	local out = BalanceTables.tables1_20()
 	for _, t in BalanceTables.regionTables("meadows", "1-20") do
@@ -1137,7 +1139,329 @@ function BalanceTables.tablesAll(): { Table }
 	for _, t in BalanceTables.tablesItems() do
 		table.insert(out, t)
 	end
+	for _, t in BalanceTables.tablesSkills() do
+		table.insert(out, t)
+	end
 	return out
+end
+
+-- Skills on the reference builds (S85) ----------------------------------------------------------------------------
+
+local SkillModel = require("./SkillModel")
+
+-- S85 (H2, H3): reference numbers the model is compared with (diagnosis 3f935c1 = balance plan D1, ROZWOJ 2.5 / 9.6 /
+-- 11.6 / 12.7) and the cause of a difference above 10 % in one word (docs/SESJE.md S85 explains each).
+BalanceTables.SKILL_REFERENCES = {
+	d1 = {
+		tsk1 = { Warrior = 1.90, Hunter = 2.12, Mage = 2.37, Cleric = 1.83 },
+		tsk2 = { Warrior = 2.31, Hunter = 2.58, Mage = 2.62, Cleric = 1.96 },
+		tsk3 = { Warrior = 1.54, Hunter = 1.29, Mage = 1.21, Cleric = 1.48 },
+		tsk4 = 2.8,
+		tsk5 = 0.28,
+		tsk6 = 1.11,
+	},
+	rozwoj25 = { Warrior = 1.84, Hunter = 1.97, Mage = 2.22, Cleric = 1.74 },
+	healer96 = { [20] = 0.21, [45] = 0.30, [70] = 0.33, [100] = 0.38 },
+	fortune96 = { [20] = 0.20, [45] = 0.26, [70] = 0.28, [100] = 0.30 },
+	hunter116 = { [20] = 1.52, [45] = 1.40, [70] = 1.40, [100] = 1.30 },
+	mageExp127 = { [45] = 1.28, [70] = 1.13, [100] = 1.05 },
+	mageBoss127 = { [45] = 1.38, [70] = 1.27, [100] = 1.18 },
+} :: any
+BalanceTables.SKILL_CAUSES = {
+	["d1.tsk1.Warrior"] = "węzły",
+	["d1.tsk2.Warrior"] = "węzły",
+	["d1.tsk2.Hunter"] = "węzły",
+	["d1.tsk3.Hunter"] = "węzły",
+	["d1.tsk1.Mage"] = "rangi",
+	["d1.tsk2.Mage"] = "rangi",
+	["d1.tsk3.Mage"] = "rangi",
+	["d1.tsk1.Cleric"] = "normalizacja",
+	["d1.tsk2.Cleric"] = "normalizacja",
+	["d1.tsk3.Cleric"] = "rotacja",
+	["d1.tsk4"] = "rotacja",
+	["d1.tsk5"] = "wzór",
+	["d1.tsk6"] = "rotacja",
+	["rozwoj25.Warrior"] = "węzły",
+	["rozwoj25.Hunter"] = "węzły",
+	["rozwoj25.Mage"] = "rangi",
+	["rozwoj25.Cleric"] = "normalizacja",
+	["healer96"] = "węzły",
+	["fortune96"] = "węzły",
+	["hunter116"] = "węzły",
+	["mageExp127"] = "żywioły",
+	["mageBoss127"] = "żywioły",
+} :: { [string]: string }
+
+local SKILL_NOTE =
+	"Liczby wstępne do mechanik S86 (Furia, Ładunki, pułapki, typy drużynowe, cechy-haki w `unmodelled`)."
+
+local function weaponLabel(build: SkillModel.Build): string
+	return if build.weapon.offhand then `{build.weapon.main} + {build.weapon.offhand}` else build.weapon.main
+end
+
+-- The S85 tables (band "S85-skills"): T-SK1..3, resources and T-SK4, unmodelled counts, damage shares, T-SK5 / T-SK6
+-- and the comparisons, in report order. Every number comes from tests/SkillModel.luau.
+function BalanceTables.tablesSkills(): { Table }
+	local started = os.clock()
+	local tb = BalanceTables.builder("S85-skills")
+	local section, row = tb.section, tb.row
+	local LEVELS = SkillModel.LEVELS
+	for _, c in B.CLASSES do
+		section(
+			`T-SK1–3: {CLASS_PL[c]}`,
+			{
+				"build · broń · poziom",
+				"atak podst.",
+				"na odnowieniu",
+				"wybuch 8 s",
+				"60 s",
+				"obszar 3 · 8 s",
+				"obszar 3 · 60 s",
+				"T-SK1",
+				"T-SK1 / L20",
+				"T-SK2",
+				"T-SK2 / L20",
+				"T-SK3",
+				"areaCap",
+			},
+			"DPS na manekinach poziomu L (`SkillModel.metrics`, ekwipunek konwencji z bronią buildu; Mag: średnia ogień / lód / błyskawica); cele T-SK1 / L20 ≤ 1,15 i T-SK2 / L20 ≤ 1,25 asertują S89–S94, T-SK3 ≤ areaCap S86 / S90 / S92–S94. "
+				.. SKILL_NOTE
+		)
+		for _, build in SkillModel.builds(c) do
+			for _, L in LEVELS do
+				local m = SkillModel.metrics(build, L)
+				row(`{build.key} · {weaponLabel(build)} · {L}`, {
+					{ m.basic },
+					{ m.onCooldown },
+					{ m.burst8 },
+					{ m.sustained60 },
+					{ m.aoe3burst },
+					{ m.aoe3sus },
+					{ m.tsk1, "2" },
+					{ m.tsk1rel, "2", nil, 1.15 },
+					{ m.tsk2, "2" },
+					{ m.tsk2rel, "2", nil, 1.25 },
+					{ m.tsk3, "2", nil, build.areaCap },
+					{ build.areaCap, "1" },
+				})
+			end
+		end
+	end
+	section(
+		"Mag: żywioły broni",
+		{ "build · poziom · żywioł", "60 s", "wybuch 8 s", "obszar 3 · 8 s", "T-SK1", "T-SK2", "T-SK3", "T-SK4" },
+		"Rozbicie średniej Maga na żywioł broni (`GearOpts.element`, `Skills.elementAllowed`, efekt adaptacyjny); raport. "
+			.. SKILL_NOTE
+	)
+	for _, build in SkillModel.builds("Mage") do
+		for _, L in LEVELS do
+			local byElement: any = SkillModel.metrics(build, L).byElement or {}
+			for _, element in SkillModel.ASSUMPTIONS.elements do
+				local m = byElement[element]
+				if m then
+					row(`{build.key} · {L} · {element}`, {
+						{ m.sustained60 },
+						{ m.burst8 },
+						{ m.aoe3burst },
+						{ m.tsk1, "2" },
+						{ m.tsk2, "2" },
+						{ m.tsk3, "2" },
+						{ m.tsk4, "2" },
+					})
+				end
+			end
+		end
+	end
+	for _, c in B.CLASSES do
+		section(
+			`Zasoby: {CLASS_PL[c]}`,
+			{
+				"build · poziom",
+				"pula",
+				"regeneracja / s",
+				"na odnowieniu / s",
+				if c == "Mage" then "T-SK4" else "zapotrzebowanie / regeneracja",
+				"60 s",
+				"60 s z miksturami",
+				"mikstury / min",
+				"punkty wydane",
+				"punkty wolne",
+			},
+			"Pula i regeneracja z `StatCalc`, koszt `Skills.cost` (mana Maga z krzywą `manaCost`, energia i Kapłan płasko), mikstury co `Potions.interval` (poza T-SK); T-SK4 Maga od 45. w 2,0–3,0 (warianty od 1,6, baza 1,1–1,4) asertują S87 (G10) i S90, u innych klas stosunek to raport. "
+				.. SKILL_NOTE
+		)
+		for _, build in SkillModel.builds(c) do
+			for _, L in LEVELS do
+				local m = SkillModel.metrics(build, L)
+				local band = if c == "Mage" and L >= 45 then SkillModel.TSK4_BANDS[build.key] or { 2.0, 3.0 } else nil
+				row(`{build.key} · {L}`, {
+					{ m.pool },
+					{ m.regen, "1" },
+					{ m.demand, "1" },
+					{ m.tsk4, "2", if band then band[1] else nil, if band then band[2] else nil },
+					{ m.sustained60 },
+					{ m.sustained60p },
+					{ m.potionsPerMinute, "1" },
+					{ m.spent },
+					{ m.free },
+				})
+			end
+		end
+	end
+	section(
+		"Brak do S86 (liczby)",
+		{ "klasa · build · poziom", "pozycje unmodelled", "pominięte rzuty (60 s)", "aktywne poza rotacją" },
+		"Ile mechanik model jeszcze nie liczy (lista w sekcji „Brak do S86”); pominięte rzuty: wpisy rotacji z typem, warunkiem lub mechaniką S86, liczone raz na odnowienie. "
+			.. SKILL_NOTE
+	)
+	for _, c in B.CLASSES do
+		for _, build in SkillModel.builds(c) do
+			for _, L in { 45, 100 } do
+				local m = SkillModel.metrics(build, L)
+				local skipped = 0
+				for _, s in m.skipped do
+					skipped += s.count
+				end
+				row(`{c} · {build.key} · {L}`, { { #m.unmodelled }, { skipped }, { #m.offRotation } })
+			end
+		end
+	end
+	section(
+		"Udziały w obrażeniach 60 s",
+		{ "build · poziom · umiejętność", "udział" },
+		"Pięć największych udziałów umiejętności (i ataku podstawowego, `basic`) w obrażeniach ciągłej walki 60 s na 1 manekinie, wiersz na umiejętność; raport dla S89–S90. "
+			.. SKILL_NOTE
+	)
+	for _, c in B.CLASSES do
+		for _, build in SkillModel.builds(c) do
+			for _, L in { 45, 70, 100 } do
+				local list: { { any } } = {}
+				for id, v in SkillModel.metrics(build, L).shares do
+					table.insert(list, { id, v })
+				end
+				table.sort(list, function(a: { any }, b: { any }): boolean
+					if a[2] ~= b[2] then
+						return a[2] > b[2]
+					end
+					return a[1] < b[1]
+				end)
+				-- one row per skill: the snapshot key follows the skill, not its rank
+				for i = 1, math.min(5, #list) do
+					row(`{c} {build.key} · {L} · {list[i][1]}`, { { list[i][2], "%" } })
+				end
+			end
+		end
+	end
+	local band5 = SkillModel.TSK5_BAND
+	section(
+		"T-SK5: jedno Leczenie / maks. HP tanka",
+		{ "build · poziom", "tank Wojownik (konwencja)", "tank Strażnik „Obrońca”" },
+		"`Skills.healAmount` (część od maks. HP tanka i od ataku magicznego na krzywej `heal`) × `healPower`, premie leczenia innego gracza i oczekiwany krytyk leczenia; cel 25–35% asertują S87 (G10) i S89. "
+			.. SKILL_NOTE
+	)
+	for _, build in SkillModel.builds("Cleric") do
+		for _, L in LEVELS do
+			row(`{build.key} · {L}`, {
+				{ SkillModel.oneHeal(build, L), "%", band5[1], band5[2] },
+				{ SkillModel.oneHeal(build, L, SkillModel.defenderTank(L)), "%", band5[1], band5[2] },
+			})
+		end
+	end
+	section(
+		"T-SK6: leczenie na tanku / obrażenia tanka na bossie",
+		{
+			"build · boss (poziom drużyny)",
+			"drużyna domyślna",
+			"drużyna S92",
+			"leczenie / s (domyślna)",
+			"obrażenia tanka / s",
+			"czas walki s",
+			"mana: zapotrzebowanie / regeneracja",
+		},
+		"Rotacja buildu Kapłana z ograniczeniem many przez czas `Balance.bossFight`, leczenie tylko na tanku (bez drugiego celu, innych członków i nadmiaru w tarczę) / `tankDps`; drużyna domyślna W, M, Ł, K, W, drużyna S92: Obrońca, Kapłan buildu, Furia, Królobójca; cel 1,0–2,0 asertują S86 (Grimrok, Łąki) i S92–S94. "
+			.. SKILL_NOTE
+	)
+	for _, build in SkillModel.builds("Cleric") do
+		for _, L in LEVELS do
+			local bossId = SkillModel.BOSS_AT[L]
+			local h = SkillModel.healerVsBoss(build, bossId)
+			local h2 = SkillModel.healerVsBoss(build, bossId, { team = "s92" })
+			row(`{build.key} · {bossId} ({h.level})`, {
+				{ h.tsk6, "2", 1.0, 2.0 },
+				{ h2.tsk6, "2", 1.0, 2.0 },
+				{ h.hps },
+				{ h.tankDps },
+				{ h.seconds, "s" },
+				{ h.mana, "2" },
+			})
+		end
+	end
+	-- Comparisons (H2, H3)
+	section(
+		"Porównanie z diagnozą i ROZWOJ",
+		{ "miara (przyczyna różnicy)", "model", "odniesienie", "różnica" },
+		"L20: baza z bronią `Balance.LOADOUT` wobec diagnozy `3f935c1` (plan balansu D1), baza z bronią ROZWOJ wobec ROZWOJ 2.5; P2: ROZWOJ 9.6, 11.6, 12.7. Różnica ponad 10% pogrubiona; przyczyna w etykiecie jest stała (klucz migawki), „–” = bez opisanej przyczyny. Model nie jest strojony pod te liczby (SESJE S85). "
+			.. SKILL_NOTE
+	)
+	local refs = BalanceTables.SKILL_REFERENCES
+	local causes = BalanceTables.SKILL_CAUSES
+	local function compare(id: string, label: string, model: number, reference: number)
+		local diff = model / reference - 1
+		-- a fixed label (snapshot key); the 10% verdict is the cell's band
+		row(`{label} ({causes[id] or "–"})`, { { model, "2" }, { reference, "2" }, { diff, "%", -0.1, 0.1 } })
+	end
+	for _, c in B.CLASSES do
+		local loadout = SkillModel.build("base.loadout", c) or SkillModel.build("base", c)
+		local m = SkillModel.metrics(loadout :: SkillModel.Build, 20)
+		compare(`d1.tsk1.{c}`, `D1 T-SK1 {CLASS_PL[c]} L20`, m.tsk1, refs.d1.tsk1[c])
+		compare(`d1.tsk2.{c}`, `D1 T-SK2 {CLASS_PL[c]} L20`, m.tsk2, refs.d1.tsk2[c])
+		compare(`d1.tsk3.{c}`, `D1 T-SK3 {CLASS_PL[c]} L20`, m.tsk3, refs.d1.tsk3[c])
+	end
+	local mageLoadout = SkillModel.build("base.loadout", "Mage") :: SkillModel.Build
+	compare("d1.tsk4", "D1 T-SK4 Mag L20", SkillModel.metrics(mageLoadout, 20).tsk4, refs.d1.tsk4)
+	local clericBase = SkillModel.build("base", "Cleric") :: SkillModel.Build
+	compare("d1.tsk5", "D1 T-SK5 Kapłan L20 (tank Wojownik)", SkillModel.oneHeal(clericBase, 20), refs.d1.tsk5)
+	compare("d1.tsk6", "D1 T-SK6 Kapłan Grimrok", SkillModel.healerVsBoss(clericBase, "grimrok").tsk6, refs.d1.tsk6)
+	for _, c in B.CLASSES do
+		local base = SkillModel.build("base", c) :: SkillModel.Build
+		compare(
+			`rozwoj25.{c}`,
+			`ROZWOJ 2.5 T-SK1 {CLASS_PL[c]} L20`,
+			SkillModel.metrics(base, 20).tsk1,
+			refs.rozwoj25[c]
+		)
+	end
+	local healer = SkillModel.build("healer.dungeon", "Cleric") :: SkillModel.Build
+	local fortune = SkillModel.build("fortune.plunder", "Cleric") :: SkillModel.Build
+	local hunter = SkillModel.build("base", "Hunter") :: SkillModel.Build
+	local mage = SkillModel.build("base", "Mage") :: SkillModel.Build
+	for _, L in LEVELS do
+		compare(
+			"healer96",
+			`ROZWOJ 9.6 T-SK5 Uzdrowiciel „Lochowy” L{L}`,
+			SkillModel.oneHeal(healer, L),
+			refs.healer96[L]
+		)
+		compare(
+			"fortune96",
+			`ROZWOJ 9.6 T-SK5 Fortuna „Łupieżczy” L{L}`,
+			SkillModel.oneHeal(fortune, L),
+			refs.fortune96[L]
+		)
+		compare(
+			"hunter116",
+			`ROZWOJ 11.6 obszar / jeden cel baza Łowcy L{L}`,
+			SkillModel.metrics(hunter, L).tsk3,
+			refs.hunter116[L]
+		)
+		if L >= 45 then
+			local t4 = SkillModel.metrics(mage, L).tsk4
+			compare("mageExp127", `ROZWOJ 12.7 T-SK4 baza Maga (exp) L{L}`, t4, refs.mageExp127[L])
+			compare("mageBoss127", `ROZWOJ 12.7 T-SK4 baza Maga (boss) L{L}`, t4, refs.mageBoss127[L])
+		end
+	end
+	BalanceTables.skillSeconds = os.clock() - started
+	return tb.tables
 end
 
 -- 1-20 fixture (S83) --------------------------------------------------------------------------------------------

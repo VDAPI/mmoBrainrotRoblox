@@ -1,6 +1,7 @@
 --!strict
 -- Balance report 1-100 (S32, S83): `lune run tools/balance_report.luau` writes docs/BALANS.md from the model in
--- tests/Balance.luau and the tables in tests/BalanceTables.luau (the game's own modules).
+-- tests/Balance.luau and the tables in tests/BalanceTables.luau (the game's own modules); S85: the skill model
+-- tests/SkillModel.luau (section "Umiejętności: T-SK na buildach wzorcowych").
 --   snapshot [S<n>]  stores tools/balance_before.json = { meta, tables, data }: every report number ("before" of the
 --                    next report) and the ledger dump (Balance.dataDump + rankDump). Without S<n>: the last
 --                    "### S<n>" of docs/SESJE.md + 1. Balance sessions S83-S94 start with it.
@@ -25,6 +26,7 @@ local LevelCurves = require("../src/shared/Logic/LevelCurves")
 local MonsterStats = require("../src/shared/Logic/MonsterStats")
 local Progression = require("../src/shared/Data/Progression")
 local Reasons = require("./balance_reasons")
+local SkillModel = require("../tests/SkillModel")
 local SkillData = require("../src/shared/Data/Skills")
 local Skills = require("../src/shared/Logic/Skills")
 
@@ -180,7 +182,8 @@ local function renderTable(t: BalanceTables.Table, level: string)
 			local now = fmtValue(c.value, c.fmt)
 			local old = beforeTables[c.key]
 			local text = now
-			if old ~= nil and fmtValue(old, c.fmt) ~= now then
+			-- the snapshot's JSON round trip moves a float in its last digit (11.024999999999999 -> 11.025)
+			if old ~= nil and not B.sameNumber(old, c.value) and fmtValue(old, c.fmt) ~= now then
 				text = `{fmtValue(old, c.fmt)} → {now}`
 			end
 			-- S84: a value outside the cell's band in bold
@@ -496,6 +499,69 @@ do
 			tableOut({ "cel", "wartość", "próg", "wynik", "kto asertuje" }, targetRows(out, "S87"))
 		end
 	end
+end
+
+-- Skills on the reference builds (S85) ----------------------------------------------------------------------------
+
+do
+	add("## Umiejętności: T-SK na buildach wzorcowych (S85)")
+	add()
+	add(
+		"Silnik `tests/SkillModel.luau` rzuca prawdziwe umiejętności bazy każdej klasy (rzędy 1 wszystkich ścieżek, Mag 1–2, broń z pomiarów ROZWOJ i `base.loadout` z bronią `Balance.LOADOUT`) i każdego buildu `PathDef.reference` (klucz `<pathId>.<id>`) na poziomach 20 / 45 / 70 / 100: rangi z poziomu, przełomy A/B, węzły, rotacja z danych, koszt `Skills.cost`, normalizacja broni, mikstury. Bez umiejętności daje `FightSim.dps` (kontrola w `balance.spec`). Liczby są wstępne do mechanik S86; to raport, nic tu nie jest asertowane (model główny celów G zostaje ×1,2)."
+	)
+	add()
+	for _, t in byBand["S85-skills"] or {} do
+		renderTable(t, "###")
+	end
+	add("### Brak do S86 (na build, poziom 100)")
+	add()
+	add(
+		"Mechaniki z `unmodelled` (typy, zachowania, efekty, haki i cechy, których model jeszcze nie liczy), wpisy rotacji pominięte z powodem (liczba rzutów w 60 s na 1 manekinie; wpis pominięty tylko w walce obszarowej: na 3 manekinach) i aktywne umiejętności buildu spoza rotacji."
+	)
+	add()
+	for _, c in B.CLASSES do
+		for _, build in SkillModel.builds(c) do
+			local m = SkillModel.metrics(build, 100)
+			local skipped = {}
+			for id, s in m.skipped do
+				table.insert(skipped, `{id} ({s.reason}) ×{s.count}`)
+			end
+			table.sort(skipped)
+			local parts = {
+				if #m.unmodelled > 0 then table.concat(m.unmodelled, ", ") else "–",
+				`pominięte: {if #skipped > 0 then table.concat(skipped, ", ") else "–"}`,
+				`poza rotacją: {if #m.offRotation > 0 then table.concat(m.offRotation, ", ") else "–"}`,
+			}
+			add(`- {BalanceTables.CLASS_PL[c]} \`{build.key}\`: {table.concat(parts, "; ")}.`)
+		end
+	end
+	add()
+	local g10 = SkillModel.targetsG10()
+	local ok, all = countIn(g10)
+	add("### Cele G10 (T-SK4, T-SK5; raport do S87)")
+	add()
+	add(
+		`{ok}/{all} w paśmie (T-SK4 Maga od 45., T-SK5 Kapłana na tanku Wojowniku konwencji i Strażniku „Obrońcy”, co 5 poziomów; blok globalny \`balance.spec\` drukuje je razem z G). Poza pasmem:`
+	)
+	add()
+	local out = {}
+	for _, row in g10 do
+		if not B.inBand(row) then
+			table.insert(out, row)
+		end
+	end
+	tableOut({ "cel", "wartość", "próg", "wynik", "kto asertuje" }, targetRows(out, "S87"))
+	local meadows = SkillModel.targetsMeadows()
+	local mOk, mAll = countIn(meadows)
+	add("### Łąki na L20: T-SK3 i T-SK6 (tylko drukowane)")
+	add()
+	add(
+		`{mOk}/{mAll} w paśmie; blok regionów \`balance.spec\` drukuje je mimo \`TUNED.meadows\` (asercje włącza S86 po mechanikach albo S91).`
+	)
+	add()
+	tableOut({ "cel", "wartość", "próg", "wynik", "kto asertuje" }, targetRows(meadows, "S86"))
+	add(`Tabele S85 liczą się {fmtValue(BalanceTables.skillSeconds or 0, "1")} s (siatka, leczenie, porównania).`)
+	add()
 end
 
 -- Formulas ------------------------------------------------------------------------------------------------------

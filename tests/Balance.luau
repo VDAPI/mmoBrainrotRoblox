@@ -358,11 +358,20 @@ export type Player = {
 -- `traitScale` (S84): strength of each trait; the grown part of a trait (ItemRoll.trait value in flat[stat] or
 -- hooks[hook]) shrinks by (1 - scale) x value before StatCalc, fixed hooks (Swordplay's riposte, Parry's block) go
 -- only at 0. nil or 1 leaves the item stats untouched (bit for bit).
+-- S85 (B5): `extra` (tests/SkillModel) gives the allocated stats instead of Balance.statsFor, more StatCalc sources
+-- after the gear (path passives, effects) and more hooks (path passives); without it nothing changes (bit for bit).
+export type PlayerExtra = {
+	stats: any?,
+	sources: { StatCalc.Source }?,
+	hooks: { [string]: number }?,
+}
+
 function Balance.playerFromItems(
 	classId: string,
 	level: number,
 	items: { any },
-	traitScale: { [string]: number }?
+	traitScale: { [string]: number }?,
+	extra: PlayerExtra?
 ): Player
 	local flat: { [string]: number } = {}
 	local pct: { [string]: number } = {}
@@ -415,10 +424,19 @@ function Balance.playerFromItems(
 		local unarmed = Stats.Formula.unarmed
 		weapon = { dmg = unarmed.dmg, mdmg = unarmed.mdmg, speed = unarmed.speed, ranged = class.basicAttack.ranged }
 	end
+	local sources: { StatCalc.Source } = { { key = "gear", flat = flat, pct = pct } }
+	if extra then
+		for _, source in extra.sources or {} do
+			table.insert(sources, source)
+		end
+		for id, v in extra.hooks or {} do
+			hooks[id] = (hooks[id] or 0) + v
+		end
+	end
 	local result = StatCalc.compute({
 		level = level,
-		stats = Balance.statsFor(classId, level),
-		sources = { { key = "gear", flat = flat, pct = pct } },
+		stats = if extra and extra.stats then extra.stats else Balance.statsFor(classId, level),
+		sources = sources,
 		weapon = { dmg = weapon.dmg, mdmg = weapon.mdmg, speed = weapon.speed, ranged = weapon.ranged },
 	})
 	return {
