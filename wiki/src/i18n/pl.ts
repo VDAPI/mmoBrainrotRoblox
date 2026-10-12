@@ -626,7 +626,7 @@ export const pl = {
   "results.few": "wyniki",
   "results.many": "wyników",
   "classes.title": "Klasy",
-  "classes.lead": "Cztery klasy gry: rola, zasób, broń, pancerz i 14 umiejętności, których rangi rosną z poziomem. Liczby prosto z danych gry.",
+  "classes.lead": "Cztery klasy gry: rola, zasób, broń, pancerz i umiejętności, których rangi rosną z poziomem. Liczby prosto z danych gry.",
   "classes.planner": "Umiejętności klasy →",
   "classes.skills": "{n} umiejętności",
   "class.resource": "Zasób",

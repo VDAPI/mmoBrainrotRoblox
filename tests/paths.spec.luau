@@ -621,6 +621,27 @@ T.describe("Paths: node values and skill changes", function()
 		local outsideMods = P.skillMods(outside, "fxSpark", { main = "staff" })
 		T.expect(outsideMods[1].values.hexGuard).toBeNear(3, 1e-9)
 	end)
+
+	T.it("a dip-scaled mul ref resolves as 1 + (x - 1) * scale, like nodeArgs", function()
+		local copy = deepCopy(Fixture.paths)
+		local hex: any = nil
+		for _, row in copy[1].rows do
+			for _, node in row.nodes do
+				if node.id == "fxStorm_hex" then
+					hex = node
+				end
+			end
+		end
+		hex.values.cd = { 0.7, 0.7 }
+		hex.modify.bp.mul = { cooldown = { ref = "cd" } }
+		local api = GamePaths.withSource(GamePaths.sourceOf(copy, Fixture.skills))
+		local nodes = fill("fxStorm", 2, fill("fxRune", 1))
+		local mods = api.skillMods(char(20, state("fxRune", nodes)), "fxSpark", { main = "staff" })
+		T.expect(mods[1].mul.cooldown).toBeNear(1 + (0.7 - 1) / 3, 1e-9)
+		T.expect(api.nodeArgs(hex, 3, 1 / 3).cd).toBe(Skills.roundArg(mods[1].mul.cooldown))
+		local inside = api.skillMods(char(20, state("fxStorm", nodes)), "fxSpark", { main = "staff" })
+		T.expect(inside[1].mul.cooldown).toBeNear(0.7, 1e-9)
+	end)
 end)
 
 T.describe("Paths: passives and active nodes", function()

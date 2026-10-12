@@ -1,6 +1,7 @@
 --!strict
 -- Slot picker for a full bar (S56, moved in S59): 2 x 5 cells with the key and the skill on it over the whole window
--- content (also over the phone sheet); the chosen slot is replaced (PutOnBar with a slot).
+-- content (also over the phone sheet); the chosen slot is replaced (PutOnBar with a slot). On touch the cancel button
+-- is MinTouch high (S59 F).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -19,7 +20,15 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 local CELL = 64
 local GAP = 8
 
-local function BarPicker(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions): Instance
+local function BarPicker(
+	scope: Scope,
+	ctx: Context.Ctx,
+	actions: Actions.Actions,
+	touch: Fusion.UsedAs<boolean>
+): Instance
+	local cancelHeight = scope:Computed(function(use): number
+		return if use(touch) then Theme.Size.MinTouch else Theme.Size.ButtonHeightSmall
+	end)
 	local cells: { Instance } = {}
 	for index = 1, SkillData.HOTBAR_SLOTS do
 		local key = if index == 10 then "0" else tostring(index)
@@ -91,7 +100,9 @@ local function BarPicker(scope: Scope, ctx: Context.Ctx, actions: Actions.Action
 			scope:New("Frame")({
 				AnchorPoint = Vector2.new(0.5, 0.5),
 				Position = UDim2.fromScale(0.5, 0.5),
-				Size = UDim2.fromOffset(gridWidth + 32, 2 * CELL + GAP + 40 + Theme.Size.ButtonHeightSmall + 48),
+				Size = scope:Computed(function(use): UDim2
+					return UDim2.fromOffset(gridWidth + 32, 2 * CELL + GAP + 40 + use(cancelHeight) + 48)
+				end),
 				BackgroundColor3 = Theme.Colors.PanelRaised,
 				[Children] = {
 					scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
@@ -123,7 +134,9 @@ local function BarPicker(scope: Scope, ctx: Context.Ctx, actions: Actions.Action
 					Button(scope, {
 						AnchorPoint = Vector2.new(0.5, 1),
 						Position = UDim2.new(0.5, 0, 1, -12),
-						Size = UDim2.fromOffset(160, Theme.Size.ButtonHeightSmall),
+						Size = scope:Computed(function(use): UDim2
+							return UDim2.fromOffset(160, use(cancelHeight))
+						end),
 						Variant = "ghost",
 						TextSize = Theme.TextSize.Small,
 						Text = Text.T(scope, "common.cancel"),

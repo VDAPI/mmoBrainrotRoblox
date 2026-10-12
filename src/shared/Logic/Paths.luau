@@ -318,7 +318,7 @@ local function resolveRefs(value: any, values: { [string]: number }, scale: numb
 	end
 	local out = {}
 	for key, inner in value do
-		out[key] = resolveRefs(inner, values, scale, key == "mul")
+		out[key] = resolveRefs(inner, values, scale, inMul or key == "mul")
 	end
 	return out
 end

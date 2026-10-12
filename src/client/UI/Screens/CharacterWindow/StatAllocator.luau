@@ -214,7 +214,9 @@ local function StatAllocator(scope: Scope, props: Props): Instance
 		end
 		busy:set(true)
 		task.spawn(function()
-			local ok, err = Net.Invoke("AllocateStats", request)
+			-- the set the points were reserved in: the server rejects them after a switch still in flight (S58 F3)
+			local slot = if State.Get({ "character", "buildSlot" }) == 2 then 2 else 1
+			local ok, err = Net.Invoke("AllocateStats", request, slot)
 			busy:set(false)
 			if ok then
 				pending:set({})

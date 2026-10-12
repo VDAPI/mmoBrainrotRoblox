@@ -628,7 +628,7 @@ export const en: Record<Key, string> = {
   "results.few": "results",
   "results.many": "results",
   "classes.title": "Classes",
-  "classes.lead": "The four classes of the game: role, resource, weapons, armor and 14 skills whose ranks grow with the level. Numbers straight from the game data.",
+  "classes.lead": "The four classes of the game: role, resource, weapons, armor and skills whose ranks grow with the level. Numbers straight from the game data.",
   "classes.planner": "Class skills →",
   "classes.skills": "{n} skills",
   "class.resource": "Resource",

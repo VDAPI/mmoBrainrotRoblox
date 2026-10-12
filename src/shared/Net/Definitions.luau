@@ -41,7 +41,7 @@ local Definitions: { [string]: Definition } = {
 	SetKeybind = { kind = "function", dir = "c2s", rate = 4, args = { "string", "string?" } }, -- (action | "*", key?), S17
 
 	-- Stats and progression
-	AllocateStats = { kind = "function", dir = "c2s", rate = 2, args = { "table" } }, -- ({ str, dex, int, vit })
+	AllocateStats = { kind = "function", dir = "c2s", rate = 2, args = { "table", "integer?" } }, -- ({ str, dex, int, vit }, buildSlot?)
 	LevelUp = { kind = "event", dir = "s2c" }, -- (player, newLevel, statPoints, pathPoints, fromLevel) to nearby players; S59 adds fromLevel
 
 	-- Combat

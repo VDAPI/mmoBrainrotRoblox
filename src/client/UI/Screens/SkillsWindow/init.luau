@@ -24,6 +24,7 @@ local Sheet = require(script.Sheet)
 local TabBar = require(script.TabBar)
 local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
+local Tooltip = require(script.Parent.Parent.Components.Tooltip)
 
 local Children = Fusion.Children
 
@@ -102,28 +103,32 @@ local function detailsPanel(scope: Scope, ctx: Context.Ctx, actions: Actions.Act
 		local out: { Instance } = {}
 		local all = use(specs)
 		for i, spec in all do
-			table.insert(
-				out,
-				Button(s, {
-					LayoutOrder = i,
-					Size = UDim2.new(1 / #all, -6, 1, 0),
-					Variant = if spec.key == "paths.node.refund" then "secondary" else "primary",
-					TextSize = Theme.TextSize.Small,
-					Text = Text.get(use, spec.key),
-					Disabled = not spec.enabled,
-					OnClick = spec.run,
-				})
-			)
+			local button = Button(s, {
+				LayoutOrder = i,
+				Size = UDim2.new(1 / #all, -6, 1, 0),
+				Variant = if spec.key == "paths.node.refund" then "secondary" else "primary",
+				TextSize = Theme.TextSize.Small,
+				Text = Text.get(use, spec.key),
+				Disabled = not spec.enabled,
+				OnClick = spec.run,
+			})
+			-- every inactive button also carries its own reason (S59 rule 6), the line above may be truncated
+			if not spec.enabled and spec.reason then
+				Tooltip.attach(s, button :: GuiObject, spec.reason)
+			end
+			table.insert(out, button)
 		end
 		return out
 	end)
+	-- the reasons of every inactive button (S59 E6), each once
 	local reason = scope:Computed(function(use): string
+		local parts: { string } = {}
 		for _, spec in use(specs) do
-			if not spec.enabled and spec.reason then
-				return spec.reason
+			if not spec.enabled and spec.reason and not table.find(parts, spec.reason) then
+				table.insert(parts, spec.reason)
 			end
 		end
-		return ""
+		return table.concat(parts, " · ")
 	end)
 	return scope:New("Frame")({
 		Name = "Details",
@@ -257,7 +262,7 @@ local function SkillsWindow(scope: Scope, props: Props): Fusion.Child
 	end)
 	return {
 		layout :: any,
-		BarPicker(scope, ctx, actions),
+		BarPicker(scope, ctx, actions, Device.Touch),
 	}
 end
 

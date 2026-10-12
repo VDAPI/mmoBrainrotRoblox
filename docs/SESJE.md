@@ -4172,3 +4172,21 @@ Poprawki z przeglądu kodu S78–S81 (bez zmian kontraktu):
 
 Pliki: `src/shared/Logic/Skills`, `src/server/{Services/SkillService,Skills/Context,Skills/Types/Offense}`,
 `src/client/{Controllers/VfxController,UI/SkillInfo}`, `tests/{paths,mage,skills}.spec`, `docs/{DECYZJE,SESJE}.md`.
+
+### Przegląd S54–S59
+
+Poprawki z przeglądu kodu S54–S59:
+- Podgląd umiejętności ścieżki w oknie Umiejętności gra ją na randze postaci (`Paths.skillRank`), nie na 1.
+- Komunikat przebudowy: ostatnie zdanie `rework.body` (PL, EN) nie mówi już „Ścieżki klas pojawią się wkrótce”.
+- Wiki: `classes.lead` bez stałej liczby „14 umiejętności” (strony klas pokazują 8 do wydania ścieżek).
+- `Paths.resolveRefs`: `{ ref }` w `mul` węzła przeskalowanego poza ścieżką główną = `1 + (x − 1) × scale`, zgodnie
+  z `nodeArgs`; test w `paths.spec` (hex z `mul.cooldown`, skala 1/3).
+- Rozdanie statystyk tuż po zmianie zestawu: `AllocateStats(request, buildSlot)`, serwer odrzuca inny zestaw
+  (`buildset.error.changed`).
+- Okno Umiejętności (PC): powody wszystkich nieaktywnych przycisków w linii nad nimi i podpowiedź na przycisku;
+  wybór slotu paska (`BarPicker`) ma parametr `touch`, przycisk Anuluj ma `MinTouch` na dotyku.
+- Wiki: `lune run tools/wikidump.luau --check` bez zmian danych.
+
+Pliki: `src/shared/{Logic/Paths,Net/Definitions,Data/Localization/{pl,en}}`, `src/server/Services/StatService`,
+`src/client/{Controllers/VfxController,UI/Screens/CharacterWindow/StatAllocator,UI/Screens/SkillsWindow/{init,BarPicker}}`,
+`tests/paths.spec`, `wiki/src/i18n/{pl,en}.ts`, `docs/{DECYZJE,SESJE}.md`.

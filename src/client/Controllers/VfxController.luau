@@ -32,6 +32,7 @@ local Config = require(ReplicatedStorage.Shared.Config)
 local EffectStack = require(ReplicatedStorage.Shared.Logic.EffectStack)
 local Library = require(script.Parent.Parent.Vfx.Library)
 local Net = require(ReplicatedStorage.Shared.Net)
+local Paths = require(ReplicatedStorage.Shared.Logic.Paths)
 local Pool = require(script.Parent.Parent.Vfx.Pool)
 local WeaponLooks = require(ReplicatedStorage.Shared.Data.WeaponLooks)
 local SkillData = require(ReplicatedStorage.Shared.Data.Skills)
@@ -787,10 +788,17 @@ function VfxController.Preview(model: Model, skillId: string)
 	local id = if type(entity) == "string" then entity else nil
 	local root = model:FindFirstChild("HumanoidRootPart") :: BasePart?
 	local front = if root then root.Position + root.CFrame.LookVector * math.min(skill.range or 10, 12) else nil
-	-- S56: rank from the character level (a locked skill previews at rank 1); always option A, no nodes (ROZWOJ 2.7)
+	-- S56: the character's rank (base from the level, path skills from their node; a locked skill previews at rank 1);
+	-- always option A, no nodes (ROZWOJ 2.7)
 	local rank = math.max(
 		1,
-		Skills.rankFor(State.Get({ "character", "class" }), State.Get({ "character", "level" }) or 1, skill)
+		Paths.skillRank({
+			class = State.Get({ "character", "class" }) or "",
+			level = State.Get({ "character", "level" }) or 1,
+			path = State.Get({ "character", "path" }),
+			hotbar = State.Get({ "character", "hotbar" }),
+			equipment = State.Get({ "character", "equipment" }),
+		}, skillId)
 	)
 	local def = Skills.effective(skill, rank, nil, nil)
 	local motion = SkillMotions.get(skillId)

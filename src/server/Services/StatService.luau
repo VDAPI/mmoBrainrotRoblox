@@ -200,11 +200,15 @@ function StatService.InvalidateThrottled(player: Player, interval: number)
 	deferred[player] = math.min(deferred[player] or math.huge, last + interval)
 end
 
--- AllocateStats({ str = 2, vit = 3 }): spends unallocated points. Validated against statPoints.
-local function allocate(player: Player, request: { [any]: any }): (boolean, string?)
+-- AllocateStats({ str = 2, vit = 3 }, buildSlot?): spends unallocated points. Validated against statPoints.
+-- buildSlot is the set the client reserved the points in: a set switch that landed first rejects it (S58 F3).
+local function allocate(player: Player, request: { [any]: any }, slot: number?): (boolean, string?)
 	local character: Types.CharacterData? = PlayerStateService.GetCharacter(player)
 	if not character then
 		return false, "error.wrongPhase"
+	end
+	if slot ~= nil and slot ~= (if character.buildSlot == 2 then 2 else 1) then
+		return false, "buildset.error.changed"
 	end
 	local total = 0
 	local adds: { [string]: number } = {}

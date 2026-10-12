@@ -1711,3 +1711,11 @@
   zwalnia przy zwrocie / przerwaniu; czar z opóźnieniem trafienia dłuższym niż GCD nie dzieli już użycia z następnym.
 - Przegląd S78–S81: kanał przerwany przed czasem wysyła `channelEnd`, a `fizzle` też oddaje chód (odrzucony Strumień);
   fale Kataklizmu mają `d = 0.2`, więc meteor spada razem z obrażeniami.
+- Przegląd S54–S59: `resolveRefs` niesie flagę `mul` w głąb, więc `{ ref }` w `mul` węzła zespołowego poza ścieżką
+  główną to `1 + (x − 1) × scale` (B3), tak samo jak w `nodeArgs`; wcześniej `x × scale`.
+- Przegląd S54–S59: `AllocateStats` dostaje zestaw, w którym zarezerwowano punkty; po zmianie zestawu, która doszła
+  pierwsza, serwer odrzuca rozdanie (`buildset.error.changed`), więc rezerwacja zestawu 1 nie trafia do zestawu 2 (S58 F3).
+- Przegląd S54–S59: ostatnie zdanie `rework.body` (S56) mówi o punktach ścieżek w oknie Umiejętności zamiast „Ścieżki
+  klas pojawią się wkrótce” (wszystkie klasy mają ścieżki od S81).
+- Przegląd S54–S59: panel szczegółów na PC pokazuje powody wszystkich nieaktywnych przycisków (` · `), a każdy
+  nieaktywny przycisk ma swój powód w podpowiedzi (S59 zasada 6).
