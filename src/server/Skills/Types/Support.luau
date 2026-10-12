@@ -9,6 +9,8 @@
 -- the shield and groupBuff cleanse too.
 -- S70 (ROZWOJ 9.3–9.5): Sanctuary is the healZone type (a field at a point); groupBuff rolls Fortune's dice
 -- (skill.roll, ctx.rollDice); Purify 5B bursts light around the healed ally (burst).
+-- S71: heals over time and shields take Context.healFactor (heal bonuses, healPower, the healCrit roll) per target;
+-- Shattering Shield (shieldBurst) heals allies around the bearer when the shield breaks or expires.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -170,28 +172,55 @@ end
 Support.hot = function(ctx)
 	local player, entity = allyTarget(ctx)
 	local duration = ctx.scaled(ctx.skill.duration)
-	local bonus = ctx.services.PassiveHook(ctx.player, "healBonus")
-	local mul = (1 + bonus / 100) * ctx.healPowerMul()
 	ctx.fx({ t = entity.id, d = duration })
+	-- the sum at the cast: heal bonuses, healPower and one crit roll per target (S71)
+	local mul = Context.healFactor(ctx.player, player, false)
 	hotOn(ctx, entity, ctx.healAmount(player, "heal") * mul, duration)
 	local other, otherEntity = second(ctx, player)
 	if other and otherEntity then
 		ctx.fx({ t = otherEntity.id, d = duration, n = 2 })
-		hotOn(ctx, otherEntity, ctx.healAmount(other, "heal") * mul * (ctx.bp.secondTarget or 0) / 100, duration)
+		local otherMul = Context.healFactor(ctx.player, other, false)
+		hotOn(ctx, otherEntity, ctx.healAmount(other, "heal") * otherMul * (ctx.bp.secondTarget or 0) / 100, duration)
 	end
 	return true, nil
 end
 
--- One shield; Shield of Faith 5B cleanses first (S69).
-local function shieldOn(ctx: Ctx, entity: any, value: number, duration: number)
+-- S71 Shattering Shield (shieldBurst): when the shield breaks or expires, allies within the radius of the bearer (the
+-- bearer too) heal values.shieldBurst % of its starting value through the caster's heal. StatusEffectService calls
+-- it once per shield, never on a refresh, cleanse, clear or the bearer's death; the caster must still be in game.
+local function burstOnEnd(ctx: Ctx): ((bearer: any, initial: number) -> ())?
+	local burst = ctx.bp.shieldBurst
+	if not burst then
+		return nil
+	end
+	local share = ctx.value("shieldBurst")
+	return function(bearer: any, initial: number)
+		if ctx.player.Parent == nil or share <= 0 or initial <= 0 then
+			return
+		end
+		local at = ctx.services.Entity.Position(bearer)
+		if not at then
+			return
+		end
+		ctx.fx({ v = "splash", p = at, r = burst.radius })
+		for _, ally in ctx.alliesInCircle(at, burst.radius) do
+			ctx.heal(ally, initial * share / 100)
+		end
+	end
+end
+
+-- One shield; Shield of Faith 5B cleanses first (S69). S71: x Context.healFactor (healPower, crit).
+local function shieldOn(ctx: Ctx, player: Player, entity: any, value: number, duration: number)
 	if ctx.bp.cleanse then
 		ctx.services.StatusEffect.Cleanse(entity)
 	end
+	local mul = Context.healFactor(ctx.player, player, true)
 	ctx.services.StatusEffect.Apply(entity, "shield", {
 		duration = duration,
-		value = value * ctx.healPowerMul(), -- S62 healPower
+		value = value * mul,
 		source = ctx.player,
 		skillId = ctx.skill.id,
+		onEnd = burstOnEnd(ctx),
 	})
 end
 
@@ -199,11 +228,12 @@ Support.shield = function(ctx)
 	local player, entity = allyTarget(ctx)
 	local duration = ctx.scaled(ctx.skill.duration)
 	ctx.fx({ t = entity.id, d = duration })
-	shieldOn(ctx, entity, ctx.healAmount(player, "shield"), duration)
+	shieldOn(ctx, player, entity, ctx.healAmount(player, "shield"), duration)
 	local other, otherEntity = second(ctx, player)
 	if other and otherEntity then
 		ctx.fx({ t = otherEntity.id, d = duration, n = 2 })
-		shieldOn(ctx, otherEntity, ctx.healAmount(other, "shield") * (ctx.bp.secondTarget or 0) / 100, duration)
+		local value = ctx.healAmount(other, "shield") * (ctx.bp.secondTarget or 0) / 100
+		shieldOn(ctx, other, otherEntity, value, duration)
 	end
 	return true, nil
 end

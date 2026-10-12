@@ -102,7 +102,10 @@ przedmiotów czyta STATY); odstępstwa idą do `docs/DECYZJE.md`, a kontrakt pop
 - **Ścieżka / węzeł** (S57): `Data/Paths/<Klasa>` (kształt: `tests/fixtures/paths.luau`), umiejętność z `path` i
   `unlock` = poziom rzędu, teksty `path.<pathId>.*`, `wiki = false` do wydania, `statPlan` (plan przycisku „Rozdaj jak
   zaleca ścieżka”, nigdy na wiki), `paths.spec` sprawdza dane. Reguły
-  (punkty, rzędy, broń, pasek, pasywki) tylko w `Logic/Paths`; serwer `PathService`.
+  (punkty, rzędy, broń, pasek, pasywki) tylko w `Logic/Paths`; serwer `PathService`. Wzór pełnej klasy: Kapłan (S71,
+  `Data/Paths/Cleric`): buildy w kształcie `ReferenceBuild`, opis węzła = placeholdery pól `values` (mnożniki
+  `{<pole>Pct}`), każdy hak węzła z odbiorcą w kodzie (test), nowy klucz przełomu w `Data/Skills/Types` i
+  `tests/BreakpointKeys`.
 - **Tytuł ścieżki** (S59): wpis w `Data/Titles` (`id = "path_<pathId>"`, `req = { kind = "mainPath", path = "<pathId>" }`)
   i `title.path_<pathId>` (PL, EN); okno umiejętności rysuje ścieżkę samo z `Data/Paths` (`Logic/PathView`), opis
   węzła dostaje argumenty z `Paths.nodeArgs`.

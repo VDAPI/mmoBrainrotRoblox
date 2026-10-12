@@ -350,7 +350,7 @@ Broń każdej ścieżki (uzasadnienie i pokrycie w sekcjach klas):
 | `Logic/Titles` | S59: `meets` z `mainPath`, `pathTitle`, `shown` z domyślnym tytułem ścieżki głównej, opcjonalna lista (testy) |
 | `Data/Combat` | nowe `pvp` (mnożniki 7.6: `combatWindow`, `heal`, `shield`, `misfortune`, `fortuneBuff`), `skillSpeedRef` (8); S61: `interceptRadius`, `interceptWindow`, `avoidBonus`, `redZoneGrace` |
 | `Logic/Skills` | `rankLevel`, `rankAt`, `effective(skill, rank, choices, mods)`, `cost(skill, rank, L, classId, mods)`; bez `canLearn`, `spentPoints`, `refundAll` |
-| `Logic/Paths` | nowy: `rowsFor`, `pointsAt`, `free`, `rowOpen`, `canBuy`, `canRefund`, `refund`, `canChooseMain` (z `freeUsed`), `skillRank`, `availableSkills`, `skillUsable`, `skillMods`, `validHotbar`, `passiveTotals`, `activeNodes`, `auras`, `inAura`, `luck`, `clampToLevel`, `weaponOk`, `canEdit(ctx)`; S57 dokłada pomocnicze `pathsOf`, `classHasPaths`, `isPublished`, `findNode`, `spent`, `ranksIn`, `weaponTypesOf`, `nodeValues`, `isTeamNode`, `canPutOnBar`, `canChooseBreakpoint`, `effectiveFor`, `withSource` / `sourceOf` (źródło danych, test na `tests/fixtures/paths.luau`) i `MAIN_LEVEL`; S58 zestawy: `swapSets`, `copySet`, `emptySet`, `otherSet`, `activeSet`, `cloneSet`, `setView`, `cleanSet`, `mainWeaponOk`, `statPlan`, akcje `canEdit` `switchSet` / `copySet` (pola `dead`, `inRun`); S59: `source` (pole API), `nodeScale` (reguła ⅓ dla dowolnego węzła, z niej `activeNodes`), `nodeArgs` (argumenty opisu węzła: placeholder = pole `values`, pola z `mul` jako 1 + (v − 1)·scale, zaokrąglenie `Skills.roundArg`), `iconWeapon`, `isTwoHanded`; S60: `luckOfNodes(activeNodes)` (surowe pola `Data/Luck` z węzłów, bez `scale`) i `luck = luckOfNodes(activeNodes(...))` |
+| `Logic/Paths` | nowy: `rowsFor`, `pointsAt`, `free`, `rowOpen`, `canBuy`, `canRefund`, `refund`, `canChooseMain` (z `freeUsed`), `skillRank`, `availableSkills`, `skillUsable`, `skillMods`, `validHotbar`, `passiveTotals`, `activeNodes`, `auras`, `inAura`, `luck`, `clampToLevel`, `weaponOk`, `canEdit(ctx)`; S57 dokłada pomocnicze `pathsOf`, `classHasPaths`, `isPublished`, `findNode`, `spent`, `ranksIn`, `weaponTypesOf`, `nodeValues`, `isTeamNode`, `canPutOnBar`, `canChooseBreakpoint`, `effectiveFor`, `withSource` / `sourceOf` (źródło danych, test na `tests/fixtures/paths.luau`) i `MAIN_LEVEL`; S58 zestawy: `swapSets`, `copySet`, `emptySet`, `otherSet`, `activeSet`, `cloneSet`, `setView`, `cleanSet`, `mainWeaponOk`, `statPlan`, akcje `canEdit` `switchSet` / `copySet` (pola `dead`, `inRun`); S59: `source` (pole API), `nodeScale` (reguła ⅓ dla dowolnego węzła, z niej `activeNodes`), `nodeArgs` (argumenty opisu węzła: placeholder = pole `values`, pola z `mul` jako 1 + (v − 1)·scale, zaokrąglenie `Skills.roundArg`; S71: pole z `mul` daje też `<pole>Pct` = |1 − v|·100, opisy pokazują mnożniki jako procent skrócenia), `iconWeapon`, `isTwoHanded`; S60: `luckOfNodes(activeNodes)` (surowe pola `Data/Luck` z węzłów, bez `scale`) i `luck = luckOfNodes(activeNodes(...))` |
 | `Logic/PathView` | S59, nowy, czysty: `with(api)`, `tabState`, `path` (rzędy z powodem zamknięcia, stany węzłów), `weaponText`, `pendingBreakpoints`, `attention` („!”), `rankUps`, `newBreakpoints` (toasty awansu) |
 | `Logic/Luck`, `PartyBonus`, `StatPlan`, `EffectStack`, `LevelCurves` | nowe, czyste; `StatPlan` (S58): `startOf`, `total`, `spent`, `refit`, `suggest`; S60: `Luck.capped`, `best`, `monster`, `boss`, `isNeutral`, `NONE_MONSTER`, `NONE_BOSS` (opcja `pvp`), `PartyBonus.variety`, `expMul` |
 | `Logic/AccountSchema`, `CharacterFactory`, `Types` | schemat 6 i nowe postacie (5) |
@@ -387,10 +387,18 @@ export type PathDef = {
 	reference: { ReferenceBuild }, -- buildy wzorcowe dla modelu, nigdy na wiki
 	wiki: boolean?, -- false = nieopublikowana: ukrywa ścieżkę, jej umiejętności, węzły, tytuł i teksty (3.5)
 }
--- S57: build wzorcowy; nodes = { { "nodeId", ranga } } w kolejności kupowania
+-- S57 / S71: build wzorcowy (kształt dla wszystkich klas; czyta go test i model balansu S85, nigdy gra ani wiki)
 export type ReferenceBuild = {
-	id: string, weapon: { main: string?, offhand: string? }, nodes: { { any } },
-	bp: { [string]: string }?, stats: { [string]: number }?, rotation: { string }?, damageReference: number?,
+	id: string,
+	damageReference: boolean?, -- tylko build Berserkera "fury" (S75)
+	weapon: { main: string, offhand: string? },
+	nodes: { { any } }, -- { nodeId, ranga } w kolejności kupowania: wg poziomu rzędu, ścieżka główna pierwsza
+	bp: { [string]: "a" | "b" }, -- "<skillId>:5" / "<skillId>:10"; brak wpisu = A
+	stats: { [string]: number }, -- statPlan ścieżki
+	-- lista priorytetów, wygrywa pierwszy wpis do użycia; warunki (dane dla modelu): skill (wymagany), target =
+	-- "tank" | "mostWounded" | "meleeAllies" | "self", minWounded, minEnemies, belowHp, debuff, beforeRedZone, opener,
+	-- elite (kolejne klasy dopisują swoje, np. minFury)
+	rotation: { { [string]: any } },
 }
 -- Zapis postaci (aktywny zestaw w polach postaci, drugi w buildOther; skills i skillPoints usunięte):
 -- path = { main: string?, nodes: { [nodeId]: rank }, bp: { ["<skillId>:5"]: "a" | "b" }, freeUsed: boolean }
@@ -2198,7 +2206,8 @@ umiejętności (`skill.<id>.name`), więc nie mają własnych kluczy `path.*`.
 Kod:
 - Dane: `Data/Skills/Cleric.luau` (pole `path`, nowe `unlock`, `healHp`/`healMag`/`shieldHp`/`shieldMag`,
   `Build.bp2`), `Data/Paths/Cleric.luau` (3 ścieżki, 48 węzłów bez węzłów `skill`, `reference`), `Data/Titles` (3
-  tytuły `path_healer`, `path_fortune`, `path_inquisitor`), `Data/Luck` (wartości z 9.4).
+  tytuły `path_healer`, `path_fortune`, `path_inquisitor`), wartości szczęścia w `node.values` węzłów `luck`
+  (S60; `Data/Luck` ma tylko pola i limity).
 - Leczenie: `Support.heal` (także Oczyszczenie, które leczy przez `Support.heal` z warunkiem na id), `hot`, `shield` i
   `groupHeal` czytają `healHp`/`healMag` przez `Skills/Context.heal` (7.5); haki `allyHealBonus`, `lowHpHealBonus`,
   `healCrit` w tym samym miejscu. Światłość zostaje przy leczeniu udziałem zadanych obrażeń w `Offense.circleSelf`

@@ -32,6 +32,25 @@ local list: { TitleDef } = {
 	{ id = "gladiator", nameKey = "title.gladiator", req = { kind = "duelsWon", value = 50 }, color = "#FFD36B" },
 	{ id = "bloodied", nameKey = "title.bloodied", req = { kind = "pvpKills", value = 10 }, color = "#E05A4A" },
 	{ id = "warlord", nameKey = "title.warlord", req = { kind = "pvpKills", value = 100 }, color = "#B8322A" },
+	-- S71: Cleric paths
+	{
+		id = "path_healer",
+		nameKey = "title.path_healer",
+		req = { kind = "mainPath", path = "healer" },
+		color = "#8FE0B8",
+	},
+	{
+		id = "path_fortune",
+		nameKey = "title.path_fortune",
+		req = { kind = "mainPath", path = "fortune" },
+		color = "#E8C25A",
+	},
+	{
+		id = "path_inquisitor",
+		nameKey = "title.path_inquisitor",
+		req = { kind = "mainPath", path = "inquisitor" },
+		color = "#D8E6F3",
+	},
 }
 
 -- S59: character.title when the player hid the title; nil = never chose, the main path title shows

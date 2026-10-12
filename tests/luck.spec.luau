@@ -249,6 +249,87 @@ describe("luck node data", function()
 	end)
 end)
 
+-- S71: the Priest of Fortune on the real Cleric data (Data/Paths/Cleric, model builds) -------------------------------
+
+describe("Full Fortune on the Cleric paths (S71)", function()
+	local function buildNodes(pathId: string, buildId: string): { [string]: number }
+		local def = PathData.get(pathId) :: any
+		for _, build in def.reference do
+			if build.id == buildId then
+				local nodes: { [string]: number } = {}
+				for _, entry in build.nodes do
+					nodes[entry[1]] = entry[2]
+				end
+				return nodes
+			end
+		end
+		error(`no build {pathId}/{buildId}`)
+	end
+	local function priest(main: string, nodes: { [string]: number }, name: string?): any
+		return {
+			class = "Cleric",
+			level = 100,
+			name = name or "Ava",
+			path = { main = main, nodes = nodes, bp = {}, freeUsed = true },
+		}
+	end
+	local plunder = buildNodes("fortune", "plunder")
+
+	it("the plunder build: x1.13, 35% upgrade, 15% second item, +30% items, Elite II x1.2, gold +15%", function()
+		local luck = Paths.luck(priest("fortune", plunder), RELIC)
+		local want = { bossLegendary = 13, monsterItem = 30, elite2 = 20, gold = 15, bossUpgrade = 35, bossExtra = 15 }
+		for field, value in want do
+			expect(luck[field]).toBeNear(value)
+		end
+		local boss = Luck.boss({ member("Ava", luck) })
+		expect(boss.legendaryMul).toBeNear(1.13)
+		expect(boss.upgrade).toBeNear(0.35)
+		expect(boss.extra).toBeNear(0.15)
+		local monster = Luck.monster({ member("Ava", luck) })
+		expect(monster.elite2Mul).toBeNear(1.2)
+		expect(monster.gold).toBeNear(15)
+	end)
+
+	it("without a relic, or from the Healer's build: only row 1 (x1.06)", function()
+		local noRelic = Paths.luck(priest("fortune", plunder), { main = "scepter", offhand = "shield" })
+		expect(noRelic).toEqual({ bossLegendary = 6 })
+		expect(Luck.boss({ member("Ava", noRelic) }).legendaryMul).toBeNear(1.06)
+		local healer =
+			Paths.luck(priest("healer", buildNodes("healer", "dungeon")), { main = "scepter", offhand = "shield" })
+		expect(healer).toEqual({ bossLegendary = 6 })
+		local boss = Luck.boss({ member("Bo", healer) })
+		expect(boss.legendaryMul).toBeNear(1.06)
+		expect(boss.upgrade).toBe(0)
+		expect(boss.extra).toBe(0)
+	end)
+
+	it("the party: shared item cap, a second priest adds nothing, no luck in PvP", function()
+		local luck = Paths.luck(priest("fortune", plunder), RELIC)
+		expect(Luck.monster({ member("rich", nil, 80), member("Ava", luck) }).itemBonus).toBe(100)
+		local twice = Luck.boss({ member("Ava", luck), member("Cy", luck) })
+		expect(twice.legendaryMul).toBeNear(1.13)
+		expect(Luck.boss({ member("Ava", luck) }, { pvp = true })).toEqual(Luck.NONE_BOSS)
+		expect(Luck.monster({ member("Ava", luck) }, { pvp = true })).toEqual(Luck.NONE_MONSTER)
+	end)
+
+	it("the max node values of a field in one path never pass its cap", function()
+		for _, def in PathData.list do
+			local sums: { [string]: number } = {}
+			for _, row in def.rows do
+				for _, n in row.nodes do
+					for field, valueKey in n.luck or {} do
+						local max = Paths.nodeValues(n, n.maxRank)[valueKey] or 0
+						sums[field] = (sums[field] or 0) + max
+					end
+				end
+			end
+			for field, sum in sums do
+				expect({ def.id, field, sum <= LuckData.fields[field].cap + 1e-9 }).toEqual({ def.id, field, true })
+			end
+		end
+	end)
+end)
+
 describe("Loot with luck", function()
 	local boss = LootTables.bosses.grimrok
 

@@ -136,7 +136,11 @@ T.describe("S56 ranks from the level and the bar", function()
 	end)
 
 	T.it("transitional ladder (ROZWOJ 2.6): every base skill, 19 ranks at level 20", function()
+		local GamePaths = require("../src/shared/Logic/Paths")
 		for _, classId in Classes.order do
+			if GamePaths.classHasPaths(classId) then
+				continue -- S71: a class on paths has its base 8, not the ladder (tested in "S71 Cleric")
+			end
 			local unlocked = Skills.unlocked(classId, 100)
 			local base = 0
 			for _, skill in SkillData.byClass[classId] do
@@ -160,13 +164,22 @@ T.describe("S56 ranks from the level and the bar", function()
 			T.expect(def.unlock).toBe(1)
 			T.expect(def.type ~= "passive").toBe(true)
 			local bar = Skills.startHotbar(classId, 100)
+			local actives = 0
+			for _, skill in SkillData.byClass[classId] do
+				if skill.path == nil and skill.type ~= "passive" then
+					actives += 1
+				end
+			end
 			local n = 0
 			for slot = 1, 10 do
-				local skill = SkillData.get(bar[tostring(slot)]) :: any
-				T.expect(skill.type ~= "passive").toBe(true)
-				n += 1
+				local skill = SkillData.get(bar[tostring(slot)] or "") :: any
+				if skill then
+					T.expect(skill.type ~= "passive").toBe(true)
+					n += 1
+				end
 			end
-			T.expect(n).toBe(10)
+			-- S71: a class with paths has fewer base actives than slots (Cleric 6)
+			T.expect(n).toBe(math.min(10, actives))
 			for _, id in bar do
 				T.expect(id ~= "titansWrath" and id ~= "stormArrow" and id ~= "meteorStorm").toBe(true)
 				T.expect(id ~= "prayer" and id ~= "divineIntervention").toBe(true)
@@ -976,28 +989,183 @@ T.describe("S70 new Cleric actives", function()
 		T.expect(Skills.valueAt(diceB, "crit", 10)).toBeNear(9)
 	end)
 
-	-- S71 replaces this case when the Cleric's paths get their PathDef.
-	T.it("out of reach until S71 (paths without a PathDef)", function()
-		local hotbar: { [string]: string } = {}
-		local i = 0
-		for id in PATHS do
-			i += 1
-			hotbar[tostring(i)] = id
-		end
+	-- S71: the paths have their PathDef; a path skill comes with its node (rows 1-2 anywhere, deeper rows in the main
+	-- path with its weapon for use).
+	T.it("reachable through their nodes (S71)", function()
 		local c: any = {
 			class = "Cleric",
 			level = 100,
-			path = { main = nil, nodes = {}, bp = {}, freeUsed = false },
-			hotbar = hotbar,
+			path = { main = "fortune", nodes = { fortune_fortuneDice = 1 }, bp = {}, freeUsed = true },
+			hotbar = { ["1"] = "fortuneDice", ["2"] = "sanctuary" },
 			equipment = {},
 		}
-		local available = GamePaths.availableSkills(c)
-		for id in PATHS do
-			T.expect({ id, table.find(available, id) }).toEqual({ id, nil })
-			T.expect({ id, GamePaths.skillRank(c, id) }).toEqual({ id, 0 })
+		T.expect(GamePaths.skillRank(c, "fortuneDice")).toBe(10)
+		T.expect(GamePaths.skillRank(c, "sanctuary")).toBe(0)
+		T.expect(GamePaths.validHotbar(c)).toEqual({ ["1"] = "fortuneDice" })
+		T.expect(GamePaths.skillUsable(c, "fortuneDice", { main = "mace1h", offhand = "relic" })).toBe(true)
+		T.expect(GamePaths.skillUsable(c, "fortuneDice", { main = "mace1h", offhand = "shield" })).toBe(false)
+	end)
+end)
+
+T.describe("S71 Cleric base and paths", function()
+	local GamePaths = require("../src/shared/Logic/Paths")
+	local function skill(id: string): SkillData.SkillDef
+		return SkillData.byId[id]
+	end
+	-- A level 100 Cleric with these nodes, main path and breakpoint choices; the skill at rank 10 with its node mods.
+	local function eff(
+		id: string,
+		main: string?,
+		nodes: { [string]: number },
+		weapons: any,
+		bp: { [string]: any }?
+	): (any, any)
+		local c: any = {
+			class = "Cleric",
+			level = 100,
+			path = { main = main, nodes = nodes, bp = bp or {}, freeUsed = true },
+			hotbar = {},
+			equipment = {},
+		}
+		return Skills.effective(skill(id), 10, bp or {}, GamePaths.skillMods(c, id, weapons), true)
+	end
+	local SCEPTER = { main = "scepter", offhand = "shield" }
+	local RELIC = { main = "mace1h", offhand = "relic" }
+
+	T.it("base 8 on levels 1-45, path skills on their rows, A and B everywhere", function()
+		local unlocks, passives = {}, 0
+		local actives = 0
+		for _, def in SkillData.byClass.Cleric do
+			if def.path == nil then
+				table.insert(unlocks, def.unlock)
+				if def.type == "passive" then
+					passives += 1
+				end
+			else
+				T.expect({ def.id, table.find({ 10, 26, 48, 60 }, def.unlock) ~= nil }).toEqual({ def.id, true })
+			end
+			if def.type ~= "passive" then
+				actives += 1
+				for _, at in Skills.BREAKPOINT_LEVELS do
+					local pair = (def.breakpoints :: any)[at]
+					T.expect({ def.id, at, pair.a ~= nil, pair.b ~= nil }).toEqual({ def.id, at, true, true })
+				end
+			end
 		end
-		local bar = GamePaths.validHotbar(c)
-		T.expect(bar).toEqual({})
+		table.sort(unlocks)
+		T.expect(unlocks).toEqual({ 1, 3, 6, 10, 14, 18, 30, 45 })
+		T.expect(passives <= 2).toBe(true)
+		T.expect(actives).toBe(18)
+	end)
+
+	T.it("base damage (ROZWOJ 9.2) and the 15.2 defaults", function()
+		for id, pair in { holyStrike = { 190, 340 }, radiance = { 130, 240 }, judgement = { 320, 580 } } do
+			T.expect({ id, Skills.valueAt(skill(id), "dmg", 1), Skills.valueAt(skill(id), "dmg", 10) })
+				.toEqual({ id, pair[1], pair[2] })
+		end
+		local prayer = skill("prayer")
+		T.expect(Skills.valueAt(Skills.effective(prayer, 10, nil, nil, true), "group", 10)).toBe(10)
+		T.expect(Skills.valueAt(Skills.effective(prayer, 10, { ["prayer:10"] = "a" }, nil, true), "group", 10)).toBe(10)
+		T.expect(Skills.valueAt(Skills.effective(prayer, 10, { ["prayer:10"] = "b" }, nil, true), "group", 10)).toBe(5)
+		T.expect(Skills.effective(skill("divineIntervention"), 10, nil, nil, true).radius).toBe(40)
+		T.expect((skill("judgement").effects :: any)[1].notBoss).toBeNil()
+	end)
+
+	T.it("Shield of Faith with Firm Faith, Bulwark and Shattering Shield", function()
+		local bp = { ["shieldOfFaith:10"] = "b" }
+		local nodes = { healer_faithShield = 3, healer_bulwark = 3 }
+		local def = eff("shieldOfFaith", "healer", nodes, SCEPTER, bp)
+		T.expect(Skills.valueAt(def, "shieldHp", 10)).toBeNear(36)
+		T.expect(Skills.scaled(def, def.duration, 10)).toBeNear(17)
+		T.expect(Skills.valueAt(def, "shieldMag", 10)).toBe(15)
+		local noWeapon = eff("shieldOfFaith", "healer", nodes, RELIC, bp)
+		T.expect(Skills.valueAt(noWeapon, "shieldHp", 10)).toBeNear(30)
+		T.expect(Skills.scaled(noWeapon, noWeapon.duration, 10)).toBeNear(14)
+		local shatter = { healer_faithShield = 3, healer_bulwark = 3, healer_shatter = 3 }
+		local withBurst, b = eff("shieldOfFaith", "healer", shatter, SCEPTER, bp)
+		T.expect(b.shieldBurst.radius).toBe(10)
+		T.expect(Skills.valueAt(withBurst, "shieldBurst", 10)).toBeNear(45)
+	end)
+
+	T.it("Aura of Endurance 5B + 10B", function()
+		local def = Skills.effective(
+			skill("auraOfEndurance"),
+			10,
+			{ ["auraOfEndurance:5"] = "b", ["auraOfEndurance:10"] = "b" },
+			nil,
+			true
+		)
+		local categories = {}
+		for _, effect in def.allyEffects :: any do
+			categories[effect.category] = effect.stats
+		end
+		T.expect(categories.allyVigor.mres ~= nil).toBe(true)
+		T.expect(categories.allyAttack.magAtk ~= nil).toBe(true)
+		T.expect(Skills.valueAt(def, "mresBp", 10)).toBe(10)
+		T.expect(Skills.valueAt(def, "atkBp", 10)).toBe(6)
+		T.expect(Skills.valueAt(def, "hp", 10)).toBe(15)
+		T.expect((def.effects :: any)[1].stats.maxHp).toBe("hp")
+	end)
+
+	T.it("Holy Strike with Evil Eye, Ill Omen and Heavy Hand", function()
+		local def = eff("holyStrike", "fortune", { fortune_evilEye = 3 }, RELIC)
+		local stun, misfortune
+		for _, effect in def.effects :: any do
+			if effect.kind == "stun" then
+				stun = effect
+			elseif effect.kind == "misfortune" then
+				misfortune = effect
+			end
+		end
+		T.expect(stun.duration).toBe(0.8)
+		T.expect({ misfortune.duration, misfortune.category, misfortune.value })
+			.toEqual({ 6, "enemyMiss", "misfortune" })
+		T.expect(Skills.valueAt(def, "misfortune", 10)).toBe(6)
+		local both = eff("holyStrike", "fortune", { fortune_evilEye = 3, fortune_omen = 3 }, RELIC)
+		T.expect(Skills.valueAt(both, "misfortune", 10)).toBe(12)
+		local heavy = eff("holyStrike", "fortune", { inquisitor_heavyHand = 3 }, RELIC)
+		T.expect(Skills.valueAt(heavy, "dmg", 10)).toBe(380)
+	end)
+
+	T.it("Roll of the Dice and Guardian Angel with their nodes", function()
+		local dice = eff("fortuneDice", "fortune", { fortune_quickDice = 3, fortune_streak = 3 }, RELIC)
+		T.expect(Skills.scaled(dice, dice.cooldown, 10)).toBeNear(18)
+		for _, effect in dice.effects :: any do
+			T.expect(Skills.scaled(dice, effect.duration, 10)).toBeNear(18)
+		end
+		local bpB = { ["guardianAngel:10"] = "b" }
+		local angel = eff("guardianAngel", "healer", { healer_choir = 2 }, SCEPTER, bpB)
+		T.expect(Skills.scaled(angel, (angel.effects :: any)[1].duration, 10)).toBeNear(14)
+		T.expect(Skills.valueAt(angel, "saveHeal", 10)).toBeNear(45)
+		T.expect(Skills.scaled(angel, angel.cooldown, 10)).toBeNear(67.5)
+		local angelA = eff("guardianAngel", "healer", { healer_choir = 2 }, SCEPTER)
+		T.expect(Skills.valueAt(angelA, "saveHeal", 10)).toBeNear(60)
+	end)
+
+	T.it("Judgement with Final Verdict, Inquisition and Executor", function()
+		local nodes = { inquisitor_finalVerdict = 3, inquisitor_inquisition = 3 }
+		local c: any = { class = "Cleric", level = 100, path = { main = "inquisitor", nodes = nodes, bp = {} } }
+		local weapons = { main = "mace1h" }
+		local def, b = Skills.effective(skill("judgement"), 10, {}, GamePaths.skillMods(c, "judgement", weapons), true)
+		T.expect(b.stunSplash.radius).toBe(6)
+		T.expect(Skills.valueAt(def, "stunSplash", 10)).toBeNear(50)
+		T.expect(Skills.scaled(def, def.cooldown, 10)).toBeNear(12)
+		c.path.nodes = { inquisitor_finalVerdict = 3, inquisitor_executioner = 3 }
+		local _, b2 = Skills.effective(skill("judgement"), 10, {}, GamePaths.skillMods(c, "judgement", weapons), true)
+		T.expect(b2.execute).toBeNear(50)
+	end)
+
+	T.it("healBonusPct and healCritChance", function()
+		local hooks = { healBonus = 25, allyHealBonus = 30, lowHpHealBonus = 0 }
+		T.expect(Skills.healBonusPct(hooks, true, 1)).toBe(55)
+		T.expect(Skills.healBonusPct(hooks, false, 1)).toBe(25)
+		local low = { healBonus = 0, allyHealBonus = 0, lowHpHealBonus = 25 }
+		T.expect(Skills.healBonusPct(low, false, 0.3)).toBe(25)
+		T.expect(Skills.healBonusPct(low, false, 0.35)).toBe(0)
+		T.expect(Skills.healCritChance(8, 100)).toBeNear(0.08)
+		T.expect(Skills.healCritChance(9, 100 / 3)).toBeNear(0.03)
+		T.expect(Skills.healCritChance(60, 0)).toBe(0)
+		T.expect(Skills.healCritChance(200, 100)).toBe(1)
 	end)
 end)
 

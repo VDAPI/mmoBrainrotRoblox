@@ -33,14 +33,18 @@ export type PathNode = {
 	descKey: string,
 }
 export type PathRow = { choice: boolean, nodes: { PathNode } }
+-- S71 (ROZWOJ 3.2, 7.5): a model build, the shape every class copies; read by tests and the balance model (S85), never
+-- by the game or the wiki. Rotation entries: `skill` (required) plus optional conditions, data only:
+-- target = "tank" | "mostWounded" | "meleeAllies" | "self", minWounded, minEnemies, belowHp, debuff, beforeRedZone,
+-- opener, elite (later classes add their own, e.g. minFury).
 export type ReferenceBuild = {
 	id: string,
-	weapon: { main: string?, offhand: string? },
-	nodes: { { any } }, -- { "nodeId", rank } in buying order
-	bp: { [string]: string }?, -- "<skillId>:5" -> "a" | "b"
-	stats: { [string]: number }?,
-	rotation: { string }?,
-	damageReference: number?,
+	damageReference: boolean?, -- only the Berserker "fury" build (S75)
+	weapon: { main: string, offhand: string? },
+	nodes: { { any } }, -- { nodeId, rank } in purchase order: by row level, main path first at the same level
+	bp: { [string]: "a" | "b" }, -- "<skillId>:5" / "<skillId>:10"; a missing entry means A
+	stats: { [string]: number }, -- the path statPlan
+	rotation: { { [string]: any } }, -- priority list, first usable wins; conditions are data for the balance model (S85)
 }
 export type Role = "damage" | "tank" | "healer" | "support" | "luck"
 export type PathDef = {

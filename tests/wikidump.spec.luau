@@ -542,15 +542,26 @@ T.describe("Wiki export: building blocks", function()
 		for _, title in d.titles.titles do
 			T.expect(all[title.id]).toBeNil()
 		end
+		-- S71: ids of hidden skills, nodes and titles never appear quoted anywhere in the output; a path id only where
+		-- it would mean the path (a record's "path" field), because "healer" / "fortune" are also NPC, shop, quest and
+		-- blessing ids.
+		local function leaks(needle: string, what: string)
+			for file, text in result.files do
+				if string.find(text, needle, 1, true) then
+					error(`{what} leaks into {file}`)
+				end
+			end
+		end
+		for id in all do
+			leaks(`"{id}"`, id)
+		end
 		for _, path in PathData.list do
 			if path.wiki == false then
+				leaks(`"path":"{path.id}"`, path.id)
+				leaks(`"path": "{path.id}"`, path.id)
 				for _, row in path.rows do
 					for _, node in row.nodes do
-						for file, text in result.files do
-							if string.find(text, `"{node.id}"`, 1, true) then
-								error(`{node.id} leaks into {file}`)
-							end
-						end
+						leaks(`"{node.id}"`, node.id)
 					end
 				end
 			end

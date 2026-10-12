@@ -342,6 +342,8 @@ end
 -- Arguments of node.descKey at `rank` (S59): one per node.values field (the placeholder = the field name), scaled as
 -- skillMods resolves references (a field used inside modify.bp `mul` as 1 + (v - 1) * scale, others v * scale) and
 -- rounded as skill descriptions (Skills.roundArg). A node without values gives {}.
+-- S71 (ROZWOJ 3.1): a field used inside `mul` also gives <field>Pct = |1 - v| x 100 of the same scaled value (texts
+-- show multipliers as a % change: 0.92 -> 8, which roundArg would show as 0.9).
 local function nodeArgs(node: PathNode, rank: number, scale: number?): { [string]: number }
 	local s = scale or 1
 	local inMul: { [string]: boolean } = {}
@@ -352,6 +354,9 @@ local function nodeArgs(node: PathNode, rank: number, scale: number?): { [string
 	for field, v in nodeValues(node, rank, 1) do
 		local x = if inMul[field] then 1 + (v - 1) * s else v * s
 		out[field] = Skills.roundArg(x)
+		if inMul[field] then
+			out[field .. "Pct"] = Skills.roundArg(math.abs(1 - x) * 100)
+		end
 	end
 	return out
 end

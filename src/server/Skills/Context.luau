@@ -15,6 +15,9 @@
 -- duration multiplier (dice faces, PvP), turns `burn` into damage over time like bleed / poison (a holy skill's burn
 -- ticks in light) and a data `hot` into % max HP per second, and passes `notBoss` for every kind; `damage` with
 -- `holy` adds the holyDamage hook outside holy skills (Purify 5B burst).
+-- S71 (ROZWOJ 9.3-9.5): Context.healFactor is the one heal / shield multiplier (healBonus + allyHealBonus +
+-- lowHpHealBonus on heals, healPower, the healCrit roll); healFrom and Types/Support use it. Divine Wrath's heal lives
+-- in onHit (holyStrikeHeal; holyHealAll for HOLY_HEAL_SKILLS).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
@@ -69,7 +72,6 @@ export type Ctx = {
 	healMul: () -> number, -- heal level curve at the caster's level (S54)
 	-- S69: base heal / shield of this cast on `target` (max HP part + magic part x healMul), before bonuses
 	healAmount: (target: Player, prefix: "heal" | "shield") -> number,
-	healPowerMul: () -> number, -- S62: 1 + healPower / 100 (lines, Anointment) on heals and shields cast
 	speedMul: number, -- skill damage x weapon speed / Combat.skillSpeedRef (S54)
 	fx: (data: { [string]: any }) -> (),
 	element: string?, -- the skill's element (adaptive: the weapon's), S18
@@ -114,6 +116,10 @@ local ADAPTIVE_SPEC: Traits.ElementSpec = {
 	arcPct = SkillData.ADAPTIVE.arcPct,
 	arcRadius = SkillData.ADAPTIVE.arcRadius,
 }
+
+-- S71 (ROZWOJ 9.5, Holy Wrath): skills whose direct hits heal through Divine Wrath at holyHealAll % strength.
+local HOLY_HEAL_SKILLS: { [string]: boolean } =
+	{ radiance = true, judgement = true, brandOfLight = true, hammerOfHeaven = true }
 
 local function flat(v: Vector3): Vector3
 	return Vector3.new(v.X, 0, v.Z)
@@ -178,16 +184,43 @@ function Context.mostWounded(player: Player, center: Vector3, radius: number, ex
 	return best
 end
 
--- `healer` heals `target` for `amount` with the heal bonus (passives), healPower (S62) and the PvP scale (S61); the
--- heal source makes the fight summary and the heal cut (S63) work. Returns (HP restored, HP it tried to restore).
+-- S71 (ROZWOJ 9.3, 9.4, 14.1): multiplier of a heal (shield = false) or shield `healer` puts on `target`, and whether
+-- it is critical. Heals: 1 + Skills.healBonusPct (healBonus, allyHealBonus on others, lowHpHealBonus on a target below
+-- SkillData.LOW_HP_HEAL % before the heal); heals and shields: healPower (S62) and one healCrit roll (Lucky Mending,
+-- x SkillData.HEAL_CRIT_MUL). The PvP scale is not here (healFrom, StatusEffectService). One call per heal, per heal
+-- over time (its sum at the cast) and per shield.
+function Context.healFactor(healer: Player, target: Player, shield: boolean): (number, boolean)
+	local services = need()
+	local result = services.Stat.Get(healer)
+	local values: { [string]: number } = if result then result.values else {}
+	local mul = 1 + (values.healPower or 0) / 100
+	if not shield then
+		local maxHp = services.Stat.GetValue(target, "maxHp")
+		local fraction = if maxHp > 0 then services.Resource.Get(target) / maxHp else 1
+		local bonus = Skills.healBonusPct({
+			healBonus = services.PassiveHook(healer, "healBonus"),
+			allyHealBonus = services.PassiveHook(healer, "allyHealBonus"),
+			lowHpHealBonus = services.PassiveHook(healer, "lowHpHealBonus"),
+		}, target ~= healer, fraction)
+		mul *= 1 + bonus / 100
+	end
+	local chance = Skills.healCritChance(values.critChance or 0, services.PassiveHook(healer, "healCrit"))
+	local crit = chance > 0 and rng:chance(chance)
+	if crit then
+		mul *= SkillData.HEAL_CRIT_MUL
+	end
+	return mul, crit
+end
+
+-- `healer` heals `target` for `amount` x Context.healFactor and the PvP scale (S61); the heal source makes the fight
+-- summary and the heal cut (S63) work. Returns (HP restored, HP it tried to restore). S71: Saving Blow's heal of an
+-- ally comes here too, so it gets the same bonuses and the crit roll.
 function Context.healFrom(healer: Player, target: Player, amount: number): (number, number)
 	local services = need()
 	local Entity = services.Entity
-	local bonus = services.PassiveHook(healer, "healBonus")
-	local result = services.Stat.Get(healer)
-	local healPower = if result then result.values.healPower or 0 else 0
+	local factor, crit = Context.healFactor(healer, target, false)
 	-- S61: heals on a player in PvP combat are weaker (Combat.pvp.heal).
-	local attempted = amount * (1 + bonus / 100) * (1 + healPower / 100) * services.Pvp.HealScale(target)
+	local attempted = amount * factor * services.Pvp.HealScale(target)
 	local healed = services.Resource.Heal(target, attempted, healer)
 	if healed > 0 then
 		local entity = Entity.GetPlayerEntity(target)
@@ -196,7 +229,7 @@ function Context.healFrom(healer: Player, target: Player, amount: number): (numb
 			local caster = Entity.GetPlayerEntity(healer)
 			services.Combat.QueueFx(
 				Entity.Position(entity),
-				{ k = "heal", e = entity.id, s = caster and caster.id, a = math.floor(healed) }
+				{ k = "heal", e = entity.id, s = caster and caster.id, a = math.floor(healed), c = crit or nil }
 			)
 		end
 	end
@@ -296,8 +329,28 @@ function Context.new(
 		return found
 	end
 
+	-- Divine Wrath (holyStrikeHeal): Holy Strike's main hit heals the caster for the hook's share of the damage; with
+	-- Holy Wrath (S71) every direct hit of HOLY_HEAL_SKILLS heals that share x holyHealAll / 100. Ticks never do.
+	local function holyHeal(dealt: number, opts: { [string]: any })
+		local share = 0
+		if skill.id == "holyStrike" then
+			if opts.primary then
+				share = services.PassiveHook(player, "holyStrikeHeal")
+			end
+		elseif HOLY_HEAL_SKILLS[skill.id] then
+			local strength = services.PassiveHook(player, "holyHealAll")
+			if strength > 0 then
+				share = services.PassiveHook(player, "holyStrikeHeal") * strength / 100
+			end
+		end
+		if share > 0 and dealt > 0 then
+			ctx.heal(player, dealt * share / 100)
+		end
+	end
+
 	-- On-hit breakpoint behaviours (S28). `opts.primary`: the cast's main target (stun near it, splash around it).
 	onHit = function(entity: any, percent: number, result: Damage.Result, opts: { [string]: any })
+		holyHeal(result.amount, opts)
 		if behaviour.lifesteal then
 			ctx.heal(player, result.amount * behaviour.lifesteal / 100)
 		end
@@ -374,10 +427,6 @@ function Context.new(
 				stats().magAtk or 0,
 				character.level
 			)
-		end,
-		-- S62: healPower (lines, Anointment) raises heals and shields this player casts
-		healPowerMul = function(): number
-			return 1 + (stats().healPower or 0) / 100
 		end,
 		speedMul = speedMul,
 		element = element,

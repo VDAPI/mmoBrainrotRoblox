@@ -517,6 +517,27 @@ function Skills.healAmount(
 		+ magAtk * curve * Skills.scaled(def, magField, rank) / 100
 end
 
+-- S71 (ROZWOJ 9.3, 9.4): heal bonus in % of a heal on a target with `fraction` of its health before the heal.
+-- healBonus always, allyHealBonus only on another player, lowHpHealBonus below SkillData.LOW_HP_HEAL %; they add up.
+export type HealHooks = { healBonus: number, allyHealBonus: number, lowHpHealBonus: number }
+
+function Skills.healBonusPct(hooks: HealHooks, isOther: boolean, fraction: number): number
+	local pct = hooks.healBonus
+	if isOther then
+		pct += hooks.allyHealBonus
+	end
+	if fraction < SkillData.LOW_HP_HEAL / 100 then
+		pct += hooks.lowHpHealBonus
+	end
+	return pct
+end
+
+-- S71 (Lucky Mending): chance in [0, 1] that a heal or shield is critical, from the caster's critChance (points) and
+-- the healCrit hook (% of that chance).
+function Skills.healCritChance(critChance: number, healCrit: number): number
+	return math.clamp(critChance * healCrit / 10000, 0, 1)
+end
+
 -- S69 (ROZWOJ 9.2, Heal 10B chainHeal): order of the next chain targets. `fractions[i]` is the HP share of
 -- candidate i (already without the targets healed in this cast). Only wounded candidates (< 1), the most
 -- wounded first, ties by lower index, at most `jumps`. Returns candidate indices.

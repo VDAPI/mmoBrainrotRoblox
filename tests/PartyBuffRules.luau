@@ -1,11 +1,12 @@
 --!strict
 -- Data rules of party buffs (S61, ROZWOJ 7.3), a helper of tests/paths.spec (not a spec itself). Every class with paths
 -- passes it with every skill and path. Limits in Data/BuffCategories.rules.
---   check(skill): the party effects of ranks 1, 5 and 10 in every A/B choice last minDuration..maxDuration s, reach at
+--   check(skill, mods?): the party effects of ranks 1, 5 and 10 in every A/B choice last minDuration..maxDuration s, reach at
 --     most maxRadius studs and the cooldown is never shorter than the duration. Rescue effects (invuln, guardianAngel,
 --     intercept, shield and allyGuard below rescueBelow s) skip the lower duration bound only. Own effects and enemy
 --     debuffs are not checked. The vigilance hook (S77, ROZWOJ 16.3) is a passive reaction, not a skill effect, so it
---     never shows up here.
+--     never shows up here. S71: `mods` (resolved modify nodes, Logic/Paths.skillMods) are applied on top of every A/B
+--     combination, so a class with paths is checked with its nodes.
 --   checkAuras(path): every aura node has an ally* category, a known shape, a radius up to maxRadius and stats keys
 --     that follow the convention of Data/Paths/Types (the category's stats, or one `value` for a value category).
 
@@ -51,14 +52,14 @@ local function describe(choices: Skills.Choices): string
 	return if #parts > 0 then table.concat(parts, ",") else "A"
 end
 
-function PartyBuffRules.check(skill: SkillDef): { string }
+function PartyBuffRules.check(skill: SkillDef, mods: { Skills.SkillMod }?): { string }
 	local problems: { string } = {}
 	for _, rank in { 1, 5, 10 } do
 		if rank > skill.maxLevel then
 			continue
 		end
 		for _, choices in choiceSets(skill, rank) do
-			local def = Skills.effective(skill, rank, choices, nil, true)
+			local def = Skills.effective(skill, rank, choices, mods, true)
 			local where = `{skill.id} rank {rank} ({describe(choices)})`
 			local d: any = def
 			local radius = d.allyRadius or def.radius or def.range or 0

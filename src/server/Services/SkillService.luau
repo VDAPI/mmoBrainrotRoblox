@@ -56,6 +56,8 @@ local SkillService = {
 
 local FX_RADIUS = 120
 local RANGE_TOLERANCE = 5
+-- S71 (ROZWOJ 9.5, Ardor): skills whose running cooldown the zealCdr hook shortens after an offensive cast.
+local ZEAL_SKILLS = { "heal", "purify" }
 local CHANNEL_MOVE_LIMIT = 2.5
 
 local PlayerStateService: any
@@ -564,6 +566,23 @@ local function cast(player: Player, skillId: string, targetId: string?, aim: any
 		-- S65 (STATY 5): Full Draw after an offensive skill or a trap (a trap is an attack too).
 		if offensive or skill.type == "trap" then
 			CombatService.PrimeFullDraw(player)
+		end
+		-- S71 Ardor (zealCdr): every successful offensive cast, hit or not, shortens the running cooldowns of
+		-- ZEAL_SKILLS; now() because this runs after the motion's hit delay.
+		local zeal = if offensive and not rt.noCooldowns then SkillService.PassiveHook(player, "zealCdr") else 0
+		if zeal > 0 then
+			local at = now()
+			local shortened = false
+			for _, id in ZEAL_SKILLS do
+				local ready = rt.cooldowns[id]
+				if ready and ready > at then
+					rt.cooldowns[id] = math.max(at, ready - zeal)
+					shortened = true
+				end
+			end
+			if shortened then
+				publishCooldowns(player)
+			end
 		end
 	end
 

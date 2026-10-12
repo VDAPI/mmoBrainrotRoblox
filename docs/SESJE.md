@@ -3755,3 +3755,40 @@ Data/Localization/{pl,en}}`, `src/server/{Skills/{Context,Types/Support},Service
 CombatService}}`, `src/client/{Controllers/VfxController,UI/Screens/Hud/EffectIcons}`,
 `tests/{roll,channel,skills,skillmotion,items}.spec`, dane wiki, `docs/{STATY,DECYZJE,SESJE,PROGRESS,PRZEDMIOTY}.md`,
 `CLAUDE.md`.
+
+### S71: Kapłan 3: podstawa, ścieżki, haki węzłów i szczęście Fortuny
+
+- Podstawa i przeniesione (`Data/Skills/Cleric`): podstawa 8 według odblokowania, potem umiejętności `healer`,
+  `fortune`, `inquisitor` (`order` z pozycji; nic nie traktuje go jak stałego numeru). Odnowa, Wskrzeszenie, Oczyszczenie
+  `unlock = 10` (rząd 1), Interwencja, Modlitwa, Aura 48 (rząd 7); sześć umiejętności S70 miało już `path` i 26 / 60.
+  Obrażenia z 9.2, Modlitwa `group` 5 (+5 z 10A), Interwencja 10A +10 st.; koszty i odnowienia podstawy były zgodne z 9.2.
+- Z paska znika przy wczytaniu (`Paths.validHotbar`, oba zestawy i `path.bp`): Odnowa, Wskrzeszenie, Oczyszczenie,
+  Boska Interwencja, Modlitwa, Aura Wytrwałości, dopóki gracz nie kupi węzła. Odzyskanie: rzędy 1 za 1 punkt od 10.
+  poziomu z każdą bronią, rzędy 7 w ścieżce głównej z jej bronią. Bez migracji: okno „Rozwój postaci się zmienił” ma
+  tylko znacznik migracji, bez wersji drzewka klasy, więc nic nie dodano. Tarcza Wiary (18), Boski Gniew (30) i Sąd (45)
+  są od razu u postaci z takim poziomem (pasek dostaje nowe aktywne tylko przy awansie, jak w S56).
+- Ścieżki (`Data/Paths/Cleric`): Uzdrowiciel (berło / kostur), Kapłan Fortuny (relikwia), Inkwizytor (buława / cep),
+  11 rzędów każda, 60 węzłów (48 z tekstami, 12 `skill`), `statPlan`, `itemWeights`, `wiki = false`, po 42 rangi w
+  ścieżce głównej, 50 / 62 pokrycia. Zwój Nowej Ścieżki jest od teraz u Nauczyciela także dla Kapłana (bramka S57).
+- Kod węzłów: `Context.healFactor` (`allyHealBonus`, `lowHpHealBonus`, krytyk `healCrit`, stałe `LOW_HP_HEAL`,
+  `HEAL_CRIT_MUL` w `Data/Skills`), `Skills.healBonusPct` / `healCritChance`; Święty Gniew (`holyHealAll`) w `onHit`;
+  Żarliwość (`zealCdr`) w `SkillService`; Sąd Ostateczny (`stunSplash`) w `Offense.target`; Pękająca Tarcza
+  (`shieldBurst`) przez `ApplyOptions.onEnd`; Odpłata to hak `riposte` (kontra z S64). `Paths.nodeArgs` daje `<pole>Pct`.
+- Szczęście: pełna Fortuna daje drużynie ×1,13 Legendy z bossa, 35% Unikat → Heroik, 15% drugiego przedmiotu, +30%
+  przedmiotów z potworów (we wspólnym limicie +100%), Legendę z Elit II 5 → 6 i złoto +15%; rząd 1 (Błogosławiony Los)
+  ×1,06 z każdą bronią i poza ścieżką główną. `Data/Luck` bez zmian (pola i limity = 6.3).
+- Buildy wzorcowe (nowy kształt `ReferenceBuild`): Uzdrowiciel „Lochowy” i „Samotny” (przełomy „Samotnego” wzięte z
+  „Lochowego”, kontrakt ich nie podaje), Fortuna „Łupieżczy”, Inkwizytor „Samotny” i „Tarczownik”; „Rząd 1 Uzdrowiciela i
+  Fortuny” z 9.5 czytany jako oba rzędy 1 w całości (inaczej build nie wyda 50 punktów).
+- Tytuły `path_healer`, `path_fortune`, `path_inquisitor`; 105 kluczy na język (3 tytuły, 6 ścieżek, 96 węzłów),
+  poprawione opisy przełomów Modlitwy 10A (5 pkt) i Interwencji 10A (+10 st.).
+- Testy: `paths.spec` (blok „Data: Cleric paths”: broń, pokrycie, rangi, ⅓ Złego Oka, buildy, odbiorcy haków, klucze
+  `modify.bp`, opisy węzłów, 7.3 z węzłami; reguła A), `skills.spec` (podstawa 8, składanie z węzłami, `healBonusPct`,
+  osiągalność przez węzły), `luck.spec` (pełna Fortuna na danych), `damage.spec` (kontra), `character.spec`,
+  `wikidump.spec`; `PartyBuffRules.check(skill, mods?)`. Dane wiki: `skills.json` bez 12 umiejętności ścieżek.
+
+Pliki: `src/shared/{Data/Skills/{Cleric,Types,init},Data/Paths/{Cleric,Types},Data/Titles,Data/Localization/{pl,en},
+Logic/{Skills,Paths}}`, `src/server/{Skills/{Context,Types/Support,Types/Offense},Services/{SkillService,
+StatusEffectService}}`, `tests/{paths,skills,luck,damage,character,skillmotion,wikidump}.spec`,
+`tests/{PartyBuffRules,BreakpointKeys}.luau`, `tests/fixtures/paths.luau`, dane wiki,
+`docs/{ROZWOJ,DECYZJE,SESJE,PROGRESS,PRZEDMIOTY}.md`, `CLAUDE.md`.

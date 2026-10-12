@@ -64,44 +64,7 @@ do
 	VFX_PIECES[name] = true
 end
 
-local BEHAVIOURS: { [string]: boolean } = {}
-for _, key in
-	{
-		"add",
-		"mul",
-		"values",
-		"pull",
-		"knockback",
-		"castMove",
-		"stunNear",
-		"bleedStacks",
-		"lingering",
-		"echo",
-		"pierce",
-		"execute",
-		"trap",
-		"split",
-		"stunLast",
-		"splash",
-		"secondTarget",
-		"overhealShield",
-		"cleanse",
-		"lifesteal",
-		"selfHeal",
-		"healWounded",
-		"chainHeal",
-		"healZone",
-		"roll", -- S70
-		"rollDouble",
-		"steadfast",
-		"burst",
-		"effect",
-		"selfEffect",
-		"allyEffect",
-	}
-do
-	BEHAVIOURS[key] = true
-end
+local BEHAVIOURS: { [string]: boolean } = require("./BreakpointKeys")
 
 describe("Skill data (S28)", function()
 	it(

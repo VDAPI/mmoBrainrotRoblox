@@ -1048,12 +1048,22 @@ T.describe("Data: Paths (game)", function()
 						for _, e in skill.effects or {} do
 							table.insert(effects, e)
 						end
+						-- ROZWOJ 2.2 (S71 reads it as written): only effects with a category other than "own" break
+						-- rule A; an invulnerability without a category (Resurrection 10A) is allowed.
+						for _, e in skill.allyEffects or {} do
+							table.insert(effects, e)
+						end
 						for _, at in Skills.BREAKPOINT_LEVELS do
 							local pair = skill.breakpoints and skill.breakpoints[at]
 							for _, option in { pair and pair.a, pair and pair.b } do
 								for _, key in { "effect", "selfEffect", "allyEffect" } do
 									if option and option[key] then
 										table.insert(effects, option[key])
+									end
+								end
+								for _, key in { "effects", "selfEffects", "allyEffects" } do
+									for _, e in (option and option[key]) or {} do
+										table.insert(effects, e)
 									end
 								end
 							end
@@ -1074,6 +1084,265 @@ T.describe("Data: Paths (game)", function()
 			end
 			for _, build in path.reference do
 				checkReference(GamePaths, path, build)
+			end
+		end
+	end)
+end)
+
+-- S71: the Cleric on real paths (ROZWOJ 9), the data rules every class session copies -----------------------------
+
+T.describe("Data: Cleric paths (S71)", function()
+	local fs = require("@lune/fs")
+	local BreakpointKeys = require("./BreakpointKeys")
+	local BuffCategories = require("../src/shared/Data/BuffCategories")
+	local Locale = require("../src/shared/Util/Locale")
+
+	local function cleric(main: string?, nodes: { [string]: number }): any
+		return char(100, state(main, nodes, {}, true), { class = "Cleric" })
+	end
+
+	-- Every .luau file under a directory (as tests/data.spec).
+	local function sources(dir: string, out: { string }): { string }
+		for _, name in fs.readDir(dir) do
+			local path = `{dir}/{name}`
+			if fs.isDir(path) then
+				sources(path, out)
+			elseif string.match(name, "%.luau$") then
+				table.insert(out, path)
+			end
+		end
+		return out
+	end
+
+	-- Main and off-hand that fit a path's weapon rule (a one-handed main when only the off-hand is required).
+	local function weaponsFor(path: any): any
+		local req = path.weapon
+		local class = Classes.get(path.class) :: any
+		local main = req.main and req.main[1]
+		if not main then
+			for _, t in class.weaponTypes do
+				if not GamePaths.isTwoHanded(t) then
+					main = t
+					break
+				end
+			end
+		end
+		local offhand = req.offhand and req.offhand[1]
+		return { main = main, offhand = offhand }
+	end
+
+	T.it("weapons of the three paths and the off-hand nodes of row 3", function()
+		local function ok(pathId: string, main: string?, offhand: string?): boolean
+			return GamePaths.weaponOk((PathData.get(pathId) :: any).weapon, { main = main, offhand = offhand })
+		end
+		T.expect(ok("healer", "scepter", "shield")).toBe(true)
+		T.expect(ok("healer", "holystaff")).toBe(true)
+		T.expect(ok("healer", "mace1h")).toBe(false)
+		T.expect(ok("fortune", "mace1h", "relic")).toBe(true)
+		T.expect(ok("fortune", "scepter", "relic")).toBe(true)
+		T.expect(ok("fortune", "holystaff")).toBe(false)
+		T.expect(ok("fortune", "mace1h", "shield")).toBe(false)
+		T.expect(ok("inquisitor", "flail1h", "relic")).toBe(true)
+		T.expect(ok("inquisitor", "mace1h", "shield")).toBe(true)
+		T.expect(ok("inquisitor", "scepter")).toBe(false)
+		local c = cleric("inquisitor", { inquisitor_shield = 3, inquisitor_relic = 3 })
+		local function active(weapons: any, id: string): boolean
+			for _, a in GamePaths.activeNodes(c, weapons) do
+				if a.node.id == id then
+					return true
+				end
+			end
+			return false
+		end
+		T.expect(active({ main = "mace1h", offhand = "shield" }, "inquisitor_shield")).toBe(true)
+		T.expect(active({ main = "mace1h", offhand = "relic" }, "inquisitor_shield")).toBe(false)
+		T.expect(active({ main = "mace1h", offhand = "relic" }, "inquisitor_relic")).toBe(true)
+		T.expect(active({ main = "mace1h", offhand = "shield" }, "inquisitor_relic")).toBe(false)
+		-- coverage: every Cleric weapon and off-hand fits a path (two-handed rule included)
+		local class = Classes.get("Cleric") :: any
+		for _, t in class.weaponTypes do
+			local fits = false
+			for _, path in GamePaths.pathsOf("Cleric") do
+				fits = fits or GamePaths.weaponOk(path.weapon, { main = t })
+				for _, off in class.offhandTypes do
+					fits = fits
+						or (
+							not GamePaths.isTwoHanded(t)
+							and GamePaths.weaponOk(path.weapon, { main = t, offhand = off })
+						)
+				end
+			end
+			T.expect({ t, fits }).toEqual({ t, true })
+		end
+		for _, off in { "shield", "relic" } do
+			local fits = false
+			for _, path in GamePaths.pathsOf("Cleric") do
+				fits = fits or GamePaths.weaponOk(path.weapon, { main = "mace1h", offhand = off })
+			end
+			T.expect({ off, fits }).toEqual({ off, true })
+		end
+	end)
+
+	T.it("ranks: 42 per main path, 10 in rows 1-2 of the others, 50 / 62 coverage", function()
+		local paths = GamePaths.pathsOf("Cleric")
+		T.expect(#paths).toBe(3)
+		for _, main in paths do
+			T.expect({ main.id, pathRanks(main, 1, #PathData.ROWS) }).toEqual({ main.id, 42 })
+			local total = 42
+			for _, other in paths do
+				if other ~= main then
+					T.expect({ other.id, pathRanks(other, 1, PathData.DIP_ROWS) }).toEqual({ other.id, 10 })
+					total += 10
+				end
+			end
+			T.expect(total).toBe(62)
+			T.expect(GamePaths.pointsAt(100) / total).toBeBetween(0.75, 0.88)
+		end
+	end)
+
+	T.it("Evil Eye works at 1/3 outside the main path (dip scale)", function()
+		local relic = { main = "mace1h", offhand = "relic" }
+		local skill = SkillData.get("holyStrike") :: any
+		local function misfortune(main: string): number
+			local c = cleric(main, { fortune_evilEye = 3 })
+			local def = Skills.effective(skill, 10, {}, GamePaths.skillMods(c, "holyStrike", relic), true)
+			return Skills.valueAt(def, "misfortune", 10)
+		end
+		T.expect(misfortune("fortune")).toBeNear(6, 1e-9)
+		T.expect(misfortune("healer")).toBeNear(2, 1e-9)
+	end)
+
+	T.it("model builds spend exactly 50 and name usable breakpoints", function()
+		for _, path in GamePaths.pathsOf("Cleric") do
+			T.expect(#path.reference > 0).toBe(true)
+			for _, build in path.reference do
+				T.expect({ build.id, build.damageReference }).toEqual({ build.id, nil })
+				T.expect(build.stats).toEqual(path.statPlan)
+				local weapons = { main = build.weapon.main, offhand = build.weapon.offhand }
+				T.expect({ build.id, GamePaths.weaponOk(path.weapon, weapons) }).toEqual({ build.id, true })
+				local nodes: { [string]: number } = {}
+				local c = cleric(path.id, nodes)
+				for _, entry in build.nodes do
+					for _ = 1, entry[2] do
+						local can, why = GamePaths.canBuy(c, entry[1])
+						T.expect({ build.id, entry[1], can, why }).toEqual({ build.id, entry[1], true, nil })
+						nodes[entry[1]] = (nodes[entry[1]] or 0) + 1
+					end
+				end
+				T.expect({ build.id, GamePaths.spent(c) }).toEqual({ build.id, GamePaths.pointsAt(100) })
+				local available = GamePaths.availableSkills(c)
+				for key in build.bp do
+					local skillId, at = string.match(key, "^(.+):(%d+)$")
+					T.expect({ key, at == "5" or at == "10" }).toEqual({ key, true })
+					T.expect({ key, table.find(available, skillId or "") ~= nil }).toEqual({ key, true })
+				end
+				for _, step in build.rotation do
+					T.expect({ build.id, step.skill, table.find(available, step.skill) ~= nil })
+						.toEqual({ build.id, step.skill, true })
+				end
+			end
+		end
+	end)
+
+	T.it("every passive hook of a path node has a receiver in the code", function()
+		local files = sources("src/server", {})
+		sources("src/shared/Logic", files)
+		local texts: { string } = {}
+		for _, file in files do
+			table.insert(texts, fs.readFile(file))
+		end
+		-- hooks read through a name built in code (none yet): id -> why
+		local BUILT: { [string]: string } = {}
+		for _, path in PathData.list do
+			for _, row in path.rows do
+				for _, n in row.nodes do
+					for hook in (n.passive and n.passive.hooks) or {} do
+						local found = BUILT[hook] ~= nil
+						for _, text in texts do
+							if found then
+								break
+							end
+							found = string.find(text, `"{hook}"`, 1, true) ~= nil
+						end
+						T.expect({ n.id, hook, found }).toEqual({ n.id, hook, true })
+					end
+				end
+			end
+		end
+	end)
+
+	T.it("modify.bp keys are breakpoint keys and node effects have known categories", function()
+		local function checkEffect(id: string, effect: any)
+			if type(effect) == "table" and effect.category ~= nil then
+				local known = effect.category == BuffCategories.OWN or BuffCategories.byId[effect.category] ~= nil
+				T.expect({ id, effect.category, known }).toEqual({ id, effect.category, true })
+			end
+		end
+		for _, path in PathData.list do
+			for _, row in path.rows do
+				for _, n in row.nodes do
+					local bp = n.modify and n.modify.bp
+					for key, value in bp or {} do
+						T.expect({ n.id, key, BreakpointKeys[key] == true }).toEqual({ n.id, key, true })
+						if key == "effect" or key == "selfEffect" or key == "allyEffect" then
+							checkEffect(n.id, value)
+						end
+					end
+				end
+			end
+		end
+	end)
+
+	T.it("node descriptions resolve every placeholder; multipliers give <field>Pct", function()
+		for _, path in PathData.list do
+			for _, row in path.rows do
+				for _, n in row.nodes do
+					if n.kind ~= "skill" then
+						for _, rank in { 1, n.maxRank } do
+							local args = GamePaths.nodeArgs(n, rank)
+							for _, lang in { "pl", "en" } do
+								local text = Locale.T(n.descKey, args, lang)
+								T.expect({ n.id, lang, rank, string.find(text, "{", 1, true) })
+									.toEqual({ n.id, lang, rank, nil })
+							end
+						end
+					end
+				end
+			end
+		end
+		local salvation = GamePaths.findNode("healer_salvation") :: any
+		local one, three = GamePaths.nodeArgs(salvation, 1), GamePaths.nodeArgs(salvation, 3)
+		T.expect({ one.salvationPct, three.salvationPct }).toEqual({ 8, 25 })
+		T.expect(GamePaths.nodeArgs(salvation, 2).salvationPct).toBe(16.5)
+		T.expect({ one.salvation, three.salvation }).toEqual({ Skills.roundArg(0.92), Skills.roundArg(0.75) })
+		T.expect(P.nodeArgs(P.findNode("fxStorm_surge") :: any, 1).cdPct).toBe(10)
+		for key in GamePaths.nodeArgs(GamePaths.findNode("healer_grace") :: any, 3) do
+			T.expect(string.find(key, "Pct$")).toBeNil()
+		end
+	end)
+
+	T.it("ROZWOJ 7.3 with every modify node at max rank, each path as the main one", function()
+		local classes: { [string]: boolean } = {}
+		for _, path in PathData.list do
+			classes[path.class] = true
+		end
+		for classId in classes do
+			local all: { [string]: number } = {}
+			for _, path in GamePaths.pathsOf(classId) do
+				for _, row in path.rows do
+					for _, n in row.nodes do
+						all[n.id] = n.maxRank
+					end
+				end
+			end
+			for _, main in GamePaths.pathsOf(classId) do
+				local c = char(100, state(main.id, all, {}, true), { class = classId })
+				local weapons = weaponsFor(main)
+				for _, skill in SkillData.byClass[classId] do
+					local mods = GamePaths.skillMods(c, skill.id, weapons)
+					T.expect({ main.id, PartyBuffRules.check(skill, mods) }).toEqual({ main.id, {} })
+				end
+				T.expect(PartyBuffRules.checkAuras(main)).toEqual({})
 			end
 		end
 	end)

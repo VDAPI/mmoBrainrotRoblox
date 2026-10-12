@@ -4,6 +4,7 @@
 -- length; multi-hit skills use `hits` and `interval`; DESIGN numbers live in Data/Skills.
 -- S28 breakpoints (ctx.bp): pull at the start, pierce (projectiles), lingering areas, echo waves, the last wave /
 -- jump stuns, split impacts; on-hit ones (knockback, splash, stun near, lifesteal, execute) live in Context.damage.
+-- S71: Final Verdict (stunSplash) in `target`; Divine Wrath's heal moved to Context (onHit).
 
 local Context = require(script.Parent.Parent.Context)
 local Push = require(script.Parent.Parent.Push)
@@ -58,15 +59,24 @@ local function stunLast(ctx: Ctx, list: { any })
 	end
 end
 
--- Cleric passive: Holy Strike heals for a share of the damage.
-local function holyStrikeHeal(ctx: Ctx, dealt: number)
-	if ctx.skill.id ~= "holyStrike" or dealt <= 0 then
+-- S71 Final Verdict (stunSplash): a hit on a stunned target (also stunned by this cast) bursts around it for
+-- values.stunSplash % of the skill's damage; bosses too (ROZWOJ 15.2.7).
+local function stunSplash(ctx: Ctx, target: any)
+	local spec = ctx.bp.stunSplash
+	if not spec or not ctx.services.StatusEffect.Has(target, "stun") then
 		return
 	end
-	local share = ctx.services.PassiveHook(ctx.player, "holyStrikeHeal")
-	if share > 0 then
-		ctx.heal(ctx.player, dealt * share / 100)
+	local at = ctx.services.Entity.Position(target)
+	if not at then
+		return
 	end
+	local percent = ctx.value("dmg") * ctx.value("stunSplash") / 100
+	for _, other in ctx.enemiesInCircle(at, spec.radius) do
+		if other ~= target then
+			ctx.damage(other, percent, { plain = true, consumeShot = false })
+		end
+	end
+	ctx.fx({ v = "splash", p = at, r = spec.radius })
 end
 
 Offense.target = function(ctx)
@@ -78,7 +88,7 @@ Offense.target = function(ctx)
 	local result = ctx.damage(target, ctx.value("dmg"), { primary = true })
 	if result and not result.dodged then
 		ctx.applyEffects(target, "enemy")
-		holyStrikeHeal(ctx, result.amount)
+		stunSplash(ctx, target)
 	end
 	return true, nil
 end

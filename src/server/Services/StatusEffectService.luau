@@ -17,6 +17,9 @@
 -- (Apply); the player's walk speed follows SlowFactor (StatService.SetSpeedFactor).
 -- S70: Guardian Angel is the filter at FilterPriority.guardianAngel (Logic/Skills.angelSave; AngelSaved after a save);
 -- `element` on an effect colours its tick numbers (Brand of Light burns in light).
+-- S71: ApplyOptions.onEnd runs once when the effect expires or a shield breaks (tickEntity), with the bearer and the
+-- starting value; never on a refresh, Remove, Cleanse, Clear or the bearer's death (Shattering Shield). The function
+-- lives only in this server table (the client sees the "Effects" text).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -69,6 +72,8 @@ export type Effect = {
 	appliedAt: number, -- server time of the last (re)application; a tie in a category goes to the newer one
 	healCut: number?, -- S63: % less healing and shields on this player (Rending Gash, PvP)
 	element: string?, -- S70: element of the tick numbers (nil = by kind, DamageText.dotElement)
+	initial: number?, -- S71: value at the last (re)application (unit), passed to onEnd
+	onEnd: ((entity: any, initial: number) -> ())?, -- S71: once at expiry / break (see the header)
 }
 
 local EntityService: any
@@ -189,7 +194,19 @@ export type ApplyOptions = {
 	notBoss: boolean?, -- S63: bosses and Elite II ignore it; SkillEffect.notBoss (S70) maps here
 	accumulate: boolean?, -- S65: a refresh adds the unpaid rest of the running DoT (EffectStack.accumulate)
 	element: string?, -- S70: element of the tick numbers (a holy skill's burn shows in light)
+	-- S71: called once when this application expires or (a shield) breaks: (bearer entity, starting value). A refresh
+	-- replaces it without a call.
+	onEnd: ((entity: any, initial: number) -> ())?,
 }
+
+-- S71: runs an effect's end callback once, outside the caller's loop (an error never stops ticking).
+local function fireEnd(entity: any, effect: Effect)
+	local onEnd = effect.onEnd
+	effect.onEnd = nil
+	if onEnd then
+		task.spawn(onEnd, entity, effect.initial or 0)
+	end
+end
 
 -- S61 (ROZWOJ 7.6): heal and shield multipliers of a player in PvP combat. PvpService sets them in its Init (it
 -- depends on this service, so this one cannot require it); 1 until then.
@@ -278,6 +295,12 @@ function StatusEffectService.Apply(entity: any, kind: string, options: ApplyOpti
 		unit *= shieldScale(entity.player)
 	end
 	local running = e.expiresAt > t
+	if not running then
+		-- S71: an ended (expired or broken) entry the tick has not swept yet ends now, before it is reused
+		fireEnd(entity, e)
+	end
+	e.onEnd = options.onEnd
+	e.initial = unit
 	-- S65: the running schedule before restack, for accumulate.
 	local schedule: EffectStack.Running? = if running
 			and e.tickAmount
@@ -562,11 +585,16 @@ function StatusEffectService.BreakRespawnShield(player: Player): boolean
 	return false
 end
 
--- Death clears harmful effects (DoTs, slows, ...); buffs from blessings and skills stay (S22).
+-- Death clears harmful effects (DoTs, slows, ...); buffs from blessings and skills stay (S22). S71: the end callbacks
+-- of the remaining effects are dropped (a shield on a dead bearer never bursts).
 function StatusEffectService.CleanseOnDeath(player: Player)
 	local entity = playerEntity(player)
 	if entity then
 		StatusEffectService.Cleanse(entity)
+		local list: { Effect } = effects[entity.id] or {}
+		for _, effect in list do
+			effect.onEnd = nil
+		end
 	end
 end
 
@@ -761,6 +789,11 @@ local function tickEntity(entity: any, list: { Effect }, t: number)
 		if effect.expiresAt <= t then
 			table.remove(list, i)
 			expired = true
+			-- S71: a bearer that died before the sweep gets no end effect
+			local dead = entity.kind == "player" and entity.player and ResourceService.IsDead(entity.player)
+			if not dead then
+				fireEnd(entity, effect)
+			end
 			continue
 		end
 		local nextTick = effect.nextTick

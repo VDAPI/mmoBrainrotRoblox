@@ -5,7 +5,7 @@
 
 ## Stan
 
-S01–S51 i S53–S70 gotowe (lista i zakres w `docs/SESJE.md`). Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
+S01–S51 i S53–S71 gotowe (lista i zakres w `docs/SESJE.md`). Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
 kategorie efektów drużyny i stos efektów (`Logic/EffectStack`), S54 wzory globalne (`Logic/LevelCurves`), S55 rangi
 i przełomy w kształcie A/B (`Build.bp2`, `Skills.effective` §2.7), S56 koniec punktów umiejętności: rangi z poziomu
 postaci (`Skills.rankFor`, drabina przejściowa ROZWOJ 2.6), zapis w schemacie 6 (darmowy reset statystyk, pasek
@@ -38,8 +38,12 @@ warianty rodzin i klas, pula mityczna, rodziny i unik potworów, `/tooltip … d
 od maks. HP celu (`Skills.healAmount`, `ctx.healAmount`, linia „Na Tobie”), 21 opcji B 12 aktywnych Kapłana
 (`healWounded`, `chainHeal`, `healZone`, oczyszczenie w tarczy i `groupBuff`), S70 sześć nowych aktywnych Kapłana z
 mechanikami (`healZone`, Anioł Stróż w filtrze 90, kości i koło przez `Logic/Roll`, `Logic/Channel.stops`, podpalenie,
-`notBoss`), Modlitwa 5B / 10B i Oczyszczenie 5B, `dotPower` dla Kapłana.
-Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`, `docs/STATY.md`), następna S71; testy
+`notBoss`), Modlitwa 5B / 10B i Oczyszczenie 5B, `dotPower` dla Kapłana, S71 Kapłan na ścieżkach: podstawa 8, ścieżki
+Uzdrowiciel, Kapłan Fortuny i Inkwizytor (`Data/Paths/Cleric`, ukryte na wiki), haki węzłów (`Context.healFactor`,
+`holyHealAll`, `zealCdr`, `stunSplash`, `shieldBurst` przez `ApplyOptions.onEnd`), szczęście Fortuny w węzłach, buildy
+wzorcowe w kształcie `ReferenceBuild` S71. Kapłan na ścieżkach (ukryte na wiki); Wojownik, Łowca i Mag na drabinie
+przejściowej.
+Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`, `docs/STATY.md`), następna S72; testy
 i strojenie po niej.
 
 ## Niedokończone (kod)
@@ -59,14 +63,9 @@ i strojenie po niej.
 - **Gildie / aukcja / poczta**: brak zaproszeń do gildii między serwerami; aukcja bez podpowiedzi ceny, poczta bez
   pobrania.
 - **Przedmioty (S62–S68)**: umiejętności przy odświeżeniu obrażeń w czasie kasują resztę (`accumulate` dla nich w
-  S79); ścieżki bez `itemWeights` (sesje ścieżek); `ItemTraits.nodeHooks` bez węzłów do S71 (szczegóły cechy nie
-  pokazują jeszcze węzłów); `dmgMul` Kuszy 1,45 (S90).
-- **Kapłan**: sześć nowych aktywnych (Sanktuarium, Anioł Stróż, Rzut Kośćmi, Koło Fortuny, Piętno Światła, Młot
-  Niebios) są w kodzie, ale nieosiągalne do S71 (ścieżki bez `PathDef`). Obrażenia podstawy z ROZWOJ 9.2 (Święte Uderzenie 190 → 340%,
-  Światłość 130 → 240%, Sąd 320 → 580%) i nowe odblokowania: S71. Cele 9.6 po normalizacji broni: w repo nie ma
-  narzędzia liczącego umiejętności, pomiar S86, strojenie S89.
-- **Szczęście**: mechanizm Fortuny gotowy, wartości przyjdą z węzłami Kapłana (S71).
-- **Umiejętności i ścieżki**: ścieżki klas wkrótce (Kapłan S71, Wojownik S75, Łowca S78, Mag S81); do tego czasu
+  S79); ścieżki Wojownika, Łowcy i Maga bez `itemWeights` (sesje ścieżek); `dmgMul` Kuszy 1,45 (S90).
+- **Kapłan**: cele 9.6 po normalizacji broni: w repo nie ma narzędzia liczącego umiejętności, pomiar S86, strojenie S89.
+- **Umiejętności i ścieżki**: ścieżki klas wkrótce (Wojownik S75, Łowca S78, Mag S81); do tego czasu
   zwój i zakładka ścieżek mówią „wkrótce”, wpis premium zwoju niedostępny do S81. Brak przycisku „Załóż pasującą
   broń” po przełączeniu zestawu (ROZWOJ 2.8, później); planer wiki wkrótce (S82).
 - **UI**: ikona plecaka w HUD nie świeci po otwarciu klawiszem B; Esc nie zamyka menu przytrzymania. Stan przełączników

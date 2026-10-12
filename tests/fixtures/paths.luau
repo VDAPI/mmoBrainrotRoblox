@@ -386,7 +386,14 @@ local function fullBuild(path: any, other: any, weapon: any, bp: any?): any
 		end
 	end
 	table.insert(nodes, { other.rows[1].nodes[1].id, 1 })
-	return { id = `{path.id}_ref`, weapon = weapon, nodes = nodes, bp = bp }
+	return {
+		id = `{path.id}_ref`,
+		weapon = weapon,
+		nodes = nodes,
+		bp = bp or {},
+		stats = path.statPlan or { int = 1 },
+		rotation = { { skill = path.rows[1].nodes[1].skill or "fxSpark" } },
+	}
 end
 
 storm.reference = { fullBuild(storm, rune, { main = "staff" }, { ["fxSpark:5"] = "b" }) }

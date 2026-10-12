@@ -104,6 +104,10 @@ export type SkillEffect = {
 --   rollDouble = pct              S70: pct % chance that a die roll gives two different faces
 --   steadfast = true              S70: damage does not interrupt the channel
 --   burst = { radius, pct }       S70: enemies within radius of the healed target take pct % magic attack as light
+--   stunSplash = { radius }       S71: a hit on a stunned target (also by the same cast) bursts: enemies within radius
+--                                take values.stunSplash % of the skill's damage (Final Verdict)
+--   shieldBurst = { radius }      S71: when the shield breaks or expires, allies within radius of its bearer heal
+--                                values.shieldBurst % of its starting value, once per shield (Shattering Shield)
 --   effect / selfEffect / allyEffect = SkillEffect   an extra effect on hit enemies / the caster / allies; these
 --                            carry their own category (S53) like the skill's effects. Logic/Skills.effective
 --                            collects them from every source into def.effects / def.selfEffects / def.allyEffects
@@ -136,6 +140,8 @@ export type Breakpoint = {
 	rollDouble: number?,
 	steadfast: boolean?,
 	burst: { radius: number, pct: number }?,
+	stunSplash: { radius: number }?,
+	shieldBurst: { radius: number }?,
 	effect: SkillEffect?,
 	selfEffect: SkillEffect?,
 	allyEffect: SkillEffect?,

@@ -547,4 +547,16 @@ T.describe("Damage: family and class lines (S67)", function()
 	end)
 end)
 
+-- S71 (ROZWOJ 14.1, STATY 6): a counter (Requital, Swordplay, Counterattack) is the class's basic attack: CombatService
+-- tryCounter takes its kind (basicParams) and style (basicAttackProfile) from Classes.basicAttack.
+T.describe("Damage: counters use the class basic attack (S71)", function()
+	local Classes = require("../src/shared/Data/Classes")
+	T.it("Cleric counters with magic in melee, Warrior with physical blows", function()
+		local cleric = (Classes.get("Cleric") :: any).basicAttack
+		T.expect({ cleric.kind, cleric.style, cleric.ranged }).toEqual({ "magic", "melee", false })
+		local warrior = (Classes.get("Warrior") :: any).basicAttack
+		T.expect({ warrior.kind, warrior.style, warrior.ranged }).toEqual({ "phys", "melee", false })
+	end)
+end)
+
 return nil

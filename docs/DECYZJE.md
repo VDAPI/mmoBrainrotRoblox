@@ -1437,3 +1437,40 @@
 - **S70** `skills.spec` „neutral on today's data” pomija `fortuneDice` (5A i 10A zmieniają te same pola `values`);
   wartości po obu A sprawdza bezpośrednio blok „S70 new Cleric actives”. Drabina przejściowa liczy tylko umiejętności
   bez `path`.
+- **S71** Kapłan: podstawa 8 (Święte Uderzenie 1, Leczenie 3, Światłość 6, Pobożność 10, Krąg Światła 14, Tarcza Wiary 18,
+  Boski Gniew 30, Sąd 45). Odnowa, Wskrzeszenie, Oczyszczenie w rzędzie 1 ścieżek (poz. 10, za punkt, z każdą bronią),
+  Boska Interwencja, Modlitwa, Aura Wytrwałości w rzędzie 7 (poz. 48, tylko ścieżka główna z jej bronią). Przy wczytaniu
+  `Paths.validHotbar` zdejmuje je z paska obu zestawów i kasuje ich wpisy `path.bp`, dopóki gracz nie kupi węzła.
+- **S71** Odblokowania: wcześniej Światłość 10 → 6, Pobożność 14 → 10, Krąg 18 → 14, Tarcza Wiary 40 → 18, Boski Gniew
+  48 → 30, Sąd 56 → 45, Wskrzeszenie 34 → 10, Oczyszczenie 23 → 10, Modlitwa 65 → 48, Interwencja 75 → 48; później
+  Odnowa 6 → 10 i Aura 28 → 48 (węzły). Obrażenia podstawy z 9.2: Święte Uderzenie 190 → 340%, Światłość 130 → 240%, Sąd
+  320 → 580%. Siła na 1–45 się zmienia; stroi ją sesja balansu (`balance.spec` jej nie widzi, stała `SKILL_DPS`).
+- **S71** Domyślne 15.2: grupowa mana Modlitwy 5% (10% z 10A), Interwencja 10A +10 st. (40 st.), Koło Fortuny w walce, Sąd
+  dalej ogłusza bossów, Fortuna wymaga relikwii, Odnowa w rzędzie 1 Uzdrowiciela.
+- **S71** Nowe zachowania `stunSplash` i `shieldBurst` (koniec tarczy przy pęknięciu albo wygaśnięciu, nie przy
+  odświeżeniu, oczyszczeniu, `Remove`, `Clear` ani śmierci; posiadacz też odzyskuje życie; wartość początkowa po mnożniku
+  PvP; leczenie idzie przez `ctx.heal` rzucającego, więc dostaje jego premie i rzut krytyka). Ogólny mechanizm:
+  `ApplyOptions.onEnd` w `StatusEffectService`; wpis wygasły, ale jeszcze nie zmieciony, kończy się przed ponownym użyciem.
+- **S71** Premie leczenia sumowane (`healBonus` + `allyHealBonus` + `lowHpHealBonus`, `Skills.healBonusPct`), krytyk
+  leczenia mnożnikowo po nich (`Skills.healCritChance`, `Rng` w `Skills/Context`), jeden rzut na leczenie, sumę `hot` i
+  tarczę; tarcze bez premii „leczenia innych” i „rannych”. Jedno wejście `Context.healFactor`: z `healFrom` korzysta też
+  Zbawczy cios na sojuszniku, kradzież życia i leczenie Boskiego Gniewu (krytyk może trafić każde leczenie Kapłana).
+- **S71** Święty Gniew: leczenie Boskiego Gniewu przeniesione do `onHit` w `Skills/Context`; liczy każde bezpośrednie
+  trafienie Światłości, Sądu, Piętna i Młota (także fale `echo`), bez `lingering`, `plain` i tyknięć `burn`.
+- **S71** Żarliwość skraca tylko trwające odnowienie Leczenia i Oczyszczenia (`ZEAL_SKILLS` w `SkillService`), po każdym
+  udanym rzucie umiejętności ofensywnej, także bez trafienia; z `now()` w `finished()`.
+- **S71** Odpłata: kontra Kapłana magią przez `tryCounter` z S64 (bez zmian w kodzie; test danych `basicAttack` w
+  `damage.spec`).
+- **S71** Kształt `ReferenceBuild` zmieniony względem S57 (`damageReference: boolean?`, `weapon.main` wymagane, `bp` z
+  `"a" | "b"`, `stats` i `rotation` z warunkami wymagane; ROZWOJ 3.2) i konwencja opisów węzłów (placeholder = pole
+  `node.values`, mnożniki jako `{<pole>Pct}` z nowego klucza `Paths.nodeArgs`; ROZWOJ 3.1): wzór dla S75, S78, S81.
+  Buildy wzorcowe zapisują w `bp` tylko wybory B (brak wpisu = A).
+- **S71** Testy S57 poprawione do brzmienia kontraktu: reguła A (test 13) odrzuca tylko efekty z kategorią inną niż
+  `own`, także z list `effects` / `allyEffects` przełomów; test ukrytych id w `wikidump.spec` szuka id umiejętności,
+  węzłów i tytułów w całym wyjściu, a id ścieżek tylko jako `"path":"<id>"` (`"healer"` i `"fortune"` to też NPC, sklep,
+  quest i błogosławieństwa). Lista kluczy przełomów jest wspólna (`tests/BreakpointKeys.luau`, `skillmotion.spec` i
+  `paths.spec`).
+- **S71** Ścieżki Kapłana `wiki = false`: 12 umiejętności ścieżek, węzły, tytuły i teksty `path.*` są ukryte na wiki do
+  decyzji właściciela o publikacji (przed S82).
+- **S71** ROZWOJ 14.1: wartości szczęścia Fortuny są w `node.values` węzłów `luck` (S60), `Data/Luck` ma tylko pola i
+  limity (równe 6.3).
