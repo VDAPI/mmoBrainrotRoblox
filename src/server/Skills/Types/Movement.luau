@@ -255,7 +255,9 @@ Movement.guard = function(ctx)
 	local allyEntity = if ally then Entity.GetPlayerEntity(ally) else nil
 	local allyPosition = allyEntity and Entity.Position(allyEntity)
 	if not ally or not allyEntity or not allyPosition then
-		-- the self variant: the guard's own reduction only
+		-- the self variant: the guard's own reduction only; S75: no selfEffects (Sacrifice's reduction is for the
+		-- time of an intercept and shares the key of this one, so it would overwrite it)
+		ctx.skipSelfEffects = true
 		ctx.fx({ t = ctx.caster.id, d = longest(ctx, "self") })
 		ctx.applyEffects(ctx.caster, "self")
 		return true, nil

@@ -118,7 +118,8 @@ local NUMERIC_FIELDS = { "range", "radius", "hitRadius", "angle", "length", "wid
 -- The skill as it works at `rank` (ROZWOJ 2.7). Sources in order: breakpoint 5, breakpoint 10 (chosen option, A
 -- without a choice), then `mods` (modify nodes, row order). Rules: `values` add to the current value (the base scales
 -- once), `add` sums, `mul` multiplies, `effect` / `selfEffect` / `allyEffect` go to the effects / selfEffects /
--- allyEffects lists, every other key: the later source wins. `add.effectDuration` lengthens `effects` only.
+-- allyEffects lists, every other key: the later source wins. `add.effectDuration` lengthens every effect of the
+-- skill (effects, selfEffects, allyEffects; S75), `add.<kind>Duration` only the `effects` of that kind (S75).
 -- `enabled = false` (or Config.Skills.breakpoints off) drops the breakpoints, not the mods. `rank` comes from the
 -- character level (S56); consumers call it through Logic/Paths.effectiveFor (choices = path.bp, mods =
 -- Paths.skillMods). Never mutates the data; with no source returns the def itself.
@@ -145,6 +146,7 @@ function Skills.effective(
 	local selfEffects: { SkillData.SkillEffect } = {}
 	local allyEffects: { SkillData.SkillEffect } = {}
 	local addDuration = 0
+	local addKind: { [string]: number } = {}
 	local jumps = 0
 	local none: { [string]: number } = {}
 	for _, bp in sources do
@@ -160,6 +162,10 @@ function Skills.effective(
 				def.allyRadius = (def.allyRadius or BuffCategories.rules.allyRadius) + amount
 			elseif table.find(NUMERIC_FIELDS, key) then
 				def[key] = (def[key] or 0) + amount
+			elseif string.sub(key, -8) == "Duration" then
+				-- S75: one effect kind, e.g. armorBreakDuration (the {<kind>Duration} placeholder name)
+				local kind = string.sub(key, 1, -9)
+				addKind[kind] = (addKind[kind] or 0) + amount
 			end
 		end
 		for key, factor in bp.mul or none do
@@ -190,14 +196,21 @@ function Skills.effective(
 	if jumps ~= 0 then
 		def.values.jumps = Skills.scaled(skill, def.values.jumps, rank) + jumps
 	end
-	-- add.effectDuration lengthens `effects` only, as before S55 (not selfEffects / allyEffects)
-	if addDuration ~= 0 then
-		for i, effect in effects do
-			local copy = table.clone(effect)
-			copy.duration = math.max(0.5, Skills.scaled(skill, effect.duration, rank) + addDuration)
-			effects[i] = copy
+	-- S75: add.effectDuration lengthens every list (the self and party copies last as long as the skill);
+	-- add.<kind>Duration only `effects` of that kind
+	local function lengthen(list: { SkillData.SkillEffect }, byKind: boolean)
+		for i, effect in list do
+			local extra = addDuration + (if byKind then addKind[effect.kind] or 0 else 0)
+			if extra ~= 0 then
+				local copy = table.clone(effect)
+				copy.duration = math.max(0.5, Skills.scaled(skill, effect.duration, rank) + extra)
+				list[i] = copy
+			end
 		end
 	end
+	lengthen(effects, true)
+	lengthen(selfEffects, false)
+	lengthen(allyEffects, false)
 	def.effects = effects
 	def.selfEffects = if #selfEffects > 0 then selfEffects else nil
 	def.allyEffects = if #allyEffects > 0 then allyEffects else nil

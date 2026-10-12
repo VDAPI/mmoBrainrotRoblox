@@ -260,9 +260,9 @@ T.describe("Migration 6 (S56)", function()
 		T.expect(noClass.statPoints).toBe(55)
 		T.expect(noClass.hotbar).toEqual({
 			["1"] = "mightyStrike",
-			["2"] = "battleCry",
-			["3"] = "charge",
-			["4"] = "bladeWhirl",
+			["2"] = "charge",
+			["3"] = "bladeWhirl",
+			["4"] = "taunt",
 		})
 		-- unknown class: stats kept, empty bar, new fields
 		local bard: any = { class = "Bard", level = 30, stats = { str = 9, dex = 9, int = 9, vit = 9 }, statPoints = 7 }

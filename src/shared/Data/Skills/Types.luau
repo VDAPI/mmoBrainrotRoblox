@@ -88,7 +88,8 @@ export type SkillEffect = {
 }
 
 -- Breakpoint (S28, ROZWOJ 2.7): what changes when the skill reaches rank 5 / 10 — numbers (`add` to radius, angle,
--- range, length, width, hits, jumps, duration, effectDuration; `mul` cooldown, cost, delay; `values` added to the
+-- range, length, width, hits, jumps, duration, effectDuration (every effect list), <kind>Duration (only `effects` of
+-- that kind, S75); `mul` cooldown, cost, delay; `values` added to the
 -- skill's values) and behaviours the server applies (Skills/Context, Types/*):
 --   pull = radius            enemies within the radius are pulled to the caster at the start
 --   knockback = studs        hit enemies are pushed away (bosses immune, players half)

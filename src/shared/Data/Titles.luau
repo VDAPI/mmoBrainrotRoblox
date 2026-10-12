@@ -51,6 +51,25 @@ local list: { TitleDef } = {
 		req = { kind = "mainPath", path = "inquisitor" },
 		color = "#D8E6F3",
 	},
+	-- S75: Warrior paths
+	{
+		id = "path_guardian",
+		nameKey = "title.path_guardian",
+		req = { kind = "mainPath", path = "guardian" },
+		color = "#A9B8C6",
+	},
+	{
+		id = "path_berserker",
+		nameKey = "title.path_berserker",
+		req = { kind = "mainPath", path = "berserker" },
+		color = "#C8463A",
+	},
+	{
+		id = "path_standard",
+		nameKey = "title.path_standard",
+		req = { kind = "mainPath", path = "standard" },
+		color = "#D9A441",
+	},
 }
 
 -- S59: character.title when the player hid the title; nil = never chose, the main path title shows

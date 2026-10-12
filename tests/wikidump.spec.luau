@@ -545,15 +545,17 @@ T.describe("Wiki export: building blocks", function()
 		-- S71: ids of hidden skills, nodes and titles never appear quoted anywhere in the output; a path id only where
 		-- it would mean the path (a record's "path" field), because "healer" / "fortune" are also NPC, shop, quest and
 		-- blessing ids.
-		local function leaks(needle: string, what: string)
+		local function leaks(needle: string, what: string, skip: string?)
 			for file, text in result.files do
-				if string.find(text, needle, 1, true) then
+				if (skip == nil or string.find(file, skip, 1, true) == nil) and string.find(text, needle, 1, true) then
 					error(`{what} leaks into {file}`)
 				end
 			end
 		end
+		-- S75: a hidden skill id that is also a monster ability id (Warrior's "cleave") is the ability in monsters.json
+		local MonsterAbilities = require("../src/shared/Data/MonsterAbilities")
 		for id in all do
-			leaks(`"{id}"`, id)
+			leaks(`"{id}"`, id, if MonsterAbilities.byId[id] then "monsters.json" else nil)
 		end
 		for _, path in PathData.list do
 			if path.wiki == false then

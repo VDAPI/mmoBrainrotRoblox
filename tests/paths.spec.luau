@@ -644,13 +644,14 @@ T.describe("Paths: passives and active nodes", function()
 		end
 		local at50 = GamePaths.passiveTotals(warrior(50), {})
 		T.expect(at50.pct.armor).toBe(25)
-		T.expect(at50.pct.maxHp).toBe(12)
+		-- S75: Fortitude is a guardian row 1 skill, it works only with the node
+		T.expect(at50.pct.maxHp).toBeNil()
 		T.expect(at50.hooks.riposte).toBe(4)
-		T.expect(GamePaths.passiveTotals(warrior(47), {}).hooks.riposte).toBeNil()
+		T.expect(GamePaths.passiveTotals(warrior(44), {}).hooks.riposte).toBeNil()
 		T.expect(GamePaths.passiveTotals(warrior(13), {})).toEqual({ flat = {}, pct = {}, hooks = {} })
 		local at100 = GamePaths.passiveTotals(warrior(100), {})
 		T.expect(at100.pct.armor).toBe(25)
-		T.expect(at100.pct.maxHp).toBe(20)
+		T.expect(at100.pct.maxHp).toBeNil()
 		T.expect(at100.hooks.riposte).toBe(12)
 	end)
 
@@ -1345,6 +1346,228 @@ T.describe("Data: Cleric paths (S71)", function()
 				T.expect(PartyBuffRules.checkAuras(main)).toEqual({})
 			end
 		end
+	end)
+end)
+
+-- S75: the Warrior on real paths (ROZWOJ 10) ---------------------------------------------------------------------------
+
+T.describe("Data: Warrior paths (S75)", function()
+	local function warrior(main: string?, nodes: { [string]: number }, bp: { [string]: string }?): any
+		return char(100, state(main, nodes, bp or {}, true), { class = "Warrior" })
+	end
+
+	local function ok(pathId: string, main: string?, offhand: string?): boolean
+		return GamePaths.weaponOk((PathData.get(pathId) :: any).weapon, { main = main, offhand = offhand })
+	end
+
+	local function active(c: any, weapons: any, id: string): boolean
+		for _, a in GamePaths.activeNodes(c, weapons) do
+			if a.node.id == id then
+				return true
+			end
+		end
+		return false
+	end
+
+	T.it("weapons of the three paths and the Block node", function()
+		T.expect(ok("berserker", "axe2h")).toBe(true)
+		T.expect(ok("berserker", "sword1h", "shield")).toBe(false)
+		T.expect(ok("guardian", "sword1h")).toBe(false)
+		T.expect(ok("guardian", "axe1h", "shield")).toBe(true)
+		T.expect(ok("guardian", "sword2h")).toBe(false)
+		T.expect(ok("standard", "saber1h")).toBe(true)
+		T.expect(ok("standard", "saber1h", "shield")).toBe(true)
+		T.expect(ok("standard", "spear2h")).toBe(false)
+		T.expect(ok("standard", "axe1h")).toBe(false)
+		-- Block: own shield requirement in row 2, also outside the main path
+		local c = warrior("berserker", { guardian_block = 3 })
+		T.expect(active(c, { main = "axe2h" }, "guardian_block")).toBe(false)
+		T.expect(active(c, { main = "mace1h", offhand = "shield" }, "guardian_block")).toBe(true)
+		-- coverage: every Warrior weapon and the shield fit a path; axe1h and mace1h only with a shield
+		local class = Classes.get("Warrior") :: any
+		for _, t in class.weaponTypes do
+			local bare, shielded = false, false
+			for _, path in GamePaths.pathsOf("Warrior") do
+				bare = bare or GamePaths.weaponOk(path.weapon, { main = t })
+				shielded = shielded
+					or (
+						not GamePaths.isTwoHanded(t)
+						and GamePaths.weaponOk(path.weapon, { main = t, offhand = "shield" })
+					)
+			end
+			T.expect({ t, bare or shielded }).toEqual({ t, true })
+			if t == "axe1h" or t == "mace1h" then
+				T.expect({ t, bare, shielded }).toEqual({ t, false, true })
+			end
+		end
+	end)
+
+	T.it("ranks: 42 per main path, 10 in rows 1-2 of the others, 50 / 62 coverage, 60 nodes", function()
+		local paths = GamePaths.pathsOf("Warrior")
+		T.expect(#paths).toBe(3)
+		local nodes, skills = 0, 0
+		for _, main in paths do
+			T.expect(main.wiki).toBe(false)
+			T.expect({ main.id, pathRanks(main, 1, #PathData.ROWS) }).toEqual({ main.id, 42 })
+			local total = 42
+			for _, other in paths do
+				if other ~= main then
+					T.expect({ other.id, pathRanks(other, 1, PathData.DIP_ROWS) }).toEqual({ other.id, 10 })
+					total += 10
+				end
+			end
+			T.expect(total).toBe(62)
+			T.expect(GamePaths.pointsAt(100) / total).toBeBetween(0.75, 0.88)
+			for _, row in main.rows do
+				for _, n in row.nodes do
+					nodes += 1
+					skills += if n.kind == "skill" then 1 else 0
+				end
+			end
+		end
+		T.expect({ nodes, skills }).toEqual({ 60, 12 })
+	end)
+
+	T.it("model builds spend exactly 50; Fury is the only damage reference", function()
+		local references = {}
+		for _, path in PathData.list do
+			for _, build in path.reference do
+				if build.damageReference then
+					table.insert(references, `{path.id}:{build.id}:{build.weapon.main}`)
+				end
+			end
+		end
+		T.expect(references).toEqual({ "berserker:fury:axe2h" })
+		for _, path in GamePaths.pathsOf("Warrior") do
+			T.expect(#path.reference).toBe(2)
+			for _, build in path.reference do
+				T.expect(build.stats).toEqual(path.statPlan)
+				local weapons = { main = build.weapon.main, offhand = build.weapon.offhand }
+				T.expect({ build.id, GamePaths.weaponOk(path.weapon, weapons) }).toEqual({ build.id, true })
+				local nodes: { [string]: number } = {}
+				local c = warrior(path.id, nodes)
+				for _, entry in build.nodes do
+					for _ = 1, entry[2] do
+						local can, why = GamePaths.canBuy(c, entry[1])
+						T.expect({ build.id, entry[1], can, why }).toEqual({ build.id, entry[1], true, nil })
+						nodes[entry[1]] = (nodes[entry[1]] or 0) + 1
+					end
+				end
+				T.expect({ build.id, GamePaths.spent(c) }).toEqual({ build.id, GamePaths.pointsAt(100) })
+				local available = GamePaths.availableSkills(c)
+				for key in build.bp do
+					local skillId, at = string.match(key, "^(.+):(%d+)$")
+					local def = SkillData.get(skillId or "") :: any
+					T.expect({ key, at == "5" or at == "10", def ~= nil and def.type ~= "passive" })
+						.toEqual({ key, true, true })
+					T.expect({ key, table.find(available, skillId or "") ~= nil }).toEqual({ key, true })
+				end
+				for _, step in build.rotation do
+					T.expect({ build.id, step.skill, table.find(available, step.skill) ~= nil })
+						.toEqual({ build.id, step.skill, true })
+				end
+			end
+		end
+	end)
+
+	T.it("Cover at 1/3 outside the main path", function()
+		local shield = { main = "sword1h", offhand = "shield" }
+		local function cover(main: string): number
+			for _, aura in GamePaths.auras(warrior(main, { guardian_cover = 3 }), shield) do
+				if aura.nodeId == "guardian_cover" then
+					return aura.stats.value
+				end
+			end
+			return 0
+		end
+		T.expect(cover("guardian")).toBeNear(10, 1e-9)
+		T.expect(cover("berserker")).toBeNear(10 / 3, 1e-9)
+	end)
+
+	-- Composition with nodes (ROZWOJ 2.7): Skills.effective(skill, rank, choices, Paths.skillMods(...)).
+	local function eff(
+		skillId: string,
+		main: string,
+		nodes: { [string]: number },
+		bp: { [string]: string },
+		weapons: any
+	): (any, any)
+		local c = warrior(main, nodes, bp)
+		local skill = SkillData.get(skillId) :: any
+		return Skills.effective(skill, 10, bp :: any, GamePaths.skillMods(c, skillId, weapons), true)
+	end
+	local SABER = { main = "saber1h" }
+	local SHIELD = { main = "sword1h", offhand = "shield" }
+	local AXE = { main = "axe2h" }
+	local function effectOf(list: { any }?, kind: string): any
+		for _, e in list or {} do
+			if e.kind == kind then
+				return e
+			end
+		end
+		return nil
+	end
+
+	T.it("Battle Cry: Fervor, Battle Breath, Commander's Voice and Hold the Line!", function()
+		local d1 = eff("battleCry", "standard", { standard_fervor = 3 }, { ["battleCry:5"] = "b" }, SABER)
+		T.expect(Skills.valueAt(d1, "atk", 10)).toBeNear(43, 1e-9)
+		local d2 = eff("battleCry", "standard", { standard_breath = 3 }, { ["battleCry:10"] = "a" }, SABER)
+		T.expect(Skills.scaled(d2, d2.cooldown, 10)).toBeNear(30, 1e-9)
+		T.expect((Skills.cost(d2, 10, 100, "Warrior"))).toBeNear(10, 1e-9)
+		local nodes = { standard_command = 3, standard_formation = 3 }
+		local d3 = eff("battleCry", "standard", nodes, { ["battleCry:10"] = "b" }, SABER)
+		T.expect(#d3.allyEffects).toBe(2)
+		local attack = d3.allyEffects[1]
+		local vigor = d3.allyEffects[2]
+		T.expect({ attack.category, Skills.valueAt(d3, attack.stats.physAtk, 10), attack.duration })
+			.toEqual({ "allyAttack", 3, 24 })
+		T.expect({ vigor.category, Skills.valueAt(d3, vigor.stats.armor, 10), vigor.duration })
+			.toEqual({ "allyVigor", 9, 24 })
+		T.expect(d3.effects[1].category).toBe("own")
+		local d4 = eff("battleCry", "guardian", nodes, { ["battleCry:10"] = "b" }, SHIELD)
+		T.expect(Skills.valueAt(d4, "cmdAtk", 10)).toBeNear(1, 1e-9)
+		-- the path weapon: rows 3+ need it, rows 1-2 do not
+		local d5 = eff("battleCry", "standard", { standard_fervor = 3, standard_command = 3 }, {}, AXE)
+		T.expect(Skills.valueAt(d5, "atk", 10)).toBeNear(28, 1e-9)
+		T.expect(Skills.valueAt(d5, "cmdAtk", 10)).toBeNear(3, 1e-9)
+	end)
+
+	T.it("War Banner, Crushing Blow, Titan's Wrath", function()
+		local bp = { ["warBanner:5"] = "a", ["warBanner:10"] = "a" }
+		local banner = eff("warBanner", "standard", { standard_wide = 3, standard_colours = 3 }, bp, SABER)
+		T.expect(banner.radius).toBe(26)
+		T.expect(Skills.scaled(banner, banner.duration, 10)).toBeNear(18, 1e-9)
+		local blow = eff("crushingBlow", "standard", { standard_sunder = 3 }, { ["crushingBlow:5"] = "a" }, SABER)
+		T.expect(effectOf(blow.effects, "armorBreak").duration).toBeNear(12, 1e-9)
+		T.expect(effectOf(blow.effects, "stun").duration).toBeNear(0.7, 1e-9)
+		local wrath = eff("titansWrath", "berserker", { berserker_thunder = 3 }, { ["titansWrath:10"] = "b" }, AXE)
+		T.expect({ wrath.hits, Skills.valueAt(wrath, "dmg", 10) }).toEqual({ 4, 295 })
+		T.expect(Skills.scaled(wrath, wrath.cooldown, 10)).toBeNear(36, 1e-9)
+	end)
+
+	T.it("Shield Wall, Intercept, Carnage", function()
+		local bp = { ["shieldWall:5"] = "a", ["shieldWall:10"] = "a" }
+		local wall = eff("shieldWall", "guardian", { guardian_fortress = 3, guardian_shieldWall2 = 2 }, bp, SHIELD)
+		T.expect(wall.radius).toBe(20)
+		T.expect(Skills.scaled(wall, wall.cooldown, 10)).toBeNear(45, 1e-9)
+		T.expect(effectOf(wall.effects, "intercept").duration).toBeNear(10, 1e-9)
+		T.expect(Skills.valueAt(wall, "share", 10)).toBeNear(30, 1e-9)
+
+		local nodes = { guardian_sacrifice = 3, guardian_aegis = 3 }
+		local guard, behaviour = eff("intercept", "guardian", nodes, { ["intercept:5"] = "a" }, SHIELD)
+		T.expect(effectOf(guard.effects, "intercept").duration).toBeNear(7.5, 1e-9)
+		local own = guard.selfEffects[1]
+		T.expect({ own.kind, own.value, Skills.valueAt(guard, "sacrificeGuard", 10) })
+			.toEqual({ "damageReduction", "sacrificeGuard", 15 })
+		T.expect(own.duration).toBeNear(7.5, 1e-9)
+		T.expect(Skills.resolve(guard, behaviour.allyShield.hpPct, 10)).toBeNear(15, 1e-9)
+
+		local carnage = eff("carnage", "berserker", { berserker_carnage2 = 2 }, { ["carnage:5"] = "a" }, AXE)
+		local effect = effectOf(carnage.effects, "carnage")
+		T.expect({ effect.duration, effect.value, Skills.valueAt(carnage, "furyRestore", 10) })
+			.toEqual({ 12, "furyRestore", 10 })
+		local plain = eff("carnage", "berserker", {}, {}, AXE)
+		T.expect(Skills.valueAt(plain, "furyRestore", 10)).toBe(0)
 	end)
 end)
 

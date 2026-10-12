@@ -1532,3 +1532,28 @@
   `furyDmg` (mnożnik ciosu), Rzeź `perFury` w `stats.physAtk` efektu `statBuff` (× zużyte stosy).
 - **S74** Mur Tarcz ma prowokację jako pierwszy efekt na liście (luau-lsp wnioskuje typ tablicy z pierwszego wpisu);
   kolejność nakładania nie ma znaczenia. Okrzyk w regule `delivery` (data.spec) liczy się jak `circleSelf` (`melee`).
+- **S75** Wojownik: podstawa 8 (Potężne Uderzenie 1, Szarża 3, Wir Ostrzy 6, Prowokacja 10, Stalowa Skóra 14, Krwawy
+  Szał 18, Trzęsienie Ziemi 30, Kontratak 45). Okrzyk Bojowy, Niezłomność, Rozpłatanie w rzędzie 1 ścieżek (poz. 10, za
+  punkt), Ostatni Bastion, Gniew Tytana, Miażdżący Cios w rzędzie 7 (poz. 48, tylko ścieżka główna z jej bronią). Przy
+  wczytaniu `Paths.validHotbar` zdejmuje je z paska obu zestawów i kasuje ich wpisy `path.bp`, dopóki gracz nie kupi
+  węzła; pasywka Niezłomność bez węzła `guardian_fortitude` nie działa.
+- **S75** Odblokowania: wcześniej Szarża 6 → 3, Wir 10 → 6, Prowokacja 23 → 10, Krwawy Szał 40 → 18, Trzęsienie 34 → 30,
+  Kontratak 48 → 45, Ostatni Bastion 65 → 48, Gniew Tytana 75 → 48, Miażdżący Cios 56 → 48; Niezłomność 28 → 10 i
+  Rozpłatanie 18 → 10 (węzeł rzędu 1); później Okrzyk Bojowy 3 → 10 (węzeł). Siłę na 1–20 stroi S91.
+- **S75** Domyślne 15.3: Okrzyk Bojowy na drużynę tylko z Głosem Dowódcy (+1 / 2 / 3% ataku fiz. i mag., poza ścieżką
+  główną 1/3); Chorąży szabla albo miecz, włócznia tylko Berserker; nazwa Strażnik bez zmian.
+- **S75** Ścieżki Wojownika `wiki = false`: 12 umiejętności ścieżek, węzły, tytuły i teksty `path.*` są ukryte na wiki do
+  decyzji właściciela o publikacji (przed S82).
+- **S75** Krwawa Rzeź: `carnage.values.furyRestore` (0 bez węzła) jako `value` efektu `carnage`; po naturalnym końcu
+  Rzezi (`tickEntity`, nie zdjęcie ani śmierć) w walce `SetFury(max(stosy, value))`, wywołane po pętli efektów.
+- **S75** Czas jednego rodzaju efektu: klucz `add.<kind>Duration` (np. `armorBreakDuration`, nazwa jak placeholder
+  opisu) wydłuża tylko `effects` tego rodzaju. Rozbicie Szyku go używa (ROZWOJ 10.5 poprawiony), bo
+  `add.effectDuration` wydłużyłby też ogłuszenie z 5A Miażdżącego Ciosu.
+- **S75** `add.effectDuration` wydłuża też `selfEffects` i `allyEffects` (kopie trwają tyle co umiejętność; Poświęcenie,
+  Głos Dowódcy, Trzymać Szyk!). Skutki dla danych: Krwawy Szał 5B + 10A redukcja 14 s (było 12), Tarcza Many 5A + 10A
+  regeneracja 20 s (15), Kamuflaż 5A + 10A ruch 6 s (4), Okrzyk Bojowy 5A / 10A + 10B pancerz i szybkość 24 s (20),
+  Rzeź 5A + 10B redukcja 10 s (8). Kapłan bez zmian; reguła 7.3 przechodzi.
+- **S75** Poświęcenie: `StatusEffectService.Apply` nadpisuje wartość efektu o tym samym kluczu, więc wariant Przechwycenia
+  na siebie ustawia `ctx.skipSelfEffects` i `SkillService.finished` pomija wtedy `selfEffects` (`selfHeal` zostaje).
+- **S75** Testy: id ukrytej umiejętności, które jest też id zdolności potwora (`cleave`), nie liczy się jako wyciek w
+  `monsters.json` (`wikidump.spec`). Przypadki składania z węzłami Wojownika są w `paths.spec` (pomocniki postaci).

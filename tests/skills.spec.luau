@@ -133,12 +133,12 @@ T.describe("S56 ranks from the level and the bar", function()
 	end
 
 	T.it("rankFor (base only)", function()
-		local cleave = SkillData.get("cleave") :: any
-		T.expect(Skills.rankFor("Warrior", 17, cleave)).toBe(0)
-		T.expect(Skills.rankFor("Warrior", 18, cleave)).toBe(1)
-		T.expect(Skills.rankFor("Warrior", 54, cleave)).toBe(10)
-		T.expect(Skills.rankFor("Mage", 54, cleave)).toBe(0)
-		local onPath = table.clone(cleave)
+		local bloodlust = SkillData.get("bloodlust") :: any
+		T.expect(Skills.rankFor("Warrior", 17, bloodlust)).toBe(0)
+		T.expect(Skills.rankFor("Warrior", 18, bloodlust)).toBe(1)
+		T.expect(Skills.rankFor("Warrior", 54, bloodlust)).toBe(10)
+		T.expect(Skills.rankFor("Mage", 54, bloodlust)).toBe(0)
+		local onPath = table.clone(bloodlust)
 		onPath.path = "somePath"
 		T.expect(Skills.rankFor("Warrior", 54, onPath)).toBe(0) -- path skills: Logic/Paths.skillRank
 		T.expect(Skills.validSlot(1)).toBe(true)
@@ -208,7 +208,7 @@ T.describe("S56 ranks from the level and the bar", function()
 	end)
 
 	T.it("newlyUnlocked", function()
-		T.expect(ids(Skills.newlyUnlocked("Warrior", 2, 6))).toEqual({ "battleCry", "charge" })
+		T.expect(ids(Skills.newlyUnlocked("Warrior", 2, 6))).toEqual({ "charge", "bladeWhirl" })
 		T.expect(ids(Skills.newlyUnlocked("Warrior", 13, 14))).toEqual({ "steelSkin" })
 		T.expect(ids(Skills.newlyUnlocked("Warrior", 6, 6))).toEqual({})
 	end)
@@ -400,7 +400,7 @@ T.describe("S55 ranks (ROZWOJ 2.5)", function()
 		T.expect(passiveLevels).toEqual({ 23, 32, 41, 50 })
 		local cleaveLevels = {}
 		for r = 1, 10 do
-			table.insert(cleaveLevels, Skills.rankLevel(skill("cleave"), r))
+			table.insert(cleaveLevels, Skills.rankLevel(skill("bloodlust"), r))
 		end
 		T.expect(cleaveLevels).toEqual({ 18, 22, 26, 30, 34, 38, 42, 46, 50, 54 })
 		T.expect(Skills.rankLevel(skill("mightyStrike"), 2)).toBe(5)
@@ -438,7 +438,7 @@ T.describe("S55 ranks (ROZWOJ 2.5)", function()
 			end
 			T.expect(Skills.rankAt(def, 100)).toBe(def.maxLevel)
 		end
-		local cleave = skill("cleave")
+		local cleave = skill("bloodlust")
 		T.expect(Skills.rankAt(cleave, 17)).toBe(0)
 		T.expect(Skills.rankAt(cleave, 33)).toBe(4)
 		T.expect(Skills.rankAt(cleave, 34)).toBe(5)
@@ -507,6 +507,15 @@ local function legacyEffective(skill: SkillData.SkillDef, level: number): (any, 
 			local copy = table.clone(effect)
 			copy.duration = math.max(0.5, Skills.scaled(skill, effect.duration, level) + addDuration)
 			effects[i] = copy
+		end
+		-- S75 (DECYZJE): add.effectDuration lengthens the self and party copies too (intended change)
+		for _, key in { "selfEffect", "allyEffect" } do
+			local effect = behaviour[key]
+			if effect then
+				local copy = table.clone(effect)
+				copy.duration = math.max(0.5, Skills.scaled(skill, effect.duration, level) + addDuration)
+				behaviour[key] = copy
+			end
 		end
 	end
 	def.effects = effects
@@ -1626,8 +1635,8 @@ T.describe("Warrior S74", function()
 			.toBe(true)
 	end)
 
-	-- S75 replaces this case: the guardian, berserker and standard paths get their PathDef there.
-	T.it("unreachable until S75 (no PathDef)", function()
+	-- S75: their paths are published; without the skill node the skills stay out of reach.
+	T.it("unreachable without their skill node", function()
 		local hotbar: { [string]: string } = {}
 		local i = 0
 		for id in NEW do
@@ -1646,6 +1655,79 @@ T.describe("Warrior S74", function()
 			T.expect({ id, table.find(available, id) == nil, GamePaths.skillRank(char, id) }).toEqual({ id, true, 0 })
 		end
 		T.expect(GamePaths.validHotbar(char)).toEqual({})
+		for id in NEW do
+			local def = SkillData.get(id) :: any
+			char.path = { main = def.path, nodes = { [`{def.path}_{id}`] = 1 }, bp = {}, freeUsed = true }
+			T.expect({ id, table.find(GamePaths.availableSkills(char), id) ~= nil }).toEqual({ id, true })
+		end
+	end)
+end)
+
+-- S75: the Warrior's base 8 and path skills (ROZWOJ 10.2-10.5).
+T.describe("S75 Warrior base and path skills", function()
+	T.it("base 8 at 1, 3, 6, 10, 14, 18, 30, 45; 12 path skills at their row level", function()
+		local base, onPath = {}, {}
+		local actives = 0
+		for _, def in SkillData.byClass.Warrior do
+			if def.path == nil then
+				table.insert(base, `{def.id}:{def.unlock}`)
+			else
+				onPath[def.id] = `{def.path}:{def.unlock}`
+			end
+			if def.type ~= "passive" then
+				actives += 1
+				for _, at in { 5, 10 } do
+					local pair = def.breakpoints and def.breakpoints[at]
+					T.expect({ def.id, at, pair ~= nil and pair.a ~= nil and pair.b ~= nil })
+						.toEqual({ def.id, at, true })
+				end
+			end
+		end
+		T.expect(base).toEqual({
+			"mightyStrike:1",
+			"charge:3",
+			"bladeWhirl:6",
+			"taunt:10",
+			"steelSkin:14",
+			"bloodlust:18",
+			"earthquake:30",
+			"riposte:45",
+		})
+		T.expect(onPath).toEqual({
+			fortitude = "guardian:10",
+			intercept = "guardian:26",
+			lastBastion = "guardian:48",
+			shieldWall = "guardian:60",
+			cleave = "berserker:10",
+			rend = "berserker:26",
+			titansWrath = "berserker:48",
+			carnage = "berserker:60",
+			battleCry = "standard:10",
+			warBanner = "standard:26",
+			crushingBlow = "standard:48",
+			advanceOrder = "standard:60",
+		})
+		T.expect(actives).toBe(17)
+	end)
+
+	T.it("Battle Cry works on the Warrior only (team copy comes from the Commander's Voice node)", function()
+		local cry = SkillData.get("battleCry") :: any
+		local function own(effect: any)
+			T.expect(effect.category).toBe("own")
+		end
+		for _, e in cry.effects do
+			own(e)
+		end
+		for _, at in { 5, 10 } do
+			for _, option in { cry.breakpoints[at].a, cry.breakpoints[at].b } do
+				T.expect(option.allyEffect).toBeNil()
+				for _, key in { "effect", "selfEffect" } do
+					if option[key] then
+						own(option[key])
+					end
+				end
+			end
+		end
 	end)
 end)
 

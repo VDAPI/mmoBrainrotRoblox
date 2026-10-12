@@ -35,8 +35,8 @@ export type PathNode = {
 export type PathRow = { choice: boolean, nodes: { PathNode } }
 -- S71 (ROZWOJ 3.2, 7.5): a model build, the shape every class copies; read by tests and the balance model (S85), never
 -- by the game or the wiki. Rotation entries: `skill` (required) plus optional conditions, data only:
--- target = "tank" | "mostWounded" | "meleeAllies" | "self", minWounded, minEnemies, belowHp, debuff, beforeRedZone,
--- opener, elite (later classes add their own, e.g. minFury).
+-- target = "tank" | "mostWounded" | "meleeAllies" | "self" | "allyInZone" (an ally in a red zone, S75), minWounded,
+-- minEnemies, belowHp, debuff, beforeRedZone, opener, elite, minFury (at least that many Fury stacks, S75).
 export type ReferenceBuild = {
 	id: string,
 	damageReference: boolean?, -- only the Berserker "fury" build (S75)

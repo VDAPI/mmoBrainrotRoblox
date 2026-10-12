@@ -1386,7 +1386,7 @@ Przeniesione:
 | 6 · 40 albo | Natchnienie (`standard_inspire`, modify `warBanner`: `allyEffect` `allyCrit`) | krytyk w kręgu +1 / 2 / 3 pkt proc. (ta sama kategoria co Rozkaz) |
 | 6 · 40 albo | Okrzyk Wiecu (`standard_rally`, modify `battleCry`: `allyEffect` leczenie, nowe `allyHeal`) | leczenie sojuszników 3 / 6 / 9% ich maks. HP przy Okrzyku |
 | 7 · 48 | Miażdżący Cios (`standard_crushingBlow`, skill) | przeniesiona B |
-| 7 · 48 | Rozbicie Szyku (`standard_sunder`, modify `crushingBlow` `add.effectDuration`) | +2 / 4 / 6 s (osłabienie pancerza 6 → 12 s) |
+| 7 · 48 | Rozbicie Szyku (`standard_sunder`, modify `crushingBlow` `add.armorBreakDuration`, S75) | +2 / 4 / 6 s (osłabienie pancerza 6 → 12 s) |
 | 8 · 60 | Rozkaz Natarcia (`standard_advanceOrder`, skill) | zwieńczenie |
 | 9 · 70 albo | Przysięga Chorągwi (`standard_oath`, modify `warBanner`: `allyEffect` `allyGuard`) | redukcja obrażeń w kręgu 4 / 7 / 10% |
 | 9 · 70 albo | Chwała (`standard_glory`, modify `advanceOrder` `add.effectDuration`) | +1 / 2 / 3 s |

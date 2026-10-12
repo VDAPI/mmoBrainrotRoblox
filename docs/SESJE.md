@@ -3887,3 +3887,30 @@ Pliki: `src/shared/{Data/Skills/{Types,Build,init,Warrior},Data/{SkillMotions,Sk
 Data/Localization/{pl,en},Logic/{Skills,GuardTarget}}`, `src/server/{Skills/{Banner,Types/Movement,Types/Support},
 Services/{SkillService,PartyAuraService}}`, `src/client/{Controllers/{SkillController,VfxController},Vfx/Library,
 UI/SkillInfo}`, `tests/{skills,skillmotion,data}.spec`, `docs/{DECYZJE,SESJE,PROGRESS}.md`.
+
+### S75: Wojownik 4: podstawa i ścieżki Strażnik, Berserker, Chorąży
+
+- Podstawa 8 i pola `path` w `Data/Skills/Warrior` (kolejność: podstawa wg odblokowania, potem `guardian`, `berserker`,
+  `standard`); dane A z 14.2 (Trzęsienie 5A 5, 10A 25, Okrzyk 10A ×0,75) i `unlock` 26 / 60 z S74 były na miejscu.
+  Okrzyk Bojowy bez efektów drużynowych (test). Bez migracji: przy wczytaniu `Paths.validHotbar` zdejmuje z paska obu
+  zestawów Okrzyk Bojowy, Rozpłatanie, Ostatni Bastion, Gniew Tytana i Miażdżący Cios (z wpisami `path.bp`), dopóki
+  gracz nie kupi węzła; Niezłomność bez węzła nie działa. Wcześniej: Szarża 3, Wir 6, Prowokacja 10, Krwawy Szał 18,
+  Trzęsienie 30, Kontratak 45, umiejętności rzędu 7 na 48; później: Okrzyk Bojowy 10. Znacznika wersji drzewka nie ma.
+  Zwój Nowej Ścieżki u Nauczyciela działa od teraz także dla Wojownika (bramka S57, bez zmian w kodzie).
+- `Data/Paths/Warrior`: Strażnik, Berserker, Chorąży (60 węzłów, 48 z tekstami, 12 `skill`), broń z B1, `statPlan`,
+  `itemWeights` (S67), `wiki = false`, sześć buildów wzorcowych (Obrońca, Samotnik, Furia z `damageReference`,
+  Rzeźnik, Dowódca, Opiekun). Samotnik ma przełomy Obrońcy (ROZWOJ ich nie podaje), rotacja z `intercept` na siebie.
+  Typ `ReferenceBuild`: warunki `minFury` i `target = "allyInZone"`.
+- C1: wszystkie haki węzłów mają odbiorców z S64 / S72 (test S71 przechodzi). C2: `furyRestore` po końcu Rzezi
+  (`StatusEffectService.tickEntity`). C3: `add.<kind>Duration` w `Skills.effective`. C4: `add.effectDuration` na
+  `selfEffects` / `allyEffects`. C5: `ctx.skipSelfEffects` w wariancie osłony na siebie. C6 i C7: nic do zrobienia.
+- Tytuły `path_guardian`, `path_berserker`, `path_standard`; 105 kluczy na język (3 tytuły, 6 ścieżek, 96 węzłów).
+- Testy: „Data: Warrior paths (S75)” w `paths.spec` (broń, pokrycie broni, rangi 42 / 10 / 62, 60 węzłów, buildy przez
+  `canBuy`, jedno odniesienie obrażeń, Osłona 1/3, składanie Okrzyku, Sztandaru, Miażdżącego Ciosu, Gniewu Tytana,
+  Muru Tarcz, Przechwycenia i Rzezi z węzłami), „S75 Warrior base and path skills” w `skills.spec`; poprawione
+  oczekiwania drabiny Wojownika (`character`, `skills`, `paths`), test „neutral” zna zmianę C4, `wikidump` pomija
+  `cleave` jako zdolność potwora. Wiki: 6 umiejętności znika ze `skills.json`.
+
+Pliki: `src/shared/{Data/Skills/{Warrior,Types},Data/Paths/{Warrior,Types},Data/Titles,Data/Localization/{pl,en},
+Logic/Skills}`, `src/server/{Services/{StatusEffectService,SkillService},Skills/{Context,Types/Movement}}`,
+`tests/{paths,skills,character,wikidump}.spec`, `wiki/src/data/*`, `docs/{ROZWOJ,PRZEDMIOTY,DECYZJE,SESJE,PROGRESS}.md`.

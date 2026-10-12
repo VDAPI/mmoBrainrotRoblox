@@ -67,6 +67,9 @@ export type Ctx = {
 	root: BasePart,
 	target: any?, -- entity
 	point: Vector3?,
+	-- S75: set by a handler whose cast must not get the selfEffects (guard's self variant: Sacrifice protects
+	-- only while intercepting); SkillService.finished reads it
+	skipSelfEffects: boolean?,
 	services: Services,
 	value: (field: string) -> number,
 	resolve: (ref: SkillData.ValueRef?) -> number, -- S73: Logic/Skills.resolve at this rank

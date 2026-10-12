@@ -962,6 +962,7 @@ end
 
 local function tickEntity(entity: any, list: { Effect }, t: number)
 	local expired = false
+	local furyRestore = 0
 	for i = #list, 1, -1 do
 		local effect = list[i]
 		if effect.expiresAt <= t then
@@ -971,6 +972,10 @@ local function tickEntity(entity: any, list: { Effect }, t: number)
 			local dead = entity.kind == "player" and entity.player and ResourceService.IsDead(entity.player)
 			if not dead then
 				fireEnd(entity, effect)
+				-- S75 (Red Carnage): Fury comes back when Carnage runs out (natural end only), set after the loop
+				if effect.kind == "carnage" and effect.value > 0 then
+					furyRestore = math.max(furyRestore, effect.value)
+				end
 			end
 			continue
 		end
@@ -1001,6 +1006,10 @@ local function tickEntity(entity: any, list: { Effect }, t: number)
 	end
 	if expired then
 		changed(entity, "expired")
+	end
+	local player: Player? = entity.player
+	if furyRestore > 0 and entity.kind == "player" and player and ResourceService.InCombat(player) then
+		StatusEffectService.SetFury(player, math.max(StatusEffectService.FuryStacks(player), furyRestore))
 	end
 end
 

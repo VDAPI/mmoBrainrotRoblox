@@ -580,7 +580,7 @@ local function cast(player: Player, skillId: string, targetId: string?, aim: any
 	-- After a successful handler: breakpoint effects on the caster.
 	local function finished()
 		local selfEffects = skill.selfEffects
-		if selfEffects then
+		if selfEffects and not ctx.skipSelfEffects then
 			for _, effect in selfEffects do
 				ctx.applyEffect(caster, effect)
 			end
