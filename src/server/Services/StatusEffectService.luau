@@ -15,6 +15,8 @@
 -- removed or changed effect publishes "Effects" at once; a mere refresh at most once per PUBLISH_INTERVAL. Category
 -- reads with the skill / item split go through CategoryValue; every DoT tick of a player on a player is x0.6 once
 -- (Apply); the player's walk speed follows SlowFactor (StatService.SetSpeedFactor).
+-- S70: Guardian Angel is the filter at FilterPriority.guardianAngel (Logic/Skills.angelSave; AngelSaved after a save);
+-- `element` on an effect colours its tick numbers (Brand of Light burns in light).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -29,6 +31,7 @@ local Config = require(Shared.Config)
 local Damage = require(Shared.Logic.Damage)
 local EffectStack = require(Shared.Logic.EffectStack)
 local Intercept = require(Shared.Logic.Intercept)
+local Skills = require(Shared.Logic.Skills)
 local Traits = require(Shared.Logic.Traits)
 
 local Log = require(Shared.Util.Log)
@@ -44,6 +47,8 @@ local StatusEffectService = {
 	-- (guard: Player, target: Player, moved: number, taken: number, attacker: any?) after a guard took part of a monster
 	-- blow aimed at an ally (S61): moved = the part before the guard's own reductions, taken = what got through them.
 	Intercepted = Signal.new(),
+	-- S70: (player, caster: Player?) after Guardian Angel left the player at 1 HP.
+	AngelSaved = Signal.new(),
 }
 
 export type Effect = {
@@ -63,6 +68,7 @@ export type Effect = {
 	radius: number?, -- S61: intercept: studs the guard may stand from the target (nil = Combat.interceptRadius)
 	appliedAt: number, -- server time of the last (re)application; a tie in a category goes to the newer one
 	healCut: number?, -- S63: % less healing and shields on this player (Rending Gash, PvP)
+	element: string?, -- S70: element of the tick numbers (nil = by kind, DamageText.dotElement)
 }
 
 local EntityService: any
@@ -182,6 +188,7 @@ export type ApplyOptions = {
 	healCut: number?, -- S63: % less healing and shields on this player (Rending Gash, PvP)
 	notBoss: boolean?, -- S63: bosses and Elite II ignore it; SkillEffect.notBoss (S70) maps here
 	accumulate: boolean?, -- S65: a refresh adds the unpaid rest of the running DoT (EffectStack.accumulate)
+	element: string?, -- S70: element of the tick numbers (a holy skill's burn shows in light)
 }
 
 -- S61 (ROZWOJ 7.6): heal and shield multipliers of a player in PvP combat. PvpService sets them in its Init (it
@@ -320,6 +327,7 @@ function StatusEffectService.Apply(entity: any, kind: string, options: ApplyOpti
 		})
 	end
 	e.healCut = options.healCut
+	e.element = options.element
 	if kind == "statBuff" then
 		-- Same key: the stats merge (Battle Cry's attack + its breakpoint's armor), the later end wins.
 		local timed: EffectStack.Timed? = if running
@@ -709,6 +717,41 @@ local function interceptFilter(player: Player, amount: number, source: string, a
 	return kept
 end
 
+-- S70 Guardian Angel (ROZWOJ 7.6, 9.3): the last filter before the duel (FilterPriority.guardianAngel), so it sees
+-- what got through intercept, reductions and shields. One save per angel: every guardianAngel effect on the player is
+-- removed when used (two Clerics' angels give one save). The save heals value % max HP after the blow (PvP heal scale
+-- like a hot tick; the source is the caster of the strongest angel).
+local function angelFilter(player: Player, amount: number, source: string, _attacker: any?): number
+	local entity = playerEntity(player)
+	if not entity then
+		return amount
+	end
+	local angels = active(entity, "guardianAngel")
+	if #angels == 0 then
+		return amount
+	end
+	local hp = ResourceService.Get(player)
+	local allowed, saved = Skills.angelSave(hp, amount, source, true)
+	if saved then
+		local strongest = angels[1]
+		for _, effect in angels do
+			if effect.value > strongest.value then
+				strongest = effect
+			end
+		end
+		local healPct = strongest.value
+		local caster = strongest.source
+		StatusEffectService.Remove(entity, "guardianAngel")
+		StatusEffectService.AngelSaved:Fire(player, caster)
+		task.defer(function()
+			-- after Damage() has taken the blow and left 1 HP
+			local maxHp = StatService.GetValue(player, "maxHp")
+			ResourceService.Heal(player, maxHp * healPct / 100 * healScale(player), caster)
+		end)
+	end
+	return allowed
+end
+
 -- Ticking ---------------------------------------------------------------------------------------------------
 
 local function tickEntity(entity: any, list: { Effect }, t: number)
@@ -766,6 +809,8 @@ function StatusEffectService.Init(registry)
 	end)
 	ResourceService.SetDamageFilter(interceptFilter, ResourceService.FilterPriority.intercept)
 	ResourceService.SetDamageFilter(damageFilter, ResourceService.FilterPriority.mitigation)
+	-- ROZWOJ 7.6: after intercept, reductions and shields; the duel knockout (100) comes after
+	ResourceService.SetDamageFilter(angelFilter, ResourceService.FilterPriority.guardianAngel)
 end
 
 function StatusEffectService.Start()

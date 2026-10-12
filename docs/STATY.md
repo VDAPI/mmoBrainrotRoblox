@@ -209,7 +209,7 @@ każda liczba linii podana jest dla 100. poziomu albo z dopiskiem, że rośnie z
 | `poisonChance` | +{v}% szansy na zatrucie | trucizna razem 20% ciosu w 5 s (albo siła Jadowitych grotów, gdy nosisz Łuk) | 2–4 | broń, rękawice, kołczan | Ł | szansa 40% |
 | `pierce` | Przebicie pancerza {v}% | ignoruje część pancerza (zastępuje `armorPen`; jak Bełt przeciwpancerny) | 3–6 | broń, kołczan, rękawice, pierścień | W, Ł | 50% |
 | `magicPierce` | Przebicie magii {v}% | ignoruje część odporności magicznej | 3–6 | broń, księga, kula, rękawice | M, K | 50% |
-| `dotPower` | +{v}% obrażeń ran, trucizn i podpaleń | mnoży tyknięcia | 4–8 | broń, naszyjnik | W, Ł, M (K od sesji, która da Kapłanowi podpalenie, S70) | brak |
+| `dotPower` | +{v}% obrażeń ran, trucizn i podpaleń | mnoży tyknięcia | 4–8 | broń, naszyjnik | wszystkie | brak |
 | `skillDmg` | +{v}% obrażeń umiejętności | mnożnik przy `params.isSkill` (jak Soczewka mocy) | 1–2,2 | broń, druga ręka, naszyjnik | wszystkie | brak |
 | `basicDmg` | +{v}% obrażeń ataku podstawowego | mnożnik ataku podstawowego | 1,5–3,3 | broń, kołczan, rękawice, pierścień | wszystkie | brak |
 | `healPower` | +{v}% mocy leczenia | leczenie i tarcze rzucane (jak Namaszczenie) | 1,5–3,5 | broń, druga ręka, hełm | K | brak |

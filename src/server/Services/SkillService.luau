@@ -8,6 +8,8 @@
 --   after the motion's hit time (S28, at most 0.6 s) the Skills/Types/* handler -> SkillFx impact events.
 --   S28/S55/S57: the skill works as Logic/Paths.effectiveFor makes it (breakpoints at ranks 5 and 10 in the chosen
 --   option, modify nodes).
+-- S70: whether a channel ends early is Logic/Channel.stops (Prayer 10B steadfast keeps praying through damage);
+-- Prayer 5B rolls Roll of the Dice at the end; Guardian Angel's save (StatusEffectService.AngelSaved) plays angelSave.
 -- Cooldowns replicate as state branch `skills` = { cd = { [skillId] = readyAt }, gcd = readyAt, channel? }
 -- (server time), so the client draws the cooldown sweep.
 
@@ -17,6 +19,7 @@ local Workspace = game:GetService("Workspace")
 
 local Shared = ReplicatedStorage.Shared
 
+local Channel = require(Shared.Logic.Channel)
 local Combat = require(Shared.Data.Combat)
 local Context = require(script.Parent.Parent.Skills.Context)
 local Log = require(Shared.Util.Log)
@@ -80,7 +83,8 @@ end
 type Runtime = {
 	cooldowns: { [string]: number },
 	gcd: number,
-	channel: { skillId: string, token: number, startedAt: Vector3 }?,
+	-- S70: kind for Logic/Channel.stops, def = the channelled skill after Skills.effective (ctx.skill)
+	channel: { skillId: string, token: number, startedAt: Vector3, kind: string, def: any }?,
 	channelToken: number,
 	noCooldowns: boolean,
 	infiniteResources: boolean,
@@ -319,13 +323,30 @@ local function interruptChannel(player: Player, reason: string?)
 	end
 end
 
+-- S70 (Prayer 5B, ROZWOJ 9.4): Roll of the Dice as the player would cast it (rank from the level, at least 1, their
+-- breakpoint choices and nodes), one face for half its duration; works without knowing the skill.
+local function prayerDice(ctx: Context.Ctx)
+	local dice = SkillData.get("fortuneDice")
+	if not dice then
+		return
+	end
+	local player = ctx.player
+	local char = ctx.character
+	local rank = math.max(1, Skills.rankAt(dice, char.level))
+	local def, behaviour = Paths.effectiveFor(char, dice.id, Paths.weaponTypesOf(char.equipment), rank)
+	local diceCtx = Context.new(player, def, rank, char, ctx.caster, ctx.root, services, behaviour)
+	diceCtx.rollDice({ half = true })
+end
+
 local function startChannel(ctx: Context.Ctx)
 	local player = ctx.player
 	local rt = runtime(player)
 	rt.channelToken += 1
 	local token = rt.channelToken
 	local duration = ctx.scaled(ctx.skill.duration)
-	rt.channel = { skillId = ctx.skill.id, token = token, startedAt = ctx.root.Position }
+	local channel =
+		{ skillId = ctx.skill.id, token = token, startedAt = ctx.root.Position, kind = "channel", def = ctx.skill }
+	rt.channel = channel
 	StatService.SetSprint(player, false) -- channelling stops the sprint (S18)
 	PlayerStateService.Set(
 		player,
@@ -342,11 +363,12 @@ local function startChannel(ctx: Context.Ctx)
 			end
 			local model = player.Character
 			local root = model and model:FindFirstChild("HumanoidRootPart") :: BasePart?
-			if
-				not root
-				or (root.Position - ctx.root.Position).Magnitude > CHANNEL_MOVE_LIMIT
-				or ResourceService.IsDead(player)
-			then
+			-- S70: Logic/Channel decides (today death and moving always end a channel)
+			local event: Channel.Event? = if not root or ResourceService.IsDead(player)
+				then "death"
+				elseif (root.Position - ctx.root.Position).Magnitude > CHANNEL_MOVE_LIMIT then "move"
+				else nil
+			if event and Channel.stops(channel.kind, event, channel.def) then
 				interruptChannel(player, "cast.interrupted")
 				return
 			end
@@ -365,6 +387,10 @@ local function startChannel(ctx: Context.Ctx)
 					ResourceService.Add(ally, "mana", StatService.GetValue(ally, "maxMana") * ctx.value("group") / 100)
 				end
 			end
+		end
+		-- S70 (Prayer 5B): the prayer ends with Roll of the Dice for the party
+		if ctx.bp.roll then
+			prayerDice(ctx)
 		end
 	end)
 end
@@ -626,6 +652,9 @@ function SkillService.Init(registry)
 		Party = PartyService,
 		Death = DeathService,
 		Fx = sendFx,
+		Toast = function(p: Player, key: string, args: { [string]: any }?, kind: string?)
+			Net.Fire(p, "Toast", key, args, kind)
+		end,
 		PassiveHook = SkillService.PassiveHook,
 		WeaponElement = weaponElement,
 		WeaponSpeed = weaponSpeed,
@@ -661,8 +690,28 @@ function SkillService.Start()
 	-- Taking damage interrupts channels.
 	ResourceService.Damaged:Connect(function(player: Player, amount: number)
 		if amount > 0 then
-			interruptChannel(player, "cast.interrupted")
+			-- S70: Logic/Channel decides (Prayer 10B steadfast keeps praying)
+			local channel = runtime(player).channel
+			if channel and Channel.stops(channel.kind, "damage", channel.def) then
+				interruptChannel(player, "cast.interrupted")
+			end
 		end
+	end)
+	-- S70: Guardian Angel left the player at 1 HP
+	StatusEffectService.AngelSaved:Connect(function(player: Player, caster: Player?)
+		local entity = EntityService.GetPlayerEntity(player)
+		if not entity then
+			return
+		end
+		local from = if caster then EntityService.GetPlayerEntity(caster) else nil
+		sendFx(player, {
+			s = "guardianAngel",
+			v = "angelSave",
+			t = entity.id,
+			p = EntityService.Position(entity),
+			c = if from then from.id else nil,
+		})
+		Net.Fire(player, "Toast", "skills.angelSave", nil, "success")
 	end)
 	CharacterService.CharacterEntered:Connect(function(player: Player)
 		hookCache[player] = nil

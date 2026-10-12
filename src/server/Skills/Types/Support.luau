@@ -7,6 +7,8 @@
 -- S69 (ROZWOJ 7.5, 9.2): heals and shields from each target's own max HP plus a magic part (ctx.healAmount, per
 -- target); the heal jumps to more wounded allies (chainHeal), Circle of Light leaves a healing field (healZone),
 -- the shield and groupBuff cleanse too.
+-- S70 (ROZWOJ 9.3–9.5): Sanctuary is the healZone type (a field at a point); groupBuff rolls Fortune's dice
+-- (skill.roll, ctx.rollDice); Purify 5B bursts light around the healed ally (burst).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -135,6 +137,17 @@ Support.heal = function(ctx)
 		healOne(ctx, other, otherEntity, ctx.healAmount(other, "heal") * (ctx.bp.secondTarget or 0) / 100)
 		healed[other] = true
 	end
+	-- S70 (Purify 5B): light bursts around the healed ally and hurts enemies near them (first target only).
+	local burst = ctx.bp.burst
+	if burst then
+		local at = ctx.services.Entity.Position(entity)
+		if at then
+			ctx.fx({ v = "splash", p = at, r = burst.radius })
+			for _, enemy in ctx.enemiesInCircle(at, burst.radius) do
+				ctx.damage(enemy, burst.pct, { plain = true, consumeShot = false, holy = true })
+			end
+		end
+	end
 	local chain = ctx.bp.chainHeal
 	if chain then
 		chainHeal(ctx, chain, healed)
@@ -257,6 +270,10 @@ Support.groupBuff = function(ctx)
 	end
 	-- Own effects of the skill stay on the caster alone (S53; the party copy above is a separate entry).
 	ctx.applyEffects(ctx.caster, "self")
+	-- S70: Roll of the Dice and Wheel of Fortune
+	if ctx.skill.roll then
+		ctx.rollDice()
+	end
 	-- Divine Intervention also heals a share of maximum health.
 	if ctx.skill.id == "divineIntervention" then
 		for _, ally in allies do
@@ -264,6 +281,34 @@ Support.groupBuff = function(ctx)
 			ctx.heal(ally, maxHp * ctx.value("heal") / 100)
 		end
 	end
+	return true, nil
+end
+
+-- S70 Sanctuary (ROZWOJ 9.3): a consecrated circle at the point. Every second allies inside heal their own
+-- heal of this skill (ctx.healZone, share 100) and get the allyEffects (Sanctuary 10B: damage reduction,
+-- refreshed each tick). Cleanse (5B) once, when the field is placed.
+Support.healZone = function(ctx)
+	local center = ctx.ground(ctx.point or ctx.root.Position)
+	local radius = ctx.skill.radius or 10
+	local duration = ctx.scaled(ctx.skill.duration)
+	ctx.fx({ p = center, r = radius, d = duration })
+	if ctx.bp.cleanse then
+		for _, ally in ctx.alliesInCircle(center, radius) do
+			local entity = ctx.services.Entity.GetPlayerEntity(ally)
+			if entity then
+				ctx.services.StatusEffect.Cleanse(entity)
+			end
+		end
+	end
+	local extras = ctx.skill.allyEffects
+	local onTick = if extras and #extras > 0
+		then function(_ally: Player, entity: any)
+			for _, effect in extras do
+				ctx.applyEffect(entity, effect)
+			end
+		end
+		else nil
+	ctx.healZone(center, radius, duration, 100, onTick)
 	return true, nil
 end
 

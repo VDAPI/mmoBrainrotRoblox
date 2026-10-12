@@ -26,6 +26,7 @@ local VALID_TYPES = {
 	resurrect = true,
 	groupBuff = true,
 	groupHeal = true,
+	healZone = true, -- S70
 	passive = true,
 }
 
@@ -61,6 +62,8 @@ T.describe("Data: Skills", function()
 				check((skill.radius or 0) > 0 and (skill.angle or 0) > 0, "cone needs radius and angle")
 			elseif skill.type == "circleSelf" or skill.type == "circleTarget" or skill.type == "trap" then
 				check((skill.radius or 0) > 0, "needs radius")
+			elseif skill.type == "healZone" then
+				check((skill.radius or 0) > 0 and (skill.range or 0) > 0, "healZone needs radius and range")
 			elseif skill.type == "line" or skill.type == "blink" then
 				check((skill.length or 0) > 0, "needs length")
 			elseif
@@ -132,10 +135,16 @@ T.describe("S56 ranks from the level and the bar", function()
 		T.expect(Skills.validSlot(1.5)).toBe(false)
 	end)
 
-	T.it("transitional ladder (ROZWOJ 2.6): every class skill, 19 ranks at level 20", function()
+	T.it("transitional ladder (ROZWOJ 2.6): every base skill, 19 ranks at level 20", function()
 		for _, classId in Classes.order do
 			local unlocked = Skills.unlocked(classId, 100)
-			T.expect(#unlocked).toBe(#SkillData.byClass[classId])
+			local base = 0
+			for _, skill in SkillData.byClass[classId] do
+				if skill.path == nil then
+					base += 1
+				end
+			end
+			T.expect(#unlocked).toBe(base) -- path skills (S70) come from Logic/Paths
 			local total = 0
 			for _, skill in SkillData.byClass[classId] do
 				total += Skills.rankFor(classId, 20, skill)
@@ -690,8 +699,13 @@ T.describe("S55 breakpoints and composition (ROZWOJ 2.7)", function()
 
 	-- Neutral only while no skill has two changes of the same field: when a class session adds such an A, it replaces
 	-- this case with a direct test (ROZWOJ 2.7).
+	-- S70: Roll of the Dice has values on both A (5A and 10A add to the faces); "S70 new Cleric actives" tests it.
+	local TWO_CHANGES = { fortuneDice = true }
 	T.it("neutral on today's data", function()
 		for id, def in SkillData.byId do
+			if TWO_CHANGES[id] then
+				continue
+			end
 			for _, rank in { 1, 5, 10 } do
 				local d1, b1 = Skills.effective(def, rank, nil, nil, true)
 				local d0, b0 = legacyEffective(def, rank)
@@ -772,19 +786,18 @@ T.describe("S69 Cleric heals and B options", function()
 	end
 
 	T.it("12 actives: A on both ranks, B per ROZWOJ 9.2–9.5", function()
-		-- S70 adds purify 5B (burst) and prayer 5B / 10B (roll, steadfast): flip these then
 		local expected: { [string]: { [number]: string } } = {
 			holyStrike = { [5] = "execute", [10] = "healWounded" },
 			heal = { [5] = "selfHeal", [10] = "chainHeal" },
 			renew = { [5] = "secondTarget", [10] = "values" },
 			radiance = { [5] = "pull", [10] = "echo" },
 			circleOfLight = { [5] = "add", [10] = "healZone" },
-			purify = { [10] = "mul" },
+			purify = { [5] = "burst", [10] = "mul" },
 			auraOfEndurance = { [5] = "allyEffect", [10] = "allyEffect" },
 			resurrection = { [5] = "mul", [10] = "values" },
 			shieldOfFaith = { [5] = "cleanse", [10] = "add" },
 			judgement = { [5] = "stunNear", [10] = "values" },
-			prayer = {},
+			prayer = { [5] = "roll", [10] = "steadfast" },
 			divineIntervention = { [5] = "cleanse", [10] = "allyEffect" },
 		}
 		for id, ranks in expected do
@@ -864,6 +877,127 @@ T.describe("S69 Cleric heals and B options", function()
 		T.expect(Skills.chainOrder({}, 2)).toEqual({})
 		T.expect(Skills.chainShare(60, 1)).toBeNear(0.6)
 		T.expect(Skills.chainShare(60, 2)).toBeNear(0.36)
+	end)
+end)
+
+T.describe("S70 Guardian Angel", function()
+	-- "Once" is the filter removing the effect and "after shields" its priority 90 (ResourceService.FilterPriority);
+	-- both live on the server. This is the pure decision.
+	T.it("a lethal monster blow leaves 1 HP, never PvP, DoT or admin", function()
+		T.expect({ Skills.angelSave(500, 600, "monster", true) }).toEqual({ 499, true })
+		T.expect({ Skills.angelSave(500, 400, "monster", true) }).toEqual({ 400, false })
+		T.expect({ Skills.angelSave(500, 600, "intercept", true) }).toEqual({ 499, true })
+		T.expect({ Skills.angelSave(500, 600, "pvp", true) }).toEqual({ 600, false })
+		T.expect({ Skills.angelSave(500, 600, "poison", true) }).toEqual({ 600, false })
+		T.expect({ Skills.angelSave(500, math.huge, "admin", true) }).toEqual({ math.huge, false })
+		T.expect({ Skills.angelSave(500, 600, "monster", false) }).toEqual({ 600, false })
+		T.expect({ Skills.angelSave(1, 50, "monster", true) }).toEqual({ 0, true })
+	end)
+end)
+
+T.describe("S70 new Cleric actives", function()
+	local GamePaths = require("../src/shared/Logic/Paths")
+	local pl = require("../src/shared/Data/Localization/pl")
+	local en = require("../src/shared/Data/Localization/en")
+	local function skill(id: string): SkillData.SkillDef
+		return SkillData.byId[id]
+	end
+	local PATHS = {
+		sanctuary = "healer",
+		guardianAngel = "healer",
+		fortuneDice = "fortune",
+		wheelOfFortune = "fortune",
+		brandOfLight = "inquisitor",
+		hammerOfHeaven = "inquisitor",
+	}
+
+	T.it("paths, delivery, ranks and breakpoints A and B per ROZWOJ 9.3–9.5", function()
+		local keys: { [string]: { [number]: { string } } } = {
+			sanctuary = { [5] = { "add", "cleanse" }, [10] = { "add", "allyEffect" } },
+			guardianAngel = { [5] = { "add", "add" }, [10] = { "values", "mul" } },
+			fortuneDice = { [5] = { "values", "add" }, [10] = { "values", "rollDouble" } },
+			wheelOfFortune = { [5] = { "add", "add" }, [10] = { "mul", "values" } },
+			brandOfLight = { [5] = { "values", "splash" }, [10] = { "lifesteal", "effect" } },
+			hammerOfHeaven = { [5] = { "add", "lingering" }, [10] = { "add", "echo" } },
+		}
+		for id, path in PATHS do
+			local def = skill(id)
+			T.expect({ id, def.class, def.path, def.maxLevel, def.delivery ~= nil })
+				.toEqual({ id, "Cleric", path, 10, true })
+			for at, pair in keys[id] do
+				local bp: any = (def.breakpoints :: SkillData.Breakpoints)[at]
+				T.expect({ id, at, bp.a[pair[1]] ~= nil, bp.b ~= nil and bp.b[pair[2]] ~= nil })
+					.toEqual({ id, at, true, true })
+				for _, suffix in { "", "b" } do
+					local textKey = `skill.{id}.bp{at}{suffix}`
+					T.expect({ textKey, (pl :: any)[textKey] ~= nil, (en :: any)[textKey] ~= nil })
+						.toEqual({ textKey, true, true })
+				end
+			end
+		end
+	end)
+
+	T.it("control values", function()
+		local sanctuary = skill("sanctuary")
+		T.expect({ Skills.valueAt(sanctuary, "healHp", 1), Skills.valueAt(sanctuary, "healHp", 10) })
+			.toEqual({ 2, 3.2 })
+		T.expect(Skills.shape(sanctuary)).toBe("circle")
+		T.expect(sanctuary.target).toBe("point")
+		local angel = skill("guardianAngel")
+		T.expect({ Skills.valueAt(angel, "saveHeal", 1), Skills.valueAt(angel, "saveHeal", 10) }).toEqual({ 15, 25 })
+		local angelEffect = (angel.effects :: any)[1]
+		T.expect({ Skills.scaled(angel, angelEffect.duration, 1), Skills.scaled(angel, angelEffect.duration, 10) })
+			.toEqual({ 6, 8 })
+		local angel5a = Skills.effective(angel, 10, nil, nil, true)
+		T.expect(Skills.scaled(angel5a, (angel5a.effects :: any)[1].duration, 10)).toBe(10)
+		T.expect(Skills.valueAt(angel5a, "saveHeal", 10)).toBe(40)
+		local wheel = skill("wheelOfFortune")
+		local wheelB = Skills.effective(wheel, 10, { ["wheelOfFortune:10"] = "b" }, nil, true)
+		T.expect(Skills.valueAt(wheelB, "boost", 10)).toBe(100)
+		for _, effect in wheelB.effects :: any do
+			if effect.face then
+				T.expect(Skills.scaled(wheelB, effect.duration, 10)).toBe(12)
+			end
+		end
+		local brand = skill("brandOfLight")
+		local burn = (brand.effects :: any)[1]
+		T.expect({ burn.kind, burn.value, brand.holy }).toEqual({ "burn", "dot", true })
+		local stun = (skill("hammerOfHeaven").effects :: any)[1]
+		T.expect({ stun.kind, stun.notBoss }).toEqual({ "stun", true })
+		T.expect((skill("judgement").effects :: any)[1].notBoss).toBeNil()
+		-- Roll of the Dice: 5A and 10A both add to the faces (replaces the neutral case for it)
+		local dice = Skills.effective(skill("fortuneDice"), 10, nil, nil, true)
+		T.expect(Skills.valueAt(dice, "crit", 10)).toBeNear(11)
+		T.expect(Skills.valueAt(dice, "haste", 10)).toBeNear(17)
+		T.expect(Skills.valueAt(dice, "regen", 10)).toBeNear(2.6)
+		local diceB = Skills.effective(skill("fortuneDice"), 10, { ["fortuneDice:10"] = "b" }, nil, true)
+		local _, behaviour = Skills.effective(skill("fortuneDice"), 10, { ["fortuneDice:10"] = "b" }, nil, true)
+		T.expect(behaviour.rollDouble).toBe(30)
+		T.expect(Skills.valueAt(diceB, "crit", 10)).toBeNear(9)
+	end)
+
+	-- S71 replaces this case when the Cleric's paths get their PathDef.
+	T.it("out of reach until S71 (paths without a PathDef)", function()
+		local hotbar: { [string]: string } = {}
+		local i = 0
+		for id in PATHS do
+			i += 1
+			hotbar[tostring(i)] = id
+		end
+		local c: any = {
+			class = "Cleric",
+			level = 100,
+			path = { main = nil, nodes = {}, bp = {}, freeUsed = false },
+			hotbar = hotbar,
+			equipment = {},
+		}
+		local available = GamePaths.availableSkills(c)
+		for id in PATHS do
+			T.expect({ id, table.find(available, id) }).toEqual({ id, nil })
+			T.expect({ id, GamePaths.skillRank(c, id) }).toEqual({ id, 0 })
+		end
+		local bar = GamePaths.validHotbar(c)
+		T.expect(bar).toEqual({})
 	end)
 end)
 

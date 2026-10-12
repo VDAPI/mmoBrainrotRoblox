@@ -53,6 +53,7 @@ local GLYPHS: { [string]: Glyph } = {
 	misfortune = { glyph = "✗", good = false }, -- S61: misses regular attacks
 	attackSlow = { glyph = "⧗", good = false }, -- S63: slower attacks
 	weaken = { glyph = "⇓", good = false }, -- S63: deals less damage
+	guardianAngel = { glyph = "✟", good = true }, -- S70: a lethal monster blow leaves 1 HP
 	nextBasic = { glyph = "➹", good = true }, -- S65: Full Draw, the next basic attack hits harder
 	runeSeal = { glyph = "◈", good = true, lasting = true }, -- S65: glowing Runic Seal
 	frostbite = { glyph = "❅", good = false }, -- S65: takes more damage from the source's ice

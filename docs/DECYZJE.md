@@ -1413,3 +1413,27 @@
   `healWounded`: tylko główne trafienie, 30 st. od rzucającego (`SkillData.WOUNDED_RADIUS`).
 - **S69** `SkillInfo.healLine(use, skill, rank)` bierze umiejętność bazową i liczy ją tym samym `Paths.effectiveFor` co
   opis (zamiast przyjmować gotową definicję); linia „Na Tobie” jest w podpowiedzi paska i w szczegółach okna.
+- **S70** Anioł Stróż: filtr `FilterPriority.guardianAngel` (90) ratuje tylko przed `"monster"` i `"intercept"`; DoT
+  (bez atakującego), PvP, `admin` i `world` nigdy (`Skills.angelSave`). Po ocaleniu znikają wszystkie efekty
+  `guardianAngel` celu (dwa anioły = jedno ocalenie); leczenie % maks. HP po ciosie (`task.defer`), z mnożnikiem PvP jak
+  tyknięcie `hot`, źródłem jest rzucający najsilniejszego anioła. Anioł nie jest w `DEBUFFS` (oczyszczenie go nie zdejmuje).
+- **S70** Kości: ściany to efekty z `face`, nakłada je tylko `ctx.rollDice` (`applyEffects` je pomija). Rzut Kośćmi
+  losuje osobno dla każdego sojusznika (`Logic/Roll`, jedno `Rng` w `Skills/Context`), Koło wskazuje jedną ścianę na rzut.
+  W PvP każda ściana ×`Combat.pvp.fortuneBuff` (0,5) przy rzucie, Źródło dodatkowo ×0,7 na tyknięciu (obie reguły 7.6).
+  Źródło to % maks. HP celu na sekundę, bez premii do leczenia (wzmocnienie Fortuny, nie czar leczący).
+- **S70** Modlitwa 5B (`roll.half`): na koniec kanału kości z definicji `fortuneDice` na randze `max(1, rankAt)` z
+  wyborami i węzłami gracza (`Paths.effectiveFor`), jedna ściana na połowę czasu (bez `rollDouble` i bez koła); działa
+  bez znajomości Rzutu Kośćmi. Połowa czasu (7,5 s) jest poniżej dolnej granicy 7.3 z woli kontraktu (ROZWOJ 9.4).
+- **S70** `Logic/Channel.stops(kind, event, def)`: `def` to definicja po `Skills.effective` (przełom `steadfast` ustawia
+  `def.steadfast`); zdarzenia `damage`, `move`, `death`; nowy rzut dalej przerywa kanał przed `cast`; ogłuszenie nie
+  przerywa (jak przed S70; S76 dopisze `"disabled"`).
+- **S70** `burn` w `ctx.applyEffect` jak `bleed` / `poison` (atak × value% / czas, `DotBonus`, PvP ×0,6 w `Apply`); barwa
+  liczb przez `Effect.element` (`holy` dla umiejętności `holy`). Kapłan dostaje linię `dotPower`; STATY 4: „wszystkie”.
+- **S70** `burst` (Oczyszczenie 5B): tylko od pierwszego celu, `plain` (bez efektów trafienia), hak `holyDamage` przez
+  `opts.holy`. `SkillEffect.notBoss` działa dla każdego rodzaju efektu w `ctx.applyEffect`.
+- **S70** Sześć nowych aktywnych ma `path` bez `PathDef` (nieosiągalne i ukryte na wiki do S71); `unlock` 26 / 60 z
+  ROZWOJ 9.3–9.5, dopóki S71 nie przepnie odblokowania na węzeł `skill`. Ściany kości są w danych typowanym
+  pomocnikiem `diceFaces` (luau-lsp nie przyjmuje literału z wpisami różnych kształtów).
+- **S70** `skills.spec` „neutral on today's data” pomija `fortuneDice` (5A i 10A zmieniają te same pola `values`);
+  wartości po obu A sprawdza bezpośrednio blok „S70 new Cleric actives”. Drabina przejściowa liczy tylko umiejętności
+  bez `path`.

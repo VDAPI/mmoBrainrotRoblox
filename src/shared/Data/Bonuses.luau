@@ -459,10 +459,10 @@ local CLASS_STATS: { [string]: { string } } = {
 	myth_magAtk = { "Mage", "Cleric" },
 	energy = { "Warrior", "Hunter" },
 	energyRegen = { "Warrior", "Hunter" },
-	-- S63: no Cleric until the Cleric has damage over time (S70 adds them with the burn).
+	-- S63: wounds and poison only for classes that bleed / poison; S70: the Cleric burns (Brand of Light), so dotPower.
 	woundChance = { "Warrior", "Hunter" },
 	poisonChance = { "Hunter" },
-	dotPower = { "Warrior", "Hunter", "Mage" },
+	dotPower = { "Warrior", "Hunter", "Mage", "Cleric" },
 	blockChance = { "Warrior", "Cleric" }, -- S64: shields only
 }
 

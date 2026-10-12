@@ -6,6 +6,8 @@
 --               { s, c, t?, p?, cf?, r?, a?, l?, w?, d?, n?, path?, from? }
 --   v = arc / lightningBurst / meteorImpact / trapSet / trapTrigger / lingering / pierce / splitImpact / echo /
 --       splash / stunBurst / pull / fizzle  — extras of adaptive skills and breakpoints
+--   v = dieFace (S70)  a face of Fortune's dice on an ally (aura in the face's colour); angelSave (S70) the Guardian
+--       Angel's save; Roll of the Dice throws two small golden dice from the hand at the motion's release
 -- Pieces come from client/Vfx/Library (pooled parts, Config.Vfx.maxActive at once); effects of other players far
 -- away and low graphics quality use the simple versions. Melee impacts freeze both animations for a moment
 -- (hitstop) and big skills shake the camera of players nearby (setting "Camera shake").
@@ -42,6 +44,12 @@ local ELEMENT_COLORS: { [string]: Color3 } = {
 }
 local HOLY = Color3.fromHex("#FFE7A0")
 local HEAL = Color3.fromHex("#4FD16B")
+-- S70: colours of Fortune's dice faces (looks only; the faces are effects in Data/Skills/Cleric).
+local FACE_COLORS: { [string]: Color3 } = {
+	blade = Color3.fromHex("#E2483A"),
+	wind = Color3.fromHex("#9FE0FF"),
+	spring = HEAL,
+}
 
 -- Camera shake handler (CombatFxController.Shake), set in Init.
 local shakeCamera: ((strength: number) -> ())? = nil
@@ -177,6 +185,28 @@ local function onCast(data: { [string]: any }, skill: SkillData.SkillDef, caster
 					color,
 					{ size = 1.2, speed = 140, simple = simple }
 				)
+			end)
+		end
+		-- S70 Roll of the Dice: two small golden dice thrown to the ground in front (one in the simple mode)
+		if entry.projectile and skill.type == "groupBuff" then
+			local release = math.max(0, (motion.release or motion.hit or 0) - 0.05)
+			task.delay(release, function()
+				local root = caster:FindFirstChild("HumanoidRootPart") :: BasePart?
+				if not root then
+					return
+				end
+				local from = centre(caster) + Vector3.new(0, 0.5, 0)
+				local ahead = root.Position + root.CFrame.LookVector * 6 - Vector3.new(0, 2.5, 0)
+				for i = 1, if simple then 1 else 2 do
+					local side = root.CFrame.RightVector * (if i == 1 then -0.8 else 0.8)
+					Library.projectile(
+						from,
+						ahead + side,
+						entry.projectile :: any,
+						color,
+						{ size = 0.35, speed = 40, simple = simple }
+					)
+				end
 			end)
 		end
 	end
@@ -487,8 +517,20 @@ local function onExtra(data: { [string]: any }, skill: SkillData.SkillDef, caste
 				end
 			end
 		end
+	elseif v == "dieFace" then
+		-- S70: the face an ally got from Fortune's dice
+		local model = findModel(data.t)
+		if model then
+			local faceColor = FACE_COLORS[tostring(data.k)] or color
+			Library.aura(model, faceColor, math.min(tonumber(data.d) or 10, 20), simpleAt(centre(model), model))
+			Library.sparkle(model, faceColor, simpleAt(centre(model), model))
+		end
 	elseif not at then
 		return
+	elseif v == "angelSave" then
+		-- S70: Guardian Angel saved this ally from death
+		Library.burst(at, 6, HOLY)
+		Library.pillar(at, 3, 12, HOLY, 0.8)
 	elseif v == "lightningBurst" then
 		Library.lightning(at + Vector3.new(0, 28, 0), at, ELEMENT_COLORS.lightning, 0.5, simple)
 		Library.shockwave(at, radius, ELEMENT_COLORS.lightning, 0.35, simple)
@@ -561,7 +603,7 @@ function VfxController.Preview(model: Model, skillId: string)
 	task.delay(delay, function()
 		local data: { [string]: any } =
 			{ s = skillId, c = id, r = def.radius, a = def.angle, l = def.length, w = def.width }
-		if skill.type == "circleTarget" or skill.type == "trap" then
+		if skill.type == "circleTarget" or skill.type == "trap" or skill.type == "healZone" then
 			data.p = front
 			data.d = def.delay
 		elseif skill.type == "cone" or skill.type == "line" then

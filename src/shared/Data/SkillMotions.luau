@@ -1333,6 +1333,155 @@ motions.divineIntervention = {
 	lock = true,
 }
 
+-- Sanctuary (S70): hands cupped low like Renew, lifted, then both palms pressed down to consecrate the ground.
+motions.sanctuary = {
+	keys = {
+		k(0.18, {
+			rShoulder = { 40, 25, 0 },
+			rElbow = { 80, 0, 0 },
+			lShoulder = { 40, -25, 0 },
+			lElbow = { 80, 0, 0 },
+			waist = { -8, 0, 0 },
+		}, "out"),
+		k(0.32, {
+			rShoulder = { 115, 20, 0 },
+			rElbow = { 30, 0, 0 },
+			lShoulder = { 115, -20, 0 },
+			lElbow = { 30, 0, 0 },
+			waist = { 8, 0, 0 },
+		}, "inOut"),
+		k(
+			0.45,
+			merge(crouch(0.4), {
+				rShoulder = { 40, -10, 0 },
+				rElbow = { 10, 0, 0 },
+				rWrist = { -40, 0, 0 },
+				lShoulder = { 40, 10, 0 },
+				lElbow = { 10, 0, 0 },
+				lWrist = { -40, 0, 0 },
+				waist = { -14, 0, 0 },
+			}),
+			"in"
+		),
+	},
+	recover = 0.3,
+	hit = 0.4,
+}
+
+-- Guardian Angel (S70): kneeling with the hands together, then rising with the arms spread wide and up.
+motions.guardianAngel = {
+	keys = {
+		k(
+			0.2,
+			merge(KNEEL, {
+				rShoulder = { 60, 45, 0 },
+				rElbow = { 120, 0, 0 },
+				lShoulder = { 60, -45, 0 },
+				lElbow = { 120, 0, 0 },
+				waist = { -12, 0, 0 },
+			}),
+			"out"
+		),
+		k(
+			0.5,
+			merge(STAND, {
+				rShoulder = { 120, 0, 75 },
+				rElbow = { 5, 0, 0 },
+				lShoulder = { 120, 0, -75 },
+				lElbow = { 5, 0, 0 },
+				waist = { 16, 0, 0 },
+			}),
+			"inOut"
+		),
+		k(0.9, merge(STAND, { rShoulder = { 125, 0, 80 }, lShoulder = { 125, 0, -80 }, waist = { 18, 0, 0 } })),
+	},
+	recover = 0.35,
+	hit = 0.45,
+	lock = true,
+}
+
+-- Roll of the Dice (S70): the right hand swings back at the hip and throws the dice underhand, forward.
+motions.fortuneDice = {
+	keys = {
+		k(
+			0.15,
+			merge(crouch(0.3), {
+				rShoulder = { -40, 0, 10 },
+				rElbow = { 20, 0, 0 },
+				lShoulder = { 30, 0, -15 },
+				waist = { -6, -12, 0 },
+			}),
+			"out"
+		),
+		k(
+			0.28,
+			merge(lunge(0.3), {
+				rShoulder = { 110, 0, 10 },
+				rElbow = { 10, 0, 0 },
+				rWrist = { 20, 0, 0 },
+				lShoulder = { 20, 0, -15 },
+				waist = { -4, 10, 0 },
+			}),
+			"out"
+		),
+	},
+	recover = 0.3,
+	release = 0.25,
+}
+
+-- Wheel of Fortune (S70): both arms over the head, one slow turn of the body like Circle of Light.
+motions.wheelOfFortune = {
+	keys = {
+		k(0.15, merge(STAND, OVERHEAD, { waist = { 10, 0, 0 } }), "out"),
+		k(0.6, merge(STAND, OVERHEAD, { waist = { 12, 0, 0 }, root = { 0, 360, 0, 0.2 } }), "inOut"),
+	},
+	recover = 0.3,
+	hit = 0.5,
+	lock = true,
+}
+
+-- Brand of Light (S70): hands crossed at the chest like Purify, then the left palm thrust at the enemy.
+motions.brandOfLight = {
+	keys = {
+		k(0.15, {
+			rShoulder = { 70, 60, 0 },
+			rElbow = { 110, 0, 0 },
+			lShoulder = { 70, -60, 0 },
+			lElbow = { 110, 0, 0 },
+			waist = { -6, 0, 0 },
+		}, "out"),
+		k(0.25, {
+			lShoulder = { 90, 0, -5 },
+			lElbow = { 5, 0, 0 },
+			lWrist = { -50, 0, 0 },
+			rShoulder = { 50, 40, 0 },
+			rElbow = { 100, 0, 0 },
+			waist = { -6, 10, 0 },
+		}, "out"),
+	},
+	recover = 0.3,
+	hit = 0.25,
+}
+
+-- Hammer of Heaven (S70): a leap like Judgement, the mace brought down from the sky at 0.5 s.
+motions.hammerOfHeaven = {
+	keys = {
+		k(
+			0.2,
+			merge(crouch(0.8), { rShoulder = { -20, 0, 10 }, lShoulder = { -20, 0, -10 }, root = { 0, 0, 0, -0.7 } }),
+			"out"
+		),
+		k(0.38, merge(air(1.8), OVERHEAD, { waist = { 10, 0, 0 }, root = { 0, 0, 0, 1.8 } }), "out"),
+		k(0.5, merge(crouch(1), SLAMMED, { waist = { -26, 0, 0 }, root = { -10, 0, 0, -0.9 } }), "in"),
+		k(0.7, merge(crouch(0.8), SLAMMED, { waist = { -20, 0, 0 } })),
+	},
+	recover = 0.35,
+	hit = 0.5,
+	land = 0.5,
+	lock = true,
+	trail = { from = 0.3, to = 0.52 },
+}
+
 SkillMotions.motions = motions
 
 function SkillMotions.get(skillId: string): Motion?

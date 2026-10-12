@@ -4,6 +4,36 @@
 -- Logic/Skills.healAmount), breakpoints A/B per ROZWOJ 9.2–9.5; unlocks and base damage are still today's (S71).
 
 local Build = require("./Build")
+local Types = require("./Types")
+
+-- S70 (ROZWOJ 9.4): the three faces of Fortune's dice (value fields crit, haste, regen), `duration` s each; a typed
+-- list, the face entries have different shapes.
+local function diceFaces(duration: number, extra: Types.SkillEffect?): { Types.SkillEffect }
+	local list: { Types.SkillEffect } = {
+		{
+			kind = "statBuff",
+			face = "blade",
+			duration = duration,
+			stats = { critChance = "crit" },
+			target = "allies",
+			category = "allyCrit",
+		},
+		{
+			kind = "statBuff",
+			face = "wind",
+			duration = duration,
+			stats = { atkSpeed = "haste" },
+			pct = true,
+			target = "allies",
+			category = "allyHaste",
+		},
+		{ kind = "hot", face = "spring", duration = duration, value = "regen", target = "allies" },
+	}
+	if extra then
+		table.insert(list, extra)
+	end
+	return list
+end
 
 return Build.class("Cleric", "mana", "magic", {
 	{
@@ -116,9 +146,8 @@ return Build.class("Cleric", "mana", "magic", {
 		cooldown = 12,
 		range = 30,
 		values = { healHp = { 8, 12 }, healMag = { 6, 10 } },
-		-- 5B (burst) comes with S70
 		breakpoints = Build.bp2(
-			{ a = { overhealShield = true } },
+			{ a = { overhealShield = true }, b = { burst = { radius = 6, pct = 60 } } },
 			{ a = { secondTarget = 50 }, b = { mul = { cooldown = 0.6 } } }
 		),
 		glyph = "✧",
@@ -253,8 +282,10 @@ return Build.class("Cleric", "mana", "magic", {
 		cooldown = 90,
 		duration = 3,
 		values = { mana = { 25, 45 }, group = 10 },
-		-- 5B (roll.half) and 10B (steadfast) come with S70
-		breakpoints = Build.bp2({ a = { mul = { cooldown = 0.75 } } }, { a = { values = { group = 10 } } }),
+		breakpoints = Build.bp2(
+			{ a = { mul = { cooldown = 0.75 } }, b = { roll = { half = true } } },
+			{ a = { values = { group = 10 } }, b = { steadfast = true } }
+		),
 		glyph = "🕯",
 	},
 	{
@@ -281,5 +312,133 @@ return Build.class("Cleric", "mana", "magic", {
 			},
 		}),
 		glyph = "☩",
+	},
+	-- S70 (ROZWOJ 9.3–9.5): the paths' new actives. Their paths have no PathDef until S71, so they are out of reach in
+	-- the game and hidden on the wiki (S57); S71 moves the unlock to the path's skill node.
+	{
+		id = "sanctuary",
+		path = "healer",
+		unlock = 26,
+		maxLevel = 10,
+		type = "healZone",
+		delivery = "ranged",
+		cost = 45,
+		cooldown = 18,
+		range = 30,
+		radius = 10,
+		duration = 6,
+		values = { healHp = { 2, 3.2 }, healMag = { 2, 3 } },
+		breakpoints = Build.bp2({ a = { add = { radius = 3 } }, b = { cleanse = true } }, {
+			a = { add = { duration = 2 } },
+			b = {
+				allyEffect = {
+					kind = "damageReduction",
+					duration = 1.5,
+					value = 10,
+					target = "allies",
+					category = "allyGuard",
+				},
+			},
+		}),
+		glyph = "❂",
+	},
+	{
+		id = "guardianAngel",
+		path = "healer",
+		unlock = 60,
+		maxLevel = 10,
+		type = "groupBuff",
+		delivery = "melee",
+		cost = 80,
+		cooldown = { 120, 90 },
+		radius = 30,
+		values = { saveHeal = { 15, 25 } },
+		effects = { { kind = "guardianAngel", duration = { 6, 8 }, value = "saveHeal", target = "allies" } },
+		breakpoints = Build.bp2(
+			{ a = { add = { effectDuration = 2 } }, b = { add = { radius = 10 } } },
+			{ a = { values = { saveHeal = 15 } }, b = { mul = { cooldown = 0.75 } } }
+		),
+		glyph = "✟",
+	},
+	{
+		id = "fortuneDice",
+		path = "fortune",
+		unlock = 26,
+		maxLevel = 10,
+		type = "groupBuff",
+		delivery = "melee",
+		cost = 40,
+		cooldown = 24,
+		radius = 30,
+		roll = {},
+		values = { crit = { 4, 8 }, haste = { 6, 12 }, regen = { 1, 2 }, boost = 0 },
+		effects = diceFaces(15),
+		breakpoints = Build.bp2(
+			{ a = { values = { crit = 1, haste = 2, regen = 0.2 } }, b = { add = { radius = 10 } } },
+			{ a = { values = { crit = 2, haste = 3, regen = 0.4 } }, b = { rollDouble = 30 } }
+		),
+		glyph = "⚄",
+	},
+	{
+		id = "wheelOfFortune",
+		path = "fortune",
+		unlock = 60,
+		maxLevel = 10,
+		type = "groupBuff",
+		delivery = "melee",
+		cost = 80,
+		cooldown = 90,
+		radius = 30,
+		roll = { all = true, enemyRadius = 15 },
+		values = { crit = { 6, 10 }, haste = { 8, 15 }, regen = { 1.5, 2.5 }, boost = 50, miss = { 10, 15 } },
+		effects = diceFaces(
+			10,
+			{ kind = "misfortune", duration = 10, value = "miss", target = "enemy", category = "enemyMiss" }
+		),
+		breakpoints = Build.bp2(
+			{ a = { add = { effectDuration = 2 } }, b = { add = { radius = 10 } } },
+			{ a = { mul = { cooldown = 0.85 } }, b = { values = { boost = 50 } } }
+		),
+		glyph = "✺",
+	},
+	{
+		id = "brandOfLight",
+		path = "inquisitor",
+		unlock = 26,
+		maxLevel = 10,
+		type = "target",
+		delivery = "ranged",
+		cost = 30,
+		cooldown = 10,
+		range = 12,
+		holy = true,
+		values = { dmg = { 100, 170 }, dot = { 140, 240 } },
+		effects = { { kind = "burn", duration = 6, value = "dot" } },
+		breakpoints = Build.bp2({ a = { values = { dot = 30 } }, b = { splash = { radius = 5, pct = 40 } } }, {
+			a = { lifesteal = 20 },
+			b = { effect = { kind = "vulnerability", duration = 8, value = 8, category = "enemyWeak" } },
+		}),
+		glyph = "✹",
+	},
+	{
+		id = "hammerOfHeaven",
+		path = "inquisitor",
+		unlock = 60,
+		maxLevel = 10,
+		type = "circleTarget",
+		delivery = "ranged",
+		cost = 70,
+		cooldown = 30,
+		range = 20,
+		radius = 8,
+		delay = 0.5,
+		holy = true,
+		values = { dmg = { 200, 340 } },
+		effects = { { kind = "stun", duration = 1.2, notBoss = true } },
+		breakpoints = Build.bp2(
+			{ a = { add = { radius = 2 } }, b = { lingering = { pct = 10, duration = 4, kind = "holy" } } },
+			{ a = { add = { effectDuration = 0.8 } }, b = { echo = { delay = 1.2, pct = 50 } } }
+		),
+		glyph = "⚒",
 	},
 })

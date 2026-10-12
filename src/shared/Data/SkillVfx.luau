@@ -218,6 +218,35 @@ local SkillVfx: { [string]: Entry } = {
 		shake = 0.3,
 		size = 2,
 	}),
+	-- S70 (ROZWOJ 9.3–9.5)
+	sanctuary = e({ color = "heal", sound = "", impact = { "rune", "sparkle", "aura" }, telegraph = "circle" }),
+	guardianAngel = e({ color = "holy", sound = "", impact = { "pillar", "shield", "sparkle" }, size = 1.6 }),
+	fortuneDice = e({
+		color = "#E8C25A",
+		sound = "",
+		projectile = "rock",
+		impact = { "burst", "sparkle", "rune" },
+		size = 0.6,
+	}),
+	wheelOfFortune = e({
+		color = "#E8C25A",
+		sound = "",
+		impact = { "rune", "shockwave", "pillar", "aura" },
+		shake = 0.3,
+		size = 2.2,
+	}),
+	brandOfLight = e({ color = "holy", sound = "", impact = { "burst", "rune", "sparkle" }, size = 0.5 }),
+	hammerOfHeaven = e({
+		color = "holy",
+		sound = "",
+		trail = true,
+		impact = { "skyBolt", "pillar", "cracks", "shockwave" },
+		land = { "dust" },
+		telegraph = "circle",
+		shake = 0.6,
+		hitstop = 0.08,
+		size = 0.9,
+	}),
 }
 
 return table.freeze(SkillVfx)

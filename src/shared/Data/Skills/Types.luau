@@ -25,6 +25,7 @@ export type SkillType =
 	| "resurrect" -- revive a dead ally
 	| "groupBuff" -- effect on allies around
 	| "groupHeal" -- heal allies around
+	| "healZone" -- S70 (ROZWOJ 9.3): a healing field at a point (Sanctuary), on the S69 ctx.healZone loop
 	| "passive" -- permanent stat bonus / proc
 
 export type TargetMode = "enemy" | "ally" | "self" | "point" | "deadAlly" | "none"
@@ -54,6 +55,7 @@ export type EffectKind =
 	| "misfortune" -- S61: value = % the bearer misses regular attacks; category enemyMiss
 	| "attackSlow" -- S63: value = % slower attacks (slow stays movement); category enemyAttackSlow
 	| "weaken" -- S63: value = % less damage the bearer deals; category enemyDamageDown
+	| "guardianAngel" -- S70: a lethal hit from a monster leaves 1 HP and heals value % max HP, once
 
 export type SkillEffect = {
 	kind: EffectKind,
@@ -67,6 +69,10 @@ export type SkillEffect = {
 	-- S53: Data/BuffCategories id (Logic/EffectStack: strongest per category, own entries add up); "own" for every
 	-- effect on the caster. No category: crowd control, taunt, invulnerability, shields, heal and damage over time.
 	category: string?,
+	-- S70: a die face of a roll skill ("blade" | "wind" | "spring"); applied only by the roll (ctx.rollDice)
+	face: string?,
+	-- S70: bosses and Elite II ignore it (StatusEffectService ApplyOptions.notBoss, S63)
+	notBoss: boolean?,
 }
 
 -- Breakpoint (S28, ROZWOJ 2.7): what changes when the skill reaches rank 5 / 10 — numbers (`add` to radius, angle,
@@ -93,6 +99,11 @@ export type SkillEffect = {
 --   healWounded = pct        S69: the most wounded ally within SkillData.WOUNDED_RADIUS heals pct of the main hit
 --   chainHeal = { jumps, pct }  S69: the heal jumps to `jumps` more wounded allies in range, (pct/100)^k of their heal
 --   healZone = { duration, pct }  S69: a field at the cast point heals allies inside pct of their heal every second
+--   roll = { half = true }       S70: at the end of the channel the caster rolls Roll of the Dice for the party
+--                                (one face, half its duration)
+--   rollDouble = pct              S70: pct % chance that a die roll gives two different faces
+--   steadfast = true              S70: damage does not interrupt the channel
+--   burst = { radius, pct }       S70: enemies within radius of the healed target take pct % magic attack as light
 --   effect / selfEffect / allyEffect = SkillEffect   an extra effect on hit enemies / the caster / allies; these
 --                            carry their own category (S53) like the skill's effects. Logic/Skills.effective
 --                            collects them from every source into def.effects / def.selfEffects / def.allyEffects
@@ -121,6 +132,10 @@ export type Breakpoint = {
 	healWounded: number?,
 	chainHeal: { jumps: number, pct: number }?,
 	healZone: { duration: number, pct: number }?,
+	roll: { half: boolean? }?,
+	rollDouble: number?,
+	steadfast: boolean?,
+	burst: { radius: number, pct: number }?,
 	effect: SkillEffect?,
 	selfEffect: SkillEffect?,
 	allyEffect: SkillEffect?,
@@ -164,6 +179,11 @@ export type SkillDef = {
 	holy: boolean?, -- light damage (Cleric, Divine Wrath)
 	values: { [string]: Scaled },
 	effects: { SkillEffect }?,
+	-- S70 (ROZWOJ 9.4): effects with face are dice faces; all = every face with one pointed face stronger, and
+	-- enemies within enemyRadius get the enemy effects
+	roll: { all: boolean?, enemyRadius: number? }?,
+	-- S70: damage does not end this channel (Logic/Channel); set by the steadfast breakpoint
+	steadfast: boolean?,
 	-- filled only by Logic/Skills.effective from breakpoints and node mods (ROZWOJ 2.7)
 	selfEffects: { SkillEffect }?,
 	allyEffects: { SkillEffect }?,

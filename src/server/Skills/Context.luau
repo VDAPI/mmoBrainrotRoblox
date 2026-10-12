@@ -11,15 +11,22 @@
 -- is the healing field (Circle of Light 10B, Sanctuary S70); on-hit `healWounded` heals the most wounded ally.
 -- S65: the weapon-element effect of adaptive skills lives in Skills/Elements (numbers in Data/Skills.ADAPTIVE); the
 -- most wounded ally and healing an ally are module functions (Context.bind) CombatService shares (Saving Blow).
+-- S70: `rollDice` is Fortune's dice (faces = effects with `face`, Logic/Roll); `applyEffect` takes a scale and a
+-- duration multiplier (dice faces, PvP), turns `burn` into damage over time like bleed / poison (a holy skill's burn
+-- ticks in light) and a data `hot` into % max HP per second, and passes `notBoss` for every kind; `damage` with
+-- `holy` adds the holyDamage hook outside holy skills (Purify 5B burst).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 
 local Shared = ReplicatedStorage.Shared
 
+local Combat = require(Shared.Data.Combat)
 local Damage = require(Shared.Logic.Damage)
 local Elements = require(script.Parent.Elements)
 local Push = require(script.Parent.Push)
+local Rng = require(Shared.Logic.Rng)
+local Roll = require(Shared.Logic.Roll)
 local SkillData = require(Shared.Data.Skills)
 local Skills = require(Shared.Logic.Skills)
 local Traits = require(Shared.Logic.Traits)
@@ -38,7 +45,11 @@ export type Services = {
 	PassiveHook: (player: Player, id: string) -> number,
 	WeaponElement: (player: Player) -> string?,
 	WeaponSpeed: (player: Player) -> number?, -- base speed of the equipped weapon (S54)
+	Toast: (player: Player, key: string, args: { [string]: any }?, kind: string?) -> (), -- S70
 }
+
+-- S70: options of ctx.applyEffect: value (and resolved stats) x scale, duration x durationMul.
+export type EffectOptions = { scale: number?, durationMul: number? }
 
 export type Ctx = {
 	player: Player,
@@ -67,7 +78,9 @@ export type Ctx = {
 	-- (HP restored, HP it tried to restore after the heal bonus and the PvP scale, S61)
 	heal: (player: Player, amount: number) -> (number, number),
 	applyEffects: (entity: any, side: "enemy" | "self" | "allies") -> (),
-	applyEffect: (entity: any, effect: SkillData.SkillEffect) -> (), -- one effect (breakpoint extras)
+	applyEffect: (entity: any, effect: SkillData.SkillEffect, opts: EffectOptions?) -> (), -- one effect
+	-- S70 (ROZWOJ 9.4): Fortune's dice / wheel for the party around the caster; half = one face, half the duration
+	rollDice: (opts: { half: boolean? }?) -> (),
 	lingering: (center: Vector3, percent: number) -> (), -- the breakpoint's lasting area (S28)
 	-- S69: healing field, every second share % of each ally's own heal of this skill; onTick adds extras (S70)
 	healZone: (
@@ -88,6 +101,9 @@ export type Ctx = {
 }
 
 local Context = {}
+
+-- S70: the server's one source of dice rolls (Logic/Roll; tests pass a fixed seed to Roll directly).
+local rng = Rng.new()
 
 -- S65: the weapon-element recipe of adaptive skills (numbers in Data/Skills.ADAPTIVE).
 local ADAPTIVE_SPEC: Traits.ElementSpec = {
@@ -249,12 +265,12 @@ function Context.new(
 	-- Adaptive skills take the weapon's element (S18).
 	local element: string? = if skill.adaptive then services.WeaponElement(player) else skill.element
 
-	local function elementalMultiplier(): number
+	local function elementalMultiplier(holy: boolean?): number
 		local mult = 1
 		if element then
 			mult += services.PassiveHook(player, "elementDamage") / 100
 		end
-		if skill.holy then
+		if skill.holy or holy then
 			mult += services.PassiveHook(player, "holyDamage") / 100
 		end
 		return mult
@@ -394,7 +410,7 @@ function Context.new(
 				end
 			end
 			local result = services.Combat.DealDamage(player, entity, params, nil, {
-				multiplier = elementalMultiplier() * speedMul,
+				multiplier = elementalMultiplier(opts.holy) * speedMul,
 				consumeShot = opts.consumeShot ~= false,
 				skill = if opts.plain then nil else skill.id,
 				-- S63 (STATY 5): area skills roll on-hit effects with a share per target; secondary hits (splash,
@@ -434,28 +450,37 @@ function Context.new(
 			local skillEffects: { SkillData.SkillEffect } = skill.effects or {}
 			for _, effect in skillEffects do
 				-- S53: a "self" effect stays on the caster (own); the party copy is a separate "allies" effect.
-				if Skills.effectSide(skill, effect) == side then
+				-- S70: dice faces are applied by ctx.rollDice only
+				if Skills.effectSide(skill, effect) == side and not effect.face then
 					ctx.applyEffect(entity, effect)
 				end
 			end
 		end,
-		applyEffect = function(entity: any, effect: SkillData.SkillEffect)
-			local duration = Skills.scaled(skill, effect.duration, rank)
-			local effectValue = if type(effect.value) == "string"
+		applyEffect = function(entity: any, effect: SkillData.SkillEffect, opts: EffectOptions?)
+			local scale = if opts and opts.scale then opts.scale else 1
+			local durationMul = if opts and opts.durationMul then opts.durationMul else 1
+			local duration = Skills.scaled(skill, effect.duration, rank) * durationMul
+			local rawValue = if type(effect.value) == "string"
 				then value(effect.value)
 				elseif type(effect.value) == "number" then effect.value
 				else 0
+			local effectValue = rawValue * scale
 			local tickAmount: number? = nil
-			if effect.kind == "bleed" or effect.kind == "poison" then
-				-- value % of attack spread over the duration, one tick per second; S63: + dotPower (STATY 4)
+			if effect.kind == "bleed" or effect.kind == "poison" or effect.kind == "burn" then
+				-- value % of attack spread over the duration, one tick per second; S63: + dotPower (STATY 4); S70: burn
+				-- too (Brand of Light); PvP x0.6 comes once in StatusEffectService.Apply
 				tickAmount = math.max(1, ctx.attack() * effectValue / 100 / math.max(1, duration))
 					* (1 + services.Combat.DotBonus(player, effect.kind) / 100)
+			elseif effect.kind == "hot" and entity.kind == "player" and entity.player then
+				-- S70 (dice face Spring): value % of the target's max HP every second; no heal bonus (a Fortune buff,
+				-- not a heal spell); PvP x0.7 comes on the tick (S61)
+				tickAmount = services.Stat.GetValue(entity.player, "maxHp") * effectValue / 100
 			end
 			local statValues: { [string]: number }? = nil
 			if effect.stats then
 				local resolved: { [string]: number } = {}
 				for stat, field in effect.stats do
-					resolved[stat] = value(field)
+					resolved[stat] = value(field) * scale
 				end
 				statValues = resolved
 			end
@@ -477,9 +502,78 @@ function Context.new(
 				maxStacks = if effect.kind == "bleed" then behaviour.bleedStacks else nil,
 				skillId = skill.id,
 				category = effect.category,
+				notBoss = effect.notBoss, -- S70: for every kind (Hammer of Heaven's stun)
+				element = if effect.kind == "burn" and skill.holy then "holy" else nil,
 			})
 			if chill and applied and isEnemy(entity) then
 				Elements.chill(services, player, entity, duration, "ice")
+			end
+		end,
+		-- S70 (ROZWOJ 9.4, 14.1): Fortune's dice. Faces are the skill's effects with `face`. Dice: each ally in the
+		-- radius gets one rolled face (rollDouble: maybe two); Wheel (roll.all): every face, the pointed one (rolled
+		-- once per cast) at 1 + boost/100, and enemies within roll.enemyRadius get the enemy effects (misfortune).
+		-- Half (Prayer 5B): one face for half the duration. PvP: faces x Combat.pvp.fortuneBuff (7.6).
+		rollDice = function(opts: { half: boolean? }?)
+			local faces: { SkillData.SkillEffect } = {}
+			local skillEffects: { SkillData.SkillEffect } = skill.effects or {}
+			for _, effect in skillEffects do
+				if effect.face then
+					table.insert(faces, effect)
+				end
+			end
+			local count = #faces
+			if count == 0 then
+				return
+			end
+			local half = opts ~= nil and opts.half == true
+			local spec = skill.roll
+			local all = not half and spec ~= nil and spec.all == true
+			local boost = if skill.values.boost ~= nil then value("boost") else 0
+			local double = if half then 0 else behaviour.rollDouble or 0
+			local durationMul = if half then 0.5 else 1
+			local pointed: { number }? = if all then { Roll.face(rng, count) } else nil
+			local function faceKey(index: number): string
+				return "@skills.face." .. (faces[index].face :: string)
+			end
+			for _, ally in ctx.alliesInCircle(root.Position, skill.radius or 30) do
+				local entity = Entity.GetPlayerEntity(ally)
+				if not entity then
+					continue
+				end
+				local picked = pointed or Roll.pick(rng, count, double)
+				local multipliers = Roll.multipliers(count, picked, all, boost)
+				local pvp = if services.Pvp.InPvpCombat(ally) then Combat.pvp.fortuneBuff else 1
+				for i, face in faces do
+					local m = multipliers[i]
+					if m > 0 then
+						ctx.applyEffect(entity, face, { scale = m * pvp, durationMul = durationMul })
+					end
+				end
+				for _, i in picked do
+					ctx.fx({
+						v = "dieFace",
+						t = entity.id,
+						k = faces[i].face,
+						d = Skills.scaled(skill, faces[i].duration, rank) * durationMul,
+					})
+				end
+				if all then
+					services.Toast(ally, "skills.wheelToast", { face = faceKey(picked[1]) }, "info")
+				elseif #picked > 1 then
+					services.Toast(
+						ally,
+						"skills.diceToastTwo",
+						{ a = faceKey(picked[1]), b = faceKey(picked[2]) },
+						"info"
+					)
+				else
+					services.Toast(ally, "skills.diceToast", { face = faceKey(picked[1]) }, "info")
+				end
+			end
+			if all and spec then
+				for _, enemy in ctx.enemiesInCircle(root.Position, spec.enemyRadius or 15) do
+					ctx.applyEffects(enemy, "enemy")
+				end
 			end
 		end,
 		lingering = function(center: Vector3, percent: number)

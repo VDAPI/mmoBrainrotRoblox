@@ -175,6 +175,10 @@ function Skills.effective(
 	def.effects = effects
 	def.selfEffects = if #selfEffects > 0 then selfEffects else nil
 	def.allyEffects = if #allyEffects > 0 then allyEffects else nil
+	if behaviour.steadfast then
+		-- S70: channel rules read the definition (Logic/Channel.stops, S76 stores def = ctx.skill)
+		def.steadfast = true
+	end
 	return def :: SkillDef, behaviour
 end
 
@@ -454,6 +458,17 @@ function Skills.cooldown(def: SkillDef, rank: number, reduction: number?): numbe
 	return math.max(base * (1 - pct / 100), math.min(base, Skills.partyDuration(def, rank)))
 end
 
+-- S70 Guardian Angel (ROZWOJ 7.6, 9.3): a lethal hit from a monster leaves 1 HP. Only "monster" and
+-- "intercept" (a monster's blow taken for an ally) are saved; players ("pvp"), damage over time (no attacker,
+-- may come from a player), "admin" and "world" never are. Returns the amount to let through and whether the
+-- angel was used.
+function Skills.angelSave(hp: number, amount: number, source: string, hasAngel: boolean): (number, boolean)
+	if not hasAngel or amount < hp or (source ~= "monster" and source ~= "intercept") then
+		return amount, false
+	end
+	return math.max(0, hp - 1), true
+end
+
 -- Multiplier of the magic-attack part of heals and shields at character level `level` (ROZWOJ 9.2).
 function Skills.healMul(level: number): number
 	return LevelCurves.at("heal", level)
@@ -598,7 +613,7 @@ function Skills.shape(skill: SkillDef): string
 		return "line"
 	elseif kind == "circleSelf" or kind == "groupHeal" or kind == "groupBuff" then
 		return "self"
-	elseif kind == "circleTarget" or kind == "trap" then
+	elseif kind == "circleTarget" or kind == "trap" or kind == "healZone" then
 		return "circle"
 	elseif skill.target == "enemy" or skill.target == "ally" or skill.target == "deadAlly" then
 		return "target"

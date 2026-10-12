@@ -31,6 +31,7 @@ export type Spec = {
 	holy: boolean?,
 	values: { [string]: Types.Scaled }?,
 	effects: { Types.SkillEffect }?,
+	roll: { all: boolean?, enemyRadius: number? }?, -- S70
 	passive: { flat: { [string]: string }?, pct: { [string]: string }?, hooks: { [string]: string }? }?,
 	breakpoints: Types.Breakpoints?,
 	glyph: string,
@@ -57,6 +58,7 @@ local DEFAULT_TARGET: { [string]: Types.TargetMode } = {
 	resurrect = "deadAlly",
 	groupBuff = "self",
 	groupHeal = "self",
+	healZone = "point",
 	passive = "none",
 }
 

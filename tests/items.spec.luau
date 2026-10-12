@@ -559,7 +559,7 @@ T.describe("S62 traits and weighted pools", function()
 		end
 		T.expect(Bonuses.classStats.woundChance).toEqual({ "Warrior", "Hunter" })
 		T.expect(Bonuses.classStats.poisonChance).toEqual({ "Hunter" })
-		T.expect(Bonuses.classStats.dotPower).toEqual({ "Warrior", "Hunter", "Mage" })
+		T.expect(Bonuses.classStats.dotPower).toEqual({ "Warrior", "Hunter", "Mage", "Cleric" })
 		T.expect(Bonuses.classStats.resourceOnHit).toBeNil()
 	end)
 

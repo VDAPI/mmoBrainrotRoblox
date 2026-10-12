@@ -3722,3 +3722,36 @@ components/MonsterCard,views/ItemView,views/MonsterView,i18n/pl,i18n/en,content/
 Pliki: `src/shared/{Logic/Skills,Data/Skills/{Cleric,Types,init},Data/Localization/{pl,en}}`,
 `src/server/Skills/{Context,Types/Support}`, `src/client/UI/{SkillInfo,Screens/SkillsWindow/Details}`,
 `tests/{skills,skillmotion}.spec`, dane wiki, `docs/{ROZWOJ,DECYZJE,SESJE,PROGRESS,PRZEDMIOTY}.md`, `CLAUDE.md`.
+
+### S70: Kapłan 2: sześć nowych umiejętności
+
+- Słownik: typ `healZone`, efekt `guardianAngel`, pola `SkillEffect.face` / `notBoss`, `SkillDef.roll` / `steadfast`,
+  przełomy `roll`, `rollDouble`, `steadfast`, `burst` (`Data/Skills/Types`, `Build` kopiuje `roll`, `healZone` celuje w
+  punkt). `Logic/Skills`: `shape` (`healZone` = krąg), `effective` przenosi `steadfast` na definicję, `angelSave`.
+- Czyste moduły: `Logic/Roll` (`face`, `pick`, `strength`, `multipliers`) i `Logic/Channel.stops` (rodzaj `channel`:
+  obrażenia przerywają bez `steadfast`, ruch i śmierć zawsze).
+- Serwer: `ctx.applyEffect(entity, effect, { scale, durationMul })` (podpalenie jak krwawienie i trucizna, `hot` z danych
+  jako % maks. HP, `notBoss` dla każdego rodzaju, barwa `holy` podpalenia), `ctx.rollDice` (kości, koło, pech wrogów,
+  toasty, obraz `dieFace`), `ctx.damage(..., { holy })`, `services.Toast`; `Support.healZone` (Sanktuarium),
+  `groupBuff` z `roll`, `burst` w `Support.heal`; filtr Anioła Stróża w `StatusEffectService` (priorytet 90, sygnał
+  `AngelSaved`, `Effect.element`), liczby tyknięć w barwie efektu (`CombatService`); kanały w `SkillService` pytają
+  `Channel.stops`, Modlitwa 5B rzuca kośćmi na koniec, ocalenie gra `angelSave` i toast.
+- Dane: Sanktuarium, Anioł Stróż, Rzut Kośćmi, Koło Fortuny, Piętno Światła, Młot Niebios z liczbami z ROZWOJ 9.3–9.5,
+  `path` (`healer`, `fortune`, `inquisitor`), `delivery`, przełomy A/B; Modlitwa 5B / 10B i Oczyszczenie 5B działają od
+  tej sesji; linia `dotPower` dla Kapłana.
+- Sześć umiejętności czeka na ścieżki S71: `path` bez `PathDef`, więc `Logic/Paths` ich nie daje (pasek, okno, rzut), a
+  `Visibility` ukrywa je na wiki (`Logic/Paths` już miało ten warunek; nic nie trzeba było poprawiać).
+- Wygląd: 6 ruchów w `Data/SkillMotions` (sprawdzone `posedump` + `render3d.py`), 6 wpisów `SkillVfx`, w
+  `VfxController` warianty `dieFace` (aura w barwie ściany) i `angelSave`, dwie złote kostki w rzucie, podgląd
+  `healZone`; ikona `guardianAngel` w `EffectIcons`.
+- Teksty PL i EN: 12 opisów, 24 przełomy, ściany, toasty kości, koła i anioła, `effect.guardianAngel`.
+- Testy: nowe `roll.spec`, `channel.spec`; `skills.spec` (Anioł Stróż, nowe aktywne i ich nieosiągalność, B Modlitwy i
+  Oczyszczenia, `healZone`), `skillmotion.spec` (nowe klucze), `items.spec` (`dotPower`). Dane wiki wygenerował
+  `wikidump.luau` (`bonuses.json`, `meta.json`, `docs/PRZEDMIOTY.md`).
+- Wzór dla S74 (Wojownik): nowe umiejętności z `path` bez `PathDef`, mechaniki i testy przez czyste funkcje.
+
+Pliki: `src/shared/{Logic/{Skills,Roll,Channel},Data/Skills/{Types,Build,Cleric},Data/{Bonuses,SkillMotions,SkillVfx},
+Data/Localization/{pl,en}}`, `src/server/{Skills/{Context,Types/Support},Services/{SkillService,StatusEffectService,
+CombatService}}`, `src/client/{Controllers/VfxController,UI/Screens/Hud/EffectIcons}`,
+`tests/{roll,channel,skills,skillmotion,items}.spec`, dane wiki, `docs/{STATY,DECYZJE,SESJE,PROGRESS,PRZEDMIOTY}.md`,
+`CLAUDE.md`.

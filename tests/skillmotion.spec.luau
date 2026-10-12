@@ -91,6 +91,10 @@ for _, key in
 		"healWounded",
 		"chainHeal",
 		"healZone",
+		"roll", -- S70
+		"rollDouble",
+		"steadfast",
+		"burst",
 		"effect",
 		"selfEffect",
 		"allyEffect",

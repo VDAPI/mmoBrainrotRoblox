@@ -1636,7 +1636,7 @@ function CombatService.Start()
 			c = false,
 			d = false,
 			dot = true,
-			el = DamageText.dotElement(effect.kind),
+			el = effect.element or DamageText.dotElement(effect.kind), -- S70: a holy burn shows in light
 		}
 		if shown <= 0 then
 			if entity.kind == "player" and entity.player then
