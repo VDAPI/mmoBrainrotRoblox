@@ -388,6 +388,20 @@ describe("Cave engine: terrain", function()
 	)
 end)
 
+describe("Cave engine: quest anchors (S102)", function()
+	-- S104-S105 add the first ones (Data/Areas/Caves questAnchors, cave-relative, built by World/CaveLayout)
+	it("every cave quest anchor stands on the cave floor and Areas.anchorById finds it", function()
+		for _, cave in Areas.caves.list do
+			for _, a in cave.questAnchors or {} do
+				local T = assert(CaveTerrain.get(cave.id), cave.id)
+				expect(`{cave.id}/{a.id} {T.floor(a.x, a.z) ~= nil}`).toBe(`{cave.id}/{a.id} true`)
+				local found, mapId = Areas.anchorById(a.id)
+				expect(found == a and mapId == cave.id).toBe(true)
+			end
+		end
+	end)
+end)
+
 describe("Cave engine: dressing", function()
 	it("registers every cave on the engine in WorldGen and stays in the part budget", function()
 		for _, id in MAPS do

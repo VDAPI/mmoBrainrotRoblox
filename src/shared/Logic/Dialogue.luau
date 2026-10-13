@@ -64,22 +64,23 @@ function Dialogue.pageName(page: number | string): string
 	return if type(page) == "number" then `p{page}` else page
 end
 
--- Pages of a story quest (S102 adds `pages`; nil = the single "text" page).
+-- Pages of a story quest (S102: MainQuest.pages; nil = the single "text" page).
 local function mainPages(quest: any): number?
-	local pages = if type(quest) == "table" then quest.pages else nil
+	local pages = if type(quest) == "table" then (quest :: Quests.MainQuest).pages else nil
 	return if type(pages) == "number" and pages >= 1 then pages else nil
 end
 
 -- The key of the page a conversation shows (in the sense of ChoicePage.page): `mode` of UI/Screens/QuestDialog
 -- ("offer" / "active" / "turnIn" / "later" / "elsewhere"), `page` = the offer page number. Story: offer and in
--- progress "text" (or the page number once the quest has pages), hand-in "done". Side: offer "p<page>", in progress
+-- progress "text" (S102: the offer of a quest with pages "p<page>"), hand-in "done". Side: offer "p<page>", in progress
 -- "progress", hand-in "done".
 function Dialogue.pageOf(quest: any, kind: Kind, mode: string, page: number?): string
 	if mode == "turnIn" then
 		return "done"
 	end
 	if kind == "main" then
-		if mainPages(quest) then
+		-- S102: the offer of a story quest with pages shows them; in progress it is the journal line (.text)
+		if mainPages(quest) and mode == "offer" then
 			return `p{page or 1}`
 		end
 		return "text"

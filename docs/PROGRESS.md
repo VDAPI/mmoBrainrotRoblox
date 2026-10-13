@@ -5,7 +5,7 @@
 
 ## Stan
 
-S01–S101b gotowe (lista i zakres w `docs/SESJE.md`). Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
+S01–S102 gotowe (lista i zakres w `docs/SESJE.md`). Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
 kategorie efektów drużyny i stos efektów (`Logic/EffectStack`), S54 wzory globalne (`Logic/LevelCurves`), S55 rangi
 i przełomy w kształcie A/B (`Build.bp2`, `Skills.effective` §2.7), S56 koniec punktów umiejętności: rangi z poziomu
 postaci (`Skills.rankFor`, drabina przejściowa ROZWOJ 2.6), zapis w schemacie 6 (darmowy reset statystyk, pasek
@@ -124,7 +124,7 @@ udział z obrażeń, leczenia, tarcz i przejęć, nagroda EXP + złoto + skrzyni
 odpowiedzi gracza na stronie dialogu z drobnymi skutkami i pamięcią NPC (`Logic/Dialogue`, `QuestSay`, `quests.said`;
 Wit i Borys na Łąkach), komentarze NPC w dymku albo okienku z portretem (`Logic/Barks`, `BarkController`, wyłącznik
 w ustawieniach; fabuła 1–20, poboczne Łąk, stajnia), towarzysz `follow` / `lead` z celem `escort` (`Logic/Companion`,
-`CompanionService`; Borys w `side_den`), minima treści dla S102–S108 w `tests/dialogue.spec.luau`.
+`CompanionService`; Borys w `side_den`), minima treści dla S102–S108 w `tests/dialogue.spec.luau`. S102 fabuła rozdział I „Znak Mrozu”: stabilny postęp (`quests.mainLast`, `Logic/StoryProgress`, migracja 8), strony dialogu fabuły, cele `use` / `deliver` / miejsca w fabule, przerywniki (`Data/Cutscenes`, `CutsceneController`, powtórka w dzienniku), cztery nowe questy z wyborami i towarzyszami (Mira, Dobiesław), kotwice w jaskiniach, `regionfolk`, reguła EXP fabuły.
 Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`, `docs/STATY.md`) i łańcuch balansu
 zakończone; testy i decyzje właściciela po nich.
 
@@ -169,8 +169,11 @@ zakończone; testy i decyzje właściciela po nich.
   najostrzej na L3 z `monsterExpMul` 0,5; decyzja właściciela: `docs/SESJE.md` → S101). Szablon tygodniowy `event`
   wchodzi do list od następnego resetu tygodnia. Mapa świata nie ma widoku regionów: glif wydarzenia tylko na mapie
   wydarzenia i na liście map; znak nie jest klikalny (bez karty). Uproszczenie: minimapa bez pulsowania znaku.
-- **Rozmowy w questach (S101b)**: tryb `lead` z celem `escort` bez questu w danych (pierwszy w S102, `frostSign`);
-  strzałka celu `escort`, gdy figury towarzysza nie ma w strumieniu, wskazuje cel zamiast towarzysza.
+- **Rozmowy w questach (S101b)**: strzałka celu `escort`, gdy figury towarzysza nie ma w strumieniu, wskazuje cel
+  zamiast towarzysza.
+- **Fabuła (S102)**: nowe questy rozdziału I dają mało EXP (`STORY_STEP` 0,05, 83–586 EXP), bo fabuła 1–19 ma już
+  41,8% EXP pasma przy celu 10% (decyzja właściciela / audyt S109).
+  Rozdziały II–IV mają w dzienniku tylko nazwę (treść S103–S105).
 - **Wierzchowce (S97)**: wierzchowiec premium `mount_royal` wyłączony (`Data/Products.mounts`, `enabled = false`) do
   decyzji właściciela (cena w Robux, id produktu z Creator Hub).
 - **Gildie / aukcja / poczta**: brak zaproszeń do gildii między serwerami; aukcja bez podpowiedzi ceny, poczta bez

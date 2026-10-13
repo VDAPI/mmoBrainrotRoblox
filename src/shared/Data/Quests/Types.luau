@@ -25,6 +25,8 @@
 --            the way there, `place` = locale key of the goal): counted only by CompanionService when the leading
 --            companion arrives with the player (`QuestEvents.fire(player, "escort", { npc, quest })`)
 -- S27: `kill` and `collect` take `area` (a monster area id): only monsters of groups from that area count.
+-- `line` (S102): `talk` / `deliver` only: what the NPC says about the quest while it is active (NpcDialog).
+-- S102: `use`, `deliver`, `reach` with a place and `area` work in the story too (Logic/SideQuests.QuestLike, mainEntry).
 
 -- S98 (docs/DESIGN-15.md §3.1): quest categories in journal-tab order (Data/Quests.CATEGORIES). The stable arc of
 -- S96 is "side" (no separate "mount" category).
@@ -57,6 +59,7 @@ export type Objective = {
 	fx: string?, -- S27 use: client effect at the anchor once done (Data/Quests/Side FX list)
 	place: string?, -- S27 reach with x/z: locale key of the place ("place.stonecircle"); S101b escort too
 	via: { { x: number, z: number } }?, -- S101b escort: waypoints between the start and x/z
+	line: string?, -- S102 talk / deliver: locale key the NPC says while the quest is active
 }
 
 -- S101b: dialogue (DESIGN-15 §3.5): choices, recall, barks, companion. Every field is optional; a quest without them
@@ -108,6 +111,9 @@ export type MainQuest = {
 	objectives: { Objective },
 	reward: Reward,
 	category: Category?, -- S98: "main" (set by Main.luau's q)
+	-- S102: story pages (FABULA §2.1) and wiki visibility
+	pages: number?, -- offer pages quest.<id>.p1..pN; nil = the single page quest.<id>.text
+	wiki: boolean?, -- false = left out of the wiki (new story quests until S109)
 	-- S101b (DESIGN-15 §3.5): at most one page with answers, page variants by an earlier answer, comments, companion
 	choices: ChoicePage?,
 	recall: { [string]: string }?, -- page key ("p1".."pN", "text", "progress", "done") -> quest whose answer picks

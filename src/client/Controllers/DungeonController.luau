@@ -268,6 +268,11 @@ function DungeonController.ShowReward(reward: BossReward.Reward)
 	task.delay(REWARD_SECONDS, close)
 end
 
+-- S102: for CutsceneController: whether the post-fight reward card is on screen.
+function DungeonController.RewardVisible(): boolean
+	return rewardScope ~= nil
+end
+
 function DungeonController.Init(registry)
 	WindowManager = registry.Get("WindowManager")
 	local UIController = registry.Get("UIController")

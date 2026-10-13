@@ -1,6 +1,7 @@
 --!strict
 -- S11: quest data and progress rules.
 
+local Areas = require("../src/shared/Data/Areas")
 local Bosses = require("../src/shared/Data/Bosses")
 local Items = require("../src/shared/Data/Items")
 local Maps = require("../src/shared/Data/Maps")
@@ -12,6 +13,12 @@ local Rng = require("../src/shared/Logic/Rng")
 local Test = require("./Test")
 
 local describe, it, expect = Test.describe, Test.it, Test.expect
+
+local Locale = require("../src/shared/Util/Locale")
+
+local function hasText(key: string): boolean
+	return Locale.has(key, "pl") and Locale.has(key, "en")
+end
 
 local KNOWN_TYPES = {
 	talk = true,
@@ -30,6 +37,8 @@ local KNOWN_TYPES = {
 	potion = true,
 	duel = true,
 	escort = true, -- S101b: walk with the leading companion (CompanionService)
+	use = true, -- S102: quest anchors in the story too (Logic/SideQuests)
+	deliver = true, -- S102: deliveries in the story too
 }
 
 describe("Main quests data", function()
@@ -41,10 +50,18 @@ describe("Main quests data", function()
 	end)
 
 	it("never goes down in level", function()
+		-- S102: a quest right after a boss quest may sit at the level of the last quest without a boss (warCouncil
+		-- after grimrok: the pace window model of tests/Balance counts windows from the quests without a boss)
 		local last = 0
 		for _, quest in Quests.Main.list do
-			expect(quest.level >= last).toBe(true)
-			last = quest.level
+			expect(`{quest.id} {quest.level >= last}`).toBe(`{quest.id} true`)
+			local boss = false
+			for _, objective in quest.objectives do
+				boss = boss or objective.type == "boss"
+			end
+			if not boss then
+				last = quest.level
+			end
 		end
 	end)
 
@@ -81,6 +98,15 @@ describe("Main quests data", function()
 				end
 				if objective.type == "collect" then
 					expect(objective.item ~= nil and objective.chance ~= nil).toBe(true)
+				end
+				-- S102: anchors exist, a talk / deliver line has its text
+				local anchors: { string } = objective.anchors or (if objective.anchor then { objective.anchor } else {})
+				for _, anchor in anchors do
+					expect(`{quest.id} {anchor} {Areas.anchorById(anchor) ~= nil}`).toBe(`{quest.id} {anchor} true`)
+				end
+				if objective.line then
+					expect(objective.type == "talk" or objective.type == "deliver").toBe(true)
+					expect(`{objective.line} {hasText(objective.line)}`).toBe(`{objective.line} true`)
 				end
 			end
 		end
@@ -124,6 +150,12 @@ describe("Quest texts", function()
 			for _, suffix in { "title", "text", "done" } do
 				if not has(`quest.{quest.id}.{suffix}`) then
 					error(`missing quest.{quest.id}.{suffix}`)
+				end
+			end
+			-- S102: offer pages
+			for i = 1, quest.pages or 0 do
+				if not has(`quest.{quest.id}.p{i}`) then
+					error(`missing quest.{quest.id}.p{i}`)
 				end
 			end
 			for _, objective in quest.objectives do

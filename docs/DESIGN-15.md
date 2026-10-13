@@ -61,6 +61,7 @@ Ten plik trafia do repo jako `docs/DESIGN-15.md`. Odejście od niego = linia w `
 - Główny quest co ok. 2–3 poziomy do 100, w **rozdziałach po regionach** (Łąki 1–20, Duskwood 20–45, Spalone Pustkowia 45–70, Lodowe Szczyty 70–100), z dialogami (strony jak `pages` w pobocznych) i przerywnikami (krótkie sceny: kamera, napis rozdziału). Obecne 32 questy zostają i wchodzą w rozdziały (id bez zmian, postęp graczy zachowany). Ok. 40 nowych. Zarys: `docs/FABULA.md` (akceptuje właściciel przed S102).
 - Poboczne łuki w Duskwood, Spalonych Pustkowiach, Lodowych Szczytach: po 6–8 łuków × 3–4 questy (ok. 25 na region), wzór łuków Łąk z S27 (`Data/Quests/Side`, `arc`, `pages`, `use`/`deliver`/`reach`, wybór nagrody).
 - Teksty: Claude pisze po polsku i angielsku, poważny ton fantasy.
+- Mechanizmy fabuły (S102): `pages`, `line`, cele `use`/`deliver`/miejsca w fabule, `mainLast` + przeliczanie przy wczytaniu, przerywniki `Data/Cutscenes` z zapisem `quests.scenes`, kotwice w jaskiniach.
 
 ### 3.5 Rozmowy i prowadzenie przez questy (prośba właściciela 2026-10-13; mechanizmy: S101b)
 Właściciel: „żeby w questach NPC cię prowadził, czasami rzucił żartem, żeby interakcje były faktycznie ciekawe”.

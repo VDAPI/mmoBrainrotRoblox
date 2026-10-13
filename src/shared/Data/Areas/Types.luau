@@ -30,8 +30,8 @@ export type Stream = {
 export type NpcSpot = { x: number, z: number, facing: number }
 
 -- Invisible quest object (S26 -> S27): a part tagged "QuestAnchor" with the attribute AnchorId, `y` studs over
--- the ground (default 2).
-export type QuestAnchor = { id: string, x: number, z: number, y: number? }
+-- the ground (default 2). S102: `wiki = false` keeps it off the wiki (story anchors until S109).
+export type QuestAnchor = { id: string, x: number, z: number, y: number?, wiki: boolean? }
 
 -- Place of a building or landmark built by a layout (S26): yaw `rot` in degrees, front = (-sin rot, -cos rot).
 export type Site = { x: number, z: number, rot: number }
@@ -92,6 +92,9 @@ export type Cave = {
 	rooms: { Room }?, -- rooms[1] is the entrance; boss caves: the last room is the dungeon antechamber
 	boss: boolean, -- last cave of the region with the boss dungeon gate
 	profile: string?, -- S33: Data/AreaProfiles id (caves have none yet: their elites already are the better drop)
+	-- S102: quest anchors inside the cave (cave-relative x / z on the floor, World/CaveLayout builds them; S104-S105
+	-- add the first ones)
+	questAnchors: { QuestAnchor }?,
 }
 
 return nil

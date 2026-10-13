@@ -44,6 +44,7 @@ local FX = {
 	fire = true, -- the goblin totem burning
 	tracks = true, -- a hunter's marker stick with a red rag
 	halter = true, -- a stake with a cut halter rope and trampled grass where the stallion was calmed (S96)
+	frost = true, -- S102: rime crust and a frosted crest on the tower ruins (story quest frostRuins)
 }
 
 local list: { SideQuest } = {}

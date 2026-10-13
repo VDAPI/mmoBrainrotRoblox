@@ -392,3 +392,49 @@ describe("Companion data and the escort objective (S101b T8)", function()
 		expect(C.catchUp < C.failDist).toBe(true)
 	end)
 end)
+
+describe("Companions of story chapter I (S102 T12)", function()
+	it(
+		"frostSign route: Dobiesław leads from the guardhouse to the temple, every waypoint free, legs <= legMax",
+		function()
+			local TownPlaces = require("../src/shared/Logic/TownPlaces")
+			local quest = assert(Quests.Main.get("frostSign"))
+			local def = assert(quest.companion, "companion")
+			expect(def.npc).toBe("sergeant")
+			expect(def.mode).toBe("lead")
+			local escort = quest.objectives[2]
+			expect(escort.type).toBe("escort")
+			local route = Companion.route(def, escort, assert(Companion.fromOf(def), "from"))
+			expect(#route >= 3).toBe(true)
+			for i, point in route do
+				if i > 1 then
+					-- the start is the sergeant's own place in the guardhouse
+					expect(`{point.x},{point.z} {TownPlaces.isFree(point.x, point.z)}`).toBe(`{point.x},{point.z} true`)
+					local prev = route[i - 1]
+					local leg = math.sqrt((point.x - prev.x) ^ 2 + (point.z - prev.z) ^ 2)
+					expect(leg <= C.legMax).toBe(true)
+				end
+			end
+			local function want(progress: { number }): any
+				return Companion.want(quests({ main = { id = "frostSign", progress = progress } }))
+			end
+			local w = want({ 1, 0, 0 })
+			expect(w and w.def.npc).toBe("sergeant")
+			expect(w and w.objective).toBe(2)
+			expect(want({ 0, 0, 0 })).toBeNil()
+			expect(want({ 1, 1, 0 })).toBeNil()
+		end
+	)
+
+	it("frostRuins: Mira follows during the objectives 1 and 2", function()
+		local function want(progress: { number }): any
+			return Companion.want(quests({ main = { id = "frostRuins", progress = progress } }))
+		end
+		for _, progress in { { 0, 0, 0 }, { 1, 0, 0 } } do
+			local w = want(progress)
+			expect(w and w.def.npc).toBe("scout_meadows")
+			expect(w and w.def.mode).toBe("follow")
+		end
+		expect(want({ 1, 1, 0 })).toBeNil()
+	end)
+end)

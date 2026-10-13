@@ -162,8 +162,12 @@ T.describe("AccountSchema", function()
 	end)
 
 	T.it("S101b: dialogue answers and the comments switch come from the templates, without a migration", function()
-		T.expect(AccountSchema.CURRENT).toBe(7)
+		T.expect(AccountSchema.CURRENT).toBe(8) -- S102: 8 = story progress (mainLast)
 		T.expect(AccountSchema.characterTemplate().quests.said).toEqual({})
+		-- S102: cutscenes start empty, the story anchor has no default
+		T.expect(AccountSchema.characterTemplate().quests.scenes).toEqual({})
+		T.expect(AccountSchema.characterTemplate().quests.mainLast).toBeNil()
+		T.expect(AccountSchema.characterTemplate().quests.mainDone).toBe(0)
 		T.expect(AccountSchema.accountTemplate().settings.barks).toBe(true)
 		local old: any = AccountSchema.accountTemplate()
 		old.settings.barks = nil
@@ -198,7 +202,7 @@ T.describe("AccountSchema", function()
 		local older: any = AccountSchema.accountTemplate()
 		older.schema = 6
 		older.login = nil
-		T.expect(AccountSchema.migrate(older)).toEqual({ 7 })
+		T.expect(AccountSchema.migrate(older)).toEqual({ 7, 8 })
 		T.expect(older.login).toEqual({ day = 0, last = 0 })
 	end)
 
@@ -263,8 +267,8 @@ end
 T.describe("Migration 6 (S56)", function()
 	T.it("level 1 Warrior", function()
 		local data, c = oldSave("Warrior", 1, { skills = { mightyStrike = 1 }, skillPoints = 0 })
-		T.expect(AccountSchema.migrate(data)).toEqual({ 6, 7 }) -- S99: 7 = hunting contracts
-		T.expect(data.schema).toBe(7)
+		T.expect(AccountSchema.migrate(data)).toEqual({ 6, 7, 8 }) -- S99: 7 = hunting contracts, S102: 8 = story progress
+		T.expect(data.schema).toBe(AccountSchema.CURRENT)
 		T.expect(c.skills).toBeNil()
 		T.expect(c.skillPoints).toBeNil()
 		T.expect(c.stats).toEqual((Classes.get("Warrior") :: any).startStats)

@@ -101,6 +101,30 @@ describe("Meadows data (S26)", function()
 		end
 	end)
 
+	-- S102 (T7): the frosted crest of the story quest frostRuins by the tower ruins
+	it("puts the story anchor tower_crest in the ruins' flat circle, on dry land, unique in the world", function()
+		local crest, mapId = Areas.anchorById("tower_crest")
+		local a = assert(crest, "tower_crest")
+		expect(mapId).toBe("meadows")
+		expect(a.wiki).toBe(false)
+		local ruins = { x = -150, z = -380 }
+		expect(math.sqrt((a.x - ruins.x) ^ 2 + (a.z - ruins.z) ^ 2) <= 12).toBe(true)
+		expect(MeadowsTerrain.isWater(a.x, a.z)).toBe(false)
+		local seen: { [string]: boolean } = {}
+		for _, data in Areas.byMap do
+			for _, anchor in data.questAnchors or {} do
+				expect(`{anchor.id} {seen[anchor.id] == nil}`).toBe(`{anchor.id} true`)
+				seen[anchor.id] = true
+			end
+		end
+		for _, cave in Areas.caves.list do
+			for _, anchor in cave.questAnchors or {} do
+				expect(`{anchor.id} {seen[anchor.id] == nil}`).toBe(`{anchor.id} true`)
+				seen[anchor.id] = true
+			end
+		end
+	end)
+
 	it("prepares the quest anchors of S27", function()
 		local want = {
 			"shrine_candles",

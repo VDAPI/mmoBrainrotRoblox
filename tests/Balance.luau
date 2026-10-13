@@ -77,6 +77,7 @@ local Spawns = require("../src/shared/Data/Spawns")
 local Skills = require("../src/shared/Logic/Skills")
 local StatCalc = require("../src/shared/Logic/StatCalc")
 local Stats = require("../src/shared/Data/Stats")
+local StoryProgress = require("../src/shared/Logic/StoryProgress")
 local Traits = require("../src/shared/Logic/Traits")
 local Upgrade = require("../src/shared/Logic/Upgrade")
 
@@ -1906,7 +1907,12 @@ Balance.CREDIT_RULES = CREDIT_RULES
 
 local function questSources(budget: boolean): { QuestSource }
 	if not budget then
-		return { { list = Quests.Main.list }, { list = Quests.Side.list, below = 20 } }
+		-- S102: the S94 story = the 32 quests of StoryProgress.LEGACY_ORDER (later story insertions are budget)
+		local legacy = {}
+		for _, id in StoryProgress.LEGACY_ORDER do
+			table.insert(legacy, Quests.Main.get(id))
+		end
+		return { { list = legacy }, { list = Quests.Side.list, below = 20 } }
 	end
 	return {
 		{ list = Quests.Main.list },

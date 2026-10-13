@@ -11,6 +11,8 @@
 --   CancelQuestUse()
 -- S101b: every change of the active side quests refreshes the quest companion (CompanionService.Refresh, taken from
 -- the registry during play: it is not in Deps).
+-- S102: anchors and places of the active story quest too (Logic/SideQuests.usableAnchors marks them `main`; the `use`
+-- event reaches the story through QuestEvents -> QuestService.handle); WhereIs for QuestService's catch-up.
 
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
@@ -168,7 +170,7 @@ function SideQuestService.Handle(player: Player, kind: string, data: { [string]:
 	end
 end
 
--- Map-relative position of a player's character and the map it stands on.
+-- Map-relative position of a player's character and the map it stands on (S102: public for QuestService).
 local function whereIs(player: Player): (string?, number, number)
 	local model = player.Character
 	local root = model and model:FindFirstChild("HumanoidRootPart") :: BasePart?
@@ -178,6 +180,10 @@ local function whereIs(player: Player): (string?, number, number)
 		return nil, 0, 0
 	end
 	return map.id, root.Position.X - map.offset.x, root.Position.Z - map.offset.z
+end
+
+function SideQuestService.WhereIs(player: Player): (string?, number, number)
+	return whereIs(player)
 end
 
 -- Counts what already holds when a quest starts: the current map / place and the level.
@@ -345,7 +351,10 @@ local function useAnchor(player: Player, anchorId: string): (boolean, string?)
 	if Vector3.new(offset.X, 0, offset.Z).Magnitude > Config.SideQuest.useRange + RANGE_TOLERANCE then
 		return false, "npc.error.tooFar"
 	end
-	local quest = Quests.npcQuest(target.quest)
+	-- S102: the anchor of the active story quest (the story wins a shared anchor)
+	local quest: Quests.MainQuest | Quests.SideQuest | nil = if target.main
+		then Quests.Main.get(target.quest)
+		else Quests.npcQuest(target.quest)
 	local objective = quest and quest.objectives[target.index]
 	if not quest or not objective then
 		return false, "error.badRequest"
@@ -539,6 +548,19 @@ function SideQuestService.Start()
 					continue
 				end
 				local wanted = false
+				-- S102: a story place (reach with x / z) of the active story quest
+				local story, storyEntry = SideQuests.mainEntry(char.quests)
+				if story and storyEntry then
+					for i, objective in story.objectives do
+						if
+							objective.type == "reach"
+							and objective.x
+							and (storyEntry.progress[i] or 0) < objective.n
+						then
+							wanted = true
+						end
+					end
+				end
 				for id, entry in sideOf(char).active do
 					local quest = Quests.npcQuest(id)
 					if quest then

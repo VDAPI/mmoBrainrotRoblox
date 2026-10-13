@@ -61,6 +61,16 @@ T.describe("Definitions", function()
 		T.expect((ArgCheck.check({ "side_bears" }, assert(def.args, "expected a value"), 1))).toBe(false)
 	end)
 
+	T.it("S102: CutsceneDone takes a scene id, rate 4", function()
+		local def = Definitions.CutsceneDone
+		T.expect(def.kind).toBe("function")
+		T.expect(def.dir).toBe("c2s")
+		T.expect(def.rate).toBe(4)
+		T.expect(def.args).toEqual({ "string" })
+		T.expect((ArgCheck.check({ "ch1_open" }, assert(def.args, "expected a value"), 1))).toBe(true)
+		T.expect((ArgCheck.check({ 5 }, assert(def.args, "expected a value"), 1))).toBe(false)
+	end)
+
 	T.it("every c2s remote has well-formed argument rules", function()
 		local known = { string = true, number = true, integer = true, boolean = true, table = true, any = true }
 		for name, def in Definitions do

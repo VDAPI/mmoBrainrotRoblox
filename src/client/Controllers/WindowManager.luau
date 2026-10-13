@@ -386,6 +386,18 @@ function WindowManager.SetHotkeysEnabled(enabled: boolean)
 	hotkeysEnabled = enabled
 end
 
+-- S102: for CutsceneController: whether window hotkeys work now.
+function WindowManager.HotkeysEnabled(): boolean
+	return hotkeysEnabled
+end
+
+-- S102: for CutsceneController: an Escape action that wins over everything else while set (skipping a cutscene).
+local escapeOverride: (() -> ())? = nil
+
+function WindowManager.SetEscapeOverride(handler: (() -> ())?)
+	escapeOverride = handler
+end
+
 -- Extra Escape step between "close the top window" and "open the menu" (e.g. clear the combat target).
 -- Returns true when it consumed the key.
 local escapeHandler: (() -> boolean)? = nil
@@ -395,6 +407,11 @@ function WindowManager.SetEscapeHandler(handler: () -> boolean)
 end
 
 local function onEscape()
+	local override = escapeOverride
+	if override then
+		override()
+		return
+	end
 	if modalScope then
 		-- Escape on a modal behaves like Cancel; a modal without Cancel stays.
 		if modalCancel then

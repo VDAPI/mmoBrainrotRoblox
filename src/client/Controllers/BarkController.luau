@@ -281,7 +281,7 @@ end
 
 local function targetOf(item: { quest: any, progress: { number }, kind: string }, quests: any, level: number): any
 	if item.kind == "main" then
-		return QuestText.target(item.quest, item.progress, level, quests)
+		return QuestText.target(item.quest, item.progress, level, quests, (quests.main or {}).used)
 	end
 	local entry = SideQuests.activeOf(quests)[item.quest.id]
 	return QuestText.sideTarget(item.quest, entry, level, quests)

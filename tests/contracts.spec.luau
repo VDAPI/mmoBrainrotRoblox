@@ -311,7 +311,7 @@ describe("Contracts: save and migration 7", function()
 			}
 		end
 		return {
-			schema = AccountSchema.CURRENT - 1,
+			schema = 6, -- before migration 7 (S102 added 8)
 			characters = {
 				a = char("a", 80, { done = 0 }),
 				b = char("b", 2, { done = 0 }),
@@ -327,13 +327,13 @@ describe("Contracts: save and migration 7", function()
 		local template: any = AccountSchema.characterTemplate()
 		expect(template.quests.contract).toEqual({ done = 0 })
 		expect(Config.Quest.contractBacklog).toBe(3)
-		expect(AccountSchema.CURRENT).toBe(7)
+		expect(AccountSchema.CURRENT).toBe(8) -- S102: 8 = story progress
 	end)
 
 	it("existing characters keep 3 levels of backlog, never lose progress, get no rewards", function()
 		local data = oldAccount()
 		local applied = AccountSchema.migrate(data)
-		expect(applied).toEqual({ 7 })
+		expect(applied).toEqual({ 7, 8 })
 		local chars = data.characters
 		expect(chars.a.quests.contract).toEqual({ done = 77 })
 		expect(chars.b.quests.contract).toEqual({ done = 0 })

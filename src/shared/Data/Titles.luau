@@ -6,6 +6,8 @@
 -- end of the list, e.g. id path_healer, req { kind = "mainPath", path = "healer" }, color "#8FE0B8". Unpublished
 -- paths hide them on the wiki (tools/WikiData/Visibility).
 
+local Main = require("./Quests/Main")
+
 export type Requirement =
 	{ kind: "level", value: number }
 	| { kind: "pvpKills", value: number }
@@ -26,8 +28,19 @@ local list: { TitleDef } = {
 	{ id = "veteran", nameKey = "title.veteran", req = { kind = "level", value = 50 }, color = "#7FB8FF" },
 	{ id = "champion", nameKey = "title.champion", req = { kind = "level", value = 75 }, color = "#C77BFF" },
 	{ id = "legend", nameKey = "title.legend", req = { kind = "level", value = 100 }, color = "#FF9F1C" },
-	{ id = "sentinel", nameKey = "title.sentinel", req = { kind = "mainDone", value = 10 }, color = "#E8D9A8" },
-	{ id = "dragonbane", nameKey = "title.dragonbane", req = { kind = "mainDone", value = 32 }, color = "#FF6B4A" },
+	-- S102: story titles follow the quest positions (Main.indexOf), so story insertions never move their meaning
+	{
+		id = "sentinel",
+		nameKey = "title.sentinel",
+		req = { kind = "mainDone", value = Main.indexOf.herbs },
+		color = "#E8D9A8",
+	},
+	{
+		id = "dragonbane",
+		nameKey = "title.dragonbane",
+		req = { kind = "mainDone", value = Main.indexOf.vaelgrath },
+		color = "#FF6B4A",
+	},
 	{ id = "duelist", nameKey = "title.duelist", req = { kind = "duelsWon", value = 10 }, color = "#E8E25A" },
 	{ id = "gladiator", nameKey = "title.gladiator", req = { kind = "duelsWon", value = 50 }, color = "#FFD36B" },
 	{ id = "bloodied", nameKey = "title.bloodied", req = { kind = "pvpKills", value = 10 }, color = "#E05A4A" },

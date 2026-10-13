@@ -166,6 +166,26 @@ describe("S101b /companion", function()
 	end)
 end)
 
+describe("S102 /scene and /quest info", function()
+	it("has its entries, the usage in both languages and the implementation", function()
+		local scene = assert(AdminCommands.get("scene"), "scene")
+		expect(scene.category).toBe("quests")
+		expect(scene.args[1].options).toEqual({ "play", "list", "reset" })
+		local quest = assert(AdminCommands.get("quest"), "quest")
+		expect(table.find(quest.args[1].options, "info") ~= nil).toBe(true)
+		for _, key in
+			{ "admin.usage.scene", "admin.quest.info", "admin.scene.line", "admin.scene.done", "admin.scene.unknown" }
+		do
+			expect(type((pl :: any)[key])).toBe("string")
+			expect(type((en :: any)[key])).toBe("string")
+		end
+		local fs = require("@lune/fs")
+		local source = fs.readFile("src/server/Admin/Quests.luau")
+		expect(string.find(source, "commands.scene = function", 1, true) ~= nil).toBe(true)
+		expect(string.find(source, 'args[1] == "info"', 1, true) ~= nil).toBe(true)
+	end)
+end)
+
 describe("DevPreset", function()
 	it("gives every class a full usable set at several levels", function()
 		for _, class in { "Warrior", "Hunter", "Mage", "Cleric" } do

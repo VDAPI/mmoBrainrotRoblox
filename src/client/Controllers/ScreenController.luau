@@ -220,6 +220,11 @@ local function gameCamera()
 	end
 end
 
+-- S102: for CutsceneController: the game camera back on the character after a cutscene.
+function ScreenController.RestoreCamera()
+	gameCamera()
+end
+
 local function show(screen: "select" | "hud")
 	if current == screen then
 		return

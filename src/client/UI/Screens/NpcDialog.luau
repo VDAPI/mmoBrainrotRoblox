@@ -4,6 +4,7 @@
 -- this NPC has for you (UI/NpcQuests: ? to hand in, ! new, … in progress, later ones greyed) and the service
 -- buttons. A quest opens the quest conversation (QuestController). S99: the hunting contract (at the board it opens
 -- the board window instead, NpcController).
+-- S102: an NPC of an active quest's `talk` / `deliver` objective with a `line` says that line (the story first).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -12,6 +13,7 @@ local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local NpcQuests = require(script.Parent.Parent.NpcQuests)
 local Npcs = require(ReplicatedStorage.Shared.Data.Npcs)
 local Preview = require(script.Parent.WorldMap.Preview)
+local QuestLogic = require(ReplicatedStorage.Shared.Logic.QuestLogic)
 local QuestText = require(script.Parent.Parent.QuestText)
 local Quests = require(ReplicatedStorage.Shared.Data.Quests)
 local SideQuests = require(ReplicatedStorage.Shared.Logic.SideQuests)
@@ -41,9 +43,47 @@ local MARK: { [string]: { glyph: string, color: Color3 } } = {
 	later = { glyph = "·", color = Theme.Colors.TextMuted },
 }
 
+-- S102: the `line` of a talk / deliver objective of an active quest that points at this NPC (story first, then side
+-- quests), or nil. It stays while the quest is active, done or not.
+local function questLine(def: Npcs.NpcDef): string?
+	local quests = State.Get({ "character", "quests" })
+	local class = State.Get({ "character", "class" })
+	local function lineOf(quest: SideQuests.QuestLike): string?
+		for _, objective in quest.objectives do
+			if (objective.type == "talk" or objective.type == "deliver") and objective.line then
+				local npc = QuestLogic.npcFor(objective.npc, class)
+				if objective.type == "deliver" and npc == nil then
+					npc = quest.turnIn
+				end
+				if npc == def.id then
+					return objective.line
+				end
+			end
+		end
+		return nil
+	end
+	local story = SideQuests.mainEntry(quests)
+	local found = if story then lineOf(story) else nil
+	if found then
+		return found
+	end
+	for id, entry in SideQuests.activeOf(quests) do
+		local quest = Quests.npcQuest(id)
+		local line = if quest and type(entry) == "table" then lineOf(quest) else nil
+		if line then
+			return line
+		end
+	end
+	return nil
+end
+
 -- Line of an NPC for this visit: [key, args]. Lines rotate at random; the innkeeper's gossip names an NPC with
 -- a quest the character can take now.
 local function pickLine(def: Npcs.NpcDef): (string, { [string]: any }?)
+	local quest = questLine(def)
+	if quest then
+		return quest, nil
+	end
 	if def.gossip then
 		local quests = State.Get({ "character", "quests" })
 		local level = State.Get({ "character", "level" }) or 1

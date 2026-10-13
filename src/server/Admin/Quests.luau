@@ -6,6 +6,7 @@ local Shared = game:GetService("ReplicatedStorage").Shared
 
 local Areas = require(Shared.Data.Areas)
 local BudgetData = require(Shared.Data.QuestBudget)
+local CutsceneData = require(Shared.Data.Cutscenes)
 local Maps = require(Shared.Data.Maps)
 local NpcMarks = require(Shared.Logic.NpcMarks)
 local QuestBudget = require(Shared.Logic.QuestBudget)
@@ -29,7 +30,19 @@ local commands: { [string]: (player: Player, args: { string }) -> ...any } = {}
 
 commands.quest = function(player, args)
 	withCharacter(player, function()
-		if args[1] == "set" and args[2] and QuestService.SetMain(player, args[2]) then
+		if args[1] == "info" then
+			-- S102: the place in the story (Logic/StoryProgress) and the chapter of the active or next quest
+			local quests = PlayerStateService.GetCharacter(player).quests
+			local active = if type(quests.main) == "table" then quests.main.id else nil
+			local nextQuest = Quests.Main.list[(quests.mainDone or 0) + 1]
+			local current = active or (if nextQuest then nextQuest.id else nil)
+			reply(player, "admin.quest.info", {
+				done = quests.mainDone or 0,
+				last = quests.mainLast or "—",
+				active = active or "—",
+				chapter = if current then Quests.Main.chapterOf(current) else "—",
+			})
+		elseif args[1] == "set" and args[2] and QuestService.SetMain(player, args[2]) then
 			reply(player, "admin.quest.set", { id = args[2] })
 		elseif args[1] == "complete" and QuestService.CompleteMain(player) then
 			reply(player, "admin.quest.complete")
@@ -214,6 +227,35 @@ commands.companion = function(player, args)
 	end
 end
 
+-- S102: /scene play <id> | list | reset: story cutscenes of the caller's character (play = queue again, also a watched
+-- one; reset = forget them all).
+commands.scene = function(player, args)
+	local action, id = args[1], args[2]
+	withCharacter(player, function()
+		local quests = PlayerStateService.GetCharacter(player).quests
+		if action == "play" then
+			if id and QuestService.QueueScene(player, id) then
+				reply(player, "admin.scene.done", { action = action, id = id })
+			else
+				reply(player, "admin.scene.unknown", { id = id or "" })
+			end
+		elseif action == "list" then
+			local scenes = quests.scenes or {}
+			for _, scene in CutsceneData.list do
+				local value = scenes[scene.id]
+				reply(player, "admin.scene.line", {
+					id = scene.id,
+					state = if value == true then "✔" elseif value == false then "…" else "·",
+				})
+			end
+		elseif action == "reset" and QuestService.ResetScenes(player) then
+			reply(player, "admin.scene.done", { action = action, id = "*" })
+		else
+			reply(player, "admin.usage.scene")
+		end
+	end)
+end
+
 -- S27: /anchor <id>: teleport next to a quest anchor (no id: the list).
 commands.anchor = function(player, args)
 	local id = args[1]
@@ -224,6 +266,15 @@ commands.anchor = function(player, args)
 			table.insert(names, anchor.id)
 			if anchor.id == id then
 				found, mapId = anchor, map
+			end
+		end
+	end
+	-- S102: anchors inside caves (Areas.anchorById knows them too)
+	for _, cave in Areas.caves.list do
+		for _, anchor in (cave.questAnchors or {}) :: { Areas.QuestAnchor } do
+			table.insert(names, anchor.id)
+			if anchor.id == id then
+				found, mapId = anchor, cave.id
 			end
 		end
 	end

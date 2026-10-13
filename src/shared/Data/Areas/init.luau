@@ -75,13 +75,21 @@ local function areaById(id: string): (Types.Area?, string?)
 	return nil, nil
 end
 
--- S27: a quest anchor by id and its map.
+-- S27: a quest anchor by id and its map. S102: then the anchors inside the caves (the map is the cave id).
 local function anchorById(id: string): (Types.QuestAnchor?, string?)
 	for mapId, data in byMap do
 		local list: { Types.QuestAnchor } = data.questAnchors or {}
 		for _, anchor in list do
 			if anchor.id == id then
 				return anchor, mapId
+			end
+		end
+	end
+	for _, cave in Caves.list do
+		local list: { Types.QuestAnchor } = cave.questAnchors or {}
+		for _, anchor in list do
+			if anchor.id == id then
+				return anchor, cave.id
 			end
 		end
 	end

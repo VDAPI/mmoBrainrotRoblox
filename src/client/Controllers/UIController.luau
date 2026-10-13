@@ -120,6 +120,16 @@ function UIController.MountDragGhost(scope: Fusion.Scope<typeof(Fusion)>, parent
 	})
 end
 
+-- S102: for CutsceneController: hides the HUD and the windows (layers Screens and Windows; toasts stay).
+function UIController.SetHudHidden(hidden: boolean)
+	for _, name in { "Screens", "Windows" } do
+		local root = roots[name]
+		if root then
+			root.Visible = not hidden
+		end
+	end
+end
+
 function UIController.Init()
 	local scope = UIController.Scope
 	-- Our own HUD replaces Roblox's backpack (keys 1–0 are the skill bar) and health bar.

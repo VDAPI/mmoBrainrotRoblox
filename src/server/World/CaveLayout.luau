@@ -6,7 +6,8 @@
 --   * ctx.height = the floor (props, nodes, portals and signs stand on it), ctx.rayFrom over it,
 --   * the "shell" level of every dressing Build in <Cave>/<tag> folders, the dressing's ore veins (Build.node),
 --   * the sketch: the floor outline (rectangles `floor`) and the dressing's shapes,
---   * World/BuildStats[<id>] and "[Cave:<id>] shell: … builds, … parts" / "parts=… ms=…".
+--   * World/BuildStats[<id>] and "[Cave:<id>] shell: … builds, … parts" / "parts=… ms=…",
+--   * S102: the cave's quest anchors (Data/Areas/Caves `questAnchors`, cave-relative, on the floor).
 -- Portals, the exit, signs, zones and respawn points stay with the caller.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -17,6 +18,8 @@ local CaveTerrainWriter = require(script.Parent.CaveTerrainWriter)
 
 local Shared = ReplicatedStorage.Shared
 local BlueprintBuild = require(Shared.Util.BlueprintBuild)
+local Areas = require(Shared.Data.Areas)
+local Caves = require(Shared.Data.Areas.Caves)
 local CaveTerrain = require(Shared.Logic.CaveTerrain)
 local Log = require(Shared.Util.Log)
 local WorldGen = require(Shared.Logic.WorldGen)
@@ -75,6 +78,12 @@ function CaveLayout.build(ctx: Build.Context)
 		for _, shape in gen.sketch() do
 			table.insert(ctx.sketch.shapes, shape :: any)
 		end
+	end
+	-- S102: quest anchors of the cave (story objectives of S104-S105), on the floor like the nodes
+	local cave = Caves.get(mapId)
+	local anchors: { Areas.QuestAnchor } = if cave then cave.questAnchors or {} else {}
+	for _, a in anchors do
+		Build.questAnchor(ctx, a.id, a.x, a.z, a.y)
 	end
 	ctx.parts += shell
 	local shellSeconds = os.clock() - t0

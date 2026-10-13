@@ -12,6 +12,7 @@ local Skills = require("./Skills")
 local Time = require("./Time")
 local Types = require("../Types")
 local StarterGear = require("./StarterGear")
+local StoryProgress = require("./StoryProgress")
 local TableUtil = require("../Util/TableUtil")
 
 type AccountData = Types.AccountData
@@ -19,7 +20,7 @@ type CharacterData = Types.CharacterData
 
 local AccountSchema = {}
 
-AccountSchema.CURRENT = 7
+AccountSchema.CURRENT = 8
 
 function AccountSchema.accountTemplate(): AccountData
 	return {
@@ -98,6 +99,7 @@ function AccountSchema.characterTemplate(): CharacterData
 			contract = { done = 0 }, -- S98; S99: hunting contracts (Logic/Contracts), migration 7
 			side = { active = {}, done = {} },
 			said = {}, -- S101b: dialogue answers (reconcile adds it to old characters, no migration)
+			scenes = {}, -- S102: story cutscenes (false = queued, true = watched); mainLast has no default (nil)
 		},
 		guildId = nil,
 		auctions = {},
@@ -294,6 +296,35 @@ MIGRATIONS[7] = function(data, _newId)
 	end
 end
 
+-- 8 (S102, docs/FABULA.md §2.1): story insertions. mainDone counted the 32 quests of LEGACY_ORDER; mainLast = the id of
+-- the last one handed in, so Logic/StoryProgress can recount mainDone in the new Main.list (inserted quests before that
+-- point count as done, without rewards). Idempotent.
+MIGRATIONS[8] = function(data, _newId)
+	if type(data.characters) ~= "table" then
+		return
+	end
+	for _, character in data.characters do
+		if type(character) ~= "table" or type(character.quests) ~= "table" then
+			continue
+		end
+		local quests = character.quests
+		if type(quests.mainLast) ~= "string" then
+			quests.mainLast = StoryProgress.legacyId(quests.mainDone)
+		end
+		if type(quests.scenes) ~= "table" then
+			quests.scenes = {}
+		end
+		if type(quests.said) ~= "table" then
+			quests.said = {}
+		end
+		if type(quests.main) ~= "table" then
+			quests.main = nil
+		elseif quests.main.used ~= nil and type(quests.main.used) ~= "table" then
+			quests.main.used = nil
+		end
+	end
+end
+
 -- Upgrades and reconciles account data in place. Returns the list of applied migration numbers.
 function AccountSchema.migrate(data: any, newId: (() -> string)?): { number }
 	local counter = 0
@@ -316,7 +347,12 @@ function AccountSchema.migrate(data: any, newId: (() -> string)?): { number }
 	TableUtil.reconcile(data, AccountSchema.accountTemplate())
 	local template = AccountSchema.characterTemplate()
 	for _, character in data.characters do
-		TableUtil.reconcile(character, template)
+		if type(character) == "table" then
+			TableUtil.reconcile(character, template)
+			-- S102: every load recounts the story from mainLast / the active quest, so inserted story quests need no
+			-- migration (Logic/StoryProgress)
+			StoryProgress.apply(character.quests)
+		end
 	end
 	return applied
 end

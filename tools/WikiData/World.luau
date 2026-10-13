@@ -306,7 +306,8 @@ function World.areasData(): any
 		end
 		local anchors = {}
 		for _, q in data.questAnchors or {} do
-			if not secretAnchors[q.id] then
+			-- S102: an anchor with wiki = false (the story's until S109) stays off the map too
+			if not secretAnchors[q.id] and (q :: any).wiki ~= false then
 				table.insert(anchors, { id = q.id, x = q.x, z = q.z })
 			end
 		end

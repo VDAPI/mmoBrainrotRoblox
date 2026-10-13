@@ -355,7 +355,15 @@ cmd("combat", "aura", {
 cmd("combat", "hook", { str("id"), str("value", true) })
 
 -- Quests
-cmd("quests", "quest", { enum("action", { "set", "complete" }), ref("id", "quest", true) })
+-- S102: `info` = the place in the story (mainDone, mainLast, the active quest, the chapter)
+cmd("quests", "quest", { enum("action", { "set", "complete", "info" }), ref("id", "quest", true) })
+-- S102: story cutscenes of the caller (play = queue again, list, reset = forget all)
+cmd(
+	"quests",
+	"scene",
+	{ enum("action", { "play", "list", "reset" }), str("id", true) },
+	{ dangerActions = { "reset" } }
+)
 cmd("quests", "daily", { enum("action", { "reroll" }) })
 cmd("quests", "questmarks", {})
 -- S98: weekly contracts and the boss contract; the quest EXP budget multiplier of a level (own level by default)

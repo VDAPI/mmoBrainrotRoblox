@@ -11,6 +11,7 @@
 -- for an answer there, QuestSay saves it, then the NPC's reply shows under the page (and on every later visit); pages
 -- may pick a variant by an earlier answer (`recall`). A side quest taken before it was answered shows the page again
 -- at its giver while it runs.
+-- S102: story quests with `pages` offer them like the side quests (p1..pN, the answers on a page number).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -151,7 +152,15 @@ local function buildView(row: NpcQuests.Row?, quests: any, npcId: string?, keep:
 				then "turnIn"
 				else "active")
 			else (if row.mode == "later" then "later" else "offer")
-		local ids = { Dialogue.pageOf(quest, "main", mode, 1) }
+		-- S102: an offer of a story quest with pages shows quest.<id>.p1..pN; in progress quest.<id>.text, hand-in .done
+		local ids: { string } = {}
+		if mode == "offer" and quest.pages then
+			for i = 1, quest.pages do
+				table.insert(ids, Dialogue.pageOf(quest, "main", "offer", i))
+			end
+		else
+			ids = { if mode == "turnIn" then "done" else "text" }
+		end
 		local say, sayAt = answersAt(quest, ids, mode)
 		return {
 			row = row,

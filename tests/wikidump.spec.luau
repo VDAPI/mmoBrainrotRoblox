@@ -206,9 +206,16 @@ T.describe("Wiki export: consistency", function()
 	T.it("has as many records as the game data", function()
 		T.expect(#d.items.items).toBe(count(Items.byId))
 		T.expect(#d.monsters.monsters).toBe(#Monsters.list)
-		T.expect(#d.quests.main).toBe(#Quests.Main.list)
-		-- S57: skills of unpublished or missing paths are hidden; S96: side quests with wiki = false too
+		-- S57: skills of unpublished or missing paths are hidden; S96: side quests with wiki = false too; S102: story
+		-- quests with wiki = false too
 		local hiddenSet = Visibility.collect()
+		local mainShown = 0
+		for _, quest in Quests.Main.list do
+			if quest.wiki ~= false then
+				mainShown += 1
+			end
+		end
+		T.expect(#d.quests.main).toBe(mainShown)
 		local sideShown = 0
 		for _, quest in Quests.Side.list do
 			if not hiddenSet[quest.id] then
@@ -223,6 +230,35 @@ T.describe("Wiki export: consistency", function()
 			end
 		end
 		T.expect(#d.skills.skills).toBe(shown)
+	end)
+
+	-- S102 (T9): the new story quests and their anchor wait for S109; the 32 old ones keep order 1..32
+	T.it("leaves the hidden story quests and their anchors out (S102)", function()
+		for i, q in d.quests.main do
+			T.expect(q.order).toBe(i)
+		end
+		local hiddenIds = { "tower_crest" }
+		for _, quest in Quests.Main.list do
+			if quest.wiki == false then
+				table.insert(hiddenIds, quest.id)
+			end
+		end
+		T.expect(#hiddenIds >= 5).toBe(true)
+		for _, file in fs.readDir("wiki/src/data") do
+			if string.match(file, "%.json$") then
+				local text = fs.readFile(`wiki/src/data/{file}`)
+				for _, id in hiddenIds do
+					if string.find(text, `"{id}"`, 1, true) then
+						error(`{file} names hidden {id}`, 0)
+					end
+				end
+			end
+		end
+		for _, title in d.titles.titles do
+			if title.id == "dragonbane" then
+				T.expect(title.req.value).toBe(Quests.Main.indexOf.vaelgrath)
+			end
+		end
 	end)
 
 	T.it("labels objectives without placeholders and keeps chances in 0..1", function()

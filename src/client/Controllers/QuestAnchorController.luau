@@ -4,7 +4,8 @@
 -- objective with that anchor (Logic/SideQuests.usableAnchors). The server holds the interaction (QuestUse, the
 -- cast bar shows it). Once used, the anchor shows its change to this player only (lit candles, a fresh fence board,
 -- the net on the shore, a burning totem, ...): built from the character's quest state, so it looks the same after
--- relogging, while the quest runs and after it is handed in.
+-- relogging, while the quest runs and after it is handed in. S102: the anchors of the active story quest too (the
+-- frosted crest of frostRuins).
 
 local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -274,6 +275,49 @@ local BUILDERS: { [string]: (model: Model, base: CFrame) -> () } = {
 			Enum.Material.Ground
 		)
 	end,
+	-- S102: rime crust and a frosted crest on the tower ruins (story quest frostRuins): thin ice slabs around the
+	-- anchor, an upright crest plate with a white snowflake and a dark thorn across it, a faint cold light
+	frost = function(model, base)
+		for i = 1, 6 do
+			local a = i / 6 * math.pi * 2 + 0.4
+			local d = 0.8 + (i % 3) * 0.6
+			local ice = part(
+				model,
+				Vector3.new(1.2 + (i % 2) * 0.6, 0.08, 0.9 + (i % 3) * 0.3),
+				base * CFrame.new(math.cos(a) * d, 0.05, math.sin(a) * d) * CFrame.Angles(0, a * 1.7, math.rad(4)),
+				"#CFE6F5",
+				Enum.Material.Ice
+			)
+			ice.Transparency = 0.25 + (i % 3) * 0.06
+		end
+		local crest =
+			part(model, Vector3.new(0.2, 1.6, 1.6), base * CFrame.new(0, 1.3, 0), "#CFE6F5", Enum.Material.Glass)
+		crest.Transparency = 0.3
+		local flake =
+			part(model, Vector3.new(0.06, 1, 0.16), base * CFrame.new(-0.13, 1.3, 0), "#FFFFFF", Enum.Material.Neon)
+		part(
+			model,
+			Vector3.new(0.06, 1, 0.16),
+			flake.CFrame * CFrame.Angles(math.rad(60), 0, 0),
+			"#FFFFFF",
+			Enum.Material.Neon
+		)
+		part(
+			model,
+			Vector3.new(0.06, 1, 0.16),
+			flake.CFrame * CFrame.Angles(math.rad(-60), 0, 0),
+			"#FFFFFF",
+			Enum.Material.Neon
+		)
+		part(
+			model,
+			Vector3.new(0.07, 1.5, 0.08),
+			base * CFrame.new(-0.16, 1.3, 0) * CFrame.Angles(math.rad(45), 0, 0),
+			"#2A2A30",
+			Enum.Material.Slate
+		)
+		light(crest, "#BFE3FF", 6, 0.8)
+	end,
 }
 
 local function groundUnder(anchor: Anchor): CFrame
@@ -310,8 +354,11 @@ local function refresh()
 	local done = SideQuests.doneAnchors(quests)
 	for id, anchor in anchors do
 		local target = usable[id]
-		local quest = target and Quests.npcQuest(target.quest)
-		local objective = quest and quest.objectives[target.index]
+		-- S102: an anchor of the active story quest
+		local quest: Quests.MainQuest | Quests.SideQuest | nil = if target
+			then (if target.main then Quests.Main.get(target.quest) else Quests.npcQuest(target.quest))
+			else nil
+		local objective = if quest and target then quest.objectives[target.index] else nil
 		anchor.prompt.Enabled = objective ~= nil
 		anchor.marker.Enabled = objective ~= nil
 		if quest and objective then

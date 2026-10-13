@@ -2979,3 +2979,40 @@
 - **S101b księga:** pola `choices`, `recall`, `barks`, `companion` pomijane przez zrzut `Data/Quests/Main` i
   `Data/Quests/Side` (`omit` w `BALANCE_MODULES`, „dialogue fields, not balance”); `Data/Quests/Talk` w `NOT_BALANCE`;
   `Config.Dialogue` / `Barks` / `Companion` poza `CONFIG_KEYS` (nie balans), więc bez wpisów w księdze.
+
+### S102: Fabuła, rozdział I „Znak Mrozu” i wspólne mechanizmy fabuły
+
+- **S102 postęp fabuły:** zapis trzyma `quests.mainLast` (ostatni oddany quest), a `Logic/StoryProgress.apply` przelicza
+  `mainDone` przy każdym wczytaniu (aktywny quest: `indexOf[main.id] − 1`, inaczej `indexOf[mainLast]`). Migracja 8
+  tylko ustawia `mainLast` z `LEGACY_ORDER` (32 stare id). Wstawki przed punktem gracza są oddane bez nagrody; postać po
+  Grimroku dostaje `warCouncil`, po Vaelgrathcie ma `mainDone = indexOf.vaelgrath` i tytuł. S103–S105 bez migracji.
+- **S102 reguła EXP fabuły (B2a):** `weight` w `q(def)` i `settleStory()`; pasmo 1–19 `STORY_STEP`, pasma z
+  `STORY_BANDS` (puste do S103) celują w `TARGET.main`. Stałe nagrody: questy bossa, stare 1–19, `toDuskwood`.
+- **S102 `STORY_STEP` = 0,05 zamiast 0,25:** 0,25 i zapasowe 0,15 przycinały `monsterExpMul` do `MUL_MIN` (12–15),
+  0,10 spuszczało `S32.drops.unique.10` do 0,468 (< 0,5). 0,05 daje 0,502 i żadnego nowego przycięcia; fabuła 1–19 ma
+  już 41,8% EXP pasma (cel 10%), więc nowe questy dają mało EXP, a resztę złoto i treść.
+- **S102 poziomy nowych questów:** 7 / 12 / 14 / 16 zamiast 8 / 13 / 15 / 19 z planu. Model tempa (`tests/Balance`)
+  liczy okna od poziomów questów fabuły bez bossa; nowy poziom dzieliłby okno starego questu (np. `herbs` 155%
+  expToNext(7) w jednym poziomie) i zerował bicie. `warCouncil` (16) stoi po `grimrok` (18): test poziomów pozwala na
+  powrót do okna po queście bossa. Złoto `gold(poziom)`.
+- **S102 model bazowy budżetu:** `questSources(budget = false)` bierze fabułę z `StoryProgress.LEGACY_ORDER` (model S94
+  na zawsze 32 questy), więc `quest_budget` porównuje nowe questy z niezmienną bazą.
+- **S102 cele w fabule:** `use` / `deliver` / `reach` z miejscem / `area` przez `Logic/SideQuests` (`QuestLike`,
+  `mainEntry`, `quests.main.used`); kotwica fabuły wygrywa ze wspólną kotwicą pobocznego; efekt kotwicy zostaje po
+  oddaniu (`StoryProgress.isDone`). `line` przy `talk` / `deliver` mówi NPC w oknie rozmowy, dopóki quest trwa.
+- **S102 przerywniki:** kolejka w `quests.scenes` (serwer, raz na postać), klient gra w bezczynności, pominięcie =
+  obejrzana, przerwanie przy spadku HP, śmierci i zmianie mapy, tryb karty, gdy ujęcia nie da się ustawić; powtórka z
+  dziennika bez remote'u; komentarze milkną (`BarkController.SetQuiet("cutscene")`). `CutsceneDone` przyjmuje tylko
+  scenę z wartością `false`.
+- **S102 tytuły:** `sentinel` = `Main.indexOf.herbs`, `dragonbane` = `Main.indexOf.vaelgrath` (wstawki ich nie psują).
+- **S102 pod S103–S108:** `Cave.questAnchors` (budowane w `CaveLayout.build`, szukane przez `Areas.anchorById`),
+  `QuestAnchor.wiki`, `NpcDef.wiki`, `regionfolk(map, …)`. Wiki: `wiki = false` na nowych questach i `tower_crest`,
+  `order` liczony wśród widocznych.
+- **S102 korekty FABULA §2.2:** miejsce `frostRuins` ze współrzędnymi ruin (r 25), `area = "meadows_burrow"` w
+  `warrenCharms`, cel `escort` w `frostSign` (scena na celu 3); nagroda `warCouncil` `blessing_hunter_2`.
+- **S102 bankier:** „Depozytariusz Wincenty” / "Keeper Wincenty" (B7); Aldric to tylko kapitan.
+- **S102 rozmowy rozdziału I:** wybory na numerach stron (`frostRuins` 3, `frostSign` 2, `warrenCharms` 2,
+  `warCouncil` 3), `recall` w `frostSign.done` i `warCouncil.p1`; Mira `follow` (cele 1–2), Dobiesław `lead` z celem
+  `escort` (trasa przez rynek i obok fontanny, punkty `TownPlaces.isFree`, odcinki ≤ `legMax`).
+- **S102 księga:** zrzut `Quests/Main` pomija `pages`, `via`, `CHAPTERS`, `chapterOf`; `indexOf*` z powodem „list
+  positions shifted”; `Data/Cutscenes` w `NOT_BALANCE`.

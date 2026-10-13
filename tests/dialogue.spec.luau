@@ -20,12 +20,16 @@ local describe, it, expect = Test.describe, Test.it, Test.expect
 
 -- New quests of a session (S102-S105: story ids, S106-S108: side ids of the region), e.g.
 -- NEW_QUESTS.S102 = { "frostSign", ... }: each has a page with 2-3 answers and every event of Barks.required.
-local NEW_QUESTS: { [string]: { string } } = {}
+local NEW_QUESTS: { [string]: { string } } = {
+	S102 = { "frostRuins", "frostSign", "warrenCharms", "warCouncil" },
+}
 
 -- Groups of a session that need at least two quests with a companion among its NEW_QUESTS: S102-S105
 -- { chapter = n } (story quests of the chapter's level band), S106-S108 { map = "duskwood" | "ashen" | "frostpeak" }
 -- (side quests whose companion walks on that map).
-local COMPANION_GROUPS: { [string]: { { chapter: number?, map: string? } } } = {}
+local COMPANION_GROUPS: { [string]: { { chapter: number?, map: string? } } } = {
+	S102 = { { chapter = 1 } },
+}
 
 -- Existing quests that got comments only (no answers): every event of Barks.required.
 local BARKS_ONLY: { [string]: { string } } = {
@@ -143,6 +147,7 @@ end
 -- The story's healer quest with answers on its single page (or on the hand-in page).
 local function fakeMain(choices: any?): any
 	local quest: any = table.clone(assert(Quests.Main.get("healer")))
+	quest.pages = nil -- S102: healer has offer pages now; the fake is a story quest without them
 	quest.choices = choices or Talk.onText({ Talk.answer("yes"), Talk.answer("no") })
 	return quest
 end
@@ -707,5 +712,45 @@ describe("Dialogue on the Meadows (S101b T5)", function()
 		local option: any = Dialogue.option(bears, "supplies")
 		expect(option.effect.id).toBe("potion_hp_1")
 		expect(option.effect.n <= Config.Dialogue.gifts.potion_hp_1).toBe(true)
+	end)
+end)
+
+describe("Dialogue in story chapter I (S102 T11)", function()
+	local Locale = require("../src/shared/Util/Locale")
+	local function has(key: string): boolean
+		return Locale.has(key, "pl") and Locale.has(key, "en")
+	end
+
+	it("recall picks the variants of frostSign.done and warCouncil.p1", function()
+		local frostSign = assert(Quests.Main.get("frostSign"))
+		local warCouncil = assert(Quests.Main.get("warCouncil"))
+		expect(Dialogue.pageKey(frostSign, "done", quests({ said = { frostSign = "chance" } }), has)).toBe(
+			"quest.frostSign.done.chance"
+		)
+		expect(Dialogue.pageKey(frostSign, "done", quests({ said = { frostSign = "same" } }), has)).toBe(
+			"quest.frostSign.done"
+		)
+		for _, choice in { "jewelry", "ready" } do
+			expect(Dialogue.pageKey(warCouncil, "p1", quests({ said = { warrenCharms = choice } }), has)).toBe(
+				`quest.warCouncil.p1.{choice}`
+			)
+		end
+		expect(Dialogue.pageKey(warCouncil, "p1", quests({ said = { warrenCharms = "count" } }), has)).toBe(
+			"quest.warCouncil.p1"
+		)
+	end)
+
+	it("answers stand on a page number of story quests with pages", function()
+		for _, id in { "frostRuins", "frostSign", "warrenCharms", "warCouncil" } do
+			local quest = assert(Quests.Main.get(id))
+			local page = assert(Dialogue.choicePage(quest), id)
+			expect(type(page.page)).toBe("number")
+			expect((page.page :: number) <= (quest.pages or 0)).toBe(true)
+		end
+		-- Mirela offers frostRuins (page 3) right after herbs
+		local frostRuins = assert(Quests.Main.get("frostRuins"))
+		local ready = quests({ mainDone = Quests.Main.indexOf.herbs })
+		expect(Dialogue.canSay(ready, frostRuins.level, "main", frostRuins, "go", "healer")).toBe(true)
+		expect(Dialogue.canSay(ready, frostRuins.level, "main", frostRuins, "go", "captain")).toBe(false)
 	end)
 end)

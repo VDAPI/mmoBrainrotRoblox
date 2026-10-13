@@ -89,10 +89,19 @@ export type CharacterData = {
 	bossRuns: { [string]: BossRun },
 	bossPity: { [string]: BossPity },
 	alchemy: { { recipeId: string, readyAt: number } },
-	-- S11: main = the accepted story quest, mainDone = completed story quests (in order), daily = contracts.
+	-- S11: main = the accepted story quest, daily = contracts.
 	quests: {
-		main: { id: string, progress: { number } }?,
+		-- S102: `used` = anchors already counted by the `use` objectives of the active story quest (nil = none)
+		main: { id: string, progress: { number }, used: { string }? }?,
+		-- number of story quests before the next one in `Main.list` order; derived from `mainLast` / `main` on load
+		-- (S102)
 		mainDone: number,
+		-- S102: id of the last story quest handed in; mainDone is recomputed from it on every load (Logic/StoryProgress),
+		-- so story insertions (S103–S105) need no migration
+		mainLast: string?,
+		-- S102: story cutscenes (Data/Cutscenes): false = queued to watch, true = watched or skipped; no key = never
+		-- triggered
+		scenes: { [string]: boolean },
 		daily: { day: number, list: { any }, rerolls: number },
 		-- S98: weekly contracts (week = Logic/Time.weekNumber, list like daily) and the week's boss contract (nil = no
 		-- boss open to the character or the week not rolled yet).

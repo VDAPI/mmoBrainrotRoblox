@@ -8,6 +8,9 @@
 -- quests with their entry level, where to take them, progress and "Track", then the week's boss contract) and Weekly
 -- (the week's three contracts and the countdown to Monday 00:00 UTC). S99: the hunting contracts tab ("Hunting"):
 -- done / 99, the backlog, the active or next contract with "Track" and where to hand it in, the next three.
+-- S102: the story tab names the chapter over the active or next quest (story.chapter.<n>), lets the player read the
+-- offer pages again ("Recall the conversation", variants by earlier answers) and groups the story so far by chapter,
+-- one row per quest with "▶" to watch its cutscenes again (only scenes already watched; props.Replay).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -19,6 +22,9 @@ local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Bosses = require(ReplicatedStorage.Shared.Data.Bosses)
 local Areas = require(ReplicatedStorage.Shared.Data.Areas)
 local Contracts = require(ReplicatedStorage.Shared.Logic.Contracts)
+local Cutscenes = require(ReplicatedStorage.Shared.Logic.Cutscenes)
+local Dialogue = require(ReplicatedStorage.Shared.Logic.Dialogue)
+local Locale = require(ReplicatedStorage.Shared.Util.Locale)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local Modal = require(script.Parent.Parent.Components.Modal)
 local Net = require(ReplicatedStorage.Shared.Net)
@@ -44,7 +50,13 @@ export type Props = {
 	Focus: Fusion.Value<QuestTrack.Focus>,
 	Track: (focus: QuestTrack.Focus) -> (),
 	ShowModal: (spec: Modal.Spec) -> (),
+	Replay: ((sceneId: string) -> ())?, -- S102: watch a story cutscene again (CutsceneController.Play)
 }
+
+-- S102: whether a page key has text in both languages (page variants of `recall`).
+local function hasText(key: string): boolean
+	return Locale.has(key, "pl") and Locale.has(key, "en")
+end
 
 local function label(
 	scope: Scope,
@@ -207,6 +219,21 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 		if use(tab) == "main" then
 			local main = q.main
 			local quest = if type(main) == "table" then Quests.Main.get(main.id) else nil
+			-- S102: the chapter of the active or next quest
+			local current = quest or QuestLogic.nextMain(q.mainDone or 0, use(level) or 1)
+			if current then
+				table.insert(
+					list,
+					label(
+						s,
+						0,
+						Text.get(use, `story.chapter.{Quests.Main.chapterOf(current.id)}`),
+						Theme.Fonts.BodyBold,
+						15,
+						Theme.Colors.TextMuted
+					)
+				)
+			end
 			if quest and main then
 				local giver = Npcs.get(quest.giver)
 				-- Title with the quest giver underneath (S18).
@@ -228,6 +255,32 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 					list,
 					label(s, 2, Text.get(use, `quest.{quest.id}.text`), Theme.Fonts.Body, 17, Theme.Colors.Parchment)
 				)
+				-- S102: the offer pages again (with the variants of earlier answers)
+				local pages = quest.pages
+				if pages then
+					local storyQuest = quest
+					table.insert(
+						list,
+						Button(s, {
+							LayoutOrder = 2,
+							Size = UDim2.fromOffset(220, 40),
+							Variant = "ghost",
+							Text = Text.T(s, "quest.journal.pages"),
+							OnClick = function()
+								local saved = State.Get({ "character", "quests" })
+								local texts: { string } = {}
+								for i = 1, pages do
+									table.insert(texts, Text.now(Dialogue.pageKey(storyQuest, `p{i}`, saved, hasText)))
+								end
+								props.ShowModal({
+									Title = Text.now(`quest.{storyQuest.id}.title`),
+									Message = table.concat(texts, "\n\n"),
+									ConfirmText = Text.now("quest.back"),
+								})
+							end,
+						})
+					)
+				end
 				-- S29: every objective stays (finished ones green), then "Return to: <NPC>" (Logic/QuestRows).
 				local lines =
 					QuestText.richRows(use, QuestText.rows(use, quest.objectives, main.progress, quest.turnIn))
@@ -300,20 +353,77 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 					)
 				end
 			end
-			-- Story so far
-			local done = {}
-			for i = 1, q.mainDone or 0 do
-				local finished = Quests.Main.list[i]
-				if finished then
-					table.insert(done, `✔ {Text.get(use, `quest.{finished.id}.title`)}`)
-				end
-			end
-			if #done > 0 then
+			-- Story so far (S102: by chapter, one row per quest, "▶" for its watched cutscenes)
+			local doneCount = math.min(q.mainDone or 0, #Quests.Main.list)
+			if doneCount > 0 then
 				table.insert(
 					list,
 					label(s, 10, `<b>{Text.get(use, "quest.history")}</b>`, Theme.Fonts.BodyBold, 17, Theme.Colors.Gold)
 				)
-				table.insert(list, label(s, 11, table.concat(done, "\n"), Theme.Fonts.Body, 15, Theme.Colors.TextMuted))
+			end
+			local scenes: { [string]: boolean } = if type(q.scenes) == "table" then q.scenes else {}
+			local chapter = 0
+			for i = 1, doneCount do
+				local finished = Quests.Main.list[i]
+				local n = Quests.Main.chapterOf(finished.id)
+				if n ~= chapter then
+					chapter = n
+					table.insert(
+						list,
+						label(
+							s,
+							10 + i * 2,
+							Text.get(use, `story.chapter.{n}`),
+							Theme.Fonts.BodyBold,
+							15,
+							Theme.Colors.TextMuted
+						)
+					)
+				end
+				local watched: { string } = {}
+				for _, id in Cutscenes.ofQuest(finished.id) do
+					if scenes[id] == true then
+						table.insert(watched, id)
+					end
+				end
+				local replay = props.Replay
+				local button = if #watched > 0 and replay
+					then Button(s, {
+						Name = "Replay",
+						Size = UDim2.fromOffset(36, 28),
+						Position = UDim2.fromScale(1, 0),
+						AnchorPoint = Vector2.new(1, 0),
+						Variant = "ghost",
+						Text = "▶",
+						OnClick = function()
+							-- several scenes of one quest play one after another (the controller queues replays)
+							for _, id in watched do
+								replay(id)
+							end
+						end,
+					})
+					else nil
+				table.insert(
+					list,
+					s:New("Frame")({
+						LayoutOrder = 11 + i * 2,
+						Size = UDim2.new(1, 0, 0, 28),
+						BackgroundTransparency = 1,
+						[Children] = {
+							s:New("TextLabel")({
+								Size = UDim2.new(1, if button then -44 else 0, 1, 0),
+								BackgroundTransparency = 1,
+								Text = `✔ {Text.get(use, `quest.{finished.id}.title`)}`,
+								TextTruncate = Enum.TextTruncate.AtEnd,
+								FontFace = Theme.Fonts.Body,
+								TextSize = 15,
+								TextColor3 = Theme.Colors.TextMuted,
+								TextXAlignment = Enum.TextXAlignment.Left,
+							}),
+							button :: any,
+						} :: any,
+					})
+				)
 			end
 		elseif use(tab) == "side" then
 			local order = 0

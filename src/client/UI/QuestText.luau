@@ -3,7 +3,8 @@
 -- (for the direction arrow and the minimap) and the marker of an NPC ("!" / "?" / grey "?"). S99: the hunting
 -- contract title (one key with arguments) and target. S101b: the saved answer leads the tracker (`focus`: another
 -- objective first, `hint`: an extra point; one helper `withDialogue` for the story and side quests) and the `escort`
--- objective points at the companion while it is far, else at the goal.
+-- objective points at the companion while it is far, else at the goal. S102: one helper for where an objective points
+-- (objectiveTarget: anchors, NPCs, places, areas) for the story and the side quests.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -264,11 +265,59 @@ local function withDialogue(
 	return nil
 end
 
+local function npcTarget(npcId: string?): Target?
+	local npc = Npcs.get(npcId or "")
+	return if npc then { map = npc.map, x = npc.position.x, z = npc.position.z, npc = npc.id } else nil
+end
+
+local function areaTarget(areaId: string?): Target?
+	local area, mapId = Areas.areaById(areaId or "")
+	if area and mapId then
+		local x, z = AreaAdvice.centre(area)
+		return { map = mapId, x = x, z = z }
+	end
+	return nil
+end
+
+-- S102: where one open objective points by the rules shared by the story and the side quests: an anchor not used
+-- yet, the NPC to talk / deliver to (`turnIn` for a deliver without its own NPC), the place or map to reach, the area
+-- of a kill / collect objective; nil = the caller's own rules (monster kinds, bosses, hints).
+local function objectiveTarget(objective: Objective, used: { string }, turnIn: string): Target?
+	local t = objective.type
+	if t == "use" then
+		local anchors: { string } = objective.anchors or { objective.anchor :: string }
+		for _, id in anchors do
+			if not table.find(used, id) then
+				local anchor, mapId = Areas.anchorById(id)
+				if anchor and mapId then
+					return { map = mapId, x = anchor.x, z = anchor.z }
+				end
+			end
+		end
+	elseif t == "talk" then
+		return npcTarget(objectiveNpc(objective.npc))
+	elseif t == "deliver" then
+		return npcTarget(objectiveNpc(objective.npc) or turnIn)
+	elseif t == "reach" and objective.map then
+		return { map = objective.map, x = objective.x, z = objective.z }
+	elseif (t == "kill" or t == "collect") and objective.area then
+		return areaTarget(objective.area)
+	end
+	return nil
+end
+
 -- Where the first unfinished objective of a quest points (NPC, map) or the turn-in NPC when done. S22: kill and
 -- collect objectives point at the middle of the area with that monster at the player's level (or the lowest
 -- such area); elite kills at the mouth of the cave with that elite. S101b: `quests` (optional) lets the saved answer
--- lead (withDialogue).
-function QuestText.target(quest: Quests.MainQuest, progress: { number }, level: number?, quests: any?): Target?
+-- lead (withDialogue). S102: `used` = the anchors the active story quest already used (quests.main.used); anchors,
+-- deliveries, places and areas point like in the side quests (objectiveTarget).
+function QuestText.target(
+	quest: Quests.MainQuest,
+	progress: { number },
+	level: number?,
+	quests: any?,
+	used: { string }?
+): Target?
 	if QuestLogic.isComplete(progress, quest.objectives) then
 		local npc = Npcs.get(quest.turnIn)
 		return if npc then { map = npc.map, x = npc.position.x, z = npc.position.z, npc = npc.id } else nil
@@ -281,7 +330,7 @@ function QuestText.target(quest: Quests.MainQuest, progress: { number }, level: 
 		end
 		local objective = quest.objectives[index]
 		local precise = not ((objective.type == "kill" or objective.type == "collect") and not objective.area)
-		return QuestText.target(quest, one, level), precise
+		return QuestText.target(quest, one, level, nil, used), precise
 	end)
 	if led then
 		return led
@@ -290,11 +339,10 @@ function QuestText.target(quest: Quests.MainQuest, progress: { number }, level: 
 		if (progress[i] or 0) < objective.n then
 			if objective.type == "escort" then
 				return escortTarget(quest, objective)
-			elseif objective.type == "talk" then
-				local npc = Npcs.get(objectiveNpc(objective.npc) or "")
-				return if npc then { map = npc.map, x = npc.position.x, z = npc.position.z, npc = npc.id } else nil
-			elseif objective.type == "reach" and objective.map then
-				return { map = objective.map, x = objective.x, z = objective.z }
+			end
+			local shared = objectiveTarget(objective, used or {}, quest.turnIn)
+			if shared then
+				return shared
 			elseif (objective.type == "kill" or objective.type == "collect") and objective.monster then
 				if objective.variant == "elite" or objective.variant == "elite2" then
 					local cave, mouth = AreaAdvice.caveFor(objective.monster)
@@ -321,20 +369,6 @@ function QuestText.target(quest: Quests.MainQuest, progress: { number }, level: 
 			end
 			return nil
 		end
-	end
-	return nil
-end
-
-local function npcTarget(npcId: string?): Target?
-	local npc = Npcs.get(npcId or "")
-	return if npc then { map = npc.map, x = npc.position.x, z = npc.position.z, npc = npc.id } else nil
-end
-
-local function areaTarget(areaId: string?): Target?
-	local area, mapId = Areas.areaById(areaId or "")
-	if area and mapId then
-		local x, z = AreaAdvice.centre(area)
-		return { map = mapId, x = x, z = z }
 	end
 	return nil
 end
@@ -366,28 +400,14 @@ function QuestText.sideTarget(quest: Quests.SideQuest, entry: any, level: number
 		local t = objective.type
 		if t == "escort" then
 			return escortTarget(quest, objective)
-		elseif t == "use" then
-			local used: { string } = if type(entry) == "table" then entry.used or {} else {}
-			local anchors: { string } = objective.anchors or { objective.anchor :: string }
-			for _, id in anchors do
-				if not table.find(used, id) then
-					local anchor, mapId = Areas.anchorById(id)
-					if anchor and mapId then
-						return { map = mapId, x = anchor.x, z = anchor.z }
-					end
-				end
-			end
-		elseif t == "talk" then
-			return npcTarget(objectiveNpc(objective.npc))
-		elseif t == "deliver" then
-			return npcTarget(objectiveNpc(objective.npc) or quest.turnIn)
-		elseif t == "reach" and objective.map then
-			return { map = objective.map, x = objective.x, z = objective.z }
-		elseif (t == "kill" or t == "collect") and objective.area then
-			local target = areaTarget(objective.area)
-			if target then
-				return target
-			end
+		end
+		local used: { string } = if type(entry) == "table" then entry.used or {} else {}
+		local shared = objectiveTarget(objective, used, quest.turnIn)
+		if shared then
+			return shared
+		elseif t == "talk" or t == "deliver" then
+			-- an unknown NPC (never in the data): nowhere, like before
+			return nil
 		end
 		if (t == "kill" or t == "collect") and objective.monster then
 			-- the same rules as the story (S22): the area with that monster at the level, elites in their cave

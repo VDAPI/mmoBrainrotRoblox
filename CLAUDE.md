@@ -129,6 +129,11 @@ przedmiotów czyta STATY); odstępstwa idą do `docs/DECYZJE.md`, a kontrakt pop
   `QuestSay`, `quests.said`), `barks` (`Logic/Barks`, `BarkController`, ustawienie `barks`, wyciszanie
   `BarkController.SetQuiet`), `companion` + cel `escort` (`Logic/Companion`, `CompanionService`, najwyżej jeden, bez
   kolizji); minima treści w `tests/dialogue.spec.luau` (`NEW_QUESTS`, `COMPANION_GROUPS`, `BARKS_ONLY`, `RETROFIT`).
+- **Fabuła** (S102): postęp = `quests.mainLast` + `Logic/StoryProgress` (przeliczenie przy każdym wczytaniu), więc
+  wstawka questu fabuły nie potrzebuje migracji (id w `EXPECTED_INSERTS` w `tests/story.spec`); EXP z `weight` w
+  `q(def)` (`settleStory`, `STORY_BANDS`); przerywniki w `Data/Cutscenes` (kolejka `QuestService`, gra
+  `CutsceneController`, `quests.scenes`; komentarze milkną przez `BarkController.SetQuiet`); questy fabuły używają pól
+  rozmów S101b (`choices` na numerze strony, gdy mają `pages`).
 - **Zachowanie przełomu z liczbą od węzła** (S73): pole typu `ValueRef` (liczba albo nazwa pola `values`,
   `Skills.resolve` / `ctx.resolve`); tarcze z umiejętności tylko przez `ctx.shield`.
 - **Wiązka / kanał z tykami** (S80): typ `beam` (`Offense.beam` → `services.Beam`), koniec tylko przez `closeChannel` i

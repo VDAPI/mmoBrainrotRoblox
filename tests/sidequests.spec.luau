@@ -476,6 +476,54 @@ describe("SideQuests rules", function()
 		expect(marks.granary_keeper).toBeNil()
 	end)
 
+	-- S102: the story on the same machinery (QuestLike, mainEntry, quests.main.used)
+	it("the active story quest uses anchors, delivers and keeps its done look", function()
+		local main = Quests.Main
+		local q: any = quests(nil, main.indexOf.frostRuins - 1)
+		q.main = { id = "frostRuins", progress = { 1, 0, 0 } }
+		local usable = SideQuests.usableAnchors(q)
+		local crest = assert(usable.tower_crest, "tower_crest")
+		expect(crest.quest).toBe("frostRuins")
+		expect(crest.index).toBe(2)
+		expect(crest.main).toBe(true)
+		-- the story entry: anchors join `used`, then the anchor is no longer usable
+		local quest, entry = SideQuests.mainEntry(q)
+		local frost = assert(quest, "frostRuins")
+		local e = assert(entry, "entry")
+		expect(e.used).toEqual({})
+		local rng = Rng.new(1)
+		expect(SideQuests.advance(e, frost, "use", { anchor = "tower_crest" }, rng)).toEqual({ 2 })
+		expect(e.used).toEqual({ "tower_crest" })
+		q.main = { id = "frostRuins", progress = e.progress, used = e.used }
+		expect(SideQuests.usableAnchors(q).tower_crest).toBeNil()
+		expect(SideQuests.doneAnchors(q).tower_crest).toBe("frost")
+		-- handed in (and relogged without the active entry): the frost stays
+		local handed: any = quests(nil, main.indexOf.frostRuins)
+		expect(SideQuests.doneAnchors(handed).tower_crest).toBe("frost")
+		expect(SideQuests.doneAnchors(quests(nil, main.indexOf.frostRuins - 1)).tower_crest).toBeNil()
+		-- deliver in the story: talking to the alchemist hands the charm over
+		local council = assert(main.get("warCouncil"))
+		local c = { progress = { 0, 0 }, used = {} }
+		expect(SideQuests.advance(c, council, "talk", { npc = "captain" }, rng)).toEqual({})
+		expect(SideQuests.advance(c, council, "talk", { npc = "alchemist" }, rng)).toEqual({ 2 })
+		expect(SideQuests.currentObjective(c, council)).toBe(1)
+		-- no active story quest
+		expect(SideQuests.mainEntry(quests())).toBeNil()
+		local broken: any = quests()
+		broken.main = { id = "nope", progress = {} }
+		expect(SideQuests.mainEntry(broken)).toBeNil()
+	end)
+
+	it("requirements on story quests follow StoryProgress.isDone", function()
+		local main = Quests.Main
+		local q = quests(nil, main.indexOf.herbs)
+		expect(SideQuests.requirementsMet(q, { requires = { "herbs" } } :: any)).toBe(true)
+		expect(SideQuests.requirementsMet(q, { requires = { "frostRuins" } } :: any)).toBe(false)
+		expect(SideQuests.requirementsMet(quests(nil, main.indexOf.frostRuins), { requires = { "frostRuins" } } :: any)).toBe(
+			true
+		)
+	end)
+
 	it("arc progress", function()
 		local done, total = SideQuests.arcProgress(quests({ active = {}, done = doneUpTo("side_sheep") }), "farm")
 		expect(done).toBe(3)
@@ -498,7 +546,7 @@ describe("AccountSchema S27", function()
 			},
 		}
 		local applied = AccountSchema.migrate(data)
-		expect(applied).toEqual({ 4, 5, 6, 7 })
+		expect(applied).toEqual({ 4, 5, 6, 7, 8 })
 		expect(data.characters["1"].quests.side).toEqual({ active = {}, done = {} })
 		expect(data.characters["2"].quests.side).toEqual({ active = {}, done = {} })
 		expect(data.characters["1"].quests.main.id).toBe("boars")

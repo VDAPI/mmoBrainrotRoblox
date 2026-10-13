@@ -45,9 +45,15 @@ T.describe("Titles", function()
 		T.expect(Titles.shown(c)).toBeNil()
 	end)
 
-	T.it("the story title needs the whole main line", function()
+	-- S102 (B6): story titles follow the quest positions, so story insertions never move their meaning
+	T.it("the story title needs Vaelgrath", function()
 		local def = TitleData.get("dragonbane")
-		T.expect(def and def.req.value).toBe(#Quests.Main.list)
+		T.expect(def and def.req.value).toBe(Quests.Main.indexOf.vaelgrath)
+	end)
+
+	T.it("sentinel = the tutorial", function()
+		local def = TitleData.get("sentinel")
+		T.expect(def and def.req.value).toBe(Quests.Main.indexOf.herbs)
 	end)
 
 	T.it("ids are unique and every title has a colour", function()

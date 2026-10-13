@@ -41,6 +41,7 @@ export type NpcDef = {
 	-- S27: random lines in the dialog instead of the greeting (npc.<id>.line1..N); the innkeeper adds gossip.
 	lines: number?,
 	gossip: boolean?,
+	wiki: boolean?, -- S102: false = left out of the wiki (NPCs of story quests before S109)
 }
 
 local LIST: { NpcDef } = {}
@@ -269,14 +270,23 @@ townsfolk("miller_widow", { body = "#4A4A52", accent = "#1E1E22" }, "⚙")
 townsfolk("stablemaster", { body = "#6B4A2B", accent = "#3A2A1A" }, "🐎", { services = { "talk", "mounts" } })
 townsfolk("sergeant", { body = "#8E96A3", accent = "#7A1F2B" }, "⚔")
 
--- Side quest NPCs on the Whispering Meadows (S27), on the places S26 prepared (Areas/meadows npcSpots).
-local MEADOW_SPOTS: { [string]: Areas.NpcSpot } = Areas.byMap.meadows.npcSpots or {}
-local function meadowsfolk(id: string, spot: string, colors: { body: string, accent: string }, icon: string, extra: any)
-	local place = assert(MEADOW_SPOTS[spot], `meadows npc spot {spot}`)
+-- S102: an NPC of a region map standing on a prepared spot of Areas.byMap[map].npcSpots (S27 on the Meadows, S103-S108
+-- elsewhere); `extra.services` / `shop` / `wiki` as for townsfolk.
+local function regionfolk(
+	map: string,
+	id: string,
+	spot: string,
+	colors: { body: string, accent: string },
+	icon: string,
+	extra: any?
+)
+	local data = Areas.byMap[map]
+	local spots: { [string]: Areas.NpcSpot } = if data then data.npcSpots or {} else {}
+	local place = assert(spots[spot], `{map} npc spot {spot}`)
 	local e: any = extra or {}
 	npc({
 		id = id,
-		map = "meadows",
+		map = map,
 		nameKey = `npc.{id}.name`,
 		greetingKey = `npc.{id}.greeting`,
 		services = e.services or { "talk" },
@@ -286,7 +296,13 @@ local function meadowsfolk(id: string, spot: string, colors: { body: string, acc
 		colors = colors,
 		icon = icon,
 		lines = 3,
+		wiki = e.wiki,
 	})
+end
+
+-- Side quest NPCs on the Whispering Meadows (S27), on the places S26 prepared (Areas/meadows npcSpots).
+local function meadowsfolk(id: string, spot: string, colors: { body: string, accent: string }, icon: string, extra: any)
+	regionfolk("meadows", id, spot, colors, icon, extra)
 end
 
 meadowsfolk("farmer_bartosz", "farmer", { body = "#7A6A3A", accent = "#C9A45C" }, "🌾")
@@ -321,4 +337,6 @@ return table.freeze({
 	end,
 	-- Max distance (studs) between a player and an NPC for any service (+ lag tolerance on the server).
 	INTERACT_RANGE = 12,
+	-- S102: NPCs of later sessions on region spots (exported for tests/story.spec)
+	regionfolk = regionfolk,
 })

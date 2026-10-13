@@ -125,7 +125,9 @@ local function refreshTarget()
 	end
 	local main = if type(quests) == "table" then quests.main else nil
 	local quest = if type(main) == "table" then Quests.Main.get(main.id) else nil
-	QuestTrack.Target:set(if quest and main then QuestText.target(quest, main.progress or {}, level, quests) else nil)
+	QuestTrack.Target:set(
+		if quest and main then QuestText.target(quest, main.progress or {}, level, quests, main.used) else nil
+	)
 end
 
 function QuestController.Init(registry)
@@ -143,6 +145,13 @@ function QuestController.Init(registry)
 				Focus = QuestTrack.Focus,
 				Track = QuestController.Track,
 				ShowModal = WindowManager.ShowModal,
+				-- S102: watch a story cutscene again (CutsceneController from the registry: no Deps cycle)
+				Replay = function(sceneId: string)
+					local cutscenes = registry.Get("CutsceneController")
+					if cutscenes then
+						cutscenes.Play(sceneId)
+					end
+				end,
 			})
 		end,
 	})

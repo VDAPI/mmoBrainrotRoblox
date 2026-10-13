@@ -12,6 +12,10 @@
 -- S101b (DESIGN-15 §3.5): answers on quest pages (QuestSay(questId, choiceId), Logic/Dialogue.canSay, saved for good in
 -- character.quests.said; an `item` answer needs the backpack space first) for the story and the side quests, and
 -- CompanionService.Refresh after every change of the active quests (the companion of Logic/Companion).
+-- S102 (docs/FABULA.md §2.1): the story runs on the side-quest machinery (Logic/SideQuests.mainEntry / advance: `use`
+-- anchors in quests.main.used, `deliver`, places to reach), hand-in keeps the place in the story (mainDone = index of
+-- the quest, mainLast = its id; Logic/StoryProgress recounts both on load) and story events queue the cutscenes of
+-- Data/Cutscenes in quests.scenes (false = queued); the client plays them and reports CutsceneDone(sceneId).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -21,6 +25,7 @@ local Shared = ReplicatedStorage.Shared
 local Analytics = require(script.Parent.Parent.Analytics)
 
 local Clock = require(Shared.Util.Clock)
+local Cutscenes = require(Shared.Logic.Cutscenes)
 local Dialogue = require(Shared.Logic.Dialogue)
 local ItemRoll = require(Shared.Logic.ItemRoll)
 local Log = require(Shared.Util.Log)
@@ -30,6 +35,7 @@ local QuestEvents = require(script.Parent.Parent.QuestEvents)
 local QuestLogic = require(Shared.Logic.QuestLogic)
 local Quests = require(Shared.Data.Quests)
 local Rng = require(Shared.Logic.Rng)
+local SideQuests = require(Shared.Logic.SideQuests)
 local Skills = require(Shared.Logic.Skills)
 local Time = require(Shared.Logic.Time)
 local Types = require(Shared.Types)
@@ -166,6 +172,21 @@ local function give(player: Player, reward: Quests.Reward)
 	Net.Fire(player, "CombatFx", { { k = "reward", exp = reward.exp, gold = reward.gold } })
 end
 
+-- S102: queues the cutscenes a story event triggers (Logic/Cutscenes.triggered) that this character never had: once
+-- per character, a scene once queued never comes back.
+local function queueScenes(player: Player, questId: string, on: string, index: number?)
+	local char = character(player)
+	if not char then
+		return
+	end
+	local scenes: { [string]: boolean } = char.quests.scenes or {}
+	for _, id in Cutscenes.triggered(questId, on, index) do
+		if scenes[id] == nil then
+			PlayerStateService.Set(player, { "character", "quests", "scenes", id }, false)
+		end
+	end
+end
+
 -- Applies an event to the story quest and the daily contracts.
 local function handle(player: Player, kind: string, data: { [string]: any })
 	local char = character(player)
@@ -177,28 +198,36 @@ local function handle(player: Player, kind: string, data: { [string]: any })
 		data = table.clone(data)
 		data.classId = char.class
 	end
-	local main = char.quests.main
-	local quest = main and Quests.Main.get(main.id)
-	if main and quest and not QuestLogic.isComplete(main.progress, quest.objectives) then
-		local progress = table.clone(main.progress)
-		local changed = QuestLogic.advance(progress, quest.objectives, kind, data, rng)
+	-- S102: the story on the side-quest machinery (use anchors, deliver, places)
+	local quest, storyEntry = SideQuests.mainEntry(char.quests)
+	if quest and storyEntry and not QuestLogic.isComplete(storyEntry.progress, quest.objectives) then
+		local before = table.clone(storyEntry.progress)
+		local changed = SideQuests.advance(storyEntry, quest, kind, data, rng)
 		if #changed > 0 then
-			PlayerStateService.Set(player, { "character", "quests", "main", "progress" }, progress)
+			PlayerStateService.Set(
+				player,
+				{ "character", "quests", "main" },
+				{ id = quest.id, progress = storyEntry.progress, used = storyEntry.used }
+			)
 			for _, index in changed do
 				local objective = quest.objectives[index]
 				if objective.type == "collect" and objective.item then
 					Net.Fire(player, "Toast", "quest.collected", {
 						item = itemArg(objective.item),
-						have = progress[index],
+						have = storyEntry.progress[index],
 						n = objective.n,
 					}, "success")
 				end
+				if (before[index] or 0) < objective.n and (storyEntry.progress[index] or 0) >= objective.n then
+					queueScenes(player, quest.id, "objective", index)
+				end
 			end
-			if QuestLogic.isComplete(progress, quest.objectives) then
+			if QuestLogic.isComplete(storyEntry.progress, quest.objectives) then
 				Net.Fire(player, "Toast", "quest.ready", {
 					title = `@quest.{quest.id}.title`,
 					npc = `@{(Npcs.get(quest.turnIn) :: any).nameKey}`,
 				}, "success")
+				queueScenes(player, quest.id, "complete")
 			end
 		end
 	end
@@ -276,7 +305,13 @@ local function catchUp(player: Player)
 	if not char then
 		return
 	end
-	handle(player, "reach", { map = char.location.map })
+	-- S102: with the position, so a story place to reach counts on accepting it there
+	local map, x, z = SideQuestService.WhereIs(player)
+	if map then
+		handle(player, "reach", { map = map, x = x, z = z })
+	else
+		handle(player, "reach", { map = char.location.map })
+	end
 	handle(player, "level", { level = char.level })
 	-- S56: "learn" counts a skill on the bar; the level-3 auto-put happens before "wolves" is accepted
 	-- (no daily or side quest has a "learn" objective)
@@ -315,7 +350,15 @@ local function accept(player: Player, npcId: string): (boolean, string?)
 	PlayerStateService.Set(player, { "character", "quests", "main" }, {
 		id = quest.id,
 		progress = QuestLogic.emptyProgress(quest.objectives),
+		used = {},
 	})
+	-- S102: the virtual items of deliver objectives come with the quest (shown in the journal)
+	for _, objective in quest.objectives do
+		if objective.type == "deliver" and objective.item then
+			Net.Fire(player, "Toast", "quest.deliverGot", { item = itemArg(objective.item) }, "info")
+		end
+	end
+	queueScenes(player, quest.id, "accept")
 	handle(player, "talk", { npc = npcId })
 	catchUp(player)
 	refreshCompanion(player)
@@ -344,12 +387,16 @@ local function turnIn(player: Player, npcId: string): (boolean, string?)
 		return false, "inventory.full"
 	end
 	PlayerStateService.Set(player, { "character", "quests", "main" }, nil)
-	PlayerStateService.Set(player, { "character", "quests", "mainDone" }, char.quests.mainDone + 1)
+	-- S102: the place in the story is the quest itself (Logic/StoryProgress recounts it on load)
+	local index = Quests.Main.indexOf[quest.id]
+	PlayerStateService.Set(player, { "character", "quests", "mainDone" }, index)
+	PlayerStateService.Set(player, { "character", "quests", "mainLast" }, quest.id)
 	-- The first story quests are the tutorial: report them as the onboarding funnel.
-	if char.quests.mainDone <= TUTORIAL_STEPS then
-		Analytics.onboarding(player, char.quests.mainDone, quest.id)
+	if index <= TUTORIAL_STEPS then
+		Analytics.onboarding(player, index, quest.id)
 	end
 	give(player, quest.reward)
+	queueScenes(player, quest.id, "turnIn")
 	Net.Fire(player, "QuestCompleted", `quest.{quest.id}.title`)
 	log:info("%s completed %s", player.Name, quest.id)
 	refreshCompanion(player)
@@ -400,6 +447,20 @@ local function say(player: Player, questId: string, choiceId: string): (boolean,
 		Net.Fire(player, "Toast", "quest.say.gift", { item = `@item.{effect.id}.name`, n = effect.n }, "success")
 	end
 	PlayerStateService.Set(player, { "character", "quests", "said", questId }, choiceId)
+	return true, nil
+end
+
+-- S102: the client finished or skipped a queued story cutscene; only a queued one turns into watched.
+local function cutsceneDone(player: Player, sceneId: string): (boolean, string?)
+	local char = character(player)
+	if not char then
+		return false, "error.wrongPhase"
+	end
+	local scenes: { [string]: boolean } = char.quests.scenes or {}
+	if scenes[sceneId] ~= false then
+		return false, "error.badRequest"
+	end
+	PlayerStateService.Set(player, { "character", "quests", "scenes", sceneId }, true)
 	return true, nil
 end
 
@@ -494,10 +555,13 @@ function QuestService.SetMain(player: Player, questId: string): boolean
 	if not quest or not index or not character(player) then
 		return false
 	end
+	local before = Quests.Main.list[index - 1]
 	PlayerStateService.Set(player, { "character", "quests", "mainDone" }, index - 1)
+	PlayerStateService.Set(player, { "character", "quests", "mainLast" }, if before then before.id else nil)
 	PlayerStateService.Set(player, { "character", "quests", "main" }, {
 		id = quest.id,
 		progress = QuestLogic.emptyProgress(quest.objectives),
+		used = {},
 	})
 	catchUp(player)
 	refreshCompanion(player)
@@ -512,12 +576,52 @@ function QuestService.CompleteMain(player: Player): boolean
 	if not quest then
 		return false
 	end
+	-- S102: the anchors of use objectives count as used, and the scenes queue as if the objectives just filled (so
+	-- /quest complete shows them)
+	local before: { number } = table.clone((main :: any).progress or {})
 	local progress = {}
+	local used: { string } = table.clone((main :: any).used or {})
 	for i, objective in quest.objectives do
 		progress[i] = objective.n
+		if objective.type == "use" then
+			local anchors: { string } = objective.anchors or { objective.anchor :: string }
+			for _, anchor in anchors do
+				if not table.find(used, anchor) then
+					table.insert(used, anchor)
+				end
+			end
+		end
 	end
-	PlayerStateService.Set(player, { "character", "quests", "main", "progress" }, progress)
+	PlayerStateService.Set(
+		player,
+		{ "character", "quests", "main" },
+		{ id = quest.id, progress = progress, used = used }
+	)
+	for i, objective in quest.objectives do
+		if (before[i] or 0) < objective.n then
+			queueScenes(player, quest.id, "objective", i)
+		end
+	end
+	queueScenes(player, quest.id, "complete")
 	refreshCompanion(player)
+	return true
+end
+
+-- S102 /scene play: queues a scene again (also one already watched); false for an unknown id.
+function QuestService.QueueScene(player: Player, sceneId: string): boolean
+	if not Cutscenes.isKnown(sceneId) or not character(player) then
+		return false
+	end
+	PlayerStateService.Set(player, { "character", "quests", "scenes", sceneId }, false)
+	return true
+end
+
+-- S102 /scene reset: forgets every scene of the character (they play again on their next trigger).
+function QuestService.ResetScenes(player: Player): boolean
+	if not character(player) then
+		return false
+	end
+	PlayerStateService.Set(player, { "character", "quests", "scenes" }, {})
 	return true
 end
 
@@ -600,6 +704,7 @@ function QuestService.Start()
 	Net.Handle("WeeklyClaim", claimWeekly)
 	Net.Handle("BossContractClaim", claimBossContract)
 	Net.Handle("QuestSay", say)
+	Net.Handle("CutsceneDone", cutsceneDone)
 
 	QuestEvents.Fired:Connect(function(player: Player, kind: string, data: { [string]: any })
 		handle(player, kind, data)

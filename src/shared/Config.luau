@@ -245,6 +245,24 @@ local Config = {
 		lookAhead = 8,
 		pathEvery = 1,
 	},
+	-- Story cutscenes (S102, Data/Cutscenes + Logic/Cutscenes + CutsceneController; client timing, not balance):
+	-- fades last `fade` s, a chapter title stays `titleSeconds`, a line `lineMin`..`lineMax` s at `lineCharsPerSecond`
+	-- characters per second; a far shot waits at most `streamWait` s for streaming; the controller checks for a queued
+	-- scene every `idlePoll` s; default focus height `lift`, eye distance `dist` and height `height` (studs); the card
+	-- mode (no shot possible) dims the view by `cardDim`.
+	Cutscene = {
+		fade = 0.6,
+		titleSeconds = 4,
+		lineMin = 3,
+		lineCharsPerSecond = 16,
+		lineMax = 8,
+		streamWait = 2,
+		idlePoll = 0.5,
+		lift = 4,
+		dist = 22,
+		height = 8,
+		cardDim = 0.55,
+	},
 	-- Skills (S28, DESIGN §14): `breakpoints` turns the rank 5 / 10 breakpoints on (off = numbers only).
 	Skills = {
 		breakpoints = true,

@@ -151,6 +151,8 @@ local Definitions: { [string]: Definition } = {
 	QuestCompleted = { kind = "event", dir = "s2c" }, -- (titleKey, args?) big message + sound
 	-- S101b: (questId, choiceId) the player's answer on a quest page (Logic/Dialogue.canSay, quests.said)
 	QuestSay = { kind = "function", dir = "c2s", rate = 4, args = { "string", "string" } },
+	-- S102: (sceneId) the client finished or skipped a queued story cutscene
+	CutsceneDone = { kind = "function", dir = "c2s", rate = 4, args = { "string" } },
 	-- Hunting contracts (S99): (npcId) the contract board or the scout of the contract's region
 	ContractAccept = { kind = "function", dir = "c2s", rate = 2, args = { "string" } },
 	ContractTurnIn = { kind = "function", dir = "c2s", rate = 2, args = { "string" } },

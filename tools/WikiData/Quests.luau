@@ -259,12 +259,15 @@ function Quests.build(ctx: any): any
 		end
 	end
 	local main = {}
+	-- S102: `order` counts the exported story quests only (the hidden ones of S102-S105 wait for S109)
+	local order = 0
 	for _, q in QuestData.Main.list do
 		if not ctx.hidden[q.id] then
 			noteItems(q.id, q.reward)
+			order += 1
 			table.insert(main, {
 				id = q.id,
-				order = QuestData.Main.indexOf[q.id],
+				order = order,
 				level = q.level,
 				giver = q.giver,
 				turnIn = q.turnIn,

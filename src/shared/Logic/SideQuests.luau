@@ -3,6 +3,8 @@
 -- gameplay events (the same events as the story: QuestLogic.amount), arcs for the journal and the reward choice.
 -- The server (SideQuestService), the NPC dialog, the journal and the quest marks (Logic/NpcMarks) all ask here.
 -- `quests` is `character.quests` (the save or the replicated client copy; old or partial tables are tolerated).
+-- S102: the `use` / `deliver` machinery works for the active story quest too (QuestLike, mainEntry: the story entry
+-- quests.main = { id, progress, used? }); its anchors join usableAnchors / doneAnchors (the story first).
 
 local Config = require("../Config")
 local DevPreset = require("./DevPreset")
@@ -10,12 +12,19 @@ local ItemRoll = require("./ItemRoll")
 local QuestLogic = require("./QuestLogic")
 local Quests = require("../Data/Quests")
 local Rng = require("./Rng")
+local StoryProgress = require("./StoryProgress")
 local Types = require("../Types")
 
 type SideQuest = Quests.SideQuest
 type SideEntry = Types.SideEntry
 
 export type Reason = "done" | "active" | "level" | "requires" | "limit" | "unknown"
+-- S102: what the progress machinery needs of a quest (the common part of SideQuest and MainQuest).
+export type QuestLike = { objectives: { Quests.Objective }, turnIn: string }
+-- S102: a progress entry (a side quest's SideEntry or the normalised story entry of mainEntry).
+export type Entry = { progress: { number }, used: { string } }
+-- Anchor id -> the quest and objective that may use it (`main` = the active story quest).
+export type AnchorTarget = { quest: string, index: number, main: boolean? }
 
 local SideQuests = {}
 
@@ -57,9 +66,22 @@ local function requirementDone(quests: any, id: string): boolean
 	if SideQuests.isDone(quests, id) then
 		return true
 	end
-	local index = Quests.Main.indexOf[id]
-	local mainDone = if type(quests) == "table" then tonumber(quests.mainDone) or 0 else 0
-	return index ~= nil and index <= mainDone
+	return StoryProgress.isDone(quests, id)
+end
+
+-- S102: the active story quest and its normalised entry (progress and used cloned, or empty); nil, nil without one.
+function SideQuests.mainEntry(quests: any): (Quests.MainQuest?, Entry?)
+	local main = if type(quests) == "table" then quests.main else nil
+	if type(main) ~= "table" or type(main.id) ~= "string" then
+		return nil, nil
+	end
+	local quest = Quests.Main.get(main.id)
+	if not quest then
+		return nil, nil
+	end
+	local progress: { number } = if type(main.progress) == "table" then table.clone(main.progress) else {}
+	local used: { string } = if type(main.used) == "table" then table.clone(main.used) else {}
+	return quest, { progress = progress, used = used }
 end
 
 function SideQuests.requirementsMet(quests: any, quest: SideQuest): boolean
@@ -201,8 +223,8 @@ end
 -- Applies a gameplay event to an active entry in place: progress, and for `use` the anchor joins `used`. Returns
 -- the changed objective indices.
 function SideQuests.advance(
-	entry: SideEntry,
-	quest: SideQuest,
+	entry: Entry,
+	quest: QuestLike,
 	kind: string,
 	data: { [string]: any },
 	rng: Rng.Rng
@@ -221,7 +243,7 @@ function SideQuests.advance(
 end
 
 -- The `use` objective of an active quest that still needs this anchor (index), or nil.
-function SideQuests.pendingUse(entry: any, quest: SideQuest, anchor: string): number?
+function SideQuests.pendingUse(entry: any, quest: QuestLike, anchor: string): number?
 	if type(entry) ~= "table" then
 		return nil
 	end
@@ -241,54 +263,84 @@ function SideQuests.pendingUse(entry: any, quest: SideQuest, anchor: string): nu
 	return nil
 end
 
--- Every anchor the character may use now: anchor id -> { quest, objective index }.
-function SideQuests.usableAnchors(quests: any): { [string]: { quest: string, index: number } }
-	local out = {}
+-- The open `use` objectives of one quest entry into `out` (anchors not used yet, first come first served).
+local function openAnchors(out: { [string]: AnchorTarget }, id: string, quest: QuestLike, entry: any, main: boolean?)
+	for i, objective in quest.objectives do
+		if objective.type == "use" and ((entry.progress or {})[i] or 0) < objective.n then
+			local anchors: { string } = objective.anchors or { objective.anchor :: string }
+			for _, anchor in anchors do
+				if not table.find(entry.used or {}, anchor) and out[anchor] == nil then
+					out[anchor] = { quest = id, index = i, main = main }
+				end
+			end
+		end
+	end
+end
+
+-- Every anchor the character may use now: anchor id -> { quest, objective index, main? }. S102: the active story
+-- quest first (it wins an anchor shared with a side quest).
+function SideQuests.usableAnchors(quests: any): { [string]: AnchorTarget }
+	local out: { [string]: AnchorTarget } = {}
+	local story, storyEntry = SideQuests.mainEntry(quests)
+	if story and storyEntry then
+		openAnchors(out, story.id, story, storyEntry, true)
+	end
 	for id, entry in side(quests) do
 		local quest = Quests.npcQuest(id)
 		if quest and type(entry) == "table" then
-			for i, objective in quest.objectives do
-				if objective.type == "use" and ((entry.progress or {})[i] or 0) < objective.n then
-					local anchors: { string } = objective.anchors or { objective.anchor :: string }
-					for _, anchor in anchors do
-						if not table.find(entry.used or {}, anchor) and out[anchor] == nil then
-							out[anchor] = { quest = id, index = i }
-						end
-					end
-				end
-			end
+			openAnchors(out, id, quest, entry, nil)
 		end
 	end
 	return out
 end
 
--- Anchors whose "done" look the client shows: used by an active quest or by any handed-in quest.
+-- The `fx` of the anchors an entry already used.
+local function usedFx(out: { [string]: string }, quest: QuestLike, used: { string })
+	for _, anchor in used do
+		for _, objective in quest.objectives do
+			if objective.type == "use" and objective.fx and QuestLogic.usesAnchor(objective, anchor) then
+				out[anchor] = objective.fx
+			end
+		end
+	end
+end
+
+-- Every anchor of the `use` objectives of a handed-in quest.
+local function allFx(out: { [string]: string }, quest: QuestLike)
+	for _, objective in quest.objectives do
+		if objective.type == "use" and objective.fx then
+			local anchors: { string } = objective.anchors or { objective.anchor :: string }
+			for _, anchor in anchors do
+				out[anchor] = objective.fx
+			end
+		end
+	end
+end
+
+-- Anchors whose "done" look the client shows: used by an active quest or by any handed-in quest (S102: the story
+-- too, so the frosted crest stays after hand-in and after a new login).
 function SideQuests.doneAnchors(quests: any): { [string]: string }
 	local out: { [string]: string } = {}
 	local active, done = side(quests)
 	for id, entry in active do
 		local quest = Quests.npcQuest(id)
 		if quest and type(entry) == "table" then
-			for _, anchor in entry.used or {} do
-				for _, objective in quest.objectives do
-					if objective.type == "use" and objective.fx and QuestLogic.usesAnchor(objective, anchor) then
-						out[anchor] = objective.fx
-					end
-				end
-			end
+			usedFx(out, quest, entry.used or {})
 		end
 	end
 	for id in done do
 		local quest = Quests.npcQuest(id)
 		if quest then
-			for _, objective in quest.objectives do
-				if objective.type == "use" and objective.fx then
-					local anchors: { string } = objective.anchors or { objective.anchor :: string }
-					for _, anchor in anchors do
-						out[anchor] = objective.fx
-					end
-				end
-			end
+			allFx(out, quest)
+		end
+	end
+	local story, storyEntry = SideQuests.mainEntry(quests)
+	if story and storyEntry then
+		usedFx(out, story, storyEntry.used)
+	end
+	for _, quest in Quests.Main.list do
+		if StoryProgress.isDone(quests, quest.id) then
+			allFx(out, quest)
 		end
 	end
 	return out
@@ -336,7 +388,7 @@ function SideQuests.rollChoice(
 end
 
 -- Which objective a tracker / guide should point at: the first unfinished one (or nil when complete).
-function SideQuests.currentObjective(entry: any, quest: SideQuest): number?
+function SideQuests.currentObjective(entry: any, quest: QuestLike): number?
 	for i, objective in quest.objectives do
 		if ((if type(entry) == "table" then entry.progress or {} else {})[i] or 0) < objective.n then
 			return i

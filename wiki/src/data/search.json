@@ -1067,7 +1067,7 @@
     {"id":"alchemist","key":"alchemiczka ysolde alchemist ysolde","map":"city","name":{"en":"Alchemist Ysolde","pl":"Alchemiczka Ysolde"},"type":"npc"},
     {"id":"merchant","key":"kupiec tobiasz merchant tobiasz","map":"city","name":{"en":"Merchant Tobiasz","pl":"Kupiec Tobiasz"},"type":"npc"},
     {"id":"backpacker","key":"kaletniczka hilda backpack maker hilda","map":"city","name":{"en":"Backpack Maker Hilda","pl":"Kaletniczka Hilda"},"type":"npc"},
-    {"id":"banker","key":"depozytariusz aldric keeper aldric","map":"city","name":{"en":"Keeper Aldric","pl":"Depozytariusz Aldric"},"type":"npc"},
+    {"id":"banker","key":"depozytariusz wincenty keeper wincenty","map":"city","name":{"en":"Keeper Wincenty","pl":"Depozytariusz Wincenty"},"type":"npc"},
     {"id":"teacher","key":"mistrz eldwin master eldwin","map":"city","name":{"en":"Master Eldwin","pl":"Mistrz Eldwin"},"type":"npc"},
     {"id":"guildmaster","key":"mistrz gildii varek guildmaster varek","map":"city","name":{"en":"Guildmaster Varek","pl":"Mistrz Gildii Varek"},"type":"npc"},
     {"id":"auctioneer","key":"aukcjonerka selma auctioneer selma","map":"city","name":{"en":"Auctioneer Selma","pl":"Aukcjonerka Selma"},"type":"npc"},

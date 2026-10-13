@@ -6964,3 +6964,118 @@ Pliki: `src/shared/Data/Quests/{Types,init,Main,Side,Talk}.luau` (`Talk` nowy), 
 `src/client/UI/Screens/Hud/QuestTracker.luau`, `src/client/UI/Screens/WorldMap/Overlay.luau`,
 `tests/{dialogue,companion}.spec.luau` (nowe), `tests/{quest,character,net,admin,sidequests}.spec.luau`,
 `tools/balance_reasons.luau`, `tools/WikiData/Quests.luau`, `docs/{DECYZJE,SESJE,PROGRESS}.md`, `CLAUDE.md`.
+
+### S102: Fabuła, rozdział I „Znak Mrozu” i wspólne mechanizmy fabuły
+
+Start na `e935814` (S101b): commit i sekcja S101b, pliki rozmów, `QuestBudget`, księga, `balance1_20.spec`,
+`DESIGN-15.md`, `FABULA.md` i `MIGRATIONS[7]` na miejscu. Część kodu z przerwanej próby (stash „S102 partial”)
+przejrzana i przejęta, reszta zrobiona od nowa. Ostatnia migracja była 7, więc nowa to **8** (`CURRENT = 8`).
+`LEGACY_ORDER` = kolejność `Main.list` z kodu (zgodna z planem).
+
+Co zrobiono:
+- **Postęp (B1, A3):** `Logic/StoryProgress` (`LEGACY_ORDER`, `inserted`, `legacyId`, `sync`, `apply`, `isDone`);
+  `quests.mainLast`, `quests.scenes = {}`, `quests.main.used`; `MIGRATIONS[8]` (ochrona typów `mainLast`, `scenes`,
+  `said`, `main`, `main.used`) i `StoryProgress.apply` przy każdym wczytaniu (postać nie-tablica pomijana);
+  `requires`, efekty kotwic i dziennik przez `isDone`.
+- **Dane (A1, A2, B2–B7):** `MainQuest.pages` / `wiki`, `Objective.line`; `q(def)` z `weight`, pomocnicy celów w
+  `Main.luau`, `settleStory()` z `STORY_STEP` / `STORY_BANDS` / `STORY_SCALE` / `STORY_WEIGHT`; cztery questy, strony
+  15 obecnych (2 albo 3), `CHAPTERS` / `chapterOf`, `sentinel` / `dragonbane` z `Main.indexOf`, bankier Wincenty,
+  `place.towerRuins`, `place.temple`, `quest.item.frostCharm`, `quest.use.crest`, efekt `frost` w `Side.FX`.
+- **Przerywniki (A4–A7):** `Data/Cutscenes` (7 scen), `Logic/Cutscenes` (`triggered`, `pending`, `ofQuest`, `isKnown`,
+  `lineSeconds`, `speakerKey`, `frame`, `validate`), `Config.Cutscene`.
+- **Serwer (C1–C6):** `QuestService` na `SideQuests.mainEntry` / `advance` (cały wpis `main` z `used`), toasty
+  `deliverGot` przy przyjęciu, `catchUp` z pozycją (`SideQuestService.WhereIs`), oddanie ustawia `mainDone = indexOf` i
+  `mainLast`, kolejka scen (`accept`, `objective`, `complete`, `turnIn`), `SetMain` / `CompleteMain` z `used` i scenami,
+  `QueueScene` / `ResetScenes`, remote `CutsceneDone`; `SideQuestService.useAnchor` i pętla `reach` znają fabułę;
+  `Cave.questAnchors` (`CaveLayout.build`, `Areas.anchorById`, `/anchor`); `QuestAnchor.wiki`, `NpcDef.wiki`,
+  `regionfolk`; `/quest info`, `/scene play|list|reset`.
+- **Klient (E1–E8):** `CutsceneController` (kolejka w bezczynności, kamera `Scriptable` po `Cutscenes.frame`,
+  strumień, tryb karty, pominięcie przyciskiem / Escape / B, dalej klik / dotyk / spacja / A, przerwanie przy spadku
+  HP, śmierci i zmianie mapy, `SetQuiet`, powtórka `Play`), nakładka `UI/Screens/Cutscene`, figura `Vfx/CutsceneFigure`
+  (szata, kaptur, lamówka, szron i zanikanie), pomocnicy `UIController.SetHudHidden`, `WorldController.PreviewEnvironment`
+  / `IsLoading`, `DungeonController.RewardVisible`, `WindowManager.HotkeysEnabled` / `SetEscapeOverride`,
+  `ScreenController.RestoreCamera`; `QuestDialog` ze stronami fabuły, `NpcDialog` z linią celu, `QuestText.objectiveTarget`
+  (fabuła i poboczne) z `used`, dziennik (nagłówek rozdziału, „Przypomnij rozmowę”, historia po rozdziałach z „▶”),
+  efekt `frost` w `QuestAnchorController`.
+- **Rozmowy (I1–I4):** wybory, `recall`, komentarze i towarzysze czterech questów (F5, F6); `NEW_QUESTS.S102`,
+  `COMPANION_GROUPS.S102`.
+- **Teksty (F):** PL i EN wszystkich stron, linii, scen, wyborów, komentarzy i admina.
+
+Nowe questy:
+
+| id | poz. | waga | EXP | złoto | inne |
+|---|---|---|---|---|---|
+| `frostRuins` | 7 | 1 | 83 | 375 | Mira `follow`, wybór p3 (2 × `potion_hp_1`), scena `frost_ruins` |
+| `frostSign` | 12 | 1 | 227 | 600 | Dobiesław `lead` + `escort`, wybór p2, `recall` done, scena `frost_sign` |
+| `warrenCharms` | 14 | 1 | 304 | 690 | wybór p2 (`hint` wejście do Kopca 420, −719) |
+| `warCouncil` | 16 | 1,5 | 586 | 780 | `blessing_hunter_2`, wybór p3 (`focus`), `recall` p1, scena `ch1_close` |
+
+Budżet (`quest_budget.luau --session S102`): `STORY_STEP` 0,25 i 0,15 przy poziomach z planu dawały `s = 0` na 7–8
+(okno `herbs` ścięte do jednego poziomu); przy poziomach okien 0,25 / 0,15 przycinały 12–15 do `MUL_MIN`, 0,10 psuło
+`S32.drops.unique.10` (0,468). Końcowo 0,05, przycięty tylko L3 (jak przed sesją). `monsterExpMul` przed → po: L5 0,649
+→ 0,649; L8 0,652 → 0,620; L10 0,651 → 0,651; L13 0,650 → 0,592; L15 0,650 → 0,592; L19 0,652 → 0,613; L20 0,643 →
+0,643. Udział `main` w 1–19 (raport): 41,8% (cel 10%). `ALLOWED_1_20_DIFFS`: 222 wpisy (0 nowych, 174 odświeżone z
+dopiskiem „S102 main story: chapter I quests”), fixture nietknięty. Księga: wpisy S102 (`MONSTER_EXP_MUL*`,
+`STORY_*`, `indexOf*`, cztery questy), bez „BRAK POWODU”.
+
+Sprawdzenie pozycji (D3, `build/s102_points.luau`): `tower_crest` (−153, −388) 8,5 st. od środka ruin, 1,7 st. za
+murem (R 6), poza wodą, 26 st. od pnia `RuinLog`; `portal_gate` ziemia 7,1, oko 18,1 nad ziemią 7,5; `ch1_close`
+przesunięty z (690, −680) na (704, −694), żeby figura Ilvara (712, −702) była bliżej środka kadru: ziemia 11,0, oko 25,0
+nad 12,6. Trasa Dobiesława (I3): punkty z planu wchodziły w zabudowę, więc `via` = (234, −12), (120, −8), (60, −28),
+(−4, −58), (−62, −78), (−90, −80), (−110, −100), cel (−118, −128); wszystkie punkty `isFree`, najdłuższy odcinek 114
+(limit 220); start w wartowni (miejsce NPC) i odcinek przez uliczkę świątyni nie są prostą linią (ścieżkę liczy
+`PathfindingService`).
+
+Wiki (`npm run data`): zmiany tylko `titles.json` (`dragonbane` 32 → 36), imię bankiera w `npcs.json`,
+`mapsearch.json`, `search.json` i `img/maps/city.svg`, do tego `meta.json` i odcisk w `docs/PRZEDMIOTY.md`; nowych id
+w JSON brak (test), `wiki_keys_diff` pusty.
+
+Testy: nowy `tests/story.spec.luau` (T1–T8, T10); poprawki `quest.spec` (`use`, `deliver`, kotwice, `line`, strony,
+poziomy po bossie), `sidequests.spec`, `titles.spec`, `character.spec`, `net.spec`, `admin.spec`, `meadows.spec`,
+`caveterrain.spec`, `wikidump.spec` (T9), `dialogue.spec` (T11, `fakeMain` bez stron), `companion.spec` (T12),
+numery migracji w `contracts`, `mounts`, `rarities`, `sidequests`, `worldmap`; `tests/Balance.questSources` (baza =
+`LEGACY_ORDER`), `BalanceTables.ALLOWED_1_20_DIFFS`. `scripts/check` zielony (6214 testów).
+
+Pliki: `src/shared/Logic/{StoryProgress,Cutscenes}.luau`, `src/shared/Data/Cutscenes.luau`,
+`src/client/Controllers/CutsceneController.luau`, `src/client/UI/Screens/Cutscene.luau`,
+`src/client/Vfx/CutsceneFigure.luau` (nowe); `src/shared/{Config,Types}.luau`, `src/shared/Data/Quests/{Main,Side,Types}.luau`,
+`src/shared/Data/{Titles,Npcs,QuestBudget,AdminCommands}.luau`, `src/shared/Data/Areas/{Types,init,meadows}.luau`,
+`src/shared/Data/Localization/{pl,en}.luau`, `src/shared/Logic/{AccountSchema,SideQuests,Dialogue}.luau`,
+`src/shared/Net/Definitions.luau`, `src/server/Services/{Quest,SideQuest}Service.luau`, `src/server/Admin/Quests.luau`,
+`src/server/World/CaveLayout.luau`, `src/client/Controllers/{Bark,Dungeon,QuestAnchor,Quest,Screen,UI,World}Controller.luau`,
+`src/client/Controllers/WindowManager.luau`, `src/client/UI/QuestText.luau`,
+`src/client/UI/Screens/{NpcDialog,QuestDialog,QuestJournal}.luau`, `src/client/UI/Screens/Hud/QuestTracker.luau`,
+testy jak wyżej, `tools/balance_reasons.luau`, `tools/WikiData/{Quests,World}.luau`, dane wiki, `docs/{BALANS,PRZEDMIOTY,
+FABULA,DESIGN-15,DECYZJE,SESJE,PROGRESS}.md`, `CLAUDE.md`.
+
+#### Dla S103–S108
+
+- Rozmowy: nazwy z listy S101b. W fabule ze stronami wybór stoi na numerze strony (`Talk.onPage(n, …)`), `"text"`
+  tylko bez `pages`; scena wycisza komentarze (`BarkController.SetQuiet("cutscene", …)`); `NEW_QUESTS.S10x` i
+  `COMPANION_GROUPS.S10x = { { chapter = n } }` w `tests/dialogue.spec.luau`.
+- Dane fabuły: `MainQuest.pages` (2–4), `MainQuest.wiki = false`, `Objective.line` (`talk` / `deliver`); pomocnicy
+  celów w `Main.luau` (`talk(npc, line?)`, `use(anchor, action, hold, fx)`, `deliver(item, npc?, line?)`,
+  `kill(n, monster, area?, variant?)`, `collect(n, item, monster, chance, area?)`, `reach(map, x?, z?, radius?, place?)`).
+- EXP (B2a): `weight` w `q(def)` zamiast `reward.exp`, `settleStory()`; **S103 dopisuje 20 do `STORY_BANDS`, S104 45,
+  S105 70**; `STORY_SCALE`, `STORY_WEIGHT`, `STORY_STEP` (0,05 dla 1–19); T10 w `story.spec` działa sam. Poziom
+  nowego questu: model tempa liczy okna od poziomów questów bez bossa, więc nowy poziom dzieli okno poprzedniego
+  (sprawdź `quest_budget report`: przycięcia i tempo); quest po bossie może wrócić do poziomu okna.
+- `CHAPTERS` / `chapterOf` (S105 dopisuje `{ n = 5, first = "snowInSummer", final = true }`).
+- `Logic/StoryProgress`: `LEGACY_ORDER` nietykalne, `inserted`, `sync`, `apply`, `isDone`; **bez nowych migracji
+  fabuły**: wstawka = dane + id w `EXPECTED_INSERTS` (`tests/story.spec.luau`); questy z nagrodą złota ×2 / ×3 do
+  `GOLD_EXCEPTIONS`.
+- Przerywniki: `Data/Cutscenes` (`Scene`, `Shot`, `Line`, `Figure`, `WHO`, `FIGURES`; Ilvar `look = "ilvar"`, mówca
+  `"ilvar"`), `Config.Cutscene`, `Cutscenes.validate` (≤ 4 linie w `scene`, długość linii ≤ `lineMax ×
+  lineCharsPerSecond`), lista siedmiu scen w T6 rozszerzają kolejne sesje; `/scene`, `/quest info`.
+- Kotwice: regionów `questAnchors` z `wiki = false`; jaskiń w `Data/Areas/Caves` `questAnchors` (względem jaskini, na
+  `CaveTerrain.floor`, test w `caveterrain.spec`); `QuestAnchor.wiki`, filtr w `tools/WikiData/World.luau` (S103 +
+  `NpcSpot.wiki`).
+- NPC: `Npcs.regionfolk(map, id, spot, colors, icon, extra?)` z `extra.wiki = false`, `NpcDef.wiki`.
+- Tytuły `{ kind = "mainDone", value = Main.indexOf.<id> }`; efekty `fx` w `Side.FX`; teksty `place.<key>`,
+  `quest.item.<id>`.
+- Kolejność zamknięcia: dane → `lune run tools/quest_budget.luau --session S10x` → `check` → `allowed --why "S10x main
+  story: …"` (blok do `tests/BalanceTables.luau`) → księga → `scripts/check` → `npm run data`.
+- Dla S105: `tests/quest.spec.luau` „… to the Frost Dragon” (`list[#list].objectives[1].boss == "vaelgrath"`)
+  przepiąć na `Main.indexOf.vaelgrath`.
+
+Uproszczenia: brak (pełny zakres; scena `grimrok_end` w komnacie bossa używa ujęcia `self`).

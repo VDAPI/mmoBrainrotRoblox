@@ -60,22 +60,30 @@ plus Ilvar, który występuje tylko w przerywnikach.
 - **Łańcuch:** każdy nowy quest bierze się u NPC, któremu oddano poprzedni, i oddaje się u NPC, który daje następny.
   Kolumna „Daje → oddaje” jest tak ułożona; obecne questy mają giver/turnIn bez zmian. Cele pośrednie u innych NPC to
   `talk` (albo `deliver`).
-- **Postęp graczy (ważne):** dziś postęp to licznik `char.quests.mainDone` (indeks w `Main.list`). Wstawienie questów
-  w środek listy przesuwa indeksy, więc S102 musi zrobić przeliczenie. Proponuję: zapisać w kodzie stałą
-  `LEGACY_ORDER`, czyli 32 obecne id w dzisiejszej kolejności. Nowy `mainDone` = `indexOf[LEGACY_ORDER[mainDone]]`,
-  a jeśli jest aktywny quest, to `indexOf[main.id] - 1`. Nowe questy, które wypadają przed tym punktem, liczą się jako
-  zrobione, bez nagrody. Zapis to test migracji (DESIGN-15 §0.6); decyzję trzeba wpisać do DECYZJE. S103–S105 wstawiają
-  questy dalej w liście, więc to samo przeliczenie musi działać po każdej z tych sesji (`LEGACY_ORDER` + kolejne
-  wstawki). Sprawdzić też `Logic/SideQuests`: `requires` porównuje indeksy z `Main.indexOf`.
+- **Postęp graczy (S102, zrobione):** zapis trzyma `quests.mainLast` (id ostatniego oddanego questu), a
+  `Logic/StoryProgress.sync` / `apply` przelicza `mainDone` przy każdym wczytaniu (`AccountSchema.migrate`): aktywny
+  quest daje `indexOf[main.id] − 1`, inaczej `indexOf[mainLast]`. Questy wstawione przed tym punktem liczą się jako
+  oddane, bez nagrody. Migracja 8 robi tylko `mainLast = LEGACY_ORDER[mainDone]` (32 stare id, lista nietykalna).
+  S103–S105 wstawiają questy bez migracji: dane + `EXPECTED_INSERTS` w `tests/story.spec.luau` (test wstawek).
+  `requires` pobocznych i efekty kotwic idą przez `StoryProgress.isDone`.
 - **Teksty:** `quest.<id>.title / .text / .done` jak dziś, do tego strony `quest.<id>.p1..pN` (2–4 strony, jak w
   pobocznych). Typ `MainQuest` potrzebuje pola `pages`. Obecnym questom S102–S105 dopisują strony, ale `.text` i
   `.done` zostawiają w tym samym sensie. Wszystko po polsku i angielsku, poważny ton, bez memów.
 - **Przerywniki:** w kolumnie „Scena” ▣ oznacza napis rozdziału (kamera na krainę, tytuł, podtytuł), a ◆ krótką
   scenę (kamera na miejsce, 2–4 linie dialogu, bez sterowania). Odtwarzają się raz na postać i można je pominąć.
   Ilvar występuje wyłącznie w scenach, jako figura bez NPC i bez dialogu w oknie.
-- **Nagrody:** EXP według `Data/QuestBudget` (S98, fabuła ok. 10% na poziom), złoto według wzoru `gold(level)`.
-  Przedmioty fabularne są wirtualne (cele `collect`/`deliver`, widać je w dzienniku), nie trafiają do plecaka.
-  Questy kończące rozdział dają coś więcej (plecak, kamień lochu, błogosławieństwo), podobnie jak dziś.
+- **Nagrody (S102):** EXP z jednej reguły w `Data/Quests/Main.luau`: quest z `weight` (pole definicji `q(def)`)
+  dostaje `floor(skala(pasmo) × expToNext(poziom) × weight)` (`settleStory`). Pasmo 1–19: `STORY_STEP` (0,05; stara
+  fabuła ma tam już ok. 42% EXP). Pasma z `STORY_BANDS` (S103 +20, S104 +45, S105 +70): skala dobiera EXP tak, żeby
+  fabuła pasma bez questów bossa dała `TARGET.main`. Stałe nagrody mają tylko questy bossa, stare 1–19 i
+  `toDuskwood`. Wagi: zwykły 1, odkrycie 1,2, koniec rozdziału 1,5. Poziom nowego questu w 1–19 to poziom okna
+  poprzedniego questu bez bossa (model tempa liczy okna od poziomów questów). Złoto `gold(level)`. Przedmioty
+  fabularne są wirtualne (cele `collect`/`deliver`, widać je w dzienniku), nie trafiają do plecaka. Questy kończące
+  rozdział dają coś więcej (plecak, kamień lochu, błogosławieństwo), podobnie jak dziś.
+- **Cele i linie (S102):** `use`, `deliver`, `reach` z miejscem (`x`, `z`, `radius`, `place`) i `area` działają w
+  fabule. Cel `talk` / `deliver` może mieć `line`: klucz tekstu, który NPC mówi w oknie rozmowy, dopóki quest trwa.
+- **NPC i wiki (S102):** nowi NPC krain przez `regionfolk(map, id, spot, colors, icon, { wiki = false })`; nowe
+  questy fabuły i ich kotwice mają `wiki = false` do S109 (`order` na wiki liczony wśród widocznych).
 - **Nowe kotwice `use` i miejsca `reach`** są wypisane pod każdym rozdziałem. Kotwice w jaskiniach (`ashen_cave`,
   `frostpeak_hold`, `frostpeak_cave`): jeśli `Areas/Caves` nie ma jeszcze `questAnchors`, sesja je dodaje albo
   przenosi cel na mapę terenową.
@@ -83,8 +91,7 @@ plus Ilvar, który występuje tylko w przerywnikach.
   `ALLOWED_1_20_DIFFS` z `why = "S102 main story"` i do księgi balansu (DESIGN-15 §0.4).
 - **Spójność:** id potworów jak w `Data/Monsters` (`carrionCrow`, `wasteHyena`, `marshWitch`, `peakHarpy`,
   `iceMammoth`, `desertMummy`). Id obszarów jak w `Data/Areas` (`duskwood_werethicket` itd.). Elity tylko z
-  listy `elites` danej jaskini. Poza tym zbieżność imion: „Kapitan Aldric” i „Depozytariusz Aldric” (banker). Fabuła
-  używa tylko kapitana, a bankierowi warto kiedyś zmienić imię (decyzja właściciela).
+  listy `elites` danej jaskini. Bankier nazywa się od S102 „Depozytariusz Wincenty”, więc Aldric to tylko kapitan.
 
 Legenda celów: `talk(npc)`, `kill(n, potwór, area/variant)`, `collect(n, przedmiot ← potwór, szansa)`,
 `gather(n, węzeł)`, `reach(mapa[, miejsce])`, `boss`, `use(kotwica, s)`, `deliver(przedmiot → npc)`, `level`,
@@ -104,18 +111,22 @@ Legenda celów: `talk(npc)`, `kill(n, potwór, area/variant)`, `collect(n, przed
 | 8 | `wolfFangs` | 4 | Mira → Mira | collect 6 wolfFang ← wolf | kły dla Ysolde | | Ysolde (w tle) |
 | 9 | `boars` | 6 | Mira → Mira | kill 10 boar | dziki w lesie | | Mira |
 | 10 | `herbs` | 7 | Mira → healer | gather 5 bush_meadowsweet | wiązówka dla Mireli | | Mirela |
-| 11 | ✚ `frostRuins` | 8 | healer → Mira | reach(meadows, place.towerRuins); use(`tower_crest`, 2 s); kill 6 carrionCrow (area `meadows_oldforest`) | Mirela opatrywała drwala z odmrożonymi dłońmi, a jest środek lata. Na ruinach wieży w Starym Lesie leży szron, pod nim herb: płatek śniegu przebity cierniem. Świeżo wyryta runa. Mira nie zna herbu | ◆ szron na murach, kruki zrywają się z wieży | Mirela, Mira |
+| 11 | ✚ `frostRuins` | 7 | healer → Mira | reach(meadows, x −150, z −380, r 25, place.towerRuins); use(`tower_crest`, 2 s); kill 6 carrionCrow (area `meadows_oldforest`) | Mirela opatrywała drwala z odmrożonymi dłońmi, a jest środek lata. Na ruinach wieży w Starym Lesie leży szron, pod nim herb: płatek śniegu przebity cierniem. Świeżo wyryta runa. Mira nie zna herbu | ◆ szron na murach, kruki zrywają się z wieży | Mirela, Mira |
 | 12 | `banditRoad` | 10 | Mira → Mira | kill 12 bandit | stary trakt | | Mira |
 | 13 | `banditOrders` | 12 | Mira → captain | collect 1 banditOrders ← bandit | rozkazy: „złoto goblinów… i znak mrozu” | ◆ Aldric nad rozkazem, ten sam herb co w ruinach | Aldric |
-| 14 | ✚ `frostSign` | 13 | captain → captain | talk(sergeant); talk(brother_anzelm) | Dobiesław: bandytom płacił człowiek w szarym płaszczu, który mówi jak kapłan. Anzelm w archiwum świątyni rozpoznaje znak Długiej Zimy: „i tego, który ją przyniósł; nie wymawiamy jego imienia”. Zakazaną kronikę czytał tylko Brat Ilvar, który dziesięć lat temu odszedł na północ | ◆ archiwum przy świecy, karta z płatkiem śniegu i cierniem | Aldric, Dobiesław, Anzelm; pierwsze imię Ilvara |
+| 14 | ✚ `frostSign` | 12 | captain → captain | talk(sergeant); escort(sergeant → świątynia); talk(brother_anzelm) | Dobiesław: bandytom płacił człowiek w szarym płaszczu, który mówi jak kapłan. Anzelm w archiwum świątyni rozpoznaje znak Długiej Zimy: „i tego, który ją przyniósł; nie wymawiamy jego imienia”. Zakazaną kronikę czytał tylko Brat Ilvar, który dziesięć lat temu odszedł na północ | ◆ archiwum przy świecy, karta z płatkiem śniegu i cierniem | Aldric, Dobiesław, Anzelm; pierwsze imię Ilvara |
 | 15 | `goblinCamp` | 14 | captain → Mira | kill 15 goblinScout | obóz goblinów | | Mira |
-| 16 | ✚ `warrenCharms` | 15 | Mira → Mira | reach(meadows_burrow); kill 4 goblinScout (elite); collect 3 frostCharm ← goblinScout (0,3) | W Goblińskim Kopcu wojownicy noszą Szronowe Amulety, które nie topnieją nawet przy ogniu. „Dar od pana z północy” | | Mira |
+| 16 | ✚ `warrenCharms` | 14 | Mira → Mira | reach(meadows_burrow); kill 4 goblinScout (elite, area `meadows_burrow`); collect 3 frostCharm ← goblinScout (0,3, area `meadows_burrow`) | W Goblińskim Kopcu wojownicy noszą Szronowe Amulety, które nie topnieją nawet przy ogniu. „Dar od pana z północy” | | Mira |
 | 17 | `mosshollow` | 16 | Mira → Mira | reach(meadows_cave); kill 3 goblinScout (elite) | Jaskinia Mchów | | Mira |
 | 18 | `grimrok` | 18 | Mira → captain | boss grimrok | Grimrok umierając mówi o panu z północy | ◆ Komnata Grimroka po walce, ostatnie słowa wodza | Grimrok, Aldric |
-| 19 | ✚ `warCouncil` | 19 | captain → captain | talk(blacksmith); deliver(frostCharm → alchemist) | Narada. Dorgan: topór Grimroka nosi krasnoludzkie runy, to stal z Kuźni Głębin. Ysolde: w amulecie jest pył łuski czegoś, co żyje i jest zimne. Aldric wysyła gracza za Ilvarem do Mrocznego Boru | ◆ koniec rozdziału I: na skraju Boru postać w szarym płaszczu patrzy na Łąki i znika w szronie | Aldric, Dorgan, Ysolde, Ilvar (cień) |
+| 19 | ✚ `warCouncil` | 16 | captain → captain | talk(blacksmith); deliver(frostCharm → alchemist) | Narada. Dorgan: topór Grimroka nosi krasnoludzkie runy, to stal z Kuźni Głębin. Ysolde: w amulecie jest pył łuski czegoś, co żyje i jest zimne. Aldric wysyła gracza za Ilvarem do Mrocznego Boru | ◆ koniec rozdziału I: na skraju Boru postać w szarym płaszczu patrzy na Łąki i znika w szronie | Aldric, Dorgan, Ysolde, Ilvar (cień) |
 
 Nowe kotwice i miejsca: `tower_crest` (miejsce `ruins` w `Areas/meadows`, ruiny wieży w Starym Lesie), klucz
-`place.towerRuins`. Przedmioty fabularne: `frostCharm` (Szronowy Amulet). Nowi NPC: brak (rozdział korzysta z
+`place.towerRuins`. Poprawki S102: miejsce `frostRuins` to współrzędne ruin z promieniem (sam `reach(meadows)`
+liczyłby się od razu na Łąkach); `kill` i `collect` w `warrenCharms` mają `area = "meadows_burrow"` (gobliny są też w
+obozie na powierzchni); w `frostSign` Dobiesław prowadzi gracza do świątyni (cel `escort`), więc scena wisi na celu 3;
+poziomy nowych questów to poziomy okien starych (7, 12, 14, 16), bo nowy poziom dzieliłby okno tempa poprzedniego
+questu (`warCouncil` 16 po bossie z poziomem 18); nagroda `warCouncil` to `blessing_hunter_2`. Przedmioty fabularne: `frostCharm` (Szronowy Amulet). Nowi NPC: brak (rozdział korzysta z
 miasta).
 
 ### 2.3 Rozdział II: Zapomniany Ród (Mroczny Bór, 20–45), S103

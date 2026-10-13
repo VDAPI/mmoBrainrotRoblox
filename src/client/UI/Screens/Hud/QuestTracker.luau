@@ -331,7 +331,7 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 					Theme.Fonts.Body
 				)
 			end
-			objectives(`main:{quest.id}`, rows, QuestText.target(quest, main.progress or {}, level, q))
+			objectives(`main:{quest.id}`, rows, QuestText.target(quest, main.progress or {}, level, q, main.used))
 			companionLine(quest.id)
 		elseif not quest then
 			local nextQuest, ready = QuestLogic.nextMain(q.mainDone or 0, level)

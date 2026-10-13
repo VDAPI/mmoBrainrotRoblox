@@ -180,6 +180,33 @@ local function applyEnvironment(mapId: string)
 	end)
 end
 
+-- S102: for CutsceneController: the lighting of another map (and an hour of its day) while a cutscene shows it;
+-- nil goes back to the map the player is on. The day / night loop leaves the lighting alone while it shows.
+local previewing = false
+
+function WorldController.PreviewEnvironment(mapId: string?, clock: number?)
+	if mapId == nil and not previewing then
+		return
+	end
+	local map = Maps.get(mapId or appliedMap)
+	if not map then
+		return
+	end
+	previewing = mapId ~= nil
+	local info = TweenInfo.new(0.8, Enum.EasingStyle.Sine)
+	local lightingProps, atmosphereProps, gradeProps = environment(map)
+	if map.id == appliedMap then
+		modulate(lightingProps, atmosphereProps, gradeProps)
+	end
+	if previewing and clock then
+		lightingProps.ClockTime = clock
+	end
+	TweenService:Create(Lighting, info, lightingProps):Play()
+	TweenService:Create(atmosphere, info, atmosphereProps):Play()
+	TweenService:Create(grade, info, gradeProps):Play()
+	tweenUntil = if previewing then math.huge else os.clock() + 0.9
+end
+
 -- Loading screen ---------------------------------------------------------------------------------
 
 local loadingGui: ScreenGui
@@ -249,6 +276,12 @@ local function showLoading(mapId: string?)
 			showLoading(nil)
 		end
 	end)
+end
+
+-- S102: for CutsceneController: whether the loading screen is up.
+function WorldController.IsLoading(): boolean
+	local gui: ScreenGui? = loadingGui
+	return gui ~= nil and gui.Enabled
 end
 
 -- Portals ----------------------------------------------------------------------------------------

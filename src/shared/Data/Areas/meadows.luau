@@ -84,6 +84,12 @@ local QUEST_ANCHORS: { Types.QuestAnchor } = {
 	-- S96: the stable arc: open grass at the edge of Bear Ravine where the wild stallion grazes
 	{ id = "wild_stallion", x = 560, z = 200 },
 }
+-- S102 story (frostRuins): the frosted crest on the tower ruins
+do
+	local crest = anchor("tower_crest", SITES.ruins, 8, 0, 2)
+	crest.wiki = false
+	table.insert(QUEST_ANCHORS, crest)
+end
 
 local function avoidSpots(): { Types.Circle }
 	local list: { Types.Circle } = {
