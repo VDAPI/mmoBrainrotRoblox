@@ -1,7 +1,7 @@
 # Vaelthorn: przedmioty
 
 > Plik generowany: `lune run tools/wikidump.luau` (dane gry, te same co wiki). Nie edytuj ręcznie.
-> Odcisk danych a4e4f634 (`wiki/src/data/meta.json`).
+> Odcisk danych 785ce560 (`wiki/src/data/meta.json`).
 
 ## Rzadkości
 
@@ -1146,7 +1146,7 @@ Cecha: **Iskra żywiołu**: 35%: atak budzi żywioł broni
 | Wiązówka | 5 | zbieractwo | alchemik (5 receptur) |
 | Księżycowy Płatek | 120 | zbieractwo | alchemik (6 receptur) |
 | Psianka | 12 | zbieractwo | alchemik (6 receptur) |
-| Rdzeń Legendy | 2500 | rozbijanie | ulepszanie +7…+9 |
+| Rdzeń Legendy | 2500 | rozbijanie | ulepszanie +8…+9 |
 | Odłamek Magmy | 60 | — | — |
 | Ruda Adamantytu | 160 | zbieractwo | kowal (135 przepisów) |
 | Ruda Miedzi | 6 | zbieractwo, sklep | kowal (180 przepisów), alchemik (2 receptur) |
@@ -1211,18 +1211,18 @@ Cecha: **Iskra żywiołu**: 35%: atak budzi żywioł broni
 | Mała Mikstura Energii | Mikstura | 1 | — | 10 | 2 |
 | Średnia Mikstura Energii | Mikstura | 1 | — | 60 | 15 |
 | Duża Mikstura Energii | Mikstura | 1 | — | 250 | 62 |
-| Wielka Mikstura Energii | Mikstura | 1 | — | 900 | 225 |
-| Potężna Mikstura Energii | Mikstura | 1 | — | 3000 | 750 |
+| Wielka Mikstura Energii | Mikstura | 45 | — | 900 | 225 |
+| Potężna Mikstura Energii | Mikstura | 70 | — | 3000 | 750 |
 | Mała Mikstura Życia | Mikstura | 1 | — | 10 | 2 |
 | Średnia Mikstura Życia | Mikstura | 1 | — | 60 | 15 |
 | Duża Mikstura Życia | Mikstura | 1 | — | 250 | 62 |
-| Wielka Mikstura Życia | Mikstura | 1 | — | 900 | 225 |
-| Potężna Mikstura Życia | Mikstura | 1 | — | 3000 | 750 |
+| Wielka Mikstura Życia | Mikstura | 45 | — | 900 | 225 |
+| Potężna Mikstura Życia | Mikstura | 70 | — | 3000 | 750 |
 | Mała Mikstura Many | Mikstura | 1 | — | 10 | 2 |
 | Średnia Mikstura Many | Mikstura | 1 | — | 60 | 15 |
 | Duża Mikstura Many | Mikstura | 1 | — | 250 | 62 |
-| Wielka Mikstura Many | Mikstura | 1 | — | 900 | 225 |
-| Potężna Mikstura Many | Mikstura | 1 | — | 3000 | 750 |
+| Wielka Mikstura Many | Mikstura | 45 | — | 900 | 225 |
+| Potężna Mikstura Many | Mikstura | 70 | — | 3000 | 750 |
 | Zwój Zapomnienia | Zwój | 1 | Resetuje punkty statystyk aktywnego zestawu. | 500 | 100 |
 | Zwój Ochrony | Zwój | 1 | Nieudane ulepszenie nie obniża przedmiotu. | — | 200 |
 | Zwój Nowej Ścieżki | Zwój | 1 | Pozwala wybrać nową ścieżkę główną. Zużywa się przy zmianie ścieżki, tylko w mieście. | — | 100 |

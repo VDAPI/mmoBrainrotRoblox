@@ -23,6 +23,7 @@ local Locale = require(ReplicatedStorage.Shared.Util.Locale)
 local Items = require(ReplicatedStorage.Shared.Data.Items)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Npcs = require(ReplicatedStorage.Shared.Data.Npcs)
+local Potions = require(ReplicatedStorage.Shared.Logic.Potions)
 local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
 local Scale = require(script.Parent.Parent.Scale)
 local SelectableSlot = require(script.Parent.Parent.Components.SelectableSlot)
@@ -119,8 +120,10 @@ local function buyRow(
 	-- Text column width: stackable rows keep room for the quantity controls.
 	local textWidth = if maxStack > 1 then -380 else -214
 	local level = State.Value({ "character", "level" })
+	-- S87: the entry's level or the potion's (Great 45, Mighty 70), the same expression as ShopService.buy
+	local requiredLevel = math.max(entry.level or 1, Potions.requiredLevel(def))
 	local locked = scope:Computed(function(use): boolean
-		return (entry.level or 0) > (use(level) or 1)
+		return requiredLevel > (use(level) or 1)
 	end)
 	local function amount(): number
 		return math.clamp(tonumber(Fusion.peek(quantity)) or 1, 1, maxStack)
@@ -171,7 +174,7 @@ local function buyRow(
 					use(State.Value({ "derived", "values", "potionDiscount" }))
 					local price = Text.get(use, "shop.price", { price = Format.number(priceOf(entry, shop)) })
 					if use(locked) then
-						local need = Text.get(use, "shop.requiresLevel", { level = entry.level or 1 })
+						local need = Text.get(use, "shop.requiresLevel", { level = requiredLevel })
 						return `{price}   <font color="{RED_HEX}">{need}</font>`
 					end
 					return price
@@ -274,7 +277,7 @@ local function buyRow(
 							)
 						else
 							Sounds.play("error")
-							Toast.push(Text.now(err or "error.internal", { level = entry.level or 1 }), "error")
+							Toast.push(Text.now(err or "error.internal", { level = requiredLevel }), "error")
 						end
 					end
 					local classId = State.Get({ "character", "class" })

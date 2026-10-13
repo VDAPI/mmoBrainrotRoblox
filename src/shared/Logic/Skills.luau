@@ -615,6 +615,19 @@ function Skills.cost(skill: SkillDef, rank: number, level: number, classId: stri
 	return applyCostMods(skill, base, mods)
 end
 
+-- S87 (/balance, approximation of T-SK4 without mana refunds or Invocation): mana per second of casting every listed
+-- skill on its cooldown, sum of Skills.cost / cooldown over the mana skills with a cooldown above 0.
+export type DemandEntry = { skill: SkillDef, rank: number, cooldown: number }
+function Skills.manaDemand(list: { DemandEntry }, level: number, classId: string, mods: CostMods?): number
+	local total = 0
+	for _, entry in list do
+		if entry.skill.resource == "mana" and entry.cooldown > 0 then
+			total += Skills.cost(entry.skill, entry.rank, level, classId, mods) / entry.cooldown
+		end
+	end
+	return total
+end
+
 -- S80: Arcane Torrent's mana per tick. Percent of max mana, so no mana curve (ROZWOJ 12.5); the same modifiers as
 -- Skills.cost (one rule for the server, the bar and the tooltip).
 function Skills.drain(skill: SkillDef, rank: number, maxMana: number, mods: CostMods?): (number, number)

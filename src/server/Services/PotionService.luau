@@ -54,6 +54,10 @@ local function drink(player: Player, index: number): (boolean, string?)
 	if ResourceService.IsDead(player) then
 		return false, "error.wrongPhase"
 	end
+	-- S87 (balance plan D3): Great potions from 45, Mighty from 70 (old stacks too: the definition decides)
+	if not Potions.canDrink(def, character.level) then
+		return false, "potion.error.level"
+	end
 	local timers = readyAt[player] or {}
 	readyAt[player] = timers
 	local t = now()

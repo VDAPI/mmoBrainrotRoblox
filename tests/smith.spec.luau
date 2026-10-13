@@ -1,4 +1,5 @@
 --!strict
+local Config = require("../src/shared/Config")
 local Crafting = require("../src/shared/Data/Crafting")
 local Dismantle = require("../src/shared/Logic/Dismantle")
 local ItemRoll = require("../src/shared/Logic/ItemRoll")
@@ -34,17 +35,30 @@ T.describe("Upgrade", function()
 
 	T.it("costs follow DESIGN §6", function()
 		local c1 = Upgrade.cost(item(4, 0), 1)
-		-- S32: gold per ilvl 4 up to ilvl 20, rising to 40 at ilvl 100 (Config.Upgrade).
+		-- S32: gold per ilvl 4 up to ilvl 20, rising to goldHigh at ilvl 100 (Config.Upgrade); S87: goldHigh 40 -> 20.
 		T.expect(c1.gold).toBe(math.floor(30 * Upgrade.goldPerIlvl(30) * 2 ^ 1.6 + 0.5))
 		T.expect(Upgrade.goldPerIlvl(10)).toBe(4)
-		T.expect(Upgrade.goldPerIlvl(100)).toBe(40)
+		T.expect(Upgrade.goldPerIlvl(20)).toBe(4)
+		T.expect(Upgrade.goldPerIlvl(100)).toBe(20)
+		T.expect(Upgrade.goldPerIlvl(100)).toBe(Config.Upgrade.goldHigh)
+		T.expect(Upgrade.goldPerIlvl(60)).toBe(12) -- 4 + (20 - 4) x 40 / 80
+		T.expect(c1.gold).toBe(math.floor(30 * 6 * 2 ^ 1.6 + 0.5)) -- ilvl 30: 4 + 16 x 10 / 80 = 6
+		-- 1-20 unchanged: ilvl 20, +1 = round(20 x 4 x 2^1.6)
+		local low = item(1, 0, 20)
+		T.expect(Upgrade.cost(low, 1).gold).toBe(math.floor(20 * 4 * 2 ^ 1.6 + 0.5))
 		T.expect(Upgrade.cost(item(1, 0), 1).gold < Upgrade.cost(item(1, 4), 5).gold).toBe(true)
 		T.expect(c1.materials).toEqual({ { id = "essence_dust", n = 2 } })
 		T.expect(Upgrade.cost(item(4, 2), 3).materials).toEqual({ { id = "essence_dust", n = 6 } })
 		T.expect(Upgrade.cost(item(4, 4), 5).materials).toEqual({ { id = "essence_shard", n = 5 } })
 		T.expect(Upgrade.cost(item(3, 6), 7).materials).toEqual({ { id = "essence_crystal", n = 2 } })
-		-- Legendary and Mythic (rarity `legendCore`) need a Legend Core from +7; named boss items too (Mythic).
+		-- Legendary and Mythic (rarity `legendCore`) need a Legend Core from +8 (S87, was +7); named boss items too.
+		T.expect(Config.Upgrade.legendCoreFrom).toBe(8)
 		for _, rarity in { 4, 5 } do
+			T.expect(Upgrade.cost(item(rarity, 6), 7).materials).toEqual({ { id = "essence_crystal", n = 2 } })
+			T.expect(Upgrade.cost(item(rarity, 7), 8).materials).toEqual({
+				{ id = "essence_crystal", n = 3 },
+				{ id = "legend_core", n = 1 },
+			})
 			T.expect(Upgrade.cost(item(rarity, 8), 9).materials).toEqual({
 				{ id = "essence_crystal", n = 4 },
 				{ id = "legend_core", n = 1 },
@@ -52,7 +66,8 @@ T.describe("Upgrade", function()
 		end
 		local named = item(5, 6)
 		named.id = "unique_grimrok_cleaver"
-		T.expect(#Upgrade.cost(named, 7).materials).toBe(2)
+		T.expect(#Upgrade.cost(named, 7).materials).toBe(1)
+		T.expect(#Upgrade.cost(named, 8).materials).toBe(2)
 	end)
 
 	T.it("+0 → +1 always succeeds", function()

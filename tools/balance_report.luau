@@ -7,10 +7,10 @@
 --                    "### S<n>" of docs/SESJE.md + 1. Balance sessions S83-S94 start with it.
 --   fixture [S<n> [note]]  writes tests/fixtures/balance_1_20.json (the 1-20 reference of tests/balance1_20.spec);
 --                    the session as for snapshot, the note optional.
---   --fixture-items [note]  (S84, also without "--") writes tests/fixtures/balance_items.json = { meta, values,
+--   --fixture-items [note [S<n>]]  (S84, also without "--") writes tests/fixtures/balance_items.json = { meta, values,
 --                    dataHash } of BalanceTables.tablesItems() (tests/balance.spec "Balance 20-100: items, loot,
 --                    defence (S84)"); no commit or date in it, so a second run gives the same bytes.
---   --fixture-paths [note]  (S86, also without "--") writes tests/fixtures/balance_paths.json of
+--   --fixture-paths [note [S<n>]]  (S86, also without "--") writes tests/fixtures/balance_paths.json of
 --                    BalanceTables.tablesPaths() the same way (tests/balance.spec "Balance 20-100: paths").
 -- The report starts with the ledger ("Zmiany danych"): a changed number of tools/balance_reasons.luau's modules
 -- without a reason marks the row and exits 1 after writing the file (like balance.spec).
@@ -27,6 +27,7 @@ local Config = require("../src/shared/Config")
 local LevelCurves = require("../src/shared/Logic/LevelCurves")
 local MonsterStats = require("../src/shared/Logic/MonsterStats")
 local Progression = require("../src/shared/Data/Progression")
+local Rarities = require("../src/shared/Data/Rarities")
 local Reasons = require("./balance_reasons")
 local SkillModel = require("../tests/SkillModel")
 local SkillData = require("../src/shared/Data/Skills")
@@ -80,7 +81,7 @@ end
 if mode == "--fixture-paths" or mode == "fixture-paths" then
 	local file = {
 		meta = {
-			session = "S86",
+			session = process.args[3] or "S86", -- S87: the session that regenerated it (third argument)
 			tolerance = BalanceTables.FIXTURE_TOLERANCE,
 			note = process.args[2]
 				or "S86: mechaniki klas i cele ścieżek w modelu umiejętności (tests/BalanceTables.tablesPaths)",
@@ -96,7 +97,7 @@ end
 if mode == "--fixture-items" or mode == "fixture-items" then
 	local file = {
 		meta = {
-			session = "S84",
+			session = process.args[3] or "S84", -- S87: the session that regenerated it (third argument)
 			tolerance = BalanceTables.FIXTURE_TOLERANCE,
 			note = process.args[2]
 				or "S84: model przedmiotów, łupu i obrony potworów 20–100 (tests/BalanceTables.tablesItems)",
@@ -380,6 +381,19 @@ local function bound(v: number?): string
 	return if v == nil then "" else fmtValue(v, "2")
 end
 
+-- "kto asertuje": the row's own report session, "S87 (asertowane)" or "raport → S<n>" (GLOBAL_REPORT_ONLY).
+local function whoOf(row: B.TargetRow, who: string): string
+	if type(row.report) == "string" then
+		return row.report
+	elseif row.report then
+		return `{who} (raport)`
+	elseif who == "S87" then
+		local entry = B.reportOnlyFor(row)
+		return if entry then `raport → {entry.session}` else "S87 (asertowane)"
+	end
+	return who
+end
+
 local function targetRows(rows: { B.TargetRow }, who: string): { { string } }
 	local out = {}
 	for _, row in rows do
@@ -392,8 +406,8 @@ local function targetRows(rows: { B.TargetRow }, who: string): { { string } }
 			fmtValue(row.value, "2"),
 			band,
 			if B.inBand(row) then "w paśmie" else "**poza**",
-			-- S86: G10 rows outside S87's asserted three carry report = true
-			if type(row.report) == "string" then row.report elseif row.report then `{who} (raport)` else who,
+			-- S86: G10 rows outside S87's asserted three carry report = true; S87: GLOBAL_REPORT_ONLY names the session
+			whoOf(row, who),
 		})
 	end
 	return out
@@ -509,7 +523,7 @@ do
 					table.insert(out, row)
 				end
 			end
-			add("### Cele G7–G9 (S84, raport do S87)")
+			add("### Cele G7–G9 (S84; asertowane od S87 poza `GLOBAL_REPORT_ONLY`)")
 			add()
 			add(
 				`{ok}/{all} w paśmie (G7: kolumna „z cechami”, G8: MIX „bez cech” i „z cechami”, G9: +1…+3 / dochód i +1…+9 z ochroną). Poza pasmem:`
@@ -557,7 +571,7 @@ do
 	add()
 	local g10 = SkillModel.targetsG10()
 	local ok, all = countIn(g10)
-	add("### Cele G10 (T-SK4, T-SK5; raport do S87)")
+	add("### Cele G10 (T-SK4, T-SK5; asertowane od S87 poza `GLOBAL_REPORT_ONLY`)")
 	add()
 	add(
 		`{ok}/{all} w paśmie (T-SK4 Maga od 45., T-SK5 Kapłana na tanku Wojowniku konwencji i Strażniku „Obrońcy”, co 5 poziomów; blok globalny \`balance.spec\` drukuje je razem z G). Poza pasmem:`
@@ -599,12 +613,309 @@ do
 	add()
 end
 
+-- Global fixes (S87) ---------------------------------------------------------------------------------------------
+
+do
+	add("## Poprawki globalne (S87)")
+	add()
+	add(
+		"S87 zmienia liczby gry powyżej 20. poziomu (plan balansu C, D): krzywe potworów, Elit i EXP w `Data/LevelCurves` (kotwice 45 / 70 / 100 tymczasowe: S92 / S93 / S94), tabele regionów `elitePairChance` i `dropFactor` (neutralne), wybór ataku bossa `Logic/BossSchedule` (gra i model), stałe `Data/BossTuning`, limit skali linii `pct` na ilvl 20 (`Bonuses.scaling`), broń dwuręczna (`Rarities.twoHandedBonusMul`, `upgradeStatPerLevelTwoHanded`), `Config.Upgrade.goldHigh` 20 i Rdzeń od +8, progi mikstur 45 / 70, kotwice `manaCost.Mage` i `heal`, zastępczy Mityk. Blok globalny `balance.spec` asertuje G1–G13 poza `GLOBAL_REPORT_ONLY` (tabela (j)). Wartości „przed” są w tabelach pasm (strzałki wobec migawki S87)."
+	)
+	add()
+
+	-- (a) curves
+	local curveIds =
+		{ "monsterHp", "monsterAtk", "eliteHp", "eliteDmg", "elite2Hp", "elite2Dmg", "expToNext", "manaCost.Mage", "heal" }
+	local rows = {}
+	for L = 20, 100, 5 do
+		local cells = { tostring(L) }
+		for _, id in curveIds do
+			table.insert(cells, fmtValue(LevelCurves.at(id, L), "2"))
+		end
+		table.insert(rows, cells)
+	end
+	local head = { "poziom" }
+	for _, id in curveIds do
+		table.insert(head, `\`{id}\``)
+	end
+	add("### (a) Krzywe poziomu")
+	add()
+	add("Krzywe liczą się od poziomu końcowego potwora (Elita +2, Elita II +4); 1 do 20. poziomu.")
+	add()
+	tableOut(head, rows)
+
+	-- (b) G1-G3, G6
+	add("### (b) G1–G3 i G6 na 20 / 45 / 70 / 100")
+	add()
+	add("Wartości po S87; „przed” w tabelach G1 / G2–G3 pasm (strzałki wobec migawki S87).")
+	add()
+	rows = {}
+	local byKey: { [string]: B.TargetRow } = {}
+	for _, row in globalRows do
+		byKey[`{row.id}|{row.classId}|{row.level}`] = row
+	end
+	for _, c in B.CLASSES do
+		for _, L in { 20, 45, 70, 100 } do
+			local function v(id: string, fmt: string): string
+				local row = byKey[`{id}|{c}|{L}`]
+				return if row then fmtValue(row.value, fmt) else "–"
+			end
+			table.insert(rows, {
+				`{BalanceTables.CLASS_PL[c]} {L}`,
+				v("G1.s", "1"),
+				v("G1.hp", "%"),
+				v("G2.avg", "%"),
+				v("G2.size4", "%"),
+				v("G3", "%"),
+			})
+		end
+	end
+	tableOut({ "klasa, poziom", "G1 s", "G1 HP", "G2 średnio", "G2 grupa 4", "G3" }, rows)
+	local g6 = {}
+	for _, L in { 20, 45, 70, 100 } do
+		local row = byKey[`G6|nil|{L}`]
+		table.insert(g6, `{L}: {if row then fmtValue(row.value, "2") else "–"}`)
+	end
+	add(`G6 (rozrzut czasu 1 na 1, ≤ 2,2): {table.concat(g6, ", ")}.`)
+	add()
+
+	-- (c) Elites
+	add("### (c) Elita ogólna pojedyncza (raport, cel regionów 20–36 s i 55–95% HP)")
+	add()
+	rows = {}
+	for _, c in B.CLASSES do
+		local cells = { BalanceTables.CLASS_PL[c] }
+		for _, L in { 20, 45, 70, 100 } do
+			local f = B.elite(B.cachedPlayer(c, L), B.GENERIC, L)
+			table.insert(cells, `{fmtValue(f.seconds, "1")} s / {fmtValue(f.hpLost, "%")}`)
+		end
+		table.insert(rows, cells)
+	end
+	tableOut({ "klasa", "20", "45", "70", "100" }, rows)
+
+	-- (d) boss schedule
+	add("### (d) Harmonogram bossów: kolejność listy (S83) → `BossSchedule` (S87), G11")
+	add()
+	rows = {}
+	for _, def in Bosses.list do
+		for phase = 1, #def.phases + 1 do
+			local old = B.bossCadence(def, phase, { pick = B.PICK_LIST_ORDER })
+			local new = B.bossCadence(def, phase)
+			for _, attack in def.attacks do
+				if new.perMinute[attack.id] then
+					table.insert(rows, {
+						`{def.id} f{phase} {attack.id}`,
+						`{fmtValue(old.perMinute[attack.id], "1")} → {fmtValue(new.perMinute[attack.id], "1")}`,
+						`{fmtValue(old.rateShare[attack.id], "%")} → {fmtValue(new.rateShare[attack.id], "%")}`,
+						`{fmtValue(old.casting, "%")} → {fmtValue(new.casting, "%")}`,
+					})
+				end
+			end
+		end
+	end
+	tableOut({ "atak", "na minutę", "tempo / odnowienie (G11 ≥ 50%)", "rzucanie" }, rows)
+
+	-- (e) items
+	add("### (e) Przedmioty: G7 po limicie skali, G8, G9, Rdzenie")
+	add()
+	rows = {}
+	for _, c in B.CLASSES do
+		local cells = { BalanceTables.CLASS_PL[c] }
+		for _, L in { 20, 45, 70, 100 } do
+			local leg = B.rarityGainAt(c, L, Rarities.LEGENDARY).traits
+			local myth = B.rarityGainAt(c, L, Rarities.MYTHIC).traits
+			table.insert(cells, `{fmtValue(leg, "%")} / {fmtValue(myth, "%")}`)
+		end
+		table.insert(rows, cells)
+	end
+	add("G7 (z cechami) Legenda / Mityk:")
+	add()
+	tableOut({ "klasa", "20", "45", "70", "100" }, rows)
+	add(
+		`G8: broń dwuręczna (bez drugiej ręki) wobec zestawu domyślnego, MIX moc²; linie zwykłe ×{fmtValue(Rarities.twoHandedBonusMul, "2")}, baza +{fmtValue(Rarities.upgradeStatPerLevelTwoHanded * 100, "1")}% na poziom ulepszenia. Komórka: bez cech / z cechami / luka cechy (z / bez). Pasmo 0,97–1,035 (Kostur Święty +9 do 1,06).`
+	)
+	add()
+	rows = {}
+	for _, pair in B.G8_PAIRS do
+		for _, rarity in B.GEAR_RARITIES do
+			for _, up in { 0, 9 } do
+				local cells = { `{pair.classId} {pair.weapon} {Rarities.get(rarity).key} +{up}` }
+				for _, L in B.ITEM_LEVELS do
+					local low, high = B.g8Band(pair.weapon, up)
+					local no = B.twoHandedParity(pair.classId, L, pair.weapon, rarity, up, { traits = false }).mix
+					local yes = B.twoHandedParity(pair.classId, L, pair.weapon, rarity, up).mix
+					local noText = fmtValue(no, "2")
+					if no < low or no > high then
+						noText = `**{noText}**`
+					end
+					table.insert(cells, `{noText} / {fmtValue(yes, "2")} / {fmtValue(yes / no, "2")}`)
+				end
+				table.insert(rows, cells)
+			end
+		end
+	end
+	tableOut({ "para", "20", "45", "70", "100" }, rows)
+	rows = {}
+	for _, L in { 20, 25, 30, 45, 60, 70, 80, 100 } do
+		local u = B.upgradeVsIncome(L)[1]
+		table.insert(rows, { tostring(L), fmtValue(u.up3, "2"), fmtValue(u.up9, "1"), fmtValue(u.goldEq9, "1") })
+	end
+	add("G9 (Wojownik, broń domyślna ilvl − 2, Zwykła): +1…+3 / dochód poziomu (0,45–1,05), +1…+9 z ochroną w poziomach dochodu (12–25):")
+	add()
+	tableOut({ "poziom", "+1…+3 / dochód", "+1…+9 z ochroną", "+1…+9 z materiałami" }, rows)
+	rows = {}
+	for _, L in { 45, 70, 100 } do
+		local ilvl = L - B.GEAR_GAP
+		local item = B.makeItem(B.tierId("sword1h", ilvl), ilvl, Rarities.LEGENDARY, 0, {})
+		local old = B.upgradePlan(item, 9, true, { coreFrom = 7 })
+		local new = B.upgradePlan(item, 9, true)
+		local oldFree = B.upgradePlan(item, 9, false, { coreFrom = 7 })
+		local newFree = B.upgradePlan(item, 9, false)
+		table.insert(rows, {
+			tostring(L),
+			`{fmtValue(old.cores, "1")} → {fmtValue(new.cores, "1")}`,
+			`{fmtValue(oldFree.cores, "1")} → {fmtValue(newFree.cores, "1")}`,
+			`{fmtValue(old.scrolls, "1")} → {fmtValue(new.scrolls, "1")}`,
+		})
+	end
+	add("Legenda +9: Rdzenie Legendy od +7 → od +8 i zwoje ochrony:")
+	add()
+	tableOut({ "poziom", "Rdzenie z ochroną", "Rdzenie bez ochrony", "zwoje" }, rows)
+
+	-- (f) hours
+	add("### (f) Godziny pasm i G13")
+	add()
+	rows = {}
+	for _, band in B.BAND_HOURS do
+		local pace = B.paceBand("Warrior", band[1], band[2])
+		table.insert(rows, {
+			`{band[1]}–{band[2]}`,
+			fmtValue(pace.hours, "1"),
+			`{fmtValue(band[3] * (1 - B.BAND_HOURS_TOLERANCE), "1")}–{fmtValue(band[3] * (1 + B.BAND_HOURS_TOLERANCE), "1")}`,
+		})
+	end
+	tableOut({ "pasmo", "godzin (Wojownik, z zadaniami)", "cel D4 ±25%" }, rows)
+	add(
+		"Krzywa `expToNext` zostaje neutralna (1 / 1 / 1): sama krzywa potworów wydłużyła pasma; 20–45 ponad celem idzie do S92 (kotwica 45 nie może zejść poniżej 1)."
+	)
+	add()
+
+	-- (g) potions
+	add("### (g) Mikstury (sprawdzenie bez zmiany odstępu, raport dla S92–S94)")
+	add()
+	rows = {}
+	for L = 25, 100, 5 do
+		local cells = { tostring(L) }
+		for _, c in { "Warrior", "Mage" } do
+			local rest = B.paceAt(c, L)
+			local chain = B.paceAt(c, L, { potions = "chain" })
+			local eco = B.economyAt(c, L, { potions = "chain" })
+			table.insert(cells, fmtValue(chain.expPerHour / math.max(1e-9, rest.expPerHour), "2"))
+			table.insert(cells, fmtValue(eco.potionShare, "%"))
+		end
+		table.insert(rows, cells)
+	end
+	tableOut({ "poziom", "Wojownik EXP/h łańcuch / odpoczynek", "Wojownik mikstury / dochód", "Mag EXP/h", "Mag mikstury / dochód" }, rows)
+	rows = {}
+	for _, L in { 45, 70, 100 } do
+		local def, f = B.bossFightAt("Warrior", L)
+		table.insert(rows, { `{def.id} ({L})`, fmtValue(f.potionHps, "i"), fmtValue(f.tankDps, "i"), fmtValue(f.potionHps / math.max(1e-9, f.tankDps), "%") })
+	end
+	add("Mikstura HP/s tanka wobec obrażeń tanka bossa (drużyna 3):")
+	add()
+	tableOut({ "boss", "mikstura HP/s", "obrażenia tanka /s", "pokrycie" }, rows)
+
+	-- (h) G10
+	add("### (h) G10: mana Maga i leczenie Kapłana")
+	add()
+	rows = {}
+	local g10 = SkillModel.targetsG10()
+	for _, row in g10 do
+		if row.report == nil then
+			table.insert(rows, {
+				row.label,
+				fmtValue(row.value, "2"),
+				`{bound(row.low)}–{bound(row.high)}`,
+				if B.inBand(row) then "w paśmie" else "**poza**",
+			})
+		end
+	end
+	tableOut({ "wiersz", "wartość", "próg", "wynik" }, rows)
+
+	-- (i) Mythic substitute
+	add("### (i) Mityk z bossa: nazwany i wylosowany dla klasy")
+	add()
+	add("500 Mityków na bossa i klasę (szansa Mityka 1, ziarno 87): udział nazwanych; każdy Mityk pasuje klasie (test `rarities.spec`).")
+	add()
+	rows = {}
+	local Loot = require("../src/shared/Logic/Loot")
+	local LootTables = require("../src/shared/Data/LootTables")
+	local Rng = require("../src/shared/Logic/Rng")
+	local Items = require("../src/shared/Data/Items")
+	for _, def in Bosses.list do
+		local boss = LootTables.bosses[def.id]
+		if boss then
+			local always = table.clone(boss) :: any
+			always.mythicChance = 1
+			always.legendaryChance = 0
+			local cells = { def.id }
+			for _, c in B.CLASSES do
+				local rng = Rng.new(87)
+				local named = 0
+				for _ = 1, 500 do
+					local drop = Loot.rollBossItem(always, 0, c, rng) :: any
+					if (Items.get(drop.defId) :: any).fixedBonuses then
+						named += 1
+					end
+				end
+				table.insert(cells, fmtValue(named / 500, "%"))
+			end
+			table.insert(rows, cells)
+		end
+	end
+	local head2 = { "boss" }
+	for _, c in B.CLASSES do
+		table.insert(head2, BalanceTables.CLASS_PL[c])
+	end
+	tableOut(head2, rows)
+
+	-- (j) report-only rows
+	add("### (j) `GLOBAL_REPORT_ONLY` (wiersze w raporcie i ich sesje)")
+	add()
+	local groups: { [string]: { count: number, out: number, session: string, why: string } } = {}
+	local order = {}
+	local all = table.clone(globalRows)
+	for _, row in g10 do
+		table.insert(all, row)
+	end
+	for _, row in all do
+		local entry = B.reportOnlyFor(row)
+		if entry and row.report == nil then
+			local key = `{row.id}|{entry.session}|{entry.why}`
+			local g = groups[key]
+			if not g then
+				g = { count = 0, out = 0, session = entry.session, why = entry.why }
+				groups[key] = g
+				table.insert(order, key)
+			end
+			g.count += 1
+			g.out += if B.inBand(row) then 0 else 1
+		end
+	end
+	rows = {}
+	for _, key in order do
+		local g = groups[key]
+		table.insert(rows, { string.match(key, "^[^|]+") or key, tostring(g.count), tostring(g.out), g.session, g.why })
+	end
+	tableOut({ "cel", "wiersze", "poza pasmem", "sesja", "powód" }, rows)
+end
+
 -- Formulas ------------------------------------------------------------------------------------------------------
 
 add("## Wzory (stan obecny)")
 add()
 add(
-	`- Potwór: HP = {Combat.monsterHpBase} + {Combat.monsterHpComp}·{Combat.monsterHpFactor}·L^{Combat.monsterHpExponent}, atak = {Combat.monsterAtkBase} + {Combat.monsterAtkFactor}·L^{Combat.monsterAtkExponent}, pancerz {Combat.monsterArmorPerLevel}·L × defMul, odporność magiczna {Combat.monsterMresPerLevel}·L × mresMul, atak co {Combat.monsterAttackInterval} s / szybkość.`
+	`- Potwór: HP = ({Combat.monsterHpBase} + {Combat.monsterHpComp}·{Combat.monsterHpFactor}·L^{Combat.monsterHpExponent}) × monsterHp(L), atak = ({Combat.monsterAtkBase} + {Combat.monsterAtkFactor}·L^{Combat.monsterAtkExponent}) × monsterAtk(L) (S87: krzywe od poziomu końcowego, 1 do 20.; Elita × eliteHp / eliteDmg), pancerz {Combat.monsterArmorPerLevel}·L × defMul, odporność magiczna {Combat.monsterMresPerLevel}·L × mresMul, atak co {Combat.monsterAttackInterval} s / szybkość.`
 )
 local groupMul = (Combat :: any).groupDamageMul
 if groupMul then
@@ -653,7 +964,7 @@ add(
 	`- Drużyna (S83): bije osobno na tym samym łowisku i dzieli zaliczenie, bez synergii; EXP/h członka = średnia solowych × (1 + min({Progression.varietyMax}, {Progression.varietyPerClass}·(klasy − 1))/100); \`floor\` z \`PartyLoot.splitExp\` pominięty.`
 )
 add(
-	`- Harmonogram bossa: \`Boss.Step\` co 0,05 s; gdy t ≥ nextGlobal, pierwszy gotowy atak fazy w kolejności listy; potem nextAttack = t + odnowienie, nextGlobal = t + zamach + {B.BOSS_GLOBAL_GAP} s; pierwszy atak po 4 s, pierwsze użycie każdego średnio po 5 s. Przyspieszenie fazy dzieli tylko odstęp ataku podstawowego, wściekłość mnoży wszystkie ciosy.`
+	`- Harmonogram bossa: \`Boss.Step\` co 0,05 s; gdy t ≥ nextGlobal, spośród gotowych ataków fazy ten z największą zaległością względem swojego odnowienia, (t − nextAttack) / odnowienie (S87, \`Logic/BossSchedule\`; remis: kolejność listy); potem nextAttack = t + odnowienie, nextGlobal = t + zamach + {B.BOSS_GLOBAL_GAP} s (\`Data/BossTuning\`); pierwszy atak po 4 s, pierwsze użycie każdego średnio po 5 s. Przyspieszenie fazy dzieli tylko odstęp ataku podstawowego, wściekłość mnoży wszystkie ciosy.`
 )
 add()
 

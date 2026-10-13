@@ -4972,3 +4972,200 @@ ElementBadge.astro}`, bloki `ClassStartTable`, `ElementList`, `GuildSkillsTable`
 `SkillPlanner`, `WorldMap`, `ItemTooltipLive`, `SearchPage`, `styles/components.css`, dane i obrazy (`wiki/src/data/items.json`,
 `meta.json`, `src/generated/{item-icons,art}.json`, `public/img/items`, `public/img/art`, `docs/PRZEDMIOTY.md`), `docs/WIKI.md`,
 `docs/GRAFIKA.md`, `CLAUDE.md`.
+
+### S87: Poprawki globalne balansu 20–100
+
+Pierwsza sesja balansu ze zmianami gry: krzywe potworów, Elit i EXP, tabele regionów, harmonogram bossów, skala linii,
+broń dwuręczna, złoto ulepszeń i Rdzeń, progi mikstur, kotwice many i leczenia, zastępczy Mityk, `/balance`; blok
+globalny G1–G13 asertuje.
+- **A. Start** na `785470a` (WIKI-GRAFIKA, po S86): wymagania są, migawka `lune run tools/balance_report.luau snapshot
+  S87` (`tools/balance_before.json`), `scripts/check` zielony przed zmianami (96 plików, 1403 testy, 59 s), zrzut
+  wyjściowy `build/s87_start.json` (wiersze bloku globalnego, harmonogram, Elity, godziny pasm, G10, różnice 1–20: 0).
+  Po kroku mechanizmów (B, krzywe w danych bez odczytu, tabele regionów, `Bonuses.scaling` bez limitu, `FightSim.power`)
+  jedyną różnicą był harmonogram bossów: 16 wierszy G11, 1–20 0 różnic, `caveterrain.spec` zielony bez nowego fixture,
+  fixture przedmiotów 0 zmian, fixture ścieżek 25 (przechwyt Azgora, T-SK6 z kadencji).
+- **B.** `Data/BossTuning` (2,2 / 0,7 / 1,4, bez zmiany wartości), `Logic/BossSchedule` (`ready`, `pick`: największy
+  (now − nextAttack) / odnowienie, remis = kolejność listy), `Boss.Step` i skrypty Azgora i Vaelgratha czytają oba,
+  `Balance.bossCadence` domyślnie `BossSchedule.pick`, `Balance.PICK_LIST_ORDER` odtwarza liczby S83 (test). Nowy
+  `tests/bossschedule.spec.luau` (7 przypadków).
+- **C.** Krzywe `monsterHp`, `monsterAtk`, `eliteHp`, `eliteDmg`, `elite2Hp`, `elite2Dmg`, `expToNext`; tabele
+  `regions`, `elitePairChance`, `dropFactor`; `LevelCurves.regionOf`, `elitePairChance`, `dropFactor`;
+  `AreaSpawns.cave(cave, opts)`, `ItemRoll.rarityWeights / rollRarity(…, dropFactor)`, `AreaRates` z `dropFactor`
+  regionu rodzaju, `Loot.rollMonsterLoot` z `dropFactor(def.region)`; `MonsterStats.baseHp / baseAttack` × krzywe,
+  `variantCurves` (Elita, Elita II) od poziomu końcowego.
+- **D.** `Bonuses.scaling` (`ItemRoll.scaleFor` czyta stałe, `pct` do ilvl 20), `Rarities.twoHandedBonusMul` 2,7 i
+  `upgradeStatPerLevelTwoHanded` 0,066 przy odczycie (`ItemRoll.isRegularLine`, `ItemRoll.upgradeStatPerLevel`,
+  `Upgrade.statMultiplier(up, twoHanded?)`), model `Balance.itemStats` (linie bez zaokrąglenia); `Config.Upgrade`
+  `goldHigh` 20 i `legendCoreFrom` 8, `Upgrade.cost`, opis Rdzenia (PL, EN).
+- **E–F.** `Exp.expToNext` × krzywa (neutralna); mikstury `LEVELS = { 1, 1, 1, 45, 70 }`, `Potions.requiredLevel`,
+  `Potions.canDrink`, `ItemRoll.requiredLevel` (ilvl tylko dla wyposażenia), `PotionService.drink` (klucz
+  `potion.error.level`), `ShopService.buy` i `ShopWindow` (to samo wyrażenie progu), `Balance.hpPotions` z
+  `Potions.requiredLevel`.
+- **G.** `manaCost.Mage` 1,89 / 2,59 / 3,49, `heal` 2,33 / 0,31 / 0,67 (przebiegi niżej; ROZWOJ 8 i 9.2 poprawione).
+- **H.** `Loot.pickUsable`, `Loot.rollBossItem` z zastępczym Mitykiem (`forClass`); test dla każdego bossa i klasy;
+  `Balance.bossDrops` liczy Mityk tak samo (test zgodności z `Loot.bossChances`).
+- **I.** `FightSim.power` (`Balance.power` bez opcji deleguje), `Skills.manaDemand`, `/balance` z G3, mocą, maną Maga
+  (tylko umiejętności, które broń pozwala rzucić), Leczeniem Kapłana i progami G4–G13
+  (`admin.balance.info/targets/mana/heal/global`, PL i EN).
+- **Poprawki z przeglądu.** Dymek: zakres linii broni dwuręcznej × `twoHandedBonusMul` jak wartość
+  (`ItemRoll.lineMultiplier`, `tooltip.spec`); model z `dropFactor` regionu (`Balance.dropFactorAt`) i bez `f > 1` w
+  danych (`globalbalance.spec`); `exp.spec` liczby kontrolne 20 / 45 / 70 / 100 i wzór × krzywa; ROZWOJ 12.2 z kotwicami
+  many S87; komentarze `Upgrade` (6,6%) i krzywej `heal`.
+- **J.** `GLOBAL_ASSERT = true`, `Balance.GLOBAL_REPORT_ONLY` (313 wierszy w raporcie: lista w DECYZJE i w raporcie (j)),
+  `ALLOWED_1_20_DIFFS` (21), księga S87 bez `unexplained`, fixture S84 i S86 od nowa, raport z sekcją „Poprawki
+  globalne (S87)” i kolumną „kto asertuje” („S87 (asertowane)” / „raport → S<n>”). Nowy `tests/globalbalance.spec.luau`
+  (krzywe potworów, tabele regionów, skala `pct`, dwuręczne, mikstury, moc, mana, zastępczy Mityk w modelu; 16
+  przypadków). Check: 98 plików, 1437 testów, ok. 60 s.
+- **K.** DESIGN §4.6, §5.2, §5.4, §6, §9, §15.1, §16, §18; STATY 4 i 10; ROZWOJ 8 i 9.2; ARCHITECTURE (moduły,
+  `/balance`); `CLAUDE.md` (wybór ataku bossa). `lune run tools/wikidump.luau` (dane wiki: HP i atak potworów i bossów,
+  zakresy linii, koszty ulepszeń, koszty many, poziom mikstur; `requiredLevel` w `items.json`: mikstury 1 / 1 / 1 / 45 /
+  70 zamiast 1–5, materiały i błogosławieństwa 1 zamiast swojego `tier`), `--check` „up to date”, `wiki_keys_diff` 0,
+  `grep LevelCurves|BossTuning|BossSchedule tools/WikiData` pusty, `npm test` w `wiki/` zielony (132 testy).
+
+Inwentarz (A3): (a) `targetsGlobal` = wiersze `TargetRow { id, group, label, value, low?, high?, classId, level,
+report? }`: G1–G6 i G11–G13 (S83), G7–G9 z `itemTargets` (S84), G10 z `SkillModel.targetsG10` (S85–S86, `report = true`
+poza trzema wierszami na poziom); `bossCadence(def, phase, opts)` ze stanem `{ nextAttack, nextGlobal, phase }`;
+`HAZARDS` i osłona tekstowa w `balancemodel.spec`; `caveElites` bierze udział par z prawdziwych spawnerów; `dropMods`
+zwracało `AreaProfiles.NEUTRAL` (zostaje; `dropFactor` regionu poziomu idzie obok przez `Balance.dropFactorAt` do
+`dropsPerHour`, `materialSupply` i `dismantlePerItem`, jak `ItemRoll` w grze);
+`potionsAt` i `paceAt` czytają `level` mikstur; `twoHandedParity` / `G8_PAIRS` / `rarityGainAt` / `upgradeGold` /
+`upgradePlan` (`coreFrom`) jak w S84. (b) `Data/LevelCurves` = `{ dexRatingLevel, curves }`, `Logic/LevelCurves.at /
+has / ids / anchors / dexFactor`, `Potions.interval`, `Skills.cost(skill, rank, level, classId, mods)`,
+`Skills.healAmount(def, rank, prefix, targetMaxHp, magAtk, level)`; cecha liczy ulepszenie przez `ItemRoll.traitPower`
+(`Rarities.upgradeStatPerLevel`, bez zmian). (c) Listy „Dla S87”: S83 harmonogram (B, zrobione), walki 1 na 1 i grupy
+po 40. (C5, zrobione), G13 (E1, przechodzi), lot Vaelgratha bez nietykalności przy żywej tarczy i stare mnożniki ciosów
+Morvane / Vaelgratha (poza zakresem: dane i skrypty bossów, PROGRESS), fale tarczy w modelu (raport S92–S94); S84 G7
+(D1), G8 (D2), G9 i Rdzeń (D3, D4) zrobione, `expectedBonuses` bez filtra klasy w pulach legendarnej i mitycznej (poza
+zakresem: zmienia 1–20, PROGRESS); S86 wzory serwera do `Logic` (pułapka, ściąganie, sokół, pole leczenia, strumień,
+kości, `onBlock`, `tryCounter`, `savingBlow`, `runThrough`, `spark`, `PrimeFullDraw`, odpływ kanału, mnożniki
+`DealDamage`, `healFactor`, `DotBonus`, burza meteorów, listy `HOLY_HEAL_SKILLS` / `ZEAL_SKILLS` / `INSTANT` /
+`TICK_INTERVAL`, limit kradzieży życia 15 w `Damage`) i luki `FightSim.dps` (`eliteDamage`, `bossDamage`,
+`executioner`, `damagePerEnemy`, Słaby punkt): poza zakresem, PROGRESS; G10 poza pasmem (G, zrobione: reszta do S90 /
+S91 / S92). (d) `items.json` eksportuje `requiredLevel` z `ItemRoll.requiredLevel` instancji `ilvl = def.tier or
+def.level`; statystyki przedmiotu na wiki idą przez `ItemRoll.itemStats` (dwuręczne +0…+9 prawdziwe), zakresy linii
+przez `rollBonusValue` (bez mnożnika dwuręcznych), krok ulepszenia `Upgrade.statMultiplier` bez drugiego argumentu.
+
+Przebiegi (wartości modelu; konwencja S32):
+
+| przebieg | kotwice / liczby | wynik |
+|---|---|---|
+| C5 1 | HP 1,20 / 1,32 / 1,43, atak 1,07 / 1,11 / 1,14 | G1–G3, G6 269/272: Mag 1 na 1 5,49 / 5,43 / 5,37 s na 90 / 95 / 100 |
+| C5 2 | HP na 100. 1,47 | 272/272; Wojownik 7,97 / 7,71 / 7,55 s, 15 / 14 / 14% HP; Mag 6,04 / 5,73 / 5,52 s; Kapłan 11,8 s |
+| C6 | Elita 1,08 / 1,11 / 1,13, obrażenia 1,05 / 1,06 / 1,07 | Wojownik 28,2 / 27,2 / 26,5 s, 62 / 59 / 57% (pasmo 20–36 s, 55–95%) |
+| D2 (siatka) | 1,75 / 7%; 2,0 / 7%; 2,25 / 7%; 2,5 / 6,5%; 2,75 / 6,5%; 2,7 / 6,6% | „bez cech” 237 / 245 / 256 / 261 / 265 / **269**/280 (Legenda i Mityk +0 na 45–100: 16 / 19 / 32 / 37 / 39 / 39 z 42) |
+| E1 | `expToNext` 1 / 1 / 1,1; 1 / 1 / 1 | pasma 18,0 / 27,2 / 47,7 h; 18,0 / 27,2 / **45,3** h (cel 14 / 25 / 41 ±25%) |
+| G2 | `manaCost.Mage` 1,4 / 1,9 / 2,5 | Niszczyciel exp 1,48 / 1,36 / 1,02, Arkanista boss 2,31 / 2,49 / 2,78 |
+| G2 | 1,89 / 2,58 / 3,71 | 2,00 / 1,84 / 1,52 i 3,11 / 2,98 / 3,37 (Arkanista rośnie wolniej niż koszt: strumień) |
+| G2 | **1,89 / 2,59 / 3,49** | 2,00 / 1,85 / 1,43 i 3,11 / 2,99 / 3,26 (średnia geometryczna potrzeb 2,36·1,52, 3,51·1,91, 6,1·2,0) |
+| G3 | `heal` 1 / 1 / 1; 2 / 2 / 2 (pomiar części magicznej) | Uzdrowiciel na Obrońcy 0,272 / 0,323 / 0,365; część magiczna 0,021 / 0,034 / 0,046 |
+| G3 | **2,33 / 0,31 / 0,67** | 0,300 / 0,300 / 0,350 (25: 0,235, 30: 0,254, 90: 0,343) |
+
+S86 → S87 (wiersze bloku globalnego bez `report`, w paśmie): G1 s 37 → 68/68, G1 HP 50 → 68, G2 średnio 21 → 68, G2
+grupa 4 68 → 68, G3 58 → 68, G4 136 → 136, G5 34 → 34, G6 17 → 17, G7 183 → 256/272, G8 58 → 292/560, G9 +1…+3 20 →
+64/68, +1…+9 20 → 60/68, G10 22 → 25/41, G11 33 → 36/36, G13 3/4 → 3/4 (rośnie: 1 spadek → 0; pasma 15,7 / 20,9 /
+31,1 → 18,0 / 27,2 / 45,3 h). Razem 1263/1263 asertowanych w paśmie, 313 w `GLOBAL_REPORT_ONLY`.
+
+Cele G po S87 (Wojownik / Łowca / Mag / Kapłan na 20 / 45 / 70 / 100):
+- G1 s: W 7,6 / 8,0 / 7,7 / 7,5 (przed 7,6 / 6,6 / 5,8 / 5,1); Ł 6,1 / 6,3 / 6,0 / 5,9; M 6,0 / 6,0 / 5,7 / 5,5; K 10,3 /
+  11,8 / 11,8 / 11,8. G1 HP 11–18% wszędzie (przed do 7–9% na 100).
+- G2 średnio: W 40 / 42 / 40 / 39%, Ł 41 / 42 / 41 / 39%, M 47 / 49 / 47 / 46%, K 32 / 34 / 34 / 33% (przed 25–29% na 100).
+- G3: W 65 / 68 / 65 / 63%, Ł 67 / 69 / 66 / 63%, M 77 / 80 / 77 / 74%, K 53 / 57 / 56 / 55%.
+- G4: sklep 5,7–9,0 s (K 11,3–12,3), 11–19% HP; G5 DPS 1,25–1,29, moc 1,00–1,03; G6 1,71 / 1,95 / 2,06 / 2,14.
+- G7 Legenda / Mityk z cechami: W 31 / 31 / 32 / 32% i 61–63%, Ł 35–36% i 68–70%, M 31–32% i 61–62%, K 29–30% i 60%
+  (przed W 33,7 / 37,3 / 41,1% na 45 / 70 / 100); Heroik Łowcy 25,1–26,7% od 25 (raport → S88).
+- G8 bez cech 269/280 (0,95–1,04), z cechami 0,87–0,99 (Kostur Święty 1,1–3,6).
+- G9 +1…+3 / dochód 0,44 / 0,55 / 0,63 / 0,84 (przed 0,44 / 0,92 / 1,18 / 1,68), +1…+9 z ochroną 10,4 / 13,0 / 14,8 /
+  19,9 poziomu (przed 10,4 / 21,6 / 27,8 / 39,8); Rdzenie na chronione +9 Legendy 10,8 → 8,3, bez ochrony 53,3 → 21,7.
+- G10 (asertowane trzy na poziom): T-SK4 Niszczyciel exp 2,00 / 1,85 / 1,43, Arkanista boss 3,11 / 2,99 / 3,26 na 45 /
+  70 / 100; T-SK5 Uzdrowiciel na Obrońcy 0,23 / 0,30 / 0,30 / 0,35.
+- G11 36/36, najniżej fireWave Azgora 52,5% i glacialRing Vaelgratha 52,5%; inferno 2,9/min (68%).
+- G12 1–20: 21 różnic, wszystkie w `ALLOWED_1_20_DIFFS`; G13 rośnie, 20–45 18,0 h (raport → S92).
+
+Liczby kontrolne harmonogramu (domyślny wybór, 600 s, krok 0,05 s; `bossschedule.spec`): Grimrok f1 sweep 7,5 / leap
+3,7, f3 sweep 4,7 / leap 4,6 / whirlwind 4,6 (przed 6,4 / 4,3 / 4,2), rzucanie 33%; Morvane f3 8,0 / 4,0 / 4,0 (bez
+zmian); Azgor f3 fireWave 4,5 / flameCleave 4,4 / meteor 4,4 / inferno 2,9 (przed 5,6 / 5,6 / 5,5 / 0); Vaelgrath f3
+frostBreath 4,1 / wingBuffet 4,0 / tailSwipe 4,0 / blizzard 2,1 / glacialRing 2,1 (przed 5,5 / 3,6 / 3,6 / 1,8 / 1,8).
+
+Grimrok wobec S32 (`bossFight`, przed → po): 3 graczy L19 369 → 369 s (6,2 min), tank 2,97 → 2,93 maks. HP/min,
+największy cios Maga 58% (bez zmian); 5 graczy 371 s; Mag L18 przeżywa (60%). Pokrycie tanka miksturą 142× → 22×
+(model `potionHps`: na 19. najwyżej Duża mikstura).
+
+Fixture: `balance_items.json` 6061 z 10 336 wartości zmienionych (największe: Iskra Mitycznego +9 w grupie na 70–100
+0,008 → 0,018 (walki w grupie po krzywej potworów), „ucięte przez limit” profilu K2 3,0 / 11,0 → 0 (linie `dropBonus` po
+limicie skali), godziny Elit na +9 na 100. 14,7 → 28,0 i 67,5 → 128,1 (dłuższe walki z Elitami; Rdzeń od +8 działa
+w drugą stronę), udział materiałów w koszcie +9 na 100. 5,2 → 9,9% (tańsze złoto); po przeglądzie Mityki z bossa
+dla klasy bez nazwanego przedmiotu 0,03 → 0,06 na dzień: Morvane dla Wojownika, Vaelgrath dla Łowcy);
+`balance_paths.json` 837 z 5782
+(R6 Arcymaga i Inwokacji 0 → 1,56 / 0,72 (przy droższej manie węzły many mają wartość), Elita II na 20. dla
+`standard.commander` i `guardian.loner` przegrana → wygrana (model pije Dużą miksturę 1 500 HP; Potężna 10 000 HP nigdy
+nie mieściła się w brakującym HP), T-SK4 Niszczyciela z Oszczędnym Splotem w paśmie na 70, T-SK5 Uzdrowiciela na
+Obrońcy na 100 w paśmie).
+
+Różnice 1–20 (`ALLOWED_1_20_DIFFS`, 21): Elity solo ze spawnera 20 (poziom 22) czas +3,1% i HP +4,3–4,4% wszystkich
+klas (Wojownik 26,8 → 27,6 s, 58 → 61%), Elita II ze spawnera 18 (poziom 22: `caveSpider`, `goblinShaman`) czas +2,2%
+i HP +2,8–3,0% (solo 265 → 273% HP), Heroiki dla klasy na godzinę Elit na 20. 1,15 → 1,10. Poza fixture: broń
+dwuręczna Unikatowa i wyżej oraz każda z ulepszeniem na 1–20 (G8 na 20.: bez cech 0,97–1,04), kadencja Grimroka w
+fazie 3 (wyżej), Elita II na 20. w modelu ścieżek (mikstury).
+
+`npm run data` zastąpione równoważnym `lune run tools/wikidump.luau`; `npm test` w `wiki/` zielony.
+
+Dla S88:
+- G7: Heroik Łowcy z cechami 25,1–26,7% na 25–100 (pasmo 15–25%); reszta G7 w paśmie po limicie skali.
+- G8 luka cechy (z cechami / bez cech, MIX; tabela „(e)” w BALANS): miecz 0,94–1,01, topór 0,92–0,95, młot 0,93–0,95,
+  włócznia ok. 0,92–0,95, kostur 0,94–0,97, kostur runiczny 0,92–0,94, Kostur Święty 1,1–3,6 (Zbawczy cios); „bez cech”
+  poza pasmem: Mityk topora 0,95–0,96 (linie mityczne bez mnożnika), Mityk kosturów +9 na 100. 0,96–0,97, Legenda miecza
+  i włóczni na 20. 1,04.
+- Limit `pct` dotyczy też linii rodzin i klas (`vs_`, `res_`): stroić je na skali ×1,33.
+- Nazwane Mityczne dwuręczne (Kieł Vaelgratha) mają stałe linie bez ×2,7, a bazę +6,6% na poziom: porównać z
+  wylosowanym Mitykiem z mnożnikiem.
+- `expectedBonuses` liczy pule legendarną i mityczną bez filtra klasy (lista S84; zmienia 1–20).
+
+Dla S89–S90:
+- G10: T-SK4 Niszczyciela exp poniżej 2 na 45 i 60–100 (1,43–2,00), Arkanisty boss ponad 3 na 45, 65, 95, 100 (3,02–3,26)
+  na wspólnej krzywej; baza Maga 1,0–1,3 po 45. (raport), warianty: Niszczyciel boss 1,4–2,2, Przeciążenie 3,4–4,2.
+- Krzywa `heal` (2,33 / 0,31 / 0,67) zmienia Fortunę i Inkwizytora (T-SK5 na Obrońcy 0,24–0,27, na Wojowniku 0,25–0,34)
+  i T-SK6; Uzdrowiciel na tanku Wojowniku (konwencja, raport) 0,35–0,36 na 45 i 0,36–0,39 na 90–100.
+- G5 i G6 w paśmie (G6 2,14 na 100).
+
+Dla S91:
+- Pełna lista różnic 1–20 wyżej (Elity 21–22, Elita II 22, Heroiki z Elit), kadencja Grimroka f3 (sweep 6,4 → 4,7, leap
+  4,3 → 4,6, wir 4,2 → 4,6, walka bez zmian 369 s), dwuręczne na 20. (G8 bez cech 0,97–1,04), mikstury Wielka i Potężna
+  niedostępne do 44. (model: Elita II wygrana na 20. w buildach ścieżek), G9 na 20. (0,44 i 10,4), T-SK5 na 20. (0,23).
+
+Dla S92–S94:
+- Kotwice 45 (S92), 70 (S93), 100 (S94) wszystkich krzywych; `elitePairChance` i `dropFactor` po id mapy (`dropFactor`
+  mnoży Unikat i Heroik, Zwykły przejmuje resztę; Elita II bez Zwykłego: tylko `f ≤ 1`).
+- Elita ogólna pojedyncza (W / Ł / M / K): 45: 28,2 / 22,1 / 21,3 / 41,7 s, 62 / 62 / 71 / 52%; 70: 27,2 / 21,3 / 20,2 /
+  41,7 s; 100: 26,5 / 20,5 / 19,4 / 41,5 s, 57 / 55 / 65 / 49% (Kapłan ponad 36 s).
+- Walki z bossami (drużyna 3, przed → po krzywej): Morvane 45 220 → 263 s, Azgor 70 226 → 298 s, Vaelgrath 100 183 →
+  268 s; największy cios Maga 100 → 107%, 82 → 118%, 114 → 130% (stare mnożniki ciosów; Łowca do 138%).
+- Mikstury (E2, raport): EXP/h z łańcuchem / z odpoczynkiem 3,7–5,1 (Wojownik) i 5,0–6,9 (Mag) na 25–100, mikstury
+  26–100% dochodu brutto (cel 15–30%), mikstura tanka pokrywa 245 / 202 / 145% obrażeń tanka bossa na 45 / 70 / 100.
+  Elity II solo z miksturami nie policzone (model Elit II regionów).
+- G9 +1…+9 na 25. 10,7 poziomu (pasmo 12–25), G13 20–45 18,0 h, T-SK5 na 25. 0,235.
+
+Dla właściciela:
+- Linie `pct` wylosowane przed S87 zostają ponad nowym zakresem (bez ścięcia przy odczycie): zostawić czy ściąć?
+- Progi Wielkiej (45) i Potężnej (70) obejmują też mikstury many i energii; gracze poniżej 45. z kupionymi wcześniej
+  Wielkimi miksturami wypiją je od 45. (sprzedać mogą od razu).
+- Wiki pokazuje zakresy linii i krok ulepszenia bez mnożnika broni dwuręcznej (×2,7, 6,6%): nowe pole na wiki wymaga
+  sesji wiki (plan balansu 2.3 zabrania nowych kluczy w sesjach balansu).
+- Cel godzin D4 (14 / 25 / 41 h) dalej wstępny; z krzywą potworów pasma mają 18 / 27 / 45 h.
+- Mikstury pokrywają z zapasem obrażenia tanka bossa (145–245%) i 26–100% dochodu: cel ROZWOJ 8 do decyzji (S92–S94).
+- Krzywa `heal` z dołkiem na 55–70 (reguła środka pasma na kotwicach): możliwa wygładzona alternatywa w S89.
+- G8 „bez cech” poza pasmem w 11 wierszach (Mityk topora 0,95–0,96, Mityk kosturów +9 na 100. 0,96–0,97, Legenda
+  miecza i włóczni na 20. 1,04): linie legendarne i mityczne nie dostają ×2,7, żadna para liczb nie mieści całej
+  siatki (`GLOBAL_REPORT_ONLY` → S88).
+
+Niedokończone: Elita II solo z miksturami w sprawdzeniu mikstur (E2, do S92–S94); tabela fixture skrócona do
+najważniejszych zmian (opis wyżej).
+
+Pliki: `src/shared/Data/{BossTuning,LevelCurves,Bonuses,Rarities}.luau`, `src/shared/Data/Items/Consumables.luau`,
+`src/shared/Config.luau`, `src/shared/Logic/{BossSchedule,LevelCurves,MonsterStats,ItemRoll,AreaSpawns,AreaRates,Loot,Exp,
+Upgrade,Potions,FightSim,Skills}.luau`, `src/shared/Data/Localization/{pl,en}.luau`, `src/server/Entities/Boss.luau`,
+`src/server/Entities/BossScripts/{azgor,vaelgrath}.luau`, `src/server/Services/{ShopService,PotionService}.luau`,
+`src/server/Admin/Combat.luau`, `src/client/UI/Screens/ShopWindow.luau`, `src/shared/Logic/TooltipModel.luau`,
+`tests/{Balance,balance.spec,balance1_20.spec,balancemodel.spec,bossschedule.spec,globalbalance.spec,levelcurves.spec,
+rarities.spec,smith.spec,skills.spec,itemvalue.spec,exp.spec,tooltip.spec}.luau`, `tests/fixtures/{balance_items,balance_paths}.json`, `tools/{balance_report,balance_reasons}.luau`,
+`tools/balance_before.json`, `wiki/src/data/*`, `docs/{BALANS,DECYZJE,SESJE,PROGRESS,DESIGN,STATY,ROZWOJ,ARCHITECTURE,
+PRZEDMIOTY}.md`, `CLAUDE.md`.

@@ -132,6 +132,28 @@ T.describe("TooltipModel.details (S68)", function()
 		end
 	end)
 
+	T.it("a two-handed line's range is shown with twoHandedBonusMul like its value (S87)", function()
+		T.expect(ItemRoll.lineMultiplier(made("sword2h_50", Rarities.HEROIC, {}), "str"))
+			.toBe(Rarities.twoHandedBonusMul)
+		T.expect(ItemRoll.lineMultiplier(made("sword1h_50", Rarities.HEROIC, {}), "str")).toBe(1)
+		T.expect(ItemRoll.lineMultiplier({ id = "unique_azgor_staff", ilvl = 45 } :: any, "str")).toBe(1)
+		local ilvl = (Items.get("sword2h_50") :: Items.ItemDef).level
+		local low, high = ItemRoll.bonusRange("str", ilvl, Rarities.HEROIC)
+		local saved = ItemRoll.rollBonusValue("str", ilvl, Rarities.HEROIC, 1)
+		local item = made("sword2h_50", Rarities.HEROIC, { { stat = "str", v = saved } })
+		local line = ItemRoll.itemStats(item).bonuses[1]
+		T.expect(line.v).toBe(math.floor(saved * Rarities.twoHandedBonusMul + 0.5))
+		local details = TooltipModel.details(item, { kind = "bonus", id = "str", v = line.v, quality = line.quality }, {
+			lang = "en",
+		})
+		local mul = Rarities.twoHandedBonusMul
+		T.expect((rowOf(details, "range") :: any).text).toBe(Locale.T("tooltip.detail.range", {
+			min = tostring(math.floor(low * mul + 0.5)),
+			max = tostring(math.floor(high * mul + 0.5)),
+			q = math.floor(line.quality * 100 + 0.5),
+		}, "en"))
+	end)
+
 	T.it("family and class variants say where they work", function()
 		local function details(id: string): TooltipModel.Details
 			local item = made("sword1h_50", Rarities.HEROIC, { { stat = id, v = 3 } })

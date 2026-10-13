@@ -280,7 +280,10 @@ unik, pech wroga i blok razem najwyżej 40% (S61).
 
 ### 4.6 Doświadczenie
 
-- `expDoNastępnego(L) = round(40 · L^1.9 + 60)` (poz. 1 → 100, poz. 10 → ~3 240, poz. 50 → ~67 400, poz. 99 → ~249 000).
+- `expDoNastępnego(L) = round((40 · L^1.9 + 60) × expToNext(L))` (poz. 1 → 100, poz. 10 → ~3 240, poz. 50 → ~67 400,
+  poz. 99 → ~249 000). S87: krzywa `expToNext` (`Data/LevelCurves`, 1 do 20.) mnoży też nagrody zadań (ułamki
+  `expToNext`); kotwice 45 / 70 / 100 = 1 / 1 / 1, bo krzywa potworów S87 sama wydłużyła pasma do 18 / 27 / 45 h
+  (cel D4 14 / 25 / 41 h ±25%; 20–45 ponad celem stroi S92).
 - EXP z potwora: `round(8 + 6 · Lpotwora^1.25)`; Elita ×4, Elita II ×12, boss ×60; od S32 razy wytrzymałość rodzaju
   `hpMul^0.75 × (atkMul × szybkość)^0.25` (niedźwiedź brunatny ×1,26, królik ×0,57, wrona ×0,86; bossy ×1).
 - Różnica poziomów (gracz − potwór = d): d ≤ 5 → 100%; d > 5 → `−15%` za każdy poziom ponad 5, min 5%. Potwór wyżej: `+4%` za poziom, max +20%.
@@ -312,7 +315,7 @@ ok. +18 / +40 / +85 / +120%.
 
 Zdolności rzadkości są w danych, nie w porównaniach id: `valuable` (potwierdzenie sprzedaży i rozbioru, światło przy
 broni; od Heroicznego), `announce` (legenda / mityk), `reveal` (okno odsłonięcia; od Legendarnego), `legendCore`
-(rdzeń legendy przy ulepszaniu od +7), `quickSell` (Zwykły, Unikatowy), `dismantle`.
+(rdzeń legendy przy ulepszaniu od +8, S87; wcześniej od +7), `quickSell` (Zwykły, Unikatowy), `dismantle`.
 
 **Ręcznie zrobione przedmioty bossów** (12, `Items/Uniques.luau`) są **Mityczne**: stałe bonusy, baza ×1.3 (bez
 dodatkowego mnożnika rzadkości), własna nazwa i opis. Próg 95 broni nazywa się „Eteryczny” (nie „Mityczny”).
@@ -360,7 +363,10 @@ Każdy przedmiot ma w tooltipie „Rzadkość · Kategoria” (broń jedno-/dwur
 - Pula bonusów per typ slotu (broń: atak, kryt, obr. kryt., szybkość ataku, przebicie, wampiryzm, SIŁ/ZRĘ/INT; zbroja: HP, obrona, odp. mag., odporności, WIT; biżuteria: wszystkie staty główne, kryt, unik, celność, regeneracje, bonus EXP/złota/dropu; buty: szybkość ruchu, unik; itd.). Pula w `Data/Bonuses.luau`.
 - Każdy bonus ma zakres `min..max` skalowany `ilvl` (S32): statystyki główne `× (1 + ilvl/20)`, HP / mana / obrona /
   odporność magiczna / przebicie / regeneracje `× (6 + 2,2·ilvl) / 8,2` (jak bazy przedmiotów), procentowe
-  `× (1 + ilvl/60)`. **Atak fizyczny i magiczny to procent ataku** (+1…2,2%; płaskie +2…5 było +50% ataku na
+  `× (1 + min(ilvl, 20)/60)` (S87: limit skali na ilvl 20, najwyżej ×1,33 zamiast ×2,67 na 100; stałe w
+  `Bonuses.scaling`; linie wylosowane wcześniej zostają). **Broń dwuręczna** (S87, odczyt w `ItemRoll.itemStats`):
+  linie zwykłe wylosowanej broni dwuręcznej liczą się ×2,7 (`Rarities.twoHandedBonusMul`; linie legendarne,
+  mityczne i przedmioty nazwane bez mnożnika). **Atak fizyczny i magiczny to procent ataku** (+1…2,2%; płaskie +2…5 było +50% ataku na
   poziomie 1 i +3% na 20). Wynik: `losowe(min,max) × mnożnikZakresuRzadkości`, zaokrąglony.
 - **Pula filtrowana po klasie** (S32, `Bonuses.classStats`): przedmiot losuje tylko bonusy przydatne którejś z jego
   klas (miecz Wojownika bez INT i ataku magicznego); biżuteria (bez klasy) losuje dla klasy, dla której wypadła.
@@ -429,10 +435,11 @@ Każdy przedmiot ma w tooltipie „Rzadkość · Kategoria” (broń jedno-/dwur
 - Poziomy +0 → +9. Szansa na sukces przy próbie przejścia na poziom N: `110% − 10%·N` (N=1: 100%, N=2: 90%, …, N=9: 20%).
 - **Porażka: przedmiot spada o 1 poziom** (z +1 nie spada niżej niż +0).
 - **Zwój Ochrony** (jednorazowy, zużywany przy próbie): przy porażce poziom nie spada. Do zdobycia: drop z Elit II i bossów, alchemik, Smocza Waluta.
-- Każdy poziom: `+6%` statystyk bazowych przedmiotu (broń: obrażenia, zbroja: obrona/HP; biżuteria: bonusy bazowe), kumulatywnie (+9 = +54%). Bonusy losowe się nie zmieniają.
-- Koszt: złoto `round(ilvl × k(ilvl) × (N+1)^1.6)` (S32, `Config.Upgrade`: `k = 4` do ilvl 20, potem liniowo do 40
-  na ilvl 100; przed S32 `k = 40` wszędzie i +1 broni ilvl 10 kosztowało więcej niż całe złoto z poziomu 10) + materiały:
-  - +1…+3: Pył Esencji × (2N), +4…+6: Odłamek Esencji × N, +7…+9: Kryształ Esencji × (N−5). Legendarne i Mityczne zawsze dodatkowo 1 Rdzeń Legendy od +7 (zdolność `legendCore`).
+- Każdy poziom: `+6%` statystyk bazowych przedmiotu (broń: obrażenia, zbroja: obrona/HP; biżuteria: bonusy bazowe), kumulatywnie (+9 = +54%). Bonusy losowe się nie zmieniają. Broń dwuręczna: `+6,6%` na poziom (S87, `Rarities.upgradeStatPerLevelTwoHanded`; cecha broni dalej 6%).
+- Koszt: złoto `round(ilvl × k(ilvl) × (N+1)^1.6)` (S32, `Config.Upgrade`: `k = 4` do ilvl 20, potem liniowo do 20
+  na ilvl 100 (S87, było 40: +1…+3 broni na 100. poziomie 1,7 dochodu poziomu → 0,84); przed S32 `k = 40` wszędzie i +1
+  broni ilvl 10 kosztowało więcej niż całe złoto z poziomu 10) + materiały:
+  - +1…+3: Pył Esencji × (2N), +4…+6: Odłamek Esencji × N, +7…+9: Kryształ Esencji × (N−5). Legendarne i Mityczne zawsze dodatkowo 1 Rdzeń Legendy od +8 (S87, `Config.Upgrade.legendCoreFrom`, było od +7; zdolność `legendCore`).
 - UI ulepszania: przedmiot w środku, koszty, szansa w %, przycisk „Ulepsz”, checkbox Zwoju Ochrony. Animacja napięcia (ok. 1.5 s, iskry, narastający dźwięk) → wynik (złoty błysk sukcesu / pęknięcie przy porażce). Komunikat globalny dla +9 na legendzie.
 - Ulepszony przedmiot ma w nazwie `+N` i świecącą ramkę od +7.
 
@@ -459,7 +466,9 @@ Każdy przedmiot ma w tooltipie „Rzadkość · Kategoria” (broń jedno-/dwur
 ## 9. Mikstury (lekarz)
 
 - Trzy rodzaje: Życie (HP), Mana, Energia. Pięć jakości: Mała, Średnia, Duża, Wielka, Potężna. Przywracają odpowiednio 150 / 500 / 1 500 / 4 000 / 10 000 punktów (energia: 30/60/100/150/250). Ceny: 10 / 60 / 250 / 900 / 3 000 złota.
-- Każdą jakość można kupić od razu (bez wymagań poziomu), tylko za złoto.
+- Jakości Mała, Średnia i Duża bez wymagań poziomu; Wielka od 45., Potężna od 70. (S87, `Consumables` `level`,
+  `Logic/Potions.requiredLevel`; te same progi dla HP, many i energii, także dla mikstur kupionych wcześniej: sklep,
+  plecak i opis pokazują próg, picie poniżej progu odmawia).
 - 3 sloty mikstur na pasku (HP / Mana / Energia), klawisze Z / X / C, na mobile 3 okrągłe przyciski. Wspólny odstęp na rodzaj: 1,5 s × krzywa poziomu (1,5 s do 20., 6 s na 45., ok. 10 s od 70.; `Logic/Potions.interval`, S54). Gracz wybiera, którą jakość podpiąć.
 - Gildia może dawać zniżkę u lekarza.
 
@@ -609,7 +618,12 @@ tylko na niego i członków jego drużyny. Szczegóły: ROZWOJ §9.
 - Statystyki z poziomu (od S18, `Data/Combat`): `HP = 55 + c·15·L^1.55` (c = `monsterHpComp`, S66),
   `atak = 4 + 2.5·L^0.88`, `obrona = 10·L × defMul`, `odporność magiczna = 8·L × mresMul` (S66), atak co 2,0 s /
   szybkość rodzaju. Mnożniki per rodzaj (`hpMul`, `atkMul`, `defMul`, `mresMul`, `speed`) w danych. Rodzina z
-  `Data/Families`; rodzaje zwinne mają unik, ale tylko na ataki podstawowe graczy (S66). **Członek grupy** zadaje obrażenia × `1 / 0,85 / 0,72 / 0,62` dla grupy 1 / 2 / 3 / 4 (S32,
+  `Data/Families`; rodzaje zwinne mają unik, ale tylko na ataki podstawowe graczy (S66). S87: HP i atak × krzywe
+  `monsterHp` / `monsterAtk`, Elita dodatkowo × `eliteHp` / `eliteDmg`, Elita II × `elite2Hp` / `elite2Dmg`
+  (`Data/LevelCurves`, liczone od poziomu końcowego potwora, dokładnie 1 do 20.; kotwice 45 / 70 / 100 tymczasowe:
+  HP 1,20 / 1,32 / 1,47, atak 1,07 / 1,11 / 1,14, Elita 1,08–1,13 / 1,05–1,07, Elita II 1; S92–S94 je przejmują).
+  Tabele regionów: szansa pary Elit w jaskini `elitePairChance` (0,5) i `dropFactor` (1: mnoży wagi Unikatu i Heroika
+  potworów regionu, Zwykły przejmuje różnicę). **Członek grupy** zadaje obrażenia × `1 / 0,85 / 0,72 / 0,62` dla grupy 1 / 2 / 3 / 4 (S32,
   `Combat.groupDamageMul`): cała grupa bije naraz, więc grupa 4 zadawała ok. 10× tyle co jeden potwór.
 - **Cele balansu** (S32, model `tests/Balance.luau`, sprawdza `balance.spec`, raport `docs/BALANS.md`; gracz używa
   zwykłych ataków + 1–2 umiejętności, bez mikstur, „ekwipunek na poziomie” = broń + druga ręka + 4 części zbroi +
@@ -695,8 +709,11 @@ Po testach S17: **więcej rodzajów na każdej mapie (min. 8–10 na mapę teren
 - Przykład Grimrok (20): Faza 1: zamach (stożek), skok na losowego gracza (okrąg). Faza 2 (70%): przyzywa 4 gobliny co 20 s. Faza 3 (35%): wir (okrąg 10 st., trzeba uciec), +25% szybkości.
   S32: zwykłe ciosy słabsze (`atkMul` 1,2 → 0,32), niebezpieczne są ataki z telegrafem (zamach ×4,5, skok ×6, wir ×7
   ataku): wir trafia Maga L20 z ekwipunkiem na poziomie za ok. 67% HP (wcześniej ok. 150% — zabijał jednym ciosem).
+- **Wybór ataku** (S87, `Logic/BossSchedule`, ta sama funkcja w grze i w modelu): spośród gotowych ataków fazy ten
+  z największą zaległością względem swojego odnowienia; każdy atak dostaje co najmniej połowę swojego tempa (inferno
+  Azgora i pierścień lodu Vaelgratha wchodzą). Odstęp między atakami i obrażenia lawy / burzy w `Data/BossTuning`.
 - Łup wspólny: 3–4 przedmioty Unikatowe/Heroiczne (+1 na każdego gracza powyżej 3) rozdzielane wg zasad grupy, złoto, materiały, szansa na legendarne błogosławieństwo i Zwój Rozwiązania.
-- **Rzut osobisty** (S30, każdy zwycięzca, worek widoczny tylko dla niego): legenda 20% + 5 pkt. proc. za każde zabicie bez legendy, pewna przy 8. (średnio ok. 3,4 zabicia); mityk 4% + 1 pkt. proc., pewny przy 30. (średnio ok. 9,8). Trafienie zeruje licznik (`character.bossPity`). Legenda: losowy Legendarny przedmiot na poziomie bossa (80% dla klasy gracza); mityk: w 50% ręczny przedmiot bossa (pierwszeństwo dla klasy), inaczej losowy Mityczny dla klasy (4 bonusy + 2 linie legendarne). Szanse widać na karcie lochu i w karcie nagrody po walce; mityk ma osobne, mocniejsze ogłoszenie na serwerze.
+- **Rzut osobisty** (S30, każdy zwycięzca, worek widoczny tylko dla niego): legenda 20% + 5 pkt. proc. za każde zabicie bez legendy, pewna przy 8. (średnio ok. 3,4 zabicia); mityk 4% + 1 pkt. proc., pewny przy 30. (średnio ok. 9,8). Trafienie zeruje licznik (`character.bossPity`). Legenda: losowy Legendarny przedmiot na poziomie bossa (80% dla klasy gracza); mityk: w 50% ręczny przedmiot bossa (tylko pasujący klasie), inaczej losowy Mityczny dla klasy (4 bonusy + 2 linie legendarne); S87: Mityk zawsze dla klasy zwycięzcy (gdy żaden ręczny nie pasuje, np. Vaelgrath dla Łowcy, losowy Mityczny dla klasy, `Loot.pickUsable`). Szanse widać na karcie lochu i w karcie nagrody po walce; mityk ma osobne, mocniejsze ogłoszenie na serwerze.
 
 ## 17. Grupa
 
@@ -720,6 +737,8 @@ Po testach S17: **więcej rodzajów na każdej mapie (min. 8–10 na mapę teren
 - **Budżet 1→20** (S32, `docs/BALANS.md`, Wojownik, fabuła + połowa questów pobocznych): ok. 6 tys. złota z zabić,
   3 tys. ze sprzedaży dropu (≈ 45% złota z zabić), 11 tys. z questów; mikstury ok. 2% dochodu; +1…+3 broni z poziomu
   kosztuje 50–100% dochodu poziomu. Plecaki: 30 miejsc 300, 45 miejsc 1500 (poz. 8), 60 miejsc 5000 (poz. 15).
+- **Ulepszenia 20–100** (S87, `Config.Upgrade.goldHigh` 20): +1…+3 broni kosztuje 0,46–0,84 dochodu poziomu
+  (25–100), +1…+9 z ochroną 11–20 poziomów dochodu (cel G9: 0,45–1,05 i 12–25).
 
 ## 19. Gildie
 

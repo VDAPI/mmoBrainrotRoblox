@@ -2,8 +2,8 @@
 -- Balance targets, checked with the model in tests/Balance.luau (expected values from the game's own modules).
 --   * S32 targets of levels 1-20 (Balance.targets1_20): a report until S91 retunes 1-20 (owner answer 4); the
 --     structural checks of the S32 blocks stay asserted. The 1-20 numbers themselves: tests/balance1_20.spec.
---   * Global targets 20-100 (Balance.targetsGlobal, G1-G9, G11-G13; G7-G9 from S84): a report until S87 sets
---     GLOBAL_ASSERT.
+--   * Global targets 20-100 (Balance.targetsGlobal, G1-G9, G11-G13; G7-G9 from S84): asserted from S87
+--     (GLOBAL_ASSERT) except Balance.GLOBAL_REPORT_ONLY.
 --   * Regions (Balance.targetsRegion): asserted where Balance.TUNED says so (S83: the Meadows' kinds and Grimrok's
 --     schedule only), printed elsewhere.
 --   * The balance ledger (S83, balance plan 2.6): always asserted.
@@ -25,7 +25,10 @@ local MonsterStats = require("../src/shared/Logic/MonsterStats")
 local T = require("./Test")
 
 local S32_ASSERT = false -- S83: report mode until S91 (owner answer 4)
-local GLOBAL_ASSERT = false -- S87 turns this on
+-- S87 (J1): rows of the global block left to a later session (the table lives in tests/Balance.luau, the report reads
+-- it too); every other row without `report` is asserted.
+local GLOBAL_REPORT_ONLY = B.GLOBAL_REPORT_ONLY
+local GLOBAL_ASSERT = true -- S87
 -- Region switches and thresholds live in tests/Balance.luau (TUNED, REGION_TARGETS: the report reads them too).
 local TUNED = B.TUNED
 local REGION_TARGETS = B.REGION_TARGETS
@@ -272,25 +275,71 @@ end)
 
 -- 20-100 ---------------------------------------------------------------------------------------------------------
 
-T.describe("Balance 20-100: global (report until S87)", function()
+T.describe("Balance 20-100: global (asserted from S87)", function()
 	local rows = B.targetsGlobal()
 	-- S85 (J2): G10 = T-SK4 (Mage) and T-SK5 (Cleric) from tests/SkillModel, in the same mode
 	for _, row in (require :: any)("./SkillModel").targetsG10() do
 		table.insert(rows, row)
 	end
-	if GLOBAL_ASSERT then
-		for _, row in rows do
-			if row.report == nil then
-				T.it(`{row.id} {row.label}`, function()
-					if not B.inBand(row) then
-						error(describeRow(row), 0)
-					end
-				end)
-			end
+	local asserted, reported = {}, {}
+	for _, row in rows do
+		if row.report ~= nil then
+			continue
+		elseif B.reportOnlyFor(row) then
+			table.insert(reported, row)
+		else
+			table.insert(asserted, row)
 		end
 	end
+	if GLOBAL_ASSERT then
+		T.it("every row outside GLOBAL_REPORT_ONLY is in band", function()
+			local bad = {}
+			for _, row in asserted do
+				if not B.inBand(row) then
+					table.insert(bad, describeRow(row))
+				end
+			end
+			if #bad > 0 then
+				error(`{#bad} row(s) out of band: {table.concat(bad, "; ", 1, math.min(#bad, 20))}`, 0)
+			end
+		end)
+	end
+	T.it("GLOBAL_REPORT_ONLY: every key matches a row, every session is above S87", function()
+		for key, entry in GLOBAL_REPORT_ONLY do
+			local found = false
+			for _, row in rows do
+				if B.reportKeyMatches(key, row) then
+					found = true
+					break
+				end
+			end
+			if not found then
+				error(`GLOBAL_REPORT_ONLY: dead key {key}`, 0)
+			end
+			T.expect({ key = key, later = (B.sessionNumber(entry.session) or 0) > 87 })
+				.toEqual({ key = key, later = true })
+			T.expect({ key = key, why = #entry.why > 0 }).toEqual({ key = key, why = true })
+		end
+	end)
 	T.it("global targets G1-G13 (printed)", function()
-		printReport("G", rows, 15)
+		local inBand = 0
+		for _, row in asserted do
+			inBand += if B.inBand(row) then 1 else 0
+		end
+		print(`G: {inBand}/{#asserted} w paśmie, w raporcie: {#reported}`)
+		local out = 0
+		for _, row in reported do
+			if not B.inBand(row) then
+				out += 1
+				if out <= 15 then
+					local entry = B.reportOnlyFor(row) :: any
+					print(`  {row.id} ({row.label}): {fmt(row.value)} → {entry.session}`)
+				end
+			end
+		end
+		if out > 15 then
+			print(`  … i {out - 15} więcej (docs/BALANS.md)`)
+		end
 		T.expect(#rows > 0).toBe(true)
 	end)
 end)
@@ -346,6 +395,7 @@ end)
 local AreaProfiles = require("../src/shared/Data/AreaProfiles")
 local AreaRates = require("../src/shared/Logic/AreaRates")
 local BalanceTables = require("./BalanceTables")
+local Bonuses = require("../src/shared/Data/Bonuses")
 local FightSim = require("../src/shared/Logic/FightSim")
 local Items = require("../src/shared/Data/Items")
 local LootTables = require("../src/shared/Data/LootTables")
@@ -750,7 +800,12 @@ T.describe("Balance 20-100: items, loot, defence (S84)", function()
 			end
 			for stat, list in samples do
 				local mean, sd = stats(list)
-				if not near(mean, expected[stat], sd, n) then
+				-- S87: expectedBonuses takes the rounded middle of the range; with the pct scale capped at ilvl 20 the
+				-- ranges are short, so a 0-decimal line may differ by up to half a rounding step x its share
+				local def = Bonuses.get(stat)
+				local share = expected[stat] / math.max(1e-9, ItemRoll.rollBonusValue(stat, 45, Rarities.HEROIC, 0.5))
+				local rounding = if def then 0.5 * 10 ^ -def.decimals * share else 0
+				if not near(mean, expected[stat], sd, n) and math.abs(mean - expected[stat]) > rounding then
 					error(`{defId} {stat}: mean {mean}, expectedBonuses {expected[stat]}`, 0)
 				end
 			end

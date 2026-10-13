@@ -248,6 +248,59 @@ describe("Boss item per winner (FIX 2026-10-09)", function()
 	it("the daily limit defaults to 3", function()
 		expect(Config.Boss.dailyRuns).toBe(3)
 	end)
+
+	-- S87 (balance plan): a Mythic from a boss always fits the winner's class (named if one fits, else rolled).
+	it("every Mythic fits the winner's class; named share as configured, 0 when no named item fits", function()
+		local classes = { "Warrior", "Hunter", "Mage", "Cleric" }
+		local function usable(defId: string, classId: string): boolean
+			local def = Items.get(defId) :: any
+			return def.classes == nil or table.find(def.classes, classId) ~= nil
+		end
+		for bossId, table_ in LootTables.bosses do
+			local always = table.clone(table_) :: any
+			always.mythicChance = 1
+			always.legendaryChance = 0
+			for _, classId in classes do
+				local rng = Rng.new(87)
+				local named = 0
+				local fits = false
+				for _, id in table_.named do
+					fits = fits or usable(id, classId)
+				end
+				for _ = 1, 500 do
+					local drop = Loot.rollBossItem(always, 0, classId, rng) :: any
+					expect(drop.rarity).toBe(Rarities.MYTHIC)
+					if not usable(drop.defId, classId) then
+						error(`{bossId} {classId}: Mythic {drop.defId} does not fit the class`, 0)
+					end
+					if (Items.get(drop.defId) :: any).fixedBonuses then
+						named += 1
+					else
+						expect(drop.forClass).toBe(classId)
+					end
+				end
+				if fits then
+					expect(named / 500).toBeNear(Config.BossLoot.mythicNamedShare, 0.08)
+				else
+					expect({ bossId = bossId, classId = classId, named = named }).toEqual({
+						bossId = bossId,
+						classId = classId,
+						named = 0,
+					})
+				end
+			end
+		end
+	end)
+
+	it("pickUsable without a class is pickItem (same choice, same Rng use)", function()
+		local a, b = Rng.new(5), Rng.new(5)
+		for _ = 1, 200 do
+			expect(Loot.pickUsable(LootTables.bossSlots, 70, nil, a)).toBe(
+				Loot.pickItem(LootTables.bossSlots, 70, 1, nil, b)
+			)
+		end
+		expect(a:next()).toBe(b:next())
+	end)
 end)
 
 describe("Rarity migration S30", function()

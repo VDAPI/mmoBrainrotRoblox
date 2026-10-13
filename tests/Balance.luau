@@ -35,6 +35,8 @@ local Blessings = require("../src/shared/Data/Blessings")
 local Bonuses = require("../src/shared/Data/Bonuses")
 local Bosses = require("../src/shared/Data/Bosses")
 local BossScaling = require("../src/shared/Logic/BossScaling")
+local BossSchedule = require("../src/shared/Logic/BossSchedule")
+local BossTuning = require("../src/shared/Data/BossTuning")
 local BuffCategories = require("../src/shared/Data/BuffCategories")
 local Classes = require("../src/shared/Data/Classes")
 local Config = require("../src/shared/Config")
@@ -48,6 +50,7 @@ local ItemRoll = require("../src/shared/Logic/ItemRoll")
 local ItemTraits = require("../src/shared/Data/ItemTraits")
 local ItemValue = require("../src/shared/Logic/ItemValue")
 local Items = require("../src/shared/Data/Items")
+local LevelCurves = require("../src/shared/Logic/LevelCurves")
 local Loot = require("../src/shared/Logic/Loot")
 local LootTables = require("../src/shared/Data/LootTables")
 local Luck = require("../src/shared/Logic/Luck")
@@ -366,6 +369,36 @@ export type PlayerExtra = {
 	hooks: { [string]: number }?,
 }
 
+-- ItemRoll.itemStats for the model's items. S87: a rolled two-handed weapon's regular lines count x
+-- Rarities.twoHandedBonusMul; the game rounds the product to the line's decimals, which would distort the model's
+-- expected (fractional) line values, so here the lines are multiplied without rounding (same fields:
+-- ItemRoll.isRegularLine, Rarities.twoHandedBonusMul). On-grid products give exactly ItemRoll.itemStats.
+-- mirrors ItemRoll.itemStats
+function Balance.itemStats(item: any): ItemRoll.ItemStats
+	local stats = ItemRoll.itemStats(item)
+	local def = Items.get(item.id) :: any
+	if not (stats.weapon and stats.weapon.twoHanded) or (def and def.fixedBonuses) or #(item.bonuses or {}) == 0 then
+		return stats
+	end
+	local bare = table.clone(item)
+	bare.bonuses = {}
+	local out = ItemRoll.itemStats(bare)
+	for _, bonus in item.bonuses do
+		local bonusDef = Bonuses.get(bonus.stat)
+		if bonusDef then
+			local v = bonus.v * (if ItemRoll.isRegularLine(bonus.stat) then Rarities.twoHandedBonusMul else 1)
+			table.insert(out.bonuses, { id = bonus.stat, v = v, quality = 0.5 })
+			if bonusDef.hook then
+				out.hooks[bonusDef.hook] = (out.hooks[bonusDef.hook] or 0) + v
+			elseif bonusDef.stat then
+				local target = if bonusDef.mode == "pct" then out.pct else out.flat
+				target[bonusDef.stat] = (target[bonusDef.stat] or 0) + v
+			end
+		end
+	end
+	return out
+end
+
 function Balance.playerFromItems(
 	classId: string,
 	level: number,
@@ -380,7 +413,7 @@ function Balance.playerFromItems(
 	local traits: { [string]: ItemRoll.TraitRoll } = {}
 	local element: string? = nil
 	for _, item in items do
-		local stats = ItemRoll.itemStats(item)
+		local stats = Balance.itemStats(item)
 		local trait = stats.trait
 		local scale = if trait and traitScale then traitScale[trait.id] else nil
 		if trait and scale and scale ~= 1 then
@@ -593,10 +626,8 @@ function Balance.power(p: Player, level: number?, opts: PowerOpts?): number
 	if opts and opts.traits then
 		return Balance.situationPower(p, Balance.situationCtx(p, opts.situation or "single", level))
 	end
-	local m = Balance.monster(Balance.GENERIC, level or p.level)
-	local hit = Balance.hit(m, p)
-	local ehp = p.values.maxHp / math.max(hit, 1e-6)
-	return math.sqrt(Balance.dps(p, m) * ehp)
+	-- S87: the same number as FightSim.power with SKILL_DPS (/balance)
+	return FightSim.power(p :: any, Balance.monster(Balance.GENERIC, level or p.level), Balance.SKILL_DPS)
 end
 
 -- Power of a full set of `rarity` relative to Common (same ilvl): 0.12 = +12 %.
@@ -960,6 +991,12 @@ function Balance.regionAt(level: number): number
 	return if level < 20 then 1 elseif level < 45 then 2 elseif level < 70 then 3 else 4
 end
 
+-- S87 C4: LevelCurves.dropFactor of the region of regionAt(level), the factor Loot.rollMonsterLoot and
+-- AreaRates.rates pass for that region's monsters (dropsPerHour, materialSupply, dismantlePerItem read it).
+function Balance.dropFactorAt(level: number): number
+	return LevelCurves.dropFactor(Balance.REGION_IDS[Balance.regionAt(level)])
+end
+
 local playerCache: { [string]: Player } = {}
 -- Balance.player with the default gear, cached (the world model asks for the same players hundreds of times).
 function Balance.cachedPlayer(classId: string, level: number): Player
@@ -1136,7 +1173,11 @@ function Balance.hpPotions(): { Potion }
 	local out: { Potion } = {}
 	for q = 1, 5 do
 		local def = Items.get(`potion_hp_{q}`) :: any
-		table.insert(out, { quality = q, heal = def.use.amount, price = def.buyPrice, level = def.level or 1 })
+		-- S87: the level a potion needs (Great 45, Mighty 70), the same function as PotionService and the shop
+		table.insert(
+			out,
+			{ quality = q, heal = def.use.amount, price = def.buyPrice, level = Potions.requiredLevel(def) }
+		)
 	end
 	defaultPotions = out
 	return out
@@ -1541,15 +1582,16 @@ end
 
 -- Boss model (S83) ----------------------------------------------------------------------------------------------
 
--- Mirror of `local GLOBAL_GAP` in src/server/Entities/Boss.luau (seconds after an attack's windup before the next
--- attack of any kind); balancemodel.spec checks the server text.
-Balance.BOSS_GLOBAL_GAP = 2.2
+-- Seconds after an attack's windup before the next attack of any kind (S87: Data/BossTuning.globalGap, read by
+-- Entities/Boss.Step too; balancemodel.spec checks that the server reads it).
+Balance.BOSS_GLOBAL_GAP = BossTuning.globalGap
 
 -- Scripted boss hazards (server BossScripts, multiplier of the boss attack like CombatService): Azgor's lava
--- outside the shrinking safe circle, Vaelgrath's storm away from the braziers. Checked as text by balancemodel.spec.
+-- outside the shrinking safe circle, Vaelgrath's storm away from the braziers. S87: damage from Data/BossTuning
+-- (the scripts require it); phase, tick and kind stay here, the ticks checked as text by balancemodel.spec.
 Balance.HAZARDS = {
-	azgor = { phase = 3, damage = 0.7, every = 1, damageKind = "magic" },
-	vaelgrath = { phase = 3, damage = 1.4, every = 3, damageKind = "magic" },
+	azgor = { phase = 3, damage = BossTuning.hazards.azgor.lava, every = 1, damageKind = "magic" },
+	vaelgrath = { phase = 3, damage = BossTuning.hazards.vaelgrath.freezingStorm, every = 3, damageKind = "magic" },
 } :: { [string]: { phase: number, damage: number, every: number, damageKind: string } }
 
 -- Numeric "local NAME = 12.5" lines of a server boss script, read as text (the scripts need Roblox; same rule as
@@ -1576,13 +1618,23 @@ export type CadenceOpts = {
 	globalStart: number?, -- 4 s (Boss.new: nextGlobal = now + 4)
 	firstUse: number?, -- 5 s (mean of 3 + U(0, 4))
 	gap: number?, -- BOSS_GLOBAL_GAP
-	pick: ((ready: { any }, t: number, state: CadenceState) -> any?)?, -- default: first ready in list order
+	pick: ((ready: { any }, t: number, state: CadenceState) -> any?)?, -- default: Logic/BossSchedule.pick (S87)
 }
 export type Cadence = { perMinute: { [string]: number }, rateShare: { [string]: number }, casting: number }
 
--- Attack schedule of `def` in `phase` (Entities/Boss.Step at a fixed step): when t >= nextGlobal, the first attack
--- of the phase whose cooldown is over (list order), or opts.pick's choice among the ready ones (S87 plugs
--- Logic/BossSchedule in here); then nextAttack = t + cooldown and nextGlobal = t + windup + gap.
+-- S87: the game's choice (Logic/BossSchedule: most overdue relative to its cooldown). -- mirrors Entities/Boss.Step
+function Balance.PICK_SCHEDULE(ready: { any }, t: number, state: CadenceState): any?
+	return BossSchedule.pick(ready, t, state.nextAttack)
+end
+
+-- The S83 rule (first ready attack in list order), kept for tests to reproduce the S83 control numbers.
+function Balance.PICK_LIST_ORDER(ready: { any }): any?
+	return ready[1]
+end
+
+-- Attack schedule of `def` in `phase` (Entities/Boss.Step at a fixed step): when t >= nextGlobal, opts.pick's
+-- choice among the ready attacks (default Logic/BossSchedule.pick, S87; Balance.PICK_LIST_ORDER = the S83 rule);
+-- then nextAttack = t + cooldown and nextGlobal = t + windup + gap.
 -- rateShare = uses per minute / (60 / cooldown); casting = time spent winding up / time.
 function Balance.bossCadence(def: any, phase: number, opts: CadenceOpts?): Cadence
 	local o: CadenceOpts = opts or {}
@@ -1605,23 +1657,10 @@ function Balance.bossCadence(def: any, phase: number, opts: CadenceOpts?): Caden
 		local t = i * step
 		if t >= state.nextGlobal then
 			local chosen = nil
-			if o.pick then
-				local ready = {}
-				for _, attack in attacks do
-					if t >= state.nextAttack[attack.id] then
-						table.insert(ready, attack)
-					end
-				end
-				if #ready > 0 then
-					chosen = o.pick(ready, t, state)
-				end
-			else
-				for _, attack in attacks do
-					if t >= state.nextAttack[attack.id] then
-						chosen = attack
-						break
-					end
-				end
+			local pick = o.pick or Balance.PICK_SCHEDULE
+			local ready = BossSchedule.ready(attacks, phase, t, state.nextAttack)
+			if #ready > 0 then
+				chosen = pick(ready, t, state)
 			end
 			if chosen then
 				state.nextAttack[chosen.id] = t + chosen.cooldown
@@ -2399,6 +2438,149 @@ function Balance.targetsGlobal(): { TargetRow }
 		table.insert(rows, row)
 	end
 	return rows
+end
+
+-- S87 (J1): rows of the global block that this session's levers do not close, each with the session that takes it
+-- over (S88 A0, S89 A1, S90-S94 decide it: remove the entry = assert, or keep it with their number). Keys: an `id`
+-- (every row of the target), `id|label` (one row) or a prefix of `id|label` ending in `*`. balance.spec asserts every
+-- other row without `report`, that each key matches a row and that each session is above S87. The numbers in `why`
+-- are the S87 values.
+Balance.GLOBAL_REPORT_ONLY = {
+	G12 = { session = "S91", why = "fixture 1-20 re-asserted by S91" },
+	["G13.band|20–45: godzin (cel D4 14 h)"] = {
+		session = "S92",
+		why = "17.98 h > 17.5: the monster curve lengthens 20-45 (15.7 -> 18.0 h); expToNext stays >= 1, the 45 anchor is S92's",
+	},
+} :: { [string]: { session: string, why: string } }
+do
+	local R = Balance.GLOBAL_REPORT_ONLY
+	local function add(key: string, session: string, why: string)
+		assert(R[key] == nil, `GLOBAL_REPORT_ONLY: duplicate {key}`)
+		R[key] = { session = session, why = why }
+	end
+	-- G7 (D1): the Hunter's Heroic set 25.1-26.7 % "z cechami" (band 15-25 %) after the pct cap; traits are S88's
+	for L = 25, 100, 5 do
+		add(`G7|Hunter {L}: heroic (z cechami)`, "S88", "Hunter Heroic 25.1-26.7 % with traits after the pct cap")
+	end
+	-- G9 (D3): at 20 the 1-20 costs (S91); at 25 +1..+9 protected 10.7 levels of income (band 12-25, S92's band)
+	for _, c in Balance.CLASSES do
+		add(`G9.up3|{c} 20: +1…+3 broni / dochód poziomu`, "S91", "0.442 < 0.45: upgrade gold up to ilvl 20 is 1-20")
+		add(
+			`G9.up9|{c} 20: +1…+9 z ochroną (poziomy dochodu)`,
+			"S91",
+			"10.43 < 12: upgrade gold up to ilvl 20 is 1-20"
+		)
+		add(`G9.up9|{c} 25: +1…+9 z ochroną (poziomy dochodu)`, "S92", "10.74 < 12 at 25 after goldHigh 20")
+	end
+	-- G10 (G2, G3): T-SK5 at 20 / 25 (the heal curve is 1 at 20; 21-44 are S92's anchors); T-SK4 of the two builds
+	-- apart (manaCost.Mage = geometric mean of what each needs): the path costs are S90's
+	add("G10|T-SK5 Cleric healer.dungeon na guardian.defender 20", "S91", "0.227 < 0.25 at 20 (heal curve = 1)")
+	add("G10|T-SK5 Cleric healer.dungeon na guardian.defender 25", "S92", "0.235 < 0.25 at 25 (anchors 21-44)")
+	for _, L in { 45, 60, 65, 70, 75, 80, 85, 90, 95, 100 } do
+		add(
+			`G10|T-SK4 Mage destroyer.destroyerExp {L}`,
+			"S90",
+			"1.43-2.00 < 2: Cascade in the income (S86); path costs"
+		)
+	end
+	for _, L in { 45, 65, 95, 100 } do
+		add(`G10|T-SK4 Mage arcanist.arcanistBoss {L}`, "S90", "3.02-3.26 > 3 on the shared mana curve; path costs")
+	end
+	-- G8 (D2): "bez cech" rows out of 0.97-1.035 with twoHandedBonusMul 2.7 / 6.6 % per level (the most rows, Legendary
+	-- and Mythic +0 at 45-100 first): legendary and mythic lines get no multiplier (S88 E6)
+	for _, label in
+		{
+			"Warrior sword2h legendary +0 L20",
+			"Warrior spear2h legendary +0 L20",
+			"Warrior spear2h legendary +9 L20",
+			"Warrior axe2h mythic +0 L45",
+			"Warrior axe2h mythic +9 L45",
+			"Warrior axe2h mythic +0 L70",
+			"Warrior axe2h mythic +9 L70",
+			"Warrior axe2h mythic +0 L100",
+			"Warrior axe2h mythic +9 L100",
+			"Mage staff mythic +9 L100",
+			"Mage runestaff mythic +9 L100",
+		}
+	do
+		add(
+			`G8|{label}: bez cech`,
+			"S88",
+			"axe Mythic 0.951-0.957, staves Mythic +9 0.960-0.966, Legendary at 20 1.036-1.043 (S87 levers)"
+		)
+	end
+	-- G8 "z cechami": the missing second trait of a two-handed weapon (0.87-0.98) and the Holy Staff's Saving Blow
+	-- (1.9-3.6); every row but the ones in band on the S87 data (S88 E6)
+	local inBand: { [string]: boolean } = {}
+	for _, label in
+		{
+			"Warrior sword2h legendary +0 L20",
+			"Warrior sword2h legendary +9 L20",
+			"Warrior sword2h mythic +0 L20",
+			"Warrior sword2h mythic +9 L20",
+			"Warrior sword2h mythic +0 L45",
+			"Warrior sword2h mythic +0 L70",
+			"Warrior sword2h mythic +0 L100",
+			"Mage staff unique +0 L20",
+			"Mage staff unique +9 L20",
+			"Mage staff heroic +0 L20",
+			"Mage staff heroic +9 L20",
+			"Mage staff legendary +0 L20",
+			"Mage staff legendary +9 L20",
+			"Mage staff unique +0 L45",
+			"Mage staff unique +9 L45",
+			"Mage staff heroic +0 L45",
+			"Mage staff heroic +9 L45",
+			"Mage staff legendary +0 L45",
+			"Mage staff legendary +9 L45",
+			"Mage staff unique +0 L70",
+			"Mage staff heroic +0 L70",
+			"Mage staff heroic +9 L70",
+			"Mage staff legendary +0 L70",
+		}
+	do
+		inBand[label] = true
+	end
+	for _, pair in Balance.G8_PAIRS do
+		for _, L in { 20, 45, 70, 100 } do
+			for rarity = Rarities.COMMON, Rarities.MYTHIC do
+				for _, up in { 0, 9 } do
+					local label = `{pair.classId} {pair.weapon} {Rarities.get(rarity).key} +{up} L{L}`
+					if not inBand[label] then
+						add(
+							`G8|{label}: z cechami`,
+							"S88",
+							"one trait against two (0.87-0.98), Holy Staff Saving Blow 1.9-3.6"
+						)
+					end
+				end
+			end
+		end
+	end
+end
+
+-- Whether a GLOBAL_REPORT_ONLY key matches `row` (an id, `id|label` or a prefix of it ending in `*`).
+function Balance.reportKeyMatches(key: string, row: TargetRow): boolean
+	local full = `{row.id}|{row.label}`
+	if key == row.id or key == full then
+		return true
+	end
+	return string.sub(key, -1) == "*" and string.sub(full, 1, #key - 1) == string.sub(key, 1, -2)
+end
+
+-- The GLOBAL_REPORT_ONLY entry of a row, or nil (S87).
+function Balance.reportOnlyFor(row: TargetRow): { session: string, why: string }?
+	local R = Balance.GLOBAL_REPORT_ONLY
+	local hit = R[`{row.id}|{row.label}`] or R[row.id]
+	if hit then
+		return hit
+	end
+	for key, entry in R do
+		if Balance.reportKeyMatches(key, row) then
+			return entry
+		end
+	end
+	return nil
 end
 
 -- Regions (S83): TUNED[mapId] = true once its region session asserts it (S91 Meadows 1-20 in full, S92-S94 the
@@ -3924,9 +4106,9 @@ function Balance.materialsPerKill(kind: string, variant: string, mul: number?): 
 end
 
 -- Expected materials of dismantling one dropped +0 item of `variant` (rarity weights; the expected value of
--- Logic/Dismantle.roll: Rarities dismantle, chance x mean amount).
-function Balance.dismantlePerItem(variant: string, topTierMul: number?): { [string]: number }
-	local weights = ItemRoll.rarityWeights(variant, topTierMul)
+-- Logic/Dismantle.roll: Rarities dismantle, chance x mean amount); `dropFactor` = the region's (S87, default 1).
+function Balance.dismantlePerItem(variant: string, topTierMul: number?, dropFactor: number?): { [string]: number }
+	local weights = ItemRoll.rarityWeights(variant, topTierMul, dropFactor)
 	local total = 0
 	for _, w in weights do
 		total += w
@@ -4100,14 +4282,15 @@ export type MaterialSupply = {
 -- Materials per hour of `classId` at `level` (expected values; paceAt and elitesPerHour of the same level).
 function Balance.materialSupply(classId: string, level: number): MaterialSupply
 	local mods = Balance.dropMods(Balance.REGION_IDS[Balance.regionAt(level)])
+	local factor = Balance.dropFactorAt(level)
 	local pace = Balance.paceAt(classId, level)
 	local kills = 3600 / pace.secondsPerKill
 	local normal: { [string]: number } = {}
 	for id, n in Balance.materialsPerKill(pace.kind, "normal", mods.materialMul) do
 		normal[id] = n * kills
 	end
-	local items = AreaRates.itemsPerKill("normal", mods, 0) * kills
-	for id, n in Balance.dismantlePerItem("normal") do
+	local items = AreaRates.itemsPerKill("normal", mods, 0, factor) * kills
+	for id, n in Balance.dismantlePerItem("normal", nil, factor) do
 		normal[id] = (normal[id] or 0) + n * items
 	end
 	local eph, cave = Balance.elitesPerHour(classId, level)
@@ -4116,13 +4299,13 @@ function Balance.materialSupply(classId: string, level: number): MaterialSupply
 	for id, n in Balance.materialsPerKill(eliteKind, "elite", mods.materialMul) do
 		elite[id] = n * eph
 	end
-	local eliteItems = AreaRates.itemsPerKill("elite", mods, 0) * eph
-	for id, n in Balance.dismantlePerItem("elite") do
+	local eliteItems = AreaRates.itemsPerKill("elite", mods, 0, factor) * eph
+	for id, n in Balance.dismantlePerItem("elite", nil, factor) do
 		elite[id] = (elite[id] or 0) + n * eliteItems
 	end
 	local elite2: { [string]: number } = Balance.materialsPerKill(eliteKind, "elite2", mods.materialMul)
-	local items2 = AreaRates.itemsPerKill("elite2", mods, 0)
-	for id, n in Balance.dismantlePerItem("elite2") do
+	local items2 = AreaRates.itemsPerKill("elite2", mods, 0, factor)
+	for id, n in Balance.dismantlePerItem("elite2", nil, factor) do
 		elite2[id] = (elite2[id] or 0) + n * items2
 	end
 	local respawn = AreaSpawns.elite2Respawn(if cave.elite2 then cave.elite2.max else level)
@@ -4262,7 +4445,8 @@ end
 
 -- Drops per hour with luck (S84 H) ----------------------------------------------------------------------------------
 
--- Hunting ground multipliers of a region's drops: AreaProfiles.NEUTRAL (S87 adds dropFactor[region] here).
+-- Hunting ground multipliers of a region's drops: AreaProfiles.NEUTRAL. The region's LevelCurves.dropFactor goes
+-- next to them as the dropFactor argument (Balance.dropFactorAt, S87 C4), as in Loot.rollMonsterLoot.
 function Balance.dropMods(_region: string): AreaProfiles.Mods
 	return AreaProfiles.NEUTRAL
 end
@@ -4456,7 +4640,8 @@ function Balance.dropsPerHour(
 	profileId: string,
 	fortune: ("full" | "start" | false)?
 ): Drops
-	local key = `{classId}|{level}|{profileId}|{fortune}`
+	local factor = Balance.dropFactorAt(level)
+	local key = `{classId}|{level}|{profileId}|{fortune}|{factor}`
 	local cached = dropCache[key]
 	if cached then
 		return cached
@@ -4466,7 +4651,7 @@ function Balance.dropsPerHour(
 	local pace = Balance.paceAt(classId, level)
 	local kills = 3600 / pace.secondsPerKill
 	local normalTable = LootTables.byId[(Monsters.get(pace.kind) :: any).lootTable]
-	local count, top = AreaRates.itemsPerKill("normal", mods, luck.itemBonus)
+	local count, top = AreaRates.itemsPerKill("normal", mods, luck.itemBonus, factor)
 	local unique = kills * count * top * usableAt(normalTable.slotWeights, level, normalTable.classBias, classId)
 	local eph, cave = Balance.elitesPerHour(classId, level)
 	local eliteTable = LootTables.byId[(Monsters.get(cave.elites[1].kind) :: any).lootTable]
@@ -4475,11 +4660,11 @@ function Balance.dropsPerHour(
 		eliteMax = math.max(eliteMax, e.max)
 	end
 	local eliteBase = Loot.dropBaseLevel(level + (Combat.variants :: any).elite.levelAdd, "elite", eliteMax)
-	local eCount, eTop = AreaRates.itemsPerKill("elite", mods, luck.itemBonus)
+	local eCount, eTop = AreaRates.itemsPerKill("elite", mods, luck.itemBonus, factor)
 	local heroic = eph * eCount * eTop * usableAt(eliteTable.slotWeights, eliteBase, eliteTable.classBias, classId)
 	local mods2 = table.clone(mods) :: any
 	mods2.topTierMul = mods.topTierMul * luck.elite2Mul
-	local c2, t2 = AreaRates.itemsPerKill("elite2", mods2, luck.itemBonus)
+	local c2, t2 = AreaRates.itemsPerKill("elite2", mods2, luck.itemBonus, factor)
 	local base2 = Loot.dropBaseLevel(level + (Combat.variants :: any).elite2.levelAdd, "elite2", level)
 	local legendary = c2 * t2 * usableAt(eliteTable.slotWeights, base2, eliteTable.classBias, classId)
 	local eliteChance = Rarities.itemDrops.elite.chance * mods.itemChanceMul
@@ -4501,7 +4686,8 @@ end
 export type BossDrops = { legendary: number, mythic: number, heroic: number, extra: number }
 -- P2 (H5): items for the class per day of Config.Boss.dailyRuns kills of `bossId` (Loot.bossChances with Luck.boss
 -- of a Priest of Fortune; item luck never counts on bosses, ROZWOJ 6.2). Unique / Heroic items: the boss weights,
--- a Unique ennobled with luck.upgrade, a second item with luck.extra.
+-- a Unique ennobled with luck.upgrade, a second item with luck.extra. Mythic as Loot.rollBossItem (S87): a fitting
+-- named item, else a rolled Mythic of a base the class can wear.
 function Balance.bossDrops(classId: string, bossId: string, fortune: ("full" | "start")?): BossDrops
 	local members: { Luck.Member } = { { name = "player" } }
 	if fortune then
@@ -4518,8 +4704,23 @@ function Balance.bossDrops(classId: string, bossId: string, fortune: ("full" | "
 			namedUsable = 1
 		end
 	end
-	local mythicUsable = Config.BossLoot.mythicNamedShare * namedUsable
-		+ (1 - Config.BossLoot.mythicNamedShare) * Balance.usableShare(slots, boss.level, 1, classId)
+	-- S87: a rolled Mythic (and the substitute when no named item fits) comes from Loot.pickUsable: always for the
+	-- class when any slot of the boss tier has a base it can wear, else Loot.pickItem with class bias 1
+	local rolledUsable = Balance.usableShare(slots, boss.level, 1, classId)
+	local tiers, tier = slotTiers(), Items.generate.tierFor(boss.level)
+	for slot, w in slots do
+		local candidates = tiers[slot] and tiers[slot][tier]
+		if w > 0 and candidates then
+			for _, id in candidates do
+				local def = Items.get(id) :: any
+				if def.classes == nil or table.find(def.classes, classId) then
+					rolledUsable = 1
+				end
+			end
+		end
+	end
+	local named = if #boss.named > 0 then Config.BossLoot.mythicNamedShare else 0
+	local mythicUsable = named * (if namedUsable > 0 then 1 else rolledUsable) + (1 - named) * rolledUsable
 	local weights = Rarities.dropWeights.boss
 	local total = 0
 	for _, w in weights do

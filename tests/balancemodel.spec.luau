@@ -1,6 +1,7 @@
 --!strict
 -- The S83 world and boss model in tests/Balance.luau: boss schedule (control numbers on the data of 05b859d, the
--- attacks did not change since), the opts.pick hook for S87, the server constants the model mirrors, regions,
+-- attacks did not change since; S87: reproduced with Balance.PICK_LIST_ORDER, the default is Logic/BossSchedule and
+-- has its own spec), the opts.pick hook, the server constants the model mirrors, regions,
 -- quests on their own level, potions on the S54 interval and the cave Elites from the real spawners.
 local fs = require("@lune/fs")
 
@@ -13,7 +14,7 @@ local Quests = require("../src/shared/Data/Quests")
 local T = require("./Test")
 
 T.describe("Balance model: boss schedule", function()
-	-- Boss.Step every 0.05 s, list order, 600 s in one phase, nextGlobal from 4 s, first use 5 s, GLOBAL_GAP 2.2
+	-- Boss.Step every 0.05 s, list order (S83 rule), 600 s in one phase, nextGlobal from 4 s, first use 5 s, gap 2.2
 	local CONTROL: { { string | number } } = {
 		{ "grimrok", 1, "sweep", 7.5 },
 		{ "grimrok", 1, "leap", 3.7 },
@@ -34,33 +35,25 @@ T.describe("Balance model: boss schedule", function()
 		{ "vaelgrath", 3, "glacialRing", 1.8 },
 	}
 
-	T.it("the default choice reproduces the control numbers (+-0.15 / min)", function()
+	T.it("the S83 list order reproduces the control numbers (+-0.15 / min)", function()
+		local listOrder = { pick = B.PICK_LIST_ORDER }
 		for _, c in CONTROL do
 			local def = Bosses.byId[c[1] :: string]
-			local cad = B.bossCadence(def, c[2] :: number)
+			local cad = B.bossCadence(def, c[2] :: number, listOrder)
 			local got = cad.perMinute[c[3] :: string]
 			if got == nil or math.abs(got - (c[4] :: number)) > 0.15 then
 				error(`{c[1]} phase {c[2]} {c[3]}: {got} per minute, control {c[4]}`, 0)
 			end
 		end
-		local grimrok = B.bossCadence(Bosses.byId.grimrok, 3)
+		local grimrok = B.bossCadence(Bosses.byId.grimrok, 3, listOrder)
 		T.expect(grimrok.casting).toBeBetween(0.33, 0.37)
-		T.expect(B.bossCadence(Bosses.byId.grimrok, 1).rateShare.sweep).toBeNear(1, 1e-9)
+		T.expect(B.bossCadence(Bosses.byId.grimrok, 1, listOrder).rateShare.sweep).toBeNear(1, 1e-9)
 	end)
 
-	T.it("opts.pick decides among the ready attacks (S87's rule gives Azgor's inferno its turn)", function()
-		local function longestWaiting(ready: { any }, t: number, state: B.CadenceState): any
-			local best, bestValue = nil, -math.huge
-			for _, attack in ready do
-				local v = (t - state.nextAttack[attack.id]) / attack.cooldown
-				if v > bestValue then
-					best, bestValue = attack, v
-				end
-			end
-			return best
-		end
-		local cad = B.bossCadence(Bosses.byId.azgor, 3, { pick = longestWaiting })
+	T.it("opts.pick decides among the ready attacks (the default S87 rule gives Azgor's inferno its turn)", function()
+		local cad = B.bossCadence(Bosses.byId.azgor, 3)
 		T.expect(cad.perMinute.inferno > 0).toBe(true)
+		T.expect(B.bossCadence(Bosses.byId.azgor, 3, { pick = B.PICK_LIST_ORDER }).perMinute.inferno).toBe(0)
 		local none = B.bossCadence(Bosses.byId.azgor, 3, {
 			pick = function()
 				return nil
@@ -69,20 +62,25 @@ T.describe("Balance model: boss schedule", function()
 		T.expect(none.casting).toBe(0)
 	end)
 
-	T.it("the mirrored server constants did not change (else fix Balance.HAZARDS / BOSS_GLOBAL_GAP)", function()
-		local message = "zmieniono stałą bossa: popraw `Balance.HAZARDS` / `BOSS_GLOBAL_GAP`"
-		local function has(path: string, text: string)
-			if not string.find(fs.readFile(path), text, 1, true) then
-				error(`{message} ({path}: "{text}")`, 0)
+	-- S87: the gap and the hazard damage are read through Data/BossTuning (require); the ticks stay as text.
+	T.it(
+		"the server reads Data/BossTuning and Logic/BossSchedule (else fix Balance.HAZARDS / BOSS_GLOBAL_GAP)",
+		function()
+			local message = "zmieniono stałą bossa: popraw `Balance.HAZARDS` / `BOSS_GLOBAL_GAP`"
+			local function has(path: string, text: string)
+				if not string.find(fs.readFile(path), text, 1, true) then
+					error(`{message} ({path}: "{text}")`, 0)
+				end
 			end
+			has("src/server/Entities/Boss.luau", "BossTuning.globalGap")
+			has("src/server/Entities/Boss.luau", "BossSchedule.pick(")
+			has("src/server/Entities/BossScripts/azgor.luau", `local TICK = {B.HAZARDS.azgor.every}`)
+			has("src/server/Entities/BossScripts/azgor.luau", "BossTuning.hazards.azgor.lava")
+			has("src/server/Entities/BossScripts/vaelgrath.luau", `local STORM_TICK = {B.HAZARDS.vaelgrath.every}`)
+			has("src/server/Entities/BossScripts/vaelgrath.luau", "BossTuning.hazards.vaelgrath.freezingStorm")
+			T.expect(B.bossScriptConsts("vaelgrath").FLIGHT_SECONDS ~= nil).toBe(true)
 		end
-		has("src/server/Entities/Boss.luau", `local GLOBAL_GAP = {B.BOSS_GLOBAL_GAP}`)
-		has("src/server/Entities/BossScripts/azgor.luau", `local TICK = {B.HAZARDS.azgor.every}`)
-		has("src/server/Entities/BossScripts/azgor.luau", `damage = {B.HAZARDS.azgor.damage}`)
-		has("src/server/Entities/BossScripts/vaelgrath.luau", `local STORM_TICK = {B.HAZARDS.vaelgrath.every}`)
-		has("src/server/Entities/BossScripts/vaelgrath.luau", `damage = {B.HAZARDS.vaelgrath.damage}`)
-		T.expect(B.bossScriptConsts("vaelgrath").FLIGHT_SECONDS ~= nil).toBe(true)
-	end)
+	)
 
 	T.it("a boss fight has three phases, shield waves and a tank damage rate", function()
 		local fight = B.bossFight("grimrok", B.team(3, 19))
@@ -164,6 +162,12 @@ T.describe("Balance model: regions, quests, potions", function()
 		T.expect(B.potionsAt("Warrior", 50, 0.9, 7, list).quality).toBe(9)
 		T.expect(B.potionHps(40, list)).toBeNear(10 / Potions.interval(40), 1e-9)
 		T.expect(Potions.interval(45)).toBeNear(6, 1e-9)
+		-- S87: on the real data Great (4) from 45, Mighty (5) from 70 (more to heal than any drink and no time:
+		-- the biggest allowed)
+		T.expect(B.potionsAt("Warrior", 44, 50, 0).quality).toBe(3)
+		T.expect(B.potionsAt("Warrior", 45, 50, 0).quality).toBe(4)
+		T.expect(B.potionsAt("Warrior", 69, 50, 0).quality).toBe(4)
+		T.expect(B.potionsAt("Warrior", 70, 50, 0).quality).toBe(5)
 	end)
 
 	T.it(

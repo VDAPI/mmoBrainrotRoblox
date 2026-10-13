@@ -11,6 +11,8 @@ local LIST: { Types.ItemDef } = {}
 local HP_MANA = { 150, 500, 1500, 4000, 10000 }
 local ENERGY = { 30, 60, 100, 150, 250 }
 local PRICES = { 10, 60, 250, 900, 3000 }
+-- S87 (balance plan D3): Great from 45, Mighty from 70 (HP, mana and energy alike; Logic/Potions.requiredLevel).
+local LEVELS = { 1, 1, 1, 45, 70 }
 
 local POTIONS: { { resource: "hp" | "mana" | "energy", color: string, amounts: { number } } } = {
 	{ resource = "hp", color = "#C2352E", amounts = HP_MANA },
@@ -25,7 +27,7 @@ for _, potion in POTIONS do
 			id = id,
 			category = "consumable",
 			type = `potion_{potion.resource}`,
-			level = 1,
+			level = LEVELS[quality],
 			tier = quality,
 			stackable = true,
 			maxStack = 999,

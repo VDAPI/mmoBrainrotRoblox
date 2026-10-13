@@ -18,6 +18,7 @@ local Items = require(Shared.Data.Items)
 local Log = require(Shared.Util.Log)
 local Net = require(Shared.Net)
 local Npcs = require(Shared.Data.Npcs)
+local Potions = require(Shared.Logic.Potions)
 local Rarities = require(Shared.Data.Rarities)
 local Rng = require(Shared.Logic.Rng)
 local ShopPrice = require(Shared.Logic.ShopPrice)
@@ -104,7 +105,9 @@ local function buy(player: Player, npcId: string, itemId: string, n: number): (b
 	if not ShopPrice.offered(entry, char.class) then
 		return false, "shop.error.unavailable"
 	end
-	if entry.level and char.level < entry.level then
+	-- S87: the entry's level or the potion's (Great 45, Mighty 70), the same expression as ShopWindow
+	local required = math.max(entry.level or 1, Potions.requiredLevel(def))
+	if char.level < required then
 		return false, "shop.error.level"
 	end
 	local count = math.clamp(n, 1, def.maxStack)

@@ -1,7 +1,8 @@
 --!strict
 -- Level curves (S54, ROZWOJ 8). Pure reader of Data/LevelCurves: identity up to the first anchor (level 20), then
 -- log-log interpolation between anchors (a power law), flat above the last anchor. Every level-dependent formula
--- (Mage mana cost, potion interval, heal curve, DEX rating) goes through here. The wiki exporter does not require this
+-- (Mage mana cost, potion interval, heal curve, DEX rating; S87 monster, Elite and EXP curves and the region tables)
+-- goes through here. The wiki exporter does not require this
 -- module; it reads the values through Logic/Skills, Logic/Potions and Logic/StatCalc.
 
 local Data = require("../Data/LevelCurves")
@@ -65,6 +66,34 @@ end
 -- Share of DEX that counts for crit, attack speed and dodge: 1 up to dexRatingLevel, then dexRatingLevel / L.
 function LevelCurves.dexFactor(level: number): number
 	return math.min(1, Data.dexRatingLevel / math.max(1, level))
+end
+
+-- S87 (balance plan D5): region tables by map id. `region` is a Data/Monsters.region number (1-4), a region map id
+-- or nil; anything else (a boss's 0, an unknown id) gives nil.
+function LevelCurves.regionOf(region: number | string | nil): string?
+	if type(region) == "number" then
+		return Data.regions[region]
+	elseif type(region) == "string" then
+		return if table.find(Data.regions, region) then region else nil
+	end
+	return nil
+end
+
+-- Chance that a cave Elite group of region `regionId` is a pair (AreaSpawns.cave). An unknown id is an error, so a
+-- typo in cave data fails the tests instead of silently using a default.
+function LevelCurves.elitePairChance(regionId: string): number
+	local value = Data.elitePairChance[regionId]
+	if value == nil then
+		error(`LevelCurves: unknown region "{regionId}" for elitePairChance`, 2)
+	end
+	return value
+end
+
+-- Multiplier of the Unique and Heroic drop weights of the region's monsters (ItemRoll.rarityWeights); 1 for an
+-- unknown region, a boss (0) and nil.
+function LevelCurves.dropFactor(region: number | string | nil): number
+	local id = LevelCurves.regionOf(region)
+	return if id then Data.dropFactor[id] or 1 else 1
 end
 
 return LevelCurves

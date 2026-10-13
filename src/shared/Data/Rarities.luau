@@ -33,7 +33,7 @@ export type RarityDef = {
 	valuable: boolean, -- confirm before selling/dismantling, light at the weapon
 	announce: ("legendary" | "mythic")?, -- server-wide announcement on drop
 	reveal: boolean, -- reveal animation on pickup
-	legendCore: boolean, -- upgrading from +7 needs a Legend Core
+	legendCore: boolean, -- upgrading from Config.Upgrade.legendCoreFrom (+8 since S87) needs a Legend Core
 	quickSell: boolean, -- included in "sell all"
 	bindOnPickup: boolean, -- equipment of this rarity binds when picked up (Mythic: the grind stays personal)
 	dismantle: { DismantleDrop },
@@ -314,4 +314,9 @@ return table.freeze({
 	upgradeItem = upgradeItem,
 	-- Each upgrade level adds this share of the item's base stats (DESIGN §6: +6 % per level, +9 = +54 %).
 	upgradeStatPerLevel = 0.06,
+	-- S87 (balance plan C2, G8): two-handed weapons. Regular lines of a rolled two-handed weapon count x this when
+	-- read (ItemRoll.itemStats; named items and legendary / mythic lines keep their numbers), and every upgrade level
+	-- adds this share of a two-handed weapon's base stats and weapon damage (the trait keeps upgradeStatPerLevel).
+	twoHandedBonusMul = 2.7,
+	upgradeStatPerLevelTwoHanded = 0.066,
 })

@@ -81,6 +81,13 @@ function FightSim.hit(m: any, p: Player, mul: number?, kind: string?, canDodge: 
 		* familyRes
 end
 
+-- S87: character power sqrt(DPS x eHP) (tests/Balance.power): eHP = max HP / one expected monster blow. /balance
+-- calls it with SKILL_DPS like its duel; the balance model through Balance.power.
+function FightSim.power(p: Player, m: any, skill: number?): number
+	local ehp = (p.values.maxHp or 0) / math.max(FightSim.hit(m, p), 1e-6)
+	return math.sqrt(FightSim.dps(p, m, skill) * ehp)
+end
+
 -- One player against `members` (MonsterStats, optionally with `ability`), killed in order.
 function FightSim.groupFight(p: Player, members: { any }, skill: number?): Fight
 	local lost = 0

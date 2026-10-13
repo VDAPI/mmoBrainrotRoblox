@@ -4,6 +4,10 @@
 -- The script adds the lava field of phase 3: the floor beyond a safe circle turns to lava and the safe
 -- circle shrinks from 50 to 20 studs over two minutes; standing on lava burns every second.
 
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local BossTuning = require(ReplicatedStorage.Shared.Data.BossTuning)
+
 local Azgor = {}
 
 local LAVA_RADIUS = 64
@@ -59,7 +63,7 @@ function Azgor.onTick(boss: any, now: number)
 		radius = LAVA_RADIUS + 10,
 		inner = radius,
 		windup = 0,
-		damage = 0.7,
+		damage = BossTuning.hazards.azgor.lava, -- S87: Data/BossTuning (balance plan D3)
 		cooldown = TICK,
 		element = "fire",
 		damageKind = "magic",

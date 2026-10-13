@@ -14,6 +14,7 @@ local FightSim = require("./FightSim")
 local ItemRoll = require("./ItemRoll")
 local ItemValue = require("./ItemValue")
 local Items = require("../Data/Items")
+local LevelCurves = require("./LevelCurves")
 local LootTables = require("../Data/LootTables")
 local MonsterStats = require("./MonsterStats")
 local Monsters = require("../Data/Monsters")
@@ -55,12 +56,17 @@ function AreaRates.walkSeconds(profile: AreaProfiles.Profile?): number
 end
 
 -- Expected items per kill of `variant` with the profile's item chance (and `dropBonus` %), and the share of them
--- of the source's highest rarity.
-function AreaRates.itemsPerKill(variant: string, mods: AreaProfiles.Mods, dropBonus: number?): (number, number)
+-- of the source's highest rarity. S87: `dropFactor` = LevelCurves.dropFactor of the monsters' region (default 1).
+function AreaRates.itemsPerKill(
+	variant: string,
+	mods: AreaProfiles.Mods,
+	dropBonus: number?,
+	dropFactor: number?
+): (number, number)
 	local drops = Rarities.itemDrops[variant] or Rarities.itemDrops.normal
 	local chance = math.min(1, drops.chance * (1 + (dropBonus or 0) / 100) * mods.itemChanceMul)
 	local count = chance * ((drops.min + drops.max) / 2 + (drops.extra or 0))
-	local weights = ItemRoll.rarityWeights(variant, mods.topTierMul)
+	local weights = ItemRoll.rarityWeights(variant, mods.topTierMul, dropFactor)
 	local cap = Rarities.cap[variant] or Rarities.cap.normal
 	local total, top, topRarity = 0, 0, 0
 	for rarity, w in weights do
@@ -77,9 +83,15 @@ local function tierId(baseType: string, ilvl: number): string
 end
 
 -- Expected merchant value of the items and materials of one kill (cf. tests/Balance.dropValue, with the profile).
-function AreaRates.dropValue(monsterLevel: number, variant: string, mods: AreaProfiles.Mods, partId: string?): number
-	local count = AreaRates.itemsPerKill(variant, mods)
-	local weights = ItemRoll.rarityWeights(variant, mods.topTierMul)
+function AreaRates.dropValue(
+	monsterLevel: number,
+	variant: string,
+	mods: AreaProfiles.Mods,
+	partId: string?,
+	dropFactor: number?
+): number
+	local count = AreaRates.itemsPerKill(variant, mods, nil, dropFactor)
+	local weights = ItemRoll.rarityWeights(variant, mods.topTierMul, dropFactor)
 	local slots = LootTables.byId.wolf.slotWeights
 	local wTotal, slotTotal = 0, 0
 	for _, w in weights do
@@ -145,8 +157,10 @@ function AreaRates.rates(
 		* kindReward
 		* mods.goldMul
 		* MonsterStats.goldLevelMultiplier(p.level, monsterLevel)
-	local dropPerKill = AreaRates.dropValue(monsterLevel, "normal", mods, kind.lootTable)
-	local items, topShare = AreaRates.itemsPerKill("normal", mods, dropBonus)
+	-- S87 (balance plan D5): the drop factor of the kind's region (Data/Monsters.region), like Loot.rollMonsterLoot
+	local dropFactor = LevelCurves.dropFactor(kind.region)
+	local dropPerKill = AreaRates.dropValue(monsterLevel, "normal", mods, kind.lootTable, dropFactor)
+	local items, topShare = AreaRates.itemsPerKill("normal", mods, dropBonus, dropFactor)
 	local killsPerHour = 3600 / secondsPerKill
 	return {
 		profile = profileId,

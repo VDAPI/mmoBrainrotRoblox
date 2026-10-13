@@ -12,6 +12,8 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local BossScaling = require(ReplicatedStorage.Shared.Logic.BossScaling)
+local BossSchedule = require(ReplicatedStorage.Shared.Logic.BossSchedule)
+local BossTuning = require(ReplicatedStorage.Shared.Data.BossTuning)
 local Bosses = require(ReplicatedStorage.Shared.Data.Bosses)
 local Monsters = require(ReplicatedStorage.Shared.Data.Monsters)
 
@@ -62,7 +64,7 @@ export type Boss = typeof(setmetatable(
 	Boss
 ))
 
-local GLOBAL_GAP = 2.2 -- seconds between two attacks of any kind
+-- S87: the gap between two attacks of any kind lives in Data/BossTuning.globalGap (balance plan D3).
 
 local function kindFor(def: Bosses.BossDef, players: number): Monsters.MonsterDef
 	return {
@@ -376,13 +378,13 @@ function Boss.Step(self: Boss, now: number)
 	if #self.shielded > 0 or monster.state ~= "chase" or now < self.nextGlobal then
 		return
 	end
-	for _, attack in self.def.attacks do
-		if table.find(attack.phases, self.phase) and now >= (self.nextAttack[attack.id] or 0) then
-			self.nextAttack[attack.id] = now + attack.cooldown
-			self.nextGlobal = now + attack.windup + GLOBAL_GAP
-			cast(self, attack)
-			return
-		end
+	-- S87 (balance plan D3, G11): the most overdue attack relative to its cooldown (Logic/BossSchedule, also the model).
+	local attack =
+		BossSchedule.pick(BossSchedule.ready(self.def.attacks, self.phase, now, self.nextAttack), now, self.nextAttack)
+	if attack then
+		self.nextAttack[attack.id] = now + attack.cooldown -- same effective cooldown as BossSchedule
+		self.nextGlobal = now + attack.windup + BossTuning.globalGap
+		cast(self, attack)
 	end
 end
 

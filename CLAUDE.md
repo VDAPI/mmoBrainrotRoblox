@@ -81,6 +81,8 @@ przedmiotów czyta STATY); odstępstwa idą do `docs/DECYZJE.md`, a kontrakt pop
   (`Logic/ArtTiers`). Ikona: `art/icons/src/<grupa>/<klucz>.png` (`eq/<typ>@<próg>`, `mat/<id>` …; z folderu Graphics
   `tools/icons/import_graphics.py`), potem `py -3 tools/icons/import_png.py` i `npm run data`; testy `artassets` /
   `arttiers`. Umowa plików: `docs/GRAFIKA.md`.
+- **Wybór ataku bossa** (S87): `Logic/BossSchedule` (gra i model); stałe bossów poza `Data/Bosses` w `Data/BossTuning`,
+  ale linie `local NAZWA = liczba` czytane przez wiki zostają w skryptach.
 - **Portal / przejście między mapami** (S25): wpis w `Data/Portals.luau` (layout stawia go przez
   `Prefabs.portalFrom(ctx, id)`); trasa (`Logic/MapRoute`), mapa świata i prowadzenie widzą go same.
 - **Karta na mapie świata** (S25): treść w `UI/Screens/WorldMap/Cards.luau` (albo `CreatureCards`) jako spec

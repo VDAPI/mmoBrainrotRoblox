@@ -7,6 +7,7 @@
 local Combat = require("../Data/Combat")
 local Config = require("../Config")
 local Items = require("../Data/Items")
+local LevelCurves = require("./LevelCurves")
 local LootTables = require("../Data/LootTables")
 local Monsters = require("../Data/Monsters")
 local MonsterStats = require("./MonsterStats")
@@ -102,6 +103,42 @@ function Loot.pickItem(
 	return rng:pick(candidates)
 end
 
+-- S87 (balance plan, Mythic for the winner's class): an equipment definition of `ilvl` usable by `classId`. Only
+-- slots with at least one usable base at the tier keep their weight; the base is picked among the usable ones.
+-- Falls back to Loot.pickItem when no slot has one; without `classId` it is Loot.pickItem(slots, ilvl, 1, nil, rng)
+-- (today's choice and Rng use: /bosssim without a class, the wiki's Monte Carlo).
+function Loot.pickUsable(slotWeights: { [string]: number }, ilvl: number, classId: string?, rng: Rng.Rng): string?
+	if not classId then
+		return Loot.pickItem(slotWeights, ilvl, 1, nil, rng)
+	end
+	local tier = Items.generate.tierFor(ilvl)
+	local weights: { [string]: number } = {}
+	local any = false
+	for slot, weight in slotWeights do
+		local list = SLOT_TIER[slot] and SLOT_TIER[slot][tier]
+		if weight > 0 and list then
+			for _, id in list do
+				if usableBy(id, classId) then
+					weights[slot] = weight
+					any = true
+					break
+				end
+			end
+		end
+	end
+	if not any then
+		return Loot.pickItem(slotWeights, ilvl, 1, classId, rng)
+	end
+	local slot = rng:weighted(weights)
+	local usable = {}
+	for _, id in SLOT_TIER[slot][tier] do
+		if usableBy(id, classId) then
+			table.insert(usable, id)
+		end
+	end
+	return rng:pick(usable)
+end
+
 -- Amount `n` x `mul`, the fraction rounded up with its probability (expected value = n x mul, at least 1).
 local function scaleAmount(n: number, mul: number, rng: Rng.Rng): number
 	if mul == 1 then
@@ -152,7 +189,8 @@ function Loot.rollMonsterLoot(
 				table.insert(result.items, {
 					defId = defId,
 					ilvl = ilvl,
-					rarity = ItemRoll.rollRarity(variant, rng, mods.topTierMul),
+					-- S87 (balance plan D5): the region's Unique / Heroic factor (1 until S91-S94)
+					rarity = ItemRoll.rollRarity(variant, rng, mods.topTierMul, LevelCurves.dropFactor(def.region)),
 					forClass = mods.classId,
 					family = def.family :: string?,
 				})
@@ -226,7 +264,8 @@ local function rollCommon(boss: LootTables.BossTable, classId: string?, rng: Rng
 end
 
 -- The one item a winner of `classId` gets: Mythic (a named item of the boss with Config.BossLoot.mythicNamedShare,
--- otherwise a rolled Mythic of a class-usable base), else Legendary (class-usable with
+-- otherwise a rolled Mythic of a class-usable base; S87: when no named item fits the class, a rolled Mythic for the
+-- class instead, so a Mythic always fits the winner's class), else Legendary (class-usable with
 -- Config.BossLoot.legendaryClassShare), else a Unique / Heroic item. Weapons come first (LootTables.bossSlots).
 -- Fortune (S60): the Legendary chance times luck.legendaryMul; a Unique becomes Heroic with luck.upgrade (no extra
 -- roll without upgrade, so the Rng sequence is unchanged).
@@ -241,7 +280,6 @@ function Loot.rollBossItem(
 	local slots = LootTables.bossSlots
 	local roll = rng:next()
 	if roll < chances.mythic then
-		local defId: string? = nil
 		if #boss.named > 0 and rng:chance(Config.BossLoot.mythicNamedShare) then
 			local usable = {}
 			for _, id in boss.named do
@@ -249,10 +287,13 @@ function Loot.rollBossItem(
 					table.insert(usable, id)
 				end
 			end
-			defId = rng:pick(if #usable > 0 then usable else boss.named)
+			if #usable > 0 then
+				return { defId = rng:pick(usable), ilvl = boss.level, rarity = Rarities.MYTHIC }
+			end
+			-- S87: no named item for this class -> a rolled Mythic for the class (below)
 		end
-		defId = defId or Loot.pickItem(slots, boss.level, 1, classId, rng)
-		return if defId then { defId = defId, ilvl = boss.level, rarity = Rarities.MYTHIC } else nil
+		local defId = Loot.pickUsable(slots, boss.level, classId, rng)
+		return if defId then { defId = defId, ilvl = boss.level, rarity = Rarities.MYTHIC, forClass = classId } else nil
 	end
 	if roll < chances.mythic + chances.legendary then
 		local defId = Loot.pickItem(slots, boss.level, Config.BossLoot.legendaryClassShare, classId, rng)

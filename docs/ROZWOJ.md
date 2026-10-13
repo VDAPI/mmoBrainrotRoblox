@@ -738,10 +738,12 @@ czekają na koniec przebudowy, więc nie robią ich wcześniej; jeśli któryś 
   Zręczności bez zmian. Według planu balansu Łowca / Wojownik spada z 2,3 do ok. 1,3 na 100.; resztę dokładają
   ścieżki w limitach `Data/Stats` (krytyk 60%, szybkość 2,5, unik 30%). Aktualizacja `statcalc.spec`, `FightSim`,
   `tests/Balance`.
-- Mana Maga (wszystkie ścieżki): koszt × `manaCost.Mage` = 1,0 / 1,4 / 1,9 / 2,5 na 20 / 45 / 70 / 100, żeby rzucanie
+- Mana Maga (wszystkie ścieżki): koszt × `manaCost.Mage` = 1,0 / 1,89 / 2,59 / 3,49 na 20 / 45 / 70 / 100 (S87: zmierzone
+  na buildach Niszczyciel exp i Arkanista boss, średnia geometryczna tego, czego potrzebuje każdy; było 1,4 / 1,9 / 2,5,
+  z Kaskadą w dochodzie T-SK4 Niszczyciela spadało do 1,0), żeby rzucanie
   wszystkiego na odnowieniu kosztowało 2–3 razy regenerację (dziś 1,8 / 1,3 / 1,0 na 45 / 70 / 100). Miara:
   zapotrzebowanie (wszystko na odnowieniu, bez limitu many) / (regeneracja z węzłami + bierne zwroty many), bez
-  czynnych źródeł jak Inwokacja, które ścieżka liczy osobno. Sama podstawa z tą krzywą ma po 45. tylko ok. 1,1–1,4;
+  czynnych źródeł jak Inwokacja, które ścieżka liczy osobno. Sama podstawa z tą krzywą ma po 45. ok. 1,0–1,3 (S87);
   cel osiągają umiejętności i koszty ścieżek (12.7). Kapłan bez zmian. Jedna funkcja `Skills.cost(skill, rank, L,
   classId, mods)` dla serwera, opisu, paska i wiki.
 - Mikstury: odstęp `1,5 s × potionCooldown(L)`, kotwice 1 / 4 / 6,67 / 6,67 (1,5 s do 20., ok. 6 s na 45., ok. 10 s od
@@ -801,7 +803,9 @@ Id ścieżek: `healer`, `fortune`, `inquisitor`. Dane: `Data/Skills/Cleric.luau`
 ### 9.2 Podstawa klasy i przełomy
 
 Rangi według 2.5 (pasywki 1–5 w tej samej rozpiętości). Część leczenia i tarcz zależna od ataku magicznego przechodzi
-przez `LevelCurves.heal` z planu balansu, żeby jedno leczenie zostało w 25–35% HP tanka. Obrażenia Świętego Uderzenia,
+przez `LevelCurves.heal` z planu balansu, żeby jedno leczenie zostało w 25–35% HP tanka (S87: kotwice 2,33 / 0,31 /
+0,67 na 45 / 70 / 100, ustawione na Uzdrowicielu „Lochowym” na Obrońcy na środek pasma 0,30, na 100. na górę 0,35, bo
+sama część od HP daje tam 0,32). Obrażenia Świętego Uderzenia,
 Światłości i Sądu są wyższe niż dziś (dziś 150 → 280%, 110 → 200%, 280 → 500%), bo cała klasa zadawała za mało względem
 Berserkera, a Uzdrowiciel i Fortuna expią na tej samej podstawie (punkt 27).
 
@@ -1848,7 +1852,7 @@ Magicznego Pocisku i z przełomami na bossa u każdego buildu.
 ### 12.2 Podstawa klasy i przełomy
 
 Rangi z 2.5. Wartości (ranga 1 → 10) zostają jak dziś; zmienia się odblokowanie, znikają `requires`, a koszt many idzie
-przez krzywą z 8 (×1,0 / 1,4 / 1,9 / 2,5 na 20 / 45 / 70 / 100).
+przez krzywą z 8 (S87: ×1,0 / 1,89 / 2,59 / 3,49 na 20 / 45 / 70 / 100).
 
 | Poz. (dziś) | Umiejętność | Ranga 5 / 10 | Ranga 1 → 10; koszt / odn. |
 |---|---|---|---|

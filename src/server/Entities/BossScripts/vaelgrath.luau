@@ -6,6 +6,10 @@
 --   * phase 3: a freezing storm — every 3 s everyone farther than 9 studs from a brazier is frozen.
 -- Brazier positions match World/Layouts/dungeon_frostpeak (relative to the arena centre at 0, -10).
 
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local BossTuning = require(ReplicatedStorage.Shared.Data.BossTuning)
+
 local Vaelgrath = {}
 
 local BRAZIERS = { Vector3.new(-32, 0, -22), Vector3.new(32, 0, -22), Vector3.new(-32, 0, 38), Vector3.new(32, 0, 38) }
@@ -61,7 +65,7 @@ function Vaelgrath.onTick(boss: any, now: number)
 				origin = "self",
 				radius = 2,
 				windup = 0,
-				damage = 1.4,
+				damage = BossTuning.hazards.vaelgrath.freezingStorm, -- S87: Data/BossTuning (balance plan D3)
 				cooldown = STORM_TICK,
 				element = "ice",
 				damageKind = "magic",

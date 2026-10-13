@@ -190,7 +190,8 @@ local Config = {
 	},
 	-- Boss personal loot (S30, DESIGN §16): a personal Legendary is usable by the winner's class with chance
 	-- `legendaryClassShare`; a personal Mythic is one of the boss's named items with chance `mythicNamedShare`
-	-- (class-usable first), otherwise a rolled Mythic of a base usable by the winner's class.
+	-- (only those the winner's class can use), otherwise a rolled Mythic of a base usable by the winner's class.
+	-- S87: a Mythic always fits the winner's class (no usable named item -> a rolled one, Loot.pickUsable).
 	BossLoot = {
 		legendaryClassShare = 0.8,
 		mythicNamedShare = 0.5,
@@ -198,11 +199,14 @@ local Config = {
 	-- Upgrade gold (S32, Logic/Upgrade, DESIGN §6): round(ilvl x perIlvl(ilvl) x (N+1)^goldExponent), perIlvl =
 	-- goldLow up to ilvl goldLowUntil, then rising linearly to goldHigh at ilvl 100 (before S32: 40 everywhere,
 	-- +1 on a level 10 item cost more than all gold from level 10). +1..+3 on the weapon fits a level's income.
+	-- S87 (balance plan C3, G9): goldHigh 40 -> 20 (+1..+3 was 1.7 levels of income at 100); 1-20 unchanged.
+	-- S87 (balance plan C4): Legendary and Mythic items need a Legend Core from +legendCoreFrom (was +7).
 	Upgrade = {
 		goldLow = 4,
 		goldLowUntil = 20,
-		goldHigh = 40,
+		goldHigh = 20,
 		goldExponent = 1.6,
+		legendCoreFrom = 8,
 	},
 	-- Streaming (S20, decision in docs/DECYZJE.md): also set in default.project.json (Workspace properties).
 	StreamingTargetRadius = 512,

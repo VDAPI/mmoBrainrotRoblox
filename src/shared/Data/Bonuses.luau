@@ -5,10 +5,10 @@
 -- (`stat`) applied as a flat addition or a percentage multiplier (`mode`), or to a special effect `hook`
 -- handled by CombatService/LootService (legendary and mythic pools).
 --
--- Value = lerp(min, max, roll) x scale(ilvl) x rarity.rangeMul, where
+-- Value = lerp(min, max, roll) x scale(ilvl) x rarity.rangeMul, where (constants in SCALING below)
 --   scale = 1 + ilvl / 20 for "flat" scaling (primary stats),
 --           (6 + 2.2 ilvl) / 8.2 for "curve" scaling (S32: HP, mana, armour, resistance grow like item bases),
---           1 + ilvl / 60 for "pct" scaling (percentages).
+--           1 + min(ilvl, 20) / 60 for "pct" scaling (percentages; S87: no growth above ilvl 20, at most x1.33).
 -- S32: attack bonuses are percentages of the attack (a flat +5 was +50 % at level 1 and +3 % at level 20), and
 -- pools are filtered by class (`CLASS_STATS`): a Warrior's sword never rolls INT or magic attack.
 -- S67 (STATY 4): a pool entry starting with "@" is a parameter marker ("@vsFamily", "@resFamily", "@vsClass",
@@ -466,8 +466,20 @@ local CLASS_STATS: { [string]: { string } } = {
 	blockChance = { "Warrior", "Cleric" }, -- S64: shields only
 }
 
+-- Bonus value scaling by item level (ItemRoll.scaleFor). S87 (balance plan C1): "pct" stops growing at
+-- ilvl pctCapIlvl (x1.33 instead of x2.67 at 100); 1-20 unchanged.
+local SCALING = table.freeze({
+	flatPer = 20,
+	curveBase = 6,
+	curveSlope = 2.2,
+	curveDiv = 8.2,
+	pctPer = 60,
+	pctCapIlvl = 20,
+})
+
 return table.freeze({
 	byId = DEFS,
+	scaling = SCALING,
 	pools = POOLS,
 	classStats = CLASS_STATS,
 	get = function(id: string): BonusDef?

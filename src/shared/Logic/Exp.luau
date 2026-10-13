@@ -1,12 +1,19 @@
 --!strict
 -- Experience formulas (DESIGN §4.6). Pure.
 
+local LevelCurves = require("./LevelCurves")
 local Progression = require("../Data/Progression")
 
 local Exp = {}
 
+-- S87 (balance plan D7, G13): x the "expToNext" level curve (exactly 1 up to 20, so 1-20 is unchanged bit for bit).
+-- Quest rewards are shares of expToNext, so the curve scales them too.
 function Exp.expToNext(level: number): number
-	return math.floor(Progression.nextFactor * level ^ Progression.nextExponent + Progression.nextBase + 0.5)
+	return math.floor(
+		(Progression.nextFactor * level ^ Progression.nextExponent + Progression.nextBase)
+				* LevelCurves.at("expToNext", level)
+			+ 0.5
+	)
 end
 
 function Exp.monsterExp(monsterLevel: number, variant: Progression.Variant?): number

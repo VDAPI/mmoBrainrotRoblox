@@ -63,8 +63,10 @@ T.describe("LevelCurves", function()
 	end)
 
 	T.it("follows a power law between anchors and stays flat above the last one", function()
-		T.expect(LevelCurves.at("manaCost.Mage", 30)).toBeNear(math.sqrt(1.4))
-		T.expect(LevelCurves.at("manaCost.Mage", 45)).toBeNear(1.4)
+		-- S87: manaCost.Mage 1.89 at 45 (G10, was 1.4); at 30 the power law sqrt(value at 45)
+		local mana45 = LevelCurves.anchors("manaCost.Mage")[2][2]
+		T.expect(LevelCurves.at("manaCost.Mage", 30)).toBeNear(math.sqrt(mana45))
+		T.expect(LevelCurves.at("manaCost.Mage", 45)).toBeNear(mana45)
 		T.expect(LevelCurves.at("potionCooldown", 30)).toBeNear(2)
 		T.expect(LevelCurves.at("potionCooldown", 100)).toBeNear(6.67)
 		for _, id in LevelCurves.ids() do
@@ -84,6 +86,58 @@ T.describe("LevelCurves", function()
 		end
 		T.expect(LevelCurves.dexFactor(40)).toBeNear(0.5)
 		T.expect(LevelCurves.dexFactor(100)).toBeNear(0.2)
+	end)
+end)
+
+T.describe("LevelCurves: S87 curves and region tables", function()
+	T.it("the S87 curves exist, are 1 up to 20 and never fall (monster, Elite, EXP)", function()
+		for _, id in { "monsterHp", "monsterAtk", "eliteHp", "eliteDmg", "elite2Hp", "elite2Dmg", "expToNext" } do
+			T.expect({ id = id, has = LevelCurves.has(id) }).toEqual({ id = id, has = true })
+			for level = 1, 20 do
+				T.expect(LevelCurves.at(id, level)).toBe(1)
+			end
+		end
+		for _, id in { "monsterHp", "monsterAtk", "eliteHp", "eliteDmg", "expToNext" } do
+			local previous = 1
+			for level = 21, Config.MaxLevel do
+				local value = LevelCurves.at(id, level)
+				T.expect({ id = id, level = level, ok = value >= previous - 1e-12 }).toEqual({
+					id = id,
+					level = level,
+					ok = true,
+				})
+				previous = value
+			end
+		end
+	end)
+
+	T.it("regionOf maps 1-4 and region ids; 0, nil and unknown ids give nil", function()
+		T.expect(LevelCurves.regionOf(1)).toBe("meadows")
+		T.expect(LevelCurves.regionOf(2)).toBe("duskwood")
+		T.expect(LevelCurves.regionOf(3)).toBe("ashen")
+		T.expect(LevelCurves.regionOf(4)).toBe("frostpeak")
+		T.expect(LevelCurves.regionOf("ashen")).toBe("ashen")
+		T.expect(LevelCurves.regionOf(0)).toBeNil()
+		T.expect(LevelCurves.regionOf(nil)).toBeNil()
+		T.expect(LevelCurves.regionOf("town")).toBeNil()
+	end)
+
+	T.it("elitePairChance is a chance for the four regions and an error for an unknown id", function()
+		for _, id in { "meadows", "duskwood", "ashen", "frostpeak" } do
+			T.expect(LevelCurves.elitePairChance(id)).toBeBetween(0, 1)
+		end
+		T.expect(function()
+			LevelCurves.elitePairChance("meadow")
+		end).toThrow("meadow")
+	end)
+
+	T.it("dropFactor is 1 for a boss (0), nil and an unknown region; neutral today", function()
+		T.expect(LevelCurves.dropFactor(0)).toBe(1)
+		T.expect(LevelCurves.dropFactor(nil)).toBe(1)
+		T.expect(LevelCurves.dropFactor("nowhere")).toBe(1)
+		for region = 1, 4 do
+			T.expect(LevelCurves.dropFactor(region)).toBeBetween(0, 1)
+		end
 	end)
 end)
 

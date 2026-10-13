@@ -14,6 +14,8 @@ local Net = require(Shared.Net)
 local PathData = require(Shared.Data.Paths)
 local Paths = require(Shared.Logic.Paths)
 local Potions = require(Shared.Logic.Potions)
+local SkillData = require(Shared.Data.Skills)
+local Skills = require(Shared.Logic.Skills)
 
 local Context = require(script.Parent.Context)
 
@@ -31,6 +33,7 @@ local EntityService = Context.services.EntityService
 local PartyService = Context.services.PartyService
 local PartyAuraService = Context.services.PartyAuraService
 local StatService = Context.services.StatService
+local SkillService = Context.services.SkillService
 
 local commands: { [string]: (player: Player, args: { string }) -> ...any } = {}
 
@@ -358,7 +361,27 @@ commands.simfight = function(player, args)
 	end)
 end
 
--- /balance: your character against the S32 targets at your level (DESIGN §15.1).
+-- S87: the hotbar skills with their rank and cooldown as SkillService casts them (Paths.skillRank, effectiveFor,
+-- Skills.cooldown with the cooldown reduction hook; only skills the current weapon can cast, Paths.skillUsable),
+-- for the mana line of /balance.
+local function barSkills(player: Player, character: any): { Skills.DemandEntry }
+	local list: { Skills.DemandEntry } = {}
+	local weapons = Paths.weaponTypesOf(character.equipment)
+	local cdr = Skills.cooldownReduction(CombatService.Hook(player, "cooldownReduction"))
+	for _, skillId in character.hotbar or {} do
+		local base = SkillData.get(skillId)
+		local rank = if base then Paths.skillRank(character, skillId) else 0
+		if base and rank > 0 and base.type ~= "passive" and Paths.skillUsable(character, skillId, weapons) then
+			local skill, behaviour = Paths.effectiveFor(character, skillId, weapons, rank)
+			table.insert(list, { skill = skill, rank = rank, cooldown = Skills.cooldown(skill, rank, cdr, behaviour) })
+		end
+	end
+	return list
+end
+
+-- /balance: your character against the targets G1-G13 at your level (S32, DESIGN §15.1; S87: three monsters
+-- without skills, power, the Mage's mana, the Cleric's Heal and the global targets). Thresholds copy the balance
+-- block of tests/balance.spec (a changed G threshold = a changed admin.balance.* text, DECYZJE S87).
 commands.balance = function(player)
 	withCharacter(player, function()
 		local character = PlayerStateService.GetCharacter(player)
@@ -368,16 +391,51 @@ commands.balance = function(player)
 		local duel = FightSim.groupFight(p, FightSim.group(generic, level, 1), FightSim.SKILL_DPS)
 		local groups = FightSim.expectedGroup(p, generic, level, FightSim.SKILL_DPS)
 		local elite = FightSim.groupFight(p, FightSim.group(generic, level, 1, "elite"), FightSim.SKILL_DPS)
+		-- S87: G3 (three monsters of the level, basic attacks only) and the character power
+		local three = FightSim.groupFight(p, FightSim.group(generic, level, 3), 1)
+		local power = FightSim.power(p, FightSim.group(generic, level, 1)[1], FightSim.SKILL_DPS)
 		reply(player, "admin.balance.info", {
 			level = level,
 			ds = seconds(duel.seconds),
 			dl = percent(duel.hpLost),
 			gl = percent(groups.hpLost),
 			g4 = percent(groups.bySize[4].hpLost),
+			g3 = percent(three.hpLost),
 			es = seconds(elite.seconds),
 			el = percent(elite.hpLost),
+			pw = string.format("%.0f", power),
 		})
 		reply(player, "admin.balance.targets")
+		if character.class == "Mage" then
+			-- S87 (G10, T-SK4 approximation): the bar on cooldown against the regeneration, no mana refunds
+			local costMods: Skills.CostMods = {
+				costReduce = StatService.GetValue(player, "costReduce"),
+				hooks = {
+					spellCost = SkillService.PassiveHook(player, "spellCost"),
+					areaCost = SkillService.PassiveHook(player, "areaCost"),
+				},
+			}
+			local demand = Skills.manaDemand(barSkills(player, character), level, character.class, costMods)
+			local regen = p.values.manaRegen or 0
+			reply(player, "admin.balance.mana", {
+				demand = string.format("%.1f", demand),
+				regen = string.format("%.1f", regen),
+				ratio = if regen > 0 then string.format("%.2f", demand / regen) else "–",
+			})
+		elseif character.class == "Cleric" then
+			-- S87 (G10, T-SK5): one Heal before heal bonuses, on yourself as the tank
+			local rank = Paths.skillRank(character, "heal")
+			if rank > 0 then
+				local def = Paths.effectiveFor(character, "heal", Paths.weaponTypesOf(character.equipment), rank)
+				local maxHp = p.values.maxHp or 1
+				local amount = Skills.healAmount(def, rank, "heal", maxHp, p.values.magAtk or 0, level)
+				reply(player, "admin.balance.heal", {
+					heal = math.floor(amount + 0.5),
+					pct = percent(amount / math.max(1, maxHp)),
+				})
+			end
+		end
+		reply(player, "admin.balance.global")
 	end)
 end
 

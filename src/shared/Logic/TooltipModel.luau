@@ -1011,7 +1011,10 @@ local function bonusDetails(item: ItemInstance, id: string, v: number, quality: 
 		table.insert(rows, { role = "range", text = Locale.T("tooltip.detail.fixed", nil, lang), tone = "muted" })
 	else
 		local low, high = ItemRoll.bonusRange(id, item.ilvl, item.rarity)
-		local q = quality or ItemRoll.bonusQuality(id, v, item.ilvl, item.rarity)
+		-- S87: the range of a two-handed line as its shown value (x twoHandedBonusMul); quality from the saved roll
+		local lineMul = ItemRoll.lineMultiplier(item, id)
+		low, high = low * lineMul, high * lineMul
+		local q = quality or ItemRoll.bonusQuality(id, v / lineMul, item.ilvl, item.rarity)
 		table.insert(rows, {
 			role = "range",
 			text = Locale.T("tooltip.detail.range", {

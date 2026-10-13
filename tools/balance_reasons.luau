@@ -27,6 +27,7 @@ return {
 		{ path = "Data/Areas/meadows", pick = { "lv" } },
 		{ path = "Data/Blessings", omit = LOOKS },
 		{ path = "Data/Bonuses" },
+		{ path = "Data/BossTuning" },
 		{ path = "Data/Bosses", omit = LOOKS },
 		{ path = "Data/BuffCategories" },
 		{ path = "Data/Classes", omit = LOOKS },
@@ -108,5 +109,92 @@ return {
 		["Data/Fish"] = "zbieractwo",
 		["Data/GatherNodes"] = "zbieractwo",
 	} :: { [string]: string },
-	reasons = {} :: { [string]: { Reason } },
+	reasons = {
+		-- S87: global balance fixes 20-100 (balance plan C, D; docs/SESJE.md S87). Anchors 45 / 70 / 100 are provisional:
+		-- S92 owns 45, S93 70, S94 100.
+		["LevelCurves:curves.monsterHp[*"] = {
+			{
+				session = "S87",
+				why = "D1 / G1-G3, G6: new curve 1 / 1.20 / 1.32 / 1.47 (100 raised from 1.43: Mage 1 on 1 5.37 s < 5.5 on 90-100); G1-G3 and G6 272/272 in band",
+			},
+		},
+		["LevelCurves:curves.monsterAtk[*"] = {
+			{ session = "S87", why = "D1 / G1-G3: new curve 1 / 1.07 / 1.11 / 1.14 (plan start; HP lost 1 on 1 13-18 %)" },
+		},
+		["LevelCurves:curves.eliteHp[*"] = {
+			{
+				session = "S87",
+				why = "D4: new curve 1 / 1.08 / 1.11 / 1.13; generic Elite for the Warrior 28.2 / 27.2 / 26.5 s and 62 / 59 / 57 % HP at 45 / 70 / 100 (band 20-36 s, 55-95 %)",
+			},
+		},
+		["LevelCurves:curves.eliteDmg[*"] = {
+			{ session = "S87", why = "D4: new curve 1 / 1.05 / 1.06 / 1.07 (Warrior Elite in REGION_TARGETS.eliteSingle)" },
+		},
+		["LevelCurves:curves.elite2Hp[*"] = {
+			{ session = "S87", why = "D4: new Elite II curve, neutral 1 / 1 / 1 / 1 until the region sessions" },
+		},
+		["LevelCurves:curves.elite2Dmg[*"] = {
+			{ session = "S87", why = "D4: new Elite II curve, neutral 1 / 1 / 1 / 1 until the region sessions" },
+		},
+		["LevelCurves:curves.expToNext[*"] = {
+			{
+				session = "S87",
+				why = "D7 / G13: new curve, neutral 1 / 1 / 1 (the monster curve already moved the bands 15.7 / 20.9 / 31.1 -> 18.0 / 27.2 / 45.3 h; 1.1 at 100 gave 47.7 h)",
+			},
+		},
+		["LevelCurves:curves.manaCost.Mage[2][2]"] = {
+			{ session = "S87", why = "G10 / T-SK4: 1.4 -> 1.89, geometric mean of what Destroyer exp (2.36) and Arcanist boss (1.52) need" },
+		},
+		["LevelCurves:curves.manaCost.Mage[3][2]"] = {
+			{ session = "S87", why = "G10 / T-SK4: 1.9 -> 2.59, geometric mean of Destroyer exp (3.51) and Arcanist boss (1.91)" },
+		},
+		["LevelCurves:curves.manaCost.Mage[4][2]"] = {
+			{ session = "S87", why = "G10 / T-SK4: 2.5 -> 3.49, geometric mean of Destroyer exp (6.1) and Arcanist boss (2.0)" },
+		},
+		["LevelCurves:curves.heal[2][2]"] = {
+			{ session = "S87", why = "G10 / T-SK5: 1 -> 2.33, Healer dungeon on Defender 0.272 -> 0.300 at 45" },
+		},
+		["LevelCurves:curves.heal[3][2]"] = {
+			{ session = "S87", why = "G10 / T-SK5: 1 -> 0.31, Healer dungeon on Defender 0.323 -> 0.300 at 70" },
+		},
+		["LevelCurves:curves.heal[4][2]"] = {
+			{
+				session = "S87",
+				why = "G10 / T-SK5: 1 -> 0.67, Healer dungeon on Defender 0.365 -> 0.350 at 100 (the HP part alone is 0.319: aim at the top)",
+			},
+		},
+		["LevelCurves:elitePairChance*"] = {
+			{ session = "S87", why = "D5: new region table, neutral 0.5 (the old AreaSpawns.cave constant; same Rng use)" },
+		},
+		["LevelCurves:dropFactor*"] = {
+			{ session = "S87", why = "D5: new region table, neutral 1 (same table and Rng use as before)" },
+		},
+		["Bonuses:scaling*"] = {
+			{
+				session = "S87",
+				why = "C1 / G7: scale constants moved from ItemRoll.scaleFor; new pctCapIlvl 20 (pct x1.33 instead of x2.67 at 100): Legendary W 31.7 % at 100 (was 41.1)",
+			},
+		},
+		["Rarities:twoHandedBonusMul"] = {
+			{ session = "S87", why = "C2 / G8: regular lines of a rolled two-handed weapon x2.7 (bez cech 269/280 in band; plan start 1.75 gave 237)" },
+		},
+		["Rarities:upgradeStatPerLevelTwoHanded"] = {
+			{ session = "S87", why = "C2 / G8: two-handed base +6.6 % per upgrade level (Common +9 up to 1.035; plan start 7 %)" },
+		},
+		["Config:Upgrade.goldHigh"] = {
+			{ session = "S87", why = "C3 / G9: 40 -> 20, +1..+3 / income at 100 1.68 -> 0.84; +1..+9 protected 39.8 -> 19.9 levels" },
+		},
+		["Config:Upgrade.legendCoreFrom"] = {
+			{ session = "S87", why = "C4: new key, Legend Core from +8 (was +7): protected +7..+9 10.8 -> 8.3 cores" },
+		},
+		["Items/Consumables:[potion_hp_4].level"] = { { session = "S87", why = "D3: Great potion from 45 (was 1)" } },
+		["Items/Consumables:[potion_hp_5].level"] = { { session = "S87", why = "D3: Mighty potion from 70 (was 1)" } },
+		["Items/Consumables:[potion_mana_4].level"] = { { session = "S87", why = "D3: Great potion from 45 (was 1)" } },
+		["Items/Consumables:[potion_mana_5].level"] = { { session = "S87", why = "D3: Mighty potion from 70 (was 1)" } },
+		["Items/Consumables:[potion_energy_4].level"] = { { session = "S87", why = "D3: Great potion from 45 (was 1)" } },
+		["Items/Consumables:[potion_energy_5].level"] = { { session = "S87", why = "D3: Mighty potion from 70 (was 1)" } },
+		["BossTuning:*"] = {
+			{ session = "S87", why = "D3: constants moved from Boss.luau and the scripts without changing their values (new module)" },
+		},
+	} :: { [string]: { Reason } },
 }

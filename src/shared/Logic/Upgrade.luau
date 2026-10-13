@@ -2,10 +2,12 @@
 -- Blacksmith upgrades +0 → +9 (DESIGN §6). Pure.
 --   chance(N)   = 110 − 10·N %   (N = target level: +1 100 %, +2 90 %, … +9 20 %)
 --   failure     = the item drops one level (never below +0); a Scroll of Protection prevents the drop
---   cost        = gold round(ilvl × perIlvl × (N+1)^1.6) (S32: perIlvl 4 up to ilvl 20, then up to 40 at 100;
---                 Config.Upgrade) + essences: +1..+3 dust ×2N, +4..+6 shard ×N, +7..+9 crystal ×(N−5);
---                 Legendary and Mythic items (Rarities `legendCore`) also need 1 Legend Core from +7
---   each level  = +6 % base stats (Rarities.upgradeStatPerLevel)
+--   cost        = gold round(ilvl × perIlvl × (N+1)^1.6) (S32: perIlvl 4 up to ilvl 20, then up to goldHigh at 100;
+--                 S87: goldHigh 20, was 40; Config.Upgrade) + essences: +1..+3 dust ×2N, +4..+6 shard ×N,
+--                 +7..+9 crystal ×(N−5); Legendary and Mythic items (Rarities `legendCore`) also need 1 Legend Core
+--                 from Config.Upgrade.legendCoreFrom (S87: +8, was +7)
+--   each level  = +6 % base stats (Rarities.upgradeStatPerLevel); S87: two-handed weapons
+--                 Rarities.upgradeStatPerLevelTwoHanded
 
 local Config = require("../Config")
 local Rarities = require("../Data/Rarities")
@@ -29,8 +31,11 @@ function Upgrade.chance(targetLevel: number): number
 	return math.clamp(110 - 10 * targetLevel, 0, 100)
 end
 
-function Upgrade.statMultiplier(up: number): number
-	return 1 + Rarities.upgradeStatPerLevel * up
+-- S87: two-handed weapons grow by Rarities.upgradeStatPerLevelTwoHanded (6.6 %) per level; without the second
+-- argument the 6 % of everything else (the wiki's upgrade.json).
+function Upgrade.statMultiplier(up: number, twoHanded: boolean?): number
+	local perLevel = if twoHanded then Rarities.upgradeStatPerLevelTwoHanded else Rarities.upgradeStatPerLevel
+	return 1 + perLevel * up
 end
 
 -- Gold per item level of an upgrade (S32): Config.Upgrade.goldLow up to goldLowUntil, then linear to goldHigh.
@@ -54,7 +59,8 @@ function Upgrade.cost(item: Types.ItemInstance, targetLevel: number): Cost
 		table.insert(materials, { id = "essence_shard", n = n })
 	else
 		table.insert(materials, { id = "essence_crystal", n = n - 5 })
-		if Rarities.get(item.rarity).legendCore then
+		-- S87 (balance plan C4): the Legend Core from +8 (Config.Upgrade.legendCoreFrom)
+		if n >= Config.Upgrade.legendCoreFrom and Rarities.get(item.rarity).legendCore then
 			table.insert(materials, { id = "legend_core", n = 1 })
 		end
 	end

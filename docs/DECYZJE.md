@@ -2035,3 +2035,63 @@
   używane na wiki: efekty (brak elementu), ikony mapy i znaczniki (mapa to SVG z danych), sloty i reszta HUD, `mapy/_uklad`
   (wzory do przemalowania, nie grafika), obrazki ukrytych umiejętności. `SkillNode` nie importuje `lib/item-model`
   (budżet planera).
+- **S87** Krzywe potworów, Elit, Elit II i EXP w `Data/LevelCurves` mają tylko kotwice 20 (= 1) / 45 / 70 / 100 i są
+  tymczasowe: kotwicę 45 przejmuje S92, 70 S93, 100 S94 (one dopisują też kotwice pośrednie swojego pasma).
+- **S87** Krzywe liczą się od poziomu końcowego potwora (`MonsterStats.compute`: Elita +2, Elita II +4), więc Elity ze
+  spawnera 19–20 (21–22) i Elity II ze spawnera 17–20 (21–24) zmieniają się o 2–4% (`ALLOWED_1_20_DIFFS`); bossowie
+  dostają krzywą potworów bez wyjątku (ich `hpMul` / `atkMul` stroją S92–S94 na bazie z krzywą).
+- **S87** Kotwice: `monsterHp` 1,20 / 1,32 / 1,47 (100. z 1,43, bo Mag 1 na 1 schodził do 5,37 s), `monsterAtk` 1,07 /
+  1,11 / 1,14, `eliteHp` 1,08 / 1,11 / 1,13, `eliteDmg` 1,05 / 1,06 / 1,07 (start planu; Wojownik w paśmie Elit), Elita
+  II neutralna; G1–G3 i G6 272/272 w paśmie.
+- **S87** `LevelCurves.elitePairChance(region)` (0,5) i `dropFactor(region)` (1) po id mapy regionu (`regionOf`: 1–4,
+  id, inaczej nil). `dropFactor` mnoży wagi Unikatu i Heroika tabeli źródła, Zwykły przejmuje różnicę (suma, Legenda i
+  Mityk bez zmian), potem `topTierMul` łowiska; przy 1 ta sama tabela i to samo zużycie `Rng`. Boss go nie dostaje;
+  dla Elity II (bez Zwykłego) `f > 1` wywala `assert` (S92–S94 stroją tylko w dół albo zwykłe i Elity).
+  `globalbalance.spec` sprawdza każdy region na zwykłych, Elitach i Elitach II. Model: `dropMods` zostaje
+  `NEUTRAL`, a `dropFactor` regionu poziomu idzie obok (`Balance.dropFactorAt`: `dropsPerHour`, `materialSupply`,
+  `dismantlePerItem`).
+- **S87** `BossSchedule.pick`: spośród gotowych ataków ten z największym (now − nextAttack) / odnowienie, remis = kolejność
+  listy. Nie „najdawniej gotowy”: przy kolejce za `globalGap` każdy atak dostawałby tyle samo rzutów niezależnie od
+  odnowienia (krótkie głodzone); stosunek daje każdemu ten sam ułamek jego tempa. G11 36/36 (najniżej 52,5%).
+- **S87** `Data/BossTuning` (`globalGap`, `hazards.azgor.lava`, `hazards.vaelgrath.freezingStorm`) czytają `Boss.luau`,
+  skrypty i model (`require`); osłona tekstowa sprawdza tylko, że serwer go czyta. Linie `local NAZWA = liczba` w
+  skryptach zostają (wiki i notatki bossów).
+- **S87** Skala `pct` linii kończy się na ilvl 20 (`Bonuses.scaling.pctCapIlvl`), bez migracji: linie wylosowane wcześniej
+  ponad nowym zakresem zostają (jakość 100%).
+- **S87** Broń dwuręczna przy odczycie (`ItemRoll.itemStats`, także posiadane): linie zwykłe wylosowanej broni ×2,7
+  (`twoHandedBonusMul`), baza i obrażenia +6,6% na poziom (`upgradeStatPerLevelTwoHanded`); bez nazwanych, linii
+  legendarnych i mitycznych i bez cechy (dalej 6%). Model mnoży linie bez zaokrąglenia (`Balance.itemStats`).
+- **S87** Definicja G8 tej sesji: siatka S84 (`G8_PAIRS` × Zwykły…Mityk × +0 / +9 × 20 / 45 / 70 / 100), MIX moc²;
+  stroi kolumna „bez cech” (0,97–1,035, Kostur Święty +9 do 1,06): 2,7 / 6,6% to para z największą liczbą wierszy w
+  paśmie (269/280) z pierwszeństwem Legendy i Mityka +0 na 45–100 (39/42; plan 1,75 / 7% dawał 237). Kolumna „z
+  cechami” (luka drugiej cechy 0,92–0,96 i Zbawczy cios Kostura Świętego) w raporcie dla S88 (E6).
+- **S87** `Config.Upgrade.goldHigh` 40 → 20 (rampa od ilvl 20, więc 1–20 bez zmian) i `legendCoreFrom = 8` (`Upgrade.cost`):
+  chronione +7…+9 Legendy 10,8 → 8,3 Rdzenia.
+- **S87** Krzywa `expToNext` mnoży też nagrody zadań (ułamki `expToNext`); zostaje neutralna (1 / 1 / 1), bo krzywa
+  potworów sama wydłużyła pasma do 18,0 / 27,2 / 45,3 h; nie schodzi poniżej 1, więc 20–45 ponad celem przejmuje S92.
+- **S87** Progi mikstur Wielka 45 i Potężna 70 jedną zasadą dla HP, many i energii (`Consumables.level`,
+  `Potions.requiredLevel` czyta definicję, więc stare stosy z `ilvl = 1` też mają próg); `ItemRoll.requiredLevel` bierze
+  ilvl tylko dla wyposażenia (materiały i błogosławieństwa na wiki: 1 zamiast swojego `tier`).
+- **S87** `manaCost.Mage` 1,89 / 2,59 / 3,49 (ROZWOJ 8 poprawiony): buildy się rozjeżdżają (Niszczyciel exp z Kaskadą w
+  dochodzie potrzebuje 2,4 / 3,5 / 6,1, Arkanista boss znosi 1,5 / 1,9 / 2,0), więc średnia geometryczna; wiersze poza
+  pasmem idą do S90 (koszty ścieżek). Wiersze T-SK4 są od 45. (ROZWOJ 12.7); 25–44 dokłada S92 (jego G2).
+- **S87** `heal` 2,33 / 0,31 / 0,67 (ROZWOJ 9.2 poprawiony): na każdej kotwicy mnożnik na środek pasma 0,30 dla
+  Uzdrowiciela „Lochowego” na Obrońcy (na 100. górę 0,35, bo część od HP daje 0,32); krzywa ma dołek na 55–70, bo część
+  od HP rośnie z węzłami. Skutek dla Fortuny, Inkwizytora i T-SK6 w raporcie dla S89.
+- **S87** Zastępczy Mityk: gałąź nazwana bierze tylko nazwany przedmiot pasujący klasie, inaczej wylosowany Mityk dla
+  klasy (`Loot.pickUsable`: tylko sloty z bazą dla klasy, `forClass`); bez klasy dzisiejszy `pickItem` (wiki bez zmian).
+  `Balance.bossDrops` liczy tak samo: każdy Mityk pasuje klasie (Morvane dla Wojownika, Vaelgrath dla Łowcy 0,03 → 0,06
+  na dzień).
+- **S87** Dymek: zakres linii broni dwuręcznej pokazany z tym samym mnożnikiem co wartość (`ItemRoll.lineMultiplier`,
+  jakość z zapisanej wartości); wiki dalej bez mnożnika. Mana w `/balance` liczy tylko umiejętności, które obecna broń
+  pozwala rzucić (`Paths.skillUsable`, jak `SkillService.cast`).
+- **S87** `/balance` (ta sama komenda) dokłada G3, moc `FightSim.power`, manę Maga (`Skills.manaDemand`, bez zwrotów),
+  Leczenie Kapłana (`Skills.healAmount` przed premiami) i progi G4–G13. Progi w tekstach to kopia bloku globalnego:
+  zmiana progu G = zmiana tekstu `admin.balance.*`.
+- **S87** `GLOBAL_ASSERT = true`; `GLOBAL_REPORT_ONLY` mieszka w `tests/Balance.luau` (jak `TUNED`, raport czyta tę samą
+  tabelę), `balance.spec` sprawdza martwe klucze i sesję > 87. Wpisy: G12 → S91; G13 20–45 (18,0 h) → S92; G7 Heroik
+  Łowcy 25–100 (25,1–26,7%) → S88; G8 „z cechami” (257 wierszy) i „bez cech” (11: Mityk topora 0,95, Mityk kosturów +9
+  na 100. 0,96–0,97, Legenda na 20. 1,04) → S88; G9 na 20. → S91, +1…+9 na 25. (10,7) → S92; G10 T-SK5 na 20. → S91, na
+  25. → S92, T-SK4 Niszczyciela (45, 60–100: 1,43–2,00) i Arkanisty (45, 65, 95, 100: 3,02–3,26) → S90.
+- **S87** Fixture `balance_items.json` i `balance_paths.json` wygenerowane od nowa (`meta.session = "S87"`, trzeci argument
+  trybu `--fixture-*`); fixture 1–20 bez zmian (S91), 21 różnic Elit w `ALLOWED_1_20_DIFFS`.

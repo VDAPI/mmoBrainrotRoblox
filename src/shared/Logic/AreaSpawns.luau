@@ -15,6 +15,7 @@ local AreaProfiles = require("../Data/AreaProfiles")
 local AreaTypes = require("../Data/Areas/Types")
 local CaveGen = require("./CaveGen")
 local Combat = require("../Data/Combat")
+local LevelCurves = require("./LevelCurves")
 local MapTerrain = require("./MapTerrain")
 local Monsters = require("../Data/Monsters")
 local Rng = require("./Rng")
@@ -245,8 +246,11 @@ local function fightRooms(cave: AreaTypes.Cave): { AreaTypes.Room }
 	return list
 end
 
-function AreaSpawns.cave(cave: AreaTypes.Cave): { Spawner }
+-- `opts.pairChance` (tests only) replaces the region's chance that an Elite group is a pair.
+function AreaSpawns.cave(cave: AreaTypes.Cave, opts: { pairChance: number? }?): { Spawner }
 	local rng = Rng.new(seedOf(cave.id))
+	-- S87 (balance plan D5): pair chance per region (LevelCurves.elitePairChance; 0.5 everywhere until S91-S94)
+	local pairChance = if opts and opts.pairChance then opts.pairChance else LevelCurves.elitePairChance(cave.region)
 	local spawners: { Spawner } = {}
 	local placed: { { number } } = {}
 	local rooms = fightRooms(cave)
@@ -305,7 +309,7 @@ function AreaSpawns.cave(cave: AreaTypes.Cave): { Spawner }
 	-- Elite groups, alternating the two kinds, spread over the rooms.
 	for i = 1, cave.eliteGroups do
 		local kind = cave.elites[(i - 1) % #cave.elites + 1]
-		local count = if rng:chance(0.5) then 2 else 1
+		local count = if rng:chance(pairChance) then 2 else 1
 		local kinds = table.create(count, kind)
 		add(`elite_{i}`, "elite", kinds, rooms[(i - 1) % #rooms + 1], AreaSpawns.ELITE_RESPAWN)
 	end

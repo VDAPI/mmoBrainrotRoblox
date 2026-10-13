@@ -50,13 +50,16 @@ local function roundTo(value: number, decimals: number): number
 	return math.floor(value * factor + 0.5) / factor
 end
 
+-- Scale of a bonus by item level (constants in Data/Bonuses.scaling). S87 (balance plan C1, G7): "pct" lines stop
+-- growing at ilvl pctCapIlvl (20), so Legendary and Mythic gains no longer grow with the level; 1-20 unchanged.
 local function scaleFor(def: Bonuses.BonusDef, ilvl: number): number
+	local s = Bonuses.scaling
 	if def.scaling == "flat" then
-		return 1 + ilvl / 20
+		return 1 + ilvl / s.flatPer
 	elseif def.scaling == "curve" then
-		return (6 + 2.2 * ilvl) / 8.2
+		return (s.curveBase + s.curveSlope * ilvl) / s.curveDiv
 	elseif def.scaling == "pct" then
-		return 1 + ilvl / 60
+		return 1 + math.min(ilvl, s.pctCapIlvl) / s.pctPer
 	end
 	return 1
 end
@@ -91,9 +94,27 @@ function ItemRoll.bonusQuality(bonusId: string, value: number, ilvl: number, rar
 end
 
 -- Weights of a drop source with its highest rarity (never above Rarities.cap) multiplied by `topTierMul` (S33:
--- "better drops" hunting grounds).
-function ItemRoll.rarityWeights(variant: string, topTierMul: number?): { [number]: number }
+-- "better drops" hunting grounds). S87 (balance plan D5): `dropFactor` (LevelCurves.dropFactor of the monster's
+-- region) first multiplies the Unique and Heroic weights of the source table and Common takes the difference, so
+-- the total and the Legendary / Mythic share stay; nil or 1 returns today's table (same Rng use).
+function ItemRoll.rarityWeights(variant: string, topTierMul: number?, dropFactor: number?): { [number]: number }
 	local weights = Rarities.dropWeights[variant] or Rarities.dropWeights.normal
+	if dropFactor and dropFactor ~= 1 then
+		local f = math.max(0, dropFactor)
+		local u = weights[Rarities.UNIQUE] or 0
+		local h = weights[Rarities.HEROIC] or 0
+		local scaled = table.clone(weights)
+		local common = (weights[Rarities.COMMON] or 0) + (1 - f) * (u + h)
+		assert(common >= -1e-9, `ItemRoll: dropFactor {f} leaves no Common weight for {variant}`)
+		scaled[Rarities.COMMON] = math.max(0, common)
+		if weights[Rarities.UNIQUE] then
+			scaled[Rarities.UNIQUE] = u * f
+		end
+		if weights[Rarities.HEROIC] then
+			scaled[Rarities.HEROIC] = h * f
+		end
+		weights = scaled
+	end
 	if not topTierMul or topTierMul == 1 then
 		return weights
 	end
@@ -111,8 +132,8 @@ function ItemRoll.rarityWeights(variant: string, topTierMul: number?): { [number
 	return out
 end
 
-function ItemRoll.rollRarity(variant: string, rng: Rng.Rng, topTierMul: number?): number
-	return rng:weighted(ItemRoll.rarityWeights(variant, topTierMul))
+function ItemRoll.rollRarity(variant: string, rng: Rng.Rng, topTierMul: number?, dropFactor: number?): number
+	return rng:weighted(ItemRoll.rarityWeights(variant, topTierMul, dropFactor))
 end
 
 -- Builds a stack of a non-equipment item (materials, potions, scrolls, tools, backpacks).
@@ -386,6 +407,39 @@ function ItemRoll.baseKey(key: string): (string, boolean)
 	return key, false
 end
 
+-- S87 (balance plan C2): a regular line (not from the legendary or mythic pools, scaling with the item level) gets
+-- Rarities.twoHandedBonusMul on a rolled two-handed weapon.
+function ItemRoll.isRegularLine(bonusId: string): boolean
+	local def = Bonuses.get(bonusId)
+	return def ~= nil and def.tier == "regular" and def.scaling ~= "none"
+end
+
+-- Upgrade share per level of an item's base stats and weapon damage (S87: two-handed weapons 6.6 %, the rest 6 %).
+function ItemRoll.upgradeStatPerLevel(twoHanded: boolean?): number
+	return if twoHanded then Rarities.upgradeStatPerLevelTwoHanded else Rarities.upgradeStatPerLevel
+end
+
+-- S87: Rarities.twoHandedBonusMul for a rolled (not named) item whose weapon is two-handed, else 1.
+local function twoHandedLineMul(def: Items.ItemDef, weapon: any): number
+	return if def.fixedBonuses == nil
+			and weapon ~= nil
+			and weapon.twoHanded == true
+		then Rarities.twoHandedBonusMul
+		else 1
+end
+
+-- Multiplier of line `bonusId` on `item` as itemStats applies it (S87: a regular line of a rolled two-handed
+-- weapon x twoHandedBonusMul, else 1); the tooltip scales the line's range with it.
+function ItemRoll.lineMultiplier(item: ItemInstance, bonusId: string): number
+	local def = Items.get(item.id)
+	if not def or not ItemRoll.isRegularLine(bonusId) then
+		return 1
+	end
+	local scaling = if def.tier and def.fixedBonuses == nil then Items.bases.byType[def.type] else nil
+	local weapon = if scaling and scaling.weapon then scaling.weapon(math.max(1, item.ilvl)) else def.weapon
+	return twoHandedLineMul(def, weapon)
+end
+
 -- Stats of an item instance: base (rarity + upgrade), weapon, and bonus totals mapped to StatCalc ids.
 function ItemRoll.itemStats(item: ItemInstance): ItemStats
 	local def = Items.get(item.id)
@@ -394,13 +448,17 @@ function ItemRoll.itemStats(item: ItemInstance): ItemStats
 		return result
 	end
 	local named = def.fixedBonuses ~= nil
-	-- Named items already carry their ×1.3 in the definition: no rarity multiplier on top (S30 B.2).
-	local baseMul = if named then 1 else Rarities.get(item.rarity).baseMul
-	local multiplier = baseMul * (1 + Rarities.upgradeStatPerLevel * (item.up or 0))
-
 	-- S18: generated equipment scales with the instance's ilvl (every level beats the one before); the
 	-- tier definition only names it. Named items keep their fixed base (S30 fix: it was recomputed and lost ×1.3).
 	local scaling = if def.tier and not named then Items.bases.byType[def.type] else nil
+	local weapon = if scaling and scaling.weapon then scaling.weapon(math.max(1, item.ilvl)) else def.weapon
+	-- S87 (balance plan C2, G8): two-handed weapons read on load (owned items too, no migration)
+	local twoHanded = weapon ~= nil and weapon.twoHanded == true
+	-- Named items already carry their ×1.3 in the definition: no rarity multiplier on top (S30 B.2).
+	local baseMul = if named then 1 else Rarities.get(item.rarity).baseMul
+	local multiplier = baseMul * (1 + ItemRoll.upgradeStatPerLevel(twoHanded) * (item.up or 0))
+	local lineMul = twoHandedLineMul(def, weapon)
+
 	local baseStats: { [string]: number } = if scaling and scaling.stats
 		then scaling.stats(math.max(1, item.ilvl))
 		else def.base or {}
@@ -412,7 +470,6 @@ function ItemRoll.itemStats(item: ItemInstance): ItemStats
 		local target = if isPct then result.pct else result.flat
 		target[id] = (target[id] or 0) + scaled
 	end
-	local weapon = if scaling and scaling.weapon then scaling.weapon(math.max(1, item.ilvl)) else def.weapon
 	if weapon then
 		result.weapon = {
 			dmg = math.floor(weapon.dmg * multiplier + 0.5),
@@ -438,6 +495,10 @@ function ItemRoll.itemStats(item: ItemInstance): ItemStats
 				id = replacement.id
 				v = ItemRoll.rollBonusValue(id, item.ilvl, item.rarity, quality)
 				bonusDef = replacement
+			end
+			-- S87: regular lines of a rolled two-handed weapon x twoHandedBonusMul (quality from the saved value)
+			if lineMul ~= 1 and ItemRoll.isRegularLine(id) then
+				v = roundTo(v * lineMul, bonusDef.decimals)
 			end
 			table.insert(result.bonuses, { id = id, v = v, quality = quality })
 			if bonusDef.hook then
@@ -473,13 +534,15 @@ function ItemRoll.itemStats(item: ItemInstance): ItemStats
 	return result
 end
 
--- Level needed to equip: the ilvl for generated equipment (S18), the definition's level otherwise.
+-- Level needed to equip or use: the ilvl for generated equipment (S18), the definition's level otherwise. S87: the
+-- ilvl branch only for equipment (potions, materials and blessings also carry `tier`; a potion stack from before S87
+-- has ilvl 1, its definition says 45 / 70).
 function ItemRoll.requiredLevel(item: ItemInstance): number
 	local def = Items.get(item.id)
 	if not def then
 		return 1
 	end
-	return if def.tier then math.max(1, item.ilvl) else def.level
+	return if def.category == "equipment" and def.tier then math.max(1, item.ilvl) else def.level or 1
 end
 
 -- Price a merchant pays (S31, DESIGN §18): the item's value from Logic/ItemValue (0 when it cannot be sold).

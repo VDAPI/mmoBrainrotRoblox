@@ -172,7 +172,7 @@ T.describe("TooltipModel (S31)", function()
 		T.expect(string.find(dust, "Używany do:", 1, true) ~= nil).toBe(true)
 		T.expect(string.find(dust, "+1…+3", 1, true) ~= nil).toBe(true)
 		local core = texts(sample("legend_core"))
-		T.expect(string.find(core, "+7…+9", 1, true) ~= nil).toBe(true)
+		T.expect(string.find(core, "+8…+9", 1, true) ~= nil).toBe(true) -- S87: the Legend Core from +8
 		for id, def in Items.byId do
 			if def.category == "material" and not roles(sample(id)).use then
 				error(`{id}: no usage line`)

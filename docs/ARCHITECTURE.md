@@ -50,7 +50,7 @@ mmoBrainrotRoblox/
 │  │  │  ├─ Classes.luau  Stats.luau  Rarities.luau  Bonuses.luau
 │  │  │  ├─ Items/ (init.luau, Generate.luau, Bases.luau, Uniques.luau, Materials.luau, Consumables.luau, Backpacks.luau)
 │  │  │  ├─ Skills/ (Warrior.luau, Hunter.luau, Mage.luau, Cleric.luau)
-│  │  │  ├─ Monsters.luau  Bosses.luau  LootTables.luau
+│  │  │  ├─ Monsters.luau  Bosses.luau  BossTuning.luau (S87: odstęp ataków, lawa, burza)  LootTables.luau
 │  │  │  ├─ Maps.luau  Spawns/ (per mapa)  GatherNodes.luau  Portals.luau (S25)  MapMarks.luau (S25)
 │  │  │  ├─ Npcs.luau  Shops.luau  Recipes.luau  Blessings.luau  Potions.luau
 │  │  │  ├─ Quests/ (Main.luau, Daily.luau)  GuildSkills.luau  Products.luau
@@ -60,6 +60,7 @@ mmoBrainrotRoblox/
 │  │  │  ├─ Upgrade.luau  Dismantle.luau  PartyLoot.luau  Skills.luau
 │  │  │  ├─ Inventory.luau  PvpRules.luau  Rng.luau  Time.luau
 │  │  │  ├─ MapRoute.luau  MapSearch.luau  NpcMarks.luau  NavPath.luau (S25: mapa i prowadzenie)
+│  │  │  ├─ BossSchedule.luau (S87: wybór ataku bossa w `Boss.Step` i w modelu balansu)
 │  │  └─ Util/ (Locale.luau, Format.luau, TableUtil.luau, Deep.luau)
 │  ├─ server/                    # → ServerScriptService.Server
 │  │  ├─ init.server.luau        # bootstrap: ładuje Services/*, Init → Start
@@ -460,7 +461,7 @@ type CharacterData = {
 | `/mstats` | monsters | [level] | HP i atak zwykłego potwora oraz czas zabicia go przez ciebie |
 | `/mobdef` | monsters | <monster> [variant] [level] | S66: rodzina, pancerz, odporność i unik potwora wobec twojej postaci |
 | `/simfight` | combat | <monster> <level> [n] [variant] | S32: przewidywana walka z grupą n (`Logic/FightSim`, twoje statystyki) |
-| `/balance` | combat | – | S32: twoja postać względem celów balansu (1 potwór, grupy, Elita) |
+| `/balance` | combat | – | S32: twoja postać względem celów balansu (1 potwór, grupy, Elita); S87: cele G1–G13, trzy potwory bez umiejętności, moc (`FightSim.power`), mana Maga (`Skills.manaDemand`), Leczenie Kapłana (`Skills.healAmount`), progi G4–G13 |
 | `/curves` | combat | [level] | S54: wartości `Data/LevelCurves` na poziomie, Zręczność, odstęp mikstur |
 | `/e2` | monsters | <spawn> | od razu odródź Elitę II w tej jaskini |
 | `/e2timer` | monsters |  | twoje timery Elit II |

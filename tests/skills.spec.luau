@@ -364,9 +364,10 @@ T.describe("S54 formulas", function()
 	T.it("Mage mana follows the level curve, Cleric and energy stay flat", function()
 		local firebolt = skill("firebolt")
 		T.expect(Skills.cost(firebolt, 1, 20, "Mage")).toBe(12)
-		T.expect(Skills.cost(firebolt, 1, 45, "Mage")).toBeNear(1.4 * Skills.cost(firebolt, 1, 20, "Mage"))
-		T.expect(Skills.cost(firebolt, 1, 45, "Mage")).toBeNear(16.8)
-		T.expect(Skills.cost(firebolt, 1, 100, "Mage")).toBeNear(30)
+		-- S87 (G10): manaCost.Mage 1.89 / 2.59 / 3.49 at 45 / 70 / 100 (was 1.4 / 1.9 / 2.5)
+		T.expect(Skills.cost(firebolt, 1, 45, "Mage")).toBeNear(1.89 * Skills.cost(firebolt, 1, 20, "Mage"))
+		T.expect(Skills.cost(firebolt, 1, 45, "Mage")).toBeNear(12 * 1.89)
+		T.expect(Skills.cost(firebolt, 1, 100, "Mage")).toBeNear(12 * 3.49)
 		for _, def in SkillData.byId do
 			if def.class == "Mage" and def.type ~= "passive" then
 				for _, rank in { 1, def.maxLevel } do

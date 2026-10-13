@@ -1,5 +1,7 @@
 --!strict
 local Exp = require("../src/shared/Logic/Exp")
+local LevelCurves = require("../src/shared/Logic/LevelCurves")
+local Progression = require("../src/shared/Data/Progression")
 local T = require("./Test")
 
 T.describe("Exp", function()
@@ -8,6 +10,20 @@ T.describe("Exp", function()
 		T.expect(Exp.expToNext(10)).toBeNear(3240, 10)
 		T.expect(Exp.expToNext(50)).toBeNear(67400, 700) -- DESIGN rounds loosely ("~67 400")
 		T.expect(Exp.expToNext(99)).toBeNear(249000, 2500)
+	end)
+
+	T.it("expToNext control values on the S87 curve (expToNext anchors; S92-S94 move 45 / 70 / 100)", function()
+		T.expect(Exp.expToNext(20)).toBe(11918)
+		T.expect(Exp.expToNext(45)).toBe(55416)
+		T.expect(Exp.expToNext(70)).toBe(128218)
+		T.expect(Exp.expToNext(100)).toBe(252443)
+	end)
+
+	T.it("expToNext is the DESIGN formula x LevelCurves expToNext (S87 E1)", function()
+		for _, l in { 1, 20, 21, 33, 45, 58, 70, 85, 99, 100 } do
+			local formula = Progression.nextFactor * l ^ Progression.nextExponent + Progression.nextBase
+			T.expect(Exp.expToNext(l)).toBe(math.floor(formula * LevelCurves.at("expToNext", l) + 0.5))
+		end
 	end)
 
 	T.it("expToNext grows with level", function()

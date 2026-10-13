@@ -198,7 +198,8 @@ i pasek. Pole `tier = "regular" | "legendary" | "mythic"` w `BonusDef` zastępuj
 
 ## 4. Nowe zwykłe linie (`Data/Bonuses`)
 
-Skala jak dziś: `pct` = `1 + ilvl/60` (na 100. poziomie ×2,67). „Linia” to średnio ok. 1–2,2% × skala, jak `physAtk`.
+Skala (S87): `pct` = `1 + min(ilvl, 20)/60`, limit na ilvl 20, najwyżej ×1,33 (było `1 + ilvl/60`, ×2,67 na 100.;
+`Bonuses.scaling.pctCapIlvl`); S88 stroi na tej skali linie rodzin i klas. „Linia” to średnio ok. 1–2,2% × skala, jak `physAtk`.
 Zakres w tabeli to wartość na 1. poziomie przedmiotu; „bez skali” znaczy stałą wartość jak linie `leg_`. W ankiecie
 każda liczba linii podana jest dla 100. poziomu albo z dopiskiem, że rośnie z poziomem.
 
@@ -455,7 +456,9 @@ Nowe pole `family` w `Data/Monsters.luau` i `Data/Bosses.luau`, lista i nazwy w 
   z liniami `pierce`), Wyuczone formuły 15% (20% z liniami `costReduce`), Ścięcie 34% (z Katem 15% razem 49%, z
   legendą do `executionerCap` ok. 60), Niszczenie pancerza 40% (z Miażdżącym Ciosem razem 50%), Żniwo 1,9% (sumuje
   się bez limitu z Krwiopijcą 2–6% i liniami `killHeal`, 14).
-- Linie: wzór z `ItemRoll` bez zmian, ulepszanie ich nie zmienia (dziś też nie).
+- Linie: wzór z `ItemRoll` bez zmian, ulepszanie ich nie zmienia (dziś też nie). S87: linie zwykłe wylosowanej broni
+  dwuręcznej liczą się ×2,7 przy odczycie (`Rarities.twoHandedBonusMul`; legendarne, mityczne i nazwane bez), a baza
+  i obrażenia broni dwuręcznej rosną o 6,6% na poziom ulepszenia (`upgradeStatPerLevelTwoHanded`); cecha dalej 6%.
 - `Logic/ItemValue` bez zmian (cena od poziomu, rzadkości i ulepszenia). `Logic/ItemScore` („Lepszy przedmiot”)
   dostaje wagi dla każdej nowej linii i cechy według klasy i ścieżki głównej; linie sytuacyjne liczą się w połowie.
 

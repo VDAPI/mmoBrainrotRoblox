@@ -4,6 +4,7 @@
 local Combat = require("../Data/Combat")
 local Damage = require("./Damage")
 local Exp = require("./Exp")
+local LevelCurves = require("./LevelCurves")
 
 export type Variant = "normal" | "elite" | "elite2" | "boss"
 
@@ -39,12 +40,31 @@ export type MonsterStats = {
 
 local MonsterStats = {}
 
+-- S87: monster HP above 20 (balance plan D1, LevelCurves.monsterHp); exactly the old formula x 1 up to 20.
 function MonsterStats.baseHp(level: number): number
-	return Combat.monsterHpBase + Combat.monsterHpComp * Combat.monsterHpFactor * level ^ Combat.monsterHpExponent
+	return (Combat.monsterHpBase + Combat.monsterHpComp * Combat.monsterHpFactor * level ^ Combat.monsterHpExponent)
+		* LevelCurves.at("monsterHp", level)
 end
 
+-- S87: monster attack above 20 (balance plan D1, LevelCurves.monsterAtk).
 function MonsterStats.baseAttack(level: number): number
-	return Combat.monsterAtkBase + Combat.monsterAtkFactor * level ^ Combat.monsterAtkExponent
+	return (Combat.monsterAtkBase + Combat.monsterAtkFactor * level ^ Combat.monsterAtkExponent)
+		* LevelCurves.at("monsterAtk", level)
+end
+
+-- S87 (balance plan D4): Elite and Elite II level curves on top of the monster curves, at the monster's final level.
+local VARIANT_CURVES: { [string]: { hp: string, dmg: string } } = {
+	elite = { hp = "eliteHp", dmg = "eliteDmg" },
+	elite2 = { hp = "elite2Hp", dmg = "elite2Dmg" },
+}
+
+-- HP and damage multipliers of the variant's level curves (1, 1 for normal monsters and bosses).
+function MonsterStats.variantCurves(variant: string, finalLevel: number): (number, number)
+	local curves = VARIANT_CURVES[variant]
+	if not curves then
+		return 1, 1
+	end
+	return LevelCurves.at(curves.hp, finalLevel), LevelCurves.at(curves.dmg, finalLevel)
 end
 
 -- Damage multiplier of a member of a group of `size` (S32, Combat.groupDamageMul; 1 alone or unknown).
@@ -74,12 +94,15 @@ function MonsterStats.compute(
 	local hpMul = if mods and mods.hpMul then mods.hpMul else 1
 	local atkMul = if mods and mods.atkMul then mods.atkMul else 1
 	local finalLevel = math.max(1, math.floor(level + variantMods.levelAdd))
+	-- S87: the curves count from the monster's final level (Elites 21-24 on the 20-45 stretch); 1 up to 20
+	local curveHp, curveDmg = MonsterStats.variantCurves(v, finalLevel)
 	return {
 		level = finalLevel,
-		maxHp = math.floor(MonsterStats.baseHp(finalLevel) * kind.hpMul * variantMods.hpMul * hpMul + 0.5),
+		maxHp = math.floor(MonsterStats.baseHp(finalLevel) * kind.hpMul * variantMods.hpMul * curveHp * hpMul + 0.5),
 		attack = MonsterStats.baseAttack(finalLevel)
 			* kind.atkMul
 			* variantMods.dmgMul
+			* curveDmg
 			* atkMul
 			* MonsterStats.groupDamageMul(groupSize),
 		-- S66 (STATY 7): magic resistance has its own multiplier; dodge only against basic attacks (Damage.paramsVsMonster)
