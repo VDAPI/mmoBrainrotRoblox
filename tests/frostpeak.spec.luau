@@ -30,13 +30,13 @@ local MAX_SLOPE = math.tan(math.rad(15))
 -- The areas of the brief (S47 "Obszary Szczytów"): id, levels, kinds, groups, profile.
 local BRIEF = {
 	{ "frostpeak_valley", { 70, 75 }, { "iceWolf", "snowLeopard" }, 8, nil },
-	{ "frostpeak_slopes", { 74, 80 }, { "yeti", "snowLeopard" }, 7, "exp" },
+	{ "frostpeak_slopes", { 71, 80 }, { "yeti", "snowLeopard" }, 7, "exp" }, -- S94: from 71
 	{ "frostpeak_harpyrocks", { 76, 83 }, { "peakHarpy", "yeti" }, 6, "loot" },
 	{ "frostpeak_pass", { 78, 86 }, { "frostGiant", "peakHarpy" }, 7, nil },
 	{ "frostpeak_lake", { 82, 90 }, { "iceElemental", "iceMammoth" }, 6, "loot" },
 	{ "frostpeak_tundra", { 82, 89 }, { "iceMammoth", "frostGiant" }, 6, "exp" },
 	{ "frostpeak_temple", { 85, 95 }, { "dragonspawn", "frozenKnight" }, 7, "gold" },
-	{ "frostpeak_icewatch", { 88, 95 }, { "frozenKnight", "iceElemental" }, 5, "exp" },
+	{ "frostpeak_icewatch", { 88, 100 }, { "frozenKnight", "iceElemental" }, 5, "exp" }, -- S94: to 100
 	{ "frostpeak_wyrmspire", { 94, 100 }, { "frostWyrm", "dragonspawn" }, 5, nil },
 }
 

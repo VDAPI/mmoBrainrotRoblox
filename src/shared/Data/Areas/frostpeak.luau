@@ -193,7 +193,7 @@ local data: Types.MapAreas = {
 		{
 			id = "frostpeak_slopes",
 			nameKey = "area.frostpeak_slopes",
-			lv = { 74, 80 },
+			lv = { 71, 80 }, -- S94: from 71 (a second hunting ground on 71-73)
 			kinds = { "yeti", "snowLeopard" },
 			rect = { -480, -780, -20, -340 },
 			groups = 7,
@@ -264,7 +264,7 @@ local data: Types.MapAreas = {
 		{
 			id = "frostpeak_icewatch",
 			nameKey = "area.frostpeak_icewatch",
-			lv = { 88, 95 },
+			lv = { 88, 100 }, -- S94: to 100 (a second hunting ground on 96-100)
 			kinds = { "frozenKnight", "iceElemental" },
 			rect = { 440, 340, 780, 780 },
 			groups = 5,

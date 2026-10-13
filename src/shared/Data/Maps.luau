@@ -678,7 +678,7 @@ for _, cave in
 			region = "frostpeak",
 			i = 4,
 			row = 12000,
-			min = 74,
+			min = 71, -- S94: Elites from 71
 			max = 83,
 			biome = "cave",
 			wx = 0.86,

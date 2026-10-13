@@ -4,19 +4,20 @@
 --     asserted again from S91 (1-20 retuned and frozen); the structural checks of the S32 blocks always. The new
 --     1-20 targets of S91 (rows "S91.*": tempo, Grimrok, the skill layer at L20, R4, paths at 20) in the block
 --     "Balance 1-20: S91". The 1-20 numbers themselves: tests/balance1_20.spec (strict from S91).
---   * Global targets 20-100 (Balance.targetsGlobal, G1-G9, G11-G13; G7-G9 from S84): asserted from S87
---     (GLOBAL_ASSERT) except Balance.GLOBAL_REPORT_ONLY.
---   * Regions (Balance.targetsRegion): asserted where Balance.TUNED says so (S91: the Meadows in full, also with
---     the players with nodes; S92: the Dark Forest with Balance.targetsS92, S93: the Scorched Wastes with
---     Balance.targetsS93, rows with `report` printed), printed elsewhere.
+--   * Global targets 20-100 (Balance.targetsGlobal, G1-G9, G11-G13; G7-G9 from S84): asserted from S87 except
+--     Balance.GLOBAL_REPORT_ONLY.
+--   * Regions (Balance.targetsRegion): every region asserted (S91: the Meadows in full, also with the players with
+--     nodes; S92: the Dark Forest with Balance.targetsS92, S93: the Scorched Wastes with Balance.targetsS93, S94: the
+--     Frost Peaks with Balance.targetsS94 and the gate TUNED removed; rows with `report` printed). S94 (L3): the
+--     cross rows 1-100 (Balance.targetsCross) asserted.
 --   * The balance ledger (S83, balance plan 2.6): always asserted.
 --   * S85: G10 (T-SK4, T-SK5 of tests/SkillModel) in the global block, the Meadows' T-SK3 / T-SK6 printed in the
 --     region block, the block "Skill model (S85)" at the end.
 --   * S86: the Meadows' T-SK rows without `report` asserted, the blocks "SkillModel: class mechanics (S86)" and
---     "Balance 20-100: paths" (PATHS_TUNED, tests/fixtures/balance_paths.json) at the end.
+--     "Balance 20-100: paths" (tests/fixtures/balance_paths.json) at the end.
 --   * Items, loot and monster defence 20-100 (S84): the tables of BalanceTables.tablesItems against
 --     tests/fixtures/balance_items.json, S32 compatibility and Monte Carlo on the game's functions; D5 rows in the
---     region block (REGION_TARGETS.d5, under TUNED).
+--     region block (REGION_TARGETS.d5).
 --   * S88: weapon traits, lines, monster defence, class checks, PvP and luck (SkillModel.targetsS88): asserted except
 --     the rows with `report` (the session with the lever).
 -- Model checks (boss schedule, quests, potions, cave Elites, boss constants): tests/balancemodel.spec.
@@ -29,13 +30,11 @@ local Loot = require("../src/shared/Logic/Loot")
 local MonsterStats = require("../src/shared/Logic/MonsterStats")
 local T = require("./Test")
 
-local S32_ASSERT = true -- S91: 1-20 retuned and frozen
 -- S87 (J1): rows of the global block left to a later session (the table lives in tests/Balance.luau, the report reads
 -- it too); every other row without `report` is asserted.
 local GLOBAL_REPORT_ONLY = B.GLOBAL_REPORT_ONLY
-local GLOBAL_ASSERT = true -- S87
--- Region switches and thresholds live in tests/Balance.luau (TUNED, REGION_TARGETS: the report reads them too).
-local TUNED = B.TUNED
+-- S94 (L3): the switches S32_ASSERT, GLOBAL_ASSERT, TUNED and PATHS_TUNED (all true) removed: every row without
+-- `report` is asserted. Region thresholds live in tests/Balance.luau (REGION_TARGETS: the report reads them too).
 local REGION_TARGETS = B.REGION_TARGETS
 
 local function fmt(v: number?): string
@@ -77,15 +76,13 @@ end
 
 T.describe("Balance S32: targets 1-20 (asserted again from S91)", function()
 	local rows = rowsOf("S32.")
-	if S32_ASSERT then
-		for _, row in rows do
-			if row.report == nil then
-				T.it(`{row.id}: {row.label}`, function()
-					if not B.inBand(row) then
-						error(`{describeRow(row)} (S32)`, 0)
-					end
-				end)
-			end
+	for _, row in rows do
+		if row.report == nil then
+			T.it(`{row.id}: {row.label}`, function()
+				if not B.inBand(row) then
+					error(`{describeRow(row)} (S32)`, 0)
+				end
+			end)
 		end
 	end
 	T.it("S32 targets (printed)", function()
@@ -340,19 +337,17 @@ T.describe("Balance 20-100: global (asserted from S87)", function()
 			table.insert(asserted, row)
 		end
 	end
-	if GLOBAL_ASSERT then
-		T.it("every row outside GLOBAL_REPORT_ONLY is in band", function()
-			local bad = {}
-			for _, row in asserted do
-				if not B.inBand(row) then
-					table.insert(bad, describeRow(row))
-				end
+	T.it("every row outside GLOBAL_REPORT_ONLY is in band", function()
+		local bad = {}
+		for _, row in asserted do
+			if not B.inBand(row) then
+				table.insert(bad, describeRow(row))
 			end
-			if #bad > 0 then
-				error(`{#bad} row(s) out of band: {table.concat(bad, "; ", 1, math.min(#bad, 20))}`, 0)
-			end
-		end)
-	end
+		end
+		if #bad > 0 then
+			error(`{#bad} row(s) out of band: {table.concat(bad, "; ", 1, math.min(#bad, 20))}`, 0)
+		end
+	end)
 	T.it("GLOBAL_REPORT_ONLY: every key matches a row, every session is above S87", function()
 		for key, entry in GLOBAL_REPORT_ONLY do
 			local found = false
@@ -461,6 +456,8 @@ T.describe("Balance 20-100: items, traits, defence (S88)", function()
 end)
 
 T.describe("Balance 20-100: regions", function()
+	-- S94 (L3): the levels of the T-SK guard rows of the region sessions (S92-S94), for the control-level check below
+	local guardLevels: { [number]: number } = {}
 	for _, mapId in B.REGION_IDS do
 		local rows = B.targetsRegion(mapId, REGION_TARGETS)
 		if mapId == "duskwood" then
@@ -475,10 +472,16 @@ T.describe("Balance 20-100: regions", function()
 			for _, row in B.targetsS93() do
 				table.insert(rows, row)
 			end
+		elseif mapId == "frostpeak" then
+			-- S94 (L2): Vaelgrath, the pace 70-100 and 1-100, the guards, support paths, drop levels, hunting grounds,
+			-- gold and parts; the rows with `report` (Balance.S94_REPORT; guards above the limit at 70) only printed
+			for _, row in B.targetsS94() do
+				table.insert(rows, row)
+			end
 		end
-		if TUNED[mapId] then
+		do
 			-- S91: the Meadows in full (S83 asserted only the kinds and Grimrok's schedule), the cave rows also with the
-			-- players with nodes (Balance.caveElites(mapId, true), B1)
+			-- players with nodes (Balance.caveElites(mapId, true), B1). S94 (L3): every region without a switch
 			local all = table.clone(rows)
 			if mapId == "meadows" then
 				for _, row in B.targetsRegion(mapId, REGION_TARGETS, true) do
@@ -493,9 +496,12 @@ T.describe("Balance 20-100: regions", function()
 						end
 					end)
 				end
+				if row.group == "guards" and row.level and string.find(row.id, ".guard.", 1, true) then
+					guardLevels[row.level] = (guardLevels[row.level] or 0) + 1
+				end
 			end
 		end
-		T.it(`{mapId}: region targets (printed{if TUNED[mapId] then "" else ", not tuned"})`, function()
+		T.it(`{mapId}: region targets (printed)`, function()
 			printReport(`region {mapId}`, rows, 8)
 			T.expect(#rows > 0).toBe(true)
 		end)
@@ -518,6 +524,31 @@ T.describe("Balance 20-100: regions", function()
 			end)
 		end
 	end
+	-- S94 (L3): every control level of the bands 20-100 has T-SK guard rows (20 is the S91 anchor: T-SK1 / T-SK2 are
+	-- 1 by definition, T-SK3 at 20 in the S91 block)
+	T.it("T-SK guards at every control level 30-100 (S92-S94 band rows)", function()
+		for _, lv in B.CROSS_GUARD_LEVELS do
+			T.expect({ lv, (guardLevels[lv] or 0) > 0 }).toEqual({ lv, true })
+		end
+	end)
+end)
+
+-- S94 (L3): the cross rows 1-100 (Balance.targetsCross): pace steps 20-99, hunting grounds and Elite item levels
+-- 21-100, no switch and no report rows.
+T.describe("Balance 1-100: cross rows (S94)", function()
+	local rows = B.targetsCross()
+	for _, row in rows do
+		T.it(`{row.id}`, function()
+			T.expect(row.report).toBeNil()
+			if not B.inBand(row) then
+				error(describeRow(row), 0)
+			end
+		end)
+	end
+	T.it("cross rows (printed)", function()
+		printReport("1-100", rows, 8)
+		T.expect(#rows).toBe(80 + 80 * 2)
+	end)
 end)
 
 -- Items, loot and monster defence 20-100 (S84) --------------------------------------------------------------------
@@ -1873,34 +1904,30 @@ end)
 
 -- Balance 20-100: paths (S86) ---------------------------------------------------------------------------------------
 -- PATH_TARGETS of tests/SkillModel.luau: printed with the same pass / fail as docs/BALANS.md; a class asserts its rows
--- (above 20) once PATHS_TUNED says so (S89: Cleric, Warrior; S90: Hunter, Mage). Asserted now: the shape, the
+-- (above 20) since S89 (Cleric, Warrior) / S90 (Hunter, Mage); S94 removed the switch. Asserted now: the shape, the
 -- dependencies of the definitions and the fixture tests/fixtures/balance_paths.json with the same data.
 
 -- S89: the Cleric and the Warrior asserted (rows with `report` or a `reportAt` level only printed, F1 / F4); the table
 -- lives in SkillModel so the report column "asertowany" reads the same one (S90 flips Hunter and Mage there)
-local PATHS_TUNED = SkillModel.PATHS_TUNED
-
 T.describe("Balance 20-100: paths", function()
 	local results = SkillModel.evaluateTargets()
 	for _, classId in B.CLASSES do
-		if PATHS_TUNED[classId] then
-			for _, r in results do
-				if r.classId == classId and r.asserted then
-					T.it(
-						`{r.build} L{r.L} {r.id}{if r.metric == "r4" or r.metric == "r4diff" then ` {r.note}` else ""}`,
-						function()
-							if not r.pass then
-								error(
-									`{r.path} L{r.L} {r.id} {string.format("%.3f", r.value)} not in {r.low or "-"}-{r.high or "-"} ({r.source})`,
-									0
-								)
-							end
+		for _, r in results do
+			if r.classId == classId and r.asserted then
+				T.it(
+					`{r.build} L{r.L} {r.id}{if r.metric == "r4" or r.metric == "r4diff" then ` {r.note}` else ""}`,
+					function()
+						if not r.pass then
+							error(
+								`{r.path} L{r.L} {r.id} {string.format("%.3f", r.value)} not in {r.low or "-"}-{r.high or "-"} ({r.source})`,
+								0
+							)
 						end
-					)
-				end
+					end
+				)
 			end
 		end
-		T.it(`paths {classId} (printed{if PATHS_TUNED[classId] then "" else ", not tuned"})`, function()
+		T.it(`paths {classId} (printed)`, function()
 			local ok, all, out = 0, 0, {}
 			for _, r in results do
 				if r.classId == classId then

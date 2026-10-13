@@ -5,7 +5,7 @@
 
 ## Stan
 
-S01–S93 gotowe (lista i zakres w `docs/SESJE.md`). Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
+S01–S94 gotowe (lista i zakres w `docs/SESJE.md`). Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
 kategorie efektów drużyny i stos efektów (`Logic/EffectStack`), S54 wzory globalne (`Logic/LevelCurves`), S55 rangi
 i przełomy w kształcie A/B (`Build.bp2`, `Skills.effective` §2.7), S56 koniec punktów umiejętności: rangi z poziomu
 postaci (`Skills.rankFor`, drabina przejściowa ROZWOJ 2.6), zapis w schemacie 6 (darmowy reset statystyk, pasek
@@ -89,9 +89,14 @@ ok. 14,4 h, `rewardMul` rodzaju, Przeklęta Kość i części Boru w przepisach,
 45–70 i Azgor nastrojone i pilnowane testem (`TUNED.ashen`, `Balance.targetsS93`: Azgor 4–6 min, inferno w harmonogramie,
 meteor złagodzony, lawa ok. 20% HP Maga, bez wsparcia; T-SK6 niedokończone; jaskinie od 46., Kuźnia do 70., Szlak Popiołu do 69.,
 `elitePairChance.ashen` 0,25, `dropFactor.ashen` 0,9, `rewardMul` golemów, Wielka 700, plecak 130 za 76 000, części
-Pustkowi i Epickie błogosławieństwa, eliksir ognia od 45.; kotwice 70 bez zmian).
-Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`, `docs/STATY.md`), następne sesje
-balansu; testy i strojenie po nich.
+Pustkowi i Epickie błogosławieństwa, eliksir ognia od 45.; kotwice 70 bez zmian). S94 Lodowe Szczyty 70–100, Vaelgrath
+i endgame nastrojone, bramka `TUNED` zdjęta: `balance.spec` asertuje każdy cel 1–100 (wiersze w trybie raportu z
+powodem, `docs/BALANS.md` → „Cele 1–100”), Vaelgrath 4,8–5,1 min z lotem nad falą tarczy (naprawa lotu), Mityk
+Vaelgratha 0,3%, jaskinie od 71., `elitePairChance` 0,12, `dropFactor` 0,9, Potężna 1800, plecaki 185 000 / 285 000,
+rudy mithrilu i adamantytu u kowala, części Szczytów i eliksir lodu od 70., tempo 1 → 100 ok. 84 h; pełna księga
+S83–S94 (`tools/balance_base.json`).
+Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`, `docs/STATY.md`) i łańcuch balansu
+zakończone; testy i decyzje właściciela po nich.
 
 ## Niedokończone (kod)
 
@@ -112,12 +117,11 @@ balansu; testy i strojenie po nich.
 - **Ruch**: sprint nie zmienia WalkSpeed lokalnie przed odpowiedzią serwera. Serwer nie kontroluje prędkości ani
   teleportów gracza.
 - **Dane**: brak słabości żywiołowych potworów. Jaskinie bez profilu expowiska (`Cave.profile` nieczytane przez
-  `AreaSpawns.cave`). Rodzaje S19 regionu 4 bez części. Region 4 niestrojony:
-  cele G i regionów poza pasmem w `docs/BALANS.md` (`GLOBAL_REPORT_ONLY`: wpisy S91 / S92 poza zasięgiem;
-  G7 Heroik Łowcy i G8 „z cechami” zostają z S88 do decyzji właściciela); Vaelgrath ma stare mnożniki ciosów
-  (największy cios Maga ok. 130% po krzywej S87), lot Vaelgratha zdejmuje nietykalność mimo żywej tarczy (lista Dla S87
-  z S83; do osobnej sesji).
-- **Questy**: EXP z nagród dobrany wzorem, do strojenia.
+  `AreaSpawns.cave`).
+- **Balans 1–100 zamknięty (S94)**; decyzje właściciela: `docs/SESJE.md` → S94 („Dla właściciela”, „Otwarte cele
+  1–100”; m.in. drabina Mityka Vaelgratha, komplet +9 366 h, mikstury łańcuchowe, strażniki D1 w pasmach, G7 / G8 z S88).
+- **Balans (S94)**: T-SK6 Vaelgratha 15,9 wobec ≤ 2,5 (S94 C6) niedokończone jak Azgora (wiersz w raporcie
+  `Balance.S94_REPORT`); decyzja właściciela razem z Azgorem (S93).
 - **Gildie / aukcja / poczta**: brak zaproszeń do gildii między serwerami; aukcja bez podpowiedzi ceny, poczta bez
   pobrania.
 - **Przedmioty (S62–S68)**: krwawienie, trucizna i podpalenie z danych umiejętności przy odświeżeniu kasują resztę
@@ -127,7 +131,7 @@ balansu; testy i strojenie po nich.
   bez strojenia (S88 C10).
 - **Przedmioty (S87)**: wiki pokazuje zakresy linii i krok ulepszenia bez mnożnika broni dwuręcznej (×2,7, 6,6%):
   nowe pole wymaga sesji wiki (decyzja właściciela).
-- **Model balansu (S87)**: sprawdzenie mikstur bez walki Elity II solo z miksturami (E2; S92 i S93 nie zrobione, S94).
+- **Model balansu (S87)**: sprawdzenie mikstur bez walki Elity II solo z miksturami (E2; S92–S94 nie zrobione).
 - **Dokumentacja (S87)**: tabela zmian fixture (klucz, przed, po, przyczyna) w SESJE skrócona do opisu najważniejszych
   zmian.
 - **Model balansu (S84)**: obrona potworów liczona na rodzaju ogólnym, bez prawdziwych rodzajów regionu (`hpMul`,
@@ -141,9 +145,9 @@ balansu; testy i strojenie po nich.
   kostura na 20); obszary Boru szersze niż 5 poziomów (D6, opcjonalne).
 - **Balans (S93)**: T-SK6 Azgora 12,8 wobec ≤ 2,5 (S93 C6) niedokończone: wiersz w raporcie
   (`Balance.S93_REPORT`), dźwignie S93 nie sięgają (samo Leczenie z rang ≤ 45 daje ok. 4); decyzja właściciela.
-- **Balans**: propozycje S93 dla S94 i właściciela w `docs/SESJE.md` → S93 (T-SK6 Azgora, meteor, mikstury
-  łańcuchowe 28–82%, Elita II ścieżek wsparcia, 229 strażników T-SK ponad limitem D1 w paśmie, Rozpłatanie 10A, T1
-  Chorążego na 45).
+- **Balans**: propozycje S93 dla właściciela w `docs/SESJE.md` → S93 (T-SK6 Azgora, meteor, mikstury łańcuchowe
+  28–82%, Elita II ścieżek wsparcia, 229 strażników T-SK ponad limitem D1 w paśmie, Rozpłatanie 10A, T1 Chorążego na
+  45).
 - **Przedmioty (S93)**: Odłamek Magmy w pancerzach progów 50–70 u kowala (J4, opcjonalne) nie zrobiony.
 - **Model balansu (S92)**: `Balance.bossFight` liczy fale tarczy z redukcją grupy S32, a serwer jej nie daje
   przywołanym (`Balance.summonHelpers`); poprawka rusza zamrożony fixture 1–20 (Grimrok bez wsparcia).

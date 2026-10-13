@@ -133,6 +133,12 @@ local PARTS: { [string]: string } = {
 	dragonspawn = "frost_scale",
 	crystalGuardian = "frost_scale",
 	youngFrostDragon = "frost_scale",
+	-- S94: the S19 kinds of the Frost Peaks (docs/SWIAT.md §2)
+	snowLeopard = "thick_hide",
+	peakHarpy = "crow_feather",
+	iceMammoth = "yeti_fur",
+	frozenKnight = "cursed_bone",
+	frostWyrm = "frost_scale",
 }
 
 local PART_CHANCE: { [string]: number } = { koboldMiner = 0.25 }
@@ -224,7 +230,9 @@ local BOSSES: { [string]: BossTable } = {
 			{ id = "scroll_unbind", chance = 0.15, min = 1, max = 1 },
 		},
 		legendaryChance = BOSS_ROLL.legendaryChance,
-		mythicChance = BOSS_ROLL.mythicChance,
+		-- S94 (balance plan 8.4, D2): the Mythic rarer than at the bosses of regions 1-3: 0.3 / 1.3 / 2.3 % on the
+		-- day's kills, ~77 kills to the first (Grimrok 50: x1.54); back to the shared chance = BOSS_ROLL.mythicChance
+		mythicChance = 0.003,
 		perKill = BOSS_ROLL.perKill,
 	},
 }

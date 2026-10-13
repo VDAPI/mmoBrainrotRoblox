@@ -3584,7 +3584,7 @@ return {
 	["skill.evocation.bp5"] = "Odnowienie krótsze o 25%",
 	["skill.evocation.bp10"] = "Przywraca o 15 pkt. procentowych więcej many",
 	["skill.meteorStorm.bp5"] = "Jeden meteor więcej",
-	["skill.meteorStorm.bp10"] = "Promień +4 st.",
+	["skill.meteorStorm.bp10"] = "Promień −5 st.: uderzenia gęściej",
 	["skill.elementalVortex.bp5"] = "Promień +2 st.",
 	["skill.elementalVortex.bp5b"] = "Każda fala +1,2 pkt proc. obrażeń",
 	["skill.elementalVortex.bp10"] = "Trzy fale więcej",

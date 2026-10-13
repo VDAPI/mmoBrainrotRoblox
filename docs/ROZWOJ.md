@@ -1942,8 +1942,8 @@ grup. Plan statystyk `{ int = 4, vit = 1 }`, tytuł `path_destroyer` („Niszczy
 
 Przeniesione: Mistrz Żywiołów `elementalist` (rząd 1, pasywka, obrażenia żywiołu +3 → 15%, rangi na 10/19/28/37/46),
 Gniew Żywiołów `meteorStorm` (rząd 7: 6 uderzeń po 24% w obszarze 16 st., koszt 174, odn. 50 s; przełomy 5A
-`add.hits = 1`, 5B `mul.cooldown = 0.88`, 10A `add.radius = 4`, 10B `values.dmg = 4.4`; S90, było 60 → 80%, koszt
-120, 2, 0,75 i 22) i Skupienie `focus` (rząd 10: rezerwa many +3,1 → 15,4% (S90, było 4 → 20), nowa statystyka
+`add.hits = 1`, 5B `mul.cooldown = 0.88`, 10A `add.radius = -5` (S94, było +4), 10B `values.dmg = 4.4`; S90, było 60 →
+80%, koszt 120, 2, 0,75 i 22) i Skupienie `focus` (rząd 10: rezerwa many +3,1 → 15,4% (S90, było 4 → 20), nowa statystyka
 `manaReserve`, której regeneracja nie liczy).
 
 **Wir Żywiołów / Elemental Vortex** (`elementalVortex`, nowa, rząd 4, poz. 26)

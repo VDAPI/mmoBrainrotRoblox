@@ -751,8 +751,9 @@ sam) i wgrywa `wiki/dist` na Cloudflare Pages. Bez sekretów workflow przechodzi
   Źródła błogosławieństw ze zleceń dziennych nie są w `items.sources` (nagroda zleceń liczona funkcją, nie tabelą).
   Pływający tooltip nadal brak; nagrody zadań mają tooltip CSS przy najechaniu/fokusie (desktop).
 
-- **S41** Uwaga balansowa (bez zmiany gry): ranga 10 umiejętności z odblokowaniem 75 (zwieńczenia każdej klasy) wymaga
-  poziomu 102 > `MaxLevel` 100 — nieosiągalna; wiki pokazuje „maks. osiągalna 9” z danych. Punkt G („jeśli zostanie
+- **S41** (nieaktualne od ROZWOJ 2.5, S55–S56; S94: sprawdzone) Ranga każdej umiejętności idzie z poziomu postaci
+  (`Skills.rankLevel`), ostatnia najpóźniej na 95., więc każda ranga 10 jest osiągalna (zwieńczenia od 60., ranga 10 na
+  95.; test `skills.spec` „every skill is maxed by level 95”). Punkt G („jeśli zostanie
   czas”: widok listy na mobile, tabela rang w `<details>`, podgląd przy najechaniu, „Dopasuj do poziomu”, powtarzanie
   +/−, OG klas, test Playwright planera) nie zrobiony — Playwright planera w S44.
 

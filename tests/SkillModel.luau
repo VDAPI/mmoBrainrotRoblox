@@ -200,8 +200,7 @@ local function target(
 	return row :: PathTarget
 end
 
--- S89 (F1): the classes whose rows (above 20) balance.spec asserts; read by balance.spec and the report (BalanceTables)
-SkillModel.PATHS_TUNED = { Cleric = true, Warrior = true, Hunter = true, Mage = true } :: { [string]: boolean }
+-- S89 (F1): the classes whose rows (above 20) balance.spec asserted (PATHS_TUNED). S94 (L3): all four, switch removed.
 
 local MAGE_GAIN = { [45] = { 1.20, 1.30 }, [70] = { 1.30, 1.40 }, [100] = { 1.35, 1.45 } } -- ROZWOJ 12.7
 
@@ -430,9 +429,11 @@ SkillModel.PATH_TARGETS = {
 			project = { [20] = 1.11, [45] = 1.14, [70] = 1.35, [100] = 1.11 },
 		}
 	),
+	-- S94 (L3): poza zasięgiem dźwigni S94: T-SK6 of the bosses 45-100 is a region row (R.<map>.<boss>.tsk6): Morvane
+	-- asserted at <= 2.7 (S92), Azgor 12.8 and Vaelgrath 15.9 unfinished (S93 / S94, the owner's decision)
 	target("healer.tsk6", "Cleric", "healer", "tsk6", "healer.dungeon", L45, 1.0, 2.0, "ROZWOJ 0, 7.5, 9.6", {
 		note = "tank Obrońca, drużyna S92",
-		report = "S92–S94",
+		report = "poza zasięgiem dźwigni S94: T-SK6 Azgora 12,8 i Vaelgratha 15,9 (decyzja właściciela; wiersze regionów)",
 	}),
 	-- Hunter (ROZWOJ 11.6)
 	target(
@@ -838,20 +839,22 @@ SkillModel.PATH_TARGETS = {
 	target("all.r1", "Mage", "arcanist", "r1", "arcanist.arcanistBoss", L45, 1.6, 2.0, "ROZWOJ 0", {
 		report = "właściciel (S90, S91)",
 	}),
+	-- S94 (L3): poza zasięgiem dźwigni S94: every support / tank path wins the Elite II solo with potions on the real
+	-- spawners of every region (S92, S93, S94 support rows in the report); the Elite II curves hold duo <= 150 %
 	target("support.elites", "Warrior", "guardian", "elites", "guardian.loner", L45, 1, 1, "ROZWOJ 7.5, 10.6", {
-		report = "S92–S94",
+		report = "poza zasięgiem dźwigni S94: wygrywa Elitę II solo z miksturami (wiersze regionów R.<map>.support.*)",
 	}),
 	target("support.elites", "Warrior", "standard", "elites", "standard.commander", L45, 1, 1, "ROZWOJ 7.5, 10.6", {
-		report = "S92–S94",
+		report = "poza zasięgiem dźwigni S94: wygrywa Elitę II solo z miksturami (wiersze regionów R.<map>.support.*)",
 	}),
 	target("support.elites", "Cleric", "healer", "elites", "healer.solo", L45, 1, 1, "ROZWOJ 7.5, 9.6", {
-		report = "S92–S94",
+		report = "poza zasięgiem dźwigni S94: wygrywa Elitę II solo z miksturami (wiersze regionów R.<map>.support.*)",
 	}),
 	target("support.elites", "Cleric", "fortune", "elites", "fortune.plunder", L45, 1, 1, "ROZWOJ 7.5, 9.6", {
-		report = "S92–S94",
+		report = "poza zasięgiem dźwigni S94: wygrywa Elitę II solo z miksturami (wiersze regionów R.<map>.support.*)",
 	}),
 	target("support.elites", "Hunter", "scout", "elites", "scout.partyHunter", L45, 1, 1, "ROZWOJ 7.5, 11.6", {
-		report = "S92–S94",
+		report = "poza zasięgiem dźwigni S94: wygrywa Elitę II solo z miksturami (wiersze regionów R.<map>.support.*)",
 	}),
 } :: { PathTarget }
 
@@ -892,8 +895,10 @@ for _, classId in B.CLASSES do
 		local path = string.match(key, "^(.-)%.") or "base"
 		table.insert(
 			SkillModel.PATH_TARGETS,
+			-- S94 (L3): only printed (no band): T-SK3 against areaCap is asserted by the region guards
+			-- (R.<map>.guard.tsk3.*, S92-S94)
 			target("all.tsk3", classId, path, "tsk3", key, L45, nil, nil, "ROZWOJ 0, 8, 15.5.3", {
-				report = "S92–S94",
+				report = "tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)",
 			})
 		)
 	end
@@ -1117,7 +1122,6 @@ SkillModel.R4_UTILITY = {
 	["firewall:10a"] = "ogłuszenie (kontrola)",
 	["elementalVortex:5a"] = "geometria albo czas kontroli",
 	["elementalVortex:10b"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
-	["meteorStorm:10a"] = "geometria albo czas kontroli",
 	["cataclysm:5a"] = "geometria albo czas kontroli",
 	["manaShield:5a"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
 	["manaShield:5b"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
@@ -6651,7 +6655,7 @@ export type TargetResult = {
 	low: number?,
 	high: number?,
 	pass: boolean,
-	asserted: boolean, -- a level of the row above 20 (S89 / S90 assert these when PATHS_TUNED says so)
+	asserted: boolean, -- a level of the row above 20 (S89 / S90; asserted by balance.spec, S94 without a switch)
 	report: string?, -- S89: who asserts it instead (the row's `report`, or "F4" at a `reportAt` level)
 	source: string,
 	note: string?,

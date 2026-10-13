@@ -90,6 +90,9 @@ local SHOPS: { [string]: ShopDef } = {
 			{ item = "ore_iron", price = 60 },
 			{ item = "ore_silver", price = 140 },
 			{ item = "essence_dust", price = 40 },
+			-- S94: the Frost Peaks' ores (~4 x their Materials price, like copper, iron and silver)
+			{ item = "ore_mithril", price = 320, level = 70 },
+			{ item = "ore_adamantite", price = 640, level = 90 },
 		},
 	},
 	weaponsmith = { id = "weaponsmith", entries = weaponsmith(), classTabs = true },

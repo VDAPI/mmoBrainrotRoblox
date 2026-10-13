@@ -431,16 +431,17 @@ kind("iceWolf", 4, false, 70, 78, {
 	ability = "leap",
 	size = 1.1,
 })
-kind("yeti", 4, false, 74, 82, {
+kind("yeti", 4, false, 71, 82, { -- S94: from 71 (Ice Grotto, Yeti Slopes)
 	family = "beast",
-	hpMul = 1.4,
-	atkMul = 1.1,
+	hpMul = 1.25,
+	atkMul = 1.05,
 	ability = "slam",
 	size = 1.6,
 })
 kind("frostGiant", 4, false, 78, 88, {
 	family = "humanoid",
-	hpMul = 1.8,
+	rewardMul = 1.1,
+	hpMul = 1.3,
 	atkMul = 1.2,
 	speed = 0.7,
 	moveSpeed = 10,
@@ -468,18 +469,20 @@ kind("dragonspawn", 4, false, 85, 95, {
 })
 kind("crystalGuardian", 4, true, 90, 96, {
 	family = "elemental",
+	rewardMul = 1.3,
 	defence = "armored",
-	hpMul = 1.7,
+	hpMul = 1.15,
 	speed = 0.8,
 	moveSpeed = 9,
 	ability = "slam",
 	size = 1.6,
 })
-kind("youngFrostDragon", 4, true, 93, 100, {
+kind("youngFrostDragon", 4, true, 92, 100, { -- S94: from 92 (Glacier Heart's Elite II)
 	family = "dragon",
+	rewardMul = 1.1,
 	defence = "scaled",
-	hpMul = 1.5,
-	atkMul = 1.25,
+	hpMul = 1.2,
+	atkMul = 1.05,
 	element = "ice",
 	ability = "frostBreath",
 	size = 1.6,
@@ -506,14 +509,16 @@ kind("peakHarpy", 4, false, 76, 83, {
 })
 kind("iceMammoth", 4, false, 82, 89, {
 	family = "animal",
+	rewardMul = 1.1,
 	hpMul = 1.5,
 	atkMul = 1.1,
 	speed = 0.8,
 	ability = "slam",
 	size = 1.9,
 })
-kind("frozenKnight", 4, false, 88, 95, {
+kind("frozenKnight", 4, false, 83, 100, { -- S94: 83-100 (Frozen Hold from 83, Icewatch to 100)
 	family = "undead",
+	rewardMul = 1.15,
 	defence = "armored",
 	hpMul = 1.15,
 	element = "ice",
@@ -522,6 +527,7 @@ kind("frozenKnight", 4, false, 88, 95, {
 })
 kind("frostWyrm", 4, false, 95, 100, {
 	family = "dragon",
+	rewardMul = 1.1,
 	defence = "scaled",
 	hpMul = 1.3,
 	element = "ice",

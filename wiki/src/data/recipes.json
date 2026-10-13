@@ -36,7 +36,7 @@
     {"gold":50,"group":"material","id":"transmute_shard","ingredients":[{"id":"essence_dust","n":10}],"level":20,"result":{"id":"essence_shard","n":1},"time":300},
     {"gold":300,"group":"material","id":"transmute_crystal","ingredients":[{"id":"essence_shard","n":8}],"level":45,"result":{"id":"essence_crystal","n":1},"time":300},
     {"gold":400,"group":"elixir","id":"elixir_resFire","ingredients":[{"id":"herb_firebloom","n":3},{"id":"salamander_scale","n":2}],"level":45,"result":{"id":"elixir_resFire","n":2},"time":900},
-    {"gold":400,"group":"elixir","id":"elixir_resIce","ingredients":[{"id":"herb_frostleaf","n":3},{"id":"yeti_fur","n":2}],"level":30,"result":{"id":"elixir_resIce","n":2},"time":900},
+    {"gold":400,"group":"elixir","id":"elixir_resIce","ingredients":[{"id":"herb_frostleaf","n":3},{"id":"yeti_fur","n":2}],"level":70,"result":{"id":"elixir_resIce","n":2},"time":900},
     {"gold":400,"group":"elixir","id":"elixir_resLightning","ingredients":[{"id":"herb_moonpetal","n":2},{"id":"fish_eel","n":3}],"level":30,"result":{"id":"elixir_resLightning","n":2},"time":900},
     {"gold":400,"group":"elixir","id":"elixir_resPoison","ingredients":[{"id":"herb_nightshade","n":3},{"id":"spider_silk","n":2}],"level":30,"result":{"id":"elixir_resPoison","n":2},"time":900}
   ]

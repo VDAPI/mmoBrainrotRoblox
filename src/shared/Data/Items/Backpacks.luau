@@ -16,8 +16,10 @@ local DEFS: { { capacity: number, level: number, buyPrice: number, color: string
 	{ capacity = 100, level = 35, buyPrice = 50000, color = "#3D6FD6" },
 	-- S93: 130 slots 200 000 -> 76 000 (13.2 -> ~5 levels of income at 50)
 	{ capacity = 130, level = 50, buyPrice = 76000, color = "#B455FF" },
-	{ capacity = 160, level = 65, buyPrice = 500000, color = "#FF9F1C" },
-	{ capacity = 200, level = 80, buyPrice = 1200000, color = "#E8C25A" },
+	-- S94: 160 slots 500 000 -> 185 000 and 200 slots 1 200 000 -> 285 000 (~8 levels of income at 65 / 80; 5-12
+	-- in the balance plan F)
+	{ capacity = 160, level = 65, buyPrice = 185000, color = "#FF9F1C" },
+	{ capacity = 200, level = 80, buyPrice = 285000, color = "#E8C25A" },
 }
 
 -- 2026-10-10: backpacks from the premium shop (Data/Products, Dragon Shards): no level requirement, never sold by

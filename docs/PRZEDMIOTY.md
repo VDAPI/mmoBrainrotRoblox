@@ -1,7 +1,7 @@
 # Vaelthorn: przedmioty
 
 > Plik generowany: `lune run tools/wikidump.luau` (dane gry, te same co wiki). Nie edytuj ręcznie.
-> Odcisk danych 01360093 (`wiki/src/data/meta.json`).
+> Odcisk danych cf258aa1 (`wiki/src/data/meta.json`).
 
 ## Rzadkości
 
@@ -1140,7 +1140,7 @@ Cecha: **Iskra żywiołu**: 35%: atak budzi żywioł broni
 | Lodopłetwy | 110 | — | — |
 | Magmopłetwy | 55 | — | — |
 | Szczupak | 14 | — | alchemik (1 receptur) |
-| Mroźna Łuska | 120 | — | — |
+| Mroźna Łuska | 120 | — | kowal (27 przepisów) |
 | Ucho Goblina | 10 | — | — |
 | Ognik | 28 | zbieractwo | alchemik (6 receptur) |
 | Szronolist | 60 | zbieractwo | alchemik (6 receptur) |
@@ -1149,10 +1149,10 @@ Cecha: **Iskra żywiołu**: 35%: atak budzi żywioł broni
 | Psianka | 12 | zbieractwo | alchemik (6 receptur) |
 | Rdzeń Legendy | 2500 | rozbijanie | ulepszanie +8…+9 |
 | Odłamek Magmy | 60 | — | alchemik (1 receptur) |
-| Ruda Adamantytu | 160 | zbieractwo | kowal (135 przepisów) |
+| Ruda Adamantytu | 160 | zbieractwo, sklep | kowal (135 przepisów) |
 | Ruda Miedzi | 6 | zbieractwo, sklep | kowal (180 przepisów), alchemik (2 receptur) |
 | Ruda Żelaza | 15 | zbieractwo, sklep | kowal (225 przepisów), alchemik (2 receptur) |
-| Ruda Mithrilu | 80 | zbieractwo | kowal (180 przepisów), alchemik (1 receptur) |
+| Ruda Mithrilu | 80 | zbieractwo, sklep | kowal (180 przepisów), alchemik (1 receptur) |
 | Ruda Srebra | 35 | zbieractwo, sklep | kowal (225 przepisów), alchemik (1 receptur) |
 | Łuska Salamandry | 45 | — | alchemik (1 receptur) |
 | Pajęczy Jedwab | 12 | — | alchemik (2 receptur) |
@@ -1160,7 +1160,7 @@ Cecha: **Iskra żywiołu**: 35%: atak budzi żywioł broni
 | Jad Ropuchy | 6 | — | alchemik (3 receptur) |
 | Pazur Wilkołaka | 22 | — | alchemik (1 receptur) |
 | Wilcza Skóra | 4 | — | alchemik (2 receptur) |
-| Futro Yeti | 80 | — | alchemik (1 receptur) |
+| Futro Yeti | 80 | — | kowal (27 przepisów), alchemik (1 receptur) |
 
 ## Przedmioty użytkowe i plecaki
 
@@ -1168,9 +1168,9 @@ Cecha: **Iskra żywiołu**: 35%: atak budzi żywioł broni
 |---|---|---|---|---|---|
 | Plecak Kupca | Plecak | 35 | 100 miejsc | — | 12500 |
 | Plecak Poszukiwacza Przygód | Plecak | 50 | 130 miejsc | — | 19000 |
-| Królewski Plecak | Plecak | 65 | 160 miejsc | — | 125000 |
+| Królewski Plecak | Plecak | 65 | 160 miejsc | — | 46250 |
 | Płócienny Plecak | Plecak | 1 | 20 miejsc | — | 25 |
-| Plecak ze Smoczej Skóry | Plecak | 80 | 200 miejsc | — | 300000 |
+| Plecak ze Smoczej Skóry | Plecak | 80 | 200 miejsc | — | 71250 |
 | Skórzany Tobołek | Plecak | 1 | 30 miejsc | — | 75 |
 | Plecak Wędrowca | Plecak | 8 | 45 miejsc | — | 375 |
 | Plecak Łowcy | Plecak | 15 | 60 miejsc | — | 1250 |
@@ -1213,17 +1213,17 @@ Cecha: **Iskra żywiołu**: 35%: atak budzi żywioł broni
 | Średnia Mikstura Energii | Mikstura | 1 | — | 60 | 15 |
 | Duża Mikstura Energii | Mikstura | 1 | — | 250 | 62 |
 | Wielka Mikstura Energii | Mikstura | 45 | — | 700 | 175 |
-| Potężna Mikstura Energii | Mikstura | 70 | — | 3000 | 750 |
+| Potężna Mikstura Energii | Mikstura | 70 | — | 1800 | 450 |
 | Mała Mikstura Życia | Mikstura | 1 | — | 10 | 2 |
 | Średnia Mikstura Życia | Mikstura | 1 | — | 60 | 15 |
 | Duża Mikstura Życia | Mikstura | 1 | — | 250 | 62 |
 | Wielka Mikstura Życia | Mikstura | 45 | — | 700 | 175 |
-| Potężna Mikstura Życia | Mikstura | 70 | — | 3000 | 750 |
+| Potężna Mikstura Życia | Mikstura | 70 | — | 1800 | 450 |
 | Mała Mikstura Many | Mikstura | 1 | — | 10 | 2 |
 | Średnia Mikstura Many | Mikstura | 1 | — | 60 | 15 |
 | Duża Mikstura Many | Mikstura | 1 | — | 250 | 62 |
 | Wielka Mikstura Many | Mikstura | 45 | — | 700 | 175 |
-| Potężna Mikstura Many | Mikstura | 70 | — | 3000 | 750 |
+| Potężna Mikstura Many | Mikstura | 70 | — | 1800 | 450 |
 | Zwój Zapomnienia | Zwój | 1 | Resetuje punkty statystyk aktywnego zestawu. | 500 | 100 |
 | Zwój Ochrony | Zwój | 1 | Nieudane ulepszenie nie obniża przedmiotu. | — | 200 |
 | Zwój Nowej Ścieżki | Zwój | 1 | Pozwala wybrać nową ścieżkę główną. Zużywa się przy zmianie ścieżki, tylko w mieście. | — | 100 |

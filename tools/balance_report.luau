@@ -12,6 +12,8 @@
 --                    defence (S84)"); no commit or date in it, so a second run gives the same bytes.
 --   --fixture-paths [note [S<n>]]  (S86, also without "--") writes tests/fixtures/balance_paths.json of
 --                    BalanceTables.tablesPaths() the same way (tests/balance.spec "Balance 20-100: paths").
+--   --baseline <file>  (S94) the baseline of the full ledger S83-S94 (default tools/balance_base.json, the S83
+--                    snapshot taken before the first change of the balance chain).
 -- The report starts with the ledger ("Zmiany danych"): a changed number of tools/balance_reasons.luau's modules
 -- without a reason marks the row and exits 1 after writing the file (like balance.spec).
 
@@ -34,6 +36,13 @@ local SkillData = require("../src/shared/Data/Skills")
 local Skills = require("../src/shared/Logic/Skills")
 
 local SNAPSHOT = "tools/balance_before.json"
+-- S94 (M2): the baseline of the full ledger S83-S94 (`--baseline <file>`; the S83 snapshot before the chain)
+local BASELINE = "tools/balance_base.json"
+for i, arg in process.args do
+	if arg == "--baseline" and process.args[i + 1] then
+		BASELINE = process.args[i + 1]
+	end
+end
 local OUT = "docs/BALANS.md"
 local started = os.clock()
 
@@ -248,6 +257,117 @@ add("(×1,2 obrażeń); potwór uderza od razu, potem co swój interwał; regene
 add(`Stałe walki: redukcja = def / (def + {Combat.reductionPerLevel}·poziom atakującego + {Combat.reductionBase}).`)
 add()
 
+-- S94 (M1): one table of every target 1-100 (block, rows, in band, asserted, report rows by the session of their
+-- reason) and the open targets 1-100 (every report row grouped by its reason).
+do
+	local function sessionOf(text: string?): string
+		local n = if type(text) == "string" then string.match(text, "S(%d+)") else nil
+		return if n then `S{n}` else "–"
+	end
+	local blocks: { { name: string, rows: { any } } } = {}
+	local function block(name: string, rows: { any })
+		table.insert(blocks, { name = name, rows = rows })
+	end
+	local s32, s91 = {}, {}
+	for _, row in B.targets1_20() do
+		table.insert(if string.sub(row.id, 1, 4) == "S32." then s32 else s91, row)
+	end
+	block("1–20: cele S32 (S91)", s32)
+	block("1–20: cele S91", s91)
+	local global: { any } = {}
+	for _, row in B.targetsGlobal() do
+		local copy = table.clone(row) :: any
+		local entry = B.reportOnlyFor(row)
+		if copy.report == nil and entry then
+			copy.report = `{entry.session}: {entry.why}`
+		end
+		table.insert(global, copy)
+	end
+	for _, row in SkillModel.targetsG10() do
+		table.insert(global, row)
+	end
+	block("20–100: globalne G1–G13 (S87)", global)
+	local regionSession = { meadows = "S91", duskwood = "S92", ashen = "S93", frostpeak = "S94" }
+	for _, mapId in B.REGION_IDS do
+		local rows = B.targetsRegion(mapId)
+		local extra = if mapId == "duskwood"
+			then B.targetsS92()
+			elseif mapId == "ashen" then B.targetsS93()
+			elseif mapId == "frostpeak" then B.targetsS94()
+			else B.targetsRegion(mapId, nil, true)
+		for _, row in extra do
+			table.insert(rows, row)
+		end
+		block(`region {mapId} ({regionSession[mapId]})`, rows)
+	end
+	block("1–100: wiersze przekrojowe (S94)", B.targetsCross())
+	block("20–100: cechy, linie, obrona (S88)", SkillModel.targetsS88())
+	local paths: { any } = {}
+	for _, r in SkillModel.evaluateTargets() do
+		if r.asserted then
+			table.insert(paths, { id = r.id, value = r.value, report = nil, pass = r.pass })
+		elseif r.report then
+			table.insert(paths, { id = r.id, value = r.value, report = r.report, pass = r.pass })
+		end
+	end
+	block("20–100: ścieżki (S89–S90)", paths)
+	add("## Cele 1–100 (S94: bez bramki `TUNED`)")
+	add()
+	add(
+		"Każdy wiersz bez opisu raportu jest asercją `balance.spec` (bloki niżej). Wiersze w trybie raportu mają powód „poza zasięgiem dźwigni S<n>” (sesja i liczby w `docs/DECYZJE.md`); ich lista po powodach jest w „Otwarte cele 1–100”."
+	)
+	add()
+	local tRows: { { string } } = {}
+	local open: { [string]: { count: number, ok: number, session: string, block: string } } = {}
+	local openOrder: { string } = {}
+	for _, b in blocks do
+		local all, inBand, asserted = #b.rows, 0, 0
+		local bySession: { [string]: number } = {}
+		for _, row in b.rows do
+			local pass = if row.pass ~= nil then row.pass else B.inBand(row)
+			if pass then
+				inBand += 1
+			end
+			if row.report == nil then
+				asserted += 1
+			else
+				local text = if type(row.report) == "string" then row.report else "tylko raport"
+				local s = sessionOf(text)
+				bySession[s] = (bySession[s] or 0) + 1
+				local key = `{b.name}|{text}`
+				if not open[key] then
+					open[key] = { count = 0, ok = 0, session = s, block = b.name }
+					table.insert(openOrder, key)
+				end
+				open[key].count += 1
+				open[key].ok += if pass then 1 else 0
+			end
+		end
+		local parts = {}
+		for s, n in bySession do
+			table.insert(parts, `{s} {n}`)
+		end
+		table.sort(parts)
+		table.insert(tRows, {
+			b.name,
+			tostring(all),
+			tostring(inBand),
+			tostring(asserted),
+			if #parts > 0 then table.concat(parts, ", ") else "0",
+		})
+	end
+	tableOut({ "blok", "wiersze", "w paśmie", "asertowane", "raport (sesja powodu: wiersze)" }, tRows)
+	add("### Otwarte cele 1–100 (wiersze w trybie raportu, po powodach)")
+	add()
+	local oRows: { { string } } = {}
+	for _, key in openOrder do
+		local o = open[key]
+		local why = string.sub(key, #o.block + 2)
+		table.insert(oRows, { o.block, o.session, `{o.count - o.ok}/{o.count}`, why })
+	end
+	tableOut({ "blok", "sesja", "poza pasmem / wiersze", "powód" }, oRows)
+end
+
 -- Ledger --------------------------------------------------------------------------------------------------------
 
 local unexplained: { string } = {}
@@ -318,6 +438,113 @@ if #B.skippedFunctions > 0 then
 	)
 	add(`{table.concat(B.skippedFunctions, ", ")}.`)
 	add()
+end
+
+-- S94 (M2): the full ledger S83-S94 against the baseline (`--baseline <file>`, default tools/balance_base.json = the
+-- S83 snapshot taken before the first change of the chain): every key whose value moved since, with all its reasons
+-- (session and why); keys the baseline does not have are marked "nowy od S<n>" (the first session of their reasons);
+-- a whole module added to the ledger later (S94: Crafting, Maps) is summarised in one row.
+do
+	local path = BASELINE
+	add("## Pełna księga S83–S94 (od migawki przed S83)")
+	add()
+	if not fs.isFile(path) then
+		add(`Brak pliku \`{path}\` (\`--baseline <plik>\`): pełna księga pominięta.`)
+		add()
+	else
+		local decoded = serde.decode("json", fs.readFile(path))
+		local base: { [string]: number } = decoded.data or {}
+		local baseMeta = decoded.meta or {}
+		add(
+			`Baza: \`{path}\` (migawka {baseMeta.session or "?"}, commit {baseMeta.commit or "?"}, {baseMeta.date or "?"}); teraz: dane gry. Dla każdego klucza: wartość przed S83, po S94 i wszystkie powody z \`tools/balance_reasons.luau\` (sesja: powód). Rangi (\`Rangi:\`) to liczby pochodne i ich tu nie ma.`
+		)
+		add()
+		local baseModules: { [string]: boolean } = {}
+		for key in base do
+			local module = string.match(key, "^([^:]+):")
+			if module then
+				baseModules[module] = true
+			end
+		end
+		local function reasonsText(key: string): (string, string)
+			local list = B.reasonsFor(Reasons.reasons, key)
+			if not list or #list == 0 then
+				return "–", "**BRAK POWODU**"
+			end
+			local sorted = table.clone(list)
+			table.sort(sorted, function(a: any, b: any)
+				return (B.sessionNumber(a.session) or 0) < (B.sessionNumber(b.session) or 0)
+			end)
+			local parts = {}
+			for _, entry in sorted do
+				table.insert(parts, `{entry.session}: {entry.why}`)
+			end
+			return (sorted[1] :: any).session, table.concat(parts, "; ")
+		end
+		local function num(v: number?): string
+			return if v == nil then "–" else fmtValue(v, "g")
+		end
+		local keys: { string } = {}
+		for key in data do
+			if string.sub(key, 1, 6) ~= "Rangi:" then
+				table.insert(keys, key)
+			end
+		end
+		for key in base do
+			if data[key] == nil and string.sub(key, 1, 6) ~= "Rangi:" then
+				table.insert(keys, key)
+			end
+		end
+		table.sort(keys)
+		local rows: { { string } } = {}
+		local laterModules: { [string]: { count: number, changed: { string } } } = {}
+		local missing = 0
+		for _, key in keys do
+			local before, after = base[key], data[key]
+			local module = string.match(key, "^([^:]+):") or key
+			if before == nil and not baseModules[module] then
+				local entry = laterModules[module]
+				if not entry then
+					entry = { count = 0, changed = {} }
+					laterModules[module] = entry
+				end
+				entry.count += 1
+				local list = B.reasonsFor(Reasons.reasons, key)
+				if list then
+					local _, why = reasonsText(key)
+					if not table.find(entry.changed, why) then
+						table.insert(entry.changed, why)
+					end
+				end
+			elseif before == nil or after == nil or not B.sameNumber(before, after) then
+				local first, why = reasonsText(key)
+				if first == "–" then
+					missing += 1
+				end
+				local note = if before == nil then `nowy od {first}` elseif after == nil then "usunięty" else first
+				table.insert(rows, { `\`{key}\``, num(before), num(after), note, why })
+			end
+		end
+		add(`{#rows} kluczy zmienionych od bazy, {missing} bez powodu.`)
+		add()
+		tableOut({ "klucz", "przed S83", "po S94", "sesja", "powody (sesja: powód)" }, rows)
+		local mRows: { { string } } = {}
+		for module, entry in laterModules do
+			table.insert(mRows, {
+				module,
+				tostring(entry.count),
+				if #entry.changed > 0 then table.concat(entry.changed, "; ") else "bez zmian liczb",
+			})
+		end
+		table.sort(mRows, function(a, b)
+			return a[1] < b[1]
+		end)
+		if #mRows > 0 then
+			add("### Moduły dopisane do księgi po S83")
+			add()
+			tableOut({ "moduł", "kluczy", "zmiany (sesja: powód)" }, mRows)
+		end
+	end
 end
 
 -- Rank bands ----------------------------------------------------------------------------------------------------
@@ -1415,13 +1642,637 @@ local function s93Section()
 	tableOut({ "krzywa", "70", "80" }, kRows2)
 end
 
+-- S94 (M1): the Frost Peaks section: start S94 -> now, the S94 targets (Balance.targetsS94) and the "Tylko raport"
+-- items of the session file.
+local function s94Section()
+	local S = B.S94
+	local s94Rows = B.targetsS94()
+	local byId: { [string]: B.TargetRow } = {}
+	for _, row in s94Rows do
+		byId[row.id] = row
+	end
+	local function v(id: string): number
+		local row = byId[`R.frostpeak.{id}`]
+		return if row then row.value else 0 / 0
+	end
+	local function range(prefix: string, fmt: string): string
+		local lo, hi = math.huge, -math.huge
+		for _, row in s94Rows do
+			if string.sub(row.id, 1, #prefix) == prefix then
+				lo, hi = math.min(lo, row.value), math.max(hi, row.value)
+			end
+		end
+		if lo == math.huge then
+			return "–"
+		end
+		return `{fmtValue(lo, fmt)}–{fmtValue(hi, fmt)}`
+	end
+	local function count(prefix: string): string
+		local ok, all = 0, 0
+		for _, row in s94Rows do
+			if string.sub(row.id, 1, #prefix) == prefix then
+				all += 1
+				ok += if B.inBand(row) then 1 else 0
+			end
+		end
+		return `{ok}/{all}`
+	end
+	local function three(prefix: string, suffix: string, fmt: string): string
+		local out = {}
+		for n = 3, 5 do
+			table.insert(out, fmtValue(v(`{prefix}{n}{suffix}`), fmt))
+		end
+		return table.concat(out, " / ")
+	end
+	local regionRows = B.targetsRegion("frostpeak")
+	local function regionRange(group: string, needle: string?, fmt: string): string
+		local lo, hi = math.huge, -math.huge
+		for _, row in regionRows do
+			if row.group == group and (needle == nil or string.find(row.id, needle, 1, true)) then
+				lo, hi = math.min(lo, row.value), math.max(hi, row.value)
+			end
+		end
+		return `{fmtValue(lo, fmt)}–{fmtValue(hi, fmt)}`
+	end
+	local function regionMax(group: string, classId: string?, needle: string?): number
+		local hi = -math.huge
+		for _, row in regionRows do
+			if
+				row.group == group
+				and (classId == nil or row.classId == classId)
+				and (needle == nil or string.find(row.id, needle, 1, true) ~= nil)
+			then
+				hi = math.max(hi, row.value)
+			end
+		end
+		return hi
+	end
+	local function regionMin(group: string, needle: string?): number
+		local lo = math.huge
+		for _, row in regionRows do
+			if row.group == group and (needle == nil or string.find(row.id, needle, 1, true) ~= nil) then
+				lo = math.min(lo, row.value)
+			end
+		end
+		return lo
+	end
+	local function share(group: string): number
+		for _, row in regionRows do
+			if row.group == group and string.find(row.id, ".share", 1, true) then
+				return row.value
+			end
+		end
+		return 0 / 0
+	end
+	add("### S94: Lodowe Szczyty i Vaelgrath (start S94 → teraz)")
+	add()
+	add(
+		"Start = stan po S93 (`ef4fb39`), zmierzony tym samym modelem przed zmianą danych (start tempa przed poprawką okna ostatniego zadania głównego, DECYZJE S94). Cele: `docs/sessions/S94.md` → „Cele tej sesji”; wiersze asertuje blok regionów `balance.spec` (`Balance.targetsS94`, bez bramki `TUNED`), wiersze z opisem w kolumnie „kto asertuje” są w raporcie (powody: `docs/DECYZJE.md` → S94)."
+	)
+	add()
+	local pace, step = 0, 0
+	for L = 70, 99 do
+		pace += B.paceWindowAt("Warrior", L).hours
+		step =
+			math.max(step, B.paceWindowAt("Warrior", L).hours / math.max(1e-9, B.paceWindowAt("Warrior", L - 1).hours))
+	end
+	local rows = {
+		{ "Vaelgrath 3 / 4 / 5 graczy L99: min", "4,58 / 4,82 / 4,67", three("vaelgrath.team", "", "2"), "4–6" },
+		{
+			"Vaelgrath z węzłami 3 / 4 / 5: min",
+			"4,01 / 4,25 / 4,21",
+			three("vaelgrath.team", "@nodes", "2"),
+			"4–6",
+		},
+		{
+			"Vaelgrath: największy cios Maga L100 / L98 (Lodowy Pierścień)",
+			"130% / 132%",
+			`{fmtValue(v("vaelgrath.mage100"), "%")} / {fmtValue(v("vaelgrath.mage98"), "%")}`,
+			"≤ 70% / < 100%",
+		},
+		{ "Vaelgrath: zwykły cios Maga L100", "33%", fmtValue(v("vaelgrath.basic100"), "%"), "7–12%" },
+		{ "Vaelgrath: tank HP na minutę (model S32)", "1063%", fmtValue(v("vaelgrath.tank"), "%"), "≤ 350%" },
+		{
+			"Vaelgrath: tank HP na minutę (bossFight; 3 / 4 / 5)",
+			"849% / 865% / 880%",
+			three("vaelgrath.tankFight", "", "%"),
+			"raport",
+		},
+		{ "Vaelgrath: zamieć na minutę / HP Maga L100", "68%", fmtValue(v("vaelgrath.blizzard"), "%"), "≤ 60%" },
+		{ "Vaelgrath: tick burzy / HP Maga L100", "47%", fmtValue(v("vaelgrath.storm"), "%"), "30–45%" },
+		{
+			"Vaelgrath: fala tarczy, HP na członka (3 / 4 / 5)",
+			"291% / 198% / 191%",
+			three("vaelgrath.wave", "", "%"),
+			"≤ 110%",
+		},
+		{
+			"Vaelgrath: nietykalność fazy 2 / max(lot, fala) (3 / 4 / 5)",
+			"1,00 (model)",
+			three("vaelgrath.flight", "", "2"),
+			"1,00",
+		},
+		{
+			"Vaelgrath: G11 (najmniejsze tempo ataku; pierścień w fazie 3)",
+			"53% (pierścień 53%)",
+			fmtValue(regionMin("bossCadence"), "%"),
+			"≥ 50%",
+		},
+		{ "Vaelgrath: T-SK6 Uzdrowiciela lochowego", "5,98", fmtValue(v("vaelgrath.tsk6"), "2"), "1,0–2,0" },
+		{
+			"Vaelgrath bez wsparcia 3 / 4 / 5: s",
+			"89 / 90 / 89",
+			three("vaelgrath.noSupport.", ".seconds", "1"),
+			"≤ 480",
+		},
+		{
+			"Vaelgrath bez wsparcia: przyjmowane / podtrzymanie (najgorszy, 3 / 4 / 5)",
+			"0,60 / 0,61 / 0,63",
+			three("vaelgrath.noSupport.", ".sustain", "2"),
+			"≤ 1,0",
+		},
+		{
+			"Vaelgrath bez wsparcia: największy cios / HP członka",
+			"117%",
+			fmtValue(v("vaelgrath.noSupport.3.hit"), "%"),
+			"≤ 100%",
+		},
+		{ "Vaelgrath: Mityki nieużyteczne (4 klasy)", "0%", range("R.frostpeak.vaelgrath.mythic.", "%"), "0%" },
+		{
+			"Vaelgrath: zabicia do Mityka / Grimrok",
+			"1,00 (50 / 50)",
+			`{fmtValue(v("vaelgrath.mythicLadder"), "2")} ({fmtValue(B.expectedMythicKills("vaelgrath"), "0")} / {fmtValue(
+				B.expectedMythicKills("grimrok"),
+				"0"
+			)})`,
+			"1,4–1,6",
+		},
+		{
+			"Elity pojedyncze w paśmie (20–36 s, 55–95%)",
+			"44%",
+			fmtValue(share("eliteSingle"), "%"),
+			"≥ 72%",
+		},
+		{
+			"Elity: spotkanie Wojownik / Mag (najgorsze)",
+			"185% / 211%",
+			`{fmtValue(regionMax("eliteEncounter", "Warrior"), "%")} / {fmtValue(
+				regionMax("eliteEncounter", "Mage"),
+				"%"
+			)}`,
+			"≤ 110% / ≤ 125%",
+		},
+		{
+			"Elita II solo / 2 / 3 graczy",
+			"2,79–4,52 / 1,11–1,93 / 0,75–1,27",
+			`{regionRange("elite2", ".solo", "2")} / {regionRange("elite2", ".duo", "2")} / {regionRange(
+				"elite2",
+				".trio",
+				"2"
+			)}`,
+			"≥ 1,8 / ≤ 1,5 / 0,6–1,0",
+		},
+		{ "Elity dropią ilvl 71–100", "29/30", count("R.frostpeak.ilvl.elite"), "każdy" },
+		{ "Expowiska ≥ 2 na 71–100", "22/30", count("R.frostpeak.areas."), "każdy" },
+		{
+			"Rodzaje: EXP/s ÷ zwykły (najmniej)",
+			"0,70 (crystalGuardian)",
+			fmtValue(regionMin("kinds", ".exp"), "2"),
+			"0,85–1,20",
+		},
+		{
+			"Lodowy Żywiołak: HP/EXP ÷ średnia regionu",
+			"1,11",
+			fmtValue(regionMax("kinds", nil, ".casterHp"), "2"),
+			"≤ 1,25",
+		},
+		{ "Tempo 70 → 100 (okno): h", "40,89", fmtValue(pace, "2"), "34,9–47,2" },
+		{
+			"Tempo: h(99) / największy krok h(L) / h(L − 1) na 70–99",
+			"1,66 / (h(92) = 0: okno `glacier` tylko na 92.)",
+			`{fmtValue(v("pace.h99"), "2")} / {fmtValue(step, "2")}`,
+			"1,36–1,84 / ≤ 1,30",
+		},
+		{ "Tempo 1 → 100 (okno): h", "84,05", fmtValue(v("pace.total"), "2"), "69,7–94,3" },
+		{
+			"Plecak 160 (od 65.) / 200 (od 80.): poziomy dochodu",
+			"21,7 / 33,8",
+			`{fmtValue(v("gold.backpack_160.Warrior"), "1")} / {fmtValue(v("gold.backpack_200.Warrior"), "1")}`,
+			"5–12",
+		},
+		{ "+1…+3 broni / dochód poziomu (71–99)", "0,63–0,84", range("R.frostpeak.gold.up3", "2"), "≤ 1,05" },
+		{
+			"Mikstury łańcuchowe / dochód (71–99)",
+			"0,38–1,45",
+			range("R.frostpeak.gold.chain.", "2"),
+			"0,15–0,30 (górna: raport)",
+		},
+		{
+			"Złoto za 1 HP: Potężna − Wielka",
+			"0,125",
+			fmtValue(v("gold.potionOrder.5"), "g"),
+			"≥ 0",
+		},
+		{
+			"Rudy u kowala: mithril / adamantyt od poziomu",
+			"brak / brak",
+			`{fmtValue(v("gold.ore.ore_mithril"), "0")} / {fmtValue(v("gold.ore.ore_adamantite"), "0")}`,
+			"70 / 90",
+		},
+		{
+			"Komplet +9 z ochroną: h na Iglicy Wyrmów (Wojownik L99)",
+			"399",
+			fmtValue(v("gold.set9"), "0"),
+			"150–300 (raport)",
+		},
+		{ "D5 (K0): Unikaty dla klasy na h expienia", "2,81–4,19", regionRange("d5", ".unique", "2"), "2–4" },
+		{ "D5 (K0): Heroiki na h Elit", "0,63–0,87", regionRange("d5", ".heroic", "2"), "0,5–1,5" },
+		{
+			"Części: rodzaje z częścią / części w przepisach / futro i łuska od 70 / eliksir lodu",
+			"7/12 / 4/5 / 0/2 / 30",
+			`{count("R.frostpeak.parts.kind")} / {count("R.frostpeak.parts.recipe")} / {count("R.frostpeak.parts.late")} / {fmtValue(
+				v("parts.elixirIce"),
+				"0"
+			)}`,
+			"12/12 / 5/5 / 2/2 / 70",
+		},
+		{ "`support.elites` na 80 / 95", "0/10", count("R.frostpeak.support"), "10/10 (raport)" },
+	}
+	tableOut({ "liczba", "start S94", "teraz", "cel" }, rows)
+	local listed: { B.TargetRow } = {}
+	for _, row in s94Rows do
+		if row.group ~= "guards" and not string.find(row.id, "gold.", 1, true) and row.group ~= "pace" then
+			table.insert(listed, row)
+		end
+	end
+	local ok, all = countIn(s94Rows)
+	add("### Cele S94 (`Balance.targetsS94`)")
+	add()
+	add(
+		`{ok}/{all} w paśmie (z wierszami raportu). Strażniki T-SK, złoto i tempo w tabelach niżej; pozostałe wiersze regionu (Elity, Elity II, rodzaje, harmonogram, D5) w „Cele (70–100)”.`
+	)
+	add()
+	tableOut({ "cel", "wartość", "próg", "wynik", "kto asertuje" }, targetRows(listed, "S94 (asertowane)"))
+	-- guards matrix (H1)
+	add("### Strażniki T-SK w paśmie (S94, H1)")
+	add()
+	add(
+		"T-SK1 / T-SK2 względem własnego L20 (limity 1,15 / 1,25) i T-SK3 / areaCap (≤ 1) na 75 / 80 / 85 / 90 / 95 / 99 / 100 (rzędy 10–11 według punktów). Gwiazdka: wiersz w raporcie (na 70 build ma już wartość ponad limitem planu D1, reguła S92 / S93, albo powód grupy w `Balance.S94_REPORT`); T-SK4 Maga i T-SK5 Uzdrowiciela lochowego w „Cele S94”."
+	)
+	add()
+	local gRows: { { string } } = {}
+	for _, c in B.CLASSES do
+		for _, build in SkillModel.builds(c) do
+			local cells = { `{c} {build.key}` }
+			for _, L in S.guardLevels do
+				local g = SkillModel.guards(build, L)
+				local mark = ""
+				for _, metric in { "tsk1", "tsk2", "tsk3" } do
+					local row = byId[`R.frostpeak.guard.{metric}.{c}.{build.key}.{L}`]
+					if row and row.report and not B.inBand(row) then
+						mark = "*"
+					end
+				end
+				table.insert(
+					cells,
+					`{fmtValue(g.tsk1rel, "2")} / {fmtValue(g.tsk2rel, "2")} / {fmtValue(g.tsk3cap, "2")}{mark}`
+				)
+			end
+			table.insert(gRows, cells)
+		end
+	end
+	tableOut({ "build", "75", "80", "85", "90", "95", "99", "100" }, gRows)
+	-- pace (G)
+	add("### Tempo 69 → 100 i całe 1 → 100 (model okna S91, Wojownik; S94)")
+	add()
+	add(
+		"h = godziny na poziom (rodzaj zwykły, odpoczynek, zadania główne bez bossów w oknach, poboczne 0,5); m = średnia krocząca h(L − 4..L) (raport); „rodzaj regionu” = `kindAtRegion` (raport); „z Vaelgrathem” = zadanie `vaelgrath` (97, `exp(99, 1,5)`) w oknie (raport). S94: okno ostatniego zadania głównego (`glacier`) sięga 99. (DECYZJE S94)."
+	)
+	add()
+	local pRows: { { string } } = {}
+	for L = 69, 100 do
+		local h = B.paceWindowAt("Warrior", L).hours
+		local prev = B.paceWindowAt("Warrior", L - 1).hours
+		table.insert(pRows, {
+			tostring(L),
+			fmtValue(h, "2"),
+			fmtValue(h / math.max(1e-9, prev), "2"),
+			fmtValue(B.paceWindowMean("Warrior", L), "2"),
+			fmtValue(B.paceWindowAt("Warrior", L, { kind = "region" }).hours, "2"),
+			fmtValue(B.paceWindowAt("Warrior", L, { withBossQuests = true }).hours, "2"),
+		})
+	end
+	tableOut({ "poziom", "h", "h / h(L − 1)", "m", "h rodzaj regionu", "h z Vaelgrathem" }, pRows)
+	local bands = { { 1, 19 }, { 20, 44 }, { 45, 69 }, { 70, 99 } }
+	local bandRows: { { string } } = {}
+	local total, totalBoss = 0, 0
+	for _, b in bands do
+		local sum, boss = 0, 0
+		for L = b[1], b[2] do
+			sum += B.paceWindowAt("Warrior", L).hours
+			boss += B.paceWindowAt("Warrior", L, { withBossQuests = true }).hours
+		end
+		total += sum
+		totalBoss += boss
+		table.insert(bandRows, { `{b[1]} → {b[2] + 1}`, fmtValue(sum, "2"), fmtValue(boss, "2") })
+	end
+	table.insert(bandRows, { "1 → 100", fmtValue(total, "2"), fmtValue(totalBoss, "2") })
+	tableOut({ "pasmo", "h (bez bossów)", "h z zadaniami bossów" }, bandRows)
+	do
+		local need = 0
+		for L = 62, 71 do
+			need += B.paceWindowAt("Warrior", L).questExp
+		end
+		local inBand = B.paceWindowAt("Warrior", 70).questExp + B.paceWindowAt("Warrior", 71).questExp
+		add(
+			`Zadanie \`vaelgrath\` oddaje {fmtValue(B.questsAt(97, { bosses = true }).exp - B.questsAt(97).exp, "0")} EXP (z Vaelgrathem w oknie −{fmtValue(
+				pace
+					- (function()
+						local s = 0
+						for L = 70, 99 do
+							s += B.paceWindowAt("Warrior", L, { withBossQuests = true }).hours
+						end
+						return s
+					end)(),
+				"2"
+			)} h na 70 → 100); okno zadania \`deepforge\` (62–71) daje na 70.–71. {fmtValue(
+				inBand / math.max(1e-9, need),
+				"%"
+			)} EXP zadań tego okna.`
+		)
+		add()
+	end
+	-- class premium (ROZWOJ 7.4)
+	local premium: { { string } } = {}
+	for _, L in { 80, 95 } do
+		for _, party in { { "Warrior", "Warrior", "Warrior" }, { "Warrior", "Hunter", "Mage" } } do
+			local p = B.paceAt("Warrior", L, { party = party })
+			table.insert(premium, {
+				`{L}: {table.concat(party, " + ")}`,
+				fmtValue(p.expMul, "2"),
+				fmtValue(p.expPerHour, "g"),
+			})
+		end
+	end
+	add("### Premia za różne klasy (tylko raport, S94)")
+	add()
+	tableOut({ "drużyna 3 osób", "mnożnik EXP", "EXP/h członka" }, premium)
+	-- chain potions (J2)
+	add("### Mikstury łańcuchowe ÷ dochód (S94, J2; górna granica 30% w raporcie, dolna 15% asertowana)")
+	add()
+	local chain: { { string } } = {}
+	for L = 71, 99, 4 do
+		local cells = { tostring(L) }
+		for _, c in B.CLASSES do
+			table.insert(cells, fmtValue(B.economyAt(c, L, { potions = "chain" }).potionShare, "%"))
+		end
+		table.insert(chain, cells)
+	end
+	tableOut({ "poziom", "Wojownik", "Łowca", "Mag", "Kapłan" }, chain)
+	-- gold endgame (J)
+	add("### Złoto endgame'u (S94, J)")
+	add()
+	local jRows: { { string } } = {}
+	for _, c in B.CLASSES do
+		local set = B.protectedSet(c, 99)
+		table.insert(jRows, {
+			`komplet +9 z ochroną, {c} L99 ({set.area})`,
+			`{fmtValue(set.goldEq, "0")} zł ekw., {fmtValue(set.scrolls, "0")} zwojów, {fmtValue(set.cores, "0")} Rdzeni; {fmtValue(
+				set.perHour,
+				"0"
+			)} zł/h → {fmtValue(set.hours, "0")} h`,
+		})
+	end
+	for _, ilvl in { 75, 85, 99 } do
+		local f = B.protectedFlow(ilvl)
+		table.insert(jRows, {
+			`chroniony +9 broni ilvl {ilvl} (Rdzenie i zwoje)`,
+			`{fmtValue(f.gold, "0")} zł, {fmtValue(f.scrolls, "1")} zwojów ({fmtValue(f.scrollGold, "0")} zł), {fmtValue(
+				f.cores,
+				"1"
+			)} Rdzeni = {fmtValue(f.levels, "1")} poziomu dochodu`,
+		})
+	end
+	do
+		local GuildSkills = require("../src/shared/Data/GuildSkills")
+		local allGuild = 0
+		for _, s in GuildSkills.list do
+			for i = 1, math.min(5, #s.costs) do
+				allGuild += s.costs[i]
+			end
+		end
+		local perHour = B.protectedSet("Warrior", 99).perHour
+		table.insert(jRows, {
+			"umiejętności gildii do 5 (skarbiec gildii)",
+			`{fmtValue(allGuild, "0")} zł = {fmtValue(allGuild / math.max(1e-9, perHour), "0")} h Wojownika L99`,
+		})
+		local Recipes = require("../src/shared/Data/Recipes")
+		local blessing = (Recipes.get("blessing_fortune_4") :: any).gold
+		table.insert(jRows, {
+			"Legendarne błogosławieństwo podtrzymane (2 na godzinę)",
+			`{fmtValue(2 * blessing, "0")} zł/h = {fmtValue(2 * blessing / math.max(1e-9, perHour), "%")} dochodu L99`,
+		})
+		local Crafting = require("../src/shared/Data/Crafting")
+		local Items = require("../src/shared/Data/Items")
+		for _, tier in { 70, 80, 90, 100 } do
+			local r = Crafting.get(`armor_heavy_{tier}`) :: any
+			local gold = r.gold
+			for _, m in r.materials do
+				local mat = Items.get(m.id) :: any
+				gold += m.n * (if mat then (mat.price or 0) * 4 else 0)
+			end
+			local income = B.levelIncome("Warrior", math.min(99, tier))
+			table.insert(jRows, {
+				`wytworzenie zbroi ciężkiej {tier} (złoto + materiały po 4 × cenie)`,
+				`{fmtValue(gold, "0")} zł = {fmtValue(gold / math.max(1e-9, income), "2")} poziomu dochodu`,
+			})
+		end
+	end
+	tableOut({ "pozycja", "wartość" }, jRows)
+	-- D5 with luck (I3)
+	add("### D5 ze szczęściem (tylko raport, S94)")
+	add()
+	add(
+		"Unikaty dla klasy na h expienia / Heroiki na h Elit: K0, K1, K1 z Kapłanem Fortuny, K2 z Kapłanem Fortuny (profile S84 / S88; limit szczęścia `monsterItemCap`)."
+	)
+	add()
+	local d5: { { string } } = {}
+	for _, L in { 75, 85, 95, 99 } do
+		for _, c in { "Warrior", "Cleric" } do
+			local cells = { `{c} {L}` }
+			for _, spec in { { "K0", false }, { "K1", false }, { "K1", "full" }, { "K2", "full" } } do
+				local d = B.dropsPerHour(c, L, spec[1] :: string, spec[2] :: any)
+				table.insert(cells, `{fmtValue(d.unique, "2")} / {fmtValue(d.heroic, "2")}`)
+			end
+			table.insert(d5, cells)
+		end
+	end
+	tableOut({ "klasa · poziom", "K0", "K1", "K1 + Fortuna", "K2 + Fortuna" }, d5)
+	do
+		local AreaSpawns = require("../src/shared/Logic/AreaSpawns")
+		local w = Rarities.dropWeights.elite2 :: any
+		local drops = Rarities.itemDrops.elite2 :: any
+		local f = LevelCurves.dropFactor("frostpeak")
+		local share = w[Rarities.LEGENDARY] / (f * (w[Rarities.UNIQUE] + w[Rarities.HEROIC]) + w[Rarities.LEGENDARY])
+		local perKill = drops.chance * (drops.min + drops.max) / 2 * share
+		local span = AreaSpawns.elite2Respawn(95)
+		local respawn = (span.min + span.max) / 2
+		local Loot = require("../src/shared/Logic/Loot")
+		local boss = 0
+		for k = 0, Config.Boss.dailyRuns - 1 do
+			boss += #B.REGION_IDS * Loot.bossChances("vaelgrath", k).legendary
+		end
+		add(
+			`Legendarne z obozowania przy Elicie II (Serce Lodowca, poziom 95, odrodzenie {fmtValue(respawn / 60, "1")} min): {fmtValue(
+				perKill * 3600 / respawn,
+				"2"
+			)} na godzinę na jaskinię; z bossów (4 bossy × {Config.Boss.dailyRuns} zabicia dziennie): {fmtValue(
+				boss,
+				"2"
+			)} na dobę.`
+		)
+		add()
+	end
+	-- pairs alone and casters (report)
+	add("### Pary Elit i rodzaje rzucające (tylko raport, S94)")
+	add()
+	local pairRows: { { string } } = {}
+	for _, cave in B.caveElites("frostpeak") do
+		for _, kind in cave.kinds do
+			local worst = 0
+			for _, fight in kind.fights do
+				worst = math.max(worst, fight.pair.hpLost / math.max(1e-9, fight.single.hpLost))
+			end
+			table.insert(pairRows, { `{cave.id} {kind.kind}`, fmtValue(cave.pairShare, "%"), fmtValue(worst, "2") })
+		end
+	end
+	tableOut({ "jaskinia · rodzaj", "q par", "para ÷ pojedyncza (najwięcej; cel ≤ 2,6)" }, pairRows)
+	-- Vaelgrath extras (C)
+	add("### Vaelgrath: tylko raport (S94)")
+	add()
+	local def = Bosses.byId.vaelgrath :: any
+	local vRows: { { string } } = {}
+	for n = 3, 5 do
+		local r = B.bossNoSupport("vaelgrath", n)
+		local pots = {}
+		for _, mem in r.members do
+			table.insert(pots, `{mem.key} {fmtValue(mem.potions, "1")}`)
+		end
+		table.insert(vRows, { `bez wsparcia, {n} graczy: mikstury na walkę`, table.concat(pots, ", ") })
+	end
+	do
+		local team = B.team(5, S.bossLevel)
+		team[2] = B.player("Mage", 100)
+		local cells = {}
+		for _, hs in { 0, 0.5, 1 } do
+			local f = B.bossFight("vaelgrath", team, { hazardShare = hs })
+			table.insert(
+				cells,
+				`{fmtValue(hs, "1")}: tank {fmtValue(f.phases[3].tankDps * 60 / team[1].values.maxHp, "%")}/min`
+			)
+		end
+		table.insert(vRows, { "burza przy hazardShare 0 / 0,5 / 1 (faza 3)", table.concat(cells, ", ") })
+	end
+	local waves = {}
+	for n = 3, 5 do
+		local f = B.bossFight("vaelgrath", B.team(n, S.bossLevel))
+		local ws = B.shieldWaves("vaelgrath", B.team(n, S.bossLevel))
+		table.insert(
+			waves,
+			`{n}: fale {fmtValue(ws[1].seconds, "1")} / {fmtValue(ws[2].seconds, "1")} s, okno fazy 2 {fmtValue(
+				f.phases[2].shieldSeconds + f.phases[2].flightSeconds,
+				"1"
+			)} s (lot po fali {fmtValue(f.phases[2].flightSeconds, "1")} s)`
+		)
+	end
+	table.insert(vRows, { "fale tarczy i okno bez obrażeń w fazie 2 (drużyna S32)", table.concat(waves, "; ") })
+	local m = B.monster(B.bossKind(def, 4), def.level, "boss")
+	for _, key in { "trapper.poisoner", "inquisitor.solo" } do
+		local sp = SkillModel.player(SkillModel.build(key), S.bossLevel)
+		local d60 = SkillModel.fight(sp, { targets = { m }, seconds = 60 }).dps
+		local d300 = SkillModel.fight(sp, { targets = { m }, seconds = 300 }).dps
+		table.insert(vRows, {
+			`{key} na Vaelgracie: DPS 300 s ÷ DPS 60 s`,
+			`{fmtValue(d300 / math.max(1e-9, d60), "2")} ({fmtValue(d60, "g")} → {fmtValue(d300, "g")})`,
+		})
+	end
+	for phase = 1, 3 do
+		local cad = B.bossCadence(def, phase)
+		local parts = {}
+		for _, at in def.attacks do
+			if cad.perMinute[at.id] then
+				table.insert(
+					parts,
+					`{at.id} {fmtValue(cad.perMinute[at.id], "1")}/min ({fmtValue(cad.rateShare[at.id], "%")})`
+				)
+			end
+		end
+		table.insert(vRows, { `harmonogram fazy {phase}`, table.concat(parts, ", ") })
+	end
+	for _, bossId in { "grimrok", "morvane", "azgor", "vaelgrath" } do
+		local kills = B.expectedMythicKills(bossId)
+		table.insert(vRows, {
+			`{bossId}: oczekiwane zabicia / dni do Mityka (3 dziennie, K0)`,
+			`{fmtValue(kills, "0")} / {fmtValue(kills / Config.Boss.dailyRuns, "1")}`,
+		})
+	end
+	tableOut({ "liczba", "wartość" }, vRows)
+	-- R4 in the band (H3, H4)
+	add("### Przełomy A / B osiągane w 71–95 (tylko raport, S94, H3)")
+	add()
+	add(
+		"R4 = zysk opcji w roli umiejętności na poziomie rangi (S89 E1, `SkillModel.optionGain`); pasmo 0,08–0,17 (5) i 0,17–0,28 (10); opcje użytkowe (`R4_UTILITY`) bez liczby. Gniew Żywiołów 10A / 10B (H4) na 84. w buildzie Niszczyciela jest w tabeli."
+	)
+	add()
+	local r4Rows: { { string } } = {}
+	for _, classId in B.CLASSES do
+		for _, d in SkillData.byClass[classId] do
+			local def2: any = d
+			if def2.type == "passive" or not def2.breakpoints then
+				continue
+			end
+			local key = SkillModel.R4_SUPPORT_BUILDS[def2.id]
+				or (if def2.path then SkillModel.R4_PATH_BUILDS[def2.path] else SkillModel.R4_CLASS_BUILDS[classId])
+			local build = SkillModel.build(key)
+			for _, at in Skills.BREAKPOINT_LEVELS do
+				local rankLevel = Skills.rankLevel(def2, at)
+				if rankLevel > 70 and rankLevel <= 95 and def2.breakpoints[at] then
+					local cells = { `{def2.id} {at} ({key})`, tostring(rankLevel) }
+					for _, choice in { "a", "b" } do
+						local k = `{def2.id}:{at}{choice}`
+						if SkillModel.R4_UTILITY[k] then
+							table.insert(cells, "użyteczność")
+						else
+							local g = SkillModel.optionGain(build, def2.id, at, choice, rankLevel)
+							table.insert(cells, if g then fmtValue(g, "2") else "–")
+						end
+					end
+					table.insert(r4Rows, cells)
+				end
+			end
+		end
+	end
+	tableOut({ "umiejętność · przełom (build)", "poziom", "A", "B" }, r4Rows)
+	-- anchors 100 (S94)
+	add("### Kotwice 100 (S94)")
+	add()
+	add(
+		"S94 nie przestawiło żadnej kotwicy 100 (`monsterHp`, `monsterAtk`, `eliteHp`, `eliteDmg`, `elite2*`, `expToNext`, `manaCost.Mage`, `heal`): wiersze pasma (Elity, Elity II, tempo 70 → 100 i 1 → 100, T-SK4, T-SK5) mieszczą się w celach na krzywych S87 po zmianach rodzajów i jaskiń. Wartości:"
+	)
+	add()
+	local kRows: { { string } } = {}
+	for _, id in LevelCurves.ids() do
+		table.insert(kRows, { id, fmtValue(LevelCurves.at(id, 85), "2"), fmtValue(LevelCurves.at(id, 100), "2") })
+	end
+	tableOut({ "krzywa", "85", "100" }, kRows)
+end
+
 local REGION_SESSION = { "S91", "S92", "S93", "S94" }
 for i, band in B.BANDS do
 	local lo, hi = band[1], band[2]
 	local mapId = B.REGION_IDS[i]
-	local tuned = B.TUNED[mapId]
-	local untuned = if tuned then "" else ": raport, nie strojone"
-	add(`## Pasmo {lo}–{hi} ({mapId}){untuned}`)
+	-- S94 (L3): no TUNED gate any more; every band is tuned and asserted
+	add(`## Pasmo {lo}–{hi} ({mapId})`)
 	add()
 	for _, t in byBand[`{lo}-{hi}`] or {} do
 		renderTable(t, "###")
@@ -1498,13 +2349,13 @@ for i, band in B.BANDS do
 	local gRows = globalFor(lo, hi)
 	local regionRows = B.targetsRegion(mapId)
 	local cele = targetRows(gRows, "S87")
-	local regionWho = if tuned then `{REGION_SESSION[i]} (asertowane)` else REGION_SESSION[i]
+	local regionWho = `{REGION_SESSION[i]} (asertowane)`
 	for _, r in targetRows(regionRows, regionWho) do
 		table.insert(cele, r)
 	end
 	local gOk, gAll = countIn(gRows)
 	local rOk, rAll = countIn(regionRows)
-	add(`### Cele ({lo}–{hi}){untuned}`)
+	add(`### Cele ({lo}–{hi})`)
 	add()
 	add(`Globalne (G): {gOk}/{gAll} w paśmie; regionu: {rOk}/{rAll} w paśmie.`)
 	add()
@@ -1513,6 +2364,8 @@ for i, band in B.BANDS do
 		s92Section()
 	elseif mapId == "ashen" then
 		s93Section()
+	elseif mapId == "frostpeak" then
+		s94Section()
 	end
 end
 

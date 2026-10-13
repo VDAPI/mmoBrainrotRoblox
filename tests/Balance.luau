@@ -12,7 +12,7 @@
 --   questsAt / paceAt / paceBand / economyAt     -> quests on their own level, pace with carried EXP, gold per hour
 --   potionsAt / potionHps                        -> potions on the S54 interval (Logic/Potions)
 --   caveElites / team / bossCadence / bossFight  -> cave Elites from the real spawners, the bosses' schedule
---   targets1_20 / targetsGlobal / targetsRegion  -> target rows for balance.spec and the report (TUNED, REGION_TARGETS)
+--   targets1_20 / targetsGlobal / targetsRegion  -> target rows for balance.spec and the report (REGION_TARGETS)
 --   dataDump / rankDump / ledger                 -> the balance ledger (tools/balance_reasons.luau)
 -- S84 (items, loot and monster defence 20-100; test data SITUATIONS, MIX, G8_PAIRS, LUCK_PROFILES below):
 --   traitTerms / power(p, L, PowerOpts) / powerMix / traitValue -> item traits as expected values in situations
@@ -214,14 +214,23 @@ local function traitTarget(
 	return row :: TraitTarget
 end
 Balance.TRAIT_TARGETS = {
-	traitTarget("swordplay", "guardian.loner", "sword1h", "shield", { "group", "elite", "boss" }),
+	-- S94: 70 and 100 in the report: the S84 boss situation at 70 / 100 is Vaelgrath (Balance.bossFightAt, regionAt(70)
+	-- = the Frost Peaks) with the S94 shield waves at 86 / 87 (<= 110 % per member of a party of 3, C7): fewer helper
+	-- attacks to counter (0.050 -> 0.037 / 0.051 -> 0.039); waves at 99 / 100 give 2.9 per member, a faster swing
+	-- breaks the S32 tank (speed 1.5: 5.1 HP / min)
+	traitTarget("swordplay", "guardian.loner", "sword1h", "shield", { "group", "elite", "boss" }, {
+		reportSession = "S94",
+		reportAt = { 70, 100 },
+		reportWhy = "poza zasięgiem dźwigni S94: 0.037 / 0.039 at 70 / 100 (the S84 boss at 70 and 100 is Vaelgrath with the S94 waves 86 / 87; waves at 99 / 100 lose 2.9 HP per member, a faster swing breaks the S32 tank); owner: the boss of the situation at 70",
+	}),
 	-- S89 (F4): 0.044 at 45 and 70 after the S89 nodes (asserted); 100 stays report
 	-- S93: 45 in the report too: the S84 boss situation at 45 is Azgor moved to 45 (Balance.bossFightAt), whose shield
 	-- waves at 58 / 59 (<= 110 % per member of a party of 3, C7) give the tank fewer helper attacks to counter
+	-- S94: 70 too (Vaelgrath with the S94 waves 86 / 87 as the S84 boss at 70: 0.044 -> 0.033)
 	traitTarget("swordplay", "standard.commander", "sword1h", "shield", { "group", "elite", "boss" }, {
-		reportSession = "S93", -- S89 (100), S93 (45)
-		reportAt = { 45, 100 },
-		reportWhy = "poza zasięgiem dźwigni S89: 0.039 at 100; the Standard-Bearer counters only with the sword's fixed 10 % (no Counterattack node in its rows 4-11), trait values are S88's (owner). Poza zasięgiem dźwigni S93: 0.038 at 45 (the S84 boss at 45 is Azgor with the S93 waves 58 / 59; owner: the boss of the situation at 45)",
+		reportSession = "S94", -- S89 (100), S93 (45), S94 (70)
+		reportAt = { 45, 70, 100 },
+		reportWhy = "poza zasięgiem dźwigni S89: 0.039 at 100; the Standard-Bearer counters only with the sword's fixed 10 % (no Counterattack node in its rows 4-11), trait values are S88's (owner). Poza zasięgiem dźwigni S93: 0.038 at 45 (the S84 boss at 45 is Azgor with the S93 waves 58 / 59; owner: the boss of the situation at 45). Poza zasięgiem dźwigni S94: 0.033 at 70 (the S84 boss at 70 is Vaelgrath with the S94 waves 86 / 87)",
 	}),
 	traitTarget("twinCut", "standard.commander", "saber1h", "shield", { "single", "elite" }),
 	traitTarget("twinCut", "guardian.defender", "saber1h", "shield", { "single", "elite" }, {
@@ -1832,7 +1841,9 @@ local function questWindows(withBosses: boolean): { [number]: number }
 	local out: { [number]: number } = {}
 	for _, q in main do
 		local i = table.find(starts, q.level) :: number
-		local last = if starts[i + 1] then starts[i + 1] - 1 else q.level
+		-- S94: the last main quest's window runs to MaxLevel - 1 (glacier 92-99, as the S91 windows read; it paid
+		-- only level 92 before: h(92) = 0 and h(93) / h(92) without meaning)
+		local last = if starts[i + 1] then starts[i + 1] - 1 else math.max(q.level, Config.MaxLevel - 1)
 		local need = 0
 		for L = q.level, last do
 			need += Exp.expToNext(L)
@@ -2102,14 +2113,6 @@ end
 -- Entities/Boss.Step too; balancemodel.spec checks that the server reads it).
 Balance.BOSS_GLOBAL_GAP = BossTuning.globalGap
 
--- Scripted boss hazards (server BossScripts, multiplier of the boss attack like CombatService): Azgor's lava
--- outside the shrinking safe circle, Vaelgrath's storm away from the braziers. S87: damage from Data/BossTuning
--- (the scripts require it); phase, tick and kind stay here, the ticks checked as text by balancemodel.spec.
-Balance.HAZARDS = {
-	azgor = { phase = 3, damage = BossTuning.hazards.azgor.lava, every = 1, damageKind = "magic" },
-	vaelgrath = { phase = 3, damage = BossTuning.hazards.vaelgrath.freezingStorm, every = 3, damageKind = "magic" },
-} :: { [string]: { phase: number, damage: number, every: number, damageKind: string } }
-
 -- Numeric "local NAME = 12.5" lines of a server boss script, read as text (the scripts need Roblox; same rule as
 -- tools/WikiData/Bosses.scriptConsts).
 function Balance.bossScriptConsts(bossId: string): { [string]: number }
@@ -2126,6 +2129,20 @@ function Balance.bossScriptConsts(bossId: string): { [string]: number }
 	end
 	return out
 end
+
+-- Scripted boss hazards (server BossScripts, multiplier of the boss attack like CombatService): Azgor's lava
+-- outside the shrinking safe circle, Vaelgrath's storm away from the braziers. S87: damage from Data/BossTuning
+-- (the scripts require it); phase, tick and kind stay here, the ticks checked as text by balancemodel.spec.
+-- S94 (B1b): Vaelgrath's tick is the script's STORM_TICK (read as text, like FLIGHT_SECONDS in bossFight)
+Balance.HAZARDS = {
+	azgor = { phase = 3, damage = BossTuning.hazards.azgor.lava, every = 1, damageKind = "magic" },
+	vaelgrath = {
+		phase = 3,
+		damage = BossTuning.hazards.vaelgrath.freezingStorm,
+		every = Balance.bossScriptConsts("vaelgrath").STORM_TICK or 3,
+		damageKind = "magic",
+	},
+} :: { [string]: { phase: number, damage: number, every: number, damageKind: string } }
 
 export type CadenceState = { nextAttack: { [string]: number }, nextGlobal: number, phase: number }
 export type CadenceOpts = {
@@ -3503,7 +3520,7 @@ function Balance.targetsS92(): { TargetRow }
 	end
 	-- skill guards in the band (G1): bases and the reference builds, T-SK3 of the reference builds. S92 (K2): a guard
 	-- of a build whose own value at 45 (the path block of S89-S90, asserted) is already above the limit and not below
-	-- the band's value is printed: holding 25-44 under the D1 limit would only move the jump to 45 (DECYZJE S92); a
+	-- the band's value (itself above the limit) is printed: holding 25-44 under the D1 limit would only move the jump to 45 (DECYZJE S92); a
 	-- band value above the one at 45 stays asserted unless Balance.S92_REPORT names it
 	for _, c in Balance.CLASSES do
 		for _, build in SkillModel.builds(c) do
@@ -3524,7 +3541,11 @@ function Balance.targetsS92(): { TargetRow }
 					if spec[1] == "tsk3" and build.key == "base" then
 						-- the base's T-SK3 only printed (S90 I3: the Mage base 2.1-2.4 by design, ROZWOJ 15.5.3)
 						rows[#rows].report = "tylko raport (T-SK3 podstawy, S90 I3)"
-					elseif (g45 :: any)[field] > (lim :: any)[field] and (g :: any)[field] <= (g45 :: any)[field] then
+					elseif
+						(g45 :: any)[field] > (lim :: any)[field]
+						and (g :: any)[field] > (lim :: any)[field]
+						and (g :: any)[field] <= (g45 :: any)[field]
+					then
 						rows[#rows].report =
 							`poza zasięgiem dźwigni S92: na 45 blok ścieżek S89–S90 trzyma {string.format(
 								"%.2f",
@@ -4010,7 +4031,7 @@ function Balance.targetsS93(): { TargetRow }
 	end
 	-- skill guards in the band (G1): bases and the reference builds, T-SK3 of the reference builds. S93 (K2): the S92
 	-- rule: a guard of a build whose own value at 45 (S92's end of the band) is already above the limit and not below
-	-- the band's value is printed; any other row above the limit (70 included) stays asserted unless
+	-- the band's value is printed when it is above the limit itself; any other row (70 included) stays asserted unless
 	-- Balance.S93_REPORT names it
 	for _, c in Balance.CLASSES do
 		for _, build in SkillModel.builds(c) do
@@ -4033,7 +4054,7 @@ function Balance.targetsS93(): { TargetRow }
 					add(`guard.{spec[1]}.{key}`, "guards", spec[3], v, nil, limit, c, lv)
 					if spec[1] == "tsk3" and build.key == "base" then
 						rows[#rows].report = "tylko raport (T-SK3 podstawy, S90 I3)"
-					elseif at45 > limit and v <= at45 + 1e-9 then
+					elseif at45 > limit and v > limit and v <= at45 + 1e-9 then
 						rows[#rows].report =
 							`poza zasięgiem dźwigni S93: na 45 (pasmo S92) build ma już {string.format("%.2f", at45)}`
 					end
@@ -4197,8 +4218,8 @@ do
 		guardian = "poza zasięgiem dźwigni S93: T-SK3 Strażnika ≤ 2,2 (S89 C1, Groźba), tu do 2,18",
 		-- S93: poza zasięgiem dźwigni S93: skok na 70 z węzła rzędu 9 ścieżki (wybór na 70., liczby S89) — Rzeźnik T-SK2
 		-- 1,17 → 1,42, Dowódca 1,26 → 1,74 (T-SK1 1,20 → 1,29), Opiekun 1,13 → 1,55 (T-SK1 1,11 → 1,19); Dowódca T-SK2
-		-- 1,26 na 69 (0,6% ponad, rangi 46-69); strażniki 70-100 dla S94 i właściciela
-		row9 = "poza zasięgiem dźwigni S93: skok na 70 z węzła rzędu 9 ścieżki (S89); dla S94 i właściciela",
+		-- 1,26 na 69 (0,6% ponad, rangi 46-69); strażniki 71-100 sprawdza S94 (R.frostpeak.guard), reszta dla właściciela
+		row9 = "poza zasięgiem dźwigni S93: skok na 70 z węzła rzędu 9 ścieżki (S89); dla właściciela",
 	}
 	for _, spec in
 		{
@@ -4265,11 +4286,609 @@ do
 	-- S93: T-SK2 podstawy Łowcy na 65 (1,285) poza zasięgiem dźwigni S93: skok przy progu sprzętu 65 (broń modelu
 	-- z progu 65, żadna ranga nie wypada na 65); na 66 Salwa ranga 10 wraca do 1,23
 	R["R.ashen.guard.tsk2.Hunter.base.65"] =
-		"poza zasięgiem dźwigni S93: skok przy progu sprzętu 65 (żadna ranga na 65), na 64 / 66 1,16 / 1,23; dla S94"
+		"poza zasięgiem dźwigni S93: skok przy progu sprzętu 65 (żadna ranga na 65), na 64 / 66 1,16 / 1,23; dla właściciela"
 	-- S93: T-SK3 Trapera „Kłusownik” na 65 (1,005) poza zasięgiem dźwigni S93: Pole Sideł rangi 1-2 (60, 64); niższa
 	-- ranga 1 z węzłem rangi 4 przesuwa rangę 3 trzymającą 70 (blok ścieżek S90)
 	R["R.ashen.guard.tsk3.Hunter.trapper.poacher.65"] =
-		"poza zasięgiem dźwigni S93: Pole Sideł rangi 1–2 (0,5% ponad), ranga 3 trzyma 70 w bloku ścieżek; dla S94"
+		"poza zasięgiem dźwigni S93: Pole Sideł rangi 1–2 (0,5% ponad), ranga 3 trzyma 70 w bloku ścieżek; dla właściciela"
+end
+
+-- S94: the Frost Peaks 70-100, Vaelgrath and the endgame (balance plan, renumbered S56 draft) ---------------------
+
+Balance.S94 = {
+	bossLevel = 99, -- the parties of the Vaelgrath rows (3-5 players of level 99)
+	minutes = { 4, 6 },
+	mageHit = 0.70, -- biggest hit / HP of a level 100 Mage (glacial ring on a ranged Mage)
+	basicHit = { 0.07, 0.12 }, -- Vaelgrath's basic hit / HP of a level 100 Mage
+	tankPerMinute = 3.5, -- S32 model: the tank's HP per minute from basic and threat attacks
+	wave = 1.10, -- HP per member per shield wave (the S32 group limit)
+	blizzard = 0.60, -- C3 (a): blizzard per minute / HP of a level 100 Mage, phases 2-3
+	storm = { 0.30, 0.45 }, -- one storm tick / HP of a level 100 Mage
+	tsk6 = { 1.0, 2.0 }, -- T-SK6 band (plan D1, ROZWOJ 0)
+	mythicRolls = 500,
+	mythicLadder = { 1.4, 1.6 }, -- expected kills to a Mythic: Vaelgrath / Grimrok (D2)
+	-- pace (G, plan D4): the window model of S91, Warrior, GENERIC, rest, no boss quests
+	pace = { hours = { 34.9, 47.2 }, h99 = { 1.36, 1.84 }, step = 1.30, total = { 69.7, 94.3 } },
+	guardLevels = { 75, 80, 85, 90, 95, 99, 100 },
+	areas = 2, -- every level 71-100 in at least two outdoor areas
+	-- gold (plan F)
+	up3 = 1.05,
+	backpacks = { { id = "backpack_160", level = 65 }, { id = "backpack_200", level = 80 } },
+	backpackLevels = { 5, 12 },
+	chainPotions = { 0.15, 0.30 },
+	potionTiers = { 3, 4, 5 }, -- gold per HP grows with quality: Large <= Great <= Mighty
+	setHours = { 150, 300 }, -- J5: protected +9 of 10 Legendary ilvl 100 in hours of the best gold area at 99
+	ores = { { item = "ore_mithril", level = 70 }, { item = "ore_adamantite", level = 90 } },
+	supportLevels = { 80, 95 },
+	-- the parts of the Frost Peaks' kinds (K): ingredients of a recipe available at 70-100
+	parts = { "yeti_fur", "frost_scale", "thick_hide", "crow_feather", "cursed_bone" },
+	partsLate = { "yeti_fur", "frost_scale" }, -- with a recipe of level 70-100
+	tsk4Builds = {
+		"destroyer.destroyerExp",
+		"destroyer.destroyerBoss",
+		"arcanist.arcanistBoss",
+		"arcanist.arcanistOverload",
+	},
+	d5Levels = { 99 }, -- the S84 region rows have 70 / 75 / ... / 95
+}
+
+-- S94 (B4): expected kills of `bossId` to the first personal Mythic: 1 / the mean of Loot.bossChances(id, k).mythic
+-- over k = 0 .. Config.Boss.dailyRuns - 1 (the same mean as the wiki's dayLine), no luck.
+function Balance.expectedMythicKills(bossId: string): number
+	local runs = Config.Boss.dailyRuns
+	local sum = 0
+	for k = 0, runs - 1 do
+		sum += Loot.bossChances(bossId, k).mythic
+	end
+	return runs / math.max(1e-12, sum)
+end
+
+-- S94 (B3, J5): the protected +9 of the 10 slots (Legendary, ilvl 100; Upgrade.cost does not depend on the slot)
+-- against the gold per hour of `classId` on the best gold area at `level` (coins + drop sales, Balance.areaHour).
+export type ProtectedSet = {
+	goldEq: number,
+	cores: number,
+	scrolls: number,
+	perHour: number,
+	area: string,
+	hours: number,
+}
+function Balance.protectedSet(classId: string, level: number): ProtectedSet
+	local item = makeItem(tierId(Balance.LOADOUT.Warrior.weapon, 100), 100, Rarities.LEGENDARY, 0, {})
+	local plan = Balance.upgradePlan(item, 9, true)
+	local slots = 2 + #Balance.ARMOR_SLOTS + #Balance.JEWELLERY
+	local best, bestId = 0, "-"
+	for _, area in areasCovering(level) do
+		local h = Balance.areaHour(classId, level, area)
+		local perHour = (h.coinPerKill + h.dropPerKill) * 3600 / h.secondsPerKill
+		if perHour > best then
+			best, bestId = perHour, area.id
+		end
+	end
+	local goldEq = plan.goldEq * slots
+	return {
+		goldEq = goldEq,
+		cores = plan.cores * slots,
+		scrolls = plan.scrolls * slots,
+		perHour = best,
+		area = bestId,
+		hours = goldEq / math.max(1e-9, best),
+	}
+end
+
+-- S94 (K1): the rows of the Frost Peaks beyond the S83 region rows (ids "R.frostpeak.<group>..."): Vaelgrath, the
+-- pace, the skill guards, support paths on the real spawners, the Elites' drop levels, hunting grounds, gold, parts.
+-- balance.spec asserts them with the region except the rows with `report` (Balance.S94_REPORT).
+function Balance.targetsS94(): { TargetRow }
+	local rows: { TargetRow } = {}
+	local S = Balance.S94
+	local SkillModel = (require :: any)("./SkillModel")
+	local L = S.bossLevel
+	local function add(
+		id: string,
+		group: string,
+		label: string,
+		value: number,
+		low: number?,
+		high: number?,
+		c: string?,
+		lv: number?
+	)
+		target(rows, `R.frostpeak.{id}`, group, label, value, low, high, c, lv)
+	end
+	local def = Bosses.byId.vaelgrath :: any
+	local flight = Balance.bossScriptConsts("vaelgrath").FLIGHT_SECONDS or 0
+	-- Vaelgrath: the S83 / S87 model (bossFight with shield waves, flight and BossSchedule), both player variants
+	for _, nodes in { false, true } do
+		local at = if nodes then "@nodes" else ""
+		local suffix = if nodes then " z węzłami" else ""
+		for n = 3, 5 do
+			local f = Balance.bossFight("vaelgrath", Balance.team(n, L, nodes))
+			local label = `Vaelgrath, {n} graczy L{L}{suffix}: min`
+			add(`vaelgrath.team{n}{at}`, "vaelgrath", label, f.seconds / 60, S.minutes[1], S.minutes[2], nil, L)
+		end
+		for _, spec in { { 100, S.mageHit }, { 98, 1 - 1e-9 } } do
+			local team = Balance.team(5, L, nodes)
+			team[2] = Balance.player("Mage", spec[1], if nodes then { nodes = Balance.COMBAT_BUILD.Mage } else nil)
+			local hit = Balance.bossFight("vaelgrath", team).biggestHit.Mage or 0
+			local label = `Vaelgrath: największy cios / HP Maga L{spec[1]}{suffix}`
+			add(`vaelgrath.mage{spec[1]}{at}`, "vaelgrath", label, hit, nil, spec[2], "Mage", spec[1])
+		end
+		for n = 3, 5 do
+			local worst = 0
+			for _, w in Balance.shieldWaves("vaelgrath", Balance.team(n, L, nodes)) do
+				worst = math.max(worst, w.worst)
+			end
+			local label = `Vaelgrath, fala tarczy, {n} graczy L{L}{suffix}: HP na członka`
+			add(`vaelgrath.wave{n}{at}`, "vaelgrath", label, worst, nil, S.wave, nil, L)
+		end
+	end
+	do
+		local mage = Balance.boss("vaelgrath", { Balance.player("Mage", 100) }).biggest[1].basic
+		add(
+			"vaelgrath.basic100",
+			"vaelgrath",
+			"Vaelgrath: zwykły cios / HP Maga L100",
+			mage,
+			S.basicHit[1],
+			S.basicHit[2],
+			"Mage",
+			100
+		)
+		local tank = Balance.boss("vaelgrath", Balance.team(5, L)).tankHpPerMinute
+		local tankLabel = `Vaelgrath (model S32): tank HP na minutę, L{L}`
+		add("vaelgrath.tank", "vaelgrath", tankLabel, tank, nil, S.tankPerMinute, nil, L)
+		-- the tank's whole intake (bossFight): only printed, the S32 row above counts basic and threat attacks
+		for n = 3, 5 do
+			local team = Balance.team(n, L)
+			local f = Balance.bossFight("vaelgrath", team)
+			local perMinute = f.memberDps[1] * 60 / team[1].values.maxHp
+			add(
+				`vaelgrath.tankFight{n}`,
+				"vaelgrath",
+				`Vaelgrath (bossFight): tank HP na minutę, {n} graczy`,
+				perMinute,
+				nil,
+				nil,
+				nil,
+				L
+			)
+			rows[#rows].report =
+				"tylko raport: całe przyjęcie tanka z zamiecią, pierścieniem i falami (miara S32 liczy atak podstawowy i threat)"
+		end
+		-- blizzard per minute and one storm tick on a level 100 Mage (C3, C4; party of 5 with the Mage swapped in)
+		local team = Balance.team(5, L)
+		team[2] = Balance.player("Mage", 100)
+		local f = Balance.bossFight("vaelgrath", team)
+		local blizzardLabel = "Vaelgrath: zamieć na minutę / HP Maga L100"
+		add("vaelgrath.blizzard", "vaelgrath", blizzardLabel, f.raid.Mage or 0, nil, S.blizzard, "Mage", 100)
+		local tick = f.hazardTick.Mage or 0
+		local stormLabel = "Vaelgrath: jeden tick burzy / HP Maga L100"
+		add("vaelgrath.storm", "vaelgrath", stormLabel, tick, S.storm[1], S.storm[2], "Mage", 100)
+		add("vaelgrath.hpMul", "vaelgrath", "Vaelgrath ma hpMul", if def.hpMul ~= nil then 1 else 0, 1, nil)
+		-- the flight (C7): phase 2 invulnerable for max(FLIGHT_SECONDS, the shield wave), 3-5 players
+		for n = 3, 5 do
+			local fight = Balance.bossFight("vaelgrath", Balance.team(n, L))
+			local ph = fight.phases[2]
+			local window = ph.shieldSeconds + ph.flightSeconds
+			local want = math.max(flight, ph.shieldSeconds)
+			local label = `Vaelgrath, {n} graczy: nietykalność fazy 2 / max(lot, fala)`
+			add(`vaelgrath.flight{n}`, "vaelgrath", label, window / math.max(1e-9, want), 1 - 1e-9, 1 + 1e-9, nil, L)
+			add(
+				`vaelgrath.enrage{n}`,
+				"vaelgrath",
+				`Vaelgrath, {n} graczy: wściekłość`,
+				if fight.enraged then 1 else 0,
+				nil,
+				0,
+				nil,
+				L
+			)
+		end
+	end
+	-- T-SK6 (C6): the dungeon Healer on the Defender, team S92 at the boss level - 1
+	do
+		local healer = SkillModel.build("healer.dungeon", "Cleric")
+		local r = SkillModel.healerVsBoss(healer, "vaelgrath", { team = "s92" })
+		add(
+			"vaelgrath.tsk6",
+			"vaelgrath",
+			"T-SK6 Vaelgrath: Uzdrowiciel lochowy na Obrońcy",
+			r.tsk6,
+			S.tsk6[1],
+			S.tsk6[2],
+			"Cleric",
+			L
+		)
+	end
+	-- Vaelgrath bez wsparcia (C5): the S91 definition (Balance.bossNoSupport), waves of the same team
+	for n = 3, 5 do
+		local r = Balance.bossNoSupport("vaelgrath", n, L)
+		local secondsLabel = `Vaelgrath bez wsparcia, {n} graczy: s`
+		add(`vaelgrath.noSupport.{n}.seconds`, "noSupport", secondsLabel, r.seconds, nil, r.limit)
+		local worst, hit = 0, 0
+		for _, mem in r.members do
+			worst = math.max(worst, mem.ratio)
+			hit = math.max(hit, mem.biggest)
+		end
+		local label = `Vaelgrath bez wsparcia, {n} graczy: przyjmowane / podtrzymanie (najgorszy)`
+		add(`vaelgrath.noSupport.{n}.sustain`, "noSupport", label, worst, nil, Balance.S91.noSupport.sustain, nil, L)
+		local hitLabel = `Vaelgrath bez wsparcia, {n} graczy: największy cios / HP`
+		add(`vaelgrath.noSupport.{n}.hit`, "noSupport", hitLabel, hit, nil, Balance.S91.noSupport.hit, nil, L)
+		local team: { Player } = {}
+		local mul: { number } = {}
+		local m = Balance.monster(Balance.bossKind(def, n), def.level, "boss")
+		for i, mem in r.members do
+			local sp = SkillModel.player(SkillModel.build(mem.key), L)
+			team[i] = sp.p
+			mul[i] = mem.dps / math.max(1e-9, Balance.dps(sp.p, m) * Balance.BOSS_UPTIME)
+		end
+		local wave = 0
+		for _, w in Balance.shieldWaves("vaelgrath", team, { dpsMul = mul }) do
+			wave = math.max(wave, w.worst)
+		end
+		local waveLabel = `Vaelgrath bez wsparcia, fala tarczy, {n} graczy: HP na członka`
+		add(`vaelgrath.noSupport.{n}.wave`, "noSupport", waveLabel, wave, nil, S.wave, nil, L)
+	end
+	-- the Mythic for every class (D1) and the slower Mythic ladder (D2)
+	for _, c in Balance.CLASSES do
+		local share = Balance.unusableMythics("vaelgrath", c, S.mythicRolls)
+		add(`vaelgrath.mythic.{c}`, "vaelgrath", `Vaelgrath: Mityki nieużyteczne dla {c}`, share, nil, 0, c, 100)
+	end
+	do
+		local ratio = Balance.expectedMythicKills("vaelgrath") / Balance.expectedMythicKills("grimrok")
+		local label = "Vaelgrath: zabicia do Mityka / Grimrok"
+		add("vaelgrath.mythicLadder", "vaelgrath", label, ratio, S.mythicLadder[1], S.mythicLadder[2])
+	end
+	-- pace 70 -> 100 and 1 -> 100 (G)
+	do
+		local P = S.pace
+		local sum = 0
+		for lv = 70, 99 do
+			sum += Balance.paceWindowAt("Warrior", lv).hours
+		end
+		local sumLabel = "Tempo 70 → 100 (okno, bez Vaelgratha): h"
+		add("pace.sum", "pace", sumLabel, sum, P.hours[1], P.hours[2], "Warrior")
+		local h99 = Balance.paceWindowAt("Warrior", 99).hours
+		add("pace.h99", "pace", "Tempo: h(99)", h99, P.h99[1], P.h99[2], "Warrior", 99)
+		for lv = 70, 99 do
+			local r = Balance.paceWindowAt("Warrior", lv).hours
+				/ math.max(1e-9, Balance.paceWindowAt("Warrior", lv - 1).hours)
+			add(`pace.step.{lv}`, "pace", `Tempo: h({lv}) / h({lv - 1})`, r, nil, P.step, "Warrior", lv)
+		end
+		local total = 0
+		for lv = 1, 99 do
+			total += Balance.paceWindowAt("Warrior", lv).hours
+		end
+		local totalLabel = "Tempo 1 → 100 (okno, bez bossów): h"
+		add("pace.total", "pace", totalLabel, total, P.total[1], P.total[2], "Warrior")
+	end
+	-- skill guards in the band (H1): bases and the reference builds, T-SK3 of the reference builds. The S92 / S93
+	-- rule: a guard of a build whose own value at 70 (S93's end of the band) is already above the limit and not
+	-- below the band's value is printed when it is above the limit itself (a row within the limit stays asserted);
+	-- any other row above the limit stays asserted unless S94_REPORT names it
+	for _, c in Balance.CLASSES do
+		for _, build in SkillModel.builds(c) do
+			local lim = SkillModel.GUARD_LIMITS
+			local g70 = SkillModel.guards(build, 70)
+			for _, lv in S.guardLevels do
+				local g = SkillModel.guards(build, lv)
+				local key = `{c}.{build.key}.{lv}`
+				for _, spec in
+					{
+						{ "tsk1", "tsk1rel", `T-SK1 {c} {build.key} L{lv} / L20` },
+						{ "tsk2", "tsk2rel", `T-SK2 {c} {build.key} L{lv} / L20` },
+						{ "tsk3", "tsk3cap", `T-SK3 {c} {build.key} L{lv} / areaCap` },
+					}
+				do
+					local field = spec[2]
+					local v = (g :: any)[field]
+					local limit = (lim :: any)[field]
+					local at70 = (g70 :: any)[field]
+					add(`guard.{spec[1]}.{key}`, "guards", spec[3], v, nil, limit, c, lv)
+					if spec[1] == "tsk3" and build.key == "base" then
+						rows[#rows].report = "tylko raport (T-SK3 podstawy, S90 I3)"
+					elseif at70 > limit and v > limit and v <= at70 + 1e-9 then
+						rows[#rows].report =
+							`poza zasięgiem dźwigni S94: na 70 (pasmo S93) build ma już {string.format("%.2f", at70)}`
+					end
+				end
+			end
+		end
+	end
+	-- T-SK4 of the asserted Mage builds and T-SK5 of the dungeon Healer on the Defender in the band (H2)
+	for _, key in S.tsk4Builds do
+		local build = SkillModel.build(key, "Mage")
+		local band = SkillModel.TSK4_BANDS[key]
+		for _, lv in S.guardLevels do
+			local v = SkillModel.metrics(build, lv).tsk4
+			add(`tsk4.{key}.{lv}`, "guards", `T-SK4 Mage {key} {lv}`, v, band[1], band[2], "Mage", lv)
+		end
+	end
+	do
+		local healer = SkillModel.build("healer.dungeon", "Cleric")
+		for _, lv in S.guardLevels do
+			local v = SkillModel.oneHeal(healer, lv, SkillModel.defenderTank(lv))
+			local band = SkillModel.TSK5_BAND
+			add(`tsk5.{lv}`, "guards", `T-SK5 Uzdrowiciel lochowy na Obrońcy {lv}`, v, band[1], band[2], "Cleric", lv)
+		end
+	end
+	-- support and tank paths on the real spawners (E6, ROZWOJ 7.5): Elite won, Elite II lost
+	for _, spec in Balance.S92.supportBuilds do
+		local build = SkillModel.build(spec[2], spec[1])
+		for _, lv in S.supportLevels do
+			local elite, elite2 = SkillModel.eliteKinds(lv)
+			local ok = 0
+			if elite and elite2 then
+				local a = SkillModel.duel(build, lv, elite, "elite")
+				local b = SkillModel.duel(build, lv, elite2, "elite2")
+				ok = if a.won and not b.won then 1 else 0
+			end
+			local label = `{spec[2]} L{lv}: Elita wygrana, Elita II przegrana ({elite or "–"} / {elite2 or "–"})`
+			add(`support.{spec[2]}.{lv}`, "support", label, ok, 1, 1, spec[1], lv)
+		end
+	end
+	-- the Elites drop every item level 71-100 (I2), hunting grounds (E2)
+	for lv = 71, 100 do
+		local e = if Balance.eliteDropsIlvl("frostpeak", lv) then 1 else 0
+		add(`ilvl.elite.{lv}`, "drop", `Elity Lodowych Szczytów dropią ilvl {lv}`, e, 1, nil, nil, lv)
+		add(`areas.{lv}`, "areas", `Expowiska z poziomem {lv}`, Balance.areasAt(lv), S.areas, nil, nil, lv)
+	end
+	-- D5 K0 at 99 (I1: 75 / 80 / 85 / 90 / 95 / 99; the S84 region rows have 70-95)
+	do
+		local d5 = Balance.REGION_TARGETS.d5
+		local u, h = d5.uniquePerHour, d5.heroicPerHour
+		for _, lv in S.d5Levels do
+			for _, c in Balance.CLASSES do
+				local d = Balance.dropsPerHour(c, lv, "K0", false)
+				add(
+					`d5.{c}.{lv}.unique`,
+					"d5",
+					`{c} {lv}: Unikaty dla klasy na h expienia`,
+					d.unique,
+					u[1],
+					u[2],
+					c,
+					lv
+				)
+				add(`d5.{c}.{lv}.heroic`, "d5", `{c} {lv}: Heroiki dla klasy na h Elit`, d.heroic, h[1], h[2], c, lv)
+			end
+		end
+	end
+	-- gold (J): +1..+3 of the weapon, chain potions (upper and lower bound), backpacks, prices, ores, the +9 set
+	for lv = 71, 99 do
+		for _, u in Balance.upgradeVsIncome(lv) do
+			local label = `{u.classId} {lv}: +1…+3 / dochód poziomu`
+			add(`gold.up3.{u.classId}.{lv}`, "gold", label, u.up3, nil, S.up3, u.classId, lv)
+		end
+		for _, c in Balance.CLASSES do
+			local share = Balance.economyAt(c, lv, { potions = "chain" }).potionShare
+			local label = `{c} {lv}: mikstury łańcuchowe / dochód`
+			add(`gold.chain.{c}.{lv}`, "gold", label, share, nil, S.chainPotions[2], c, lv)
+			add(`gold.chainLow.{c}.{lv}`, "gold", `{label} (dolna granica)`, share, S.chainPotions[1], nil, c, lv)
+		end
+	end
+	for _, b in S.backpacks do
+		local item = Items.get(b.id) :: any
+		for _, c in Balance.CLASSES do
+			local levels = item.buyPrice / math.max(1e-9, Balance.levelIncome(c, b.level))
+			local label = `{c}: {b.id} (od {b.level}.) / dochód poziomu`
+			add(`gold.{b.id}.{c}`, "gold", label, levels, S.backpackLevels[1], S.backpackLevels[2], c, b.level)
+		end
+	end
+	do
+		local prev = Items.get(S.backpacks[1].id) :: any
+		local last = Items.get(S.backpacks[2].id) :: any
+		local before = Items.get("backpack_130") :: any
+		add("gold.backpackOrder.160", "gold", "Cena plecaka 160 − 130", prev.buyPrice - before.buyPrice, 1, nil)
+		add("gold.backpackOrder.200", "gold", "Cena plecaka 200 − 160", last.buyPrice - prev.buyPrice, 1, nil)
+	end
+	for i = 2, #S.potionTiers do
+		local lower, higher = S.potionTiers[i - 1], S.potionTiers[i]
+		local d = Balance.potionGoldPerHp(higher) - Balance.potionGoldPerHp(lower)
+		add(`gold.potionOrder.{higher}`, "gold", `Złoto za 1 HP: jakość {higher} − jakość {lower}`, d, 0, nil)
+	end
+	do
+		local shop = Shops.get("blacksmith") :: any
+		for _, ore in S.ores do
+			local level = -1
+			for _, e in shop.entries do
+				if e.item == ore.item then
+					level = e.level or 0
+				end
+			end
+			add(`gold.ore.{ore.item}`, "gold", `Kowal sprzedaje {ore.item} od poziomu`, level, ore.level, ore.level)
+		end
+	end
+	do
+		local set = Balance.protectedSet("Warrior", 99)
+		local label = `Komplet +9 z ochroną (10 Legendarnych ilvl 100) / złoto na h ({set.area}, Wojownik L99): h`
+		add("gold.set9", "gold", label, set.hours, S.setHours[1], S.setHours[2], "Warrior", 99)
+	end
+	-- parts (K): every kind of the region drops a part; the region's parts are ingredients of a recipe at 70-100
+	for _, kind in Monsters.list do
+		if kind.region == 4 then
+			local tbl = LootTables.get(kind.lootTable) :: any
+			local has = 0
+			for _, m in tbl.materials do
+				local item = Items.get(m.id) :: any
+				if item and item.type == "part" then
+					has = 1
+				end
+			end
+			add(`parts.kind.{kind.id}`, "parts", `{kind.id}: część potwora`, has, 1, nil)
+		end
+	end
+	local uses = Balance.partUses(1, 100)
+	for _, part in S.parts do
+		add(
+			`parts.recipe.{part}`,
+			"parts",
+			`{part}: składnik przepisu dostępnego na 70–100`,
+			#(uses[part] or {}),
+			1,
+			nil
+		)
+	end
+	local late = Balance.partUses(70, 100)
+	for _, part in S.partsLate do
+		add(`parts.late.{part}`, "parts", `{part}: składnik przepisu z poziomem 70–100`, #(late[part] or {}), 1, nil)
+	end
+	do
+		local elixir = Recipes.get("elixir_resIce") :: any
+		local v = if elixir then elixir.level else 0
+		add("parts.elixirIce", "parts", "elixir_resIce: poziom przepisu", v, 70, 70)
+	end
+	for _, row in rows do
+		local why = Balance.S94_REPORT[row.id]
+		if why then
+			row.report = why
+		end
+	end
+	return rows
+end
+
+-- S94 (L): rows of targetsS94 out of reach of the S94 levers (printed with the reason; docs/DECYZJE.md S94).
+Balance.S94_REPORT = {} :: { [string]: string }
+do
+	local R = Balance.S94_REPORT
+	-- S94: T-SK6 Vaelgratha NIEDOKOŃCZONE jak Azgora w S93 (asercja ≤ 2,5 z C6 nie przechodzi, wynik ok. 15,9; decyzja
+	-- właściciela z S93 dalej otwarta): Uzdrowiciel lochowy na 99 leczy od maks. HP celu (S69) wielokrotność tego, co
+	-- Obrońca przyjmuje, a obrażenia w tanka trzyma wiersz S32 (3,45 maks. HP na minutę ≤ 3,5; przy atkMul 1,3 sprzed
+	-- S94 T-SK6 było 6,0 przy tanku 10,6 / min); kotwica heal 100 trzyma T-SK5 (0,35 na 100)
+	R["R.frostpeak.vaelgrath.tsk6"] =
+		"NIEDOKOŃCZONE S94: T-SK6 15,9 wobec ≤ 2,5 (C6) nieosiągalne dźwigniami S94 (tank S32 3,45 / min ≤ 3,5, leczenie od maks. HP celu, S69); decyzja właściciela jak dla Azgora (S93)"
+	-- S94: Elita / Elita II ścieżek wsparcia i tanka poza zasięgiem dźwigni S94: każda ścieżka wygrywa Elitę II solo z
+	-- miksturami (HP na koniec 0,46-1,00 na 80 i 95), a krzywe Elit II trzyma duet <= 150 % i trio 60-100 %; dane
+	-- ścieżek S89-S90 (jak S92 i S93)
+	for _, spec in Balance.S92.supportBuilds do
+		for _, lv in Balance.S94.supportLevels do
+			R[`R.frostpeak.support.{spec[2]}.{lv}`] =
+				"poza zasięgiem dźwigni S94: wygrywa Elitę II solo z miksturami (krzywe Elit II trzyma duet ≤ 150 %); dla właściciela"
+		end
+	end
+	-- S94: mikstury łańcuchowe (górna granica) poza zasięgiem dźwigni S94: Potężna 1800 (0,18 zł za 1 HP) to dół
+	-- kolejności cen (Wielka 0,175), a łańcuch daje 0,33-1,04 dochodu na 71-99 (Kapłan najwięcej: długie walki);
+	-- ceny jakości 1-4 i krzywa potionCooldown są globalne
+	for lv = 71, 99 do
+		for _, c in Balance.CLASSES do
+			R[`R.frostpeak.gold.chain.{c}.{lv}`] =
+				"poza zasięgiem dźwigni S94: Potężna 1800 to dół kolejności cen (0,18 ≥ 0,175 zł/HP), ceny 1–4 i potionCooldown globalne; dla właściciela"
+		end
+	end
+	-- S94: komplet +9 z ochroną poza zasięgiem dźwigni S94: ok. 12 mln złota (83 % to złoto ulepszeń z Config.Upgrade,
+	-- S87; esencje 12 %, zwoje 5 %) wobec ok. 33 tys. na godzinę Wojownika L99 na Iglicy Wyrmów = 366 h; materiały
+	-- Vaelgratha (Rdzenie, zwoje) prawie nie ruszają goldEq (Rdzeni się nie kupuje), dochód pasma po S94 E-F
+	R["R.frostpeak.gold.set9"] =
+		"poza zasięgiem dźwigni S94: 366 h wobec 150–300 (złoto ulepszeń z Config.Upgrade, S87, to ok. 83 % kosztu); dla właściciela: goldHigh 20 → ok. 15"
+	-- S94: strażniki T-SK ponad limitem D1 w paśmie 71-100 (reguła S92 / S93 ich nie zwalnia), każda grupa z powodem i
+	-- linią w DECYZJE S94; liczby (wartość na 70 → najwyższa w paśmie) w docs/BALANS.md
+	local guardReasons = {
+		-- S94: poza zasięgiem dźwigni S94: build już na 70 ponad limitem D1 (S93), w paśmie rośnie z poziomem przez
+		-- sprzęt, statystyki i rangi 71-95 całej klasy; węzły SkillCurves zmieniłyby blok ścieżek S89-S90 na 100
+		rise = "poza zasięgiem dźwigni S94: na 70 już ponad limitem D1 (S93), w paśmie rośnie z poziomem klasy; dla właściciela",
+		-- S94: Furia to zamrożone odniesienie obrażeń (S89, R1 2,4-2,6)
+		fury = "poza zasięgiem dźwigni S94: Furia to zamrożone odniesienie obrażeń (S89); dla właściciela",
+		-- S94: Strażnik z Groźbą: T-SK3 1,09 × areaCap 2,0 = 2,18 na 70-100; S89 C1: Strażnik ma 2,2 (DECYZJE S89)
+		guardian = "poza zasięgiem dźwigni S94: T-SK3 Strażnika ≤ 2,2 (S89 C1, Groźba), tu 2,18",
+		-- S94: Chorąży (Dowódca, Opiekun): skoki z węzłów rzędów 9-11 (70, 80, 90; liczby S89) i rang zwieńczeń do 95
+		row10 = "poza zasięgiem dźwigni S94: skoki z węzłów rzędów 9–11 Chorążego (S89) i rang zwieńczenia do 95; dla właściciela",
+		-- S94: na 70 w limicie, w paśmie ponad nim o 1-16 % (podstawa Łowcy T-SK2 1,26-1,27 od 85, Zwiadowca T-SK1 do
+		-- 1,33 na 100, Traper T-SK3 1,02-1,10): sprzęt i rangi 71-95 klasy; węzeł SkillCurves rusza blok ścieżek S90
+		cross = "poza zasięgiem dźwigni S94: przekracza limit D1 w paśmie przez sprzęt i rangi 71–95 klasy (blok ścieżek S90 trzyma 100); dla właściciela",
+	}
+	for _, spec in
+		{
+			{ "tsk1", "Warrior.base", { 80, 85, 90, 95, 99, 100 }, "rise" },
+			{ "tsk2", "Warrior.base", { 85, 90, 95, 99, 100 }, "rise" },
+			{ "tsk1", "Warrior.base.loadout", { 85, 90, 95, 99, 100 }, "rise" },
+			{ "tsk3", "Warrior.guardian.defender", { 75, 80, 85, 90, 95, 99, 100 }, "guardian" },
+			{ "tsk3", "Warrior.guardian.loner", { 75, 80, 85, 90, 95, 99, 100 }, "guardian" },
+			{ "tsk1", "Warrior.berserker.fury", { 75, 80, 85, 90, 95, 99, 100 }, "fury" },
+			{ "tsk2", "Warrior.berserker.fury", { 80, 85, 90, 95, 99, 100 }, "fury" },
+			{ "tsk1", "Warrior.berserker.butcher", { 75, 80, 85, 90, 95, 99, 100 }, "rise" },
+			{ "tsk2", "Warrior.berserker.butcher", { 80, 85, 90, 95, 99, 100 }, "rise" },
+			{ "tsk1", "Warrior.standard.commander", { 75, 80, 85, 90, 95, 99, 100 }, "row10" },
+			{ "tsk2", "Warrior.standard.commander", { 75, 80, 85, 90, 95, 99, 100 }, "row10" },
+			{ "tsk1", "Warrior.standard.warden", { 75, 80, 85, 90, 95, 99, 100 }, "row10" },
+			{ "tsk2", "Warrior.standard.warden", { 75, 80, 85, 90, 95, 99, 100 }, "row10" },
+			{ "tsk2", "Hunter.base", { 85, 95, 99, 100 }, "cross" },
+			{ "tsk1", "Hunter.marksman.kingslayer", { 75, 95, 100 }, "rise" },
+			{ "tsk2", "Hunter.marksman.kingslayer", { 75, 95, 99, 100 }, "rise" },
+			{ "tsk1", "Hunter.marksman.eliteHunter", { 75, 100 }, "rise" },
+			{ "tsk2", "Hunter.marksman.eliteHunter", { 75, 100 }, "rise" },
+			{ "tsk2", "Hunter.trapper.poacher", { 99, 100 }, "rise" },
+			{ "tsk3", "Hunter.trapper.poacher", { 80, 85, 90, 95 }, "cross" },
+			{ "tsk2", "Hunter.trapper.poisoner", { 80, 85, 90, 95, 99, 100 }, "rise" },
+			{ "tsk3", "Hunter.trapper.poisoner", { 80, 85, 90, 95, 99, 100 }, "cross" },
+			{ "tsk1", "Hunter.scout.partyHunter", { 85, 90, 95, 99, 100 }, "cross" },
+			{ "tsk1", "Hunter.scout.tracker", { 85, 90, 95, 99, 100 }, "cross" },
+			{ "tsk1", "Mage.base", { 75, 80, 85, 90, 95, 99, 100 }, "rise" },
+			{ "tsk2", "Mage.base", { 75, 80, 85, 90, 95, 99, 100 }, "rise" },
+			{ "tsk1", "Mage.base.loadout", { 75, 80, 85, 90, 95, 99, 100 }, "rise" },
+			{ "tsk2", "Mage.base.loadout", { 75, 80, 85, 90, 95, 99, 100 }, "rise" },
+			{ "tsk1", "Mage.destroyer.destroyerExp", { 75, 80, 85, 90, 95, 99, 100 }, "rise" },
+			{ "tsk2", "Mage.destroyer.destroyerExp", { 75, 80, 85, 90, 95, 99, 100 }, "rise" },
+			{ "tsk1", "Mage.destroyer.destroyerBoss", { 75, 80, 85, 90, 95, 99, 100 }, "rise" },
+			{ "tsk2", "Mage.destroyer.destroyerBoss", { 75, 80, 85, 90, 95, 99, 100 }, "rise" },
+			{ "tsk1", "Mage.arcanist.arcanistBoss", { 75, 80, 85, 90, 95, 99, 100 }, "rise" },
+			{ "tsk2", "Mage.arcanist.arcanistBoss", { 75, 80, 85, 90, 95, 99, 100 }, "rise" },
+			{ "tsk1", "Mage.arcanist.arcanistOverload", { 75, 80, 85, 90, 95, 99, 100 }, "rise" },
+			{ "tsk2", "Mage.arcanist.arcanistOverload", { 75, 80, 85, 90, 95, 99, 100 }, "rise" },
+			{ "tsk1", "Cleric.base", { 75, 80, 85, 90, 95, 99, 100 }, "rise" },
+			{ "tsk2", "Cleric.base", { 75, 80, 85, 90, 95, 99, 100 }, "rise" },
+			{ "tsk1", "Cleric.healer.dungeon", { 75, 80, 85, 90, 95, 99, 100 }, "rise" },
+			{ "tsk2", "Cleric.healer.dungeon", { 75, 80, 85, 90, 95, 99, 100 }, "rise" },
+			{ "tsk1", "Cleric.healer.solo", { 75, 80, 85, 90, 95, 99, 100 }, "rise" },
+			{ "tsk2", "Cleric.healer.solo", { 75, 80, 85, 90, 95, 99, 100 }, "rise" },
+			{ "tsk1", "Cleric.fortune.plunder", { 75, 80, 85, 90, 95, 99, 100 }, "rise" },
+			{ "tsk2", "Cleric.fortune.plunder", { 75, 80, 85, 90, 95, 99, 100 }, "rise" },
+			{ "tsk1", "Cleric.inquisitor.solo", { 75, 80, 85, 90, 95, 99, 100 }, "rise" },
+			{ "tsk2", "Cleric.inquisitor.solo", { 75, 80, 85, 90, 95, 99, 100 }, "rise" },
+			{ "tsk1", "Cleric.inquisitor.bulwark", { 75, 80, 85, 90, 95, 99, 100 }, "rise" },
+			{ "tsk2", "Cleric.inquisitor.bulwark", { 75, 80, 85, 90, 95, 99, 100 }, "rise" },
+		}
+	do
+		for _, lv in spec[3] do
+			R[`R.frostpeak.guard.{spec[1]}.{spec[2]}.{lv}`] = (guardReasons :: any)[spec[4]]
+		end
+	end
+end
+
+-- S94 (L3): the cross rows 1-100 no band checked in full (ids "X.<group>..."): the pace step h(L) / h(L - 1) <= 1.3
+-- on 20-99 across the band borders 45 and 70, at least two outdoor hunting grounds on 21-100, the cave Elites of some
+-- region drop every item level 21-100. The sum 1 -> 100 is R.frostpeak.pace.total; the T-SK guards of the control
+-- levels are the band rows (balance.spec checks that every control level has them).
+Balance.CROSS_GUARD_LEVELS = { 30, 40, 44, 50, 60, 69, 70, 75, 80, 90, 99, 100 }
+function Balance.targetsCross(): { TargetRow }
+	local rows: { TargetRow } = {}
+	for lv = 20, 99 do
+		local r = Balance.paceWindowAt("Warrior", lv).hours
+			/ math.max(1e-9, Balance.paceWindowAt("Warrior", lv - 1).hours)
+		target(
+			rows,
+			`X.pace.step.{lv}`,
+			"pace",
+			`Tempo: h({lv}) / h({lv - 1})`,
+			r,
+			nil,
+			Balance.S94.pace.step,
+			"Warrior",
+			lv
+		)
+	end
+	for lv = 21, 100 do
+		local label = `Expowiska z poziomem {lv}`
+		target(rows, `X.areas.{lv}`, "areas", label, Balance.areasAt(lv), Balance.S94.areas, nil, nil, lv)
+		local any = 0
+		for _, mapId in Balance.REGION_IDS do
+			if Balance.eliteDropsIlvl(mapId, lv) then
+				any = 1
+			end
+		end
+		target(rows, `X.ilvl.elite.{lv}`, "drop", `Elity dropią ilvl {lv}`, any, 1, nil, nil, lv)
+	end
+	return rows
 end
 
 -- Targets 20-100 (S83, balance plan 2.5) ------------------------------------------------------------------------
@@ -4590,11 +5209,11 @@ function Balance.reportOnlyFor(row: TargetRow): { session: string, why: string }
 	return nil
 end
 
--- Regions (S83): TUNED[mapId] = true once its region session asserts it (S91 Meadows 1-20 in full, S92-S94 the
+-- Regions (S83): TUNED[mapId] = true once its region session asserted it (S91 Meadows 1-20 in full, S92-S94 the
 -- rest); read by balance.spec ("Balance 20-100: regions") and the report. Starting thresholds of the balance plan;
 -- region sessions may tune them with a line in DECYZJE.
 -- S92: the Dark Forest tuned (20-45 and Morvane). S93: the Scorched Wastes (45-70 and Azgor)
-Balance.TUNED = { meadows = true, duskwood = true, ashen = true, frostpeak = false } :: { [string]: boolean }
+-- S94 (L3): every region tuned; the gate Balance.TUNED removed, balance.spec asserts every region row without `report`
 Balance.REGION_TARGETS = {
 	-- S91: `classes` = W / Ł / M (the S32 Elite classes; the Cleric's Elites only printed)
 	eliteSingle = {

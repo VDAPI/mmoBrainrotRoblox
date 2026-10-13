@@ -46,6 +46,13 @@ for _, base in Bases.list do
 		if HIDE_SLOTS[base.slot] and ((tier >= 5 and tier < 20) or tier == 25) then
 			table.insert(materials, { id = "thick_hide", n = 1 + math.floor(tier / 10) })
 		end
+		-- S94: chest pieces, gloves and boots of tiers 75-85 take yeti fur, of tiers 90-100 frost scale (the Frost
+		-- Peaks' parts)
+		if HIDE_SLOTS[base.slot] and tier >= 75 and tier <= 85 then
+			table.insert(materials, { id = "yeti_fur", n = 2 })
+		elseif HIDE_SLOTS[base.slot] and tier >= 90 then
+			table.insert(materials, { id = "frost_scale", n = 2 })
+		end
 		if tier >= 30 then
 			table.insert(materials, { id = "essence_dust", n = 2 + math.floor(tier / 20) })
 		end

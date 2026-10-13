@@ -2560,3 +2560,81 @@
   `Balance.partUses`, `Balance.eliteDropsIlvl`, `Balance.protectedFlow`, `Balance.potionGoldPerHp`,
   `Balance.targetsS93` / `S93` / `S93_REPORT`; test Monte Carlo łupu S84 liczy model z `dropFactor` regionu (jak
   `Loot.rollMonsterLoot`). Istniejące funkcje liczą jak przed S93.
+- **S94 Vaelgrath:** `hpMul` 1,3 (nowy klucz), `atkMul` 1,3 → 0,38 (zwykły cios 9,7% HP Maga L100), Mroźny Oddech
+  2,6 → 3,6, Uderzenie Skrzydeł 2,2 → 3,7, Smagnięcie Ogonem 2,4 → 4,1, Zamieć 2,6 → 4,4, Lodowy Pierścień 3,6 → 6,2
+  (65% HP Maga L100, 67% L98); `speed` 0,85, odnowienia, przygotowania i `haste[3]` bez zmian. 3–5 graczy L99: 4,8–5,1 min
+  (z węzłami 4,2–4,6), tank S32 3,45 HP / min, każdy atak ≥ 53% tempa (pierścień w fazie 3), kolejność ataków bez zmian.
+- **S94 zamieć:** wariant (a) jak meteor w S93: złagodzona, 34% HP Maga L100 na minutę w fazach 2–3 (≤ 60%); wariant
+  „sprawdzian leczenia” nie poprawiłby T-SK6 (niżej).
+- **S94 burza:** liczba już od S87 w `Data/BossTuning` (`hazards.vaelgrath.freezingStorm`); 1,4 → 3,9 (tick 38% HP Maga
+  L100). Model czyta odstęp burzy ze `STORM_TICK` skryptu (jak `FLIGHT_SECONDS`), osłona tekstowa zostaje.
+- **S94 FIX: lot Vaelgratha trwa `max(lot, fala)` i nie zdejmuje tarczy fali** (`BossScripts/vaelgrath.luau`, C7):
+  `onPhase(2)` zapisuje `boss.flightUntil`, `onTick` trzyma nietykalność do końca lotu (także gdy fala padnie wcześniej,
+  `Boss.Step` woła `onTick` w tym samym kroku), koniec lotu ustawia `invulnerable = #boss.shielded > 0`. Stałe skryptu
+  bez zmian; `bossschedule.spec` pilnuje tekstu `flightUntil` i `#boss.shielded > 0`.
+- **S94 fale tarczy Vaelgratha:** smoczy pomiot na 86 / 87 (było 99 / 100, decyzja FIX 2026-10-10 „poziom bossa − 1 /
+  bossa” zmieniona jak u Morvane i Azgora): drużyna 3 osób traci 95% HP na członka na falę (≤ 110%; na 99 było 290%).
+- **S94 Mityk Vaelgratha (plan 8.4):** własne `mythicChance` 0,003 (`perKill` i `legendaryChance` wspólne): szanse dnia
+  0,3 / 1,3 / 2,3%, ok. 77 zabić do Mityka wobec 50 u Grimroka (×1,54). Powrót do wspólnej szansy = jedna liczba.
+  Zastępczy Mityk S87 daje każdej klasie (także Łowcy) tylko pasujące Mityki; `Logic/Loot` bez zmian.
+- **S94 T-SK6 Vaelgratha NIEDOKOŃCZONE:** 15,9 wobec ≤ 2,5 (C6), jak Azgor w S93 (decyzja właściciela z S93 nadal
+  otwarta): tank S32 3,45 / min jest na granicy 3,5, leczenie liczy się od maks. HP celu (S69); przy dawnym `atkMul` 1,3
+  T-SK6 było 6,0 przy tanku 10,6 / min. Wiersz w raporcie (`Balance.S94_REPORT`), wpis w PROGRESS.
+- **S94 T1 Fechtunku w raporcie (S88 blok):** sytuacja boss S84 na 70 i 100 to Vaelgrath (`bossFightAt`, region od 70)
+  z falami 86 / 87: mniej ciosów pomocników do kontry, Strażnik „Samotnik” 0,050 → 0,037 / 0,039, „Dowódca” na 70
+  0,044 → 0,033 (pasmo od 0,040). Fale na 99 / 100 to 290% HP na falę, szybszy cios łamie tanka S32 (`speed` 1,5: 5,1 / min).
+  Dla właściciela: boss sytuacji na 70.
+- **S94 jaskinie i rodzaje od 71.:** Lodowa Grota 71–83 (mapa `min` 71), yeti 71–82, Zamarznięty Rycerz 83–100 (Elita i
+  Elita II Twierdzy od 83., Lodowa Strażnica do 100), młody smok 92–100 (Elita II Serca od 92.); Zbocza Yeti 71–80,
+  Lodowa Strażnica 88–100 (drugie expowisko na 71–73 i 96–100). Elity dropią każdy ilvl 71–100.
+- **S94 Elity:** zamiast kotwic 100 krzywych Elit (bez zmian) rodzaje: yeti `hpMul` 1,4 → 1,25 i `atkMul` 1,1 → 1,05,
+  Mroźny Olbrzym `hpMul` 1,8 → 1,3, Kryształowy Strażnik 1,7 → 1,15, młody smok 1,5 → 1,2 i `atkMul` 1,25 → 1,05
+  (Elity pojedyncze 51/54 walk w paśmie, Elita II solo 2,34–3,03, duet ≤ 1,30, trio 0,63–0,86; Rycerz solo ≥ 2,79 bez
+  zmiany `hpMul`). Kryształowy Strażnik u Wojownika 36,9 s (o 0,9 s ponad pasmem; trio Elity II trzyma 0,63).
+- **S94 `elitePairChance.frostpeak` 0,5 → 0,12:** jedna para na jaskinię na prawdziwych spawnerach (q 0,25 / 0,25 /
+  0,20; przy 0,25 Twierdza miała 3 pary na 4 grupy); spotkanie Elit Wojownik ≤ 1,05, Mag ≤ 1,20.
+- **S94 `rewardMul`:** Mroźny Olbrzym 1,1, Kryształowy Strażnik 1,3, Zamarznięty Rycerz 1,15, Wyrm Szronu 1,1, Mamut 1,1,
+  młody smok 1,1 (EXP/s 0,92–1,04 zwykłego); Lodowy Żywiołak 1,20 × średniej HP na EXP (≤ 1,25) bez zmian.
+- **S94 `dropFactor.frostpeak` 1 → 0,9:** Unikaty dla klasy 2,5–3,8 na godzinę (było do 4,19), Heroiki 0,77–0,94 na
+  godzinę Elit.
+- **S94 tempo i kotwice 100:** `expToNext`, `monsterHp`, `monsterAtk`, `eliteHp`, `eliteDmg`, `elite2*`, `manaCost.Mage`,
+  `heal` na 100 bez zmian: 70 → 100 41,0 h, h(99) 1,47 h, krok ≤ ×1,05, 1 → 100 84,1 h, T-SK4 Maga i T-SK5 w pasmach;
+  `exp.spec` bez zmian. Model okna: okno ostatniego zadania głównego bez bossa (`glacier`) sięga 99. (zgodnie z opisem
+  okien S91; płaciło tylko 92., więc h(92) = 0 i h(93) / h(92) bez sensu); zadania `frostpeak`, `giants`, `glacier` bez zmian.
+- **S94 Potężna 3000 → 1800** (`PRICES[5]`, HP, mana, energia; od 70.): 0,18 zł za 1 HP, tuż nad Wielką (0,175);
+  mikstury łańcuchowe 71–99 0,33–1,04 dochodu (górna granica 30% poza zasięgiem: raport, dla właściciela).
+- **S94 plecaki:** 160 miejsc 500 000 → 185 000 (8,0 poziomu dochodu na 65.; jawny wyjątek poniżej 71, plecak w sklepie
+  od 65.), 200 miejsc 1 200 000 → 285 000 (8,0 na 80.); premiowe bez zmian.
+- **S94 rudy u kowala:** Ruda Mithrilu 320 od 70., Ruda Adamantytu 640 od 90. (ok. 4 × cena z `Materials`, jak miedź,
+  żelazo i srebro; pole `level` wpisu).
+- **S94 części i przepisy:** lampart → Gruba Skóra, harpia → Krucze Pióro, mamut → Futro Yeti, Rycerz → Przeklęta Kość,
+  wyrm → Mroźna Łuska; napierśniki, rękawice i buty progów 75–85 biorą 2 Futra Yeti, progów 90–100 2 Mroźne Łuski
+  (pierwsze użycie łuski). `Data/Crafting` i `Data/Maps` (zakresy poziomów) przeszły z `NOT_BALANCE` do `BALANCE_MODULES`
+  przed migawką S94.
+- **S94 eliksir lodu od 70. (wyjątek poniżej 71):** `ELIXIR_LEVEL.resIce = 70` (Futro Yeti od 70.); jedyna różnica
+  zrzutu „do 70.” (A4).
+- **S94 zdjęcie bramki (L3):** `Balance.TUNED` i przełączniki `S32_ASSERT`, `GLOBAL_ASSERT`, `FIXTURE_ASSERT`,
+  `PATHS_TUNED` (wszystkie `true`) usunięte; każdy wiersz bez `report` jest asercją. Wiersze przekrojowe 1–100
+  (`Balance.targetsCross`: krok tempa 20–99, ≥ 2 expowiska i ilvl Elit 21–100) i strażniki na poziomach kontrolnych
+  30–100 asertowane; 1 → 100 to `R.frostpeak.pace.total`. `PATH_TARGETS` z `report = "S92–S94"`: `healer.tsk6` i
+  `support.elites` poza zasięgiem dźwigni S94 (wiersze regionów), `all.tsk3` tylko raport (asertują strażniki regionów).
+  `GLOBAL_REPORT_ONLY` bez wpisów S94; zostają wpisy S88 / S91 / S92 z powodem „poza zasięgiem dźwigni”.
+- **S94 wiersze w trybie raportu (S94_REPORT):** `support.elites` na 80 / 95 (każda ścieżka wygrywa Elitę II solo z
+  miksturami, HP na koniec 0,46–1,00); mikstury łańcuchowe 71–99 (górna granica); komplet +9 z ochroną 366 h (cel
+  150–300; ok. 83% kosztu to złoto ulepszeń (esencje 12%, zwoje 5%) z `Config.Upgrade`, propozycja `goldHigh` 20 → ok. 15); strażniki T-SK
+  ponad limitem D1 w paśmie po grupach: rośnie z poziomem klasy (Mag, Kapłan, Strzelec, Traper, Rzeźnik, podstawa
+  Wojownika; na 70 już ponad limitem), Furia (zamrożona S89), Strażnik T-SK3 2,18 (≤ 2,2, S89 C1), Chorąży (skoki z
+  rzędów 9–11: Dowódca T-SK2 1,76 → 2,23, Opiekun 1,57 → 2,00), przekroczenia w paśmie (podstawa Łowcy T-SK2 1,26–1,27
+  od 85, Zwiadowca T-SK1 do 1,33, Traper T-SK3 1,02–1,10). Dla właściciela: który kontrakt D1 obowiązuje w paśmie.
+- **S94 model:** `Balance.expectedMythicKills`, `Balance.protectedSet` (komplet +9 z 10 Legendarnych ilvl 100 wobec
+  najlepszego obszaru złota), `Balance.targetsS94` / `S94` / `S94_REPORT`, `Balance.targetsCross`; `Balance.HAZARDS`
+  czyta `STORM_TICK`; okno ostatniego zadania głównego (wyżej). Pełna księga S83–S94: `tools/balance_base.json` (migawka
+  S83) i `--baseline` w `tools/balance_report.luau`.
+- **S94 wiki:** tekst fazy 2 Vaelgratha (PL, EN) opisuje lot nad falą tarczy; `{FLIGHT_SECONDS}` bez zmian.
+- **S94 Gniew Żywiołów 10A (H4):** `add.radius` +4 → −5 („Promień −5 st.: uderzenia gęściej”, PL i EN): szerszy krąg
+  rozpraszał uderzenia (R4 −0,04), węższy daje 0,21 na 84–100 przy 10B 0,18 (|A − B| 0,03); opcja wyszła z `R4_UTILITY`
+  i jest asercją bloku ścieżek. Buildy Niszczyciela biorą 10B, więc ich liczby bez zmian; ROZWOJ 12.4 poprawione.
+- **S94 reguła strażników S92–S94:** do raportu idzie tylko wiersz ponad limitem D1 (build ponad limitem już na 45 / 70);
+  wiersz w limicie zostaje asercją (wcześniej np. podstawa Wojownika T-SK1 1,14 na 75 była tylko drukowana).
+- **S94 powody S93:** wiersze S93 w raporcie (skok rzędu 9 na 70, podstawa Łowcy T-SK2 na 65, Kłusownik T-SK3 na 65)
+  mają „poza zasięgiem dźwigni S93: …; dla właściciela” zamiast „dla S94”.

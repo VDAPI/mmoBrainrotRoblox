@@ -47,7 +47,7 @@
 | `ashen_lair` | Leże Wywerny / Wyvern Lair | 56–63 | **czerwona** | jaskinia |
 | `ashen_cave` | Kuźnia Głębin / Deepforge | 63–70 | **czerwona** | jaskinia + wejście do lochu bossa 70 |
 | `frostpeak` | Lodowe Szczyty / Frostpeak | 70–100 | żółta | jw. |
-| `frostpeak_grotto` | Lodowa Grota / Ice Grotto | 74–83 | **czerwona** | jaskinia |
+| `frostpeak_grotto` | Lodowa Grota / Ice Grotto | 71–83 (S94) | **czerwona** | jaskinia |
 | `frostpeak_hold` | Zamarznięta Twierdza / Frozen Hold | 83–92 | **czerwona** | jaskinia |
 | `frostpeak_cave` | Serce Lodowca / Glacier Heart | 92–100 | **czerwona** | jaskinia + wejście do lochu bossa 100 |
 | `dungeon_*` | Komnaty bossów (4) | 20/45/70/100 | czerwona (PvP wyłączone wewnątrz, bo tylko jedna grupa) | boss |
@@ -90,6 +90,8 @@ Każda strefa terenowa ma też podstrefy (np. łąka, las, ruiny) z innymi pozio
   - 6–10 węzłów rud (§12).
 - Wejście z zewnątrz jest wyraźne: wylot jaskini (skały, łuk, pochodnie), płaski teren wokół portalu, tabliczka z nazwą i poziomami.
 - Ostatnia jaskinia regionu ma wejście do lochu bossa.
+- Elity i Elity II są na każdym poziomie 7–100 bez luk (S91–S94: jaskinie Boru od 21., Pustkowi od 46., Szczytów od
+  71.; Elity dropią każdy poziom przedmiotu 21–100).
 
 **Wygląd jaskiń (S48).** Jaskinie na silniku jaskiń mają prawdziwy kształt: nierówne ściany, podłogę raz wyżej, raz niżej,
 kręte tunele, wnęki, jeziora, strumienie, otwory w sklepieniu; każda sala ma rolę (gawra, pajęczarnia, kapliczka…) i ubiór
@@ -285,7 +287,11 @@ unik, pech wroga i blok razem najwyżej 40% (S61).
   `expToNext`); kotwice 45 / 70 / 100 = 1 / 1 / 1, bo krzywa potworów S87 sama wydłużyła pasma do 18 / 27 / 45 h
   (cel D4 14 / 25 / 41 h ±25%). S92: 20 → 45 ok. 14,4 h (model okna Wojownika) przez większe nagrody zadań Boru
   (`werewolves` 1,7, `ruins` 1,4, `ents` 1,1, `cult` 1,2, `swamp` 1,3, `crypt` 1,6 poziomu); kotwica 45 zostaje 1, bo
-  krzywa `expToNext` nie maleje. S93: 45 → 70 ok. 26,1 h (h(69) 1,23 h, krok ≤ ×1,07), kotwica 70 zostaje 1.
+  krzywa `expToNext` nie maleje. S93: 45 → 70 ok. 26,1 h (h(69) 1,23 h, krok ≤ ×1,07), kotwica 70 zostaje 1. S94:
+  70 → 100 ok. 41,0 h (h(99) 1,47 h, krok ≤ ×1,05), kotwica 100 zostaje 1; całe 1 → 100 ok. 84 h gry solo z
+  odpoczynkiem (model okna Wojownika: 2,6 / 14,4 / 26,1 / 41,0 h na pasma 1–20 / 20–45 / 45–70 / 70–100; cel D4 82 h
+  ±15%). Tabela `expDoNastępnego`: poz. 20 → 11 918, 45 → 55 416, 70 → 128 218, 80 → 165 230, 90 → 206 655,
+  99 → 247 669 (100. poziom to koniec).
 - EXP z potwora: `round(8 + 6 · Lpotwora^1.25)`; Elita ×4, Elita II ×12, boss ×60; od S32 razy wytrzymałość rodzaju
   `hpMul^0.75 × (atkMul × szybkość)^0.25` (niedźwiedź brunatny ×1,26, królik ×0,57, wrona ×0,86; bossy ×1).
 - Różnica poziomów (gracz − potwór = d): d ≤ 5 → 100%; d > 5 → `−15%` za każdy poziom ponad 5, min 5%. Potwór wyżej: `+4%` za poziom, max +20%.
@@ -398,6 +404,10 @@ Każdy przedmiot ma w tooltipie „Rzadkość · Kategoria” (broń jedno-/dwur
   Boru: `dropFactor` 0,85 (2–4 Unikaty dla klasy na godzinę expienia, Heroik co ok. godzinę Elit). S93 (Spalone
   Pustkowia): hiena → Gruba Skóra, sęp → Krucze Pióro, chochlik → Odłamek Magmy, bazyliszek → Jad Ropuchy, mumia →
   Przeklęta Kość; Epickie błogosławieństwa biorą części Pustkowi (§11); `dropFactor` 0,9 (2,6–3,7 Unikatu na godzinę).
+  S94 (Lodowe Szczyty): lampart → Gruba Skóra, harpia → Krucze Pióro, mamut → Futro Yeti, Zamarznięty Rycerz →
+  Przeklęta Kość, wyrm → Mroźna Łuska (Futro i Łuska w pancerzach kowala progów 75–100, §8); `dropFactor` 0,9
+  (2,5–3,8 Unikatu na godzinę). Cel D5 na 1–100: 2–4 Unikaty dla klasy na godzinę expienia, 0,5–1,5 Heroika na
+  godzinę Elit (bez szczęścia).
 - Materiały/zioła/kamienie z tabel potworów (`Data/Monsters`).
 - Przedmiot ląduje na ziemi jako „worek łupu” widoczny **tylko dla właściciela** (lokalnie po stronie klienta); podniesienie klawiszem/klikiem lub automatycznie z gamepassem Auto-łup. Znika po 120 s.
 - **Drop legendy / mityka**: pomarańczowy (mityk: wyższy czerwony z żarem) słup światła na ziemi, specjalny dźwięk, krótki flash ekranu, komunikat na całym serwerze „⚜ {gracz} zdobył legendarny przedmiot: {nazwa}!” (i między serwerami przez MessagingService). Po podniesieniu: okno odsłonięcia z animacją pojawiania się bonusów jeden po drugim.
@@ -412,7 +422,8 @@ Każdy przedmiot ma w tooltipie „Rzadkość · Kategoria” (broń jedno-/dwur
 ### 5.7 Plecak i depozyt
 
 - Plecak to przedmiot w slocie Plecaka. Pojemność określa ile slotów ma inwentarz.
-- Start: Płócienny Plecak 20 slotów. U Handlarza Plecaków: 30, 45, 60, 80, 100, 130, 160, **200** (ceny rosną, wymagany poziom: 1, 8, 15, 25, 35, 50, 65, 80). Zmiana plecaka możliwa tylko, gdy przedmioty mieszczą się w nowym. S92: 80 miejsc 30 000, 100 miejsc 50 000 (było 80 000): 6,8 i 7,1 poziomu dochodu na 25. i 35. S93: 130 miejsc 76 000 (było 200 000): 5,0 poziomu dochodu na 50.
+- Start: Płócienny Plecak 20 slotów. U Handlarza Plecaków: 30, 45, 60, 80, 100, 130, 160, **200** (ceny rosną, wymagany poziom: 1, 8, 15, 25, 35, 50, 65, 80). Zmiana plecaka możliwa tylko, gdy przedmioty mieszczą się w nowym. S92: 80 miejsc 30 000, 100 miejsc 50 000 (było 80 000): 6,8 i 7,1 poziomu dochodu na 25. i 35. S93: 130 miejsc 76 000 (było 200 000): 5,0 poziomu dochodu na 50. S94: 160 miejsc 185 000 (było 500 000) i 200 miejsc
+  285 000 (było 1 200 000): po 8 poziomów dochodu na 65. i 80.
 - Depozyt w mieście: 60 slotów, **kontowy** (wspólny dla 3 postaci). Gamepass „Skarbiec” +60 slotów.
 - Stackowanie: materiały, mikstury, zwoje do 999 w slocie.
 - Sortowanie inwentarza przyciskiem.
@@ -460,7 +471,10 @@ Każdy przedmiot ma w tooltipie „Rzadkość · Kategoria” (broń jedno-/dwur
 
 - Kowal sprzedaje/wytwarza przedmioty o **stałych statystykach** (rzadkość Zwykły, średnie wartości) dla każdego progu poziomu i klasy, za złoto + rudy (z kopania).
 - Służy jako siatka bezpieczeństwa, gdy drop nie dopisuje.
-- Gruba Skóra: zbroja, rękawice i buty progów 5–15 i (S92) progu 25.
+- Gruba Skóra: zbroja, rękawice i buty progów 5–15 i (S92) progu 25. S94: Futro Yeti (2) w progach 75–85, Mroźna
+  Łuska (2) w progach 90–100.
+- Rudy u kowala (S94): miedź 25, żelazo 60, srebro 140, mithril 320 (od 70.), adamantyt 640 (od 90.); ok. 4 × cena
+  sprzedaży rudy.
 - Złoto wytwarzania (S32) = wartość przedmiotu Zwykłego tego progu × 3 (`Data/ItemValue.craftMul`; wcześniej
   `priceAt × 3`, np. 6120 za broń progu 55 sprzedawaną u Zbrojmistrza za 1320).
 
@@ -473,7 +487,8 @@ Każdy przedmiot ma w tooltipie „Rzadkość · Kategoria” (broń jedno-/dwur
 
 ## 9. Mikstury (lekarz)
 
-- Trzy rodzaje: Życie (HP), Mana, Energia. Pięć jakości: Mała, Średnia, Duża, Wielka, Potężna. Przywracają odpowiednio 150 / 500 / 1 500 / 4 000 / 10 000 punktów (energia: 30/60/100/150/250). Ceny: 10 / 60 / 250 / 700 / 3 000 złota (S93: Wielka 900 → 700, złoto za 1 HP rośnie z jakością: 0,167 / 0,175 / 0,30).
+- Trzy rodzaje: Życie (HP), Mana, Energia. Pięć jakości: Mała, Średnia, Duża, Wielka, Potężna. Przywracają odpowiednio 150 / 500 / 1 500 / 4 000 / 10 000 punktów (energia: 30/60/100/150/250). Ceny: 10 / 60 / 250 / 700 / 1 800 złota (S93: Wielka 900 → 700; S94: Potężna 3000 → 1800; złoto za 1 HP rośnie z
+  jakością: 0,167 / 0,175 / 0,18).
 - Jakości Mała, Średnia i Duża bez wymagań poziomu; Wielka od 45., Potężna od 70. (S87, `Consumables` `level`,
   `Logic/Potions.requiredLevel`; te same progi dla HP, many i energii, także dla mikstur kupionych wcześniej: sklep,
   plecak i opis pokazują próg, picie poniżej progu odmawia).
@@ -488,7 +503,8 @@ Każdy przedmiot ma w tooltipie „Rzadkość · Kategoria” (broń jedno-/dwur
   - Błogosławieństwa (rozdział 11) w stopniach do Legendarnego (Mityczne tylko z dropu bossów).
   - Zwoje Ochrony, Kamienie Teleportu.
   - Przemiana materiałów: 10 Pył → 1 Odłamek, 8 Odłamek → 1 Kryształ (koszt złota, 5 min).
-  - Eliksiry odporności (1 h, +15% odporności na żywioł); od 30., eliksir ognia od 45. (S93: razem z łuską salamandry).
+  - Eliksiry odporności (1 h, +15% odporności na żywioł); od 30., eliksir ognia od 45. (S93: razem z łuską salamandry),
+    eliksir lodu od 70. (S94: razem z Futrem Yeti).
 - Przykładowe receptury i poziomy są w `Data/Recipes.luau` (min. 25 receptur przy starcie).
 
 ## 11. Błogosławieństwa
@@ -634,10 +650,12 @@ tylko na niego i członków jego drużyny. Szczegóły: ROZWOJ §9.
   (`Data/LevelCurves`, liczone od poziomu końcowego potwora, dokładnie 1 do 20.; kotwice 45 / 70 / 100 tymczasowe:
   HP 1,20 / 1,32 / 1,47, atak 1,07 / 1,11 / 1,14, Elita 1,08–1,13 / 1,05–1,07, Elita II 1; S92–S94 je przejmują).
   Tabele regionów: szansa pary Elit w jaskini `elitePairChance` (0,5; Łąki 0,3 od S91: w jaskiniach Łąk jedna para na
-  13 grup Elit; Mroczny Bór 0,3 od S92; Spalone Pustkowia 0,25 od S93) i `dropFactor` (1: mnoży wagi Unikatu i
-  Heroika potworów regionu, Zwykły przejmuje różnicę; Mroczny Bór 0,85 od S92, Pustkowia 0,9 od S93). S92: rodzaj może
+  13 grup Elit; Mroczny Bór 0,3 od S92; Spalone Pustkowia 0,25 od S93; Lodowe Szczyty 0,12 od S94) i `dropFactor` (1:
+  mnoży wagi Unikatu i Heroika potworów regionu, Zwykły przejmuje różnicę; Mroczny Bór 0,85 od S92, Pustkowia 0,9 od
+  S93, Szczyty 0,9 od S94). Kotwice 100 krzywych (S94) bez zmian. S92: rodzaj może
   mieć `rewardMul` (mnoży EXP i złoto ponad `kindReward`; Ent Zgnilizny 1,25, Bagienny Troll i Szkielet Strażnik 1,1;
-  S93: Ognisty i Magmowy Golem 1,45, Ork Popiołu 1,15). **Członek grupy** zadaje obrażenia × `1 / 0,85 / 0,72 / 0,62` dla grupy 1 / 2 / 3 / 4 (S32,
+  S93: Ognisty i Magmowy Golem 1,45, Ork Popiołu 1,15; S94: Kryształowy Strażnik 1,3, Zamarznięty Rycerz 1,15, Mroźny
+  Olbrzym, Mamut, Wyrm Szronu i Młody Smok 1,1). **Członek grupy** zadaje obrażenia × `1 / 0,85 / 0,72 / 0,62` dla grupy 1 / 2 / 3 / 4 (S32,
   `Combat.groupDamageMul`): cała grupa bije naraz, więc grupa 4 zadawała ok. 10× tyle co jeden potwór.
 - **Cele balansu** (S32, model `tests/Balance.luau`, sprawdza `balance.spec`, raport `docs/BALANS.md`; gracz używa
   zwykłych ataków + 1–2 umiejętności, bez mikstur, „ekwipunek na poziomie” = broń + druga ręka + 4 części zbroi +
@@ -658,6 +676,9 @@ tylko na niego i członków jego drużyny. Szczegóły: ROZWOJ §9.
   | Morvane (S92) | 3–5 graczy L44, 4–6 min; największy cios ≤ 70% HP Maga L45, zwykły 7–12%; tank ≤ 350% HP/min (model S32: atak podstawowy i `threat`; z Polem Klątwy ok. 740–790%); fala tarczy ≤ 110% HP na członka; do pokonania bez wsparcia; T-SK6 ≤ 2,7 (cel planu 2,0 poza zasięgiem, DECYZJE S92) |
   | Spalone Pustkowia (S93) | Elity jaskiń od 46. na każdym poziomie do 70; spotkanie Elit ≤ 110% HP Wojownika, ≤ 125% Maga; Elita II solo ≥ 180%, dwóch ≤ 150%, trzech 60–100%; rodzaje 0,85–1,20 EXP/s zwykłego; ≥ 2 expowiska na każdym poziomie 46–70; tempo 45 → 70 21,25–28,75 h, h(69) 0,98–1,32 h, krok ≤ ×1,3 |
   | Azgor (S93) | 3–5 graczy L69, 4–6 min; największy cios ≤ 70% HP Maga L70 (inferno), zwykły 7–12%; tank ≤ 350% HP/min (model S32); meteor ≤ 60% HP Maga na minutę; tick lawy 15–25%; fala tarczy ≤ 110% HP na członka; każdy atak ≥ 50% tempa (inferno w fazie 3); do pokonania bez wsparcia; T-SK6 1,0–2,0 (sufit 2,5; dziś 12,8, niedokończone, DECYZJE S93) |
+  | Lodowe Szczyty (S94) | Elity jaskiń od 71. na każdym poziomie do 100; spotkanie Elit ≤ 110% HP Wojownika, ≤ 125% Maga; Elita II solo ≥ 180% (także Zamarznięty Rycerz), dwóch ≤ 150%, trzech 60–100%; rodzaje 0,85–1,20 EXP/s zwykłego; ≥ 2 expowiska na każdym poziomie 71–100; tempo 70 → 100 34,9–47,2 h, h(99) 1,36–1,84 h, krok ≤ ×1,3 |
+  | Vaelgrath (S94) | 3–5 graczy L99, 4–6 min z falami i lotem; największy cios ≤ 70% HP Maga L100 (Lodowy Pierścień), zwykły 7–12%; tank ≤ 350% HP/min (model S32); zamieć ≤ 60% HP Maga na minutę; tick burzy 30–45%; fala tarczy ≤ 110% HP na członka; nietykalny przez max(lot, fala); do pokonania bez wsparcia; Mityk dla każdej klasy, 1,4–1,6 × tyle zabić co u Grimroka; T-SK6 1,0–2,0 (dziś 15,9, niedokończone, DECYZJE S94) |
+  | 1 → 100 (S94, bez bramki) | każdy cel regionów i globalny asertowany albo w raporcie z powodem; krok tempa ≤ ×1,3 na 20–99; ≥ 2 expowiska i drop Elit na każdym poziomie 21–100; 1 → 100 69,7–94,3 h; strażniki T-SK1 ≤ 1,15, T-SK2 ≤ 1,25 × własne L20, T-SK3 ≤ areaCap, T-SK4 2–3 × regeneracji, T-SK5 25–35% HP tanka (`docs/BALANS.md` → „Cele 1–100”) |
   | tempo 1 → 20 (Wojownik, model okna, bez zadania z bossem) | 1,8–2,8 h, średnia z 5 poziomów rośnie najwyżej o 30% na poziom (S91) |
   | rzadkość (pełny komplet vs Zwykły) | Unikatowy +8–15%, Heroiczny +15–25%, Legendarny +25–40% |
   | broń 2H vs 1H + druga ręka | ±3% DPS × przeżywalność |
@@ -710,9 +731,9 @@ Po testach S17: **więcej rodzajów na każdej mapie (min. 8–10 na mapę teren
 - Salamandra (45–52), Ork Popiołu (46–56), Ognisty Golem (52–60), Skorpion Pustyni (55–63), Wywerna (56–66); Krasnolud Renegat (60–70), Golem Magmowy (62–70), Kowal Płomieni (63–70) (jaskinia). Elity: Kopalnia ork i hiena (Elita II ork), Leże wywerna i skorpion (Elita II wywerna), Kuźnia krasnolud i golem magmowy (Elita II Kowal Płomieni) na każdym poziomie jaskini.
 - **Boss 70: Azgor, Pan Płomieni**
 
-**Lodowe Szczyty (70–100) / jaskinie 74–100**
-- *nowy* Śnieżny Lampart (71–78), *nowy* Harpia Szczytów (76–83, latająca), *nowy* Mamut Lodowy (82–89), *nowy* Zamarznięty Rycerz (88–95), *nowy* Wyrm Szronu (95–100)
-- Lodowy Wilk, Yeti, Mroźny Olbrzym, Lodowy Żywiołak, Smoczy Pomiot; Kryształowy Strażnik, Młody Smok Lodu (jaskinia).
+**Lodowe Szczyty (70–100) / jaskinie 71–100 (S94)**
+- *nowy* Śnieżny Lampart (71–78), *nowy* Harpia Szczytów (76–83, latająca), *nowy* Mamut Lodowy (82–89), *nowy* Zamarznięty Rycerz (83–100), *nowy* Wyrm Szronu (95–100)
+- Lodowy Wilk (70–78), Yeti (71–82), Mroźny Olbrzym (78–88), Lodowy Żywiołak (82–92), Smoczy Pomiot (85–95); Kryształowy Strażnik (90–96), Młody Smok Lodu (92–100) (jaskinia). Elity: Grota yeti i wilk (Elita II yeti), Twierdza Rycerz i olbrzym (Elita II Rycerz), Serce strażnik i młody smok (Elita II młody smok albo strażnik) na każdym poziomie jaskini.
 - **Boss 100: Vaelgrath, Smok Mrozu**
 
 ### 15.3 Timery Elit II (dodatek po testach S17, jak w Margonem)
@@ -724,7 +745,8 @@ Po testach S17: **więcej rodzajów na każdej mapie (min. 8–10 na mapę teren
 
 - Wejście do lochu w głębi jaskini. Portal pokazuje: wymagany poziom (poziom bossa − 5), stan „Wolny / Zajęty przez grupę X (mm:ss)”.
 - **Tylko jedna grupa naraz** na serwerze. Wchodzi lider grupy z członkami w zasięgu 20 st. (grupa 1–5 osób; projektowany pod 5). Inni czekają.
-- **Do 3 zabić jednego bossa dziennie na postać** (S30, `Config.Boss.dailyRuns`; reset o 00:00 UTC; karta lochu i brama pokazują „Dziś: 1/3” i czas do resetu). Wejście zużywa dzienną próbę dopiero po zabiciu bossa (porażka nie zużywa).
+- **Do 3 zabić jednego bossa dziennie na postać** (S30, `Config.Boss.dailyRuns`; reset o 00:00 UTC; karta lochu i brama pokazują „Dziś: 1/3” i czas do resetu). Próbę zużywa zabicie bossa i porażka (czas albo wszyscy padli; FIX 2026-10-10), a szanse osobistego łupu liczą się z
+  zabić tego bossa dziś.
 - Limit czasu walki 15 min; po wybiciu całej grupy lub przekroczeniu czasu: wyrzucenie, boss się resetuje, loch wolny.
 - Boss: HP `30 × HP zwykłego potwora tego poziomu × (1 + 0.6 × (gracze − 1)) × hpMul bossa` (S32; Grimrok 1,2 od S91), 2–3 fazy (przejścia przy 70% i 35%), ataki telegrafowane (czerwone strefy na ziemi 1–1.5 s przed uderzeniem), przyzwania, wściekłość po 10 min.
 - Przykład Grimrok (20): Faza 1: zamach (stożek), skok na losowego gracza (okrąg). Faza 2 (70%): przyzywa 4 gobliny co 20 s. Faza 3 (35%): wir (okrąg 10 st., trzeba uciec), +25% szybkości.
@@ -751,11 +773,20 @@ Po testach S17: **więcej rodzajów na każdej mapie (min. 8–10 na mapę teren
   69 / 70): drużyna 3 osób traci na falę 85–98% HP na członka. 3–5 graczy L69 bije go 4,9–5,2 min; drużyna bez wsparcia
   wygrywa w ok. 1,7 min na miksturach (przyjmuje do 41% tego, co podtrzymują mikstury, regeneracja i kradzież życia);
   Uzdrowiciel lochowy leczy ok. 12,8 obrażeń Obrońcy (cel 1,0–2,0, sufit 2,5: niedokończone, DECYZJE S93).
+- Przykład Vaelgrath (100, S94): `hpMul` 1,3, zwykły cios słaby (`atkMul` 0,38, ok. 10% HP Maga L100), Mroźny Oddech
+  ×3,6 w tanka, Uderzenie Skrzydeł ×3,7 wokół siebie, Smagnięcie Ogonem ×4,1 w losowego, Zamieć ×4,4 pod każdym graczem
+  co 16 s w fazach 2–3 (złagodzona, wariant (a) jak meteor: ok. 34% HP Maga na minutę), w 3. fazie Lodowy Pierścień ×6,2
+  (65% HP Maga L100 z dystansu; bezpieczny środek przy smoku) i burza poza zasięgiem koksowników (tick ok. 38% HP Maga
+  L100, `Data/BossTuning` 3,9). Na początku fazy 2 smok leci 12 s nad falą tarczy smoczych pomiotów (86 / 87, było 99 /
+  100) i jest nietykalny do końca lotu i do upadku fali (FIX S94). 3–5 graczy L99 bije go 4,8–5,1 min; drużyna 3 osób
+  traci na falę ok. 95% HP na członka; drużyna bez wsparcia wygrywa w ok. 1,7 min na miksturach (przyjmuje ok. 26% tego,
+  co podtrzymują mikstury, regeneracja i kradzież życia); Uzdrowiciel lochowy leczy ok. 15,9 obrażeń Obrońcy
+  (niedokończone jak u Azgora, DECYZJE S94).
 - **Wybór ataku** (S87, `Logic/BossSchedule`, ta sama funkcja w grze i w modelu): spośród gotowych ataków fazy ten
   z największą zaległością względem swojego odnowienia; każdy atak dostaje co najmniej połowę swojego tempa (inferno
   Azgora i pierścień lodu Vaelgratha wchodzą). Odstęp między atakami i obrażenia lawy / burzy w `Data/BossTuning`.
-- Łup wspólny: 3–4 przedmioty Unikatowe/Heroiczne (+1 na każdego gracza powyżej 3) rozdzielane wg zasad grupy, złoto, materiały, szansa na legendarne błogosławieństwo i Zwój Rozwiązania.
-- **Rzut osobisty** (S30, każdy zwycięzca, worek widoczny tylko dla niego): legenda 20% + 5 pkt. proc. za każde zabicie bez legendy, pewna przy 8. (średnio ok. 3,4 zabicia); mityk 4% + 1 pkt. proc., pewny przy 30. (średnio ok. 9,8). Trafienie zeruje licznik (`character.bossPity`). Legenda: losowy Legendarny przedmiot na poziomie bossa (80% dla klasy gracza); mityk: w 50% ręczny przedmiot bossa (tylko pasujący klasie), inaczej losowy Mityczny dla klasy (4 bonusy + 2 linie legendarne); S87: Mityk zawsze dla klasy zwycięzcy (gdy żaden ręczny nie pasuje, np. Vaelgrath dla Łowcy, losowy Mityczny dla klasy, `Loot.pickUsable`). Szanse widać na karcie lochu i w karcie nagrody po walce; mityk ma osobne, mocniejsze ogłoszenie na serwerze.
+- Łup wspólny (FIX 2026-10-09, `Loot.rollBossLoot`): bez przedmiotów, tylko złoto i materiały z tabeli bossa (Odłamki i Kryształy Esencji, Rdzeń Legendy, Zwój Ochrony, Zwój Rozwiązania). Przedmioty daje rzut osobisty niżej i drugi przedmiot Fortuny (S60).
+- **Przedmiot osobisty** (FIX 2026-10-09, `Loot.rollBossItem`, każdy zwycięzca dostaje dokładnie jeden przedmiot we własnym worku): Legendarny 6% + 1 pkt. proc. za każde zabicie tego bossa dziś, Mityczny 1% + 1 pkt. proc. (przy 3 zabiciach dziennie średnio 2%, ok. 50 zabić do pierwszego Mityka); bez progów litości. **Osobisty Mityk u Vaelgratha** (S94, plan 8.4): 0,3% + 1 pkt. proc. na zabicie tego dnia, średnio ok. 77 zabić (×1,54 Grimroka). Legenda: losowy Legendarny przedmiot na poziomie bossa (80% dla klasy gracza); mityk: w 50% ręczny przedmiot bossa (tylko pasujący klasie), inaczej losowy Mityczny dla klasy (4 bonusy + 2 linie legendarne); S87: Mityk zawsze dla klasy zwycięzcy (gdy żaden ręczny nie pasuje, np. Vaelgrath dla Łowcy, losowy Mityczny dla klasy, `Loot.pickUsable`). Szanse widać na karcie lochu i w karcie nagrody po walce; mityk ma osobne, mocniejsze ogłoszenie na serwerze.
 
 ## 17. Grupa
 
@@ -785,6 +816,11 @@ Po testach S17: **więcej rodzajów na każdej mapie (min. 8–10 na mapę teren
 - **Budżet 45 → 70** (S93, Wojownik): +1…+3 broni kosztuje 0,56–0,73 dochodu poziomu, plecak 130 5,0 poziomu dochodu;
   mikstury łańcuchowe 28–82% dochodu (Wielka 700 to dół kolejności cen; decyzja właściciela); chroniony +9 Legendarnej
   broni ok. 18–20 poziomów dochodu, 18 zwojów i 8 Rdzeni Legendy (raport S93, cel kompletu S94).
+- **Budżet 70 → 100** (S94, Wojownik): +1…+3 broni kosztuje 0,63–0,81 dochodu poziomu, plecak 160 i 200 po 8,0
+  poziomu dochodu na 65. i 80., rudy mithrilu (320) i adamantytu (640) u kowala, Potężna 1800; mikstury łańcuchowe
+  33–104% dochodu (górna granica poza zasięgiem, decyzja właściciela); chroniony komplet +9 z 10 Legendarnych ilvl 100
+  ok. 12 mln złota, 183 zwoje i 83 Rdzenie Legendy, ok. 366 h na Iglicy Wyrmów (cel 150–300 h; ok. 83% to złoto
+  ulepszeń, propozycja `goldHigh` 20 → ok. 15 dla właściciela).
 - **Ulepszenia 20–100** (S87, `Config.Upgrade.goldHigh` 20): +1…+3 broni kosztuje 0,46–0,84 dochodu poziomu
   (25–100), +1…+9 z ochroną 11–20 poziomów dochodu (cel G9: 0,45–1,05 i 12–25).
 

@@ -3586,7 +3586,7 @@ return {
 	["skill.evocation.bp5"] = "Cooldown 25% shorter",
 	["skill.evocation.bp10"] = "Restores 15 percentage points more mana",
 	["skill.meteorStorm.bp5"] = "One more meteor",
-	["skill.meteorStorm.bp10"] = "Radius +4 studs",
+	["skill.meteorStorm.bp10"] = "Radius −5 studs: denser strikes",
 	["skill.elementalVortex.bp5"] = "Radius +2 studs",
 	["skill.elementalVortex.bp5b"] = "Each wave deals 1.2 percentage points more",
 	["skill.elementalVortex.bp10"] = "Three more waves",

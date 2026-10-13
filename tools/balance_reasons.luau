@@ -32,6 +32,8 @@ return {
 		{ path = "Data/BuffCategories" },
 		{ path = "Data/Classes", omit = LOOKS },
 		{ path = "Data/Combat" },
+		-- S94: the smith recipes (generated from Bases x tiers): only the materials (S94 K2 adds fur and scale)
+		{ path = "Data/Crafting", pick = { "materials" } },
 		{ path = "Data/Families", omit = LOOKS },
 		{ path = "Data/GuildSkills", omit = LOOKS },
 		{ path = "Data/ItemTraits", omit = LOOKS },
@@ -48,6 +50,8 @@ return {
 		{ path = "Data/LootRules" },
 		{ path = "Data/LootTables" },
 		{ path = "Data/Luck" },
+		-- S94: the level ranges of the maps and generated caves (S94 E1: the Ice Grotto from 71)
+		{ path = "Data/Maps", pick = { "minLevel", "maxLevel", "min", "max" } },
 		{ path = "Data/Market" },
 		{ path = "Data/MonsterAbilities", omit = LOOKS },
 		{ path = "Data/Monsters", omit = LOOKS },
@@ -80,7 +84,6 @@ return {
 		["Data/Products"] = "sekret",
 		["Data/Localization/*"] = "teksty",
 		["Data/Spawns/*"] = "generowane",
-		["Data/Crafting"] = "generowane",
 		["Data/ItemIconAtlas"] = "generowane",
 		["Data/ItemIconSheets"] = "generowane",
 		["Data/Items/Generate"] = "generator",
@@ -102,7 +105,6 @@ return {
 		["Data/Elements"] = "wygląd",
 		["Data/Cosmetics"] = "wygląd",
 		["Data/Titles"] = "wygląd",
-		["Data/Maps"] = "świat",
 		["Data/Portals"] = "świat",
 		["Data/Npcs"] = "świat",
 		["Data/Keybinds"] = "świat",
@@ -2736,6 +2738,214 @@ return {
 		},
 		["Recipes:byId.blessing_fortune_4.ingredients*"] = {
 			{ session = "S93", why = "Epic blessing with a region part (J2, LINE_INGREDIENT_EPIC: crow_feather)" },
+		},
+		-- S94: the Frost Peaks 70-100, Vaelgrath and the endgame (docs/sessions/S94.md; docs/SESJE.md S94)
+		["Bosses:byId.vaelgrath.atkMul"] = {
+			{
+				session = "S94",
+				why = "C2: 1.3 -> 0.38: basic hit 33 % -> 9.7 % of a level 100 Mage's HP (target 7-12 %, like Grimrok, Morvane, Azgor)",
+			},
+		},
+		["Bosses:byId.vaelgrath.hpMul"] = {
+			{
+				session = "S94",
+				why = "C2: new 1.3: 3-5 players of level 99 need 4.8-5.1 min (with nodes 4.2-4.5) with waves and flight (target 4-6)",
+			},
+		},
+		["Bosses:byId.vaelgrath.attacks[frostBreath].damage"] = {
+			{
+				session = "S94",
+				why = "C2: 2.6 -> 3.6 after atkMul 0.38: specials stronger than the basic hit, S32 tank 3.45 HP / min (<= 3.5)",
+			},
+		},
+		["Bosses:byId.vaelgrath.attacks[wingBuffet].damage"] = {
+			{ session = "S94", why = "C2: 2.2 -> 3.7 after atkMul 0.38 (draft direction 4.3 at atkMul 0.33)" },
+		},
+		["Bosses:byId.vaelgrath.attacks[tailSwipe].damage"] = {
+			{ session = "S94", why = "C2: 2.4 -> 4.1 after atkMul 0.38 (draft direction 4.7 at atkMul 0.33)" },
+		},
+		["Bosses:byId.vaelgrath.attacks[blizzard].damage"] = {
+			{
+				session = "S94",
+				why = "C3 (variant a, as the meteor in S93): 2.6 -> 4.4, blizzard 34 % of a level 100 Mage's HP per minute (<= 60 %)",
+			},
+		},
+		["Bosses:byId.vaelgrath.attacks[glacialRing].damage"] = {
+			{
+				session = "S94",
+				why = "C2: 3.6 -> 6.2: biggest hit 65 % of a level 100 Mage (<= 70 %), 67 % of a level 98 Mage (< 100 %)",
+			},
+		},
+		["Bosses:byId.vaelgrath.summons[1].level"] = {
+			{
+				session = "S94",
+				why = "C7: shield wave 99 -> 86: a party of 3 loses 95 % HP per member per wave (<= 110 %; 290 % at 99)",
+			},
+		},
+		["Bosses:byId.vaelgrath.summons[2].level"] = {
+			{ session = "S94", why = "C7: shield wave 100 -> 87 (boss level - 14 / - 13, like Azgor's 58 / 59)" },
+		},
+		["BossTuning:hazards.vaelgrath.freezingStorm"] = {
+			{
+				session = "S94",
+				why = "C4: 1.4 -> 3.9: one storm tick 38 % of a level 100 Mage's HP after atkMul 0.38 (30-45 %)",
+			},
+		},
+		["LootTables:bosses.vaelgrath.mythicChance"] = {
+			{
+				session = "S94",
+				why = "D2 (plan 8.4): own 0.003 instead of BOSS_ROLL 0.01: ~77 kills to a Mythic against Grimrok's 50 (x1.54, band 1.4-1.6)",
+			},
+		},
+		["Areas/Caves:byId.frostpeak_grotto.levels[1]"] = {
+			{ session = "S94", why = "E1: the Ice Grotto 74 -> 71 (Elites and Elite II from 71, item levels 71-73)" },
+		},
+		["Maps:byId.frostpeak_grotto.minLevel"] = { { session = "S94", why = "E1: the Ice Grotto's map from 71" } },
+		["Areas/frostpeak:areas[frostpeak_slopes].lv[1]"] = {
+			{ session = "S94", why = "E2: the Yeti Slopes 74 -> 71 (a second hunting ground on 71-73)" },
+		},
+		["Areas/frostpeak:areas[frostpeak_icewatch].lv[2]"] = {
+			{
+				session = "S94",
+				why = "E2: the Icewatch 95 -> 100 (a second hunting ground on 96-100, the Frozen Knight to 100)",
+			},
+		},
+		["Monsters:byId.yeti.levels.min"] = {
+			{ session = "S94", why = "E1: yeti 74 -> 71 (Grotto and Slopes from 71)" },
+		},
+		["Monsters:byId.frozenKnight.levels.min"] = {
+			{ session = "S94", why = "E1: Frozen Knight 88 -> 83 (Elite and Elite II of the Frozen Hold from 83)" },
+		},
+		["Monsters:byId.frozenKnight.levels.max"] = {
+			{ session = "S94", why = "E2: Frozen Knight 95 -> 100 (Icewatch to 100)" },
+		},
+		["Monsters:byId.youngFrostDragon.levels.min"] = {
+			{ session = "S94", why = "E1: young frost dragon 93 -> 92 (the Glacier Heart's Elite II from 92)" },
+		},
+		["Monsters:byId.yeti.hpMul"] = {
+			{
+				session = "S94",
+				why = "E3: 1.4 -> 1.25: Elite yeti for the Warrior 38 -> 34 s (20-36 s), Mage 102 -> 88 % HP",
+			},
+		},
+		["Monsters:byId.yeti.atkMul"] = {
+			{
+				session = "S94",
+				why = "E4: 1.1 -> 1.05: the Mage's Elite encounter in the Grotto 1.26 -> 1.20 (<= 1.25)",
+			},
+		},
+		["Monsters:byId.frostGiant.hpMul"] = {
+			{
+				session = "S94",
+				why = "E3: 1.8 -> 1.3: Elite frost giant for the Warrior 48.8 -> 35.2 s (20-36 s); EXP/s 0.83 -> 0.90",
+			},
+		},
+		["Monsters:byId.frostGiant.rewardMul"] = {
+			{ session = "S94", why = "F1: new 1.1: EXP/s 0.90 -> 0.99 of GENERIC (0.85-1.20)" },
+		},
+		["Monsters:byId.crystalGuardian.hpMul"] = {
+			{
+				session = "S94",
+				why = "E3: 1.7 -> 1.15: Elite crystal guardian (armour x2.0, S88) for the Warrior 54.6 -> 36.9 s; Elite II trio 0.63-0.65",
+			},
+		},
+		["Monsters:byId.crystalGuardian.rewardMul"] = {
+			{ session = "S94", why = "F1: new 1.3: EXP/s 0.77 -> 1.00 of GENERIC (0.85-1.20)" },
+		},
+		["Monsters:byId.youngFrostDragon.hpMul"] = {
+			{
+				session = "S94",
+				why = "E3, E5: 1.5 -> 1.2: Elite HP lost 114-128 % -> 76-87 %, Elite II trio 1.23-1.27 -> 0.83-0.86",
+			},
+		},
+		["Monsters:byId.youngFrostDragon.atkMul"] = {
+			{
+				session = "S94",
+				why = "E3, E5: 1.25 -> 1.05 (with hpMul 1.2): Elite II duo 1.87-1.93 -> 1.26-1.30 (<= 1.50)",
+			},
+		},
+		["Monsters:byId.youngFrostDragon.rewardMul"] = {
+			{ session = "S94", why = "F1: new 1.1: EXP/s 0.90 -> 0.99 of GENERIC after the shorter fight" },
+		},
+		["Monsters:byId.frozenKnight.rewardMul"] = {
+			{ session = "S94", why = "F1: new 1.15: the armoured undead (S88) EXP/s 0.84 -> 0.96 of GENERIC" },
+		},
+		["Monsters:byId.frostWyrm.rewardMul"] = {
+			{ session = "S94", why = "F1: new 1.1: the scaled dragon (S88) EXP/s 0.87 -> 0.96 of GENERIC" },
+		},
+		["Monsters:byId.iceMammoth.rewardMul"] = {
+			{ session = "S94", why = "F1: new 1.1: EXP/s 0.88 -> 0.96 of GENERIC" },
+		},
+		["LevelCurves:elitePairChance.frostpeak"] = {
+			{
+				session = "S94",
+				why = "E4: 0.5 -> 0.12: one pair group per cave on the real spawners (q 0.25 / 0.25 / 0.20); encounter W <= 1.05, M <= 1.20",
+			},
+		},
+		["LevelCurves:dropFactor.frostpeak"] = {
+			{
+				session = "S94",
+				why = "I1: 1 -> 0.9: Uniques for the class 4.03-4.19 -> 3.63-3.77 per hour on 70-80 (2-4)",
+			},
+		},
+		["Items/Consumables:[potion_hp_5].buyPrice"] = {
+			{
+				session = "S94",
+				why = "J2: 3000 -> 1800 (0.18 gold per HP, just above the Great's 0.175): chain potions 71-99 max 1.40 -> 1.04 of income",
+			},
+		},
+		["Items/Consumables:[potion_mana_5].buyPrice"] = { { session = "S94", why = "PRICES[5] shared with HP (J2)" } },
+		["Items/Consumables:[potion_energy_5].buyPrice"] = {
+			{ session = "S94", why = "PRICES[5] shared with HP (J2)" },
+		},
+		["Items/Consumables:[potion_hp_5].price"] = { { session = "S94", why = "derived: buyPrice / 4" } },
+		["Items/Consumables:[potion_mana_5].price"] = { { session = "S94", why = "derived: buyPrice / 4" } },
+		["Items/Consumables:[potion_energy_5].price"] = { { session = "S94", why = "derived: buyPrice / 4" } },
+		["Items/Backpacks:[backpack_160].buyPrice"] = {
+			{
+				session = "S94",
+				why = "J3: 500 000 -> 185 000: 21.7 -> 8.0 levels of income at 65 (5-12); from 65 (rule 6)",
+			},
+		},
+		["Items/Backpacks:[backpack_200].buyPrice"] = {
+			{ session = "S94", why = "J3: 1 200 000 -> 285 000: 33.8 -> 8.0 levels of income at 80 (5-12)" },
+		},
+		["Items/Backpacks:[backpack_160].price"] = { { session = "S94", why = "derived: buyPrice / 4" } },
+		["Items/Backpacks:[backpack_200].price"] = { { session = "S94", why = "derived: buyPrice / 4" } },
+		["Shops:byId.blacksmith.entries[5]*"] = {
+			{ session = "S94", why = "J4: mithril ore at the smith, 320 (~4 x Materials 80) from 70" },
+		},
+		["Shops:byId.blacksmith.entries[6]*"] = {
+			{ session = "S94", why = "J4: adamantite ore at the smith, 640 (~4 x Materials 160) from 90" },
+		},
+		["Recipes:byId.elixir_resIce.level"] = {
+			{
+				session = "S94",
+				why = "K3: 30 -> 70 (ELIXIR_LEVEL): the ice elixir with its yeti fur (Frost Peaks from 70); the only intended change below 71",
+			},
+		},
+		["LootTables:byId.snowLeopard.materials*"] = {
+			{ session = "S94", why = "K1: new part thick_hide (SWIAT §2)" },
+		},
+		["LootTables:byId.peakHarpy.materials*"] = {
+			{ session = "S94", why = "K1: new part crow_feather (SWIAT §2)" },
+		},
+		["LootTables:byId.iceMammoth.materials*"] = { { session = "S94", why = "K1: new part yeti_fur (SWIAT §2)" } },
+		["LootTables:byId.frozenKnight.materials*"] = {
+			{ session = "S94", why = "K1: new part cursed_bone (SWIAT §2)" },
+		},
+		["LootTables:byId.frostWyrm.materials*"] = { { session = "S94", why = "K1: new part frost_scale (SWIAT §2)" } },
+		["Crafting:byId.*"] = {
+			{
+				session = "S94",
+				why = "K2: chest pieces, gloves and boots of tiers 75-85 take 2 yeti fur, of 90-100 2 frost scale (first use of the scale)",
+			},
+		},
+		["Skills/Mage:[meteorStorm].breakpoints[10].a.add.radius"] = {
+			{
+				session = "S94",
+				why = "4 -> -5: H4 R4: a wider storm spread the impacts (-0.04); a tighter one gives 0.21 at 84-100 (10B 0.18)",
+			},
 		},
 	} :: { [string]: { Reason } },
 }

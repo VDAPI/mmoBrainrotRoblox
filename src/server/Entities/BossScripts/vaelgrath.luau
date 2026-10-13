@@ -1,8 +1,9 @@
 --!strict
 -- Vaelgrath, the Frost Dragon (boss 100). Data (Data/Bosses): frost breath (cone), wing buffet around
--- itself, tail swipe (line); phase 2 (70 %) blizzard bolts at everyone and dragonspawn; phase 3 (35 %)
--- glacial ring. The script adds:
---   * phase 2: the dragon takes to the air for 12 s (cannot be hit, raised above the arena) while bolts fall,
+-- itself, tail swipe (line); phase 2 (70 %) blizzard under everyone and a shield wave of dragonspawn; phase 3
+-- (35 %) glacial ring and a second shield wave. The script adds:
+--   * phase 2: the dragon takes to the air for 12 s above its shield wave (raised above the arena); it cannot be
+--     hit until both the flight is over and the wave is down (S94 C7: max(flight, wave)),
 --   * phase 3: a freezing storm — every 3 s everyone farther than 9 studs from a brazier is frozen.
 -- Brazier positions match World/Layouts/dungeon_frostpeak (relative to the arena centre at 0, -10).
 
@@ -32,6 +33,8 @@ function Vaelgrath.onPhase(boss: any, phase: number)
 	local monster = boss.monster
 	if phase == 2 then
 		monster.invulnerable = true
+		-- S94 (C7): onTick keeps the flight invulnerable even when the shield wave falls first
+		boss.flightUntil = os.clock() + FLIGHT_SECONDS
 		monster.model:SetAttribute("Flying", true)
 		local humanoid = monster.humanoid :: Humanoid
 		local hip = humanoid.HipHeight
@@ -40,8 +43,9 @@ function Vaelgrath.onPhase(boss: any, phase: number)
 			if monster:IsAlive() then
 				humanoid.HipHeight = hip
 				monster.model:SetAttribute("Flying", nil)
-				-- Shield summons (none for Vaelgrath) would keep it invulnerable; flying ends it.
-				monster.invulnerable = false
+				-- S94 (C7): landing does not end a living shield wave; Boss.Step lifts it after the last helper
+				boss.flightUntil = nil
+				monster.invulnerable = #boss.shielded > 0
 				boss.services.announce("boss.vaelgrath.landed", nil)
 			end
 		end)
@@ -51,6 +55,11 @@ function Vaelgrath.onPhase(boss: any, phase: number)
 end
 
 function Vaelgrath.onTick(boss: any, now: number)
+	-- S94 (C7): Boss.Step lifts the shield when the last helper falls and calls onTick in the same step, so the
+	-- rest of the flight stays invulnerable
+	if boss.flightUntil and now < boss.flightUntil then
+		boss.monster.invulnerable = true
+	end
 	local storm = boss.storm
 	if not storm or now < storm.nextTick then
 		return

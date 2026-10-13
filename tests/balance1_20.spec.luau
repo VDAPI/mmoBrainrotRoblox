@@ -13,7 +13,6 @@ local fs = require("@lune/fs")
 local BalanceTables = require("./BalanceTables")
 local T = require("./Test")
 
-local FIXTURE_ASSERT = true -- S91: strict
 local TOLERANCE = 0.005
 -- S91: levels 1-20 frozen; every future difference is an entry in BalanceTables.ALLOWED_1_20_DIFFS and a DECYZJE
 -- line (G12 in balance.spec reads the same list).
@@ -80,21 +79,19 @@ T.describe("Balance 1-20 fixture (S83; strict from S91)", function()
 		end
 	end)
 
-	if FIXTURE_ASSERT then
-		T.it("no difference outside ALLOWED_1_20_DIFFS", function()
-			if report.unexpected > 0 then
-				local shown = {}
-				for _, d in report.diffs do
-					if not d.allowed and #shown < 5 then
-						table.insert(shown, `{d.key}: {d.before} → {d.after}`)
-					end
+	T.it("no difference outside ALLOWED_1_20_DIFFS", function()
+		if report.unexpected > 0 then
+			local shown = {}
+			for _, d in report.diffs do
+				if not d.allowed and #shown < 5 then
+					table.insert(shown, `{d.key}: {d.before} → {d.after}`)
 				end
-				error(
-					`{report.unexpected} difference(s) against tests/fixtures/balance_1_20.json (1-20 frozen by S91; add `
-						.. `ALLOWED_1_20_DIFFS and a DECYZJE line): {table.concat(shown, "; ")}`,
-					0
-				)
 			end
-		end)
-	end
+			error(
+				`{report.unexpected} difference(s) against tests/fixtures/balance_1_20.json (1-20 frozen by S91; add `
+					.. `ALLOWED_1_20_DIFFS and a DECYZJE line): {table.concat(shown, "; ")}`,
+				0
+			)
+		end
+	end)
 end)

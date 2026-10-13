@@ -225,7 +225,8 @@ return Build.class("Mage", "mana", "magic", {
 		values = { dmg = { 24, 24 } }, -- S81 (ROZWOJ 12.4, 15.5.4): row 7 of the Destroyer
 		breakpoints = Build.bp2(
 			{ a = { add = { hits = 1 } }, b = { mul = { cooldown = 0.88 } } },
-			{ a = { add = { radius = 4 } }, b = { values = { dmg = 4.4 } } }
+			-- S94 (H4): 10A -5 studs (was +4: a wider storm spread the impacts, R4 -0.04; -5 gives 0.21 at 84-100)
+			{ a = { add = { radius = -5 } }, b = { values = { dmg = 4.4 } } }
 		),
 		glyph = "✺",
 	},

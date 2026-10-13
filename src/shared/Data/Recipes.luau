@@ -158,8 +158,9 @@ local ELIXIR_INGREDIENTS: { [string]: { Ingredient } } = {
 	resLightning = { { id = "herb_moonpetal", n = 2 }, { id = "fish_eel", n = 3 } },
 	resPoison = { { id = "herb_nightshade", n = 3 }, { id = "spider_silk", n = 2 } },
 }
--- S93: the fire elixir unlocks with its scale (salamanders from 45); the rest at 30 (S94 adds resIce).
-local ELIXIR_LEVEL: { [string]: number } = { resFire = 45 }
+-- S93: the fire elixir unlocks with its scale (salamanders from 45); the rest at 30. S94: the ice elixir with yeti
+-- fur (the Frost Peaks from 70).
+local ELIXIR_LEVEL: { [string]: number } = { resFire = 45, resIce = 70 }
 for _, stat in Blessings.ELIXIRS do
 	local id = `elixir_{stat}`
 	add({

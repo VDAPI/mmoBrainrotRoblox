@@ -10,6 +10,6 @@ return table.freeze({
 	hazards = table.freeze({
 		-- S93: 0.7 -> 2.2 (one tick ~20 % of a level 70 Mage's HP after atkMul 0.36)
 		azgor = table.freeze({ lava = 2.2 }),
-		vaelgrath = table.freeze({ freezingStorm = 1.4 }),
+		vaelgrath = table.freeze({ freezingStorm = 3.9 }),
 	}),
 })

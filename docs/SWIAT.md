@@ -37,9 +37,9 @@
 | 63–70 | Grobowce Pustyni, **Kuźnia Głębin** (jaskinia, Elity do 70.) | Spalone Pustkowia |
 | 70 | **Boss: Azgor** | Palenisko Azgora |
 | 70–75 | Dolina Lodowych Wilków | Lodowe Szczyty |
-| 74–83 | Zbocza Yeti, Skały Harpii, **Lodowa Grota** (jaskinia) | Lodowe Szczyty |
+| 71–83 | Zbocza Yeti (S94: od 71.), Skały Harpii (76–83), **Lodowa Grota** (jaskinia 71–83, S94) | Lodowe Szczyty |
 | 78–92 | Przełęcz Olbrzymów, Zamarznięte Jezioro, Mamucia Tundra, **Zamarznięta Twierdza** (jaskinia 83–92) | Lodowe Szczyty |
-| 85–95 | Ruiny Smoczej Świątyni, Lodowa Strażnica | Lodowe Szczyty |
+| 85–100 | Ruiny Smoczej Świątyni (85–95), Lodowa Strażnica (88–100, S94) | Lodowe Szczyty |
 | 92–100 | Iglica Wyrmów, **Serce Lodowca** (jaskinia) | Lodowe Szczyty |
 | 100 | **Boss: Vaelgrath** | Leże Vaelgratha |
 
@@ -120,15 +120,15 @@ fortuny Krucze Pióro; eliksir odporności na ogień od 45. (razem z Łuską Sal
 |---|---|---|---|---|
 | `iceWolf` | Lodowy Wilk → Wilk Zamieci → Biały Kieł | quadruped | 70–78 | Futro Yeti |
 | `snowLeopard` *nowy* | Śnieżny Lampart → Lampart Zamieci → Biała Śmierć | quadruped | 71–78 | Gruba Skóra |
-| `yeti` | Yeti → Yeti Starszy → Król Gór | humanoid (duży) | 74–82 | Futro Yeti |
-| `harpy` *nowy* | Harpia Szczytów → Harpia Burzy → Królowa Harpii | flyer | 76–83 | Pióro |
+| `yeti` | Yeti → Yeti Starszy → Król Gór | humanoid (duży) | 71–82 (S94) | Futro Yeti |
+| `peakHarpy` *nowy* | Harpia Szczytów → Harpia Burzy → Królowa Harpii | flyer | 76–83 | Krucze Pióro |
 | `frostGiant` | Mroźny Olbrzym → Olbrzym Lodowca → Jarl Mrozu | humanoid (ogromny) | 78–88 | Futro Yeti |
-| `mammoth` *nowy* | Mamut Lodowy → Mamut Starszy → Ojciec Stada | quadruped (ogromny) | 82–89 | Futro Yeti |
+| `iceMammoth` *nowy* | Mamut Lodowy → Mamut Starszy → Ojciec Stada | quadruped (ogromny) | 82–89 | Futro Yeti |
 | `iceElemental` | Lodowy Żywiołak → Żywiołak Zamieci → Wieczna Zima | golem, magia, lód | 82–92 | Mroźna Łuska |
 | `dragonspawn` | Smoczy Pomiot → Smoczy Strażnik → Smoczy Czempion | dragon | 85–95 | Mroźna Łuska |
-| `frozenKnight` *nowy* | Zamarznięty Rycerz → Rycerz Szronu → Lodowy Komtur | humanoid | 88–95 | Przeklęta Kość |
-| `crystalGuardian` | Kryształowy Strażnik → Kryształowy Obrońca → Kryształowy Tytan | golem | 92–96 | Mroźna Łuska |
-| `youngFrostDragon` | Młody Smok Lodu → Smok Lodu → Starszy Smok Lodu | dragon | 93–100 | Mroźna Łuska |
+| `frozenKnight` *nowy* | Zamarznięty Rycerz → Rycerz Szronu → Lodowy Komtur | humanoid | 83–100 (S94) | Przeklęta Kość |
+| `crystalGuardian` | Kryształowy Strażnik → Kryształowy Obrońca → Kryształowy Tytan | golem | 90–96 | Mroźna Łuska |
+| `youngFrostDragon` | Młody Smok Lodu → Smok Lodu → Starszy Smok Lodu | dragon | 92–100 (S94) | Mroźna Łuska |
 | `frostWyrm` *nowy* | Wyrm Szronu → Wyrm Zamieci → Pradawny Wyrm | dragon | 95–100 | Mroźna Łuska |
 
 Nowe materiały (S19): **Gruba Skóra** (`thick_hide`), **Jad Ropuchy** (`toad_venom`), **Krucze Pióro** (`crow_feather`), **Przeklęta Kość** (`cursed_bone`, S92: poziom 27, 26 złota), po jednym poziomie ceny na region jak obecne części. Służą do sprzedaży i do 2–4 nowych receptur alchemika (np. Eliksir Odporności na Truciznę z Jadu, Zwój Ochrony z Przeklętej Kości i Kryształu).
@@ -178,13 +178,13 @@ grup bierz z tej tabeli. Tabele Łąk i (od S45) Boru niżej zgadzają się z ko
 | Grobowce Pustyni (`ashen_tombs`) | 66–70 | Mumia Pustyni, Bazyliszek | 5 | 10 | — |
 | **Lodowe Szczyty** | | | | | |
 | Dolina Lodowych Wilków (`frostpeak_valley`) | 70–75 | Lodowy Wilk, Śnieżny Lampart | 8 | 16 | — |
-| Zbocza Yeti (`frostpeak_slopes`) | 74–80 | Yeti, Śnieżny Lampart | 7 | 19 | ⚡ |
+| Zbocza Yeti (`frostpeak_slopes`) | 71–80 (S94) | Yeti, Śnieżny Lampart | 7 | 19 | ⚡ |
 | Skały Harpii (`frostpeak_harpyrocks`) | 76–83 | Harpia Szczytów, Yeti | 6 | 8 | ✦ |
 | Przełęcz Olbrzymów (`frostpeak_pass`) | 78–86 | Mroźny Olbrzym, Harpia Szczytów | 7 | 18 | — |
 | Zamarznięte Jezioro (`frostpeak_lake`) | 82–90 | Lodowy Żywiołak, Mamut Lodowy | 6 | 14 | ✦ |
 | Mamucia Tundra (`frostpeak_tundra`) | 82–89 | Mamut Lodowy, Mroźny Olbrzym | 6 | 16 | ⚡ |
 | Ruiny Smoczej Świątyni (`frostpeak_temple`) | 85–95 | Smoczy Pomiot, Zamarznięty Rycerz | 7 | 21 | ⛁ |
-| Lodowa Strażnica (`frostpeak_icewatch`) | 88–95 | Zamarznięty Rycerz, Lodowy Żywiołak | 5 | 11 | ⚡ |
+| Lodowa Strażnica (`frostpeak_icewatch`) | 88–100 (S94) | Zamarznięty Rycerz, Lodowy Żywiołak | 5 | 11 | ⚡ |
 | Iglica Wyrmów (`frostpeak_wyrmspire`) | 94–100 | Wyrm Szronu, Smoczy Pomiot | 5 | 11 | — |
 
 Jaskinie nie mają profilu (elity już są „lepszym dropem”).
@@ -271,13 +271,13 @@ budowle `Logic/FrostpeakGen`.
 | Obszar | Poziomy | Potwory | Grupy | Punkt charakterystyczny | Inne |
 |---|---|---|---|---|---|
 | Dolina Lodowych Wilków / Ice Wolf Valley | 70–75 | Lodowy Wilk, Śnieżny Lampart | 8 | opuszczony obóz traperów (chata z zapadniętym dachem, ramy na skóry, wnyki, sanie, tląca się latarnia) | ośnieżone świerki w kępach, zamarznięty Lodowy Potok z drewnianymi mostami, kopiec z rogami i wstęgami przy wjeździe, Wyjąca Skała w kręgu tropów, rozwleczone kości jelenia i bladoniebieska sierść, półka lampartów nad potokiem, zadrapania na pniach · **NPC: zwiadowca** |
-| Zbocza Yeti / Yeti Slopes ⚡ | 74–80 | Yeti, Śnieżny Lampart | 7 | Legowisko Yeti (nisza pod skalnym nawisem, posłanie z futer, kości, sosna-maczuga, odciski dłoni) | trzy śnieżne ławy ze stromymi progami i wychodniami łupku, nory z parą, sterty głazów do rzucania, wielkie tropy, lawinisko u wylotu żlebu (pył lawiny), **wejście: Lodowa Grota** (otwór w lodowej ścianie pod kłami sopli, niebieska poświata) |
+| Zbocza Yeti / Yeti Slopes ⚡ | 71–80 | Yeti, Śnieżny Lampart | 7 | Legowisko Yeti (nisza pod skalnym nawisem, posłanie z futer, kości, sosna-maczuga, odciski dłoni) | trzy śnieżne ławy ze stromymi progami i wychodniami łupku, nory z parą, sterty głazów do rzucania, wielkie tropy, lawinisko u wylotu żlebu (pył lawiny), **wejście: Lodowa Grota** (otwór w lodowej ścianie pod kłami sopli, niebieska poświata) |
 | Skały Harpii / Harpy Rocks ✦ | 76–83 | Harpia Szczytów, Yeti | 6 | Iglica Królowej (najwyższa iglica z gniazdem z gałęzi, kości i piór, świecidełka) | las lodowo-skalnych iglic z czapami śniegu, zamarznięty Harpi Staw z przeręblą (łowisko), obóz spadłych wspinaczy (rozdarty namiot, plecaki w lodzie, liny, czekan, drabinka), gniazda na iglicach, pióra, nocą żółte błyski, orły wysoko |
 | Przełęcz Olbrzymów / Giants' Pass | 78–86 | Mroźny Olbrzym, Harpia Szczytów | 7 | Brama Olbrzymów (dwa siedzące kolosy na ostrogach, jednemu odpadła głowa) | Sala Tronów (trzy trony wokół ogniska z pni, rożen z udźcem mamuta, kocioł, słup dymu), kamienie z runami świecące nocą, pole głazów z kraterami, schody olbrzymów, kości mamuta, gniazda harpii na ścianach grani, oszronione martwe drzewa |
 | Zamarznięte Jezioro / Frozen Lake ✦ | 82–90 | Lodowy Żywiołak, Mamut Lodowy | 6 | przerębel z wmarzniętą łodzią (złamany maszt, sieci, sanie i wędki) | tafla lodu z rysami (chodzi się po niej), łowisko przy przerębli, Zamarznięty Wodospad na urwisku Grani Południowej, ogród kryształów (nocą pulsują), kręgi gładkiego lodu, skarby w bryłach lodu, szlak tropów mamutów przez lód, zmarznięte trzciny |
 | Mamucia Tundra / Mammoth Tundra ⚡ | 82–89 | Mamut Lodowy, Mroźny Olbrzym | 6 | Cmentarzysko Mamutów (pole szkieletów, łuk z kłów nad drogą) | wywiany płaskowyż, cienki śnieg z łatami zmarzniętej ziemi i żwiru, obóz łowiecki olbrzymów (namioty ze skór na kościach, 15-stopowe włócznie, suszarnia, stos czaszek, dół-pułapka, dym), głazy narzutowe z sierścią, żerowiska, zamiecie, **wejście: Zamarznięta Twierdza** (brama połknięta przez jęzor lodowca) |
 | Ruiny Smoczej Świątyni / Dragon Temple Ruins ⛁ | 85–95 | Smoczy Pomiot, Zamarznięty Rycerz | 7 | Smocze Schody (schody procesyjne na tarasy z posągami smoków) | trzy tarasy ze ścianami oporowymi, sanktuarium bez dachu z kolumnadą w lodzie i kolosem smoka (oczy świecą nocą), ołtarze ze złotem w bryłach lodu, chorągwie kultu (granat i złoto), kosze niebieskiego ognia, zbroje poległych, **wejście: Serce Lodowca** (rozpadlina w czole wielkiego lodowca, kryształy w głębi) |
-| Lodowa Strażnica / Ice Watch ⚡ | 88–95 | Zamarznięty Rycerz, Lodowy Żywiołak | 5 | brama w soplach jak w kratach i oblodzony donżon | mury z blankami i 4 wieże pod skorupą lodu, zamarznięci wartownicy, chorągwie zamarznięte w pół łopotu, stojaki z bronią w lodzie, kryształy rozsadzające mury, strzelnice świecą nocą, droga patrolowa z pochodniami niebieskiego ognia |
+| Lodowa Strażnica / Ice Watch ⚡ | 88–100 | Zamarznięty Rycerz, Lodowy Żywiołak | 5 | brama w soplach jak w kratach i oblodzony donżon | mury z blankami i 4 wieże pod skorupą lodu, zamarznięci wartownicy, chorągwie zamarznięte w pół łopotu, stojaki z bronią w lodzie, kryształy rozsadzające mury, strzelnice świecą nocą, droga patrolowa z pochodniami niebieskiego ognia |
 | Iglica Wyrmów / Wyrm Spire | 94–100 | Wyrm Szronu, Smoczy Pomiot | 5 | Szkielet Wyrma (kręgosłup wokół skały, żebra nad Szlakiem Kości, czaszka na półce) | najwyższy róg krainy z pióropuszem śniegu, płaskowyż z lodowymi kolcami, gęsta zamieć, nory wyrmów w lodowych skarpach, zrzucone łuski, obelisk kultu z chorągwią |
 
 ### Questy poboczne Szepczących Łąk (S27)
@@ -337,13 +337,13 @@ W każdej: 2–3 rodzaje zwykłych potworów, **2 rodzaje Elit** (3–5 grup po 
 | Opuszczona Kopalnia / Abandoned Mine | 46–56 | Ork Popiołu, Hiena Pustkowi, Sęp Popiołu | Ork Berserker, Hiena Śmiechu | Wódz Popiołu | Srebro, Mithril | krasnoludzka kopalnia zajęta przez orków (S50): tory prowadzą w głąb, Nadszybie z barykadą z wózków, Hala Wyciągu z wieżą i klatką wiszącą krzywo w szybie, Obóz w Komorze Pomp z kołem pompy i namiotami, **Sala Wodza** z tronem z wózka przed świecącą żyłą mithrilu i szybem sępów, Psiarnia przy przebiciu do magmy |
 | Leże Wywerny / Wyvern Lair | 56–63 | Wywerna, Ognisty Chochlik, Skorpion Pustyni | Wywerna Popiołu, Skorpion Królewski | Królowa Wywern | Srebro, Mithril | wulkaniczna jaskinia otwarta do nieba (S50): Osmalona Paszcza z pękniętym jajem, Kominy Chochlików z jeziorkiem lawy i fumarolą, Piaskowe Gniazda ze strugą piasku przez otwór i norami skorpionów, Grzędy Wywern z wielkim otworem i gniazdami na półkach, Spiżarnia z rozbitym wozem i świecącą szczeliną, **Gniazdo Królowej**: świecące jaja na kopcu w kręgu lawy pod kominem |
 | Kuźnia Głębin / Deepforge | 63–70 | Krasnolud Renegat, Golem Magmowy, Kowal Płomieni | ⚑ Krasnolud Weteran, Golem Lawy | Pierwszy Kowal / Serce Wulkanu | Mithril, Adamantyt · **loch Azgora (70)** | krasnoludzka kuźnia zajęta przez renegatów (S50): Wrota Głębin z klęczącymi królami i błękitnymi runami, **Wielka Kuźnia** (ośmiokątna hala, 4 zatoki kuźni, posągi królów ze skutymi twarzami, Wielki Tygiel na łańcuchach), mosty nad Rzeką Ognia w kanionach, Gardziel Magmy z jeziorem lawy i golemami, Huta z kaskadą metalu do form, Odlewnia Golemów, Zbrojownia ze skrzyniami broni dla smoka, **Serce Kuźni** (kula magmy w klatce z łańcuchów), Przedsionek z płonącym znakiem Azgora |
-| Lodowa Grota / Ice Grotto | 74–83 | Yeti, Lodowy Wilk, Harpia Szczytów | Yeti Starszy, Wilk Zamieci | Król Gór | Mithril, Adamantyt | lodowe nory yeti w lodowcu (S51): Paszcza Sopli z porzuconym obozem traperów i tlącą się latarnią, **Sala Lodospadów** (trzy świecące zamarznięte wodospady, przerębel yeti), **Komin Harpii** (snop księżyca ze śniegiem, gniazda harpii na półkach z linami wspinaczy), Leże Króla Gór z tronem z kłów mamuta i lodowym oknem z zamarzniętym mamutem, Wilcze Legowisko z norami |
-| Zamarznięta Twierdza / Frozen Hold | 83–92 | Zamarznięty Rycerz, Mroźny Olbrzym, Lodowy Żywiołak | Rycerz Lodowej Straży, Olbrzym Lodowca | Komtur Wiecznej Zimy | Mithril, Adamantyt | twierdza zakonu połknięta przez lodowiec (S51): Brama pod Lodem z zamarzniętą kratą i niebieskimi pochodniami, **Wyłom Olbrzymów** (lodowiec wlewa się przez mur, ognisko olbrzymów z ław), Dziedziniec pod Lodowcem z pulsującym Kwiatem Szronu, Kaplica z mieczem w lodzie i lodowymi witrażami, Koszary, **Komnata Komtura** z wysokim krzesłem i Ścianą Poległych |
+| Lodowa Grota / Ice Grotto | 71–83 (S94) | Yeti, Lodowy Wilk, Harpia Szczytów | Yeti Starszy, Wilk Zamieci | Król Gór | Mithril, Adamantyt | lodowe nory yeti w lodowcu (S51): Paszcza Sopli z porzuconym obozem traperów i tlącą się latarnią, **Sala Lodospadów** (trzy świecące zamarznięte wodospady, przerębel yeti), **Komin Harpii** (snop księżyca ze śniegiem, gniazda harpii na półkach z linami wspinaczy), Leże Króla Gór z tronem z kłów mamuta i lodowym oknem z zamarzniętym mamutem, Wilcze Legowisko z norami |
+| Zamarznięta Twierdza / Frozen Hold | 83–92 (Rycerz od 83., S94) | Zamarznięty Rycerz, Mroźny Olbrzym, Lodowy Żywiołak | Rycerz Lodowej Straży, Olbrzym Lodowca | Komtur Wiecznej Zimy | Mithril, Adamantyt | twierdza zakonu połknięta przez lodowiec (S51): Brama pod Lodem z zamarzniętą kratą i niebieskimi pochodniami, **Wyłom Olbrzymów** (lodowiec wlewa się przez mur, ognisko olbrzymów z ław), Dziedziniec pod Lodowcem z pulsującym Kwiatem Szronu, Kaplica z mieczem w lodzie i lodowymi witrażami, Koszary, **Komnata Komtura** z wysokim krzesłem i Ścianą Poległych |
 | Serce Lodowca / Glacier Heart | 92–100 | Kryształowy Strażnik, Młody Smok Lodu, Wyrm Szronu | ⚑ Kryształowy Obrońca, Smok Lodu | Starszy Smok Lodu / Kryształowy Tytan | Adamantyt, Mithril · **loch Vaelgratha (100)** | wnętrze lodowca, gdzie śpią smoki (S51): prosta Droga Smoka od Rozpadliny ze szczeliną nieba do czerwonej bramy, kryształy pulsują jak bijące serce, Kryształowa Hala z czterema kolosalnymi kryształami, Wylęgarnia z jajami, Lodowe Organy, Nory Wyrmów, Skarbiec Lodu, **Smocza Pieczara** pod żebrami szkieletu smoka, Przedsionek Pazurów ze śladami Vaelgratha |
 
 ## 5. Bossy
 
-| Boss | Poziom | Gdzie | Unikaty (25% szansy na jeden z nich) |
+| Boss | Poziom | Gdzie | Mityki nazwane (część osobistych Mityków, §6.1) |
 |---|---|---|---|
 | Grimrok, Wódz Goblinów | 20 | Jaskinia Mchów → Komnata Grimroka (S48: płaska arena z ubitej ziemi pod kopułą, 10 totemów wojennych z pochodniami, tron ze złomu pod czaszką niedźwiedzia na podeście, galerie z bębnami) | Rozłupywacz Grimroka (topór 1H), Kieł Wodza (pierścień), Totem Plemienia (talizman) |
 | Morvane, Królowa Krypt | 45 | Krypta Zapomnianych → Grobowiec Morvane (S49: czarna posadzka z mozaiką, sarkofagi w arkadach pod nieosiągalną galerią, kosze z upiornym płomieniem, absyda z pustym sarkofagiem i posągiem młodej królowej) | Całun Królowej (zbroja lekka), Berło Krypt (berło), Łuk Zawodzących Cieni (łuk) |
@@ -355,35 +355,45 @@ Meteor pod każdym graczem co 18 s (złagodzony: ok. 54% HP Maga na minutę), w 
 dystansu) i lawa poza kurczącym się kręgiem (tick ok. 20% HP Maga); fale tarczy ognistych golemów 58 / 59. Walka na
 4–6 minut dla 3–5 graczy L69, do wygrania bez leczącego (na miksturach).
 
-Raz dziennie na postać, grupa 1–5, jedna grupa naraz na serwerze (DESIGN §16). Elita II ma **2%** szansy na unikat bossa swojego regionu.
+S94 (Vaelgrath): `hpMul` 1,3, słaby zwykły cios (ok. 10% HP Maga L100), Zamieć pod każdym graczem co 16 s w fazach 2–3
+(złagodzona: ok. 34% HP Maga na minutę), w 3. fazie Lodowy Pierścień (65% HP Maga z dystansu) i burza z dala od
+koksowników (tick ok. 38% HP Maga); na początku fazy 2 lot nad falą tarczy smoczych pomiotów (86 / 87): smok nietykalny
+do końca lotu i do upadku fali. Walka na 4–6 minut dla 3–5 graczy L99, do wygrania bez leczącego. Osobisty Mityk u
+Vaelgratha rzadszy: 0,3% + 1 pkt. proc. na zabicie tego dnia (średnio ok. 77 zabić, u innych bossów 50).
+
+3 próby dziennie na postać (`Config.Boss.dailyRuns`; porażka też zużywa próbę, FIX 2026-10-10), grupa 1–5, jedna grupa
+naraz na serwerze (DESIGN §16). Każdy zwycięzca dostaje jeden przedmiot osobisty (FIX 2026-10-09).
 
 ## 6. Dropy
 
-### 6.1 Przedmioty (po S18)
+### 6.1 Przedmioty (po S30, `Rarities.dropWeights`)
 
-| | Zwykły potwór | Elita | Elita II | Boss |
+| | Zwykły potwór | Elita | Elita II | Boss (każdy zwycięzca) |
 |---|---|---|---|---|
-| Szansa na przedmiot | 20% | 75% (+25% na drugi) | 100%, 2–3 przedmioty | 3–4 gwarantowane (+1 na gracza ponad 3) |
-| Zwykły | 72 | 45 | 20 | 0 |
-| Niezwykły | 20 | 30 | 30 | 10 |
-| Rzadki | 6.5 | 17 | 30 | 35 |
-| Epicki | 1.4 | 7 | 15 | 38 |
-| **Legendarny** | **0.1** | **1** | **5** | **17** |
+| Szansa na przedmiot | 20% | 75% (+25% na drugi) | 100%, 2–3 przedmioty | 1 przedmiot osobisty (FIX 2026-10-09) |
+| Zwykły | 70 | 45 | – | – |
+| Unikatowy | 30 | 49 | 45 | 35 |
+| Heroiczny | – | 6 | 50 | 65 |
+| **Legendarny** | – | – | **5** | 6% + 1 pkt. proc. za zabicie dziś |
+| **Mityczny** | – | – | – | 1% + 1 pkt. proc. (Vaelgrath 0,3%) |
 
-- Poziom przedmiotu = poziom potwora ±2; statystyki rosną z każdym poziomem (S18).
+- Wagi Unikatu i Heroika potworów mnoży `dropFactor` regionu (Bór 0,85, Pustkowia 0,9, Szczyty 0,9; Zwykły przejmuje
+  resztę). Poziom przedmiotu = poziom bazowy potwora (bez dodatku Elity) minus 0–2 (`ItemRoll.dropLevelRange`), nigdy
+  ponad poziom spawnera; statystyki rosną z każdym poziomem (S18).
 - Slot: broń ok. 30%, druga ręka 10%, pierścień 12%, hełm/zbroja 10%, rękawice/buty 9%, naszyjnik 8%, talizman 6% (wagi w `LootTables`).
 - Preferencja klasy zabójcy 80%: częściej wypada przedmiot dla twojej klasy.
 - Bonus dropu (błogosławieństwo Fortuny, gildia Szczęście, bonusy z przedmiotów) mnoży szansę na przedmiot.
-- Szansa na legendę: zwykły potwór ok. 1 na 5 000 zabójstw, Elita ok. 1 na 100, Elita II ok. 1 na 8, boss: przynajmniej jedna legenda w ok. 50% zabójstw (bez bonusów dropu).
+- Legenda: tylko z Elity II (ok. 1 na 8 zabić) i z przedmiotu osobistego bossa; Mityk tylko od bossa (zawsze dla klasy
+  zwycięzcy, S87).
 
 ### 6.2 Materiały
 
 | Źródło | Drop |
 |---|---|
 | Każdy potwór regionu 1 / 2 / 3 / 4 | Pył Esencji 12 / 14 / 16 / 18% (1–4 szt.), zioło regionu 4% |
-| Każdy potwór | Część potwora (tabela §2) 30%, 1–2 szt. |
+| Każdy potwór | Część potwora (tabela §2) 30%, 1–2 szt. (S92–S94: każdy rodzaj Boru, Pustkowi i Szczytów ma część) |
 | Elita (dodatkowo) | Odłamek Esencji 25%, Pył Esencji 50% (2–4) |
-| Elita II (dodatkowo) | Odłamek Esencji 80% (1–3), Kryształ Esencji 30%, Zwój Ochrony 8%, unikat bossa regionu 2% |
+| Elita II (dodatkowo) | Odłamek Esencji 80% (1–3), Kryształ Esencji 30%, Zwój Ochrony 8% |
 | Grimrok | Odłamek 100% (2–4), Kryształ 50%, Rdzeń Legendy 10%, Zwój Ochrony 25%, Zwój Rozwiązania 8% |
 | Morvane | Odłamek 100% (3–5), Kryształ 80% (1–2), Rdzeń Legendy 15%, Zwój Ochrony 30%, Zwój Rozwiązania 10% |
 | Azgor | Kryształ 100% (2–3), Rdzeń Legendy 20%, Zwój Ochrony 35% (1–2), Zwój Rozwiązania 12% |

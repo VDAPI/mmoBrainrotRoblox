@@ -96,13 +96,13 @@ T.describe("S87: region tables", function()
 		T.expect(s1).toBe(0)
 		T.expect(p1 > 0).toBe(true)
 		-- S91: the Meadows 0.3 (fewer Elite pairs on 1-20); S92: the Dark Forest 0.3; S93: the Scorched Wastes 0.25;
-		-- the region 4 stays neutral until S94
+		-- S94: the Frost Peaks 0.12 (one pair group per cave on the real spawners)
 		T.expect(AreaSpawns.cave(cave))
 			.toEqual(AreaSpawns.cave(cave, { pairChance = LevelCurves.elitePairChance(cave.region) }))
 		T.expect(LevelCurves.elitePairChance("meadows")).toBe(0.3)
 		T.expect(LevelCurves.elitePairChance("duskwood")).toBe(0.3)
 		T.expect(LevelCurves.elitePairChance("ashen")).toBe(0.25)
-		T.expect(LevelCurves.elitePairChance("frostpeak")).toBe(0.5)
+		T.expect(LevelCurves.elitePairChance("frostpeak")).toBe(0.12)
 	end)
 
 	T.it("dropFactor 1 keeps the table itself; 0.5 halves Unique and Heroic, Common takes the rest", function()

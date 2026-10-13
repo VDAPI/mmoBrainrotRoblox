@@ -1896,7 +1896,7 @@ function BalanceTables.tablesPaths(): { Table }
 				row(label, {
 					{ r.value, "2", r.low, r.high },
 					{ if r.pass then 1 else 0 },
-					{ if r.asserted and SkillModel.PATHS_TUNED[r.classId] then 1 else 0 },
+					{ if r.asserted then 1 else 0 },
 					{ r.project or 0 / 0, "2" },
 					{ if r.project then r.value / r.project - 1 else 0 / 0, "%", -0.1, 0.1 },
 					{ src, "1" },
@@ -2660,7 +2660,7 @@ BalanceTables.ITEM_BANDS = {
 	{
 		band = "S84-loot",
 		title = "Łup i szczęście (S84)",
-		intro = "Drop na godzinę przez `AreaRates.itemsPerKill`, `Logic/Luck` i udział przedmiotów dla klasy (`Balance.usableShare`, odwzorowanie `Loot.pickItem`) w tempie S83, z profilami szczęścia K0–K3 z Fortuną i bez (D5: K0 bez Fortuny, asertują S92–S94 przez `TUNED`; szczęście S88), boss z Fortuną, luki poziomu przedmiotów i trwałość.",
+		intro = "Drop na godzinę przez `AreaRates.itemsPerKill`, `Logic/Luck` i udział przedmiotów dla klasy (`Balance.usableShare`, odwzorowanie `Loot.pickItem`) w tempie S83, z profilami szczęścia K0–K3 z Fortuną i bez (D5: K0 bez Fortuny, asertują S92–S94 w bloku regionów; szczęście S88), boss z Fortuną, luki poziomu przedmiotów i trwałość.",
 	},
 	{
 		band = "S84-defence",

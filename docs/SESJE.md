@@ -6041,3 +6041,177 @@ Pliki: `src/shared/Data/{Bosses,BossTuning,LevelCurves,LootTables,Maps,Monsters,
 bossschedule.spec,globalbalance.spec,ashen.spec}.luau`, `tests/fixtures/{caveRooms.luau,balance_items.json,
 balance_paths.json}`, `tools/{balance_report,balance_reasons}.luau`, `tools/balance_before.json`,
 `docs/{BALANS,DESIGN,SWIAT,DECYZJE,SESJE,PROGRESS,PRZEDMIOTY}.md`, `wiki/src/data/*.json`, `wiki/public/img/maps/ashen.svg`.
+
+### S94: Balans poziomów 70–100: Lodowe Szczyty, Vaelgrath i endgame
+
+Start na `ef4fb39` (S93): `scripts/check` zielony (98 plików, 4851 testów), `TUNED.duskwood` i `TUNED.ashen` = `true`.
+Przed migawką `Data/Crafting` (tylko `materials`) i `Data/Maps` (tylko `min` / `max` / `minLevel` / `maxLevel`) przeszły
+z `NOT_BALANCE` do `BALANCE_MODULES` (S94 zmienia w nich liczby); potem migawka `snapshot S94`
+(`tools/balance_before.json`). Zrzut „wszystko do 70.” (`build/s94_le70.luau`: umiejętności na rangach z `rankLevel`
+≤ 70 i koszty z `unlock` ≤ 70, krzywe i `expToNext` 1–70, rodzaje regionów 1–3 ze statystykami wariantów i `kindReward`,
+Grimrok, Morvane, Azgor i ich łup, tabele łupu rodzajów 1–3, zadania poniżej 70, spawnery map i jaskiń regionów 1–3,
+przepisy alchemika ≤ 69 i kowala ≤ 70, plecaki do 130, mikstury jakości 1–4, sklepy bez wpisów od 70.). Tabela startowa:
+`build/s94_t_start.txt` (wiersze `Balance.targetsS94` i regionu przy `TUNED.frostpeak = false`). Model a szkic
+(`3f935c1`): Vaelgrath 4,6–4,8 min zamiast 1,7–1,9 (krzywa potworów S87, obrona smoka S88, fale tarczy S92 i lot w
+`bossFight`), pojedyncze Elity 24 z 54 walk W / H / M w paśmie (44%) zamiast 1/36, tempo 70 → 100 40,9 h zamiast 28,4 h
+(krzywa S87, model okna S91), Rycerz solo Elity II 2,8 zamiast 1,54–1,57 (pancerz nieumarłych S88 wydłuża walkę);
+błędu odwzorowania serwera nie znaleziono. Jedna poprawka modelu (nie serwera): okno ostatniego zadania głównego bez
+bossa (`glacier`, 92) płaciło tylko 92., więc h(92) = 0 i h(93) / h(92) = 1,6·10⁹; od S94 okno sięga 99. (jak opis okien
+S91), DECYZJE.
+
+Co zrobiono:
+- **Model (B):** `Balance.HAZARDS.vaelgrath.every` czytane ze `STORM_TICK` skryptu (mnożnik już od S87 z
+  `Data/BossTuning`, lot `FLIGHT_SECONDS` w `bossFight` od S83 jako `max(lot, fala)`); `Balance.expectedMythicKills`,
+  `Balance.protectedSet`, `Balance.targetsS94` / `S94` / `S94_REPORT`, `Balance.targetsCross`; `partUses`,
+  `protectedFlow`, `upgradePlan`, `shieldWaves`, `bossNoSupport`, `healerVsBoss` tylko wołane.
+- **Kod gry:** naprawa lotu Vaelgratha (C7) w `BossScripts/vaelgrath.luau` (`flightUntil`, `#boss.shielded > 0`, nagłówek
+  i komentarz); stałe skryptu bez zmian. `Logic/Loot` bez zmian (D1: 0% nieużytecznych Mityków dla 4 klas).
+- **Dane:** Vaelgrath (`hpMul` 1,3, `atkMul` 0,38, ataki 3,6 / 3,7 / 4,1 / 4,4 / 6,2, fale 86 / 87), burza 3,9, Mityk
+  Vaelgratha 0,003; Lodowa Grota od 71., yeti 71–82, Rycerz 83–100, młody smok 92–100, Zbocza Yeti 71–80, Lodowa
+  Strażnica 88–100; `hpMul` / `atkMul` yeti, olbrzyma, strażnika i młodego smoka; `rewardMul` sześciu rodzajów;
+  `elitePairChance.frostpeak` 0,12, `dropFactor.frostpeak` 0,9; Potężna 1800; plecaki 185 000 i 285 000; rudy mithrilu i
+  adamantytu u kowala; pięć części; Futro Yeti i Mroźna Łuska w pancerzach progów 75–100; eliksir lodu od 70. Kotwice 100
+  wszystkich krzywych bez zmian. Liczby i powody w `tools/balance_reasons.luau` (S94) i DECYZJE.
+- **Testy:** bramka `TUNED` i przełączniki `S32_ASSERT`, `GLOBAL_ASSERT`, `FIXTURE_ASSERT`, `PATHS_TUNED` usunięte
+  (`balance.spec`, `balance1_20.spec`, `SkillModel`, `BalanceTables`, raport); blok regionów asertuje
+  `Balance.targetsS94` (wiersze z `report` drukuje), nowy blok „Balance 1-100: cross rows (S94)” i strażniki na
+  poziomach kontrolnych 30–100. `rarities.spec`: Mityk Vaelgratha 0,003 (inni 0,01) i szanse dnia; `bossschedule.spec`:
+  burza 3,9, `STORM_TICK` / `FLIGHT_SECONDS` z tekstu, osłona `flightUntil` i `#boss.shielded > 0`; `frostpeak.spec`
+  (BRIEF: Zbocza 71–80, Strażnica 88–100); `globalbalance.spec` (para Szczytów 0,12); T1 Fechtunku na 70 / 100 w
+  raporcie (sytuacja boss S84 to Vaelgrath z falami 86 / 87). `tests/fixtures/caveRooms.luau` odświeżony: różnica tylko
+  w `members` / `count` czterech spawnerów `frostpeak_*_elite_<n>`. Fixture'y `balance_items.json` i
+  `balance_paths.json` wygenerowane od nowa. `skills.spec` „every skill is maxed by level 95” liczy według `rankLevel`
+  i obejmuje umiejętności ścieżek (`SkillData.byId`); ranga 10 Gniewu Żywiołów na 84. przypięta (bez zmian). Po
+  przeglądzie: Gniew Żywiołów 10A promień +4 → −5 (H4, DECYZJE, ROZWOJ 12.4, teksty `bp10` PL i EN), reguła strażników
+  S92–S94 drukuje tylko wiersze ponad limitem (w limicie = asercja), powody S93 bez „dla S94”, DESIGN §16 bez wspólnych
+  przedmiotów z bossa.
+- **Raport:** `docs/BALANS.md` z tabelą „Cele 1–100” i „Otwarte cele 1–100” na początku, pełną księgą S83–S94
+  (`tools/balance_base.json` = migawka S83, opcja `--baseline`), pasmami 1–20 / 20–45 / 45–70 / 70–100 bez „raport, nie
+  strojone” i sekcją S94 (start → teraz, cele S94, strażniki, tempo 69 → 100 i pasma 1 → 100, premia za klasy, mikstury
+  łańcuchowe, złoto endgame'u z kompletem +9, gildią, błogosławieństwem i kosztem wytwarzania, D5 ze szczęściem,
+  obozowanie przy Elicie II, pary Elit, Vaelgrath tylko raport, przełomy A / B 71–95, kotwice 100).
+- **Wiki:** `npm run data` (wartości: obszary, bossy, jaskinie, wytwarzanie, przedmioty, mapy, potwory, postęp,
+  przepisy, wyszukiwarka, sklepy, mapa `frostpeak.svg`, `docs/PRZEDMIOTY.md`; `wiki_keys_diff` 0), tekst fazy 2
+  Vaelgratha (PL, EN); `npm test` (132 testy) i `npm run build` zielone.
+- **Zrzut A4:** na końcu jedna różnica: `recipe:elixir_resIce` wypada ze zrzutu (poziom 30 → 70), zamierzona (K3). Ścisły
+  `balance1_20.spec` bez wpisów (0 różnic), bloki `duskwood` i `ashen` zielone.
+
+Cele (start S94 → koniec):
+
+| cel | start | koniec | próg |
+|---|---|---|---|
+| Vaelgrath 3 / 4 / 5 graczy L99 (z węzłami) | 4,58 / 4,82 / 4,67 (4,01–4,25) min | 4,78 / 5,12 / 5,03 (4,19–4,55) | 4–6 |
+| Vaelgrath: największy cios Maga L100 / L98 | 130% / 132% | 65% / 67% | ≤ 70% / < 100% |
+| Vaelgrath: zwykły cios Maga L100 | 33% | 10% | 7–12% |
+| Vaelgrath: tank (model S32) / bossFight 3–5 | 1063% / 849–880%/min | 345% / 369–371%/min | ≤ 350% / raport |
+| Vaelgrath: zamieć na minutę / tick burzy (HP Maga L100) | 68% / 47% | 34% / 38% | ≤ 60% / 30–45% |
+| Vaelgrath: fala tarczy na członka (3 / 4 / 5) | 291 / 198 / 191% | 95 / 65 / 62% | ≤ 110% |
+| Vaelgrath: G11 (najmniejsze tempo; pierścień w fazie 3) | 53% | 53% | ≥ 50% |
+| Vaelgrath bez wsparcia 3 / 4 / 5: s, podtrzymanie, cios | 89–90 s, 0,63, 117% | 101–103 s, 0,26, 59% | ≤ 480, ≤ 1,0, ≤ 100% |
+| Vaelgrath: T-SK6 | 5,98 | 15,85 | 1,0–2,0 (niedokończone, raport, DECYZJE) |
+| Vaelgrath: Mityki nieużyteczne (4 klasy) / zabicia do Mityka ÷ Grimrok | 0% / 1,00 | 0% / 1,54 (77 / 50) | 0% / 1,4–1,6 |
+| Elity pojedyncze w paśmie / spotkanie W / M (najgorsze) | 44% / 1,85 / 2,11 | 94% / 1,05 / 1,20 | ≥ 72% / ≤ 1,10 / ≤ 1,25 |
+| Elita II solo / 2 / 3 graczy | 2,79–4,52 / 1,11–1,93 / 0,75–1,27 | 2,34–3,03 / 0,91–1,30 / 0,63–0,86 | ≥ 1,8 / ≤ 1,5 / 0,6–1,0 |
+| ilvl Elit 71–100 / expowiska ≥ 2 na 71–100 | 29/30 / 22/30 | 30/30 / 30/30 | każdy |
+| Rodzaje EXP/s ÷ zwykły / żywiołak HP/EXP ÷ średnia | 0,70–1,04 / 1,11 | 0,92–1,04 / 1,20 | 0,85–1,20 / ≤ 1,25 |
+| Tempo 70 → 100 / h(99) / krok / 1 → 100 | 40,89 h / 1,66 / (h(92) = 0) / 84,05 h | 40,97 h / 1,47 / 1,05 / 84,13 h | 34,9–47,2 / 1,36–1,84 / ≤ 1,30 / 69,7–94,3 |
+| T-SK4 Maga (4 pasma S90) / T-SK5 na 75–100 | w pasmach / 0,31–0,35 | bez zmian | pasma S90 / 0,25–0,35 |
+| Strażniki T-SK ponad limitem, poza regułą S92 / S93 | 297 | 0 asertowanych; 297 w raporcie po grupach (DECYZJE) | limity D1 |
+| D5 K0: Unikaty / Heroiki na h | 2,81–4,19 / 0,63–0,87 | 2,53–3,77 / 0,77–0,94 | 2–4 / 0,5–1,5 |
+| +1…+3 / plecak 160 / 200 (poziomy dochodu) | 0,63–0,84 / 21,7 / 33,8 | 0,63–0,81 / 8,0 / 8,0 | ≤ 1,05 / 5–12 |
+| Mikstury łańcuchowe ÷ dochód 71–99 | 0,38–1,45 | 0,33–1,04 | 0,15–0,30 (górna raport) |
+| Złoto za 1 HP Duża / Wielka / Potężna | 0,167 / 0,175 / 0,30 | 0,167 / 0,175 / 0,18 | rośnie |
+| Rudy u kowala / komplet +9 (h, Wojownik L99) | brak / 399 | 70 / 90; 366 | 70 / 90; 150–300 (raport) |
+| Części: rodzaje / części w przepisach / futro i łuska od 70 / eliksir lodu | 7/12 / 4/5 / 0/2 / 30 | 12/12 / 5/5 / 2/2 / 70 | wszystkie / 70 |
+| `support.elites` na 80 / 95 | 0/10 | 0/10 (raport) | 10/10 |
+| Wiersze przekrojowe 1–100 (krok 20–99, expowiska i ilvl Elit 21–100) | – | 240/240 | wszystkie |
+
+Wejście (listy „Dla S92–S94” S84–S91, „Dla S94” S93, `GLOBAL_REPORT_ONLY`, `PATH_TARGETS`, PROGRESS):
+- S84 D5 K0 Szczyty i luka ilvl 71–73: **wykonane** (`dropFactor` 0,9, Grota od 71.); luka Elity II 85–87: **wykonane**
+  (Elita II Twierdzy od 83.); szansa przedmiotu z Elity ucina szczęście: **raport** (D5 ze szczęściem).
+- S85 / S89 / S92 T-SK6 Vaelgratha (4,50 / 6,07 / 7,53 na starych mnożnikach): **niedokończone** (15,9 po cięciu
+  `atkMul`; jak Azgor, decyzja właściciela).
+- S86 strażniki i `targetsG10` na 75–100: **wykonane** (asercje; ponad limitem w raporcie po grupach); przechwyt w modelu
+  bossa (Vaelgrath 114% → 80%): **nieaktualne** (największy cios 65%).
+- S87 kotwice 100: **sprawdzone, bez zmian**; Vaelgrath stare mnożniki i lot zdejmujący nietykalność: **wykonane**;
+  mikstury E2: **raport** (dla właściciela); Elita II solo z miksturami w modelu: **niedokończone** (jak S92–S93).
+- S88 rodzaje opancerzone Szczytów (olbrzym 0,83, strażnik 0,70, Rycerz 0,84): **wykonane** (`rewardMul`); Elita II
+  ×3 graczy za łatwa we `frostpeak_*`, Rycerz solo < 180%: **wykonane** (trio 0,63–0,86, Rycerz 2,79).
+- S89 T-SK3 Strażnika 2,18–2,19 na 70–100: **raport** (≤ 2,2, S89 C1); `support.elites`: **raport**; bez wsparcia:
+  **wykonane** (asercja).
+- S90 T-SK3 bazy Maga: **raport** (tylko raport, S90 I3); Truciciel na bossie: **raport**; dołek Niszczyciela na 70: **bez
+  zmian** (T-SK4 w paśmie).
+- S91 definicje okien, `bossNoSupport`, `healerVsBoss` s92: **użyte**; okno ostatniego zadania: **poprawione** (DECYZJE).
+- S93 „Dla S94”: Elity Kuźni ze spawnerów 69–70: **w paśmie** (pasmo S93 zielone); h(70) / h(69) = 1,00: **bez zmian**;
+  przełomy z rangą 71+: **raport** (tabela R4 71–95); strażniki rzędu 9 na 70 i skoki 70–100: **raport** (dla
+  właściciela); Rdzenie i zwoje a komplet +9: **policzone** (366 h, raport); wnioski z Azgora (pola `raid` /
+  `hazardTick`, fale ok. 13 poziomów pod bossem): **zastosowane**; T-SK2 podstawy Łowcy na 65 i T-SK3 Kłusownika na 65:
+  **zostają w raporcie S93** (pasmo 46–70).
+- `GLOBAL_REPORT_ONLY`: brak wpisów S94; G11 Vaelgratha asertowane (wiersze `bossCadence`).
+- `PATH_TARGETS` z `report = "S92–S94"`: `healer.tsk6` i `support.elites` **raport z powodem S94** (wiersze regionów),
+  `all.tsk3` **tylko raport** (asertują strażniki regionów).
+- PROGRESS: „Region 4 niestrojony”, „stare mnożniki Vaelgratha”, „lot zdejmuje nietykalność”, „Rodzaje S19 regionu 4 bez
+  części”: **wykonane**; „Questy: EXP z nagród dobrany wzorem”: **rozstrzygnięte** (zadania stroiły S91–S93, tempo 1 →
+  100 w celu; usunięte z PROGRESS).
+
+Dla właściciela:
+- Drabina Mityka (plan 8.4): domyślnie wolniejsza u Vaelgratha, `mythicChance` 0,003: ok. 77 zabić (ok. 26 dni) do
+  pierwszego Mityka wobec 50 (ok. 17 dni) u pozostałych bossów; wspólna szansa = `BOSS_ROLL.mythicChance` w
+  `LootTables.bosses.vaelgrath` (jedna liczba).
+- T-SK6 Vaelgratha 15,9 (jak Azgor 12,8): leczenie od maks. HP celu przy tanku 3,45 maks. HP na minutę; do wyboru jak w
+  S93 (T-SK6 bez nadleczenia, słabsze leczenie od maks. HP po 45., inny cel T-SK6 dla bossów 45+).
+- Komplet +9 z ochroną 366 h (cel 150–300): ok. 83% kosztu to złoto ulepszeń (esencje 12%, zwoje 5%); propozycja `Config.Upgrade.goldHigh`
+  20 → ok. 15 (globalne, rusza też G9) albo cena zwoju ochrony zależna od poziomu (nowe pole przepisu i kod w
+  `AlchemyService`).
+- Mikstury łańcuchowe 33–104% dochodu na 71–99 (Kapłan najwięcej): Potężna 1800 to dół kolejności cen; ceny 1–4 i
+  `potionCooldown` globalne.
+- Obozowanie przy Elicie II (Serce Lodowca, 95.): ok. 0,3 Legendarnego na godzinę na jaskinię wobec ok. 0,8 na dobę z
+  czterech bossów (`Rarities` i `Combat.elite2Respawn*` globalne).
+- Ścieżki wsparcia i tanka wygrywają Elitę II solo z miksturami także na 80 / 95 (HP na koniec 0,46–1,00).
+- Strażniki planu D1 na 71–100: 297 wierszy ponad limitem (grupy w DECYZJE S94: rośnie z poziomem klasy, Furia, Strażnik
+  T-SK3, skoki rzędów 9–11 Chorążego, przekroczenia w paśmie); który kontrakt obowiązuje w paśmie (jak S92 i S93).
+- T1 Fechtunku (S88) na 70 / 100: sytuacja boss S84 na 70+ to Vaelgrath z falami 86 / 87; propozycja: Azgor jako boss
+  sytuacji na 70 (zmiana modelu S84).
+- Przełomy A / B w 71–95: tabela R4 w `docs/BALANS.md` (sekcja S94); jedyna zmiana to Gniew Żywiołów 10A (H4):
+  promień +4 → −5 (R4 −0,04 → 0,21, 10B 0,18; buildy Niszczyciela biorą 10B), reszta bez zmian (blok ścieżek zielony).
+- Zamieć: wybrany wariant (a) złagodzony (34% HP Maga L100 na minutę); „sprawdzian leczenia” nie poprawiłby T-SK6.
+- Wiersze 1–20 w trybie raportu: bez zmian (S91; `docs/BALANS.md` → „Otwarte cele 1–100”).
+- `GLOBAL_REPORT_ONLY`, które zostają (propozycje, liczby niepoliczone):
+  - G7 (S88): Heroik Łowcy z cechami 0,257–0,273 na 25–100 (pasmo 0,15–0,25): wyjątek Łowcy w D1 jak Legenda ≤ 43%
+    albo słabsze cechy łuku Heroika (`Data/ItemTraits`).
+  - G8 „bez cech” (S88, S91): Mityki topora 0,953–0,969, kostury Mityk +9 0,966–0,970, Legendy dwuręczne na 20
+    1,036–1,039 (pasmo 0,97–1,035): mnożnik dwuręczny także na liniach mitycznych i mniejszy na legendarnych na 20
+    (`Data/Rarities`).
+  - G8 „z cechami” (S88): jedna cecha broni dwuręcznej wobec dwóch (Berserker 0,90–0,97, kostury 0,85–0,96, Święty
+    Kostur 1,15–3,66): wyjątek E6 dla dwuręcznych albo podwojona wartość cechy dwuręcznej (`Data/ItemTraits`).
+  - G8 kostur Kapłana na 20 (S92): 1,040 > 1,035 przy Morvane jako bossie sytuacji S84 na 20: Grimrok jako boss tej
+    sytuacji (zmiana modelu S84, jak propozycja T1 na 70).
+  - G9 (S91, S92): +1…+3 na 20 0,442 < 0,45, +1…+9 z ochroną 10,43 na 20 i 11,36 na 25 (< 12), a na 100 komplet +9
+    366 h (> 300): koszt ulepszeń płaszczej w poziomie, np. `Config.Upgrade.goldLow` 4 → ok. 4,6 razem z `goldHigh`
+    20 → ok. 15 (szacunek z ilorazu 12 / 10,4).
+  - G10 T-SK5 na 20 (S91): 0,221 < 0,25 (rangi Leczenia ≤ 20 pod przypiętą rangą 6, krzywa leczenia 1 na 20): dolna
+    granica T-SK5 na 20 0,22 albo mocniejsze Błogosławione Dłonie (rząd 1, globalne).
+
+Otwarte cele 1–100 (wiersze w trybie raportu; pełna lista po powodach w `docs/BALANS.md` → „Otwarte cele 1–100”):
+- S88: G7 Heroik Łowcy z cechami 0,257–0,273 (25–100), G8 „z cechami” (jedna cecha zamiast dwóch), G8 „bez cech”
+  Mityków topora i kosturów; T1 / T2 z `reportSession` S88–S90.
+- S91: G9 +1…+3 i +1…+9 na 20, G10 T-SK5 na 20, G8 Legend na 20; wiersze S91 1–20 z powodem S90.
+- S92: G8 kostura Kapłana na 20, G9 +1…+9 na 25; region Boru: strażniki ponad limitem, mikstury łańcuchowe, `support.elites`.
+- S93: region Pustkowi: T-SK6 Azgora 12,8 (niedokończone), strażniki (229), mikstury łańcuchowe 46–69, `support.elites`,
+  T-SK2 podstawy Łowcy i T-SK3 Kłusownika na 65; T1 Fechtunku „Dowódcy” na 45.
+- S94: T-SK6 Vaelgratha 15,9 (niedokończone), strażniki 71–100 (297), mikstury łańcuchowe 71–99, komplet +9 366 h,
+  `support.elites` na 80 / 95, T1 Fechtunku na 70 / 100, `PATH_TARGETS` `healer.tsk6` i `support.elites`.
+
+Niedokończone: T-SK6 Vaelgratha (15,9 wobec ≤ 2,5, C6; jak Azgor, decyzja właściciela); Elita II solo z miksturami w
+modelu (E2 S87); Odłamek Magmy w pancerzach progów 50–70 (S93 J4, opcjonalne). Strażniki T-SK na 85. i 95. policzone
+(nie odłożone).
+
+Pliki: `src/server/Entities/BossScripts/vaelgrath.luau`, `src/shared/Data/{Bosses,BossTuning,Crafting,LevelCurves,
+LootTables,Maps,Monsters,Recipes,Shops}.luau`, `src/shared/Data/Areas/{Caves,frostpeak}.luau`,
+`src/shared/Data/Items/{Backpacks,Consumables}.luau`, `tests/{Balance,BalanceTables,SkillModel,balance.spec,
+balance1_20.spec,bossschedule.spec,frostpeak.spec,globalbalance.spec,rarities.spec}.luau`,
+`tests/fixtures/{caveRooms.luau,balance_items.json,balance_paths.json}`, `tools/{balance_report,balance_reasons}.luau`,
+`src/shared/Data/Skills/Mage.luau`, `src/shared/Data/Localization/{pl,en}.luau`, `docs/ROZWOJ.md`,
+`tools/balance_before.json`, `tools/balance_base.json`, `docs/{BALANS,DESIGN,SWIAT,WIKI,DECYZJE,SESJE,PROGRESS,
+PRZEDMIOTY}.md`, `wiki/src/data/*.json`, `wiki/public/img/maps/frostpeak.svg`,
+`wiki/src/content/bosses/{pl,en}/vaelgrath.md`.

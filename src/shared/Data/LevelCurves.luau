@@ -62,11 +62,11 @@ local Data: LevelCurvesData = {
 	-- Neutral until the region sessions (S91 meadows, S92 duskwood, S93 ashen, S94 frostpeak).
 	regions = { "meadows", "duskwood", "ashen", "frostpeak" },
 	-- Chance that a cave Elite group is a pair (AreaSpawns.cave). S92: the Dark Forest 0.3.
-	elitePairChance = { meadows = 0.3, duskwood = 0.3, ashen = 0.25, frostpeak = 0.5 },
+	elitePairChance = { meadows = 0.3, duskwood = 0.3, ashen = 0.25, frostpeak = 0.12 },
 	-- Multiplier of Unique and Heroic drop weights of the region's monsters (Common absorbs the rest). At most 1:
 	-- Elite II tables have no Common weight, so a factor above 1 fails ItemRoll.rarityWeights (globalbalance.spec).
 	-- S92: the Dark Forest 0.85 (2-4 Uniques for the class per hour of grinding, D5). S93: the Scorched Wastes 0.9.
-	dropFactor = { meadows = 1, duskwood = 0.85, ashen = 0.9, frostpeak = 1 },
+	dropFactor = { meadows = 1, duskwood = 0.85, ashen = 0.9, frostpeak = 0.9 },
 }
 
 for _, anchors in Data.curves do
