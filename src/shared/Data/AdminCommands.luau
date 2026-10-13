@@ -351,6 +351,9 @@ cmd("combat", "hook", { str("id"), str("value", true) })
 cmd("quests", "quest", { enum("action", { "set", "complete" }), ref("id", "quest", true) })
 cmd("quests", "daily", { enum("action", { "reroll" }) })
 cmd("quests", "questmarks", {})
+-- S98: weekly contracts and the boss contract; the quest EXP budget multiplier of a level (own level by default)
+cmd("quests", "weekly", { enum("action", { "reroll", "complete" }) })
+cmd("quests", "questbudget", { int("level", 1, 100, true) })
 -- S27: side quests of the caller's character; `arc <id>` hands in everything before the quest in its arc.
 cmd(
 	"quests",

@@ -236,7 +236,7 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 		-- S27: the tracked side quest first.
 		local level = use(State.Value({ "character", "level" })) or 1
 		local focus = use(QuestTrack.Focus)
-		local sideQuest = if focus then Quests.Side.get(focus.id) else nil
+		local sideQuest = if focus then Quests.npcQuest(focus.id) else nil
 		local sideEntry = if focus then SideQuests.activeOf(q)[focus.id] else nil
 		if sideQuest and type(sideEntry) == "table" then
 			line(`◆ {Text.get(use, `quest.{sideQuest.id}.title`)}`, Theme.Colors.GoldBright, 17, Theme.Fonts.BodyBold)

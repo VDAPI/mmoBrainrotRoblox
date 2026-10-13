@@ -1,5 +1,6 @@
 --!strict
--- Horizontal tab strip. The caller renders the content for Fusion.peek(Selected).
+-- Horizontal tab strip. The caller renders the content for Fusion.peek(Selected). S98: `Scroll` puts the strip in a
+-- horizontal ScrollingFrame (many tabs on a phone, e.g. the quest journal's six categories).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -19,9 +20,15 @@ export type Props = {
 	Size: UsedAs<UDim2>?,
 	Position: UsedAs<UDim2>?,
 	LayoutOrder: UsedAs<number>?,
+	Scroll: boolean?, -- S98
 }
 
+-- S98: the thin scroll bar under a scrolling strip
+local BAR = 4
+
 local function Tabs(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instance
+	-- S98: in a scrolling strip the buttons leave room for the scroll bar under them
+	local buttonSize = if props.Scroll then UDim2.new(0, 0, 1, -BAR - 2) else UDim2.fromScale(0, 1)
 	local buttons = {}
 	for index, tab in props.Tabs do
 		local isSelected = scope:Computed(function(use): boolean
@@ -33,7 +40,7 @@ local function Tabs(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instance
 				Name = tab.id,
 				LayoutOrder = index,
 				AutoButtonColor = false,
-				Size = UDim2.fromScale(0, 1),
+				Size = buttonSize,
 				AutomaticSize = Enum.AutomaticSize.X,
 				BackgroundColor3 = scope:Computed(function(use): Color3
 					return if use(isSelected) then Theme.Colors.PanelRaised else Theme.Colors.Panel
@@ -67,6 +74,32 @@ local function Tabs(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instance
 		)
 	end
 
+	local layout = scope:New("UIListLayout")({
+		FillDirection = Enum.FillDirection.Horizontal,
+		SortOrder = Enum.SortOrder.LayoutOrder,
+		Padding = UDim.new(0, Theme.Padding.Small),
+	})
+	if props.Scroll then
+		return scope:New("ScrollingFrame")({
+			Name = "Tabs",
+			Size = props.Size or UDim2.new(1, 0, 0, Theme.Size.ButtonHeightSmall + BAR + 2),
+			Position = props.Position,
+			LayoutOrder = props.LayoutOrder,
+			BackgroundTransparency = 1,
+			BorderSizePixel = 0,
+			CanvasSize = UDim2.new(),
+			AutomaticCanvasSize = Enum.AutomaticSize.X,
+			ScrollingDirection = Enum.ScrollingDirection.X,
+			ScrollBarThickness = BAR,
+			ScrollBarImageColor3 = Theme.Colors.TextMuted,
+			VerticalScrollBarInset = Enum.ScrollBarInset.None,
+			HorizontalScrollBarInset = Enum.ScrollBarInset.ScrollBar,
+			[Children] = {
+				layout,
+				buttons :: any,
+			},
+		})
+	end
 	return scope:New("Frame")({
 		Name = "Tabs",
 		Size = props.Size or UDim2.new(1, 0, 0, Theme.Size.ButtonHeightSmall),
@@ -74,11 +107,7 @@ local function Tabs(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instance
 		LayoutOrder = props.LayoutOrder,
 		BackgroundTransparency = 1,
 		[Children] = {
-			scope:New("UIListLayout")({
-				FillDirection = Enum.FillDirection.Horizontal,
-				SortOrder = Enum.SortOrder.LayoutOrder,
-				Padding = UDim.new(0, Theme.Padding.Small),
-			}),
+			layout,
 			buttons :: any,
 		},
 	})

@@ -94,8 +94,21 @@ export type CharacterData = {
 		main: { id: string, progress: { number } }?,
 		mainDone: number,
 		daily: { day: number, list: { any }, rerolls: number },
+		-- S98: weekly contracts (week = Logic/Time.weekNumber, list like daily) and the week's boss contract (nil = no
+		-- boss open to the character or the week not rolled yet).
+		weekly: {
+			week: number,
+			list: { any },
+			rerolls: number,
+			boss: { boss: string, progress: number, claimed: boolean }?,
+		},
+		-- S99: hunting contracts in order (Data/Quests/Contracts); done = handed in, active = the one in progress (one
+		-- at a time)
+		contract: { done: number, active: { level: number, progress: { number } }? },
 		-- S27: side quests. active[id] = progress per objective, anchors already used, the rolled reward choice;
 		-- done[id] = true once handed in.
+		-- S98: every quest taken at an NPC (side arcs incl. the S96 stable arc, boss) keyed by id; Data/Quests.npcQuest
+		-- resolves it
 		side: {
 			active: { [string]: SideEntry },
 			done: { [string]: boolean },

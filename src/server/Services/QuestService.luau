@@ -5,6 +5,10 @@
 -- Progress comes from QuestEvents (combat, gathering, fishing, upgrades, …), kills (CombatService credit),
 -- levels, map changes and talking to NPCs. Rewards check the backpack space first. S27: every event also goes to
 -- the side quests (SideQuestService.Handle).
+-- S98 (docs/DESIGN-15.md §3.1): weekly contracts (3 per week from Monday 00:00 UTC, Logic/QuestLogic.weeklyFor) and
+-- the week's boss contract (the highest boss open to the character, `Weekly.bossContract.n` won dungeon runs: only
+-- the "boss" event DungeonService fires after a won run counts, so Config.Boss.dailyRuns always applies), both
+-- collected at the board.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -79,6 +83,44 @@ local function ensureDaily(player: Player)
 	end
 	local list = QuestLogic.dailyFor(player.UserId, char.id, today, char.level)
 	PlayerStateService.Set(player, { "character", "quests", "daily" }, { day = today, list = list, rerolls = 0 })
+end
+
+-- S98: the week's boss contract for the character's level (nil below the first boss's entry level).
+local function bossContract(level: number): { boss: string, progress: number, claimed: boolean }?
+	local bossId = QuestLogic.bossContractFor(level)
+	return if bossId then { boss = bossId, progress = 0, claimed = false } else nil
+end
+
+-- S98: weekly contracts of this week (regenerated on a new week). A character that reaches the first boss's entry
+-- level during the week gets the boss contract at once; once given, its boss stays until the week ends.
+local function ensureWeekly(player: Player)
+	local char = character(player)
+	if not char then
+		return
+	end
+	local week = Time.weekNumber(Clock.now())
+	local weekly: any = char.quests.weekly
+	if type(weekly) ~= "table" or weekly.week ~= week then
+		PlayerStateService.Set(player, { "character", "quests", "weekly" }, {
+			week = week,
+			list = QuestLogic.weeklyFor(player.UserId, char.id, week, char.level),
+			rerolls = 0,
+			boss = bossContract(char.level),
+		})
+		return
+	end
+	if type(weekly.list) ~= "table" or #weekly.list == 0 then
+		local list = QuestLogic.weeklyFor(player.UserId, char.id, week, char.level)
+		if #list > 0 then
+			PlayerStateService.Set(player, { "character", "quests", "weekly", "list" }, list)
+		end
+	end
+	if weekly.boss == nil then
+		local contract = bossContract(char.level)
+		if contract then
+			PlayerStateService.Set(player, { "character", "quests", "weekly", "boss" }, contract)
+		end
+	end
 end
 
 local function canFit(player: Player, items: { { id: string, n: number } }?): boolean
@@ -159,6 +201,41 @@ local function handle(player: Player, kind: string, data: { [string]: any })
 				if value >= entry.objective.n then
 					Net.Fire(player, "Toast", "quest.dailyDone", { title = `@daily.{entry.template}.title` }, "success")
 				end
+			end
+		end
+	end
+	-- S98: weekly contracts and the boss contract
+	local weekly: any = char.quests.weekly
+	if type(weekly) == "table" then
+		for index, entry in weekly.list or {} do
+			if not entry.claimed and entry.progress < entry.objective.n then
+				local add = QuestLogic.amount(entry.objective, kind, data, rng:next())
+				if add > 0 then
+					local value = math.min(entry.objective.n, entry.progress + add)
+					PlayerStateService.Set(
+						player,
+						{ "character", "quests", "weekly", "list", index, "progress" } :: { any },
+						value
+					)
+					if value >= entry.objective.n then
+						Net.Fire(
+							player,
+							"Toast",
+							"quest.weeklyDone",
+							{ title = `@weekly.{entry.template}.title` },
+							"success"
+						)
+					end
+				end
+			end
+		end
+		local boss = weekly.boss
+		local need = Quests.Weekly.bossContract.n
+		if kind == "boss" and boss and not boss.claimed and data.bossId == boss.boss and boss.progress < need then
+			local value = boss.progress + 1
+			PlayerStateService.Set(player, { "character", "quests", "weekly", "boss", "progress" }, value)
+			if value >= need then
+				Net.Fire(player, "Toast", "quest.bossContractDone", {}, "success")
 			end
 		end
 	end
@@ -284,6 +361,62 @@ local function claim(player: Player, index: number): (boolean, string?)
 	return true, nil
 end
 
+-- S98: collects weekly contract `index` at the board.
+local function claimWeekly(player: Player, index: number): (boolean, string?)
+	local char = character(player)
+	if not char then
+		return false, "error.wrongPhase"
+	end
+	if not NpcService.NearService(player, "quests") then
+		return false, "npc.error.tooFar"
+	end
+	ensureWeekly(player)
+	local weekly: any = char.quests.weekly
+	local entry = if type(weekly) == "table" and type(weekly.list) == "table" then weekly.list[index] else nil
+	if not entry or entry.claimed then
+		return false, "error.badRequest"
+	end
+	if entry.progress < entry.objective.n then
+		return false, "quest.error.notDone"
+	end
+	local reward = Quests.Weekly.reward(char.level)
+	if not canFit(player, reward.items) then
+		return false, "inventory.full"
+	end
+	PlayerStateService.Set(player, { "character", "quests", "weekly", "list", index, "claimed" } :: { any }, true)
+	give(player, reward)
+	Net.Fire(player, "QuestCompleted", `weekly.{entry.template}.title`)
+	return true, nil
+end
+
+-- S98: collects the week's boss contract at the board.
+local function claimBossContract(player: Player): (boolean, string?)
+	local char = character(player)
+	if not char then
+		return false, "error.wrongPhase"
+	end
+	if not NpcService.NearService(player, "quests") then
+		return false, "npc.error.tooFar"
+	end
+	ensureWeekly(player)
+	local weekly: any = char.quests.weekly
+	local boss = if type(weekly) == "table" then weekly.boss else nil
+	if not boss or boss.claimed then
+		return false, "error.badRequest"
+	end
+	if boss.progress < Quests.Weekly.bossContract.n then
+		return false, "quest.error.notDone"
+	end
+	local reward = Quests.Weekly.bossReward(char.level)
+	if not canFit(player, reward.items) then
+		return false, "inventory.full"
+	end
+	PlayerStateService.Set(player, { "character", "quests", "weekly", "boss", "claimed" }, true)
+	give(player, reward)
+	Net.Fire(player, "QuestCompleted", "quest.bossContract.title")
+	return true, nil
+end
+
 -- Admin ------------------------------------------------------------------------------------------
 
 -- /quest set <id>: makes `id` the active story quest (everything before counts as done).
@@ -331,6 +464,50 @@ function QuestService.RerollDaily(player: Player): boolean
 	return true
 end
 
+-- S98 /weekly reroll: new weekly contracts for this week (the boss contract stays).
+function QuestService.RerollWeekly(player: Player): boolean
+	local char = character(player)
+	if not char then
+		return false
+	end
+	ensureWeekly(player)
+	local weekly: any = char.quests.weekly
+	local week = Time.weekNumber(Clock.now())
+	local rerolls = (weekly.rerolls or 0) + 1
+	PlayerStateService.Set(player, { "character", "quests", "weekly" }, {
+		week = week,
+		list = QuestLogic.weeklyFor(player.UserId, `{char.id}#{rerolls}`, week, char.level),
+		rerolls = rerolls,
+		boss = weekly.boss,
+	})
+	return true
+end
+
+-- S98 /weekly complete: fills every weekly contract and the boss contract (to test collecting them).
+function QuestService.CompleteWeekly(player: Player): boolean
+	local char = character(player)
+	if not char then
+		return false
+	end
+	ensureWeekly(player)
+	local weekly: any = char.quests.weekly
+	for index, entry in weekly.list do
+		PlayerStateService.Set(
+			player,
+			{ "character", "quests", "weekly", "list", index, "progress" } :: { any },
+			entry.objective.n
+		)
+	end
+	if weekly.boss then
+		PlayerStateService.Set(
+			player,
+			{ "character", "quests", "weekly", "boss", "progress" },
+			Quests.Weekly.bossContract.n
+		)
+	end
+	return true
+end
+
 function QuestService.Init(registry)
 	PlayerStateService = registry.Get("PlayerStateService")
 	CharacterService = registry.Get("CharacterService")
@@ -348,6 +525,8 @@ function QuestService.Start()
 	Net.Handle("QuestAccept", accept)
 	Net.Handle("QuestTurnIn", turnIn)
 	Net.Handle("DailyClaim", claim)
+	Net.Handle("WeeklyClaim", claimWeekly)
+	Net.Handle("BossContractClaim", claimBossContract)
 
 	QuestEvents.Fired:Connect(function(player: Player, kind: string, data: { [string]: any })
 		handle(player, kind, data)
@@ -365,12 +544,14 @@ function QuestService.Start()
 	end)
 	LevelService.LeveledUp:Connect(function(player: Player, level: number)
 		handle(player, "level", { level = level })
+		ensureWeekly(player) -- S98: the boss contract from the first boss's entry level
 	end)
 	ZoneService.ZoneChanged:Connect(function(player: Player, zone: any)
 		handle(player, "reach", { map = zone.map })
 	end)
 	CharacterService.CharacterEntered:Connect(function(player: Player)
 		ensureDaily(player)
+		ensureWeekly(player)
 		catchUp(player)
 	end)
 
@@ -381,6 +562,7 @@ function QuestService.Start()
 			for _, player in Players:GetPlayers() do
 				if PlayerStateService.HasState(player) and character(player) then
 					ensureDaily(player)
+					ensureWeekly(player)
 				end
 			end
 		end

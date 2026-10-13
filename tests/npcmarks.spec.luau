@@ -1,6 +1,7 @@
 --!strict
 -- S25: quest marks over NPCs (Logic/NpcMarks).
 
+local Config = require("../src/shared/Config")
 local NpcMarks = require("../src/shared/Logic/NpcMarks")
 local Npcs = require("../src/shared/Data/Npcs")
 local QuestLogic = require("../src/shared/Logic/QuestLogic")
@@ -78,8 +79,67 @@ describe("NpcMarks", function()
 
 	it("priority orders turn-in over available over active", function()
 		expect(NpcMarks.priority("turnIn") > NpcMarks.priority("available")).toBe(true)
-		expect(NpcMarks.priority("available") > NpcMarks.priority("active")).toBe(true)
+		expect(NpcMarks.priority("available") > NpcMarks.priority("availableLow")).toBe(true)
+		expect(NpcMarks.priority("availableLow") > NpcMarks.priority("active")).toBe(true)
+		expect(NpcMarks.priority("active") > NpcMarks.priority(nil)).toBe(true)
 		expect(NpcMarks.priority(nil)).toBe(0)
+	end)
+
+	-- S98 (docs/DESIGN-15.md §3.1): the grey "!", the weekly contracts and the boss quests of the scouts
+	local function sideState(done: { [string]: boolean }?, weekly: any?): any
+		local s = state(nil, 999)
+		s.side = { active = {}, done = done or {} }
+		s.weekly = weekly
+		return s
+	end
+
+	it("an offer more than greyGap levels below is grey, at greyGap it is gold", function()
+		local gap = Config.Quest.greyGap
+		expect(NpcMarks.isLow(10, 10 + gap)).toBe(false)
+		expect(NpcMarks.isLow(10, 10 + gap + 1)).toBe(true)
+		local q = Quests.Boss.get("boss_grimrok")
+		assert(q, "boss_grimrok")
+		expect(NpcMarks.of(q.giver, sideState(), q.level + gap)).toBe("available")
+		expect(NpcMarks.of(q.giver, sideState(), q.level + gap + 1)).toBe("availableLow")
+	end)
+
+	it("a gold offer wins over a grey one at the same NPC", function()
+		-- the stablemaster: side_wagon (10) is grey at 21, the stable arc's first quest (21) is gold
+		local wagon = Quests.Side.get("side_wagon")
+		local harness = Quests.Side.get("side_stable_harness")
+		assert(wagon and harness, "stablemaster quests")
+		expect(wagon.giver).toBe("stablemaster")
+		expect(harness.giver).toBe("stablemaster")
+		expect(NpcMarks.isLow(wagon.level, 21)).toBe(true)
+		expect(NpcMarks.of("stablemaster", sideState(), 21)).toBe("available")
+		local arcDone = { side_stable_harness = true, side_stable_stallion = true }
+		expect(NpcMarks.of("stablemaster", sideState(arcDone), 21)).toBe("availableLow")
+	end)
+
+	it("the board shows weekly contracts and the boss contract", function()
+		local list: { any } = QuestLogic.weeklyFor(7, "c", 2963, 30)
+		local weekly = { week = 2963, list = list, rerolls = 0 }
+		expect(NpcMarks.of(NpcMarks.BOARD, sideState(nil, weekly), 30)).toBe("active")
+		list[1].progress = list[1].objective.n
+		expect(NpcMarks.of(NpcMarks.BOARD, sideState(nil, weekly), 30)).toBe("turnIn")
+		for _, entry in list do
+			entry.claimed = true
+		end
+		expect(NpcMarks.of(NpcMarks.BOARD, sideState(nil, weekly), 30)).toBeNil()
+		weekly.boss = { boss = "morvane", progress = 0, claimed = false }
+		expect(NpcMarks.of(NpcMarks.BOARD, sideState(nil, weekly), 30)).toBe("active")
+		weekly.boss.progress = Quests.Weekly.bossContract.n
+		expect(NpcMarks.of(NpcMarks.BOARD, sideState(nil, weekly), 30)).toBe("turnIn")
+		weekly.boss.claimed = true
+		expect(NpcMarks.of(NpcMarks.BOARD, sideState(nil, weekly), 30)).toBeNil()
+	end)
+
+	it("the Meadows scout offers Grimrok's Slayer at 15", function()
+		local q = Quests.Boss.get("boss_grimrok")
+		assert(q, "boss_grimrok")
+		expect(q.giver).toBe("scout_meadows")
+		expect(NpcMarks.of("scout_meadows", sideState(), 14)).toBeNil()
+		expect(NpcMarks.of("scout_meadows", sideState(), 15)).toBe("available")
 	end)
 end)
 

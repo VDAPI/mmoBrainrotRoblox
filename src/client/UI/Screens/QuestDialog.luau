@@ -4,7 +4,8 @@
 -- rewards with "Accept" / "Not now". A quest in progress shows its progress line (quest.<id>.progress); one that
 -- is done shows the thanks (quest.<id>.done) and "Hand in" — with three items for the character's class to pick
 -- from on an arc's last quest (rolled by the server when the quest was finished, tooltip compares with the
--- equipped item).
+-- equipped item). S98: the quest's category over the title (quest.tab.<category>) and, on an offer far below the
+-- character (NpcMarks.isLow, the grey "!"), a note that it pays less than hunting at the character's level.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -12,6 +13,7 @@ local Button = require(script.Parent.Parent.Components.Button)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Net = require(ReplicatedStorage.Shared.Net)
 local NpcQuests = require(script.Parent.Parent.NpcQuests)
+local NpcMarks = require(ReplicatedStorage.Shared.Logic.NpcMarks)
 local Npcs = require(ReplicatedStorage.Shared.Data.Npcs)
 local Preview = require(script.Parent.WorldMap.Preview)
 local QuestLogic = require(ReplicatedStorage.Shared.Logic.QuestLogic)
@@ -82,7 +84,7 @@ local function buildView(row: NpcQuests.Row?, quests: any, npcId: string?): View
 			turnIn = quest.turnIn,
 		}
 	end
-	local quest = Quests.Side.get(row.id)
+	local quest = Quests.npcQuest(row.id)
 	if not quest then
 		return nil
 	end
@@ -117,6 +119,7 @@ end
 
 local function QuestDialog(scope: Scope, props: Props): Fusion.Child
 	local quests = State.Value({ "character", "quests" })
+	local level = State.Value({ "character", "level" })
 	local page = scope:Value(1)
 	local picked = scope:Value(nil :: number?)
 	local busy = scope:Value(false)
@@ -283,9 +286,23 @@ local function QuestDialog(scope: Scope, props: Props): Fusion.Child
 			},
 		}),
 		scope:New("TextLabel")({
-			Name = "Title",
+			Name = "Category",
 			Position = UDim2.fromOffset(PORTRAIT.X + 14, 0),
-			Size = UDim2.new(1, -PORTRAIT.X - 14, 0, 36),
+			Size = UDim2.new(1, -PORTRAIT.X - 14, 0, 14),
+			BackgroundTransparency = 1,
+			Text = scope:Computed(function(use): string
+				local v = use(view)
+				return if v then string.upper(Text.get(use, `quest.tab.{v.row.category}`)) else ""
+			end),
+			FontFace = Theme.Fonts.BodyMedium,
+			TextSize = 12,
+			TextColor3 = Theme.Colors.TextMuted,
+			TextXAlignment = Enum.TextXAlignment.Left,
+		}),
+		scope:New("TextLabel")({
+			Name = "Title",
+			Position = UDim2.fromOffset(PORTRAIT.X + 14, 14),
+			Size = UDim2.new(1, -PORTRAIT.X - 14, 0, 32),
 			BackgroundTransparency = 1,
 			Text = scope:Computed(function(use): string
 				local v = use(view)
@@ -300,7 +317,7 @@ local function QuestDialog(scope: Scope, props: Props): Fusion.Child
 		}),
 		scope:New("TextLabel")({
 			Name = "Speaker",
-			Position = UDim2.fromOffset(PORTRAIT.X + 14, 38),
+			Position = UDim2.fromOffset(PORTRAIT.X + 14, 48),
 			Size = UDim2.new(1, -PORTRAIT.X - 14, 0, 22),
 			BackgroundTransparency = 1,
 			Text = scope:Computed(function(use): string
@@ -329,6 +346,23 @@ local function QuestDialog(scope: Scope, props: Props): Fusion.Child
 			[Children] = {
 				scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 10) }),
 				scope:New("UIPadding")({ PaddingRight = UDim.new(0, 8) }),
+				-- S98: an offer far below the character's level (the grey "!")
+				scope:New("TextLabel")({
+					LayoutOrder = 0,
+					Size = UDim2.fromScale(1, 0),
+					AutomaticSize = Enum.AutomaticSize.Y,
+					BackgroundTransparency = 1,
+					TextWrapped = true,
+					Text = Text.T(scope, "quest.lowLevel"),
+					Visible = scope:Computed(function(use): boolean
+						local v = use(view)
+						return v ~= nil and v.mode == "offer" and NpcMarks.isLow(v.row.level, use(level) or 1)
+					end),
+					FontFace = Theme.Fonts.BodyMedium,
+					TextSize = Theme.TextSize.Small,
+					TextColor3 = Theme.Colors.TextMuted,
+					TextXAlignment = Enum.TextXAlignment.Left,
+				}),
 				scope:New("TextLabel")({
 					LayoutOrder = 1,
 					Size = UDim2.fromScale(1, 0),

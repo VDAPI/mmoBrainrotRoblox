@@ -6476,3 +6476,117 @@ Pliki: `src/shared/Data/{Mounts,Cosmetics,Products,Npcs,Keybinds,AdminCommands}.
 
 Testy: `scripts/check` zielony (99 plików, 6029 testów), `wiki_keys_diff` z `WIKI_KEYS_ALLOW` jak wyżej, `balance1_20` 0 różnic
 (`ALLOWED_1_20_DIFFS` pusta). Wiki: `npm run data`, `npm test` (132 testy) i `npm run check` zielone.
+
+### S98: Questy, fundament: kategorie, dziennik, znaki, tygodniowe, bossowe, budżet EXP
+
+Start na `ebe7e75` (S97): pliki S83 / S91 / S94 na miejscu, `scripts/check` zielony (6029 testów). Bez migracji
+zapisu (`AccountSchema.CURRENT = 6`).
+
+Co zrobiono:
+- **Budżet EXP (C):** refaktor `tests/Balance.luau` bit w bit: `Balance.questCreditByLevel(opts)` (wiersze `exp`,
+  `quest`, `carryIn`, `carryOut`, `need`, `byCategory`) i jedna lokalna `questSources(budget)` z regułami
+  `CREDIT_RULES` po polu `category` (`main` okna S91, `side` × `SIDE_SHARE` na pasmo, `boss` na pasmo, `contract` na
+  swój poziom); `paceWindowAt` czyta te wiersze (zrzut 4 wariantów × 99 poziomów przed i po identyczny bajt w bajt
+  bez questów bossowych, `build/s98_pace_*.txt`). Uwaga do C1: kod S91 rozkładał już poboczne **każdego** pasma (nie
+  tylko < 20), więc łuk stajennego S96 był w modelu od S96 bez kompensacji; `budget = false` = model S94 (poboczne < 20)
+  jawnie przez `below = 20`. Nowe `Data/QuestBudget.luau` (`TARGET`, `BANDS`, `MUL_MIN/MAX`, generowane
+  `MONSTER_EXP_MUL` jako `local` z `-- stylua: ignore`, 10 liczb w wierszu), `Logic/QuestBudget.luau`
+  (`monsterExpMul`, `bandOf`, `bandExp`, `bossQuestExp`), `tools/QuestBudgetGen.luau` (`credit`, `base`, `compute`,
+  `render`, `read`, `shares`, `grind`, `allowed`, `session`) i CLI `tools/quest_budget.luau`, plik bazowy
+  `tests/fixtures/quest_budget_base.json` (S98, `ebe7e75`, przed danymi questów bossowych). Mnożnik w
+  `CombatService.reward` (poziom otrzymującego, po `levelDiffMultiplier`, przed `GiveExp` i `shownExp`), w
+  `Balance.killExp` i `Balance.areaHour` (`Balance.QUEST_BUDGET_OFF`, `Balance.budgetMul`). `questsAt`: pola
+  `bossQuest`, `contract` (w `exp`) i `weekly` (raport); `questRewards` liczy questy bossowe < 20.
+- **Dane (A):** `Category` i `ContractQuest` w `Data/Quests/Types`, `hidden` w `DailyTemplate`, cele `kill` z
+  `variant = "elite2"` i `event`; `category` z `q` / `side` (łuk stajennego `side`); `Data/Quests/Boss` (cztery
+  „Pogromcy”: `boss_grimrok` 15 → 1 541 EXP, `boss_morvane` 40 → 15 140, `boss_azgor` 65 → 43 993, `boss_vaelgrath`
+  95 → 110 983; złoto 1,5 × `60 + 45·L`, 2 kamienie lochu regionu), `Data/Quests/Weekly` (8 szablonów, `event`
+  ukryty; `elite2` od 14., bo Elity II są w Kryjówce Przemytników od 7.), `Data/Quests/Contracts` (pusty szkielet S99),
+  `Quests.CATEGORIES`, `npcList`, `npcQuest`, `categoryOf`; `Config.Quest.greyGap = 6`; zapis `quests.weekly`
+  (`boss?`) i `quests.contract` przez `reconcile`.
+- **Logika (B):** `Time.weekNumber` / `weekStart` / `split`; `QuestLogic`: `elite2`, `pickTemplates` (dzienne bez
+  zmian: 50 par przed i po identyczne, `build/s98_daily_*.txt`), `weeklyFor`, `bossContractFor`, `weeklyOpen`;
+  `SideQuests` i wszystkie odczyty id z `quests.side` na `Quests.npcQuest` / `npcList` (poza `tools/WikiData`);
+  `NpcMarks`: `availableLow`, `isLow`, priorytety 4–1, tablica z tygodniowymi i zleceniem na bossa.
+- **Serwer (D):** `QuestService`: `ensureWeekly` (wejście, pętla 60 s, awans), tygodniowe i zlecenie na bossa w
+  `handle` (tylko zdarzenie `boss` z `DungeonService`), `WeeklyClaim`, `BossContractClaim`, `RerollWeekly`,
+  `CompleteWeekly`; `SideQuestService` na wspólnej liście (miejsce w plecaku na `reward.items`); `QuestEvents`:
+  rodzaj `event`; `DungeonService` bez zmian. Admin `/weekly reroll|complete`, `/questbudget [poziom]`.
+- **Klient (E):** jeden styl znaków w `UI/NpcMarkState` (`QuestController` bez `MARKERS`); `QuestText`: `killElite2`,
+  `event`, `gatherAny`; `NpcQuests.Row.category`; dialog z kategorią nad tytułem i dopiskiem `quest.lowLevel`;
+  `Components/Tabs` z `Scroll`; dziennik z zakładkami `Quests.CATEGORIES` (Zlecenia ukryte do S99, Bossowie,
+  Tygodniowe); tablica z zakładkami Dzienne / Tygodniowe i kartą zlecenia na bossa (lista przewijana); karta tablicy
+  na mapie z linią tygodniowych, wiersze NPC z kategorią.
+- **Teksty (F):** wszystkie klucze z planu w PL i EN, plus `quest.bossContract.progress`, `quest.boss.takeAt`,
+  `quest.boss.entry`, `quest.board.daily/weekly`, `quest.contract.*`, `quest.obj.gatherAny`.
+
+`monsterExpMul` (pierwsze uruchomienie; zmiany wobec bazy to cztery questy bossowe po 2% EXP pasma i łuk stajennego
+3 × 0,1 `expToNext` × `SIDE_SHARE` na 20–44):
+
+| L | 1 | 3 | 10 | 15 | 19 | 20 | 30 | 45 | 60 | 70 | 85 | 99 |
+|---|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|
+| mul | 1,000 | 0,875 | 0,950 | 0,950 | 0,950 | 0,943 | 0,964 | 0,976 | 0,977 | 0,978 | 0,978 | 0,977 |
+
+Poziomy 1–2 pokrywa samouczek (1,000); L3 0,875 (poza oczekiwanymi 0,9–1,0, nie przycięte): udział bicia S94 jest
+tam niski (0,29), a EXP questów bossowych z 1–2 przechodzi nadmiarem na 3. To zgodne z oknami S91, nie błąd modelu.
+Godziny bicia na pasmo w ±0,05% bazy (raport „Budżet EXP zadań (S98)” w `docs/BALANS.md`).
+
+Udziały kategorii w pasmach (model z `SIDE_SHARE`; cel 30% nieasertowany do S109): 1–19 fabuła 40%, poboczne 20%,
+bossowe 2% (razem 62%); 20–44 27% / 0,3% / 2% (30%); 45–69 13% / 0 / 2% (15%); 70–99 10% / 0 / 2% (12%); zleceń 0%
+do S99. Gracz robiący wszystko: 1–19 82%, 20–44 30%.
+
+1–20: 208 wpisów `ALLOWED_1_20_DIFFS` (w `tests/BalanceTables.luau`, gdzie leży tabela, więc bez
+`tests/Allowed1_20.luau`), wygenerowane `allowed`; okna `paceWindowAt` 1–19 bez różnic, cele S91–S94 zielone bez
+zmiany progów. Fixture 1–20 i migawka bez regeneracji. Fixture przedmiotów S84 odświeżony (`--fixture-items`): odcisk
+danych obejmuje teraz `QuestBudget` i `Quests/Boss`, 448 wartości G9 (dochód poziomu, np. na 20: 3 111 → 3 247) się
+przesunęło, bo dochód liczy zabicia z mnożnikiem i złoto questów bossowych. Wiki: `lune run tools/wikidump.luau`
+zero zmian danych (`--check`: up to date; `meta.json` ze znacznikiem commitu przywrócony), `wiki_keys_diff` pusty.
+
+Uproszczenia wyglądu (dozwolone przez plan): plakietka kategorii w dialogu jako sam tekst bez tła, karta zlecenia na
+bossa bez glifu bossa, pasek zakładek dziennika przewijany bez strzałek.
+
+Komenda generatora (słowo w słowo):
+
+```
+# po każdej zmianie danych questów (S99, S102–S108):
+lune run tools/quest_budget.luau            # przelicza MONSTER_EXP_MUL i drukuje linię do balance_reasons
+lune run tools/quest_budget.luau check      # 0 = aktualne (to samo sprawdza tests/questbudget.spec.luau)
+lune run tools/quest_budget.luau allowed --why "S<n>: <co doszło>"   # blok ALLOWED_1_20_DIFFS do wklejenia
+lune run tests/run.luau                     # balance1_20.spec zielony, bez martwych wpisów
+lune run tools/balance_report.luau          # docs/BALANS.md z sekcją „Budżet EXP zadań”
+# tylko S98 (i ewentualnie audyt S109 z --force):
+lune run tools/quest_budget.luau base
+```
+
+Flaga `--session S<n>` podaje sesję linii do księgi, gdy sekcja SESJE bieżącej sesji już jest (bez niej: ostatnie
+`### S<n>` + 1). `report` tylko drukuje.
+
+Dla S99 i S102–S108:
+- pole `category` w każdym quescie; typ `ContractQuest` (`id = contract_<L>`, `level`, `category = "contract"`, `map`,
+  `area`, `objectives`, `reward`); `Data/Quests/Contracts.luau` eksportuje `list`, `byLevel` (tabela), `byId`
+  (tabela), `get`, `forLevel`, `MAX_LEVEL = 99`; S99 podmienia tylko tekst między `-- BEGIN GENERATED
+  (tools/contracts_gen.luau)` i `-- END GENERATED` i dopisuje `RULES` po `MAX_LEVEL`;
+- zapis `quests.contract = { done, active = { level, progress }? }` (dziś nic go nie czyta);
+- zakładka „Zlecenia” dziennika pokazuje się sama, gdy `Contracts.list` niepusta (prosty widok aktywnego zlecenia i
+  liczby oddanych do rozbudowy); `NpcMarks` do rozszerzenia o `questboard` i `scout_<region>` dla zleceń;
+- model liczy `contract_<L>` w całości na poziomie L (`CREDIT_RULES.contract`);
+- po każdej zmianie questów: generator (`lune run tools/quest_budget.luau`), linia `["QuestBudget:MONSTER_EXP_MUL*"]`
+  w księdze (nowy element listy powodów), wpisy 1–20 z `allowed`; generatora i `questSources` nie zmieniasz,
+  dodajesz tylko dane z polem `category` (nowa lista spoza Main / Side / Boss / Contracts wchodzi przez `questSources`);
+- S101: `Weekly.templates` `event` `hidden = true` → `false` i `QuestEvents.fire(player, "event", …)`.
+
+Poprawki po przeglądzie: zakładka „Bossowie” ma przy aktywnym quescie „Porzuć” obok „Śledź” (wspólny `sideButtons` z
+zakładką „Poboczne”); śledzenie questu bossowego prowadzi do wejścia do lochu (`QuestText.sideTarget`, gałąź `boss`
+jak w fabule); `Balance.questsAt.weekly` liczy zlecenie na bossa dopiero od `QuestLogic.bossContractFor` (raport:
+0,90 na 1–14, 1,40 od 15.).
+
+Pliki: `src/shared/Data/{QuestBudget,AdminCommands}.luau`, `src/shared/Data/Quests/{Types,init,Main,Side,Boss,Weekly,Contracts}.luau`,
+`src/shared/Data/Localization/{pl,en}.luau`, `src/shared/Logic/{QuestBudget,QuestLogic,SideQuests,NpcMarks,Time,AccountSchema}.luau`,
+`src/shared/{Config,Types}.luau`, `src/shared/Net/Definitions.luau`, `src/server/QuestEvents.luau`,
+`src/server/Services/{Quest,SideQuest,Combat}Service.luau`, `src/server/Admin/Quests.luau`,
+`src/client/Controllers/{Quest,QuestAnchor}Controller.luau`, `src/client/UI/{NpcMarkState,NpcQuests,QuestText}.luau`,
+`src/client/UI/Components/Tabs.luau`, `src/client/UI/Screens/{QuestJournal,QuestBoard,QuestDialog}.luau`,
+`src/client/UI/Screens/WorldMap/Cards.luau`, `src/client/UI/Screens/Hud/QuestTracker.luau`,
+`tests/{questbudget,questcategories,npcmarks,quest,sidequests,character}.spec.luau`, `tests/{Balance,BalanceTables}.luau`,
+`tests/fixtures/{quest_budget_base,balance_items}.json`, `tools/{QuestBudgetGen,quest_budget,balance_reasons,balance_report}.luau`,
+`docs/{DESIGN,BALANS,DECYZJE,SESJE,PROGRESS}.md`, `CLAUDE.md`.

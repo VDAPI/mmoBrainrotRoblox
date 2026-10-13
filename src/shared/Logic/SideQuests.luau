@@ -111,7 +111,7 @@ end
 -- explains it), lowest level first.
 function SideQuests.available(quests: any, level: number, npcId: string): { SideQuest }
 	local out = {}
-	for _, quest in Quests.Side.list do
+	for _, quest in Quests.npcList do
 		if quest.giver == npcId then
 			local ok, reason = SideQuests.canAccept(quests, level, quest)
 			if ok or reason == "limit" then
@@ -125,7 +125,7 @@ end
 -- Quests this NPC will give a little later (requirements met, level too low).
 function SideQuests.later(quests: any, level: number, npcId: string): { SideQuest }
 	local out = {}
-	for _, quest in Quests.Side.list do
+	for _, quest in Quests.npcList do
 		if quest.giver == npcId then
 			local _, reason = SideQuests.canAccept(quests, level, quest)
 			if reason == "level" then
@@ -144,7 +144,7 @@ end
 function SideQuests.atTurnIn(quests: any, npcId: string): ({ SideQuest }, { SideQuest })
 	local ready, open = {}, {}
 	for id, entry in side(quests) do
-		local quest = Quests.Side.get(id)
+		local quest = Quests.npcQuest(id)
 		if quest and quest.turnIn == npcId and type(entry) == "table" then
 			table.insert(if SideQuests.isComplete(entry, quest) then ready else open, quest)
 		end
@@ -160,7 +160,7 @@ end
 -- NPCs with a quest the character can take now (Wacław's gossip, S27), nearest level first; `except` skipped.
 function SideQuests.giversWithWork(quests: any, level: number, except: string?): { string }
 	local best: { [string]: number } = {}
-	for _, quest in Quests.Side.list do
+	for _, quest in Quests.npcList do
 		if quest.giver ~= except and SideQuests.canAccept(quests, level, quest) then
 			local d = math.abs(quest.level - level)
 			if best[quest.giver] == nil or d < best[quest.giver] then
@@ -245,7 +245,7 @@ end
 function SideQuests.usableAnchors(quests: any): { [string]: { quest: string, index: number } }
 	local out = {}
 	for id, entry in side(quests) do
-		local quest = Quests.Side.get(id)
+		local quest = Quests.npcQuest(id)
 		if quest and type(entry) == "table" then
 			for i, objective in quest.objectives do
 				if objective.type == "use" and ((entry.progress or {})[i] or 0) < objective.n then
@@ -267,7 +267,7 @@ function SideQuests.doneAnchors(quests: any): { [string]: string }
 	local out: { [string]: string } = {}
 	local active, done = side(quests)
 	for id, entry in active do
-		local quest = Quests.Side.get(id)
+		local quest = Quests.npcQuest(id)
 		if quest and type(entry) == "table" then
 			for _, anchor in entry.used or {} do
 				for _, objective in quest.objectives do
@@ -279,7 +279,7 @@ function SideQuests.doneAnchors(quests: any): { [string]: string }
 		end
 	end
 	for id in done do
-		local quest = Quests.Side.get(id)
+		local quest = Quests.npcQuest(id)
 		if quest then
 			for _, objective in quest.objectives do
 				if objective.type == "use" and objective.fx then

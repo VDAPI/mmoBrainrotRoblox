@@ -19,9 +19,11 @@ NpcMarkState.Marks = scope:Computed(function(use): { [string]: NpcMarks.Mark }
 	return NpcMarks.all(use(quests), use(level) or 1)
 end)
 
--- Glyph and colour of a mark (same look on the plates and the maps).
+-- Glyph and colour of a mark (same look on the plates and the maps; S98: the only style table, QuestController's
+-- plates read it too).
 local STYLE: { [string]: { text: string, color: Color3 } } = {
 	available = { text = "!", color = Color3.fromHex("#E8C25A") },
+	availableLow = { text = "!", color = Color3.fromHex("#9A9DA8") }, -- S98: an offer more than greyGap levels below
 	turnIn = { text = "?", color = Color3.fromHex("#E8C25A") },
 	active = { text = "?", color = Color3.fromHex("#9A9DA8") },
 }

@@ -185,6 +185,11 @@ local Config = {
 		useRange = 10,
 		useMoveLimit = 3,
 	},
+	-- Quest marks (S98, DESIGN-15 §3.1): an offer more than `greyGap` levels under the character shows a grey "!"
+	-- instead of a gold one.
+	Quest = {
+		greyGap = 6,
+	},
 	-- Skills (S28, DESIGN §14): `breakpoints` turns the rank 5 / 10 breakpoints on (off = numbers only).
 	Skills = {
 		breakpoints = true,

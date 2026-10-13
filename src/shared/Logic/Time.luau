@@ -11,6 +11,23 @@ function Time.dayNumber(t: number): number
 	return math.floor(t / 86400)
 end
 
+-- S98: UTC week index for the weekly contracts. Weeks start on Monday 00:00 UTC (day 0, 1 January 1970, was a
+-- Thursday, hence the + 3).
+function Time.weekNumber(t: number): number
+	return math.floor((Time.dayNumber(t) + 3) / 7)
+end
+
+-- S98: the time (seconds) week `week` starts: Monday 00:00 UTC.
+function Time.weekStart(week: number): number
+	return (week * 7 - 3) * 86400
+end
+
+-- S98: days, hours and minutes of a countdown (Time.format would print "150:12:00" for six days).
+function Time.split(seconds: number): (number, number, number)
+	local s = math.max(0, math.floor(seconds))
+	return s // 86400, (s % 86400) // 3600, (s % 3600) // 60
+end
+
 -- Seconds left until `expiresAt` (never negative).
 function Time.remaining(expiresAt: number, now: number): number
 	return math.max(0, expiresAt - now)

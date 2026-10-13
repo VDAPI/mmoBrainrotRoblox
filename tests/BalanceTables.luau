@@ -2572,7 +2572,1050 @@ BalanceTables.FIXTURE_TOLERANCE = 0.005
 -- S91: levels 1-20 are frozen. Every future difference is an entry here (key -> before = fixture, after = now, why)
 -- and a DECYZJE line; read by balance1_20.spec and by G12 (Balance.targetsGlobal, tools/balance_report).
 export type AllowedDiff = { before: number, after: number, why: string }
-BalanceTables.ALLOWED_1_20_DIFFS = {} :: { [string]: AllowedDiff }
+BalanceTables.ALLOWED_1_20_DIFFS = {
+	-- S98+: quest budget (docs/DESIGN-15.md §3.2). Every session that regenerates tools/quest_budget.luau refreshes these
+	-- entries (`lune run tools/quest_budget.luau allowed --why "S<n>: ..."`); S109 rebuilds the fixture.
+	["Drop: poziom przedmiotów i rzadkości|10|Unikatowe do klasy/poziom"] = {
+		before = 0.6118137264,
+		after = 0.6024213385,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Drop: poziom przedmiotów i rzadkości|10|zabicia (grind + questy)"] = {
+		before = 11.99634758,
+		after = 11.81218311,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Drop: poziom przedmiotów i rzadkości|15|Unikatowe do klasy/poziom"] = {
+		before = 0.9763320017,
+		after = 0.9641356192,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Drop: poziom przedmiotów i rzadkości|15|zabicia (grind + questy)"] = {
+		before = 19.14376474,
+		after = 18.90461998,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Drop: poziom przedmiotów i rzadkości|18|Unikatowe do klasy/poziom"] = {
+		before = 1.272745463,
+		after = 1.258019903,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Drop: poziom przedmiotów i rzadkości|18|zabicia (grind + questy)"] = {
+		before = 24.95579339,
+		after = 24.66705693,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Drop: poziom przedmiotów i rzadkości|1|Unikatowe do klasy/poziom"] = {
+		before = 0.1036008531,
+		after = 0.09656841239,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Drop: poziom przedmiotów i rzadkości|1|zabicia (grind + questy)"] = {
+		before = 2.031389276,
+		after = 1.893498282,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Drop: poziom przedmiotów i rzadkości|2|Unikatowe do klasy/poziom"] = {
+		before = 0.1428676982,
+		after = 0.1335145521,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Drop: poziom przedmiotów i rzadkości|2|zabicia (grind + questy)"] = {
+		before = 2.801327416,
+		after = 2.617932395,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Drop: poziom przedmiotów i rzadkości|5|Unikatowe do klasy/poziom"] = {
+		before = 0.2916338103,
+		after = 0.2861538381,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Drop: poziom przedmiotów i rzadkości|5|zabicia (grind + questy)"] = {
+		before = 5.718310006,
+		after = 5.61085957,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Kara złota za różnicę poziomów (gracz 20)|10|EXP"] = {
+		before = 28.75,
+		after = 27.11125,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Kara złota za różnicę poziomów (gracz 20)|14|EXP"] = {
+		before = 144.5,
+		after = 136.2635,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Kara złota za różnicę poziomów (gracz 20)|15|EXP"] = {
+		before = 185,
+		after = 174.455,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Kara złota za różnicę poziomów (gracz 20)|18|EXP"] = {
+		before = 230,
+		after = 216.89,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Kara złota za różnicę poziomów (gracz 20)|20|EXP"] = {
+		before = 262,
+		after = 247.066,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|1 wolf|godziny"] = {
+		before = 0.01351414868,
+		after = 0.0125335576,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|1 wolf|zabicia"] = {
+		before = 1.900363382,
+		after = 1.762472388,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|10 bandit|EXP/h"] = {
+		before = 8690.546816,
+		after = 8256.019475,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|10 bandit|EXP/zabicie"] = {
+		before = 115,
+		after = 109.25,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|10 bandit|godziny"] = {
+		before = 0.1026206462,
+		after = 0.1001836403,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|10 bandit|zabicia"] = {
+		before = 7.755039392,
+		after = 7.570874924,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|11 bandit|EXP/h"] = {
+		before = 9619.118237,
+		after = 9138.162325,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|11 bandit|EXP/zabicie"] = {
+		before = 128,
+		after = 121.6,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|11 bandit|godziny"] = {
+		before = 0.1107873952,
+		after = 0.1081564477,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|11 bandit|zabicia"] = {
+		before = 8.325601981,
+		after = 8.127887955,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|12 bandit|EXP/h"] = {
+		before = 10606.72566,
+		after = 10076.38938,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|12 bandit|EXP/zabicie"] = {
+		before = 142,
+		after = 134.9,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|12 bandit|godziny"] = {
+		before = 0.1182647895,
+		after = 0.115456271,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|12 bandit|zabicia"] = {
+		before = 8.833818156,
+		after = 8.624035157,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|13 koboldMiner|EXP/h"] = {
+		before = 11357.81706,
+		after = 10789.9262,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|13 koboldMiner|EXP/zabicie"] = {
+		before = 150.1126536,
+		after = 142.607021,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|13 koboldMiner|godziny"] = {
+		before = 0.1283459124,
+		after = 0.1252979902,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|13 koboldMiner|zabicia"] = {
+		before = 9.710902827,
+		after = 9.480291071,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|14 goblinScout|EXP/h"] = {
+		before = 12083.62789,
+		after = 11479.4465,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|14 goblinScout|EXP/zabicie"] = {
+		before = 174.0993271,
+		after = 165.3943608,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|14 goblinScout|godziny"] = {
+		before = 0.1386490217,
+		after = 0.1353564242,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|14 goblinScout|zabicia"] = {
+		before = 9.623145668,
+		after = 9.394617944,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|15 goblinScout|EXP/h"] = {
+		before = 13478.16192,
+		after = 12804.25382,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|15 goblinScout|EXP/zabicie"] = {
+		before = 189.4610325,
+		after = 179.9879809,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|15 goblinScout|godziny"] = {
+		before = 0.1415559919,
+		after = 0.1381943605,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|15 goblinScout|zabicia"] = {
+		before = 10.07022159,
+		after = 9.831076836,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|16 goblinScout|EXP/h"] = {
+		before = 14574.11552,
+		after = 13845.40974,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|16 goblinScout|EXP/zabicie"] = {
+		before = 204.8227378,
+		after = 194.5816009,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|16 goblinScout|godziny"] = {
+		before = 0.1478303805,
+		after = 0.1443197467,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|16 goblinScout|zabicia"] = {
+		before = 10.51883724,
+		after = 10.26903889,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|17 caveSpider|EXP/h"] = {
+		before = 15196.89469,
+		after = 14437.04996,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|17 caveSpider|EXP/zabicie"] = {
+		before = 207.9292818,
+		after = 197.5328177,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|17 caveSpider|godziny"] = {
+		before = 0.1589588954,
+		after = 0.1551839848,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|17 caveSpider|zabicia"] = {
+		before = 11.61780377,
+		after = 11.34190747,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|18 goblinShaman|EXP/h"] = {
+		before = 15194.6369,
+		after = 14434.90506,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|18 goblinShaman|EXP/zabicie"] = {
+		before = 221.3199381,
+		after = 210.2539412,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|18 goblinShaman|godziny"] = {
+		before = 0.1770965131,
+		after = 0.1728908755,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|18 goblinShaman|zabicia"] = {
+		before = 12.15849434,
+		after = 11.86975788,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|19 goblinShaman|EXP/h"] = {
+		before = 16279.9722,
+		after = 15465.97359,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|19 goblinShaman|EXP/zabicie"] = {
+		before = 236.7161077,
+		after = 224.8803023,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|19 goblinShaman|godziny"] = {
+		before = 0.1830595203,
+		after = 0.1787122749,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|19 goblinShaman|zabicia"] = {
+		before = 12.58978077,
+		after = 12.29080224,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|2 wolf|godziny"] = {
+		before = 0.02613641956,
+		after = 0.02423995234,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|2 wolf|zabicia"] = {
+		before = 2.527483298,
+		after = 2.344088277,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|3 wolf|EXP/h"] = {
+		before = 2311.485014,
+		after = 2022.549388,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|3 wolf|EXP/zabicie"] = {
+		before = 33.13785844,
+		after = 28.99562614,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|3 wolf|godziny"] = {
+		before = 0.04565063689,
+		after = 0.04838652757,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|3 wolf|zabicia"] = {
+		before = 3.184296392,
+		after = 3.375134624,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|4 wolf|EXP/h"] = {
+		before = 2958.895807,
+		after = 2810.951017,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|4 wolf|EXP/zabicie"] = {
+		before = 43.49343921,
+		after = 41.31876725,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|4 wolf|godziny"] = {
+		before = 0.05745060953,
+		after = 0.05608628881,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|4 wolf|zabicia"] = {
+		before = 3.908414022,
+		after = 3.815598118,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|5 lynx|EXP/h"] = {
+		before = 3520.083566,
+		after = 3344.079388,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|5 lynx|EXP/zabicie"] = {
+		before = 55.47166239,
+		after = 52.69807927,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|5 lynx|godziny"] = {
+		before = 0.07130246637,
+		after = 0.06960919569,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|5 lynx|zabicia"] = {
+		before = 4.524664113,
+		after = 4.417213677,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|6 swampToad|EXP/h"] = {
+		before = 5177.190977,
+		after = 4918.331428,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|6 swampToad|EXP/zabicie"] = {
+		before = 66.95532389,
+		after = 63.60755769,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|6 swampToad|godziny"] = {
+		before = 0.06726544777,
+		after = 0.06566804706,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|6 swampToad|zabicia"] = {
+		before = 5.201170706,
+		after = 5.077654785,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|7 boar|EXP/h"] = {
+		before = 5659.492732,
+		after = 5376.518096,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|7 boar|EXP/zabicie"] = {
+		before = 78.83254848,
+		after = 74.89092106,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|7 boar|godziny"] = {
+		before = 0.08144371651,
+		after = 0.07950961431,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|7 boar|zabicia"] = {
+		before = 5.846951932,
+		after = 5.708100182,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|8 boar|EXP/h"] = {
+		before = 6501.16395,
+		after = 6176.105752,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|8 boar|EXP/zabicie"] = {
+		before = 92.31706336,
+		after = 87.70121019,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|8 boar|godziny"] = {
+		before = 0.09064812288,
+		after = 0.08849543706,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|8 boar|zabicia"] = {
+		before = 6.383633612,
+		after = 6.232036898,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|9 carrionCrow|EXP/h"] = {
+		before = 6786.820995,
+		after = 6447.479945,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|9 carrionCrow|EXP/zabicie"] = {
+		before = 87.77724733,
+		after = 83.38838497,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|9 carrionCrow|godziny"] = {
+		before = 0.1080233469,
+		after = 0.1054580392,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo (Wojownik): zabicia i czas na poziom|9 carrionCrow|zabicia"] = {
+		before = 8.352222713,
+		after = 8.153876505,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo: model okna od 1. poziomu (S91)|10|EXP zadań poziomu"] = {
+		before = 1938.244059,
+		after = 2002.955504,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo: model okna od 1. poziomu (S91)|11|EXP zadań poziomu"] = {
+		before = 2316.072913,
+		after = 2393.398792,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo: model okna od 1. poziomu (S91)|12|EXP zadań poziomu"] = {
+		before = 2733.213733,
+		after = 2824.233568,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo: model okna od 1. poziomu (S91)|13|EXP zadań poziomu"] = {
+		before = 3176.242886,
+		after = 3282.016211,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo: model okna od 1. poziomu (S91)|14|EXP zadań poziomu"] = {
+		before = 3648.470068,
+		after = 3770.036425,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo: model okna od 1. poziomu (S91)|15|EXP zadań poziomu"] = {
+		before = 4154.852035,
+		after = 4293.290946,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo: model okna od 1. poziomu (S91)|16|EXP zadań poziomu"] = {
+		before = 4673.567337,
+		after = 4829.898353,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo: model okna od 1. poziomu (S91)|17|EXP zadań poziomu"] = {
+		before = 5240.132789,
+		after = 5415.415442,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo: model okna od 1. poziomu (S91)|18|EXP zadań poziomu"] = {
+		before = 5837.178029,
+		after = 6032.431869,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo: model okna od 1. poziomu (S91)|19|EXP zadań poziomu"] = {
+		before = 6464.703055,
+		after = 6680.947632,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo: model okna od 1. poziomu (S91)|1|EXP zadań poziomu"] = {
+		before = 304.7933423,
+		after = 306.7924602,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo: model okna od 1. poziomu (S91)|2|EXP przeniesione"] = {
+		before = 204.7933423,
+		after = 206.7924602,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo: model okna od 1. poziomu (S91)|2|EXP zadań poziomu"] = {
+		before = 124.3680855,
+		after = 128.5462418,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo: model okna od 1. poziomu (S91)|3|EXP przeniesione"] = {
+		before = 120.1614278,
+		after = 126.3387019,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo: model okna od 1. poziomu (S91)|3|EXP zadań poziomu"] = {
+		before = 151.8085011,
+		after = 159.4651225,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo: model okna od 1. poziomu (S91)|4|EXP zadań poziomu"] = {
+		before = 371.2669379,
+		after = 383.601495,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo: model okna od 1. poziomu (S91)|5|EXP zadań poziomu"] = {
+		before = 548.1753329,
+		after = 566.3872965,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo: model okna od 1. poziomu (S91)|6|EXP zadań poziomu"] = {
+		before = 755.187847,
+		after = 780.4566966,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo: model okna od 1. poziomu (S91)|7|EXP zadań poziomu"] = {
+		before = 1001.324758,
+		after = 1034.77,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo: model okna od 1. poziomu (S91)|8|EXP zadań poziomu"] = {
+		before = 1280.235301,
+		after = 1322.996431,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo: model okna od 1. poziomu (S91)|9|EXP zadań poziomu"] = {
+		before = 1592.66299,
+		after = 1645.859516,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Tempo: model okna od 1. poziomu (S91)|suma 1–19 z zadaniem Grimroka|h"] = {
+		before = 2.05150824,
+		after = 2.023463594,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Zwykły potwór (mnożniki rodzaju 1)|10|EXP"] = {
+		before = 115,
+		after = 109.25,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Zwykły potwór (mnożniki rodzaju 1)|11|EXP"] = {
+		before = 128,
+		after = 121.6,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Zwykły potwór (mnożniki rodzaju 1)|12|EXP"] = {
+		before = 142,
+		after = 134.9,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Zwykły potwór (mnożniki rodzaju 1)|13|EXP"] = {
+		before = 156,
+		after = 148.2,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Zwykły potwór (mnożniki rodzaju 1)|14|EXP"] = {
+		before = 170,
+		after = 161.5,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Zwykły potwór (mnożniki rodzaju 1)|15|EXP"] = {
+		before = 185,
+		after = 175.75,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Zwykły potwór (mnożniki rodzaju 1)|16|EXP"] = {
+		before = 200,
+		after = 190,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Zwykły potwór (mnożniki rodzaju 1)|17|EXP"] = {
+		before = 215,
+		after = 204.25,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Zwykły potwór (mnożniki rodzaju 1)|18|EXP"] = {
+		before = 230,
+		after = 218.5,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Zwykły potwór (mnożniki rodzaju 1)|19|EXP"] = {
+		before = 246,
+		after = 233.7,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Zwykły potwór (mnożniki rodzaju 1)|20|EXP"] = {
+		before = 262,
+		after = 247.066,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Zwykły potwór (mnożniki rodzaju 1)|3|EXP"] = {
+		before = 32,
+		after = 28,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Zwykły potwór (mnożniki rodzaju 1)|4|EXP"] = {
+		before = 42,
+		after = 39.9,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Zwykły potwór (mnożniki rodzaju 1)|5|EXP"] = {
+		before = 53,
+		after = 50.35,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Zwykły potwór (mnożniki rodzaju 1)|6|EXP"] = {
+		before = 64,
+		after = 60.8,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Zwykły potwór (mnożniki rodzaju 1)|7|EXP"] = {
+		before = 76,
+		after = 72.2,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Zwykły potwór (mnożniki rodzaju 1)|8|EXP"] = {
+		before = 89,
+		after = 84.55,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Zwykły potwór (mnożniki rodzaju 1)|9|EXP"] = {
+		before = 102,
+		after = 96.9,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|10|mikstury"] = {
+		before = 5.170026262,
+		after = 5.047249949,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|10|z questów"] = {
+		before = 597.8144881,
+		after = 644.0909398,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|10|z zabić"] = {
+		before = 232.6511818,
+		after = 227.1262477,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|10|ze sprzedaży dropu"] = {
+		before = 122.2802447,
+		after = 119.3763682,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|11|mikstury"] = {
+		before = 5.550401321,
+		after = 5.41859197,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|11|z questów"] = {
+		before = 714.3486067,
+		after = 769.6458928,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|11|z zabić"] = {
+		before = 274.7448654,
+		after = 268.2203025,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|11|ze sprzedaży dropu"] = {
+		before = 140.2619063,
+		after = 136.9310065,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|12|mikstury"] = {
+		before = 5.889212104,
+		after = 5.749356771,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|12|z questów"] = {
+		before = 840.8555342,
+		after = 905.9456437,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|12|z zabić"] = {
+		before = 318.0174536,
+		after = 310.4652656,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|12|ze sprzedaży dropu"] = {
+		before = 158.367842,
+		after = 154.6069675,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|13|mikstury"] = {
+		before = 6.473935218,
+		after = 6.320194047,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|13|z questów"] = {
+		before = 977.150589,
+		after = 1052.791215,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|13|z zabić"] = {
+		before = 364.4323482,
+		after = 355.7779125,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|13|ze sprzedaży dropu"] = {
+		before = 162.573842,
+		after = 158.7130847,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|14|mikstury"] = {
+		before = 23.52324497,
+		after = 22.96462164,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|14|z questów"] = {
+		before = 1123.049089,
+		after = 1209.983628,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|14|z zabić"] = {
+		before = 413.9181989,
+		after = 404.0885873,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|14|ze sprzedaży dropu"] = {
+		before = 192.8629343,
+		after = 188.2828803,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|15|mikstury"] = {
+		before = 24.61609723,
+		after = 24.03152116,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|15|z questów"] = {
+		before = 1278.920399,
+		after = 1377.92084,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|15|z zabić"] = {
+		before = 464.0873303,
+		after = 453.0663165,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|15|ze sprzedaży dropu"] = {
+		before = 212.6909782,
+		after = 207.6400534,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|16|mikstury"] = {
+		before = 25.71271325,
+		after = 25.10209506,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|16|z questów"] = {
+		before = 1444.210472,
+		after = 1556.005916,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|16|z zabić"] = {
+		before = 517.0792901,
+		after = 504.7998383,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|16|ze sprzedaży dropu"] = {
+		before = 233.5305618,
+		after = 227.9847445,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|17|mikstury"] = {
+		before = 28.39907588,
+		after = 27.72466271,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|17|z questów"] = {
+		before = 1619.288672,
+		after = 1744.636812,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|17|z zabić"] = {
+		before = 573.0221456,
+		after = 559.4141788,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|17|ze sprzedaży dropu"] = {
+		before = 280.7453671,
+		after = 274.078306,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|18|mikstury"] = {
+		before = 29.72076394,
+		after = 29.01496369,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|18|z questów"] = {
+		before = 1803.785636,
+		after = 1943.415573,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|18|z zabić"] = {
+		before = 631.7805632,
+		after = 616.7772182,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|18|ze sprzedaży dropu"] = {
+		before = 296.1904581,
+		after = 289.1566114,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|19|mikstury"] = {
+		before = 39.16820685,
+		after = 38.23805142,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|19|z questów"] = {
+		before = 1997.701365,
+		after = 2152.342198,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|19|z zabić"] = {
+		before = 690.5350502,
+		after = 674.1364204,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|19|ze sprzedaży dropu"] = {
+		before = 319.7113113,
+		after = 312.1188981,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|1|z questów"] = {
+		before = 18.4681646,
+		after = 19.89777386,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|1|z zabić"] = {
+		before = 5.903809944,
+		after = 5.475427548,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|1|ze sprzedaży dropu"] = {
+		before = 8.590387726,
+		after = 7.967066361,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|2|mikstury"] = {
+		before = 1.684988865,
+		after = 1.562725518,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|2|z questów"] = {
+		before = 38.59846401,
+		after = 41.58634736,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|2|z zabić"] = {
+		before = 15.70413445,
+		after = 14.56463728,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|2|ze sprzedaży dropu"] = {
+		before = 12.68499264,
+		after = 11.7645654,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|3|mikstury"] = {
+		before = 5.660971363,
+		after = 6.000239331,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|3|z questów"] = {
+		before = 70.73307042,
+		after = 76.20847387,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|3|z zabić"] = {
+		before = 29.67771461,
+		after = 31.45633127,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|3|ze sprzedaży dropu"] = {
+		before = 17.83081105,
+		after = 18.89943031,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|4|mikstury"] = {
+		before = 6.948291594,
+		after = 6.783285543,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|4|z questów"] = {
+		before = 113.9485756,
+		after = 122.7692647,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|4|z zabić"] = {
+		before = 48.56867647,
+		after = 47.41528137,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|4|ze sprzedaży dropu"] = {
+		before = 25.99018689,
+		after = 25.37297933,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|5|mikstury"] = {
+		before = 11.06029005,
+		after = 10.79763343,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|5|z questów"] = {
+		before = 168.2449795,
+		after = 181.2687198,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|5|z zabić"] = {
+		before = 71.03508682,
+		after = 69.34816579,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|5|ze sprzedaży dropu"] = {
+		before = 38.9742146,
+		after = 38.04866605,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|6|mikstury"] = {
+		before = 3.467447138,
+		after = 3.38510319,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|6|z questów"] = {
+		before = 233.4376005,
+		after = 251.5078616,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|6|z zabić"] = {
+		before = 97.94420697,
+		after = 95.61825582,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|6|ze sprzedaży dropu"] = {
+		before = 50.42076073,
+		after = 49.22338285,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|7|mikstury"] = {
+		before = 10.39458121,
+		after = 10.14773366,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|7|z questów"] = {
+		before = 308.9723938,
+		after = 332.8897566,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|7|z zabić"] = {
+		before = 127.3622705,
+		after = 124.3377075,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|7|ze sprzedaży dropu"] = {
+		before = 65.62229052,
+		after = 64.06391104,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|8|mikstury"] = {
+		before = 11.34868198,
+		after = 11.07917671,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|8|z questów"] = {
+		before = 395.0340408,
+		after = 425.6133828,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|8|z zabić"] = {
+		before = 158.9172967,
+		after = 155.143374,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|8|ze sprzedaży dropu"] = {
+		before = 78.54247559,
+		after = 76.67727124,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|9|mikstury"] = {
+		before = 5.568148475,
+		after = 5.43591767,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|9|z questów"] = {
+		before = 491.43786,
+		after = 529.4797623,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|9|z zabić"] = {
+		before = 194.0651785,
+		after = 189.4565739,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|9|ze sprzedaży dropu"] = {
+		before = 111.397361,
+		after = 108.7519282,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|suma|mikstury"] = {
+		before = 250.3570777,
+		after = 244.8031235,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|suma|z questów"] = {
+		before = 14236,
+		after = 15338,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|suma|z zabić"] = {
+		before = 5229.446802,
+		after = 5106.688042,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+	["Złoto 1→20 (Wojownik)|suma|ze sprzedaży dropu"] = {
+		before = 2529.268927,
+		after = 2469.658121,
+		why = "S98+ quest budget: boss quests 2% of each band",
+	},
+} :: { [string]: AllowedDiff }
 
 export type FixtureDiff = { key: string, before: number, after: number, rel: number, allowed: boolean }
 export type FixtureReport = {
@@ -3292,6 +4335,8 @@ BalanceTables.ITEM_MODEL_MODULES = {
 	"Bosses",
 	"Areas/Caves",
 	"AreaProfiles",
+	"QuestBudget", -- S98: the monster EXP multiplier moves the kills of a level (Balance.levelIncome)
+	"Quests/Boss", -- S98: the boss quests pay EXP and gold in the band (Balance.levelIncome)
 	"Config",
 }
 

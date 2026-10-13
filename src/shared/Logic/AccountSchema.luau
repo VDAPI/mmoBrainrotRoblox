@@ -90,6 +90,8 @@ function AccountSchema.characterTemplate(): CharacterData
 			main = nil,
 			mainDone = 0,
 			daily = { day = 0, list = {}, rerolls = 0 },
+			weekly = { week = 0, list = {}, rerolls = 0 }, -- S98 (reconcile adds it to old characters)
+			contract = { done = 0 }, -- S98: filled by S99
 			side = { active = {}, done = {} },
 		},
 		guildId = nil,

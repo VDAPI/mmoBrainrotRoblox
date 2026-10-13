@@ -144,6 +144,9 @@ local Definitions: { [string]: Definition } = {
 	QuestAccept = { kind = "function", dir = "c2s", rate = 2, args = { "string" } }, -- (npcId)
 	QuestTurnIn = { kind = "function", dir = "c2s", rate = 2, args = { "string" } }, -- (npcId)
 	DailyClaim = { kind = "function", dir = "c2s", rate = 2, args = { "integer" } }, -- (contract index)
+	-- S98: weekly contracts and the week's boss contract, collected at the board
+	WeeklyClaim = { kind = "function", dir = "c2s", rate = 2, args = { "integer" } }, -- (weekly contract index)
+	BossContractClaim = { kind = "function", dir = "c2s", rate = 2, args = {} }, -- () the week's boss contract
 	QuestCompleted = { kind = "event", dir = "s2c" }, -- (titleKey) big message + sound
 	-- Side quests (S27): (questId) / (questId, reward choice 1..3) / (questId) / (quest anchor id) / ()
 	SideAccept = { kind = "function", dir = "c2s", rate = 2, args = { "string" } },

@@ -176,6 +176,12 @@ describe("QuestLogic.amount", function()
 		expect(QuestLogic.amount({ type = "talk", n = 1, npc = "healer" }, "talk", { npc = "healer" }, 0)).toBe(1)
 	end)
 
+	it("counts the world event objective by its kind (S98, from S101)", function()
+		local objective = { type = "event", n = 2 }
+		expect(QuestLogic.amount(objective, "event", {}, 0)).toBe(1)
+		expect(QuestLogic.amount(objective, "kill", { monsterId = "wolf" }, 0)).toBe(0)
+	end)
+
 	it("resolves the class vendor objective (S95)", function()
 		local expected: { [string]: string } = {
 			Warrior = "vendor_warrior",

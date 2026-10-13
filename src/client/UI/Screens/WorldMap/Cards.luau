@@ -31,6 +31,7 @@ local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local Monsters = require(ReplicatedStorage.Shared.Data.Monsters)
 local NavTarget = require(script.Parent.Parent.Parent.NavTarget)
 local NpcMarks = require(ReplicatedStorage.Shared.Logic.NpcMarks)
+local QuestLogic = require(ReplicatedStorage.Shared.Logic.QuestLogic)
 local NpcQuests = require(script.Parent.Parent.Parent.NpcQuests)
 local Npcs = require(ReplicatedStorage.Shared.Data.Npcs)
 local Portals = require(ReplicatedStorage.Shared.Data.Portals)
@@ -146,7 +147,7 @@ local function objectiveLines(lines: { DetailCard.Line }, quests: any, row: NpcQ
 		end
 		objectives, progress, turnIn = quest.objectives, main.progress, quest.turnIn
 	else
-		local quest = Quests.Side.get(row.id)
+		local quest = Quests.npcQuest(row.id)
 		local entry = SideQuests.activeOf(quests)[row.id]
 		if not quest or type(entry) ~= "table" then
 			return
@@ -165,7 +166,7 @@ local function rewardOf(row: NpcQuests.Row): Quests.Reward?
 		local quest = Quests.Main.get(row.id)
 		return if quest then quest.reward else nil
 	end
-	local quest = Quests.Side.get(row.id)
+	local quest = Quests.npcQuest(row.id)
 	return if quest then quest.reward else nil
 end
 
@@ -194,7 +195,8 @@ local function questSections(npcId: string, level: number): { Section }
 		active = "worldmap.card.questActive",
 	}
 	for _, row in NpcQuests.rows(quests, level, npcId) do
-		local title = T(`quest.{row.id}.title`)
+		-- S98: the quest's category in front of its title (quest.tab.<category>)
+		local title = `{T(`quest.tab.{row.category}`)} · {T(`quest.{row.id}.title`)}`
 		if row.mode == "later" then
 			table.insert(lines, {
 				text = `{title} ({T("quest.fromLevel", { level = NpcQuests.minLevel(row) })})`,
@@ -233,6 +235,23 @@ local function questSections(npcId: string, level: number): { Section }
 		if ready > 0 then
 			table.insert(lines, {
 				text = T("worldmap.card.dailyReady", { n = ready }),
+				color = Theme.Colors.GoldBright,
+				bold = true,
+			})
+		end
+	end
+	-- S98: the weekly contracts with the week's boss contract
+	local weekly = if npcId == NpcMarks.BOARD then quests.weekly else nil
+	if type(weekly) == "table" then
+		local ready, left = QuestLogic.weeklyOpen(weekly)
+		local total = #(weekly.list or {}) + (if type(weekly.boss) == "table" then 1 else 0)
+		table.insert(lines, {
+			text = T("worldmap.card.weekly", { left = left, total = total }),
+			color = Theme.Colors.Parchment,
+		})
+		if ready > 0 then
+			table.insert(lines, {
+				text = T("worldmap.card.weeklyReady", { n = ready }),
 				color = Theme.Colors.GoldBright,
 				bold = true,
 			})

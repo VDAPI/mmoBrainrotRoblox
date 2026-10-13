@@ -1,7 +1,10 @@
 --!strict
 -- Quest progress rules (DESIGN §20). Pure functions (Lune tests): which events advance which objectives,
--- completion, the next main quest and the daily contracts of a day.
+-- completion, the next main quest, the daily contracts of a day and (S98) the weekly contracts and boss contract of a
+-- week.
 
+local Bosses = require("../Data/Bosses")
+local BossScaling = require("./BossScaling")
 local Monsters = require("../Data/Monsters")
 local Quests = require("../Data/Quests")
 local Rng = require("./Rng")
@@ -48,6 +51,10 @@ function QuestLogic.amount(objective: Objective, kind: string, data: { [string]:
 		local wanted: string? = objective.variant
 		local isElite = variant == "elite" or variant == "elite2"
 		if (wanted == "elite" and not isElite) or (wanted == "normal" and isElite) then
+			return 0
+		end
+		-- S98: "elite2" = Elite II only
+		if wanted == "elite2" and variant ~= "elite2" then
 			return 0
 		end
 		if t == "collect" then
@@ -102,7 +109,7 @@ function QuestLogic.amount(objective: Objective, kind: string, data: { [string]:
 	elseif t == "level" then
 		return if kind == "level" and (data.level or 0) >= (objective.level or 1) then objective.n else 0
 	elseif t == kind then
-		-- fish, loot, stats, learn, potion, duel
+		-- fish, loot, stats, learn, potion, duel, event (S98; counted from S101)
 		return 1
 	end
 	return 0
@@ -178,9 +185,15 @@ end
 
 export type DailyEntry = { template: string, objective: Objective, progress: number, claimed: boolean }
 
--- The day's contracts for a character (deterministic for the same user, character and day).
-function QuestLogic.dailyFor(userId: number, characterId: string, day: number, level: number): { DailyEntry }
-	local seed = (userId * 7919 + day * 104729) % 2147483647
+-- S98: `perPeriod` templates of `templates` for a seed (the daily rules of S11: character bytes, 8 warm-up draws,
+-- draws without repetition from the templates open at `level`); `hidden` templates are never picked.
+local function pickTemplates(
+	templates: { Quests.DailyTemplate },
+	perPeriod: number,
+	seed: number,
+	characterId: string,
+	level: number
+): { DailyEntry }
 	for i = 1, #characterId do
 		seed = (seed * 31 + string.byte(characterId, i)) % 2147483647
 	end
@@ -190,13 +203,13 @@ function QuestLogic.dailyFor(userId: number, characterId: string, day: number, l
 		rng:next()
 	end
 	local pool = {}
-	for _, template in Quests.Daily.templates do
-		if level >= template.minLevel then
+	for _, template in templates do
+		if level >= template.minLevel and template.hidden ~= true then
 			table.insert(pool, template)
 		end
 	end
 	local list: { DailyEntry } = {}
-	for _ = 1, math.min(Quests.Daily.PER_DAY, #pool) do
+	for _ = 1, math.min(perPeriod, #pool) do
 		local template = table.remove(pool, rng:int(1, #pool))
 		assert(template, "template")
 		table.insert(
@@ -205,6 +218,65 @@ function QuestLogic.dailyFor(userId: number, characterId: string, day: number, l
 		)
 	end
 	return list
+end
+
+-- The day's contracts for a character (deterministic for the same user, character and day).
+function QuestLogic.dailyFor(userId: number, characterId: string, day: number, level: number): { DailyEntry }
+	local seed = (userId * 7919 + day * 104729) % 2147483647
+	return pickTemplates(Quests.Daily.templates, Quests.Daily.PER_DAY, seed, characterId, level)
+end
+
+-- S98: the week's contracts for a character (deterministic for the same user, character and week; another sequence
+-- than the daily ones of the same day).
+function QuestLogic.weeklyFor(userId: number, characterId: string, week: number, level: number): { DailyEntry }
+	local seed = (userId * 7919 + week * 15485863) % 2147483647
+	return pickTemplates(Quests.Weekly.templates, Quests.Weekly.PER_WEEK, seed, characterId, level)
+end
+
+-- S98: the boss of the week's boss contract: the highest boss whose dungeon the character may enter
+-- (BossScaling.requiredLevel); nil below the first entry level.
+function QuestLogic.bossContractFor(level: number): string?
+	local best, bestLevel = nil, -math.huge
+	for _, def in Bosses.list do
+		if BossScaling.requiredLevel(def.level) <= level and def.level > bestLevel then
+			best, bestLevel = def.id, def.level
+		end
+	end
+	return best
+end
+
+export type WeeklyState = {
+	week: number,
+	list: { any },
+	rerolls: number,
+	boss: { boss: string, progress: number, claimed: boolean }?,
+}
+
+-- S98: weekly contracts and the boss contract to collect (done, not claimed) and open (not done).
+function QuestLogic.weeklyOpen(weekly: WeeklyState?): (number, number)
+	if type(weekly) ~= "table" then
+		return 0, 0
+	end
+	local ready, open = 0, 0
+	local list: { any } = weekly.list or {}
+	for _, entry in list do
+		if not entry.claimed then
+			if (entry.progress or 0) >= entry.objective.n then
+				ready += 1
+			else
+				open += 1
+			end
+		end
+	end
+	local boss = weekly.boss
+	if boss and not boss.claimed then
+		if boss.progress >= Quests.Weekly.bossContract.n then
+			ready += 1
+		else
+			open += 1
+		end
+	end
+	return ready, open
 end
 
 return QuestLogic

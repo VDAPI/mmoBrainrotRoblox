@@ -53,6 +53,7 @@ local Items = require(Shared.Data.Items)
 local Log = require(Shared.Util.Log)
 local MonsterAbilities = require(Shared.Data.MonsterAbilities)
 local MonsterStats = require(Shared.Logic.MonsterStats)
+local QuestBudget = require(Shared.Logic.QuestBudget)
 local Net = require(Shared.Net)
 local Loot = require(Shared.Logic.Loot)
 local Luck = require(Shared.Logic.Luck)
@@ -636,6 +637,9 @@ local function reward(player: Player, monster: any, share: number, goldShare: nu
 	local kindReward = MonsterStats.kindReward(monster.def)
 	local baseExp = PartyLoot.splitExp(Exp.monsterExp(level, monster.variant) * kindReward * expMul, share)
 	local exp = math.floor(baseExp * Exp.levelDiffMultiplier(character.level, level) + 0.5)
+	-- S98: quest EXP budget (Data/QuestBudget): quests replace part of the grinding. The receiver's own level (every
+	-- party member has its own multiplier); dungeon bosses never come here (their EXP stays).
+	exp = math.floor(exp * QuestBudget.monsterExpMul(character.level) + 0.5)
 	local goldBonus = StatService.GetValue(player, "goldBonus")
 	local goldMul = MonsterStats.goldLevelMultiplier(character.level, level)
 	local gold = math.floor(goldShare * goldMul * (1 + (goldBonus + luckGold) / 100) + 0.5)

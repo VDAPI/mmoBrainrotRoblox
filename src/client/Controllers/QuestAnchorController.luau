@@ -310,7 +310,7 @@ local function refresh()
 	local done = SideQuests.doneAnchors(quests)
 	for id, anchor in anchors do
 		local target = usable[id]
-		local quest = target and Quests.Side.get(target.quest)
+		local quest = target and Quests.npcQuest(target.quest)
 		local objective = quest and quest.objectives[target.index]
 		anchor.prompt.Enabled = objective ~= nil
 		anchor.marker.Enabled = objective ~= nil

@@ -60,7 +60,12 @@ function QuestText.objective(use: any, objective: Objective, have: number, turnI
 			return Text.get(use, "quest.obj.kill", { monster = Text.get(use, key), count = count }) .. where
 		end
 		local map = Maps.get(REGION_MAPS[objective.region or 1] or "")
-		return Text.get(use, if objective.variant == "elite" then "quest.obj.killElite" else "quest.obj.killRegion", {
+		-- S98: "elite2" = Elite II only (weekly contracts)
+		local key = if objective.variant == "elite2"
+			then "quest.obj.killElite2"
+			elseif objective.variant == "elite" then "quest.obj.killElite"
+			else "quest.obj.killRegion"
+		return Text.get(use, key, {
 			region = if map then Text.get(use, map.nameKey) else "?",
 			count = count,
 		})
@@ -79,9 +84,12 @@ function QuestText.objective(use: any, objective: Objective, have: number, turnI
 				{ node = if kind then Text.get(use, kind.nameKey) else "?", count = count }
 			)
 		end
-		return Text.get(use, if objective.category == "ore" then "quest.obj.gatherOre" else "quest.obj.gatherHerb", {
-			count = count,
-		})
+		-- S98: no node and no category = herbs or ore (the weekly "gather" contract)
+		local key = if objective.category == "ore"
+			then "quest.obj.gatherOre"
+			elseif objective.category == "herb" then "quest.obj.gatherHerb"
+			else "quest.obj.gatherAny"
+		return Text.get(use, key, { count = count })
 	elseif t == "reach" then
 		if objective.place then
 			return Text.get(use, "quest.obj.reach", { map = Text.get(use, objective.place) })
@@ -99,7 +107,7 @@ function QuestText.objective(use: any, objective: Objective, have: number, turnI
 	elseif t == "level" then
 		return Text.get(use, "quest.obj.level", { level = objective.level or 1 })
 	end
-	-- fish, equip, loot, stats, learn, potion, duel
+	-- fish, equip, loot, stats, learn, potion, duel, event (S98: world events, counted from S101)
 	return Text.get(use, `quest.obj.{t}`, { count = count })
 end
 
@@ -248,6 +256,20 @@ function QuestText.sideTarget(quest: Quests.SideQuest, entry: any, level: number
 			}
 			local target = QuestText.target(fake, { 0 }, level)
 			if target and not quest.where then
+				return target
+			end
+		elseif t == "boss" and objective.boss then
+			-- Slayer quests (S98): the dungeon entrance, like the story's boss objective
+			local fake: Quests.MainQuest = {
+				id = quest.id,
+				level = quest.level,
+				giver = quest.giver,
+				turnIn = quest.turnIn,
+				objectives = { objective },
+				reward = quest.reward,
+			}
+			local target = QuestText.target(fake, { 0 }, level)
+			if target then
 				return target
 			end
 		end

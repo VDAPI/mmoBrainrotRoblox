@@ -61,6 +61,7 @@ local function side(
 		cosmetic: string?, -- S97: an account cosmetic on hand-in (Reward.cosmetic)
 		minLevel: number?, -- S96
 		wiki: boolean?, -- S96
+		category: Types.Category?, -- S98: "side" when nil (the S96 stable arc too)
 	}
 )
 	local final = def.final == true
@@ -84,6 +85,7 @@ local function side(
 		where = def.where,
 		minLevel = def.minLevel,
 		wiki = def.wiki,
+		category = def.category or "side",
 	})
 end
 

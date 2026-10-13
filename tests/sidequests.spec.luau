@@ -330,9 +330,27 @@ describe("S96 stable arc", function()
 			expect(quest.wiki).toBe(nil) -- S97: published on the wiki
 		end
 		expect(#Quests.Side.byArc.stable).toBe(3)
+		for _, quest in Quests.Side.byArc.stable do
+			expect(quest.category).toBe("side") -- S98
+		end
 		expect(ride.reward.mount).toBe("mount_horse")
 		expect(ride.reward.choice).toBe(nil)
 		expect(Mounts.get(ride.reward.mount :: string) ~= nil).toBe(true)
+	end)
+end)
+
+describe("S98 boss quests on the side machinery", function()
+	it("the Meadows scout offers Grimrok's Slayer from 15", function()
+		local function ids(list: { Quests.SideQuest }): { string }
+			local out = {}
+			for _, quest in list do
+				table.insert(out, quest.id)
+			end
+			return out
+		end
+		expect(table.find(ids(SideQuests.available(quests(), 15, "scout_meadows")), "boss_grimrok") ~= nil).toBe(true)
+		expect(table.find(ids(SideQuests.available(quests(), 14, "scout_meadows")), "boss_grimrok")).toBeNil()
+		expect(table.find(ids(SideQuests.later(quests(), 14, "scout_meadows")), "boss_grimrok") ~= nil).toBe(true)
 	end)
 end)
 

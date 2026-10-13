@@ -2778,3 +2778,38 @@
   sprint nie, spowolnienia tak), bez zmian; mnożnik zależy tylko od poziomu wierzchowca (test dla każdego wierzchowca).
 - **S97 księga:** `scale` dopisane do `omit` `Data/Mounts` (geometria wyglądu); powody `Mounts:UPGRADE[n]*`,
   `Mounts:BOSS_DROPS*`, `Mounts:byId.<id>*` z `session = "S97"`. Fixture 1–20 i `ALLOWED_1_20_DIFFS` bez zmian.
+- **S98 questy bossowe:** „pierwsze pokonanie każdego bossa i każdego lochu/jaskini z bossem” (DESIGN-15 §3.1) to cztery
+  questy `boss_<id>` (`Data/Quests/Boss`), bo każdy boss ma dokładnie jeden loch w jednej jaskini z bossem. Daje i
+  odbiera zwiadowca regionu, dostępne od poziomu wejścia (`minLevel = level = BossScaling.requiredLevel`: 15 / 40 / 65 /
+  95); liczy się tylko zwycięstwo po przyjęciu (zdarzenie `boss` z `DungeonService`, bez zaliczania przeszłości).
+- **S98 wspólna lista NPC:** questy bossowe żyją w gałęzi `quests.side` przez `Quests.npcList` / `Quests.npcQuest`
+  (`SideQuests`, `NpcMarks`, `SideQuestService`, klient); zajmują miejsce w limicie `maxActive = 10` jak poboczne.
+  `SideQuestService.turnIn` sprawdza teraz miejsce w plecaku także na `reward.items` (kamienie lochu).
+- **S98 znaki:** cztery znaki: złoty „!” (`available`), szary „!” (`availableLow`, oferta o więcej niż
+  `Config.Quest.greyGap = 6` poziomów niżej), „?” do oddania, szary „?” w toku (zostaje od S25 obok trzech z DESIGN-15).
+  Priorytet `turnIn > available > availableLow > active`; jeden styl w `UI/NpcMarkState` (tabliczki, mapa, minimapa).
+- **S98 kompensacja:** mnożnik EXP potworów per poziom postaci otrzymującej (`CombatService.reward`, każdy członek
+  drużyny swój), wzór na udziale bicia `s / s₀` z pliku bazowego; bez bossa w lochu, questów i PvP. Budżet obejmuje
+  `main`, `side` (× `SIDE_SHARE`), `boss` i `contract`; dzienne i tygodniowe poza nim. Questy bossowe i poboczne
+  rozkładane na pasmo (`QuestBudget.bandOf`), `questRewards` (S32) i `questsAt` liczą questy bossowe (w `exp` zawsze,
+  jak poboczne; `opts.bosses` dalej tylko dla questów fabuły z celem `boss`).
+- **S98 plik bazowy:** `tests/fixtures/quest_budget_base.json` liczony modelem S94 (`budget = false`: fabuła w oknach,
+  poboczne < 20); kod S91 rozkładał już poboczne każdego pasma, więc łuk stajennego S96 (21–22) był w modelu od S96 bez
+  kompensacji; teraz wchodzi do budżetu jak poboczne (pasmo 20–44, `SIDE_SHARE`). `SideQuest.minLevel` z S96 bez zmian.
+- **S98 1–20:** 208 wpisów `ALLOWED_1_20_DIFFS` z `why = "S98+ quest budget: boss quests 2% of each band"` (EXP za
+  zabicie, EXP/h, zabicia i godziny tabel S32, złoto 1→20, kara poziomu dla gracza 20, okno z zadaniem Grimroka);
+  fixture bez regeneracji do S109. Okna `paceWindowAt` 1–19 bez różnic (kompensacja trzyma godziny).
+- **S98 cel 30%:** nieasertowany; dziś (model) 1–19 62%, 20–44 30%, 45–69 15%, 70–99 12% (bez zleceń S99). Asertuje S109.
+- **S98 tygodniowe:** nagroda 0,30 `expToNext` (2× dzienne), złoto 2×, błogosławieństwo o stopień wyżej (2 / 3 od 15. /
+  4 od 35.), pył ×10, od 20. odłamek ×3, od 45. kryształ ×1; zlecenie na bossa: 2 zwycięstwa, 0,50 `expToNext`, złoto
+  5× dzienne, błogosławieństwo szczęścia 3 (4 od 35.), esencje; bez `legend_core` i kamieni lochu. Szablon `elite2`
+  od 14. (Elity II są w jaskiniach Łąk od 7.).
+- **S98 ukryte do kolejnych sesji:** szablon tygodniowy `event` z `hidden = true` do S101; zakładka „Zlecenia” w
+  dzienniku pokazuje się sama, gdy `Data/Quests/Contracts.list` niepusta (S99). Zlecenie na bossa przydzielone raz na
+  tydzień nie zmienia bossa; postać, która w tygodniu dojdzie do 15., dostaje je od razu.
+- **S98 łuk stajennego:** kategoria `side` (bez osobnej `mount`; DESIGN-15 §3.1 pozwala), zakładka „Poboczne”.
+- **S98 model:** `Balance.killExp` i `Balance.areaHour` mnożą przez `QuestBudget.monsterExpMul` (jak serwer;
+  `AreaRates` bez zmian, bo czyta go też wiki); odcisk danych fixture'u przedmiotów S84 obejmuje `QuestBudget` i
+  `Quests/Boss` (dochód poziomu G9), fixture odświeżony.
+- **S98 porzucanie questu bossowego:** w zakładce „Bossowie” dziennika (zajmuje miejsce w `maxActive`, więc musi dać się
+  zwolnić); śledzenie prowadzi do wejścia do lochu regionu bossa.

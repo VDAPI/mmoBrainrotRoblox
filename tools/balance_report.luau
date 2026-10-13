@@ -33,6 +33,10 @@ local MonsterStats = require("../src/shared/Logic/MonsterStats")
 local Progression = require("../src/shared/Data/Progression")
 local Rarities = require("../src/shared/Data/Rarities")
 local Reasons = require("./balance_reasons")
+local Exp = require("../src/shared/Logic/Exp")
+local QuestBudgetData = require("../src/shared/Data/QuestBudget")
+local QuestBudgetGen = require("./QuestBudgetGen")
+local Quests = require("../src/shared/Data/Quests")
 local SkillModel = require("../tests/SkillModel")
 local SkillData = require("../src/shared/Data/Skills")
 local Skills = require("../src/shared/Logic/Skills")
@@ -2550,19 +2554,16 @@ do
 		})
 	end
 	table.insert(rows, { "1 → 10", "", fmtValue(totalGold, "i"), "", fmtValue(total, "2"), "", "", "" })
-	tableOut(
-		{
-			"poziom wierzchowca",
-			"poziom postaci",
-			"złoto",
-			"dochód poziomu",
-			"udział",
-			"części (rodzaj: zabicia)",
-			"szybkość",
-			"wsiadanie s",
-		},
-		rows
-	)
+	tableOut({
+		"poziom wierzchowca",
+		"poziom postaci",
+		"złoto",
+		"dochód poziomu",
+		"udział",
+		"części (rodzaj: zabicia)",
+		"szybkość",
+		"wsiadanie s",
+	}, rows)
 	add(
 		"Wierzchowce z bossów (`Data/Mounts.BOSS_DROPS`): osobny rzut każdego zwycięzcy, bez drabiny zabić dnia i bez szczęścia."
 	)
@@ -2578,6 +2579,80 @@ do
 		})
 	end
 	tableOut({ "boss", "wierzchowiec", "szansa", "zabicia średnio", "dni przy limicie" }, drops)
+end
+
+-- Quest EXP budget (S98) ------------------------------------------------------------------------------------------
+
+do
+	add("## Budżet EXP zadań (S98)")
+	add()
+	add(
+		"Kontrakt `docs/DESIGN-15.md` §3.2: zadania zastępują część bicia, czas na poziom zostaje z S94. Udział = EXP kategorii zaliczony poziomom pasma w modelu okien (`Balance.questCreditByLevel`) / suma `expToNext` pasma; cel `Data/QuestBudget.TARGET` (razem 30%, asertuje S109). Kompensacja: `MONSTER_EXP_MUL` z `lune run tools/quest_budget.luau` (udział bicia `s / s₀` wobec pliku bazowego `tests/fixtures/quest_budget_base.json`)."
+	)
+	add()
+	local cats = QuestBudgetGen.CATEGORIES
+	for _, variant in
+		{ { false, "model (poboczne × SIDE_SHARE)" }, { true, "gracz robi wszystko (poboczne w całości)" } }
+	do
+		add(`Udział EXP zadań w paśmie, {variant[2]}:`)
+		add()
+		local rows: { { string } } = {}
+		for _, band in QuestBudgetGen.shares(variant[1]) do
+			local row = { `{band.lo}–{band.hi}` }
+			for _, cat in cats do
+				table.insert(row, fmtValue(band.byCategory[cat] or 0, "%"))
+			end
+			table.insert(row, fmtValue(band.total, "%"))
+			table.insert(rows, row)
+		end
+		local target = { "cel" }
+		local sum = 0
+		for _, cat in cats do
+			local t = QuestBudgetData.TARGET[cat] or 0
+			sum += t
+			table.insert(target, fmtValue(t, "%"))
+		end
+		table.insert(target, fmtValue(sum, "%"))
+		table.insert(rows, target)
+		tableOut({ "pasmo", "fabuła", "poboczne", "bossowe", "zlecenia", "razem" }, rows)
+	end
+	add(
+		"Poza budżetem (w ułamku `expToNext` poziomu postaci, nagroda liczona przy odbiorze): dzienne 3 × 0,15 = 0,45 na dzień; tygodniowe 3 × 0,30 = 0,90 na tydzień i zlecenie na bossa 0,50 na tydzień (od 15. poziomu)."
+	)
+	add()
+	local rows: { { string } } = {}
+	for _, L in { 1, 5, 10, 15, 19, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 99 } do
+		local q = B.questsAt(L)
+		local e = Exp.expToNext(L)
+		table.insert(rows, {
+			tostring(L),
+			string.format("%.3f", QuestBudgetData.MONSTER_EXP_MUL[L]),
+			fmtValue(Quests.Daily.PER_DAY * (Quests.Daily.reward(L).exp or 0) / e, "2"),
+			fmtValue(q.weekly / e, "2"),
+		})
+	end
+	tableOut({ "poziom", "`monsterExpMul`", "dzienne / dzień (× expToNext)", "tygodniowe + boss / tydzień" }, rows)
+	add(
+		"Godziny bicia na pasmo (Wojownik, model okien): baza = udział bicia S94 × EXP poziomu, teraz = po zadaniach S98 i kompensacji."
+	)
+	add()
+	local base = QuestBudgetGen.base()
+	local credit = QuestBudgetGen.credit()
+	local hours: { { string } } = {}
+	for _, band in QuestBudgetData.BANDS do
+		local before, after = 0, 0
+		for L = band[1], band[2] do
+			local w = B.paceWindowAt("Warrior", L)
+			local mul = QuestBudgetData.MONSTER_EXP_MUL[L]
+			before += base[L].share * credit[L].exp * mul / w.expPerKill * w.secondsPerKill / 3600
+			after += w.hours
+		end
+		table.insert(
+			hours,
+			{ `{band[1]}–{band[2]}`, fmtValue(before, "1"), fmtValue(after, "1"), fmtValue(after / before, "2") }
+		)
+	end
+	tableOut({ "pasmo", "h baza", "h teraz", "teraz / baza" }, hours)
 end
 
 -- Skills on the reference builds (S85) ----------------------------------------------------------------------------

@@ -874,6 +874,21 @@ Po testach S17: **więcej rodzajów na każdej mapie (min. 8–10 na mapę teren
   (`x`, `z`, `radius`, nazwa miejsca).
 - Dziennik: zakładki Główne / Poboczne / Dzienne; poboczne po wątkach z postępem („2/5”), śledzenie jednego questa
   naraz (strzałka, minimapa), porzucanie z potwierdzeniem. Karczmarz w plotkach wskazuje NPC, u których jest robota.
+- **Kategorie (S98, `docs/DESIGN-15.md` §3)**: `main`, `side` (także łuk stajennego), `contract` (zlecenia łowieckie
+  S99), `boss`, `daily`, `weekly`; dziennik ma zakładkę na kategorię w tej kolejności (przewijany pasek na telefonie;
+  „Zlecenia” pojawiają się, gdy są dane).
+- **Znaki nad NPC i na mapach (S98)**: złoty „!” nowy quest, szary „!” quest o więcej niż `Config.Quest.greyGap = 6`
+  poziomów poniżej postaci (dialog dopisuje, że płaci mniej niż bicie), złoty „?” do oddania, szary „?” w toku.
+- **Tygodniowe (S98)**: 3 na tydzień z tablicy zleceń (nowy zestaw w poniedziałek 00:00 UTC), nagroda 2× dzienna i
+  błogosławieństwo o stopień wyższe; szablon „wydarzenia świata” czeka na S101. Do tego **zlecenie na bossa**: raz na
+  tydzień pokonaj najwyższego dostępnego bossa 2 razy (od 15. poziomu), odbiór na tablicy.
+- **Questy bossowe „Pogromca” (S98)**: po jednym na bossa i jego loch, u zwiadowcy regionu, od poziomu wejścia do
+  lochu. Postęp i zlecenie na bossa liczą tylko wygrane biegi, więc dzienny limit bossów (`Config.Boss.dailyRuns`)
+  obowiązuje zawsze.
+- **Budżet EXP (S98)**: questy zastępują część bicia, czas na poziom zostaje z S94. EXP potworów na poziomie postaci L
+  mnoży `monsterExpMul(L) = s(L) / s₀(L)` (udział bicia w EXP poziomu teraz / w modelu S94), który generuje
+  `lune run tools/quest_budget.luau` z danych questów; cel `Data/QuestBudget.TARGET` ok. 30% EXP poziomu z questów
+  (zlecenie 12%, fabuła 10%, poboczne 6%, bossowe 2%), dzienne i tygodniowe poza budżetem.
 
 ## 21. Monetyzacja (bez pay-to-win)
 

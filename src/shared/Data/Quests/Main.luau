@@ -20,6 +20,7 @@ end
 local list: { MainQuest } = {}
 
 local function q(def: MainQuest)
+	def.category = "main" -- S98 (Data/Quests.CATEGORIES)
 	table.insert(list, def)
 end
 

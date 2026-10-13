@@ -63,6 +63,8 @@ local PartyBonus = require("../src/shared/Logic/PartyBonus")
 local PathData = require("../src/shared/Data/Paths")
 local Paths = require("../src/shared/Logic/Paths")
 local Potions = require("../src/shared/Logic/Potions")
+local QuestBudget = require("../src/shared/Logic/QuestBudget")
+local QuestLogic = require("../src/shared/Logic/QuestLogic")
 local Quests = require("../src/shared/Data/Quests")
 local Rarities = require("../src/shared/Data/Rarities")
 local Recipes = require("../src/shared/Data/Recipes")
@@ -1030,10 +1032,22 @@ function Balance.kindReward(kind: any): number
 	return 1
 end
 
+-- S98 (C4): true = the model without the quest budget compensation (build/ comparisons and questbudget.spec only).
+Balance.QUEST_BUDGET_OFF = false
+
+-- S98: the quest budget multiplier of a kill credited to a character of `playerLevel` (CombatService.reward; not
+-- for a dungeon boss).
+function Balance.budgetMul(playerLevel: number, variant: string?): number
+	if Balance.QUEST_BUDGET_OFF or (variant or "normal") == "boss" then
+		return 1
+	end
+	return QuestBudget.monsterExpMul(playerLevel)
+end
+
 function Balance.killExp(playerLevel: number, kind: any, monsterLevel: number, variant: string?): number
 	local base = Exp.monsterExp(monsterLevel, (variant or "normal") :: any)
 	local mul = if (variant or "normal") == "boss" then 1 else Balance.kindReward(kind)
-	return base * mul * Exp.levelDiffMultiplier(playerLevel, monsterLevel)
+	return base * mul * Exp.levelDiffMultiplier(playerLevel, monsterLevel) * Balance.budgetMul(playerLevel, variant)
 end
 
 function Balance.killGold(playerLevel: number, kind: any, monsterLevel: number, variant: string?): number
@@ -1130,9 +1144,10 @@ Balance.SIDE_SHARE = 0.5
 
 -- Quest EXP and gold of levels 1..19 (main story + SIDE_SHARE of the Meadows side quests), spread over the levels
 -- in proportion to the EXP each level needs (quests are done along the way, not all at their own level).
+-- S98: the boss quests below 20 count in full (the same quest EXP as the window model).
 function Balance.questRewards(level: number): (number, number)
 	local exp, gold, need = 0, 0, 0
-	for _, entry in { { Quests.Main.list, 1 }, { Quests.Side.list, Balance.SIDE_SHARE } } do
+	for _, entry in { { Quests.Main.list, 1 }, { Quests.Side.list, Balance.SIDE_SHARE }, { Quests.Boss.list, 1 } } do
 		for _, q in entry[1] :: any do
 			if q.level < 20 then
 				exp += (q.reward.exp or 0) * entry[2]
@@ -1488,6 +1503,11 @@ export type QuestsAt = {
 	bossGold: number,
 	daily: number, -- PER_DAY x Daily.reward EXP per day (report only)
 	dailyGold: number,
+	-- S98: the boss quests of Data/Quests/Boss (category "boss", in `exp` and `gold`), the hunting contract of the level
+	-- (S99, in `exp` and `gold`) and the weekly contracts with the boss contract per week (report only)
+	bossQuest: number,
+	contract: number,
+	weekly: number,
 }
 
 local function hasBoss(q: any): boolean
@@ -1520,13 +1540,33 @@ function Balance.questsAt(level: number, opts: QuestOpts?): QuestsAt
 			sideGold += (q.reward.gold or 0) * Balance.SIDE_SHARE
 		end
 	end
+	-- S98: boss quests (category "boss") and the hunting contract of the level count like the side quests
+	local bossQuest, bossQuestGold, contract, contractGold = 0, 0, 0, 0
+	for _, q in Quests.Boss.list :: { any } do
+		if q.level == level then
+			bossQuest += q.reward.exp or 0
+			bossQuestGold += q.reward.gold or 0
+		end
+	end
+	for _, q in Quests.Contracts.list :: { any } do
+		if q.level == level then
+			contract += q.reward.exp or 0
+			contractGold += q.reward.gold or 0
+		end
+	end
 	local daily = Quests.Daily.reward(level)
-	local exp, gold = main + side, mainGold + sideGold
+	local exp, gold = main + side + bossQuest + contract, mainGold + sideGold + bossQuestGold + contractGold
 	if o.bosses then
 		exp += boss
 		gold += bossGold
 	end
+	local weekly = Quests.Weekly.reward(level)
+	-- the boss contract only from the first boss's entry level (QuestLogic.bossContractFor)
+	local bossWeekly = if QuestLogic.bossContractFor(level) ~= nil then Quests.Weekly.bossReward(level).exp or 0 else 0
 	return {
+		bossQuest = bossQuest,
+		contract = contract,
+		weekly = Quests.Weekly.PER_WEEK * (weekly.exp or 0) + bossWeekly,
 		exp = exp,
 		gold = gold,
 		main = main,
@@ -1675,6 +1715,8 @@ function Balance.areaHour(classId: string, level: number, area: any): any
 		hp += r.hpLostPerFight
 	end
 	spk /= n
+	-- S98: the quest budget multiplier of the character's level, as CombatService.reward (AreaRates stays without it)
+	exp *= Balance.budgetMul(level)
 	return {
 		id = area.id,
 		profile = area.profile,
@@ -1813,7 +1855,8 @@ end
 -- opts.kind = a kind (or "kindAt" for the Meadows kind of each level, Balance.kindAt; S92: "region" for
 -- Balance.kindAtRegion), opts.withBossQuests = the boss
 -- quests count too (report variant: grimrok over 18-19).
-export type PaceWindowOpts = { kind: any?, withBossQuests: boolean? }
+-- S98: opts.budget = false = the S94 quest lists (Balance.questCreditByLevel); the default counts the quest budget.
+export type PaceWindowOpts = { kind: any?, withBossQuests: boolean?, budget: boolean? }
 export type PaceWindow = {
 	level: number,
 	hours: number,
@@ -1826,47 +1869,145 @@ export type PaceWindow = {
 
 local windowCache: { [string]: { PaceWindow } } = {}
 
-local function questWindows(withBosses: boolean): { [number]: number }
-	local main: { any } = {}
-	for _, q in Quests.Main.list :: { any } do
-		if withBosses or not hasBoss(q) then
-			table.insert(main, q)
-		end
+-- S98 (docs/DESIGN-15.md §3.2, C1): every quest list of the pace model, read by one function so later sessions add
+-- quests in the data only (each quest's `category` picks its rule in CREDIT_RULES). budget = false is for ever the
+-- S91 / S94 model: the main story in windows and SIDE_SHARE of the side quests below 20 over 1-19, no boss quests, no
+-- contracts, no side quests from 20 (the stable arc of S96 is new to it).
+export type QuestCreditOpts = { withBossQuests: boolean?, budget: boolean? }
+export type QuestCreditRow = {
+	exp: number, -- Exp.expToNext(L)
+	quest: number, -- quest EXP credited to L (without the carry)
+	carryIn: number, -- quest EXP above the need of L - 1
+	carryOut: number, -- quest EXP above the need of L (the next level's carryIn)
+	need: number, -- EXP left to kill: max(0, exp - quest - carryIn)
+	byCategory: { [string]: number }, -- `quest` split by category (main, side, boss, contract)
+}
+type QuestSource = { list: { any }, below: number? }
+-- share = the part of a quest's EXP the model counts; spread = "window" (the main story: from its level to the level
+-- before the next main quest), "band" (Logic/QuestBudget.bandOf of its level), "level" (its own level only)
+local CREDIT_RULES: { [string]: { share: number, spread: string } } = {
+	main = { share = 1, spread = "window" },
+	side = { share = Balance.SIDE_SHARE, spread = "band" },
+	boss = { share = 1, spread = "band" },
+	contract = { share = 1, spread = "level" },
+}
+Balance.CREDIT_RULES = CREDIT_RULES
+
+local function questSources(budget: boolean): { QuestSource }
+	if not budget then
+		return { { list = Quests.Main.list }, { list = Quests.Side.list, below = 20 } }
 	end
+	return {
+		{ list = Quests.Main.list },
+		{ list = Quests.Side.list },
+		{ list = Quests.Boss.list },
+		{ list = Quests.Contracts.list },
+	}
+end
+
+local creditCache: { [string]: { QuestCreditRow } } = {}
+
+local function creditRows(o: QuestCreditOpts): { QuestCreditRow }
+	local budget = o.budget ~= false
+	local withBosses = o.withBossQuests == true
+	local key = `{budget}|{withBosses}`
+	local cached = creditCache[key]
+	if cached then
+		return cached
+	end
+	local out: { [number]: number } = {}
+	local cats: { [number]: { [string]: number } } = {}
+	local function add(L: number, category: string, value: number)
+		out[L] = (out[L] or 0) + value
+		local c = cats[L] or {}
+		cats[L] = c
+		c[category] = (c[category] or 0) + value
+	end
+	local sources = questSources(budget)
+	local function counted(source: QuestSource, q: any): boolean
+		if source.below and q.level >= source.below then
+			return false
+		end
+		local rule = CREDIT_RULES[q.category or "main"]
+		assert(rule, `Balance: no credit rule for the quest category {q.category} ({q.id})`)
+		return rule.spread ~= "window" or withBosses or not hasBoss(q)
+	end
+	-- the levels of the main quests counted (window starts, S91)
 	local starts: { number } = {}
-	for _, q in main do
-		if not table.find(starts, q.level) then
-			table.insert(starts, q.level)
+	for _, source in sources do
+		for _, q in source.list do
+			if counted(source, q) and CREDIT_RULES[q.category or "main"].spread == "window" then
+				if not table.find(starts, q.level) then
+					table.insert(starts, q.level)
+				end
+			end
 		end
 	end
 	table.sort(starts)
-	local out: { [number]: number } = {}
-	for _, q in main do
-		local i = table.find(starts, q.level) :: number
-		-- S94: the last main quest's window runs to MaxLevel - 1 (glacier 92-99, as the S91 windows read; it paid
-		-- only level 92 before: h(92) = 0 and h(93) / h(92) without meaning)
-		local last = if starts[i + 1] then starts[i + 1] - 1 else math.max(q.level, Config.MaxLevel - 1)
-		local need = 0
-		for L = q.level, last do
-			need += Exp.expToNext(L)
-		end
-		for L = q.level, last do
-			out[L] = (out[L] or 0) + (q.reward.exp or 0) * Exp.expToNext(L) / need
-		end
-	end
-	for _, q in Quests.Side.list :: { any } do
-		for _, band in Balance.BANDS do
-			if q.level >= band[1] and q.level < band[2] then
+	for _, source in sources do
+		for _, q in source.list do
+			if not counted(source, q) then
+				continue
+			end
+			local category: string = q.category or "main"
+			local rule = CREDIT_RULES[category]
+			if rule.spread == "window" then
+				local i = table.find(starts, q.level) :: number
+				-- S94: the last main quest's window runs to MaxLevel - 1 (glacier 92-99, as the S91 windows read; it
+				-- paid only level 92 before: h(92) = 0 and h(93) / h(92) without meaning)
+				local last = if starts[i + 1] then starts[i + 1] - 1 else math.max(q.level, Config.MaxLevel - 1)
 				local need = 0
-				for L = band[1], band[2] - 1 do
+				for L = q.level, last do
 					need += Exp.expToNext(L)
 				end
-				for L = band[1], band[2] - 1 do
-					out[L] = (out[L] or 0) + (q.reward.exp or 0) * Balance.SIDE_SHARE * Exp.expToNext(L) / need
+				for L = q.level, last do
+					add(L, category, (q.reward.exp or 0) * Exp.expToNext(L) / need)
 				end
-				break
+			elseif rule.spread == "band" then
+				if q.level < Config.MaxLevel then
+					local lo, hi = QuestBudget.bandOf(q.level)
+					local need = 0
+					for L = lo, hi do
+						need += Exp.expToNext(L)
+					end
+					for L = lo, hi do
+						add(L, category, (q.reward.exp or 0) * rule.share * Exp.expToNext(L) / need)
+					end
+				end
+			else
+				add(q.level, category, (q.reward.exp or 0) * rule.share)
 			end
 		end
+	end
+	local rows: { QuestCreditRow } = {}
+	local carry = 0
+	for L = 1, Config.MaxLevel do
+		local e = Exp.expToNext(L)
+		local quest = out[L] or 0
+		local need = e - quest - carry
+		local carryOut = math.max(0, -need)
+		table.insert(rows, {
+			exp = e,
+			quest = quest,
+			carryIn = carry,
+			carryOut = carryOut,
+			need = math.max(0, need),
+			byCategory = cats[L] or {},
+		})
+		carry = carryOut
+	end
+	creditCache[key] = rows
+	return rows
+end
+
+-- S98 (C1): the quest EXP of the pace window model per level 1..99 (exp = Exp.expToNext, quest = window main + side +
+-- boss + contract EXP credited to the level, carryIn = the excess of the level before, need = what is left to kill).
+-- opts.budget = false: the S94 model (the base of the quest budget, tests/fixtures/quest_budget_base.json).
+function Balance.questCreditByLevel(opts: QuestCreditOpts?): { [number]: QuestCreditRow }
+	local rows = creditRows(opts or {})
+	local out: { [number]: QuestCreditRow } = {}
+	for L = 1, Config.MaxLevel - 1 do
+		out[L] = rows[L]
 	end
 	return out
 end
@@ -1875,12 +2016,11 @@ function Balance.paceWindowAt(classId: string, level: number, opts: PaceWindowOp
 	local o: PaceWindowOpts = opts or {}
 	-- only nil / string kinds are cached: a kind table has no stable key (a second table must not read the first's)
 	local cacheable = o.kind == nil or type(o.kind) == "string"
-	local key = `{classId}|{o.kind or "generic"}|{o.withBossQuests == true}`
+	local key = `{classId}|{o.kind or "generic"}|{o.withBossQuests == true}|{o.budget ~= false}`
 	local list = if cacheable then windowCache[key] else nil
 	if not list or #list < level then
 		list = {}
-		local windows = questWindows(o.withBossQuests == true)
-		local carry = 0
+		local credit = creditRows({ withBossQuests = o.withBossQuests, budget = o.budget })
 		local top = math.max(level, 20)
 		for L = 1, top do
 			-- S92: "region" = the hunting-ground kind of each level (Balance.kindAtRegion; the report's region variant)
@@ -1889,20 +2029,17 @@ function Balance.paceWindowAt(classId: string, level: number, opts: PaceWindowOp
 				elseif o.kind == "region" then Balance.kindAtRegion(L)
 				else (o.kind or Balance.GENERIC)
 			local pace = Balance.paceAt(classId, L, { kind = kind })
-			local questExp = windows[L] or 0
-			local need = Exp.expToNext(L) - questExp - carry
-			local carryOut = math.max(0, -need)
-			local kills = math.max(0, need) / pace.expPerKill
+			local row = credit[L]
+			local kills = row.need / pace.expPerKill
 			table.insert(list, {
 				level = L,
 				hours = kills * pace.secondsPerKill / 3600,
-				questExp = questExp,
-				carryIn = carry,
-				carryOut = carryOut,
+				questExp = row.quest,
+				carryIn = row.carryIn,
+				carryOut = row.carryOut,
 				secondsPerKill = pace.secondsPerKill,
 				expPerKill = pace.expPerKill,
 			})
-			carry = carryOut
 		end
 		if cacheable then
 			windowCache[key] = list

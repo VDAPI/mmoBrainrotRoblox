@@ -1,7 +1,7 @@
 --!strict
 -- Quests on the client (DESIGN §20): the journal (L), the quest conversation with NPCs (story and, S27, side
--- quests), the contract board, markers above NPCs ("!" quest available, golden "?" ready to hand in, grey "?" in
--- progress; Logic/NpcMarks), the HUD tracker with the direction arrow and the target on the minimap for the one
+-- quests), the contract board, markers above NPCs (gold "!" quest available, S98: grey "!" an offer far below the
+-- level, gold "?" ready to hand in, grey "?" in progress; Logic/NpcMarks, style in UI/NpcMarkState), the HUD tracker with the direction arrow and the target on the minimap for the one
 -- tracked quest (the story or a side quest, QuestTrack.Focus), and the completion message.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -16,6 +16,7 @@ local QuestJournal = require(script.Parent.Parent.UI.Screens.QuestJournal)
 local QuestText = require(script.Parent.Parent.UI.QuestText)
 local QuestTrack = require(script.Parent.Parent.UI.QuestTrack)
 local NpcQuests = require(script.Parent.Parent.UI.NpcQuests)
+local NpcMarkState = require(script.Parent.Parent.UI.NpcMarkState)
 local Elite2Timer = require(script.Parent.Parent.UI.Screens.Hud.Elite2Timer)
 local QuestTracker = require(script.Parent.Parent.UI.Screens.Hud.QuestTracker)
 local Quests = require(ReplicatedStorage.Shared.Data.Quests)
@@ -35,12 +36,6 @@ local scope = Fusion.scoped(Fusion)
 local WindowManager: any
 local dialogNpc = scope:Value(nil :: string?)
 local dialogRow = scope:Value(nil :: NpcQuests.Row?)
-
-local MARKERS = {
-	available = { text = "!", color = Theme.Colors.GoldBright },
-	turnIn = { text = "?", color = Theme.Colors.GoldBright },
-	active = { text = "?", color = Theme.Colors.TextMuted },
-}
 
 -- Opens the conversation about one quest of an NPC (a row of UI/NpcQuests).
 function QuestController.OpenQuest(npcId: string, row: NpcQuests.Row)
@@ -90,7 +85,8 @@ local function refreshMarkers()
 			end
 			assert(label, "marker")
 			local marker = QuestText.marker(npcId, quests, level)
-			local style = if marker then MARKERS[marker] else nil
+			-- S98: one style for the plates, the world map and the minimap (UI/NpcMarkState)
+			local style = NpcMarkState.style(marker :: any)
 			label.Visible = style ~= nil
 			if style then
 				label.Text = style.text
@@ -106,7 +102,7 @@ local function refreshTarget()
 	-- S27: a tracked side quest that is no longer active (handed in, abandoned) gives the arrow back to the story.
 	local focus = Fusion.peek(QuestTrack.Focus)
 	if focus then
-		local side = Quests.Side.get(focus.id)
+		local side = Quests.npcQuest(focus.id)
 		local entry = SideQuests.activeOf(quests)[focus.id]
 		if side and type(entry) == "table" then
 			QuestTrack.Target:set(QuestText.sideTarget(side, entry, level))

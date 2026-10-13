@@ -136,6 +136,31 @@ T.describe("AccountSchema", function()
 		T.expect(data.characters["1"].quests.daily.list).toEqual({})
 	end)
 
+	T.it("S98: old characters get the weekly and contract branches, side quests untouched", function()
+		local side = { active = { side_granary = { progress = { 1 }, used = {} } }, done = { side_fence = true } }
+		local data: any = {
+			schema = AccountSchema.CURRENT,
+			characters = {
+				["1"] = {
+					id = "x",
+					name = "Old",
+					class = "Warrior",
+					level = 30,
+					quests = { mainDone = 3, daily = { day = 1, list = {}, rerolls = 0 }, side = side },
+				},
+			},
+		}
+		AccountSchema.migrate(data)
+		local quests = data.characters["1"].quests
+		T.expect(quests.weekly).toEqual({ week = 0, list = {}, rerolls = 0 })
+		T.expect(quests.contract).toEqual({ done = 0 })
+		T.expect(quests.side).toEqual({
+			active = { side_granary = { progress = { 1 }, used = {} } },
+			done = { side_fence = true },
+		})
+		T.expect(quests.mainDone).toBe(3)
+	end)
+
 	T.it("template keeps an empty hotbar (reconcile)", function()
 		T.expect(AccountSchema.characterTemplate().hotbar).toEqual({})
 		local mage = CharacterFactory.create("Mage", "Empty", ids())

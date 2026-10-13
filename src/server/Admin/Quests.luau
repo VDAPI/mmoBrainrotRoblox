@@ -5,8 +5,10 @@
 local Shared = game:GetService("ReplicatedStorage").Shared
 
 local Areas = require(Shared.Data.Areas)
+local BudgetData = require(Shared.Data.QuestBudget)
 local Maps = require(Shared.Data.Maps)
 local NpcMarks = require(Shared.Logic.NpcMarks)
+local QuestBudget = require(Shared.Logic.QuestBudget)
 local Quests = require(Shared.Data.Quests)
 local SideQuests = require(Shared.Logic.SideQuests)
 
@@ -42,6 +44,41 @@ commands.daily = function(player, args)
 	withCharacter(player, function()
 		QuestService.RerollDaily(player)
 		reply(player, "admin.daily.reroll")
+	end)
+end
+
+-- S98: /weekly reroll | complete
+commands.weekly = function(player, args)
+	local action = args[1]
+	if action ~= "reroll" and action ~= "complete" then
+		reply(player, "admin.usage.weekly")
+		return
+	end
+	withCharacter(player, function()
+		if action == "reroll" then
+			QuestService.RerollWeekly(player)
+		else
+			QuestService.CompleteWeekly(player)
+		end
+		reply(player, "admin.weekly.done")
+	end)
+end
+
+-- S98: /questbudget [level]: the monster EXP multiplier of the quest budget (Logic/QuestBudget).
+commands.questbudget = function(player, args)
+	withCharacter(player, function()
+		local char = PlayerStateService.GetCharacter(player)
+		local level = math.clamp(math.floor(tonumber(args[1]) or char.level), 1, 100)
+		local lo, hi = QuestBudget.bandOf(level)
+		local t = BudgetData.TARGET
+		local target = t.contract + t.main + t.side + t.boss
+		reply(player, "admin.questbudget.line", {
+			level = level,
+			mul = string.format("%.3f", QuestBudget.monsterExpMul(level)),
+			lo = lo,
+			hi = hi,
+			target = math.floor(target * 100 + 0.5),
+		})
 	end)
 end
 
@@ -90,7 +127,7 @@ commands.side = function(player, args)
 			reply(player, "admin.side.done", { action = action, id = id or "*" })
 			return
 		end
-		if not id or not Quests.Side.get(id) then
+		if not id or not Quests.npcQuest(id) then
 			reply(player, "admin.usage.side")
 			return
 		end

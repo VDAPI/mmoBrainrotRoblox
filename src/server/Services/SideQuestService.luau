@@ -5,6 +5,8 @@
 -- World interactions (`use` objectives): QuestUse(anchorId) holds for the objective's time at a quest anchor (parts
 -- tagged QuestAnchor, built by the map layouts from Data/Areas) like gathering; moving or taking damage breaks it.
 -- Rules live in Logic/SideQuests (shared with the client's dialog, journal and quest marks).
+-- S98: the boss quests of Data/Quests/Boss run on the same machinery (Data/Quests.npcList / npcQuest): taken from the
+-- scout of the region, progressed only by the "boss" event of a won dungeon run (no past kills count).
 --   SideAccept(questId) · SideTurnIn(questId, choiceIndex?) · SideAbandon(questId) · QuestUse(anchorId) ·
 --   CancelQuestUse()
 
@@ -16,6 +18,7 @@ local Workspace = game:GetService("Workspace")
 local Shared = ReplicatedStorage.Shared
 
 local Config = require(Shared.Config)
+local ItemRoll = require(Shared.Logic.ItemRoll)
 local Log = require(Shared.Util.Log)
 local Maps = require(Shared.Data.Maps)
 local Net = require(Shared.Net)
@@ -124,7 +127,7 @@ function SideQuestService.Handle(player: Player, kind: string, data: { [string]:
 		data.classId = char.class
 	end
 	for id, entry in sideOf(char).active do
-		local quest = Quests.Side.get(id)
+		local quest = Quests.npcQuest(id)
 		if not quest or SideQuests.isComplete(entry, quest) then
 			continue
 		end
@@ -181,7 +184,7 @@ end
 
 local function accept(player: Player, questId: string): (boolean, string?)
 	local char = character(player)
-	local quest = Quests.Side.get(questId)
+	local quest = Quests.npcQuest(questId)
 	if not char or not quest then
 		return false, "error.badRequest"
 	end
@@ -205,7 +208,7 @@ end
 
 local function turnIn(player: Player, questId: string, choiceIndex: number?): (boolean, string?)
 	local char = character(player)
-	local quest = Quests.Side.get(questId)
+	local quest = Quests.npcQuest(questId)
 	if not char or not quest then
 		return false, "error.badRequest"
 	end
@@ -234,7 +237,16 @@ local function turnIn(player: Player, questId: string, choiceIndex: number?): (b
 			chosen = options[choiceIndex]
 		end
 	end
-	if chosen and not InventoryService.CanFit(player, { chosen }) then
+	-- S98: reward items (the dungeon stones of the boss quests) need the space too
+	local fit: { any } = {}
+	local rewardItems: { { id: string, n: number } } = quest.reward.items or {}
+	for _, item in rewardItems do
+		table.insert(fit, ItemRoll.makeStack(item.id, item.n, "check"))
+	end
+	if chosen then
+		table.insert(fit, chosen)
+	end
+	if #fit > 0 and not InventoryService.CanFit(player, fit) then
 		return false, "inventory.full"
 	end
 	setEntry(player, questId, nil)
@@ -319,7 +331,7 @@ local function useAnchor(player: Player, anchorId: string): (boolean, string?)
 	if Vector3.new(offset.X, 0, offset.Z).Magnitude > Config.SideQuest.useRange + RANGE_TOLERANCE then
 		return false, "npc.error.tooFar"
 	end
-	local quest = Quests.Side.get(target.quest)
+	local quest = Quests.npcQuest(target.quest)
 	local objective = quest and quest.objectives[target.index]
 	if not quest or not objective then
 		return false, "error.badRequest"
@@ -376,7 +388,7 @@ end
 
 -- /side give <id>: makes the quest active (requirements and limit ignored).
 function SideQuestService.Give(player: Player, questId: string): boolean
-	local quest = Quests.Side.get(questId)
+	local quest = Quests.npcQuest(questId)
 	local char = character(player)
 	if not quest or not char then
 		return false
@@ -389,7 +401,7 @@ end
 
 -- /side complete <id>: fills every objective of an active quest (and marks its anchors used).
 function SideQuestService.Complete(player: Player, questId: string): boolean
-	local quest = Quests.Side.get(questId)
+	local quest = Quests.npcQuest(questId)
 	local char = character(player)
 	local entry = char and sideOf(char).active[questId]
 	if not quest or not entry then
@@ -427,7 +439,7 @@ end
 
 -- /side arc <questId>: everything in the quest's arc before it handed in, the quest itself active.
 function SideQuestService.SkipTo(player: Player, questId: string): boolean
-	local quest = Quests.Side.get(questId)
+	local quest = Quests.npcQuest(questId)
 	if not quest or not character(player) then
 		return false
 	end
@@ -442,7 +454,7 @@ function SideQuestService.SkipTo(player: Player, questId: string): boolean
 	-- Requirements from other arcs (side_mill needs side_shiny) are marked done too.
 	local requires: { string } = quest.requires or {}
 	for _, id in requires do
-		if Quests.Side.get(id) then
+		if Quests.npcQuest(id) then
 			PlayerStateService.Set(player, { "character", "quests", "side", "done", id }, true)
 		end
 	end
@@ -510,7 +522,7 @@ function SideQuestService.Start()
 				end
 				local wanted = false
 				for id, entry in sideOf(char).active do
-					local quest = Quests.Side.get(id)
+					local quest = Quests.npcQuest(id)
 					if quest then
 						for i, objective in quest.objectives do
 							if objective.type == "reach" and objective.x and (entry.progress[i] or 0) < objective.n then
