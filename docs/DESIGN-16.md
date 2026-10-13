@@ -1,0 +1,145 @@
+# DESIGN-16: animacje, efekty, dźwięki, modele i grafiki (sesje S110–S119)
+
+Kontrakt serii. Sesje S110–S117 czytają ten plik w całości. Odstępstwa zapisują w `docs/DECYZJE.md` i poprawiają ten plik w tym samym commicie. Stan kodu, z którego pisano plan: `4d533e2` (S81). S82–S109 mogły przesunąć linie i nazwy: **wygrywa kod**.
+
+## 0. Cel i zasady
+
+Właściciel (ProjektG, 2026-10-12): „Co do animacji ataków potworów, umiejętności bossa, umiejętności gracza, to czy będą wyglądały dobrze, czy jest sposób/narzędzia do zrobienia ich lepiej?” Potem: „Możesz korzystać ze Studio” i „Zaplanuj kolejne sesje po S109, w których to wszystko dodamy”.
+
+Diagnoza (stan S81):
+- Ataki i umiejętności gracza są proceduralne: `Data/AttackMotions` + `Logic/AttackPose`, `Data/SkillMotions` + `Logic/SkillPose`, zapis do `Motor6D.Transform` w `AnimationController` po kroku `Animator`. Pozy pisał Claude bez oglądania ich.
+- Efekty: `Data/SkillVfx` + `client/Vfx/Library.luau` (neonowe części, `ParticleEmitter` z domyślną teksturą, `Beam`, `Trail` bez tekstur), `VfxController`, `CombatFxController` (błysk, wstrząs, liczby).
+- Dźwięki: pole `SkillVfx.sound` jest wszędzie puste; walka, potwory i bossowie są nieme. Są tylko grupy `Music` i `Ambience` (`SettingsController`).
+- Potwory: generator z części (`Data/MonsterLooks`, `Logic/Anatomy`, `Logic/Gait`), hak na prawdziwy model z klipami (`asset`, `Logic/LookAnim`, `docs/ASSETS.md`), bez modeli w repo. Bossowie: telegrafy z `Data/Bosses` (`windup`), Elity II: `Data/MonsterAbilities`.
+- NPC: awatar R15 z `HumanoidDescription` (`NpcService`), bez animacji poza domyślną.
+
+Kierunek: **hybryda**. Nic, co działa, nie znika. Proceduralne ruchy zostają zapasem i dostają poprawki po obejrzeniu; prawdziwe klipy (z Tripo, Mixamo, Moon Animator, Animation Editor) podmieniają je wtedy, gdy są. Każda sesja zostawia grę grywalną bez żadnego nowego assetu.
+
+### 0.1. Studio przez MCP (nowa zasada fazy, tylko S110–S119, `IMPORT-MODELI.md` i `IMPORT-GRAFIK.md`)
+
+`CLAUDE.md` zabrania uruchamiania gry. Ta seria **zmienia to wąsko**: sesja może używać wbudowanego serwera MCP Roblox Studio (narzędzia `mcp__Roblox_Studio__*`, dokumentacja: create.roblox.com/docs/studio/mcp), żeby **oglądać** animacje i efekty, które zmienia. Wolno:
+- `list_roblox_studios`, `get_studio_state`, `start_stop_play`, `get_console_output`;
+- `screen_capture` (także z własnej pozycji kamery) i komendy AnimLab (§1) wpisane przez `execute_luau` w modelu danych `Server`/`Client` albo przez `user_keyboard_input` w czacie;
+- `execute_luau` do **odczytu** i do tymczasowych zmian w trakcie Play (znikają po Stop);
+- `search_asset` i `insert_asset` dla dźwięków (§3), `store_image` i `upload_image` dla tekstur (§4) i obrazów interfejsu (S118–S119);
+- `user_mouse_input` i `user_keyboard_input` tylko do wejścia do gry w Play (np. przycisk „Graj”) i wpisania komend AnimLab;
+- w trybie Edit (`datamodel_type = Edit`): tylko porządkowanie zaimportowanych modeli w `ReplicatedStorage.Assets` (§7).
+
+Nie wolno: edytować skryptów w Studio (`multi_edit`, zapis do `Script.Source`): kod żyje w repo i synchronizuje się przez Rojo; publikować miejsca; zapisywać miejsca; zmieniać ustawień gry; ruszać danych graczy (DataStore).
+
+**Gdy MCP nie działa** (brak narzędzi, brak połączonego Studio, `rojo serve` nie chodzi): sesja robi całą część kodu, przegląd wizualny pomija, w `docs/PROGRESS.md` → „Niedokończone” dopisuje „S1xx: przegląd w Studio nie zrobiony (brak MCP)” i nie przerywa. Liczby czasów i kątów zmienia wtedy tylko tam, gdzie wynikają z zasad §2 i testów.
+
+**Przed S110 właściciel raz:** otwiera miejsce gry w Studio, uruchamia `rojo serve`, w Studio: Assistant → ⋯ → Manage MCP Servers → „Enable Studio as MCP server”, w „Quick connect” włącza Claude Code (albo w terminalu `claude mcp add Roblox_Studio -- cmd.exe /c %LOCALAPPDATA%\Roblox\mcp.bat`), restartuje Claude Code. S110 opisuje to w `docs/ANIMACJE.md`.
+
+### 0.2. Inne zasady serii
+
+1. Faza gameplay obowiązuje dalej we wszystkim innym: bez „Instrukcji testu”, bez pytania właściciela w trakcie, `scripts/check` zielony, decyzje w `docs/DECYZJE.md`, sekcja `### S1xx` w `docs/SESJE.md`, commit `S1xx: …` i push.
+2. Bez zmian balansu: czasy, które serwer liczy (windup, cooldown, moment trafienia ataku podstawowego `AttackPose.hitDelay` = windup + strike × hit z `Data/AttackMotions`, 0,12–0,235 s plus lot pocisku; S113 przypina je w `AttackMotions.SERVER_HIT`), zostają. Animacja dopasowuje się do serwera, nigdy odwrotnie. Wyjątek: czysto wizualne czasy klienta (długość smugi, hitstop, wstrząs).
+3. Wszystko na kliencie, bez nowych remote'ów (wyjątki nazwane w sesji: komendy AnimLab to komendy admina S23; pole `w` w zdarzeniu `SkillFx` z S114/S115 i id ataku w zdarzeniu `tele` z S117 to czysto wizualne pola istniejących zdarzeń). Uwaga: część czasów serwera czyta pola z `SkillMotions`/`SkillVfx`/`AttackMotions`; są przypięte testami (`AttackMotions.SERVER_HIT`, `tests/fixtures/skill_timing.luau`) i nie wolno ich zmieniać.
+4. Wydajność telefonu: limity z `Config.Vfx` i `Config.MonsterLook.maxAnimated` obowiązują; nowe limity w `Config.Sfx` i `Config.Vfx`. Niska jakość efektów: połowa cząsteczek, bez smug, dźwięki innych graczy ciszej.
+5. Liczby wyglądu w `Data/*` i `Config.luau`. Kod po angielsku, `--!strict`, `Logic` i `Data` bez API Roblox (testy Lune).
+6. Każdy asset z zewnątrz ma wiersz w `docs/ASSETS.md` (źródło, licencja, data). Dźwięki tylko z Creator Store z twórcą **Roblox** albo oznaczone jako darmowe do użycia; nigdy z cudzych gier.
+
+## 1. AnimLab (S110)
+
+Scena do oglądania ruchu, dostępna tylko w Studio i tylko dla admina (`RunService:IsStudio()` + uprawnienia S23).
+
+- Komenda `/animlab` (kategoria Dev w `Data/AdminCommands`): stawia scenę obok spawnu gracza (płaska podłoga z siatką 1 st., neutralne światło, tło, 4 kamery `AnimLabCam_Front`, `_Side`, `_ThreeQuarter`, `_Top` jako `Part`y z nazwą), manekiny R15 ubrane jak postaci klas, z każdą bronią z `WeaponLooks`, i manekiny celów (potwór generatora albo modelu).
+- Podkomendy: `attack <weaponType>`, `skill <skillId>`, `mob <kind> <slot>`, `boss <bossId> <attackId>`, `npc <npcId> <slot>`, `sfx <key>`, `loop`, `freeze <t>` (ustawia pozę i efekt na czas `t` w sekundach i trzyma), `step <dt>`, `off`.
+- `freeze` wymaga, żeby ruch był funkcją czasu: `AttackPose`, `SkillPose`, `Gait` i `LookAnim` dostają (jeśli nie mają) wejście „poza w chwili t”, a `Vfx/Library` tryb „stop-klatki” (zatrzymanie tweenów i emiterów w chwili t). Klipy `AnimationTrack` przez `TimePosition` + `AdjustSpeed(0)`.
+- Każdy ruch ma **klatki kontrolne** liczone z danych: start, szczyt zamachu, trafienie, wybrzmienie, koniec. `/animlab … keys` drukuje ich czasy, a sesja robi `screen_capture` z kamer dla każdej klatki kontrolnej.
+- `docs/ANIMACJE.md` (nowy, S110): jak włączyć MCP, jak działa AnimLab, lista klatek kontrolnych, zasady §2, jak zrobić klip w Moon Animator 2 albo Animation Editor i gdzie wpisać jego ID (§5), jak dodać dźwięk (§3) i teksturę (§4).
+- `CLAUDE.md`: krótki punkt o zasadzie 0.1 (tylko seria animacji).
+
+## 2. Jak oceniamy ruch i efekt (lista dla wszystkich sesji)
+
+Dla każdego ruchu, przed i po zmianie, ze zrzutów klatek kontrolnych z kamery `ThreeQuarter` i z typowej kamery gry:
+1. **Zapowiedź:** zamach widać co najmniej 0,1 s (bossowie i Elity: przez cały `windup`), sylwetka czytelna z wysokości kamery gry.
+2. **Trafienie:** szczyt ruchu dokładnie w chwili, gdy serwer zadaje obrażenia (±0,03 s); w tej samej klatce błysk, dźwięk, liczba.
+3. **Wybrzmienie:** ruch jedzie dalej za trafienie (follow-through, lekki overshoot), potem powrót; bez liniowego „robota” (krzywe łagodzenia).
+4. **Ciężar:** broń dwuręczna i młoty wolniej przed trafieniem, szybciej w ciosie; sztylet krótko.
+5. **Łuki:** ręce i broń jadą po łukach, nie po prostych.
+6. **Efekt w trzech warstwach:** rdzeń (błysk 0,05–0,1 s), ciało (kształt umiejętności: łuk cięcia, fala, słup), ślad (iskry, pył, pęknięcia, dym, 0,3–1,5 s). Kolor z klasy albo żywiołu.
+7. **Każda umiejętność inna:** dwie umiejętności tej samej klasy nie mają tej samej sylwetki i tego samego zestawu efektów.
+8. **Koszt:** w AnimLab z 20 manekinami i efektami licznik `Config.Vfx.maxActive` nie przekracza limitu, MicroProfiler bez skoków (sprawdzenie odczytem `execute_luau`, nie na oko).
+
+Sesja zapisuje w `docs/SESJE.md` krótką tabelę: ruch, co było źle (1 linia), co zmieniono.
+
+## 3. Dźwięki (S111)
+
+- `Data/Sfx.luau`: klucz → `{ ids = { "rbxassetid://…", … }, volume, pitch = { min, max }, roll = maxDistance, cooldown? }`. Kilka wariantów na klucz i losowa wysokość ±5–8% (losowość klienta, nie `Logic/Rng`).
+- Klucze (minimum): `swing.light|heavy|blunt|thrust`, `bow.draw|release`, `crossbow.release`, `wand.cast`, `hit.flesh|armor|wood|stone|bone|slime|crit`, `block`, `miss`, `skill.<skillId>` (pole `SkillVfx.sound` zmienia się z ID na klucz `Sfx`; puste = domyślny dźwięk rodzaju umiejętności), `mob.<family>.attack|hurt|death|aggro`, `boss.<bossId>.roar|attack|death|phase`, `telegraph.warn`, `ui.loot|loot.rare|loot.legendary|levelup|quest|coin|click|error`, `step.<material>` opcjonalnie.
+- Materiał trafienia z rodziny potwora (`Data/Families`) albo pola `hitSound` wyglądu.
+- `SfxController`: pula `Sound` na częściach-kotwicach (bez `Instance.new` w pętli klatek), 3D w miejscu zdarzenia, `RollOffMaxDistance` z danych, limit jednoczesnych (`Config.Sfx.maxVoices`: PC 16, telefon 10), priorytet: własne > drużyna > reszta, tłumienie powtórzeń tego samego klucza w 0,05 s. Nowa grupa `SoundGroup` „Efekty” z suwakiem w ustawieniach obok muzyki i otoczenia.
+- Podpięcie: `VfxController.playSound`, ataki podstawowe (`AnimationController` w klatce trafienia), `CombatFxController` (trafienie, krytyk, blok, unik), potwory (atak, ból, śmierć), bossowie (ryk przy zmianie fazy, ostrzeżenie telegrafu), UI (łup, poziom, quest).
+- **Wybór ID:** sesja szuka przez MCP `search_asset` (audio, twórca Roblox), sprawdza długość i nazwę, wstawia przez `insert_asset` do `AnimLab` i odtwarza `/animlab sfx <key>`, czyta `IsLoaded`/`TimeLength` (dźwięk musi się wczytać w Play). Nie zgaduje ID z pamięci. Bez MCP: pola puste, lista kluczy do uzupełnienia w „Niedokończone”, gra działa bez dźwięku jak dziś.
+
+## 4. Efekty 2.0 (S112)
+
+- `tools/vfx/make_textures.py` (Python + Pillow, deterministyczny, bez sieci) rysuje tekstury efektów do `art/vfx/*.png` z manifestem `art/vfx/manifest.json`: miękka poświata, iskra, gwiazdka, pióro dymu (flipbook 4×4), ogień (flipbook 4×4), pył, łuk cięcia (gradient), pierścień fali, pęknięcia ziemi (decal), runy kół dla 4 klas, koło magiczne, tekstury promieni (błyskawica, światło święte, arkana, trucizna), gradient smugi, odłamek lodu, bąbel trucizny (flipbook), pióro (sokół), kropla krwi bez czerwieni (iskra ciemna). Rozmiary 128–512 px, przezroczyste tło, biel do barwienia `Color`.
+- Wgranie: przez MCP `store_image` + `upload_image`, jeśli przyjmuje lokalny plik; inaczej właściciel: Asset Manager → Bulk Import (`docs/ANIMACJE.md`). ID w `Data/VfxTextures.luau`; puste ID = dzisiejszy wygląd (neon, domyślna cząsteczka).
+- `Vfx/Library`: `ParticleEmitter.Texture` + `FlipbookLayout`/`FlipbookMode`, `Beam.Texture` + `TextureSpeed`/`TextureLength`, `Trail.Texture`, `Decal` na pęknięcia, `LightInfluence = 0` i `LightEmission` dla poświaty. Nowe składniki: `impactFlash`, `sparks`, `groundDecal`, `smokePuff`, `magicCircle`, `ringWave`. Stare nazwy składników w `SkillVfx` działają dalej.
+- Właściciel może później podmienić dowolną teksturę na własną (ta sama nazwa pliku, nowe ID).
+
+## 5. Ataki podstawowe gracza i hak na klipy (S113)
+
+- Przegląd w AnimLab wszystkich typów broni z `WeaponLooks` (lista typów w kodzie), poprawki `Data/AttackMotions` według §2, **serie 2–3 ciosów** (naprzemienne cięcia, druga strona, pchnięcie na koniec) wybierane po kolei przy kolejnych atakach w oknie 1,5 s, smuga broni z teksturą (S112), iskry trafienia według materiału, reakcja trafionego z kierunkiem ciosu.
+- **Hak na klipy** (kształt ostateczny w S113: `motions.<motion>.clips`, `clipsByWeapon.<weaponType>`, `Logic/ClipFit`): `AttackMotions.<type>.clips = { "rbxassetid://…", … }` i `SkillMotions.<skillId>.clip = { id, hit = "Hit", speed? }`. Gdy klip jest, `AnimationController` gra `AnimationTrack` na `Animator` postaci (R15) zamiast pozy proceduralnej, trafienie i efekty wyzwala znacznik `Hit` (`GetMarkerReachedSignal`), prędkość dopasowana tak, żeby `Hit` wypadł w chwili trafienia z serwera. Gdy klip się nie wczytał (brak uprawnień, moderacja), wraca poza proceduralna (jedno ostrzeżenie). Test Lune: format ID i obecność pól.
+- `docs/ANIMACJE.md`: jak właściciel robi klip w **Moon Animator 2** (płatny dodatek) albo **Animation Editor** (wbudowany) na manekinie z AnimLab, ustawia znacznik `Hit`, publikuje i wpisuje ID.
+
+## 6. Umiejętności (S114: Wojownik i Kapłan, S115: Łowca i Mag)
+
+- Każda aktywna umiejętność klasy (z drzewa po S69–S81, lista z `Data/Skills`) przechodzi przez AnimLab: klatki kontrolne, ocena §2, poprawka `SkillMotions`, przejście na tekstury S112, dźwięk S111, telegraf i rozmiar efektu zgodny z obszarem z serwera, warianty przełomów (`bp5`, `bp10`, opcje B ścieżek), jeśli zmieniają kształt.
+- Priorytet: najczęściej używane (podstawa 8 klasy), potem ścieżki.
+- Bez zmian obszarów, czasów i liczb umiejętności.
+
+## 7. Modele z Tripo (S116 + `docs/sessions/IMPORT-MODELI.md`)
+
+Instrukcja dla właściciela: `Graphics/TRIPO-ANIMACJE.md` (kopia `docs/TRIPO-ANIMACJE.md`). Folder grafik: `D:\Users\vdapi\Downloads\Graphics` (zmienna `VAELTHORN_GRAPHICS` może go nadpisać). Modele: `modele_3d/potwory/<id>/model/<id>.fbx` i klipy `<id>@<slot>.fbx`, `uwagi.txt` („bez kości”, brakujące ruchy); NPC w `modele_3d/npc/<id>/model/`.
+
+S116 (kod + pierwsza partia):
+- `tools/models/scan.luau` (albo `.py`): lista modeli w folderze grafik vs wpisy `asset` w danych: nowe, zmienione (data pliku), brakujące klipy, uwagi.
+- Rozszerzenia haka: `asset.elite` / `asset.elite2` (`{ model, anims? }`, osobny model Elity), klipy ataków bossa `anims[<attackId>]` i `anims.roar` (zmiana fazy), `rig = "static"` z proceduralnym podskokiem i pochyleniem (modele bez kości), **NPC** (`Data/Npcs` → `asset = { model, anims = { idle, talk, wave?, work? } }`, `NpcController` gra klipy, `talk` przy otwarciu rozmowy, `wave` gdy gracz podchodzi), **wierzchowce** (hak S96–S97 dostaje `anims = { idle, walk, run }`).
+- Import przez MCP po kroku właściciela „Import 3D”: `execute_luau` (Edit) porządkuje model według `docs/ASSETS.md` (nazwa, `PrimaryPart`, stopy na 0, przód −Z, gniazda `Head`/`Back`/`Hand_R`/`Hand_L` z kości, bez skryptów, `AnimationController` + `Animator`), mierzy `rootSize`, `hipHeight`, `height`, przenosi do `ReplicatedStorage.Assets.<Monsters|Npcs|Mounts>`, wypisuje klipy do publikacji. Po ID od właściciela wpis `asset` w danych, przegląd w AnimLab (`/animlab mob <kind> <slot>`), poprawki obrotu, skali i prędkości klipów (`walkSpeed`).
+- Zapis modelu do repo: właściciel prawym → Save to File → `assets/<…>/<nazwa>.rbxm` (sesja podaje listę); do tego czasu model żyje w miejscu gry (`ignoreUnknownInstances`).
+- `docs/sessions/IMPORT-MODELI.md`: powtarzalny prompt (jak `FIX.md`), który robi jedną partię importu: skan, przegląd, porządkowanie, wpisy, zrzuty, lista „Save to File” i „Publish”. Nie jest w kolejce `DALEJ`; właściciel wkleja go, gdy ma nowe modele.
+
+## 8. Potwory i bossowie w walce (S117)
+
+- Generator (`Logic/Gait`): ataki według planu ciała (czworonóg: skok z ugryzieniem; niedźwiedź: wspięcie i uderzenie łapami; ptak: nurkowanie; pająk: wypad przednich nóg; humanoid: cięcie bronią, uderzenie z góry; pozostałe plany z `Logic/Anatomy` według ich kształtu), zapowiedź specjalnego ataku Elity II trwa dokładnie `windup` z `MonsterAbilities` (poza zbierania siły zsynchronizowana z wypełnianiem czerwonego obszaru), trafienie z kierunkiem (odrzut od atakującego), śmierć według planu ciała.
+- Bossowie: osobna poza (albo klip `anims[<attackId>]`) dla każdego ataku z `Data/Bosses`, zapowiedź = `windup`, ryk i wstrząs przy zmianie fazy, przyzwanie z animacją `spawn`, śmierć z dłuższą sekwencją i światłem.
+- **Telegrafy 2.0:** obszar wypełnia się od krawędzi do środka w czasie `windup`, pulsujący brzeg, tekstura z S112 (runy dla magii, pęknięcia dla uderzeń), dźwięk `telegraph.warn` na starcie, błysk w chwili trafienia; czytelne na jasnej trawie, śniegu i w jaskini.
+- Limit animowanych potworów i LOD bez zmian.
+- Id ataku w zdarzeniu `tele` dodaje S116 (pole `a`); S117 tylko sprawdza. S117 może dodać atrybut serwera `Summoned` na przyzwanych (czysto wizualny).
+
+### 8.1. Ustalenia z planu (2026-10-12)
+
+- Hitbox potwora pochodzi z `asset.rootSize` (`RigBuilder.body`); `rootSize` i `hipHeight` modelu mają być równe wartościom generatora, a model skaluje się do nich (zasięg walki się nie zmienia).
+- Kolejne sesje dopisują podkomendy AnimLab (S112 `vfx`, `hit`, `flinch`, `clip`; S116 `mount`; S117 `floor`).
+- Budżety trójkątów: wygrywa tabela `Graphics/PORADNIK-GRAFIKA.md` §4 (nowsza niż `docs/MODELE.md` §6).
+- Wierzchowce z Tripo: `modele_3d/wierzchowce/<id>/model/`. NPC w folderach z imionami: mapowanie imię → id NPC w S116.
+- Pełna lista nazw serii: `NAZWY.md` (kopiowana do `docs/ANIMACJE-NAZWY.md`).
+
+## 9. Kolejność i zależności
+
+| Sesja | Temat | Wymaga |
+|---|---|---|
+| S110 | AnimLab, Studio przez MCP, `docs/ANIMACJE.md` | S109 |
+| S111 | Dźwięki walki, potworów, bossów i UI | S110 |
+| S112 | Efekty 2.0: tekstury, flipbooki, nowe składniki | S110 |
+| S113 | Ataki podstawowe gracza, serie ciosów, hak na klipy | S111, S112 |
+| S114 | Umiejętności Wojownika i Kapłana | S113 |
+| S115 | Umiejętności Łowcy i Maga | S113 |
+| S116 | Modele z Tripo: haki (Elity, bossowie, NPC, wierzchowce), skan, import, `IMPORT-MODELI.md` | S110 |
+| S117 | Potwory i bossowie w walce, telegrafy 2.0 | S112, S116 |
+| S118 | Ikony przedmiotów z PNG właściciela (każdy przedmiot własna ikona) | S110 |
+| S119 | Grafiki interfejsu: umiejętności, efekty, klasy, HUD, mapa | S118 |
+
+Kolejka `DALEJ.md`: S110…S119 po S109. S118 zastępuje część „ikony z PNG” niewykonanej S52 (S52 nie uruchamiamy: model broni ma hak `WeaponLooks.assets`). S116 działa także bez żadnego modelu w folderze grafik (robi kod i dokumentację, import zostawia na `IMPORT-MODELI.md`).
+
+## 10. Co robi właściciel
+
+1. Przed S110: Studio z miejscem gry, `rojo serve`, MCP włączone (§0.1). Studio otwarte w czasie sesji S110–S117.
+2. S112: jeśli MCP nie wgra tekstur, Bulk Import w Asset Managerze (sesja poda pliki).
+3. Modele: według `Graphics/TRIPO-ANIMACJE.md`; przy imporcie: Import 3D, Publish klipów, Save to File.
+4. Opcjonalnie: własne klipy ataków i umiejętności w Moon Animator 2 albo Animation Editor (`docs/ANIMACJE.md`).

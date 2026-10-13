@@ -62,6 +62,15 @@ Ten plik trafia do repo jako `docs/DESIGN-15.md`. Odejście od niego = linia w `
 - Poboczne łuki w Duskwood, Spalonych Pustkowiach, Lodowych Szczytach: po 6–8 łuków × 3–4 questy (ok. 25 na region), wzór łuków Łąk z S27 (`Data/Quests/Side`, `arc`, `pages`, `use`/`deliver`/`reach`, wybór nagrody).
 - Teksty: Claude pisze po polsku i angielsku, poważny ton fantasy.
 
+### 3.5 Rozmowy i prowadzenie przez questy (prośba właściciela 2026-10-13; mechanizmy: S101b)
+Właściciel: „żeby w questach NPC cię prowadził, czasami rzucił żartem, żeby interakcje były faktycznie ciekawe”.
+- **Wybory w rozmowie (S101b):** strona dialogu może mieć 2–3 odpowiedzi gracza (`choices`). Większość to smak (inna odpowiedź NPC, czasem żart), część daje drobny efekt: dodatkowa wskazówka na mapie, inna kolejność celów, mała nagroda smakowa (np. mikstura); nigdy nie blokują fabuły i nie zmieniają mocy. Wybór zapisany w zapisie questu, NPC może się do niego odnieść później.
+- **NPC komentuje w trakcie (S101b):** krótkie linie (`barks`) w dymku nad NPC albo w małym okienku z portretem przy krawędzi ekranu, wyzwalane zdarzeniami celu: przyjęcie, połowa postępu, dotarcie w pobliże celu, ukończenie celu, śmierć gracza w trakcie questu, długi brak postępu (podpowiedź). Limit częstotliwości, wyłączalne w ustawieniach.
+- **Towarzysz (S101b):** w wybranych questach NPC idzie z graczem (`escort`/`follow`): prowadzi do miejsca, czeka, komentuje, nie walczy albo walczy symbolicznie, nie może zginąć na stałe (przy porażce wraca do punktu). Ścieżka przez `Logic/NavPath`. Najwyżej jeden towarzysz naraz.
+- **Ton:** poważny świat, ale postacie mają charakter. Humor ok. raz na 2–3 questy: suchy, z sytuacji i z postaci (marudny kapitan, przesądny traper, krasnolud, który wszystko liczy), nigdy memy, internetowy slang ani łamanie czwartej ściany. Złoczyńcy i sceny tragiczne bez żartów.
+- **Wymóg treści (S102–S108):** każdy nowy quest fabularny i poboczny ma co najmniej: jedną stronę z wyborem, 3 linie komentarza w trakcie (przyjęcie, postęp, ukończenie), a każdy rozdział fabuły i każdy region pobocznych ma co najmniej 2 questy z towarzyszem. S101b dopisuje komentarze także do obecnych questów 1–20, pobocznych Łąk i łuku stajni, a wybory i towarzysza kilku pobocznym Łąk (`side_venom`, `side_bears`, `side_den`), żeby mechanizmy działały od razu. Test treści (`tests/dialogue.spec.luau`, S101b) pilnuje minimów; S109 sprawdza całość.
+- **Mechanizmy (S101b):** `choices` / `recall` + `QuestSay` + `quests.said`, `barks` (klient, `Config.Barks`, ustawienie `barks`), `companion` (`follow` / `lead`, cel `escort`, `CompanionService`); S102–S108 dopisują tylko dane.
+
 ## 4. Wydarzenia świata (S101)
 - Co godzinę (± losowe przesunięcie) na każdym serwerze jedno wydarzenie w **otwartym regionie, w którym są gracze** (wagi po liczbie graczy), na łowisku dopasowanym do poziomu graczy tam. Rodzaje: **Inwazja** (fale potworów regionu przez ok. 10 min, na końcu dowódca jako Elita II) i **Wędrowny czempion** (silny potwór elitarny chodzący trasą po regionie, 15 min albo do śmierci).
 - Ogłoszenie na czacie (`AnnounceService`) 2 min przed i na starcie, znacznik na mapie i licznik na HUD dla graczy w regionie.
@@ -85,6 +94,7 @@ Ten plik trafia do repo jako `docs/DESIGN-15.md`. Odejście od niego = linia w `
 | S99 | Zlecenia łowieckie 1–99 |
 | S100 | Nagroda za logowanie |
 | S101 | Wydarzenia świata |
+| S101b | Rozmowy w questach: wybory, komentarze NPC, towarzysz (mechanizmy §3.5 dla S102–S108) |
 | S102 | Fabuła rozdział I: Szepczące Łąki (1–20) |
 | S103 | Fabuła rozdział II: Duskwood (20–45) |
 | S104 | Fabuła rozdział III: Spalone Pustkowia (45–70) |
