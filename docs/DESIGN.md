@@ -757,6 +757,14 @@ Po testach S17: **więcej rodzajów na każdej mapie (min. 8–10 na mapę teren
 - Po zabiciu Elity II gracze, którzy zadali jej obrażenia, dostają **timer**: nazwa, jaskinia, okno odrodzenia „za 10–20 min” (od minimum do maksimum). Lista timerów w małym panelu (rozwijanym z HUD) i na mapie jaskini.
 - Timer jest per serwer (odrodzenie dzieje się na tym serwerze), znika po pojawieniu się Elity II (wtedy ogłoszenie na mapie).
 
+### 15.4 Wydarzenia świata (S101, DESIGN-15 §4)
+
+Mniej więcej co godzinę każdy serwer zaczyna w otwartym regionie z graczami jedno wydarzenie: Inwazję (fale potworów
+łowiska, na końcu dowódca jako Elita II) albo Wędrownego czempiona (Elita II idąca trasą przez region). Ogłoszenie na
+czacie przed startem i na starcie, znak na mapie i minimapie, panel na HUD; uczestnicy z wystarczającym udziałem
+(obrażenia, leczenie, tarcze) dostają EXP, złoto i przy zwycięstwie skrzynię. Szczegóły i liczby: `docs/DESIGN-15.md`
+§4, `Data/WorldEvents`.
+
 ## 16. Bossy i lochy
 
 - Wejście do lochu w głębi jaskini. Portal pokazuje: wymagany poziom (poziom bossa − 5), stan „Wolny / Zajęty przez grupę X (mm:ss)”.

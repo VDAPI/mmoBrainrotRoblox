@@ -322,6 +322,12 @@ Wacław (karczma; plotki o robocie), Młynarzowa Hanna (młyn), Stajenny Radosz 
 Starym Lesie), Kupiec Lucjan (rozbity wóz), Górnik Dobromir (szopa przy Wyrobisku; kilof), Myśliwy Borys (obozowisko
 nad jarem). EXP: 0,25 poziomu, koniec wątku 0,45 (razem ~40% EXP na 1→20).
 
+### Wydarzenia świata (S101)
+
+Inwazje i Wędrowny czempion zaczynają się na łowiskach czterech otwartych regionów (Łąki, Mroczny Bór, Spalone
+Pustkowia, Lodowe Szczyty), na tym, które pasuje poziomem do graczy w regionie; jaskinie, lochy i miasto nie. Dowódca
+i czempion to Elita II jednego z rodzajów łowiska. Zasady: `docs/DESIGN-15.md` §4.
+
 ## 4. Jaskinie (czerwona strefa, PvP zawsze)
 
 W każdej: 2–3 rodzaje zwykłych potworów, **2 rodzaje Elit** (3–5 grup po 1–2 Elity), **1 Elita II naraz** (losuje jeden z 2 rodzajów przy odrodzeniu, 10–20 min), 6–10 rud. ⚑ = Elita potrzebna questom głównej linii (nie przenosić do innej jaskini bez poprawy questa).

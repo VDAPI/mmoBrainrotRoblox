@@ -16,6 +16,7 @@ local Maps = require(Shared.Data.Maps)
 local Monsters = require(Shared.Data.Monsters)
 local Net = require(Shared.Net)
 local Npcs = require(Shared.Data.Npcs)
+local Time = require(Shared.Logic.Time)
 local Town = require(Shared.Data.Town)
 local TownGen = require(Shared.Logic.TownGen)
 local TownPlaces = require(Shared.Logic.TownPlaces)
@@ -38,6 +39,7 @@ local WorldService = Context.services.WorldService
 local TravelService = Context.services.TravelService
 local AdminService = Context.services.AdminService
 local MapMarkService = Context.services.MapMarkService
+local WorldEventService = Context.services.WorldEventService
 
 local commands: { [string]: (player: Player, args: { string }) -> ...any } = {}
 
@@ -616,6 +618,89 @@ commands.bring = function(player, args)
 	end
 	reply(player, "admin.bring.ok", { name = target.Name })
 	return true
+end
+
+-- S101: world events. /event info | start [kind] [area] | warn [kind] [area] | stop | next <minutes>
+local EVENT_KINDS = { invasion = true, champion = true, random = true }
+
+commands.event = function(player, args)
+	local action = args[1]
+	if action == "info" or action == nil then
+		local info = WorldEventService.Info()
+		if not info.active then
+			local parts = {}
+			for map, n in info.counts or {} do
+				table.insert(parts, `{map} {n}`)
+			end
+			table.sort(parts)
+			reply(player, "admin.event.none", {
+				time = Time.format(info.nextIn or 0),
+				counts = if #parts > 0 then table.concat(parts, ", ") else "-",
+			})
+			return true
+		end
+		local area = Areas.areaById(info.area or "")
+		reply(player, "admin.event.info", {
+			kind = `@event.{info.kind}.name`,
+			phase = info.phase,
+			area = if area then "@" .. area.nameKey else info.area,
+			level = info.level,
+			progress = info.progress,
+			time = Time.format(info.timeLeft or 0),
+			n = info.participants,
+		})
+		for _, row in info.top or {} do
+			reply(
+				player,
+				"admin.event.row",
+				{ name = row.name, points = row.points, ok = if row.ok then "✓" else "✗" }
+			)
+		end
+		return true
+	elseif action == "start" or action == "warn" then
+		local kind: string? = nil
+		local areaId: string? = nil
+		if args[2] and EVENT_KINDS[args[2]] then
+			kind, areaId = args[2], args[3]
+		else
+			areaId = args[2]
+		end
+		local ok, err =
+			WorldEventService.Force(if kind == "random" then nil else kind, areaId, action == "warn", player)
+		if not ok then
+			reply(player, err or "admin.event.busy")
+			return false, err
+		end
+		local info = WorldEventService.Info()
+		local area = Areas.areaById(info.area or "")
+		reply(player, "admin.event.started", {
+			kind = `@event.{info.kind}.name`,
+			area = if area then "@" .. area.nameKey else info.area,
+		})
+		return true
+	elseif action == "stop" then
+		if not WorldEventService.Stop() then
+			reply(
+				player,
+				"admin.event.none",
+				{ time = Time.format(WorldEventService.Info().nextIn or 0), counts = "-" }
+			)
+			return false
+		end
+		reply(player, "admin.event.stopped")
+		return true
+	elseif action == "next" then
+		local minutes = tonumber(args[2])
+		if not minutes or minutes ~= minutes or minutes < 1 or minutes > 180 then
+			reply(player, "admin.usage.event")
+			return false, "admin.usage.event"
+		end
+		WorldEventService.SetNext(math.floor(minutes * 60))
+		reply(player, "admin.event.next", { time = Time.format(minutes * 60) })
+		return true
+	end
+	reply(player, "admin.usage.event")
+	return false, "admin.usage.event"
 end
 
 return commands

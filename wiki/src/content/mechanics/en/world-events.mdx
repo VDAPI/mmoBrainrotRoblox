@@ -1,0 +1,44 @@
+---
+title: World Events
+description: "Invasions and the Wandering Champion: when and where they start, how your part counts and what the participants get."
+key: worldEvents
+order: 12
+updated: 2026-10-13
+tags: [Events, Monsters, Rewards]
+---
+
+## When and where
+
+About every <Stat path="mechanics.worldEvents.intervalMin" /> minutes (shifted by up to ± <Stat path="mechanics.worldEvents.jitterMin" /> minutes) each server starts one world event. It picks an open region where players are: the more people in a region, the more likely the event lands there. Caves, dungeons and the city never take part. While no region has anyone in it, the event waits.
+
+The hunting ground is chosen for the level of the players in that region, so the event's monsters are close to your level. The same ground does not come twice in a row while another one fits.
+
+<Stat path="mechanics.worldEvents.warnMin" /> minutes before the start the whole server sees an announcement in the chat and a banner naming the ground and the region. A second one comes at the start.
+
+## Invasion
+
+The monsters of the ground come in waves and gather around its centre. There are <Stat path="mechanics.worldEvents.kinds[invasion].waves" /> waves: the next one comes after a while, or earlier once you defeat most of the current one. Waves grow with the number of players nearby, and some of them bring an Elite as well.
+
+After the last wave the invasion's commander enters the fight: an Elite II of one of the ground's kinds, with its special ability. Its strength depends on how many players are around when it appears, so it can be beaten alone, while a bigger group meets a tougher foe. An Invasion lasts up to <Stat path="mechanics.worldEvents.kinds[invasion].durationMin" /> minutes; defeating the commander in time is a victory.
+
+## Wandering Champion
+
+A mighty Elite II sets out across the region and visits several hunting grounds of a fitting level in turn. It rests a moment at each stop of its route and walks on after a fight. The more players are near it when it appears, the stronger it is. The champion stays in the region for <Stat path="mechanics.worldEvents.kinds[champion].durationMin" /> minutes; if nobody stops it, it leaves.
+
+## Your part and the reward
+
+Your part is the damage you deal to the event's monsters, the healing and shields you cast on players nearby, and the damage you take for an ally. Each of these counts the same, so healers and protectors earn the reward just like those who deal the damage. You need <Stat path="mechanics.worldEvents.minSharePct" format="pct" /> of everyone's total, or the worth of a few defeated monsters, whichever is lower.
+
+At the end every participant with enough of a part gets experience, gold and, on a victory, a chest with one Unique or Heroic item (Heroic at most), fitted to the character's level and usually to its class. The chest's item is bound to the character. With a full backpack the chest comes by mail.
+
+If time runs out without a victory, participants get <Stat path="mechanics.worldEvents.failPct" format="pct" /> of the experience and gold and no chest. A character more than <Stat path="mechanics.worldEvents.maxLevelAbove" /> levels above the event can help but gets no reward. Only the character that fought gets the reward, and only while it is on the server when the event ends.
+
+The event's monsters also pay their usual rewards when defeated: experience, gold and loot, and their kills count for quests on that ground.
+
+## On the map and on screen
+
+The event's mark shows on the world map (with the time to its start or end), in the map list and on the minimap. Players on the event's map get a panel with the timer, the progress of the waves or the champion's health, whether their part already counts, and a "Guide" button that shows the way there.
+
+## Weekly contract
+
+"World Events" can come up among the weekly contracts: every event that rewards you (a defeat included) moves it one step on.

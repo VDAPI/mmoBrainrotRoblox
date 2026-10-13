@@ -261,6 +261,25 @@ S.file(
 		-- S54: DEX rating level (StatCalc) and the potion interval of every level (Potions.interval).
 		dexRatingLevel = "int",
 		potionInterval = arr(rec("PotionInterval", { id = "string", level = "int", seconds = "number" })),
+		-- S101: world events, a general description (no reward formulas, chest weights, scale or schedule seconds)
+		["worldEvents?"] = rec("WorldEventsInfo", {
+			intervalMin = "number",
+			jitterMin = "number",
+			warnMin = "number",
+			kinds = arr(rec("WorldEventKind", {
+				id = "string",
+				name = "name",
+				desc = "name",
+				glyph = "string",
+				durationMin = "number",
+				["waves?"] = "int",
+			})),
+			minSharePct = "number",
+			maxLevelAbove = "int",
+			failPct = "number",
+			chestMax = "name",
+			regions = arr("name"),
+		}),
 	})
 )
 
@@ -686,6 +705,42 @@ function Basics.mechanics(ctx: any): any
 		market = Basics.market(),
 		dexRatingLevel = StatCalc.dexRatingLevel(),
 		potionInterval = Basics.potionInterval(),
+		worldEvents = if ctx.features.worldEvents then Basics.worldEvents() else nil,
+	}
+end
+
+-- S101: world events in general, explicitly picked fields of Data/WorldEvents (never the whole module: no reward
+-- formulas, chest weights, scale, thresholds in HP or schedule details).
+function Basics.worldEvents(): any
+	local WorldEvents = (require :: any)("../../src/shared/Data/WorldEvents")
+	local kinds = {}
+	for _, id in WorldEvents.order do
+		local def = WorldEvents.kinds[id]
+		table.insert(kinds, {
+			id = id,
+			name = Names.of(def.nameKey),
+			desc = Names.of(def.descKey),
+			glyph = def.glyph,
+			durationMin = def.duration / 60,
+			waves = def.waves,
+		})
+	end
+	local regions = {}
+	for _, mapId in WorldEvents.regions do
+		local map = Maps.get(mapId)
+		assert(map, `worldEvents: unknown region {mapId}`)
+		table.insert(regions, Names.of(map.nameKey))
+	end
+	return {
+		intervalMin = WorldEvents.schedule.interval / 60,
+		jitterMin = WorldEvents.schedule.jitter / 60,
+		warnMin = WorldEvents.schedule.warn / 60,
+		kinds = kinds,
+		minSharePct = WorldEvents.share.min * 100,
+		maxLevelAbove = WorldEvents.share.maxLevelAbove,
+		failPct = WorldEvents.reward.failMul * 100,
+		chestMax = Names.of("rarity.heroic"),
+		regions = regions,
 	}
 end
 

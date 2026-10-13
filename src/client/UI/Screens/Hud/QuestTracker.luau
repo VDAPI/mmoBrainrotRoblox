@@ -63,6 +63,8 @@ end
 export type Props = {
 	-- S25: "Guide" to the tracked quest's target (NavController).
 	Guide: ((target: QuestTrack.Target) -> ())?,
+	-- S101: pixels the tracker moves down while the world event panel stands above it (QuestController).
+	Offset: Fusion.UsedAs<number>?,
 }
 
 local function QuestTracker(scope: Scope, props: Props?): Instance
@@ -379,7 +381,10 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 	return scope:New("Frame")({
 		Name = "QuestTracker",
 		AnchorPoint = Vector2.new(1, 0),
-		Position = UDim2.new(1, -Theme.Padding.Large, 0, 400),
+		Position = scope:Computed(function(use): UDim2
+			local offset = if props and props.Offset then use(props.Offset) else 0
+			return UDim2.new(1, -Theme.Padding.Large, 0, 400 + offset)
+		end),
 		Size = UDim2.fromOffset(WIDTH, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,
 		BackgroundColor3 = Theme.Colors.Panel,

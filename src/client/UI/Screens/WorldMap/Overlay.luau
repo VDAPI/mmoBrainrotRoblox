@@ -2,11 +2,13 @@
 -- Moving layer of the world map (S20, S25), parented into the shown map's canvas: the player arrow, the quest
 -- star, the guide target, party members and own marks (buttons, clickable), the pulsing gold ring of the
 -- selection and the hover hint. Everything is created once per window; per frame only positions change
--- (`step`). Hit areas keep Canvas.HIT pixels at every zoom and the hint is counter-scaled.
+-- (`step`). Hit areas keep Canvas.HIT pixels at every zoom and the hint is counter-scaled. S101: the world event's
+-- glyph (a label, not a button) with its time to the start / end under it.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
+local Workspace = game:GetService("Workspace")
 
 local Canvas = require(script.Parent.Canvas)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
@@ -16,6 +18,8 @@ local NavTarget = require(script.Parent.Parent.Parent.NavTarget)
 local QuestTrack = require(script.Parent.Parent.Parent.QuestTrack)
 local State = require(script.Parent.Parent.Parent.State)
 local Theme = require(script.Parent.Parent.Parent.Theme)
+local Time = require(ReplicatedStorage.Shared.Logic.Time)
+local WorldEvents = require(ReplicatedStorage.Shared.Logic.WorldEvents)
 
 type Scope = Fusion.Scope<typeof(Fusion)>
 
@@ -82,6 +86,13 @@ function Overlay.new(scope: Scope): Api
 	local player = label(frame, "▲", Theme.Colors.Accent, 20, 12)
 	local quest = label(frame, "★", Theme.Colors.GoldBright, 18, 11)
 	local nav = label(frame, "◆", Color3.fromHex("#F2E28A"), 16, 11)
+	-- S101: the world event on this map (warning: faded) and its time to the start / end.
+	local eventMarker = label(frame, "⚔", Theme.Colors.GoldBright, 20, 11)
+	eventMarker.Visible = false
+	local eventTime = label(frame, "", Theme.Colors.Parchment, 12, 11)
+	eventTime.Size = UDim2.fromOffset(60, 16)
+	eventTime.Visible = false
+	local eventClock = 0
 	local partyMarkers: { TextButton } = {}
 	local partyIds: { number? } = {}
 	for i = 1, PARTY do
@@ -238,6 +249,26 @@ function Overlay.new(scope: Scope): Api
 			if questOn and target and target.x and target.z then
 				local p = Canvas.toPixel(cached, target.x, target.z)
 				quest.Position = UDim2.fromOffset(p.X, p.Y)
+			end
+			local event = State.Get({ "worldEvent" })
+			local eventDef = if type(event) == "table" and event.map == cached.mapId
+				then WorldEvents.kindOf(event.kind)
+				else nil
+			eventMarker.Visible = eventDef ~= nil
+			eventTime.Visible = eventDef ~= nil
+			if eventDef and type(event) == "table" then
+				local p = Canvas.toPixel(cached, event.x, event.z)
+				eventMarker.Position = UDim2.fromOffset(p.X, p.Y)
+				eventMarker.Text = eventDef.glyph
+				eventMarker.TextColor3 = Color3.fromHex(eventDef.color)
+				eventMarker.TextTransparency = if event.phase == "warn" then 0.4 else 0
+				eventTime.Position = UDim2.fromOffset(p.X, p.Y + 16)
+				local clock = os.clock()
+				if clock - eventClock >= 0.5 then
+					eventClock = clock
+					local t = Workspace:GetServerTimeNow()
+					eventTime.Text = Time.format((if event.phase == "warn" then event.startsAt else event.endsAt) - t)
+				end
 			end
 			local guide = Fusion.peek(NavTarget.Target)
 			nav.Visible = guide ~= nil and guide.map == cached.mapId

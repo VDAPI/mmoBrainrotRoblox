@@ -243,6 +243,8 @@ export type ClientState = {
 	zone: ZoneState?,
 	death: DeathState?,
 	pvp: PvpState?,
+	-- S101: the running world event (Logic/WorldEvents.Public + `mine = { points, ok }`), WorldEventService
+	worldEvent: { [string]: any }?,
 }
 
 export type PathKey = string | number

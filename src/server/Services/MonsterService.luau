@@ -24,6 +24,7 @@ local Maps = require(Shared.Data.Maps)
 local Monster = require(script.Parent.Parent.Entities.Monster)
 local MonsterAbilities = require(Shared.Data.MonsterAbilities)
 local Monsters = require(Shared.Data.Monsters)
+local MonsterStats = require(Shared.Logic.MonsterStats)
 local Net = require(Shared.Net)
 local Signal = require(ReplicatedStorage.Packages.Signal)
 local Spawns = require(Shared.Data.Spawns)
@@ -200,14 +201,17 @@ local context: Monster.Context = {
 	end,
 }
 
--- Spawns one monster. Returns nil when the server budget is full or the id is unknown.
+-- Spawns one monster. Returns nil when the server budget is full or the id is unknown. S101: `mods` multiply the
+-- HP and attack on top of the hunting ground profile (world event commander / champion). Without a spawner (world
+-- events, admin) the monster has no group, no Elite II timers and no Elite II announcement.
 function MonsterService.SpawnAt(
 	monsterId: string,
 	variant: "normal" | "elite" | "elite2",
 	level: number,
 	at: CFrame,
 	spawner: SpawnerRuntime?,
-	attributes: { [string]: any }?
+	attributes: { [string]: any }?,
+	mods: MonsterStats.Mods?
 ): Monster.Monster?
 	local def = Monsters.get(monsterId)
 	if not def then
@@ -220,7 +224,7 @@ function MonsterService.SpawnAt(
 	local actualVariant: "normal" | "elite" | "elite2" = if def.elites then variant else "normal"
 	local ground = groundAt(at.Position)
 	local monster =
-		Monster.new(def, actualVariant, level, CFrame.new(ground) * at.Rotation, context, folder, attributes)
+		Monster.new(def, actualVariant, level, CFrame.new(ground) * at.Rotation, context, folder, attributes, mods)
 	monster.entity = EntityService.RegisterMonster(monster, monster.model)
 	monster.spawnerId = if spawner then spawner.data.id else nil
 	if spawner then

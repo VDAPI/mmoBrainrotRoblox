@@ -64,10 +64,9 @@ local templates: { Types.DailyTemplate } = {
 		end,
 	},
 	{
-		-- S101: world events (WorldEventService) turn this on
+		-- S101: world events (WorldEventService fires QuestEvents "event")
 		id = "event",
 		minLevel = 1,
-		hidden = true,
 		objective = function(_level)
 			return { type = "event", n = 2 }
 		end,

@@ -110,6 +110,14 @@ export type Monster = typeof(setmetatable(
 		-- Obstacle steering: the side of the current detour (-1, 0, 1) and until when it is kept.
 		detourSide: number,
 		detourUntil: number,
+		-- S101: patrol route (world event champion): waypoints, the current one, rest until (0 = walking), the rest
+		-- on each waypoint and the next MoveTo while walking. `home` = the champion's own position while walking (the
+		-- leash and the return point at the spot where a fight starts), the waypoint while resting.
+		patrol: { Vector3 }?,
+		patrolIndex: number,
+		patrolWaitUntil: number,
+		patrolPause: number,
+		nextPatrolMove: number,
 	},
 	Monster
 ))
@@ -121,14 +129,23 @@ function Monster.new(
 	spawnCFrame: CFrame,
 	ctx: Context,
 	parent: Instance,
-	attributes: { [string]: any }?
+	attributes: { [string]: any }?,
+	extraMods: MonsterStats.Mods?
 ): Monster
 	-- S32: members of bigger groups hit softer (Combat.groupDamageMul). S33: the area profile's HP and attack.
+	-- S101: `extraMods` (world event commander / champion) multiply the profile's.
 	local groupSize = attributes and (attributes :: any).GroupSize
 	local areaId = attributes and (attributes :: any).AreaId
 	local profile = AreaProfiles.ofArea(if type(areaId) == "string" then areaId else nil)
+	local mods: MonsterStats.Mods? = profile
+	if extraMods then
+		mods = {
+			hpMul = (if profile then profile.hpMul else 1) * (extraMods.hpMul or 1),
+			atkMul = (if profile then profile.atkMul else 1) * (extraMods.atkMul or 1),
+		}
+	end
 	local stats =
-		MonsterStats.compute(def, level, variant, if type(groupSize) == "number" then groupSize else nil, profile)
+		MonsterStats.compute(def, level, variant, if type(groupSize) == "number" then groupSize else nil, mods)
 	local model = RigBuilder.build(def, variant, stats.scale)
 	local root = model:FindFirstChild("HumanoidRootPart") :: BasePart
 	local humanoid = model:FindFirstChildOfClass("Humanoid") :: Humanoid
@@ -190,6 +207,11 @@ function Monster.new(
 		lastStep = os.clock(),
 		detourSide = 0,
 		detourUntil = 0,
+		patrol = nil,
+		patrolIndex = 1,
+		patrolWaitUntil = 0,
+		patrolPause = 0,
+		nextPatrolMove = 0,
 	}, Monster)
 	return self
 end
@@ -357,9 +379,48 @@ local function finishReturn(self: Monster)
 	self.model:SetAttribute("Returning", nil)
 	self.humanoid.WalkSpeed = self.def.moveSpeed * self.speedFactor
 	self.nextWander = os.clock() + 2 + self.random:NextNumber() * 4
-	-- Spread back to the own spot of the group.
+	-- Spread back to the own spot of the group. S101: a patrolling champion walks back to where the fight started,
+	-- then goes on to its next waypoint instead of the start of its route.
 	if not self.isBoss and not self.ctx.isRooted(self) then
-		self.humanoid:MoveTo(self.spawnCFrame.Position)
+		self.humanoid:MoveTo(if self.patrol then homeOf(self) else self.spawnCFrame.Position)
+	end
+end
+
+-- S101: walks `points` in a loop (world event champion), resting `pause` seconds on each. The leash centre (`home`)
+-- moves with the champion while it walks: route legs run up to ~1 500 studs, far past the 150 stud leash.
+function Monster.SetPatrol(self: Monster, points: { Vector3 }, pause: number)
+	if #points == 0 then
+		self.patrol = nil
+		return
+	end
+	self.patrol = points
+	self.patrolIndex = 1
+	self.patrolWaitUntil = 0
+	self.patrolPause = pause
+	self.nextPatrolMove = 0
+	self.home = points[1]
+end
+
+-- One idle step along the patrol route.
+local function stepPatrol(self: Monster, now: number)
+	local route = self.patrol :: { Vector3 }
+	local point = route[self.patrolIndex] or route[1]
+	if distanceFlat(self.root.Position, point) <= 6 then
+		if self.patrolWaitUntil == 0 then
+			self.patrolWaitUntil = now + self.patrolPause
+			self.home = point
+			stop(self)
+		elseif now >= self.patrolWaitUntil then
+			self.patrolIndex = self.patrolIndex % #route + 1
+			self.patrolWaitUntil = 0
+			self.nextPatrolMove = 0
+		end
+		return
+	end
+	if now >= self.nextPatrolMove then
+		self.nextPatrolMove = now + 1
+		self.home = self.root.Position
+		steerTo(self, point)
 	end
 end
 
@@ -456,6 +517,12 @@ local function stepIdle(self: Monster, now: number)
 	local found = lookForAggro(self)
 	if found then
 		engage(self, found)
+		return
+	end
+	if self.patrol then
+		if not self.ctx.isRooted(self) then
+			stepPatrol(self, now)
+		end
 		return
 	end
 	if now >= self.nextWander and not self.ctx.isRooted(self) then

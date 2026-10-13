@@ -2885,3 +2885,56 @@
 - **S100 wiki:** nagroda za logowanie nie trafia na wiki w tej sesji (`npm run data` bez zmian).
 - **S100 panel admina:** `Dev.lineText` rozwiązuje argumenty jak czat (`"@klucz"` i `{ key, args }`), bo `/login` podaje
   teksty stanu jako argumenty.
+
+### S101: Wydarzenia świata: Inwazja i Wędrowny czempion
+
+- **S101 harmonogram:** jedno wydarzenie na serwer, w pamięci (bez zapisu, po restarcie od nowa); pierwsze 15–35 min po
+  starcie serwera, kolejne od planowanego startu poprzedniego co 60 ± 10 min, nie wcześniej niż 5 min po końcu
+  (`schedule.gapAfter`); bez graczy w regionach ponowna próba co 2 min. Regiony to tylko 4 mapy otwarte (zbudowane);
+  jaskinie, lochy i miasto się nie liczą. Wszystkie czasy w czasie serwera (`GetServerTimeNow`), nie `os.clock`.
+- **S101 łowisko:** pod medianę poziomów graczy mapy (niższa środkowa, margines 2), bez powtórzenia ostatniego łowiska,
+  gdy pasuje inne; poziom wydarzenia = mediana obcięta do zakresu łowiska.
+- **S101 dowódca i czempion:** Elita II rodzaju łowiska (nie pasywny, z elitami i umiejętnością, `hostKinds`), statystyki
+  × `Data/WorldEvents.scale` wg liczby graczy w promieniu przy pojawieniu się; bez licznika Elity II i bez ogłoszenia
+  `combat.elite2Spawned` (brak spawnera), własne ogłoszenia `event.*`. Zwykłe nagrody i łup Elity II przez `CombatService`.
+- **S101 trasa czempiona (odejście od planu B3):** punkty z łowiska wydarzenia i do 2 pasujących łowisk obok, wybierane
+  po kolei z każdego łowiska (losowo w łowisku), potem kolejność najbliższego sąsiada od środka. Sam najbliższy sąsiad
+  zostawał w jednym łowisku (ma ≥ 8 grup), a trasa ma iść przez region.
+- **S101 nagrody za zabicia:** potwory wydarzenia dają zwykłe nagrody (EXP, złoto, łup, questy i zlecenia łowieckie w
+  łowisku, atrybut `AreaId`); sprawdzenie ≤ 3% dotyczy tylko nagrody za wydarzenie, bo fale zastępują bicie na tym łowisku.
+- **S101 udział:** obrażenia (z `damageBy`, z zapamiętaniem przed resetem S22) + leczenie + tarcze + przejęte obrażenia
+  (`Intercepted`, część przed redukcjami), 1:1; leczenie i tarcze liczą się na graczach w promieniu (Inwazja: środek,
+  czempion: jego pozycja). Próg `min(3% sumy, 3 × HP zwykłego potwora poziomu wydarzenia)`.
+- **S101 kto dostaje:** tylko gracze obecni w chwili końca, tą postacią, która zdobyła pierwszy punkt; poza tym bez poczty
+  do nieobecnych. Postać > 10 poziomów ponad wydarzeniem bez nagrody (odejście: DESIGN-15 tego nie mówi). Za mały udział
+  i za wysoki poziom mają komunikat (`event.noReward`, `event.tooHigh`).
+- **S101 porażka (odejście):** czas minął = 50% EXP i złota, bez skrzyni. Czempion, który się nie pojawił (budżet
+  potworów), albo dowódca / czempion usunięty z zewnątrz = koniec bez nagród.
+- **S101 skrzynia:** jeden przedmiot Unikat 80% / Heroik 20% z `LootTables.bossSlots`, ilvl z `min(poziom postaci, poziom
+  wydarzenia)`, `classBias` 0,8, kształt jak skrzynia S100 (`rarity`, `bound = true`), ta sama kolejność losowań;
+  `Loot.pickItem` z `classBias` (S100 ma `pickUsable`). Do plecaka; pełny plecak albo blokada handlu → poczta
+  (`mail.subject.worldEvent`, `task.spawn`), błąd poczty → osobista sakwa u stóp (`event.chestBag`); gracza już nie ma →
+  ostrzeżenie w logu.
+- **S101 EXP:** `expKills` 1,9 (plan 8), bez `QuestBudget.monsterExpMul` (S98 mnoży tylko EXP za zabicie w
+  `CombatService.reward`; wydarzenie poza budżetem), z `expBonus` przez `LevelService.GiveExp`.
+- **S101 miara ≤ 3% (odejście od planu F2):** czas poziomu = czas bicia `expToNext / paceAt.expPerHour`, nie
+  `paceAt.hours` (to godziny bicia po questach, 0 na poziomach pokrytych questem i zawyżone na następnych); górna
+  granica, bo questy tylko skracają poziom. Najgorszy L3 (Łowca) 2,86%: na L3 `monsterExpMul` = 0,5 (S99).
+- **S101 tygodniowe:** szablon S98 `event` (cel `{ type = "event", n = 2 }`) odsłonięty; liczy każde nagrodzone wydarzenie,
+  także porażkę; `QuestEvents.fire(player, "event", { eventId, kind, success, map })`, gałąź ogólna `t == kind`.
+  Istniejące listy tygodnia nie są przelosowane (`ensureWeekly`).
+- **S101 stan:** gałąź runtime `worldEvent` (bez remote'a, `Public` + `mine`), pomijanie identycznych przez JSON,
+  odświeżanie co 2 s albo przy zmianie; ogłoszenia tylko na tym serwerze (`AnnounceService.Server`); znacznik osobno od
+  znaczników gracza (nie w `mapMarks`).
+- **S101 potwory:** `MonsterService.SpawnAt(..., mods?)` mnoży HP i atak razem z profilem łowiska; `Monster.SetPatrol`
+  (home = własna pozycja w marszu, punkt trasy na postoju: smycz i powrót do miejsca początku walki, potem czempion
+  idzie dalej; odcinki trasy są dłuższe niż smycz 150); `/killall` usuwa potwory wydarzenia przez `Despawn` (D8);
+  fale bez rosnącego rozmiaru; potwór fali po powrocie idzie na swój punkt spawnu (jak dziś), a krąży wokół środka
+  (`home`). `GroupSize` bez `GroupId`: zniżka obrażeń grupy jak w łowisku, bez pierścieni grup na kliencie.
+- **S101 HUD:** panel na PC w prawej kolumnie w miejscu tropiciela questów, który przesuwa się w dół o wysokość panelu
+  (blok minimapy kończy się ok. y 300–350, nad y 394 brakowało miejsca); na telefonie w lewej kolumnie pod portretem i
+  ikonami efektów (prawa kolumna to minimapa, tropiciel, `Elite2Timer` i przyciski umiejętności), 220 px; w drużynie
+  pod ramkami `PartyFrames` (cele leczenia mają pierwszeństwo).
+- **S101 mapa:** widok świata nie ma węzłów regionów; glif wydarzenia stoi przy mapie i łowisku na liście map.
+- **S101 wiki:** pole `mechanics.worldEvents` z jawnie wybranymi polami (bez wzorów nagrody, wag skrzyni, skali,
+  progów w HP, harmonogramu w sekundach) i strona mechaniki PL/EN (`order` 12, temat „world”).

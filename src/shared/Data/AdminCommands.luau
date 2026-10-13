@@ -245,6 +245,13 @@ cmd("world", "nav", { str("target"), str("z", true) })
 cmd("world", "navdebug", {})
 cmd("world", "marks", { enum("action", { "list", "clear" }) }, { dangerActions = { "clear" } })
 cmd("world", "goto", { ref("player", "player") })
+-- S101: world events (WorldEventService): a = kind (invasion / champion / random) or the hunting ground, b = ground
+cmd(
+	"world",
+	"event",
+	{ enum("action", { "info", "start", "warn", "stop", "next" }), str("a", true), str("b", true) },
+	{ dangerActions = { "stop" } }
+)
 cmd("world", "bring", { ref("player", "player") })
 -- S26: shaped terrains (Admin/Terrain)
 cmd("world", "tparea", { str("target") })

@@ -53,6 +53,7 @@ local Items = require("../src/shared/Data/Items")
 local LevelCurves = require("../src/shared/Logic/LevelCurves")
 local LoginReward = require("../src/shared/Logic/LoginReward")
 local LoginRewardData = require("../src/shared/Data/LoginReward")
+local WorldEvents = require("../src/shared/Logic/WorldEvents")
 local Loot = require("../src/shared/Logic/Loot")
 local LootTables = require("../src/shared/Data/LootTables")
 local Luck = require("../src/shared/Logic/Luck")
@@ -8212,6 +8213,59 @@ function Balance.loginChest(): { heroic: number, unique: number, heroicShare: nu
 		unique = unique,
 		heroicShare = heroic / (d5.heroicPerHour[1] * Balance.LOGIN_HOURS_PER_WEEK),
 		uniqueShare = unique / (d5.uniquePerHour[1] * Balance.LOGIN_HOURS_PER_WEEK),
+	}
+end
+
+-- World events (S101, DESIGN-15 §4): the event reward's EXP as a share of the level's EXP at one event every
+-- WORLD_EVENT_HOURS of play (the event at the character's level, a victory, no expBonus), for the class with the
+-- longest level. The level's time is its grinding time (expToNext / paceAt.expPerHour, default options): paceAt's
+-- `hours` leave out the quest EXP and are 0 on levels the quests cover, and quests only shorten the level, so this
+-- is the upper bound. The waves' and the Elite II's kills are ordinary kills that replace grinding on the same
+-- ground, so they stay outside. Returns (worst share, its class).
+Balance.WORLD_EVENT_HOURS = 2
+function Balance.worldEventHours(classId: string, level: number): number
+	local pace = Balance.paceAt(classId, level)
+	return Exp.expToNext(level) / math.max(1e-9, pace.expPerHour)
+end
+
+function Balance.worldEventShare(level: number): (number, string)
+	local exp = WorldEvents.reward(level, level, true).exp
+	local need = math.max(1, Exp.expToNext(level))
+	local worst, worstClass = -1, Balance.CLASSES[1]
+	for _, classId in Balance.CLASSES do
+		local hours = Balance.worldEventHours(classId, level)
+		local share = exp * (hours / Balance.WORLD_EVENT_HOURS) / need
+		if share > worst then
+			worst, worstClass = share, classId
+		end
+	end
+	return worst, worstClass
+end
+
+export type WorldEventRow = {
+	level: number,
+	exp: number,
+	share: number,
+	classId: string,
+	gold: number,
+	goldShare: number, -- event gold over the income of WORLD_EVENT_HOURS hours (the same class)
+	minutes: number, -- minutes of grinding the event's EXP is worth (the same class)
+}
+
+-- One report row of the world event reward at `level` (balance_report "World events (S101)").
+function Balance.worldEventRow(level: number): WorldEventRow
+	local share, classId = Balance.worldEventShare(level)
+	local r = WorldEvents.reward(level, level, true)
+	local hours = Balance.worldEventHours(classId, level)
+	local income = math.max(1e-9, Balance.economyAt(classId, level).incomePerHour)
+	return {
+		level = level,
+		exp = r.exp,
+		share = share,
+		classId = classId,
+		gold = r.gold,
+		goldShare = r.gold / Balance.WORLD_EVENT_HOURS / income,
+		minutes = r.exp / math.max(1, Exp.expToNext(level)) * hours * 60,
 	}
 end
 

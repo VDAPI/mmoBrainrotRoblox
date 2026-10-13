@@ -12,8 +12,8 @@
 --   learn    { skillId }                                 (SkillService: SetHotbar, PutOnBar, auto-put on unlock)
 --   potion   {}                                          (PotionService)
 --   duel     { won }                                     (DuelService, both fighters)
---   event    (S98) world event participation: the data is decided by S101 (WorldEventService); the weekly
---            template "event" counts on the kind alone
+--   event    { eventId, kind, success, map }    (WorldEventService, every rewarded participant; S98 template
+--            "event" counts on the kind alone, S101)
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 

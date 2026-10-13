@@ -786,6 +786,7 @@ export interface MechanicsFile {
   pvp: PvpInfo;
   reduction: ReductionTable;
   variants: Record<string, VariantInfo>;
+  worldEvents?: WorldEventsInfo;
   zones: Record<string, ZoneInfo>;
 }
 
@@ -1608,6 +1609,27 @@ export interface VariantInfo {
   levelAdd: number;
   name?: Name;
   scale: number;
+}
+
+export interface WorldEventKind {
+  desc: Name;
+  durationMin: number;
+  glyph: string;
+  id: string;
+  name: Name;
+  waves?: number;
+}
+
+export interface WorldEventsInfo {
+  chestMax: Name;
+  failPct: number;
+  intervalMin: number;
+  jitterMin: number;
+  kinds: WorldEventKind[];
+  maxLevelAbove: number;
+  minSharePct: number;
+  regions: Name[];
+  warnMin: number;
 }
 
 export interface WorldMapPos {

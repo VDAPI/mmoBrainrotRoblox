@@ -109,7 +109,7 @@ function QuestLogic.amount(objective: Objective, kind: string, data: { [string]:
 	elseif t == "level" then
 		return if kind == "level" and (data.level or 0) >= (objective.level or 1) then objective.n else 0
 	elseif t == kind then
-		-- fish, loot, stats, learn, potion, duel, event (S98; counted from S101)
+		-- fish, loot, stats, learn, potion, duel, event (S98; WorldEventService fires it from S101)
 		return 1
 	end
 	return 0

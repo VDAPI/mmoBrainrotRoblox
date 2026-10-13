@@ -111,8 +111,14 @@ commands.killall = function(player, args)
 		for _, entity in EntityService.QueryMonsters(model:GetPivot().Position, radius) do
 			local monster = entity.monster
 			if monster and monster:IsAlive() then
-				monster.invulnerable = false
-				monster:TakeDamage(monster.hp + 1, player)
+				-- S101: world event monsters are removed, not killed: a commander / champion removed from outside
+				-- ends its event as a failure without rewards (WorldEventService), a wave monster counts as dead.
+				if monster.model:GetAttribute("WorldEvent") ~= nil then
+					MonsterService.Despawn(monster)
+				else
+					monster.invulnerable = false
+					monster:TakeDamage(monster.hp + 1, player)
+				end
 				count += 1
 			end
 		end

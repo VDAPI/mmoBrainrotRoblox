@@ -20,6 +20,7 @@ local NpcQuests = require(script.Parent.Parent.UI.NpcQuests)
 local NpcMarkState = require(script.Parent.Parent.UI.NpcMarkState)
 local Elite2Timer = require(script.Parent.Parent.UI.Screens.Hud.Elite2Timer)
 local QuestTracker = require(script.Parent.Parent.UI.Screens.Hud.QuestTracker)
+local WorldEventPanel = require(script.Parent.Parent.UI.Screens.Hud.WorldEventPanel)
 local Quests = require(ReplicatedStorage.Shared.Data.Quests)
 local SideQuests = require(ReplicatedStorage.Shared.Logic.SideQuests)
 local Sounds = require(script.Parent.Parent.UI.Sounds)
@@ -181,7 +182,10 @@ function QuestController.Init(registry)
 		end,
 	})
 	local Nav = registry.Get("NavController")
+	-- S101: the world event panel stands over the tracker (PC), which moves down by its height meanwhile.
+	local eventOffset = scope:Value(0)
 	QuestTracker(scope, {
+		Offset = eventOffset,
 		-- S25: the tracker's "➤" guides to the quest target like "Guide" on the map.
 		Guide = function(target)
 			local npc = if target.npc then Npcs.get(target.npc) else nil
@@ -198,6 +202,13 @@ function QuestController.Init(registry)
 	}).Parent =
 		UIController.GetLayer("Screens")
 	Elite2Timer(scope).Parent = UIController.GetLayer("Screens")
+	WorldEventPanel(scope, {
+		Offset = eventOffset,
+		Guide = function(target)
+			Nav.Guide({ map = target.map, x = target.x, z = target.z, labelKey = target.labelKey })
+		end,
+	}).Parent =
+		UIController.GetLayer("Screens")
 end
 
 function QuestController.Start()

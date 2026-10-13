@@ -419,6 +419,26 @@ T.describe("Wiki export: consistency", function()
 		end
 	end)
 
+	T.it("exports world events in general, without the reward formulas (S101)", function()
+		local w = d.mechanics.worldEvents
+		assert(w, "mechanics.worldEvents")
+		T.expect(#w.kinds).toBe(2)
+		T.expect(w.kinds[1].id).toBe("invasion")
+		T.expect(w.kinds[2].id).toBe("champion")
+		for _, kind in w.kinds do
+			for _, lang in { "pl", "en" } do
+				T.expect(type(kind.name[lang]) == "string" and kind.name[lang] ~= "").toBe(true)
+				T.expect(type(kind.desc[lang]) == "string" and kind.desc[lang] ~= "").toBe(true)
+			end
+			T.expect(kind.durationMin > 0).toBe(true)
+		end
+		for _, key in { "expKills", "goldKills", "chest", "scale", "hpEquivalent", "levelWindow", "retry", "first" } do
+			T.expect(w[key]).toBeNil()
+		end
+		T.expect(w.reward).toBeNil()
+		T.expect(#w.regions).toBe(4)
+	end)
+
 	T.it("exports keys, the full PvP matrix and a best area for every level (S42)", function()
 		local KeybindData = require("../src/shared/Data/Keybinds")
 		local PvpRules = require("../src/shared/Logic/PvpRules")

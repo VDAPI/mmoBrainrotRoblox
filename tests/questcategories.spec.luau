@@ -142,7 +142,7 @@ describe("Weeks (S98)", function()
 		expect({ d, h, m }).toEqual({ 6, 5, 7 })
 	end)
 
-	it("weeklyFor picks 3 distinct visible templates, the same for the same week", function()
+	it("weeklyFor picks 3 distinct templates, the same for the same week", function()
 		local first = QuestLogic.weeklyFor(4242, "char-a", 2963, 30)
 		expect(#first).toBe(Quests.Weekly.PER_WEEK)
 		local again = QuestLogic.weeklyFor(4242, "char-a", 2963, 30)
@@ -153,7 +153,6 @@ describe("Weeks (S98)", function()
 			for i, entry in list do
 				expect(seen[entry.template]).toBeNil()
 				seen[entry.template] = true
-				expect(entry.template ~= "event").toBe(true)
 				differs = differs or entry.template ~= first[i].template
 			end
 		end
@@ -166,7 +165,21 @@ describe("Weeks (S98)", function()
 			assert(template, entry.template)
 			expect(template.minLevel <= 5).toBe(true)
 		end
-		expect(Quests.Weekly.get("event").hidden).toBe(true)
+	end)
+
+	it("the world event template is open since S101 and comes up", function()
+		local template = Quests.Weekly.get("event")
+		assert(template, "event")
+		expect(template.hidden == true).toBe(false)
+		expect(template.minLevel).toBe(1)
+		expect(template.objective(5).type).toBe("event")
+		local found = false
+		for week = 2963, 3162 do
+			for _, entry in QuestLogic.weeklyFor(4242, "char-a", week, 5) do
+				found = found or entry.template == "event"
+			end
+		end
+		expect(found).toBe(true)
 	end)
 
 	it("dailyFor keeps its lists after the S98 refactor", function()

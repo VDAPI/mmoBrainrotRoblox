@@ -2172,3 +2172,35 @@ T.describe("Login reward (S100)", function()
 		)
 	end)
 end)
+
+T.describe("World events (S101)", function()
+	local WorldEvents = require("../src/shared/Logic/WorldEvents")
+	local WorldEventsData = require("../src/shared/Data/WorldEvents")
+
+	T.it("one event every 2 h of play adds at most 3% to any level 1-99 (DESIGN-15 §4)", function()
+		local worst, worstLevel, worstClass = 0, 0, ""
+		for L = 1, 99 do
+			local share, classId = B.worldEventShare(L)
+			if share > 0.03 then
+				error(`L{L} {classId}: one event every 2 h adds {share} of the level`, 0)
+			end
+			if share > worst then
+				worst, worstLevel, worstClass = share, L, classId
+			end
+		end
+		-- the reward is tuned to the cap (S101 F2): not far below it either
+		T.expect(worst >= 0.02).toBe(true)
+		print(string.format("world events: worst %.2f%% of a level at L%d (%s)", worst * 100, worstLevel, worstClass))
+	end)
+
+	T.it("the reward never goes over Heroic and a defeat pays less without a chest", function()
+		for k in WorldEventsData.reward.chest.rarity :: { [number]: number } do
+			T.expect(k <= 3).toBe(true)
+		end
+		for _, L in { 1, 20, 45, 70, 100 } do
+			local win, lost = WorldEvents.reward(L, L, true), WorldEvents.reward(L, L, false)
+			T.expect(lost.exp <= win.exp and lost.gold <= win.gold).toBe(true)
+			T.expect(lost.chest).toBe(false)
+		end
+	end)
+end)

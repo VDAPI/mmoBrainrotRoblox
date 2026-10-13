@@ -17,6 +17,7 @@ Features.FILES = {
 	itemIcons = "src/shared/Logic/ItemIcons.luau", -- S35
 	itemIconAtlas = "src/shared/Data/ItemIconAtlas.luau", -- S35
 	fightSim = "src/shared/Logic/FightSim.luau", -- S32
+	worldEvents = "src/shared/Data/WorldEvents.luau", -- S101
 }
 
 function Features.detect(exists: (path: string) -> boolean): Set

@@ -893,6 +893,8 @@ export const en: Record<Key, string> = {
   "mech.topic.cosmetics.desc": "Outfits, pets and passes that never add power.",
   "mech.topic.mounts": "Mounts",
   "mech.topic.mounts.desc": "The first horse, riding, upgrades, boss mounts and looks.",
+  "mech.topic.worldEvents": "World Events",
+  "mech.topic.worldEvents.desc": "Invasions and the Wandering Champion: when, where and what they pay.",
   "quests.title": "Quests",
   "quests.kicker": "Quests",
   "quests.lead": "The main story in game order, side quests of the townsfolk and daily contracts. No story on the list: you reveal it on the quest page.",

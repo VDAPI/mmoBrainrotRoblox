@@ -10,6 +10,8 @@
 -- S78 Scout's Eye (ROZWOJ 11.5): Elites are shown MONSTER_RANGE + bonus studs away (own minimapEliteBonus hook or the
 -- scoutRange of a party member nearby, Logic/ScoutRange); those beyond the disc get markers pinned to its edge.
 -- Without the node (bonus 0) nothing changes. Only monsters the client has streamed in can be shown.
+-- S101: the world event of this map (its glyph and colour, faded during the warning) while inside the disc (like
+-- the quest star, no edge marker).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -37,6 +39,7 @@ local State = require(script.Parent.Parent.Parent.State)
 local ScoutRange = require(ReplicatedStorage.Shared.Logic.ScoutRange)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
+local WorldEvents = require(ReplicatedStorage.Shared.Logic.WorldEvents)
 
 local Children, OnEvent = Fusion.Children, Fusion.OnEvent
 
@@ -124,6 +127,8 @@ local function Minimap(scope: Scope, props: Props): Instance
 		markPool[i] = glyph(dynamic, "⚑", "#E8C25A", Vector2.zero, 16, 6)
 		markPool[i].Visible = false
 	end
+	local eventGlyph = glyph(dynamic, "⚔", "#E0564A", Vector2.zero, 20, 6)
+	eventGlyph.Visible = false
 	local partyPool: { TextLabel } = {}
 	for i = 1, 4 do
 		partyPool[i] = glyph(dynamic, "●", "#4A8FE7", Vector2.zero, 14, 5)
@@ -391,6 +396,19 @@ local function Minimap(scope: Scope, props: Props): Instance
 			end
 			for i = usedParty + 1, #partyPool do
 				partyPool[i].Visible = false
+			end
+			-- S101: the world event
+			local event = State.Get({ "worldEvent" })
+			local eventDef = if type(event) == "table" and event.map == currentMap
+				then WorldEvents.kindOf(event.kind)
+				else nil
+			local eventPoint = if eventDef and type(event) == "table" then at(event.x, event.z) else nil
+			eventGlyph.Visible = eventPoint ~= nil and (eventPoint - pixel).Magnitude <= EDGE
+			if eventDef and eventPoint and type(event) == "table" then
+				eventGlyph.Position = UDim2.fromOffset(eventPoint.X, eventPoint.Y)
+				eventGlyph.Text = eventDef.glyph
+				eventGlyph.TextColor3 = Color3.fromHex(eventDef.color)
+				eventGlyph.TextTransparency = if event.phase == "warn" then 0.4 else 0
 			end
 			-- Monsters nearby (S19: normal ones in the colour of their group size, elites gold).
 			-- S78: Elites up to MONSTER_RANGE + the Scout's Eye bonus; beyond the disc they get edge markers.

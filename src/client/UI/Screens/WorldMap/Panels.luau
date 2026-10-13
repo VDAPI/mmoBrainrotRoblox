@@ -2,7 +2,7 @@
 -- Side panels of the world map window: the map list (S22: region -> map -> caves in the band colour of the
 -- player's level, the PvP zone as a dot, the areas of the selected map under it), the band legend with
 -- "Show only recommended" (S22), the service chips (S25: highlight NPCs with a service) and the bottom bar
--- (layer toggles, zoom, "Centre on me").
+-- (layer toggles, zoom, "Centre on me"). S101: the world event's glyph after its map and its hunting ground.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -14,8 +14,10 @@ local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local LevelBand = require(ReplicatedStorage.Shared.Logic.LevelBand)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local Npcs = require(ReplicatedStorage.Shared.Data.Npcs)
+local State = require(script.Parent.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
+local WorldEvents = require(ReplicatedStorage.Shared.Logic.WorldEvents)
 
 local Children, OnEvent = Fusion.Children, Fusion.OnEvent
 
@@ -67,8 +69,18 @@ export type ListProps = {
 	OnArea: (area: Areas.Area) -> (),
 }
 
+-- S101: the world event glyph (rich text) when the event is on `mapId` (and on `areaId`, when given).
+local function eventGlyph(event: any, mapId: string, areaId: string?): string
+	if type(event) ~= "table" or event.map ~= mapId or (areaId ~= nil and event.area ~= areaId) then
+		return ""
+	end
+	local def = WorldEvents.kindOf(event.kind)
+	return if def then ` <font color="{def.color}">{def.glyph}</font>` else ""
+end
+
 -- Rows of the map list.
 function Panels.mapList(scope: Scope, props: ListProps): { Instance }
+	local worldEvent = State.Value({ "worldEvent" })
 	local rows = {}
 	local order = 0
 	for _, region in REGIONS do
@@ -94,7 +106,8 @@ function Panels.mapList(scope: Scope, props: ListProps): { Instance }
 							local here = if use(props.MapId) == id then " ▲" else ""
 							local levels = if id == "city" then "" else ` · {map.minLevel}–{map.maxLevel}`
 							local indent = if i == 1 then "" else "   "
-							return `{indent}<font color="#{zoneHex}">●</font> {Text.get(use, map.nameKey)}{levels}{here}`
+							local event = eventGlyph(use(worldEvent), id)
+							return `{indent}<font color="#{zoneHex}">●</font> {Text.get(use, map.nameKey)}{levels}{here}{event}`
 						end),
 						FontFace = if i == 1 then Theme.Fonts.BodyBold else Theme.Fonts.Body,
 						TextSize = if i == 1 then 16 else 14,
@@ -141,6 +154,7 @@ function Panels.mapList(scope: Scope, props: ListProps): { Instance }
 								local name = AreaProfileText.escape(Text.get(use, area.nameKey))
 								return `      {star}{name} · {area.lv[1]}–{area.lv[2]}`
 									.. AreaProfileText.iconRich(area.profile, " ")
+									.. eventGlyph(use(worldEvent), id, area.id)
 							end),
 							FontFace = Theme.Fonts.Body,
 							TextSize = 13,

@@ -2,7 +2,8 @@
 -- Monster kinds of all four regions (DESIGN §15.2). Data only.
 -- Names: localization keys "monster.<id>.<variant>" (variant = normal | elite | elite2).
 -- Stats: Logic/MonsterStats from level x multipliers below x variant (Data/Combat.variants).
--- Elites and Elite II spawn only in caves (red zones); `elites = false` kinds have no elite variants.
+-- Elites and Elite II spawn in caves (red zones) and, as world event commanders and champions (S101), in open
+-- regions; `elites = false` kinds have no elite variants.
 -- S66: every kind names its family (Data/Families) and maybe one of its defence traits
 
 local Families = require("./Families")

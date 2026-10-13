@@ -1,4 +1,4 @@
-// Mechanics topics of the index (S42): all eleven in three groups (S97: mounts); a topic links once its article exists
+// Mechanics topics of the index (S42): all twelve in three groups (S97: mounts, S101: world events); a topic links once its article exists
 // (mechanicsHref finds the key), otherwise its card shows "Soon". Titles and descriptions in the wiki i18n.
 export interface Topic {
   key: string;
@@ -18,6 +18,7 @@ export const TOPICS: Topic[] = [
   { key: "city", group: "world", icon: "M5 26h22M8 26V14l4-4 4 4v12m4 0V10l4-4 4 4v16" },
   { key: "cosmetics", group: "world", icon: "M10 7l6 3 6-3 4 6-4 2v11H10V15l-4-2z" },
   { key: "mounts", group: "world", icon: "M9 26V12a7 7 0 0 1 14 0v14M6 26h6m8 0h6M12 9h1m6 0h1" },
+  { key: "worldEvents", group: "world", icon: "M16 4v6m0 12v6M4 16h6m12 0h6M9 9l3 3m8 8l3 3m0-14l-3 3m-8 8l-3 3M16 13a3 3 0 1 0 0 6a3 3 0 1 0 0-6" },
 ];
 
 export const GROUPS: Topic["group"][] = ["character", "players", "world"];

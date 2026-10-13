@@ -891,6 +891,8 @@ export const pl = {
   "mech.topic.cosmetics.desc": "Stroje, pety i przepustki bez wpływu na siłę.",
   "mech.topic.mounts": "Wierzchowce",
   "mech.topic.mounts.desc": "Pierwszy koń, jazda, ulepszanie, wierzchowce z bossów i wygląd.",
+  "mech.topic.worldEvents": "Wydarzenia świata",
+  "mech.topic.worldEvents.desc": "Inwazje i Wędrowny czempion: kiedy, gdzie i jaka nagroda.",
   "quests.title": "Zadania",
   "quests.kicker": "Zadania",
   "quests.lead": "Wątek główny w kolejności gry, zadania poboczne mieszkańców i zlecenia dzienne. Bez fabuły na liście: historię odsłaniasz na stronie zadania.",

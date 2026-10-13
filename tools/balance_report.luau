@@ -2708,6 +2708,46 @@ do
 	add()
 end
 
+-- World events (S101) -------------------------------------------------------------------------------------------
+
+do
+	add("## Wydarzenia świata (S101)")
+	add()
+	add(
+		"Nagroda za wydarzenie (`Logic/WorldEvents.reward`, zwycięstwo, poziom wydarzenia = poziom postaci, bez `expBonus`) przy jednym wydarzeniu na 2 h gry. Udział EXP = EXP nagrody × (godziny bicia poziomu / 2) / EXP poziomu dla klasy z najdłuższym poziomem (`Balance.worldEventShare`; godziny bicia = `expToNext / paceAt.expPerHour`, bez questów, więc górna granica). Asercja w `balance.spec` („World events (S101)”): ≤ 3% na 1–99. Złoto wobec dochodu 2 h bicia tej klasy (`economyAt`), bez asercji. Minuty = ile minut bicia jest wart EXP nagrody. Zabicia fal i Elity II to zwykłe zabicia (zastępują bicie na tym łowisku), poza tym sprawdzeniem."
+	)
+	add()
+	local function pct2(v: number): string
+		return (string.gsub(string.format("%.2f%%", v * 100), "%.", ","))
+	end
+	local rows: { { string } } = {}
+	for L = 10, 100, 10 do
+		local r = B.worldEventRow(L)
+		table.insert(rows, {
+			tostring(L),
+			BalanceTables.CLASS_PL[r.classId],
+			fmtValue(r.exp, "i"),
+			pct2(r.share),
+			fmtValue(r.gold, "i"),
+			pct2(r.goldShare),
+			fmtValue(r.minutes, "1"),
+		})
+	end
+	tableOut(
+		{ "poziom", "klasa", "EXP nagrody", "udział EXP", "złoto", "złoto / 2 h dochodu", "minuty bicia" },
+		rows
+	)
+	local worst, worstLevel, worstClass = 0, 0, ""
+	for L = 1, 99 do
+		local share, classId = B.worldEventShare(L)
+		if share > worst then
+			worst, worstLevel, worstClass = share, L, classId
+		end
+	end
+	add(`Najgorszy poziom 1–99: {worstLevel} ({BalanceTables.CLASS_PL[worstClass]}), {pct2(worst)} (limit 3%).`)
+	add()
+end
+
 -- Skills on the reference builds (S85) ----------------------------------------------------------------------------
 
 do

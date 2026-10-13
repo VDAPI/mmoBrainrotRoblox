@@ -6768,3 +6768,85 @@ Pliki: `src/shared/Data/LoginReward.luau` (nowy), `src/shared/Logic/LoginReward.
 `src/client/UI/Screens/Hud/init.luau`, `src/client/UI/Screens/DevWindow/Dev.luau`, `tests/loginreward.spec.luau`
 (nowy), `tests/{character,balance}.spec.luau`, `tests/Balance.luau`, `tools/balance_reasons.luau`,
 `tools/balance_report.luau`, `docs/{BALANS,DESIGN,DESIGN-15,ARCHITECTURE,DECYZJE,SESJE,PROGRESS}.md`.
+
+### S101: Wydarzenia świata: Inwazja i Wędrowny czempion
+
+Start na `b03784c` (po S100): commit i sekcja S100, `docs/DESIGN-15.md`, `Data/QuestBudget`, `Data/Quests/Weekly`,
+`tools/balance_reasons.luau`, `tests/fixtures/balance_1_20.json`, `tools/wiki_keys_diff.luau` i
+`ResourceService.Healed` na miejscu. Migawka księgi `lune run tools/balance_report.luau snapshot S101` przed zmianami.
+
+Co zrobiono:
+- **Dane (A):** `Data/WorldEvents` (harmonogram 3600 ± 600 s, pierwsze 900–2100 s, ostrzeżenie 120 s, ponowna próba
+  120 s, `gapAfter` 300 s; regiony `meadows`, `duskwood`, `ashen`, `frostpeak`; rodzaje `invasion` 720 s / 6 fal po
+  `4 + 2 × gracze` (maks. 16, skupiska po 4, Elita w falach 3 i 6, dowódca najpóźniej po 480 s) i `champion` 900 s / 8
+  punktów trasy; skala Elity II wg graczy; udział; nagroda; skrzynia `rarity = { [2] = 80, [3] = 20 }`, `classBias`
+  0,8, `bound`). W `BALANCE_MODULES`, powody `WorldEvents:*` i `WorldEvents:reward.expKills` (S101).
+- **Logika (B):** `Logic/WorldEvents` (`firstStart`, `nextStart` z `notBefore`, `retryAt`, `pickRegion`,
+  `medianLevel`, `hostKinds`, `waveKinds`, `eliteKinds`, `spawnPoints`, `canHost`, `pickArea`, `pickKind`, `eventLevel`,
+  `centre`, `route`, `waveSize`, `scaleOf`, `points`, `threshold`, `eligible`, `reward`, `rollChest`, `progressOf`,
+  `kindOf`, typ `Public`).
+- **Potwory (C):** `MonsterService.SpawnAt(..., mods?)` → `Monster.new(..., extraMods?)` (mnożone z profilem łowiska),
+  `Monster.SetPatrol` i krok patrolu w `stepIdle` (odpoczynek na punkcie, `MoveTo` najwyżej co 1 s, `home` = własna
+  pozycja w marszu i punkt na postoju, bo odcinki trasy mają do ok. 1 500 studów przy smyczy 150), `finishReturn` przy
+  patrolu idzie do `home` (miejsce początku walki), potem dalej trasą; komentarz `Data/Monsters` o Elitach poza
+  jaskiniami. `/killall` usuwa potwory wydarzenia (`Despawn`), nie zabija (D8).
+- **Serwer (D):** `WorldEventService` (harmonogram w pętli 1 s w `pcall`, Inwazja z falami i dowódcą, czempion z trasą,
+  udział z `damageBy` + `Healed` + `Intercepted`, koniec z nagrodą, skrzynia do plecaka / poczty / sakwy, gałąź
+  `worldEvent` z `mine`, `CharacterEntered` publikuje od razu, `PlayerStateService.Ready` czyści pamięć JSON). Bez
+  remote'a, bez zapisu. Od nowego serwisu zależy tylko `AdminService` (sprawdzone `Deps`, bez cyklu).
+- **Tygodniowe (D7):** szablon S98 `event` (cel `{ type = "event", n = 2 }`, `minLevel = 1`) bez `hidden`; zdarzenie
+  `QuestEvents.fire(player, "event", { eventId, kind, success, map })` dla każdego nagrodzonego (także przy porażce);
+  `QuestLogic.amount` liczy je gałęzią ogólną `t == kind` (bez nowej gałęzi). `ensureWeekly` tworzy listę tylko przy
+  zmianie tygodnia albo pustej liście, więc szablon wchodzi od następnego resetu (albo przelosowania).
+- **Admin (E):** `/event info | start [invasion|champion|random] [łowisko] | warn [...] | stop | next <min>`
+  (`Admin/World`, `WorldEventService` w `AdminService.Deps`); `start <łowisko>` bez rodzaju też działa.
+- **Klient (F1, F3):** `Hud/WorldEventPanel` (rodzaj i łowisko, czas do startu / końca, pasek i tekst postępu, własny
+  udział, „Prowadź” przez `NavController.Guide`), montowany w `QuestController`; `QuestTracker` z `Offset` (na PC
+  zjeżdża pod panel). Znak wydarzenia w `WorldMap/Overlay` (glif + czas, przygaszony w ostrzeżeniu), na minimapie (w
+  dysku, bez znacznika krawędzi, jak gwiazda questu) i glif przy mapie i łowisku na liście map (widok świata nie ma
+  węzłów regionów).
+- **Teksty (I):** wszystkie klucze z planu w PL i EN plus `admin.event.noRegion`; `weekly.event.title` i
+  `quest.obj.event` już były.
+- **Wiki (G):** `Features.worldEvents`, `Basics.worldEvents` → `mechanics.worldEvents` (wybrane pola), schemat
+  `WorldEventsInfo` / `WorldEventKind`, strony `mechanics/pl/wydarzenia-swiata.mdx` i `mechanics/en/world-events.mdx`
+  (`order` 12), temat `worldEvents` w `wiki/src/lib/mechanics.ts` i `mech.topic.worldEvents(.desc)` w i18n.
+  `npm run data`: zmieniły się `mechanics.json`, `types.ts`, `meta.json` i odcisk w `docs/PRZEDMIOTY.md`.
+- **Testy:** `tests/worldevents.spec.luau` (10 grup z planu), blok „World events (S101)” w `balance.spec`
+  (asertowany), przypadki w `quest.spec` i `questcategories.spec` (szablon `event` wypada na 200 tygodniach; test
+  ukrytego szablonu pominięty: `pickTemplates` jest lokalne), `wikidump.spec` (pola i brak kluczy nagrody).
+
+Zastany stan: `QuestBudget.monsterExpMul` działa tylko w `CombatService.reward` (i `Balance.areaHour`), nie w
+`Exp.monsterExp`, więc nagroda wydarzenia go nie zawiera. `StatusEffectService.Intercepted(guard, target, moved,
+taken, attacker, returned)` jest (S61): podłączony, liczy `moved`.
+
+Balans (F2): `expKills` 8 → 1,9. Miara: czas poziomu = `expToNext / paceAt.expPerHour` (godziny bicia bez questów;
+`paceAt.hours` jest 0 na poziomach pokrytych questem). Najgorszy poziom L3 (Łowca) 2,86% (L3 ma `monsterExpMul` 0,5),
+od 10. 1,3–2,2%; złoto 12 potworów = 5–7% dochodu 2 h. Poza nowym modułem migawka bez różnic, `ALLOWED_1_20_DIFFS`
+bez wpisów, fixture'y nietknięte, `docs/BALANS.md` z sekcją „Wydarzenia świata (S101)”, bez „BRAK POWODU”.
+
+Panel na telefonie (obliczenie, `Scale.VirtualSize` przy minimalnej skali dotyku 0,846): na PC panel 280 × 90 / 155
+(ostrzeżenie / trwa) w y 400 po prawej, tropiciel zjeżdża o wysokość + 8 (minimapa z menu i paskiem prowadzenia kończy
+się ok. y 300–375). Na dotyku prawa kolumna jest pełna (minimapa do ok. y 300, `Elite2Timer` na −290 od dołu nad
+przyciskami), więc panel 220 × 96 / 161 stoi po lewej w y 208 (pod portretem 400 × 136 i rzędem ikon efektów): na
+ekranie 998 × 461 kończy się na y 369, nie dotyka `TargetFrame` (x 289–709) ani prawej kolumny; przycisk „Prowadź” 36 px.
+W drużynie panel schodzi pod ramki `PartyFrames` (y 228 + 64 na członka), bo to cele klikania przy leczeniu; przy 3–4
+innych członkach na małym telefonie dolna część panelu wychodzi poza ekran.
+
+`WIKI_KEYS_ALLOW="mechanics:mechanics.worldEvents,mechanics:mechanics.worldEvents.chestMax,mechanics:mechanics.worldEvents.failPct,mechanics:mechanics.worldEvents.intervalMin,mechanics:mechanics.worldEvents.jitterMin,mechanics:mechanics.worldEvents.kinds,mechanics:mechanics.worldEvents.kinds[],mechanics:mechanics.worldEvents.kinds[].desc,mechanics:mechanics.worldEvents.kinds[].durationMin,mechanics:mechanics.worldEvents.kinds[].glyph,mechanics:mechanics.worldEvents.kinds[].id,mechanics:mechanics.worldEvents.kinds[].name,mechanics:mechanics.worldEvents.kinds[].waves,mechanics:mechanics.worldEvents.maxLevelAbove,mechanics:mechanics.worldEvents.minSharePct,mechanics:mechanics.worldEvents.regions,mechanics:mechanics.worldEvents.regions[],mechanics:mechanics.worldEvents.warnMin,types.ts"`.
+`scripts/check` zielony.
+
+Dla właściciela: `expKills` 1,9 to mało (EXP ok. 2 potworów); zasada ≤ 3% przy jednym wydarzeniu na 2 h nie pozwala na
+więcej, a najostrzej trzyma L3 (`monsterExpMul` 0,5). Większa nagroda = luźniejszy limit albo inna miara (np. od 5.).
+
+Pliki: `src/shared/Data/WorldEvents.luau` (nowy), `src/shared/Logic/WorldEvents.luau` (nowy),
+`src/server/Services/WorldEventService.luau` (nowy), `src/client/UI/Screens/Hud/WorldEventPanel.luau` (nowy),
+`src/server/Services/{MonsterService,AdminService,PlayerStateService}.luau`, `src/server/Entities/Monster.luau`,
+`src/server/Admin/{World,Monsters}.luau`, `src/server/QuestEvents.luau`, `src/shared/Data/{Monsters,AdminCommands}.luau`,
+`src/shared/Data/Quests/Weekly.luau`, `src/shared/Logic/QuestLogic.luau`, `src/shared/Types.luau`,
+`src/shared/Data/Localization/{pl,en}.luau`, `src/client/Controllers/QuestController.luau`,
+`src/client/UI/Screens/Hud/{QuestTracker,Minimap}.luau`, `src/client/UI/Screens/WorldMap/{Overlay,Panels}.luau`,
+`tests/worldevents.spec.luau` (nowy), `tests/{balance,quest,questcategories,wikidump}.spec.luau`, `tests/Balance.luau`,
+`tools/{balance_reasons,balance_report}.luau`, `tools/balance_before.json`, `tools/WikiData/{Features,Basics}.luau`,
+`wiki/src/data/{mechanics,meta}.json`, `wiki/src/data/types.ts`,
+`wiki/src/content/mechanics/{pl/wydarzenia-swiata,en/world-events}.mdx` (nowe), `wiki/src/lib/mechanics.ts`,
+`wiki/src/i18n/{pl,en}.ts`, `docs/{BALANS,DESIGN,DESIGN-15,SWIAT,PRZEDMIOTY,DECYZJE,SESJE,PROGRESS}.md`.

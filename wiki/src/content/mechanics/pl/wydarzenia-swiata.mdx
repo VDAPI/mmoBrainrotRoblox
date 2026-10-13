@@ -1,0 +1,44 @@
+---
+title: Wydarzenia świata
+description: "Inwazje i Wędrowny czempion: kiedy i gdzie się zaczynają, jak liczy się udział i jaką nagrodę dostają uczestnicy."
+key: worldEvents
+order: 12
+updated: 2026-10-13
+tags: [Wydarzenia, Potwory, Nagrody]
+---
+
+## Kiedy i gdzie
+
+Mniej więcej co <Stat path="mechanics.worldEvents.intervalMin" /> minut (z przesunięciem do ± <Stat path="mechanics.worldEvents.jitterMin" /> minut) na każdym serwerze zaczyna się jedno wydarzenie świata. Wybiera ono otwarty region, w którym akurat są gracze: im więcej osób w regionie, tym większa szansa, że wydarzenie trafi właśnie tam. Jaskinie, lochy i miasto nie biorą udziału w losowaniu. Gdy w żadnym regionie nikogo nie ma, wydarzenie czeka.
+
+Łowisko wybierane jest pod poziom graczy w tym regionie, więc potwory wydarzenia mają poziom zbliżony do Twojego. To samo łowisko nie powtarza się dwa razy z rzędu, jeśli w pobliżu poziomu jest inne.
+
+Na <Stat path="mechanics.worldEvents.warnMin" /> minuty przed startem cały serwer widzi ogłoszenie na czacie i baner z nazwą łowiska i regionu. Drugie ogłoszenie pada na starcie.
+
+## Inwazja
+
+Potwory łowiska nadciągają falami i krążą wokół jego środka. Fal jest <Stat path="mechanics.worldEvents.kinds[invasion].waves" />: następna przychodzi po upływie czasu albo wcześniej, gdy pokonacie większość poprzedniej. Fale rosną z liczbą graczy w pobliżu, a w niektórych pojawia się także Elita.
+
+Po ostatniej fali do walki wkracza dowódca inwazji: Elita II jednego z rodzajów łowiska, ze swoją specjalną umiejętnością. Jego siła zależy od liczby graczy w okolicy w chwili pojawienia się, więc w pojedynkę da się go pokonać, a większa grupa trafi na twardszego przeciwnika. Inwazja trwa do <Stat path="mechanics.worldEvents.kinds[invasion].durationMin" /> minut; pokonanie dowódcy przed czasem to zwycięstwo.
+
+## Wędrowny czempion
+
+Potężna Elita II wyrusza w drogę przez region i odwiedza po kolei kilka łowisk pasujących poziomem. W każdym punkcie trasy odpoczywa chwilę, po walce idzie dalej. Im więcej graczy jest przy nim, gdy się pojawia, tym jest silniejszy. Czempion zostaje w regionie przez <Stat path="mechanics.worldEvents.kinds[champion].durationMin" /> minut; jeśli nikt go nie zatrzyma, odchodzi.
+
+## Udział i nagroda
+
+Do udziału liczą się zadane potworom wydarzenia obrażenia, leczenie i tarcze rzucone na graczy w pobliżu oraz obrażenia przejęte za sojusznika. Każdy z tych sposobów liczy się tak samo, więc uzdrowiciel i obrońca dostają nagrodę na równi z tymi, którzy zadają obrażenia. Wystarczy <Stat path="mechanics.worldEvents.minSharePct" format="pct" /> całego wkładu wszystkich uczestników albo równowartość kilku pokonanych potworów, zależnie od tego, co jest mniejsze.
+
+Na koniec każdy uczestnik z wystarczającym udziałem dostaje doświadczenie, złoto, a przy zwycięstwie także skrzynię z jednym przedmiotem Unikatowym albo Heroicznym (najwyżej Heroiczny), dopasowanym do poziomu i zwykle do klasy postaci. Przedmiot ze skrzyni jest związany z postacią. Gdy plecak jest pełny, skrzynia przychodzi pocztą.
+
+Jeśli czas minie bez zwycięstwa, uczestnicy dostają <Stat path="mechanics.worldEvents.failPct" format="pct" /> doświadczenia i złota, ale bez skrzyni. Postać o więcej niż <Stat path="mechanics.worldEvents.maxLevelAbove" /> poziomów wyższa od wydarzenia może pomagać, ale nagrody nie dostaje. Nagrodę dostaje tylko postać, która walczyła, i tylko gdy w chwili końca wydarzenia jest na serwerze.
+
+Potwory wydarzenia dają przy tym zwykłe nagrody za pokonanie: doświadczenie, złoto i łup, a ich zabicia liczą się do zadań na tym łowisku.
+
+## Na mapie i na ekranie
+
+Znak wydarzenia widać na mapie świata (z czasem do startu albo do końca), na liście map i na minimapie. Gracze na mapie wydarzenia mają na ekranie panel z licznikiem, postępem fal albo życiem czempiona, informacją, czy ich udział już wystarcza, oraz przyciskiem „Prowadź”, który wyznacza drogę na miejsce.
+
+## Tygodniowe zlecenie
+
+Wśród zleceń tygodniowych może wypaść „Wydarzenia świata”: każde wydarzenie, za które dostajesz nagrodę (także zakończone porażką), przybliża je o krok.

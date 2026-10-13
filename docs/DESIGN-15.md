@@ -76,6 +76,13 @@ Właściciel: „żeby w questach NPC cię prowadził, czasami rzucił żartem, 
 - Ogłoszenie na czacie (`AnnounceService`) 2 min przed i na starcie, znacznik na mapie i licznik na HUD dla graczy w regionie.
 - Nagroda dla każdego uczestnika z udziałem ≥ próg (obrażenia/leczenie/tarcze): EXP (poza budżetem questów, ale liczona w modelu tempa jako dodatek ≤ 3% czasu poziomu przy jednym wydarzeniu na 2 h gry), złoto, skrzynia z przedmiotem do Heroicznego. Liczy się do zadań tygodniowych (szablon „wydarzenie”).
 - `Data/WorldEvents.luau`, `WorldEventService`, komendy admina do wymuszenia wydarzenia.
+- **Ustalenia S101:**
+  - próg udziału: obrażenia, leczenie, tarcze i przejęte obrażenia liczą się 1:1, wystarczy `min(3% sumy wszystkich, 3 × HP zwykłego potwora poziomu wydarzenia)`; nagroda tylko dla obecnych na serwerze w chwili końca, tą samą postacią;
+  - porażka (czas minął): 50% EXP i złota, bez skrzyni (odejście: §4 mówiło tylko o nagrodzie uczestnika);
+  - postać więcej niż 10 poziomów ponad wydarzeniem pomaga, ale nagrody nie dostaje (odejście: §4 tego nie mówiło);
+  - skrzynia: jeden przedmiot Unikat 80% / Heroik 20%, związany z postacią (jak skrzynia S100), do plecaka, a przy pełnym plecaku pocztą (przy pełnej poczcie sakwa u stóp);
+  - EXP nagrody = 1,9 zwykłego potwora poziomu wydarzenia, bez mnożnika budżetu questów; ≤ 3% liczone wobec czasu bicia poziomu (górna granica, `Balance.worldEventShare`), najgorszy L3 2,86%;
+  - tygodniowe zlecenie `event` (S98) liczy każde nagrodzone wydarzenie, także zakończone porażką; Inwazja trwa do 12 min (6 fal, dowódca najpóźniej po 8 min).
 
 ## 5. Nagroda za logowanie (S100)
 - **Seria 7 dni na konto**: pierwsze wejście danego dnia (UTC) dowolną postacią daje okno nagrody dnia N; odbiera ta postać, nagroda skalowana jej poziomem. Dzień 1–6: złoto, mikstury, błogosławieństwo, pył esencji, kamień powrotu; **dzień 7: skrzynia** (przedmiot do Heroicznego na poziom postaci + błogosławieństwo Unikatowe). Po dniu 7 seria wraca do 1.

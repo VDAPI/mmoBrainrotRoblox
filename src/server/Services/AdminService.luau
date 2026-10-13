@@ -74,6 +74,7 @@ local AdminService = {
 		"MapMarkService",
 		"MountService", -- S96: /mount
 		"LoginRewardService", -- S100: /login, /loginset, /loginnext
+		"WorldEventService", -- S101: /event
 	},
 }
 

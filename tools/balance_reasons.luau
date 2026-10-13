@@ -88,6 +88,8 @@ return {
 		-- byId / byClass are the records of the class files (dumped there); the rest: RANKS, GCD, HOTBAR_SLOTS, ...
 		{ path = "Data/Skills/init", omit = { "byId", "byClass" } },
 		{ path = "Data/Stats" },
+		-- S101: world events (schedule, scale of the commander / champion, contribution threshold, reward, chest)
+		{ path = "Data/WorldEvents" },
 	} :: { ModuleEntry },
 	CONFIG_KEYS = { "MaxLevel", "PotionCooldown", "Upgrade", "BossLoot", "Mount" },
 	NOT_BALANCE = {
@@ -3131,6 +3133,19 @@ return {
 			{
 				session = "S100",
 				why = "new module: login reward 7-day streak (DESIGN-15 §5); week 0.27-0.47 h of income at 10-99 (0.33-0.39 h at 45, 0.27-0.30 h at 99), dearest day <= 0.11 h; Great potions from 70, shards instead of crystals (a crystal ~3 900 gold), chest Unique 85 / Heroic 15 (T-LR5 <= 5% of D5)",
+			},
+		},
+		-- S101 (docs/DESIGN-15.md §4): world events
+		["WorldEvents:*"] = {
+			{
+				session = "S101",
+				why = "new module: world events (DESIGN-15 §4): one an hour per server (60 +- 10 min, first 15-35 min, 2 min warning), Invasion 12 min (6 waves of 4 + 2 per player, max 16, commander at 8 min) and Wandering Champion 15 min, Elite II scaled by players (commander 0.45-1.4 HP for 1-5+, champion 0.7-2.3), reward threshold min(3% of all points, 3 monster HP), 10 levels above the event without reward, EXP 1.9 kills (F2: one event every 2 h <= 3% of every level 1-99, worst L3 2.86%), gold 12 kills, defeat 50%, chest Unique 80 / Heroic 20 bound",
+			},
+		},
+		["WorldEvents:reward.expKills"] = {
+			{
+				session = "S101",
+				why = "S101 F2: event EXP = 1.9 normal monsters of the event level (8 planned), the largest one-decimal value with one event every 2 h of play <= 3% of every level 1-99 (Balance.worldEventShare; worst L3 Hunter 2.86%, L3 grinds at monsterExpMul 0.5; 1.3-2.2% from 10 up); no quest budget multiplier",
 			},
 		},
 	} :: { [string]: { Reason } },

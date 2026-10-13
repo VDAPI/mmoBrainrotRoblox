@@ -179,6 +179,14 @@ describe("QuestLogic.amount", function()
 	it("counts the world event objective by its kind (S98, from S101)", function()
 		local objective = { type = "event", n = 2 }
 		expect(QuestLogic.amount(objective, "event", {}, 0)).toBe(1)
+		-- S101: WorldEventService's data (every rewarded participant, also on a defeat)
+		local data = { eventId = "x", kind = "invasion", success = false, map = "meadows" }
+		expect(QuestLogic.amount(objective, "event", data, 0)).toBe(1)
+		expect(QuestLogic.amount(objective, "kill", data, 0)).toBe(0)
+		local weekly = Quests.Weekly.get("event")
+		assert(weekly, "event")
+		expect(weekly.hidden == true).toBe(false)
+		expect(weekly.objective(1).type).toBe("event")
 		expect(QuestLogic.amount(objective, "kill", { monsterId = "wolf" }, 0)).toBe(0)
 	end)
 
