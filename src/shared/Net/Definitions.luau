@@ -147,7 +147,10 @@ local Definitions: { [string]: Definition } = {
 	-- S98: weekly contracts and the week's boss contract, collected at the board
 	WeeklyClaim = { kind = "function", dir = "c2s", rate = 2, args = { "integer" } }, -- (weekly contract index)
 	BossContractClaim = { kind = "function", dir = "c2s", rate = 2, args = {} }, -- () the week's boss contract
-	QuestCompleted = { kind = "event", dir = "s2c" }, -- (titleKey) big message + sound
+	QuestCompleted = { kind = "event", dir = "s2c" }, -- (titleKey, args?) big message + sound
+	-- Hunting contracts (S99): (npcId) the contract board or the scout of the contract's region
+	ContractAccept = { kind = "function", dir = "c2s", rate = 2, args = { "string" } },
+	ContractTurnIn = { kind = "function", dir = "c2s", rate = 2, args = { "string" } },
 	-- Side quests (S27): (questId) / (questId, reward choice 1..3) / (questId) / (quest anchor id) / ()
 	SideAccept = { kind = "function", dir = "c2s", rate = 2, args = { "string" } },
 	SideTurnIn = { kind = "function", dir = "c2s", rate = 2, args = { "string", "integer?" } },

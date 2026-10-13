@@ -6,7 +6,8 @@
 -- the time to the reset. S98 (docs/DESIGN-15.md §3.1): one tab per category in Quests.CATEGORIES order on a scrolling
 -- strip (six tabs on a phone): Contracts (only once Data/Quests/Contracts has any, S99), Bosses (the four Slayer
 -- quests with their entry level, where to take them, progress and "Track", then the week's boss contract) and Weekly
--- (the week's three contracts and the countdown to Monday 00:00 UTC).
+-- (the week's three contracts and the countdown to Monday 00:00 UTC). S99: the hunting contracts tab ("Hunting"):
+-- done / 99, the backlog, the active or next contract with "Track" and where to hand it in, the next three.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -16,6 +17,8 @@ local Config = require(ReplicatedStorage.Shared.Config)
 local Clock = require(ReplicatedStorage.Shared.Util.Clock)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Bosses = require(ReplicatedStorage.Shared.Data.Bosses)
+local Areas = require(ReplicatedStorage.Shared.Data.Areas)
+local Contracts = require(ReplicatedStorage.Shared.Logic.Contracts)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local Modal = require(script.Parent.Parent.Components.Modal)
 local Net = require(ReplicatedStorage.Shared.Net)
@@ -554,53 +557,149 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 				list
 			)
 		elseif use(tab) == "contract" then
-			-- S98: a simple view of the hunting contracts (S99 fills Data/Quests/Contracts and extends it)
-			local state = q.contract
-			local current = if type(state) == "table" then state.active else nil
-			local contract = if type(current) == "table" then Quests.Contracts.forLevel(current.level) else nil
-			if contract and current then
-				table.insert(
-					list,
+			-- S99: the hunting contracts: done / 99 and the backlog, the active one (objectives, rewards, "Track",
+			-- where to hand it in) or the next one, then the next three (a mark on every 10th)
+			local lvl = use(level) or 1
+			local order = 0
+			local function add(item: Instance)
+				order += 1
+				(item :: any).LayoutOrder = order
+				table.insert(list, item)
+			end
+			local function lookup(key: string, args: { [string]: any }?): string
+				return Text.get(use, key, args)
+			end
+			local state = Contracts.stateOf(q)
+			local allDone = Contracts.allDone(state)
+			local head = Text.get(use, "contract.doneCount", { done = state.done, max = Quests.Contracts.MAX_LEVEL })
+			local backlog = Contracts.backlog(state, lvl)
+			if backlog > 1 then
+				head ..= `   <font color="#9A9DA8">{Text.get(use, "contract.backlog", { n = backlog })}</font>`
+			end
+			add(label(s, 0, head, Theme.Fonts.Heading, 22, if allDone then Theme.Colors.Success else Theme.Colors.Gold))
+			if allDone then
+				add(label(s, 0, Text.get(use, "contract.allDone"), Theme.Fonts.Body, 17, Theme.Colors.Success))
+				return list
+			end
+			local active, entry = Contracts.active(state)
+			local contract = active or Contracts.next(state)
+			if contract then
+				local canTake = active == nil and Contracts.canAccept(state, lvl)
+				local scout = Npcs.get(QuestText.contractScout(contract))
+				local scoutName = if scout then Text.get(use, scout.nameKey) else "?"
+				add(
 					label(
 						s,
-						1,
-						Text.get(use, "quest.contract.active", { level = contract.level }),
-						Theme.Fonts.Heading,
-						22,
-						Theme.Colors.GoldBright
+						0,
+						`<b>{QuestText.contractTitle(lookup, contract)}</b>`,
+						Theme.Fonts.BodyBold,
+						19,
+						if active or canTake then Theme.Colors.GoldBright else Theme.Colors.TextMuted
 					)
 				)
-				local rows = QuestText.rows(use, contract.objectives, current.progress)
-				table.insert(
-					list,
+				add(
 					label(
 						s,
-						2,
-						table.concat(QuestText.richRows(use, rows), "\n"),
+						0,
+						QuestText.contractAreaLine(use, contract, lvl),
 						Theme.Fonts.BodyMedium,
-						16,
+						15,
 						Theme.Colors.Text
 					)
 				)
-				table.insert(list, QuestRewards(s, { Id = contract.id, Reward = contract.reward, LayoutOrder = 3 }))
-			else
-				table.insert(
-					list,
-					label(s, 1, Text.get(use, "quest.contract.none"), Theme.Fonts.Body, 17, Theme.Colors.TextMuted)
-				)
+				if active and entry then
+					local rows = QuestText.rows(use, contract.objectives, entry.progress)
+					add(
+						label(
+							s,
+							0,
+							table.concat(QuestText.richRows(use, rows, false), "\n"),
+							Theme.Fonts.BodyMedium,
+							16,
+							Theme.Colors.Text
+						)
+					)
+					add(QuestRewards(s, { Id = contract.id, Reward = contract.reward }))
+					add(Button(s, {
+						Size = UDim2.fromOffset(150, 40),
+						Variant = "secondary",
+						Text = s:Computed(function(use2): string
+							local focus = use2(props.Focus)
+							local tracked = use2(props.Tracked) and focus ~= nil and focus.kind == "contract"
+							return Text.get(use2, if tracked then "quest.untrack" else "quest.track")
+						end),
+						OnClick = function()
+							local focus = Fusion.peek(props.Focus)
+							if focus and focus.kind == "contract" then
+								props.Track(nil)
+							else
+								props.Track({ kind = "contract" })
+							end
+						end,
+					}))
+					add(
+						label(
+							s,
+							0,
+							Text.get(use, "contract.where", { scout = scoutName }),
+							Theme.Fonts.BodyBold,
+							16,
+							Theme.Colors.GoldBright
+						)
+					)
+				elseif canTake then
+					local rows = QuestText.rows(use, contract.objectives, nil)
+					add(
+						label(
+							s,
+							0,
+							table.concat(QuestText.richRows(use, rows, false), "\n"),
+							Theme.Fonts.BodyMedium,
+							16,
+							Theme.Colors.Text
+						)
+					)
+					add(QuestRewards(s, { Id = contract.id, Reward = contract.reward }))
+					add(
+						label(
+							s,
+							0,
+							Text.get(use, "contract.takeAt", { scout = scoutName }),
+							Theme.Fonts.BodyBold,
+							16,
+							Theme.Colors.GoldBright
+						)
+					)
+				else
+					add(
+						label(
+							s,
+							0,
+							Text.get(use, "contract.waiting", { level = contract.level }),
+							Theme.Fonts.Body,
+							17,
+							Theme.Colors.TextMuted
+						)
+					)
+				end
 			end
-			local handed = if type(state) == "table" then tonumber(state.done) or 0 else 0
-			table.insert(
-				list,
-				label(
-					s,
-					4,
-					Text.get(use, "quest.contract.done", { n = handed }),
-					Theme.Fonts.Body,
-					14,
-					Theme.Colors.TextMuted
-				)
-			)
+			local upcoming = Contracts.upcoming(state, 3)
+			if #upcoming > 0 then
+				local lines = { `<b>{Text.get(use, "contract.upcoming")}</b>` }
+				for _, c in upcoming do
+					local area = Areas.areaById(c.area)
+					local line = Text.get(use, "contract.upcomingRow", {
+						level = c.level,
+						area = if area then Text.get(use, area.nameKey) else "?",
+						n = c.objectives[1].n,
+					})
+					if c.reward.items then
+						line ..= `  <font color="#E8C25A">◆ {Text.get(use, "contract.milestone")}</font>`
+					end
+					table.insert(lines, line)
+				end
+				add(label(s, 0, table.concat(lines, "\n"), Theme.Fonts.Body, 15, Theme.Colors.TextMuted))
+			end
 		else
 			local daily = q.daily
 			table.insert(

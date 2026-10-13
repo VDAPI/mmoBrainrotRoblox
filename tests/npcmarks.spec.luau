@@ -10,8 +10,14 @@ local Test = require("./Test")
 
 local describe, it, expect = Test.describe, Test.it, Test.expect
 
+-- S99: every hunting contract handed in, so the cases before S99 see no contract marks
 local function state(main: any, mainDone: number, daily: { any }?): any
-	return { main = main, mainDone = mainDone, daily = { day = 1, list = daily or {}, rerolls = 0 } }
+	return {
+		main = main,
+		mainDone = mainDone,
+		daily = { day = 1, list = daily or {}, rerolls = 0 },
+		contract = { done = Quests.Contracts.MAX_LEVEL },
+	}
 end
 
 describe("NpcMarks", function()
@@ -140,6 +146,74 @@ describe("NpcMarks", function()
 		expect(q.giver).toBe("scout_meadows")
 		expect(NpcMarks.of("scout_meadows", sideState(), 14)).toBeNil()
 		expect(NpcMarks.of("scout_meadows", sideState(), 15)).toBe("available")
+	end)
+
+	-- S99 (docs/DESIGN-15.md §3.3): the hunting contract at the board and the scout of its region
+	local function contractState(done: number, active: any?): any
+		local s = state(nil, 999)
+		-- the boss quests of the scouts handed in: only the contract marks the scouts
+		local bossDone = {}
+		for _, q in Quests.Boss.list do
+			bossDone[q.id] = true
+		end
+		s.side = { active = {}, done = bossDone }
+		s.contract = { done = done, active = active }
+		return s
+	end
+
+	local function scoutOf(level: number): string
+		return `scout_{(Quests.Contracts.forLevel(level) :: any).map}`
+	end
+
+	local function otherScout(level: number): string
+		local own = scoutOf(level)
+		for _, map in { "meadows", "duskwood", "ashen", "frostpeak" } do
+			if `scout_{map}` ~= own then
+				return `scout_{map}`
+			end
+		end
+		error("no other scout")
+	end
+
+	it("the next contract is a gold ! at the board and its scout, grey far below the level", function()
+		-- contract 31 (Dark Forest): no boss quest of the Dark Forest scout is open at 31 (Morvane's is from 40)
+		local s = contractState(30)
+		expect(NpcMarks.of(NpcMarks.BOARD, s, 31)).toBe("available")
+		expect(NpcMarks.of(scoutOf(31), s, 31)).toBe("available")
+		expect(NpcMarks.of(otherScout(31), s, 31)).toBeNil()
+		expect(NpcMarks.of(NpcMarks.BOARD, s, 30)).toBeNil() -- below its level: nothing to take
+		local gap = Config.Quest.greyGap
+		expect(NpcMarks.of(NpcMarks.BOARD, s, 31 + gap)).toBe("available")
+		expect(NpcMarks.of(NpcMarks.BOARD, s, 32 + gap)).toBe("availableLow")
+		expect(NpcMarks.of(scoutOf(31), s, 32 + gap)).toBe("availableLow")
+	end)
+
+	it("an active contract is a grey ? until done, then ? at both givers", function()
+		local contract = Quests.Contracts.forLevel(31) :: any
+		local open = contractState(30, { level = 31, progress = { 0 } })
+		expect(NpcMarks.of(NpcMarks.BOARD, open, 31)).toBe("active")
+		expect(NpcMarks.of(scoutOf(31), open, 31)).toBe("active")
+		local done = contractState(30, { level = 31, progress = { contract.objectives[1].n } })
+		expect(NpcMarks.of(NpcMarks.BOARD, done, 31)).toBe("turnIn")
+		expect(NpcMarks.of(scoutOf(31), done, 31)).toBe("turnIn")
+		expect(NpcMarks.of(otherScout(31), done, 31)).toBeNil()
+	end)
+
+	it("a scout with a story quest to hand in and a contract to take shows ?", function()
+		-- the Meadows scout gives Grimrok's Slayer (15) and the contracts of the Meadows
+		local slayer = Quests.Boss.get("boss_grimrok") :: any
+		local contract = Quests.Contracts.forLevel(15) :: any
+		expect(contract.map).toBe("meadows")
+		local s = contractState(14)
+		s.side.active[slayer.id] = { progress = { slayer.objectives[1].n } }
+		expect(NpcMarks.of("scout_meadows", s, 15)).toBe("turnIn")
+		s.side.active = {}
+		expect(NpcMarks.of("scout_meadows", s, 15)).toBe("available")
+	end)
+
+	it("after the 99th contract the board has no contract mark", function()
+		expect(NpcMarks.of(NpcMarks.BOARD, contractState(99), 100)).toBeNil()
+		expect(NpcMarks.of(scoutOf(99), contractState(99), 100)).toBeNil()
 	end)
 end)
 

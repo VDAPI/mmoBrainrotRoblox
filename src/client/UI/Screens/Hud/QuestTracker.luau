@@ -1,7 +1,9 @@
 --!strict
 -- Quest tracker (DESIGN §20, right side under the minimap): the tracked side quest (S27, QuestTrack.Focus) and the
 -- main quest with their objectives and an arrow towards the tracked one's target (an NPC or a place on this map, or the portal leading to the target map), plus the
--- daily contracts. The header collapses it. Elite II timers moved to Hud/Elite2Timer (FIX 2026-10-09).
+-- daily contracts. The header collapses it. Elite II timers moved to Hud/Elite2Timer (FIX 2026-10-09). S99: the hunting
+-- contract between the story and the daily contracts (on top with the arrow when tracked; the next one to take with
+-- "From: Contract board"; nothing while waiting for a level or after the 99th).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -9,6 +11,7 @@ local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
 
+local Contracts = require(ReplicatedStorage.Shared.Logic.Contracts)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local MapRoute = require(ReplicatedStorage.Shared.Logic.MapRoute)
 local MapSketch = require(script.Parent.Parent.Parent.MapSketch)
@@ -236,8 +239,51 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 		-- S27: the tracked side quest first.
 		local level = use(State.Value({ "character", "level" })) or 1
 		local focus = use(QuestTrack.Focus)
-		local sideQuest = if focus then Quests.npcQuest(focus.id) else nil
-		local sideEntry = if focus then SideQuests.activeOf(q)[focus.id] else nil
+
+		-- S99: the hunting contract (active: title and objective; to take: "!" and where)
+		local contractState = Contracts.stateOf(q)
+		local function lookup(key: string, args: { [string]: any }?): string
+			return Text.get(use, key, args)
+		end
+		local function contractBlock(): boolean
+			local active, entry = Contracts.active(contractState)
+			if active and entry then
+				local map = use(State.Value({ "character", "location", "map" }))
+				local target = QuestText.contractTarget(active, entry, level, map)
+				local turnIn = if target and target.npc then target.npc else Contracts.BOARD
+				line(`◈ {QuestText.contractTitle(lookup, active)}`, Theme.Colors.Gold, 16, Theme.Fonts.BodyBold)
+				objectives(
+					`contract:{active.id}`,
+					QuestText.rows(use, active.objectives, entry.progress, turnIn),
+					target
+				)
+				return true
+			end
+			local nextContract = Contracts.next(contractState)
+			if nextContract and Contracts.canAccept(contractState, level) then
+				line(
+					`! {QuestText.contractTitle(lookup, nextContract)}`,
+					Theme.Colors.GoldBright,
+					16,
+					Theme.Fonts.BodyBold
+				)
+				line(
+					Text.get(use, "quest.tracker.from", { npc = npcName(Contracts.BOARD) }),
+					Theme.Colors.TextMuted,
+					14,
+					Theme.Fonts.Body
+				)
+				return true
+			end
+			return false
+		end
+		local contractOnTop = focus ~= nil and focus.kind == "contract"
+		if contractOnTop and contractBlock() then
+			gap()
+		end
+
+		local sideQuest = if focus and focus.id then Quests.npcQuest(focus.id) else nil
+		local sideEntry = if focus and focus.id then SideQuests.activeOf(q)[focus.id] else nil
 		if sideQuest and type(sideEntry) == "table" then
 			line(`◆ {Text.get(use, `quest.{sideQuest.id}.title`)}`, Theme.Colors.GoldBright, 17, Theme.Fonts.BodyBold)
 			objectives(
@@ -277,6 +323,18 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 					14,
 					Theme.Fonts.Body
 				)
+			end
+		end
+
+		if not contractOnTop then
+			local before = order
+			if before > 0 then
+				gap()
+			end
+			if not contractBlock() and before > 0 then
+				-- nothing to show: drop the gap again
+				table.remove(list)
+				order -= 1
 			end
 		end
 

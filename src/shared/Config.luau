@@ -189,6 +189,7 @@ local Config = {
 	-- instead of a gold one.
 	Quest = {
 		greyGap = 6,
+		contractBacklog = 3, -- S99: levels of backlog an existing character keeps at the first load after S99
 	},
 	-- Skills (S28, DESIGN §14): `breakpoints` turns the rank 5 / 10 breakpoints on (off = numbers only).
 	Skills = {

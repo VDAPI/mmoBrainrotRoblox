@@ -20,6 +20,7 @@ local withCharacter = Context.withCharacter
 local QuestService = Context.services.QuestService
 local PlayerStateService = Context.services.PlayerStateService
 local SideQuestService = Context.services.SideQuestService
+local ContractService = Context.services.ContractService
 local TravelService = Context.services.TravelService
 
 local commands: { [string]: (player: Player, args: { string }) -> ...any } = {}
@@ -61,6 +62,41 @@ commands.weekly = function(player, args)
 			QuestService.CompleteWeekly(player)
 		end
 		reply(player, "admin.weekly.done")
+	end)
+end
+
+-- S99: /contract info | set <level> | complete | reset
+commands.contract = function(player, args)
+	local action = args[1]
+	withCharacter(player, function()
+		if action == "info" then
+			local info = ContractService.Info(player)
+			if not info then
+				return
+			end
+			reply(player, "admin.contract.info", {
+				done = info.done,
+				max = Quests.Contracts.MAX_LEVEL,
+				active = info.active or "-",
+				have = info.have or 0,
+				need = info.need or 0,
+				next = info.next or "-",
+			})
+		elseif action == "set" then
+			local level = tonumber(args[2])
+			local contract = if level then Quests.Contracts.forLevel(math.floor(level)) else nil
+			if contract and ContractService.SetLevel(player, contract.level) then
+				reply(player, "admin.contract.set", { id = contract.id })
+			else
+				reply(player, "admin.usage.contract")
+			end
+		elseif action == "complete" and ContractService.Complete(player) then
+			reply(player, "admin.contract.complete")
+		elseif action == "reset" and ContractService.Reset(player) then
+			reply(player, "admin.contract.reset")
+		else
+			reply(player, "admin.usage.contract")
+		end
 	end)
 end
 

@@ -252,9 +252,17 @@ local function registerWindows()
 				OnService = NpcController.OpenService,
 				OnQuest = function(row)
 					local npcId = Fusion.peek(NpcController.Current)
-					if npcId then
-						NpcController.Quests.OpenQuest(npcId, row)
+					if not npcId then
+						return
 					end
+					-- S99: the hunting contract at the board is handled in the board window (one place)
+					local def = Npcs.get(npcId)
+					if row.kind == "contract" and def and table.find(def.services, "quests") then
+						WindowManager.Close("npc")
+						NpcController.Quests.OpenBoard()
+						return
+					end
+					NpcController.Quests.OpenQuest(npcId, row)
 				end,
 			})
 		end,

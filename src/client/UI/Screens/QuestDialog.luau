@@ -5,7 +5,8 @@
 -- is done shows the thanks (quest.<id>.done) and "Hand in" — with three items for the character's class to pick
 -- from on an arc's last quest (rolled by the server when the quest was finished, tooltip compares with the
 -- equipped item). S98: the quest's category over the title (quest.tab.<category>) and, on an offer far below the
--- character (NpcMarks.isLow, the grey "!"), a note that it pays less than hunting at the character's level.
+-- character (NpcMarks.isLow, the grey "!"), a note that it pays less than hunting at the character's level. S99: the
+-- hunting contract at the scout of its region (title and pages with arguments, ContractAccept / ContractTurnIn).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -28,6 +29,9 @@ local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
 local Toast = require(script.Parent.Parent.Components.Toast)
 
+local Areas = require(ReplicatedStorage.Shared.Data.Areas)
+local Contracts = require(ReplicatedStorage.Shared.Logic.Contracts)
+
 local Children = Fusion.Children
 
 type Scope = Fusion.Scope<typeof(Fusion)>
@@ -48,7 +52,9 @@ type View = {
 	row: NpcQuests.Row,
 	mode: "offer" | "active" | "turnIn" | "later" | "elsewhere",
 	title: string, -- locale key
+	titleArgs: { [string]: any }?, -- S99: arguments of the title (the hunting contract)
 	pages: { string }, -- locale keys
+	pageArgs: { [string]: any }?, -- S99: arguments of every page
 	objectives: { Quests.Objective },
 	progress: { number },
 	reward: Quests.Reward,
@@ -59,6 +65,39 @@ type View = {
 local function buildView(row: NpcQuests.Row?, quests: any, npcId: string?): View?
 	if not row or type(quests) ~= "table" then
 		return nil
+	end
+	if row.kind == "contract" then
+		-- S99: the hunting contract (taken and handed in here at the scout of its region)
+		local contract = Quests.Contracts.get(row.id)
+		if not contract then
+			return nil
+		end
+		local state = Contracts.stateOf(quests)
+		local active, entry = Contracts.active(state)
+		local mine = active ~= nil and active.id == contract.id and entry ~= nil
+		local progress = if mine and entry then entry.progress else QuestLogic.emptyProgress(contract.objectives)
+		local mode: any = if mine
+			then (if Contracts.isComplete(state) then "turnIn" else "active")
+			else (if row.mode == "later" then "later" else "offer")
+		local area = Areas.areaById(contract.area)
+		local areaArg = if area then `@{area.nameKey}` else "?"
+		return {
+			row = row,
+			mode = mode,
+			title = "contract.title",
+			titleArgs = { n = contract.level, area = areaArg },
+			pages = {
+				if mode == "turnIn"
+					then "contract.done"
+					elseif mode == "active" then "contract.progress"
+					else "contract.text",
+			},
+			pageArgs = { area = areaArg, n = contract.objectives[1].n },
+			objectives = contract.objectives,
+			progress = progress,
+			reward = contract.reward,
+			turnIn = npcId or Contracts.BOARD,
+		}
 	end
 	if row.kind == "main" then
 		local quest = Quests.Main.get(row.id)
@@ -117,6 +156,33 @@ local function buildView(row: NpcQuests.Row?, quests: any, npcId: string?): View
 	}
 end
 
+-- S99: "@key" arguments of a view (area names) in the player's language.
+local function resolveWith(use: any, args: { [string]: any }?): { [string]: any }?
+	if not args then
+		return nil
+	end
+	local out = {}
+	for key, value in args do
+		out[key] = if type(value) == "string" and string.sub(value, 1, 1) == "@"
+			then Text.get(use, string.sub(value, 2))
+			else value
+	end
+	return out
+end
+
+local function resolve(args: { [string]: any }?): { [string]: any }?
+	if not args then
+		return nil
+	end
+	local out = {}
+	for key, value in args do
+		out[key] = if type(value) == "string" and string.sub(value, 1, 1) == "@"
+			then Text.now(string.sub(value, 2))
+			else value
+	end
+	return out
+end
+
 local function QuestDialog(scope: Scope, props: Props): Fusion.Child
 	local quests = State.Value({ "character", "quests" })
 	local level = State.Value({ "character", "level" })
@@ -170,6 +236,9 @@ local function QuestDialog(scope: Scope, props: Props): Fusion.Child
 		if v.row.kind == "main" then
 			name = if v.mode == "offer" then "QuestAccept" else "QuestTurnIn"
 			args = { npcId }
+		elseif v.row.kind == "contract" then
+			name = if v.mode == "offer" then "ContractAccept" else "ContractTurnIn"
+			args = { npcId }
 		elseif v.mode == "offer" then
 			name, args = "SideAccept", { v.row.id }
 		else
@@ -184,7 +253,10 @@ local function QuestDialog(scope: Scope, props: Props): Fusion.Child
 			if ok then
 				Sounds.play("levelUp")
 				if v.mode == "offer" then
-					Toast.push(Text.now("quest.accepted", { title = Text.now(v.title) }), "success")
+					Toast.push(
+						Text.now("quest.accepted", { title = Text.now(v.title, resolve(v.titleArgs)) }),
+						"success"
+					)
 					if props.OnAccepted then
 						props.OnAccepted(v.row)
 					end
@@ -210,7 +282,7 @@ local function QuestDialog(scope: Scope, props: Props): Fusion.Child
 			return Text.get(use, "quest.handInAt", { npc = if npc then Text.get(use, npc.nameKey) else "?" })
 		end
 		local key = v.pages[math.clamp(use(page), 1, #v.pages)]
-		return Text.get(use, key)
+		return Text.get(use, key, resolveWith(use, v.pageArgs))
 	end)
 
 	-- Objectives and rewards show on the last page.
@@ -306,7 +378,7 @@ local function QuestDialog(scope: Scope, props: Props): Fusion.Child
 			BackgroundTransparency = 1,
 			Text = scope:Computed(function(use): string
 				local v = use(view)
-				return if v then Text.get(use, v.title) else ""
+				return if v then Text.get(use, v.title, resolveWith(use, v.titleArgs)) else ""
 			end),
 			TextWrapped = true,
 			TextScaled = true,

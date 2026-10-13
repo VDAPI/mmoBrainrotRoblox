@@ -4,6 +4,7 @@
 
 local Classes = require("../Data/Classes")
 local Config = require("../Config")
+local Contracts = require("../Data/Quests/Contracts")
 local Exp = require("./Exp")
 local Items = require("../Data/Items")
 local Rarities = require("../Data/Rarities")
@@ -18,7 +19,7 @@ type CharacterData = Types.CharacterData
 
 local AccountSchema = {}
 
-AccountSchema.CURRENT = 6
+AccountSchema.CURRENT = 7
 
 function AccountSchema.accountTemplate(): AccountData
 	return {
@@ -91,7 +92,7 @@ function AccountSchema.characterTemplate(): CharacterData
 			mainDone = 0,
 			daily = { day = 0, list = {}, rerolls = 0 },
 			weekly = { week = 0, list = {}, rerolls = 0 }, -- S98 (reconcile adds it to old characters)
-			contract = { done = 0 }, -- S98: filled by S99
+			contract = { done = 0 }, -- S98; S99: hunting contracts (Logic/Contracts), migration 7
 			side = { active = {}, done = {} },
 		},
 		guildId = nil,
@@ -256,6 +257,36 @@ MIGRATIONS[6] = function(data, _newId)
 		character.buildSlot = 1
 		character.buildOther = nil
 		character.reworkNotice = true
+	end
+end
+
+-- 7 (S99): hunting contracts (DESIGN-15 §3.3): existing characters skip the contracts far below their level, without
+-- rewards (done = max(done, level - 3)); new characters start at contract 1. Idempotent.
+MIGRATIONS[7] = function(data, _newId)
+	if type(data.characters) ~= "table" then
+		return
+	end
+	for _, character in data.characters do
+		if type(character) ~= "table" or type(character.quests) ~= "table" then
+			-- no quests: the reconcile after the migrations adds the template's { done = 0 }
+			continue
+		end
+		local contract = character.quests.contract
+		if type(contract) ~= "table" then
+			contract = { done = 0 }
+			character.quests.contract = contract
+		end
+		local level = math.clamp(math.floor(tonumber(character.level) or 1), 1, Config.MaxLevel)
+		local done = math.clamp(
+			math.max(math.floor(tonumber(contract.done) or 0), level - Config.Quest.contractBacklog),
+			0,
+			Contracts.MAX_LEVEL
+		)
+		contract.done = done
+		local active = contract.active
+		if type(active) ~= "table" or active.level ~= done + 1 then
+			contract.active = nil
+		end
 	end
 end
 

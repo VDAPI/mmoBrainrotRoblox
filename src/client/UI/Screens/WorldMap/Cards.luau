@@ -15,6 +15,7 @@ local Areas = require(ReplicatedStorage.Shared.Data.Areas)
 local Bosses = require(ReplicatedStorage.Shared.Data.Bosses)
 local BossScaling = require(ReplicatedStorage.Shared.Logic.BossScaling)
 local CardKit = require(script.Parent.CardKit)
+local Contracts = require(ReplicatedStorage.Shared.Logic.Contracts)
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local CreatureCards = require(script.Parent.CreatureCards)
 local DetailCard = require(script.Parent.DetailCard)
@@ -139,7 +140,14 @@ end
 -- finished objectives green, "Return to: <NPC>" when complete and handed in elsewhere.
 local function objectiveLines(lines: { DetailCard.Line }, quests: any, row: NpcQuests.Row)
 	local objectives: { Quests.Objective }, progress: any, turnIn: string
-	if row.kind == "main" then
+	if row.kind == "contract" then
+		-- S99: the active hunting contract (handed in at the board or its scout)
+		local contract, entry = Contracts.active(Contracts.stateOf(quests))
+		if not contract or not entry or contract.id ~= row.id then
+			return
+		end
+		objectives, progress, turnIn = contract.objectives, entry.progress, Contracts.BOARD
+	elseif row.kind == "main" then
 		local quest = Quests.Main.get(row.id)
 		local main = quests.main
 		if not quest or type(main) ~= "table" or main.id ~= quest.id then
@@ -162,12 +170,25 @@ end
 
 -- Rewards of a quest row (S31): shown under its line, except for quests not reachable yet.
 local function rewardOf(row: NpcQuests.Row): Quests.Reward?
+	if row.kind == "contract" then
+		local contract = Quests.Contracts.get(row.id)
+		return if contract then contract.reward else nil
+	end
 	if row.kind == "main" then
 		local quest = Quests.Main.get(row.id)
 		return if quest then quest.reward else nil
 	end
 	local quest = Quests.npcQuest(row.id)
 	return if quest then quest.reward else nil
+end
+
+-- S99: the title of a quest row (the hunting contract: one key with arguments).
+local function rowTitle(row: NpcQuests.Row): string
+	if row.kind == "contract" then
+		local contract = Quests.Contracts.get(row.id)
+		return if contract then QuestText.contractTitle(T, contract) else row.id
+	end
+	return T(`quest.{row.id}.title`)
 end
 
 -- One section per quest (its line, objectives and rewards); the first one carries the "Quests" title.
@@ -195,8 +216,8 @@ local function questSections(npcId: string, level: number): { Section }
 		active = "worldmap.card.questActive",
 	}
 	for _, row in NpcQuests.rows(quests, level, npcId) do
-		-- S98: the quest's category in front of its title (quest.tab.<category>)
-		local title = `{T(`quest.tab.{row.category}`)} · {T(`quest.{row.id}.title`)}`
+		-- S98: the quest's category in front of its title (quest.tab.<category>); S99: one title function per kind
+		local title = `{T(`quest.tab.{row.category}`)} · {rowTitle(row)}`
 		if row.mode == "later" then
 			table.insert(lines, {
 				text = `{title} ({T("quest.fromLevel", { level = NpcQuests.minLevel(row) })})`,
@@ -411,6 +432,16 @@ function Cards.area(ctx: Context, mapId: string, areaId: string): Spec?
 	end
 	if AreaAdvice.isRecommended(found, ctx.level) then
 		table.insert(lines, 1, { text = T("worldmap.card.forYou"), color = Theme.Colors.GoldBright, bold = true })
+	end
+	-- S99: the hunting ground of the active hunting contract
+	local contract, entry = Contracts.active(Contracts.stateOf(State.Get({ "character", "quests" })))
+	if contract and entry and contract.area == found.id then
+		local n = contract.objectives[1].n
+		table.insert(lines, 1, {
+			text = T("worldmap.card.contractHere", { have = math.min(entry.progress[1] or 0, n), n = n }),
+			color = Theme.Colors.GoldBright,
+			bold = true,
+		})
 	end
 	local x, z = AreaAdvice.centre(found)
 	table.insert(lines, whereLine(ctx, mapId, x, z))

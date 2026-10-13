@@ -1,13 +1,17 @@
 --!strict
 -- Client helpers for quests (S11): objective labels in the player's language, where an objective points to
--- (for the direction arrow and the minimap) and the marker of an NPC ("!" / "?" / grey "?").
+-- (for the direction arrow and the minimap) and the marker of an NPC ("!" / "?" / grey "?"). S99: the hunting
+-- contract title (one key with arguments) and target.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local AreaAdvice = require(ReplicatedStorage.Shared.Logic.AreaAdvice)
+local AreaProfileText = require(script.Parent.AreaProfileText)
+local AreaProfiles = require(ReplicatedStorage.Shared.Data.AreaProfiles)
 local Areas = require(ReplicatedStorage.Shared.Data.Areas)
 local Bosses = require(ReplicatedStorage.Shared.Data.Bosses)
 local GatherNodes = require(ReplicatedStorage.Shared.Data.GatherNodes)
+local LevelBand = require(ReplicatedStorage.Shared.Logic.LevelBand)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local Monsters = require(ReplicatedStorage.Shared.Data.Monsters)
 local NpcMarks = require(ReplicatedStorage.Shared.Logic.NpcMarks)
@@ -58,6 +62,10 @@ function QuestText.objective(use: any, objective: Objective, have: number, turnI
 				then (if objective.variant == "elite" then def.nameKeys.elite else def.nameKeys.normal)
 				else "?"
 			return Text.get(use, "quest.obj.kill", { monster = Text.get(use, key), count = count }) .. where
+		end
+		-- S99: only an area (the hunting contracts): "Defeat monsters: <area> 3/30", no "in <area>" suffix
+		if area and not objective.region and not objective.variant then
+			return Text.get(use, "quest.obj.killArea", { area = Text.get(use, area.nameKey), count = count })
 		end
 		local map = Maps.get(REGION_MAPS[objective.region or 1] or "")
 		-- S98: "elite2" = Elite II only (weekly contracts)
@@ -282,6 +290,57 @@ function QuestText.sideTarget(quest: Quests.SideQuest, entry: any, level: number
 		return { map = hint.map, x = hint.x, z = hint.z }
 	end
 	return nil
+end
+
+-- S99: the title of a hunting contract ("Hunting contract 12: Crow Field"); `lookup` = Text.get bound to a scope's
+-- `use` or the T of a card.
+function QuestText.contractTitle(
+	lookup: (key: string, args: { [string]: any }?) -> string,
+	contract: Quests.ContractQuest
+): string
+	local area = Areas.areaById(contract.area)
+	return lookup("contract.title", { n = contract.level, area = if area then lookup(area.nameKey) else "?" })
+end
+
+-- S99: the hunting ground of a contract as rich text: its name and levels in the colour of the level band for the
+-- character, then the S33 profile tag in its colour.
+function QuestText.contractAreaLine(use: any, contract: Quests.ContractQuest, level: number): string
+	local area = Areas.areaById(contract.area)
+	if not area then
+		return ""
+	end
+	local color: string = LevelBand.COLORS[AreaAdvice.bandOf(area, level)]
+	local name = `{Text.get(use, area.nameKey)} ({area.lv[1]}–{area.lv[2]})`
+	local line = `<font color="{color}">{name}</font>`
+	local profile = AreaProfiles.ofArea(area.id)
+	if profile then
+		local hex = "#" .. AreaProfileText.color(profile):ToHex()
+		line ..= `  <font color="{hex}">{AreaProfileText.tag(use, profile)}</font>`
+	end
+	return line
+end
+
+-- S99: the scout of a contract's region (the other place to take and hand it in).
+function QuestText.contractScout(contract: Quests.ContractQuest): string
+	return `scout_{contract.map}`
+end
+
+-- S99: where a hunting contract points: done -> its scout when the player is on that map, else the board; open or
+-- not taken yet -> the middle of its hunting ground.
+function QuestText.contractTarget(
+	contract: Quests.ContractQuest,
+	active: { level: number, progress: { number } }?,
+	_level: number?,
+	currentMap: string?
+): Target?
+	if active and QuestLogic.isComplete(active.progress, contract.objectives) then
+		local scout = Npcs.get(QuestText.contractScout(contract))
+		if scout and currentMap == scout.map then
+			return npcTarget(scout.id)
+		end
+		return npcTarget(NpcMarks.BOARD)
+	end
+	return areaTarget(contract.area)
 end
 
 export type Marker = NpcMarks.Mark?

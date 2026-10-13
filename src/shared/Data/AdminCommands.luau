@@ -362,6 +362,13 @@ cmd(
 	{ dangerActions = { "reset" } }
 )
 cmd("quests", "anchor", { str("id", true) })
+-- S99: hunting contracts of the caller's character (`set <level>` = that contract active, the ones before done)
+cmd(
+	"quests",
+	"contract",
+	{ enum("action", { "info", "set", "complete", "reset" }), int("level", 1, 99, true) },
+	{ dangerActions = { "reset" } }
+)
 
 -- Economy and community
 cmd("economy", "gold", { int("amount", -BIG, BIG) })

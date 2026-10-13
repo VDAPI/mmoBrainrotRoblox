@@ -1147,7 +1147,15 @@ Balance.SIDE_SHARE = 0.5
 -- S98: the boss quests below 20 count in full (the same quest EXP as the window model).
 function Balance.questRewards(level: number): (number, number)
 	local exp, gold, need = 0, 0, 0
-	for _, entry in { { Quests.Main.list, 1 }, { Quests.Side.list, Balance.SIDE_SHARE }, { Quests.Boss.list, 1 } } do
+	-- S99: the hunting contracts below 20 too (questsAt counts them on their level; their kills are grinding kills,
+	-- so questKills leaves them out)
+	local lists = {
+		{ Quests.Main.list, 1 },
+		{ Quests.Side.list, Balance.SIDE_SHARE },
+		{ Quests.Boss.list, 1 },
+		{ Quests.Contracts.list, 1 },
+	}
+	for _, entry in lists do
 		for _, q in entry[1] :: any do
 			if q.level < 20 then
 				exp += (q.reward.exp or 0) * entry[2]
@@ -5146,7 +5154,10 @@ function Balance.targetsGlobal(): { TargetRow }
 		local falls, last = 0, -math.huge
 		for L = 25, 99 do
 			local pace = Balance.paceAt("Warrior", L, { kind = Balance.GENERIC })
-			local hours = Exp.expToNext(L) / pace.expPerKill * pace.secondsPerKill / 3600
+			-- S99: without quests there is nothing to compensate: the curve without the quest budget multiplier
+			-- (its steps follow the quest windows and would read as falls)
+			local expPerKill = pace.expPerKill / Balance.budgetMul(L)
+			local hours = Exp.expToNext(L) / expPerKill * pace.secondsPerKill / 3600
 			if hours < last then
 				falls += 1
 			end

@@ -360,7 +360,8 @@ describe("Mounts: seat, rider pose and save", function()
 	end)
 
 	it("adds mounts through the template and reconcile, without a new schema", function()
-		expect(AccountSchema.CURRENT).toBe(SCHEMA_BEFORE_S96)
+		-- S96 added no schema; the next one is S99's hunting contracts (7)
+		expect(AccountSchema.CURRENT).toBe(SCHEMA_BEFORE_S96 + 1)
 		local template = AccountSchema.characterTemplate().mounts
 		expect(template).toEqual({ owned = {}, riding = false })
 		local data: any = {

@@ -11,8 +11,8 @@ local scope = Fusion.scoped(Fusion)
 
 export type Target = { map: string, x: number?, z: number?, npc: string? }
 
--- S27: the tracked quest; nil = the story quest.
-export type Focus = { kind: "side", id: string }?
+-- S27: the tracked quest; nil = the story quest. S99: { kind = "contract" } = the active hunting contract (no id).
+export type Focus = { kind: "side" | "contract", id: string? }?
 
 return {
 	Tracked = scope:Value(true),

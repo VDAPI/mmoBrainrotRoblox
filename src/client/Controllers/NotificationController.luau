@@ -19,7 +19,8 @@ local NotificationController = {
 local KINDS = { info = true, success = true, warning = true, error = true }
 
 -- Player-provided values (names) must not inject rich text tags. Values starting with "@" are localization keys,
--- "#item:<id>:<up>" are item names.
+-- "#item:<id>:<up>" are item names; S99: a table { key, args? } is a localized text with its own arguments
+-- (the hunting contract title).
 local function escapeArgs(args: any): { [string]: any }?
 	if type(args) ~= "table" then
 		return nil
@@ -36,6 +37,8 @@ local function escapeArgs(args: any): { [string]: any }?
 			else
 				value = string.gsub(value, "[<>&]", { ["<"] = "&lt;", [">"] = "&gt;", ["&"] = "&amp;" })
 			end
+		elseif type(value) == "table" and type(value.key) == "string" then
+			value = Text.now(value.key, escapeArgs(value.args))
 		end
 		out[key] = value
 	end

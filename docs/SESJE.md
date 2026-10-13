@@ -6590,3 +6590,105 @@ Pliki: `src/shared/Data/{QuestBudget,AdminCommands}.luau`, `src/shared/Data/Ques
 `tests/{questbudget,questcategories,npcmarks,quest,sidequests,character}.spec.luau`, `tests/{Balance,BalanceTables}.luau`,
 `tests/fixtures/{quest_budget_base,balance_items}.json`, `tools/{QuestBudgetGen,quest_budget,balance_reasons,balance_report}.luau`,
 `docs/{DESIGN,BALANS,DECYZJE,SESJE,PROGRESS}.md`, `CLAUDE.md`.
+
+### S99: Zlecenia łowieckie 1–99
+
+Start na `88a8ad4` (S98): commit S98, sekcja S98, `Data/QuestBudget`, `tools/quest_budget.luau`, `tools/balance_reasons.luau`,
+`tests/balance1_20.spec.luau` i `docs/DESIGN-15.md` na miejscu; ostatnia migracja w kodzie `MIGRATIONS[6]`.
+
+Co zrobiono:
+- **Dane i generator (A):** `Data/Quests/Contracts` ma ręczne `RULES` (kotwice zabić `{1,10} {10,20} {20,30} {99,60}`,
+  złoto `20 + 4·L`, `minGroups = 4`, kary rotacji, kamienie milowe co 10) i wygenerowaną listę 99 zleceń (`contract_<L>`,
+  `map`, `area`, jeden cel `kill` z samym `area`, nagroda 12% `expToNext(L)` z `QuestBudget.TARGET.contract`);
+  `Logic/ContractGen` (`killsAt`, `candidates`, `picks`, `build`, `report`), `tools/contracts_gen.luau [check]`
+  (zapis sekcji GENERATED + `stylua`, raport łowisk i `n / zabicia poziomu`).
+- **Logika (B):** `Logic/Contracts` (`stateOf`, `next`, `active`, `isComplete`, `canAccept` z powodami `active` / `none` /
+  `level`, `giversOf`, `isGiver`, `backlog`, `upcoming`, `allDone`); `NpcMarks`: zlecenie przy tablicy i zwiadowcy
+  regionu (złoty / szary „!”, „?”, szary „?”); migracja 7 (`AccountSchema.CURRENT = 7`, `Config.Quest.contractBacklog = 3`).
+- **Serwer (C, G):** `ContractService` (`Handle` z `QuestService.handle`, `ContractAccept` / `ContractTurnIn` z poziomem,
+  kolejnością, NPC, odległością i miejscem w plecaku, auto-przyjęcie następnego, toasty `contract.ready` / `next` /
+  `waiting`, `QuestCompleted("contract.title", args)`), remote'y w `Net/Definitions`, admin `/contract info | set |
+  complete | reset`. Zależności serwisów sprawdzone skryptem (`build/s99_deps.py`, bez cyklu; `tests/depsort.spec` nie
+  ładuje prawdziwych `Deps`).
+- **Klient (E):** `QuestText.contractTitle` / `contractTarget` / `contractAreaLine` / `contractScout`, `quest.obj.killArea`;
+  `QuestTrack.Focus` z `{ kind = "contract" }`; tablica: sekcja zlecenia nad zakładkami (Przyjmij / Śledź / Oddaj albo
+  „Następne zlecenie od N. poziomu”, łowisko w kolorze pasma z profilem, zaległe), okno 640 × 600; dialog zwiadowcy
+  (`NpcQuests.Row.kind = "contract"`, `QuestDialog` z `titleArgs` / `pageArgs`), wiersz przy tablicy otwiera okno
+  tablicy; dziennik „Łowieckie” (wykonane / 99, zaległe, aktywne ze „Śledź” i „Oddaj: …”, następne 3 ze znakiem co 10.,
+  „Wszystkie zlecenia łowieckie wykonane”); tracker (◈ blok między fabułą a dziennymi, na górze ze strzałką, gdy
+  śledzony); mapa świata (wiersze tablicy i zwiadowcy, linia „Tu jest Twoje zlecenie” na karcie łowiska); okno portalu
+  „◈ Zlecenie”; `QuestCompleted(titleKey, args?)` i argument toastu `{ key, args }`.
+- **Teksty (F):** wszystkie klucze z planu w PL i EN plus `contract.takeAt`, `contract.doneCount`, `contract.upcoming`,
+  `contract.upcomingRow`, `quest.tag.contract`; `quest.tab.contract` „Łowieckie” / "Hunting"; usunięte nieczytane
+  `quest.contract.active` / `done` / `none` (S98).
+- **Budżet i księga (H):** `monsterExpMul` przeliczone (`lune run tools/quest_budget.luau --session S99`), powody
+  `Quests/Contracts:*` i `QuestBudget:MONSTER_EXP_MUL*` (S99), `RULES.penalty` przez `omit`; `Balance.questRewards`
+  z zleceniami < 20, G13.rise bez mnożnika budżetu; raport `docs/BALANS.md` bez „BRAK POWODU”.
+
+Zlecenia (wybrane poziomy):
+
+| L | łowisko | n | EXP | złoto | przedmioty |
+|--:|---|--:|--:|--:|---|
+| 1 | `meadows_rabbitfields` (1–4) | 10 | 12 | 24 | |
+| 5 | `meadows_wolfhills` (3–7) | 14 | 109 | 40 | |
+| 10 | `meadows_banditroad` (9–14) | 20 | 388 | 60 | `blessing_fortune_2` ×1, `stone_return` ×3 |
+| 15 | `meadows_goblincamp` (13–18) | 25 | 831 | 80 | |
+| 20 | `duskwood_werethicket` (20–25) | 30 | 1 430 | 100 | `blessing_fortune_2` ×1, `stone_map` ×2 |
+| 30 | `duskwood_crossroads` (30–36) | 34 | 3 081 | 140 | `blessing_fortune_3` ×1, `stone_dungeon` ×1 |
+| 45 | `ashen_flats` (45–50) | 39 | 6 649 | 200 | |
+| 60 | `ashen_crags` (58–66) | 45 | 11 481 | 260 | `blessing_fortune_3` ×1, `stone_map` ×4 |
+| 75 | `frostpeak_slopes` (71–80) | 51 | 17 540 | 320 | |
+| 90 | `frostpeak_temple` (85–95) | 57 | 24 798 | 380 | `blessing_fortune_3` ×1, `stone_dungeon` ×3, `essence_dust` ×10 |
+| 99 | `frostpeak_wyrmspire` (94–100) | 60 | 29 720 | 416 | |
+
+Raport generatora: Łąki rabbitfields 2, wolfhills 2, toadmire 2, oldforest 2, crowfield 2, banditroad 1, diggings 2,
+goblincamp 3, bearridge 3; Bór werethicket 3, bearhollow 2, ruins 2, heart 3, cultvillage 3, crossroads 2, swamp 3,
+witchmarsh 4, bloodcliffs 3; Pustkowia flats 3, oasis 2, warcamp 3, golemfields 3, burntruins 2, dunes 3, crags 3,
+ashroad 4, tombs 2; Szczyty valley 3, slopes 5, harpyrocks 2, pass 3, tundra 2, lake 3, temple 4, icewatch 5,
+wyrmspire 3. Najdłuższa seria ×2: `meadows_rabbitfields` 1–2 i `meadows_bearridge` 18–19 (na 2. i 19. pasuje tylko jedno
+łowisko); 96–99 na zmianę `frostpeak_icewatch` i `frostpeak_wyrmspire`; zapasów brak. Wszystkie 36 łowisk użyte, żadne
+nie odpada przez `minGroups`; każde ma ≥ 4 grupy i ≥ 6 potworów w `Data/Spawns`. `n / zabicia całego poziomu` (Wojownik,
+`expToNext / paceAt.expPerKill`, już z nowym mnożnikiem): L1 10/7 = 1,45; L5 0,55; L10 0,46; L15 0,44; L20 0,47;
+L30 0,70; L45 0,42; L60 0,42; L80 0,36; L99 0,51 (na 1. zlecenie trwa dłużej niż poziom: kotwica 10 z planu).
+
+Migracja: `MIGRATIONS[7]`, `CURRENT = 7`; test w `tests/contracts.spec` na 7 postaciach (80 → 77, 2 → 0, 50 z obcym
+aktywnym → 47 bez aktywnego, 40 z `done = 45` → 45, postać bez `quests` → `{ done = 0 }`, uszkodzona gałąź na 20 → 17,
+aktywne następne zlecenie zostaje), drugie `migrate` i ponowna migracja bez zmian, EXP / złoto / plecak nietknięte.
+
+`monsterExpMul` (przed → po): L5 0,950 → 0,649; L10 0,950 → 0,651; L20 0,943 → 0,643; L45 0,976 → 0,832; L70 0,978 →
+0,847; L99 0,977 → 0,842 (L3 0,875 → 0,500 = `MUL_MIN`). Udziały questów w pasmach (model `SIDE_SHARE`): 1–19 74%
+(zlecenia 12%), 20–44 42%, 45–69 27%, 70–99 24%. Godziny bicia pasm wobec bazy S94: 1–19 ×0,9976 (przycięcie na 3.),
+reszta ×0,9996–0,9999; cele tempa S91–S94 zielone bez zmian innych danych. Na 1–19 EXP potworów spada o ok. 35%, bo
+fabuła i poboczne dawały tam już ok. 62% poziomu: gracz, który pomija zlecenia na 1–19, bije tam ok. 1,5× dłużej.
+
+1–20: 222 wpisy `ALLOWED_1_20_DIFFS` (wygenerowane `allowed --why "S99 hunting contracts: quest budget"`): 208 kluczy S98
+z nowymi wartościami „po” i dopiskiem w `why`, 14 nowych kluczy okna tempa S91 (`Tempo: model okna od 1. poziomu (S91)`:
+`3|h`, `3|m (średnia h z 5 poziomów)`, `4|h / h − 1`, `4|m (średnia …)`, `4|m / m − 1`, `5|m (średnia …)`,
+`5|m / m − 1`, `6|m (średnia …)`, `6|m / m − 1`, `7|m (średnia …)`, `7|m / m − 1`, `8|m / m − 1`,
+`suma 1–19|h` 2,634 → 2,602, `suma 1–19 z rodzajami Łąk (kindAt)|h` 2,790 → 2,756). Na 3. zlecenie i fabuła pokrywają
+prawie cały poziom (h 0,045 → 0,012). Fixture 1–20 bez regeneracji (S109). Fixture przedmiotów S84 odświeżony
+(`--fixture-items`, odcisk danych z `Quests/Contracts`): dochód poziomu G9 na 20. 3 247 → 3 964, na 25. 4 564 → 4 920
+(G9.up3 25. 0,486 → 0,451).
+
+Wiki: `npm run data` bez zmian danych (`meta.json` ze znacznikiem commitu przywrócony), `wiki_keys_diff` pusty.
+`scripts/check` zielony (6075 testów).
+
+Dla S109:
+- eksport `Quests.Contracts.list` do `quests.json` (poziom, łowisko z `ref:areas`, `n`, nagroda, kamienie milowe),
+  schemat w `tools/WikiData/Quests.luau`, wpis `WIKI_KEYS_ALLOW`;
+- audyt budżetu: na 1–19 udział questów 74% i mnożnik ok. 0,65 (L3 przycięte do `MUL_MIN`); decyzja, czy zlecenia 1–19
+  zostają w budżecie, i regeneracja fixture'u 1–20;
+- EXP potworów i EXP/h łowisk na wiki z mnożnikiem `QuestBudget.monsterExpMul` (poziom łowiska / pasma) albo z
+  dopiskiem: dziś wiki liczy bez niego i na 1–19 pokazuje ok. 1,5× więcej EXP niż serwer (L3 2×).
+
+Dla S100+: migracja S99 ma numer 7 (`AccountSchema.CURRENT = 7`); następna to 8.
+
+Pliki: `src/shared/Data/Quests/Contracts.luau`, `src/shared/Data/QuestBudget.luau`, `src/shared/Data/AdminCommands.luau`,
+`src/shared/Data/Localization/{pl,en}.luau`, `src/shared/Logic/{ContractGen,Contracts,NpcMarks,AccountSchema}.luau`,
+`src/shared/{Config}.luau`, `src/shared/Net/Definitions.luau`, `src/server/Services/{Contract,Quest,Admin}Service.luau`,
+`src/server/Admin/Quests.luau`, `src/client/Controllers/{Quest,Npc,Notification}Controller.luau`,
+`src/client/UI/{QuestText,QuestTrack,NpcQuests}.luau`, `src/client/UI/Screens/{QuestBoard,QuestDialog,QuestJournal,NpcDialog,AreaPicker}.luau`,
+`src/client/UI/Screens/Hud/QuestTracker.luau`, `src/client/UI/Screens/WorldMap/Cards.luau`,
+`tests/contracts.spec.luau` (nowy), `tests/{npcmarks,quest,questcategories,character,mounts,rarities,sidequests,worldmap}.spec.luau`,
+`tests/{Balance,BalanceTables}.luau`, `tests/fixtures/balance_items.json`, `tools/contracts_gen.luau` (nowy),
+`tools/balance_reasons.luau`, `docs/{DESIGN,DESIGN-15,BALANS,DECYZJE,SESJE,PROGRESS}.md`, `CLAUDE.md`.

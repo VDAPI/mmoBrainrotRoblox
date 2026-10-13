@@ -7,6 +7,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 
+local Contracts = require(ReplicatedStorage.Shared.Logic.Contracts)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Npcs = require(ReplicatedStorage.Shared.Data.Npcs)
@@ -29,11 +30,12 @@ local Toast = require(script.Parent.Parent.UI.Components.Toast)
 
 local QuestController = {
 	Name = "QuestController",
-	Deps = { "WindowManager", "UIController", "NavController" },
+	Deps = { "WindowManager", "UIController", "NavController", "NotificationController" },
 }
 
 local scope = Fusion.scoped(Fusion)
 local WindowManager: any
+local NotificationController: any
 local dialogNpc = scope:Value(nil :: string?)
 local dialogRow = scope:Value(nil :: NpcQuests.Row?)
 
@@ -101,9 +103,18 @@ local function refreshTarget()
 	local level = State.Get({ "character", "level" }) or 1
 	-- S27: a tracked side quest that is no longer active (handed in, abandoned) gives the arrow back to the story.
 	local focus = Fusion.peek(QuestTrack.Focus)
-	if focus then
-		local side = Quests.npcQuest(focus.id)
-		local entry = SideQuests.activeOf(quests)[focus.id]
+	if focus and focus.kind == "contract" then
+		-- S99: the active hunting contract; none active (handed in and waiting) gives the arrow back to the story
+		local contract, active = Contracts.active(Contracts.stateOf(quests))
+		if contract and active then
+			local map = State.Get({ "character", "location", "map" })
+			QuestTrack.Target:set(QuestText.contractTarget(contract, active, level, map))
+			return
+		end
+		QuestTrack.Focus:set(nil)
+	elseif focus then
+		local side = Quests.npcQuest(focus.id or "")
+		local entry = SideQuests.activeOf(quests)[focus.id or ""]
 		if side and type(entry) == "table" then
 			QuestTrack.Target:set(QuestText.sideTarget(side, entry, level))
 			return
@@ -117,6 +128,7 @@ end
 
 function QuestController.Init(registry)
 	WindowManager = registry.Get("WindowManager")
+	NotificationController = registry.Get("NotificationController")
 	local UIController = registry.Get("UIController")
 	WindowManager.Register({
 		id = "quests",
@@ -159,8 +171,14 @@ function QuestController.Init(registry)
 	WindowManager.Register({
 		id = "questboard",
 		titleKey = "window.questboard.title",
-		size = Vector2.new(640, 480),
-		build = QuestBoard,
+		size = Vector2.new(640, 600), -- S99: the hunting contract over the tabs
+		build = function(s)
+			return QuestBoard(s, {
+				Tracked = QuestTrack.Tracked,
+				Focus = QuestTrack.Focus,
+				Track = QuestController.Track,
+			})
+		end,
 	})
 	local Nav = registry.Get("NavController")
 	QuestTracker(scope, {
@@ -192,6 +210,8 @@ function QuestController.Start()
 		refreshTarget()
 	end)
 	scope:Observer(QuestTrack.Focus):onChange(refreshTarget)
+	-- S99: a done hunting contract points at its scout on the scout's map, else at the board
+	scope:Observer(State.Value({ "character", "location", "map" })):onChange(refreshTarget)
 	refreshTarget()
 	-- NPC models stream in and out: refresh the markers regularly.
 	task.spawn(function()
@@ -200,9 +220,11 @@ function QuestController.Start()
 			refreshMarkers()
 		end
 	end)
-	Net.On("QuestCompleted", function(titleKey: string)
+	-- S99: (titleKey, args?) the hunting contract title has arguments ("@key" values resolved)
+	Net.On("QuestCompleted", function(titleKey: string, args: any)
 		Sounds.play("levelUp")
-		Toast.push(Text.now("quest.completed", { title = Text.now(titleKey) }), "success", 5)
+		local title = Text.now(titleKey, NotificationController.ResolveArgs(args))
+		Toast.push(Text.now("quest.completed", { title = title }), "success", 5)
 	end)
 end
 

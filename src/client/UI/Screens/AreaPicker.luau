@@ -10,6 +10,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local AreaAdvice = require(ReplicatedStorage.Shared.Logic.AreaAdvice)
+local Contracts = require(ReplicatedStorage.Shared.Logic.Contracts)
 local AreaProfileText = require(script.Parent.Parent.AreaProfileText)
 local AreaProfiles = require(ReplicatedStorage.Shared.Data.AreaProfiles)
 local Areas = require(ReplicatedStorage.Shared.Data.Areas)
@@ -37,6 +38,23 @@ export type Props = {
 local ROW_HEIGHT = 66
 local PROFILE_ROW_HEIGHT = 88
 
+local CONTRACT_HEX = "#" .. Theme.Colors.GoldBright:ToHex()
+
+-- The tag under an area's levels: "from level X" when locked, else S99 "◈ Contract" and "★ Recommended".
+local function tagText(use: Fusion.Use, area: any, locked: boolean, recommended: boolean, contract: boolean): string
+	if locked then
+		return Text.get(use, "portal.choose.fromLevel", { level = area.lv[1] })
+	end
+	local parts: { string } = {}
+	if contract then
+		table.insert(parts, `<font color="{CONTRACT_HEX}">{Text.get(use, "portal.choose.contract")}</font>`)
+	end
+	if recommended then
+		table.insert(parts, Text.get(use, "portal.choose.recommended"))
+	end
+	return table.concat(parts, "  ")
+end
+
 local function kindsText(use: Fusion.Use, kinds: { string }): string
 	local names = {}
 	for _, kind in kinds do
@@ -50,12 +68,16 @@ end
 
 local function AreaPicker(scope: Scope, props: Props): Fusion.Child
 	local level = State.Value({ "character", "level" })
+	-- S99: the hunting ground of the active hunting contract gets "◈ Contract" (the default choice stays, S22)
+	local contractState = State.Value({ "character", "quests", "contract" })
 
 	local rows = scope:Computed(function(use, s: Scope): { Instance }
 		local mapId = use(props.MapId)
 		local playerLevel = use(level) or 1
 		local list = {}
 		local best = AreaAdvice.bestByProfile(playerLevel, mapId or "")
+		local activeContract = Contracts.active(Contracts.stateOf({ contract = use(contractState) }))
+		local contractArea = if activeContract then activeContract.area else nil
 		for i, area in AreaAdvice.sorted(mapId or "") do
 			local locked = AreaAdvice.locked(area, playerLevel)
 			local band = Color3.fromHex(LevelBand.COLORS[AreaAdvice.bandOf(area, playerLevel)])
@@ -155,12 +177,10 @@ local function AreaPicker(scope: Scope, props: Props): Fusion.Child
 							Name = "Tag",
 							AnchorPoint = Vector2.new(1, 0),
 							Position = UDim2.new(1, -12, 0, 38),
-							Size = UDim2.fromOffset(130, 20),
+							Size = UDim2.fromOffset(220, 20),
 							BackgroundTransparency = 1,
-							Text = if locked
-								then Text.get(use, "portal.choose.fromLevel", { level = area.lv[1] })
-								elseif recommended then Text.get(use, "portal.choose.recommended")
-								else "",
+							RichText = true,
+							Text = tagText(use, area, locked, recommended, contractArea == area.id),
 							TextXAlignment = Enum.TextXAlignment.Right,
 							FontFace = Theme.Fonts.BodyBold,
 							TextSize = Theme.TextSize.Small,

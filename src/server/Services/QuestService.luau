@@ -4,7 +4,7 @@
 -- (Logic/QuestLogic.dailyFor), active automatically, rewards collected at the board on the plaza.
 -- Progress comes from QuestEvents (combat, gathering, fishing, upgrades, …), kills (CombatService credit),
 -- levels, map changes and talking to NPCs. Rewards check the backpack space first. S27: every event also goes to
--- the side quests (SideQuestService.Handle).
+-- the side quests (SideQuestService.Handle) and, S99, to the hunting contract (ContractService.Handle).
 -- S98 (docs/DESIGN-15.md §3.1): weekly contracts (3 per week from Monday 00:00 UTC, Logic/QuestLogic.weeklyFor) and
 -- the week's boss contract (the highest boss open to the character, `Weekly.bossContract.n` won dungeon runs: only
 -- the "boss" event DungeonService fires after a won run counts, so Config.Boss.dailyRuns always applies), both
@@ -46,6 +46,7 @@ local QuestService = {
 		"NpcService",
 		"ZoneService",
 		"SideQuestService",
+		"ContractService", -- S99: hunting contracts (ContractService.Handle)
 		"CosmeticService", -- S97: Reward.cosmetic (the Dragonslayer's mount skin of the quest vaelgrath)
 	},
 }
@@ -58,6 +59,7 @@ local CombatService: any
 local NpcService: any
 local ZoneService: any
 local SideQuestService: any
+local ContractService: any
 local CosmeticService: any
 
 local rng = Rng.new()
@@ -241,6 +243,8 @@ local function handle(player: Player, kind: string, data: { [string]: any })
 	end
 	-- S27: the same event for every active side quest.
 	SideQuestService.Handle(player, kind, data)
+	-- S99: the hunting contract (kills of its area)
+	ContractService.Handle(player, kind, data)
 end
 
 function QuestService.Handle(player: Player, kind: string, data: { [string]: any }?)
@@ -517,6 +521,7 @@ function QuestService.Init(registry)
 	NpcService = registry.Get("NpcService")
 	ZoneService = registry.Get("ZoneService")
 	SideQuestService = registry.Get("SideQuestService")
+	ContractService = registry.Get("ContractService")
 	CosmeticService = registry.Get("CosmeticService")
 end
 

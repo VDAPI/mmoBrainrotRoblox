@@ -2813,3 +2813,43 @@
   `Quests/Boss` (dochód poziomu G9), fixture odświeżony.
 - **S98 porzucanie questu bossowego:** w zakładce „Bossowie” dziennika (zajmuje miejsce w `maxActive`, więc musi dać się
   zwolnić); śledzenie prowadzi do wejścia do lochu regionu bossa.
+- **S99 generator zleceń:** czysta `Logic/ContractGen` (deterministyczna, bez `Rng`) + `tools/contracts_gen.luau`, który
+  zapisuje literalną listę w sekcji GENERATED `Data/Quests/Contracts` (`check` = test aktualności, też w
+  `tests/contracts.spec`). Plik zamiast listy liczonej przy `require`: zmiana `lv` / `groups` łowisk nie przesuwa po
+  cichu zleceń w trakcie, księga S83 widzi literalne `exp`, `gold`, `n`, a wzór jest ten sam co `Data/QuestBudget` S98.
+- **S99 odejście od DESIGN-15 §3.3 (n):** zabicia 10 → 30 na 1–20 (kontrakt: ok. 30–60), bo poziom na 1–10 to dziś
+  kilkanaście–kilkadziesiąt zwykłych potworów; 30 → 60 na 20–99 bez zmian. DESIGN-15 poprawiony.
+- **S99 odejście (kamienie milowe):** co 10. zlecenie błogosławieństwo Fortuny (2 na 10 i 20, potem 3) i kamienie
+  (powrotu, mapy, lochu; na 90. też pył esencji ×10), bez plecaków (zlew złota S84/S94) i bez ekwipunku.
+- **S99 złoto zleceń 20 + 4·L (plan: 12·L):** przy 12·L G9.up3 na 25. spadał do 0,437 (< 0,45); plan każe wtedy
+  zmniejszyć tylko `perLevel`, 4 daje 0,451. Razem 1–99 ok. 21,8 tys. złota.
+- **S99 doprecyzowanie (auto-przyjęcie):** przy oddaniu kolejne zlecenie przyjmuje się samo, gdy poziom pozwala, niezależnie
+  od NPC (zwiadowca Łąk przy oddaniu 20. daje 21. z Boru); NPC potrzebny do pierwszego przyjęcia i po czekaniu na poziom.
+  Zabicia przed przyjęciem się nie liczą (bez `catchUp`).
+- **S99 łowiska:** tylko łowiska czterech map regionów z `groups >= RULES.minGroups` (4; dziś żadne nie odpada), bez jaskiń
+  i lochów (Elity, ciasne komnaty, wierzchowiec zsiada); rotacja deterministyczna: środek przedziału blisko poziomu +
+  kary za poprzednie (100), przedpoprzednie (10), każde użycie (2) i ten sam profil S33 (1); remis = niższe `id`.
+  `RULES.penalty` poza księgą (`omit`), bo to wagi rotacji, nie liczby balansu.
+- **S99 decyzja właściciela (zaległości):** postacie sprzed S99 przy pierwszym wczytaniu mają `contract.done = max(done,
+  poziom − 3)` bez nagród (migracja 7, `Config.Quest.contractBacklog = 3`), nowe zaczynają od zlecenia 1; nagroda
+  zaległego zlecenia z jego poziomu, szary „!” (`availableLow`), gdy zaległość jest ponad `greyGap`.
+- **S99 strzałka:** przyjęcie zlecenia nie przejmuje strzałki (samouczek fabuły na 1.); „Śledź” w dzienniku i na tablicy
+  (`QuestTrack.Focus = { kind = "contract" }`), bez aktywnego zlecenia strzałka wraca do fabuły.
+- **S99 teksty:** `QuestCompleted(titleKey, args?)`; tytuł zlecenia to jeden klucz `contract.title` z argumentami (bez 99
+  kluczy); argument toastu `{ key, args }` rozwija `NotificationController` (`contract.next`); cel `kill` z samym `area`
+  ma `quest.obj.killArea` (nazwa łowiska zamiast regionu). Zakładka dziennika „Łowieckie” (`quest.tab.contract`), klucze
+  S98 `quest.contract.*` usunięte (nieczytane).
+- **S99 przy tablicy:** wiersz zlecenia w rozmowie z tablicą otwiera okno tablicy (jedno miejsce obsługi), u zwiadowcy
+  `QuestDialog`; okno tablicy 640 × 600 (zlecenie nad zakładkami Dzienne / Tygodniowe).
+- **S99 wiki:** zlecenia poza eksportem do S109 (DESIGN-15 §0.5, §6: jeden kształt `quests.json`); `npm run data` bez
+  zmian danych (EXP potworów na wiki liczy się bez `monsterExpMul`).
+- **S99 model:** zlecenie L na poziomie L w `questsAt` (kod S98, `CREDIT_RULES.contract`), bez zaległości i bez
+  przedmiotów kamieni milowych; `Balance.questRewards` (rozkład 1–19) liczy też zlecenia < 20, `questKills` nie (to
+  zabicia z grindu); G13.rise („bez zadań”) liczy krzywą bez `monsterExpMul` (bez questów nie ma czego kompensować, a
+  stopnie mnożnika czytałyby się jako spadki). `monsterExpMul` przeliczone generatorem S98: 1–19 ok. 0,65 (L3 0,5 =
+  `MUL_MIN`), 20–44 0,64–0,83, 45–99 0,83–0,85; godziny bicia pasm ±0,3% bazy. 222 wpisy `ALLOWED_1_20_DIFFS` (14 nowych
+  kluczy okien tempa S91, 208 S98 odświeżonych z dopiskiem), fixture 1–20 bez regeneracji; fixture przedmiotów S84
+  odświeżony (odcisk danych obejmuje `Quests/Contracts`).
+- **S99 dopasowania do S98:** eksport `Data/Quests/Contracts` z S98 bez zmian nazw (dopisane `RULES`); `Focus` jako
+  `{ kind: "side" | "contract", id: string? }?` (wariant bez `id`); `NpcMarks` liczy znak tablicy przez `put` (wcześniej
+  tylko gdy pusty); `Row.kind` w `UI/NpcQuests` z `"contract"`; `tests/mounts.spec` przypina teraz schemat 7.

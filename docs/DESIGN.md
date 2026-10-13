@@ -876,7 +876,7 @@ Po testach S17: **więcej rodzajów na każdej mapie (min. 8–10 na mapę teren
   naraz (strzałka, minimapa), porzucanie z potwierdzeniem. Karczmarz w plotkach wskazuje NPC, u których jest robota.
 - **Kategorie (S98, `docs/DESIGN-15.md` §3)**: `main`, `side` (także łuk stajennego), `contract` (zlecenia łowieckie
   S99), `boss`, `daily`, `weekly`; dziennik ma zakładkę na kategorię w tej kolejności (przewijany pasek na telefonie;
-  „Zlecenia” pojawiają się, gdy są dane).
+  zakładka zleceń łowieckich nazywa się „Łowieckie”, bo „zlecenia” to też dzienne i tygodniowe).
 - **Znaki nad NPC i na mapach (S98)**: złoty „!” nowy quest, szary „!” quest o więcej niż `Config.Quest.greyGap = 6`
   poziomów poniżej postaci (dialog dopisuje, że płaci mniej niż bicie), złoty „?” do oddania, szary „?” w toku.
 - **Tygodniowe (S98)**: 3 na tydzień z tablicy zleceń (nowy zestaw w poniedziałek 00:00 UTC), nagroda 2× dzienna i
@@ -889,6 +889,16 @@ Po testach S17: **więcej rodzajów na każdej mapie (min. 8–10 na mapę teren
   mnoży `monsterExpMul(L) = s(L) / s₀(L)` (udział bicia w EXP poziomu teraz / w modelu S94), który generuje
   `lune run tools/quest_budget.luau` z danych questów; cel `Data/QuestBudget.TARGET` ok. 30% EXP poziomu z questów
   (zlecenie 12%, fabuła 10%, poboczne 6%, bossowe 2%), dzienne i tygodniowe poza budżetem.
+- **Zlecenia łowieckie (S99, `docs/DESIGN-15.md` §3.3)**: jedno na każdy poziom 1–99 (`Data/Quests/Contracts`):
+  ubij n dowolnych potworów na łowisku otwartego regionu, którego przedział obejmuje poziom (bez jaskiń i lochów,
+  rotacja łowisk, nigdy to samo dwa razy z rzędu, gdy jest wybór). n rośnie 10 → 30 na 1–20 i 30 → 60 na 20–99;
+  nagroda 12% EXP poziomu (`QuestBudget.TARGET.contract`) i złoto 20 + 4·L, co 10. zlecenie błogosławieństwo Fortuny
+  i kamienie (powrotu, mapy, lochu; bez ekwipunku i plecaków). Przyjmuje się je i oddaje przy tablicy zleceń w mieście
+  i u zwiadowcy regionu zlecenia; jedno aktywne, zlecenie L wymaga poziomu L, zaległe idą po kolei, a przy oddaniu kolejne przyjmuje
+  się samo, gdy poziom pozwala. Postacie sprzed S99 zaczynają 2 poziomy pod swoim (migracja 7, bez nagród za pominięte).
+  Szary „!” przy zaległości ponad `greyGap`. Zlecenie jest w dzienniku („Łowieckie”), trackerze („Śledź”, strzałka),
+  na tablicy, mapie świata i w oknie portalu („◈ Zlecenie”). Lista jest generowana: `lune run
+  tools/contracts_gen.luau`, potem `tools/quest_budget.luau`. Na wiki od S109.
 
 ## 21. Monetyzacja (bez pay-to-win)
 

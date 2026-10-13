@@ -5,7 +5,7 @@
 
 ## Stan
 
-S01–S98 gotowe (lista i zakres w `docs/SESJE.md`). Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
+S01–S99 gotowe (lista i zakres w `docs/SESJE.md`). Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
 kategorie efektów drużyny i stos efektów (`Logic/EffectStack`), S54 wzory globalne (`Logic/LevelCurves`), S55 rangi
 i przełomy w kształcie A/B (`Build.bp2`, `Skills.effective` §2.7), S56 koniec punktów umiejętności: rangi z poziomu
 postaci (`Skills.rankFor`, drabina przejściowa ROZWOJ 2.6), zapis w schemacie 6 (darmowy reset statystyk, pasek
@@ -108,7 +108,11 @@ fundament questów (DESIGN-15 §3.1–§3.2): kategorie (`category`, `Quests.CAT
 („Zlecenia” ukryte do S99), cztery znaki nad NPC i na mapach (szary „!” ponad `greyGap = 6`), tygodniowe (3 na
 tydzień, poniedziałek 00:00 UTC, szablon wydarzenia ukryty do S101) i zlecenie na bossa, questy „Pogromca” u
 zwiadowców, budżet EXP z kompensacją (`Data/QuestBudget`, `tools/quest_budget.luau`, mnożnik EXP potworów ok. 0,95–0,98,
-godziny na poziom bez zmian).
+godziny na poziom bez zmian). S99 zlecenia łowieckie (DESIGN-15 §3.3): 99 zleceń „ubij n potworów na łowisku” po jednym
+na poziom 1–99, generowane z łowisk (`Logic/ContractGen`, `lune run tools/contracts_gen.luau`), przy tablicy zleceń i
+zwiadowcy regionu, jedno aktywne, kolejne przyjmuje się samo przy oddaniu, zaległe po kolei (migracja 7: postacie sprzed
+S99 zaczynają 2 poziomy pod swoim), 12% EXP poziomu + złoto, co 10. błogosławieństwo Fortuny i kamienie; tablica,
+dziennik („Łowieckie”), tracker, mapa i portal; `monsterExpMul` przeliczone (1–19 ok. 0,65, 45–99 ok. 0,84).
 Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`, `docs/STATY.md`) i łańcuch balansu
 zakończone; testy i decyzje właściciela po nich.
 
@@ -140,8 +144,12 @@ zakończone; testy i decyzje właściciela po nich.
   `tests/classvendors.spec`) i komplet u sprzedawcy tańszy niż kuźnia z kupionymi rudami (decyzje właściciela:
   `docs/SESJE.md` → S95); cel `deliver` do sprzedawcy klasy bez tekstu na wiki (pierwszy taki quest).
 - **Questy (S98)**: uproszczenia wyglądu: plakietka kategorii w dialogu bez tła, karta zlecenia na bossa bez glifu
-  bossa, pasek zakładek dziennika przewijany bez strzałek. Cel budżetu 30% EXP z questów nieosiągnięty powyżej 20.
-  (zlecenia S99, fabuła S102–S105, poboczne S106–S108; audyt S109).
+  bossa, pasek zakładek dziennika przewijany bez strzałek. Cel budżetu 30% EXP z questów nieosiągnięty powyżej 45.
+  (po S99: 20–44 42%, 45–69 27%, 70–99 24%; fabuła S102–S105, poboczne S106–S108; audyt S109).
+- **Zlecenia łowieckie (S99)**: na 1–19 questy dają w modelu 74% EXP poziomu, więc `monsterExpMul` spadł tam do ok. 0,65
+  (L3 przycięte do `MUL_MIN` 0,5): kto pomija zlecenia na 1–19, bije ok. 1,5× dłużej (decyzja właściciela / audyt S109).
+  Zlecenie 1. (10 zabić) jest dłuższe niż cały 1. poziom (ok. 7 potworów). Zlecenia bez eksportu na wiki (S109).
+  EXP potworów i EXP/h łowisk na wiki bez `monsterExpMul`: na 1–19 ok. 1,5× ponad serwer (L3 2×), od 45. ok. 1,2× (S109).
 - **Wierzchowce (S97)**: wierzchowiec premium `mount_royal` wyłączony (`Data/Products.mounts`, `enabled = false`) do
   decyzji właściciela (cena w Robux, id produktu z Creator Hub).
 - **Gildie / aukcja / poczta**: brak zaproszeń do gildii między serwerami; aukcja bez podpowiedzi ceny, poczta bez

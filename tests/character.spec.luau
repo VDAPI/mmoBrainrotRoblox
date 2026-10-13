@@ -222,8 +222,8 @@ end
 T.describe("Migration 6 (S56)", function()
 	T.it("level 1 Warrior", function()
 		local data, c = oldSave("Warrior", 1, { skills = { mightyStrike = 1 }, skillPoints = 0 })
-		T.expect(AccountSchema.migrate(data)).toEqual({ 6 })
-		T.expect(data.schema).toBe(6)
+		T.expect(AccountSchema.migrate(data)).toEqual({ 6, 7 }) -- S99: 7 = hunting contracts
+		T.expect(data.schema).toBe(7)
 		T.expect(c.skills).toBeNil()
 		T.expect(c.skillPoints).toBeNil()
 		T.expect(c.stats).toEqual((Classes.get("Warrior") :: any).startStats)

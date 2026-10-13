@@ -322,3 +322,30 @@ describe("S56 learn objective", function()
 		expect(QuestLogic.amount({ type = "learn", n = 1 } :: any, "learn", { skillId = "battleCry" }, 0)).toBe(1)
 	end)
 end)
+
+-- S99: the hunting contracts' objective (kill with only an area)
+describe("QuestLogic: kill in an area", function()
+	it("counts every kind and variant of the area, nothing from another area or without one", function()
+		local objective: any = { type = "kill", n = 3, area = "meadows_crowfield" }
+		expect(QuestLogic.amount(objective, "kill", { monsterId = "crow", areaId = "meadows_crowfield" }, 0)).toBe(1)
+		expect(QuestLogic.amount(objective, "kill", { monsterId = "scarecrow", areaId = "meadows_crowfield" }, 0)).toBe(
+			1
+		)
+		local elite = { monsterId = "crow", variant = "elite", areaId = "meadows_crowfield" }
+		expect(QuestLogic.amount(objective, "kill", elite, 0)).toBe(1)
+		expect(QuestLogic.amount(objective, "kill", { monsterId = "crow", areaId = "meadows_banditroad" }, 0)).toBe(0)
+		expect(QuestLogic.amount(objective, "kill", { monsterId = "crow" }, 0)).toBe(0)
+		local progress = { 0 }
+		local rng = Rng.new(3)
+		for _ = 1, 5 do
+			QuestLogic.advance(
+				progress,
+				{ objective },
+				"kill",
+				{ monsterId = "crow", areaId = "meadows_crowfield" },
+				rng
+			)
+		end
+		expect(progress[1]).toBe(3)
+	end)
+end)

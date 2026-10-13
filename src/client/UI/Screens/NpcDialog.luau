@@ -2,7 +2,8 @@
 -- NPC conversation window: 3D portrait (S27, the world map's preview in portrait mode), name and role, a line
 -- (the greeting or one of the NPC's lines; the innkeeper also passes on who has work for you), then the quests
 -- this NPC has for you (UI/NpcQuests: ? to hand in, ! new, … in progress, later ones greyed) and the service
--- buttons. A quest opens the quest conversation (QuestController).
+-- buttons. A quest opens the quest conversation (QuestController). S99: the hunting contract (at the board it opens
+-- the board window instead, NpcController).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -11,6 +12,8 @@ local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local NpcQuests = require(script.Parent.Parent.NpcQuests)
 local Npcs = require(ReplicatedStorage.Shared.Data.Npcs)
 local Preview = require(script.Parent.WorldMap.Preview)
+local QuestText = require(script.Parent.Parent.QuestText)
+local Quests = require(ReplicatedStorage.Shared.Data.Quests)
 local SideQuests = require(ReplicatedStorage.Shared.Logic.SideQuests)
 local Sounds = require(script.Parent.Parent.Sounds)
 local State = require(script.Parent.Parent.State)
@@ -115,12 +118,20 @@ local function NpcDialog(scope: Scope, props: Props): Fusion.Child
 		for _, row in questRows do
 			order += 1
 			local style = MARK[row.mode]
-			local title = Text.get(use, `quest.{row.id}.title`)
+			local contract = if row.kind == "contract" then Quests.Contracts.get(row.id) else nil
+			local title = if contract
+				then QuestText.contractTitle(function(key: string, args: { [string]: any }?): string
+					return Text.get(use, key, args)
+				end, contract)
+				else Text.get(use, `quest.{row.id}.title`)
 			local suffix = if row.mode == "later"
 				then `  ({Text.get(use, "quest.fromLevel", { level = NpcQuests.minLevel(row) })})`
 				elseif row.mode == "turnIn" then `  ({Text.get(use, "quest.readyShort")})`
 				else ""
-			local tag = if row.kind == "side" then Text.get(use, "quest.tag.side") else Text.get(use, "quest.tag.main")
+			local tag = if row.kind == "side"
+				then Text.get(use, "quest.tag.side")
+				elseif row.kind == "contract" then Text.get(use, "quest.tag.contract")
+				else Text.get(use, "quest.tag.main")
 			table.insert(
 				list,
 				s:New("TextButton")({
