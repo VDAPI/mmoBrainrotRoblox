@@ -16,7 +16,9 @@ local QuestBudget = require("../src/shared/Logic/QuestBudget")
 local QuestBudgetData = require("../src/shared/Data/QuestBudget")
 local QuestLogic = require("../src/shared/Logic/QuestLogic")
 local Quests = require("../src/shared/Data/Quests")
+local Rng = require("../src/shared/Logic/Rng")
 local Side = require("../src/shared/Data/Quests/Side")
+local SideQuests = require("../src/shared/Logic/SideQuests")
 local StoryProgress = require("../src/shared/Logic/StoryProgress")
 local Test = require("./Test")
 local Titles = require("../src/shared/Logic/Titles")
@@ -540,6 +542,44 @@ describe("Cave quest anchors (S102 T7)", function()
 				expect(mapId).toBe(cave.id)
 			end
 		end
+	end)
+
+	-- review S102: the tracker points a kill / collect `area` that is a cave id at the cave (UI/QuestText.areaTarget)
+	it("every objective area is a named area or a cave with a mouth on its region map", function()
+		local function check(id: string, objectives: { any })
+			for i, objective in objectives do
+				if objective.area then
+					local area = Areas.areaById(objective.area)
+					local cave = Areas.caves.get(objective.area)
+					local ok = area ~= nil or (cave ~= nil and Areas.arrivalOf(cave.id) ~= nil)
+					expect(`{id}#{i} {objective.area} {ok}`).toBe(`{id}#{i} {objective.area} true`)
+				end
+			end
+		end
+		for _, quest in Quests.Main.list do
+			check(quest.id, quest.objectives)
+		end
+		for _, quest in Side.list do
+			check(quest.id, quest.objectives)
+		end
+		local charms = assert(Quests.Main.get("warrenCharms")).objectives[3]
+		expect(charms.type).toBe("collect")
+		expect(charms.area).toBe("meadows_burrow")
+		expect(Areas.areaById("meadows_burrow")).toBeNil()
+		expect((assert(Areas.caves.get("meadows_burrow"))).region).toBe("meadows")
+	end)
+end)
+
+describe("Story escort on the side quests' machinery (S102 T11)", function()
+	it("the escort of frostSign counts through SideQuests.mainEntry and advance", function()
+		local quest, entry = SideQuests.mainEntry({ main = { id = "frostSign", progress = { 1, 0, 0 } } })
+		local frostSign = assert(quest, "frostSign")
+		local e = assert(entry, "entry")
+		local rng = Rng.new(1)
+		expect(SideQuests.advance(e, frostSign, "escort", { npc = "brother_anzelm", quest = "frostSign" }, rng)).toEqual({})
+		expect(e.progress[2]).toBe(0)
+		expect(SideQuests.advance(e, frostSign, "escort", { npc = "sergeant", quest = "frostSign" }, rng)).toEqual({ 2 })
+		expect(e.progress[2]).toBe(1)
 	end)
 end)
 

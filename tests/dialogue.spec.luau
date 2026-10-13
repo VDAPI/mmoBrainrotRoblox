@@ -752,5 +752,13 @@ describe("Dialogue in story chapter I (S102 T11)", function()
 		local ready = quests({ mainDone = Quests.Main.indexOf.herbs })
 		expect(Dialogue.canSay(ready, frostRuins.level, "main", frostRuins, "go", "healer")).toBe(true)
 		expect(Dialogue.canSay(ready, frostRuins.level, "main", frostRuins, "go", "captain")).toBe(false)
+		-- review S102: in progress only the journal page shows, so the offer page's answer is gone (even at turnIn)
+		local running = quests({
+			main = { id = "frostRuins", progress = { 0, 0, 0 } },
+			mainDone = Quests.Main.indexOf.herbs,
+		})
+		expect(select(2, Dialogue.canSay(running, frostRuins.level, "main", frostRuins, "go", frostRuins.turnIn))).toBe(
+			"quest.say.notOffered"
+		)
 	end)
 end)

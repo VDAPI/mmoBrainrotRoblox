@@ -40,6 +40,7 @@ local Tabs = require(script.Parent.Parent.Components.Tabs)
 local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
 local Time = require(ReplicatedStorage.Shared.Logic.Time)
+local Tooltip = require(script.Parent.Parent.Components.Tooltip)
 
 local Children = Fusion.Children
 
@@ -403,6 +404,9 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 						end,
 					})
 					else nil
+				if button then
+					Tooltip.attach(s, button :: GuiObject, Text.T(s, "quest.journal.replay"))
+				end
 				table.insert(
 					list,
 					s:New("Frame")({

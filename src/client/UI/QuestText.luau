@@ -270,11 +270,23 @@ local function npcTarget(npcId: string?): Target?
 	return if npc then { map = npc.map, x = npc.position.x, z = npc.position.z, npc = npc.id } else nil
 end
 
+-- An objective's area: a named area (its middle) or a cave id (review S102): inside that cave the cave itself (no
+-- point, the arrow rests), elsewhere the mouth on its region map like AreaAdvice.caveFor.
 local function areaTarget(areaId: string?): Target?
 	local area, mapId = Areas.areaById(areaId or "")
 	if area and mapId then
 		local x, z = AreaAdvice.centre(area)
 		return { map = mapId, x = x, z = z }
+	end
+	local cave = Areas.caves.get(areaId or "")
+	if cave then
+		if State.Get({ "character", "location", "map" }) == cave.id then
+			return { map = cave.id }
+		end
+		local mouth = Areas.arrivalOf(cave.id)
+		if mouth then
+			return { map = cave.region, x = mouth.x, z = mouth.z }
+		end
 	end
 	return nil
 end

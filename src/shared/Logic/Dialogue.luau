@@ -104,8 +104,11 @@ local function pageShown(quests: any, level: number, kind: Kind, quest: any, pag
 			return active and complete and npcId == quest.turnIn
 		end
 		if active then
-			-- in progress the story's page shows at the turn-in NPC (UI/NpcQuests)
-			return not complete and npcId == quest.turnIn
+			-- in progress the story's page shows at the turn-in NPC (UI/NpcQuests), only its in-progress page (the
+			-- offer pages of a quest with pages are gone by then)
+			return not complete
+				and npcId == quest.turnIn
+				and Dialogue.pageName(page.page) == Dialogue.pageOf(quest, "main", "active")
 		end
 		if main ~= nil then
 			return false

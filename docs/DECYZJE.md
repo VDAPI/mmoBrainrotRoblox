@@ -3016,3 +3016,9 @@
   `escort` (trasa przez rynek i obok fontanny, punkty `TownPlaces.isFree`, odcinki ≤ `legMax`).
 - **S102 księga:** zrzut `Quests/Main` pomija `pages`, `via`, `CHAPTERS`, `chapterOf`; `indexOf*` z powodem „list
   positions shifted”; `Data/Cutscenes` w `NOT_BALANCE`.
+- **Przegląd S102 cel w jaskini:** `area` celu kill / collect może być id jaskini; śledzenie wskazuje wylot jaskini na
+  mapie regionu, a w środku jaskini samą jaskinię (bez punktu, strzałka znika).
+- **Przegląd S102 odpowiedzi fabuły:** w trakcie questa fabuły serwer przyjmuje odpowiedź tylko ze strony w toku
+  (`text`); odpowiedzi ze stron numerowanych tylko przy ofercie (jak klient).
+- **Przegląd S102 przerywniki:** zgłoszona scena czeka na `scenes[id] = true` (albo zniknięcie) i znów może zagrać po
+  `/scene play` / `/scene reset` w tej samej sesji; scena przerwana zmianą postaci nie jest zgłaszana.

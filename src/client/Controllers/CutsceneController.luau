@@ -71,7 +71,9 @@ type Playing = { id: string, replay: boolean, token: number, finish: (reason: st
 local playing: Playing? = nil
 local token = 0
 local replays: { string } = {}
-local finishedHere: { [string]: boolean } = {} -- reported (or being reported) to the server: never again
+-- reported (or being reported) to the server: not again until the server has it as seen (true) or dropped it (nil),
+-- so /scene play and a new trigger after /scene reset play it again in the same session
+local finishedHere: { [string]: boolean } = {}
 
 local function lazy(name: string): any
 	return Registry and Registry.Get(name)
@@ -348,6 +350,7 @@ local function play(scene: Scene, replay: boolean)
 	local camera = Workspace.CurrentCamera
 	local finished = false
 	local skipToNext = false
+	local characterId = State.Get({ "character", "id" })
 
 	local function finish(reason: string)
 		if finished then
@@ -390,7 +393,8 @@ local function play(scene: Scene, replay: boolean)
 			card:set(false)
 			fade(0, c.fade * 0.5)
 			Fusion.doCleanup(overlayScope)
-			if not replay then
+			-- a scene cut by a character switch stays queued for its own character
+			if not replay and State.Get({ "character", "id" }) == characterId then
 				report(scene.id)
 			end
 			if playing and playing.token == myToken then
@@ -601,7 +605,13 @@ local function poll()
 		end
 		return
 	end
-	for _, id in Cutscenes.pending(State.Get({ "character", "quests", "scenes" })) do
+	local scenes = State.Get({ "character", "quests", "scenes" })
+	for id in finishedHere do
+		if type(scenes) ~= "table" or scenes[id] ~= false then
+			finishedHere[id] = nil
+		end
+	end
+	for _, id in Cutscenes.pending(scenes) do
 		if not finishedHere[id] then
 			local scene = sceneOf(id)
 			if scene then

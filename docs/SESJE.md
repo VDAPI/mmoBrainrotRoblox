@@ -7079,3 +7079,19 @@ FABULA,DESIGN-15,DECYZJE,SESJE,PROGRESS}.md`, `CLAUDE.md`.
   przepiąć na `Main.indexOf.vaelgrath`.
 
 Uproszczenia: brak (pełny zakres; scena `grimrok_end` w komnacie bossa używa ujęcia `self`).
+
+### Przegląd S102
+
+Poprawki z przeglądu S102:
+- Cel z `area` = jaskinia (`warrenCharms` cele 2–3, `meadows_burrow`): śledzenie, strzałka i komentarze NPC wskazują
+  wylot jaskini zamiast łowiska na powierzchni (`UI/QuestText.areaTarget`).
+- Przerywniki: `/scene play` i ponowny wyzwalacz po `/scene reset` grają w tej samej sesji; scena przerwana zmianą
+  postaci nie zgłasza `CutsceneDone` i nie blokuje nowej postaci (`Controllers/CutsceneController`).
+- `Dialogue.canSay`: odpowiedź ze strony oferty questa fabuły nie przechodzi w trakcie questa (`quest.say.notOffered`).
+- Przycisk „▶” w dzienniku ma podpowiedź `quest.journal.replay` (`UI/Screens/QuestJournal`).
+- Testy: cele `area` to obszary albo jaskinie z wylotem, `escort` w `frostSign` przez `SideQuests.mainEntry` +
+  `advance` (T11) w `tests/story.spec`; odpowiedź `frostRuins` w toku w `tests/dialogue.spec`.
+
+Pliki: `src/client/UI/QuestText.luau`, `src/client/Controllers/CutsceneController.luau`,
+`src/client/UI/Screens/QuestJournal.luau`, `src/shared/Logic/Dialogue.luau`, `tests/story.spec.luau`,
+`tests/dialogue.spec.luau`. Wiki bez zmian danych.
