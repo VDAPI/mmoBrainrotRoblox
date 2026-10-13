@@ -1541,7 +1541,7 @@ T.describe("Data: Warrior paths (S75)", function()
 
 	T.it("Battle Cry: Fervor, Battle Breath, Commander's Voice and Hold the Line!", function()
 		local d1 = eff("battleCry", "standard", { standard_fervor = 3 }, { ["battleCry:5"] = "b" }, SABER)
-		T.expect(Skills.valueAt(d1, "atk", 10)).toBeNear(43, 1e-9)
+		T.expect(Skills.valueAt(d1, "atk", 10)).toBeNear(31, 1e-9) -- S89: 16 + 3 + 12
 		local d2 = eff("battleCry", "standard", { standard_breath = 3 }, { ["battleCry:10"] = "a" }, SABER)
 		T.expect(Skills.scaled(d2, d2.cooldown, 10)).toBeNear(30, 1e-9)
 		T.expect((Skills.cost(d2, 10, 100, "Warrior"))).toBeNear(10, 1e-9)
@@ -1559,7 +1559,7 @@ T.describe("Data: Warrior paths (S75)", function()
 		T.expect(Skills.valueAt(d4, "cmdAtk", 10)).toBeNear(1, 1e-9)
 		-- the path weapon: rows 3+ need it, rows 1-2 do not
 		local d5 = eff("battleCry", "standard", { standard_fervor = 3, standard_command = 3 }, {}, AXE)
-		T.expect(Skills.valueAt(d5, "atk", 10)).toBeNear(28, 1e-9)
+		T.expect(Skills.valueAt(d5, "atk", 10)).toBeNear(16, 1e-9)
 		T.expect(Skills.valueAt(d5, "cmdAtk", 10)).toBeNear(3, 1e-9)
 	end)
 
@@ -1572,7 +1572,7 @@ T.describe("Data: Warrior paths (S75)", function()
 		T.expect(effectOf(blow.effects, "armorBreak").duration).toBeNear(12, 1e-9)
 		T.expect(effectOf(blow.effects, "stun").duration).toBeNear(0.7, 1e-9)
 		local wrath = eff("titansWrath", "berserker", { berserker_thunder = 3 }, { ["titansWrath:10"] = "b" }, AXE)
-		T.expect({ wrath.hits, Skills.valueAt(wrath, "dmg", 10) }).toEqual({ 4, 295 })
+		T.expect({ wrath.hits, Skills.valueAt(wrath, "dmg", 10) }).toEqual({ 4, 135 }) -- S89
 		T.expect(Skills.scaled(wrath, wrath.cooldown, 10)).toBeNear(36, 1e-9)
 	end)
 

@@ -123,7 +123,7 @@ T.describe("Data: Skills", function()
 	T.it("DESIGN control values", function()
 		local mighty = SkillData.get("mightyStrike") :: any
 		T.expect(Skills.valueAt(mighty, "dmg", 1)).toBe(160)
-		T.expect(Skills.valueAt(mighty, "dmg", 10)).toBe(295)
+		T.expect(Skills.valueAt(mighty, "dmg", 10)).toBe(222) -- S89 (rank 5 pinned by Data/SkillCurves)
 		T.expect(Skills.valueAt(mighty, "dmg", 5)).toBeNear(160 + 135 * 4 / 9)
 		local steel = SkillData.get("steelSkin") :: any
 		T.expect(Skills.valueAt(steel, "armor", 5)).toBe(25)
@@ -958,7 +958,7 @@ T.describe("S69 Cleric heals and B options", function()
 		end
 		T.expect(b("holyStrike", 10).healWounded).toBe(30)
 		T.expect(b("heal", 10).chainHeal).toEqual({ jumps = 2, pct = 60 })
-		T.expect(b("circleOfLight", 10).healZone).toEqual({ duration = 4, pct = 25 })
+		T.expect(b("circleOfLight", 10).healZone).toEqual({ duration = 4, pct = 6 }) -- S89 (R4)
 		T.expect(b("auraOfEndurance", 5).allyEffect.category).toBe("allyVigor")
 		T.expect(b("auraOfEndurance", 5).allyEffect.stats.mres ~= nil).toBe(true)
 		T.expect(b("auraOfEndurance", 10).allyEffect.category).toBe("allyAttack")
@@ -975,13 +975,13 @@ T.describe("S69 Cleric heals and B options", function()
 	T.it("Shield of Faith 5A + 10B sums shieldHp", function()
 		local sof = skill("shieldOfFaith")
 		local def = Skills.effective(sof, 10, { ["shieldOfFaith:10"] = "b" }, nil, true)
-		T.expect(Skills.valueAt(def, "shieldHp", 10)).toBeNear(24)
+		T.expect(Skills.valueAt(def, "shieldHp", 10)).toBeNear(28) -- S89: 10B +7 (R4)
 		T.expect(Skills.scaled(def, def.duration, 10)).toBeNear(14)
 		T.expect(Skills.valueAt(def, "shieldMag", 10)).toBeNear(15)
-		T.expect(Skills.healAmount(def, 10, "shield", 3000, 900, 20)).toBeNear(3000 * 0.24 + 900 * 0.15)
+		T.expect(Skills.healAmount(def, 10, "shield", 3000, 900, 20)).toBeNear(3000 * 0.28 + 900 * 0.15)
 		local bb, behaviourB =
 			Skills.effective(sof, 10, { ["shieldOfFaith:5"] = "b", ["shieldOfFaith:10"] = "b" }, nil, true)
-		T.expect(Skills.valueAt(bb, "shieldHp", 10)).toBeNear(21)
+		T.expect(Skills.valueAt(bb, "shieldHp", 10)).toBeNear(25)
 		T.expect(behaviourB.cleanse).toBe(true)
 		local aa, behaviourA = Skills.effective(sof, 10, nil, nil, true)
 		T.expect(Skills.valueAt(aa, "shieldHp", 10)).toBeNear(21)
@@ -1195,11 +1195,11 @@ T.describe("S71 Cleric base and paths", function()
 		local bp = { ["shieldOfFaith:10"] = "b" }
 		local nodes = { healer_faithShield = 3, healer_bulwark = 3 }
 		local def = eff("shieldOfFaith", "healer", nodes, SCEPTER, bp)
-		T.expect(Skills.valueAt(def, "shieldHp", 10)).toBeNear(36)
+		T.expect(Skills.valueAt(def, "shieldHp", 10)).toBeNear(40) -- S89: 10B +7
 		T.expect(Skills.scaled(def, def.duration, 10)).toBeNear(17)
 		T.expect(Skills.valueAt(def, "shieldMag", 10)).toBe(15)
 		local noWeapon = eff("shieldOfFaith", "healer", nodes, RELIC, bp)
-		T.expect(Skills.valueAt(noWeapon, "shieldHp", 10)).toBeNear(30)
+		T.expect(Skills.valueAt(noWeapon, "shieldHp", 10)).toBeNear(34)
 		T.expect(Skills.scaled(noWeapon, noWeapon.duration, 10)).toBeNear(14)
 		local shatter = { healer_faithShield = 3, healer_bulwark = 3, healer_shatter = 3 }
 		local withBurst, b = eff("shieldOfFaith", "healer", shatter, SCEPTER, bp)
@@ -1360,25 +1360,25 @@ T.describe("S73 Warrior B options and breakpoint kinds", function()
 	T.it("control values at rank 10", function()
 		local d, b = at("earthquake", 10, "b", "b")
 		T.expect(b.pull).toBe(10)
-		T.expect(v(d, "dmg")).toBeNear(340)
+		T.expect(v(d, "dmg")).toBeNear(213) -- S89: 175 + 38
 		T.expect(b.lingering).toBeNil()
 		T.expect(b.echo).toBeNil()
 		d, b = at("earthquake", 10, "a", "b")
 		T.expect(b.lingering.pct).toBe(5)
-		T.expect(v(d, "dmg")).toBeNear(340)
+		T.expect(v(d, "dmg")).toBeNear(213)
 
 		d, b = at("titansWrath", 10, "a", "b")
 		T.expect(d.radius).toBe(17)
 		T.expect(d.hits).toBe(4)
-		T.expect(v(d, "dmg")).toBeNear(295)
+		T.expect(v(d, "dmg")).toBeNear(135) -- S89: 150 - 15
 		d, b = at("titansWrath", 10, "b", "a")
-		T.expect(v(d, "dmg")).toBeNear(345)
+		T.expect(v(d, "dmg")).toBeNear(168) -- S89: 150 + 18
 		T.expect(d.hits).toBe(3)
 		T.expect(b.stunLast).toBe(1.2)
 
 		d, b = at("bladeWhirl", 10, "b", "b")
 		T.expect(d.hits).toBe(4)
-		T.expect(v(d, "dmg")).toBeNear(60)
+		T.expect(v(d, "dmg")).toBeNear(48) -- S89: 52 - 4
 		T.expect(b.lifesteal).toBe(8)
 		d, b = at("bladeWhirl", 10, "a", "a")
 		T.expect(d.hits).toBe(3)
@@ -1396,7 +1396,7 @@ T.describe("S73 Warrior B options and breakpoint kinds", function()
 
 		d, b = at("bloodlust", 10, "b", "b")
 		T.expect(Skills.scaled(d, d.effects[1].duration, 10)).toBeNear(14)
-		T.expect(v(d, "speed")).toBeNear(43)
+		T.expect(v(d, "speed")).toBeNear(24) -- S89: 20 + 4
 		T.expect(v(d, "lifesteal")).toBeNear(5)
 		d, b = at("bloodlust", 10, "a", "a")
 		T.expect(v(d, "lifesteal")).toBeNear(8)
@@ -1423,7 +1423,7 @@ T.describe("S73 Warrior B options and breakpoint kinds", function()
 		T.expect(b.bleedStacks).toBeNil()
 
 		d, b = at("crushingBlow", 10, "b", "b")
-		T.expect(v(d, "dmg")).toBeNear(560)
+		T.expect(v(d, "dmg")).toBeNear(568) -- S89: 520 + 48
 		T.expect(cd(d)).toBeNear(12.8)
 		d, b = at("crushingBlow", 10, "a", "a")
 		local kinds: { [string]: number } = {}
@@ -1437,14 +1437,14 @@ T.describe("S73 Warrior B options and breakpoint kinds", function()
 		d, b = at("mightyStrike", 10, "b", "b")
 		T.expect(b.execute).toBe(30)
 		local bleed = d.effects[#d.effects]
-		T.expect({ bleed.kind, bleed.value, bleed.duration }).toEqual({ "bleed", 90, 6 })
+		T.expect({ bleed.kind, bleed.value, bleed.duration }).toEqual({ "bleed", 45, 6 }) -- S89 (R1, R4)
 		d, b = at("charge", 10, "b", "b")
 		T.expect(cd(d)).toBeNear(9.6)
 		T.expect(b.splash.pct).toBe(60)
 		T.expect(d.range).toBe(25)
 
 		d, b = at("battleCry", 10, "b", "b")
-		T.expect(v(d, "atk")).toBeNear(31)
+		T.expect(v(d, "atk")).toBeNear(19) -- S89: 16 + 3
 		T.expect(Skills.scaled(d, d.effects[1].duration, 10)).toBeNear(24)
 		T.expect(#d.selfEffects).toBe(1)
 		T.expect(d.selfEffects[1].stats.atkSpeed).toBe("speedBp")
@@ -1453,7 +1453,7 @@ T.describe("S73 Warrior B options and breakpoint kinds", function()
 		d = at("battleCry", 10, "a", "b")
 		T.expect(#d.selfEffects).toBe(2)
 		d = at("battleCry", 5, "b")
-		T.expect(Skills.valueAt(d, "atk", 5)).toBeNear(10 + 18 * 4 / 9 + 3)
+		T.expect(Skills.valueAt(d, "atk", 5)).toBeNear(14 + 2 * 2 / 7 + 3) -- S89: knot 14 at rank 3, 16 at 10
 	end)
 
 	T.it("new kinds compose without nodes", function()
@@ -2517,14 +2517,20 @@ T.describe("Skill value knots (S83, Data/SkillCurves)", function()
 						local def = Skills.effective(skill, rank, choices, nil, true)
 						local values: { [string]: any } = table.clone(skill.values) :: any
 						local jumps = 0
+						-- S89: the value at the rank goes through the Data/SkillCurves knots (Skills.valueAt), a number
+						-- already changed by a breakpoint passes as it is
+						local function at(field: string): number
+							local v = values[field]
+							return if type(v) == "number" then v else Skills.valueAt(skill, field, rank)
+						end
 						for _, bp in Skills.breakpointsAt(skill, rank, choices, true) do
 							for field, amount in (bp.values or {}) :: { [string]: number } do
-								values[field] = Skills.scaled(skill, values[field], rank) + amount
+								values[field] = at(field) + amount
 							end
 							jumps += ((bp.add or {}) :: any).jumps or 0
 						end
 						if jumps ~= 0 then
-							values.jumps = Skills.scaled(skill, values.jumps, rank) + jumps
+							values.jumps = at("jumps") + jumps
 						end
 						for field, value in values do
 							if type(value) == "number" then

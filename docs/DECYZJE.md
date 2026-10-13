@@ -2156,3 +2156,52 @@
   `mythicPool`, lista S84); Mityk +6–7% na 1–20 (S91), G8 „bez cech” Mityk topora na 20. (0,969) do raportu z toporem.
 - **S88** E1: unik + chybienie + blok mierzone przed cięciem `Damage.avoidance` (po cięciu suma nigdy nie przekracza
   limitu); E5 liczy Krwiopijcę z węzła `drinker` (hak `killHeal`), nie Żądzę Krwi.
+- **S89** R1 (ROZWOJ 0): test 1,6 ≤ R1 ≤ max(2,0; 1,15 × R1 tego buildu na L20), stała `SkillModel.R1_L20` z tabeli
+  startowej (Furia 2,27, Inkwizytor solo 2,21); buildy Łowcy i Maga dopisuje S90.
+- **S89** R4: pasma testu 0,08–0,17 (przełom 5) i 0,17–0,28 (przełom 10) zamiast „ok. +10–15% / +20–25%” (ROZWOJ 0), a
+  gdy A i B mają wartość, |A − B| ≤ 0,05; liczone na każdym z 45 / 70 / 100 z tą rangą. Opcje kontroli, ruchu, geometrii i
+  bez metryki w `optionGain` (wzmocnienia, obrony, leczenie innych celów) w `SkillModel.R4_UTILITY`, opcje rang ≤ 20 dla S91:
+  tylko druk.
+- **S89** R5 w klasie z jedną ścieżką bojową (Wojownik, Kapłan): rozrzut broni tej ścieżki, każdy typ (Berserker: 4
+  dwuręczne, Inkwizytor: buława i korbacz z relikwią) w ±10% średniej typów, 1 cel 60 s; pary ścieżek asertuje S90.
+- **S89** R6: punkty rzędów 4–11 ścieżki głównej w kolejności `reference` w trzech równych częściach; zysk części =
+  √((1 + Δmetryki) × (1 + ΔEHP)) − 1 po dokupieniu jej po poprzednich, na punkt, w 0,6–1,5 × średniej (L100; metryka: 1 cel
+  60 s na celu bossa, `4 × (1 + B) + S`, leczenie i tarcze na sekundę na tanku). Strażnik i Fortuna tylko raport.
+- **S89** `PATHS_TUNED` (tabela `SkillModel.PATHS_TUNED`, czytana przez spec i raport) Wojownika i Kapłana na `true`; wiersz `PATH_TARGETS` z polem `report` (kto asertuje) albo
+  `reportAt` (poziomy tylko drukowane, F4) się nie asertuje. Nowe wiersze: `healer.S`, `r4.*`, `r5.*`, `r6.*`.
+- **S89** Uzdrowiciel liczony przez S ≥ 0,55 (kostur / „Inkwizytor solo”) i tempo solo, nie przez sumę 7.5 (Uzdrowiciel i
+  Fortuna dają przeżycie i łup); suma Chorążego na 45 tylko druk (10.6: pasmo na 70–100); tempo solo Kapłana asertowane
+  do 1,50 (decyzja właściciela), 1,35 z 9.0 pkt 5 w notatce wiersza.
+- **S89** Groźba i T-SK3 Strażnika (C1): Groźba podniesiona do +2 / 4 / 6% za wroga, bo bez niej grupa „Samotnika” na 100.
+  spada poniżej 0,55 Furii; T-SK3 „Obrońcy” 2,18 na 70–100 to wyjątek Strażnika (S93–S94 przyjmują 2,2 dla Strażnika).
+- **S89** Rząd 3 (poz. 20) traktowany jak rzędy 1–2 (własność S91): bez zmian, poza R6 (tylko rzędy 4–11).
+- **S89 podstawa Wojownika** (ranga osiągana do 20. przypięta węzłem `Data/SkillCurves`): Potężne Uderzenie ranga 10
+  295 → 222, 10B krwawienie 90 → 45; Szarża 210 → 165; Wir Ostrzy 67 → 52, 10B −7 → −4; Rozpłatanie 250 → 168; Okrzyk
+  Bojowy 28 → 16; Krwawy Szał 35 → 20%, 10B +8 → +4; Trzęsienie Ziemi 280 → 175, 10B +60 → +38 (R1 Furii 2,9–3,4 → 2,4–2,6).
+- **S89 Berserker:** Rozdarcie 140→250 → 280 na każdej randze, krwawienie 40 → 10, +8 → +6% za stos, 10A +30 → +70;
+  Gniew Tytana 180→320 → 105→150, 5B +25 → +18, 10B −25 → −15; Rzeź 1,5→2,5 → 0,6→0,9; Kat 5/10/15 → 1,5/3/4,5;
+  Rozdzierające Cięcia 1/2/3 → 1,5/3/4,5 s; Siła Rozmachu 3/6/9 → 1/2/3; Otwarte Rany 10/20/30 → 1/2/3; Zahartowany w
+  Boju 4/8/12 → 2/4/6. Odniesienie „Furia” od S89 zamrożone (× baza 1,25 / 1,31 / 1,35).
+- **S89 Strażnik:** plan statystyk STR 2 : VIT 3 → 7 : 5 (na 45 EHP zależy tylko od planu i rzędów 1–3; lista S91);
+  Groźba (obrażenia) 1/2/3 → 2/4/6%; Mistrz Tarczy 3/6/9 → 2/4/6; Weteran Frontu 4/8/12 → 1,5/3/4,5.
+- **S89 Chorąży:** Sztandar Wojenny koszt 30 → 15; Miażdżący Cios koszt 50 → 35, osłabienie pancerza 30 → 40%, 5B +40 →
+  +48; Rozkaz Natarcia koszt 35 → 20, krytyk 10→20 → 12→24; Hart Chorążego 4/8/12 → 3/6/9; Weteran Kampanii 4/8/12 →
+  6/12/18 (R6).
+- **S89 Inkwizytor:** plan INT 3 : VIT 2 → 1 : 2 (HP 1,06 → 1,32 Furii na 45, gdzie działa tylko plan; lista S91); Piętno
+  Światła 100→170 → 120→260, podpalenie 140→240 → 170→320, 5A +30 → +80; Młot Niebios 200→340 → 160→260, 5B 10 → 5%,
+  10B 50 → 25%; Żar 1/2/3 → 2/4/6; Krzepa 2/4/6 → 2,5/5/7,5; Oczyszczenie 10B ×0,6 → ×0,85; Światłość 10B echo 40 → 25%.
+- **S89 Uzdrowiciel:** Łaska 5/10/15 → 8/16/24, Światło Nadziei 5/10/15 → 2/4/6 (Fortuna leczy 22–25% słabiej na 70–100,
+  T-SK5 ≤ 0,35); Krąg Światła 10B pole 25 → 6%, Tarcza Wiary 10B +3 → +7 pkt (R4). Kapłan Fortuny bez zmian liczb.
+- **S89 F4 (poza zasięgiem dźwigni S89, wiersze w raporcie):** `guardian.dps` 0,45–0,48 Furii przy EHP 1,6–1,8 (plan
+  przesuwa DPS i EHP razem, ścieżka nie ma umiejętności z obrażeniami, broń jednoręczna z tarczą wobec dwuręcznej z
+  liniami ×2,7 z S87); `standard.support` na 70 4,71 / 4,73 (Sztandar z `opener` raz na walkę, bez niego 4,92 / 4,94);
+  `fortune.healLess` na 45 0,085 (na 45 Uzdrowiciel ma z leczenia tylko rzędy 1–3: S91); `all.r1` Inkwizytora 4,4–5,7 (jego
+  atak podstawowy to 0,6–0,7 ataku Furii, więc przy stosunku 0,84–0,93 R1 ≥ ok. 3,4); R6 Berserkera, Inkwizytora i
+  Uzdrowiciela (środkowa albo ostatnia trzecia część to obszar, podtrzymanie i ratunek bez wartości w metryce); R4
+  Rozpłatania 5B (synergia z 10A: 0,12 na 45, 0,25 od 70) i Odnowy 5A (−0,29: dłuższa Odnowa na odnowieniu traci tyknięcia).
+- **S89** Kontrole S88 (F6): R1 podniosło udział ataku podstawowego, więc cztery wiersze T1 wyszły o 0,1–0,4 pkt poza 4–6%
+  (Podwójne cięcie Strażnika na 45, Rana rąbana Berserkera na 45 i 100, Przeszycie na 45): raport z `reportAt` (dźwignia to
+  wartości cech S88, właściciel). Fechtunek Chorążego asertowany na 45 i 70, na 100 (0,039) raport; T2 Strażnika, Fortuny i
+  Uzdrowiciela oraz E1.ehp topora i buławy Strażnika zostają w raporcie z sesją S89 (bazy i cechy broni).
+- **S89** `skills.spec` „przełomy jak przed węzłami”: wartość pola na randze przez `Skills.valueAt` (z węzłami
+  `Data/SkillCurves`); oczekiwane liczby zmienionych danych poprawione. Błędu odwzorowania serwera w modelu nie znaleziono.

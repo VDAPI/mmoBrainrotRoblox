@@ -193,6 +193,7 @@ export type TraitTarget = {
 	reportWhy: string?,
 	reportSession: string?,
 	reportElements: { string }?,
+	reportAt: { number }?, -- S89: report only at these levels (all levels when nil and reportWhy is set)
 }
 Balance.TRAIT_BAND = { 0.04, 0.06 }
 Balance.TRAIT_BAND_2H = { 0.04, 0.09 } -- E6: the two-handed Mage and Cleric weapons after x1.3-1.5
@@ -214,12 +215,18 @@ local function traitTarget(
 end
 Balance.TRAIT_TARGETS = {
 	traitTarget("swordplay", "guardian.loner", "sword1h", "shield", { "group", "elite", "boss" }),
+	-- S89 (F4): 0.044 at 45 and 70 after the S89 nodes (asserted); 100 stays report
 	traitTarget("swordplay", "standard.commander", "sword1h", "shield", { "group", "elite", "boss" }, {
 		reportSession = "S89",
-		reportWhy = "Standard-Bearer counters only with the sword's fixed 10 % (no Counterattack / Retaliation): 0.035-0.039; a higher counter bonus pushes Samotnik over 6 %",
+		reportAt = { 100 },
+		reportWhy = "poza zasięgiem dźwigni S89: 0.039 at 100; the Standard-Bearer counters only with the sword's fixed 10 % (no Counterattack node in its rows 4-11), trait values are S88's (owner)",
 	}),
 	traitTarget("twinCut", "standard.commander", "saber1h", "shield", { "single", "elite" }),
-	traitTarget("twinCut", "guardian.defender", "saber1h", "shield", { "single", "elite" }),
+	traitTarget("twinCut", "guardian.defender", "saber1h", "shield", { "single", "elite" }, {
+		reportSession = "S89",
+		reportAt = { 45 },
+		reportWhy = "poza zasięgiem dźwigni S89: 0.0615 at 45; R1 (S89) raised the basic attack share of every Warrior and the Guardian has no damage lever at 45 (owner: the trait value, S88)",
+	}),
 	traitTarget("reaping", "guardian.loner", "axe1h", "shield", { "solo" }, { report = { "boss" } }),
 	traitTarget("bonebreaker", "guardian.defender", "mace1h", "shield", { "tank" }),
 	traitTarget("bonebreaker", "inquisitor.solo", "mace1h", "shield", { "tank" }),
@@ -229,9 +236,17 @@ Balance.TRAIT_TARGETS = {
 	}),
 	traitTarget("rendingGash", "berserker.fury", "axe2h", nil, { "single", "elite" }, {
 		nodesOff = { "berserker_wounds", "berserker_openWounds" },
+		reportSession = "S89",
+		reportAt = { 45, 100 },
+		reportWhy = "poza zasięgiem dźwigni S89: 0.0400 at 45, 0.039 at 100 (band from 0.04): Mighty Strike 10B and Rend 10A bleeds (R4) take the share of the hits that proc it (owner: the trait value, S88)",
 	}),
 	traitTarget("sundering", "berserker.fury", "hammer2h", nil, { "single", "armored" }),
-	traitTarget("runThrough", "berserker.fury", "spear2h", nil, { "group" }, { report = { "boss" } }),
+	traitTarget("runThrough", "berserker.fury", "spear2h", nil, { "group" }, {
+		report = { "boss" },
+		reportSession = "S89",
+		reportAt = { 45 },
+		reportWhy = "poza zasięgiem dźwigni S89: 0.063 at 45; R1 (S89) cut the shared area skills, the group at 45 has no Titan's Wrath yet (owner: the trait value, S88)",
+	}),
 	traitTarget("parry", "guardian.defender", "sword1h", "shield", { "tank" }),
 	traitTarget("parry", "standard.commander", "sword1h", "shield", { "tank" }),
 	traitTarget("parry", "healer.dungeon", "scepter", "shield", { "tank" }),
@@ -300,7 +315,7 @@ Balance.TYPE_SETS = {
 		build = "guardian.loner",
 		measure = "power",
 		reportSession = "S89",
-		reportWhy = "mace + shield 0.92 of sword + shield: the mace base and Bonebreaker outside `tank` (band 0.054); S89 nodes",
+		reportWhy = "poza zasięgiem dźwigni S89: 0.106-0.110 (mace + shield): the mace base and Bonebreaker outside `tank`; the Guardian's nodes act on every weapon alike (owner: bases / traits)",
 		sets = {
 			{ main = "sword1h", offhand = "shield" },
 			{ main = "saber1h", offhand = "shield" },
@@ -360,7 +375,7 @@ Balance.TYPE_SETS = {
 		build = "fortune.plunder",
 		measure = "power",
 		reportSession = "S89",
-		reportWhy = "flail 1.03, scepter 0.97-0.98 of the mace: Anointment heals nobody in MIX, Concussion in band",
+		reportWhy = "poza zasięgiem dźwigni S89: 0.060-0.063 (flail 1.03, scepter 0.97-0.98 of the mace): Anointment heals nobody in MIX; the nodes act on every weapon alike (owner: bases / traits)",
 		sets = {
 			{ main = "mace1h", offhand = "relic" },
 			{ main = "flail1h", offhand = "relic" },
@@ -372,7 +387,7 @@ Balance.TYPE_SETS = {
 		build = "healer.dungeon",
 		measure = "healer",
 		reportSession = "S89",
-		reportWhy = "holy staff 1.07-1.08 of scepter + shield: the staff's base in dungeon; Saving Blow in band",
+		reportWhy = "poza zasięgiem dźwigni S89: 0.071-0.083 (holy staff 1.07-1.08 of scepter + shield): the staff's base in dungeon; the nodes act on every weapon alike (owner: bases)",
 		sets = { { main = "scepter", offhand = "shield" }, { main = "holystaff" } },
 	},
 } :: { TypeSet }

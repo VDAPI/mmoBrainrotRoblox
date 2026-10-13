@@ -5330,3 +5330,127 @@ Pliki: `src/shared/Data/{ItemTraits,Bonuses,Families,Combat,ItemWeights}.luau`, 
 `src/server/Services/CombatService.luau`, `tests/{Balance,SkillModel,balance.spec,items.spec,traits.spec}.luau`,
 `tests/fixtures/{balance_items,balance_paths}.json`, `tools/{balance_report,balance_reasons}.luau`,
 `tools/balance_before.json`, `docs/{BALANS,DECYZJE,SESJE,PROGRESS,STATY,PRZEDMIOTY}.md`, `wiki/src/data/*`.
+
+### S89: Balans 1–100, część 7: ścieżki Kapłana i Wojownika
+
+Sesja balansu: sześć ścieżek Kapłana i Wojownika nastrojonych na 45 / 70 / 100 na modelu S85–S86 (tylko dane: węzły
+rzędów 4–11, przełomy, wartości umiejętności na rangach osiąganych powyżej 20., plany statystyk Strażnika i
+Inkwizytora), cele z `docs/ROZWOJ.md` w `tests/balance.spec.luau` jako asercje (`PATHS_TUNED` Wojownika i Kapłana).
+- **A. Start** na `2579a27` (S88): wymagania są (commity S85–S88, sekcje SESJE, pliki z nagłówka), `BALANCE_MODULES` ma
+  `Data/Paths/*`, `Data/Skills/*`, `Data/SkillCurves`; migawka `lune run tools/balance_report.luau snapshot S89`
+  (`tools/balance_before.json`). Zrzut A3 (`build/s89_le20.luau`: wartości rang z poziomem ≤ 20, przełomy rang ≤ 20,
+  rzędy 1–3, `statPlan`, pola najwyższego poziomu umiejętności z odblokowaniem ≤ 20) na końcu identyczny poza dwoma
+  świadomie zmienionymi `statPlan` (Strażnik, Inkwizytor; lista S91). Lista A4 (`build/balance1_20_diff.txt`, 69 różnic)
+  identyczna na starcie i na końcu. Listy „Dla S89” z S86, S87 i S88 rozstrzygnięte niżej; `GLOBAL_REPORT_ONLY` nie miał
+  wpisów S89 / S89–S90 (blok globalny 1257/1257 w paśmie po zmianach).
+- **B. Berserker** (odniesienie, od S89 zamrożony): R1 „Furii” 2,89 / 3,12 / 3,35 → 2,41 / 2,51 / 2,60 (pasmo do 2,61 =
+  1,15 × 2,27 z L20), × baza z toporem 1,14 / 1,33 / 1,42 → 1,25 / 1,31 / 1,35. Dźwignie: podstawa Wojownika na rangach > 20
+  (węzły `Data/SkillCurves` przypinają ostatnią rangę ≤ 20), Rozdarcie (jedyna dźwignia Berserkera na 45: na 45 build ma 22
+  punkty, ostatni to Rozdarcie), przycięte węzły 70–100 (Kat, Siła Rozmachu, Otwarte Rany), Rzeź. Średnia Furia (A7)
+  6,95 / 7,15 / 7,20 w 1 cel i 6,95 / 6,81 / 7,08 w grupie (projekt 7,5). Liczby zamrożone: 1 cel 60 s 1929 / 4630 / 9395,
+  atak podstawowy 801 / 1846 / 3617, grupa 3 × 8 s 3378 / 8834 / 21 899, maks. HP 2730 / 4284 / 6336, EHP 47,3 / 50,1 / 53,4.
+- **C. Strażnik i Chorąży.** Strażnik: plan 2 : 3 → 7 : 5 (na 45 EHP zależy tylko od planu), Groźba +2/4/6%, Mistrz Tarczy i
+  Weteran Frontu niżej, Gniew Tytana Berserkera 180→320 → 105→150 (57% grupy 8 s „Furii” na 100; R1 bez zmian, bo w jeden
+  cel się go nie rzuca). Chorąży: koszty Sztandaru, Miażdżącego Ciosu i Rozkazu, pancerz 40%, krytyk Rozkazu 12→24.
+- **D. Kapłan.** Inkwizytor: plan 3 : 2 → 1 : 2, Piętno Światła wyżej (jedyna dźwignia na 45), Młot Niebios niżej (grupy na
+  100: tempo Fortuny i Uzdrowiciela), Żar, Krzepa; `hardened` Berserkera 4/8/12 → 2/4/6 (HP Inkwizytora na 100). Uzdrowiciel:
+  Łaska 8/16/24, Światło Nadziei 2/4/6.
+- **E. R4** (`optionGain` na 45 / 70 / 100): 49 asertowanych wierszy w paśmie (opcje i |A − B|), 107 opcji w `R4_UTILITY`,
+  2 w `R4_REPORT`; przycięte B: Światłość 10B, Krąg 10B, Młot 5B i 10B, Oczyszczenie 10B, Trzęsienie 10B, Gniew Tytana 5B,
+  Potężne Uderzenie 10B; podniesione: Rozdarcie 10A, Tarcza Wiary 10B, Wir 10B, Miażdżący Cios 5B, Gniew Tytana 10B, Piętno
+  5A. **R5**: Berserker 4,8 / 3,8 / 4,5%, Inkwizytor 1,7% (≤ 10%). **R6** (L100, część / średnia): Chorąży 1,29 / 0,86 /
+  0,84 (asertowany); Berserker 1,45 / 0,33 / 1,15, Inkwizytor 2,10 / 0,86 / 0,02, Uzdrowiciel 1,59 / 0,25 / 1,09 (raport, F4),
+  Strażnik i Fortuna raport (E3).
+- **F.** `SkillModel`: `R1_L20`, `R4_BANDS` (0,08–0,17 / 0,17–0,28), `R4_DIFF`, `R4_UTILITY`, `R4_REPORT`, `R4_*_BUILDS`,
+  wiersze `healer.S`, `r4.*`, `r5.*`, `r6.*`, pola `report` / `reportAt` / `noL20` w `PathTarget`, `r5Spread`, `r6Parts`,
+  metryki `single60/inquisitor`, `r4`, `r4diff`, `r5`, `r6min`, `r6max`; `bandOf` liczy górę R1. `balance.spec`:
+  `PATHS_TUNED` Wojownika i Kapłana (tabela `SkillModel.PATHS_TUNED`, czyta ją też kolumna raportu „asertowany”), komunikat `<ścieżka> L<poziom> <cel> <wartość> not in <pasmo> (<źródło>)`.
+  Asertowane: 49 wierszy celów, 49 R4, 6 R5, 2 R6 (106). Raport: kolumna „asertowany” i etykieta „raport: kto”.
+  `Balance.TRAIT_TARGETS`: pole `reportAt` (S88 T1 w raporcie na wybranych poziomach; tabela cech w raporcie podaje te
+  poziomy w kolumnie „kto”). STATY 14 (limity z węzłami: Otwarte Rany, Mistrz Tarczy, Kat, Miażdżący Cios) na liczbach S89. `--fixture-paths` zapisany (982
+  wartości przesunięte przez dane); `--fixture-items` niepotrzebny (0 wartości).
+- **H.** ROZWOJ 0 (R1, R4, R5, R6), 9.0 pkt 5, 9.2–9.6, 10.2–10.6 (liczby z „(S89, było …)”), teksty przełomów z liczbą
+  dosłowną w `pl.luau` i `en.luau` (15 kluczy), dane wiki (`npm run data`: `skills.json`, `meta.json`, `PRZEDMIOTY.md`),
+  `tools/wiki_keys_diff.luau` pusty.
+- **Pozostałe pozycje list „Dla S89”:** koszt relikwii w walce Fortuny (Pomyślność +8–15% Unikatów zamiast cechy walki
+  drugiej ręki, S88) bez zmian: to wartość cechy łupu S88 (odpowiedź 12), nie węzeł, decyzja właściciela. Krzywa `heal` S87:
+  T-SK5 Fortuny i Inkwizytora na „Obrońcy” 0,24–0,25 na 65–80, Uzdrowiciela na tanku Wojowniku konwencji 0,36 na 45 i
+  0,36–0,39 na 90–100 (blok G10, raport S87); wiersz ścieżki `healer.tsk5` 0,30 / 0,31 / 0,35 w paśmie, krzywej nie
+  ruszano (globalna, S87). Bilans kradzieży życia „Furii” w grupie 3,18 / 9,19 / 14,17 → 2,38 / 6,18 / 9,21 po przycięciu
+  Furii (raport, bez celu w ROZWOJ).
+
+Cele przed → po (45 / 70 / 100; przed = dane S88 i stara „Furia”, po = po S89; *raport* = wiersz tylko drukowany):
+
+| cel | przed | po |
+|---|---|---|
+| R1 „Furia” (≤ 2,61) | 2,89 / 3,12 / 3,35 | 2,41 / 2,51 / 2,60 |
+| Berserker × baza (1,25–1,35) | 1,14 / 1,33 / 1,42 | 1,25 / 1,31 / 1,35 |
+| Strażnik DPS (0,60–0,75) | 0,39 / 0,33 / 0,29 | 0,48 / 0,48 / 0,45 *raport* |
+| Strażnik EHP (1,6–1,8) / czerwone (1,3–1,5) | 1,89 / 2,15 / 2,22 · 1,61 / 1,63 / 1,69 | 1,63 / 1,77 / 1,77 · 1,38 / 1,40 / 1,40 |
+| grupa „Samotnik” / „Dowódca” (≥ 0,55) | 0,57 / 0,41 / 0,29 · 0,71 / 0,51 / 0,48 | 0,69 / 0,72 / 0,56 · 0,69 / 0,70 / 0,75 |
+| tempo solo „Samotnik” / „Dowódca” (≤ 1,5) | 1,44 / 1,82 / 2,40 · 1,24 / 1,55 / 1,61 | 1,26 / 1,22 / 1,45 · 1,26 / 1,24 / 1,19 |
+| Chorąży suma miecz / szabla (4,9–5,1 na 70, 100; 45 tylko druk) | – / 4,62 / 4,71 · – / 4,63 / 4,72 | 4,66 / 4,71 *raport* / 4,93 · 4,69 / 4,73 *raport* / 4,95 |
+| Chorąży S (≥ 0,55) | 0,59 / 0,50 / 0,53 | 0,58 / 0,57 / 0,64 |
+| Inkwizytor / Furia (0,80–0,86 / 0,85–0,91 / 0,87–0,93) | 0,99 / 0,94 / 0,98 | 0,84 / 0,87 / 0,93 |
+| Inkwizytor HP (1,3–1,4) | 1,06 / 1,09 / 1,00 | 1,32 / 1,38 / 1,33 |
+| R1 Inkwizytora (≤ 2,54) | 4,15 / 4,74 / 5,43 | 4,36 / 5,04 / 5,73 *raport* |
+| Uzdrowiciel T-SK5 (0,25–0,35) | 0,29 / 0,29 / 0,34 | 0,30 / 0,31 / 0,35 |
+| Fortuna leczy słabiej (0,20–0,25) | 0,09 / 0,17 / 0,25 | 0,09 *raport* / 0,22 / 0,25 |
+| Uzdrowiciel S, kostur / Inkwizytor (≥ 0,55) | 0,61 / 0,59 / 0,54 | 0,87 / 0,86 / 0,81 |
+| tempo solo Uzdrowiciel / Fortuna (≤ 1,5) | 0,80 / 1,60 / 2,34 · 1,06 / 2,45 / 3,51 | 0,58 / 0,61 / 0,91 · 0,76 / 0,93 / 1,36 |
+| Uzdrowiciel × Furia berło / kostur, Fortuna × Furia | 0,50 / 0,43 / 0,39 · 0,61 / 0,55 / 0,53 · 0,59 / 0,51 / 0,47 | 0,60 / 0,58 / 0,55 · 0,73 / 0,75 / 0,75 · 0,70 / 0,69 / 0,67 (raport) |
+
+Model a ROZWOJ (A6): różnice ponad 10% mają przyczyny opisane w S86 („model a ROZWOJ”: Furia krok po kroku z `furyConsume`,
+rotacja z danych, blok z Zastawą, Kapłan z normalizacją broni, expienie z walką, w której potwory oddają); błędu
+odwzorowania serwera nie znaleziono, model bez zmian w tym, co liczy S86. Nowe: Gniew Tytana to 52–57% grupy 8 s „Furii”
+na 70–100 (projekt liczył grupę bez pełnej fali Tytana w każdej walce), a na 45 „Furia” nie ma jeszcze żadnego węzła
+rzędów 4–11 poza Rozdarciem (projekt liczył pełne rzędy).
+
+Dla S90:
+- „Furia” zamrożona (liczby w B i w `docs/BALANS.md` → „Odniesienie Berserkera »Furia«”): mianownik R7 i wszystkich klas.
+- R7 dziś (Strzelec / Furia, 1 cel 60 s, 45 / 70 / 100): ciężka kusza 1,48 / 1,74 / 1,79, długi łuk 1,50 / 1,75 / 1,83 (pasmo
+  1,15–1,35): Furia straciła 17–29%, więc Łowca musi zejść.
+- `SkillModel.R1_L20`: dopisać buildy Łowcy i Maga (R1 na L20 z ich tabeli startowej); wiersze `all.r1` Łowcy i Maga mają dziś
+  górę 2,0. Pole `report` / `reportAt` w wierszach `PATH_TARGETS` i R4 (`R4_UTILITY`, `R4_*_BUILDS`) gotowe do użycia.
+
+Dla S91:
+- Plany statystyk: Strażnik 2 : 3 → 7 : 5 (na L20 DPS „Obrońcy” 0,56 → 0,65 Furii, EHP 1,62 → 1,41), Inkwizytor 3 : 2 → 1 : 2
+  (na L20 stosunek 0,86 → 0,66, HP 1,12 → 1,37).
+- Baza na L20 (G2, ROZWOJ 2.5): R1 bazy Wojownika 2,05 (topór) / 2,08 (`base.loadout`), Kapłana 2,06 wobec „dziś” 1,90 /
+  1,83 i projektu 1,84 / 1,74; buildy z rzędami 1–2 na L20: Wojownik 2,08–2,27 („Furia” 2,27), Kapłan 2,06–2,21 (Inkwizytor
+  2,21). Rzędy 1–2 nie oddają 3–7% (baza jest 8–13% ponad „dziś”).
+- Rzędy 1–3: Głębokie Rany (+34–40% DPS „Furii”) i Bitewny Rytm (+22–25%) niosą prawie całego Berserkera, dlatego rzędy
+  4–11 S89 są słabe na punkt; po przycięciu rzędów 1–3 przywrócić Siłę Rozmachu, Kata i Otwarte Rany. Różnica Fortuny na 45
+  (0,085): Błogosławione Dłonie Uzdrowiciela albo Szczęśliwe Leczenie Fortuny.
+- Przełomy rang ≤ 20 (R4, drukowane): Potężne Uderzenie 5B 0,12, Szarża 5B 0,40 (×0,8 odnowienia: za dużo), Święte
+  Uderzenie 5B 0,13–0,14, Leczenie 5A / 5B bez metryki.
+
+Dla S92–S94:
+- T-SK6 Uzdrowiciela (drużyna S92): 2,23 / 4,82 / 6,07 na Morvane / Azgor / Vaelgrath (cel 1,0–2,0; stare mnożniki bossów).
+- T-SK3 Strażnika 2,18–2,19 na 70–100 (Groźba +2/4/6%, wyjątek w DECYZJE S89: przyjąć 2,2 dla Strażnika); Furia 1,27–1,54.
+- Elity / Elity II ścieżek wsparcia i tanka: `support.elites` w raporcie (wynik zależy od kotwic Elit S87 i potworów).
+- „Boss bez wsparcia” (ROZWOJ 7.5: każdy boss do pokonania bez wsparcia i tanka): model nie ma jeszcze tej metryki (brak
+  liczby z S89); definicja i asercja w S92–S94, adnotacja we wstępie „Klasy i ścieżki” w `docs/BALANS.md`.
+
+Dla właściciela:
+- Strażnik zadaje 0,45–0,48 Furii (cel 0,60–0,75): plan statystyk przesuwa DPS i EHP razem (4 : 1 daje 0,6 przy EHP 1,3),
+  ścieżka nie ma umiejętności z obrażeniami, a broń jednoręczna z tarczą przegrywa z dwuręczną z liniami ×2,7 (S87). Do
+  decyzji: niższy cel DPS tanka albo dźwignia globalna (broń z tarczą, S87).
+- Sztandar Wojenny ma w buildach `opener` (raz na walkę bossa): suma Chorążego na 70 4,71 / 4,73; ze Sztandarem na
+  odnowieniu 4,92 / 4,94 na 70 i 5,14 / 5,16 na 100 (wtedy B do przycięcia). Do decyzji: rotacja „Dowódcy” (rotacja buildu
+  to kształt, nie liczba).
+- R1 Inkwizytora (4,4–5,7) nie zejdzie do 2,5 przy stosunku 0,84–0,93 Furii: jego atak podstawowy (magia wręcz) to
+  0,6–0,7 ataku Furii z szybkością Furii. Do decyzji: osobne pasmo R1 dla klas z magicznym atakiem podstawowym.
+- Odnowa 5A (+4 s) w rotacji na odnowieniu traci tyknięcia (−0,29): opcja do zmiany zachowania (np. `values.healHp`).
+  Rozpłatanie 5B: synergia z 10A (0,12 na 45, 0,25 od 70).
+- Cechy S88 przesunięte przez R1 (wyższy udział ataku podstawowego): Podwójne cięcie Strażnika 6,15% na 45, Rana rąbana
+  4,0 / 3,9% na 45 / 100, Przeszycie 6,3% na 45, Fechtunek Chorążego 3,9% na 100 (raport z `reportAt`); typy broni Strażnika
+  (10,6–11,0%), Fortuny (6,0–6,3%), Uzdrowiciela (7,1–8,3%) i wkład cech w EHP Strażnika z toporem / buławą (13–16%): bazy i
+  cechy broni, nie węzły.
+- Gniew Tytana jest dziś AoE-umiejętnością o połowę słabszą (105→150%): bez tego grupa 8 s „Furii” była 2× grupy tanka i
+  wsparcia, a ich tempo solo 1,6–2,4.
+
+Pliki: `src/shared/Data/{Paths/Cleric,Paths/Warrior,Skills/Cleric,Skills/Warrior,SkillCurves}.luau`,
+`src/shared/Data/Localization/{pl,en}.luau`, `tests/{SkillModel,Balance,BalanceTables,balance.spec,skills.spec,paths.spec}.luau`,
+`tests/fixtures/balance_paths.json`, `tools/{balance_report.luau,balance_reasons.luau,balance_before.json}`,
+`docs/{BALANS,ROZWOJ,STATY,DECYZJE,SESJE,PROGRESS,PRZEDMIOTY}.md`, `wiki/src/data/{skills,meta}.json`.

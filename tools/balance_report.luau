@@ -624,8 +624,17 @@ do
 	add()
 
 	-- (a) curves
-	local curveIds =
-		{ "monsterHp", "monsterAtk", "eliteHp", "eliteDmg", "elite2Hp", "elite2Dmg", "expToNext", "manaCost.Mage", "heal" }
+	local curveIds = {
+		"monsterHp",
+		"monsterAtk",
+		"eliteHp",
+		"eliteDmg",
+		"elite2Hp",
+		"elite2Dmg",
+		"expToNext",
+		"manaCost.Mage",
+		"heal",
+	}
 	local rows = {}
 	for L = 20, 100, 5 do
 		local cells = { tostring(L) }
@@ -732,7 +741,10 @@ do
 	add()
 	tableOut({ "klasa", "20", "45", "70", "100" }, rows)
 	add(
-		`G8: broń dwuręczna (bez drugiej ręki) wobec zestawu domyślnego, MIX moc²; linie zwykłe ×{fmtValue(Rarities.twoHandedBonusMul, "2")}, baza +{fmtValue(Rarities.upgradeStatPerLevelTwoHanded * 100, "1")}% na poziom ulepszenia. Komórka: bez cech / z cechami / luka cechy (z / bez). Pasmo 0,97–1,035 (Kostur Święty +9 do 1,06).`
+		`G8: broń dwuręczna (bez drugiej ręki) wobec zestawu domyślnego, MIX moc²; linie zwykłe ×{fmtValue(
+			Rarities.twoHandedBonusMul,
+			"2"
+		)}, baza +{fmtValue(Rarities.upgradeStatPerLevelTwoHanded * 100, "1")}% na poziom ulepszenia. Komórka: bez cech / z cechami / luka cechy (z / bez). Pasmo 0,97–1,035 (Kostur Święty +9 do 1,06).`
 	)
 	add()
 	rows = {}
@@ -760,7 +772,9 @@ do
 		local u = B.upgradeVsIncome(L)[1]
 		table.insert(rows, { tostring(L), fmtValue(u.up3, "2"), fmtValue(u.up9, "1"), fmtValue(u.goldEq9, "1") })
 	end
-	add("G9 (Wojownik, broń domyślna ilvl − 2, Zwykła): +1…+3 / dochód poziomu (0,45–1,05), +1…+9 z ochroną w poziomach dochodu (12–25):")
+	add(
+		"G9 (Wojownik, broń domyślna ilvl − 2, Zwykła): +1…+3 / dochód poziomu (0,45–1,05), +1…+9 z ochroną w poziomach dochodu (12–25):"
+	)
 	add()
 	tableOut({ "poziom", "+1…+3 / dochód", "+1…+9 z ochroną", "+1…+9 z materiałami" }, rows)
 	rows = {}
@@ -791,7 +805,10 @@ do
 		table.insert(rows, {
 			`{band[1]}–{band[2]}`,
 			fmtValue(pace.hours, "1"),
-			`{fmtValue(band[3] * (1 - B.BAND_HOURS_TOLERANCE), "1")}–{fmtValue(band[3] * (1 + B.BAND_HOURS_TOLERANCE), "1")}`,
+			`{fmtValue(band[3] * (1 - B.BAND_HOURS_TOLERANCE), "1")}–{fmtValue(
+				band[3] * (1 + B.BAND_HOURS_TOLERANCE),
+				"1"
+			)}`,
 		})
 	end
 	tableOut({ "pasmo", "godzin (Wojownik, z zadaniami)", "cel D4 ±25%" }, rows)
@@ -815,11 +832,28 @@ do
 		end
 		table.insert(rows, cells)
 	end
-	tableOut({ "poziom", "Wojownik EXP/h łańcuch / odpoczynek", "Wojownik mikstury / dochód", "Mag EXP/h", "Mag mikstury / dochód" }, rows)
+	tableOut(
+		{
+			"poziom",
+			"Wojownik EXP/h łańcuch / odpoczynek",
+			"Wojownik mikstury / dochód",
+			"Mag EXP/h",
+			"Mag mikstury / dochód",
+		},
+		rows
+	)
 	rows = {}
 	for _, L in { 45, 70, 100 } do
 		local def, f = B.bossFightAt("Warrior", L)
-		table.insert(rows, { `{def.id} ({L})`, fmtValue(f.potionHps, "i"), fmtValue(f.tankDps, "i"), fmtValue(f.potionHps / math.max(1e-9, f.tankDps), "%") })
+		table.insert(
+			rows,
+			{
+				`{def.id} ({L})`,
+				fmtValue(f.potionHps, "i"),
+				fmtValue(f.tankDps, "i"),
+				fmtValue(f.potionHps / math.max(1e-9, f.tankDps), "%"),
+			}
+		)
 	end
 	add("Mikstura HP/s tanka wobec obrażeń tanka bossa (drużyna 3):")
 	add()
@@ -845,7 +879,9 @@ do
 	-- (i) Mythic substitute
 	add("### (i) Mityk z bossa: nazwany i wylosowany dla klasy")
 	add()
-	add("500 Mityków na bossa i klasę (szansa Mityka 1, ziarno 87): udział nazwanych; każdy Mityk pasuje klasie (test `rarities.spec`).")
+	add(
+		"500 Mityków na bossa i klasę (szansa Mityka 1, ziarno 87): udział nazwanych; każdy Mityk pasuje klasie (test `rarities.spec`)."
+	)
 	add()
 	rows = {}
 	local Loot = require("../src/shared/Logic/Loot")
@@ -984,13 +1020,42 @@ do
 			end
 			table.insert(cells, if #rep > 0 then table.concat(rep, ", ") .. " (70)" else "–")
 			local reportOnly = row.reportWhy ~= nil
-				and (row.reportElements == nil or (v.element ~= nil and table.find(row.reportElements, v.element) ~= nil))
-			table.insert(cells, if reportOnly then `raport → {row.reportSession or "S88"}` else "S88")
+				and (
+					row.reportElements == nil or (v.element ~= nil and table.find(row.reportElements, v.element) ~= nil)
+				)
+			-- S89: `reportAt` makes only some levels report-only (the rest stays asserted, as in SkillModel.targetsS88)
+			local reportLevels = {}
+			if reportOnly then
+				for _, L in { 45, 70, 100 } do
+					if row.reportAt == nil or table.find(row.reportAt, L) ~= nil then
+						table.insert(reportLevels, tostring(L))
+					end
+				end
+			end
+			local who = "S88"
+			if #reportLevels == 3 then
+				who = `raport → {row.reportSession or "S88"}`
+			elseif #reportLevels > 0 then
+				who = `S88; raport → {row.reportSession or "S88"} ({table.concat(reportLevels, ", ")})`
+			end
+			table.insert(cells, who)
 			table.insert(rows, cells)
 		end
 	end
 	tableOut(
-		{ "cecha", "build", "sytuacje", "20", "45", "70", "100", "Mityczny +9 (45 / 70 / 100)", "z węzłami", "raport", "kto" },
+		{
+			"cecha",
+			"build",
+			"sytuacje",
+			"20",
+			"45",
+			"70",
+			"100",
+			"Mityczny +9 (45 / 70 / 100)",
+			"z węzłami",
+			"raport",
+			"kto",
+		},
 		rows
 	)
 	add("Powody wierszy w raporcie (H4):")
@@ -1017,7 +1082,8 @@ do
 			for _, set in r.sets do
 				table.insert(parts, `{set.label} {fmtValue(set.index, "2")}`)
 			end
-			local reportOnly = entry.reportWhy ~= nil and (entry.reportAt == nil or table.find(entry.reportAt, L) ~= nil)
+			local reportOnly = entry.reportWhy ~= nil
+				and (entry.reportAt == nil or table.find(entry.reportAt, L) ~= nil)
 			local spread = pct(r.spread)
 			if r.spread > B.TYPE_SET_MAX then
 				spread = `**{spread}**`
@@ -1065,7 +1131,10 @@ do
 			local list = B.defenceAt(c, L)
 			local cells = { `{BalanceTables.CLASS_PL[c]} {L}` }
 			for _, d in list do
-				table.insert(cells, `{fmtValue(d.seconds / list[1].seconds, "2")} / {fmtValue(list[1].seconds / d.seconds, "2")}`)
+				table.insert(
+					cells,
+					`{fmtValue(d.seconds / list[1].seconds, "2")} / {fmtValue(list[1].seconds / d.seconds, "2")}`
+				)
 			end
 			table.insert(rows, cells)
 		end
@@ -1117,11 +1186,17 @@ do
 			`{fmtValue(t.common[1], "1")}–{fmtValue(t.common[2], "1")} (Mityk ≤ {fmtValue(t.mythicTop, "1")})`,
 			-- only vs_<family> rolls on weapons (S67 pools: weapon, necklace)
 			if t.prefix == "vs_" and t.over == "family"
-				then `{fmtValue(lo2 * Rarities.twoHandedBonusMul, "1")}–{fmtValue(hi2 * Rarities.twoHandedBonusMul, "1")}`
+				then `{fmtValue(lo2 * Rarities.twoHandedBonusMul, "1")}–{fmtValue(
+					hi2 * Rarities.twoHandedBonusMul,
+					"1"
+				)}`
 				else "–",
 		})
 	end
-	tableOut({ "linia (100. poziom)", "Zwykły", "Legenda", "Mityk", "cel (odp. 23)", "Zwykły na broni dwuręcznej" }, rows)
+	tableOut(
+		{ "linia (100. poziom)", "Zwykły", "Legenda", "Mityk", "cel (odp. 23)", "Zwykły na broni dwuręcznej" },
+		rows
+	)
 	-- D2 parity
 	rows = {}
 	for _, c in B.CLASSES do
@@ -1139,7 +1214,19 @@ do
 		end
 		local atk = gain(if c == "Mage" or c == "Cleric" then "magAtk" else "physAtk")
 		local parts = {}
-		for _, id in { "pierce", "magicPierce", "skillDmg", "basicDmg", "critResist", "poisonChance", "woundChance", "dotPower", "blockChance" } do
+		for _, id in
+			{
+				"pierce",
+				"magicPierce",
+				"skillDmg",
+				"basicDmg",
+				"critResist",
+				"poisonChance",
+				"woundChance",
+				"dotPower",
+				"blockChance",
+			}
+		do
 			local g = gain(id)
 			if g ~= 0 then
 				table.insert(parts, `{id} {fmtValue(g / atk, "2")}`)
@@ -1147,17 +1234,24 @@ do
 		end
 		table.insert(rows, { BalanceTables.CLASS_PL[c], table.concat(parts, ", ") })
 	end
-	add("Parytet linii (D2, raport): zysk mocy² jednej linii średniego rzutu (Heroiczny, 70. poziom, `single`) wobec linii ataku klasy; kandydat do zmiany poza 0,5–2,0.")
+	add(
+		"Parytet linii (D2, raport): zysk mocy² jednej linii średniego rzutu (Heroiczny, 70. poziom, `single`) wobec linii ataku klasy; kandydat do zmiany poza 0,5–2,0."
+	)
 	add()
 	tableOut({ "klasa", "linia / linia ataku" }, rows)
-	add("G7 (zysk pełnego zestawu rzadkości wobec Zwykłego, z cechami, `single`): asertuje blok globalny S87 (tabela „Cele G7–G9” wyżej i „(j)”).")
+	add(
+		"G7 (zysk pełnego zestawu rzadkości wobec Zwykłego, z cechami, `single`): asertuje blok globalny S87 (tabela „Cele G7–G9” wyżej i „(j)”)."
+	)
 	add()
 
 	-- Named Mythics
 	add("### Nazwane Mityczne")
 	add()
 	add(
-		`Moc w MIX postaci klasy docelowej z nazwanym przedmiotem w slocie / z oczekiwanym wylosowanym Mitykiem tego samego typu i ilvl (definicja diagnozy S84 F); cel {fmtValue(B.NAMED_BAND[1], "2")}–{fmtValue(B.NAMED_BAND[2], "2")}. Linie zwykłe ≤ {fmtValue(B.NAMED_LINE_MAX, "1")} × górna granica Mityczna (broń dwuręczna × \`twoHandedBonusMul\`), legendarna w swoim zakresie.`
+		`Moc w MIX postaci klasy docelowej z nazwanym przedmiotem w slocie / z oczekiwanym wylosowanym Mitykiem tego samego typu i ilvl (definicja diagnozy S84 F); cel {fmtValue(
+			B.NAMED_BAND[1],
+			"2"
+		)}–{fmtValue(B.NAMED_BAND[2], "2")}. Linie zwykłe ≤ {fmtValue(B.NAMED_LINE_MAX, "1")} × górna granica Mityczna (broń dwuręczna × \`twoHandedBonusMul\`), legendarna w swoim zakresie.`
 	)
 	add()
 	rows = {}
@@ -1177,14 +1271,20 @@ do
 		end
 		local lines = {}
 		for _, l in B.namedLines(id) do
-			table.insert(lines, `{l.stat} {fmtValue(l.v, "1")} (≤ {fmtValue(l.limit, "1")}){if l.ok then "" else " **!**"}`)
+			table.insert(
+				lines,
+				`{l.stat} {fmtValue(l.v, "1")} (≤ {fmtValue(l.limit, "1")}){if l.ok then "" else " **!**"}`
+			)
 		end
 		local mean = sum / #B.NAMED_TARGETS[id]
 		local meanText = fmtValue(mean, "2")
 		if mean < B.NAMED_BAND[1] or mean > B.NAMED_BAND[2] then
 			meanText = `**{meanText}**`
 		end
-		table.insert(rows, { `{id} ({def.type}, {def.level})`, meanText, table.concat(powers, ", "), table.concat(lines, ", ") })
+		table.insert(
+			rows,
+			{ `{id} ({def.type}, {def.level})`, meanText, table.concat(powers, ", "), table.concat(lines, ", ") }
+		)
 	end
 	tableOut({ "przedmiot", "moc / wylosowany Mityk", "klasy", "linie" }, rows)
 
@@ -1207,9 +1307,21 @@ do
 			end
 		end
 	end
-	add("Strażnik (E1): blok i kontra przed limitem, unik + chybienie + blok przed cięciem w `Damage.avoidance`, wkład obu cech zestawu w EHP (≤ 12%; topór i buława w raporcie → S89), leczenie z bloku w % maks. HP/s.")
+	add(
+		"Strażnik (E1): blok i kontra przed limitem, unik + chybienie + blok przed cięciem w `Damage.avoidance`, wkład obu cech zestawu w EHP (≤ 12%; topór i buława w raporcie → S89), leczenie z bloku w % maks. HP/s."
+	)
 	add()
-	tableOut({ "build, broń · poziom", "blok / limit", "kontra / limit", "unik+blok / limit", "EHP obu cech", "leczenie z bloku / s" }, rows)
+	tableOut(
+		{
+			"build, broń · poziom",
+			"blok / limit",
+			"kontra / limit",
+			"unik+blok / limit",
+			"EHP obu cech",
+			"leczenie z bloku / s",
+		},
+		rows
+	)
 	rows = {}
 	for _, L in { 45, 70, 100 } do
 		for _, r in { { Rarities.COMMON, 0 }, { Rarities.MYTHIC, 9 } } do
@@ -1224,7 +1336,9 @@ do
 			})
 		end
 	end
-	add("Ścięcie i Kat (E3, „Furia” z `sword2h`): suma cechy i węzła pod `executionerCap`; z liniami `leg_executioner` 18 i `myth_executioner` 35 (górne granice) limit ucina resztę.")
+	add(
+		"Ścięcie i Kat (E3, „Furia” z `sword2h`): suma cechy i węzła pod `executionerCap`; z liniami `leg_executioner` 18 i `myth_executioner` 35 (górne granice) limit ucina resztę."
+	)
 	add()
 	tableOut({ "przedmiot · poziom", "Ścięcie", "Kat", "razem / limit", "z liniami", "ucięte" }, rows)
 	rows = {}
@@ -1241,9 +1355,14 @@ do
 			`{fmtValue(s9.total, "1")} / {s9.cap}`,
 		})
 	end
-	add("Uzdrowiciel (E4): T-SK5 (jedno Leczenie / maks. HP Obrońcy, cel 0,25–0,35) z Namaszczeniem Zwykłym i Mitycznym +9; Zbawczy cios na noszącym + wampiryzm w limicie kradzieży życia.")
+	add(
+		"Uzdrowiciel (E4): T-SK5 (jedno Leczenie / maks. HP Obrońcy, cel 0,25–0,35) z Namaszczeniem Zwykłym i Mitycznym +9; Zbawczy cios na noszącym + wampiryzm w limicie kradzieży życia."
+	)
 	add()
-	tableOut({ "poziom", "T-SK5 Zwykły", "T-SK5 Mityczny +9", "Zbawczy cios + wampiryzm Zwykły", "Mityczny +9" }, rows)
+	tableOut(
+		{ "poziom", "T-SK5 Zwykły", "T-SK5 Mityczny +9", "Zbawczy cios + wampiryzm Zwykły", "Mityczny +9" },
+		rows
+	)
 	rows = {}
 	for _, L in { 45, 70, 100 } do
 		for _, k in SkillModel.killHealSums(L) do
@@ -1256,7 +1375,9 @@ do
 			})
 		end
 	end
-	add("Leczenie za zabicie (E5): suma haka `killHeal` i po limicie `Traits.killHeal` (limit kradzieży życia 15%), utrata HP na zabicie w G1 i leczenie z ok. 20 zabić fal bossa.")
+	add(
+		"Leczenie za zabicie (E5): suma haka `killHeal` i po limicie `Traits.killHeal` (limit kradzieży życia 15%), utrata HP na zabicie w G1 i leczenie z ok. 20 zabić fal bossa."
+	)
 	add()
 	tableOut({ "suma · poziom", "surowa", "po limicie", "utrata HP / zabicie (G1)", "fale bossa" }, rows)
 
@@ -1273,7 +1394,10 @@ do
 			local cells = { a }
 			for _, d in SkillModel.PVP_DEFENDERS do
 				local r = SkillModel.pvpPair(a, d, L)
-				table.insert(cells, `{fmtValue(r.seconds, "1")} ({fmtValue(r.noTraits, "1")} / {fmtValue(r.classLines, "1")})`)
+				table.insert(
+					cells,
+					`{fmtValue(r.seconds, "1")} ({fmtValue(r.noTraits, "1")} / {fmtValue(r.classLines, "1")})`
+				)
 			end
 			table.insert(rows, cells)
 		end
@@ -1296,7 +1420,9 @@ do
 	add()
 	tableOut({ "cecha", "45", "70", "100" }, rows)
 	add(
-		`Ogłuszenie Wstrząsem: {pct(SkillModel.pvpStun(45))} / {pct(SkillModel.pvpStun(70))} / {pct(SkillModel.pvpStun(100))} czasu walki (≤ 2%); tyknięcie umiejętności PvP / PvE {fmtValue(SkillModel.pvpTickRatio(70), "2")}.`
+		`Ogłuszenie Wstrząsem: {pct(SkillModel.pvpStun(45))} / {pct(SkillModel.pvpStun(70))} / {pct(
+			SkillModel.pvpStun(100)
+		)} czasu walki (≤ 2%); tyknięcie umiejętności PvP / PvE {fmtValue(SkillModel.pvpTickRatio(70), "2")}.`
 	)
 	add()
 
@@ -1324,13 +1450,30 @@ do
 			end
 		end
 	end
-	tableOut({ "profil · poziom", "Unikaty / h", "Heroiki / h", "Legenda / Elita II", "szczęście przed limitem", "ucięte przez limit", "ucięte na Elicie" }, rows)
+	tableOut(
+		{
+			"profil · poziom",
+			"Unikaty / h",
+			"Heroiki / h",
+			"Legenda / Elita II",
+			"szczęście przed limitem",
+			"ucięte przez limit",
+			"ucięte na Elicie",
+		},
+		rows
+	)
 	local relic = function(r: number, up: number): number
 		local item = B.makeItem(B.tierId("relic", 68), 68, r, up, {})
 		return (ItemRoll.trait(item) :: any).value
 	end
 	add(
-		`Pomyślność (relikwia Kapłana Fortuny): +{fmtValue(relic(Rarities.COMMON, 0), "1")}% (Zwykła) do +{fmtValue(relic(Rarities.MYTHIC, 9), "1")}% (Mityczna +9) szansy na przedmiot, czyli ×{fmtValue(1 + relic(Rarities.COMMON, 0) / 100, "2")}–{fmtValue(1 + relic(Rarities.MYTHIC, 9) / 100, "2")} Unikatów bez innego szczęścia; poza pasmem 4–6% (wyjątek STATY 2A, odpowiedź 12).`
+		`Pomyślność (relikwia Kapłana Fortuny): +{fmtValue(relic(Rarities.COMMON, 0), "1")}% (Zwykła) do +{fmtValue(
+			relic(Rarities.MYTHIC, 9),
+			"1"
+		)}% (Mityczna +9) szansy na przedmiot, czyli ×{fmtValue(1 + relic(Rarities.COMMON, 0) / 100, "2")}–{fmtValue(
+			1 + relic(Rarities.MYTHIC, 9) / 100,
+			"2"
+		)} Unikatów bez innego szczęścia; poza pasmem 4–6% (wyjątek STATY 2A, odpowiedź 12).`
 	)
 	add()
 
@@ -1339,7 +1482,12 @@ do
 	add()
 	rows = {}
 	for _, row in s88 do
-		local f = if string.sub(row.id, 1, 1) == "T" or row.id == "E1.ehp" or row.id == "E1.avoid" or row.id == "F.half" or row.id == "F.stun" or row.id == "F.ticks"
+		local f = if string.sub(row.id, 1, 1) == "T"
+				or row.id == "E1.ehp"
+				or row.id == "E1.avoid"
+				or row.id == "F.half"
+				or row.id == "F.stun"
+				or row.id == "F.ticks"
 			then pct
 			else function(v: number): string
 				return fmtValue(v, "2")

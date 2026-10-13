@@ -158,7 +158,7 @@ i pasek. Pole `tier = "regular" | "legendary" | "mythic"` w `BonusDef` zastępuj
   - Fechtunek: Kontratak i Odwet Strażnika (hak `riposte`; szansa do limitu 34% razem z Odpłatą Inkwizytora, a
     premia Fechtunku do obrażeń dotyczy też ich kontr, więc miecz zyskuje także przy limicie);
   - Ścięcie: Kat Berserkera (hak `executioner`), limit `Data/Combat.executionerCap`;
-  - Rana rąbana: Głębokie Rany i Otwarte Rany Berserkera (`bleedDamage`, do +60%);
+  - Rana rąbana: Głębokie Rany i Otwarte Rany Berserkera (`bleedDamage`, do +33%, S89);
   - Zastawa: Blok i Mistrz Tarczy Strażnika (hak `block`, limit 25%; leczenie Zastawy działa przy każdym bloku);
   - Jadowite groty: Jad Myśliwski i Jad Bazyliszka (`poisonDamage`), Paraliżujący Jad (`poisonSlow`) i Zaraza
     (`poisonSpread`) Trapera;
@@ -289,7 +289,7 @@ bo w PvP ma połowę, we wspólnym `executionerCap`). Łowca z kołczanem losuje
 - **Kategorie (global E1).** Niszczenie pancerza z przedmiotów (tylko Młot): kategoria `enemyArmor`, ale liczy się
   najsilniejsza umiejętność plus najsilniejszy stos z przedmiotów, część z przedmiotów najwyżej 25% × siła cechy
   (Mityczny +9: 40%, nigdy więcej), razem do 50% (`BuffCategories.caps.enemyArmor`, `Logic/EffectStack`)
- . Miażdżący Cios Chorążego (30%) przy Zwykłym młocie w drużynie dalej daje 25 pkt., przy Mitycznym +9
+ . Miażdżący Cios Chorążego (40%, S89) przy Zwykłym młocie w drużynie dalej daje 25 pkt., przy Mitycznym +9
   10 pkt. Łamanie kości: nowy rodzaj `weaken` i kategoria `enemyDamageDown` (najsilniejsza umiejętność plus
   najsilniejszy przedmiot, limit 15%); to nie `enemyWeak` (`vulnerability`, cel dostaje więcej). Spowolnienie ruchu
   (Nękanie, lód z Iskry): `enemySlow`, najsilniejsze; rodzaj `slow` zostaje tylko ruchem, więc dzisiejsze spowolnienia
@@ -454,11 +454,11 @@ Nowe pole `family` w `Data/Monsters.luau` i `Data/Bosses.luau`, lista i nazwy w 
   rośnie ich siła, żeby szybkie bronie nie dostawały więcej efektów niż wolne. Niszczenie pancerza: rośnie stos i
   limit części z przedmiotów (25% → 40%), czas 6 s stały (2A). Pieczęć runiczna: stały czas 1,5 s, rośnie premia.
 - Limity liczone razem z węzłami ścieżki, nie dla samej cechy. Strażnik ma z Kontratakiem (12%) i Odwetem (12%) 24%
-  kontry, a z Blokiem (10%) i Mistrzem Tarczy (9%) 19% bloku, więc już Zwykły miecz (10%) i Zwykła tarcza (5%)
-  dochodzą do `riposteCap` (S88: 34) i `blockCap` 25. Dlatego ich szanse są stałe, a rzadkość i ulepszenie podnoszą
+  kontry, a z Blokiem (10%) i Mistrzem Tarczy (6%, S89) 16% bloku, więc już Zwykły miecz (10%) dochodzi do `riposteCap`
+  (S88: 34), a Zwykła tarcza (5%) do 21% z `blockCap` 25. Dlatego ich szanse są stałe, a rzadkość i ulepszenie podnoszą
   premię kontr (+33% → +62%) i leczenie z bloku (0,1% → 0,19% maks. HP); linia `blockChance` ma na tarczy wagę ×1.
   Na Mitycznym +9 (×1,88): Łamanie kości 11% (`enemyDamageDown` 15% z umiejętnością), Bełt przeciwpancerny 38% (50%
-  z liniami `pierce`), Wyuczone formuły 15% (20% z liniami `costReduce`), Ścięcie 34% (z Katem 15% razem 49%, z
+  z liniami `pierce`), Wyuczone formuły 15% (20% z liniami `costReduce`), Ścięcie 34% (z Katem 4,5% razem 38,5%, S89; z
   legendą do `executionerCap` ok. 60), Niszczenie pancerza 40% (z Miażdżącym Ciosem razem 50%), Żniwo 1,3% (sumuje
   się z Krwiopijcą 2–6% i liniami `killHeal`, razem najwyżej 15%, S88), Podwójne cięcie 109%, Przeszycie 103%, Naciąg
   85%, Moc żywiołu 73%, Pieczęć runiczna 10%, Namaszczenie 9,4%, Zbawczy cios 4,7%, Wstrząs 13% szansy (S88).

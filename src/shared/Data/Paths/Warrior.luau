@@ -62,7 +62,7 @@ local guardian: Types.PathDef = {
 	descKey = "path.guardian.desc",
 	titleId = "path_guardian",
 	weapon = { main = { "sword1h", "axe1h", "mace1h", "saber1h" }, offhand = { "shield" } },
-	statPlan = { str = 2, vit = 3 },
+	statPlan = { str = 7, vit = 5 },
 	itemWeights = {
 		axes = { surv = 1.5, dmg = 0.7 },
 		stats = { blockChance = 1.3, energyRegen = 1.7 },
@@ -126,11 +126,11 @@ local guardian: Types.PathDef = {
 		}),
 		row(false, {
 			node(G, "menace", "passive", 3, "☠", {
-				values = { menaceThreat = { 30, 90 }, menaceDamage = { 1, 3 } },
+				values = { menaceThreat = { 30, 90 }, menaceDamage = { 2, 6 } },
 				passive = { hooks = { threat = "menaceThreat", damagePerEnemy = "menaceDamage" } },
 			}),
 			node(G, "shieldMastery", "passive", 3, "⬢", {
-				values = { shieldMastery = { 3, 9 } },
+				values = { shieldMastery = { 2, 6 } },
 				passive = { hooks = { block = "shieldMastery" } },
 			}),
 		}),
@@ -186,7 +186,7 @@ local guardian: Types.PathDef = {
 				modify = { skill = "shieldWall", bp = { mul = { cooldown = ref("fortress") } } },
 			}),
 			node(G, "veteran", "passive", 3, "✪", {
-				values = { veteran = { 4, 12 } },
+				values = { veteran = { 1.5, 4.5 } },
 				passive = { pct = { armor = "veteran", maxHp = "veteran" } },
 			}),
 		}),
@@ -263,17 +263,17 @@ local berserker: Types.PathDef = {
 		row(false, {
 			skill(B, "rend"),
 			node(B, "executioner", "passive", 3, "⚰", {
-				values = { executioner = { 5, 15 } },
+				values = { executioner = { 1.5, 4.5 } },
 				passive = { hooks = { executioner = "executioner" } },
 			}),
 		}),
 		row(false, {
 			node(B, "rendingCuts", "modify", 3, "≋", {
-				values = { rendingCuts = { 1, 3 } },
+				values = { rendingCuts = { 1.5, 4.5 } },
 				modify = { skill = "cleave", bp = { add = { effectDuration = ref("rendingCuts") } } },
 			}),
 			node(B, "might", "passive", 3, "⚒", {
-				values = { might = { 3, 9 } },
+				values = { might = { 1, 3 } },
 				passive = { pct = { physAtk = "might" } },
 			}),
 		}),
@@ -307,11 +307,11 @@ local berserker: Types.PathDef = {
 		}),
 		row(false, {
 			node(B, "openWounds", "passive", 3, "✂", {
-				values = { openWounds = { 10, 30 } },
+				values = { openWounds = { 1, 3 } },
 				passive = { hooks = { bleedDamage = "openWounds" } },
 			}),
 			node(B, "hardened", "passive", 3, "⛰", {
-				values = { hardened = { 4, 12 } },
+				values = { hardened = { 2, 6 } },
 				passive = { pct = { maxHp = "hardened" } },
 			}),
 		}),
@@ -416,7 +416,7 @@ local standard: Types.PathDef = {
 		}),
 		row(false, {
 			node(S, "grit", "passive", 3, "❣", {
-				values = { bearerGrit = { 4, 12 } },
+				values = { bearerGrit = { 3, 9 } },
 				passive = { pct = { maxHp = "bearerGrit" } },
 			}),
 			node(S, "wide", "modify", 3, "◯", {
@@ -486,7 +486,7 @@ local standard: Types.PathDef = {
 				passive = { flat = { energyRegen = "stamina" } },
 			}),
 			node(S, "veteran", "passive", 3, "✯", {
-				values = { campaign = { 4, 12 } },
+				values = { campaign = { 6, 18 } },
 				passive = { pct = { armor = "campaign" } },
 			}),
 		}),

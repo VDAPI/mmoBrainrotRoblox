@@ -83,7 +83,7 @@ return Build.class("Cleric", "mana", "magic", {
 		values = { dmg = { 130, 240 }, heal = 50 },
 		breakpoints = Build.bp2(
 			{ a = { add = { radius = 3 } }, b = { pull = 16 } },
-			{ a = { values = { heal = 50 } }, b = { echo = { delay = 1, pct = 40 } } }
+			{ a = { values = { heal = 50 } }, b = { echo = { delay = 1, pct = 25 } } }
 		),
 		glyph = "☀",
 	},
@@ -116,7 +116,7 @@ return Build.class("Cleric", "mana", "magic", {
 					category = "allyGuard",
 				},
 			},
-			b = { healZone = { duration = 4, pct = 25 } },
+			b = { healZone = { duration = 4, pct = 6 } },
 		}),
 		glyph = "◌",
 	},
@@ -133,7 +133,7 @@ return Build.class("Cleric", "mana", "magic", {
 		values = { shieldHp = { 12, 18 }, shieldMag = { 10, 15 } },
 		breakpoints = Build.bp2(
 			{ a = { values = { shieldHp = 3 } }, b = { cleanse = true } },
-			{ a = { secondTarget = 50 }, b = { add = { duration = 6 }, values = { shieldHp = 3 } } }
+			{ a = { secondTarget = 50 }, b = { add = { duration = 6 }, values = { shieldHp = 7 } } }
 		),
 		glyph = "🛡",
 	},
@@ -344,7 +344,7 @@ return Build.class("Cleric", "mana", "magic", {
 		values = { healHp = { 8, 12 }, healMag = { 6, 10 } },
 		breakpoints = Build.bp2(
 			{ a = { overhealShield = true }, b = { burst = { radius = 6, pct = 60 } } },
-			{ a = { secondTarget = 50 }, b = { mul = { cooldown = 0.6 } } }
+			{ a = { secondTarget = 50 }, b = { mul = { cooldown = 0.85 } } }
 		),
 		glyph = "✧",
 	},
@@ -359,9 +359,9 @@ return Build.class("Cleric", "mana", "magic", {
 		cooldown = 10,
 		range = 12,
 		holy = true,
-		values = { dmg = { 100, 170 }, dot = { 140, 240 } },
+		values = { dmg = { 120, 260 }, dot = { 170, 320 } },
 		effects = { { kind = "burn", duration = 6, value = "dot" } },
-		breakpoints = Build.bp2({ a = { values = { dot = 30 } }, b = { splash = { radius = 5, pct = 40 } } }, {
+		breakpoints = Build.bp2({ a = { values = { dot = 80 } }, b = { splash = { radius = 5, pct = 40 } } }, {
 			a = { lifesteal = 20 },
 			b = { effect = { kind = "vulnerability", duration = 8, value = 8, category = "enemyWeak" } },
 		}),
@@ -441,11 +441,11 @@ return Build.class("Cleric", "mana", "magic", {
 		radius = 8,
 		delay = 0.5,
 		holy = true,
-		values = { dmg = { 200, 340 } },
+		values = { dmg = { 160, 260 } },
 		effects = { { kind = "stun", duration = 1.2, notBoss = true } },
 		breakpoints = Build.bp2(
-			{ a = { add = { radius = 2 } }, b = { lingering = { pct = 10, duration = 4, kind = "holy" } } },
-			{ a = { add = { effectDuration = 0.8 } }, b = { echo = { delay = 1.2, pct = 50 } } }
+			{ a = { add = { radius = 2 } }, b = { lingering = { pct = 5, duration = 4, kind = "holy" } } },
+			{ a = { add = { effectDuration = 0.8 } }, b = { echo = { delay = 1.2, pct = 25 } } }
 		),
 		glyph = "⚒",
 	},

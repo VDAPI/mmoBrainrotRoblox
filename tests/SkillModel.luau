@@ -155,6 +155,14 @@ export type PathTarget = {
 	project: { [number]: number }?,
 	n: number?, -- destroyer.clear: monsters in the group
 	heavy: boolean?,
+	-- S89 (F1): `report` = who asserts the row instead (the row is only printed); `reportAt` = only these levels are
+	-- printed (F4); `skill` / `at` / `choice` name an R4 option; `noL20` = no print at 20 (R4-R6)
+	report: string?,
+	reportAt: { number }?,
+	skill: string?,
+	at: number?,
+	choice: string?,
+	noL20: boolean?,
 }
 
 local L45 = { 45, 70, 100 }
@@ -190,6 +198,9 @@ local function target(
 	return row :: PathTarget
 end
 
+-- S89 (F1): the classes whose rows (above 20) balance.spec asserts; read by balance.spec and the report (BalanceTables)
+SkillModel.PATHS_TUNED = { Cleric = true, Warrior = true, Hunter = false, Mage = false } :: { [string]: boolean }
+
 local MAGE_GAIN = { [45] = { 1.20, 1.30 }, [70] = { 1.30, 1.40 }, [100] = { 1.35, 1.45 } } -- ROZWOJ 12.7
 
 SkillModel.PATH_TARGETS = {
@@ -220,6 +231,8 @@ SkillModel.PATH_TARGETS = {
 		"ROZWOJ 10.6",
 		{
 			project = { [20] = 0.80, [45] = 0.72, [70] = 0.70, [100] = 0.67 },
+			-- S89: poza zasięgiem dźwigni S89: 0.45-0.48 (plan i rzędy 1-3, DECYZJE S89)
+			report = "właściciel (F4)",
 		}
 	),
 	target("guardian.ehp", "Warrior", "guardian", "ehp/fury", "guardian.defender", L45, 1.60, 1.80, "ROZWOJ 10.6", {
@@ -261,13 +274,15 @@ SkillModel.PATH_TARGETS = {
 		"standard",
 		"support",
 		"standard.commander",
-		{ 70, 100 },
+		L45,
 		4.90,
 		5.10,
 		"ROZWOJ 7.5, 10.6",
 		{
 			weapon = { main = "sword1h", offhand = "shield" },
 			project = { [45] = 4.9, [70] = 5.0, [100] = 5.08 },
+			-- S89: na 45 tylko druk (C2); na 70 poza zasięgiem dźwigni S89: 4.71 (Sztandar z `opener`, DECYZJE S89)
+			reportAt = { 45, 70 },
 		}
 	),
 	target(
@@ -276,13 +291,15 @@ SkillModel.PATH_TARGETS = {
 		"standard",
 		"support",
 		"standard.commander",
-		{ 70, 100 },
+		L45,
 		4.90,
 		5.10,
 		"ROZWOJ 7.5, 10.6",
 		{
 			weapon = { main = "saber1h", offhand = "shield" },
 			project = { [45] = 4.9, [70] = 5.0, [100] = 5.08 },
+			-- S89: na 45 tylko druk (C2); na 70 poza zasięgiem dźwigni S89: 4.73 (Sztandar z `opener`, DECYZJE S89)
+			reportAt = { 45, 70 },
 		}
 	),
 	target("standard.S", "Warrior", "standard", "S", "standard.commander", L45, 0.55, nil, "ROZWOJ 7.5", {
@@ -346,13 +363,20 @@ SkillModel.PATH_TARGETS = {
 	target("healer.dps", "Cleric", "healer", "single60/fury", "healer.dungeon", L45, 0.45, 0.54, "ROZWOJ 9.6", {
 		note = "berło + tarcza",
 		project = { [20] = 0.54, [45] = 0.46, [70] = 0.45, [100] = 0.48 },
+		report = "tylko raport (healer.S, tempo solo)",
 	}),
 	target("healer.dps", "Cleric", "healer", "single60/fury", "healer.solo", L45, 0.58, 0.66, "ROZWOJ 9.6", {
 		note = "kostur",
 		project = { [20] = 0.66, [45] = 0.58, [70] = 0.58, [100] = 0.61 },
+		report = "tylko raport (healer.S, tempo solo)",
+	}),
+	-- S89 (F2, ROZWOJ 7.5, 9.6): S of the Healer: "Samotny" with the holy staff / "Inkwizytor solo", 1 target 60 s
+	target("healer.S", "Cleric", "healer", "single60/inquisitor", "healer.solo", L45, 0.55, nil, "ROZWOJ 7.5, 9.6", {
+		note = "kostur",
 	}),
 	target("fortune.dps", "Cleric", "fortune", "single60/fury", "fortune.plunder", L45, 0.49, 0.55, "ROZWOJ 9.6", {
 		project = { [20] = 0.55, [45] = 0.49, [70] = 0.50, [100] = 0.55 },
+		report = "tylko raport (tempo solo)",
 	}),
 	target("healer.tsk5", "Cleric", "healer", "tsk5", "healer.dungeon", L20, 0.25, 0.35, "ROZWOJ 7.5, 9.6", {
 		note = "tank Obrońca",
@@ -369,6 +393,8 @@ SkillModel.PATH_TARGETS = {
 		"ROZWOJ 9.0 pkt 3, 9.4, 9.6",
 		{
 			project = { [45] = 0.21, [70] = 0.21, [100] = 0.21 },
+			-- S89: na 45 poza zasięgiem dźwigni S89: 0.085 (na 45 Uzdrowiciel ma z leczenia tylko rzędy 1-3: S91)
+			reportAt = { 45 },
 		}
 	),
 	target(
@@ -403,6 +429,7 @@ SkillModel.PATH_TARGETS = {
 	),
 	target("healer.tsk6", "Cleric", "healer", "tsk6", "healer.dungeon", L45, 1.0, 2.0, "ROZWOJ 0, 7.5, 9.6", {
 		note = "tank Obrońca, drużyna S92",
+		report = "S92–S94",
 	}),
 	-- Hunter (ROZWOJ 11.6)
 	target(
@@ -701,17 +728,29 @@ SkillModel.PATH_TARGETS = {
 		project = { [45] = 2.62, [70] = 2.75, [100] = 2.79 },
 	}),
 	-- every class
+	-- S89 (F2): the upper band is max(2.0, 1.15 x R1_L20[build]) (SkillModel.bandOf)
 	target("all.r1", "Warrior", "berserker", "r1", "berserker.fury", L45, 1.6, 2.0, "ROZWOJ 0"),
-	target("all.r1", "Cleric", "inquisitor", "r1", "inquisitor.solo", L45, 1.6, 2.0, "ROZWOJ 0"),
+	-- S89: all.r1 Inkwizytora poza zasięgiem dźwigni S89: 4.4-5.7 przy stosunku 0.84-0.93 Furii (DECYZJE S89)
+	target("all.r1", "Cleric", "inquisitor", "r1", "inquisitor.solo", L45, 1.6, 2.0, "ROZWOJ 0", {
+		report = "właściciel (F4)",
+	}),
 	target("all.r1", "Hunter", "marksman", "r1", "marksman.kingslayer", L45, 1.6, 2.0, "ROZWOJ 0"),
 	target("all.r1", "Hunter", "trapper", "r1", "trapper.poacher", L45, 1.6, 2.0, "ROZWOJ 0"),
 	target("all.r1", "Mage", "destroyer", "r1", "destroyer.destroyerExp", L45, 1.6, 2.0, "ROZWOJ 0"),
 	target("all.r1", "Mage", "destroyer", "r1", "destroyer.destroyerBoss", L45, 1.6, 2.0, "ROZWOJ 0"),
 	target("all.r1", "Mage", "arcanist", "r1", "arcanist.arcanistBoss", L45, 1.6, 2.0, "ROZWOJ 0"),
-	target("support.elites", "Warrior", "guardian", "elites", "guardian.loner", L45, 1, 1, "ROZWOJ 7.5, 10.6"),
-	target("support.elites", "Warrior", "standard", "elites", "standard.commander", L45, 1, 1, "ROZWOJ 7.5, 10.6"),
-	target("support.elites", "Cleric", "healer", "elites", "healer.solo", L45, 1, 1, "ROZWOJ 7.5, 9.6"),
-	target("support.elites", "Cleric", "fortune", "elites", "fortune.plunder", L45, 1, 1, "ROZWOJ 7.5, 9.6"),
+	target("support.elites", "Warrior", "guardian", "elites", "guardian.loner", L45, 1, 1, "ROZWOJ 7.5, 10.6", {
+		report = "S92–S94",
+	}),
+	target("support.elites", "Warrior", "standard", "elites", "standard.commander", L45, 1, 1, "ROZWOJ 7.5, 10.6", {
+		report = "S92–S94",
+	}),
+	target("support.elites", "Cleric", "healer", "elites", "healer.solo", L45, 1, 1, "ROZWOJ 7.5, 9.6", {
+		report = "S92–S94",
+	}),
+	target("support.elites", "Cleric", "fortune", "elites", "fortune.plunder", L45, 1, 1, "ROZWOJ 7.5, 9.6", {
+		report = "S92–S94",
+	}),
 	target("support.elites", "Hunter", "scout", "elites", "scout.partyHunter", L45, 1, 1, "ROZWOJ 7.5, 11.6"),
 } :: { PathTarget }
 
@@ -758,7 +797,9 @@ for _, classId in B.CLASSES do
 		local path = string.match(key, "^(.-)%.") or "base"
 		table.insert(
 			SkillModel.PATH_TARGETS,
-			target("all.tsk3", classId, path, "tsk3", key, L45, nil, nil, "ROZWOJ 0, 8, 15.5.3")
+			target("all.tsk3", classId, path, "tsk3", key, L45, nil, nil, "ROZWOJ 0, 8, 15.5.3", {
+				report = "S92–S94",
+			})
 		)
 	end
 end
@@ -770,6 +811,270 @@ for _, id in { "r4", "r5", "r6" } do
 			note = "tabele R4 / R5 / R6 raportu",
 		})
 	)
+end
+
+-- S89 (F2): R1 of "Furia" and "Inkwizytor solo" trimmed to L20 (the S89 start table, A5, to 0.01); all.r1's upper band
+-- is max(2.0, 1.15 x R1_L20[build]) (balance plan D1: T-SK1 <= 1.15 x own L20). S90 adds the Hunter and Mage builds.
+SkillModel.R1_L20 = { ["berserker.fury"] = 2.27, ["inquisitor.solo"] = 2.21 } :: { [string]: number }
+
+-- S89 (E1, DECYZJE): R4 bands of the test (ROZWOJ 0 "ok. +10-15% / +20-25%"); A and B both with a value: |A - B| <= 0.05.
+SkillModel.R4_BANDS = { [5] = { 0.08, 0.17 }, [10] = { 0.17, 0.28 } }
+SkillModel.R4_DIFF = 0.05
+
+-- S89 (E1): breakpoint options with a rank level above 20 printed without an assertion: control, movement and geometry
+-- (free utility, ROZWOJ 2.7) and options without a value in the role SkillModel.optionGain measures (S86).
+SkillModel.R4_UTILITY = {
+	["mightyStrike:10a"] = "obszar przy roli 1 cel (bez metryki)",
+	["charge:10a"] = "ogłuszenie (kontrola)",
+	["charge:10b"] = "obszar przy roli 1 cel (bez metryki)",
+	["bladeWhirl:5a"] = "ruch w trakcie rzutu",
+	["bladeWhirl:5b"] = "kradzież życia (podtrzymanie, bez metryki w roli)",
+	["bladeWhirl:10a"] = "przyciąganie (kontrola)",
+	["taunt:5a"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["taunt:5b"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["taunt:10a"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["taunt:10b"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["bloodlust:5a"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["bloodlust:5b"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["bloodlust:10a"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["bloodlust:10b"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["earthquake:5b"] = "przyciąganie (kontrola)",
+	["intercept:5a"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["intercept:5b"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["intercept:10a"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["intercept:10b"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["lastBastion:5a"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["lastBastion:5b"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["lastBastion:10a"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["lastBastion:10b"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["shieldWall:5a"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["shieldWall:5b"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["shieldWall:10a"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["shieldWall:10b"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["cleave:5a"] = "geometria albo czas kontroli",
+	["cleave:10b"] = "kradzież życia (podtrzymanie, bez metryki w roli)",
+	["rend:5b"] = "kradzież życia (podtrzymanie, bez metryki w roli)",
+	["rend:10b"] = "obszar przy roli 1 cel (bez metryki)",
+	["titansWrath:5a"] = "geometria albo czas kontroli",
+	["titansWrath:10a"] = "ogłuszenie (kontrola)",
+	["carnage:5a"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["carnage:5b"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["carnage:10a"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["carnage:10b"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["battleCry:5a"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["battleCry:5b"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["battleCry:10a"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["battleCry:10b"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["warBanner:5a"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["warBanner:5b"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["warBanner:10a"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["warBanner:10b"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["crushingBlow:5a"] = "kontrola albo osłabienie wroga dla drużyny (bez metryki w roli)",
+	["crushingBlow:10a"] = "obszar przy roli 1 cel (bez metryki)",
+	["advanceOrder:5a"] = "geometria albo czas kontroli",
+	["advanceOrder:5b"] = "przyciąganie (kontrola)",
+	["advanceOrder:10b"] = "oczyszczenie",
+	["holyStrike:10a"] = "kontrola albo osłabienie wroga dla drużyny (bez metryki w roli)",
+	["holyStrike:10b"] = "leczenie sojusznika z obrażeń (bez metryki w roli 1 cel)",
+	["heal:10a"] = "nadmiar w tarczę (bez nadleczenia w modelu)",
+	["heal:10b"] = "przeskok na innych (bez metryki na jednym tanku)",
+	["radiance:5a"] = "geometria albo czas kontroli",
+	["radiance:5b"] = "przyciąganie (kontrola)",
+	["radiance:10a"] = "leczenie sojuszników z obrażeń (bez metryki w roli 1 cel)",
+	["circleOfLight:5a"] = "oczyszczenie",
+	["circleOfLight:5b"] = "geometria albo czas kontroli",
+	["circleOfLight:10a"] = "redukcja obrażeń drużyny (bez metryki w roli)",
+	["shieldOfFaith:5b"] = "oczyszczenie",
+	["shieldOfFaith:10a"] = "drugi cel (bez metryki na jednym tanku)",
+	["judgement:5a"] = "kradzież życia (podtrzymanie, bez metryki w roli)",
+	["judgement:5b"] = "ogłuszenie (kontrola)",
+	["judgement:10a"] = "kontrola albo osłabienie wroga dla drużyny (bez metryki w roli)",
+	["renew:5b"] = "drugi cel (bez metryki na jednym tanku)",
+	["renew:10a"] = "oczyszczenie",
+	["sanctuary:5a"] = "geometria albo czas kontroli",
+	["sanctuary:5b"] = "oczyszczenie",
+	["sanctuary:10b"] = "redukcja obrażeń drużyny (bez metryki w roli)",
+	["divineIntervention:5a"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["divineIntervention:5b"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["divineIntervention:10a"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["divineIntervention:10b"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["guardianAngel:5a"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["guardianAngel:5b"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["guardianAngel:10a"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["guardianAngel:10b"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["resurrection:5a"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["resurrection:5b"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["resurrection:10a"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["resurrection:10b"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["fortuneDice:5a"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["fortuneDice:5b"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["fortuneDice:10a"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["fortuneDice:10b"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["prayer:5a"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["prayer:5b"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["prayer:10a"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["prayer:10b"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["wheelOfFortune:5a"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["wheelOfFortune:5b"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["wheelOfFortune:10a"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["wheelOfFortune:10b"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["purify:5a"] = "nadmiar w tarczę (bez nadleczenia w modelu)",
+	["purify:5b"] = "obszar przy roli leczenia (bez metryki)",
+	["purify:10a"] = "drugi cel (bez metryki na jednym tanku)",
+	["brandOfLight:5b"] = "obszar przy roli 1 cel (bez metryki)",
+	["brandOfLight:10a"] = "kradzież życia (podtrzymanie, bez metryki w roli)",
+	["brandOfLight:10b"] = "kontrola albo osłabienie wroga dla drużyny (bez metryki w roli)",
+	["auraOfEndurance:5a"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["auraOfEndurance:5b"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["auraOfEndurance:10a"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["auraOfEndurance:10b"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["hammerOfHeaven:5a"] = "geometria albo czas kontroli",
+	["hammerOfHeaven:10a"] = "geometria albo czas kontroli",
+	["advanceOrder:10a"] = "krytyk sojuszników: wartość w B Chorążego, nie w obrażeniach Rozkazu",
+} :: { [string]: string }
+
+-- S89 (F4): measured options a single number cannot bring into the band (printed; DECYZJE S89, list for the owner).
+SkillModel.R4_REPORT = {
+	["cleave:5b"] = "synergia z 10A (3 stosy krwawienia): 0,12 na 45, 0,25 od 70; jedna liczba nie mieści obu",
+	["renew:5a"] = "dłuższa Odnowa rzucana na odnowieniu traci tyknięcia (odświeżenie bez reszty): -0,29",
+} :: { [string]: string }
+
+-- S89 (E1): the build of a skill's R4 rows: path skills on their path's target build, base skills on the class's combat
+-- path, Heal, Circle of Light, Shield of Faith on "Uzdrowiciel lochowy" and Taunt on "Obrońca".
+SkillModel.R4_PATH_BUILDS = {
+	guardian = "guardian.defender",
+	berserker = "berserker.fury",
+	standard = "standard.commander",
+	healer = "healer.dungeon",
+	fortune = "fortune.plunder",
+	inquisitor = "inquisitor.solo",
+} :: { [string]: string }
+SkillModel.R4_CLASS_BUILDS = { Warrior = "berserker.fury", Cleric = "inquisitor.solo" } :: { [string]: string }
+SkillModel.R4_SUPPORT_BUILDS = {
+	heal = "healer.dungeon",
+	circleOfLight = "healer.dungeon",
+	shieldOfFaith = "healer.dungeon",
+	taunt = "guardian.defender",
+} :: { [string]: string }
+
+-- S89 (F2): r4.<skillId>.<rank> rows of every active Cleric and Warrior skill (both options; options of a rank level
+-- <= 20 only printed for S91), the A - B difference when both have a value, r5 (the weapon spread of the combat paths)
+-- and r6 (the value of a point in rows 4-11: the weakest and the strongest third against the mean, at 100).
+do
+	for _, classId in { "Warrior", "Cleric" } do
+		for _, def in SkillData.byClass[classId] do
+			local d: any = def
+			if d.type == "passive" or not d.breakpoints then
+				continue
+			end
+			local key = SkillModel.R4_SUPPORT_BUILDS[d.id]
+				or (if d.path then SkillModel.R4_PATH_BUILDS[d.path] else SkillModel.R4_CLASS_BUILDS[classId])
+			local path = string.match(key, "^(.-)%.") :: string
+			for _, at in Skills.BREAKPOINT_LEVELS do
+				local rankLevel = Skills.rankLevel(d, at)
+				local levels: { number } = {}
+				for _, L in L45 do
+					if L >= rankLevel then
+						table.insert(levels, L)
+					end
+				end
+				if #levels == 0 then
+					continue
+				end
+				local band = SkillModel.R4_BANDS[at]
+				local measured = 0
+				for _, choice in { "a", "b" } do
+					local k = `{d.id}:{at}{choice}`
+					local why = SkillModel.R4_UTILITY[k] or SkillModel.R4_REPORT[k]
+					local report = if rankLevel <= 20
+						then "S91 (ranga z poziomu ≤ 20)"
+						elseif SkillModel.R4_UTILITY[k] then "użyteczność (R4_UTILITY)"
+						elseif SkillModel.R4_REPORT[k] then "właściciel (F4)"
+						else nil
+					if report == nil then
+						measured += 1
+					end
+					table.insert(
+						SkillModel.PATH_TARGETS,
+						target(`r4.{d.id}.{at}`, classId, path, "r4", key, levels, band[1], band[2], "ROZWOJ 0, 2.7", {
+							skill = d.id,
+							at = at,
+							choice = choice,
+							noL20 = true,
+							report = report,
+							note = if why then `{choice}: {why}` else choice,
+						})
+					)
+				end
+				if measured == 2 then
+					table.insert(
+						SkillModel.PATH_TARGETS,
+						target(
+							`r4.{d.id}.{at}`,
+							classId,
+							path,
+							"r4diff",
+							key,
+							levels,
+							nil,
+							SkillModel.R4_DIFF,
+							"ROZWOJ 0, 2.7",
+							{
+								skill = d.id,
+								at = at,
+								noL20 = true,
+								note = "|A − B|",
+							}
+						)
+					)
+				end
+			end
+		end
+	end
+	table.insert(
+		SkillModel.PATH_TARGETS,
+		target("r5.berserker", "Warrior", "berserker", "r5", "berserker.fury", L45, nil, 0.10, "ROZWOJ 0 (E2)", {
+			noL20 = true,
+			note = "miecz, topór, młot, włócznia dwuręczne",
+		})
+	)
+	table.insert(
+		SkillModel.PATH_TARGETS,
+		target("r5.inquisitor", "Cleric", "inquisitor", "r5", "inquisitor.solo", L45, nil, 0.10, "ROZWOJ 0 (E2)", {
+			noL20 = true,
+			note = "buława i korbacz z relikwią",
+		})
+	)
+	-- S89 (F4, DECYZJE): the Berserker, the Inquisitor and the Healer only printed (their middle or last third holds
+	-- skills and nodes without a value in the metric: area, sustain, rescue)
+	for _, spec in
+		{
+			{ "Warrior", "berserker", "berserker.fury", "właściciel (F4)" },
+			{ "Cleric", "inquisitor", "inquisitor.solo", "właściciel (F4)" },
+			{ "Warrior", "standard", "standard.commander", nil },
+			{ "Cleric", "healer", "healer.dungeon", "właściciel (F4)" },
+			{ "Warrior", "guardian", "guardian.defender", "tylko raport (E3)" },
+			{ "Cleric", "fortune", "fortune.plunder", "tylko raport (E3)" },
+		} :: { { any } }
+	do
+		local report = spec[4]
+		table.insert(
+			SkillModel.PATH_TARGETS,
+			target(`r6.{spec[2]}`, spec[1], spec[2], "r6min", spec[3], { 100 }, 0.6, nil, "ROZWOJ 0, 2.3 (E3)", {
+				noL20 = true,
+				report = report,
+				note = "najsłabsza trzecia część / średnia",
+			})
+		)
+		table.insert(
+			SkillModel.PATH_TARGETS,
+			target(`r6.{spec[2]}`, spec[1], spec[2], "r6max", spec[3], { 100 }, nil, 1.5, "ROZWOJ 0, 2.3 (E3)", {
+				noL20 = true,
+				report = report,
+				note = "najmocniejsza trzecia część / średnia",
+			})
+		)
+	end
 end
 
 -- The class base (B2, ROZWOJ 2.1): no main path, rows 1 of every path (Mage rows 1-2, 12.7), A everywhere, the class
@@ -6014,6 +6319,33 @@ SkillModel.TARGET_METRICS = {
 	tsk6 = function(row: PathTarget, L: number): number
 		return SkillModel.healerVsBoss(rowBuild(row), SkillModel.BOSS_AT[L], { team = "s92" }).tsk6
 	end,
+	-- S89 (F2): healer.S = 1 target 60 s / "Inkwizytor solo" (the best combat path of the class, ROZWOJ 9.6)
+	["single60/inquisitor"] = function(row: PathTarget, L: number): number
+		return ratio(
+			SkillModel.metrics(rowBuild(row), L).single60,
+			SkillModel.metrics(byKey("inquisitor.solo"), L).single60
+		)
+	end,
+	-- S89 (E1): the gain of one breakpoint option (SkillModel.optionGain); 0 without a value in the role (S86)
+	r4 = function(row: PathTarget, L: number): number
+		local v = SkillModel.optionGain(rowBuild(row), row.skill :: string, row.at :: number, row.choice :: string, L)
+		return v or 0
+	end,
+	r4diff = function(row: PathTarget, L: number): number
+		local build = rowBuild(row)
+		local a = SkillModel.optionGain(build, row.skill :: string, row.at :: number, "a", L)
+		local b = SkillModel.optionGain(build, row.skill :: string, row.at :: number, "b", L)
+		return math.abs((a or 0) - (b or 0))
+	end,
+	r5 = function(row: PathTarget, L: number): number
+		return SkillModel.r5Spread(rowBuild(row), L)
+	end,
+	r6min = function(row: PathTarget, _L: number): number
+		return SkillModel.r6Parts(rowBuild(row)).low
+	end,
+	r6max = function(row: PathTarget, _L: number): number
+		return SkillModel.r6Parts(rowBuild(row)).high
+	end,
 } :: { [string]: (PathTarget, number) -> number }
 
 export type TargetResult = {
@@ -6028,6 +6360,7 @@ export type TargetResult = {
 	high: number?,
 	pass: boolean,
 	asserted: boolean, -- a level of the row above 20 (S89 / S90 assert these when PATHS_TUNED says so)
+	report: string?, -- S89: who asserts it instead (the row's `report`, or "F4" at a `reportAt` level)
 	source: string,
 	note: string?,
 	project: number?,
@@ -6048,6 +6381,11 @@ function SkillModel.bandOf(row: PathTarget, L: number): (number?, number?)
 			return band[1], band[2]
 		end
 	end
+	local own = SkillModel.R1_L20[row.build]
+	if row.metric == "r1" and own then
+		-- S89 (F2): max(2.0, 1.15 x the build's own R1 at L20)
+		return row.low, math.max(row.high or 2.0, 1.15 * own)
+	end
 	return row.low, row.high
 end
 
@@ -6063,12 +6401,13 @@ function SkillModel.evaluateTargets(classId: string?): { TargetResult }
 		local fn = SkillModel.TARGET_METRICS[row.metric]
 		assert(fn, `SkillModel: unknown target metric {row.metric}`)
 		local levels = table.clone(row.levels)
-		if not table.find(levels, 20) then
+		if not row.noL20 and not table.find(levels, 20) then
 			table.insert(levels, 1, 20)
 		end
 		local build = rowBuild(row)
 		for _, L in levels do
-			local key = `{row.id}|{row.classId}|{build.key}|{row.metric}|{row.n or ""}|{L}`
+			local option = `{row.skill or ""}{row.at or ""}{row.choice or ""}`
+			local key = `{row.id}|{row.classId}|{build.key}|{row.metric}|{row.n or ""}|{option}|{L}`
 			local cached = targetCache[key]
 			if not cached then
 				local value = fn(row, L)
@@ -6086,7 +6425,12 @@ function SkillModel.evaluateTargets(classId: string?): { TargetResult }
 					pass = value == value
 						and (low == nil or value >= low - 1e-9)
 						and (high == nil or value <= high + 1e-9),
-					asserted = L > 20 and table.find(row.levels, L) ~= nil,
+					-- S89 (F1, F4): a row with `report`, or a `reportAt` level, is only printed
+					asserted = L > 20
+						and table.find(row.levels, L) ~= nil
+						and row.report == nil
+						and not (row.reportAt and table.find(row.reportAt, L)),
+					report = row.report or (if row.reportAt and table.find(row.reportAt, L) then "F4" else nil),
 					source = row.source,
 					note = row.note,
 					project = if row.project then row.project[L] else nil,
@@ -6450,9 +6794,6 @@ export type R4Row = {
 	chosen: boolean,
 }
 
--- R4 bands of ROZWOJ 0 (breakpoint 5 / 10).
-SkillModel.R4_BANDS = { [5] = { 0.10, 0.15 }, [10] = { 0.20, 0.25 } }
-
 -- S86 (D7): R4 of every rotation skill with breakpoints of the damage and heal builds "do celów", both options, at
 -- the first of 45 / 70 / 100 where the rank reaches the breakpoint (DECYZJE S86: the cost cap of G3).
 SkillModel.R4_BUILDS = {
@@ -6617,6 +6958,130 @@ function SkillModel.r6Rows(): { R6Row }
 			table.insert(out, r)
 		end
 	end
+	return out
+end
+
+-- S89 (E2, DECYZJE): R5 of a class with one combat path: every weapon of the path's weapon list (the build's off-hand
+-- kept unless two-handed) in 1 target 60 s; the largest |weapon / mean of the weapons - 1|.
+function SkillModel.r5Spread(build: Build, L: number): number
+	local path = PathData.get(build.pathId :: string) :: any
+	local values: { number } = {}
+	local sum = 0
+	for _, weapon in path.weapon.main do
+		local offhand = if Paths.isTwoHanded(weapon) then nil else build.weapon.offhand
+		local v = SkillModel.metrics(SkillModel.withWeapon(build, weapon, offhand), L).single60
+		table.insert(values, v)
+		sum += v
+	end
+	local mean = sum / math.max(1, #values)
+	local worst = 0
+	for _, v in values do
+		worst = math.max(worst, math.abs(v / math.max(1e-12, mean) - 1))
+	end
+	return worst
+end
+
+export type R6Part = { points: number, metric: number, ehp: number, gain: number, perPoint: number, ratio: number }
+export type R6Parts = {
+	points: number,
+	mean: number, -- gain per point of rows 4-11
+	parts: { R6Part },
+	low: number, -- the weakest third's gain per point / mean
+	high: number, -- the strongest third's
+}
+local r6Cache: { [string]: R6Parts } = {}
+
+-- `build` with only the first `k` points of its main path's rows 4-11 (in the reference order; the boundary node
+-- partly bought), every other node kept.
+local function withRowPoints(build: Build, k: number): Build
+	local nodes: { { any } } = {}
+	local used = 0
+	for _, entry in build.nodes do
+		local _, path, row = Paths.findNode(entry[1])
+		if path and path.id == build.pathId and (row or 0) >= 4 then
+			local take = math.min(entry[2], k - used)
+			if take > 0 then
+				table.insert(nodes, { entry[1], take })
+				used += take
+			end
+		else
+			table.insert(nodes, entry)
+		end
+	end
+	local copy: any = table.clone(build)
+	copy.key = `{build.key}#r6:{k}`
+	copy.nodes = nodes
+	return copy
+end
+
+-- The R6 metric of a build at L (E3): 1 target 60 s on the boss model target (Giant Slayer's bossDamage counts; the
+-- Berserker, the Inquisitor), 4 x (1 + B) + S (the Standard-Bearer), heal and shields per second on the tank over the
+-- boss window (the Healer; the trait situation `dungeon`).
+local function r6Metric(build: Build, L: number): number
+	if build.pathId == "standard" then
+		return SkillModel.standardSupport(build, L).value
+	end
+	local sp = SkillModel.player(build, L)
+	local boss = { B.monster(B.GENERIC, L, "boss") }
+	if build.pathId == "healer" then
+		local r = SkillModel.fight(sp, {
+			targets = boss,
+			seconds = A.bossSeconds,
+			heal = { tank = SkillModel.defenderTank(L), team = 5 },
+		})
+		return (r.healTo.tank or 0) / A.bossSeconds
+	end
+	return SkillModel.fight(sp, { targets = boss }).dps
+end
+
+-- S89 (E3, ROZWOJ 0, 2.3): the points of rows 4-11 of the main path in the reference order split into three equal
+-- parts (the capstone counts with its part); at 100 each part's gain is the power sqrt((1 + dmetric) x (1 + dEHP)) - 1
+-- of buying it after the parts before it, per point, against the mean gain per point of rows 4-11.
+function SkillModel.r6Parts(build: Build): R6Parts
+	local cached = r6Cache[build.key]
+	if cached then
+		return cached
+	end
+	local L = 100
+	local total = 0
+	for _, entry in build.nodes do
+		local _, path, row = Paths.findNode(entry[1])
+		if path and path.id == build.pathId and (row or 0) >= 4 then
+			total += entry[2]
+		end
+	end
+	local cuts = { 0, math.floor(total / 3 + 0.5), math.floor(2 * total / 3 + 0.5), total }
+	local parts: { R6Part } = {}
+	local prevMetric, prevEhp = 0, 0
+	local sum = 0
+	for i, k in cuts do
+		local b = withRowPoints(build, k)
+		local metric = r6Metric(b, L)
+		local ehp = SkillModel.metrics(b, L).ehp
+		if i > 1 then
+			local points = k - cuts[i - 1]
+			local gain = math.sqrt((metric / math.max(1e-12, prevMetric)) * (ehp / math.max(1e-12, prevEhp))) - 1
+			sum += gain
+			table.insert(parts, {
+				points = points,
+				metric = metric / math.max(1e-12, prevMetric) - 1,
+				ehp = ehp / math.max(1e-12, prevEhp) - 1,
+				gain = gain,
+				perPoint = gain / math.max(1, points),
+				ratio = 0,
+			})
+		end
+		prevMetric, prevEhp = metric, ehp
+	end
+	local mean = sum / math.max(1, total)
+	local low, high = math.huge, -math.huge
+	for _, p in parts do
+		p.ratio = p.perPoint / math.max(1e-12, mean)
+		low = math.min(low, p.ratio)
+		high = math.max(high, p.ratio)
+	end
+	local out: R6Parts = { points = total, mean = mean, parts = parts, low = low, high = high }
+	r6Cache[build.key] = out
 	return out
 end
 
@@ -7164,10 +7629,8 @@ function SkillModel.targetsS88(): { B.TargetRow }
 				local element = if v.element then ` {v.element}` else ""
 				local label = `{row.trait}{element} · {row.build}@{row.weapon} · L{L}`
 				local reportOnly = row.reportWhy ~= nil
-					and (
-						row.reportElements == nil
-						or (v.element ~= nil and table.find(row.reportElements, v.element) ~= nil)
-					)
+					and (row.reportElements == nil or (v.element ~= nil and table.find(row.reportElements, v.element) ~= nil))
+					and (row.reportAt == nil or table.find(row.reportAt, L) ~= nil) -- S89
 				add(
 					"T1",
 					label,
@@ -7284,6 +7747,7 @@ function SkillModel.targetsS88(): { B.TargetRow }
 				add("E1.block", label, g.block, nil, Combat.blockCap, L)
 				add("E1.riposte", label, g.riposte, nil, Combat.riposteCap, L)
 				add("E1.avoid", label, g.avoid, nil, avoidCap, L)
+				-- S89 (F4): out of reach of the S89 levers (the traits of the axe and the mace, S88): owner
 				local ehpReport = if w == "axe1h" or w == "mace1h" then "S89" else nil
 				add("E1.ehp", label, g.ehp, nil, B.GUARD_EHP_MAX, L, ehpReport)
 			end

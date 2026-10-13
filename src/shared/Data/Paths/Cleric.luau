@@ -117,7 +117,7 @@ local healer: Types.PathDef = {
 				},
 			}),
 			node(H, "grace", "passive", 3, "♥", {
-				values = { grace = { 5, 15 } },
+				values = { grace = { 8, 24 } },
 				passive = { hooks = { allyHealBonus = "grace" } },
 			}),
 		}),
@@ -154,7 +154,7 @@ local healer: Types.PathDef = {
 		}),
 		row(false, {
 			node(H, "hope", "passive", 3, "✦", {
-				values = { hope = { 5, 15 } },
+				values = { hope = { 2, 6 } },
 				passive = { hooks = { allyHealBonus = "hope" } },
 			}),
 			node(H, "endurance", "passive", 3, "⛰", {
@@ -303,7 +303,7 @@ local inquisitor: Types.PathDef = {
 	descKey = "path.inquisitor.desc",
 	titleId = "path_inquisitor",
 	weapon = { main = { "mace1h", "flail1h" } },
-	statPlan = { int = 3, vit = 2 },
+	statPlan = { int = 1, vit = 2 },
 	itemWeights = {
 		axes = { dmg = 1.3, surv = 1.1, support = 0.6 },
 		stats = {
@@ -350,7 +350,7 @@ local inquisitor: Types.PathDef = {
 		row(false, {
 			skill(I, "brandOfLight"),
 			node(I, "ember", "passive", 3, "✹", {
-				values = { ember = { 1, 3 } },
+				values = { ember = { 2, 6 } },
 				passive = { flat = { critChance = "ember" } },
 			}),
 		}),
@@ -363,7 +363,7 @@ local inquisitor: Types.PathDef = {
 				},
 			}),
 			node(I, "grit", "passive", 3, "⛰", {
-				values = { grit = { 2, 6 } },
+				values = { grit = { 2.5, 7.5 } },
 				passive = { pct = { maxHp = "grit" } },
 			}),
 		}),

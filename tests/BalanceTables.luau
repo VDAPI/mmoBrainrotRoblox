@@ -1512,7 +1512,7 @@ BalanceTables.PATH_CAUSES = {
 } :: { [string]: string }
 
 local PATHS_INTRO =
-	"S86: mechaniki klas w `tests/SkillModel.luau` (każda z `mirrors`), ekwipunek konwencji S32 z cechami na zdarzeniu; raport, asertują S87 (G10), S89 (Kapłan, Wojownik), S90 (Łowca, Mag), S91 (L20), S92–S94 (regiony i bossy)."
+	"S86: mechaniki klas w `tests/SkillModel.luau` (każda z `mirrors`), ekwipunek konwencji S32 z cechami na zdarzeniu; raport, asertują S87 (G10), S89 (Kapłan, Wojownik), S90 (Łowca, Mag), S91 (L20), S92–S94 (regiony i bossy). „Boss bez wsparcia” (ROZWOJ 7.5) nie ma jeszcze metryki w modelu: definicja i asercje w S92–S94."
 
 -- S86 (G): the tables of the section "Klasy i ścieżki" (band "S86-paths"), in report order; every number comes from
 -- tests/SkillModel.luau. The values are the fixture tests/fixtures/balance_paths.json.
@@ -1542,7 +1542,7 @@ function BalanceTables.tablesPaths(): { Table }
 			"kradzież / obrażenia w grupie",
 			"× baza (topór)",
 		},
-		"Berserker `berserker.fury` z toporem dwuręcznym (ROZWOJ 7.5, 10.4, 10.6): mianownik każdego stosunku „× Berserker”. Furia krok po kroku (`Logic/Fury`, `HOOK_RULES.fury`), średnia stosów obok 7,5 z ROZWOJ 10.6; bilans kradzieży życia w walce z 3 potworami, które oddają (leczenie z kradzieży / przyjęte obrażenia); × baza = 1 cel 60 s / baza Wojownika z toporem. "
+		"Od S89 to liczby zamrożone: dane Berserkera i wspólnej podstawy Wojownika się nie zmieniają (mianownik R7 w S90 i wszystkich klas). Berserker `berserker.fury` z toporem dwuręcznym (ROZWOJ 7.5, 10.4, 10.6): mianownik każdego stosunku „× Berserker”. Furia krok po kroku (`Logic/Fury`, `HOOK_RULES.fury`), średnia stosów obok 7,5 z ROZWOJ 10.6; bilans kradzieży życia w walce z 3 potworami, które oddają (leczenie z kradzieży / przyjęte obrażenia); × baza = 1 cel 60 s / baza Wojownika z toporem. "
 			.. PATHS_INTRO
 	)
 	for _, L in LEVELS do
@@ -1587,17 +1587,28 @@ function BalanceTables.tablesPaths(): { Table }
 	for _, c in B.CLASSES do
 		section(
 			`Cele ścieżek: {CLASS_PL[c]}`,
-			{ "cel · build · poziom", "wartość", "mieści się", "projekt (ROZWOJ)", "różnica", "źródło" },
-			"Wartość z pasmem (poza pasmem pogrubiona), 1 = mieści się; projekt = liczba z tabeli ROZWOJ dla tego buildu i poziomu, różnica ponad 10% pogrubiona (przyczyna w SESJE S86, „model a ROZWOJ”). Źródło: sekcja ROZWOJ (kolumna = numer sekcji). "
+			{
+				"cel · build · poziom",
+				"wartość",
+				"mieści się",
+				"asertowany",
+				"projekt (ROZWOJ)",
+				"różnica",
+				"źródło",
+			},
+			"Wartość z pasmem (poza pasmem pogrubiona), 1 = mieści się; asertowany = 1, gdy blok ścieżek w `balance.spec` sprawdza ten wiersz (S89: Wojownik i Kapłan; wiersz z polem `report` albo poziom z `reportAt` tylko drukowany, kto asertuje w etykiecie); projekt = liczba z tabeli ROZWOJ dla tego buildu i poziomu, różnica ponad 10% pogrubiona (przyczyna w SESJE S86, „model a ROZWOJ”). Źródło: sekcja ROZWOJ (kolumna = numer sekcji). R4 (S89): zysk opcji przełomu na buildzie z `SkillModel.R4_*_BUILDS`, opcje z `R4_UTILITY` i `R4_REPORT` tylko drukowane; R5: największe |broń / średnia − 1|; R6: trzecia część punktów rzędów 4–11 na punkt / średnia (moc z metryki i EHP, L100). "
 				.. PATHS_INTRO
 		)
 		for _, r in results do
 			if r.classId == c then
-				local label = `{r.id} · {r.build}{if r.note then ` ({r.note})` else ""} · {r.L}`
+				local note = if r.note then ` ({r.note})` else ""
+				local who = if r.report then ` [raport: {r.report}]` else ""
+				local label = `{r.id} · {r.build}{note} · {r.L}{who}`
 				local src = tonumber(string.match(r.source, "(%d+%.?%d*)")) or 0
 				row(label, {
 					{ r.value, "2", r.low, r.high },
 					{ if r.pass then 1 else 0 },
+					{ if r.asserted and SkillModel.PATHS_TUNED[r.classId] then 1 else 0 },
 					{ r.project or 0 / 0, "2" },
 					{ if r.project then r.value / r.project - 1 else 0 / 0, "%", -0.1, 0.1 },
 					{ src, "1" },
@@ -1773,7 +1784,7 @@ function BalanceTables.tablesPaths(): { Table }
 	section(
 		"R4: wartość opcji przełomu",
 		{ "build · umiejętność · ranga · opcja · poziom", "zysk", "w buildzie" },
-		"`SkillModel.optionGain`: wartość umiejętności w roli (60 s na odnowieniu, 1 cel albo 3 cele z obrażeniami w czasie; leczenie na „Obrońcy”) z opcją / bez tego przełomu − 1, na pierwszym z 45 / 70 / 100, na którym ranga go ma. Pasma ROZWOJ 0: przełom 5 +10–15%, przełom 10 +20–25% (ustala S89); 0 = opcja bez wartości w tej roli (użytkowa). "
+		"`SkillModel.optionGain`: wartość umiejętności w roli (60 s na odnowieniu, 1 cel albo 3 cele z obrażeniami w czasie; leczenie na „Obrońcy”) z opcją / bez tego przełomu − 1, na pierwszym z 45 / 70 / 100, na którym ranga go ma. Pasma testu (S89): przełom 5 0,08–0,17, przełom 10 0,17–0,28 (ROZWOJ 0: ok. +10–15% / +20–25%); 0 = opcja bez wartości w tej roli (użytkowa, `SkillModel.R4_UTILITY`). Wojownik i Kapłan na wszystkich poziomach: wiersze `r4.*` w „Cele ścieżek”. "
 			.. PATHS_INTRO
 	)
 	for _, r in SkillModel.r4Rows() do

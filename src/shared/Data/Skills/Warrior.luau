@@ -15,11 +15,11 @@ return Build.class("Warrior", "energy", "phys", {
 		cost = 15,
 		cooldown = 4,
 		range = 8,
-		values = { dmg = { 160, 295 } },
+		values = { dmg = { 160, 222 } },
 		breakpoints = Build.bp2({ a = { knockback = 6 }, b = { execute = 30 } }, {
 			a = { splash = { radius = 6, pct = 50 } },
 			-- no category (ROZWOJ 7.1); every strike renews it (no bleedStacks)
-			b = { effect = { kind = "bleed", duration = 6, value = 90 } },
+			b = { effect = { kind = "bleed", duration = 6, value = 45 } },
 		}),
 		glyph = "⚔",
 	},
@@ -32,7 +32,7 @@ return Build.class("Warrior", "energy", "phys", {
 		cost = 20,
 		cooldown = 12,
 		range = 25,
-		values = { dmg = { 120, 210 } },
+		values = { dmg = { 120, 165 } },
 		effects = { { kind = "stun", duration = 0.8 } },
 		breakpoints = Build.bp2(
 			{ a = { add = { range = 7 } }, b = { mul = { cooldown = 0.8 } } },
@@ -52,10 +52,10 @@ return Build.class("Warrior", "energy", "phys", {
 		-- S28: two turns with three blows (the DESIGN total 110-200% split over the hits)
 		hits = 3,
 		interval = 0.2,
-		values = { dmg = { 37, 67 } },
+		values = { dmg = { 37, 52 } },
 		breakpoints = Build.bp2(
 			{ a = { castMove = 60 }, b = { lifesteal = 8 } },
-			{ a = { pull = 12 }, b = { add = { hits = 1 }, values = { dmg = -7 } } } -- 4 x 60 % at rank 10
+			{ a = { pull = 12 }, b = { add = { hits = 1 }, values = { dmg = -4 } } } -- 4 x 48 % at rank 10
 		),
 		glyph = "🌀",
 	},
@@ -104,7 +104,7 @@ return Build.class("Warrior", "energy", "phys", {
 		cost = 40,
 		cooldown = 60,
 		duration = 12,
-		values = { speed = { 15, 35 }, lifesteal = 5 },
+		values = { speed = { 15, 20 }, lifesteal = 5 },
 		effects = {
 			{
 				kind = "statBuff",
@@ -124,7 +124,7 @@ return Build.class("Warrior", "energy", "phys", {
 					category = "own",
 				},
 			},
-			b = { values = { speed = 8 } },
+			b = { values = { speed = 4 } },
 		}),
 		glyph = "🩸",
 	},
@@ -137,13 +137,13 @@ return Build.class("Warrior", "energy", "phys", {
 		cost = 45,
 		cooldown = 14,
 		radius = 12,
-		values = { dmg = { 150, 280 }, slow = 40 },
+		values = { dmg = { 150, 175 }, slow = 40 },
 		effects = { { kind = "slow", duration = 3, value = "slow", category = "enemySlow" } },
 		breakpoints = Build.bp2(
 			-- S73: was pct = 20 (R4, ROZWOJ 10.2)
 			{ a = { lingering = { pct = 5, duration = 3, kind = "cracks" } }, b = { pull = 10 } },
 			-- S73: was pct = 60 (R4, ROZWOJ 10.2)
-			{ a = { echo = { delay = 1, pct = 25 } }, b = { values = { dmg = 60 } } }
+			{ a = { echo = { delay = 1, pct = 25 } }, b = { values = { dmg = 38 } } }
 		),
 		glyph = "⛰",
 	},
@@ -246,7 +246,7 @@ return Build.class("Warrior", "energy", "phys", {
 		cooldown = 7,
 		radius = 10,
 		angle = 90,
-		values = { dmg = { 140, 250 }, bleed = 30 },
+		values = { dmg = { 140, 168 }, bleed = 30 },
 		effects = { { kind = "bleed", duration = 5, value = "bleed" } },
 		breakpoints = Build.bp2(
 			{ a = { add = { angle = 30 } }, b = { values = { bleed = 20 } } },
@@ -264,12 +264,12 @@ return Build.class("Warrior", "energy", "phys", {
 		cost = 25,
 		cooldown = 10,
 		range = 8,
-		furyConsume = "furyDmg", -- consumes all Fury: +furyDmg % hit damage per stack (x1.8 at 10)
-		values = { dmg = { 140, 250 }, bleed = 40, furyDmg = 8 },
+		furyConsume = "furyDmg", -- consumes all Fury: +furyDmg % hit damage per stack (x1.6 at 10, S89)
+		values = { dmg = { 280, 280 }, bleed = 10, furyDmg = 6 },
 		effects = { { kind = "bleed", duration = 6, value = "bleed" } },
 		breakpoints = Build.bp2(
 			{ a = { execute = 30 }, b = { lifesteal = 15 } },
-			{ a = { values = { bleed = 30 } }, b = { splash = { radius = 6, pct = 50 } } }
+			{ a = { values = { bleed = 70 } }, b = { splash = { radius = 6, pct = 50 } } }
 		),
 		glyph = "🗡",
 	},
@@ -285,10 +285,10 @@ return Build.class("Warrior", "energy", "phys", {
 		radius = 14,
 		hits = 3,
 		interval = 0.45,
-		values = { dmg = { 180, 320 } },
+		values = { dmg = { 105, 150 } },
 		breakpoints = Build.bp2(
-			{ a = { add = { radius = 3 } }, b = { values = { dmg = 25 } } },
-			{ a = { stunLast = 1.2 }, b = { add = { hits = 1 }, values = { dmg = -25 } } } -- 4 x 295 % at rank 10
+			{ a = { add = { radius = 3 } }, b = { values = { dmg = 18 } } },
+			{ a = { stunLast = 1.2 }, b = { add = { hits = 1 }, values = { dmg = -15 } } } -- 4 x 135 % at rank 10
 		),
 		glyph = "⚡",
 	},
@@ -304,7 +304,7 @@ return Build.class("Warrior", "energy", "phys", {
 		duration = 8,
 		furyConsume = "perFury", -- consumes all Fury: +perFury % physical attack per stack (own)
 		-- Fury restored when Carnage ends: berserker_carnage2, S75
-		values = { perFury = { 1.5, 2.5 }, furyRestore = 0 },
+		values = { perFury = { 0.6, 0.9 }, furyRestore = 0 },
 		-- S72: no Fury decay, +2 per hit, a kill resets Charge and Blade Whirl
 		effects = {
 			{ kind = "carnage", duration = 8, value = "furyRestore", target = "self", category = "own" } :: any,
@@ -337,7 +337,7 @@ return Build.class("Warrior", "energy", "phys", {
 		cost = 25,
 		cooldown = 40,
 		duration = 20,
-		values = { atk = { 10, 28 } },
+		values = { atk = { 10, 16 } },
 		effects = {
 			{
 				kind = "statBuff",
@@ -386,7 +386,7 @@ return Build.class("Warrior", "energy", "phys", {
 		maxLevel = 10,
 		type = "banner",
 		delivery = "melee",
-		cost = 30,
+		cost = 15,
 		cooldown = 30,
 		range = 12, -- planted up to 12 studs away (no aim: at the feet)
 		radius = 15,
@@ -418,13 +418,13 @@ return Build.class("Warrior", "energy", "phys", {
 		maxLevel = 10,
 		type = "target",
 		delivery = "melee",
-		cost = 50,
+		cost = 35,
 		cooldown = 16,
 		range = 8,
-		values = { dmg = { 300, 520 }, armorBreak = 30 },
+		values = { dmg = { 300, 520 }, armorBreak = 40 },
 		effects = { { kind = "armorBreak", duration = 6, value = "armorBreak", category = "enemyArmor" } },
 		breakpoints = Build.bp2(
-			{ a = { effect = { kind = "stun", duration = 0.7 } }, b = { values = { dmg = 40 } } },
+			{ a = { effect = { kind = "stun", duration = 0.7 } }, b = { values = { dmg = 48 } } },
 			{ a = { splash = { radius = 7, pct = 60 } }, b = { mul = { cooldown = 0.8 } } }
 		),
 		glyph = "🔨",
@@ -436,12 +436,12 @@ return Build.class("Warrior", "energy", "phys", {
 		maxLevel = 10,
 		type = "shout",
 		delivery = "melee",
-		cost = 35,
+		cost = 20,
 		cooldown = 60,
 		radius = 30, -- allies, the Standard-Bearer included (node Hetman's Order: +10 -> 40, S75)
 		hitRadius = 10,
 		duration = 10,
-		values = { dmg = { 120, 220 }, crit = { 10, 20 } },
+		values = { dmg = { 120, 220 }, crit = { 12, 24 } },
 		effects = {
 			-- critChance in points (allyCrit)
 			{

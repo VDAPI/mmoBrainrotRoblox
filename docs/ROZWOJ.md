@@ -21,10 +21,13 @@ streszczenie, które odsyła tutaj.
   kupić), bez przerzutów cech, bez gniazd, bez premii za komplety przedmiotów, bez profesji zbierackich, poważny ton.
   Eksporter wiki działa na liście dozwolonych i nigdy nie eksportuje `Data/Codes`, `Data/AdminCommands`,
   `Data/Products` (poza `WikiData/Premium.luau`), `Logic/DevPreset` ani niewydanych treści.
-- Skróty celów balansu (z planu balansu): R1 obrażenia stałe ok. 1,6–2,0 × atak podstawowy; R3 i T-SK3 obszar na 3
-  cele / jeden cel (wybuch 8 s) najwyżej 2,0; R4 przełom 5 ok. +10–15%, przełom 10 ok. +20–25% wartości umiejętności w
-  jej roli; R5 ścieżki bojowe jednej klasy w ok. ±10% w swojej metryce; R6 wartość punktu mniej więcej stała w
-  ścieżce; R7 Łowca / Wojownik w jeden cel 1,15–1,35; T-SK4 koszt many na odnowieniu 2–3 × regeneracja; T-SK5 jedno
+- Skróty celów balansu (z planu balansu): R1 obrażenia stałe ok. 1,6–2,0 × atak podstawowy (S89: test 1,6 ≤ R1 ≤
+  max(2,0; 1,15 × R1 tego buildu na L20)); R3 i T-SK3 obszar na 3 cele / jeden cel (wybuch 8 s) najwyżej 2,0; R4 przełom
+  5 ok. +10–15%, przełom 10 ok. +20–25% wartości umiejętności w jej roli (S89: test 0,08–0,17 i 0,17–0,28, różnica A i B
+  ≤ 0,05, opcje użytkowe w `SkillModel.R4_UTILITY`); R5 ścieżki bojowe jednej klasy w ok. ±10% w swojej metryce (S89:
+  klasa z jedną ścieżką bojową, Kapłan i Wojownik, mierzy rozrzut broni tej ścieżki, każdy typ ±10% średniej typów); R6
+  wartość punktu mniej więcej stała w ścieżce (S89: punkty rzędów 4–11 w 3 równych częściach, zysk części
+  √((1 + Δmetryki) × (1 + ΔEHP)) − 1 na punkt w 0,6–1,5 × średniej, L100); R7 Łowca / Wojownik w jeden cel 1,15–1,35; T-SK4 koszt many na odnowieniu 2–3 × regeneracja; T-SK5 jedno
   leczenie 25–35% HP tanka; T-SK6 leczenie na sekundę 1,0–2,0 × obrażenia tanka na bossie.
 
 ## 1. Decyzje właściciela (2026-10-09)
@@ -781,9 +784,10 @@ Id ścieżek: `healer`, `fortune`, `inquisitor`. Dane: `Data/Skills/Cleric.luau`
 4. Szczęście Fortuny dokładnie według sekcji 6: na potworach +30% szansy na przedmiot (wspólny limit +100), Elity II
    Legenda 5 → 6, złoto +15%; na bossach mnożnik Legendy ×1,13 z pełnej Fortuny i ×1,06 z jej rzędu 1, Unikat → Heroik
    35%, drugi przedmiot 15%. Działa na całą drużynę razem z Kapłanem, także solo, bez warunku poza zaliczeniem.
-5. Odniesieniem obrażeń jest Berserker (7.5). Inkwizytor z planem INT 3 : VIT 2, buławą i relikwią zadaje w jeden cel
-   0,83 / 0,88 / 0,90 obrażeń Berserkera na 45 / 70 / 100 (0,78 na 20.), a ma ok. 1,3–1,4 jego HP. Uzdrowiciel i
-   Fortuna expią solo najwyżej 1,35 raza wolniej niż Inkwizytor (z uzupełnianiem życia Leczeniem).
+5. Odniesieniem obrażeń jest Berserker (7.5). Inkwizytor z planem INT 1 : VIT 2 (S89; był 3 : 2), buławą i relikwią
+   zadaje w jeden cel 0,83 / 0,88 / 0,90 obrażeń Berserkera na 45 / 70 / 100, a ma ok. 1,3–1,4 jego HP. Uzdrowiciel i
+   Fortuna expią solo najwyżej 1,5 raza wolniej niż Inkwizytor (z uzupełnianiem życia Leczeniem; test S89, cel projektu
+   1,35 drukowany).
 6. Sześć nowych aktywnych: Sanktuarium, Anioł Stróż, Rzut Kośćmi, Koło Fortuny, Piętno Światła, Młot Niebios.
 
 ### 9.1 Broń ścieżek
@@ -831,9 +835,9 @@ zmienia to samo pole (np. `shieldHp` Tarczy Wiary z 5A, 10B, Mocnej Wiary i Opok
 |---|---|---|
 | Święte Uderzenie | A `splash` 40% w 5 st. / B `execute = 30` (cel poniżej 30% HP: zawsze krytyk) | A ogłuszenie 0,8 s / B `healWounded = 30` [nowy]: najbardziej ranny sojusznik w 30 st. dostaje 30% zadanych obrażeń jako leczenie |
 | Leczenie | A `secondTarget = 50` / B `selfHeal = 6` (leczący też odzyskuje 6% HP) | A `overhealShield` / B `chainHeal = { jumps = 2, pct = 60 }` [nowy]: przeskakuje na 2 kolejnych rannych (60%, 36%) |
-| Światłość | A `add.radius = 3` / B `pull = 16` (przyciąga wrogów z 16 st. przed wybuchem w promieniu 10) | A `values.heal = 50` / B `echo = { delay = 1, pct = 40 }` |
-| Krąg Światła | A `cleanse` / B `add.radius = 4` | A `allyEffect` redukcja 15% na 4 s (`allyGuard`) / B `healZone = { duration = 4, pct = 25 }` [nowy]: pole leczy jeszcze 4 s po 25% na sekundę |
-| Tarcza Wiary | A `values.shieldHp = 3` (dziś `shield +120`) / B `cleanse` [nowy kod w `Support.shield`] | A `secondTarget = 50` / B `add.duration = 6`, `values.shieldHp = 3` (trwała tarcza) |
+| Światłość | A `add.radius = 3` / B `pull = 16` (przyciąga wrogów z 16 st. przed wybuchem w promieniu 10) | A `values.heal = 50` / B `echo = { delay = 1, pct = 25 }` (S89, było 40) |
+| Krąg Światła | A `cleanse` / B `add.radius = 4` | A `allyEffect` redukcja 15% na 4 s (`allyGuard`) / B `healZone = { duration = 4, pct = 6 }` [nowy]: pole leczy jeszcze 4 s po 6% na sekundę (S89, było 25) |
+| Tarcza Wiary | A `values.shieldHp = 3` (dziś `shield +120`) / B `cleanse` [nowy kod w `Support.shield`] | A `secondTarget = 50` / B `add.duration = 6`, `values.shieldHp = 7` (trwała tarcza; S89, było 3) |
 | Sąd | A `lifesteal = 30` / B `stunNear = { radius = 6, duration = 0.8 }` | A `effect` wrażliwość 10% na 6 s (`enemyWeak`) / B `values.dmg = 100` (wyrok bez odwołania) |
 
 ### 9.3 Uzdrowiciel (`healer`, rola `healer`)
@@ -878,7 +882,7 @@ Przeniesione:
 | 4 · 26 | Sanktuarium (`healer_sanctuary`, skill) | nowa |
 | 4 · 26 | Jasny Krąg (`healer_radiantCircle`, modify `circleOfLight`) | `healHp` +1 / 2 / 3 |
 | 5 · 33 | Pękająca Tarcza (`healer_shatter`, modify `shieldOfFaith`, `shieldBurst` [nowy]) | gdy tarcza zniknie (pęknie albo wygaśnie), sojusznicy w 10 st. od niej odzyskują 15 / 30 / 45% jej wartości początkowej, raz na tarczę |
-| 5 · 33 | Łaska (`healer_grace`, passive, hak `allyHealBonus`) | leczenie innych +5 / 10 / 15% |
+| 5 · 33 | Łaska (`healer_grace`, passive, hak `allyHealBonus`) | leczenie innych +8 / 16 / 24% (S89, było 5 / 10 / 15) |
 | 6 · 40 albo | Opoka (`healer_bulwark`, modify `shieldOfFaith`) | `values.shieldHp` +2 / 4 / 6 i `add.duration` +1 / 2 / 3 s |
 | 6 · 40 albo | Zdrój Łaski (`healer_wellspring`, modify `renew`) | `values.healHp` +3 / 6 / 9 |
 | 7 · 48 | Boska Interwencja (`healer_divineIntervention`, skill) | przeniesiona B |
@@ -886,7 +890,7 @@ Przeniesione:
 | 8 · 60 | Anioł Stróż (`healer_guardianAngel`, skill) | zwieńczenie |
 | 9 · 70 albo | Pośpiech Łaski (`healer_haste`, modify `heal`) | `mul.cooldown` ×0,9 / 0,8 / 0,7 |
 | 9 · 70 albo | Rozległe Sanktuarium (`healer_wide`, modify `sanctuary`) | `add.radius` +2 / 4 / 6 st. |
-| 10 · 80 | Światło Nadziei (`healer_hope`, passive, hak `allyHealBonus`) | leczenie innych +5 / 10 / 15% |
+| 10 · 80 | Światło Nadziei (`healer_hope`, passive, hak `allyHealBonus`) | leczenie innych +2 / 4 / 6% (S89, było 5 / 10 / 15) |
 | 10 · 80 | Wytrwałość Pasterza (`healer_endurance`, passive) | maks. HP +2 / 4 / 6%, regeneracja many +5 / 10 / 15% |
 | 11 · 90 | Chór Aniołów (`healer_choir`, modify `guardianAngel`, 2 rangi) | `add.effectDuration` +2 / +4 s i `values.saveHeal` +10 / +20 |
 
@@ -1007,31 +1011,33 @@ punktów z 42) ma wszystkie pola; rzędy wyboru są bojowe.
 
 ### 9.5 Inkwizytor (`inquisitor`, rola `damage`)
 
-Zbrojne ramię świątyni: z buławą w pierwszym szeregu, każdy cios pali światłem. Plan `{ int = 3, vit = 2 }`, tytuł
+Zbrojne ramię świątyni: z buławą w pierwszym szeregu, każdy cios pali światłem. Plan `{ int = 1, vit = 2 }` (S89, był
+3 : 2), tytuł
 `path_inquisitor` („Inkwizytor”). Metryka: obrażenia w jeden cel i w trzy cele względem Berserkera (cel w jeden cel
 ok. 0,85–0,9 od 45. poziomu, przy większym HP).
 
 Przeniesione:
 - Oczyszczenie `purify` (rząd 1; ranga 5 / 10 na 26 / 46): 8% → 12% maks. HP + 6% → 10% ataku mag. i oczyszczenie,
   25 many / 12 s. Przełomy: 5A `overhealShield`, 5B `burst = { radius = 6, pct = 60 }` [nowy]: wrogowie w 6 st. od celu
-  dostają 60% ataku mag. światłem, 10A `secondTarget = 50`, 10B `mul.cooldown = 0.6`.
+  dostają 60% ataku mag. światłem, 10A `secondTarget = 50`, 10B `mul.cooldown = 0.85` (S89, było 0,6).
 - Aura Wytrwałości `auraOfEndurance` (rząd 7; ranga 5 / 10 na 64 / 84): maks. HP +5% → +15% w 30 st. na 60 s, 40 many
   / 60 s, `allyVigor`. Przełomy: 5A `add.radius = 10`, 5B `allyEffect` odporność mag. +10% w tej samej kategorii, 10A
   pancerz +10% (`allyVigor`), 10B Aura Gorliwości: atak +6% (`allyAttack`).
 
 **Piętno Światła / Brand of Light** (`brandOfLight`, nowa, rząd 4, poz. 26; ranga 5 / 10 na 42 / 62)
-- `target` 12 st., światło: 100% → 170% ataku mag. i podpalenie światłem 140% → 240% przez 6 s (efekt `burn`; dziś
+- `target` 12 st., światło: 120% → 260% ataku mag. i podpalenie światłem 170% → 320% przez 6 s (S89, było 100 → 170 i
+  140 → 240; efekt `burn`; dziś
   `Context.applyEffect` liczy obrażenia w czasie tylko dla `bleed` i `poison`, trzeba dopisać `burn`). 30 many / 10 s.
-- Przełomy: 5A `values.dot = 30`; 5B `splash = { radius = 5, pct = 40 }`; 10A `lifesteal = 20`; 10B `effect`
+- Przełomy: 5A `values.dot = 80` (S89, było 30); 5B `splash = { radius = 5, pct = 40 }`; 10A `lifesteal = 20`; 10B `effect`
   wrażliwość 8% na 8 s (`enemyWeak`).
 - Animacja: lewa dłoń pchnięta ku wrogowi (wariant `purify`: ręce skrzyżowane, potem jedna w przód), `hit = 0.25`.
   Efekt: `color = "holy"`, `burst` + mała `rune` (`size = 0.5`) na celu + `sparkle`.
 
 **Młot Niebios / Hammer of Heaven** (`hammerOfHeaven`, nowa, zwieńczenie, poz. 60; ranga 5 / 10 na 76 / 95)
-- `circleTarget` 20 st., promień 8, opóźnienie 0,5 s, światło: 200% → 340% i ogłuszenie 1,2 s z nowym polem efektu
+- `circleTarget` 20 st., promień 8, opóźnienie 0,5 s, światło: 160% → 260% (S89, było 200 → 340) i ogłuszenie 1,2 s z nowym polem efektu
   `notBoss` (bossy i Elity II dostają tylko obrażenia). 70 many / 30 s.
-- Przełomy: 5A `add.radius = 2`; 5B `lingering = { pct = 10, duration = 4, kind = "holy" }`; 10A `add.effectDuration =
-  0.8`; 10B `echo = { delay = 1.2, pct = 50 }`.
+- Przełomy: 5A `add.radius = 2`; 5B `lingering = { pct = 5, duration = 4, kind = "holy" }`; 10A `add.effectDuration =
+  0.8`; 10B `echo = { delay = 1.2, pct = 25 }` (S89, było 10 i 50).
 - Animacja: skok jak `judgement` (pomocnik `leap`), `OVERHEAD` → `SLAMMED`, `hit = 0.5`, `trail`, `lock`. Efekt:
   `skyBolt` + `pillar` + `cracks` + `shockwave`, `land = { "dust" }`, `telegraph = "circle"`, `shake = 0.6`,
   `hitstop = 0.08`, `size = 0.9`.
@@ -1045,9 +1051,9 @@ Przeniesione:
 | 3 · 20 albo | Tarcza Inkwizytora (`inquisitor_shield`, passive, `weapon.offhand = { "shield" }`) | pancerz +6 / 12 / 18% i maks. HP +2 / 4 / 6% |
 | 3 · 20 albo | Relikwia Gniewu (`inquisitor_relic`, passive, `weapon.offhand = { "relic" }`) | światło +4 / 7 / 10% |
 | 4 · 26 | Piętno Światła (`inquisitor_brandOfLight`, skill) | nowa |
-| 4 · 26 | Żar (`inquisitor_ember`, passive) | krytyk +1 / 2 / 3 pkt proc. |
+| 4 · 26 | Żar (`inquisitor_ember`, passive) | krytyk +2 / 4 / 6 pkt proc. (S89, było 1 / 2 / 3) |
 | 5 · 33 | Sąd Ostateczny (`inquisitor_finalVerdict`, modify `judgement`) | ogłuszony wróg (także przez sam Sąd) wybucha: `splash` 6 st. 20 / 35 / 50% |
-| 5 · 33 | Krzepa (`inquisitor_grit`, passive) | maks. HP +2 / 4 / 6% |
+| 5 · 33 | Krzepa (`inquisitor_grit`, passive) | maks. HP +2,5 / 5 / 7,5% (S89, było 2 / 4 / 6) |
 | 6 · 40 albo | Święty Gniew (`inquisitor_holyWrath`, hak `holyHealAll`) | leczenie Boskiego Gniewu działa dla Światłości, Sądu, Piętna i Młota w 1/3, 2/3, 3/3 siły |
 | 6 · 40 albo | Żarliwość (`inquisitor_fervor`, hak `zealCdr`) | każda ofensywna umiejętność skraca Leczenie i Oczyszczenie o 0,3 / 0,6 / 1 s |
 | 7 · 48 | Aura Wytrwałości (`inquisitor_auraOfEndurance`, skill) | przeniesiona B |
@@ -1111,6 +1117,7 @@ Pomiar był bez normalizacji broni (8).
   z tej tabeli dostępnym narzędziem pomiaru i w razie potrzeby stroi Piętno, Młot, rzędy 1–2 Inkwizytora i podstawę;
   jeśli w repo nie ma narzędzia, które liczy umiejętności, zostawia te liczby i dopisuje sprawdzenie do pierwszej sesji
   balansu (`docs/PROGRESS.md`, Niedokończone).
+- Pomiar po strojeniu (S89, model `tests/SkillModel.luau`, z normalizacją broni): `docs/BALANS.md` → „Klasy i ścieżki”.
 
 ### 9.7 Ryzyka
 
@@ -1168,17 +1175,17 @@ Id ścieżek: `guardian`, `berserker`, `standard`. Dane: `Data/Skills/Warrior.lu
 ### 10.2 Podstawa klasy i przełomy
 
 Rangi z 2.5. Wartości umiejętności (ranga 1 → 10) zostają jak dziś; zmienia się tylko odblokowanie i dochodzą
-przełomy B. Wyjątki to dzisiejsze przełomy A ponad R4: 5A i 10A Trzęsienia Ziemi (niżej) i 10A Okrzyku Bojowego (10.5).
+przełomy B. S89 obniżyło rangi powyżej 20. poziomu (R1, ranga osiągana do 20. przypięta w `Data/SkillCurves`). Wyjątki to dzisiejsze przełomy A ponad R4: 5A i 10A Trzęsienia Ziemi (niżej) i 10A Okrzyku Bojowego (10.5).
 
 | Poz. (dziś) | Umiejętność | Ranga 5 / 10 | Ranga 1 → 10; koszt / odn. |
 |---|---|---|---|
-| 1 (1) | Potężne Uderzenie `mightyStrike` (target) | 17 / 37 | 160 → 295%; 15 / 4 s |
-| 3 (6) | Szarża `charge` | 19 / 39 | 120 → 210%, ogłuszenie 0,8 s; 20 / 12 s |
-| 6 (10) | Wir Ostrzy `bladeWhirl` (circleSelf) | 22 / 42 | 3 × 37 → 67%, promień 8; 30 / 8 s |
+| 1 (1) | Potężne Uderzenie `mightyStrike` (target) | 17 / 37 | 160 → 222% (S89, było 295; ranga 5 = 220); 15 / 4 s |
+| 3 (6) | Szarża `charge` | 19 / 39 | 120 → 165% (S89, było 210; ranga 5 = 160), ogłuszenie 0,8 s; 20 / 12 s |
+| 6 (10) | Wir Ostrzy `bladeWhirl` (circleSelf) | 22 / 42 | 3 × 37 → 52% (S89, było 67; ranga 4 = 47), promień 8; 30 / 8 s |
 | 10 (23) | Prowokacja `taunt` (circleSelf) | 26 / 46 | prowokacja 6 s, pancerz +20 → 40%; 20 / 20 s |
 | 14 (14) | Stalowa Skóra `steelSkin` (pasywka) | rangi na 14/23/32/41/50 | pancerz +5 → 25% |
-| 18 (40) | Krwawy Szał `bloodlust` (buff) | 34 / 54 | szybkość ataku +15 → 35%, kradzież życia 5%, 12 s; odn. 60 s |
-| 30 (34) | Trzęsienie Ziemi `earthquake` (circleSelf) | 46 / 66 | 150 → 280%, spowolnienie 40% 3 s; 45 / 14 s |
+| 18 (40) | Krwawy Szał `bloodlust` (buff) | 34 / 54 | szybkość ataku +15 → 20% (S89, było 35), kradzież życia 5%, 12 s; odn. 60 s |
+| 30 (34) | Trzęsienie Ziemi `earthquake` (circleSelf) | 46 / 66 | 150 → 175% (S89, było 280), spowolnienie 40% 3 s; 45 / 14 s |
 | 45 (48) | Kontratak `riposte` (pasywka) | rangi na 45/54/63/72/81 | szansa 4 → 12% na kontratak po ciosie |
 
 Dlaczego te: cios startowy, dwie obszarówki, ruch, obrona i podtrzymanie (kradzież życia Krwawego Szału pomaga solo
@@ -1191,12 +1198,12 @@ podtrzymanie zamiast kontroli) przy podobnej wartości (R4).
 
 | Umiejętność | Ranga 5: A / B | Ranga 10: A / B |
 |---|---|---|
-| Potężne Uderzenie | A `knockback = 6` / B `execute = 30` (ok. +11% na jednym celu) | A `splash = { radius = 6, pct = 50 }` / B `effect` krwawienie 90% ataku przez 6 s (odświeża się przy każdym rzucie, ok. +20%, omija pancerz) |
+| Potężne Uderzenie | A `knockback = 6` / B `execute = 30` (ok. +11% na jednym celu) | A `splash = { radius = 6, pct = 50 }` / B `effect` krwawienie 45% ataku przez 6 s (S89, było 90; odświeża się przy każdym rzucie, ok. +18%, omija pancerz) |
 | Szarża | A `add.range = 7` / B `mul.cooldown = 0.8` | A `stunNear = { radius = 5, duration = 1 }` / B `splash = { radius = 6, pct = 60 }` |
-| Wir Ostrzy | A `castMove = 60` / B `lifesteal = 8` | A `pull = 12` / B `add.hits = 1`, `values.dmg = -7` (4 × 60%, ok. +20%) |
+| Wir Ostrzy | A `castMove = 60` / B `lifesteal = 8` | A `pull = 12` / B `add.hits = 1`, `values.dmg = -4` (4 × 48%, ok. +23%; S89, było −7) |
 | Prowokacja | A `add.radius = 5` / B `selfHeal = 8` | A `effect` spowolnienie 30% 4 s (`enemySlow`) / B `add.effectDuration = 3` (prowokacja i pancerz 9 s) |
-| Krwawy Szał | A `values.lifesteal = 3` / B `add.effectDuration = 2` | A `selfEffect` redukcja 15% 12 s / B `values.speed = 8` (35 → 43%) |
-| Trzęsienie Ziemi | A `lingering = { pct = 5, duration = 3, kind = "cracks" }` (dziś 20) / B `pull = 10` | A `echo = { delay = 1, pct = 25 }` (dziś 60) / B `values.dmg = 60` (ok. +21%) |
+| Krwawy Szał | A `values.lifesteal = 3` / B `add.effectDuration = 2` | A `selfEffect` redukcja 15% 12 s / B `values.speed = 4` (20 → 24%; S89, było 8) |
+| Trzęsienie Ziemi | A `lingering = { pct = 5, duration = 3, kind = "cracks" }` (dziś 20) / B `pull = 10` | A `echo = { delay = 1, pct = 25 }` (dziś 60) / B `values.dmg = 38` (ok. +22%; S89, było 60) |
 
 Trzęsienie Ziemi 5A i 10A są dziś ponad R4: 5A to 3 × 20%, czyli do +60% na wrogach, którzy zostają w kręgu, a 10A to
 druga fala za 60%. Sesja Wojownika zmienia te dane A na `lingering.pct = 5` (ok. +15%) i `echo.pct = 25` (ok. +25%);
@@ -1205,7 +1212,7 @@ wtedy 10B (+21%) jest równe 10A, a 5B (przyciąganie) to darmowa użyteczność
 ### 10.3 Strażnik (`guardian`, rola `tank`)
 
 Tarcza i ciężka zbroja: Strażnik staje między bossem a drużyną. Metryka: przejęte i zatrzymane obrażenia drużyny oraz
-efektywne HP. Plan statystyk `{ str = 2, vit = 3 }`, tytuł `path_guardian` („Strażnik”).
+efektywne HP. Plan statystyk `{ str = 7, vit = 5 }` (S89, był 2 : 3), tytuł `path_guardian` („Strażnik”).
 
 Przeniesione: Niezłomność `fortitude` (rząd 1, pasywka, maks. HP +4 → 20%, rangi na 10/19/28/37/46) i Ostatni Bastion
 `lastBastion` (rząd 7; redukcja 40 → 60% na 6 s, koszt 40, odn. 90 s; przełomy 5A `add.effectDuration = 2`, 5B
@@ -1248,8 +1255,8 @@ Przeniesione: Niezłomność `fortitude` (rząd 1, pasywka, maks. HP +4 → 20%,
 | 3 · 20 albo | Odwet (`guardian_retaliation`, passive, hak `riposte`) | +4 / 8 / 12 pkt proc. szansy na Kontratak, działa też przed 45. poziomem |
 | 4 · 26 | Przechwycenie (`guardian_intercept`, skill) | nowa |
 | 4 · 26 | Poświęcenie (`guardian_sacrifice`, modify `intercept`: `add.effectDuration`, `selfEffect`) | przechwyt dłużej o 0,5 / 1 / 1,5 s, Strażnik ma na ten czas 5 / 10 / 15% redukcji (`own`) |
-| 5 · 33 | Groźba (`guardian_menace`, passive, haki `threat` i `damagePerEnemy`) | +30 / 60 / 90% zagrożenia (`Monster.TakeDamage`) i +1 / 2 / 3% obrażeń za każdego wroga w 10 st., najwyżej 5 |
-| 5 · 33 | Mistrz Tarczy (`guardian_shieldMastery`, passive, hak `block`) | +3 / 6 / 9 pkt proc. bloku (z Blokiem do 19%, limit `Data/Combat.blockCap = 25`) |
+| 5 · 33 | Groźba (`guardian_menace`, passive, haki `threat` i `damagePerEnemy`) | +30 / 60 / 90% zagrożenia (`Monster.TakeDamage`) i +2 / 4 / 6% obrażeń za każdego wroga w 10 st., najwyżej 5 (S89, było 1 / 2 / 3) |
+| 5 · 33 | Mistrz Tarczy (`guardian_shieldMastery`, passive, hak `block`) | +2 / 4 / 6 pkt proc. bloku (S89, było 3 / 6 / 9; z Blokiem do 16%, limit `Data/Combat.blockCap = 25`) |
 | 6 · 40 albo | Zaciśnięte Zęby (`guardian_grit`, passive, hak `lastStand`) | 10 / 20 / 30% mniej obrażeń poniżej 30% HP (wpis `own` w `Logic/EffectStack`, 7.1) |
 | 6 · 40 albo | Tarcza Drużyny (`guardian_aegis`, modify `intercept`: `allyEffect` tarcza, nowe `allyShield`) | chroniony dostaje tarczę 5 / 10 / 15% swoich maks. HP na 4 s (wyjątek 7.3) |
 | 7 · 48 | Ostatni Bastion (`guardian_lastBastion`, skill) | przeniesiona B |
@@ -1258,7 +1265,7 @@ Przeniesione: Niezłomność `fortitude` (rząd 1, pasywka, maks. HP +4 → 20%,
 | 9 · 70 albo | Męczennik (`guardian_martyr`, passive, hak `interceptMitigation`) | przejęta część ciosu mniejsza o 10 / 20 / 30% |
 | 9 · 70 albo | Kara (`guardian_retribution`, passive, hak `interceptThorns`) | 10 / 20 / 30% przejętych obrażeń wraca do potwora, który uderzył |
 | 10 · 80 | Twierdza (`guardian_fortress`, modify `shieldWall` `mul.cooldown`) | ×0,92 / 0,84 / 0,75 (Mur Tarcz co 45 s) |
-| 10 · 80 | Weteran Frontu (`guardian_veteran`, passive pct `armor`, `maxHp`) | +4 / 8 / 12% |
+| 10 · 80 | Weteran Frontu (`guardian_veteran`, passive pct `armor`, `maxHp`) | +1,5 / 3 / 4,5% (S89, było 4 / 8 / 12) |
 | 11 · 90 | Niewzruszony Mur (`guardian_shieldWall2`, modify `shieldWall`, 2 rangi) | +1 / 2 s, przechwycenie +2,5 / 5 pkt proc. (limit 30%) |
 
 - Drużyna: przechwyt (bez kategorii, 7.6), Osłona i Bastion Drużyny (`allyGuard`), Tarcza Drużyny (tarcza),
@@ -1292,22 +1299,24 @@ i na grupie. Plan statystyk `{ str = 4, vit = 1 }`, tytuł `path_berserker` („
   `CombatService.offensiveMultiplier`. Pole `furyConsume` (Rozdarcie, Rzeź): rzut zużywa wszystkie stosy i wzmacnia
   umiejętność za każdy.
 
-Przeniesione: Rozpłatanie `cleave` (rząd 1; 140 → 250%, krwawienie 30% przez 5 s, koszt 30, odn. 7 s; przełomy 5A
+Przeniesione: Rozpłatanie `cleave` (rząd 1; 140 → 168% (S89, było 250; ranga 3 = 164,4), krwawienie 30% przez 5 s, koszt 30, odn. 7 s; przełomy 5A
 `add.angle = 30`, 5B `values.bleed = 20`, 10A `bleedStacks = 3`, 10B `lifesteal = 12`) i Gniew Tytana `titansWrath`
-(rząd 7, dziś 75; 3 fale × 180 → 320%, promień 14, koszt 80, odn. 45 s; 5A `add.radius = 3`, 5B `values.dmg = 25`, 10A
-`stunLast = 1.2`, 10B `add.hits = 1` z `values.dmg = -25`, czyli 4 × 295%, ok. +23%).
+(rząd 7, dziś 75; 3 fale × 105 → 150% (S89, było 180 → 320), promień 14, koszt 80, odn. 45 s; 5A `add.radius = 3`, 5B
+`values.dmg = 18` (było 25), 10A `stunLast = 1.2`, 10B `add.hits = 1` z `values.dmg = -15` (było −25), czyli 4 × 135%, ok.
++20%).
 
 **Rozdarcie / Rend** (`rend`, nowa, rząd 4, poz. 26)
-- Typ `target` (zasięg 8) z `furyConsume`, koszt 25, odn. 10 s. 140 → 250% i krwawienie 40% ataku przez 6 s; zużywa
-  całą Furię: +8% obrażeń ciosu za stos (przy 10 ×1,8). Furia wraca w ok. 5 s.
-- Przełomy: 5A `execute = 30`; 5B `lifesteal = 15`; 10A `values.bleed = 30`; 10B `splash = { radius = 6, pct = 50 }`.
+- Typ `target` (zasięg 8) z `furyConsume`, koszt 25, odn. 10 s. 280% na każdej randze i krwawienie 10% ataku przez 6 s
+  (S89, było 140 → 250% i 40%); zużywa całą Furię: +6% obrażeń ciosu za stos (przy 10 ×1,6; było +8%). Furia wraca w
+  ok. 5 s.
+- Przełomy: 5A `execute = 30`; 5B `lifesteal = 15`; 10A `values.bleed = 70` (S89, było 30); 10B `splash = { radius = 6, pct = 50 }`.
 - Animacja z `mightyStrike` i `crushingBlow`: oburęczny zamach (`OVERHEAD`), wypad `lunge(1.0)`, ukośne cięcie w dół
   (`SLAMMED`), `trail`. Efekty: `slash` (`#C21F2A`, `tilt = 80`, `radius = 7`) i `burst`, czerwona `aura` na Wojowniku
   przy zużyciu Furii, `hitstop = 0.08`, `shake = 0.3`.
 
 **Rzeź / Carnage** (`carnage`, nowa, zwieńczenie, poz. 60)
-- Typ `buff` z `furyConsume`, nowy efekt `carnage`, koszt 30, odn. 45 s, czas 8 s. Zużywa całą Furię: +1,5 → 2,5%
-  ataku fizycznego za stos (`own`, przy 10 +15 → 25%). Przez 8 s Furia nie opada i rośnie o 2 za trafienie, a każde
+- Typ `buff` z `furyConsume`, nowy efekt `carnage`, koszt 30, odn. 45 s, czas 8 s. Zużywa całą Furię: +0,6 → 0,9%
+  ataku fizycznego za stos (`own`, przy 10 +6 → 9%; S89, było 1,5 → 2,5). Przez 8 s Furia nie opada i rośnie o 2 za trafienie, a każde
   zabójstwo odnawia Szarżę i Wir Ostrzy (nowe `SkillService.ResetCooldown`). Na bossie działa sama premia.
 - Przełomy: 5A `add.effectDuration = 2`; 5B `selfHeal = 10`; 10A `values.perFury = 0.5`; 10B `selfEffect` redukcja 15%.
 - Animacja z `bloodlust` (pochylenie, ryk) z bronią uniesioną w `OVERHEAD`. Efekty: `aura`, `burst` i `smoke`
@@ -1322,9 +1331,9 @@ Przeniesione: Rozpłatanie `cleave` (rząd 1; 140 → 250%, krwawienie 30% przez
 | 3 · 20 albo | Amok (`berserker_amok`, passive, hak `furySpeed`) | +1 / 1,5 / 2% szybkości za stos (razem do 3%, +30% przy 10) |
 | 3 · 20 albo | Zajadłość (`berserker_ferocity`, passive, hak `furyDamage`) | +0,4 / 0,8 / 1,2% obrażeń za stos (do +12% przy 10) |
 | 4 · 26 | Rozdarcie (`berserker_rend`, skill) | nowa |
-| 4 · 26 | Kat (`berserker_executioner`, passive, hak `executioner`) | +5 / 10 / 15% na cele poniżej 30% HP |
-| 5 · 33 | Rozdzierające Cięcia (`berserker_rendingCuts`, modify `cleave` `add.effectDuration`) | krwawienie +1 / 2 / 3 s (8 s dłuższe niż odnowienie 7 s, więc 10A z 3 stosami zaczyna działać) |
-| 5 · 33 | Siła Rozmachu (`berserker_might`, passive pct `physAtk`) | +3 / 6 / 9% |
+| 4 · 26 | Kat (`berserker_executioner`, passive, hak `executioner`) | +1,5 / 3 / 4,5% na cele poniżej 30% HP (S89, było 5 / 10 / 15) |
+| 5 · 33 | Rozdzierające Cięcia (`berserker_rendingCuts`, modify `cleave` `add.effectDuration`) | krwawienie +1,5 / 3 / 4,5 s (S89, było 1 / 2 / 3; dłuższe niż odnowienie 7 s, więc 10A z 3 stosami zaczyna działać) |
+| 5 · 33 | Siła Rozmachu (`berserker_might`, passive pct `physAtk`) | +1 / 2 / 3% (S89, było 3 / 6 / 9) |
 | 6 · 40 albo | Krwawa Furia (`berserker_bloodfury`, passive, hak `furyLifesteal`) | +0,2 / 0,35 / 0,5 pkt proc. kradzieży życia za stos (limit kradzieży 15%) |
 | 6 · 40 albo | Nieustępliwy (`berserker_relentless`, passive, hak `furyGuard`) | 5 / 10 / 15% redukcji przy pełnej Furii (`own`) |
 | 7 · 48 | Gniew Tytana (`berserker_titansWrath`, skill) | przeniesiona B |
@@ -1332,8 +1341,8 @@ Przeniesione: Rozpłatanie `cleave` (rząd 1; 140 → 250%, krwawienie 30% przez
 | 8 · 60 | Rzeź (`berserker_carnage`, skill) | zwieńczenie |
 | 9 · 70 albo | Krwiopijca (`berserker_drinker`, passive, hak `killHeal`) | 2 / 4 / 6% maks. HP za zabójstwo |
 | 9 · 70 albo | Pogromca Olbrzymów (`berserker_giantSlayer`, passive, haki `bossDamage`, `eliteDamage`) | +4 / 8 / 12% na bossy i Elity |
-| 10 · 80 | Otwarte Rany (`berserker_openWounds`, passive, hak `bleedDamage`) | +10 / 20 / 30% (z Głębokimi Ranami do +60%) |
-| 10 · 80 | Zahartowany w Boju (`berserker_hardened`, passive pct `maxHp`) | +4 / 8 / 12% |
+| 10 · 80 | Otwarte Rany (`berserker_openWounds`, passive, hak `bleedDamage`) | +1 / 2 / 3% (S89, było 10 / 20 / 30; z Głębokimi Ranami do +33%) |
+| 10 · 80 | Zahartowany w Boju (`berserker_hardened`, passive pct `maxHp`) | +2 / 4 / 6% (S89, było 4 / 8 / 12) |
 | 11 · 90 | Krwawa Rzeź (`berserker_carnage2`, modify `carnage`, 2 rangi) | Rzeź +1 / 2 s, po jej końcu Furia wraca do 5 / 10 stosów |
 
 - Drużyna: brak (ścieżka bojowa). Początki dla innych w pełnej sile (nie są drużynowe): Rozpłatanie, Głębokie Rany,
@@ -1356,16 +1365,17 @@ drużyny B przy realnym czasie działania i własne obrażenia S (7.5). Plan sta
 `path_standard` („Chorąży”).
 
 Przeniesione:
-- Okrzyk Bojowy `battleCry` (rząd 1; atak +10 → 28% na 20 s, koszt 25, odn. 40 s, tylko na siebie zgodnie z 2.2).
+- Okrzyk Bojowy `battleCry` (rząd 1; atak +10 → 16% na 20 s (S89, było 28; ranga 3 = 14), koszt 25, odn. 40 s, tylko na
+  siebie zgodnie z 2.2).
   Przełomy: 5A `selfEffect` pancerz 12%, 5B `values.atk = 3`, 10A `mul.cooldown = 0.75` (dziś 0,6), 10B
   `add.effectDuration = 4` i `selfEffect` szybkość ataku +10%. Dzisiejsze 10A (×0,6, czyli +66% czasu działania) jest
   ponad R4, więc sesja Wojownika zmienia je na ×0,75 (+33%, odnowienie 30 s); wtedy 10B jest mu równe.
-- Miażdżący Cios `crushingBlow` (rząd 7, dziś 56; 300 → 520%, osłabienie pancerza 30% na 6 s, `enemyArmor`, koszt 50,
-  odn. 16 s). Przełomy: 5A `effect` ogłuszenie 0,7 s, 5B `values.dmg = 40` (ok. +10%), 10A `splash = { radius = 7,
-  pct = 60 }`, 10B `mul.cooldown = 0.8`.
+- Miażdżący Cios `crushingBlow` (rząd 7, dziś 56; 300 → 520%, osłabienie pancerza 40% na 6 s (S89, było 30),
+  `enemyArmor`, koszt 35 (S89, było 50), odn. 16 s). Przełomy: 5A `effect` ogłuszenie 0,7 s, 5B `values.dmg = 48` (ok.
+  +10%; S89, było 40), 10A `splash = { radius = 7, pct = 60 }`, 10B `mul.cooldown = 0.8`.
 
 **Sztandar Wojenny / War Banner** (`warBanner`, nowa, rząd 4, poz. 26)
-- Nowy typ `banner` (obiekt na ziemi), punkt do 12 st. (bez celu pod nogami), promień 15 st., koszt 30, odn. 30 s, czas
+- Nowy typ `banner` (obiekt na ziemi), punkt do 12 st. (bez celu pod nogami), promień 15 st., koszt 15 (S89, było 30), odn. 30 s, czas
   12 s, działa, dopóki Chorąży żyje. Co 1 s sojusznicy w kręgu, także Chorąży, dostają na 1,5 s +5 → 10% szybkości
   ataku (`allyHaste`); węzły dodają przez `allyEffect` kolejne efekty tego kręgu.
 - Przełomy: 5A `add.radius = 5`; 5B `allyEffect` leczenie 1,5% maks. HP celu na sekundę (nowe `hot` z `hpPct`); 10A
@@ -1375,8 +1385,9 @@ Przeniesione:
   kolorze klasy `#C0503C` 3 × 4,5 st., części jak w `WeaponLooks`), `shockwave` i `dust` przy wbiciu, `rune` na krąg.
 
 **Rozkaz Natarcia / Order to Advance** (`advanceOrder`, nowa, zwieńczenie, poz. 60)
-- Typ `shout`, koszt 35, odn. 60 s, czas 10 s. Wrogowie w 10 st. (nowe pole `hitRadius`): 120 → 220% obrażeń.
-  Sojusznicy w 30 st., także Chorąży: +10 → 20 pkt proc. szansy na krytyk (`allyCrit`); solo to cios i okno krytyków.
+- Typ `shout`, koszt 20 (S89, było 35), odn. 60 s, czas 10 s. Wrogowie w 10 st. (nowe pole `hitRadius`): 120 → 220%
+  obrażeń. Sojusznicy w 30 st., także Chorąży: +12 → 24 pkt proc. szansy na krytyk (`allyCrit`; S89, było 10 → 20); solo
+  to cios i okno krytyków.
 - Przełomy: 5A `add.effectDuration = 2`; 5B `pull = 10` przed uderzeniem; 10A `values.crit = 5`; 10B `cleanse = true`.
 - Animacja z `battleCry` (broń w górze, wygięcie, okrzyk), zakończona oburęcznym uderzeniem drzewcem w ziemię jak w
   `earthquake`. Efekty: `shockwave` (kolor klasy), `burst`, złota `aura` na sojusznikach, `shake = 0.4`.
@@ -1391,7 +1402,7 @@ Przeniesione:
 | 3 · 20 albo | Trzymać Szyk! (`standard_formation`, modify `battleCry`: drugi `allyEffect` `allyVigor`) | pancerz i odporność mag. sojuszników +3 / 6 / 9% pod Okrzykiem |
 | 4 · 26 | Sztandar Wojenny (`standard_warBanner`, skill) | nowa |
 | 4 · 26 | Chorągiew Pułku (`standard_colours`, modify `warBanner` `add.duration`) | +1 / 2 / 3 s (12 → 15 s, odnowienie 30 s) |
-| 5 · 33 | Hart Chorążego (`standard_grit`, passive pct `maxHp`) | +4 / 8 / 12% |
+| 5 · 33 | Hart Chorążego (`standard_grit`, passive pct `maxHp`) | +3 / 6 / 9% (S89, było 4 / 8 / 12) |
 | 5 · 33 | Szeroki Krąg (`standard_wide`, modify `warBanner` `add.radius`) | +2 / 4 / 6 st. (promień 15 → 21) |
 | 6 · 40 albo | Natchnienie (`standard_inspire`, modify `warBanner`: `allyEffect` `allyCrit`) | krytyk w kręgu +1 / 2 / 3 pkt proc. (ta sama kategoria co Rozkaz) |
 | 6 · 40 albo | Okrzyk Wiecu (`standard_rally`, modify `battleCry`: `allyEffect` leczenie, nowe `allyHeal`) | leczenie sojuszników 3 / 6 / 9% ich maks. HP przy Okrzyku |
@@ -1401,7 +1412,7 @@ Przeniesione:
 | 9 · 70 albo | Przysięga Chorągwi (`standard_oath`, modify `warBanner`: `allyEffect` `allyGuard`) | redukcja obrażeń w kręgu 4 / 7 / 10% |
 | 9 · 70 albo | Chwała (`standard_glory`, modify `advanceOrder` `add.effectDuration`) | +1 / 2 / 3 s |
 | 10 · 80 | Niespożyte Siły (`standard_stamina`, passive flat `energyRegen`) | +0,5 / 1 / 1,5 energii na sekundę |
-| 10 · 80 | Weteran Kampanii (`standard_veteran`, passive pct `armor`) | +4 / 8 / 12% |
+| 10 · 80 | Weteran Kampanii (`standard_veteran`, passive pct `armor`) | +6 / 12 / 18% (S89, było 4 / 8 / 12) |
 | 11 · 90 | Rozkaz Hetmański (`standard_advanceOrder2`, modify `advanceOrder`, 2 rangi) | +1 / 2 s, promień sojuszników +5 / 10 st. (do 40) |
 
 - Drużyna: `allyAttack` (Głos Dowódcy, 20 s, odnowienie 40 s albo 30 s z 10A), `allyHaste` (Sztandar), `enemyArmor`
@@ -1425,9 +1436,11 @@ Przeniesione:
 Cele (Berserker = 1,00; „baza” = Wojownik bez ścieżki głównej z rzędami 1 wszystkich ścieżek), po normalizacji broni:
 - Berserker: DPS 1,25–1,35 bazy z tą samą bronią na 45–100; przeżycie z kradzieży życia, nie z pancerza.
 - Strażnik: DPS 0,6–0,75 Berserkera na 45–100, efektywne HP 1,6–1,8 na zwykłych ciosach (1,3–1,5 na czerwonych
-  strefach).
-- Chorąży: `4 × (1 + B) + S` w 4,9–5,1 na 70–100 dla każdej broni ścieżki, S co najmniej 0,55 (wychodzi ok. 0,74), B
-  ok. 8,5% na 100. poziomie (7.5).
+  strefach). S89: model daje DPS 0,45–0,48 przy EHP 1,63–1,77 (planem statystyk DPS i EHP przesuwają się razem), wiersz
+  DPS w raporcie.
+- Chorąży: `4 × (1 + B) + S` w 4,9–5,1 na 70–100 dla każdej broni ścieżki, S co najmniej 0,55, B ok. 8,5% na 100.
+  poziomie (7.5). S89: model daje 4,93–4,95 na 100 przy B 6,7% i S 0,64; na 70 4,71–4,73 (Sztandar z `opener`
+  działa raz na walkę), wiersz na 70 w raporcie.
 - Strażnik i Chorąży solo najwyżej 1,5 raza wolniej niż Berserker; expienie solo to głównie grupy, więc liczy się grupa
   3 potworów: co najmniej 0,55 Berserkera na 20., 45., 70. i 100. poziomie.
 
@@ -1435,6 +1448,7 @@ Pomiar projektu: prawdziwe umiejętności, rangi z poziomu, węzły jako pasywki
 stosu, Rozdarcie przy 10 stosach, manekin potwora z poziomu L; Berserker z toporem dwuręcznym; Okrzyk 10A ×0,75 i
 Trzęsienie Ziemi 5A i 10A po zmianie. Normalizacja: obrażenia umiejętności i ich krwawień × szybkość broni / 0,8.
 Grupa: 3 manekiny przez 8 s. Tempo solo `(6 + 8/g) / 14` (marsz 6 s, walka Berserkera 8 s, g = grupa ×Berserker).
+Pomiar po strojeniu (S89, model `tests/SkillModel.luau`, z normalizacją broni): `docs/BALANS.md` → „Klasy i ścieżki”.
 
 Po normalizacji, poziomy 20 / 45 / 70 / 100 (×Berserker):
 
@@ -1452,8 +1466,8 @@ Po normalizacji, poziomy 20 / 45 / 70 / 100 (×Berserker):
   80.; na czerwonych strefach bez Bloku ok. 1,3–1,45. Chorąży 1,12 / 1,25 / 1,26 / 1,17.
 - Bez normalizacji Strażnik na grupie na 100. poziomie ma 0,44 Berserkera i expi solo 1,72 raza wolniej, a Chorąży z
   szablą od 70. ponad 1,5 raza wolniej (1,60 / 1,66). Dlatego normalizacja jest warunkiem sesji.
-- R3 spełnia każda budowa poza Strażnikiem po normalizacji: 2,01 na 70–100 (Groźba na 3 celach); sesja balansu może
-  przyciąć Groźbę do +2% za wroga. Energia wiąże każdą budowę (620–675 wydane w 60 s), więc okrzyki i ochrona kosztują
+- R3 spełnia każda budowa poza Strażnikiem po normalizacji: 2,01 na 70–100 (Groźba na 3 celach). S89: Groźba +2 / 4 / 6%
+  za wroga (grupa „Samotnika” ≥ 0,55 Furii), T-SK3 „Obrońcy” 2,18 to wyjątek Strażnika (DECYZJE S89). Energia wiąże każdą budowę (620–675 wydane w 60 s), więc okrzyki i ochrona kosztują
   obrażenia; S to zawiera.
 - Boss 100: największy cios w maga to 115% jego HP, w Wojownika 107%; z przechwytem 30% mag dostaje 80% i przeżywa, z
   Osłoną 72%. Strażnik przejmuje ok. 1190 HP przed redukcją (21% swoich 5600 HP), z Męczennikiem ok. 15%.

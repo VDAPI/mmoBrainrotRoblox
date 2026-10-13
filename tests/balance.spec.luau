@@ -1805,7 +1805,9 @@ end)
 -- (above 20) once PATHS_TUNED says so (S89: Cleric, Warrior; S90: Hunter, Mage). Asserted now: the shape, the
 -- dependencies of the definitions and the fixture tests/fixtures/balance_paths.json with the same data.
 
-local PATHS_TUNED = { Cleric = false, Warrior = false, Hunter = false, Mage = false }
+-- S89: the Cleric and the Warrior asserted (rows with `report` or a `reportAt` level only printed, F1 / F4); the table
+-- lives in SkillModel so the report column "asertowany" reads the same one (S90 flips Hunter and Mage there)
+local PATHS_TUNED = SkillModel.PATHS_TUNED
 
 T.describe("Balance 20-100: paths", function()
 	local results = SkillModel.evaluateTargets()
@@ -1813,14 +1815,17 @@ T.describe("Balance 20-100: paths", function()
 		if PATHS_TUNED[classId] then
 			for _, r in results do
 				if r.classId == classId and r.asserted then
-					T.it(`{r.build} L{r.L} {r.id}`, function()
-						if not r.pass then
-							error(
-								`{r.build} L{r.L} {r.id} {string.format("%.3f", r.value)} not in {r.low or "-"}-{r.high or "-"} ({r.source})`,
-								0
-							)
+					T.it(
+						`{r.build} L{r.L} {r.id}{if r.metric == "r4" or r.metric == "r4diff" then ` {r.note}` else ""}`,
+						function()
+							if not r.pass then
+								error(
+									`{r.path} L{r.L} {r.id} {string.format("%.3f", r.value)} not in {r.low or "-"}-{r.high or "-"} ({r.source})`,
+									0
+								)
+							end
 						end
-					end)
+					)
 				end
 			end
 		end

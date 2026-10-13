@@ -347,5 +347,174 @@ return {
 		},
 		["ItemWeights:traits.anointment.pct"] = { { session = "S88", why = "C10: 8 -> 5, measured 5.0-5.2 % (dungeon)" } },
 		["ItemWeights:traits.concussion.pct"] = { { session = "S88", why = "C10: 3 -> 4.5, measured 4.5 % (group)" } },
+		-- S89: Cleric and Warrior paths at 45 / 70 / 100 (model tests/SkillModel.luau; numbers 45 / 70 / 100)
+		["SkillCurves:knots.mightyStrike.dmg[5]"] = {
+			{ session = "S89", why = "B3: rank 5 (L17) pinned at 220 so rank 10 can move without changing 1-20" },
+		},
+		["SkillCurves:knots.charge.dmg[5]"] = { { session = "S89", why = "B3: rank 5 (L19) pinned at 160" } },
+		["SkillCurves:knots.bladeWhirl.dmg[4]"] = { { session = "S89", why = "B3: rank 4 (L18) pinned at 47" } },
+		["SkillCurves:knots.cleave.dmg[3]"] = { { session = "S89", why = "B3: rank 3 (L18) pinned at 164.4" } },
+		["SkillCurves:knots.battleCry.atk[3]"] = { { session = "S89", why = "B3: rank 3 (L18) pinned at 14" } },
+		["Skills/Warrior:[mightyStrike].values.dmg[2]"] = {
+			{ session = "S89", why = "B R1: rank 10 295 -> 222; Furia R1 2.89 / 3.12 / 3.35 -> 2.41 / 2.51 / 2.60 (<= 1.15 x L20 2.27)" },
+		},
+		["Skills/Warrior:[mightyStrike].breakpoints[10].b.effect.value"] = {
+			{ session = "S89", why = "B R1 / R4: bleed 90 -> 45, 10B gain 0.27 -> 0.18 (band 0.17-0.28)" },
+		},
+		["Skills/Warrior:[charge].values.dmg[2]"] = { { session = "S89", why = "B R1: rank 10 210 -> 165 (shared base)" } },
+		["Skills/Warrior:[cleave].values.dmg[2]"] = { { session = "S89", why = "B R1: rank 10 250 -> 168 (shared base)" } },
+		["Skills/Warrior:[bladeWhirl].values.dmg[2]"] = {
+			{ session = "S89", why = "B R1 / Furia x base: rank 10 67 -> 52; x base 1.14 -> 1.25 at 45" },
+		},
+		["Skills/Warrior:[bladeWhirl].breakpoints[10].b.values.dmg"] = {
+			{ session = "S89", why = "R4: 10B -7 -> -4 per blow, gain 0.15 -> 0.23 (band 0.17-0.28)" },
+		},
+		["Skills/Warrior:[battleCry].values.atk[2]"] = {
+			{ session = "S89", why = "B R1: rank 10 28 -> 16 (the cry is outside R1's basic fight); Furia R1 -0.1" },
+		},
+		["Skills/Warrior:[bloodlust].values.speed[2]"] = { { session = "S89", why = "B R1: rank 10 35 -> 20 % attack speed" } },
+		["Skills/Warrior:[bloodlust].breakpoints[10].b.values.speed"] = {
+			{ session = "S89", why = "B R1 / Furia x base: 10B +8 -> +4 (x base at 100 1.36 -> 1.35)" },
+		},
+		["Skills/Warrior:[earthquake].values.dmg[2]"] = { { session = "S89", why = "B R1: rank 10 280 -> 175 (R1 growth 70-100)" } },
+		["Skills/Warrior:[earthquake].breakpoints[10].b.values.dmg"] = {
+			{ session = "S89", why = "R4: 10B +60 -> +38, gain 0.34 -> 0.22 = 10A (|A - B| 0)" },
+		},
+		["Skills/Warrior:[rend].values.dmg[1]"] = {
+			{ session = "S89", why = "B Furia x base: 140 -> 280 flat (the only Berserker lever at 45): 1.14 -> 1.25 at 45" },
+		},
+		["Skills/Warrior:[rend].values.dmg[2]"] = { { session = "S89", why = "B: 250 -> 280 flat (x base 1.31 / 1.35 at 70 / 100)" } },
+		["Skills/Warrior:[rend].values.bleed"] = { { session = "S89", why = "B R1: bleed 40 -> 10 (armour-free bleed grows R1 70-100)" } },
+		["Skills/Warrior:[rend].values.furyDmg"] = { { session = "S89", why = "B: +8 -> +6 % per Fury stack (R1 at 100 2.65 -> 2.60)" } },
+		["Skills/Warrior:[rend].breakpoints[10].a.values.bleed"] = {
+			{ session = "S89", why = "R4: 10A +30 -> +70 bleed, gain 0.07 -> 0.18 (band 0.17-0.28)" },
+		},
+		["Skills/Warrior:[titansWrath].values.dmg[1]"] = {
+			{ session = "S89", why = "C pace: 180 -> 105; Furia group 8 s at 100 31.8k -> 23k (57 % was Titan's Wrath), Samotnik pace 2.40 -> 1.45" },
+		},
+		["Skills/Warrior:[titansWrath].values.dmg[2]"] = { { session = "S89", why = "C pace: 320 -> 150 (group 8 s, ROZWOJ 10.6)" } },
+		["Skills/Warrior:[titansWrath].breakpoints[5].b.values.dmg"] = {
+			{ session = "S89", why = "R4: 5B +25 -> +18, gain 0.19 -> 0.14 (band 0.08-0.17)" },
+		},
+		["Skills/Warrior:[titansWrath].breakpoints[10].b.values.dmg"] = {
+			{ session = "S89", why = "R4: 10B -25 -> -15 per blow, gain 0.14 -> 0.21 (band 0.17-0.28)" },
+		},
+		["Skills/Warrior:[carnage].values.perFury[1]"] = {
+			{ session = "S89", why = "B R1 / x base at 100: 1.5 -> 0.6 % per stack (R1 at 100 2.66 -> 2.60)" },
+		},
+		["Skills/Warrior:[carnage].values.perFury[2]"] = { { session = "S89", why = "B: 2.5 -> 0.9 % per stack" } },
+		["Skills/Warrior:[warBanner].cost"] = {
+			{ session = "S89", why = "C Standard-Bearer S: 30 -> 15 energy (S 0.57 at 70; support at 100 4.79 -> 4.93)" },
+		},
+		["Skills/Warrior:[crushingBlow].cost"] = { { session = "S89", why = "C Standard-Bearer S: 50 -> 35 energy (S at 70 0.54 -> 0.55+)" } },
+		["Skills/Warrior:[crushingBlow].values.armorBreak"] = { { session = "S89", why = "C B: armour break 30 -> 40 % (support at 100 +0.02)" } },
+		["Skills/Warrior:[crushingBlow].breakpoints[5].b.values.dmg"] = {
+			{ session = "S89", why = "R4: 5B +40 -> +48, gain at 100 0.077 -> 0.092 (band 0.08-0.17)" },
+		},
+		["Skills/Warrior:[advanceOrder].cost"] = { { session = "S89", why = "C B: 35 -> 20 energy (the order cast on cooldown, support at 100 4.80 -> 4.88)" } },
+		["Skills/Warrior:[advanceOrder].values.crit[1]"] = { { session = "S89", why = "C B: crit 10 -> 12 points" } },
+		["Skills/Warrior:[advanceOrder].values.crit[2]"] = {
+			{ session = "S89", why = "C B: crit 20 -> 24 points; support at 100 4.93 / 4.95 (sword / sabre, band 4.9-5.1)" },
+		},
+		["Paths/Warrior:[berserker].rows[4].nodes[berserker_executioner].values.executioner[1]"] = {
+			{ session = "S89", why = "B x base: 5 -> 1.5 % (x base 1.33 / 1.42 at 70 / 100 -> 1.31 / 1.35)" },
+		},
+		["Paths/Warrior:[berserker].rows[4].nodes[berserker_executioner].values.executioner[2]"] = {
+			{ session = "S89", why = "B x base: 15 -> 4.5 %" },
+		},
+		["Paths/Warrior:[berserker].rows[5].nodes[berserker_rendingCuts].values.rendingCuts[1]"] = {
+			{ session = "S89", why = "R4: +1 -> +1.5 s, Cleave 10A gain 0.31 -> 0.27 (band 0.17-0.28)" },
+		},
+		["Paths/Warrior:[berserker].rows[5].nodes[berserker_rendingCuts].values.rendingCuts[2]"] = {
+			{ session = "S89", why = "R4: +3 -> +4.5 s" },
+		},
+		["Paths/Warrior:[berserker].rows[5].nodes[berserker_might].values.might[1]"] = {
+			{ session = "S89", why = "B x base: 3 -> 1 % physical attack (x base at 100 <= 1.35)" },
+		},
+		["Paths/Warrior:[berserker].rows[5].nodes[berserker_might].values.might[2]"] = { { session = "S89", why = "B x base: 9 -> 3 %" } },
+		["Paths/Warrior:[berserker].rows[10].nodes[berserker_openWounds].values.openWounds[1]"] = {
+			{ session = "S89", why = "B R1 / x base at 100: +10 -> +1 % bleed (bleeds skip armour and grow R1 to 100)" },
+		},
+		["Paths/Warrior:[berserker].rows[10].nodes[berserker_openWounds].values.openWounds[2]"] = {
+			{ session = "S89", why = "B: +30 -> +3 %" },
+		},
+		["Paths/Warrior:[berserker].rows[10].nodes[berserker_hardened].values.hardened[1]"] = {
+			{ session = "S89", why = "D Inquisitor HP at 100: Furia max HP +4 -> +2 % (Inquisitor / Berserker HP 1.25 -> 1.33)" },
+		},
+		["Paths/Warrior:[berserker].rows[10].nodes[berserker_hardened].values.hardened[2]"] = { { session = "S89", why = "D: +12 -> +6 %" } },
+		["Paths/Warrior:[guardian].reference[defender].stats.str"] = {
+			{ session = "S89", why = "C statPlan 2 : 3 -> 7 : 5 (EHP 1.89 / 2.15 / 2.22 -> 1.63 / 1.77 / 1.77, DPS 0.39 -> 0.48 Furia)" },
+		},
+		["Paths/Warrior:[guardian].reference[defender].stats.vit"] = { { session = "S89", why = "C statPlan 2 : 3 -> 7 : 5" } },
+		["Paths/Warrior:[guardian].rows[5].nodes[guardian_menace].values.menaceDamage[1]"] = {
+			{ session = "S89", why = "C group: +1 -> +2 % per enemy (Samotnik group at 100 0.53 -> 0.56; T-SK3 2.18, exception in DECYZJE)" },
+		},
+		["Paths/Warrior:[guardian].rows[5].nodes[guardian_menace].values.menaceDamage[2]"] = { { session = "S89", why = "C: +3 -> +6 %" } },
+		["Paths/Warrior:[guardian].rows[5].nodes[guardian_shieldMastery].values.shieldMastery[1]"] = {
+			{ session = "S89", why = "C EHP at 70: +3 -> +2 points block (1.84 -> 1.77)" },
+		},
+		["Paths/Warrior:[guardian].rows[5].nodes[guardian_shieldMastery].values.shieldMastery[2]"] = { { session = "S89", why = "C: +9 -> +6" } },
+		["Paths/Warrior:[guardian].rows[10].nodes[guardian_veteran].values.veteran[1]"] = {
+			{ session = "S89", why = "C EHP at 100: 4 -> 1.5 % armour and HP (1.89 -> 1.77)" },
+		},
+		["Paths/Warrior:[guardian].rows[10].nodes[guardian_veteran].values.veteran[2]"] = { { session = "S89", why = "C: 12 -> 4.5 %" } },
+		["Paths/Warrior:[standard].rows[5].nodes[standard_grit].values.bearerGrit[1]"] = {
+			{ session = "S89", why = "R6: 4 -> 3 % max HP (first third 1.56 -> 1.29 of the mean)" },
+		},
+		["Paths/Warrior:[standard].rows[5].nodes[standard_grit].values.bearerGrit[2]"] = { { session = "S89", why = "R6: 12 -> 9 %" } },
+		["Paths/Warrior:[standard].rows[10].nodes[standard_veteran].values.campaign[1]"] = {
+			{ session = "S89", why = "R6: 4 -> 6 % armour (last third 0.61 -> 0.84 of the mean)" },
+		},
+		["Paths/Warrior:[standard].rows[10].nodes[standard_veteran].values.campaign[2]"] = { { session = "S89", why = "R6: 12 -> 18 %" } },
+		["Skills/Cleric:[brandOfLight].values.dmg[1]"] = {
+			{ session = "S89", why = "D Inquisitor / Furia: 100 -> 120 (0.80 / 0.81 / 0.86 after statPlan 1 : 2 -> 0.84 / 0.87 / 0.93)" },
+		},
+		["Skills/Cleric:[brandOfLight].values.dmg[2]"] = { { session = "S89", why = "D: 170 -> 260 (rank 10 at 62: 70 and 100)" } },
+		["Skills/Cleric:[brandOfLight].values.dot[1]"] = { { session = "S89", why = "D: burn 140 -> 170" } },
+		["Skills/Cleric:[brandOfLight].values.dot[2]"] = { { session = "S89", why = "D: burn 240 -> 320 (ratio at 100 0.925, band 0.87-0.93)" } },
+		["Skills/Cleric:[brandOfLight].breakpoints[5].a.values.dot"] = {
+			{ session = "S89", why = "R4: 5A +30 -> +80 burn, gain 0.04 -> 0.11-0.16 (band 0.08-0.17)" },
+		},
+		["Skills/Cleric:[hammerOfHeaven].values.dmg[1]"] = {
+			{ session = "S89", why = "D Fortune solo pace: 200 -> 160; the Inquisitor's group at 100 (Fortuna 1.51 -> 1.36 x Inquisitor, T-SK3 2.16 -> 1.87)" },
+		},
+		["Skills/Cleric:[hammerOfHeaven].values.dmg[2]"] = { { session = "S89", why = "D: 340 -> 260" } },
+		["Skills/Cleric:[hammerOfHeaven].breakpoints[5].b.lingering.pct"] = {
+			{ session = "S89", why = "R4: 5B 10 -> 5 % per second, gain 0.27 -> 0.16 (band 0.08-0.17)" },
+		},
+		["Skills/Cleric:[hammerOfHeaven].breakpoints[10].b.echo.pct"] = {
+			{ session = "S89", why = "R4: 10B echo 50 -> 25 %, gain 0.50 -> 0.25 (band 0.17-0.28)" },
+		},
+		["Skills/Cleric:[radiance].breakpoints[10].b.echo.pct"] = {
+			{ session = "S89", why = "R4: 10B echo 40 -> 25 %, gain 0.40 -> 0.25" },
+		},
+		["Skills/Cleric:[circleOfLight].breakpoints[10].b.healZone.pct"] = {
+			{ session = "S89", why = "R4: 10B field 25 -> 6 % per second, gain 1.00 -> 0.24" },
+		},
+		["Skills/Cleric:[shieldOfFaith].breakpoints[10].b.values.shieldHp"] = {
+			{ session = "S89", why = "R4: 10B +3 -> +7 % max HP, gain 0.09 -> 0.20" },
+		},
+		["Skills/Cleric:[purify].breakpoints[10].b.mul.cooldown"] = {
+			{ session = "S89", why = "R4: 10B cooldown x0.6 -> x0.85, gain 0.80 -> 0.20" },
+		},
+		["Paths/Cleric:[inquisitor].reference[solo].stats.int"] = {
+			{ session = "S89", why = "D statPlan 3 : 2 -> 1 : 2 (HP 1.06 / 1.09 / 1.00 -> 1.32 / 1.38 / 1.33 Furia; at 45 only the plan acts)" },
+		},
+		["Paths/Cleric:[inquisitor].rows[4].nodes[inquisitor_ember].values.ember[1]"] = {
+			{ session = "S89", why = "D ratio at 70 / 100: crit +1 -> +2 points" },
+		},
+		["Paths/Cleric:[inquisitor].rows[4].nodes[inquisitor_ember].values.ember[2]"] = { { session = "S89", why = "D: +3 -> +6" } },
+		["Paths/Cleric:[inquisitor].rows[5].nodes[inquisitor_grit].values.grit[1]"] = {
+			{ session = "S89", why = "D HP at 100: 2 -> 2.5 % (1.30 -> 1.33)" },
+		},
+		["Paths/Cleric:[inquisitor].rows[5].nodes[inquisitor_grit].values.grit[2]"] = { { session = "S89", why = "D: 6 -> 7.5 %" } },
+		["Paths/Cleric:[healer].rows[5].nodes[healer_grace].values.grace[1]"] = {
+			{ session = "S89", why = "D Fortune heals less at 70: 5 -> 8 % (0.17 -> 0.22, band 0.20-0.25)" },
+		},
+		["Paths/Cleric:[healer].rows[5].nodes[healer_grace].values.grace[2]"] = { { session = "S89", why = "D: 15 -> 24 %" } },
+		["Paths/Cleric:[healer].rows[10].nodes[healer_hope].values.hope[1]"] = {
+			{ session = "S89", why = "D T-SK5 at 100 under 0.35 with Grace 24: 5 -> 2 % (T-SK5 0.347, Fortune 0.247)" },
+		},
+		["Paths/Cleric:[healer].rows[10].nodes[healer_hope].values.hope[2]"] = { { session = "S89", why = "D: 15 -> 6 %" } },
 	} :: { [string]: { Reason } },
 }
