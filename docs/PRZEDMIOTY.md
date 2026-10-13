@@ -1,7 +1,7 @@
 # Vaelthorn: przedmioty
 
 > Plik generowany: `lune run tools/wikidump.luau` (dane gry, te same co wiki). Nie edytuj ręcznie.
-> Odcisk danych e13c8aa1 (`wiki/src/data/meta.json`).
+> Odcisk danych c15c82b8 (`wiki/src/data/meta.json`).
 
 ## Rzadkości
 
@@ -664,27 +664,27 @@ Cecha: **Łatwy cel**: +9% na celach pod kontrolą
 
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|
-| Prosta Kusza | 1 | obr. 12, szybkość 0,75 | 6 | — |
-| Solidna Kusza | 5 | obr. 25, szybkość 0,75 | 30 | 120 |
-| Żelazna Kusza | 10 | obr. 41, szybkość 0,75 | 60 | — |
-| Wzmocniona Kusza | 15 | obr. 57, szybkość 0,75 | 90 | 360 |
-| Stalowa Kusza | 20 | obr. 73, szybkość 0,75 | 120 | — |
-| Hartowana Kusza | 25 | obr. 88, szybkość 0,75 | 150 | 600 |
-| Srebrna Kusza | 30 | obr. 104, szybkość 0,75 | 180 | — |
-| Szlachetna Kusza | 35 | obr. 120, szybkość 0,75 | 210 | 840 |
-| Runiczna Kusza | 40 | obr. 136, szybkość 0,75 | 240 | — |
-| Mithrilowa Kusza | 45 | obr. 152, szybkość 0,75 | 270 | 1080 |
-| Elfia Kusza | 50 | obr. 168, szybkość 0,75 | 300 | — |
-| Obsydianowa Kusza | 55 | obr. 184, szybkość 0,75 | 330 | 1320 |
-| Adamantytowa Kusza | 60 | obr. 200, szybkość 0,75 | 360 | — |
-| Królewska Kusza | 65 | obr. 216, szybkość 0,75 | 390 | 1560 |
-| Płomienna Kusza | 70 | obr. 232, szybkość 0,75 | 420 | — |
-| Gwiezdna Kusza | 75 | obr. 248, szybkość 0,75 | 450 | 1800 |
-| Tytanowa Kusza | 80 | obr. 264, szybkość 0,75 | 480 | — |
-| Pradawna Kusza | 85 | obr. 280, szybkość 0,75 | 510 | 2040 |
-| Niebiańska Kusza | 90 | obr. 296, szybkość 0,75 | 540 | — |
-| Eteryczna Kusza | 95 | obr. 312, szybkość 0,75 | 570 | 2280 |
-| Smocza Kusza | 100 | obr. 328, szybkość 0,75 | 600 | — |
+| Prosta Kusza | 1 | obr. 13, szybkość 0,75 | 6 | — |
+| Solidna Kusza | 5 | obr. 26, szybkość 0,75 | 30 | 120 |
+| Żelazna Kusza | 10 | obr. 43, szybkość 0,75 | 60 | — |
+| Wzmocniona Kusza | 15 | obr. 60, szybkość 0,75 | 90 | 360 |
+| Stalowa Kusza | 20 | obr. 77, szybkość 0,75 | 120 | — |
+| Hartowana Kusza | 25 | obr. 94, szybkość 0,75 | 150 | 600 |
+| Srebrna Kusza | 30 | obr. 111, szybkość 0,75 | 180 | — |
+| Szlachetna Kusza | 35 | obr. 128, szybkość 0,75 | 210 | 840 |
+| Runiczna Kusza | 40 | obr. 145, szybkość 0,75 | 240 | — |
+| Mithrilowa Kusza | 45 | obr. 162, szybkość 0,75 | 270 | 1080 |
+| Elfia Kusza | 50 | obr. 179, szybkość 0,75 | 300 | — |
+| Obsydianowa Kusza | 55 | obr. 196, szybkość 0,75 | 330 | 1320 |
+| Adamantytowa Kusza | 60 | obr. 213, szybkość 0,75 | 360 | — |
+| Królewska Kusza | 65 | obr. 229, szybkość 0,75 | 390 | 1560 |
+| Płomienna Kusza | 70 | obr. 246, szybkość 0,75 | 420 | — |
+| Gwiezdna Kusza | 75 | obr. 263, szybkość 0,75 | 450 | 1800 |
+| Tytanowa Kusza | 80 | obr. 280, szybkość 0,75 | 480 | — |
+| Pradawna Kusza | 85 | obr. 297, szybkość 0,75 | 510 | 2040 |
+| Niebiańska Kusza | 90 | obr. 314, szybkość 0,75 | 540 | — |
+| Eteryczna Kusza | 95 | obr. 331, szybkość 0,75 | 570 | 2280 |
+| Smocza Kusza | 100 | obr. 348, szybkość 0,75 | 600 | — |
 
 #### Cep (`flail1h`) · Kapłan
 

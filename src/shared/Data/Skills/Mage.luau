@@ -17,11 +17,11 @@ return Build.class("Mage", "mana", "magic", {
 		range = 38,
 		hits = 1, -- S79 (ROZWOJ 14.4): Bolt 10B adds one (add.hits)
 		adaptive = true,
-		values = { dmg = { 170, 310 } },
+		values = { dmg = { 170, 255.7 } },
 		breakpoints = Build.bp2(
 			{ a = { pierce = 40 }, b = { mul = { cooldown = 0.88 } } },
-			-- 10B: two bolts at 186 % each (20 % more in total)
-			{ a = { splash = { radius = 4, pct = 50 } }, b = { add = { hits = 1 }, values = { dmg = -124 } } }
+			-- 10B: two bolts at 151.7 % each (19 % more in total)
+			{ a = { splash = { radius = 4, pct = 12 } }, b = { add = { hits = 1 }, values = { dmg = -104 } } }
 		),
 		glyph = "✦",
 		vfx = "arcaneBolt",
@@ -37,7 +37,7 @@ return Build.class("Mage", "mana", "magic", {
 		range = 38,
 		radius = 8,
 		element = "fire",
-		values = { dmg = { 150, 270 } },
+		values = { dmg = { 150, 221.8 } },
 		breakpoints = Build.bp2(
 			{ a = { lingering = { pct = 15, duration = 3, kind = "burn" } }, b = { execute = 35 } },
 			{ a = { split = { count = 3, pct = 40, radius = 7 } }, b = { values = { dmg = 55 } } }
@@ -54,11 +54,11 @@ return Build.class("Mage", "mana", "magic", {
 		cooldown = 5,
 		range = 38,
 		element = "ice",
-		values = { dmg = { 140, 250 }, slow = 30 },
+		values = { dmg = { 140, 213 }, slow = 30 },
 		effects = { { kind = "slow", duration = 3, value = "slow", category = "enemySlow" } },
 		breakpoints = Build.bp2(
-			{ a = { effect = { kind = "freeze", duration = 0.8 } }, b = { values = { dmg = 20 } } },
-			{ a = { pierce = 60 }, b = { mul = { cooldown = 0.85 } } }
+			{ a = { effect = { kind = "freeze", duration = 0.8 } }, b = { values = { dmg = 23 } } },
+			{ a = { pierce = 27 }, b = { mul = { cooldown = 0.84 } } }
 		),
 		glyph = "❄",
 		vfx = "iceShard",
@@ -74,10 +74,10 @@ return Build.class("Mage", "mana", "magic", {
 		range = 35,
 		radius = 12,
 		element = "lightning",
-		values = { dmg = { 130, 230 }, jumps = { 3, 6 } },
+		values = { dmg = { 130, 163.5 }, jumps = { 3, 6 } },
 		breakpoints = Build.bp2(
-			{ a = { add = { jumps = 2 } }, b = { values = { dmg = 25 } } },
-			{ a = { stunLast = 1 }, b = { mul = { cooldown = 0.8 } } }
+			{ a = { add = { jumps = 2 } }, b = { values = { dmg = 22 } } },
+			{ a = { stunLast = 1 }, b = { mul = { cooldown = 0.83 } } }
 		),
 		glyph = "⚡",
 	},
@@ -118,7 +118,7 @@ return Build.class("Mage", "mana", "magic", {
 		cooldown = 18,
 		radius = 10,
 		element = "ice",
-		values = { dmg = { 120, 220 }, freeze = { 1.5, 2.5 } },
+		values = { dmg = { 120, 141.3 }, freeze = { 1.5, 2.5 } },
 		effects = { { kind = "freeze", duration = { 1.5, 2.5 } } },
 		breakpoints = Build.bp2({
 			a = { add = { radius = 3 } },
@@ -126,8 +126,8 @@ return Build.class("Mage", "mana", "magic", {
 				selfEffect = { kind = "damageReduction", duration = 4, value = 20, target = "self", category = "own" },
 			},
 		}, {
-			a = { lingering = { pct = 10, duration = 4, kind = "frost", slow = 40 } },
-			b = { echo = { delay = 1.5, pct = 40 } },
+			a = { lingering = { pct = 5, duration = 4, kind = "frost", slow = 40 } },
+			b = { echo = { delay = 1.5, pct = 19 } },
 		}),
 		glyph = "✳",
 	},
@@ -137,16 +137,16 @@ return Build.class("Mage", "mana", "magic", {
 		maxLevel = 10,
 		type = "circleTarget",
 		delivery = "ranged",
-		cost = 60,
+		cost = 72,
 		cooldown = 20,
 		range = 38,
 		radius = 10,
 		delay = 1,
 		element = "fire",
-		values = { dmg = { 280, 480 } },
+		values = { dmg = { 98, 174 } },
 		breakpoints = Build.bp2(
-			{ a = { mul = { delay = 0.5 } }, b = { values = { dmg = 45 } } },
-			{ a = { lingering = { pct = 20, duration = 4, kind = "burn" } }, b = { values = { dmg = 100 } } }
+			{ a = { mul = { delay = 0.5 } }, b = { values = { dmg = 23 } } },
+			{ a = { lingering = { pct = 6, duration = 4, kind = "burn" } }, b = { values = { dmg = 45 } } }
 		),
 		glyph = "☄",
 	},
@@ -156,7 +156,7 @@ return Build.class("Mage", "mana", "magic", {
 		maxLevel = 10,
 		type = "circleTarget",
 		delivery = "ranged",
-		cost = 55,
+		cost = 43,
 		cooldown = 22,
 		range = 38,
 		radius = 12,
@@ -164,10 +164,10 @@ return Build.class("Mage", "mana", "magic", {
 		interval = 0.5,
 		randomTarget = true,
 		element = "lightning",
-		values = { dmg = { 50, 90 } },
+		values = { dmg = { 24.9, 49.8 } },
 		breakpoints = Build.bp2(
-			{ a = { add = { hits = 4 } }, b = { mul = { cooldown = 0.75 } } },
-			{ a = { effect = { kind = "stun", duration = 0.5 } }, b = { values = { dmg = 18 } } }
+			{ a = { add = { hits = 1 } }, b = { mul = { cooldown = 0.93 } } },
+			{ a = { effect = { kind = "stun", duration = 0.5 } }, b = { values = { dmg = 13.9 } } }
 		),
 		glyph = "⛈",
 		vfx = "thunderstorm",
@@ -191,14 +191,14 @@ return Build.class("Mage", "mana", "magic", {
 		maxLevel = 10,
 		type = "circleSelf",
 		delivery = "melee",
-		cost = 40,
+		cost = 12,
 		cooldown = 12,
 		radius = 7,
 		hits = 10,
 		interval = 0.4,
 		adaptive = true,
-		values = { dmg = { 12, 13 } },
-		breakpoints = Build.bp2({ a = { add = { radius = 2 } }, b = { values = { dmg = 2 } } }, {
+		values = { dmg = { 6.2, 8.3 } },
+		breakpoints = Build.bp2({ a = { add = { radius = 2 } }, b = { values = { dmg = 1.2 } } }, {
 			a = { add = { hits = 3 } },
 			b = {
 				selfEffect = { kind = "damageReduction", duration = 6, value = 20, target = "self", category = "own" },
@@ -213,7 +213,7 @@ return Build.class("Mage", "mana", "magic", {
 		maxLevel = 10,
 		type = "circleTarget",
 		delivery = "ranged",
-		cost = 120,
+		cost = 174,
 		cooldown = 50,
 		range = 38,
 		radius = 16,
@@ -221,10 +221,10 @@ return Build.class("Mage", "mana", "magic", {
 		interval = 0.4,
 		delay = 0.8,
 		adaptive = true,
-		values = { dmg = { 60, 80 } }, -- S81 (ROZWOJ 12.4, 15.5.4): row 7 of the Destroyer
+		values = { dmg = { 24, 24 } }, -- S81 (ROZWOJ 12.4, 15.5.4): row 7 of the Destroyer
 		breakpoints = Build.bp2(
-			{ a = { add = { hits = 2 } }, b = { mul = { cooldown = 0.75 } } },
-			{ a = { add = { radius = 4 } }, b = { values = { dmg = 22 } } }
+			{ a = { add = { hits = 1 } }, b = { mul = { cooldown = 0.88 } } },
+			{ a = { add = { radius = 4 } }, b = { values = { dmg = 4.4 } } }
 		),
 		glyph = "✺",
 	},
@@ -236,7 +236,7 @@ return Build.class("Mage", "mana", "magic", {
 		maxLevel = 10,
 		type = "circleTarget",
 		delivery = "ranged",
-		cost = 90,
+		cost = 119,
 		cooldown = 30,
 		range = 38,
 		radius = 12,
@@ -244,10 +244,10 @@ return Build.class("Mage", "mana", "magic", {
 		interval = 0.6,
 		pull = true,
 		adaptive = true,
-		values = { dmg = { 60, 70 } },
-		breakpoints = Build.bp2({ a = { add = { radius = 3 } }, b = { values = { dmg = 7 } } }, {
-			a = { lingering = { pct = 25, duration = 4, kind = "element" } },
-			b = { echo = { delay = 0.8, pct = 100 } },
+		values = { dmg = { 36.6, 36.6 } },
+		breakpoints = Build.bp2({ a = { add = { radius = 3 } }, b = { values = { dmg = 6 } } }, {
+			a = { lingering = { pct = 34, duration = 4, kind = "element" } },
+			b = { echo = { delay = 0.8, pct = 136 } },
 		}),
 		glyph = "✵",
 	},
@@ -258,7 +258,7 @@ return Build.class("Mage", "mana", "magic", {
 		maxLevel = 5,
 		type = "passive",
 		-- S81 (ROZWOJ 12.4): the S79 mana reserve (percentage points of the pool), not regeneration
-		values = { reserve = { 4, 20 } },
+		values = { reserve = { 3.1, 15.4 } },
 		passive = { pct = { manaReserve = "reserve" } },
 		glyph = "◉",
 	},
@@ -298,13 +298,13 @@ return Build.class("Mage", "mana", "magic", {
 		maxLevel = 10,
 		type = "projectile",
 		delivery = "ranged",
-		cost = 20,
+		cost = 5,
 		cooldown = 6,
 		range = 38,
-		values = { dmg = { 140, 230 }, perCharge = 12 },
+		values = { dmg = { 57, 69 }, perCharge = 4.1 },
 		breakpoints = Build.bp2(
 			{ a = { values = { perCharge = 5 } }, b = { mul = { cooldown = 0.8 } } },
-			{ a = { execute = 35 }, b = { splash = { radius = 5, pct = 40 } } }
+			{ a = { execute = 40 }, b = { splash = { radius = 5, pct = 11 } } }
 		),
 		glyph = "✴",
 	},
@@ -318,7 +318,7 @@ return Build.class("Mage", "mana", "magic", {
 		cost = 0,
 		cooldown = 120, -- S81 (ROZWOJ 15.5.4): 90 -> 120; 5A gives 90
 		duration = 3,
-		values = { mana = { 30, 50 } },
+		values = { mana = { 25, 49 } },
 		breakpoints = Build.bp2(
 			{ a = { mul = { cooldown = 0.75 } }, b = { channelMove = 50 } },
 			{ a = { values = { mana = 15 } }, b = { grantCharges = 4 } }
@@ -338,10 +338,10 @@ return Build.class("Mage", "mana", "magic", {
 		range = 30,
 		duration = 4,
 		interval = 0.5,
-		values = { dmg = { 160, 170 }, growth = 2, drain = 1.5 },
+		values = { dmg = { 122, 140 }, growth = 1.62, drain = 0.73 },
 		breakpoints = Build.bp2(
-			{ a = { values = { growth = 1 } }, b = { channelMove = 50 } },
-			{ a = { values = { dmg = 30 } }, b = { splash = { radius = 4, pct = 35 } } }
+			{ a = { values = { growth = 4.37 } }, b = { channelMove = 50 } },
+			{ a = { values = { dmg = 32 } }, b = { splash = { radius = 4, pct = 10 } } }
 		),
 		glyph = "≋",
 	},
@@ -351,7 +351,7 @@ return Build.class("Mage", "mana", "magic", {
 		unlock = 80,
 		maxLevel = 5,
 		type = "passive",
-		values = { crit = { 1, 3 }, critDmg = { 3, 8 } }, -- S81 (ROZWOJ 12.5, 15.5.4)
+		values = { crit = { 0.35, 1.05 }, critDmg = { 1, 2.8 } }, -- S81 (ROZWOJ 12.5, 15.5.4)
 		passive = { flat = { critChance = "crit", critDmg = "critDmg" } },
 		glyph = "✦",
 	},

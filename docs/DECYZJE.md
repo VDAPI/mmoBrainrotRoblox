@@ -2205,3 +2205,115 @@
   Uzdrowiciela oraz E1.ehp topora i buławy Strażnika zostają w raporcie z sesją S89 (bazy i cechy broni).
 - **S89** `skills.spec` „przełomy jak przed węzłami”: wartość pola na randze przez `Skills.valueAt` (z węzłami
   `Data/SkillCurves`); oczekiwane liczby zmienionych danych poprawione. Błędu odwzorowania serwera w modelu nie znaleziono.
+- **S90** R4 (rola opcji, G1): opcja, która dodaje cele umiejętności na jeden cel (`splash`, `split`, `pierce`,
+  `add.jumps`), liczy się na 3 manekinach; umiejętność obszarowa zawsze na 3, opcja na jeden cel na 1. Mag liczony z
+  bronią żywiołu umiejętności (lód i błyskawica tylko z taką bronią, adaptacyjne z ogniem). Opcja `mul.cooldown` liczona
+  w oknie co najmniej 12 odnowień (`SkillModel.R4_CASTS`; 60 s dawało 2–3 rzuty przy odnowieniu 20–40 s, więc 0 albo
+  +50%), reszta jak S86 w 60 s. Wyładowanie Arkanów liczone w całej rotacji buildu (jego wartość to Ładunki z innych
+  czarów, `R4_ROTATION`). Wiersz R4 tylko na poziomie, na którym build ma tę rangę, a opcja bez wartości w roli na tym
+  poziomie (Pułapka Lodowa przed Wybuchową Pułapką) tylko druk. Wiersze Wojownika i Kapłana bez zmian w paśmie
+  (Oczyszczenie 10B 0,20 → 0,25, Szarża 5B dla S91 0,40 → 0,25).
+- **S90** R5a (G2, ROZWOJ 0): klasa z dwiema ścieżkami bojowymi porównuje zysk roli × baza: Strzelec 1 cel 60 s / baza z
+  tą samą bronią, Traper obszar 3 cele 8 s / baza z tą samą bronią, Niszczyciel obszar 3 cele 60 s / baza z kosturem,
+  Arkanista boss 180 s / baza z kosturem (średnia broni ścieżki); każda ścieżka w ±10% średniej pary. R5b jak S89, ale
+  w metryce ścieżki (`SkillModel.PATH_METRIC`), różdżka z drugą ręką ścieżki (kula, księga).
+- **S90** R6 (G3) Łowcy i Maga w metryce ścieżki: Strzelec 1 cel 60 s na celu bossa, Traper obszar 3 cele 8 s, Zwiadowca
+  `4 × (1 + B) + S`, Niszczyciel obszar 3 cele 60 s, Arkanista boss 180 s; moc z EHP jak S89.
+- **S90** T-SK4 (F4, H1): pasma 12.0 / 12.7 w `mage.tsk4` i w G10 (`SkillModel.TSK4_BANDS`): Niszczyciel exp 2,0–2,8,
+  boss z Oszczędnym Splotem 1,6–2,8 (wariant z węzłem kosztu, „nie poniżej 1,6”), Arkanista 2,0–2,4, z Przeciążeniem
+  2,6–2,8 (było 2,0–3,0 i ≥ 1,6, S86 / S87).
+- **S90** T-SK3 asertowane na buildach ścieżek (`mage.tsk3` ≤ `areaCap`: Niszczyciel 3,0, Arkanista 2,0; `trapper.r3`
+  ≤ 2,0 z obiema broniami); baza Maga i pozostałe buildy w `all.tsk3` (raport).
+- **S90** `SkillModel.R1_L20`: Królobójca 2,48 (Ciężka Kusza) / 2,49 (Łuk Długi), Kłusownik 2,42 (Kusza 1,45) / 2,44
+  (Łuk), `destroyerExp` 2,93, `destroyerBoss` 3,18, `arcanistBoss` 3,07 (tabela startowa S90 na L20); klucz z bronią
+  wariantu.
+- **S90** `hunter.dexCaps` (C4): krytyk (z `sighted` Namierzenia), szybkość ataku i unik każdego buildu Łowcy przed
+  obcięciem limitem `Data/Stats` (gracz zbudowany z limitami zdjętymi na chwilę, `SkillModel.dexCaps`), nadwyżka ≤ 0,5
+  pkt, szybkość ≤ 0,01.
+- **S90** S Zwiadowcy liczone względem Strzelca „Królobójca” z Łukiem Długim (S86, 11.6), tempo solo (a) i (b) wobec
+  najszybszej ścieżki bojowej klasy z lepszą bronią; „Arkanista na exp” to wariant modelu (`SkillModel.arcanistExp`:
+  węzły `arcanistBoss`, przełomy A, bez Strumienia), nie build w `reference`.
+- **S90 Kusza:** `dmgMul` 1,45 → 1,54 na wszystkich poziomach (także 1–20: obrażenia Kuszy L1/5/10/15/20 12/25/41/57/73
+  → 13/26/43/60/77, lista S91). Traper z Kuszą i z Łukiem w paśmie na jednym celu i w obszarze 8 s, MIX ≤ 5%
+  (wiersz T2 Trapera asertowany).
+- **S90 Salwa 5A:** `add.hits` 3 → 1 (zalecenie 11.7 pkt 4); 5B +15 → +5, 10B +20 → +9, strzała 70→120 → 25→34%, odn.
+  14 → 13 s (Salwa od 30. w całości ponad 20.).
+- **S90 podstawa Łowcy** (ranga osiągana do 20. przypięta węzłem `Data/SkillCurves`): Celny Strzał ranga 10 310 → 233
+  (ranga 5 = 232), 10A próg 30 → 21%; Podwójny Strzał 150 → 114 (ranga 5 = 114), 10B +30 → +28; Odskok 50 → 35 (ranga 4
+  = 30); Sokole Oko krytyk 10 → 4, obr. kryt. 30 → 16; Zatruta Strzała 210 → 152, trucizna 120 → 50, 5A +40 → +21, 5B
+  +40 → +28, 10A odprysk 40 → 19%, 10B +70 → +60; Instynkt Drapieżnika szybkość 3→15 → 17→34% (atak podstawowy niesie
+  więcej obrażeń, gdy Zręczność od 20. daje coraz mniej: R1 i R7 Strzelca); Strzała Przebijająca 360 → 410 (ranga 3 =
+  235,6).
+- **S90 Strzelec:** Namierzenie krytyk 12→20 → 20→23, obr. kryt. 15→30 → 26,5→28; Strzała Burzy 400→650 → 200→400,
+  wybuch 120 → 75%, odn. 40 → 29 s, 5B +80 → +37; Strzał w Serce 400→650 → 220→290, odn. 30 → 31 s, 5A +60 → +37, 5B
+  przebicie 60 → 11%, 10B odprysk 50 → 18%; Wstrzymany Oddech 1/2/3 → 0,25/0,5/0,75 s; Długi Strzał 10/20/30 → 3/5,5/8;
+  Bystry Wzrok 1/2/3 → 0,3/0,6/0,9; Dobicie 5/10/15 → 1,7/3,35/5; Nawałnica 0,93→0,8 → 0,92→0,78; Śmiertelny Grot 35 →
+  36 na randze 3; Hart Strzelca 12 → 11; Zimna Krew 5/10/15 → 7/14/21; Strzał Królobójcy 60/120 → 15/30. „Królobójca”
+  × baza 1,25–1,33, × Furia (R7) 1,26–1,34 na 45–100.
+- **S90 Traper:** Pułapka Lodowa 5B trucizna 60 → 9%; Trujące Sidła koszt 25 → 16, odn. 10 → 14 s, 130→220 → 232→236,
+  trucizna 60→110 → 285→290, 10A echo 60 → 38%, 10B +50 → +98; Kamuflaż odn. 60 → 67 s; Pole Sideł odn. 40 → 35 s,
+  90→150 → 30→38, 10A +25 → +14; Łowisko 7/13,5/20 → 2/3,5/5; Kąsające Strzały 15/30/45 i 10/20/30 → 4/7,5/11 i
+  2,5/5/7,5; Łup Kłusownika 2/3/4 → 1/1,5/2; Wybuchowa Pułapka 50/100/150 i 35/67,5/100 → 12/25/38 i 9/17/25; Jad
+  Bazyliszka 10/20/30 → 2,5/5/7,5; Weteran Puszczy 4/8/12 → 5/9,5/14; Pole Śmierci 60/120 → 24/47. „Kłusownik” w obszarze
+  8 s 1,15–1,43 Strzelca, na jednym celu 1,05–1,15 bazy, R3 ≤ 1,99 z obiema broniami.
+- **S90 Zwiadowca:** Sokół 15→30 → 27→44, odn. 30 → 36 s, 10A +15 → +14, 10B odprysk 50 → 10%; Znak Łowcy 5A +5 → +1 s,
+  10B +2 → +1 pkt (Znak 8% bez zmian: decyzja 7.5 o sile Znaku zostaje właścicielowi); Nagonka 80→120 → 102→108, odn.
+  30 → 33 s, 5B ×0,8 → ×0,9, 10A +25 → +20; Ostre Szpony 5/10/15 → 10/19,5/29; Sokola Więź 2/4/6 s i 20/40/60 →
+  1,3/2,55/3,8 i 13/25,5/38; Wytrwały Zwiadowca 3/6/9 → 0,8/1,65/2,5; Szybki Znak 0,93→0,8 → 0,91→0,74; Wytrawny
+  Naganiacz 2/4/6 → 1,8/3,65/5,5; Sokół Władcy tempo 10/20 → 19/38% i Oznaczenie +1/2 → +0,1/0,2. Plan statystyk bez
+  zmian (DEX 3 : VIT 2: optymalizator dał ten sam stosunek). Suma 4,93–5,10, S 0,69–0,79, tempo solo ≤ 1,49.
+- **S90 H4 Łowcy (poza zasięgiem dźwigni S90, wiersze w raporcie):** `all.r1` Strzelca 2,89–2,97 i Trapera z Kuszą
+  2,80–2,93 przy górze 2,78–2,86 (R1 bazy na 20. 2,42–2,49, a Strzelec × baza ≥ 1,25 z R7 ≥ 1,15 wymaga silnej bazy;
+  Traper z Łukiem 2,63–2,77 w paśmie) → S91; R6 Strzelca 0,20 (najsłabsza trzecia część) i Trapera 1,66 (najmocniejsza):
+  pierwszy punkt rzędu 4 daje +15,7% (Namierzenie) i +40% (Trujące Sidła) metryki, środkowa część Strzelca to Strzała
+  Burzy +0,9%, Strzał w Serce −0,4%, Nawałnica 0; obie umiejętności ×1,25 dają 0,32 przy Strzelec × baza 1,348 (pasmo C),
+  Trujące Sidła ×0,7 dają 1,46 przy Kłusownik / Strzelec w obszarze na 45 1,05 (< 1,15, pasmo D) → właściciel. Cztery wiersze T1 (Naciąg Strzelca 6,1–6,8%
+  na 45–100 z oboma broniami, Naciąg i Jadowite groty Zwiadowcy 6,2% na 45) w raporcie: wartości cech S88 (właściciel).
+- **S90** Test krzyżowy C5 Naciągu w 2 pkt (Soczewka mocy dalej w 1): `traitTerms` daje każdemu rzutowi jeden wzmocniony
+  atak przy pełnej szybkości ataku, walka traci ok. 12% z nich (rzut odświeża Naciąg przed następnym atakiem), a Łowca S90
+  rzadziej celuje między rzutami; różnica 0,011–0,019 (decyduje walka modelu).
+- **S90 podstawa Maga** (ranga osiągana do 20. przypięta węzłem `Data/SkillCurves`): Magiczny Pocisk ranga 10 310 →
+  255,7 (ranga 5 = 232,2), 10A odprysk 50 → 12%, 10B −124 → −104; Kula Ognia 270 → 221,8 (ranga 5 = 203,3); Lodowy
+  Odłamek 250 → 213 (ranga 4 = 176,7), 5B +20 → +23, 10A przebicie 60 → 27%, 10B ×0,85 → ×0,84; Łańcuch Błyskawic 230 →
+  163,5 (ranga 3 = 152,2), 5B +25 → +22, 10B ×0,8 → ×0,83; Lodowa Nova 220 → 141,3, 10A 10 → 5%, 10B echo 40 → 19%;
+  Meteor 280→480 → 98→174, koszt 60 → 72, 5B +45 → +23, 10A 20 → 6%, 10B +100 → +45; Burza Piorunów 50→90 → 24,9→49,8,
+  koszt 55 → 43, 5A +4 → +1 piorun, 5B ×0,75 → ×0,93, 10B +18 → +13,9.
+- **S90 Niszczyciel:** Wir Żywiołów 12→13 → 6,2→8,3 na falę, koszt 40 → 12, 5B +2 → +1,2; Gniew Żywiołów 60→80 → 24
+  na każdej randze, koszt 120 → 174, 5A +2 → +1 uderzenie, 5B ×0,75 → ×0,88, 10B +22 → +4,4; Kataklizm 60→70 → 36,6,
+  koszt 90 → 119, 5B +7 → +6, 10A 25 → 34%, 10B echo 100 → 136%; Skupienie 4→20 → 3,1→15,4; Potęga Zniszczenia 2/4/6 →
+  4/8/12; Żywioł w Żyłach 10/20/30 → 4,4/8,75/13,1; Zahartowanie 4/8/12 → 2,3/4,55/6,8; Krucha Potęga 2/4/6 → 2,7/5,35/8;
+  Gniew Burzy 1/2/3 → 1,15/2,3/3,44 s; Szalejący Wir 0,5/1/1,5 → 0,49/0,98/1,47; Prędki Kataklizm 0,93→0,8 →
+  0,935→0,814; Przepływ Żywiołów 3/6/9 → 1,2/2,45/3,7; Hart Maga 4/8/12 → 1,4/2,8/4,2. Na 3 cele 1,20 / 1,31 / 1,46 bazy,
+  boss 1,10 / 1,04 / 1,11, T-SK4 exp 2,01–2,78 (G10 co 5 poziomów), z Oszczędnym Splotem 1,62–2,11.
+- **S90 Arkanista:** Ładunki Arkanów +2% obrażeń / +15% kosztu → +1% / +4,3% (`Data/Skills.ARCANE_CHARGES`); Wyładowanie
+  140→230 → 57→69, za Ładunek 12 → 4,1%, koszt 20 → 5, 10A próg 35 → 40%, 10B odprysk 40 → 11%; Inwokacja 30→50 →
+  25→49% many; Strumień Arkanów 160→170 → 122→140, wzrost 2 → 1,62, pobór 1,5 → 0,73% many, 5A +1 → +4,37, 10A +30 →
+  +32, 10B odprysk 35 → 10%; Tajemny Umysł krytyk 1→3 → 0,35→1,05, obr. kryt. 3→8 → 1→2,8; Pełne Wyładowanie 10 → 9,9 na
+  randze 3; Moc Arkanów 1/2/3 → 0,3/0,65/1; Odzysk 0,1/0,2/0,3 → 0,035/0,07/0,105; Narastająca Moc 0,5/1/1,5 →
+  0,17/0,345/0,52; Chłodna Głowa −4/8/12 → −1,15/2,3/3,44 (ten sam udział nowej dopłaty 4,3); Inwokacja Mocy 5/10/15 →
+  3,9/7,8/11,7; Rozdzierający Strumień 0,5/1/1,5 → 0,84/1,685/2,53; Studnia Many −0,25/0,5/0,75 → −0,12/0,245/0,37
+  (pobór zostaje dodatni); Mistrzowski Umysł 4/8/12 → 5,6/11,25/16,9; Arcymag −0,5/1/1,5 → −0,44/0,875/1,31 s.
+  Arkanista × baza 1,30 / 1,32 / 1,38, × Niszczyciel (boss) 1,18 / 1,27 / 1,25, T-SK4 2,00–2,19.
+- **S90 H4 Maga (poza zasięgiem dźwigni S90, wiersze w raporcie):** `destroyer.single` na 70 1,04 i
+  `arcanist.vsDestroyer` na 70 1,27: build bossa Niszczyciela ma na 70 Kataklizm na randze 3 bez 5B i Gniew Żywiołów bez
+  10B przy pełnym zużyciu many; każda dźwignia, która go podnosi na 70 (koszty, rangi, przełomy B), rusza go na 45
+  (vs ≥ 1,15) albo na 100 (vs ≤ 1,25; rotacja „najsilniejszy pierwszy” to kształt buildu, właściciel); `destroyer.aoe` na
+  100 1,455 (≤ 1,45): Wir i Kataklizm z rangą 10 na 3 celach, ich obniżka podnosi vs na 100 ponad 1,25; Przeciążenie na
+  45 i 100 2,84 / 2,85: węzeł rzędu 3 (+30% kosztu, ≤ 20, S91) daje ×1,30 `arcanistBoss`, a ten ma na 50–55 (G10)
+  2,00–2,05, więc na 45 i 100 nie zejdzie pod 2,15; `all.r1` Maga 3,3–5,0 przy górze 3,37–3,66 → S91 (R1 buildów Maga na
+  20. to 2,9–3,2); czas czyszczenia (`destroyer.clear`) 0,85–1,93 Arkanisty na exp (2 wrogów od 70 i 3 wrogów od 70 > 1):
+  Niszczyciel czyści 2–4 wrogów w 2,6–2,8 s bez względu na ich liczbę (pierwsze rzuty), Arkanista 2 wrogów w 1,3 s; Wir
+  (ryzyko 12.8 pkt 4) ×2 daje 1,77 / 1,79 (2 wrogów, 70 / 100) i psuje `destroyer.aoe`, `mage.tsk4`,
+  `arcanist.vsDestroyer` → właściciel; R6 Niszczyciela 0,53 / 1,58 i Arkanisty 0,40 / 1,56: pierwszą część niesie
+  umiejętność rzędu 4 (Wir +8,7%, Wyładowanie +5,0%), w środkowej Gniew Burzy i Przepływ Żywiołów mają 0, Inwokacja Mocy
+  +0,1%, a Odzysk −2,43 (obniża boss 180 s); to wybór węzłów buildu wzorcowego → właściciel.
+- **S90** Cechy S88 przesunięte przez S90 (raport, wartości cech S88 dla właściciela): Iskra żywiołu u Niszczyciela z
+  różdżką (ogień 6,0–6,2%, błyskawica 6,1–6,5% na 45 / 100) i u Arkanisty błyskawica 6,2% na 45, Moc żywiołu błyskawica
+  9,9% na 100, Wyuczone formuły 0,3–1,5%, T2 Niszczyciela (kostur / różdżka z kulą 5,0–6,1%).
+- **S90 Pole Sideł 5B:** `values.vuln` 2 → 1 (najwyżej 9%, jak Znak z 10B po S90; ROZWOJ 11.4: nie więcej niż Znak,
+  jedna `enemyWeak` się liczy); `skills.spec` pilnuje Pole Sideł z 5B i Nagonki ≤ Znak z 10B.
+- **S90** R4 opcji wzmocnień i obron (Namierzenie, Kamuflaż, Znak 5A / 5B / 10B, Odskok, Tarcza Many, Błysk 5A / 10A,
+  Inwokacja) zostaje drukiem w `R4_UTILITY`: metryka buildu z opcją / bez daje 0 (umiejętność poza rotacją buildu, EHP
+  bez aktywnych obron), poza Namierzeniem B (−0,6 do +4,8% 1 cel 60 s na 70 / 100, A 0), Znakiem 10B (+0,5% sumy
+  Zwiadowcy na 100) i Inwokacją 10B (−0,5% boss 180 s); pomiar w metryce roli czeka na model (PROGRESS „Niedokończone”). Odskok 10A to obrażenia następnego
+  strzału, nie użyteczność (powód w `R4_UTILITY` poprawiony).

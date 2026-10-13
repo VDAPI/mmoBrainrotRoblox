@@ -5454,3 +5454,122 @@ Pliki: `src/shared/Data/{Paths/Cleric,Paths/Warrior,Skills/Cleric,Skills/Warrior
 `src/shared/Data/Localization/{pl,en}.luau`, `tests/{SkillModel,Balance,BalanceTables,balance.spec,skills.spec,paths.spec}.luau`,
 `tests/fixtures/balance_paths.json`, `tools/{balance_report.luau,balance_reasons.luau,balance_before.json}`,
 `docs/{BALANS,ROZWOJ,STATY,DECYZJE,SESJE,PROGRESS,PRZEDMIOTY}.md`, `wiki/src/data/{skills,meta}.json`.
+
+### S90: Balans 1–100, część 8: ścieżki Łowcy i Maga
+
+Sesja balansu: pięć ścieżek Łowcy i Maga nastrojonych na 45 / 70 / 100 na modelu S85–S86 (tylko dane: wartości
+umiejętności na rangach osiąganych powyżej 20. z rangą ≤ 20 przypiętą węzłem `Data/SkillCurves`, węzły rzędów 4–11,
+koszty, odnowienia i pola umiejętności z odblokowaniem > 20, przełomy, parametry Ładunków Arkanów, mnożnik Kuszy),
+cele z `docs/ROZWOJ.md` 11.6 i 12.7 w `tests/balance.spec.luau` jako asercje (`PATHS_TUNED` Łowcy i Maga).
+- **A. Start** na `a2edf5b` (S89): migawka `tools/balance_before.json` (sesja S90); zrzut A4 (`build/s90_le20.luau`:
+  rangi z poziomem ≤ 20, przełomy takich rang, rzędy 1–3, `statPlan`, pola umiejętności z odblokowaniem ≤ 20, Kusza
+  L1–20) na końcu identyczny poza Kuszą; lista A5 (`build/balance1_20_diff.txt`, 69 różnic) identyczna z listą z
+  `a2edf5b`. Strojenie: optymalizator na modelu (`build/s90_*.py`: ES i ręczne próby na wierszach `evaluateTargets`,
+  wagi: pasma 11.6 / 12.7 i R7 > R1 > R6), wartości zaokrąglone i sprawdzone na danych.
+- **B. Kusza i Salwa 5A.** `dmgMul` Kuszy 1,45 → 1,54 (Traper z Kuszą i Łukiem w paśmie, T2 Trapera asertowany);
+  Salwa 5A +3 → +1 strzała (11.7 pkt 4), tak samo Burza Piorunów 5A (+4 → +1) i Gniew Żywiołów 5A (+2 → +1).
+- **C. Strzelec i baza Łowcy.** Rangi > 20 podstawy prawie płaskie (R1), Instynkt Drapieżnika 3→15 → 17→34% szybkości
+  (atak podstawowy niesie więcej, gdy Zręczność od 20. daje coraz mniej), Strzała Burzy i Strzał w Serce niżej, węzły
+  Strzelca przycięte; „Królobójca” × baza 1,25–1,33, R7 1,26–1,34.
+- **D. Traper.** Trujące Sidła tańsze i mocniejsze na randze 1, Pole Sideł i węzły obrażeń niżej; obszar 8 s 1,15–1,43
+  Strzelca, jeden cel 1,05–1,15 bazy, R3 ≤ 1,99 z oboma broniami.
+- **E. Zwiadowca.** Sokół mocniejszy, Nagonka i Znak (5A, 10B) niżej, Sokół Władcy szybszy, Oznaczenie z niego 0,1/0,2;
+  plan statystyk bez zmian (DEX 3 : VIT 2; optymalizator dał ten sam stosunek, więc lista S91 bez planu).
+- **F. Mag.** Podstawa na rangach > 20 niżej (Pocisk ok. połowy obrażeń Maga), Meteor i Burza Piorunów na nowo;
+  Niszczyciel: Wir i Kataklizm płaskie i tańsze / droższe, Gniew Żywiołów 24% na każdej randze i koszt 174; Arkanista:
+  Ładunki +1% / +4,3%, Wyładowanie 57→69 z kosztem 5, Strumień 122→140 z poborem 0,73%. Studnia Many i Chłodna Głowa
+  przeliczone do nowego poboru i dopłaty (pobór zostaje dodatni).
+- **G. R4 / R5 / R6.** R4 (`optionGain`): 65 wierszy Łowcy i 79 Maga asertowanych (opcja w paśmie i |A − B| ≤ 0,05),
+  opcje z celami dodatkowymi liczone na 3 manekinach, opcje odnowienia w oknie 12 odnowień (DECYZJE S90). R5: R5a (pary
+  ścieżek bojowych) i R5b (broń w metryce ścieżki), 12 wierszy na klasę w paśmie (≤ 0,10). R6: Zwiadowca asertowany
+  (0,61 / 1,43), Strzelec, Traper, Niszczyciel, Arkanista w raporcie.
+- **H. Asercje.** `PATHS_TUNED` Łowcy i Maga; `hunter.dexCaps` (54 wiersze: krytyk, szybkość, unik przed limitem
+  `Data/Stats`), `trapper.r3`, `mage.tsk3`, `mage.tsk4` z pasmami 12.0 / 12.7, G10 T-SK4 `destroyerExp` i
+  `arcanistBoss` asertowane (wpisy S90 z `GLOBAL_REPORT_ONLY` usunięte). Wiersze H4 z polem `report` / `reportAt` i
+  komentarzem `-- S90: … poza zasięgiem dźwigni S90` (lista w DECYZJE S90). Test krzyżowy C5 Naciągu w 2 pkt (DECYZJE).
+- **I. Raport.** `docs/BALANS.md` (nowe tabele: Zręczność a limity, mana Maga, baza na L20 dla S91, raport Łowcy i
+  Maga), `--fixture-paths` i `--fixture-items` zapisane (Kusza), `tools/balance_reasons.luau` z powodem każdej liczby,
+  ROZWOJ 0, 11.1–11.6, 12.0–12.7 („S90, było …”), STATY 13 / 14 / 15 (Kusza 1,54), teksty przełomów z liczbą dosłowną
+  w `pl.luau` i `en.luau` (49 kluczy i opis Chłodnej Głowy), dane wiki (`npm run data`).
+- **Listy „Dla S90”** z S86–S89: T-SK4 Niszczyciela i Arkanisty w paśmie (G10 asertowane), Traper Łuk / Kusza (T2 w
+  paśmie po `dmgMul`), R7 i `R1_L20` Łowcy i Maga zrobione; T2 Niszczyciela, Iskra, Moc żywiołu i Wyuczone formuły
+  zostają w raporcie z nowymi liczbami (cechy S88, właściciel); Kaskada w T-SK4 jak S86 (osobna walka z ginącymi
+  potworami).
+
+Cele przed → po (45 / 70 / 100; przed = dane S89, po = po S90; *raport* = wiersz tylko drukowany):
+
+| cel | przed | po |
+|---|---|---|
+| Strzelec × baza, Ciężka Kusza / Łuk Długi (1,25–1,35) | 1,22 / 1,38 / 1,43 · 1,22 / 1,38 / 1,44 | 1,25 / 1,28 / 1,32 · 1,26 / 1,29 / 1,33 |
+| R7 Strzelec / Furia (1,15–1,35) | 1,48 / 1,74 / 1,79 · 1,50 / 1,75 / 1,83 | 1,26 / 1,28 / 1,32 · 1,27 / 1,28 / 1,34 |
+| Traper obszar 8 s × Strzelec, Kusza / Łuk (≥ 1,15) | 0,88 / 1,44 / 1,46 · 0,92 / 1,46 / 1,50 | 1,15 / 1,42 / 1,43 · 1,16 / 1,38 / 1,40 |
+| Traper 1 cel × baza, Kusza / Łuk (1,05–1,15) | 0,97 / 1,16 / 1,15 · 0,95 / 1,13 / 1,14 | 1,09 / 1,15 / 1,14 · 1,05 / 1,11 / 1,12 |
+| R3 Trapera, Kusza (≤ 2,0) | 1,45 / 1,79 / 2,07 | 1,64 / 1,88 / 1,97 |
+| Zwiadowca suma, Łuk / Łuk Krótki (4,9–5,1) | 4,98 / 4,87 / 5,02 · 4,96 / 4,84 / 5,00 | 4,98 / 4,95 / 5,10 · 4,95 / 4,93 / 5,08 |
+| Zwiadowca S (≥ 0,55) | 0,74 / 0,63 / 0,64 · 0,72 / 0,60 / 0,62 | 0,74 / 0,71 / 0,79 · 0,71 / 0,69 / 0,77 |
+| tempo solo (a) / (b), Łuk (≤ 1,5) | 1,07 / 1,52 / 1,95 · 1,37 / 1,40 / 1,27 | 1,08 / 1,35 / 1,49 · 1,43 / 1,49 / 1,39 |
+| R1 Strzelca, Ciężka Kusza / Łuk Długi | 3,62 / 3,99 / 4,04 · – | 2,89 / 2,89 / 2,92 · 2,94 / 2,93 / 2,97 *raport* |
+| R1 Trapera, Kusza / Łuk | 3,27 / 3,99 / 3,95 · – | 2,80 / 2,93 / 2,90 *raport* · 2,63 / 2,74 / 2,77 |
+| Niszczyciel 3 cele 60 s × baza (1,20–1,30 / 1,30–1,40 / 1,35–1,45) | 1,16 / 1,32 / 1,51 | 1,20 / 1,31 / 1,46 *raport na 100* |
+| Niszczyciel boss × baza (1,05–1,20) | 1,01 / 0,94 / 1,10 | 1,10 / 1,04 *raport* / 1,11 |
+| Arkanista × baza (pasma jak Niszczyciel) | 1,24 / 1,54 / 1,64 | 1,30 / 1,32 / 1,38 |
+| Arkanista / Niszczyciel boss (1,15–1,25) | 1,23 / 1,64 / 1,50 | 1,18 / 1,27 *raport* / 1,25 |
+| T-SK4 Niszczyciel exp (2,0–2,8) | 2,00 / 1,85 / 1,43 | 2,01 / 2,35 / 2,22 |
+| T-SK4 Arkanista (2,0–2,4) | 3,11 / 2,99 / 3,27 | 2,18 / 2,13 / 2,19 |
+| T-SK4 Przeciążenie (2,6–2,8) / Oszczędny Splot (1,6–2,8) | 4,05 / 3,88 / 4,24 · 2,17 / 1,73 / 1,38 | 2,84 *raport* / 2,77 / 2,85 *raport* · 2,11 / 1,77 / 1,62 |
+| R1 Maga exp / boss / Arkanista | 3,93 / 4,69 / 5,27 · 5,17 / 6,04 / 6,70 · 5,74 / 6,54 / 6,73 | 3,34 / 3,58 / 3,85 · 4,28 / 4,67 / 4,96 · 4,38 / 4,64 / 4,91 *raport* |
+| czyszczenie 2 / 3 / 4 wrogów × Arkanista na exp (≤ 1) | 1,43 / 2,00 / 2,00 · 1,39 / 2,03 / 2,00 · 1,15 / 1,78 / 1,93 | 0,85 / 1,89 / 1,93 · 0,96 / 1,13 / 1,50 · 0,90 / 0,91 / 0,95 *raport* |
+
+Model a ROZWOJ (A7): różnice ponad 10% mają przyczyny z S86 („model a ROZWOJ”: rotacja z danych, pułapki jako
+prawdziwe sidła, normalizacja broni, Kaskada w osobnej walce); błędu odwzorowania serwera nie znaleziono. Nowe:
+projekt 12.7 ma Niszczyciela bossa 1,07 / 1,14 / 1,19, model 1,10 / 1,04 / 1,11 (dołek na 70: Kataklizm na randze 3
+rzucany pierwszy przy pełnym zużyciu many), Arkanista 1,23 / 1,36 / 1,47 → 1,30 / 1,32 / 1,38; czas czyszczenia z
+2 wrogami od 70 przegrywa z Arkanistą (manekiny giną w 1–2 s, liczy się kolejność pierwszych rzutów, nie moc).
+
+Dla S91:
+- Kusza na 1–20: obrażenia L1 / 5 / 10 / 15 / 20 12 / 25 / 41 / 57 / 73 → 13 / 26 / 43 / 60 / 77 (`dmgMul` 1,54 na
+  wszystkich poziomach); wiersze Kuszy w „Moc przedmiotów” na 20.
+- R1 Łowcy i Maga (`all.r1` w raporcie): `R1_L20` Królobójca 2,48 / 2,49, Kłusownik 2,42 / 2,44, `destroyerExp` 2,93,
+  `destroyerBoss` 3,18, `arcanistBoss` 3,07; R1 zejdzie dopiero z rangami ≤ 20 (Celny Strzał, Podwójny Strzał, Magiczny
+  Pocisk, Kula Ognia na randze 5) i z rzędami 1–3 ścieżek. Tabela „Baza na L20 dla S91 (S90)” w `docs/BALANS.md`.
+- Przeciążenie (rząd 3): +30% kosztu daje ×1,30 T-SK4 `arcanistBoss`; ok. +27% (`overloadCost` 9 / 18 / 27) mieści
+  wariant w 2,6–2,8 przy G10 ≥ 2,0.
+- Przełomy rangi 5 osiągane do 20. (R4 0,08–0,17, raport): Celny Strzał 5A 0,50 (5B 0,13), Podwójny Strzał 5A i 5B
+  0,50 (`marksman.kingslayer`), Magiczny Pocisk 5A 0,19 (5B 0,16), Kula Ognia 5A 0,41 (5B 0,16) (`arcanistBoss`); 5A
+  do obniżenia razem z rangami ≤ 20 (R1).
+
+Dla S92–S94:
+- `support.elites` Zwiadowcy w raporcie (kotwice Elit S87); Truciciel na bossie 60 / 180 s i EHP Zwiadowcy w tabeli
+  „Łowca i Mag: tylko raport (S90)”.
+- T-SK3 bazy Maga i buildów `all.tsk3` (raport) w regionach z `areaCap` (`mage.tsk3` 2,02–2,43 w paśmie).
+- „Każdy boss bez wsparcia” (ROZWOJ 7.5) z drużynami ze ścieżkami Łowcy i Maga: model nie ma jeszcze tej metryki.
+
+Dla właściciela:
+- Dołek bossa Niszczyciela na 70 (1,04; Arkanista / Niszczyciel 1,27) i obszar na 100 (1,455): rotacja „najsilniejszy
+  pierwszy” stawia Kataklizm na randze 3 przed tańszymi czarami; zmiana kolejności to kształt buildu (decyzja).
+- Kataklizm 10B: echo 136% (mocniejsze niż pierwsza fala), bo R4 wymaga 0,17–0,28 przy płaskich falach 36,6%; do
+  decyzji, czy echo może przekraczać 100% (tekst mówi „za 136% siły”).
+- Czas czyszczenia (`destroyer.clear`): Niszczyciel 2,6–2,8 s na 2–4 wrogów, Arkanista na exp 1,3 s na 2 (1,89 / 1,93
+  na 70 / 100); Wir ×2 daje 1,77 / 1,79 i psuje `destroyer.aoe`, `mage.tsk4`, `arcanist.vsDestroyer` (DECYZJE S90).
+- R6 (najsłabsza / najmocniejsza trzecia część): Strzelec 0,20 / 1,50, Traper 0,61 / 1,66, Niszczyciel 0,53 / 1,58,
+  Arkanista 0,40 / 1,56. Pierwszy punkt rzędu 4 (Namierzenie +15,7%, Trujące Sidła +40%, Wir +8,7%, Wyładowanie +5,0%)
+  niesie pierwszą część; Nawałnica, Gniew Burzy, Przepływ Żywiołów 0, Odzysk −2,43. Strzała Burzy i Strzał w Serce ×1,25
+  → 0,32 przy Strzelec × baza 1,348; Trujące Sidła ×0,7 → 1,46 przy Kłusownik / Strzelec 1,05 na 45 (< 1,15). Decyzja:
+  wybór węzłów buildów wzorcowych albo dopuszczenie R6 poza pasmem.
+- `areaCap` Niszczyciela 3,0 dalej domyślny (`mage.tsk3` 2,02–2,43); alternatywa z 15.5.3 dla bazy Maga (projekt
+  T-SK3 bazy 2,1–2,4 > 2,0): osłabić obszar podstawy (Kula Ognia 10A, Meteor, rozprysk Pocisku).
+- Rozrzut żywiołów (max / min − 1, ponad 15%): Niszczyciel 1 cel 19% na 45, obszar 29 / 19 / 30%; Arkanista 1 cel
+  24 / 17% na 45 / 70, obszar 33 / 32 / 33% (45 / 70 / 100).
+- R4 opcji wzmocnień i obron (Namierzenie, Kamuflaż, Znak, Odskok, Tarcza Many, Błysk, Inwokacja) tylko drukiem: metryka
+  buildu z opcją / bez daje 0 poza Namierzeniem B (do +4,8%), Znakiem 10B (+0,5%) i Inwokacją 10B (−0,5%).
+- Pole Sideł 5B +2 → +1 pkt (9%, jak Znak z 10B; ROZWOJ 11.4).
+- Znak Łowcy 8% (z 10B 9%) bez zmian siły bazowej (7.5): Zwiadowca trzyma sumę przez Sokoła i Oznaczenie.
+- Cechy S88 przesunięte przez S90 (raport, `reportSession = "S90"`): Naciąg Strzelca 6,1–6,8% i Zwiadowcy 6,2% na 45,
+  Jadowite groty Zwiadowcy 6,2% na 45, Iskra Niszczyciela 6,0–6,5% i Arkanisty (błyskawica) 6,2% na 45, Moc żywiołu
+  (błyskawica) 9,9% na 100, Wyuczone formuły 0,3–1,5%, T2 Niszczyciela 5,0–6,1%.
+- Ścieżki Łowcy i Maga dalej `wiki = false` (publikacja po decyzji).
+
+Pliki: `src/shared/Data/{Items/Bases,Paths/Hunter,Paths/Mage,Skills/Hunter,Skills/Mage,Skills/init,SkillCurves}.luau`,
+`src/shared/Data/Localization/{pl,en}.luau`, `tests/{SkillModel,Balance,BalanceTables,balance.spec,skills.spec,mage.spec}.luau`,
+`tests/fixtures/{balance_paths,balance_items}.json`, `tools/{balance_reasons.luau,balance_before.json}`,
+`docs/{BALANS,ROZWOJ,STATY,DECYZJE,SESJE,PROGRESS,PRZEDMIOTY}.md`, `wiki/src/data/{skills,items,meta}.json`.

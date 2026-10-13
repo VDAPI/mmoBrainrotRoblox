@@ -5,7 +5,7 @@
 
 ## Stan
 
-S01–S89 gotowe (lista i zakres w `docs/SESJE.md`). Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
+S01–S90 gotowe (lista i zakres w `docs/SESJE.md`). Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
 kategorie efektów drużyny i stos efektów (`Logic/EffectStack`), S54 wzory globalne (`Logic/LevelCurves`), S55 rangi
 i przełomy w kształcie A/B (`Build.bp2`, `Skills.effective` §2.7), S56 koniec punktów umiejętności: rangi z poziomu
 postaci (`Skills.rankFor`, drabina przejściowa ROZWOJ 2.6), zapis w schemacie 6 (darmowy reset statystyk, pasek
@@ -80,7 +80,9 @@ i `heal`, Mityk z bossa zawsze dla klasy, `/balance` z G1–G13; blok globalny G
 S88 cechy broni, linie, obrona potworów i szczęście nastrojone na 20–100 i pilnowane testem (cele S88 w `balance.spec`,
 limit leczenia za zabicie `Traits.killHeal`, `riposteCap` 34, linie rodzin i klas z odpowiedzi 23, 12 nazwanych
 Mitycznych na nowych liniach, model PvP `Balance.pvpDuel`). S89 ścieżki Kapłana i Wojownika nastrojone na 45–100 i
-pilnowane testem (`PATHS_TUNED`, R1 / R4 / R5 / R6, odniesienie „Furia” zamrożone); Łowca i Mag w S90.
+pilnowane testem (`PATHS_TUNED`, R1 / R4 / R5 / R6, odniesienie „Furia” zamrożone). S90 ścieżki Łowcy i Maga nastrojone
+na 45–100 i pilnowane testem (Kusza `dmgMul` 1,54, Salwa 5A +1 strzała, R5a, limity Zręczności `hunter.dexCaps`, pasma
+T-SK4 z 12.7).
 Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`, `docs/STATY.md`), następne sesje
 balansu; testy i strojenie po nich.
 
@@ -99,19 +101,19 @@ balansu; testy i strojenie po nich.
   ikonami mapy i resztą HUD).
 - **Walka**: ataki potworów zaliczają się od razu (bez zamachu; gracze mają). Brak „flinch” potwora wg siły ciosu.
   Umiejętności (`Cast`) i strzały łowcy nie używają systemu póz S22. Zręczność od S54 słabnie z poziomem (Łowca L90 3,4 → 5,9 s na
-  zabicie bez umiejętności); cele Łowcy i Maga stroi S90.
+  zabicie bez umiejętności); Instynkt Drapieżnika od S90 oddaje część szybkości (17 → 34%).
 - **Ruch**: sprint nie zmienia WalkSpeed lokalnie przed odpowiedzią serwera. Serwer nie kontroluje prędkości ani
   teleportów gracza.
 - **Dane**: brak słabości żywiołowych potworów. Jaskinie bez profilu expowiska (`Cave.profile` nieczytane przez
   `AreaSpawns.cave`). Rodzaje S19 regionów 2–4 (np. czarny niedźwiedź, ghul) bez części. Regiony 2–4 niestrojone:
-  cele G i regionów poza pasmem w `docs/BALANS.md` (`GLOBAL_REPORT_ONLY`: Mag S90, 1–20 S91, regiony S92–S94;
+  cele G i regionów poza pasmem w `docs/BALANS.md` (`GLOBAL_REPORT_ONLY`: 1–20 S91, regiony S92–S94;
   G7 Heroik Łowcy i G8 „z cechami” zostają z S88 do decyzji właściciela); Morvane, Azgor, Vaelgrath mają stare mnożniki ciosów (największy cios Maga 107–130% po krzywej
   S87), lot Vaelgratha zdejmuje nietykalność mimo żywej tarczy (lista Dla S87 z S83; do osobnej sesji).
 - **Questy**: EXP z nagród dobrany wzorem, do strojenia.
 - **Gildie / aukcja / poczta**: brak zaproszeń do gildii między serwerami; aukcja bez podpowiedzi ceny, poczta bez
   pobrania.
 - **Przedmioty (S62–S68)**: krwawienie, trucizna i podpalenie z danych umiejętności przy odświeżeniu kasują resztę
-  (`accumulate` ma od S79 tylko podpalenie z żywiołu broni); `dmgMul` Kuszy 1,45 (S90).
+  (`accumulate` ma od S79 tylko podpalenie z żywiołu broni).
 - **Model balansu (S84)**: brak kolumny „z hakami linii” w G7 (`eliteDamage`, `bossDamage`, `lastStand`, `thorns`).
 - **Balans**: propozycje S88 dla 1–20 (S91), regionów (S92–S94) i właściciela w `docs/SESJE.md` → S88; `PathDef.itemWeights`
   bez strojenia (S88 C10).
@@ -124,9 +126,11 @@ balansu; testy i strojenie po nich.
   `atkMul`, rodzina).
 - **Balans**: propozycje S89 dla 1–20 (S91) i regionów (S92–S94) w `docs/SESJE.md` → S89; cele S89 w raporcie do decyzji
   właściciela (DPS Strażnika, suma Chorążego na 70, R1 Inkwizytora, R6 trzech ścieżek): `docs/SESJE.md` → S89.
+- **Balans**: propozycje S90 dla 1–20 (S91), regionów (S92–S94) i właściciela w `docs/SESJE.md` → S90.
 - **Model balansu (S86)**: bez utraty celowania i strumienia przy czerwonych strefach bossa (B10.4, B11.3).
 - **Model balansu (S86)**: R6 tylko na 100. dla buildów obrażeń (rzędy 4–11), bez 45 / 70; R4 opcji użytkowych = 0.
-- **Model balansu (S86)**: brak limitów Zręczności przed obcięciem (D9) i wierszy celów buildów „tylko w raporcie”.
+- **Model balansu (S90)**: R4 opcji wzmocnień i obron Łowcy i Maga (Namierzenie, Kamuflaż, Znak, Odskok, Tarcza Many,
+  Błysk, Inwokacja) bez pomiaru w metryce roli: umiejętności poza rotacją buildów, EHP bez aktywnych obron (DECYZJE S90).
 - **Wzory serwera poza `Logic`** (lista Dla S87 z S84 i S86; do osobnej sesji): pętla pułapki (`TRAP_CHECK`), czekanie
   po ściągnięciu, harmonogram sokoła, tyknięcia pola leczenia, pętla strumienia, kości (`Context.rollDice`), `onBlock`,
   `tryCounter`, `savingBlow`, `runThrough`, `spark`, `PrimeFullDraw`, odpływ kanału, mnożniki `DealDamage` (`nextShot`,

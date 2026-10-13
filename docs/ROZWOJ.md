@@ -25,9 +25,12 @@ streszczenie, które odsyła tutaj.
   max(2,0; 1,15 × R1 tego buildu na L20)); R3 i T-SK3 obszar na 3 cele / jeden cel (wybuch 8 s) najwyżej 2,0; R4 przełom
   5 ok. +10–15%, przełom 10 ok. +20–25% wartości umiejętności w jej roli (S89: test 0,08–0,17 i 0,17–0,28, różnica A i B
   ≤ 0,05, opcje użytkowe w `SkillModel.R4_UTILITY`); R5 ścieżki bojowe jednej klasy w ok. ±10% w swojej metryce (S89:
-  klasa z jedną ścieżką bojową, Kapłan i Wojownik, mierzy rozrzut broni tej ścieżki, każdy typ ±10% średniej typów); R6
+  klasa z jedną ścieżką bojową, Kapłan i Wojownik, mierzy rozrzut broni tej ścieżki, każdy typ ±10% średniej typów; S90:
+  R5a, Łowca i Mag z dwiema ścieżkami bojowymi, zysk roli × baza każdej ścieżki w ±10% średniej pary, R5b broń w metryce
+  ścieżki); R6
   wartość punktu mniej więcej stała w ścieżce (S89: punkty rzędów 4–11 w 3 równych częściach, zysk części
-  √((1 + Δmetryki) × (1 + ΔEHP)) − 1 na punkt w 0,6–1,5 × średniej, L100); R7 Łowca / Wojownik w jeden cel 1,15–1,35; T-SK4 koszt many na odnowieniu 2–3 × regeneracja; T-SK5 jedno
+  √((1 + Δmetryki) × (1 + ΔEHP)) − 1 na punkt w 0,6–1,5 × średniej, L100); R7 Łowca / Wojownik w jeden cel 1,15–1,35; T-SK4 koszt many na odnowieniu 2–3 × regeneracja (S90: pasma
+  ścieżek z 12.0 / 12.7); T-SK5 jedno
   leczenie 25–35% HP tanka; T-SK6 leczenie na sekundę 1,0–2,0 × obrażenia tanka na bossie.
 
 ## 1. Decyzje właściciela (2026-10-09)
@@ -1525,7 +1528,7 @@ niej nie obowiązują.
 | Łuk Krótki `shortbow` (0,9 × 1,3) | Zwiadowca |
 | Łuk `bow` (1,15 × 1,0) | Traper, Zwiadowca |
 | Łuk Długi `longbow` (1,47 × 0,78) | Strzelec |
-| Kusza `crossbow` (1,45 × 0,75) | Traper |
+| Kusza `crossbow` (1,54 × 0,75; S90, było 1,45) | Traper |
 | Ciężka Kusza `heavycrossbow` (1,85 × 0,62) | Strzelec |
 
 - `weapon`: Strzelec `{ main = { "longbow", "heavycrossbow" } }` (najcięższe pojedyncze strzały), Traper
@@ -1534,8 +1537,8 @@ niej nie obowiązują.
   ręki.
 - Pokrycie (test 2.8): każdy z 5 typów ma ścieżkę, Łuk dwie; każda ścieżka ma 2 z 5 typów (ok. 40% łupu z premią
   klasy). Z normalizacją obie bronie każdej ścieżki dają prawie te same obrażenia (na jednym celu różnica do 1%, w
-  walce 8 s do 6%). Wyjątek to Kusza: ok. 5% mniej, bo jej atak podstawowy na sekundę to 1,09 zamiast 1,15 (sesja
-  balansu może podnieść jej mnożnik obrażeń w `Bases` z 1,45 do ok. 1,53).
+  walce 8 s do 6%). Wyjątek była Kusza: ok. 5% mniej, bo jej atak podstawowy na sekundę to 1,09 zamiast 1,15; S90
+  podniosło jej mnożnik obrażeń w `Bases` z 1,45 do 1,54 (na wszystkich poziomach, także 1–20).
 
 ### 11.2 Podstawa klasy i przełomy
 
@@ -1543,14 +1546,14 @@ Rangi z 2.5. Wartości (ranga 1 → 10) zostają jak dziś; zmienia się tylko o
 
 | Poz. (dziś) | Umiejętność | Ranga 5 / 10 | Ranga 1 → 10; koszt / odn. |
 |---|---|---|---|
-| 1 (1) | Celny Strzał `aimedShot` (projectile) | 17 / 37 | 170 → 310%, zasięg 38; 15 / 4 s |
-| 3 (3) | Podwójny Strzał `doubleShot` (projectile) | 19 / 39 | 2 × 85 → 150%; 20 / 6 s |
-| 6 (6) | Odskok `disengage` (blink) | 22 / 42 | następny strzał +20 → 50% (8 s); 15 / 10 s |
+| 1 (1) | Celny Strzał `aimedShot` (projectile) | 17 / 37 | 170 → 233% (S90, było 310; ranga 5 = 232), zasięg 38; 15 / 4 s |
+| 3 (3) | Podwójny Strzał `doubleShot` (projectile) | 19 / 39 | 2 × 85 → 114% (S90, było 150; ranga 5 = 114); 20 / 6 s |
+| 6 (6) | Odskok `disengage` (blink) | 22 / 42 | następny strzał +20 → 35% (S90, było 50; ranga 4 = 30) (8 s); 15 / 10 s |
 | 10 (10) | Deszcz Strzał `arrowRain` (circleTarget) | 26 / 46 | 4 fale × 45 → 85%, promień 9; 35 / 10 s |
-| 14 (14) | Sokole Oko `hawkEye` (pasywka) | rangi na 14/23/32/41/50 | krytyk +2 → 10 pkt proc., obrażenia krytyczne +10 → 30 |
-| 18 (18) | Zatruta Strzała `venomArrow` (projectile) | 34 / 54 | 120 → 210%, trucizna 50 → 120% przez 6 s; 25 / 8 s |
-| 30 (56) | Salwa `volley` (cone) | 46 / 66 | 7 strzał × 70 → 120%, stożek 25 st.; 50 / 14 s |
-| 45 (48) | Instynkt Drapieżnika `predatorInstinct` (pasywka) | rangi na 45/54/63/72/81 | szybkość ataku +3 → 15% |
+| 14 (14) | Sokole Oko `hawkEye` (pasywka) | rangi na 14/23/32/41/50 | krytyk +2 → 4 pkt proc., obrażenia krytyczne +10 → 16 (S90, było 10 i 30; ranga 1 na 14.) |
+| 18 (18) | Zatruta Strzała `venomArrow` (projectile) | 34 / 54 | 120 → 152%, trucizna 50 → 50% przez 6 s (S90, było 210 i 120; ranga 1 na 18.); 25 / 8 s |
+| 30 (56) | Salwa `volley` (cone) | 46 / 66 | 7 strzał × 25 → 34%, stożek 25 st.; 50 / 13 s (S90, było 70 → 120% i 14 s) |
+| 45 (48) | Instynkt Drapieżnika `predatorInstinct` (pasywka) | rangi na 45/54/63/72/81 | szybkość ataku +17 → 34% (S90, było 3 → 15) |
 
 - Wszystko, co dziś odblokowuje się do 18., zostaje. Salwa daje drugą obszarówkę na 30., Instynkt Drapieżnika
   szybkość, której Zręczność od 20. poziomu daje coraz mniej (nie może być A: dziś 48, limit 34). Podwójny Strzał,
@@ -1562,12 +1565,12 @@ Przełomy podstawy (A = dzisiejsze dane, B = nowe; w nawiasie zysk na randze 5 a
 
 | Umiejętność | Ranga 5: A / B | Ranga 10: A / B |
 |---|---|---|
-| Celny Strzał | A `pierce = 50` / B `values.dmg = 30` (ok. +13%) | A `execute = 30` / B `lifesteal = 12` (podtrzymanie) |
-| Podwójny Strzał | A `add.hits = 1` / B `mul.cooldown = 0.7` | A `effect` spowolnienie 25% 2 s (`enemySlow`) / B `values.dmg = 30` (ok. +20%) |
+| Celny Strzał | A `pierce = 50` / B `values.dmg = 30` (ok. +13%) | A `execute = 21` (S90, było 30) / B `lifesteal = 12` (podtrzymanie) |
+| Podwójny Strzał | A `add.hits = 1` / B `mul.cooldown = 0.7` | A `effect` spowolnienie 25% 2 s (`enemySlow`) / B `values.dmg = 28` (S90, było 30) |
 | Odskok | A `trap` spowolnienie 40% 8 s (`enemySlow`) / B `mul.cooldown = 0.7` | A `values.bonus = 50`, `add.effectDuration = -5` / B `selfEffect` unik +20 pkt proc. 4 s (`own`) |
 | Deszcz Strzał | A `add.radius = 3` / B `values.dmg = 8` (ok. +13%) | A `effect` spowolnienie 30% 2 s (`enemySlow`) / B `add.hits = 1` (5 fal, +25%) |
-| Zatruta Strzała | A `values.poison = 40` / B `values.dmg = 40` (ok. +17%) | A `splash = { radius = 5, pct = 40 }` / B `values.poison = 70` (ok. +21%) |
-| Salwa | A `add.hits = 3` (ok. +43%, ryzyko 4) / B `values.dmg = 15` (ok. +16%) | A `add.angle = 30` / B `values.dmg = 20` (ok. +17%) |
+| Zatruta Strzała | A `values.poison = 21` / B `values.dmg = 28` (S90, było 40 i 40) | A `splash = { radius = 5, pct = 19 }` / B `values.poison = 60` (S90, było 40 i 70) |
+| Salwa | A `add.hits = 1` / B `values.dmg = 5` (S90, było 3 i 15; ryzyko 4) | A `add.angle = 30` / B `values.dmg = 9` (S90, było 20) |
 
 ### 11.3 Strzelec Wyborowy (`marksman`, rola `damage`)
 
@@ -1575,13 +1578,14 @@ Jeden strzał, jeden trup: Strzelec wybiera cel, mierzy i trafia tam, gdzie boli
 zwłaszcza bossie. Plan statystyk `{ dex = 4, vit = 1 }`, tytuł `path_marksman` („Strzelec Wyborowy”).
 
 Przeniesione (bez efektów z kategorią inną niż `own`, 2.2): Strzała Przebijająca `piercingArrow` (rząd 1; linia 35 ×
-4 st., 200 → 360%, koszt 40, odn. 12 s; 5A `add.width = 2`, 5B `effect` krwawienie 50% przez 6 s, 10A `knockback = 6`,
-10B `mul.cooldown = 0.8`) i Strzała Burzy `stormArrow` (rząd 7; 400 → 650% i wybuch 120% w promieniu 8, koszt 80,
-odn. 40 s; 5A `add.radius = 4`, 5B `values.dmg = 80`, 10A `effect` ogłuszenie 1 s, 10B `mul.cooldown = 0.8`).
+4 st., 200 → 410% (S90, było 360; ranga 3 = 235,6), koszt 40, odn. 12 s; 5A `add.width = 2`, 5B `effect` krwawienie 50% przez 6 s, 10A `knockback = 6`,
+10B `mul.cooldown = 0.8`) i Strzała Burzy `stormArrow` (rząd 7; 200 → 400% i wybuch 75% w promieniu 8, koszt 80,
+odn. 29 s (S90, było 400 → 650%, 120% i 40 s); 5A `add.radius = 4`, 5B `values.dmg = 37` (S90, było 80), 10A `effect` ogłuszenie 1 s, 10B `mul.cooldown = 0.8`).
 
 **Namierzenie / Draw a Bead** (`drawBead`, nowa, rząd 4, poz. 26)
 - Typ `debuff` do 40 st., koszt 15, odn. 25 s, czas 10 s. Nowy efekt `sighted` przypisany do rzucającego: tylko jego
-  trafienia mają krytyk +12 → 20 pkt proc. i obrażenia krytyczne +15 → 30 pkt proc. (`own`, nie dubluje Znaku).
+  trafienia mają krytyk +20 → 23 pkt proc. i obrażenia krytyczne +26,5 → 28 pkt proc. (S90, było 12 → 20 i 15 → 30;
+  `own`, nie dubluje Znaku).
 - Przełomy: 5A `add.effectDuration = 2`; 5B `values.critDmg = 15`; 10A `mul.cooldown = 0.8`; 10B `selfEffect`
   `guaranteedCrit` 5 s (następne trafienie w ciągu 5 s jest krytyczne; efekt znika po pierwszym trafieniu,
   `CombatService.DealDamage`). Handler `Support.debuff`; `CombatService` dodaje wartości `sighted` do krytyka trafień
@@ -1592,9 +1596,9 @@ odn. 40 s; 5A `add.radius = 4`, 5B `values.dmg = 80`, 10A `effect` ogłuszenie 1
 **Strzał w Serce / Heartseeker** (`heartseeker`, nowa, zwieńczenie, poz. 60)
 - Typ `projectile` z nowym `castTime = 1.5` (mierzy stojąc, bez ataków podstawowych). Ruch przerywa, obrażenia nie
   (po S76 `Channel.stops("castTime", "damage")` nigdy nie przerywa, `steadfast` zbędne); przerwanie ruchem zwraca energię i zeruje odnowienie (14.3). 400 → 650%, nowe `finisher = { hp = 20,
-  mul = 2 }` (cel poniżej 20% HP: ×2). Koszt 50, odn. 30 s, zasięg 40.
-- Przełomy: 5A `values.dmg = 60` (ok. +12%); 5B `pierce = 60` (następny cel na linii, do 16 st. za celem, za 60%); 10A
-  `mul.cooldown = 0.8`; 10B `splash = { radius = 6, pct = 50 }`. Handler: `Offense.projectile`, uruchamiany przez
+  mul = 2 }` (cel poniżej 20% HP: ×2). S90: 220 → 290%, odn. 31 s (było 400 → 650% i 30 s). Koszt 50, zasięg 40.
+- Przełomy: 5A `values.dmg = 37`; 5B `pierce = 11` (następny cel na linii, do 16 st. za celem, za 11%); 10A
+  `mul.cooldown = 0.8`; 10B `splash = { radius = 6, pct = 18 }` (S90, było 60, 60 i 50). Handler: `Offense.projectile`, uruchamiany przez
   `SkillService.startChannel(ctx, onDone)` po `castTime`.
 - Animacja: `KNEEL` z `frostTrap`, długie `BOW_DRAW` z `piercingArrow`, `BOW_LOOSE`; efekty `glow` lewej ręki 1,5 s,
   pocisk `arrow`, `beam` (od łucznika do celu) i `burst`, `shake = 0.3`; bez `lineBeam` i `telegraph = "line"` (S77:
@@ -1609,19 +1613,19 @@ odn. 40 s; 5A `add.radius = 4`, 5B `values.dmg = 80`, 10A `effect` ogłuszenie 1
 | 3 · 20 albo | Słaby Punkt (`marksman_weakSpot`, passive, nowy hak `weakSpot`) | 3 / 6 / 9 stosów: każde trafienie tego samego celu +1% obrażeń na nim, zmiana celu zeruje (`own`) |
 | 3 · 20 albo | Pogromca (`marksman_slayer`, passive, haki `bossDamage`, `eliteDamage`) | +4 / 8 / 12% |
 | 4 · 26 | Namierzenie (`marksman_drawBead`, skill) | nowa |
-| 4 · 26 | Wstrzymany Oddech (`marksman_heldBreath`, modify `drawBead` `add.effectDuration`) | +1 / 2 / 3 s |
-| 5 · 33 | Długi Strzał (`marksman_longShot`, modify `aimedShot` `values.dmg`) | +10 / 20 / 30 pkt proc. |
-| 5 · 33 | Bystry Wzrok (`marksman_keenSight`, passive `critChance`) | +1 / 2 / 3 pkt proc. |
-| 6 · 40 albo | Dobicie (`marksman_coupDeGrace`, passive, hak `executioner`) | +5 / 10 / 15% na rannych wrogów |
+| 4 · 26 | Wstrzymany Oddech (`marksman_heldBreath`, modify `drawBead` `add.effectDuration`) | +0,25 / 0,5 / 0,75 s (S90, było 1 / 2 / 3) |
+| 5 · 33 | Długi Strzał (`marksman_longShot`, modify `aimedShot` `values.dmg`) | +3 / 5,5 / 8 pkt proc. (S90, było 10 / 20 / 30) |
+| 5 · 33 | Bystry Wzrok (`marksman_keenSight`, passive `critChance`) | +0,3 / 0,6 / 0,9 pkt proc. (S90, było 1 / 2 / 3) |
+| 6 · 40 albo | Dobicie (`marksman_coupDeGrace`, passive, hak `executioner`) | +1,7 / 3,35 / 5% na rannych wrogów (S90, było 5 / 10 / 15) |
 | 6 · 40 albo | Refleks Strzelca (`marksman_reflex`, passive `dodge`) | +2 / 4 / 6 pkt proc. |
 | 7 · 48 | Strzała Burzy (`marksman_stormArrow`, skill) | przeniesiona B |
-| 7 · 48 | Nawałnica (`marksman_tempest`, modify `stormArrow` `mul.cooldown`) | ×0,93 / 0,87 / 0,8 (Strzała Burzy co 32 s) |
+| 7 · 48 | Nawałnica (`marksman_tempest`, modify `stormArrow` `mul.cooldown`) | ×0,92 / 0,85 / 0,78 (S90, było 0,93 / 0,87 / 0,8; Strzała Burzy co 22,6 s) |
 | 8 · 60 | Strzał w Serce (`marksman_heartseeker`, skill) | zwieńczenie |
-| 9 · 70 albo | Śmiertelny Grot (`marksman_deadlyTip`, modify `heartseeker` `finisher.hp`) | próg dobicia 25 / 30 / 35% |
+| 9 · 70 albo | Śmiertelny Grot (`marksman_deadlyTip`, modify `heartseeker` `finisher.hp`) | próg dobicia 25 / 30,5 / 36% (S90, było 35 na randze 3) |
 | 9 · 70 albo | Snajper (`marksman_sniper`, modify `heartseeker` `add.castTime`) | −0,2 / 0,4 / 0,6 s (celowanie do 0,9 s) |
-| 10 · 80 | Hart Strzelca (`marksman_grit`, passive pct `maxHp`) | +4 / 8 / 12% |
-| 10 · 80 | Zimna Krew (`marksman_coldBlood`, passive pct `armor`) | +5 / 10 / 15% |
-| 11 · 90 | Strzał Królobójcy (`marksman_heartseeker2`, modify `heartseeker` `values.dmg`, 2 rangi) | +60 / 120 pkt proc. (ok. +10 / 20% Strzału w Serce; dodaje się do 5A) |
+| 10 · 80 | Hart Strzelca (`marksman_grit`, passive pct `maxHp`) | +4 / 7,5 / 11% (S90, było 12 na randze 3) |
+| 10 · 80 | Zimna Krew (`marksman_coldBlood`, passive pct `armor`) | +7 / 14 / 21% (S90, było 5 / 10 / 15) |
+| 11 · 90 | Strzał Królobójcy (`marksman_heartseeker2`, modify `heartseeker` `values.dmg`, 2 rangi) | +15 / 30 pkt proc. (S90, było 60 / 120; dodaje się do 5A) |
 
 - Drużyna: brak efektu z kategorią, wkładem są obrażenia. Początki dla innych: Strzała Przebijająca, Pewna Ręka, Rytm
   Strzelca, Zabójcza Precyzja (10 punktów obrażeń, `dipScale` nie dotyczy). PvP: Namierzenie widać na celu, Strzał w
@@ -1638,26 +1642,28 @@ Myśliwy, który wybiera teren: zastawia sidła i truje, a wrogowie przychodzą 
 kontrola, na bossie trucizna. Plan statystyk `{ dex = 3, vit = 1 }`, tytuł `path_trapper` („Traper”).
 
 Przeniesione: Pułapka Lodowa `frostTrap` (rząd 1; promień 6, czeka 20 s, unieruchomienie 2 → 3,5 s, koszt 25, odn.
-18 s; kontrola bez kategorii, więc spełnia 2.2; 5A `add.radius = 2`, 5B `effect` trucizna 60% przez 6 s, 10A `effect`
+18 s; kontrola bez kategorii, więc spełnia 2.2; 5A `add.radius = 2`, 5B `effect` trucizna 9% przez 6 s (S90, było
+60), 10A `effect`
 zamrożenie 1 s, 10B `add.hits = 1`: druga pułapka stoi 4 st. w bok od pierwszej, prostopadle do linii od Łowcy do
 punktu) i Kamuflaż `camouflage` (rząd 7; 4 s niewidzialności, a następne trafienie w ciągu 10 s jest krytyczne,
-`guaranteedCrit` zużywany przez pierwsze trafienie; koszt 30, odn. 60 s; 5A `add.effectDuration = 2`, 5B
+`guaranteedCrit` zużywany przez pierwsze trafienie; koszt 30, odn. 67 s (S90, było 60); 5A `add.effectDuration = 2`, 5B
 `mul.cooldown = 0.75`, 10A ruch +30% 4 s, 10B `selfHeal = 15`).
 
 **Trujące Sidła / Venom Snare** (`venomSnare`, nowa, rząd 4, poz. 26)
-- Typ `trap` w punkcie do 30 st., promień 6, czeka 20 s, koszt 25, odn. 10 s. Po wejściu wroga wszyscy w promieniu:
-  130 → 220% obrażeń, trucizna 60 → 110% przez 6 s, spowolnienie 30% 3 s (`enemySlow`).
-- Przełomy: 5A `add.radius = 2`; 5B `pull = 8`; 10A `echo = { delay = 1, pct = 60 }`; 10B `values.poison = 50` (ok.
-  +20%). Handler: `Movement.trap` rozszerzony o `values.dmg`, `pull` i `echo` (dziś pułapka tylko nakłada efekty na
+- Typ `trap` w punkcie do 30 st., promień 6, czeka 20 s, koszt 16, odn. 14 s. Po wejściu wroga wszyscy w promieniu:
+  232 → 236% obrażeń, trucizna 285 → 290% przez 6 s, spowolnienie 30% 3 s (`enemySlow`; S90, było koszt 25, odn.
+  10 s, 130 → 220% i 60 → 110%).
+- Przełomy: 5A `add.radius = 2`; 5B `pull = 8`; 10A `echo = { delay = 1, pct = 38 }`; 10B `values.poison = 98` (S90,
+  było 60 i 50). Handler: `Movement.trap` rozszerzony o `values.dmg`, `pull` i `echo` (dziś pułapka tylko nakłada efekty na
   złapanych i znika; `ctx.trap` z przełomu Odskoku zostaje bez zmian).
 - Animacja z `frostTrap` (`KNEEL`) z rzutem prawą ręką; efekty `rune` w kolorze trucizny (`trapSet`), `cloud` i
   `burst` (`trapTrigger`).
 
 **Pole Sideł / Snarefield** (`snarefield`, nowa, zwieńczenie, poz. 60)
 - Typ `trap` z `hits = 5`: pięć sideł w pierścieniu o promieniu 8 wokół punktu do 30 st., każde promień 3,5, czeka
-  15 s; koszt 45, odn. 40 s. Złapanie: 90 → 150%, podatność 5 → 8% na 6 s (`enemyWeak`, nie więcej niż Znak
+  15 s; koszt 45, odn. 35 s (S90, było 40). Złapanie: 30 → 38% (S90, było 90 → 150%), podatność 5 → 8% na 6 s (`enemyWeak`, nie więcej niż Znak
   Zwiadowcy), unieruchomienie 1,5 → 2,5 s z `notBoss` (bossy i Elity II dostają tylko obrażenia i podatność).
-- Przełomy: 5A `add.radius = 1`; 5B `values.vuln = 2`; 10A `values.dmg = 25`; 10B `pull = 6`. Handler: `Movement.trap`
+- Przełomy: 5A `add.radius = 1`; 5B `values.vuln = 1` (S90, było 2: najwyżej 9%, jak Znak z 10B); 10A `values.dmg = 14` (S90, było 25); 10B `pull = 6`. Handler: `Movement.trap`
   z `hits`, nowym `ringRadius` i `notBoss`.
 - Animacja: `crouch(0.8)` i obrót tułowia jak w `volley`; efekty `rune` na sidłach, `cracks` i `burst` przy złapaniu
   (`trigger`, S77); bez `telegraph = "circle"` (rysowałby koło jednego sidła).
@@ -1671,21 +1677,21 @@ punktu) i Kamuflaż `camouflage` (rząd 7; 4 s niewidzialności, a następne tra
 | 3 · 20 albo | Zaraza (`trapper_contagion`, passive, nowe `poisonSpread`) | śmierć zatrutego przenosi resztę trucizny na 1 / 2 / 3 najbliższych w 8 st. |
 | 3 · 20 albo | Toksykolog (`trapper_toxicologist`, passive, nowy hak `poisonedGuard`) | 4 / 7 / 10% mniej obrażeń od zatrutych przez Trapera (`own`) |
 | 4 · 26 | Trujące Sidła (`trapper_venomSnare`, skill) | nowa |
-| 4 · 26 | Łowisko (`trapper_huntingGround`, passive, nowy hak `areaSkillDamage`) | +7 / 13,5 / 20% trafień obszarowych Łowcy (Deszcz Strzał, Salwa, Strzała Przebijająca, pułapki), bez trucizny i ataków podstawowych |
-| 5 · 33 | Kąsające Strzały (`trapper_bitingRain`, modify `arrowRain`: nowe `firstWave`, `lingering` `poison` 4 s) | pierwsza fala +15 / 30 / 45%, trujące pole zadaje 10 / 20 / 30% obrażeń fali na sekundę |
-| 5 · 33 | Łup Kłusownika (`trapper_spoils`, passive, nowy hak `trapEnergy`) | 2 / 3 / 4 energii za każdego wroga złapanego przez pułapkę Łowcy, najwyżej 3 na pułapkę |
-| 6 · 40 albo | Wybuchowa Pułapka (`trapper_blastTrap`, modify `frostTrap` `values.dmg`, `values.poison`) | 50 / 100 / 150% obrażeń przy aktywacji i trucizna 35 / 67,5 / 100% przez 6 s |
+| 4 · 26 | Łowisko (`trapper_huntingGround`, passive, nowy hak `areaSkillDamage`) | +2 / 3,5 / 5% (S90, było 7 / 13,5 / 20) trafień obszarowych Łowcy (Deszcz Strzał, Salwa, Strzała Przebijająca, pułapki), bez trucizny i ataków podstawowych |
+| 5 · 33 | Kąsające Strzały (`trapper_bitingRain`, modify `arrowRain`: nowe `firstWave`, `lingering` `poison` 4 s) | pierwsza fala +4 / 7,5 / 11%, trujące pole zadaje 2,5 / 5 / 7,5% obrażeń fali na sekundę (S90, było 15 / 30 / 45 i 10 / 20 / 30) |
+| 5 · 33 | Łup Kłusownika (`trapper_spoils`, passive, nowy hak `trapEnergy`) | 1 / 1,5 / 2 energii (S90, było 2 / 3 / 4) za każdego wroga złapanego przez pułapkę Łowcy, najwyżej 3 na pułapkę |
+| 6 · 40 albo | Wybuchowa Pułapka (`trapper_blastTrap`, modify `frostTrap` `values.dmg`, `values.poison`) | 12 / 25 / 38% obrażeń przy aktywacji i trucizna 9 / 17 / 25% przez 6 s (S90, było 50 / 100 / 150 i 35 / 67,5 / 100) |
 | 6 · 40 albo | Uwięzienie (`trapper_entrap`, passive, nowy hak `trapRootDuration`) | unieruchomienie z pułapek +0,5 / 1 / 1,5 s (Pułapka Lodowa, Pole Sideł) |
 | 7 · 48 | Kamuflaż (`trapper_camouflage`, skill) | przeniesiona B |
 | 7 · 48 | Zasadzka (`trapper_ambush`, modify `camouflage` `mul.cooldown`) | ×0,9 / 0,8 / 0,7 (Kamuflaż co 42 s) |
 | 8 · 60 | Pole Sideł (`trapper_snarefield`, skill) | zwieńczenie |
 | 9 · 70 albo | Gęste Sidła (`trapper_denseSnares`, modify `snarefield` `add.hits`) | +1 / 2 / 3 sidła (do 8) |
 | 9 · 70 albo | Paraliżujący Jad (`trapper_numbingVenom`, passive, nowy hak `poisonSlow`) | zatruci przez Trapera spowolnieni o 10 / 15 / 20% (`enemySlow`) |
-| 10 · 80 | Jad Bazyliszka (`trapper_basilisk`, passive, hak `poisonDamage`) | +10 / 20 / 30% (z Jadem Myśliwskim do +60%) |
-| 10 · 80 | Weteran Puszczy (`trapper_woodsman`, passive pct `maxHp`) | +4 / 8 / 12% |
-| 11 · 90 | Pole Śmierci (`trapper_snarefield2`, modify `snarefield` `effect` trucizna, 2 rangi) | sidła trują 60 / 120% przez 6 s |
+| 10 · 80 | Jad Bazyliszka (`trapper_basilisk`, passive, hak `poisonDamage`) | +2,5 / 5 / 7,5% (S90, było 10 / 20 / 30; z Jadem Myśliwskim do +37,5%) |
+| 10 · 80 | Weteran Puszczy (`trapper_woodsman`, passive pct `maxHp`) | +5 / 9,5 / 14% (S90, było 4 / 8 / 12) |
+| 11 · 90 | Pole Śmierci (`trapper_snarefield2`, modify `snarefield` `effect` trucizna, 2 rangi) | sidła trują 24 / 47% przez 6 s (S90, było 60 / 120) |
 
-- Drużyna: Pole Sideł daje grupie podatność 5 → 8%, z 5B 10% (`enemyWeak`, najsilniejsza w kategorii, nie sumuje się
+- Drużyna: Pole Sideł daje grupie podatność 5 → 8%, z 5B 9% (`enemyWeak`, najsilniejsza w kategorii, nie sumuje się
   ze Znakiem), Trujące Sidła i Paraliżujący Jad spowalniają (`enemySlow`), unieruchomienia to kontrola bez kategorii;
   wszystko od rzędu 4, więc tylko w ścieżce głównej. Początki dla innych: Pułapka Lodowa, Jad Myśliwski (+30% trucizny
   Zatrutej Strzały z podstawy), Zjadliwy Jad, Oszczędność Kłusownika; bez efektów drużynowych. PvP: kontrola ×0,5.
@@ -1702,26 +1708,26 @@ Darmowa użyteczność: Oko Zwiadowcy.
 
 Przeniesione: Zwinność `agility` (rząd 1, pasywka `own`, unik +2 → 10 pkt proc., ruch +3 → 15%) i Znak Łowcy
 `huntersMark` (rząd 7; `debuff` do 40 st., podatność 6 → 8% na 10 s, `enemyWeak`, koszt 20, odn. 25 s; dziś 10 → 25%;
-5A `add.effectDuration = 5`, 5B `add.radius = 6` (nowe: też wrogowie w 6 st. od celu), 10A spowolnienie 20% 10 s,
-10B `values.vuln = 2`).
+5A `add.effectDuration = 1` (S90, było 5), 5B `add.radius = 6` (nowe: też wrogowie w 6 st. od celu), 10A spowolnienie
+20% 10 s, 10B `values.vuln = 1` (S90, było 2)).
 
 **Sokół / Falcon** (`falcon`, nowa, rząd 4, poz. 26)
 - Nowy typ `companion`: przez 20 s sokół co 2 s uderza obecny cel Łowcy (czytany w każdym uderzeniu, także po zmianie
   celu, do 40 st. = `range`), a bez celu najbliższego potwora w 30 st. od Łowcy, z którym walczy Łowca albo jego drużyna
-  (tabela zagrożenia; S77), za 15 → 30% obrażeń broni; bez wroga krąży nad Łowcą. Pierwsze uderzenie po `delay = 1` s,
+  (tabela zagrożenia; S77), za 27 → 44% obrażeń broni (S90, było 15 → 30); bez wroga krąży nad Łowcą. Pierwsze uderzenie po `delay = 1` s,
   w strefie zielonej nie uderza.
-  Koszt 30, odn. 30 s. W PvP uderzenie zdejmuje Kamuflaż z celu. Sokół to obraz i pętla obrażeń na serwerze, nie
+  Koszt 30, odn. 36 s (S90, było 30). W PvP uderzenie zdejmuje Kamuflaż z celu. Sokół to obraz i pętla obrażeń na serwerze, nie
   postać: nie można go trafić, nie ma HP.
-- Przełomy: 5A `add.duration = 4`; 5B `effect` spowolnienie 15% 2 s (`enemySlow`); 10A `values.dmg = 15`; 10B
-  `splash = { radius = 5, pct = 50 }`. Handler: nowy `Support.companion` (14.3).
+- Przełomy: 5A `add.duration = 4`; 5B `effect` spowolnienie 15% 2 s (`enemySlow`); 10A `values.dmg = 14`; 10B
+  `splash = { radius = 5, pct = 10 }` (S90, było 15 i 50). Handler: nowy `Support.companion` (14.3).
 - Animacja z `huntersMark` (`STAND`, uniesione lewe ramię); efekty `dust` i `sparkle` przy starcie, mały `slash` i
   `burst` przy uderzeniu; nowy element `falcon` w `Vfx/Library` (ptak z części: tułów i dwa skrzydła z klinów), krąży
   i nurkuje przy uderzeniu.
 
 **Nagonka / The Drive** (`drive`, nowa, rząd 10, poz. 80)
-- Typ `circleTarget`, punkt do 30 st., promień 12, koszt 40, odn. 30 s. Ściąga wrogów do środka (`pull = 10`), 80 →
-  120% obrażeń, spowolnienie 30% 3 s (`enemySlow`), podatność 6% na 8 s (`enemyWeak`; przy Znaku liczy się Znak).
-- Przełomy: 5A `add.radius = 3`; 5B `mul.cooldown = 0.8`; 10A `values.dmg = 25`; 10B `effect` unieruchomienie 1 s
+- Typ `circleTarget`, punkt do 30 st., promień 12, koszt 40, odn. 33 s. Ściąga wrogów do środka (`pull = 10`), 102 →
+  108% obrażeń (S90, było 30 s i 80 → 120%), spowolnienie 30% 3 s (`enemySlow`), podatność 6% na 8 s (`enemyWeak`; przy Znaku liczy się Znak).
+- Przełomy: 5A `add.radius = 3`; 5B `mul.cooldown = 0.9`; 10A `values.dmg = 20` (S90, było 0,8 i 25); 10B `effect` unieruchomienie 1 s
   (`notBoss`). Handler: `Offense.circleTarget` z `pull` (14.3).
 - Animacja z `arrowRain` i zamach jak w `volley`; efekty `arrowRain` po obwodzie, `shockwave` do środka, `dust`,
   `telegraph = "circle"`.
@@ -1740,19 +1746,19 @@ Ulepszenie w rzędzie 11: Sokół Władcy.
 | 3 · 20 albo | Szybkie Palce (`scout_quickFingers`, passive pct `atkSpeed`) | +3 / 6 / 9% |
 | 3 · 20 albo | Lekka Stopa (`scout_lightStep`, passive `dodge`) | +2 / 4 / 6 pkt proc. |
 | 4 · 26 | Sokół (`scout_falcon`, skill) | nowa |
-| 4 · 26 | Ostre Szpony (`scout_talons`, modify `falcon` `values.dmg`) | +5 / 10 / 15 pkt proc. |
-| 5 · 33 | Sokola Więź (`scout_bond`, passive, nowy hak `falconBond` w sekundach) | Sokół trwa +2 / 4 / 6 s; z Królewskim Sokołem zamiast tego nurkowanie +20 / 40 / 60 pkt proc. |
-| 5 · 33 | Wytrwały Zwiadowca (`scout_hardy`, passive pct `maxHp`) | +3 / 6 / 9% |
+| 4 · 26 | Ostre Szpony (`scout_talons`, modify `falcon` `values.dmg`) | +10 / 19,5 / 29 pkt proc. (S90, było 5 / 10 / 15) |
+| 5 · 33 | Sokola Więź (`scout_bond`, passive, nowy hak `falconBond` w sekundach) | Sokół trwa +1,3 / 2,55 / 3,8 s; z Królewskim Sokołem zamiast tego nurkowanie +13 / 25,5 / 38 pkt proc. (S90, było 2 / 4 / 6 i 20 / 40 / 60) |
+| 5 · 33 | Wytrwały Zwiadowca (`scout_hardy`, passive pct `maxHp`) | +0,8 / 1,65 / 2,5% (S90, było 3 / 6 / 9) |
 | 6 · 40 albo | Odwrót (`scout_retreat`, modify `disengage` `mul.cooldown`) | ×0,9 / 0,8 / 0,7 |
 | 6 · 40 albo | Ostrzeżenie (`scout_warning`, passive, nowy hak `vigilanceGuard`, `allyGuard`) | potwór w 30 st. zaczyna czerwoną strefę: drużyna w 40 st. ma 5 / 10 / 15% redukcji obrażeń na czas zamachu + 0,5 s, raz na 8 s; działa też bez Czujności, z nią oba efekty naraz |
 | 7 · 48 | Znak Łowcy (`scout_huntersMark`, skill) | przeniesiona B |
 | 7 · 48 | Tropem Rannego (`scout_trail`, modify `huntersMark`, nowe `markJump`) | śmierć oznaczonego przenosi znak z resztą czasu na najbliższego wroga w 10 / 15 / 20 st. |
 | 8 · 60 | Królewski Sokół (`scout_royalFalcon`, keystone) | zwieńczenie |
-| 9 · 70 albo | Szybki Znak (`scout_quickMark`, modify `huntersMark` `mul.cooldown`) | ×0,93 / 0,87 / 0,8 (Znak co 20 s) |
+| 9 · 70 albo | Szybki Znak (`scout_quickMark`, modify `huntersMark` `mul.cooldown`) | ×0,91 / 0,825 / 0,74 (S90, było 0,93 / 0,87 / 0,8; Znak co 18,5 s) |
 | 9 · 70 albo | Zgrany Duet (`scout_duet`, passive, nowy hak `falconDamage`) | obrażenia sokoła i nurkowania +10 / 20 / 30% |
 | 10 · 80 | Nagonka (`scout_drive`, skill) | nowa |
-| 10 · 80 | Wytrawny Naganiacz (`scout_beater`, modify `drive` `add.vulnerabilityDuration`, `add.slowDuration`; S78) | +2 / 4 / 6 s podatności i spowolnienia (unieruchomienie 10B bez zmian) |
-| 11 · 90 | Sokół Władcy (`scout_royalFalcon2`, passive, nowe haki `falconInterval` 10 / 20 (% krócej), `spotBonus`, 2 rangi) | uderzenia co 1,8 / 1,6 s, Oznaczenie +1 / 2 pkt proc. |
+| 10 · 80 | Wytrawny Naganiacz (`scout_beater`, modify `drive` `add.vulnerabilityDuration`, `add.slowDuration`; S78) | +1,8 / 3,65 / 5,5 s podatności i spowolnienia (S90, było 2 / 4 / 6; unieruchomienie 10B bez zmian) |
+| 11 · 90 | Sokół Władcy (`scout_royalFalcon2`, passive, nowe haki `falconInterval` 19 / 38 (% krócej), `spotBonus`, 2 rangi) | uderzenia co 1,62 / 1,24 s, Oznaczenie +0,1 / 0,2 pkt proc. (S90, było 10 / 20 i 1 / 2) |
 
 - Drużyna (7.1, 7.3): Znak i Oznaczenie (`enemyWeak`; liczy się najsilniejszy, więc Oznaczenie działa w przerwach
   Znaku), Nagonka (`enemyWeak`, `enemySlow`), Czujność (`allyMove`), Ostrzeżenie (`allyGuard`). Znak trwa 10–15 s przy
@@ -1804,6 +1810,10 @@ potwora z poziomu L; pułapki jako natychmiastowe koła (dla Trapera optymistycz
   Strzelec z Ciężką Kuszą, od 45. Traper z Łukiem), z Łukiem Krótkim 1,01 / 1,21 / 1,23 / 1,32; w walce z grupą 3
   potworów, które oddają, 1,00–1,13. Punkt 27 jest spełniony dla obu broni. Bez normalizacji Zwiadowca z Łukiem Krótkim
   był 1,47–1,73 raza wolniejszy na 45–100. Efektywne HP Zwiadowcy 1,17–1,26 bazy; Elity bije sam.
+- S90 (model `tests/SkillModel.luau`, pomiar po strojeniu w `docs/BALANS.md` → „Klasy i ścieżki”): Strzelec × baza
+  1,25–1,33 i × Furia 1,26–1,34; Traper w obszarze 8 s 1,15–1,43 Strzelca, na jednym celu 1,05–1,15 bazy, R3 ≤ 1,99;
+  Zwiadowca `4 × (1 + B) + S` 4,93–5,10, S 0,69–0,79, tempo solo ≤ 1,49; limity Zręczności (`hunter.dexCaps`) z zapasem.
+  W raporcie: R1 Strzelca i Trapera z Kuszą 2,80–2,97 (S91), R6 Strzelca i Trapera (właściciel); DECYZJE S90.
 - Na 100. z oceną Zręczności: Strzelec krytyk 26 pkt proc. stale, 46 z Namierzeniem (limit 60), obrażenia krytyczne
   195%; Zwiadowca krytyk 23 pkt proc., unik 25, szybkość ×1,35 z Łukiem, ×1,76 z Łukiem Krótkim (limit 2,5). Obrażenia
   ×atak podstawowy u Strzelca 3,26–3,45 na 45–100 (R1: 1,6–2,0), u Berserkera 2,61–3,06: do balansu.
@@ -1813,11 +1823,11 @@ potwora z poziomu L; pułapki jako natychmiastowe koła (dla Trapera optymistycz
 1. Normalizacja z 8 jest warunkiem. Bez niej Strzelec z Ciężką Kuszą ma 1,49 / 1,60 / 1,56 Berserkera na 45 / 70 / 100
    i bije Trapera także w obszarze, a Łuk Długi i Łuk Krótki są w swoich ścieżkach martwym łupem.
 2. Energia wiąże Łowcę zawsze; Łup Kłusownika, Oszczędność Kłusownika i Rytm Strzelca są mocne na punkt.
-3. Trucizna ze stosami (3 stosy, sidła, Pole Śmierci, Kąsające Strzały, osobne klucze z 7.2, `poisonDamage` do +60%):
+3. Trucizna ze stosami (3 stosy, sidła, Pole Śmierci, Kąsające Strzały, osobne klucze z 7.2, `poisonDamage` do +37,5%, S90):
    przy dłuższych walkach z bossem Traper wyjdzie mocniej niż w pomiarze. Sprawdzić na nowym fixture.
 4. Salwa od 30. zamiast 56. i jej 5A (+3 strzały, ok. +43%, R4 chce 10–15%); zalecenie dla sesji balansu: `add.hits =
-   1` (ok. +14%). Poziomy 1–45 są bezpieczne (baza z Łukiem 0,97–1,04 dzisiejszego Łowcy).
-5. Znak słabszy niż dziś (8%, z 10B 10%, zamiast 25%): drużyny z dzisiejszym Łowcą stracą kilka procent na bossach.
+   1` (ok. +14%); zrobione w S90 (5A `add.hits = 1`, 5B `values.dmg = 5`). Poziomy 1–45 są bezpieczne (baza z Łukiem 0,97–1,04 dzisiejszego Łowcy).
+5. Znak słabszy niż dziś (8%, z 10B 9% od S90, zamiast 25%): drużyny z dzisiejszym Łowcą stracą kilka procent na bossach.
 6. Sokół nie jest postacią (nie zasłania, nie ginie, nie ściąga uwagi); opis musi mówić, że to wsparcie z powietrza.
 7. `castTime`: czerwone strefy wymagają ruchu, więc Strzelec traci część Strzałów w Serce (Snajper łagodzi, a
    przerwanie oddaje energię i odnowienie).
@@ -1839,7 +1849,8 @@ Magicznego Pocisku i z przełomami na bossa u każdego buildu.
 - Przeniesione (6): Mistrz Żywiołów, Gniew Żywiołów i Skupienie do Niszczyciela; Tarcza Many, Inwokacja i Tajemny
   Umysł do Arkanisty. Nowe (4): Wir Żywiołów i Kataklizm, Wyładowanie Arkanów i Strumień Arkanów.
 - Mechaniki ścieżek: premie Niszczyciela do obszaru działają tylko wtedy, gdy czar trafia co najmniej 2 wrogów
-  (12.3); Arkanista zbiera Ładunki Arkanów (każdy czar +2% obrażeń i +15% kosztu), które zużywa Wyładowanie.
+  (12.3); Arkanista zbiera Ładunki Arkanów (każdy czar +1% obrażeń i +4,3% kosztu; S90, było 2 i 15), które zużywa
+  Wyładowanie.
 - Mana znowu wiąże po 45. poziomie (punkt 25): rzucanie wszystkiego na odnowieniu kosztuje 2,0–2,8 razy regenerację u
   Niszczyciela i 2,0–2,4 razy u Arkanisty (z Przeciążeniem 2,6–2,8), licząc węzły regeneracji i bierne zwroty many.
   Inwokacja Arkanisty (od 48.) to osobne, czynne źródło. Skupienie i Rezerwa powiększają pulę bez regeneracji.
@@ -1870,14 +1881,14 @@ przez krzywą z 8 (S87: ×1,0 / 1,89 / 2,59 / 3,49 na 20 / 45 / 70 / 100).
 
 | Poz. (dziś) | Umiejętność | Ranga 5 / 10 | Ranga 1 → 10; koszt / odn. |
 |---|---|---|---|
-| 1 (1) | Magiczny Pocisk `firebolt` (projectile, żywioł broni) | 17 / 37 | 170 → 310%; 12 / 2,5 s; nowe pole `hits = 1` |
-| 3 (10) | Kula Ognia `fireball` (circleTarget r 8, ogień) | 19 / 39 | 150 → 270%; 35 / 8 s |
-| 6 (3) | Lodowy Odłamek `iceShard` (projectile, lód) | 22 / 42 | 140 → 250%, spowolnienie 30% 3 s; 15 / 5 s |
-| 10 (18) | Łańcuch Błyskawic `chainLightning` (chain, błyskawica) | 26 / 46 | 130 → 230%, 3 → 6 skoków; 35 / 9 s |
+| 1 (1) | Magiczny Pocisk `firebolt` (projectile, żywioł broni) | 17 / 37 | 170 → 255,7% (S90, było 310; ranga 5 = 232,2); 12 / 2,5 s; nowe pole `hits = 1` |
+| 3 (10) | Kula Ognia `fireball` (circleTarget r 8, ogień) | 19 / 39 | 150 → 221,8% (S90, było 270; ranga 5 = 203,3); 35 / 8 s |
+| 6 (3) | Lodowy Odłamek `iceShard` (projectile, lód) | 22 / 42 | 140 → 213% (S90, było 250; ranga 4 = 176,7), spowolnienie 30% 3 s; 15 / 5 s |
+| 10 (18) | Łańcuch Błyskawic `chainLightning` (chain, błyskawica) | 26 / 46 | 130 → 163,5% (S90, było 230; ranga 3 = 152,2), 3 → 6 skoków; 35 / 9 s |
 | 14 (6) | Błysk `blink` | 30 / 50 | 15 st.; 20 / 12 s |
-| 18 (34) | Lodowa Nova `frostNova` (circleSelf r 10, lód) | 34 / 54 | 120 → 220%, zamrożenie 1,5 → 2,5 s; 45 / 18 s |
-| 30 (40) | Meteor `meteor` (circleTarget r 10, ogień) | 46 / 66 | 280 → 480% po 1 s; 60 / 20 s |
-| 45 (56) | Burza Piorunów `firewall` (circleTarget r 12, błyskawica) | 61 / 81 | 10 piorunów po 50 → 90% w losowych wrogów; 55 / 22 s |
+| 18 (34) | Lodowa Nova `frostNova` (circleSelf r 10, lód) | 34 / 54 | 120 → 141,3% (S90, było 220), zamrożenie 1,5 → 2,5 s; 45 / 18 s |
+| 30 (40) | Meteor `meteor` (circleTarget r 10, ogień) | 46 / 66 | 98 → 174% po 1 s; 72 / 20 s (S90, było 280 → 480% i koszt 60) |
+| 45 (56) | Burza Piorunów `firewall` (circleTarget r 12, błyskawica) | 61 / 81 | 10 piorunów po 24,9 → 49,8% w losowych wrogów; 43 / 22 s (S90, było 50 → 90% i koszt 55) |
 
 - Dlaczego te: punkt 23 każe zostawić żywioł broni, więc każdy żywioł zachowuje w podstawie swoje dwa czary (ogień 3 i
   30, lód 6 i 18, błyskawica 10 i 45), do tego Magiczny Pocisk (cios startowy każdego żywiołu) i Błysk (ruch).
@@ -1894,14 +1905,14 @@ mieście i przy wejściu do lochu, więc każdy gracz ma przełomy pod exp i pod
 
 | Umiejętność | Ranga 5: A / B | Ranga 10: A / B |
 |---|---|---|
-| Magiczny Pocisk | A `pierce = 40` / B `mul.cooldown = 0.88` (2,5 → 2,2 s) | A `splash = { radius = 4, pct = 50 }` / B `add.hits = 1`, `values.dmg = -124` (2 × 186%, +20%) |
+| Magiczny Pocisk | A `pierce = 40` / B `mul.cooldown = 0.88` (2,5 → 2,2 s) | A `splash = { radius = 4, pct = 12 }` / B `add.hits = 1`, `values.dmg = -104` (2 × 151,7%, +19%; S90, było 50 i −124) |
 | Kula Ognia | A `lingering` podpalenie 15% 3 s / B `execute = 35` | A `split = { count = 3, pct = 40, radius = 7 }` / B `values.dmg = 55` (+20%) |
-| Lodowy Odłamek | A `effect` zamrożenie 0,8 s / B `values.dmg = 20` | A `pierce = 60` / B `mul.cooldown = 0.85` |
-| Łańcuch Błyskawic | A `add.jumps = 2` / B `values.dmg = 25` | A `stunLast = 1` / B `mul.cooldown = 0.8` |
+| Lodowy Odłamek | A `effect` zamrożenie 0,8 s / B `values.dmg = 23` (S90, było 20) | A `pierce = 27` / B `mul.cooldown = 0.84` (S90, było 60 i 0,85) |
+| Łańcuch Błyskawic | A `add.jumps = 2` / B `values.dmg = 22` (S90, było 25) | A `stunLast = 1` / B `mul.cooldown = 0.83` (S90, było 0,8) |
 | Błysk | A `selfEffect` redukcja 30% 2 s / B `add.length = 5` | A `mul.cooldown = 0.6` / B `trap = { radius = 6, duration = 3, slow = 40 }` |
-| Lodowa Nova | A `add.radius = 3` / B `selfEffect` redukcja 20% 4 s | A `lingering` mróz 10% 4 s, spowolnienie 40% / B `echo = { delay = 1.5, pct = 40 }` |
-| Meteor | A `mul.delay = 0.5` / B `values.dmg = 45` | A `lingering` podpalenie 20% 4 s / B `values.dmg = 100` (razem z 5B +30%) |
-| Burza Piorunów | A `add.hits = 4` / B `mul.cooldown = 0.75` | A `effect` ogłuszenie 0,5 s / B `values.dmg = 18` (+20%) |
+| Lodowa Nova | A `add.radius = 3` / B `selfEffect` redukcja 20% 4 s | A `lingering` mróz 5% 4 s, spowolnienie 40% / B `echo = { delay = 1.5, pct = 19 }` (S90, było 10 i 40) |
+| Meteor | A `mul.delay = 0.5` / B `values.dmg = 23` | A `lingering` podpalenie 6% 4 s / B `values.dmg = 45` (S90, było 45, 20 i 100) |
+| Burza Piorunów | A `add.hits = 1` / B `mul.cooldown = 0.93` (S90, było 4 i 0,75) | A `effect` ogłuszenie 0,5 s / B `values.dmg = 13.9` (S90, było 18) |
 
 - Magiczny Pocisk 10B działa tylko z polem `hits = 1` w danych: `Skills.effective` dodaje `add.hits` do `def.hits or
   0`, więc bez niego wyszedłby jeden pocisk 186% (−40%). `Offense.projectile` już czyta `hits` (dziś domyślnie 1).
@@ -1926,26 +1937,27 @@ Ziemia płonie, zamarza albo trzaska piorunami, a grupy padają naraz. Metryka: 
 grup. Plan statystyk `{ int = 4, vit = 1 }`, tytuł `path_destroyer` („Niszczyciel”).
 
 Przeniesione: Mistrz Żywiołów `elementalist` (rząd 1, pasywka, obrażenia żywiołu +3 → 15%, rangi na 10/19/28/37/46),
-Gniew Żywiołów `meteorStorm` (rząd 7: 6 uderzeń po 60 → 80% w obszarze 16 st., koszt 120, odn. 50 s; przełomy 5A
-`add.hits = 2`, 5B `mul.cooldown = 0.75`, 10A `add.radius = 4`, 10B `values.dmg = 22`) i Skupienie `focus` (rząd 10:
-rezerwa many +4 → 20%, nowa statystyka `manaReserve`, której regeneracja nie liczy).
+Gniew Żywiołów `meteorStorm` (rząd 7: 6 uderzeń po 24% w obszarze 16 st., koszt 174, odn. 50 s; przełomy 5A
+`add.hits = 1`, 5B `mul.cooldown = 0.88`, 10A `add.radius = 4`, 10B `values.dmg = 4.4`; S90, było 60 → 80%, koszt
+120, 2, 0,75 i 22) i Skupienie `focus` (rząd 10: rezerwa many +3,1 → 15,4% (S90, było 4 → 20), nowa statystyka
+`manaReserve`, której regeneracja nie liczy).
 
 **Wir Żywiołów / Elemental Vortex** (`elementalVortex`, nowa, rząd 4, poz. 26)
 - Typ `circleSelf` (istniejący handler: środek liczy się przy każdej fali, więc wir idzie za Magiem), `adaptive`, promień
-  7 st., 10 fal co 0,4 s, każda 12 → 13% (ranga 10 już na 62., moc rośnie z atakiem). Koszt 40, odn. 12 s. Rzucony
+  7 st., 10 fal co 0,4 s, każda 6,2 → 8,3% (S90, było 12 → 13; ranga 10 na 95.). Koszt 12 (S90, było 40), odn. 12 s. Rzucony
   nie blokuje innych czarów. Żywioł broni dodaje swój efekt (podpalenie, spowolnienie, łuk).
-- Przełomy: 5A `add.radius = 2`; 5B `values.dmg = 2` (+15%); 10A `add.hits = 3`; 10B `selfEffect` redukcja 20% na 6 s
+- Przełomy: 5A `add.radius = 2`; 5B `values.dmg = 1.2` (S90, było 2); 10A `add.hits = 3`; 10B `selfEffect` redukcja 20% na 6 s
   (własny efekt Wiru, osobny od Płaszcza Żywiołów).
 - Animacja z `evocation` bez uniesienia, skrócona do 0,5 s: obie dłonie zataczają koło na wysokości pasa, `hit` 0,3 s,
   bez `lock`. Efekty: kolor `element`, `rune` pod Magiem na starcie, `whirl` i `aura` przy każdej fali.
 
 **Kataklizm / Cataclysm** (`cataclysm`, nowa, zwieńczenie, poz. 60)
 - Typ `circleTarget` bez opóźnienia (zwykłe fale), `adaptive`, zasięg 38 st. (S80), promień 12 st. Najpierw ściąga wrogów z całego promienia
-  do środka (pole `pull = true`, 14.4; bossowie odporni, jak już robi `Push.pull`), potem 5 fal co 0,6 s po 60 → 70%
-  (300 → 350% na cel, z Ostatecznym Kataklizmem 7 fal, do 490%). Koszt 90, odn. 30 s. Ściągnięta grupa stoi potem w
+  do środka (pole `pull = true`, 14.4; bossowie odporni, jak już robi `Push.pull`), potem 5 fal co 0,6 s po 36,6%
+  (183% na cel, z Ostatecznym Kataklizmem 7 fal, 256%; S90, było 60 → 70%). Koszt 119 (S90, było 90), odn. 30 s. Ściągnięta grupa stoi potem w
   Wirze i pod Meteorem.
-- Przełomy: 5A `add.radius = 3` (większy krąg i ściąganie); 5B `values.dmg = 7` (+10%); 10A `lingering` żywiołu broni
-  25% przez 4 s; 10B `echo = { delay = 0.8, pct = 100 }`.
+- Przełomy: 5A `add.radius = 3` (większy krąg i ściąganie); 5B `values.dmg = 6`; 10A `lingering` żywiołu broni
+  34% przez 4 s; 10B `echo = { delay = 0.8, pct = 136 }` (S90, było 7, 25 i 100).
 - Animacja z `meteor` (długie wezwanie z uniesionymi rękami), zakończona `crouch(0.6)` i pozą `SLAMMED`, `hit` przy
   uderzeniu, `lock`. Efekty: kolor `element`, `glow` obu dłoni 0,8 s, `dust` przy ściąganiu, `meteor`, `shockwave`,
   `cracks`, `rune`, `shake = 0.7`.
@@ -1961,19 +1973,19 @@ rezerwa many +4 → 20%, nowa statystyka `manaReserve`, której regeneracja nie 
 | 3 · 20 albo | Oszczędny Splot (`destroyer_thrift`, passive, hak `areaCost`) | −4 / 8 / 12% kosztu czarów obszarowych |
 | 4 · 26 | Wir Żywiołów (`destroyer_elementalVortex`, skill → `elementalVortex`) | nowa |
 | 4 · 26 | Oko Cyklonu (`destroyer_eye`, modify `elementalVortex` `add.hits`) | +1 / 2 / 3 fale (10 → 13) |
-| 5 · 33 | Potęga Zniszczenia (`destroyer_might`, passive pct `magAtk`) | +2 / 4 / 6% |
-| 5 · 33 | Żywioł w Żyłach (`destroyer_veins`, passive, hak `elementRider`) | efekt żywiołu +10 / 20 / 30% (podpalenie 30 → 39%, spowolnienie 2 → 2,6 s, łuk 40 → 52%) |
-| 5 · 33 | Zahartowanie (`destroyer_tempered`, dodatkowy, passive pct `maxHp`) | +4 / 8 / 12% |
-| 6 · 40 albo | Krucha Potęga (`destroyer_frail`, passive: `areaDamage`, pct `maxHp`) | +2 / 4 / 6% obrażeń, HP −4 / 8 / 12% |
+| 5 · 33 | Potęga Zniszczenia (`destroyer_might`, passive pct `magAtk`) | +4 / 8 / 12% (S90, było 2 / 4 / 6) |
+| 5 · 33 | Żywioł w Żyłach (`destroyer_veins`, passive, hak `elementRider`) | efekt żywiołu +4,4 / 8,75 / 13,1% (S90, było 10 / 20 / 30; podpalenie 30 → 33,9%, spowolnienie 2 → 2,26 s, łuk 40 → 45,2%) |
+| 5 · 33 | Zahartowanie (`destroyer_tempered`, dodatkowy, passive pct `maxHp`) | +2,3 / 4,55 / 6,8% (S90, było 4 / 8 / 12) |
+| 6 · 40 albo | Krucha Potęga (`destroyer_frail`, passive: `areaDamage`, pct `maxHp`) | +2,7 / 5,35 / 8% obrażeń (S90, było 2 / 4 / 6), HP −4 / 8 / 12% |
 | 6 · 40 albo | Płaszcz Żywiołów (`destroyer_mantle`, passive, hak `vortexGuard`) | przy rzuceniu Wiru 4 / 8 / 12% własnej redukcji obrażeń |
 | 7 · 48 | Gniew Żywiołów (`destroyer_meteorStorm`, skill → `meteorStorm`) | przeniesiona B |
-| 7 · 48 | Gniew Burzy (`destroyer_wrath`, modify `meteorStorm`, nowe `cdrPerTarget`) | −1 / 2 / 3 s odnowienia za każdego trafionego wroga, najwyżej 5 (50 → 35 s) |
+| 7 · 48 | Gniew Burzy (`destroyer_wrath`, modify `meteorStorm`, nowe `cdrPerTarget`) | −1,15 / 2,3 / 3,44 s (S90, było 1 / 2 / 3) odnowienia za każdego trafionego wroga, najwyżej 5 (50 → 32,8 s) |
 | 8 · 60 | Kataklizm (`destroyer_cataclysm`, skill) | zwieńczenie |
-| 9 · 70 albo | Szalejący Wir (`destroyer_raging`, modify `elementalVortex` `values.dmg`) | +0,5 / 1 / 1,5 pkt proc. na falę (13 → 14,5%) |
-| 9 · 70 albo | Prędki Kataklizm (`destroyer_swift`, modify `cataclysm` `mul.cooldown`) | ×0,93 / 0,87 / 0,8 (30 → 24 s) |
+| 9 · 70 albo | Szalejący Wir (`destroyer_raging`, modify `elementalVortex` `values.dmg`) | +0,49 / 0,98 / 1,47 pkt proc. na falę (8,3 → 9,77%; S90, było 0,5 / 1 / 1,5) |
+| 9 · 70 albo | Prędki Kataklizm (`destroyer_swift`, modify `cataclysm` `mul.cooldown`) | ×0,935 / 0,875 / 0,814 (30 → 24,4 s; S90, było 0,93 / 0,87 / 0,8) |
 | 10 · 80 | Skupienie (`destroyer_focus`, skill → `focus`) | przeniesiona C |
-| 10 · 80 | Przepływ Żywiołów (`destroyer_flow`, passive, hak `areaCost`) | −3 / 6 / 9% kosztu czarów obszarowych |
-| 10 · 80 | Hart Maga (`destroyer_grit`, dodatkowy, passive pct `maxHp`) | +4 / 8 / 12% |
+| 10 · 80 | Przepływ Żywiołów (`destroyer_flow`, passive, hak `areaCost`) | −1,2 / 2,45 / 3,7% kosztu czarów obszarowych (S90, było 3 / 6 / 9) |
+| 10 · 80 | Hart Maga (`destroyer_grit`, dodatkowy, passive pct `maxHp`) | +1,4 / 2,8 / 4,2% (S90, było 4 / 8 / 12) |
 | 11 · 90 | Ostateczny Kataklizm (`destroyer_cataclysm2`, modify `cataclysm` `add.hits`, 2 rangi) | +1 / 2 fale (5 → 7) |
 
 - Płaszcz Żywiołów to osobny efekt, nie `selfEffect` Wiru: hak `vortexGuard` przy każdym rzuceniu Wiru nakłada na Maga
@@ -1999,32 +2011,34 @@ Uczony czystej magii wlewa manę w coraz silniejsze czary w jeden cel; pełny pa
 słabości. Metryka: obrażenia w jeden cel (boss). Plan statystyk `{ int = 5 }`, tytuł `path_arcanist` („Arkanista”).
 
 **Ładunki Arkanów** (mechanika ścieżki, działa z Wyładowaniem Arkanów i bronią ścieżki): każdy czar z obrażeniami poza
-Wyładowaniem daje 1 Ładunek (najwyżej 4, 15 s, znikają poza walką). Każdy Ładunek: +2% obrażeń czarów innych niż
-Wyładowanie i +15% kosztu każdego czaru z obrażeniami (także Wyładowania). Nowy efekt `arcaneCharge` ze stosami (jak
+Wyładowaniem daje 1 Ładunek (najwyżej 4, 15 s, znikają poza walką). Każdy Ładunek: +1% obrażeń czarów innych niż
+Wyładowanie i +4,3% kosztu każdego czaru z obrażeniami (także Wyładowania; S90, było 2 i 15). Nowy efekt `arcaneCharge` ze stosami (jak
 Furia Berserkera), licznik przy pasku efektów i 1–4 kule krążące wokół Maga.
 
 Przeniesione:
 - Tarcza Many `manaShield` (rząd 1, dziś 23.): przez 8 → 15 s 50% obrażeń zabiera manę. Przełomy: 5A regeneracja many
   +50% 15 s, 5B `mul.cooldown = 0.75`, 10A `add.effectDuration = 5`, 10B `selfHeal = 10`.
-- Inwokacja `evocation` (rząd 7): kanał 3 s, 30 → 50% many, odn. 120 s zamiast dzisiejszych 90 s. Przełomy: 5A
+- Inwokacja `evocation` (rząd 7): kanał 3 s, 25 → 49% many (S90, było 30 → 50), odn. 120 s zamiast dzisiejszych 90 s. Przełomy: 5A
   `mul.cooldown = 0.75` (90 s), 5B nowe `channelMove = 50`, 10A `values.mana = 15`, 10B nowe `grantCharges = 4`.
   Inwokację dalej przerywają obrażenia, ruch i inny czar.
-- Tajemny Umysł `arcaneMind` (rząd 10, zmieniony): krytyk 1 → 3%, obrażenia krytyczne 3 → 8%.
+- Tajemny Umysł `arcaneMind` (rząd 10, zmieniony): krytyk 0,35 → 1,05%, obrażenia krytyczne 1 → 2,8% (S90, było 1 → 3
+  i 3 → 8).
 
 **Wyładowanie Arkanów / Arcane Discharge** (`arcaneDischarge`, nowa, rząd 4, poz. 26)
-- Typ `projectile`, czysta magia bez żywiołu, zasięg 38 st., 140 → 230%, zużywa wszystkie Ładunki: +12% za każdy
-  (wartość `perCharge`). Premia Ładunków +2% go nie dotyczy, ich koszt tak. Koszt 20, odn. 6 s. Z 4 Ładunkami, 5A i
-  pełnym węzłem (27% za Ładunek) ok. 2,1 raza mocniej.
-- Przełomy: 5A `values.perCharge = 5`; 5B `mul.cooldown = 0.8`; 10A `execute = 35`; 10B `splash = { radius = 5, pct =
-  40 }`.
+- Typ `projectile`, czysta magia bez żywiołu, zasięg 38 st., 57 → 69%, zużywa wszystkie Ładunki: +4,1% za każdy
+  (wartość `perCharge`). Premia Ładunków +1% go nie dotyczy, ich koszt tak. Koszt 5, odn. 6 s (S90, było 140 → 230%,
+  +12% i koszt 20). Z 4 Ładunkami, 5A i pełnym węzłem (19% za Ładunek) ok. 1,76 raza mocniej.
+- Przełomy: 5A `values.perCharge = 5`; 5B `mul.cooldown = 0.8`; 10A `execute = 40`; 10B `splash = { radius = 5, pct =
+  11 }` (S90, było 35 i 40).
 - Animacja z `fireball` (energia zebrana obiema dłońmi przy biodrze, pchnięta do przodu), `release`. Efekty: kolor
   `#B07CFF` (fiolet arkanów jak Błysk), `glow` obu dłoni 0,35 s, pocisk `orb` o rozmiarze 0,8 + 0,15 za Ładunek,
   `burst`, `sparkle`, mały `shockwave`. Zdarzenie `SkillFx` niesie `ch` (zużyte Ładunki), a `VfxController` skaluje nim
   pocisk `orb`.
 
 **Strumień Arkanów / Arcane Torrent** (`arcaneTorrent`, nowa, zwieńczenie, poz. 60)
-- Nowy typ `beam`: promień w jeden cel do 30 st., 8 tyków co 0,5 s (4 s) po 160 → 170%, każdy kolejny tyk +2% (tyk n
-  × (1 + 0,02·(n − 1))), każdy tyk pobiera 1,5% maks. many (bez krzywej z 8). Odn. 25 s.
+- Nowy typ `beam`: promień w jeden cel do 30 st., 8 tyków co 0,5 s (4 s) po 122 → 140%, każdy kolejny tyk +1,62%
+  (tyk n × (1 + 0,0162·(n − 1))), każdy tyk pobiera 0,73% maks. many (bez krzywej z 8; S90, było 160 → 170%, 2% i
+  1,5%). Odn. 25 s.
 - Tyki są mocne, bo kanał zajmuje Maga na 8 globalnych odnowień (GCD 0,5 s), a w tym czasie inne czary czekają;
   Strumień musi zadać więcej niż to, co wypiera. Daje ×1,03 na 70. i ×1,08 na 100. (14% i 21% obrażeń Arkanisty).
 - Przerwanie (`Logic/Channel.stops`, 14.4): Strumień kończy się tylko wtedy, gdy Mag jest ogłuszony, zamrożony albo
@@ -2032,8 +2046,8 @@ Przeniesione:
   (z tolerancją 5 st. jak przy rzucie, S80), zabraknie many na tyk albo Mag rzuci inną umiejętność. Otrzymane
   obrażenia go nie przerywają (15.5). Pobór idzie przez te same modyfikatory kosztu co `Skills.cost` (haki, Ładunki,
   oszczędność; `Skills.drain`, S80).
-- Przełomy: 5A `values.growth = 1`; 5B `channelMove = 50`; 10A `values.dmg = 30` (+18%); 10B `splash = { radius = 4,
-  pct = 35 }`.
+- Przełomy: 5A `values.growth = 4.37`; 5B `channelMove = 50`; 10A `values.dmg = 32`; 10B `splash = { radius = 4,
+  pct = 10 }` (S90, było 1, 30 i 35).
 - Animacja z `evocation` bez uniesienia: broń w obu dłoniach wysunięta przed pierś, `loop` przez cały kanał, `lock`
   (bez 5B). Efekty: istniejący element `beam` (`Library.beam`) odświeżany co tyk od broni do celu, coraz szerszy,
   kolor `#B07CFF`, `sparkle` na celu, `aura` na Magu.
@@ -2048,20 +2062,20 @@ Przeniesione:
 | 3 · 20 albo | Rezonans (`arcanist_resonance`, passive, hak `resonance`) | +2 / 4 / 6% obrażeń czarów przy manie ≥ 75% |
 | 3 · 20 albo | Przeciążenie (`arcanist_overload`, passive, haki `spellDamage`, `spellCost`) | +2 / 4 / 6% obrażeń, +10 / 20 / 30% kosztu (opłaca się dopiero z Inwokacją; opis musi to mówić) |
 | 4 · 26 | Wyładowanie Arkanów (`arcanist_arcaneDischarge`, skill → `arcaneDischarge`) | nowa, włącza Ładunki |
-| 4 · 26 | Pełne Wyładowanie (`arcanist_fullDischarge`, modify `arcaneDischarge` `values.perCharge`) | +3 / 6,5 / 10 pkt proc. (12 → 27% za Ładunek z 5A) |
-| 5 · 33 | Moc Arkanów (`arcanist_might`, passive pct `magAtk`) | +1 / 2 / 3% |
-| 5 · 33 | Odzysk (`arcanist_reclaim`, passive, hak `chargeReclaim`) | 0,1 / 0,2 / 0,3% maks. many za każdy zużyty Ładunek |
+| 4 · 26 | Pełne Wyładowanie (`arcanist_fullDischarge`, modify `arcaneDischarge` `values.perCharge`) | +3 / 6,45 / 9,9 pkt proc. (4,1 → 19% za Ładunek z 5A; S90, było 10 na randze 3) |
+| 5 · 33 | Moc Arkanów (`arcanist_might`, passive pct `magAtk`) | +0,3 / 0,65 / 1% (S90, było 1 / 2 / 3) |
+| 5 · 33 | Odzysk (`arcanist_reclaim`, passive, hak `chargeReclaim`) | 0,035 / 0,07 / 0,105% maks. many za każdy zużyty Ładunek (S90, było 0,1 / 0,2 / 0,3) |
 | 5 · 33 | Nieugięta Wola (`arcanist_will`, dodatkowy, passive pct `maxHp`) | +4 / 8 / 12% |
-| 6 · 40 albo | Narastająca Moc (`arcanist_mounting`, passive, hak `chargeDamage`) | +0,5 / 1 / 1,5 pkt proc. za Ładunek (2 → 3,5%) |
-| 6 · 40 albo | Chłodna Głowa (`arcanist_coolHead`, passive, hak `chargeCost`) | −4 / 8 / 12 pkt proc. kosztu Ładunku (15 → 3%) |
+| 6 · 40 albo | Narastająca Moc (`arcanist_mounting`, passive, hak `chargeDamage`) | +0,17 / 0,345 / 0,52 pkt proc. za Ładunek (1 → 1,52%; S90, było 0,5 / 1 / 1,5) |
+| 6 · 40 albo | Chłodna Głowa (`arcanist_coolHead`, passive, hak `chargeCost`) | −1,15 / 2,3 / 3,44 pkt proc. kosztu Ładunku (4,3 → 0,86%; S90, było 4 / 8 / 12) |
 | 7 · 48 | Inwokacja (`arcanist_evocation`, skill) | przeniesiona B |
-| 7 · 48 | Inwokacja Mocy (`arcanist_invocation`, modify `evocation`, nowy efekt `empowered`, 15 s, S80) | 3 następne czary po kanale +5 / 10 / 15% |
+| 7 · 48 | Inwokacja Mocy (`arcanist_invocation`, modify `evocation`, nowy efekt `empowered`, 15 s, S80) | 3 następne czary po kanale +3,9 / 7,8 / 11,7% (S90, było 5 / 10 / 15) |
 | 8 · 60 | Strumień Arkanów (`arcanist_arcaneTorrent`, skill → `arcaneTorrent`) | zwieńczenie |
-| 9 · 70 albo | Rozdzierający Strumień (`arcanist_rending`, modify `arcaneTorrent` `values.growth`) | +0,5 / 1 / 1,5 pkt proc. wzrostu na tyk (3 → 4,5% z 5A) |
-| 9 · 70 albo | Studnia Many (`arcanist_well`, modify `arcaneTorrent` `values.drain`) | −0,25 / 0,5 / 0,75 pkt proc. (1,5 → 0,75% many na tyk) |
+| 9 · 70 albo | Rozdzierający Strumień (`arcanist_rending`, modify `arcaneTorrent` `values.growth`) | +0,84 / 1,685 / 2,53 pkt proc. wzrostu na tyk (5,99 → 8,52% z 5A; S90, było 0,5 / 1 / 1,5) |
+| 9 · 70 albo | Studnia Many (`arcanist_well`, modify `arcaneTorrent` `values.drain`) | −0,12 / 0,245 / 0,37 pkt proc. (0,73 → 0,36% many na tyk; S90, było 0,25 / 0,5 / 0,75) |
 | 10 · 80 | Tajemny Umysł (`arcanist_arcaneMind`, skill) | przeniesiona C |
-| 10 · 80 | Mistrzowski Umysł (`arcanist_masterMind`, passive, hak `channelGuard`) | −4 / 8 / 12% obrażeń otrzymanych w czasie kanału (Strumień, Inwokacja) |
-| 10 · 80 | Arcymag (`arcanist_archmage`, dodatkowy, modify `evocation` `add.duration`) | kanał Inwokacji −0,5 / 1 / 1,5 s (3 → 1,5 s, ta sama mana) |
+| 10 · 80 | Mistrzowski Umysł (`arcanist_masterMind`, passive, hak `channelGuard`) | −5,6 / 11,25 / 16,9% (S90, było 4 / 8 / 12) obrażeń otrzymanych w czasie kanału (Strumień, Inwokacja) |
+| 10 · 80 | Arcymag (`arcanist_archmage`, dodatkowy, modify `evocation` `add.duration`) | kanał Inwokacji −0,44 / 0,875 / 1,31 s (3 → 1,69 s, ta sama mana; S90, było 0,5 / 1 / 1,5) |
 | 11 · 90 | Niewyczerpany Strumień (`arcanist_torrent2`, modify `arcaneTorrent` `add.duration`, 2 rangi) | +0,5 / 1 s (8 → 10 tyków) |
 
 - Drużyna: brak (7.5); Arkanista nie osłabia wrogów. Początki dla innych (Niszczyciel): Tarcza Many (1 punkt,
@@ -2153,6 +2167,11 @@ Mana (zapotrzebowanie / dochód; w nawiasie z Inwokacją na każdym odnowieniu):
   zasadzie podpalenia (14.4). Balans żywiołów to zadanie sesji balansu, nie ścieżek.
 - Strumień Arkanów: Arkanista z nim / bez niego ×1,03 na 70. i ×1,08 na 100.; bez Strumienia Arkanista ma 1,33 / 1,37
   bazy na 70 / 100.
+- S90 (model `tests/SkillModel.luau`, pomiar po strojeniu w `docs/BALANS.md` → „Klasy i ścieżki”): Niszczyciel na 3
+  cele 1,20 / 1,31 / 1,46, w jeden cel (boss) 1,10 / 1,04 / 1,11; Arkanista 1,30 / 1,32 / 1,38 bazy i 1,18 / 1,27 / 1,25
+  Niszczyciela; T-SK4 Niszczyciel exp 2,01–2,78, Arkanista 2,00–2,19, z Przeciążeniem 2,77–2,85, z Oszczędnym Splotem
+  1,62–2,11. W raporcie: Niszczyciel na 3 cele na 100., boss na 70., Arkanista / Niszczyciel na 70., Przeciążenie na 45 i
+  100, R1 (S91), czas czyszczenia i R6 (właściciel); DECYZJE S90.
 
 ### 12.8 Ryzyka
 
@@ -2517,7 +2536,7 @@ Każdy punkt ma wartość domyślną, którą sesje wdrażają, dopóki właści
 
 ### 15.4 Łowca
 
-1. Znak Łowcy 6 → 8% (z przełomem 10B 10%) zamiast dzisiejszych 10 → 25%; przy 25% Zwiadowca byłby wart ok. 5,7
+1. Znak Łowcy 6 → 8% (z przełomem 10B 9%, S90) zamiast dzisiejszych 10 → 25%; przy 25% Zwiadowca byłby wart ok. 5,7
    atakującego. Drużyny z dzisiejszym Łowcą stracą część siły znaku.
 2. Traper jest zwolniony z R7 na jednym celu (1,01–1,10 Berserkera), bo jego metryką jest obszar.
 3. Podział broni z 11.1 (Kołczan pasuje do każdej ścieżki) i Salwa z 56. na 30. poziom.

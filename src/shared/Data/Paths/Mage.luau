@@ -130,22 +130,22 @@ local destroyer: Types.PathDef = {
 		}),
 		row(false, {
 			node(D, "might", "passive", 3, "✶", {
-				values = { might = { 2, 6 } },
+				values = { might = { 4, 12 } },
 				passive = { pct = { magAtk = "might" } },
 			}),
 			node(D, "veins", "passive", 3, "♆", {
-				values = { veins = { 10, 30 } },
+				values = { veins = { 4.4, 13.1 } },
 				-- sums with the staff's Elemental Might and the wand's Elemental Spark (STATY 3, S68 nodeHooks)
 				passive = { hooks = { elementRider = "veins" } },
 			}),
 			extra(node(D, "tempered", "passive", 3, "❤", {
-				values = { tempered = { 4, 12 } },
+				values = { tempered = { 2.3, 6.8 } },
 				passive = { pct = { maxHp = "tempered" } },
 			})),
 		}),
 		row(true, {
 			node(D, "frail", "passive", 3, "☍", {
-				values = { frailDmg = { 2, 6 }, frailHp = { -4, -12 } },
+				values = { frailDmg = { 2.7, 8 }, frailHp = { -4, -12 } },
 				passive = { hooks = { areaDamage = "frailDmg" }, pct = { maxHp = "frailHp" } },
 			}),
 			node(D, "mantle", "passive", 3, "⛉", {
@@ -156,29 +156,29 @@ local destroyer: Types.PathDef = {
 		row(false, {
 			skill(D, "meteorStorm"),
 			node(D, "wrath", "modify", 3, "⚡", {
-				values = { wrath = { 1, 3 } },
+				values = { wrath = { 1.15, 3.44 } },
 				modify = { skill = "meteorStorm", bp = { cdrPerTarget = { sec = ref("wrath"), max = 5 } } },
 			}),
 		}),
 		row(false, { skill(D, "cataclysm") }),
 		row(true, {
 			node(D, "raging", "modify", 3, "❂", {
-				values = { raging = { 0.5, 1.5 } },
+				values = { raging = { 0.49, 1.47 } },
 				modify = { skill = "elementalVortex", bp = { values = { dmg = ref("raging") } } },
 			}),
 			node(D, "swift", "modify", 3, "⌛", {
-				values = { swift = { 0.93, 0.8 } },
+				values = { swift = { 0.935, 0.814 } },
 				modify = { skill = "cataclysm", bp = { mul = { cooldown = ref("swift") } } },
 			}),
 		}),
 		row(false, {
 			skill(D, "focus"),
 			node(D, "flow", "passive", 3, "∿", {
-				values = { flow = { -3, -9 } },
+				values = { flow = { -1.2, -3.7 } },
 				passive = { hooks = { areaCost = "flow" } },
 			}),
 			extra(node(D, "grit", "passive", 3, "♥", {
-				values = { grit = { 4, 12 } },
+				values = { grit = { 1.4, 4.2 } },
 				passive = { pct = { maxHp = "grit" } },
 			})),
 		}),
@@ -259,17 +259,17 @@ local arcanist: Types.PathDef = {
 		row(false, {
 			skill(A, "arcaneDischarge"),
 			node(A, "fullDischarge", "modify", 3, "✷", {
-				values = { fullDischarge = { 3, 10 } },
+				values = { fullDischarge = { 3, 9.9 } },
 				modify = { skill = "arcaneDischarge", bp = { values = { perCharge = ref("fullDischarge") } } },
 			}),
 		}),
 		row(false, {
 			node(A, "might", "passive", 3, "✶", {
-				values = { might = { 1, 3 } },
+				values = { might = { 0.3, 1 } },
 				passive = { pct = { magAtk = "might" } },
 			}),
 			node(A, "reclaim", "passive", 3, "↺", {
-				values = { reclaim = { 0.1, 0.3 } },
+				values = { reclaim = { 0.035, 0.105 } },
 				passive = { hooks = { chargeReclaim = "reclaim" } },
 			}),
 			extra(node(A, "will", "passive", 3, "♥", {
@@ -279,18 +279,18 @@ local arcanist: Types.PathDef = {
 		}),
 		row(true, {
 			node(A, "mounting", "passive", 3, "⇈", {
-				values = { mounting = { 0.5, 1.5 } },
+				values = { mounting = { 0.17, 0.52 } },
 				passive = { hooks = { chargeDamage = "mounting" } },
 			}),
 			node(A, "coolHead", "passive", 3, "❄", {
-				values = { coolHead = { -4, -12 } },
+				values = { coolHead = { -1.15, -3.44 } },
 				passive = { hooks = { chargeCost = "coolHead" } },
 			}),
 		}),
 		row(false, {
 			skill(A, "evocation"),
 			node(A, "invocation", "modify", 3, "☼", {
-				values = { invocation = { 5, 15 } },
+				values = { invocation = { 3.9, 11.7 } },
 				-- S80: the effect "empowered" after a full channel (SkillService.closeChannel)
 				modify = { skill = "evocation", bp = { empower = { pct = ref("invocation"), uses = 3 } } },
 			}),
@@ -298,22 +298,22 @@ local arcanist: Types.PathDef = {
 		row(false, { skill(A, "arcaneTorrent") }),
 		row(true, {
 			node(A, "rending", "modify", 3, "⟿", {
-				values = { rending = { 0.5, 1.5 } },
+				values = { rending = { 0.84, 2.53 } },
 				modify = { skill = "arcaneTorrent", bp = { values = { growth = ref("rending") } } },
 			}),
 			node(A, "well", "modify", 3, "◒", {
-				values = { well = { -0.25, -0.75 } },
+				values = { well = { -0.12, -0.37 } },
 				modify = { skill = "arcaneTorrent", bp = { values = { drain = ref("well") } } },
 			}),
 		}),
 		row(false, {
 			skill(A, "arcaneMind"),
 			node(A, "masterMind", "passive", 3, "♕", {
-				values = { masterMind = { 4, 12 } },
+				values = { masterMind = { 5.6, 16.9 } },
 				passive = { hooks = { channelGuard = "masterMind" } },
 			}),
 			extra(node(A, "archmage", "modify", 3, "⌚", {
-				values = { archmage = { -0.5, -1.5 } },
+				values = { archmage = { -0.44, -1.31 } },
 				-- a shorter channel, the same mana (restored at the end of the channel)
 				modify = { skill = "evocation", bp = { add = { duration = ref("archmage") } } },
 			})),

@@ -21,10 +21,10 @@ return Build.class("Hunter", "energy", "phys", {
 		cost = 15,
 		cooldown = 4,
 		range = 38,
-		values = { dmg = { 170, 310 } },
+		values = { dmg = { 170, 233 } },
 		breakpoints = Build.bp2(
 			{ a = { pierce = 50 }, b = { values = { dmg = 30 } } },
-			{ a = { execute = 30 }, b = { lifesteal = 12 } }
+			{ a = { execute = 21 }, b = { lifesteal = 12 } }
 		),
 		glyph = "➶",
 		vfx = "arrow",
@@ -40,10 +40,10 @@ return Build.class("Hunter", "energy", "phys", {
 		range = 38,
 		hits = 2,
 		interval = 0.15,
-		values = { dmg = { 85, 150 } },
+		values = { dmg = { 85, 114 } },
 		breakpoints = Build.bp2({ a = { add = { hits = 1 } }, b = { mul = { cooldown = 0.7 } } }, {
 			a = { effect = { kind = "slow", duration = 2, value = 25, category = "enemySlow" } },
-			b = { values = { dmg = 30 } },
+			b = { values = { dmg = 28 } },
 		}),
 		glyph = "⇉",
 		vfx = "arrow",
@@ -58,7 +58,7 @@ return Build.class("Hunter", "energy", "phys", {
 		cost = 15,
 		cooldown = 10,
 		length = 15,
-		values = { bonus = { 20, 50 } },
+		values = { bonus = { 20, 35 } },
 		effects = { { kind = "nextShot", duration = 8, value = "bonus", target = "self", category = "own" } },
 		breakpoints = Build.bp2(
 			{ a = { trap = { radius = 6, duration = 8, slow = 40 } }, b = { mul = { cooldown = 0.7 } } },
@@ -103,7 +103,7 @@ return Build.class("Hunter", "energy", "phys", {
 		unlock = 14,
 		maxLevel = 5,
 		type = "passive",
-		values = { crit = { 2, 10 }, critDmg = { 10, 30 } },
+		values = { crit = { 2, 4 }, critDmg = { 10, 16 } },
 		passive = { flat = { critChance = "crit", critDmg = "critDmg" } },
 		glyph = "👁",
 	},
@@ -117,11 +117,11 @@ return Build.class("Hunter", "energy", "phys", {
 		cooldown = 8,
 		range = 38,
 		element = "poison",
-		values = { dmg = { 120, 210 }, poison = { 50, 120 } },
+		values = { dmg = { 120, 152 }, poison = { 50, 50 } },
 		effects = { { kind = "poison", duration = 6, value = "poison" } },
 		breakpoints = Build.bp2(
-			{ a = { values = { poison = 40 } }, b = { values = { dmg = 40 } } },
-			{ a = { splash = { radius = 5, pct = 40 } }, b = { values = { poison = 70 } } }
+			{ a = { values = { poison = 21 } }, b = { values = { dmg = 28 } } },
+			{ a = { splash = { radius = 5, pct = 19 } }, b = { values = { poison = 60 } } }
 		),
 		glyph = "☠",
 		vfx = "arrow",
@@ -133,14 +133,14 @@ return Build.class("Hunter", "energy", "phys", {
 		type = "cone",
 		delivery = "ranged",
 		cost = 50,
-		cooldown = 14,
+		cooldown = 13,
 		radius = 25,
 		angle = 60,
 		hits = 7,
-		values = { dmg = { 70, 120 } },
+		values = { dmg = { 25, 34 } },
 		breakpoints = Build.bp2(
-			{ a = { add = { hits = 3 } }, b = { values = { dmg = 15 } } },
-			{ a = { add = { angle = 30 } }, b = { values = { dmg = 20 } } }
+			{ a = { add = { hits = 1 } }, b = { values = { dmg = 5 } } },
+			{ a = { add = { angle = 30 } }, b = { values = { dmg = 9 } } }
 		),
 		glyph = "⇶",
 	},
@@ -149,7 +149,7 @@ return Build.class("Hunter", "energy", "phys", {
 		unlock = 45,
 		maxLevel = 5,
 		type = "passive",
-		values = { speed = { 3, 15 } },
+		values = { speed = { 17, 34 } },
 		passive = { flat = { atkSpeed = "speed" } },
 		glyph = "🐾",
 	},
@@ -167,7 +167,7 @@ return Build.class("Hunter", "energy", "phys", {
 		cooldown = 12,
 		length = 35,
 		width = 4,
-		values = { dmg = { 200, 360 } },
+		values = { dmg = { 200, 410 } },
 		breakpoints = Build.bp2({
 			a = { add = { width = 2 } },
 			-- no category, like every DoT (ROZWOJ 7.1, 7.2)
@@ -185,7 +185,7 @@ return Build.class("Hunter", "energy", "phys", {
 		cost = 15,
 		cooldown = 25,
 		range = 40,
-		values = { crit = { 12, 20 }, critDmg = { 15, 30 } },
+		values = { crit = { 20, 23 }, critDmg = { 26.5, 28 } },
 		effects = { { kind = "sighted", duration = 10, stats = { critChance = "crit", critDmg = "critDmg" } } },
 		breakpoints = Build.bp2({ a = { add = { effectDuration = 2 } }, b = { values = { critDmg = 15 } } }, {
 			a = { mul = { cooldown = 0.8 } },
@@ -201,13 +201,13 @@ return Build.class("Hunter", "energy", "phys", {
 		type = "projectile",
 		delivery = "ranged",
 		cost = 80,
-		cooldown = 40,
+		cooldown = 29,
 		range = 38,
 		radius = 8,
 		element = "lightning",
-		values = { dmg = { 400, 650 }, splash = 120 },
+		values = { dmg = { 200, 400 }, splash = 75 },
 		breakpoints = Build.bp2(
-			{ a = { add = { radius = 4 } }, b = { values = { dmg = 80 } } },
+			{ a = { add = { radius = 4 } }, b = { values = { dmg = 37 } } },
 			{ a = { effect = { kind = "stun", duration = 1 } }, b = { mul = { cooldown = 0.8 } } }
 		),
 		glyph = "⚡",
@@ -221,14 +221,14 @@ return Build.class("Hunter", "energy", "phys", {
 		type = "projectile",
 		delivery = "ranged",
 		cost = 50,
-		cooldown = 30,
+		cooldown = 31,
 		range = 40,
 		castTime = 1.5,
 		finisher = { hp = 20, mul = 2 },
-		values = { dmg = { 400, 650 } },
+		values = { dmg = { 220, 290 } },
 		breakpoints = Build.bp2(
-			{ a = { values = { dmg = 60 } }, b = { pierce = 60 } },
-			{ a = { mul = { cooldown = 0.8 } }, b = { splash = { radius = 6, pct = 50 } } }
+			{ a = { values = { dmg = 37 } }, b = { pierce = 11 } },
+			{ a = { mul = { cooldown = 0.8 } }, b = { splash = { radius = 6, pct = 18 } } }
 		),
 		glyph = "➹",
 	},
@@ -252,7 +252,7 @@ return Build.class("Hunter", "energy", "phys", {
 		breakpoints = Build.bp2({
 			a = { add = { radius = 2 } },
 			-- the same values.poison and effect as Blast Trap (ROZWOJ 11.4): one effect, summed value (S78 D4)
-			b = { values = { poison = 60 }, effect = { kind = "poison", duration = 6, value = "poison" } },
+			b = { values = { poison = 9 }, effect = { kind = "poison", duration = 6, value = "poison" } },
 		}, { a = { effect = { kind = "freeze", duration = 1 } }, b = { add = { hits = 1 } } }),
 		glyph = "❄",
 	},
@@ -264,20 +264,20 @@ return Build.class("Hunter", "energy", "phys", {
 		type = "trap",
 		target = "point",
 		delivery = "ranged",
-		cost = 25,
-		cooldown = 10,
+		cost = 16,
+		cooldown = 14,
 		range = 30,
 		radius = 6,
 		duration = 20,
 		element = "poison",
-		values = { dmg = { 130, 220 }, poison = { 60, 110 }, slow = 30 },
+		values = { dmg = { 232, 236 }, poison = { 285, 290 }, slow = 30 },
 		effects = {
 			{ kind = "poison", duration = 6, value = "poison" },
 			{ kind = "slow", duration = 3, value = "slow", category = "enemySlow" },
 		},
 		breakpoints = Build.bp2(
 			{ a = { add = { radius = 2 } }, b = { pull = 8 } },
-			{ a = { echo = { delay = 1, pct = 60 } }, b = { values = { poison = 50 } } }
+			{ a = { echo = { delay = 1, pct = 38 } }, b = { values = { poison = 98 } } }
 		),
 		glyph = "☣",
 	},
@@ -289,7 +289,7 @@ return Build.class("Hunter", "energy", "phys", {
 		type = "buff",
 		delivery = "ranged",
 		cost = 30,
-		cooldown = 60,
+		cooldown = 67,
 		duration = 4,
 		values = {},
 		effects = {
@@ -321,17 +321,17 @@ return Build.class("Hunter", "energy", "phys", {
 		target = "point",
 		delivery = "ranged",
 		cost = 45,
-		cooldown = 40,
+		cooldown = 35,
 		range = 30,
 		radius = 3.5,
 		ringRadius = 8,
 		hits = 5,
 		duration = 15,
-		values = { dmg = { 90, 150 }, vuln = { 5, 8 }, root = { 1.5, 2.5 } },
+		values = { dmg = { 30, 38 }, vuln = { 5, 8 }, root = { 1.5, 2.5 } },
 		effects = SNAREFIELD_EFFECTS,
 		breakpoints = Build.bp2(
-			{ a = { add = { radius = 1 } }, b = { values = { vuln = 2 } } },
-			{ a = { values = { dmg = 25 } }, b = { pull = 6 } }
+			{ a = { add = { radius = 1 } }, b = { values = { vuln = 1 } } }, -- 5B: at most the Mark with 10B (ROZWOJ 11.4)
+			{ a = { values = { dmg = 14 } }, b = { pull = 6 } }
 		),
 		glyph = "⁂",
 	},
@@ -356,17 +356,17 @@ return Build.class("Hunter", "energy", "phys", {
 		type = "companion",
 		delivery = "ranged",
 		cost = 30,
-		cooldown = 30,
+		cooldown = 36,
 		duration = 20,
 		interval = 2,
 		delay = 1,
 		range = 40,
 		radius = 30,
-		values = { dmg = { 15, 30 } },
+		values = { dmg = { 27, 44 } },
 		breakpoints = Build.bp2({
 			a = { add = { duration = 4 } },
 			b = { effect = { kind = "slow", duration = 2, value = 15, category = "enemySlow" } },
-		}, { a = { values = { dmg = 15 } }, b = { splash = { radius = 5, pct = 50 } } }),
+		}, { a = { values = { dmg = 14 } }, b = { splash = { radius = 5, pct = 10 } } }),
 		glyph = "🦅",
 	},
 	{
@@ -381,9 +381,9 @@ return Build.class("Hunter", "energy", "phys", {
 		range = 40,
 		values = { vuln = { 6, 8 } }, -- ROZWOJ 11.5, 15.4.1
 		effects = { { kind = "vulnerability", duration = 10, value = "vuln", category = "enemyWeak" } },
-		breakpoints = Build.bp2({ a = { add = { effectDuration = 5 } }, b = { add = { radius = 6 } } }, {
+		breakpoints = Build.bp2({ a = { add = { effectDuration = 1 } }, b = { add = { radius = 6 } } }, {
 			a = { effect = { kind = "slow", duration = 10, value = 20, category = "enemySlow" } },
-			b = { values = { vuln = 2 } },
+			b = { values = { vuln = 1 } },
 		}),
 		glyph = "🎯",
 	},
@@ -395,18 +395,18 @@ return Build.class("Hunter", "energy", "phys", {
 		type = "circleTarget",
 		delivery = "ranged",
 		cost = 40,
-		cooldown = 30,
+		cooldown = 33,
 		range = 30,
 		radius = 12,
 		pull = 10,
-		values = { dmg = { 80, 120 }, slow = 30, vuln = 6 },
+		values = { dmg = { 102, 108 }, slow = 30, vuln = 6 },
 		effects = {
 			{ kind = "slow", duration = 3, value = "slow", category = "enemySlow" },
 			{ kind = "vulnerability", duration = 8, value = "vuln", category = "enemyWeak" },
 		},
 		breakpoints = Build.bp2(
-			{ a = { add = { radius = 3 } }, b = { mul = { cooldown = 0.8 } } },
-			{ a = { values = { dmg = 25 } }, b = { effect = { kind = "root", duration = 1, notBoss = true } } }
+			{ a = { add = { radius = 3 } }, b = { mul = { cooldown = 0.9 } } },
+			{ a = { values = { dmg = 20 } }, b = { effect = { kind = "root", duration = 1, notBoss = true } } }
 		),
 		glyph = "⇲",
 	},

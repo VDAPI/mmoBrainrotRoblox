@@ -163,6 +163,7 @@ export type PathTarget = {
 	at: number?,
 	choice: string?,
 	noL20: boolean?,
+	cap: string?, -- S90: hunter.dexCaps, which cap ("crit", "speed", "dodge")
 }
 
 local L45 = { 45, 70, 100 }
@@ -199,7 +200,7 @@ local function target(
 end
 
 -- S89 (F1): the classes whose rows (above 20) balance.spec asserts; read by balance.spec and the report (BalanceTables)
-SkillModel.PATHS_TUNED = { Cleric = true, Warrior = true, Hunter = false, Mage = false } :: { [string]: boolean }
+SkillModel.PATHS_TUNED = { Cleric = true, Warrior = true, Hunter = true, Mage = true } :: { [string]: boolean }
 
 local MAGE_GAIN = { [45] = { 1.20, 1.30 }, [70] = { 1.30, 1.40 }, [100] = { 1.35, 1.45 } } -- ROZWOJ 12.7
 
@@ -609,6 +610,13 @@ SkillModel.PATH_TARGETS = {
 			note = "(b) 3 potwory, które oddają",
 		}
 	),
+	-- S90 (H1): R3 of the Trapper (area 3 targets 8 s / 1 target 8 s <= areaCap 2.0) with both weapons of the path
+	target("trapper.r3", "Hunter", "trapper", "tsk3", "trapper.poacher", L45, nil, nil, "ROZWOJ 11.6", {
+		weapon = { main = "crossbow", offhand = QUIVER },
+	}),
+	target("trapper.r3", "Hunter", "trapper", "tsk3", "trapper.poacher", L45, nil, nil, "ROZWOJ 11.6", {
+		weapon = { main = "bow", offhand = QUIVER },
+	}),
 	-- Mage (ROZWOJ 8, 12.7)
 	target(
 		"destroyer.aoe",
@@ -623,6 +631,9 @@ SkillModel.PATH_TARGETS = {
 		{
 			bands = MAGE_GAIN,
 			project = { [45] = 1.21, [70] = 1.38, [100] = 1.46 },
+			-- S90: destroyer.aoe na 100 poza zasięgiem dźwigni S90: 1.455; Wir i Kataklizm z rangą 10 na 3 celach, a ich
+			-- obniżka podnosi arcanist.vsDestroyer na 100 ponad 1.25 (DECYZJE S90)
+			reportAt = { 100 },
 		}
 	),
 	target(
@@ -637,6 +648,9 @@ SkillModel.PATH_TARGETS = {
 		"ROZWOJ 12.7",
 		{
 			project = { [20] = 0.98, [45] = 1.07, [70] = 1.14, [100] = 1.19 },
+			-- S90: destroyer.single na 70 poza zasięgiem dźwigni S90: 1.038; build bossa na 70 ma Kataklizm na randze 3 i
+			-- Burzę Meteorów bez 10B przy pełnym zużyciu many, a każda dźwignia na 70 rusza 45 albo 100 (DECYZJE S90)
+			reportAt = { 70 },
 		}
 	),
 	target(
@@ -652,6 +666,10 @@ SkillModel.PATH_TARGETS = {
 		{
 			n = 2,
 			note = "2 wrogów",
+			-- S90: destroyer.clear poza zasięgiem dźwigni S90: Niszczyciel czyści 2-4 wrogów w 2,6-2,8 s niezależnie od
+			-- liczby wrogów (próg pierwszych rzutów), Arkanista 2 wrogów w 1,3 s; Wir x2 daje 1,77 / 1,79 (2 wrogów, 70 / 100)
+			-- i psuje destroyer.aoe, mage.tsk4 i arcanist.vsDestroyer (DECYZJE S90)
+			report = "właściciel (H4)",
 		}
 	),
 	target(
@@ -667,6 +685,10 @@ SkillModel.PATH_TARGETS = {
 		{
 			n = 3,
 			note = "3 wrogów",
+			-- S90: destroyer.clear poza zasięgiem dźwigni S90: Niszczyciel czyści 2-4 wrogów w 2,6-2,8 s niezależnie od
+			-- liczby wrogów (próg pierwszych rzutów), Arkanista 2 wrogów w 1,3 s; Wir x2 daje 1,77 / 1,79 (2 wrogów, 70 / 100)
+			-- i psuje destroyer.aoe, mage.tsk4 i arcanist.vsDestroyer (DECYZJE S90)
+			report = "właściciel (H4)",
 		}
 	),
 	target(
@@ -682,6 +704,10 @@ SkillModel.PATH_TARGETS = {
 		{
 			n = 4,
 			note = "4 wrogów",
+			-- S90: destroyer.clear poza zasięgiem dźwigni S90: Niszczyciel czyści 2-4 wrogów w 2,6-2,8 s niezależnie od
+			-- liczby wrogów (próg pierwszych rzutów), Arkanista 2 wrogów w 1,3 s; Wir x2 daje 1,77 / 1,79 (2 wrogów, 70 / 100)
+			-- i psuje destroyer.aoe, mage.tsk4 i arcanist.vsDestroyer (DECYZJE S90)
+			report = "właściciel (H4)",
 		}
 	),
 	target(
@@ -711,22 +737,53 @@ SkillModel.PATH_TARGETS = {
 		"ROZWOJ 12.7",
 		{
 			project = { [20] = 1.04, [45] = 1.15, [70] = 1.20, [100] = 1.24 },
+			-- S90: arcanist.vsDestroyer na 70 poza zasięgiem dźwigni S90: 1.269 (ten sam dołek bossa Niszczyciela na 70)
+			reportAt = { 70 },
 		}
 	),
-	target("mage.tsk4", "Mage", "destroyer", "tsk4", "destroyer.destroyerExp", L45, 2.0, 3.0, "ROZWOJ 8, 12.7", {
+	-- S90 (H1, DECYZJE): the four bands of ROZWOJ 12.0 / 12.7 instead of the S86 2.0-3.0 with variants >= 1.6
+	target("mage.tsk4", "Mage", "destroyer", "tsk4", "destroyer.destroyerExp", L45, 2.0, 2.8, "ROZWOJ 8, 12.0, 12.7", {
 		project = { [45] = 1.97, [70] = 2.48, [100] = 2.18 },
 	}),
-	target("mage.tsk4", "Mage", "arcanist", "tsk4", "arcanist.arcanistBoss", L45, 2.0, 3.0, "ROZWOJ 8, 12.7", {
+	target("mage.tsk4", "Mage", "arcanist", "tsk4", "arcanist.arcanistBoss", L45, 2.0, 2.4, "ROZWOJ 8, 12.0, 12.7", {
 		project = { [45] = 2.02, [70] = 2.32, [100] = 2.40 },
 	}),
-	target("mage.tsk4", "Mage", "destroyer", "tsk4", "destroyer.destroyerBoss", L45, 1.6, nil, "ROZWOJ 12.7", {
+	target("mage.tsk4", "Mage", "destroyer", "tsk4", "destroyer.destroyerBoss", L45, 1.6, 2.8, "ROZWOJ 12.0, 12.7", {
 		note = "wariant: Oszczędny Splot",
 		project = { [45] = 1.64, [70] = 2.11, [100] = 1.82 },
 	}),
-	target("mage.tsk4", "Mage", "arcanist", "tsk4", "arcanist.arcanistOverload", L45, 1.6, nil, "ROZWOJ 12.7", {
+	-- S90: Przeciążenie na 45 i 100 poza zasięgiem dźwigni S90: 2.84 / 2.85; węzeł rzędu 3 (≤ 20, S91) daje ×1.30
+	-- arcanistBoss, a ten ma na 50-55 (G10) 2.00-2.05, więc na 45 i 100 nie zejdzie pod 2.15 (DECYZJE S90)
+	target("mage.tsk4", "Mage", "arcanist", "tsk4", "arcanist.arcanistOverload", L45, 2.6, 2.8, "ROZWOJ 12.0, 12.7", {
 		note = "wariant: Przeciążenie",
 		project = { [45] = 2.62, [70] = 2.75, [100] = 2.79 },
+		reportAt = { 45, 100 },
 	}),
+	-- S90 (H1): T-SK3 of the Mage path builds against their areaCap (Destroyer 3.0, Arcanist 2.0; SkillModel.bandOf)
+	target("mage.tsk3", "Mage", "destroyer", "tsk3", "destroyer.destroyerExp", L45, nil, nil, "ROZWOJ 8, 12.7, 15.5.3"),
+	target(
+		"mage.tsk3",
+		"Mage",
+		"destroyer",
+		"tsk3",
+		"destroyer.destroyerBoss",
+		L45,
+		nil,
+		nil,
+		"ROZWOJ 8, 12.7, 15.5.3"
+	),
+	target("mage.tsk3", "Mage", "arcanist", "tsk3", "arcanist.arcanistBoss", L45, nil, nil, "ROZWOJ 8, 12.7, 15.5.3"),
+	target(
+		"mage.tsk3",
+		"Mage",
+		"arcanist",
+		"tsk3",
+		"arcanist.arcanistOverload",
+		L45,
+		nil,
+		nil,
+		"ROZWOJ 8, 12.7, 15.5.3"
+	),
 	-- every class
 	-- S89 (F2): the upper band is max(2.0, 1.15 x R1_L20[build]) (SkillModel.bandOf)
 	target("all.r1", "Warrior", "berserker", "r1", "berserker.fury", L45, 1.6, 2.0, "ROZWOJ 0"),
@@ -734,11 +791,48 @@ SkillModel.PATH_TARGETS = {
 	target("all.r1", "Cleric", "inquisitor", "r1", "inquisitor.solo", L45, 1.6, 2.0, "ROZWOJ 0", {
 		report = "właściciel (F4)",
 	}),
-	target("all.r1", "Hunter", "marksman", "r1", "marksman.kingslayer", L45, 1.6, 2.0, "ROZWOJ 0"),
-	target("all.r1", "Hunter", "trapper", "r1", "trapper.poacher", L45, 1.6, 2.0, "ROZWOJ 0"),
-	target("all.r1", "Mage", "destroyer", "r1", "destroyer.destroyerExp", L45, 1.6, 2.0, "ROZWOJ 0"),
-	target("all.r1", "Mage", "destroyer", "r1", "destroyer.destroyerBoss", L45, 1.6, 2.0, "ROZWOJ 0"),
-	target("all.r1", "Mage", "arcanist", "r1", "arcanist.arcanistBoss", L45, 1.6, 2.0, "ROZWOJ 0"),
+	-- S90: all.r1 Strzelca i Trapera z Kuszą poza zasięgiem dźwigni S90: 2.80-2.97 przy górze 2.78-2.86 (R1 bazy Łowcy
+	-- na 20. to 2.42-2.49, a Strzelec x baza >= 1.25 i R7 1.15-1.35 wymagają mocnej bazy; DECYZJE S90, lista S91)
+	target("all.r1", "Hunter", "marksman", "r1", "marksman.kingslayer", L45, 1.6, 2.0, "ROZWOJ 0", {
+		report = "S91",
+	}),
+	target("all.r1", "Hunter", "marksman", "r1", "marksman.kingslayer", L45, 1.6, 2.0, "ROZWOJ 0", {
+		weapon = { main = "longbow", offhand = QUIVER },
+		report = "S91",
+	}),
+	target("all.r1", "Hunter", "trapper", "r1", "trapper.poacher", L45, 1.6, 2.0, "ROZWOJ 0", {
+		report = "S91",
+	}),
+	target("all.r1", "Hunter", "trapper", "r1", "trapper.poacher", L45, 1.6, 2.0, "ROZWOJ 0", {
+		weapon = { main = "bow", offhand = QUIVER },
+	}),
+	-- S90: all.r1 Maga poza zasięgiem dźwigni S90: 3.3-3.9 (exp), 4.3-5.0 (boss) przy górze 3.37-3.66; R1 buildów Maga na 20.
+	-- to 2.9-3.2, a pasma 12.7 wymagają jej pełnych umiejętności (Pocisk Ognia to ok. połowa obrażeń; DECYZJE S90, S91)
+	target(
+		"all.r1",
+		"Mage",
+		"destroyer",
+		"r1",
+		"destroyer.destroyerExp",
+		L45,
+		1.6,
+		2.0,
+		"ROZWOJ 0",
+		{ report = "S91" }
+	),
+	target(
+		"all.r1",
+		"Mage",
+		"destroyer",
+		"r1",
+		"destroyer.destroyerBoss",
+		L45,
+		1.6,
+		2.0,
+		"ROZWOJ 0",
+		{ report = "S91" }
+	),
+	target("all.r1", "Mage", "arcanist", "r1", "arcanist.arcanistBoss", L45, 1.6, 2.0, "ROZWOJ 0", { report = "S91" }),
 	target("support.elites", "Warrior", "guardian", "elites", "guardian.loner", L45, 1, 1, "ROZWOJ 7.5, 10.6", {
 		report = "S92–S94",
 	}),
@@ -751,7 +845,9 @@ SkillModel.PATH_TARGETS = {
 	target("support.elites", "Cleric", "fortune", "elites", "fortune.plunder", L45, 1, 1, "ROZWOJ 7.5, 9.6", {
 		report = "S92–S94",
 	}),
-	target("support.elites", "Hunter", "scout", "elites", "scout.partyHunter", L45, 1, 1, "ROZWOJ 7.5, 11.6"),
+	target("support.elites", "Hunter", "scout", "elites", "scout.partyHunter", L45, 1, 1, "ROZWOJ 7.5, 11.6", {
+		report = "S92–S94",
+	}),
 } :: { PathTarget }
 
 -- all.tsk3 (ROZWOJ 0, 8, 15.5.3): T-SK3 of every build and base against its areaCap; R4 / R5 / R6 (ROZWOJ 0, 2.3,
@@ -772,18 +868,12 @@ for _, classId in B.CLASSES do
 				"base",
 				"marksman.kingslayer",
 				"marksman.eliteHunter",
-				"trapper.poacher",
 				"trapper.poisoner",
 				"scout.partyHunter",
 				"scout.tracker",
 			},
-			Mage = {
-				"base",
-				"destroyer.destroyerExp",
-				"destroyer.destroyerBoss",
-				"arcanist.arcanistBoss",
-				"arcanist.arcanistOverload",
-			},
+			-- S90: trapper.poacher (trapper.r3) and the Mage path builds (mage.tsk3) are asserted under their own ids
+			Mage = { "base" },
 			Cleric = {
 				"base",
 				"healer.dungeon",
@@ -803,6 +893,30 @@ for _, classId in B.CLASSES do
 		)
 	end
 end
+-- S90 (C4, ROZWOJ 8, 11.6, 15.4): every Hunter reference build's crit (with Draw a Bead), attack speed and dodge before
+-- the Data/Stats caps, minus the cap (SkillModel.dexCaps): no node wasted above a cap (crit and dodge <= 0.5 points,
+-- speed <= 0.01).
+for _, key in
+	{
+		"marksman.kingslayer",
+		"marksman.eliteHunter",
+		"trapper.poacher",
+		"trapper.poisoner",
+		"scout.partyHunter",
+		"scout.tracker",
+	}
+do
+	local path = string.match(key, "^(.-)%.") :: string
+	for _, spec in { { "crit", 0.5 }, { "speed", 0.01 }, { "dodge", 0.5 } } :: { { any } } do
+		table.insert(
+			SkillModel.PATH_TARGETS,
+			target("hunter.dexCaps", "Hunter", path, "dexCap", key, L45, nil, spec[2], "ROZWOJ 8, 11.6, 15.4", {
+				cap = spec[1],
+				note = `{spec[1]} ponad limit`,
+			})
+		)
+	end
+end
 for _, id in { "r4", "r5", "r6" } do
 	table.insert(
 		SkillModel.PATH_TARGETS,
@@ -815,11 +929,26 @@ end
 
 -- S89 (F2): R1 of "Furia" and "Inkwizytor solo" trimmed to L20 (the S89 start table, A5, to 0.01); all.r1's upper band
 -- is max(2.0, 1.15 x R1_L20[build]) (balance plan D1: T-SK1 <= 1.15 x own L20). S90 adds the Hunter and Mage builds.
-SkillModel.R1_L20 = { ["berserker.fury"] = 2.27, ["inquisitor.solo"] = 2.21 } :: { [string]: number }
+-- S90 (H1): the Hunter per weapon of the measurement (key with "@weapon" for a variant), the Mage builds; the S90 start
+-- table at L20 before any S90 change (the crossbow at 1.45).
+SkillModel.R1_L20 = {
+	["berserker.fury"] = 2.27,
+	["inquisitor.solo"] = 2.21,
+	["marksman.kingslayer"] = 2.48, -- heavy crossbow
+	["marksman.kingslayer@longbow+quiver"] = 2.49,
+	["trapper.poacher"] = 2.42, -- crossbow
+	["trapper.poacher@bow+quiver"] = 2.44,
+	["destroyer.destroyerExp"] = 2.93,
+	["destroyer.destroyerBoss"] = 3.18,
+	["arcanist.arcanistBoss"] = 3.07,
+} :: { [string]: number }
 
 -- S89 (E1, DECYZJE): R4 bands of the test (ROZWOJ 0 "ok. +10-15% / +20-25%"); A and B both with a value: |A - B| <= 0.05.
 SkillModel.R4_BANDS = { [5] = { 0.08, 0.17 }, [10] = { 0.17, 0.28 } }
 SkillModel.R4_DIFF = 0.05
+SkillModel.R4_CASTS = 12 -- S90: a cooldown option's R4 window covers at least 12 cooldowns (SkillModel.optionGain)
+-- S90: skills measured in the build's whole rotation (their value comes from the other spells)
+SkillModel.R4_ROTATION = { arcaneDischarge = true } :: { [string]: boolean }
 
 -- S89 (E1): breakpoint options with a rank level above 20 printed without an assertion: control, movement and geometry
 -- (free utility, ROZWOJ 2.7) and options without a value in the role SkillModel.optionGain measures (S86).
@@ -931,12 +1060,77 @@ SkillModel.R4_UTILITY = {
 	["hammerOfHeaven:5a"] = "geometria albo czas kontroli",
 	["hammerOfHeaven:10a"] = "geometria albo czas kontroli",
 	["advanceOrder:10a"] = "krytyk sojuszników: wartość w B Chorążego, nie w obrażeniach Rozkazu",
+	-- S90: the Hunter and the Mage
+	["aimedShot:10b"] = "kradzież życia (podtrzymanie, bez metryki w roli)",
+	["doubleShot:10a"] = "spowolnienie (kontrola)",
+	["disengage:5a"] = "spowolnienie (kontrola)",
+	["disengage:5b"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["disengage:10a"] = "obrażenia następnego strzału: Odskok poza rotacją buildów (0 w DPS Strzelca, S90)",
+	["disengage:10b"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["arrowRain:5a"] = "geometria albo czas kontroli",
+	["arrowRain:10a"] = "spowolnienie (kontrola)",
+	["volley:10a"] = "geometria albo czas kontroli",
+	["piercingArrow:5a"] = "geometria albo czas kontroli",
+	["piercingArrow:10a"] = "odrzucenie (kontrola)",
+	["drawBead:5a"] = "wzmocnienie krytyka: wartość w DPS Strzelca (bez metryki w optionGain)",
+	["drawBead:5b"] = "wzmocnienie krytyka: wartość w DPS Strzelca (bez metryki w optionGain)",
+	["drawBead:10a"] = "wzmocnienie krytyka: wartość w DPS Strzelca (bez metryki w optionGain)",
+	["drawBead:10b"] = "wzmocnienie krytyka: wartość w DPS Strzelca (bez metryki w optionGain)",
+	["stormArrow:5a"] = "geometria albo czas kontroli",
+	["stormArrow:10a"] = "ogłuszenie (kontrola)",
+	["frostTrap:5a"] = "geometria albo czas kontroli",
+	["frostTrap:10a"] = "zamrożenie (kontrola)",
+	["venomSnare:5a"] = "geometria albo czas kontroli",
+	["venomSnare:5b"] = "przyciąganie (kontrola)",
+	["camouflage:5a"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["camouflage:5b"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["camouflage:10a"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["camouflage:10b"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["snarefield:5a"] = "geometria albo czas kontroli",
+	["snarefield:5b"] = "kontrola albo osłabienie wroga dla drużyny (bez metryki w roli)",
+	["snarefield:10b"] = "przyciąganie (kontrola)",
+	["falcon:5b"] = "spowolnienie (kontrola)",
+	["huntersMark:5a"] = "osłabienie wroga: wartość w B Zwiadowcy (wiersz scout.support)",
+	["huntersMark:5b"] = "osłabienie wroga: wartość w B Zwiadowcy (wiersz scout.support)",
+	["huntersMark:10a"] = "spowolnienie (kontrola)",
+	["huntersMark:10b"] = "osłabienie wroga: wartość w B Zwiadowcy (wiersz scout.support)",
+	["drive:5a"] = "geometria albo czas kontroli",
+	["drive:10b"] = "unieruchomienie (kontrola)",
+	["iceShard:5a"] = "zamrożenie (kontrola)",
+	["chainLightning:5a"] = "dodatkowe skoki: wartość dopiero przy więcej niż 3 wrogach (pomiar na 3 manekinach)",
+	["fireball:10a"] = "3 małe kule spadają 7 st. od środka, a manekiny stoją w środku (geometria, 0 w modelu)",
+	["chainLightning:10a"] = "ogłuszenie (kontrola)",
+	["blink:5a"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["blink:5b"] = "geometria albo czas kontroli",
+	["blink:10a"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["blink:10b"] = "spowolnienie (kontrola)",
+	["frostNova:5a"] = "geometria albo czas kontroli",
+	["frostNova:5b"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["meteor:5a"] = "krótsze opóźnienie (geometria, bez wartości w 60 s)",
+	["firewall:10a"] = "ogłuszenie (kontrola)",
+	["elementalVortex:5a"] = "geometria albo czas kontroli",
+	["elementalVortex:10b"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["meteorStorm:10a"] = "geometria albo czas kontroli",
+	["cataclysm:5a"] = "geometria albo czas kontroli",
+	["manaShield:5a"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["manaShield:5b"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["manaShield:10a"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["manaShield:10b"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["evocation:5a"] = "mana: wartość w dochodzie many Arkanisty (bez metryki w optionGain)",
+	["evocation:5b"] = "mana: wartość w dochodzie many Arkanisty (bez metryki w optionGain)",
+	["evocation:10a"] = "mana: wartość w dochodzie many Arkanisty (bez metryki w optionGain)",
+	["evocation:10b"] = "mana: wartość w dochodzie many Arkanisty (bez metryki w optionGain)",
+	["arcaneTorrent:5b"] = "ruch w trakcie kanału",
 } :: { [string]: string }
 
 -- S89 (F4): measured options a single number cannot bring into the band (printed; DECYZJE S89, list for the owner).
 SkillModel.R4_REPORT = {
 	["cleave:5b"] = "synergia z 10A (3 stosy krwawienia): 0,12 na 45, 0,25 od 70; jedna liczba nie mieści obu",
 	["renew:5a"] = "dłuższa Odnowa rzucana na odnowieniu traci tyknięcia (odświeżenie bez reszty): -0,29",
+	-- S90 (G1, H4)
+	["falcon:5a"] = "z Królewskim Sokołem (od 60.) ptak zostaje do końca walki, więc +4 s czasu nic nie daje (0 na 100)",
+	["frostTrap:10b"] = "druga pułapka łapie 1 z 3 wrogów (groupSpread), a liczba sideł jest całkowita: 0,11–0,12",
+	["arcaneDischarge:5b"] = "Wyładowanie czeka na 4 Ładunki, więc krótsze odnowienie nie zmienia rzutów w rotacji (0)",
 } :: { [string]: string }
 
 -- S89 (E1): the build of a skill's R4 rows: path skills on their path's target build, base skills on the class's combat
@@ -948,8 +1142,20 @@ SkillModel.R4_PATH_BUILDS = {
 	healer = "healer.dungeon",
 	fortune = "fortune.plunder",
 	inquisitor = "inquisitor.solo",
+	-- S90: the Hunter's and the Mage's paths on their target builds; the Mage's base skills on "Arkanista (boss)" (B
+	-- is the boss option, ROZWOJ 12.2; the option role decides 1 or 3 dummies, SkillModel.optionGain)
+	marksman = "marksman.kingslayer",
+	trapper = "trapper.poacher",
+	scout = "scout.partyHunter",
+	destroyer = "destroyer.destroyerExp",
+	arcanist = "arcanist.arcanistBoss",
 } :: { [string]: string }
-SkillModel.R4_CLASS_BUILDS = { Warrior = "berserker.fury", Cleric = "inquisitor.solo" } :: { [string]: string }
+SkillModel.R4_CLASS_BUILDS = {
+	Warrior = "berserker.fury",
+	Cleric = "inquisitor.solo",
+	Hunter = "marksman.kingslayer",
+	Mage = "arcanist.arcanistBoss",
+} :: { [string]: string }
 SkillModel.R4_SUPPORT_BUILDS = {
 	heal = "healer.dungeon",
 	circleOfLight = "healer.dungeon",
@@ -961,7 +1167,7 @@ SkillModel.R4_SUPPORT_BUILDS = {
 -- <= 20 only printed for S91), the A - B difference when both have a value, r5 (the weapon spread of the combat paths)
 -- and r6 (the value of a point in rows 4-11: the weakest and the strongest third against the mean, at 100).
 do
-	for _, classId in { "Warrior", "Cleric" } do
+	for _, classId in { "Warrior", "Cleric", "Hunter", "Mage" } do
 		for _, def in SkillData.byClass[classId] do
 			local d: any = def
 			if d.type == "passive" or not d.breakpoints then
@@ -1045,8 +1251,44 @@ do
 			note = "buława i korbacz z relikwią",
 		})
 	)
+	-- S90 (G2): R5b of the Hunter's and the Mage's combat paths, every weapon type in the path's own metric
+	-- (SkillModel.PATH_METRIC) within 10% of the mean of the types
+	for _, spec in
+		{
+			{ "Hunter", "marksman", "marksman.kingslayer", "Łuk Długi, Ciężka Kusza (1 cel 60 s)" },
+			{ "Hunter", "trapper", "trapper.poacher", "Kusza, Łuk (obszar 3 cele 8 s)" },
+			{ "Mage", "destroyer", "destroyer.destroyerExp", "kostur, różdżka z kulą (obszar 3 cele 60 s)" },
+			{ "Mage", "arcanist", "arcanist.arcanistBoss", "kostur runiczny, różdżka z księgą (boss 180 s)" },
+		} :: { { any } }
+	do
+		table.insert(
+			SkillModel.PATH_TARGETS,
+			target(`r5.{spec[2]}`, spec[1], spec[2], "r5", spec[3], L45, nil, 0.10, "ROZWOJ 0 (G2)", {
+				noL20 = true,
+				note = spec[4],
+			})
+		)
+	end
+	-- S90 (G2, DECYZJE): R5a, the two combat paths of the Hunter and of the Mage: role gain x base (SkillModel.r5aGain)
+	-- of each path within 10% of the pair's mean
+	for _, spec in
+		{
+			{ "Hunter", "marksman", "marksman.kingslayer", "r5a.hunter", "Strzelec 1 cel / baza" },
+			{ "Hunter", "trapper", "trapper.poacher", "r5a.hunter", "Traper obszar 8 s / baza" },
+			{ "Mage", "destroyer", "destroyer.destroyerExp", "r5a.mage", "Niszczyciel obszar 60 s / baza" },
+			{ "Mage", "arcanist", "arcanist.arcanistBoss", "r5a.mage", "Arkanista boss 180 s / baza" },
+		} :: { { any } }
+	do
+		table.insert(
+			SkillModel.PATH_TARGETS,
+			target(spec[4], spec[1], spec[2], "r5a", spec[3], L45, nil, 0.10, "ROZWOJ 0 (G2)", {
+				noL20 = true,
+				note = spec[5],
+			})
+		)
+	end
 	-- S89 (F4, DECYZJE): the Berserker, the Inquisitor and the Healer only printed (their middle or last third holds
-	-- skills and nodes without a value in the metric: area, sustain, rescue)
+	-- skills and nodes without a value in the metric: area, sustain, rescue). S90: the five Hunter and Mage paths.
 	for _, spec in
 		{
 			{ "Warrior", "berserker", "berserker.fury", "właściciel (F4)" },
@@ -1055,6 +1297,20 @@ do
 			{ "Cleric", "healer", "healer.dungeon", "właściciel (F4)" },
 			{ "Warrior", "guardian", "guardian.defender", "tylko raport (E3)" },
 			{ "Cleric", "fortune", "fortune.plunder", "tylko raport (E3)" },
+			-- S90: r6 Strzelca i Trapera poza zasięgiem dźwigni S90: Strzelec 0.20 (najsłabsza trzecia część), Traper 1.66
+			-- (najmocniejsza). Pierwszy punkt rzędu 4 (Namierzenie +15,7%, Trujące Sidła +40% metryki) niesie pierwszą część;
+			-- środkowa Strzelca to Strzała Burzy +0,9%, Strzał w Serce -0,4% i Nawałnica 0 w 1 cel 60 s: obie umiejętności
+			-- x1,25 dają 0,32 przy Królobójca x baza 1,348 na 100 (pasmo C do 1,35); Trujące Sidła x0,7 dają 1,46, ale
+			-- Kłusownik / Strzelec w obszarze na 45 1,05 < 1,15 (pasmo D) (DECYZJE S90)
+			{ "Hunter", "marksman", "marksman.kingslayer", "właściciel (F4)" },
+			{ "Hunter", "trapper", "trapper.poacher", "właściciel (F4)" },
+			{ "Hunter", "scout", "scout.partyHunter", nil },
+			-- S90: r6 Niszczyciela (0.53 / 1.58) i Arkanisty (0.40 / 1.56) poza zasięgiem dźwigni S90: pierwsza część to
+			-- umiejętność rzędu 4 (Wir +8,7%, Wyładowanie +5,0%) i Potęga; w środkowej węzły bez wartości w metryce
+			-- (Gniew Burzy i Przepływ Żywiołów 0, Inwokacja Mocy +0,1%), a Odzysk ma -2,43 (obniża boss 180 s); to wybór
+			-- węzłów buildu wzorcowego, a ich wartości rusza pasma 12.7 (właściciel, DECYZJE S90)
+			{ "Mage", "destroyer", "destroyer.destroyerExp", "właściciel (F4)" },
+			{ "Mage", "arcanist", "arcanist.arcanistBoss", "właściciel (F4)" },
 		} :: { { any } }
 	do
 		local report = spec[4]
@@ -5357,11 +5613,12 @@ end
 -- Target rows (J2) ----------------------------------------------------------------------------------------------------
 
 -- T-SK4 bands (ROZWOJ 8, 12.7): the main builds 2.0-3.0, their variants from 1.6, the base 1.1-1.4.
+-- S90 (F4, DECYZJE): the path bands of ROZWOJ 12.0 / 12.7 (were 2.0-3.0 and >= 1.6 for the variants, S87)
 SkillModel.TSK4_BANDS = {
-	["destroyer.destroyerExp"] = { 2.0, 3.0 },
-	["arcanist.arcanistBoss"] = { 2.0, 3.0 },
-	["destroyer.destroyerBoss"] = { 1.6 },
-	["arcanist.arcanistOverload"] = { 1.6 },
+	["destroyer.destroyerExp"] = { 2.0, 2.8 },
+	["arcanist.arcanistBoss"] = { 2.0, 2.4 },
+	["destroyer.destroyerBoss"] = { 1.6, 2.8 },
+	["arcanist.arcanistOverload"] = { 2.6, 2.8 },
 	base = { 1.1, 1.4 },
 	["base.loadout"] = { 1.1, 1.4 },
 } :: { [string]: { number } }
@@ -6340,6 +6597,22 @@ SkillModel.TARGET_METRICS = {
 	r5 = function(row: PathTarget, L: number): number
 		return SkillModel.r5Spread(rowBuild(row), L)
 	end,
+	-- S90 (G2): |role gain x base of the row's path / the mean of the class's pair - 1|
+	r5a = function(row: PathTarget, L: number): number
+		local build = rowBuild(row)
+		local own = SkillModel.r5aGain(build, L)
+		local other = SkillModel.r5aGain(byKey(SkillModel.R5A_PAIRS[build.key]), L)
+		return math.abs(own / math.max(1e-12, (own + other) / 2) - 1)
+	end,
+	-- S90 (C4): a Hunter cap: the value before Data/Stats' cap minus the cap (SkillModel.dexCaps)
+	dexCap = function(row: PathTarget, L: number): number
+		local c = SkillModel.dexCaps(rowBuild(row), L)
+		local cap = row.cap
+		return if cap == "crit"
+			then c.critSighted - c.critCap
+			elseif cap == "speed" then c.speed - c.speedCap
+			else c.dodge - c.dodgeCap
+	end,
 	r6min = function(row: PathTarget, _L: number): number
 		return SkillModel.r6Parts(rowBuild(row)).low
 	end,
@@ -6381,7 +6654,7 @@ function SkillModel.bandOf(row: PathTarget, L: number): (number?, number?)
 			return band[1], band[2]
 		end
 	end
-	local own = SkillModel.R1_L20[row.build]
+	local own = if row.metric == "r1" then SkillModel.R1_L20[rowBuild(row).key] or SkillModel.R1_L20[row.build] else nil
 	if row.metric == "r1" and own then
 		-- S89 (F2): max(2.0, 1.15 x the build's own R1 at L20)
 		return row.low, math.max(row.high or 2.0, 1.15 * own)
@@ -6406,11 +6679,24 @@ function SkillModel.evaluateTargets(classId: string?): { TargetResult }
 		end
 		local build = rowBuild(row)
 		for _, L in levels do
+			-- S90: an R4 row only where the build has the skill at that rank (a path skill bought later has none yet)
+			if
+				row.skill
+				and row.at
+				and Paths.skillRank(SkillModel.character(build, L).character, row.skill) < (row.at :: number)
+			then
+				continue
+			end
 			local option = `{row.skill or ""}{row.at or ""}{row.choice or ""}`
-			local key = `{row.id}|{row.classId}|{build.key}|{row.metric}|{row.n or ""}|{option}|{L}`
+			local key = `{row.id}|{row.classId}|{build.key}|{row.metric}|{row.n or ""}|{option}|{row.cap or ""}|{L}`
 			local cached = targetCache[key]
 			if not cached then
 				local value = fn(row, L)
+				-- S90: an option without a value in its role at this level (the skill does no damage yet, e.g. Frost
+				-- Trap before Blast Trap) is only printed
+				local noMetric = row.metric == "r4"
+					and SkillModel.optionGain(build, row.skill :: string, row.at :: number, row.choice :: string, L)
+						== nil
 				local low, high = SkillModel.bandOf(row, L)
 				cached = {
 					id = row.id,
@@ -6429,8 +6715,11 @@ function SkillModel.evaluateTargets(classId: string?): { TargetResult }
 					asserted = L > 20
 						and table.find(row.levels, L) ~= nil
 						and row.report == nil
-						and not (row.reportAt and table.find(row.reportAt, L)),
-					report = row.report or (if row.reportAt and table.find(row.reportAt, L) then "F4" else nil),
+						and not (row.reportAt and table.find(row.reportAt, L))
+						and not noMetric,
+					report = row.report
+						or (if row.reportAt and table.find(row.reportAt, L) then "F4" else nil)
+						or (if noMetric then "bez metryki na tym poziomie" else nil),
 					source = row.source,
 					note = row.note,
 					project = if row.project then row.project[L] else nil,
@@ -6442,6 +6731,70 @@ function SkillModel.evaluateTargets(classId: string?): { TargetResult }
 		end
 	end
 	return out
+end
+
+-- S90 report helpers (I1) -----------------------------------------------------------------------------------------
+
+export type ManaRow = {
+	demand: number, -- mana per s with every damaging spell on cooldown (T-SK4 numerator)
+	regen: number,
+	returns: number, -- passive returns per s (Reclaim, Cascade)
+	ratio: number, -- T-SK4
+	evocation: number, -- mana per s of an Evocation on every cooldown (0 without the skill)
+	ratioEvocation: number, -- demand / (regen + returns + evocation)
+}
+
+-- S90 (F4, I1, ROZWOJ 12.7): the mana table of a Mage build at L (mean of the elements, as metrics); Evocation on every
+-- cooldown counted apart: its mana % x the pool / its cooldown (Paths.effectiveFor with the build's nodes).
+function SkillModel.manaRow(build: Build, L: number): ManaRow
+	local m = SkillModel.metrics(build, L)
+	local sp = SkillModel.player(build, L)
+	local evo = 0
+	local rank = Paths.skillRank(sp.character, "evocation")
+	if rank > 0 then
+		local def = Paths.effectiveFor(sp.character, "evocation", sp.weapons, rank)
+		evo = Skills.valueAt(def, "mana", rank) / 100 * m.pool / math.max(1, Skills.cooldown(def, rank))
+	end
+	local income = m.regen + m.returns
+	return {
+		demand = m.demand,
+		regen = m.regen,
+		returns = m.returns,
+		ratio = m.tsk4,
+		evocation = evo,
+		ratioEvocation = m.demand / math.max(1e-9, income + evo),
+	}
+end
+
+-- S90 (I1, ROZWOJ 12.7): the build without one skill in its rotation (key "<key>-<skillId>"), e.g. the Arcanist
+-- without the Arcane Torrent (12.7: x1.03 on 70, x1.08 on 100).
+function SkillModel.withoutSkill(build: Build, skillId: string): Build
+	local key = `{build.key}-{skillId}`
+	local cached = variantCache[`{build.classId}|{key}`]
+	if cached then
+		return cached
+	end
+	local copy: any = table.clone(build)
+	copy.key = key
+	local rotation = {}
+	for _, entry in build.rotation do
+		if entry.skill ~= skillId then
+			table.insert(rotation, entry)
+		end
+	end
+	copy.rotation = rotation
+	variantCache[`{build.classId}|{key}`] = copy
+	return copy
+end
+
+-- S90 (I1, ROZWOJ 12.7): seconds per monster of a grind with rest (SkillModel.grind, rest variant: 20 fights with the
+-- region's groups that hit back, the rest at ASSUMPTIONS.restPct between them).
+function SkillModel.restPerMonster(build: Build, L: number): number
+	local monsters = 0
+	for _, n in grindSizes(A.grindFights) do
+		monsters += n
+	end
+	return SkillModel.grind(build, L, true).seconds / math.max(1, monsters)
 end
 
 -- Guards (F1) -------------------------------------------------------------------------------------------------------
@@ -6733,7 +7086,16 @@ end
 
 -- The role value of one skill (R4): 60 s on cooldown without a resource limit, the skill alone in the rotation;
 -- damage of the skill and its ticks, or heal on the tank in heal mode.
-local function skillRoleValue(sp: any, L: number, skillId: string, def: any, bp: any, role: string): number
+local function skillRoleValue(
+	sp: any,
+	L: number,
+	skillId: string,
+	def: any,
+	bp: any,
+	role: string,
+	seconds: number?,
+	rotation: { { [string]: any } }?
+): number
 	local targets = {}
 	for _ = 1, if role == "area" then A.areaTargets else 1 do
 		table.insert(targets, B.monster(B.GENERIC, L))
@@ -6741,9 +7103,10 @@ local function skillRoleValue(sp: any, L: number, skillId: string, def: any, bp:
 	local r = SkillModel.fight(sp, {
 		targets = targets,
 		unlimited = true,
-		rotation = { { skill = skillId } },
+		rotation = rotation or { { skill = skillId } },
 		override = { [skillId] = { def = def, bp = bp } },
 		heal = if role == "heal" then { tank = SkillModel.defenderTank(L), team = 5 } else nil,
+		seconds = seconds,
 	})
 	if role == "heal" then
 		return r.healTo.tank or 0
@@ -6755,13 +7118,18 @@ end
 -- (Skills.effective of the skill without breakpoints[at]; the other breakpoint as in the build) - 1. nil when the
 -- build's rank is below `at`, the skill has no role value or the option does not exist.
 function SkillModel.optionGain(build: Build, skillId: string, at: number, choice: string, L: number): number?
-	local sp = SkillModel.player(build, L, if build.classId == "Mage" then { element = "fire" } else nil)
-	local rank = Paths.skillRank(sp.character, skillId)
 	local base = SkillData.get(skillId) :: any
+	-- S90: the Mage on the skill's own element (lightning and ice spells need that weapon; adaptive ones fire)
+	local element = if build.classId == "Mage"
+		then (if base and base.element and table.find(A.elements, base.element) then base.element else "fire")
+		else nil
+	local sp = SkillModel.player(build, L, if element then { element = element } else nil)
+	local rank = Paths.skillRank(sp.character, skillId)
 	if rank < at or not base or not base.breakpoints or not base.breakpoints[at] then
 		return nil
 	end
-	if base.breakpoints[at][choice] == nil then
+	local option = base.breakpoints[at][choice]
+	if option == nil then
 		return nil
 	end
 	local choices = table.clone(sp.character.path.bp or {})
@@ -6772,12 +7140,30 @@ function SkillModel.optionGain(build: Build, skillId: string, at: number, choice
 	if not role then
 		return nil
 	end
+	-- S90 (G1, DECYZJE): an option that adds targets (splash, split, pierce, add.jumps) to a one-target skill counts on
+	-- 3 dummies; an area skill always on 3; a one-target option on 1
+	if
+		role == "single"
+		and (option.splash ~= nil or option.split ~= nil or option.pierce ~= nil or (option.add and option.add.jumps))
+	then
+		role = "area"
+	end
 	local stripped = table.clone(base)
 	stripped.breakpoints = table.clone(base.breakpoints)
 	stripped.breakpoints[at] = nil
 	local withoutDef, withoutBp = Skills.effective(stripped, rank, choices, mods)
-	local a = skillRoleValue(sp, L, skillId, withDef, withBp, role)
-	local b = skillRoleValue(sp, L, skillId, withoutDef, withoutBp, role)
+	-- S90 (G1, DECYZJE): a cooldown option over at least R4_CASTS cooldowns of the skill (60 s gave 2-3 casts of a
+	-- 20-40 s cooldown, so `mul.cooldown` counted 0 or +50 %); every other option on the S86 60 s
+	local seconds: number? = nil
+	if option.mul and option.mul.cooldown then
+		local cooldown = Skills.scaled(withoutDef, withoutDef.cooldown, rank)
+		seconds = math.max(A.sustainedSeconds, SkillModel.R4_CASTS * cooldown)
+	end
+	-- S90: a skill whose value comes from the other spells (Arcane Discharge spends the Charges they give) in the
+	-- build's whole rotation, counting only its own damage
+	local rotation = if SkillModel.R4_ROTATION[skillId] then build.rotation else nil
+	local a = skillRoleValue(sp, L, skillId, withDef, withBp, role, seconds, rotation)
+	local b = skillRoleValue(sp, L, skillId, withoutDef, withoutBp, role, seconds, rotation)
 	if b <= 0 then
 		return nil
 	end
@@ -6961,15 +7347,41 @@ function SkillModel.r6Rows(): { R6Row }
 	return out
 end
 
+-- S90 (G2, ROZWOJ 11.6, 12.7): the metric of a combat path (R5a, R5b, R6): the Marksman 1 target 60 s, the Trapper
+-- area 3 targets 8 s, the Destroyer area 3 targets 60 s, the Arcanist the boss 180 s; the rest 1 target 60 s.
+SkillModel.PATH_METRIC = {
+	marksman = "single60",
+	trapper = "aoe3burst",
+	destroyer = "aoe3sus",
+	arcanist = "boss180",
+} :: { [string]: string }
+
+-- The build with `weapon` of its path's list: a two-handed one alone, else the build's off-hand when the path allows it,
+-- else the path's first off-hand (the Mage's wand: orb or tome, S90).
+local function pathWeapon(build: Build, weapon: string): Build
+	local path = PathData.get(build.pathId :: string) :: any
+	local offhand: string? = nil
+	if not Paths.isTwoHanded(weapon) then
+		local allowed = path.weapon.offhand
+		offhand = build.weapon.offhand
+		if allowed and not (offhand and table.find(allowed, offhand)) then
+			offhand = allowed[1]
+		end
+	end
+	return SkillModel.withWeapon(build, weapon, offhand)
+end
+SkillModel.pathWeapon = pathWeapon
+
 -- S89 (E2, DECYZJE): R5 of a class with one combat path: every weapon of the path's weapon list (the build's off-hand
--- kept unless two-handed) in 1 target 60 s; the largest |weapon / mean of the weapons - 1|.
+-- kept unless two-handed) in 1 target 60 s; the largest |weapon / mean of the weapons - 1|. S90 (G2): in the path's
+-- metric (PATH_METRIC), the Mage's wand with the path's off-hand.
 function SkillModel.r5Spread(build: Build, L: number): number
 	local path = PathData.get(build.pathId :: string) :: any
+	local field = SkillModel.PATH_METRIC[build.pathId :: string] or "single60"
 	local values: { number } = {}
 	local sum = 0
 	for _, weapon in path.weapon.main do
-		local offhand = if Paths.isTwoHanded(weapon) then nil else build.weapon.offhand
-		local v = SkillModel.metrics(SkillModel.withWeapon(build, weapon, offhand), L).single60
+		local v = (SkillModel.metrics(pathWeapon(build, weapon), L) :: any)[field]
 		table.insert(values, v)
 		sum += v
 	end
@@ -6980,6 +7392,30 @@ function SkillModel.r5Spread(build: Build, L: number): number
 	end
 	return worst
 end
+
+-- S90 (G2, DECYZJE): the role gain x base of a combat path: the path's metric (PATH_METRIC) / the same of the class base
+-- (SkillModel.baseFor: the Hunter with the same weapon, the Mage with the staff), the mean over the path's weapons.
+function SkillModel.r5aGain(build: Build, L: number): number
+	local path = PathData.get(build.pathId :: string) :: any
+	local field = SkillModel.PATH_METRIC[build.pathId :: string] or "single60"
+	local sum = 0
+	for _, weapon in path.weapon.main do
+		local b = pathWeapon(build, weapon)
+		sum += (SkillModel.metrics(b, L) :: any)[field] / math.max(
+			1e-12,
+			(SkillModel.metrics(SkillModel.baseFor(b), L) :: any)[field]
+		)
+	end
+	return sum / math.max(1, #path.weapon.main)
+end
+
+-- S90 (G2): the other combat path of the class (R5a pairs).
+SkillModel.R5A_PAIRS = {
+	["marksman.kingslayer"] = "trapper.poacher",
+	["trapper.poacher"] = "marksman.kingslayer",
+	["destroyer.destroyerExp"] = "arcanist.arcanistBoss",
+	["arcanist.arcanistBoss"] = "destroyer.destroyerExp",
+} :: { [string]: string }
 
 export type R6Part = { points: number, metric: number, ehp: number, gain: number, perPoint: number, ratio: number }
 export type R6Parts = {
@@ -7020,6 +7456,14 @@ end
 local function r6Metric(build: Build, L: number): number
 	if build.pathId == "standard" then
 		return SkillModel.standardSupport(build, L).value
+	end
+	-- S90 (G3): the Scout's 4 x (1 + B) + S, the Trapper, the Destroyer and the Arcanist in their PATH_METRIC
+	if build.pathId == "scout" then
+		return SkillModel.scoutSupport(build, L).value
+	end
+	local field = if build.pathId == "marksman" then nil else SkillModel.PATH_METRIC[build.pathId :: string]
+	if field then
+		return (SkillModel.metrics(build, L) :: any)[field]
 	end
 	local sp = SkillModel.player(build, L)
 	local boss = { B.monster(B.GENERIC, L, "boss") }
@@ -7340,6 +7784,75 @@ function SkillModel.guardLimits(buildKey: string, weapon: string, L: number): Gu
 		ehp = ehpWith / math.max(1e-12, ehpWithout) - 1,
 		blockHealPerSecond = rate * block * (hooks.blockHeal or 0),
 	}
+end
+
+-- S90 (C4, ROZWOJ 8, 11.6, 15.4): a Hunter build's crit, attack speed and dodge before the Data/Stats caps (StatCalc
+-- clamps them, so the player is rebuilt with those three caps lifted), crit with Draw a Bead's `sighted` on the build's
+-- rank (Paths.effectiveFor), next to the caps.
+export type DexCaps = {
+	crit: number,
+	critSighted: number,
+	critDmg: number,
+	speed: number,
+	dodge: number,
+	critCap: number,
+	speedCap: number,
+	dodgeCap: number,
+}
+local dexCache: { [string]: DexCaps } = {}
+local DEX_CAPS = { "critChance", "atkSpeed", "dodge" }
+
+function SkillModel.dexCaps(build: Build, L: number): DexCaps
+	local key = `{build.classId}|{build.key}|{L}`
+	if dexCache[key] then
+		return dexCache[key]
+	end
+	local sp = SkillModel.player(build, L)
+	local caps: { [string]: number } = {}
+	for _, id in DEX_CAPS do
+		local def = Stats.get(id) :: any
+		caps[id] = def.cap
+	end
+	local flat, pct = EffectStack.stats(sp.auraEntries)
+	local sources: { any } = { { key = "source.passives", flat = sp.passives.flat, pct = sp.passives.pct } }
+	if next(flat) ~= nil or next(pct) ~= nil then
+		table.insert(sources, { key = "source.effects", flat = flat, pct = pct })
+	end
+	local ok, raw = pcall(function()
+		for _, id in DEX_CAPS do
+			(Stats.get(id) :: any).cap = nil
+		end
+		return B.playerFromItems(
+			sp.classId,
+			sp.level,
+			sp.items,
+			sp.traitScale,
+			{ stats = sp.stats, sources = sources, hooks = sp.passives.hooks }
+		)
+	end)
+	for _, id in DEX_CAPS do
+		(Stats.get(id) :: any).cap = caps[id]
+	end
+	assert(ok, raw)
+	local v = (raw :: any).values
+	local sighted = 0
+	local rank = Paths.skillRank(sp.character, "drawBead")
+	if rank > 0 then
+		local def = Paths.effectiveFor(sp.character, "drawBead", sp.weapons, rank)
+		sighted = Skills.valueAt(def, "crit", rank)
+	end
+	local out: DexCaps = {
+		crit = v.critChance or 0,
+		critSighted = (v.critChance or 0) + sighted,
+		critDmg = v.critDmg or 0,
+		speed = v.atkSpeed or 0,
+		dodge = v.dodge or 0,
+		critCap = caps.critChance,
+		speedCap = caps.atkSpeed,
+		dodgeCap = caps.dodge,
+	}
+	dexCache[key] = out
+	return out
 end
 
 export type ExecuteCheck = {

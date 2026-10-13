@@ -1771,12 +1771,16 @@ T.describe("SkillModel: class mechanics (S86)", function()
 	end)
 
 	T.it(
-		"C5 cross test: Power Lens and Full Draw on the event within 1 point of traitTerms with the measured situation",
+		"C5 cross test: Power Lens (1 point) and Full Draw (2 points, S90) on the event against traitTerms with the measured situation",
 		function()
+			-- S90 (DECYZJE): Full Draw within 2 points: traitTerms gives every offensive cast one boosted swing at
+			-- the full attack speed; the fight loses ~12% of them (a cast refreshes the draw before the next swing)
+			-- and swings less blocked by aiming with the S90 Hunter, so the gap is 0.011-0.019 (the fight decides)
 			for _, id in { "powerLens", "fullDraw" } do
+				local tolerance = if id == "fullDraw" then 0.02 else 0.01
 				for _, L in { 45, 70, 100 } do
 					local row = SkillModel.traitRow(id, L, 1, 0)
-					if math.abs(row.model - row.measured) > 0.01 then
+					if math.abs(row.model - row.measured) > tolerance then
 						error(`{id} {L}: model {row.model}, traitTerms {row.measured}`, 0)
 					end
 				end

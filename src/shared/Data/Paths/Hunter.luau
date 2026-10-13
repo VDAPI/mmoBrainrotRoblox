@@ -117,23 +117,23 @@ local marksman: Types.PathDef = {
 		row(false, {
 			skill(M, "drawBead"),
 			node(M, "heldBreath", "modify", 3, "◌", {
-				values = { heldBreath = { 1, 3 } },
+				values = { heldBreath = { 0.25, 0.75 } },
 				modify = { skill = "drawBead", bp = { add = { effectDuration = ref("heldBreath") } } },
 			}),
 		}),
 		row(false, {
 			node(M, "longShot", "modify", 3, "⟶", {
-				values = { longShot = { 10, 30 } },
+				values = { longShot = { 3, 8 } },
 				modify = { skill = "aimedShot", bp = { values = { dmg = ref("longShot") } } },
 			}),
 			node(M, "keenSight", "passive", 3, "◉", {
-				values = { keenSight = { 1, 3 } },
+				values = { keenSight = { 0.3, 0.9 } },
 				passive = { flat = { critChance = "keenSight" } },
 			}),
 		}),
 		row(true, {
 			node(M, "coupDeGrace", "passive", 3, "⚰", {
-				values = { coupDeGrace = { 5, 15 } },
+				values = { coupDeGrace = { 1.7, 5 } },
 				passive = { hooks = { executioner = "coupDeGrace" } },
 			}),
 			node(M, "reflex", "passive", 3, "↯", {
@@ -144,14 +144,14 @@ local marksman: Types.PathDef = {
 		row(false, {
 			skill(M, "stormArrow"),
 			node(M, "tempest", "modify", 3, "☈", {
-				values = { tempest = { 0.93, 0.8 } },
+				values = { tempest = { 0.92, 0.78 } },
 				modify = { skill = "stormArrow", bp = { mul = { cooldown = ref("tempest") } } },
 			}),
 		}),
 		row(false, { skill(M, "heartseeker") }),
 		row(true, {
 			node(M, "deadlyTip", "modify", 3, "➴", {
-				values = { deadlyTip = { 25, 35 } },
+				values = { deadlyTip = { 25, 36 } },
 				-- the breakpoint overrides the finisher fields it gives (S76): the threshold, not the multiplier
 				modify = { skill = "heartseeker", bp = { finisher = { hp = ref("deadlyTip") } } },
 			}),
@@ -162,17 +162,17 @@ local marksman: Types.PathDef = {
 		}),
 		row(false, {
 			node(M, "grit", "passive", 3, "❤", {
-				values = { grit = { 4, 12 } },
+				values = { grit = { 4, 11 } },
 				passive = { pct = { maxHp = "grit" } },
 			}),
 			node(M, "coldBlood", "passive", 3, "❄", {
-				values = { coldBlood = { 5, 15 } },
+				values = { coldBlood = { 7, 21 } },
 				passive = { pct = { armor = "coldBlood" } },
 			}),
 		}),
 		row(false, {
 			node(M, "heartseeker2", "modify", 2, "♚", {
-				values = { kingslayer = { 60, 120 } },
+				values = { kingslayer = { 15, 30 } },
 				modify = { skill = "heartseeker", bp = { values = { dmg = ref("kingslayer") } } },
 			}),
 		}),
@@ -242,13 +242,13 @@ local trapper: Types.PathDef = {
 		row(false, {
 			skill(T, "venomSnare"),
 			node(T, "huntingGround", "passive", 3, "⛺", {
-				values = { huntingGround = { 7, 20 } },
+				values = { huntingGround = { 2, 5 } },
 				passive = { hooks = { areaSkillDamage = "huntingGround" } },
 			}),
 		}),
 		row(false, {
 			node(T, "bitingRain", "modify", 3, "☂", {
-				values = { bitingWave = { 15, 45 }, bitingField = { 10, 30 } },
+				values = { bitingWave = { 4, 11 }, bitingField = { 2.5, 7.5 } },
 				modify = {
 					skill = "arrowRain",
 					bp = {
@@ -258,13 +258,13 @@ local trapper: Types.PathDef = {
 				},
 			}),
 			node(T, "spoils", "passive", 3, "⚡", {
-				values = { spoils = { 2, 4 } },
+				values = { spoils = { 1, 2 } },
 				passive = { hooks = { trapEnergy = "spoils" } },
 			}),
 		}),
 		row(true, {
 			node(T, "blastTrap", "modify", 3, "✹", {
-				values = { blastDmg = { 50, 150 }, blastPoison = { 35, 100 } },
+				values = { blastDmg = { 12, 38 }, blastPoison = { 9, 25 } },
 				modify = {
 					skill = "frostTrap",
 					bp = {
@@ -299,17 +299,17 @@ local trapper: Types.PathDef = {
 		}),
 		row(false, {
 			node(T, "basilisk", "passive", 3, "🐍", {
-				values = { basilisk = { 10, 30 } },
+				values = { basilisk = { 2.5, 7.5 } },
 				passive = { hooks = { poisonDamage = "basilisk" } },
 			}),
 			node(T, "woodsman", "passive", 3, "🌲", {
-				values = { woodsman = { 4, 12 } },
+				values = { woodsman = { 5, 14 } },
 				passive = { pct = { maxHp = "woodsman" } },
 			}),
 		}),
 		row(false, {
 			node(T, "snarefield2", "modify", 2, "☗", {
-				values = { deathField = { 60, 120 } },
+				values = { deathField = { 24, 47 } },
 				modify = {
 					skill = "snarefield",
 					bp = {
@@ -385,18 +385,18 @@ local scout: Types.PathDef = {
 		row(false, {
 			skill(S, "falcon"),
 			node(S, "talons", "modify", 3, "⋎", {
-				values = { talons = { 5, 15 } },
+				values = { talons = { 10, 29 } },
 				modify = { skill = "falcon", bp = { values = { dmg = ref("talons") } } },
 			}),
 		}),
 		row(false, {
 			node(S, "bond", "passive", 3, "∞", {
 				-- bondDive only for the text: falconBond x HOOK_RULES.royalFalcon.bondDive (Skills/Companion)
-				values = { bond = { 2, 6 }, bondDive = { 20, 60 } },
+				values = { bond = { 1.3, 3.8 }, bondDive = { 13, 38 } },
 				passive = { hooks = { falconBond = "bond" } },
 			}),
 			node(S, "hardy", "passive", 3, "⛰", {
-				values = { hardy = { 3, 9 } },
+				values = { hardy = { 0.8, 2.5 } },
 				passive = { pct = { maxHp = "hardy" } },
 			}),
 		}),
@@ -426,7 +426,7 @@ local scout: Types.PathDef = {
 		}),
 		row(true, {
 			node(S, "quickMark", "modify", 3, "⌛", {
-				values = { quickMark = { 0.93, 0.8 } },
+				values = { quickMark = { 0.91, 0.74 } },
 				modify = { skill = "huntersMark", bp = { mul = { cooldown = ref("quickMark") } } },
 			}),
 			node(S, "duet", "passive", 3, "⚭", {
@@ -437,7 +437,7 @@ local scout: Types.PathDef = {
 		row(false, {
 			skill(S, "drive"),
 			node(S, "beater", "modify", 3, "⚑", {
-				values = { beater = { 2, 6 } },
+				values = { beater = { 1.8, 5.5 } },
 				-- one kind each (S75 add.<kind>Duration): the 10B root stays 1 s
 				modify = {
 					skill = "drive",
@@ -447,7 +447,7 @@ local scout: Types.PathDef = {
 		}),
 		row(false, {
 			node(S, "royalFalcon2", "passive", 2, "♕", {
-				values = { sovereignPace = { 10, 20 }, sovereignMark = { 1, 2 } },
+				values = { sovereignPace = { 19, 38 }, sovereignMark = { 0.1, 0.2 } },
 				passive = { hooks = { falconInterval = "sovereignPace", spotBonus = "sovereignMark" } },
 			}),
 		}),

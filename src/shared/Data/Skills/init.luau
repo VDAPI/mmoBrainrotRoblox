@@ -46,7 +46,7 @@ return table.freeze({
 	-- seconds, lost out of combat and on death); each charge gives +`damage` % to spells other than the consumer and
 	-- +`cost` % to the cost of every damaging spell. Charges exist only for a caster who may use `consumer`
 	-- (Logic/Paths.skillUsable: the node bought and the arcanist's weapon). Not exported to the wiki.
-	ARCANE_CHARGES = table.freeze({ max = 4, duration = 15, damage = 2, cost = 15, consumer = "arcaneDischarge" }),
+	ARCANE_CHARGES = table.freeze({ max = 4, duration = 15, damage = 1, cost = 4.3, consumer = "arcaneDischarge" }), -- S90: damage 2 -> 1, cost 15 -> 4.3
 	-- S80: Empowering Invocation lasts this long; its value and uses come from the channel's `empower`.
 	EMPOWERED = table.freeze({ duration = 15 }),
 	AREA_MIN_HITS = 2, -- S79 (ROZWOJ 12.3): area bonuses need this many enemies hit; secondary hits always count

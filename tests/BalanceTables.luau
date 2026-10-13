@@ -1925,6 +1925,187 @@ function BalanceTables.tablesPaths(): { Table }
 		end
 	end
 
+	-- S90 (C4, I1): the Hunter's caps after the falling Dexterity
+	section(
+		"Łowca: Zręczność a limity (S90)",
+		{ "build · poziom", "krytyk", "krytyk z Namierzeniem", "obrażenia kryt.", "szybkość ataku", "unik" },
+		"`SkillModel.dexCaps`: wartości `StatCalc` przed obcięciem limitem `Data/Stats` (krytyk 60, szybkość 2,5, unik 30), Zręczność z oceną `DEX × min(1, 20/L)`, węzły, pasywki i przedmioty; krytyk z `sighted` Namierzenia na randze buildu. Asercja: wiersze `hunter.dexCaps` w „Cele ścieżek” (nadwyżka ≤ 0,5 pkt, szybkość ≤ 0,01; ROZWOJ 8, 11.6, 15.4). Projekt na 100.: Strzelec krytyk 26 (46 z Namierzeniem), obrażenia krytyczne 195%; Zwiadowca krytyk 23, unik 25, szybkość ×1,35 z Łukiem i ×1,76 z Łukiem Krótkim. "
+			.. PATHS_INTRO
+	)
+	for _, key in
+		{
+			"marksman.kingslayer",
+			"marksman.eliteHunter",
+			"trapper.poacher",
+			"trapper.poisoner",
+			"scout.partyHunter",
+			"scout.tracker",
+		}
+	do
+		for _, L in { 20, 45, 70, 100 } do
+			local c = SkillModel.dexCaps(byKey(key), L)
+			row(`{key} · {L}`, {
+				{ c.crit, "1", nil, c.critCap },
+				{ c.critSighted, "1", nil, c.critCap },
+				{ c.critDmg, "i" },
+				{ c.speed, "2", nil, c.speedCap },
+				{ c.dodge, "1", nil, c.dodgeCap },
+			})
+		end
+	end
+
+	-- S90 (F4, I1): the Mage's mana
+	section(
+		"Mag: mana (S90)",
+		{
+			"build · poziom",
+			"zapotrzebowanie / s",
+			"regeneracja / s",
+			"bierne zwroty / s",
+			"T-SK4",
+			"Inwokacja / s",
+			"T-SK4 z Inwokacją",
+		},
+		"`SkillModel.manaRow`: zapotrzebowanie = każdy czar z obrażeniami na odnowieniu przez 60 s bez limitu many (koszt przez `Skills.cost` z krzywą `manaCost` i Ładunkami), dochód = regeneracja z węzłami i bierne zwroty (Odzysk, Kaskada z walki z grupą); Inwokacja na każdym odnowieniu osobno (jej % puli / odnowienie). Pasma ROZWOJ 12.0, 12.7 (asertowane w „Cele ścieżek”, `mage.tsk4`, i w G10): Niszczyciel exp 2,0–2,8, boss z Oszczędnym Splotem 1,6–2,8, Arkanista 2,0–2,4, z Przeciążeniem 2,6–2,8; baza 1,1–1,4 tylko druk. "
+			.. PATHS_INTRO
+	)
+	for _, key in
+		{
+			"base",
+			"destroyer.destroyerExp",
+			"destroyer.destroyerBoss",
+			"arcanist.arcanistBoss",
+			"arcanist.arcanistOverload",
+		}
+	do
+		for _, L in { 45, 70, 100 } do
+			local m = SkillModel.manaRow(SkillModel.build(key, "Mage") :: SkillModel.Build, L)
+			local band = SkillModel.TSK4_BANDS[key] or { 2.0, 3.0 }
+			row(`{key} · {L}`, {
+				{ m.demand, "1" },
+				{ m.regen, "1" },
+				{ m.returns, "2" },
+				{ m.ratio, "2", band[1], band[2] },
+				{ m.evocation, "1" },
+				{ m.ratioEvocation, "2" },
+			})
+		end
+	end
+
+	-- S90 (I2): the class base at L20 for S91 (ROZWOJ 2.5)
+	section(
+		"Baza na L20 dla S91 (S90)",
+		{ "klasa · build", "R1 (T-SK1) na L20", "dziś (2.5)", "projekt przebudowy (2.5)" },
+		"Łowca i Mag bez ścieżki głównej na L20 (podstawa na rangach z L20; Salwa i Meteor od 30., Instynkt Drapieżnika i Burza Piorunów od 45.) i każdy build wzorcowy przycięty do L20 (rzędy 1–2 ścieżki, 10 punktów): obrażenia z umiejętności × atak podstawowy (R1) obok „dziś” i projektu z ROZWOJ 2.5. Bez zmian danych: wejście dla S91 (kotwica L20). "
+			.. PATHS_INTRO
+	)
+	for _, spec in { { "Hunter", 2.12, 1.97 }, { "Mage", 2.37, 2.22 } } :: { { any } } do
+		local c = spec[1]
+		for _, build in SkillModel.builds(c) do
+			local m = SkillModel.metrics(build, 20)
+			row(`{CLASS_PL[c]} · {build.key}`, { { m.r1, "2" }, { spec[2], "2" }, { spec[3], "2" } })
+		end
+	end
+
+	-- S90 (I1): report-only rows of docs/sessions/S90.md "Tylko raport"
+	section(
+		"Łowca i Mag: tylko raport (S90)",
+		{ "wiersz · poziom", "wartość", "projekt / pasmo" },
+		"Pozycje „Tylko raport” S90 (kto asertuje w etykiecie): moc √(1 cel 60 s × EHP) Strzelca wobec „Furii” (G5 0,95–1,10), Traper wobec „Furii” (zwolniony z R7, projekt 1,01–1,10), „Truciciel” na celu bossa 60 s i 180 s wobec bazy z tą samą bronią (stosy trucizny, 11.7 ryzyko 3), EHP Zwiadowcy wobec bazy (projekt 1,17–1,26), Arkanista z Przeciążeniem wobec bazy i Niszczyciela (boss 180 s; projekt na 100. 1,52 i 1,28), udział Strumienia Arkanów (boss 180 s z nim / bez; projekt ×1,03 na 70., ×1,08 na 100.), czas na potwora z odpoczynkiem (baza, Niszczyciel exp, Arkanista; s), rozrzut żywiołów (max / min − 1, 1 cel 60 s i obszar 60 s; lista „Dla właściciela” ponad 15%). T-SK6 z drużyną S92 (Królobójca) w tabeli T-SK6, Elity i Elity II Zwiadowcy w E3, B Zwiadowcy na źródła wyżej, premia za różne klasy w tabelach regionów: asercje w S92–S94. "
+			.. PATHS_INTRO
+	)
+	do
+		local fury = SkillModel.FURY
+		for _, L in { 20, 45, 70, 100 } do
+			local f = SkillModel.metrics(byKey(fury), L)
+			local function power(m: any): number
+				return math.sqrt(m.single60 * m.ehp)
+			end
+			for _, w in { "longbow", "heavycrossbow" } do
+				local b = SkillModel.withWeapon(byKey("marksman.kingslayer"), w, "quiver")
+				local m = SkillModel.metrics(b, L)
+				row(`moc Strzelca ({w}) / Furia · {L} [raport: S92–S94]`, {
+					{ power(m) / power(f), "2", 0.95, 1.10 },
+					{ 0 / 0, "2" },
+				})
+			end
+			for _, w in { "crossbow", "bow" } do
+				local b = SkillModel.withWeapon(byKey("trapper.poacher"), w, "quiver")
+				row(`Traper ({w}) / Furia, 1 cel 60 s · {L} [zwolniony z R7]`, {
+					{ SkillModel.metrics(b, L).single60 / f.single60, "2", 1.01, 1.10 },
+					{ 0 / 0, "2" },
+				})
+			end
+			local poisoner = byKey("trapper.poisoner")
+			local pBase = SkillModel.baseFor(poisoner)
+			local function onBoss(build: SkillModel.Build, seconds: number): number
+				local sp = SkillModel.player(build, L)
+				return SkillModel.fight(sp, { seconds = seconds, targets = { B.monster(B.GENERIC, L, "boss") } }).dps
+			end
+			row(`Truciciel / baza, boss 60 s · {L} [raport]`, {
+				{ onBoss(poisoner, 60) / onBoss(pBase, 60), "2" },
+				{ 0 / 0, "2" },
+			})
+			row(`Truciciel / baza, boss 180 s · {L} [raport]`, {
+				{ onBoss(poisoner, 180) / onBoss(pBase, 180), "2" },
+				{ 0 / 0, "2" },
+			})
+			local scout = byKey("scout.partyHunter")
+			row(`EHP Zwiadowcy / bazy · {L} [raport]`, {
+				{ SkillModel.metrics(scout, L).ehp / SkillModel.metrics(SkillModel.baseFor(scout), L).ehp, "2" },
+				{ 1.2, "2" },
+			})
+			local over = SkillModel.metrics(byKey("arcanist.arcanistOverload"), L)
+			local overBase = SkillModel.metrics(SkillModel.baseFor(byKey("arcanist.arcanistOverload")), L)
+			local dBoss = SkillModel.metrics(byKey("destroyer.destroyerBoss"), L)
+			row(`Przeciążenie / baza, boss 180 s · {L} [raport]`, {
+				{ over.boss180 / overBase.boss180, "2" },
+				{ if L == 100 then 1.52 else 0 / 0, "2" },
+			})
+			row(`Przeciążenie / Niszczyciel (boss) · {L} [raport]`, {
+				{ over.boss180 / dBoss.boss180, "2" },
+				{ if L == 100 then 1.28 else 0 / 0, "2" },
+			})
+			if L >= 60 then
+				local arc = byKey("arcanist.arcanistBoss")
+				row(`udział Strumienia (z / bez), boss 180 s · {L} [raport]`, {
+					{
+						SkillModel.metrics(arc, L).boss180
+							/ SkillModel.metrics(SkillModel.withoutSkill(arc, "arcaneTorrent"), L).boss180,
+						"2",
+					},
+					{ if L == 70 then 1.03 elseif L == 100 then 1.08 else 0 / 0, "2" },
+				})
+			end
+			if L >= 45 then
+				for _, key in { "destroyer.destroyerExp", "arcanist.arcanistBoss" } do
+					row(`czas na potwora z odpoczynkiem: {key} · {L} [raport]`, {
+						{ SkillModel.restPerMonster(byKey(key), L), "1" },
+						{ 0 / 0, "2" },
+					})
+				end
+				row(`czas na potwora z odpoczynkiem: baza · {L} [raport]`, {
+					{ SkillModel.restPerMonster(SkillModel.baseFor(byKey("destroyer.destroyerExp")), L), "1" },
+					{ 0 / 0, "2" },
+				})
+				for _, key in { "destroyer.destroyerExp", "arcanist.arcanistBoss" } do
+					local m = SkillModel.metrics(byKey(key), L)
+					for _, field in { "single60", "aoe3sus" } do
+						local lo, hi = math.huge, 0
+						for _, e in m.byElement or {} do
+							local v = (e :: any)[field]
+							lo, hi = math.min(lo, v), math.max(hi, v)
+						end
+						row(`rozrzut żywiołów {key} {field} · {L} [właściciel]`, {
+							{ hi / math.max(1e-9, lo) - 1, "%", nil, 0.15 },
+							{ 0 / 0, "2" },
+						})
+					end
+				end
+			end
+		end
+	end
+
 	-- D10: model and ROZWOJ
 	section(
 		"Model a ROZWOJ (D10)",

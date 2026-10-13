@@ -178,7 +178,7 @@ local LIST: { Base } = {
 		trait = "easyPrey",
 		glyph = "➹",
 		gender = "f",
-		weapon = weapon(1.45, 0, 0.75, true, false),
+		weapon = weapon(1.54, 0, 0.75, true, false),
 	},
 	{
 		type = "wand",

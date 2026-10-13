@@ -540,7 +540,7 @@ broni głównej, np. „z Łukiem Krótkim +39%”):
 | Plik | Zmiana |
 |---|---|
 | `Data/ItemTraits.luau` (nowy) | 24 cechy (id, kategoria, wartości, która liczba rośnie, rodzaj: statystyka, hak albo efekt, mnożnik PvP), `affinity` dla typów (Buława z częścią po klasie) |
-| `Data/Items/Bases.luau`, `Generate.luau` | pole `trait` w definicji typu; `crossbow` `dmgMul` 1,45 → ok. 1,53 (`lowca.md` ryzyko 1: atak podstawowy Kuszy na sekundę 1,09 zamiast 1,15 Łuku, czyli ok. 5% mniej obrażeń Trapera) |
+| `Data/Items/Bases.luau`, `Generate.luau` | pole `trait` w definicji typu; `crossbow` `dmgMul` 1,45 → 1,54 (zrobione w S90; `lowca.md` ryzyko 1: atak podstawowy Kuszy na sekundę 1,09 zamiast 1,15 Łuku, czyli ok. 5% mniej obrażeń Trapera) |
 | `Data/Bonuses.luau` | nowe linie, `tier`, `wiki`, linie z parametrem, `CLASS_STATS`, pule |
 | `Data/Families.luau` (nowy), `Data/Monsters.luau`, `Data/Bosses.luau` | `family`, `defence` (cecha rodziny; wartości cech `defMul` / `mresMul` / `dodge` tylko w `Data/Families`), `mresMul`, `dodge`, `defMul` |
 | `Data/Combat.luau`, `Data/BuffCategories.luau`, `Data/ItemTraits.luau` | `monsterArmorPerLevel` 10, `monsterMresPerLevel` 8, `monsterHpComp` (S66); stałe cech w `ItemTraits.params` (S65, nie w `Data/Combat`); limity (przebicie 50, niszczenie 50 z częścią z przedmiotów 25 × siła, najwyżej 40, `blockCap = 25`, `riposteCap = 34` (S88: 30 → 34), `executionerCap` 60, odporności (limit ochron 30 leży w `Data/Stats` jak `dodge`), `vs_<klasa>`, `cdrCap = 20`), przerwa Wstrząsu 8 s i opóźnienie ataku po nim (1 × `attackInterval`, `delayShare`; S88: 0,5 → 1), kategorie `enemyAttackSlow` (20%) i `enemyDamageDown` (15%), stałe cech (Podwójne cięcie co 5. i 5 s, Przeszycie: pas 4 st. szerokości do 4 st. za celem, Naciąg 4 s, Pieczęć 1,5 s i 1 st., Zbawczy cios 30 st.), mnożniki PvP |
@@ -585,7 +585,7 @@ stałe `block` / `riposte` z `fixedHooks`, kontra tylko w zasięgu ataku podstaw
 | Nękanie | solo przeciw wręcz, wsparcie | cel atakuje 7–8% rzadziej | |
 | Jadowite groty | walka dłuższa niż 5 s | ok. +4,5% i cel atakuje 10% wolniej, Traper z oboma Jadami ok. 7–7,5% (z poprawką tyknięć; dziś 80% sumy, ok. 3,6%) | |
 | Siła krytyka | build krytyczny | +4,5% przy 20% krytyka, Strzelec ok. +6% | |
-| Łatwy cel | kontrola Trapera | ok. +6–7% | cel pod kontrolą 60–70% walki; Kusza z `dmgMul` 1,53 (13) bez cechy równa Łukowi |
+| Łatwy cel | kontrola Trapera | ok. +6–7% | cel pod kontrolą 60–70% walki; Kusza z `dmgMul` 1,54 (13; S90) bez cechy równa Łukowi |
 | Bełt przeciwpancerny | opancerzeni | +4% zwykły, +6% opancerzony | obrona potworów z 7 |
 | Naciąg | każda ścieżka Łowcy | ok. +4–5% przy każdej broni (premia × szybkość broni: jeden wzmocniony strzał na rzut daje tyle samo obrażeń) | umiejętność co 2–3 s; szybkość ataku z linii i węzłów (Zwiadowca) obniża udział; porównać pary Strzelca (Łuk Długi, Ciężka Kusza) i Zwiadowcy (Łuk Krótki, Łuk) |
 | Iskra żywiołu | mana wiąże (po 45.) | ogień ok. +3,7–5,3%; błyskawica w grupie ok. +5–7%, na bossie ok. 2,5–3,5%; lód ok. 2–3% i spowolnienie; z Kulą ok. 6,5–12% | udział ataku podstawowego 35–50%; jeśli lód zostanie poniżej 4%, Przemarznięcie z Iskry 10% jak z Kosturem |
@@ -620,8 +620,9 @@ Pomiar po strojeniu (S88, model `tests/Balance.luau` i `tests/SkillModel.luau`):
   `myth_killHeal` i Krwiopijcą, razem najwyżej 15% maks. HP na zabicie (S88, `Traits.killHeal`).
 - Fechtunek wygrywa z Szablą (ok. +4% wszędzie), gdy Strażnik tankuje grupy, Elity i fale bossa, a przegrywa na
   jednym potworze; u Chorążego z Kontratakiem oba są blisko (3–4,5% i 4%).
-- Traper: Kusza (`dmgMul` 1,53, Łatwy cel ok. 6–7%) i Łuk (Jadowite groty z oboma Jadami ok. 7%) różnią się o ok.
-  1 pkt; bez poprawki `dmgMul` Kusza traci ok. 5% (`lowca.md` ryzyko 1).
+- Traper: Kusza (`dmgMul` 1,54 od S90, Łatwy cel ok. 6–7%) i Łuk (Jadowite groty z oboma Jadami ok. 7%) różnią się o
+  ok. 1 pkt; bez poprawki `dmgMul` Kusza traci ok. 5% (`lowca.md` ryzyko 1). S90: Kusza i Łuk Trapera w 2–4% na
+  jednym celu i w obszarze 8 s, MIX ≤ 5%.
 - Nękanie i Jadowite groty dzielą kategorię `enemyAttackSlow` (Zwiadowca nosi oba łuki); podstawowe działanie jest
   różne (kontrola albo obrażenia w czasie).
 
@@ -634,7 +635,7 @@ w `docs/sessions` (S62–S68) ma pierwszeństwo przed P1–P4 niżej.
 1. **P1 Model i cechy bez efektów:** `Data/ItemTraits` (24 cechy), `trait` w bazach, `tier`, ważone pule z `forClass`,
    cechy liczone jak linie albo przez istniejące haki: Siła krytyka, Bełt przeciwpancerny (`pierce`), Soczewka mocy,
    Wyuczone formuły, Namaszczenie (`healPower` w `Context.heal`), Pomyślność, Żniwo (`killHeal`), Ścięcie
-   (`traitExecute`, `executionerCap`), Łatwy cel (`controlledDamage`), `dmgMul` Kuszy 1,53; przeliczenie `armorPen` →
+   (`traitExecute`, `executionerCap`), Łatwy cel (`controlledDamage`), `dmgMul` Kuszy 1,54 (zrobione w S90); przeliczenie `armorPen` →
    `pierce` przy odczycie (bez RV 3), sekcja Cecha w opisie z linią `trait.<id>.line`, wiki z częstością na typ bazy.
    P1 tworzy konsumenta haka `block` (Zastawa z leczeniem z bloku) w `monsterHitsPlayer` i w gałęzi PvP oraz
    `Data/Combat.blockCap = 25` (global K1–K6 go nie daje; węzły Strażnika dopisze sesja Wojownika). Test: Łuk Długi ma

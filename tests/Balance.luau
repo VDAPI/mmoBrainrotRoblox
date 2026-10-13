@@ -255,32 +255,53 @@ Balance.TRAIT_TARGETS = {
 	traitTarget("toxicBarbs", "trapper.poacher", "bow", "quiver", { "single", "elite" }, {
 		nodesOff = { "trapper_venom", "trapper_basilisk" },
 	}),
-	traitTarget("toxicBarbs", "scout.partyHunter", "bow", "quiver", { "single", "elite" }),
+	traitTarget("toxicBarbs", "scout.partyHunter", "bow", "quiver", { "single", "elite" }, {
+		reportSession = "S90",
+		reportAt = { 45 },
+		reportWhy = "poza zasięgiem dźwigni S90: 0.062 at 45; the Hunter's skills above rank 20 got flatter (R1, S90), basic hits carry more of the damage (owner: the trait value, S88)",
+	}),
 	traitTarget("criticalForce", "marksman.kingslayer", "longbow", "quiver", { "single", "group" }),
 	traitTarget("easyPrey", "trapper.poacher", "crossbow", "quiver", { "controlled" }),
 	traitTarget("bodkinBolt", "marksman.kingslayer", "heavycrossbow", "quiver", { "single", "armored" }),
-	traitTarget("fullDraw", "marksman.kingslayer", "longbow", "quiver", { "single", "group" }),
-	traitTarget("fullDraw", "marksman.kingslayer", "heavycrossbow", "quiver", { "single", "group" }),
+	traitTarget("fullDraw", "marksman.kingslayer", "longbow", "quiver", { "single", "group" }, {
+		reportSession = "S90",
+		reportWhy = "poza zasięgiem dźwigni S90: 0.063-0.068 at 45-100; the Marksman casts as often as before while its skills above rank 20 got flatter (R1, S90), so the boosted basic weighs more (owner: the trait value, S88)",
+	}),
+	traitTarget("fullDraw", "marksman.kingslayer", "heavycrossbow", "quiver", { "single", "group" }, {
+		reportSession = "S90",
+		reportWhy = "poza zasięgiem dźwigni S90: 0.061-0.065 at 45-100 (as the longbow; owner: the trait value, S88)",
+	}),
 	traitTarget("fullDraw", "trapper.poacher", "bow", "quiver", { "single", "group" }),
-	traitTarget("fullDraw", "scout.partyHunter", "shortbow", "quiver", { "single", "group" }),
-	traitTarget("elementalSpark", "destroyer.destroyerExp", "wand", "orb", { "mana", "group" }, { elements = true }),
-	traitTarget("elementalSpark", "arcanist.arcanistBoss", "wand", "tome", { "mana", "group" }, {
+	traitTarget("fullDraw", "scout.partyHunter", "shortbow", "quiver", { "single", "group" }, {
+		reportSession = "S90",
+		reportAt = { 45 },
+		reportWhy = "poza zasięgiem dźwigni S90: 0.062 at 45 (as the Marksman; owner: the trait value, S88)",
+	}),
+	traitTarget("elementalSpark", "destroyer.destroyerExp", "wand", "orb", { "mana", "group" }, {
 		elements = true,
 		reportElements = { "fire", "lightning" },
 		reportSession = "S90",
-		reportWhy = "Arcanist with a tome: fire 0.031-0.041, lightning 0.036-0.048 (the boss build hits one target, the burn and the arc count less); one Spark number for both paths",
+		reportWhy = "poza zasięgiem dźwigni S90: fire 0.060-0.062, lightning 0.061-0.065 at 45 / 100; the Destroyer's skills above rank 20 got lower (R1, S90), the basic attack carries more (owner: the trait value, S88)",
+	}),
+	traitTarget("elementalSpark", "arcanist.arcanistBoss", "wand", "tome", { "mana", "group" }, {
+		elements = true,
+		reportElements = { "lightning" },
+		reportSession = "S90",
+		reportAt = { 45 },
+		reportWhy = "poza zasięgiem dźwigni S90: lightning 0.062 at 45 (fire 0.046-0.051 and lightning 0.048-0.056 at 70-100 in band); one Spark number for both paths (owner: the trait value, S88)",
 	}),
 	traitTarget("elementalMight", "destroyer.destroyerExp", "staff", nil, { "single", "group" }, {
 		elements = true,
 		twoHanded = true,
 		reportElements = { "lightning" },
 		reportSession = "S90",
-		reportWhy = "lightning 0.087-0.118: the arc rider on one target (riderSameTarget); one Might number for three elements",
+		reportAt = { 100 },
+		reportWhy = "poza zasięgiem dźwigni S90: lightning 0.099 at 100 (0.082-0.086 at 45-70): the arc rider on one target (riderSameTarget); one Might number for three elements (owner: the trait value, S88)",
 	}),
 	traitTarget("runicSeal", "arcanist.arcanistBoss", "runestaff", nil, { "still", "boss" }),
 	traitTarget("learnedFormulae", "arcanist.arcanistBoss", "wand", "tome", { "mana" }, {
 		reportSession = "S90",
-		reportWhy = "mana binds only at 45 in the 180 s boss window (0.4-5.5 %): the mana costs are S90's lever",
+		reportWhy = "poza zasięgiem dźwigni S90: 0.003-0.015 at 45-100; at T-SK4 2.0-2.4 (ROZWOJ 12.7) the boss build's damage comes from the cheap Discharge and the charges, a saving buys few extra casts in 180 s (owner: the trait, S88)",
 	}),
 	traitTarget("powerLens", "destroyer.destroyerExp", "wand", "orb", { "single", "group" }),
 	traitTarget("anointment", "healer.dungeon", "scepter", "shield", { "dungeon" }),
@@ -339,8 +360,6 @@ Balance.TYPE_SETS = {
 		path = "trapper",
 		build = "trapper.poacher",
 		measure = "dps",
-		reportSession = "S90",
-		reportWhy = "bow 1.06-1.07 of the crossbow: the crossbow's dmgMul (Data/Items/Bases, S90's lever); Easy Prey in band",
 		sets = { { main = "crossbow", offhand = "quiver" }, { main = "bow", offhand = "quiver" } },
 	},
 	{
@@ -354,8 +373,7 @@ Balance.TYPE_SETS = {
 		build = "destroyer.destroyerExp",
 		measure = "dps",
 		reportSession = "S90",
-		reportAt = { 100 },
-		reportWhy = "wand + orb 1.054 of the staff at 100 after Elemental Might x1.3 (the Spark and the Lens grow with the Mage's skills)",
+		reportWhy = "poza zasięgiem dźwigni S90: staff / wand + orb spread 0.053 / 0.050 / 0.061 at 45 / 70 / 100 (the Spark and the Lens on the wand and Might on the staff weigh more as the S90 skills above rank 20 fall; owner: bases / traits, S88)",
 		sets = { { main = "staff" }, { main = "wand", offhand = "orb" } },
 	},
 	{
@@ -2749,20 +2767,10 @@ do
 		"S92",
 		"0.246 < 0.25 with Anointment 5 % (anchors 21-44)"
 	)
-	-- G10 (G2, G3): T-SK5 at 20 / 25 (the heal curve is 1 at 20; 21-44 are S92's anchors); T-SK4 of the two builds
-	-- apart (manaCost.Mage = geometric mean of what each needs): the path costs are S90's
+	-- G10 (G2, G3): T-SK5 at 20 / 25 (the heal curve is 1 at 20; 21-44 are S92's anchors). S90: T-SK4 of
+	-- destroyerExp and arcanistBoss asserted (path costs, bands 2.0-2.8 / 2.0-2.4 of SkillModel.TSK4_BANDS)
 	add("G10|T-SK5 Cleric healer.dungeon na guardian.defender 20", "S91", "0.227 < 0.25 at 20 (heal curve = 1)")
 	add("G10|T-SK5 Cleric healer.dungeon na guardian.defender 25", "S92", "0.235 < 0.25 at 25 (anchors 21-44)")
-	for _, L in { 45, 60, 65, 70, 75, 80, 85, 90, 95, 100 } do
-		add(
-			`G10|T-SK4 Mage destroyer.destroyerExp {L}`,
-			"S90",
-			"1.43-2.00 < 2: Cascade in the income (S86); path costs"
-		)
-	end
-	for _, L in { 45, 65, 95, 100 } do
-		add(`G10|T-SK4 Mage arcanist.arcanistBoss {L}`, "S90", "3.02-3.26 > 3 on the shared mana curve; path costs")
-	end
 	-- G8 (D2): "bez cech" rows out of 0.97-1.035 with twoHandedBonusMul 2.7 / 6.6 % per level (the most rows, Legendary
 	-- and Mythic +0 at 45-100 first): legendary and mythic lines get no multiplier. S88 (H4): Data/Rarities is not an
 	-- S88 lever; the Legendary rows at 20 go to the 1-20 session
