@@ -63,9 +63,18 @@ T.describe("LevelCurves", function()
 	end)
 
 	T.it("follows a power law between anchors and stays flat above the last one", function()
-		-- S87: manaCost.Mage 1.89 at 45 (G10, was 1.4); at 30 the power law sqrt(value at 45)
-		local mana45 = LevelCurves.anchors("manaCost.Mage")[2][2]
-		T.expect(LevelCurves.at("manaCost.Mage", 30)).toBeNear(math.sqrt(mana45))
+		-- S87: manaCost.Mage 1.89 at 45 (G10, was 1.4). S92: knots 25 / 30 / 40; between two anchors the power law gives
+		-- the geometric mean of their values at the geometric mean of their levels
+		local function anchorAt(level: number): number
+			for _, a in LevelCurves.anchors("manaCost.Mage") do
+				if a[1] == level then
+					return a[2]
+				end
+			end
+			error(`no manaCost.Mage anchor at {level}`)
+		end
+		local mana30, mana40, mana45 = anchorAt(30), anchorAt(40), anchorAt(45)
+		T.expect(LevelCurves.at("manaCost.Mage", math.sqrt(30 * 40))).toBeNear(math.sqrt(mana30 * mana40))
 		T.expect(LevelCurves.at("manaCost.Mage", 45)).toBeNear(mana45)
 		T.expect(LevelCurves.at("potionCooldown", 30)).toBeNear(2)
 		T.expect(LevelCurves.at("potionCooldown", 100)).toBeNear(6.67)

@@ -21,9 +21,10 @@ T.describe("Balance model: boss schedule", function()
 		{ "grimrok", 3, "sweep", 6.4 },
 		{ "grimrok", 3, "leap", 4.3 },
 		{ "grimrok", 3, "whirlwind", 4.2 },
-		{ "morvane", 3, "shadowBoltFast", 8.0 },
-		{ "morvane", 3, "curseField", 4.0 },
-		{ "morvane", 3, "deathRing", 4.0 },
+		-- S92: Morvane's curse field every 6.5 s starves the ring in the list order (8.0 / 4.0 / 4.0 before)
+		{ "morvane", 3, "shadowBoltFast", 8.8 },
+		{ "morvane", 3, "curseField", 8.7 },
+		{ "morvane", 3, "deathRing", 0 },
 		{ "azgor", 3, "fireWave", 5.6 },
 		{ "azgor", 3, "flameCleave", 5.6 },
 		{ "azgor", 3, "meteor", 5.5 },

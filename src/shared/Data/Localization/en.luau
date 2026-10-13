@@ -600,6 +600,8 @@ return {
 	["item.toad_venom.desc"] = "Monster part. An ingredient of the hunter's blessing.",
 	["item.crow_feather.name"] = "Crow Feather",
 	["item.crow_feather.desc"] = "Monster part. Said to bring luck.",
+	["item.cursed_bone.name"] = "Cursed Bone",
+	["item.cursed_bone.desc"] = "Monster part. The alchemist brews the guardian's blessing from it.",
 
 	-- Potions (DESIGN §9)
 	["item.potion_hp_1.name"] = "Small Health Potion",

@@ -20,6 +20,8 @@ export type MonsterDef = {
 	family: Families.FamilyId, -- S66: monster family (Data/Families)
 	defence: Families.DefenceId?, -- S66: defence trait of the family (its values come from Data/Families)
 	speed: number, -- attack speed multiplier
+	-- S92: multiplier of the kind's EXP and gold on top of MonsterStats.kindReward (nil = 1; set on tuned kinds only)
+	rewardMul: number?,
 	moveSpeed: number, -- studs per second while chasing
 	attack: "melee" | "ranged",
 	damageKind: "phys" | "magic",
@@ -43,6 +45,7 @@ type Options = {
 	mresMul: number?,
 	dodge: number?,
 	speed: number?,
+	rewardMul: number?,
 	moveSpeed: number?,
 	attack: ("melee" | "ranged")?,
 	damageKind: ("phys" | "magic")?,
@@ -80,6 +83,7 @@ local function kind(id: string, region: number, cave: boolean, minLevel: number,
 		family = o.family,
 		defence = o.defence,
 		speed = o.speed or 1,
+		rewardMul = o.rewardMul,
 		moveSpeed = o.moveSpeed or 13,
 		attack = o.attack or "melee",
 		damageKind = o.damageKind or "phys",
@@ -193,7 +197,7 @@ kind("brownBear", 1, false, 16, 20, {
 })
 
 -- Region 2: Duskwood (20–45) / Crypt of the Forgotten (35–45)
-kind("werewolf", 2, false, 20, 28, {
+kind("werewolf", 2, false, 20, 31, {
 	family = "beast",
 	hpMul = 1.1,
 	speed = 1.1,
@@ -216,13 +220,15 @@ kind("rotEnt", 2, false, 26, 34, {
 	hpMul = 1.5,
 	defMul = 1.4,
 	speed = 0.8,
+	rewardMul = 1.25, -- S92: its armour (defMul 1.4) is outside kindReward; EXP/s 0.80 -> 1.0 of GENERIC
 	moveSpeed = 9,
 	element = "poison",
 	ability = "slam",
 	size = 1.5,
 })
-kind("darkCultist", 2, false, 29, 37, {
+kind("darkCultist", 2, false, 29, 38, {
 	family = "humanoid",
+	atkMul = 0.8, -- S92: the barrow's Elite pairs (q 0.5) within 110 % / 125 % HP per encounter
 	attack = "ranged",
 	damageKind = "magic",
 	range = 28,
@@ -233,16 +239,18 @@ kind("swampTroll", 2, false, 32, 40, {
 	hpMul = 1.6,
 	atkMul = 1.1,
 	speed = 0.8,
+	rewardMul = 1.1, -- S92: EXP/s 0.86 -> 0.95 of GENERIC
 	moveSpeed = 11,
 	ability = "slam",
 	size = 1.6,
 })
-kind("skeletonGuard", 2, true, 35, 41, {
+kind("skeletonGuard", 2, true, 35, 45, {
 	family = "undead",
 	defence = "armored",
+	rewardMul = 1.1, -- S92: the armoured undead (S88) fight longer; EXP/s 0.87 -> 0.96 of GENERIC
 	ability = "cleave",
 })
-kind("specter", 2, true, 37, 43, {
+kind("specter", 2, true, 37, 45, {
 	family = "undead",
 	defence = "warded",
 	hpMul = 0.85,
@@ -252,7 +260,7 @@ kind("specter", 2, true, 37, 43, {
 	element = "ice",
 	ability = "wail",
 })
-kind("necromancer", 2, true, 39, 45, {
+kind("necromancer", 2, true, 38, 45, {
 	family = "humanoid",
 	hpMul = 0.9,
 	attack = "ranged",
@@ -262,15 +270,16 @@ kind("necromancer", 2, true, 39, 45, {
 })
 
 -- New kinds (S19).
-kind("blackBear", 2, false, 21, 27, {
+kind("blackBear", 2, false, 21, 31, {
 	family = "animal",
 	hpMul = 1.35,
 	speed = 0.9,
 	ability = "slam",
 	size = 1.5,
 })
-kind("ghoul", 2, false, 27, 33, {
+kind("ghoul", 2, false, 27, 38, {
 	family = "undead",
+	atkMul = 0.8, -- S92: the barrow's Elite pairs (q 0.5) within 110 % / 125 % HP per encounter
 	speed = 1.15,
 	element = "poison",
 	ability = "leap",
@@ -282,7 +291,7 @@ kind("bogSerpent", 2, false, 30, 36, {
 	ability = "poisonPool",
 	size = 1.1,
 })
-kind("marshWitch", 2, false, 36, 42, {
+kind("marshWitch", 2, false, 36, 44, {
 	family = "humanoid",
 	hpMul = 0.85,
 	attack = "ranged",

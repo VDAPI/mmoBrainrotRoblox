@@ -7,7 +7,8 @@
 --   * Global targets 20-100 (Balance.targetsGlobal, G1-G9, G11-G13; G7-G9 from S84): asserted from S87
 --     (GLOBAL_ASSERT) except Balance.GLOBAL_REPORT_ONLY.
 --   * Regions (Balance.targetsRegion): asserted where Balance.TUNED says so (S91: the Meadows in full, also with
---     the players with nodes), printed elsewhere.
+--     the players with nodes; S92: the Dark Forest with Balance.targetsS92, rows with `report` printed), printed
+--     elsewhere.
 --   * The balance ledger (S83, balance plan 2.6): always asserted.
 --   * S85: G10 (T-SK4, T-SK5 of tests/SkillModel) in the global block, the Meadows' T-SK3 / T-SK6 printed in the
 --     region block, the block "Skill model (S85)" at the end.
@@ -462,6 +463,13 @@ end)
 T.describe("Balance 20-100: regions", function()
 	for _, mapId in B.REGION_IDS do
 		local rows = B.targetsRegion(mapId, REGION_TARGETS)
+		if mapId == "duskwood" then
+			-- S92 (K1): Morvane, the pace, the guards, support paths, drop levels, hunting grounds, gold and parts; the
+			-- rows with `report` (Balance.S92_REPORT, guards above the limit at 45) only printed
+			for _, row in B.targetsS92() do
+				table.insert(rows, row)
+			end
+		end
 		if TUNED[mapId] then
 			-- S91: the Meadows in full (S83 asserted only the kinds and Grimrok's schedule), the cave rows also with the
 			-- players with nodes (Balance.caveElites(mapId, true), B1)
@@ -472,11 +480,13 @@ T.describe("Balance 20-100: regions", function()
 				end
 			end
 			for _, row in all do
-				T.it(`{row.id}`, function()
-					if not B.inBand(row) then
-						error(describeRow(row), 0)
-					end
-				end)
+				if row.report == nil then
+					T.it(`{row.id}`, function()
+						if not B.inBand(row) then
+							error(describeRow(row), 0)
+						end
+					end)
+				end
 			end
 		end
 		T.it(`{mapId}: region targets (printed{if TUNED[mapId] then "" else ", not tuned"})`, function()

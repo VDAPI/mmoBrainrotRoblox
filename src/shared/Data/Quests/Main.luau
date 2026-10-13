@@ -152,6 +152,9 @@ q({
 })
 
 -- Duskwood and the Crypt -------------------------------------------------------------------------------
+-- S92 (F2): werewolves 0.9 -> 1.7, ruins 1 -> 1.4, ents 1 -> 1.1, cult 1 -> 1.2, swamp 1 -> 1.3, crypt 1 -> 1.6 of
+-- their level's EXP: the window model's step h(L) / h(L - 1) stays <= 1.3 after level 20 (was 1.89 at 21) and 20 -> 45
+-- takes ~14.4 h (was 16.1).
 q({
 	id = "toDuskwood",
 	level = 20,
@@ -166,7 +169,7 @@ q({
 	giver = "scout_duskwood",
 	turnIn = "scout_duskwood",
 	objectives = { { type = "kill", n = 15, monster = "werewolf" } },
-	reward = { exp = exp(21, 0.9), gold = gold(21) },
+	reward = { exp = exp(21, 1.7), gold = gold(21) },
 })
 q({
 	id = "ruins",
@@ -177,7 +180,7 @@ q({
 		{ type = "kill", n = 12, monster = "forestWraith" },
 		{ type = "collect", n = 5, monster = "forestWraith", item = "wraithEssence", chance = 0.4 },
 	},
-	reward = { exp = exp(24, 1), gold = gold(24) },
+	reward = { exp = exp(24, 1.4), gold = gold(24) },
 })
 q({
 	id = "ents",
@@ -185,7 +188,7 @@ q({
 	giver = "scout_duskwood",
 	turnIn = "scout_duskwood",
 	objectives = { { type = "kill", n = 10, monster = "rotEnt" }, { type = "gather", n = 4, node = "bush_nightshade" } },
-	reward = { exp = exp(27, 1), gold = gold(27), items = { { id = "blessing_guardian_2", n = 1 } } },
+	reward = { exp = exp(27, 1.1), gold = gold(27), items = { { id = "blessing_guardian_2", n = 1 } } },
 })
 q({
 	id = "cult",
@@ -196,7 +199,7 @@ q({
 		{ type = "kill", n = 15, monster = "darkCultist" },
 		{ type = "collect", n = 3, monster = "darkCultist", item = "cultSigil", chance = 0.3 },
 	},
-	reward = { exp = exp(30, 1), gold = gold(30), items = { { id = "backpack_80", n = 1 } } },
+	reward = { exp = exp(30, 1.2), gold = gold(30), items = { { id = "backpack_80", n = 1 } } },
 })
 q({
 	id = "swamp",
@@ -204,7 +207,7 @@ q({
 	giver = "captain",
 	turnIn = "scout_duskwood",
 	objectives = { { type = "kill", n = 12, monster = "swampTroll" }, { type = "fish", n = 3 } },
-	reward = { exp = exp(33, 1), gold = gold(33) },
+	reward = { exp = exp(33, 1.3), gold = gold(33) },
 })
 q({
 	id = "crypt",
@@ -215,7 +218,7 @@ q({
 		{ type = "reach", n = 1, map = "duskwood_cave" },
 		{ type = "kill", n = 5, monster = "skeletonGuard", variant = "elite" },
 	},
-	reward = { exp = exp(37, 1), gold = gold(37), items = { { id = "blessing_sage_3", n = 1 } } },
+	reward = { exp = exp(37, 1.6), gold = gold(37), items = { { id = "blessing_sage_3", n = 1 } } },
 })
 q({
 	id = "morvane",

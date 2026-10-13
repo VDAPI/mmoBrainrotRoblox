@@ -600,6 +600,8 @@ return {
 	["item.toad_venom.desc"] = "Część potwora. Składnik błogosławieństwa łowcy.",
 	["item.crow_feather.name"] = "Krucze Pióro",
 	["item.crow_feather.desc"] = "Część potwora. Podobno przynosi szczęście.",
+	["item.cursed_bone.name"] = "Przeklęta Kość",
+	["item.cursed_bone.desc"] = "Część potwora. Alchemik warzy z niej błogosławieństwo strażnika.",
 
 	-- Potions (DESIGN §9)
 	["item.potion_hp_1.name"] = "Mała Mikstura Życia",

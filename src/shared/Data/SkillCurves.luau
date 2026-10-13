@@ -42,5 +42,10 @@ return table.freeze({
 		fireball = table.freeze({ dmg = table.freeze({ [5] = 173, [6] = BALL5 + (221.8 - BALL5) * 1 / 5 }) }),
 		iceShard = table.freeze({ dmg = table.freeze({ [4] = 150, [5] = SHARD4 + (213 - SHARD4) * 1 / 6 }) }),
 		chainLightning = table.freeze({ dmg = table.freeze({ [3] = 129, [4] = CHAIN3 + (163.5 - CHAIN3) * 1 / 7 }) }),
+		-- S92 (G2, T-SK5 >= 0.25 at 25-30): Heal's rank 6 (level 23) near rank 10, rank 5 (level 19) pinned
+		heal = table.freeze({
+			healHp = table.freeze({ [5] = 16 + 2 * 4 / 9, [6] = 17.9 }),
+			healMag = table.freeze({ [5] = 8 + 4 * 4 / 9, [6] = 11.6 }),
+		}),
 	}) :: Knots,
 })

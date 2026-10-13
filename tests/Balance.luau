@@ -1419,6 +1419,7 @@ export type KindRate = {
 	level: number,
 	expPerSecond: number, -- EXP per second of fighting vs GENERIC (Warrior 1 on 1, middle level of the kind)
 	hpPerExp: number, -- (HP lost / EXP per kill) / the same of GENERIC at that level, relative to the region mean
+	hpPerExpGeneric: number, -- S92: the same against GENERIC only (the S54 draft's 1.20 threshold, report)
 	caster: boolean, -- ranged magic attacker
 	passive: boolean,
 }
@@ -1445,6 +1446,7 @@ function Balance.kindRates(mapId: string, includePassive: boolean?): { KindRate 
 				level = level,
 				expPerSecond = ratio,
 				hpPerExp = 0,
+				hpPerExpGeneric = raw[#raw],
 				caster = def.attack == "ranged" and def.damageKind == "magic",
 				passive = def.passive == true,
 			})
@@ -1795,7 +1797,8 @@ end
 -- its EXP over the window from its level to the level before the next main quest (in proportion to Exp.expToNext);
 -- SIDE_SHARE of the side quests is spread over their band (Balance.BANDS: 1-19, 20-44, ...) like questRewards; the
 -- quest EXP above a level's need carries to the next (paceAt's carry). Warrior / rest / GENERIC by default:
--- opts.kind = a kind (or "kindAt" for the Meadows kind of each level, Balance.kindAt), opts.withBossQuests = the boss
+-- opts.kind = a kind (or "kindAt" for the Meadows kind of each level, Balance.kindAt; S92: "region" for
+-- Balance.kindAtRegion), opts.withBossQuests = the boss
 -- quests count too (report variant: grimrok over 18-19).
 export type PaceWindowOpts = { kind: any?, withBossQuests: boolean? }
 export type PaceWindow = {
@@ -1865,7 +1868,11 @@ function Balance.paceWindowAt(classId: string, level: number, opts: PaceWindowOp
 		local carry = 0
 		local top = math.max(level, 20)
 		for L = 1, top do
-			local kind = if o.kind == "kindAt" then Balance.kindAt(L) else (o.kind or Balance.GENERIC)
+			-- S92: "region" = the hunting-ground kind of each level (Balance.kindAtRegion; the report's region variant)
+			local kind = if o.kind == "kindAt"
+				then Balance.kindAt(L)
+				elseif o.kind == "region" then Balance.kindAtRegion(L)
+				else (o.kind or Balance.GENERIC)
 			local pace = Balance.paceAt(classId, L, { kind = kind })
 			local questExp = windows[L] or 0
 			local need = Exp.expToNext(L) - questExp - carry
@@ -2245,6 +2252,17 @@ export type BossFight = {
 	memberDps: { number },
 }
 
+-- S92: the helpers of a boss summon as the server spawns them: Boss.spawnSummons -> DungeonService spawnMonster ->
+-- MonsterService.SpawnAt(id, "normal", level, at, nil) has no GroupSize attribute, so Monster.new gives them
+-- groupDamageMul(nil) = 1 (no S32 group damage reduction, unlike FightSim.group of `count` members).
+function Balance.summonHelpers(helperDef: any, level: number, count: number): { any }
+	local members = {}
+	for _ = 1, count do
+		table.insert(members, FightSim.group(helperDef, level, 1)[1])
+	end
+	return members
+end
+
 -- Boss fight of `team` (team[1] is the tank): HP and armour as Balance.boss, phases by HP (def.phases), the real
 -- schedule per phase (bossCadence), damage per attack and kind on its targets (threat / nearest -> tank, self
 -- circle -> melee, self ring -> ranged, random -> min(count, n) / n each, all -> everyone) x specialHit, the basic
@@ -2300,6 +2318,8 @@ function Balance.bossFight(bossId: string, team: { Player }, opts: BossOpts?): B
 				local count = summon.count + Bosses.SUMMON_PER_PLAYER * (n - 1)
 				local waves = 1 + (if summon.every then math.floor(fighting / summon.every) else 0)
 				local helperDef = Monsters.get(summon.monster) :: any
+				-- S92: still with the S32 group reduction (the server has none, Balance.summonHelpers): without it the
+				-- frozen 1-20 fixture moves (Grimrok bez wsparcia +18 %); DECYZJE S92, for S93 / the owner
 				local members = FightSim.group(helperDef, summon.level, count)
 				local lost, attacks = 0, 0
 				for k, member in members do
@@ -3182,6 +3202,495 @@ Balance.S91_REPORT = {
 	["S91.gain.trapper.poacher"] = "rzędy 1–2 Trapera z kuszą +1,4% (dźwignie globalne psują S90)",
 } :: { [string]: string }
 
+-- S92: the Dark Forest 20-45 and Morvane (balance plan, renumbered S54 draft) ------------------------------------
+
+local Crafting = require("../src/shared/Data/Crafting")
+local Rng = require("../src/shared/Logic/Rng")
+
+Balance.S92 = {
+	bossLevel = 44, -- the parties of the Morvane rows (balance plan D4: 3-5 players of level 44)
+	minutes = { 4, 6 },
+	mageHit = 0.70, -- biggest hit / HP of a level 45 Mage
+	basicHit = { 0.07, 0.12 }, -- Morvane's basic hit / HP of a level 45 Mage
+	tankPerMinute = 3.5, -- S32 model: the tank's HP per minute from basic and threat attacks
+	wave = 1.10, -- HP per member per shield wave (the S32 group limit)
+	-- T-SK6 band (plan D1, ROZWOJ 0: 1.0-2.0). S92 (C4): the upper bound is the nearest reachable one (DECYZJE S92):
+	-- T-SK6 x the sustain ratio of the Berserker without support is ~2.55 (the Healer's 660 HP/s / a potion chain's
+	-- 258 HP/s at 44), and every lever of the heal at 44 (Heal rank 10, Holy Strike 10B) moves the Saving Blow share
+	-- of S88 (T1, 0.058 at 70) out of its band
+	tsk6 = { 1.0, 2.7 },
+	mythicRolls = 500,
+	-- pace (B1, plan D4): the window model of S91, Warrior, GENERIC, rest, no boss quests
+	pace = { hours = { 11.9, 16.1 }, h44 = { 0.72, 0.98 }, step = 1.30 },
+	guardLevels = { 25, 30, 35, 40, 44 },
+	-- the region's hunting grounds: at least this many outdoor areas hold every level 21-45 (ashen at 45)
+	areas = 2,
+	-- gold (plan F)
+	up3 = 1.05,
+	backpacks = { { id = "backpack_80", level = 25 }, { id = "backpack_100", level = 35 } },
+	backpackLevels = { 3, 8 },
+	chainPotions = 0.30,
+	-- ROZWOJ 7.5: the support and tank paths win an Elite and lose an Elite II on the real spawners
+	supportLevels = { 30, 40 },
+	supportBuilds = {
+		{ "Warrior", "guardian.loner" },
+		{ "Warrior", "standard.commander" },
+		{ "Cleric", "healer.solo" },
+		{ "Cleric", "fortune.plunder" },
+		{ "Hunter", "scout.partyHunter" },
+	},
+	-- part ingredients of a recipe with level 20-45 (J1, J2)
+	parts = { "werewolf_claw", "ectoplasm", "cursed_bone", "toad_venom", "crow_feather" },
+	-- T-SK4 in the band (G2): the asserted Mage builds of G10 at 25-40 (the global block has 45+)
+	tsk4Builds = { "destroyer.destroyerExp", "arcanist.arcanistBoss" },
+}
+
+export type WaveLoss = { seconds: number, worst: number, byMember: { number } }
+
+-- S92 (B2): the shield waves of `bossId` against `team` one by one: count + SUMMON_PER_PLAYER x (n - 1) helpers at
+-- their level, killed one after another by the whole team (as Balance.bossFight); every living helper attacks a
+-- member in turn (helper j -> member (j - 1) % n + 1), so the helpers spread over the party. Per wave: its seconds
+-- and the HP each member loses / its max HP (worst = the biggest share of any wave).
+function Balance.shieldWaves(bossId: string, team: { Player }, opts: BossOpts?): { WaveLoss }
+	local def = Bosses.byId[bossId] :: any
+	local n = #team
+	local out: { WaveLoss } = {}
+	for _, summon in def.summons do
+		if summon.shield then
+			local count = summon.count + Bosses.SUMMON_PER_PLAYER * (n - 1)
+			local helperDef = Monsters.get(summon.monster) :: any
+			local members = Balance.summonHelpers(helperDef, summon.level, count)
+			local lost: { number } = table.create(n, 0)
+			local seconds = 0
+			for k, member in members do
+				local teamDps = 0
+				for i, p in team do
+					teamDps += Balance.dps(p, member) * (if opts and opts.dpsMul then opts.dpsMul[i] or 1 else 1)
+				end
+				local duration = member.maxHp / math.max(1e-6, teamDps)
+				seconds += duration
+				for j = k, #members do
+					local i = (j - 1) % n + 1
+					lost[i] += Balance.hit(members[j], team[i]) * duration / members[j].attackInterval
+				end
+			end
+			local byMember: { number } = {}
+			local worst = 0
+			for i, p in team do
+				byMember[i] = lost[i] / p.values.maxHp
+				worst = math.max(worst, byMember[i])
+			end
+			table.insert(out, { seconds = seconds, worst = worst, byMember = byMember })
+		end
+	end
+	return out
+end
+
+-- S92 (C8, B3): share of the Mythic items `classId` cannot use out of `rolls` personal boss rolls with the Mythic
+-- chance 1 (the same check as tests/rarities.spec S87, on the server's function Loot.rollBossItem); `killsToday`
+-- (the daily kill counter that changes the chances) varies over 0-9.
+function Balance.unusableMythics(bossId: string, classId: string, rolls: number): number
+	local always = table.clone(LootTables.bosses[bossId]) :: any
+	always.mythicChance = 1
+	always.legendaryChance = 0
+	local rng = Rng.new(92)
+	local bad = 0
+	for k = 1, rolls do
+		local drop = Loot.rollBossItem(always, (k - 1) % 10, classId, rng) :: any
+		local def = Items.get(drop.defId) :: any
+		if drop.rarity ~= Rarities.MYTHIC or (def.classes and not table.find(def.classes, classId)) then
+			bad += 1
+		end
+	end
+	return bad / rolls
+end
+
+-- S92: outdoor hunting grounds (every region) whose `lv` holds `level`.
+function Balance.areasAt(level: number): number
+	local n = 0
+	for _, mapId in Balance.REGION_IDS do
+		for _, area in Areas.byMap[mapId].areas do
+			if level >= area.lv[1] and level <= area.lv[2] then
+				n += 1
+			end
+		end
+	end
+	return n
+end
+
+-- S92: whether an Elite spawner of the region's caves holds `level` (its drops then have that base level).
+function Balance.eliteSpawnerAt(mapId: string, level: number): boolean
+	for _, cave in Balance.caveSpawners(mapId) do
+		for _, e in cave.elites do
+			if level >= e.min and level <= e.max then
+				return true
+			end
+		end
+	end
+	return false
+end
+
+-- S92 (K1): the rows of the Dark Forest beyond the S83 region rows (ids "R.duskwood.<group>..."): Morvane, the pace,
+-- the skill guards, support paths on the real spawners, the Elites' drop levels, hunting grounds, gold, parts.
+-- balance.spec asserts them with the region (TUNED.duskwood) except the rows with `report` (Balance.S92_REPORT).
+function Balance.targetsS92(): { TargetRow }
+	local rows: { TargetRow } = {}
+	local S = Balance.S92
+	local SkillModel = (require :: any)("./SkillModel")
+	local L = S.bossLevel
+	local function add(
+		id: string,
+		group: string,
+		label: string,
+		value: number,
+		low: number?,
+		high: number?,
+		c: string?,
+		lv: number?
+	)
+		target(rows, `R.duskwood.{id}`, group, label, value, low, high, c, lv)
+	end
+	local def = Bosses.byId.morvane :: any
+	-- Morvane: the S83 / S87 model (bossFight with shield waves and BossSchedule), both player variants
+	for _, nodes in { false, true } do
+		local at = if nodes then "@nodes" else ""
+		local suffix = if nodes then " z węzłami" else ""
+		for n = 3, 5 do
+			local f = Balance.bossFight("morvane", Balance.team(n, L, nodes))
+			local label = `Morvane, {n} graczy L{L}{suffix}: min`
+			add(`morvane.team{n}{at}`, "morvane", label, f.seconds / 60, S.minutes[1], S.minutes[2], nil, L)
+		end
+		for _, spec in { { 45, S.mageHit }, { 43, 1 - 1e-9 } } do
+			local team = Balance.team(5, L, nodes)
+			team[2] = Balance.player("Mage", spec[1], if nodes then { nodes = Balance.COMBAT_BUILD.Mage } else nil)
+			local hit = Balance.bossFight("morvane", team).biggestHit.Mage or 0
+			local label = `Morvane: największy cios / HP Maga L{spec[1]}{suffix}`
+			add(`morvane.mage{spec[1]}{at}`, "morvane", label, hit, nil, spec[2], "Mage", spec[1])
+		end
+		-- the shield waves: HP per member per wave (S32 order)
+		for n = 3, 5 do
+			local worst = 0
+			for _, w in Balance.shieldWaves("morvane", Balance.team(n, L, nodes)) do
+				worst = math.max(worst, w.worst)
+			end
+			local label = `Morvane, fala tarczy, {n} graczy L{L}{suffix}: HP na członka`
+			add(`morvane.wave{n}{at}`, "morvane", label, worst, nil, S.wave, nil, L)
+		end
+	end
+	do
+		local mage = Balance.boss("morvane", { Balance.player("Mage", 45) }).biggest[1].basic
+		local label = "Morvane: zwykły cios / HP Maga L45"
+		add("morvane.basic45", "morvane", label, mage, S.basicHit[1], S.basicHit[2], "Mage", 45)
+		local tank = Balance.boss("morvane", Balance.team(5, L)).tankHpPerMinute
+		add(
+			"morvane.tank",
+			"morvane",
+			`Morvane (model S32): tank HP na minutę, L{L}`,
+			tank,
+			nil,
+			S.tankPerMinute,
+			nil,
+			L
+		)
+		-- the tank's whole intake (bossFight, with the curse field on the nearest member): only printed, the S32 row
+		-- above counts basic and threat attacks (DECYZJE S92)
+		for n = 3, 5 do
+			local team = Balance.team(n, L)
+			local f = Balance.bossFight("morvane", team)
+			local perMinute = f.memberDps[1] * 60 / team[1].values.maxHp
+			add(
+				`morvane.tankFight{n}`,
+				"morvane",
+				`Morvane (bossFight): tank HP na minutę, {n} graczy`,
+				perMinute,
+				nil,
+				nil,
+				nil,
+				L
+			)
+			rows[#rows].report = "tylko raport: z Polem Klątwy w tanka (miara S32 liczy atak podstawowy i threat)"
+		end
+		add("morvane.hpMul", "morvane", "Morvane ma hpMul", if def.hpMul ~= nil then 1 else 0, 1, nil)
+	end
+	-- T-SK6 (C4): the dungeon Healer on the Defender, team S92 at the boss level - 1
+	do
+		local healer = SkillModel.build("healer.dungeon", "Cleric")
+		local r = SkillModel.healerVsBoss(healer, "morvane", { team = "s92" })
+		local label = "T-SK6 Morvane: Uzdrowiciel lochowy na Obrońcy"
+		add("morvane.tsk6", "morvane", label, r.tsk6, S.tsk6[1], S.tsk6[2], "Cleric", L)
+	end
+	-- Morvane bez wsparcia (C3): the S91 definition (Balance.bossNoSupport), waves of the same team
+	for n = 3, 5 do
+		local r = Balance.bossNoSupport("morvane", n, L)
+		add(
+			`morvane.noSupport.{n}.seconds`,
+			"noSupport",
+			`Morvane bez wsparcia, {n} graczy: s`,
+			r.seconds,
+			nil,
+			r.limit
+		)
+		local worst, hit = 0, 0
+		for _, mem in r.members do
+			worst = math.max(worst, mem.ratio)
+			hit = math.max(hit, mem.biggest)
+		end
+		local label = `Morvane bez wsparcia, {n} graczy: przyjmowane / podtrzymanie (najgorszy)`
+		add(`morvane.noSupport.{n}.sustain`, "noSupport", label, worst, nil, Balance.S91.noSupport.sustain, nil, L)
+		local hitLabel = `Morvane bez wsparcia, {n} graczy: największy cios / HP`
+		add(`morvane.noSupport.{n}.hit`, "noSupport", hitLabel, hit, nil, Balance.S91.noSupport.hit, nil, L)
+		local team: { Player } = {}
+		local mul: { number } = {}
+		local m = Balance.monster(Balance.bossKind(def, n), def.level, "boss")
+		for i, mem in r.members do
+			local sp = SkillModel.player(SkillModel.build(mem.key), L)
+			team[i] = sp.p
+			mul[i] = mem.dps / math.max(1e-9, Balance.dps(sp.p, m) * Balance.BOSS_UPTIME)
+		end
+		local wave = 0
+		for _, w in Balance.shieldWaves("morvane", team, { dpsMul = mul }) do
+			wave = math.max(wave, w.worst)
+		end
+		local waveLabel = `Morvane bez wsparcia, fala tarczy, {n} graczy: HP na członka`
+		add(`morvane.noSupport.{n}.wave`, "noSupport", waveLabel, wave, nil, S.wave, nil, L)
+	end
+	-- the Mythic for every class (C8)
+	for _, c in Balance.CLASSES do
+		local share = Balance.unusableMythics("morvane", c, S.mythicRolls)
+		add(`morvane.mythic.{c}`, "morvane", `Morvane: Mityki nieużyteczne dla {c}`, share, nil, 0, c, 45)
+	end
+	-- pace 20 -> 45 (B1)
+	do
+		local P = S.pace
+		local sum = 0
+		for lv = 20, 44 do
+			sum += Balance.paceWindowAt("Warrior", lv).hours
+		end
+		add("pace.sum", "pace", "Tempo 20 → 45 (okno, bez Morvane): h", sum, P.hours[1], P.hours[2], "Warrior")
+		local h44 = Balance.paceWindowAt("Warrior", 44).hours
+		add("pace.h44", "pace", "Tempo: h(44)", h44, P.h44[1], P.h44[2], "Warrior", 44)
+		for lv = 20, 44 do
+			local r = Balance.paceWindowAt("Warrior", lv).hours
+				/ math.max(1e-9, Balance.paceWindowAt("Warrior", lv - 1).hours)
+			add(`pace.step.{lv}`, "pace", `Tempo: h({lv}) / h({lv - 1})`, r, nil, P.step, "Warrior", lv)
+		end
+	end
+	-- skill guards in the band (G1): bases and the reference builds, T-SK3 of the reference builds. S92 (K2): a guard
+	-- of a build whose own value at 45 (the path block of S89-S90, asserted) is already above the limit and not below
+	-- the band's value is printed: holding 25-44 under the D1 limit would only move the jump to 45 (DECYZJE S92); a
+	-- band value above the one at 45 stays asserted unless Balance.S92_REPORT names it
+	for _, c in Balance.CLASSES do
+		for _, build in SkillModel.builds(c) do
+			local lim = SkillModel.GUARD_LIMITS
+			local g45 = SkillModel.guards(build, 45)
+			for _, lv in S.guardLevels do
+				local g = SkillModel.guards(build, lv)
+				local key = `{c}.{build.key}.{lv}`
+				for _, spec in
+					{
+						{ "tsk1", "tsk1rel", `T-SK1 {c} {build.key} L{lv} / L20` },
+						{ "tsk2", "tsk2rel", `T-SK2 {c} {build.key} L{lv} / L20` },
+						{ "tsk3", "tsk3cap", `T-SK3 {c} {build.key} L{lv} / areaCap` },
+					}
+				do
+					local field = spec[2]
+					add(`guard.{spec[1]}.{key}`, "guards", spec[3], (g :: any)[field], nil, (lim :: any)[field], c, lv)
+					if spec[1] == "tsk3" and build.key == "base" then
+						-- the base's T-SK3 only printed (S90 I3: the Mage base 2.1-2.4 by design, ROZWOJ 15.5.3)
+						rows[#rows].report = "tylko raport (T-SK3 podstawy, S90 I3)"
+					elseif (g45 :: any)[field] > (lim :: any)[field] and (g :: any)[field] <= (g45 :: any)[field] then
+						rows[#rows].report =
+							`poza zasięgiem dźwigni S92: na 45 blok ścieżek S89–S90 trzyma {string.format(
+								"%.2f",
+								(g45 :: any)[field]
+							)}`
+					end
+				end
+			end
+		end
+	end
+	-- T-SK4 of the asserted Mage builds in the band (G2)
+	for _, key in S.tsk4Builds do
+		local build = SkillModel.build(key, "Mage")
+		local band = SkillModel.TSK4_BANDS[key]
+		for _, lv in S.guardLevels do
+			local v = SkillModel.metrics(build, lv).tsk4
+			add(`tsk4.{key}.{lv}`, "guards", `T-SK4 Mage {key} {lv}`, v, band[1], band[2], "Mage", lv)
+		end
+	end
+	-- support and tank paths on the real spawners (B5, ROZWOJ 7.5): Elite won, Elite II lost
+	for _, spec in S.supportBuilds do
+		local build = SkillModel.build(spec[2], spec[1])
+		for _, lv in S.supportLevels do
+			local elite, elite2 = SkillModel.eliteKinds(lv)
+			local ok = 0
+			if elite and elite2 then
+				local a = SkillModel.duel(build, lv, elite, "elite")
+				local b = SkillModel.duel(build, lv, elite2, "elite2")
+				ok = if a.won and not b.won then 1 else 0
+			end
+			local label = `{spec[2]} L{lv}: Elita wygrana, Elita II przegrana ({elite or "–"} / {elite2 or "–"})`
+			add(`support.{spec[2]}.{lv}`, "support", label, ok, 1, 1, spec[1], lv)
+		end
+	end
+	-- the Elites drop every item level 21-45 (H2), hunting grounds (D6)
+	for lv = 21, 45 do
+		local e = if Balance.eliteSpawnerAt("duskwood", lv) then 1 else 0
+		add(`ilvl.elite.{lv}`, "drop", `Spawner Elit Mrocznego Boru trzyma poziom {lv}`, e, 1, nil, nil, lv)
+		add(`areas.{lv}`, "areas", `Expowiska z poziomem {lv}`, Balance.areasAt(lv), S.areas, nil, nil, lv)
+	end
+	-- D5 K0 at 44 (H1: 25 / 30 / 35 / 40 / 44; the S84 region rows stop at 40)
+	do
+		local d5 = Balance.REGION_TARGETS.d5
+		local u, h = d5.uniquePerHour, d5.heroicPerHour
+		for _, c in Balance.CLASSES do
+			local d = Balance.dropsPerHour(c, 44, "K0", false)
+			add(`d5.{c}.44.unique`, "d5", `{c} 44: Unikaty dla klasy na h expienia`, d.unique, u[1], u[2], c, 44)
+			add(`d5.{c}.44.heroic`, "d5", `{c} 44: Heroiki dla klasy na h Elit`, d.heroic, h[1], h[2], c, 44)
+		end
+	end
+	-- gold (I): +1..+3 of the weapon, backpacks, chain potions
+	for lv = 21, 45 do
+		for _, u in Balance.upgradeVsIncome(lv) do
+			add(
+				`gold.up3.{u.classId}.{lv}`,
+				"gold",
+				`{u.classId} {lv}: +1…+3 / dochód poziomu`,
+				u.up3,
+				nil,
+				S.up3,
+				u.classId,
+				lv
+			)
+		end
+		for _, c in Balance.CLASSES do
+			local share = Balance.economyAt(c, lv, { potions = "chain" }).potionShare
+			add(
+				`gold.chain.{c}.{lv}`,
+				"gold",
+				`{c} {lv}: mikstury łańcuchowe / dochód`,
+				share,
+				nil,
+				S.chainPotions,
+				c,
+				lv
+			)
+		end
+	end
+	for _, b in S.backpacks do
+		local item = Items.get(b.id) :: any
+		for _, c in Balance.CLASSES do
+			local levels = item.buyPrice / math.max(1e-9, Balance.levelIncome(c, b.level))
+			local label = `{c}: {b.id} (od {b.level}.) / dochód poziomu`
+			add(`gold.{b.id}.{c}`, "gold", label, levels, S.backpackLevels[1], S.backpackLevels[2], c, b.level)
+		end
+	end
+	-- parts (J): every kind of the region drops a part; the region's parts are ingredients of a recipe with level 20-45
+	for _, kind in Monsters.list do
+		if kind.region == 2 then
+			local tbl = LootTables.get(kind.lootTable) :: any
+			local has = 0
+			for _, m in tbl.materials do
+				local item = Items.get(m.id) :: any
+				if item and item.type == "part" then
+					has = 1
+				end
+			end
+			add(`parts.kind.{kind.id}`, "parts", `{kind.id}: część potwora`, has, 1, nil)
+		end
+	end
+	for _, part in S.parts do
+		local used = 0
+		for _, r in Recipes.list do
+			if r.level >= 20 and r.level <= 45 then
+				for _, ing in r.ingredients do
+					used += if ing.id == part then 1 else 0
+				end
+			end
+		end
+		for _, r in Crafting.list do
+			if r.level >= 20 and r.level <= 45 then
+				for _, mat in r.materials do
+					used += if mat.id == part then 1 else 0
+				end
+			end
+		end
+		add(`parts.recipe.{part}`, "parts", `{part}: składnik przepisu 20–45`, used, 1, nil)
+	end
+	for _, row in rows do
+		local why = Balance.S92_REPORT[row.id]
+		if why then
+			row.report = why
+		end
+	end
+	return rows
+end
+
+-- S92 (K2): rows of targetsS92 out of reach of the S92 levers (printed with the reason; docs/DECYZJE.md S92).
+Balance.S92_REPORT = {} :: { [string]: string }
+do
+	local R = Balance.S92_REPORT
+	-- S92: Elita / Elita II ścieżek wsparcia i tanka poza zasięgiem dźwigni S92: każda ścieżka wygrywa Elitę II solo
+	-- z miksturami (HP na koniec 0,43-1,00), a krzywe Elit II trzyma duet <= 150% (1,09-1,41); dane ścieżek S89-S90
+	for _, key in { "guardian.loner", "standard.commander", "healer.solo", "fortune.plunder", "scout.partyHunter" } do
+		for _, lv in { 30, 40 } do
+			R[`R.duskwood.support.{key}.{lv}`] =
+				"poza zasięgiem dźwigni S92: wygrywa Elitę II solo z miksturami (krzywe Elit II trzyma duet ≤ 150%); dla właściciela"
+		end
+	end
+	-- S92: T-SK4 Niszczyciela na 44 poza zasięgiem dźwigni S92: 1,90 < 2,0; koszt many na 44 ponad kotwicę 45 (1,89)
+	-- albo wyższa kotwica 45 psuje arcanistOverload na 45 (2,98 > 2,8, S90)
+	R["R.duskwood.tsk4.destroyer.destroyerExp.44"] =
+		"poza zasięgiem dźwigni S92: 1,90 < 2,0 (kotwica 45 trzyma arcanistOverload ≤ 2,8 na 45)"
+	-- S92: strażniki Łowcy na 40-44 poza zasięgiem dźwigni S92: baza 1,16 na 44, Zwiadowca 1,17-1,21 (T-SK1) i
+	-- 1,30-1,35 (T-SK2) na 40-44, a na 45 1,05-1,23 (Ostrość Zręczności i rangi 45, S90); dla S93
+	for _, spec in
+		{
+			{ "base", { 44 }, { "tsk1" } },
+			{ "scout.partyHunter", { 40, 44 }, { "tsk1", "tsk2" } },
+			{ "scout.tracker", { 40, 44 }, { "tsk1", "tsk2" } },
+		}
+	do
+		for _, lv in spec[2] do
+			for _, metric in spec[3] do
+				R[`R.duskwood.guard.{metric}.Hunter.{spec[1]}.{lv}`] =
+					"poza zasięgiem dźwigni S92: Łowca na 40–44 ponad limit, na 45 w paśmie (spadek na 45, S90); dla S93"
+			end
+		end
+	end
+	-- S92: strażniki ponad wartością na 45 poza zasięgiem dźwigni S92: skok na 44 to węzeł kupiony 44. punktem w
+	-- kolejności `reference` S89-S90 (Strzelec Namierzenie, Traper Trujące Sidła, Rzeźnik Rozdarcie, Niszczyciel
+	-- Krucha Potęga 3), a rangi na 44 i 45 są te same, więc węzły SkillCurves nie obniżą 44 bez 45 (blok ścieżek);
+	-- Łowca spada na 45 (Ostrość Zręczności i rangi 45, S90), Królobójca T-SK2 1,31 już na 40; dla S93
+	for _, spec in
+		{
+			{ "Hunter", "marksman.kingslayer", { 44 }, { "tsk1", "tsk2" } },
+			{ "Hunter", "marksman.eliteHunter", { 44 }, { "tsk1", "tsk2" } },
+			{ "Hunter", "trapper.poacher", { 44 }, { "tsk1", "tsk2" } },
+			{ "Hunter", "trapper.poisoner", { 44 }, { "tsk1", "tsk2" } },
+			{ "Warrior", "berserker.butcher", { 44 }, { "tsk1" } },
+			{ "Mage", "destroyer.destroyerBoss", { 44 }, { "tsk2" } },
+		}
+	do
+		for _, lv in spec[3] do
+			for _, metric in spec[4] do
+				R[`R.duskwood.guard.{metric}.{spec[1]}.{spec[2]}.{lv}`] =
+					"poza zasięgiem dźwigni S92: skok z węzła ścieżki kupionego 44. punktem (kolejność S89–S90), rangi 44 = 45; dla S93"
+			end
+		end
+	end
+	R["R.duskwood.guard.tsk2.Hunter.marksman.kingslayer.40"] =
+		"poza zasięgiem dźwigni S92: 1,31 na 40 wobec 1,29 na 45 (rangi z 37–42 trzymają też 45, blok ścieżek); dla S93"
+	-- S92: mikstury łańcuchowe poza zasięgiem dźwigni S92: ceny mikstur wspólne z 1-20, odstęp z globalnej krzywej
+	-- potionCooldown; Duża mikstura (250) od ok. 32. poziomu podnosi udział do 0,32-0,49 (Kapłan do 0,77)
+	for lv = 21, 45 do
+		for _, c in Balance.CLASSES do
+			R[`R.duskwood.gold.chain.{c}.{lv}`] =
+				"poza zasięgiem dźwigni S92: ceny mikstur i krzywa potionCooldown globalne; dla właściciela"
+		end
+	end
+end
+
 -- Targets 20-100 (S83, balance plan 2.5) ------------------------------------------------------------------------
 
 Balance.GLOBAL_LEVELS = { 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100 }
@@ -3331,10 +3840,15 @@ end
 -- (every row of the target), `id|label` (one row) or a prefix of `id|label` ending in `*`. balance.spec asserts every
 -- other row without `report`, that each key matches a row and that each session is above S87. The numbers in `why`
 -- are the S87 values.
+-- S92: G13.band 20-45 removed (14.9 h after the Dark Forest quests: asserted again)
 Balance.GLOBAL_REPORT_ONLY = {
-	["G13.band|20–45: godzin (cel D4 14 h)"] = {
+	-- S92: poza zasięgiem dźwigni S92: the S84 boss situation at 20 is Morvane moved to level 20 (Balance.bossFightAt,
+	-- regionAt(20) = the Dark Forest); its basic attack 1.1 -> 0.42 (S92 C2: 7-12 % of a level 45 Mage) makes the
+	-- shield of the one-handed set worth less on that boss (boss 0.920 -> 0.947), the holy staff's mix 1.033 -> 1.040;
+	-- the owner decides (S93 proposal: Grimrok as the boss of the situation at 20)
+	["G8|Cleric holystaff common +0 L20: z cechami"] = {
 		session = "S92",
-		why = "17.98 h > 17.5: the monster curve lengthens 20-45 (15.7 -> 18.0 h); expToNext stays >= 1, the 45 anchor is S92's",
+		why = "poza zasięgiem dźwigni S92: 1.040 > 1.035 (Morvane at 20 in the S84 boss situation, atkMul 0.42 for the 7-12 % basic hit)",
 	},
 } :: { [string]: { session: string, why: string } }
 do
@@ -3367,14 +3881,15 @@ do
 			"S91",
 			"poza zasięgiem dźwigni S91: 10.43 < 12 (Config.Upgrade global, income of 20 from the band 20-45)"
 		)
-		add(`G9.up9|{c} 25: +1…+9 z ochroną (poziomy dochodu)`, "S92", "10.74 < 12 at 25 after goldHigh 20")
+		-- S92: poza zasięgiem dźwigni S92: the upgrade gold is global (Config.Upgrade, G9 S87); for the owner
+		add(
+			`G9.up9|{c} 25: +1…+9 z ochroną (poziomy dochodu)`,
+			"S92",
+			"poza zasięgiem dźwigni S92: 11.36 < 12 at 25 (Config.Upgrade global, an owner decision)"
+		)
 	end
-	-- S88 (E4): T-SK5 at 30 with Anointment 5 % (8 before; band 0.04-0.06 in `dungeon`): the heal anchors 21-44
-	add(
-		"G10|T-SK5 Cleric healer.dungeon na guardian.defender 30",
-		"S92",
-		"0.246 < 0.25 with Anointment 5 % (anchors 21-44)"
-	)
+	-- S88 (E4): T-SK5 at 30 with Anointment 5 % (8 before; band 0.04-0.06 in `dungeon`): the heal anchors 21-44.
+	-- S92: asserted again (Heal's rank 6 knot and the heal anchor 25: 0.269 at 30, 0.254 at 25)
 	-- G10 (G2, G3): T-SK5 at 20 / 25 (the heal curve is 1 at 20; 21-44 are S92's anchors). S90: T-SK4 of
 	-- destroyerExp and arcanistBoss asserted (path costs, bands 2.0-2.8 / 2.0-2.4 of SkillModel.TSK4_BANDS)
 	-- S91: T-SK5 at 20 poza zasięgiem dźwigni S91: Heal's ranks <= 20 can rise at most 1-4 % under the pinned rank 6,
@@ -3384,7 +3899,6 @@ do
 		"S91",
 		"poza zasięgiem dźwigni S91: 0.221 < 0.25 (Heal ranks <= 20 under the pinned rank 6, heal curve 1 at 20)"
 	)
-	add("G10|T-SK5 Cleric healer.dungeon na guardian.defender 25", "S92", "0.235 < 0.25 at 25 (anchors 21-44)")
 	-- G8 (D2): "bez cech" rows out of 0.97-1.035 with twoHandedBonusMul 2.7 / 6.6 % per level (the most rows, Legendary
 	-- and Mythic +0 at 45-100 first): legendary and mythic lines get no multiplier. S88 (H4): Data/Rarities is not an
 	-- S88 lever; the Legendary rows at 20 go to the 1-20 session
@@ -3498,7 +4012,8 @@ end
 -- Regions (S83): TUNED[mapId] = true once its region session asserts it (S91 Meadows 1-20 in full, S92-S94 the
 -- rest); read by balance.spec ("Balance 20-100: regions") and the report. Starting thresholds of the balance plan;
 -- region sessions may tune them with a line in DECYZJE.
-Balance.TUNED = { meadows = true, duskwood = false, ashen = false, frostpeak = false } :: { [string]: boolean }
+-- S92: the Dark Forest tuned (20-45 and Morvane)
+Balance.TUNED = { meadows = true, duskwood = true, ashen = false, frostpeak = false } :: { [string]: boolean }
 Balance.REGION_TARGETS = {
 	-- S91: `classes` = W / Ł / M (the S32 Elite classes; the Cleric's Elites only printed)
 	eliteSingle = {

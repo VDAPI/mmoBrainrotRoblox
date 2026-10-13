@@ -46,6 +46,14 @@ local LINE_INGREDIENT_COMMON: { [string]: string } = {
 	guardian = "thick_hide",
 	fortune = "crow_feather",
 }
+-- S92: Rare blessings (level 35) use the parts of the Dark Forest.
+local LINE_INGREDIENT_RARE: { [string]: string } = {
+	warrior = "werewolf_claw",
+	hunter = "toad_venom",
+	fortune = "crow_feather",
+	sage = "ectoplasm",
+	guardian = "cursed_bone",
+}
 
 for _, line in Blessings.lines do
 	for rarity = 1, 4 do
@@ -54,6 +62,7 @@ for _, line in Blessings.lines do
 			{
 				id = if rarity == 1
 					then LINE_INGREDIENT_COMMON[line] or LINE_INGREDIENT[line]
+					elseif rarity == 3 then LINE_INGREDIENT_RARE[line] or LINE_INGREDIENT[line]
 					else LINE_INGREDIENT[line],
 				n = rarity,
 			},

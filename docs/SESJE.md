@@ -5737,3 +5737,161 @@ skills.spec,globalbalance.spec}.luau`, `tests/fixtures/{balance_1_20,balance_pat
 `tests/fixtures/caveRooms.luau`, `tools/{balance_report,balance_reasons}.luau`, `tools/balance_before.json`,
 `docs/{BALANS,DESIGN,ROZWOJ,DECYZJE,SESJE,PROGRESS,PRZEDMIOTY}.md`, `wiki/src/data/{areas,bosses,caves,meta,monsters,
 quests,skills}.json`.
+
+### S92: Balans poziomów 20–45: Mroczny Bór i Morvane
+
+Start na `10f94d2` (S91): `scripts/check` zielony (98 plików, 3417 testów), migawka księgi `snapshot S92`
+(`tools/balance_before.json`), zrzut „wszystko do 20.” (`build/s92_le20.json`: umiejętności na rangach z `rankLevel`
+≤ 20 i koszty z `unlock` ≤ 20, krzywe 1–20, `expToNext` 1–20, rodzaje Łąk ze statystykami wariantów, Grimrok, zadania
+poniżej 20, spawnery jaskiń Łąk, przepisy i wytwarzanie ≤ 20, plecaki do 60, mikstury), tabela startowa
+(`build/s92_t_start.txt`). `BALANCE_MODULES` już obejmowały wszystkie moduły z A3 (bez dopisków). Na starcie poza
+celami: Morvane (największy cios Maga L45 107%, zwykły 28%, tank 770%/min, T-SK6 2,70, fala tarczy drużyny 3 osób 148%
+na członka, bez wsparcia: cios 110% HP), spotkania Elit (Kurhan 1,91 / 2,06), luka Elit na 21–23 i 29–30, jeden expowisko
+na 43–44, Ent Zgnilizny 0,80 EXP/s, krok tempa 21 / 20 = 1,89, Unikaty do 4,5 / h, plecak 100 11,4 poziomu dochodu,
+pięć rodzajów bez części, `support.elites` 0/10, strażniki T-SK1 / T-SK2 Maga, Kapłana i Łowcy, T-SK4 na 25 / 40 / 44,
+T-SK5 na 25 / 30. Model a szkic (`3f935c1`): Morvane 4,6–4,8 min zamiast 2,6–2,8 (obrona nieumarłych S88 i krzywa
+potworów S87 wydłużają walkę), Elity pojedyncze 89% w paśmie zamiast 15/36 (przebudowa i krzywe Elit S87), tempo 16,1 h
+(szkic 14,7 h: model okna S91 zamiast modelu S83); błędu odwzorowania serwera nie znaleziono.
+
+Co zrobiono:
+- **Model (B):** `Balance.targetsS92` (wiersze `R.duskwood.*` w bloku regionów), `Balance.S92` (progi), `Balance.S92_REPORT`
+  (powody), `Balance.shieldWaves` (fale tarczy: pomocnicy rozłożeni na członków, czas i HP na falę),
+  `Balance.unusableMythics` (`Loot.rollBossItem` z szansą Mityka 1, licznik zabić 0–9), `Balance.areasAt`,
+  `Balance.eliteSpawnerAt`, opcja `kind = "region"` w `paceWindowAt` i pole `hpPerExpGeneric` w `kindRates` (raport).
+  Morvane liczy `bossFight` S83 / S87 (cele ataków, fazy, fale, wściekłość), „bez wsparcia” `Balance.bossNoSupport`
+  (definicja S91), T-SK6 `healerVsBoss(healer.dungeon, "morvane", { team = "s92" })`, Elity dla ścieżek wsparcia
+  `SkillModel.duel` na rodzajach prawdziwych spawnerów (`eliteKinds`). Test Mityka S87 (`rarities.spec`) obejmuje Morvane
+  i cztery klasy; logika łupu bez zmian.
+- **Poprawki po przeglądzie:** pomocnicy fal w `Balance.shieldWaves` bez redukcji grupy S32, jak na serwerze
+  (`Balance.summonHelpers`: `Boss.spawnSummons` → `MonsterService.SpawnAt` bez `GroupSize`), więc fale 39 / 40 → 36 / 37
+  (`bossFight` zostaje z redukcją, bo poprawka rusza fixture 1–20); wiersz raportu `morvane.tankFight` (całe przyjęcie
+  tanka z Polem Klątwy); wiersze D5 K0 na 44; automatyczny tryb raportu strażników tylko, gdy wartość w paśmie ≤ wartości
+  na 45, a strażniki ponad 45 (Strzelec, Traper, Rzeźnik, Niszczyciel boss na 44, Królobójca T-SK2 na 40) z jawnym
+  wpisem `S92_REPORT`; wzór `kindReward` z `rewardMul` i `hpMul` bossów w raporcie; `docs/GRAFIKA.md` (Przeklęta Kość).
+- **Kod gry:** pole `rewardMul` rodzaju (`Data/Monsters`, `MonsterStats.kindReward`); nic więcej.
+- **Dane:** Morvane (`hpMul` 1,2, `atkMul` 0,42, `speed` 1,15, ataki 4,5 / 4,5 / 11,5 co 6,5 s / 5,8, fale 36 / 37),
+  zakresy rodzajów i Wilcza Nora od 21., Wiedźmie Moczary do 44., `rewardMul` (ent 1,25, troll 1,1, szkielet 1,1),
+  kultysta i ghul `atkMul` 0,8 (pary w Kurhanie), `elitePairChance.duskwood` 0,3, `dropFactor.duskwood` 0,85, zadania
+  `werewolves` / `ruins` / `ents` / `cult` / `swamp` / `crypt` (1,7 / 1,4 / 1,1 / 1,2 / 1,3 / 1,6), węzły
+  `manaCost.Mage` 25 / 30 / 40 i `heal` 25, Leczenie ranga 6 w `Data/SkillCurves`, plecak 100 za 50 000, części
+  (`cursed_bone`, `LootTables.PARTS`, `LINE_INGREDIENT_RARE`, Gruba Skóra w progu 25 u kowala), teksty
+  `item.cursed_bone.*` (PL, EN). Liczby i powody w `tools/balance_reasons.luau` (S92) i DECYZJE.
+- **Testy:** `TUNED.duskwood = true` (blok regionów asertuje wiersze bez `report`), wpisy `GLOBAL_REPORT_ONLY`: G13 20–45
+  i T-SK5 na 25 / 30 usunięte, G9 +1…+9 na 25 zostaje (powód S92), nowy G8 kostur Kapłana L20 (Morvane w sytuacji boss
+  S84 na 20.; S92 K3 pozwala tylko usuwać wpisy, więc decyzja właściciela); poprawione liczby kontrolne: harmonogram Morvane (`bossschedule.spec`, `balancemodel.spec`), szansa pary
+  regionu (`globalbalance.spec`), Wiedźmie Moczary (`duskwood.spec`), liczba przedmiotów (`data.spec`), prawo potęgowe
+  `manaCost.Mage` między węzłami (`levelcurves.spec`). `tests/fixtures/caveRooms.luau` odświeżony: różnica tylko w
+  `members` / `count` pięciu spawnerów `duskwood_*_elite_<n>`. Fixture'y `balance_items.json` (630 wartości: drop,
+  materiały, Morvane w sytuacji boss na 20–45, luki ilvl) i `balance_paths.json` (57 wartości: Morvane w B7, T-SK5 na
+  25 / 30, rangi Leczenia) wygenerowane od nowa.
+- **Raport:** `docs/BALANS.md` (pasmo 20–45 nastrojone, „S92: Mroczny Bór i Morvane (start S92 → teraz)”, „Cele S92”,
+  strażniki T-SK, podstawy, tempo 19 → 45, premia za klasy, mikstury łańcuchowe, D5 ze szczęściem, rodzaje rzucające i
+  pary Elit, Morvane tylko raport, przełomy A / B w 21–45, kotwice 45; księga S92). Dane wiki: `npm run data`
+  (wartości i listy: obszary, bossy, jaskinie, wytwarzanie, przedmioty z nową częścią i ikoną, mapy, potwory, zadania,
+  przepisy, umiejętności, ulepszenia, mapa `duskwood.svg`; `wiki_keys_diff` 0).
+- **Zrzut A4:** identyczny na końcu (`cmp build/s92_le20_start.json build/s92_le20_end.json`). Ścisły
+  `balance1_20.spec` bez wpisów (0 różnic).
+
+Cele (start S92 → koniec):
+
+| cel | start | koniec | próg |
+|---|---|---|---|
+| Morvane 3 / 4 / 5 graczy L44 (model S83 / S87) | 4,6 / 4,8 / 4,7 min | 4,7 / 5,0 / 4,9 (z węzłami 4,6 / 4,8 / 4,8) | 4–6 |
+| Morvane: największy cios Maga L45 / L43 | 107% / 112% | 68% / 71% | ≤ 70% / < 100% |
+| Morvane: zwykły cios Maga L45 | 28% | 11% | 7–12% |
+| Morvane: tank (model S32: atak podstawowy i `threat`) | 770%/min | 338%/min | ≤ 350% |
+| Morvane: tank z Polem Klątwy (`bossFight`, 3 / 4 / 5) | – | 790 / 760 / 740%/min | raport (DECYZJE) |
+| Morvane: fala tarczy na członka (3 / 4 / 5; pomocnicy bez redukcji grupy) | 239 / 158 / 154% | 106 / 71 / 69% | ≤ 110% |
+| Morvane: G11 (najmniejsze tempo) | 53% | 57% | ≥ 50% |
+| Morvane bez wsparcia 3 / 4 / 5: s, podtrzymanie, cios | 107 / 109 / 103 s, 0,99, 110% | 110 / 114 / 109 s, 0,99, 93% | ≤ 480, ≤ 1,0, ≤ 100% |
+| Morvane: T-SK6 | 2,70 | 2,68 | 1,0–2,0 (asertowane ≤ 2,7, DECYZJE) |
+| Morvane: Mityki nieużyteczne (4 klasy) | 0% | 0% | 0% |
+| Elity pojedyncze w paśmie / najmniej HP | 89% / 0,59 | 78% / 0,53 | ≥ 72% / ≥ 0,45 |
+| Spotkanie Elit W / M (najgorsze) | 1,91 / 2,06 | 1,06 / 1,18 | ≤ 1,10 / ≤ 1,25 |
+| Elita II solo / 2 / 3 graczy | 2,40–3,10 / 1,09–1,38 / 0,72–0,90 | 2,12–3,16 / 0,94–1,41 / 0,62–0,92 | ≥ 1,8 / ≤ 1,5 / 0,6–1,0 |
+| Spawnery Elit na 21–45 / expowiska na 43–44 | 18/25 / 1 | 25/25 / 2 | każdy / ≥ 2 |
+| Rodzaje EXP/s ÷ zwykły / rzucający HP/EXP ÷ średnia | 0,80–1,06 / ≤ 1,10 | 0,90–1,06 / ≤ 1,16 | 0,85–1,20 / ≤ 1,25 |
+| Tempo 20 → 45 (okno) / h(44) / krok | 16,07 h / 0,93 / 1,89 (21.) | 14,38 h / 0,86 / 1,25 | 11,9–16,1 / 0,72–0,98 / ≤ 1,30 |
+| G13 pasmo 20–45 (rodzaje regionu) | 17,98 h | 14,92 h | 10,5–17,5 |
+| T-SK4 `destroyerExp` 25 / 40 / 44, `arcanistBoss` 25 | 1,79 / 1,98 / 1,88, 1,77 | 2,06 / 2,09 / 1,90 (raport), 2,03 | 2,0–2,8 / 2,0–2,4 |
+| T-SK5 Uzdrowiciela na Obrońcy 25 / 30 | 0,230 / 0,249 | 0,254 / 0,269 | 0,25–0,35 |
+| D5 K0: Unikaty / Heroiki na h | 2,3–4,5 / 0,7–1,1 | 2,3–3,8 / 0,7–1,0 | 2–4 / 0,5–1,5 |
+| +1…+3 / plecak 80 / plecak 100 (poziomy dochodu) | 0,44–0,69 / 6,5 / 11,4 | 0,46–0,68 / 6,8 / 7,1 | ≤ 1,05 / 3–8 / 3–8 |
+| Mikstury łańcuchowe ÷ dochód (W / K) | do 53% / 79% | do 49% / 77% | ≤ 30% (raport) |
+| Części: rodzaje / części w przepisach 20–45 | 8/13 / 0/5 | 13/13 / 5/5 | wszystkie |
+| `support.elites` na 30 / 40 | 0/10 | 0/10 (raport) | 10/10 |
+
+Wejście (listy „Dla S92–S94” S84–S91, `GLOBAL_REPORT_ONLY` S92, PROGRESS):
+- S84 D5 K0 Boru 3,1–5,4 Unikatu / h: **wykonane** (`dropFactor` 0,85); luki ilvl Elit 22–23 i 29–30: **wykonane** (D1);
+  Elity po bossie 46–48 i Elita II 85–87: **S93 / S94**; obrona w walce 1 na 1: **wykonane** (`rewardMul` ent, troll,
+  szkielet).
+- S85 T-SK6 „Lochowego” na Morvane: **asertowane z progiem 2,7** (DECYZJE); Azgor, Vaelgrath: **S93, S94**.
+- S86 strażniki T-SK i `targetsG10`: **wykonane** (wiersze na 25 / 30 / 35 / 40 / 44, część w raporcie z powodem);
+  `support.elites`: **raport, dla właściciela**; przechwyt w modelu bossa: **raport** (fixture ścieżek: cios w Maga 1,07
+  → 0,68).
+- S87 kotwice 45: **sprawdzone, bez zmian** (`monsterHp`, `monsterAtk`, krzywe Elit, `expToNext`, `manaCost.Mage`,
+  `heal` na 45 jak po S87; węzły tylko w 21–44); `elitePairChance` / `dropFactor` Boru: **wykonane**; Morvane: **wykonane**;
+  mikstury E2 (łańcuch): **raport, dla właściciela**; Elita II solo z miksturami: **niedokończone**; G9 +1…+9 na 25:
+  **dla właściciela** (wpis zostaje); G13 20–45: **wykonane** (wpis usunięty); T-SK5 na 25: **wykonane** (wpis usunięty).
+- S88 D5 K0 i EXP/s rodzajów opancerzonych: **wykonane** (`rewardMul`); T-SK5 na 30 z Namaszczeniem: **wykonane**.
+- S89 T-SK6 drużyny S92: **asertowane ≤ 2,7**; T-SK3 Strażnika 70–100: **S93 / S94**; `support.elites`: **raport**;
+  „boss bez wsparcia”: **wykonane** (asercja dla Morvane).
+- S90 `support.elites` Zwiadowcy: **raport**; Truciciel na bossie: **raport** (DPS 300 s ÷ 60 s 0,93); T-SK3 bazy Maga:
+  **raport** (1,39–1,61); boss bez wsparcia z Łowcą i Magiem: **wykonane**.
+- S91 kotwica L20: **bez zmian** (zrzut A4 identyczny, tryb ścisły 0 różnic); skok 21.–23. (T-SK1 Maga i Inkwizytora na
+  25): **raport** (wartości na 45 z bloku ścieżek ponad limitem); krok 20 → 21: **wykonane** (`werewolves` 1,7);
+  definicje S91 (`bossNoSupport`, `healerVsBoss` drużyna s92, `targetsRegion`): **użyte**; wiersze L20 bloku ścieżek:
+  **bez zmian** (drukowane).
+- PROGRESS „rodzaje S19 regionu 2 bez części” i „stare mnożniki Morvane”: **wykonane**.
+
+Dla S93:
+- Kotwice 45 nie przesuwają 46–69 (żadna nie zmieniona); na 45–47 działają: Krypta (spawnery Elit do 45, Elity do 47)
+  i zakresy rodzajów Boru do 45. h(45) / h(44) = 1,01 (rodzaje Pustkowi na 45 zmienią krok).
+- Rozpłatanie 10A (ranga 10 na 46.) i przełomy rangi 10 umiejętności z odblokowaniem 10–18 (46–54): R4 na 46+.
+- Strażniki Łowcy ponad limitem na 40–44 przy wartości na 45 w paśmie (baza 1,16, Zwiadowca 1,17–1,35): spadek T-SK1
+  między 44 a 45 (1,16 → 1,05) do sprawdzenia razem z poziomami Pustkowi; T-SK4 Niszczyciela na 44 (1,90).
+- Strażniki na 44 wyższe niż na 45 (`S92_REPORT`): `marksman.kingslayer` 1,40 / 1,63, `marksman.eliteHunter` 1,41 /
+  1,58, `trapper.poacher` 1,38 / 1,47, `trapper.poisoner` 1,30 / 1,54, `berserker.butcher` T-SK1 1,20,
+  `destroyer.destroyerBoss` T-SK2 1,47: skok z węzła kupionego 44. punktem (Namierzenie, Trujące Sidła, Rozdarcie,
+  Krucha Potęga 3); propozycja: późniejszy węzeł w kolejności `reference` albo niższa ranga 5 rzędu 4 z węzłem na 46;
+  `marksman.kingslayer` T-SK2 na 40 (1,31 wobec 1,29 na 45).
+- `Balance.bossFight` liczy fale tarczy z redukcją grupy S32 (serwer jej nie daje przywołanym): poprawka zmienia fixture
+  1–20 (Grimrok bez wsparcia 0,06 → 0,07, mikstury +18%) i Morvane bez wsparcia 3 osób 0,99 → 1,02; razem z decyzją
+  właściciela o fixture.
+- Z Morvane dla Azgora: T-SK6 ograniczony iloczynem z „bez wsparcia” (leczenie Uzdrowiciela ÷ łańcuch mikstur ok. 2,5 na
+  44.; na 70. odstęp mikstur 10 s, więc gorzej), obrażenia w tanka przez atak `nearest` (bez wsparcia trafia
+  Berserkera), fale tarczy ok. 8–9 poziomów pod bossem dla drużyny 3 osób (przywołani bez redukcji grupy), zwykły cios
+  ok. 10% HP Maga.
+
+Dla właściciela:
+- T-SK6 Morvane ≤ 2,7 (cel 2,0): leczenie Uzdrowiciela lochowego (Leczenie co 3 s, Święte Uderzenie 10B) na 44. to ok.
+  2,6 tego, co daje łańcuch mikstur, więc tank potrzebny do T-SK6 2,0 zabija drużynę bez wsparcia. Do wyboru: liczyć w
+  T-SK6 obrażenia fal tarczy w tanka, wolniejsze Leczenie (odnowienie z rangi ≤ 20 zamrożone), słabsze 10B (psuje Zbawczy
+  Cios S88 na 70 / 100) albo przyjąć próg 2,7 (ponad sufitem 2,5 z S92 C4, więc potrzebna zgoda).
+- Tank Morvane: cel ≤ 350%/min spełnia miara S32 (338%), a z Polem Klątwy w tanka przyjmuje ok. 740–790%/min; zejście
+  do 350% podniosłoby T-SK6. Do wyboru: cel na mierze S32 albo na całym przyjęciu (wtedy T-SK6 z innym progiem).
+- G8 kostura Kapłana Zwykły +0 L20 „z cechami” (1,040 > 1,035) to nowy wpis `GLOBAL_REPORT_ONLY` (S92 K3 pozwala tylko
+  usuwać): sytuacja boss S84 na 20. to Morvane (`bossFightAt`, `regionAt(20)`); propozycja: Grimrok jako boss sytuacji
+  na 20. (zmiana modelu S84, przeliczy fixture przedmiotów).
+- Elita II dla ścieżek wsparcia i tanka (ROZWOJ 7.5): Samotnik, Dowódca, Uzdrowiciel samotny, Fortuna i Łowczy drużyny
+  wygrywają Elitę II solo z miksturami (HP na koniec 43–100%); krzywe Elit II trzyma duet ≤ 150% (Kurhan 0,94–1,03).
+  Do wyboru: limit mikstur w walce z Elitą II, mocniejsza zdolność Elity II albo zgoda, że ścieżki z miksturami ją biją.
+- Mikstury łańcuchowe 18–49% dochodu (Kapłan do 77%) wobec celu 30%: Duża mikstura (250 złota, od ok. 32. poziomu
+  potrzebna w grupie 4) i odstęp `potionCooldown` są globalne; propozycja: Duża 250 → 150 albo cel tylko w raporcie.
+- Odnowa 5A (+4 s): przy rzucaniu na odnowieniu traci tyknięcia (R4 −0,29), liczba nie pomoże; zmiana rodzaju przełomu
+  (np. +leczenie zamiast czasu).
+- Strażniki planu D1 (T-SK1 ≤ 1,15, T-SK2 ≤ 1,25 × własne L20) a pasma ścieżek S89–S90 na 45 (Mag 1,32–1,69, Kapłan
+  1,30–2,11, Strzelec i Traper 1,20–1,46): który kontrakt obowiązuje w 21–44.
+- G9 +1…+9 z ochroną na 25: 11,4 poziomu dochodu (cel 12–25, ceny ulepszeń globalne).
+
+Niedokończone: Elita II solo z miksturami (E2 S87, model); zawężenie obszarów Boru do ≤ 5 poziomów (D6, opcjonalne).
+
+Pliki: `src/shared/Data/{Bosses,Crafting,LevelCurves,LootTables,Maps,Monsters,Recipes,SkillCurves}.luau`,
+`src/shared/Data/Areas/{Caves,duskwood}.luau`, `src/shared/Data/Items/{Backpacks,Materials}.luau`,
+`src/shared/Data/Quests/Main.luau`, `src/shared/Data/Localization/{pl,en}.luau`, `src/shared/Logic/MonsterStats.luau`,
+`tests/{Balance,balance.spec,balancemodel.spec,bossschedule.spec,data.spec,duskwood.spec,globalbalance.spec,
+levelcurves.spec}.luau`, `tests/fixtures/{caveRooms.luau,balance_items.json,balance_paths.json}`,
+`tools/{balance_report,balance_reasons}.luau`, `tools/balance_before.json`,
+`docs/{BALANS,DESIGN,SWIAT,ROZWOJ,DECYZJE,SESJE,PROGRESS,PRZEDMIOTY,GRAFIKA}.md`, `wiki/src/data/*.json`,
+`wiki/src/generated/item-icons.json`, `wiki/public/img/items/mat-cursed_bone-{64,128}.webp`,
+`wiki/public/img/maps/duskwood.svg`.

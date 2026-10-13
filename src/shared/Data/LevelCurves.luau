@@ -23,12 +23,22 @@ local Data: LevelCurvesData = {
 		-- Mage mana cost (ROZWOJ 8, owner answer 25). Target T-SK4: on-cooldown casting costs 2-3x regeneration;
 		-- the base reaches ~1.1-1.4x with this curve, path skills and costs do the rest (ROZWOJ 12.7).
 		-- Key "manaCost.<classId>": classes without a curve pay the flat cost (Cleric, energy classes).
-		["manaCost.Mage"] = { { 20, 1 }, { 45, 1.89 }, { 70, 2.59 }, { 100, 3.49 } },
+		-- S92 (G2): knots 25 / 30 / 40 keep T-SK4 of destroyerExp and arcanistBoss at 2.0-2.4 on 25-40 (45 unchanged).
+		["manaCost.Mage"] = {
+			{ 20, 1 },
+			{ 25, 1.37 },
+			{ 30, 1.47 },
+			{ 40, 1.82 },
+			{ 45, 1.89 },
+			{ 70, 2.59 },
+			{ 100, 3.49 },
+		},
 		-- Potion interval = Config.PotionCooldown x this (owner answer 28): 1.5 s to 20, 6 s at 45, ~10 s from 70.
 		potionCooldown = { { 20, 1 }, { 45, 4 }, { 70, 6.67 }, { 100, 6.67 } },
 		-- Magic-attack part of heals and shields (ROZWOJ 9.2). S87 (T-SK5): mid-band 0.30 for the dungeon Healer on the
-		-- Defender at each anchor; the dip on 55-70 is because the HP part grows with path nodes (DECYZJE S87).
-		heal = { { 20, 1 }, { 45, 2.33 }, { 70, 0.31 }, { 100, 0.67 } },
+		-- Defender at each anchor; the dip on 55-70 is because the HP part grows with path nodes (DECYZJE S87). S92 (G2):
+		-- knot 25 (with Heal's rank 6 in Data/SkillCurves) lifts T-SK5 on 25-30 to >= 0.25.
+		heal = { { 20, 1 }, { 25, 2.05 }, { 45, 2.33 }, { 70, 0.31 }, { 100, 0.67 } },
 		-- S87 (balance plan D1, D4, D5, D7): provisional anchors. S92 owns 45, S93 owns 70, S94 owns 100.
 		-- Monster HP and attack at the monster's own (final) level (Logic/MonsterStats.baseHp / baseAttack).
 		monsterHp = { { 20, 1 }, { 45, 1.20 }, { 70, 1.32 }, { 100, 1.47 } },
@@ -39,17 +49,19 @@ local Data: LevelCurvesData = {
 		-- Elite II level terms: neutral until the region sessions tune them.
 		elite2Hp = { { 20, 1 }, { 45, 1 }, { 70, 1 }, { 100, 1 } },
 		elite2Dmg = { { 20, 1 }, { 45, 1 }, { 70, 1 }, { 100, 1 } },
-		-- EXP to the next level (Logic/Exp.expToNext); quest rewards are shares of it, so it scales them too.
+		-- EXP to the next level (Logic/Exp.expToNext); quest rewards are shares of it, so it scales them too. S92 (F3):
+		-- 45 stays 1.0 (the curve never falls, levelcurves.spec); the Dark Forest's quests carry the pace (~14.4 h).
 		expToNext = { { 20, 1 }, { 45, 1.0 }, { 70, 1.0 }, { 100, 1.0 } },
 	},
 	-- S87 (balance plan D5): per-region values by map id (Data/Maps). Data/Monsters.region 1..4 = regions[i].
 	-- Neutral until the region sessions (S91 meadows, S92 duskwood, S93 ashen, S94 frostpeak).
 	regions = { "meadows", "duskwood", "ashen", "frostpeak" },
-	-- Chance that a cave Elite group is a pair (AreaSpawns.cave).
-	elitePairChance = { meadows = 0.3, duskwood = 0.5, ashen = 0.5, frostpeak = 0.5 },
+	-- Chance that a cave Elite group is a pair (AreaSpawns.cave). S92: the Dark Forest 0.3.
+	elitePairChance = { meadows = 0.3, duskwood = 0.3, ashen = 0.5, frostpeak = 0.5 },
 	-- Multiplier of Unique and Heroic drop weights of the region's monsters (Common absorbs the rest). At most 1:
 	-- Elite II tables have no Common weight, so a factor above 1 fails ItemRoll.rarityWeights (globalbalance.spec).
-	dropFactor = { meadows = 1, duskwood = 1, ashen = 1, frostpeak = 1 },
+	-- S92: the Dark Forest 0.85 (2-4 Uniques for the class per hour of grinding, D5).
+	dropFactor = { meadows = 1, duskwood = 0.85, ashen = 1, frostpeak = 1 },
 }
 
 for _, anchors in Data.curves do

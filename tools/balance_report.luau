@@ -455,6 +455,422 @@ for _, t in tables do
 	table.insert(byBand[t.band], t)
 end
 
+-- S92 (L1): the Dark Forest section: start S92 -> now, the S92 targets (Balance.targetsS92) and the "Tylko raport"
+-- items of the session file.
+local function s92Section()
+	local S = B.S92
+	local s92Rows = B.targetsS92()
+	local byId: { [string]: B.TargetRow } = {}
+	for _, row in s92Rows do
+		byId[row.id] = row
+	end
+	local function v(id: string): number
+		local row = byId[`R.duskwood.{id}`]
+		return if row then row.value else 0 / 0
+	end
+	local function range(prefix: string, fmt: string): string
+		local lo, hi = math.huge, -math.huge
+		for _, row in s92Rows do
+			if string.sub(row.id, 1, #prefix) == prefix then
+				lo, hi = math.min(lo, row.value), math.max(hi, row.value)
+			end
+		end
+		if lo == math.huge then
+			return "–"
+		end
+		return `{fmtValue(lo, fmt)}–{fmtValue(hi, fmt)}`
+	end
+	-- "in band / all" of the S92 rows with this id prefix
+	local function count(prefix: string): string
+		local ok, all = 0, 0
+		for _, row in s92Rows do
+			if string.sub(row.id, 1, #prefix) == prefix then
+				all += 1
+				ok += if B.inBand(row) then 1 else 0
+			end
+		end
+		return `{ok}/{all}`
+	end
+	local regionRows = B.targetsRegion("duskwood")
+	local uniqueLo, uniqueHi = math.huge, -math.huge
+	for _, row in regionRows do
+		if row.group == "d5" and string.find(row.id, ".unique", 1, true) then
+			uniqueLo, uniqueHi = math.min(uniqueLo, row.value), math.max(uniqueHi, row.value)
+		end
+	end
+	local function regionMax(group: string, classId: string?): number
+		local hi = -math.huge
+		for _, row in regionRows do
+			if row.group == group and (classId == nil or row.classId == classId) then
+				hi = math.max(hi, row.value)
+			end
+		end
+		return hi
+	end
+	local function regionMin(group: string): number
+		local lo = math.huge
+		for _, row in regionRows do
+			if row.group == group then
+				lo = math.min(lo, row.value)
+			end
+		end
+		return lo
+	end
+	add("### S92: Mroczny Bór i Morvane (start S92 → teraz)")
+	add()
+	add(
+		"Start = stan po S91 (`10f94d2`), zmierzony tym samym modelem przed zmianą danych. Cele: `docs/sessions/S92.md` → „Cele tej sesji”; wiersze asertuje blok regionów `balance.spec` (`TUNED.duskwood`, `Balance.targetsS92`), wiersze z opisem w kolumnie „kto asertuje” są w raporcie (powody: `docs/DECYZJE.md` → S92)."
+	)
+	add()
+	local pace, h44, step = 0, B.paceWindowAt("Warrior", 44).hours, 0
+	for L = 20, 44 do
+		pace += B.paceWindowAt("Warrior", L).hours
+		step =
+			math.max(step, B.paceWindowAt("Warrior", L).hours / math.max(1e-9, B.paceWindowAt("Warrior", L - 1).hours))
+	end
+	local noSup = {}
+	for n = 3, 5 do
+		table.insert(noSup, fmtValue(v(`morvane.noSupport.{n}.seconds`), "1"))
+	end
+	local rows = {
+		{
+			"Morvane 3 / 4 / 5 graczy L44: min",
+			"4,6 / 4,8 / 4,7",
+			`{fmtValue(v("morvane.team3"), "2")} / {fmtValue(v("morvane.team4"), "2")} / {fmtValue(
+				v("morvane.team5"),
+				"2"
+			)}`,
+			"4–6",
+		},
+		{
+			"Morvane: największy cios Maga L45 / L43",
+			"107% / 112%",
+			`{fmtValue(v("morvane.mage45"), "%")} / {fmtValue(v("morvane.mage43"), "%")}`,
+			"≤ 70% / < 100%",
+		},
+		{ "Morvane: zwykły cios Maga L45", "28%", fmtValue(v("morvane.basic45"), "%"), "7–12%" },
+		{ "Morvane: tank HP na minutę (model S32)", "770%", fmtValue(v("morvane.tank"), "%"), "≤ 350%" },
+		{
+			"Morvane: tank HP na minutę (bossFight, z Polem Klątwy; 3 / 4 / 5)",
+			"–",
+			`{fmtValue(v("morvane.tankFight3"), "%")} / {fmtValue(v("morvane.tankFight4"), "%")} / {fmtValue(
+				v("morvane.tankFight5"),
+				"%"
+			)}`,
+			"raport",
+		},
+		{
+			"Morvane: fala tarczy, HP na członka (3 / 4 / 5; pomocnicy bez redukcji grupy)",
+			"239% / 158% / 154%",
+			`{fmtValue(v("morvane.wave3"), "%")} / {fmtValue(v("morvane.wave4"), "%")} / {fmtValue(
+				v("morvane.wave5"),
+				"%"
+			)}`,
+			"≤ 110%",
+		},
+		{
+			"Morvane: T-SK6 Uzdrowiciela lochowego",
+			"2,70",
+			fmtValue(v("morvane.tsk6"), "2"),
+			`1,0–{fmtValue(S.tsk6[2], "2")}`,
+		},
+		{ "Morvane bez wsparcia 3 / 4 / 5: s", "107 / 109 / 103", table.concat(noSup, " / "), "≤ 480" },
+		{
+			"Morvane bez wsparcia 3 / 4 / 5: przyjmowane / podtrzymanie (najgorszy)",
+			"0,99 / 0,97 / 0,96",
+			`{fmtValue(v("morvane.noSupport.3.sustain"), "2")} / {fmtValue(v("morvane.noSupport.4.sustain"), "2")} / {fmtValue(
+				v("morvane.noSupport.5.sustain"),
+				"2"
+			)}`,
+			"≤ 1,0",
+		},
+		{ "Morvane bez wsparcia: największy cios / HP członka", "110%", fmtValue(v("morvane.noSupport.3.hit"), "%"), "≤ 100%" },
+		{ "Morvane: G11 (najmniejsze tempo ataku)", "53%", fmtValue(regionMin("bossCadence"), "%"), "≥ 50%" },
+		{
+			"Elity: spotkanie Wojownik / Mag (najgorsze)",
+			"191% / 206%",
+			`{fmtValue(regionMax("eliteEncounter", "Warrior"), "%")} / {fmtValue(
+				regionMax("eliteEncounter", "Mage"),
+				"%"
+			)}`,
+			"≤ 110% / ≤ 125%",
+		},
+		{ "Spawnery Elit na poziomach 21–45", "18/25", count("R.duskwood.ilvl.elite"), "każdy" },
+		{ "Expowiska na 43–44", "1", `{v("areas.43")} / {v("areas.44")}`, "≥ 2" },
+		{ "Rodzaje: EXP/s ÷ zwykły (najmniej)", "0,80 (rotEnt)", fmtValue(regionMin("kinds"), "2"), "0,85–1,20" },
+		{ "Tempo 20 → 45 (okno): h", "16,07", fmtValue(pace, "2"), "11,9–16,1" },
+		{ "G13: pasmo 20–45 (rodzaje regionu, zadania na swoim poziomie): h", "17,98", fmtValue(B.paceBand("Warrior", 20, 45).hours, "2"), "10,5–17,5" },
+		{
+			"Tempo: h(44) / największy krok h(L) / h(L − 1)",
+			"0,93 / 1,89 (L21)",
+			`{fmtValue(h44, "2")} / {fmtValue(step, "2")}`,
+			"0,72–0,98 / ≤ 1,30",
+		},
+		{ "Plecak 100 (od 35.): poziomy dochodu", "11,4", fmtValue(v("gold.backpack_100.Warrior"), "1"), "3–8" },
+		{ "Plecak 80 (od 25.): poziomy dochodu", "6,5", fmtValue(v("gold.backpack_80.Warrior"), "1"), "3–8" },
+		{ "+1…+3 broni / dochód poziomu (21–45)", "0,44–0,69", range("R.duskwood.gold.up3", "2"), "≤ 1,05" },
+		{
+			"D5 (K0): Unikaty dla klasy na h expienia",
+			"2,3–4,5",
+			`{fmtValue(uniqueLo, "2")}–{fmtValue(uniqueHi, "2")}`,
+			"2–4",
+		},
+		{
+			"Części: rodzaje z częścią / części w przepisach 20–45",
+			"8/13 / 0/5",
+			`{count("R.duskwood.parts.kind")} / {count("R.duskwood.parts.recipe")}`,
+			"13/13 / 5/5",
+		},
+	}
+	tableOut({ "liczba", "start S92", "teraz", "cel" }, rows)
+	-- the S92 targets without the guard and chain matrices (below)
+	local listed: { B.TargetRow } = {}
+	for _, row in s92Rows do
+		if row.group ~= "guards" and not string.find(row.id, "gold.chain", 1, true) then
+			table.insert(listed, row)
+		end
+	end
+	local ok, all = countIn(s92Rows)
+	add("### Cele S92 (`Balance.targetsS92`)")
+	add()
+	add(
+		`{ok}/{all} w paśmie (z wierszami raportu). Strażniki T-SK i mikstury łańcuchowe w tabelach niżej; pozostałe wiersze regionu (Elity, Elity II, rodzaje, harmonogram, D5) w „Cele (20–45)”.`
+	)
+	add()
+	tableOut({ "cel", "wartość", "próg", "wynik", "kto asertuje" }, targetRows(listed, "S92 (asertowane)"))
+	-- guards matrix (G1)
+	add("### Strażniki T-SK w paśmie (S92, G1)")
+	add()
+	add(
+		"T-SK1 / T-SK2 względem własnego L20 (limity 1,15 / 1,25) i T-SK3 / areaCap (≤ 1) na 25 / 30 / 35 / 40 / 44 i na 45 (blok ścieżek S89–S90). Gwiazdka: wiersz w raporcie (na 45 build ma już wartość ponad limitem planu D1 albo powód w `Balance.S92_REPORT`)."
+	)
+	add()
+	local gRows: { { string } } = {}
+	for _, c in B.CLASSES do
+		for _, build in SkillModel.builds(c) do
+			local cells = { `{c} {build.key}` }
+			for _, L in { 25, 30, 35, 40, 44, 45 } do
+				local g = SkillModel.guards(build, L)
+				local mark = ""
+				local id = `R.duskwood.guard.tsk1.{c}.{build.key}.{L}`
+				if byId[id] and byId[id].report then
+					mark = "*"
+				end
+				table.insert(
+					cells,
+					`{fmtValue(g.tsk1rel, "2")} / {fmtValue(g.tsk2rel, "2")} / {fmtValue(g.tsk3cap, "2")}{mark}`
+				)
+			end
+			table.insert(gRows, cells)
+		end
+	end
+	tableOut({ "build", "25", "30", "35", "40", "44", "45" }, gRows)
+	-- T-SK3 / T-SK4 of the bases (report)
+	local baseRows: { { string } } = {}
+	for _, c in B.CLASSES do
+		local build = SkillModel.build("base", c)
+		local cells = { `{c} base: T-SK3{if c == "Mage" then " / T-SK4" else ""}` }
+		for _, L in { 25, 30, 35, 40, 44 } do
+			local m = SkillModel.metrics(build, L)
+			table.insert(
+				cells,
+				if c == "Mage" then `{fmtValue(m.tsk3, "2")} / {fmtValue(m.tsk4, "2")}` else fmtValue(m.tsk3, "2")
+			)
+		end
+		table.insert(baseRows, cells)
+	end
+	add("### Podstawy klas: T-SK3 i T-SK4 Maga (tylko raport, S92)")
+	add()
+	add("T-SK3 bazy (Mag z projektu 2,1–2,4, S90 I3) i T-SK4 bazy Maga (ROZWOJ 8: ok. 1,1–1,4) w paśmie 25–44.")
+	add()
+	tableOut({ "podstawa", "25", "30", "35", "40", "44" }, baseRows)
+	-- pace (B1, F)
+	add("### Tempo 19 → 45 (model okna S91, Wojownik; S92)")
+	add()
+	add(
+		"h = godziny na poziom (rodzaj zwykły, odpoczynek, zadania główne bez bossów w oknach, poboczne 0,5); m = średnia krocząca h(L − 4..L) (raport); „rodzaj regionu” = `kindAtRegion` (opcja `region`, raport); „z Morvane” = zadanie z bossem w oknie (raport)."
+	)
+	add()
+	local pRows: { { string } } = {}
+	for L = 19, 45 do
+		local h = B.paceWindowAt("Warrior", L).hours
+		local prev = B.paceWindowAt("Warrior", L - 1).hours
+		table.insert(pRows, {
+			tostring(L),
+			fmtValue(h, "2"),
+			fmtValue(h / math.max(1e-9, prev), "2"),
+			fmtValue(B.paceWindowMean("Warrior", L), "2"),
+			fmtValue(B.paceWindowAt("Warrior", L, { kind = "region" }).hours, "2"),
+			fmtValue(B.paceWindowAt("Warrior", L, { withBossQuests = true }).hours, "2"),
+		})
+	end
+	tableOut({ "poziom", "h", "h / h(L − 1)", "m", "h rodzaj regionu", "h z Morvane" }, pRows)
+	local regionSum, bossSum = 0, 0
+	for L = 20, 44 do
+		regionSum += B.paceWindowAt("Warrior", L, { kind = "region" }).hours
+		bossSum += B.paceWindowAt("Warrior", L, { withBossQuests = true }).hours
+	end
+	add(
+		`Suma 20 → 45: {fmtValue(pace, "2")} h (rodzaj regionu {fmtValue(regionSum, "2")} h, z Morvane {fmtValue(
+			bossSum,
+			"2"
+		)} h); h(45) / h(44) = {fmtValue(B.paceWindowAt("Warrior", 45).hours / math.max(1e-9, h44), "2")} (rodzaje Pustkowi: S93).`
+	)
+	add()
+	-- class premium (ROZWOJ 7.4)
+	local premium: { { string } } = {}
+	for _, L in { 30, 40 } do
+		for _, party in { { "Warrior", "Warrior", "Warrior" }, { "Warrior", "Hunter", "Mage" } } do
+			local p = B.paceAt("Warrior", L, { party = party })
+			table.insert(premium, {
+				`{L}: {table.concat(party, " + ")}`,
+				fmtValue(p.expMul, "2"),
+				fmtValue(p.expPerHour, "g"),
+			})
+		end
+	end
+	add("### Premia za różne klasy (tylko raport, S92)")
+	add()
+	tableOut({ "drużyna 3 osób", "mnożnik EXP", "EXP/h członka" }, premium)
+	-- chain potions (I3)
+	add("### Mikstury łańcuchowe ÷ dochód (S92, I3; dolna granica 15% tylko raport)")
+	add()
+	local chain: { { string } } = {}
+	for L = 21, 45, 2 do
+		local cells = { tostring(L) }
+		for _, c in B.CLASSES do
+			table.insert(cells, fmtValue(B.economyAt(c, L, { potions = "chain" }).potionShare, "%"))
+		end
+		table.insert(chain, cells)
+	end
+	tableOut({ "poziom", "Wojownik", "Łowca", "Mag", "Kapłan" }, chain)
+	-- D5 with luck (H3)
+	add("### D5 ze szczęściem (tylko raport, S92)")
+	add()
+	add(
+		"Unikaty dla klasy na h expienia / Heroiki na h Elit: K0, K1, K1 z Kapłanem Fortuny, K2 z Kapłanem Fortuny (profile S84 / S88)."
+	)
+	add()
+	local d5: { { string } } = {}
+	for _, L in { 25, 30, 35, 40 } do
+		for _, c in { "Warrior", "Cleric" } do
+			local cells = { `{c} {L}` }
+			for _, spec in { { "K0", false }, { "K1", false }, { "K1", "full" }, { "K2", "full" } } do
+				local d = B.dropsPerHour(c, L, spec[1] :: string, spec[2] :: any)
+				table.insert(cells, `{fmtValue(d.unique, "2")} / {fmtValue(d.heroic, "2")}`)
+			end
+			table.insert(d5, cells)
+		end
+	end
+	tableOut({ "klasa · poziom", "K0", "K1", "K1 + Fortuna", "K2 + Fortuna" }, d5)
+	-- casters and Elite pairs (report)
+	add("### Rodzaje rzucające i pary Elit (tylko raport, S92)")
+	add()
+	local kRows: { { string } } = {}
+	for _, k in B.kindRates("duskwood") do
+		if k.caster then
+			table.insert(
+				kRows,
+				{ k.kind, tostring(k.level), fmtValue(k.hpPerExp, "2"), fmtValue(k.hpPerExpGeneric, "2") }
+			)
+		end
+	end
+	tableOut(
+		{ "rodzaj rzucający", "poziom", "HP/EXP ÷ średnia regionu", "HP/EXP ÷ zwykły (szkic S54: 1,20)" },
+		kRows
+	)
+	local pairRows: { { string } } = {}
+	for _, cave in B.caveElites("duskwood") do
+		for _, kind in cave.kinds do
+			local worst = 0
+			for _, f in kind.fights do
+				worst = math.max(worst, f.pair.hpLost / math.max(1e-9, f.single.hpLost))
+			end
+			table.insert(pairRows, { `{cave.id} {kind.kind}`, fmtValue(cave.pairShare, "%"), fmtValue(worst, "2") })
+		end
+	end
+	tableOut({ "jaskinia · rodzaj", "q par", "para ÷ pojedyncza (najwięcej; cel ≤ 2,6)" }, pairRows)
+	-- Morvane extras (C)
+	add("### Morvane: tylko raport (S92)")
+	add()
+	local mRows: { { string } } = {}
+	for n = 3, 5 do
+		local r = B.bossNoSupport("morvane", n)
+		local pots = {}
+		for _, mem in r.members do
+			table.insert(pots, `{mem.key} {fmtValue(mem.potions, "1")}`)
+		end
+		table.insert(mRows, { `bez wsparcia, {n} graczy: mikstury na walkę`, table.concat(pots, ", ") })
+	end
+	local def = Bosses.byId.morvane :: any
+	local m = B.monster(B.bossKind(def, 4), def.level, "boss")
+	for _, key in { "trapper.poisoner", "inquisitor.solo" } do
+		local sp = SkillModel.player(SkillModel.build(key), 44)
+		local d60 = SkillModel.fight(sp, { targets = { m }, seconds = 60 }).dps
+		local d300 = SkillModel.fight(sp, { targets = { m }, seconds = 300 }).dps
+		table.insert(mRows, {
+			`{key} na Morvane: DPS 300 s ÷ DPS 60 s`,
+			`{fmtValue(d300 / math.max(1e-9, d60), "2")} ({fmtValue(d60, "g")} → {fmtValue(d300, "g")})`,
+		})
+	end
+	local waves = {}
+	for n = 3, 5 do
+		local ws = B.shieldWaves("morvane", B.team(n, S.bossLevel))
+		table.insert(waves, `{n}: {fmtValue(ws[1].seconds, "1")} / {fmtValue(ws[2].seconds, "1")} s`)
+	end
+	table.insert(mRows, { "fale tarczy: czas fali 2 / 3 (drużyna S32)", table.concat(waves, ", ") })
+	tableOut({ "liczba", "wartość" }, mRows)
+	-- R4 in the band (G3)
+	add("### Przełomy A / B osiągane w 21–45 (tylko raport, S92, G3)")
+	add()
+	add(
+		"R4 = zysk opcji w roli umiejętności na poziomie rangi (S89 E1, `SkillModel.optionGain`); pasmo 0,08–0,17 (5) i 0,17–0,28 (10); opcje użytkowe (`R4_UTILITY`) bez liczby. Blok ścieżek asertuje te same opcje na 45 / 70 / 100."
+	)
+	add()
+	local r4Rows: { { string } } = {}
+	for _, classId in B.CLASSES do
+		for _, d in SkillData.byClass[classId] do
+			local def2: any = d
+			if def2.type == "passive" or not def2.breakpoints then
+				continue
+			end
+			local key = SkillModel.R4_SUPPORT_BUILDS[def2.id]
+				or (if def2.path then SkillModel.R4_PATH_BUILDS[def2.path] else SkillModel.R4_CLASS_BUILDS[classId])
+			local build = SkillModel.build(key)
+			for _, at in Skills.BREAKPOINT_LEVELS do
+				local rankLevel = Skills.rankLevel(def2, at)
+				if rankLevel > 20 and rankLevel <= 45 and def2.breakpoints[at] then
+					local L = math.max(rankLevel, 21)
+					local cells = { `{def2.id} {at} ({key})`, tostring(L) }
+					for _, choice in { "a", "b" } do
+						local k = `{def2.id}:{at}{choice}`
+						if SkillModel.R4_UTILITY[k] then
+							table.insert(cells, "użyteczność")
+						else
+							local g = SkillModel.optionGain(build, def2.id, at, choice, L)
+							table.insert(cells, if g then fmtValue(g, "2") else "–")
+						end
+					end
+					table.insert(r4Rows, cells)
+				end
+			end
+		end
+	end
+	tableOut({ "umiejętność · przełom (build)", "poziom", "A", "B" }, r4Rows)
+	-- anchors 45 -> 46-69 (S93)
+	add("### Kotwice 45 a poziomy 46–69 (S92 → S93)")
+	add()
+	add(
+		"S92 nie przestawiło żadnej kotwicy 45 (`monsterHp`, `monsterAtk`, `eliteHp`, `eliteDmg`, `elite2*`, `expToNext`, `manaCost.Mage`, `heal`): węzły dodało tylko w 21–44 (`manaCost.Mage` 25 / 30 / 40, `heal` 25), więc krzywe na 46–69 są jak po S87. Na 46–69 przechodzą: Morvane (sytuacja boss S84 na 45+ to Azgor), zakresy rodzajów Boru do 45 i `rewardMul` (rodzaje Pustkowi bez zmian). Wartości kotwic 45:"
+	)
+	add()
+	local aRows: { { string } } = {}
+	for _, id in LevelCurves.ids() do
+		table.insert(aRows, { id, fmtValue(LevelCurves.at(id, 45), "2"), fmtValue(LevelCurves.at(id, 55), "2") })
+	end
+	tableOut({ "krzywa", "45", "55" }, aRows)
+end
+
 local REGION_SESSION = { "S91", "S92", "S93", "S94" }
 for i, band in B.BANDS do
 	local lo, hi = band[1], band[2]
@@ -544,7 +960,7 @@ for i, band in B.BANDS do
 	local gRows = globalFor(lo, hi)
 	local regionRows = B.targetsRegion(mapId)
 	local cele = targetRows(gRows, "S87")
-	local regionWho = if tuned then "S91 (asertowane)" else REGION_SESSION[i]
+	local regionWho = if tuned then `{REGION_SESSION[i]} (asertowane)` else REGION_SESSION[i]
 	for _, r in targetRows(regionRows, regionWho) do
 		table.insert(cele, r)
 	end
@@ -555,6 +971,9 @@ for i, band in B.BANDS do
 	add(`Globalne (G): {gOk}/{gAll} w paśmie; regionu: {rOk}/{rAll} w paśmie.`)
 	add()
 	tableOut({ "cel", "wartość", "próg", "wynik", "kto asertuje" }, cele)
+	if mapId == "duskwood" then
+		s92Section()
+	end
 end
 
 -- Items, loot and monster defence (S84) -------------------------------------------------------------------------
@@ -1567,12 +1986,15 @@ for _, def in Bosses.list do
 	for _, a in def.attacks do
 		table.insert(attacks, `{a.id} ×{a.damage}`)
 	end
-	add(`- {def.id} (L{def.level}): atak ×{def.atkMul}, ciosy {table.concat(attacks, ", ")}.`)
+	local hpMul = if (def :: any).hpMul then `HP ×{(def :: any).hpMul}, ` else ""
+	add(`- {def.id} (L{def.level}): {hpMul}atak ×{def.atkMul}, ciosy {table.concat(attacks, ", ")}.`)
 end
 local stats: any = MonsterStats
 if stats.kindReward then
 	local hpExp, atkExp = (Combat :: any).kindRewardHpExponent, (Combat :: any).kindRewardAtkExponent
-	add(`- EXP i złoto rodzaju × mnożnik HP^{hpExp} × (mnożnik ataku × szybkość)^{atkExp}.`)
+	add(
+		`- EXP i złoto rodzaju × mnożnik HP^{hpExp} × (mnożnik ataku × szybkość)^{atkExp} × rewardMul rodzaju (S92, domyślnie 1).`
+	)
 end
 local curve = {}
 for _, L in { 20, 45, 70, 100 } do

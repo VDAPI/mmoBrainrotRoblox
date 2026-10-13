@@ -5,7 +5,7 @@
 
 ## Stan
 
-S01–S91 gotowe (lista i zakres w `docs/SESJE.md`). Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
+S01–S92 gotowe (lista i zakres w `docs/SESJE.md`). Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
 kategorie efektów drużyny i stos efektów (`Logic/EffectStack`), S54 wzory globalne (`Logic/LevelCurves`), S55 rangi
 i przełomy w kształcie A/B (`Build.bp2`, `Skills.effective` §2.7), S56 koniec punktów umiejętności: rangi z poziomu
 postaci (`Skills.rankFor`, drabina przejściowa ROZWOJ 2.6), zapis w schemacie 6 (darmowy reset statystyk, pasek
@@ -83,7 +83,9 @@ Mitycznych na nowych liniach, model PvP `Balance.pvpDuel`). S89 ścieżki Kapła
 pilnowane testem (`PATHS_TUNED`, R1 / R4 / R5 / R6, odniesienie „Furia” zamrożone). S90 ścieżki Łowcy i Maga nastrojone
 na 45–100 i pilnowane testem (Kusza `dmgMul` 1,54, Salwa 5A +1 strzała, R5a, limity Zręczności `hunter.dexCaps`, pasma
 T-SK4 z 12.7). S91 poziomy 1–20 przestrojone po przebudowie i zamrożone testem (`balance1_20.spec` w trybie ścisłym);
-kotwica L20 w fixture dla S92–S94.
+kotwica L20 w fixture dla S92–S94. S92 Mroczny Bór 20–45 i Morvane nastrojone i pilnowane testem (`TUNED.duskwood`,
+`Balance.targetsS92`: Morvane 4–6 min, bez wsparcia, T-SK6 ≤ 2,7, Mityk dla klasy, fale tarczy, jaskinie od 21., tempo
+ok. 14,4 h, `rewardMul` rodzaju, Przeklęta Kość i części Boru w przepisach, plecak 100 za 50 000).
 Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`, `docs/STATY.md`), następne sesje
 balansu; testy i strojenie po nich.
 
@@ -106,10 +108,11 @@ balansu; testy i strojenie po nich.
 - **Ruch**: sprint nie zmienia WalkSpeed lokalnie przed odpowiedzią serwera. Serwer nie kontroluje prędkości ani
   teleportów gracza.
 - **Dane**: brak słabości żywiołowych potworów. Jaskinie bez profilu expowiska (`Cave.profile` nieczytane przez
-  `AreaSpawns.cave`). Rodzaje S19 regionów 2–4 (np. czarny niedźwiedź, ghul) bez części. Regiony 2–4 niestrojone:
-  cele G i regionów poza pasmem w `docs/BALANS.md` (`GLOBAL_REPORT_ONLY`: regiony S92–S94, wpisy S91 poza zasięgiem;
-  G7 Heroik Łowcy i G8 „z cechami” zostają z S88 do decyzji właściciela); Morvane, Azgor, Vaelgrath mają stare mnożniki ciosów (największy cios Maga 107–130% po krzywej
-  S87), lot Vaelgratha zdejmuje nietykalność mimo żywej tarczy (lista Dla S87 z S83; do osobnej sesji).
+  `AreaSpawns.cave`). Rodzaje S19 regionów 3–4 (np. hiena, sęp) bez części. Regiony 3–4 niestrojone:
+  cele G i regionów poza pasmem w `docs/BALANS.md` (`GLOBAL_REPORT_ONLY`: wpisy S91 / S92 poza zasięgiem;
+  G7 Heroik Łowcy i G8 „z cechami” zostają z S88 do decyzji właściciela); Azgor i Vaelgrath mają stare mnożniki ciosów
+  (największy cios Maga 118–130% po krzywej S87), lot Vaelgratha zdejmuje nietykalność mimo żywej tarczy (lista Dla S87
+  z S83; do osobnej sesji).
 - **Questy**: EXP z nagród dobrany wzorem, do strojenia.
 - **Gildie / aukcja / poczta**: brak zaproszeń do gildii między serwerami; aukcja bez podpowiedzi ceny, poczta bez
   pobrania.
@@ -120,7 +123,7 @@ balansu; testy i strojenie po nich.
   bez strojenia (S88 C10).
 - **Przedmioty (S87)**: wiki pokazuje zakresy linii i krok ulepszenia bez mnożnika broni dwuręcznej (×2,7, 6,6%):
   nowe pole wymaga sesji wiki (decyzja właściciela).
-- **Model balansu (S87)**: sprawdzenie mikstur bez walki Elity II solo z miksturami (E2; S92–S94).
+- **Model balansu (S87)**: sprawdzenie mikstur bez walki Elity II solo z miksturami (E2; S92 nie zrobione, S93–S94).
 - **Dokumentacja (S87)**: tabela zmian fixture (klucz, przed, po, przyczyna) w SESJE skrócona do opisu najważniejszych
   zmian.
 - **Model balansu (S84)**: obrona potworów liczona na rodzaju ogólnym, bez prawdziwych rodzajów regionu (`hpMul`,
@@ -129,6 +132,11 @@ balansu; testy i strojenie po nich.
   właściciela (DPS Strażnika, suma Chorążego na 70, R1 Inkwizytora, R6 trzech ścieżek): `docs/SESJE.md` → S89.
 - **Balans**: propozycje S90 dla regionów (S92–S94) i właściciela w `docs/SESJE.md` → S90.
 - **Balans**: propozycje S91 dla S92–S94 i właściciela w `docs/SESJE.md` → S91.
+- **Balans**: propozycje S92 dla S93 i właściciela w `docs/SESJE.md` → S92 (T-SK6 Morvane ≤ 2,7, Elita II ścieżek
+  wsparcia, mikstury łańcuchowe, Odnowa 5A, strażniki planu D1 a pasma ścieżek, tank Morvane z Polem Klątwy, G8
+  kostura na 20); obszary Boru szersze niż 5 poziomów (D6, opcjonalne).
+- **Model balansu (S92)**: `Balance.bossFight` liczy fale tarczy z redukcją grupy S32, a serwer jej nie daje
+  przywołanym (`Balance.summonHelpers`); poprawka rusza zamrożony fixture 1–20 (Grimrok bez wsparcia).
 - **Model balansu (S91)**: raport bez G5 / G6 na 5–15, R6 rzędów 1–3, rzędów wyboru na 20, Elity II solo z miksturami i
   D5 na godzinę na 1–20; gładkość R1 buildów bez wiersza na 5.
 - **Model balansu (S86)**: bez utraty celowania i strumienia przy czerwonych strefach bossa (B10.4, B11.3).

@@ -28,7 +28,7 @@ local BRIEF = {
 	{ "duskwood_cultvillage", { 29, 37 }, { "darkCultist", "bogSerpent" }, 7, "gold" },
 	{ "duskwood_crossroads", { 30, 36 }, { "bogSerpent", "darkCultist", "forestWraith" }, 5, "exp" },
 	{ "duskwood_swamp", { 32, 40 }, { "swampTroll", "bogSerpent", "marshWitch" }, 7, "exp" },
-	{ "duskwood_witchmarsh", { 36, 42 }, { "marshWitch", "swampTroll" }, 4, "loot" },
+	{ "duskwood_witchmarsh", { 36, 44 }, { "marshWitch", "swampTroll" }, 4, "loot" }, -- S92: 42 -> 44
 	{ "duskwood_bloodcliffs", { 40, 45 }, { "bloodBat", "marshWitch" }, 6, nil },
 }
 

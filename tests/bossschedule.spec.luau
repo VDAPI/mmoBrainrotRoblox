@@ -69,9 +69,10 @@ T.describe("BossSchedule (S87)", function()
 			{ "grimrok", 3, "sweep", 4.7 },
 			{ "grimrok", 3, "leap", 4.6 },
 			{ "grimrok", 3, "whirlwind", 4.6 },
-			{ "morvane", 3, "shadowBoltFast", 8.0 },
-			{ "morvane", 3, "curseField", 4.0 },
-			{ "morvane", 3, "deathRing", 4.0 },
+			-- S92: Morvane's curse field every 6.5 s (was 11; 8.0 / 4.0 / 4.0 before)
+			{ "morvane", 3, "shadowBoltFast", 8.5 },
+			{ "morvane", 3, "curseField", 5.7 },
+			{ "morvane", 3, "deathRing", 2.8 },
 			{ "azgor", 3, "fireWave", 4.5 },
 			{ "azgor", 3, "flameCleave", 4.4 },
 			{ "azgor", 3, "meteor", 4.4 },

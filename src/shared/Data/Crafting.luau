@@ -41,8 +41,9 @@ for _, base in Bases.list do
 	for _, tier in Bases.tiers do
 		local id = `{base.type}_{tier}`
 		local materials = { { id = oreFor(tier), n = 3 + math.floor(tier / 15) } }
-		-- S32: chest pieces, gloves and boots of tiers 5-15 also take thick hide (lynx, brown bear).
-		if HIDE_SLOTS[base.slot] and tier >= 5 and tier < 20 then
+		-- S32: chest pieces, gloves and boots of tiers 5-15 also take thick hide (lynx, brown bear). S92: and tier 25
+		-- (the Dark Forest's black bear).
+		if HIDE_SLOTS[base.slot] and ((tier >= 5 and tier < 20) or tier == 25) then
 			table.insert(materials, { id = "thick_hide", n = 1 + math.floor(tier / 10) })
 		end
 		if tier >= 30 then

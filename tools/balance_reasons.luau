@@ -136,12 +136,6 @@ return {
 		["LevelCurves:curves.elite2Dmg[*"] = {
 			{ session = "S87", why = "D4: new Elite II curve, neutral 1 / 1 / 1 / 1 until the region sessions" },
 		},
-		["LevelCurves:curves.expToNext[*"] = {
-			{
-				session = "S87",
-				why = "D7 / G13: new curve, neutral 1 / 1 / 1 (the monster curve already moved the bands 15.7 / 20.9 / 31.1 -> 18.0 / 27.2 / 45.3 h; 1.1 at 100 gave 47.7 h)",
-			},
-		},
 		["LevelCurves:curves.manaCost.Mage[2][2]"] = {
 			{ session = "S87", why = "G10 / T-SK4: 1.4 -> 1.89, geometric mean of what Destroyer exp (2.36) and Arcanist boss (1.52) need" },
 		},
@@ -1049,6 +1043,192 @@ return {
 		},
 		["SkillCurves:knots.chainLightning.dmg[4]"] = {
 			{ session = "S91", why = "new, 153.83 pinned (rank 4 before S91)" },
+		},
+		-- S92: the Dark Forest 20-45 and Morvane (docs/sessions/S92.md, docs/SESJE.md S92; the R.duskwood.* rows of
+		-- tests/Balance.luau targetsS92 and targetsRegion)
+		["Bosses:byId.morvane.hpMul"] = {
+			{
+				session = "S92",
+				why = "new 1.2 (C2): 3 / 4 / 5 players L44 4.6-4.8 -> 4.7-5.0 min in the S83 / S87 model (band 4-6)",
+			},
+		},
+		["Bosses:byId.morvane.atkMul"] = {
+			{
+				session = "S92",
+				why = "1.1 -> 0.42 (C2): basic hit 28 % -> 11 % of a level 45 Mage (7-12 %), S32 tank 770 -> 338 %/min",
+			},
+		},
+		["Bosses:byId.morvane.speed"] = {
+			{
+				session = "S92",
+				why = "1 -> 1.15 (C4): more basic hits on the tank for T-SK6 within the S32 tank <= 350 %/min (338 %)",
+			},
+		},
+		["Bosses:byId.morvane.attacks[shadowBolt].damage"] = {
+			{ session = "S92", why = "1.8 -> 4.5 (C2): 49 % of a level 45 Mage, ~4 x the basic hit after atkMul 0.42" },
+		},
+		["Bosses:byId.morvane.attacks[shadowBoltFast].damage"] = {
+			{ session = "S92", why = "1.9 -> 4.5 (C2): phase 3 like the phase 1-2 bolt" },
+		},
+		["Bosses:byId.morvane.attacks[curseField].damage"] = {
+			{
+				session = "S92",
+				why = "2.4 -> 11.5 (C4): the nearest member's attack carries the tank damage (T-SK6 2.70 -> 2.68); without support the biggest hit is 93 % of the Berserker",
+			},
+		},
+		["Bosses:byId.morvane.attacks[curseField].cooldown"] = {
+			{ session = "S92", why = "11 -> 6.5 (C4, C7): tank damage; G11 phase 3 0.62 (>= 0.5)" },
+		},
+		["Bosses:byId.morvane.attacks[deathRing].damage"] = {
+			{
+				session = "S92",
+				why = "3.5 -> 5.8 (C2): the biggest hit 68 % of a level 45 Mage (<= 70 %), 71 % of a level 43 Mage",
+			},
+		},
+		["Bosses:byId.morvane.summons[1].level"] = {
+			{
+				session = "S92",
+				why = "44 -> 36 (C6): a party of 3 loses 88 % HP per member per wave (helpers without the group reduction like the server, Balance.summonHelpers; 223 % at 44, limit 110 %)",
+			},
+		},
+		["Bosses:byId.morvane.summons[2].level"] = {
+			{ session = "S92", why = "45 -> 37 (C6): 106 % per member for a party of 3 (239 % at 45, limit 110 %)" },
+		},
+		["Areas/Caves:byId.duskwood_den.levels[1]"] = {
+			{ session = "S92", why = "24 -> 21 (D1): Elites on every level 21-45 (spawner levels 18/25 -> 25/25)" },
+		},
+		["Areas/duskwood:areas[duskwood_witchmarsh].lv[2]"] = {
+			{ session = "S92", why = "42 -> 44 (D6): a second hunting ground on 43-44 (1 -> 2 areas)" },
+		},
+		["Monsters:byId.werewolf.levels.max"] = { { session = "S92", why = "28 -> 31 (D1): the den's Elites cover 21-31" } },
+		["Monsters:byId.blackBear.levels.max"] = { { session = "S92", why = "27 -> 31 (D1): the den's Elites cover 21-31" } },
+		["Monsters:byId.darkCultist.levels.max"] = {
+			{ session = "S92", why = "37 -> 38 (D1): the barrow's Elites and Elite II cover 31-38" },
+		},
+		["Monsters:byId.ghoul.levels.max"] = { { session = "S92", why = "33 -> 38 (D1): the barrow's Elites cover 31-38" } },
+		["Monsters:byId.skeletonGuard.levels.max"] = {
+			{ session = "S92", why = "41 -> 45 (D1): the crypt's Elites cover 38-45" },
+		},
+		["Monsters:byId.specter.levels.max"] = { { session = "S92", why = "43 -> 45 (D1): the crypt's Elites cover 38-45" } },
+		["Monsters:byId.necromancer.levels.min"] = {
+			{ session = "S92", why = "39 -> 38 (D1): the crypt's Elite II covers 38-45" },
+		},
+		["Monsters:byId.marshWitch.levels.max"] = {
+			{ session = "S92", why = "42 -> 44 (D6): the witch marsh holds 43-44 (second hunting ground)" },
+		},
+		["Monsters:byId.rotEnt.rewardMul"] = {
+			{
+				session = "S92",
+				why = "new 1.25 (E1, E2): EXP/s 0.80 -> 1.00 x GENERIC at 30 (band 0.85-1.20; its armour is outside kindReward)",
+			},
+		},
+		["Monsters:byId.swampTroll.rewardMul"] = {
+			{ session = "S92", why = "new 1.1 (E2): EXP/s 0.86 -> 0.95 x GENERIC at 36 (band 0.85-1.20)" },
+		},
+		["Monsters:byId.skeletonGuard.rewardMul"] = {
+			{ session = "S92", why = "new 1.1 (E2): EXP/s 0.87 -> 0.96 x GENERIC at 40 (armoured undead, S88)" },
+		},
+		["Monsters:byId.darkCultist.atkMul"] = {
+			{
+				session = "S92",
+				why = "1 -> 0.8 (D3): the barrow's Elite pairs (q 0.5 from its seed) W 1.34 -> 1.06, M 1.44 -> 1.15 of HP per encounter; EXP/s 0.95 x GENERIC, Elite II trio 0.66-0.68",
+			},
+		},
+		["Monsters:byId.ghoul.atkMul"] = {
+			{
+				session = "S92",
+				why = "1 -> 0.8 (D3): the barrow's ghoul Elite pairs (q 0.5); EXP/s 0.98 x GENERIC, Elite II trio 0.62-0.64",
+			},
+		},
+		["LevelCurves:elitePairChance.duskwood"] = {
+			{
+				session = "S92",
+				why = "0.5 -> 0.3 (D3): pair share den 0.5 -> 0.25, crypt 0.6 -> 0.2 (the barrow's seed keeps 0.5)",
+			},
+		},
+		["LevelCurves:dropFactor.duskwood"] = {
+			{
+				session = "S92",
+				why = "1 -> 0.85 (H1): Uniques for the class per hour of grinding up to 4.5 -> 3.8 (band 2-4), Heroics 0.7-1.1 per hour of Elites",
+			},
+		},
+		["LevelCurves:curves.expToNext[*"] = {
+			{
+				session = "S92",
+				why = "anchor 45 1.0 -> 0.92 (F3): pace 20 -> 45 16.07 -> 14.45 h (11.9-16.1), h(44) 0.93 -> 0.86 (0.72-0.98); 46-69 x0.92-1.0 (S93)",
+			},
+		},
+		["LevelCurves:curves.manaCost.Mage[*"] = {
+			{
+				session = "S92",
+				why = "knots 25 / 30 / 40 (1.37 / 1.47 / 1.82), 45-100 unchanged (G2): T-SK4 destroyerExp 1.79 -> 2.06 at 25, 1.98 -> 2.09 at 40, arcanistBoss 1.77 -> 2.03 at 25",
+			},
+		},
+		["LevelCurves:curves.heal[*"] = {
+			{
+				session = "S92",
+				why = "knot 25 = 2.05, 45-100 unchanged (G2): T-SK5 of the dungeon Healer on the Defender 0.230 -> 0.254 at 25 (with the Heal knot)",
+			},
+		},
+		["SkillCurves:knots.heal.healHp[5]"] = {
+			{ session = "S92", why = "new, 16.89 pinned (rank 5 at 19 before S92)" },
+		},
+		["SkillCurves:knots.heal.healHp[6]"] = {
+			{ session = "S92", why = "new 17.9 (G2): rank 6 (L23) near rank 10; T-SK5 0.249 -> 0.269 at 30" },
+		},
+		["SkillCurves:knots.heal.healMag[5]"] = {
+			{ session = "S92", why = "new, 9.78 pinned (rank 5 at 19 before S92)" },
+		},
+		["SkillCurves:knots.heal.healMag[6]"] = {
+			{ session = "S92", why = "new 11.6 (G2): rank 6 (L23) with the heal knot of 25" },
+		},
+		["Quests/Main:byId.werewolves.reward.exp"] = {
+			{ session = "S92", why = "fraction 0.9 -> 1.7 (F2): h(21) / h(20) 1.89 -> 1.24 (<= 1.30)" },
+		},
+		["Quests/Main:byId.ruins.reward.exp"] = {
+			{ session = "S92", why = "fraction 1 -> 1.4 (F2): h(24) / h(23) 1.32 -> 1.22" },
+		},
+		["Quests/Main:byId.ents.reward.exp"] = {
+			{ session = "S92", why = "fraction 1 -> 1.1 (F2): h(27) / h(26) <= 1.19" },
+		},
+		["Quests/Main:byId.cult.reward.exp"] = {
+			{ session = "S92", why = "fraction 1 -> 1.2 (F2, F3): pace 20 -> 45 15.3 -> 14.4 h with swamp and crypt" },
+		},
+		["Quests/Main:byId.swamp.reward.exp"] = {
+			{ session = "S92", why = "fraction 1 -> 1.3 (F2, F3): h(33) / h(32) 1.15" },
+		},
+		["Quests/Main:byId.crypt.reward.exp"] = {
+			{ session = "S92", why = "fraction 1 -> 1.6 (F3): h(44) 0.93 -> 0.86 (0.72-0.98), h(37) / h(36) 1.21" },
+		},
+		["Items/Backpacks:[backpack_100].buyPrice"] = {
+			{ session = "S92", why = "80 000 -> 50 000 (I2): 11.4 -> 7.1 levels of income at 35 (band 3-8)" },
+		},
+		["Items/Backpacks:[backpack_100].price"] = { { session = "S92", why = "derived: buyPrice / 4" } },
+		["Items/Materials:[cursed_bone]*"] = {
+			{
+				session = "S92",
+				why = "new part (J1): the ghoul's and the marsh witch's, level 27, price 26 (between the claw and the ectoplasm)",
+			},
+		},
+		["LootTables:byId.blackBear.materials*"] = { { session = "S92", why = "new part thick_hide (J1, SWIAT §2)" } },
+		["LootTables:byId.bogSerpent.materials*"] = { { session = "S92", why = "new part toad_venom (J1, SWIAT §2)" } },
+		["LootTables:byId.bloodBat.materials*"] = { { session = "S92", why = "new part crow_feather (J1, SWIAT §2)" } },
+		["LootTables:byId.ghoul.materials*"] = { { session = "S92", why = "new part cursed_bone (J1, SWIAT §2)" } },
+		["LootTables:byId.marshWitch.materials*"] = { { session = "S92", why = "new part cursed_bone (J1, SWIAT §2)" } },
+		["Recipes:byId.blessing_warrior_3.ingredients*"] = {
+			{ session = "S92", why = "Rare blessing with a Dark Forest part (J2, LINE_INGREDIENT_RARE)" },
+		},
+		["Recipes:byId.blessing_hunter_3.ingredients*"] = {
+			{ session = "S92", why = "Rare blessing with a Dark Forest part (J2, LINE_INGREDIENT_RARE)" },
+		},
+		["Recipes:byId.blessing_sage_3.ingredients*"] = {
+			{ session = "S92", why = "Rare blessing with a Dark Forest part (J2, LINE_INGREDIENT_RARE)" },
+		},
+		["Recipes:byId.blessing_guardian_3.ingredients*"] = {
+			{ session = "S92", why = "Rare blessing with a Dark Forest part (J2, LINE_INGREDIENT_RARE)" },
+		},
+		["Recipes:byId.blessing_fortune_3.ingredients*"] = {
+			{ session = "S92", why = "Rare blessing with a Dark Forest part (J2, LINE_INGREDIENT_RARE)" },
 		},
 	} :: { [string]: { Reason } },
 }

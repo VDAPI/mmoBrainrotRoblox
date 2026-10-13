@@ -20,14 +20,14 @@
 | 13–18 | Gobliński Obóz | Szepczące Łąki |
 | 16–20 | Niedźwiedzi Jar, **Jaskinia Mchów** (jaskinia) | Szepczące Łąki |
 | 20 | **Boss: Grimrok** | Komnata Grimroka |
-| 20–25 | Wilcze Ostępy, **Wilcza Nora** (jaskinia 24–31) | Mroczny Bór |
+| 20–25 | Wilcze Ostępy, **Wilcza Nora** (jaskinia 21–31, S92) | Mroczny Bór |
 | 21–27 | Niedźwiedzi Jar | Mroczny Bór |
 | 24–31 | Nawiedzone Ruiny | Mroczny Bór |
 | 26–33 | Serce Puszczy | Mroczny Bór |
 | 29–37 | Osada Kultystów, **Kurhan Kultystów** (jaskinia 31–38) | Mroczny Bór |
 | 30–36 | Mglisty Rozstaj | Mroczny Bór |
 | 32–40 | Trolle Bagno | Mroczny Bór |
-| 36–42 | Wiedźmie Moczary | Mroczny Bór |
+| 36–44 | Wiedźmie Moczary (S92: do 44.) | Mroczny Bór |
 | 40–45 | Krwawe Urwiska, **Krypta Zapomnianych** (jaskinia) | Mroczny Bór |
 | 45 | **Boss: Morvane** | Grobowiec Morvane |
 | 45–52 | Równiny Salamander, Martwa Oaza | Spalone Pustkowia |
@@ -70,21 +70,25 @@
 
 | id | Zwykły → Elita → Elita II | Kształt | Poziomy | Część |
 |---|---|---|---|---|
-| `werewolf` | Wilkołak → Wilkołak Krwawej Pełni → Pradawny Wilkołak | humanoid | 20–28 | Pazur Wilkołaka |
-| `blackBear` *nowy* | Czarny Niedźwiedź → Niedźwiedź Mroku → Czarnofutry | quadruped (duży) | 21–27 | Gruba Skóra |
+| `werewolf` | Wilkołak → Wilkołak Krwawej Pełni → Pradawny Wilkołak | humanoid | 20–31 | Pazur Wilkołaka |
+| `blackBear` *nowy* | Czarny Niedźwiedź → Niedźwiedź Mroku → Czarnofutry | quadruped (duży) | 21–31 | Gruba Skóra |
 | `forestWraith` | Leśna Zjawa → Zjawa Mgieł → Pani Mgieł | humanoid, magia | 23–31 | Ektoplazma |
 | `rotEnt` | Ent Zgnilizny → Prastary Ent Zgnilizny → Serce Zgnilizny | golem | 26–34 | Pazur Wilkołaka* |
-| `ghoul` *nowy* | Ghul → Ghul Grobowy → Pożeracz Zmarłych | humanoid | 27–33 | Przeklęta Kość *nowa* |
-| `darkCultist` | Kultysta Mroku → Kapłan Mroku → Arcykapłan Mroku | humanoid, magia | 29–37 | Ektoplazma |
-| `swampSerpent` *nowy* | Bagienny Wąż → Wąż Dusiciel → Wielki Wąż Moczarów | quadruped (niski, długi) | 30–36 | Jad |
+| `ghoul` *nowy* | Ghul → Ghul Grobowy → Pożeracz Zmarłych | humanoid | 27–38 | Przeklęta Kość *nowa* |
+| `darkCultist` | Kultysta Mroku → Kapłan Mroku → Arcykapłan Mroku | humanoid, magia | 29–38 | Ektoplazma |
+| `bogSerpent` *nowy* | Bagienny Wąż → Wąż Dusiciel → Wielki Wąż Moczarów | quadruped (niski, długi) | 30–36 | Jad Ropuchy |
 | `swampTroll` | Bagienny Troll → Troll Starszy → Gnilnoząb | golem | 32–40 | Pazur Wilkołaka* |
-| `skeletonGuard` | Szkielet Strażnik → Szkielet Rycerz → Kościany Komendant | humanoid | 35–41 | Ektoplazma |
-| `swampWitch` *nowy* | Wiedźma Mokradeł → Starsza Wiedźma → Matka Sabatu | humanoid, dystans, magia | 36–42 | Przeklęta Kość |
-| `specter` | Upiór → Upiór Krzyku → Banshee Krypty | humanoid, magia | 37–43 | Ektoplazma |
-| `necromancer` | Nekromanta → Mistrz Nekromancji → Lisz Zapomnianych | humanoid, dystans, magia | 39–45 | Ektoplazma |
-| `bloodBat` *nowy* | Nietoperz Krwiopijca → Nietoperz Wampir → Pan Nocy | flyer | 40–45 | Pióro |
+| `skeletonGuard` | Szkielet Strażnik → Szkielet Rycerz → Kościany Komendant | humanoid | 35–45 | Ektoplazma |
+| `marshWitch` *nowy* | Wiedźma Mokradeł → Starsza Wiedźma → Matka Sabatu | humanoid, dystans, magia | 36–44 | Przeklęta Kość |
+| `specter` | Upiór → Upiór Krzyku → Banshee Krypty | humanoid, magia | 37–45 | Ektoplazma |
+| `necromancer` | Nekromanta → Mistrz Nekromancji → Lisz Zapomnianych | humanoid, dystans, magia | 38–45 | Ektoplazma |
+| `bloodBat` *nowy* | Nietoperz Krwiopijca → Nietoperz Wampir → Pan Nocy | flyer | 40–45 | Krucze Pióro |
 
 \* Ent i Troll zostawiają „Pazur Wilkołaka”; S19 może dać im „Grubą Skórę” (troll) i nowe „Zgniłe Drewno” (ent), jeśli chce.
+
+S92: części rodzajów S19 są w łupie (`LootTables.PARTS`); poziomy Elit jaskiń pokrywają 21–45 (wilkołak i niedźwiedź do
+31., kultysta i ghul do 38., szkielet i upiór do 45., nekromanta od 38.). Rzadkie błogosławieństwa (35.) biorą części
+Boru: wojownika Pazur Wilkołaka, łowcy Jad Ropuchy, fortuny Krucze Pióro, mędrca Ektoplazmę, strażnika Przeklętą Kość.
 
 ### Region 3: Spalone Pustkowia (45–70)
 
@@ -121,7 +125,7 @@
 | `youngFrostDragon` | Młody Smok Lodu → Smok Lodu → Starszy Smok Lodu | dragon | 93–100 | Mroźna Łuska |
 | `frostWyrm` *nowy* | Wyrm Szronu → Wyrm Zamieci → Pradawny Wyrm | dragon | 95–100 | Mroźna Łuska |
 
-Nowe materiały (S19): **Gruba Skóra** (`thick_hide`), **Jad** (`venom_sac`), **Pióro** (`feather`), **Przeklęta Kość** (`cursed_bone`), po jednym poziomie ceny na region jak obecne części. Służą do sprzedaży i do 2–4 nowych receptur alchemika (np. Eliksir Odporności na Truciznę z Jadu, Zwój Ochrony z Przeklętej Kości i Kryształu).
+Nowe materiały (S19): **Gruba Skóra** (`thick_hide`), **Jad Ropuchy** (`toad_venom`), **Krucze Pióro** (`crow_feather`), **Przeklęta Kość** (`cursed_bone`, S92: poziom 27, 26 złota), po jednym poziomie ceny na region jak obecne części. Służą do sprzedaży i do 2–4 nowych receptur alchemika (np. Eliksir Odporności na Truciznę z Jadu, Zwój Ochrony z Przeklętej Kości i Kryształu).
 
 ## 3. Expowiska na mapach terenowych (żółta strefa)
 
@@ -154,7 +158,7 @@ grup bierz z tej tabeli. Tabele Łąk i (od S45) Boru niżej zgadzają się z ko
 | Osada Kultystów (`duskwood_cultvillage`) | 29–37 | Kultysta Mroku, Bagienny Wąż | 7 | 18 | ⛁ |
 | Mglisty Rozstaj (`duskwood_crossroads`) | 30–36 | Bagienny Wąż, Kultysta Mroku, Leśna Zjawa | 5 | 11 | ⚡ |
 | Trolle Bagno (`duskwood_swamp`) | 32–40 | Bagienny Troll, Bagienny Wąż, Wiedźma Mokradeł | 7 | 18 | ⚡ |
-| Wiedźmie Moczary (`duskwood_witchmarsh`) | 36–42 | Wiedźma Mokradeł, Bagienny Troll | 4 | 7 | ✦ |
+| Wiedźmie Moczary (`duskwood_witchmarsh`) | 36–44 | Wiedźma Mokradeł, Bagienny Troll | 4 | 7 | ✦ |
 | Krwawe Urwiska (`duskwood_bloodcliffs`) | 40–45 | Nietoperz Krwiopijca, Wiedźma Mokradeł | 6 | 14 | — |
 | **Spalone Pustkowia** | | | | | |
 | Równiny Salamander (`ashen_flats`) | 45–50 | Salamandra, Hiena Pustkowi | 8 | 20 | ⚡ |
@@ -216,7 +220,7 @@ nastrój i dźwięki na obszar (`Data/Ambience`). Dane: `Data/Areas/duskwood` (o
 | Osada Kultystów / Cultist Village ⛁ | 29–37 | Kultysta Mroku, Bagienny Wąż | 7 | krąg rytualny (runy świecą nocą, ołtarz z fioletowym ogniem) | palisada z czarnych pali z fioletowymi szmatami, brama z dzwonem, hala kultu, chaty o spiczastych dachach, klatki, dziesięcina (skrzynie i worki monet), ogrodzona sadzawka węży, skóry, jaja, totem węża, **wejście: Kurhan Kultystów** (kopiec z dolmenem i kręgiem menhirów) |
 | Mglisty Rozstaj / Misty Crossroads ⚡ | 30–36 | Bagienny Wąż, Kultysta Mroku, Leśna Zjawa | 5 | przydrożna kapliczka z latarnią | płytka niecka pełna mgły, krzywy drogowskaz o wielu ramionach, szubienica z krukiem, kamienny most nad Czarną Strugą, wylinki w trzcinach, ogniki nad wodą |
 | Trolle Bagno / Troll Swamp ⚡ | 32–40 | Bagienny Troll, Bagienny Wąż, Wiedźma Mokradeł | 7 | zatopiona wieża strażnicza (gniazdo trolla na szczycie) | wielkie mokradło z wysepkami i groblami z pni, wioska trolli (kopulaste chaty, tron z głazów, kocioł), opuszczona wioska na palach, pomost z łódką i latarnią (łowisko), wierzby z brodami mchu, amulety wiedźm, gniazdo węży |
-| Wiedźmie Moczary / Witch Marsh ✦ | 36–42 | Wiedźma Mokradeł, Bagienny Troll | 4 | chata wiedźmy na palach | dym z wygiętego komina, czaszki ze świecami, kocioł z zieloną poświatą, wisielcze drzewo z amuletami i kościanymi dzwonkami, laleczki, krąg świecących grzybów, półki ze słojami i skrzynia amuletów, trop trolla w trzcinach |
+| Wiedźmie Moczary / Witch Marsh ✦ | 36–44 | Wiedźma Mokradeł, Bagienny Troll | 4 | chata wiedźmy na palach | dym z wygiętego komina, czaszki ze świecami, kocioł z zieloną poświatą, wisielcze drzewo z amuletami i kościanymi dzwonkami, laleczki, krąg świecących grzybów, półki ze słojami i skrzynia amuletów, trop trolla w trzcinach |
 | Krwawe Urwiska / Blood Cliffs | 40–45 | Nietoperz Krwiopijca, Wiedźma Mokradeł | 6 | Brama Krypty (wrota w skale, zakapturzone figury, zimne niebieskie płomienie) | czerwona skarpa z wyżyną (droga wcięciem), nawisy z gniazdami nietoperzy i guanem, piargi, czarny wodospad, białe kości, ciernie, **wejście: Krypta Zapomnianych** (jaskinia bossa) |
 
 ### Spalone Pustkowia (45–70), razem 56 grup (stan po S46)
@@ -321,7 +325,7 @@ W każdej: 2–3 rodzaje zwykłych potworów, **2 rodzaje Elit** (3–5 grup po 
 | Kryjówka Przemytników / Smugglers' Hideout | 7–12 | Bandyta, Kruk Padlinożerca | Herszt Bandytów, Rozjuszony Dzik | Krwawy Ruben / Czarne Skrzydło | Miedź, Żelazo | dziupla szajki pod Kupieckim Traktem (S48): czaty z barykadą skrzyń, przystań nad czarnym strumieniem z łodzią i żurawiem, **Sala Narad pod Zapadliskiem** (księżyc i kruki w szybie, stół z mapą, taras obserwacyjny), komnata herszta pełna łupów, zagroda dzików bojowych |
 | Gobliński Kopiec / Goblin Warren | 12–16 | Goblin Zwiadowca, Kobold Górnik, Pająk Jaskiniowy | ⚑ Goblin Wojownik, Kobold Brygadzista | Goblin Rzeźnik / Wódz Szybów | Miedź, Żelazo | niska kręta nora (S48): śmieciowa brama, wioska z bud ze złomu z grzędami grzybów i lampami w słojach, wyrobisko z torami i wózkami, **Szyb Wodza** z kołowrotem i klatką kości, pajęcza jama |
 | Jaskinia Mchów / Mosshollow Cave | 16–20 | Pająk Jaskiniowy, Goblin Szaman, Brunatny Niedźwiedź | Goblin Wojownik, Arcyszaman | Królowa Splotu / Wieszcz Kości | Żelazo, Miedź · **loch Grimroka (20)** | zielona grota (S48): wejście za kurtyną wody, **Wielka Grota** z podziemnym jeziorem, wodospadem z pęknięcia i robaczkami na sklepieniu, gawra, koszary, Gniazdo Królowej z lejowatą siecią i kościanym ołtarzem, pajęczarnia, kapliczka szamanów, przedsionek chorągwi przed paszczą bramy |
-| Wilcza Nora / Wolfden Hollow | 24–31 | Wilkołak, Czarny Niedźwiedź, Ghul | Wilkołak Krwawej Pełni, Czarny Niedźwiedź Bagien | Pradawny Wilkołak / Smolisty Pan | Żelazo, Srebro | nora pod korzeniami martwego dębu (S49): łuk korzeni i rozszarpany biwak myśliwych, Jama Żeru z dołami ghuli i padliną, Wielka Gawra z korzeniem palowym i barcią, **Księżycowa Komora** ze słupem księżyca z otworu na kamień w kręgu czaszek, Mokra Gawra ze źródlanym stawem |
+| Wilcza Nora / Wolfden Hollow | 21–31 | Wilkołak, Czarny Niedźwiedź, Ghul | Wilkołak Krwawej Pełni, Czarny Niedźwiedź Bagien | Pradawny Wilkołak / Smolisty Pan | Żelazo, Srebro | nora pod korzeniami martwego dębu (S49): łuk korzeni i rozszarpany biwak myśliwych, Jama Żeru z dołami ghuli i padliną, Wielka Gawra z korzeniem palowym i barcią, **Księżycowa Komora** ze słupem księżyca z otworu na kamień w kręgu czaszek, Mokra Gawra ze źródlanym stawem |
 | Kurhan Kultystów / Cultist Barrow | 31–38 | Kultysta Mroku, Ghul, Bagienny Wąż | Kapłan Mroku, Ghul Kurhanowy | Arcykapłan Mroku / Pożeracz Zmarłych | Żelazo, Srebro | kurhan z suchego muru przejęty przez kult (S49): dromos pod dolmenem, Krąg Obrzędów z 9 menhirami i fioletowym ogniem, Komora Grobowa z niszami i rozbitymi trumnami, **Serce Kurhanu** z ołtarzem na podeście przed rogatym idolem, Nora Ghuli, Zalana Krypta z czarną wodą, groblą i sarkofagami |
 | Krypta Zapomnianych / Crypt of the Forgotten | 38–45 | Szkielet Strażnik, Upiór, Nekromanta | ⚑ Szkielet Rycerz, Upiór Krzyku | Lisz Zapomnianych / Banshee Krypty | Srebro, Żelazo · **loch Morvane (45)** | krypta zapomnianego rodu (S49): prosta oś procesji od Bramy Zapomnianych z płaczkami, Sala Kolumn, Krypta Rodów z niszami, Koszary Umarłych, **Studnia Dusz** pod kominem, **Ossuarium** ze ścianami czaszek i żyrandolem z kości, Galeria Upiorów, Sanktuarium Nekromanty z kręgiem przywołań, Przedsionek z pieczęcią Morvane i klęczącymi rycerzami |
 | Opuszczona Kopalnia / Abandoned Mine | 49–56 | Ork Popiołu, Hiena Pustkowi, Sęp Popiołu | Ork Berserker, Hiena Śmiechu | Wódz Popiołu | Srebro, Mithril | krasnoludzka kopalnia zajęta przez orków (S50): tory prowadzą w głąb, Nadszybie z barykadą z wózków, Hala Wyciągu z wieżą i klatką wiszącą krzywo w szybie, Obóz w Komorze Pomp z kołem pompy i namiotami, **Sala Wodza** z tronem z wózka przed świecącą żyłą mithrilu i szybem sępów, Psiarnia przy przebiciu do magmy |

@@ -106,6 +106,12 @@ local PARTS: { [string]: string } = {
 	skeletonGuard = "ectoplasm",
 	specter = "ectoplasm",
 	necromancer = "ectoplasm",
+	-- S92: the S19 kinds of the Dark Forest (docs/SWIAT.md §2)
+	blackBear = "thick_hide",
+	ghoul = "cursed_bone",
+	bogSerpent = "toad_venom",
+	marshWitch = "cursed_bone",
+	bloodBat = "crow_feather",
 	salamander = "salamander_scale",
 	ashOrc = "magma_shard",
 	fireGolem = "magma_shard",

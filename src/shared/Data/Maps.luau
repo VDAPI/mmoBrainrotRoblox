@@ -630,7 +630,7 @@ for _, cave in
 			region = "duskwood",
 			i = 2,
 			row = 12000,
-			min = 24,
+			min = 21,
 			max = 31,
 			biome = "cave",
 			wx = 0.53,

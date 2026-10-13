@@ -749,7 +749,8 @@ czekają na koniec przebudowy, więc nie robią ich wcześniej; jeśli któryś 
   `tests/Balance`.
 - Mana Maga (wszystkie ścieżki): koszt × `manaCost.Mage` = 1,0 / 1,89 / 2,59 / 3,49 na 20 / 45 / 70 / 100 (S87: zmierzone
   na buildach Niszczyciel exp i Arkanista boss, średnia geometryczna tego, czego potrzebuje każdy; było 1,4 / 1,9 / 2,5,
-  z Kaskadą w dochodzie T-SK4 Niszczyciela spadało do 1,0), żeby rzucanie
+  z Kaskadą w dochodzie T-SK4 Niszczyciela spadało do 1,0; S92: węzły 1,37 / 1,47 / 1,82 na 25 / 30 / 40, żeby T-SK4
+  buildów trzymało 2–2,4 także w paśmie 25–40), żeby rzucanie
   wszystkiego na odnowieniu kosztowało 2–3 razy regenerację (dziś 1,8 / 1,3 / 1,0 na 45 / 70 / 100). Miara:
   zapotrzebowanie (wszystko na odnowieniu, bez limitu many) / (regeneracja z węzłami + bierne zwroty many), bez
   czynnych źródeł jak Inwokacja, które ścieżka liczy osobno. Sama podstawa z tą krzywą ma po 45. ok. 1,0–1,3 (S87);

@@ -136,14 +136,15 @@ function MonsterStats.asDefender(stats: MonsterStats): Damage.Defender
 	return { armor = stats.armor, mres = stats.mres, dodge = stats.dodge, res = {}, level = stats.level }
 end
 
--- EXP and gold factor of a kind (S32): tougher kinds pay more, weak ones less. Bosses use 1.
-function MonsterStats.kindReward(kind: { hpMul: number, atkMul: number, speed: number }?): number
+-- EXP and gold factor of a kind (S32): tougher kinds pay more, weak ones less. Bosses use 1. S92: times the kind's
+-- own `rewardMul` (Data/Monsters, nil = 1) for kinds whose defence or attack the S32 formula misses.
+function MonsterStats.kindReward(kind: { hpMul: number, atkMul: number, speed: number, rewardMul: number? }?): number
 	if not kind then
 		return 1
 	end
 	local hp = math.max(0.05, kind.hpMul or 1) ^ Combat.kindRewardHpExponent
 	local danger = math.max(0.05, (kind.atkMul or 1) * (kind.speed or 1)) ^ Combat.kindRewardAtkExponent
-	return hp * danger
+	return hp * danger * (kind.rewardMul or 1)
 end
 
 -- Gold multiplier for a player of `playerLevel` killing a monster of `monsterLevel` (S32): a share of the EXP

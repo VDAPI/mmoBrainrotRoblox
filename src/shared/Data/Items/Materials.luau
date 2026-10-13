@@ -64,5 +64,7 @@ material("frost_scale", "part", 90, 120, "✾", "#7FD4E8")
 material("thick_hide", "part", 3, 6, "✾", "#8A6B4A")
 material("toad_venom", "part", 4, 6, "✾", "#7FB04A")
 material("crow_feather", "part", 6, 7, "✾", "#3A3A44")
+-- S92: the part of the Dark Forest's ghoul and marsh witch (docs/SWIAT.md §2), between the claw and the ectoplasm.
+material("cursed_bone", "part", 27, 26, "✾", "#CFC6A8")
 
 return LIST
