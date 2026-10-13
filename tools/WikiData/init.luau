@@ -20,6 +20,7 @@ local ItemsMd = require("@self/ItemsMd")
 local Json = require("@self/Json")
 local Leak = require("@self/Leak")
 local Monsters = require("@self/Monsters")
+local Mounts = require("@self/Mounts")
 local Names = require("@self/Names")
 local Places = require("@self/Places")
 local Premium = require("@self/Premium")
@@ -96,6 +97,7 @@ local ORDER: { { name: string, fn: (ctx: any) -> any } } = {
 	{ name = "npcs", fn = World.npcs },
 	{ name = "shops", fn = World.shops },
 	{ name = "quests", fn = Quests.build },
+	{ name = "mounts", fn = Mounts.build }, -- S97 (after bosses and quests)
 	{ name = "skills", fn = Skills.build },
 	{ name = "upgrade", fn = Upgrade.build },
 	{ name = "crafting", fn = Crafting.build },

@@ -7,7 +7,7 @@
 -- quest of an arc (★) lets the player pick one of three items for their class. Texts: quest.<id>.title,
 -- .p1..pN (pages), .progress, .done; arcs quest.arc.<arc>; quest items quest.item.<item>.
 -- S96: the stable arc (levels 21-22, taken from 20 through `minLevel`) ends with a mount (`reward.mount`) instead of
--- an item choice; it stays off the wiki until S97 (`wiki = false`).
+-- an item choice; S97 publishes it on the wiki and adds a mount skin to its last quest (`reward.cosmetic`).
 
 local Exp = require("../../Logic/Exp")
 local Town = require("../Town")
@@ -58,6 +58,7 @@ local function side(
 		where: { map: string, area: string?, x: number?, z: number? }?,
 		expShare: number?, -- S96: EXP share of the quest level instead of NORMAL_EXP / FINAL_EXP
 		mount: string?, -- S96: a mount on hand-in (the arc's end without an item choice)
+		cosmetic: string?, -- S97: an account cosmetic on hand-in (Reward.cosmetic)
 		minLevel: number?, -- S96
 		wiki: boolean?, -- S96
 	}
@@ -78,6 +79,7 @@ local function side(
 			gold = gold(def.level),
 			choice = if final and not def.mount then "final" else nil,
 			mount = def.mount,
+			cosmetic = def.cosmetic,
 		},
 		where = def.where,
 		minLevel = def.minLevel,
@@ -472,7 +474,6 @@ side({
 	objectives = { collect(3, "harnessPiece", "goblinScout", 0.4, "meadows_goblincamp") },
 	expShare = STABLE_EXP,
 	minLevel = STABLE_MIN,
-	wiki = false,
 })
 side({
 	id = "side_stable_stallion",
@@ -488,7 +489,6 @@ side({
 	},
 	expShare = STABLE_EXP,
 	minLevel = STABLE_MIN,
-	wiki = false,
 })
 side({
 	id = "side_stable_ride",
@@ -503,9 +503,9 @@ side({
 	},
 	final = true,
 	mount = "mount_horse",
+	cosmetic = "mountskin_meadow",
 	expShare = STABLE_EXP,
 	minLevel = STABLE_MIN,
-	wiki = false,
 })
 
 -- Arcs in journal order (one per Meadows area; S96: the stable last).

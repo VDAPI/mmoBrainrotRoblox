@@ -257,7 +257,50 @@ Każdy wiersz bez opisu raportu jest asercją `balance.spec` (bloki niżej). Wie
 | `Monsters:byId.frozenKnight.rewardMul` | 1,15 | S94 | F1: new 1.15: the armoured undead (S88) EXP/s 0.84 -> 0.96 of GENERIC |
 | `Monsters:byId.iceMammoth.rewardMul` | 1,1 | S94 | F1: new 1.1: EXP/s 0.88 -> 0.96 of GENERIC |
 | `Monsters:byId.youngFrostDragon.rewardMul` | 1,1 | S94 | F1: new 1.1: EXP/s 0.90 -> 0.99 of GENERIC after the shorter fight |
+| `Mounts:BOSS_DROPS.azgor.mountChance` | 0,012 | S97 | new table: flat personal rolls of every winner, no kills-today ladder or luck: mounts 2 / 1.5 / 1.2 / 1% (50 / 67 / 83 / 100 kills, 17-33 days at 3 kills a day), Morvane's and Azgor's skins 3% (33 kills) |
+| `Mounts:BOSS_DROPS.azgor.skinChance` | 0,03 | S97 | new table: flat personal rolls of every winner, no kills-today ladder or luck: mounts 2 / 1.5 / 1.2 / 1% (50 / 67 / 83 / 100 kills, 17-33 days at 3 kills a day), Morvane's and Azgor's skins 3% (33 kills) |
+| `Mounts:BOSS_DROPS.grimrok.mountChance` | 0,02 | S97 | new table: flat personal rolls of every winner, no kills-today ladder or luck: mounts 2 / 1.5 / 1.2 / 1% (50 / 67 / 83 / 100 kills, 17-33 days at 3 kills a day), Morvane's and Azgor's skins 3% (33 kills) |
+| `Mounts:BOSS_DROPS.morvane.mountChance` | 0,015 | S97 | new table: flat personal rolls of every winner, no kills-today ladder or luck: mounts 2 / 1.5 / 1.2 / 1% (50 / 67 / 83 / 100 kills, 17-33 days at 3 kills a day), Morvane's and Azgor's skins 3% (33 kills) |
+| `Mounts:BOSS_DROPS.morvane.skinChance` | 0,03 | S97 | new table: flat personal rolls of every winner, no kills-today ladder or luck: mounts 2 / 1.5 / 1.2 / 1% (50 / 67 / 83 / 100 kills, 17-33 days at 3 kills a day), Morvane's and Azgor's skins 3% (33 kills) |
+| `Mounts:BOSS_DROPS.vaelgrath.mountChance` | 0,01 | S97 | new table: flat personal rolls of every winner, no kills-today ladder or luck: mounts 2 / 1.5 / 1.2 / 1% (50 / 67 / 83 / 100 kills, 17-33 days at 3 kills a day), Morvane's and Azgor's skins 3% (33 kills) |
+| `Mounts:UPGRADE[10].gold` | 3,2e+04 | S97 | new table: level 10 (x2.0, the cap of every mount) from 90, gold 32000 = 0.70 of the level-90 income, 20 yeti fur + 15 frost scales (~45 / 34 kills); 1 -> 10 = 112 500 gold, about 5.2 levels of income over levels 20-90 |
+| `Mounts:UPGRADE[10].level` | 90 | S97 | new table: level 10 (x2.0, the cap of every mount) from 90, gold 32000 = 0.70 of the level-90 income, 20 yeti fur + 15 frost scales (~45 / 34 kills); 1 -> 10 = 112 500 gold, about 5.2 levels of income over levels 20-90 |
+| `Mounts:UPGRADE[10].materials[frost_scale].n` | 15 | S97 | new table: level 10 (x2.0, the cap of every mount) from 90, gold 32000 = 0.70 of the level-90 income, 20 yeti fur + 15 frost scales (~45 / 34 kills); 1 -> 10 = 112 500 gold, about 5.2 levels of income over levels 20-90 |
+| `Mounts:UPGRADE[10].materials[yeti_fur].n` | 20 | S97 | new table: level 10 (x2.0, the cap of every mount) from 90, gold 32000 = 0.70 of the level-90 income, 20 yeti fur + 15 frost scales (~45 / 34 kills); 1 -> 10 = 112 500 gold, about 5.2 levels of income over levels 20-90 |
+| `Mounts:UPGRADE[2].gold` | 1500 | S97 | new table: mount level 2 from character level 20 (= Config.Mount.minLevel), gold 1500 = 0.48 of the level-20 income (0.4 rounded up to 500), 15 goblin ears + 10 thick hides (late Meadows / bears, ~34 kills) |
+| `Mounts:UPGRADE[2].level` | 20 | S97 | new table: mount level 2 from character level 20 (= Config.Mount.minLevel), gold 1500 = 0.48 of the level-20 income (0.4 rounded up to 500), 15 goblin ears + 10 thick hides (late Meadows / bears, ~34 kills) |
+| `Mounts:UPGRADE[2].materials[goblin_ear].n` | 15 | S97 | new table: mount level 2 from character level 20 (= Config.Mount.minLevel), gold 1500 = 0.48 of the level-20 income (0.4 rounded up to 500), 15 goblin ears + 10 thick hides (late Meadows / bears, ~34 kills) |
+| `Mounts:UPGRADE[2].materials[thick_hide].n` | 10 | S97 | new table: mount level 2 from character level 20 (= Config.Mount.minLevel), gold 1500 = 0.48 of the level-20 income (0.4 rounded up to 500), 15 goblin ears + 10 thick hides (late Meadows / bears, ~34 kills) |
+| `Mounts:UPGRADE[3].gold` | 2000 | S97 | new table: level 3 from 25, gold 2000 = 0.45 of the level-25 income, 12 werewolf claws (~27 kills) |
+| `Mounts:UPGRADE[3].level` | 25 | S97 | new table: level 3 from 25, gold 2000 = 0.45 of the level-25 income, 12 werewolf claws (~27 kills) |
+| `Mounts:UPGRADE[3].materials[werewolf_claw].n` | 12 | S97 | new table: level 3 from 25, gold 2000 = 0.45 of the level-25 income, 12 werewolf claws (~27 kills) |
+| `Mounts:UPGRADE[4].gold` | 2500 | S97 | new table: level 4 from 30, gold 2500 = 0.46 of the level-30 income, 20 werewolf claws + 10 ectoplasm (~45 kills) |
+| `Mounts:UPGRADE[4].level` | 30 | S97 | new table: level 4 from 30, gold 2500 = 0.46 of the level-30 income, 20 werewolf claws + 10 ectoplasm (~45 kills) |
+| `Mounts:UPGRADE[4].materials[ectoplasm].n` | 10 | S97 | new table: level 4 from 30, gold 2500 = 0.46 of the level-30 income, 20 werewolf claws + 10 ectoplasm (~45 kills) |
+| `Mounts:UPGRADE[4].materials[werewolf_claw].n` | 20 | S97 | new table: level 4 from 30, gold 2500 = 0.46 of the level-30 income, 20 werewolf claws + 10 ectoplasm (~45 kills) |
+| `Mounts:UPGRADE[5].gold` | 6000 | S97 | new table: level 5 (mounting 1.0 s) from 40, gold 6000 = 0.59 of the level-40 income (0.55 rounded up), 20 ectoplasm (~45 kills) |
+| `Mounts:UPGRADE[5].level` | 40 | S97 | new table: level 5 (mounting 1.0 s) from 40, gold 6000 = 0.59 of the level-40 income (0.55 rounded up), 20 ectoplasm (~45 kills) |
+| `Mounts:UPGRADE[5].materials[ectoplasm].n` | 20 | S97 | new table: level 5 (mounting 1.0 s) from 40, gold 6000 = 0.59 of the level-40 income (0.55 rounded up), 20 ectoplasm (~45 kills) |
+| `Mounts:UPGRADE[6].gold` | 8500 | S97 | new table: level 6 from 50, gold 8500 = 0.56 of the level-50 income, 15 salamander scales (~34 kills) |
+| `Mounts:UPGRADE[6].level` | 50 | S97 | new table: level 6 from 50, gold 8500 = 0.56 of the level-50 income, 15 salamander scales (~34 kills) |
+| `Mounts:UPGRADE[6].materials[salamander_scale].n` | 15 | S97 | new table: level 6 from 50, gold 8500 = 0.56 of the level-50 income, 15 salamander scales (~34 kills) |
+| `Mounts:UPGRADE[7].gold` | 1,25e+04 | S97 | new table: level 7 from 60, gold 12500 = 0.57 of the level-60 income, 15 salamander scales + 15 magma shards (~34 kills each) |
+| `Mounts:UPGRADE[7].level` | 60 | S97 | new table: level 7 from 60, gold 12500 = 0.57 of the level-60 income, 15 salamander scales + 15 magma shards (~34 kills each) |
+| `Mounts:UPGRADE[7].materials[magma_shard].n` | 15 | S97 | new table: level 7 from 60, gold 12500 = 0.57 of the level-60 income, 15 salamander scales + 15 magma shards (~34 kills each) |
+| `Mounts:UPGRADE[7].materials[salamander_scale].n` | 15 | S97 | new table: level 7 from 60, gold 12500 = 0.57 of the level-60 income, 15 salamander scales + 15 magma shards (~34 kills each) |
+| `Mounts:UPGRADE[8].gold` | 2,2e+04 | S97 | new table: level 8 from 70, gold 22000 = 0.71 of the level-70 income (0.7 rounded up), 20 magma shards + 10 yeti fur (~45 / 23 kills) |
+| `Mounts:UPGRADE[8].level` | 70 | S97 | new table: level 8 from 70, gold 22000 = 0.71 of the level-70 income (0.7 rounded up), 20 magma shards + 10 yeti fur (~45 / 23 kills) |
+| `Mounts:UPGRADE[8].materials[magma_shard].n` | 20 | S97 | new table: level 8 from 70, gold 22000 = 0.71 of the level-70 income (0.7 rounded up), 20 magma shards + 10 yeti fur (~45 / 23 kills) |
+| `Mounts:UPGRADE[8].materials[yeti_fur].n` | 10 | S97 | new table: level 8 from 70, gold 22000 = 0.71 of the level-70 income (0.7 rounded up), 20 magma shards + 10 yeti fur (~45 / 23 kills) |
+| `Mounts:UPGRADE[9].gold` | 2,55e+04 | S97 | new table: level 9 from 80, gold 25500 = 0.71 of the level-80 income, 25 yeti fur (~56 kills) |
+| `Mounts:UPGRADE[9].level` | 80 | S97 | new table: level 9 from 80, gold 25500 = 0.71 of the level-80 income, 25 yeti fur (~56 kills) |
+| `Mounts:UPGRADE[9].materials[yeti_fur].n` | 25 | S97 | new table: level 9 from 80, gold 25500 = 0.71 of the level-80 income, 25 yeti fur (~56 kills) |
+| `Mounts:byId.mount_azgor.startLevel` | 5 | S97 | new boss mount: starts at mount level 5 (DESIGN-15 §2) |
+| `Mounts:byId.mount_grimrok.startLevel` | 3 | S97 | new boss mount: starts at mount level 3 (DESIGN-15 §2) |
 | `Mounts:byId.mount_horse.startLevel` | 1 | S96 | new module: the stablemaster's bay horse starts at mount level 1 (x1.6 walk speed, DESIGN-15 §2) |
+| `Mounts:byId.mount_morvane.startLevel` | 4 | S97 | new boss mount: starts at mount level 4 (DESIGN-15 §2) |
+| `Mounts:byId.mount_royal.startLevel` | 4 | S97 | new premium mount (Data/Products.mounts, disabled): starts at mount level 4 like Morvane's, below the best boss mount (6), the same speed cap |
+| `Mounts:byId.mount_vaelgrath.startLevel` | 6 | S97 | new boss mount: starts at mount level 6 (DESIGN-15 §2) |
 | `Quests/Side:STABLE_MIN` | 20 | S96 | the stable arc is offered from level 20 (= Config.Mount.minLevel) |
 | `Quests/Side:byArc.stable[side_stable_harness].level` | 21 | S96 | new stable arc 21-22 (taken from 20 through minLevel, 1-20 untouched): 0.1 of a level's EXP per quest (the mount is the reward; S98 budgets the arc), gold as side quests (gold(level)), 3 harness pieces at 40%, 6 bears, a 3 s use, reach the stable within 14 studs |
 | `Quests/Side:byArc.stable[side_stable_harness].minLevel` | 20 | S96 | new stable arc 21-22 (taken from 20 through minLevel, 1-20 untouched): 0.1 of a level's EXP per quest (the mount is the reward; S98 budgets the arc), gold as side quests (gold(level)), 3 harness pieces at 40%, 6 bears, a 3 s use, reach the stable within 14 studs |
@@ -1076,7 +1119,7 @@ Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz
 | BossTuning | 3 | S87: D3: constants moved from Boss.luau and the scripts without changing their values (new module); S87: D3: constants moved from Boss.luau and the scripts without changing their values (new module); S93: 0.7 -> 2.2 (C2): one lava tick 6.5 % -> 20 % of a level 70 Mage after atkMul 0.36 (15-25 %); S87: D3: constants moved from Boss.luau and the scripts without changing their values (new module); S94: C4: 1.4 -> 3.9: one storm tick 38 % of a level 100 Mage's HP after atkMul 0.38 (30-45 %) |
 | Crafting | 1494 | S94: K2: chest pieces, gloves and boots of tiers 75-85 take 2 yeti fur, of 90-100 2 frost scale (first use of the scale) |
 | Maps | 42 | S94: E1: the Ice Grotto's map from 71 |
-| Mounts | 1 | S96: new module: the stablemaster's bay horse starts at mount level 1 (x1.6 walk speed, DESIGN-15 §2) |
+| Mounts | 44 | S97: new table: flat personal rolls of every winner, no kills-today ladder or luck: mounts 2 / 1.5 / 1.2 / 1% (50 / 67 / 83 / 100 kills, 17-33 days at 3 kills a day), Morvane's and Azgor's skins 3% (33 kills); S97: new table: level 10 (x2.0, the cap of every mount) from 90, gold 32000 = 0.70 of the level-90 income, 20 yeti fur + 15 frost scales (~45 / 34 kills); 1 -> 10 = 112 500 gold, about 5.2 levels of income over levels 20-90; S97: new table: mount level 2 from character level 20 (= Config.Mount.minLevel), gold 1500 = 0.48 of the level-20 income (0.4 rounded up to 500), 15 goblin ears + 10 thick hides (late Meadows / bears, ~34 kills); S97: new table: level 3 from 25, gold 2000 = 0.45 of the level-25 income, 12 werewolf claws (~27 kills); S97: new table: level 4 from 30, gold 2500 = 0.46 of the level-30 income, 20 werewolf claws + 10 ectoplasm (~45 kills); S97: new table: level 5 (mounting 1.0 s) from 40, gold 6000 = 0.59 of the level-40 income (0.55 rounded up), 20 ectoplasm (~45 kills); S97: new table: level 6 from 50, gold 8500 = 0.56 of the level-50 income, 15 salamander scales (~34 kills); S97: new table: level 7 from 60, gold 12500 = 0.57 of the level-60 income, 15 salamander scales + 15 magma shards (~34 kills each); S97: new table: level 8 from 70, gold 22000 = 0.71 of the level-70 income (0.7 rounded up), 20 magma shards + 10 yeti fur (~45 / 23 kills); S97: new table: level 9 from 80, gold 25500 = 0.71 of the level-80 income, 25 yeti fur (~56 kills); S97: new boss mount: starts at mount level 5 (DESIGN-15 §2); S97: new boss mount: starts at mount level 3 (DESIGN-15 §2); S96: new module: the stablemaster's bay horse starts at mount level 1 (x1.6 walk speed, DESIGN-15 §2); S97: new boss mount: starts at mount level 4 (DESIGN-15 §2); S97: new premium mount (Data/Products.mounts, disabled): starts at mount level 4 like Morvane's, below the best boss mount (6), the same speed cap; S97: new boss mount: starts at mount level 6 (DESIGN-15 §2) |
 | SkillCurves | 28 | S91: 232.2 -> 196 (x0.845, R1 / T-SK2 Kingslayer at L20); S91: new, 232.38 pinned (rank 6 before S91); S89: B3: rank 3 (L18) pinned at 14; S91: 47 -> 42 (x0.9, R1 Fury at L20); S91: new, 47.83 pinned (rank 5 before S91); S91: 152.2 -> 129 (x0.85, R1 Mage builds at L20); S91: new, 153.83 pinned (rank 4 before S91); S91: 160 -> 136 (x0.85, R1 Fury at L20); S91: new, 161 pinned (rank 6 before S91); S89: B3: rank 3 (L18) pinned at 164.4; S90: - -> 30: C3 / F1: rank 4 pinned at today's 30 so rank 10 can move without changing 1-20; S91: 113.9 -> 83 (x0.73, T-SK2 Kingslayer at L20); S91: new, 113.91 pinned (rank 6 before S91); S91: 203.3 -> 173 (x0.85, R1 Mage builds at L20); S91: new, 207.03 pinned (rank 6 before S91); S91: 232.2 -> 174 (x0.75, R1 Mage builds at L20); S91: new, 236.92 pinned (rank 6 before S91); S92: new, 16.89 pinned (rank 5 at 19 before S92); S92: new 17.9 (G2): rank 6 (L23) near rank 10; T-SK5 0.249 -> 0.269 at 30; S92: new, 9.78 pinned (rank 5 at 19 before S92); S92: new 11.6 (G2): rank 6 (L23) with the heal knot of 25; S91: new, 226 (x0.88 of 256.7, R1 Inquisitor at L20); S91: new, 273.33 pinned (rank 6 before S91); S91: 176.7 -> 150 (x0.85, R1 Mage builds at L20); S91: new, 182.72 pinned (rank 5 before S91); S91: 220 -> 187 (x0.85, R1 Fury at L20); S91: new, 220.4 pinned (rank 6 before S91); S90: - -> 235.556: C3 / F1: rank 3 pinned at today's 235.556 so rank 10 can move without changing 1-20 |
 
 ## Własność pasm umiejętności
@@ -8922,6 +8965,32 @@ Najtańsza broń, druga ręka, hełm, pancerz, rękawice i buty klasy z jednego 
 | Mag 85 | 10 200 | 20 120 | 21,9 |
 | Mag 95 | 11 400 | 36 840 | 22,6 |
 
+## Wierzchowce (S97)
+
+Ulepszanie u stajennego (`Data/Mounts.UPGRADE`, ten sam koszt dla każdego wierzchowca): złoto wobec dochodu poziomu przy wymaganym poziomie postaci (`Balance.levelIncome`, średnia klas, jak G9 z S84), części potworów i zabicia najlepszego rodzaju w paśmie ±10 poziomów (szansa części z `LootTables.PARTS`). Asercje w `balance.spec` („S97 mounts”): każdy stopień 0,3–1,0 dochodu, suma 4–8.
+
+| poziom wierzchowca | poziom postaci | złoto | dochód poziomu | udział | części (rodzaj: zabicia) | szybkość | wsiadanie s |
+| --- | --: | --: | --: | --: | --: | --: | --: |
+| 1 → 2 | 20 | 1500 | 3111 | 0,48 | 15 goblin_ear (bandit: 34), 10 thick_hide (brownBear: 23) | ×1,64 | 1,5 |
+| 2 → 3 | 25 | 2000 | 4443 | 0,45 | 12 werewolf_claw (werewolf: 27) | ×1,69 | 1,5 |
+| 3 → 4 | 30 | 2500 | 5405 | 0,46 | 20 werewolf_claw (werewolf: 45), 10 ectoplasm (forestWraith: 23) | ×1,73 | 1,5 |
+| 4 → 5 | 40 | 6000 | 10 175 | 0,59 | 20 ectoplasm (forestWraith: 45) | ×1,78 | 1,0 |
+| 5 → 6 | 50 | 8500 | 15 299 | 0,56 | 15 salamander_scale (salamander: 34) | ×1,82 | 1,0 |
+| 6 → 7 | 60 | 12 500 | 22 006 | 0,57 | 15 salamander_scale (salamander: 34), 15 magma_shard (ashOrc: 34) | ×1,87 | 1,0 |
+| 7 → 8 | 70 | 22 000 | 30 936 | 0,71 | 20 magma_shard (fireGolem: 45), 10 yeti_fur (iceWolf: 23) | ×1,91 | 1,0 |
+| 8 → 9 | 80 | 25 500 | 35 827 | 0,71 | 25 yeti_fur (iceWolf: 56) | ×1,96 | 1,0 |
+| 9 → 10 | 90 | 32 000 | 45 447 | 0,70 | 20 yeti_fur (yeti: 45), 15 frost_scale (iceElemental: 34) | ×2,00 | 1,0 |
+| 1 → 10 |  | 112 500 |  | 5,24 |  |  |  |
+
+Wierzchowce z bossów (`Data/Mounts.BOSS_DROPS`): osobny rzut każdego zwycięzcy, bez drabiny zabić dnia i bez szczęścia.
+
+| boss | wierzchowiec | szansa | zabicia średnio | dni przy limicie |
+| --- | --: | --: | --: | --: |
+| grimrok | mount_grimrok | 2,0% | 50 | 16,7 |
+| morvane | mount_morvane | 1,5% | 67 | 22,2 |
+| azgor | mount_azgor | 1,2% | 83 | 27,8 |
+| vaelgrath | mount_vaelgrath | 1,0% | 100 | 33,3 |
+
 ## Umiejętności: T-SK na buildach wzorcowych (S85)
 
 Silnik `tests/SkillModel.luau` rzuca prawdziwe umiejętności bazy każdej klasy (rzędy 1 wszystkich ścieżek, Mag 1–2, broń z pomiarów ROZWOJ i `base.loadout` z bronią `Balance.LOADOUT`) i każdego buildu `PathDef.reference` (klucz `<pathId>.<id>`) na poziomach 20 / 45 / 70 / 100: rangi z poziomu, przełomy A/B, węzły, rotacja z danych, koszt `Skills.cost`, normalizacja broni, mikstury. Bez umiejętności daje `FightSim.dps` (kontrola w `balance.spec`). S86 dołożyło mechaniki klas i cechy na zdarzeniu (sekcja „Klasy i ścieżki”); to raport, nic tu nie jest asertowane (model główny celów G zostaje ×1,2).
@@ -12668,7 +12737,7 @@ Wiersze celów z liczbą z tabeli ROZWOJ (9.6, 10.6, 11.6, 12.7) dla tego samego
 | mage.tsk4 · arcanist.arcanistOverload · 70 (wariant: Przeciążenie) (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 2,71 | 2,75 | -2% |
 | mage.tsk4 · arcanist.arcanistOverload · 100 (wariant: Przeciążenie) (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 2,78 | 2,79 | 0% |
 
-Tabele S86 liczą się 19,8 s.
+Tabele S86 liczą się 19,7 s.
 
 ## Poprawki globalne (S87)
 

@@ -6,11 +6,16 @@
 -- carries the attributes MountId, LookScale, MountRig ("gait" | "animator" | "static"), MountWalkSpeed and the
 -- CollectionService tag "VaelthornMount" (AnimationController animates by the tag). Returns the seat too: the
 -- rider's HipHeight and the LookRoot / pivot offset from the rider's root (Logic/Mounts.seat).
+-- S97: the account's mount skin (Data/Cosmetics kind "mountskin") goes over the procedural look through
+-- Logic/Mounts.lookWith and the model gets the attribute MountSkin. A real model only takes the skin's colours on parts
+-- named like a colour role (Base, Accent, Detail, Cloth, Trim). preview() builds a still copy for the wardrobe and the
+-- mounts window (no tag: the AnimationController leaves it alone).
 
 local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Anatomy = require("../Logic/Anatomy")
+local Cosmetics = require("../Data/Cosmetics")
 local LookBuild = require("./LookBuild")
 local MountData = require("../Data/Mounts")
 local Mounts = require("../Logic/Mounts")
@@ -21,10 +26,40 @@ MountLook.NAME = "VaelthornMount"
 MountLook.TAG = "VaelthornMount"
 
 export type Options = {
-	skin: string?, -- S97: a mountskin cosmetic id (reserved; ignored today, attribute MountSkin)
+	skin: string?, -- S97: a mountskin cosmetic id (Logic/Mounts.lookWith; attribute MountSkin)
+	still: boolean?, -- S97: a preview copy: no CollectionService tag (the AnimationController never walks it)
 }
 
 local warned: { [string]: boolean } = {}
+
+-- Part names of a real model that take a skin colour (role -> colour of Data/Cosmetics skin.colors).
+local ROLE_PARTS: { [string]: string } = {
+	Base = "base",
+	Accent = "accent",
+	Detail = "detail",
+	Cloth = "cloth",
+	Trim = "trim",
+}
+
+local function skinOf(id: string?): Cosmetics.Def?
+	local def = if id then Cosmetics.get(id) else nil
+	return if def and def.kind == "mountskin" then def else nil
+end
+
+-- A real model keeps its look; only parts named like a colour role take the skin's colour.
+local function paintAsset(model: Model, skin: Cosmetics.Def)
+	local colors = skin.skin and skin.skin.colors
+	if not colors then
+		return
+	end
+	for _, item in model:GetDescendants() do
+		local role = ROLE_PARTS[item.Name]
+		local hex = role and colors[role]
+		if hex and item:IsA("BasePart") then
+			item.Color = Color3.fromHex(hex)
+		end
+	end
+end
 
 -- Parts of a mount never weigh, collide, touch or take rays; a real model casts no shadows either.
 local function quiet(model: Model, shadows: boolean)
@@ -86,10 +121,15 @@ function MountLook.build(id: string, rootHalf: number, opts: Options?): (Model?,
 		return nil, nil
 	end
 	local scale = def.scale or 1
+	local skin = skinOf(opts and opts.skin)
 	local model, seat = fromAsset(id, rootHalf)
+	if model and skin then
+		paintAsset(model, skin)
+	end
 	if not model then
 		-- Data/Mounts.Look is the same shape as Anatomy.Look without the monster-only fields
-		local rig = Anatomy.build(def.look :: any, { id = def.id, variant = "mount", scale = scale })
+		local look = Mounts.lookWith(def.look, skin)
+		local rig = Anatomy.build(look :: any, { id = def.id, variant = "mount", scale = scale })
 		local built = LookBuild.build(rig :: any, { name = MountLook.NAME, scale = scale, shadows = true })
 		quiet(built, true)
 		built:SetAttribute("MountRig", "gait")
@@ -100,12 +140,31 @@ function MountLook.build(id: string, rootHalf: number, opts: Options?): (Model?,
 	out.Name = MountLook.NAME
 	out:SetAttribute("MountId", id)
 	out:SetAttribute("LookScale", scale)
-	local skin = opts and opts.skin
 	if skin then
-		out:SetAttribute("MountSkin", skin)
+		out:SetAttribute("MountSkin", skin.id)
 	end
-	CollectionService:AddTag(out, MountLook.TAG)
+	if not (opts and opts.still) then
+		CollectionService:AddTag(out, MountLook.TAG)
+	end
 	return out, seat
+end
+
+-- A still, anchored copy of mount `id` with `skin` for a ViewportFrame (wardrobe, mounts window): untagged, its
+-- pivot moved so the hooves stand at y = 0 under the origin. nil for an unknown id.
+function MountLook.preview(id: string, skin: string?): Model?
+	local model, seat = MountLook.build(id, 1, { skin = skin, still = true })
+	if not model or not seat then
+		return nil
+	end
+	for _, item in model:GetDescendants() do
+		if item:IsA("BasePart") then
+			item.Anchored = true
+		end
+	end
+	-- The rider's root at (0, 1 + hipHeight, 0) puts the mount's hooves on the ground (Logic/Mounts.seat).
+	local riderRoot = CFrame.new(0, 1 + seat.hipHeight, 0)
+	model:PivotTo(riderRoot * CFrame.new(seat.offset[1], seat.offset[2], seat.offset[3]))
+	return model
 end
 
 -- A still copy of a rider (wardrobe / skill preview) stands on foot: no mount model, no Mount attribute, so the

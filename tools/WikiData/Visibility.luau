@@ -14,6 +14,7 @@ local Cosmetics = require("../../src/shared/Data/Cosmetics")
 local Items = require("../../src/shared/Data/Items")
 local Maps = require("../../src/shared/Data/Maps")
 local Monsters = require("../../src/shared/Data/Monsters")
+local MountData = require("../../src/shared/Data/Mounts")
 local Npcs = require("../../src/shared/Data/Npcs")
 local PathData = require("../../src/shared/Data/Paths")
 local Quests = require("../../src/shared/Data/Quests")
@@ -85,6 +86,7 @@ function Visibility.collect(): { [string]: boolean }
 		Titles.list,
 		Blessings.list,
 		Cosmetics.list,
+		MountData.list, -- S97
 	})
 	local fromPaths = Visibility.fromPaths(PathData.list, SkillData.byId)
 	for id in fromPaths do

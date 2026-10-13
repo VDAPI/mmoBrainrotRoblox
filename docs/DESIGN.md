@@ -885,14 +885,37 @@ Po testach S17: **więcej rodzajów na każdej mapie (min. 8–10 na mapę teren
 
 ## 22. Kosmetyki i pety
 
-- Pety chodzą (albo latają) za graczem, nie dają bonusów. Wygląd z tego samego generatora co potwory, w wersji „chibi” (duża głowa, duże oczy, krótkie nogi, do 16 części); to, czy pet lata, jest w danych (`flies`: sowa, smoczek, ognik), latające machają skrzydłami. Prawdziwy model można podmienić (`docs/MODELE.md`, `docs/ASSETS.md`). Kosmetyki: strój (nakładany na awatar), aura, ślad, efekt broni. Garderoba w menu.
+- Pety chodzą (albo latają) za graczem, nie dają bonusów. Wygląd z tego samego generatora co potwory, w wersji „chibi” (duża głowa, duże oczy, krótkie nogi, do 16 części); to, czy pet lata, jest w danych (`flies`: sowa, smoczek, ognik), latające machają skrzydłami. Prawdziwy model można podmienić (`docs/MODELE.md`, `docs/ASSETS.md`). Kosmetyki: strój (nakładany na awatar), aura, ślad, efekt broni, wygląd wierzchowca (S97, rodzaj `mountskin`: jeden na konto, działa na każdym wierzchowcu). Garderoba w menu.
+- **Skiny zdobywane w grze (S97):** kosmetyka z `obtain` (łup bossa albo nagroda zadania, `Reward.cosmetic`) ma cenę 0,
+  nie jest na sprzedaż (`premium.error.notForSale`), w garderobie pokazuje źródło zamiast ceny i nie ma przycisku, dopóki
+  jej nie masz.
 - **Wierzchowce (S96, DESIGN-15 §2):** od 20. poziomu każda postać raz zdobywa gniadego konia w łuku trzech zadań u
   stajennego Radosza (21–22, wzięcie od 20.). Na koniu `WalkSpeed = 16 × (1,6 → 2,0 wg poziomu wierzchowca 1–10) ×
   (1 + moveSpeed ze sprzętu, limit 30%)`; buffy i pasywki szybkości oraz sprint nie działają, spowolnienia tak.
   Wsiadanie 1,5 s w miejscu (od 5. poziomu wierzchowca 1 s), przerywa je ruch, obrażenia i umiejętność; w walce się nie
   wsiada. Z siodła działa atak podstawowy i mikstury, umiejętność zsiada i się wykonuje. Jazda w mieście i otwartych
   regionach, nie w jaskiniach, lochach i na arenie (portal tam zsiada). Wierzchowiec nie daje statystyk bojowych.
-  Ulepszanie, wierzchowce z bossów i premium oraz skiny: S97.
+- **Wierzchowce 2 (S97):** ulepszanie poziomów 1–10 u stajennego (okno wierzchowców: klawisz J, menu, usługa
+  „Wierzchowce” u stajennego; przycisk „Ulepsz” tylko przy nim), ten sam koszt dla każdego wierzchowca
+  (`Data/Mounts.UPGRADE`):
+
+  | poziom | postać | złoto | części potworów |
+  |---|--:|--:|---|
+  | 2 | 20 | 1 500 | 15 uszu goblina, 10 grubych skór |
+  | 3 | 25 | 2 000 | 12 pazurów wilkołaka |
+  | 4 | 30 | 2 500 | 20 pazurów wilkołaka, 10 ektoplazmy |
+  | 5 | 40 | 6 000 | 20 ektoplazmy |
+  | 6 | 50 | 8 500 | 15 łusek salamandry |
+  | 7 | 60 | 12 500 | 15 łusek salamandry, 15 odłamków magmy |
+  | 8 | 70 | 22 000 | 20 odłamków magmy, 10 futer yeti |
+  | 9 | 80 | 25 500 | 25 futer yeti |
+  | 10 | 90 | 32 000 | 20 futer yeti, 15 mroźnych łusek |
+
+  Wierzchowce z bossów (osobny rzut każdego zwycięzcy, bez drabiny zabić dnia i szczęścia; posiadany nie jest
+  losowany): Grimrok 2% (start 3), Morvane 1,5% (4), Azgor 1,2% (5), Vaelgrath 1% (6); skiny Morvane i Azgora 3%.
+  Wierzchowiec premium `mount_royal` (start 4) czeka w `Data/Products.mounts` z `enabled = false` (niewidoczny i nie do
+  kupienia do decyzji właściciela). Skiny wierzchowców w garderobie (rodzaj `mountskin`): cztery za Smoczą Walutę
+  (350–900), dwa z bossów, dwa z zadań (finał łuku stajni, główne zadanie `vaelgrath`).
 
 ## 23. Interfejs
 

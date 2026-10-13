@@ -1,0 +1,44 @@
+---
+title: Mounts
+description: "Your first horse from the stablemaster, riding, upgrades at the stable, boss mounts and their looks in the wardrobe."
+key: mounts
+order: 11
+updated: 2026-10-13
+tags: [Travel, Mounts]
+---
+
+<Callout kind="tip" title="No edge in combat">
+A mount and its look give no combat stats at all. Every mount has the same top speed: they differ in looks and in the level they start at.
+</Callout>
+
+## Your first mount
+
+You can ride from <Stat path="mounts.config.minLevel" format="lvl" />. The first horse comes from <Npc id="stablemaster" /> at the stable by the city gate: first you gather the scattered harness, then you calm a wild stallion on the Meadows and lead it back to the stable. The arc starts with the quest <Quest id="side_stable_harness" /> and ends with <Quest id="side_stable_ride" />, which besides the horse also gives a mount look. Every character gets this horse once.
+
+You see all your mounts in the mounts window (<Key action="win_mounts" />, the game menu or a talk with the stablemaster). There you choose the active one, look at it up close and check what the next level costs.
+
+## Riding
+
+Mounting takes <Stat path="mounts.config.mountTime" format="s" />, and from mount level <Stat path="mounts.config.fastFromLevel" /> only <Stat path="mounts.config.mountTimeFast" format="s" />. Meanwhile you stand still: moving, taking damage or using a skill breaks it. You cannot mount in combat. You mount and dismount with <Key action="mount" /> or the button on the screen.
+
+On a mount you move at <Stat path="mounts.config.baseMul" format="x" /> to <Stat path="mounts.config.maxMul" format="x" /> of the base speed, depending on the mount's level. The movement speed bonus of your gear works in the saddle too, with the same limit of <Stat path="stats.stats[moveSpeed].cap" format="pct" /> as on foot. Speed buffs from skills and sprinting do not work in the saddle, but slows work as usual.
+
+From the saddle you can fight with basic attacks, and a hit does not throw you off. Using a skill dismounts you at once and the skill goes off right away. Potions work as usual. You ride in the city and on the open regions. Caves, boss dungeons and the arena do not allow riding: going through a portal to such a place dismounts you.
+
+## Upgrades
+
+Every mount level adds a little speed, up to level <Stat path="mounts.config.maxLevel" />. You upgrade at the stablemaster for gold and monster parts from the region you are growing into. Each level also needs a character level, so a fully upgraded mount is an endgame goal. The mounts window shows what is missing, and the upgrade button only works near the stablemaster. The cost is the same for every mount: a mount with a higher starting level simply skips the first steps.
+
+<MountTable part="levels" />
+
+## Boss mounts
+
+Each of the four region bosses has a mount of its own. After a victory every member of the fight has a separate, rare roll for that boss's mount. The chance is flat: it does not grow with your kills that day and the party's luck does not change it. A mount you already own is never rolled again. The dungeon allows <Stat path="bosses.dailyRuns" /> runs a day, so a boss mount usually takes a few weeks of work. Once won it goes straight to your stable and cannot be sold or traded.
+
+<MountTable part="mounts" />
+
+## Looks
+
+A mount look is an account cosmetic: you put it on in the wardrobe on the mounts tab and it works on every mount you own, boss mounts included. A mount's special features, such as horns or a flaming mane, stay unless the look gives them a colour of its own. Some looks are bought for Dragon Currency, others are earned only in the game: as boss loot or as a quest reward. More about the wardrobe in <Link to="mechanics" id="cosmetics">Cosmetics</Link>.
+
+<MountTable part="skins" />

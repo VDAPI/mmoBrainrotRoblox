@@ -6393,3 +6393,86 @@ Pliki: `src/shared/{Config,Types}.luau`, `src/shared/Data/{Mounts,Keybinds,Admin
 Testy: `scripts/check` zielony (99 plików, 6010 testów), `wiki_keys_diff` 0 różnic, `balance1_20` 0 różnic
 (`ALLOWED_1_20_DIFFS` pusta). `Config.Mount` zmienia odcisk `Config`: fixture'y `balance_paths` i `balance_items`
 odświeżone (`--fixture-paths`, `--fixture-items`, 0 przesuniętych wartości; w items też odcisk `Shops` z S95).
+
+### S97: Wierzchowce 2: ulepszanie, wierzchowce z bossów i premium, skiny
+
+Start na `d732e9a` (S96): pliki S96 na miejscu, `scripts/check` zielony. Nazwy S96 sprawdzone w kodzie (odstępstwa w
+DECYZJE: `MountLook.build(id, rootHalf, opts)`, `premium.error.notOnSale`). Reguła szybkości `Mounts.walkSpeed`
+zgodna z DESIGN-15 §2, bez zmian.
+
+Co zrobiono:
+- **Dane (A, B):** `Data/Mounts`: cztery wierzchowce bossów (`mount_grimrok` 3, `mount_morvane` 4, `mount_azgor` 5,
+  `mount_vaelgrath` 6), `mount_royal` (premium, 4, `wiki = false`), `UPGRADE` 2–10, `BOSS_DROPS`, `wiki = false` zdjęte
+  z `mount_horse`; `Look.colors.cloth/trim`, `glow`. `Data/Cosmetics`: rodzaj `mountskin`, pola `skin` i `obtain`,
+  osiem skinów (dapple 350, raven 500, ivory 700, herald 900; shade i cinder z bossów; meadow i dragonslayer z zadań).
+  `Data/Products.mounts` (`mount_royal`, `enabled = false`). `Reward.cosmetic` w `side_stable_ride` i `vaelgrath`; łuk
+  stajni bez `wiki = false`. `Npcs`: usługa `mounts` u stajennego. `Keybinds`: `win_mounts` = J, klawisz `mount` na wiki.
+- **Wygląd:** `Anatomy.palette` z rolami `cloth` / `trim`, 11 akcesoriów wierzchowców; każdy wierzchowiec z każdym
+  skinem ≤ 40 części (najwięcej 40). `Util/MountLook`: skin przez `Mounts.lookWith`, atrybut `MountSkin`, barwienie
+  części ról prawdziwego modelu, `MountLook.preview` (kopia bez tagu do okien).
+- **Logika (C):** `Logic/Mounts.upgradeCost`, `canUpgrade`, `rollBossDrop`, `bossMountOf`, `expectedKills`,
+  `isObtainable`, `lookWith`; `Logic/Premium.canBuyCosmetic` (`notForSale`), `mountOffers`, `canBuyMount`.
+- **Serwer (D, H):** `MountService`: `MountUpgrade` (przy NPC `mounts`, złoto i części w jednym kroku, `SetLevel`,
+  toast `mount.upgraded`, zapis), `MountSetActive` (poza walką, zsiada), `RollBossDrop` (ogłoszenie
+  `loot.announceMount`), `RefreshLook`, skin przy wsiadaniu, `Grant` z analityką i zapisem, rejestracja produktów
+  premium; blokada `busyRequest`. `DungeonService.reward`: rzut po wszystkich rzutach przedmiotów, pola `mount` /
+  `mountSkin` w `CombatFx`. `CosmeticService.Grant`, `mountskin` → `RefreshLook` (leniwie). `QuestService` i
+  `SideQuestService`: `Reward.cosmetic`. `MonetizationService`: `Products.mounts` w `keyOfProduct`, `buyProduct` przez
+  `canBuyMount`. Remote'y `MountUpgrade`, `MountSetActive`. Admin `/mountall`, `/mountsim`, `/mountmats`.
+- **Klient (E, F):** `UI/Screens/MountWindow` (lista posiadanych, „Do zdobycia” bez wyłączonego premium, podgląd w
+  `ViewportFrame` z obrotem i skinem konta, „Wybierz”, panel ulepszenia z poziomem, złotem i częściami, „Ulepsz” tylko
+  przy stajennym, podpowiedź powodu), `MountController` (rejestracja okna, `Access`, `NearStable`), menu HUD `♞` (J,
+  ukryte poniżej 20. bez wierzchowca: `MenuEntry.visible`, `IconButton.Visible`), `NpcController` (usługa `mounts`; okno zamyka się po odejściu tylko otwarte u stajennego),
+  `Wardrobe` (zakładka `mountskin` z podglądem wierzchowca, źródło skinu zamiast ceny i bez przycisku, podpowiedź,
+  `UI/WardrobeStart`), `BossReward` + `CombatFxController` + dźwięk (`boss.mountGot`, `boss.skinGot`), `PremiumShop`
+  (sekcja wierzchowców tylko przy ofercie), `QuestRewards` (żeton wyglądu).
+- **Teksty (I):** wszystkie klucze z planu w PL i EN oraz `mount.mount_horse.desc`, `mount.pick`, `mount.upgrade.speed`,
+  `.mountTime`, `.gold`, `mount.error.upgradeLevel`, `premium.error.notOnSale`, `quest.reward.cosmetic`,
+  `worldmap.search.mounts`.
+- **Balans (G):** `Balance.mountUpgrades`, `Balance.mountDrops`, blok „S97 mounts” w `balance.spec` (asertowany),
+  sekcja „Wierzchowce (S97)” w `docs/BALANS.md`, powody w księdze. `balance1_20` 0 różnic.
+- **Wiki (J):** `tools/WikiData/Mounts.luau` → `mounts.json`, `Visibility` z `Data/Mounts`, `QuestReward.mount?` /
+  `cosmetic?`, blok `MountTable` (`part`), temat `mounts` (jedenasty), artykuły `pl/wierzchowce.mdx` /
+  `en/mounts.mdx`, wpis aktualizacji `2026-10-13-wierzchowce`, klucze i18n (`mech.topic.mounts`, `cos.kind.mountskin`,
+  `block.mount.*`), `mounts` w `stat.ts`.
+
+Koszty ulepszeń (dochód poziomu = `Balance.levelIncome`, średnia klas):
+
+| poziom | postać | złoto | dochód poziomu | udział | części (zabicia) |
+|---|--:|--:|--:|--:|---|
+| 1 → 2 | 20 | 1 500 | 3 111 | 0,48 | 15 uszu goblina (34), 10 grubych skór (23) |
+| 2 → 3 | 25 | 2 000 | 4 443 | 0,45 | 12 pazurów wilkołaka (27) |
+| 3 → 4 | 30 | 2 500 | 5 405 | 0,46 | 20 pazurów wilkołaka (45), 10 ektoplazmy (23) |
+| 4 → 5 | 40 | 6 000 | 10 175 | 0,59 | 20 ektoplazmy (45) |
+| 5 → 6 | 50 | 8 500 | 15 299 | 0,56 | 15 łusek salamandry (34) |
+| 6 → 7 | 60 | 12 500 | 22 006 | 0,57 | 15 łusek salamandry (34), 15 odłamków magmy (34) |
+| 7 → 8 | 70 | 22 000 | 30 936 | 0,71 | 20 odłamków magmy (45), 10 futer yeti (23) |
+| 8 → 9 | 80 | 25 500 | 35 827 | 0,71 | 25 futer yeti (56) |
+| 9 → 10 | 90 | 32 000 | 45 447 | 0,70 | 20 futer yeti (45), 15 mroźnych łusek (34) |
+| 1 → 10 | | 112 500 | | 5,24 | |
+
+Szanse z bossów: Grimrok 2% (50 zabić, 16,7 dnia przy 3 dziennie), Morvane 1,5% (67, 22,2), Azgor 1,2% (83, 27,8),
+Vaelgrath 1% (100, 33,3); skiny Morvane i Azgora 3% (33 zabicia).
+
+`WIKI_KEYS_ALLOW="mounts:*,quests:quests.main[].reward.cosmetic,quests:quests.side[].reward.cosmetic,quests:quests.side[].reward.mount,types.ts"`:
+nowy plik `mounts.json`, nowe pola nagrody zadania (`cosmetic` w `vaelgrath` i finale stajni, `mount` w finale stajni)
+i ich typy w `types.ts`. Skiny i rodzaj `mountskin` w `cosmetics.json`, usługa `mounts` w `npcs.json`, klawisze
+`win_mounts` i `mount` w `mechanics.json` oraz trzy zadania stajni to nowe elementy tablic / map, nie nowe klucze.
+
+Pliki: `src/shared/Data/{Mounts,Cosmetics,Products,Npcs,Keybinds,AdminCommands}.luau`,
+`src/shared/Data/Quests/{Types,Side,Main}.luau`, `src/shared/Data/Localization/{pl,en}.luau`,
+`src/shared/Logic/{Mounts,Premium}.luau`, `src/shared/Logic/Anatomy/{init,Builder,Accessories}.luau`,
+`src/shared/Util/MountLook.luau`, `src/shared/Net/Definitions.luau`,
+`src/server/Services/{Mount,Cosmetic,Dungeon,Quest,SideQuest,Monetization}Service.luau`,
+`src/server/Admin/{Character,Items,Monsters}.luau`, `src/client/Controllers/{Mount,Screen,Npc,CombatFx,Dungeon}Controller.luau`,
+`src/client/UI/Screens/{MountWindow,Wardrobe,BossReward,PremiumShop}.luau`, `src/client/UI/Screens/Hud/init.luau`,
+`src/client/UI/Components/{IconButton,QuestRewards}.luau`, `src/client/UI/WardrobeStart.luau`,
+`tests/{mounts,premium,wikidump,balance,sidequests}.spec.luau`, `tests/Balance.luau`,
+`tools/{balance_reasons,balance_report}.luau`, `tools/WikiData/{Mounts,Quests,Visibility,Basics,init}.luau`,
+`wiki/src/data/*` (nowy `mounts.json`), `wiki/src/components/blocks/{MountTable.astro,index.ts}`,
+`wiki/src/lib/{mechanics,stat}.ts`, `wiki/src/i18n/{pl,en}.ts`, `wiki/src/content/mechanics/{pl/wierzchowce,en/mounts}.mdx`,
+`wiki/src/content/updates/{pl,en}/2026-10-13-wierzchowce.md`,
+`docs/{DESIGN,WIKI,ARCHITECTURE,ASSETS,BALANS,PRZEDMIOTY,DECYZJE,SESJE,PROGRESS}.md`.
+
+Testy: `scripts/check` zielony (99 plików, 6029 testów), `wiki_keys_diff` z `WIKI_KEYS_ALLOW` jak wyżej, `balance1_20` 0 różnic
+(`ALLOWED_1_20_DIFFS` pusta). Wiki: `npm run data`, `npm test` (132 testy) i `npm run check` zielone.

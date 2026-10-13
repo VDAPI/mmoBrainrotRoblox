@@ -49,6 +49,8 @@ local Definitions: { [string]: Definition } = {
 	SetTarget = { kind = "event", dir = "c2s", rate = 12, args = { "string?", "boolean?" } },
 	SetSprint = { kind = "event", dir = "c2s", rate = 10, args = { "boolean" } }, -- S18
 	SetMounted = { kind = "function", dir = "c2s", rate = 4, args = { "boolean" } }, -- S96: (true = mount, false = dismount) -> (ok, errKey?)
+	MountUpgrade = { kind = "function", dir = "c2s", rate = 2, args = { "string" } }, -- (mount id) at the stablemaster, S97
+	MountSetActive = { kind = "function", dir = "c2s", rate = 2, args = { "string" } }, -- (mount id), S97
 	-- S20: quick sell (npcId, max rarity 1..2), item lock (backpack index)
 	SellAll = { kind = "function", dir = "c2s", rate = 2, args = { "string", "integer" } },
 	ToggleLock = { kind = "function", dir = "c2s", rate = 6, args = { "integer" } },

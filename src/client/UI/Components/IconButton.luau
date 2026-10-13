@@ -24,6 +24,7 @@ export type Props = {
 	LayoutOrder: UsedAs<number>?,
 	Active: UsedAs<boolean>?, -- highlighted (e.g. window open)
 	Badge: UsedAs<boolean>?, -- S59: red "!" in the corner (something waits in the window)
+	Visible: UsedAs<boolean>?, -- S97: hidden while false (the mounts entry below the mount level)
 	Name: string?,
 }
 
@@ -38,6 +39,7 @@ local function IconButton(scope: Fusion.Scope<typeof(Fusion)>, props: Props): In
 		Position = props.Position,
 		AnchorPoint = props.AnchorPoint,
 		LayoutOrder = props.LayoutOrder,
+		Visible = if props.Visible ~= nil then props.Visible else true,
 		BackgroundColor3 = scope:Tween(
 			scope:Computed(function(use): Color3
 				if use(props.Active) == true then

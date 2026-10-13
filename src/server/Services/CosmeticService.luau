@@ -3,6 +3,8 @@
 -- applied to every spawned character model (Util/CosmeticLook; re-applied when the weapon model changes),
 -- and the equipped pet is spawned in Workspace.VaelthornPets with attribute OwnerId. Pets are anchored
 -- and never move on the server; every client moves all pets smoothly behind their owners (PetController).
+-- S97: Grant (boss drops, quest rewards) and the mount skin slot ("mountskin": nothing on the character, the ridden
+-- mount is rebuilt through MountService.RefreshLook; MountService depends on this service, so it is taken lazily).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -24,6 +26,15 @@ local CosmeticService = {
 local DataService: any
 local PlayerStateService: any
 local CharacterService: any
+local Registry: any
+local MountService: any
+
+-- Lazy: MountService depends on this service (RollBossDrop), so a Deps entry here would be a cycle. Never call during
+-- Init.
+local function mountService(): any
+	MountService = MountService or Registry.Get("MountService")
+	return MountService
+end
 
 local petFolder: Folder
 local pets: { [Player]: Model } = {}
@@ -104,11 +115,32 @@ local function equip(player: Player, kind: string, id: string?): (boolean, strin
 	if kind == "pet" then
 		PlayerStateService.Set(player, { "account", "pets", "equipped" }, id)
 		spawnPet(player)
+	elseif kind == "mountskin" then
+		PlayerStateService.Set(player, { "account", "cosmetics", "equipped", kind }, id)
+		mountService().RefreshLook(player)
 	else
 		PlayerStateService.Set(player, { "account", "cosmetics", "equipped", kind }, id)
 		applyLook(player)
 	end
 	return true, nil
+end
+
+-- Gives one cosmetic to the account (boss drops, quest rewards). False for an unknown or already owned id.
+function CosmeticService.Grant(player: Player, id: string): boolean
+	local def = Cosmetics.get(id)
+	local data = account(player)
+	if not def or not data then
+		return false
+	end
+	local branch = if def.kind == "pet" then "pets" else "cosmetics"
+	local owned = if def.kind == "pet" then data.pets.owned else data.cosmetics.owned
+	if owned[id] then
+		return false
+	end
+	PlayerStateService.Set(player, { "account", branch, "owned", id }, true)
+	Net.Fire(player, "Toast", "cosmetic.got", { name = `@{def.nameKey}` }, "success")
+	DataService.Save(player)
+	return true
 end
 
 -- Admin: owns every cosmetic and pet.
@@ -123,6 +155,7 @@ function CosmeticService.GrantAll(player: Player)
 end
 
 function CosmeticService.Init(registry)
+	Registry = registry
 	DataService = registry.Get("DataService")
 	PlayerStateService = registry.Get("PlayerStateService")
 	CharacterService = registry.Get("CharacterService")

@@ -18,6 +18,7 @@
     {"group":"windows","id":"win_quests","key":"L","name":{"en":"Quests","pl":"Questy"}},
     {"group":"windows","id":"win_guild","key":"G","name":{"en":"Guild","pl":"Gildia"}},
     {"group":"windows","id":"win_party","key":"P","name":{"en":"Party","pl":"Grupa"}},
+    {"group":"windows","id":"win_mounts","key":"J","name":{"en":"Mounts","pl":"Wierzchowce"}},
     {"group":"windows","id":"item_details","key":"Alt","name":{"en":"Item details","pl":"Szczegóły opisu przedmiotu"}},
     {"group":"combat","id":"skill_1","key":"1","name":{"en":"Skill 1","pl":"Umiejętność 1"}},
     {"group":"combat","id":"skill_2","key":"2","name":{"en":"Skill 2","pl":"Umiejętność 2"}},
@@ -36,7 +37,8 @@
     {"group":"combat","id":"target_clear","key":"Q","name":{"en":"Clear target","pl":"Brak celu"}},
     {"group":"world","id":"sprint","key":"Ctrl","name":{"en":"Sprint","pl":"Sprint"}},
     {"group":"world","id":"interact","key":"E","name":{"en":"Interact / talk","pl":"Interakcja / rozmowa"}},
-    {"group":"world","id":"pickup","key":"F","name":{"en":"Pick up loot","pl":"Podnieś łup"}}
+    {"group":"world","id":"pickup","key":"F","name":{"en":"Pick up loot","pl":"Podnieś łup"}},
+    {"group":"world","id":"mount","key":"H","name":{"en":"Mount","pl":"Wierzchowiec"}}
   ],
   "levelBands": [
     {"band":"grey","color":"#8C8C8C","max":-10,"min":-15},

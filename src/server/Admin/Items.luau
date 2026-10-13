@@ -21,6 +21,7 @@ local ItemValue = require(Shared.Logic.ItemValue)
 local Items = require(Shared.Data.Items)
 local Loot = require(Shared.Logic.Loot)
 local Monsters = require(Shared.Data.Monsters)
+local Mounts = require(Shared.Logic.Mounts)
 local Net = require(Shared.Net)
 local PartyLoot = require(Shared.Logic.PartyLoot)
 local Rarities = require(Shared.Data.Rarities)
@@ -318,6 +319,34 @@ commands.mats = function(player, args)
 				InventoryService.GiveNew(player, id, n)
 			end
 		end
+		reply(player, "admin.mats.ok")
+	end)
+end
+
+-- S97: gold and parts for the next upgrade of the active mount (the stablemaster still has to be near).
+commands.mountmats = function(player)
+	withCharacter(player, function()
+		local character = PlayerStateService.GetCharacter(player)
+		local id, lvl = Mounts.activeOf(character and character.mounts)
+		if not id then
+			reply(player, "mount.error.none")
+			return
+		end
+		local step = Mounts.upgradeCost(lvl + 1)
+		if not step then
+			reply(player, "admin.mount.max")
+			return
+		end
+		for _, m in step.materials do
+			local leftover = InventoryService.GiveNew(player, m.id, m.n)
+			if leftover > 0 then
+				reply(player, "inventory.full")
+				return
+			end
+		end
+		PlayerStateService.Update(player, { "character", "gold" }, function(gold: number)
+			return gold + step.gold
+		end)
 		reply(player, "admin.mats.ok")
 	end)
 end

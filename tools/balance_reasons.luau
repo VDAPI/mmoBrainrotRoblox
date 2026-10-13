@@ -57,7 +57,8 @@ return {
 		{ path = "Data/Monsters", omit = LOOKS },
 		-- S96: mount speed and start levels are pace numbers; the look, the riding rules, the rider pose and the real
 		-- model hook are not
-		{ path = "Data/Mounts", omit = { "look", "RULES", "RIDER", "assets" } },
+		-- S97: the look scale is geometry too
+		{ path = "Data/Mounts", omit = { "look", "scale", "RULES", "RIDER", "assets" } },
 		{ path = "Data/Paths/Cleric" },
 		{ path = "Data/Paths/Hunter" },
 		{ path = "Data/Paths/Mage" },
@@ -3003,6 +3004,86 @@ return {
 		},
 		["Quests/Side:STABLE_MIN"] = {
 			{ session = "S96", why = "the stable arc is offered from level 20 (= Config.Mount.minLevel)" },
+		},
+		-- S97 (DESIGN-15 §2): mounts 2 (upgrades, boss and premium mounts); income = Balance.levelIncome at the step's
+		-- character level (S84 model, mean of the classes), table in docs/BALANS.md "Wierzchowce (S97)"
+		["Mounts:UPGRADE[2]*"] = {
+			{
+				session = "S97",
+				why = "new table: mount level 2 from character level 20 (= Config.Mount.minLevel), gold 1500 = 0.48 of the level-20 income (0.4 rounded up to 500), 15 goblin ears + 10 thick hides (late Meadows / bears, ~34 kills)",
+			},
+		},
+		["Mounts:UPGRADE[3]*"] = {
+			{
+				session = "S97",
+				why = "new table: level 3 from 25, gold 2000 = 0.45 of the level-25 income, 12 werewolf claws (~27 kills)",
+			},
+		},
+		["Mounts:UPGRADE[4]*"] = {
+			{
+				session = "S97",
+				why = "new table: level 4 from 30, gold 2500 = 0.46 of the level-30 income, 20 werewolf claws + 10 ectoplasm (~45 kills)",
+			},
+		},
+		["Mounts:UPGRADE[5]*"] = {
+			{
+				session = "S97",
+				why = "new table: level 5 (mounting 1.0 s) from 40, gold 6000 = 0.59 of the level-40 income (0.55 rounded up), 20 ectoplasm (~45 kills)",
+			},
+		},
+		["Mounts:UPGRADE[6]*"] = {
+			{
+				session = "S97",
+				why = "new table: level 6 from 50, gold 8500 = 0.56 of the level-50 income, 15 salamander scales (~34 kills)",
+			},
+		},
+		["Mounts:UPGRADE[7]*"] = {
+			{
+				session = "S97",
+				why = "new table: level 7 from 60, gold 12500 = 0.57 of the level-60 income, 15 salamander scales + 15 magma shards (~34 kills each)",
+			},
+		},
+		["Mounts:UPGRADE[8]*"] = {
+			{
+				session = "S97",
+				why = "new table: level 8 from 70, gold 22000 = 0.71 of the level-70 income (0.7 rounded up), 20 magma shards + 10 yeti fur (~45 / 23 kills)",
+			},
+		},
+		["Mounts:UPGRADE[9]*"] = {
+			{
+				session = "S97",
+				why = "new table: level 9 from 80, gold 25500 = 0.71 of the level-80 income, 25 yeti fur (~56 kills)",
+			},
+		},
+		["Mounts:UPGRADE[10]*"] = {
+			{
+				session = "S97",
+				why = "new table: level 10 (x2.0, the cap of every mount) from 90, gold 32000 = 0.70 of the level-90 income, 20 yeti fur + 15 frost scales (~45 / 34 kills); 1 -> 10 = 112 500 gold, about 5.2 levels of income over levels 20-90",
+			},
+		},
+		["Mounts:BOSS_DROPS*"] = {
+			{
+				session = "S97",
+				why = "new table: flat personal rolls of every winner, no kills-today ladder or luck: mounts 2 / 1.5 / 1.2 / 1% (50 / 67 / 83 / 100 kills, 17-33 days at 3 kills a day), Morvane's and Azgor's skins 3% (33 kills)",
+			},
+		},
+		["Mounts:byId.mount_grimrok*"] = {
+			{ session = "S97", why = "new boss mount: starts at mount level 3 (DESIGN-15 §2)" },
+		},
+		["Mounts:byId.mount_morvane*"] = {
+			{ session = "S97", why = "new boss mount: starts at mount level 4 (DESIGN-15 §2)" },
+		},
+		["Mounts:byId.mount_azgor*"] = {
+			{ session = "S97", why = "new boss mount: starts at mount level 5 (DESIGN-15 §2)" },
+		},
+		["Mounts:byId.mount_vaelgrath*"] = {
+			{ session = "S97", why = "new boss mount: starts at mount level 6 (DESIGN-15 §2)" },
+		},
+		["Mounts:byId.mount_royal*"] = {
+			{
+				session = "S97",
+				why = "new premium mount (Data/Products.mounts, disabled): starts at mount level 4 like Morvane's, below the best boss mount (6), the same speed cap",
+			},
 		},
 	} :: { [string]: { Reason } },
 }

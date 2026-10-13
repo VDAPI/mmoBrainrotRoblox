@@ -2725,3 +2725,56 @@
 - **S96 sterowanie:** klawisz `H` (wolny), slot na PC w pasku akcji za miksturami (przerwa jak przed miksturami), na
   telefonie przycisk 64 × 64 na `(0, 132, 1, −260)`, na prawo od sprintu. Sprint na telefonie znika w siodle, klawisz
   sprintu w siodle nic nie wysyła. Liczby obrażeń nad jeźdźcem od głowy, nie od pudełka razem z koniem.
+
+### S97: Wierzchowce 2: ulepszanie, wierzchowce z bossów i premium, skiny
+
+- **S97 nazwy S96 zamiast założeń promptu:** `MountLook.build(id, rootHalf, { skin })` (z `rootHalf`, nie
+  `build(id, { skin })`); `premium.error.notOnSale` zamiast `premium.error.soon` (test S81 w `premium.spec` pilnuje, że
+  klucza „soon” nie ma); reszta nazw jak w S96 (`lvl`, `speedMul`, `Grant`, `SetLevel`, `/mount lvl`, `mount.*`).
+- **S97 koszt ulepszeń:** wspólny dla wszystkich wierzchowców (bossowy zaczyna wyżej i omija pierwsze stopnie). Poziom
+  postaci 20 / 25 / 30 / 40 / 50 / 60 / 70 / 80 / 90 dla stopni 2–10 (DESIGN-15 milczał). Złoto = 0,4 / 0,55 / 0,7
+  dochodu poziomu (`Balance.levelIncome`, średnia klas, model S84) zaokrąglone w górę do 500: 1 500 … 32 000, razem
+  112 500 (5,2 poziomu dochodu). Dochód modelu jest niższy niż szacunek promptu (2: ok. 3 000, 10: ok. 120 000):
+  decyduje model. Materiały to części potworów pasma, bez esencji, Rdzeni i zwojów; stopień 2: uszy goblina zamiast
+  skór wilka (wilki to 2–6, gobliny i niedźwiedzie 16–20).
+- **S97 rzut z bossa:** płaska szansa na zwycięzcę (Grimrok 2%, Morvane 1,5%, Azgor 1,2%, Vaelgrath 1%; skiny Morvane i
+  Azgora 3%), bez drabiny zabić dnia, bez szczęścia i bez podziału na drużynę; posiadany wierzchowiec / skin nie jest
+  losowany (`Rng` nietknięty); rzut po wszystkich rzutach przedmiotów, na tym samym `rng` serwisu. Wierzchowiec od razu
+  w `character.mounts.owned` (nie przedmiot: nie do sprzedania ani wymiany); postać poniżej 20. poziomu też może go
+  dostać i jeździ od 20.
+- **S97 wygląd:** wierzchowce bossów i premium na planie konia S96 (inne zwierzęta wymagałyby nowej pozy siedzenia).
+  Nowe role kolorów `cloth` (czapraki, pióropusz; domyślnie `detail`) i `trim` (blachy, rogi, kryształy; domyślnie
+  `accent`) w `Anatomy.palette`; akcesoria 1–2 części (`peytral`, `chamfron`, `spikes`, `warPaint`, `caparison`,
+  `caparisonTorn`, `plume`, `wreath`, `emberCracks`, `frostHorns`, `frostCrystals`). Wierzchowce bossów bez juków, żeby
+  każdy z każdym skinem mieścił się w `BUDGET.mount` 40 (najwięcej 40). Przy prawdziwym modelu `.rbxm` skin barwi
+  tylko części nazwane jak role (`Base`, `Accent`, `Detail`, `Cloth`, `Trim`).
+- **S97 skiny:** jeden skin wierzchowca na konto (`account.cosmetics.equipped.mountskin`), działa na każdym wierzchowcu
+  każdej postaci, bez osobnego skinu na wierzchowca. Skiny z `obtain` (boss / zadanie) mają cenę 0, nie są na sprzedaż
+  (`premium.error.notForSale`), w garderobie bez przycisku do czasu zdobycia. Skiny z zadań jako nowe pole
+  `Reward.cosmetic` w istniejących zadaniach (`side_stable_ride`, główne `vaelgrath`), bez zmiany EXP i złota.
+- **S97 premium:** `mount_royal` (`startLevel` 4 jak Morvane, poniżej najlepszego bossowego 6) w `Products.mounts` z
+  `enabled = false`, `productId = 0`, `robux = 0`: niewidoczny w sklepie (sekcja dodawana tylko przy ofercie), serwer
+  odmawia zakupu nawet w Studio, wiki go nie zna. Handler nadania rejestruje `MountService.Start`; paragon bez aktywnej
+  postaci czeka (`NotProcessedYet`). Do włączenia: decyzja właściciela, cena w Robux, id produktu, `enabled = true` i
+  zmiana testu w `mounts.spec`.
+- **S97 okno:** okno wierzchowców otwiera się wszędzie (klawisz J, menu HUD, nowa usługa NPC `mounts` u stajennego),
+  ulepszenie tylko przy NPC z usługą `mounts` (serwer `NpcService.NearService`, klient dystans co 0,5 s); wpis menu i
+  klawisz ukryte poniżej 20. poziomu bez wierzchowca (`Hud.MenuEntry.visible`, `WindowDef.enabled`), z dialogu
+  stajennego okno z informacją o poziomie. „Garderoba” w oknie otwiera garderobę na zakładce skinów (`UI/WardrobeStart`).
+  Okno otwarte z dialogu stajennego zamyka się po odejściu od niego jak okna usług; otwarte klawiszem J albo z menu nie
+  (`mounts` poza `SERVICE_WINDOWS`, flaga w `NpcController`).
+- **S97 zależności:** `MountService.Deps` += `DataService`, `InventoryService`, `NpcService`, `CosmeticService`,
+  `MonetizationService`, `AnnounceService` (żaden nie zależy od `MountService`; sprawdzone skryptem po wszystkich 53
+  serwisach); `DungeonService`, `QuestService`, `SideQuestService` biorą `MountService` / `CosmeticService` z `Deps`;
+  `CosmeticService` bierze `MountService` leniwie z `registry` (wzór S60), bo `MountService` zależy od niego.
+- **S97 wiki:** nowy `mounts.json` (bez premium, bez `wiki = false`, bez `Data/Products`), blok `MountTable`, artykuł
+  `mounts`; łuk stajni i `mount_horse` opublikowane (zdjęte `wiki = false`), klawisz `mount` też; nagroda zadania z
+  `mount` i `cosmetic`; `sidequests.spec` i `mounts.spec` przestawione z `wiki == false` na `nil`. `WIKI_KEYS_ALLOW` w
+  SESJE.
+- **S97 admin i teksty:** poziom wierzchowca dla admina przez `/mount lvl` z S96 (bez `/mountlvl`); nowe `/mountall`,
+  `/mountsim`, `/mountmats`; teksty okna i ulepszania pod `mount.*`, „za niski poziom do ulepszenia” to nowy
+  `mount.error.upgradeLevel` (S96 `mount.error.level` zostaje „do jazdy”).
+- **S97 reguła szybkości:** `Mounts.walkSpeed` sprawdzona wobec DESIGN-15 §2 (sprzęt działa w siodle z limitem 30, buffy i
+  sprint nie, spowolnienia tak), bez zmian; mnożnik zależy tylko od poziomu wierzchowca (test dla każdego wierzchowca).
+- **S97 księga:** `scale` dopisane do `omit` `Data/Mounts` (geometria wyglądu); powody `Mounts:UPGRADE[n]*`,
+  `Mounts:BOSS_DROPS*`, `Mounts:byId.<id>*` z `session = "S97"`. Fixture 1–20 i `ALLOWED_1_20_DIFFS` bez zmian.

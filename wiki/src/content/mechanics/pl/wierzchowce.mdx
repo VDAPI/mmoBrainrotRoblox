@@ -1,0 +1,44 @@
+---
+title: Wierzchowce
+description: "Pierwszy koń od stajennego, jazda, ulepszanie u stajni, wierzchowce z bossów i ich wygląd w garderobie."
+key: mounts
+order: 11
+updated: 2026-10-13
+tags: [Podróż, Wierzchowce]
+---
+
+<Callout kind="tip" title="Bez przewagi w walce">
+Wierzchowiec i jego wygląd nie dają żadnych statystyk bojowych. Każdy wierzchowiec ma ten sam najwyższy poziom szybkości: różnią się wyglądem i poziomem, od którego zaczynają.
+</Callout>
+
+## Pierwszy wierzchowiec
+
+Wierzchowca dosiądziesz od <Stat path="mounts.config.minLevel" format="lvl" />. Pierwszego konia daje <Npc id="stablemaster" /> w stajni przy bramie miasta: najpierw zbierasz rozrzuconą uprząż, potem uspokajasz dzikiego ogiera na Łąkach i odprowadzasz go do stajni. Łuk zaczyna się od zadania <Quest id="side_stable_harness" />, a kończy na <Quest id="side_stable_ride" />, które oprócz konia daje też wygląd wierzchowca. Każda postać dostaje tego konia raz.
+
+Wszystkie swoje wierzchowce widzisz w oknie wierzchowców (<Key action="win_mounts" />, menu gry albo rozmowa ze stajennym). Tam wybierasz aktywnego, oglądasz go z bliska i sprawdzasz, ile kosztuje następny poziom.
+
+## Jazda
+
+Wsiadanie trwa <Stat path="mounts.config.mountTime" format="s" />, a od <Stat path="mounts.config.fastFromLevel" /> poziomu wierzchowca tylko <Stat path="mounts.config.mountTimeFast" format="s" />. W tym czasie stoisz w miejscu: ruch, otrzymane obrażenia albo użycie umiejętności przerywają wsiadanie. W walce nie wsiądziesz. Dosiadasz i zsiadasz klawiszem <Key action="mount" /> albo przyciskiem na ekranie.
+
+Na wierzchowcu poruszasz się od <Stat path="mounts.config.baseMul" format="x" /> do <Stat path="mounts.config.maxMul" format="x" /> podstawowej szybkości, zależnie od poziomu wierzchowca. Premia do szybkości ruchu z ekwipunku działa także w siodle, z tym samym limitem <Stat path="stats.stats[moveSpeed].cap" format="pct" /> co pieszo. Wzmocnienia szybkości z umiejętności i sprint w siodle nie działają, za to spowolnienia działają normalnie.
+
+Z siodła możesz walczyć atakiem podstawowym, a trafienie cię nie zrzuca. Użycie umiejętności zsiada automatycznie i umiejętność wykonuje się od razu. Mikstury działają jak zwykle. Konno jeździsz po mieście i otwartych krainach. W jaskiniach, lochach bossów i na arenie nie da się jeździć: przejście przez portal do takiego miejsca zsiada.
+
+## Ulepszanie
+
+Każdy poziom wierzchowca dodaje trochę szybkości, aż do <Stat path="mounts.config.maxLevel" /> poziomu. Ulepszasz go u stajennego za złoto i części potworów z krainy, do której właśnie dorastasz. Każdy kolejny poziom wymaga też odpowiedniego poziomu postaci, więc pełne ulepszenie to cel na koniec gry. Okno wierzchowców pokazuje, czego brakuje, a przycisk ulepszenia działa tylko w pobliżu stajennego. Koszt jest taki sam dla każdego wierzchowca: wierzchowiec z wyższym poziomem startowym po prostu omija pierwsze stopnie.
+
+<MountTable part="levels" />
+
+## Wierzchowce z bossów
+
+Każdy z czterech bossów krain ma własnego wierzchowca. Po zwycięstwie każdy uczestnik walki ma osobny, rzadki rzut na wierzchowca tego bossa. Szansa jest stała: nie rośnie z liczbą zabić danego dnia i nie wpływa na nią szczęście drużyny. Wierzchowca, którego już masz, nie wylosujesz drugi raz. Limit wejść do lochu to <Stat path="bosses.dailyRuns" /> dziennie, więc na wierzchowca z bossa trzeba zwykle zapracować przez kilka tygodni. Zdobyty od razu trafia do twojej stajni, nie da się go sprzedać ani wymienić.
+
+<MountTable part="mounts" />
+
+## Wygląd
+
+Wygląd wierzchowca to kosmetyka konta: zakładasz go w garderobie w zakładce wierzchowców i działa na każdym twoim wierzchowcu, także na tym z bossa. Cechy szczególne wierzchowca, jak rogi albo płomienna grzywa, zostają, chyba że wygląd nadaje im własny kolor. Część wyglądów kupisz za Smoczą Walutę, a część zdobędziesz tylko w grze: jako łup z bossa albo nagrodę za zadanie. Więcej o garderobie w artykule <Link to="mechanics" id="cosmetics">Kosmetyki</Link>.
+
+<MountTable part="skins" />

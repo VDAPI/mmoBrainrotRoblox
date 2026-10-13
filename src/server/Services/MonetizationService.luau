@@ -7,6 +7,8 @@
 --              cached; replicated as state branch `passes` and the player attribute "Vip".
 -- Ids in Data/Products are placeholders (0). In Studio BuyProduct/BuyPass simulate the purchase on the
 -- server so everything is testable without Robux; on live servers id 0 is refused. Admins grant passes with /premium grant.
+-- S97: premium mounts (Data/Products.mounts, handlers registered by MountService) are sold only while enabled
+-- (Logic/Premium.canBuyMount), even in Studio; today none is.
 
 local MarketplaceService = game:GetService("MarketplaceService")
 local Players = game:GetService("Players")
@@ -105,6 +107,11 @@ local function keyOfProduct(productId: number): string?
 	if Products.respawn.productId == productId and productId ~= 0 then
 		return Products.respawn.key
 	end
+	for _, entry in Products.mounts do
+		if entry.productId == productId and productId ~= 0 then
+			return entry.key
+		end
+	end
 	return nil
 end
 
@@ -135,9 +142,17 @@ local function processReceipt(info: any): Enum.ProductPurchaseDecision
 end
 
 local function buyProduct(player: Player, key: string): (boolean, string?)
+	local mount = Products.getMount(key)
+	if mount then
+		local ok, err = Premium.canBuyMount(key, PlayerStateService.GetCharacter(player))
+		if not ok then
+			return false, err
+		end
+	end
 	local productId = if Products.getPack(key)
 		then (Products.getPack(key) :: any).productId
 		elseif key == Products.respawn.key then Products.respawn.productId
+		elseif mount then mount.productId
 		else nil
 	if productId == nil then
 		return false, "error.badRequest"

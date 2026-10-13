@@ -261,7 +261,7 @@ function DungeonController.ShowReward(reward: BossReward.Reward)
 			Fusion.doCleanup(inner)
 		end
 	end
-	if reward.gotMyth or reward.gotLeg then
+	if reward.gotMyth or reward.gotLeg or reward.mount ~= nil or reward.mountSkin ~= nil then
 		Sounds.play("levelUp")
 	end
 	BossReward(inner, { Reward = reward, Close = close }).Parent = UIControllerRef.GetLayer("Toasts")

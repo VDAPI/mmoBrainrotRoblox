@@ -61,6 +61,7 @@ local DungeonService = {
 		"AnnounceService",
 		"StatService",
 		"StatusEffectService",
+		"MountService", -- S97: the boss mount roll (MountService never depends on this service)
 	},
 }
 
@@ -102,6 +103,7 @@ local LootService: any
 local AnnounceService: any
 local StatusEffectService: any
 local StatService: any
+local MountService: any
 local Registry: any
 local PathService: any
 
@@ -355,6 +357,11 @@ local function reward(run: Run, position: Vector3, damageBy: { [Player]: number 
 					Analytics.custom(player, if gotMyth then "BossMythic" else "BossLegendary", def.level)
 				end
 			end
+			-- S97: the personal mount / mount skin roll, after every item roll above (their order is unchanged).
+			local mountDrop = MountService.RollBossDrop(player, def.id, rng)
+			if mountDrop.mount then
+				Analytics.custom(player, "BossMount", def.level)
+			end
 			-- The chances of the next kill today.
 			local chances = Loot.bossChances(def.id, killsToday + 1, bossLuck)
 			Net.Fire(player, "CombatFx", {
@@ -374,6 +381,8 @@ local function reward(run: Run, position: Vector3, damageBy: { [Player]: number 
 					upgraded = upgraded,
 					extra = gotExtra,
 					sum = summary,
+					mount = mountDrop.mount,
+					mountSkin = mountDrop.skin,
 				},
 			})
 		end
@@ -751,6 +760,7 @@ function DungeonService.Init(registry)
 	LootService = registry.Get("LootService")
 	AnnounceService = registry.Get("AnnounceService")
 	StatService = registry.Get("StatService")
+	MountService = registry.Get("MountService")
 	StatusEffectService = registry.Get("StatusEffectService")
 	Registry = registry
 end

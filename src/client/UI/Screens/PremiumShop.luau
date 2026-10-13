@@ -2,13 +2,17 @@
 -- Premium shop (DESIGN §21): Dragon Shard packs and gamepasses (Robux; simulated in Studio / with id 0),
 -- services for shards (scrolls with the daily limit, renaming the character) and a link to the wardrobe.
 -- Nothing here sells power: no EXP, stats or items with bonuses.
+-- S97: a "Mounts" section with every premium mount on sale (Logic/Premium.mountOffers), added only when there is one:
+-- today none is (Data/Products.mounts enabled = false), so the player sees nothing.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Button = require(script.Parent.Parent.Components.Button)
+local Config = require(ReplicatedStorage.Shared.Config)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local ItemText = require(script.Parent.Parent.ItemText)
+local MountData = require(ReplicatedStorage.Shared.Data.Mounts)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Premium = require(ReplicatedStorage.Shared.Logic.Premium)
 local Products = require(ReplicatedStorage.Shared.Data.Products)
@@ -243,6 +247,47 @@ local function servicesTab(scope: Scope, props: Props): { Instance }
 					)
 				)
 			)
+		end
+	end
+	-- S97: premium mounts, only while one is on sale (the same speed cap as every mount).
+	local offers = Premium.mountOffers()
+	if #offers > 0 then
+		table.insert(
+			list,
+			scope:New("TextLabel")({
+				LayoutOrder = 90,
+				Size = UDim2.new(1, 0, 0, 30),
+				BackgroundTransparency = 1,
+				Text = Text.T(scope, "premium.mounts.title"),
+				FontFace = Theme.Fonts.Heading,
+				TextSize = Theme.TextSize.Body,
+				TextColor3 = Theme.Colors.Gold,
+				TextXAlignment = Enum.TextXAlignment.Left,
+			})
+		)
+		for i, offer in offers do
+			local def = MountData.get(offer.mount)
+			if def then
+				table.insert(
+					list,
+					card(
+						scope,
+						90 + i,
+						"♞",
+						scope:Computed(function(use): string
+							return `{Text.get(use, def.nameKey)} · {Text.get(
+								use,
+								"mount.level",
+								{ lvl = def.startLevel, max = Config.Mount.maxLevel }
+							)}`
+						end),
+						Text.T(scope, "premium.mounts.desc"),
+						buyButton(scope, `R$ {offer.robux}`, nil, function()
+							invoke("BuyProduct", offer.key)
+						end)
+					)
+				)
+			end
 		end
 	end
 	table.insert(

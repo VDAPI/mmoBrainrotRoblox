@@ -7,8 +7,21 @@
 --   trail   : a trail behind the character while moving
 --   weapon  : particles on the weapon in hand
 --   pet     : a small creature that follows its owner
+--   mountskin: the look of every owned mount (account-wide, one slot; S97, DESIGN-15 §2)
 
-export type Kind = "outfit" | "aura" | "trail" | "weapon" | "pet"
+export type Kind = "outfit" | "aura" | "trail" | "weapon" | "pet" | "mountskin"
+
+-- S97: a mount skin over the mount's look (Logic/Mounts.lookWith): colour roles (base, accent, detail, eye, cloth,
+-- trim) and material roles (base, accent, detail) win over the mount's, parts are added, glow replaces its glow.
+export type Skin = {
+	colors: { [string]: string }?,
+	materials: { [string]: string }?,
+	parts: { string }?,
+	glow: string?,
+}
+
+-- S97: earned in the game, never sold (price 0, Logic/Premium.canBuyCosmetic): exactly one of the fields.
+export type Obtain = { boss: string?, quest: string? }
 
 export type Def = {
 	id: string,
@@ -23,6 +36,8 @@ export type Def = {
 	-- wardrobe swatch) and whether the pet flies (hovers at shoulder height and flaps).
 	look: any?,
 	flies: boolean?,
+	skin: Skin?, -- S97: mountskin
+	obtain: Obtain?, -- S97: a boss drop (Data/Mounts.BOSS_DROPS) or a quest reward (Reward.cosmetic), not for sale
 }
 
 local LIST: { Def } = {}
@@ -117,12 +132,74 @@ add("pet_frog", "pet", 400, "🐸", "#5EA83A", {
 	},
 })
 
+-- Mount skins (S97): the look of every mount the character owns (Logic/Mounts.lookWith). Sold ones like mid-range
+-- cosmetics; Morvane's and Azgor's from their bosses (Data/Mounts.BOSS_DROPS), two from quests (Reward.cosmetic).
+add("mountskin_dapple", "mountskin", 350, "🐎", "#B8B4AC", {
+	color2 = "#5A3E24",
+	skin = { colors = { base = "#B8B4AC", accent = "#E4E0D6", detail = "#5A3E24" } },
+})
+add("mountskin_raven", "mountskin", 500, "🐎", "#24222A", {
+	color2 = "#C8CCD2",
+	skin = {
+		colors = { base = "#24222A", accent = "#1E1E24", detail = "#2E2A30", trim = "#C8CCD2" },
+		materials = { accent = "SmoothPlastic" },
+	},
+})
+add("mountskin_ivory", "mountskin", 700, "🐎", "#E8E0CC", {
+	color2 = "#6E1F2E",
+	skin = {
+		colors = { base = "#E8E0CC", accent = "#D8CCB0", cloth = "#6E1F2E", trim = "#D4AF37" },
+		parts = { "caparison" },
+	},
+})
+add("mountskin_herald", "mountskin", 900, "🐎", "#E8E4DA", {
+	color2 = "#B0202A",
+	skin = {
+		colors = { base = "#E8E4DA", accent = "#D8D0C0", cloth = "#B0202A", trim = "#D4AF37" },
+		parts = { "caparison", "plume" },
+	},
+})
+add("mountskin_shade", "mountskin", 0, "☾", "#4A4850", {
+	color2 = "#9FE0B8",
+	obtain = { boss = "morvane" },
+	skin = {
+		colors = { base = "#4A4850", accent = "#9FE0B8", cloth = "#24222A", eye = "#B8F5D0" },
+		materials = { accent = "Neon" },
+		parts = { "caparisonTorn" },
+	},
+})
+add("mountskin_cinder", "mountskin", 0, "♨", "#6A6460", {
+	color2 = "#FF7A2A",
+	obtain = { boss = "azgor" },
+	skin = {
+		colors = { base = "#6A6460", accent = "#2E2826", detail = "#2A2422", trim = "#3E3634" },
+		parts = { "emberCracks" },
+		glow = "#FF7A2A",
+	},
+})
+add("mountskin_meadow", "mountskin", 0, "❦", "#8A4A26", {
+	color2 = "#4E7A34",
+	obtain = { quest = "side_stable_ride" },
+	skin = {
+		colors = { base = "#8A4A26", accent = "#5A2E18", cloth = "#4E7A34" },
+		parts = { "caparison", "wreath" },
+	},
+})
+add("mountskin_dragonslayer", "mountskin", 0, "🐉", "#8E949C", {
+	color2 = "#9FD8F5",
+	obtain = { quest = "vaelgrath" },
+	skin = {
+		colors = { base = "#5A5E66", accent = "#2E3138", trim = "#A8AEB6", cloth = "#9FD8F5" },
+		parts = { "peytral", "chamfron" },
+	},
+})
+
 local byId: { [string]: Def } = {}
 for _, def in LIST do
 	byId[def.id] = def
 end
 
-local KINDS: { Kind } = { "outfit", "aura", "trail", "weapon", "pet" }
+local KINDS: { Kind } = { "outfit", "aura", "trail", "weapon", "pet", "mountskin" }
 
 return table.freeze({
 	list = LIST,

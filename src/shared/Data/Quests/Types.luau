@@ -57,6 +57,7 @@ export type Reward = {
 	-- higher rarity of an arc's last quest (Config.SideQuest.choiceRarity).
 	choice: ("normal" | "final")?,
 	mount: string?, -- S96: a Data/Mounts id given on hand-in (once per character)
+	cosmetic: string?, -- S97: account cosmetic granted on turn-in; nothing when already owned
 }
 
 export type MainQuest = {

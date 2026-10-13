@@ -22,14 +22,23 @@
     {"color":"#3E8A4A","color2":"#E8C25A","flies":true,"icon":"🐉","id":"pet_dragon","kind":"pet","name":{"en":"Little Dragon","pl":"Smoczek"}},
     {"color":"#9ED8FF","color2":"#FFFFFF","flies":true,"icon":"✦","id":"pet_wisp","kind":"pet","name":{"en":"Crystal Wisp","pl":"Kryształowy Duszek"}},
     {"color":"#4A4A52","color2":"#E8E4DA","flies":false,"icon":"🐈","id":"pet_cat","kind":"pet","name":{"en":"Cat","pl":"Kotek"}},
-    {"color":"#5EA83A","color2":"#E8D85A","flies":false,"icon":"🐸","id":"pet_frog","kind":"pet","name":{"en":"Frog","pl":"Żaba"}}
+    {"color":"#5EA83A","color2":"#E8D85A","flies":false,"icon":"🐸","id":"pet_frog","kind":"pet","name":{"en":"Frog","pl":"Żaba"}},
+    {"color":"#B8B4AC","color2":"#5A3E24","icon":"🐎","id":"mountskin_dapple","kind":"mountskin","name":{"en":"Dapple Grey","pl":"Siwy jabłkowity"}},
+    {"color":"#24222A","color2":"#C8CCD2","icon":"🐎","id":"mountskin_raven","kind":"mountskin","name":{"en":"Raven Black","pl":"Kruczy"}},
+    {"color":"#E8E0CC","color2":"#6E1F2E","icon":"🐎","id":"mountskin_ivory","kind":"mountskin","name":{"en":"Ivory","pl":"Kość słoniowa"}},
+    {"color":"#E8E4DA","color2":"#B0202A","icon":"🐎","id":"mountskin_herald","kind":"mountskin","name":{"en":"Herald's Colours","pl":"Barwy herolda"}},
+    {"color":"#4A4850","color2":"#9FE0B8","icon":"☾","id":"mountskin_shade","kind":"mountskin","name":{"en":"Morvane's Shroud","pl":"Całun Morvane"}},
+    {"color":"#6A6460","color2":"#FF7A2A","icon":"♨","id":"mountskin_cinder","kind":"mountskin","name":{"en":"Azgor's Cinders","pl":"Popiół Azgora"}},
+    {"color":"#8A4A26","color2":"#4E7A34","icon":"❦","id":"mountskin_meadow","kind":"mountskin","name":{"en":"Meadow Colours","pl":"Barwy Łąk"}},
+    {"color":"#8E949C","color2":"#9FD8F5","icon":"🐉","id":"mountskin_dragonslayer","kind":"mountskin","name":{"en":"Dragonslayer's Colours","pl":"Barwy Pogromcy Smoka"}}
   ],
   "kinds": [
     {"id":"outfit","name":{"en":"Outfits","pl":"Stroje"}},
     {"id":"aura","name":{"en":"Auras","pl":"Aury"}},
     {"id":"trail","name":{"en":"Trails","pl":"Ślady"}},
     {"id":"weapon","name":{"en":"Weapon effects","pl":"Efekty broni"}},
-    {"id":"pet","name":{"en":"Pets","pl":"Pety"}}
+    {"id":"pet","name":{"en":"Pets","pl":"Pety"}},
+    {"id":"mountskin","name":{"en":"Mounts","pl":"Wierzchowce"}}
   ],
   "texts": {
     "hint": {"en":"Click an item to try it on. Looks only — no stats.","pl":"Kliknij przedmiot, by go przymierzyć. Tylko wygląd — bez statystyk."},

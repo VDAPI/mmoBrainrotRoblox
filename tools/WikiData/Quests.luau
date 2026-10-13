@@ -60,6 +60,8 @@ local Reward = rec("QuestReward", {
 	gold = "int",
 	items = arr(rec("QuestRewardItem", { id = "ref:items", n = "int" })),
 	["choice?"] = "string",
+	["mount?"] = "ref:mounts", -- S97: the stable arc's horse
+	["cosmetic?"] = "ref:cosmetics", -- S97: a mount skin
 })
 
 S.file(
@@ -231,6 +233,9 @@ local function reward(r: any, hidden: { [string]: boolean }): any
 		gold = r.gold,
 		items = Clean.dropRefs(Clean.clean(r.items or {}), hidden, "id"),
 		choice = r.choice,
+		-- S97: never an unpublished mount or cosmetic
+		mount = if r.mount and not hidden[r.mount] then r.mount else nil,
+		cosmetic = if r.cosmetic and not hidden[r.cosmetic] then r.cosmetic else nil,
 	}
 end
 

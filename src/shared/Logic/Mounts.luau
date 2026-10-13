@@ -1,11 +1,15 @@
 --!strict
 -- Mount rules (S96, docs/DESIGN-15.md §2). Pure: riding speed, mounting time, where riding is allowed, who may
 -- mount, granting a mount and where the rider sits on the procedural horse. MountService (server), StatService
--- (walk speed), the HUD and tests/mounts.spec use it; S97 (upgrades, boss mounts, skins) builds on it.
+-- (walk speed), the HUD and tests/mounts.spec use it. S97: upgrades at the stablemaster (upgradeCost, canUpgrade),
+-- the personal boss roll (rollBossDrop), what the mounts window lists (isObtainable) and the look with a skin
+-- (lookWith).
 
 local Config = require("../Config")
+local Cosmetics = require("../Data/Cosmetics")
 local Maps = require("../Data/Maps")
 local MountData = require("../Data/Mounts")
+local Rng = require("./Rng")
 local Stats = require("../Data/Stats")
 
 local Mounts = {}
@@ -181,6 +185,143 @@ end
 function Mounts.seatAt(h0: number, s: { number }, rootHalf: number): Seat
 	local hr = h0 + s[2] + MountData.RIDER.seatLift
 	return { hipHeight = hr - rootHalf, offset = { -s[1], h0 - hr, -s[3] } }
+end
+
+-- Upgrades (S97) ---------------------------------------------------------------------------------------------------
+
+-- The step that raises a mount to `toLevel` (2..maxLevel), nil outside.
+function Mounts.upgradeCost(toLevel: number): MountData.UpgradeStep?
+	if toLevel < 2 or toLevel > M.maxLevel then
+		return nil
+	end
+	return MountData.UPGRADE[toLevel]
+end
+
+export type UpgradeCharacter = { level: number, gold: number, mounts: MountState? }
+
+-- Whether the character can raise `mountId` by one level now. `inv` = pieces of each material in the backpack (the
+-- server counts them through InventoryService.Count). Errors (Locale keys) in this order: notOwned, maxLevel,
+-- upgradeLevel, gold, materials. On success: true, nil, the step.
+function Mounts.canUpgrade(
+	character: UpgradeCharacter,
+	mountId: string,
+	inv: { [string]: number }
+): (boolean, string?, MountData.UpgradeStep?)
+	local state = character.mounts
+	local entry = state and state.owned and state.owned[mountId]
+	if not entry or not MountData.get(mountId) then
+		return false, "mount.error.notOwned", nil
+	end
+	local lvl = clampLevel(entry.lvl)
+	if lvl >= M.maxLevel then
+		return false, "mount.error.maxLevel", nil
+	end
+	local step = Mounts.upgradeCost(lvl + 1)
+	if not step then
+		return false, "mount.error.maxLevel", nil
+	end
+	if character.level < step.level then
+		return false, "mount.error.upgradeLevel", step
+	end
+	if character.gold < step.gold then
+		return false, "mount.error.gold", step
+	end
+	for _, m in step.materials do
+		if (inv[m.id] or 0) < m.n then
+			return false, "mount.error.materials", step
+		end
+	end
+	return true, nil, step
+end
+
+-- Boss mounts (S97) -------------------------------------------------------------------------------------------------
+
+export type BossRoll = { mount: string?, skin: string? }
+
+-- The personal roll of one winner of a kill of `bossId` (Data/Mounts.BOSS_DROPS): one chance for the boss's mount
+-- unless the character owns it, then one for its skin unless the account owns it. An owned one is not rolled at all
+-- (the rng stays untouched). No luck and no kills-today ladder: apart from the item rolls of Logic/Loot.
+function Mounts.rollBossDrop(
+	bossId: string,
+	ownedMounts: { [string]: any },
+	ownedSkins: { [string]: boolean },
+	rng: Rng.Rng
+): BossRoll
+	local drop = MountData.BOSS_DROPS[bossId]
+	local out: BossRoll = {}
+	if not drop then
+		return out
+	end
+	if drop.mount and drop.mountChance and ownedMounts[drop.mount] == nil then
+		if rng:chance(drop.mountChance) then
+			out.mount = drop.mount
+		end
+	end
+	if drop.skin and drop.skinChance and not ownedSkins[drop.skin] then
+		if rng:chance(drop.skinChance) then
+			out.skin = drop.skin
+		end
+	end
+	return out
+end
+
+-- The mount a boss drops (nil when none).
+function Mounts.bossMountOf(bossId: string): string?
+	local drop = MountData.BOSS_DROPS[bossId]
+	return if drop then drop.mount else nil
+end
+
+-- Kills on average for one drop of chance `chance`.
+function Mounts.expectedKills(chance: number): number
+	return if chance > 0 then 1 / chance else math.huge
+end
+
+-- Whether a mount is something a player can get now (the mounts window's "To obtain"): quest, boss and event mounts
+-- always, a premium one only while its product is on sale.
+function Mounts.isObtainable(def: MountData.MountDef, premiumEnabled: (id: string) -> boolean): boolean
+	if def.source == "premium" then
+		return premiumEnabled(def.id)
+	end
+	return true
+end
+
+-- Skins (S97) -------------------------------------------------------------------------------------------------------
+
+-- The look of a mount with a mount skin: a shallow copy with new colour and material tables (the skin's values win),
+-- the mount's parts plus the skin's (no duplicates) and the skin's glow. Never changes the input (Data is frozen). A
+-- nil skin or a cosmetic of another kind gives an unchanged copy.
+function Mounts.lookWith(look: any, skin: Cosmetics.Def?): any
+	local out = table.clone(look)
+	out.colors = table.clone(look.colors or {})
+	out.materials = if look.materials then table.clone(look.materials) else nil
+	out.parts = if look.parts then table.clone(look.parts) else nil
+	if not skin or skin.kind ~= "mountskin" or not skin.skin then
+		return out
+	end
+	local over = skin.skin
+	for role, color in (over.colors or {}) :: { [string]: string } do
+		out.colors[role] = color
+	end
+	if over.materials then
+		local materials = out.materials or {}
+		for role, material in over.materials do
+			materials[role] = material
+		end
+		out.materials = materials
+	end
+	if over.parts then
+		local parts = out.parts or {}
+		for _, part in over.parts do
+			if not table.find(parts, part) then
+				table.insert(parts, part)
+			end
+		end
+		out.parts = parts
+	end
+	if over.glow then
+		out.glow = over.glow
+	end
+	return out
 end
 
 return Mounts

@@ -11,8 +11,8 @@ export type StatFormat = "num" | "pct" | "frac" | "x" | "s" | "min" | "h" | "gol
 
 const FILES = new Set<string>([
   "areas", "blessings", "bonuses", "bosses", "caves", "classes", "cosmetics", "crafting", "elements", "fish", "gather",
-  "icons", "items", "maps", "mechanics", "meta", "monsters", "npcs", "portals", "progression", "quests", "rarities",
-  "recipes", "shops", "skills", "stats", "titles", "upgrade",
+  "icons", "items", "maps", "mechanics", "meta", "monsters", "mounts", "npcs", "portals", "progression", "quests",
+  "rarities", "recipes", "shops", "skills", "stats", "titles", "upgrade",
 ]);
 
 type Getter = (file: string) => unknown;

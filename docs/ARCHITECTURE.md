@@ -189,6 +189,13 @@ type CharacterData = {
   (`Util/MountLook`, nazwa i tag `VaelthornMount`) budowany na serwerze i przyspawany do HRP (`Massless`, bez kolizji),
   `HipHeight` podniesiony do siodła; klienci animują nogi i pozę jeźdźca po tagu (`AnimationController`). Szybkość chodu:
   `StatService.SetMountProvider` + jeden wzór `Logic/Mounts.walkSpeed` (pieszo i w siodle). Reguły: `Logic/Mounts`.
+  S97: `Deps` += `DataService`, `InventoryService`, `NpcService`, `CosmeticService`, `MonetizationService`,
+  `AnnounceService` (od `MountService` zależy też `DungeonService`; `CosmeticService` bierze go leniwie z `registry`).
+  Remote'y `MountUpgrade(id)` (przy NPC z usługą `mounts`, rate 2) i `MountSetActive(id)` (rate 2); publiczne
+  `MountService.Grant`, `RollBossDrop(player, bossId, rng)` (rzut zwycięzcy w `DungeonService.reward`, pola `mount` /
+  `mountSkin` zdarzenia `reward`), `RefreshLook` (skin konta na modelu w trakcie jazdy), `CosmeticService.Grant`
+  (łup i nagrody zadań, `Reward.cosmetic`). Produkty `Data/Products.mounts` rejestruje `MountService.Start`
+  (`MonetizationService.RegisterProduct`); sprzedaż tylko przy `enabled` (`Logic/Premium.canBuyMount`).
 - **Filtry obrażeń gracza (S61):** `ResourceService.SetDamageFilter(filter, priority)` z `FilterPriority` (przechwyt 10,
   redukcje i tarcze 20, Anioł Stróż 90, nokaut pojedynku 100); filtr dostaje `(player, amount, source, attacker?)`.
 - **Aury i strefy (S61):** `PartyAuraService` co 1 s odświeża krótkie wzmocnienia aur drużyny (`Paths.auras`,

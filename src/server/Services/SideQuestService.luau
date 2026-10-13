@@ -40,6 +40,7 @@ local SideQuestService = {
 		"ZoneService",
 		"WorldService",
 		"MountService", -- S96: quest interactions dismount, the stable arc gives the horse
+		"CosmeticService", -- S97: Reward.cosmetic (the stable arc's mount skin)
 	},
 }
 
@@ -51,6 +52,7 @@ local ResourceService: any
 local CharacterService: any
 local ZoneService: any
 local MountService: any
+local CosmeticService: any
 
 local rng = Rng.new()
 
@@ -253,6 +255,10 @@ local function turnIn(player: Player, questId: string, choiceIndex: number?): (b
 	local mountId = quest.reward.mount
 	if mountId then
 		MountService.Grant(player, mountId, "quest")
+	end
+	-- S97: an account cosmetic (already owned: nothing, the quest is handed in all the same)
+	if quest.reward.cosmetic then
+		CosmeticService.Grant(player, quest.reward.cosmetic)
 	end
 	Net.Fire(player, "CombatFx", { { k = "reward", exp = quest.reward.exp, gold = quest.reward.gold } })
 	Net.Fire(player, "QuestCompleted", `quest.{quest.id}.title`)
@@ -458,6 +464,7 @@ function SideQuestService.Init(registry)
 	CharacterService = registry.Get("CharacterService")
 	ZoneService = registry.Get("ZoneService")
 	MountService = registry.Get("MountService")
+	CosmeticService = registry.Get("CosmeticService")
 end
 
 function SideQuestService.Start()

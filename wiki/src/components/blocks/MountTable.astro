@@ -1,0 +1,108 @@
+---
+// Mounts (S97): the levels 1…10 (speed, mounting time, the character level, gold and parts of the upgrade at the
+// stablemaster), the mounts (colour swatch, name, start level, where they come from: the stablemaster's quest or a boss
+// with the kills on average) and the mount skins (shop, boss, quest). `part` = "levels" | "mounts" | "skins" shows one
+// table only. No prices of skins and never the premium mount (mounts.json leaves it out).
+import Item from "../mdx/Item.astro";
+import Source from "./Source.astro";
+import type { Lang } from "../../i18n/routes";
+import { getBoss, load } from "../../lib/data";
+import { formatChance, formatNumber } from "../../lib/format";
+import { name, t } from "../../lib/i18n";
+import { sectionHref } from "../../lib/sections";
+interface Props {
+  part?: "levels" | "mounts" | "skins";
+}
+const { part } = Astro.props;
+const lang = (Astro.url.pathname.startsWith("/en/") ? "en" : "pl") as Lang;
+const file = load("mounts");
+const show = (p: string) => part === undefined || part === p;
+const mul = (v: number) => `×${formatNumber(Math.round(v * 100) / 100, lang)}`;
+const bossName = (id: string) => {
+  const boss = getBoss(id);
+  return boss ? name(boss.name, lang) : id;
+};
+---
+{show("levels") && (
+  <div class="vw-scroll" tabindex="0">
+    <table class="vw-table vw-table--plain vw-table--keep">
+      <caption class="vw-sr">{t(lang, "block.mount.caption")}</caption>
+      <thead>
+        <tr>
+          <th scope="col">{t(lang, "block.mount.level")}</th>
+          <th scope="col" style="text-align: right">{t(lang, "block.mount.speed")}</th>
+          <th scope="col" style="text-align: right">{t(lang, "block.mount.time")}</th>
+          <th scope="col" style="text-align: right">{t(lang, "block.mount.charLevel")}</th>
+          <th scope="col" style="text-align: right">{t(lang, "block.mount.gold")}</th>
+          <th scope="col">{t(lang, "block.mount.materials")}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {file.levels.map((l) => (
+          <tr>
+            <th scope="row" class="rowhead">{l.level}</th>
+            <td style="text-align: right" class="gold">{mul(l.speedMul)}</td>
+            <td style="text-align: right">{formatNumber(l.mountTime, lang)} s</td>
+            <td style="text-align: right">{l.charLevel ?? "—"}</td>
+            <td style="text-align: right">{l.gold !== undefined ? formatNumber(l.gold, lang) : "—"}</td>
+            <td>{l.materials?.length ? l.materials.map((m) => <span class="mat"><Item id={m.id} n={m.n} /></span>) : "—"}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+)}
+{show("mounts") && (
+  <ul class="vw-mounts">
+    {file.mounts.map((m) => {
+      const bossLink = m.boss ? sectionHref(lang, "bosses", m.boss) : null;
+      return (
+        <li>
+          <span class="sw" style={`--c1: ${m.color}; --c2: ${m.color2 ?? m.color}`} aria-hidden="true"><span>♞</span></span>
+          <span class="txt">
+            <strong>{name(m.name, lang)}</strong>
+            <span>{t(lang, "block.mount.start", { n: m.startLevel })}</span>
+            <span>
+              {m.source === "boss" && m.boss ? (
+                <>
+                  {t(lang, "block.mount.fromBoss")} {bossLink ? <a href={bossLink}>{bossName(m.boss)}</a> : bossName(m.boss)}
+                  {m.chance !== undefined && ` · ${formatChance(m.chance, lang)}`}
+                  {m.kills !== undefined && ` · ${t(lang, "block.mount.kills", { n: m.kills })}`}
+                </>
+              ) : (
+                t(lang, "block.mount.fromQuest")
+              )}
+            </span>
+          </span>
+        </li>
+      );
+    })}
+  </ul>
+)}
+{show("skins") && (
+  <ul class="vw-mounts">
+    {file.skins.map((s) => (
+      <li>
+        <span class="txt">
+          <strong>{name(s.name, lang)}</strong>
+          <span>
+            {s.source === "boss" && s.boss
+              ? `${t(lang, "block.mount.skinBoss", { boss: bossName(s.boss) })}${s.chance !== undefined ? ` · ${formatChance(s.chance, lang)}` : ""}`
+              : s.source === "quest" && s.quest
+                ? t(lang, "block.mount.skinQuest", { quest: name(s.quest, lang) })
+                : t(lang, "block.mount.skinShop")}
+          </span>
+        </span>
+      </li>
+    ))}
+  </ul>
+)}
+<Source from="Data/Mounts" />
+<style>
+  .vw-mounts { margin: 0 0 8px; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+  .vw-mounts li { display: flex; align-items: center; gap: 14px; padding: 10px 12px; background: var(--vw-panel); border: 1px solid var(--vw-border); }
+  .sw { flex-shrink: 0; width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, var(--c1) 0 55%, var(--c2) 55% 100%); border: 2px solid var(--vw-gold-dark); font-size: 26px; color: #fff; text-shadow: 0 1px 2px #000; }
+  .txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .txt span { font-size: 14px; color: var(--vw-text-muted); }
+  .mat { display: inline-block; margin-right: 10px; white-space: nowrap; }
+</style>

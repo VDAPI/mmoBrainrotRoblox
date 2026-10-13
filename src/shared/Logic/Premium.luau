@@ -1,6 +1,7 @@
 --!strict
 -- Premium rules (DESIGN §21–22), pure: receipt idempotency, shop purchase checks with the daily limit,
--- cosmetic ownership and equipping.
+-- cosmetic ownership and equipping. S97: cosmetics earned in the game are not for sale, premium mounts (sold only
+-- while their product is enabled; Data/Products.mounts).
 
 local Cosmetics = require("../Data/Cosmetics")
 local Products = require("../Data/Products")
@@ -46,6 +47,9 @@ function Premium.canBuyCosmetic(id: string, owned: { [string]: boolean }, shards
 	if owned[id] then
 		return false, "premium.error.owned"
 	end
+	if def.obtain ~= nil then
+		return false, "premium.error.notForSale"
+	end
 	if shards < def.price then
 		return false, "premium.error.shards"
 	end
@@ -66,6 +70,45 @@ function Premium.canEquip(kind: string, id: string?, owned: { [string]: boolean 
 	end
 	if not owned[id] then
 		return false, "premium.error.notOwned"
+	end
+	return true, nil
+end
+
+-- Premium mounts on sale (enabled) from `list` (default Data/Products.mounts). Empty while the owner has not decided.
+function Premium.mountOffers(list: { Products.MountProduct }?): { Products.MountProduct }
+	local out: { Products.MountProduct } = {}
+	for _, entry in list or Products.mounts do
+		if entry.enabled == true then
+			table.insert(out, entry)
+		end
+	end
+	return out
+end
+
+-- Whether `character` may buy the premium mount `key` (from `list`, default Data/Products.mounts).
+function Premium.canBuyMount(
+	key: string,
+	character: { mounts: { owned: { [string]: any } }? }?,
+	list: { Products.MountProduct }?
+): (boolean, string?)
+	local entry: Products.MountProduct? = nil
+	for _, e in list or Products.mounts do
+		if e.key == key then
+			entry = e
+		end
+	end
+	if not entry then
+		return false, "error.badRequest"
+	end
+	if entry.enabled ~= true then
+		return false, "premium.error.notOnSale"
+	end
+	if not character then
+		return false, "error.wrongPhase"
+	end
+	local owned = character.mounts and character.mounts.owned
+	if owned and owned[entry.mount] ~= nil then
+		return false, "premium.error.owned"
 	end
 	return true, nil
 end

@@ -6,6 +6,7 @@
 -- S60: the party's Fortune (Legendary multiplier, an ennobled item, a second item) only when it counted, and the
 -- "Fight summary" table: damage share, healing and shields of every member. On short screens the card sits in the
 -- middle and the table scrolls after 4 rows. S61: an "Intercepted" column when anyone took over blows from allies.
+-- S97: a new mount / mount skin from the personal boss roll (lines above the fight summary).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -14,8 +15,10 @@ local Bosses = require(ReplicatedStorage.Shared.Data.Bosses)
 local Button = require(script.Parent.Parent.Components.Button)
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local Clock = require(ReplicatedStorage.Shared.Util.Clock)
+local Cosmetics = require(ReplicatedStorage.Shared.Data.Cosmetics)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local MountData = require(ReplicatedStorage.Shared.Data.Mounts)
 local GroupLuck = require(script.Parent.Parent.GroupLuck)
 local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
 local Scale = require(script.Parent.Parent.Scale)
@@ -46,6 +49,8 @@ export type Reward = {
 	upgraded: boolean?, -- Fortune ennobled the item (Unique -> Heroic)
 	extra: boolean?, -- Fortune's second item
 	summary: { SummaryRow }?,
+	mount: string?, -- S97: a new mount from the personal roll (Data/Mounts id)
+	mountSkin: string?, -- S97: a new mount skin (Data/Cosmetics id)
 }
 
 export type Props = {
@@ -247,6 +252,32 @@ local function BossReward(scope: Scope, props: Props): Instance
 		table.insert(
 			extras,
 			label(8, Text.T(scope, "luck.extra"), Theme.Colors.GoldBright, Theme.TextSize.Small, Theme.Fonts.BodyBold)
+		)
+	end
+	local mountDef = if reward.mount then MountData.get(reward.mount) else nil
+	if mountDef then
+		table.insert(
+			extras,
+			label(
+				8,
+				Text.T(scope, "boss.mountGot", { mount = Text.T(scope, mountDef.nameKey) }),
+				Theme.Colors.GoldBright,
+				Theme.TextSize.Body,
+				Theme.Fonts.BodyBold
+			)
+		)
+	end
+	local skinDef = if reward.mountSkin then Cosmetics.get(reward.mountSkin) else nil
+	if skinDef then
+		table.insert(
+			extras,
+			label(
+				8,
+				Text.T(scope, "boss.skinGot", { skin = Text.T(scope, skinDef.nameKey) }),
+				Theme.Colors.GoldBright,
+				Theme.TextSize.Small,
+				Theme.Fonts.BodyBold
+			)
 		)
 	end
 	local summary = reward.summary

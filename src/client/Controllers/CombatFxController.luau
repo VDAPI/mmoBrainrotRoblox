@@ -24,9 +24,11 @@ local Workspace = game:GetService("Workspace")
 
 local AttackPose = require(ReplicatedStorage.Shared.Logic.AttackPose)
 local Config = require(ReplicatedStorage.Shared.Config)
+local Cosmetics = require(ReplicatedStorage.Shared.Data.Cosmetics)
 local DamageNumbers = require(ReplicatedStorage.Shared.Data.DamageNumbers)
 local DamageText = require(ReplicatedStorage.Shared.Logic.DamageText)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
+local MountData = require(ReplicatedStorage.Shared.Data.Mounts)
 local Net = require(ReplicatedStorage.Shared.Net)
 local SkillData = require(ReplicatedStorage.Shared.Data.Skills)
 local Sounds = require(script.Parent.Parent.UI.Sounds)
@@ -1087,6 +1089,11 @@ local function handle(event: { [string]: any })
 				upgraded = event.upgraded == true,
 				extra = event.extra == true,
 				summary = summaryOf(event.sum),
+				-- S97: the personal mount roll (ids checked against the data)
+				mount = if type(event.mount) == "string" and MountData.get(event.mount) then event.mount else nil,
+				mountSkin = if type(event.mountSkin) == "string" and Cosmetics.get(event.mountSkin)
+					then event.mountSkin
+					else nil,
 			})
 		end
 	end

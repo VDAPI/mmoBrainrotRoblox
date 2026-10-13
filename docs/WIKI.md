@@ -15,6 +15,8 @@ Oficjalna wiki gry w folderze `wiki/` tego repozytorium. Ten plik jest źródłe
 - Nigdy nie trafiają na wiki: `Data/Codes` (kody nagród), `Data/AdminCommands`, `Logic/DevPreset`, konfiguracja serwera i identyfikatory administratorów z `Config`, ceny w Robux i Smoczej Walucie, id produktów i przepustek. Z `Config` eksporter bierze tylko jawnie wymienione klucze (nigdy `RespawnNowCost`), z `Data/Cosmetics` nigdy `price`.
 - S58: `Classes.statPlan`, `PathDef.statPlan` i `buildOther` (drugi zestaw buildu) też nie trafiają na wiki.
 - `Data/Products` czyta wyłącznie `tools/WikiData/Premium.luau` (S43) i kopiuje tylko klucze i ikony przepustek oraz listę usług sklepu premium (klucz, rodzaj, przedmiot, limit dzienny); nazwy i opisy idą z lokalizacji. Ceny w złocie mają w JSON klucz `gold`, klucz `price` nie występuje w żadnym pliku.
+- **Wierzchowiec premium (S97)** nie trafia na wiki, dopóki jest wyłączony: `mounts.json` pomija każdy wpis z
+  `source = "premium"` (i `wiki = false`) i nie czyta `Data/Products`; włączenie go na wiki to osobna decyzja.
 - Encje oznaczone jako niewydane (`hidden = true` albo `wiki = false` w danych; eksporter dodaje obsługę tych flag tam, gdzie ich jeszcze nie ma) są pomijane razem z linkami do nich.
 - Ścieżki (S57, `Visibility.fromPaths`): ścieżka z `wiki = false` ukrywa swój tytuł (`titleId`), węzły i umiejętności, a umiejętność z `path` bez `PathDef` jest ukryta zawsze. Same id ścieżek nie wchodzą do wspólnego zbioru ukrytych (kolizje z NPC i sklepem `healer`, umiejętnością gildii `fortune`); eksport ścieżek (S82) filtruje po `PathDef.wiki`. Wpis sklepu `needsPaths` (Zwój Nowej Ścieżki) trafia na wiki tylko z klasami, które mają opublikowaną ścieżkę.
 - `tests/wikidump.spec.luau` wywala się, gdy w wyjściu pojawi się którykolwiek kod z `Data/Codes`, id administratora, klucz spoza allowlisty albo klucz `productId`, `passId`, `robux`, `price`, `shards`, `RespawnNowCost`. Od S44 ten sam skan wycieków przechodzi po zbudowanej stronie (`dist/`).
@@ -131,7 +133,8 @@ przełomy umiejętności, `Combat`, `Stats.Formula`) jako `data` (typ `Json`).
 | `bosses.json` | `bosses`: Boss[], `countdown`: number, `dailyRuns`: number, `entryRange`: number, `releaseAfter`: number | `Data/Bosses`, `LootTables.bosses`; `MonsterStats.compute(kind, poziom, "boss")` z `BossScaling.hpMultiplier`; ataki jak zdolność Elity II (`Damage.computeDamage` + `StubRng`); łup: Monte Carlo `Loot.rollBossLoot`; rzut osobisty `Loot.bossChances`; od S39 `attacks[].name` (`boss.<id>.attack.<atak>`) i `scriptConsts` (stałe `local NAZWA = liczba` ze skryptu `src/server/Entities/BossScripts/<id>.luau` czytanego jako tekst) |
 | `caves.json` | `caves`: Cave[] | `Data/Areas` (`caves.list`, `entranceOf`, `arrivalOf`), sumy z `Data/Spawns` |
 | `classes.json` | `classes`: ClassInfo[] | `Data/Classes`, `Items.startingGear` |
-| `cosmetics.json` | `cosmetics`: Cosmetic[], `kinds`: CosmeticKind[], `texts` (S43) | `Data/Cosmetics` (bez ceny); od S43 `parts`, `flies`, teksty `wardrobe.hint`, `premium.pack.desc`, `premium.wardrobe.desc` |
+| `cosmetics.json` | `cosmetics`: Cosmetic[], `kinds`: CosmeticKind[], `texts` (S43) | `Data/Cosmetics` (bez ceny); od S43 `parts`, `flies`, teksty `wardrobe.hint`, `premium.pack.desc`, `premium.wardrobe.desc`; od S97 rodzaj `mountskin` (pola `skin` i `obtain` nie wychodzą) |
+| `mounts.json` (S97) | `config`: MountConfig, `mounts`: Mount[], `levels`: MountLevel[], `skins`: MountSkin[] | `tools/WikiData/Mounts.luau`: `Config.Mount`, `Data/Mounts` (wierzchowce bez `source = "premium"` i bez `wiki = false`, szansa i średnie zabicia z `BOSS_DROPS`, kolory z wyglądu), `Logic/Mounts` (szybkość, wsiadanie, koszt `UPGRADE` z poziomem postaci, złotem i częściami), skiny `mountskin` (źródło `shop` / `boss` / `quest`, bez ceny); nigdy `Data/Products` |
 | `crafting.json` | `dismantle`: Record<string, CraftRange[]>, `refund`: UpgradeRefund[], `rows`: CraftRow[] | `Data/Crafting` (wiersze o tym samym poziomie, złocie i materiałach), `Dismantle.preview`, `Dismantle.upgradeRefund` |
 | `elements.json` | `default`: ElementId, `elements`: Element[] | `Data/Elements` |
 | `fish.json` | `chest`: FishChest, `spots`: FishSpot[] | `Data/Fish`; od S40 ryba ma `zone` i `speed` (trudność minigry) |
@@ -284,7 +287,8 @@ sama data), spoiler `inert` + `data-pagefind-ignore`. `src/lib/stat.ts` (`resolv
 `TitleTable` (`kinds?`), `ExpChart`, `ExpDiffChart`, `MonsterExpTable`, `ReductionTable`, `VariantTable`,
 `LevelBandStrip`, `StatFormulaTable`, `CapsTable`, `ClassStartTable`, `ElementList`, `BlessingTable`, `ElixirTable`,
 `PotionTable`, `KeybindTable` (`groups?`, `fixed?`); S43: `CityNpcs`, `CityGallery` (`names?`, `hero?`), `GuildRanksTable`,
-`GuildSkillsTable`, `AuctionTable`, `CosmeticsGrid`, `PassList` (`shop?`), `LevelPath` (`from`, `to`), `UpgradeChances`. Widoki S43:
+`GuildSkillsTable`, `AuctionTable`, `CosmeticsGrid`, `PassList` (`shop?`), `LevelPath` (`from`, `to`), `UpgradeChances`,
+`MountTable` (S97; `part?`: `levels` | `mounts` | `skins`; artykuł mechaniki `mounts`). Widoki S43:
 `GuidesSection.astro`, `UpdatesView.astro`, `src/lib/city.ts`. Klasy CSS: `.vw-article*`, `.vw-prose`, `.vw-h3`, `.vw-stat`,
 `.vw-ref`, `.vw-scroll`, `.vw-table--plain|keep|dense|prose`, `.vw-chart`, `.vw-chip--static`.
 

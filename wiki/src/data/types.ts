@@ -888,6 +888,59 @@ export interface MonstersFile {
   monsters: Monster[];
 }
 
+export interface Mount {
+  boss?: string; // id in bosses.json
+  chance?: number;
+  color: string;
+  color2?: string;
+  desc?: Name;
+  id: string;
+  kills?: number;
+  name: Name;
+  source: string;
+  startLevel: number;
+}
+
+export interface MountConfig {
+  baseMul: number;
+  fastFromLevel: number;
+  maxLevel: number;
+  maxMul: number;
+  minLevel: number;
+  mountTime: number;
+  mountTimeFast: number;
+}
+
+export interface MountLevel {
+  charLevel?: number;
+  gold?: number;
+  level: number;
+  materials?: MountMaterial[];
+  mountTime: number;
+  speedMul: number;
+}
+
+export interface MountMaterial {
+  id: string; // id in items.json
+  n: number;
+}
+
+export interface MountSkin {
+  boss?: string; // id in bosses.json
+  chance?: number;
+  id: string;
+  name: Name;
+  quest?: Name;
+  source: string;
+}
+
+export interface MountsFile {
+  config: MountConfig;
+  levels: MountLevel[];
+  mounts: Mount[];
+  skins: MountSkin[];
+}
+
 export interface NormalizeVector {
   input: string;
   output: string;
@@ -1058,9 +1111,11 @@ export interface QuestObjective {
 
 export interface QuestReward {
   choice?: string;
+  cosmetic?: string; // id in cosmetics.json
   exp: number;
   gold: number;
   items: QuestRewardItem[];
+  mount?: string; // id in mounts.json
 }
 
 export interface QuestRewardItem {
@@ -1586,6 +1641,7 @@ export interface Files {
   mechanics: MechanicsFile;
   meta: MetaFile;
   monsters: MonstersFile;
+  mounts: MountsFile;
   npcs: NpcsFile;
   portals: PortalsFile;
   premium: PremiumFile;

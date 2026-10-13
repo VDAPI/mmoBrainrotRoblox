@@ -48,6 +48,7 @@ export type MenuEntry = {
 	hotkey: string?, -- label shown on the button
 	tooltipKey: string,
 	badge: ((scope: Scope) -> Fusion.UsedAs<boolean>)?, -- S59: "!" on the button (skills window)
+	visible: ((use: Fusion.Use) -> boolean)?, -- S97: the button shows only while this is true (nil: always)
 }
 
 export type Props = {
@@ -252,6 +253,7 @@ local function menu(scope: Scope, props: Props): Instance
 				Tooltip = Text.T(scope, entry.tooltipKey),
 				Active = props.IsOpen(entry.id),
 				Badge = if entry.badge then entry.badge(scope) else nil,
+				Visible = if entry.visible then scope:Computed(entry.visible) else nil,
 				OnClick = function()
 					props.OpenWindow(entry.id)
 				end,

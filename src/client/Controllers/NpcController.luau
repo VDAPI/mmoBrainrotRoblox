@@ -50,8 +50,29 @@ NpcController.SmithTab = scope:Value("craft")
 local WindowManager: any
 local CLOSE_DISTANCE = 20
 -- Windows of an NPC; closing them goes through WindowRules, so the companion backpack closes with the last.
-local SERVICE_WINDOWS =
-	{ "npc", "questnpc", "shop", "deposit", "blacksmith", "backpacks", "alchemy", "guildfound", "auction", "mail" }
+local SERVICE_WINDOWS = {
+	"npc",
+	"questnpc",
+	"shop",
+	"deposit",
+	"blacksmith",
+	"backpacks",
+	"alchemy",
+	"guildfound",
+	"auction",
+	"mail",
+}
+-- S97: the mounts window opens anywhere (J, the HUD menu); it closes with the NPC's windows only when the
+-- stablemaster's dialog opened it.
+local mountsFromNpc = false
+
+local function closeServiceWindows()
+	WindowManager.CloseMany(SERVICE_WINDOWS)
+	if mountsFromNpc then
+		mountsFromNpc = false
+		WindowManager.Close("mounts")
+	end
+end
 
 local SERVICE_TO_WINDOW: { [string]: string } = {
 	shop = "shop",
@@ -59,6 +80,7 @@ local SERVICE_TO_WINDOW: { [string]: string } = {
 	blacksmith = "blacksmith",
 	backpacks = "backpacks",
 	alchemy = "alchemy",
+	mounts = "mounts", -- S97: the stablemaster (MountController registers the window)
 }
 
 local function heal(npcId: string)
@@ -80,7 +102,7 @@ function NpcController.GuideToNpc(npcId: string)
 		Toast.push(Text.now("error.internal"), "error")
 		return
 	end
-	WindowManager.CloseMany(SERVICE_WINDOWS)
+	closeServiceWindows()
 	Toast.push(
 		Text.now("npc.vendors.guide", { name = Text.now(def.nameKey), where = Text.now(`npc.{npcId}.where`) }),
 		"info",
@@ -130,6 +152,9 @@ function NpcController.OpenService(service: string)
 	end
 	WindowManager.Close("npc")
 	WindowManager.Open(window)
+	if window == "mounts" then
+		mountsFromNpc = true
+	end
 end
 
 function NpcController.Talk(npcId: string)
@@ -140,7 +165,7 @@ function NpcController.Talk(npcId: string)
 	NpcController.Current:set(npcId)
 	-- S25: talking (opening a service) ends the guide's walk.
 	NpcController.Nav.StopWalk(true)
-	WindowManager.CloseMany(SERVICE_WINDOWS)
+	closeServiceWindows()
 	-- Talking counts for "talk to X" quest objectives.
 	task.spawn(function()
 		Net.Invoke("QuestTalk", npcId)
@@ -300,6 +325,13 @@ function NpcController.Init(registry)
 end
 
 function NpcController.Start()
+	-- A mounts window closed by hand and reopened with J no longer belongs to the stablemaster.
+	local mountsOpen = WindowManager.IsOpen("mounts")
+	scope:Observer(mountsOpen):onChange(function()
+		if not Fusion.peek(mountsOpen) then
+			mountsFromNpc = false
+		end
+	end)
 	local function watch(folder: Instance)
 		for _, child in folder:GetChildren() do
 			if child:IsA("Model") then
@@ -332,7 +364,7 @@ function NpcController.Start()
 			local model = npcId and folder and folder:FindFirstChild(npcId) :: Model?
 			if npcId and root and model then
 				if (model:GetPivot().Position - root.Position).Magnitude > CLOSE_DISTANCE then
-					WindowManager.CloseMany(SERVICE_WINDOWS)
+					closeServiceWindows()
 					NpcController.Current:set(nil)
 				end
 			end

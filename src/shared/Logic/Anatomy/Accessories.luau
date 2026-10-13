@@ -988,4 +988,150 @@ Accessories.saddlebags = function(b: B)
 	})
 end
 
+-- Mounts (S97): boss, premium and skin gear of the horse plan. One or two pieces each, so a mount (at most four extra
+-- pieces besides saddle and bridle) and a skin (at most two) stay within Anatomy.BUDGET.mount. Tones: "trim" = metal
+-- plates, horns and crystals, "cloth" = caparisons and plumes (Anatomy.palette; skins recolour them).
+
+local WAR_PAINT = "#A8281F"
+local LEAVES = "#6E9A3E"
+
+-- Breast plate over the chest (socket Chest).
+Accessories.peytral = function(b: B)
+	local s = socketOf(b, "Chest")
+	if s then
+		b:add("Peytral", "block", { 1.5, 0.95, 0.24 }, at(s, 0, 0.12, -0.14), {
+			tone = "trim",
+			material = "Metal",
+			rot = { -10, 0, 0 },
+			parent = s.parent,
+		})
+	end
+end
+
+-- Face plate along the top of the head (socket Head; the head leans 40 degrees down).
+Accessories.chamfron = function(b: B)
+	local s = socketOf(b, "Head")
+	if s then
+		b:add("Chamfron", "block", { 0.5, 0.1, 1.2 }, at(s, 0, -0.17, -0.57), {
+			tone = "trim",
+			material = "Metal",
+			rot = { -40, 0, 0 },
+			parent = s.parent,
+		})
+	end
+end
+
+-- One spike forward from the breast plate (socket Chest).
+Accessories.spikes = function(b: B)
+	local s = socketOf(b, "Chest")
+	if s then
+		b:add("Spike", "ball", { 0.2, 0.2, 0.75 }, at(s, 0, 0.2, -0.5), {
+			tone = "trim",
+			material = "Metal",
+			parent = s.parent,
+		})
+	end
+end
+
+-- A red war stripe across the rump, showing on both flanks (socket Hip).
+Accessories.warPaint = function(b: B)
+	local s = socketOf(b, "Hip")
+	if s then
+		b:add("WarPaint", "block", { 1.72, 0.16, 0.5 }, at(s, 0, 0.55, 0), {
+			tone = WAR_PAINT,
+			material = "SmoothPlastic",
+			parent = s.parent,
+		})
+	end
+end
+
+-- A cloth over the back under the saddle: its sides show on both flanks (socket Saddle).
+Accessories.caparison = function(b: B)
+	local s = socketOf(b, "Saddle")
+	if s then
+		b:add("Caparison", "block", { 1.76, 1.0, 2.0 }, at(s, 0, -0.55, 0.1), {
+			tone = "cloth",
+			material = "Fabric",
+			parent = s.parent,
+		})
+	end
+end
+
+-- A longer, hanging shroud (socket Saddle).
+Accessories.caparisonTorn = function(b: B)
+	local s = socketOf(b, "Saddle")
+	if s then
+		b:add("Shroud", "block", { 1.8, 1.3, 1.7 }, at(s, 0, -0.75, 0.3), {
+			tone = "cloth",
+			material = "Fabric",
+			rot = { 4, 0, 0 },
+			parent = s.parent,
+		})
+	end
+end
+
+-- A plume on top of the head (socket Head).
+Accessories.plume = function(b: B)
+	local s = socketOf(b, "Head")
+	if s then
+		b:add("Plume", "ball", { 0.2, 0.75, 0.32 }, at(s, 0, 0.42, 0.08), {
+			tone = "cloth",
+			material = "Fabric",
+			rot = { 12, 0, 0 },
+			parent = s.parent,
+		})
+	end
+end
+
+-- A green wreath around the base of the neck (socket Chest).
+Accessories.wreath = function(b: B)
+	local s = socketOf(b, "Chest")
+	if s then
+		b:add("Wreath", "ball", { 1.05, 0.28, 1.25 }, at(s, 0, 1.17, -0.03), {
+			tone = LEAVES,
+			material = "Grass",
+			rot = { -35, 0, 0 },
+			parent = s.parent,
+		})
+	end
+end
+
+-- Glowing cracks on both flanks (socket Saddle; the look's glow colour).
+Accessories.emberCracks = function(b: B)
+	local s = socketOf(b, "Saddle")
+	if s then
+		b:pair("Ember", "block", { 0.06, 0.12, 1.6 }, at(s, 0.78, -0.9, 0.5), {
+			tone = "glow",
+			rot = { 25, 0, 0 },
+			parent = s.parent,
+		})
+	end
+end
+
+-- Two horns of ice (socket Head).
+Accessories.frostHorns = function(b: B)
+	local s = socketOf(b, "Head")
+	if s then
+		b:pair("IceHorn", "corner", { 0.16, 0.7, 0.16 }, at(s, 0.2, 0.32, 0.05), {
+			tone = "trim",
+			material = "Glass",
+			rot = { -25, 0, -15 },
+			parent = s.parent,
+		})
+	end
+end
+
+-- Frost crystals on the shoulders, ahead of the saddle (socket Saddle).
+Accessories.frostCrystals = function(b: B)
+	local s = socketOf(b, "Saddle")
+	if s then
+		b:pair("FrostCrystal", "corner", { 0.35, 0.7, 0.35 }, at(s, 0.66, -0.3, -1.0), {
+			tone = "trim",
+			material = "Glass",
+			rot = { 0, 45, -20 },
+			parent = s.parent,
+		})
+	end
+end
+
 return Accessories

@@ -11,6 +11,10 @@
 --     characters. Riding never survives entering the world.
 -- Other services call Interrupt / Dismount / IsRiding; quests give mounts through Grant; admins use Ride / SetLevel /
 -- Take (/mount).
+-- S97: upgrades at the stablemaster (MountUpgrade: Logic/Mounts.canUpgrade, gold and parts taken in one step), the
+-- active mount (MountSetActive), the boss roll of every winner (RollBossDrop, DungeonService), the account's mount
+-- skin on the ridden model (RefreshLook after CosmeticService equips one) and the premium mounts (a product handler
+-- per Data/Products.mounts entry; sold only while enabled).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -18,19 +22,36 @@ local Workspace = game:GetService("Workspace")
 
 local Shared = ReplicatedStorage.Shared
 
+local Analytics = require(script.Parent.Parent.Analytics)
+local Bosses = require(Shared.Data.Bosses)
 local Config = require(Shared.Config)
 local Log = require(Shared.Util.Log)
 local MountData = require(Shared.Data.Mounts)
 local MountLook = require(Shared.Util.MountLook)
 local Mounts = require(Shared.Logic.Mounts)
 local Net = require(Shared.Net)
+local Products = require(Shared.Data.Products)
+local Rng = require(Shared.Logic.Rng)
 local Types = require(Shared.Types)
 
 local log = Log.new("MountService")
 
 local MountService = {
 	Name = "MountService",
-	Deps = { "PlayerStateService", "CharacterService", "StatService", "ResourceService", "ZoneService" },
+	Deps = {
+		"PlayerStateService",
+		"CharacterService",
+		"StatService",
+		"ResourceService",
+		"ZoneService",
+		-- S97: none of these depends on this service, directly or further on (CosmeticService takes it lazily)
+		"DataService",
+		"InventoryService",
+		"NpcService",
+		"CosmeticService",
+		"MonetizationService",
+		"AnnounceService",
+	},
 }
 
 local PlayerStateService: any
@@ -38,6 +59,12 @@ local CharacterService: any
 local StatService: any
 local ResourceService: any
 local ZoneService: any
+local DataService: any
+local InventoryService: any
+local NpcService: any
+local CosmeticService: any
+local MonetizationService: any
+local AnnounceService: any
 
 type Casting = { token: number, start: Vector3 }
 type Riding = { model: Model, hipHeight: number, id: string, humanoid: Humanoid }
@@ -45,6 +72,7 @@ type Riding = { model: Model, hipHeight: number, id: string, humanoid: Humanoid 
 local casting: { [Player]: Casting } = {}
 local riding: { [Player]: Riding } = {}
 local counter = 0
+local busyRequest: { [Player]: boolean } = {} -- S97: one upgrade / choice at a time
 
 local CHECK_EVERY = 0.1
 -- State branches of channels that keep the character busy (no mounting meanwhile).
@@ -202,7 +230,9 @@ function MountService.Ride(player: Player, force: boolean?): (boolean, string?)
 	end
 	-- R6 measures HipHeight from the bottom of the legs (2 studs below the root's bottom).
 	local legs = if humanoid.RigType == Enum.HumanoidRigType.R6 then 2 else 0
-	local mount, seat = MountLook.build(id, root.Size.Y / 2 + legs)
+	local account: Types.AccountData? = DataService.GetData(player)
+	local skin = if account then account.cosmetics.equipped.mountskin else nil
+	local mount, seat = MountLook.build(id, root.Size.Y / 2 + legs, { skin = skin })
 	if not mount or not seat then
 		return false, "mount.error.none"
 	end
@@ -323,6 +353,8 @@ function MountService.Grant(player: Player, id: string, source: string): boolean
 	if def then
 		Net.Fire(player, "Toast", "mount.got", { name = `@{def.nameKey}` }, "success")
 	end
+	Analytics.custom(player, "MountGot_" .. source, 1)
+	DataService.Save(player)
 	log:info("%s got mount %s (%s)", player.Name, id, source)
 	return true
 end
@@ -361,6 +393,130 @@ function MountService.Take(player: Player, id: string): boolean
 	return true
 end
 
+-- S97 ---------------------------------------------------------------------------------------------------------------
+
+-- MountUpgrade: raises an owned mount by one level at the stablemaster. The check (Logic/Mounts.canUpgrade) and the
+-- payment (gold, parts) happen in one step without yielding.
+local function upgrade(player: Player, mountId: string): (boolean, string?)
+	local character: Types.CharacterData? = PlayerStateService.GetCharacter(player)
+	if not character then
+		return false, "error.wrongPhase"
+	end
+	if not NpcService.NearService(player, "mounts") then
+		return false, "mount.error.notNear"
+	end
+	local entry = character.mounts and character.mounts.owned[mountId]
+	local nextStep = if entry then Mounts.upgradeCost(entry.lvl + 1) else nil
+	local inv: { [string]: number } = {}
+	if nextStep then
+		for _, m in nextStep.materials do
+			inv[m.id] = InventoryService.Count(player, m.id)
+		end
+	end
+	local ok, err, step = Mounts.canUpgrade(character, mountId, inv)
+	if not ok or not step or not entry then
+		return false, err
+	end
+	local balance = PlayerStateService.Update(player, { "character", "gold" }, function(gold: number)
+		return gold - step.gold
+	end)
+	Analytics.gold(player, -step.gold, balance, "mount")
+	for _, m in step.materials do
+		InventoryService.Remove(player, m.id, m.n)
+	end
+	local lvl = math.clamp(entry.lvl + 1, 1, Config.Mount.maxLevel)
+	-- SetLevel refreshes the walk speed (StatService asks Logic/Mounts.walkSpeed through the mount provider).
+	MountService.SetLevel(player, mountId, lvl)
+	local def = MountData.get(mountId)
+	Net.Fire(
+		player,
+		"Toast",
+		"mount.upgraded",
+		{ mount = if def then `@{def.nameKey}` else mountId, lvl = lvl },
+		"success"
+	)
+	Analytics.custom(player, "MountUpgrade", lvl)
+	DataService.Save(player)
+	return true, nil
+end
+
+-- MountSetActive: picks the owned mount used for riding (out of combat; while riding it dismounts first, the next
+-- mounting takes the new mount's time).
+local function setActive(player: Player, mountId: string): (boolean, string?)
+	local character: Types.CharacterData? = PlayerStateService.GetCharacter(player)
+	if not character then
+		return false, "error.wrongPhase"
+	end
+	local state = character.mounts
+	if not state or not state.owned[mountId] or not MountData.get(mountId) then
+		return false, "mount.error.notOwned"
+	end
+	if state.active == mountId then
+		return true, nil
+	end
+	if ResourceService.InCombat(player) then
+		return false, "mount.error.combat"
+	end
+	MountService.Interrupt(player)
+	MountService.Dismount(player, "manual")
+	PlayerStateService.Set(player, { "character", "mounts", "active" }, mountId)
+	return true, nil
+end
+
+local function lockedRequest(fn: (Player, string) -> (boolean, string?)): (Player, string) -> (boolean, string?)
+	return function(player: Player, arg: string)
+		if busyRequest[player] then
+			return false, "error.busy"
+		end
+		busyRequest[player] = true
+		local ok, result, err = pcall(fn, player, arg)
+		busyRequest[player] = nil
+		if not ok then
+			log:error("mount request failed for %s: %s", player.Name, tostring(result))
+			return false, "error.internal"
+		end
+		return result, err
+	end
+end
+
+-- The personal mount roll of a boss winner (DungeonService, after every item roll). Grants what dropped: the mount to
+-- the character (with a server and cross-server announcement), the skin to the account (a toast). Returns the result
+-- for the reward card.
+function MountService.RollBossDrop(player: Player, bossId: string, rng: Rng.Rng): Mounts.BossRoll
+	local character: Types.CharacterData? = PlayerStateService.GetCharacter(player)
+	local account: Types.AccountData? = DataService.GetData(player)
+	if not character or not account then
+		return {}
+	end
+	local owned: { [string]: any } = if character.mounts then character.mounts.owned else {}
+	local result = Mounts.rollBossDrop(bossId, owned, account.cosmetics.owned, rng)
+	local out: Mounts.BossRoll = {}
+	if result.mount and MountService.Grant(player, result.mount, "boss") then
+		out.mount = result.mount
+		local def = MountData.get(result.mount)
+		local boss = Bosses.get(bossId)
+		AnnounceService.Global("loot.announceMount", "loot.announceMountGlobal", {
+			player = character.name,
+			mount = if def then `@{def.nameKey}` else result.mount,
+			boss = if boss then `@{boss.nameKey}` else bossId,
+		})
+	end
+	if result.skin and CosmeticService.Grant(player, result.skin) then
+		out.skin = result.skin
+	end
+	return out
+end
+
+-- Rebuilds the ridden mount's model (the account's mount skin changed): dismounts quietly and mounts again at once
+-- (the place was allowed a moment ago). Nothing on foot.
+function MountService.RefreshLook(player: Player)
+	if not riding[player] then
+		return
+	end
+	MountService.Dismount(player, "skin")
+	MountService.Ride(player, true)
+end
+
 -- Forgets the riding state without touching a model that is gone (respawn, leaving).
 local function reset(player: Player)
 	if casting[player] then
@@ -381,11 +537,27 @@ function MountService.Init(registry)
 	StatService = registry.Get("StatService")
 	ResourceService = registry.Get("ResourceService")
 	ZoneService = registry.Get("ZoneService")
+	DataService = registry.Get("DataService")
+	InventoryService = registry.Get("InventoryService")
+	NpcService = registry.Get("NpcService")
+	CosmeticService = registry.Get("CosmeticService")
+	MonetizationService = registry.Get("MonetizationService")
+	AnnounceService = registry.Get("AnnounceService")
 	StatService.SetMountProvider(ridingLevel)
 end
 
 function MountService.Start()
 	Net.Handle("SetMounted", MountService.Request)
+	Net.Handle("MountUpgrade", lockedRequest(upgrade))
+	Net.Handle("MountSetActive", lockedRequest(setActive))
+	-- S97: premium mounts. Registering never puts one on sale: MonetizationService sells a mount product only while
+	-- it is enabled (Logic/Premium.canBuyMount). Without an active character Grant is false, so the receipt waits
+	-- (NotProcessedYet) until the player enters the world with a character.
+	for _, entry in Products.mounts do
+		MonetizationService.RegisterProduct(entry.key, function(player: Player): boolean
+			return MountService.Grant(player, entry.mount, "premium")
+		end)
+	end
 
 	ResourceService.Damaged:Connect(function(player: Player, amount: number)
 		if amount > 0 then
@@ -412,6 +584,7 @@ function MountService.Start()
 		task.defer(function()
 			casting[player] = nil
 			riding[player] = nil
+			busyRequest[player] = nil
 		end)
 	end)
 end

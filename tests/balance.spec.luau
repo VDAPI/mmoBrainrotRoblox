@@ -25,6 +25,7 @@ local fs = require("@lune/fs")
 local serde = require("@lune/serde")
 
 local B = require("./Balance")
+local Config = require("../src/shared/Config")
 local ItemRoll = require("../src/shared/Logic/ItemRoll")
 local Loot = require("../src/shared/Logic/Loot")
 local MonsterStats = require("../src/shared/Logic/MonsterStats")
@@ -2054,6 +2055,45 @@ T.describe("Balance 20-100: paths", function()
 					.. `({#problems}): {table.concat(problems, "; ", 1, math.min(8, #problems))}`,
 				0
 			)
+		end
+	end)
+end)
+
+-- S97 (DESIGN-15 §2): mount upgrades priced against the level income of the S84 model, parts that really drop near the
+-- step's level, rare flat boss mounts. Always asserted.
+T.describe("S97 mounts", function()
+	T.it("prices every upgrade at 0.3-1.0 of a level's income and 4-8 levels in all", function()
+		local total = 0
+		local lastGold, lastLevel = 0, Config.Mount.minLevel
+		for _, row in B.mountUpgrades() do
+			T.expect(row.share).toBeBetween(0.3, 1.0)
+			T.expect(row.gold > lastGold).toBe(true)
+			T.expect(row.level >= lastLevel and row.level <= 95).toBe(true)
+			lastGold, lastLevel = row.gold, row.level
+			total += row.share
+			for _, m in row.mats do
+				local item = Items.get(m.id)
+				T.expect(item ~= nil and item.category == "material").toBe(true)
+				-- dropped by at least one kind up to 10 levels above the step's character level
+				local drops = false
+				for _, def in Monsters.list do
+					if def.levels.min <= row.level + 10 and (B.materialsPerKill(def.id, "normal")[m.id] or 0) > 0 then
+						drops = true
+					end
+				end
+				T.expect(drops).toBe(true)
+				T.expect(m.kills < math.huge).toBe(true)
+			end
+		end
+		T.expect(total).toBeBetween(4, 8)
+	end)
+
+	T.it("drops boss mounts in 30-200 kills, rarer for later bosses", function()
+		local last = 0
+		for _, row in B.mountDrops() do
+			T.expect(row.kills).toBeBetween(30, 200)
+			T.expect(row.kills >= last).toBe(true)
+			last = row.kills
 		end
 	end)
 end)

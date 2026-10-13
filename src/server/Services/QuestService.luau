@@ -42,6 +42,7 @@ local QuestService = {
 		"NpcService",
 		"ZoneService",
 		"SideQuestService",
+		"CosmeticService", -- S97: Reward.cosmetic (the Dragonslayer's mount skin of the quest vaelgrath)
 	},
 }
 
@@ -53,6 +54,7 @@ local CombatService: any
 local NpcService: any
 local ZoneService: any
 local SideQuestService: any
+local CosmeticService: any
 
 local rng = Rng.new()
 
@@ -99,6 +101,10 @@ local function give(player: Player, reward: Quests.Reward)
 	local items: { { id: string, n: number } } = reward.items or {}
 	for _, item in items do
 		InventoryService.GiveNew(player, item.id, item.n)
+	end
+	-- S97: an account cosmetic (already owned: nothing, the quest is handed in all the same)
+	if reward.cosmetic then
+		CosmeticService.Grant(player, reward.cosmetic)
 	end
 	Net.Fire(player, "CombatFx", { { k = "reward", exp = reward.exp, gold = reward.gold } })
 end
@@ -334,6 +340,7 @@ function QuestService.Init(registry)
 	NpcService = registry.Get("NpcService")
 	ZoneService = registry.Get("ZoneService")
 	SideQuestService = registry.Get("SideQuestService")
+	CosmeticService = registry.Get("CosmeticService")
 end
 
 function QuestService.Start()

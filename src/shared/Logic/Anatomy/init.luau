@@ -24,7 +24,8 @@ export type Joint = Builder.Joint
 export type Look = {
 	plan: string,
 	build: { [string]: number }?,
-	colors: { base: string, accent: string, detail: string?, eye: string? },
+	-- S97 (mounts): cloth = caparison / plume (default detail), trim = metal plates, horns, crystals (default accent)
+	colors: { base: string, accent: string, detail: string?, eye: string?, cloth: string?, trim: string? },
 	materials: { base: string?, accent: string?, detail: string? }?,
 	parts: { string }?,
 	weapon: string?,
@@ -116,17 +117,22 @@ local function seedOf(text: string): number
 	return h
 end
 
--- Palette of a look: three tones of the base colour plus accent, detail, eye and glow.
+-- Palette of a look: three tones of the base colour plus accent, detail, eye and glow (S97: cloth and trim of the
+-- mount gear).
 function Anatomy.palette(look: Look): Builder.Palette
 	local base = Builder.clampColor(look.colors.base)
+	local accent = Builder.clampColor(look.colors.accent)
+	local detail = Builder.clampColor(look.colors.detail or Builder.tone(base, 0.55))
 	return {
 		base = base,
 		shade = Builder.tone(base, 0.75),
 		light = Builder.tone(base, 1.25),
-		accent = Builder.clampColor(look.colors.accent),
-		detail = Builder.clampColor(look.colors.detail or Builder.tone(base, 0.55)),
+		accent = accent,
+		detail = detail,
 		eye = Builder.clampColor(look.colors.eye or "#E8D9A0"),
 		glow = look.glow or look.colors.eye or "#FFD86E",
+		cloth = if look.colors.cloth then Builder.clampColor(look.colors.cloth) else detail,
+		trim = if look.colors.trim then Builder.clampColor(look.colors.trim) else accent,
 	}
 end
 

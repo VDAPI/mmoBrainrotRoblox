@@ -15,6 +15,8 @@ export type ShopEntry = {
 	price: number, -- Dragon Shards
 	dailyLimit: number?, -- per account and UTC day
 }
+-- S97: a premium mount (Developer Product, granted to the active character; Data/Mounts entry with source "premium").
+export type MountProduct = { key: string, productId: number, robux: number, mount: string, enabled: boolean }
 
 local SHARD_PACKS: { ShardPack } = {
 	{ key = "shards_100", productId = 0, shards = 100, robux = 99 },
@@ -46,6 +48,13 @@ local SHOP: { ShopEntry } = {
 	{ key = "backpack_premium_200", kind = "item", itemId = "backpack_premium_200", price = 1000 },
 }
 
+-- S97: disabled until the owner decides (price in Robux, product id from the Creator Hub). Same speed cap as every
+-- mount (no pay2win): startLevel in Data/Mounts. Disabled = not sold (MonetizationService refuses even in Studio), not
+-- shown in the premium shop (Logic/Premium.mountOffers) and never on the wiki.
+local MOUNTS: { MountProduct } = {
+	{ key = "mount_royal", productId = 0, robux = 0, mount = "mount_royal", enabled = false },
+}
+
 local packByKey: { [string]: ShardPack } = {}
 for _, pack in SHARD_PACKS do
 	packByKey[pack.key] = pack
@@ -58,12 +67,17 @@ local shopByKey: { [string]: ShopEntry } = {}
 for _, entry in SHOP do
 	shopByKey[entry.key] = entry
 end
+local mountByKey: { [string]: MountProduct } = {}
+for _, entry in MOUNTS do
+	mountByKey[entry.key] = entry
+end
 
 return table.freeze({
 	shardPacks = SHARD_PACKS,
 	respawn = RESPAWN_PRODUCT,
 	passes = PASSES,
 	shop = SHOP,
+	mounts = MOUNTS,
 	getPack = function(key: string): ShardPack?
 		return packByKey[key]
 	end,
@@ -72,6 +86,9 @@ return table.freeze({
 	end,
 	getShop = function(key: string): ShopEntry?
 		return shopByKey[key]
+	end,
+	getMount = function(key: string): MountProduct?
+		return mountByKey[key]
 	end,
 	VAULT_PASS_SLOTS = 60,
 	AUTO_LOOT_RANGE = 15,

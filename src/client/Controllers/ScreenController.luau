@@ -62,6 +62,16 @@ local MENU: { Hud.MenuEntry } = {
 	{ id = "quests", icon = "✎", hotkey = "L", tooltipKey = "hud.menu.quests" },
 	{ id = "guild", icon = "⚑", hotkey = "G", tooltipKey = "hud.menu.guild" },
 	{ id = "party", icon = "☍", hotkey = "P", tooltipKey = "hud.menu.party" },
+	-- S97: shown from the mount level, or earlier with a mount (MountController.Access)
+	{
+		id = "mounts",
+		icon = "♞",
+		hotkey = "J",
+		tooltipKey = "hud.menu.mounts",
+		visible = function(use: Fusion.Use): boolean
+			return use(MountController.Access) == true
+		end,
+	},
 	{ id = "wardrobe", icon = "♛", hotkey = nil, tooltipKey = "hud.menu.wardrobe" },
 	{ id = "premium", icon = "◆", hotkey = nil, tooltipKey = "hud.menu.shop" },
 	{ id = "menu", icon = "☰", hotkey = nil, tooltipKey = "hud.menu.menu" },
@@ -144,8 +154,10 @@ local function registerWindows()
 			or entry.id == "guild"
 			or entry.id == "premium"
 			or entry.id == "wardrobe"
+			or entry.id == "mounts"
 		then
-			-- Registered by WorldController / PartyController / QuestController / GuildController / PremiumController.
+			-- Registered by WorldController / PartyController / QuestController / GuildController / PremiumController /
+			-- MountController (S97).
 			continue
 		elseif entry.id == "menu" then
 			WindowManager.Register({

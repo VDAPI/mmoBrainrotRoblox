@@ -1,4 +1,4 @@
-// Data blocks usable in MDX without an import (S42; S43: city, guild, market, cosmetics, guides).
+// Data blocks usable in MDX without an import (S42; S43: city, guild, market, cosmetics, guides; S97: mounts).
 import AuctionTable from "./AuctionTable.astro";
 import BlessingTable from "./BlessingTable.astro";
 import CapsTable from "./CapsTable.astro";
@@ -16,6 +16,7 @@ import KeybindTable from "./KeybindTable.astro";
 import LevelBandStrip from "./LevelBandStrip.astro";
 import LevelPath from "./LevelPath.astro";
 import MonsterExpTable from "./MonsterExpTable.astro";
+import MountTable from "./MountTable.astro";
 import PassList from "./PassList.astro";
 import PotionTable from "./PotionTable.astro";
 import PvpMatrix from "./PvpMatrix.astro";
@@ -44,6 +45,7 @@ export const BLOCKS = {
   LevelBandStrip,
   LevelPath,
   MonsterExpTable,
+  MountTable,
   PassList,
   PotionTable,
   PvpMatrix,

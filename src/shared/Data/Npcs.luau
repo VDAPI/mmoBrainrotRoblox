@@ -21,6 +21,7 @@ export type Service =
 	| "story" -- S11: main story quests
 	| "talk" -- S27: only conversation (side quests, gossip)
 	| "vendors" -- S95: the dealer's "Where can I buy gear?" (leads to the player's class vendor, client only)
+	| "mounts" -- S97: the stablemaster's mounts window (upgrades only near him)
 
 export type NpcDef = {
 	id: string,
@@ -265,7 +266,7 @@ townsfolk("brother_anzelm", { body = "#5A4A3A", accent = "#2E2620" }, "✝")
 townsfolk("fishwife", { body = "#3E6B5A", accent = "#C9B98A" }, "🐟")
 townsfolk("innkeeper", { body = "#7A3E2A", accent = "#E8D8B0" }, "🍺", { gossip = true })
 townsfolk("miller_widow", { body = "#4A4A52", accent = "#1E1E22" }, "⚙")
-townsfolk("stablemaster", { body = "#6B4A2B", accent = "#3A2A1A" }, "🐎")
+townsfolk("stablemaster", { body = "#6B4A2B", accent = "#3A2A1A" }, "🐎", { services = { "talk", "mounts" } })
 townsfolk("sergeant", { body = "#8E96A3", accent = "#7A1F2B" }, "⚔")
 
 -- Side quest NPCs on the Whispering Meadows (S27), on the places S26 prepared (Areas/meadows npcSpots).

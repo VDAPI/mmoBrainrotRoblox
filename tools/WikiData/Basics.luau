@@ -783,7 +783,7 @@ function Basics.keybinds(): { any }
 	local out = {}
 	for _, a in KeybindData.actions do
 		if a.wiki == false then
-			continue -- S96: the mount key waits for the mounts on the wiki (S97)
+			continue -- an action kept off the wiki (S96 kept the mount key here until S97)
 		end
 		local n = Names.of(a.labelKey)
 		table.insert(out, {

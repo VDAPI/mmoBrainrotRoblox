@@ -327,7 +327,7 @@ describe("S96 stable arc", function()
 		for _, quest in Quests.Side.byArc.stable do
 			expect(SideQuests.minLevel(quest)).toBe(20)
 			expect(quest.minLevel).toBe(Quests.Side.STABLE_MIN)
-			expect(quest.wiki).toBe(false)
+			expect(quest.wiki).toBe(nil) -- S97: published on the wiki
 		end
 		expect(#Quests.Side.byArc.stable).toBe(3)
 		expect(ride.reward.mount).toBe("mount_horse")

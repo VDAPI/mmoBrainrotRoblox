@@ -1,0 +1,32 @@
+{
+  "config": {"baseMul":1.6,"fastFromLevel":5,"maxLevel":10,"maxMul":2,"minLevel":20,"mountTime":1.5,"mountTimeFast":1},
+  "levels": [
+    {"level":1,"mountTime":1.5,"speedMul":1.6},
+    {"charLevel":20,"gold":1500,"level":2,"materials":[{"id":"goblin_ear","n":15},{"id":"thick_hide","n":10}],"mountTime":1.5,"speedMul":1.6444},
+    {"charLevel":25,"gold":2000,"level":3,"materials":[{"id":"werewolf_claw","n":12}],"mountTime":1.5,"speedMul":1.6889},
+    {"charLevel":30,"gold":2500,"level":4,"materials":[{"id":"werewolf_claw","n":20},{"id":"ectoplasm","n":10}],"mountTime":1.5,"speedMul":1.7333},
+    {"charLevel":40,"gold":6000,"level":5,"materials":[{"id":"ectoplasm","n":20}],"mountTime":1,"speedMul":1.7778},
+    {"charLevel":50,"gold":8500,"level":6,"materials":[{"id":"salamander_scale","n":15}],"mountTime":1,"speedMul":1.8222},
+    {"charLevel":60,"gold":12500,"level":7,"materials":[{"id":"salamander_scale","n":15},{"id":"magma_shard","n":15}],"mountTime":1,"speedMul":1.8667},
+    {"charLevel":70,"gold":22000,"level":8,"materials":[{"id":"magma_shard","n":20},{"id":"yeti_fur","n":10}],"mountTime":1,"speedMul":1.9111},
+    {"charLevel":80,"gold":25500,"level":9,"materials":[{"id":"yeti_fur","n":25}],"mountTime":1,"speedMul":1.9556},
+    {"charLevel":90,"gold":32000,"level":10,"materials":[{"id":"yeti_fur","n":20},{"id":"frost_scale","n":15}],"mountTime":1,"speedMul":2}
+  ],
+  "mounts": [
+    {"color":"#6B4A2B","color2":"#2A1D14","desc":{"en":"A calm bay horse from Radosz's stable. It dislikes marshes, but it will not leave you on the road.","pl":"Spokojny gniady koń ze stajni Radosza. Nie lubi bagien, ale nie zostawi cię na trakcie."},"id":"mount_horse","name":{"en":"Bay Horse","pl":"Gniady koń"},"source":"quest","startLevel":1},
+    {"boss":"grimrok","chance":0.02,"color":"#7A4A26","color2":"#24180F","desc":{"en":"Goblin raiders stole the finest horses from the roads. This one carried the warlord's iron and never forgot the smell of blood.","pl":"Goblińscy jeźdźcy kradli najlepsze konie z gościńców. Ten nosił żelazo wodza i nie zapomniał zapachu krwi."},"id":"mount_grimrok","kills":50,"name":{"en":"Grimrok's War Steed","pl":"Bojowy Rumak Grimroka"},"source":"boss","startLevel":3},
+    {"boss":"morvane","chance":0.015,"color":"#9C9A96","color2":"#7FD6C8","desc":{"en":"A horse that outlived its rider. In the dark its mane glows like marsh lights.","pl":"Koń, który przeżył swojego jeźdźca. W mroku jego grzywa świeci jak bagienne ogniki."},"id":"mount_morvane","kills":67,"name":{"en":"Morvane's Spectral Steed","pl":"Upiorny Rumak Morvane"},"source":"boss","startLevel":4},
+    {"boss":"azgor","chance":0.012,"color":"#2A2422","color2":"#FF7A1C","desc":{"en":"Forged in the heat of the Wastes. Sparks fly from its hooves and its hide never quite cools.","pl":"Wykuty w żarze Pustkowi. Spod kopyt sypią się iskry, a skóra nigdy do końca nie stygnie."},"id":"mount_azgor","kills":83,"name":{"en":"Azgor's Embermane","pl":"Żarogrzywy Azgora"},"source":"boss","startLevel":5},
+    {"boss":"vaelgrath","chance":0.01,"color":"#DCE8F0","color2":"#9FD8F5","desc":{"en":"Born in the shadow of dragon wings. Where it treads, the grass turns to frost.","pl":"Zrodzony w cieniu smoczych skrzydeł. Tam, gdzie stąpa, trawa pokrywa się szronem."},"id":"mount_vaelgrath","kills":100,"name":{"en":"Vaelgrath's Frosthorn","pl":"Szronoróg Vaelgratha"},"source":"boss","startLevel":6}
+  ],
+  "skins": [
+    {"id":"mountskin_dapple","name":{"en":"Dapple Grey","pl":"Siwy jabłkowity"},"source":"shop"},
+    {"id":"mountskin_raven","name":{"en":"Raven Black","pl":"Kruczy"},"source":"shop"},
+    {"id":"mountskin_ivory","name":{"en":"Ivory","pl":"Kość słoniowa"},"source":"shop"},
+    {"id":"mountskin_herald","name":{"en":"Herald's Colours","pl":"Barwy herolda"},"source":"shop"},
+    {"boss":"morvane","chance":0.03,"id":"mountskin_shade","name":{"en":"Morvane's Shroud","pl":"Całun Morvane"},"source":"boss"},
+    {"boss":"azgor","chance":0.03,"id":"mountskin_cinder","name":{"en":"Azgor's Cinders","pl":"Popiół Azgora"},"source":"boss"},
+    {"id":"mountskin_meadow","name":{"en":"Meadow Colours","pl":"Barwy Łąk"},"quest":{"en":"The First Ride","pl":"Pierwsza jazda"},"source":"quest"},
+    {"id":"mountskin_dragonslayer","name":{"en":"Dragonslayer's Colours","pl":"Barwy Pogromcy Smoka"},"quest":{"en":"Vaelgrath","pl":"Vaelgrath"},"source":"quest"}
+  ]
+}

@@ -41,12 +41,14 @@ export type Palette = {
 	detail: string,
 	eye: string,
 	glow: string?,
+	cloth: string?, -- S97: mount caparison / plume
+	trim: string?, -- S97: mount plates, horns, crystals
 }
 
 export type Materials = { base: string, accent: string, detail: string }
 
 export type Options = {
-	tone: string?, -- "base" | "shade" | "light" | "accent" | "detail" | "eye" | "glow" | "#RRGGBB"
+	tone: string?, -- "base" | "shade" | "light" | "accent" | "detail" | "eye" | "glow" | "cloth" | "trim" | "#RRGGBB"
 	material: string?, -- "base" | "accent" | "detail" | Enum.Material name
 	rot: Vec?,
 	parent: string?,

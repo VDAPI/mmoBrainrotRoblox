@@ -213,6 +213,19 @@ commands.mount = function(player, args)
 	end)
 end
 
+-- S97: every mount at its start level (premium too: admins test everything).
+commands.mountall = function(player)
+	withCharacter(player, function()
+		local n = 0
+		for _, def in MountData.list do
+			if MountService.Grant(player, def.id, "admin") then
+				n += 1
+			end
+		end
+		reply(player, "admin.mount.all", { n = n })
+	end)
+end
+
 -- Level + the full gear set of the character's class at that level (Logic/DevPreset), rolled at `rarity` with
 -- upgrade `up`, equipped through the normal Equip path (old pieces go to the backpack).
 commands.preset = function(player, args)

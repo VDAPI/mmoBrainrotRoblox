@@ -57,6 +57,8 @@ local Luck = require("../src/shared/Logic/Luck")
 local MonsterAbilities = require("../src/shared/Data/MonsterAbilities")
 local MonsterStats = require("../src/shared/Logic/MonsterStats")
 local Monsters = require("../src/shared/Data/Monsters")
+local MountData = require("../src/shared/Data/Mounts")
+local MountLogic = require("../src/shared/Logic/Mounts")
 local PartyBonus = require("../src/shared/Logic/PartyBonus")
 local PathData = require("../src/shared/Data/Paths")
 local Paths = require("../src/shared/Logic/Paths")
@@ -6761,6 +6763,91 @@ function Balance.upgradeVsIncome(level: number): { UpgradeIncome }
 		})
 	end
 	upgradeIncomes[level] = out
+	return out
+end
+
+-- Mounts (S97) ------------------------------------------------------------------------------------------------------
+
+export type MountMaterial = { id: string, n: number, kills: number, kind: string? }
+export type MountUpgrade = {
+	to: number, -- mount level after the step
+	level: number, -- character level needed
+	gold: number,
+	income: number, -- gold of a level at `level` (Balance.levelIncome, mean of the classes)
+	share: number, -- gold / income
+	speedMul: number,
+	mountTime: number,
+	mats: { MountMaterial },
+}
+
+-- The kind of the band around `level` (levels overlapping level - 10 .. level + 10, normal variant) that drops the most
+-- of `id` per kill (Balance.materialsPerKill mirrors the LootTables.PARTS roll), and how much.
+local function bestPartKind(id: string, level: number): (string?, number)
+	local best, bestKind = 0, nil
+	for _, def in Monsters.list do
+		if def.levels.min <= level + 10 and def.levels.max >= level - 10 then
+			local per = Balance.materialsPerKill(def.id, "normal")[id] or 0
+			if per > best then
+				best, bestKind = per, def.id
+			end
+		end
+	end
+	return bestKind, best
+end
+
+-- Every step of Data/Mounts.UPGRADE against the gold of the level it needs (the same income as G9 of S84) and the kills
+-- its parts take from the best kind of that band.
+function Balance.mountUpgrades(): { MountUpgrade }
+	local out: { MountUpgrade } = {}
+	for to = 2, Config.Mount.maxLevel do
+		local step = MountData.UPGRADE[to]
+		local income = 0
+		for _, c in Balance.CLASSES do
+			income += Balance.levelIncome(c, step.level)
+		end
+		income = math.max(1e-9, income / #Balance.CLASSES)
+		local mats: { MountMaterial } = {}
+		for _, m in step.materials do
+			local kind, per = bestPartKind(m.id, step.level)
+			table.insert(mats, {
+				id = m.id,
+				n = m.n,
+				kind = kind,
+				kills = if per > 0 then math.ceil(m.n / per) else math.huge,
+			})
+		end
+		table.insert(out, {
+			to = to,
+			level = step.level,
+			gold = step.gold,
+			income = income,
+			share = step.gold / income,
+			speedMul = MountLogic.speedMul(to),
+			mountTime = MountLogic.mountTime(to),
+			mats = mats,
+		})
+	end
+	return out
+end
+
+export type MountDrop = { boss: string, mount: string?, mountChance: number, kills: number, days: number }
+
+-- The boss mounts (Data/Mounts.BOSS_DROPS): expected kills and days at the daily limit of kills.
+function Balance.mountDrops(): { MountDrop }
+	local out: { MountDrop } = {}
+	for _, bossId in LootTables.regionBoss do
+		local drop = MountData.BOSS_DROPS[bossId]
+		if drop and drop.mountChance then
+			local kills = MountLogic.expectedKills(drop.mountChance)
+			table.insert(out, {
+				boss = bossId,
+				mount = drop.mount,
+				mountChance = drop.mountChance,
+				kills = kills,
+				days = kills / Config.Boss.dailyRuns,
+			})
+		end
+	end
 	return out
 end
 

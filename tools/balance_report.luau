@@ -2520,6 +2520,66 @@ do
 	tableOut({ "klasa · próg", "u sprzedawcy", "kuźnia (złoto + rudy)", "minuty zarobku" }, rows)
 end
 
+-- Mounts (S97) ------------------------------------------------------------------------------------------------------
+
+do
+	add("## Wierzchowce (S97)")
+	add()
+	add(
+		"Ulepszanie u stajennego (`Data/Mounts.UPGRADE`, ten sam koszt dla każdego wierzchowca): złoto wobec dochodu poziomu przy wymaganym poziomie postaci (`Balance.levelIncome`, średnia klas, jak G9 z S84), części potworów i zabicia najlepszego rodzaju w paśmie ±10 poziomów (szansa części z `LootTables.PARTS`). Asercje w `balance.spec` („S97 mounts”): każdy stopień 0,3–1,0 dochodu, suma 4–8."
+	)
+	add()
+	local rows: { { string } } = {}
+	local total, totalGold = 0, 0
+	for _, row in B.mountUpgrades() do
+		local mats: { string } = {}
+		for _, m in row.mats do
+			table.insert(mats, `{m.n} {m.id} ({m.kind or "–"}: {m.kills})`)
+		end
+		total += row.share
+		totalGold += row.gold
+		table.insert(rows, {
+			`{row.to - 1} → {row.to}`,
+			tostring(row.level),
+			fmtValue(row.gold, "i"),
+			fmtValue(row.income, "i"),
+			fmtValue(row.share, "2"),
+			table.concat(mats, ", "),
+			`×{fmtValue(row.speedMul, "2")}`,
+			fmtValue(row.mountTime, "1"),
+		})
+	end
+	table.insert(rows, { "1 → 10", "", fmtValue(totalGold, "i"), "", fmtValue(total, "2"), "", "", "" })
+	tableOut(
+		{
+			"poziom wierzchowca",
+			"poziom postaci",
+			"złoto",
+			"dochód poziomu",
+			"udział",
+			"części (rodzaj: zabicia)",
+			"szybkość",
+			"wsiadanie s",
+		},
+		rows
+	)
+	add(
+		"Wierzchowce z bossów (`Data/Mounts.BOSS_DROPS`): osobny rzut każdego zwycięzcy, bez drabiny zabić dnia i bez szczęścia."
+	)
+	add()
+	local drops: { { string } } = {}
+	for _, row in B.mountDrops() do
+		table.insert(drops, {
+			row.boss,
+			row.mount or "–",
+			fmtValue(row.mountChance * 100, "1") .. "%",
+			fmtValue(row.kills, "i"),
+			fmtValue(row.days, "1"),
+		})
+	end
+	tableOut({ "boss", "wierzchowiec", "szansa", "zabicia średnio", "dni przy limicie" }, drops)
+end
+
 -- Skills on the reference builds (S85) ----------------------------------------------------------------------------
 
 do

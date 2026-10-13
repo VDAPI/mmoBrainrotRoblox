@@ -6,6 +6,7 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Cosmetics = require(ReplicatedStorage.Shared.Data.Cosmetics)
 local CurrencyIcon = require(script.Parent.CurrencyIcon)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
@@ -155,6 +156,20 @@ local function QuestRewards(scope: Scope, props: Props): Instance
 			Theme.Colors.GoldBright,
 			scope:Computed(function(use): string
 				return Text.get(use, "quest.reward.mount", { name = Text.get(use, mountDef.nameKey) })
+			end),
+			size
+		))
+	end
+	-- S97: an account cosmetic (the stable arc's and the quest vaelgrath's mount skins)
+	local cosmeticDef = if reward.cosmetic then Cosmetics.get(reward.cosmetic) else nil
+	if cosmeticDef then
+		add(chip(
+			scope,
+			0,
+			cosmeticDef.icon,
+			Theme.Colors.GoldBright,
+			scope:Computed(function(use): string
+				return Text.get(use, "quest.reward.cosmetic", { name = Text.get(use, cosmeticDef.nameKey) })
 			end),
 			size
 		))

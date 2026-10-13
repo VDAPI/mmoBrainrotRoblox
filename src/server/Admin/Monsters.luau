@@ -21,6 +21,8 @@ local Config = require(Shared.Config)
 local Damage = require(Shared.Logic.Damage)
 local Monsters = require(Shared.Data.Monsters)
 local MonsterStats = require(Shared.Logic.MonsterStats)
+local MountData = require(Shared.Data.Mounts)
+local Mounts = require(Shared.Logic.Mounts)
 
 local Context = require(script.Parent.Context)
 
@@ -331,6 +333,31 @@ commands.bosssim = function(player, args)
 		myth = result.mythic,
 		legEvery = every(result.legendary),
 		mythEvery = every(result.mythic),
+	})
+end
+
+-- S97: n personal mount rolls of a boss on a fresh character (nothing owned), a seeded Rng of its own.
+commands.mountsim = function(player, args)
+	local bossId = args[1]
+	local drop = bossId and MountData.BOSS_DROPS[bossId]
+	if not drop then
+		reply(player, "admin.usage.mountsim")
+		return
+	end
+	local n = math.clamp(parseAmount(args[2]) or 1000, 1, 100000)
+	local rng = Rng.new(os.time())
+	local mounts, skins = 0, 0
+	for _ = 1, n do
+		local result = Mounts.rollBossDrop(bossId, {}, {}, rng)
+		mounts += if result.mount then 1 else 0
+		skins += if result.skin then 1 else 0
+	end
+	reply(player, "admin.mount.sim", {
+		boss = bossId,
+		n = n,
+		mounts = mounts,
+		skins = skins,
+		expected = string.format("%.0f", Mounts.expectedKills(drop.mountChance or 0)),
 	})
 end
 

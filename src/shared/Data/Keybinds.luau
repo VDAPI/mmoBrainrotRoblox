@@ -7,7 +7,7 @@ export type Action = {
 	default: string,
 	labelKey: string,
 	group: "windows" | "combat" | "world",
-	wiki: boolean?, -- S96: false = left out of the wiki key list (the mount key until S97)
+	wiki: boolean?, -- S96: false = left out of the wiki key list
 }
 
 local actions: { Action } = {
@@ -18,6 +18,7 @@ local actions: { Action } = {
 	{ id = "win_quests", default = "L", labelKey = "hud.menu.quests", group = "windows" },
 	{ id = "win_guild", default = "G", labelKey = "hud.menu.guild", group = "windows" },
 	{ id = "win_party", default = "P", labelKey = "hud.menu.party", group = "windows" },
+	{ id = "win_mounts", default = "J", labelKey = "hud.menu.mounts", group = "windows" }, -- S97: mounts window
 	-- S68: held, pins the item tooltip so the mouse can point at its lines (details panel)
 	{ id = "item_details", default = "LeftAlt", labelKey = "keys.itemDetails", group = "windows" },
 	{ id = "skill_1", default = "One", labelKey = "keys.skill.1", group = "combat" },
@@ -38,7 +39,7 @@ local actions: { Action } = {
 	{ id = "sprint", default = "LeftControl", labelKey = "keys.sprint", group = "world" },
 	{ id = "interact", default = "E", labelKey = "keys.interact", group = "world" },
 	{ id = "pickup", default = "F", labelKey = "keys.pickup", group = "world" },
-	{ id = "mount", default = "H", labelKey = "keys.mount", group = "world", wiki = false }, -- S96: ride / dismount
+	{ id = "mount", default = "H", labelKey = "keys.mount", group = "world" }, -- S96: ride / dismount (wiki from S97)
 }
 
 -- Keys a player may bind. Movement (WASD, arrows, Space), camera (I/O, Shift), chat (/), Esc and the

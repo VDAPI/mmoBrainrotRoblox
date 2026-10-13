@@ -423,7 +423,7 @@ T.describe("Wiki export: consistency", function()
 		local KeybindData = require("../src/shared/Data/Keybinds")
 		local PvpRules = require("../src/shared/Logic/PvpRules")
 		local Areas = require("../src/shared/Data/Areas")
-		-- S96: actions with wiki = false (the mount key until S97) stay off the list
+		-- S96: actions with wiki = false stay off the list (S97 published the mount key)
 		local shownKeys = 0
 		for _, action in KeybindData.actions do
 			if action.wiki ~= false then
@@ -1070,5 +1070,66 @@ T.describe("Wiki export: skill planner (S82)", function()
 		end
 		T.expect(#d.skills.rules.rows).toBe(#PathData.ROWS)
 		T.expect(d.skills.rules.dipRows).toBe(PathData.DIP_ROWS)
+	end)
+end)
+
+T.describe("Wiki export: mounts (S97)", function()
+	local MountConfig = require("../src/shared/Config").Mount
+
+	T.it("publishes the stable arc with its horse and mount skin", function()
+		local byId: { [string]: any } = {}
+		for _, q in d.quests.side do
+			byId[q.id] = q
+		end
+		for _, id in { "side_stable_harness", "side_stable_stallion", "side_stable_ride" } do
+			T.expect(byId[id] ~= nil).toBe(true)
+		end
+		T.expect(byId.side_stable_ride.reward.mount).toBe("mount_horse")
+		T.expect(byId.side_stable_ride.reward.cosmetic).toBe("mountskin_meadow")
+		local vaelgrath = nil
+		for _, q in d.quests.main do
+			if q.id == "vaelgrath" then
+				vaelgrath = q
+			end
+		end
+		T.expect(vaelgrath and vaelgrath.reward.cosmetic).toBe("mountskin_dragonslayer")
+	end)
+
+	T.it("exports the mounts without the premium one and without any price", function()
+		T.expect(d.mounts ~= nil).toBe(true)
+		local ids: { [string]: boolean } = {}
+		for _, m in d.mounts.mounts do
+			ids[m.id] = true
+			T.expect(m.source ~= "premium").toBe(true)
+		end
+		for _, id in { "mount_horse", "mount_grimrok", "mount_morvane", "mount_azgor", "mount_vaelgrath" } do
+			T.expect(ids[id]).toBe(true)
+		end
+		T.expect(ids.mount_royal).toBe(nil)
+		T.expect(#d.mounts.levels).toBe(MountConfig.maxLevel)
+		T.expect(d.mounts.levels[1].gold).toBe(nil)
+		T.expect(d.mounts.levels[2].gold ~= nil).toBe(true)
+		local text = result.files["wiki/src/data/mounts.json"]
+		for _, key in { '"productId"', '"robux"', '"enabled"', '"price"', '"product"', "mount_royal" } do
+			T.expect(string.find(text, key, 1, true)).toBe(nil)
+		end
+		local SOURCES = { shop = true, boss = true, quest = true }
+		T.expect(#d.mounts.skins >= 8).toBe(true)
+		for _, s in d.mounts.skins do
+			T.expect(SOURCES[s.source]).toBe(true)
+		end
+	end)
+
+	T.it("lists the mount skins in cosmetics.json without new fields", function()
+		local kinds: { [string]: boolean } = {}
+		for _, k in d.cosmetics.kinds do
+			kinds[k.id] = true
+		end
+		T.expect(kinds.mountskin).toBe(true)
+		for _, c in d.cosmetics.cosmetics do
+			T.expect(c.skin).toBe(nil)
+			T.expect(c.obtain).toBe(nil)
+			T.expect(c.price).toBe(nil)
+		end
 	end)
 end)

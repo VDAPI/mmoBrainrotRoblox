@@ -1,15 +1,22 @@
 --!strict
 -- S96: mounts 1 (docs/DESIGN-15.md §2): data (Data/Mounts, Config.Mount), the horse look (Logic/Anatomy plan "horse"),
--- riding speed, places, who may mount, granting, the seat, the rider pose and the save template.
+-- riding speed, places, who may mount, granting, the seat, the rider pose and the save template. S97: the upgrade
+-- curve, canUpgrade, boss and premium mounts, the boss roll, skins over the look and the quest skins.
 
 local AccountSchema = require("../src/shared/Logic/AccountSchema")
 local Anatomy = require("../src/shared/Logic/Anatomy")
 local Config = require("../src/shared/Config")
+local Cosmetics = require("../src/shared/Data/Cosmetics")
+local Exp = require("../src/shared/Logic/Exp")
+local Items = require("../src/shared/Data/Items")
+local LootTables = require("../src/shared/Data/LootTables")
 local Maps = require("../src/shared/Data/Maps")
 local MountData = require("../src/shared/Data/Mounts")
 local Mounts = require("../src/shared/Logic/Mounts")
+local Products = require("../src/shared/Data/Products")
 local Quests = require("../src/shared/Data/Quests")
 local RiderPose = require("../src/shared/Logic/RiderPose")
+local Rng = require("../src/shared/Logic/Rng")
 local StatCalc = require("../src/shared/Logic/StatCalc")
 local Test = require("./Test")
 local en = require("../src/shared/Data/Localization/en")
@@ -74,7 +81,7 @@ describe("Mounts: data", function()
 		local h = horse()
 		expect(h.source).toBe("quest")
 		expect(h.startLevel).toBe(1)
-		expect(h.wiki).toBe(false)
+		expect(h.wiki).toBe(nil) -- S97: on the wiki
 	end)
 
 	it("has valid real model entries and riding rules", function()
@@ -363,6 +370,317 @@ describe("Mounts: seat, rider pose and save", function()
 		AccountSchema.migrate(data)
 		expect(data.characters["1"].mounts.owned).toEqual({})
 		expect(data.characters["1"].mounts.riding).toBe(false)
+	end)
+end)
+
+-- S97: mounts 2 ------------------------------------------------------------------------------------------------------
+
+local function upgradeCharacter(level: number, gold: number, lvl: number?): Mounts.UpgradeCharacter
+	return {
+		level = level,
+		gold = gold,
+		mounts = { owned = { mount_horse = { lvl = lvl or 1 } }, active = "mount_horse", riding = false },
+	}
+end
+
+local function stepInv(step: MountData.UpgradeStep): { [string]: number }
+	local inv: { [string]: number } = {}
+	for _, m in step.materials do
+		inv[m.id] = (inv[m.id] or 0) + m.n
+	end
+	return inv
+end
+
+describe("S97 upgrade curve", function()
+	it("has steps 2..maxLevel with rising levels and gold and monster parts only", function()
+		local M = Config.Mount
+		local keys = 0
+		for k in MountData.UPGRADE do
+			keys += 1
+			expect(k >= 2 and k <= M.maxLevel and k == math.floor(k)).toBe(true)
+		end
+		expect(keys).toBe(M.maxLevel - 1)
+		expect(MountData.UPGRADE[2].level).toBe(M.minLevel)
+		expect(MountData.UPGRADE[M.maxLevel].level <= 95).toBe(true)
+		local lastLevel, lastGold = 0, 0
+		for n = 2, M.maxLevel do
+			local step = MountData.UPGRADE[n]
+			expect(step.level >= lastLevel).toBe(true)
+			expect(step.gold > lastGold and step.gold > 0).toBe(true)
+			lastLevel, lastGold = step.level, step.gold
+			expect(#step.materials > 0).toBe(true)
+			for _, m in step.materials do
+				local item = Items.get(m.id)
+				expect(item ~= nil and item.category == "material").toBe(true)
+				expect(m.n > 0).toBe(true)
+				expect(string.find(m.id, "^essence_") == nil and m.id ~= "legend_core").toBe(true)
+				expect(string.find(m.id, "^scroll_") == nil).toBe(true)
+			end
+			expect(Mounts.upgradeCost(n)).toBe(step)
+		end
+		expect(Mounts.upgradeCost(1)).toBe(nil)
+		expect(Mounts.upgradeCost(M.maxLevel + 1)).toBe(nil)
+	end)
+
+	it("speeds depend on the mount level only (no pay2win) and mounting gets faster at fastFromLevel", function()
+		local M = Config.Mount
+		expect(Mounts.mountTime(M.fastFromLevel - 1)).toBe(M.mountTime)
+		expect(Mounts.mountTime(M.fastFromLevel)).toBe(M.mountTimeFast)
+		expect(Mounts.speedMul(M.maxLevel)).toBeNear(M.maxMul, 1e-9)
+		for lvl = 1, M.maxLevel do
+			local speeds: { [number]: boolean } = {}
+			for _, def in MountData.list do
+				if def.startLevel <= lvl then
+					-- the same rule for every mount: only the level enters the formula
+					local speed = Mounts.walkSpeed({
+						riding = true,
+						lvl = lvl,
+						walk = 16,
+						gearMove = 0,
+						sprint = false,
+						factor = 1,
+					})
+					expect(speed <= 16 * M.maxMul + 1e-9).toBe(true)
+					speeds[math.floor(speed * 1000 + 0.5)] = true
+				end
+			end
+			local n = 0
+			for _ in speeds do
+				n += 1
+			end
+			expect(n).toBe(1)
+		end
+		-- DESIGN-15 §2: gear moveSpeed counts in the saddle, sprint does not, slows do
+		local base: Mounts.SpeedInput = { riding = true, lvl = 1, walk = 16, gearMove = 30, sprint = false, factor = 1 }
+		expect(Mounts.walkSpeed(base)).toBeNear(33.28, 1e-9)
+		local sprinting = table.clone(base)
+		sprinting.sprint = true
+		expect(Mounts.walkSpeed(sprinting)).toBeNear(33.28, 1e-9)
+		local slowed = table.clone(base)
+		slowed.factor = 0.5
+		expect(Mounts.walkSpeed(slowed)).toBeNear(16.64, 1e-9)
+	end)
+end)
+
+describe("S97 canUpgrade", function()
+	local step2 = MountData.UPGRADE[2]
+	local step3 = MountData.UPGRADE[3]
+
+	it("upgrades a horse with enough level, gold and parts", function()
+		local ok, err, step = Mounts.canUpgrade(upgradeCharacter(25, 50000), "mount_horse", stepInv(step2))
+		expect(ok).toBe(true)
+		expect(err).toBe(nil)
+		expect(step).toBe(step2)
+	end)
+
+	it("reports the reasons in order", function()
+		local inv = stepInv(step2)
+		local function reason(c: Mounts.UpgradeCharacter, id: string, have: { [string]: number }): string?
+			local _, err = Mounts.canUpgrade(c, id, have)
+			return err
+		end
+		expect(reason(upgradeCharacter(25, 50000), "mount_grimrok", inv)).toBe("mount.error.notOwned")
+		expect(reason(upgradeCharacter(99, 1e9, Config.Mount.maxLevel), "mount_horse", inv)).toBe(
+			"mount.error.maxLevel"
+		)
+		expect(reason(upgradeCharacter(24, 50000, 2), "mount_horse", stepInv(step3))).toBe("mount.error.upgradeLevel")
+		expect(reason(upgradeCharacter(25, step2.gold - 1), "mount_horse", inv)).toBe("mount.error.gold")
+		local short = table.clone(inv)
+		local first = step2.materials[1]
+		short[first.id] = first.n - 1
+		expect(reason(upgradeCharacter(25, 50000), "mount_horse", short)).toBe("mount.error.materials")
+		-- a low level and too little gold: the level first
+		expect(reason(upgradeCharacter(24, 0, 2), "mount_horse", {})).toBe("mount.error.upgradeLevel")
+		local noState: Mounts.UpgradeCharacter = { level = 50, gold = 1e9, mounts = nil }
+		expect(reason(noState, "mount_horse", inv)).toBe("mount.error.notOwned")
+	end)
+end)
+
+describe("S97 boss and premium mounts", function()
+	local START: { [string]: number } = { grimrok = 3, morvane = 4, azgor = 5, vaelgrath = 6 }
+
+	it("gives every region boss one mount with its start level", function()
+		local maxBoss = 0
+		for _, bossId in LootTables.regionBoss do
+			local found: { MountData.MountDef } = {}
+			for _, def in MountData.list do
+				if def.source == "boss" and def.boss == bossId then
+					table.insert(found, def)
+				end
+			end
+			expect(#found).toBe(1)
+			expect(found[1].startLevel).toBe(START[bossId])
+			expect(Mounts.bossMountOf(bossId)).toBe(found[1].id)
+			expect(hasKey(`mount.{found[1].id}.desc`)).toBe(true)
+			maxBoss = math.max(maxBoss, found[1].startLevel)
+		end
+		for _, def in MountData.list do
+			if def.source == "premium" then
+				expect(def.startLevel <= maxBoss).toBe(true)
+				expect(def.product ~= nil and Products.getMount(def.product :: string) ~= nil).toBe(true)
+				expect(def.wiki).toBe(false)
+			end
+		end
+		for _, entry in Products.mounts do
+			-- turning one on is the owner's decision and a change of this test
+			expect(entry.enabled).toBe(false)
+			expect(MountData.get(entry.mount) ~= nil).toBe(true)
+		end
+	end)
+
+	it("drops boss mounts and skins at flat, rare chances", function()
+		local last = math.huge
+		for _, bossId in LootTables.regionBoss do
+			local drop = MountData.BOSS_DROPS[bossId]
+			expect(drop ~= nil).toBe(true)
+			local mount = MountData.get(drop.mount :: string)
+			expect(mount ~= nil and mount.source == "boss" and mount.boss == bossId).toBe(true)
+			local chance = drop.mountChance :: number
+			expect(chance >= 0.005 and chance <= 0.03).toBe(true)
+			expect(chance <= last).toBe(true)
+			last = chance
+			local kills = Mounts.expectedKills(chance)
+			expect(kills >= 30 and kills <= 200).toBe(true)
+			if drop.skin then
+				local skin = Cosmetics.get(drop.skin)
+				expect(skin ~= nil and skin.kind == "mountskin").toBe(true)
+				local obtain = skin and skin.obtain
+				expect(obtain and obtain.boss).toBe(bossId)
+			end
+		end
+		for _, def in Cosmetics.list do
+			local obtain = def.obtain
+			if obtain and obtain.boss then
+				local drop = MountData.BOSS_DROPS[obtain.boss]
+				expect(drop ~= nil and drop.skin == def.id).toBe(true)
+			end
+		end
+	end)
+end)
+
+describe("S97 rollBossDrop", function()
+	it("rolls the mount and the skin at their chances", function()
+		local N = 200000
+		local rng = Rng.new(97)
+		local mounts, skins = 0, 0
+		for _ = 1, N do
+			local r = Mounts.rollBossDrop("grimrok", {}, {}, rng)
+			mounts += if r.mount then 1 else 0
+			skins += if r.skin then 1 else 0
+		end
+		local grimrok = MountData.BOSS_DROPS.grimrok
+		local mountChance = grimrok.mountChance :: number
+		expect(mounts / N).toBeNear(mountChance, mountChance * 0.1)
+		expect(skins).toBe(0)
+		local morvane = MountData.BOSS_DROPS.morvane
+		local skinChance = morvane.skinChance :: number
+		skins = 0
+		for _ = 1, N do
+			skins += if Mounts.rollBossDrop("morvane", {}, {}, rng).skin then 1 else 0
+		end
+		expect(skins / N).toBeNear(skinChance, skinChance * 0.1)
+	end)
+
+	it("skips owned drops and unknown bosses without touching the rng", function()
+		local morvane = MountData.BOSS_DROPS.morvane
+		local rng = Rng.new(5)
+		local copy = Rng.new(5)
+		local owned: { [string]: any } = { [morvane.mount :: string] = { lvl = 4 } }
+		local skins: { [string]: boolean } = { [morvane.skin :: string] = true }
+		expect(Mounts.rollBossDrop("morvane", owned, skins, rng)).toEqual({})
+		expect(Mounts.rollBossDrop("nobody", {}, {}, rng)).toEqual({})
+		expect(rng:next()).toBe(copy:next())
+		-- the same seed, the same sequence
+		local a, b = Rng.new(11), Rng.new(11)
+		for _ = 1, 500 do
+			expect(Mounts.rollBossDrop("azgor", {}, {}, a)).toEqual(Mounts.rollBossDrop("azgor", {}, {}, b))
+		end
+	end)
+end)
+
+describe("S97 lookWith", function()
+	it("puts a skin over a mount without touching the data", function()
+		local def = assert(MountData.get("mount_azgor"))
+		local skin = assert(Cosmetics.get("mountskin_meadow"))
+		local before = table.clone(def.look.colors)
+		local out = Mounts.lookWith(def.look, skin)
+		local over = skin.skin :: Cosmetics.Skin
+		for role, color in over.colors :: { [string]: string } do
+			expect(out.colors[role]).toBe(color)
+		end
+		local seen: { [string]: number } = {}
+		for _, part in out.parts do
+			seen[part] = (seen[part] or 0) + 1
+		end
+		for _, part in def.look.parts :: { string } do
+			expect(seen[part]).toBe(1)
+		end
+		for _, part in over.parts :: { string } do
+			expect(seen[part]).toBe(1)
+		end
+		expect(table.isfrozen(def)).toBe(true)
+		expect(def.look.colors).toEqual(before)
+		local cinder = assert(Cosmetics.get("mountskin_cinder"))
+		expect(Mounts.lookWith(def.look, cinder).glow).toBe((cinder.skin :: Cosmetics.Skin).glow)
+		-- nil and another kind: an unchanged copy
+		expect(Mounts.lookWith(def.look, nil).colors).toEqual(def.look.colors)
+		expect(Mounts.lookWith(def.look, Cosmetics.get("outfit_ranger")).parts).toEqual(def.look.parts)
+	end)
+
+	it("builds every mount with every skin within the budget, with a saddle", function()
+		local skins: { Cosmetics.Def } = {}
+		for _, c in Cosmetics.list do
+			if c.kind == "mountskin" then
+				table.insert(skins, c)
+			end
+		end
+		expect(#skins >= 8).toBe(true)
+		for _, def in MountData.list do
+			for i = 0, #skins do
+				local skin = if i == 0 then nil else skins[i]
+				local rig = Anatomy.build(
+					Mounts.lookWith(def.look, skin),
+					{ id = def.id, variant = "mount", scale = def.scale or 1 }
+				)
+				expect(#rig.pieces <= Anatomy.BUDGET.mount).toBe(true)
+				expect(rig.sockets.Saddle ~= nil).toBe(true)
+			end
+		end
+	end)
+end)
+
+describe("S97 quest skins", function()
+	local function questOf(id: string): any
+		return Quests.Main.get(id) or Quests.Side.get(id)
+	end
+
+	it("ties quest skins and Reward.cosmetic both ways, without touching EXP and gold", function()
+		for _, c in Cosmetics.list do
+			local obtain = c.obtain
+			if obtain and obtain.quest then
+				local quest = questOf(obtain.quest)
+				expect(quest ~= nil).toBe(true)
+				expect(quest.reward.cosmetic).toBe(c.id)
+				expect(c.price).toBe(0)
+			end
+		end
+		local lists: { { any } } = { Quests.Main.list :: any, Quests.Side.list :: any }
+		for _, list in lists do
+			for _, quest in list do
+				local id = quest.reward.cosmetic
+				if id then
+					local c = Cosmetics.get(id)
+					local obtain = c and c.obtain
+					expect(obtain ~= nil and obtain.quest == quest.id).toBe(true)
+				end
+			end
+		end
+		local ride = questOf("side_stable_ride")
+		expect(ride.reward.exp).toBe(math.floor(Exp.expToNext(22) * 0.1))
+		expect(ride.reward.gold).toBe(math.floor((60 + 22 * 45) * 0.5))
+		local vaelgrath = questOf("vaelgrath")
+		expect(vaelgrath.reward.exp).toBe(math.floor(Exp.expToNext(99) * 1.5))
+		expect(vaelgrath.reward.gold).toBe((60 + 100 * 45) * 5)
 	end)
 end)
 

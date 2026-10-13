@@ -320,6 +320,7 @@ q({
 		gold = gold(100) * 5,
 		-- The one Scroll of Unbinding of the story.
 		items = { { id = "scroll_unbind", n = 1 }, { id = "blessing_fortune_4", n = 1 } },
+		cosmetic = "mountskin_dragonslayer", -- S97: the Dragonslayer's mount colours
 	},
 })
 
