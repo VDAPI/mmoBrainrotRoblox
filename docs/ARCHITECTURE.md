@@ -182,6 +182,13 @@ type CharacterData = {
 - **Prawdziwe modele (S24, `docs/ASSETS.md`):** Rojo mapuje `assets/` na `ReplicatedStorage.Assets` (`ignoreUnknownInstances`, więc modele wklejone w Studio zostają). Gdy wpis ma `asset` i `Assets.Monsters.<model>` istnieje, klient klonuje model, usuwa z kopii wszystkie skrypty, zamienia `Humanoid` na `AnimationController` + `Animator`, skaluje raz (`ScaleTo`) i spawa `PrimaryPart` z HRP. `asset.rig`: `animator` (klipy z `asset.anims`, wybór `Logic/LookAnim`: death > hit > atak/cast > run/walk > idle, zastępstwa, prędkość chodu = prędkość / `walkSpeed`), `gait` (motory `Gait_*`) albo `static`. Bez pliku: generator, jedno ostrzeżenie. Pety: `Assets.Pets.<id>` (statyczne).
 - **Kontrakt modelu potwora (nie łam):** potwory to bezpośrednie dzieci `Workspace.Monsters`; HRP to hitbox (`max(X,Z)/2` = promień walki); ziemia = `HRP.Y − HipHeight − HRP.Size.Y/2`; atrybuty `MonsterId`, `Variant`, `NameKey`, `Level`, `MaxHp`, `Hp`, `Look*` przed parentowaniem, `EntityId` po; klik idzie w górę do Modelu z `EntityId`.
 - Liczby obrażeń, efekty uderzeń, telegrafy: wysyłane eventem do klientów w zasięgu, rysowane lokalnie.
+- **Wierzchowce (S96, DESIGN-15 §2):** `MountService` (`Deps`: `PlayerStateService`, `CharacterService`,
+  `StatService`, `ResourceService`, `ZoneService`; od niego zależą `SkillService`, `TravelService`, `SideQuestService`,
+  `GatherService`, `FishingService`, `AdminService`). Remote `SetMounted(boolean) -> (ok, errKey?)` (rate 4), gałąź stanu
+  `mountCast` (pasek wsiadania), pole postaci `mounts`, atrybut modelu postaci `Mount`. Model wierzchowca
+  (`Util/MountLook`, nazwa i tag `VaelthornMount`) budowany na serwerze i przyspawany do HRP (`Massless`, bez kolizji),
+  `HipHeight` podniesiony do siodła; klienci animują nogi i pozę jeźdźca po tagu (`AnimationController`). Szybkość chodu:
+  `StatService.SetMountProvider` + jeden wzór `Logic/Mounts.walkSpeed` (pieszo i w siodle). Reguły: `Logic/Mounts`.
 - **Filtry obrażeń gracza (S61):** `ResourceService.SetDamageFilter(filter, priority)` z `FilterPriority` (przechwyt 10,
   redukcje i tarcze 20, Anioł Stróż 90, nokaut pojedynku 100); filtr dostaje `(player, amount, source, attacker?)`.
 - **Aury i strefy (S61):** `PartyAuraService` co 1 s odświeża krótkie wzmocnienia aur drużyny (`Paths.auras`,

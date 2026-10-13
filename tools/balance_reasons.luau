@@ -55,6 +55,9 @@ return {
 		{ path = "Data/Market" },
 		{ path = "Data/MonsterAbilities", omit = LOOKS },
 		{ path = "Data/Monsters", omit = LOOKS },
+		-- S96: mount speed and start levels are pace numbers; the look, the riding rules, the rider pose and the real
+		-- model hook are not
+		{ path = "Data/Mounts", omit = { "look", "RULES", "RIDER", "assets" } },
 		{ path = "Data/Paths/Cleric" },
 		{ path = "Data/Paths/Hunter" },
 		{ path = "Data/Paths/Mage" },
@@ -77,7 +80,7 @@ return {
 		{ path = "Data/Skills/init", omit = { "byId", "byClass" } },
 		{ path = "Data/Stats" },
 	} :: { ModuleEntry },
-	CONFIG_KEYS = { "MaxLevel", "PotionCooldown", "Upgrade", "BossLoot" },
+	CONFIG_KEYS = { "MaxLevel", "PotionCooldown", "Upgrade", "BossLoot", "Mount" },
 	NOT_BALANCE = {
 		["Data/AdminCommands"] = "sekret",
 		["Data/Codes"] = "sekret",
@@ -2979,5 +2982,27 @@ return {
 			},
 		},
 		["Shops:byId.fence*"] = { { session = "S95", why = "the dealer: buys and sells back only (no entries)" } },
+		-- S96 (DESIGN-15 §2): mounts 1 (the stablemaster's horse, riding, combat and place rules)
+		["Config:Mount*"] = {
+			{
+				session = "S96",
+				why = "new table: a mount from level 20, walk speed x1.6 -> x2.0 over mount levels 1-10 (DESIGN-15 §2), mounting 1.5 s (1.0 s from mount level 5), 2.5 studs of movement break it",
+			},
+		},
+		["Mounts:*"] = {
+			{
+				session = "S96",
+				why = "new module: the stablemaster's bay horse starts at mount level 1 (x1.6 walk speed, DESIGN-15 §2)",
+			},
+		},
+		["Quests/Side:byArc.stable*"] = {
+			{
+				session = "S96",
+				why = "new stable arc 21-22 (taken from 20 through minLevel, 1-20 untouched): 0.1 of a level's EXP per quest (the mount is the reward; S98 budgets the arc), gold as side quests (gold(level)), 3 harness pieces at 40%, 6 bears, a 3 s use, reach the stable within 14 studs",
+			},
+		},
+		["Quests/Side:STABLE_MIN"] = {
+			{ session = "S96", why = "the stable arc is offered from level 20 (= Config.Mount.minLevel)" },
+		},
 	} :: { [string]: { Reason } },
 }

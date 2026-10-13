@@ -48,6 +48,7 @@ local Definitions: { [string]: Definition } = {
 	-- (entityId or nil to clear, attack: false keeps the target but stops the auto-attack; S18)
 	SetTarget = { kind = "event", dir = "c2s", rate = 12, args = { "string?", "boolean?" } },
 	SetSprint = { kind = "event", dir = "c2s", rate = 10, args = { "boolean" } }, -- S18
+	SetMounted = { kind = "function", dir = "c2s", rate = 4, args = { "boolean" } }, -- S96: (true = mount, false = dismount) -> (ok, errKey?)
 	-- S20: quick sell (npcId, max rarity 1..2), item lock (backpack index)
 	SellAll = { kind = "function", dir = "c2s", rate = 2, args = { "string", "integer" } },
 	ToggleLock = { kind = "function", dir = "c2s", rate = 6, args = { "integer" } },

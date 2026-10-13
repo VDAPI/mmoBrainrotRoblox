@@ -23,6 +23,8 @@ właściciel (`docs/GRAFIKA.md` 6).
 - `assets/Pets/<petId>.rbxm` → `ReplicatedStorage.Assets.Pets.<petId>` (statyczny model peta, zastępuje generator bez wpisu w danych).
 - `assets/Weapons/<paczka>.rbxm` → `ReplicatedStorage.Assets.Weapons.<paczka>` (folder MeshPartów broni nazwanych jak
   `model` w `WeaponLooks.assets`; gra szuka po nazwie w całym `Assets.Weapons`). Źródła `.glb` leżą obok tylko lokalnie.
+- `assets/Mounts/<model>.rbxm` → `ReplicatedStorage.Assets.Mounts.<model>` (S96: model wierzchowca z wpisem w
+  `Data/Mounts.assets`, sekcja „Wierzchowce”).
 - `art/icons/src/<grupa>/<klucz>.png` → atlasy `art/icons/items_<n>.png` (packer `tools/icons/import_png.py`).
 - Foldery mają `init.meta.json` z `ignoreUnknownInstances`, więc model wklejony ręcznie w Studio nie znika przy `rojo serve`. Żeby trafił do repozytorium, zapisz go jako `.rbxm` w odpowiednim folderze.
 
@@ -53,6 +55,21 @@ atrybuty i światło jak klockom. Limit Roblox: 20 tys. trójkątów na MeshPart
 7. Commit `assets/Weapons/Meadows.rbxm` (bez `.glb`).
 8. Ikony: wgraj w Asset Manager tylko atlasy z pustym id w `src/shared/Data/ItemIconSheets.luau` (dziś `items_4.png` ..
    `items_7.png`) i wklej ich id w tej samej kolejności; commit.
+
+## Wierzchowce (S96)
+
+Prawdziwy model zastępuje wygląd z generatora (plan `horse`, `docs/MODELE.md` §8) dla wierzchowca:
+1. Model (Model z częściami albo MeshPartami) zwrócony głową w **−Z**, pivot na **ziemi** między kopytami, skala
+   docelowa (koń ok. 6,5 st. do czubka uszu). Rig: części połączone stawami (`Motor6D`) albo jedna bryła.
+2. Zapisz w Studio jako `assets/Mounts/<model>.rbxm` (folder ma `ignoreUnknownInstances`); Rojo wstawi go do
+   `ReplicatedStorage.Assets.Mounts.<model>`.
+3. Wpis w `src/shared/Data/Mounts.luau` → `Mounts.assets`:
+   `mount_horse = { model = "<model>", saddle = { x, y, z }, rig = "animator", walkSpeed = 26, anims = { idle = "rbxassetid://…", walk = "rbxassetid://…", run = "rbxassetid://…" } }`.
+   `saddle` = miejsce siodła od pivota (st.; jeździec siada `Data/Mounts.RIDER.seatLift` wyżej), `rig`: `animator`
+   (klipy z `anims`, wybór jak u potworów: `run` od 20 st./s, prędkość klipu = prędkość / `walkSpeed`), `gait` (stawy
+   `Motor6D` `Gait_*` z atrybutami jak w generatorze) albo `static` (stoi; części spawane do `PrimaryPart`).
+4. Gra usuwa z kopii skrypty, wyłącza kolizje, dotyk, zapytania i masę. Bez pliku albo bez wpisu zostaje wygląd
+   proceduralny (jedno ostrzeżenie w Output, gdy wpis jest, a pliku brak).
 
 ## Ikony przedmiotów (S35)
 

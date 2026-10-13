@@ -17,6 +17,7 @@ local PLANS: { [string]: Plan } = {
 	toad = Quadrupeds.toad,
 	lizard = Quadrupeds.lizard,
 	mammoth = Quadrupeds.mammoth,
+	horse = Quadrupeds.horse, -- S96: mounts
 	serpent = Creatures.serpent,
 	spider = Creatures.spider,
 	scorpion = Creatures.scorpion,

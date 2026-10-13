@@ -18,6 +18,7 @@ local Areas = require(Shared.Data.Areas)
 local Config = require(Shared.Config)
 local Items = require(Shared.Data.Items)
 local Maps = require(Shared.Data.Maps)
+local Mounts = require(Shared.Logic.Mounts)
 local Net = require(Shared.Net)
 local Placement = require(script.Parent.Parent.Placement)
 local Types = require(Shared.Types)
@@ -31,6 +32,7 @@ local TravelService = {
 		"CharacterService",
 		"DeathService",
 		"WorldService",
+		"MountService", -- S96: a teleport to a cave or a dungeon dismounts
 	},
 }
 
@@ -43,6 +45,7 @@ local ResourceService: any
 local CharacterService: any
 local DeathService: any
 local WorldService: any
+local MountService: any
 
 local tokens: { [Player]: number } = {}
 
@@ -66,6 +69,12 @@ function TravelService.TeleportToMap(player: Player, mapId: string, at: CFrame?)
 		return
 	end
 	local target = at or DeathService.SpawnCFrame(mapId, nil)
+	-- S96: riding goes on to maps where it is allowed (the mount is welded and moves along); elsewhere a quiet
+	-- dismount (a message behind the loading screen would be lost)
+	MountService.Interrupt(player)
+	if MountService.IsRiding(player) and not Mounts.allowedAt(mapId, nil) then
+		MountService.Dismount(player, "travel")
+	end
 	Net.Fire(player, "MapTransition", mapId)
 	task.wait(0.4)
 	pcall(function()
@@ -309,6 +318,7 @@ function TravelService.Init(registry)
 	CharacterService = registry.Get("CharacterService")
 	DeathService = registry.Get("DeathService")
 	WorldService = registry.Get("WorldService")
+	MountService = registry.Get("MountService")
 	InventoryService.UseHandlers.teleport = useStone
 end
 

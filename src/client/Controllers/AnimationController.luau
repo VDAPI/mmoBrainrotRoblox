@@ -12,9 +12,14 @@
 --   * skills (S28): every active skill plays its own motion (Data/SkillMotions through Logic/SkillPose) on the same
 --     joints plus the whole body (RootJoint: turns, flips, visual jumps) and the legs; it wins over the basic attack,
 --     stops on stun / death, freezes for a moment on a melee hit (hitstop) and may hold the character still while it
---     plays (`lock`, unless a breakpoint lets it move: castMove).
+--     plays (`lock`, unless a breakpoint lets it move: castMove);
+--   * mounts (S96): every model tagged "VaelthornMount" (Util/MountLook, welded under a rider) walks its Gait_* legs
+--     in step with the rider's speed (stride x Data/Mounts.RIDER.stride), a real model with MountRig "animator"
+--     plays its clips (Data/Mounts.assets anims) and "static" stands; the rider (character attribute Mount) sits
+--     astride with the legs of Logic/RiderPose (the arms stay free for the basic attack).
 -- Everything runs locally on every client, so other players see the same motion.
 
+local CollectionService = game:GetService("CollectionService")
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
@@ -27,6 +32,8 @@ local SkillMotions = require(ReplicatedStorage.Shared.Data.SkillMotions)
 local SkillPose = require(ReplicatedStorage.Shared.Logic.SkillPose)
 local LookAnim = require(ReplicatedStorage.Shared.Logic.LookAnim)
 local MonsterLooks = require(ReplicatedStorage.Shared.Data.MonsterLooks)
+local MountData = require(ReplicatedStorage.Shared.Data.Mounts)
+local RiderPose = require(ReplicatedStorage.Shared.Logic.RiderPose)
 local UserInputService = game:GetService("UserInputService")
 
 local AnimationController = {
@@ -99,6 +106,34 @@ local function collectJoints(model: Model): { JointState }
 	return joints
 end
 
+-- Tracks of `anims` (slot -> animation id) on `animator` (S96: monsters and mounts).
+local function clipsFrom(animator: Animator, anims: { [string]: string }, walkSpeed: number?): Clips
+	local tracks: { [string]: AnimationTrack } = {}
+	for slot, id in anims do
+		local animation = animations[id]
+		if not animation then
+			local created = Instance.new("Animation")
+			created.AnimationId = id
+			animations[id] = created
+			animation = created
+		end
+		local ok, loaded = pcall(function()
+			return animator:LoadAnimation(animation :: Animation)
+		end)
+		if ok and loaded then
+			tracks[slot] = loaded
+		end
+	end
+	return {
+		animator = animator,
+		tracks = tracks,
+		playing = nil,
+		slot = nil,
+		walkSpeed = walkSpeed,
+		paused = false,
+	}
+end
+
 -- Clips of a real model (asset.rig = "animator"), loaded once per look.
 local function loadClips(model: Model): Clips?
 	local lookId = model:GetAttribute("Look")
@@ -112,30 +147,7 @@ local function loadClips(model: Model): Clips?
 	if not animator then
 		return nil
 	end
-	local tracks: { [string]: AnimationTrack } = {}
-	for slot, id in asset.anims :: { [string]: string } do
-		local animation = animations[id]
-		if not animation then
-			local created = Instance.new("Animation")
-			created.AnimationId = id
-			animations[id] = created
-			animation = created
-		end
-		local ok, loaded = pcall(function()
-			return (animator :: Animator):LoadAnimation(animation :: Animation)
-		end)
-		if ok and loaded then
-			tracks[slot] = loaded
-		end
-	end
-	return {
-		animator = animator :: Animator,
-		tracks = tracks,
-		playing = nil,
-		slot = nil,
-		walkSpeed = asset.walkSpeed,
-		paused = false,
-	}
+	return clipsFrom(animator :: Animator, asset.anims :: { [string]: string }, asset.walkSpeed)
 end
 
 -- (Re)collects the joints of a monster's look; called when the model arrives and when its look changes.
@@ -313,6 +325,141 @@ function AnimationController.MonsterHit(model: Model)
 	end
 end
 
+-- Mounts (S96) ------------------------------------------------------------------------------------------------
+
+local MOUNT_TAG = "VaelthornMount"
+local MOUNT_RUN_ABOVE = 20 -- speed from which a real mount model plays "run"
+
+type MountState = {
+	model: Model,
+	joints: { JointState },
+	clips: Clips?,
+	scale: number,
+	cycle: number,
+	move: number,
+	seed: number,
+}
+
+local mounts: { [Model]: MountState } = {}
+
+-- Clips of a real mount model (MountRig "animator", Data/Mounts.assets anims); a model without an Animator gets a
+-- local one (the clips only play on this client, like every animation here).
+local function mountClips(model: Model): Clips?
+	local id = model:GetAttribute("MountId")
+	local asset = if type(id) == "string" then MountData.assets[id] else nil
+	if not asset or not asset.anims then
+		return nil
+	end
+	local animator = model:FindFirstChildWhichIsA("Animator", true)
+	if not animator then
+		local controller = model:FindFirstChildWhichIsA("AnimationController", true)
+		if not controller then
+			local created = Instance.new("AnimationController")
+			created.Parent = model
+			controller = created
+		end
+		local created = Instance.new("Animator")
+		created.Parent = controller
+		animator = created
+	end
+	return clipsFrom(animator :: Animator, asset.anims, asset.walkSpeed)
+end
+
+local function trackMount(instance: Instance)
+	if not instance:IsA("Model") or mounts[instance] then
+		return
+	end
+	local rig = instance:GetAttribute("MountRig")
+	local scale = instance:GetAttribute("LookScale")
+	mounts[instance] = {
+		model = instance,
+		joints = if rig == "gait" then collectJoints(instance) else {},
+		clips = if rig == "animator" then mountClips(instance) else nil,
+		scale = if type(scale) == "number" then scale else 1,
+		cycle = 0,
+		move = 0,
+		seed = math.random() * 100,
+	}
+end
+
+local function riderRoot(model: Model): BasePart?
+	local rider = model.Parent
+	local root = rider and rider:FindFirstChild("HumanoidRootPart")
+	return if root and root:IsA("BasePart") then root else nil
+end
+
+local function stepMountClips(clips: Clips, speed: number)
+	local available: { [string]: boolean } = {}
+	for slot in clips.tracks do
+		available[slot] = true
+	end
+	local pick = LookAnim.pick({ speed = speed, runAbove = MOUNT_RUN_ABOVE, walkSpeed = clips.walkSpeed }, available)
+	if not pick then
+		return
+	end
+	local clip = clips.tracks[pick.slot]
+	if clips.slot ~= pick.slot or not clips.playing then
+		if clips.playing then
+			clips.playing:Stop(pick.fade)
+		end
+		clip.Looped = pick.looped
+		clip:Play(pick.fade)
+		clips.playing = clip
+		clips.slot = pick.slot
+	end
+	clip:AdjustSpeed(pick.speed)
+end
+
+-- Walk cycle of every mount near the camera from its rider's speed; legs from Logic/Gait or the model's clips.
+local function stepMounts(dt: number)
+	local camera = Workspace.CurrentCamera
+	local eye = if camera then camera.CFrame.Position else Vector3.zero
+	local now = os.clock()
+	for model, m in mounts do
+		if not model.Parent then
+			mounts[model] = nil
+			continue
+		end
+		local root = riderRoot(model)
+		if not root or (root.Position - eye).Magnitude > Config.EffectRadius then
+			continue
+		end
+		local velocity = root.AssemblyLinearVelocity
+		local speed = Vector3.new(velocity.X, 0, velocity.Z).Magnitude
+		local target = math.clamp(speed / 3, 0, 1)
+		m.move += (target - m.move) * math.min(1, dt * 8)
+		m.cycle = Gait.advance(m.cycle, dt, speed, m.scale * MountData.RIDER.stride)
+		local clips = m.clips
+		if clips then
+			stepMountClips(clips, speed)
+			continue
+		end
+		motion.cycle = m.cycle
+		motion.move = m.move
+		motion.time = now + m.seed
+		motion.raise = 0
+		motion.strike = 0
+		motion.hit = 0
+		motion.dead = 0
+		for _, j in m.joints do
+			local p = Gait.pose(j.joint, motion)
+			local k = j.scale
+			j.motor.Transform = CFrame.new(p.x * k, p.y * k, p.z * k) * CFrame.Angles(p.rx, p.ry, p.rz)
+		end
+	end
+end
+
+-- Rider pose of a character on a mount (nil on foot): the legs astride, lifted in step with the mount.
+local function riderPose(model: Model): AttackPose.Pose?
+	local id = model:GetAttribute("Mount")
+	if type(id) ~= "string" or id == "" then
+		return nil
+	end
+	local mount = model:FindFirstChild(MOUNT_TAG)
+	local m = if mount and mount:IsA("Model") then mounts[mount] else nil
+	return RiderPose.sample(if m then m.cycle else 0, if m then m.move else 0)
+end
+
 -- Characters: attack poses (S22) --------------------------------------------------------------------------
 
 -- A joint is a Motor6D or (avatar joint upgrade, S28) an AnimationConstraint: both take Transform.
@@ -433,7 +580,7 @@ local function jointTransform(joint: string, a: { number }, ref: JointRef, r6: b
 	return ref.rot:Inverse() * q * ref.rot
 end
 
-local function poseCharacter(model: Model, rig: Rig, now: number)
+local function poseCharacter(model: Model, rig: Rig, now: number, ride: AttackPose.Pose?)
 	-- A skill motion owns its joints; the basic attack the rest of the arms (S28).
 	local skillPose: AttackPose.Pose? = nil
 	local skillWeight = 0
@@ -470,17 +617,21 @@ local function poseCharacter(model: Model, rig: Rig, now: number)
 			flinch = math.rad(FLINCH_DEGREES) * math.sin(t * math.pi)
 		end
 	end
-	if not pose and not skillPose and flinch == 0 then
+	if not pose and not skillPose and flinch == 0 and not ride then
 		release(rig)
 		return
 	end
 	for joint, ref in rig.joints do
 		local fromSkill = skillPose and skillPose[joint]
-		local a = fromSkill or (if pose then pose[joint] else nil)
+		-- S96: the rider's legs and body lift (a skill dismounts, so the two meet only for a frame)
+		local fromRide = if ride and not fromSkill and table.find(RiderPose.JOINTS, joint) then ride[joint] else nil
+		local a = fromSkill or fromRide or (if pose then pose[joint] else nil)
 		local isAttackJoint = table.find(ATTACK_JOINTS, joint) ~= nil
 		local own: number
 		if fromSkill then
 			own = if joint == "waist" then skillWeight * 0.85 else skillWeight
+		elseif fromRide then
+			own = 1
 		elseif isAttackJoint and pose then
 			own = if joint == "waist" then weight * 0.6 else weight
 		elseif joint == "waist" and flinch ~= 0 then
@@ -505,12 +656,25 @@ local function poseCharacter(model: Model, rig: Rig, now: number)
 	end
 end
 
+-- S96: characters posed as riders last frame (released once when they dismount).
+local riders: { [Model]: boolean } = {}
+
 local function stepCharacters()
 	local camera = Workspace.CurrentCamera
 	local eye = if camera then camera.CFrame.Position else Vector3.zero
 	local now = os.clock()
 	local active: { [Model]: boolean } = {}
 	for model in attacks do
+		active[model] = true
+	end
+	-- S96: riders (the mount's parent) and riders who just dismounted
+	for mount in mounts do
+		local rider = mount.Parent
+		if rider and rider:IsA("Model") and rigOf(rider) then
+			active[rider] = true
+		end
+	end
+	for model in riders do
 		active[model] = true
 	end
 	for model in flinches do
@@ -526,15 +690,23 @@ local function stepCharacters()
 			attacks[model] = nil
 			flinches[model] = nil
 			skills[model] = nil
+			riders[model] = nil
 		elseif
 			model:GetAttribute("VaelthornPreview") ~= true and (root.Position - eye).Magnitude > Config.EffectRadius
 		then
 			attacks[model] = nil
 			flinches[model] = nil
 			skills[model] = nil
+			riders[model] = nil
 			release(rig)
 		else
-			poseCharacter(model, rig, now)
+			local ride = riderPose(model)
+			if ride then
+				riders[model] = true
+			else
+				riders[model] = nil
+			end
+			poseCharacter(model, rig, now, ride)
 		end
 	end
 end
@@ -659,7 +831,18 @@ function AnimationController.Start()
 	end)
 	RunService.PreSimulation:Connect(function(dt: number)
 		step(dt)
+		stepMounts(dt)
 		stepCharacters()
+	end)
+	-- S96: mounts arrive with their rider (one frame lets the attributes settle)
+	for _, instance in CollectionService:GetTagged(MOUNT_TAG) do
+		trackMount(instance)
+	end
+	CollectionService:GetInstanceAddedSignal(MOUNT_TAG):Connect(function(instance)
+		task.defer(trackMount, instance)
+	end)
+	CollectionService:GetInstanceRemovedSignal(MOUNT_TAG):Connect(function(instance)
+		mounts[instance :: Model] = nil
 	end)
 	local folder = Workspace:WaitForChild("Monsters", 60)
 	if not folder then

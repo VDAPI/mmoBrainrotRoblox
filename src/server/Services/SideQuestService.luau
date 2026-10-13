@@ -39,6 +39,7 @@ local SideQuestService = {
 		"CharacterService",
 		"ZoneService",
 		"WorldService",
+		"MountService", -- S96: quest interactions dismount, the stable arc gives the horse
 	},
 }
 
@@ -49,6 +50,7 @@ local NpcService: any
 local ResourceService: any
 local CharacterService: any
 local ZoneService: any
+local MountService: any
 
 local rng = Rng.new()
 
@@ -246,6 +248,12 @@ local function turnIn(player: Player, questId: string, choiceIndex: number?): (b
 	if chosen then
 		InventoryService.AddItem(player, chosen)
 	end
+	-- S96: the stable arc's last quest gives a mount (once per character; a repeated hand-in after /side reset does
+	-- nothing, Logic/Mounts.grant)
+	local mountId = quest.reward.mount
+	if mountId then
+		MountService.Grant(player, mountId, "quest")
+	end
 	Net.Fire(player, "CombatFx", { { k = "reward", exp = quest.reward.exp, gold = quest.reward.gold } })
 	Net.Fire(player, "QuestCompleted", `quest.{quest.id}.title`)
 	log:info("%s completed %s", player.Name, quest.id)
@@ -310,6 +318,7 @@ local function useAnchor(player: Player, anchorId: string): (boolean, string?)
 	if not quest or not objective then
 		return false, "error.badRequest"
 	end
+	MountService.Dismount(player, "action") -- S96: holding a quest interaction needs standing at the anchor
 	holdCounter += 1
 	local token = holdCounter
 	holds[player] = { token = token, anchor = anchorId }
@@ -448,6 +457,7 @@ function SideQuestService.Init(registry)
 	ResourceService = registry.Get("ResourceService")
 	CharacterService = registry.Get("CharacterService")
 	ZoneService = registry.Get("ZoneService")
+	MountService = registry.Get("MountService")
 end
 
 function SideQuestService.Start()

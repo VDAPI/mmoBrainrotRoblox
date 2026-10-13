@@ -13,6 +13,7 @@ local Maps = require("../../src/shared/Data/Maps")
 local Names = require("./Names")
 local Npcs = require("../../src/shared/Data/Npcs")
 local PathData = require("../../src/shared/Data/Paths")
+local QuestData = require("../../src/shared/Data/Quests")
 local Places = require("./Places")
 local Portals = require("../../src/shared/Data/Portals")
 local Rarities = require("../../src/shared/Data/Rarities")
@@ -20,6 +21,7 @@ local Schema = require("./Schema")
 local Shops = require("../../src/shared/Data/Shops")
 local Spawns = require("../../src/shared/Data/Spawns")
 local Town = require("../../src/shared/Data/Town")
+local Visibility = require("./Visibility")
 
 local S = Schema
 local arr, map, rec = S.arr, S.map, S.rec
@@ -242,8 +244,35 @@ local function spawnTotals(): { [string]: any }
 	return out
 end
 
+-- S96: quest anchors that only side quests hidden from the wiki use (the stable arc until S97) stay off the map.
+local function hiddenAnchors(): { [string]: boolean }
+	local hidden = Visibility.collect()
+	local usedHidden: { [string]: boolean } = {}
+	local usedShown: { [string]: boolean } = {}
+	for _, quest in QuestData.Side.list do
+		for _, objective in quest.objectives do
+			local ids: { string } = objective.anchors or (if objective.anchor then { objective.anchor } else {})
+			for _, id in ids do
+				if hidden[quest.id] then
+					usedHidden[id] = true
+				else
+					usedShown[id] = true
+				end
+			end
+		end
+	end
+	local out: { [string]: boolean } = {}
+	for id in usedHidden do
+		if not usedShown[id] then
+			out[id] = true
+		end
+	end
+	return out
+end
+
 function World.areasData(): any
 	local totals = spawnTotals()
+	local secretAnchors = hiddenAnchors()
 	local areas = {}
 	local features = {}
 	for _, mapId in Clean.keys(Areas.byMap) do
@@ -277,7 +306,9 @@ function World.areasData(): any
 		end
 		local anchors = {}
 		for _, q in data.questAnchors or {} do
-			table.insert(anchors, { id = q.id, x = q.x, z = q.z })
+			if not secretAnchors[q.id] then
+				table.insert(anchors, { id = q.id, x = q.x, z = q.z })
+			end
 		end
 		local spots = Json.object({})
 		for _, key in Clean.keys(data.npcSpots or {}) do

@@ -5,7 +5,7 @@
 
 ## Stan
 
-S01–S95 gotowe (lista i zakres w `docs/SESJE.md`). Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
+S01–S96 gotowe (lista i zakres w `docs/SESJE.md`). Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
 kategorie efektów drużyny i stos efektów (`Logic/EffectStack`), S54 wzory globalne (`Logic/LevelCurves`), S55 rangi
 i przełomy w kształcie A/B (`Build.bp2`, `Skills.effective` §2.7), S56 koniec punktów umiejętności: rangi z poziomu
 postaci (`Skills.rankFor`, drabina przejściowa ROZWOJ 2.6), zapis w schemacie 6 (darmowy reset statystyk, pasek
@@ -97,7 +97,10 @@ rudy mithrilu i adamantytu u kowala, części Szczytów i eliksir lodu od 70., t
 S83–S94 (`tools/balance_base.json`). S95 (pierwsza z DESIGN-15) sprzedawcy klas zamiast Zbrojmistrza: Wojownik w zamku,
 Kapłan przed świątynią, Łowca przed nową Lożą Łowców, Mag przed nową Wieżą Magów (`TownGen/ClassHalls`, późne budowle w
 `plan.py`); broń, druga ręka i zbroja klasy na progach 5…95, Zwykłe, zawsze słabsze od Unikatu (test), zakup innej
-klasy odrzucany; skupiec w zbrojowni (skup, odkup, „Gdzie kupię sprzęt?”); cel questu `classVendor`.
+klasy odrzucany; skupiec w zbrojowni (skup, odkup, „Gdzie kupię sprzęt?”); cel questu `classVendor`. S96 wierzchowce 1:
+od 20. poziomu gniady koń z łuku trzech zadań u stajennego (21–22, `SideQuest.minLevel`), jazda `16 × 1,6…2,0 × (1 +
+moveSpeed ze sprzętu)` bez buffów i sprintu, wsiadanie 1,5 s z przerwaniami, umiejętność zsiada, bez jazdy w jaskiniach,
+lochach i na arenie (`MountService`, `Logic/Mounts`, plan `horse`, klawisz H i przycisk na telefonie, `/mount`).
 Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`, `docs/STATY.md`) i łańcuch balansu
 zakończone; testy i decyzje właściciela po nich.
 
@@ -128,6 +131,7 @@ zakończone; testy i decyzje właściciela po nich.
 - **Sprzedawcy klas (S95)**: remis ciężkich rękawic progu 5 z najsłabszym Unikatem (`TIE_OK` w
   `tests/classvendors.spec`) i komplet u sprzedawcy tańszy niż kuźnia z kupionymi rudami (decyzje właściciela:
   `docs/SESJE.md` → S95); cel `deliver` do sprzedawcy klasy bez tekstu na wiki (pierwszy taki quest).
+- **Wierzchowce (S96)**: ulepszanie, wierzchowce z bossów, skiny, wiki wierzchowców: S97.
 - **Gildie / aukcja / poczta**: brak zaproszeń do gildii między serwerami; aukcja bez podpowiedzi ceny, poczta bez
   pobrania.
 - **Przedmioty (S62–S68)**: krwawienie, trucizna i podpalenie z danych umiejętności przy odświeżeniu kasują resztę

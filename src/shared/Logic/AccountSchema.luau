@@ -100,6 +100,8 @@ function AccountSchema.characterTemplate(): CharacterData
 		pvp = { kills = 0, deaths = 0, duelsWon = 0, duelsLost = 0 },
 		visitedMaps = { [Config.StartingMap] = true },
 		mapMarks = {},
+		-- S96: no migration; reconcile adds owned = {} and riding = false to older characters
+		mounts = { owned = {}, active = nil, riding = false },
 		createdAt = 0,
 		playtime = 0,
 	}

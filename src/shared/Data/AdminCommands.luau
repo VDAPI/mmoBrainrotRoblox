@@ -118,6 +118,8 @@ cmd("character", "cd", { enum("mode", { "off", "on" }) })
 cmd("character", "res", { enum("mode", { "inf", "off" }) })
 cmd("character", "sprint", {})
 cmd("character", "speed", { str("value") })
+-- S96: mounts of the character (MountService): ride skips the channel, the level and combat, not the place
+cmd("character", "mount", { enum("action", { "info", "give", "take", "lvl", "ride", "off" }), str("arg", true) })
 cmd("character", "preset", { int("level", 1, MAX_LEVEL), int("rarity", 1, 5), int("up", 0, 9, true, "0") })
 -- S28: skill tools (S56: ranks come from the level; /lvl sets them)
 cmd("character", "nocd", { enum("mode", { "on", "off" }, true, "on") })

@@ -12,6 +12,7 @@ local CosmeticLook = require(ReplicatedStorage.Shared.Util.CosmeticLook)
 local Cosmetics = require(ReplicatedStorage.Shared.Data.Cosmetics)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local MountLook = require(ReplicatedStorage.Shared.Util.MountLook)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Sounds = require(script.Parent.Parent.Sounds)
 local State = require(script.Parent.Parent.State)
@@ -52,6 +53,7 @@ local function cloneCharacter(): Model?
 	if not clone then
 		return nil
 	end
+	MountLook.strip(clone)
 	for _, d in clone:GetDescendants() do
 		if d:IsA("Script") or d:IsA("LocalScript") or d:IsA("BillboardGui") or d:IsA("ProximityPrompt") then
 			d:Destroy()

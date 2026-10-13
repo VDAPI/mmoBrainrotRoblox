@@ -1,7 +1,7 @@
 --!strict
 -- Quest rewards row (S31, DESIGN §20, §23): EXP and gold as an icon with the number, every item as a small
 -- ItemSlot with its tooltip (slot ids "view:quest:<id>:<n>", so a tap shows the tooltip on touch), and the
--- "item to choose" note of side quest arcs. Used by the quest dialog, the contract board, the journal and the
+-- "item to choose" note of side quest arcs (S96: the mount of the stable arc). Used by the quest dialog, the contract board, the journal and the
 -- quest section of the world map's NPC cards.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -12,6 +12,7 @@ local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local ItemRoll = require(ReplicatedStorage.Shared.Logic.ItemRoll)
 local ItemSlot = require(script.Parent.ItemSlot)
 local Items = require(ReplicatedStorage.Shared.Data.Items)
+local Mounts = require(ReplicatedStorage.Shared.Data.Mounts)
 local Quests = require(ReplicatedStorage.Shared.Data.Quests)
 local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
@@ -141,6 +142,19 @@ local function QuestRewards(scope: Scope, props: Props): Instance
 					use,
 					if reward.choice == "final" then "quest.reward.choiceRare" else "quest.reward.choice"
 				)
+			end),
+			size
+		))
+	end
+	local mountDef = if reward.mount then Mounts.get(reward.mount) else nil
+	if mountDef then
+		add(chip(
+			scope,
+			0,
+			"🐎",
+			Theme.Colors.GoldBright,
+			scope:Computed(function(use): string
+				return Text.get(use, "quest.reward.mount", { name = Text.get(use, mountDef.nameKey) })
 			end),
 			size
 		))

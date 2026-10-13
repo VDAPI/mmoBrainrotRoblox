@@ -2685,3 +2685,43 @@
   powody dla każdej klasy. Raport zwija ≥ 100 kluczy jednego powodu w jeden wiersz (prefiks i liczba kluczy), żeby
   `docs/BALANS.md` nie rósł o kilka tysięcy wierszy.
 - **S95 `export.py`:** zapis w UTF-8 (`encoding="utf-8"`); na Windows wcześniej pisał w stronie kodowej systemu.
+- **S96 szybkość na wierzchowcu:** `16 × (1,6 → 2,0 liniowo na poziomach wierzchowca 1–10) × (1 + moveSpeed ze sprzętu /
+  100)` jednym wzorem `Logic/Mounts.walkSpeed` (pieszo ten sam moduł, dawna reguła S63), decyzja właściciela 2026-10-12,
+  DESIGN-15 §2. Liczy się tylko źródło `source.gear` (limit 30, cechy przedmiotów idą tym samym źródłem); `moveSpeed` z
+  efektów (Kamuflaż, `allyMove`, Czujność) i pasywek (`agility` Łowcy, Marsz) oraz sprint nie działają, spowolnienia S63
+  tak, `/speed` admina wygrywa. Koń 1. poziomu zawsze szybszy od tej samej postaci pieszo ze sprintem (25,6 wobec 21,6
+  bez premii, 33,28 wobec 28,1 przy +30%), sufit 41,6 st./s (koń 10., sprzęt +30%).
+- **S96 flaga walki = `ResourceService.InCombat`** (5 s od zadania lub otrzymania obrażeń), ta sama co handel i zmiana
+  postaci; po kanale wsiadania serwer sprawdza ją jeszcze raz, więc atak podstawowy w trakcie wsiadania je unieważnia.
+- **S96 umiejętność:** każde wciśnięcie przerywa wsiadanie (`MountService.Interrupt` na początku `cast`), zsiada tylko
+  rzut po walidacjach i koszcie (tuż przed zamknięciem kanału S80); zasięg liczony jeszcze z siodła (ok. 2,5 st. wyżej,
+  w `RANGE_TOLERANCE = 5`). Kanał zaczęty po zsiadaniu przez 0,6 s bierze wysokość startu za jeźdźcem (opadanie po
+  zmianie `HipHeight` to nie ruch; ruch w poziomie dalej przerywa).
+- **S96 miejsca:** jazda tam, gdzie `biome ∉ { cave, crypt, dungeon }` i strefa ≠ `zone.arena`
+  (`Data/Mounts.RULES`). Teleport na zakazaną mapę zsiada cicho (`TravelService.TeleportToMap`, komunikat zginąłby za
+  ekranem ładowania), wejście do zakazanej strefy zsiada z komunikatem (`ZoneChanged`). Zbieranie, łowienie i kotwice
+  zadań zsiadają przy starcie, kamień powrotu nie (kanał i tak przerywa ruch). W wodzie zsiada klient (prośba
+  `SetMounted(false)` przy stanie `Swimming`; koń nie pływa).
+- **S96 model:** budowany na serwerze (`Util/MountLook`) i przyspawany do `HumanoidRootPart` (`Massless`, bez kolizji,
+  dotyku i zapytań), `HipHeight` podniesiony do siodła (`Logic/Mounts.seat`; R6 liczy 2 st. nóg), klienci animują nogi i
+  pozę jeźdźca po tagu `VaelthornMount`. Hak `Data/Mounts.assets` + `ReplicatedStorage.Assets.Mounts.<model>` (pivot na
+  ziemi, siodło `saddle` od pivota: `Logic/Mounts.seatAt`); `static` dostaje `WeldConstraint`y do `PrimaryPart`.
+  DESIGN-15 §2: plik nazywa się jak `model` wpisu, nie jak id.
+- **S96 `Data/Mounts.Look` lokalnie** (jak `Data/MonsterLooks.Look`): `Data` nie wymaga `Logic`; `MountLook` rzutuje na
+  `Anatomy.Look`. `RIDER.stride = 1,6` (dłuższy krok konia w `Gait.advance`, 25–42 st./s kręciłoby nogami za szybko);
+  `RIDER` to wygląd, poza księgą.
+- **S96 łuk stajennego:** poziomy 21–22 z nowym `SideQuest.minLevel = 20` (`SideQuests.minLevel` =
+  `max(1, level − levelSlack, minLevel)`), więc 1–20 bez zmian (`ALLOWED_1_20_DIFFS` pusta). Finał daje `reward.mount`
+  zamiast wyboru przedmiotu (`choice` tylko bez `mount`), EXP 0,1 poziomu na zadanie (`expShare`, S98 włączy łuk do
+  budżetu), złoto `gold(level)`. `Quests.Side.STABLE_MIN = 20` (Data nie wymaga `Config`; `mounts.spec` porównuje z
+  `Config.Mount.minLevel`). `sidequests.spec`: 31 zadań w 10 wątkach, finał = `choice` albo `mount`, budżet 40%
+  liczony tylko do 19. poziomu (70% poziomu dalej dla każdego).
+- **S96 wiki bez zmian:** zadania stajni `wiki = false`, `Data/Mounts` poza eksportem; kotwica `wild_stallion` znika z
+  mapy wiki (`World.areasData` pomija kotwice używane tylko przez ukryte zadania), akcja klawisza `mount` ma
+  `wiki = false` (`Basics.keybinds`). `wikidump.spec` liczy rekordy zadań pobocznych i klawiszy bez ukrytych (jak
+  umiejętności ścieżek).
+- **S96 zapis:** `character.mounts` przez szablon i `reconcile`, bez migracji (`CURRENT` = 6); `riding` zerowane przy
+  wejściu, wyjściu, odrodzeniu i śmierci.
+- **S96 sterowanie:** klawisz `H` (wolny), slot na PC w pasku akcji za miksturami (przerwa jak przed miksturami), na
+  telefonie przycisk 64 × 64 na `(0, 132, 1, −260)`, na prawo od sprintu. Sprint na telefonie znika w siodle, klawisz
+  sprintu w siodle nic nie wysyła. Liczby obrażeń nad jeźdźcem od głowy, nie od pudełka razem z koniem.

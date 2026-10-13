@@ -6306,3 +6306,90 @@ Pliki: `src/shared/Data/{Shops,Npcs}.luau`, `src/shared/Data/Town/city.luau`, `s
 `tests/fixtures/cityHeights.luau`, `tools/{balance_reasons,balance_report}.luau`, `tools/WikiData/{World,Quests}.luau`,
 `docs/miasto/tools/{plan,extras,free,export}.py`, `docs/{BALANS,DESIGN,WIKI,DECYZJE,SESJE,PROGRESS,PRZEDMIOTY}.md`,
 `docs/miasto/MIASTO.md`, `wiki/src/data/*.json`, `wiki/public/img/maps/city.svg`, `wiki/src/lib/city.ts`.
+
+### S96: Wierzchowce 1: koń stajennego, jazda, zasady walki i miejsc
+
+Start na `d290a56` (S95): wymagania S95 / S83 / S91 / DESIGN-15 na miejscu, `scripts/check` zielony. Brak cyklu
+`Deps` (sprawdzone skryptem po wszystkich serwisach i kontrolerach): `MountService` zależy od `PlayerStateService`,
+`CharacterService`, `StatService`, `ResourceService`, `ZoneService`, od niego `SkillService`, `TravelService`,
+`SideQuestService`, `GatherService`, `FishingService`, `AdminService`.
+
+Co zrobiono:
+- **Dane (A):** `Config.Mount` (minLevel 20, ×1,6 → ×2,0, 10 poziomów, 1,5 s / 1,0 s od 5., limit ruchu 2,5 st.),
+  `Data/Mounts` (`MountDef`, `MountAsset`, `mount_horse` gniady z siodłem, uzdą i jukami, `RULES`, `RIDER` ze
+  `stride`, puste `assets`), księga: `Data/Mounts` w `BALANCE_MODULES` (bez wyglądu i zasad), `"Mount"` w `CONFIG_KEYS`,
+  powody `Config:Mount*`, `Mounts:*`, `Quests/Side:byArc.stable*`, `Quests/Side:STABLE_MIN`.
+- **Logika (B):** `Logic/Mounts` (`speedMul`, `mountTime`, `GEAR_SOURCE`, `gearMove`, `walkSpeed`, `allowedAt`,
+  `activeOf`, `canMount`, `grant`, `seat`, `seatAt`), `Logic/RiderPose`; plan `horse` w `Anatomy/Plans/Quadrupeds`
+  (36 części z siodłem, uzdą i jukami, 40 z frędzlami), akcesoria `saddle`, `bridle`, `saddlebags`, wariant `mount`
+  (`BUDGET.mount = 40`). Siedzisko konia: `hipHeight` jeźdźca R15 4,17 st., koń 0,4 st. za jeźdźcem.
+- **Zapis (C):** `Types.MountState`, `CharacterData.mounts`, szablon `{ owned = {}, riding = false }`, bez migracji.
+- **Serwer (D):** `Util/MountLook` (hak `Assets.Mounts`, wygląd z generatora, atrybuty `MountId`, `LookScale`,
+  `MountRig`, `MountWalkSpeed`, zarezerwowany `MountSkin`, tag `VaelthornMount`), `MountService` (`Request`, `Ride`,
+  `Dismount`, `Interrupt`, `IsRiding`, `Grant`, `SetLevel`, `Take`; kanał `mountCast`, przerwania ruchem, obrażeniami,
+  umiejętnością; zsiadanie przy strefie, śmierci, odrodzeniu, wejściu i wyjściu), `StatService.SetMountProvider` i
+  `applyWalkSpeed` przez `Mounts.walkSpeed`, `SkillService` (przerwanie wsiadania, zsiadanie po koszcie, start kanału
+  przy opadaniu), `TravelService.TeleportToMap`, zbieranie, łowienie i kotwice zsiadają, remote `SetMounted`,
+  `assets/Mounts/init.meta.json`.
+- **Łuk stajennego (E):** `Reward.mount`, `SideQuest.minLevel` / `wiki`, `SideQuests.minLevel` z `minLevel`; trzy
+  zadania (`side_stable_harness` 21, `side_stable_stallion` 21, `side_stable_ride` 22, wątek `stable`), kotwica
+  `wild_stallion` (560, 200) bez poprawek (`meadows*`, `worldgen` zielone), efekt `halter` (palik, zwój liny, wydeptana
+  trawa: 4 części), nagroda w `SideQuestService.turnIn`, żeton „🐎 Wierzchowiec: …” w `QuestRewards`.
+- **Klient (F):** `MountController` (klawisz, `Toggle`, `Riding`, `Has`, woda), `Hud/MountButton` (slot PC za
+  miksturami z klawiszem, przycisk na telefonie `(0, 132, 1, −260)`, bez sprawdzenia w Studio), `SprintButton` znika w
+  siodle, `MovementController` (sprint zgaszony już na starcie kanału `mountCast` i zablokowany w siodle), `CastBar`
+  czyta `mountCast`, `AnimationController` (sekcja „mounts”: krok `Gait` wg prędkości jeźdźca, klipy prawdziwego
+  modelu, poza jeźdźca na nogach i `root`), `CombatFxController` (liczby nad głową jeźdźca), `TargetController`
+  (wybaczający klik w jeźdźca mierzy od `HumanoidRootPart` do czubka głowy, bez konia), podglądy w `Wardrobe` i
+  `SkillsWindow/Preview` bez konia i pozy jeźdźca (`MountLook.strip`). `PetController`, kamera, `NameplateController`:
+  bez zmian.
+- **Admin (G):** `/mount info | give [id] | take [id] | lvl <n> | ride | off`.
+- **Teksty (H):** wszystkie klucze z planu w PL i EN, teksty trzech zadań.
+- **Wiki (I):** `npm run data`: zero zmian w `wiki/src/data/*.json` (odcisk danych `82c069b7` jak przed sesją;
+  `meta.json` przywrócony, zmieniał się tylko commit i data) dzięki ukryciu kotwicy `wild_stallion` i akcji `mount`
+  (`wiki = false`); `wiki_keys_diff` 0 różnic.
+
+Tempo (`lune run tools/balance_report.luau`, przed → po): h(21) 0,29 → 0,29, h(22) 0,31 → 0,30, h(21) / h(20)
+1,25 → 1,26 (≤ 1,30), okno 20 → 45 14,38 → 14,33 h, G13 20–45 14,92 → 14,83 h (pasmo 10,5–17,5). Asercje S92 bez zmian,
+`STABLE_EXP` zostaje 0,1. Księga: 3212 kluczy od bazy, 0 bez powodu.
+
+Dla S97 (nazwy wiążące):
+- dane: `Data/Mounts` (`MountDef`: `id`, `nameKey`, `startLevel`, `source = "quest" | "boss" | "premium" | "event"`,
+  `look`, `scale?`, `boss?`, `product?`, `wiki?`; `Mounts.assets` (`MountAsset`: `model`, `saddle`, `rig`, `walkSpeed?`,
+  `anims?`); `RULES` (`noBiomes`, `noZones`); `RIDER` (`rHip`, `lHip`, `rKnee`, `lKnee`, `bob`, `seatLift`, `stride`));
+  wierzchowce z bossów (`source = "boss"`, `boss = "grimrok" | "morvane" | "azgor" | "vaelgrath"`, `startLevel` 3 / 4 /
+  5 / 6) i premium (`source = "premium"`, `product`, wyłączony); krzywa ulepszeń jako nowe pole modułu (np.
+  `UPGRADE[lvl] = { gold, materials }`); `Config.Mount` (`minLevel`, `baseMul`, `maxMul`, `maxLevel`, `mountTime`,
+  `mountTimeFast`, `fastFromLevel`, `moveLimit`);
+- logika: `Logic/Mounts.speedMul`, `mountTime`, `walkSpeed` (`riding`, `lvl`, `walk`, `gearMove`, `sprint`, `factor`),
+  `gearMove`, `GEAR_SOURCE`, `allowedAt`, `activeOf`, `canMount`, `grant`, `seat`, `seatAt`; `Logic/RiderPose.sample`,
+  `JOINTS`;
+- zapis: `character.mounts = { owned = { [id] = { lvl } }, active, riding }` (S97 podnosi `lvl`, ustawia `active`);
+  skiny jako kosmetyka konta `cosmetics.owned` z nowym rodzajem `mountskin`;
+- serwer: `MountService.Request`, `Ride`, `Dismount`, `Interrupt`, `IsRiding`, `Grant`, `SetLevel`, `Take`;
+  `StatService.SetMountProvider`; remote `SetMounted`; gałąź stanu `mountCast`; atrybut postaci `Mount`; model
+  `VaelthornMount` (atrybuty `MountId`, `LookScale`, `MountRig`, `MountWalkSpeed`, tag `VaelthornMount`), zarezerwowany
+  atrybut `MountSkin` i `MountLook.build(id, rootHalf, { skin })`;
+- zadania: wątek `stable`, `side_stable_harness`, `side_stable_stallion`, `side_stable_ride`, `Reward.mount`,
+  `SideQuest.minLevel`, `SideQuest.wiki`, `Quests.Side.STABLE_MIN` (S97 zdejmuje `wiki = false`, dopisuje `mount?` do
+  schematu `QuestReward` w `tools/WikiData/Quests.luau` z wpisem `WIKI_KEYS_ALLOW`; kotwica `wild_stallion` wraca na mapę
+  wiki sama); S98: kategoria łuku (`side` albo `mount`) i budżet EXP łuku;
+- klient: `MountController.Toggle`, `Riding`, `Has`; `Hud/MountButton.Slot` / `.Touch`; akcja klawisza `mount`
+  (`wiki = false` do zdjęcia); `J` dla `win_mounts`, `N` w zapasie;
+- admin: `/mount info | give | take | lvl | ride | off`.
+
+Pliki: `src/shared/{Config,Types}.luau`, `src/shared/Data/{Mounts,Keybinds,AdminCommands}.luau`,
+`src/shared/Data/Quests/{Side,Types}.luau`, `src/shared/Data/Areas/meadows.luau`, `src/shared/Data/Localization/{pl,en}.luau`,
+`src/shared/Logic/{Mounts,RiderPose,SideQuests,AccountSchema}.luau`, `src/shared/Logic/Anatomy/{init,Accessories}.luau`,
+`src/shared/Logic/Anatomy/Plans/{init,Quadrupeds}.luau`, `src/shared/Util/MountLook.luau`, `src/shared/Net/Definitions.luau`,
+`src/server/Services/{Mount,Stat,Skill,Travel,SideQuest,Gather,Fishing,Admin}Service.luau`, `src/server/Admin/Character.luau`,
+`src/client/Controllers/{Mount,Animation,Movement,Screen,QuestAnchor,CombatFx,Target}Controller.luau`,
+`src/client/UI/Screens/{Wardrobe,SkillsWindow/Preview}.luau`,
+`src/client/UI/Screens/Hud/{init,MountButton,SprintButton,CastBar}.luau`, `src/client/UI/Components/QuestRewards.luau`,
+`assets/Mounts/init.meta.json`, `tests/{mounts,sidequests,wikidump}.spec.luau`,
+`tests/fixtures/balance_{paths,items}.json`, `tools/balance_reasons.luau`,
+`tools/WikiData/{World,Basics}.luau`, `docs/{DESIGN,DESIGN-15,ARCHITECTURE,MODELE,ASSETS,BALANS,DECYZJE,SESJE,PROGRESS}.md`.
+
+Testy: `scripts/check` zielony (99 plików, 6010 testów), `wiki_keys_diff` 0 różnic, `balance1_20` 0 różnic
+(`ALLOWED_1_20_DIFFS` pusta). `Config.Mount` zmienia odcisk `Config`: fixture'y `balance_paths` i `balance_items`
+odświeżone (`--fixture-paths`, `--fixture-items`, 0 przesuniętych wartości; w items też odcisk `Shops` z S95).

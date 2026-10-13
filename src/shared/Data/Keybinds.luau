@@ -7,6 +7,7 @@ export type Action = {
 	default: string,
 	labelKey: string,
 	group: "windows" | "combat" | "world",
+	wiki: boolean?, -- S96: false = left out of the wiki key list (the mount key until S97)
 }
 
 local actions: { Action } = {
@@ -37,6 +38,7 @@ local actions: { Action } = {
 	{ id = "sprint", default = "LeftControl", labelKey = "keys.sprint", group = "world" },
 	{ id = "interact", default = "E", labelKey = "keys.interact", group = "world" },
 	{ id = "pickup", default = "F", labelKey = "keys.pickup", group = "world" },
+	{ id = "mount", default = "H", labelKey = "keys.mount", group = "world", wiki = false }, -- S96: ride / dismount
 }
 
 -- Keys a player may bind. Movement (WASD, arrows, Space), camera (I/O, Shift), chat (/), Esc and the

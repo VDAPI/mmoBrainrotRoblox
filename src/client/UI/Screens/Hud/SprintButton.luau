@@ -1,5 +1,6 @@
 --!strict
--- Sprint toggle for touch devices (S18, DESIGN §24), above the movement joystick.
+-- Sprint toggle for touch devices (S18, DESIGN §24), above the movement joystick. S96: hidden while riding (no
+-- sprint in the saddle).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -16,6 +17,7 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 export type Props = {
 	Sprinting: Fusion.UsedAs<boolean>,
 	OnToggle: () -> (),
+	Riding: Fusion.UsedAs<any>?, -- S96
 }
 
 local SIZE = 64
@@ -26,7 +28,9 @@ local function SprintButton(scope: Scope, props: Props): Instance
 		AnchorPoint = Vector2.new(0, 1),
 		Position = UDim2.new(0, 60, 1, -260),
 		Size = UDim2.fromOffset(SIZE, SIZE),
-		Visible = Device.Touch,
+		Visible = scope:Computed(function(use): boolean
+			return use(Device.Touch) and not (props.Riding ~= nil and use(props.Riding) == true)
+		end),
 		AutoButtonColor = false,
 		BackgroundColor3 = scope:Computed(function(use): Color3
 			return if use(props.Sprinting) then Theme.Colors.Accent else Theme.Colors.Panel

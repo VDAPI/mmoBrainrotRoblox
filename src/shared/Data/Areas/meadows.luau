@@ -81,6 +81,8 @@ local QUEST_ANCHORS: { Types.QuestAnchor } = {
 	{ id = "tunnel_3", x = 480, z = -84 },
 	anchor("totem_goblin", SITES.goblinCamp, 5, 0, 2),
 	{ id = "bear_den", x = 700, z = 470 },
+	-- S96: the stable arc: open grass at the edge of Bear Ravine where the wild stallion grazes
+	{ id = "wild_stallion", x = 560, z = 200 },
 }
 
 local function avoidSpots(): { Types.Circle }

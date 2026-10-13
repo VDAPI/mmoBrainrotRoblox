@@ -60,6 +60,8 @@ export type PathState = {
 	freeUsed: boolean,
 }
 export type BuildSet = { path: PathState, stats: Stats, statPoints: number, hotbar: { [string]: string } }
+-- S96: mounts of a character (Data/Mounts ids; lvl 1..Config.Mount.maxLevel).
+export type MountState = { owned: { [string]: { lvl: number } }, active: string?, riding: boolean }
 
 export type CharacterData = {
 	id: string,
@@ -108,6 +110,9 @@ export type CharacterData = {
 	pvp: { kills: number, deaths: number, duelsWon: number, duelsLost: number },
 	visitedMaps: { [string]: boolean },
 	mapMarks: { MapMark }, -- S25: own map marks (Data/MapMarks icons, max Config.Nav.maxMarks)
+	-- S96: owned mounts (lvl 1..Config.Mount.maxLevel), the chosen one and whether riding now (never survives a
+	-- logout; MountService clears it)
+	mounts: MountState,
 	createdAt: number,
 	playtime: number,
 	-- S20: last items picked up (newest first, max 50) and Elite II respawn timers.

@@ -146,6 +146,11 @@ end
 
 -- Top of a monster's look (S24: MonsterView.top), the bounding box for characters and as a fallback.
 local function headPosition(model: Model): Vector3
+	-- S96: a rider's box holds the mount too; the head of the rider is the top that counts
+	local head = model:FindFirstChild("Head")
+	if head and head:IsA("BasePart") and model:FindFirstChild("VaelthornMount") then
+		return head.Position + Vector3.new(0, head.Size.Y / 2 + 0.5, 0)
+	end
 	local cframe, size = model:GetBoundingBox()
 	local top = if MonsterView then MonsterView.top(model) else nil
 	if top then

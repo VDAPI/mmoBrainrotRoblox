@@ -39,7 +39,7 @@ export type Look = {
 
 export type Options = {
 	id: string, -- seed
-	variant: string?, -- "normal" | "elite" | "elite2" | "boss" | "pet"
+	variant: string?, -- "normal" | "elite" | "elite2" | "boss" | "pet" | "mount" (S96: no chibi, glowEyes only from the look)
 	scale: number?,
 	lod: "full" | "far" | nil,
 }
@@ -79,7 +79,7 @@ Anatomy.MATERIALS = {
 }
 
 -- Part budgets per variant (normal monsters include weapons, accessories and Elite II extras).
-Anatomy.BUDGET = { normal = 36, elite = 36, elite2 = 36, boss = 90, pet = 16, far = 3 }
+Anatomy.BUDGET = { normal = 36, elite = 36, elite2 = 36, boss = 90, pet = 16, mount = 40, far = 3 }
 
 -- Joint roles Logic/Gait knows.
 Anatomy.ROLES = {

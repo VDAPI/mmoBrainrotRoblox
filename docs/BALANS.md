@@ -174,6 +174,14 @@ Każdy wiersz bez opisu raportu jest asercją `balance.spec` (bloki niżej). Wie
 | klucz | wartość | sesja | powód |
 | --- | --: | --: | --: |
 | `Bosses:byId.vaelgrath.hpMul` | 1,3 | S94 | C2: new 1.3: 3-5 players of level 99 need 4.8-5.1 min (with nodes 4.2-4.5) with waves and flight (target 4-6) |
+| `Config:Mount.baseMul` | 1,6 | S96 | new table: a mount from level 20, walk speed x1.6 -> x2.0 over mount levels 1-10 (DESIGN-15 §2), mounting 1.5 s (1.0 s from mount level 5), 2.5 studs of movement break it |
+| `Config:Mount.fastFromLevel` | 5 | S96 | new table: a mount from level 20, walk speed x1.6 -> x2.0 over mount levels 1-10 (DESIGN-15 §2), mounting 1.5 s (1.0 s from mount level 5), 2.5 studs of movement break it |
+| `Config:Mount.maxLevel` | 10 | S96 | new table: a mount from level 20, walk speed x1.6 -> x2.0 over mount levels 1-10 (DESIGN-15 §2), mounting 1.5 s (1.0 s from mount level 5), 2.5 studs of movement break it |
+| `Config:Mount.maxMul` | 2 | S96 | new table: a mount from level 20, walk speed x1.6 -> x2.0 over mount levels 1-10 (DESIGN-15 §2), mounting 1.5 s (1.0 s from mount level 5), 2.5 studs of movement break it |
+| `Config:Mount.minLevel` | 20 | S96 | new table: a mount from level 20, walk speed x1.6 -> x2.0 over mount levels 1-10 (DESIGN-15 §2), mounting 1.5 s (1.0 s from mount level 5), 2.5 studs of movement break it |
+| `Config:Mount.mountTime` | 1,5 | S96 | new table: a mount from level 20, walk speed x1.6 -> x2.0 over mount levels 1-10 (DESIGN-15 §2), mounting 1.5 s (1.0 s from mount level 5), 2.5 studs of movement break it |
+| `Config:Mount.mountTimeFast` | 1 | S96 | new table: a mount from level 20, walk speed x1.6 -> x2.0 over mount levels 1-10 (DESIGN-15 §2), mounting 1.5 s (1.0 s from mount level 5), 2.5 studs of movement break it |
+| `Config:Mount.moveLimit` | 2,5 | S96 | new table: a mount from level 20, walk speed x1.6 -> x2.0 over mount levels 1-10 (DESIGN-15 §2), mounting 1.5 s (1.0 s from mount level 5), 2.5 studs of movement break it |
 | `Crafting:byId.armor_heavy_100.materials[frost_scale].n` | 2 | S94 | K2: chest pieces, gloves and boots of tiers 75-85 take 2 yeti fur, of 90-100 2 frost scale (first use of the scale) |
 | `Crafting:byId.armor_heavy_75.materials[yeti_fur].n` | 2 | S94 | K2: chest pieces, gloves and boots of tiers 75-85 take 2 yeti fur, of 90-100 2 frost scale (first use of the scale) |
 | `Crafting:byId.armor_heavy_80.materials[yeti_fur].n` | 2 | S94 | K2: chest pieces, gloves and boots of tiers 75-85 take 2 yeti fur, of 90-100 2 frost scale (first use of the scale) |
@@ -249,6 +257,32 @@ Każdy wiersz bez opisu raportu jest asercją `balance.spec` (bloki niżej). Wie
 | `Monsters:byId.frozenKnight.rewardMul` | 1,15 | S94 | F1: new 1.15: the armoured undead (S88) EXP/s 0.84 -> 0.96 of GENERIC |
 | `Monsters:byId.iceMammoth.rewardMul` | 1,1 | S94 | F1: new 1.1: EXP/s 0.88 -> 0.96 of GENERIC |
 | `Monsters:byId.youngFrostDragon.rewardMul` | 1,1 | S94 | F1: new 1.1: EXP/s 0.90 -> 0.99 of GENERIC after the shorter fight |
+| `Mounts:byId.mount_horse.startLevel` | 1 | S96 | new module: the stablemaster's bay horse starts at mount level 1 (x1.6 walk speed, DESIGN-15 §2) |
+| `Quests/Side:STABLE_MIN` | 20 | S96 | the stable arc is offered from level 20 (= Config.Mount.minLevel) |
+| `Quests/Side:byArc.stable[side_stable_harness].level` | 21 | S96 | new stable arc 21-22 (taken from 20 through minLevel, 1-20 untouched): 0.1 of a level's EXP per quest (the mount is the reward; S98 budgets the arc), gold as side quests (gold(level)), 3 harness pieces at 40%, 6 bears, a 3 s use, reach the stable within 14 studs |
+| `Quests/Side:byArc.stable[side_stable_harness].minLevel` | 20 | S96 | new stable arc 21-22 (taken from 20 through minLevel, 1-20 untouched): 0.1 of a level's EXP per quest (the mount is the reward; S98 budgets the arc), gold as side quests (gold(level)), 3 harness pieces at 40%, 6 bears, a 3 s use, reach the stable within 14 studs |
+| `Quests/Side:byArc.stable[side_stable_harness].objectives[1].chance` | 0,4 | S96 | new stable arc 21-22 (taken from 20 through minLevel, 1-20 untouched): 0.1 of a level's EXP per quest (the mount is the reward; S98 budgets the arc), gold as side quests (gold(level)), 3 harness pieces at 40%, 6 bears, a 3 s use, reach the stable within 14 studs |
+| `Quests/Side:byArc.stable[side_stable_harness].objectives[1].n` | 3 | S96 | new stable arc 21-22 (taken from 20 through minLevel, 1-20 untouched): 0.1 of a level's EXP per quest (the mount is the reward; S98 budgets the arc), gold as side quests (gold(level)), 3 harness pieces at 40%, 6 bears, a 3 s use, reach the stable within 14 studs |
+| `Quests/Side:byArc.stable[side_stable_harness].pages` | 3 | S96 | new stable arc 21-22 (taken from 20 through minLevel, 1-20 untouched): 0.1 of a level's EXP per quest (the mount is the reward; S98 budgets the arc), gold as side quests (gold(level)), 3 harness pieces at 40%, 6 bears, a 3 s use, reach the stable within 14 studs |
+| `Quests/Side:byArc.stable[side_stable_harness].reward.exp` | 1307 | S96 | new stable arc 21-22 (taken from 20 through minLevel, 1-20 untouched): 0.1 of a level's EXP per quest (the mount is the reward; S98 budgets the arc), gold as side quests (gold(level)), 3 harness pieces at 40%, 6 bears, a 3 s use, reach the stable within 14 studs |
+| `Quests/Side:byArc.stable[side_stable_harness].reward.gold` | 502 | S96 | new stable arc 21-22 (taken from 20 through minLevel, 1-20 untouched): 0.1 of a level's EXP per quest (the mount is the reward; S98 budgets the arc), gold as side quests (gold(level)), 3 harness pieces at 40%, 6 bears, a 3 s use, reach the stable within 14 studs |
+| `Quests/Side:byArc.stable[side_stable_ride].level` | 22 | S96 | new stable arc 21-22 (taken from 20 through minLevel, 1-20 untouched): 0.1 of a level's EXP per quest (the mount is the reward; S98 budgets the arc), gold as side quests (gold(level)), 3 harness pieces at 40%, 6 bears, a 3 s use, reach the stable within 14 studs |
+| `Quests/Side:byArc.stable[side_stable_ride].minLevel` | 20 | S96 | new stable arc 21-22 (taken from 20 through minLevel, 1-20 untouched): 0.1 of a level's EXP per quest (the mount is the reward; S98 budgets the arc), gold as side quests (gold(level)), 3 harness pieces at 40%, 6 bears, a 3 s use, reach the stable within 14 studs |
+| `Quests/Side:byArc.stable[side_stable_ride].objectives[1].n` | 1 | S96 | new stable arc 21-22 (taken from 20 through minLevel, 1-20 untouched): 0.1 of a level's EXP per quest (the mount is the reward; S98 budgets the arc), gold as side quests (gold(level)), 3 harness pieces at 40%, 6 bears, a 3 s use, reach the stable within 14 studs |
+| `Quests/Side:byArc.stable[side_stable_ride].objectives[1].radius` | 14 | S96 | new stable arc 21-22 (taken from 20 through minLevel, 1-20 untouched): 0.1 of a level's EXP per quest (the mount is the reward; S98 budgets the arc), gold as side quests (gold(level)), 3 harness pieces at 40%, 6 bears, a 3 s use, reach the stable within 14 studs |
+| `Quests/Side:byArc.stable[side_stable_ride].objectives[1].x` | 243 | S96 | new stable arc 21-22 (taken from 20 through minLevel, 1-20 untouched): 0.1 of a level's EXP per quest (the mount is the reward; S98 budgets the arc), gold as side quests (gold(level)), 3 harness pieces at 40%, 6 bears, a 3 s use, reach the stable within 14 studs |
+| `Quests/Side:byArc.stable[side_stable_ride].objectives[1].z` | 23 | S96 | new stable arc 21-22 (taken from 20 through minLevel, 1-20 untouched): 0.1 of a level's EXP per quest (the mount is the reward; S98 budgets the arc), gold as side quests (gold(level)), 3 harness pieces at 40%, 6 bears, a 3 s use, reach the stable within 14 studs |
+| `Quests/Side:byArc.stable[side_stable_ride].pages` | 2 | S96 | new stable arc 21-22 (taken from 20 through minLevel, 1-20 untouched): 0.1 of a level's EXP per quest (the mount is the reward; S98 budgets the arc), gold as side quests (gold(level)), 3 harness pieces at 40%, 6 bears, a 3 s use, reach the stable within 14 studs |
+| `Quests/Side:byArc.stable[side_stable_ride].reward.exp` | 1427 | S96 | new stable arc 21-22 (taken from 20 through minLevel, 1-20 untouched): 0.1 of a level's EXP per quest (the mount is the reward; S98 budgets the arc), gold as side quests (gold(level)), 3 harness pieces at 40%, 6 bears, a 3 s use, reach the stable within 14 studs |
+| `Quests/Side:byArc.stable[side_stable_ride].reward.gold` | 525 | S96 | new stable arc 21-22 (taken from 20 through minLevel, 1-20 untouched): 0.1 of a level's EXP per quest (the mount is the reward; S98 budgets the arc), gold as side quests (gold(level)), 3 harness pieces at 40%, 6 bears, a 3 s use, reach the stable within 14 studs |
+| `Quests/Side:byArc.stable[side_stable_stallion].level` | 21 | S96 | new stable arc 21-22 (taken from 20 through minLevel, 1-20 untouched): 0.1 of a level's EXP per quest (the mount is the reward; S98 budgets the arc), gold as side quests (gold(level)), 3 harness pieces at 40%, 6 bears, a 3 s use, reach the stable within 14 studs |
+| `Quests/Side:byArc.stable[side_stable_stallion].minLevel` | 20 | S96 | new stable arc 21-22 (taken from 20 through minLevel, 1-20 untouched): 0.1 of a level's EXP per quest (the mount is the reward; S98 budgets the arc), gold as side quests (gold(level)), 3 harness pieces at 40%, 6 bears, a 3 s use, reach the stable within 14 studs |
+| `Quests/Side:byArc.stable[side_stable_stallion].objectives[1].hold` | 3 | S96 | new stable arc 21-22 (taken from 20 through minLevel, 1-20 untouched): 0.1 of a level's EXP per quest (the mount is the reward; S98 budgets the arc), gold as side quests (gold(level)), 3 harness pieces at 40%, 6 bears, a 3 s use, reach the stable within 14 studs |
+| `Quests/Side:byArc.stable[side_stable_stallion].objectives[1].n` | 1 | S96 | new stable arc 21-22 (taken from 20 through minLevel, 1-20 untouched): 0.1 of a level's EXP per quest (the mount is the reward; S98 budgets the arc), gold as side quests (gold(level)), 3 harness pieces at 40%, 6 bears, a 3 s use, reach the stable within 14 studs |
+| `Quests/Side:byArc.stable[side_stable_stallion].objectives[2].n` | 6 | S96 | new stable arc 21-22 (taken from 20 through minLevel, 1-20 untouched): 0.1 of a level's EXP per quest (the mount is the reward; S98 budgets the arc), gold as side quests (gold(level)), 3 harness pieces at 40%, 6 bears, a 3 s use, reach the stable within 14 studs |
+| `Quests/Side:byArc.stable[side_stable_stallion].pages` | 3 | S96 | new stable arc 21-22 (taken from 20 through minLevel, 1-20 untouched): 0.1 of a level's EXP per quest (the mount is the reward; S98 budgets the arc), gold as side quests (gold(level)), 3 harness pieces at 40%, 6 bears, a 3 s use, reach the stable within 14 studs |
+| `Quests/Side:byArc.stable[side_stable_stallion].reward.exp` | 1307 | S96 | new stable arc 21-22 (taken from 20 through minLevel, 1-20 untouched): 0.1 of a level's EXP per quest (the mount is the reward; S98 budgets the arc), gold as side quests (gold(level)), 3 harness pieces at 40%, 6 bears, a 3 s use, reach the stable within 14 studs |
+| `Quests/Side:byArc.stable[side_stable_stallion].reward.gold` | 502 | S96 | new stable arc 21-22 (taken from 20 through minLevel, 1-20 untouched): 0.1 of a level's EXP per quest (the mount is the reward; S98 budgets the arc), gold as side quests (gold(level)), 3 harness pieces at 40%, 6 bears, a 3 s use, reach the stable within 14 studs |
 | `Shops:byId.blacksmith.entries[5].level` | 70 | S94 | J4: mithril ore at the smith, 320 (~4 x Materials 80) from 70 |
 | `Shops:byId.blacksmith.entries[5].price` | 320 | S94 | J4: mithril ore at the smith, 320 (~4 x Materials 80) from 70 |
 | `Shops:byId.blacksmith.entries[6].level` | 90 | S94 | J4: adamantite ore at the smith, 640 (~4 x Materials 160) from 90 |
@@ -267,13 +301,13 @@ Każdy wiersz bez opisu raportu jest asercją `balance.spec` (bloki niżej). Wie
 ### Księga: pominięte funkcje
 
 Funkcje modułów księgi, które dla poziomów 1, 20, 45, 70, 100 nie zwracają liczby ani tabeli (np. `get(id)`):
-AreaProfiles:get, AreaProfiles:ofArea, Areas/Caves:get, Blessings:get, Blessings:of, Bonuses:classLine, Bonuses:familyLine, Bonuses:get, Bonuses:isParam, Bosses:forRegion, Bosses:get, BuffCategories:get, Classes:get, Crafting:get, Crafting:oreFor, Families:defence, Families:get, GuildSkills:get, ItemTraits:get, Items/init:generate.definition, Items/init:get, LootTables:get, Maps:get, Market:getCategory, MonsterAbilities:get, Monsters:get, Paths/init:get, Quests/Daily:get, Quests/Main:get, Quests/Side:get, Recipes:get, Shops:get, Shops:vendorOf, Skills/init:get, Stats:get.
+AreaProfiles:get, AreaProfiles:ofArea, Areas/Caves:get, Blessings:get, Blessings:of, Bonuses:classLine, Bonuses:familyLine, Bonuses:get, Bonuses:isParam, Bosses:forRegion, Bosses:get, BuffCategories:get, Classes:get, Crafting:get, Crafting:oreFor, Families:defence, Families:get, GuildSkills:get, ItemTraits:get, Items/init:generate.definition, Items/init:get, LootTables:get, Maps:get, Market:getCategory, MonsterAbilities:get, Monsters:get, Mounts:get, Paths/init:get, Quests/Daily:get, Quests/Main:get, Quests/Side:get, Recipes:get, Shops:get, Shops:vendorOf, Skills/init:get, Stats:get.
 
 ## Pełna księga S83–S94 (od migawki przed S83)
 
 Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz: dane gry. Dla każdego klucza: wartość przed S83, po S94 i wszystkie powody z `tools/balance_reasons.luau` (sesja: powód). Rangi (`Rangi:`) to liczby pochodne i ich tu nie ma.
 
-3179 kluczy zmienionych od bazy, 0 bez powodu.
+3212 kluczy zmienionych od bazy, 0 bez powodu.
 
 | klucz | przed S83 | po S94 | sesja | powody (sesja: powód) |
 | --- | --: | --: | --: | --: |
@@ -374,6 +408,14 @@ Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz
 | `Bosses:byId.vaelgrath.summons[1].level` | 99 | 86 | S94 | S94: C7: shield wave 99 -> 86: a party of 3 loses 95 % HP per member per wave (<= 110 %; 290 % at 99) |
 | `Bosses:byId.vaelgrath.summons[2].level` | 100 | 87 | S94 | S94: C7: shield wave 100 -> 87 (boss level - 14 / - 13, like Azgor's 58 / 59) |
 | `Combat:riposteCap` | 30 | 34 | S88 | S88: E1: 30 -> 34 %: Counterattack 12 + Retaliation 12 + Swordplay 10 on Samotnik at 100 (STATY 10) |
+| `Config:Mount.baseMul` | – | 1,6 | nowy od S96 | S96: new table: a mount from level 20, walk speed x1.6 -> x2.0 over mount levels 1-10 (DESIGN-15 §2), mounting 1.5 s (1.0 s from mount level 5), 2.5 studs of movement break it |
+| `Config:Mount.fastFromLevel` | – | 5 | nowy od S96 | S96: new table: a mount from level 20, walk speed x1.6 -> x2.0 over mount levels 1-10 (DESIGN-15 §2), mounting 1.5 s (1.0 s from mount level 5), 2.5 studs of movement break it |
+| `Config:Mount.maxLevel` | – | 10 | nowy od S96 | S96: new table: a mount from level 20, walk speed x1.6 -> x2.0 over mount levels 1-10 (DESIGN-15 §2), mounting 1.5 s (1.0 s from mount level 5), 2.5 studs of movement break it |
+| `Config:Mount.maxMul` | – | 2 | nowy od S96 | S96: new table: a mount from level 20, walk speed x1.6 -> x2.0 over mount levels 1-10 (DESIGN-15 §2), mounting 1.5 s (1.0 s from mount level 5), 2.5 studs of movement break it |
+| `Config:Mount.minLevel` | – | 20 | nowy od S96 | S96: new table: a mount from level 20, walk speed x1.6 -> x2.0 over mount levels 1-10 (DESIGN-15 §2), mounting 1.5 s (1.0 s from mount level 5), 2.5 studs of movement break it |
+| `Config:Mount.mountTime` | – | 1,5 | nowy od S96 | S96: new table: a mount from level 20, walk speed x1.6 -> x2.0 over mount levels 1-10 (DESIGN-15 §2), mounting 1.5 s (1.0 s from mount level 5), 2.5 studs of movement break it |
+| `Config:Mount.mountTimeFast` | – | 1 | nowy od S96 | S96: new table: a mount from level 20, walk speed x1.6 -> x2.0 over mount levels 1-10 (DESIGN-15 §2), mounting 1.5 s (1.0 s from mount level 5), 2.5 studs of movement break it |
+| `Config:Mount.moveLimit` | – | 2,5 | nowy od S96 | S96: new table: a mount from level 20, walk speed x1.6 -> x2.0 over mount levels 1-10 (DESIGN-15 §2), mounting 1.5 s (1.0 s from mount level 5), 2.5 studs of movement break it |
 | `Config:Upgrade.goldHigh` | 40 | 20 | S87 | S87: C3 / G9: 40 -> 20, +1..+3 / income at 100 1.68 -> 0.84; +1..+9 protected 39.8 -> 19.9 levels |
 | `Config:Upgrade.legendCoreFrom` | – | 8 | nowy od S87 | S87: C4: new key, Legend Core from +8 (was +7): protected +7..+9 10.8 -> 8.3 cores |
 | `Families:byId.beast.defences.agile.dodge` | 15 | 10 | S88 | S88: B5: harpy dodge 15 -> 10 %: every class +14 % -> +9 % fight time against GENERIC (at most +10 %) |
@@ -781,6 +823,31 @@ Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz
 | `Quests/Main:byId.wolfFangs.reward.exp` | 493 | 617 | S91 | S91: 493 -> 617: F1 tempo: wolfFangs 0.8 -> 1 of level 4 (quest share of 4-5 about 0.6, as every window from 4) |
 | `Quests/Main:byId.wolfFangs.reward.gold` | 240 | 480 | S91 | S91: 240 -> 480: F4 gold(L) x2 of the quests 4-16 (more quest EXP = fewer kills: +1..+3 / level income at 4-8 1.06-1.19 -> 0.88-0.99, band <= 1.05) |
 | `Quests/Main:byId.wolves.reward.exp` | 268 | 76 | S91 | S91: 268 -> 76: F1 tempo: wolves 0.7 -> 0.2 of level 3 (the tutorial pays 1.6 levels; h(3) 0 -> 0.05 h, m(8) / m(7) <= 1.30) |
+| `Quests/Side:STABLE_MIN` | – | 20 | nowy od S96 | S96: the stable arc is offered from level 20 (= Config.Mount.minLevel) |
+| `Quests/Side:byArc.stable[side_stable_harness].level` | – | 21 | nowy od S96 | S96: new stable arc 21-22 (taken from 20 through minLevel, 1-20 untouched): 0.1 of a level's EXP per quest (the mount is the reward; S98 budgets the arc), gold as side quests (gold(level)), 3 harness pieces at 40%, 6 bears, a 3 s use, reach the stable within 14 studs |
+| `Quests/Side:byArc.stable[side_stable_harness].minLevel` | – | 20 | nowy od S96 | S96: new stable arc 21-22 (taken from 20 through minLevel, 1-20 untouched): 0.1 of a level's EXP per quest (the mount is the reward; S98 budgets the arc), gold as side quests (gold(level)), 3 harness pieces at 40%, 6 bears, a 3 s use, reach the stable within 14 studs |
+| `Quests/Side:byArc.stable[side_stable_harness].objectives[1].chance` | – | 0,4 | nowy od S96 | S96: new stable arc 21-22 (taken from 20 through minLevel, 1-20 untouched): 0.1 of a level's EXP per quest (the mount is the reward; S98 budgets the arc), gold as side quests (gold(level)), 3 harness pieces at 40%, 6 bears, a 3 s use, reach the stable within 14 studs |
+| `Quests/Side:byArc.stable[side_stable_harness].objectives[1].n` | – | 3 | nowy od S96 | S96: new stable arc 21-22 (taken from 20 through minLevel, 1-20 untouched): 0.1 of a level's EXP per quest (the mount is the reward; S98 budgets the arc), gold as side quests (gold(level)), 3 harness pieces at 40%, 6 bears, a 3 s use, reach the stable within 14 studs |
+| `Quests/Side:byArc.stable[side_stable_harness].pages` | – | 3 | nowy od S96 | S96: new stable arc 21-22 (taken from 20 through minLevel, 1-20 untouched): 0.1 of a level's EXP per quest (the mount is the reward; S98 budgets the arc), gold as side quests (gold(level)), 3 harness pieces at 40%, 6 bears, a 3 s use, reach the stable within 14 studs |
+| `Quests/Side:byArc.stable[side_stable_harness].reward.exp` | – | 1307 | nowy od S96 | S96: new stable arc 21-22 (taken from 20 through minLevel, 1-20 untouched): 0.1 of a level's EXP per quest (the mount is the reward; S98 budgets the arc), gold as side quests (gold(level)), 3 harness pieces at 40%, 6 bears, a 3 s use, reach the stable within 14 studs |
+| `Quests/Side:byArc.stable[side_stable_harness].reward.gold` | – | 502 | nowy od S96 | S96: new stable arc 21-22 (taken from 20 through minLevel, 1-20 untouched): 0.1 of a level's EXP per quest (the mount is the reward; S98 budgets the arc), gold as side quests (gold(level)), 3 harness pieces at 40%, 6 bears, a 3 s use, reach the stable within 14 studs |
+| `Quests/Side:byArc.stable[side_stable_ride].level` | – | 22 | nowy od S96 | S96: new stable arc 21-22 (taken from 20 through minLevel, 1-20 untouched): 0.1 of a level's EXP per quest (the mount is the reward; S98 budgets the arc), gold as side quests (gold(level)), 3 harness pieces at 40%, 6 bears, a 3 s use, reach the stable within 14 studs |
+| `Quests/Side:byArc.stable[side_stable_ride].minLevel` | – | 20 | nowy od S96 | S96: new stable arc 21-22 (taken from 20 through minLevel, 1-20 untouched): 0.1 of a level's EXP per quest (the mount is the reward; S98 budgets the arc), gold as side quests (gold(level)), 3 harness pieces at 40%, 6 bears, a 3 s use, reach the stable within 14 studs |
+| `Quests/Side:byArc.stable[side_stable_ride].objectives[1].n` | – | 1 | nowy od S96 | S96: new stable arc 21-22 (taken from 20 through minLevel, 1-20 untouched): 0.1 of a level's EXP per quest (the mount is the reward; S98 budgets the arc), gold as side quests (gold(level)), 3 harness pieces at 40%, 6 bears, a 3 s use, reach the stable within 14 studs |
+| `Quests/Side:byArc.stable[side_stable_ride].objectives[1].radius` | – | 14 | nowy od S96 | S96: new stable arc 21-22 (taken from 20 through minLevel, 1-20 untouched): 0.1 of a level's EXP per quest (the mount is the reward; S98 budgets the arc), gold as side quests (gold(level)), 3 harness pieces at 40%, 6 bears, a 3 s use, reach the stable within 14 studs |
+| `Quests/Side:byArc.stable[side_stable_ride].objectives[1].x` | – | 243 | nowy od S96 | S96: new stable arc 21-22 (taken from 20 through minLevel, 1-20 untouched): 0.1 of a level's EXP per quest (the mount is the reward; S98 budgets the arc), gold as side quests (gold(level)), 3 harness pieces at 40%, 6 bears, a 3 s use, reach the stable within 14 studs |
+| `Quests/Side:byArc.stable[side_stable_ride].objectives[1].z` | – | 23 | nowy od S96 | S96: new stable arc 21-22 (taken from 20 through minLevel, 1-20 untouched): 0.1 of a level's EXP per quest (the mount is the reward; S98 budgets the arc), gold as side quests (gold(level)), 3 harness pieces at 40%, 6 bears, a 3 s use, reach the stable within 14 studs |
+| `Quests/Side:byArc.stable[side_stable_ride].pages` | – | 2 | nowy od S96 | S96: new stable arc 21-22 (taken from 20 through minLevel, 1-20 untouched): 0.1 of a level's EXP per quest (the mount is the reward; S98 budgets the arc), gold as side quests (gold(level)), 3 harness pieces at 40%, 6 bears, a 3 s use, reach the stable within 14 studs |
+| `Quests/Side:byArc.stable[side_stable_ride].reward.exp` | – | 1427 | nowy od S96 | S96: new stable arc 21-22 (taken from 20 through minLevel, 1-20 untouched): 0.1 of a level's EXP per quest (the mount is the reward; S98 budgets the arc), gold as side quests (gold(level)), 3 harness pieces at 40%, 6 bears, a 3 s use, reach the stable within 14 studs |
+| `Quests/Side:byArc.stable[side_stable_ride].reward.gold` | – | 525 | nowy od S96 | S96: new stable arc 21-22 (taken from 20 through minLevel, 1-20 untouched): 0.1 of a level's EXP per quest (the mount is the reward; S98 budgets the arc), gold as side quests (gold(level)), 3 harness pieces at 40%, 6 bears, a 3 s use, reach the stable within 14 studs |
+| `Quests/Side:byArc.stable[side_stable_stallion].level` | – | 21 | nowy od S96 | S96: new stable arc 21-22 (taken from 20 through minLevel, 1-20 untouched): 0.1 of a level's EXP per quest (the mount is the reward; S98 budgets the arc), gold as side quests (gold(level)), 3 harness pieces at 40%, 6 bears, a 3 s use, reach the stable within 14 studs |
+| `Quests/Side:byArc.stable[side_stable_stallion].minLevel` | – | 20 | nowy od S96 | S96: new stable arc 21-22 (taken from 20 through minLevel, 1-20 untouched): 0.1 of a level's EXP per quest (the mount is the reward; S98 budgets the arc), gold as side quests (gold(level)), 3 harness pieces at 40%, 6 bears, a 3 s use, reach the stable within 14 studs |
+| `Quests/Side:byArc.stable[side_stable_stallion].objectives[1].hold` | – | 3 | nowy od S96 | S96: new stable arc 21-22 (taken from 20 through minLevel, 1-20 untouched): 0.1 of a level's EXP per quest (the mount is the reward; S98 budgets the arc), gold as side quests (gold(level)), 3 harness pieces at 40%, 6 bears, a 3 s use, reach the stable within 14 studs |
+| `Quests/Side:byArc.stable[side_stable_stallion].objectives[1].n` | – | 1 | nowy od S96 | S96: new stable arc 21-22 (taken from 20 through minLevel, 1-20 untouched): 0.1 of a level's EXP per quest (the mount is the reward; S98 budgets the arc), gold as side quests (gold(level)), 3 harness pieces at 40%, 6 bears, a 3 s use, reach the stable within 14 studs |
+| `Quests/Side:byArc.stable[side_stable_stallion].objectives[2].n` | – | 6 | nowy od S96 | S96: new stable arc 21-22 (taken from 20 through minLevel, 1-20 untouched): 0.1 of a level's EXP per quest (the mount is the reward; S98 budgets the arc), gold as side quests (gold(level)), 3 harness pieces at 40%, 6 bears, a 3 s use, reach the stable within 14 studs |
+| `Quests/Side:byArc.stable[side_stable_stallion].pages` | – | 3 | nowy od S96 | S96: new stable arc 21-22 (taken from 20 through minLevel, 1-20 untouched): 0.1 of a level's EXP per quest (the mount is the reward; S98 budgets the arc), gold as side quests (gold(level)), 3 harness pieces at 40%, 6 bears, a 3 s use, reach the stable within 14 studs |
+| `Quests/Side:byArc.stable[side_stable_stallion].reward.exp` | – | 1307 | nowy od S96 | S96: new stable arc 21-22 (taken from 20 through minLevel, 1-20 untouched): 0.1 of a level's EXP per quest (the mount is the reward; S98 budgets the arc), gold as side quests (gold(level)), 3 harness pieces at 40%, 6 bears, a 3 s use, reach the stable within 14 studs |
+| `Quests/Side:byArc.stable[side_stable_stallion].reward.gold` | – | 502 | nowy od S96 | S96: new stable arc 21-22 (taken from 20 through minLevel, 1-20 untouched): 0.1 of a level's EXP per quest (the mount is the reward; S98 budgets the arc), gold as side quests (gold(level)), 3 harness pieces at 40%, 6 bears, a 3 s use, reach the stable within 14 studs |
 | `Rarities:twoHandedBonusMul` | – | 2,7 | nowy od S87 | S87: C2 / G8: regular lines of a rolled two-handed weapon x2.7 (bez cech 269/280 in band; plan start 1.75 gave 237) |
 | `Rarities:upgradeStatPerLevelTwoHanded` | – | 0,066 | nowy od S87 | S87: C2 / G8: two-handed base +6.6 % per upgrade level (Common +9 up to 1.035; plan start 7 %) |
 | `Recipes:byId.blessing_fortune_3.ingredients[crow_feather].n` | – | 3 | nowy od S92 | S92: Rare blessing with a Dark Forest part (J2, LINE_INGREDIENT_RARE) |
@@ -1009,6 +1076,7 @@ Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz
 | BossTuning | 3 | S87: D3: constants moved from Boss.luau and the scripts without changing their values (new module); S87: D3: constants moved from Boss.luau and the scripts without changing their values (new module); S93: 0.7 -> 2.2 (C2): one lava tick 6.5 % -> 20 % of a level 70 Mage after atkMul 0.36 (15-25 %); S87: D3: constants moved from Boss.luau and the scripts without changing their values (new module); S94: C4: 1.4 -> 3.9: one storm tick 38 % of a level 100 Mage's HP after atkMul 0.38 (30-45 %) |
 | Crafting | 1494 | S94: K2: chest pieces, gloves and boots of tiers 75-85 take 2 yeti fur, of 90-100 2 frost scale (first use of the scale) |
 | Maps | 42 | S94: E1: the Ice Grotto's map from 71 |
+| Mounts | 1 | S96: new module: the stablemaster's bay horse starts at mount level 1 (x1.6 walk speed, DESIGN-15 §2) |
 | SkillCurves | 28 | S91: 232.2 -> 196 (x0.845, R1 / T-SK2 Kingslayer at L20); S91: new, 232.38 pinned (rank 6 before S91); S89: B3: rank 3 (L18) pinned at 14; S91: 47 -> 42 (x0.9, R1 Fury at L20); S91: new, 47.83 pinned (rank 5 before S91); S91: 152.2 -> 129 (x0.85, R1 Mage builds at L20); S91: new, 153.83 pinned (rank 4 before S91); S91: 160 -> 136 (x0.85, R1 Fury at L20); S91: new, 161 pinned (rank 6 before S91); S89: B3: rank 3 (L18) pinned at 164.4; S90: - -> 30: C3 / F1: rank 4 pinned at today's 30 so rank 10 can move without changing 1-20; S91: 113.9 -> 83 (x0.73, T-SK2 Kingslayer at L20); S91: new, 113.91 pinned (rank 6 before S91); S91: 203.3 -> 173 (x0.85, R1 Mage builds at L20); S91: new, 207.03 pinned (rank 6 before S91); S91: 232.2 -> 174 (x0.75, R1 Mage builds at L20); S91: new, 236.92 pinned (rank 6 before S91); S92: new, 16.89 pinned (rank 5 at 19 before S92); S92: new 17.9 (G2): rank 6 (L23) near rank 10; T-SK5 0.249 -> 0.269 at 30; S92: new, 9.78 pinned (rank 5 at 19 before S92); S92: new 11.6 (G2): rank 6 (L23) with the heal knot of 25; S91: new, 226 (x0.88 of 256.7, R1 Inquisitor at L20); S91: new, 273.33 pinned (rank 6 before S91); S91: 176.7 -> 150 (x0.85, R1 Mage builds at L20); S91: new, 182.72 pinned (rank 5 before S91); S91: 220 -> 187 (x0.85, R1 Fury at L20); S91: new, 220.4 pinned (rank 6 before S91); S90: - -> 235.556: C3 / F1: rank 3 pinned at today's 235.556 so rank 10 can move without changing 1-20 |
 
 ## Własność pasm umiejętności
@@ -1604,8 +1672,8 @@ Gracz konwencji S32 (Zwykły, ilvl = poziom − 2, `Balance.statsFor`) z pasywka
 | 17 | 0,22 | 0,20 | 1,05 | 5240 | 0 | 1,04 |
 | 18 | 0,22 | 0,21 | 1,04 | 5837 | 0 | 1,04 |
 | 19 | 0,23 | 0,21 | 1,04 | 6465 | 0 | 1,03 |
-| 20 | 0,23 | 0,22 | 1,03 | 7150 | 0 | 1,01 |
-| 21 | 0,29 | 0,24 | 1,08 | 6774 | 0 | 1,25 |
+| 20 | 0,23 | 0,22 | 1,03 | 7150 → 7182 | 0 | 1,01 → 1,00 |
+| 21 | 0,29 | 0,24 | 1,08 | 6774 → 6809 | 0 | 1,25 → 1,26 |
 | suma 1–19 | 2,63 | – | – | – | – |
 | suma 1–19 z zadaniem Grimroka | 2,05 | – |
 | suma 1–19 z rodzajami Łąk (`kindAt`) | 2,79 | – |
@@ -3154,7 +3222,7 @@ Gracze na poziomie bossa (najwyżej 100), kolejność Wojownik (tank), Mag, Łow
 | Tempo: m(18) / m(17) | 1,04 | 0,97–1,30 | w paśmie | S91 (asertowane) |
 | Tempo: m(19) / m(18) | 1,04 | 0,97–1,30 | w paśmie | S91 (asertowane) |
 | Tempo: m(20) / m(19) | 1,03 | ≤ 1,30 | w paśmie | S91 (asertowane) |
-| Tempo: h(20) / h(19) | 1,01 | ≤ 1,30 | w paśmie | S91 (asertowane) |
+| Tempo: h(20) / h(19) | 1,00 | ≤ 1,30 | w paśmie | S91 (asertowane) |
 | Grimrok (model S83), 3 graczy L19: min | 5,43 | 4,00–6,00 | w paśmie | S91 (asertowane) |
 | Grimrok (model S83), 4 graczy L19: min | 5,57 | 4,00–6,00 | w paśmie | S91 (asertowane) |
 | Grimrok (model S83), 5 graczy L19: min | 5,43 | 4,00–6,00 | w paśmie | S91 (asertowane) |
@@ -3544,8 +3612,8 @@ Sklep: zbroja z progu `tierFor`, broń z progu kowala. Cel G4: ≤ 15,5 s (Kapł
 | 30 rotEnt | 687 | 61,4 | 0,00 | 100% | 74% | 0,00 | 0,00 | 0,00 |
 | 35 swampTroll | 787 | 66,3 | 0,81 | 0% | 76% | 0,78 | 0,19 | 0,89 |
 | 40 marshWitch | 542 | 49,7 | 1,13 | 0% | 80% | 0,83 | 0,23 | 0,97 |
-| suma pasma | – | – | 14,9 | – | – | 13,2 | 3,2 | 14,1 |
-| suma z bossami w zadaniach | – | – | 13,3 | – | – | – | – | – |
+| suma pasma | – | – | 14,9 → 14,8 | – | – | 13,2 → 13,1 | 3,2 | 14,1 → 14,0 |
+| suma z bossami w zadaniach | – | – | 13,3 → 13,2 | – | – | – | – | – |
 | cel D4 (wstępny) | – | – | 14,0 | – | – | – | – | – |
 
 ### Zadania na swoim poziomie (20-45)
@@ -3555,7 +3623,8 @@ Zadania liczą się na poziomie zadania (bez rozkładania); boss tylko z opcją 
 | poziom | główne EXP | poboczne EXP (×0,5) | boss EXP | dzienne EXP/dzień | dzienne ÷ poziom | główne złoto |
 | --- | --: | --: | --: | --: | --: | --: |
 | 20 | 7150 | 0 | 0 | 5361 | 45% | 960 |
-| 21 | 22 219 | 0 | 0 | 5880 | 45% | 1005 |
+| 21 | 22 219 | 0 → 1307 | 0 | 5880 | 45% | 1005 → 1507 |
+| 22 | 0 | 714 | 0 | 6420 | 45% | 263 |
 | 24 | 23 557 | 0 | 0 | 7572 | 45% | 1140 |
 | 25 | 0 | 0 | 0 | 8178 | 45% | 0 |
 | 27 | 23 136 | 0 | 0 | 9462 | 45% | 1275 |
@@ -3572,10 +3641,10 @@ Założenie modelu: drużyna bije na tym samym łowisku osobno i dzieli zaliczen
 
 | drużyna | mnożnik EXP | EXP/h członka | h pasma |
 | --- | --: | --: | --: |
-| solo (Wojownik) | 1,00 | 40 330 | 14,9 |
-| 3 × Wojownik | 1,00 | 40 330 | 14,9 |
-| Wojownik + Łowca + Mag | 1,10 | 44 398 | 13,5 |
-| cztery klasy | 1,15 | 47 792 | 12,6 |
+| solo (Wojownik) | 1,00 | 40 330 | 14,9 → 14,8 |
+| 3 × Wojownik | 1,00 | 40 330 | 14,9 → 14,8 |
+| Wojownik + Łowca + Mag | 1,10 | 44 398 | 13,5 → 13,4 |
+| cztery klasy | 1,15 | 47 792 | 12,6 → 12,5 |
 
 ### Ekonomia (Wojownik) (20-45)
 
@@ -3859,7 +3928,7 @@ Globalne (G): 164/164 w paśmie; regionu: 192/192 w paśmie.
 | grimrok faza 3: leap (tempo / odnowienie) | 1,00 | ≥ 0,50 | w paśmie | S87 (asertowane) |
 | grimrok faza 3: whirlwind (tempo / odnowienie) | 0,77 | ≥ 0,50 | w paśmie | S87 (asertowane) |
 | 25–99: spadki h/poziom rodzaju ogólnego bez zadań (Wojownik) | 0,00 | ≤ 0,00 | w paśmie | S87 (asertowane) |
-| 20–45: godzin (cel D4 14 h) | 14,92 | 10,50–17,50 | w paśmie | S87 (asertowane) |
+| 20–45: godzin (cel D4 14 h) | 14,83 | 10,50–17,50 | w paśmie | S87 (asertowane) |
 | duskwood_den werewolf 21 Warrior: Elita HP | 0,73 | 0,45–1,10 | w paśmie | S92 (asertowane) |
 | duskwood_den werewolf 21 Warrior: spotkanie Elit (q = 0.25) | 1,01 | ≤ 1,10 | w paśmie | S92 (asertowane) |
 | duskwood_den werewolf 21 Hunter: Elita HP | 0,73 | 0,45–1,10 | w paśmie | S92 (asertowane) |
@@ -4074,9 +4143,9 @@ Start = stan po S91 (`10f94d2`), zmierzony tym samym modelem przed zmianą danyc
 | Spawnery Elit na poziomach 21–45 | 18/25 | 25/25 | każdy |
 | Expowiska na 43–44 | 1 | 2 / 2 | ≥ 2 |
 | Rodzaje: EXP/s ÷ zwykły (najmniej) | 0,80 (rotEnt) | 0,90 | 0,85–1,20 |
-| Tempo 20 → 45 (okno): h | 16,07 | 14,38 | 11,9–16,1 |
-| G13: pasmo 20–45 (rodzaje regionu, zadania na swoim poziomie): h | 17,98 | 14,92 | 10,5–17,5 |
-| Tempo: h(44) / największy krok h(L) / h(L − 1) | 0,93 / 1,89 (L21) | 0,86 / 1,25 | 0,72–0,98 / ≤ 1,30 |
+| Tempo 20 → 45 (okno): h | 16,07 | 14,33 | 11,9–16,1 |
+| G13: pasmo 20–45 (rodzaje regionu, zadania na swoim poziomie): h | 17,98 | 14,83 | 10,5–17,5 |
+| Tempo: h(44) / największy krok h(L) / h(L − 1) | 0,93 / 1,89 (L21) | 0,86 / 1,26 | 0,72–0,98 / ≤ 1,30 |
 | Plecak 100 (od 35.): poziomy dochodu | 11,4 | 7,1 | 3–8 |
 | Plecak 80 (od 25.): poziomy dochodu | 6,5 | 6,8 | 3–8 |
 | +1…+3 broni / dochód poziomu (21–45) | 0,44–0,69 | 0,46–0,68 | ≤ 1,05 |
@@ -4128,10 +4197,10 @@ Start = stan po S91 (`10f94d2`), zmierzony tym samym modelem przed zmianą danyc
 | Morvane: Mityki nieużyteczne dla Hunter | 0,00 | ≤ 0,00 | w paśmie | S92 (asertowane) |
 | Morvane: Mityki nieużyteczne dla Mage | 0,00 | ≤ 0,00 | w paśmie | S92 (asertowane) |
 | Morvane: Mityki nieużyteczne dla Cleric | 0,00 | ≤ 0,00 | w paśmie | S92 (asertowane) |
-| Tempo 20 → 45 (okno, bez Morvane): h | 14,38 | 11,90–16,10 | w paśmie | S92 (asertowane) |
+| Tempo 20 → 45 (okno, bez Morvane): h | 14,33 | 11,90–16,10 | w paśmie | S92 (asertowane) |
 | Tempo: h(44) | 0,86 | 0,72–0,98 | w paśmie | S92 (asertowane) |
-| Tempo: h(20) / h(19) | 1,01 | ≤ 1,30 | w paśmie | S92 (asertowane) |
-| Tempo: h(21) / h(20) | 1,25 | ≤ 1,30 | w paśmie | S92 (asertowane) |
+| Tempo: h(20) / h(19) | 1,00 | ≤ 1,30 | w paśmie | S92 (asertowane) |
+| Tempo: h(21) / h(20) | 1,26 | ≤ 1,30 | w paśmie | S92 (asertowane) |
 | Tempo: h(22) / h(21) | 1,04 | ≤ 1,30 | w paśmie | S92 (asertowane) |
 | Tempo: h(23) / h(22) | 1,04 | ≤ 1,30 | w paśmie | S92 (asertowane) |
 | Tempo: h(24) / h(23) | 1,22 | ≤ 1,30 | w paśmie | S92 (asertowane) |
@@ -4299,10 +4368,10 @@ Start = stan po S91 (`10f94d2`), zmierzony tym samym modelem przed zmianą danyc
 | Hunter 39: +1…+3 / dochód poziomu | 0,59 | ≤ 1,05 | w paśmie | S92 (asertowane) |
 | Mage 39: +1…+3 / dochód poziomu | 0,59 | ≤ 1,05 | w paśmie | S92 (asertowane) |
 | Cleric 39: +1…+3 / dochód poziomu | 0,59 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Warrior 40: +1…+3 / dochód poziomu | 0,60 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Hunter 40: +1…+3 / dochód poziomu | 0,60 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Mage 40: +1…+3 / dochód poziomu | 0,60 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Cleric 40: +1…+3 / dochód poziomu | 0,60 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Warrior 40: +1…+3 / dochód poziomu | 0,59 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Hunter 40: +1…+3 / dochód poziomu | 0,59 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Mage 40: +1…+3 / dochód poziomu | 0,59 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Cleric 40: +1…+3 / dochód poziomu | 0,59 | ≤ 1,05 | w paśmie | S92 (asertowane) |
 | Warrior 41: +1…+3 / dochód poziomu | 0,60 | ≤ 1,05 | w paśmie | S92 (asertowane) |
 | Hunter 41: +1…+3 / dochód poziomu | 0,60 | ≤ 1,05 | w paśmie | S92 (asertowane) |
 | Mage 41: +1…+3 / dochód poziomu | 0,60 | ≤ 1,05 | w paśmie | S92 (asertowane) |
@@ -4323,14 +4392,14 @@ Start = stan po S91 (`10f94d2`), zmierzony tym samym modelem przed zmianą danyc
 | Hunter 45: +1…+3 / dochód poziomu | 0,55 | ≤ 1,05 | w paśmie | S92 (asertowane) |
 | Mage 45: +1…+3 / dochód poziomu | 0,55 | ≤ 1,05 | w paśmie | S92 (asertowane) |
 | Cleric 45: +1…+3 / dochód poziomu | 0,55 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Warrior: backpack_80 (od 25.) / dochód poziomu | 6,76 | 3,00–8,00 | w paśmie | S92 (asertowane) |
-| Hunter: backpack_80 (od 25.) / dochód poziomu | 6,76 | 3,00–8,00 | w paśmie | S92 (asertowane) |
-| Mage: backpack_80 (od 25.) / dochód poziomu | 6,76 | 3,00–8,00 | w paśmie | S92 (asertowane) |
-| Cleric: backpack_80 (od 25.) / dochód poziomu | 6,76 | 3,00–8,00 | w paśmie | S92 (asertowane) |
-| Warrior: backpack_100 (od 35.) / dochód poziomu | 7,13 | 3,00–8,00 | w paśmie | S92 (asertowane) |
-| Hunter: backpack_100 (od 35.) / dochód poziomu | 7,13 | 3,00–8,00 | w paśmie | S92 (asertowane) |
-| Mage: backpack_100 (od 35.) / dochód poziomu | 7,13 | 3,00–8,00 | w paśmie | S92 (asertowane) |
-| Cleric: backpack_100 (od 35.) / dochód poziomu | 7,13 | 3,00–8,00 | w paśmie | S92 (asertowane) |
+| Warrior: backpack_80 (od 25.) / dochód poziomu | 6,75 | 3,00–8,00 | w paśmie | S92 (asertowane) |
+| Hunter: backpack_80 (od 25.) / dochód poziomu | 6,75 | 3,00–8,00 | w paśmie | S92 (asertowane) |
+| Mage: backpack_80 (od 25.) / dochód poziomu | 6,75 | 3,00–8,00 | w paśmie | S92 (asertowane) |
+| Cleric: backpack_80 (od 25.) / dochód poziomu | 6,75 | 3,00–8,00 | w paśmie | S92 (asertowane) |
+| Warrior: backpack_100 (od 35.) / dochód poziomu | 7,12 | 3,00–8,00 | w paśmie | S92 (asertowane) |
+| Hunter: backpack_100 (od 35.) / dochód poziomu | 7,12 | 3,00–8,00 | w paśmie | S92 (asertowane) |
+| Mage: backpack_100 (od 35.) / dochód poziomu | 7,12 | 3,00–8,00 | w paśmie | S92 (asertowane) |
+| Cleric: backpack_100 (od 35.) / dochód poziomu | 7,12 | 3,00–8,00 | w paśmie | S92 (asertowane) |
 | werewolf: część potwora | 1,00 | ≥ 1,00 | w paśmie | S92 (asertowane) |
 | forestWraith: część potwora | 1,00 | ≥ 1,00 | w paśmie | S92 (asertowane) |
 | rotEnt: część potwora | 1,00 | ≥ 1,00 | w paśmie | S92 (asertowane) |
@@ -4402,34 +4471,34 @@ h = godziny na poziom (rodzaj zwykły, odpoczynek, zadania główne bez bossów 
 | poziom | h | h / h(L − 1) | m | h rodzaj regionu | h z Morvane |
 | --- | --: | --: | --: | --: | --: |
 | 19 | 0,23 | 1,03 | 0,21 | 0,27 | 0,19 |
-| 20 | 0,23 | 1,01 | 0,22 | 0,25 | 0,23 |
-| 21 | 0,29 | 1,25 | 0,24 | 0,31 | 0,29 |
-| 22 | 0,31 | 1,04 | 0,26 | 0,32 | 0,31 |
-| 23 | 0,32 | 1,04 | 0,28 | 0,34 | 0,32 |
+| 20 | 0,23 | 1,00 | 0,22 | 0,24 | 0,23 |
+| 21 | 0,29 | 1,26 | 0,24 | 0,31 | 0,29 |
+| 22 | 0,30 | 1,04 | 0,26 | 0,32 | 0,30 |
+| 23 | 0,32 | 1,04 | 0,27 | 0,33 | 0,32 |
 | 24 | 0,39 | 1,22 | 0,31 | 0,41 | 0,39 |
-| 25 | 0,40 | 1,02 | 0,34 | 0,42 | 0,40 |
+| 25 | 0,39 | 1,02 | 0,34 | 0,42 | 0,39 |
 | 26 | 0,41 | 1,03 | 0,36 | 0,40 | 0,41 |
 | 27 | 0,49 | 1,19 | 0,40 | 0,56 | 0,49 |
-| 28 | 0,50 | 1,03 | 0,44 | 0,58 | 0,50 |
-| 29 | 0,52 | 1,03 | 0,46 | 0,41 | 0,52 |
+| 28 | 0,50 | 1,03 | 0,43 | 0,58 | 0,50 |
+| 29 | 0,51 | 1,03 | 0,46 | 0,41 | 0,51 |
 | 30 | 0,50 | 0,96 | 0,48 | 0,40 | 0,50 |
 | 31 | 0,51 | 1,02 | 0,50 | 0,41 | 0,51 |
 | 32 | 0,52 | 1,03 | 0,51 | 0,49 | 0,52 |
-| 33 | 0,60 | 1,15 | 0,53 | 0,61 | 0,60 |
-| 34 | 0,61 | 1,02 | 0,55 | 0,64 | 0,61 |
+| 33 | 0,60 | 1,15 | 0,53 | 0,60 | 0,60 |
+| 34 | 0,61 | 1,02 | 0,55 | 0,63 | 0,61 |
 | 35 | 0,62 | 1,01 | 0,57 | 0,56 | 0,62 |
-| 36 | 0,64 | 1,02 | 0,60 | 0,58 | 0,64 |
-| 37 | 0,77 | 1,21 | 0,65 | 0,70 | 0,71 |
-| 38 | 0,79 | 1,02 | 0,69 | 0,71 | 0,72 |
+| 36 | 0,63 | 1,02 | 0,60 | 0,58 | 0,63 |
+| 37 | 0,77 | 1,21 | 0,65 | 0,70 | 0,70 |
+| 38 | 0,78 | 1,02 | 0,68 | 0,71 | 0,72 |
 | 39 | 0,80 | 1,02 | 0,72 | 0,93 | 0,73 |
-| 40 | 0,81 | 1,01 | 0,76 | 0,94 | 0,74 |
-| 41 | 0,82 | 1,02 | 0,80 | 0,96 | 0,76 |
-| 42 | 0,84 | 1,02 | 0,81 | 1,03 | 0,77 |
+| 40 | 0,80 | 1,01 | 0,76 | 0,94 | 0,74 |
+| 41 | 0,82 | 1,02 | 0,79 | 0,95 | 0,75 |
+| 42 | 0,83 | 1,02 | 0,81 | 1,03 | 0,77 |
 | 43 | 0,85 | 1,02 | 0,82 | 1,05 | 0,37 |
-| 44 | 0,86 | 1,02 | 0,84 | 1,07 | 0,37 |
+| 44 | 0,86 | 1,02 | 0,83 | 1,06 | 0,37 |
 | 45 | 0,87 | 1,01 | 0,85 | 0,91 | 0,87 |
 
-Suma 20 → 45: 14,38 h (rodzaj regionu 15,06 h, z Morvane 13,02 h); h(45) / h(44) = 1,01 (rodzaje Pustkowi: S93).
+Suma 20 → 45: 14,33 h (rodzaj regionu 15,00 h, z Morvane 12,97 h); h(45) / h(44) = 1,01 (rodzaje Pustkowi: S93).
 
 ### Premia za różne klasy (tylko raport, S92)
 
@@ -5397,7 +5466,7 @@ h = godziny na poziom (rodzaj zwykły, odpoczynek, zadania główne bez bossów 
 
 | poziom | h | h / h(L − 1) | m | h rodzaj regionu | h z Azgorem |
 | --- | --: | --: | --: | --: | --: |
-| 44 | 0,86 | 1,02 | 0,84 | 1,07 | 0,37 |
+| 44 | 0,86 | 1,02 | 0,83 | 1,06 | 0,37 |
 | 45 | 0,87 | 1,01 | 0,85 | 0,91 | 0,87 |
 | 46 | 0,89 | 1,02 | 0,86 | 0,93 | 0,89 |
 | 47 | 0,90 | 1,01 | 0,87 | 0,94 | 0,90 |
@@ -6307,7 +6376,7 @@ Start = stan po S93 (`ef4fb39`), zmierzony tym samym modelem przed zmianą danyc
 | Lodowy Żywiołak: HP/EXP ÷ średnia regionu | 1,11 | 1,20 | ≤ 1,25 |
 | Tempo 70 → 100 (okno): h | 40,89 | 40,97 | 34,9–47,2 |
 | Tempo: h(99) / największy krok h(L) / h(L − 1) na 70–99 | 1,66 / (h(92) = 0: okno `glacier` tylko na 92.) | 1,47 / 1,05 | 1,36–1,84 / ≤ 1,30 |
-| Tempo 1 → 100 (okno): h | 84,05 | 84,13 | 69,7–94,3 |
+| Tempo 1 → 100 (okno): h | 84,05 | 84,07 | 69,7–94,3 |
 | Plecak 160 (od 65.) / 200 (od 80.): poziomy dochodu | 21,7 / 33,8 | 8,0 / 8,0 | 5–12 |
 | +1…+3 broni / dochód poziomu (71–99) | 0,63–0,84 | 0,63–0,81 | ≤ 1,05 |
 | Mikstury łańcuchowe / dochód (71–99) | 0,38–1,45 | 0,33–1,04 | 0,15–0,30 (górna: raport) |
@@ -6548,10 +6617,10 @@ h = godziny na poziom (rodzaj zwykły, odpoczynek, zadania główne bez bossów 
 | pasmo | h (bez bossów) | h z zadaniami bossów |
 | --- | --: | --: |
 | 1 → 20 | 2,63 | 2,05 |
-| 20 → 45 | 14,38 | 13,02 |
+| 20 → 45 | 14,33 | 12,97 |
 | 45 → 70 | 26,14 | 25,04 |
 | 70 → 100 | 40,97 | 37,83 |
-| 1 → 100 | 84,13 | 77,94 |
+| 1 → 100 | 84,07 | 77,88 |
 
 Zadanie `vaelgrath` oddaje 371 503 EXP (z Vaelgrathem w oknie −3,14 h na 70 → 100); okno zadania `deepforge` (62–71) daje na 70.–71. 22% EXP zadań tego okna.
 
@@ -7659,26 +7728,26 @@ Broń domyślna klasy z ilvl poziom − 2, Zwykła. Dochód poziomu (`Balance.le
 
 | klasa · poziom | dochód poziomu | +1…+3 / dochód | +1…+6 / dochód | +1…+9 z ochroną (poziomy) | +1…+9 bez ochrony (poziomy) | zestaw +9 bez ochrony (poziomy) | goldEq +9 z ochroną (poziomy) | zwoje +9 |
 | --- | --: | --: | --: | --: | --: | --: | --: | --: |
-| Wojownik · 20 | 3110 | 0,49 | 2,64 | **11,5** | 82,1 | 821 | 77,8 | 18,3 |
-| Łowca · 20 | 3110 | 0,49 | 2,64 | **11,5** | 82,1 | 821 | 77,8 | 18,3 |
-| Mag · 20 | 3110 | 0,49 | 2,64 | **11,5** | 82,1 | 821 | 77,8 | 18,3 |
-| Kapłan · 20 | 3110 | 0,49 | 2,64 | **11,5** | 82,1 | 821 | 77,8 | 18,3 |
-| Wojownik · 25 | 4440 | 0,50 | 2,72 | **11,8** | 84,5 | 845 | 58,2 | 18,3 |
-| Łowca · 25 | 4440 | 0,50 | 2,72 | **11,8** | 84,5 | 845 | 58,2 | 18,3 |
-| Mag · 25 | 4440 | 0,50 | 2,72 | **11,8** | 84,5 | 845 | 58,2 | 18,3 |
-| Kapłan · 25 | 4440 | 0,50 | 2,72 | **11,8** | 84,5 | 845 | 58,2 | 18,3 |
-| Wojownik · 30 | 5398 | 0,61 | 3,31 | 14,4 | 103,0 | 1030 | 52,6 | 18,3 |
-| Łowca · 30 | 5398 | 0,61 | 3,31 | 14,4 | 103,0 | 1030 | 52,6 | 18,3 |
-| Mag · 30 | 5398 | 0,61 | 3,31 | 14,4 | 103,0 | 1030 | 52,6 | 18,3 |
-| Kapłan · 30 | 5398 | 0,61 | 3,31 | 14,4 | 103,0 | 1030 | 52,6 | 18,3 |
-| Wojownik · 35 | 7014 | 0,65 | 3,54 | 15,4 | 110,1 | 1101 | 44,8 | 18,3 |
-| Łowca · 35 | 7014 | 0,65 | 3,54 | 15,4 | 110,1 | 1101 | 44,8 | 18,3 |
-| Mag · 35 | 7014 | 0,65 | 3,54 | 15,4 | 110,1 | 1101 | 44,8 | 18,3 |
-| Kapłan · 35 | 7014 | 0,65 | 3,54 | 15,4 | 110,1 | 1101 | 44,8 | 18,3 |
-| Wojownik · 40 | 10 166 | 0,60 | 3,24 | 14,1 | 100,7 | 1007 | 34,3 | 18,3 |
-| Łowca · 40 | 10 166 | 0,60 | 3,24 | 14,1 | 100,7 | 1007 | 34,3 | 18,3 |
-| Mag · 40 | 10 166 | 0,60 | 3,24 | 14,1 | 100,7 | 1007 | 34,3 | 18,3 |
-| Kapłan · 40 | 10 166 | 0,60 | 3,24 | 14,1 | 100,7 | 1007 | 34,3 | 18,3 |
+| Wojownik · 20 | 3110 → 3111 | 0,49 | 2,64 | **11,5** | 82,1 | 821 | 77,8 → 77,7 | 18,3 |
+| Łowca · 20 | 3110 → 3111 | 0,49 | 2,64 | **11,5** | 82,1 | 821 | 77,8 → 77,7 | 18,3 |
+| Mag · 20 | 3110 → 3111 | 0,49 | 2,64 | **11,5** | 82,1 | 821 | 77,8 → 77,7 | 18,3 |
+| Kapłan · 20 | 3110 → 3111 | 0,49 | 2,64 | **11,5** | 82,1 | 821 | 77,8 → 77,7 | 18,3 |
+| Wojownik · 25 | 4440 → 4443 | 0,50 | 2,72 | **11,8** | 84,5 → 84,4 | 845 → 844 | 58,2 | 18,3 |
+| Łowca · 25 | 4440 → 4443 | 0,50 | 2,72 | **11,8** | 84,5 → 84,4 | 845 → 844 | 58,2 | 18,3 |
+| Mag · 25 | 4440 → 4443 | 0,50 | 2,72 | **11,8** | 84,5 → 84,4 | 845 → 844 | 58,2 | 18,3 |
+| Kapłan · 25 | 4440 → 4443 | 0,50 | 2,72 | **11,8** | 84,5 → 84,4 | 845 → 844 | 58,2 | 18,3 |
+| Wojownik · 30 | 5398 → 5405 | 0,61 | 3,31 | 14,4 | 103,0 → 102,9 | 1030 → 1029 | 52,6 → 52,5 | 18,3 |
+| Łowca · 30 | 5398 → 5405 | 0,61 | 3,31 | 14,4 | 103,0 → 102,9 | 1030 → 1029 | 52,6 → 52,5 | 18,3 |
+| Mag · 30 | 5398 → 5405 | 0,61 | 3,31 | 14,4 | 103,0 → 102,9 | 1030 → 1029 | 52,6 → 52,5 | 18,3 |
+| Kapłan · 30 | 5398 → 5405 | 0,61 | 3,31 | 14,4 | 103,0 → 102,9 | 1030 → 1029 | 52,6 → 52,5 | 18,3 |
+| Wojownik · 35 | 7014 → 7024 | 0,65 | 3,54 | 15,4 → 15,3 | 110,1 → 110,0 | 1101 → 1100 | 44,8 → 44,7 | 18,3 |
+| Łowca · 35 | 7014 → 7024 | 0,65 | 3,54 | 15,4 → 15,3 | 110,1 → 110,0 | 1101 → 1100 | 44,8 → 44,7 | 18,3 |
+| Mag · 35 | 7014 → 7024 | 0,65 | 3,54 | 15,4 → 15,3 | 110,1 → 110,0 | 1101 → 1100 | 44,8 → 44,7 | 18,3 |
+| Kapłan · 35 | 7014 → 7024 | 0,65 | 3,54 | 15,4 → 15,3 | 110,1 → 110,0 | 1101 → 1100 | 44,8 → 44,7 | 18,3 |
+| Wojownik · 40 | 10 166 → 10 175 | 0,60 → 0,59 | 3,24 | 14,1 → 14,0 | 100,7 | 1007 | 34,3 | 18,3 |
+| Łowca · 40 | 10 166 → 10 175 | 0,60 → 0,59 | 3,24 | 14,1 → 14,0 | 100,7 | 1007 | 34,3 | 18,3 |
+| Mag · 40 | 10 166 → 10 175 | 0,60 → 0,59 | 3,24 | 14,1 → 14,0 | 100,7 | 1007 | 34,3 | 18,3 |
+| Kapłan · 40 | 10 166 → 10 175 | 0,60 → 0,59 | 3,24 | 14,1 → 14,0 | 100,7 | 1007 | 34,3 | 18,3 |
 | Wojownik · 45 | 14 121 | 0,55 | 2,99 | 13,0 | 92,9 | 929 | 27,6 | 18,3 |
 | Łowca · 45 | 14 121 | 0,55 | 2,99 | 13,0 | 92,9 | 929 | 27,6 | 18,3 |
 | Mag · 45 | 14 121 | 0,55 | 2,99 | 13,0 | 92,9 | 929 | 27,6 | 18,3 |
@@ -8099,14 +8168,14 @@ Godziny: materiały +9 jednej broni (odłamki zwojów z receptury przy ochronie)
 | Cleric holystaff legendary +9 L100: z cechami | 4,42 | 0,97–1,06 | **poza** | raport → S88 |
 | Cleric holystaff mythic +0 L100: z cechami | 4,40 | 0,97–1,03 | **poza** | raport → S88 |
 | Cleric holystaff mythic +9 L100: z cechami | 4,25 | 0,97–1,06 | **poza** | raport → S88 |
-| Warrior 20: +1…+9 z ochroną (poziomy dochodu) | 11,46 | 12,00–25,00 | **poza** | raport → S91 |
-| Hunter 20: +1…+9 z ochroną (poziomy dochodu) | 11,46 | 12,00–25,00 | **poza** | raport → S91 |
-| Mage 20: +1…+9 z ochroną (poziomy dochodu) | 11,46 | 12,00–25,00 | **poza** | raport → S91 |
-| Cleric 20: +1…+9 z ochroną (poziomy dochodu) | 11,46 | 12,00–25,00 | **poza** | raport → S91 |
-| Warrior 25: +1…+9 z ochroną (poziomy dochodu) | 11,79 | 12,00–25,00 | **poza** | raport → S92 |
-| Hunter 25: +1…+9 z ochroną (poziomy dochodu) | 11,79 | 12,00–25,00 | **poza** | raport → S92 |
-| Mage 25: +1…+9 z ochroną (poziomy dochodu) | 11,79 | 12,00–25,00 | **poza** | raport → S92 |
-| Cleric 25: +1…+9 z ochroną (poziomy dochodu) | 11,79 | 12,00–25,00 | **poza** | raport → S92 |
+| Warrior 20: +1…+9 z ochroną (poziomy dochodu) | 11,45 | 12,00–25,00 | **poza** | raport → S91 |
+| Hunter 20: +1…+9 z ochroną (poziomy dochodu) | 11,45 | 12,00–25,00 | **poza** | raport → S91 |
+| Mage 20: +1…+9 z ochroną (poziomy dochodu) | 11,45 | 12,00–25,00 | **poza** | raport → S91 |
+| Cleric 20: +1…+9 z ochroną (poziomy dochodu) | 11,45 | 12,00–25,00 | **poza** | raport → S91 |
+| Warrior 25: +1…+9 z ochroną (poziomy dochodu) | 11,78 | 12,00–25,00 | **poza** | raport → S92 |
+| Hunter 25: +1…+9 z ochroną (poziomy dochodu) | 11,78 | 12,00–25,00 | **poza** | raport → S92 |
+| Mage 25: +1…+9 z ochroną (poziomy dochodu) | 11,78 | 12,00–25,00 | **poza** | raport → S92 |
+| Cleric 25: +1…+9 z ochroną (poziomy dochodu) | 11,78 | 12,00–25,00 | **poza** | raport → S92 |
 
 ## Łup i szczęście (S84)
 
@@ -12599,7 +12668,7 @@ Wiersze celów z liczbą z tabeli ROZWOJ (9.6, 10.6, 11.6, 12.7) dla tego samego
 | mage.tsk4 · arcanist.arcanistOverload · 70 (wariant: Przeciążenie) (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 2,71 | 2,75 | -2% |
 | mage.tsk4 · arcanist.arcanistOverload · 100 (wariant: Przeciążenie) (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 2,78 | 2,79 | 0% |
 
-Tabele S86 liczą się 19,6 s.
+Tabele S86 liczą się 19,8 s.
 
 ## Poprawki globalne (S87)
 
@@ -12794,9 +12863,9 @@ G9 (Wojownik, broń domyślna ilvl − 2, Zwykła): +1…+3 / dochód poziomu (0
 
 | poziom | +1…+3 / dochód | +1…+9 z ochroną | +1…+9 z materiałami |
 | --- | --: | --: | --: |
-| 20 | 0,49 | 11,5 | 77,8 |
+| 20 | 0,49 | 11,5 | 77,7 |
 | 25 | 0,50 | 11,8 | 58,2 |
-| 30 | 0,61 | 14,4 | 52,6 |
+| 30 | 0,61 | 14,4 | 52,5 |
 | 45 | 0,55 | 13,0 | 27,6 |
 | 60 | 0,64 | 15,1 | 24,5 |
 | 70 | 0,63 | 14,8 | 21,5 |
@@ -12815,7 +12884,7 @@ Legenda +9: Rdzenie Legendy od +7 → od +8 i zwoje ochrony:
 
 | pasmo | godzin (Wojownik, z zadaniami) | cel D4 ±25% |
 | --- | --: | --: |
-| 20–45 | 14,9 | 10,5–17,5 |
+| 20–45 | 14,8 | 10,5–17,5 |
 | 45–70 | 26,1 | 18,8–31,2 |
 | 70–100 | 42,5 | 30,8–51,2 |
 

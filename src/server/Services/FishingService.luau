@@ -26,7 +26,14 @@ local log = Log.new("FishingService")
 
 local FishingService = {
 	Name = "FishingService",
-	Deps = { "PlayerStateService", "InventoryService", "ResourceService", "CharacterService", "GatherService" },
+	Deps = {
+		"PlayerStateService",
+		"InventoryService",
+		"ResourceService",
+		"CharacterService",
+		"GatherService",
+		"MountService", -- S96: fishing dismounts
+	},
 }
 
 type Session = {
@@ -43,6 +50,7 @@ local InventoryService: any
 local ResourceService: any
 local CharacterService: any
 local GatherService: any
+local MountService: any
 
 local rng = Rng.new()
 local sessions: { [Player]: Session } = {}
@@ -133,6 +141,7 @@ local function startFishing(player: Player, uid: string): (boolean, string?, str
 		fish = Fish.pick(spot, rng:next()),
 		start = root.Position,
 	}
+	MountService.Dismount(player, "action") -- S96: fishing needs standing at the water
 	sessions[player] = session
 	PlayerStateService.Set(player, { "fishing" }, { sessionId = session.id, phase = "waiting", node = uid })
 
@@ -204,6 +213,7 @@ function FishingService.Init(registry)
 	ResourceService = registry.Get("ResourceService")
 	CharacterService = registry.Get("CharacterService")
 	GatherService = registry.Get("GatherService")
+	MountService = registry.Get("MountService")
 end
 
 function FishingService.Start()

@@ -9,6 +9,8 @@ local DevPreset = require(Shared.Logic.DevPreset)
 local Elements = require(Shared.Data.Elements)
 local Items = require(Shared.Data.Items)
 local Luck = require(Shared.Logic.Luck)
+local MountData = require(Shared.Data.Mounts)
+local Mounts = require(Shared.Logic.Mounts)
 local LuckData = require(Shared.Data.Luck)
 local PartyBonus = require(Shared.Logic.PartyBonus)
 local PathData = require(Shared.Data.Paths)
@@ -28,6 +30,7 @@ local StatService = Context.services.StatService
 local SkillService = Context.services.SkillService
 local PathService = Context.services.PathService
 local PartyService = Context.services.PartyService
+local MountService = Context.services.MountService
 
 local commands: { [string]: (player: Player, args: { string }) -> ...any } = {}
 
@@ -147,6 +150,67 @@ commands.speed = function(player, args)
 	end
 	StatService.SetSpeedOverride(player, speed)
 	reply(player, "admin.speed.ok", { speed = speed })
+end
+
+-- S96: /mount info | give [id] | take [id] | lvl <1-10> | ride | off
+commands.mount = function(player, args)
+	local action = args[1]
+	withCharacter(player, function()
+		local character = PlayerStateService.GetCharacter(player)
+		local state = (character and character.mounts) or { owned = {}, riding = false }
+		local active, lvl = Mounts.activeOf(state)
+		if action == "info" then
+			local owned: { string } = {}
+			for id, entry in state.owned do
+				table.insert(owned, `{id} {entry.lvl}`)
+			end
+			table.sort(owned)
+			local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+			reply(player, "admin.mount.info", {
+				owned = if #owned > 0 then table.concat(owned, ", ") else "-",
+				active = active or "-",
+				riding = if MountService.IsRiding(player) then "ON" else "OFF",
+				speed = if humanoid then string.format("%.1f", humanoid.WalkSpeed) else "-",
+				mul = string.format("%.2f", Mounts.speedMul(lvl)),
+				time = tostring(Mounts.mountTime(lvl)),
+			})
+		elseif action == "give" then
+			local id = args[2] or "mount_horse"
+			if not MountData.get(id) then
+				reply(player, "admin.mount.unknown", { id = id })
+			elseif MountService.Grant(player, id, "admin") then
+				reply(player, "admin.mount.given", { id = id })
+			else
+				reply(player, "admin.mount.already", { id = id })
+			end
+		elseif action == "take" then
+			local id = args[2] or active
+			if id and MountService.Take(player, id) then
+				reply(player, "admin.mount.taken", { id = id })
+			else
+				reply(player, "admin.mount.unknown", { id = id or "-" })
+			end
+		elseif action == "lvl" then
+			local n = parseAmount(args[2])
+			if not n or not active then
+				reply(player, "admin.usage.mount")
+				return
+			end
+			MountService.SetLevel(player, active, n)
+			local entry = (PlayerStateService.Get(player, { "character", "mounts", "owned", active }) or {}) :: any
+			reply(player, "admin.mount.lvl", { id = active, lvl = entry.lvl or n })
+		elseif action == "ride" then
+			local ok, err = MountService.Ride(player, true)
+			if not ok then
+				reply(player, err or "admin.usage.mount", { level = Config.Mount.minLevel })
+			end
+		elseif action == "off" then
+			MountService.Interrupt(player)
+			MountService.Dismount(player, "admin")
+		else
+			reply(player, "admin.usage.mount")
+		end
+	end)
 end
 
 -- Level + the full gear set of the character's class at that level (Logic/DevPreset), rolled at `rarity` with

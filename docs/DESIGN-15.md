@@ -37,7 +37,7 @@ Ten plik trafia do repo jako `docs/DESIGN-15.md`. Odejście od niego = linia w `
 - **Ulepszanie (S97):** poziomy wierzchowca 1–10 u stajennego za złoto i materiały z potworów (krzywa w `Data/Mounts`), każdy poziom trochę szybkości, od 5. krótsze wsiadanie. **Bez statystyk bojowych.**
 - **Lepsze wierzchowce (S97):** z bossów (mała szansa przy osobistym rzucie, osobna od pity przedmiotów; np. Grimrok/Morvane/Azgor/Vaelgrath po jednym, startLevel 3/4/5/6) i premium (produkt w `Data/Products` wyłączony do decyzji właściciela, startLevel jak bossowy, ten sam sufit). Różnią się wyglądem i poziomem startowym.
 - **Skiny (S97):** nowy rodzaj kosmetyki `mountskin` w garderobie za Smocze Odłamki, kilka do zdobycia z bossów i questów; skin działa na każdego posiadanego wierzchowca.
-- **Wygląd:** proceduralny model z części (jak `Logic/Anatomy` czworonogów) z hakiem na plik modelu (`assets/Mounts/<id>.rbxm`, wzór `WeaponLooks.assets`); postać siedzi (poza siedzenia), animacja kroku z `Logic/Gait`/`LookAnim`. Klawisz wsiadania w `Data/Keybinds` (PC) i przycisk na telefonie.
+- **Wygląd:** proceduralny model z części (jak `Logic/Anatomy` czworonogów) z hakiem na plik modelu (`assets/Mounts/<model>.rbxm` z nazwą z wpisu `Data/Mounts.assets[id]`, wzór `WeaponLooks.assets`; S96); postać siedzi (poza siedzenia), animacja kroku z `Logic/Gait`/`LookAnim`. Klawisz wsiadania w `Data/Keybinds` (PC) i przycisk na telefonie.
 
 ## 3. Questy (S98–S108)
 

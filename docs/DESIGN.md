@@ -885,7 +885,14 @@ Po testach S17: **więcej rodzajów na każdej mapie (min. 8–10 na mapę teren
 
 ## 22. Kosmetyki i pety
 
-- Pety chodzą (albo latają) za graczem, nie dają bonusów. Wygląd z tego samego generatora co potwory, w wersji „chibi” (duża głowa, duże oczy, krótkie nogi, do 16 części); to, czy pet lata, jest w danych (`flies`: sowa, smoczek, ognik), latające machają skrzydłami. Prawdziwy model można podmienić (`docs/MODELE.md`, `docs/ASSETS.md`). Wierzchowców nie ma. Kosmetyki: strój (nakładany na awatar), aura, ślad, efekt broni. Garderoba w menu.
+- Pety chodzą (albo latają) za graczem, nie dają bonusów. Wygląd z tego samego generatora co potwory, w wersji „chibi” (duża głowa, duże oczy, krótkie nogi, do 16 części); to, czy pet lata, jest w danych (`flies`: sowa, smoczek, ognik), latające machają skrzydłami. Prawdziwy model można podmienić (`docs/MODELE.md`, `docs/ASSETS.md`). Kosmetyki: strój (nakładany na awatar), aura, ślad, efekt broni. Garderoba w menu.
+- **Wierzchowce (S96, DESIGN-15 §2):** od 20. poziomu każda postać raz zdobywa gniadego konia w łuku trzech zadań u
+  stajennego Radosza (21–22, wzięcie od 20.). Na koniu `WalkSpeed = 16 × (1,6 → 2,0 wg poziomu wierzchowca 1–10) ×
+  (1 + moveSpeed ze sprzętu, limit 30%)`; buffy i pasywki szybkości oraz sprint nie działają, spowolnienia tak.
+  Wsiadanie 1,5 s w miejscu (od 5. poziomu wierzchowca 1 s), przerywa je ruch, obrażenia i umiejętność; w walce się nie
+  wsiada. Z siodła działa atak podstawowy i mikstury, umiejętność zsiada i się wykonuje. Jazda w mieście i otwartych
+  regionach, nie w jaskiniach, lochach i na arenie (portal tam zsiada). Wierzchowiec nie daje statystyk bojowych.
+  Ulepszanie, wierzchowce z bossów i premium oraz skiny: S97.
 
 ## 23. Interfejs
 
@@ -919,3 +926,5 @@ przy nicku zostaje znakiem. Admin: `/icons [glyph|art]`, `/icongrid <grupa>`.
 - **Animacje ataku** (S22, proceduralne, bez assetów): każdy atak podstawowy ma ruch zgodny z bronią w ręce: cięcie znad barku ze smugą w kolorze rzadkości (miecz, topór, szabla), cięcie oburącz z góry, pchnięcie włócznią, uderzenie młotem z pyłem, łuk w lewej ręce naciągany prawą (strzała leci z łuku po łuku paraboli i na chwilę zostaje w celu), kusza podniesiona do ramienia (bełt po prostej), pchnięcie różdżką lub kosturem (pocisk z czubka w kolorze żywiołu), cios pięścią. Obrażenia serwer zadaje od razu; błysk i liczba pokazują się w chwili ciosu albo dolotu (najwyżej 0,5 s później). Trafiona postać lekko się odchyla.
 - Skille: na cel, a umiejętności obszarowe bez celu w kierunku patrzenia/kursora.
 - E = interakcja (NPC, łup, węzły), F = podnieś łup.
+- **H = wierzchowiec** (dosiądź / zsiądź, zmienialne; S96): na PC slot za miksturami, na telefonie przycisk na prawo od
+  sprintu, oba dopiero gdy postać ma wierzchowca. W siodle sprint nie działa (przycisk sprintu na telefonie znika).

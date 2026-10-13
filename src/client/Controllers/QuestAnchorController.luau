@@ -241,6 +241,39 @@ local BUILDERS: { [string]: (model: Model, base: CFrame) -> () } = {
 		)
 		part(model, Vector3.new(0.9, 0.7, 0.05), base * CFrame.new(0.5, 3.6, 0), "#A3282A", Enum.Material.Fabric)
 	end,
+	-- S96: where the wild stallion was calmed: a stake, a coil of cut halter rope and a patch of trampled grass
+	halter = function(model, base)
+		part(
+			model,
+			Vector3.new(2.6, 0.3, 0.3),
+			base * CFrame.new(0, 1.3, 0) * CFrame.Angles(0, 0, math.rad(90)),
+			"#6B5038",
+			Enum.Material.Wood,
+			Enum.PartType.Cylinder
+		)
+		part(
+			model,
+			Vector3.new(0.25, 0.9, 0.9),
+			base * CFrame.new(0.55, 0.15, 0.3) * CFrame.Angles(0, 0, math.rad(90)),
+			"#8A6A44",
+			Enum.Material.Fabric,
+			Enum.PartType.Cylinder
+		)
+		part(
+			model,
+			Vector3.new(1.6, 0.1, 0.1),
+			base * CFrame.new(0.3, 0.9, 0.1) * CFrame.Angles(0, math.rad(30), math.rad(-35)),
+			"#8A6A44",
+			Enum.Material.Fabric
+		)
+		part(
+			model,
+			Vector3.new(4.5, 0.08, 3.2),
+			base * CFrame.new(0.4, 0.04, 0.6) * CFrame.Angles(0, math.rad(20), 0),
+			"#6E5B3A",
+			Enum.Material.Ground
+		)
+	end,
 }
 
 local function groundUnder(anchor: Anchor): CFrame

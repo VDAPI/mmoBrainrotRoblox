@@ -72,9 +72,9 @@ function SideQuests.requirementsMet(quests: any, quest: SideQuest): boolean
 	return true
 end
 
--- Lowest character level that may take the quest.
+-- Lowest character level that may take the quest (S96: never below the quest's own `minLevel`).
 function SideQuests.minLevel(quest: SideQuest): number
-	return math.max(1, quest.level - Config.SideQuest.levelSlack)
+	return math.max(1, quest.level - Config.SideQuest.levelSlack, quest.minLevel or 1)
 end
 
 -- Whether the character may take the quest now; the reason when not.

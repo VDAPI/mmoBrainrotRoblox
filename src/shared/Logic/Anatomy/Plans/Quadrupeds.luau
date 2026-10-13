@@ -1,6 +1,6 @@
 --!strict
 -- Four-legged body plans (S24): hare, canine (wolf, lynx, hyena, leopard), bear, boar, toad, lizard,
--- mammoth. Ground space at scale 1 (see Builder). Every plan sets the core body, the head joint, the legs and
+-- mammoth; S96: horse (mounts, Data/Mounts). Ground space at scale 1 (see Builder). Every plan sets the core body, the head joint, the legs and
 -- the sockets Head, Back, Tail (and Hip) for accessories.
 
 local Builder = require("../Builder")
@@ -409,6 +409,92 @@ function Plans.mammoth(b: B)
 	b:socket("Head", { 0, 4.6, -2.0 }, head.name)
 	b:socket("Back", { 0, 4.8, -0.4 }, "Body")
 	b:socket("Tail", { 0, 3.1, 2.0 }, "Body")
+end
+
+-- Horse (S96, mounts): long body with withers and rump, a neck leaning forward with the head on it (the head joint at
+-- the base of the neck nods the whole neck), long legs with hooves. build: mane (0/1: wedges along the neck), tail
+-- (0/1: long, hanging), feathering (0/1: fringes above the hooves). Sockets Head, Back, Saddle (top of the back where
+-- the saddle sits, Logic/Mounts.seat), Tail, Hip, Chest. Within Anatomy.BUDGET.mount with saddle, bridle and bags.
+function Plans.horse(b: B)
+	local mane = b:get("mane", 1)
+	local tail = b:get("tail", 1)
+	local feathering = b:get("feathering", 0)
+	local bodyY = 3.6
+	b:coreBody("Body", "ball", { 1.6, 1.7, 4.2 }, { 0, bodyY, 0 })
+	b:add("Withers", "ball", { 1.45, 1.5, 1.5 }, { 0, bodyY + 0.3, -1.3 }, { parent = "Body" })
+	b:add("Rump", "ball", { 1.65, 1.6, 1.7 }, { 0, bodyY + 0.22, 1.35 }, { parent = "Body", far = true })
+	b:add("Belly", "ball", { 1.35, 0.9, 3.0 }, { 0, bodyY - 0.5, 0.05 }, { tone = "light", parent = "Body" })
+	-- Neck: 2.3 studs leaning 35 degrees forward from the withers; its joint nods the head with it.
+	local base = { 0, bodyY + 0.6, -1.7 }
+	local lean = math.rad(35)
+	local up, fwd = math.cos(lean), math.sin(lean)
+	local neckLen = 2.3
+	local neck = b:add(
+		"Neck",
+		"ball",
+		{ 0.9, neckLen, 1.1 },
+		{ 0, base[2] + up * neckLen / 2, base[3] - fwd * neckLen / 2 },
+		{ rot = { -35, 0, 0 }, parent = "Body", far = true, joint = { role = "head", at = base } }
+	)
+	local top = { 0, base[2] + up * neckLen, base[3] - fwd * neckLen }
+	local headY, headZ = top[2] - 0.33, top[3] - 0.38
+	local head = b:add("Head", "ball", { 0.72, 0.85, 1.8 }, { 0, headY, headZ }, {
+		rot = { -40, 0, 0 },
+		parent = neck.name,
+		far = true,
+	})
+	b:add("Muzzle", "ball", { 0.62, 0.6, 0.72 }, { 0, headY - 0.55, headZ - 0.62 }, {
+		tone = "light",
+		rot = { -40, 0, 0 },
+		parent = head.name,
+	})
+	b:eyes(head.name, { 0.34, headY + 0.2, headZ + 0.05 }, 0.16, b:get("glowEyes", 0) > 0)
+	b:pair("Ear", "wedge", { 0.12, 0.45, 0.24 }, { 0.2, top[2] + 0.22, top[3] + 0.05 }, {
+		tone = "shade",
+		rot = { 0, 180, -8 },
+		parent = head.name,
+	})
+	if mane > 0 then
+		-- Up and back from the neck's axis (the crest).
+		local nx, ny = fwd, up
+		for i, t in { 0.2, 0.5, 0.8 } do
+			b:add("Mane", "wedge", { 0.2, 0.62 - i * 0.06, 0.55 }, {
+				0,
+				base[2] + up * neckLen * t + ny * 0.42,
+				base[3] - fwd * neckLen * t + nx * 0.42,
+			}, { tone = "accent", rot = { -35, 0, 0 }, parent = neck.name })
+		end
+	end
+	if tail > 0 then
+		b:add("Tail", "ball", { 0.42, 0.42, 2.2 }, { 0, bodyY - 0.15, 2.85 }, {
+			tone = "accent",
+			rot = { 58, 0, 0 },
+			parent = "Body",
+			joint = { role = "tail", at = { 0, bodyY + 0.5, 2.15 } },
+		})
+	end
+	local legTop = 2.9
+	fourLegs(b, 0.45, -1.4, 1.4, legTop, 0.38)
+	for _, legName in { "LegFL", "LegFR", "LegBL", "LegBR" } do
+		local legPiece = b.byName[legName]
+		local x, z = legPiece.pos[1], legPiece.pos[3]
+		b:add(
+			"Hoof",
+			"cyl",
+			{ 0.32, 0.46, 0.46 },
+			{ x, 0.16, z },
+			{ tone = "detail", rot = { 0, 0, 90 }, parent = legName }
+		)
+		if feathering > 0 then
+			b:add("Fringe", "ball", { 0.58, 0.42, 0.58 }, { x, 0.5, z }, { tone = "light", parent = legName })
+		end
+	end
+	b:socket("Head", { 0, top[2] + 0.05, top[3] - 0.25 }, head.name)
+	b:socket("Back", { 0, bodyY + 0.85, 0 }, "Body")
+	b:socket("Saddle", { 0, bodyY + 0.82, -0.4 }, "Body")
+	b:socket("Tail", { 0, bodyY + 0.5, 2.15 }, "Body")
+	b:socket("Hip", { 0, bodyY, 1.6 }, "Body")
+	b:socket("Chest", { 0, bodyY - 0.1, -2.0 }, "Body")
 end
 
 return Plans

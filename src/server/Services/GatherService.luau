@@ -24,7 +24,14 @@ local Rng = require(Shared.Logic.Rng)
 
 local GatherService = {
 	Name = "GatherService",
-	Deps = { "PlayerStateService", "InventoryService", "ResourceService", "CharacterService", "WorldService" },
+	Deps = {
+		"PlayerStateService",
+		"InventoryService",
+		"ResourceService",
+		"CharacterService",
+		"WorldService",
+		"MountService", -- S96: gathering dismounts
+	},
 }
 
 local TAG = "GatherNode"
@@ -44,6 +51,7 @@ local InventoryService: any
 local ResourceService: any
 local CharacterService: any
 local WorldService: any
+local MountService: any
 
 local rng = Rng.new()
 local nodes: { [string]: Node } = {}
@@ -317,6 +325,7 @@ local function startGather(player: Player, uid: string): (boolean, string?, numb
 	if not root then
 		return false, "error.wrongPhase"
 	end
+	MountService.Dismount(player, "action") -- S96: gathering needs standing next to the node
 	tokenCounter += 1
 	local token = tokenCounter
 	active[player] = { uid = uid, token = token }
@@ -377,6 +386,7 @@ function GatherService.Init(registry)
 	ResourceService = registry.Get("ResourceService")
 	CharacterService = registry.Get("CharacterService")
 	WorldService = registry.Get("WorldService")
+	MountService = registry.Get("MountService")
 end
 
 function GatherService.Start()

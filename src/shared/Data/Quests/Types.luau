@@ -56,6 +56,7 @@ export type Reward = {
 	-- S27: one item of N to choose, rolled for the character's class when the quest is complete; "final" uses the
 	-- higher rarity of an arc's last quest (Config.SideQuest.choiceRarity).
 	choice: ("normal" | "final")?,
+	mount: string?, -- S96: a Data/Mounts id given on hand-in (once per character)
 }
 
 export type MainQuest = {
@@ -82,6 +83,8 @@ export type SideQuest = {
 	objectives: { Objective },
 	reward: Reward,
 	where: { map: string, area: string?, x: number?, z: number? }?,
+	minLevel: number?, -- S96: never offered below this character level, whatever levelSlack says
+	wiki: boolean?, -- S96: false = left out of the wiki (released in S97)
 }
 
 export type DailyTemplate = {

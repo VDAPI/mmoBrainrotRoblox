@@ -207,9 +207,15 @@ T.describe("Wiki export: consistency", function()
 		T.expect(#d.items.items).toBe(count(Items.byId))
 		T.expect(#d.monsters.monsters).toBe(#Monsters.list)
 		T.expect(#d.quests.main).toBe(#Quests.Main.list)
-		T.expect(#d.quests.side).toBe(#Quests.Side.list)
-		-- S57: skills of unpublished or missing paths are hidden
+		-- S57: skills of unpublished or missing paths are hidden; S96: side quests with wiki = false too
 		local hiddenSet = Visibility.collect()
+		local sideShown = 0
+		for _, quest in Quests.Side.list do
+			if not hiddenSet[quest.id] then
+				sideShown += 1
+			end
+		end
+		T.expect(#d.quests.side).toBe(sideShown)
 		local shown = 0
 		for id in SkillData.byId do
 			if not hiddenSet[id] then
@@ -417,7 +423,14 @@ T.describe("Wiki export: consistency", function()
 		local KeybindData = require("../src/shared/Data/Keybinds")
 		local PvpRules = require("../src/shared/Logic/PvpRules")
 		local Areas = require("../src/shared/Data/Areas")
-		T.expect(#d.mechanics.keybinds).toBe(#KeybindData.actions)
+		-- S96: actions with wiki = false (the mount key until S97) stay off the list
+		local shownKeys = 0
+		for _, action in KeybindData.actions do
+			if action.wiki ~= false then
+				shownKeys += 1
+			end
+		end
+		T.expect(#d.mechanics.keybinds).toBe(shownKeys)
 		for _, k in d.mechanics.keybinds do
 			for _, lang in { "pl", "en" } do
 				if string.find(k.name[lang], "%)%s*$") then

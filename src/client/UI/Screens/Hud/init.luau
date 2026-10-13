@@ -11,6 +11,7 @@ local Bar = require(script.Parent.Parent.Components.Bar)
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local Config = require(ReplicatedStorage.Shared.Config)
 local DeathScreen = require(script.DeathScreen)
+local Device = require(script.Parent.Parent.Device)
 local Exp = require(ReplicatedStorage.Shared.Logic.Exp)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
@@ -24,6 +25,7 @@ local SprintButton = require(script.SprintButton)
 local BlessingBadge = require(script.BlessingBadge)
 local BlessingIcon = require(script.BlessingIcon)
 local Minimap = require(script.Minimap)
+local MountButton = require(script.MountButton)
 local NavBar = require(script.NavBar)
 local CastBar = require(script.CastBar)
 local EffectIcons = require(script.EffectIcons)
@@ -58,6 +60,10 @@ export type Props = {
 	OnAttack: () -> (),
 	Sprinting: Fusion.Value<boolean>,
 	OnSprint: () -> (),
+	-- S96: mounts (MountController): riding now, owns a mount, ride / dismount
+	Riding: Fusion.UsedAs<any>,
+	HasMount: Fusion.UsedAs<boolean>,
+	OnMount: () -> (),
 	UsePotion: (kind: string) -> (),
 	AssignPotion: (kind: string, itemId: string?) -> (),
 	CastSlot: (slot: number) -> (),
@@ -312,6 +318,29 @@ local function actionBar(scope: Scope, props: Props): Instance
 			Assign = props.AssignPotion,
 		})
 	)
+	-- S96: the mount slot after the potions (PC only, once the character owns a mount)
+	table.insert(
+		slots,
+		scope:New("Frame")({
+			Name = "MountGap",
+			LayoutOrder = SKILL_SLOTS + 3,
+			Size = UDim2.fromOffset(Theme.Padding.Large, SLOT_SIZE),
+			BackgroundTransparency = 1,
+			Visible = scope:Computed(function(use): boolean
+				return use(props.HasMount) == true and use(Device.Touch) ~= true
+			end),
+		})
+	)
+	table.insert(
+		slots,
+		MountButton.Slot(scope, {
+			Riding = props.Riding,
+			Has = props.HasMount,
+			OnToggle = props.OnMount,
+			LayoutOrder = SKILL_SLOTS + 4,
+			SlotSize = SLOT_SIZE,
+		})
+	)
 
 	return scope:New("Frame")({
 		Name = "ActionBar",
@@ -404,7 +433,8 @@ local function Hud(scope: Scope, props: Props): Instance
 			ZoneBanner(scope),
 			AreaBanner(scope),
 			AttackButton(scope, { OnAttack = props.OnAttack }),
-			SprintButton(scope, { Sprinting = props.Sprinting, OnToggle = props.OnSprint }),
+			SprintButton(scope, { Sprinting = props.Sprinting, OnToggle = props.OnSprint, Riding = props.Riding }),
+			MountButton.Touch(scope, { Riding = props.Riding, Has = props.HasMount, OnToggle = props.OnMount }),
 			PvpToggle(scope),
 			DeathScreen(scope),
 		},

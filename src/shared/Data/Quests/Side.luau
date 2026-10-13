@@ -6,8 +6,11 @@
 -- see docs/DECYZJE.md S27), gold half of the base main-quest formula (main quests 4-16 pay x2 since S91), and the last
 -- quest of an arc (★) lets the player pick one of three items for their class. Texts: quest.<id>.title,
 -- .p1..pN (pages), .progress, .done; arcs quest.arc.<arc>; quest items quest.item.<item>.
+-- S96: the stable arc (levels 21-22, taken from 20 through `minLevel`) ends with a mount (`reward.mount`) instead of
+-- an item choice; it stays off the wiki until S97 (`wiki = false`).
 
 local Exp = require("../../Logic/Exp")
+local Town = require("../Town")
 local Types = require("./Types")
 
 type SideQuest = Types.SideQuest
@@ -36,23 +39,31 @@ local FX = {
 	seal = true, -- planks nailed across a tunnel mouth
 	fire = true, -- the goblin totem burning
 	tracks = true, -- a hunter's marker stick with a red rag
+	halter = true, -- a stake with a cut halter rope and trampled grass where the stallion was calmed (S96)
 }
 
 local list: { SideQuest } = {}
 
-local function side(def: {
-	id: string,
-	level: number,
-	giver: string,
-	turnIn: string,
-	arc: string,
-	pages: number,
-	requires: { string }?,
-	objectives: { Objective },
-	final: boolean?,
-	where: { map: string, area: string?, x: number?, z: number? }?,
-})
+local function side(
+	def: {
+		id: string,
+		level: number,
+		giver: string,
+		turnIn: string,
+		arc: string,
+		pages: number,
+		requires: { string }?,
+		objectives: { Objective },
+		final: boolean?,
+		where: { map: string, area: string?, x: number?, z: number? }?,
+		expShare: number?, -- S96: EXP share of the quest level instead of NORMAL_EXP / FINAL_EXP
+		mount: string?, -- S96: a mount on hand-in (the arc's end without an item choice)
+		minLevel: number?, -- S96
+		wiki: boolean?, -- S96
+	}
+)
 	local final = def.final == true
+	local share = def.expShare or (if final then FINAL_EXP else NORMAL_EXP)
 	table.insert(list, {
 		id = def.id,
 		level = def.level,
@@ -63,11 +74,14 @@ local function side(def: {
 		requires = def.requires,
 		objectives = def.objectives,
 		reward = {
-			exp = exp(def.level, if final then FINAL_EXP else NORMAL_EXP),
+			exp = exp(def.level, share),
 			gold = gold(def.level),
-			choice = if final then "final" else nil,
+			choice = if final and not def.mount then "final" else nil,
+			mount = def.mount,
 		},
 		where = def.where,
+		minLevel = def.minLevel,
+		wiki = def.wiki,
 	})
 end
 
@@ -441,8 +455,61 @@ side({
 	final = true,
 })
 
--- Arcs in journal order (one per Meadows area).
-local ARCS = { "farm", "shrine", "pond", "forest", "mill", "road", "quarry", "goblins", "ravine" }
+-- J. The Stable (20–22) -------------------------------------------------------------------------------------------
+-- S96 (docs/DESIGN-15.md §2): the stablemaster's arc gives every character its first mount once. The EXP is symbolic
+-- (the mount is the reward); S98 puts the arc into the quest EXP budget.
+local STABLE_EXP = 0.1
+local STABLE_MIN = 20 -- = Config.Mount.minLevel (Data does not require Config; tests/mounts.spec checks it)
+local stable = Town.npcSpot("stablemaster")
+assert(stable, "Side: no stablemaster spot in the city plan")
+side({
+	id = "side_stable_harness",
+	level = 21,
+	giver = "stablemaster",
+	turnIn = "stablemaster",
+	arc = "stable",
+	pages = 3,
+	objectives = { collect(3, "harnessPiece", "goblinScout", 0.4, "meadows_goblincamp") },
+	expShare = STABLE_EXP,
+	minLevel = STABLE_MIN,
+	wiki = false,
+})
+side({
+	id = "side_stable_stallion",
+	level = 21,
+	giver = "stablemaster",
+	turnIn = "hunter_borys",
+	arc = "stable",
+	pages = 3,
+	requires = { "side_stable_harness" },
+	objectives = {
+		use({ "wild_stallion" }, "quest.use.calm", 3, "halter"),
+		kill(6, "brownBear", "meadows_bearridge"),
+	},
+	expShare = STABLE_EXP,
+	minLevel = STABLE_MIN,
+	wiki = false,
+})
+side({
+	id = "side_stable_ride",
+	level = 22,
+	giver = "hunter_borys",
+	turnIn = "stablemaster",
+	arc = "stable",
+	pages = 2,
+	requires = { "side_stable_stallion" },
+	objectives = {
+		{ type = "reach", n = 1, map = "city", x = stable.x, z = stable.z, radius = 14, place = "place.stable" },
+	},
+	final = true,
+	mount = "mount_horse",
+	expShare = STABLE_EXP,
+	minLevel = STABLE_MIN,
+	wiki = false,
+})
+
+-- Arcs in journal order (one per Meadows area; S96: the stable last).
+local ARCS = { "farm", "shrine", "pond", "forest", "mill", "road", "quarry", "goblins", "ravine", "stable" }
 
 local byId: { [string]: SideQuest } = {}
 local byArc: { [string]: { SideQuest } } = {}
@@ -463,6 +530,7 @@ return table.freeze({
 	byArc = byArc,
 	ARCS = ARCS,
 	FX = FX,
+	STABLE_MIN = STABLE_MIN,
 	get = function(id: string): SideQuest?
 		return byId[id]
 	end,

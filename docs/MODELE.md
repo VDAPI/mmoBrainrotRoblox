@@ -22,7 +22,7 @@ Research z 5.10.2026 (strony wydawców, dokumentacja Roblox, DevForum) i przegl�
 | Elity | to samo ×1,25 / ×1,5 + aura | wyglądają jak zwykłe, poza rozmiarem, aurą i kolorem nazwy |
 | Bossowie | ten sam generator + 5 kolców „korony” | `Bosses.look.secondary` nie jest nigdzie używane |
 | Pety (6) | `src/shared/Util/CosmeticLook.luau` `buildPet` | 2–6 części, zakotwiczone, ruch klienta w `PetController` |
-| Wierzchowce | brak | nie ma ich w designie ani w kodzie |
+| Wierzchowce (S96) | `src/shared/Util/MountLook.luau`, budowane na serwerze | plan `horse` (`Logic/Anatomy/Plans/Quadrupeds`), wariant `mount` (budżet 40, bez chibi), przyspawany do HRP jeźdźca; nogi `Gait_*` animowane na kliencie wg prędkości jeźdźca |
 
 **Hak na prawdziwe modele już istnieje:** model w `ReplicatedStorage.Assets.Monsters.<id rodzaju>` (z `Humanoid` i `HumanoidRootPart`) zastępuje placeholder. Ma jednak trzy braki:
 - nie ma animacji (nic nie odtwarza `AnimationId`);
@@ -220,7 +220,14 @@ Roblox Studio ma też **serwer MCP** dla Claude Code (`execute_luau`, `insert_as
   - ruch tylko na kliencie (CFrame za graczem, podskok z sinusa, bez fizyki, bez cieni), jak dziś;
   - rozmiar 1,5–3 st.;
   - wystarczy statyczny model z podskokiem i jedną animacją bezczynności.
-- **Wierzchowce** (nie ma ich w designie): koń, wilk, jeleń i byk Quaternius mają animacje galopu. Wzorzec: model przyspawany do `HumanoidRootPart`, animacja siedzenia jeźdźca i galopu wierzchowca na kliencie wg prędkości. Do decyzji właściciela, czy w ogóle.
+- **Wierzchowce (S96, DESIGN-15 §2):** plan `horse` (rdzeń z kłębem i zadem, brzuch, szyja ze stawem `head` u nasady,
+  głowa z pyskiem, uszy, grzywa `build.mane`, ogon ze stawem `tail` `build.tail`, cztery nogi z kopytami, frędzle nad
+  kopytami `build.feathering`), sockety `Head`, `Back`, **`Saddle`** (góra grzbietu, gdzie siedzi jeździec;
+  `Logic/Mounts.seat` liczy z niego `HipHeight` jeźdźca), `Tail`, `Hip`, `Chest`. Akcesoria `saddle` (siedzisko, łęk,
+  tybinki, strzemiona na pasach), `bridle` (paski, nachrapnik, wodze do łęku), `saddlebags`. Wariant `mount`: budżet 40
+  części, bez chibi, świecące oczy tylko z `look.glowEyes`. Model przyspawany do `HumanoidRootPart`, poza jeźdźca
+  (`Logic/RiderPose`, `Data/Mounts.RIDER`) i krok wierzchowca (`Logic/Gait`) na kliencie. Prawdziwy model: `docs/ASSETS.md`
+  → „Wierzchowce”. Quaternius ma konia, wilka, jelenia i byka z galopem (kandydaci na S97).
 
 ## 9. Co dalej
 

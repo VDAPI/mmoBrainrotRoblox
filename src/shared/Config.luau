@@ -103,6 +103,22 @@ local Config = {
 	StateFlushInterval = 0,
 	-- Sprint (S18, DESIGN §24): walk speed multiplier while the sprint key is held.
 	SprintMultiplier = 1.35,
+	-- Mounts (S96, docs/DESIGN-15.md §2): from character level `minLevel`. Riding walk speed =
+	-- Stats.Formula.walkSpeed x mul, mul rising linearly from baseMul (mount level 1) to maxMul (mount level
+	-- maxLevel), one cap for every mount, times (1 + gear moveSpeed / 100) with the usual 30 cap; skill / path
+	-- speed buffs and sprint do not apply, slows do (S63 speed factor). Mounting takes mountTime seconds standing
+	-- still (mountTimeFast from mount level fastFromLevel); moving more than moveLimit studs, taking damage or using
+	-- a skill interrupts it. Levels are raised in S97.
+	Mount = {
+		minLevel = 20,
+		baseMul = 1.6,
+		maxMul = 2.0,
+		maxLevel = 10,
+		mountTime = 1.5,
+		mountTimeFast = 1.0,
+		fastFromLevel = 5,
+		moveLimit = 2.5,
+	},
 	-- Client decorations (S20, DESIGN §3.7): chunk size and radius per "World detail" setting (studs).
 	DecorChunk = 128,
 	DecorRadius = { low = 250, mid = 400, high = 600 },

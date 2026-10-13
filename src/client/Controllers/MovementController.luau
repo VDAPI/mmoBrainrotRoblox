@@ -22,6 +22,10 @@ local function set(on: boolean)
 	if Fusion.peek(MovementController.Sprinting) == on then
 		return
 	end
+	-- S96: no sprint in the saddle (the server ignores it there anyway)
+	if on and State.Get({ "character", "mounts", "riding" }) == true then
+		return
+	end
 	MovementController.Sprinting:set(on)
 	Net.Send("SetSprint", on)
 end
@@ -44,9 +48,15 @@ function MovementController.Start()
 			set(false)
 		end
 	end)
-	-- The server clears the sprint on death and respawn; mirror that so the button never lies.
+	-- The server clears the sprint on death, respawn and mounting, already when the mount channel starts (S96);
+	-- mirror that so the button never lies, also after an interrupted channel.
 	State.Changed:Connect(function()
-		if State.Get({ "death" }) ~= nil or State.Get({ "session", "phase" }) ~= "playing" then
+		if
+			State.Get({ "death" }) ~= nil
+			or State.Get({ "session", "phase" }) ~= "playing"
+			or State.Get({ "character", "mounts", "riding" }) == true
+			or State.Get({ "mountCast" }) ~= nil
+		then
 			if Fusion.peek(MovementController.Sprinting) then
 				MovementController.Sprinting:set(false)
 			end

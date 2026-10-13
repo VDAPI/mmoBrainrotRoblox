@@ -8,6 +8,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Button = require(script.Parent.Parent.Parent.Components.Button)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local MountLook = require(ReplicatedStorage.Shared.Util.MountLook)
 local Pool = require(script.Parent.Parent.Parent.Parent.Vfx.Pool)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
@@ -31,6 +32,7 @@ local function mannequin(): Model?
 	if not copy then
 		return nil
 	end
+	MountLook.strip(copy)
 	for _, item in copy:GetDescendants() do
 		if
 			item:IsA("LuaSourceContainer")

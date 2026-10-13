@@ -909,4 +909,83 @@ end
 
 Accessories.glowRunes = Accessories.runes
 
+-- Mounts (S96): riding gear of the horse plan -------------------------------------------------------------
+
+local LEATHER = "#4A3324"
+local STRAP = "#2E2118"
+local IRON = "#8E8E93"
+
+-- Seat, pommel, flaps on both sides and stirrups on their leathers (socket Saddle).
+Accessories.saddle = function(b: B)
+	local s = socketOf(b, "Saddle")
+	if not s then
+		return
+	end
+	b:add("Seat", "block", { 1.0, 0.22, 1.5 }, at(s, 0, 0.08, 0.05), {
+		tone = "detail",
+		material = "detail",
+		parent = s.parent,
+		far = true,
+	})
+	b:add("Pommel", "block", { 0.8, 0.36, 0.26 }, at(s, 0, 0.24, -0.66), {
+		tone = "detail",
+		material = "detail",
+		parent = s.parent,
+	})
+	b:pair("Flap", "block", { 0.08, 0.9, 1.1 }, at(s, 0.78, -0.42, 0.05), {
+		tone = LEATHER,
+		material = "Leather",
+		parent = s.parent,
+	})
+	b:pair("StirrupLeather", "block", { 0.06, 1.3, 0.1 }, at(s, 0.84, -0.95, -0.1), {
+		tone = STRAP,
+		material = "Leather",
+		parent = s.parent,
+	})
+	b:pair("Stirrup", "block", { 0.14, 0.12, 0.36 }, at(s, 0.86, -1.64, -0.1), {
+		tone = IRON,
+		material = "Metal",
+		parent = s.parent,
+	})
+end
+
+-- Cheek straps, noseband with the bit and the reins down to the pommel (socket Head).
+Accessories.bridle = function(b: B)
+	local s = socketOf(b, "Head")
+	if not s then
+		return
+	end
+	b:add("Cheekpiece", "block", { 0.78, 0.95, 0.1 }, at(s, 0, -0.38, 0.02), {
+		tone = STRAP,
+		material = "Leather",
+		rot = { 10, 0, 0 },
+		parent = s.parent,
+	})
+	b:add("Noseband", "block", { 0.7, 0.12, 0.64 }, at(s, 0, -0.88, -0.72), {
+		tone = STRAP,
+		material = "Leather",
+		rot = { -40, 0, 0 },
+		parent = s.parent,
+	})
+	b:add("Reins", "block", { 1.0, 0.05, 2.9 }, at(s, 0, -1.18, 0.75), {
+		tone = STRAP,
+		material = "Leather",
+		rot = { 10, 0, 0 },
+		parent = b.core,
+	})
+end
+
+-- Two bags behind the saddle (socket Saddle).
+Accessories.saddlebags = function(b: B)
+	local s = socketOf(b, "Saddle")
+	if not s then
+		return
+	end
+	b:pair("Saddlebag", "block", { 0.3, 0.6, 0.7 }, at(s, 0.86, -0.55, 1.25), {
+		tone = "#5A3E24",
+		material = "Leather",
+		parent = s.parent,
+	})
+end
+
 return Accessories

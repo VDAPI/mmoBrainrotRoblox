@@ -9,6 +9,7 @@ local Exp = require("../src/shared/Logic/Exp")
 local Items = require("../src/shared/Data/Items")
 local MeadowsGen = require("../src/shared/Logic/MeadowsGen")
 local Monsters = require("../src/shared/Data/Monsters")
+local Mounts = require("../src/shared/Data/Mounts")
 local NpcMarks = require("../src/shared/Logic/NpcMarks")
 local Npcs = require("../src/shared/Data/Npcs")
 local QuestLogic = require("../src/shared/Logic/QuestLogic")
@@ -63,14 +64,16 @@ local function doneUpTo(id: string): { [string]: boolean }
 end
 
 describe("Side quest data", function()
-	it("has 28 quests in 9 arcs, every arc with exactly one final quest at its end", function()
-		expect(#Quests.Side.list).toBe(28)
-		expect(#Quests.Side.ARCS).toBe(9)
+	-- S96: the stable arc (3 quests) ends with a mount instead of an item choice
+	it("has 31 quests in 10 arcs, every arc with exactly one final quest (choice or mount) at its end", function()
+		expect(#Quests.Side.list).toBe(31)
+		expect(#Quests.Side.ARCS).toBe(10)
 		for _, arc in Quests.Side.ARCS do
 			local list = assert(Quests.Side.byArc[arc], arc)
 			local finals = 0
 			for i, quest in list do
-				if quest.reward.choice then
+				expect(quest.reward.choice == nil or quest.reward.mount == nil).toBe(true)
+				if quest.reward.choice or quest.reward.mount then
 					finals += 1
 					expect(i).toBe(#list)
 				end
@@ -267,6 +270,7 @@ describe("Side quest levels and balance", function()
 		end
 	end)
 
+	-- S96: the budget 1 -> 20 counts the quests up to level 19 (the stable arc is above it); 70% holds for all
 	it("give at most 40% of the EXP from level 1 to 20, at most 70% of a level each", function()
 		local need = 0
 		for level = 1, 19 do
@@ -274,7 +278,9 @@ describe("Side quest levels and balance", function()
 		end
 		local total = 0
 		for _, quest in Quests.Side.list do
-			total += quest.reward.exp
+			if quest.level <= 19 then
+				total += quest.reward.exp
+			end
 			expect(quest.reward.exp <= Exp.expToNext(quest.level) * 0.7).toBe(true)
 			expect(quest.reward.gold > 0).toBe(true)
 		end
@@ -307,6 +313,26 @@ describe("Side quest levels and balance", function()
 				end
 			end
 		end
+	end)
+end)
+
+describe("S96 stable arc", function()
+	local harness = assert(Quests.Side.get("side_stable_harness"))
+	local ride = assert(Quests.Side.get("side_stable_ride"))
+
+	it("is taken from level 20 and ends with the bay horse", function()
+		local _, reason = SideQuests.canAccept(quests(), 19, harness)
+		expect(reason).toBe("level")
+		expect((SideQuests.canAccept(quests(), 20, harness))).toBe(true)
+		for _, quest in Quests.Side.byArc.stable do
+			expect(SideQuests.minLevel(quest)).toBe(20)
+			expect(quest.minLevel).toBe(Quests.Side.STABLE_MIN)
+			expect(quest.wiki).toBe(false)
+		end
+		expect(#Quests.Side.byArc.stable).toBe(3)
+		expect(ride.reward.mount).toBe("mount_horse")
+		expect(ride.reward.choice).toBe(nil)
+		expect(Mounts.get(ride.reward.mount :: string) ~= nil).toBe(true)
 	end)
 end)
 

@@ -194,6 +194,18 @@ local function candidates(includePlayers: boolean): { Model }
 	return list
 end
 
+-- Box of a model for the forgiving pick. S96: a rider's box would hold the mount too, so a rider is measured
+-- from the root up to the top of the head (the same idea as CombatFxController.headPosition).
+local function pickBox(model: Model): (CFrame, Vector3)
+	local root = model:FindFirstChild("HumanoidRootPart")
+	local head = model:FindFirstChild("Head")
+	if model:FindFirstChild("VaelthornMount") and root and root:IsA("BasePart") and head and head:IsA("BasePart") then
+		local half = math.max(head.Position.Y + head.Size.Y / 2 - root.Position.Y, 1)
+		return root.CFrame, Vector3.new(root.Size.X, half * 2, root.Size.Z)
+	end
+	return model:GetBoundingBox()
+end
+
 -- Nearest living monster (players only when `includePlayers`) within `range`, preferring what the camera faces.
 function TargetController.FindNearest(range: number, includePlayers: boolean, inFront: boolean): Model?
 	local root = myRoot()
@@ -276,7 +288,7 @@ local function enemyAt(screenPosition: Vector2, hostileOnly: boolean): Model?
 	local bestDistance = math.huge
 	for _, candidate in candidates(true) do
 		if not hostileOnly or isHostile(candidate) then
-			local cframe, size = candidate:GetBoundingBox()
+			local cframe, size = pickBox(candidate)
 			local centre = camera:WorldToViewportPoint(cframe.Position)
 			if centre.Z > 0 and centre.Z < 200 then
 				local top = camera:WorldToViewportPoint(cframe.Position + Vector3.new(0, size.Y / 2, 0))

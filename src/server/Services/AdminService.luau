@@ -71,6 +71,7 @@ local AdminService = {
 		"CosmeticService",
 		"StatusEffectService",
 		"MapMarkService",
+		"MountService", -- S96: /mount
 	},
 }
 

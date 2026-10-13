@@ -70,6 +70,7 @@ local SkillService = {
 		"DeathService",
 		"ZoneService",
 		"LevelService",
+		"MountService", -- S96: a skill interrupts mounting and dismounts
 	},
 }
 
@@ -92,6 +93,11 @@ local DeathService: any
 local ZoneService: any
 local LevelService: any
 local PartyAuraService: any
+local MountService: any
+-- S96: a cast that dismounted: until then (os.clock) a channel's start follows the rider settling to the ground (the
+-- HipHeight drop is not a move).
+local DISMOUNT_SETTLE = 0.6
+local settling: { [Player]: number } = {}
 
 type Handler = (ctx: Context.Ctx) -> (boolean, string?)
 
@@ -620,6 +626,12 @@ local function startChannel(ctx: Context.Ctx, onDone: (() -> ())?, onRefund: (()
 				if StatusEffectService.IsDisabled(ctx.caster) then
 					table.insert(events, "disabled")
 				end
+				local settleUntil = settling[player]
+				if settleUntil and os.clock() < settleUntil then
+					-- S96: the rider drops to the ground after a dismount; only the height of the start follows
+					local start = channel.startedAt
+					channel.startedAt = Vector3.new(start.X, root.Position.Y, start.Z)
+				end
 				if Channel.afterMove(kind, (root.Position - channel.startedAt).Magnitude, channel.def) then
 					table.insert(events, "move")
 				end
@@ -728,6 +740,8 @@ end
 local INSTANT: { [string]: boolean } = { resurrect = true, channel = true, beam = true }
 
 local function cast(player: Player, skillId: string, targetId: string?, aim: any): (boolean, string?)
+	-- S96 (DESIGN-15 §2): pressing a skill stops mounting, even when the cast is refused below
+	MountService.Interrupt(player)
 	local char = character(player)
 	local base = SkillData.get(skillId)
 	if not char or not base or base.class ~= char.class then
@@ -895,6 +909,11 @@ local function cast(player: Player, skillId: string, targetId: string?, aim: any
 		end
 	end
 
+	-- S96 (DESIGN-15 §2): a skill dismounts first, then it is cast
+	if MountService.IsRiding(player) then
+		MountService.Dismount(player, "skill")
+		settling[player] = os.clock() + DISMOUNT_SETTLE
+	end
 	-- S80: a new cast ends a channel or a beam (Logic/Channel "cast"); a refused cast above never does
 	local running = rt.channel
 	if running and (Channel.stops(running.kind, "cast", running.def)) then
@@ -1121,6 +1140,7 @@ function SkillService.Init(registry)
 	DeathService = registry.Get("DeathService")
 	ZoneService = registry.Get("ZoneService")
 	LevelService = registry.Get("LevelService")
+	MountService = registry.Get("MountService")
 	-- S73: not in Deps: PartyAuraService -> PathService -> SkillService would be a cycle. Deps only order Init and
 	-- BehindAnchor is called on a cast, after every Init.
 	PartyAuraService = registry.Get("PartyAuraService")
@@ -1283,6 +1303,7 @@ function SkillService.Start()
 	Players.PlayerRemoving:Connect(function(player)
 		Companion.stop(player, true) -- S77: the entity is gone
 		chargeHolders[player] = nil -- S80
+		settling[player] = nil -- S96
 		task.defer(function()
 			runtimes[player] = nil
 			hookCache[player] = nil
