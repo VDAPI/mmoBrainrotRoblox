@@ -2097,3 +2097,78 @@ T.describe("S97 mounts", function()
 		end
 	end)
 end)
+
+-- S100: the login reward (docs/DESIGN-15.md §5) is outside economyAt and the pace model (a reward per calendar day):
+-- these targets compare it with the income of an hour of grinding. Always asserted.
+T.describe("Login reward (S100)", function()
+	local LoginReward = require("../src/shared/Logic/LoginReward")
+	local LoginRewardData = require("../src/shared/Data/LoginReward")
+	local Blessings = require("../src/shared/Data/Blessings")
+	local LEVELS = { 10, 20, 30, 45, 60, 70, 85, 99 }
+
+	T.it("T-LR1/T-LR2: a week is 0.15-0.6 h of income, a day 1-6 at most 0.12 h, day 7 at most 0.2 h", function()
+		for _, c in B.CLASSES do
+			for _, L in LEVELS do
+				local s = B.loginShare(c, L)
+				if s.weekShare < 0.15 or s.weekShare > 0.6 then
+					error(`T-LR1 {c} L{L}: week {s.weekShare} h of income`, 0)
+				end
+				if s.maxDay16 > 0.12 then
+					error(`T-LR2 {c} L{L}: a day 1-6 is {s.maxDay16} h of income`, 0)
+				end
+				if s.day7 > 0.2 then
+					error(`T-LR2 {c} L{L}: day 7 is {s.day7} h of income`, 0)
+				end
+			end
+		end
+	end)
+
+	T.it("T-LR3: the week's essence is at most half of its upgrade band", function()
+		for _, c in B.CLASSES do
+			for _, L in { 5, 10, 15, 20, 30, 45, 60, 70, 85, 99 } do
+				local share, need = B.loginEssenceShare(c, L)
+				T.expect(need > 0).toBe(true)
+				if share > 0.5 then
+					error(`T-LR3 {c} L{L}: {share} of the band's essence`, 0)
+				end
+			end
+		end
+	end)
+
+	T.it("T-LR4: no EXP and no EXP bonus", function()
+		for _, c in B.CLASSES do
+			T.expect(LoginReward.lineOf(c) ~= "fortune").toBe(true)
+			for _, L in { 1, 20, 45, 70, 100 } do
+				for _, day in LoginReward.week(L, c) do
+					T.expect(day.exp).toBe(0)
+					for _, entry in day.items do
+						local def = Items.get(entry.id) :: any
+						if def.use and def.use.kind == "blessing" then
+							local blessing = Blessings.get(def.use.target) :: any
+							T.expect(blessing.rarity <= 2).toBe(true)
+							T.expect(blessing.stats.expBonus).toBeNil()
+						end
+					end
+				end
+			end
+		end
+		for _, day in LoginRewardData.days do
+			T.expect((day.blessing or 0) <= 2).toBe(true)
+		end
+	end)
+
+	T.it("T-LR5: the chest's Heroics are at most 5% of the D5 floor over a week of play", function()
+		local chest = B.loginChest()
+		T.expect(chest.heroic + chest.unique).toBeNear(1, 1e-9)
+		T.expect(chest.heroicShare <= 0.05).toBe(true)
+		print(
+			string.format(
+				"login chest: %.2f Heroic (%.1f%% of D5) and %.2f Unique (%.1f%%) a week",
+				chest.heroic,
+				chest.heroicShare * 100,
+				chest.unique,
+				chest.uniqueShare * 100
+			)
+		)
+	end)
+end)

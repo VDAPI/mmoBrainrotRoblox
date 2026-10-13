@@ -5,7 +5,7 @@
 
 ## Stan
 
-S01–S99 gotowe (lista i zakres w `docs/SESJE.md`). Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
+S01–S100 gotowe (lista i zakres w `docs/SESJE.md`). Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
 kategorie efektów drużyny i stos efektów (`Logic/EffectStack`), S54 wzory globalne (`Logic/LevelCurves`), S55 rangi
 i przełomy w kształcie A/B (`Build.bp2`, `Skills.effective` §2.7), S56 koniec punktów umiejętności: rangi z poziomu
 postaci (`Skills.rankFor`, drabina przejściowa ROZWOJ 2.6), zapis w schemacie 6 (darmowy reset statystyk, pasek
@@ -113,6 +113,10 @@ na poziom 1–99, generowane z łowisk (`Logic/ContractGen`, `lune run tools/con
 zwiadowcy regionu, jedno aktywne, kolejne przyjmuje się samo przy oddaniu, zaległe po kolei (migracja 7: postacie sprzed
 S99 zaczynają 2 poziomy pod swoim), 12% EXP poziomu + złoto, co 10. błogosławieństwo Fortuny i kamienie; tablica,
 dziennik („Łowieckie”), tracker, mapa i portal; `monsterExpMul` przeliczone (1–19 ok. 0,65, 45–99 ok. 0,84).
+S100 nagroda za logowanie (DESIGN-15 §5): seria 7 dni na koncie w dniach UTC (`account.login`, bez migracji), okno
+samo raz dziennie i przycisk ✧ przy portrecie, nagroda na poziom odbierającej postaci (złoto, mikstury, esencja, kamienie,
+błogosławieństwo; dzień 7 skrzynia: Unikat 85% / Heroik 15% dla klasy, związany), pełny plecak → poczta, `/login`,
+`/loginset`, `/loginnext`; tydzień 0,27–0,47 h dochodu, poza modelem tempa.
 Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`, `docs/STATY.md`) i łańcuch balansu
 zakończone; testy i decyzje właściciela po nich.
 
@@ -150,6 +154,9 @@ zakończone; testy i decyzje właściciela po nich.
   (L3 przycięte do `MUL_MIN` 0,5): kto pomija zlecenia na 1–19, bije ok. 1,5× dłużej (decyzja właściciela / audyt S109).
   Zlecenie 1. (10 zabić) jest dłuższe niż cały 1. poziom (ok. 7 potworów). Zlecenia bez eksportu na wiki (S109).
   EXP potworów i EXP/h łowisk na wiki bez `monsterExpMul`: na 1–19 ok. 1,5× ponad serwer (L3 2×), od 45. ok. 1,2× (S109).
+- **Nagroda za logowanie (S100)**: liczby skrzyni (85 / 15 zamiast planowanych 65 / 35) i to, czy dzień bez odbioru
+  przerywa serię, do decyzji właściciela (`docs/SESJE.md` → S100); nagroda bez strony na wiki. Uproszczenie wyglądu:
+  karty dni w siatce równej szerokości (karta 7 nie jest szersza), bez dźwięku „reward” (jest `levelUp`).
 - **Wierzchowce (S97)**: wierzchowiec premium `mount_royal` wyłączony (`Data/Products.mounts`, `enabled = false`) do
   decyzji właściciela (cena w Robux, id produktu z Creator Hub).
 - **Gildie / aukcja / poczta**: brak zaproszeń do gildii między serwerami; aukcja bez podpowiedzi ceny, poczta bez

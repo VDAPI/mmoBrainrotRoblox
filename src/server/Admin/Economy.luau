@@ -9,6 +9,7 @@ local Shared = game:GetService("ReplicatedStorage").Shared
 local Blessings = require(Shared.Data.Blessings)
 local ItemRoll = require(Shared.Logic.ItemRoll)
 local Items = require(Shared.Data.Items)
+local LoginReward = require(Shared.Logic.LoginReward)
 local Products = require(Shared.Data.Products)
 local Rarities = require(Shared.Data.Rarities)
 local Rng = require(Shared.Logic.Rng)
@@ -27,6 +28,7 @@ local TradeService = Context.services.TradeService
 local MailService = Context.services.MailService
 local AuctionService = Context.services.AuctionService
 local CosmeticService = Context.services.CosmeticService
+local LoginRewardService = Context.services.LoginRewardService
 
 local commands: { [string]: (player: Player, args: { string }) -> ...any } = {}
 
@@ -211,6 +213,99 @@ commands.setshards = function(player, args)
 	end
 	PlayerStateService.Set(player, { "account", "dragonShards" }, amount)
 	reply(player, "admin.setshards.ok", { total = amount })
+end
+
+-- S100: the login reward streak of the caller's account -------------------------------------------------------------
+
+-- "today" / "yesterday" / "n days ago" / "never" for the last claim (a { key, args } argument, localized by the
+-- client).
+local function agoText(last: number, today: number): any
+	if last == 0 then
+		return { key = "admin.login.ago.never" }
+	elseif last == today then
+		return { key = "admin.login.ago.today" }
+	elseif last == today - 1 then
+		return { key = "admin.login.ago.yesterday" }
+	end
+	return { key = "admin.login.ago.days", args = { n = today - last } }
+end
+
+local function statusText(status: LoginReward.Status): any
+	if status.claimedToday then
+		return { key = "admin.login.status.claimed" }
+	elseif status.resets then
+		return { key = "admin.login.status.reset" }
+	end
+	return { key = "admin.login.status.claimable", args = { day = status.day } }
+end
+
+commands.login = function(player, _args)
+	withCharacter(player, function()
+		local state = LoginRewardService.State(player)
+		if not state then
+			return
+		end
+		local today = LoginRewardService.Today()
+		reply(player, "admin.login.state", {
+			day = state.day,
+			last = state.last,
+			ago = agoText(state.last, today),
+			today = today,
+			status = statusText(LoginReward.status(state, today)),
+		})
+		local char = PlayerStateService.GetCharacter(player)
+		local gold, items = 0, 0
+		for _, day in LoginReward.week(char.level, char.class) do
+			gold += day.gold
+			items += #day.items
+		end
+		reply(player, "admin.login.week", { level = char.level, gold = gold, items = items })
+	end)
+end
+
+commands.loginset = function(player, args)
+	local day = tonumber(args[1])
+	local gap = tonumber(args[2] or "0")
+	if day == nil or gap == nil or day ~= math.floor(day) or day < 0 or day > 7 or gap < 0 or gap > 30 then
+		reply(player, "admin.usage.loginset")
+		return
+	end
+	withCharacter(player, function()
+		local today = LoginRewardService.Today()
+		local state = if day == 0 then { day = 0, last = 0 } else { day = day, last = today - 1 - math.floor(gap) }
+		LoginRewardService.SetState(player, state)
+		local saved = LoginRewardService.State(player) :: LoginReward.State
+		reply(player, "admin.login.set", {
+			day = saved.day,
+			last = saved.last,
+			status = statusText(LoginReward.status(saved, today)),
+		})
+	end)
+end
+
+commands.loginnext = function(player, args)
+	local days = tonumber(args[1] or "1")
+	if days == nil or days ~= math.floor(days) or days < 1 or days > 30 then
+		reply(player, "admin.usage.loginnext")
+		return
+	end
+	withCharacter(player, function()
+		local state = LoginRewardService.State(player)
+		if not state then
+			return
+		end
+		if state.last == 0 then
+			reply(player, "admin.login.never")
+			return
+		end
+		LoginRewardService.SetState(player, { day = state.day, last = math.max(0, state.last - days) })
+		local saved = LoginRewardService.State(player) :: LoginReward.State
+		reply(player, "admin.login.set", {
+			day = saved.day,
+			last = saved.last,
+			status = statusText(LoginReward.status(saved, LoginRewardService.Today())),
+		})
+	end)
 end
 
 return commands

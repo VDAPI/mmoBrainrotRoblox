@@ -49,11 +49,28 @@ local function log(text: string, ok: boolean?)
 	Dev.Log:set(list)
 end
 
+-- S100: arguments like the chat's (NotificationController): "@key" and { key, args? } are localized texts.
+local function resolveArgs(args: any): { [string]: any }?
+	if type(args) ~= "table" then
+		return nil
+	end
+	local out = {}
+	for name, value in args do
+		if type(value) == "string" and string.sub(value, 1, 1) == "@" then
+			value = Text.now(string.sub(value, 2))
+		elseif type(value) == "table" and type(value.key) == "string" then
+			value = Text.now(value.key, resolveArgs(value.args))
+		end
+		out[name] = value
+	end
+	return out
+end
+
 function Dev.lineText(line: any): string
 	if type(line) ~= "table" or type(line.key) ~= "string" then
 		return tostring(line)
 	end
-	return Text.now(line.key, if type(line.args) == "table" then line.args else nil)
+	return Text.now(line.key, resolveArgs(line.args))
 end
 
 -- Runs a command now (no confirmation). `done(ok, err, lines)` gets the raw result.

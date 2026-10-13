@@ -55,6 +55,8 @@ function AccountSchema.accountTemplate(): AccountData
 		},
 		purchases = {},
 		dailyLimits = { day = 0, protectScrolls = 0 },
+		-- S100: login reward streak (Logic/LoginReward): last claimed day 0..7 and its UTC day
+		login = { day = 0, last = 0 },
 		stats = { createdAt = 0, playtime = 0 },
 		redeemed = {},
 	}

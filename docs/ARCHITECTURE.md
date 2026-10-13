@@ -128,6 +128,7 @@ type AccountData = {
   settings: { lang: string, volume: number, dmgNumbers: boolean, ... },
   purchases: { [string]: number },   -- receiptId → os.time() (idempotencja)
   dailyLimits: { day: number, protectScrolls: number },
+  login: { day: number, last: number }, -- S100: login reward streak (account-wide, UTC days)
   stats: { createdAt: number, playtime: number },
 }
 type CharacterData = {
@@ -153,6 +154,11 @@ type CharacterData = {
 }
 ```
 - Migracje: `DataService.Migrations[n] = function(data) ... end`, uruchamiane gdy `data.schema < CURRENT`.
+- **Nagroda za logowanie (S100):** `account.login` z szablonu (`TableUtil.reconcile`, bez migracji); `LoginRewardService`
+  (`Deps`: `DataService`, `PlayerStateService`, `InventoryService`, `MailService`; od niego zależy `AdminService`),
+  remote `ClaimLoginReward() -> (ok, errKey?, result?)` (rate 0,5), reguły i zawartość w `Logic/LoginReward`, liczby w
+  `Data/LoginReward`. Klient: `LoginRewardController` (okno `login`, `Status`, `Badge`, otwarcie raz dziennie),
+  `UI/Screens/LoginReward`, przycisk `Hud/LoginButton`; `WindowManager.AnyOpen()`.
 - Zapis automatyczny (ProfileStore), dodatkowo `profile:Save()` po zakupach i transakcjach handlu/aukcji.
 - Inne store'y: `Names` (rezerwacja nazw postaci, `UpdateAsync`), `Guilds`, `GuildNames`, `Mail` (`"Mail_" .. userId`, lista przesyłek), `Auction` (escrow ofert) + MemoryStore SortedMap jako indeks wyszukiwania.
 - W Studio bez opublikowanego place lub z wyłączonym API: DataService wykrywa brak dostępu do DataStore i używa **mock store w pamięci** (ProfileStore.Mock), żeby testy w Studio działały.
@@ -503,6 +509,9 @@ type CharacterData = {
 | `/pass` | economy | <pass:pass> <on|off> | testuj gamepass |
 | `/premium` | economy | <grant> <pass:pass> | /premium grant autoLoot|vault|fastRespawn|vip |
 | `/bless` | economy | [id:blessing] | lista błogosławieństw albo nadaj jedno (np. warrior_5) |
+| `/login` | economy |  | stan serii nagrody za logowanie konta (S100) |
+| `/loginset` | economy | <day> [gap] | ustaw serię: dzień 0–7, przerwa w dniach (np. /loginset 6 → dziś skrzynia) |
+| `/loginnext` | economy | [days] | symuluj upływ dni dla konta (1 = następny dzień serii, 2+ = przerwa) |
 | `/cosmetic` | economy | <all> | /cosmetic all |
 | `/mail` | economy | <gold|item> <a> [b] [c] | /mail gold n | /mail item idPrzedmiotu [n] [rzadkość] |
 | `/auction` | economy | <list|expireall> | /auction list | /auction expireall (Studio) ⚠ expireall |

@@ -6692,3 +6692,79 @@ Pliki: `src/shared/Data/Quests/Contracts.luau`, `src/shared/Data/QuestBudget.lua
 `tests/contracts.spec.luau` (nowy), `tests/{npcmarks,quest,questcategories,character,mounts,rarities,sidequests,worldmap}.spec.luau`,
 `tests/{Balance,BalanceTables}.luau`, `tests/fixtures/balance_items.json`, `tools/contracts_gen.luau` (nowy),
 `tools/balance_reasons.luau`, `docs/{DESIGN,DESIGN-15,BALANS,DECYZJE,SESJE,PROGRESS}.md`, `CLAUDE.md`.
+
+### S100: Nagroda za logowanie
+
+Start na `b51f279` (S99): commit i sekcja S99, `tools/balance_reasons.luau`, `tests/Balance.luau` (`economyAt`,
+`upgradePlan`), `tests/balance1_20.spec.luau`, `tests/fixtures/balance_1_20.json`, `docs/DESIGN-15.md` na miejscu;
+`AccountSchema.CURRENT = 7`; od `AdminService` zależy tylko `SettingsService`; S98–S99 nie dodały funkcji „następny
+dzień” w `Logic/Time`.
+
+Co zrobiono:
+- **Dane (A):** `Data/LoginReward` (7 dni, jednostka złota `10 + 8·L` co 5, pasma mikstur i esencji, linie
+  błogosławieństw klas, skrzynia `rarity = { [2] = 85, [3] = 15 }`, `bound`). Zmiany względem planu po strojeniu G:
+  Wielkie mikstury od 70 (nie 60), esencja bez kryształów (pył ×3 / odłamek ×1 od 20. / ×2 od 45.), skrzynia 85 / 15
+  (nie 65 / 35), pole pasma esencji `item` (nie `id`), bez `classBias` (skrzynia przez `Loot.pickUsable`).
+- **Logika (B):** `Logic/LoginReward` (`sanitize`, `status`, `claim`, `goldAt`, `potionQuality`, `essenceAt`, `lineOf`,
+  `contents`, `week`, `rollChest`, `chestFallback`), `Time.nextDayAt`.
+- **Zapis (C):** `login = { day = 0, last = 0 }` w `AccountSchema.accountTemplate` i `Types.AccountData`, bez migracji.
+- **Serwer (D, F):** `LoginRewardService` (`Claim`, `Status`, `State`, `SetState`, `Today`; poczta przy pełnym
+  plecaku z cofnięciem zapisu, `Analytics.gold(..., "login")`, `DataService.Save`), remote `ClaimLoginReward` (rate
+  0,5); `/login`, `/loginset <dzień> [przerwa]`, `/loginnext [dni]` w `Admin/Economy`, `LoginRewardService` w
+  `AdminService.Deps` (bez cyklu).
+- **Klient (E):** `LoginRewardController` (okno `login` 860 × 520, `Status`, `Badge`, samo otwarcie raz dziennie po
+  przewodniku, bez modala i bez innego okna, 2 s po wejściu), `UI/Screens/LoginReward` (nagłówek z dniem serii i
+  ostrzeżeniem o przerwie, siedem kart z `QuestRewards`, karta 7 z ▣ i klasą, stopka „Odbierz” albo „Odebrano dziś” z
+  jutrzejszym dniem i odliczaniem, panel „Otrzymano:” z `ItemSlot` przedmiotu skrzyni, linia o poczcie, puls ramki
+  dzisiejszej karty; na dotyku siatka 4 w rzędzie), `Hud/LoginButton` (✧ 44 × 44 w x 434–478, y 114–158: wolne po
+  S60–S99; „!” i pulsująca złota ramka), `WindowManager.AnyOpen()`, `Dev.lineText` z argumentami `@klucz` / `{ key, args }`.
+- **Teksty (H):** wszystkie klucze z planu w PL i EN.
+- **Uproszczenia wyglądu:** karty dni w `UIGridLayout` równej szerokości na PC i dotyku (karta 7 wyróżniona ▣ i
+  złotym tekstem, nie szerokością); dźwięk odbioru `levelUp` (w `UI/Sounds` nie ma „reward”).
+- **Ekonomia (G):** `Balance.loginWeek`, `loginEssenceShare`, `loginShare`, `loginChest` w `tests/Balance.luau`; blok
+  „Login reward (S100)” w `balance.spec` (T-LR1..5, asertowany); `Data/LoginReward` w `BALANCE_MODULES`, powód
+  `LoginReward:*` (S100); sekcja „Nagroda za logowanie (S100)” w `docs/BALANS.md`. Migawki księgi nie trzeba było
+  robić od nowa. Fixture 1–20 i `ALLOWED_1_20_DIFFS` nietknięte.
+- **Testy:** `tests/loginreward.spec.luau` (nowy: seria, dni, granica północy UTC, zawartość dla 4 klas i 8 poziomów,
+  mikstury i esencja, skrzynia 4 klasy × 6 poziomów × 50 ziaren, udział Heroików na 2 000 rzutach, dane), przypadek S100
+  w `tests/character.spec.luau` (szablon, stary zapis bez pola, zapis schematu 6 → tylko migracja 7).
+- **Po przeglądzie:** złoto w „Otrzymano:” jako własny element (nie zachodzi na pierwszy przedmiot); okno otwarte
+  przez gracza w czasie oczekiwania liczy się jak pokazane dziś (zamknięte bez odbioru nie wraca); samo otwarcie
+  sprawdza świeży dzień UTC (nie ten z odświeżania co 30 s); nagłówek okna 48 px, więc rząd kart na PC mieści się bez
+  przewijania.
+
+Tydzień nagród (Wojownik / Mag, bez przedmiotu skrzyni; dochód z `economyAt`):
+
+| L | złoto tygodnia | razem (złoto + przedmioty) | dochód / h | tydzień h | minuty gry |
+|--:|--:|--:|--:|--:|--:|
+| 20 | 1 020 | 2 800 | 6 659 / 6 022 | 0,42 / 0,46 | 25 / 28 |
+| 45 | 2 220 | 5 180 | 14 693 / 13 318 | 0,35 / 0,39 | 21 / 23 |
+| 99 | 4 810 | 9 570 | 33 558 / 31 460 | 0,29 / 0,30 | 17 / 18 |
+
+Najdroższy dzień ≤ 0,11 h (Mag na 70.: dzień 5 z Wielkimi miksturami); skrzynia: 0,15 Heroika i 0,85 Unikatu na tydzień
+(4% / 6% dolnej granicy D5 przy 7 h gry tygodniowo).
+
+Wiki: bez zmian (`npm run data`: dane bez zmian, `meta.json` ze znacznikiem commitu przywrócony; `wiki_keys_diff`
+pusty). `scripts/check` zielony.
+
+Dla właściciela:
+- wiki: krótka strona „Nagroda za logowanie” (tabela dni na kilku poziomach z `LoginReward.week`) w przyszłej sesji wiki;
+- liczby skrzyni: Unikat 85 / Heroik 15 (plan 65 / 35 łamał cel ≤ 5% D5); jeśli skrzynia ma być hojniejsza, trzeba
+  poluzować T-LR5;
+- czy dzień, w którym gracz wszedł, ale nie odebrał nagrody, ma przerywać serię (dziś przerywa; okno otwiera się samo
+  i przycisk ma odznakę);
+- kryształy esencji poza nagrodą (za drogie wobec limitu dnia); jeśli mają wrócić, to np. jako rzadka zawartość skrzyni.
+
+Dla S101: skrzynia wydarzenia może czytać `Data/LoginReward.chest` (wariant „bound”) i `LoginReward.rollChest`; nazwy
+z tej sesji bez zmian.
+
+Pliki: `src/shared/Data/LoginReward.luau` (nowy), `src/shared/Logic/LoginReward.luau` (nowy),
+`src/shared/Logic/{Time,AccountSchema}.luau`, `src/shared/Types.luau`, `src/shared/Net/Definitions.luau`,
+`src/shared/Data/AdminCommands.luau`, `src/shared/Data/Localization/{pl,en}.luau`,
+`src/server/Services/LoginRewardService.luau` (nowy), `src/server/Services/AdminService.luau`,
+`src/server/Admin/Economy.luau`, `src/client/Controllers/LoginRewardController.luau` (nowy),
+`src/client/Controllers/{ScreenController,WindowManager}.luau`,
+`src/client/UI/Screens/LoginReward.luau` (nowy), `src/client/UI/Screens/Hud/LoginButton.luau` (nowy),
+`src/client/UI/Screens/Hud/init.luau`, `src/client/UI/Screens/DevWindow/Dev.luau`, `tests/loginreward.spec.luau`
+(nowy), `tests/{character,balance}.spec.luau`, `tests/Balance.luau`, `tools/balance_reasons.luau`,
+`tools/balance_report.luau`, `docs/{BALANS,DESIGN,DESIGN-15,ARCHITECTURE,DECYZJE,SESJE,PROGRESS}.md`.

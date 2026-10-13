@@ -161,6 +161,26 @@ T.describe("AccountSchema", function()
 		T.expect(quests.mainDone).toBe(3)
 	end)
 
+	T.it("S100: the login streak comes from the template, without a migration", function()
+		T.expect(AccountSchema.accountTemplate().login).toEqual({ day = 0, last = 0 })
+		local old: any = AccountSchema.accountTemplate()
+		old.login = nil
+		local applied = AccountSchema.migrate(old)
+		T.expect(applied).toEqual({})
+		T.expect(old.schema).toBe(AccountSchema.CURRENT)
+		T.expect(old.login).toEqual({ day = 0, last = 0 })
+		local kept: any = AccountSchema.accountTemplate()
+		kept.login = { day = 4, last = 123 }
+		AccountSchema.migrate(kept)
+		T.expect(kept.login).toEqual({ day = 4, last = 123 })
+		-- a save of schema 6 (before S99) runs only migration 7 and gets the field too
+		local older: any = AccountSchema.accountTemplate()
+		older.schema = 6
+		older.login = nil
+		T.expect(AccountSchema.migrate(older)).toEqual({ 7 })
+		T.expect(older.login).toEqual({ day = 0, last = 0 })
+	end)
+
 	T.it("template keeps an empty hotbar (reconcile)", function()
 		T.expect(AccountSchema.characterTemplate().hotbar).toEqual({})
 		local mage = CharacterFactory.create("Mage", "Empty", ids())

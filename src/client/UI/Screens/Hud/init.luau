@@ -17,6 +17,8 @@ local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local IconButton = require(script.Parent.Parent.Components.IconButton)
 local Keybinds = require(script.Parent.Parent.Keybinds)
+local LoginButton = require(script.LoginButton)
+local LoginReward = require(ReplicatedStorage.Shared.Logic.LoginReward)
 local PotionBar = require(script.PotionBar)
 local PvpDot = require(script.Parent.Parent.Components.PvpDot)
 local PvpState = require(script.Parent.Parent.PvpState)
@@ -65,6 +67,10 @@ export type Props = {
 	Riding: Fusion.UsedAs<any>,
 	HasMount: Fusion.UsedAs<boolean>,
 	OnMount: () -> (),
+	-- S100: the login reward (LoginRewardController): today's streak status, a reward waits, open the window
+	LoginStatus: Fusion.UsedAs<LoginReward.Status?>,
+	LoginBadge: Fusion.UsedAs<boolean>,
+	OpenLogin: () -> (),
 	UsePotion: (kind: string) -> (),
 	AssignPotion: (kind: string, itemId: string?) -> (),
 	CastSlot: (slot: number) -> (),
@@ -415,6 +421,13 @@ local function Hud(scope: Scope, props: Props): Instance
 		[Children] = {
 			portrait(scope),
 			BlessingIcon(scope, UDim2.fromOffset(Theme.Padding.Large + 400 + 12, Theme.Padding.Large + 4)),
+			-- S100: right of the portrait, aligned to its bottom (the elixirs end at ~90, the effect icons start at 164)
+			LoginButton(scope, {
+				Status = props.LoginStatus,
+				Badge = props.LoginBadge,
+				Open = props.OpenLogin,
+				Position = UDim2.fromOffset(Theme.Padding.Large + 400 + 12, Theme.Padding.Large + 136 - 44),
+			}),
 			CastBar(scope),
 			EffectIcons(scope, {
 				Model = myModel,

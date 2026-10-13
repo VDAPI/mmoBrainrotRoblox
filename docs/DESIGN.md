@@ -900,6 +900,39 @@ Po testach S17: **więcej rodzajów na każdej mapie (min. 8–10 na mapę teren
   na tablicy, mapie świata i w oknie portalu („◈ Zlecenie”). Lista jest generowana: `lune run
   tools/contracts_gen.luau`, potem `tools/quest_budget.luau`. Na wiki od S109.
 
+## 20a. Nagroda za logowanie (S100, DESIGN-15 §5)
+
+- **Seria 7 dni na konto** w dniach UTC (`account.login = { day, last }`: ostatni odebrany dzień serii 0–7 i dzień
+  UTC tego odbioru). Pierwsze wejście danego dnia dowolną postacią (po przewodniku nowej postaci) otwiera okno nagrody
+  samo, raz dziennie; potem otwiera je przycisk ✧ przy portrecie (z „!”, gdy nagroda czeka).
+- **Odbiera postać, która jest w świecie**, a nagroda skaluje się jej poziomem (okno pokazuje „Odbierze: imię, poziom”).
+  Inna postać tego samego dnia widzi „Odebrano dziś”.
+- **Dzień liczy się w chwili odbioru**: dzień bez odbioru (wejście bez kliknięcia „Odbierz”) przerywa serię. Opuszczenie
+  pełnego dnia zeruje trwającą serię (okno: „Przerwa wyzerowała serię”, po odbiorze „Jutro dzień N. Przerwa zeruje
+  serię.”); po dniu 7 seria wraca do 1 bez komunikatu. Zegar cofnięty nigdy nie daje drugiej nagrody.
+- Jednostka złota `10 + 8 · L` (zaokrąglona do 5), mikstury HP i zasobu klasy (Małe ×5 do 11., Średnie ×3 od 12.,
+  Duże ×1 od 35., Wielkie ×1 od 70.), esencja pasma (pył ×3 do 19., odłamek ×1 od 20., ×2 od 45.), kamień powrotu,
+  błogosławieństwo linii klasy (Wojownik `warrior`, Łowca `hunter`, Mag `sage`, Kapłan `guardian`; nigdy Fortuna):
+
+  | dzień | nagroda |
+  |---|---|
+  | 1 | złoto ×1, 2 kamienie powrotu |
+  | 2 | mikstury |
+  | 3 | złoto ×1, esencja |
+  | 4 | błogosławieństwo Zwykłe, kamień powrotu |
+  | 5 | złoto ×1,5, mikstury |
+  | 6 | złoto ×1, esencja |
+  | 7 | **skrzynia**: złoto ×1,5, błogosławieństwo Unikatowe i przedmiot Unikatowy (85%) albo Heroiczny (15%) |
+
+- **Skrzynia**: przedmiot z poziomu dropu postaci (`ItemRoll.dropLevel`), z bazy, którą klasa może założyć (wagi slotów
+  bossa, broń najpierw), z liniami jak z dropu, **związany z postacią**.
+- Tydzień = ok. 0,27–0,47 h dochodu z bicia na 10.–99. poziomie (żaden dzień ≥ 0,12 h), **bez EXP** i premii EXP; nagroda
+  jest poza modelem tempa (`docs/BALANS.md` → „Nagroda za logowanie (S100)”).
+- **Pełny plecak** nie blokuje odbioru: cała nagroda idzie jedną przesyłką na pocztę tej postaci („Nagroda za
+  logowanie: dzień N”, odbiór u Aukcjonera); błąd poczty nie zapisuje odbioru.
+- Bez premium: nagrody nie da się kupić, przyspieszyć ani odnowić. Admin: `/login`, `/loginset <dzień> [przerwa]`,
+  `/loginnext [dni]`.
+
 ## 21. Monetyzacja (bez pay-to-win)
 
 - **Smocza Waluta** (Developer Products: 100 / 550 / 1 200 / 2 600 / 7 000).
@@ -955,6 +988,10 @@ Po testach S17: **więcej rodzajów na każdej mapie (min. 8–10 na mapę teren
 - **Mapa interaktywna** (S25, jak w Margonem: mapa jest głównym narzędziem nawigacji): każda ikona na mapie jest klikalna. Na PC najechanie pokazuje dymek (nazwa + 1 linia), kliknięcie przypina **kartę szczegółów** po prawej (zostaje do ✕, kliknięcia w puste miejsce albo innej ikony; zaznaczona ikona ma pulsującą złotą obwódkę); na dotyku tap otwiera kartę jako dolny panel z dużymi przyciskami, a przeciąganie mapy jej nie zamyka. Karta: nagłówek (ikona, nazwa, poziomy / rola, kolor strefy lub pasma) → **obracający się podgląd 3D** (NPC, potwór w wariantach Zwykły / Elita / Elita II, Elita II jaskini, boss) → treść → przyciski. Rodzaje: **NPC** (powitanie, usługi, 6 pierwszych rzeczy ze sklepu dla poziomu gracza z cenami, quest do wzięcia / oddania / w trakcie, zlecenia dzienne przy tablicy, odległość albo trasa przez mapy), **portal** (mapa docelowa, poziomy, strefa, polecany obszar, „Pokaż mapę”; nieotwarta kraina: szara karta „Wkrótce”), **obszar** (rodzaje jako klikalne wiersze → karta potwora z „← wróć”: poziomy, HP i atak dla środka zakresu, żywioł, gdzie występuje, ciekawy łup słowami „często / czasem / rzadko / bardzo rzadko”), **jaskinia** (zwykłe, Elity, Elita II z timerem, komnaty), **loch** (boss 3D, wymagany poziom, czy dziś dostępny, zasada grupy, unikaty z tooltipem), **węzeł / łowisko**, **członek grupy** (klasa, poziom, HP/mana, Profil), **własny znacznik**. Akcje: **Prowadź** (ścieżka na ziemi z kropek co 6 st. na pierwszych 120 st., belka „➤ Kowal Dorgan · 84 m ✕” pod minimapą, cel na innej mapie prowadzi do właściwego portalu i przelicza się po teleporcie, dojście czyści cel), **Idź** (tylko ta sama mapa: postać idzie sama; przerywa ją WASD / joystick, skok, wybranie celu ataku, rozmowa z NPC, śmierć, teleport; walka trwa normalnie; mapa się zamyka, opcja w ustawieniach; dojście do NPC kończy się obrotem do niego i „Rozmawiaj [E]”), **Wyśrodkuj**, **Pokaż mapę**. Podwójny klik / długie przytrzymanie na ziemi mapy: „Idź tutaj”, „Prowadź tutaj”, „Postaw znacznik” (punkt w wodzie albo w ścianie → najbliższe osiągalne miejsce). **Własne znaczniki**: do 8 na postać, bez własnego tekstu (ikona z 6: ⚑ ★ ✖ ⛏ 💰 ☠, nazwa z najbliższego NPC albo obszaru), zapisane w postaci, widoczne na mapie i minimapie. **Wyszukiwarka** nad listą map (NPC także po roli i usłudze: „kowal”, „sklep”, „poczta”; mapy, obszary, potwory po każdej nazwie wariantu, bossowie, węzły; bez wielkości liter i polskich znaków: „laki” → Łąki; max 12 wyników; Enter = pierwszy). **Chipy usług** w mieście (Sklepy, Kowal, Alchemik, Questy, Bank) podświetlają pasujących NPC. Znaczniki questów **!** (quest do wzięcia), **?** złoty (do oddania), **?** szary (w trakcie) nad NPC na mapie, minimapie i nad głowami. Przy najmniejszym zoomie nakładające się ikony: zostaje ważniejsza (NPC z questem > portal > loch > NPC > węzeł), reszta jest dostępna z wyszukiwarki.
 - **Minimapa**: ten sam rysunek co mapa (wycinek), obszary potworów, strzałka gracza zgodna z kierunkiem postaci, kropki grup w kolorze liczebności. S25: klik / tap otwiera mapę świata na graczu; pokazuje cel prowadzenia (poza widokiem albo na innej mapie: strzałka na krawędzi w stronę celu lub portalu po drodze), własne znaczniki i **!** / **?** nad NPC. Strzałka questu w trackerze wskazuje portal z trasy, a przycisk **➤** w trackerze włącza prowadzenie do celu questu.
 - Mobile: joystick Roblox, przycisk ataku duży w prawym dolnym, skille wokół, mikstury nad nimi, menu jako ikony na górze.
+- **Nagroda za logowanie (S100)**: przycisk ✧ (44 × 44) na prawo od portretu, wyrównany do jego dołu, na PC i telefonie
+  tak samo; „!” i pulsująca złota ramka, gdy nagroda czeka, podpowiedź z dniem serii. Okno (860 × 520; na telefonie
+  pełny ekran, karty w dwóch rzędach po 4): siedem kart dni z nagrodą na poziom postaci, dzisiejsza w złotej ramce,
+  odebrane z ✓, stopka „Odbierz” albo „Odebrano dziś” z odliczaniem do następnej nagrody (§20a).
 
 ### Ikony w UI (S35)
 

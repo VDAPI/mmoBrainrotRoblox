@@ -2655,6 +2655,59 @@ do
 	tableOut({ "pasmo", "h baza", "h teraz", "teraz / baza" }, hours)
 end
 
+-- Login reward (S100) ---------------------------------------------------------------------------------------------
+
+do
+	add("## Nagroda za logowanie (S100)")
+	add()
+	add(
+		"Tydzień nagród (`Data/LoginReward`, `Logic/LoginReward.week`) wobec dochodu godziny bicia (`Balance.economyAt`): mikstury i kamienie po cenie kupna, esencja po cenach materiałów S84 (`Balance.materialPrices`), błogosławieństwo po cenie przedmiotu; przedmiot skrzyni poza wartością (drop, wiersz pod tabelą). Esencja tygodnia wobec esencji tego rodzaju na całe pasmo ulepszeń broni klasy z ilvl L − 2 (bez ochrony). Asercje w `balance.spec` („Login reward (S100)”): tydzień 0,15–0,6 h, dzień 1–6 ≤ 0,12 h, dzień 7 bez skrzyni ≤ 0,2 h, esencja ≤ 50%, zero EXP, Heroiki skrzyni ≤ 5% D5."
+	)
+	add()
+	local rows: { { string } } = {}
+	for _, c in { "Warrior", "Mage" } do
+		for _, L in { 10, 20, 30, 45, 60, 70, 85, 99 } do
+			local s = B.loginShare(c, L)
+			local items = s.week.total - s.week.gold
+			table.insert(rows, {
+				BalanceTables.CLASS_PL[c],
+				tostring(L),
+				fmtValue(s.week.gold, "i"),
+				fmtValue(items, "i"),
+				fmtValue(s.week.total, "i"),
+				fmtValue(s.income, "i"),
+				fmtValue(s.weekShare, "2"),
+				fmtValue(math.max(s.maxDay16, s.day7), "2"),
+				`{s.week.essence.n} {s.week.essence.id} / {fmtValue(s.essenceNeed, "1")} ({fmtValue(
+					s.essenceShare,
+					"%"
+				)})`,
+			})
+		end
+	end
+	tableOut({
+		"klasa",
+		"poziom",
+		"złoto tygodnia",
+		"przedmioty",
+		"razem",
+		"dochód / h",
+		"tydzień h",
+		"najdroższy dzień h",
+		"esencja tygodnia / pasmo",
+	}, rows)
+	local chest = B.loginChest()
+	add(
+		`Skrzynia (dzień 7): {fmtValue(chest.heroic, "2")} Heroika i {fmtValue(chest.unique, "2")} Unikatu na tydzień = {fmtValue(
+			chest.heroicShare,
+			"%"
+		)} Heroików i {fmtValue(chest.uniqueShare, "%")} Unikatów z dolnej granicy D5 przy {B.LOGIN_HOURS_PER_WEEK} h gry tygodniowo.`
+	)
+	add()
+	add("Nagroda poza modelem tempa i `economyAt` (S100, DECYZJE).")
+	add()
+end
+
 -- Skills on the reference builds (S85) ----------------------------------------------------------------------------
 
 do

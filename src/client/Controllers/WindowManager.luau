@@ -324,6 +324,16 @@ function WindowManager.CloseTop(): boolean
 	return false
 end
 
+-- S100: a normal (non-overlay) window is open (windows that open on their own wait until the player closes it).
+function WindowManager.AnyOpen(): boolean
+	for _, id in stack do
+		if not isOverlay(id) then
+			return true
+		end
+	end
+	return false
+end
+
 function WindowManager.HasModal(): boolean
 	return modalScope ~= nil
 end

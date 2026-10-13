@@ -378,6 +378,10 @@ cmd("economy", "setshards", { int("amount", 0, BIG) })
 cmd("economy", "pass", { ref("pass", "pass"), enum("mode", { "on", "off" }) })
 cmd("economy", "premium", { enum("action", { "grant" }), ref("pass", "pass") })
 cmd("economy", "bless", { ref("id", "blessing", true) })
+-- S100: the login reward streak of the caller's account (state, set, simulate days passing)
+cmd("economy", "login", {})
+cmd("economy", "loginset", { int("day", 0, 7), int("gap", 0, 30, true, "0") })
+cmd("economy", "loginnext", { int("days", 1, 30, true, "1") })
 -- S29: a blessing by line and tier, optionally with only `seconds` left (to see the last minute).
 cmd(
 	"economy",

@@ -190,6 +190,7 @@ export type AccountData = {
 	settings: Settings,
 	purchases: { [string]: number },
 	dailyLimits: { day: number, protectScrolls: number },
+	login: { day: number, last: number }, -- S100: login reward streak (account-wide, UTC days)
 	stats: { createdAt: number, playtime: number },
 	redeemed: { [string]: number }, -- S17: reward code -> os.time() of redemption
 }

@@ -72,6 +72,7 @@ Ten plik trafia do repo jako `docs/DESIGN-15.md`. Odejście od niego = linia w `
 - **Seria 7 dni na konto**: pierwsze wejście danego dnia (UTC) dowolną postacią daje okno nagrody dnia N; odbiera ta postać, nagroda skalowana jej poziomem. Dzień 1–6: złoto, mikstury, błogosławieństwo, pył esencji, kamień powrotu; **dzień 7: skrzynia** (przedmiot do Heroicznego na poziom postaci + błogosławieństwo Unikatowe). Po dniu 7 seria wraca do 1.
 - Opuszczenie pełnego dnia zeruje serię (widać to w oknie: „Jutro dzień 4. Przerwa zeruje serię”).
 - Zapis na koncie (`account.login = { day, last }`), bez premium, bez Robuxów.
+- Doprecyzowanie (S100): `day` = ostatni odebrany dzień serii 0–7, `last` = dzień UTC tego odbioru; dzień liczy się w chwili odbioru; esencja pasma poziomu (pył, od 20. odłamek; bez kryształów, za drogie wobec limitu dnia); pełny plecak → poczta; przedmiot skrzyni (Unikat 85% / Heroik 15%) związany z postacią; szczegóły w DESIGN §20a.
 
 ## 6. Kolejność sesji
 

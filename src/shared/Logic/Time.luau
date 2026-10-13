@@ -11,6 +11,11 @@ function Time.dayNumber(t: number): number
 	return math.floor(t / 86400)
 end
 
+-- S100: the time (seconds) the next UTC day starts (the login reward's "next reward in" countdown).
+function Time.nextDayAt(t: number): number
+	return (Time.dayNumber(t) + 1) * 86400
+end
+
 -- S98: UTC week index for the weekly contracts. Weeks start on Monday 00:00 UTC (day 0, 1 January 1970, was a
 -- Thursday, hence the + 3).
 function Time.weekNumber(t: number): number

@@ -2853,3 +2853,35 @@
 - **S99 dopasowania do S98:** eksport `Data/Quests/Contracts` z S98 bez zmian nazw (dopisane `RULES`); `Focus` jako
   `{ kind: "side" | "contract", id: string? }?` (wariant bez `id`); `NpcMarks` liczy znak tablicy przez `put` (wcześniej
   tylko gdy pusty); `Row.kind` w `UI/NpcQuests` z `"contract"`; `tests/mounts.spec` przypina teraz schemat 7.
+- **S100 zapis:** `account.login = { day, last }` (ostatni odebrany dzień serii 0–7 i dzień UTC tego odbioru) z
+  szablonu konta przez `TableUtil.reconcile`, bez migracji (`CURRENT` zostaje 7); serwis i klient czytają go przez
+  `LoginReward.sanitize`.
+- **S100 seria:** liczy się przy odbiorze, nie przy samym wejściu: dzień bez odbioru przerywa serię (DESIGN-15 milczał).
+  Okno otwiera się samo raz dziennie (klucz „dzień UTC : last”), przycisk HUD ma odznakę. Po pełnym tygodniu przerwa
+  nie pokazuje komunikatu o zerowaniu (seria i tak zaczyna od 1).
+- **S100 zegar:** `last > today` (zegar cofnięty `/time`, inny serwer) liczy się jak „odebrano dziś”: nigdy druga nagroda.
+- **S100 pełny plecak:** cała nagroda (złoto i przedmioty) jedną przesyłką do tej postaci (`mail.subject.login`, wzór
+  `CodeService`: najpierw zapis, potem poczta, przy błędzie cofnięcie); błąd poczty nie zapisuje odbioru.
+- **S100 skrzynia:** nie jest przedmiotem w plecaku, tylko zawartością dnia 7: `ItemRoll.dropLevel` + `Loot.pickUsable`
+  (wagi `LootTables.bossSlots`, zawsze baza klasy, gdy próg ją ma; zamiast `pickItem` z `classBias = 1`, które przy
+  slocie bez bazy klasy dawało cudzy przedmiot, więc pole `classBias` z planu odpadło) + `ItemRoll.rollItem`; przedmiot
+  związany z postacią (przeciw farmie na kontach pobocznych). Brak progu → podwójna esencja pasma.
+- **S100 wagi skrzyni:** Unikat 85 / Heroik 15 zamiast 65 / 35 z planu: 0,35 Heroika na tydzień to 10% dolnej granicy D5
+  (0,5 / h × 7 h), cel T-LR5 ≤ 5%; 0,15 = 4,3%. Do decyzji właściciela.
+- **S100 linie błogosławieństw:** Wojownik `warrior`, Łowca `hunter`, Mag `sage`, Kapłan `guardian`; nigdy `fortune`
+  (bez premii EXP); błogosławieństwo nagrody najwyżej Unikatowe (poziom 5 ma premię EXP z `LEGENDARY_SPECIAL`).
+- **S100 esencja:** pył ×3 do 19., odłamek ×1 od 20., ×2 od 45., bez kryształów (doprecyzowanie „pyłu” z DESIGN-15 §5):
+  kryształ wyceniony transmutacją S84 (`Balance.materialPrices`) to ok. 3 900 zł, sam ok. 0,25–0,29 h dochodu na 45.
+  wobec limitu dnia 0,12 h. Pasmo w danych ma pole `item` (nie `id`): dwa pasma odłamków zderzyłyby się w kluczach księgi.
+- **S100 mikstury:** Wielkie (700) od 70. zamiast od 60. (dzień 5 Maga na 60. miał 0,127 h), bez Potężnych; jakość nigdy
+  ponad `Potions.canDrink` poziomu.
+- **S100 ekonomia:** nagroda poza `economyAt` i modelem tempa (to dochód na dzień kalendarzowy; wliczenie ruszyłoby
+  zamrożone 1–20 i cele S92–S94). Cele T-LR1..5 w `balance.spec` („Login reward (S100)”): tydzień 0,27–0,47 h dochodu na
+  10–99, najdroższy dzień ≤ 0,11 h, esencja ≤ 39% pasma (pył na 10.), zero EXP, Heroiki 4,3% D5. `Data/LoginReward` w
+  `BALANCE_MODULES` z powodem prefiksowym `LoginReward:*`. Wycena: mikstury i kamienie po `buyPrice`, esencja po
+  `Balance.materialPrices` (pył 40 u kupca), błogosławieństwo po `price`.
+- **S100 HUD:** przycisk ✧ przy portrecie (x 434–478, y 114–158), nie w `MENU` (pasek pełny na telefonie); jedyna zmiana
+  w `WindowManager` to odczyt `AnyOpen()` (okno nie otwiera się samo nad innym oknem).
+- **S100 wiki:** nagroda za logowanie nie trafia na wiki w tej sesji (`npm run data` bez zmian).
+- **S100 panel admina:** `Dev.lineText` rozwiązuje argumenty jak czat (`"@klucz"` i `{ key, args }`), bo `/login` podaje
+  teksty stanu jako argumenty.

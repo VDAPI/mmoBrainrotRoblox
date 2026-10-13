@@ -51,6 +51,8 @@ local ItemTraits = require("../src/shared/Data/ItemTraits")
 local ItemValue = require("../src/shared/Logic/ItemValue")
 local Items = require("../src/shared/Data/Items")
 local LevelCurves = require("../src/shared/Logic/LevelCurves")
+local LoginReward = require("../src/shared/Logic/LoginReward")
+local LoginRewardData = require("../src/shared/Data/LoginReward")
 local Loot = require("../src/shared/Logic/Loot")
 local LootTables = require("../src/shared/Data/LootTables")
 local Luck = require("../src/shared/Logic/Luck")
@@ -8076,6 +8078,141 @@ function Balance.pvpTraitValue(
 	local with = Balance.pvpDuel(p, opp, o).ab.seconds
 	local without = Balance.pvpDuel(pOff, opp, o).ab.seconds
 	return without / with - 1
+end
+
+-- Login reward (S100, docs/DESIGN-15.md §5) -------------------------------------------------------------------------
+-- Outside economyAt and the pace model (a reward per calendar day, not per hour of play; DECYZJE S100): the targets
+-- compare a week of rewards with the income of an hour of grinding (balance.spec "Login reward (S100)").
+
+export type LoginDay = { gold: number, items: number, total: number } -- items: the value of the day's items
+export type LoginWeek = {
+	gold: number,
+	potionValue: number, -- potions at their buy price (what the shop would ask)
+	essenceValue: number, -- essences at Balance.materialPrices (dust at the merchant, shards / crystals transmuted)
+	stoneValue: number, -- Return Stones at their buy price
+	blessingValue: number, -- blessings at their item price
+	total: number,
+	perDay: { LoginDay },
+	essence: { id: string, n: number }, -- the band's essence of the whole week
+}
+
+local function loginItemValue(id: string, n: number): (string, number)
+	local def = Items.get(id) :: any
+	assert(def, `loginWeek: unknown item {id}`)
+	if def.use and def.use.kind == "potion" then
+		return "potion", n * def.buyPrice
+	elseif id == "stone_return" then
+		return "stone", n * (def.buyPrice or def.price)
+	elseif def.use and def.use.kind == "blessing" then
+		return "blessing", n * def.price
+	end
+	local price = Balance.materialPrices()[id]
+	assert(price, `loginWeek: no price for {id}`)
+	return "essence", n * price
+end
+
+-- One week of login rewards of `classId` at `level` (LoginReward.week) in gold; the chest item stays outside (a drop,
+-- compared with D5 in loginChest).
+function Balance.loginWeek(classId: string, level: number): LoginWeek
+	local out: LoginWeek = {
+		gold = 0,
+		potionValue = 0,
+		essenceValue = 0,
+		stoneValue = 0,
+		blessingValue = 0,
+		total = 0,
+		perDay = {},
+		essence = { id = LoginReward.essenceAt(level).item, n = 0 },
+	}
+	for _, day in LoginReward.week(level, classId) do
+		local value = 0
+		for _, entry in day.items do
+			local kind, v = loginItemValue(entry.id, entry.n)
+			value += v
+			if kind == "potion" then
+				out.potionValue += v
+			elseif kind == "stone" then
+				out.stoneValue += v
+			elseif kind == "blessing" then
+				out.blessingValue += v
+			else
+				out.essenceValue += v
+				if entry.id == out.essence.id then
+					out.essence.n += entry.n
+				end
+			end
+		end
+		out.gold += day.gold
+		table.insert(out.perDay, { gold = day.gold, items = value, total = day.gold + value })
+	end
+	out.total = out.gold + out.potionValue + out.essenceValue + out.stoneValue + out.blessingValue
+	return out
+end
+
+-- The week's essence against the essence of that kind the class weapon of ilvl level - 2 needs for its whole band of
+-- upgrades without protection (dust +1..+3, shards +4..+6, crystals +7..+9; Logic/Upgrade uses each essence only in
+-- its band). Returns (share, need).
+function Balance.loginEssenceShare(classId: string, level: number): (number, number)
+	local week = Balance.loginWeek(classId, level)
+	local id = week.essence.id
+	local to = if id == "essence_dust" then 3 elseif id == "essence_shard" then 6 else 9
+	local ilvl = math.max(1, level - Balance.GEAR_GAP)
+	local item = makeItem(tierId(Balance.LOADOUT[classId].weapon, ilvl), ilvl, Rarities.COMMON, 0, {})
+	local need = Balance.upgradePlan(item, to, false).materials[id] or 0
+	return week.essence.n / math.max(1e-9, need), need
+end
+
+export type LoginShare = {
+	classId: string,
+	level: number,
+	income: number, -- gold per hour of grinding (economyAt)
+	week: LoginWeek,
+	weekShare: number, -- hours of income
+	maxDay16: number, -- the dearest of days 1-6, in hours of income
+	day7: number, -- day 7 without the chest item, in hours of income
+	essenceShare: number, -- the week's essence / the essence of its upgrade band
+	essenceNeed: number,
+}
+
+function Balance.loginShare(classId: string, level: number): LoginShare
+	local week = Balance.loginWeek(classId, level)
+	local income = math.max(1e-9, Balance.economyAt(classId, level).incomePerHour)
+	local maxDay = 0
+	for d = 1, LoginReward.DAYS - 1 do
+		maxDay = math.max(maxDay, week.perDay[d].total)
+	end
+	local essenceShare, need = Balance.loginEssenceShare(classId, level)
+	return {
+		classId = classId,
+		level = level,
+		income = income,
+		week = week,
+		weekShare = week.total / income,
+		maxDay16 = maxDay / income,
+		day7 = week.perDay[LoginReward.DAYS].total / income,
+		essenceShare = essenceShare,
+		essenceNeed = need,
+	}
+end
+
+-- Expected chest items a week (one chest a week) against D5 at its floor (heroicPerHour[1] Heroics and
+-- uniquePerHour[1] Uniques per hour) over an assumed LOGIN_HOURS_PER_WEEK hours of play a week.
+Balance.LOGIN_HOURS_PER_WEEK = 7
+function Balance.loginChest(): { heroic: number, unique: number, heroicShare: number, uniqueShare: number }
+	local weights = LoginRewardData.chest.rarity :: { [number]: number }
+	local total = 0
+	for _, w in weights do
+		total += w
+	end
+	local heroic = (weights[Rarities.HEROIC] or 0) / total
+	local unique = (weights[Rarities.UNIQUE] or 0) / total
+	local d5 = Balance.REGION_TARGETS.d5
+	return {
+		heroic = heroic,
+		unique = unique,
+		heroicShare = heroic / (d5.heroicPerHour[1] * Balance.LOGIN_HOURS_PER_WEEK),
+		uniqueShare = unique / (d5.uniquePerHour[1] * Balance.LOGIN_HOURS_PER_WEEK),
+	}
 end
 
 return Balance
