@@ -2638,3 +2638,50 @@
   wiersz w limicie zostaje asercją (wcześniej np. podstawa Wojownika T-SK1 1,14 na 75 była tylko drukowana).
 - **S94 powody S93:** wiersze S93 w raporcie (skok rzędu 9 na 70, podstawa Łowcy T-SK2 na 65, Kłusownik T-SK3 na 65)
   mają „poza zasięgiem dźwigni S93: …; dla właściciela” zamiast „dla S94”.
+
+### S95: Sprzedawcy klas
+
+- **S95 sprzedawcy klas zamiast Zbrojmistrza:** NPC i sklep `weaponsmith` usunięte; `vendor_warrior` (dziedziniec zamku
+  przed donżonem), `vendor_cleric` (przed świątynią), `vendor_hunter` (przed nową Lożą Łowców), `vendor_mage` (przed
+  nową Wieżą Magów) sprzedają broń, drugą rękę i zbroję swojej klasy na progach 5…95, Zwykłe, `ilvl = level = próg`,
+  cena `value × buyMul`. `ShopDef.class` zamiast `classTabs`, `Shops.CLASS_VENDORS`, `Shops.vendorOf`,
+  `Shops.VENDOR_SLOTS` (kolejność wierszy w progu; czyta ją też raport I5).
+- **S95 blokada według przedmiotu:** kupić można to, co klasa może założyć (`ShopPrice.usableBy`: `entry.classes`
+  zawiera klasę; wpisy bez `classes` dla wszystkich), więc Wojownik kupi buzdygan i ciężką zbroję także u Kapłana.
+  Serwer sprawdza klasę po `offered`, przed poziomem (`shop.error.class`).
+- **S95 modal innej klasy usunięty:** wiersz przedmiotu innej klasy ma wyłączone „Kup” i czerwone „Tylko dla: …” (tylko
+  ono, gdy blokuje też poziom); klucze `shop.otherClass.*` usunięte.
+- **S95 skupiec:** `fence` w zbrojowni, sklep bez wpisów (okno bez zakładki „Kup”, otwiera się na „Sprzedaj”), usługa
+  `vendors` i pasek „Prowadź” prowadzą do sprzedawcy klasy (`NavController.GuideToNpc`, tylko klient). Karta NPC na mapie
+  świata nie pokazuje pustej sekcji sklepu; wiki eksportuje pusty sklep `fence` (NPC ma `shop` jako `ref:shops`).
+- **S95 I1 = Unikat tego samego przedmiotu:** porównanie z najsłabszym Unikatem tej samej bazy, progu i żywiołu (bez
+  wpływu wyboru bazy). Najsłabszy Unikat w teście: statystyki bazy z `baseMul` Unikatu i dwie pozycje puli o najniższym
+  wkładzie do `ItemScore` (pula = suma pul dla `forClass` nil i każdej klasy bazy, znaczniki rozwinięte na wszystkie
+  warianty, wartość z rzutu 0 albo 1), czyli dolne ograniczenie każdego prawdziwego Unikatu.
+- **S95 TIE_OK:** ciężkie rękawice progu 5 (`gloves_heavy_5`) remisują we wszystkich 8 kontekstach Wojownika i Kapłana:
+  pancerz 7 i HP 9 u Zwykłego i Unikatu po zaokrągleniu, a dwie najsłabsze linie wspólnej puli mają wagę 0 dla klasy.
+  `Rarities` i `ItemWeights` bez zmian (decyzja właściciela); DESIGN-15 §1 dopisuje wyjątek `TIE_OK`.
+- **S95 późne budowle w `plan.py`:** `LATE_SPECIALS` / `LATE_NPCS` / `LATE_NPC_AT` / `LATE_STREETS` po `generate_lots()`,
+  `BASE` = stan sprzed nich, działki pod nowymi budowlami (bufor 4) odpadają (`h166`, `h167`). Ogrody z
+  `free.occupied(base=True)` (ten sam ciąg losowy), potem `extras._trim_late` bez losowania: `g011` usunięty (pod wieżą
+  zostawał pierścień z dziurą), `g146` (wybieg przy stajni) przycięty o ok. 1 st. buforem 3 loży. Latarnie bez zmian.
+- **S95 pozycje bez przesunięć:** loża (273, 36), wieża (-248, -182) i czterej sprzedawcy stoją dokładnie tam, gdzie
+  podał plan sesji; `validate.py`, `town.spec`, `townsigns.spec` i `world.spec` przeszły bez poprawek. Ścieżka do wieży
+  (`LATE_STREETS`) niepotrzebna.
+- **S95 `classTabs` w wiki = `shop.class ~= nil`**, `weaponsmithTiers` = progi sprzedawców (te same klucze, kształt bez
+  zmian).
+- **S95 cel questu `classVendor`:** `QuestLogic.CLASS_VENDOR`, `QuestLogic.npcFor`; `QuestService` i
+  `SideQuestService.Handle` dopisują `classId` do każdego zdarzenia `talk` w jednym miejscu (zamiast w każdym wywołaniu).
+  Testy danych dopuszczają `classVendor` tylko w celach `talk` / `deliver`. Wiki: cel `talk` z tekstem
+  `quest.obj.talkClassVendor`, bez `npc` (cel `deliver` do sprzedawcy klasy nie ma jeszcze tekstu; pierwszy taki quest
+  dopisze go w S98+).
+- **S95 I3 mocniej niż w planie:** komplet „wszystko od sprzedawcy” (zbroja i broń z `shopTier`) jest asercją na
+  **każdym** poziomie 21–100 (plan: 25, 35, …, 95, 100, gdzie wynik = G4); najgorszy jest 24. poziom (Wojownik 11,0 s,
+  Mag 26% HP), w progach G4. 5–20 tylko raport w SESJE.
+- **S95 I5 w raporcie, nie w `BalanceTables`:** tabela „Komplet u sprzedawcy klasy” powstaje w `tools/balance_report.luau`
+  (poza fixture 1–20 i migawką). Kuźnia = złoto przepisu + rudy i pył esencji po cenach kowala (skóry, futro i łuski z
+  potworów bez ceny).
+- **S95 księga:** jeden wpis z prefiksem na sklep (`Shops:byId.<id>*`; cały sklep dodany albo usunięty naraz), osobne
+  powody dla każdej klasy. Raport zwija ≥ 100 kluczy jednego powodu w jeden wiersz (prefiks i liczba kluczy), żeby
+  `docs/BALANS.md` nie rósł o kilka tysięcy wierszy.
+- **S95 `export.py`:** zapis w UTF-8 (`encoding="utf-8"`); na Windows wcześniej pisał w stronie kodowej systemu.

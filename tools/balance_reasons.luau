@@ -2947,5 +2947,37 @@ return {
 				why = "4 -> -5: H4 R4: a wider storm spread the impacts (-0.04); a tighter one gives 0.21 at 84-100 (10B 0.18)",
 			},
 		},
+		-- S95 (DESIGN-15 §1): the class vendors replace the shared weaponsmith (whole shops moved at once)
+		["Shops:byId.weaponsmith*"] = {
+			{
+				session = "S95",
+				why = "removed: the weaponsmith's weapons and off-hands moved to the four class vendors (same items, levels and prices)",
+			},
+		},
+		["Shops:byId.vendor_warrior*"] = {
+			{
+				session = "S95",
+				why = "new class vendor: weapons and off-hands moved from the weaponsmith (same items, levels, value x buyMul); heavy armour new in a shop, Common as the smith's recipe, price value x buyMul >= the recipe's gold (I2)",
+			},
+		},
+		["Shops:byId.vendor_cleric*"] = {
+			{
+				session = "S95",
+				why = "new class vendor: weapons and off-hands moved from the weaponsmith (same items, levels, value x buyMul); heavy armour and robes new in a shop, Common as the smith's recipe, price >= the recipe's gold (I2)",
+			},
+		},
+		["Shops:byId.vendor_hunter*"] = {
+			{
+				session = "S95",
+				why = "new class vendor: weapons and off-hands moved from the weaponsmith (same items, levels, value x buyMul); medium armour new in a shop, Common as the smith's recipe, price value x buyMul >= the recipe's gold (I2)",
+			},
+		},
+		["Shops:byId.vendor_mage*"] = {
+			{
+				session = "S95",
+				why = "new class vendor: weapons (every element) and off-hands moved from the weaponsmith (same items, levels, value x buyMul); light armour (robes) new in a shop, Common as the smith's recipe, price >= the recipe's gold (I2)",
+			},
+		},
+		["Shops:byId.fence*"] = { { session = "S95", why = "the dealer: buys and sells back only (no entries)" } },
 	} :: { [string]: { Reason } },
 }

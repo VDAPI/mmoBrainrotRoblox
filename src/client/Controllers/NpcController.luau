@@ -17,7 +17,9 @@ local Net = require(ReplicatedStorage.Shared.Net)
 local NpcDialog = require(script.Parent.Parent.UI.Screens.NpcDialog)
 local Npcs = require(ReplicatedStorage.Shared.Data.Npcs)
 local ShopWindow = require(script.Parent.Parent.UI.Screens.ShopWindow)
+local Shops = require(ReplicatedStorage.Shared.Data.Shops)
 local Sounds = require(script.Parent.Parent.UI.Sounds)
+local State = require(script.Parent.Parent.UI.State)
 local Text = require(script.Parent.Parent.UI.Text)
 local Theme = require(script.Parent.Parent.UI.Theme)
 local Toast = require(script.Parent.Parent.UI.Components.Toast)
@@ -71,6 +73,30 @@ local function heal(npcId: string)
 	end)
 end
 
+-- S95: leads to the vendor of the player's class (the dealer's "Where can I buy gear?", the shop's "Guide me").
+function NpcController.GuideToNpc(npcId: string)
+	local def = Npcs.get(npcId)
+	if not def or not NpcController.Nav.GuideToNpc(npcId) then
+		Toast.push(Text.now("error.internal"), "error")
+		return
+	end
+	WindowManager.CloseMany(SERVICE_WINDOWS)
+	Toast.push(
+		Text.now("npc.vendors.guide", { name = Text.now(def.nameKey), where = Text.now(`npc.{npcId}.where`) }),
+		"info",
+		4
+	)
+end
+
+local function guideToClassVendor()
+	local vendorId = Shops.vendorOf(State.Get({ "character", "class" }))
+	if not vendorId then
+		Toast.push(Text.now("error.internal"), "error")
+		return
+	end
+	NpcController.GuideToNpc(vendorId)
+end
+
 function NpcController.OpenService(service: string)
 	local npcId = Fusion.peek(NpcController.Current)
 	if not npcId then
@@ -92,6 +118,9 @@ function NpcController.OpenService(service: string)
 		return
 	elseif service == "mail" then
 		NpcController.Market.OpenMail()
+		return
+	elseif service == "vendors" then
+		guideToClassVendor()
 		return
 	end
 	local window = SERVICE_TO_WINDOW[service]
@@ -210,7 +239,11 @@ local function registerWindows()
 		titleKey = "window.shop.title",
 		size = Vector2.new(720, 640),
 		build = function(s)
-			return ShopWindow(s, { NpcId = NpcController.Current, ShowModal = WindowManager.ShowModal })
+			return ShopWindow(s, {
+				NpcId = NpcController.Current,
+				ShowModal = WindowManager.ShowModal,
+				Guide = NpcController.GuideToNpc,
+			})
 		end,
 	})
 	WindowManager.Register({

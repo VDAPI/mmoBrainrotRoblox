@@ -55,8 +55,34 @@ def kind_for(poly, r):
     return pick(MIX[d["style"]], r)
 
 
+def _trim_late(out, min_area):
+    """S95: cut the gardens under the late buildings (buffer 3) and NPCs (buffer 2) of plan.py without using rng;
+    keep the largest hole-free piece, drop the garden when it is too small. Ids and seeds of the rest stay."""
+    cut = unary_union([P._foot(sp).buffer(3) for sp in P.LATE_SPECIALS] +
+                      [Point(x, z).buffer(2) for x, z, _ in P.LATE_NPCS.values()])
+    res = []
+    for gd in out:
+        if not gd["_p"].intersects(cut):
+            res.append(gd)
+            continue
+        rest = gd["_p"].difference(cut)
+        pieces = list(rest.geoms) if hasattr(rest, "geoms") else [rest]
+        pieces = [g for g in pieces if g.geom_type == "Polygon" and not g.is_empty and len(g.interiors) == 0]
+        if not pieces:
+            continue
+        piece = max(pieces, key=lambda g: g.area).simplify(1.5, preserve_topology=True)
+        if piece.area < min_area:
+            continue
+        pts = [(round(x, 1), round(z, 1)) for x, z in list(piece.exterior.coords)[:-1]]
+        if len(pts) > 14:
+            piece = piece.simplify(3, preserve_topology=True)
+            pts = [(round(x, 1), round(z, 1)) for x, z in list(piece.exterior.coords)[:-1]]
+        res.append(dict(gd, poly=pts, area=round(piece.area), _p=piece))
+    return res
+
+
 def gardens(cell=34, min_area=160):
-    fs = free_space()
+    fs = free_space(base=True)
     out = []
     xs = range(-400, 400, cell)
     for gx in xs:
@@ -85,7 +111,7 @@ def gardens(cell=34, min_area=160):
                 key=lambda g: g["_p"].centroid.distance(Point(262, -46)))
     for g in ty[2:]:
         g["kind"] = "orchard"
-    return out
+    return _trim_late(out, min_area)
 
 
 GARDENS = gardens()

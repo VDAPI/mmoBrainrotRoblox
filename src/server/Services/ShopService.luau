@@ -82,7 +82,7 @@ local function shopOf(npcId: string): Shops.ShopDef?
 	return if npc and npc.shop then Shops.get(npc.shop) else nil
 end
 
--- `itemId` is the entry key (the item id, or "<item>:<element>" for mage weapons at the weaponsmith).
+-- `itemId` is the entry key (the item id, or "<item>:<element>" for mage weapons at the Mage's vendor).
 local function buy(player: Player, npcId: string, itemId: string, n: number): (boolean, string?)
 	local char = character(player)
 	local shop = shopOf(npcId)
@@ -105,6 +105,10 @@ local function buy(player: Player, npcId: string, itemId: string, n: number): (b
 	if not ShopPrice.offered(entry, char.class) then
 		return false, "shop.error.unavailable"
 	end
+	-- S95: gear only for the classes that can wear it (before the level: "never" beats "not yet")
+	if not ShopPrice.usableBy(entry, char.class) then
+		return false, "shop.error.class"
+	end
 	-- S87: the entry's level or the potion's (Great 45, Mighty 70), the same expression as ShopWindow
 	local required = math.max(entry.level or 1, Potions.requiredLevel(def))
 	if char.level < required then
@@ -117,7 +121,7 @@ local function buy(player: Player, npcId: string, itemId: string, n: number): (b
 	end
 	local item: ItemInstance
 	if entry.ilvl and def.category == "equipment" then
-		-- Fixed common equipment (weaponsmith): no bonuses, the entry's ilvl and element.
+		-- Fixed common equipment (class vendors): no bonuses, the entry's ilvl and element.
 		item =
 			ItemRoll.rollItem(entry.item, entry.ilvl, entry.rarity or Rarities.COMMON, rng, InventoryService.NewUid())
 		item.el = entry.el

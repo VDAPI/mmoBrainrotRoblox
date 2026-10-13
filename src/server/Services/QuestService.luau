@@ -109,6 +109,11 @@ local function handle(player: Player, kind: string, data: { [string]: any })
 	if not char then
 		return
 	end
+	if kind == "talk" and data.classId == nil then
+		-- S95: "talk to your class vendor" objectives (QuestLogic.npcFor) need the talker's class
+		data = table.clone(data)
+		data.classId = char.class
+	end
 	local main = char.quests.main
 	local quest = main and Quests.Main.get(main.id)
 	if main and quest and not QuestLogic.isComplete(main.progress, quest.objectives) then

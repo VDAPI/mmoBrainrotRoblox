@@ -63,9 +63,13 @@ Pozycje w `city.npcs` (x, z, kierunek). Wysokość zawsze z `TownTerrain.heightA
 | auctioneer | -16, -14 | Hala Kupiecka (Sukiennice), zachodni koniec |
 | merchant, backpacker | 6, 36 i 30, 36 | za ladą straganów |
 | healer, teacher | -120, -134 i -100, -134 | przed Świątynią Światła |
+| vendor_cleric | -110, -130 | przed Świątynią Światła, między lekarką a nauczycielem (S95) |
+| vendor_warrior | -210, -205 | dziedziniec zamku przed donżonem (S95) |
+| vendor_mage | -246, -168 | przed Wieżą Magów w górnym mieście (S95) |
+| vendor_hunter | 262, 21 | przed Lożą Łowców przy stajni i wschodniej bramie (S95) |
 | guildmaster | -150, -122 | przed Domem Gildii |
 | blacksmith | -160, 32 | przed kuźnią |
-| weaponsmith | -126, 33 | przed Zbrojmistrzem |
+| fence | -126, 33 | przed zbrojownią: skupiec (S95; wcześniej Zbrojmistrz `weaponsmith`) |
 | alchemist | -200, 22 | przed Apteką |
 | guard1, guard2 | 270, ±16 | przy bramie wschodniej |
 
@@ -156,10 +160,10 @@ Serwer buduje więc ok. 5,3 tys. części (mieści się w dzisiejszym limicie `C
 | hala | Hala Kupiecka (Sukiennice) | podcienia z ostrołukami po obu stronach, sklepiki, przelot, attyka z pinaklami, schodkowe szczyty, chorągwie | auctioneer |
 | ratusz | Ratusz ze Skarbcem | 2 kamienne kondygnacje, kraty w oknach skarbca, portyk z kolumnami, herb, wieża zegarowa z 4 tarczami i hełmem | banker |
 | swiatynia | Świątynia Światła | nawa i nawy boczne, przypory, kolorowe witraże, rozeta, portal z wimpergą, wieża z iglicą i świecącą kulą, absyda, kosze ognia | healer, teacher |
-| donzon | Donżon Kasztelana | wieża mieszkalna z blankami, 4 wieżyczki, sala na dachu, sztandar; wokół wzgórza **mur obronny** z basztami i bramą na Ulicy Zamkowej | – |
+| donzon | Donżon Kasztelana | wieża mieszkalna z blankami, 4 wieżyczki, sala na dachu, sztandar; wokół wzgórza **mur obronny** z basztami i bramą na Ulicy Zamkowej | vendor_warrior (szyld „Zbrojmistrz Zakonu”) |
 | gildia | Dom Gildii | kamienica patrycjuszowska, 3 piętra, chorągwie, herb, maszt na dachu | guildmaster |
 | kuznia | Kuźnia | kamienny warsztat, otwarta wiata, palenisko z ogniem, kowadło, kadź, szlifierka, węgiel, komin z dymem | blacksmith |
-| zbrojownia | Zbrojmistrz | dom rzemieślnika, stojak z bronią, tarcza, szyld | weaponsmith |
+| zbrojownia | Zbrojownia (szyld „Skupiec”) | dom rzemieślnika, stojak z bronią, tarcza, szyld | fence |
 | apteka | Apteka Alchemika | szyld, półka z flakonami (świecące), suszone zioła, zielone światło | alchemist |
 | karczma | Karczma Pod Kamiennym Smokiem | 3 piętra, ogródek ze stołami, beczki, latarnie pod okapem | – |
 | stajnia | Stajnia | boksy z półdrzwiami, bele siana, koryto | – |
@@ -167,6 +171,8 @@ Serwer buduje więc ok. 5,3 tys. części (mieści się w dzisiejszym limicie `C
 | spichlerz | Spichlerz | 3 piętra, belka z wyciągiem i workiem, worki | – |
 | arena | Ristalle | drewniane trybuny w 4 rzędach, wejścia N i S, loża z baldachimem, płot, chorągwie, pochodnie | pojedynki (DuelService) |
 | wartownia | Wartownia | chorągiew, stojak z włóczniami, kosz z ogniem | guard1, guard2 obok |
+| loza | Loża Łowców (S95, `hunterLodge`, `TownGen/ClassHalls`) | parterowy dom z belkami (`workshopHouse`), duże poroże nad drzwiami i dwa mniejsze, zielony sztandar, tarcza strzelecka z kołczanem przy lewym rogu, w podwórzu po prawej dwie suszarki ze skórami i stos drewna, beczki i skrzynie | vendor_hunter |
+| wieza | Wieża Magów (S95, `mageTower`, `TownGen/ClassHalls`) | smukły kamienny walec (r 5,5, 30 st.) na cokole, 3 rzędy wąskich okien, balkon z balustradą na 20 st., stożkowy dach z 5 pierścieni łupka, świecący kryształ `Neon` z tagiem `glow` i światłem, kamienny portal z granatowym sztandarem, dwa świecące kryształy przy drzwiach | vendor_mage |
 
 ## 7. Wyposażenie ulic (`Props`)
 
@@ -209,6 +215,15 @@ Wszystkie polecenia uruchamiaj w `docs/miasto/tools` (Python 3 z `shapely numpy 
 3. `python3 export.py` zapisuje `src/shared/Data/Town/city.luau` i `tests/fixtures/cityHeights.luau` w repozytorium (bez argumentów). Potem w katalogu repozytorium: `stylua src tests` i `lune run tests/run.luau`.
 4. Podgląd: `python3 render.py plan.png` (plan z góry); 3D: w katalogu repozytorium `lune run tools/dump.luau out.json x1 z1 x2 z2`, potem `python3 docs/miasto/tools/render3d.py out.json out.png --eye x y z --look x y z --terrain x1 z1 x2 z2`. Gotowe kadry budynków: `python3 shot.py <id działki lub budowli> out.png` (wymaga `lune` w PATH).
 
+**Późne budowle i NPC (S95).** `generate_lots` zużywa liczby losowe na każdy kandydujący slot, a `SPECIALS` i `NPCS`
+blokują sloty, więc nowa budowla dopisana do `SPECIALS` przesunęłaby id, położenie i ziarna prawie wszystkich działek.
+Dlatego budowle i NPC dodane po S21 idą do list `LATE_SPECIALS`, `LATE_NPCS`, `LATE_NPC_AT` i `LATE_STREETS` w `plan.py`
+**po** `generate_lots()`: stan sprzed nich zostaje w `P.BASE`, działki pod nową budowlą (bufor 4) wypadają
+(`LATE_DROPPED`, w S95 `h166` i `h167`). Ogrody liczy `extras.gardens()` z `free.occupied(base=True)` (ten sam ciąg
+`random.Random(77)`), a potem `_trim_late` przycina ogrody pod późnymi budowlami (bufor 3) i NPC (bufor 2) bez
+losowania: zostaje największy kawałek bez dziur, za mały ogród znika (S95: `g011` pod wieżą; luka w numeracji jest
+dozwolona). Nowa budowla: wpis w `LATE_SPECIALS`, `kind` w `Specials.all` (`TownGen`), szyld `town.sign.<id>`.
+
 Jeśli zmienisz wzór wysokości w `plan.py`, zmień go też w `src/shared/Logic/TownTerrain.luau`; `tests/townterrain.spec.luau` porównuje oba z wektorami z `cityHeights.luau`.
 
 Wygląd budynków zmienia się w `src/shared/Logic/TownGen/*` (np. nowy rodzaj szyldu w `Specials`, inny kolor dachówek w `Palette`); test budżetów od razu powie, czy coś jest za ciężkie.
@@ -228,4 +243,5 @@ Podglądy robi prosty renderer w Pythonie (bez tekstur i cieni), więc w grze ws
 
 ## 13. Narzędzia (`docs/miasto/tools`)
 
-Wymagają `python3 -m pip install shapely numpy pillow`. `plan.py` (układ, teren, działki, mury oporowe), `extras.py` (ogrody, latarnie, pola, okolica), `validate.py`, `free.py` (wolne miejsca), `export.py` (zapis `city.luau`), `render.py` (plan PNG), `render3d.py` (podgląd 3D z JSON z `tools/dump.luau`), `shot.py`, `spshots.py`, `sub.py` (wycinanie części).
+Wymagają `python3 -m pip install shapely numpy pillow` (na Windows `py -3 -m pip install --user shapely numpy pillow`;
+od S95 `export.py` zapisuje UTF-8 także na Windows). `plan.py` (układ, teren, działki, mury oporowe), `extras.py` (ogrody, latarnie, pola, okolica), `validate.py`, `free.py` (wolne miejsca), `export.py` (zapis `city.luau`), `render.py` (plan PNG), `render3d.py` (podgląd 3D z JSON z `tools/dump.luau`), `shot.py`, `spshots.py`, `sub.py` (wycinanie części).

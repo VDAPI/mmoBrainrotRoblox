@@ -114,6 +114,11 @@ function SideQuestService.Handle(player: Player, kind: string, data: { [string]:
 	if not char then
 		return
 	end
+	if kind == "talk" and data.classId == nil then
+		-- S95: "talk to your class vendor" objectives (QuestLogic.npcFor) need the talker's class
+		data = table.clone(data)
+		data.classId = char.class
+	end
 	for id, entry in sideOf(char).active do
 		local quest = Quests.Side.get(id)
 		if not quest or SideQuests.isComplete(entry, quest) then

@@ -109,7 +109,7 @@ T.describe("ItemValue (S31)", function()
 	end)
 
 	T.it("the tooltip shop price is the row price (ShopPrice.unit)", function()
-		local shop = Shops.get("weaponsmith") :: Shops.ShopDef
+		local shop = Shops.get("vendor_mage") :: Shops.ShopDef -- S95: mage weapons with elements and armour
 		for i = 1, #shop.entries, 37 do
 			local entry = shop.entries[i]
 			local item = ItemValue.entryItem(entry)

@@ -16,6 +16,7 @@ local QuestLogic = require(ReplicatedStorage.Shared.Logic.QuestLogic)
 local QuestRows = require(ReplicatedStorage.Shared.Logic.QuestRows)
 local Quests = require(ReplicatedStorage.Shared.Data.Quests)
 local SideQuests = require(ReplicatedStorage.Shared.Logic.SideQuests)
+local State = require(script.Parent.State)
 local Text = require(script.Parent.Text)
 local Theme = require(script.Parent.Theme)
 
@@ -24,6 +25,11 @@ local QuestText = {}
 type Objective = Quests.Objective
 
 local REGION_MAPS = { "meadows", "duskwood", "ashen", "frostpeak" }
+
+-- S95: an objective's NPC for this character ("classVendor" = the vendor of the player's class).
+local function objectiveNpc(npc: string?): string?
+	return QuestLogic.npcFor(npc, State.Get({ "character", "class" }))
+end
 
 -- Localized label of an objective with its progress, e.g. "Defeat: Grey Wolf 3/8".
 -- `turnIn` names the NPC of a deliver objective without its own `npc` (S27).
@@ -34,10 +40,10 @@ function QuestText.objective(use: any, objective: Objective, have: number, turnI
 	local area = objective.area and Areas.areaById(objective.area)
 	local where = if area then Text.get(use, "quest.obj.inArea", { area = Text.get(use, area.nameKey) }) else ""
 	if t == "talk" then
-		local npc = Npcs.get(objective.npc or "")
+		local npc = Npcs.get(objectiveNpc(objective.npc) or "")
 		return Text.get(use, "quest.obj.talk", { npc = if npc then Text.get(use, npc.nameKey) else "?" })
 	elseif t == "deliver" then
-		local npc = Npcs.get(objective.npc or turnIn or "")
+		local npc = Npcs.get(objectiveNpc(objective.npc) or turnIn or "")
 		return Text.get(use, "quest.obj.deliver", {
 			item = Text.get(use, `quest.item.{objective.item}`),
 			npc = if npc then Text.get(use, npc.nameKey) else "?",
@@ -149,7 +155,7 @@ function QuestText.target(quest: Quests.MainQuest, progress: { number }, level: 
 	for i, objective in quest.objectives do
 		if (progress[i] or 0) < objective.n then
 			if objective.type == "talk" then
-				local npc = Npcs.get(objective.npc or "")
+				local npc = Npcs.get(objectiveNpc(objective.npc) or "")
 				return if npc then { map = npc.map, x = npc.position.x, z = npc.position.z, npc = npc.id } else nil
 			elseif objective.type == "reach" and objective.map then
 				return { map = objective.map, x = objective.x, z = objective.z }
@@ -219,9 +225,9 @@ function QuestText.sideTarget(quest: Quests.SideQuest, entry: any, level: number
 				end
 			end
 		elseif t == "talk" then
-			return npcTarget(objective.npc)
+			return npcTarget(objectiveNpc(objective.npc))
 		elseif t == "deliver" then
-			return npcTarget(objective.npc or quest.turnIn)
+			return npcTarget(objectiveNpc(objective.npc) or quest.turnIn)
 		elseif t == "reach" and objective.map then
 			return { map = objective.map, x = objective.x, z = objective.z }
 		elseif (t == "kill" or t == "collect") and objective.area then

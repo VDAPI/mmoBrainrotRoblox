@@ -6215,3 +6215,94 @@ balance1_20.spec,bossschedule.spec,frostpeak.spec,globalbalance.spec,rarities.sp
 `tools/balance_before.json`, `tools/balance_base.json`, `docs/{BALANS,DESIGN,SWIAT,WIKI,DECYZJE,SESJE,PROGRESS,
 PRZEDMIOTY}.md`, `wiki/src/data/*.json`, `wiki/public/img/maps/frostpeak.svg`,
 `wiki/src/content/bosses/{pl,en}/vaelgrath.md`.
+
+### S95: Sprzedawcy klas
+
+Start na `45b7d8f` (S94): `scripts/check` zielony (98 plików, 5981 testów), `balance1_20` 0 różnic. Narzędzia miasta
+działają: Python 3.12 + `shapely`, `numpy`, `pillow` (doinstalowane `py -3 -m pip install --user`); `export.py` przed
+zmianami dał po `stylua` plik identyczny z `city.luau` i `cityHeights.luau` (bez ręcznych zmian po S21; na Windows tylko
+z UTF-8, poprawione w `export.py`). Ścieżka D5 niepotrzebna. Żaden quest nie wskazywał `weaponsmith`.
+
+Co zrobiono:
+- **Sklepy i NPC (B):** `weaponsmith` usunięty; `vendor_warrior`, `vendor_cleric`, `vendor_hunter`, `vendor_mage` (sklep i
+  NPC o tym samym id, `ShopDef.class`) i `fence` (skupiec, pusty sklep, usługi `shop` + `vendors`).
+  `Shops.CLASS_VENDORS`, `Shops.vendorOf`, `Shops.VENDOR_SLOTS`; `WEAPONSMITH_TIERS` bez zmian. Asortyment: Wojownik 13
+  pozycji na próg (8 broni, tarcza, ciężka zbroja ×4), Kapłan 14 (4 bronie, tarcza, relikwia, ciężka i lekka zbroja), Łowca
+  10, Mag 15 (3 bronie × 3 żywioły, 2 drugie ręce, lekka zbroja).
+- **Serwer (C):** `ShopPrice.usableBy`, `ShopService.buy` odrzuca przedmiot innej klasy (`shop.error.class`, przed
+  poziomem); skup, „sprzedaj wszystko” i odkup bez zmian (każdy NPC ze sklepem, wspólna lista odkupu). Bez nowych
+  remote'ów, pól zapisu i komend admina.
+- **Plan miasta (D):** `plan.py`: `weaponsmith` → `fence` w `NPCS` / `NPC_AT` (te same liczby), blok `LATE_*` po
+  `generate_lots()`, `BASE`, `LATE_DROPPED`; `free.occupied(base)`, `extras._trim_late`; `export.py` w UTF-8.
+  `validate.py` czysty bez przesunięć. Diff `city.luau`: dwie budowle, `fence` zamiast `weaponsmith` i czterech
+  sprzedawców w `npcs`, minus działki `h166` i `h167`, minus ogród `g011`, jeden punkt `g146` (259,6, 46,1 → 259,4,
+  46,9); latarnie bez zmian; `cityHeights.luau` +4 punkty NPC. Miejsce po `h166` / `h167` poza lożą to trawa.
+- **TownGen (E):** nowy `Logic/TownGen/ClassHalls.luau` (`hunterLodge`, `mageTower`, pomocniki `Specials` w `kit`),
+  gałęzie w `Specials.all`. Części (shell / detail / fine): loża 15 / 176 / 31, wieża 9 / 58 / 4 (+2 światła `glow`);
+  miasto 5305 / 28 498 / 8042 (przed 5303 / 28 500 / 8080). Podglądy `render3d.py` (`build/s95_loza.png`,
+  `build/s95_wieza.png`) obejrzane: loża z porożem nad drzwiami, sztandarem, tarczą i beczkami; wieża z oknami,
+  balkonem, stożkiem i kryształem. Po przeglądzie drzwi, portal, sztandar i schody wieży stoją na górze cokołu
+  (y = 2), schody schodzą przez jego krawędź (wcześniej dół drzwi siedział w cokole).
+- **Klient (F):** `ShopWindow`: nagłówek „Sprzęt: <klasa>”, filtr Wszystko / Broń / Druga ręka / Zbroja (reset przy
+  zmianie NPC; bez pustych filtrów), progi i leniwe wiersze jak dotąd, blokada klasy w wierszu („Tylko dla: …”), pasek
+  „Sprzęt dla twojej klasy sprzedaje …” z „Prowadź” u innej klasy i u skupca, skupiec bez zakładki „Kup”; zakładki klas
+  i modal innej klasy usunięte. `NavController.GuideToNpc` (także `/nav npc`), `NpcController.GuideToNpc` (zamyka okna,
+  toast `npc.vendors.guide`), usługa `vendors`; karta mapy: ikona usługi, bez pustej sekcji sklepu skupca.
+- **Questy (G):** `QuestLogic.CLASS_VENDOR`, `QuestLogic.npcFor` w `talk` i `deliver`; `classId` w zdarzeniach `talk`
+  (`QuestService.handle`, `SideQuestService.Handle`); `QuestText` rozwiązuje cel; wiki: `quest.obj.talkClassVendor`.
+- **Wiki (H):** `classTabs = shop.class ~= nil`, `donzon: "zamek"` w `BUILDING_IMAGE`; `npm run data` (5 nowych NPC,
+  11 sklepów, ceny zbroi w `PRZEDMIOTY.md`, mapa miasta), `npm test` zielony (132 testy). Teksty `wiki/src/content` nie
+  wymieniały Zbrojmistrza.
+- **Balans (I):** `tests/classvendors.spec.luau` (zamiast `weaponsmith.spec`, blok „Mage weapon elements (items)”
+  przeniesiony bez zmian), I3 w `balance.spec`, księga S95, tabela I5 w `docs/BALANS.md`.
+- **Teksty (J):** PL i EN dla pięciu NPC (imię, powitanie, rola, `where`), usługi, sklepu, filtrów, szyldów
+  (`donzon`, `loza`, `wieza`, `zbrojownia` = „Skupiec”), questu; usunięte `npc.weaponsmith.*` i `shop.otherClass.*`.
+
+Pozycje (ostateczne, bez przesunięć względem planu):
+
+| Co | Gdzie | Liczby |
+|---|---|---|
+| `loza` (`hunterLodge`) | północny skraj placu wschodniego, przy stajni | (273, 36), 26 × 16, rot 0, drzwi (273, 26,5) |
+| `wieza` (`mageTower`) | górne miasto, płaskowyż zamkowy | (-248, -182), 14 × 14, rot 180, drzwi (-248, -173,5) |
+| `vendor_warrior` | dziedziniec przed donżonem | (-210, -205), 135°, `at = donzon` |
+| `vendor_cleric` | przed świątynią | (-110, -130), 180°, `at = swiatynia` |
+| `vendor_hunter` | przed lożą | (262, 21), 0°, `at = loza` |
+| `vendor_mage` | przed wieżą | (-246, -168), 180°, `at = wieza` |
+| `fence` | przed zbrojownią | (-126, 33), 0°, `at = zbrojownia` |
+
+I1 „słabsze niż każdy Unikat”: przechodzi dla 4 klas, wszystkich progów, slotów, żywiołów i ścieżek głównych; kontrola
+konstrukcji (200 Unikatów × 3 wpisy na sklep, część bez klasy `forClass = nil`) bez wyniku poniżej najsłabszego.
+`TIE_OK`: tylko `gloves_heavy_5` (Wojownik i Kapłan, 8 kontekstów); test wymaga tam dokładnego remisu (przewaga sklepu
+zawsze błędem, wpis bez remisu też). Najmniejszy zapas `worstUnique − sklep` (punkty `ItemScore`) na próg 5 / 15 / 45 /
+95: Wojownik 0 / 0,48 / 1,44 / 2,40, Kapłan 0 / 0,60 / 1,65 / 2,32, Łowca 0,94 / 1,68 / 2,35 / 2,60, Mag 0,26 / 0,81
+/ 1,41 / 3,01 (zawsze rękawice, u Kapłana od 65 relikwia, u Łowcy od 75 kołczan). I2: zbroja sklepu = Zwykła z
+przepisu kowala, cena ≥ złoto przepisu.
+
+I3 komplet od sprzedawcy (zbroja co 10): 21–100 w progach G4 (asercja; najgorzej 24.: Wojownik 11,0 s / 23%, Łowca 8,6 s
+/ 23%, Mag 8,6 s / 26%, Kapłan 15,2 s / 17%). 5–20 (raport): najgorzej 14. poziom (zbroja progu 5): Wojownik 15,0 s /
+34% (G4 15,0 s / 28%), Łowca 12,3 s / 33% (28%), Mag 12,1 s / 36% (31%), Kapłan 19,4 s / 25% (22%); na progach równe G4.
+
+I5 (`docs/BALANS.md` → „Komplet u sprzedawcy klasy”): komplet 600 złota na progu 5, 1800 na 15, … 11 400 na 95 (każda
+klasa tyle samo), czyli 15,5–29,9 minuty zarobku (`economyAt`); żaden próg poniżej 10 min ani powyżej 6 h. Ten sam
+komplet z kuźni (złoto + rudy i pył po cenach kowala): 900 / 1950 / … / 44 550 (Mag mniej: 735 … 36 840).
+
+Dla właściciela:
+- Remis ciężkich rękawic progu 5 z najsłabszym Unikatem (`TIE_OK`): zostaje albo `baseMul` Unikatu wyżej / linie
+  Unikatu bez wagi 0 dla klasy (zmiana `Rarities` albo `ItemWeights` rusza zamrożone 1–20).
+- Komplet u sprzedawcy jest od progu 25 tańszy niż z kuźni z rudami kupionymi u kowala (rudy z kopania są darmowe):
+  sklep kosztuje więcej złota niż przepis, ale mniej niż przepis + kupione rudy. Do decyzji, czy to zostaje.
+- Na 5–20 kit „wszystko od sprzedawcy” na 14. poziomie dochodzi do 36% HP Maga (próg G4); 1–20 zamrożone, więc bez zmian.
+- Wierzchowce, questy i reszta DESIGN-15 bez zmian; cel `deliver` do sprzedawcy klasy nie ma tekstu na wiki (S98+).
+
+Testy: `scripts/check` zielony (98 plików, 5993 testy), `wiki_keys_diff` 0 różnic, `balance1_20` 0 różnic, `npm test`
+w `wiki/` zielony.
+
+Pliki: `src/shared/Data/{Shops,Npcs}.luau`, `src/shared/Data/Town/city.luau`, `src/shared/Data/Localization/{pl,en}.luau`,
+`src/shared/Logic/{ShopPrice,QuestLogic}.luau`, `src/shared/Logic/TownGen/{ClassHalls,Specials}.luau`,
+`src/server/Services/{ShopService,QuestService,SideQuestService}.luau`,
+`src/client/Controllers/{NavController,NpcController}.luau`, `src/client/UI/QuestText.luau`,
+`src/client/UI/Screens/{ShopWindow,WorldMap/Cards}.luau`, `tests/classvendors.spec.luau` (nowy),
+`tests/weaponsmith.spec.luau` (usunięty), `tests/{balance,itemvalue,quest,sidequests,towngen}.spec.luau`,
+`tests/fixtures/cityHeights.luau`, `tools/{balance_reasons,balance_report}.luau`, `tools/WikiData/{World,Quests}.luau`,
+`docs/miasto/tools/{plan,extras,free,export}.py`, `docs/{BALANS,DESIGN,WIKI,DECYZJE,SESJE,PROGRESS,PRZEDMIOTY}.md`,
+`docs/miasto/MIASTO.md`, `wiki/src/data/*.json`, `wiki/public/img/maps/city.svg`, `wiki/src/lib/city.ts`.

@@ -250,14 +250,14 @@ NPCS = {
     "teacher": (-100, -134, 180),
     "guildmaster": (-150, -122, 270),   # guild hall door
     "blacksmith": (-160, 32, 0),        # forge yard
-    "weaponsmith": (-126, 33, 0),       # workshop counter
+    "fence": (-126, 33, 0),             # workshop counter (S95: the dealer; was the weaponsmith)
     "alchemist": (-200, 22, 180),       # apothecary door
     "guard1": (270, -16, 270),
     "guard2": (270, 16, 270),
 }
 # Which building or stall an NPC belongs to (the NPC stands within 16 studs of its door, 9 of a stall).
 NPC_AT = {"banker": "ratusz", "auctioneer": "hala", "healer": "swiatynia", "teacher": "swiatynia",
-          "guildmaster": "gildia", "blacksmith": "kuznia", "weaponsmith": "zbrojownia", "alchemist": "apteka",
+          "guildmaster": "gildia", "blacksmith": "kuznia", "fence": "zbrojownia", "alchemist": "apteka",
           "merchant": "stall_merchant", "backpacker": "stall_backpacker"}
 SPAWN = (-30, -4, 270)  # x, z, facing east toward the market hall
 CAPTAIN_FIX = True
@@ -446,6 +446,36 @@ def generate_lots(seed=2026):
 
 
 LOTS, CEMETERY = generate_lots()
+
+# S95 (DESIGN-15 §1): class vendors. Added AFTER generate_lots so the lot sequence (ids, seeds) stays;
+# lots under the new buildings are dropped below.
+LATE_SPECIALS = [
+    dict(id="loza", kind="hunterLodge", name="Loża Łowców", x=273, z=36, w=26, d=16, rot=0),
+    dict(id="wieza", kind="mageTower", name="Wieża Magów", x=-248, z=-182, w=14, d=14, rot=180),
+]
+LATE_NPCS = {
+    "vendor_warrior": (-210, -205, 135),
+    "vendor_cleric": (-110, -130, 180),
+    "vendor_hunter": (262, 21, 0),
+    "vendor_mage": (-246, -168, 180),
+}
+LATE_NPC_AT = {"vendor_warrior": "donzon", "vendor_cleric": "swiatynia",
+               "vendor_hunter": "loza", "vendor_mage": "wieza"}
+LATE_STREETS = []  # S95: only if the tower needs an alley
+# State before the late additions: extras.py builds the gardens from it, so their rng (seed 77) stays.
+BASE = dict(specials=list(SPECIALS), lots=list(LOTS), npcs=dict(NPCS), streets=list(STREETS))
+SPECIALS += LATE_SPECIALS
+NPCS.update(LATE_NPCS)
+NPC_AT.update(LATE_NPC_AT)
+STREETS += LATE_STREETS
+
+
+def _foot(b):
+    return rect_poly(b["x"], b["z"], b["w"], b["d"], b["rot"])
+
+
+LATE_DROPPED = [l["id"] for l in LOTS if any(_foot(l).intersects(_foot(sp).buffer(4)) for sp in LATE_SPECIALS)]
+LOTS = [l for l in LOTS if l["id"] not in LATE_DROPPED]
 
 if __name__ == "__main__":
     print("lots", len(LOTS))

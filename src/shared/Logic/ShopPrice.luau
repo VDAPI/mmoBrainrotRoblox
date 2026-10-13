@@ -23,6 +23,15 @@ function ShopPrice.offered(entry: Shops.Entry, classId: string): boolean
 	return not entry.needsPaths or Paths.classHasPaths(classId)
 end
 
+-- S95: whether a character of `classId` can buy the entry: entries without `classes` (potions, ores, scrolls) for
+-- everyone, gear only for the classes that can wear it (the class vendors show the rest locked).
+function ShopPrice.usableBy(entry: Shops.Entry, classId: string?): boolean
+	if entry.classes == nil then
+		return true
+	end
+	return classId ~= nil and table.find(entry.classes, classId) ~= nil
+end
+
 function ShopPrice.unit(entry: Shops.Entry, level: number, potionDiscount: number?, shop: Shops.ShopDef?): number
 	local price = ItemValue.buyPrice(entry, shop, level)
 	local discount = potionDiscount or 0

@@ -1,7 +1,7 @@
 # Vaelthorn: przedmioty
 
 > Plik generowany: `lune run tools/wikidump.luau` (dane gry, te same co wiki). Nie edytuj ręcznie.
-> Odcisk danych cf258aa1 (`wiki/src/data/meta.json`).
+> Odcisk danych 82c069b7 (`wiki/src/data/meta.json`).
 
 ## Rzadkości
 
@@ -33,25 +33,25 @@ Legendarne i Mityczne przedmioty dają też osobiste rzuty bossów (S30), a nazw
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|
 | Prosta Zbroja Płytowa | 1 | Obrona 6, hp 9 | 5 | — |
-| Solidna Zbroja Płytowa | 5 | Obrona 16, hp 21 | 24 | — |
+| Solidna Zbroja Płytowa | 5 | Obrona 16, hp 21 | 24 | 96 |
 | Żelazna Zbroja Płytowa | 10 | Obrona 28, hp 36 | 48 | — |
-| Wzmocniona Zbroja Płytowa | 15 | Obrona 40, hp 51 | 72 | — |
+| Wzmocniona Zbroja Płytowa | 15 | Obrona 40, hp 51 | 72 | 288 |
 | Stalowa Zbroja Płytowa | 20 | Obrona 52, hp 66 | 96 | — |
-| Hartowana Zbroja Płytowa | 25 | Obrona 64, hp 81 | 120 | — |
+| Hartowana Zbroja Płytowa | 25 | Obrona 64, hp 81 | 120 | 480 |
 | Srebrna Zbroja Płytowa | 30 | Obrona 76, hp 96 | 144 | — |
-| Szlachetna Zbroja Płytowa | 35 | Obrona 88, hp 111 | 168 | — |
+| Szlachetna Zbroja Płytowa | 35 | Obrona 88, hp 111 | 168 | 672 |
 | Runiczna Zbroja Płytowa | 40 | Obrona 100, hp 126 | 192 | — |
-| Mithrilowa Zbroja Płytowa | 45 | Obrona 112, hp 141 | 216 | — |
+| Mithrilowa Zbroja Płytowa | 45 | Obrona 112, hp 141 | 216 | 864 |
 | Elfia Zbroja Płytowa | 50 | Obrona 124, hp 156 | 240 | — |
-| Obsydianowa Zbroja Płytowa | 55 | Obrona 136, hp 171 | 264 | — |
+| Obsydianowa Zbroja Płytowa | 55 | Obrona 136, hp 171 | 264 | 1056 |
 | Adamantytowa Zbroja Płytowa | 60 | Obrona 148, hp 186 | 288 | — |
-| Królewska Zbroja Płytowa | 65 | Obrona 160, hp 201 | 312 | — |
+| Królewska Zbroja Płytowa | 65 | Obrona 160, hp 201 | 312 | 1248 |
 | Płomienna Zbroja Płytowa | 70 | Obrona 172, hp 216 | 336 | — |
-| Gwiezdna Zbroja Płytowa | 75 | Obrona 184, hp 231 | 360 | — |
+| Gwiezdna Zbroja Płytowa | 75 | Obrona 184, hp 231 | 360 | 1440 |
 | Tytanowa Zbroja Płytowa | 80 | Obrona 196, hp 246 | 384 | — |
-| Pradawna Zbroja Płytowa | 85 | Obrona 208, hp 261 | 408 | — |
+| Pradawna Zbroja Płytowa | 85 | Obrona 208, hp 261 | 408 | 1632 |
 | Niebiańska Zbroja Płytowa | 90 | Obrona 220, hp 276 | 432 | — |
-| Eteryczna Zbroja Płytowa | 95 | Obrona 232, hp 291 | 456 | — |
+| Eteryczna Zbroja Płytowa | 95 | Obrona 232, hp 291 | 456 | 1824 |
 | Smocza Zbroja Płytowa | 100 | Obrona 244, hp 306 | 480 | — |
 
 #### Szata (`armor_light`) · Mag, Kapłan
@@ -59,25 +59,25 @@ Legendarne i Mityczne przedmioty dają też osobiste rzuty bossów (S30), a nazw
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|
 | Prosta Szata | 1 | Obrona 3, hp 5, mana 8, Odporność magiczna 3 | 5 | — |
-| Solidna Szata | 5 | Obrona 7, hp 11, mana 18, Odporność magiczna 9 | 24 | — |
+| Solidna Szata | 5 | Obrona 7, hp 11, mana 18, Odporność magiczna 9 | 24 | 96 |
 | Żelazna Szata | 10 | Obrona 12, hp 18, mana 30, Odporność magiczna 16 | 48 | — |
-| Wzmocniona Szata | 15 | Obrona 17, hp 26, mana 43, Odporność magiczna 23 | 72 | — |
+| Wzmocniona Szata | 15 | Obrona 17, hp 26, mana 43, Odporność magiczna 23 | 72 | 288 |
 | Stalowa Szata | 20 | Obrona 22, hp 33, mana 55, Odporność magiczna 30 | 96 | — |
-| Hartowana Szata | 25 | Obrona 27, hp 41, mana 68, Odporność magiczna 37 | 120 | — |
+| Hartowana Szata | 25 | Obrona 27, hp 41, mana 68, Odporność magiczna 37 | 120 | 480 |
 | Srebrna Szata | 30 | Obrona 32, hp 48, mana 80, Odporność magiczna 44 | 144 | — |
-| Szlachetna Szata | 35 | Obrona 37, hp 56, mana 93, Odporność magiczna 51 | 168 | — |
+| Szlachetna Szata | 35 | Obrona 37, hp 56, mana 93, Odporność magiczna 51 | 168 | 672 |
 | Runiczna Szata | 40 | Obrona 42, hp 63, mana 105, Odporność magiczna 58 | 192 | — |
-| Mithrilowa Szata | 45 | Obrona 47, hp 71, mana 118, Odporność magiczna 65 | 216 | — |
+| Mithrilowa Szata | 45 | Obrona 47, hp 71, mana 118, Odporność magiczna 65 | 216 | 864 |
 | Elfia Szata | 50 | Obrona 52, hp 78, mana 130, Odporność magiczna 72 | 240 | — |
-| Obsydianowa Szata | 55 | Obrona 57, hp 86, mana 143, Odporność magiczna 79 | 264 | — |
+| Obsydianowa Szata | 55 | Obrona 57, hp 86, mana 143, Odporność magiczna 79 | 264 | 1056 |
 | Adamantytowa Szata | 60 | Obrona 62, hp 93, mana 155, Odporność magiczna 86 | 288 | — |
-| Królewska Szata | 65 | Obrona 67, hp 101, mana 168, Odporność magiczna 93 | 312 | — |
+| Królewska Szata | 65 | Obrona 67, hp 101, mana 168, Odporność magiczna 93 | 312 | 1248 |
 | Płomienna Szata | 70 | Obrona 72, hp 108, mana 180, Odporność magiczna 100 | 336 | — |
-| Gwiezdna Szata | 75 | Obrona 77, hp 116, mana 193, Odporność magiczna 107 | 360 | — |
+| Gwiezdna Szata | 75 | Obrona 77, hp 116, mana 193, Odporność magiczna 107 | 360 | 1440 |
 | Tytanowa Szata | 80 | Obrona 82, hp 123, mana 205, Odporność magiczna 114 | 384 | — |
-| Pradawna Szata | 85 | Obrona 87, hp 131, mana 218, Odporność magiczna 121 | 408 | — |
+| Pradawna Szata | 85 | Obrona 87, hp 131, mana 218, Odporność magiczna 121 | 408 | 1632 |
 | Niebiańska Szata | 90 | Obrona 92, hp 138, mana 230, Odporność magiczna 128 | 432 | — |
-| Eteryczna Szata | 95 | Obrona 97, hp 146, mana 243, Odporność magiczna 135 | 456 | — |
+| Eteryczna Szata | 95 | Obrona 97, hp 146, mana 243, Odporność magiczna 135 | 456 | 1824 |
 | Smocza Szata | 100 | Obrona 102, hp 153, mana 255, Odporność magiczna 142 | 480 | — |
 
 #### Kurta (`armor_medium`) · Łowca
@@ -85,25 +85,25 @@ Legendarne i Mityczne przedmioty dają też osobiste rzuty bossów (S30), a nazw
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|
 | Prosta Kurta | 1 | Obrona 5, Unik 0,5, hp 8 | 5 | — |
-| Solidna Kurta | 5 | Obrona 12, Unik 0,6, hp 18 | 24 | — |
+| Solidna Kurta | 5 | Obrona 12, Unik 0,6, hp 18 | 24 | 96 |
 | Żelazna Kurta | 10 | Obrona 20, Unik 0,7, hp 30 | 48 | — |
-| Wzmocniona Kurta | 15 | Obrona 29, Unik 0,8, hp 43 | 72 | — |
+| Wzmocniona Kurta | 15 | Obrona 29, Unik 0,8, hp 43 | 72 | 288 |
 | Stalowa Kurta | 20 | Obrona 37, Unik 0,9, hp 55 | 96 | — |
-| Hartowana Kurta | 25 | Obrona 46, Unik 1, hp 68 | 120 | — |
+| Hartowana Kurta | 25 | Obrona 46, Unik 1, hp 68 | 120 | 480 |
 | Srebrna Kurta | 30 | Obrona 54, Unik 1,1, hp 80 | 144 | — |
-| Szlachetna Kurta | 35 | Obrona 63, Unik 1,2, hp 93 | 168 | — |
+| Szlachetna Kurta | 35 | Obrona 63, Unik 1,2, hp 93 | 168 | 672 |
 | Runiczna Kurta | 40 | Obrona 71, Unik 1,3, hp 105 | 192 | — |
-| Mithrilowa Kurta | 45 | Obrona 80, Unik 1,4, hp 118 | 216 | — |
+| Mithrilowa Kurta | 45 | Obrona 80, Unik 1,4, hp 118 | 216 | 864 |
 | Elfia Kurta | 50 | Obrona 88, Unik 1,5, hp 130 | 240 | — |
-| Obsydianowa Kurta | 55 | Obrona 97, Unik 1,6, hp 143 | 264 | — |
+| Obsydianowa Kurta | 55 | Obrona 97, Unik 1,6, hp 143 | 264 | 1056 |
 | Adamantytowa Kurta | 60 | Obrona 105, Unik 1,7, hp 155 | 288 | — |
-| Królewska Kurta | 65 | Obrona 114, Unik 1,8, hp 168 | 312 | — |
+| Królewska Kurta | 65 | Obrona 114, Unik 1,8, hp 168 | 312 | 1248 |
 | Płomienna Kurta | 70 | Obrona 122, Unik 1,9, hp 180 | 336 | — |
-| Gwiezdna Kurta | 75 | Obrona 131, Unik 2, hp 193 | 360 | — |
+| Gwiezdna Kurta | 75 | Obrona 131, Unik 2, hp 193 | 360 | 1440 |
 | Tytanowa Kurta | 80 | Obrona 139, Unik 2,1, hp 205 | 384 | — |
-| Pradawna Kurta | 85 | Obrona 148, Unik 2,2, hp 218 | 408 | — |
+| Pradawna Kurta | 85 | Obrona 148, Unik 2,2, hp 218 | 408 | 1632 |
 | Niebiańska Kurta | 90 | Obrona 156, Unik 2,3, hp 230 | 432 | — |
-| Eteryczna Kurta | 95 | Obrona 165, Unik 2,4, hp 243 | 456 | — |
+| Eteryczna Kurta | 95 | Obrona 165, Unik 2,4, hp 243 | 456 | 1824 |
 | Smocza Kurta | 100 | Obrona 173, Unik 2,5, hp 255 | 480 | — |
 
 ### Buty
@@ -113,25 +113,25 @@ Legendarne i Mityczne przedmioty dają też osobiste rzuty bossów (S30), a nazw
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|
 | Proste Buty Płytowe | 1 | Obrona 3, hp 5 | 5 | — |
-| Solidne Buty Płytowe | 5 | Obrona 8, hp 11 | 24 | — |
+| Solidne Buty Płytowe | 5 | Obrona 8, hp 11 | 24 | 96 |
 | Żelazne Buty Płytowe | 10 | Obrona 14, hp 18 | 48 | — |
-| Wzmocnione Buty Płytowe | 15 | Obrona 20, hp 26 | 72 | — |
+| Wzmocnione Buty Płytowe | 15 | Obrona 20, hp 26 | 72 | 288 |
 | Stalowe Buty Płytowe | 20 | Obrona 26, hp 33 | 96 | — |
-| Hartowane Buty Płytowe | 25 | Obrona 32, hp 41 | 120 | — |
+| Hartowane Buty Płytowe | 25 | Obrona 32, hp 41 | 120 | 480 |
 | Srebrne Buty Płytowe | 30 | Obrona 38, hp 48 | 144 | — |
-| Szlachetne Buty Płytowe | 35 | Obrona 44, hp 56 | 168 | — |
+| Szlachetne Buty Płytowe | 35 | Obrona 44, hp 56 | 168 | 672 |
 | Runiczne Buty Płytowe | 40 | Obrona 50, hp 63 | 192 | — |
-| Mithrilowe Buty Płytowe | 45 | Obrona 56, hp 71 | 216 | — |
+| Mithrilowe Buty Płytowe | 45 | Obrona 56, hp 71 | 216 | 864 |
 | Elfie Buty Płytowe | 50 | Obrona 62, hp 78 | 240 | — |
-| Obsydianowe Buty Płytowe | 55 | Obrona 68, hp 86 | 264 | — |
+| Obsydianowe Buty Płytowe | 55 | Obrona 68, hp 86 | 264 | 1056 |
 | Adamantytowe Buty Płytowe | 60 | Obrona 74, hp 93 | 288 | — |
-| Królewskie Buty Płytowe | 65 | Obrona 80, hp 101 | 312 | — |
+| Królewskie Buty Płytowe | 65 | Obrona 80, hp 101 | 312 | 1248 |
 | Płomienne Buty Płytowe | 70 | Obrona 86, hp 108 | 336 | — |
-| Gwiezdne Buty Płytowe | 75 | Obrona 92, hp 116 | 360 | — |
+| Gwiezdne Buty Płytowe | 75 | Obrona 92, hp 116 | 360 | 1440 |
 | Tytanowe Buty Płytowe | 80 | Obrona 98, hp 123 | 384 | — |
-| Pradawne Buty Płytowe | 85 | Obrona 104, hp 131 | 408 | — |
+| Pradawne Buty Płytowe | 85 | Obrona 104, hp 131 | 408 | 1632 |
 | Niebiańskie Buty Płytowe | 90 | Obrona 110, hp 138 | 432 | — |
-| Eteryczne Buty Płytowe | 95 | Obrona 116, hp 146 | 456 | — |
+| Eteryczne Buty Płytowe | 95 | Obrona 116, hp 146 | 456 | 1824 |
 | Smocze Buty Płytowe | 100 | Obrona 122, hp 153 | 480 | — |
 
 #### Sandały (`boots_light`) · Mag, Kapłan
@@ -139,25 +139,25 @@ Legendarne i Mityczne przedmioty dają też osobiste rzuty bossów (S30), a nazw
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|
 | Proste Sandały | 1 | Obrona 2, hp 2, mana 4, Odporność magiczna 2 | 5 | — |
-| Solidne Sandały | 5 | Obrona 4, hp 5, mana 9, Odporność magiczna 5 | 24 | — |
+| Solidne Sandały | 5 | Obrona 4, hp 5, mana 9, Odporność magiczna 5 | 24 | 96 |
 | Żelazne Sandały | 10 | Obrona 6, hp 9, mana 15, Odporność magiczna 8 | 48 | — |
-| Wzmocnione Sandały | 15 | Obrona 9, hp 13, mana 21, Odporność magiczna 12 | 72 | — |
+| Wzmocnione Sandały | 15 | Obrona 9, hp 13, mana 21, Odporność magiczna 12 | 72 | 288 |
 | Stalowe Sandały | 20 | Obrona 11, hp 17, mana 28, Odporność magiczna 15 | 96 | — |
-| Hartowane Sandały | 25 | Obrona 14, hp 20, mana 34, Odporność magiczna 19 | 120 | — |
+| Hartowane Sandały | 25 | Obrona 14, hp 20, mana 34, Odporność magiczna 19 | 120 | 480 |
 | Srebrne Sandały | 30 | Obrona 16, hp 24, mana 40, Odporność magiczna 22 | 144 | — |
-| Szlachetne Sandały | 35 | Obrona 19, hp 28, mana 46, Odporność magiczna 26 | 168 | — |
+| Szlachetne Sandały | 35 | Obrona 19, hp 28, mana 46, Odporność magiczna 26 | 168 | 672 |
 | Runiczne Sandały | 40 | Obrona 21, hp 32, mana 53, Odporność magiczna 29 | 192 | — |
-| Mithrilowe Sandały | 45 | Obrona 24, hp 35, mana 59, Odporność magiczna 33 | 216 | — |
+| Mithrilowe Sandały | 45 | Obrona 24, hp 35, mana 59, Odporność magiczna 33 | 216 | 864 |
 | Elfie Sandały | 50 | Obrona 26, hp 39, mana 65, Odporność magiczna 36 | 240 | — |
-| Obsydianowe Sandały | 55 | Obrona 29, hp 43, mana 71, Odporność magiczna 40 | 264 | — |
+| Obsydianowe Sandały | 55 | Obrona 29, hp 43, mana 71, Odporność magiczna 40 | 264 | 1056 |
 | Adamantytowe Sandały | 60 | Obrona 31, hp 47, mana 78, Odporność magiczna 43 | 288 | — |
-| Królewskie Sandały | 65 | Obrona 34, hp 50, mana 84, Odporność magiczna 47 | 312 | — |
+| Królewskie Sandały | 65 | Obrona 34, hp 50, mana 84, Odporność magiczna 47 | 312 | 1248 |
 | Płomienne Sandały | 70 | Obrona 36, hp 54, mana 90, Odporność magiczna 50 | 336 | — |
-| Gwiezdne Sandały | 75 | Obrona 39, hp 58, mana 96, Odporność magiczna 54 | 360 | — |
+| Gwiezdne Sandały | 75 | Obrona 39, hp 58, mana 96, Odporność magiczna 54 | 360 | 1440 |
 | Tytanowe Sandały | 80 | Obrona 41, hp 62, mana 103, Odporność magiczna 57 | 384 | — |
-| Pradawne Sandały | 85 | Obrona 44, hp 65, mana 109, Odporność magiczna 60 | 408 | — |
+| Pradawne Sandały | 85 | Obrona 44, hp 65, mana 109, Odporność magiczna 60 | 408 | 1632 |
 | Niebiańskie Sandały | 90 | Obrona 46, hp 69, mana 115, Odporność magiczna 64 | 432 | — |
-| Eteryczne Sandały | 95 | Obrona 49, hp 73, mana 121, Odporność magiczna 68 | 456 | — |
+| Eteryczne Sandały | 95 | Obrona 49, hp 73, mana 121, Odporność magiczna 68 | 456 | 1824 |
 | Smocze Sandały | 100 | Obrona 51, hp 77, mana 128, Odporność magiczna 71 | 480 | — |
 
 #### Trzewiki (`boots_medium`) · Łowca
@@ -165,25 +165,25 @@ Legendarne i Mityczne przedmioty dają też osobiste rzuty bossów (S30), a nazw
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|
 | Proste Trzewiki | 1 | Obrona 2, Unik 0,3, hp 4 | 5 | — |
-| Solidne Trzewiki | 5 | Obrona 6, Unik 0,3, hp 9 | 24 | — |
+| Solidne Trzewiki | 5 | Obrona 6, Unik 0,3, hp 9 | 24 | 96 |
 | Żelazne Trzewiki | 10 | Obrona 10, Unik 0,4, hp 15 | 48 | — |
-| Wzmocnione Trzewiki | 15 | Obrona 14, Unik 0,4, hp 21 | 72 | — |
+| Wzmocnione Trzewiki | 15 | Obrona 14, Unik 0,4, hp 21 | 72 | 288 |
 | Stalowe Trzewiki | 20 | Obrona 19, Unik 0,5, hp 28 | 96 | — |
-| Hartowane Trzewiki | 25 | Obrona 23, Unik 0,5, hp 34 | 120 | — |
+| Hartowane Trzewiki | 25 | Obrona 23, Unik 0,5, hp 34 | 120 | 480 |
 | Srebrne Trzewiki | 30 | Obrona 27, Unik 0,6, hp 40 | 144 | — |
-| Szlachetne Trzewiki | 35 | Obrona 31, Unik 0,6, hp 46 | 168 | — |
+| Szlachetne Trzewiki | 35 | Obrona 31, Unik 0,6, hp 46 | 168 | 672 |
 | Runiczne Trzewiki | 40 | Obrona 36, Unik 0,7, hp 53 | 192 | — |
-| Mithrilowe Trzewiki | 45 | Obrona 40, Unik 0,7, hp 59 | 216 | — |
+| Mithrilowe Trzewiki | 45 | Obrona 40, Unik 0,7, hp 59 | 216 | 864 |
 | Elfie Trzewiki | 50 | Obrona 44, Unik 0,8, hp 65 | 240 | — |
-| Obsydianowe Trzewiki | 55 | Obrona 48, Unik 0,8, hp 71 | 264 | — |
+| Obsydianowe Trzewiki | 55 | Obrona 48, Unik 0,8, hp 71 | 264 | 1056 |
 | Adamantytowe Trzewiki | 60 | Obrona 53, Unik 0,9, hp 78 | 288 | — |
-| Królewskie Trzewiki | 65 | Obrona 57, Unik 0,9, hp 84 | 312 | — |
+| Królewskie Trzewiki | 65 | Obrona 57, Unik 0,9, hp 84 | 312 | 1248 |
 | Płomienne Trzewiki | 70 | Obrona 61, Unik 1, hp 90 | 336 | — |
-| Gwiezdne Trzewiki | 75 | Obrona 65, Unik 1, hp 96 | 360 | — |
+| Gwiezdne Trzewiki | 75 | Obrona 65, Unik 1, hp 96 | 360 | 1440 |
 | Tytanowe Trzewiki | 80 | Obrona 70, Unik 1,1, hp 103 | 384 | — |
-| Pradawne Trzewiki | 85 | Obrona 74, Unik 1,1, hp 109 | 408 | — |
+| Pradawne Trzewiki | 85 | Obrona 74, Unik 1,1, hp 109 | 408 | 1632 |
 | Niebiańskie Trzewiki | 90 | Obrona 78, Unik 1,2, hp 115 | 432 | — |
-| Eteryczne Trzewiki | 95 | Obrona 82, Unik 1,2, hp 121 | 456 | — |
+| Eteryczne Trzewiki | 95 | Obrona 82, Unik 1,2, hp 121 | 456 | 1824 |
 | Smocze Trzewiki | 100 | Obrona 87, Unik 1,3, hp 128 | 480 | — |
 
 ### Rękawice
@@ -193,25 +193,25 @@ Legendarne i Mityczne przedmioty dają też osobiste rzuty bossów (S30), a nazw
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|
 | Proste Rękawice Płytowe | 1 | Obrona 3, hp 4 | 5 | — |
-| Solidne Rękawice Płytowe | 5 | Obrona 7, hp 9 | 24 | — |
+| Solidne Rękawice Płytowe | 5 | Obrona 7, hp 9 | 24 | 96 |
 | Żelazne Rękawice Płytowe | 10 | Obrona 13, hp 16 | 48 | — |
-| Wzmocnione Rękawice Płytowe | 15 | Obrona 18, hp 23 | 72 | — |
+| Wzmocnione Rękawice Płytowe | 15 | Obrona 18, hp 23 | 72 | 288 |
 | Stalowe Rękawice Płytowe | 20 | Obrona 23, hp 30 | 96 | — |
-| Hartowane Rękawice Płytowe | 25 | Obrona 29, hp 36 | 120 | — |
+| Hartowane Rękawice Płytowe | 25 | Obrona 29, hp 36 | 120 | 480 |
 | Srebrne Rękawice Płytowe | 30 | Obrona 34, hp 43 | 144 | — |
-| Szlachetne Rękawice Płytowe | 35 | Obrona 40, hp 50 | 168 | — |
+| Szlachetne Rękawice Płytowe | 35 | Obrona 40, hp 50 | 168 | 672 |
 | Runiczne Rękawice Płytowe | 40 | Obrona 45, hp 57 | 192 | — |
-| Mithrilowe Rękawice Płytowe | 45 | Obrona 50, hp 63 | 216 | — |
+| Mithrilowe Rękawice Płytowe | 45 | Obrona 50, hp 63 | 216 | 864 |
 | Elfie Rękawice Płytowe | 50 | Obrona 56, hp 70 | 240 | — |
-| Obsydianowe Rękawice Płytowe | 55 | Obrona 61, hp 77 | 264 | — |
+| Obsydianowe Rękawice Płytowe | 55 | Obrona 61, hp 77 | 264 | 1056 |
 | Adamantytowe Rękawice Płytowe | 60 | Obrona 67, hp 84 | 288 | — |
-| Królewskie Rękawice Płytowe | 65 | Obrona 72, hp 90 | 312 | — |
+| Królewskie Rękawice Płytowe | 65 | Obrona 72, hp 90 | 312 | 1248 |
 | Płomienne Rękawice Płytowe | 70 | Obrona 77, hp 97 | 336 | — |
-| Gwiezdne Rękawice Płytowe | 75 | Obrona 83, hp 104 | 360 | — |
+| Gwiezdne Rękawice Płytowe | 75 | Obrona 83, hp 104 | 360 | 1440 |
 | Tytanowe Rękawice Płytowe | 80 | Obrona 88, hp 111 | 384 | — |
-| Pradawne Rękawice Płytowe | 85 | Obrona 94, hp 117 | 408 | — |
+| Pradawne Rękawice Płytowe | 85 | Obrona 94, hp 117 | 408 | 1632 |
 | Niebiańskie Rękawice Płytowe | 90 | Obrona 99, hp 124 | 432 | — |
-| Eteryczne Rękawice Płytowe | 95 | Obrona 104, hp 131 | 456 | — |
+| Eteryczne Rękawice Płytowe | 95 | Obrona 104, hp 131 | 456 | 1824 |
 | Smocze Rękawice Płytowe | 100 | Obrona 110, hp 138 | 480 | — |
 
 #### Mitenki (`gloves_light`) · Mag, Kapłan
@@ -219,25 +219,25 @@ Legendarne i Mityczne przedmioty dają też osobiste rzuty bossów (S30), a nazw
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|
 | Proste Mitenki | 1 | Obrona 1, hp 2, mana 3, Odporność magiczna 2 | 5 | — |
-| Solidne Mitenki | 5 | Obrona 3, hp 5, mana 8, Odporność magiczna 4 | 24 | — |
+| Solidne Mitenki | 5 | Obrona 3, hp 5, mana 8, Odporność magiczna 4 | 24 | 96 |
 | Żelazne Mitenki | 10 | Obrona 5, hp 8, mana 14, Odporność magiczna 7 | 48 | — |
-| Wzmocnione Mitenki | 15 | Obrona 8, hp 11, mana 19, Odporność magiczna 10 | 72 | — |
+| Wzmocnione Mitenki | 15 | Obrona 8, hp 11, mana 19, Odporność magiczna 10 | 72 | 288 |
 | Stalowe Mitenki | 20 | Obrona 10, hp 15, mana 25, Odporność magiczna 14 | 96 | — |
-| Hartowane Mitenki | 25 | Obrona 12, hp 18, mana 30, Odporność magiczna 17 | 120 | — |
+| Hartowane Mitenki | 25 | Obrona 12, hp 18, mana 30, Odporność magiczna 17 | 120 | 480 |
 | Srebrne Mitenki | 30 | Obrona 14, hp 22, mana 36, Odporność magiczna 20 | 144 | — |
-| Szlachetne Mitenki | 35 | Obrona 17, hp 25, mana 42, Odporność magiczna 23 | 168 | — |
+| Szlachetne Mitenki | 35 | Obrona 17, hp 25, mana 42, Odporność magiczna 23 | 168 | 672 |
 | Runiczne Mitenki | 40 | Obrona 19, hp 28, mana 47, Odporność magiczna 26 | 192 | — |
-| Mithrilowe Mitenki | 45 | Obrona 21, hp 32, mana 53, Odporność magiczna 29 | 216 | — |
+| Mithrilowe Mitenki | 45 | Obrona 21, hp 32, mana 53, Odporność magiczna 29 | 216 | 864 |
 | Elfie Mitenki | 50 | Obrona 23, hp 35, mana 59, Odporność magiczna 32 | 240 | — |
-| Obsydianowe Mitenki | 55 | Obrona 26, hp 38, mana 64, Odporność magiczna 36 | 264 | — |
+| Obsydianowe Mitenki | 55 | Obrona 26, hp 38, mana 64, Odporność magiczna 36 | 264 | 1056 |
 | Adamantytowe Mitenki | 60 | Obrona 28, hp 42, mana 70, Odporność magiczna 39 | 288 | — |
-| Królewskie Mitenki | 65 | Obrona 30, hp 45, mana 75, Odporność magiczna 42 | 312 | — |
+| Królewskie Mitenki | 65 | Obrona 30, hp 45, mana 75, Odporność magiczna 42 | 312 | 1248 |
 | Płomienne Mitenki | 70 | Obrona 32, hp 49, mana 81, Odporność magiczna 45 | 336 | — |
-| Gwiezdne Mitenki | 75 | Obrona 35, hp 52, mana 87, Odporność magiczna 48 | 360 | — |
+| Gwiezdne Mitenki | 75 | Obrona 35, hp 52, mana 87, Odporność magiczna 48 | 360 | 1440 |
 | Tytanowe Mitenki | 80 | Obrona 37, hp 55, mana 92, Odporność magiczna 51 | 384 | — |
-| Pradawne Mitenki | 85 | Obrona 39, hp 59, mana 98, Odporność magiczna 54 | 408 | — |
+| Pradawne Mitenki | 85 | Obrona 39, hp 59, mana 98, Odporność magiczna 54 | 408 | 1632 |
 | Niebiańskie Mitenki | 90 | Obrona 41, hp 62, mana 104, Odporność magiczna 58 | 432 | — |
-| Eteryczne Mitenki | 95 | Obrona 44, hp 65, mana 109, Odporność magiczna 61 | 456 | — |
+| Eteryczne Mitenki | 95 | Obrona 44, hp 65, mana 109, Odporność magiczna 61 | 456 | 1824 |
 | Smocze Mitenki | 100 | Obrona 46, hp 69, mana 115, Odporność magiczna 64 | 480 | — |
 
 #### Karwasze (`gloves_medium`) · Łowca
@@ -245,25 +245,25 @@ Legendarne i Mityczne przedmioty dają też osobiste rzuty bossów (S30), a nazw
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|
 | Proste Karwasze | 1 | Obrona 2, Unik 0,2, hp 3 | 5 | — |
-| Solidne Karwasze | 5 | Obrona 5, Unik 0,3, hp 8 | 24 | — |
+| Solidne Karwasze | 5 | Obrona 5, Unik 0,3, hp 8 | 24 | 96 |
 | Żelazne Karwasze | 10 | Obrona 9, Unik 0,3, hp 14 | 48 | — |
-| Wzmocnione Karwasze | 15 | Obrona 13, Unik 0,4, hp 19 | 72 | — |
+| Wzmocnione Karwasze | 15 | Obrona 13, Unik 0,4, hp 19 | 72 | 288 |
 | Stalowe Karwasze | 20 | Obrona 17, Unik 0,4, hp 25 | 96 | — |
-| Hartowane Karwasze | 25 | Obrona 20, Unik 0,5, hp 30 | 120 | — |
+| Hartowane Karwasze | 25 | Obrona 20, Unik 0,5, hp 30 | 120 | 480 |
 | Srebrne Karwasze | 30 | Obrona 24, Unik 0,5, hp 36 | 144 | — |
-| Szlachetne Karwasze | 35 | Obrona 28, Unik 0,5, hp 42 | 168 | — |
+| Szlachetne Karwasze | 35 | Obrona 28, Unik 0,5, hp 42 | 168 | 672 |
 | Runiczne Karwasze | 40 | Obrona 32, Unik 0,6, hp 47 | 192 | — |
-| Mithrilowe Karwasze | 45 | Obrona 36, Unik 0,6, hp 53 | 216 | — |
+| Mithrilowe Karwasze | 45 | Obrona 36, Unik 0,6, hp 53 | 216 | 864 |
 | Elfie Karwasze | 50 | Obrona 40, Unik 0,7, hp 59 | 240 | — |
-| Obsydianowe Karwasze | 55 | Obrona 43, Unik 0,7, hp 64 | 264 | — |
+| Obsydianowe Karwasze | 55 | Obrona 43, Unik 0,7, hp 64 | 264 | 1056 |
 | Adamantytowe Karwasze | 60 | Obrona 47, Unik 0,8, hp 70 | 288 | — |
-| Królewskie Karwasze | 65 | Obrona 51, Unik 0,8, hp 75 | 312 | — |
+| Królewskie Karwasze | 65 | Obrona 51, Unik 0,8, hp 75 | 312 | 1248 |
 | Płomienne Karwasze | 70 | Obrona 55, Unik 0,9, hp 81 | 336 | — |
-| Gwiezdne Karwasze | 75 | Obrona 59, Unik 0,9, hp 87 | 360 | — |
+| Gwiezdne Karwasze | 75 | Obrona 59, Unik 0,9, hp 87 | 360 | 1440 |
 | Tytanowe Karwasze | 80 | Obrona 63, Unik 0,9, hp 92 | 384 | — |
-| Pradawne Karwasze | 85 | Obrona 66, Unik 1, hp 98 | 408 | — |
+| Pradawne Karwasze | 85 | Obrona 66, Unik 1, hp 98 | 408 | 1632 |
 | Niebiańskie Karwasze | 90 | Obrona 70, Unik 1, hp 104 | 432 | — |
-| Eteryczne Karwasze | 95 | Obrona 74, Unik 1,1, hp 109 | 456 | — |
+| Eteryczne Karwasze | 95 | Obrona 74, Unik 1,1, hp 109 | 456 | 1824 |
 | Smocze Karwasze | 100 | Obrona 78, Unik 1,1, hp 115 | 480 | — |
 
 ### Hełm
@@ -273,25 +273,25 @@ Legendarne i Mityczne przedmioty dają też osobiste rzuty bossów (S30), a nazw
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|
 | Prosty Hełm | 1 | Obrona 4, hp 5 | 5 | — |
-| Solidny Hełm | 5 | Obrona 10, hp 13 | 24 | — |
+| Solidny Hełm | 5 | Obrona 10, hp 13 | 24 | 96 |
 | Żelazny Hełm | 10 | Obrona 17, hp 22 | 48 | — |
-| Wzmocniony Hełm | 15 | Obrona 24, hp 31 | 72 | — |
+| Wzmocniony Hełm | 15 | Obrona 24, hp 31 | 72 | 288 |
 | Stalowy Hełm | 20 | Obrona 31, hp 40 | 96 | — |
-| Hartowany Hełm | 25 | Obrona 38, hp 49 | 120 | — |
+| Hartowany Hełm | 25 | Obrona 38, hp 49 | 120 | 480 |
 | Srebrny Hełm | 30 | Obrona 46, hp 58 | 144 | — |
-| Szlachetny Hełm | 35 | Obrona 53, hp 67 | 168 | — |
+| Szlachetny Hełm | 35 | Obrona 53, hp 67 | 168 | 672 |
 | Runiczny Hełm | 40 | Obrona 60, hp 76 | 192 | — |
-| Mithrilowy Hełm | 45 | Obrona 67, hp 85 | 216 | — |
+| Mithrilowy Hełm | 45 | Obrona 67, hp 85 | 216 | 864 |
 | Elfi Hełm | 50 | Obrona 74, hp 94 | 240 | — |
-| Obsydianowy Hełm | 55 | Obrona 82, hp 103 | 264 | — |
+| Obsydianowy Hełm | 55 | Obrona 82, hp 103 | 264 | 1056 |
 | Adamantytowy Hełm | 60 | Obrona 89, hp 112 | 288 | — |
-| Królewski Hełm | 65 | Obrona 96, hp 121 | 312 | — |
+| Królewski Hełm | 65 | Obrona 96, hp 121 | 312 | 1248 |
 | Płomienny Hełm | 70 | Obrona 103, hp 130 | 336 | — |
-| Gwiezdny Hełm | 75 | Obrona 110, hp 139 | 360 | — |
+| Gwiezdny Hełm | 75 | Obrona 110, hp 139 | 360 | 1440 |
 | Tytanowy Hełm | 80 | Obrona 118, hp 148 | 384 | — |
-| Pradawny Hełm | 85 | Obrona 125, hp 157 | 408 | — |
+| Pradawny Hełm | 85 | Obrona 125, hp 157 | 408 | 1632 |
 | Niebiański Hełm | 90 | Obrona 132, hp 166 | 432 | — |
-| Eteryczny Hełm | 95 | Obrona 139, hp 175 | 456 | — |
+| Eteryczny Hełm | 95 | Obrona 139, hp 175 | 456 | 1824 |
 | Smoczy Hełm | 100 | Obrona 146, hp 184 | 480 | — |
 
 #### Diadem (`helmet_light`) · Mag, Kapłan
@@ -299,25 +299,25 @@ Legendarne i Mityczne przedmioty dają też osobiste rzuty bossów (S30), a nazw
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|
 | Prosty Diadem | 1 | Obrona 2, hp 3, mana 5, Odporność magiczna 2 | 5 | — |
-| Solidny Diadem | 5 | Obrona 4, hp 6, mana 11, Odporność magiczna 5 | 24 | — |
+| Solidny Diadem | 5 | Obrona 4, hp 6, mana 11, Odporność magiczna 5 | 24 | 96 |
 | Żelazny Diadem | 10 | Obrona 7, hp 11, mana 18, Odporność magiczna 10 | 48 | — |
-| Wzmocniony Diadem | 15 | Obrona 10, hp 15, mana 26, Odporność magiczna 14 | 72 | — |
+| Wzmocniony Diadem | 15 | Obrona 10, hp 15, mana 26, Odporność magiczna 14 | 72 | 288 |
 | Stalowy Diadem | 20 | Obrona 13, hp 20, mana 33, Odporność magiczna 18 | 96 | — |
-| Hartowany Diadem | 25 | Obrona 16, hp 24, mana 41, Odporność magiczna 22 | 120 | — |
+| Hartowany Diadem | 25 | Obrona 16, hp 24, mana 41, Odporność magiczna 22 | 120 | 480 |
 | Srebrny Diadem | 30 | Obrona 19, hp 29, mana 48, Odporność magiczna 26 | 144 | — |
-| Szlachetny Diadem | 35 | Obrona 22, hp 33, mana 56, Odporność magiczna 31 | 168 | — |
+| Szlachetny Diadem | 35 | Obrona 22, hp 33, mana 56, Odporność magiczna 31 | 168 | 672 |
 | Runiczny Diadem | 40 | Obrona 25, hp 38, mana 63, Odporność magiczna 35 | 192 | — |
-| Mithrilowy Diadem | 45 | Obrona 28, hp 42, mana 71, Odporność magiczna 39 | 216 | — |
+| Mithrilowy Diadem | 45 | Obrona 28, hp 42, mana 71, Odporność magiczna 39 | 216 | 864 |
 | Elfi Diadem | 50 | Obrona 31, hp 47, mana 78, Odporność magiczna 43 | 240 | — |
-| Obsydianowy Diadem | 55 | Obrona 34, hp 51, mana 86, Odporność magiczna 47 | 264 | — |
+| Obsydianowy Diadem | 55 | Obrona 34, hp 51, mana 86, Odporność magiczna 47 | 264 | 1056 |
 | Adamantytowy Diadem | 60 | Obrona 37, hp 56, mana 93, Odporność magiczna 52 | 288 | — |
-| Królewski Diadem | 65 | Obrona 40, hp 60, mana 101, Odporność magiczna 56 | 312 | — |
+| Królewski Diadem | 65 | Obrona 40, hp 60, mana 101, Odporność magiczna 56 | 312 | 1248 |
 | Płomienny Diadem | 70 | Obrona 43, hp 65, mana 108, Odporność magiczna 60 | 336 | — |
-| Gwiezdny Diadem | 75 | Obrona 46, hp 69, mana 116, Odporność magiczna 64 | 360 | — |
+| Gwiezdny Diadem | 75 | Obrona 46, hp 69, mana 116, Odporność magiczna 64 | 360 | 1440 |
 | Tytanowy Diadem | 80 | Obrona 49, hp 74, mana 123, Odporność magiczna 68 | 384 | — |
-| Pradawny Diadem | 85 | Obrona 52, hp 78, mana 131, Odporność magiczna 73 | 408 | — |
+| Pradawny Diadem | 85 | Obrona 52, hp 78, mana 131, Odporność magiczna 73 | 408 | 1632 |
 | Niebiański Diadem | 90 | Obrona 55, hp 83, mana 138, Odporność magiczna 77 | 432 | — |
-| Eteryczny Diadem | 95 | Obrona 58, hp 87, mana 146, Odporność magiczna 81 | 456 | — |
+| Eteryczny Diadem | 95 | Obrona 58, hp 87, mana 146, Odporność magiczna 81 | 456 | 1824 |
 | Smoczy Diadem | 100 | Obrona 61, hp 92, mana 153, Odporność magiczna 85 | 480 | — |
 
 #### Kaptur (`helmet_medium`) · Łowca
@@ -325,25 +325,25 @@ Legendarne i Mityczne przedmioty dają też osobiste rzuty bossów (S30), a nazw
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|
 | Prosty Kaptur | 1 | Obrona 3, Unik 0,3, hp 5 | 5 | — |
-| Solidny Kaptur | 5 | Obrona 7, Unik 0,4, hp 11 | 24 | — |
+| Solidny Kaptur | 5 | Obrona 7, Unik 0,4, hp 11 | 24 | 96 |
 | Żelazny Kaptur | 10 | Obrona 12, Unik 0,4, hp 18 | 48 | — |
-| Wzmocniony Kaptur | 15 | Obrona 17, Unik 0,5, hp 26 | 72 | — |
+| Wzmocniony Kaptur | 15 | Obrona 17, Unik 0,5, hp 26 | 72 | 288 |
 | Stalowy Kaptur | 20 | Obrona 22, Unik 0,5, hp 33 | 96 | — |
-| Hartowany Kaptur | 25 | Obrona 27, Unik 0,6, hp 41 | 120 | — |
+| Hartowany Kaptur | 25 | Obrona 27, Unik 0,6, hp 41 | 120 | 480 |
 | Srebrny Kaptur | 30 | Obrona 32, Unik 0,7, hp 48 | 144 | — |
-| Szlachetny Kaptur | 35 | Obrona 38, Unik 0,7, hp 56 | 168 | — |
+| Szlachetny Kaptur | 35 | Obrona 38, Unik 0,7, hp 56 | 168 | 672 |
 | Runiczny Kaptur | 40 | Obrona 43, Unik 0,8, hp 63 | 192 | — |
-| Mithrilowy Kaptur | 45 | Obrona 48, Unik 0,8, hp 71 | 216 | — |
+| Mithrilowy Kaptur | 45 | Obrona 48, Unik 0,8, hp 71 | 216 | 864 |
 | Elfi Kaptur | 50 | Obrona 53, Unik 0,9, hp 78 | 240 | — |
-| Obsydianowy Kaptur | 55 | Obrona 58, Unik 1, hp 86 | 264 | — |
+| Obsydianowy Kaptur | 55 | Obrona 58, Unik 1, hp 86 | 264 | 1056 |
 | Adamantytowy Kaptur | 60 | Obrona 63, Unik 1, hp 93 | 288 | — |
-| Królewski Kaptur | 65 | Obrona 68, Unik 1,1, hp 101 | 312 | — |
+| Królewski Kaptur | 65 | Obrona 68, Unik 1,1, hp 101 | 312 | 1248 |
 | Płomienny Kaptur | 70 | Obrona 73, Unik 1,1, hp 108 | 336 | — |
-| Gwiezdny Kaptur | 75 | Obrona 78, Unik 1,2, hp 116 | 360 | — |
+| Gwiezdny Kaptur | 75 | Obrona 78, Unik 1,2, hp 116 | 360 | 1440 |
 | Tytanowy Kaptur | 80 | Obrona 83, Unik 1,3, hp 123 | 384 | — |
-| Pradawny Kaptur | 85 | Obrona 89, Unik 1,3, hp 131 | 408 | — |
+| Pradawny Kaptur | 85 | Obrona 89, Unik 1,3, hp 131 | 408 | 1632 |
 | Niebiański Kaptur | 90 | Obrona 94, Unik 1,4, hp 138 | 432 | — |
-| Eteryczny Kaptur | 95 | Obrona 99, Unik 1,4, hp 146 | 456 | — |
+| Eteryczny Kaptur | 95 | Obrona 99, Unik 1,4, hp 146 | 456 | 1824 |
 | Smoczy Kaptur | 100 | Obrona 104, Unik 1,5, hp 153 | 480 | — |
 
 ### Naszyjnik

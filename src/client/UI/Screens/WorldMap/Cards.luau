@@ -72,6 +72,7 @@ local SERVICE_ICONS: { [string]: string } = {
 	mail = "✉",
 	quests = "✎",
 	story = "❗",
+	vendors = "⚔", -- S95: the dealer points to the class vendors
 }
 
 -- The item a shop entry sells (S31: the same instance as the shop window and the price).
@@ -82,8 +83,8 @@ end
 -- First entries of a shop the character can use now (the newest tiers first in class shops).
 local function shopSection(shopId: string, level: number, class: string): Section?
 	local shop = Shops.get(shopId)
-	if not shop then
-		return nil
+	if not shop or #shop.entries == 0 then
+		return nil -- S95: the dealer only buys and sells back
 	end
 	local usable: { Shops.Entry } = {}
 	local offered: { Shops.Entry } = {}
@@ -95,12 +96,12 @@ local function shopSection(shopId: string, level: number, class: string): Sectio
 	for _, entry in offered do
 		local item = previewItem(entry)
 		local need = entry.level or ItemRoll.requiredLevel(item)
-		local classOk = entry.classes == nil or table.find(entry.classes, class) ~= nil
+		local classOk = ShopPrice.usableBy(entry, class)
 		if need <= level and classOk and Items.get(entry.item) then
 			table.insert(usable, entry)
 		end
 	end
-	if shop.classTabs then
+	if shop.class then -- S95: class vendors
 		table.sort(usable, function(a, b)
 			return (a.level or 0) > (b.level or 0)
 		end)

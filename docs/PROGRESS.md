@@ -5,7 +5,7 @@
 
 ## Stan
 
-S01–S94 gotowe (lista i zakres w `docs/SESJE.md`). Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
+S01–S95 gotowe (lista i zakres w `docs/SESJE.md`). Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
 kategorie efektów drużyny i stos efektów (`Logic/EffectStack`), S54 wzory globalne (`Logic/LevelCurves`), S55 rangi
 i przełomy w kształcie A/B (`Build.bp2`, `Skills.effective` §2.7), S56 koniec punktów umiejętności: rangi z poziomu
 postaci (`Skills.rankFor`, drabina przejściowa ROZWOJ 2.6), zapis w schemacie 6 (darmowy reset statystyk, pasek
@@ -94,7 +94,10 @@ i endgame nastrojone, bramka `TUNED` zdjęta: `balance.spec` asertuje każdy cel
 powodem, `docs/BALANS.md` → „Cele 1–100”), Vaelgrath 4,8–5,1 min z lotem nad falą tarczy (naprawa lotu), Mityk
 Vaelgratha 0,3%, jaskinie od 71., `elitePairChance` 0,12, `dropFactor` 0,9, Potężna 1800, plecaki 185 000 / 285 000,
 rudy mithrilu i adamantytu u kowala, części Szczytów i eliksir lodu od 70., tempo 1 → 100 ok. 84 h; pełna księga
-S83–S94 (`tools/balance_base.json`).
+S83–S94 (`tools/balance_base.json`). S95 (pierwsza z DESIGN-15) sprzedawcy klas zamiast Zbrojmistrza: Wojownik w zamku,
+Kapłan przed świątynią, Łowca przed nową Lożą Łowców, Mag przed nową Wieżą Magów (`TownGen/ClassHalls`, późne budowle w
+`plan.py`); broń, druga ręka i zbroja klasy na progach 5…95, Zwykłe, zawsze słabsze od Unikatu (test), zakup innej
+klasy odrzucany; skupiec w zbrojowni (skup, odkup, „Gdzie kupię sprzęt?”); cel questu `classVendor`.
 Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`, `docs/STATY.md`) i łańcuch balansu
 zakończone; testy i decyzje właściciela po nich.
 
@@ -122,6 +125,9 @@ zakończone; testy i decyzje właściciela po nich.
   1–100”; m.in. drabina Mityka Vaelgratha, komplet +9 366 h, mikstury łańcuchowe, strażniki D1 w pasmach, G7 / G8 z S88).
 - **Balans (S94)**: T-SK6 Vaelgratha 15,9 wobec ≤ 2,5 (S94 C6) niedokończone jak Azgora (wiersz w raporcie
   `Balance.S94_REPORT`); decyzja właściciela razem z Azgorem (S93).
+- **Sprzedawcy klas (S95)**: remis ciężkich rękawic progu 5 z najsłabszym Unikatem (`TIE_OK` w
+  `tests/classvendors.spec`) i komplet u sprzedawcy tańszy niż kuźnia z kupionymi rudami (decyzje właściciela:
+  `docs/SESJE.md` → S95); cel `deliver` do sprzedawcy klasy bez tekstu na wiki (pierwszy taki quest).
 - **Gildie / aukcja / poczta**: brak zaproszeń do gildii między serwerami; aukcja bez podpowiedzi ceny, poczta bez
   pobrania.
 - **Przedmioty (S62–S68)**: krwawienie, trucizna i podpalenie z danych umiejętności przy odświeżeniu kasują resztę

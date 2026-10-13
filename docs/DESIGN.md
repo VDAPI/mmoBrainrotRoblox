@@ -476,14 +476,30 @@ Każdy przedmiot ma w tooltipie „Rzadkość · Kategoria” (broń jedno-/dwur
 - Rudy u kowala (S94): miedź 25, żelazo 60, srebro 140, mithril 320 (od 70.), adamantyt 640 (od 90.); ok. 4 × cena
   sprzedaży rudy.
 - Złoto wytwarzania (S32) = wartość przedmiotu Zwykłego tego progu × 3 (`Data/ItemValue.craftMul`; wcześniej
-  `priceAt × 3`, np. 6120 za broń progu 55 sprzedawaną u Zbrojmistrza za 1320).
+  `priceAt × 3`, np. 6120 za broń progu 55 sprzedawaną wtedy u Zbrojmistrza za 1320).
 
-## 8a. Zbrojmistrz (sprzedawca broni)
+## 8a. Sprzedawcy klas i skupiec (S95, DESIGN-15 §1)
 
-- NPC **Zbrojmistrz / Weaponsmith** w dzielnicy rzemieślniczej miasta, obok kuźni.
-- Sprzedaje broń (i drugą rękę) **każdej klasy na progach 5, 15, 25, …, 95** (S31, `Shops.WEAPONSMITH_TIERS`; próg 1 to broń startowa), rzadkość Zwykły, statystyki stałe dla `ilvl` = próg, bez bonusów. Dla maga każda broń w 3 żywiołach.
-- Zakładki klas (domyślnie własna klasa), lista pogrupowana nagłówkami „Poziom 15 · Wzmocniony”, **wszystkie progi widoczne**, okno otwiera się na progu gracza; wyższe mają szary „Kup” i czerwone „Wymaga poziomu N”. Zakup sprawdza poziom na serwerze. Wiersze tworzone leniwie.
-- Cena = wartość × `buyMul` (4) — ta sama liczba w wierszu i w tooltipie. Wiersz ma trzecią linię „Poz. 15 · Obr. 39 · 1,20/s · DPS 46,8”.
+- Zamiast wspólnego Zbrojmistrza każda klasa ma **własnego sprzedawcę** w miejscu kojarzonym z klasą (`Data/Shops`,
+  `Data/Npcs`, ten sam id sklepu i NPC): Wojownik — Zbrojmistrz Radwan na dziedzińcu zamku przed donżonem
+  (`vendor_warrior`), Kapłan — Siostra Agata przed świątynią (`vendor_cleric`), Łowca — Łowczy Mszczuj przed lożą
+  łowców przy stajni i wschodniej bramie (`vendor_hunter`), Mag — Magister Orsolya przed wieżą magów w górnym mieście
+  (`vendor_mage`). `Shops.CLASS_VENDORS` / `Shops.vendorOf(classId)`.
+- Asortyment: **broń, druga ręka i zbroja (hełm, pancerz, rękawice, buty)**, które klasa może założyć (`base.classes`),
+  na progach 5, 15, 25, …, 95 (`Shops.WEAPONSMITH_TIERS`; próg 1 to sprzęt startowy). Zawsze **Zwykłe**, statystyki
+  stałe dla `ilvl` = `level` = próg, bez bonusów; broń maga w 3 żywiołach. Kapłan: ciężka zbroja i szaty. Każdy Unikat
+  tego samego przedmiotu jest lepszy (test `classvendors.spec`, poza remisem ciężkich rękawic progu 5).
+- Cena = wartość × `buyMul` (4), ta sama liczba w wierszu i w tooltipie (zbroja ≥ złoto przepisu kowala, bez rud).
+- Okno: nagłówek „Sprzęt: <klasa>”, filtr Wszystko / Broń / Druga ręka / Zbroja, nagłówki progów „Poziom 15 ·
+  Wzmocniony”, **wszystkie progi widoczne**, okno otwiera się na progu gracza; wyższe mają szary „Kup” i czerwone
+  „Wymaga poziomu N”. Inna klasa przegląda towar: przedmiot, którego nie założy, ma szary „Kup” i „Tylko dla: …”, a
+  pasek „Sprzęt dla twojej klasy sprzedaje …” z „Prowadź” prowadzi do jej sprzedawcy. Serwer odrzuca zakup przedmiotu
+  innej klasy (`shop.error.class`, przed poziomem). Wiersze tworzone leniwie.
+- **Skupiec** (`fence`, Skupiec Bertold) w zbrojowni przy rynku: tylko skup i odkup (okno bez zakładki „Kup”), pasek
+  z „Prowadź” i usługa „Gdzie kupię sprzęt?” prowadzą do sprzedawcy klasy gracza. Skup i odkup działają też u każdego
+  sprzedawcy (wspólna lista odkupu).
+- Cele questów mogą wskazywać sprzedawcę klasy gracza: `npc = "classVendor"` w celach `talk` / `deliver`
+  (`QuestLogic.npcFor`).
 
 ## 9. Mikstury (lekarz)
 

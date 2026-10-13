@@ -128,7 +128,7 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), 
 out = sys.argv[1] if len(sys.argv) > 1 else os.path.join(ROOT, "src", "shared", "Data", "Town", "city.luau")
 heights = sys.argv[2] if len(sys.argv) > 2 else os.path.join(ROOT, "tests", "fixtures", "cityHeights.luau")
 os.makedirs(os.path.dirname(out), exist_ok=True)
-open(out, "w").write("\n".join(lines))
+open(out, "w", encoding="utf-8").write("\n".join(lines))  # S95: UTF-8 on Windows too
 print("wrote", out, len(lines), "lines", sum(len(l) for l in lines), "chars")
 
 # Test vectors for TownTerrain.heightAt parity (Python reference vs Luau)
@@ -149,5 +149,5 @@ for x, z in vec:
     fx.append(f"\t{{ {num(x)}, {num(z)}, {P.height_at(x, z):.6f} }},")
 fx += ["}", ""]
 os.makedirs(os.path.dirname(heights) or ".", exist_ok=True)
-open(heights, "w").write("\n".join(fx))
+open(heights, "w", encoding="utf-8").write("\n".join(fx))
 print("vectors", len(vec))

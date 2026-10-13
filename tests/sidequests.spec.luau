@@ -11,6 +11,7 @@ local MeadowsGen = require("../src/shared/Logic/MeadowsGen")
 local Monsters = require("../src/shared/Data/Monsters")
 local NpcMarks = require("../src/shared/Logic/NpcMarks")
 local Npcs = require("../src/shared/Data/Npcs")
+local QuestLogic = require("../src/shared/Logic/QuestLogic")
 local Quests = require("../src/shared/Data/Quests")
 local Rng = require("../src/shared/Logic/Rng")
 local SideQuests = require("../src/shared/Logic/SideQuests")
@@ -154,8 +155,14 @@ describe("Side quest data", function()
 				if objective.type == "deliver" or objective.type == "collect" then
 					expect(objective.item ~= nil and hasKey(`quest.item.{objective.item}`)).toBe(true)
 				end
-				if objective.type == "deliver" or objective.type == "talk" then
+				if
+					(objective.type == "deliver" or objective.type == "talk")
+					and objective.npc ~= QuestLogic.CLASS_VENDOR
+				then
 					expect(Npcs.get(objective.npc or quest.turnIn) ~= nil).toBe(true)
+				elseif objective.npc == QuestLogic.CLASS_VENDOR then
+					-- S95: "your class vendor" only in talk / deliver objectives
+					expect(objective.type == "deliver" or objective.type == "talk").toBe(true)
 				end
 				if objective.type == "gather" and objective.node then
 					if not nodes[objective.node] then

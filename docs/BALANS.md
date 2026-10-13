@@ -253,17 +253,27 @@ Każdy wiersz bez opisu raportu jest asercją `balance.spec` (bloki niżej). Wie
 | `Shops:byId.blacksmith.entries[5].price` | 320 | S94 | J4: mithril ore at the smith, 320 (~4 x Materials 80) from 70 |
 | `Shops:byId.blacksmith.entries[6].level` | 90 | S94 | J4: adamantite ore at the smith, 640 (~4 x Materials 160) from 90 |
 | `Shops:byId.blacksmith.entries[6].price` | 640 | S94 | J4: adamantite ore at the smith, 640 (~4 x Materials 160) from 90 |
+| `Shops:byId.vendor_cleric.entries[…` (420 kluczy) | – | S95 | new class vendor: weapons and off-hands moved from the weaponsmith (same items, levels, value x buyMul); heavy armour and robes new in a shop, Common as the smith's recipe, price >= the recipe's gold (I2) |
+| `Shops:byId.vendor_hunter.entries[…` (300 kluczy) | – | S95 | new class vendor: weapons and off-hands moved from the weaponsmith (same items, levels, value x buyMul); medium armour new in a shop, Common as the smith's recipe, price value x buyMul >= the recipe's gold (I2) |
+| `Shops:byId.vendor_mage.entries[…` (450 kluczy) | – | S95 | new class vendor: weapons (every element) and off-hands moved from the weaponsmith (same items, levels, value x buyMul); light armour (robes) new in a shop, Common as the smith's recipe, price >= the recipe's gold (I2) |
+| `Shops:byId.vendor_warrior.entries[…` (390 kluczy) | – | S95 | new class vendor: weapons and off-hands moved from the weaponsmith (same items, levels, value x buyMul); heavy armour new in a shop, Common as the smith's recipe, price value x buyMul >= the recipe's gold (I2) |
+
+### Usunięte klucze
+
+| klucz | wartość | sesja | powód |
+| --- | --: | --: | --: |
+| `Shops:byId.weaponsmith.entries[…` (900 kluczy) | – | S95 | removed: the weaponsmith's weapons and off-hands moved to the four class vendors (same items, levels and prices) |
 
 ### Księga: pominięte funkcje
 
 Funkcje modułów księgi, które dla poziomów 1, 20, 45, 70, 100 nie zwracają liczby ani tabeli (np. `get(id)`):
-AreaProfiles:get, AreaProfiles:ofArea, Areas/Caves:get, Blessings:get, Blessings:of, Bonuses:classLine, Bonuses:familyLine, Bonuses:get, Bonuses:isParam, Bosses:forRegion, Bosses:get, BuffCategories:get, Classes:get, Crafting:get, Crafting:oreFor, Families:defence, Families:get, GuildSkills:get, ItemTraits:get, Items/init:generate.definition, Items/init:get, LootTables:get, Maps:get, Market:getCategory, MonsterAbilities:get, Monsters:get, Paths/init:get, Quests/Daily:get, Quests/Main:get, Quests/Side:get, Recipes:get, Shops:get, Skills/init:get, Stats:get.
+AreaProfiles:get, AreaProfiles:ofArea, Areas/Caves:get, Blessings:get, Blessings:of, Bonuses:classLine, Bonuses:familyLine, Bonuses:get, Bonuses:isParam, Bosses:forRegion, Bosses:get, BuffCategories:get, Classes:get, Crafting:get, Crafting:oreFor, Families:defence, Families:get, GuildSkills:get, ItemTraits:get, Items/init:generate.definition, Items/init:get, LootTables:get, Maps:get, Market:getCategory, MonsterAbilities:get, Monsters:get, Paths/init:get, Quests/Daily:get, Quests/Main:get, Quests/Side:get, Recipes:get, Shops:get, Shops:vendorOf, Skills/init:get, Stats:get.
 
 ## Pełna księga S83–S94 (od migawki przed S83)
 
 Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz: dane gry. Dla każdego klucza: wartość przed S83, po S94 i wszystkie powody z `tools/balance_reasons.luau` (sesja: powód). Rangi (`Rangi:`) to liczby pochodne i ich tu nie ma.
 
-719 kluczy zmienionych od bazy, 0 bez powodu.
+3179 kluczy zmienionych od bazy, 0 bez powodu.
 
 | klucz | przed S83 | po S94 | sesja | powody (sesja: powód) |
 | --- | --: | --: | --: | --: |
@@ -799,6 +809,11 @@ Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz
 | `Shops:byId.blacksmith.entries[5].price` | – | 320 | nowy od S94 | S94: J4: mithril ore at the smith, 320 (~4 x Materials 80) from 70 |
 | `Shops:byId.blacksmith.entries[6].level` | – | 90 | nowy od S94 | S94: J4: adamantite ore at the smith, 640 (~4 x Materials 160) from 90 |
 | `Shops:byId.blacksmith.entries[6].price` | – | 640 | nowy od S94 | S94: J4: adamantite ore at the smith, 640 (~4 x Materials 160) from 90 |
+| `Shops:byId.vendor_cleric.entries[…` (420 kluczy) | – | – | nowy od S95 | S95: new class vendor: weapons and off-hands moved from the weaponsmith (same items, levels, value x buyMul); heavy armour and robes new in a shop, Common as the smith's recipe, price >= the recipe's gold (I2) |
+| `Shops:byId.vendor_hunter.entries[…` (300 kluczy) | – | – | nowy od S95 | S95: new class vendor: weapons and off-hands moved from the weaponsmith (same items, levels, value x buyMul); medium armour new in a shop, Common as the smith's recipe, price value x buyMul >= the recipe's gold (I2) |
+| `Shops:byId.vendor_mage.entries[…` (450 kluczy) | – | – | nowy od S95 | S95: new class vendor: weapons (every element) and off-hands moved from the weaponsmith (same items, levels, value x buyMul); light armour (robes) new in a shop, Common as the smith's recipe, price >= the recipe's gold (I2) |
+| `Shops:byId.vendor_warrior.entries[…` (390 kluczy) | – | – | nowy od S95 | S95: new class vendor: weapons and off-hands moved from the weaponsmith (same items, levels, value x buyMul); heavy armour new in a shop, Common as the smith's recipe, price value x buyMul >= the recipe's gold (I2) |
+| `Shops:byId.weaponsmith.entries[…` (900 kluczy) | – | – | usunięty | S95: removed: the weaponsmith's weapons and off-hands moved to the four class vendors (same items, levels and prices) |
 | `Skills/Cleric:[brandOfLight].breakpoints[5].a.values.dot` | 30 | 80 | S89 | S89: R4: 5A +30 -> +80 burn, gain 0.04 -> 0.11-0.16 (band 0.08-0.17) |
 | `Skills/Cleric:[brandOfLight].values.dmg[1]` | 100 | 120 | S89 | S89: D Inquisitor / Furia: 100 -> 120 (0.80 / 0.81 / 0.86 after statPlan 1 : 2 -> 0.84 / 0.87 / 0.93) |
 | `Skills/Cleric:[brandOfLight].values.dmg[2]` | 170 | 260 | S89 | S89: D: 170 -> 260 (rank 10 at 62: 70 and 100) |
@@ -8791,6 +8806,53 @@ Zysk obrażeń przy stałym niszczeniu albo przebiciu (`Damage.reduction`): Nisz
 | 100 · linia pierce (Legendarny, środek rzutu) | 1% | 2% |
 | 100 · linia magicPierce (Legendarny, środek rzutu) | 1% | 1% |
 
+## Komplet u sprzedawcy klasy (S95)
+
+Najtańsza broń, druga ręka, hełm, pancerz, rękawice i buty klasy z jednego progu sprzedawcy (Zwykłe, `value × buyMul`), ten sam komplet z kuźni (złoto przepisu + rudy i pył esencji po cenach kowala; skóry, futro i łuski z potworów nie są liczone) i minuty zarobku na poziomie progu (`Balance.economyAt`: złoto i drop z zabić na godzinę). Raport, nie cel.
+
+| klasa · próg | u sprzedawcy | kuźnia (złoto + rudy) | minuty zarobku |
+| --- | --: | --: | --: |
+| Wojownik 5 | 600 | 900 | 23,3 |
+| Wojownik 15 | 1800 | 1950 | 22,6 |
+| Wojownik 25 | 3000 | 3690 | 22,7 |
+| Wojownik 35 | 4200 | 5670 | 22,3 |
+| Wojownik 45 | 5400 | 10 050 | 22,1 |
+| Wojownik 55 | 6600 | 10 950 | 18,2 |
+| Wojownik 65 | 7800 | 12 930 | 24,9 |
+| Wojownik 75 | 9000 | 23 310 | 27,3 |
+| Wojownik 85 | 10 200 | 24 450 | 20,2 |
+| Wojownik 95 | 11 400 | 44 550 | 21,2 |
+| Kapłan 5 | 600 | 900 | 20,9 |
+| Kapłan 15 | 1800 | 1950 | 20,2 |
+| Kapłan 25 | 3000 | 3690 | 20,8 |
+| Kapłan 35 | 4200 | 5670 | 21,2 |
+| Kapłan 45 | 5400 | 10 050 | 20,8 |
+| Kapłan 55 | 6600 | 10 950 | 15,5 |
+| Kapłan 65 | 7800 | 12 930 | 23,0 |
+| Kapłan 75 | 9000 | 23 310 | 26,4 |
+| Kapłan 85 | 10 200 | 24 450 | 20,1 |
+| Kapłan 95 | 11 400 | 44 550 | 20,7 |
+| Łowca 5 | 600 | 900 | 26,4 |
+| Łowca 15 | 1800 | 1950 | 23,1 |
+| Łowca 25 | 3000 | 3690 | 22,4 |
+| Łowca 35 | 4200 | 5670 | 21,8 |
+| Łowca 45 | 5400 | 10 050 | 21,6 |
+| Łowca 55 | 6600 | 10 950 | 17,6 |
+| Łowca 65 | 7800 | 12 930 | 24,1 |
+| Łowca 75 | 9000 | 23 310 | 26,4 |
+| Łowca 85 | 10 200 | 24 450 | 19,4 |
+| Łowca 95 | 11 400 | 44 550 | 20,2 |
+| Mag 5 | 600 | 735 | 25,2 |
+| Mag 15 | 1800 | 1580 | 25,0 |
+| Mag 25 | 3000 | 3000 | 25,1 |
+| Mag 35 | 4200 | 4620 | 24,3 |
+| Mag 45 | 5400 | 8240 | 24,3 |
+| Mag 55 | 6600 | 8960 | 16,9 |
+| Mag 65 | 7800 | 10 580 | 25,9 |
+| Mag 75 | 9000 | 19 200 | 29,9 |
+| Mag 85 | 10 200 | 20 120 | 21,9 |
+| Mag 95 | 11 400 | 36 840 | 22,6 |
+
 ## Umiejętności: T-SK na buildach wzorcowych (S85)
 
 Silnik `tests/SkillModel.luau` rzuca prawdziwe umiejętności bazy każdej klasy (rzędy 1 wszystkich ścieżek, Mag 1–2, broń z pomiarów ROZWOJ i `base.loadout` z bronią `Balance.LOADOUT`) i każdego buildu `PathDef.reference` (klucz `<pathId>.<id>`) na poziomach 20 / 45 / 70 / 100: rangi z poziomu, przełomy A/B, węzły, rotacja z danych, koszt `Skills.cost`, normalizacja broni, mikstury. Bez umiejętności daje `FightSim.dps` (kontrola w `balance.spec`). S86 dołożyło mechaniki klas i cechy na zdarzeniu (sekcja „Klasy i ścieżki”); to raport, nic tu nie jest asertowane (model główny celów G zostaje ×1,2).
@@ -12537,7 +12599,7 @@ Wiersze celów z liczbą z tabeli ROZWOJ (9.6, 10.6, 11.6, 12.7) dla tego samego
 | mage.tsk4 · arcanist.arcanistOverload · 70 (wariant: Przeciążenie) (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 2,71 | 2,75 | -2% |
 | mage.tsk4 · arcanist.arcanistOverload · 100 (wariant: Przeciążenie) (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 2,78 | 2,79 | 0% |
 
-Tabele S86 liczą się 19,7 s.
+Tabele S86 liczą się 19,6 s.
 
 ## Poprawki globalne (S87)
 

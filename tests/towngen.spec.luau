@@ -116,6 +116,49 @@ T.describe("Town generator", function()
 		T.expect((tags.window or 0) > 500).toBe(true)
 	end)
 
+	T.it("builds the hunters' lodge and the mages' tower (S95)", function()
+		local byName: { [string]: Item } = {}
+		for _, b in all do
+			byName[b.name] = b
+		end
+		-- the round top of a door leaf (Parts.door): a 0.3-thick plank cylinder
+		local function hasDoor(bp: any): boolean
+			for _, p in bp.pieces do
+				if p.s == "cyl" and math.abs(p.size[1] - 0.3) < 1e-6 and p.m == "WoodPlanks" then
+					return true
+				end
+			end
+			return false
+		end
+		local kinds: { [string]: string } = {}
+		for _, sp in city.specials do
+			kinds[sp.id] = sp.kind
+		end
+		T.expect(kinds.loza).toBe("hunterLodge")
+		T.expect(kinds.wieza).toBe("mageTower")
+		local lodge, tower = byName.loza, byName.wieza
+		T.expect(lodge ~= nil and tower ~= nil).toBe(true)
+		local flag = false
+		for _, p in lodge.bp.pieces do
+			flag = flag or p.tag == "flag"
+		end
+		T.expect(flag).toBe(true)
+		local crystal, topY = false, -math.huge
+		for _, p in tower.bp.pieces do
+			crystal = crystal or (p.m == "Neon" and p.tag == "glow")
+			topY = math.max(topY, p.p[2] + p.size[2] / 2)
+		end
+		T.expect(crystal).toBe(true)
+		local light = false
+		for _, l in tower.bp.lights do
+			light = light or l.tag == "glow"
+		end
+		T.expect(light).toBe(true)
+		-- local y = 0 is the floor (at.y), on the plateau's ground
+		T.expect(topY >= 25).toBe(true)
+		T.expect(hasDoor(lodge.bp) and hasDoor(tower.bp)).toBe(true)
+	end)
+
 	T.it("keeps the pillory on the market square, clear of buildings", function()
 		local P = TownGen.Props.PILLORY
 		local rynek

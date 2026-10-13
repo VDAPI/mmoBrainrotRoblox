@@ -66,7 +66,10 @@ describe("Main quests data", function()
 				if objective.monster then
 					expect(Monsters.get(objective.monster) ~= nil).toBe(true)
 				end
-				if objective.npc then
+				if objective.npc == QuestLogic.CLASS_VENDOR then
+					-- S95: "your class vendor" only in talk / deliver objectives (never giver / turn-in)
+					expect(objective.type == "talk" or objective.type == "deliver").toBe(true)
+				elseif objective.npc then
 					expect(Npcs.get(objective.npc) ~= nil).toBe(true)
 				end
 				if objective.map then
@@ -171,6 +174,39 @@ describe("QuestLogic.amount", function()
 		expect(QuestLogic.amount({ type = "upgrade", n = 1, up = 5 }, "upgrade", { to = 5 }, 0)).toBe(1)
 		expect(QuestLogic.amount({ type = "equip", n = 1, rarity = 3 }, "equip", { rarity = 2 }, 0)).toBe(0)
 		expect(QuestLogic.amount({ type = "talk", n = 1, npc = "healer" }, "talk", { npc = "healer" }, 0)).toBe(1)
+	end)
+
+	it("resolves the class vendor objective (S95)", function()
+		local expected: { [string]: string } = {
+			Warrior = "vendor_warrior",
+			Cleric = "vendor_cleric",
+			Hunter = "vendor_hunter",
+			Mage = "vendor_mage",
+		}
+		for classId, vendor in expected do
+			expect(QuestLogic.npcFor(QuestLogic.CLASS_VENDOR, classId)).toBe(vendor)
+			expect(Npcs.get(vendor) ~= nil).toBe(true)
+		end
+		expect(QuestLogic.CLASS_VENDOR).toBe("classVendor")
+		expect(QuestLogic.npcFor("healer", "Mage")).toBe("healer")
+		expect(QuestLogic.npcFor("classVendor", nil)).toBeNil()
+		expect(QuestLogic.npcFor(nil, "Mage")).toBeNil()
+		local talk = { type = "talk", n = 1, npc = "classVendor" }
+		expect(QuestLogic.amount(talk :: any, "talk", { npc = "vendor_mage", classId = "Mage" }, 0)).toBe(1)
+		expect(QuestLogic.amount(talk :: any, "talk", { npc = "vendor_warrior", classId = "Mage" }, 0)).toBe(0)
+		expect(QuestLogic.amount(talk :: any, "talk", { npc = "vendor_mage" }, 0)).toBe(0)
+		local deliver = { type = "deliver", n = 1, npc = "classVendor", item = "x" }
+		expect(
+			QuestLogic.amount(
+				deliver :: any,
+				"talk",
+				{ npc = "vendor_hunter", classId = "Hunter", turnIn = "healer" },
+				0
+			)
+		).toBe(1)
+		expect(QuestLogic.amount(deliver :: any, "talk", { npc = "healer", classId = "Hunter", turnIn = "healer" }, 0)).toBe(
+			0
+		)
 		expect(QuestLogic.amount({ type = "reach", n = 1, map = "meadows" }, "reach", { map = "meadows" }, 0)).toBe(1)
 		expect(QuestLogic.amount({ type = "reach", n = 1, map = "meadows", x = 0, z = 0, radius = 10 }, "reach", {
 			map = "meadows",

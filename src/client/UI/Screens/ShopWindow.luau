@@ -1,16 +1,16 @@
 --!strict
 -- Shop window (DESIGN §9, §18): Buy (icon, name, price, quantity with −/+/Max), Sell (click backpack items to
 -- select, total, confirmation for Epic and better) and Buy back (last 10 sold). Gold always visible.
--- Shops with class tabs (weaponsmith, S18) filter by class (own class first); buying for another class asks first.
 -- S31: rows show a third line with the item's stats (TooltipModel.statLine, required level red when too high) and
--- the price of ItemValue.buyPrice (the tooltip shows the same price). The weaponsmith lists every tier (5, 15 ...
--- 95) under "Level 15 · Reinforced" headers, scrolled to the player's tier; rows above the character's level
--- show a red "Requires level N" and a disabled "Buy". Its rows are built lazily (only those near the view).
+-- the price of ItemValue.buyPrice (the tooltip shows the same price). S95: a class vendor (shop.class) lists every
+-- tier (5, 15 ... 95) under "Level 15 · Reinforced" headers with a slot filter, scrolled to the player's tier; rows
+-- above the character's level show a red "Requires level N" and a disabled "Buy", gear another class wears shows
+-- "Only for: ..." and a disabled "Buy" (the server refuses it too). Another class's vendor and the dealer (no
+-- entries: no Buy tab) show who sells the player's gear, with "Guide me". Vendor rows are built lazily.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Button = require(script.Parent.Parent.Components.Button)
-local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local DragDrop = require(script.Parent.Parent.DragDrop)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
@@ -45,14 +45,21 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 export type Props = {
 	NpcId: Fusion.UsedAs<string?>,
 	ShowModal: (spec: any) -> (),
+	-- S95: leads the player to an NPC (NavController.GuideToNpc) and closes the window
+	Guide: (npcId: string) -> (),
 }
 
 local ROW = 76
--- Lazy rows (weaponsmith): rows within this many pixels of the visible part of the list are built.
+-- Lazy rows (class vendors): rows within this many pixels of the visible part of the list are built.
 local LAZY_MARGIN = 400
 local RED_HEX = "#" .. Theme.Colors.DangerHover:ToHex()
 
 -- Highest rarity the "sell all" buttons may include (S30: the `quickSell` rarities, Common and Unique).
+-- S95: slot filter of the class vendors (armour = helmet, chest, gloves, boots).
+local FILTERS: { string } = { "all", "weapon", "offhand", "armor" }
+local FILTER_OF: { [string]: string } =
+	{ weapon = "weapon", offhand = "offhand", helmet = "armor", armor = "armor", gloves = "armor", boots = "armor" }
+
 local QUICK_SELL_MAX = Rarities.COMMON
 for _, rarity in Rarities.list do
 	if rarity.quickSell then
@@ -104,14 +111,7 @@ local function priceOf(entry: Shops.Entry, shop: Shops.ShopDef?): number
 	)
 end
 
-local function buyRow(
-	scope: Scope,
-	npcId: string,
-	shop: Shops.ShopDef,
-	entry: Shops.Entry,
-	order: number,
-	showModal: (spec: any) -> ()
-): Instance
+local function buyRow(scope: Scope, npcId: string, shop: Shops.ShopDef, entry: Shops.Entry, order: number): Instance
 	local def = Items.get(entry.item)
 	local key = entry.key or entry.item
 	local quantity = scope:Value("1")
@@ -122,8 +122,10 @@ local function buyRow(
 	local level = State.Value({ "character", "level" })
 	-- S87: the entry's level or the potion's (Great 45, Mighty 70), the same expression as ShopService.buy
 	local requiredLevel = math.max(entry.level or 1, Potions.requiredLevel(def))
+	-- S95: gear of another class can be browsed, not bought (ShopService refuses it with shop.error.class)
+	local classLocked = not ShopPrice.usableBy(entry, State.Get({ "character", "class" }))
 	local locked = scope:Computed(function(use): boolean
-		return requiredLevel > (use(level) or 1)
+		return classLocked or requiredLevel > (use(level) or 1)
 	end)
 	local function amount(): number
 		return math.clamp(tonumber(Fusion.peek(quantity)) or 1, 1, maxStack)
@@ -173,6 +175,15 @@ local function buyRow(
 					use(level)
 					use(State.Value({ "derived", "values", "potionDiscount" }))
 					local price = Text.get(use, "shop.price", { price = Format.number(priceOf(entry, shop)) })
+					if classLocked then
+						local names = {}
+						local classes: { string } = entry.classes or {}
+						for _, classId in classes do
+							table.insert(names, Text.get(use, `class.{classId}.name`))
+						end
+						local only = Text.get(use, "shop.onlyFor", { classes = table.concat(names, ", ") })
+						return `{price}   <font color="{RED_HEX}">{only}</font>`
+					end
 					if use(locked) then
 						local need = Text.get(use, "shop.requiresLevel", { level = requiredLevel })
 						return `{price}   <font color="{RED_HEX}">{need}</font>`
@@ -266,7 +277,7 @@ local function buyRow(
 						return
 					end
 					local n = amount()
-					local function doBuy()
+					task.spawn(function()
 						local ok, err = Net.Invoke("Buy", npcId, key, n)
 						if ok then
 							Sounds.play("click")
@@ -279,22 +290,58 @@ local function buyRow(
 							Sounds.play("error")
 							Toast.push(Text.now(err or "error.internal", { level = requiredLevel }), "error")
 						end
-					end
-					local classId = State.Get({ "character", "class" })
-					if entry.classes and classId and not table.find(entry.classes, classId) then
-						showModal({
-							Title = Text.now("shop.otherClass.title"),
-							Message = Text.now("shop.otherClass.message"),
-							ConfirmText = Text.now("shop.buy"),
-							CancelText = Text.now("common.cancel"),
-							OnConfirm = function()
-								task.spawn(doBuy)
-								return true, nil
-							end,
-						})
-					else
-						task.spawn(doBuy)
-					end
+					end)
+				end,
+			}),
+		},
+	})
+end
+
+-- S95: "Gear for your class is sold by X, where." with "Guide me", at another class's vendor and at the dealer;
+-- nil at the player's own vendor or without a class.
+local function vendorBar(
+	s: Scope,
+	use: Fusion.Use,
+	shopId: string,
+	guide: (npcId: string) -> (),
+	order: number
+): Instance?
+	local vendorId = Shops.vendorOf(State.Get({ "character", "class" }))
+	local vendor = vendorId and Npcs.get(vendorId)
+	if not vendorId or not vendor or vendorId == shopId then
+		return nil
+	end
+	return s:New("Frame")({
+		Name = "VendorBar",
+		LayoutOrder = order,
+		Size = UDim2.new(1, 0, 0, 48),
+		BackgroundColor3 = Theme.Colors.PanelRaised,
+		BackgroundTransparency = 0.3,
+		[Children] = {
+			s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
+			s:New("TextLabel")({
+				Position = UDim2.fromOffset(10, 0),
+				Size = UDim2.new(1, -170, 1, 0),
+				BackgroundTransparency = 1,
+				Text = Text.get(use, "shop.vendor.otherClass", {
+					name = Text.get(use, vendor.nameKey),
+					where = Text.get(use, `npc.{vendorId}.where`),
+				}),
+				FontFace = Theme.Fonts.BodyMedium,
+				TextSize = Theme.TextSize.Small,
+				TextColor3 = Theme.Colors.Parchment,
+				TextWrapped = true,
+				TextXAlignment = Enum.TextXAlignment.Left,
+			}),
+			Button(s, {
+				AnchorPoint = Vector2.new(1, 0.5),
+				Position = UDim2.new(1, -6, 0.5, 0),
+				Size = UDim2.fromOffset(150, 40),
+				Variant = "primary",
+				Text = Text.get(use, "shop.vendor.guide"),
+				TextSize = Theme.TextSize.Small,
+				OnClick = function()
+					guide(vendorId)
 				end,
 			}),
 		},
@@ -302,7 +349,12 @@ local function buyRow(
 end
 
 local function ShopWindow(scope: Scope, props: Props): Fusion.Child
-	local tab = scope:Value("buy")
+	local openNpc = Fusion.peek(props.NpcId)
+	local openNpcDef = openNpc and Npcs.get(openNpc)
+	local openShop = openNpcDef and openNpcDef.shop and Shops.get(openNpcDef.shop)
+	-- S95: the dealer sells nothing: no Buy tab, the window opens on Sell.
+	local canBuy = not openShop or #openShop.entries > 0
+	local tab = scope:Value(if canBuy then "buy" else "sell")
 	local inventory = State.Value({ "character", "inventory" })
 	local gold = State.Value({ "character", "gold" })
 	local buyback = State.Value({ "buyback" })
@@ -311,8 +363,8 @@ local function ShopWindow(scope: Scope, props: Props): Fusion.Child
 	local npcId = scope:Computed(function(use): string?
 		return use(props.NpcId)
 	end)
-	-- Class tab of shops with classTabs (own class by default).
-	local classTab = scope:Value(State.Get({ "character", "class" }) or "Warrior")
+	-- S95: slot filter of the class vendors and the NPC it was chosen at ("all" at another NPC).
+	local filter = scope:Value({ npc = openNpc, slot = "all" } :: { npc: string?, slot: string })
 	local playerLevel = State.Value({ "character", "level" })
 
 	local sellTotal = scope:Computed(function(use): number
@@ -444,7 +496,7 @@ local function ShopWindow(scope: Scope, props: Props): Fusion.Child
 	})
 	DragDrop.register(scope, dropZone :: any, "shopsell:zone")
 
-	-- Lazy rows of the weaponsmith list: placeholders of the row's height, filled when they come near the view.
+	-- Lazy rows of the class vendor list: placeholders of the row's height, filled when they come near the view.
 	local list: ScrollingFrame? = nil
 	-- `y` = the row's canvas offset in virtual pixels (the layout is fixed: known heights and padding), so the
 	-- check does not depend on when the layout pass runs.
@@ -503,21 +555,55 @@ local function ShopWindow(scope: Scope, props: Props): Fusion.Child
 		scrollTries = 0
 		if current == "buy" then
 			local rows = {}
-			if shop and id and shop.classTabs then
-				local chosen = use(classTab)
-				local tabs = {}
-				for order, classId in Classes.order do
-					local class = Classes.get(classId) :: Classes.ClassDef
+			if shop and id and shop.class then
+				local chosenFor = use(filter)
+				local chosen = if chosenFor.npc == id then chosenFor.slot else "all"
+				-- Canvas offset of the next element (list padding 6).
+				local offset = 0
+				table.insert(
+					rows,
+					s:New("TextLabel")({
+						Name = "VendorHeader",
+						LayoutOrder = -3,
+						Size = UDim2.new(1, 0, 0, 30),
+						BackgroundTransparency = 1,
+						Text = Text.get(
+							use,
+							"shop.vendor.header",
+							{ class = Text.get(use, `class.{shop.class}.name`) }
+						),
+						FontFace = Theme.Fonts.Heading,
+						TextSize = 22,
+						TextColor3 = Theme.Colors.Gold,
+						TextXAlignment = Enum.TextXAlignment.Left,
+					})
+				)
+				offset += 30 + 6
+				local bar = vendorBar(s, use, shop.id, props.Guide, -2)
+				if bar then
+					table.insert(rows, bar)
+					offset += 48 + 6
+				end
+				local slots: { [string]: boolean } = {}
+				for _, entry in shop.entries do
+					local def = Items.get(entry.item)
+					slots[FILTER_OF[def and def.slot or ""] or ""] = true
+				end
+				local filters = {}
+				for order, filterId in FILTERS do
+					if filterId ~= "all" and not slots[filterId] then
+						continue -- no empty filter (a class without off-hands)
+					end
 					table.insert(
-						tabs,
+						filters,
 						Button(s, {
 							LayoutOrder = order,
-							Text = Text.get(use, class.nameKey),
+							Text = Text.get(use, `shop.filter.{filterId}`),
 							TextSize = Theme.TextSize.Small,
 							Size = UDim2.fromOffset(130, 40),
-							Variant = if chosen == class.id then "primary" else "secondary",
+							Variant = if chosen == filterId then "primary" else "secondary",
 							OnClick = function()
-								classTab:set(class.id)
+								filter:set({ npc = id, slot = filterId })
 							end,
 						})
 					)
@@ -525,8 +611,8 @@ local function ShopWindow(scope: Scope, props: Props): Fusion.Child
 				table.insert(
 					rows,
 					s:New("Frame")({
-						Name = "ClassTabs",
-						LayoutOrder = 0,
+						Name = "SlotFilter",
+						LayoutOrder = -1,
 						Size = UDim2.new(1, 0, 0, 44),
 						BackgroundTransparency = 1,
 						[Children] = {
@@ -535,10 +621,11 @@ local function ShopWindow(scope: Scope, props: Props): Fusion.Child
 								Padding = UDim.new(0, 6),
 								SortOrder = Enum.SortOrder.LayoutOrder,
 							}),
-							tabs :: any,
+							filters :: any,
 						},
 					})
 				)
+				offset += 44 + 6
 				-- S31: every tier (Shops.WEAPONSMITH_TIERS) under its header; the list opens at the highest tier
 				-- the character can use (the first one below level 5).
 				local alive = true
@@ -554,16 +641,14 @@ local function ShopWindow(scope: Scope, props: Props): Fusion.Child
 				end
 				local byTier: { [number]: { { entry: Shops.Entry, index: number } } } = {}
 				for i, entry in shop.entries do
-					local forClass = entry.classes == nil or table.find(entry.classes, chosen) ~= nil
-					if forClass then
+					local def = Items.get(entry.item)
+					if chosen == "all" or FILTER_OF[def and def.slot or ""] == chosen then
 						local tier = entry.level or 0
 						byTier[tier] = byTier[tier] or {}
 						table.insert(byTier[tier], { entry = entry, index = i })
 					end
 				end
 				local order = 0
-				-- Canvas offset of the next element (the class tabs row comes first; list padding 6).
-				local offset = 44 + 6
 				for _, tier in Shops.WEAPONSMITH_TIERS do
 					local group = byTier[tier]
 					if not group then
@@ -621,7 +706,7 @@ local function ShopWindow(scope: Scope, props: Props): Fusion.Child
 							y = offset,
 							build = function()
 								if alive then
-									local built = buyRow(s, id, shop, row.entry, 0, props.ShowModal) :: any
+									local built = buyRow(s, id, shop, row.entry, 0) :: any
 									built.Parent = holder
 								end
 							end,
@@ -634,12 +719,14 @@ local function ShopWindow(scope: Scope, props: Props): Fusion.Child
 				local classId = State.Get({ "character", "class" }) or ""
 				for i, entry in shop.entries do
 					if ShopPrice.offered(entry, classId) then
-						table.insert(rows, buyRow(s, id, shop, entry, i, props.ShowModal))
+						table.insert(rows, buyRow(s, id, shop, entry, i))
 					end
 				end
 			end
 			return rows
 		elseif current == "sell" then
+			-- S95: the dealer (no gear of its own) points to the player's class vendor.
+			local bar = if shop and #shop.entries == 0 then vendorBar(s, use, shop.id, props.Guide, -1) else nil
 			local list = {
 				s:New("TextLabel")({
 					LayoutOrder = 0,
@@ -680,6 +767,9 @@ local function ShopWindow(scope: Scope, props: Props): Fusion.Child
 					},
 				}),
 			}
+			if bar then
+				table.insert(list, bar)
+			end
 			local grid = {}
 			local keys = {}
 			for key in use(inventory) or {} do
@@ -835,11 +925,16 @@ local function ShopWindow(scope: Scope, props: Props): Fusion.Child
 	return {
 		Tabs(scope, {
 			Selected = tab,
-			Tabs = {
-				{ id = "buy", label = Text.T(scope, "shop.tab.buy") },
-				{ id = "sell", label = Text.T(scope, "shop.tab.sell") },
-				{ id = "buyback", label = Text.T(scope, "shop.tab.buyback") },
-			},
+			Tabs = if canBuy
+				then {
+					{ id = "buy", label = Text.T(scope, "shop.tab.buy") },
+					{ id = "sell", label = Text.T(scope, "shop.tab.sell") },
+					{ id = "buyback", label = Text.T(scope, "shop.tab.buyback") },
+				}
+				else {
+					{ id = "sell", label = Text.T(scope, "shop.tab.sell") },
+					{ id = "buyback", label = Text.T(scope, "shop.tab.buyback") },
+				},
 		}),
 		scope:New("TextLabel")({
 			Name = "Gold",

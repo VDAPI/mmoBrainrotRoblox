@@ -5,11 +5,24 @@
 local Monsters = require("../Data/Monsters")
 local Quests = require("../Data/Quests")
 local Rng = require("./Rng")
+local Shops = require("../Data/Shops")
 local SkillData = require("../Data/Skills")
 
 local QuestLogic = {}
 
 type Objective = Quests.Objective
+
+-- S95 (DESIGN-15 §1): `npc` of a talk / deliver objective that means "the vendor of the player's class".
+QuestLogic.CLASS_VENDOR = "classVendor"
+
+-- The NPC an objective's `npc` points at for a character of `classId`: the class vendor for CLASS_VENDOR (nil
+-- without a class), else `npc` itself.
+function QuestLogic.npcFor(npc: string?, classId: string?): string?
+	if npc == QuestLogic.CLASS_VENDOR then
+		return Shops.vendorOf(classId)
+	end
+	return npc
+end
 
 -- How much an event advances an objective (0 when it does not match). `roll` (0..1) decides `collect`.
 function QuestLogic.amount(objective: Objective, kind: string, data: { [string]: any }, roll: number): number
@@ -59,10 +72,11 @@ function QuestLogic.amount(objective: Objective, kind: string, data: { [string]:
 	elseif t == "equip" then
 		return if kind == "equip" and (data.rarity or 1) >= (objective.rarity or 1) then 1 else 0
 	elseif t == "talk" then
-		return if kind == "talk" and data.npc == objective.npc then 1 else 0
+		local target = QuestLogic.npcFor(objective.npc, data.classId)
+		return if kind == "talk" and target ~= nil and data.npc == target then 1 else 0
 	elseif t == "deliver" then
 		-- S27: `npc` nil = the quest's turn-in NPC (the caller passes it as data.turnIn).
-		local target = objective.npc or data.turnIn
+		local target = QuestLogic.npcFor(objective.npc, data.classId) or data.turnIn
 		return if kind == "talk" and target ~= nil and data.npc == target then 1 else 0
 	elseif t == "use" then
 		-- S27: one anchor once; `data.used` lists the anchors this objective already counted.

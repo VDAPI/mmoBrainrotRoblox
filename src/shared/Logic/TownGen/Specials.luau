@@ -1,9 +1,11 @@
 --!strict
 -- The city's landmark buildings (S21, MIASTO.md §6): market hall, town hall with a clock tower, temple, castle
--- keep with its curtain wall, forge, tournament stands, and the house-like ones (guild hall, armoury,
--- apothecary, tavern, stable, water mill, granary, guardhouse) built on Houses with their own trimmings. Pure.
+-- keep with its curtain wall, forge, tournament stands, the class vendors' lodge and tower (S95, ClassHalls), and the
+-- house-like ones (guild hall, armoury, apothecary, tavern, stable, water mill, granary, guardhouse) built on Houses
+-- with their own trimmings. Pure.
 
 local Blueprint = require("./Blueprint")
+local ClassHalls = require("./ClassHalls")
 local Houses = require("./Houses")
 local Palette = require("./Palette")
 local Parts = require("./Parts")
@@ -795,6 +797,15 @@ local HOUSE_LIKE: { [string]: { any } } = {
 
 function Specials.all(city: any, ground: Ground): { Build }
 	local out: { Build } = {}
+	-- S95: helpers for the class vendors' buildings (Logic/TownGen/ClassHalls)
+	local kit: ClassHalls.Kit = {
+		houseLike = houseLike,
+		seedOf = seedOf,
+		lookFor = lookFor,
+		floorOf = floorOf,
+		banner = banner,
+		o = o,
+	}
 	for _, sp in city.specials do
 		local kind = sp.kind
 		if kind == "marketHall" then
@@ -809,6 +820,10 @@ function Specials.all(city: any, ground: Ground): { Build }
 			table.insert(out, forge(sp, ground))
 		elseif kind == "arena" then
 			table.insert(out, arena(sp, city, ground))
+		elseif kind == "hunterLodge" then
+			table.insert(out, ClassHalls.hunterLodge(sp, ground, kit))
+		elseif kind == "mageTower" then
+			table.insert(out, ClassHalls.mageTower(sp, ground, kit))
 		else
 			-- house-like specials: a big house plus trimmings in its local frame
 			local look = HOUSE_LIKE[kind] or HOUSE_LIKE.default

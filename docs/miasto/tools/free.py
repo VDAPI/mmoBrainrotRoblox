@@ -3,17 +3,22 @@ import plan as P
 from shapely.geometry import Point, Polygon, LineString, box
 from shapely.ops import unary_union
 
-def occupied():
+def occupied(base=False):
+    """base=True: the plan before the late additions of S95 (P.BASE), so the gardens keep their rng sequence."""
+    lots = P.BASE["lots"] if base else P.LOTS
+    specials = P.BASE["specials"] if base else P.SPECIALS
+    streets = P.BASE["streets"] if base else P.STREETS
+    npcs = P.BASE["npcs"] if base else P.NPCS
     occ = []
-    for l in P.LOTS:
+    for l in lots:
         occ.append(P.rect_poly(l["x"], l["z"], l["w"], l["d"], l["rot"]).buffer(2.5))
-    for sp in P.SPECIALS:
+    for sp in specials:
         if sp["kind"] == "arena":
             o = P.ARENA["half"] + P.ARENA["stands"] + 4
             occ.append(box(sp["x"] - o, sp["z"] - o, sp["x"] + o, sp["z"] + o))
         else:
             occ.append(P.rect_poly(sp["x"], sp["z"], sp["w"], sp["d"], sp["rot"]).buffer(5))
-    for st in P.STREETS:
+    for st in streets:
         occ.append(P.street_poly(st, 1.5))
     for sq in P.SQUARES:
         occ.append(Polygon(sq["poly"]).buffer(1))
@@ -31,14 +36,14 @@ def occupied():
     occ.append(Point(*P.FOUNTAIN).buffer(14))
     for wx, wz in P.WELLS:
         occ.append(Point(wx, wz).buffer(6))
-    for n, (x, z, f) in P.NPCS.items():
+    for n, (x, z, f) in npcs.items():
         occ.append(Point(x, z).buffer(6))
     occ.append(Point(P.SPAWN[0], P.SPAWN[1]).buffer(10))
     return unary_union(occ)
 
-def free_space():
+def free_space(base=False):
     inner = P.WALL_POLY.buffer(-9)
-    return inner.difference(occupied())
+    return inner.difference(occupied(base))
 
 if __name__ == "__main__":
     fs = free_space()

@@ -17,6 +17,7 @@ const BUILDING_IMAGE: Record<string, string> = {
   ratusz: "ratusz",
   hala: "rynek",
   mlyn: "mlyn",
+  donzon: "zamek", // S95: the Warriors' vendor stands at the keep
 };
 
 export interface CityImage {

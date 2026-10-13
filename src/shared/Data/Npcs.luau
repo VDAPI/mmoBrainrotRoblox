@@ -20,6 +20,7 @@ export type Service =
 	| "quests" -- S11: daily contracts board
 	| "story" -- S11: main story quests
 	| "talk" -- S27: only conversation (side quests, gossip)
+	| "vendors" -- S95: the dealer's "Where can I buy gear?" (leads to the player's class vendor, client only)
 
 export type NpcDef = {
 	id: string,
@@ -76,18 +77,37 @@ npc({
 	colors = { body = "#5A4636", accent = "#8E8E93" },
 	icon = "⚒",
 })
--- Weaponsmith (S18, DESIGN §8a): stall between the forge and the alchemist.
+-- Class vendors (S95, DESIGN-15 §1): gear of one class each, at a place of that class (the castle keep, the temple,
+-- the hunters' lodge, the mages' tower); the dealer in the armoury only buys and sells back.
+local function classVendor(id: string, colors: { body: string, accent: string }, icon: string, x: number, z: number)
+	npc({
+		id = id,
+		map = "city",
+		nameKey = `npc.{id}.name`,
+		greetingKey = `npc.{id}.greeting`,
+		services = { "shop" },
+		shop = id,
+		position = { x = x, z = z },
+		facing = 0,
+		colors = colors,
+		icon = icon,
+	})
+end
+classVendor("vendor_warrior", { body = "#5A2E2E", accent = "#C9CED6" }, "⚔", -210, -205)
+classVendor("vendor_cleric", { body = "#E8E2D0", accent = "#C8A040" }, "✚", -110, -130)
+classVendor("vendor_hunter", { body = "#3E5A34", accent = "#8A6A44" }, "➶", 262, 21)
+classVendor("vendor_mage", { body = "#2E3A6B", accent = "#8E7CC3" }, "✦", -246, -168)
 npc({
-	id = "weaponsmith",
+	id = "fence",
 	map = "city",
-	nameKey = "npc.weaponsmith.name",
-	greetingKey = "npc.weaponsmith.greeting",
-	services = { "shop" },
-	shop = "weaponsmith",
-	position = { x = -150, z = -48 },
-	facing = 180,
-	colors = { body = "#4A3A2E", accent = "#C9CED6" },
-	icon = "⚔",
+	nameKey = "npc.fence.name",
+	greetingKey = "npc.fence.greeting",
+	services = { "shop", "vendors" },
+	shop = "fence",
+	position = { x = -126, z = 33 },
+	facing = 0,
+	colors = { body = "#4A3A2E", accent = "#B89A6A" },
+	icon = "⚖",
 })
 npc({
 	id = "alchemist",

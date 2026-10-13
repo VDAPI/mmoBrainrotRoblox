@@ -11,47 +11,54 @@ export type Entry = {
 	item: string,
 	price: number?, -- fixed price (overrides the item's buyPrice and value x buyMul)
 	pricePerLevel: number?, -- price = pricePerLevel x character level
-	-- Equipment sold at a fixed item level (weaponsmith, S18): common, no bonuses.
+	-- Equipment sold at a fixed item level (class vendors, S18 / S95): common, no bonuses.
 	key: string?, -- unique id of the entry when one item is sold several ways (elements); default `item`
 	ilvl: number?,
-	rarity: number?, -- rarity of the sold equipment (weaponsmith: Common)
+	rarity: number?, -- rarity of the sold equipment (class vendors: Common)
 	el: string?, -- element of a mage weapon
 	level: number?, -- character level needed to buy
-	classes: { string }?, -- classes that can use it (class tabs)
+	classes: { string }?, -- classes that can use it (S95: only they can buy it, Logic/ShopPrice.usableBy)
 	needsPaths: boolean?, -- S57: sold only to classes that have paths in Data/Paths (Logic/ShopPrice.offered)
 }
 
 export type ShopDef = {
 	id: string,
 	entries: { Entry },
-	classTabs: boolean?, -- the window shows class tabs grouped by tier (weaponsmith)
+	class: string?, -- class vendor (S95): the class whose gear this shop sells; nil for every other shop
 	buyMul: number?, -- price = value x buyMul for entries without a fixed price (default Data/ItemValue.buyMul)
 }
 
--- Weaponsmith (S18, S31 DESIGN §8a): every weapon and off-hand base at tiers 5, 15, ..., 95 (tier 1 is the
--- starting gear), Common, ilvl = tier, mage weapons once per element. No fixed price: value x buyMul.
+-- Tiers of the class vendors (name kept for the wiki key `weaponsmithTiers` and tests/balance.spec `shopTier`):
+-- 5, 15, ..., 95 (tier 1 is the starting gear).
 local WEAPONSMITH_TIERS: { number } = { 5, 15, 25, 35, 45, 55, 65, 75, 85, 95 }
 
-local function weaponsmith(): { Entry }
+-- Row order of a class vendor inside one tier.
+local VENDOR_SLOTS: { string } = { "weapon", "offhand", "helmet", "armor", "gloves", "boots" }
+
+-- S95 DESIGN-15 §1: every base the class can wear in the weapon, off-hand and armour slots, at tiers 5..95, Common,
+-- ilvl = level = tier; mage weapons once per element. Price value x buyMul.
+local function classVendor(classId: string): { Entry }
 	local list = {}
-	for _, base in Bases.list do
-		if base.slot ~= "weapon" and base.slot ~= "offhand" then
-			continue
-		end
-		for _, tier in WEAPONSMITH_TIERS do
-			local item = `{base.type}_{tier}`
-			local elements: { string? } = if base.elemental then Elements.WEAPON :: any else { false :: any }
-			for _, el in elements do
-				local element = if el then el :: string else nil
-				table.insert(list, {
-					item = item,
-					key = if element then `{item}:{element}` else item,
-					ilvl = tier,
-					rarity = Rarities.COMMON,
-					el = element,
-					level = tier,
-					classes = base.classes,
-				})
+	for _, tier in WEAPONSMITH_TIERS do
+		for _, slot in VENDOR_SLOTS do
+			for _, base in Bases.list do
+				if base.slot ~= slot or not base.classes or not table.find(base.classes, classId) then
+					continue
+				end
+				local item = `{base.type}_{tier}`
+				local elements: { string? } = if base.elemental then Elements.WEAPON :: any else { false :: any }
+				for _, el in elements do
+					local element = if el then el :: string else nil
+					table.insert(list, {
+						item = item,
+						key = if element then `{item}:{element}` else item,
+						ilvl = tier,
+						rarity = Rarities.COMMON,
+						el = element,
+						level = tier,
+						classes = base.classes,
+					})
+				end
 			end
 		end
 	end
@@ -95,7 +102,13 @@ local SHOPS: { [string]: ShopDef } = {
 			{ item = "ore_adamantite", price = 640, level = 90 },
 		},
 	},
-	weaponsmith = { id = "weaponsmith", entries = weaponsmith(), classTabs = true },
+	-- S95 (DESIGN-15 §1): one gear vendor per class (replaces the shared weaponsmith) and the dealer who only buys
+	-- and sells back (buyback).
+	vendor_warrior = { id = "vendor_warrior", class = "Warrior", entries = classVendor("Warrior") },
+	vendor_cleric = { id = "vendor_cleric", class = "Cleric", entries = classVendor("Cleric") },
+	vendor_hunter = { id = "vendor_hunter", class = "Hunter", entries = classVendor("Hunter") },
+	vendor_mage = { id = "vendor_mage", class = "Mage", entries = classVendor("Mage") },
+	fence = { id = "fence", entries = {} },
 	-- S27: tools sold where they are needed (Wit by Toad Pond, Dobromir at the Old Quarry).
 	fisher = { id = "fisher", entries = { { item = "fishing_rod" }, { item = "potion_hp_1" } } },
 	miner = { id = "miner", entries = { { item = "pickaxe" }, { item = "potion_hp_2" } } },
@@ -109,6 +122,14 @@ local SHOPS: { [string]: ShopDef } = {
 	},
 }
 
+-- S95: class id -> its vendor's shop (and NPC) id.
+local CLASS_VENDORS: { [string]: string } = {}
+for id, shop in SHOPS do
+	if shop.class then
+		CLASS_VENDORS[shop.class] = id
+	end
+end
+
 return table.freeze({
 	byId = SHOPS,
 	get = function(id: string): ShopDef?
@@ -116,4 +137,10 @@ return table.freeze({
 	end,
 	BUYBACK_SIZE = 10,
 	WEAPONSMITH_TIERS = table.freeze(WEAPONSMITH_TIERS),
+	VENDOR_SLOTS = table.freeze(VENDOR_SLOTS),
+	CLASS_VENDORS = table.freeze(CLASS_VENDORS),
+	-- The shop (and NPC) id of the vendor who sells gear for `classId`; nil without a class or for an unknown one.
+	vendorOf = function(classId: string?): string?
+		return if classId then CLASS_VENDORS[classId] else nil
+	end,
 })

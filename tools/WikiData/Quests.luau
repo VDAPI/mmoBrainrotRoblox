@@ -12,6 +12,7 @@ local Monsters = require("../../src/shared/Data/Monsters")
 local Names = require("./Names")
 local Npcs = require("../../src/shared/Data/Npcs")
 local QuestData = require("../../src/shared/Data/Quests")
+local QuestLogic = require("../../src/shared/Logic/QuestLogic")
 local Areas = require("../../src/shared/Data/Areas")
 local Basics = require("./Basics")
 local Places = require("./Places")
@@ -126,7 +127,10 @@ function Quests.label(o: any, turnIn: string?, lang: string): string
 		local npc = Npcs.get(id or "")
 		return if npc then textOf(npc.nameKey, lang) else "?"
 	end
-	if t == "talk" then
+	if t == "talk" and o.npc == QuestLogic.CLASS_VENDOR then
+		-- S95: the vendor depends on the reader's class
+		return Names.T("quest.obj.talkClassVendor", nil, lang)
+	elseif t == "talk" then
 		return Names.T("quest.obj.talk", { npc = npcName(o.npc) }, lang)
 	elseif t == "deliver" then
 		return Names.T(
@@ -203,6 +207,9 @@ local function objectives(list: { any }, turnIn: string?, level: number): { any 
 			"anchors",
 			"hold",
 		})
+		if entry.npc == QuestLogic.CLASS_VENDOR then
+			entry.npc = nil -- S95: "your class vendor" is no NPC id (ref:npcs)
+		end
 		entry.label = Names.combine(function(lang: string): string
 			return Quests.label(o, turnIn, lang)
 		end)

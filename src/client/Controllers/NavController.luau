@@ -311,6 +311,25 @@ function NavController.Guide(target: NavTarget.Target)
 	resetPath()
 end
 
+-- S95: shows the path to an NPC (the dealer's "Where can I buy gear?", the shop's "Guide me", /nav npc); false when
+-- the NPC does not exist.
+function NavController.GuideToNpc(npcId: string): boolean
+	local def = Npcs.get(npcId)
+	if not def then
+		return false
+	end
+	NavController.Guide({
+		map = def.map,
+		x = def.position.x,
+		z = def.position.z,
+		npc = def.id,
+		kind = "npc",
+		id = def.id,
+		labelKey = def.nameKey,
+	})
+	return true
+end
+
 -- Walks to `target` (only on the current map); returns false when it is elsewhere.
 function NavController.Walk(target: NavTarget.Target): boolean
 	if target.map ~= currentMap() then
@@ -651,18 +670,7 @@ local function fromAdmin(spec: any)
 	if spec.kind == "clear" then
 		NavController.Clear()
 	elseif spec.kind == "npc" then
-		local def = Npcs.get(spec.id)
-		if def then
-			NavController.Guide({
-				map = def.map,
-				x = def.position.x,
-				z = def.position.z,
-				npc = def.id,
-				kind = "npc",
-				id = def.id,
-				labelKey = def.nameKey,
-			})
-		end
+		NavController.GuideToNpc(spec.id)
 	elseif spec.kind == "map" then
 		local map = Maps.get(spec.id)
 		if map then

@@ -26,6 +26,8 @@ local BalanceTables = require("../tests/BalanceTables")
 local Bosses = require("../src/shared/Data/Bosses")
 local Combat = require("../src/shared/Data/Combat")
 local Config = require("../src/shared/Config")
+local Crafting = require("../src/shared/Data/Crafting")
+local Items = require("../src/shared/Data/Items")
 local LevelCurves = require("../src/shared/Logic/LevelCurves")
 local MonsterStats = require("../src/shared/Logic/MonsterStats")
 local Progression = require("../src/shared/Data/Progression")
@@ -34,6 +36,8 @@ local Reasons = require("./balance_reasons")
 local SkillModel = require("../tests/SkillModel")
 local SkillData = require("../src/shared/Data/Skills")
 local Skills = require("../src/shared/Logic/Skills")
+local ShopPrice = require("../src/shared/Logic/ShopPrice")
+local Shops = require("../src/shared/Data/Shops")
 
 local SNAPSHOT = "tools/balance_before.json"
 -- S94 (M2): the baseline of the full ledger S83-S94 (`--baseline <file>`; the S83 snapshot before the chain)
@@ -370,6 +374,50 @@ end
 
 -- Ledger --------------------------------------------------------------------------------------------------------
 
+-- S95: rows of one reason (`why` in column `whyCol`) with at least COLLAPSE_MIN keys (a whole shop added or removed at
+-- once) become one row: the keys' common prefix, "N kluczy" and "–" in the value columns.
+local COLLAPSE_MIN = 100
+local function collapse(rows: { { string } }, whyCol: number, valueCols: { number }): { { string } }
+	local count: { [string]: number } = {}
+	for _, r in rows do
+		count[r[whyCol]] = (count[r[whyCol]] or 0) + 1
+	end
+	local prefix: { [string]: string } = {}
+	for _, r in rows do
+		local why = r[whyCol]
+		if count[why] >= COLLAPSE_MIN then
+			local key = string.gsub(r[1], "`", "")
+			local p = prefix[why]
+			if p == nil then
+				prefix[why] = key
+			else
+				local n = 0
+				while n < #p and n < #key and string.sub(p, n + 1, n + 1) == string.sub(key, n + 1, n + 1) do
+					n += 1
+				end
+				prefix[why] = string.sub(p, 1, n)
+			end
+		end
+	end
+	local out: { { string } } = {}
+	local done: { [string]: boolean } = {}
+	for _, r in rows do
+		local why = r[whyCol]
+		if count[why] < COLLAPSE_MIN then
+			table.insert(out, r)
+		elseif not done[why] then
+			done[why] = true
+			local row = table.clone(r)
+			row[1] = `\`{prefix[why]}…\` ({count[why]} kluczy)`
+			for _, i in valueCols do
+				row[i] = "–"
+			end
+			table.insert(out, row)
+		end
+	end
+	return out
+end
+
 local unexplained: { string } = {}
 add("## Zmiany danych (księga, `tools/balance_reasons.luau`)")
 add()
@@ -420,7 +468,7 @@ else
 			if #rows > 0 then
 				add(`### {part[1]}`)
 				add()
-				tableOut({ "klucz", "wartość", "sesja", "powód" }, rows)
+				tableOut({ "klucz", "wartość", "sesja", "powód" }, collapse(rows, 4, { 2 }))
 			end
 		end
 		if #ranks > 0 then
@@ -527,7 +575,7 @@ do
 		end
 		add(`{#rows} kluczy zmienionych od bazy, {missing} bez powodu.`)
 		add()
-		tableOut({ "klucz", "przed S83", "po S94", "sesja", "powody (sesja: powód)" }, rows)
+		tableOut({ "klucz", "przed S83", "po S94", "sesja", "powody (sesja: powód)" }, collapse(rows, 5, { 2, 3 }))
 		local mRows: { { string } } = {}
 		for module, entry in laterModules do
 			table.insert(mRows, {
@@ -2403,6 +2451,73 @@ do
 			tableOut({ "cel", "wartość", "próg", "wynik", "kto asertuje" }, targetRows(out, "S87"))
 		end
 	end
+end
+
+-- S95 (I5): a full set from the class vendor ------------------------------------------------------------------
+
+-- Cheapest entry of `slot` at `tier` in the vendor's shop: its price and the item (nil when the class has none).
+local function cheapestAt(shop: any, slot: string, tier: number): (number?, string?)
+	local best: number?, item: string? = nil, nil
+	for _, entry in shop.entries do
+		local def = Items.get(entry.item)
+		if def and def.slot == slot and entry.ilvl == tier then
+			local price = ShopPrice.unit(entry, tier, 0, shop)
+			if best == nil or price < best then
+				best, item = price, entry.item
+			end
+		end
+	end
+	return best, item
+end
+
+-- Gold of the smith's recipe plus the materials the smith sells (ores, essence dust) at his prices; hides, fur and
+-- scales are monster parts (not counted).
+local SMITH_PRICES: { [string]: number } = {}
+for _, entry in (Shops.get("blacksmith") :: any).entries do
+	SMITH_PRICES[entry.item] = ShopPrice.unit(entry, 100, 0, Shops.get("blacksmith"))
+end
+local function forgeCost(item: string): number
+	local recipe = Crafting.get(item)
+	if not recipe then
+		return 0
+	end
+	local total = recipe.gold
+	for _, m in recipe.materials do
+		total += (SMITH_PRICES[m.id] or 0) * m.n
+	end
+	return total
+end
+
+do
+	add("## Komplet u sprzedawcy klasy (S95)")
+	add()
+	add(
+		"Najtańsza broń, druga ręka, hełm, pancerz, rękawice i buty klasy z jednego progu sprzedawcy (Zwykłe, `value × buyMul`), ten sam komplet z kuźni (złoto przepisu + rudy i pył esencji po cenach kowala; skóry, futro i łuski z potworów nie są liczone) i minuty zarobku na poziomie progu (`Balance.economyAt`: złoto i drop z zabić na godzinę). Raport, nie cel."
+	)
+	add()
+	local rows: { { string } } = {}
+	local CLASS_NAMES = { Warrior = "Wojownik", Cleric = "Kapłan", Hunter = "Łowca", Mage = "Mag" }
+	for _, classId in { "Warrior", "Cleric", "Hunter", "Mage" } do
+		local shop = Shops.get(Shops.vendorOf(classId) :: string) :: any
+		for _, tier in Shops.WEAPONSMITH_TIERS do
+			local price, forge = 0, 0
+			for _, slot in Shops.VENDOR_SLOTS do
+				local p, item = cheapestAt(shop, slot, tier)
+				if p and item then
+					price += p
+					forge += forgeCost(item)
+				end
+			end
+			local perMinute = B.economyAt(classId, tier).incomePerHour / 60
+			table.insert(rows, {
+				`{CLASS_NAMES[classId]} {tier}`,
+				fmtValue(price, "i"),
+				fmtValue(forge, "i"),
+				fmtValue(price / math.max(1e-9, perMinute), "1"),
+			})
+		end
+	end
+	tableOut({ "klasa · próg", "u sprzedawcy", "kuźnia (złoto + rudy)", "minuty zarobku" }, rows)
 end
 
 -- Skills on the reference builds (S85) ----------------------------------------------------------------------------

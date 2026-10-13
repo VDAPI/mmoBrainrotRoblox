@@ -441,7 +441,8 @@ function World.shops(ctx: any): any
 				table.insert(ctx.shopItems[e.item], { shop = id, gold = entry.gold, ilvl = e.ilvl })
 			end
 		end
-		table.insert(list, { id = id, npcs = npcsOf[id] or {}, classTabs = shop.classTabs == true, entries = entries })
+		-- S95: class vendors (key kept for the wiki shape)
+		table.insert(list, { id = id, npcs = npcsOf[id] or {}, classTabs = shop.class ~= nil, entries = entries })
 	end
 	return { shops = list, weaponsmithTiers = Clean.clean(Shops.WEAPONSMITH_TIERS) }
 end

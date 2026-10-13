@@ -388,6 +388,28 @@ T.describe("Balance 20-100: global (asserted from S87)", function()
 	end)
 end)
 
+-- S95 (I3): everything from the class vendor (armour at the vendor's tier, every 10 levels, instead of the
+-- blacksmith's tierFor) against the G4 thresholds of the global block (up to 15.5 s, Cleric 20, up to 36 % HP). Levels
+-- 21-100 asserted; 5-20 only a report (frozen since S91, docs/SESJE.md S95). G4 itself is unchanged.
+T.describe("Balance: kit from the class vendor (S95)", function()
+	T.it("every class at 21-100 stays within the G4 thresholds", function()
+		local bad = {}
+		for _, c in B.CLASSES do
+			for L = 21, 100 do
+				local p = B.player(c, L, { ilvl = B.shopTier(L), weaponIlvl = B.shopTier(L) })
+				local f = B.duel(p, B.monster(B.GENERIC, L))
+				local slow = if c == "Cleric" then 20 else 15.5
+				if f.seconds > slow or f.hpLost > 0.36 then
+					table.insert(bad, `{c} {L}: {fmt(f.seconds)} s, {fmt(f.hpLost)} HP`)
+				end
+			end
+		end
+		if #bad > 0 then
+			error(`{#bad} vendor kit row(s) outside G4: {table.concat(bad, "; ", 1, math.min(#bad, 20))}`, 0)
+		end
+	end)
+end)
+
 -- S88 (H): weapon traits, lines, monster defence, class checks, PvP and luck. Every row of SkillModel.targetsS88
 -- without `report` is asserted; the targets and bands are the test data of tests/Balance.luau (TRAIT_TARGETS,
 -- TYPE_SETS, NAMED_TARGETS, DEFENCE_TARGETS, PVP_TARGETS, ...), the report prints the same rows.
