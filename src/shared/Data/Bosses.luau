@@ -231,9 +231,15 @@ boss({
 	nameKey = "boss.azgor.name",
 	region = "ashen",
 	level = 70,
-	atkMul = 1.25,
+	-- S93 (balance plan D4, tests/balance.spec R.ashen.azgor.*): 3-5 players of level 69 need 4-6 min in the S83 /
+	-- S87 model (hpMul 1.25); the basic hit is ~10 % of a level 70 Mage's HP (atkMul 1.25 -> 0.36), the inferno on a
+	-- ranged Mage ~66 % (<= 70 %), the meteor softened to ~54 % of a Mage's HP per minute (variant (a) of plan 8.5),
+	-- the S32 tank ~346 %/min from a faster basic swing (speed 1.35: more hits to counter, S88 swordplay) and a
+	-- lighter flame cleave; a party without support lives on potions (Azgor bez wsparcia).
+	hpMul = 1.25,
+	atkMul = 0.36,
 	defMul = 1.3,
-	speed = 0.9,
+	speed = 1.35,
 	moveSpeed = 13,
 	attack = "melee",
 	damageKind = "phys",
@@ -246,7 +252,7 @@ boss({
 			length = 40,
 			width = 9,
 			windup = 1.3,
-			damage = 2.4,
+			damage = 5.2,
 			cooldown = 7,
 			phases = { 1, 2, 3 },
 			element = "fire",
@@ -259,7 +265,7 @@ boss({
 			radius = 16,
 			angle = 110,
 			windup = 1.2,
-			damage = 2.2,
+			damage = 3,
 			cooldown = 9,
 			phases = { 1, 2, 3 },
 			element = "fire",
@@ -270,8 +276,8 @@ boss({
 			target = "all",
 			radius = 7,
 			windup = 1.6,
-			damage = 2.6,
-			cooldown = 10,
+			damage = 4,
+			cooldown = 18,
 			phases = { 1, 2, 3 },
 			element = "fire",
 			damageKind = "magic",
@@ -283,7 +289,7 @@ boss({
 			radius = 30,
 			inner = 8,
 			windup = 2,
-			damage = 3.4,
+			damage = 6.6,
 			cooldown = 14,
 			phases = { 3 },
 			element = "fire",
@@ -291,8 +297,10 @@ boss({
 		},
 	},
 	summons = {
-		{ phase = 2, monster = "fireGolem", level = 69, count = 10, shield = true },
-		{ phase = 3, monster = "fireGolem", level = 70, count = 10, shield = true },
+		-- S93: the waves at 58 / 59 (were 69 / 70): a party of 3 loses <= 110 % HP per member per wave (S32 limit;
+		-- summoned helpers hit without the group damage reduction, Balance.summonHelpers)
+		{ phase = 2, monster = "fireGolem", level = 58, count = 10, shield = true },
+		{ phase = 3, monster = "fireGolem", level = 59, count = 10, shield = true },
 	},
 	haste = { [3] = 1.2 },
 	enrageAfter = 600,

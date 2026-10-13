@@ -1,6 +1,7 @@
 --!strict
 -- Azgor, Lord of Flames (boss 70). Data (Data/Bosses): fire waves along a line at a random player, flame
--- cleave, meteors under every player; phase 2 (70 %) fire golems every 30 s; phase 3 (35 %) inferno ring.
+-- cleave, meteors under every player; a shield wave of fire golems at the start of phases 2 (70 %) and 3 (35 %);
+-- phase 3 inferno ring.
 -- The script adds the lava field of phase 3: the floor beyond a safe circle turns to lava and the safe
 -- circle shrinks from 50 to 20 studs over two minutes; standing on lava burns every second.
 

@@ -73,10 +73,11 @@ T.describe("BossSchedule (S87)", function()
 			{ "morvane", 3, "shadowBoltFast", 8.5 },
 			{ "morvane", 3, "curseField", 5.7 },
 			{ "morvane", 3, "deathRing", 2.8 },
-			{ "azgor", 3, "fireWave", 4.5 },
-			{ "azgor", 3, "flameCleave", 4.4 },
-			{ "azgor", 3, "meteor", 4.4 },
-			{ "azgor", 3, "inferno", 2.9 },
+			-- S93: Azgor's meteor every 18 s (was 10; 4.5 / 4.4 / 4.4 / 2.9 before)
+			{ "azgor", 3, "fireWave", 5.5 },
+			{ "azgor", 3, "flameCleave", 5.4 },
+			{ "azgor", 3, "meteor", 2.7 },
+			{ "azgor", 3, "inferno", 2.8 },
 			{ "vaelgrath", 3, "frostBreath", 4.1 },
 			{ "vaelgrath", 3, "wingBuffet", 4.0 },
 			{ "vaelgrath", 3, "tailSwipe", 4.0 },
@@ -95,9 +96,10 @@ T.describe("BossSchedule (S87)", function()
 		T.expect(old.perMinute.sweep).toBeNear(6.4, 0.15)
 	end)
 
-	T.it("BossTuning keeps the values moved out of the server (2.2 / 0.7 / 1.4) and the model reads them", function()
+	-- S93: Azgor's lava 0.7 -> 2.2 (one tick ~20 % of a level 70 Mage after atkMul 0.36)
+	T.it("BossTuning keeps the values moved out of the server (2.2 / 2.2 / 1.4) and the model reads them", function()
 		T.expect(BossTuning.globalGap).toBe(2.2)
-		T.expect(BossTuning.hazards.azgor.lava).toBe(0.7)
+		T.expect(BossTuning.hazards.azgor.lava).toBe(2.2)
 		T.expect(BossTuning.hazards.vaelgrath.freezingStorm).toBe(1.4)
 		T.expect(B.BOSS_GLOBAL_GAP).toBe(BossTuning.globalGap)
 		T.expect(B.HAZARDS.azgor.damage).toBe(BossTuning.hazards.azgor.lava)

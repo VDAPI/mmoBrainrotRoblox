@@ -654,7 +654,7 @@ for _, cave in
 			region = "ashen",
 			i = 3,
 			row = 12000,
-			min = 49,
+			min = 46, -- S93: Elites from 46
 			max = 56,
 			biome = "cave",
 			wx = 0.69,

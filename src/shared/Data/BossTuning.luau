@@ -8,7 +8,8 @@ return table.freeze({
 	globalGap = 2.2,
 	-- Scripted hazards by boss and hazard id: damage as a multiple of the boss attack, like any attack.
 	hazards = table.freeze({
-		azgor = table.freeze({ lava = 0.7 }),
+		-- S93: 0.7 -> 2.2 (one tick ~20 % of a level 70 Mage's HP after atkMul 0.36)
+		azgor = table.freeze({ lava = 2.2 }),
 		vaelgrath = table.freeze({ freezingStorm = 1.4 }),
 	}),
 })

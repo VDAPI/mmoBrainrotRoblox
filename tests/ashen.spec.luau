@@ -39,7 +39,7 @@ local BRIEF = {
 	{ "ashen_burntruins", { 55, 61 }, { "fireImp", "desertScorpion" }, 6, "exp" },
 	{ "ashen_dunes", { 55, 63 }, { "desertScorpion", "desertMummy" }, 7, "gold" },
 	{ "ashen_crags", { 58, 66 }, { "wyvern", "basilisk" }, 6, "exp" },
-	{ "ashen_ashroad", { 61, 67 }, { "basilisk", "wyvern" }, 4, "gold" },
+	{ "ashen_ashroad", { 61, 69 }, { "basilisk", "wyvern" }, 4, "gold" }, -- S93: to 69
 	{ "ashen_tombs", { 66, 70 }, { "desertMummy", "basilisk" }, 5, nil },
 }
 

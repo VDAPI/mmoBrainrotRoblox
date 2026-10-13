@@ -216,10 +216,12 @@ end
 Balance.TRAIT_TARGETS = {
 	traitTarget("swordplay", "guardian.loner", "sword1h", "shield", { "group", "elite", "boss" }),
 	-- S89 (F4): 0.044 at 45 and 70 after the S89 nodes (asserted); 100 stays report
+	-- S93: 45 in the report too: the S84 boss situation at 45 is Azgor moved to 45 (Balance.bossFightAt), whose shield
+	-- waves at 58 / 59 (<= 110 % per member of a party of 3, C7) give the tank fewer helper attacks to counter
 	traitTarget("swordplay", "standard.commander", "sword1h", "shield", { "group", "elite", "boss" }, {
-		reportSession = "S89",
-		reportAt = { 100 },
-		reportWhy = "poza zasięgiem dźwigni S89: 0.039 at 100; the Standard-Bearer counters only with the sword's fixed 10 % (no Counterattack node in its rows 4-11), trait values are S88's (owner)",
+		reportSession = "S93", -- S89 (100), S93 (45)
+		reportAt = { 45, 100 },
+		reportWhy = "poza zasięgiem dźwigni S89: 0.039 at 100; the Standard-Bearer counters only with the sword's fixed 10 % (no Counterattack node in its rows 4-11), trait values are S88's (owner). Poza zasięgiem dźwigni S93: 0.038 at 45 (the S84 boss at 45 is Azgor with the S93 waves 58 / 59; owner: the boss of the situation at 45)",
 	}),
 	traitTarget("twinCut", "standard.commander", "saber1h", "shield", { "single", "elite" }),
 	traitTarget("twinCut", "guardian.defender", "saber1h", "shield", { "single", "elite" }, {
@@ -2250,6 +2252,13 @@ export type BossFight = {
 	-- S91: damage per second taken by member i over the whole fight (active phases and shield waves; the shield
 	-- helpers hit the tank)
 	memberDps: { number },
+	-- S93: share of the max HP per minute one member of each class takes from the boss's `all` attacks (Azgor's
+	-- meteor under every player; the worst member of the class) over the active phases (casts per minute of
+	-- bossCadence weighted by the phases' active seconds x one hit x specialHit, no enrage); S94 reads the same field
+	-- for Vaelgrath
+	raid: { [string]: number },
+	-- S93: one tick of the scripted hazard / the class's max HP (hazards.perTick; empty without a hazard)
+	hazardTick: { [string]: number },
 }
 
 -- S92: the helpers of a boss summon as the server spawns them: Boss.spawnSummons -> DungeonService spawnMonster ->
@@ -2308,6 +2317,8 @@ function Balance.bossFight(bossId: string, team: { Player }, opts: BossOpts?): B
 	local tankTotal, fightingTotal, shieldTankHp = 0, 0, 0
 	local shieldAttacks, shieldKills, shieldTotal = 0, 0, 0
 	local biggest: { [string]: number } = {}
+	-- S93: damage of `all` attacks per member over the active phases (per member: a class can be in the team twice)
+	local raidTotal: { number } = {}
 	for phase = 1, #thresholds - 1 do
 		local share = thresholds[phase] - thresholds[phase + 1]
 		-- shield waves at the phase start (and every `every` s of the phase)
@@ -2385,6 +2396,10 @@ function Balance.bossFight(bossId: string, team: { Player }, opts: BossOpts?): B
 						end
 						local top = hit * Combat.randomMax / p.values.maxHp
 						biggest[p.classId] = math.max(biggest[p.classId] or 0, top)
+						if attack.target == "all" then
+							-- S93: meteor per minute (Boss.luau targetsFor: `all` = a circle under every player)
+							raidTotal[i] = (raidTotal[i] or 0) + perSecond * active
+						end
 					end
 				end
 			end
@@ -2455,6 +2470,17 @@ function Balance.bossFight(bossId: string, team: { Player }, opts: BossOpts?): B
 			end
 			return out
 		end)(),
+		raid = (function(): { [string]: number }
+			-- the worst member of each class (members of one class share level and gear in the model)
+			local out: { [string]: number } = {}
+			for i, total in raidTotal do
+				local p = team[i]
+				local share = total / math.max(1e-9, fightingTotal) * 60 / p.values.maxHp
+				out[p.classId] = math.max(out[p.classId] or 0, share)
+			end
+			return out
+		end)(),
+		hazardTick = if hazards then hazards.perTick else {},
 	}
 end
 
@@ -3691,6 +3717,561 @@ do
 	end
 end
 
+-- S93: the Scorched Wastes 45-70 and Azgor (balance plan, renumbered S55 draft) -------------------------------------
+
+Balance.S93 = {
+	bossLevel = 69, -- the parties of the Azgor rows (3-5 players of level 69)
+	minutes = { 4, 6 },
+	mageHit = 0.70, -- biggest hit / HP of a level 70 Mage (inferno on a ranged Mage)
+	basicHit = { 0.07, 0.12 }, -- Azgor's basic hit / HP of a level 70 Mage
+	tankPerMinute = 3.5, -- S32 model: the tank's HP per minute from basic and threat attacks
+	wave = 1.10, -- HP per member per shield wave (the S32 group limit)
+	meteor = 0.60, -- C4 (a): meteor per minute / HP of a level 70 Mage, phases 1-3
+	lava = { 0.15, 0.25 }, -- one lava tick / HP of a level 70 Mage
+	-- T-SK6 band (plan D1, ROZWOJ 0: 1.0-2.0; S93 C6: a fallback threshold at most 2.5). S93: NOT DONE, the row is
+	-- in Balance.S93_REPORT and in docs/PROGRESS.md "Niedokończone" (12.8, owner's decision)
+	tsk6 = { 1.0, 2.5 },
+	mythicRolls = 500,
+	-- pace (F, plan D4): the window model of S91, Warrior, GENERIC, rest, no boss quests
+	pace = { hours = { 21.25, 28.75 }, h69 = { 0.98, 1.32 }, step = 1.30 },
+	guardLevels = { 50, 55, 60, 65, 69, 70 },
+	areas = 2, -- every level 46-70 in at least two outdoor areas (frostpeak_valley counts at 70)
+	-- gold (plan F)
+	up3 = 1.05,
+	backpacks = { { id = "backpack_130", level = 50 } },
+	backpackLevels = { 3, 8 },
+	chainPotions = { 0.15, 0.30 },
+	potionTiers = { 3, 4, 5 }, -- gold per HP grows with quality: Large <= Great <= Mighty
+	supportLevels = { 55, 65 },
+	-- the part ingredients of a recipe with level 45-70 (J2, J3)
+	parts = { "salamander_scale", "magma_shard", "thick_hide", "crow_feather", "toad_venom", "cursed_bone" },
+	-- G2: the four Mage path bands of S90 (SkillModel.TSK4_BANDS)
+	tsk4Builds = {
+		"destroyer.destroyerExp",
+		"destroyer.destroyerBoss",
+		"arcanist.arcanistBoss",
+		"arcanist.arcanistOverload",
+	},
+	d5Levels = { 69 }, -- the S84 region rows have 45 / 50 / 55 / 60 / 65
+}
+
+-- S93 (B4): part uses: for every material the alchemist (Recipes.list) and smith (Crafting.list) recipes with a level
+-- in [minLevel, maxLevel] that take it as an ingredient. S94 calls it for 70-100.
+function Balance.partUses(minLevel: number, maxLevel: number): { [string]: { string } }
+	local out: { [string]: { string } } = {}
+	local function add(material: string, recipeId: string)
+		local list = out[material]
+		if not list then
+			list = {}
+			out[material] = list
+		end
+		if not table.find(list, recipeId) then
+			table.insert(list, recipeId)
+		end
+	end
+	for _, r in Recipes.list do
+		if r.level >= minLevel and r.level <= maxLevel then
+			for _, ing in r.ingredients do
+				add(ing.id, r.id)
+			end
+		end
+	end
+	for _, r in Crafting.list do
+		if r.level >= minLevel and r.level <= maxLevel then
+			for _, mat in r.materials do
+				add(mat.id, r.id)
+			end
+		end
+	end
+	return out
+end
+
+-- S93 (H2): whether an Elite of the region's caves drops item level `ilvl`: a spawner of level L drops ilvl
+-- ItemRoll.dropLevelRange(L) (Loot.dropBaseLevel takes off the variant's levelAdd), over every spawner level.
+function Balance.eliteDropsIlvl(mapId: string, ilvl: number): boolean
+	for _, cave in Balance.caveSpawners(mapId) do
+		for _, e in cave.elites do
+			for L = e.min, e.max do
+				local low, high = ItemRoll.dropLevelRange(L)
+				if ilvl >= low and ilvl <= high then
+					return true
+				end
+			end
+		end
+	end
+	return false
+end
+
+-- S93 (B3, report): the protected +9 of a Legendary weapon at ilvl `ilvl`: gold, scrolls and Legend Cores (from +8,
+-- S87), the scrolls' gold at the alchemist, all in levels of income of the Warrior at that level.
+export type ProtectedFlow = {
+	ilvl: number,
+	gold: number,
+	scrolls: number,
+	cores: number,
+	scrollGold: number,
+	income: number,
+	levels: number, -- (gold + scrollGold) / income
+}
+function Balance.protectedFlow(ilvl: number): ProtectedFlow
+	local item = makeItem(tierId(Balance.LOADOUT.Warrior.weapon, ilvl), ilvl, Rarities.LEGENDARY, 0, {})
+	local plan = Balance.upgradePlan(item, 9, true)
+	local income = math.max(1e-9, Balance.levelIncome("Warrior", ilvl))
+	return {
+		ilvl = ilvl,
+		gold = plan.gold,
+		scrolls = plan.scrolls,
+		cores = plan.cores,
+		scrollGold = plan.scrollGold,
+		income = income,
+		levels = (plan.gold + plan.scrollGold) / income,
+	}
+end
+
+-- S93: gold per HP of the HP potion of `quality` (Data/Items/Consumables).
+function Balance.potionGoldPerHp(quality: number): number
+	local item = Items.get(`potion_hp_{quality}`) :: any
+	return item.buyPrice / item.use.amount
+end
+
+-- S93 (K1): the rows of the Scorched Wastes beyond the S83 region rows (ids "R.ashen.<group>..."): Azgor, the pace,
+-- the skill guards, support paths on the real spawners, the Elites' drop levels, hunting grounds, gold, parts.
+-- balance.spec asserts them with the region (TUNED.ashen) except the rows with `report` (Balance.S93_REPORT).
+function Balance.targetsS93(): { TargetRow }
+	local rows: { TargetRow } = {}
+	local S = Balance.S93
+	local SkillModel = (require :: any)("./SkillModel")
+	local L = S.bossLevel
+	local function add(
+		id: string,
+		group: string,
+		label: string,
+		value: number,
+		low: number?,
+		high: number?,
+		c: string?,
+		lv: number?
+	)
+		target(rows, `R.ashen.{id}`, group, label, value, low, high, c, lv)
+	end
+	local def = Bosses.byId.azgor :: any
+	-- Azgor: the S83 / S87 model (bossFight with shield waves and BossSchedule), both player variants
+	for _, nodes in { false, true } do
+		local at = if nodes then "@nodes" else ""
+		local suffix = if nodes then " z węzłami" else ""
+		for n = 3, 5 do
+			local f = Balance.bossFight("azgor", Balance.team(n, L, nodes))
+			local label = `Azgor, {n} graczy L{L}{suffix}: min`
+			add(`azgor.team{n}{at}`, "azgor", label, f.seconds / 60, S.minutes[1], S.minutes[2], nil, L)
+		end
+		for _, spec in { { 70, S.mageHit }, { 68, 1 - 1e-9 } } do
+			local team = Balance.team(5, L, nodes)
+			team[2] = Balance.player("Mage", spec[1], if nodes then { nodes = Balance.COMBAT_BUILD.Mage } else nil)
+			local hit = Balance.bossFight("azgor", team).biggestHit.Mage or 0
+			local label = `Azgor: największy cios / HP Maga L{spec[1]}{suffix}`
+			add(`azgor.mage{spec[1]}{at}`, "azgor", label, hit, nil, spec[2], "Mage", spec[1])
+		end
+		for n = 3, 5 do
+			local worst = 0
+			for _, w in Balance.shieldWaves("azgor", Balance.team(n, L, nodes)) do
+				worst = math.max(worst, w.worst)
+			end
+			local label = `Azgor, fala tarczy, {n} graczy L{L}{suffix}: HP na członka`
+			add(`azgor.wave{n}{at}`, "azgor", label, worst, nil, S.wave, nil, L)
+		end
+	end
+	do
+		local mage = Balance.boss("azgor", { Balance.player("Mage", 70) }).biggest[1].basic
+		add(
+			"azgor.basic70",
+			"azgor",
+			"Azgor: zwykły cios / HP Maga L70",
+			mage,
+			S.basicHit[1],
+			S.basicHit[2],
+			"Mage",
+			70
+		)
+		local tank = Balance.boss("azgor", Balance.team(5, L)).tankHpPerMinute
+		add("azgor.tank", "azgor", `Azgor (model S32): tank HP na minutę, L{L}`, tank, nil, S.tankPerMinute, nil, L)
+		-- the tank's whole intake (bossFight): only printed, the S32 row above counts basic and threat attacks
+		for n = 3, 5 do
+			local team = Balance.team(n, L)
+			local f = Balance.bossFight("azgor", team)
+			local perMinute = f.memberDps[1] * 60 / team[1].values.maxHp
+			add(
+				`azgor.tankFight{n}`,
+				"azgor",
+				`Azgor (bossFight): tank HP na minutę, {n} graczy`,
+				perMinute,
+				nil,
+				nil,
+				nil,
+				L
+			)
+			rows[#rows].report =
+				"tylko raport: całe przyjęcie tanka z meteorem i falami (miara S32 liczy atak podstawowy i threat)"
+		end
+		-- meteor per minute and one lava tick on a level 70 Mage (C4, C2; party of 5 with the Mage swapped in)
+		local team = Balance.team(5, L)
+		team[2] = Balance.player("Mage", 70)
+		local f = Balance.bossFight("azgor", team)
+		add(
+			"azgor.meteor",
+			"azgor",
+			"Azgor: meteor na minutę / HP Maga L70",
+			f.raid.Mage or 0,
+			nil,
+			S.meteor,
+			"Mage",
+			70
+		)
+		local tick = f.hazardTick.Mage or 0
+		add("azgor.lava", "azgor", "Azgor: jeden tick lawy / HP Maga L70", tick, S.lava[1], S.lava[2], "Mage", 70)
+		add("azgor.hpMul", "azgor", "Azgor ma hpMul", if def.hpMul ~= nil then 1 else 0, 1, nil)
+		-- enrage never in the fight (C2)
+		for n = 3, 5 do
+			local fight = Balance.bossFight("azgor", Balance.team(n, L))
+			add(
+				`azgor.enrage{n}`,
+				"azgor",
+				`Azgor, {n} graczy: wściekłość`,
+				if fight.enraged then 1 else 0,
+				nil,
+				0,
+				nil,
+				L
+			)
+		end
+	end
+	-- T-SK6 (C6): the dungeon Healer on the Defender, team S92 at the boss level - 1
+	do
+		local healer = SkillModel.build("healer.dungeon", "Cleric")
+		local r = SkillModel.healerVsBoss(healer, "azgor", { team = "s92" })
+		add(
+			"azgor.tsk6",
+			"azgor",
+			"T-SK6 Azgor: Uzdrowiciel lochowy na Obrońcy",
+			r.tsk6,
+			S.tsk6[1],
+			S.tsk6[2],
+			"Cleric",
+			L
+		)
+	end
+	-- Azgor bez wsparcia (C5): the S91 definition (Balance.bossNoSupport), waves of the same team
+	for n = 3, 5 do
+		local r = Balance.bossNoSupport("azgor", n, L)
+		add(`azgor.noSupport.{n}.seconds`, "noSupport", `Azgor bez wsparcia, {n} graczy: s`, r.seconds, nil, r.limit)
+		local worst, hit = 0, 0
+		for _, mem in r.members do
+			worst = math.max(worst, mem.ratio)
+			hit = math.max(hit, mem.biggest)
+		end
+		local label = `Azgor bez wsparcia, {n} graczy: przyjmowane / podtrzymanie (najgorszy)`
+		add(`azgor.noSupport.{n}.sustain`, "noSupport", label, worst, nil, Balance.S91.noSupport.sustain, nil, L)
+		local hitLabel = `Azgor bez wsparcia, {n} graczy: największy cios / HP`
+		add(`azgor.noSupport.{n}.hit`, "noSupport", hitLabel, hit, nil, Balance.S91.noSupport.hit, nil, L)
+		local team: { Player } = {}
+		local mul: { number } = {}
+		local m = Balance.monster(Balance.bossKind(def, n), def.level, "boss")
+		for i, mem in r.members do
+			local sp = SkillModel.player(SkillModel.build(mem.key), L)
+			team[i] = sp.p
+			mul[i] = mem.dps / math.max(1e-9, Balance.dps(sp.p, m) * Balance.BOSS_UPTIME)
+		end
+		local wave = 0
+		for _, w in Balance.shieldWaves("azgor", team, { dpsMul = mul }) do
+			wave = math.max(wave, w.worst)
+		end
+		local waveLabel = `Azgor bez wsparcia, fala tarczy, {n} graczy: HP na członka`
+		add(`azgor.noSupport.{n}.wave`, "noSupport", waveLabel, wave, nil, S.wave, nil, L)
+	end
+	-- the Mythic for every class (C8)
+	for _, c in Balance.CLASSES do
+		local share = Balance.unusableMythics("azgor", c, S.mythicRolls)
+		add(`azgor.mythic.{c}`, "azgor", `Azgor: Mityki nieużyteczne dla {c}`, share, nil, 0, c, 70)
+	end
+	-- pace 45 -> 70 (F)
+	do
+		local P = S.pace
+		local sum = 0
+		for lv = 45, 69 do
+			sum += Balance.paceWindowAt("Warrior", lv).hours
+		end
+		add("pace.sum", "pace", "Tempo 45 → 70 (okno, bez Azgora): h", sum, P.hours[1], P.hours[2], "Warrior")
+		local h69 = Balance.paceWindowAt("Warrior", 69).hours
+		add("pace.h69", "pace", "Tempo: h(69)", h69, P.h69[1], P.h69[2], "Warrior", 69)
+		for lv = 45, 69 do
+			local r = Balance.paceWindowAt("Warrior", lv).hours
+				/ math.max(1e-9, Balance.paceWindowAt("Warrior", lv - 1).hours)
+			add(`pace.step.{lv}`, "pace", `Tempo: h({lv}) / h({lv - 1})`, r, nil, P.step, "Warrior", lv)
+		end
+	end
+	-- skill guards in the band (G1): bases and the reference builds, T-SK3 of the reference builds. S93 (K2): the S92
+	-- rule: a guard of a build whose own value at 45 (S92's end of the band) is already above the limit and not below
+	-- the band's value is printed; any other row above the limit (70 included) stays asserted unless
+	-- Balance.S93_REPORT names it
+	for _, c in Balance.CLASSES do
+		for _, build in SkillModel.builds(c) do
+			local lim = SkillModel.GUARD_LIMITS
+			local g45 = SkillModel.guards(build, 45)
+			for _, lv in S.guardLevels do
+				local g = SkillModel.guards(build, lv)
+				local key = `{c}.{build.key}.{lv}`
+				for _, spec in
+					{
+						{ "tsk1", "tsk1rel", `T-SK1 {c} {build.key} L{lv} / L20` },
+						{ "tsk2", "tsk2rel", `T-SK2 {c} {build.key} L{lv} / L20` },
+						{ "tsk3", "tsk3cap", `T-SK3 {c} {build.key} L{lv} / areaCap` },
+					}
+				do
+					local field = spec[2]
+					local v = (g :: any)[field]
+					local limit = (lim :: any)[field]
+					local at45 = (g45 :: any)[field]
+					add(`guard.{spec[1]}.{key}`, "guards", spec[3], v, nil, limit, c, lv)
+					if spec[1] == "tsk3" and build.key == "base" then
+						rows[#rows].report = "tylko raport (T-SK3 podstawy, S90 I3)"
+					elseif at45 > limit and v <= at45 + 1e-9 then
+						rows[#rows].report =
+							`poza zasięgiem dźwigni S93: na 45 (pasmo S92) build ma już {string.format("%.2f", at45)}`
+					end
+				end
+			end
+		end
+	end
+	-- T-SK4 of the asserted Mage builds and T-SK5 of the dungeon Healer on the Defender in the band (G2)
+	for _, key in S.tsk4Builds do
+		local build = SkillModel.build(key, "Mage")
+		local band = SkillModel.TSK4_BANDS[key]
+		for _, lv in S.guardLevels do
+			local v = SkillModel.metrics(build, lv).tsk4
+			add(`tsk4.{key}.{lv}`, "guards", `T-SK4 Mage {key} {lv}`, v, band[1], band[2], "Mage", lv)
+		end
+	end
+	do
+		local healer = SkillModel.build("healer.dungeon", "Cleric")
+		for _, lv in S.guardLevels do
+			local v = SkillModel.oneHeal(healer, lv, SkillModel.defenderTank(lv))
+			local band = SkillModel.TSK5_BAND
+			add(`tsk5.{lv}`, "guards", `T-SK5 Uzdrowiciel lochowy na Obrońcy {lv}`, v, band[1], band[2], "Cleric", lv)
+		end
+	end
+	-- support and tank paths on the real spawners (D6, ROZWOJ 7.5): Elite won, Elite II lost
+	for _, spec in Balance.S92.supportBuilds do
+		local build = SkillModel.build(spec[2], spec[1])
+		for _, lv in S.supportLevels do
+			local elite, elite2 = SkillModel.eliteKinds(lv)
+			local ok = 0
+			if elite and elite2 then
+				local a = SkillModel.duel(build, lv, elite, "elite")
+				local b = SkillModel.duel(build, lv, elite2, "elite2")
+				ok = if a.won and not b.won then 1 else 0
+			end
+			local label = `{spec[2]} L{lv}: Elita wygrana, Elita II przegrana ({elite or "–"} / {elite2 or "–"})`
+			add(`support.{spec[2]}.{lv}`, "support", label, ok, 1, 1, spec[1], lv)
+		end
+	end
+	-- the Elites drop every item level 46-70 (H2), hunting grounds (D2)
+	for lv = 46, 70 do
+		local e = if Balance.eliteDropsIlvl("ashen", lv) then 1 else 0
+		add(`ilvl.elite.{lv}`, "drop", `Elity Spalonych Pustkowi dropią ilvl {lv}`, e, 1, nil, nil, lv)
+		add(`areas.{lv}`, "areas", `Expowiska z poziomem {lv}`, Balance.areasAt(lv), S.areas, nil, nil, lv)
+	end
+	-- D5 K0 at 69 (H1: 50 / 55 / 60 / 65 / 69; the S84 region rows stop at 65)
+	do
+		local d5 = Balance.REGION_TARGETS.d5
+		local u, h = d5.uniquePerHour, d5.heroicPerHour
+		for _, lv in S.d5Levels do
+			for _, c in Balance.CLASSES do
+				local d = Balance.dropsPerHour(c, lv, "K0", false)
+				add(
+					`d5.{c}.{lv}.unique`,
+					"d5",
+					`{c} {lv}: Unikaty dla klasy na h expienia`,
+					d.unique,
+					u[1],
+					u[2],
+					c,
+					lv
+				)
+				add(`d5.{c}.{lv}.heroic`, "d5", `{c} {lv}: Heroiki dla klasy na h Elit`, d.heroic, h[1], h[2], c, lv)
+			end
+		end
+	end
+	-- gold (I): +1..+3 of the weapon, chain potions (upper bound; the lower one in its own rows), backpack, prices
+	for lv = 46, 69 do
+		for _, u in Balance.upgradeVsIncome(lv) do
+			local label = `{u.classId} {lv}: +1…+3 / dochód poziomu`
+			add(`gold.up3.{u.classId}.{lv}`, "gold", label, u.up3, nil, S.up3, u.classId, lv)
+		end
+		for _, c in Balance.CLASSES do
+			local share = Balance.economyAt(c, lv, { potions = "chain" }).potionShare
+			local label = `{c} {lv}: mikstury łańcuchowe / dochód`
+			add(`gold.chain.{c}.{lv}`, "gold", label, share, nil, S.chainPotions[2], c, lv)
+			add(`gold.chainLow.{c}.{lv}`, "gold", `{label} (dolna granica)`, share, S.chainPotions[1], nil, c, lv)
+		end
+	end
+	for _, b in S.backpacks do
+		local item = Items.get(b.id) :: any
+		for _, c in Balance.CLASSES do
+			local levels = item.buyPrice / math.max(1e-9, Balance.levelIncome(c, b.level))
+			local label = `{c}: {b.id} (od {b.level}.) / dochód poziomu`
+			add(`gold.{b.id}.{c}`, "gold", label, levels, S.backpackLevels[1], S.backpackLevels[2], c, b.level)
+		end
+	end
+	for i = 2, #S.potionTiers do
+		local lower, higher = S.potionTiers[i - 1], S.potionTiers[i]
+		local d = Balance.potionGoldPerHp(higher) - Balance.potionGoldPerHp(lower)
+		add(`gold.potionOrder.{higher}`, "gold", `Złoto za 1 HP: jakość {higher} − jakość {lower}`, d, 0, nil)
+	end
+	-- parts (J): every kind of the region drops a part; the region's parts are ingredients of a recipe with level 45-70
+	for _, kind in Monsters.list do
+		if kind.region == 3 then
+			local tbl = LootTables.get(kind.lootTable) :: any
+			local has = 0
+			for _, m in tbl.materials do
+				local item = Items.get(m.id) :: any
+				if item and item.type == "part" then
+					has = 1
+				end
+			end
+			add(`parts.kind.{kind.id}`, "parts", `{kind.id}: część potwora`, has, 1, nil)
+		end
+	end
+	local uses = Balance.partUses(45, 70)
+	for _, part in S.parts do
+		add(`parts.recipe.{part}`, "parts", `{part}: składnik przepisu 45–70`, #(uses[part] or {}), 1, nil)
+	end
+	do
+		local elixir = Recipes.get("elixir_resFire") :: any
+		local v = if elixir then elixir.level else 0
+		add("parts.elixirFire", "parts", "elixir_resFire: poziom przepisu", v, 45, 45)
+	end
+	for _, row in rows do
+		local why = Balance.S93_REPORT[row.id]
+		if why then
+			row.report = why
+		end
+	end
+	return rows
+end
+
+-- S93 (K2): rows of targetsS93 out of reach of the S93 levers (printed with the reason; docs/DECYZJE.md S93).
+Balance.S93_REPORT = {} :: { [string]: string }
+do
+	local R = Balance.S93_REPORT
+	-- S93: Elita / Elita II ścieżek wsparcia i tanka poza zasięgiem dźwigni S93: każda ścieżka wygrywa Elitę II solo
+	-- z miksturami (HP na koniec 0,18-1,00), a krzywe Elit II trzyma duet <= 150% (1,11-1,24); dane ścieżek S89-S90
+	for _, spec in Balance.S92.supportBuilds do
+		for _, lv in Balance.S93.supportLevels do
+			R[`R.ashen.support.{spec[2]}.{lv}`] =
+				"poza zasięgiem dźwigni S93: wygrywa Elitę II solo z miksturami (krzywe Elit II trzyma duet ≤ 150%); dla właściciela"
+		end
+	end
+	-- S93: mikstury łańcuchowe (górna granica) poza zasięgiem dźwigni S93: Wielka na najniższej cenie w kolejności
+	-- jakości (700, 0,175 zł za 1 HP; próg Dużej 0,167) daje 0,28-0,82 dochodu; ceny jakości 1-3 i krzywa
+	-- potionCooldown są globalne
+	for lv = 46, 69 do
+		for _, c in Balance.CLASSES do
+			R[`R.ashen.gold.chain.{c}.{lv}`] =
+				"poza zasięgiem dźwigni S93: Wielka 700 to dół kolejności cen (0,175 ≥ 0,167 zł/HP), ceny 1–3 i potionCooldown globalne; dla właściciela"
+		end
+	end
+	-- S93: strażniki T-SK ponad limitem D1 i ponad wartością na 45 (reguła S92 ich nie zwalnia), każda grupa z
+	-- powodem i linią w DECYZJE S93; liczby (wartość na 45 → najwyższa w paśmie) w docs/BALANS.md
+	local guardReasons = {
+		-- S93: poza zasięgiem dźwigni S93: build już na 45 ponad limitem (pasmo S92), w paśmie rośnie z poziomem
+		-- (Mag do +28%, Kapłan do +19%, Łowca do +25%, Rzeźnik i Dowódca T-SK1 do +6% nad 45) przez sprzęt, statystyki
+		-- i rangi 46-70 całej klasy; węzły SkillCurves na rangach z pasma ruszają też 70 i 71+ (S94), a cięcie obrażeń
+		-- klasy zmienia jej cele obrażeń ścieżek; dla właściciela (który kontrakt obowiązuje w paśmie, lista S92)
+		rise = "poza zasięgiem dźwigni S93: na 45 już ponad limitem D1 (S92), w paśmie rośnie z poziomem klasy (do +28% nad 45); dla właściciela",
+		-- S93: poza zasięgiem dźwigni S93: Furia to zamrożone odniesienie obrażeń (S89, R1 2,4-2,6), T-SK1 1,16-1,18 na
+		-- 55-70 (1,13 na 45), T-SK2 1,32 na 70 (węzeł rzędu 9)
+		fury = "poza zasięgiem dźwigni S93: Furia to zamrożone odniesienie obrażeń (S89); dla właściciela",
+		-- S93: poza zasięgiem dźwigni S93: podstawa Wojownika do 1,5% ponad T-SK1 na 49-53 i 66-70, T-SK2 1,32-1,33 od
+		-- 66: ranga 10 Trzęsienia Ziemi z przełomem na 66 (ta sama wartość trzyma Furię, zamrożoną S89)
+		warriorBase = "poza zasięgiem dźwigni S93: ranga 10 Trzęsienia Ziemi na 66 (+7% wybuchu) trzyma też Furię (S89); dla właściciela",
+		-- S93: Strażnik z Groźbą: T-SK3 do 1,09 × areaCap 2,0 = 2,18 na 55-70; S89 C1: Strażnik ma 2,2 (DECYZJE S89)
+		guardian = "poza zasięgiem dźwigni S93: T-SK3 Strażnika ≤ 2,2 (S89 C1, Groźba), tu do 2,18",
+		-- S93: poza zasięgiem dźwigni S93: skok na 70 z węzła rzędu 9 ścieżki (wybór na 70., liczby S89) — Rzeźnik T-SK2
+		-- 1,17 → 1,42, Dowódca 1,26 → 1,74 (T-SK1 1,20 → 1,29), Opiekun 1,13 → 1,55 (T-SK1 1,11 → 1,19); Dowódca T-SK2
+		-- 1,26 na 69 (0,6% ponad, rangi 46-69); strażniki 70-100 dla S94 i właściciela
+		row9 = "poza zasięgiem dźwigni S93: skok na 70 z węzła rzędu 9 ścieżki (S89); dla S94 i właściciela",
+	}
+	for _, spec in
+		{
+			{ "tsk1", "Warrior.base", { 50, 69, 70 }, "warriorBase" },
+			{ "tsk2", "Warrior.base", { 69, 70 }, "warriorBase" },
+			{ "tsk1", "Warrior.base.loadout", { 69, 70 }, "warriorBase" },
+			{ "tsk2", "Warrior.base.loadout", { 69, 70 }, "warriorBase" },
+			{ "tsk3", "Warrior.guardian.defender", { 55, 60, 65, 69, 70 }, "guardian" },
+			{ "tsk3", "Warrior.guardian.loner", { 60, 65, 69, 70 }, "guardian" },
+			{ "tsk1", "Warrior.berserker.fury", { 55, 60, 65, 69, 70 }, "fury" },
+			{ "tsk2", "Warrior.berserker.fury", { 70 }, "fury" },
+			{ "tsk1", "Warrior.berserker.butcher", { 50, 55, 60, 65, 69, 70 }, "rise" },
+			{ "tsk2", "Warrior.berserker.butcher", { 70 }, "row9" },
+			{ "tsk1", "Warrior.standard.commander", { 50, 55, 60, 65, 69 }, "rise" },
+			{ "tsk1", "Warrior.standard.commander", { 70 }, "row9" },
+			{ "tsk2", "Warrior.standard.commander", { 69, 70 }, "row9" },
+			{ "tsk1", "Warrior.standard.warden", { 70 }, "row9" },
+			{ "tsk2", "Warrior.standard.warden", { 70 }, "row9" },
+			{ "tsk1", "Hunter.marksman.kingslayer", { 50, 55, 60, 69 }, "rise" },
+			{ "tsk2", "Hunter.marksman.kingslayer", { 50, 55, 60, 65, 69, 70 }, "rise" },
+			{ "tsk1", "Hunter.marksman.eliteHunter", { 50, 69 }, "rise" },
+			{ "tsk2", "Hunter.marksman.eliteHunter", { 50, 55, 60, 65, 69, 70 }, "rise" },
+			{ "tsk1", "Hunter.trapper.poacher", { 50, 55, 60, 65, 69, 70 }, "rise" },
+			{ "tsk2", "Hunter.trapper.poacher", { 50, 55, 60, 65, 69, 70 }, "rise" },
+			{ "tsk1", "Hunter.trapper.poisoner", { 50, 55, 60, 65, 69, 70 }, "rise" },
+			{ "tsk2", "Hunter.trapper.poisoner", { 50, 55, 60, 65, 69, 70 }, "rise" },
+		}
+	do
+		for _, lv in spec[3] do
+			R[`R.ashen.guard.{spec[1]}.{spec[2]}.{lv}`] = (guardReasons :: any)[spec[4]]
+		end
+	end
+	-- Mage and Cleric: the base and every reference build, T-SK1 and T-SK2 on 50-70 (reason `rise`)
+	for _, build in
+		{
+			"Mage.base",
+			"Mage.base.loadout",
+			"Mage.destroyer.destroyerExp",
+			"Mage.destroyer.destroyerBoss",
+			"Mage.arcanist.arcanistBoss",
+			"Mage.arcanist.arcanistOverload",
+			"Cleric.base",
+			"Cleric.healer.dungeon",
+			"Cleric.healer.solo",
+			"Cleric.fortune.plunder",
+			"Cleric.inquisitor.solo",
+			"Cleric.inquisitor.bulwark",
+		}
+	do
+		for _, metric in { "tsk1", "tsk2" } do
+			for _, lv in Balance.S93.guardLevels do
+				R[`R.ashen.guard.{metric}.{build}.{lv}`] = guardReasons.rise
+			end
+		end
+	end
+	-- S93: T-SK6 Azgora NIEDOKOŃCZONE (asercja ≤ 2,5 z C6 nie przechodzi, wynik 12,8; zasada 4 nie pozwala na raport,
+	-- więc to brak S93 w PROGRESS, nie poszerzone pasmo): Uzdrowiciel lochowy na 69 leczy ok. 1820 HP/s (19 maks. HP
+	-- Obrońcy na minutę), Obrońca przyjmuje ok. 142 HP/s (1,5 maks. HP na minutę). Samo Leczenie (rangi ≤ 45, odnowienie
+	-- 3 s, S91) daje ok. 20 × 0,31 HP tanka na minutę, czyli T-SK6 ok. 4 nawet bez reszty ścieżki; kotwica heal 70
+	-- (0,31 → 0,01) zmienia T-SK6 12,8 → 12,5 (część od maks. HP celu, S69); obrażenia w tanka ×5 łamią wiersz tanka
+	-- S32 (346%/min ≤ 350%). Dla właściciela: definicja T-SK6 (bez nadleczenia), przepustowość leczenia albo inny cel
+	R["R.ashen.azgor.tsk6"] =
+		"NIEDOKOŃCZONE S93: T-SK6 12,8 wobec ≤ 2,5 (C6) nieosiągalne dźwigniami S93 (Leczenie z rang ≤ 45 samo daje ok. 4, tank S32 346%/min); decyzja właściciela"
+	-- S93: T-SK2 podstawy Łowcy na 65 (1,285) poza zasięgiem dźwigni S93: skok przy progu sprzętu 65 (broń modelu
+	-- z progu 65, żadna ranga nie wypada na 65); na 66 Salwa ranga 10 wraca do 1,23
+	R["R.ashen.guard.tsk2.Hunter.base.65"] =
+		"poza zasięgiem dźwigni S93: skok przy progu sprzętu 65 (żadna ranga na 65), na 64 / 66 1,16 / 1,23; dla S94"
+	-- S93: T-SK3 Trapera „Kłusownik” na 65 (1,005) poza zasięgiem dźwigni S93: Pole Sideł rangi 1-2 (60, 64); niższa
+	-- ranga 1 z węzłem rangi 4 przesuwa rangę 3 trzymającą 70 (blok ścieżek S90)
+	R["R.ashen.guard.tsk3.Hunter.trapper.poacher.65"] =
+		"poza zasięgiem dźwigni S93: Pole Sideł rangi 1–2 (0,5% ponad), ranga 3 trzyma 70 w bloku ścieżek; dla S94"
+end
+
 -- Targets 20-100 (S83, balance plan 2.5) ------------------------------------------------------------------------
 
 Balance.GLOBAL_LEVELS = { 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100 }
@@ -4012,8 +4593,8 @@ end
 -- Regions (S83): TUNED[mapId] = true once its region session asserts it (S91 Meadows 1-20 in full, S92-S94 the
 -- rest); read by balance.spec ("Balance 20-100: regions") and the report. Starting thresholds of the balance plan;
 -- region sessions may tune them with a line in DECYZJE.
--- S92: the Dark Forest tuned (20-45 and Morvane)
-Balance.TUNED = { meadows = true, duskwood = true, ashen = false, frostpeak = false } :: { [string]: boolean }
+-- S92: the Dark Forest tuned (20-45 and Morvane). S93: the Scorched Wastes (45-70 and Azgor)
+Balance.TUNED = { meadows = true, duskwood = true, ashen = true, frostpeak = false } :: { [string]: boolean }
 Balance.REGION_TARGETS = {
 	-- S91: `classes` = W / Ł / M (the S32 Elite classes; the Cleric's Elites only printed)
 	eliteSingle = {

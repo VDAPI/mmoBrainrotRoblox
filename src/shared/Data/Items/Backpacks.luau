@@ -14,7 +14,8 @@ local DEFS: { { capacity: number, level: number, buyPrice: number, color: string
 	{ capacity = 80, level = 25, buyPrice = 30000, color = "#4A8FE7" },
 	-- S92: 100 slots 80 000 -> 50 000 (11.4 -> 7.1 levels of income at 35; 3-8 in the balance plan F)
 	{ capacity = 100, level = 35, buyPrice = 50000, color = "#3D6FD6" },
-	{ capacity = 130, level = 50, buyPrice = 200000, color = "#B455FF" },
+	-- S93: 130 slots 200 000 -> 76 000 (13.2 -> ~5 levels of income at 50)
+	{ capacity = 130, level = 50, buyPrice = 76000, color = "#B455FF" },
 	{ capacity = 160, level = 65, buyPrice = 500000, color = "#FF9F1C" },
 	{ capacity = 200, level = 80, buyPrice = 1200000, color = "#E8C25A" },
 }

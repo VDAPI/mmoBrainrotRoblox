@@ -2492,3 +2492,71 @@
   `Balance.unusableMythics`, `Balance.areasAt`, `Balance.eliteSpawnerAt`, `Balance.targetsS92` / `S92` / `S92_REPORT`,
   opcja `kind = "region"` w `paceWindowAt` i pole `hpPerExpGeneric` w `kindRates` (raport); istniejące funkcje liczą
   jak przed S92.
+- **S93 Spalone Pustkowia nastrojone (`TUNED.ashen = true`):** blok regionów `balance.spec` asertuje wiersze regionu
+  i `Balance.targetsS93` (Azgor, bez wsparcia, T-SK6, tempo, strażniki, ilvl Elit, expowiska, D5 na 69, złoto, części);
+  wiersze z `report` (`Balance.S93_REPORT`) tylko drukuje. Kotwice 70 (`monsterHp`, `monsterAtk`, krzywe Elit,
+  `expToNext`, `manaCost.Mage`, `heal`) sprawdzone i bez zmian, 71–99 jak po S87; `manaCost.Mage` dostał węzły pasma
+  50 / 55 / 60 (niżej).
+- **S93 Azgor:** `hpMul` 1,25 (nowy), `atkMul` 1,25 → 0,36, `speed` 0,9 → 1,35, Fala Ognia 2,4 → 5,2, Płomienne Cięcie
+  2,2 → 3, Meteor 2,6 → 4 co 18 s (było 10), Piekielny Krąg 3,4 → 6,6: 3 / 4 / 5 graczy L69 4,9 / 5,2 / 5,1 min
+  (z węzłami 4,4–4,6), największy cios 66% Maga L70 (68% L68), zwykły 10%, tank S32 346%/min. Kolejność ataków bez zmian.
+- **S93 meteor złagodzony (wariant (a) planu 8.5, domyślny do słowa właściciela):** 4 co 18 s = 54% HP Maga L70 na
+  minutę (było 215%); wariant (b) „sprawdzian leczenia” nie wybrany, bo T-SK6 i tak jest daleko ponad 2,0.
+- **S93 inferno leci:** z `BossSchedule.pick` (S87) i meteorem co 18 s każdy atak fazy 3 ma ≥ 64% tempa (inferno 2,8/min,
+  65%), także w kolejności listy S83; liczby kontrolne `bossschedule.spec` i `balancemodel.spec` poprawione, test
+  „lista głodzi pierścień” przeszedł na Morvane.
+- **S93 lawa Azgora 0,7 → 2,2 (`Data/BossTuning`):** jeden tick 20% HP Maga L70 przy `atkMul` 0,36 (bez zmian stałych
+  skryptu); S87 już przeniosło obrażenia lawy do `BossTuning`. Nagłówek `BossScripts/azgor.luau` poprawiony (fale
+  na początku faz 2 i 3, nie co 30 s).
+- **S93 fale tarczy Azgora 58 / 59 (było 69 / 70, FIX 2026-10-10 „poziom bossa −1 / bossa”):** drużyna 3 osób traci
+  85% / 98% HP na członka na falę (pomocnicy bez redukcji grupy, jak serwer; 263% / 275% na 69 / 70).
+- **S93 T-SK6 Azgora niedokończone (12,8 wobec sufitu C6 2,5):** próg 13,0 nie był asercją, więc wiersz ma próg 1,0–2,5
+  i stoi w `Balance.S93_REPORT` jako brak S93 (PROGRESS „Niedokończone”), nie jako poszerzone pasmo. Uzdrowiciel lochowy
+  na 69. leczy ok. 1820 HP/s (19 maks. HP Obrońcy na minutę), Obrońca przyjmuje 1,5 maks. HP na minutę; samo Leczenie
+  (rangi ≤ 45, odnowienie 3 s) daje T-SK6 ok. 4, kotwica `heal` 70 → 0,01 zmienia 12,8 → 12,5 (leczenie od maks. HP
+  celu, S69), a obrażenia w tanka ×5 łamią wiersz tanka S32 (346%/min). Decyzja właściciela.
+- **S93 `speed` Azgora 1,35 i Płomienne Cięcie 3 (zamiast 6):** szybszy atak podstawowy daje Fechtunkowi (S88, T1
+  Strażnika „Samotnika” na 45, gdzie sytuacja boss S84 to Azgor) dość ciosów do kontry (0,041); T1 Chorążego
+  „Dowódcy” na 45 (0,038) przechodzi do raportu z S93 obok 100 (S89): fale 58 / 59 dają mniej ataków pomocników.
+- **S93 jaskinie od 46. i Kuźnia do 70.:** Opuszczona Kopalnia `levels` 49 → 46 (mapa `min` 46), ork 48–56 → 46–56,
+  wywerna 58–66 → 56–66, krasnolud renegat 60–65 → 60–70, golem magmowy 62–68 → 62–70, Kowal Płomieni 64–70 → 63–70.
+  Elity dropią każdy ilvl 46–70.
+- **S93 drugie expowisko na 68–69:** Szlak Popiołu `lv` 61–67 → 61–69, bazyliszek 61–67 → 61–69.
+- **S93 Elity Pustkowi:** `elitePairChance.ashen` 0,5 → 0,25 (pary: Kopalnia 0,25, Leże i Kuźnia 0), ork `atkMul` 1,1 →
+  0,95 (spotkanie W 1,58 → 1,06, M 1,63 → 1,10); krzywe Elit bez zmian (pojedyncze 83% walk w paśmie, Elita II solo
+  2,5–3,5, duet ≤ 1,35, trio 0,74–0,92).
+- **S93 rodzaje:** `rewardMul` golem ognisty i magmowy 1,45 (EXP/s 0,70 → 1,01), ork 1,15 (po cięciu ataku), Ognisty
+  Chochlik `atkMul` 1 → 0,9 (HP na EXP 1,12 średniej regionu).
+- **S93 `dropFactor.ashen` 1 → 0,9:** Unikaty dla klasy na godzinę expienia 2,6–3,7 (było do 4,2), Heroiki 0,77–0,97
+  na godzinę Elit.
+- **S93 ceny:** mikstura Wielka (`PRICES[4]`, wspólna dla HP, many i energii) 900 → 700 (0,175 zł za 1 HP: Duża 0,167 ≤
+  Wielka ≤ Potężna 0,30); plecak 130 miejsc 200 000 → 76 000 (5,0 poziomu dochodu na 50.).
+- **S93 eliksir ognia od 45. (wyjątek poniżej 46):** `ELIXIR_LEVEL = { resFire = 45 }` w `Data/Recipes` (pozostałe 30,
+  S94 dopisze `resIce`); jedyna zmiana zrzutu „do 45.” (A4).
+- **S93 części:** hiena → Gruba Skóra, sęp → Krucze Pióro, chochlik → Odłamek Magmy, bazyliszek → Jad Ropuchy, mumia →
+  Przeklęta Kość; Epickie błogosławieństwa (60.) biorą części Pustkowi (`LINE_INGREDIENT_EPIC`: Odłamek Magmy, jad,
+  kość, skóra, pióro). Odłamek Magmy w pancerzach progów 50–70 (J4) odłożony.
+- **S93 wiersze w trybie raportu:** `support.elites` na 55 / 65 (każda ścieżka wsparcia i tanka wygrywa Elitę II solo z
+  miksturami, HP na koniec 0,18–1,00; krzywe Elit II trzyma duet ≤ 150%): dla właściciela; mikstury łańcuchowe 46–69
+  (górna granica; Wielka 700 to dół kolejności cen, 0,28–0,82 dochodu, ceny 1–3 i `potionCooldown` globalne): dla
+  właściciela; strażniki T-SK (niżej); T-SK2 podstawy Łowcy na 65 (1,285, próg sprzętu 65) i T-SK3 Trapera
+  „Kłusownik” na 65 (1,005, Pole Sideł; ranga 3 trzyma 70): dla S94.
+- **S93 strażniki T-SK w paśmie:** reguła S92 (wiersz ponad limitem drukowany tylko, gdy build ma już na 45 wartość ponad
+  limitem i nie rośnie ponad nią); reguła z końcem 70 zwalniała ok. 200 wierszy, w tym każdy na 70. Pozostałe 229
+  wierszy ponad limitem stoi w `Balance.S93_REPORT` (dwa z powodem wyżej, reszta po grupach, dla właściciela: kontrakt
+  D1 w paśmie): **rośnie z poziomem** (Mag i Kapłan: podstawa i wszystkie buildy, T-SK1 / T-SK2 na 50–70; Strzelec,
+  Traper; T-SK1 Rzeźnika i Dowódcy): już na 45 ponad limitem, w paśmie do +28% nad 45 (Niszczyciel T-SK2 1,39 → 1,78,
+  Kapłan 1,59 → 1,87, Inkwizytor 2,33 → 2,78); **Furia** (zamrożona S89): T-SK1 1,16–1,18 na 55–70 (1,13 na 45), T-SK2 1,32 na 70; **podstawa Wojownika**:
+  T-SK1 do 1,16, T-SK2 1,33 od 66 (ranga 10 Trzęsienia, wspólna z Furią); **Strażnik** T-SK3 do 2,18 (≤ 2,2, S89 C1);
+  **rząd 9 na 70**: Rzeźnik T-SK2 1,42, Dowódca 1,29 / 1,74 (T-SK2 1,26 już na 69), Opiekun 1,19 / 1,55 (dla S94).
+- **S93 T-SK4 Maga w paśmie:** asertowane cztery pasma S90 (`destroyerExp`, `destroyerBoss`, `arcanistBoss`,
+  `arcanistOverload`); węzeł `manaCost.Mage` 55 = 2,25 (było 2,18 z interpolacji, węzły 50 i 60 trzymają dzisiejsze
+  wartości): `arcanistOverload` na 55 2,54 → 2,62, `arcanistBoss` 2,00 → 2,06. Dołek na 57. (1,93 / 2,45) poza poziomami
+  strażników zostaje.
+- **S93 Rozpłatanie 10A:** R4 0 bez węzła „Rozdzierające Cięcia” (na 46. Furia go jeszcze nie ma), 0,31 / 0,27 z nim na 55 /
+  70; liczba stosów nie wyrówna obu: dla właściciela (rodzaj przełomu). Odnowa 10B 0,21 w paśmie.
+- **S93 model:** pola `raid` (ataki `all` na minutę, np. meteor; na członka, klasa = najgorszy jej członek, więc dwóch
+  Wojowników nie podwaja udziału) i `hazardTick` w `Balance.bossFight`,
+  `Balance.partUses`, `Balance.eliteDropsIlvl`, `Balance.protectedFlow`, `Balance.potionGoldPerHp`,
+  `Balance.targetsS93` / `S93` / `S93_REPORT`; test Monte Carlo łupu S84 liczy model z `dropFactor` regionu (jak
+  `Loot.rollMonsterLoot`). Istniejące funkcje liczą jak przed S93.

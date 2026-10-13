@@ -317,11 +317,12 @@ kind("salamander", 3, false, 45, 52, {
 	ability = "fireBreath",
 	size = 1.1,
 })
-kind("ashOrc", 3, false, 48, 56, {
+kind("ashOrc", 3, false, 46, 56, {
 	family = "humanoid",
 	defence = "armored",
 	hpMul = 1.2,
-	atkMul = 1.1,
+	atkMul = 0.95,
+	rewardMul = 1.15,
 	ability = "cleave",
 	size = 1.2,
 })
@@ -330,6 +331,7 @@ kind("fireGolem", 3, false, 52, 60, {
 	defence = "armored",
 	hpMul = 1.6,
 	speed = 0.75,
+	rewardMul = 1.45,
 	moveSpeed = 9,
 	element = "fire",
 	ability = "emberNova",
@@ -342,7 +344,7 @@ kind("desertScorpion", 3, false, 55, 63, {
 	ability = "poisonPool",
 	size = 1.3,
 })
-kind("wyvern", 3, false, 58, 66, {
+kind("wyvern", 3, false, 56, 66, {
 	family = "dragon",
 	defence = "scaled",
 	hpMul = 1.1,
@@ -352,23 +354,24 @@ kind("wyvern", 3, false, 58, 66, {
 	ability = "fireBreath",
 	size = 1.3,
 })
-kind("renegadeDwarf", 3, true, 60, 65, {
+kind("renegadeDwarf", 3, true, 60, 70, {
 	family = "humanoid",
 	defence = "armored",
 	ability = "charge",
 	size = 0.85,
 })
-kind("magmaGolem", 3, true, 62, 68, {
+kind("magmaGolem", 3, true, 62, 70, {
 	family = "elemental",
 	defence = "armored",
 	hpMul = 1.7,
 	speed = 0.75,
+	rewardMul = 1.45,
 	moveSpeed = 9,
 	element = "fire",
 	ability = "slam",
 	size = 1.7,
 })
-kind("flameSmith", 3, true, 64, 70, {
+kind("flameSmith", 3, true, 63, 70, {
 	family = "humanoid",
 	atkMul = 1.2,
 	element = "fire",
@@ -396,6 +399,7 @@ kind("ashVulture", 3, false, 50, 56, {
 kind("fireImp", 3, false, 55, 61, {
 	family = "elemental",
 	hpMul = 0.8,
+	atkMul = 0.9,
 	attack = "ranged",
 	damageKind = "magic",
 	range = 24,
@@ -403,7 +407,7 @@ kind("fireImp", 3, false, 55, 61, {
 	ability = "emberNova",
 	size = 0.7,
 })
-kind("basilisk", 3, false, 61, 67, {
+kind("basilisk", 3, false, 61, 69, {
 	family = "beast",
 	hpMul = 1.2,
 	defMul = 1.3,

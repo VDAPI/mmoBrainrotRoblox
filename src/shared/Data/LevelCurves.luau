@@ -24,12 +24,17 @@ local Data: LevelCurvesData = {
 		-- the base reaches ~1.1-1.4x with this curve, path skills and costs do the rest (ROZWOJ 12.7).
 		-- Key "manaCost.<classId>": classes without a curve pay the flat cost (Cleric, energy classes).
 		-- S92 (G2): knots 25 / 30 / 40 keep T-SK4 of destroyerExp and arcanistBoss at 2.0-2.4 on 25-40 (45 unchanged).
+		-- S93 (G2): knot 55 (2.18 -> 2.25) lifts arcanistOverload to 2.6 there; knots 50 / 60 hold today's values, so
+		-- 45-50 and 60-100 stay as they were.
 		["manaCost.Mage"] = {
 			{ 20, 1 },
 			{ 25, 1.37 },
 			{ 30, 1.47 },
 			{ 40, 1.82 },
 			{ 45, 1.89 },
+			{ 50, 2.0375 },
+			{ 55, 2.25 },
+			{ 60, 2.3204 },
 			{ 70, 2.59 },
 			{ 100, 3.49 },
 		},
@@ -57,11 +62,11 @@ local Data: LevelCurvesData = {
 	-- Neutral until the region sessions (S91 meadows, S92 duskwood, S93 ashen, S94 frostpeak).
 	regions = { "meadows", "duskwood", "ashen", "frostpeak" },
 	-- Chance that a cave Elite group is a pair (AreaSpawns.cave). S92: the Dark Forest 0.3.
-	elitePairChance = { meadows = 0.3, duskwood = 0.3, ashen = 0.5, frostpeak = 0.5 },
+	elitePairChance = { meadows = 0.3, duskwood = 0.3, ashen = 0.25, frostpeak = 0.5 },
 	-- Multiplier of Unique and Heroic drop weights of the region's monsters (Common absorbs the rest). At most 1:
 	-- Elite II tables have no Common weight, so a factor above 1 fails ItemRoll.rarityWeights (globalbalance.spec).
-	-- S92: the Dark Forest 0.85 (2-4 Uniques for the class per hour of grinding, D5).
-	dropFactor = { meadows = 1, duskwood = 0.85, ashen = 1, frostpeak = 1 },
+	-- S92: the Dark Forest 0.85 (2-4 Uniques for the class per hour of grinding, D5). S93: the Scorched Wastes 0.9.
+	dropFactor = { meadows = 1, duskwood = 0.85, ashen = 0.9, frostpeak = 1 },
 }
 
 for _, anchors in Data.curves do

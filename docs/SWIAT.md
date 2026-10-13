@@ -31,10 +31,10 @@
 | 40–45 | Krwawe Urwiska, **Krypta Zapomnianych** (jaskinia) | Mroczny Bór |
 | 45 | **Boss: Morvane** | Grobowiec Morvane |
 | 45–52 | Równiny Salamander, Martwa Oaza | Spalone Pustkowia |
-| 48–56 | Obóz Popielnych Orków, **Opuszczona Kopalnia** (jaskinia 49–56) | Spalone Pustkowia |
+| 46–56 | Obóz Popielnych Orków, **Opuszczona Kopalnia** (jaskinia 46–56, S93) | Spalone Pustkowia |
 | 52–63 | Pola Golemów, Spalone Ruiny, Wydmy Skorpionów, **Leże Wywerny** (jaskinia 56–63) | Spalone Pustkowia |
-| 58–67 | Turnie Wywern, Szlak Popiołu | Spalone Pustkowia |
-| 63–70 | Grobowce Pustyni, **Kuźnia Głębin** (jaskinia) | Spalone Pustkowia |
+| 58–69 | Turnie Wywern, Szlak Popiołu (S93: do 69.) | Spalone Pustkowia |
+| 63–70 | Grobowce Pustyni, **Kuźnia Głębin** (jaskinia, Elity do 70.) | Spalone Pustkowia |
 | 70 | **Boss: Azgor** | Palenisko Azgora |
 | 70–75 | Dolina Lodowych Wilków | Lodowe Szczyty |
 | 74–83 | Zbocza Yeti, Skały Harpii, **Lodowa Grota** (jaskinia) | Lodowe Szczyty |
@@ -96,17 +96,23 @@ Boru: wojownika Pazur Wilkołaka, łowcy Jad Ropuchy, fortuny Krucze Pióro, mę
 |---|---|---|---|---|
 | `salamander` | Salamandra → Ognista Salamandra → Matka Płomieni | quadruped | 45–52 | Łuska Salamandry |
 | `hyena` *nowy* | Hiena Pustkowi → Hiena Watażka → Śmiejący się Kieł | quadruped | 46–52 | Gruba Skóra |
-| `ashOrc` | Ork Popiołu → Ork Berserker → Wódz Popiołu | humanoid | 48–56 | Odłamek Magmy |
+| `ashOrc` | Ork Popiołu → Ork Berserker → Wódz Popiołu | humanoid | 46–56 | Odłamek Magmy |
 | `ashVulture` *nowy* | Sęp Popiołu → Sęp Pogorzeliska → Król Sępów | flyer | 50–56 | Pióro |
 | `fireGolem` | Ognisty Golem → Golem Żaru → Kolos Pożogi | golem | 52–60 | Odłamek Magmy |
 | `fireImp` *nowy* | Ognisty Chochlik → Chochlik Żaru → Arcychochlik | humanoid (mały), dystans, ogień | 55–61 | Odłamek Magmy |
 | `desertScorpion` | Skorpion Pustyni → Skorpion Królewski → Żądło Pustkowi | spider | 55–63 | Jad |
-| `wyvern` | Wywerna → Wywerna Popiołu → Królowa Wywern | dragon | 58–66 | Łuska Salamandry |
-| `basilisk` *nowy* | Bazyliszek → Bazyliszek Kamiennooki → Prastary Bazyliszek | quadruped | 61–67 | Jad |
-| `renegadeDwarf` | Krasnolud Renegat → Krasnolud Weteran → Thrain Żelazna Pięść | humanoid | 63–67 | Odłamek Magmy |
-| `magmaGolem` | Golem Magmowy → Golem Lawy → Serce Wulkanu | golem | 63–68 | Odłamek Magmy |
-| `flameSmith` | Kowal Płomieni → Mistrz Kuźni → Pierwszy Kowal | humanoid | 64–70 | Odłamek Magmy |
+| `wyvern` | Wywerna → Wywerna Popiołu → Królowa Wywern | dragon | 56–66 | Łuska Salamandry |
+| `basilisk` *nowy* | Bazyliszek → Bazyliszek Kamiennooki → Prastary Bazyliszek | quadruped | 61–69 | Jad |
+| `renegadeDwarf` | Krasnolud Renegat → Krasnolud Weteran → Thrain Żelazna Pięść | humanoid | 60–70 | Odłamek Magmy |
+| `magmaGolem` | Golem Magmowy → Golem Lawy → Serce Wulkanu | golem | 62–70 | Odłamek Magmy |
+| `flameSmith` | Kowal Płomieni → Mistrz Kuźni → Pierwszy Kowal | humanoid | 63–70 | Odłamek Magmy |
 | `mummy` *nowy* | Mumia Pustyni → Mumia Kapłana → Faraon Popiołów | humanoid | 66–70 | Przeklęta Kość |
+
+S93: części rodzajów S19 są w łupie (`LootTables.PARTS`: hiena Gruba Skóra, sęp Krucze Pióro, chochlik Odłamek Magmy,
+bazyliszek Jad Ropuchy, mumia Przeklęta Kość); poziomy Elit jaskiń pokrywają 46–70 (ork od 46., wywerna od 56.,
+krasnolud i golem magmowy do 70., Kowal Płomieni od 63.). Epickie błogosławieństwa (60.) biorą części Pustkowi:
+wojownika Odłamek Magmy (jego pierwszy przepis), łowcy Jad Ropuchy, mędrca Przeklętą Kość, strażnika Grubą Skórę,
+fortuny Krucze Pióro; eliksir odporności na ogień od 45. (razem z Łuską Salamandry).
 
 ### Region 4: Lodowe Szczyty (70–100)
 
@@ -168,7 +174,7 @@ grup bierz z tej tabeli. Tabele Łąk i (od S45) Boru niżej zgadzają się z ko
 | Spalone Ruiny (`ashen_burntruins`) | 55–61 | Ognisty Chochlik, Skorpion Pustyni | 6 | 15 | ⚡ |
 | Wydmy Skorpionów (`ashen_dunes`) | 55–63 | Skorpion Pustyni, Mumia Pustyni | 7 | 19 | ⛁ |
 | Turnie Wywern (`ashen_crags`) | 58–66 | Wywerna, Bazyliszek | 6 | 20 | ⚡ |
-| Szlak Popiołu (`ashen_ashroad`) | 61–67 | Bazyliszek, Wywerna | 4 | 8 | ⛁ |
+| Szlak Popiołu (`ashen_ashroad`) | 61–69 | Bazyliszek, Wywerna | 4 | 8 | ⛁ |
 | Grobowce Pustyni (`ashen_tombs`) | 66–70 | Mumia Pustyni, Bazyliszek | 5 | 10 | — |
 | **Lodowe Szczyty** | | | | | |
 | Dolina Lodowych Wilków (`frostpeak_valley`) | 70–75 | Lodowy Wilk, Śnieżny Lampart | 8 | 16 | — |
@@ -245,7 +251,7 @@ lawa, szczeliny, wydmy, mesy, turnie, suche jezioro), budowle `Logic/AshenGen`.
 | Spalone Ruiny / Burnt Ruins ⚡ | 55–61 | Ognisty Chochlik, Skorpion Pustyni | 6 | świątynia z zapadniętą kopułą i tlącą się dzwonnicą (okna żarzą się nocą) | osmalone domy bez dachów z piwnicami pełnymi żaru (gniazda chochlików), aleja samotnych kominów, plac z wyschniętą fontanną pełną żaru, brama miasteczka, pęknięty dzwon, piasek wydm w uliczkach, nory skorpionów |
 | Wydmy Skorpionów / Scorpion Dunes ⛁ | 55–63 | Skorpion Pustyni, Mumia Pustyni | 7 | Zasypany Kolos (głowa króla z turkusowymi oczami i uniesiona dłoń) | morze wydm z płaskimi dolinami, odsłonięte sarkofagi (część pusta), złote maski i monety, połamane kolumny, nory skorpionów i zrzucone pancerze |
 | Turnie Wywern / Wyvern Crags ⚡ | 58–66 | Wywerna, Bazyliszek | 6 | Skamieniała Wywerna (zastygła w ryku na niskiej turni przy drodze) | las rdzawych turni z bazaltowymi czapami i gniazdami, Gniazdowa Mesa z rampą (gniazdo z jajami), droga kanionem pod naturalnym łukiem skalnym, wysoka mesa z wylotem Leża, skamieniałe zwierzęta, **wejście: Leże Wywerny** (osmalony otwór, kości, pęknięte jajo) |
-| Szlak Popiołu / Ash Road ⛁ | 61–67 | Bazyliszek, Wywerna | 4 | Aleja Królów (kolosalne posągi, część leży rozbita) | stara królewska droga z płyt, skamieniała karawana (wóz, woły, ludzie), ograbione i spalone wozy z monetami, obeliski jako kamienie milowe, jama bazyliszka ze zrzuconą skórą |
+| Szlak Popiołu / Ash Road ⛁ | 61–69 | Bazyliszek, Wywerna | 4 | Aleja Królów (kolosalne posągi, część leży rozbita) | stara królewska droga z płyt, skamieniała karawana (wóz, woły, ludzie), ograbione i spalone wozy z monetami, obeliski jako kamienie milowe, jama bazyliszka ze zrzuconą skórą |
 | Grobowce Pustyni / Desert Tombs | 66–70 | Mumia Pustyni, Bazyliszek | 5 | schodkowa piramida z turkusowym wejściem | droga procesyjna przez aleję strażników z głowami bazyliszków, obeliski, 2 zagłębione dziedzińce z sarkofagami, urnami i ołtarzami (nocą ogniki), grobowce wykute w skarpie wydm, **wejście: Kuźnia Głębin** (brama krasnoludów z posągami królów, świecące runy, łuna z wnętrza, strumyk stopionego metalu) |
 
 ### Lodowe Szczyty (70–100), razem 57 grup (stan po S47)
@@ -328,7 +334,7 @@ W każdej: 2–3 rodzaje zwykłych potworów, **2 rodzaje Elit** (3–5 grup po 
 | Wilcza Nora / Wolfden Hollow | 21–31 | Wilkołak, Czarny Niedźwiedź, Ghul | Wilkołak Krwawej Pełni, Czarny Niedźwiedź Bagien | Pradawny Wilkołak / Smolisty Pan | Żelazo, Srebro | nora pod korzeniami martwego dębu (S49): łuk korzeni i rozszarpany biwak myśliwych, Jama Żeru z dołami ghuli i padliną, Wielka Gawra z korzeniem palowym i barcią, **Księżycowa Komora** ze słupem księżyca z otworu na kamień w kręgu czaszek, Mokra Gawra ze źródlanym stawem |
 | Kurhan Kultystów / Cultist Barrow | 31–38 | Kultysta Mroku, Ghul, Bagienny Wąż | Kapłan Mroku, Ghul Kurhanowy | Arcykapłan Mroku / Pożeracz Zmarłych | Żelazo, Srebro | kurhan z suchego muru przejęty przez kult (S49): dromos pod dolmenem, Krąg Obrzędów z 9 menhirami i fioletowym ogniem, Komora Grobowa z niszami i rozbitymi trumnami, **Serce Kurhanu** z ołtarzem na podeście przed rogatym idolem, Nora Ghuli, Zalana Krypta z czarną wodą, groblą i sarkofagami |
 | Krypta Zapomnianych / Crypt of the Forgotten | 38–45 | Szkielet Strażnik, Upiór, Nekromanta | ⚑ Szkielet Rycerz, Upiór Krzyku | Lisz Zapomnianych / Banshee Krypty | Srebro, Żelazo · **loch Morvane (45)** | krypta zapomnianego rodu (S49): prosta oś procesji od Bramy Zapomnianych z płaczkami, Sala Kolumn, Krypta Rodów z niszami, Koszary Umarłych, **Studnia Dusz** pod kominem, **Ossuarium** ze ścianami czaszek i żyrandolem z kości, Galeria Upiorów, Sanktuarium Nekromanty z kręgiem przywołań, Przedsionek z pieczęcią Morvane i klęczącymi rycerzami |
-| Opuszczona Kopalnia / Abandoned Mine | 49–56 | Ork Popiołu, Hiena Pustkowi, Sęp Popiołu | Ork Berserker, Hiena Śmiechu | Wódz Popiołu | Srebro, Mithril | krasnoludzka kopalnia zajęta przez orków (S50): tory prowadzą w głąb, Nadszybie z barykadą z wózków, Hala Wyciągu z wieżą i klatką wiszącą krzywo w szybie, Obóz w Komorze Pomp z kołem pompy i namiotami, **Sala Wodza** z tronem z wózka przed świecącą żyłą mithrilu i szybem sępów, Psiarnia przy przebiciu do magmy |
+| Opuszczona Kopalnia / Abandoned Mine | 46–56 | Ork Popiołu, Hiena Pustkowi, Sęp Popiołu | Ork Berserker, Hiena Śmiechu | Wódz Popiołu | Srebro, Mithril | krasnoludzka kopalnia zajęta przez orków (S50): tory prowadzą w głąb, Nadszybie z barykadą z wózków, Hala Wyciągu z wieżą i klatką wiszącą krzywo w szybie, Obóz w Komorze Pomp z kołem pompy i namiotami, **Sala Wodza** z tronem z wózka przed świecącą żyłą mithrilu i szybem sępów, Psiarnia przy przebiciu do magmy |
 | Leże Wywerny / Wyvern Lair | 56–63 | Wywerna, Ognisty Chochlik, Skorpion Pustyni | Wywerna Popiołu, Skorpion Królewski | Królowa Wywern | Srebro, Mithril | wulkaniczna jaskinia otwarta do nieba (S50): Osmalona Paszcza z pękniętym jajem, Kominy Chochlików z jeziorkiem lawy i fumarolą, Piaskowe Gniazda ze strugą piasku przez otwór i norami skorpionów, Grzędy Wywern z wielkim otworem i gniazdami na półkach, Spiżarnia z rozbitym wozem i świecącą szczeliną, **Gniazdo Królowej**: świecące jaja na kopcu w kręgu lawy pod kominem |
 | Kuźnia Głębin / Deepforge | 63–70 | Krasnolud Renegat, Golem Magmowy, Kowal Płomieni | ⚑ Krasnolud Weteran, Golem Lawy | Pierwszy Kowal / Serce Wulkanu | Mithril, Adamantyt · **loch Azgora (70)** | krasnoludzka kuźnia zajęta przez renegatów (S50): Wrota Głębin z klęczącymi królami i błękitnymi runami, **Wielka Kuźnia** (ośmiokątna hala, 4 zatoki kuźni, posągi królów ze skutymi twarzami, Wielki Tygiel na łańcuchach), mosty nad Rzeką Ognia w kanionach, Gardziel Magmy z jeziorem lawy i golemami, Huta z kaskadą metalu do form, Odlewnia Golemów, Zbrojownia ze skrzyniami broni dla smoka, **Serce Kuźni** (kula magmy w klatce z łańcuchów), Przedsionek z płonącym znakiem Azgora |
 | Lodowa Grota / Ice Grotto | 74–83 | Yeti, Lodowy Wilk, Harpia Szczytów | Yeti Starszy, Wilk Zamieci | Król Gór | Mithril, Adamantyt | lodowe nory yeti w lodowcu (S51): Paszcza Sopli z porzuconym obozem traperów i tlącą się latarnią, **Sala Lodospadów** (trzy świecące zamarznięte wodospady, przerębel yeti), **Komin Harpii** (snop księżyca ze śniegiem, gniazda harpii na półkach z linami wspinaczy), Leże Króla Gór z tronem z kłów mamuta i lodowym oknem z zamarzniętym mamutem, Wilcze Legowisko z norami |
@@ -343,6 +349,11 @@ W każdej: 2–3 rodzaje zwykłych potworów, **2 rodzaje Elit** (3–5 grup po 
 | Morvane, Królowa Krypt | 45 | Krypta Zapomnianych → Grobowiec Morvane (S49: czarna posadzka z mozaiką, sarkofagi w arkadach pod nieosiągalną galerią, kosze z upiornym płomieniem, absyda z pustym sarkofagiem i posągiem młodej królowej) | Całun Królowej (zbroja lekka), Berło Krypt (berło), Łuk Zawodzących Cieni (łuk) |
 | Azgor, Pan Płomieni | 70 | Kuźnia Głębin → Palenisko Azgora (S50: płaskie bazaltowe koło w fosie lawy, grobla od wnęki, 10 kolumn-pieców, Gardziel Pieca na północy leje lawę do fosy, rogate dysze i żyły magmy na ścianach, nieosiągalne półki z kowadłami i skutymi krasnoludami) | Płomienne Serce (naszyjnik), Kostur Pożogi (kostur), Hełm Pana Płomieni (hełm ciężki) |
 | Vaelgrath, Smok Mrozu | 100 | Serce Lodowca → Leże Vaelgratha (S51: płaska lodowa arena ze spękaniami szronu, cztery koksowniki z kręgami odtajałej skały, korona lodowych kolców, zamrożony skarb i poprzednicy za lodem, gniazdo na półce w księżycowym snopie) | Kieł Vaelgratha (miecz 2H), Łuska Smoka Mrozu (tarcza), Oko Zimy (orb) |
+
+S93 (Azgor): `hpMul` 1,25, słaby i szybki zwykły cios (ok. 10% HP Maga L70), groźne ataki z telegrafem: Fala Ognia,
+Meteor pod każdym graczem co 18 s (złagodzony: ok. 54% HP Maga na minutę), w 3. fazie Piekielny Krąg (66% HP Maga z
+dystansu) i lawa poza kurczącym się kręgiem (tick ok. 20% HP Maga); fale tarczy ognistych golemów 58 / 59. Walka na
+4–6 minut dla 3–5 graczy L69, do wygrania bez leczącego (na miksturach).
 
 Raz dziennie na postać, grupa 1–5, jedna grupa naraz na serwerze (DESIGN §16). Elita II ma **2%** szansy na unikat bossa swojego regionu.
 

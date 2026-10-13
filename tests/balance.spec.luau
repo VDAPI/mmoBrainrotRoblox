@@ -7,8 +7,8 @@
 --   * Global targets 20-100 (Balance.targetsGlobal, G1-G9, G11-G13; G7-G9 from S84): asserted from S87
 --     (GLOBAL_ASSERT) except Balance.GLOBAL_REPORT_ONLY.
 --   * Regions (Balance.targetsRegion): asserted where Balance.TUNED says so (S91: the Meadows in full, also with
---     the players with nodes; S92: the Dark Forest with Balance.targetsS92, rows with `report` printed), printed
---     elsewhere.
+--     the players with nodes; S92: the Dark Forest with Balance.targetsS92, S93: the Scorched Wastes with
+--     Balance.targetsS93, rows with `report` printed), printed elsewhere.
 --   * The balance ledger (S83, balance plan 2.6): always asserted.
 --   * S85: G10 (T-SK4, T-SK5 of tests/SkillModel) in the global block, the Meadows' T-SK3 / T-SK6 printed in the
 --     region block, the block "Skill model (S85)" at the end.
@@ -469,6 +469,12 @@ T.describe("Balance 20-100: regions", function()
 			for _, row in B.targetsS92() do
 				table.insert(rows, row)
 			end
+		elseif mapId == "ashen" then
+			-- S93 (K1): Azgor, the pace, the guards, support paths, drop levels, hunting grounds, gold and parts; the
+			-- rows with `report` (Balance.S93_REPORT; guards above the limit at 45, the S92 rule) only printed
+			for _, row in B.targetsS93() do
+				table.insert(rows, row)
+			end
 		end
 		if TUNED[mapId] then
 			-- S91: the Meadows in full (S83 asserted only the kinds and Grimrok's schedule), the cave rows also with the
@@ -802,7 +808,9 @@ T.describe("Balance 20-100: items, loot, defence (S84)", function()
 			local n = if variant == "normal" then 20000 else 6000
 			local counts, tops, usable, dust = {}, 0, 0, {}
 			local items = 0
-			local expectedCount, topShare = AreaRates.itemsPerKill(variant, mods, 20)
+			-- S93: with the kind's region drop factor, as Loot.rollMonsterLoot (ashen 0.9)
+			local dropFactor = require("../src/shared/Logic/LevelCurves").dropFactor(def.region)
+			local expectedCount, topShare = AreaRates.itemsPerKill(variant, mods, 20, dropFactor)
 			local weights = Rarities.dropWeights[variant]
 			local cap = Rarities.cap[variant]
 			local top = 0

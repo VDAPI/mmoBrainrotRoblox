@@ -25,10 +25,11 @@ T.describe("Balance model: boss schedule", function()
 		{ "morvane", 3, "shadowBoltFast", 8.8 },
 		{ "morvane", 3, "curseField", 8.7 },
 		{ "morvane", 3, "deathRing", 0 },
-		{ "azgor", 3, "fireWave", 5.6 },
-		{ "azgor", 3, "flameCleave", 5.6 },
-		{ "azgor", 3, "meteor", 5.5 },
-		{ "azgor", 3, "inferno", 0 },
+		-- S93: Azgor's meteor every 18 s leaves the inferno its turn in the list order too (5.6 / 5.6 / 5.5 / 0 before)
+		{ "azgor", 3, "fireWave", 5.5 },
+		{ "azgor", 3, "flameCleave", 5.5 },
+		{ "azgor", 3, "meteor", 2.7 },
+		{ "azgor", 3, "inferno", 2.7 },
 		{ "vaelgrath", 3, "frostBreath", 5.5 },
 		{ "vaelgrath", 3, "wingBuffet", 3.6 },
 		{ "vaelgrath", 3, "tailSwipe", 3.6 },
@@ -51,10 +52,11 @@ T.describe("Balance model: boss schedule", function()
 		T.expect(B.bossCadence(Bosses.byId.grimrok, 1, listOrder).rateShare.sweep).toBeNear(1, 1e-9)
 	end)
 
-	T.it("opts.pick decides among the ready attacks (the default S87 rule gives Azgor's inferno its turn)", function()
-		local cad = B.bossCadence(Bosses.byId.azgor, 3)
-		T.expect(cad.perMinute.inferno > 0).toBe(true)
-		T.expect(B.bossCadence(Bosses.byId.azgor, 3, { pick = B.PICK_LIST_ORDER }).perMinute.inferno).toBe(0)
+	-- S93: Azgor's meteor every 18 s no longer starves the inferno in the list order; Morvane's ring stays the case
+	T.it("opts.pick decides among the ready attacks (the default S87 rule gives the starved ring its turn)", function()
+		local cad = B.bossCadence(Bosses.byId.morvane, 3)
+		T.expect(cad.perMinute.deathRing > 0).toBe(true)
+		T.expect(B.bossCadence(Bosses.byId.morvane, 3, { pick = B.PICK_LIST_ORDER }).perMinute.deathRing).toBe(0)
 		local none = B.bossCadence(Bosses.byId.azgor, 3, {
 			pick = function()
 				return nil
@@ -95,6 +97,15 @@ T.describe("Balance model: boss schedule", function()
 			share += phase.share
 		end
 		T.expect(share).toBeNear(1, 1e-9)
+	end)
+
+	T.it("raid is per member: a class twice in the team (two Warriors) does not double its share", function()
+		-- every member takes every `all` attack, so the Warrior / Mage ratio is one hit / HP over the other and does
+		-- not depend on the team (team(5) has two Warriors, team(4) one)
+		local five = B.bossFight("azgor", B.team(5, 69)).raid
+		local four = B.bossFight("azgor", B.team(4, 69)).raid
+		T.expect(five.Warrior > 0 and four.Warrior > 0).toBe(true)
+		T.expect((five.Warrior / five.Mage) / (four.Warrior / four.Mage)).toBeNear(1, 1e-6)
 	end)
 end)
 

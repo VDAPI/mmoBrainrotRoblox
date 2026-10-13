@@ -5895,3 +5895,149 @@ levelcurves.spec}.luau`, `tests/fixtures/{caveRooms.luau,balance_items.json,bala
 `docs/{BALANS,DESIGN,SWIAT,ROZWOJ,DECYZJE,SESJE,PROGRESS,PRZEDMIOTY,GRAFIKA}.md`, `wiki/src/data/*.json`,
 `wiki/src/generated/item-icons.json`, `wiki/public/img/items/mat-cursed_bone-{64,128}.webp`,
 `wiki/public/img/maps/duskwood.svg`.
+
+### S93: Balans poziomów 45–70: Spalone Pustkowia i Azgor
+
+Start na `15def98` (S92): `scripts/check` zielony (98 plików, 4071 testów), migawka księgi `snapshot S93`
+(`tools/balance_before.json`), zrzut „wszystko do 45.” (`build/s93_le45.json`: umiejętności na rangach z `rankLevel`
+≤ 45 i koszty z `unlock` ≤ 45, krzywe 1–45, `expToNext` 1–45, rodzaje regionów 1–2 ze statystykami wariantów, Grimrok i
+Morvane, zadania poniżej 45, spawnery map i jaskiń Łąk i Boru, przepisy alchemika ≤ 44 i kowala ≤ 45, plecaki do 100,
+mikstury jakości 1–3), tabela startowa (`build/s93_t_start.txt`, wiersze `Balance.targetsS93` przy `TUNED.ashen =
+false`). `BALANCE_MODULES` już obejmowały wszystkie moduły z A3 (bez dopisków). Na starcie poza celami: Azgor (największy
+cios Maga L70 118%, L68 122%, zwykły 35%, tank 816%/min, meteor 215% HP Maga na minutę, fale tarczy 179–275% na członka,
+bez wsparcia cios 111% HP, T-SK6 5,23, brak `hpMul`), spotkania Elit (Kopalnia i Kuźnia 1,26–1,68), ilvl Elit 46, 69, 70
+bez spawnera, jedno expowisko na 68–69, golemy 0,69–0,70 EXP/s zwykłego, plecak 130 13,2 poziomu dochodu, Unikaty do 4,17
+/ h, pięć rodzajów bez części, części regionu bez przepisu 45–70, eliksir ognia od 30., `support.elites` 0/10, 18
+strażników T-SK. Model a szkic (`3f935c1`): Azgor 5,1–5,3 min zamiast 2,1–2,3 (obrona żywiołaków S88 i krzywa potworów
+S87, fale tarczy w modelu S92), inferno 2,9 / min zamiast 0 (`BossSchedule.pick`, S87), pojedyncze Elity 45 z 54 walk
+W / H / M w paśmie (83%) zamiast 1/36 (krzywe Elit S87 i przebudowa), tempo 45 → 70 26,1 h zamiast 19,5 h (model okna S91, krzywa S87); błędu
+odwzorowania serwera nie znaleziono.
+
+Co zrobiono:
+- **Model (B):** pola `raid` (ataki `all` na minutę: meteor; liczone na członka, klasa = jej najgorszy członek, test w
+  `balancemodel.spec`) i `hazardTick` (tick lawy) w wyniku `Balance.bossFight`; `Balance.partUses(min, max)`, `Balance.eliteDropsIlvl` (suma `ItemRoll.dropLevelRange` po
+  poziomach spawnerów Elit), `Balance.protectedFlow` (chroniony +9 Legendy: złoto, zwoje, Rdzenie), `Balance.potionGoldPerHp`,
+  `Balance.targetsS93` / `S93` / `S93_REPORT` (wiersze `R.ashen.*`). Test Monte Carlo łupu S84 liczy model z `dropFactor`
+  regionu rodzaju (jak `Loot.rollMonsterLoot`; neutralny dotąd dla orka). `Balance.HAZARDS` już czytało `BossTuning`.
+- **Kod gry:** tylko komentarz nagłówka `BossScripts/azgor.luau` (fale tarczy na początku faz 2 i 3); stałe skryptu bez
+  zmian.
+- **Dane:** Azgor (`hpMul` 1,25, `atkMul` 0,36, `speed` 1,35, Fala Ognia 5,2, Płomienne Cięcie 3, Meteor 4 co 18 s,
+  Piekielny Krąg 6,6, fale 58 / 59), lawa 2,2 (`Data/BossTuning`), jaskinie od 46. (Kopalnia 46–56, mapa `min` 46), ork
+  46–56, wywerna 56–66, krasnolud 60–70, golem magmowy 62–70, Kowal Płomieni 63–70, Szlak Popiołu i bazyliszek do 69.,
+  ork `atkMul` 0,95 i `rewardMul` 1,15, golemy `rewardMul` 1,45, chochlik `atkMul` 0,9, `elitePairChance.ashen` 0,25,
+  `dropFactor.ashen` 0,9, Wielka 700, plecak 130 za 76 000, części (`LootTables.PARTS`), `LINE_INGREDIENT_EPIC`,
+  `ELIXIR_LEVEL` (eliksir ognia od 45.), węzły `manaCost.Mage` 50 / 55 / 60 (2,0375 / 2,25 / 2,3204: T-SK4
+  `arcanistOverload` na 55 w paśmie). Kotwice 70 bez zmian. Liczby i powody w `tools/balance_reasons.luau` (S93) i
+  DECYZJE.
+- **Testy:** `TUNED.ashen = true` (blok regionów asertuje wiersze bez `report`); `T1` Fechtunek Chorążego „Dowódcy” na 45
+  w raporcie z S93 (sytuacja boss S84 na 45 to Azgor z falami 58 / 59); poprawione liczby kontrolne: harmonogram Azgora
+  (`bossschedule.spec`, `balancemodel.spec`; test „lista głodzi pierścień” na Morvane), lawa 2,2 (`bossschedule.spec`),
+  szansa pary regionu (`globalbalance.spec`), Szlak Popiołu (`ashen.spec`). `tests/fixtures/caveRooms.luau` odświeżony:
+  różnica tylko w `members` / `count` pięciu spawnerów `ashen_*_elite_<n>`. Fixture'y `balance_items.json` i
+  `balance_paths.json` wygenerowane od nowa. `GLOBAL_REPORT_ONLY` bez wpisów S93 (G11 Azgora był już asercją).
+- **Raport:** `docs/BALANS.md` (pasmo 45–70 nastrojone, „S93: Spalone Pustkowia i Azgor (start S93 → teraz)”, „Cele S93”,
+  strażniki T-SK, podstawy, Fortuna a „Lochowy”, tempo 44 → 70, premia za klasy, mikstury łańcuchowe, Rdzenie i zwoje, D5
+  ze szczęściem, rodzaje rzucające i pary Elit, Azgor tylko raport, przełomy A / B w 46–70 z Rozpłataniem 10A, kotwice
+  70; księga S93). Dane wiki: `npm run data` (wartości: obszary, bossy, jaskinie, przedmioty, mapy, potwory, postęp,
+  przepisy, wyszukiwarka, sklepy, mapa `ashen.svg`; `wiki_keys_diff` 0).
+- **Zrzut A4:** na końcu jedna różnica: `recipe:elixir_resFire` wypada ze zrzutu (poziom 30 → 45), zamierzona (J3).
+  Ścisły `balance1_20.spec` bez wpisów (0 różnic), blok `duskwood` zielony.
+
+Cele (start S93 → koniec):
+
+| cel | start | koniec | próg |
+|---|---|---|---|
+| Azgor 3 / 4 / 5 graczy L69 (z węzłami) | 5,14 / 5,30 / 5,13 (4,62–4,77) min | 4,90 / 5,17 / 5,07 (4,39–4,65) | 4–6 |
+| Azgor: największy cios Maga L70 / L68 | 118% / 122% | 66% / 68% | ≤ 70% / < 100% |
+| Azgor: zwykły cios Maga L70 | 35% | 10% | 7–12% |
+| Azgor: tank (model S32) / bossFight 3–5 | 816% / 649–678%/min | 346% / 330–335%/min | ≤ 350% / raport |
+| Azgor: meteor na minutę / HP Maga L70 | 215% | 54% | ≤ 60% |
+| Azgor: tick lawy / HP Maga L70 | 23% (6% po cięciu `atkMul`) | 20% | 15–25% |
+| Azgor: fala tarczy na członka (3 / 4 / 5) | 275 / 183 / 179% | 98 / 65 / 64% | ≤ 110% |
+| Azgor: G11 (najmniejsze tempo; inferno faza 3) | 53% (68%) | 64% (65%) | ≥ 50% |
+| Azgor bez wsparcia 3 / 4 / 5: s, podtrzymanie, cios | 108 / 107 / 101 s, 0,83, 111% | 103 / 104 / 101 s, 0,41, 62% | ≤ 480, ≤ 1,0, ≤ 100% |
+| Azgor: T-SK6 | 5,23 | 12,78 | 1,0–2,0, sufit 2,5 (niedokończone, raport, DECYZJE) |
+| Azgor: Mityki nieużyteczne (4 klasy) | 0% | 0% | 0% |
+| Elity pojedyncze w paśmie / spotkanie W / M (najgorsze) | 83% / 1,58 / 1,63 | 83% / 1,06 / 1,17 | ≥ 72% / ≤ 1,10 / ≤ 1,25 |
+| Elita II solo / 2 / 3 graczy | 2,55–3,45 / 1,11–1,42 / 0,74–0,95 | 2,54–3,45 / 1,11–1,35 / 0,74–0,92 | ≥ 1,8 / ≤ 1,5 / 0,6–1,0 |
+| ilvl Elit 46–70 / expowiska na 68–69 | 22/25 / 1 | 25/25 / 2 | każdy / ≥ 2 |
+| Rodzaje EXP/s ÷ zwykły / chochlik HP/EXP ÷ średnia | 0,69–1,12 / 1,14 | 0,90–1,12 / 1,12 | 0,85–1,20 / ≤ 1,25 |
+| Tempo 45 → 70 / h(69) / krok | 26,14 h / 1,23 / 1,07 | 26,14 h / 1,23 / 1,07 | 21,25–28,75 / 0,98–1,32 / ≤ 1,30 |
+| T-SK4 `destroyerExp` / `destroyerBoss` / `arcanistBoss` / `arcanistOverload` 50–70 | 2,35–2,49 / 1,77–2,29 / 2,00–2,19 / 2,54–2,78 | 2,35–2,50 / 1,77–2,37 / 2,05–2,19 / 2,61–2,78 | 2,0–2,8 / 1,6–2,8 / 2,0–2,4 / 2,6–2,8 |
+| T-SK5 Uzdrowiciela na Obrońcy 50–70 | 0,28–0,32 | bez zmian | 0,25–0,35 |
+| Strażniki T-SK w paśmie ponad limitem i ponad wartością na 45 | 18 (reguła z końcem 70) | 229, w raporcie po grupach (reguła S92, DECYZJE) | limity D1 |
+| D5 K0: Unikaty / Heroiki na h | 2,90–4,17 / 0,77–1,01 | 2,61–3,68 / 0,77–0,97 | 2–4 / 0,5–1,5 |
+| +1…+3 / plecak 130 (poziomy dochodu) | 0,56–0,74 / 13,2 | 0,56–0,73 / 5,0 | ≤ 1,05 / 3–8 |
+| Mikstury łańcuchowe ÷ dochód 46–69 | 0,36–1,00 | 0,28–0,82 | 0,15–0,30 (górna raport) |
+| Złoto za 1 HP Duża / Wielka / Potężna | 0,167 / 0,225 / 0,30 | 0,167 / 0,175 / 0,30 | rośnie |
+| Części: rodzaje / części w przepisach 45–70 / eliksir ognia | 8/13 / 0/6 / 30 | 13/13 / 6/6 / 45 | wszystkie / 45 |
+| `support.elites` na 55 / 65 | 0/10 | 0/10 (raport) | 10/10 |
+
+Nowe liczby kontrolne: harmonogram Azgora w fazie 3 (reguła S87) Fala Ognia 5,5, Cięcie 5,4, Meteor 2,7, Inferno 2,8 na
+minutę; w kolejności listy S83 5,5 / 5,5 / 2,7 / 2,7.
+
+Wejście (listy „Dla S92–S94” S84–S91, „Dla S93” S92, `GLOBAL_REPORT_ONLY`, PROGRESS):
+- S84 D5 K0 (Pustkowia): **wykonane** (`dropFactor` 0,9); luki ilvl Elit po bossie 46–48: **wykonane** (Kopalnia od
+  46.), 71–73: **S94**; szansa przedmiotu z Elity ucina szczęście: **raport** (D5 ze szczęściem).
+- S85 T-SK6 Azgora: **niedokończone** (12,8 wobec ≤ 2,5, raport, dla właściciela); Vaelgrath: **S94**.
+- S86 strażniki T-SK i `targetsG10` na 50–70: **wykonane** (część w raporcie z powodem); Pole Sideł w pierścieniu:
+  **raport** (T-SK3 Kłusownika 1,005 na 65, dla S94).
+- S87 kotwice 70: **sprawdzone, bez zmian** (wszystkie wiersze pasma w celach na krzywych S87 / S92); Azgor: **wykonane**;
+  mikstury E2 (łańcuch): **raport, dla właściciela**; Elita II solo z miksturami: **niedokończone (S94)**.
+- S88 rodzaje opancerzone (golemy, ork, krasnolud, wywerna): **wykonane** (`rewardMul` golemów i orka; krasnolud i wywerna
+  0,90–0,91 w paśmie); profile szczęścia: **raport**.
+- S89 T-SK6 drużyny S92 na Azgorze: **niedokończone** (jak wyżej); T-SK3 Strażnika 70–100: **S94** (w paśmie na 50–70);
+  `support.elites`: **raport**; bez wsparcia: **wykonane** (asercja).
+- S90 `support.elites` Zwiadowcy: **raport**; T-SK3 bazy Maga: **raport** (tabela podstaw); Truciciel na bossie: **raport**
+  (DPS 300 s ÷ 60 s 0,90 na Azgorze); dołek Niszczyciela na 70: **S94**.
+- S91 definicje (`paceWindowAt`, `bossNoSupport`, `healerVsBoss` drużyna s92): **użyte**.
+- S92 „Dla S93”: kotwice 45 a 46–69: **bez zmian** (h(45) / h(44) = 1,01); Rozpłatanie 10A: **dla właściciela** (R4 0
+  bez węzła, 0,31 / 0,27 z węzłem); strażniki Łowcy i skoki z węzłów na 44: **S92 zostaje**, w 46–70 **raport** po grupach
+  (DECYZJE S93: strażniki); fale tarczy w `bossFight` z redukcją grupy: **zostaje** (ruszałoby fixture 1–20;
+  `shieldWaves` liczy bez redukcji); wnioski z Morvane: **zastosowane** (fale ok. 10 poziomów pod bossem, zwykły cios
+  10% HP Maga; T-SK6 ograniczony wierszem tanka S32).
+- PROGRESS „rodzaje regionu 3 bez części”, „stare mnożniki Azgora”: **wykonane**; „inferno nie leci”: już od S87.
+
+Dla S94:
+- Kotwice 70 bez zmian, więc 71–99 jak po S87; Elity Kuźni ze spawnerów 69–70 (poziom 71–72) i Elita II Kuźni ze
+  spawnerów 67–70 (71–74) leżą na odcinku 70–100 i zależą od kotwicy 100 (dziś: Elita II solo 2,5 / 3,4, trio 0,74 /
+  0,91 na spawnerze 70); ilvl 71 dropi tylko Elita ze spawnera 70+ (S94: Szczyty od 71.).
+- h(70) / h(69) = 1,00 (h(69) 1,23 h); okno zadania `deepforge` (62–71) liczy część EXP na 70.–71.
+- Przełomy A / B z rangą na 71+: bez zmian; Rozpłatanie 10A z węzłem 0,27 na 70.
+- Strażniki ponad limitem D1 na 70 (pasmo strażników S94: 70–100): skoki z rzędu 9 (Rzeźnik T-SK2 1,42, Dowódca 1,29 /
+  1,74, Opiekun 1,19 / 1,55, Furia T-SK2 1,32), Strzelec 1,25–1,32 / 1,43–1,55, Traper 1,30–1,32 / 1,53–1,67, Mag
+  1,38–1,79 / 1,48–1,85, Kapłan 1,39–2,44 / 1,42–2,78; T-SK2 podstawy Łowcy 1,23 od 66.
+- Rdzenie i zwoje: chroniony +9 Legendy ok. 18 zwojów, 8 Rdzeni i 17,5–19,9 poziomu dochodu (złoto i zwoje) na ilvl
+  50–70; zwoje z dropu (Elita II 0,08, Azgor 0,35) i alchemika; cel kompletu +9 (150–300 h) do policzenia w S94.
+- Wnioski z Azgora dla Vaelgratha: atak `all` (zamieć) mierzy pole `raid` (`bossFight`), tick burzy pole `hazardTick`;
+  pierścień jak inferno trafia walczących z dystansu, a wiersz tanka S32 ogranicza T-SK6 (zwykły cios ok. 10% HP Maga,
+  fale tarczy ok. 10 poziomów pod bossem dla drużyny 3 osób, przywołani bez redukcji grupy).
+
+Dla właściciela:
+- Meteor: wybrany wariant (a) złagodzony (4 co 18 s, 54% HP Maga L70 na minutę); wariant (b) „sprawdzian leczenia”
+  (np. 4 co 10 s ≈ 100% na minutę) nie poprawiłby T-SK6, które i tak jest ok. 12,8; decyzja 8.5 planu czeka.
+- T-SK6 Azgora 12,8 (cel 2,0, sufit 2,5; niedokończone): Uzdrowiciel lochowy na 69. leczy ok. 1820 HP/s, ok. 19 maks.
+  HP Obrońcy na minutę (leczenie od maks. HP celu, S69), Obrońca przyjmuje 1,5 maks. HP na minutę, a obrażenia w tanka
+  trzyma wiersz S32 ≤ 350%/min. Samo Leczenie (rangi ≤ 45, odnowienie 3 s) daje ok. 4, kotwica `heal` 70 prawie nic
+  (12,8 → 12,5 przy 0,01). Do wyboru: T-SK6 liczone bez nadleczenia (leczenie ucięte do brakującego HP), rzadsze albo
+  słabsze leczenie od maks. HP po 45. (Leczenie, Odnowa, Sanktuarium, Krąg Światła) albo inny cel T-SK6 dla bossów 45+.
+- Ścieżki wsparcia i tanka wygrywają Elitę II solo z miksturami także na 55 / 65 (HP na koniec 0,18–1,00).
+- Mikstury łańcuchowe 28–82% dochodu na 46–69 (Wielka 700 to dół kolejności cen; Duża 250 i `potionCooldown` globalne).
+- Strażniki planu D1 na 46–70 (jak S92): 229 wierszy ponad limitem i ponad wartością na 45 (grupy w DECYZJE S93). Mag
+  i Kapłan (podstawa i wszystkie buildy), Strzelec i Traper rosną w paśmie do +28% nad 45 (Niszczyciel T-SK2 1,39 →
+  1,78, Kapłan 1,59 → 1,87, Inkwizytor 2,33 → 2,78); Furia T-SK1 1,16–1,18; podstawa Wojownika T-SK2 1,33 od 66
+  (Trzęsienie 10); rząd 9 na 70 (Dowódca T-SK2 1,74). Który kontrakt obowiązuje w paśmie.
+- Rozpłatanie 10A: R4 0 bez węzła „Rozdzierające Cięcia”, 0,31 / 0,27 z nim (55 / 70); liczba stosów nie wyrówna obu,
+  potrzebna zmiana rodzaju przełomu.
+- T1 Fechtunku Chorążego „Dowódcy” na 45 (0,038 < 0,040): sytuacja boss S84 na 45 to Azgor przesunięty na 45 (z falami
+  58 / 59 mniej ataków pomocników do kontry); propozycja: Morvane jako boss sytuacji na 45 (zmiana modelu S84).
+
+Niedokończone: T-SK6 Azgora (12,8 wobec ≤ 2,5, C6; wiersz w raporcie, decyzja właściciela); Odłamek Magmy w pancerzach
+progów 50–70 (J4, opcjonalne); Elita II solo z miksturami (E2 S87, model).
+
+Pliki: `src/shared/Data/{Bosses,BossTuning,LevelCurves,LootTables,Maps,Monsters,Recipes}.luau`,
+`src/shared/Data/Areas/{Caves,ashen}.luau`, `src/shared/Data/Items/{Backpacks,Consumables}.luau`,
+`src/server/Entities/BossScripts/azgor.luau` (komentarz), `tests/{Balance,balance.spec,balancemodel.spec,
+bossschedule.spec,globalbalance.spec,ashen.spec}.luau`, `tests/fixtures/{caveRooms.luau,balance_items.json,
+balance_paths.json}`, `tools/{balance_report,balance_reasons}.luau`, `tools/balance_before.json`,
+`docs/{BALANS,DESIGN,SWIAT,DECYZJE,SESJE,PROGRESS,PRZEDMIOTY}.md`, `wiki/src/data/*.json`, `wiki/public/img/maps/ashen.svg`.

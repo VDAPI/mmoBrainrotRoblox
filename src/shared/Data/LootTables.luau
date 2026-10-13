@@ -120,6 +120,12 @@ local PARTS: { [string]: string } = {
 	renegadeDwarf = "magma_shard",
 	magmaGolem = "magma_shard",
 	flameSmith = "magma_shard",
+	-- S93: the S19 kinds of the Scorched Wastes (docs/SWIAT.md §2)
+	wasteHyena = "thick_hide",
+	ashVulture = "crow_feather",
+	fireImp = "magma_shard",
+	basilisk = "toad_venom",
+	desertMummy = "cursed_bone",
 	iceWolf = "yeti_fur",
 	yeti = "yeti_fur",
 	frostGiant = "yeti_fur",

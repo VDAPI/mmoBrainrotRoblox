@@ -10,7 +10,8 @@ local LIST: { Types.ItemDef } = {}
 -- Five qualities: Small, Medium, Large, Great, Mighty.
 local HP_MANA = { 150, 500, 1500, 4000, 10000 }
 local ENERGY = { 30, 60, 100, 150, 250 }
-local PRICES = { 10, 60, 250, 900, 3000 }
+-- S93: the Great potion 900 -> 700 (gold per HP 0.175 between the Large 0.167 and the Mighty 0.30)
+local PRICES = { 10, 60, 250, 700, 3000 }
 -- S87 (balance plan D3): Great from 45, Mighty from 70 (HP, mana and energy alike; Logic/Potions.requiredLevel).
 local LEVELS = { 1, 1, 1, 45, 70 }
 

@@ -54,6 +54,14 @@ local LINE_INGREDIENT_RARE: { [string]: string } = {
 	sage = "ectoplasm",
 	guardian = "cursed_bone",
 }
+-- S93: Epic blessings (level 60) use the parts of the Scorched Wastes (the Magma Shard's first recipe).
+local LINE_INGREDIENT_EPIC: { [string]: string } = {
+	warrior = "magma_shard",
+	hunter = "toad_venom",
+	sage = "cursed_bone",
+	guardian = "thick_hide",
+	fortune = "crow_feather",
+}
 
 for _, line in Blessings.lines do
 	for rarity = 1, 4 do
@@ -63,6 +71,7 @@ for _, line in Blessings.lines do
 				id = if rarity == 1
 					then LINE_INGREDIENT_COMMON[line] or LINE_INGREDIENT[line]
 					elseif rarity == 3 then LINE_INGREDIENT_RARE[line] or LINE_INGREDIENT[line]
+					elseif rarity == 4 then LINE_INGREDIENT_EPIC[line] or LINE_INGREDIENT[line]
 					else LINE_INGREDIENT[line],
 				n = rarity,
 			},
@@ -149,6 +158,8 @@ local ELIXIR_INGREDIENTS: { [string]: { Ingredient } } = {
 	resLightning = { { id = "herb_moonpetal", n = 2 }, { id = "fish_eel", n = 3 } },
 	resPoison = { { id = "herb_nightshade", n = 3 }, { id = "spider_silk", n = 2 } },
 }
+-- S93: the fire elixir unlocks with its scale (salamanders from 45); the rest at 30 (S94 adds resIce).
+local ELIXIR_LEVEL: { [string]: number } = { resFire = 45 }
 for _, stat in Blessings.ELIXIRS do
 	local id = `elixir_{stat}`
 	add({
@@ -158,7 +169,7 @@ for _, stat in Blessings.ELIXIRS do
 		ingredients = ELIXIR_INGREDIENTS[stat],
 		gold = 400,
 		time = 15 * 60,
-		level = 30,
+		level = ELIXIR_LEVEL[stat] or 30,
 	})
 end
 

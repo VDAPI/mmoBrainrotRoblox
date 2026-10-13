@@ -119,7 +119,10 @@ return {
 			},
 		},
 		["LevelCurves:curves.monsterAtk[*"] = {
-			{ session = "S87", why = "D1 / G1-G3: new curve 1 / 1.07 / 1.11 / 1.14 (plan start; HP lost 1 on 1 13-18 %)" },
+			{
+				session = "S87",
+				why = "D1 / G1-G3: new curve 1 / 1.07 / 1.11 / 1.14 (plan start; HP lost 1 on 1 13-18 %)",
+			},
 		},
 		["LevelCurves:curves.eliteHp[*"] = {
 			{
@@ -128,7 +131,10 @@ return {
 			},
 		},
 		["LevelCurves:curves.eliteDmg[*"] = {
-			{ session = "S87", why = "D4: new curve 1 / 1.05 / 1.06 / 1.07 (Warrior Elite in REGION_TARGETS.eliteSingle)" },
+			{
+				session = "S87",
+				why = "D4: new curve 1 / 1.05 / 1.06 / 1.07 (Warrior Elite in REGION_TARGETS.eliteSingle)",
+			},
 		},
 		["LevelCurves:curves.elite2Hp[*"] = {
 			{ session = "S87", why = "D4: new Elite II curve, neutral 1 / 1 / 1 / 1 until the region sessions" },
@@ -137,13 +143,22 @@ return {
 			{ session = "S87", why = "D4: new Elite II curve, neutral 1 / 1 / 1 / 1 until the region sessions" },
 		},
 		["LevelCurves:curves.manaCost.Mage[2][2]"] = {
-			{ session = "S87", why = "G10 / T-SK4: 1.4 -> 1.89, geometric mean of what Destroyer exp (2.36) and Arcanist boss (1.52) need" },
+			{
+				session = "S87",
+				why = "G10 / T-SK4: 1.4 -> 1.89, geometric mean of what Destroyer exp (2.36) and Arcanist boss (1.52) need",
+			},
 		},
 		["LevelCurves:curves.manaCost.Mage[3][2]"] = {
-			{ session = "S87", why = "G10 / T-SK4: 1.9 -> 2.59, geometric mean of Destroyer exp (3.51) and Arcanist boss (1.91)" },
+			{
+				session = "S87",
+				why = "G10 / T-SK4: 1.9 -> 2.59, geometric mean of Destroyer exp (3.51) and Arcanist boss (1.91)",
+			},
 		},
 		["LevelCurves:curves.manaCost.Mage[4][2]"] = {
-			{ session = "S87", why = "G10 / T-SK4: 2.5 -> 3.49, geometric mean of Destroyer exp (6.1) and Arcanist boss (2.0)" },
+			{
+				session = "S87",
+				why = "G10 / T-SK4: 2.5 -> 3.49, geometric mean of Destroyer exp (6.1) and Arcanist boss (2.0)",
+			},
 		},
 		["LevelCurves:curves.heal[2][2]"] = {
 			{ session = "S87", why = "G10 / T-SK5: 1 -> 2.33, Healer dungeon on Defender 0.272 -> 0.300 at 45" },
@@ -158,7 +173,10 @@ return {
 			},
 		},
 		["LevelCurves:elitePairChance*"] = {
-			{ session = "S87", why = "D5: new region table, neutral 0.5 (the old AreaSpawns.cave constant; same Rng use)" },
+			{
+				session = "S87",
+				why = "D5: new region table, neutral 0.5 (the old AreaSpawns.cave constant; same Rng use)",
+			},
 		},
 		["LevelCurves:dropFactor*"] = {
 			{ session = "S87", why = "D5: new region table, neutral 1 (same table and Rng use as before)" },
@@ -170,13 +188,22 @@ return {
 			},
 		},
 		["Rarities:twoHandedBonusMul"] = {
-			{ session = "S87", why = "C2 / G8: regular lines of a rolled two-handed weapon x2.7 (bez cech 269/280 in band; plan start 1.75 gave 237)" },
+			{
+				session = "S87",
+				why = "C2 / G8: regular lines of a rolled two-handed weapon x2.7 (bez cech 269/280 in band; plan start 1.75 gave 237)",
+			},
 		},
 		["Rarities:upgradeStatPerLevelTwoHanded"] = {
-			{ session = "S87", why = "C2 / G8: two-handed base +6.6 % per upgrade level (Common +9 up to 1.035; plan start 7 %)" },
+			{
+				session = "S87",
+				why = "C2 / G8: two-handed base +6.6 % per upgrade level (Common +9 up to 1.035; plan start 7 %)",
+			},
 		},
 		["Config:Upgrade.goldHigh"] = {
-			{ session = "S87", why = "C3 / G9: 40 -> 20, +1..+3 / income at 100 1.68 -> 0.84; +1..+9 protected 39.8 -> 19.9 levels" },
+			{
+				session = "S87",
+				why = "C3 / G9: 40 -> 20, +1..+3 / income at 100 1.68 -> 0.84; +1..+9 protected 39.8 -> 19.9 levels",
+			},
 		},
 		["Config:Upgrade.legendCoreFrom"] = {
 			{ session = "S87", why = "C4: new key, Legend Core from +8 (was +7): protected +7..+9 10.8 -> 8.3 cores" },
@@ -185,49 +212,86 @@ return {
 		["Items/Consumables:[potion_hp_5].level"] = { { session = "S87", why = "D3: Mighty potion from 70 (was 1)" } },
 		["Items/Consumables:[potion_mana_4].level"] = { { session = "S87", why = "D3: Great potion from 45 (was 1)" } },
 		["Items/Consumables:[potion_mana_5].level"] = { { session = "S87", why = "D3: Mighty potion from 70 (was 1)" } },
-		["Items/Consumables:[potion_energy_4].level"] = { { session = "S87", why = "D3: Great potion from 45 (was 1)" } },
-		["Items/Consumables:[potion_energy_5].level"] = { { session = "S87", why = "D3: Mighty potion from 70 (was 1)" } },
+		["Items/Consumables:[potion_energy_4].level"] = {
+			{ session = "S87", why = "D3: Great potion from 45 (was 1)" },
+		},
+		["Items/Consumables:[potion_energy_5].level"] = {
+			{ session = "S87", why = "D3: Mighty potion from 70 (was 1)" },
+		},
 		["BossTuning:*"] = {
-			{ session = "S87", why = "D3: constants moved from Boss.luau and the scripts without changing their values (new module)" },
+			{
+				session = "S87",
+				why = "D3: constants moved from Boss.luau and the scripts without changing their values (new module)",
+			},
 		},
 		-- S88: weapon traits, lines, monster defence and named Mythics 20-100 (docs/SESJE.md S88). Trait values: the
 		-- mean over the trait's situations (equal weights) on its path build, Common +0 at 45 / 70 / 100
 		-- (SkillModel.traitTarget, Balance.TRAIT_TARGETS); band 0.04-0.06 (STATY 14, answer 6).
 		["ItemTraits:byId.swordplay.value"] = {
-			{ session = "S88", why = "C2: counter bonus 25 -> 33 %: Swordplay 0.038-0.041 -> 0.041-0.044 (group, elite, boss on Samotnik)" },
+			{
+				session = "S88",
+				why = "C2: counter bonus 25 -> 33 %: Swordplay 0.038-0.041 -> 0.041-0.044 (group, elite, boss on Samotnik)",
+			},
 		},
 		["ItemTraits:byId.twinCut.value"] = {
-			{ session = "S88", why = "C2: 40 -> 58 %: Twin Cut 0.030-0.034 -> 0.043-0.050 (single, elite on Chorąży)" },
+			{
+				session = "S88",
+				why = "C2: 40 -> 58 %: Twin Cut 0.030-0.034 -> 0.043-0.050 (single, elite on Chorąży)",
+			},
 		},
 		["ItemTraits:byId.reaping.value"] = {
-			{ session = "S88", why = "C2: 1 -> 0.7 % max HP per kill: Reaping solo 0.074-0.079 -> 0.050-0.054 (the boss waves only in the report)" },
+			{
+				session = "S88",
+				why = "C2: 1 -> 0.7 % max HP per kill: Reaping solo 0.074-0.079 -> 0.050-0.054 (the boss waves only in the report)",
+			},
 		},
 		["ItemTraits:byId.rendingGash.value"] = {
-			{ session = "S88", why = "C2: 30 -> 36 %: Rending Gash 0.038-0.039 -> 0.045-0.046 without the bleed nodes, 0.040-0.061 with them (<= 0.08)" },
+			{
+				session = "S88",
+				why = "C2: 30 -> 36 %: Rending Gash 0.038-0.039 -> 0.045-0.046 without the bleed nodes, 0.040-0.061 with them (<= 0.08)",
+			},
 		},
 		["ItemTraits:byId.runThrough.value"] = {
-			{ session = "S88", why = "C2: 25 -> 55 %: Run Through in a group 0.020-0.025 -> 0.044-0.054 (band width untouched; the boss alone 0)" },
+			{
+				session = "S88",
+				why = "C2: 25 -> 55 %: Run Through in a group 0.020-0.025 -> 0.044-0.054 (band width untouched; the boss alone 0)",
+			},
 		},
 		["ItemTraits:byId.parry.value"] = {
-			{ session = "S88", why = "C2 / E1: block heal 0.5 -> 0.1 % max HP (one decimal in the tooltip; 0.2 gives 0.126 EHP at 100): Parry tank 0.061 -> 0.054; both traits of sword + shield on Samotnik 0.145-0.159 -> 0.072-0.095 EHP (<= 0.12)" },
+			{
+				session = "S88",
+				why = "C2 / E1: block heal 0.5 -> 0.1 % max HP (one decimal in the tooltip; 0.2 gives 0.126 EHP at 100): Parry tank 0.061 -> 0.054; both traits of sword + shield on Samotnik 0.145-0.159 -> 0.072-0.095 EHP (<= 0.12)",
+			},
 		},
 		["ItemTraits:byId.harrying.value"] = {
 			{ session = "S88", why = "C2: chance 15 -> 6 %: Harrying solo 0.114-0.116 -> 0.050-0.051" },
 		},
 		["ItemTraits:byId.toxicBarbs.value"] = {
-			{ session = "S88", why = "C2: 30 -> 38 %: Toxic Barbs 0.033-0.038 -> 0.043-0.048 without the venoms, 0.059-0.066 with them (<= 0.08)" },
+			{
+				session = "S88",
+				why = "C2: 30 -> 38 %: Toxic Barbs 0.033-0.038 -> 0.043-0.048 without the venoms, 0.059-0.066 with them (<= 0.08)",
+			},
 		},
 		["ItemTraits:byId.criticalForce.value"] = {
-			{ session = "S88", why = "C2: 25 -> 20 crit points: Critical Force 0.061-0.073 -> 0.049-0.058 (Strzelec Wyborowy, single and group)" },
+			{
+				session = "S88",
+				why = "C2: 25 -> 20 crit points: Critical Force 0.061-0.073 -> 0.049-0.058 (Strzelec Wyborowy, single and group)",
+			},
 		},
 		["ItemTraits:byId.easyPrey.value"] = {
 			{ session = "S88", why = "C2: 10 -> 9 %: Easy Prey controlled 0.054-0.061 -> 0.049-0.055 (Traper)" },
 		},
 		["ItemTraits:byId.fullDraw.value"] = {
-			{ session = "S88", why = "C2: 30 -> 45 % x weapon speed: Full Draw 0.028-0.039 -> 0.043-0.059 with every Hunter weapon (Traper bow the lowest)" },
+			{
+				session = "S88",
+				why = "C2: 30 -> 45 % x weapon speed: Full Draw 0.028-0.039 -> 0.043-0.059 with every Hunter weapon (Traper bow the lowest)",
+			},
 		},
 		["ItemTraits:byId.elementalSpark.params.burnPct"] = {
-			{ session = "S88", why = "C5: burn 30 -> 80 % of the hit: Spark fire 0.016-0.018 -> 0.043-0.049 (mana, group; the chance 35 sits at onHitChanceCap from Legendary)" },
+			{
+				session = "S88",
+				why = "C5: burn 30 -> 80 % of the hit: Spark fire 0.016-0.018 -> 0.043-0.049 (mana, group; the chance 35 sits at onHitChanceCap from Legendary)",
+			},
 		},
 		["ItemTraits:byId.elementalSpark.params.arcPct"] = {
 			{ session = "S88", why = "C5: arc 40 -> 110 %: Spark lightning 0.015-0.017 -> 0.042-0.048" },
@@ -236,31 +300,58 @@ return {
 			{ session = "S88", why = "C5: same target 20 -> 55 % (with arcPct; mana window on one target)" },
 		},
 		["ItemTraits:byId.elementalSpark.fixedHooks.frostbite"] = {
-			{ session = "S88", why = "C5: Frostbite 6 -> 11 %: Spark ice 0.000-0.005 -> 0.047-0.051 (STATY 14: 10 like the staff was not enough at 100)" },
+			{
+				session = "S88",
+				why = "C5: Frostbite 6 -> 11 %: Spark ice 0.000-0.005 -> 0.047-0.051 (STATY 14: 10 like the staff was not enough at 100)",
+			},
 		},
 		["ItemTraits:byId.elementalMight.value"] = {
-			{ session = "S88", why = "E6: 30 -> 39 % (x1.3): staff vs wand + orb in MIX was 0.94 at 100; fire 0.053-0.057, ice 0.046-0.048, lightning 0.087-0.118 (band 0.04-0.09, lightning in the report)" },
+			{
+				session = "S88",
+				why = "E6: 30 -> 39 % (x1.3): staff vs wand + orb in MIX was 0.94 at 100; fire 0.053-0.057, ice 0.046-0.048, lightning 0.087-0.118 (band 0.04-0.09, lightning in the report)",
+			},
 		},
 		["ItemTraits:byId.runicSeal.value"] = {
-			{ session = "S88", why = "C2 / C9: 8 -> 5.5 %: Runic Seal 0.076-0.078 -> 0.052-0.053; runestaff vs wand + tome 0.027-0.044 (<= 0.05)" },
+			{
+				session = "S88",
+				why = "C2 / C9: 8 -> 5.5 %: Runic Seal 0.076-0.078 -> 0.052-0.053; runestaff vs wand + tome 0.027-0.044 (<= 0.05)",
+			},
 		},
 		["ItemTraits:byId.anointment.value"] = {
-			{ session = "S88", why = "E4: 8 -> 5 %: Anointment in dungeon 0.080-0.083 -> 0.050-0.052; T-SK5 0.29 / 0.29 / 0.34 on 45 / 70 / 100" },
+			{
+				session = "S88",
+				why = "E4: 8 -> 5 %: Anointment in dungeon 0.080-0.083 -> 0.050-0.052; T-SK5 0.29 / 0.29 / 0.34 on 45 / 70 / 100",
+			},
 		},
 		["ItemTraits:byId.savingBlow.value"] = {
-			{ session = "S88", why = "C2: 4 -> 2.5 %: Saving Blow in dungeon 0.078-0.082 -> 0.049-0.051 (the holy staff is above scepter + shield, no x1.3)" },
+			{
+				session = "S88",
+				why = "C2: 4 -> 2.5 %: Saving Blow in dungeon 0.078-0.082 -> 0.049-0.051 (the holy staff is above scepter + shield, no x1.3)",
+			},
 		},
 		["ItemTraits:byId.concussion.value"] = {
-			{ session = "S88", why = "C6 / F3: chance 6 -> 7 %: Concussion in a group 0.015 -> 0.045 with delayShare 1; PvP stun 0.013 of the fight (<= 0.02)" },
+			{
+				session = "S88",
+				why = "C6 / F3: chance 6 -> 7 %: Concussion in a group 0.015 -> 0.045 with delayShare 1; PvP stun 0.013 of the fight (<= 0.02)",
+			},
 		},
 		["ItemTraits:byId.concussion.onHit.delayShare"] = {
-			{ session = "S88", why = "C6 / F3: 0.5 -> 1 interval after the stun (monsters only): chance 12 % with 0.5 s did not reach 0.04 and 1 s broke the PvP stun limit" },
+			{
+				session = "S88",
+				why = "C6 / F3: 0.5 -> 1 interval after the stun (monsters only): chance 12 % with 0.5 s did not reach 0.04 and 1 s broke the PvP stun limit",
+			},
 		},
 		["Combat:riposteCap"] = {
-			{ session = "S88", why = "E1: 30 -> 34 %: Counterattack 12 + Retaliation 12 + Swordplay 10 on Samotnik at 100 (STATY 10)" },
+			{
+				session = "S88",
+				why = "E1: 30 -> 34 %: Counterattack 12 + Retaliation 12 + Swordplay 10 on Samotnik at 100 (STATY 10)",
+			},
 		},
 		["Families:byId.beast.defences.agile.dodge"] = {
-			{ session = "S88", why = "B5: harpy dodge 15 -> 10 %: every class +14 % -> +9 % fight time against GENERIC (at most +10 %)" },
+			{
+				session = "S88",
+				why = "B5: harpy dodge 15 -> 10 %: every class +14 % -> +9 % fight time against GENERIC (at most +10 %)",
+			},
 		},
 		["Monsters:byId.peakHarpy.dodge"] = {
 			{ session = "S88", why = "B5: the family trait (Families beast agile 15 -> 10)" },
@@ -277,7 +368,9 @@ return {
 				why = "D3 (answer 23): res_<family> 2-4 -> 3.75-8.25 (Common 5-11 at ilvl 20+, Mythic top 13.2), res_<class> 1.5-3.5 -> 3-6.75 (4-9, top 10.8)",
 			},
 		},
-		["Bonuses:byId.pierce.min"] = { { session = "S88", why = "D1 / G7: pierce 3-6 -> 2.5-5 (family lines x2 raised G7 by 1-2 points)" } },
+		["Bonuses:byId.pierce.min"] = {
+			{ session = "S88", why = "D1 / G7: pierce 3-6 -> 2.5-5 (family lines x2 raised G7 by 1-2 points)" },
+		},
 		["Bonuses:byId.pierce.max"] = { { session = "S88", why = "D1 / G7: pierce 3-6 -> 2.5-5" } },
 		["Bonuses:byId.magicPierce.min"] = {
 			{ session = "S88", why = "D1 / G7: magicPierce 3-6 -> 2-4: Mage Heroic 0.257 -> 0.250 at 100" },
@@ -286,23 +379,37 @@ return {
 		["Bonuses:byId.skillDmg.min"] = { { session = "S88", why = "D1 / G7: skillDmg 1-2.2 -> 0.8-1.8" } },
 		["Bonuses:byId.skillDmg.max"] = { { session = "S88", why = "D1 / G7: skillDmg 1-2.2 -> 0.8-1.8" } },
 		["Bonuses:byId.basicDmg.min"] = {
-			{ session = "S88", why = "D1 / G7: basicDmg 1.5-3.3 -> 1-2.2 (D2 parity 0.78-0.98 -> 0.51-0.65 of the attack line)" },
+			{
+				session = "S88",
+				why = "D1 / G7: basicDmg 1.5-3.3 -> 1-2.2 (D2 parity 0.78-0.98 -> 0.51-0.65 of the attack line)",
+			},
 		},
 		["Bonuses:byId.basicDmg.max"] = { { session = "S88", why = "D1 / G7: basicDmg 1.5-3.3 -> 1-2.2" } },
-		["Bonuses:byId.woundChance.min"] = { { session = "S88", why = "D1 / G7: woundChance 2-4 -> 1.2-2.4 (as poisonChance)" } },
+		["Bonuses:byId.woundChance.min"] = {
+			{ session = "S88", why = "D1 / G7: woundChance 2-4 -> 1.2-2.4 (as poisonChance)" },
+		},
 		["Bonuses:byId.woundChance.max"] = { { session = "S88", why = "D1 / G7: woundChance 2-4 -> 1.2-2.4" } },
 		["Bonuses:byId.poisonChance.min"] = {
-			{ session = "S88", why = "D1 / G7: poisonChance 2-4 -> 1.2-2.4 (D2 parity 1.30 -> 0.80 of the Hunter's attack line)" },
+			{
+				session = "S88",
+				why = "D1 / G7: poisonChance 2-4 -> 1.2-2.4 (D2 parity 1.30 -> 0.80 of the Hunter's attack line)",
+			},
 		},
 		["Bonuses:byId.poisonChance.max"] = { { session = "S88", why = "D1 / G7: poisonChance 2-4 -> 1.2-2.4" } },
 		["Items/Uniques:[unique_grimrok_cleaver].fixedBonuses*"] = {
-			{ session = "S88", why = "D4: critDmg 15 -> vs_humanoid 12 (Grimrok's family, STATY 9): power 1.033 -> 1.055 of a rolled Mythic" },
+			{
+				session = "S88",
+				why = "D4: critDmg 15 -> vs_humanoid 12 (Grimrok's family, STATY 9): power 1.033 -> 1.055 of a rolled Mythic",
+			},
 		},
 		["Items/Uniques:[unique_grimrok_fang].fixedBonuses*"] = {
 			{ session = "S88", why = "D4: goldBonus 10 -> basicDmg 4: power 1.012 -> 1.022" },
 		},
 		["Items/Uniques:[unique_grimrok_totem].fixedBonuses*"] = {
-			{ session = "S88", why = "D4: resPoison 15 -> res_humanoid 8: power 1.052 -> 1.070 (mean of the four classes)" },
+			{
+				session = "S88",
+				why = "D4: resPoison 15 -> res_humanoid 8: power 1.052 -> 1.070 (mean of the four classes)",
+			},
 		},
 		["Items/Uniques:[unique_morvane_shroud].fixedBonuses*"] = {
 			{ session = "S88", why = "D4: resIce 18 -> res_undead 10 (Morvane's family): power 0.990 -> 1.011" },
@@ -311,13 +418,22 @@ return {
 			{ session = "S88", why = "D4: hpRegen 6 -> healPower 8 (the scepter's affinity): power 1.070" },
 		},
 		["Items/Uniques:[unique_morvane_bow].fixedBonuses*"] = {
-			{ session = "S88", why = "D4: critChance 6 (over the Mythic top) -> poisonChance 5, physAtk 8 -> 6, dex 14 -> 10: power 1.094 -> 1.073" },
+			{
+				session = "S88",
+				why = "D4: critChance 6 (over the Mythic top) -> poisonChance 5, physAtk 8 -> 6, dex 14 -> 10: power 1.094 -> 1.073",
+			},
 		},
 		["Items/Uniques:[unique_azgor_heart].fixedBonuses*"] = {
-			{ session = "S88", why = "D4: critDmg 25 (over 2.5 x the Mythic top) -> vs_elemental 12: power 1.019 -> 1.035" },
+			{
+				session = "S88",
+				why = "D4: critDmg 25 (over 2.5 x the Mythic top) -> vs_elemental 12: power 1.019 -> 1.035",
+			},
 		},
 		["Items/Uniques:[unique_azgor_staff].fixedBonuses*"] = {
-			{ session = "S88", why = "D4: critChance 8 (over the Mythic top) -> dotPower 15 (affinity): power 1.050 -> 1.030" },
+			{
+				session = "S88",
+				why = "D4: critChance 8 (over the Mythic top) -> dotPower 15 (affinity): power 1.050 -> 1.030",
+			},
 		},
 		["Items/Uniques:[unique_azgor_helm].fixedBonuses*"] = {
 			{ session = "S88", why = "D4: resFire 25 -> res_elemental 10 (Azgor's family): power 1.013 -> 1.034" },
@@ -326,10 +442,16 @@ return {
 			{ session = "S88", why = "D4: leg_bossDamage 12 -> 10 (the legendary range): power 1.053" },
 		},
 		["Items/Uniques:[unique_vaelgrath_scale].fixedBonuses*"] = {
-			{ session = "S88", why = "D4: hpPct 10 -> 8 (2.5 x the Mythic top), resIce 30 -> res_dragon 10: power 1.027 -> 1.039" },
+			{
+				session = "S88",
+				why = "D4: hpPct 10 -> 8 (2.5 x the Mythic top), resIce 30 -> res_dragon 10: power 1.027 -> 1.039",
+			},
 		},
 		["Items/Uniques:[unique_vaelgrath_eye].fixedBonuses*"] = {
-			{ session = "S88", why = "D4: magAtk 10 -> 8.5, int 35 -> 32 (2.5 x the Mythic top), manaRegen 12 -> magicPierce 10 (affinity): power 1.045 -> 1.046" },
+			{
+				session = "S88",
+				why = "D4: magAtk 10 -> 8.5, int 35 -> 32 (2.5 x the Mythic top), manaRegen 12 -> magicPierce 10 (affinity): power 1.045 -> 1.046",
+			},
 		},
 		["ItemWeights:traits.runThrough.pct"] = { { session = "S88", why = "C10: 3 -> 5, measured 4.4-5.4 % (group)" } },
 		["ItemWeights:traits.harrying.pct"] = { { session = "S88", why = "C10: 7 -> 5, measured 5.0-5.1 % (solo)" } },
@@ -337,9 +459,14 @@ return {
 			{ session = "S88", why = "C10: 4 -> 2, measured 0.4-5.4 % (mana binds only at 45; report row)" },
 		},
 		["ItemWeights:traits.elementalMight.pct"] = {
-			{ session = "S88", why = "C10: 5 -> 6.5, measured fire 5.3-5.7, ice 4.6-4.8, lightning 8.7-11.8 % (mean 6.6)" },
+			{
+				session = "S88",
+				why = "C10: 5 -> 6.5, measured fire 5.3-5.7, ice 4.6-4.8, lightning 8.7-11.8 % (mean 6.6)",
+			},
 		},
-		["ItemWeights:traits.anointment.pct"] = { { session = "S88", why = "C10: 8 -> 5, measured 5.0-5.2 % (dungeon)" } },
+		["ItemWeights:traits.anointment.pct"] = {
+			{ session = "S88", why = "C10: 8 -> 5, measured 5.0-5.2 % (dungeon)" },
+		},
 		["ItemWeights:traits.concussion.pct"] = { { session = "S88", why = "C10: 3 -> 4.5, measured 4.5 % (group)" } },
 		-- S89: Cleric and Warrior paths at 45 / 70 / 100 (model tests/SkillModel.luau; numbers 45 / 70 / 100)
 		["SkillCurves:knots.mightyStrike.dmg[5]"] = {
@@ -350,13 +477,20 @@ return {
 		["SkillCurves:knots.cleave.dmg[3]"] = { { session = "S89", why = "B3: rank 3 (L18) pinned at 164.4" } },
 		["SkillCurves:knots.battleCry.atk[3]"] = { { session = "S89", why = "B3: rank 3 (L18) pinned at 14" } },
 		["Skills/Warrior:[mightyStrike].values.dmg[2]"] = {
-			{ session = "S89", why = "B R1: rank 10 295 -> 222; Furia R1 2.89 / 3.12 / 3.35 -> 2.41 / 2.51 / 2.60 (<= 1.15 x L20 2.27)" },
+			{
+				session = "S89",
+				why = "B R1: rank 10 295 -> 222; Furia R1 2.89 / 3.12 / 3.35 -> 2.41 / 2.51 / 2.60 (<= 1.15 x L20 2.27)",
+			},
 		},
 		["Skills/Warrior:[mightyStrike].breakpoints[10].b.effect.value"] = {
 			{ session = "S89", why = "B R1 / R4: bleed 90 -> 45, 10B gain 0.27 -> 0.18 (band 0.17-0.28)" },
 		},
-		["Skills/Warrior:[charge].values.dmg[2]"] = { { session = "S89", why = "B R1: rank 10 210 -> 165 (shared base)" } },
-		["Skills/Warrior:[cleave].values.dmg[2]"] = { { session = "S89", why = "B R1: rank 10 250 -> 168 (shared base)" } },
+		["Skills/Warrior:[charge].values.dmg[2]"] = {
+			{ session = "S89", why = "B R1: rank 10 210 -> 165 (shared base)" },
+		},
+		["Skills/Warrior:[cleave].values.dmg[2]"] = {
+			{ session = "S89", why = "B R1: rank 10 250 -> 168 (shared base)" },
+		},
 		["Skills/Warrior:[bladeWhirl].values.dmg[2]"] = {
 			{ session = "S89", why = "B R1 / Furia x base: rank 10 67 -> 52; x base 1.14 -> 1.25 at 45" },
 		},
@@ -366,27 +500,45 @@ return {
 		["Skills/Warrior:[battleCry].values.atk[2]"] = {
 			{ session = "S89", why = "B R1: rank 10 28 -> 16 (the cry is outside R1's basic fight); Furia R1 -0.1" },
 		},
-		["Skills/Warrior:[bloodlust].values.speed[2]"] = { { session = "S89", why = "B R1: rank 10 35 -> 20 % attack speed" } },
+		["Skills/Warrior:[bloodlust].values.speed[2]"] = {
+			{ session = "S89", why = "B R1: rank 10 35 -> 20 % attack speed" },
+		},
 		["Skills/Warrior:[bloodlust].breakpoints[10].b.values.speed"] = {
 			{ session = "S89", why = "B R1 / Furia x base: 10B +8 -> +4 (x base at 100 1.36 -> 1.35)" },
 		},
-		["Skills/Warrior:[earthquake].values.dmg[2]"] = { { session = "S89", why = "B R1: rank 10 280 -> 175 (R1 growth 70-100)" } },
+		["Skills/Warrior:[earthquake].values.dmg[2]"] = {
+			{ session = "S89", why = "B R1: rank 10 280 -> 175 (R1 growth 70-100)" },
+		},
 		["Skills/Warrior:[earthquake].breakpoints[10].b.values.dmg"] = {
 			{ session = "S89", why = "R4: 10B +60 -> +38, gain 0.34 -> 0.22 = 10A (|A - B| 0)" },
 		},
 		["Skills/Warrior:[rend].values.dmg[1]"] = {
-			{ session = "S89", why = "B Furia x base: 140 -> 280 flat (the only Berserker lever at 45): 1.14 -> 1.25 at 45" },
+			{
+				session = "S89",
+				why = "B Furia x base: 140 -> 280 flat (the only Berserker lever at 45): 1.14 -> 1.25 at 45",
+			},
 		},
-		["Skills/Warrior:[rend].values.dmg[2]"] = { { session = "S89", why = "B: 250 -> 280 flat (x base 1.31 / 1.35 at 70 / 100)" } },
-		["Skills/Warrior:[rend].values.bleed"] = { { session = "S89", why = "B R1: bleed 40 -> 10 (armour-free bleed grows R1 70-100)" } },
-		["Skills/Warrior:[rend].values.furyDmg"] = { { session = "S89", why = "B: +8 -> +6 % per Fury stack (R1 at 100 2.65 -> 2.60)" } },
+		["Skills/Warrior:[rend].values.dmg[2]"] = {
+			{ session = "S89", why = "B: 250 -> 280 flat (x base 1.31 / 1.35 at 70 / 100)" },
+		},
+		["Skills/Warrior:[rend].values.bleed"] = {
+			{ session = "S89", why = "B R1: bleed 40 -> 10 (armour-free bleed grows R1 70-100)" },
+		},
+		["Skills/Warrior:[rend].values.furyDmg"] = {
+			{ session = "S89", why = "B: +8 -> +6 % per Fury stack (R1 at 100 2.65 -> 2.60)" },
+		},
 		["Skills/Warrior:[rend].breakpoints[10].a.values.bleed"] = {
 			{ session = "S89", why = "R4: 10A +30 -> +70 bleed, gain 0.07 -> 0.18 (band 0.17-0.28)" },
 		},
 		["Skills/Warrior:[titansWrath].values.dmg[1]"] = {
-			{ session = "S89", why = "C pace: 180 -> 105; Furia group 8 s at 100 31.8k -> 23k (57 % was Titan's Wrath), Samotnik pace 2.40 -> 1.45" },
+			{
+				session = "S89",
+				why = "C pace: 180 -> 105; Furia group 8 s at 100 31.8k -> 23k (57 % was Titan's Wrath), Samotnik pace 2.40 -> 1.45",
+			},
 		},
-		["Skills/Warrior:[titansWrath].values.dmg[2]"] = { { session = "S89", why = "C pace: 320 -> 150 (group 8 s, ROZWOJ 10.6)" } },
+		["Skills/Warrior:[titansWrath].values.dmg[2]"] = {
+			{ session = "S89", why = "C pace: 320 -> 150 (group 8 s, ROZWOJ 10.6)" },
+		},
 		["Skills/Warrior:[titansWrath].breakpoints[5].b.values.dmg"] = {
 			{ session = "S89", why = "R4: 5B +25 -> +18, gain 0.19 -> 0.14 (band 0.08-0.17)" },
 		},
@@ -398,17 +550,29 @@ return {
 		},
 		["Skills/Warrior:[carnage].values.perFury[2]"] = { { session = "S89", why = "B: 2.5 -> 0.9 % per stack" } },
 		["Skills/Warrior:[warBanner].cost"] = {
-			{ session = "S89", why = "C Standard-Bearer S: 30 -> 15 energy (S 0.57 at 70; support at 100 4.79 -> 4.93)" },
+			{
+				session = "S89",
+				why = "C Standard-Bearer S: 30 -> 15 energy (S 0.57 at 70; support at 100 4.79 -> 4.93)",
+			},
 		},
-		["Skills/Warrior:[crushingBlow].cost"] = { { session = "S89", why = "C Standard-Bearer S: 50 -> 35 energy (S at 70 0.54 -> 0.55+)" } },
-		["Skills/Warrior:[crushingBlow].values.armorBreak"] = { { session = "S89", why = "C B: armour break 30 -> 40 % (support at 100 +0.02)" } },
+		["Skills/Warrior:[crushingBlow].cost"] = {
+			{ session = "S89", why = "C Standard-Bearer S: 50 -> 35 energy (S at 70 0.54 -> 0.55+)" },
+		},
+		["Skills/Warrior:[crushingBlow].values.armorBreak"] = {
+			{ session = "S89", why = "C B: armour break 30 -> 40 % (support at 100 +0.02)" },
+		},
 		["Skills/Warrior:[crushingBlow].breakpoints[5].b.values.dmg"] = {
 			{ session = "S89", why = "R4: 5B +40 -> +48, gain at 100 0.077 -> 0.092 (band 0.08-0.17)" },
 		},
-		["Skills/Warrior:[advanceOrder].cost"] = { { session = "S89", why = "C B: 35 -> 20 energy (the order cast on cooldown, support at 100 4.80 -> 4.88)" } },
+		["Skills/Warrior:[advanceOrder].cost"] = {
+			{ session = "S89", why = "C B: 35 -> 20 energy (the order cast on cooldown, support at 100 4.80 -> 4.88)" },
+		},
 		["Skills/Warrior:[advanceOrder].values.crit[1]"] = { { session = "S89", why = "C B: crit 10 -> 12 points" } },
 		["Skills/Warrior:[advanceOrder].values.crit[2]"] = {
-			{ session = "S89", why = "C B: crit 20 -> 24 points; support at 100 4.93 / 4.95 (sword / sabre, band 4.9-5.1)" },
+			{
+				session = "S89",
+				why = "C B: crit 20 -> 24 points; support at 100 4.93 / 4.95 (sword / sabre, band 4.9-5.1)",
+			},
 		},
 		["Paths/Warrior:[berserker].rows[4].nodes[berserker_executioner].values.executioner[1]"] = {
 			{ session = "S89", why = "B x base: 5 -> 1.5 % (x base 1.33 / 1.42 at 70 / 100 -> 1.31 / 1.35)" },
@@ -425,52 +589,90 @@ return {
 		["Paths/Warrior:[berserker].rows[5].nodes[berserker_might].values.might[1]"] = {
 			{ session = "S89", why = "B x base: 3 -> 1 % physical attack (x base at 100 <= 1.35)" },
 		},
-		["Paths/Warrior:[berserker].rows[5].nodes[berserker_might].values.might[2]"] = { { session = "S89", why = "B x base: 9 -> 3 %" } },
+		["Paths/Warrior:[berserker].rows[5].nodes[berserker_might].values.might[2]"] = {
+			{ session = "S89", why = "B x base: 9 -> 3 %" },
+		},
 		["Paths/Warrior:[berserker].rows[10].nodes[berserker_openWounds].values.openWounds[1]"] = {
-			{ session = "S89", why = "B R1 / x base at 100: +10 -> +1 % bleed (bleeds skip armour and grow R1 to 100)" },
+			{
+				session = "S89",
+				why = "B R1 / x base at 100: +10 -> +1 % bleed (bleeds skip armour and grow R1 to 100)",
+			},
 		},
 		["Paths/Warrior:[berserker].rows[10].nodes[berserker_openWounds].values.openWounds[2]"] = {
 			{ session = "S89", why = "B: +30 -> +3 %" },
 		},
 		["Paths/Warrior:[berserker].rows[10].nodes[berserker_hardened].values.hardened[1]"] = {
-			{ session = "S89", why = "D Inquisitor HP at 100: Furia max HP +4 -> +2 % (Inquisitor / Berserker HP 1.25 -> 1.33)" },
+			{
+				session = "S89",
+				why = "D Inquisitor HP at 100: Furia max HP +4 -> +2 % (Inquisitor / Berserker HP 1.25 -> 1.33)",
+			},
 		},
-		["Paths/Warrior:[berserker].rows[10].nodes[berserker_hardened].values.hardened[2]"] = { { session = "S89", why = "D: +12 -> +6 %" } },
+		["Paths/Warrior:[berserker].rows[10].nodes[berserker_hardened].values.hardened[2]"] = {
+			{ session = "S89", why = "D: +12 -> +6 %" },
+		},
 		["Paths/Warrior:[guardian].reference[defender].stats.str"] = {
-			{ session = "S89", why = "C statPlan 2 : 3 -> 7 : 5 (EHP 1.89 / 2.15 / 2.22 -> 1.63 / 1.77 / 1.77, DPS 0.39 -> 0.48 Furia)" },
+			{
+				session = "S89",
+				why = "C statPlan 2 : 3 -> 7 : 5 (EHP 1.89 / 2.15 / 2.22 -> 1.63 / 1.77 / 1.77, DPS 0.39 -> 0.48 Furia)",
+			},
 		},
-		["Paths/Warrior:[guardian].reference[defender].stats.vit"] = { { session = "S89", why = "C statPlan 2 : 3 -> 7 : 5" } },
+		["Paths/Warrior:[guardian].reference[defender].stats.vit"] = {
+			{ session = "S89", why = "C statPlan 2 : 3 -> 7 : 5" },
+		},
 		["Paths/Warrior:[guardian].rows[5].nodes[guardian_menace].values.menaceDamage[1]"] = {
-			{ session = "S89", why = "C group: +1 -> +2 % per enemy (Samotnik group at 100 0.53 -> 0.56; T-SK3 2.18, exception in DECYZJE)" },
+			{
+				session = "S89",
+				why = "C group: +1 -> +2 % per enemy (Samotnik group at 100 0.53 -> 0.56; T-SK3 2.18, exception in DECYZJE)",
+			},
 		},
-		["Paths/Warrior:[guardian].rows[5].nodes[guardian_menace].values.menaceDamage[2]"] = { { session = "S89", why = "C: +3 -> +6 %" } },
+		["Paths/Warrior:[guardian].rows[5].nodes[guardian_menace].values.menaceDamage[2]"] = {
+			{ session = "S89", why = "C: +3 -> +6 %" },
+		},
 		["Paths/Warrior:[guardian].rows[5].nodes[guardian_shieldMastery].values.shieldMastery[1]"] = {
 			{ session = "S89", why = "C EHP at 70: +3 -> +2 points block (1.84 -> 1.77)" },
 		},
-		["Paths/Warrior:[guardian].rows[5].nodes[guardian_shieldMastery].values.shieldMastery[2]"] = { { session = "S89", why = "C: +9 -> +6" } },
+		["Paths/Warrior:[guardian].rows[5].nodes[guardian_shieldMastery].values.shieldMastery[2]"] = {
+			{ session = "S89", why = "C: +9 -> +6" },
+		},
 		["Paths/Warrior:[guardian].rows[10].nodes[guardian_veteran].values.veteran[1]"] = {
 			{ session = "S89", why = "C EHP at 100: 4 -> 1.5 % armour and HP (1.89 -> 1.77)" },
 		},
-		["Paths/Warrior:[guardian].rows[10].nodes[guardian_veteran].values.veteran[2]"] = { { session = "S89", why = "C: 12 -> 4.5 %" } },
+		["Paths/Warrior:[guardian].rows[10].nodes[guardian_veteran].values.veteran[2]"] = {
+			{ session = "S89", why = "C: 12 -> 4.5 %" },
+		},
 		["Paths/Warrior:[standard].rows[5].nodes[standard_grit].values.bearerGrit[1]"] = {
 			{ session = "S89", why = "R6: 4 -> 3 % max HP (first third 1.56 -> 1.29 of the mean)" },
 		},
-		["Paths/Warrior:[standard].rows[5].nodes[standard_grit].values.bearerGrit[2]"] = { { session = "S89", why = "R6: 12 -> 9 %" } },
+		["Paths/Warrior:[standard].rows[5].nodes[standard_grit].values.bearerGrit[2]"] = {
+			{ session = "S89", why = "R6: 12 -> 9 %" },
+		},
 		["Paths/Warrior:[standard].rows[10].nodes[standard_veteran].values.campaign[1]"] = {
 			{ session = "S89", why = "R6: 4 -> 6 % armour (last third 0.61 -> 0.84 of the mean)" },
 		},
-		["Paths/Warrior:[standard].rows[10].nodes[standard_veteran].values.campaign[2]"] = { { session = "S89", why = "R6: 12 -> 18 %" } },
-		["Skills/Cleric:[brandOfLight].values.dmg[1]"] = {
-			{ session = "S89", why = "D Inquisitor / Furia: 100 -> 120 (0.80 / 0.81 / 0.86 after statPlan 1 : 2 -> 0.84 / 0.87 / 0.93)" },
+		["Paths/Warrior:[standard].rows[10].nodes[standard_veteran].values.campaign[2]"] = {
+			{ session = "S89", why = "R6: 12 -> 18 %" },
 		},
-		["Skills/Cleric:[brandOfLight].values.dmg[2]"] = { { session = "S89", why = "D: 170 -> 260 (rank 10 at 62: 70 and 100)" } },
+		["Skills/Cleric:[brandOfLight].values.dmg[1]"] = {
+			{
+				session = "S89",
+				why = "D Inquisitor / Furia: 100 -> 120 (0.80 / 0.81 / 0.86 after statPlan 1 : 2 -> 0.84 / 0.87 / 0.93)",
+			},
+		},
+		["Skills/Cleric:[brandOfLight].values.dmg[2]"] = {
+			{ session = "S89", why = "D: 170 -> 260 (rank 10 at 62: 70 and 100)" },
+		},
 		["Skills/Cleric:[brandOfLight].values.dot[1]"] = { { session = "S89", why = "D: burn 140 -> 170" } },
-		["Skills/Cleric:[brandOfLight].values.dot[2]"] = { { session = "S89", why = "D: burn 240 -> 320 (ratio at 100 0.925, band 0.87-0.93)" } },
+		["Skills/Cleric:[brandOfLight].values.dot[2]"] = {
+			{ session = "S89", why = "D: burn 240 -> 320 (ratio at 100 0.925, band 0.87-0.93)" },
+		},
 		["Skills/Cleric:[brandOfLight].breakpoints[5].a.values.dot"] = {
 			{ session = "S89", why = "R4: 5A +30 -> +80 burn, gain 0.04 -> 0.11-0.16 (band 0.08-0.17)" },
 		},
 		["Skills/Cleric:[hammerOfHeaven].values.dmg[1]"] = {
-			{ session = "S89", why = "D Fortune solo pace: 200 -> 160; the Inquisitor's group at 100 (Fortuna 1.51 -> 1.36 x Inquisitor, T-SK3 2.16 -> 1.87)" },
+			{
+				session = "S89",
+				why = "D Fortune solo pace: 200 -> 160; the Inquisitor's group at 100 (Fortuna 1.51 -> 1.36 x Inquisitor, T-SK3 2.16 -> 1.87)",
+			},
 		},
 		["Skills/Cleric:[hammerOfHeaven].values.dmg[2]"] = { { session = "S89", why = "D: 340 -> 260" } },
 		["Skills/Cleric:[hammerOfHeaven].breakpoints[5].b.lingering.pct"] = {
@@ -492,254 +694,1370 @@ return {
 			{ session = "S89", why = "R4: 10B cooldown x0.6 -> x0.85, gain 0.80 -> 0.20" },
 		},
 		["Paths/Cleric:[inquisitor].reference[solo].stats.int"] = {
-			{ session = "S89", why = "D statPlan 3 : 2 -> 1 : 2 (HP 1.06 / 1.09 / 1.00 -> 1.32 / 1.38 / 1.33 Furia; at 45 only the plan acts)" },
+			{
+				session = "S89",
+				why = "D statPlan 3 : 2 -> 1 : 2 (HP 1.06 / 1.09 / 1.00 -> 1.32 / 1.38 / 1.33 Furia; at 45 only the plan acts)",
+			},
 		},
 		["Paths/Cleric:[inquisitor].rows[4].nodes[inquisitor_ember].values.ember[1]"] = {
 			{ session = "S89", why = "D ratio at 70 / 100: crit +1 -> +2 points" },
 		},
-		["Paths/Cleric:[inquisitor].rows[4].nodes[inquisitor_ember].values.ember[2]"] = { { session = "S89", why = "D: +3 -> +6" } },
+		["Paths/Cleric:[inquisitor].rows[4].nodes[inquisitor_ember].values.ember[2]"] = {
+			{ session = "S89", why = "D: +3 -> +6" },
+		},
 		["Paths/Cleric:[inquisitor].rows[5].nodes[inquisitor_grit].values.grit[1]"] = {
 			{ session = "S89", why = "D HP at 100: 2 -> 2.5 % (1.30 -> 1.33)" },
 		},
-		["Paths/Cleric:[inquisitor].rows[5].nodes[inquisitor_grit].values.grit[2]"] = { { session = "S89", why = "D: 6 -> 7.5 %" } },
+		["Paths/Cleric:[inquisitor].rows[5].nodes[inquisitor_grit].values.grit[2]"] = {
+			{ session = "S89", why = "D: 6 -> 7.5 %" },
+		},
 		["Paths/Cleric:[healer].rows[5].nodes[healer_grace].values.grace[1]"] = {
 			{ session = "S89", why = "D Fortune heals less at 70: 5 -> 8 % (0.17 -> 0.22, band 0.20-0.25)" },
 		},
-		["Paths/Cleric:[healer].rows[5].nodes[healer_grace].values.grace[2]"] = { { session = "S89", why = "D: 15 -> 24 %" } },
+		["Paths/Cleric:[healer].rows[5].nodes[healer_grace].values.grace[2]"] = {
+			{ session = "S89", why = "D: 15 -> 24 %" },
+		},
 		["Paths/Cleric:[healer].rows[10].nodes[healer_hope].values.hope[1]"] = {
 			{ session = "S89", why = "D T-SK5 at 100 under 0.35 with Grace 24: 5 -> 2 % (T-SK5 0.347, Fortune 0.247)" },
 		},
-		["Paths/Cleric:[healer].rows[10].nodes[healer_hope].values.hope[2]"] = { { session = "S89", why = "D: 15 -> 6 %" } },
+		["Paths/Cleric:[healer].rows[10].nodes[healer_hope].values.hope[2]"] = {
+			{ session = "S89", why = "D: 15 -> 6 %" },
+		},
 		-- S90: Hunter and Mage paths at 45 / 70 / 100 (model tests/SkillModel.luau); "before -> after: why"
-		["Items/Bases:byType.crossbow.weapon.f(1).dmg"] = { { session = "S90", why = "12 -> 13: B1: Kusza dmgMul 1.45 -> 1.54 (Trapper with the crossbow and the bow in band on 1 target and area 8 s, T2 MIX <= 5 %; ROZWOJ 11.1); 1-20 too (list S91)" } },
-		["Items/Bases:byType.crossbow.weapon.f(100).dmg"] = { { session = "S90", why = "328 -> 348: B1: Kusza dmgMul 1.45 -> 1.54 (Trapper with the crossbow and the bow in band on 1 target and area 8 s, T2 MIX <= 5 %; ROZWOJ 11.1); 1-20 too (list S91)" } },
-		["Items/Bases:byType.crossbow.weapon.f(20).dmg"] = { { session = "S90", why = "73 -> 77: B1: Kusza dmgMul 1.45 -> 1.54 (Trapper with the crossbow and the bow in band on 1 target and area 8 s, T2 MIX <= 5 %; ROZWOJ 11.1); 1-20 too (list S91)" } },
-		["Items/Bases:byType.crossbow.weapon.f(45).dmg"] = { { session = "S90", why = "152 -> 162: B1: Kusza dmgMul 1.45 -> 1.54 (Trapper with the crossbow and the bow in band on 1 target and area 8 s, T2 MIX <= 5 %; ROZWOJ 11.1); 1-20 too (list S91)" } },
-		["Items/Bases:byType.crossbow.weapon.f(70).dmg"] = { { session = "S90", why = "232 -> 246: B1: Kusza dmgMul 1.45 -> 1.54 (Trapper with the crossbow and the bow in band on 1 target and area 8 s, T2 MIX <= 5 %; ROZWOJ 11.1); 1-20 too (list S91)" } },
-		["Paths/Hunter:[marksman].rows[10].nodes[marksman_coldBlood].values.coldBlood[1]"] = { { session = "S90", why = "5 -> 7: C: Królobójca x base 1.25-1.35 and R7 1.15-1.35 (ROZWOJ 11.6); rows 4-11 node" } },
-		["Paths/Hunter:[marksman].rows[10].nodes[marksman_coldBlood].values.coldBlood[2]"] = { { session = "S90", why = "15 -> 21: C: Królobójca x base 1.25-1.35 and R7 1.15-1.35 (ROZWOJ 11.6); rows 4-11 node" } },
-		["Paths/Hunter:[marksman].rows[10].nodes[marksman_grit].values.grit[2]"] = { { session = "S90", why = "12 -> 11: C: Królobójca x base 1.25-1.35 and R7 1.15-1.35 (ROZWOJ 11.6); rows 4-11 node" } },
-		["Paths/Hunter:[marksman].rows[11].nodes[marksman_heartseeker2].values.kingslayer[1]"] = { { session = "S90", why = "60 -> 15: C: Królobójca x base 1.25-1.35 and R7 1.15-1.35 (ROZWOJ 11.6); rows 4-11 node" } },
-		["Paths/Hunter:[marksman].rows[11].nodes[marksman_heartseeker2].values.kingslayer[2]"] = { { session = "S90", why = "120 -> 30: C: Królobójca x base 1.25-1.35 and R7 1.15-1.35 (ROZWOJ 11.6); rows 4-11 node" } },
-		["Paths/Hunter:[marksman].rows[4].nodes[marksman_heldBreath].values.heldBreath[1]"] = { { session = "S90", why = "1 -> 0.25: C: Królobójca x base 1.25-1.35 and R7 1.15-1.35 (ROZWOJ 11.6); rows 4-11 node" } },
-		["Paths/Hunter:[marksman].rows[4].nodes[marksman_heldBreath].values.heldBreath[2]"] = { { session = "S90", why = "3 -> 0.75: C: Królobójca x base 1.25-1.35 and R7 1.15-1.35 (ROZWOJ 11.6); rows 4-11 node" } },
-		["Paths/Hunter:[marksman].rows[5].nodes[marksman_keenSight].values.keenSight[1]"] = { { session = "S90", why = "1 -> 0.3: C: Królobójca x base 1.25-1.35 and R7 1.15-1.35 (ROZWOJ 11.6); rows 4-11 node" } },
-		["Paths/Hunter:[marksman].rows[5].nodes[marksman_keenSight].values.keenSight[2]"] = { { session = "S90", why = "3 -> 0.9: C: Królobójca x base 1.25-1.35 and R7 1.15-1.35 (ROZWOJ 11.6); rows 4-11 node" } },
-		["Paths/Hunter:[marksman].rows[5].nodes[marksman_longShot].values.longShot[1]"] = { { session = "S90", why = "10 -> 3: C: Królobójca x base 1.25-1.35 and R7 1.15-1.35 (ROZWOJ 11.6); rows 4-11 node" } },
-		["Paths/Hunter:[marksman].rows[5].nodes[marksman_longShot].values.longShot[2]"] = { { session = "S90", why = "30 -> 8: C: Królobójca x base 1.25-1.35 and R7 1.15-1.35 (ROZWOJ 11.6); rows 4-11 node" } },
-		["Paths/Hunter:[marksman].rows[6].nodes[marksman_coupDeGrace].values.coupDeGrace[1]"] = { { session = "S90", why = "5 -> 1.7: C: Królobójca x base 1.25-1.35 and R7 1.15-1.35 (ROZWOJ 11.6); rows 4-11 node" } },
-		["Paths/Hunter:[marksman].rows[6].nodes[marksman_coupDeGrace].values.coupDeGrace[2]"] = { { session = "S90", why = "15 -> 5: C: Królobójca x base 1.25-1.35 and R7 1.15-1.35 (ROZWOJ 11.6); rows 4-11 node" } },
-		["Paths/Hunter:[marksman].rows[7].nodes[marksman_tempest].values.tempest[1]"] = { { session = "S90", why = "0.93 -> 0.92: C: Królobójca x base 1.25-1.35 and R7 1.15-1.35 (ROZWOJ 11.6); rows 4-11 node" } },
-		["Paths/Hunter:[marksman].rows[7].nodes[marksman_tempest].values.tempest[2]"] = { { session = "S90", why = "0.8 -> 0.78: C: Królobójca x base 1.25-1.35 and R7 1.15-1.35 (ROZWOJ 11.6); rows 4-11 node" } },
-		["Paths/Hunter:[marksman].rows[9].nodes[marksman_deadlyTip].values.deadlyTip[2]"] = { { session = "S90", why = "35 -> 36: C: Królobójca x base 1.25-1.35 and R7 1.15-1.35 (ROZWOJ 11.6); rows 4-11 node" } },
-		["Paths/Hunter:[scout].rows[10].nodes[scout_beater].values.beater[1]"] = { { session = "S90", why = "2 -> 1.8: E: Łowczy drużyny 4 x (1 + B) + S 4.9-5.1, S >= 0.55, solo pace <= 1.5 (ROZWOJ 7.5, 11.6); rows 4-11 node" } },
-		["Paths/Hunter:[scout].rows[10].nodes[scout_beater].values.beater[2]"] = { { session = "S90", why = "6 -> 5.5: E: Łowczy drużyny 4 x (1 + B) + S 4.9-5.1, S >= 0.55, solo pace <= 1.5 (ROZWOJ 7.5, 11.6); rows 4-11 node" } },
-		["Paths/Hunter:[scout].rows[11].nodes[scout_royalFalcon2].values.sovereignMark[1]"] = { { session = "S90", why = "1 -> 0.1: E: Łowczy drużyny 4 x (1 + B) + S 4.9-5.1, S >= 0.55, solo pace <= 1.5 (ROZWOJ 7.5, 11.6); rows 4-11 node" } },
-		["Paths/Hunter:[scout].rows[11].nodes[scout_royalFalcon2].values.sovereignMark[2]"] = { { session = "S90", why = "2 -> 0.2: E: Łowczy drużyny 4 x (1 + B) + S 4.9-5.1, S >= 0.55, solo pace <= 1.5 (ROZWOJ 7.5, 11.6); rows 4-11 node" } },
-		["Paths/Hunter:[scout].rows[11].nodes[scout_royalFalcon2].values.sovereignPace[1]"] = { { session = "S90", why = "10 -> 19: E: Łowczy drużyny 4 x (1 + B) + S 4.9-5.1, S >= 0.55, solo pace <= 1.5 (ROZWOJ 7.5, 11.6); rows 4-11 node" } },
-		["Paths/Hunter:[scout].rows[11].nodes[scout_royalFalcon2].values.sovereignPace[2]"] = { { session = "S90", why = "20 -> 38: E: Łowczy drużyny 4 x (1 + B) + S 4.9-5.1, S >= 0.55, solo pace <= 1.5 (ROZWOJ 7.5, 11.6); rows 4-11 node" } },
-		["Paths/Hunter:[scout].rows[4].nodes[scout_talons].values.talons[1]"] = { { session = "S90", why = "5 -> 10: E: Łowczy drużyny 4 x (1 + B) + S 4.9-5.1, S >= 0.55, solo pace <= 1.5 (ROZWOJ 7.5, 11.6); rows 4-11 node" } },
-		["Paths/Hunter:[scout].rows[4].nodes[scout_talons].values.talons[2]"] = { { session = "S90", why = "15 -> 29: E: Łowczy drużyny 4 x (1 + B) + S 4.9-5.1, S >= 0.55, solo pace <= 1.5 (ROZWOJ 7.5, 11.6); rows 4-11 node" } },
-		["Paths/Hunter:[scout].rows[5].nodes[scout_bond].values.bondDive[1]"] = { { session = "S90", why = "20 -> 13: E: Łowczy drużyny 4 x (1 + B) + S 4.9-5.1, S >= 0.55, solo pace <= 1.5 (ROZWOJ 7.5, 11.6); rows 4-11 node" } },
-		["Paths/Hunter:[scout].rows[5].nodes[scout_bond].values.bondDive[2]"] = { { session = "S90", why = "60 -> 38: E: Łowczy drużyny 4 x (1 + B) + S 4.9-5.1, S >= 0.55, solo pace <= 1.5 (ROZWOJ 7.5, 11.6); rows 4-11 node" } },
-		["Paths/Hunter:[scout].rows[5].nodes[scout_bond].values.bond[1]"] = { { session = "S90", why = "2 -> 1.3: E: Łowczy drużyny 4 x (1 + B) + S 4.9-5.1, S >= 0.55, solo pace <= 1.5 (ROZWOJ 7.5, 11.6); rows 4-11 node" } },
-		["Paths/Hunter:[scout].rows[5].nodes[scout_bond].values.bond[2]"] = { { session = "S90", why = "6 -> 3.8: E: Łowczy drużyny 4 x (1 + B) + S 4.9-5.1, S >= 0.55, solo pace <= 1.5 (ROZWOJ 7.5, 11.6); rows 4-11 node" } },
-		["Paths/Hunter:[scout].rows[5].nodes[scout_hardy].values.hardy[1]"] = { { session = "S90", why = "3 -> 0.8: E: Łowczy drużyny 4 x (1 + B) + S 4.9-5.1, S >= 0.55, solo pace <= 1.5 (ROZWOJ 7.5, 11.6); rows 4-11 node" } },
-		["Paths/Hunter:[scout].rows[5].nodes[scout_hardy].values.hardy[2]"] = { { session = "S90", why = "9 -> 2.5: E: Łowczy drużyny 4 x (1 + B) + S 4.9-5.1, S >= 0.55, solo pace <= 1.5 (ROZWOJ 7.5, 11.6); rows 4-11 node" } },
-		["Paths/Hunter:[scout].rows[9].nodes[scout_quickMark].values.quickMark[1]"] = { { session = "S90", why = "0.93 -> 0.91: E: Łowczy drużyny 4 x (1 + B) + S 4.9-5.1, S >= 0.55, solo pace <= 1.5 (ROZWOJ 7.5, 11.6); rows 4-11 node" } },
-		["Paths/Hunter:[scout].rows[9].nodes[scout_quickMark].values.quickMark[2]"] = { { session = "S90", why = "0.8 -> 0.74: E: Łowczy drużyny 4 x (1 + B) + S 4.9-5.1, S >= 0.55, solo pace <= 1.5 (ROZWOJ 7.5, 11.6); rows 4-11 node" } },
-		["Paths/Hunter:[trapper].rows[10].nodes[trapper_basilisk].values.basilisk[1]"] = { { session = "S90", why = "10 -> 2.5: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6); rows 4-11 node" } },
-		["Paths/Hunter:[trapper].rows[10].nodes[trapper_basilisk].values.basilisk[2]"] = { { session = "S90", why = "30 -> 7.5: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6); rows 4-11 node" } },
-		["Paths/Hunter:[trapper].rows[10].nodes[trapper_woodsman].values.woodsman[1]"] = { { session = "S90", why = "4 -> 5: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6); rows 4-11 node" } },
-		["Paths/Hunter:[trapper].rows[10].nodes[trapper_woodsman].values.woodsman[2]"] = { { session = "S90", why = "12 -> 14: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6); rows 4-11 node" } },
-		["Paths/Hunter:[trapper].rows[11].nodes[trapper_snarefield2].values.deathField[1]"] = { { session = "S90", why = "60 -> 24: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6); rows 4-11 node" } },
-		["Paths/Hunter:[trapper].rows[11].nodes[trapper_snarefield2].values.deathField[2]"] = { { session = "S90", why = "120 -> 47: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6); rows 4-11 node" } },
-		["Paths/Hunter:[trapper].rows[4].nodes[trapper_huntingGround].values.huntingGround[1]"] = { { session = "S90", why = "7 -> 2: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6); rows 4-11 node" } },
-		["Paths/Hunter:[trapper].rows[4].nodes[trapper_huntingGround].values.huntingGround[2]"] = { { session = "S90", why = "20 -> 5: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6); rows 4-11 node" } },
-		["Paths/Hunter:[trapper].rows[5].nodes[trapper_bitingRain].values.bitingField[1]"] = { { session = "S90", why = "10 -> 2.5: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6); rows 4-11 node" } },
-		["Paths/Hunter:[trapper].rows[5].nodes[trapper_bitingRain].values.bitingField[2]"] = { { session = "S90", why = "30 -> 7.5: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6); rows 4-11 node" } },
-		["Paths/Hunter:[trapper].rows[5].nodes[trapper_bitingRain].values.bitingWave[1]"] = { { session = "S90", why = "15 -> 4: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6); rows 4-11 node" } },
-		["Paths/Hunter:[trapper].rows[5].nodes[trapper_bitingRain].values.bitingWave[2]"] = { { session = "S90", why = "45 -> 11: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6); rows 4-11 node" } },
-		["Paths/Hunter:[trapper].rows[5].nodes[trapper_spoils].values.spoils[1]"] = { { session = "S90", why = "2 -> 1: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6); rows 4-11 node" } },
-		["Paths/Hunter:[trapper].rows[5].nodes[trapper_spoils].values.spoils[2]"] = { { session = "S90", why = "4 -> 2: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6); rows 4-11 node" } },
-		["Paths/Hunter:[trapper].rows[6].nodes[trapper_blastTrap].values.blastDmg[1]"] = { { session = "S90", why = "50 -> 12: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6); rows 4-11 node" } },
-		["Paths/Hunter:[trapper].rows[6].nodes[trapper_blastTrap].values.blastDmg[2]"] = { { session = "S90", why = "150 -> 38: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6); rows 4-11 node" } },
-		["Paths/Hunter:[trapper].rows[6].nodes[trapper_blastTrap].values.blastPoison[1]"] = { { session = "S90", why = "35 -> 9: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6); rows 4-11 node" } },
-		["Paths/Hunter:[trapper].rows[6].nodes[trapper_blastTrap].values.blastPoison[2]"] = { { session = "S90", why = "100 -> 25: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6); rows 4-11 node" } },
-		["Paths/Mage:[arcanist].rows[10].nodes[arcanist_archmage].values.archmage[1]"] = { { session = "S90", why = "-0.5 -> -0.44: F3: arcanistBoss boss 180 s x base 1.20-1.45 and 1.15-1.25 Destroyer, T-SK4 2.0-2.4 (ROZWOJ 12.7); rows 4-11 node" } },
-		["Paths/Mage:[arcanist].rows[10].nodes[arcanist_archmage].values.archmage[2]"] = { { session = "S90", why = "-1.5 -> -1.31: F3: arcanistBoss boss 180 s x base 1.20-1.45 and 1.15-1.25 Destroyer, T-SK4 2.0-2.4 (ROZWOJ 12.7); rows 4-11 node" } },
-		["Paths/Mage:[arcanist].rows[10].nodes[arcanist_masterMind].values.masterMind[1]"] = { { session = "S90", why = "4 -> 5.6: F3: arcanistBoss boss 180 s x base 1.20-1.45 and 1.15-1.25 Destroyer, T-SK4 2.0-2.4 (ROZWOJ 12.7); rows 4-11 node" } },
-		["Paths/Mage:[arcanist].rows[10].nodes[arcanist_masterMind].values.masterMind[2]"] = { { session = "S90", why = "12 -> 16.9: F3: arcanistBoss boss 180 s x base 1.20-1.45 and 1.15-1.25 Destroyer, T-SK4 2.0-2.4 (ROZWOJ 12.7); rows 4-11 node" } },
-		["Paths/Mage:[arcanist].rows[4].nodes[arcanist_fullDischarge].values.fullDischarge[2]"] = { { session = "S90", why = "10 -> 9.9: F3: arcanistBoss boss 180 s x base 1.20-1.45 and 1.15-1.25 Destroyer, T-SK4 2.0-2.4 (ROZWOJ 12.7); rows 4-11 node" } },
-		["Paths/Mage:[arcanist].rows[5].nodes[arcanist_might].values.might[1]"] = { { session = "S90", why = "1 -> 0.3: F3: arcanistBoss boss 180 s x base 1.20-1.45 and 1.15-1.25 Destroyer, T-SK4 2.0-2.4 (ROZWOJ 12.7); rows 4-11 node" } },
-		["Paths/Mage:[arcanist].rows[5].nodes[arcanist_might].values.might[2]"] = { { session = "S90", why = "3 -> 1: F3: arcanistBoss boss 180 s x base 1.20-1.45 and 1.15-1.25 Destroyer, T-SK4 2.0-2.4 (ROZWOJ 12.7); rows 4-11 node" } },
-		["Paths/Mage:[arcanist].rows[5].nodes[arcanist_reclaim].values.reclaim[1]"] = { { session = "S90", why = "0.1 -> 0.035: F3: arcanistBoss boss 180 s x base 1.20-1.45 and 1.15-1.25 Destroyer, T-SK4 2.0-2.4 (ROZWOJ 12.7); rows 4-11 node" } },
-		["Paths/Mage:[arcanist].rows[5].nodes[arcanist_reclaim].values.reclaim[2]"] = { { session = "S90", why = "0.3 -> 0.105: F3: arcanistBoss boss 180 s x base 1.20-1.45 and 1.15-1.25 Destroyer, T-SK4 2.0-2.4 (ROZWOJ 12.7); rows 4-11 node" } },
-		["Paths/Mage:[arcanist].rows[6].nodes[arcanist_mounting].values.mounting[1]"] = { { session = "S90", why = "0.5 -> 0.17: F3: arcanistBoss boss 180 s x base 1.20-1.45 and 1.15-1.25 Destroyer, T-SK4 2.0-2.4 (ROZWOJ 12.7); rows 4-11 node" } },
-		["Paths/Mage:[arcanist].rows[6].nodes[arcanist_mounting].values.mounting[2]"] = { { session = "S90", why = "1.5 -> 0.52: F3: arcanistBoss boss 180 s x base 1.20-1.45 and 1.15-1.25 Destroyer, T-SK4 2.0-2.4 (ROZWOJ 12.7); rows 4-11 node" } },
-		["Paths/Mage:[arcanist].rows[7].nodes[arcanist_invocation].values.invocation[1]"] = { { session = "S90", why = "5 -> 3.9: F3: arcanistBoss boss 180 s x base 1.20-1.45 and 1.15-1.25 Destroyer, T-SK4 2.0-2.4 (ROZWOJ 12.7); rows 4-11 node" } },
-		["Paths/Mage:[arcanist].rows[7].nodes[arcanist_invocation].values.invocation[2]"] = { { session = "S90", why = "15 -> 11.7: F3: arcanistBoss boss 180 s x base 1.20-1.45 and 1.15-1.25 Destroyer, T-SK4 2.0-2.4 (ROZWOJ 12.7); rows 4-11 node" } },
-		["Paths/Mage:[arcanist].rows[9].nodes[arcanist_rending].values.rending[1]"] = { { session = "S90", why = "0.5 -> 0.84: F3: arcanistBoss boss 180 s x base 1.20-1.45 and 1.15-1.25 Destroyer, T-SK4 2.0-2.4 (ROZWOJ 12.7); rows 4-11 node" } },
-		["Paths/Mage:[arcanist].rows[9].nodes[arcanist_rending].values.rending[2]"] = { { session = "S90", why = "1.5 -> 2.53: F3: arcanistBoss boss 180 s x base 1.20-1.45 and 1.15-1.25 Destroyer, T-SK4 2.0-2.4 (ROZWOJ 12.7); rows 4-11 node" } },
-		["Paths/Mage:[arcanist].rows[9].nodes[arcanist_well].values.well[1]"] = { { session = "S90", why = "-0.25 -> -0.12: F3: the drain stays above 0 after the S90 drain 0.73 (Deep Well takes half of it, as before)" } },
-		["Paths/Mage:[arcanist].rows[9].nodes[arcanist_well].values.well[2]"] = { { session = "S90", why = "-0.75 -> -0.37: F3: the drain stays above 0 after the S90 drain 0.73 (Deep Well takes half of it, as before)" } },
-		["Paths/Mage:[destroyer].rows[10].nodes[destroyer_flow].values.flow[1]"] = { { session = "S90", why = "-3 -> -1.2: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7); rows 4-11 node" } },
-		["Paths/Mage:[destroyer].rows[10].nodes[destroyer_flow].values.flow[2]"] = { { session = "S90", why = "-9 -> -3.7: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7); rows 4-11 node" } },
-		["Paths/Mage:[destroyer].rows[10].nodes[destroyer_grit].values.grit[1]"] = { { session = "S90", why = "4 -> 1.4: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7); rows 4-11 node" } },
-		["Paths/Mage:[destroyer].rows[10].nodes[destroyer_grit].values.grit[2]"] = { { session = "S90", why = "12 -> 4.2: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7); rows 4-11 node" } },
-		["Paths/Mage:[destroyer].rows[5].nodes[destroyer_might].values.might[1]"] = { { session = "S90", why = "2 -> 4: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7); rows 4-11 node" } },
-		["Paths/Mage:[destroyer].rows[5].nodes[destroyer_might].values.might[2]"] = { { session = "S90", why = "6 -> 12: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7); rows 4-11 node" } },
-		["Paths/Mage:[destroyer].rows[5].nodes[destroyer_tempered].values.tempered[1]"] = { { session = "S90", why = "4 -> 2.3: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7); rows 4-11 node" } },
-		["Paths/Mage:[destroyer].rows[5].nodes[destroyer_tempered].values.tempered[2]"] = { { session = "S90", why = "12 -> 6.8: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7); rows 4-11 node" } },
-		["Paths/Mage:[destroyer].rows[5].nodes[destroyer_veins].values.veins[1]"] = { { session = "S90", why = "10 -> 4.4: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7); rows 4-11 node" } },
-		["Paths/Mage:[destroyer].rows[5].nodes[destroyer_veins].values.veins[2]"] = { { session = "S90", why = "30 -> 13.1: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7); rows 4-11 node" } },
-		["Paths/Mage:[destroyer].rows[6].nodes[destroyer_frail].values.frailDmg[1]"] = { { session = "S90", why = "2 -> 2.7: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7); rows 4-11 node" } },
-		["Paths/Mage:[destroyer].rows[6].nodes[destroyer_frail].values.frailDmg[2]"] = { { session = "S90", why = "6 -> 8: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7); rows 4-11 node" } },
-		["Paths/Mage:[destroyer].rows[7].nodes[destroyer_wrath].values.wrath[1]"] = { { session = "S90", why = "1 -> 1.15: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7); rows 4-11 node" } },
-		["Paths/Mage:[destroyer].rows[7].nodes[destroyer_wrath].values.wrath[2]"] = { { session = "S90", why = "3 -> 3.44: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7); rows 4-11 node" } },
-		["Paths/Mage:[destroyer].rows[9].nodes[destroyer_raging].values.raging[1]"] = { { session = "S90", why = "0.5 -> 0.49: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7); rows 4-11 node" } },
-		["Paths/Mage:[destroyer].rows[9].nodes[destroyer_raging].values.raging[2]"] = { { session = "S90", why = "1.5 -> 1.47: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7); rows 4-11 node" } },
-		["Paths/Mage:[destroyer].rows[9].nodes[destroyer_swift].values.swift[1]"] = { { session = "S90", why = "0.93 -> 0.935: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7); rows 4-11 node" } },
-		["Paths/Mage:[destroyer].rows[9].nodes[destroyer_swift].values.swift[2]"] = { { session = "S90", why = "0.8 -> 0.814: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7); rows 4-11 node" } },
-		["SkillCurves:knots.aimedShot.dmg[5]"] = { { session = "S90", why = "- -> 232.222: C3 / F1: rank 5 pinned at today's 232.222 so rank 10 can move without changing 1-20" } },
-		["SkillCurves:knots.chainLightning.dmg[3]"] = { { session = "S90", why = "- -> 152.222: C3 / F1: rank 3 pinned at today's 152.222 so rank 10 can move without changing 1-20" } },
-		["SkillCurves:knots.disengage.bonus[4]"] = { { session = "S90", why = "- -> 30: C3 / F1: rank 4 pinned at today's 30 so rank 10 can move without changing 1-20" } },
-		["SkillCurves:knots.doubleShot.dmg[5]"] = { { session = "S90", why = "- -> 113.889: C3 / F1: rank 5 pinned at today's 113.889 so rank 10 can move without changing 1-20" } },
-		["SkillCurves:knots.fireball.dmg[5]"] = { { session = "S90", why = "- -> 203.333: C3 / F1: rank 5 pinned at today's 203.333 so rank 10 can move without changing 1-20" } },
-		["SkillCurves:knots.firebolt.dmg[5]"] = { { session = "S90", why = "- -> 232.222: C3 / F1: rank 5 pinned at today's 232.222 so rank 10 can move without changing 1-20" } },
-		["SkillCurves:knots.iceShard.dmg[4]"] = { { session = "S90", why = "- -> 176.667: C3 / F1: rank 4 pinned at today's 176.667 so rank 10 can move without changing 1-20" } },
-		["SkillCurves:knots.piercingArrow.dmg[3]"] = { { session = "S90", why = "- -> 235.556: C3 / F1: rank 3 pinned at today's 235.556 so rank 10 can move without changing 1-20" } },
-		["Skills/Hunter:[aimedShot].breakpoints[10].a.execute"] = { { session = "S90", why = "30 -> 21: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)" } },
-		["Skills/Hunter:[aimedShot].values.dmg[2]"] = { { session = "S90", why = "310 -> 233: C R1: rank > 20 nearly flat (R1 of every Hunter build; rank <= 20 pinned in SkillCurves)" } },
-		["Skills/Hunter:[camouflage].cooldown"] = { { session = "S90", why = "60 -> 67: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6)" } },
-		["Skills/Hunter:[disengage].values.bonus[2]"] = { { session = "S90", why = "50 -> 35: C R1: rank > 20 nearly flat (R1 of every Hunter build; rank <= 20 pinned in SkillCurves)" } },
-		["Skills/Hunter:[doubleShot].breakpoints[10].b.values.dmg"] = { { session = "S90", why = "30 -> 28: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)" } },
-		["Skills/Hunter:[doubleShot].values.dmg[2]"] = { { session = "S90", why = "150 -> 114: C R1: rank > 20 nearly flat (R1 of every Hunter build; rank <= 20 pinned in SkillCurves)" } },
-		["Skills/Hunter:[drawBead].values.critDmg[1]"] = { { session = "S90", why = "15 -> 26.5: C: Królobójca x base 1.25-1.35 and R7 1.15-1.35 (ROZWOJ 11.6)" } },
-		["Skills/Hunter:[drawBead].values.critDmg[2]"] = { { session = "S90", why = "30 -> 28: C: Królobójca x base 1.25-1.35 and R7 1.15-1.35 (ROZWOJ 11.6)" } },
-		["Skills/Hunter:[drawBead].values.crit[1]"] = { { session = "S90", why = "12 -> 20: C: Królobójca x base 1.25-1.35 and R7 1.15-1.35 (ROZWOJ 11.6)" } },
-		["Skills/Hunter:[drawBead].values.crit[2]"] = { { session = "S90", why = "20 -> 23: C: Królobójca x base 1.25-1.35 and R7 1.15-1.35 (ROZWOJ 11.6)" } },
-		["Skills/Hunter:[drive].breakpoints[10].a.values.dmg"] = { { session = "S90", why = "25 -> 20: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)" } },
-		["Skills/Hunter:[drive].breakpoints[5].b.mul.cooldown"] = { { session = "S90", why = "0.8 -> 0.9: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)" } },
-		["Skills/Hunter:[drive].cooldown"] = { { session = "S90", why = "30 -> 33: E: Łowczy drużyny 4 x (1 + B) + S 4.9-5.1, S >= 0.55, solo pace <= 1.5 (ROZWOJ 7.5, 11.6)" } },
-		["Skills/Hunter:[drive].values.dmg[1]"] = { { session = "S90", why = "80 -> 102: E: Łowczy drużyny 4 x (1 + B) + S 4.9-5.1, S >= 0.55, solo pace <= 1.5 (ROZWOJ 7.5, 11.6)" } },
-		["Skills/Hunter:[drive].values.dmg[2]"] = { { session = "S90", why = "120 -> 108: E: Łowczy drużyny 4 x (1 + B) + S 4.9-5.1, S >= 0.55, solo pace <= 1.5 (ROZWOJ 7.5, 11.6)" } },
-		["Skills/Hunter:[falcon].breakpoints[10].a.values.dmg"] = { { session = "S90", why = "15 -> 14: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)" } },
-		["Skills/Hunter:[falcon].breakpoints[10].b.splash.pct"] = { { session = "S90", why = "50 -> 10: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)" } },
-		["Skills/Hunter:[falcon].cooldown"] = { { session = "S90", why = "30 -> 36: E: Łowczy drużyny 4 x (1 + B) + S 4.9-5.1, S >= 0.55, solo pace <= 1.5 (ROZWOJ 7.5, 11.6)" } },
-		["Skills/Hunter:[falcon].values.dmg[1]"] = { { session = "S90", why = "15 -> 27: E: Łowczy drużyny 4 x (1 + B) + S 4.9-5.1, S >= 0.55, solo pace <= 1.5 (ROZWOJ 7.5, 11.6)" } },
-		["Skills/Hunter:[falcon].values.dmg[2]"] = { { session = "S90", why = "30 -> 44: E: Łowczy drużyny 4 x (1 + B) + S 4.9-5.1, S >= 0.55, solo pace <= 1.5 (ROZWOJ 7.5, 11.6)" } },
-		["Skills/Hunter:[frostTrap].breakpoints[5].b.values.poison"] = { { session = "S90", why = "60 -> 9: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)" } },
-		["Skills/Hunter:[hawkEye].values.critDmg[2]"] = { { session = "S90", why = "30 -> 16: C R7: crit ranks 2-5 lower (Marksman 1.15-1.35 Furia at 70-100 with x base >= 1.25)" } },
-		["Skills/Hunter:[hawkEye].values.crit[2]"] = { { session = "S90", why = "10 -> 4: C R7: crit ranks 2-5 lower (Marksman 1.15-1.35 Furia at 70-100 with x base >= 1.25)" } },
-		["Skills/Hunter:[heartseeker].breakpoints[10].b.splash.pct"] = { { session = "S90", why = "50 -> 18: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)" } },
-		["Skills/Hunter:[heartseeker].breakpoints[5].a.values.dmg"] = { { session = "S90", why = "60 -> 37: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)" } },
-		["Skills/Hunter:[heartseeker].breakpoints[5].b.pierce"] = { { session = "S90", why = "60 -> 11: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)" } },
-		["Skills/Hunter:[heartseeker].cooldown"] = { { session = "S90", why = "30 -> 31: C: Królobójca x base 1.25-1.35 and R7 1.15-1.35 (ROZWOJ 11.6)" } },
-		["Skills/Hunter:[heartseeker].values.dmg[1]"] = { { session = "S90", why = "400 -> 220: C: Królobójca x base 1.25-1.35 and R7 1.15-1.35 (ROZWOJ 11.6)" } },
-		["Skills/Hunter:[heartseeker].values.dmg[2]"] = { { session = "S90", why = "650 -> 290: C: Królobójca x base 1.25-1.35 and R7 1.15-1.35 (ROZWOJ 11.6)" } },
-		["Skills/Hunter:[huntersMark].breakpoints[10].b.values.vuln"] = { { session = "S90", why = "2 -> 1: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)" } },
-		["Skills/Hunter:[huntersMark].breakpoints[5].a.add.effectDuration"] = { { session = "S90", why = "5 -> 1: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)" } },
-		["Skills/Hunter:[piercingArrow].values.dmg[2]"] = { { session = "S90", why = "360 -> 410: C R1: rank > 20 nearly flat (R1 of every Hunter build; rank <= 20 pinned in SkillCurves)" } },
-		["Skills/Hunter:[predatorInstinct].values.speed[1]"] = { { session = "S90", why = "3 -> 17: C R1 / R7: attack speed of the base above 45 (Dexterity gives less, ROZWOJ 8, 11.2): Hunter R1 down, Marksman R7 in band" } },
-		["Skills/Hunter:[predatorInstinct].values.speed[2]"] = { { session = "S90", why = "15 -> 34: C R1 / R7: attack speed of the base above 45 (Dexterity gives less, ROZWOJ 8, 11.2): Hunter R1 down, Marksman R7 in band" } },
-		["Skills/Hunter:[snarefield].breakpoints[10].a.values.dmg"] = { { session = "S90", why = "25 -> 14: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)" } },
-		["Skills/Hunter:[snarefield].breakpoints[5].b.values.vuln"] = { { session = "S90", why = "2 -> 1: Snarefield 5B vulnerability <= Hunter's Mark with 10B (ROZWOJ 11.4, 11.5)" } },
-		["Skills/Hunter:[snarefield].cooldown"] = { { session = "S90", why = "40 -> 35: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6)" } },
-		["Skills/Hunter:[snarefield].values.dmg[1]"] = { { session = "S90", why = "90 -> 30: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6)" } },
-		["Skills/Hunter:[snarefield].values.dmg[2]"] = { { session = "S90", why = "150 -> 38: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6)" } },
-		["Skills/Hunter:[stormArrow].breakpoints[5].b.values.dmg"] = { { session = "S90", why = "80 -> 37: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)" } },
-		["Skills/Hunter:[stormArrow].cooldown"] = { { session = "S90", why = "40 -> 29: C: Królobójca x base 1.25-1.35 and R7 1.15-1.35 (ROZWOJ 11.6)" } },
-		["Skills/Hunter:[stormArrow].values.dmg[1]"] = { { session = "S90", why = "400 -> 200: C: Królobójca x base 1.25-1.35 and R7 1.15-1.35 (ROZWOJ 11.6)" } },
-		["Skills/Hunter:[stormArrow].values.dmg[2]"] = { { session = "S90", why = "650 -> 400: C: Królobójca x base 1.25-1.35 and R7 1.15-1.35 (ROZWOJ 11.6)" } },
-		["Skills/Hunter:[stormArrow].values.splash"] = { { session = "S90", why = "120 -> 75: C: Królobójca x base 1.25-1.35 and R7 1.15-1.35 (ROZWOJ 11.6)" } },
-		["Skills/Hunter:[venomArrow].breakpoints[10].a.splash.pct"] = { { session = "S90", why = "40 -> 19: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)" } },
-		["Skills/Hunter:[venomArrow].breakpoints[10].b.values.poison"] = { { session = "S90", why = "70 -> 60: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)" } },
-		["Skills/Hunter:[venomArrow].breakpoints[5].a.values.poison"] = { { session = "S90", why = "40 -> 21: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)" } },
-		["Skills/Hunter:[venomArrow].breakpoints[5].b.values.dmg"] = { { session = "S90", why = "40 -> 28: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)" } },
-		["Skills/Hunter:[venomArrow].values.dmg[2]"] = { { session = "S90", why = "210 -> 152: C R1: rank > 20 nearly flat (R1 of every Hunter build; rank <= 20 pinned in SkillCurves)" } },
-		["Skills/Hunter:[venomArrow].values.poison[2]"] = { { session = "S90", why = "120 -> 50: C R1: rank > 20 nearly flat (R1 of every Hunter build; rank <= 20 pinned in SkillCurves)" } },
-		["Skills/Hunter:[venomSnare].breakpoints[10].a.echo.pct"] = { { session = "S90", why = "60 -> 38: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)" } },
-		["Skills/Hunter:[venomSnare].breakpoints[10].b.values.poison"] = { { session = "S90", why = "50 -> 98: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)" } },
-		["Skills/Hunter:[venomSnare].cooldown"] = { { session = "S90", why = "10 -> 14: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6)" } },
-		["Skills/Hunter:[venomSnare].cost"] = { { session = "S90", why = "25 -> 16: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6)" } },
-		["Skills/Hunter:[venomSnare].values.dmg[1]"] = { { session = "S90", why = "130 -> 232: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6)" } },
-		["Skills/Hunter:[venomSnare].values.dmg[2]"] = { { session = "S90", why = "220 -> 236: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6)" } },
-		["Skills/Hunter:[venomSnare].values.poison[1]"] = { { session = "S90", why = "60 -> 285: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6)" } },
-		["Skills/Hunter:[venomSnare].values.poison[2]"] = { { session = "S90", why = "110 -> 290: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6)" } },
-		["Skills/Hunter:[volley].breakpoints[10].b.values.dmg"] = { { session = "S90", why = "20 -> 9: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)" } },
-		["Skills/Hunter:[volley].breakpoints[5].a.add.hits"] = { { session = "S90", why = "3 -> 1: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)" } },
-		["Skills/Hunter:[volley].breakpoints[5].b.values.dmg"] = { { session = "S90", why = "15 -> 5: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)" } },
-		["Skills/Hunter:[volley].cooldown"] = { { session = "S90", why = "14 -> 13: C R1: Salwa (unlock 30) per arrow lower; Hunter base R1 / Marksman x base" } },
-		["Skills/Hunter:[volley].values.dmg[1]"] = { { session = "S90", why = "70 -> 25: C R1: Salwa (unlock 30) per arrow lower; Hunter base R1 / Marksman x base" } },
-		["Skills/Hunter:[volley].values.dmg[2]"] = { { session = "S90", why = "120 -> 34: C R1: Salwa (unlock 30) per arrow lower; Hunter base R1 / Marksman x base" } },
-		["Skills/Mage:[arcaneDischarge].breakpoints[10].a.execute"] = { { session = "S90", why = "35 -> 40: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)" } },
-		["Skills/Mage:[arcaneDischarge].breakpoints[10].b.splash.pct"] = { { session = "S90", why = "40 -> 11: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)" } },
-		["Skills/Mage:[arcaneDischarge].cost"] = { { session = "S90", why = "20 -> 5: F3: arcanistBoss boss 180 s x base 1.20-1.45 and 1.15-1.25 Destroyer, T-SK4 2.0-2.4 (ROZWOJ 12.7)" } },
-		["Skills/Mage:[arcaneDischarge].values.dmg[1]"] = { { session = "S90", why = "140 -> 57: F3: arcanistBoss boss 180 s x base 1.20-1.45 and 1.15-1.25 Destroyer, T-SK4 2.0-2.4 (ROZWOJ 12.7)" } },
-		["Skills/Mage:[arcaneDischarge].values.dmg[2]"] = { { session = "S90", why = "230 -> 69: F3: arcanistBoss boss 180 s x base 1.20-1.45 and 1.15-1.25 Destroyer, T-SK4 2.0-2.4 (ROZWOJ 12.7)" } },
-		["Skills/Mage:[arcaneDischarge].values.perCharge"] = { { session = "S90", why = "12 -> 4.1: F3: arcanistBoss boss 180 s x base 1.20-1.45 and 1.15-1.25 Destroyer, T-SK4 2.0-2.4 (ROZWOJ 12.7)" } },
-		["Skills/Mage:[arcaneMind].values.critDmg[1]"] = { { session = "S90", why = "3 -> 1: F3: arcanistBoss boss 180 s x base 1.20-1.45 and 1.15-1.25 Destroyer, T-SK4 2.0-2.4 (ROZWOJ 12.7)" } },
-		["Skills/Mage:[arcaneMind].values.critDmg[2]"] = { { session = "S90", why = "8 -> 2.8: F3: arcanistBoss boss 180 s x base 1.20-1.45 and 1.15-1.25 Destroyer, T-SK4 2.0-2.4 (ROZWOJ 12.7)" } },
-		["Skills/Mage:[arcaneMind].values.crit[1]"] = { { session = "S90", why = "1 -> 0.35: F3: arcanistBoss boss 180 s x base 1.20-1.45 and 1.15-1.25 Destroyer, T-SK4 2.0-2.4 (ROZWOJ 12.7)" } },
-		["Skills/Mage:[arcaneMind].values.crit[2]"] = { { session = "S90", why = "3 -> 1.05: F3: arcanistBoss boss 180 s x base 1.20-1.45 and 1.15-1.25 Destroyer, T-SK4 2.0-2.4 (ROZWOJ 12.7)" } },
-		["Skills/Mage:[arcaneTorrent].breakpoints[10].a.values.dmg"] = { { session = "S90", why = "30 -> 32: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)" } },
-		["Skills/Mage:[arcaneTorrent].breakpoints[10].b.splash.pct"] = { { session = "S90", why = "35 -> 10: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)" } },
-		["Skills/Mage:[arcaneTorrent].breakpoints[5].a.values.growth"] = { { session = "S90", why = "1 -> 4.37: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)" } },
-		["Skills/Mage:[arcaneTorrent].values.dmg[1]"] = { { session = "S90", why = "160 -> 122: F3: arcanistBoss boss 180 s x base 1.20-1.45 and 1.15-1.25 Destroyer, T-SK4 2.0-2.4 (ROZWOJ 12.7)" } },
-		["Skills/Mage:[arcaneTorrent].values.dmg[2]"] = { { session = "S90", why = "170 -> 140: F3: arcanistBoss boss 180 s x base 1.20-1.45 and 1.15-1.25 Destroyer, T-SK4 2.0-2.4 (ROZWOJ 12.7)" } },
-		["Skills/Mage:[arcaneTorrent].values.drain"] = { { session = "S90", why = "1.5 -> 0.73: F3: arcanistBoss boss 180 s x base 1.20-1.45 and 1.15-1.25 Destroyer, T-SK4 2.0-2.4 (ROZWOJ 12.7)" } },
-		["Skills/Mage:[arcaneTorrent].values.growth"] = { { session = "S90", why = "2 -> 1.62: F3: arcanistBoss boss 180 s x base 1.20-1.45 and 1.15-1.25 Destroyer, T-SK4 2.0-2.4 (ROZWOJ 12.7)" } },
-		["Skills/Mage:[cataclysm].breakpoints[10].a.lingering.pct"] = { { session = "S90", why = "25 -> 34: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)" } },
-		["Skills/Mage:[cataclysm].breakpoints[10].b.echo.pct"] = { { session = "S90", why = "100 -> 136: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)" } },
-		["Skills/Mage:[cataclysm].breakpoints[5].b.values.dmg"] = { { session = "S90", why = "7 -> 6: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)" } },
-		["Skills/Mage:[cataclysm].cost"] = { { session = "S90", why = "90 -> 119: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7)" } },
-		["Skills/Mage:[cataclysm].values.dmg[1]"] = { { session = "S90", why = "60 -> 36.6: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7)" } },
-		["Skills/Mage:[cataclysm].values.dmg[2]"] = { { session = "S90", why = "70 -> 36.6: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7)" } },
-		["Skills/Mage:[chainLightning].breakpoints[10].b.mul.cooldown"] = { { session = "S90", why = "0.8 -> 0.83: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)" } },
-		["Skills/Mage:[chainLightning].breakpoints[5].b.values.dmg"] = { { session = "S90", why = "25 -> 22: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)" } },
-		["Skills/Mage:[chainLightning].values.dmg[2]"] = { { session = "S90", why = "230 -> 163.5: F1 R1: rank > 20 nearly flat (Mage base R1; rank <= 20 pinned in SkillCurves)" } },
-		["Skills/Mage:[elementalVortex].breakpoints[5].b.values.dmg"] = { { session = "S90", why = "2 -> 1.2: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)" } },
-		["Skills/Mage:[elementalVortex].cost"] = { { session = "S90", why = "40 -> 12: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7)" } },
-		["Skills/Mage:[elementalVortex].values.dmg[1]"] = { { session = "S90", why = "12 -> 6.2: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7)" } },
-		["Skills/Mage:[elementalVortex].values.dmg[2]"] = { { session = "S90", why = "13 -> 8.3: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7)" } },
-		["Skills/Mage:[evocation].values.mana[1]"] = { { session = "S90", why = "30 -> 25: F3: arcanistBoss boss 180 s x base 1.20-1.45 and 1.15-1.25 Destroyer, T-SK4 2.0-2.4 (ROZWOJ 12.7)" } },
-		["Skills/Mage:[evocation].values.mana[2]"] = { { session = "S90", why = "50 -> 49: F3: arcanistBoss boss 180 s x base 1.20-1.45 and 1.15-1.25 Destroyer, T-SK4 2.0-2.4 (ROZWOJ 12.7)" } },
-		["Skills/Mage:[fireball].values.dmg[2]"] = { { session = "S90", why = "270 -> 221.8: F1 R1: rank > 20 nearly flat (Mage base R1; rank <= 20 pinned in SkillCurves)" } },
-		["Skills/Mage:[firebolt].breakpoints[10].a.splash.pct"] = { { session = "S90", why = "50 -> 12: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)" } },
-		["Skills/Mage:[firebolt].breakpoints[10].b.values.dmg"] = { { session = "S90", why = "-124 -> -104: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)" } },
-		["Skills/Mage:[firebolt].values.dmg[2]"] = { { session = "S90", why = "310 -> 255.7: F1 R1: rank > 20 nearly flat (Mage base R1; rank <= 20 pinned in SkillCurves)" } },
-		["Skills/Mage:[firewall].breakpoints[10].b.values.dmg"] = { { session = "S90", why = "18 -> 13.9: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)" } },
-		["Skills/Mage:[firewall].breakpoints[5].a.add.hits"] = { { session = "S90", why = "4 -> 1: G1 R4: +4 / +2 hits were +40-50 %; one more hit fits 0.08-0.17 (as Volley 5A, ROZWOJ 11.7 point 4)" } },
-		["Skills/Mage:[firewall].breakpoints[5].b.mul.cooldown"] = { { session = "S90", why = "0.75 -> 0.93: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)" } },
-		["Skills/Mage:[firewall].cost"] = { { session = "S90", why = "55 -> 43: F1 R1 / F4: unlock > 20 skill of the Mage base (R1, T-SK4 2.0-2.8 / 2.0-2.4)" } },
-		["Skills/Mage:[firewall].values.dmg[1]"] = { { session = "S90", why = "50 -> 24.9: F1 R1 / F4: unlock > 20 skill of the Mage base (R1, T-SK4 2.0-2.8 / 2.0-2.4)" } },
-		["Skills/Mage:[firewall].values.dmg[2]"] = { { session = "S90", why = "90 -> 49.8: F1 R1 / F4: unlock > 20 skill of the Mage base (R1, T-SK4 2.0-2.8 / 2.0-2.4)" } },
-		["Skills/Mage:[focus].values.reserve[1]"] = { { session = "S90", why = "4 -> 3.1: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7)" } },
-		["Skills/Mage:[focus].values.reserve[2]"] = { { session = "S90", why = "20 -> 15.4: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7)" } },
-		["Skills/Mage:[frostNova].breakpoints[10].a.lingering.pct"] = { { session = "S90", why = "10 -> 5: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)" } },
-		["Skills/Mage:[frostNova].breakpoints[10].b.echo.pct"] = { { session = "S90", why = "40 -> 19: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)" } },
-		["Skills/Mage:[frostNova].values.dmg[2]"] = { { session = "S90", why = "220 -> 141.3: F1 R1: rank > 20 nearly flat (Mage base R1; rank <= 20 pinned in SkillCurves)" } },
-		["Skills/Mage:[iceShard].breakpoints[10].a.pierce"] = { { session = "S90", why = "60 -> 27: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)" } },
-		["Skills/Mage:[iceShard].breakpoints[10].b.mul.cooldown"] = { { session = "S90", why = "0.85 -> 0.84: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)" } },
-		["Skills/Mage:[iceShard].breakpoints[5].b.values.dmg"] = { { session = "S90", why = "20 -> 23: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)" } },
-		["Skills/Mage:[iceShard].values.dmg[2]"] = { { session = "S90", why = "250 -> 213: F1 R1: rank > 20 nearly flat (Mage base R1; rank <= 20 pinned in SkillCurves)" } },
-		["Skills/Mage:[meteorStorm].breakpoints[10].b.values.dmg"] = { { session = "S90", why = "22 -> 4.4: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)" } },
-		["Skills/Mage:[meteorStorm].breakpoints[5].a.add.hits"] = { { session = "S90", why = "2 -> 1: G1 R4: +4 / +2 hits were +40-50 %; one more hit fits 0.08-0.17 (as Volley 5A, ROZWOJ 11.7 point 4)" } },
-		["Skills/Mage:[meteorStorm].breakpoints[5].b.mul.cooldown"] = { { session = "S90", why = "0.75 -> 0.88: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)" } },
-		["Skills/Mage:[meteorStorm].cost"] = { { session = "S90", why = "120 -> 174: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7)" } },
-		["Skills/Mage:[meteorStorm].values.dmg[1]"] = { { session = "S90", why = "60 -> 24: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7)" } },
-		["Skills/Mage:[meteorStorm].values.dmg[2]"] = { { session = "S90", why = "80 -> 24: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7)" } },
-		["Skills/Mage:[meteor].breakpoints[10].a.lingering.pct"] = { { session = "S90", why = "20 -> 6: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)" } },
-		["Skills/Mage:[meteor].breakpoints[10].b.values.dmg"] = { { session = "S90", why = "100 -> 45: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)" } },
-		["Skills/Mage:[meteor].breakpoints[5].b.values.dmg"] = { { session = "S90", why = "45 -> 23: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)" } },
-		["Skills/Mage:[meteor].cost"] = { { session = "S90", why = "60 -> 72: F1 R1 / F4: unlock > 20 skill of the Mage base (R1, T-SK4 2.0-2.8 / 2.0-2.4)" } },
-		["Skills/Mage:[meteor].values.dmg[1]"] = { { session = "S90", why = "280 -> 98: F1 R1 / F4: unlock > 20 skill of the Mage base (R1, T-SK4 2.0-2.8 / 2.0-2.4)" } },
-		["Skills/Mage:[meteor].values.dmg[2]"] = { { session = "S90", why = "480 -> 174: F1 R1 / F4: unlock > 20 skill of the Mage base (R1, T-SK4 2.0-2.8 / 2.0-2.4)" } },
-		["Skills/init:ARCANE_CHARGES.cost"] = { { session = "S90", why = "15 -> 4.3: F4: Arcane Charge cost / damage per charge (Arcanist T-SK4 2.0-2.4, Przeciążenie 2.6-2.8; ROZWOJ 12.0, 12.7)" } },
-		["Skills/init:ARCANE_CHARGES.damage"] = { { session = "S90", why = "2 -> 1: F4: Arcane Charge cost / damage per charge (Arcanist T-SK4 2.0-2.4, Przeciążenie 2.6-2.8; ROZWOJ 12.0, 12.7)" } },
+		["Items/Bases:byType.crossbow.weapon.f(1).dmg"] = {
+			{
+				session = "S90",
+				why = "12 -> 13: B1: Kusza dmgMul 1.45 -> 1.54 (Trapper with the crossbow and the bow in band on 1 target and area 8 s, T2 MIX <= 5 %; ROZWOJ 11.1); 1-20 too (list S91)",
+			},
+		},
+		["Items/Bases:byType.crossbow.weapon.f(100).dmg"] = {
+			{
+				session = "S90",
+				why = "328 -> 348: B1: Kusza dmgMul 1.45 -> 1.54 (Trapper with the crossbow and the bow in band on 1 target and area 8 s, T2 MIX <= 5 %; ROZWOJ 11.1); 1-20 too (list S91)",
+			},
+		},
+		["Items/Bases:byType.crossbow.weapon.f(20).dmg"] = {
+			{
+				session = "S90",
+				why = "73 -> 77: B1: Kusza dmgMul 1.45 -> 1.54 (Trapper with the crossbow and the bow in band on 1 target and area 8 s, T2 MIX <= 5 %; ROZWOJ 11.1); 1-20 too (list S91)",
+			},
+		},
+		["Items/Bases:byType.crossbow.weapon.f(45).dmg"] = {
+			{
+				session = "S90",
+				why = "152 -> 162: B1: Kusza dmgMul 1.45 -> 1.54 (Trapper with the crossbow and the bow in band on 1 target and area 8 s, T2 MIX <= 5 %; ROZWOJ 11.1); 1-20 too (list S91)",
+			},
+		},
+		["Items/Bases:byType.crossbow.weapon.f(70).dmg"] = {
+			{
+				session = "S90",
+				why = "232 -> 246: B1: Kusza dmgMul 1.45 -> 1.54 (Trapper with the crossbow and the bow in band on 1 target and area 8 s, T2 MIX <= 5 %; ROZWOJ 11.1); 1-20 too (list S91)",
+			},
+		},
+		["Paths/Hunter:[marksman].rows[10].nodes[marksman_coldBlood].values.coldBlood[1]"] = {
+			{
+				session = "S90",
+				why = "5 -> 7: C: Królobójca x base 1.25-1.35 and R7 1.15-1.35 (ROZWOJ 11.6); rows 4-11 node",
+			},
+		},
+		["Paths/Hunter:[marksman].rows[10].nodes[marksman_coldBlood].values.coldBlood[2]"] = {
+			{
+				session = "S90",
+				why = "15 -> 21: C: Królobójca x base 1.25-1.35 and R7 1.15-1.35 (ROZWOJ 11.6); rows 4-11 node",
+			},
+		},
+		["Paths/Hunter:[marksman].rows[10].nodes[marksman_grit].values.grit[2]"] = {
+			{
+				session = "S90",
+				why = "12 -> 11: C: Królobójca x base 1.25-1.35 and R7 1.15-1.35 (ROZWOJ 11.6); rows 4-11 node",
+			},
+		},
+		["Paths/Hunter:[marksman].rows[11].nodes[marksman_heartseeker2].values.kingslayer[1]"] = {
+			{
+				session = "S90",
+				why = "60 -> 15: C: Królobójca x base 1.25-1.35 and R7 1.15-1.35 (ROZWOJ 11.6); rows 4-11 node",
+			},
+		},
+		["Paths/Hunter:[marksman].rows[11].nodes[marksman_heartseeker2].values.kingslayer[2]"] = {
+			{
+				session = "S90",
+				why = "120 -> 30: C: Królobójca x base 1.25-1.35 and R7 1.15-1.35 (ROZWOJ 11.6); rows 4-11 node",
+			},
+		},
+		["Paths/Hunter:[marksman].rows[4].nodes[marksman_heldBreath].values.heldBreath[1]"] = {
+			{
+				session = "S90",
+				why = "1 -> 0.25: C: Królobójca x base 1.25-1.35 and R7 1.15-1.35 (ROZWOJ 11.6); rows 4-11 node",
+			},
+		},
+		["Paths/Hunter:[marksman].rows[4].nodes[marksman_heldBreath].values.heldBreath[2]"] = {
+			{
+				session = "S90",
+				why = "3 -> 0.75: C: Królobójca x base 1.25-1.35 and R7 1.15-1.35 (ROZWOJ 11.6); rows 4-11 node",
+			},
+		},
+		["Paths/Hunter:[marksman].rows[5].nodes[marksman_keenSight].values.keenSight[1]"] = {
+			{
+				session = "S90",
+				why = "1 -> 0.3: C: Królobójca x base 1.25-1.35 and R7 1.15-1.35 (ROZWOJ 11.6); rows 4-11 node",
+			},
+		},
+		["Paths/Hunter:[marksman].rows[5].nodes[marksman_keenSight].values.keenSight[2]"] = {
+			{
+				session = "S90",
+				why = "3 -> 0.9: C: Królobójca x base 1.25-1.35 and R7 1.15-1.35 (ROZWOJ 11.6); rows 4-11 node",
+			},
+		},
+		["Paths/Hunter:[marksman].rows[5].nodes[marksman_longShot].values.longShot[1]"] = {
+			{
+				session = "S90",
+				why = "10 -> 3: C: Królobójca x base 1.25-1.35 and R7 1.15-1.35 (ROZWOJ 11.6); rows 4-11 node",
+			},
+		},
+		["Paths/Hunter:[marksman].rows[5].nodes[marksman_longShot].values.longShot[2]"] = {
+			{
+				session = "S90",
+				why = "30 -> 8: C: Królobójca x base 1.25-1.35 and R7 1.15-1.35 (ROZWOJ 11.6); rows 4-11 node",
+			},
+		},
+		["Paths/Hunter:[marksman].rows[6].nodes[marksman_coupDeGrace].values.coupDeGrace[1]"] = {
+			{
+				session = "S90",
+				why = "5 -> 1.7: C: Królobójca x base 1.25-1.35 and R7 1.15-1.35 (ROZWOJ 11.6); rows 4-11 node",
+			},
+		},
+		["Paths/Hunter:[marksman].rows[6].nodes[marksman_coupDeGrace].values.coupDeGrace[2]"] = {
+			{
+				session = "S90",
+				why = "15 -> 5: C: Królobójca x base 1.25-1.35 and R7 1.15-1.35 (ROZWOJ 11.6); rows 4-11 node",
+			},
+		},
+		["Paths/Hunter:[marksman].rows[7].nodes[marksman_tempest].values.tempest[1]"] = {
+			{
+				session = "S90",
+				why = "0.93 -> 0.92: C: Królobójca x base 1.25-1.35 and R7 1.15-1.35 (ROZWOJ 11.6); rows 4-11 node",
+			},
+		},
+		["Paths/Hunter:[marksman].rows[7].nodes[marksman_tempest].values.tempest[2]"] = {
+			{
+				session = "S90",
+				why = "0.8 -> 0.78: C: Królobójca x base 1.25-1.35 and R7 1.15-1.35 (ROZWOJ 11.6); rows 4-11 node",
+			},
+		},
+		["Paths/Hunter:[marksman].rows[9].nodes[marksman_deadlyTip].values.deadlyTip[2]"] = {
+			{
+				session = "S90",
+				why = "35 -> 36: C: Królobójca x base 1.25-1.35 and R7 1.15-1.35 (ROZWOJ 11.6); rows 4-11 node",
+			},
+		},
+		["Paths/Hunter:[scout].rows[10].nodes[scout_beater].values.beater[1]"] = {
+			{
+				session = "S90",
+				why = "2 -> 1.8: E: Łowczy drużyny 4 x (1 + B) + S 4.9-5.1, S >= 0.55, solo pace <= 1.5 (ROZWOJ 7.5, 11.6); rows 4-11 node",
+			},
+		},
+		["Paths/Hunter:[scout].rows[10].nodes[scout_beater].values.beater[2]"] = {
+			{
+				session = "S90",
+				why = "6 -> 5.5: E: Łowczy drużyny 4 x (1 + B) + S 4.9-5.1, S >= 0.55, solo pace <= 1.5 (ROZWOJ 7.5, 11.6); rows 4-11 node",
+			},
+		},
+		["Paths/Hunter:[scout].rows[11].nodes[scout_royalFalcon2].values.sovereignMark[1]"] = {
+			{
+				session = "S90",
+				why = "1 -> 0.1: E: Łowczy drużyny 4 x (1 + B) + S 4.9-5.1, S >= 0.55, solo pace <= 1.5 (ROZWOJ 7.5, 11.6); rows 4-11 node",
+			},
+		},
+		["Paths/Hunter:[scout].rows[11].nodes[scout_royalFalcon2].values.sovereignMark[2]"] = {
+			{
+				session = "S90",
+				why = "2 -> 0.2: E: Łowczy drużyny 4 x (1 + B) + S 4.9-5.1, S >= 0.55, solo pace <= 1.5 (ROZWOJ 7.5, 11.6); rows 4-11 node",
+			},
+		},
+		["Paths/Hunter:[scout].rows[11].nodes[scout_royalFalcon2].values.sovereignPace[1]"] = {
+			{
+				session = "S90",
+				why = "10 -> 19: E: Łowczy drużyny 4 x (1 + B) + S 4.9-5.1, S >= 0.55, solo pace <= 1.5 (ROZWOJ 7.5, 11.6); rows 4-11 node",
+			},
+		},
+		["Paths/Hunter:[scout].rows[11].nodes[scout_royalFalcon2].values.sovereignPace[2]"] = {
+			{
+				session = "S90",
+				why = "20 -> 38: E: Łowczy drużyny 4 x (1 + B) + S 4.9-5.1, S >= 0.55, solo pace <= 1.5 (ROZWOJ 7.5, 11.6); rows 4-11 node",
+			},
+		},
+		["Paths/Hunter:[scout].rows[4].nodes[scout_talons].values.talons[1]"] = {
+			{
+				session = "S90",
+				why = "5 -> 10: E: Łowczy drużyny 4 x (1 + B) + S 4.9-5.1, S >= 0.55, solo pace <= 1.5 (ROZWOJ 7.5, 11.6); rows 4-11 node",
+			},
+		},
+		["Paths/Hunter:[scout].rows[4].nodes[scout_talons].values.talons[2]"] = {
+			{
+				session = "S90",
+				why = "15 -> 29: E: Łowczy drużyny 4 x (1 + B) + S 4.9-5.1, S >= 0.55, solo pace <= 1.5 (ROZWOJ 7.5, 11.6); rows 4-11 node",
+			},
+		},
+		["Paths/Hunter:[scout].rows[5].nodes[scout_bond].values.bondDive[1]"] = {
+			{
+				session = "S90",
+				why = "20 -> 13: E: Łowczy drużyny 4 x (1 + B) + S 4.9-5.1, S >= 0.55, solo pace <= 1.5 (ROZWOJ 7.5, 11.6); rows 4-11 node",
+			},
+		},
+		["Paths/Hunter:[scout].rows[5].nodes[scout_bond].values.bondDive[2]"] = {
+			{
+				session = "S90",
+				why = "60 -> 38: E: Łowczy drużyny 4 x (1 + B) + S 4.9-5.1, S >= 0.55, solo pace <= 1.5 (ROZWOJ 7.5, 11.6); rows 4-11 node",
+			},
+		},
+		["Paths/Hunter:[scout].rows[5].nodes[scout_bond].values.bond[1]"] = {
+			{
+				session = "S90",
+				why = "2 -> 1.3: E: Łowczy drużyny 4 x (1 + B) + S 4.9-5.1, S >= 0.55, solo pace <= 1.5 (ROZWOJ 7.5, 11.6); rows 4-11 node",
+			},
+		},
+		["Paths/Hunter:[scout].rows[5].nodes[scout_bond].values.bond[2]"] = {
+			{
+				session = "S90",
+				why = "6 -> 3.8: E: Łowczy drużyny 4 x (1 + B) + S 4.9-5.1, S >= 0.55, solo pace <= 1.5 (ROZWOJ 7.5, 11.6); rows 4-11 node",
+			},
+		},
+		["Paths/Hunter:[scout].rows[5].nodes[scout_hardy].values.hardy[1]"] = {
+			{
+				session = "S90",
+				why = "3 -> 0.8: E: Łowczy drużyny 4 x (1 + B) + S 4.9-5.1, S >= 0.55, solo pace <= 1.5 (ROZWOJ 7.5, 11.6); rows 4-11 node",
+			},
+		},
+		["Paths/Hunter:[scout].rows[5].nodes[scout_hardy].values.hardy[2]"] = {
+			{
+				session = "S90",
+				why = "9 -> 2.5: E: Łowczy drużyny 4 x (1 + B) + S 4.9-5.1, S >= 0.55, solo pace <= 1.5 (ROZWOJ 7.5, 11.6); rows 4-11 node",
+			},
+		},
+		["Paths/Hunter:[scout].rows[9].nodes[scout_quickMark].values.quickMark[1]"] = {
+			{
+				session = "S90",
+				why = "0.93 -> 0.91: E: Łowczy drużyny 4 x (1 + B) + S 4.9-5.1, S >= 0.55, solo pace <= 1.5 (ROZWOJ 7.5, 11.6); rows 4-11 node",
+			},
+		},
+		["Paths/Hunter:[scout].rows[9].nodes[scout_quickMark].values.quickMark[2]"] = {
+			{
+				session = "S90",
+				why = "0.8 -> 0.74: E: Łowczy drużyny 4 x (1 + B) + S 4.9-5.1, S >= 0.55, solo pace <= 1.5 (ROZWOJ 7.5, 11.6); rows 4-11 node",
+			},
+		},
+		["Paths/Hunter:[trapper].rows[10].nodes[trapper_basilisk].values.basilisk[1]"] = {
+			{
+				session = "S90",
+				why = "10 -> 2.5: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6); rows 4-11 node",
+			},
+		},
+		["Paths/Hunter:[trapper].rows[10].nodes[trapper_basilisk].values.basilisk[2]"] = {
+			{
+				session = "S90",
+				why = "30 -> 7.5: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6); rows 4-11 node",
+			},
+		},
+		["Paths/Hunter:[trapper].rows[10].nodes[trapper_woodsman].values.woodsman[1]"] = {
+			{
+				session = "S90",
+				why = "4 -> 5: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6); rows 4-11 node",
+			},
+		},
+		["Paths/Hunter:[trapper].rows[10].nodes[trapper_woodsman].values.woodsman[2]"] = {
+			{
+				session = "S90",
+				why = "12 -> 14: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6); rows 4-11 node",
+			},
+		},
+		["Paths/Hunter:[trapper].rows[11].nodes[trapper_snarefield2].values.deathField[1]"] = {
+			{
+				session = "S90",
+				why = "60 -> 24: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6); rows 4-11 node",
+			},
+		},
+		["Paths/Hunter:[trapper].rows[11].nodes[trapper_snarefield2].values.deathField[2]"] = {
+			{
+				session = "S90",
+				why = "120 -> 47: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6); rows 4-11 node",
+			},
+		},
+		["Paths/Hunter:[trapper].rows[4].nodes[trapper_huntingGround].values.huntingGround[1]"] = {
+			{
+				session = "S90",
+				why = "7 -> 2: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6); rows 4-11 node",
+			},
+		},
+		["Paths/Hunter:[trapper].rows[4].nodes[trapper_huntingGround].values.huntingGround[2]"] = {
+			{
+				session = "S90",
+				why = "20 -> 5: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6); rows 4-11 node",
+			},
+		},
+		["Paths/Hunter:[trapper].rows[5].nodes[trapper_bitingRain].values.bitingField[1]"] = {
+			{
+				session = "S90",
+				why = "10 -> 2.5: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6); rows 4-11 node",
+			},
+		},
+		["Paths/Hunter:[trapper].rows[5].nodes[trapper_bitingRain].values.bitingField[2]"] = {
+			{
+				session = "S90",
+				why = "30 -> 7.5: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6); rows 4-11 node",
+			},
+		},
+		["Paths/Hunter:[trapper].rows[5].nodes[trapper_bitingRain].values.bitingWave[1]"] = {
+			{
+				session = "S90",
+				why = "15 -> 4: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6); rows 4-11 node",
+			},
+		},
+		["Paths/Hunter:[trapper].rows[5].nodes[trapper_bitingRain].values.bitingWave[2]"] = {
+			{
+				session = "S90",
+				why = "45 -> 11: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6); rows 4-11 node",
+			},
+		},
+		["Paths/Hunter:[trapper].rows[5].nodes[trapper_spoils].values.spoils[1]"] = {
+			{
+				session = "S90",
+				why = "2 -> 1: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6); rows 4-11 node",
+			},
+		},
+		["Paths/Hunter:[trapper].rows[5].nodes[trapper_spoils].values.spoils[2]"] = {
+			{
+				session = "S90",
+				why = "4 -> 2: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6); rows 4-11 node",
+			},
+		},
+		["Paths/Hunter:[trapper].rows[6].nodes[trapper_blastTrap].values.blastDmg[1]"] = {
+			{
+				session = "S90",
+				why = "50 -> 12: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6); rows 4-11 node",
+			},
+		},
+		["Paths/Hunter:[trapper].rows[6].nodes[trapper_blastTrap].values.blastDmg[2]"] = {
+			{
+				session = "S90",
+				why = "150 -> 38: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6); rows 4-11 node",
+			},
+		},
+		["Paths/Hunter:[trapper].rows[6].nodes[trapper_blastTrap].values.blastPoison[1]"] = {
+			{
+				session = "S90",
+				why = "35 -> 9: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6); rows 4-11 node",
+			},
+		},
+		["Paths/Hunter:[trapper].rows[6].nodes[trapper_blastTrap].values.blastPoison[2]"] = {
+			{
+				session = "S90",
+				why = "100 -> 25: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6); rows 4-11 node",
+			},
+		},
+		["Paths/Mage:[arcanist].rows[10].nodes[arcanist_archmage].values.archmage[1]"] = {
+			{
+				session = "S90",
+				why = "-0.5 -> -0.44: F3: arcanistBoss boss 180 s x base 1.20-1.45 and 1.15-1.25 Destroyer, T-SK4 2.0-2.4 (ROZWOJ 12.7); rows 4-11 node",
+			},
+		},
+		["Paths/Mage:[arcanist].rows[10].nodes[arcanist_archmage].values.archmage[2]"] = {
+			{
+				session = "S90",
+				why = "-1.5 -> -1.31: F3: arcanistBoss boss 180 s x base 1.20-1.45 and 1.15-1.25 Destroyer, T-SK4 2.0-2.4 (ROZWOJ 12.7); rows 4-11 node",
+			},
+		},
+		["Paths/Mage:[arcanist].rows[10].nodes[arcanist_masterMind].values.masterMind[1]"] = {
+			{
+				session = "S90",
+				why = "4 -> 5.6: F3: arcanistBoss boss 180 s x base 1.20-1.45 and 1.15-1.25 Destroyer, T-SK4 2.0-2.4 (ROZWOJ 12.7); rows 4-11 node",
+			},
+		},
+		["Paths/Mage:[arcanist].rows[10].nodes[arcanist_masterMind].values.masterMind[2]"] = {
+			{
+				session = "S90",
+				why = "12 -> 16.9: F3: arcanistBoss boss 180 s x base 1.20-1.45 and 1.15-1.25 Destroyer, T-SK4 2.0-2.4 (ROZWOJ 12.7); rows 4-11 node",
+			},
+		},
+		["Paths/Mage:[arcanist].rows[4].nodes[arcanist_fullDischarge].values.fullDischarge[2]"] = {
+			{
+				session = "S90",
+				why = "10 -> 9.9: F3: arcanistBoss boss 180 s x base 1.20-1.45 and 1.15-1.25 Destroyer, T-SK4 2.0-2.4 (ROZWOJ 12.7); rows 4-11 node",
+			},
+		},
+		["Paths/Mage:[arcanist].rows[5].nodes[arcanist_might].values.might[1]"] = {
+			{
+				session = "S90",
+				why = "1 -> 0.3: F3: arcanistBoss boss 180 s x base 1.20-1.45 and 1.15-1.25 Destroyer, T-SK4 2.0-2.4 (ROZWOJ 12.7); rows 4-11 node",
+			},
+		},
+		["Paths/Mage:[arcanist].rows[5].nodes[arcanist_might].values.might[2]"] = {
+			{
+				session = "S90",
+				why = "3 -> 1: F3: arcanistBoss boss 180 s x base 1.20-1.45 and 1.15-1.25 Destroyer, T-SK4 2.0-2.4 (ROZWOJ 12.7); rows 4-11 node",
+			},
+		},
+		["Paths/Mage:[arcanist].rows[5].nodes[arcanist_reclaim].values.reclaim[1]"] = {
+			{
+				session = "S90",
+				why = "0.1 -> 0.035: F3: arcanistBoss boss 180 s x base 1.20-1.45 and 1.15-1.25 Destroyer, T-SK4 2.0-2.4 (ROZWOJ 12.7); rows 4-11 node",
+			},
+		},
+		["Paths/Mage:[arcanist].rows[5].nodes[arcanist_reclaim].values.reclaim[2]"] = {
+			{
+				session = "S90",
+				why = "0.3 -> 0.105: F3: arcanistBoss boss 180 s x base 1.20-1.45 and 1.15-1.25 Destroyer, T-SK4 2.0-2.4 (ROZWOJ 12.7); rows 4-11 node",
+			},
+		},
+		["Paths/Mage:[arcanist].rows[6].nodes[arcanist_mounting].values.mounting[1]"] = {
+			{
+				session = "S90",
+				why = "0.5 -> 0.17: F3: arcanistBoss boss 180 s x base 1.20-1.45 and 1.15-1.25 Destroyer, T-SK4 2.0-2.4 (ROZWOJ 12.7); rows 4-11 node",
+			},
+		},
+		["Paths/Mage:[arcanist].rows[6].nodes[arcanist_mounting].values.mounting[2]"] = {
+			{
+				session = "S90",
+				why = "1.5 -> 0.52: F3: arcanistBoss boss 180 s x base 1.20-1.45 and 1.15-1.25 Destroyer, T-SK4 2.0-2.4 (ROZWOJ 12.7); rows 4-11 node",
+			},
+		},
+		["Paths/Mage:[arcanist].rows[7].nodes[arcanist_invocation].values.invocation[1]"] = {
+			{
+				session = "S90",
+				why = "5 -> 3.9: F3: arcanistBoss boss 180 s x base 1.20-1.45 and 1.15-1.25 Destroyer, T-SK4 2.0-2.4 (ROZWOJ 12.7); rows 4-11 node",
+			},
+		},
+		["Paths/Mage:[arcanist].rows[7].nodes[arcanist_invocation].values.invocation[2]"] = {
+			{
+				session = "S90",
+				why = "15 -> 11.7: F3: arcanistBoss boss 180 s x base 1.20-1.45 and 1.15-1.25 Destroyer, T-SK4 2.0-2.4 (ROZWOJ 12.7); rows 4-11 node",
+			},
+		},
+		["Paths/Mage:[arcanist].rows[9].nodes[arcanist_rending].values.rending[1]"] = {
+			{
+				session = "S90",
+				why = "0.5 -> 0.84: F3: arcanistBoss boss 180 s x base 1.20-1.45 and 1.15-1.25 Destroyer, T-SK4 2.0-2.4 (ROZWOJ 12.7); rows 4-11 node",
+			},
+		},
+		["Paths/Mage:[arcanist].rows[9].nodes[arcanist_rending].values.rending[2]"] = {
+			{
+				session = "S90",
+				why = "1.5 -> 2.53: F3: arcanistBoss boss 180 s x base 1.20-1.45 and 1.15-1.25 Destroyer, T-SK4 2.0-2.4 (ROZWOJ 12.7); rows 4-11 node",
+			},
+		},
+		["Paths/Mage:[arcanist].rows[9].nodes[arcanist_well].values.well[1]"] = {
+			{
+				session = "S90",
+				why = "-0.25 -> -0.12: F3: the drain stays above 0 after the S90 drain 0.73 (Deep Well takes half of it, as before)",
+			},
+		},
+		["Paths/Mage:[arcanist].rows[9].nodes[arcanist_well].values.well[2]"] = {
+			{
+				session = "S90",
+				why = "-0.75 -> -0.37: F3: the drain stays above 0 after the S90 drain 0.73 (Deep Well takes half of it, as before)",
+			},
+		},
+		["Paths/Mage:[destroyer].rows[10].nodes[destroyer_flow].values.flow[1]"] = {
+			{
+				session = "S90",
+				why = "-3 -> -1.2: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7); rows 4-11 node",
+			},
+		},
+		["Paths/Mage:[destroyer].rows[10].nodes[destroyer_flow].values.flow[2]"] = {
+			{
+				session = "S90",
+				why = "-9 -> -3.7: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7); rows 4-11 node",
+			},
+		},
+		["Paths/Mage:[destroyer].rows[10].nodes[destroyer_grit].values.grit[1]"] = {
+			{
+				session = "S90",
+				why = "4 -> 1.4: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7); rows 4-11 node",
+			},
+		},
+		["Paths/Mage:[destroyer].rows[10].nodes[destroyer_grit].values.grit[2]"] = {
+			{
+				session = "S90",
+				why = "12 -> 4.2: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7); rows 4-11 node",
+			},
+		},
+		["Paths/Mage:[destroyer].rows[5].nodes[destroyer_might].values.might[1]"] = {
+			{
+				session = "S90",
+				why = "2 -> 4: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7); rows 4-11 node",
+			},
+		},
+		["Paths/Mage:[destroyer].rows[5].nodes[destroyer_might].values.might[2]"] = {
+			{
+				session = "S90",
+				why = "6 -> 12: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7); rows 4-11 node",
+			},
+		},
+		["Paths/Mage:[destroyer].rows[5].nodes[destroyer_tempered].values.tempered[1]"] = {
+			{
+				session = "S90",
+				why = "4 -> 2.3: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7); rows 4-11 node",
+			},
+		},
+		["Paths/Mage:[destroyer].rows[5].nodes[destroyer_tempered].values.tempered[2]"] = {
+			{
+				session = "S90",
+				why = "12 -> 6.8: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7); rows 4-11 node",
+			},
+		},
+		["Paths/Mage:[destroyer].rows[5].nodes[destroyer_veins].values.veins[1]"] = {
+			{
+				session = "S90",
+				why = "10 -> 4.4: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7); rows 4-11 node",
+			},
+		},
+		["Paths/Mage:[destroyer].rows[5].nodes[destroyer_veins].values.veins[2]"] = {
+			{
+				session = "S90",
+				why = "30 -> 13.1: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7); rows 4-11 node",
+			},
+		},
+		["Paths/Mage:[destroyer].rows[6].nodes[destroyer_frail].values.frailDmg[1]"] = {
+			{
+				session = "S90",
+				why = "2 -> 2.7: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7); rows 4-11 node",
+			},
+		},
+		["Paths/Mage:[destroyer].rows[6].nodes[destroyer_frail].values.frailDmg[2]"] = {
+			{
+				session = "S90",
+				why = "6 -> 8: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7); rows 4-11 node",
+			},
+		},
+		["Paths/Mage:[destroyer].rows[7].nodes[destroyer_wrath].values.wrath[1]"] = {
+			{
+				session = "S90",
+				why = "1 -> 1.15: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7); rows 4-11 node",
+			},
+		},
+		["Paths/Mage:[destroyer].rows[7].nodes[destroyer_wrath].values.wrath[2]"] = {
+			{
+				session = "S90",
+				why = "3 -> 3.44: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7); rows 4-11 node",
+			},
+		},
+		["Paths/Mage:[destroyer].rows[9].nodes[destroyer_raging].values.raging[1]"] = {
+			{
+				session = "S90",
+				why = "0.5 -> 0.49: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7); rows 4-11 node",
+			},
+		},
+		["Paths/Mage:[destroyer].rows[9].nodes[destroyer_raging].values.raging[2]"] = {
+			{
+				session = "S90",
+				why = "1.5 -> 1.47: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7); rows 4-11 node",
+			},
+		},
+		["Paths/Mage:[destroyer].rows[9].nodes[destroyer_swift].values.swift[1]"] = {
+			{
+				session = "S90",
+				why = "0.93 -> 0.935: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7); rows 4-11 node",
+			},
+		},
+		["Paths/Mage:[destroyer].rows[9].nodes[destroyer_swift].values.swift[2]"] = {
+			{
+				session = "S90",
+				why = "0.8 -> 0.814: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7); rows 4-11 node",
+			},
+		},
+		["SkillCurves:knots.aimedShot.dmg[5]"] = {
+			{
+				session = "S90",
+				why = "- -> 232.222: C3 / F1: rank 5 pinned at today's 232.222 so rank 10 can move without changing 1-20",
+			},
+		},
+		["SkillCurves:knots.chainLightning.dmg[3]"] = {
+			{
+				session = "S90",
+				why = "- -> 152.222: C3 / F1: rank 3 pinned at today's 152.222 so rank 10 can move without changing 1-20",
+			},
+		},
+		["SkillCurves:knots.disengage.bonus[4]"] = {
+			{
+				session = "S90",
+				why = "- -> 30: C3 / F1: rank 4 pinned at today's 30 so rank 10 can move without changing 1-20",
+			},
+		},
+		["SkillCurves:knots.doubleShot.dmg[5]"] = {
+			{
+				session = "S90",
+				why = "- -> 113.889: C3 / F1: rank 5 pinned at today's 113.889 so rank 10 can move without changing 1-20",
+			},
+		},
+		["SkillCurves:knots.fireball.dmg[5]"] = {
+			{
+				session = "S90",
+				why = "- -> 203.333: C3 / F1: rank 5 pinned at today's 203.333 so rank 10 can move without changing 1-20",
+			},
+		},
+		["SkillCurves:knots.firebolt.dmg[5]"] = {
+			{
+				session = "S90",
+				why = "- -> 232.222: C3 / F1: rank 5 pinned at today's 232.222 so rank 10 can move without changing 1-20",
+			},
+		},
+		["SkillCurves:knots.iceShard.dmg[4]"] = {
+			{
+				session = "S90",
+				why = "- -> 176.667: C3 / F1: rank 4 pinned at today's 176.667 so rank 10 can move without changing 1-20",
+			},
+		},
+		["SkillCurves:knots.piercingArrow.dmg[3]"] = {
+			{
+				session = "S90",
+				why = "- -> 235.556: C3 / F1: rank 3 pinned at today's 235.556 so rank 10 can move without changing 1-20",
+			},
+		},
+		["Skills/Hunter:[aimedShot].breakpoints[10].a.execute"] = {
+			{
+				session = "S90",
+				why = "30 -> 21: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)",
+			},
+		},
+		["Skills/Hunter:[aimedShot].values.dmg[2]"] = {
+			{
+				session = "S90",
+				why = "310 -> 233: C R1: rank > 20 nearly flat (R1 of every Hunter build; rank <= 20 pinned in SkillCurves)",
+			},
+		},
+		["Skills/Hunter:[camouflage].cooldown"] = {
+			{
+				session = "S90",
+				why = "60 -> 67: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6)",
+			},
+		},
+		["Skills/Hunter:[disengage].values.bonus[2]"] = {
+			{
+				session = "S90",
+				why = "50 -> 35: C R1: rank > 20 nearly flat (R1 of every Hunter build; rank <= 20 pinned in SkillCurves)",
+			},
+		},
+		["Skills/Hunter:[doubleShot].breakpoints[10].b.values.dmg"] = {
+			{
+				session = "S90",
+				why = "30 -> 28: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)",
+			},
+		},
+		["Skills/Hunter:[doubleShot].values.dmg[2]"] = {
+			{
+				session = "S90",
+				why = "150 -> 114: C R1: rank > 20 nearly flat (R1 of every Hunter build; rank <= 20 pinned in SkillCurves)",
+			},
+		},
+		["Skills/Hunter:[drawBead].values.critDmg[1]"] = {
+			{ session = "S90", why = "15 -> 26.5: C: Królobójca x base 1.25-1.35 and R7 1.15-1.35 (ROZWOJ 11.6)" },
+		},
+		["Skills/Hunter:[drawBead].values.critDmg[2]"] = {
+			{ session = "S90", why = "30 -> 28: C: Królobójca x base 1.25-1.35 and R7 1.15-1.35 (ROZWOJ 11.6)" },
+		},
+		["Skills/Hunter:[drawBead].values.crit[1]"] = {
+			{ session = "S90", why = "12 -> 20: C: Królobójca x base 1.25-1.35 and R7 1.15-1.35 (ROZWOJ 11.6)" },
+		},
+		["Skills/Hunter:[drawBead].values.crit[2]"] = {
+			{ session = "S90", why = "20 -> 23: C: Królobójca x base 1.25-1.35 and R7 1.15-1.35 (ROZWOJ 11.6)" },
+		},
+		["Skills/Hunter:[drive].breakpoints[10].a.values.dmg"] = {
+			{
+				session = "S90",
+				why = "25 -> 20: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)",
+			},
+		},
+		["Skills/Hunter:[drive].breakpoints[5].b.mul.cooldown"] = {
+			{
+				session = "S90",
+				why = "0.8 -> 0.9: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)",
+			},
+		},
+		["Skills/Hunter:[drive].cooldown"] = {
+			{
+				session = "S90",
+				why = "30 -> 33: E: Łowczy drużyny 4 x (1 + B) + S 4.9-5.1, S >= 0.55, solo pace <= 1.5 (ROZWOJ 7.5, 11.6)",
+			},
+		},
+		["Skills/Hunter:[drive].values.dmg[1]"] = {
+			{
+				session = "S90",
+				why = "80 -> 102: E: Łowczy drużyny 4 x (1 + B) + S 4.9-5.1, S >= 0.55, solo pace <= 1.5 (ROZWOJ 7.5, 11.6)",
+			},
+		},
+		["Skills/Hunter:[drive].values.dmg[2]"] = {
+			{
+				session = "S90",
+				why = "120 -> 108: E: Łowczy drużyny 4 x (1 + B) + S 4.9-5.1, S >= 0.55, solo pace <= 1.5 (ROZWOJ 7.5, 11.6)",
+			},
+		},
+		["Skills/Hunter:[falcon].breakpoints[10].a.values.dmg"] = {
+			{
+				session = "S90",
+				why = "15 -> 14: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)",
+			},
+		},
+		["Skills/Hunter:[falcon].breakpoints[10].b.splash.pct"] = {
+			{
+				session = "S90",
+				why = "50 -> 10: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)",
+			},
+		},
+		["Skills/Hunter:[falcon].cooldown"] = {
+			{
+				session = "S90",
+				why = "30 -> 36: E: Łowczy drużyny 4 x (1 + B) + S 4.9-5.1, S >= 0.55, solo pace <= 1.5 (ROZWOJ 7.5, 11.6)",
+			},
+		},
+		["Skills/Hunter:[falcon].values.dmg[1]"] = {
+			{
+				session = "S90",
+				why = "15 -> 27: E: Łowczy drużyny 4 x (1 + B) + S 4.9-5.1, S >= 0.55, solo pace <= 1.5 (ROZWOJ 7.5, 11.6)",
+			},
+		},
+		["Skills/Hunter:[falcon].values.dmg[2]"] = {
+			{
+				session = "S90",
+				why = "30 -> 44: E: Łowczy drużyny 4 x (1 + B) + S 4.9-5.1, S >= 0.55, solo pace <= 1.5 (ROZWOJ 7.5, 11.6)",
+			},
+		},
+		["Skills/Hunter:[frostTrap].breakpoints[5].b.values.poison"] = {
+			{
+				session = "S90",
+				why = "60 -> 9: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)",
+			},
+		},
+		["Skills/Hunter:[hawkEye].values.critDmg[2]"] = {
+			{
+				session = "S90",
+				why = "30 -> 16: C R7: crit ranks 2-5 lower (Marksman 1.15-1.35 Furia at 70-100 with x base >= 1.25)",
+			},
+		},
+		["Skills/Hunter:[hawkEye].values.crit[2]"] = {
+			{
+				session = "S90",
+				why = "10 -> 4: C R7: crit ranks 2-5 lower (Marksman 1.15-1.35 Furia at 70-100 with x base >= 1.25)",
+			},
+		},
+		["Skills/Hunter:[heartseeker].breakpoints[10].b.splash.pct"] = {
+			{
+				session = "S90",
+				why = "50 -> 18: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)",
+			},
+		},
+		["Skills/Hunter:[heartseeker].breakpoints[5].a.values.dmg"] = {
+			{
+				session = "S90",
+				why = "60 -> 37: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)",
+			},
+		},
+		["Skills/Hunter:[heartseeker].breakpoints[5].b.pierce"] = {
+			{
+				session = "S90",
+				why = "60 -> 11: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)",
+			},
+		},
+		["Skills/Hunter:[heartseeker].cooldown"] = {
+			{ session = "S90", why = "30 -> 31: C: Królobójca x base 1.25-1.35 and R7 1.15-1.35 (ROZWOJ 11.6)" },
+		},
+		["Skills/Hunter:[heartseeker].values.dmg[1]"] = {
+			{ session = "S90", why = "400 -> 220: C: Królobójca x base 1.25-1.35 and R7 1.15-1.35 (ROZWOJ 11.6)" },
+		},
+		["Skills/Hunter:[heartseeker].values.dmg[2]"] = {
+			{ session = "S90", why = "650 -> 290: C: Królobójca x base 1.25-1.35 and R7 1.15-1.35 (ROZWOJ 11.6)" },
+		},
+		["Skills/Hunter:[huntersMark].breakpoints[10].b.values.vuln"] = {
+			{
+				session = "S90",
+				why = "2 -> 1: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)",
+			},
+		},
+		["Skills/Hunter:[huntersMark].breakpoints[5].a.add.effectDuration"] = {
+			{
+				session = "S90",
+				why = "5 -> 1: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)",
+			},
+		},
+		["Skills/Hunter:[piercingArrow].values.dmg[2]"] = {
+			{
+				session = "S90",
+				why = "360 -> 410: C R1: rank > 20 nearly flat (R1 of every Hunter build; rank <= 20 pinned in SkillCurves)",
+			},
+		},
+		["Skills/Hunter:[predatorInstinct].values.speed[1]"] = {
+			{
+				session = "S90",
+				why = "3 -> 17: C R1 / R7: attack speed of the base above 45 (Dexterity gives less, ROZWOJ 8, 11.2): Hunter R1 down, Marksman R7 in band",
+			},
+		},
+		["Skills/Hunter:[predatorInstinct].values.speed[2]"] = {
+			{
+				session = "S90",
+				why = "15 -> 34: C R1 / R7: attack speed of the base above 45 (Dexterity gives less, ROZWOJ 8, 11.2): Hunter R1 down, Marksman R7 in band",
+			},
+		},
+		["Skills/Hunter:[snarefield].breakpoints[10].a.values.dmg"] = {
+			{
+				session = "S90",
+				why = "25 -> 14: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)",
+			},
+		},
+		["Skills/Hunter:[snarefield].breakpoints[5].b.values.vuln"] = {
+			{
+				session = "S90",
+				why = "2 -> 1: Snarefield 5B vulnerability <= Hunter's Mark with 10B (ROZWOJ 11.4, 11.5)",
+			},
+		},
+		["Skills/Hunter:[snarefield].cooldown"] = {
+			{
+				session = "S90",
+				why = "40 -> 35: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6)",
+			},
+		},
+		["Skills/Hunter:[snarefield].values.dmg[1]"] = {
+			{
+				session = "S90",
+				why = "90 -> 30: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6)",
+			},
+		},
+		["Skills/Hunter:[snarefield].values.dmg[2]"] = {
+			{
+				session = "S90",
+				why = "150 -> 38: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6)",
+			},
+		},
+		["Skills/Hunter:[stormArrow].breakpoints[5].b.values.dmg"] = {
+			{
+				session = "S90",
+				why = "80 -> 37: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)",
+			},
+		},
+		["Skills/Hunter:[stormArrow].cooldown"] = {
+			{ session = "S90", why = "40 -> 29: C: Królobójca x base 1.25-1.35 and R7 1.15-1.35 (ROZWOJ 11.6)" },
+		},
+		["Skills/Hunter:[stormArrow].values.dmg[1]"] = {
+			{ session = "S90", why = "400 -> 200: C: Królobójca x base 1.25-1.35 and R7 1.15-1.35 (ROZWOJ 11.6)" },
+		},
+		["Skills/Hunter:[stormArrow].values.dmg[2]"] = {
+			{ session = "S90", why = "650 -> 400: C: Królobójca x base 1.25-1.35 and R7 1.15-1.35 (ROZWOJ 11.6)" },
+		},
+		["Skills/Hunter:[stormArrow].values.splash"] = {
+			{ session = "S90", why = "120 -> 75: C: Królobójca x base 1.25-1.35 and R7 1.15-1.35 (ROZWOJ 11.6)" },
+		},
+		["Skills/Hunter:[venomArrow].breakpoints[10].a.splash.pct"] = {
+			{
+				session = "S90",
+				why = "40 -> 19: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)",
+			},
+		},
+		["Skills/Hunter:[venomArrow].breakpoints[10].b.values.poison"] = {
+			{
+				session = "S90",
+				why = "70 -> 60: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)",
+			},
+		},
+		["Skills/Hunter:[venomArrow].breakpoints[5].a.values.poison"] = {
+			{
+				session = "S90",
+				why = "40 -> 21: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)",
+			},
+		},
+		["Skills/Hunter:[venomArrow].breakpoints[5].b.values.dmg"] = {
+			{
+				session = "S90",
+				why = "40 -> 28: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)",
+			},
+		},
+		["Skills/Hunter:[venomArrow].values.dmg[2]"] = {
+			{
+				session = "S90",
+				why = "210 -> 152: C R1: rank > 20 nearly flat (R1 of every Hunter build; rank <= 20 pinned in SkillCurves)",
+			},
+		},
+		["Skills/Hunter:[venomArrow].values.poison[2]"] = {
+			{
+				session = "S90",
+				why = "120 -> 50: C R1: rank > 20 nearly flat (R1 of every Hunter build; rank <= 20 pinned in SkillCurves)",
+			},
+		},
+		["Skills/Hunter:[venomSnare].breakpoints[10].a.echo.pct"] = {
+			{
+				session = "S90",
+				why = "60 -> 38: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)",
+			},
+		},
+		["Skills/Hunter:[venomSnare].breakpoints[10].b.values.poison"] = {
+			{
+				session = "S90",
+				why = "50 -> 98: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)",
+			},
+		},
+		["Skills/Hunter:[venomSnare].cooldown"] = {
+			{
+				session = "S90",
+				why = "10 -> 14: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6)",
+			},
+		},
+		["Skills/Hunter:[venomSnare].cost"] = {
+			{
+				session = "S90",
+				why = "25 -> 16: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6)",
+			},
+		},
+		["Skills/Hunter:[venomSnare].values.dmg[1]"] = {
+			{
+				session = "S90",
+				why = "130 -> 232: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6)",
+			},
+		},
+		["Skills/Hunter:[venomSnare].values.dmg[2]"] = {
+			{
+				session = "S90",
+				why = "220 -> 236: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6)",
+			},
+		},
+		["Skills/Hunter:[venomSnare].values.poison[1]"] = {
+			{
+				session = "S90",
+				why = "60 -> 285: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6)",
+			},
+		},
+		["Skills/Hunter:[venomSnare].values.poison[2]"] = {
+			{
+				session = "S90",
+				why = "110 -> 290: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6)",
+			},
+		},
+		["Skills/Hunter:[volley].breakpoints[10].b.values.dmg"] = {
+			{
+				session = "S90",
+				why = "20 -> 9: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)",
+			},
+		},
+		["Skills/Hunter:[volley].breakpoints[5].a.add.hits"] = {
+			{
+				session = "S90",
+				why = "3 -> 1: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)",
+			},
+		},
+		["Skills/Hunter:[volley].breakpoints[5].b.values.dmg"] = {
+			{
+				session = "S90",
+				why = "15 -> 5: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)",
+			},
+		},
+		["Skills/Hunter:[volley].cooldown"] = {
+			{
+				session = "S90",
+				why = "14 -> 13: C R1: Salwa (unlock 30) per arrow lower; Hunter base R1 / Marksman x base",
+			},
+		},
+		["Skills/Hunter:[volley].values.dmg[1]"] = {
+			{
+				session = "S90",
+				why = "70 -> 25: C R1: Salwa (unlock 30) per arrow lower; Hunter base R1 / Marksman x base",
+			},
+		},
+		["Skills/Hunter:[volley].values.dmg[2]"] = {
+			{
+				session = "S90",
+				why = "120 -> 34: C R1: Salwa (unlock 30) per arrow lower; Hunter base R1 / Marksman x base",
+			},
+		},
+		["Skills/Mage:[arcaneDischarge].breakpoints[10].a.execute"] = {
+			{
+				session = "S90",
+				why = "35 -> 40: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)",
+			},
+		},
+		["Skills/Mage:[arcaneDischarge].breakpoints[10].b.splash.pct"] = {
+			{
+				session = "S90",
+				why = "40 -> 11: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)",
+			},
+		},
+		["Skills/Mage:[arcaneDischarge].cost"] = {
+			{
+				session = "S90",
+				why = "20 -> 5: F3: arcanistBoss boss 180 s x base 1.20-1.45 and 1.15-1.25 Destroyer, T-SK4 2.0-2.4 (ROZWOJ 12.7)",
+			},
+		},
+		["Skills/Mage:[arcaneDischarge].values.dmg[1]"] = {
+			{
+				session = "S90",
+				why = "140 -> 57: F3: arcanistBoss boss 180 s x base 1.20-1.45 and 1.15-1.25 Destroyer, T-SK4 2.0-2.4 (ROZWOJ 12.7)",
+			},
+		},
+		["Skills/Mage:[arcaneDischarge].values.dmg[2]"] = {
+			{
+				session = "S90",
+				why = "230 -> 69: F3: arcanistBoss boss 180 s x base 1.20-1.45 and 1.15-1.25 Destroyer, T-SK4 2.0-2.4 (ROZWOJ 12.7)",
+			},
+		},
+		["Skills/Mage:[arcaneDischarge].values.perCharge"] = {
+			{
+				session = "S90",
+				why = "12 -> 4.1: F3: arcanistBoss boss 180 s x base 1.20-1.45 and 1.15-1.25 Destroyer, T-SK4 2.0-2.4 (ROZWOJ 12.7)",
+			},
+		},
+		["Skills/Mage:[arcaneMind].values.critDmg[1]"] = {
+			{
+				session = "S90",
+				why = "3 -> 1: F3: arcanistBoss boss 180 s x base 1.20-1.45 and 1.15-1.25 Destroyer, T-SK4 2.0-2.4 (ROZWOJ 12.7)",
+			},
+		},
+		["Skills/Mage:[arcaneMind].values.critDmg[2]"] = {
+			{
+				session = "S90",
+				why = "8 -> 2.8: F3: arcanistBoss boss 180 s x base 1.20-1.45 and 1.15-1.25 Destroyer, T-SK4 2.0-2.4 (ROZWOJ 12.7)",
+			},
+		},
+		["Skills/Mage:[arcaneMind].values.crit[1]"] = {
+			{
+				session = "S90",
+				why = "1 -> 0.35: F3: arcanistBoss boss 180 s x base 1.20-1.45 and 1.15-1.25 Destroyer, T-SK4 2.0-2.4 (ROZWOJ 12.7)",
+			},
+		},
+		["Skills/Mage:[arcaneMind].values.crit[2]"] = {
+			{
+				session = "S90",
+				why = "3 -> 1.05: F3: arcanistBoss boss 180 s x base 1.20-1.45 and 1.15-1.25 Destroyer, T-SK4 2.0-2.4 (ROZWOJ 12.7)",
+			},
+		},
+		["Skills/Mage:[arcaneTorrent].breakpoints[10].a.values.dmg"] = {
+			{
+				session = "S90",
+				why = "30 -> 32: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)",
+			},
+		},
+		["Skills/Mage:[arcaneTorrent].breakpoints[10].b.splash.pct"] = {
+			{
+				session = "S90",
+				why = "35 -> 10: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)",
+			},
+		},
+		["Skills/Mage:[arcaneTorrent].breakpoints[5].a.values.growth"] = {
+			{
+				session = "S90",
+				why = "1 -> 4.37: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)",
+			},
+		},
+		["Skills/Mage:[arcaneTorrent].values.dmg[1]"] = {
+			{
+				session = "S90",
+				why = "160 -> 122: F3: arcanistBoss boss 180 s x base 1.20-1.45 and 1.15-1.25 Destroyer, T-SK4 2.0-2.4 (ROZWOJ 12.7)",
+			},
+		},
+		["Skills/Mage:[arcaneTorrent].values.dmg[2]"] = {
+			{
+				session = "S90",
+				why = "170 -> 140: F3: arcanistBoss boss 180 s x base 1.20-1.45 and 1.15-1.25 Destroyer, T-SK4 2.0-2.4 (ROZWOJ 12.7)",
+			},
+		},
+		["Skills/Mage:[arcaneTorrent].values.drain"] = {
+			{
+				session = "S90",
+				why = "1.5 -> 0.73: F3: arcanistBoss boss 180 s x base 1.20-1.45 and 1.15-1.25 Destroyer, T-SK4 2.0-2.4 (ROZWOJ 12.7)",
+			},
+		},
+		["Skills/Mage:[arcaneTorrent].values.growth"] = {
+			{
+				session = "S90",
+				why = "2 -> 1.62: F3: arcanistBoss boss 180 s x base 1.20-1.45 and 1.15-1.25 Destroyer, T-SK4 2.0-2.4 (ROZWOJ 12.7)",
+			},
+		},
+		["Skills/Mage:[cataclysm].breakpoints[10].a.lingering.pct"] = {
+			{
+				session = "S90",
+				why = "25 -> 34: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)",
+			},
+		},
+		["Skills/Mage:[cataclysm].breakpoints[10].b.echo.pct"] = {
+			{
+				session = "S90",
+				why = "100 -> 136: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)",
+			},
+		},
+		["Skills/Mage:[cataclysm].breakpoints[5].b.values.dmg"] = {
+			{
+				session = "S90",
+				why = "7 -> 6: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)",
+			},
+		},
+		["Skills/Mage:[cataclysm].cost"] = {
+			{
+				session = "S90",
+				why = "90 -> 119: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7)",
+			},
+		},
+		["Skills/Mage:[cataclysm].values.dmg[1]"] = {
+			{
+				session = "S90",
+				why = "60 -> 36.6: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7)",
+			},
+		},
+		["Skills/Mage:[cataclysm].values.dmg[2]"] = {
+			{
+				session = "S90",
+				why = "70 -> 36.6: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7)",
+			},
+		},
+		["Skills/Mage:[chainLightning].breakpoints[10].b.mul.cooldown"] = {
+			{
+				session = "S90",
+				why = "0.8 -> 0.83: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)",
+			},
+		},
+		["Skills/Mage:[chainLightning].breakpoints[5].b.values.dmg"] = {
+			{
+				session = "S90",
+				why = "25 -> 22: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)",
+			},
+		},
+		["Skills/Mage:[chainLightning].values.dmg[2]"] = {
+			{
+				session = "S90",
+				why = "230 -> 163.5: F1 R1: rank > 20 nearly flat (Mage base R1; rank <= 20 pinned in SkillCurves)",
+			},
+		},
+		["Skills/Mage:[elementalVortex].breakpoints[5].b.values.dmg"] = {
+			{
+				session = "S90",
+				why = "2 -> 1.2: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)",
+			},
+		},
+		["Skills/Mage:[elementalVortex].cost"] = {
+			{
+				session = "S90",
+				why = "40 -> 12: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7)",
+			},
+		},
+		["Skills/Mage:[elementalVortex].values.dmg[1]"] = {
+			{
+				session = "S90",
+				why = "12 -> 6.2: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7)",
+			},
+		},
+		["Skills/Mage:[elementalVortex].values.dmg[2]"] = {
+			{
+				session = "S90",
+				why = "13 -> 8.3: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7)",
+			},
+		},
+		["Skills/Mage:[evocation].values.mana[1]"] = {
+			{
+				session = "S90",
+				why = "30 -> 25: F3: arcanistBoss boss 180 s x base 1.20-1.45 and 1.15-1.25 Destroyer, T-SK4 2.0-2.4 (ROZWOJ 12.7)",
+			},
+		},
+		["Skills/Mage:[evocation].values.mana[2]"] = {
+			{
+				session = "S90",
+				why = "50 -> 49: F3: arcanistBoss boss 180 s x base 1.20-1.45 and 1.15-1.25 Destroyer, T-SK4 2.0-2.4 (ROZWOJ 12.7)",
+			},
+		},
+		["Skills/Mage:[fireball].values.dmg[2]"] = {
+			{
+				session = "S90",
+				why = "270 -> 221.8: F1 R1: rank > 20 nearly flat (Mage base R1; rank <= 20 pinned in SkillCurves)",
+			},
+		},
+		["Skills/Mage:[firebolt].breakpoints[10].a.splash.pct"] = {
+			{
+				session = "S90",
+				why = "50 -> 12: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)",
+			},
+		},
+		["Skills/Mage:[firebolt].breakpoints[10].b.values.dmg"] = {
+			{
+				session = "S90",
+				why = "-124 -> -104: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)",
+			},
+		},
+		["Skills/Mage:[firebolt].values.dmg[2]"] = {
+			{
+				session = "S90",
+				why = "310 -> 255.7: F1 R1: rank > 20 nearly flat (Mage base R1; rank <= 20 pinned in SkillCurves)",
+			},
+		},
+		["Skills/Mage:[firewall].breakpoints[10].b.values.dmg"] = {
+			{
+				session = "S90",
+				why = "18 -> 13.9: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)",
+			},
+		},
+		["Skills/Mage:[firewall].breakpoints[5].a.add.hits"] = {
+			{
+				session = "S90",
+				why = "4 -> 1: G1 R4: +4 / +2 hits were +40-50 %; one more hit fits 0.08-0.17 (as Volley 5A, ROZWOJ 11.7 point 4)",
+			},
+		},
+		["Skills/Mage:[firewall].breakpoints[5].b.mul.cooldown"] = {
+			{
+				session = "S90",
+				why = "0.75 -> 0.93: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)",
+			},
+		},
+		["Skills/Mage:[firewall].cost"] = {
+			{
+				session = "S90",
+				why = "55 -> 43: F1 R1 / F4: unlock > 20 skill of the Mage base (R1, T-SK4 2.0-2.8 / 2.0-2.4)",
+			},
+		},
+		["Skills/Mage:[firewall].values.dmg[1]"] = {
+			{
+				session = "S90",
+				why = "50 -> 24.9: F1 R1 / F4: unlock > 20 skill of the Mage base (R1, T-SK4 2.0-2.8 / 2.0-2.4)",
+			},
+		},
+		["Skills/Mage:[firewall].values.dmg[2]"] = {
+			{
+				session = "S90",
+				why = "90 -> 49.8: F1 R1 / F4: unlock > 20 skill of the Mage base (R1, T-SK4 2.0-2.8 / 2.0-2.4)",
+			},
+		},
+		["Skills/Mage:[focus].values.reserve[1]"] = {
+			{
+				session = "S90",
+				why = "4 -> 3.1: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7)",
+			},
+		},
+		["Skills/Mage:[focus].values.reserve[2]"] = {
+			{
+				session = "S90",
+				why = "20 -> 15.4: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7)",
+			},
+		},
+		["Skills/Mage:[frostNova].breakpoints[10].a.lingering.pct"] = {
+			{
+				session = "S90",
+				why = "10 -> 5: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)",
+			},
+		},
+		["Skills/Mage:[frostNova].breakpoints[10].b.echo.pct"] = {
+			{
+				session = "S90",
+				why = "40 -> 19: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)",
+			},
+		},
+		["Skills/Mage:[frostNova].values.dmg[2]"] = {
+			{
+				session = "S90",
+				why = "220 -> 141.3: F1 R1: rank > 20 nearly flat (Mage base R1; rank <= 20 pinned in SkillCurves)",
+			},
+		},
+		["Skills/Mage:[iceShard].breakpoints[10].a.pierce"] = {
+			{
+				session = "S90",
+				why = "60 -> 27: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)",
+			},
+		},
+		["Skills/Mage:[iceShard].breakpoints[10].b.mul.cooldown"] = {
+			{
+				session = "S90",
+				why = "0.85 -> 0.84: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)",
+			},
+		},
+		["Skills/Mage:[iceShard].breakpoints[5].b.values.dmg"] = {
+			{
+				session = "S90",
+				why = "20 -> 23: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)",
+			},
+		},
+		["Skills/Mage:[iceShard].values.dmg[2]"] = {
+			{
+				session = "S90",
+				why = "250 -> 213: F1 R1: rank > 20 nearly flat (Mage base R1; rank <= 20 pinned in SkillCurves)",
+			},
+		},
+		["Skills/Mage:[meteorStorm].breakpoints[10].b.values.dmg"] = {
+			{
+				session = "S90",
+				why = "22 -> 4.4: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)",
+			},
+		},
+		["Skills/Mage:[meteorStorm].breakpoints[5].a.add.hits"] = {
+			{
+				session = "S90",
+				why = "2 -> 1: G1 R4: +4 / +2 hits were +40-50 %; one more hit fits 0.08-0.17 (as Volley 5A, ROZWOJ 11.7 point 4)",
+			},
+		},
+		["Skills/Mage:[meteorStorm].breakpoints[5].b.mul.cooldown"] = {
+			{
+				session = "S90",
+				why = "0.75 -> 0.88: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)",
+			},
+		},
+		["Skills/Mage:[meteorStorm].cost"] = {
+			{
+				session = "S90",
+				why = "120 -> 174: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7)",
+			},
+		},
+		["Skills/Mage:[meteorStorm].values.dmg[1]"] = {
+			{
+				session = "S90",
+				why = "60 -> 24: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7)",
+			},
+		},
+		["Skills/Mage:[meteorStorm].values.dmg[2]"] = {
+			{
+				session = "S90",
+				why = "80 -> 24: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7)",
+			},
+		},
+		["Skills/Mage:[meteor].breakpoints[10].a.lingering.pct"] = {
+			{
+				session = "S90",
+				why = "20 -> 6: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)",
+			},
+		},
+		["Skills/Mage:[meteor].breakpoints[10].b.values.dmg"] = {
+			{
+				session = "S90",
+				why = "100 -> 45: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)",
+			},
+		},
+		["Skills/Mage:[meteor].breakpoints[5].b.values.dmg"] = {
+			{
+				session = "S90",
+				why = "45 -> 23: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)",
+			},
+		},
+		["Skills/Mage:[meteor].cost"] = {
+			{
+				session = "S90",
+				why = "60 -> 72: F1 R1 / F4: unlock > 20 skill of the Mage base (R1, T-SK4 2.0-2.8 / 2.0-2.4)",
+			},
+		},
+		["Skills/Mage:[meteor].values.dmg[1]"] = {
+			{
+				session = "S90",
+				why = "280 -> 98: F1 R1 / F4: unlock > 20 skill of the Mage base (R1, T-SK4 2.0-2.8 / 2.0-2.4)",
+			},
+		},
+		["Skills/Mage:[meteor].values.dmg[2]"] = {
+			{
+				session = "S90",
+				why = "480 -> 174: F1 R1 / F4: unlock > 20 skill of the Mage base (R1, T-SK4 2.0-2.8 / 2.0-2.4)",
+			},
+		},
+		["Skills/init:ARCANE_CHARGES.cost"] = {
+			{
+				session = "S90",
+				why = "15 -> 4.3: F4: Arcane Charge cost / damage per charge (Arcanist T-SK4 2.0-2.4, Przeciążenie 2.6-2.8; ROZWOJ 12.0, 12.7)",
+			},
+		},
+		["Skills/init:ARCANE_CHARGES.damage"] = {
+			{
+				session = "S90",
+				why = "2 -> 1: F4: Arcane Charge cost / damage per charge (Arcanist T-SK4 2.0-2.4, Przeciążenie 2.6-2.8; ROZWOJ 12.0, 12.7)",
+			},
+		},
 		["Paths/Mage:[arcanist].rows[6].nodes[arcanist_coolHead].values.coolHead[1]"] = {
-			{ session = "S90", why = "-4 -> -1.15: the charge surcharge 15 -> 4.3 (F4); Cool Head keeps its share (4 / 15)" },
+			{
+				session = "S90",
+				why = "-4 -> -1.15: the charge surcharge 15 -> 4.3 (F4); Cool Head keeps its share (4 / 15)",
+			},
 		},
 		["Paths/Mage:[arcanist].rows[6].nodes[arcanist_coolHead].values.coolHead[2]"] = {
 			{ session = "S90", why = "-12 -> -3.44: the same share (12 / 15) of the S90 surcharge 4.3" },
@@ -1100,16 +2418,24 @@ return {
 		["Areas/duskwood:areas[duskwood_witchmarsh].lv[2]"] = {
 			{ session = "S92", why = "42 -> 44 (D6): a second hunting ground on 43-44 (1 -> 2 areas)" },
 		},
-		["Monsters:byId.werewolf.levels.max"] = { { session = "S92", why = "28 -> 31 (D1): the den's Elites cover 21-31" } },
-		["Monsters:byId.blackBear.levels.max"] = { { session = "S92", why = "27 -> 31 (D1): the den's Elites cover 21-31" } },
+		["Monsters:byId.werewolf.levels.max"] = {
+			{ session = "S92", why = "28 -> 31 (D1): the den's Elites cover 21-31" },
+		},
+		["Monsters:byId.blackBear.levels.max"] = {
+			{ session = "S92", why = "27 -> 31 (D1): the den's Elites cover 21-31" },
+		},
 		["Monsters:byId.darkCultist.levels.max"] = {
 			{ session = "S92", why = "37 -> 38 (D1): the barrow's Elites and Elite II cover 31-38" },
 		},
-		["Monsters:byId.ghoul.levels.max"] = { { session = "S92", why = "33 -> 38 (D1): the barrow's Elites cover 31-38" } },
+		["Monsters:byId.ghoul.levels.max"] = {
+			{ session = "S92", why = "33 -> 38 (D1): the barrow's Elites cover 31-38" },
+		},
 		["Monsters:byId.skeletonGuard.levels.max"] = {
 			{ session = "S92", why = "41 -> 45 (D1): the crypt's Elites cover 38-45" },
 		},
-		["Monsters:byId.specter.levels.max"] = { { session = "S92", why = "43 -> 45 (D1): the crypt's Elites cover 38-45" } },
+		["Monsters:byId.specter.levels.max"] = {
+			{ session = "S92", why = "43 -> 45 (D1): the crypt's Elites cover 38-45" },
+		},
 		["Monsters:byId.necromancer.levels.min"] = {
 			{ session = "S92", why = "39 -> 38 (D1): the crypt's Elite II covers 38-45" },
 		},
@@ -1163,6 +2489,10 @@ return {
 				session = "S92",
 				why = "knots 25 / 30 / 40 (1.37 / 1.47 / 1.82), 45-100 unchanged (G2): T-SK4 destroyerExp 1.79 -> 2.06 at 25, 1.98 -> 2.09 at 40, arcanistBoss 1.77 -> 2.03 at 25",
 			},
+			{
+				session = "S93",
+				why = "knots 50 / 55 / 60 (2.0375 / 2.25 / 2.3204), 45-50 and 60-100 unchanged (G2): T-SK4 at 55 arcanistOverload 2.54 -> 2.62 (2.6-2.8), arcanistBoss 2.00 -> 2.06, destroyerExp 2.42 -> 2.50, destroyerBoss 2.29 -> 2.37",
+			},
 		},
 		["LevelCurves:curves.heal[*"] = {
 			{
@@ -1214,7 +2544,9 @@ return {
 		["LootTables:byId.bogSerpent.materials*"] = { { session = "S92", why = "new part toad_venom (J1, SWIAT §2)" } },
 		["LootTables:byId.bloodBat.materials*"] = { { session = "S92", why = "new part crow_feather (J1, SWIAT §2)" } },
 		["LootTables:byId.ghoul.materials*"] = { { session = "S92", why = "new part cursed_bone (J1, SWIAT §2)" } },
-		["LootTables:byId.marshWitch.materials*"] = { { session = "S92", why = "new part cursed_bone (J1, SWIAT §2)" } },
+		["LootTables:byId.marshWitch.materials*"] = {
+			{ session = "S92", why = "new part cursed_bone (J1, SWIAT §2)" },
+		},
 		["Recipes:byId.blessing_warrior_3.ingredients*"] = {
 			{ session = "S92", why = "Rare blessing with a Dark Forest part (J2, LINE_INGREDIENT_RARE)" },
 		},
@@ -1229,6 +2561,181 @@ return {
 		},
 		["Recipes:byId.blessing_fortune_3.ingredients*"] = {
 			{ session = "S92", why = "Rare blessing with a Dark Forest part (J2, LINE_INGREDIENT_RARE)" },
+		},
+		-- S93: the Scorched Wastes 45-70 and Azgor (docs/sessions/S93.md, docs/SESJE.md S93; the R.ashen.* rows of
+		-- tests/Balance.luau targetsS93 and targetsRegion)
+		["Bosses:byId.azgor.hpMul"] = {
+			{
+				session = "S93",
+				why = "new 1.25 (C2): 3 / 4 / 5 players L69 4.9 / 5.2 / 5.1 min, with nodes 4.4 / 4.6 / 4.6 (band 4-6; 4.4-4.7 / 3.9-4.1 with nodes at 1.0 after the waves 58 / 59)",
+			},
+		},
+		["Bosses:byId.azgor.atkMul"] = {
+			{
+				session = "S93",
+				why = "1.25 -> 0.36 (C2): basic hit 35 % -> 10 % of a level 70 Mage (7-12 %), S32 tank 816 -> 235 %/min before the attack lifts",
+			},
+		},
+		["Bosses:byId.azgor.speed"] = {
+			{
+				session = "S93",
+				why = "0.9 -> 1.35 (C6): more basic hits on the tank within the S32 tank <= 350 %/min (346 %); counters of S88 swordplay at 45 (guardian.loner 0.041)",
+			},
+		},
+		["Bosses:byId.azgor.attacks[fireWave].damage"] = {
+			{
+				session = "S93",
+				why = "2.4 -> 5.2 (C2): ~52 % of a level 70 Mage per wave after atkMul 0.36, below the inferno",
+			},
+		},
+		["Bosses:byId.azgor.attacks[flameCleave].damage"] = {
+			{
+				session = "S93",
+				why = "2.2 -> 3 (C2, C6): 3 x the basic hit on the tank; S32 tank 346 %/min with speed 1.35 (<= 350 %)",
+			},
+		},
+		["Bosses:byId.azgor.attacks[meteor].damage"] = {
+			{ session = "S93", why = "2.6 -> 4 (C4 a): one meteor ~40 % of a level 70 Mage (x randomMax), dodgeable" },
+		},
+		["Bosses:byId.azgor.attacks[meteor].cooldown"] = {
+			{
+				session = "S93",
+				why = "10 -> 18 (C4 a): meteor per minute 258 % (3f935c1) / 215 % (S92 data) -> 54 % of a level 70 Mage (<= 60 %); G11 phase 3 0.81",
+			},
+		},
+		["Bosses:byId.azgor.attacks[inferno].damage"] = {
+			{
+				session = "S93",
+				why = "3.4 -> 6.6 (C2): the biggest hit 66 % of a level 70 Mage (<= 70 %), 68 % of a level 68 Mage (< 100 %); G11 phase 3 0.65",
+			},
+		},
+		["Bosses:byId.azgor.summons[1].level"] = {
+			{
+				session = "S93",
+				why = "69 -> 58 (C7): a party of 3 loses 85 % HP per member per wave (helpers without the group reduction like the server; 263 % at 69, limit 110 %)",
+			},
+		},
+		["Bosses:byId.azgor.summons[2].level"] = {
+			{ session = "S93", why = "70 -> 59 (C7): 98 % per member for a party of 3 (275 % at 70, limit 110 %)" },
+		},
+		["BossTuning:hazards.azgor.lava"] = {
+			{
+				session = "S93",
+				why = "0.7 -> 2.2 (C2): one lava tick 6.5 % -> 20 % of a level 70 Mage after atkMul 0.36 (15-25 %)",
+			},
+		},
+		["Areas/Caves:byId.ashen_mine.levels[1]"] = {
+			{
+				session = "S93",
+				why = "49 -> 46 (D1): Elites and Elite II of the mine from 46 (ilvl 46-48 dropped by Elites)",
+			},
+		},
+		["Areas/ashen:areas[ashen_ashroad].lv[2]"] = {
+			{ session = "S93", why = "67 -> 69 (D2): a second hunting ground on 68-69 (1 -> 2 areas)" },
+		},
+		["Monsters:byId.ashOrc.levels.min"] = {
+			{ session = "S93", why = "48 -> 46 (D1): the mine's Elites and Elite II from 46" },
+		},
+		["Monsters:byId.wyvern.levels.min"] = {
+			{ session = "S93", why = "58 -> 56 (D1): the lair's Elite and Elite II from 56" },
+		},
+		["Monsters:byId.renegadeDwarf.levels.max"] = {
+			{ session = "S93", why = "65 -> 70 (D1): the Deepforge's Elites up to 70 (ilvl 69-70)" },
+		},
+		["Monsters:byId.magmaGolem.levels.max"] = {
+			{ session = "S93", why = "68 -> 70 (D1): the Deepforge's Elites up to 70" },
+		},
+		["Monsters:byId.flameSmith.levels.min"] = {
+			{ session = "S93", why = "64 -> 63 (D1): the Deepforge's Elite II over the whole cave (63-70)" },
+		},
+		["Monsters:byId.basilisk.levels.max"] = {
+			{ session = "S93", why = "67 -> 69 (D2): the basilisks of the Ash Road hold 68-69" },
+		},
+		["Monsters:byId.ashOrc.atkMul"] = {
+			{
+				session = "S93",
+				why = "1.1 -> 0.95 (D3): the mine's Elite pairs (q 0.25) W 1.58 -> 1.06, M 1.63 -> 1.10 of HP per encounter; Elite II trio 0.95 -> 0.80-0.83",
+			},
+		},
+		["Monsters:byId.ashOrc.rewardMul"] = {
+			{
+				session = "S93",
+				why = "new 1.15 (E1): EXP/s 0.88 -> 0.98 x GENERIC at 51 after atkMul 0.95 (armoured orc, S88)",
+			},
+		},
+		["Monsters:byId.fireGolem.rewardMul"] = {
+			{ session = "S93", why = "new 1.45 (E1): EXP/s 0.70 -> 1.01 x GENERIC at 56 (golem armour x2.0, S88)" },
+		},
+		["Monsters:byId.magmaGolem.rewardMul"] = {
+			{ session = "S93", why = "new 1.45 (E1): EXP/s 0.69 -> 0.99 x GENERIC at 66 (golem armour x2.0, S88)" },
+		},
+		["Monsters:byId.fireImp.atkMul"] = {
+			{
+				session = "S93",
+				why = "1 -> 0.9 (E2): caster HP per EXP 1.21 -> 1.13 of the region mean (<= 1.25) after the orc's cut; EXP/s 1.03",
+			},
+		},
+		["LevelCurves:elitePairChance.ashen"] = {
+			{
+				session = "S93",
+				why = "0.5 -> 0.25 (D4): pair share mine 0.5 -> 0.25, lair 0.25 -> 0, Deepforge 0.6 -> 0 (encounters W <= 1.07, M <= 1.10)",
+			},
+		},
+		["LevelCurves:dropFactor.ashen"] = {
+			{
+				session = "S93",
+				why = "1 -> 0.9 (H1): Uniques for the class per hour of grinding up to 4.17 -> 3.68 (band 2-4), Heroics 0.77-0.97 per hour of Elites",
+			},
+		},
+		["Items/Backpacks:[backpack_130].buyPrice"] = {
+			{ session = "S93", why = "200 000 -> 76 000 (I3): 13.2 -> 5.0 levels of income at 50 (band 3-8)" },
+		},
+		["Items/Backpacks:[backpack_130].price"] = { { session = "S93", why = "derived: buyPrice / 4" } },
+		["Items/Consumables:[potion_hp_4].buyPrice"] = {
+			{
+				session = "S93",
+				why = "900 -> 700 (I2): gold per HP 0.225 -> 0.175 (Large 0.167 <= Great <= Mighty 0.30); chain potions 0.36-1.0 -> 0.28-0.82 of income",
+			},
+		},
+		["Items/Consumables:[potion_mana_4].buyPrice"] = { { session = "S93", why = "PRICES[4] shared with HP (I2)" } },
+		["Items/Consumables:[potion_energy_4].buyPrice"] = {
+			{ session = "S93", why = "PRICES[4] shared with HP (I2)" },
+		},
+		["Items/Consumables:[potion_hp_4].price"] = { { session = "S93", why = "derived: buyPrice / 4" } },
+		["Items/Consumables:[potion_mana_4].price"] = { { session = "S93", why = "derived: buyPrice / 4" } },
+		["Items/Consumables:[potion_energy_4].price"] = { { session = "S93", why = "derived: buyPrice / 4" } },
+		["Recipes:byId.elixir_resFire.level"] = {
+			{
+				session = "S93",
+				why = "30 -> 45 (J3, ELIXIR_LEVEL): the fire elixir with its scale (salamanders from 45); the only intended change below 46",
+			},
+		},
+		["LootTables:byId.wasteHyena.materials*"] = { { session = "S93", why = "new part thick_hide (J1, SWIAT §2)" } },
+		["LootTables:byId.ashVulture.materials*"] = {
+			{ session = "S93", why = "new part crow_feather (J1, SWIAT §2)" },
+		},
+		["LootTables:byId.fireImp.materials*"] = { { session = "S93", why = "new part magma_shard (J1, SWIAT §2)" } },
+		["LootTables:byId.basilisk.materials*"] = { { session = "S93", why = "new part toad_venom (J1, SWIAT §2)" } },
+		["LootTables:byId.desertMummy.materials*"] = {
+			{ session = "S93", why = "new part cursed_bone (J1, SWIAT §2)" },
+		},
+		["Recipes:byId.blessing_warrior_4.ingredients*"] = {
+			{
+				session = "S93",
+				why = "Epic blessing with a Scorched Wastes part (J2, LINE_INGREDIENT_EPIC: magma_shard)",
+			},
+		},
+		["Recipes:byId.blessing_hunter_4.ingredients*"] = {
+			{ session = "S93", why = "Epic blessing with a region part (J2, LINE_INGREDIENT_EPIC: toad_venom)" },
+		},
+		["Recipes:byId.blessing_sage_4.ingredients*"] = {
+			{ session = "S93", why = "Epic blessing with a region part (J2, LINE_INGREDIENT_EPIC: cursed_bone)" },
+		},
+		["Recipes:byId.blessing_guardian_4.ingredients*"] = {
+			{ session = "S93", why = "Epic blessing with a region part (J2, LINE_INGREDIENT_EPIC: thick_hide)" },
+		},
+		["Recipes:byId.blessing_fortune_4.ingredients*"] = {
+			{ session = "S93", why = "Epic blessing with a region part (J2, LINE_INGREDIENT_EPIC: crow_feather)" },
 		},
 	} :: { [string]: { Reason } },
 }

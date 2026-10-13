@@ -2,7 +2,7 @@
 
 > Plik generowany: `lune run tools/balance_report.luau` (model `tests/Balance.luau`, tabele
 > `tests/BalanceTables.luau`, moduły gry). Nie edytuj ręcznie.
-> „a → b” = migawka S92 (commit 10f94d2, 2026-10-13) → teraz (`tools/balance_before.json`).
+> „a → b” = migawka S93 (commit 15def98, 2026-10-13) → teraz (`tools/balance_before.json`).
 > Tryby: `lune run tools/balance_report.luau snapshot [S<n>]` (nowa migawka „przed”: tabele i zrzut danych
 > księgi), `lune run tools/balance_report.luau fixture [S<n>]` (fixture 1–20 dla `tests/balance1_20.spec.luau`).
 
@@ -15,117 +15,86 @@ Stałe walki: redukcja = def / (def + 40·poziom atakującego + 200).
 
 | klucz | przed | po | sesja | powód |
 | --- | --: | --: | --: | --: |
-| `Areas/Caves:byId.duskwood_den.levels[1]` | 24 | 21 | S92 | 24 -> 21 (D1): Elites on every level 21-45 (spawner levels 18/25 -> 25/25) |
-| `Areas/duskwood:areas[duskwood_witchmarsh].lv[2]` | 42 | 44 | S92 | 42 -> 44 (D6): a second hunting ground on 43-44 (1 -> 2 areas) |
-| `Bosses:byId.morvane.atkMul` | 1,1 | 0,42 | S92 | 1.1 -> 0.42 (C2): basic hit 28 % -> 11 % of a level 45 Mage (7-12 %), S32 tank 770 -> 338 %/min |
-| `Bosses:byId.morvane.attacks[curseField].cooldown` | 11 | 6,5 | S92 | 11 -> 6.5 (C4, C7): tank damage; G11 phase 3 0.62 (>= 0.5) |
-| `Bosses:byId.morvane.attacks[curseField].damage` | 2,4 | 11,5 | S92 | 2.4 -> 11.5 (C4): the nearest member's attack carries the tank damage (T-SK6 2.70 -> 2.68); without support the biggest hit is 93 % of the Berserker |
-| `Bosses:byId.morvane.attacks[deathRing].damage` | 3,5 | 5,8 | S92 | 3.5 -> 5.8 (C2): the biggest hit 68 % of a level 45 Mage (<= 70 %), 71 % of a level 43 Mage |
-| `Bosses:byId.morvane.attacks[shadowBoltFast].damage` | 1,9 | 4,5 | S92 | 1.9 -> 4.5 (C2): phase 3 like the phase 1-2 bolt |
-| `Bosses:byId.morvane.attacks[shadowBolt].damage` | 1,8 | 4,5 | S92 | 1.8 -> 4.5 (C2): 49 % of a level 45 Mage, ~4 x the basic hit after atkMul 0.42 |
-| `Bosses:byId.morvane.speed` | 1 | 1,15 | S92 | 1 -> 1.15 (C4): more basic hits on the tank for T-SK6 within the S32 tank <= 350 %/min (338 %) |
-| `Bosses:byId.morvane.summons[1].level` | 44 | 36 | S92 | 44 -> 36 (C6): a party of 3 loses 88 % HP per member per wave (helpers without the group reduction like the server, Balance.summonHelpers; 223 % at 44, limit 110 %) |
-| `Bosses:byId.morvane.summons[2].level` | 45 | 37 | S92 | 45 -> 37 (C6): 106 % per member for a party of 3 (239 % at 45, limit 110 %) |
-| `Items/Backpacks:[backpack_100].buyPrice` | 8e+04 | 5e+04 | S92 | 80 000 -> 50 000 (I2): 11.4 -> 7.1 levels of income at 35 (band 3-8) |
-| `Items/Backpacks:[backpack_100].price` | 2e+04 | 1,25e+04 | S92 | derived: buyPrice / 4 |
-| `LevelCurves:curves.heal[2][1]` | 45 | 25 | S92 | knot 25 = 2.05, 45-100 unchanged (G2): T-SK5 of the dungeon Healer on the Defender 0.230 -> 0.254 at 25 (with the Heal knot) |
-| `LevelCurves:curves.heal[2][2]` | 2,33 | 2,05 | S92 | knot 25 = 2.05, 45-100 unchanged (G2): T-SK5 of the dungeon Healer on the Defender 0.230 -> 0.254 at 25 (with the Heal knot) |
-| `LevelCurves:curves.heal[3][1]` | 70 | 45 | S92 | knot 25 = 2.05, 45-100 unchanged (G2): T-SK5 of the dungeon Healer on the Defender 0.230 -> 0.254 at 25 (with the Heal knot) |
-| `LevelCurves:curves.heal[3][2]` | 0,31 | 2,33 | S92 | knot 25 = 2.05, 45-100 unchanged (G2): T-SK5 of the dungeon Healer on the Defender 0.230 -> 0.254 at 25 (with the Heal knot) |
-| `LevelCurves:curves.heal[4][1]` | 100 | 70 | S92 | knot 25 = 2.05, 45-100 unchanged (G2): T-SK5 of the dungeon Healer on the Defender 0.230 -> 0.254 at 25 (with the Heal knot) |
-| `LevelCurves:curves.heal[4][2]` | 0,67 | 0,31 | S92 | knot 25 = 2.05, 45-100 unchanged (G2): T-SK5 of the dungeon Healer on the Defender 0.230 -> 0.254 at 25 (with the Heal knot) |
-| `LevelCurves:curves.manaCost.Mage[2][1]` | 45 | 25 | S92 | knots 25 / 30 / 40 (1.37 / 1.47 / 1.82), 45-100 unchanged (G2): T-SK4 destroyerExp 1.79 -> 2.06 at 25, 1.98 -> 2.09 at 40, arcanistBoss 1.77 -> 2.03 at 25 |
-| `LevelCurves:curves.manaCost.Mage[2][2]` | 1,89 | 1,37 | S92 | knots 25 / 30 / 40 (1.37 / 1.47 / 1.82), 45-100 unchanged (G2): T-SK4 destroyerExp 1.79 -> 2.06 at 25, 1.98 -> 2.09 at 40, arcanistBoss 1.77 -> 2.03 at 25 |
-| `LevelCurves:curves.manaCost.Mage[3][1]` | 70 | 30 | S92 | knots 25 / 30 / 40 (1.37 / 1.47 / 1.82), 45-100 unchanged (G2): T-SK4 destroyerExp 1.79 -> 2.06 at 25, 1.98 -> 2.09 at 40, arcanistBoss 1.77 -> 2.03 at 25 |
-| `LevelCurves:curves.manaCost.Mage[3][2]` | 2,59 | 1,47 | S92 | knots 25 / 30 / 40 (1.37 / 1.47 / 1.82), 45-100 unchanged (G2): T-SK4 destroyerExp 1.79 -> 2.06 at 25, 1.98 -> 2.09 at 40, arcanistBoss 1.77 -> 2.03 at 25 |
-| `LevelCurves:curves.manaCost.Mage[4][1]` | 100 | 40 | S92 | knots 25 / 30 / 40 (1.37 / 1.47 / 1.82), 45-100 unchanged (G2): T-SK4 destroyerExp 1.79 -> 2.06 at 25, 1.98 -> 2.09 at 40, arcanistBoss 1.77 -> 2.03 at 25 |
-| `LevelCurves:curves.manaCost.Mage[4][2]` | 3,49 | 1,82 | S92 | knots 25 / 30 / 40 (1.37 / 1.47 / 1.82), 45-100 unchanged (G2): T-SK4 destroyerExp 1.79 -> 2.06 at 25, 1.98 -> 2.09 at 40, arcanistBoss 1.77 -> 2.03 at 25 |
-| `LevelCurves:dropFactor.duskwood` | 1 | 0,85 | S92 | 1 -> 0.85 (H1): Uniques for the class per hour of grinding up to 4.5 -> 3.8 (band 2-4), Heroics 0.7-1.1 per hour of Elites |
-| `LevelCurves:elitePairChance.duskwood` | 0,5 | 0,3 | S92 | 0.5 -> 0.3 (D3): pair share den 0.5 -> 0.25, crypt 0.6 -> 0.2 (the barrow's seed keeps 0.5) |
-| `Monsters:byId.blackBear.levels.max` | 27 | 31 | S92 | 27 -> 31 (D1): the den's Elites cover 21-31 |
-| `Monsters:byId.darkCultist.atkMul` | 1 | 0,8 | S92 | 1 -> 0.8 (D3): the barrow's Elite pairs (q 0.5 from its seed) W 1.34 -> 1.06, M 1.44 -> 1.15 of HP per encounter; EXP/s 0.95 x GENERIC, Elite II trio 0.66-0.68 |
-| `Monsters:byId.darkCultist.levels.max` | 37 | 38 | S92 | 37 -> 38 (D1): the barrow's Elites and Elite II cover 31-38 |
-| `Monsters:byId.ghoul.atkMul` | 1 | 0,8 | S92 | 1 -> 0.8 (D3): the barrow's ghoul Elite pairs (q 0.5); EXP/s 0.98 x GENERIC, Elite II trio 0.62-0.64 |
-| `Monsters:byId.ghoul.levels.max` | 33 | 38 | S92 | 33 -> 38 (D1): the barrow's Elites cover 31-38 |
-| `Monsters:byId.marshWitch.levels.max` | 42 | 44 | S92 | 42 -> 44 (D6): the witch marsh holds 43-44 (second hunting ground) |
-| `Monsters:byId.necromancer.levels.min` | 39 | 38 | S92 | 39 -> 38 (D1): the crypt's Elite II covers 38-45 |
-| `Monsters:byId.skeletonGuard.levels.max` | 41 | 45 | S92 | 41 -> 45 (D1): the crypt's Elites cover 38-45 |
-| `Monsters:byId.specter.levels.max` | 43 | 45 | S92 | 43 -> 45 (D1): the crypt's Elites cover 38-45 |
-| `Monsters:byId.werewolf.levels.max` | 28 | 31 | S92 | 28 -> 31 (D1): the den's Elites cover 21-31 |
-| `Quests/Main:byId.crypt.reward.exp` | 3,822e+04 | 6,116e+04 | S92 | fraction 1 -> 1.6 (F3): h(44) 0.93 -> 0.86 (0.72-0.98), h(37) / h(36) 1.21 |
-| `Quests/Main:byId.cult.reward.exp` | 2,568e+04 | 3,082e+04 | S92 | fraction 1 -> 1.2 (F2, F3): pace 20 -> 45 15.3 -> 14.4 h with swamp and crypt |
-| `Quests/Main:byId.ents.reward.exp` | 2,103e+04 | 2,314e+04 | S92 | fraction 1 -> 1.1 (F2): h(27) / h(26) <= 1.19 |
-| `Quests/Main:byId.ruins.reward.exp` | 1,683e+04 | 2,356e+04 | S92 | fraction 1 -> 1.4 (F2): h(24) / h(23) 1.32 -> 1.22 |
-| `Quests/Main:byId.swamp.reward.exp` | 3,077e+04 | 4e+04 | S92 | fraction 1 -> 1.3 (F2, F3): h(33) / h(32) 1.15 |
-| `Quests/Main:byId.werewolves.reward.exp` | 1,176e+04 | 2,222e+04 | S92 | fraction 0.9 -> 1.7 (F2): h(21) / h(20) 1.89 -> 1.24 (<= 1.30) |
+| `Areas/Caves:byId.ashen_mine.levels[1]` | 49 | 46 | S93 | 49 -> 46 (D1): Elites and Elite II of the mine from 46 (ilvl 46-48 dropped by Elites) |
+| `Areas/ashen:areas[ashen_ashroad].lv[2]` | 67 | 69 | S93 | 67 -> 69 (D2): a second hunting ground on 68-69 (1 -> 2 areas) |
+| `BossTuning:hazards.azgor.lava` | 0,7 | 2,2 | S93 | 0.7 -> 2.2 (C2): one lava tick 6.5 % -> 20 % of a level 70 Mage after atkMul 0.36 (15-25 %) |
+| `Bosses:byId.azgor.atkMul` | 1,25 | 0,36 | S93 | 1.25 -> 0.36 (C2): basic hit 35 % -> 10 % of a level 70 Mage (7-12 %), S32 tank 816 -> 235 %/min before the attack lifts |
+| `Bosses:byId.azgor.attacks[fireWave].damage` | 2,4 | 5,2 | S93 | 2.4 -> 5.2 (C2): ~52 % of a level 70 Mage per wave after atkMul 0.36, below the inferno |
+| `Bosses:byId.azgor.attacks[flameCleave].damage` | 2,2 | 3 | S93 | 2.2 -> 3 (C2, C6): 3 x the basic hit on the tank; S32 tank 346 %/min with speed 1.35 (<= 350 %) |
+| `Bosses:byId.azgor.attacks[inferno].damage` | 3,4 | 6,6 | S93 | 3.4 -> 6.6 (C2): the biggest hit 66 % of a level 70 Mage (<= 70 %), 68 % of a level 68 Mage (< 100 %); G11 phase 3 0.65 |
+| `Bosses:byId.azgor.attacks[meteor].cooldown` | 10 | 18 | S93 | 10 -> 18 (C4 a): meteor per minute 258 % (3f935c1) / 215 % (S92 data) -> 54 % of a level 70 Mage (<= 60 %); G11 phase 3 0.81 |
+| `Bosses:byId.azgor.attacks[meteor].damage` | 2,6 | 4 | S93 | 2.6 -> 4 (C4 a): one meteor ~40 % of a level 70 Mage (x randomMax), dodgeable |
+| `Bosses:byId.azgor.speed` | 0,9 | 1,35 | S93 | 0.9 -> 1.35 (C6): more basic hits on the tank within the S32 tank <= 350 %/min (346 %); counters of S88 swordplay at 45 (guardian.loner 0.041) |
+| `Bosses:byId.azgor.summons[1].level` | 69 | 58 | S93 | 69 -> 58 (C7): a party of 3 loses 85 % HP per member per wave (helpers without the group reduction like the server; 263 % at 69, limit 110 %) |
+| `Bosses:byId.azgor.summons[2].level` | 70 | 59 | S93 | 70 -> 59 (C7): 98 % per member for a party of 3 (275 % at 70, limit 110 %) |
+| `Items/Backpacks:[backpack_130].buyPrice` | 2e+05 | 7,6e+04 | S93 | 200 000 -> 76 000 (I3): 13.2 -> 5.0 levels of income at 50 (band 3-8) |
+| `Items/Backpacks:[backpack_130].price` | 5e+04 | 1,9e+04 | S93 | derived: buyPrice / 4 |
+| `Items/Consumables:[potion_energy_4].buyPrice` | 900 | 700 | S93 | PRICES[4] shared with HP (I2) |
+| `Items/Consumables:[potion_energy_4].price` | 225 | 175 | S93 | derived: buyPrice / 4 |
+| `Items/Consumables:[potion_hp_4].buyPrice` | 900 | 700 | S93 | 900 -> 700 (I2): gold per HP 0.225 -> 0.175 (Large 0.167 <= Great <= Mighty 0.30); chain potions 0.36-1.0 -> 0.28-0.82 of income |
+| `Items/Consumables:[potion_hp_4].price` | 225 | 175 | S93 | derived: buyPrice / 4 |
+| `Items/Consumables:[potion_mana_4].buyPrice` | 900 | 700 | S93 | PRICES[4] shared with HP (I2) |
+| `Items/Consumables:[potion_mana_4].price` | 225 | 175 | S93 | derived: buyPrice / 4 |
+| `LevelCurves:curves.manaCost.Mage[6][1]` | 70 | 50 | S93 | knots 50 / 55 / 60 (2.0375 / 2.25 / 2.3204), 45-50 and 60-100 unchanged (G2): T-SK4 at 55 arcanistOverload 2.54 -> 2.62 (2.6-2.8), arcanistBoss 2.00 -> 2.06, destroyerExp 2.42 -> 2.50, destroyerBoss 2.29 -> 2.37 |
+| `LevelCurves:curves.manaCost.Mage[6][2]` | 2,59 | 2,038 | S93 | knots 50 / 55 / 60 (2.0375 / 2.25 / 2.3204), 45-50 and 60-100 unchanged (G2): T-SK4 at 55 arcanistOverload 2.54 -> 2.62 (2.6-2.8), arcanistBoss 2.00 -> 2.06, destroyerExp 2.42 -> 2.50, destroyerBoss 2.29 -> 2.37 |
+| `LevelCurves:curves.manaCost.Mage[7][1]` | 100 | 55 | S93 | knots 50 / 55 / 60 (2.0375 / 2.25 / 2.3204), 45-50 and 60-100 unchanged (G2): T-SK4 at 55 arcanistOverload 2.54 -> 2.62 (2.6-2.8), arcanistBoss 2.00 -> 2.06, destroyerExp 2.42 -> 2.50, destroyerBoss 2.29 -> 2.37 |
+| `LevelCurves:curves.manaCost.Mage[7][2]` | 3,49 | 2,25 | S93 | knots 50 / 55 / 60 (2.0375 / 2.25 / 2.3204), 45-50 and 60-100 unchanged (G2): T-SK4 at 55 arcanistOverload 2.54 -> 2.62 (2.6-2.8), arcanistBoss 2.00 -> 2.06, destroyerExp 2.42 -> 2.50, destroyerBoss 2.29 -> 2.37 |
+| `LevelCurves:dropFactor.ashen` | 1 | 0,9 | S93 | 1 -> 0.9 (H1): Uniques for the class per hour of grinding up to 4.17 -> 3.68 (band 2-4), Heroics 0.77-0.97 per hour of Elites |
+| `LevelCurves:elitePairChance.ashen` | 0,5 | 0,25 | S93 | 0.5 -> 0.25 (D4): pair share mine 0.5 -> 0.25, lair 0.25 -> 0, Deepforge 0.6 -> 0 (encounters W <= 1.07, M <= 1.10) |
+| `Monsters:byId.ashOrc.atkMul` | 1,1 | 0,95 | S93 | 1.1 -> 0.95 (D3): the mine's Elite pairs (q 0.25) W 1.58 -> 1.06, M 1.63 -> 1.10 of HP per encounter; Elite II trio 0.95 -> 0.80-0.83 |
+| `Monsters:byId.ashOrc.levels.min` | 48 | 46 | S93 | 48 -> 46 (D1): the mine's Elites and Elite II from 46 |
+| `Monsters:byId.basilisk.levels.max` | 67 | 69 | S93 | 67 -> 69 (D2): the basilisks of the Ash Road hold 68-69 |
+| `Monsters:byId.fireImp.atkMul` | 1 | 0,9 | S93 | 1 -> 0.9 (E2): caster HP per EXP 1.21 -> 1.13 of the region mean (<= 1.25) after the orc's cut; EXP/s 1.03 |
+| `Monsters:byId.flameSmith.levels.min` | 64 | 63 | S93 | 64 -> 63 (D1): the Deepforge's Elite II over the whole cave (63-70) |
+| `Monsters:byId.magmaGolem.levels.max` | 68 | 70 | S93 | 68 -> 70 (D1): the Deepforge's Elites up to 70 |
+| `Monsters:byId.renegadeDwarf.levels.max` | 65 | 70 | S93 | 65 -> 70 (D1): the Deepforge's Elites up to 70 (ilvl 69-70) |
+| `Monsters:byId.wyvern.levels.min` | 58 | 56 | S93 | 58 -> 56 (D1): the lair's Elite and Elite II from 56 |
+| `Recipes:byId.elixir_resFire.level` | 30 | 45 | S93 | 30 -> 45 (J3, ELIXIR_LEVEL): the fire elixir with its scale (salamanders from 45); the only intended change below 46 |
 
 ### Nowe klucze
 
 | klucz | wartość | sesja | powód |
 | --- | --: | --: | --: |
-| `Bosses:byId.morvane.hpMul` | 1,2 | S92 | new 1.2 (C2): 3 / 4 / 5 players L44 4.6-4.8 -> 4.7-5.0 min in the S83 / S87 model (band 4-6) |
-| `Items/Materials:[cursed_bone].level` | 1 | S92 | new part (J1): the ghoul's and the marsh witch's, level 27, price 26 (between the claw and the ectoplasm) |
-| `Items/Materials:[cursed_bone].maxStack` | 999 | S92 | new part (J1): the ghoul's and the marsh witch's, level 27, price 26 (between the claw and the ectoplasm) |
-| `Items/Materials:[cursed_bone].price` | 26 | S92 | new part (J1): the ghoul's and the marsh witch's, level 27, price 26 (between the claw and the ectoplasm) |
-| `Items/Materials:[cursed_bone].tier` | 27 | S92 | new part (J1): the ghoul's and the marsh witch's, level 27, price 26 (between the claw and the ectoplasm) |
-| `LevelCurves:curves.heal[5][1]` | 100 | S92 | knot 25 = 2.05, 45-100 unchanged (G2): T-SK5 of the dungeon Healer on the Defender 0.230 -> 0.254 at 25 (with the Heal knot) |
-| `LevelCurves:curves.heal[5][2]` | 0,67 | S92 | knot 25 = 2.05, 45-100 unchanged (G2): T-SK5 of the dungeon Healer on the Defender 0.230 -> 0.254 at 25 (with the Heal knot) |
-| `LevelCurves:curves.manaCost.Mage[5][1]` | 45 | S92 | knots 25 / 30 / 40 (1.37 / 1.47 / 1.82), 45-100 unchanged (G2): T-SK4 destroyerExp 1.79 -> 2.06 at 25, 1.98 -> 2.09 at 40, arcanistBoss 1.77 -> 2.03 at 25 |
-| `LevelCurves:curves.manaCost.Mage[5][2]` | 1,89 | S92 | knots 25 / 30 / 40 (1.37 / 1.47 / 1.82), 45-100 unchanged (G2): T-SK4 destroyerExp 1.79 -> 2.06 at 25, 1.98 -> 2.09 at 40, arcanistBoss 1.77 -> 2.03 at 25 |
-| `LevelCurves:curves.manaCost.Mage[6][1]` | 70 | S92 | knots 25 / 30 / 40 (1.37 / 1.47 / 1.82), 45-100 unchanged (G2): T-SK4 destroyerExp 1.79 -> 2.06 at 25, 1.98 -> 2.09 at 40, arcanistBoss 1.77 -> 2.03 at 25 |
-| `LevelCurves:curves.manaCost.Mage[6][2]` | 2,59 | S92 | knots 25 / 30 / 40 (1.37 / 1.47 / 1.82), 45-100 unchanged (G2): T-SK4 destroyerExp 1.79 -> 2.06 at 25, 1.98 -> 2.09 at 40, arcanistBoss 1.77 -> 2.03 at 25 |
-| `LevelCurves:curves.manaCost.Mage[7][1]` | 100 | S92 | knots 25 / 30 / 40 (1.37 / 1.47 / 1.82), 45-100 unchanged (G2): T-SK4 destroyerExp 1.79 -> 2.06 at 25, 1.98 -> 2.09 at 40, arcanistBoss 1.77 -> 2.03 at 25 |
-| `LevelCurves:curves.manaCost.Mage[7][2]` | 3,49 | S92 | knots 25 / 30 / 40 (1.37 / 1.47 / 1.82), 45-100 unchanged (G2): T-SK4 destroyerExp 1.79 -> 2.06 at 25, 1.98 -> 2.09 at 40, arcanistBoss 1.77 -> 2.03 at 25 |
-| `LootTables:byId.blackBear.materials[thick_hide].chance` | 0,3 | S92 | new part thick_hide (J1, SWIAT §2) |
-| `LootTables:byId.blackBear.materials[thick_hide].max` | 2 | S92 | new part thick_hide (J1, SWIAT §2) |
-| `LootTables:byId.blackBear.materials[thick_hide].min` | 1 | S92 | new part thick_hide (J1, SWIAT §2) |
-| `LootTables:byId.bloodBat.materials[crow_feather].chance` | 0,3 | S92 | new part crow_feather (J1, SWIAT §2) |
-| `LootTables:byId.bloodBat.materials[crow_feather].max` | 2 | S92 | new part crow_feather (J1, SWIAT §2) |
-| `LootTables:byId.bloodBat.materials[crow_feather].min` | 1 | S92 | new part crow_feather (J1, SWIAT §2) |
-| `LootTables:byId.bogSerpent.materials[toad_venom].chance` | 0,3 | S92 | new part toad_venom (J1, SWIAT §2) |
-| `LootTables:byId.bogSerpent.materials[toad_venom].max` | 2 | S92 | new part toad_venom (J1, SWIAT §2) |
-| `LootTables:byId.bogSerpent.materials[toad_venom].min` | 1 | S92 | new part toad_venom (J1, SWIAT §2) |
-| `LootTables:byId.ghoul.materials[cursed_bone].chance` | 0,3 | S92 | new part cursed_bone (J1, SWIAT §2) |
-| `LootTables:byId.ghoul.materials[cursed_bone].max` | 2 | S92 | new part cursed_bone (J1, SWIAT §2) |
-| `LootTables:byId.ghoul.materials[cursed_bone].min` | 1 | S92 | new part cursed_bone (J1, SWIAT §2) |
-| `LootTables:byId.marshWitch.materials[cursed_bone].chance` | 0,3 | S92 | new part cursed_bone (J1, SWIAT §2) |
-| `LootTables:byId.marshWitch.materials[cursed_bone].max` | 2 | S92 | new part cursed_bone (J1, SWIAT §2) |
-| `LootTables:byId.marshWitch.materials[cursed_bone].min` | 1 | S92 | new part cursed_bone (J1, SWIAT §2) |
-| `Monsters:byId.rotEnt.rewardMul` | 1,25 | S92 | new 1.25 (E1, E2): EXP/s 0.80 -> 1.00 x GENERIC at 30 (band 0.85-1.20; its armour is outside kindReward) |
-| `Monsters:byId.skeletonGuard.rewardMul` | 1,1 | S92 | new 1.1 (E2): EXP/s 0.87 -> 0.96 x GENERIC at 40 (armoured undead, S88) |
-| `Monsters:byId.swampTroll.rewardMul` | 1,1 | S92 | new 1.1 (E2): EXP/s 0.86 -> 0.95 x GENERIC at 36 (band 0.85-1.20) |
-| `Recipes:byId.blessing_fortune_3.ingredients[crow_feather].n` | 3 | S92 | Rare blessing with a Dark Forest part (J2, LINE_INGREDIENT_RARE) |
-| `Recipes:byId.blessing_guardian_3.ingredients[cursed_bone].n` | 3 | S92 | Rare blessing with a Dark Forest part (J2, LINE_INGREDIENT_RARE) |
-| `Recipes:byId.blessing_hunter_3.ingredients[toad_venom].n` | 3 | S92 | Rare blessing with a Dark Forest part (J2, LINE_INGREDIENT_RARE) |
-| `Recipes:byId.blessing_sage_3.ingredients[ectoplasm].n` | 3 | S92 | Rare blessing with a Dark Forest part (J2, LINE_INGREDIENT_RARE) |
-| `Recipes:byId.blessing_warrior_3.ingredients[werewolf_claw].n` | 3 | S92 | Rare blessing with a Dark Forest part (J2, LINE_INGREDIENT_RARE) |
-| `SkillCurves:knots.heal.healHp[5]` | 16,89 | S92 | new, 16.89 pinned (rank 5 at 19 before S92) |
-| `SkillCurves:knots.heal.healHp[6]` | 17,9 | S92 | new 17.9 (G2): rank 6 (L23) near rank 10; T-SK5 0.249 -> 0.269 at 30 |
-| `SkillCurves:knots.heal.healMag[5]` | 9,778 | S92 | new, 9.78 pinned (rank 5 at 19 before S92) |
-| `SkillCurves:knots.heal.healMag[6]` | 11,6 | S92 | new 11.6 (G2): rank 6 (L23) with the heal knot of 25 |
+| `Bosses:byId.azgor.hpMul` | 1,25 | S93 | new 1.25 (C2): 3 / 4 / 5 players L69 4.9 / 5.2 / 5.1 min, with nodes 4.4 / 4.6 / 4.6 (band 4-6; 4.4-4.7 / 3.9-4.1 with nodes at 1.0 after the waves 58 / 59) |
+| `LevelCurves:curves.manaCost.Mage[10][1]` | 100 | S93 | knots 50 / 55 / 60 (2.0375 / 2.25 / 2.3204), 45-50 and 60-100 unchanged (G2): T-SK4 at 55 arcanistOverload 2.54 -> 2.62 (2.6-2.8), arcanistBoss 2.00 -> 2.06, destroyerExp 2.42 -> 2.50, destroyerBoss 2.29 -> 2.37 |
+| `LevelCurves:curves.manaCost.Mage[10][2]` | 3,49 | S93 | knots 50 / 55 / 60 (2.0375 / 2.25 / 2.3204), 45-50 and 60-100 unchanged (G2): T-SK4 at 55 arcanistOverload 2.54 -> 2.62 (2.6-2.8), arcanistBoss 2.00 -> 2.06, destroyerExp 2.42 -> 2.50, destroyerBoss 2.29 -> 2.37 |
+| `LevelCurves:curves.manaCost.Mage[8][1]` | 60 | S93 | knots 50 / 55 / 60 (2.0375 / 2.25 / 2.3204), 45-50 and 60-100 unchanged (G2): T-SK4 at 55 arcanistOverload 2.54 -> 2.62 (2.6-2.8), arcanistBoss 2.00 -> 2.06, destroyerExp 2.42 -> 2.50, destroyerBoss 2.29 -> 2.37 |
+| `LevelCurves:curves.manaCost.Mage[8][2]` | 2,32 | S93 | knots 50 / 55 / 60 (2.0375 / 2.25 / 2.3204), 45-50 and 60-100 unchanged (G2): T-SK4 at 55 arcanistOverload 2.54 -> 2.62 (2.6-2.8), arcanistBoss 2.00 -> 2.06, destroyerExp 2.42 -> 2.50, destroyerBoss 2.29 -> 2.37 |
+| `LevelCurves:curves.manaCost.Mage[9][1]` | 70 | S93 | knots 50 / 55 / 60 (2.0375 / 2.25 / 2.3204), 45-50 and 60-100 unchanged (G2): T-SK4 at 55 arcanistOverload 2.54 -> 2.62 (2.6-2.8), arcanistBoss 2.00 -> 2.06, destroyerExp 2.42 -> 2.50, destroyerBoss 2.29 -> 2.37 |
+| `LevelCurves:curves.manaCost.Mage[9][2]` | 2,59 | S93 | knots 50 / 55 / 60 (2.0375 / 2.25 / 2.3204), 45-50 and 60-100 unchanged (G2): T-SK4 at 55 arcanistOverload 2.54 -> 2.62 (2.6-2.8), arcanistBoss 2.00 -> 2.06, destroyerExp 2.42 -> 2.50, destroyerBoss 2.29 -> 2.37 |
+| `LootTables:byId.ashVulture.materials[crow_feather].chance` | 0,3 | S93 | new part crow_feather (J1, SWIAT §2) |
+| `LootTables:byId.ashVulture.materials[crow_feather].max` | 2 | S93 | new part crow_feather (J1, SWIAT §2) |
+| `LootTables:byId.ashVulture.materials[crow_feather].min` | 1 | S93 | new part crow_feather (J1, SWIAT §2) |
+| `LootTables:byId.basilisk.materials[toad_venom].chance` | 0,3 | S93 | new part toad_venom (J1, SWIAT §2) |
+| `LootTables:byId.basilisk.materials[toad_venom].max` | 2 | S93 | new part toad_venom (J1, SWIAT §2) |
+| `LootTables:byId.basilisk.materials[toad_venom].min` | 1 | S93 | new part toad_venom (J1, SWIAT §2) |
+| `LootTables:byId.desertMummy.materials[cursed_bone].chance` | 0,3 | S93 | new part cursed_bone (J1, SWIAT §2) |
+| `LootTables:byId.desertMummy.materials[cursed_bone].max` | 2 | S93 | new part cursed_bone (J1, SWIAT §2) |
+| `LootTables:byId.desertMummy.materials[cursed_bone].min` | 1 | S93 | new part cursed_bone (J1, SWIAT §2) |
+| `LootTables:byId.fireImp.materials[magma_shard].chance` | 0,3 | S93 | new part magma_shard (J1, SWIAT §2) |
+| `LootTables:byId.fireImp.materials[magma_shard].max` | 2 | S93 | new part magma_shard (J1, SWIAT §2) |
+| `LootTables:byId.fireImp.materials[magma_shard].min` | 1 | S93 | new part magma_shard (J1, SWIAT §2) |
+| `LootTables:byId.wasteHyena.materials[thick_hide].chance` | 0,3 | S93 | new part thick_hide (J1, SWIAT §2) |
+| `LootTables:byId.wasteHyena.materials[thick_hide].max` | 2 | S93 | new part thick_hide (J1, SWIAT §2) |
+| `LootTables:byId.wasteHyena.materials[thick_hide].min` | 1 | S93 | new part thick_hide (J1, SWIAT §2) |
+| `Monsters:byId.ashOrc.rewardMul` | 1,15 | S93 | new 1.15 (E1): EXP/s 0.88 -> 0.98 x GENERIC at 51 after atkMul 0.95 (armoured orc, S88) |
+| `Monsters:byId.fireGolem.rewardMul` | 1,45 | S93 | new 1.45 (E1): EXP/s 0.70 -> 1.01 x GENERIC at 56 (golem armour x2.0, S88) |
+| `Monsters:byId.magmaGolem.rewardMul` | 1,45 | S93 | new 1.45 (E1): EXP/s 0.69 -> 0.99 x GENERIC at 66 (golem armour x2.0, S88) |
+| `Recipes:byId.blessing_fortune_4.ingredients[crow_feather].n` | 4 | S93 | Epic blessing with a region part (J2, LINE_INGREDIENT_EPIC: crow_feather) |
+| `Recipes:byId.blessing_guardian_4.ingredients[thick_hide].n` | 4 | S93 | Epic blessing with a region part (J2, LINE_INGREDIENT_EPIC: thick_hide) |
+| `Recipes:byId.blessing_hunter_4.ingredients[toad_venom].n` | 4 | S93 | Epic blessing with a region part (J2, LINE_INGREDIENT_EPIC: toad_venom) |
+| `Recipes:byId.blessing_sage_4.ingredients[cursed_bone].n` | 4 | S93 | Epic blessing with a region part (J2, LINE_INGREDIENT_EPIC: cursed_bone) |
+| `Recipes:byId.blessing_warrior_4.ingredients[magma_shard].n` | 4 | S93 | Epic blessing with a Scorched Wastes part (J2, LINE_INGREDIENT_EPIC: magma_shard) |
 
 ### Usunięte klucze
 
 | klucz | wartość | sesja | powód |
 | --- | --: | --: | --: |
-| `Recipes:byId.blessing_fortune_3.ingredients[fish_goldfin].n` | 3 | S92 | Rare blessing with a Dark Forest part (J2, LINE_INGREDIENT_RARE) |
-| `Recipes:byId.blessing_guardian_3.ingredients[ore_iron].n` | 3 | S92 | Rare blessing with a Dark Forest part (J2, LINE_INGREDIENT_RARE) |
-| `Recipes:byId.blessing_hunter_3.ingredients[spider_silk].n` | 3 | S92 | Rare blessing with a Dark Forest part (J2, LINE_INGREDIENT_RARE) |
-| `Recipes:byId.blessing_sage_3.ingredients[herb_moonpetal].n` | 3 | S92 | Rare blessing with a Dark Forest part (J2, LINE_INGREDIENT_RARE) |
-| `Recipes:byId.blessing_warrior_3.ingredients[wolf_pelt].n` | 3 | S92 | Rare blessing with a Dark Forest part (J2, LINE_INGREDIENT_RARE) |
-
-### Rangi (liczby pochodne, bez osobnego powodu)
-
-| umiejętność.pole | ranga | pasmo rangi | przed | po |
-| --- | --: | --: | --: | --: |
-| heal.healHp | 6 | 21–45 | 17,11 | 17,9 |
-| heal.healHp | 7 | 21–45 | 17,33 | 17,92 |
-| heal.healHp | 8 | 21–45 | 17,56 | 17,95 |
-| heal.healHp | 9 | 21–45 | 17,78 | 17,98 |
-| heal.healMag | 6 | 21–45 | 10,22 | 11,6 |
-| heal.healMag | 7 | 21–45 | 10,67 | 11,7 |
-| heal.healMag | 8 | 21–45 | 11,11 | 11,8 |
-| heal.healMag | 9 | 21–45 | 11,56 | 11,9 |
+| `Recipes:byId.blessing_fortune_4.ingredients[fish_goldfin].n` | 4 | S93 | Epic blessing with a region part (J2, LINE_INGREDIENT_EPIC: crow_feather) |
+| `Recipes:byId.blessing_guardian_4.ingredients[ore_iron].n` | 4 | S93 | Epic blessing with a region part (J2, LINE_INGREDIENT_EPIC: thick_hide) |
+| `Recipes:byId.blessing_hunter_4.ingredients[spider_silk].n` | 4 | S93 | Epic blessing with a region part (J2, LINE_INGREDIENT_EPIC: toad_venom) |
+| `Recipes:byId.blessing_sage_4.ingredients[herb_moonpetal].n` | 4 | S93 | Epic blessing with a region part (J2, LINE_INGREDIENT_EPIC: cursed_bone) |
+| `Recipes:byId.blessing_warrior_4.ingredients[wolf_pelt].n` | 4 | S93 | Epic blessing with a Scorched Wastes part (J2, LINE_INGREDIENT_EPIC: magma_shard) |
 
 ### Księga: pominięte funkcje
 
@@ -726,7 +695,7 @@ Gracz konwencji S32 (Zwykły, ilvl = poziom − 2, `Balance.statsFor`) z pasywka
 | 18 | 0,22 | 0,21 | 1,04 | 5837 | 0 | 1,04 |
 | 19 | 0,23 | 0,21 | 1,04 | 6465 | 0 | 1,03 |
 | 20 | 0,23 | 0,22 | 1,03 | 7150 | 0 | 1,01 |
-| 21 | 0,44 → 0,29 | 0,27 → 0,24 | 1,21 → 1,08 | 3586 → 6774 | 0 | 1,89 → 1,25 |
+| 21 | 0,29 | 0,24 | 1,08 | 6774 | 0 | 1,25 |
 | suma 1–19 | 2,63 | – | – | – | – |
 | suma 1–19 z zadaniem Grimroka | 2,05 | – |
 | suma 1–19 z rodzajami Łąk (`kindAt`) | 2,79 | – |
@@ -2661,12 +2630,12 @@ Sklep: zbroja z progu `tierFor`, broń z progu kowala. Cel G4: ≤ 15,5 s (Kapł
 | poziom · rodzaj | EXP/zabicie | s/zabicie | h/poziom | udział zadań | odpoczynek | h najlepsze łowisko | h mikstury | h rodzaj ogólny |
 | --- | --: | --: | --: | --: | --: | --: | --: | --: |
 | 20 werewolf | 288 | 53,5 | 0,25 | 60% | 79% | 0,21 | 0,05 | 0,23 |
-| 25 werewolf | 377 | 54,8 | 0,73 → 0,46 | 0% | 79% | 0,62 → 0,39 | 0,16 → 0,10 | 0,70 → 0,44 |
+| 25 werewolf | 377 | 54,8 | 0,46 | 0% | 79% | 0,39 | 0,10 | 0,44 |
 | 30 rotEnt | 687 | 61,4 | 0,00 | 100% | 74% | 0,00 | 0,00 | 0,00 |
-| 35 swampTroll | 715 → 787 | 66,3 | 0,89 → 0,81 | 0% | 76% | 0,82 → 0,78 | 0,21 → 0,19 | 0,89 |
-| 40 marshWitch | 542 | 49,7 | 1,13 | 0% | 80% | 0,86 → 0,83 | 0,23 | 0,97 |
-| suma pasma | – | – | 18,0 → 14,9 | – | – | 15,5 → 13,2 | 3,6 → 3,2 | 15,8 → 14,1 |
-| suma z bossami w zadaniach | – | – | 16,3 → 13,3 | – | – | – | – | – |
+| 35 swampTroll | 787 | 66,3 | 0,81 | 0% | 76% | 0,78 | 0,19 | 0,89 |
+| 40 marshWitch | 542 | 49,7 | 1,13 | 0% | 80% | 0,83 | 0,23 | 0,97 |
+| suma pasma | – | – | 14,9 | – | – | 13,2 | 3,2 | 14,1 |
+| suma z bossami w zadaniach | – | – | 13,3 | – | – | – | – | – |
 | cel D4 (wstępny) | – | – | 14,0 | – | – | – | – | – |
 
 ### Zadania na swoim poziomie (20-45)
@@ -2676,14 +2645,14 @@ Zadania liczą się na poziomie zadania (bez rozkładania); boss tylko z opcją 
 | poziom | główne EXP | poboczne EXP (×0,5) | boss EXP | dzienne EXP/dzień | dzienne ÷ poziom | główne złoto |
 | --- | --: | --: | --: | --: | --: | --: |
 | 20 | 7150 | 0 | 0 | 5361 | 45% | 960 |
-| 21 | 11 763 → 22 219 | 0 | 0 | 5880 | 45% | 1005 |
-| 24 | 16 827 → 23 557 | 0 | 0 | 7572 | 45% | 1140 |
+| 21 | 22 219 | 0 | 0 | 5880 | 45% | 1005 |
+| 24 | 23 557 | 0 | 0 | 7572 | 45% | 1140 |
 | 25 | 0 | 0 | 0 | 8178 | 45% | 0 |
-| 27 | 21 033 → 23 136 | 0 | 0 | 9462 | 45% | 1275 |
-| 30 | 25 681 → 30 817 | 0 | 0 | 11 556 | 45% | 1410 |
-| 33 | 30 767 → 39 997 | 0 | 0 | 13 845 | 45% | 1545 |
+| 27 | 23 136 | 0 | 0 | 9462 | 45% | 1275 |
+| 30 | 30 817 | 0 | 0 | 11 556 | 45% | 1410 |
+| 33 | 39 997 | 0 | 0 | 13 845 | 45% | 1545 |
 | 35 | 0 | 0 | 0 | 15 477 | 45% | 0 |
-| 37 | 38 223 → 61 156 | 0 | 0 | 17 199 | 45% | 1725 |
+| 37 | 61 156 | 0 | 0 | 17 199 | 45% | 1725 |
 | 40 | 0 | 0 | 0 | 19 941 | 45% | 0 |
 | 43 | 0 | 0 | 66 499 | 22 875 | 45% | 6255 |
 
@@ -2693,10 +2662,10 @@ Założenie modelu: drużyna bije na tym samym łowisku osobno i dzieli zaliczen
 
 | drużyna | mnożnik EXP | EXP/h członka | h pasma |
 | --- | --: | --: | --: |
-| solo (Wojownik) | 1,00 | 30 187 → 40 330 | 18,0 → 14,9 |
-| 3 × Wojownik | 1,00 | 30 187 → 40 330 | 18,0 → 14,9 |
-| Wojownik + Łowca + Mag | 1,10 | 32 307 → 44 398 | 16,2 → 13,5 |
-| cztery klasy | 1,15 | 34 743 → 47 792 | 15,2 → 12,6 |
+| solo (Wojownik) | 1,00 | 40 330 | 14,9 |
+| 3 × Wojownik | 1,00 | 40 330 | 14,9 |
+| Wojownik + Łowca + Mag | 1,10 | 44 398 | 13,5 |
+| cztery klasy | 1,15 | 47 792 | 12,6 |
 
 ### Ekonomia (Wojownik) (20-45)
 
@@ -2706,9 +2675,9 @@ Na godzinę expienia w tempie z tabeli „Tempo” (bez ulepszeń i materiałów
 | --- | --: | --: | --: | --: | --: | --: | --: |
 | 20 | 4441 | 2218 | 209 | 3% | 0,50 | 960 | 19% |
 | 25 | 5417 | 2517 | 204 | 3% | 0,46 | 0 | 26% |
-| 30 | 6333 → 8461 | 2296 → 2563 | 257 → 287 | 3% | 0,36 → 0,30 | 1410 | 35% → 23% |
-| 35 | 7857 → 8643 | 2663 | 398 | 4% | 0,34 → 0,31 | 0 | 41% → 38% |
-| 40 | 7700 | 3226 → 4074 | 274 | 3% → 2% | 0,42 → 0,53 | 0 | 53% → 49% |
+| 30 | 8461 | 2563 | 287 | 3% | 0,30 | 1410 | 23% |
+| 35 | 8643 | 2663 | 398 | 4% | 0,31 | 0 | 38% |
+| 40 | 7700 | 4074 | 274 | 2% | 0,53 | 0 | 49% |
 | 45 | 9676 | 5018 | 264 | 2% | 0,52 | 2085 | 38% |
 
 ### Mikstury (Wojownik, łańcuch zamiast odpoczynku) (20-45)
@@ -2730,19 +2699,19 @@ Wojownik 1 na 1 na środkowym poziomie rodzaju, bez odpoczynku. HP/EXP: strata H
 
 | rodzaj | poziom | EXP/s ÷ zwykły | HP/EXP ÷ średnia regionu | rzucający |
 | --- | --: | --: | --: | --: |
-| werewolf | 24 → 25 | 1,00 | 0,95 → 1,00 | 0 |
-| forestWraith | 27 | 1,06 | 1,09 → 1,15 | 1 |
-| rotEnt | 30 | 0,80 → 1,00 | 0,84 → 0,71 | 0 |
-| darkCultist | 33 | 1,00 → 0,95 | 1,10 → 0,97 | 1 |
-| swampTroll | 36 | 0,86 → 0,95 | 0,86 → 0,83 | 0 |
-| skeletonGuard | 38 → 40 | 0,87 → 0,96 | 1,00 → 0,95 | 0 |
-| specter | 40 → 41 | 1,04 | 1,10 → 1,16 | 1 |
-| necromancer | 42 → 41 | 1,03 | 1,10 → 1,16 | 1 |
-| blackBear | 24 → 26 | 0,90 | 0,85 → 0,90 | 0 |
-| ghoul | 30 → 32 | 1,04 → 0,98 | 0,97 → 0,86 | 0 |
-| bogSerpent | 33 | 0,98 | 0,90 → 0,95 | 0 |
-| marshWitch | 39 → 40 | 1,04 | 1,10 → 1,16 | 1 |
-| bloodBat | 42 | 1,03 | 1,15 → 1,21 | 0 |
+| werewolf | 25 | 1,00 | 1,00 | 0 |
+| forestWraith | 27 | 1,06 | 1,15 | 1 |
+| rotEnt | 30 | 1,00 | 0,71 | 0 |
+| darkCultist | 33 | 0,95 | 0,97 | 1 |
+| swampTroll | 36 | 0,95 | 0,83 | 0 |
+| skeletonGuard | 40 | 0,96 | 0,95 | 0 |
+| specter | 41 | 1,04 | 1,16 | 1 |
+| necromancer | 41 | 1,03 | 1,16 | 1 |
+| blackBear | 26 | 0,90 | 0,90 | 0 |
+| ghoul | 32 | 0,98 | 0,86 | 0 |
+| bogSerpent | 33 | 0,98 | 0,95 | 0 |
+| marshWitch | 40 | 1,04 | 1,16 | 1 |
+| bloodBat | 42 | 1,03 | 1,21 | 0 |
 
 ### Jaskinie: Elity solo i w parze (20-45, duskwood)
 
@@ -2751,21 +2720,21 @@ Prawdziwe spawnery (`Data/Spawns`); q = udział spawnerów Elit z dwoma członka
 | jaskinia · rodzaj · poziom | q par | Wojownik s | Wojownik HP | Łowca s | Łowca HP | Mag s | Mag HP | Kapłan s | Kapłan HP | Wojownik para HP | Mag para HP | Wojownik spotkanie | Mag spotkanie |
 | --- | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: |
 | duskwood_den · werewolf · 21 | 25% | 30,5 | 73% | 24,1 | 73% | 24,0 | 84% | 41,6 | 60% | 185% | 211% | 101% | 116% |
-| duskwood_den · werewolf · 26 | 50% → 25% | 30,9 | 74% | 24,3 | 74% | 24,0 | 85% | 43,0 | 61% | 187% | 213% | 130% → 102% | 149% → 117% |
+| duskwood_den · werewolf · 26 | 25% | 30,9 | 74% | 24,3 | 74% | 24,0 | 85% | 43,0 | 61% | 187% | 213% | 102% | 117% |
 | duskwood_den · werewolf · 31 | 25% | 31,1 | 74% | 24,6 | 75% | 23,9 | 86% | 44,3 | 62% | 188% | 214% | 103% | 118% |
 | duskwood_den · blackBear · 21 | 25% | 37,5 | 73% | 29,6 | 73% | 29,5 | 84% | 51,1 | 60% | 184% | 210% | 101% | 116% |
 | duskwood_den · blackBear · 26 | 25% | 37,9 | 74% | 29,8 | 73% | 29,5 | 85% | 52,8 | 61% | 186% | 213% | 102% | 117% |
 | duskwood_den · blackBear · 31 | 25% | 38,1 | 74% | 30,1 | 74% | 29,4 | 85% | 54,3 | 61% | 187% | 214% | 102% | 118% |
-| duskwood_barrow · darkCultist · 31 | 100% → 50% | 28,2 | 75% → 60% | 22,3 | 68% → 54% | 21,8 | 67% → 53% | 40,2 | 60% → 47% | 189% → 150% | 168% → 133% | 189% → 105% | 168% → 93% |
-| duskwood_barrow · darkCultist · 34 | 100% → 50% | 28,5 | 76% → 60% | 22,2 | 68% → 54% | 21,9 | 68% → 54% | 40,9 | 60% → 47% | 191% → 152% | 169% → 134% | 191% → 106% | 169% → 94% |
+| duskwood_barrow · darkCultist · 31 | 50% | 28,2 | 60% | 22,3 | 54% | 21,8 | 53% | 40,2 | 47% | 150% | 133% | 105% | 93% |
+| duskwood_barrow · darkCultist · 34 | 50% | 28,5 | 60% | 22,2 | 54% | 21,9 | 54% | 40,9 | 47% | 152% | 134% | 106% | 94% |
 | duskwood_barrow · darkCultist · 38 | 50% | 28,4 | 60% | 22,3 | 54% | 21,7 | 54% | 41,3 | 48% | 152% | 134% | 106% | 94% |
-| duskwood_barrow · ghoul · 31 | 100% → 50% | 28,2 | 71% → 56% | 22,3 | 71% → 57% | 21,8 | 82% → 65% | 40,2 | 59% → 47% | 179% → 142% | 204% → 163% | 179% → 99% | 204% → 114% |
+| duskwood_barrow · ghoul · 31 | 50% | 28,2 | 56% | 22,3 | 57% | 21,8 | 65% | 40,2 | 47% | 142% | 163% | 99% | 114% |
 | duskwood_barrow · ghoul · 34 | 50% | 28,5 | 57% | 22,2 | 56% | 21,9 | 66% | 40,9 | 47% | 144% | 164% | 100% | 115% |
 | duskwood_barrow · ghoul · 38 | 50% | 28,4 | 57% | 22,3 | 57% | 21,7 | 66% | 41,3 | 47% | 143% | 164% | 100% | 115% |
-| duskwood_cave · skeletonGuard · 38 | 60% → 20% | 32,7 | 71% | 25,6 | 71% | 21,7 | 72% | 41,3 | 52% | 180% | 180% | 136% → 93% | 137% → 94% |
-| duskwood_cave · skeletonGuard · 41 | 60% → 20% | 32,6 | 71% | 25,5 | 71% | 21,5 | 72% | 41,5 | 52% | 179% | 179% | 136% → 92% | 136% → 93% |
+| duskwood_cave · skeletonGuard · 38 | 20% | 32,7 | 71% | 25,6 | 71% | 21,7 | 72% | 41,3 | 52% | 180% | 180% | 93% | 94% |
+| duskwood_cave · skeletonGuard · 41 | 20% | 32,6 | 71% | 25,5 | 71% | 21,5 | 72% | 41,5 | 52% | 179% | 179% | 92% | 93% |
 | duskwood_cave · skeletonGuard · 45 | 20% | 32,4 | 70% | 25,4 | 70% | 21,3 | 71% | 41,7 | 52% | 178% | 178% | 92% | 93% |
-| duskwood_cave · specter · 38 | 60% → 20% | 24,2 | 66% | 18,9 | 59% | 20,8 | 65% | 39,5 | 58% | 164% | 162% | 125% → 85% | 123% → 84% |
+| duskwood_cave · specter · 38 | 20% | 24,2 | 66% | 18,9 | 59% | 20,8 | 65% | 39,5 | 58% | 164% | 162% | 85% | 84% |
 | duskwood_cave · specter · 41 | 20% | 24,1 | 65% | 18,8 | 59% | 20,6 | 65% | 39,7 | 58% | 164% | 161% | 85% | 84% |
 | duskwood_cave · specter · 45 | 20% | 23,9 | 65% | 18,8 | 59% | 20,4 | 64% | 39,9 | 58% | 163% | 160% | 85% | 83% |
 
@@ -2779,9 +2748,9 @@ Drużyna w kolejności Wojownik, Mag, Łowca, Kapłan na min(100, spawner + 2), 
 | duskwood_den · werewolf · 31 | 33 | 293% | 130% | 85% | 72% | 27,7 |
 | duskwood_den · blackBear · 21 | 23 | 316% | 141% | 92% | 77% | 34,9 |
 | duskwood_den · blackBear · 31 | 33 | 303% | 134% | 88% | 74% | 34,0 |
-| duskwood_barrow · darkCultist · 31 | 33 | 293% → 232% | 130% → 103% | 86% → 68% | 73% → 58% | 25,2 |
+| duskwood_barrow · darkCultist · 31 | 33 | 232% | 103% | 68% | 58% | 25,2 |
 | duskwood_barrow · darkCultist · 38 | 40 | 226% | 100% | 66% | 56% | 24,5 |
-| duskwood_barrow · ghoul · 31 | 33 | 277% → 220% | 123% → 98% | 81% → 64% | 68% → 54% | 25,2 |
+| duskwood_barrow · ghoul · 31 | 33 | 220% | 98% | 64% | 54% | 25,2 |
 | duskwood_barrow · ghoul · 38 | 40 | 212% | 94% | 62% | 52% | 24,5 |
 | duskwood_cave · necromancer · 38 | 40 | 251% | 112% | 74% | 63% | 22,1 |
 | duskwood_cave · necromancer · 45 | 47 | 246% | 109% | 72% | 62% | 21,6 |
@@ -2794,11 +2763,11 @@ Drużyna w kolejności Wojownik, Mag, Łowca, Kapłan na min(100, spawner + 2), 
 
 | atak | faza 1 /min | faza 1 tempo | faza 2 /min | faza 2 tempo | faza 3 /min | faza 3 tempo |
 | --- | --: | --: | --: | --: | --: | --: |
-| shadowBolt | 9,1 → 8,4 | 91% → 84% | 9,1 → 8,4 | 91% → 84% | – | – |
-| shadowBoltFast | – | – | – | – | 8,0 → 8,5 | 53% → 57% |
-| curseField | 4,6 → 8,4 | 84% → 91% | 4,6 → 8,4 | 84% → 91% | 4,0 → 5,7 | 73% → 62% |
-| deathRing | – | – | – | – | 4,0 → 2,8 | 100% → 70% |
-| udział rzucania | 29% → 38% | – | 29% → 38% | – | 36% → 37% | – |
+| shadowBolt | 8,4 | 84% | 8,4 | 84% | – | – |
+| shadowBoltFast | – | – | – | – | 8,5 | 57% |
+| curseField | 8,4 | 91% | 8,4 | 91% | 5,7 | 62% |
+| deathRing | – | – | – | – | 2,8 | 70% |
+| udział rzucania | 38% | – | 38% | – | 37% | – |
 
 ### Boss morvane: walka (20-45, duskwood)
 
@@ -2806,10 +2775,10 @@ Gracze na poziomie bossa (najwyżej 100), kolejność Wojownik (tank), Mag, Łow
 
 | drużyna · wariant | walka min | tarcze s | pomocnicy na tanku HP | wściekłość | tank HP/s | tank HP/s ÷ HP | mikstura HP/s | max cios Wojownik | max cios Łowca | max cios Mag | max cios Kapłan |
 | --- | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: |
-| 3 · połowa | 4,4 → 4,5 | 66,1 → 30,6 | 471% → 176% | 0 | 290 → 278 | 14% | 667 | 69% → 125% | 114% → 72% | 107% → 68% | – |
-| 3 · wszystkie | 4,4 → 4,5 | 66,1 → 30,6 | 471% → 176% | 0 | 408 → 487 | 20% → 24% | 667 | 69% → 125% | 114% → 72% | 107% → 68% | – |
-| 5 · połowa | 4,4 → 4,6 | 57,9 → 26,8 | 523% → 195% | 0 | 262 → 253 | 13% | 667 | 69% → 125% | 114% → 72% | 107% → 68% | 31% → 28% |
-| 5 · wszystkie | 4,4 → 4,6 | 57,9 → 26,8 | 523% → 195% | 0 | 351 → 436 | 17% → 22% | 667 | 69% → 125% | 114% → 72% | 107% → 68% | 31% → 28% |
+| 3 · połowa | 4,5 | 30,6 | 176% | 0 | 278 | 14% | 667 | 125% | 72% | 68% | – |
+| 3 · wszystkie | 4,5 | 30,6 | 176% | 0 | 487 | 24% | 667 | 125% | 72% | 68% | – |
+| 5 · połowa | 4,6 | 26,8 | 195% | 0 | 253 | 13% | 667 | 125% | 72% | 68% | 28% |
+| 5 · wszystkie | 4,6 | 26,8 | 195% | 0 | 436 | 22% | 667 | 125% | 72% | 68% | 28% |
 
 ### Cele (20–45)
 
@@ -3687,12 +3656,12 @@ S92 nie przestawiło żadnej kotwicy 45 (`monsterHp`, `monsterAtk`, `eliteHp`, `
 | eliteHp | 1,08 | 1,09 |
 | expToNext | 1,00 | 1,00 |
 | heal | 2,33 | 0,93 |
-| manaCost.Mage | 1,89 | 2,18 |
+| manaCost.Mage | 1,89 | 2,25 |
 | monsterAtk | 1,07 | 1,09 |
 | monsterHp | 1,20 | 1,25 |
 | potionCooldown | 4,00 | 5,05 |
 
-## Pasmo 45–70 (ashen): raport, nie strojone
+## Pasmo 45–70 (ashen)
 
 ### Gracz z ekwipunkiem na poziomie (45-70)
 
@@ -3783,11 +3752,11 @@ Sklep: zbroja z progu `tierFor`, broń z progu kowala. Cel G4: ≤ 15,5 s (Kapł
 | --- | --: | --: | --: | --: | --: | --: | --: | --: |
 | 45 salamander | 724 | 51,4 | 0,11 | 90% | 78% | 0,10 | 0,02 | 0,10 |
 | 50 wasteHyena | 844 | 54,6 | 0,00 | 100% | 80% | 0,00 | 0,00 | 0,00 |
-| 55 fireGolem | 1201 | 67,3 | 0,00 | 100% | 73% | 0,00 | 0,00 | 0,00 |
-| 60 desertScorpion | 1057 | 53,8 | 1,35 | 0% | 80% | 1,16 | 0,28 | 1,24 |
+| 55 fireGolem | 1201 → 1741 | 67,3 | 0,00 | 100% | 73% | 0,00 | 0,00 | 0,00 |
+| 60 desertScorpion | 1057 | 53,8 | 1,35 | 0% | 80% | 1,16 → 1,05 | 0,28 | 1,24 |
 | 65 basilisk | 1278 | 57,2 | 1,39 | 0% | 77% | 1,22 | 0,31 | 1,30 |
-| suma pasma | – | – | 27,2 | – | – | 25,2 | 6,1 | 25,6 |
-| suma z bossami w zadaniach | – | – | 25,6 | – | – | – | – | – |
+| suma pasma | – | – | 27,2 → 26,1 | – | – | 25,2 → 23,5 | 6,1 → 5,8 | 25,6 |
+| suma z bossami w zadaniach | – | – | 25,6 → 24,5 | – | – | – | – | – |
 | cel D4 (wstępny) | – | – | 25,0 | – | – | – | – | – |
 
 ### Zadania na swoim poziomie (45-70)
@@ -3810,10 +3779,10 @@ Założenie modelu: drużyna bije na tym samym łowisku osobno i dzieli zaliczen
 
 | drużyna | mnożnik EXP | EXP/h członka | h pasma |
 | --- | --: | --: | --: |
-| solo (Wojownik) | 1,00 | 64 236 | 27,2 |
-| 3 × Wojownik | 1,00 | 64 236 | 27,2 |
-| Wojownik + Łowca + Mag | 1,10 | 73 373 | 24,9 |
-| cztery klasy | 1,15 | 79 263 | 23,3 |
+| solo (Wojownik) | 1,00 | 64 236 → 93 142 | 27,2 → 26,1 |
+| 3 × Wojownik | 1,00 | 64 236 → 93 142 | 27,2 → 26,1 |
+| Wojownik + Łowca + Mag | 1,10 | 73 373 → 106 391 | 24,9 → 23,9 |
+| cztery klasy | 1,15 | 79 263 → 114 932 | 23,3 → 22,5 |
 
 ### Ekonomia (Wojownik) (45-70)
 
@@ -3822,11 +3791,11 @@ Na godzinę expienia w tempie z tabeli „Tempo” (bez ulepszeń i materiałów
 | poziom | złoto z zabić/h | sprzedaż dropu/h | mikstury/h | mikstury ÷ dochód | drop ÷ zabicia | złoto zadań poziomu | łańcuch: mikstury ÷ dochód |
 | --- | --: | --: | --: | --: | --: | --: | --: |
 | 45 | 9676 | 5018 | 264 | 2% | 0,52 | 2085 | 38% |
-| 50 | 10 360 | 3748 | 411 | 3% | 0,36 | 2310 | 40% |
-| 55 | 11 686 | 4769 | 464 | 3% | 0,41 | 2535 | 65% |
-| 60 | 12 600 | 5870 | 461 | 2% | 0,47 | 0 | 73% |
-| 65 | 14 063 | 4583 | 475 | 3% | 0,33 | 0 | 68% |
-| 70 | 15 250 | 8178 | 358 | 2% | 0,54 | 0 | 60% |
+| 50 | 10 360 | 3748 → 3927 | 411 | 3% | 0,36 → 0,38 | 2310 | 40% → 39% |
+| 55 | 11 686 → 16 944 | 4769 | 464 | 3% → 2% | 0,41 → 0,28 | 2535 | 65% → 41% |
+| 60 | 12 600 | 5870 | 461 | 2% | 0,47 | 0 | 73% → 60% |
+| 65 | 14 063 | 4583 → 4753 | 475 | 3% | 0,33 → 0,34 | 0 | 68% → 55% |
+| 70 | 15 250 | 8178 | 358 | 2% | 0,54 | 0 | 60% → 50% |
 
 ### Mikstury (Wojownik, łańcuch zamiast odpoczynku) (45-70)
 
@@ -3836,10 +3805,10 @@ Odstęp `Potions.interval` (S54: 1,5 s do 20., 6 s na 45., 10 s od 70.); w 7 s p
 | --- | --: | --: | --: | --: | --: | --: |
 | 45 | 6,0 | 3 | 1,75 | 0,0 | 180 | 667 |
 | 50 | 6,8 | 3 | 1,45 | 0,0 | 192 | 590 |
-| 55 | 7,6 | 4 | 1,00 | 0,0 | 453 | 529 |
-| 60 | 8,4 | 4 | 1,00 | 0,0 | 453 | 478 |
-| 65 | 9,2 | 4 | 1,00 | 0,0 | 453 | 436 |
-| 70 | 10,0 | 4 | 1,00 | 0,0 | 453 | 1000 |
+| 55 | 7,6 | 4 | 1,00 | 0,0 | 453 → 373 | 529 |
+| 60 | 8,4 | 4 | 1,00 | 0,0 | 453 → 373 | 478 |
+| 65 | 9,2 | 4 | 1,00 | 0,0 | 453 → 373 | 436 |
+| 70 | 10,0 | 4 | 1,00 | 0,0 | 453 → 373 | 1000 |
 
 ### Rodzaje regionu (45-70, ashen)
 
@@ -3847,19 +3816,19 @@ Wojownik 1 na 1 na środkowym poziomie rodzaju, bez odpoczynku. HP/EXP: strata H
 
 | rodzaj | poziom | EXP/s ÷ zwykły | HP/EXP ÷ średnia regionu | rzucający |
 | --- | --: | --: | --: | --: |
-| salamander | 48 | 1,02 | 0,97 | 0 |
-| ashOrc | 52 | 0,88 | 1,09 | 0 |
-| fireGolem | 56 | 0,70 | 0,91 | 0 |
-| desertScorpion | 59 | 1,05 | 1,03 | 0 |
-| wyvern | 62 | 0,91 | 0,98 | 0 |
-| renegadeDwarf | 62 | 0,90 | 1,00 | 0 |
-| magmaGolem | 65 | 0,69 | 0,91 | 0 |
-| flameSmith | 67 | 1,05 | 1,06 | 0 |
-| wasteHyena | 49 | 1,05 | 1,03 | 0 |
-| ashVulture | 53 | 1,12 | 1,04 | 0 |
-| fireImp | 58 | 1,06 | 1,14 | 1 |
-| basilisk | 64 | 0,90 | 0,97 | 0 |
-| desertMummy | 68 | 0,94 | 0,87 | 0 |
+| salamander | 48 | 1,02 | 0,97 → 1,05 | 0 |
+| ashOrc | 52 → 51 | 0,88 → 0,98 | 1,09 → 0,91 | 0 |
+| fireGolem | 56 | 0,70 → 1,01 | 0,91 → 0,67 | 0 |
+| desertScorpion | 59 | 1,05 | 1,03 → 1,10 | 0 |
+| wyvern | 62 → 61 | 0,91 | 0,98 → 1,05 | 0 |
+| renegadeDwarf | 62 → 65 | 0,90 | 1,00 → 1,08 | 0 |
+| magmaGolem | 65 → 66 | 0,69 → 0,99 | 0,91 → 0,68 | 0 |
+| flameSmith | 67 → 66 | 1,05 | 1,06 → 1,14 | 0 |
+| wasteHyena | 49 | 1,05 | 1,03 → 1,10 | 0 |
+| ashVulture | 53 | 1,12 | 1,04 → 1,12 | 0 |
+| fireImp | 58 | 1,06 → 1,03 | 1,14 → 1,12 | 1 |
+| basilisk | 64 → 65 | 0,90 | 0,97 → 1,04 | 0 |
+| desertMummy | 68 | 0,94 | 0,87 → 0,93 | 0 |
 
 ### Jaskinie: Elity solo i w parze (45-70, ashen)
 
@@ -3867,24 +3836,24 @@ Prawdziwe spawnery (`Data/Spawns`); q = udział spawnerów Elit z dwoma członka
 
 | jaskinia · rodzaj · poziom | q par | Wojownik s | Wojownik HP | Łowca s | Łowca HP | Mag s | Mag HP | Kapłan s | Kapłan HP | Wojownik para HP | Mag para HP | Wojownik spotkanie | Mag spotkanie |
 | --- | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: |
-| ashen_mine · ashOrc · 49 | 50% | 37,8 | 90% | 29,4 | 89% | 25,6 | 93% | 50,5 | 69% | 226% | 233% | 158% | 163% |
-| ashen_mine · ashOrc · 52 | 50% | 37,5 | 89% | 29,4 | 88% | 25,3 | 92% | 50,2 | 68% | 224% | 230% | 156% | 161% |
-| ashen_mine · ashOrc · 56 | 50% | 37,2 | 88% | 29,0 | 87% | 25,0 | 91% | 50,2 | 68% | 222% | 228% | 155% | 160% |
-| ashen_mine · wasteHyena · 49 | 50% | 28,2 | 74% | 22,0 | 73% | 21,3 | 85% | 42,1 | 63% | 186% | 212% | 130% | 148% |
-| ashen_mine · wasteHyena · 50 | 50% | 28,0 | 73% | 22,0 | 73% | 21,1 | 84% | 41,7 | 62% | 184% | 210% | 129% | 147% |
-| ashen_mine · wasteHyena · 52 | 50% | 28,0 | 73% | 22,0 | 73% | 21,1 | 84% | 41,8 | 62% | 184% | 210% | 129% | 147% |
-| ashen_lair · wyvern · 58 | 25% | 32,9 | 71% | 25,6 | 70% | 24,4 | 81% | 49,0 | 60% | 179% | 202% | 98% | 111% |
-| ashen_lair · wyvern · 60 | 25% | 32,7 | 70% | 25,5 | 70% | 24,2 | 80% | 48,9 | 59% | 177% | 200% | 97% | 110% |
-| ashen_lair · wyvern · 63 | 25% | 32,7 | 70% | 25,5 | 70% | 24,1 | 80% | 49,2 | 59% | 177% | 199% | 97% | 110% |
-| ashen_lair · desertScorpion · 56 | 25% | 27,8 | 72% | 21,7 | 72% | 20,8 | 83% | 41,8 | 62% | 182% | 208% | 100% | 114% |
-| ashen_lair · desertScorpion · 59 | 25% | 27,8 | 72% | 21,6 | 72% | 20,8 | 83% | 42,1 | 62% | 182% | 207% | 100% | 114% |
-| ashen_lair · desertScorpion · 63 | 25% | 27,6 | 72% | 21,5 | 71% | 20,6 | 82% | 42,0 | 62% | 180% | 205% | 99% | 113% |
-| ashen_cave · renegadeDwarf · 63 | 60% | 30,8 | 66% | 24,0 | 66% | 20,6 | 69% | 42,0 | 51% | 167% | 172% | 127% | 131% |
-| ashen_cave · renegadeDwarf · 64 | 60% | 30,7 | 66% | 23,8 | 65% | 20,5 | 69% | 41,9 | 51% | 167% | 172% | 127% | 131% |
-| ashen_cave · renegadeDwarf · 65 | 60% | 30,5 | 66% | 23,9 | 65% | 20,4 | 68% | 41,8 | 51% | 166% | 170% | 126% | 130% |
-| ashen_cave · magmaGolem · 63 | 60% | 55,9 | 87% | 43,6 | 87% | 35,0 | 85% | 71,4 | 63% | 222% | 214% | 168% | 163% |
-| ashen_cave · magmaGolem · 65 | 60% | 55,5 | 87% | 43,4 | 86% | 34,7 | 85% | 71,0 | 62% | 220% | 212% | 167% | 161% |
-| ashen_cave · magmaGolem · 68 | 60% | 55,4 | 86% | 43,1 | 86% | 34,6 | 85% | 71,0 | 62% | 220% | 212% | 167% | 161% |
+| ashen_mine · ashOrc · 46 | 25% | 37,7 | 77% | 29,6 | 77% | 25,6 | 80% | 50,0 | 59% | 195% | 200% | 106% | 110% |
+| ashen_mine · ashOrc · 51 | 25% | 37,4 | 76% | 29,3 | 76% | 25,3 | 79% | 50,2 | 58% | 192% | 198% | 105% | 109% |
+| ashen_mine · ashOrc · 56 | 50% → 25% | 37,2 | 88% → 75% | 29,0 | 87% → 75% | 25,0 | 91% → 78% | 50,2 | 68% → 58% | 222% → 191% | 228% → 196% | 155% → 104% | 160% → 108% |
+| ashen_mine · wasteHyena · 46 | 25% | 28,2 | 74% | 22,2 | 74% | 21,3 | 85% | 41,7 | 63% | 186% | 212% | 102% | 117% |
+| ashen_mine · wasteHyena · 49 | 50% → 25% | 28,2 | 74% | 22,0 | 73% | 21,3 | 85% | 42,1 | 63% | 186% | 212% | 130% → 102% | 148% → 117% |
+| ashen_mine · wasteHyena · 52 | 50% → 25% | 28,0 | 73% | 22,0 | 73% | 21,1 | 84% | 41,8 | 62% | 184% | 210% | 129% → 101% | 147% → 115% |
+| ashen_lair · wyvern · 56 | 0% | 32,9 | 71% | 25,7 | 71% | 24,4 | 81% | 48,9 | 60% | 179% | 202% | 71% | 81% |
+| ashen_lair · wyvern · 59 | 0% | 32,9 | 71% | 25,6 | 70% | 24,3 | 81% | 49,3 | 60% | 179% | 201% | 71% | 81% |
+| ashen_lair · wyvern · 63 | 25% → 0% | 32,7 | 70% | 25,5 | 70% | 24,1 | 80% | 49,2 | 59% | 177% | 199% | 97% → 70% | 110% → 80% |
+| ashen_lair · desertScorpion · 56 | 25% → 0% | 27,8 | 72% | 21,7 | 72% | 20,8 | 83% | 41,8 | 62% | 182% | 208% | 100% → 72% | 114% → 83% |
+| ashen_lair · desertScorpion · 59 | 25% → 0% | 27,8 | 72% | 21,6 | 72% | 20,8 | 83% | 42,1 | 62% | 182% | 207% | 100% → 72% | 114% → 83% |
+| ashen_lair · desertScorpion · 63 | 25% → 0% | 27,6 | 72% | 21,5 | 71% | 20,6 | 82% | 42,0 | 62% | 180% | 205% | 99% → 72% | 113% → 82% |
+| ashen_cave · renegadeDwarf · 63 | 60% → 0% | 30,8 | 66% | 24,0 | 66% | 20,6 | 69% | 42,0 | 51% | 167% | 172% | 127% → 66% | 131% → 69% |
+| ashen_cave · renegadeDwarf · 66 | 0% | 30,5 | 66% | 23,8 | 65% | 20,4 | 68% | 41,7 | 51% | 166% | 170% | 66% | 68% |
+| ashen_cave · renegadeDwarf · 70 | 0% | 30,4 | 65% | 23,7 | 65% | 20,2 | 68% | 41,7 | 51% | 164% | 169% | 65% | 68% |
+| ashen_cave · magmaGolem · 63 | 60% → 0% | 55,9 | 87% | 43,6 | 87% | 35,0 | 85% | 71,4 | 63% | 222% | 214% | 168% → 87% | 163% → 85% |
+| ashen_cave · magmaGolem · 66 | 0% | 55,5 | 87% | 43,3 | 86% | 34,6 | 85% | 70,9 | 62% | 220% | 212% | 87% | 85% |
+| ashen_cave · magmaGolem · 70 | 0% | 55,2 | 86% | 43,1 | 85% | 34,4 | 84% | 70,9 | 62% | 219% | 211% | 86% | 84% |
 
 ### Jaskinie: Elita II (45-70, ashen)
 
@@ -3892,13 +3861,13 @@ Drużyna w kolejności Wojownik, Mag, Łowca, Kapłan na min(100, spawner + 2), 
 
 | jaskinia · rodzaj · poziom spawnera | poziom graczy | solo HP | 2 graczy HP | 3 graczy HP | 4 graczy HP | 3 graczy s |
 | --- | --: | --: | --: | --: | --: | --: |
-| ashen_mine · ashOrc · 49 | 51 | 345% | 142% | 95% | 80% | 30,4 |
-| ashen_mine · ashOrc · 56 | 58 | 338% | 139% | 93% | 79% | 29,9 |
-| ashen_lair · wyvern · 58 | 60 | 275% | 119% | 79% | 67% | 27,2 |
+| ashen_mine · ashOrc · 46 | 48 | 301% | 124% | 83% | 70% | 30,8 |
+| ashen_mine · ashOrc · 56 | 58 | 338% → 290% | 139% → 119% | 93% → 80% | 79% → 68% | 29,9 |
+| ashen_lair · wyvern · 56 | 58 | 278% | 121% | 80% | 68% | 27,4 |
 | ashen_lair · wyvern · 63 | 65 | 271% | 117% | 78% | 66% | 26,8 |
-| ashen_cave · flameSmith · 64 | 66 | 258% | 113% | 75% | 64% | 22,7 |
+| ashen_cave · flameSmith · 63 | 65 | 258% | 113% | 75% | 64% | 22,8 |
 | ashen_cave · flameSmith · 70 | 72 | 254% | 111% | 74% | 63% | 22,5 |
-| ashen_cave · magmaGolem · 64 | 66 | 345% | 135% | 92% | 77% | 43,0 |
+| ashen_cave · magmaGolem · 63 | 65 | 345% | 135% | 92% | 77% | 43,1 |
 | ashen_cave · magmaGolem · 70 | 72 | 340% | 133% | 91% | 76% | 42,5 |
 
 ### Boss azgor: harmonogram ataków (45-70, ashen)
@@ -3907,11 +3876,11 @@ Drużyna w kolejności Wojownik, Mag, Łowca, Kapłan na min(100, spawner + 2), 
 
 | atak | faza 1 /min | faza 1 tempo | faza 2 /min | faza 2 tempo | faza 3 /min | faza 3 tempo |
 | --- | --: | --: | --: | --: | --: | --: |
-| fireWave | 5,6 | 65% | 5,6 | 65% | 4,5 | 53% |
-| flameCleave | 5,6 | 84% | 5,6 | 84% | 4,4 | 66% |
-| meteor | 5,5 | 92% | 5,5 | 92% | 4,4 | 73% |
-| inferno | – | – | – | – | 2,9 | 68% |
-| udział rzucania | 38% | – | 38% | – | 40% | – |
+| fireWave | 5,6 → 6,1 | 65% → 71% | 5,6 → 6,1 | 65% → 71% | 4,5 → 5,5 | 53% → 64% |
+| flameCleave | 5,6 → 6,0 | 84% → 90% | 5,6 → 6,0 | 84% → 90% | 4,4 → 5,4 | 66% → 81% |
+| meteor | 5,5 → 3,0 | 92% → 90% | 5,5 → 3,0 | 92% → 90% | 4,4 → 2,7 | 73% → 81% |
+| inferno | – | – | – | – | 2,9 → 2,8 | 68% → 65% |
+| udział rzucania | 38% → 33% | – | 38% → 33% | – | 40% → 39% | – |
 
 ### Boss azgor: walka (45-70, ashen)
 
@@ -3919,25 +3888,25 @@ Gracze na poziomie bossa (najwyżej 100), kolejność Wojownik (tank), Mag, Łow
 
 | drużyna · wariant | walka min | tarcze s | pomocnicy na tanku HP | wściekłość | tank HP/s | tank HP/s ÷ HP | mikstura HP/s | max cios Wojownik | max cios Łowca | max cios Mag | max cios Kapłan |
 | --- | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: |
-| 3 · połowa | 5,0 | 104,3 | 556% | 0 | 408 | 14% | 1000 | 84% | 126% | 118% | – |
-| 3 · wszystkie | 5,0 | 104,3 | 556% | 0 | 833 | 28% | 1000 | 84% | 126% | 118% | – |
-| 5 · połowa | 5,0 | 92,0 | 622% | 0 | 396 | 13% | 1000 | 84% | 126% | 118% | 47% |
-| 5 · wszystkie | 5,0 | 92,0 | 622% | 0 | 808 | 27% | 1000 | 84% | 126% | 118% | 47% |
+| 3 · połowa | 5,0 → 4,7 | 104,3 → 38,8 | 556% → 170% | 0 | 408 → 172 | 14% → 6% | 1000 | 84% → 49% | 126% → 70% | 118% → 66% | – |
+| 3 · wszystkie | 5,0 → 4,7 | 104,3 → 38,8 | 556% → 170% | 0 | 833 → 451 | 28% → 15% | 1000 | 84% → 49% | 126% → 70% | 118% → 66% | – |
+| 5 · połowa | 5,0 → 4,9 | 92,0 → 34,3 | 622% → 190% | 0 | 396 → 163 | 13% → 5% | 1000 | 84% → 49% | 126% → 70% | 118% → 66% | 47% → 27% |
+| 5 · wszystkie | 5,0 → 4,9 | 92,0 → 34,3 | 622% → 190% | 0 | 808 → 434 | 27% → 14% | 1000 | 84% → 49% | 126% → 70% | 118% → 66% | 47% → 27% |
 
 ### Boss azgor: zagrożenie skryptu (45-70, ashen)
 
-Faza 3: ×0.7 ataku bossa (magic) co 1 s na każdego poza bezpiecznym miejscem. Lawa: bezpieczny krąg kurczy się z 50 do 20 st. w 120 s; dane nie mają promienia walki wręcz, więc walczący wręcz przy bossie w środku areny mieszczą się w kręgu przez całą fazę (sprawdzić w S87, gdy boss nie stoi w środku).
+Faza 3: ×2.2 ataku bossa (magic) co 1 s na każdego poza bezpiecznym miejscem. Lawa: bezpieczny krąg kurczy się z 50 do 20 st. w 120 s; dane nie mają promienia walki wręcz, więc walczący wręcz przy bossie w środku areny mieszczą się w kręgu przez całą fazę (sprawdzić w S87, gdy boss nie stoi w środku).
 
 | klasa | jedno trafienie HP | HP/s | HP/s ÷ mikstura HP/s |
 | --- | --: | --: | --: |
-| Wojownik | 21% | 636 | 0,64 |
-| Łowca | 24% | 636 | 0,64 |
-| Mag | 23% | 559 | 0,56 |
-| Kapłan | 12% | 601 | 0,60 |
+| Wojownik | 21% → 19% | 636 → 575 | 0,64 → 0,58 |
+| Łowca | 24% → 22% | 636 → 575 | 0,64 → 0,58 |
+| Mag | 23% → 20% | 559 → 506 | 0,56 → 0,51 |
+| Kapłan | 12% → 11% | 601 → 544 | 0,60 → 0,54 |
 
-### Cele (45–70): raport, nie strojone
+### Cele (45–70)
 
-Globalne (G): 163/163 w paśmie; regionu: 152/179 w paśmie.
+Globalne (G): 163/163 w paśmie; regionu: 179/179 w paśmie.
 
 | cel | wartość | próg | wynik | kto asertuje |
 | --- | --: | --: | --: | --: |
@@ -4103,186 +4072,607 @@ Globalne (G): 163/163 w paśmie; regionu: 152/179 w paśmie.
 | morvane faza 3: shadowBoltFast (tempo / odnowienie) | 0,57 | ≥ 0,50 | w paśmie | S87 (asertowane) |
 | morvane faza 3: curseField (tempo / odnowienie) | 0,62 | ≥ 0,50 | w paśmie | S87 (asertowane) |
 | morvane faza 3: deathRing (tempo / odnowienie) | 0,70 | ≥ 0,50 | w paśmie | S87 (asertowane) |
-| 45–70: godzin (cel D4 25 h) | 27,23 | 18,75–31,25 | w paśmie | S87 (asertowane) |
-| ashen_mine ashOrc 49 Warrior: Elita HP | 0,90 | 0,45–1,10 | w paśmie | S93 |
-| ashen_mine ashOrc 49 Warrior: spotkanie Elit (q = 0.50) | 1,58 | ≤ 1,10 | **poza** | S93 |
-| ashen_mine ashOrc 49 Hunter: Elita HP | 0,89 | 0,45–1,10 | w paśmie | S93 |
-| ashen_mine ashOrc 49 Mage: Elita HP | 0,93 | 0,45–1,10 | w paśmie | S93 |
-| ashen_mine ashOrc 49 Mage: spotkanie Elit (q = 0.50) | 1,63 | ≤ 1,25 | **poza** | S93 |
-| ashen_mine ashOrc 52 Warrior: Elita HP | 0,89 | 0,45–1,10 | w paśmie | S93 |
-| ashen_mine ashOrc 52 Warrior: spotkanie Elit (q = 0.50) | 1,56 | ≤ 1,10 | **poza** | S93 |
-| ashen_mine ashOrc 52 Hunter: Elita HP | 0,88 | 0,45–1,10 | w paśmie | S93 |
-| ashen_mine ashOrc 52 Mage: Elita HP | 0,92 | 0,45–1,10 | w paśmie | S93 |
-| ashen_mine ashOrc 52 Mage: spotkanie Elit (q = 0.50) | 1,61 | ≤ 1,25 | **poza** | S93 |
-| ashen_mine ashOrc 56 Warrior: Elita HP | 0,88 | 0,45–1,10 | w paśmie | S93 |
-| ashen_mine ashOrc 56 Warrior: spotkanie Elit (q = 0.50) | 1,55 | ≤ 1,10 | **poza** | S93 |
-| ashen_mine ashOrc 56 Hunter: Elita HP | 0,87 | 0,45–1,10 | w paśmie | S93 |
-| ashen_mine ashOrc 56 Mage: Elita HP | 0,91 | 0,45–1,10 | w paśmie | S93 |
-| ashen_mine ashOrc 56 Mage: spotkanie Elit (q = 0.50) | 1,60 | ≤ 1,25 | **poza** | S93 |
-| ashen_mine wasteHyena 49 Warrior: Elita HP | 0,74 | 0,45–1,10 | w paśmie | S93 |
-| ashen_mine wasteHyena 49 Warrior: spotkanie Elit (q = 0.50) | 1,30 | ≤ 1,10 | **poza** | S93 |
-| ashen_mine wasteHyena 49 Hunter: Elita HP | 0,73 | 0,45–1,10 | w paśmie | S93 |
-| ashen_mine wasteHyena 49 Mage: Elita HP | 0,85 | 0,45–1,10 | w paśmie | S93 |
-| ashen_mine wasteHyena 49 Mage: spotkanie Elit (q = 0.50) | 1,48 | ≤ 1,25 | **poza** | S93 |
-| ashen_mine wasteHyena 50 Warrior: Elita HP | 0,73 | 0,45–1,10 | w paśmie | S93 |
-| ashen_mine wasteHyena 50 Warrior: spotkanie Elit (q = 0.50) | 1,29 | ≤ 1,10 | **poza** | S93 |
-| ashen_mine wasteHyena 50 Hunter: Elita HP | 0,73 | 0,45–1,10 | w paśmie | S93 |
-| ashen_mine wasteHyena 50 Mage: Elita HP | 0,84 | 0,45–1,10 | w paśmie | S93 |
-| ashen_mine wasteHyena 50 Mage: spotkanie Elit (q = 0.50) | 1,47 | ≤ 1,25 | **poza** | S93 |
-| ashen_mine wasteHyena 52 Warrior: Elita HP | 0,73 | 0,45–1,10 | w paśmie | S93 |
-| ashen_mine wasteHyena 52 Warrior: spotkanie Elit (q = 0.50) | 1,29 | ≤ 1,10 | **poza** | S93 |
-| ashen_mine wasteHyena 52 Hunter: Elita HP | 0,73 | 0,45–1,10 | w paśmie | S93 |
-| ashen_mine wasteHyena 52 Mage: Elita HP | 0,84 | 0,45–1,10 | w paśmie | S93 |
-| ashen_mine wasteHyena 52 Mage: spotkanie Elit (q = 0.50) | 1,47 | ≤ 1,25 | **poza** | S93 |
-| ashen_mine ashOrc 49: Elita II solo HP | 3,45 | ≥ 1,80 | w paśmie | S93 |
-| ashen_mine ashOrc 49: Elita II 2 graczy HP | 1,42 | ≤ 1,50 | w paśmie | S93 |
-| ashen_mine ashOrc 49: Elita II 3 graczy HP | 0,95 | 0,60–1,00 | w paśmie | S93 |
-| ashen_mine ashOrc 56: Elita II solo HP | 3,38 | ≥ 1,80 | w paśmie | S93 |
-| ashen_mine ashOrc 56: Elita II 2 graczy HP | 1,39 | ≤ 1,50 | w paśmie | S93 |
-| ashen_mine ashOrc 56: Elita II 3 graczy HP | 0,93 | 0,60–1,00 | w paśmie | S93 |
-| ashen_lair wyvern 58 Warrior: Elita HP | 0,71 | 0,45–1,10 | w paśmie | S93 |
-| ashen_lair wyvern 58 Warrior: spotkanie Elit (q = 0.25) | 0,98 | ≤ 1,10 | w paśmie | S93 |
-| ashen_lair wyvern 58 Hunter: Elita HP | 0,70 | 0,45–1,10 | w paśmie | S93 |
-| ashen_lair wyvern 58 Mage: Elita HP | 0,81 | 0,45–1,10 | w paśmie | S93 |
-| ashen_lair wyvern 58 Mage: spotkanie Elit (q = 0.25) | 1,11 | ≤ 1,25 | w paśmie | S93 |
-| ashen_lair wyvern 60 Warrior: Elita HP | 0,70 | 0,45–1,10 | w paśmie | S93 |
-| ashen_lair wyvern 60 Warrior: spotkanie Elit (q = 0.25) | 0,97 | ≤ 1,10 | w paśmie | S93 |
-| ashen_lair wyvern 60 Hunter: Elita HP | 0,70 | 0,45–1,10 | w paśmie | S93 |
-| ashen_lair wyvern 60 Mage: Elita HP | 0,80 | 0,45–1,10 | w paśmie | S93 |
-| ashen_lair wyvern 60 Mage: spotkanie Elit (q = 0.25) | 1,10 | ≤ 1,25 | w paśmie | S93 |
-| ashen_lair wyvern 63 Warrior: Elita HP | 0,70 | 0,45–1,10 | w paśmie | S93 |
-| ashen_lair wyvern 63 Warrior: spotkanie Elit (q = 0.25) | 0,97 | ≤ 1,10 | w paśmie | S93 |
-| ashen_lair wyvern 63 Hunter: Elita HP | 0,70 | 0,45–1,10 | w paśmie | S93 |
-| ashen_lair wyvern 63 Mage: Elita HP | 0,80 | 0,45–1,10 | w paśmie | S93 |
-| ashen_lair wyvern 63 Mage: spotkanie Elit (q = 0.25) | 1,10 | ≤ 1,25 | w paśmie | S93 |
-| ashen_lair desertScorpion 56 Warrior: Elita HP | 0,72 | 0,45–1,10 | w paśmie | S93 |
-| ashen_lair desertScorpion 56 Warrior: spotkanie Elit (q = 0.25) | 1,00 | ≤ 1,10 | w paśmie | S93 |
-| ashen_lair desertScorpion 56 Hunter: Elita HP | 0,72 | 0,45–1,10 | w paśmie | S93 |
-| ashen_lair desertScorpion 56 Mage: Elita HP | 0,83 | 0,45–1,10 | w paśmie | S93 |
-| ashen_lair desertScorpion 56 Mage: spotkanie Elit (q = 0.25) | 1,14 | ≤ 1,25 | w paśmie | S93 |
-| ashen_lair desertScorpion 59 Warrior: Elita HP | 0,72 | 0,45–1,10 | w paśmie | S93 |
-| ashen_lair desertScorpion 59 Warrior: spotkanie Elit (q = 0.25) | 1,00 | ≤ 1,10 | w paśmie | S93 |
-| ashen_lair desertScorpion 59 Hunter: Elita HP | 0,72 | 0,45–1,10 | w paśmie | S93 |
-| ashen_lair desertScorpion 59 Mage: Elita HP | 0,83 | 0,45–1,10 | w paśmie | S93 |
-| ashen_lair desertScorpion 59 Mage: spotkanie Elit (q = 0.25) | 1,14 | ≤ 1,25 | w paśmie | S93 |
-| ashen_lair desertScorpion 63 Warrior: Elita HP | 0,72 | 0,45–1,10 | w paśmie | S93 |
-| ashen_lair desertScorpion 63 Warrior: spotkanie Elit (q = 0.25) | 0,99 | ≤ 1,10 | w paśmie | S93 |
-| ashen_lair desertScorpion 63 Hunter: Elita HP | 0,71 | 0,45–1,10 | w paśmie | S93 |
-| ashen_lair desertScorpion 63 Mage: Elita HP | 0,82 | 0,45–1,10 | w paśmie | S93 |
-| ashen_lair desertScorpion 63 Mage: spotkanie Elit (q = 0.25) | 1,13 | ≤ 1,25 | w paśmie | S93 |
-| ashen_lair wyvern 58: Elita II solo HP | 2,75 | ≥ 1,80 | w paśmie | S93 |
-| ashen_lair wyvern 58: Elita II 2 graczy HP | 1,19 | ≤ 1,50 | w paśmie | S93 |
-| ashen_lair wyvern 58: Elita II 3 graczy HP | 0,79 | 0,60–1,00 | w paśmie | S93 |
-| ashen_lair wyvern 63: Elita II solo HP | 2,71 | ≥ 1,80 | w paśmie | S93 |
-| ashen_lair wyvern 63: Elita II 2 graczy HP | 1,17 | ≤ 1,50 | w paśmie | S93 |
-| ashen_lair wyvern 63: Elita II 3 graczy HP | 0,78 | 0,60–1,00 | w paśmie | S93 |
-| ashen_cave renegadeDwarf 63 Warrior: Elita HP | 0,66 | 0,45–1,10 | w paśmie | S93 |
-| ashen_cave renegadeDwarf 63 Warrior: spotkanie Elit (q = 0.60) | 1,27 | ≤ 1,10 | **poza** | S93 |
-| ashen_cave renegadeDwarf 63 Hunter: Elita HP | 0,66 | 0,45–1,10 | w paśmie | S93 |
-| ashen_cave renegadeDwarf 63 Mage: Elita HP | 0,69 | 0,45–1,10 | w paśmie | S93 |
-| ashen_cave renegadeDwarf 63 Mage: spotkanie Elit (q = 0.60) | 1,31 | ≤ 1,25 | **poza** | S93 |
-| ashen_cave renegadeDwarf 64 Warrior: Elita HP | 0,66 | 0,45–1,10 | w paśmie | S93 |
-| ashen_cave renegadeDwarf 64 Warrior: spotkanie Elit (q = 0.60) | 1,27 | ≤ 1,10 | **poza** | S93 |
-| ashen_cave renegadeDwarf 64 Hunter: Elita HP | 0,65 | 0,45–1,10 | w paśmie | S93 |
-| ashen_cave renegadeDwarf 64 Mage: Elita HP | 0,69 | 0,45–1,10 | w paśmie | S93 |
-| ashen_cave renegadeDwarf 64 Mage: spotkanie Elit (q = 0.60) | 1,31 | ≤ 1,25 | **poza** | S93 |
-| ashen_cave renegadeDwarf 65 Warrior: Elita HP | 0,66 | 0,45–1,10 | w paśmie | S93 |
-| ashen_cave renegadeDwarf 65 Warrior: spotkanie Elit (q = 0.60) | 1,26 | ≤ 1,10 | **poza** | S93 |
-| ashen_cave renegadeDwarf 65 Hunter: Elita HP | 0,65 | 0,45–1,10 | w paśmie | S93 |
-| ashen_cave renegadeDwarf 65 Mage: Elita HP | 0,68 | 0,45–1,10 | w paśmie | S93 |
-| ashen_cave renegadeDwarf 65 Mage: spotkanie Elit (q = 0.60) | 1,30 | ≤ 1,25 | **poza** | S93 |
-| ashen_cave magmaGolem 63 Warrior: Elita HP | 0,87 | 0,45–1,10 | w paśmie | S93 |
-| ashen_cave magmaGolem 63 Warrior: spotkanie Elit (q = 0.60) | 1,68 | ≤ 1,10 | **poza** | S93 |
-| ashen_cave magmaGolem 63 Hunter: Elita HP | 0,87 | 0,45–1,10 | w paśmie | S93 |
-| ashen_cave magmaGolem 63 Mage: Elita HP | 0,85 | 0,45–1,10 | w paśmie | S93 |
-| ashen_cave magmaGolem 63 Mage: spotkanie Elit (q = 0.60) | 1,63 | ≤ 1,25 | **poza** | S93 |
-| ashen_cave magmaGolem 65 Warrior: Elita HP | 0,87 | 0,45–1,10 | w paśmie | S93 |
-| ashen_cave magmaGolem 65 Warrior: spotkanie Elit (q = 0.60) | 1,67 | ≤ 1,10 | **poza** | S93 |
-| ashen_cave magmaGolem 65 Hunter: Elita HP | 0,86 | 0,45–1,10 | w paśmie | S93 |
-| ashen_cave magmaGolem 65 Mage: Elita HP | 0,85 | 0,45–1,10 | w paśmie | S93 |
-| ashen_cave magmaGolem 65 Mage: spotkanie Elit (q = 0.60) | 1,61 | ≤ 1,25 | **poza** | S93 |
-| ashen_cave magmaGolem 68 Warrior: Elita HP | 0,86 | 0,45–1,10 | w paśmie | S93 |
-| ashen_cave magmaGolem 68 Warrior: spotkanie Elit (q = 0.60) | 1,67 | ≤ 1,10 | **poza** | S93 |
-| ashen_cave magmaGolem 68 Hunter: Elita HP | 0,86 | 0,45–1,10 | w paśmie | S93 |
-| ashen_cave magmaGolem 68 Mage: Elita HP | 0,85 | 0,45–1,10 | w paśmie | S93 |
-| ashen_cave magmaGolem 68 Mage: spotkanie Elit (q = 0.60) | 1,61 | ≤ 1,25 | **poza** | S93 |
-| ashen_cave flameSmith 64: Elita II solo HP | 2,58 | ≥ 1,80 | w paśmie | S93 |
-| ashen_cave flameSmith 64: Elita II 2 graczy HP | 1,13 | ≤ 1,50 | w paśmie | S93 |
-| ashen_cave flameSmith 64: Elita II 3 graczy HP | 0,75 | 0,60–1,00 | w paśmie | S93 |
-| ashen_cave flameSmith 70: Elita II solo HP | 2,54 | ≥ 1,80 | w paśmie | S93 |
-| ashen_cave flameSmith 70: Elita II 2 graczy HP | 1,11 | ≤ 1,50 | w paśmie | S93 |
-| ashen_cave flameSmith 70: Elita II 3 graczy HP | 0,74 | 0,60–1,00 | w paśmie | S93 |
-| ashen_cave magmaGolem 64: Elita II solo HP | 3,45 | ≥ 1,80 | w paśmie | S93 |
-| ashen_cave magmaGolem 64: Elita II 2 graczy HP | 1,35 | ≤ 1,50 | w paśmie | S93 |
-| ashen_cave magmaGolem 64: Elita II 3 graczy HP | 0,92 | 0,60–1,00 | w paśmie | S93 |
-| ashen_cave magmaGolem 70: Elita II solo HP | 3,40 | ≥ 1,80 | w paśmie | S93 |
-| ashen_cave magmaGolem 70: Elita II 2 graczy HP | 1,33 | ≤ 1,50 | w paśmie | S93 |
-| ashen_cave magmaGolem 70: Elita II 3 graczy HP | 0,91 | 0,60–1,00 | w paśmie | S93 |
-| Elity solo: udział walk w paśmie czasu i HP | 0,83 | ≥ 0,72 | w paśmie | S93 |
-| salamander 48: EXP/s ÷ zwykły | 1,02 | 0,85–1,20 | w paśmie | S93 |
-| ashOrc 52: EXP/s ÷ zwykły | 0,88 | 0,85–1,20 | w paśmie | S93 |
-| fireGolem 56: EXP/s ÷ zwykły | 0,70 | 0,85–1,20 | **poza** | S93 |
-| desertScorpion 59: EXP/s ÷ zwykły | 1,05 | 0,85–1,20 | w paśmie | S93 |
-| wyvern 62: EXP/s ÷ zwykły | 0,91 | 0,85–1,20 | w paśmie | S93 |
-| renegadeDwarf 62: EXP/s ÷ zwykły | 0,90 | 0,85–1,20 | w paśmie | S93 |
-| magmaGolem 65: EXP/s ÷ zwykły | 0,69 | 0,85–1,20 | **poza** | S93 |
-| flameSmith 67: EXP/s ÷ zwykły | 1,05 | 0,85–1,20 | w paśmie | S93 |
-| wasteHyena 49: EXP/s ÷ zwykły | 1,05 | 0,85–1,20 | w paśmie | S93 |
-| ashVulture 53: EXP/s ÷ zwykły | 1,12 | 0,85–1,20 | w paśmie | S93 |
-| fireImp 58: EXP/s ÷ zwykły | 1,06 | 0,85–1,20 | w paśmie | S93 |
-| fireImp 58: HP/EXP rzucającego ÷ średnia regionu | 1,14 | ≤ 1,25 | w paśmie | S93 |
-| basilisk 64: EXP/s ÷ zwykły | 0,90 | 0,85–1,20 | w paśmie | S93 |
-| desertMummy 68: EXP/s ÷ zwykły | 0,94 | 0,85–1,20 | w paśmie | S93 |
-| azgor faza 1: fireWave | 0,65 | ≥ 0,50 | w paśmie | S93 |
-| azgor faza 1: flameCleave | 0,84 | ≥ 0,50 | w paśmie | S93 |
-| azgor faza 1: meteor | 0,92 | ≥ 0,50 | w paśmie | S93 |
-| azgor faza 2: fireWave | 0,65 | ≥ 0,50 | w paśmie | S93 |
-| azgor faza 2: flameCleave | 0,84 | ≥ 0,50 | w paśmie | S93 |
-| azgor faza 2: meteor | 0,92 | ≥ 0,50 | w paśmie | S93 |
-| azgor faza 3: fireWave | 0,53 | ≥ 0,50 | w paśmie | S93 |
-| azgor faza 3: flameCleave | 0,66 | ≥ 0,50 | w paśmie | S93 |
-| azgor faza 3: meteor | 0,73 | ≥ 0,50 | w paśmie | S93 |
-| azgor faza 3: inferno | 0,68 | ≥ 0,50 | w paśmie | S93 |
-| Warrior 45: Unikaty dla klasy na h expienia | 3,79 | 2,00–4,00 | w paśmie | S93 |
-| Warrior 45: Heroiki dla klasy na h Elit | 0,80 | 0,50–1,50 | w paśmie | S93 |
-| Hunter 45: Unikaty dla klasy na h expienia | 3,83 | 2,00–4,00 | w paśmie | S93 |
-| Hunter 45: Heroiki dla klasy na h Elit | 0,82 | 0,50–1,50 | w paśmie | S93 |
-| Mage 45: Unikaty dla klasy na h expienia | 3,40 | 2,00–4,00 | w paśmie | S93 |
-| Mage 45: Heroiki dla klasy na h Elit | 0,77 | 0,50–1,50 | w paśmie | S93 |
-| Cleric 45: Unikaty dla klasy na h expienia | 4,09 | 2,00–4,00 | **poza** | S93 |
-| Cleric 45: Heroiki dla klasy na h Elit | 0,90 | 0,50–1,50 | w paśmie | S93 |
-| Warrior 50: Unikaty dla klasy na h expienia | 3,57 | 2,00–4,00 | w paśmie | S93 |
-| Warrior 50: Heroiki dla klasy na h Elit | 0,80 | 0,50–1,50 | w paśmie | S93 |
-| Hunter 50: Unikaty dla klasy na h expienia | 3,60 | 2,00–4,00 | w paśmie | S93 |
-| Hunter 50: Heroiki dla klasy na h Elit | 0,82 | 0,50–1,50 | w paśmie | S93 |
-| Mage 50: Unikaty dla klasy na h expienia | 3,20 | 2,00–4,00 | w paśmie | S93 |
-| Mage 50: Heroiki dla klasy na h Elit | 0,77 | 0,50–1,50 | w paśmie | S93 |
-| Cleric 50: Unikaty dla klasy na h expienia | 3,85 | 2,00–4,00 | w paśmie | S93 |
-| Cleric 50: Heroiki dla klasy na h Elit | 0,91 | 0,50–1,50 | w paśmie | S93 |
-| Warrior 55: Unikaty dla klasy na h expienia | 2,90 | 2,00–4,00 | w paśmie | S93 |
-| Warrior 55: Heroiki dla klasy na h Elit | 0,81 | 0,50–1,50 | w paśmie | S93 |
-| Hunter 55: Unikaty dla klasy na h expienia | 2,98 | 2,00–4,00 | w paśmie | S93 |
-| Hunter 55: Heroiki dla klasy na h Elit | 0,84 | 0,50–1,50 | w paśmie | S93 |
-| Mage 55: Unikaty dla klasy na h expienia | 3,08 | 2,00–4,00 | w paśmie | S93 |
-| Mage 55: Heroiki dla klasy na h Elit | 0,78 | 0,50–1,50 | w paśmie | S93 |
-| Cleric 55: Unikaty dla klasy na h expienia | 3,48 | 2,00–4,00 | w paśmie | S93 |
-| Cleric 55: Heroiki dla klasy na h Elit | 0,91 | 0,50–1,50 | w paśmie | S93 |
-| Warrior 60: Unikaty dla klasy na h expienia | 3,62 | 2,00–4,00 | w paśmie | S93 |
-| Warrior 60: Heroiki dla klasy na h Elit | 0,95 | 0,50–1,50 | w paśmie | S93 |
-| Hunter 60: Unikaty dla klasy na h expienia | 3,68 | 2,00–4,00 | w paśmie | S93 |
-| Hunter 60: Heroiki dla klasy na h Elit | 0,98 | 0,50–1,50 | w paśmie | S93 |
-| Mage 60: Unikaty dla klasy na h expienia | 3,25 | 2,00–4,00 | w paśmie | S93 |
-| Mage 60: Heroiki dla klasy na h Elit | 0,88 | 0,50–1,50 | w paśmie | S93 |
-| Cleric 60: Unikaty dla klasy na h expienia | 3,87 | 2,00–4,00 | w paśmie | S93 |
-| Cleric 60: Heroiki dla klasy na h Elit | 1,00 | 0,50–1,50 | w paśmie | S93 |
-| Warrior 65: Unikaty dla klasy na h expienia | 3,41 | 2,00–4,00 | w paśmie | S93 |
-| Warrior 65: Heroiki dla klasy na h Elit | 0,79 | 0,50–1,50 | w paśmie | S93 |
-| Hunter 65: Unikaty dla klasy na h expienia | 3,48 | 2,00–4,00 | w paśmie | S93 |
-| Hunter 65: Heroiki dla klasy na h Elit | 0,83 | 0,50–1,50 | w paśmie | S93 |
-| Mage 65: Unikaty dla klasy na h expienia | 3,23 | 2,00–4,00 | w paśmie | S93 |
-| Mage 65: Heroiki dla klasy na h Elit | 0,85 | 0,50–1,50 | w paśmie | S93 |
-| Cleric 65: Unikaty dla klasy na h expienia | 3,75 | 2,00–4,00 | w paśmie | S93 |
-| Cleric 65: Heroiki dla klasy na h Elit | 0,94 | 0,50–1,50 | w paśmie | S93 |
+| 45–70: godzin (cel D4 25 h) | 26,12 | 18,75–31,25 | w paśmie | S87 (asertowane) |
+| ashen_mine ashOrc 46 Warrior: Elita HP | 0,77 | 0,45–1,10 | w paśmie | S93 (asertowane) |
+| ashen_mine ashOrc 46 Warrior: spotkanie Elit (q = 0.25) | 1,06 | ≤ 1,10 | w paśmie | S93 (asertowane) |
+| ashen_mine ashOrc 46 Hunter: Elita HP | 0,77 | 0,45–1,10 | w paśmie | S93 (asertowane) |
+| ashen_mine ashOrc 46 Mage: Elita HP | 0,80 | 0,45–1,10 | w paśmie | S93 (asertowane) |
+| ashen_mine ashOrc 46 Mage: spotkanie Elit (q = 0.25) | 1,10 | ≤ 1,25 | w paśmie | S93 (asertowane) |
+| ashen_mine ashOrc 51 Warrior: Elita HP | 0,76 | 0,45–1,10 | w paśmie | S93 (asertowane) |
+| ashen_mine ashOrc 51 Warrior: spotkanie Elit (q = 0.25) | 1,05 | ≤ 1,10 | w paśmie | S93 (asertowane) |
+| ashen_mine ashOrc 51 Hunter: Elita HP | 0,76 | 0,45–1,10 | w paśmie | S93 (asertowane) |
+| ashen_mine ashOrc 51 Mage: Elita HP | 0,79 | 0,45–1,10 | w paśmie | S93 (asertowane) |
+| ashen_mine ashOrc 51 Mage: spotkanie Elit (q = 0.25) | 1,09 | ≤ 1,25 | w paśmie | S93 (asertowane) |
+| ashen_mine ashOrc 56 Warrior: Elita HP | 0,75 | 0,45–1,10 | w paśmie | S93 (asertowane) |
+| ashen_mine ashOrc 56 Warrior: spotkanie Elit (q = 0.25) | 1,04 | ≤ 1,10 | w paśmie | S93 (asertowane) |
+| ashen_mine ashOrc 56 Hunter: Elita HP | 0,75 | 0,45–1,10 | w paśmie | S93 (asertowane) |
+| ashen_mine ashOrc 56 Mage: Elita HP | 0,78 | 0,45–1,10 | w paśmie | S93 (asertowane) |
+| ashen_mine ashOrc 56 Mage: spotkanie Elit (q = 0.25) | 1,08 | ≤ 1,25 | w paśmie | S93 (asertowane) |
+| ashen_mine wasteHyena 46 Warrior: Elita HP | 0,74 | 0,45–1,10 | w paśmie | S93 (asertowane) |
+| ashen_mine wasteHyena 46 Warrior: spotkanie Elit (q = 0.25) | 1,02 | ≤ 1,10 | w paśmie | S93 (asertowane) |
+| ashen_mine wasteHyena 46 Hunter: Elita HP | 0,74 | 0,45–1,10 | w paśmie | S93 (asertowane) |
+| ashen_mine wasteHyena 46 Mage: Elita HP | 0,85 | 0,45–1,10 | w paśmie | S93 (asertowane) |
+| ashen_mine wasteHyena 46 Mage: spotkanie Elit (q = 0.25) | 1,17 | ≤ 1,25 | w paśmie | S93 (asertowane) |
+| ashen_mine wasteHyena 49 Warrior: Elita HP | 0,74 | 0,45–1,10 | w paśmie | S93 (asertowane) |
+| ashen_mine wasteHyena 49 Warrior: spotkanie Elit (q = 0.25) | 1,02 | ≤ 1,10 | w paśmie | S93 (asertowane) |
+| ashen_mine wasteHyena 49 Hunter: Elita HP | 0,73 | 0,45–1,10 | w paśmie | S93 (asertowane) |
+| ashen_mine wasteHyena 49 Mage: Elita HP | 0,85 | 0,45–1,10 | w paśmie | S93 (asertowane) |
+| ashen_mine wasteHyena 49 Mage: spotkanie Elit (q = 0.25) | 1,17 | ≤ 1,25 | w paśmie | S93 (asertowane) |
+| ashen_mine wasteHyena 52 Warrior: Elita HP | 0,73 | 0,45–1,10 | w paśmie | S93 (asertowane) |
+| ashen_mine wasteHyena 52 Warrior: spotkanie Elit (q = 0.25) | 1,01 | ≤ 1,10 | w paśmie | S93 (asertowane) |
+| ashen_mine wasteHyena 52 Hunter: Elita HP | 0,73 | 0,45–1,10 | w paśmie | S93 (asertowane) |
+| ashen_mine wasteHyena 52 Mage: Elita HP | 0,84 | 0,45–1,10 | w paśmie | S93 (asertowane) |
+| ashen_mine wasteHyena 52 Mage: spotkanie Elit (q = 0.25) | 1,15 | ≤ 1,25 | w paśmie | S93 (asertowane) |
+| ashen_mine ashOrc 46: Elita II solo HP | 3,01 | ≥ 1,80 | w paśmie | S93 (asertowane) |
+| ashen_mine ashOrc 46: Elita II 2 graczy HP | 1,24 | ≤ 1,50 | w paśmie | S93 (asertowane) |
+| ashen_mine ashOrc 46: Elita II 3 graczy HP | 0,83 | 0,60–1,00 | w paśmie | S93 (asertowane) |
+| ashen_mine ashOrc 56: Elita II solo HP | 2,90 | ≥ 1,80 | w paśmie | S93 (asertowane) |
+| ashen_mine ashOrc 56: Elita II 2 graczy HP | 1,19 | ≤ 1,50 | w paśmie | S93 (asertowane) |
+| ashen_mine ashOrc 56: Elita II 3 graczy HP | 0,80 | 0,60–1,00 | w paśmie | S93 (asertowane) |
+| ashen_lair wyvern 56 Warrior: Elita HP | 0,71 | 0,45–1,10 | w paśmie | S93 (asertowane) |
+| ashen_lair wyvern 56 Warrior: spotkanie Elit (q = 0.00) | 0,71 | ≤ 1,10 | w paśmie | S93 (asertowane) |
+| ashen_lair wyvern 56 Hunter: Elita HP | 0,71 | 0,45–1,10 | w paśmie | S93 (asertowane) |
+| ashen_lair wyvern 56 Mage: Elita HP | 0,81 | 0,45–1,10 | w paśmie | S93 (asertowane) |
+| ashen_lair wyvern 56 Mage: spotkanie Elit (q = 0.00) | 0,81 | ≤ 1,25 | w paśmie | S93 (asertowane) |
+| ashen_lair wyvern 59 Warrior: Elita HP | 0,71 | 0,45–1,10 | w paśmie | S93 (asertowane) |
+| ashen_lair wyvern 59 Warrior: spotkanie Elit (q = 0.00) | 0,71 | ≤ 1,10 | w paśmie | S93 (asertowane) |
+| ashen_lair wyvern 59 Hunter: Elita HP | 0,70 | 0,45–1,10 | w paśmie | S93 (asertowane) |
+| ashen_lair wyvern 59 Mage: Elita HP | 0,81 | 0,45–1,10 | w paśmie | S93 (asertowane) |
+| ashen_lair wyvern 59 Mage: spotkanie Elit (q = 0.00) | 0,81 | ≤ 1,25 | w paśmie | S93 (asertowane) |
+| ashen_lair wyvern 63 Warrior: Elita HP | 0,70 | 0,45–1,10 | w paśmie | S93 (asertowane) |
+| ashen_lair wyvern 63 Warrior: spotkanie Elit (q = 0.00) | 0,70 | ≤ 1,10 | w paśmie | S93 (asertowane) |
+| ashen_lair wyvern 63 Hunter: Elita HP | 0,70 | 0,45–1,10 | w paśmie | S93 (asertowane) |
+| ashen_lair wyvern 63 Mage: Elita HP | 0,80 | 0,45–1,10 | w paśmie | S93 (asertowane) |
+| ashen_lair wyvern 63 Mage: spotkanie Elit (q = 0.00) | 0,80 | ≤ 1,25 | w paśmie | S93 (asertowane) |
+| ashen_lair desertScorpion 56 Warrior: Elita HP | 0,72 | 0,45–1,10 | w paśmie | S93 (asertowane) |
+| ashen_lair desertScorpion 56 Warrior: spotkanie Elit (q = 0.00) | 0,72 | ≤ 1,10 | w paśmie | S93 (asertowane) |
+| ashen_lair desertScorpion 56 Hunter: Elita HP | 0,72 | 0,45–1,10 | w paśmie | S93 (asertowane) |
+| ashen_lair desertScorpion 56 Mage: Elita HP | 0,83 | 0,45–1,10 | w paśmie | S93 (asertowane) |
+| ashen_lair desertScorpion 56 Mage: spotkanie Elit (q = 0.00) | 0,83 | ≤ 1,25 | w paśmie | S93 (asertowane) |
+| ashen_lair desertScorpion 59 Warrior: Elita HP | 0,72 | 0,45–1,10 | w paśmie | S93 (asertowane) |
+| ashen_lair desertScorpion 59 Warrior: spotkanie Elit (q = 0.00) | 0,72 | ≤ 1,10 | w paśmie | S93 (asertowane) |
+| ashen_lair desertScorpion 59 Hunter: Elita HP | 0,72 | 0,45–1,10 | w paśmie | S93 (asertowane) |
+| ashen_lair desertScorpion 59 Mage: Elita HP | 0,83 | 0,45–1,10 | w paśmie | S93 (asertowane) |
+| ashen_lair desertScorpion 59 Mage: spotkanie Elit (q = 0.00) | 0,83 | ≤ 1,25 | w paśmie | S93 (asertowane) |
+| ashen_lair desertScorpion 63 Warrior: Elita HP | 0,72 | 0,45–1,10 | w paśmie | S93 (asertowane) |
+| ashen_lair desertScorpion 63 Warrior: spotkanie Elit (q = 0.00) | 0,72 | ≤ 1,10 | w paśmie | S93 (asertowane) |
+| ashen_lair desertScorpion 63 Hunter: Elita HP | 0,71 | 0,45–1,10 | w paśmie | S93 (asertowane) |
+| ashen_lair desertScorpion 63 Mage: Elita HP | 0,82 | 0,45–1,10 | w paśmie | S93 (asertowane) |
+| ashen_lair desertScorpion 63 Mage: spotkanie Elit (q = 0.00) | 0,82 | ≤ 1,25 | w paśmie | S93 (asertowane) |
+| ashen_lair wyvern 56: Elita II solo HP | 2,78 | ≥ 1,80 | w paśmie | S93 (asertowane) |
+| ashen_lair wyvern 56: Elita II 2 graczy HP | 1,21 | ≤ 1,50 | w paśmie | S93 (asertowane) |
+| ashen_lair wyvern 56: Elita II 3 graczy HP | 0,80 | 0,60–1,00 | w paśmie | S93 (asertowane) |
+| ashen_lair wyvern 63: Elita II solo HP | 2,71 | ≥ 1,80 | w paśmie | S93 (asertowane) |
+| ashen_lair wyvern 63: Elita II 2 graczy HP | 1,17 | ≤ 1,50 | w paśmie | S93 (asertowane) |
+| ashen_lair wyvern 63: Elita II 3 graczy HP | 0,78 | 0,60–1,00 | w paśmie | S93 (asertowane) |
+| ashen_cave renegadeDwarf 63 Warrior: Elita HP | 0,66 | 0,45–1,10 | w paśmie | S93 (asertowane) |
+| ashen_cave renegadeDwarf 63 Warrior: spotkanie Elit (q = 0.00) | 0,66 | ≤ 1,10 | w paśmie | S93 (asertowane) |
+| ashen_cave renegadeDwarf 63 Hunter: Elita HP | 0,66 | 0,45–1,10 | w paśmie | S93 (asertowane) |
+| ashen_cave renegadeDwarf 63 Mage: Elita HP | 0,69 | 0,45–1,10 | w paśmie | S93 (asertowane) |
+| ashen_cave renegadeDwarf 63 Mage: spotkanie Elit (q = 0.00) | 0,69 | ≤ 1,25 | w paśmie | S93 (asertowane) |
+| ashen_cave renegadeDwarf 66 Warrior: Elita HP | 0,66 | 0,45–1,10 | w paśmie | S93 (asertowane) |
+| ashen_cave renegadeDwarf 66 Warrior: spotkanie Elit (q = 0.00) | 0,66 | ≤ 1,10 | w paśmie | S93 (asertowane) |
+| ashen_cave renegadeDwarf 66 Hunter: Elita HP | 0,65 | 0,45–1,10 | w paśmie | S93 (asertowane) |
+| ashen_cave renegadeDwarf 66 Mage: Elita HP | 0,68 | 0,45–1,10 | w paśmie | S93 (asertowane) |
+| ashen_cave renegadeDwarf 66 Mage: spotkanie Elit (q = 0.00) | 0,68 | ≤ 1,25 | w paśmie | S93 (asertowane) |
+| ashen_cave renegadeDwarf 70 Warrior: Elita HP | 0,65 | 0,45–1,10 | w paśmie | S93 (asertowane) |
+| ashen_cave renegadeDwarf 70 Warrior: spotkanie Elit (q = 0.00) | 0,65 | ≤ 1,10 | w paśmie | S93 (asertowane) |
+| ashen_cave renegadeDwarf 70 Hunter: Elita HP | 0,65 | 0,45–1,10 | w paśmie | S93 (asertowane) |
+| ashen_cave renegadeDwarf 70 Mage: Elita HP | 0,68 | 0,45–1,10 | w paśmie | S93 (asertowane) |
+| ashen_cave renegadeDwarf 70 Mage: spotkanie Elit (q = 0.00) | 0,68 | ≤ 1,25 | w paśmie | S93 (asertowane) |
+| ashen_cave magmaGolem 63 Warrior: Elita HP | 0,87 | 0,45–1,10 | w paśmie | S93 (asertowane) |
+| ashen_cave magmaGolem 63 Warrior: spotkanie Elit (q = 0.00) | 0,87 | ≤ 1,10 | w paśmie | S93 (asertowane) |
+| ashen_cave magmaGolem 63 Hunter: Elita HP | 0,87 | 0,45–1,10 | w paśmie | S93 (asertowane) |
+| ashen_cave magmaGolem 63 Mage: Elita HP | 0,85 | 0,45–1,10 | w paśmie | S93 (asertowane) |
+| ashen_cave magmaGolem 63 Mage: spotkanie Elit (q = 0.00) | 0,85 | ≤ 1,25 | w paśmie | S93 (asertowane) |
+| ashen_cave magmaGolem 66 Warrior: Elita HP | 0,87 | 0,45–1,10 | w paśmie | S93 (asertowane) |
+| ashen_cave magmaGolem 66 Warrior: spotkanie Elit (q = 0.00) | 0,87 | ≤ 1,10 | w paśmie | S93 (asertowane) |
+| ashen_cave magmaGolem 66 Hunter: Elita HP | 0,86 | 0,45–1,10 | w paśmie | S93 (asertowane) |
+| ashen_cave magmaGolem 66 Mage: Elita HP | 0,85 | 0,45–1,10 | w paśmie | S93 (asertowane) |
+| ashen_cave magmaGolem 66 Mage: spotkanie Elit (q = 0.00) | 0,85 | ≤ 1,25 | w paśmie | S93 (asertowane) |
+| ashen_cave magmaGolem 70 Warrior: Elita HP | 0,86 | 0,45–1,10 | w paśmie | S93 (asertowane) |
+| ashen_cave magmaGolem 70 Warrior: spotkanie Elit (q = 0.00) | 0,86 | ≤ 1,10 | w paśmie | S93 (asertowane) |
+| ashen_cave magmaGolem 70 Hunter: Elita HP | 0,85 | 0,45–1,10 | w paśmie | S93 (asertowane) |
+| ashen_cave magmaGolem 70 Mage: Elita HP | 0,84 | 0,45–1,10 | w paśmie | S93 (asertowane) |
+| ashen_cave magmaGolem 70 Mage: spotkanie Elit (q = 0.00) | 0,84 | ≤ 1,25 | w paśmie | S93 (asertowane) |
+| ashen_cave flameSmith 63: Elita II solo HP | 2,58 | ≥ 1,80 | w paśmie | S93 (asertowane) |
+| ashen_cave flameSmith 63: Elita II 2 graczy HP | 1,13 | ≤ 1,50 | w paśmie | S93 (asertowane) |
+| ashen_cave flameSmith 63: Elita II 3 graczy HP | 0,75 | 0,60–1,00 | w paśmie | S93 (asertowane) |
+| ashen_cave flameSmith 70: Elita II solo HP | 2,54 | ≥ 1,80 | w paśmie | S93 (asertowane) |
+| ashen_cave flameSmith 70: Elita II 2 graczy HP | 1,11 | ≤ 1,50 | w paśmie | S93 (asertowane) |
+| ashen_cave flameSmith 70: Elita II 3 graczy HP | 0,74 | 0,60–1,00 | w paśmie | S93 (asertowane) |
+| ashen_cave magmaGolem 63: Elita II solo HP | 3,45 | ≥ 1,80 | w paśmie | S93 (asertowane) |
+| ashen_cave magmaGolem 63: Elita II 2 graczy HP | 1,35 | ≤ 1,50 | w paśmie | S93 (asertowane) |
+| ashen_cave magmaGolem 63: Elita II 3 graczy HP | 0,92 | 0,60–1,00 | w paśmie | S93 (asertowane) |
+| ashen_cave magmaGolem 70: Elita II solo HP | 3,40 | ≥ 1,80 | w paśmie | S93 (asertowane) |
+| ashen_cave magmaGolem 70: Elita II 2 graczy HP | 1,33 | ≤ 1,50 | w paśmie | S93 (asertowane) |
+| ashen_cave magmaGolem 70: Elita II 3 graczy HP | 0,91 | 0,60–1,00 | w paśmie | S93 (asertowane) |
+| Elity solo: udział walk w paśmie czasu i HP | 0,83 | ≥ 0,72 | w paśmie | S93 (asertowane) |
+| salamander 48: EXP/s ÷ zwykły | 1,02 | 0,85–1,20 | w paśmie | S93 (asertowane) |
+| ashOrc 51: EXP/s ÷ zwykły | 0,98 | 0,85–1,20 | w paśmie | S93 (asertowane) |
+| fireGolem 56: EXP/s ÷ zwykły | 1,01 | 0,85–1,20 | w paśmie | S93 (asertowane) |
+| desertScorpion 59: EXP/s ÷ zwykły | 1,05 | 0,85–1,20 | w paśmie | S93 (asertowane) |
+| wyvern 61: EXP/s ÷ zwykły | 0,91 | 0,85–1,20 | w paśmie | S93 (asertowane) |
+| renegadeDwarf 65: EXP/s ÷ zwykły | 0,90 | 0,85–1,20 | w paśmie | S93 (asertowane) |
+| magmaGolem 66: EXP/s ÷ zwykły | 0,99 | 0,85–1,20 | w paśmie | S93 (asertowane) |
+| flameSmith 66: EXP/s ÷ zwykły | 1,05 | 0,85–1,20 | w paśmie | S93 (asertowane) |
+| wasteHyena 49: EXP/s ÷ zwykły | 1,05 | 0,85–1,20 | w paśmie | S93 (asertowane) |
+| ashVulture 53: EXP/s ÷ zwykły | 1,12 | 0,85–1,20 | w paśmie | S93 (asertowane) |
+| fireImp 58: EXP/s ÷ zwykły | 1,03 | 0,85–1,20 | w paśmie | S93 (asertowane) |
+| fireImp 58: HP/EXP rzucającego ÷ średnia regionu | 1,12 | ≤ 1,25 | w paśmie | S93 (asertowane) |
+| basilisk 65: EXP/s ÷ zwykły | 0,90 | 0,85–1,20 | w paśmie | S93 (asertowane) |
+| desertMummy 68: EXP/s ÷ zwykły | 0,94 | 0,85–1,20 | w paśmie | S93 (asertowane) |
+| azgor faza 1: fireWave | 0,71 | ≥ 0,50 | w paśmie | S93 (asertowane) |
+| azgor faza 1: flameCleave | 0,90 | ≥ 0,50 | w paśmie | S93 (asertowane) |
+| azgor faza 1: meteor | 0,90 | ≥ 0,50 | w paśmie | S93 (asertowane) |
+| azgor faza 2: fireWave | 0,71 | ≥ 0,50 | w paśmie | S93 (asertowane) |
+| azgor faza 2: flameCleave | 0,90 | ≥ 0,50 | w paśmie | S93 (asertowane) |
+| azgor faza 2: meteor | 0,90 | ≥ 0,50 | w paśmie | S93 (asertowane) |
+| azgor faza 3: fireWave | 0,64 | ≥ 0,50 | w paśmie | S93 (asertowane) |
+| azgor faza 3: flameCleave | 0,81 | ≥ 0,50 | w paśmie | S93 (asertowane) |
+| azgor faza 3: meteor | 0,81 | ≥ 0,50 | w paśmie | S93 (asertowane) |
+| azgor faza 3: inferno | 0,65 | ≥ 0,50 | w paśmie | S93 (asertowane) |
+| Warrior 45: Unikaty dla klasy na h expienia | 3,41 | 2,00–4,00 | w paśmie | S93 (asertowane) |
+| Warrior 45: Heroiki dla klasy na h Elit | 0,80 | 0,50–1,50 | w paśmie | S93 (asertowane) |
+| Hunter 45: Unikaty dla klasy na h expienia | 3,45 | 2,00–4,00 | w paśmie | S93 (asertowane) |
+| Hunter 45: Heroiki dla klasy na h Elit | 0,83 | 0,50–1,50 | w paśmie | S93 (asertowane) |
+| Mage 45: Unikaty dla klasy na h expienia | 3,06 | 2,00–4,00 | w paśmie | S93 (asertowane) |
+| Mage 45: Heroiki dla klasy na h Elit | 0,77 | 0,50–1,50 | w paśmie | S93 (asertowane) |
+| Cleric 45: Unikaty dla klasy na h expienia | 3,68 | 2,00–4,00 | w paśmie | S93 (asertowane) |
+| Cleric 45: Heroiki dla klasy na h Elit | 0,90 | 0,50–1,50 | w paśmie | S93 (asertowane) |
+| Warrior 50: Unikaty dla klasy na h expienia | 3,22 | 2,00–4,00 | w paśmie | S93 (asertowane) |
+| Warrior 50: Heroiki dla klasy na h Elit | 0,81 | 0,50–1,50 | w paśmie | S93 (asertowane) |
+| Hunter 50: Unikaty dla klasy na h expienia | 3,24 | 2,00–4,00 | w paśmie | S93 (asertowane) |
+| Hunter 50: Heroiki dla klasy na h Elit | 0,83 | 0,50–1,50 | w paśmie | S93 (asertowane) |
+| Mage 50: Unikaty dla klasy na h expienia | 2,88 | 2,00–4,00 | w paśmie | S93 (asertowane) |
+| Mage 50: Heroiki dla klasy na h Elit | 0,78 | 0,50–1,50 | w paśmie | S93 (asertowane) |
+| Cleric 50: Unikaty dla klasy na h expienia | 3,47 | 2,00–4,00 | w paśmie | S93 (asertowane) |
+| Cleric 50: Heroiki dla klasy na h Elit | 0,90 | 0,50–1,50 | w paśmie | S93 (asertowane) |
+| Warrior 55: Unikaty dla klasy na h expienia | 2,61 | 2,00–4,00 | w paśmie | S93 (asertowane) |
+| Warrior 55: Heroiki dla klasy na h Elit | 0,82 | 0,50–1,50 | w paśmie | S93 (asertowane) |
+| Hunter 55: Unikaty dla klasy na h expienia | 2,68 | 2,00–4,00 | w paśmie | S93 (asertowane) |
+| Hunter 55: Heroiki dla klasy na h Elit | 0,84 | 0,50–1,50 | w paśmie | S93 (asertowane) |
+| Mage 55: Unikaty dla klasy na h expienia | 2,77 | 2,00–4,00 | w paśmie | S93 (asertowane) |
+| Mage 55: Heroiki dla klasy na h Elit | 0,79 | 0,50–1,50 | w paśmie | S93 (asertowane) |
+| Cleric 55: Unikaty dla klasy na h expienia | 3,13 | 2,00–4,00 | w paśmie | S93 (asertowane) |
+| Cleric 55: Heroiki dla klasy na h Elit | 0,91 | 0,50–1,50 | w paśmie | S93 (asertowane) |
+| Warrior 60: Unikaty dla klasy na h expienia | 3,26 | 2,00–4,00 | w paśmie | S93 (asertowane) |
+| Warrior 60: Heroiki dla klasy na h Elit | 0,92 | 0,50–1,50 | w paśmie | S93 (asertowane) |
+| Hunter 60: Unikaty dla klasy na h expienia | 3,31 | 2,00–4,00 | w paśmie | S93 (asertowane) |
+| Hunter 60: Heroiki dla klasy na h Elit | 0,95 | 0,50–1,50 | w paśmie | S93 (asertowane) |
+| Mage 60: Unikaty dla klasy na h expienia | 2,93 | 2,00–4,00 | w paśmie | S93 (asertowane) |
+| Mage 60: Heroiki dla klasy na h Elit | 0,85 | 0,50–1,50 | w paśmie | S93 (asertowane) |
+| Cleric 60: Unikaty dla klasy na h expienia | 3,49 | 2,00–4,00 | w paśmie | S93 (asertowane) |
+| Cleric 60: Heroiki dla klasy na h Elit | 0,97 | 0,50–1,50 | w paśmie | S93 (asertowane) |
+| Warrior 65: Unikaty dla klasy na h expienia | 3,07 | 2,00–4,00 | w paśmie | S93 (asertowane) |
+| Warrior 65: Heroiki dla klasy na h Elit | 0,81 | 0,50–1,50 | w paśmie | S93 (asertowane) |
+| Hunter 65: Unikaty dla klasy na h expienia | 3,13 | 2,00–4,00 | w paśmie | S93 (asertowane) |
+| Hunter 65: Heroiki dla klasy na h Elit | 0,85 | 0,50–1,50 | w paśmie | S93 (asertowane) |
+| Mage 65: Unikaty dla klasy na h expienia | 2,91 | 2,00–4,00 | w paśmie | S93 (asertowane) |
+| Mage 65: Heroiki dla klasy na h Elit | 0,87 | 0,50–1,50 | w paśmie | S93 (asertowane) |
+| Cleric 65: Unikaty dla klasy na h expienia | 3,38 | 2,00–4,00 | w paśmie | S93 (asertowane) |
+| Cleric 65: Heroiki dla klasy na h Elit | 0,95 | 0,50–1,50 | w paśmie | S93 (asertowane) |
+
+### S93: Spalone Pustkowia i Azgor (start S93 → teraz)
+
+Start = stan po S92 (`15def98`), zmierzony tym samym modelem przed zmianą danych. Cele: `docs/sessions/S93.md` → „Cele tej sesji”; wiersze asertuje blok regionów `balance.spec` (`TUNED.ashen`, `Balance.targetsS93`), wiersze z opisem w kolumnie „kto asertuje” są w raporcie (powody: `docs/DECYZJE.md` → S93).
+
+| liczba | start S93 | teraz | cel |
+| --- | --: | --: | --: |
+| Azgor 3 / 4 / 5 graczy L69: min | 5,14 / 5,30 / 5,13 | 4,90 / 5,17 / 5,07 | 4–6 |
+| Azgor z węzłami 3 / 4 / 5: min | 4,62 / 4,77 / 4,71 | 4,39 / 4,65 / 4,64 | 4–6 |
+| Azgor: największy cios Maga L70 / L68 (inferno) | 118% / 122% | 66% / 68% | ≤ 70% / < 100% |
+| Azgor: zwykły cios Maga L70 | 35% | 10% | 7–12% |
+| Azgor: tank HP na minutę (model S32) | 816% | 346% | ≤ 350% |
+| Azgor: tank HP na minutę (bossFight; 3 / 4 / 5) | 649% / 665% / 678% | 335% / 331% / 330% | raport |
+| Azgor: meteor na minutę / HP Maga L70 | 215% | 54% | ≤ 60% |
+| Azgor: tick lawy / HP Maga L70 | 23% (6% po cięciu atkMul) | 20% | 15–25% |
+| Azgor: fala tarczy, HP na członka (3 / 4 / 5) | 275% / 183% / 179% | 98% / 65% / 64% | ≤ 110% |
+| Azgor: G11 (najmniejsze tempo ataku; inferno w fazie 3) | 53% (inferno 68%) | 64% | ≥ 50% |
+| Azgor: T-SK6 Uzdrowiciela lochowego | 5,23 | 12,78 | 1,0–2,50 |
+| Azgor bez wsparcia 3 / 4 / 5: s | 108 / 107 / 101 | 102,7 / 104,2 / 100,8 | ≤ 480 |
+| Azgor bez wsparcia: przyjmowane / podtrzymanie (najgorszy, 3 / 4 / 5) | 0,79 / 0,81 / 0,83 | 0,41 / 0,40 / 0,40 | ≤ 1,0 |
+| Azgor bez wsparcia: największy cios / HP członka | 111% | 62% | ≤ 100% |
+| Elity: spotkanie Wojownik / Mag (najgorsze) | 158% / 163% | 106% / 117% | ≤ 110% / ≤ 125% |
+| Elita II solo / 2 / 3 graczy | 2,55–3,45 / 1,11–1,42 / 0,74–0,95 | 2,54–3,45 / 1,11–1,35 / 0,74–0,92 | ≥ 1,8 / ≤ 1,5 / 0,6–1,0 |
+| Elity dropią ilvl 46–70 | 22/25 | 25/25 | każdy |
+| Expowiska na 68 / 69 | 1 / 1 | 2 / 2 | ≥ 2 |
+| Rodzaje: EXP/s ÷ zwykły (najmniej) | 0,69 (magmaGolem) | 0,90 | 0,85–1,20 |
+| Ognisty Chochlik: HP/EXP ÷ średnia regionu | 1,14 | 1,12 | ≤ 1,25 |
+| Tempo 45 → 70 (okno): h | 26,14 | 26,14 | 21,25–28,75 |
+| Tempo: h(69) / największy krok h(L) / h(L − 1) | 1,23 / 1,07 (L55) | 1,23 / 1,07 | 0,98–1,32 / ≤ 1,30 |
+| Plecak 130 (od 50.): poziomy dochodu | 13,2 | 5,0 | 3–8 |
+| +1…+3 broni / dochód poziomu (46–69) | 0,56–0,74 | 0,56–0,73 | ≤ 1,05 |
+| Mikstury łańcuchowe / dochód (46–69) | 0,36–1,00 | 0,28–0,82 | 0,15–0,30 (górna: raport) |
+| D5 (K0): Unikaty dla klasy na h expienia | 2,90–4,17 | 2,61–3,68 | 2–4 |
+| Części: rodzaje z częścią / części w przepisach 45–70 / eliksir ognia | 8/13 / 0/6 / 30 | 13/13 / 6/6 / 45 | 13/13 / 6/6 / 45 |
+| `support.elites` na 55 / 65 | 0/10 | 0/10 | 10/10 (raport) |
+
+### Cele S93 (`Balance.targetsS93`)
+
+631/969 w paśmie (z wierszami raportu). Strażniki T-SK, złoto i tempo w tabelach niżej; pozostałe wiersze regionu (Elity, Elity II, rodzaje, harmonogram, D5) w „Cele (45–70)”.
+
+| cel | wartość | próg | wynik | kto asertuje |
+| --- | --: | --: | --: | --: |
+| Azgor, 3 graczy L69: min | 4,90 | 4,00–6,00 | w paśmie | S93 (asertowane) |
+| Azgor, 4 graczy L69: min | 5,17 | 4,00–6,00 | w paśmie | S93 (asertowane) |
+| Azgor, 5 graczy L69: min | 5,07 | 4,00–6,00 | w paśmie | S93 (asertowane) |
+| Azgor: największy cios / HP Maga L70 | 0,66 | ≤ 0,70 | w paśmie | S93 (asertowane) |
+| Azgor: największy cios / HP Maga L68 | 0,68 | ≤ 1,00 | w paśmie | S93 (asertowane) |
+| Azgor, fala tarczy, 3 graczy L69: HP na członka | 0,98 | ≤ 1,10 | w paśmie | S93 (asertowane) |
+| Azgor, fala tarczy, 4 graczy L69: HP na członka | 0,65 | ≤ 1,10 | w paśmie | S93 (asertowane) |
+| Azgor, fala tarczy, 5 graczy L69: HP na członka | 0,64 | ≤ 1,10 | w paśmie | S93 (asertowane) |
+| Azgor, 3 graczy L69 z węzłami: min | 4,39 | 4,00–6,00 | w paśmie | S93 (asertowane) |
+| Azgor, 4 graczy L69 z węzłami: min | 4,65 | 4,00–6,00 | w paśmie | S93 (asertowane) |
+| Azgor, 5 graczy L69 z węzłami: min | 4,64 | 4,00–6,00 | w paśmie | S93 (asertowane) |
+| Azgor: największy cios / HP Maga L70 z węzłami | 0,66 | ≤ 0,70 | w paśmie | S93 (asertowane) |
+| Azgor: największy cios / HP Maga L68 z węzłami | 0,68 | ≤ 1,00 | w paśmie | S93 (asertowane) |
+| Azgor, fala tarczy, 3 graczy L69 z węzłami: HP na członka | 0,86 | ≤ 1,10 | w paśmie | S93 (asertowane) |
+| Azgor, fala tarczy, 4 graczy L69 z węzłami: HP na członka | 0,58 | ≤ 1,10 | w paśmie | S93 (asertowane) |
+| Azgor, fala tarczy, 5 graczy L69 z węzłami: HP na członka | 0,58 | ≤ 1,10 | w paśmie | S93 (asertowane) |
+| Azgor: zwykły cios / HP Maga L70 | 0,10 | 0,07–0,12 | w paśmie | S93 (asertowane) |
+| Azgor (model S32): tank HP na minutę, L69 | 3,46 | ≤ 3,50 | w paśmie | S93 (asertowane) |
+| Azgor (bossFight): tank HP na minutę, 3 graczy | 3,35 | ≤  | w paśmie | tylko raport: całe przyjęcie tanka z meteorem i falami (miara S32 liczy atak podstawowy i threat) |
+| Azgor (bossFight): tank HP na minutę, 4 graczy | 3,31 | ≤  | w paśmie | tylko raport: całe przyjęcie tanka z meteorem i falami (miara S32 liczy atak podstawowy i threat) |
+| Azgor (bossFight): tank HP na minutę, 5 graczy | 3,30 | ≤  | w paśmie | tylko raport: całe przyjęcie tanka z meteorem i falami (miara S32 liczy atak podstawowy i threat) |
+| Azgor: meteor na minutę / HP Maga L70 | 0,54 | ≤ 0,60 | w paśmie | S93 (asertowane) |
+| Azgor: jeden tick lawy / HP Maga L70 | 0,20 | 0,15–0,25 | w paśmie | S93 (asertowane) |
+| Azgor ma hpMul | 1,00 | ≥ 1,00 | w paśmie | S93 (asertowane) |
+| Azgor, 3 graczy: wściekłość | 0,00 | ≤ 0,00 | w paśmie | S93 (asertowane) |
+| Azgor, 4 graczy: wściekłość | 0,00 | ≤ 0,00 | w paśmie | S93 (asertowane) |
+| Azgor, 5 graczy: wściekłość | 0,00 | ≤ 0,00 | w paśmie | S93 (asertowane) |
+| T-SK6 Azgor: Uzdrowiciel lochowy na Obrońcy | 12,78 | 1,00–2,50 | **poza** | NIEDOKOŃCZONE S93: T-SK6 12,8 wobec ≤ 2,5 (C6) nieosiągalne dźwigniami S93 (Leczenie z rang ≤ 45 samo daje ok. 4, tank S32 346%/min); decyzja właściciela |
+| Azgor bez wsparcia, 3 graczy: s | 102,65 | ≤ 480,00 | w paśmie | S93 (asertowane) |
+| Azgor bez wsparcia, 3 graczy: przyjmowane / podtrzymanie (najgorszy) | 0,41 | ≤ 1,00 | w paśmie | S93 (asertowane) |
+| Azgor bez wsparcia, 3 graczy: największy cios / HP | 0,62 | ≤ 1,00 | w paśmie | S93 (asertowane) |
+| Azgor bez wsparcia, fala tarczy, 3 graczy: HP na członka | 0,23 | ≤ 1,10 | w paśmie | S93 (asertowane) |
+| Azgor bez wsparcia, 4 graczy: s | 104,18 | ≤ 480,00 | w paśmie | S93 (asertowane) |
+| Azgor bez wsparcia, 4 graczy: przyjmowane / podtrzymanie (najgorszy) | 0,40 | ≤ 1,00 | w paśmie | S93 (asertowane) |
+| Azgor bez wsparcia, 4 graczy: największy cios / HP | 0,62 | ≤ 1,00 | w paśmie | S93 (asertowane) |
+| Azgor bez wsparcia, fala tarczy, 4 graczy: HP na członka | 0,23 | ≤ 1,10 | w paśmie | S93 (asertowane) |
+| Azgor bez wsparcia, 5 graczy: s | 100,80 | ≤ 480,00 | w paśmie | S93 (asertowane) |
+| Azgor bez wsparcia, 5 graczy: przyjmowane / podtrzymanie (najgorszy) | 0,40 | ≤ 1,00 | w paśmie | S93 (asertowane) |
+| Azgor bez wsparcia, 5 graczy: największy cios / HP | 0,62 | ≤ 1,00 | w paśmie | S93 (asertowane) |
+| Azgor bez wsparcia, fala tarczy, 5 graczy: HP na członka | 0,21 | ≤ 1,10 | w paśmie | S93 (asertowane) |
+| Azgor: Mityki nieużyteczne dla Warrior | 0,00 | ≤ 0,00 | w paśmie | S93 (asertowane) |
+| Azgor: Mityki nieużyteczne dla Hunter | 0,00 | ≤ 0,00 | w paśmie | S93 (asertowane) |
+| Azgor: Mityki nieużyteczne dla Mage | 0,00 | ≤ 0,00 | w paśmie | S93 (asertowane) |
+| Azgor: Mityki nieużyteczne dla Cleric | 0,00 | ≤ 0,00 | w paśmie | S93 (asertowane) |
+| guardian.loner L55: Elita wygrana, Elita II przegrana (ashOrc / ashOrc) | 0,00 | 1,00–1,00 | **poza** | poza zasięgiem dźwigni S93: wygrywa Elitę II solo z miksturami (krzywe Elit II trzyma duet ≤ 150%); dla właściciela |
+| guardian.loner L65: Elita wygrana, Elita II przegrana (renegadeDwarf / wyvern) | 0,00 | 1,00–1,00 | **poza** | poza zasięgiem dźwigni S93: wygrywa Elitę II solo z miksturami (krzywe Elit II trzyma duet ≤ 150%); dla właściciela |
+| standard.commander L55: Elita wygrana, Elita II przegrana (ashOrc / ashOrc) | 0,00 | 1,00–1,00 | **poza** | poza zasięgiem dźwigni S93: wygrywa Elitę II solo z miksturami (krzywe Elit II trzyma duet ≤ 150%); dla właściciela |
+| standard.commander L65: Elita wygrana, Elita II przegrana (renegadeDwarf / wyvern) | 0,00 | 1,00–1,00 | **poza** | poza zasięgiem dźwigni S93: wygrywa Elitę II solo z miksturami (krzywe Elit II trzyma duet ≤ 150%); dla właściciela |
+| healer.solo L55: Elita wygrana, Elita II przegrana (ashOrc / ashOrc) | 0,00 | 1,00–1,00 | **poza** | poza zasięgiem dźwigni S93: wygrywa Elitę II solo z miksturami (krzywe Elit II trzyma duet ≤ 150%); dla właściciela |
+| healer.solo L65: Elita wygrana, Elita II przegrana (renegadeDwarf / wyvern) | 0,00 | 1,00–1,00 | **poza** | poza zasięgiem dźwigni S93: wygrywa Elitę II solo z miksturami (krzywe Elit II trzyma duet ≤ 150%); dla właściciela |
+| fortune.plunder L55: Elita wygrana, Elita II przegrana (ashOrc / ashOrc) | 0,00 | 1,00–1,00 | **poza** | poza zasięgiem dźwigni S93: wygrywa Elitę II solo z miksturami (krzywe Elit II trzyma duet ≤ 150%); dla właściciela |
+| fortune.plunder L65: Elita wygrana, Elita II przegrana (renegadeDwarf / wyvern) | 0,00 | 1,00–1,00 | **poza** | poza zasięgiem dźwigni S93: wygrywa Elitę II solo z miksturami (krzywe Elit II trzyma duet ≤ 150%); dla właściciela |
+| scout.partyHunter L55: Elita wygrana, Elita II przegrana (ashOrc / ashOrc) | 0,00 | 1,00–1,00 | **poza** | poza zasięgiem dźwigni S93: wygrywa Elitę II solo z miksturami (krzywe Elit II trzyma duet ≤ 150%); dla właściciela |
+| scout.partyHunter L65: Elita wygrana, Elita II przegrana (renegadeDwarf / wyvern) | 0,00 | 1,00–1,00 | **poza** | poza zasięgiem dźwigni S93: wygrywa Elitę II solo z miksturami (krzywe Elit II trzyma duet ≤ 150%); dla właściciela |
+| Elity Spalonych Pustkowi dropią ilvl 46 | 1,00 | ≥ 1,00 | w paśmie | S93 (asertowane) |
+| Expowiska z poziomem 46 | 2,00 | ≥ 2,00 | w paśmie | S93 (asertowane) |
+| Elity Spalonych Pustkowi dropią ilvl 47 | 1,00 | ≥ 1,00 | w paśmie | S93 (asertowane) |
+| Expowiska z poziomem 47 | 2,00 | ≥ 2,00 | w paśmie | S93 (asertowane) |
+| Elity Spalonych Pustkowi dropią ilvl 48 | 1,00 | ≥ 1,00 | w paśmie | S93 (asertowane) |
+| Expowiska z poziomem 48 | 3,00 | ≥ 2,00 | w paśmie | S93 (asertowane) |
+| Elity Spalonych Pustkowi dropią ilvl 49 | 1,00 | ≥ 1,00 | w paśmie | S93 (asertowane) |
+| Expowiska z poziomem 49 | 3,00 | ≥ 2,00 | w paśmie | S93 (asertowane) |
+| Elity Spalonych Pustkowi dropią ilvl 50 | 1,00 | ≥ 1,00 | w paśmie | S93 (asertowane) |
+| Expowiska z poziomem 50 | 3,00 | ≥ 2,00 | w paśmie | S93 (asertowane) |
+| Elity Spalonych Pustkowi dropią ilvl 51 | 1,00 | ≥ 1,00 | w paśmie | S93 (asertowane) |
+| Expowiska z poziomem 51 | 2,00 | ≥ 2,00 | w paśmie | S93 (asertowane) |
+| Elity Spalonych Pustkowi dropią ilvl 52 | 1,00 | ≥ 1,00 | w paśmie | S93 (asertowane) |
+| Expowiska z poziomem 52 | 3,00 | ≥ 2,00 | w paśmie | S93 (asertowane) |
+| Elity Spalonych Pustkowi dropią ilvl 53 | 1,00 | ≥ 1,00 | w paśmie | S93 (asertowane) |
+| Expowiska z poziomem 53 | 2,00 | ≥ 2,00 | w paśmie | S93 (asertowane) |
+| Elity Spalonych Pustkowi dropią ilvl 54 | 1,00 | ≥ 1,00 | w paśmie | S93 (asertowane) |
+| Expowiska z poziomem 54 | 2,00 | ≥ 2,00 | w paśmie | S93 (asertowane) |
+| Elity Spalonych Pustkowi dropią ilvl 55 | 1,00 | ≥ 1,00 | w paśmie | S93 (asertowane) |
+| Expowiska z poziomem 55 | 4,00 | ≥ 2,00 | w paśmie | S93 (asertowane) |
+| Elity Spalonych Pustkowi dropią ilvl 56 | 1,00 | ≥ 1,00 | w paśmie | S93 (asertowane) |
+| Expowiska z poziomem 56 | 4,00 | ≥ 2,00 | w paśmie | S93 (asertowane) |
+| Elity Spalonych Pustkowi dropią ilvl 57 | 1,00 | ≥ 1,00 | w paśmie | S93 (asertowane) |
+| Expowiska z poziomem 57 | 3,00 | ≥ 2,00 | w paśmie | S93 (asertowane) |
+| Elity Spalonych Pustkowi dropią ilvl 58 | 1,00 | ≥ 1,00 | w paśmie | S93 (asertowane) |
+| Expowiska z poziomem 58 | 4,00 | ≥ 2,00 | w paśmie | S93 (asertowane) |
+| Elity Spalonych Pustkowi dropią ilvl 59 | 1,00 | ≥ 1,00 | w paśmie | S93 (asertowane) |
+| Expowiska z poziomem 59 | 4,00 | ≥ 2,00 | w paśmie | S93 (asertowane) |
+| Elity Spalonych Pustkowi dropią ilvl 60 | 1,00 | ≥ 1,00 | w paśmie | S93 (asertowane) |
+| Expowiska z poziomem 60 | 4,00 | ≥ 2,00 | w paśmie | S93 (asertowane) |
+| Elity Spalonych Pustkowi dropią ilvl 61 | 1,00 | ≥ 1,00 | w paśmie | S93 (asertowane) |
+| Expowiska z poziomem 61 | 4,00 | ≥ 2,00 | w paśmie | S93 (asertowane) |
+| Elity Spalonych Pustkowi dropią ilvl 62 | 1,00 | ≥ 1,00 | w paśmie | S93 (asertowane) |
+| Expowiska z poziomem 62 | 3,00 | ≥ 2,00 | w paśmie | S93 (asertowane) |
+| Elity Spalonych Pustkowi dropią ilvl 63 | 1,00 | ≥ 1,00 | w paśmie | S93 (asertowane) |
+| Expowiska z poziomem 63 | 3,00 | ≥ 2,00 | w paśmie | S93 (asertowane) |
+| Elity Spalonych Pustkowi dropią ilvl 64 | 1,00 | ≥ 1,00 | w paśmie | S93 (asertowane) |
+| Expowiska z poziomem 64 | 2,00 | ≥ 2,00 | w paśmie | S93 (asertowane) |
+| Elity Spalonych Pustkowi dropią ilvl 65 | 1,00 | ≥ 1,00 | w paśmie | S93 (asertowane) |
+| Expowiska z poziomem 65 | 2,00 | ≥ 2,00 | w paśmie | S93 (asertowane) |
+| Elity Spalonych Pustkowi dropią ilvl 66 | 1,00 | ≥ 1,00 | w paśmie | S93 (asertowane) |
+| Expowiska z poziomem 66 | 3,00 | ≥ 2,00 | w paśmie | S93 (asertowane) |
+| Elity Spalonych Pustkowi dropią ilvl 67 | 1,00 | ≥ 1,00 | w paśmie | S93 (asertowane) |
+| Expowiska z poziomem 67 | 2,00 | ≥ 2,00 | w paśmie | S93 (asertowane) |
+| Elity Spalonych Pustkowi dropią ilvl 68 | 1,00 | ≥ 1,00 | w paśmie | S93 (asertowane) |
+| Expowiska z poziomem 68 | 2,00 | ≥ 2,00 | w paśmie | S93 (asertowane) |
+| Elity Spalonych Pustkowi dropią ilvl 69 | 1,00 | ≥ 1,00 | w paśmie | S93 (asertowane) |
+| Expowiska z poziomem 69 | 2,00 | ≥ 2,00 | w paśmie | S93 (asertowane) |
+| Elity Spalonych Pustkowi dropią ilvl 70 | 1,00 | ≥ 1,00 | w paśmie | S93 (asertowane) |
+| Expowiska z poziomem 70 | 2,00 | ≥ 2,00 | w paśmie | S93 (asertowane) |
+| Warrior 69: Unikaty dla klasy na h expienia | 3,60 | 2,00–4,00 | w paśmie | S93 (asertowane) |
+| Warrior 69: Heroiki dla klasy na h Elit | 0,81 | 0,50–1,50 | w paśmie | S93 (asertowane) |
+| Hunter 69: Unikaty dla klasy na h expienia | 3,68 | 2,00–4,00 | w paśmie | S93 (asertowane) |
+| Hunter 69: Heroiki dla klasy na h Elit | 0,85 | 0,50–1,50 | w paśmie | S93 (asertowane) |
+| Mage 69: Unikaty dla klasy na h expienia | 3,26 | 2,00–4,00 | w paśmie | S93 (asertowane) |
+| Mage 69: Heroiki dla klasy na h Elit | 0,87 | 0,50–1,50 | w paśmie | S93 (asertowane) |
+| Cleric 69: Unikaty dla klasy na h expienia | 3,75 | 2,00–4,00 | w paśmie | S93 (asertowane) |
+| Cleric 69: Heroiki dla klasy na h Elit | 0,95 | 0,50–1,50 | w paśmie | S93 (asertowane) |
+| salamander: część potwora | 1,00 | ≥ 1,00 | w paśmie | S93 (asertowane) |
+| ashOrc: część potwora | 1,00 | ≥ 1,00 | w paśmie | S93 (asertowane) |
+| fireGolem: część potwora | 1,00 | ≥ 1,00 | w paśmie | S93 (asertowane) |
+| desertScorpion: część potwora | 1,00 | ≥ 1,00 | w paśmie | S93 (asertowane) |
+| wyvern: część potwora | 1,00 | ≥ 1,00 | w paśmie | S93 (asertowane) |
+| renegadeDwarf: część potwora | 1,00 | ≥ 1,00 | w paśmie | S93 (asertowane) |
+| magmaGolem: część potwora | 1,00 | ≥ 1,00 | w paśmie | S93 (asertowane) |
+| flameSmith: część potwora | 1,00 | ≥ 1,00 | w paśmie | S93 (asertowane) |
+| wasteHyena: część potwora | 1,00 | ≥ 1,00 | w paśmie | S93 (asertowane) |
+| ashVulture: część potwora | 1,00 | ≥ 1,00 | w paśmie | S93 (asertowane) |
+| fireImp: część potwora | 1,00 | ≥ 1,00 | w paśmie | S93 (asertowane) |
+| basilisk: część potwora | 1,00 | ≥ 1,00 | w paśmie | S93 (asertowane) |
+| desertMummy: część potwora | 1,00 | ≥ 1,00 | w paśmie | S93 (asertowane) |
+| salamander_scale: składnik przepisu 45–70 | 1,00 | ≥ 1,00 | w paśmie | S93 (asertowane) |
+| magma_shard: składnik przepisu 45–70 | 1,00 | ≥ 1,00 | w paśmie | S93 (asertowane) |
+| thick_hide: składnik przepisu 45–70 | 1,00 | ≥ 1,00 | w paśmie | S93 (asertowane) |
+| crow_feather: składnik przepisu 45–70 | 1,00 | ≥ 1,00 | w paśmie | S93 (asertowane) |
+| toad_venom: składnik przepisu 45–70 | 1,00 | ≥ 1,00 | w paśmie | S93 (asertowane) |
+| cursed_bone: składnik przepisu 45–70 | 1,00 | ≥ 1,00 | w paśmie | S93 (asertowane) |
+| elixir_resFire: poziom przepisu | 45,00 | 45,00–45,00 | w paśmie | S93 (asertowane) |
+
+### Strażniki T-SK w paśmie (S93, G1)
+
+T-SK1 / T-SK2 względem własnego L20 (limity 1,15 / 1,25) i T-SK3 / areaCap (≤ 1) na 50 / 55 / 60 / 65 / 69 / 70 (rzędy 7–9 według punktów). Gwiazdka: wiersz w raporcie (na 45 build ma już wartość ponad limitem planu D1, reguła S92, albo powód grupy w `Balance.S93_REPORT`); T-SK4 Maga i T-SK5 Uzdrowiciela lochowego w „Cele S93”.
+
+| build | 50 | 55 | 60 | 65 | 69 | 70 |
+| --- | --: | --: | --: | --: | --: | --: |
+| Warrior base | 1,15 / 1,24 / 0,94* | 1,11 / 1,24 / 0,94 | 1,15 / 1,24 / 0,94 | 1,14 / 1,24 / 0,94 | 1,16 / 1,33 / 0,92* | 1,16 / 1,33 / 0,92* |
+| Warrior base.loadout | 1,14 / 1,24 / 0,93 | 1,12 / 1,24 / 0,93 | 1,14 / 1,24 / 0,93 | 1,14 / 1,25 / 0,93 | 1,15 / 1,32 / 0,93* | 1,16 / 1,32 / 0,93* |
+| Warrior guardian.defender | 1,08 / 1,19 / 0,96 | 1,07 / 1,19 / 1,04* | 1,08 / 1,19 / 1,07* | 1,08 / 1,19 / 1,07* | 1,09 / 1,23 / 1,09* | 1,09 / 1,23 / 1,09* |
+| Warrior guardian.loner | 1,00 / 1,16 / 0,97 | 1,01 / 1,16 / 0,97 | 1,02 / 1,16 / 1,04* | 1,04 / 1,16 / 1,07* | 1,04 / 1,19 / 1,09* | 1,04 / 1,19 / 1,09* |
+| Warrior berserker.fury | 1,15 / 1,05 / 0,75 | 1,17 / 1,06 / 0,74* | 1,16 / 1,06 / 0,74* | 1,18 / 1,09 / 0,73* | 1,17 / 1,08 / 0,76* | 1,17 / 1,32 / 0,64* |
+| Warrior berserker.butcher | 1,20 / 1,13 / 0,76* | 1,22 / 1,14 / 0,76* | 1,21 / 1,17 / 0,73* | 1,25 / 1,17 / 0,73* | 1,26 / 1,17 / 0,77* | 1,27 / 1,42 / 0,65* |
+| Warrior standard.commander | 1,18 / 1,24 / 0,88* | 1,18 / 1,24 / 0,88* | 1,20 / 1,24 / 0,88* | 1,19 / 1,25 / 0,88* | 1,19 / 1,26 / 0,88* | 1,29 / 1,74 / 0,78* |
+| Warrior standard.warden | 1,10 / 1,12 / 0,87 | 1,11 / 1,13 / 0,87 | 1,13 / 1,13 / 0,87 | 1,11 / 1,13 / 0,87 | 1,11 / 1,13 / 0,87 | 1,19 / 1,55 / 0,77* |
+| Hunter base | 1,08 / 1,21 / 0,67 | 1,06 / 1,17 / 0,70 | 1,07 / 1,18 / 0,70 | 1,06 / 1,28 / 0,77* | 1,06 / 1,23 / 0,77 | 1,06 / 1,23 / 0,77 |
+| Hunter marksman.kingslayer | 1,29 / 1,48 / 0,60* | 1,31 / 1,46 / 0,60* | 1,31 / 1,48 / 0,60* | 1,26 / 1,50 / 0,59* | 1,31 / 1,55 / 0,61* | 1,27 / 1,43 / 0,62* |
+| Hunter marksman.eliteHunter | 1,31 / 1,49 / 0,60* | 1,25 / 1,48 / 0,60* | 1,29 / 1,49 / 0,79* | 1,30 / 1,51 / 0,77* | 1,32 / 1,51 / 0,78* | 1,25 / 1,55 / 0,56* |
+| Hunter trapper.poacher | 1,29 / 1,42 / 0,84* | 1,29 / 1,41 / 0,85* | 1,30 / 1,49 / 1,00* | 1,31 / 1,53 / 1,00* | 1,33 / 1,66 / 0,95* | 1,32 / 1,67 / 0,94* |
+| Hunter trapper.poisoner | 1,25 / 1,50 / 0,92* | 1,24 / 1,50 / 0,92* | 1,29 / 1,51 / 0,96* | 1,29 / 1,52 / 0,99* | 1,31 / 1,53 / 0,99* | 1,30 / 1,53 / 0,99* |
+| Hunter scout.partyHunter | 1,12 / 1,24 / 0,85 | 1,12 / 1,25 / 0,87 | 1,14 / 1,25 / 0,86 | 1,14 / 1,24 / 0,85 | 1,14 / 1,24 / 0,85 | 1,13 / 1,24 / 0,85 |
+| Hunter scout.tracker | 1,08 / 1,17 / 0,83 | 1,08 / 1,19 / 0,85 | 1,10 / 1,19 / 0,85 | 1,09 / 1,18 / 0,84 | 1,09 / 1,18 / 0,84 | 1,09 / 1,18 / 0,84 |
+| Mage base | 1,37 / 1,44 / 0,80* | 1,38 / 1,45 / 0,81* | 1,38 / 1,46 / 0,81* | 1,39 / 1,48 / 0,80* | 1,40 / 1,50 / 0,81* | 1,40 / 1,50 / 0,81* |
+| Mage base.loadout | 1,35 / 1,42 / 0,80* | 1,35 / 1,43 / 0,81* | 1,36 / 1,44 / 0,81* | 1,37 / 1,46 / 0,80* | 1,38 / 1,48 / 0,81* | 1,38 / 1,48 / 0,81* |
+| Mage destroyer.destroyerExp | 1,38 / 1,52 / 0,66* | 1,39 / 1,53 / 0,67* | 1,43 / 1,71 / 0,73* | 1,45 / 1,76 / 0,75* | 1,44 / 1,78 / 0,75* | 1,44 / 1,78 / 0,75* |
+| Mage destroyer.destroyerBoss | 1,64 / 1,57 / 0,54* | 1,65 / 1,59 / 0,55* | 1,70 / 1,76 / 0,61* | 1,72 / 1,80 / 0,62* | 1,73 / 1,81 / 0,62* | 1,74 / 1,82 / 0,62* |
+| Mage arcanist.arcanistBoss | 1,73 / 1,77 / 0,63* | 1,74 / 1,79 / 0,64* | 1,74 / 1,77 / 0,63* | 1,77 / 1,81 / 0,63* | 1,78 / 1,83 / 0,63* | 1,78 / 1,85 / 0,63* |
+| Mage arcanist.arcanistOverload | 1,74 / 1,77 / 0,63* | 1,75 / 1,78 / 0,64* | 1,74 / 1,77 / 0,63* | 1,77 / 1,81 / 0,63* | 1,78 / 1,83 / 0,63* | 1,78 / 1,85 / 0,63* |
+| Cleric base | 1,50 / 1,65 / 0,90* | 1,52 / 1,68 / 0,89* | 1,57 / 1,75 / 0,89* | 1,60 / 1,80 / 0,88* | 1,65 / 1,87 / 0,88* | 1,65 / 1,87 / 0,88* |
+| Cleric healer.dungeon | 1,33 / 1,36 / 0,76* | 1,33 / 1,36 / 0,76* | 1,36 / 1,39 / 0,76* | 1,36 / 1,39 / 0,76* | 1,39 / 1,42 / 0,76* | 1,39 / 1,42 / 0,76* |
+| Cleric healer.solo | 1,50 / 1,65 / 0,90* | 1,52 / 1,68 / 0,89* | 1,57 / 1,75 / 0,89* | 1,60 / 1,80 / 0,88* | 1,65 / 1,87 / 0,88* | 1,65 / 1,87 / 0,88* |
+| Cleric fortune.plunder | 1,46 / 1,49 / 0,76* | 1,46 / 1,49 / 0,76* | 1,49 / 1,53 / 0,77* | 1,51 / 1,55 / 0,76* | 1,55 / 1,58 / 0,77* | 1,55 / 1,58 / 0,77* |
+| Cleric inquisitor.solo | 2,20 / 2,44 / 0,68* | 2,24 / 2,50 / 0,72* | 2,32 / 2,60 / 0,75* | 2,38 / 2,69 / 0,75* | 2,44 / 2,77 / 0,75* | 2,44 / 2,77 / 0,75* |
+| Cleric inquisitor.bulwark | 2,08 / 2,31 / 0,67* | 2,12 / 2,36 / 0,72* | 2,20 / 2,47 / 0,74* | 2,25 / 2,55 / 0,74* | 2,32 / 2,63 / 0,75* | 2,32 / 2,63 / 0,75* |
+
+### Podstawy klas: T-SK3 i T-SK4 Maga (tylko raport, S93)
+
+| podstawa | 50 | 55 | 60 | 65 | 69 | 70 |
+| --- | --: | --: | --: | --: | --: | --: |
+| Warrior base: T-SK3 | 1,88 | 1,88 | 1,88 | 1,88 | 1,85 | 1,85 |
+| Hunter base: T-SK3 | 1,35 | 1,39 | 1,40 | 1,53 | 1,53 | 1,53 |
+| Mage base: T-SK3 / T-SK4 | 1,60 / 1,67 | 1,62 / 1,87 | 1,61 / 1,77 | 1,61 / 1,74 | 1,62 / 1,71 | 1,62 / 1,70 |
+| Cleric base: T-SK3 | 1,79 | 1,78 | 1,78 | 1,75 | 1,75 | 1,75 |
+
+### Leczenie Fortuny wobec „Lochowego” (tylko raport, S93; ROZWOJ 9.6: ok. 21% słabiej)
+
+| poziom | T-SK5 Uzdrowiciel lochowy | T-SK5 Fortuna łupieżcza | słabiej o |
+| --- | --: | --: | --: |
+| 50 | 0,29 | 0,27 | 8% |
+| 55 | 0,28 | 0,26 | 8% |
+| 60 | 0,30 | 0,25 | 18% |
+| 65 | 0,31 | 0,25 | 22% |
+| 69 | 0,31 | 0,24 | 22% |
+| 70 | 0,31 | 0,24 | 22% |
+
+### Tempo 44 → 70 (model okna S91, Wojownik; S93)
+
+h = godziny na poziom (rodzaj zwykły, odpoczynek, zadania główne bez bossów w oknach, poboczne 0,5); m = średnia krocząca h(L − 4..L) (raport); „rodzaj regionu” = `kindAtRegion` (opcja `region`, raport); „z Azgorem” = zadanie z bossem w oknie (raport). Okno zadania `deepforge` sięga 71. (do `frostpeak`), więc część jego EXP liczy się w paśmie S94.
+
+| poziom | h | h / h(L − 1) | m | h rodzaj regionu | h z Azgorem |
+| --- | --: | --: | --: | --: | --: |
+| 44 | 0,86 | 1,02 | 0,84 | 1,07 | 0,37 |
+| 45 | 0,87 | 1,01 | 0,85 | 0,91 | 0,87 |
+| 46 | 0,89 | 1,02 | 0,86 | 0,93 | 0,89 |
+| 47 | 0,90 | 1,01 | 0,87 | 0,94 | 0,90 |
+| 48 | 0,91 | 1,01 | 0,89 | 0,95 | 0,91 |
+| 49 | 0,93 | 1,01 | 0,90 | 1,01 | 0,93 |
+| 50 | 0,91 | 0,98 | 0,91 | 0,99 | 0,91 |
+| 51 | 0,92 | 1,01 | 0,91 | 0,87 | 0,92 |
+| 52 | 0,93 | 1,01 | 0,92 | 1,02 | 0,93 |
+| 53 | 0,95 | 1,01 | 0,93 | 1,03 | 0,95 |
+| 54 | 0,96 | 1,01 | 0,93 | 1,04 | 0,96 |
+| 55 | 1,03 | 1,07 | 0,96 | 0,76 | 1,03 |
+| 56 | 1,04 | 1,01 | 0,98 | 0,77 | 1,04 |
+| 57 | 1,05 | 1,01 | 1,00 | 0,78 | 1,05 |
+| 58 | 1,07 | 1,01 | 1,03 | 1,17 | 1,07 |
+| 59 | 1,08 | 1,01 | 1,05 | 1,17 | 1,08 |
+| 60 | 1,08 | 1,00 | 1,06 | 1,18 | 1,08 |
+| 61 | 1,09 | 1,01 | 1,07 | 1,17 | 1,09 |
+| 62 | 1,16 | 1,06 | 1,09 | 1,24 | 1,07 |
+| 63 | 1,17 | 1,01 | 1,12 | 1,25 | 1,08 |
+| 64 | 1,18 | 1,01 | 1,14 | 1,26 | 1,09 |
+| 65 | 1,19 | 1,00 | 1,16 | 1,26 | 1,10 |
+| 66 | 1,20 | 1,01 | 1,18 | 1,28 | 1,11 |
+| 67 | 1,21 | 1,01 | 1,19 | 1,17 | 1,12 |
+| 68 | 1,22 | 1,01 | 1,20 | 1,18 | 0,93 |
+| 69 | 1,23 | 1,01 | 1,21 | 1,19 | 0,94 |
+| 70 | 1,23 | 1,00 | 1,22 | 1,32 | 0,94 |
+
+Suma 45 → 70: 26,14 h (rodzaj regionu 26,51 h, z Azgorem 25,04 h); h(70) / h(69) = 1,00 (stosunki 70–99: S94).
+
+### Premia za różne klasy (tylko raport, S93)
+
+| drużyna 3 osób | mnożnik EXP | EXP/h członka |
+| --- | --: | --: |
+| 55: Warrior + Warrior + Warrior | 1,00 | 9,314e+04 |
+| 55: Warrior + Hunter + Mage | 1,10 | 1,064e+05 |
+| 65: Warrior + Warrior + Warrior | 1,00 | 8,041e+04 |
+| 65: Warrior + Hunter + Mage | 1,10 | 8,819e+04 |
+
+### Mikstury łańcuchowe ÷ dochód (S93, I2; górna granica 30% w raporcie, dolna 15% asertowana)
+
+| poziom | Wojownik | Łowca | Mag | Kapłan |
+| --- | --: | --: | --: | --: |
+| 46 | 37% | 37% | 37% | 53% |
+| 48 | 36% | 36% | 36% | 59% |
+| 50 | 39% | 37% | 39% | 60% |
+| 52 | 57% | 57% | 57% | 82% |
+| 54 | 55% | 55% | 55% | 79% |
+| 56 | 40% | 40% | 28% | 40% |
+| 58 | 49% | 36% | 36% | 70% |
+| 60 | 60% | 42% | 60% | 60% |
+| 62 | 57% | 40% | 57% | 57% |
+| 64 | 56% | 56% | 56% | 56% |
+| 66 | 55% | 55% | 55% | 55% |
+| 68 | 54% | 38% | 54% | 54% |
+
+### Rdzenie Legendy i zwoje ochrony (tylko raport, S93, I4)
+
+Chroniony +9 Legendarnej broni Wojownika (`Balance.protectedFlow`): złoto ulepszeń, zwoje ochrony (alchemik 2000 zł; drop: Elita II 0,08, Azgor 0,35) i Rdzenie Legendy (od +8, S87; Azgor 0,2), w poziomach dochodu Wojownika na tym poziomie. Cel kompletu +9 z ochroną (150–300 h) jest S94.
+
+| ilvl | złoto ulepszeń | zwoje | Rdzenie Legendy | złoto zwojów | poziomy dochodu |
+| --- | --: | --: | --: | --: | --: |
+| 50 | 247 414 | 18,3 | 8,3 | 57 430 | 19,9 |
+| 60 | 356 283 | 18,3 | 8,3 | 57 430 | 18,8 |
+| 70 | 484 941 | 18,3 | 8,3 | 57 430 | 17,5 |
+
+### D5 ze szczęściem (tylko raport, S93)
+
+Unikaty dla klasy na h expienia / Heroiki na h Elit: K0, K1, K1 z Kapłanem Fortuny, K2 z Kapłanem Fortuny (profile S84 / S88; limit szczęścia `monsterItemCap`).
+
+| klasa · poziom | K0 | K1 | K1 + Fortuna | K2 + Fortuna |
+| --- | --: | --: | --: | --: |
+| Warrior 50 | 3,22 / 0,81 | 3,79 / 0,95 | 4,76 / 1,08 | 6,15 / 1,08 |
+| Cleric 50 | 3,47 / 0,90 | 4,09 / 1,07 | 5,13 / 1,20 | 6,63 / 1,20 |
+| Warrior 55 | 2,61 / 0,82 | 3,08 / 0,96 | 3,86 / 1,09 | 4,98 / 1,09 |
+| Cleric 55 | 3,13 / 0,91 | 3,69 / 1,07 | 4,63 / 1,21 | 5,97 / 1,21 |
+| Warrior 60 | 3,26 / 0,92 | 3,85 / 1,08 | 4,82 / 1,23 | 6,23 / 1,23 |
+| Cleric 60 | 3,49 / 0,97 | 4,11 / 1,14 | 5,16 / 1,29 | 6,66 / 1,29 |
+| Warrior 65 | 3,07 / 0,81 | 3,62 / 0,96 | 4,54 / 1,08 | 5,86 / 1,08 |
+| Cleric 65 | 3,38 / 0,95 | 3,98 / 1,12 | 5,00 / 1,27 | 6,45 / 1,27 |
+| Warrior 69 | 3,60 / 0,81 | 4,24 / 0,96 | 5,32 / 1,09 | 6,87 / 1,09 |
+| Cleric 69 | 3,75 / 0,95 | 4,43 / 1,12 | 5,55 / 1,27 | 7,17 / 1,27 |
+
+### Rodzaje rzucające i pary Elit (tylko raport, S93)
+
+| rodzaj rzucający | poziom | HP/EXP ÷ średnia regionu | HP/EXP ÷ zwykły (szkic S55: 1,20) |
+| --- | --: | --: | --: |
+| fireImp | 58 | 1,12 | 1,14 |
+
+| jaskinia · rodzaj | q par | para ÷ pojedyncza (najwięcej; cel ≤ 2,6) |
+| --- | --: | --: |
+| ashen_mine ashOrc | 25% | 2,56 |
+| ashen_mine wasteHyena | 25% | 2,55 |
+| ashen_lair wyvern | 0% | 2,56 |
+| ashen_lair desertScorpion | 0% | 2,55 |
+| ashen_cave renegadeDwarf | 0% | 2,55 |
+| ashen_cave magmaGolem | 0% | 2,58 |
+
+### Azgor: tylko raport (S93)
+
+| liczba | wartość |
+| --- | --: |
+| bez wsparcia, 3 graczy: mikstury na walkę | berserker.fury 4,2, marksman.kingslayer 1,2, arcanist.arcanistBoss 1,1 |
+| bez wsparcia, 4 graczy: mikstury na walkę | berserker.fury 4,2, marksman.kingslayer 1,2, arcanist.arcanistBoss 1,0, inquisitor.solo 0,6 |
+| bez wsparcia, 5 graczy: mikstury na walkę | berserker.fury 4,1, marksman.kingslayer 1,1, arcanist.arcanistBoss 1,0, inquisitor.solo 0,6, destroyer.destroyerBoss 0,9 |
+| lawa przy hazardShare = 1: tank HP na minutę w fazie 3 (z lawą / bez) | 1488% / 330% |
+| faza 3: sekundy, przez które bezpieczny krąg mieści walczących z dystansu poza inferno (promień ≥ zasięg inferno) | 80 s z 92 s fazy 3 (5 graczy) |
+| trapper.poisoner na Azgorze: DPS 300 s ÷ DPS 60 s | 0,90 (5025 → 4512) |
+| inquisitor.solo na Azgorze: DPS 300 s ÷ DPS 60 s | 1,00 (3818 → 3818) |
+| fale tarczy: czas fali 2 / 3 (drużyna S32) | 3: 20,5 / 23,2 s, 4: 19,6 / 22,1 s, 5: 18,1 / 20,4 s |
+| harmonogram fazy 1 | fireWave 6,1/min (71%), flameCleave 6,0/min (90%), meteor 3,0/min (90%) |
+| harmonogram fazy 2 | fireWave 6,1/min (71%), flameCleave 6,0/min (90%), meteor 3,0/min (90%) |
+| harmonogram fazy 3 | fireWave 5,5/min (64%), flameCleave 5,4/min (81%), meteor 2,7/min (81%), inferno 2,8/min (65%) |
+
+### Przełomy A / B osiągane w 46–70 (tylko raport, S93, G3)
+
+R4 = zysk opcji w roli umiejętności na poziomie rangi (S89 E1, `SkillModel.optionGain`); pasmo 0,08–0,17 (5) i 0,17–0,28 (10); opcje użytkowe (`R4_UTILITY`) bez liczby. Blok ścieżek asertuje te same opcje na 45 / 70 / 100. Rozpłatanie 10A (G4) w buildzie „Furia” z węzłem „Rozdzierające Cięcia” i bez niego pod tabelą.
+
+| umiejętność · przełom (build) | poziom | A | B |
+| --- | --: | --: | --: |
+| taunt 10 (guardian.defender) | 46 | użyteczność | użyteczność |
+| bloodlust 10 (berserker.fury) | 54 | użyteczność | użyteczność |
+| earthquake 5 (berserker.fury) | 46 | 0,15 | użyteczność |
+| earthquake 10 (berserker.fury) | 66 | 0,22 | 0,22 |
+| intercept 10 (guardian.defender) | 62 | użyteczność | użyteczność |
+| lastBastion 5 (guardian.defender) | 64 | użyteczność | użyteczność |
+| cleave 10 (berserker.fury) | 46 | 0,00 | użyteczność |
+| rend 10 (berserker.fury) | 62 | 0,18 | użyteczność |
+| titansWrath 5 (berserker.fury) | 64 | użyteczność | – |
+| battleCry 10 (standard.commander) | 46 | użyteczność | użyteczność |
+| warBanner 10 (standard.commander) | 62 | użyteczność | użyteczność |
+| crushingBlow 5 (standard.commander) | 64 | użyteczność | – |
+| arrowRain 10 (marksman.kingslayer) | 46 | użyteczność | 0,25 |
+| venomArrow 10 (marksman.kingslayer) | 54 | 0,26 | 0,26 |
+| volley 5 (marksman.kingslayer) | 46 | 0,14 | 0,17 |
+| volley 10 (marksman.kingslayer) | 66 | użyteczność | 0,26 |
+| piercingArrow 10 (marksman.kingslayer) | 46 | użyteczność | 0,25 |
+| drawBead 10 (marksman.kingslayer) | 62 | użyteczność | użyteczność |
+| stormArrow 5 (marksman.kingslayer) | 64 | użyteczność | – |
+| frostTrap 10 (trapper.poacher) | 46 | użyteczność | – |
+| venomSnare 10 (trapper.poacher) | 62 | 0,18 | 0,19 |
+| camouflage 5 (trapper.poacher) | 64 | użyteczność | użyteczność |
+| falcon 10 (scout.partyHunter) | 62 | 0,19 | 0,19 |
+| huntersMark 5 (scout.partyHunter) | 64 | użyteczność | użyteczność |
+| chainLightning 10 (arcanist.arcanistBoss) | 46 | użyteczność | 0,25 |
+| blink 10 (arcanist.arcanistBoss) | 50 | użyteczność | użyteczność |
+| frostNova 10 (arcanist.arcanistBoss) | 54 | 0,20 | 0,20 |
+| meteor 5 (arcanist.arcanistBoss) | 46 | użyteczność | 0,17 |
+| meteor 10 (arcanist.arcanistBoss) | 66 | 0,23 | 0,23 |
+| firewall 5 (arcanist.arcanistBoss) | 61 | 0,10 | 0,08 |
+| elementalVortex 10 (destroyer.destroyerExp) | 62 | 0,23 | użyteczność |
+| meteorStorm 5 (destroyer.destroyerExp) | 64 | 0,17 | 0,13 |
+| manaShield 10 (arcanist.arcanistBoss) | 46 | użyteczność | użyteczność |
+| arcaneDischarge 10 (arcanist.arcanistBoss) | 62 | 0,18 | 0,21 |
+| evocation 5 (arcanist.arcanistBoss) | 64 | użyteczność | użyteczność |
+| circleOfLight 10 (healer.dungeon) | 50 | użyteczność | 0,24 |
+| shieldOfFaith 10 (healer.dungeon) | 54 | użyteczność | 0,24 |
+| judgement 5 (inquisitor.solo) | 61 | użyteczność | użyteczność |
+| renew 10 (healer.dungeon) | 46 | użyteczność | 0,21 |
+| sanctuary 10 (healer.dungeon) | 62 | 0,26 | użyteczność |
+| divineIntervention 5 (healer.dungeon) | 64 | użyteczność | użyteczność |
+| resurrection 10 (fortune.plunder) | 46 | użyteczność | użyteczność |
+| fortuneDice 10 (fortune.plunder) | 62 | użyteczność | użyteczność |
+| prayer 5 (fortune.plunder) | 64 | użyteczność | użyteczność |
+| purify 10 (inquisitor.solo) | 46 | użyteczność | 0,25 |
+| brandOfLight 10 (inquisitor.solo) | 62 | użyteczność | użyteczność |
+| auraOfEndurance 5 (inquisitor.solo) | 64 | użyteczność | użyteczność |
+
+Rozpłatanie 10A (3 stosy krwawienia) w „Furii” z węzłem / bez węzła „Rozdzierające Cięcia”: 46: 0,00 / 0,00; 55: 0,31 / 0,00; 70: 0,27 / 0,00. 10B (kradzież życia) to opcja użytkowa (`R4_UTILITY`).
+
+### Kotwice 70 a poziomy 71–99 (S93 → S94)
+
+S93 nie przestawiło żadnej kotwicy 70 (`monsterHp`, `monsterAtk`, `eliteHp`, `eliteDmg`, `elite2*`, `expToNext`, `manaCost.Mage`, `heal`): wiersze pasma mieszczą się w celach na krzywych S87 / S92, więc 71–99 zostają jak po S87. Na 71+ przechodzą: zakresy Kuźni do 70 (Elity ze spawnerów 69–70 mają poziom 71–72), `rewardMul` golemów, Azgor (sytuacja boss S84 na 70+ to Vaelgrath). Wartości kotwic 70:
+
+| krzywa | 70 | 80 |
+| --- | --: | --: |
+| elite2Dmg | 1,00 | 1,00 |
+| elite2Hp | 1,00 | 1,00 |
+| eliteDmg | 1,06 | 1,06 |
+| eliteHp | 1,11 | 1,12 |
+| expToNext | 1,00 | 1,00 |
+| heal | 0,31 | 0,41 |
+| manaCost.Mage | 2,59 | 2,90 |
+| monsterAtk | 1,11 | 1,12 |
+| monsterHp | 1,32 | 1,37 |
+| potionCooldown | 6,67 | 6,67 |
 
 ## Pasmo 70–100 (frostpeak): raport, nie strojone
 
@@ -4424,13 +4814,13 @@ Na godzinę expienia w tempie z tabeli „Tempo” (bez ulepszeń i materiałów
 
 | poziom | złoto z zabić/h | sprzedaż dropu/h | mikstury/h | mikstury ÷ dochód | drop ÷ zabicia | złoto zadań poziomu | łańcuch: mikstury ÷ dochód |
 | --- | --: | --: | --: | --: | --: | --: | --: |
-| 70 | 15 250 | 8178 | 358 | 2% | 0,54 | 0 | 60% |
-| 75 | 14 397 | 5204 | 672 | 3% | 0,36 | 0 | 62% |
-| 80 | 16 245 | 6674 | 373 | 2% | 0,41 | 3660 | 64% |
-| 85 | 20 219 | 5841 | 604 | 2% | 0,29 | 0 | 53% |
-| 90 | 18 145 | 8833 | 843 | 3% | 0,49 | 0 | 95% |
-| 95 | 20 652 | 6393 | 741 | 3% | 0,31 | 0 | 100% |
-| 100 | 21 836 | 6742 | 784 | 3% | 0,31 | 0 | 95% |
+| 70 | 15 250 | 8178 | 358 | 2% | 0,54 | 0 | 60% → 50% |
+| 75 | 14 397 | 5204 | 672 | 3% | 0,36 | 0 | 62% → 51% |
+| 80 | 16 245 | 6674 | 373 | 2% | 0,41 | 3660 | 64% → 53% |
+| 85 | 20 219 | 5841 | 604 | 2% | 0,29 | 0 | 53% → 44% |
+| 90 | 18 145 | 8833 | 843 | 3% | 0,49 | 0 | 95% → 85% |
+| 95 | 20 652 | 6393 | 741 | 3% | 0,31 | 0 | 100% → 89% |
+| 100 | 21 836 | 6742 | 784 | 3% | 0,31 | 0 | 95% → 85% |
 
 ### Mikstury (Wojownik, łańcuch zamiast odpoczynku) (70-100)
 
@@ -4438,13 +4828,13 @@ Odstęp `Potions.interval` (S54: 1,5 s do 20., 6 s na 45., 10 s od 70.); w 7 s p
 
 | poziom | odstęp s | jakość | łyki na walkę | czekanie s | złoto na walkę | mikstura HP/s |
 | --- | --: | --: | --: | --: | --: | --: |
-| 70 | 10,0 | 4 | 1,00 | 0,0 | 453 | 1000 |
-| 75 | 10,0 | 4 | 1,00 | 0,0 | 453 | 1000 |
-| 80 | 10,0 | 4 | 1,00 | 0,0 | 453 | 1000 |
-| 85 | 10,0 | 4 | 1,00 | 0,0 | 510 | 1000 |
-| 90 | 10,0 | 5 | 1,00 | 0,0 | 1020 | 1000 |
-| 95 | 10,0 | 5 | 1,00 | 0,0 | 1020 | 1000 |
-| 100 | 10,0 | 5 | 1,00 | 0,0 | 1020 | 1000 |
+| 70 | 10,0 | 4 | 1,00 | 0,0 | 453 → 373 | 1000 |
+| 75 | 10,0 | 4 | 1,00 | 0,0 | 453 → 373 | 1000 |
+| 80 | 10,0 | 4 | 1,00 | 0,0 | 453 → 373 | 1000 |
+| 85 | 10,0 | 4 | 1,00 | 0,0 | 510 → 430 | 1000 |
+| 90 | 10,0 | 5 | 1,00 | 0,0 | 1020 → 910 | 1000 |
+| 95 | 10,0 | 5 | 1,00 | 0,0 | 1020 → 910 | 1000 |
+| 100 | 10,0 | 5 | 1,00 | 0,0 | 1020 → 910 | 1000 |
 
 ### Rodzaje regionu (70-100, frostpeak)
 
@@ -4763,16 +5153,16 @@ Globalne (G): 240/240 w paśmie; regionu: 133/188 w paśmie.
 | 100: DPS Łowca / Wojownik | 1,29 | 1,15–1,35 | w paśmie | S87 (asertowane) |
 | 100: moc Łowca / Wojownik | 1,03 | 0,95–1,10 | w paśmie | S87 (asertowane) |
 | 100: rozrzut czasu 1 na 1 (najwolniejsza / najszybsza) | 2,14 | ≤ 2,20 | w paśmie | S87 (asertowane) |
-| azgor faza 1: fireWave (tempo / odnowienie) | 0,65 | ≥ 0,50 | w paśmie | S87 (asertowane) |
-| azgor faza 1: flameCleave (tempo / odnowienie) | 0,84 | ≥ 0,50 | w paśmie | S87 (asertowane) |
-| azgor faza 1: meteor (tempo / odnowienie) | 0,92 | ≥ 0,50 | w paśmie | S87 (asertowane) |
-| azgor faza 2: fireWave (tempo / odnowienie) | 0,65 | ≥ 0,50 | w paśmie | S87 (asertowane) |
-| azgor faza 2: flameCleave (tempo / odnowienie) | 0,84 | ≥ 0,50 | w paśmie | S87 (asertowane) |
-| azgor faza 2: meteor (tempo / odnowienie) | 0,92 | ≥ 0,50 | w paśmie | S87 (asertowane) |
-| azgor faza 3: fireWave (tempo / odnowienie) | 0,53 | ≥ 0,50 | w paśmie | S87 (asertowane) |
-| azgor faza 3: flameCleave (tempo / odnowienie) | 0,66 | ≥ 0,50 | w paśmie | S87 (asertowane) |
-| azgor faza 3: meteor (tempo / odnowienie) | 0,73 | ≥ 0,50 | w paśmie | S87 (asertowane) |
-| azgor faza 3: inferno (tempo / odnowienie) | 0,68 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| azgor faza 1: fireWave (tempo / odnowienie) | 0,71 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| azgor faza 1: flameCleave (tempo / odnowienie) | 0,90 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| azgor faza 1: meteor (tempo / odnowienie) | 0,90 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| azgor faza 2: fireWave (tempo / odnowienie) | 0,71 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| azgor faza 2: flameCleave (tempo / odnowienie) | 0,90 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| azgor faza 2: meteor (tempo / odnowienie) | 0,90 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| azgor faza 3: fireWave (tempo / odnowienie) | 0,64 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| azgor faza 3: flameCleave (tempo / odnowienie) | 0,81 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| azgor faza 3: meteor (tempo / odnowienie) | 0,81 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| azgor faza 3: inferno (tempo / odnowienie) | 0,65 | ≥ 0,50 | w paśmie | S87 (asertowane) |
 | vaelgrath faza 1: frostBreath (tempo / odnowienie) | 0,73 | ≥ 0,50 | w paśmie | S87 (asertowane) |
 | vaelgrath faza 1: wingBuffet (tempo / odnowienie) | 0,99 | ≥ 0,50 | w paśmie | S87 (asertowane) |
 | vaelgrath faza 1: tailSwipe (tempo / odnowienie) | 0,81 | ≥ 0,50 | w paśmie | S87 (asertowane) |
@@ -5285,44 +5675,44 @@ moc² zestawu z bronią dwuręczną (bez drugiej ręki) / moc² zestawu domyśln
 
 | rzadkość · ulepszenie · poziom | S32 | bez cech (MIX) | z cechami (MIX) | single | group | elite | boss | najgorsza |
 | --- | --: | --: | --: | --: | --: | --: | --: | --: |
-| Zwykły · +0 · 20 | **0,95** | 1,01 | **0,95 → 0,96** | 0,97 | 0,94 | 0,97 | 0,96 → 0,98 | 0,94 |
-| Zwykły · +0 · 45 | **0,95** | 1,00 | **0,94** | 0,96 | 0,94 | 0,96 | 0,93 | 0,93 |
+| Zwykły · +0 · 20 | **0,95** | 1,01 | **0,96** | 0,97 | 0,94 | 0,97 | 0,98 | 0,94 |
+| Zwykły · +0 · 45 | **0,95** | 1,00 | **0,94 → 0,95** | 0,96 | 0,94 | 0,96 | 0,93 → 0,94 | 0,93 → 0,94 |
 | Zwykły · +0 · 70 | **0,95** | 1,00 | **0,94** | 0,96 | 0,93 | 0,96 | 0,95 | 0,93 |
 | Zwykły · +0 · 100 | **0,94** | 1,00 | **0,94** | 0,96 | 0,93 | 0,96 | 0,95 | 0,93 |
-| Zwykły · +9 · 20 | **0,95** | 1,01 | **0,96 → 0,97** | 0,98 | 0,94 | 0,98 | 0,97 → 1,00 | 0,94 |
-| Zwykły · +9 · 45 | **0,94** | 0,99 | **0,95** | 0,98 | 0,94 | 0,98 | 0,94 | 0,94 |
+| Zwykły · +9 · 20 | **0,95** | 1,01 | **0,97** | 0,98 | 0,94 | 0,98 | 1,00 | 0,94 |
+| Zwykły · +9 · 45 | **0,94** | 0,99 | **0,95** | 0,98 | 0,94 | 0,98 | 0,94 → 0,95 | 0,94 |
 | Zwykły · +9 · 70 | **0,94** | 1,00 | **0,96** | 0,98 | 0,94 | 0,97 | 0,97 | 0,94 |
 | Zwykły · +9 · 100 | **0,94** | 1,00 | **0,95** | 0,97 | 0,94 | 0,97 | 0,97 | 0,94 |
-| Unikatowy · +0 · 20 | **0,96** | 1,02 | **0,96 → 0,97** | 0,98 | 0,94 | 0,98 | 0,97 → 0,99 | 0,94 |
-| Unikatowy · +0 · 45 | **0,95** | 1,00 | **0,95** | 0,98 | 0,94 | 0,97 | 0,94 | 0,94 |
+| Unikatowy · +0 · 20 | **0,96** | 1,02 | **0,97** | 0,98 | 0,94 | 0,98 | 0,99 | 0,94 |
+| Unikatowy · +0 · 45 | **0,95** | 1,00 | **0,95** | 0,98 | 0,94 | 0,97 | 0,94 → 0,95 | 0,94 |
 | Unikatowy · +0 · 70 | **0,95** | 1,01 | **0,95** | 0,97 | 0,93 | 0,97 | 0,96 | 0,93 |
 | Unikatowy · +0 · 100 | **0,95** | 1,01 | **0,95** | 0,97 | 0,94 | 0,97 | 0,96 | 0,94 |
-| Unikatowy · +9 · 20 | **0,95** | 1,01 | 0,97 | 0,99 | 0,94 | 0,99 | 0,99 → 1,01 | 0,94 |
-| Unikatowy · +9 · 45 | **0,95** | 1,00 | **0,96** | 0,99 | 0,94 | 0,99 | 0,95 | 0,94 |
+| Unikatowy · +9 · 20 | **0,95** | 1,01 | 0,97 | 0,99 | 0,94 | 0,99 | 1,01 | 0,94 |
+| Unikatowy · +9 · 45 | **0,95** | 1,00 | **0,96** | 0,99 | 0,94 | 0,99 | 0,95 → 0,97 | 0,94 |
 | Unikatowy · +9 · 70 | **0,95** | 1,01 | **0,96** | 0,99 | 0,94 | 0,99 | 0,99 | 0,94 |
 | Unikatowy · +9 · 100 | **0,95** | 1,01 | **0,96** | 0,99 | 0,94 | 0,98 | 0,99 | 0,94 |
-| Heroiczny · +0 · 20 | **0,94** | 1,00 | **0,95** | 0,97 | 0,93 | 0,97 | 0,96 → 0,98 | 0,93 |
-| Heroiczny · +0 · 45 | **0,95** | 1,01 | **0,95** | 0,98 | 0,94 | 0,98 | 0,94 | 0,94 |
+| Heroiczny · +0 · 20 | **0,94** | 1,00 | **0,95** | 0,97 | 0,93 | 0,97 | 0,98 | 0,93 |
+| Heroiczny · +0 · 45 | **0,95** | 1,01 | **0,95** | 0,98 | 0,94 | 0,98 | 0,94 → 0,96 | 0,94 |
 | Heroiczny · +0 · 70 | **0,96** | 1,01 | **0,96** | 0,98 | 0,94 | 0,98 | 0,97 | 0,94 |
 | Heroiczny · +0 · 100 | **0,95** | 1,01 | **0,95** | 0,98 | 0,93 | 0,98 | 0,97 | 0,93 |
-| Heroiczny · +9 · 20 | **0,95** | 1,01 | 0,97 | 1,00 | 0,94 | 1,00 | 0,99 → 1,02 | 0,94 |
-| Heroiczny · +9 · 45 | **0,95** | 1,01 | **0,96** | 0,99 | 0,94 | 0,99 | 0,95 | 0,94 |
+| Heroiczny · +9 · 20 | **0,95** | 1,01 | 0,97 | 1,00 | 0,94 | 1,00 | 1,02 | 0,94 |
+| Heroiczny · +9 · 45 | **0,95** | 1,01 | **0,96** | 0,99 | 0,94 | 0,99 | 0,95 → 0,97 | 0,94 |
 | Heroiczny · +9 · 70 | **0,96** | 1,02 | **0,97** | 1,00 | 0,94 | 0,99 | 1,00 | 0,94 |
 | Heroiczny · +9 · 100 | **0,95** | 1,01 | **0,96** | 0,99 | 0,94 | 0,99 | 0,99 | 0,94 |
-| Legendarny · +0 · 20 | 0,98 | **1,04** | 1,00 → 1,01 | 1,03 | 0,98 | 1,03 | 1,02 → 1,04 | 0,98 |
-| Legendarny · +0 · 45 | **0,95** | 1,00 | 0,97 | 1,00 | 0,96 | 1,00 | 0,96 | 0,96 |
+| Legendarny · +0 · 20 | 0,98 | **1,04** | 1,01 | 1,03 | 0,98 | 1,03 | 1,04 | 0,98 |
+| Legendarny · +0 · 45 | **0,95** | 1,00 | 0,97 | 1,00 | 0,96 | 1,00 | 0,96 → 0,98 | 0,96 |
 | Legendarny · +0 · 70 | **0,95** | 1,01 | 0,97 | 1,00 | 0,95 | 1,00 | 0,99 | 0,95 |
 | Legendarny · +0 · 100 | **0,95** | 1,01 | 0,97 | 1,00 | 0,95 | 1,00 | 0,99 | 0,95 |
-| Legendarny · +9 · 20 | **0,97** | 1,03 | 1,00 → 1,01 | 1,03 | 0,97 | 1,03 | 1,03 → 1,06 | 0,97 |
-| Legendarny · +9 · 45 | **0,95** | 1,00 | 0,98 | 1,01 | 0,96 | 1,01 | 0,97 | 0,96 |
+| Legendarny · +9 · 20 | **0,97** | 1,03 | 1,01 | 1,03 | 0,97 | 1,03 | 1,06 | 0,97 |
+| Legendarny · +9 · 45 | **0,95** | 1,00 | 0,98 | 1,01 | 0,96 | 1,01 | 0,97 → 0,99 | 0,96 |
 | Legendarny · +9 · 70 | **0,95** | 1,01 | 0,98 | 1,01 | 0,95 | 1,01 | 1,01 | 0,95 |
 | Legendarny · +9 · 100 | **0,95** | 1,01 | 0,98 | 1,01 | 0,95 | 1,01 | 1,01 | 0,95 |
-| Mityczny · +0 · 20 | **0,94** | 1,00 | 1,01 → 1,02 | 1,04 | 0,99 | 1,04 | 1,03 → 1,05 | 0,99 |
-| Mityczny · +0 · 45 | **0,93** | 0,98 | 1,00 | 1,03 | 0,98 | 1,02 | 0,99 | 0,98 |
+| Mityczny · +0 · 20 | **0,94** | 1,00 | 1,02 | 1,04 | 0,99 | 1,04 | 1,05 | 0,99 |
+| Mityczny · +0 · 45 | **0,93** | 0,98 | 1,00 | 1,03 | 0,98 | 1,02 | 0,99 → 1,01 | 0,98 |
 | Mityczny · +0 · 70 | **0,93** | 0,98 | 1,00 | 1,02 | 0,98 | 1,02 | 1,02 | 0,98 |
 | Mityczny · +0 · 100 | **0,93** | 0,98 | 1,00 | 1,02 | 0,97 | 1,02 | 1,02 | 0,97 |
-| Mityczny · +9 · 20 | **0,94** | 1,00 | 1,00 → 1,01 | 1,03 | 0,97 | 1,03 | 1,04 → 1,06 | 0,97 |
-| Mityczny · +9 · 45 | **0,93** | 0,98 | 0,98 | 1,02 | 0,96 | 1,01 | 0,98 | 0,96 |
+| Mityczny · +9 · 20 | **0,94** | 1,00 | 1,01 | 1,03 | 0,97 | 1,03 | 1,06 | 0,97 |
+| Mityczny · +9 · 45 | **0,93** | 0,98 | 0,98 | 1,02 | 0,96 | 1,01 | 0,98 → 1,00 | 0,96 |
 | Mityczny · +9 · 70 | **0,92** | 0,98 | 0,98 | 1,01 | 0,95 | 1,01 | 1,02 | 0,95 |
 | Mityczny · +9 · 100 | **0,92** | 0,98 | 0,98 | 1,01 | 0,95 | 1,01 | 1,02 | 0,95 |
 
@@ -5332,44 +5722,44 @@ moc² zestawu z bronią dwuręczną (bez drugiej ręki) / moc² zestawu domyśln
 
 | rzadkość · ulepszenie · poziom | S32 | bez cech (MIX) | z cechami (MIX) | single | group | elite | boss | najgorsza |
 | --- | --: | --: | --: | --: | --: | --: | --: | --: |
-| Zwykły · +0 · 20 | **0,95** | 1,00 | **0,94 → 0,95** | 0,97 | 0,93 | 0,97 | 0,96 → 0,98 | 0,93 |
-| Zwykły · +0 · 45 | **0,94** | 0,99 | **0,93** | 0,96 | 0,92 | 0,96 | 0,93 | 0,92 |
+| Zwykły · +0 · 20 | **0,95** | 1,00 | **0,95** | 0,97 | 0,93 | 0,97 | 0,98 | 0,93 |
+| Zwykły · +0 · 45 | **0,94** | 0,99 | **0,93 → 0,94** | 0,96 | 0,92 | 0,96 | 0,93 → 0,94 | 0,92 |
 | Zwykły · +0 · 70 | **0,94** | 0,99 | **0,94** | 0,96 | 0,92 | 0,96 | 0,95 | 0,92 |
 | Zwykły · +0 · 100 | **0,94** | 0,99 | **0,94** | 0,96 | 0,92 | 0,96 | 0,95 | 0,92 |
-| Zwykły · +9 · 20 | **0,95** | 1,00 | **0,95** | 0,99 | 0,92 | 0,98 | 0,98 → 1,01 | 0,92 |
-| Zwykły · +9 · 45 | **0,94** | 0,99 | **0,93** | 0,98 | 0,91 | 0,97 | 0,94 | 0,91 |
+| Zwykły · +9 · 20 | **0,95** | 1,00 | **0,95** | 0,99 | 0,92 | 0,98 | 1,01 | 0,92 |
+| Zwykły · +9 · 45 | **0,94** | 0,99 | **0,93 → 0,94** | 0,98 | 0,91 | 0,97 | 0,94 → 0,96 | 0,91 |
 | Zwykły · +9 · 70 | **0,94** | 1,00 | **0,94** | 0,98 | 0,91 | 0,97 | 0,98 | 0,91 |
 | Zwykły · +9 · 100 | **0,94** | 1,00 | **0,94** | 0,98 | 0,91 | 0,97 | 0,98 | 0,91 |
-| Unikatowy · +0 · 20 | **0,94** | 1,00 | **0,95** | 0,98 | 0,92 | 0,98 | 0,97 → 0,99 | 0,92 |
-| Unikatowy · +0 · 45 | **0,94** | 0,99 | **0,94** | 0,98 | 0,92 | 0,98 | 0,94 | 0,92 |
+| Unikatowy · +0 · 20 | **0,94** | 1,00 | **0,95** | 0,98 | 0,92 | 0,98 | 0,99 | 0,92 |
+| Unikatowy · +0 · 45 | **0,94** | 0,99 | **0,94 → 0,95** | 0,98 | 0,92 | 0,98 | 0,94 → 0,96 | 0,92 |
 | Unikatowy · +0 · 70 | **0,94** | 0,99 | **0,94** | 0,97 | 0,92 | 0,97 | 0,96 | 0,92 |
 | Unikatowy · +0 · 100 | **0,94** | 0,99 | **0,94** | 0,98 | 0,92 | 0,97 | 0,97 | 0,92 |
-| Unikatowy · +9 · 20 | **0,94** | 1,00 | **0,95 → 0,96** | 1,01 | 0,91 | 0,99 | 1,00 → 1,03 | 0,91 |
-| Unikatowy · +9 · 45 | **0,94** | 0,99 | **0,95** | 1,01 | 0,91 | 1,00 | 0,97 | 0,91 |
+| Unikatowy · +9 · 20 | **0,94** | 1,00 | **0,96** | 1,01 | 0,91 | 0,99 | 1,03 | 0,91 |
+| Unikatowy · +9 · 45 | **0,94** | 0,99 | **0,95** | 1,01 | 0,91 | 1,00 | 0,97 → 0,99 | 0,91 |
 | Unikatowy · +9 · 70 | **0,94** | 1,00 | **0,95** | 1,00 | 0,90 | 0,99 | 1,00 | 0,90 |
 | Unikatowy · +9 · 100 | **0,94** | 0,99 | **0,95** | 1,00 | 0,90 | 0,99 | 1,00 | 0,90 |
-| Heroiczny · +0 · 20 | **0,92** | 0,98 | **0,93 → 0,94** | 0,97 | 0,90 | 0,96 | 0,96 → 0,99 | 0,90 |
-| Heroiczny · +0 · 45 | **0,94** | 0,99 | **0,94** | 0,99 | 0,92 | 0,98 | 0,95 | 0,92 |
+| Heroiczny · +0 · 20 | **0,92** | 0,98 | **0,94** | 0,97 | 0,90 | 0,96 | 0,99 | 0,90 |
+| Heroiczny · +0 · 45 | **0,94** | 0,99 | **0,94 → 0,95** | 0,99 | 0,92 | 0,98 | 0,95 → 0,97 | 0,92 |
 | Heroiczny · +0 · 70 | **0,94** | 1,00 | **0,95** | 0,99 | 0,92 | 0,98 | 0,98 | 0,92 |
 | Heroiczny · +0 · 100 | **0,94** | 0,99 | **0,95** | 0,98 | 0,92 | 0,98 | 0,98 | 0,92 |
-| Heroiczny · +9 · 20 | **0,94** | 0,99 | **0,95 → 0,96** | 1,02 | 0,90 | 1,00 | 1,02 → 1,05 | 0,90 |
-| Heroiczny · +9 · 45 | **0,94** | 0,99 | **0,95** | 1,02 | 0,90 | 1,00 | 0,98 | 0,90 |
+| Heroiczny · +9 · 20 | **0,94** | 0,99 | **0,96** | 1,02 | 0,90 | 1,00 | 1,05 | 0,90 |
+| Heroiczny · +9 · 45 | **0,94** | 0,99 | **0,95** | 1,02 | 0,90 | 1,00 | 0,98 → 1,00 | 0,90 |
 | Heroiczny · +9 · 70 | **0,94** | 1,00 | **0,95** | 1,02 | 0,90 | 1,00 | 1,02 | 0,90 |
 | Heroiczny · +9 · 100 | **0,94** | 0,99 | **0,95** | 1,02 | 0,89 | 1,00 | 1,02 | 0,89 |
-| Legendarny · +0 · 20 | **0,95** | 1,01 | **0,96 → 0,97** | 1,00 | 0,93 | 1,00 | 1,00 → 1,02 | 0,93 |
-| Legendarny · +0 · 45 | **0,93** | 0,98 | **0,94** | 0,98 | 0,91 | 0,98 | 0,95 | 0,91 |
+| Legendarny · +0 · 20 | **0,95** | 1,01 | **0,97** | 1,00 | 0,93 | 1,00 | 1,02 | 0,93 |
+| Legendarny · +0 · 45 | **0,93** | 0,98 | **0,94** | 0,98 | 0,91 | 0,98 | 0,95 → 0,97 | 0,91 |
 | Legendarny · +0 · 70 | **0,93** | 0,99 | **0,95** | 0,99 | 0,91 | 0,98 | 0,98 | 0,91 |
 | Legendarny · +0 · 100 | **0,93** | 0,99 | **0,94** | 0,99 | 0,91 | 0,98 | 0,98 | 0,91 |
-| Legendarny · +9 · 20 | **0,95** | 1,00 | **0,96** | 1,03 | 0,90 | 1,01 | 1,04 → 1,07 | 0,90 |
-| Legendarny · +9 · 45 | **0,93** | 0,98 | **0,94** | 1,02 | 0,89 | 1,00 | 0,98 | 0,89 |
+| Legendarny · +9 · 20 | **0,95** | 1,00 | **0,96** | 1,03 | 0,90 | 1,01 | 1,07 | 0,90 |
+| Legendarny · +9 · 45 | **0,93** | 0,98 | **0,94** | 1,02 | 0,89 | 1,00 | 0,98 → 1,00 | 0,89 |
 | Legendarny · +9 · 70 | **0,93** | 0,99 | **0,94** | 1,02 | 0,88 | 0,99 | 1,02 | 0,88 |
 | Legendarny · +9 · 100 | **0,93** | 0,99 | **0,94** | 1,02 | 0,88 | 0,99 | 1,02 | 0,88 |
-| Mityczny · +0 · 20 | **0,92** | **0,97** | **0,93** | 0,97 | 0,89 | 0,96 | 0,97 → 0,99 | 0,89 |
-| Mityczny · +0 · 45 | **0,91** | **0,95** | **0,91** | 0,96 | 0,88 | 0,95 | 0,93 | 0,88 |
+| Mityczny · +0 · 20 | **0,92** | **0,97** | **0,93** | 0,97 | 0,89 | 0,96 | 0,99 | 0,89 |
+| Mityczny · +0 · 45 | **0,91** | **0,95** | **0,91** | 0,96 | 0,88 | 0,95 | 0,93 → 0,95 | 0,88 |
 | Mityczny · +0 · 70 | **0,90** | **0,96** | **0,91** | 0,96 | 0,88 | 0,95 | 0,96 | 0,88 |
 | Mityczny · +0 · 100 | **0,90** | **0,96** | **0,91** | 0,96 | 0,87 | 0,95 | 0,96 | 0,87 |
-| Mityczny · +9 · 20 | **0,92** | 0,97 | **0,92** | 1,01 | 0,85 | 0,98 | 1,02 → 1,04 | 0,85 |
-| Mityczny · +9 · 45 | **0,91** | **0,95** | **0,90** | 0,99 | 0,84 | 0,96 | 0,96 | 0,84 |
+| Mityczny · +9 · 20 | **0,92** | 0,97 | **0,92** | 1,01 | 0,85 | 0,98 | 1,04 | 0,85 |
+| Mityczny · +9 · 45 | **0,91** | **0,95** | **0,90** | 0,99 | 0,84 | 0,96 | 0,96 → 0,98 | 0,84 |
 | Mityczny · +9 · 70 | **0,90** | **0,95** | **0,90** | 0,99 | 0,83 | 0,96 | 1,00 | 0,83 |
 | Mityczny · +9 · 100 | **0,90** | **0,96** | **0,90** | 0,99 | 0,82 | 0,96 | 1,00 | 0,82 |
 
@@ -5379,44 +5769,44 @@ moc² zestawu z bronią dwuręczną (bez drugiej ręki) / moc² zestawu domyśln
 
 | rzadkość · ulepszenie · poziom | S32 | bez cech (MIX) | z cechami (MIX) | single | group | elite | boss | najgorsza |
 | --- | --: | --: | --: | --: | --: | --: | --: | --: |
-| Zwykły · +0 · 20 | **0,96** | 1,01 | **0,95** | 0,97 | 0,93 | 0,97 | 0,96 → 0,98 | 0,93 |
-| Zwykły · +0 · 45 | **0,95** | 1,00 | **0,94** | 0,97 | 0,92 | 0,96 | 0,94 | 0,92 |
+| Zwykły · +0 · 20 | **0,96** | 1,01 | **0,95** | 0,97 | 0,93 | 0,97 | 0,98 | 0,93 |
+| Zwykły · +0 · 45 | **0,95** | 1,00 | **0,94** | 0,97 | 0,92 | 0,96 | 0,94 → 0,96 | 0,92 |
 | Zwykły · +0 · 70 | **0,95** | 1,00 | **0,94** | 0,96 | 0,92 | 0,96 | 0,97 | 0,92 |
 | Zwykły · +0 · 100 | **0,95** | 1,00 | **0,94** | 0,96 | 0,92 | 0,96 | 0,97 | 0,92 |
-| Zwykły · +9 · 20 | **0,95** | 1,01 | **0,95** | 0,98 | 0,91 | 0,98 | 0,98 → 1,01 | 0,91 |
-| Zwykły · +9 · 45 | **0,95** | 1,00 | **0,94** | 0,98 | 0,91 | 0,98 | 0,96 | 0,91 |
+| Zwykły · +9 · 20 | **0,95** | 1,01 | **0,95** | 0,98 | 0,91 | 0,98 | 1,01 | 0,91 |
+| Zwykły · +9 · 45 | **0,95** | 1,00 | **0,94** | 0,98 | 0,91 | 0,98 | 0,96 → 0,98 | 0,91 |
 | Zwykły · +9 · 70 | **0,95** | 1,01 | **0,95** | 0,98 | 0,91 | 0,98 | 1,01 | 0,91 |
 | Zwykły · +9 · 100 | **0,94** | 1,00 | **0,94** | 0,98 | 0,91 | 0,97 | 1,01 | 0,91 |
-| Unikatowy · +0 · 20 | **0,96** | 1,01 | **0,95** | 0,97 | 0,92 | 0,97 | 0,96 → 0,99 | 0,92 |
-| Unikatowy · +0 · 45 | **0,96** | 1,01 | **0,94** | 0,98 | 0,92 | 0,97 | 0,95 | 0,92 |
+| Unikatowy · +0 · 20 | **0,96** | 1,01 | **0,95** | 0,97 | 0,92 | 0,97 | 0,99 | 0,92 |
+| Unikatowy · +0 · 45 | **0,96** | 1,01 | **0,94 → 0,95** | 0,98 | 0,92 | 0,97 | 0,95 → 0,97 | 0,92 |
 | Unikatowy · +0 · 70 | **0,95** | 1,01 | **0,95** | 0,97 | 0,92 | 0,97 | 0,98 | 0,92 |
 | Unikatowy · +0 · 100 | **0,95** | 1,01 | **0,95** | 0,98 | 0,92 | 0,97 | 0,98 | 0,92 |
-| Unikatowy · +9 · 20 | **0,96** | 1,02 | **0,95** | 0,99 | 0,91 | 0,99 | 0,99 → 1,02 | 0,91 |
-| Unikatowy · +9 · 45 | **0,96** | 1,01 | **0,95** | 1,00 | 0,91 | 0,99 | 0,97 | 0,91 |
+| Unikatowy · +9 · 20 | **0,96** | 1,02 | **0,95** | 0,99 | 0,91 | 0,99 | 1,02 | 0,91 |
+| Unikatowy · +9 · 45 | **0,96** | 1,01 | **0,95** | 1,00 | 0,91 | 0,99 | 0,97 → 0,99 | 0,91 |
 | Unikatowy · +9 · 70 | **0,96** | 1,02 | **0,95** | 1,00 | 0,91 | 0,98 | 1,02 | 0,91 |
 | Unikatowy · +9 · 100 | **0,95** | 1,01 | **0,95** | 0,99 | 0,90 | 0,98 | 1,02 | 0,90 |
-| Heroiczny · +0 · 20 | **0,95** | 1,00 | **0,93 → 0,94** | 0,96 | 0,91 | 0,96 | 0,96 → 0,98 | 0,91 |
-| Heroiczny · +0 · 45 | **0,96** | 1,01 | **0,95** | 0,98 | 0,92 | 0,98 | 0,96 | 0,92 |
+| Heroiczny · +0 · 20 | **0,95** | 1,00 | **0,94** | 0,96 | 0,91 | 0,96 | 0,98 | 0,91 |
+| Heroiczny · +0 · 45 | **0,96** | 1,01 | **0,95** | 0,98 | 0,92 | 0,98 | 0,96 → 0,98 | 0,92 |
 | Heroiczny · +0 · 70 | **0,96** | 1,02 | **0,95** | 0,98 | 0,92 | 0,98 | 0,99 | 0,92 |
 | Heroiczny · +0 · 100 | **0,95** | 1,01 | **0,95** | 0,98 | 0,92 | 0,97 | 0,99 | 0,92 |
-| Heroiczny · +9 · 20 | **0,96** | 1,02 | **0,94 → 0,95** | 0,99 | 0,90 | 0,99 | 0,99 → 1,02 | 0,90 |
-| Heroiczny · +9 · 45 | **0,96** | 1,01 | **0,94** | 1,00 | 0,91 | 0,99 | 0,98 | 0,91 |
+| Heroiczny · +9 · 20 | **0,96** | 1,02 | **0,95** | 0,99 | 0,90 | 0,99 | 1,02 | 0,90 |
+| Heroiczny · +9 · 45 | **0,96** | 1,01 | **0,94 → 0,95** | 1,00 | 0,91 | 0,99 | 0,98 → 0,99 | 0,91 |
 | Heroiczny · +9 · 70 | **0,96** | 1,02 | **0,95** | 1,00 | 0,90 | 0,99 | 1,02 | 0,90 |
 | Heroiczny · +9 · 100 | **0,95** | 1,01 | **0,94** | 0,99 | 0,90 | 0,98 | 1,02 | 0,90 |
-| Legendarny · +0 · 20 | 0,97 | 1,03 | **0,96 → 0,97** | 0,99 | 0,93 | 0,99 | 0,99 → 1,01 | 0,93 |
-| Legendarny · +0 · 45 | **0,95** | 1,01 | **0,94** | 0,98 | 0,92 | 0,97 | 0,96 | 0,92 |
+| Legendarny · +0 · 20 | 0,97 | 1,03 | **0,97** | 0,99 | 0,93 | 0,99 | 1,01 | 0,93 |
+| Legendarny · +0 · 45 | **0,95** | 1,01 | **0,94** | 0,98 | 0,92 | 0,97 | 0,96 → 0,97 | 0,92 |
 | Legendarny · +0 · 70 | **0,95** | 1,01 | **0,95** | 0,98 | 0,92 | 0,97 | 0,99 | 0,92 |
 | Legendarny · +0 · 100 | **0,95** | 1,01 | **0,95** | 0,98 | 0,91 | 0,97 | 0,99 | 0,91 |
-| Legendarny · +9 · 20 | **0,97** | 1,03 | **0,95 → 0,96** | 1,00 | 0,91 | 0,99 | 1,00 → 1,03 | 0,91 |
-| Legendarny · +9 · 45 | **0,95** | 1,01 | **0,94** | 0,99 | 0,90 | 0,98 | 0,97 | 0,90 |
+| Legendarny · +9 · 20 | **0,97** | 1,03 | **0,96** | 1,00 | 0,91 | 0,99 | 1,03 | 0,91 |
+| Legendarny · +9 · 45 | **0,95** | 1,01 | **0,94** | 0,99 | 0,90 | 0,98 | 0,97 → 0,99 | 0,90 |
 | Legendarny · +9 · 70 | **0,95** | 1,01 | **0,94** | 0,99 | 0,89 | 0,98 | 1,02 | 0,89 |
 | Legendarny · +9 · 100 | **0,95** | 1,01 | **0,94** | 0,99 | 0,89 | 0,98 | 1,02 | 0,89 |
-| Mityczny · +0 · 20 | **0,94** | 0,99 | **0,92 → 0,93** | 0,96 | 0,89 | 0,96 | 0,96 → 0,98 | 0,89 |
-| Mityczny · +0 · 45 | **0,93** | 0,98 | **0,92** | 0,96 | 0,89 | 0,95 | 0,94 | 0,89 |
+| Mityczny · +0 · 20 | **0,94** | 0,99 | **0,93** | 0,96 | 0,89 | 0,96 | 0,98 | 0,89 |
+| Mityczny · +0 · 45 | **0,93** | 0,98 | **0,92** | 0,96 | 0,89 | 0,95 | 0,94 → 0,96 | 0,89 |
 | Mityczny · +0 · 70 | **0,92** | 0,98 | **0,92** | 0,95 | 0,88 | 0,95 | 0,97 | 0,88 |
 | Mityczny · +0 · 100 | **0,92** | 0,98 | **0,92** | 0,95 | 0,88 | 0,95 | 0,97 | 0,88 |
-| Mityczny · +9 · 20 | **0,94** | 1,00 | **0,92** | 0,97 | 0,87 | 0,96 | 0,98 → 1,01 | 0,87 |
-| Mityczny · +9 · 45 | **0,93** | 0,98 | **0,91** | 0,96 | 0,86 | 0,95 | 0,95 | 0,86 |
+| Mityczny · +9 · 20 | **0,94** | 1,00 | **0,92** | 0,97 | 0,87 | 0,96 | 1,01 | 0,87 |
+| Mityczny · +9 · 45 | **0,93** | 0,98 | **0,91** | 0,96 | 0,86 | 0,95 | 0,95 → 0,96 | 0,86 |
 | Mityczny · +9 · 70 | **0,92** | 0,98 | **0,91** | 0,96 | 0,86 | 0,94 | 1,00 | 0,86 |
 | Mityczny · +9 · 100 | **0,92** | 0,98 | **0,91** | 0,96 | 0,86 | 0,94 | 1,00 | 0,86 |
 
@@ -5426,44 +5816,44 @@ moc² zestawu z bronią dwuręczną (bez drugiej ręki) / moc² zestawu domyśln
 
 | rzadkość · ulepszenie · poziom | S32 | bez cech (MIX) | z cechami (MIX) | single | group | elite | boss | najgorsza |
 | --- | --: | --: | --: | --: | --: | --: | --: | --: |
-| Zwykły · +0 · 20 | **0,95** | 1,00 | **0,94 → 0,95** | 0,92 | 0,97 | 0,92 | 0,93 → 0,94 | 0,92 |
+| Zwykły · +0 · 20 | **0,95** | 1,00 | **0,95** | 0,92 | 0,97 | 0,92 | 0,94 | 0,92 |
 | Zwykły · +0 · 45 | **0,94** | 0,99 | **0,93** | 0,91 | 0,96 | 0,91 | 0,90 | 0,90 |
 | Zwykły · +0 · 70 | **0,94** | 0,99 | **0,93** | 0,91 | 0,95 | 0,91 | 0,92 | 0,91 |
 | Zwykły · +0 · 100 | **0,93** | 0,99 | **0,93** | 0,91 | 0,95 | 0,91 | 0,92 | 0,91 |
-| Zwykły · +9 · 20 | **0,95** | 1,01 | **0,96** | 0,92 | 0,99 | 0,92 | 0,94 → 0,95 | 0,92 |
-| Zwykły · +9 · 45 | **0,93** | 0,98 | **0,94** | 0,90 | 0,98 | 0,90 | 0,90 | 0,90 |
+| Zwykły · +9 · 20 | **0,95** | 1,01 | **0,96** | 0,92 | 0,99 | 0,92 | 0,95 | 0,92 |
+| Zwykły · +9 · 45 | **0,93** | 0,98 | **0,94** | 0,90 | 0,98 | 0,90 | 0,90 → 0,89 | 0,90 → 0,89 |
 | Zwykły · +9 · 70 | **0,93** | 0,99 | **0,94** | 0,90 | 0,98 | 0,90 | 0,93 | 0,90 |
 | Zwykły · +9 · 100 | **0,93** | 0,99 | **0,94** | 0,90 | 0,97 | 0,90 | 0,93 | 0,90 |
-| Unikatowy · +0 · 20 | 0,97 | 1,02 | **0,96 → 0,97** | 0,94 | 0,98 | 0,94 | 0,95 → 0,96 | 0,94 |
-| Unikatowy · +0 · 45 | **0,96** | 1,01 | **0,95** | 0,93 | 0,98 | 0,93 | 0,93 | 0,93 |
+| Unikatowy · +0 · 20 | 0,97 | 1,02 | **0,97** | 0,94 | 0,98 | 0,94 | 0,96 | 0,94 |
+| Unikatowy · +0 · 45 | **0,96** | 1,01 | **0,95** | 0,93 | 0,98 | 0,93 | 0,93 → 0,92 | 0,93 → 0,92 |
 | Unikatowy · +0 · 70 | **0,96** | 1,01 | **0,95** | 0,93 | 0,97 | 0,93 | 0,94 | 0,93 |
 | Unikatowy · +0 · 100 | **0,96** | 1,01 | **0,95** | 0,93 | 0,97 | 0,93 | 0,94 | 0,93 |
-| Unikatowy · +9 · 20 | **0,96** | 1,02 | 0,97 | 0,93 | 1,00 | 0,93 | 0,95 → 0,96 | 0,93 |
-| Unikatowy · +9 · 45 | **0,96** | 1,01 | **0,97** | 0,93 | 1,00 | 0,93 | 0,93 | 0,93 |
+| Unikatowy · +9 · 20 | **0,96** | 1,02 | 0,97 | 0,93 | 1,00 | 0,93 | 0,96 | 0,93 |
+| Unikatowy · +9 · 45 | **0,96** | 1,01 | **0,97 → 0,96** | 0,93 | 1,00 | 0,93 | 0,93 → 0,92 | 0,93 → 0,92 |
 | Unikatowy · +9 · 70 | **0,96** | 1,01 | **0,97** | 0,92 | 1,00 | 0,92 | 0,96 | 0,92 |
 | Unikatowy · +9 · 100 | **0,96** | 1,01 | **0,96** | 0,92 | 0,99 | 0,92 | 0,95 | 0,92 |
-| Heroiczny · +0 · 20 | **0,95** | 1,00 | **0,95** | 0,92 | 0,97 | 0,92 | 0,93 → 0,94 | 0,92 |
+| Heroiczny · +0 · 20 | **0,95** | 1,00 | **0,95** | 0,92 | 0,97 | 0,92 | 0,94 | 0,92 |
 | Heroiczny · +0 · 45 | **0,97** | 1,01 | **0,96** | 0,94 | 0,98 | 0,94 | 0,93 | 0,93 |
 | Heroiczny · +0 · 70 | 0,97 | 1,02 | **0,96** | 0,94 | 0,98 | 0,94 | 0,95 | 0,94 |
 | Heroiczny · +0 · 100 | **0,97** | 1,01 | **0,96** | 0,93 | 0,98 | 0,93 | 0,95 | 0,93 |
 | Heroiczny · +9 · 20 | 0,97 | 1,03 | 0,98 | 0,94 | 1,01 | 0,94 | 0,97 | 0,94 |
-| Heroiczny · +9 · 45 | 0,97 | 1,01 | 0,97 | 0,93 | 1,01 | 0,93 | 0,94 | 0,93 |
+| Heroiczny · +9 · 45 | 0,97 | 1,01 | **0,97** | 0,93 | 1,01 | 0,93 | 0,94 → 0,93 | 0,93 |
 | Heroiczny · +9 · 70 | **0,97** | 1,02 | 0,98 | 0,93 | 1,01 | 0,93 | 0,97 | 0,93 |
 | Heroiczny · +9 · 100 | **0,96** | 1,02 | 0,97 | 0,93 | 1,00 | 0,92 | 0,96 | 0,92 |
-| Legendarny · +0 · 20 | 0,99 | **1,04** | 0,98 | 0,96 | 1,00 | 0,96 | 0,97 → 0,98 | 0,96 |
+| Legendarny · +0 · 20 | 0,99 | **1,04** | 0,98 | 0,96 | 1,00 | 0,96 | 0,98 | 0,96 |
 | Legendarny · +0 · 45 | **0,97** | 1,01 | **0,96** | 0,94 | 0,98 | 0,94 | 0,93 | 0,93 |
 | Legendarny · +0 · 70 | **0,97** | 1,02 | **0,96** | 0,93 | 0,98 | 0,93 | 0,95 | 0,93 |
 | Legendarny · +0 · 100 | **0,96** | 1,01 | **0,96** | 0,93 | 0,97 | 0,93 | 0,95 | 0,93 |
 | Legendarny · +9 · 20 | 0,98 | 1,03 | 0,99 | 0,94 | 1,02 | 0,94 | 0,98 | 0,94 |
-| Legendarny · +9 · 45 | **0,97** | 1,01 | **0,97** | 0,93 | 1,01 | 0,93 | 0,94 | 0,93 |
+| Legendarny · +9 · 45 | **0,97** | 1,01 | **0,97** | 0,93 | 1,01 | 0,93 | 0,94 → 0,93 | 0,93 |
 | Legendarny · +9 · 70 | **0,96** | 1,02 | 0,97 | 0,93 | 1,00 | 0,92 | 0,97 | 0,92 |
 | Legendarny · +9 · 100 | **0,96** | 1,02 | 0,97 | 0,93 | 1,00 | 0,92 | 0,97 | 0,92 |
 | Mityczny · +0 · 20 | **0,95** | 1,00 | **0,94** | 0,92 | 0,96 | 0,92 | 0,94 | 0,92 |
-| Mityczny · +0 · 45 | **0,95** | 0,99 | **0,93** | 0,92 | 0,95 | 0,92 | 0,92 | 0,92 |
+| Mityczny · +0 · 45 | **0,95** | 0,99 | **0,93** | 0,92 | 0,95 | 0,92 | 0,92 → 0,91 | 0,92 → 0,91 |
 | Mityczny · +0 · 70 | **0,94** | 0,99 | **0,93** | 0,91 | 0,94 | 0,91 | 0,93 | 0,91 |
 | Mityczny · +0 · 100 | **0,94** | 0,99 | **0,93** | 0,91 | 0,94 | 0,91 | 0,93 | 0,91 |
 | Mityczny · +9 · 20 | **0,96** | 1,00 | **0,96** | 0,92 | 0,98 | 0,92 | 0,96 | 0,92 |
-| Mityczny · +9 · 45 | **0,94** | 0,98 | **0,94** | 0,90 | 0,97 | 0,90 | 0,91 | 0,90 |
+| Mityczny · +9 · 45 | **0,94** | 0,98 | **0,94 → 0,93** | 0,90 | 0,97 | 0,90 | 0,91 → 0,90 | 0,90 |
 | Mityczny · +9 · 70 | **0,94** | 0,99 | **0,94** | 0,90 | 0,96 | 0,90 | 0,95 | 0,90 |
 | Mityczny · +9 · 100 | **0,94** | 0,99 | **0,94** | 0,90 | 0,96 | 0,90 | 0,95 | 0,90 |
 
@@ -5477,40 +5867,40 @@ moc² zestawu z bronią dwuręczną (bez drugiej ręki) / moc² zestawu domyśln
 | Zwykły · +0 · 45 | 0,99 | 1,00 | **0,93** | 0,93 | 0,93 | 0,94 | 0,93 | 0,93 |
 | Zwykły · +0 · 70 | 0,98 | 0,99 | **0,93** | 0,93 | 0,92 | 0,93 | 0,92 | 0,92 |
 | Zwykły · +0 · 100 | 0,97 | 0,98 | **0,92** | 0,92 | 0,92 | 0,92 | 0,92 | 0,92 |
-| Zwykły · +9 · 20 | 0,98 | 0,99 | **0,93** | 0,93 | 0,93 | 0,93 | 0,92 → 0,93 | 0,92 → 0,93 |
+| Zwykły · +9 · 20 | 0,98 | 0,99 | **0,93** | 0,93 | 0,93 | 0,93 | 0,93 | 0,93 |
 | Zwykły · +9 · 45 | 0,97 | 0,99 | **0,92** | 0,93 | 0,92 | 0,93 | 0,92 | 0,92 |
 | Zwykły · +9 · 70 | 0,97 | 0,99 | **0,92** | 0,92 | 0,92 | 0,92 | 0,91 | 0,91 |
 | Zwykły · +9 · 100 | **0,96** | 0,98 | **0,91** | 0,91 | 0,91 | 0,91 | 0,90 | 0,90 |
-| Unikatowy · +0 · 20 | 1,00 | 1,02 | **0,95** | 0,95 | 0,94 | 0,95 | 0,94 → 0,95 | 0,94 |
+| Unikatowy · +0 · 20 | 1,00 | 1,02 | **0,95** | 0,95 | 0,94 | 0,95 | 0,95 | 0,94 |
 | Unikatowy · +0 · 45 | 1,00 | 1,01 | **0,94** | 0,95 | 0,94 | 0,95 | 0,94 | 0,94 |
 | Unikatowy · +0 · 70 | 0,99 | 1,01 | **0,94** | 0,94 | 0,93 | 0,94 | 0,93 | 0,93 |
 | Unikatowy · +0 · 100 | 0,99 | 1,00 | **0,93** | 0,94 | 0,93 | 0,94 | 0,93 | 0,93 |
-| Unikatowy · +9 · 20 | 1,00 | 1,02 | **0,95** | 0,95 | 0,95 | 0,95 | 0,94 → 0,95 | 0,94 → 0,95 |
-| Unikatowy · +9 · 45 | 0,99 | 1,01 | **0,94** | 0,95 | 0,94 | 0,95 | 0,94 | 0,94 |
+| Unikatowy · +9 · 20 | 1,00 | 1,02 | **0,95** | 0,95 | 0,95 | 0,95 | 0,95 | 0,95 |
+| Unikatowy · +9 · 45 | 0,99 | 1,01 | **0,94 → 0,95** | 0,95 | 0,94 | 0,95 | 0,94 | 0,94 |
 | Unikatowy · +9 · 70 | 0,98 | 1,00 | **0,94** | 0,94 | 0,94 | 0,94 | 0,93 | 0,93 |
 | Unikatowy · +9 · 100 | 0,97 | 0,99 | **0,93** | 0,93 | 0,93 | 0,93 | 0,92 | 0,92 |
-| Heroiczny · +0 · 20 | 1,00 | 1,01 | **0,94** | 0,94 | 0,94 | 0,94 | 0,93 → 0,94 | 0,93 → 0,94 |
-| Heroiczny · +0 · 45 | 1,01 | 1,02 | **0,95** | 0,95 | 0,95 | 0,95 | 0,94 | 0,94 |
+| Heroiczny · +0 · 20 | 1,00 | 1,01 | **0,94** | 0,94 | 0,94 | 0,94 | 0,94 | 0,94 |
+| Heroiczny · +0 · 45 | 1,01 | 1,02 | **0,95** | 0,95 | 0,95 | 0,95 | 0,94 → 0,95 | 0,94 → 0,95 |
 | Heroiczny · +0 · 70 | 1,00 | 1,01 | **0,94** | 0,94 | 0,94 | 0,95 | 0,93 | 0,93 |
 | Heroiczny · +0 · 100 | 0,99 | 1,00 | **0,93** | 0,93 | 0,93 | 0,94 | 0,93 | 0,93 |
-| Heroiczny · +9 · 20 | 1,01 | 1,03 | **0,96** | 0,96 | 0,96 | 0,96 | 0,95 → 0,96 | 0,95 → 0,96 |
-| Heroiczny · +9 · 45 | 0,99 | 1,01 | **0,95** | 0,95 | 0,95 | 0,95 | 0,94 | 0,94 |
+| Heroiczny · +9 · 20 | 1,01 | 1,03 | **0,96** | 0,96 | 0,96 | 0,96 | 0,96 | 0,96 |
+| Heroiczny · +9 · 45 | 0,99 | 1,01 | **0,95** | 0,95 | 0,95 | 0,95 | 0,94 → 0,95 | 0,94 → 0,95 |
 | Heroiczny · +9 · 70 | 0,99 | 1,01 | **0,94** | 0,94 | 0,94 | 0,95 | 0,93 | 0,93 |
 | Heroiczny · +9 · 100 | 0,97 | 0,99 | **0,93** | 0,93 | 0,93 | 0,93 | 0,92 | 0,92 |
 | Legendarny · +0 · 20 | 1,02 | **1,04** | **0,96** | 0,97 | 0,96 | 0,97 | 0,96 | 0,96 |
-| Legendarny · +0 · 45 | 1,00 | 1,02 | **0,95** | 0,95 | 0,94 | 0,95 | 0,94 | 0,94 |
+| Legendarny · +0 · 45 | 1,00 | 1,02 | **0,95** | 0,95 | 0,94 | 0,95 | 0,94 → 0,95 | 0,94 |
 | Legendarny · +0 · 70 | 1,00 | 1,01 | **0,94** | 0,94 | 0,94 | 0,95 | 0,94 | 0,94 |
 | Legendarny · +0 · 100 | 0,98 | 1,00 | **0,93** | 0,93 | 0,93 | 0,93 | 0,92 | 0,92 |
-| Legendarny · +9 · 20 | 1,00 | 1,02 | **0,96** | 0,96 | 0,96 | 0,96 | 0,95 → 0,96 | 0,95 → 0,96 |
-| Legendarny · +9 · 45 | 0,99 | 1,01 | **0,95** | 0,95 | 0,95 | 0,95 | 0,94 | 0,94 |
+| Legendarny · +9 · 20 | 1,00 | 1,02 | **0,96** | 0,96 | 0,96 | 0,96 | 0,96 | 0,96 |
+| Legendarny · +9 · 45 | 0,99 | 1,01 | **0,95** | 0,95 | 0,95 | 0,95 | 0,94 → 0,95 | 0,94 → 0,95 |
 | Legendarny · +9 · 70 | 0,98 | 1,00 | **0,94** | 0,94 | 0,94 | 0,94 | 0,93 | 0,93 |
 | Legendarny · +9 · 100 | **0,97** | 0,99 | **0,93** | 0,93 | 0,93 | 0,93 | 0,92 | 0,92 |
-| Mityczny · +0 · 20 | 0,98 | 1,00 | **0,94** | 0,94 | 0,94 | 0,94 | 0,93 → 0,94 | 0,93 → 0,94 |
+| Mityczny · +0 · 20 | 0,98 | 1,00 | **0,94** | 0,94 | 0,94 | 0,94 | 0,94 | 0,94 |
 | Mityczny · +0 · 45 | 0,98 | 1,00 | **0,93** | 0,94 | 0,93 | 0,94 | 0,93 | 0,93 |
 | Mityczny · +0 · 70 | **0,97** | 0,98 | **0,92** | 0,92 | 0,92 | 0,93 | 0,92 | 0,92 |
 | Mityczny · +0 · 100 | **0,96** | 0,98 | **0,92** | 0,92 | 0,92 | 0,92 | 0,91 | 0,91 |
-| Mityczny · +9 · 20 | 0,97 | 0,99 | **0,94** | 0,94 | 0,95 | 0,95 | 0,93 → 0,94 | 0,93 → 0,94 |
-| Mityczny · +9 · 45 | **0,96** | 0,98 | **0,93** | 0,93 | 0,94 | 0,94 | 0,92 | 0,92 |
+| Mityczny · +9 · 20 | 0,97 | 0,99 | **0,94** | 0,94 | 0,95 | 0,95 | 0,94 | 0,94 |
+| Mityczny · +9 · 45 | **0,96** | 0,98 | **0,93 → 0,94** | 0,93 | 0,94 | 0,94 | 0,92 → 0,93 | 0,92 → 0,93 |
 | Mityczny · +9 · 70 | **0,95** | 0,98 | **0,93** | 0,92 | 0,93 | 0,93 | 0,92 | 0,92 |
 | Mityczny · +9 · 100 | **0,94** | **0,96** | **0,92** | 0,91 | 0,92 | 0,92 | 0,90 | 0,90 |
 
@@ -5532,8 +5922,8 @@ moc² zestawu z bronią dwuręczną (bez drugiej ręki) / moc² zestawu domyśln
 | Unikatowy · +0 · 45 | 1,00 | 1,02 | **0,90** | 0,90 | 0,89 | 0,90 | 0,93 | 0,89 |
 | Unikatowy · +0 · 70 | 1,00 | 1,01 | **0,90** | 0,89 | 0,89 | 0,90 | 0,92 | 0,89 |
 | Unikatowy · +0 · 100 | 0,99 | 1,00 | **0,89** | 0,89 | 0,88 | 0,89 | 0,92 | 0,88 |
-| Unikatowy · +9 · 20 | 1,01 | 1,02 | **0,89** | 0,89 | 0,88 | 0,89 | 0,93 → 0,94 | 0,88 |
-| Unikatowy · +9 · 45 | 1,00 | 1,02 | **0,89** | 0,88 | 0,88 | 0,88 | 0,92 | 0,88 |
+| Unikatowy · +9 · 20 | 1,01 | 1,02 | **0,89** | 0,89 | 0,88 | 0,89 | 0,94 | 0,88 |
+| Unikatowy · +9 · 45 | 1,00 | 1,02 | **0,89** | 0,88 | 0,88 | 0,88 | 0,92 → 0,93 | 0,88 |
 | Unikatowy · +9 · 70 | 0,98 | 1,00 | **0,88** | 0,87 | 0,87 | 0,87 | 0,91 | 0,87 |
 | Unikatowy · +9 · 100 | 0,98 | 0,99 | **0,87** | 0,86 | 0,86 | 0,86 | 0,91 | 0,86 |
 | Heroiczny · +0 · 20 | 1,01 | 1,02 | **0,90** | 0,90 | 0,89 | 0,90 | 0,93 | 0,89 |
@@ -5541,22 +5931,22 @@ moc² zestawu z bronią dwuręczną (bez drugiej ręki) / moc² zestawu domyśln
 | Heroiczny · +0 · 70 | 1,00 | 1,02 | **0,90** | 0,89 | 0,89 | 0,89 | 0,92 | 0,89 |
 | Heroiczny · +0 · 100 | 0,99 | 1,01 | **0,89** | 0,89 | 0,88 | 0,89 | 0,92 | 0,88 |
 | Heroiczny · +9 · 20 | 1,01 | 1,03 | **0,90** | 0,89 | 0,88 | 0,89 | 0,94 | 0,88 |
-| Heroiczny · +9 · 45 | 0,99 | 1,02 | **0,88** | 0,87 | 0,87 | 0,88 | 0,92 | 0,87 |
+| Heroiczny · +9 · 45 | 0,99 | 1,02 | **0,88 → 0,89** | 0,87 | 0,87 | 0,88 | 0,92 → 0,93 | 0,87 |
 | Heroiczny · +9 · 70 | 0,99 | 1,01 | **0,88** | 0,87 | 0,87 | 0,87 | 0,92 | 0,87 |
 | Heroiczny · +9 · 100 | 0,98 | 1,00 | **0,87** | 0,86 | 0,86 | 0,86 | 0,91 | 0,86 |
-| Legendarny · +0 · 20 | 1,02 | **1,04** | **0,92** | 0,91 | 0,91 | 0,91 | 0,94 → 0,95 | 0,91 |
-| Legendarny · +0 · 45 | 1,00 | 1,02 | **0,90** | 0,89 | 0,89 | 0,89 | 0,92 | 0,89 |
+| Legendarny · +0 · 20 | 1,02 | **1,04** | **0,92** | 0,91 | 0,91 | 0,91 | 0,95 | 0,91 |
+| Legendarny · +0 · 45 | 1,00 | 1,02 | **0,90** | 0,89 | 0,89 | 0,89 | 0,92 → 0,93 | 0,89 |
 | Legendarny · +0 · 70 | 1,00 | 1,01 | **0,89** | 0,89 | 0,88 | 0,89 | 0,92 | 0,88 |
 | Legendarny · +0 · 100 | 0,99 | 1,00 | **0,88** | 0,88 | 0,88 | 0,88 | 0,91 | 0,88 |
 | Legendarny · +9 · 20 | 1,00 | 1,03 | **0,90** | 0,88 | 0,88 | 0,89 | 0,94 | 0,88 |
-| Legendarny · +9 · 45 | 0,99 | 1,01 | **0,88** | 0,87 | 0,87 | 0,87 | 0,92 | 0,87 |
+| Legendarny · +9 · 45 | 0,99 | 1,01 | **0,88** | 0,87 | 0,87 | 0,87 | 0,92 → 0,93 | 0,87 |
 | Legendarny · +9 · 70 | 0,98 | 1,00 | **0,87** | 0,86 | 0,86 | 0,87 | 0,91 | 0,86 |
 | Legendarny · +9 · 100 | **0,97** | 0,99 | **0,87** | 0,85 | 0,85 | 0,86 | 0,90 | 0,85 |
-| Mityczny · +0 · 20 | 0,99 | 1,00 | **0,89** | 0,89 | 0,88 | 0,89 | 0,92 → 0,93 | 0,88 |
-| Mityczny · +0 · 45 | 0,98 | 0,99 | **0,88** | 0,88 | 0,88 | 0,88 | 0,91 | 0,88 |
+| Mityczny · +0 · 20 | 0,99 | 1,00 | **0,89** | 0,89 | 0,88 | 0,89 | 0,93 | 0,88 |
+| Mityczny · +0 · 45 | 0,98 | 0,99 | **0,88 → 0,89** | 0,88 | 0,88 | 0,88 | 0,91 → 0,92 | 0,88 |
 | Mityczny · +0 · 70 | **0,97** | 0,99 | **0,88** | 0,87 | 0,87 | 0,87 | 0,90 | 0,87 |
 | Mityczny · +0 · 100 | **0,96** | 0,98 | **0,87** | 0,86 | 0,86 | 0,86 | 0,90 | 0,86 |
-| Mityczny · +9 · 20 | 0,98 | 1,00 | **0,88** | 0,87 | 0,87 | 0,87 | 0,92 → 0,93 | 0,87 |
+| Mityczny · +9 · 20 | 0,98 | 1,00 | **0,88** | 0,87 | 0,87 | 0,87 | 0,93 | 0,87 |
 | Mityczny · +9 · 45 | **0,96** | 0,98 | **0,87** | 0,85 | 0,86 | 0,85 | 0,91 | 0,85 |
 | Mityczny · +9 · 70 | **0,95** | 0,98 | **0,86** | 0,84 | 0,85 | 0,85 | 0,90 | 0,84 |
 | Mityczny · +9 · 100 | **0,95** | **0,97** | **0,85** | 0,84 | 0,84 | 0,84 | 0,89 | 0,84 |
@@ -5567,44 +5957,44 @@ moc² zestawu z bronią dwuręczną (bez drugiej ręki) / moc² zestawu domyśln
 
 | rzadkość · ulepszenie · poziom | S32 | bez cech (MIX) | z cechami (MIX) | single | group | elite | boss | najgorsza |
 | --- | --: | --: | --: | --: | --: | --: | --: | --: |
-| Zwykły · +0 · 20 | **0,94** | 1,00 | **1,03 → 1,04** | 1,15 | 1,07 | 1,05 | 0,92 → 0,96 | 0,92 → 0,96 |
-| Zwykły · +0 · 45 | **0,95** | 1,00 | **1,18** | 1,50 | 1,25 | 1,24 | 0,91 | 0,91 |
+| Zwykły · +0 · 20 | **0,94** | 1,00 | **1,04** | 1,15 | 1,07 | 1,05 | 0,96 | 0,96 |
+| Zwykły · +0 · 45 | **0,95** | 1,00 | **1,18 → 1,19** | 1,50 | 1,25 | 1,24 | 0,91 → 0,99 | 0,91 → 0,99 |
 | Zwykły · +0 · 70 | **0,95** | 1,00 | **1,38** | 2,16 | 1,50 | 1,50 | 0,94 | 0,94 |
 | Zwykły · +0 · 100 | **0,95** | 1,00 | **1,78** | 4,43 | 2,00 | 2,06 | 0,95 | 0,95 |
-| Zwykły · +9 · 20 | **0,94** | 1,00 | **1,32 → 1,34** | 2,22 | 1,43 | 1,42 | 0,91 → 1,02 | 0,91 → 1,02 |
-| Zwykły · +9 · 45 | **0,95** | 1,00 | **2,57** | 4,28 | 2,99 | 3,34 | 0,91 | 0,91 |
+| Zwykły · +9 · 20 | **0,94** | 1,00 | **1,34** | 2,22 | 1,43 | 1,42 | 1,02 | 1,02 |
+| Zwykły · +9 · 45 | **0,95** | 1,00 | **2,57 → 2,66** | 4,28 | 2,99 | 3,34 | 0,91 → 1,20 | 0,91 → 1,20 |
 | Zwykły · +9 · 70 | **0,95** | 1,01 | **3,53** | 4,28 | 4,47 | 4,29 | 0,96 | 0,96 |
 | Zwykły · +9 · 100 | **0,95** | 1,01 | **3,54** | 4,27 | 4,47 | 4,28 | 0,98 | 0,98 |
-| Unikatowy · +0 · 20 | **0,96** | 1,01 | **1,16 → 1,17** | 1,44 | 1,22 | 1,20 | 0,94 → 1,01 | 0,94 → 1,01 |
-| Unikatowy · +0 · 45 | **0,97** | 1,02 | **1,52** | 2,86 | 1,69 | 1,69 | 0,94 | 0,94 |
+| Unikatowy · +0 · 20 | **0,96** | 1,01 | **1,17** | 1,44 | 1,22 | 1,20 | 1,01 | 1,01 |
+| Unikatowy · +0 · 45 | **0,97** | 1,02 | **1,52 → 1,56** | 2,86 | 1,69 | 1,69 | 0,94 → 1,09 | 0,94 → 1,09 |
 | Unikatowy · +0 · 70 | **0,96** | 1,02 | **2,29** | 4,50 | 2,65 | 2,80 | 0,97 | 0,97 |
 | Unikatowy · +0 · 100 | **0,96** | 1,02 | **3,65** | 4,50 | 4,60 | 4,51 | 0,99 | 0,99 |
-| Unikatowy · +9 · 20 | **0,97** | 1,03 | **1,88 → 1,93** | 4,35 | 2,11 | 2,21 | 0,95 → 1,13 | 0,95 → 1,13 |
-| Unikatowy · +9 · 45 | **0,97** | 1,02 | **3,56** | 4,35 | 4,53 | 4,37 | 0,96 | 0,96 |
+| Unikatowy · +9 · 20 | **0,97** | 1,03 | **1,93** | 4,35 | 2,11 | 2,21 | 1,13 | 1,13 |
+| Unikatowy · +9 · 45 | **0,97** | 1,02 | **3,56 → 3,76** | 4,35 | 4,53 | 4,37 | 0,96 → 1,55 | 0,96 → 1,55 |
 | Unikatowy · +9 · 70 | **0,96** | 1,02 | **3,59** | 4,33 | 4,50 | 4,34 | 1,00 | 1,00 |
 | Unikatowy · +9 · 100 | **0,96** | 1,02 | **3,60** | 4,32 | 4,50 | 4,33 | 1,05 | 1,05 |
-| Heroiczny · +0 · 20 | **0,95** | 1,01 | **1,26 → 1,28** | 1,82 | 1,35 | 1,34 | 0,94 → 1,03 | 0,94 → 1,03 |
-| Heroiczny · +0 · 45 | **0,97** | 1,02 | **2,05** | 4,51 | 2,36 | 2,42 | 0,95 | 0,95 |
+| Heroiczny · +0 · 20 | **0,95** | 1,01 | **1,28** | 1,82 | 1,35 | 1,34 | 1,03 | 1,03 |
+| Heroiczny · +0 · 45 | **0,97** | 1,02 | **2,05 → 2,11** | 4,51 | 2,36 | 2,42 | 0,95 → 1,18 | 0,95 → 1,18 |
 | Heroiczny · +0 · 70 | 0,97 | 1,03 | **3,66** | 4,52 | 4,61 | 4,52 | 0,99 | 0,99 |
 | Heroiczny · +0 · 100 | **0,97** | 1,02 | **3,66** | 4,50 | 4,60 | 4,51 | 1,01 | 1,01 |
-| Heroiczny · +9 · 20 | **0,97** | 1,02 | **3,10 → 3,18** | 4,30 | 3,56 | 4,20 | 0,96 → 1,22 | 0,96 → 1,22 |
-| Heroiczny · +9 · 45 | 0,97 | 1,02 | **3,56** | 4,33 | 4,51 | 4,35 | 0,99 | 0,99 |
+| Heroiczny · +9 · 20 | **0,97** | 1,02 | **3,18** | 4,30 | 3,56 | 4,20 | 1,22 | 1,22 |
+| Heroiczny · +9 · 45 | 0,97 | 1,02 | **3,56 → 3,90** | 4,33 | 4,51 | 4,35 | 0,99 → 2,08 | 0,99 → 2,08 |
 | Heroiczny · +9 · 70 | 0,97 | 1,03 | **3,61** | 4,33 | 4,51 | 4,34 | 1,04 | 1,04 |
 | Heroiczny · +9 · 100 | **0,97** | 1,03 | **3,62** | 4,31 | 4,49 | 4,32 | 1,10 | 1,10 |
-| Legendarny · +0 · 20 | **0,97** | 1,02 | **1,82 → 1,86** | 4,48 | 2,05 | 2,09 | 0,97 → 1,14 | 0,97 → 1,14 |
-| Legendarny · +0 · 45 | **0,96** | 1,01 | **3,63** | 4,48 | 4,57 | 4,49 | 0,98 | 0,98 |
+| Legendarny · +0 · 20 | **0,97** | 1,02 | **1,86** | 4,48 | 2,05 | 2,09 | 1,14 | 1,14 |
+| Legendarny · +0 · 45 | **0,96** | 1,01 | **3,63 → 3,80** | 4,48 | 4,57 | 4,49 | 0,98 → 1,48 | 0,98 → 1,48 |
 | Legendarny · +0 · 70 | **0,96** | 1,01 | **3,63** | 4,45 | 4,55 | 4,46 | 1,02 | 1,02 |
 | Legendarny · +0 · 100 | **0,96** | 1,02 | **3,66** | 4,48 | 4,57 | 4,48 | 1,06 | 1,06 |
-| Legendarny · +9 · 20 | **0,96** | 1,02 | **3,55 → 3,71** | 4,27 | 4,45 | 4,29 | 0,99 → 1,48 | 0,99 → 1,48 |
-| Legendarny · +9 · 45 | **0,97** | 1,01 | **3,55** | 4,28 | 4,46 | 4,30 | 1,06 | 1,06 |
+| Legendarny · +9 · 20 | **0,96** | 1,02 | **3,71** | 4,27 | 4,45 | 4,29 | 1,48 | 1,48 |
+| Legendarny · +9 · 45 | **0,97** | 1,01 | **3,55 → 4,38** | 4,28 | 4,46 | 4,30 | 1,06 → 4,30 | 1,06 → 4,28 |
 | Legendarny · +9 · 70 | **0,96** | 1,02 | **3,58** | 4,25 | 4,43 | 4,27 | 1,11 | 1,11 |
 | Legendarny · +9 · 100 | **0,96** | 1,02 | **3,64** | 4,28 | 4,46 | 4,29 | 1,24 | 1,24 |
-| Mityczny · +0 · 20 | **0,93** | 0,98 | **3,49 → 3,62** | 4,28 | 4,38 | 4,30 | 0,96 → 1,34 | 0,96 → 1,34 |
-| Mityczny · +0 · 45 | **0,94** | 0,99 | **3,56** | 4,35 | 4,45 | 4,37 | 1,03 | 1,03 |
+| Mityczny · +0 · 20 | **0,93** | 0,98 | **3,62** | 4,28 | 4,38 | 4,30 | 1,34 | 1,34 |
+| Mityczny · +0 · 45 | **0,94** | 0,99 | **3,56 → 4,15** | 4,35 | 4,45 | 4,37 | 1,03 → 3,15 | 1,03 → 3,15 |
 | Mityczny · +0 · 70 | **0,93** | 0,98 | **3,54** | 4,30 | 4,39 | 4,31 | 1,07 | 1,07 |
 | Mityczny · +0 · 100 | **0,93** | 0,99 | **3,59** | 4,32 | 4,41 | 4,33 | 1,16 | 1,16 |
-| Mityczny · +9 · 20 | **0,93** | 0,98 | **3,43 → 3,91** | 4,09 | 4,27 | 4,11 | 1,03 → 2,79 | 1,03 → 2,79 |
-| Mityczny · +9 · 45 | **0,94** | 0,99 | **3,51** | 4,14 | 4,32 | 4,16 | 1,24 | 1,24 |
+| Mityczny · +9 · 20 | **0,93** | 0,98 | **3,91** | 4,09 | 4,27 | 4,11 | 2,79 | 2,79 |
+| Mityczny · +9 · 45 | **0,94** | 0,99 | **3,51 → 4,24** | 4,14 | 4,32 | 4,16 | 1,24 → 4,17 | 1,24 → 4,14 |
 | Mityczny · +9 · 70 | **0,93** | 0,98 | **3,52** | 4,09 | 4,26 | 4,10 | 1,29 | 1,29 |
 | Mityczny · +9 · 100 | **0,93** | 0,99 | **3,64** | 4,11 | 4,29 | 4,13 | 1,62 | 1,62 |
 
@@ -5619,7 +6009,7 @@ Dla S89–S90: moc² w MIX wobec jednoręcznej z drugą ręką tej samej ścież
 | staff · wand + orb · Zwykły +0 · 70 | 0,99 | 0,93 |
 | staff · wand + orb · Zwykły +0 · 100 | 0,98 | 0,92 |
 | staff · wand + orb · Mityczny +9 · 20 | 0,99 | 0,94 |
-| staff · wand + orb · Mityczny +9 · 45 | 0,98 | 0,93 |
+| staff · wand + orb · Mityczny +9 · 45 | 0,98 | 0,93 → 0,94 |
 | staff · wand + orb · Mityczny +9 · 70 | 0,98 | 0,93 |
 | staff · wand + orb · Mityczny +9 · 100 | 0,96 | 0,92 |
 | runestaff · wand + tome · Zwykły +0 · 20 | 1,04 | 0,96 |
@@ -5631,11 +6021,11 @@ Dla S89–S90: moc² w MIX wobec jednoręcznej z drugą ręką tej samej ścież
 | runestaff · wand + tome · Mityczny +9 · 70 | 1,03 | 0,96 |
 | runestaff · wand + tome · Mityczny +9 · 100 | 1,02 | 0,96 |
 | holystaff · scepter + shield · Zwykły +0 · 20 | 1,01 | 1,10 |
-| holystaff · scepter + shield · Zwykły +0 · 45 | 1,00 | 1,23 |
+| holystaff · scepter + shield · Zwykły +0 · 45 | 1,00 | 1,23 → 1,25 |
 | holystaff · scepter + shield · Zwykły +0 · 70 | 1,01 | 1,45 |
 | holystaff · scepter + shield · Zwykły +0 · 100 | 1,00 | 1,86 |
-| holystaff · scepter + shield · Mityczny +9 · 20 | 0,99 | 3,77 → 4,30 |
-| holystaff · scepter + shield · Mityczny +9 · 45 | 0,99 | 3,84 |
+| holystaff · scepter + shield · Mityczny +9 · 20 | 0,99 | 4,30 |
+| holystaff · scepter + shield · Mityczny +9 · 45 | 0,99 | 3,84 → 4,63 |
 | holystaff · scepter + shield · Mityczny +9 · 70 | 0,99 | 3,86 |
 | holystaff · scepter + shield · Mityczny +9 · 100 | 0,99 | 3,98 |
 
@@ -5660,15 +6050,15 @@ Wartość cechy = M(z cechą) / M(bez niej) − 1 (`Balance.traitValue`; druga c
 
 | cecha · poziom (klasa, zestaw) | single | group | elite | boss | armored | tank | solo | controlled | still | mana | dungeon | MIX | zestaw bez cech (MIX) | STATY 14 |
 | --- | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: |
-| swordplay · 20 (Wojownik, sword1h + shield) | 3% | 6% | 3% | 7% → 4% | – | – | – | – | – | – | – | 5% | 11% → 10% | 4% |
+| swordplay · 20 (Wojownik, sword1h + shield) | 3% | 6% | 3% | 4% | – | – | – | – | – | – | – | 5% | 10% | 4% |
 | twinCut · 20 (Wojownik, saber1h + shield) | 6% | – | 6% | – | – | – | – | – | – | – | – | 6% | 12% | 4% |
-| reaping · 20 (Wojownik, axe1h + shield) | – | – | – | 0% → 1% | – | – | 5% | – | – | – | – | 2% | 8% | 5% |
+| reaping · 20 (Wojownik, axe1h + shield) | – | – | – | 1% | – | – | 5% | – | – | – | – | 2% | 8% | 5% |
 | bonebreaker · 20 (Wojownik, mace1h + shield) | 6% | – | – | 6% | – | 5% | – | – | – | – | – | 5% | 11% | 6% |
 | beheading · 20 (Wojownik, sword2h) | 5% | 5% | 5% | 5% | – | – | – | – | – | – | – | 5% | 5% | 5% |
 | rendingGash · 20 (Wojownik, axe2h) | 5% | – | 5% | – | – | – | – | – | – | – | – | 4% | 4% | 5% |
 | sundering · 20 (Wojownik, hammer2h) | 4% | – | – | – | 7% | – | – | – | – | – | – | 4% | 4% | 5% |
-| runThrough · 20 (Wojownik, spear2h) | – | 8% | – | 2% → 1% | – | – | – | – | – | – | – | 4% | 4% | 5% |
-| parry · 20 (Wojownik, sword1h + shield) | – | – | – | – | – | 5% | – | – | – | – | – | 5% | 11% → 10% | 5% |
+| runThrough · 20 (Wojownik, spear2h) | – | 8% | – | 1% | – | – | – | – | – | – | – | 4% | 4% | 5% |
+| parry · 20 (Wojownik, sword1h + shield) | – | – | – | – | – | 5% | – | – | – | – | – | 5% | 10% | 5% |
 | harrying · 20 (Łowca, shortbow + quiver) | – | – | – | – | – | – | 5% | – | – | – | – | 3% | 11% | 5% |
 | toxicBarbs · 20 (Łowca, bow + quiver) | 13% | – | 13% | – | – | – | – | – | – | – | – | 10% | 18% | 5% |
 | criticalForce · 20 (Łowca, longbow + quiver) | 2% | 2% | 2% | 2% | – | – | – | – | – | – | – | 2% | 10% | 5% |
@@ -5678,7 +6068,7 @@ Wartość cechy = M(z cechą) / M(bez niej) − 1 (`Balance.traitValue`; druga c
 | elementalSpark · 20 (Mag, wand + orb) | 8% | 9% | – | 9% | – | – | – | – | – | – | – | 9% | 13% | 5% |
 | elementalSpark (fire) · 20 (Mag, wand + orb) | 11% | 9% | – | 11% | – | – | – | – | – | – | – | 10% | 14% | 5% |
 | elementalSpark (ice) · 20 (Mag, wand + orb) | 7% | 7% | – | 7% | – | – | – | – | – | – | – | 7% | 11% | 5% |
-| elementalSpark (lightning) · 20 (Mag, wand + orb) | 7% | 12% | – | 9% → 8% | – | – | – | – | – | – | – | 10% | 14% | 5% |
+| elementalSpark (lightning) · 20 (Mag, wand + orb) | 7% | 12% | – | 8% | – | – | – | – | – | – | – | 10% | 14% | 5% |
 | elementalMight · 20 (Mag, staff) | 5% | 5% | – | 5% | – | – | – | – | – | – | – | 5% | 5% | 7% |
 | elementalMight (fire) · 20 (Mag, staff) | 7% | 7% | – | 7% | – | – | – | – | – | – | – | 7% | 7% | 7% |
 | elementalMight (ice) · 20 (Mag, staff) | 3% | 3% | – | 3% | – | – | – | – | – | – | – | 3% | 3% | 7% |
@@ -5687,17 +6077,17 @@ Wartość cechy = M(z cechą) / M(bez niej) − 1 (`Balance.traitValue`; druga c
 | learnedFormulae · 20 (Mag, wand + tome) | – | – | – | – | – | – | – | – | – | 0% | – | 0% | 9% | 2% |
 | powerLens · 20 (Mag, wand + orb) | 3% | 3% | 3% | 3% | – | – | – | – | – | – | – | 3% | 13% | 5% |
 | anointment · 20 (Kapłan, scepter + shield) | – | – | – | – | – | – | – | – | – | – | 0% | 0% | 6% | 5% |
-| savingBlow · 20 (Kapłan, holystaff) | – | – | – | – | – | – | 26% | – | – | – | – | 14% → 15% | 14% → 15% | 4% |
+| savingBlow · 20 (Kapłan, holystaff) | – | – | – | – | – | – | 26% | – | – | – | – | 15% | 15% | 4% |
 | concussion · 20 (Kapłan, flail1h + shield) | 9% | 4% | – | – | – | – | – | – | – | – | – | 5% | 11% | 5% |
 | prosperity · 20 (Kapłan, scepter + relic) | – | – | – | – | – | – | – | – | – | – | – | 0% | 0% | 8% |
-| swordplay · 45 (Wojownik, sword1h + shield) | 3% | 6% | 3% | 7% | – | – | – | – | – | – | – | 5% | 11% | 4% |
+| swordplay · 45 (Wojownik, sword1h + shield) | 3% | 6% | 3% | 7% → 5% | – | – | – | – | – | – | – | 5% | 11% | 4% |
 | twinCut · 45 (Wojownik, saber1h + shield) | 6% | – | 6% | – | – | – | – | – | – | – | – | 6% | 12% | 4% |
-| reaping · 45 (Wojownik, axe1h + shield) | – | – | – | 0% | – | – | 5% | – | – | – | – | 2% | 8% | 5% |
+| reaping · 45 (Wojownik, axe1h + shield) | – | – | – | 0% → 1% | – | – | 5% | – | – | – | – | 2% | 8% | 5% |
 | bonebreaker · 45 (Wojownik, mace1h + shield) | 6% | – | – | 6% | – | 5% | – | – | – | – | – | 5% | 11% | 6% |
 | beheading · 45 (Wojownik, sword2h) | 5% | 5% | 5% | 5% | – | – | – | – | – | – | – | 5% | 5% | 5% |
 | rendingGash · 45 (Wojownik, axe2h) | 5% | – | 5% | – | – | – | – | – | – | – | – | 5% | 5% | 5% |
 | sundering · 45 (Wojownik, hammer2h) | 5% | – | – | – | 7% | – | – | – | – | – | – | 4% | 4% | 5% |
-| runThrough · 45 (Wojownik, spear2h) | – | 8% | – | 3% | – | – | – | – | – | – | – | 5% | 5% | 5% |
+| runThrough · 45 (Wojownik, spear2h) | – | 8% | – | 3% → 1% | – | – | – | – | – | – | – | 5% → 4% | 5% → 4% | 5% |
 | parry · 45 (Wojownik, sword1h + shield) | – | – | – | – | – | 5% | – | – | – | – | – | 5% | 11% | 5% |
 | harrying · 45 (Łowca, shortbow + quiver) | – | – | – | – | – | – | 5% | – | – | – | – | 3% | 11% | 5% |
 | toxicBarbs · 45 (Łowca, bow + quiver) | 13% | – | 13% | – | – | – | – | – | – | – | – | 10% | 18% | 5% |
@@ -5708,7 +6098,7 @@ Wartość cechy = M(z cechą) / M(bez niej) − 1 (`Balance.traitValue`; druga c
 | elementalSpark · 45 (Mag, wand + orb) | 8% | 9% | – | 9% | – | – | – | – | – | – | – | 9% | 13% | 5% |
 | elementalSpark (fire) · 45 (Mag, wand + orb) | 11% | 9% | – | 11% | – | – | – | – | – | – | – | 10% | 14% | 5% |
 | elementalSpark (ice) · 45 (Mag, wand + orb) | 7% | 7% | – | 7% | – | – | – | – | – | – | – | 7% | 11% | 5% |
-| elementalSpark (lightning) · 45 (Mag, wand + orb) | 7% | 12% | – | 10% | – | – | – | – | – | – | – | 10% | 14% | 5% |
+| elementalSpark (lightning) · 45 (Mag, wand + orb) | 7% | 12% | – | 10% → 8% | – | – | – | – | – | – | – | 10% | 14% | 5% |
 | elementalMight · 45 (Mag, staff) | 5% | 5% | – | 5% | – | – | – | – | – | – | – | 5% | 5% | 7% |
 | elementalMight (fire) · 45 (Mag, staff) | 7% | 7% | – | 7% | – | – | – | – | – | – | – | 7% | 7% | 7% |
 | elementalMight (ice) · 45 (Mag, staff) | 3% | 3% | – | 3% | – | – | – | – | – | – | – | 3% | 3% | 7% |
@@ -5717,7 +6107,7 @@ Wartość cechy = M(z cechą) / M(bez niej) − 1 (`Balance.traitValue`; druga c
 | learnedFormulae · 45 (Mag, wand + tome) | – | – | – | – | – | – | – | – | – | 0% | – | 0% | 9% | 2% |
 | powerLens · 45 (Mag, wand + orb) | 3% | 3% | 3% | 3% | – | – | – | – | – | – | – | 3% | 13% | 5% |
 | anointment · 45 (Kapłan, scepter + shield) | – | – | – | – | – | – | – | – | – | – | 0% | 0% | 6% | 5% |
-| savingBlow · 45 (Kapłan, holystaff) | – | – | – | – | – | – | 60% | – | – | – | – | 30% | 30% | 4% |
+| savingBlow · 45 (Kapłan, holystaff) | – | – | – | – | – | – | 60% | – | – | – | – | 30% → 32% | 30% → 32% | 4% |
 | concussion · 45 (Kapłan, flail1h + shield) | 9% | 4% | – | – | – | – | – | – | – | – | – | 5% | 11% | 5% |
 | prosperity · 45 (Kapłan, scepter + relic) | – | – | – | – | – | – | – | – | – | – | – | 0% | 0% | 8% |
 | swordplay · 70 (Wojownik, sword1h + shield) | 3% | 6% | 3% | 7% | – | – | – | – | – | – | – | 5% | 11% | 4% |
@@ -5787,15 +6177,15 @@ Wartość cechy = M(z cechą) / M(bez niej) − 1 (`Balance.traitValue`; druga c
 
 | cecha · poziom (klasa, zestaw) | single | group | elite | boss | armored | tank | solo | controlled | still | mana | dungeon | MIX | zestaw bez cech (MIX) | STATY 14 |
 | --- | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: |
-| swordplay · 20 (Wojownik, sword1h + shield) | 3% | 8% | 3% | 7% → 5% | – | – | – | – | – | – | – | 6% | 13% → 12% | 4% |
+| swordplay · 20 (Wojownik, sword1h + shield) | 3% | 8% | 3% | 5% | – | – | – | – | – | – | – | 6% | 12% | 4% |
 | twinCut · 20 (Wojownik, saber1h + shield) | 9% | – | 9% | – | – | – | – | – | – | – | – | 9% | 16% | 4% |
-| reaping · 20 (Wojownik, axe1h + shield) | – | – | – | 8% → 47% | – | – | 313% | – | – | – | – | 301% → 314% | 325% → 339% | 5% |
+| reaping · 20 (Wojownik, axe1h + shield) | – | – | – | 47% | – | – | 313% | – | – | – | – | 314% | 339% | 5% |
 | bonebreaker · 20 (Wojownik, mace1h + shield) | 13% | – | – | 13% | – | 11% | – | – | – | – | – | 9% | 16% | 6% |
 | beheading · 20 (Wojownik, sword2h) | 13% | 13% | 13% | 13% | – | – | – | – | – | – | – | 13% | 13% | 5% |
 | rendingGash · 20 (Wojownik, axe2h) | 13% | – | 10% | – | – | – | – | – | – | – | – | 6% | 6% | 5% |
 | sundering · 20 (Wojownik, hammer2h) | 6% | – | – | – | 10% | – | – | – | – | – | – | 4% | 4% | 5% |
-| runThrough · 20 (Wojownik, spear2h) | – | 14% | – | 3% → 1% | – | – | – | – | – | – | – | 7% | 7% | 5% |
-| parry · 20 (Wojownik, sword1h + shield) | – | – | – | – | – | 6% | – | – | – | – | – | 6% | 13% → 12% | 5% |
+| runThrough · 20 (Wojownik, spear2h) | – | 14% | – | 1% | – | – | – | – | – | – | – | 7% | 7% | 5% |
+| parry · 20 (Wojownik, sword1h + shield) | – | – | – | – | – | 6% | – | – | – | – | – | 6% | 12% | 5% |
 | harrying · 20 (Łowca, shortbow + quiver) | – | – | – | – | – | – | 9% | – | – | – | – | 6% | 19% | 5% |
 | toxicBarbs · 20 (Łowca, bow + quiver) | 21% | – | 16% | – | – | – | – | – | – | – | – | 11% | 24% | 5% |
 | criticalForce · 20 (Łowca, longbow + quiver) | 4% | 4% | 4% | 4% | – | – | – | – | – | – | – | 4% | 16% | 5% |
@@ -5805,7 +6195,7 @@ Wartość cechy = M(z cechą) / M(bez niej) − 1 (`Balance.traitValue`; druga c
 | elementalSpark · 20 (Mag, wand + orb) | 8% | 8% | – | 9% | – | – | – | – | – | – | – | 8% | 15% | 5% |
 | elementalSpark (fire) · 20 (Mag, wand + orb) | 11% | 5% | – | 11% | – | – | – | – | – | – | – | 7% | 14% | 5% |
 | elementalSpark (ice) · 20 (Mag, wand + orb) | 8% | 8% | – | 8% | – | – | – | – | – | – | – | 8% | 15% | 5% |
-| elementalSpark (lightning) · 20 (Mag, wand + orb) | 7% | 11% | – | 9% → 8% | – | – | – | – | – | – | – | 9% | 17% → 16% | 5% |
+| elementalSpark (lightning) · 20 (Mag, wand + orb) | 7% | 11% | – | 8% | – | – | – | – | – | – | – | 9% | 16% | 5% |
 | elementalMight · 20 (Mag, staff) | 9% | 9% | – | 9% | – | – | – | – | – | – | – | 9% | 9% | 7% |
 | elementalMight (fire) · 20 (Mag, staff) | 13% | 13% | – | 13% | – | – | – | – | – | – | – | 13% | 13% | 7% |
 | elementalMight (ice) · 20 (Mag, staff) | 3% | 3% | – | 3% | – | – | – | – | – | – | – | 3% | 3% | 7% |
@@ -5814,18 +6204,18 @@ Wartość cechy = M(z cechą) / M(bez niej) − 1 (`Balance.traitValue`; druga c
 | learnedFormulae · 20 (Mag, wand + tome) | – | – | – | – | – | – | – | – | – | 0% | – | 0% | 9% | 2% |
 | powerLens · 20 (Mag, wand + orb) | 6% | 6% | 6% | 6% | – | – | – | – | – | – | – | 6% | 15% | 5% |
 | anointment · 20 (Kapłan, scepter + shield) | – | – | – | – | – | – | – | – | – | – | 0% | 0% | 6% | 5% |
-| savingBlow · 20 (Kapłan, holystaff) | – | – | – | – | – | – | 318% | – | – | – | – | 306% → 363% | 306% → 363% | 4% |
+| savingBlow · 20 (Kapłan, holystaff) | – | – | – | – | – | – | 318% | – | – | – | – | 363% | 363% | 4% |
 | concussion · 20 (Kapłan, flail1h + shield) | 13% | 6% | – | – | – | – | – | – | – | – | – | 7% | 14% | 5% |
 | prosperity · 20 (Kapłan, scepter + relic) | – | – | – | – | – | – | – | – | – | – | – | 0% | 0% | 8% |
-| swordplay · 45 (Wojownik, sword1h + shield) | 3% | 8% | 3% | 7% | – | – | – | – | – | – | – | 6% | 13% | 4% |
+| swordplay · 45 (Wojownik, sword1h + shield) | 3% | 8% | 3% | 7% → 5% | – | – | – | – | – | – | – | 6% | 13% → 12% | 4% |
 | twinCut · 45 (Wojownik, saber1h + shield) | 9% | – | 9% | – | – | – | – | – | – | – | – | 9% | 16% | 4% |
-| reaping · 45 (Wojownik, axe1h + shield) | – | – | – | 8% | – | – | 305% | – | – | – | – | 297% | 321% | 5% |
+| reaping · 45 (Wojownik, axe1h + shield) | – | – | – | 8% → 67% | – | – | 305% | – | – | – | – | 297% → 317% | 321% → 342% | 5% |
 | bonebreaker · 45 (Wojownik, mace1h + shield) | 13% | – | – | 13% | – | 11% | – | – | – | – | – | 9% | 16% | 6% |
 | beheading · 45 (Wojownik, sword2h) | 13% | 13% | 13% | 13% | – | – | – | – | – | – | – | 13% | 13% | 5% |
 | rendingGash · 45 (Wojownik, axe2h) | 13% | – | 10% | – | – | – | – | – | – | – | – | 6% | 6% | 5% |
 | sundering · 45 (Wojownik, hammer2h) | 7% | – | – | – | 11% | – | – | – | – | – | – | 4% | 4% | 5% |
-| runThrough · 45 (Wojownik, spear2h) | – | 14% | – | 5% | – | – | – | – | – | – | – | 8% | 8% | 5% |
-| parry · 45 (Wojownik, sword1h + shield) | – | – | – | – | – | 6% | – | – | – | – | – | 6% | 13% | 5% |
+| runThrough · 45 (Wojownik, spear2h) | – | 14% | – | 5% → 2% | – | – | – | – | – | – | – | 8% → 7% | 8% → 7% | 5% |
+| parry · 45 (Wojownik, sword1h + shield) | – | – | – | – | – | 6% | – | – | – | – | – | 6% | 13% → 12% | 5% |
 | harrying · 45 (Łowca, shortbow + quiver) | – | – | – | – | – | – | 10% | – | – | – | – | 6% | 19% | 5% |
 | toxicBarbs · 45 (Łowca, bow + quiver) | 21% | – | 16% | – | – | – | – | – | – | – | – | 11% | 24% | 5% |
 | criticalForce · 45 (Łowca, longbow + quiver) | 4% | 4% | 4% | 4% | – | – | – | – | – | – | – | 4% | 16% | 5% |
@@ -5835,7 +6225,7 @@ Wartość cechy = M(z cechą) / M(bez niej) − 1 (`Balance.traitValue`; druga c
 | elementalSpark · 45 (Mag, wand + orb) | 8% | 8% | – | 9% | – | – | – | – | – | – | – | 8% | 15% | 5% |
 | elementalSpark (fire) · 45 (Mag, wand + orb) | 11% | 5% | – | 11% | – | – | – | – | – | – | – | 7% | 14% | 5% |
 | elementalSpark (ice) · 45 (Mag, wand + orb) | 8% | 8% | – | 8% | – | – | – | – | – | – | – | 8% | 15% | 5% |
-| elementalSpark (lightning) · 45 (Mag, wand + orb) | 7% | 11% | – | 10% | – | – | – | – | – | – | – | 10% | 17% | 5% |
+| elementalSpark (lightning) · 45 (Mag, wand + orb) | 7% | 11% | – | 10% → 8% | – | – | – | – | – | – | – | 10% → 9% | 17% → 16% | 5% |
 | elementalMight · 45 (Mag, staff) | 9% | 9% | – | 9% | – | – | – | – | – | – | – | 9% | 9% | 7% |
 | elementalMight (fire) · 45 (Mag, staff) | 13% | 13% | – | 13% | – | – | – | – | – | – | – | 13% | 13% | 7% |
 | elementalMight (ice) · 45 (Mag, staff) | 3% | 3% | – | 3% | – | – | – | – | – | – | – | 3% | 3% | 7% |
@@ -5844,7 +6234,7 @@ Wartość cechy = M(z cechą) / M(bez niej) − 1 (`Balance.traitValue`; druga c
 | learnedFormulae · 45 (Mag, wand + tome) | – | – | – | – | – | – | – | – | – | 0% | – | 0% | 9% | 2% |
 | powerLens · 45 (Mag, wand + orb) | 6% | 6% | 6% | 6% | – | – | – | – | – | – | – | 6% | 15% | 5% |
 | anointment · 45 (Kapłan, scepter + shield) | – | – | – | – | – | – | – | – | – | – | 0% | 0% | 6% | 5% |
-| savingBlow · 45 (Kapłan, holystaff) | – | – | – | – | – | – | 307% | – | – | – | – | 314% | 314% | 4% |
+| savingBlow · 45 (Kapłan, holystaff) | – | – | – | – | – | – | 307% | – | – | – | – | 314% → 400% | 314% → 400% | 4% |
 | concussion · 45 (Kapłan, flail1h + shield) | 13% | 6% | – | – | – | – | – | – | – | – | – | 7% | 14% | 5% |
 | prosperity · 45 (Kapłan, scepter + relic) | – | – | – | – | – | – | – | – | – | – | – | 0% | 0% | 8% |
 | swordplay · 70 (Wojownik, sword1h + shield) | 3% | 8% | 4% | 8% | – | – | – | – | – | – | – | 6% | 13% | 4% |
@@ -5914,12 +6304,12 @@ Wartość Przeszycia (`Balance.runThroughValue`, moc² jak w tabeli cech) przy `
 
 | rzadkość · poziom | group 0.15 | group 0.3 | group 0.5 | boss 0.15 | boss 0.3 | boss 0.5 |
 | --- | --: | --: | --: | --: | --: | --: |
-| Zwykły +0 · 20 | 4% | 8% | 14% | 1% → 0% | 2% → 1% | 3% → 1% |
-| Zwykły +0 · 45 | 4% | 8% | 14% | 1% | 3% | 5% |
+| Zwykły +0 · 20 | 4% | 8% | 14% | 0% | 1% | 1% |
+| Zwykły +0 · 45 | 4% | 8% | 14% | 1% → 0% | 3% → 1% | 5% → 2% |
 | Zwykły +0 · 70 | 4% | 8% | 14% | 1% | 2% | 4% |
 | Zwykły +0 · 100 | 4% | 8% | 14% | 1% | 2% | 4% |
-| Mityczny +9 · 20 | 7% | 14% | 23% | 2% → 0% | 3% → 1% | 6% → 2% |
-| Mityczny +9 · 45 | 7% | 14% | 23% | 2% | 5% | 8% |
+| Mityczny +9 · 20 | 7% | 14% | 23% | 0% | 1% | 2% |
+| Mityczny +9 · 45 | 7% | 14% | 23% | 2% → 1% | 5% → 2% | 8% → 3% |
 | Mityczny +9 · 70 | 7% | 14% | 23% | 2% | 4% | 6% |
 | Mityczny +9 · 100 | 7% | 14% | 23% | 2% | 4% | 6% |
 
@@ -5933,46 +6323,46 @@ Broń domyślna klasy z ilvl poziom − 2, Zwykła. Dochód poziomu (`Balance.le
 
 | klasa · poziom | dochód poziomu | +1…+3 / dochód | +1…+6 / dochód | +1…+9 z ochroną (poziomy) | +1…+9 bez ochrony (poziomy) | zestaw +9 bez ochrony (poziomy) | goldEq +9 z ochroną (poziomy) | zwoje +9 |
 | --- | --: | --: | --: | --: | --: | --: | --: | --: |
-| Wojownik · 20 | 3416 → 3110 | 0,44 → 0,49 | 2,40 → 2,64 | **10,4 → 11,5** | 74,8 → 82,1 | 748 → 821 | 70,8 → 77,8 | 18,3 |
-| Łowca · 20 | 3416 → 3110 | 0,44 → 0,49 | 2,40 → 2,64 | **10,4 → 11,5** | 74,8 → 82,1 | 748 → 821 | 70,8 → 77,8 | 18,3 |
-| Mag · 20 | 3416 → 3110 | 0,44 → 0,49 | 2,40 → 2,64 | **10,4 → 11,5** | 74,8 → 82,1 | 748 → 821 | 70,8 → 77,8 | 18,3 |
-| Kapłan · 20 | 3416 → 3110 | 0,44 → 0,49 | 2,40 → 2,64 | **10,4 → 11,5** | 74,8 → 82,1 | 748 → 821 | 70,8 → 77,8 | 18,3 |
-| Wojownik · 25 | 4875 → 4440 | 0,46 → 0,50 | 2,47 → 2,72 | **10,7 → 11,8** | 77,0 → 84,5 | 770 → 845 | 53,0 → 58,2 | 18,3 |
-| Łowca · 25 | 4875 → 4440 | 0,46 → 0,50 | 2,47 → 2,72 | **10,7 → 11,8** | 77,0 → 84,5 | 770 → 845 | 53,0 → 58,2 | 18,3 |
-| Mag · 25 | 4875 → 4440 | 0,46 → 0,50 | 2,47 → 2,72 | **10,7 → 11,8** | 77,0 → 84,5 | 770 → 845 | 53,0 → 58,2 | 18,3 |
-| Kapłan · 25 | 4875 → 4440 | 0,46 → 0,50 | 2,47 → 2,72 | **10,7 → 11,8** | 77,0 → 84,5 | 770 → 845 | 53,0 → 58,2 | 18,3 |
-| Wojownik · 30 | 6180 → 5398 | 0,53 → 0,61 | 2,89 → 3,31 | 12,6 → 14,4 | 90,0 → 103,0 | 900 → 1030 | 45,9 → 52,6 | 18,3 |
-| Łowca · 30 | 6180 → 5398 | 0,53 → 0,61 | 2,89 → 3,31 | 12,6 → 14,4 | 90,0 → 103,0 | 900 → 1030 | 45,9 → 52,6 | 18,3 |
-| Mag · 30 | 6180 → 5398 | 0,53 → 0,61 | 2,89 → 3,31 | 12,6 → 14,4 | 90,0 → 103,0 | 900 → 1030 | 45,9 → 52,6 | 18,3 |
-| Kapłan · 30 | 6180 → 5398 | 0,53 → 0,61 | 2,89 → 3,31 | 12,6 → 14,4 | 90,0 → 103,0 | 900 → 1030 | 45,9 → 52,6 | 18,3 |
-| Wojownik · 35 | 7866 → 7014 | 0,58 → 0,65 | 3,16 → 3,54 | 13,7 → 15,4 | 98,2 → 110,1 | 982 → 1101 | 39,9 → 44,8 | 18,3 |
-| Łowca · 35 | 7866 → 7014 | 0,58 → 0,65 | 3,16 → 3,54 | 13,7 → 15,4 | 98,2 → 110,1 | 982 → 1101 | 39,9 → 44,8 | 18,3 |
-| Mag · 35 | 7866 → 7014 | 0,58 → 0,65 | 3,16 → 3,54 | 13,7 → 15,4 | 98,2 → 110,1 | 982 → 1101 | 39,9 → 44,8 | 18,3 |
-| Kapłan · 35 | 7866 → 7014 | 0,58 → 0,65 | 3,16 → 3,54 | 13,7 → 15,4 | 98,2 → 110,1 | 982 → 1101 | 39,9 → 44,8 | 18,3 |
-| Wojownik · 40 | 10 393 → 10 166 | 0,58 → 0,60 | 3,17 → 3,24 | 13,8 → 14,1 | 98,5 → 100,7 | 985 → 1007 | 33,6 → 34,3 | 18,3 |
-| Łowca · 40 | 10 393 → 10 166 | 0,58 → 0,60 | 3,17 → 3,24 | 13,8 → 14,1 | 98,5 → 100,7 | 985 → 1007 | 33,6 → 34,3 | 18,3 |
-| Mag · 40 | 10 393 → 10 166 | 0,58 → 0,60 | 3,17 → 3,24 | 13,8 → 14,1 | 98,5 → 100,7 | 985 → 1007 | 33,6 → 34,3 | 18,3 |
-| Kapłan · 40 | 10 393 → 10 166 | 0,58 → 0,60 | 3,17 → 3,24 | 13,8 → 14,1 | 98,5 → 100,7 | 985 → 1007 | 33,6 → 34,3 | 18,3 |
+| Wojownik · 20 | 3110 | 0,49 | 2,64 | **11,5** | 82,1 | 821 | 77,8 | 18,3 |
+| Łowca · 20 | 3110 | 0,49 | 2,64 | **11,5** | 82,1 | 821 | 77,8 | 18,3 |
+| Mag · 20 | 3110 | 0,49 | 2,64 | **11,5** | 82,1 | 821 | 77,8 | 18,3 |
+| Kapłan · 20 | 3110 | 0,49 | 2,64 | **11,5** | 82,1 | 821 | 77,8 | 18,3 |
+| Wojownik · 25 | 4440 | 0,50 | 2,72 | **11,8** | 84,5 | 845 | 58,2 | 18,3 |
+| Łowca · 25 | 4440 | 0,50 | 2,72 | **11,8** | 84,5 | 845 | 58,2 | 18,3 |
+| Mag · 25 | 4440 | 0,50 | 2,72 | **11,8** | 84,5 | 845 | 58,2 | 18,3 |
+| Kapłan · 25 | 4440 | 0,50 | 2,72 | **11,8** | 84,5 | 845 | 58,2 | 18,3 |
+| Wojownik · 30 | 5398 | 0,61 | 3,31 | 14,4 | 103,0 | 1030 | 52,6 | 18,3 |
+| Łowca · 30 | 5398 | 0,61 | 3,31 | 14,4 | 103,0 | 1030 | 52,6 | 18,3 |
+| Mag · 30 | 5398 | 0,61 | 3,31 | 14,4 | 103,0 | 1030 | 52,6 | 18,3 |
+| Kapłan · 30 | 5398 | 0,61 | 3,31 | 14,4 | 103,0 | 1030 | 52,6 | 18,3 |
+| Wojownik · 35 | 7014 | 0,65 | 3,54 | 15,4 | 110,1 | 1101 | 44,8 | 18,3 |
+| Łowca · 35 | 7014 | 0,65 | 3,54 | 15,4 | 110,1 | 1101 | 44,8 | 18,3 |
+| Mag · 35 | 7014 | 0,65 | 3,54 | 15,4 | 110,1 | 1101 | 44,8 | 18,3 |
+| Kapłan · 35 | 7014 | 0,65 | 3,54 | 15,4 | 110,1 | 1101 | 44,8 | 18,3 |
+| Wojownik · 40 | 10 166 | 0,60 | 3,24 | 14,1 | 100,7 | 1007 | 34,3 | 18,3 |
+| Łowca · 40 | 10 166 | 0,60 | 3,24 | 14,1 | 100,7 | 1007 | 34,3 | 18,3 |
+| Mag · 40 | 10 166 | 0,60 | 3,24 | 14,1 | 100,7 | 1007 | 34,3 | 18,3 |
+| Kapłan · 40 | 10 166 | 0,60 | 3,24 | 14,1 | 100,7 | 1007 | 34,3 | 18,3 |
 | Wojownik · 45 | 14 121 | 0,55 | 2,99 | 13,0 | 92,9 | 929 | 27,6 | 18,3 |
 | Łowca · 45 | 14 121 | 0,55 | 2,99 | 13,0 | 92,9 | 929 | 27,6 | 18,3 |
 | Mag · 45 | 14 121 | 0,55 | 2,99 | 13,0 | 92,9 | 929 | 27,6 | 18,3 |
 | Kapłan · 45 | 14 121 | 0,55 | 2,99 | 13,0 | 92,9 | 929 | 27,6 | 18,3 |
-| Wojownik · 50 | 15 112 | 0,64 | 3,48 | 15,1 | 108,1 | 1081 | 28,7 | 18,3 |
-| Łowca · 50 | 15 112 | 0,64 | 3,48 | 15,1 | 108,1 | 1081 | 28,7 | 18,3 |
-| Mag · 50 | 15 112 | 0,64 | 3,48 | 15,1 | 108,1 | 1081 | 28,7 | 18,3 |
-| Kapłan · 50 | 15 112 | 0,64 | 3,48 | 15,1 | 108,1 | 1081 | 28,7 | 18,3 |
-| Wojownik · 55 | 18 299 | 0,64 | 3,50 | 15,2 | 108,9 | 1089 | 26,5 | 18,3 |
-| Łowca · 55 | 18 299 | 0,64 | 3,50 | 15,2 | 108,9 | 1089 | 26,5 | 18,3 |
-| Mag · 55 | 18 299 | 0,64 | 3,50 | 15,2 | 108,9 | 1089 | 26,5 | 18,3 |
-| Kapłan · 55 | 18 299 | 0,64 | 3,50 | 15,2 | 108,9 | 1089 | 26,5 | 18,3 |
+| Wojownik · 50 | 15 112 → 15 299 | 0,64 → 0,63 | 3,48 → 3,43 | 15,1 → 14,9 | 108,1 → 106,8 | 1081 → 1068 | 28,7 → 28,4 | 18,3 |
+| Łowca · 50 | 15 112 → 15 299 | 0,64 → 0,63 | 3,48 → 3,43 | 15,1 → 14,9 | 108,1 → 106,8 | 1081 → 1068 | 28,7 → 28,4 | 18,3 |
+| Mag · 50 | 15 112 → 15 299 | 0,64 → 0,63 | 3,48 → 3,43 | 15,1 → 14,9 | 108,1 → 106,8 | 1081 → 1068 | 28,7 → 28,4 | 18,3 |
+| Kapłan · 50 | 15 112 → 15 299 | 0,64 → 0,63 | 3,48 → 3,43 | 15,1 → 14,9 | 108,1 → 106,8 | 1081 → 1068 | 28,7 → 28,4 | 18,3 |
+| Wojownik · 55 | 18 299 → 16 686 | 0,64 → 0,71 | 3,50 → 3,84 | 15,2 → 16,7 | 108,9 → 119,4 | 1089 → 1194 | 26,5 → 29,0 | 18,3 |
+| Łowca · 55 | 18 299 → 16 686 | 0,64 → 0,71 | 3,50 → 3,84 | 15,2 → 16,7 | 108,9 → 119,4 | 1089 → 1194 | 26,5 → 29,0 | 18,3 |
+| Mag · 55 | 18 299 → 16 686 | 0,64 → 0,71 | 3,50 → 3,84 | 15,2 → 16,7 | 108,9 → 119,4 | 1089 → 1194 | 26,5 → 29,0 | 18,3 |
+| Kapłan · 55 | 18 299 → 16 686 | 0,64 → 0,71 | 3,50 → 3,84 | 15,2 → 16,7 | 108,9 → 119,4 | 1089 → 1194 | 26,5 → 29,0 | 18,3 |
 | Wojownik · 60 | 22 006 | 0,64 | 3,49 | 15,1 | 108,4 | 1084 | 24,5 | 18,3 |
 | Łowca · 60 | 22 006 | 0,64 | 3,49 | 15,1 | 108,4 | 1084 | 24,5 | 18,3 |
 | Mag · 60 | 22 006 | 0,64 | 3,49 | 15,1 | 108,4 | 1084 | 24,5 | 18,3 |
 | Kapłan · 60 | 22 006 | 0,64 | 3,49 | 15,1 | 108,4 | 1084 | 24,5 | 18,3 |
-| Wojownik · 65 | 22 796 | 0,73 | 3,97 | 17,2 | 123,5 | 1235 | 26,3 | 18,3 |
-| Łowca · 65 | 22 796 | 0,73 | 3,97 | 17,2 | 123,5 | 1235 | 26,3 | 18,3 |
-| Mag · 65 | 22 796 | 0,73 | 3,97 | 17,2 | 123,5 | 1235 | 26,3 | 18,3 |
-| Kapłan · 65 | 22 796 | 0,73 | 3,97 | 17,2 | 123,5 | 1235 | 26,3 | 18,3 |
+| Wojownik · 65 | 22 796 → 22 999 | 0,73 → 0,72 | 3,97 → 3,94 | 17,2 → 17,1 | 123,5 → 122,4 | 1235 → 1224 | 26,3 → 26,0 | 18,3 |
+| Łowca · 65 | 22 796 → 22 999 | 0,73 → 0,72 | 3,97 → 3,94 | 17,2 → 17,1 | 123,5 → 122,4 | 1235 → 1224 | 26,3 → 26,0 | 18,3 |
+| Mag · 65 | 22 796 → 22 999 | 0,73 → 0,72 | 3,97 → 3,94 | 17,2 → 17,1 | 123,5 → 122,4 | 1235 → 1224 | 26,3 → 26,0 | 18,3 |
+| Kapłan · 65 | 22 796 → 22 999 | 0,73 → 0,72 | 3,97 → 3,94 | 17,2 → 17,1 | 123,5 → 122,4 | 1235 → 1224 | 26,3 → 26,0 | 18,3 |
 | Wojownik · 70 | 30 936 | 0,63 | 3,41 | 14,8 | 106,0 | 1060 | 21,5 | 18,3 |
 | Łowca · 70 | 30 936 | 0,63 | 3,41 | 14,8 | 106,0 | 1060 | 21,5 | 18,3 |
 | Mag · 70 | 30 936 | 0,63 | 3,41 | 14,8 | 106,0 | 1060 | 21,5 | 18,3 |
@@ -6054,15 +6444,15 @@ Wartości oczekiwane z tabel łupu (szansa × średnia ilość, jak `Loot.rollMo
 
 | poziom · źródło | pył | odłamki | kryształy | zwoje | Rdzenie |
 | --- | --: | --: | --: | --: | --: |
-| 20 · expienie / h | 45,1 → 44,2 | 1,01 → 0,86 | 0,00 | 0,00 | 0,00 |
-| 20 · Elity / h | 65,2 → 66,6 | 8,21 → 7,97 | 0,19 → 0,17 | 0,00 | 0,00 |
-| 20 · Elita II / zabicie | 3,7 | 4,38 → 3,96 | 0,74 → 0,70 | 0,08 | 0,12 |
-| 20 · Elita II / h odrodzeń | 16,1 → 15,6 | 19,34 → 16,76 | 3,26 → 2,96 | 0,35 → 0,34 | 0,55 → 0,53 |
+| 20 · expienie / h | 44,2 | 0,86 | 0,00 | 0,00 | 0,00 |
+| 20 · Elity / h | 66,6 | 7,97 | 0,17 | 0,00 | 0,00 |
+| 20 · Elita II / zabicie | 3,7 | 3,96 | 0,70 | 0,08 | 0,12 |
+| 20 · Elita II / h odrodzeń | 15,6 | 16,76 | 2,96 | 0,34 | 0,53 |
 | 20 · boss / tydzień | 0,0 | 84,00 | 25,20 | 6,30 | 3,15 |
-| 45 · expienie / h | 55,3 | 1,05 | 0,00 | 0,00 | 0,00 |
-| 45 · Elity / h | 61,3 | 7,49 | 0,18 | 0,00 | 0,00 |
-| 45 · Elita II / zabicie | 3,8 | 4,38 | 0,74 | 0,08 | 0,12 |
-| 45 · Elita II / h odrodzeń | 11,8 | 13,70 | 2,31 | 0,25 | 0,39 |
+| 45 · expienie / h | 55,3 → 54,7 | 1,05 → 0,94 | 0,00 | 0,00 | 0,00 |
+| 45 · Elity / h | 61,3 → 67,6 | 7,49 → 7,98 | 0,18 | 0,00 | 0,00 |
+| 45 · Elita II / zabicie | 3,8 | 4,38 → 4,10 | 0,74 → 0,71 | 0,08 | 0,12 |
+| 45 · Elita II / h odrodzeń | 11,8 → 11,9 | 13,70 → 12,83 | 2,31 → 2,23 | 0,25 | 0,39 |
 | 45 · boss / tydzień | 0,0 | 0,00 | 52,50 | 11,02 | 4,20 |
 | 70 · expienie / h | 65,2 | 1,05 | 0,00 | 0,00 | 0,00 |
 | 70 · Elity / h | 65,8 | 7,76 | 0,18 | 0,00 | 0,00 |
@@ -6081,14 +6471,14 @@ Godziny: materiały +9 jednej broni (odłamki zwojów z receptury przy ochronie)
 
 | poziom | h expienia +9 z ochroną | h expienia +9 bez ochrony | h Elit +9 z ochroną | h Elit +9 bez ochrony | Rdzenie / tydzień (boss) | Rdzenie na Legendę +9 z ochroną | zwoje / Elita II | zwoje na +9 z ochroną | udział materiałów w goldEq +9 bez ochrony |
 | --- | --: | --: | --: | --: | --: | --: | --: | --: | --: |
-| 20 | – | – | 180,9 → 203,4 | 689,2 → 775,0 | 3,15 | 8,3 | 0,08 | 18,3 | 75% |
-| 45 | 52,3 | 239,3 | 22,9 | 104,7 | 4,20 | 8,3 | 0,08 | 18,3 | 36% |
+| 20 | – | – | 203,4 | 775,0 | 3,15 | 8,3 | 0,08 | 18,3 | 75% |
+| 45 | 52,3 → 53,7 | 239,3 → 245,6 | 22,9 → 21,3 | 104,7 → 97,4 | 4,20 | 8,3 | 0,08 | 18,3 | 36% |
 | 70 | 45,4 | 207,9 | 21,8 | 99,6 | 9,45 | 8,3 | 0,08 | 18,3 | 19% |
 | 100 | 53,3 | 243,8 | 28,0 | 128,1 | 9,45 | 8,3 | 0,08 | 18,3 | 10% |
 
 ### Cele G7–G9 (S84; asertowane od S87 poza `GLOBAL_REPORT_ONLY`)
 
-678/968 w paśmie (G7: kolumna „z cechami”, G8: MIX „bez cech” i „z cechami”, G9: +1…+3 / dochód i +1…+9 z ochroną). Poza pasmem:
+677/968 w paśmie (G7: kolumna „z cechami”, G8: MIX „bez cech” i „z cechami”, G9: +1…+3 / dochód i +1…+9 z ochroną). Poza pasmem:
 
 | cel | wartość | próg | wynik | kto asertuje |
 | --- | --: | --: | --: | --: |
@@ -6113,7 +6503,7 @@ Godziny: materiały +9 jednej broni (odłamki zwojów z receptury przy ochronie)
 | Warrior sword2h unique +0 L20: z cechami | 0,97 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior sword2h heroic +0 L20: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior sword2h legendary +0 L20: bez cech | 1,04 | 0,97–1,03 | **poza** | raport → S91 |
-| Warrior sword2h common +0 L45: z cechami | 0,94 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior sword2h common +0 L45: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior sword2h common +9 L45: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior sword2h unique +0 L45: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior sword2h unique +9 L45: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
@@ -6142,11 +6532,11 @@ Godziny: materiały +9 jednej broni (odłamki zwojów z receptury przy ochronie)
 | Warrior axe2h mythic +0 L20: bez cech | 0,97 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior axe2h mythic +0 L20: z cechami | 0,93 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior axe2h mythic +9 L20: z cechami | 0,92 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior axe2h common +0 L45: z cechami | 0,93 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior axe2h common +9 L45: z cechami | 0,93 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior axe2h unique +0 L45: z cechami | 0,94 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior axe2h common +0 L45: z cechami | 0,94 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior axe2h common +9 L45: z cechami | 0,94 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior axe2h unique +0 L45: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior axe2h unique +9 L45: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior axe2h heroic +0 L45: z cechami | 0,94 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior axe2h heroic +0 L45: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior axe2h heroic +9 L45: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior axe2h legendary +0 L45: z cechami | 0,94 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior axe2h legendary +9 L45: z cechami | 0,94 | 0,97–1,03 | **poza** | raport → S88 |
@@ -6190,10 +6580,10 @@ Godziny: materiały +9 jednej broni (odłamki zwojów z receptury przy ochronie)
 | Warrior hammer2h mythic +9 L20: z cechami | 0,92 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior hammer2h common +0 L45: z cechami | 0,94 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior hammer2h common +9 L45: z cechami | 0,94 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior hammer2h unique +0 L45: z cechami | 0,94 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior hammer2h unique +0 L45: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior hammer2h unique +9 L45: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior hammer2h heroic +0 L45: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior hammer2h heroic +9 L45: z cechami | 0,94 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior hammer2h heroic +9 L45: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior hammer2h legendary +0 L45: z cechami | 0,94 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior hammer2h legendary +9 L45: z cechami | 0,94 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior hammer2h mythic +0 L45: z cechami | 0,92 | 0,97–1,03 | **poza** | raport → S88 |
@@ -6228,12 +6618,13 @@ Godziny: materiały +9 jednej broni (odłamki zwojów z receptury przy ochronie)
 | Warrior spear2h common +0 L45: z cechami | 0,93 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior spear2h common +9 L45: z cechami | 0,94 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior spear2h unique +0 L45: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior spear2h unique +9 L45: z cechami | 0,97 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior spear2h unique +9 L45: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior spear2h heroic +0 L45: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior spear2h heroic +9 L45: z cechami | 0,97 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior spear2h legendary +0 L45: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior spear2h legendary +9 L45: z cechami | 0,97 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior spear2h mythic +0 L45: z cechami | 0,93 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior spear2h mythic +9 L45: z cechami | 0,94 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior spear2h mythic +9 L45: z cechami | 0,93 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior spear2h common +0 L70: z cechami | 0,93 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior spear2h common +9 L70: z cechami | 0,94 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior spear2h unique +0 L70: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
@@ -6264,13 +6655,13 @@ Godziny: materiały +9 jednej broni (odłamki zwojów z receptury przy ochronie)
 | Mage staff common +0 L45: z cechami | 0,93 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage staff common +9 L45: z cechami | 0,92 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage staff unique +0 L45: z cechami | 0,94 | 0,97–1,03 | **poza** | raport → S88 |
-| Mage staff unique +9 L45: z cechami | 0,94 | 0,97–1,03 | **poza** | raport → S88 |
+| Mage staff unique +9 L45: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage staff heroic +0 L45: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage staff heroic +9 L45: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage staff legendary +0 L45: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage staff legendary +9 L45: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage staff mythic +0 L45: z cechami | 0,93 | 0,97–1,03 | **poza** | raport → S88 |
-| Mage staff mythic +9 L45: z cechami | 0,93 | 0,97–1,03 | **poza** | raport → S88 |
+| Mage staff mythic +9 L45: z cechami | 0,94 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage staff common +0 L70: z cechami | 0,93 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage staff common +9 L70: z cechami | 0,92 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage staff unique +0 L70: z cechami | 0,94 | 0,97–1,03 | **poza** | raport → S88 |
@@ -6308,10 +6699,10 @@ Godziny: materiały +9 jednej broni (odłamki zwojów z receptury przy ochronie)
 | Mage runestaff unique +0 L45: z cechami | 0,90 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage runestaff unique +9 L45: z cechami | 0,89 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage runestaff heroic +0 L45: z cechami | 0,90 | 0,97–1,03 | **poza** | raport → S88 |
-| Mage runestaff heroic +9 L45: z cechami | 0,88 | 0,97–1,03 | **poza** | raport → S88 |
+| Mage runestaff heroic +9 L45: z cechami | 0,89 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage runestaff legendary +0 L45: z cechami | 0,90 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage runestaff legendary +9 L45: z cechami | 0,88 | 0,97–1,03 | **poza** | raport → S88 |
-| Mage runestaff mythic +0 L45: z cechami | 0,88 | 0,97–1,03 | **poza** | raport → S88 |
+| Mage runestaff mythic +0 L45: z cechami | 0,89 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage runestaff mythic +9 L45: z cechami | 0,87 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage runestaff common +0 L70: z cechami | 0,89 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage runestaff common +9 L70: z cechami | 0,87 | 0,97–1,03 | **poza** | raport → S88 |
@@ -6344,16 +6735,16 @@ Godziny: materiały +9 jednej broni (odłamki zwojów z receptury przy ochronie)
 | Cleric holystaff legendary +9 L20: z cechami | 3,71 | 0,97–1,06 | **poza** | raport → S88 |
 | Cleric holystaff mythic +0 L20: z cechami | 3,62 | 0,97–1,03 | **poza** | raport → S88 |
 | Cleric holystaff mythic +9 L20: z cechami | 3,91 | 0,97–1,06 | **poza** | raport → S88 |
-| Cleric holystaff common +0 L45: z cechami | 1,18 | 0,97–1,03 | **poza** | raport → S88 |
-| Cleric holystaff common +9 L45: z cechami | 2,57 | 0,97–1,06 | **poza** | raport → S88 |
-| Cleric holystaff unique +0 L45: z cechami | 1,52 | 0,97–1,03 | **poza** | raport → S88 |
-| Cleric holystaff unique +9 L45: z cechami | 3,56 | 0,97–1,06 | **poza** | raport → S88 |
-| Cleric holystaff heroic +0 L45: z cechami | 2,05 | 0,97–1,03 | **poza** | raport → S88 |
-| Cleric holystaff heroic +9 L45: z cechami | 3,56 | 0,97–1,06 | **poza** | raport → S88 |
-| Cleric holystaff legendary +0 L45: z cechami | 3,63 | 0,97–1,03 | **poza** | raport → S88 |
-| Cleric holystaff legendary +9 L45: z cechami | 3,55 | 0,97–1,06 | **poza** | raport → S88 |
-| Cleric holystaff mythic +0 L45: z cechami | 3,56 | 0,97–1,03 | **poza** | raport → S88 |
-| Cleric holystaff mythic +9 L45: z cechami | 3,51 | 0,97–1,06 | **poza** | raport → S88 |
+| Cleric holystaff common +0 L45: z cechami | 1,19 | 0,97–1,03 | **poza** | raport → S88 |
+| Cleric holystaff common +9 L45: z cechami | 2,66 | 0,97–1,06 | **poza** | raport → S88 |
+| Cleric holystaff unique +0 L45: z cechami | 1,56 | 0,97–1,03 | **poza** | raport → S88 |
+| Cleric holystaff unique +9 L45: z cechami | 3,76 | 0,97–1,06 | **poza** | raport → S88 |
+| Cleric holystaff heroic +0 L45: z cechami | 2,11 | 0,97–1,03 | **poza** | raport → S88 |
+| Cleric holystaff heroic +9 L45: z cechami | 3,90 | 0,97–1,06 | **poza** | raport → S88 |
+| Cleric holystaff legendary +0 L45: z cechami | 3,80 | 0,97–1,03 | **poza** | raport → S88 |
+| Cleric holystaff legendary +9 L45: z cechami | 4,38 | 0,97–1,06 | **poza** | raport → S88 |
+| Cleric holystaff mythic +0 L45: z cechami | 4,15 | 0,97–1,03 | **poza** | raport → S88 |
+| Cleric holystaff mythic +9 L45: z cechami | 4,24 | 0,97–1,06 | **poza** | raport → S88 |
 | Cleric holystaff common +0 L70: z cechami | 1,38 | 0,97–1,03 | **poza** | raport → S88 |
 | Cleric holystaff common +9 L70: z cechami | 3,53 | 0,97–1,06 | **poza** | raport → S88 |
 | Cleric holystaff unique +0 L70: z cechami | 2,29 | 0,97–1,03 | **poza** | raport → S88 |
@@ -6425,42 +6816,42 @@ Przedmioty dla klasy: zabicia na godzinę (`paceAt`) × `AreaRates.itemsPerKill`
 
 | poziom · profil | Unikaty / h expienia | Unikaty z Fortuną | Fortuna / bez (Unikaty) | Heroiki / h Elit | Heroiki z Fortuną | Legendy / Elita II | Legendy / Elita II z Fortuną | premia ucięta na Elitach (pkt, z Fortuną) | zabicia / h | Elity / h |
 | --- | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: |
-| 25 · K0 | 3,56 → 3,02 | 4,62 → 3,93 | 1,30 | 0,86 → 0,77 | 1,12 → 1,00 | 0,11 | 0,13 | 0,0 | 65,7 | 17,0 → 17,8 |
-| 25 · K1 | 4,19 → 3,57 | 5,26 → 4,47 | 1,25 | 1,02 → 0,91 | 1,15 → 1,03 | 0,11 | 0,13 | 14,6 | 65,7 | 17,0 → 17,8 |
-| 25 · K2 | 5,73 → 4,87 | 6,79 → 5,78 | 1,19 | 1,15 → 1,03 | 1,15 → 1,03 | 0,11 | 0,13 | 57,7 | 65,7 | 17,0 → 17,8 |
-| 25 · K3 | 7,11 → 6,05 | 7,11 → 6,05 | 1,00 | 1,15 → 1,03 | 1,15 → 1,03 | 0,11 | 0,13 | 66,7 | 65,7 | 17,0 → 17,8 |
-| 30 · K0 | 3,68 → 2,70 | 4,79 → 3,51 | 1,30 | 0,85 → 0,76 | 1,10 → 0,99 | 0,11 | 0,13 | 0,0 | 67,9 → 58,7 | 16,7 → 17,7 |
-| 30 · K1 | 4,34 → 3,19 | 5,45 → 4,00 | 1,25 | 1,00 → 0,90 | 1,13 → 1,02 | 0,11 | 0,13 | 14,6 | 67,9 → 58,7 | 16,7 → 17,7 |
-| 30 · K2 | 5,93 → 4,35 | 7,03 → 5,16 | 1,19 | 1,13 → 1,02 | 1,13 → 1,02 | 0,11 | 0,13 | 57,7 | 67,9 → 58,7 | 16,7 → 17,7 |
-| 30 · K3 | 7,36 → 5,40 | 7,36 → 5,40 | 1,00 | 1,13 → 1,02 | 1,13 → 1,02 | 0,11 | 0,13 | 66,7 | 67,9 → 58,7 | 16,7 → 17,7 |
-| 35 · K0 | 2,94 → 2,50 | 3,82 → 3,25 | 1,30 | 0,85 → 0,92 | 1,10 → 1,19 | 0,11 | 0,13 | 0,0 | 54,3 | 16,7 → 21,3 |
-| 35 · K1 | 3,47 → 2,95 | 4,35 → 3,70 | 1,25 | 1,00 → 1,08 | 1,13 → 1,22 | 0,11 | 0,13 | 14,6 | 54,3 | 16,7 → 21,3 |
-| 35 · K2 | 4,74 → 4,03 | 5,62 → 4,78 | 1,19 | 1,13 → 1,22 | 1,13 → 1,22 | 0,11 | 0,13 | 57,7 | 54,3 | 16,7 → 21,3 |
-| 35 · K3 | 5,88 → 5,00 | 5,88 → 5,00 | 1,00 | 1,13 → 1,22 | 1,13 → 1,22 | 0,11 | 0,13 | 66,7 | 54,3 | 16,7 → 21,3 |
-| 40 · K0 | 3,93 → 3,34 | 5,10 → 4,34 | 1,30 | 0,94 → 0,85 | 1,22 → 1,11 | 0,11 | 0,13 | 0,0 | 72,5 | 18,5 → 19,8 |
-| 40 · K1 | 4,63 → 3,94 | 5,81 → 4,94 | 1,25 | 1,11 → 1,01 | 1,25 → 1,14 | 0,11 | 0,13 | 14,6 | 72,5 | 18,5 → 19,8 |
-| 40 · K2 | 6,32 → 5,37 | 7,50 → 6,38 | 1,19 | 1,25 → 1,14 | 1,25 → 1,14 | 0,11 | 0,13 | 57,7 | 72,5 | 18,5 → 19,8 |
-| 40 · K3 | 7,85 → 6,68 | 7,85 → 6,68 | 1,00 | 1,25 → 1,14 | 1,25 → 1,14 | 0,11 | 0,13 | 66,7 | 72,5 | 18,5 → 19,8 |
-| 45 · K0 | 3,79 | 4,93 | 1,30 | 0,80 | 1,04 | 0,11 | 0,13 | 0,0 | 70,0 | 15,7 |
-| 45 · K1 | 4,47 | 5,61 | 1,25 | 0,94 | 1,06 | 0,11 | 0,13 | 14,6 | 70,0 | 15,7 |
-| 45 · K2 | 6,10 | 7,24 | 1,19 | 1,06 | 1,06 | 0,11 | 0,13 | 57,7 | 70,0 | 15,7 |
-| 45 · K3 | 7,58 | 7,58 | 1,00 | 1,06 | 1,06 | 0,11 | 0,13 | 66,7 | 70,0 | 15,7 |
-| 50 · K0 | 3,57 | 4,65 | 1,30 | 0,80 | 1,04 | 0,11 | 0,13 | 0,0 | 66,0 | 15,8 |
-| 50 · K1 | 4,22 | 5,29 | 1,25 | 0,95 | 1,07 | 0,11 | 0,13 | 14,6 | 66,0 | 15,8 |
-| 50 · K2 | 5,76 | 6,83 | 1,19 | 1,07 | 1,07 | 0,11 | 0,13 | 57,7 | 66,0 | 15,8 |
-| 50 · K3 | 7,15 | 7,15 | 1,00 | 1,07 | 1,07 | 0,11 | 0,13 | 66,7 | 66,0 | 15,8 |
-| 55 · K0 | 2,90 | 3,77 | 1,30 | 0,81 | 1,06 | 0,11 | 0,13 | 0,0 | 53,5 | 16,0 |
-| 55 · K1 | 3,42 | 4,29 | 1,25 | 0,96 | 1,08 | 0,11 | 0,13 | 14,6 | 53,5 | 16,0 |
-| 55 · K2 | 4,67 | 5,54 | 1,19 | 1,08 | 1,08 | 0,11 | 0,13 | 57,7 | 53,5 | 16,0 |
-| 55 · K3 | 5,80 | 5,80 | 1,00 | 1,08 | 1,08 | 0,11 | 0,13 | 66,7 | 53,5 | 16,0 |
-| 60 · K0 | 3,62 | 4,71 | 1,30 | 0,95 | 1,23 | 0,11 | 0,13 | 0,0 | 66,9 | 18,7 |
-| 60 · K1 | 4,27 | 5,36 | 1,25 | 1,12 | 1,27 | 0,11 | 0,13 | 14,6 | 66,9 | 18,7 |
-| 60 · K2 | 5,83 | 6,92 | 1,19 | 1,27 | 1,27 | 0,11 | 0,13 | 57,7 | 66,9 | 18,7 |
-| 60 · K3 | 7,25 | 7,25 | 1,00 | 1,27 | 1,27 | 0,11 | 0,13 | 66,7 | 66,9 | 18,7 |
-| 65 · K0 | 3,41 | 4,43 | 1,30 | 0,79 | 1,03 | 0,11 | 0,13 | 0,0 | 62,9 | 15,6 |
-| 65 · K1 | 4,02 | 5,04 | 1,25 | 0,94 | 1,06 | 0,11 | 0,13 | 14,6 | 62,9 | 15,6 |
-| 65 · K2 | 5,49 | 6,51 | 1,19 | 1,06 | 1,06 | 0,11 | 0,13 | 57,7 | 62,9 | 15,6 |
-| 65 · K3 | 6,82 | 6,82 | 1,00 | 1,06 | 1,06 | 0,11 | 0,13 | 66,7 | 62,9 | 15,6 |
+| 25 · K0 | 3,02 | 3,93 | 1,30 | 0,77 | 1,00 | 0,11 | 0,13 | 0,0 | 65,7 | 17,8 |
+| 25 · K1 | 3,57 | 4,47 | 1,25 | 0,91 | 1,03 | 0,11 | 0,13 | 14,6 | 65,7 | 17,8 |
+| 25 · K2 | 4,87 | 5,78 | 1,19 | 1,03 | 1,03 | 0,11 | 0,13 | 57,7 | 65,7 | 17,8 |
+| 25 · K3 | 6,05 | 6,05 | 1,00 | 1,03 | 1,03 | 0,11 | 0,13 | 66,7 | 65,7 | 17,8 |
+| 30 · K0 | 2,70 | 3,51 | 1,30 | 0,76 | 0,99 | 0,11 | 0,13 | 0,0 | 58,7 | 17,7 |
+| 30 · K1 | 3,19 | 4,00 | 1,25 | 0,90 | 1,02 | 0,11 | 0,13 | 14,6 | 58,7 | 17,7 |
+| 30 · K2 | 4,35 | 5,16 | 1,19 | 1,02 | 1,02 | 0,11 | 0,13 | 57,7 | 58,7 | 17,7 |
+| 30 · K3 | 5,40 | 5,40 | 1,00 | 1,02 | 1,02 | 0,11 | 0,13 | 66,7 | 58,7 | 17,7 |
+| 35 · K0 | 2,50 | 3,25 | 1,30 | 0,92 | 1,19 | 0,11 | 0,13 | 0,0 | 54,3 | 21,3 |
+| 35 · K1 | 2,95 | 3,70 | 1,25 | 1,08 | 1,22 | 0,11 | 0,13 | 14,6 | 54,3 | 21,3 |
+| 35 · K2 | 4,03 | 4,78 | 1,19 | 1,22 | 1,22 | 0,11 | 0,13 | 57,7 | 54,3 | 21,3 |
+| 35 · K3 | 5,00 | 5,00 | 1,00 | 1,22 | 1,22 | 0,11 | 0,13 | 66,7 | 54,3 | 21,3 |
+| 40 · K0 | 3,34 | 4,34 | 1,30 | 0,85 | 1,11 | 0,11 | 0,13 | 0,0 | 72,5 | 19,8 |
+| 40 · K1 | 3,94 | 4,94 | 1,25 | 1,01 | 1,14 | 0,11 | 0,13 | 14,6 | 72,5 | 19,8 |
+| 40 · K2 | 5,37 | 6,38 | 1,19 | 1,14 | 1,14 | 0,11 | 0,13 | 57,7 | 72,5 | 19,8 |
+| 40 · K3 | 6,68 | 6,68 | 1,00 | 1,14 | 1,14 | 0,11 | 0,13 | 66,7 | 72,5 | 19,8 |
+| 45 · K0 | 3,79 → 3,41 | 4,93 → 4,44 | 1,30 | 0,80 | 1,04 | 0,11 | 0,13 | 0,0 | 70,0 | 15,7 → 17,6 |
+| 45 · K1 | 4,47 → 4,02 | 5,61 → 5,05 | 1,25 | 0,94 → 0,95 | 1,06 → 1,07 | 0,11 | 0,13 | 14,6 | 70,0 | 15,7 → 17,6 |
+| 45 · K2 | 6,10 → 5,49 | 7,24 → 6,52 | 1,19 | 1,06 → 1,07 | 1,06 → 1,07 | 0,11 | 0,13 | 57,7 | 70,0 | 15,7 → 17,6 |
+| 45 · K3 | 7,58 → 6,82 | 7,58 → 6,82 | 1,00 | 1,06 → 1,07 | 1,06 → 1,07 | 0,11 | 0,13 | 66,7 | 70,0 | 15,7 → 17,6 |
+| 50 · K0 | 3,57 → 3,22 | 4,65 → 4,18 | 1,30 | 0,80 → 0,81 | 1,04 → 1,05 | 0,11 | 0,13 | 0,0 | 66,0 | 15,8 → 17,7 |
+| 50 · K1 | 4,22 → 3,79 | 5,29 → 4,76 | 1,25 | 0,95 | 1,07 → 1,08 | 0,11 | 0,13 | 14,6 | 66,0 | 15,8 → 17,7 |
+| 50 · K2 | 5,76 → 5,18 | 6,83 → 6,15 | 1,19 | 1,07 → 1,08 | 1,07 → 1,08 | 0,11 | 0,13 | 57,7 | 66,0 | 15,8 → 17,7 |
+| 50 · K3 | 7,15 → 6,43 | 7,15 → 6,43 | 1,00 | 1,07 → 1,08 | 1,07 → 1,08 | 0,11 | 0,13 | 66,7 | 66,0 | 15,8 → 17,7 |
+| 55 · K0 | 2,90 → 2,61 | 3,77 → 3,39 | 1,30 | 0,81 → 0,82 | 1,06 | 0,11 | 0,13 | 0,0 | 53,5 | 16,0 → 17,9 |
+| 55 · K1 | 3,42 → 3,08 | 4,29 → 3,86 | 1,25 | 0,96 | 1,08 → 1,09 | 0,11 | 0,13 | 14,6 | 53,5 | 16,0 → 17,9 |
+| 55 · K2 | 4,67 → 4,20 | 5,54 → 4,98 | 1,19 | 1,08 → 1,09 | 1,08 → 1,09 | 0,11 | 0,13 | 57,7 | 53,5 | 16,0 → 17,9 |
+| 55 · K3 | 5,80 → 5,22 | 5,80 → 5,22 | 1,00 | 1,08 → 1,09 | 1,08 → 1,09 | 0,11 | 0,13 | 66,7 | 53,5 | 16,0 → 17,9 |
+| 60 · K0 | 3,62 → 3,26 | 4,71 → 4,24 | 1,30 | 0,95 → 0,92 | 1,23 → 1,19 | 0,11 | 0,13 | 0,0 | 66,9 | 18,7 → 20,1 |
+| 60 · K1 | 4,27 → 3,85 | 5,36 → 4,82 | 1,25 | 1,12 → 1,08 | 1,27 → 1,23 | 0,11 | 0,13 | 14,6 | 66,9 | 18,7 → 20,1 |
+| 60 · K2 | 5,83 → 5,25 | 6,92 → 6,23 | 1,19 | 1,27 → 1,23 | 1,27 → 1,23 | 0,11 | 0,13 | 57,7 | 66,9 | 18,7 → 20,1 |
+| 60 · K3 | 7,25 → 6,52 | 7,25 → 6,52 | 1,00 | 1,27 → 1,23 | 1,27 → 1,23 | 0,11 | 0,13 | 66,7 | 66,9 | 18,7 → 20,1 |
+| 65 · K0 | 3,41 → 3,07 | 4,43 → 3,99 | 1,30 | 0,79 → 0,81 | 1,03 → 1,06 | 0,11 | 0,13 | 0,0 | 62,9 | 15,6 → 17,8 |
+| 65 · K1 | 4,02 → 3,62 | 5,04 → 4,54 | 1,25 | 0,94 → 0,96 | 1,06 → 1,08 | 0,11 | 0,13 | 14,6 | 62,9 | 15,6 → 17,8 |
+| 65 · K2 | 5,49 → 4,94 | 6,51 → 5,86 | 1,19 | 1,06 → 1,08 | 1,06 → 1,08 | 0,11 | 0,13 | 57,7 | 62,9 | 15,6 → 17,8 |
+| 65 · K3 | 6,82 → 6,13 | 6,82 → 6,13 | 1,00 | 1,06 → 1,08 | 1,06 → 1,08 | 0,11 | 0,13 | 66,7 | 62,9 | 15,6 → 17,8 |
 | 70 · K0 | 3,80 | 4,94 | 1,30 | 0,83 | 1,07 | 0,11 | 0,13 | 0,0 | 70,1 | 16,3 |
 | 70 · K1 | 4,48 | 5,62 | 1,25 | 0,97 | 1,10 | 0,11 | 0,13 | 14,6 | 70,1 | 16,3 |
 | 70 · K2 | 6,12 | 7,26 | 1,19 | 1,10 | 1,10 | 0,11 | 0,13 | 57,7 | 70,1 | 16,3 |
@@ -6496,42 +6887,42 @@ Przedmioty dla klasy: zabicia na godzinę (`paceAt`) × `AreaRates.itemsPerKill`
 
 | poziom · profil | Unikaty / h expienia | Unikaty z Fortuną | Fortuna / bez (Unikaty) | Heroiki / h Elit | Heroiki z Fortuną | Legendy / Elita II | Legendy / Elita II z Fortuną | premia ucięta na Elitach (pkt, z Fortuną) | zabicia / h | Elity / h |
 | --- | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: |
-| 25 · K0 | 3,57 → 3,04 | 4,65 → 3,95 | 1,30 | 0,89 → 0,79 | 1,15 → 1,02 | 0,11 | 0,13 | 0,0 | 66,6 | 17,6 → 18,4 |
-| 25 · K1 | 4,22 → 3,58 | 5,29 → 4,49 | 1,25 | 1,04 → 0,93 | 1,18 → 1,05 | 0,11 | 0,13 | 14,6 | 66,6 | 17,6 → 18,4 |
-| 25 · K2 | 5,76 → 4,89 | 6,83 → 5,80 | 1,19 | 1,18 → 1,05 | 1,18 → 1,05 | 0,11 | 0,13 | 57,7 | 66,6 | 17,6 → 18,4 |
-| 25 · K3 | 7,15 → 6,08 | 7,15 → 6,08 | 1,00 | 1,18 → 1,05 | 1,18 → 1,05 | 0,11 | 0,13 | 66,7 | 66,6 | 17,6 → 18,4 |
-| 30 · K0 | 3,70 → 2,75 | 4,82 → 3,58 | 1,30 | 0,91 → 0,78 | 1,18 → 1,02 | 0,11 | 0,13 | 0,0 | 69,1 → 60,4 | 18,1 → 18,4 |
-| 30 · K1 | 4,37 → 3,25 | 5,48 → 4,07 | 1,25 | 1,07 → 0,93 | 1,21 → 1,05 | 0,11 | 0,13 | 14,6 | 69,1 → 60,4 | 18,1 → 18,4 |
-| 30 · K2 | 5,97 → 4,43 | 7,08 → 5,26 | 1,19 | 1,21 → 1,05 | 1,21 → 1,05 | 0,11 | 0,13 | 57,7 | 69,1 → 60,4 | 18,1 → 18,4 |
-| 30 · K3 | 7,41 → 5,51 | 7,41 → 5,51 | 1,00 | 1,21 → 1,05 | 1,21 → 1,05 | 0,11 | 0,13 | 66,7 | 69,1 → 60,4 | 18,1 → 18,4 |
-| 35 · K0 | 2,98 → 2,53 | 3,87 → 3,29 | 1,30 | 0,90 → 0,98 | 1,17 → 1,28 | 0,11 | 0,13 | 0,0 | 55,5 | 17,9 → 23,0 |
-| 35 · K1 | 3,51 → 2,98 | 4,40 → 3,74 | 1,25 | 1,06 → 1,16 | 1,20 → 1,31 | 0,11 | 0,13 | 14,6 | 55,5 | 17,9 → 23,0 |
-| 35 · K2 | 4,79 → 4,07 | 5,69 → 4,83 | 1,19 | 1,20 → 1,31 | 1,20 → 1,31 | 0,11 | 0,13 | 57,7 | 55,5 | 17,9 → 23,0 |
-| 35 · K3 | 5,95 → 5,06 | 5,95 → 5,06 | 1,00 | 1,20 → 1,31 | 1,20 → 1,31 | 0,11 | 0,13 | 66,7 | 55,5 | 17,9 → 23,0 |
-| 40 · K0 | 4,29 → 3,65 | 5,58 → 4,74 | 1,30 | 1,00 → 0,91 | 1,30 → 1,18 | 0,11 | 0,13 | 0,0 | 80,0 | 19,9 → 21,3 |
-| 40 · K1 | 5,06 → 4,30 | 6,35 → 5,40 | 1,25 | 1,18 → 1,07 | 1,33 → 1,21 | 0,11 | 0,13 | 14,6 | 80,0 | 19,9 → 21,3 |
-| 40 · K2 | 6,91 → 5,87 | 8,20 → 6,97 | 1,19 | 1,33 → 1,21 | 1,33 → 1,21 | 0,11 | 0,13 | 57,7 | 80,0 | 19,9 → 21,3 |
-| 40 · K3 | 8,58 → 7,29 | 8,58 → 7,29 | 1,00 | 1,33 → 1,21 | 1,33 → 1,21 | 0,11 | 0,13 | 66,7 | 80,0 | 19,9 → 21,3 |
-| 45 · K0 | 3,83 | 4,98 | 1,30 | 0,82 | 1,07 | 0,11 | 0,13 | 0,0 | 71,4 | 16,3 |
-| 45 · K1 | 4,52 | 5,66 | 1,25 | 0,97 | 1,09 | 0,11 | 0,13 | 14,6 | 71,4 | 16,3 |
-| 45 · K2 | 6,17 | 7,31 | 1,19 | 1,09 | 1,09 | 0,11 | 0,13 | 57,7 | 71,4 | 16,3 |
-| 45 · K3 | 7,66 | 7,66 | 1,00 | 1,09 | 1,09 | 0,11 | 0,13 | 66,7 | 71,4 | 16,3 |
-| 50 · K0 | 3,60 | 4,68 | 1,30 | 0,82 | 1,07 | 0,11 | 0,13 | 0,0 | 67,1 | 16,4 |
-| 50 · K1 | 4,24 | 5,32 | 1,25 | 0,97 | 1,10 | 0,11 | 0,13 | 14,6 | 67,1 | 16,4 |
-| 50 · K2 | 5,80 | 6,88 | 1,19 | 1,10 | 1,10 | 0,11 | 0,13 | 57,7 | 67,1 | 16,4 |
-| 50 · K3 | 7,20 | 7,20 | 1,00 | 1,10 | 1,10 | 0,11 | 0,13 | 66,7 | 67,1 | 16,4 |
-| 55 · K0 | 2,98 | 3,88 | 1,30 | 0,84 | 1,09 | 0,11 | 0,13 | 0,0 | 55,6 | 16,6 |
-| 55 · K1 | 3,52 | 4,41 | 1,25 | 0,99 | 1,11 | 0,11 | 0,13 | 14,6 | 55,6 | 16,6 |
-| 55 · K2 | 4,80 | 5,70 | 1,19 | 1,11 | 1,11 | 0,11 | 0,13 | 57,7 | 55,6 | 16,6 |
-| 55 · K3 | 5,96 | 5,96 | 1,00 | 1,11 | 1,11 | 0,11 | 0,13 | 66,7 | 55,6 | 16,6 |
-| 60 · K0 | 3,68 | 4,78 | 1,30 | 0,98 | 1,28 | 0,11 | 0,13 | 0,0 | 68,5 | 19,5 |
-| 60 · K1 | 4,34 | 5,44 | 1,25 | 1,16 | 1,31 | 0,11 | 0,13 | 14,6 | 68,5 | 19,5 |
-| 60 · K2 | 5,92 | 7,02 | 1,19 | 1,31 | 1,31 | 0,11 | 0,13 | 57,7 | 68,5 | 19,5 |
-| 60 · K3 | 7,35 | 7,35 | 1,00 | 1,31 | 1,31 | 0,11 | 0,13 | 66,7 | 68,5 | 19,5 |
-| 65 · K0 | 3,48 | 4,52 | 1,30 | 0,83 | 1,07 | 0,11 | 0,13 | 0,0 | 64,8 | 16,4 |
-| 65 · K1 | 4,10 | 5,14 | 1,25 | 0,98 | 1,10 | 0,11 | 0,13 | 14,6 | 64,8 | 16,4 |
-| 65 · K2 | 5,60 | 6,64 | 1,19 | 1,10 | 1,10 | 0,11 | 0,13 | 57,7 | 64,8 | 16,4 |
-| 65 · K3 | 6,96 | 6,96 | 1,00 | 1,10 | 1,10 | 0,11 | 0,13 | 66,7 | 64,8 | 16,4 |
+| 25 · K0 | 3,04 | 3,95 | 1,30 | 0,79 | 1,02 | 0,11 | 0,13 | 0,0 | 66,6 | 18,4 |
+| 25 · K1 | 3,58 | 4,49 | 1,25 | 0,93 | 1,05 | 0,11 | 0,13 | 14,6 | 66,6 | 18,4 |
+| 25 · K2 | 4,89 | 5,80 | 1,19 | 1,05 | 1,05 | 0,11 | 0,13 | 57,7 | 66,6 | 18,4 |
+| 25 · K3 | 6,08 | 6,08 | 1,00 | 1,05 | 1,05 | 0,11 | 0,13 | 66,7 | 66,6 | 18,4 |
+| 30 · K0 | 2,75 | 3,58 | 1,30 | 0,78 | 1,02 | 0,11 | 0,13 | 0,0 | 60,4 | 18,4 |
+| 30 · K1 | 3,25 | 4,07 | 1,25 | 0,93 | 1,05 | 0,11 | 0,13 | 14,6 | 60,4 | 18,4 |
+| 30 · K2 | 4,43 | 5,26 | 1,19 | 1,05 | 1,05 | 0,11 | 0,13 | 57,7 | 60,4 | 18,4 |
+| 30 · K3 | 5,51 | 5,51 | 1,00 | 1,05 | 1,05 | 0,11 | 0,13 | 66,7 | 60,4 | 18,4 |
+| 35 · K0 | 2,53 | 3,29 | 1,30 | 0,98 | 1,28 | 0,11 | 0,13 | 0,0 | 55,5 | 23,0 |
+| 35 · K1 | 2,98 | 3,74 | 1,25 | 1,16 | 1,31 | 0,11 | 0,13 | 14,6 | 55,5 | 23,0 |
+| 35 · K2 | 4,07 | 4,83 | 1,19 | 1,31 | 1,31 | 0,11 | 0,13 | 57,7 | 55,5 | 23,0 |
+| 35 · K3 | 5,06 | 5,06 | 1,00 | 1,31 | 1,31 | 0,11 | 0,13 | 66,7 | 55,5 | 23,0 |
+| 40 · K0 | 3,65 | 4,74 | 1,30 | 0,91 | 1,18 | 0,11 | 0,13 | 0,0 | 80,0 | 21,3 |
+| 40 · K1 | 4,30 | 5,40 | 1,25 | 1,07 | 1,21 | 0,11 | 0,13 | 14,6 | 80,0 | 21,3 |
+| 40 · K2 | 5,87 | 6,97 | 1,19 | 1,21 | 1,21 | 0,11 | 0,13 | 57,7 | 80,0 | 21,3 |
+| 40 · K3 | 7,29 | 7,29 | 1,00 | 1,21 | 1,21 | 0,11 | 0,13 | 66,7 | 80,0 | 21,3 |
+| 45 · K0 | 3,83 → 3,45 | 4,98 → 4,48 | 1,30 | 0,82 → 0,83 | 1,07 → 1,08 | 0,11 | 0,13 | 0,0 | 71,4 | 16,3 → 18,3 |
+| 45 · K1 | 4,52 → 4,06 | 5,66 → 5,10 | 1,25 | 0,97 → 0,98 | 1,09 → 1,10 | 0,11 | 0,13 | 14,6 | 71,4 | 16,3 → 18,3 |
+| 45 · K2 | 6,17 → 5,55 | 7,31 → 6,58 | 1,19 | 1,09 → 1,10 | 1,09 → 1,10 | 0,11 | 0,13 | 57,7 | 71,4 | 16,3 → 18,3 |
+| 45 · K3 | 7,66 → 6,89 | 7,66 → 6,89 | 1,00 | 1,09 → 1,10 | 1,09 → 1,10 | 0,11 | 0,13 | 66,7 | 71,4 | 16,3 → 18,3 |
+| 50 · K0 | 3,60 → 3,24 | 4,68 → 4,21 | 1,30 | 0,82 → 0,83 | 1,07 → 1,08 | 0,11 | 0,13 | 0,0 | 67,1 | 16,4 → 18,4 |
+| 50 · K1 | 4,24 → 3,82 | 5,32 → 4,79 | 1,25 | 0,97 → 0,98 | 1,10 → 1,11 | 0,11 | 0,13 | 14,6 | 67,1 | 16,4 → 18,4 |
+| 50 · K2 | 5,80 → 5,22 | 6,88 → 6,19 | 1,19 | 1,10 → 1,11 | 1,10 → 1,11 | 0,11 | 0,13 | 57,7 | 67,1 | 16,4 → 18,4 |
+| 50 · K3 | 7,20 → 6,48 | 7,20 → 6,48 | 1,00 | 1,10 → 1,11 | 1,10 → 1,11 | 0,11 | 0,13 | 66,7 | 67,1 | 16,4 → 18,4 |
+| 55 · K0 | 2,98 → 2,68 | 3,88 → 3,49 | 1,30 | 0,84 | 1,09 → 1,10 | 0,11 | 0,13 | 0,0 | 55,6 | 16,6 → 18,6 |
+| 55 · K1 | 3,52 → 3,17 | 4,41 → 3,97 | 1,25 | 0,99 | 1,11 → 1,12 | 0,11 | 0,13 | 14,6 | 55,6 | 16,6 → 18,6 |
+| 55 · K2 | 4,80 → 4,32 | 5,70 → 5,13 | 1,19 | 1,11 → 1,12 | 1,11 → 1,12 | 0,11 | 0,13 | 57,7 | 55,6 | 16,6 → 18,6 |
+| 55 · K3 | 5,96 → 5,37 | 5,96 → 5,37 | 1,00 | 1,11 → 1,12 | 1,11 → 1,12 | 0,11 | 0,13 | 66,7 | 55,6 | 16,6 → 18,6 |
+| 60 · K0 | 3,68 → 3,31 | 4,78 → 4,30 | 1,30 | 0,98 → 0,95 | 1,28 → 1,23 | 0,11 | 0,13 | 0,0 | 68,5 | 19,5 → 21,0 |
+| 60 · K1 | 4,34 → 3,90 | 5,44 → 4,89 | 1,25 | 1,16 → 1,12 | 1,31 → 1,27 | 0,11 | 0,13 | 14,6 | 68,5 | 19,5 → 21,0 |
+| 60 · K2 | 5,92 → 5,33 | 7,02 → 6,32 | 1,19 | 1,31 → 1,27 | 1,31 → 1,27 | 0,11 | 0,13 | 57,7 | 68,5 | 19,5 → 21,0 |
+| 60 · K3 | 7,35 → 6,62 | 7,35 → 6,62 | 1,00 | 1,31 → 1,27 | 1,31 → 1,27 | 0,11 | 0,13 | 66,7 | 68,5 | 19,5 → 21,0 |
+| 65 · K0 | 3,48 → 3,13 | 4,52 → 4,07 | 1,30 | 0,83 → 0,85 | 1,07 → 1,10 | 0,11 | 0,13 | 0,0 | 64,8 | 16,4 → 18,7 |
+| 65 · K1 | 4,10 → 3,69 | 5,14 → 4,63 | 1,25 | 0,98 → 1,00 | 1,10 → 1,13 | 0,11 | 0,13 | 14,6 | 64,8 | 16,4 → 18,7 |
+| 65 · K2 | 5,60 → 5,04 | 6,64 → 5,98 | 1,19 | 1,10 → 1,13 | 1,10 → 1,13 | 0,11 | 0,13 | 57,7 | 64,8 | 16,4 → 18,7 |
+| 65 · K3 | 6,96 → 6,26 | 6,96 → 6,26 | 1,00 | 1,10 → 1,13 | 1,10 → 1,13 | 0,11 | 0,13 | 66,7 | 64,8 | 16,4 → 18,7 |
 | 70 · K0 | 3,86 | 5,02 | 1,30 | 0,86 | 1,11 | 0,11 | 0,13 | 0,0 | 72,0 | 17,0 |
 | 70 · K1 | 4,56 | 5,71 | 1,25 | 1,01 | 1,14 | 0,11 | 0,13 | 14,6 | 72,0 | 17,0 |
 | 70 · K2 | 6,22 | 7,38 | 1,19 | 1,14 | 1,14 | 0,11 | 0,13 | 57,7 | 72,0 | 17,0 |
@@ -6567,42 +6958,42 @@ Przedmioty dla klasy: zabicia na godzinę (`paceAt`) × `AreaRates.itemsPerKill`
 
 | poziom · profil | Unikaty / h expienia | Unikaty z Fortuną | Fortuna / bez (Unikaty) | Heroiki / h Elit | Heroiki z Fortuną | Legendy / Elita II | Legendy / Elita II z Fortuną | premia ucięta na Elitach (pkt, z Fortuną) | zabicia / h | Elity / h |
 | --- | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: |
-| 25 · K0 | 3,18 → 2,70 | 4,13 → 3,51 | 1,30 | 0,79 → 0,70 | 1,03 → 0,91 | 0,11 | 0,13 | 0,0 | 59,4 | 15,7 → 16,5 |
-| 25 · K1 | 3,75 → 3,19 | 4,70 → 4,00 | 1,25 | 0,93 → 0,83 | 1,05 → 0,94 | 0,11 | 0,13 | 14,6 | 59,4 | 15,7 → 16,5 |
-| 25 · K2 | 5,12 → 4,35 | 6,07 → 5,16 | 1,19 | 1,05 → 0,94 | 1,05 → 0,94 | 0,11 | 0,13 | 57,7 | 59,4 | 15,7 → 16,5 |
-| 25 · K3 | 6,36 → 5,40 | 6,36 → 5,40 | 1,00 | 1,05 → 0,94 | 1,05 → 0,94 | 0,11 | 0,13 | 66,7 | 59,4 | 15,7 → 16,5 |
-| 30 · K0 | 3,28 → 2,60 | 4,27 → 3,38 | 1,30 | 0,86 → 0,70 | 1,11 → 0,91 | 0,11 | 0,13 | 0,0 | 61,3 → 57,1 | 17,1 → 16,3 |
-| 30 · K1 | 3,87 → 3,06 | 4,86 → 3,84 | 1,25 | 1,01 → 0,82 | 1,14 → 0,93 | 0,11 | 0,13 | 14,6 | 61,3 → 57,1 | 17,1 → 16,3 |
-| 30 · K2 | 5,29 → 4,18 | 6,27 → 4,96 | 1,19 | 1,14 → 0,93 | 1,14 → 0,93 | 0,11 | 0,13 | 57,7 | 61,3 → 57,1 | 17,1 → 16,3 |
-| 30 · K3 | 6,57 → 5,20 | 6,57 → 5,20 | 1,00 | 1,14 → 0,93 | 1,14 → 0,93 | 0,11 | 0,13 | 66,7 | 61,3 → 57,1 | 17,1 → 16,3 |
-| 35 · K0 | 2,66 → 2,26 | 3,46 → 2,94 | 1,30 | 0,86 → 0,93 | 1,11 → 1,22 | 0,11 | 0,13 | 0,0 | 49,8 | 17,1 → 21,9 |
-| 35 · K1 | 3,14 → 2,67 | 3,94 → 3,35 | 1,25 | 1,01 → 1,10 | 1,14 → 1,25 | 0,11 | 0,13 | 14,6 | 49,8 | 17,1 → 21,9 |
-| 35 · K2 | 4,29 → 3,65 | 5,09 → 4,33 | 1,19 | 1,14 → 1,25 | 1,14 → 1,25 | 0,11 | 0,13 | 57,7 | 49,8 | 17,1 → 21,9 |
-| 35 · K3 | 5,33 → 4,53 | 5,33 → 4,53 | 1,00 | 1,14 → 1,25 | 1,14 → 1,25 | 0,11 | 0,13 | 66,7 | 49,8 | 17,1 → 21,9 |
-| 40 · K0 | 4,36 → 3,71 | 5,67 → 4,82 | 1,30 | 0,97 → 0,88 | 1,26 → 1,14 | 0,11 | 0,13 | 0,0 | 81,5 | 19,3 → 20,6 |
-| 40 · K1 | 5,15 → 4,37 | 6,46 → 5,49 | 1,25 | 1,14 → 1,04 | 1,29 → 1,17 | 0,11 | 0,13 | 14,6 | 81,5 | 19,3 → 20,6 |
-| 40 · K2 | 7,03 → 5,97 | 8,34 → 7,09 | 1,19 | 1,29 → 1,17 | 1,29 → 1,17 | 0,11 | 0,13 | 57,7 | 81,5 | 19,3 → 20,6 |
-| 40 · K3 | 8,73 → 7,42 | 8,73 → 7,42 | 1,00 | 1,29 → 1,17 | 1,29 → 1,17 | 0,11 | 0,13 | 66,7 | 81,5 | 19,3 → 20,6 |
-| 45 · K0 | 3,40 | 4,41 | 1,30 | 0,77 | 1,00 | 0,11 | 0,13 | 0,0 | 63,4 | 15,3 |
-| 45 · K1 | 4,01 | 5,02 | 1,25 | 0,90 | 1,02 | 0,11 | 0,13 | 14,6 | 63,4 | 15,3 |
-| 45 · K2 | 5,47 | 6,49 | 1,19 | 1,02 | 1,02 | 0,11 | 0,13 | 57,7 | 63,4 | 15,3 |
-| 45 · K3 | 6,79 | 6,79 | 1,00 | 1,02 | 1,02 | 0,11 | 0,13 | 66,7 | 63,4 | 15,3 |
-| 50 · K0 | 3,20 | 4,16 | 1,30 | 0,77 | 1,01 | 0,11 | 0,13 | 0,0 | 59,8 | 15,4 |
-| 50 · K1 | 3,78 | 4,74 | 1,25 | 0,91 | 1,03 | 0,11 | 0,13 | 14,6 | 59,8 | 15,4 |
-| 50 · K2 | 5,16 | 6,12 | 1,19 | 1,03 | 1,03 | 0,11 | 0,13 | 57,7 | 59,8 | 15,4 |
-| 50 · K3 | 6,40 | 6,40 | 1,00 | 1,03 | 1,03 | 0,11 | 0,13 | 66,7 | 59,8 | 15,4 |
-| 55 · K0 | 3,08 | 4,01 | 1,30 | 0,78 | 1,02 | 0,11 | 0,13 | 0,0 | 57,6 | 15,6 |
-| 55 · K1 | 3,63 | 4,56 | 1,25 | 0,92 | 1,04 | 0,11 | 0,13 | 14,6 | 57,6 | 15,6 |
-| 55 · K2 | 4,96 | 5,89 | 1,19 | 1,04 | 1,04 | 0,11 | 0,13 | 57,7 | 57,6 | 15,6 |
-| 55 · K3 | 6,16 | 6,16 | 1,00 | 1,04 | 1,04 | 0,11 | 0,13 | 66,7 | 57,6 | 15,6 |
-| 60 · K0 | 3,25 | 4,23 | 1,30 | 0,88 | 1,14 | 0,11 | 0,13 | 0,0 | 60,8 | 17,4 |
-| 60 · K1 | 3,84 | 4,81 | 1,25 | 1,03 | 1,17 | 0,11 | 0,13 | 14,6 | 60,8 | 17,4 |
-| 60 · K2 | 5,24 | 6,21 | 1,19 | 1,17 | 1,17 | 0,11 | 0,13 | 57,7 | 60,8 | 17,4 |
-| 60 · K3 | 6,51 | 6,51 | 1,00 | 1,17 | 1,17 | 0,11 | 0,13 | 66,7 | 60,8 | 17,4 |
-| 65 · K0 | 3,23 | 4,21 | 1,30 | 0,85 | 1,10 | 0,11 | 0,13 | 0,0 | 60,4 | 16,8 |
-| 65 · K1 | 3,82 | 4,79 | 1,25 | 1,00 | 1,13 | 0,11 | 0,13 | 14,6 | 60,4 | 16,8 |
-| 65 · K2 | 5,21 | 6,18 | 1,19 | 1,13 | 1,13 | 0,11 | 0,13 | 57,7 | 60,4 | 16,8 |
-| 65 · K3 | 6,47 | 6,47 | 1,00 | 1,13 | 1,13 | 0,11 | 0,13 | 66,7 | 60,4 | 16,8 |
+| 25 · K0 | 2,70 | 3,51 | 1,30 | 0,70 | 0,91 | 0,11 | 0,13 | 0,0 | 59,4 | 16,5 |
+| 25 · K1 | 3,19 | 4,00 | 1,25 | 0,83 | 0,94 | 0,11 | 0,13 | 14,6 | 59,4 | 16,5 |
+| 25 · K2 | 4,35 | 5,16 | 1,19 | 0,94 | 0,94 | 0,11 | 0,13 | 57,7 | 59,4 | 16,5 |
+| 25 · K3 | 5,40 | 5,40 | 1,00 | 0,94 | 0,94 | 0,11 | 0,13 | 66,7 | 59,4 | 16,5 |
+| 30 · K0 | 2,60 | 3,38 | 1,30 | 0,70 | 0,91 | 0,11 | 0,13 | 0,0 | 57,1 | 16,3 |
+| 30 · K1 | 3,06 | 3,84 | 1,25 | 0,82 | 0,93 | 0,11 | 0,13 | 14,6 | 57,1 | 16,3 |
+| 30 · K2 | 4,18 | 4,96 | 1,19 | 0,93 | 0,93 | 0,11 | 0,13 | 57,7 | 57,1 | 16,3 |
+| 30 · K3 | 5,20 | 5,20 | 1,00 | 0,93 | 0,93 | 0,11 | 0,13 | 66,7 | 57,1 | 16,3 |
+| 35 · K0 | 2,26 | 2,94 | 1,30 | 0,93 | 1,22 | 0,11 | 0,13 | 0,0 | 49,8 | 21,9 |
+| 35 · K1 | 2,67 | 3,35 | 1,25 | 1,10 | 1,25 | 0,11 | 0,13 | 14,6 | 49,8 | 21,9 |
+| 35 · K2 | 3,65 | 4,33 | 1,19 | 1,25 | 1,25 | 0,11 | 0,13 | 57,7 | 49,8 | 21,9 |
+| 35 · K3 | 4,53 | 4,53 | 1,00 | 1,25 | 1,25 | 0,11 | 0,13 | 66,7 | 49,8 | 21,9 |
+| 40 · K0 | 3,71 | 4,82 | 1,30 | 0,88 | 1,14 | 0,11 | 0,13 | 0,0 | 81,5 | 20,6 |
+| 40 · K1 | 4,37 | 5,49 | 1,25 | 1,04 | 1,17 | 0,11 | 0,13 | 14,6 | 81,5 | 20,6 |
+| 40 · K2 | 5,97 | 7,09 | 1,19 | 1,17 | 1,17 | 0,11 | 0,13 | 57,7 | 81,5 | 20,6 |
+| 40 · K3 | 7,42 | 7,42 | 1,00 | 1,17 | 1,17 | 0,11 | 0,13 | 66,7 | 81,5 | 20,6 |
+| 45 · K0 | 3,40 → 3,06 | 4,41 → 3,97 | 1,30 | 0,77 | 1,00 | 0,11 | 0,13 | 0,0 | 63,4 | 15,3 → 17,1 |
+| 45 · K1 | 4,01 → 3,60 | 5,02 → 4,52 | 1,25 | 0,90 → 0,91 | 1,02 → 1,03 | 0,11 | 0,13 | 14,6 | 63,4 | 15,3 → 17,1 |
+| 45 · K2 | 5,47 → 4,92 | 6,49 → 5,84 | 1,19 | 1,02 → 1,03 | 1,02 → 1,03 | 0,11 | 0,13 | 57,7 | 63,4 | 15,3 → 17,1 |
+| 45 · K3 | 6,79 → 6,11 | 6,79 → 6,11 | 1,00 | 1,02 → 1,03 | 1,02 → 1,03 | 0,11 | 0,13 | 66,7 | 63,4 | 15,3 → 17,1 |
+| 50 · K0 | 3,20 → 2,88 | 4,16 → 3,75 | 1,30 | 0,77 → 0,78 | 1,01 | 0,11 | 0,13 | 0,0 | 59,8 | 15,4 → 17,3 |
+| 50 · K1 | 3,78 → 3,40 | 4,74 → 4,26 | 1,25 | 0,91 → 0,92 | 1,03 → 1,04 | 0,11 | 0,13 | 14,6 | 59,8 | 15,4 → 17,3 |
+| 50 · K2 | 5,16 → 4,64 | 6,12 → 5,50 | 1,19 | 1,03 → 1,04 | 1,03 → 1,04 | 0,11 | 0,13 | 57,7 | 59,8 | 15,4 → 17,3 |
+| 50 · K3 | 6,40 → 5,76 | 6,40 → 5,76 | 1,00 | 1,03 → 1,04 | 1,03 → 1,04 | 0,11 | 0,13 | 66,7 | 59,8 | 15,4 → 17,3 |
+| 55 · K0 | 3,08 → 2,77 | 4,01 → 3,61 | 1,30 | 0,78 → 0,79 | 1,02 → 1,03 | 0,11 | 0,13 | 0,0 | 57,6 | 15,6 → 17,5 |
+| 55 · K1 | 3,63 → 3,27 | 4,56 → 4,10 | 1,25 | 0,92 → 0,93 | 1,04 → 1,05 | 0,11 | 0,13 | 14,6 | 57,6 | 15,6 → 17,5 |
+| 55 · K2 | 4,96 → 4,47 | 5,89 → 5,30 | 1,19 | 1,04 → 1,05 | 1,04 → 1,05 | 0,11 | 0,13 | 57,7 | 57,6 | 15,6 → 17,5 |
+| 55 · K3 | 6,16 → 5,55 | 6,16 → 5,55 | 1,00 | 1,04 → 1,05 | 1,04 → 1,05 | 0,11 | 0,13 | 66,7 | 57,6 | 15,6 → 17,5 |
+| 60 · K0 | 3,25 → 2,93 | 4,23 → 3,81 | 1,30 | 0,88 → 0,85 | 1,14 → 1,10 | 0,11 | 0,13 | 0,0 | 60,8 | 17,4 → 18,8 |
+| 60 · K1 | 3,84 → 3,45 | 4,81 → 4,33 | 1,25 | 1,03 → 1,00 | 1,17 → 1,13 | 0,11 | 0,13 | 14,6 | 60,8 | 17,4 → 18,8 |
+| 60 · K2 | 5,24 → 4,71 | 6,21 → 5,59 | 1,19 | 1,17 → 1,13 | 1,17 → 1,13 | 0,11 | 0,13 | 57,7 | 60,8 | 17,4 → 18,8 |
+| 60 · K3 | 6,51 → 5,86 | 6,51 → 5,86 | 1,00 | 1,17 → 1,13 | 1,17 → 1,13 | 0,11 | 0,13 | 66,7 | 60,8 | 17,4 → 18,8 |
+| 65 · K0 | 3,23 → 2,91 | 4,21 → 3,78 | 1,30 | 0,85 → 0,87 | 1,10 → 1,13 | 0,11 | 0,13 | 0,0 | 60,4 | 16,8 → 19,2 |
+| 65 · K1 | 3,82 → 3,43 | 4,79 → 4,31 | 1,25 | 1,00 → 1,02 | 1,13 → 1,16 | 0,11 | 0,13 | 14,6 | 60,4 | 16,8 → 19,2 |
+| 65 · K2 | 5,21 → 4,69 | 6,18 → 5,56 | 1,19 | 1,13 → 1,16 | 1,13 → 1,16 | 0,11 | 0,13 | 57,7 | 60,4 | 16,8 → 19,2 |
+| 65 · K3 | 6,47 → 5,82 | 6,47 → 5,82 | 1,00 | 1,13 → 1,16 | 1,13 → 1,16 | 0,11 | 0,13 | 66,7 | 60,4 | 16,8 → 19,2 |
 | 70 · K0 | 3,42 | 4,45 | 1,30 | 0,76 | 0,98 | 0,11 | 0,13 | 0,0 | 63,9 | 15,1 |
 | 70 · K1 | 4,03 | 5,06 | 1,25 | 0,89 | 1,01 | 0,11 | 0,13 | 14,6 | 63,9 | 15,1 |
 | 70 · K2 | 5,51 | 6,53 | 1,19 | 1,01 | 1,01 | 0,11 | 0,13 | 57,7 | 63,9 | 15,1 |
@@ -6638,42 +7029,42 @@ Przedmioty dla klasy: zabicia na godzinę (`paceAt`) × `AreaRates.itemsPerKill`
 
 | poziom · profil | Unikaty / h expienia | Unikaty z Fortuną | Fortuna / bez (Unikaty) | Heroiki / h Elit | Heroiki z Fortuną | Legendy / Elita II | Legendy / Elita II z Fortuną | premia ucięta na Elitach (pkt, z Fortuną) | zabicia / h | Elity / h |
 | --- | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: |
-| 25 · K0 | 3,95 → 3,35 | 5,13 → 4,36 | 1,30 | 0,95 → 0,84 | 1,24 → 1,10 | 0,12 | 0,14 | 0,0 | 71,5 | 18,4 → 19,2 |
-| 25 · K1 | 4,65 → 3,96 | 5,84 → 4,96 | 1,25 | 1,12 → 0,99 | 1,27 → 1,12 | 0,12 | 0,14 | 14,6 | 71,5 | 18,4 → 19,2 |
-| 25 · K2 | 6,35 → 5,40 | 7,54 → 6,41 | 1,19 | 1,27 → 1,12 | 1,27 → 1,12 | 0,12 | 0,14 | 57,7 | 71,5 | 18,4 → 19,2 |
-| 25 · K3 | 7,89 → 6,71 | 7,89 → 6,71 | 1,00 | 1,27 → 1,12 | 1,27 → 1,12 | 0,12 | 0,14 | 66,7 | 71,5 | 18,4 → 19,2 |
-| 30 · K0 | 4,07 → 3,08 | 5,29 → 4,01 | 1,30 | 0,96 → 0,83 | 1,25 → 1,08 | 0,12 | 0,14 | 0,0 | 73,7 → 65,7 | 18,6 → 18,8 |
-| 30 · K1 | 4,80 → 3,63 | 6,02 → 4,56 | 1,25 | 1,13 → 0,98 | 1,28 → 1,11 | 0,12 | 0,14 | 14,6 | 73,7 → 65,7 | 18,6 → 18,8 |
-| 30 · K2 | 6,55 → 4,96 | 7,77 → 5,89 | 1,19 | 1,28 → 1,11 | 1,28 → 1,11 | 0,12 | 0,14 | 57,7 | 73,7 → 65,7 | 18,6 → 18,8 |
-| 30 · K3 | 8,14 → 6,16 | 8,14 → 6,16 | 1,00 | 1,28 → 1,11 | 1,28 → 1,11 | 0,12 | 0,14 | 66,7 | 73,7 → 65,7 | 18,6 → 18,8 |
-| 35 · K0 | 3,15 → 2,68 | 4,10 → 3,48 | 1,30 | 0,95 → 1,01 | 1,23 → 1,31 | 0,12 | 0,14 | 0,0 | 57,1 | 18,3 → 22,9 |
-| 35 · K1 | 3,72 → 3,16 | 4,66 → 3,96 | 1,25 | 1,12 → 1,19 | 1,26 → 1,34 | 0,12 | 0,14 | 14,6 | 57,1 | 18,3 → 22,9 |
-| 35 · K2 | 5,07 → 4,31 | 6,02 → 5,12 | 1,19 | 1,26 → 1,34 | 1,26 → 1,34 | 0,12 | 0,14 | 57,7 | 57,1 | 18,3 → 22,9 |
-| 35 · K3 | 6,30 → 5,36 | 6,30 → 5,36 | 1,00 | 1,26 → 1,34 | 1,26 → 1,34 | 0,12 | 0,14 | 66,7 | 57,1 | 18,3 → 22,9 |
-| 40 · K0 | 4,52 → 3,84 | 5,87 → 4,99 | 1,30 | 1,05 → 0,95 | 1,36 → 1,24 | 0,12 | 0,14 | 0,0 | 81,9 | 20,3 → 21,6 |
-| 40 · K1 | 5,33 → 4,53 | 6,68 → 5,68 | 1,25 | 1,24 → 1,12 | 1,40 → 1,27 | 0,12 | 0,14 | 14,6 | 81,9 | 20,3 → 21,6 |
-| 40 · K2 | 7,28 → 6,18 | 8,63 → 7,34 | 1,19 | 1,40 → 1,27 | 1,40 → 1,27 | 0,12 | 0,14 | 57,7 | 81,9 | 20,3 → 21,6 |
-| 40 · K3 | 9,04 → 7,68 | 9,04 → 7,68 | 1,00 | 1,40 → 1,27 | 1,40 → 1,27 | 0,12 | 0,14 | 66,7 | 81,9 | 20,3 → 21,6 |
-| 45 · K0 | **4,09** | 5,32 | 1,30 | 0,90 | 1,17 | 0,12 | 0,14 | 0,0 | 74,1 | 17,5 |
-| 45 · K1 | 4,82 | 6,05 | 1,25 | 1,07 | 1,20 | 0,12 | 0,14 | 14,6 | 74,1 | 17,5 |
-| 45 · K2 | 6,59 | 7,81 | 1,19 | 1,20 | 1,20 | 0,12 | 0,14 | 57,7 | 74,1 | 17,5 |
-| 45 · K3 | 8,18 | 8,18 | 1,00 | 1,20 | 1,20 | 0,12 | 0,14 | 66,7 | 74,1 | 17,5 |
-| 50 · K0 | 3,85 | 5,01 | 1,30 | 0,91 | 1,18 | 0,12 | 0,14 | 0,0 | 69,8 | 17,5 |
-| 50 · K1 | 4,55 | 5,70 | 1,25 | 1,07 | 1,21 | 0,12 | 0,14 | 14,6 | 69,8 | 17,5 |
-| 50 · K2 | 6,21 | 7,36 | 1,19 | 1,21 | 1,21 | 0,12 | 0,14 | 57,7 | 69,8 | 17,5 |
-| 50 · K3 | 7,71 | 7,71 | 1,00 | 1,21 | 1,21 | 0,12 | 0,14 | 66,7 | 69,8 | 17,5 |
-| 55 · K0 | 3,48 | 4,52 | 1,30 | 0,91 | 1,18 | 0,12 | 0,14 | 0,0 | 63,0 | 17,6 |
-| 55 · K1 | 4,10 | 5,14 | 1,25 | 1,07 | 1,21 | 0,12 | 0,14 | 14,6 | 63,0 | 17,6 |
-| 55 · K2 | 5,60 | 6,64 | 1,19 | 1,21 | 1,21 | 0,12 | 0,14 | 57,7 | 63,0 | 17,6 |
-| 55 · K3 | 6,95 | 6,95 | 1,00 | 1,21 | 1,21 | 0,12 | 0,14 | 66,7 | 63,0 | 17,6 |
-| 60 · K0 | 3,87 | 5,04 | 1,30 | 1,00 | 1,31 | 0,12 | 0,14 | 0,0 | 70,2 | 19,4 |
-| 60 · K1 | 4,57 | 5,73 | 1,25 | 1,19 | 1,34 | 0,12 | 0,14 | 14,6 | 70,2 | 19,4 |
-| 60 · K2 | 6,24 | 7,40 | 1,19 | 1,34 | 1,34 | 0,12 | 0,14 | 57,7 | 70,2 | 19,4 |
-| 60 · K3 | 7,75 | 7,75 | 1,00 | 1,34 | 1,34 | 0,12 | 0,14 | 66,7 | 70,2 | 19,4 |
-| 65 · K0 | 3,75 | 4,88 | 1,30 | 0,94 | 1,22 | 0,12 | 0,14 | 0,0 | 68,0 | 18,2 |
-| 65 · K1 | 4,42 | 5,55 | 1,25 | 1,11 | 1,26 | 0,12 | 0,14 | 14,6 | 68,0 | 18,2 |
-| 65 · K2 | 6,04 | 7,17 | 1,19 | 1,26 | 1,26 | 0,12 | 0,14 | 57,7 | 68,0 | 18,2 |
-| 65 · K3 | 7,50 | 7,50 | 1,00 | 1,26 | 1,26 | 0,12 | 0,14 | 66,7 | 68,0 | 18,2 |
+| 25 · K0 | 3,35 | 4,36 | 1,30 | 0,84 | 1,10 | 0,12 | 0,14 | 0,0 | 71,5 | 19,2 |
+| 25 · K1 | 3,96 | 4,96 | 1,25 | 0,99 | 1,12 | 0,12 | 0,14 | 14,6 | 71,5 | 19,2 |
+| 25 · K2 | 5,40 | 6,41 | 1,19 | 1,12 | 1,12 | 0,12 | 0,14 | 57,7 | 71,5 | 19,2 |
+| 25 · K3 | 6,71 | 6,71 | 1,00 | 1,12 | 1,12 | 0,12 | 0,14 | 66,7 | 71,5 | 19,2 |
+| 30 · K0 | 3,08 | 4,01 | 1,30 | 0,83 | 1,08 | 0,12 | 0,14 | 0,0 | 65,7 | 18,8 |
+| 30 · K1 | 3,63 | 4,56 | 1,25 | 0,98 | 1,11 | 0,12 | 0,14 | 14,6 | 65,7 | 18,8 |
+| 30 · K2 | 4,96 | 5,89 | 1,19 | 1,11 | 1,11 | 0,12 | 0,14 | 57,7 | 65,7 | 18,8 |
+| 30 · K3 | 6,16 | 6,16 | 1,00 | 1,11 | 1,11 | 0,12 | 0,14 | 66,7 | 65,7 | 18,8 |
+| 35 · K0 | 2,68 | 3,48 | 1,30 | 1,01 | 1,31 | 0,12 | 0,14 | 0,0 | 57,1 | 22,9 |
+| 35 · K1 | 3,16 | 3,96 | 1,25 | 1,19 | 1,34 | 0,12 | 0,14 | 14,6 | 57,1 | 22,9 |
+| 35 · K2 | 4,31 | 5,12 | 1,19 | 1,34 | 1,34 | 0,12 | 0,14 | 57,7 | 57,1 | 22,9 |
+| 35 · K3 | 5,36 | 5,36 | 1,00 | 1,34 | 1,34 | 0,12 | 0,14 | 66,7 | 57,1 | 22,9 |
+| 40 · K0 | 3,84 | 4,99 | 1,30 | 0,95 | 1,24 | 0,12 | 0,14 | 0,0 | 81,9 | 21,6 |
+| 40 · K1 | 4,53 | 5,68 | 1,25 | 1,12 | 1,27 | 0,12 | 0,14 | 14,6 | 81,9 | 21,6 |
+| 40 · K2 | 6,18 | 7,34 | 1,19 | 1,27 | 1,27 | 0,12 | 0,14 | 57,7 | 81,9 | 21,6 |
+| 40 · K3 | 7,68 | 7,68 | 1,00 | 1,27 | 1,27 | 0,12 | 0,14 | 66,7 | 81,9 | 21,6 |
+| 45 · K0 | 4,09 → 3,68 | 5,32 → 4,78 | 1,30 | 0,90 | 1,17 | 0,12 | 0,14 | 0,0 | 74,1 | 17,5 → 19,3 |
+| 45 · K1 | 4,82 → 4,34 | 6,05 → 5,45 | 1,25 | 1,07 → 1,06 | 1,20 | 0,12 | 0,14 | 14,6 | 74,1 | 17,5 → 19,3 |
+| 45 · K2 | 6,59 → 5,93 | 7,81 → 7,03 | 1,19 | 1,20 | 1,20 | 0,12 | 0,14 | 57,7 | 74,1 | 17,5 → 19,3 |
+| 45 · K3 | 8,18 → 7,36 | 8,18 → 7,36 | 1,00 | 1,20 | 1,20 | 0,12 | 0,14 | 66,7 | 74,1 | 17,5 → 19,3 |
+| 50 · K0 | 3,85 → 3,47 | 5,01 → 4,51 | 1,30 | 0,91 → 0,90 | 1,18 → 1,17 | 0,12 | 0,14 | 0,0 | 69,8 | 17,5 → 19,4 |
+| 50 · K1 | 4,55 → 4,09 | 5,70 → 5,13 | 1,25 | 1,07 | 1,21 → 1,20 | 0,12 | 0,14 | 14,6 | 69,8 | 17,5 → 19,4 |
+| 50 · K2 | 6,21 → 5,59 | 7,36 → 6,63 | 1,19 | 1,21 → 1,20 | 1,21 → 1,20 | 0,12 | 0,14 | 57,7 | 69,8 | 17,5 → 19,4 |
+| 50 · K3 | 7,71 → 6,94 | 7,71 → 6,94 | 1,00 | 1,21 → 1,20 | 1,21 → 1,20 | 0,12 | 0,14 | 66,7 | 69,8 | 17,5 → 19,4 |
+| 55 · K0 | 3,48 → 3,13 | 4,52 → 4,07 | 1,30 | 0,91 | 1,18 | 0,12 | 0,14 | 0,0 | 63,0 | 17,6 → 19,5 |
+| 55 · K1 | 4,10 → 3,69 | 5,14 → 4,63 | 1,25 | 1,07 | 1,21 | 0,12 | 0,14 | 14,6 | 63,0 | 17,6 → 19,5 |
+| 55 · K2 | 5,60 → 5,04 | 6,64 → 5,97 | 1,19 | 1,21 | 1,21 | 0,12 | 0,14 | 57,7 | 63,0 | 17,6 → 19,5 |
+| 55 · K3 | 6,95 → 6,26 | 6,95 → 6,26 | 1,00 | 1,21 | 1,21 | 0,12 | 0,14 | 66,7 | 63,0 | 17,6 → 19,5 |
+| 60 · K0 | 3,87 → 3,49 | 5,04 → 4,53 | 1,30 | 1,00 → 0,97 | 1,31 → 1,26 | 0,12 | 0,14 | 0,0 | 70,2 | 19,4 → 20,8 |
+| 60 · K1 | 4,57 → 4,11 | 5,73 → 5,16 | 1,25 | 1,19 → 1,14 | 1,34 → 1,29 | 0,12 | 0,14 | 14,6 | 70,2 | 19,4 → 20,8 |
+| 60 · K2 | 6,24 → 5,61 | 7,40 → 6,66 | 1,19 | 1,34 → 1,29 | 1,34 → 1,29 | 0,12 | 0,14 | 57,7 | 70,2 | 19,4 → 20,8 |
+| 60 · K3 | 7,75 → 6,97 | 7,75 → 6,97 | 1,00 | 1,34 → 1,29 | 1,34 → 1,29 | 0,12 | 0,14 | 66,7 | 70,2 | 19,4 → 20,8 |
+| 65 · K0 | 3,75 → 3,38 | 4,88 → 4,39 | 1,30 | 0,94 → 0,95 | 1,22 → 1,24 | 0,12 | 0,14 | 0,0 | 68,0 | 18,2 → 20,4 |
+| 65 · K1 | 4,42 → 3,98 | 5,55 → 5,00 | 1,25 | 1,11 → 1,12 | 1,26 → 1,27 | 0,12 | 0,14 | 14,6 | 68,0 | 18,2 → 20,4 |
+| 65 · K2 | 6,04 → 5,44 | 7,17 → 6,45 | 1,19 | 1,26 → 1,27 | 1,26 → 1,27 | 0,12 | 0,14 | 57,7 | 68,0 | 18,2 → 20,4 |
+| 65 · K3 | 7,50 → 6,75 | 7,50 → 6,75 | 1,00 | 1,26 → 1,27 | 1,26 → 1,27 | 0,12 | 0,14 | 66,7 | 68,0 | 18,2 → 20,4 |
 | 70 · K0 | **4,03** | 5,24 | 1,30 | 0,86 | 1,12 | 0,12 | 0,14 | 0,0 | 73,0 | 16,7 |
 | 70 · K1 | 4,75 | 5,96 | 1,25 | 1,02 | 1,15 | 0,12 | 0,14 | 14,6 | 73,0 | 16,7 |
 | 70 · K2 | 6,49 | 7,70 | 1,19 | 1,15 | 1,15 | 0,12 | 0,14 | 57,7 | 73,0 | 16,7 |
@@ -6765,16 +7156,16 @@ Luka = poziom gracza − średni ilvl dropu (`Loot.dropBaseLevel`, `ItemRoll.dro
 | poziom | zwykły potwór | Elita: spawner | Elita: luka | Elita II: spawner | Elita II: luka | boss: luka |
 | --- | --: | --: | --: | --: | --: | --: |
 | 20 | 1,0 | 20 | 1,0 | 20 | 1,0 | 0 |
-| 21 | 1,0 | 20 → 21 | 2,0 → 1,0 | 20 → 21 | 2,0 → 1,0 | 1 |
-| 22 | 1,0 | 20 → 22 | 3,0 → 1,0 | 20 → 22 | 3,0 → 1,0 | 2 |
-| 23 | 1,0 | 20 → 23 | 4,0 → 1,0 | 20 → 23 | 4,0 → 1,0 | 3 |
+| 21 | 1,0 | 21 | 1,0 | 21 | 1,0 | 1 |
+| 22 | 1,0 | 22 | 1,0 | 22 | 1,0 | 2 |
+| 23 | 1,0 | 23 | 1,0 | 23 | 1,0 | 3 |
 | 24 | 1,0 | 24 | 1,0 | 24 | 1,0 | 4 |
 | 25 | 1,0 | 25 | 1,0 | 25 | 1,0 | 5 |
 | 26 | 1,0 | 26 | 1,0 | 26 | 1,0 | 6 |
 | 27 | 1,0 | 27 | 1,0 | 27 | 1,0 | 7 |
 | 28 | 1,0 | 28 | 1,0 | 28 | 1,0 | 8 |
-| 29 | 1,0 | 28 → 29 | 2,0 → 1,0 | 28 → 29 | 2,0 → 1,0 | 9 |
-| 30 | 1,0 | 28 → 30 | 3,0 → 1,0 | 28 → 30 | 3,0 → 1,0 | 10 |
+| 29 | 1,0 | 29 | 1,0 | 29 | 1,0 | 9 |
+| 30 | 1,0 | 30 | 1,0 | 30 | 1,0 | 10 |
 | 31 | 1,0 | 31 | 1,0 | 31 | 1,0 | 11 |
 | 32 | 1,0 | 32 | 1,0 | 32 | 1,0 | 12 |
 | 33 | 1,0 | 33 | 1,0 | 33 | 1,0 | 13 |
@@ -6782,17 +7173,17 @@ Luka = poziom gracza − średni ilvl dropu (`Loot.dropBaseLevel`, `ItemRoll.dro
 | 35 | 1,0 | 35 | 1,0 | 35 | 1,0 | 15 |
 | 36 | 1,0 | 36 | 1,0 | 36 | 1,0 | 16 |
 | 37 | 1,0 | 37 | 1,0 | 37 | 1,0 | 17 |
-| 38 | 1,0 | 38 | 1,0 | 37 → 38 | 2,0 → 1,0 | 18 |
+| 38 | 1,0 | 38 | 1,0 | 38 | 1,0 | 18 |
 | 39 | 1,0 | 39 | 1,0 | 39 | 1,0 | 19 |
 | 40 | 1,0 | 40 | 1,0 | 40 | 1,0 | 20 |
 | 41 | 1,0 | 41 | 1,0 | 41 | 1,0 | 21 |
 | 42 | 1,0 | 42 | 1,0 | 42 | 1,0 | 22 |
 | 43 | 1,0 | 43 | 1,0 | 43 | 1,0 | 23 |
-| 44 | 1,0 | 43 → 44 | 2,0 → 1,0 | 44 | 1,0 | 24 |
-| 45 | 1,0 | 43 → 45 | 3,0 → 1,0 | 45 | 1,0 | 0 |
-| 46 | 1,0 | 43 → 45 | 4,0 → 2,0 | 45 | 2,0 | 1 |
-| 47 | 1,0 | 43 → 45 | 5,0 → 3,0 | 45 | 3,0 | 2 |
-| 48 | 1,0 | 43 → 45 | 6,0 → 4,0 | 45 | 4,0 | 3 |
+| 44 | 1,0 | 44 | 1,0 | 44 | 1,0 | 24 |
+| 45 | 1,0 | 45 | 1,0 | 45 | 1,0 | 0 |
+| 46 | 1,0 | 45 → 46 | 2,0 → 1,0 | 45 → 46 | 2,0 → 1,0 | 1 |
+| 47 | 1,0 | 45 → 47 | 3,0 → 1,0 | 45 → 47 | 3,0 → 1,0 | 2 |
+| 48 | 1,0 | 45 → 48 | 4,0 → 1,0 | 45 → 48 | 4,0 → 1,0 | 3 |
 | 49 | 1,0 | 49 | 1,0 | 49 | 1,0 | 4 |
 | 50 | 1,0 | 50 | 1,0 | 50 | 1,0 | 5 |
 | 51 | 1,0 | 51 | 1,0 | 51 | 1,0 | 6 |
@@ -6801,7 +7192,7 @@ Luka = poziom gracza − średni ilvl dropu (`Loot.dropBaseLevel`, `ItemRoll.dro
 | 54 | 1,0 | 54 | 1,0 | 54 | 1,0 | 9 |
 | 55 | 1,0 | 55 | 1,0 | 55 | 1,0 | 10 |
 | 56 | 1,0 | 56 | 1,0 | 56 | 1,0 | 11 |
-| 57 | 1,0 | 57 | 1,0 | 56 | 2,0 | 12 |
+| 57 | 1,0 | 57 | 1,0 | 56 → 57 | 2,0 → 1,0 | 12 |
 | 58 | 1,0 | 58 | 1,0 | 58 | 1,0 | 13 |
 | 59 | 1,0 | 59 | 1,0 | 59 | 1,0 | 14 |
 | 60 | 1,0 | 60 | 1,0 | 60 | 1,0 | 15 |
@@ -6813,11 +7204,11 @@ Luka = poziom gracza − średni ilvl dropu (`Loot.dropBaseLevel`, `ItemRoll.dro
 | 66 | 1,0 | 66 | 1,0 | 66 | 1,0 | 21 |
 | 67 | 1,0 | 67 | 1,0 | 67 | 1,0 | 22 |
 | 68 | 1,0 | 68 | 1,0 | 68 | 1,0 | 23 |
-| 69 | 1,0 | 68 | 2,0 | 69 | 1,0 | 24 |
-| 70 | 1,0 | 68 | 3,0 | 70 | 1,0 | 0 |
-| 71 | 1,0 | 68 | 4,0 | 70 | 2,0 | 1 |
-| 72 | 1,0 | 68 | 5,0 | 70 | 3,0 | 2 |
-| 73 | 1,0 | 68 | 6,0 | 70 | 4,0 | 3 |
+| 69 | 1,0 | 68 → 69 | 2,0 → 1,0 | 69 | 1,0 | 24 |
+| 70 | 1,0 | 68 → 70 | 3,0 → 1,0 | 70 | 1,0 | 0 |
+| 71 | 1,0 | 68 → 70 | 4,0 → 2,0 | 70 | 2,0 | 1 |
+| 72 | 1,0 | 68 → 70 | 5,0 → 3,0 | 70 | 3,0 | 2 |
+| 73 | 1,0 | 68 → 70 | 6,0 → 4,0 | 70 | 4,0 | 3 |
 | 74 | 1,0 | 74 | 1,0 | 74 | 1,0 | 4 |
 | 75 | 1,0 | 75 | 1,0 | 75 | 1,0 | 5 |
 | 76 | 1,0 | 76 | 1,0 | 76 | 1,0 | 6 |
@@ -7909,28 +8300,28 @@ Rotacja buildu Kapłana z ograniczeniem many przez czas `Balance.bossFight`, lec
 | build · boss (poziom drużyny) | drużyna domyślna | drużyna S92 | leczenie / s (domyślna) | obrażenia tanka / s | czas walki s | mana: zapotrzebowanie / regeneracja |
 | --- | --: | --: | --: | --: | --: | --: |
 | base · grimrok (19) | 1,13 | 1,73 | 56 | 50 | 325,7 | 5,55 |
-| base · morvane (44) | **0,86 → 0,88** | 1,34 | 225 → 223 | 262 → 253 | 277,3 → 291,3 | 2,62 |
-| base · azgor (69) | **0,90** | 1,83 | 356 | 397 | 305,4 | 2,11 |
+| base · morvane (44) | **0,88** | 1,34 | 223 | 253 | 291,3 | 2,62 |
+| base · azgor (69) | **0,90 → 2,19** | **1,83 → 4,49** | 356 → 357 | 397 → 163 | 305,4 → 301,9 | 2,11 |
 | base · vaelgrath (99) | **0,92** | 1,85 | 620 | 673 | 277,9 | 1,50 |
 | healer.dungeon · grimrok (19) | 1,20 | 1,83 | 60 | 50 | 325,0 | 5,55 |
-| healer.dungeon · morvane (44) | **2,03 → 2,10** | **2,70 → 2,68** | 532 → 531 | 262 → 253 | 277,3 → 291,2 | 2,49 |
-| healer.dungeon · azgor (69) | **3,41** | **5,23** | 1353 | 397 | 305,2 | 1,63 |
+| healer.dungeon · morvane (44) | **2,10** | **2,68** | 531 | 253 | 291,2 | 2,49 |
+| healer.dungeon · azgor (69) | **3,41 → 8,31** | **5,23 → 12,78** | 1353 → 1357 | 397 → 163 | 305,2 → 301,7 | 1,63 |
 | healer.dungeon · vaelgrath (99) | **3,93** | **5,98** | 2643 | 673 | 277,9 | 1,12 |
 | healer.solo · grimrok (19) | **0,14** | **0,14** | 7 | 50 | 321,0 | 1,37 |
-| healer.solo · morvane (44) | 1,22 → 1,25 | 1,27 → 1,28 | 319 → 317 | 262 → 253 | 273,6 → 287,4 | 0,52 |
-| healer.solo · azgor (69) | **2,42** | **2,77** | 961 | 397 | 301,5 | 0,65 |
+| healer.solo · morvane (44) | 1,25 | 1,28 | 317 | 253 | 287,4 | 0,52 |
+| healer.solo · azgor (69) | **2,42 → 5,88** | **2,77 → 6,74** | 961 | 397 → 163 | 301,5 → 298,1 | 0,65 |
 | healer.solo · vaelgrath (99) | **2,83** | **3,14** | 1901 | 673 | 274,7 | 0,41 |
 | fortune.plunder · grimrok (19) | 1,03 | 1,58 | 51 | 50 | 320,3 | 3,87 |
-| fortune.plunder · morvane (44) | **0,79 → 0,82** | 1,26 → 1,24 | 207 | 262 → 253 | 274,7 → 288,5 | 2,15 |
-| fortune.plunder · azgor (69) | **0,79** | 1,64 | 314 | 397 | 302,3 | 1,48 |
+| fortune.plunder · morvane (44) | **0,82** | 1,24 | 207 | 253 | 288,5 | 2,15 |
+| fortune.plunder · azgor (69) | 0,79 → 1,91 | **1,64 → 4,00** | 314 → 313 | 397 → 163 | 302,3 → 298,9 | 1,48 |
 | fortune.plunder · vaelgrath (99) | **0,76** | 1,52 | 511 | 673 | 275,1 | 1,15 |
 | inquisitor.solo · grimrok (19) | **0,00** | **0,00** | 0 | 50 | 328,6 | 1,72 |
-| inquisitor.solo · morvane (44) | **0,00** | **0,00** | 0 | 262 → 253 | 284,8 → 299,0 | 1,47 |
-| inquisitor.solo · azgor (69) | **0,00** | **0,00** | 0 | 397 | 313,7 | 1,49 |
+| inquisitor.solo · morvane (44) | **0,00** | **0,00** | 0 | 253 | 299,0 | 1,47 |
+| inquisitor.solo · azgor (69) | **0,00** | **0,00** | 0 | 397 → 163 | 313,7 → 310,0 | 1,49 |
 | inquisitor.solo · vaelgrath (99) | **0,00** | **0,00** | 0 | 673 | 285,5 | 1,22 |
 | inquisitor.bulwark · grimrok (19) | **0,00** | **0,00** | 0 | 50 | 330,7 | 1,72 |
-| inquisitor.bulwark · morvane (44) | **0,00** | **0,00** | 0 | 262 → 253 | 286,5 → 300,8 | 1,47 |
-| inquisitor.bulwark · azgor (69) | **0,00** | **0,00** | 0 | 397 | 315,8 | 1,49 |
+| inquisitor.bulwark · morvane (44) | **0,00** | **0,00** | 0 | 253 | 300,8 | 1,47 |
+| inquisitor.bulwark · azgor (69) | **0,00** | **0,00** | 0 | 397 → 163 | 315,8 → 312,0 | 1,49 |
 | inquisitor.bulwark · vaelgrath (99) | **0,00** | **0,00** | 0 | 673 | 287,4 | 1,22 |
 
 ### Porównanie z diagnozą i ROZWOJ
@@ -8011,7 +8402,7 @@ Pozycje `unmodelled` (po S86 tylko nieznane klucze; haki bez wpływu na metryki 
 
 ### Cele G10 (T-SK4, T-SK5; asertowane od S87 poza `GLOBAL_REPORT_ONLY`)
 
-216/276 w paśmie (T-SK4 Maga od 45., T-SK5 Kapłana na tanku Wojowniku konwencji i Strażniku „Obrońcy”, co 5 poziomów; blok globalny `balance.spec` drukuje je razem z G). Poza pasmem:
+217/276 w paśmie (T-SK4 Maga od 45., T-SK5 Kapłana na tanku Wojowniku konwencji i Strażniku „Obrońcy”, co 5 poziomów; blok globalny `balance.spec` drukuje je razem z G). Poza pasmem:
 
 | cel | wartość | próg | wynik | kto asertuje |
 | --- | --: | --: | --: | --: |
@@ -8043,9 +8434,8 @@ Pozycje `unmodelled` (po S86 tylko nieznane klucze; haki bez wpływu na metryki 
 | T-SK5 Cleric healer.solo na Warrior 45 | 0,36 | 0,25–0,35 | **poza** | S87 (raport) |
 | T-SK4 Mage base 50 | 1,67 | 1,10–1,40 | **poza** | S87 (raport) |
 | T-SK4 Mage base.loadout 50 | 1,66 | 1,10–1,40 | **poza** | S87 (raport) |
-| T-SK4 Mage base 55 | 1,81 | 1,10–1,40 | **poza** | S87 (raport) |
-| T-SK4 Mage base.loadout 55 | 1,81 | 1,10–1,40 | **poza** | S87 (raport) |
-| T-SK4 Mage arcanist.arcanistOverload 55 | 2,54 | 2,60–2,80 | **poza** | S87 (raport) |
+| T-SK4 Mage base 55 | 1,87 | 1,10–1,40 | **poza** | S87 (raport) |
+| T-SK4 Mage base.loadout 55 | 1,87 | 1,10–1,40 | **poza** | S87 (raport) |
 | T-SK4 Mage base 60 | 1,77 | 1,10–1,40 | **poza** | S87 (raport) |
 | T-SK4 Mage base.loadout 60 | 1,77 | 1,10–1,40 | **poza** | S87 (raport) |
 | T-SK4 Mage base 65 | 1,74 | 1,10–1,40 | **poza** | S87 (raport) |
@@ -9068,8 +9458,8 @@ Wartość z pasmem (poza pasmem pogrubiona), 1 = mieści się; asertowany = 1, g
 | cleric.solo · fortune.plunder (9.0 mówi 1,35) · 70 | 0,93 | 1 | 1 | 1,35 | **-31%** | 7,5 |
 | cleric.solo · fortune.plunder (9.0 mówi 1,35) · 100 | 1,28 | 1 | 1 | 1,11 | **15%** | 7,5 |
 | healer.tsk6 · healer.dungeon (tank Obrońca, drużyna S92) · 20 [raport: S92–S94] | 1,83 | 1 | 0 | – | – | 0,0 |
-| healer.tsk6 · healer.dungeon (tank Obrońca, drużyna S92) · 45 [raport: S92–S94] | **2,70 → 2,68** | 0 | 0 | – | – | 0,0 |
-| healer.tsk6 · healer.dungeon (tank Obrońca, drużyna S92) · 70 [raport: S92–S94] | **5,23** | 0 | 0 | – | – | 0,0 |
+| healer.tsk6 · healer.dungeon (tank Obrońca, drużyna S92) · 45 [raport: S92–S94] | **2,68** | 0 | 0 | – | – | 0,0 |
+| healer.tsk6 · healer.dungeon (tank Obrońca, drużyna S92) · 70 [raport: S92–S94] | **5,23 → 12,78** | 0 | 0 | – | – | 0,0 |
 | healer.tsk6 · healer.dungeon (tank Obrońca, drużyna S92) · 100 [raport: S92–S94] | **5,98** | 0 | 0 | – | – | 0,0 |
 | all.r1 · inquisitor.solo · 20 [raport: właściciel (F4)] | 2,06 | 1 | 0 | – | – | 0,0 |
 | all.r1 · inquisitor.solo · 45 [raport: właściciel (F4)] | **4,35** | 0 | 0 | – | – | 0,0 |
@@ -9297,47 +9687,47 @@ Założenia S84 (Balance.SITUATIONS) w kolumnach obok: atak podst. 0.5 (Mag 0.4)
 
 | build · poziom | atak podst. 1 cel | atak podst. grupa | odstęp rzutów s | żywioł broni | lód: kontrola | obszar w grupie | kontrola 1 cel | kontrola boss | bez ruchu | bez ruchu boss | mana (boss 180 s) | leczenie / s tanka |
 | --- | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: |
-| berserker.fury · 45 | 42% | 36% | 2,3 | 0% | 5% | 21% | 5% | 5% | 87% | 40% | – | – |
+| berserker.fury · 45 | 42% | 36% | 2,3 | 0% | 5% | 21% | 5% | 5% | 87% | 40% → 27% | – | – |
 | berserker.fury · 70 | 41% | 34% | 2,2 | 0% | 9% | 22% | 9% | 9% | 87% | 35% | – | – |
 | berserker.fury · 100 | 40% | 32% | 2,2 | 0% | 9% | 27% | 9% | 9% | 87% | 36% | – | – |
-| guardian.defender · 45 | 53% | 32% | 2,3 | 0% | 5% | 35% | 5% | 5% | 97% | 45% | – | – |
+| guardian.defender · 45 | 53% | 32% | 2,3 | 0% | 5% | 35% | 5% | 5% | 97% | 45% → 30% | – | – |
 | guardian.defender · 70 | 51% | 30% | 2,2 | 0% | 10% | 36% | 10% | 10% | 97% | 40% | – | – |
 | guardian.defender · 100 | 51% | 30% | 2,2 | 0% | 5% | 35% | 5% | 5% | 97% | 40% | – | – |
-| guardian.loner · 45 | 53% | 32% | 2,3 | 0% | 5% | 35% | 5% | 5% | 97% | 45% | – | – |
+| guardian.loner · 45 | 53% | 32% | 2,3 | 0% | 5% | 35% | 5% | 5% | 97% | 45% → 30% | – | – |
 | guardian.loner · 70 | 54% | 33% | 2,4 | 0% | 5% | 31% | 5% | 5% | 97% | 40% | – | – |
 | guardian.loner · 100 | 55% | 34% | 2,5 | 0% | 5% | 28% | 5% | 5% | 97% | 40% | – | – |
-| standard.commander · 45 | 50% | 29% | 2,3 | 0% | 0% | 39% | 0% | 0% | 97% | 45% | – | – |
+| standard.commander · 45 | 50% | 29% | 2,3 | 0% | 0% | 39% | 0% | 0% | 97% | 45% → 30% | – | – |
 | standard.commander · 70 | 47% | 29% | 2,3 | 0% | 0% | 35% | 0% | 0% | 97% | 40% | – | – |
 | standard.commander · 100 | 42% | 25% | 1,9 | 0% | 0% | 39% | 0% | 0% | 97% | 40% | – | – |
-| marksman.kingslayer · 45 | 46% | 44% | 1,9 | 0% | 28% | 8% | 28% | 28% | 97% | 45% | – | – |
+| marksman.kingslayer · 45 | 46% | 44% | 1,9 | 0% | 28% | 8% | 28% | 28% | 97% | 45% → 30% | – | – |
 | marksman.kingslayer · 70 | 47% | 44% | 1,9 | 0% | 27% | 6% | 27% | 27% | 97% | 40% | – | – |
 | marksman.kingslayer · 100 | 46% | 44% | 1,9 | 0% | 28% | 6% | 28% | 28% | 97% | 40% | – | – |
-| trapper.poacher · 45 | 44% | 31% | 1,8 | 0% | 55% | 36% | 55% | 55% | 97% | 45% | – | – |
+| trapper.poacher · 45 | 44% | 31% | 1,8 | 0% | 55% | 36% | 55% | 55% | 97% | 45% → 30% | – | – |
 | trapper.poacher · 70 | 41% | 26% | 1,8 | 0% | 51% | 44% | 51% | 51% | 97% | 40% | – | – |
 | trapper.poacher · 100 | 42% | 26% | 1,7 | 0% | 57% | 45% | 57% | 56% | 97% | 40% | – | – |
-| scout.partyHunter · 45 | 43% | 36% | 1,9 | 0% | 31% | 11% | 31% | 31% | 97% | 45% | – | – |
+| scout.partyHunter · 45 | 43% | 36% | 1,9 | 0% | 31% | 11% | 31% | 31% | 97% | 45% → 30% | – | – |
 | scout.partyHunter · 70 | 42% | 35% | 1,9 | 0% | 31% | 10% | 31% | 31% | 97% | 40% | – | – |
 | scout.partyHunter · 100 | 38% | 33% | 1,8 | 0% | 30% | 11% | 30% | 27% | 97% | 40% | – | – |
-| destroyer.destroyerExp · 45 | 31% | 18% | 1,7 | 8% | 99% | 28% | 33% | 33% | 97% | 45% | 98% | – |
+| destroyer.destroyerExp · 45 | 31% | 18% | 1,7 | 8% | 99% | 28% | 33% | 33% | 97% | 45% → 30% | 98% | – |
 | destroyer.destroyerExp · 70 | 29% | 16% | 1,6 | 9% | 99% | 37% | 33% | 33% | 97% | 40% | 89% | – |
 | destroyer.destroyerExp · 100 | 27% | 14% | 1,6 | 11% | 99% | 42% | 33% | 33% | 97% | 40% | 91% | – |
-| destroyer.destroyerBoss · 45 | 25% | 18% | 1,4 | 10% | 99% | 31% | 33% | 33% | 97% | 45% | 98% | – |
+| destroyer.destroyerBoss · 45 | 25% | 18% | 1,4 | 10% | 99% | 31% | 33% | 33% | 97% | 45% → 30% | 98% | – |
 | destroyer.destroyerBoss · 70 | 22% | 15% | 1,2 | 10% | 99% | 42% | 33% | 33% | 97% | 40% | 90% | – |
 | destroyer.destroyerBoss · 100 | 21% | 13% | 1,2 | 12% | 99% | 46% | 33% | 33% | 97% | 40% | 91% | – |
-| arcanist.arcanistBoss · 45 | 24% | 19% | 1,2 | 4% | 98% | 21% | 33% | 33% | 97% | 45% | 97% | – |
+| arcanist.arcanistBoss · 45 | 24% | 19% | 1,2 | 4% | 98% | 21% | 33% | 33% | 97% | 45% → 30% | 97% | – |
 | arcanist.arcanistBoss · 70 | 21% | 17% | 1,3 | 4% | 92% | 24% | 31% | 31% | 97% | 40% | 96% | – |
 | arcanist.arcanistBoss · 100 | 20% | 16% | 1,3 | 4% | 90% | 23% | 30% | 30% | 97% | 40% | 88% | – |
-| inquisitor.solo · 45 | 23% | 17% | 2,0 | 0% | 32% | 25% | 32% | 32% | 97% | 45% | – | – |
+| inquisitor.solo · 45 | 23% | 17% | 2,0 | 0% | 32% | 25% | 32% | 32% | 97% | 45% → 30% | – | – |
 | inquisitor.solo · 70 | 20% | 14% | 2,0 | 0% | 31% | 22% | 31% | 31% | 97% | 40% | – | – |
 | inquisitor.solo · 100 | 18% | 11% | 1,9 | 0% | 33% | 27% | 33% | 33% | 97% | 40% | – | – |
-| healer.dungeon · 45 | 40% | 27% | 3,0 | 0% | 0% | 0% | 0% | 0% | 97% | 45% | – | 532 → 531 |
-| healer.dungeon · 70 | 37% | 25% | 3,0 | 0% | 0% | 0% | 0% | 0% | 97% | 40% | – | 1353 |
+| healer.dungeon · 45 | 40% | 27% | 3,0 | 0% | 0% | 0% | 0% | 0% | 97% | 45% → 30% | – | 531 |
+| healer.dungeon · 70 | 37% | 25% | 3,0 | 0% | 0% | 0% | 0% | 0% | 97% | 40% | – | 1353 → 1357 |
 | healer.dungeon · 100 | 37% | 25% | 3,0 | 0% | 0% | 0% | 0% | 0% | 97% | 40% | – | 2643 |
-| healer.solo · 45 | 36% | 20% | 2,5 | 0% | 7% | 19% | 7% | 7% | 97% | 45% | – | 319 → 317 |
+| healer.solo · 45 | 36% | 20% | 2,5 | 0% | 7% | 19% | 7% | 7% | 97% | 45% → 30% | – | 317 |
 | healer.solo · 70 | 31% | 18% | 2,5 | 0% | 7% | 19% | 7% | 7% | 97% | 40% | – | 961 |
 | healer.solo · 100 | 31% | 18% | 2,5 | 0% | 7% | 19% | 7% | 7% | 97% | 40% | – | 1901 |
-| fortune.plunder · 45 | 38% | 25% | 3,0 | 0% | 27% | 0% | 27% | 27% | 97% | 45% | – | 207 |
-| fortune.plunder · 70 | 36% | 24% | 3,0 | 0% | 27% | 0% | 27% | 27% | 97% | 40% | – | 314 |
+| fortune.plunder · 45 | 38% | 25% | 3,0 | 0% | 27% | 0% | 27% | 27% | 97% | 45% → 30% | – | 207 |
+| fortune.plunder · 70 | 36% | 24% | 3,0 | 0% | 27% | 0% | 27% | 27% | 97% | 40% | – | 314 → 313 |
 | fortune.plunder · 100 | 36% | 24% | 3,0 | 0% | 27% | 0% | 27% | 27% | 97% | 40% | – | 511 |
 
 ### Cechy w modelu umiejętności (C6)
@@ -9689,9 +10079,9 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | Mage destroyer.destroyerBoss · 90 | **1,80** | **1,97** | 0,64 | 2,66 | 2,82 |
 | Mage destroyer.destroyerBoss · 95 | **1,82** | **2,05** | 0,66 | 2,66 | 2,82 |
 | Mage destroyer.destroyerBoss · 100 | **1,84** | **2,07** | 0,66 | 2,66 | 2,82 |
-| Mage arcanist.arcanistBoss · 25 | **1,25 → 1,24** | **1,26** | 0,61 | 2,58 | 2,69 |
-| Mage arcanist.arcanistBoss · 30 | **1,37 → 1,36** | **1,39** | 0,63 | 2,58 | 2,69 |
-| Mage arcanist.arcanistBoss · 35 | **1,40 → 1,39** | **1,42** | 0,63 | 2,58 | 2,69 |
+| Mage arcanist.arcanistBoss · 25 | **1,24** | **1,26** | 0,61 | 2,58 | 2,69 |
+| Mage arcanist.arcanistBoss · 30 | **1,36** | **1,39** | 0,63 | 2,58 | 2,69 |
+| Mage arcanist.arcanistBoss · 35 | **1,39** | **1,42** | 0,63 | 2,58 | 2,69 |
 | Mage arcanist.arcanistBoss · 40 | **1,60** | **1,63** | 0,63 | 2,58 | 2,69 |
 | Mage arcanist.arcanistBoss · 45 | **1,68** | **1,71** | 0,63 | 2,58 | 2,69 |
 | Mage arcanist.arcanistBoss · 50 | **1,73** | **1,77** | 0,63 | 2,58 | 2,69 |
@@ -9804,53 +10194,53 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | T-SK5 Cleric inquisitor.solo na guardian.defender 20 | **0,21** | 0 |
 | T-SK5 Cleric inquisitor.bulwark na Warrior 20 | **0,21** | 0 |
 | T-SK5 Cleric inquisitor.bulwark na guardian.defender 20 | **0,21** | 0 |
-| T-SK5 Cleric base na Warrior 25 | 0,23 → 0,26 | 0 |
-| T-SK5 Cleric base na guardian.defender 25 | **0,22 → 0,24** | 0 |
-| T-SK5 Cleric healer.dungeon na Warrior 25 | 0,24 → 0,27 | 0 |
-| T-SK5 Cleric healer.dungeon na guardian.defender 25 | 0,23 → 0,25 | 1 |
-| T-SK5 Cleric healer.solo na Warrior 25 | 0,24 → 0,28 | 0 |
-| T-SK5 Cleric healer.solo na guardian.defender 25 | 0,22 → 0,25 | 0 |
-| T-SK5 Cleric fortune.plunder na Warrior 25 | **0,21 → 0,24** | 0 |
-| T-SK5 Cleric fortune.plunder na guardian.defender 25 | **0,20 → 0,22** | 0 |
-| T-SK5 Cleric inquisitor.solo na Warrior 25 | **0,22 → 0,25** | 0 |
-| T-SK5 Cleric inquisitor.solo na guardian.defender 25 | **0,22 → 0,24** | 0 |
-| T-SK5 Cleric inquisitor.bulwark na Warrior 25 | **0,22 → 0,25** | 0 |
-| T-SK5 Cleric inquisitor.bulwark na guardian.defender 25 | **0,22 → 0,23** | 0 |
-| T-SK5 Cleric base na Warrior 30 | 0,25 → 0,28 | 0 |
-| T-SK5 Cleric base na guardian.defender 30 | 0,24 → 0,25 | 0 |
-| T-SK5 Cleric healer.dungeon na Warrior 30 | 0,27 → 0,29 | 0 |
-| T-SK5 Cleric healer.dungeon na guardian.defender 30 | 0,25 → 0,27 | 1 |
-| T-SK5 Cleric healer.solo na Warrior 30 | 0,27 → 0,30 | 0 |
-| T-SK5 Cleric healer.solo na guardian.defender 30 | 0,25 → 0,27 | 0 |
-| T-SK5 Cleric fortune.plunder na Warrior 30 | 0,23 → 0,26 | 0 |
-| T-SK5 Cleric fortune.plunder na guardian.defender 30 | **0,22 → 0,24** | 0 |
-| T-SK5 Cleric inquisitor.solo na Warrior 30 | 0,24 → 0,27 | 0 |
-| T-SK5 Cleric inquisitor.solo na guardian.defender 30 | **0,23 → 0,25** | 0 |
-| T-SK5 Cleric inquisitor.bulwark na Warrior 30 | 0,24 → 0,26 | 0 |
-| T-SK5 Cleric inquisitor.bulwark na guardian.defender 30 | **0,23 → 0,25** | 0 |
-| T-SK5 Cleric base na Warrior 35 | 0,27 → 0,29 | 0 |
-| T-SK5 Cleric base na guardian.defender 35 | 0,25 → 0,26 | 0 |
-| T-SK5 Cleric healer.dungeon na Warrior 35 | 0,29 → 0,31 | 0 |
-| T-SK5 Cleric healer.dungeon na guardian.defender 35 | 0,26 → 0,28 | 1 |
-| T-SK5 Cleric healer.solo na Warrior 35 | 0,29 → 0,32 | 0 |
-| T-SK5 Cleric healer.solo na guardian.defender 35 | 0,26 → 0,28 | 0 |
-| T-SK5 Cleric fortune.plunder na Warrior 35 | 0,25 → 0,27 | 0 |
-| T-SK5 Cleric fortune.plunder na guardian.defender 35 | **0,23 → 0,24** | 0 |
-| T-SK5 Cleric inquisitor.solo na Warrior 35 | 0,26 → 0,27 | 0 |
-| T-SK5 Cleric inquisitor.solo na guardian.defender 35 | 0,24 → 0,25 | 0 |
-| T-SK5 Cleric inquisitor.bulwark na Warrior 35 | 0,26 → 0,27 | 0 |
-| T-SK5 Cleric inquisitor.bulwark na guardian.defender 35 | 0,24 → 0,25 | 0 |
-| T-SK5 Cleric base na Warrior 40 | 0,30 → 0,31 | 0 |
+| T-SK5 Cleric base na Warrior 25 | 0,26 | 0 |
+| T-SK5 Cleric base na guardian.defender 25 | **0,24** | 0 |
+| T-SK5 Cleric healer.dungeon na Warrior 25 | 0,27 | 0 |
+| T-SK5 Cleric healer.dungeon na guardian.defender 25 | 0,25 | 1 |
+| T-SK5 Cleric healer.solo na Warrior 25 | 0,28 | 0 |
+| T-SK5 Cleric healer.solo na guardian.defender 25 | 0,25 | 0 |
+| T-SK5 Cleric fortune.plunder na Warrior 25 | **0,24** | 0 |
+| T-SK5 Cleric fortune.plunder na guardian.defender 25 | **0,22** | 0 |
+| T-SK5 Cleric inquisitor.solo na Warrior 25 | **0,25** | 0 |
+| T-SK5 Cleric inquisitor.solo na guardian.defender 25 | **0,24** | 0 |
+| T-SK5 Cleric inquisitor.bulwark na Warrior 25 | **0,25** | 0 |
+| T-SK5 Cleric inquisitor.bulwark na guardian.defender 25 | **0,23** | 0 |
+| T-SK5 Cleric base na Warrior 30 | 0,28 | 0 |
+| T-SK5 Cleric base na guardian.defender 30 | 0,25 | 0 |
+| T-SK5 Cleric healer.dungeon na Warrior 30 | 0,29 | 0 |
+| T-SK5 Cleric healer.dungeon na guardian.defender 30 | 0,27 | 1 |
+| T-SK5 Cleric healer.solo na Warrior 30 | 0,30 | 0 |
+| T-SK5 Cleric healer.solo na guardian.defender 30 | 0,27 | 0 |
+| T-SK5 Cleric fortune.plunder na Warrior 30 | 0,26 | 0 |
+| T-SK5 Cleric fortune.plunder na guardian.defender 30 | **0,24** | 0 |
+| T-SK5 Cleric inquisitor.solo na Warrior 30 | 0,27 | 0 |
+| T-SK5 Cleric inquisitor.solo na guardian.defender 30 | **0,25** | 0 |
+| T-SK5 Cleric inquisitor.bulwark na Warrior 30 | 0,26 | 0 |
+| T-SK5 Cleric inquisitor.bulwark na guardian.defender 30 | **0,25** | 0 |
+| T-SK5 Cleric base na Warrior 35 | 0,29 | 0 |
+| T-SK5 Cleric base na guardian.defender 35 | 0,26 | 0 |
+| T-SK5 Cleric healer.dungeon na Warrior 35 | 0,31 | 0 |
+| T-SK5 Cleric healer.dungeon na guardian.defender 35 | 0,28 | 1 |
+| T-SK5 Cleric healer.solo na Warrior 35 | 0,32 | 0 |
+| T-SK5 Cleric healer.solo na guardian.defender 35 | 0,28 | 0 |
+| T-SK5 Cleric fortune.plunder na Warrior 35 | 0,27 | 0 |
+| T-SK5 Cleric fortune.plunder na guardian.defender 35 | **0,24** | 0 |
+| T-SK5 Cleric inquisitor.solo na Warrior 35 | 0,27 | 0 |
+| T-SK5 Cleric inquisitor.solo na guardian.defender 35 | 0,25 | 0 |
+| T-SK5 Cleric inquisitor.bulwark na Warrior 35 | 0,27 | 0 |
+| T-SK5 Cleric inquisitor.bulwark na guardian.defender 35 | 0,25 | 0 |
+| T-SK5 Cleric base na Warrior 40 | 0,31 | 0 |
 | T-SK5 Cleric base na guardian.defender 40 | 0,27 | 0 |
-| T-SK5 Cleric healer.dungeon na Warrior 40 | 0,32 → 0,33 | 0 |
+| T-SK5 Cleric healer.dungeon na Warrior 40 | 0,33 | 0 |
 | T-SK5 Cleric healer.dungeon na guardian.defender 40 | 0,29 | 1 |
-| T-SK5 Cleric healer.solo na Warrior 40 | 0,33 → 0,34 | 0 |
+| T-SK5 Cleric healer.solo na Warrior 40 | 0,34 | 0 |
 | T-SK5 Cleric healer.solo na guardian.defender 40 | 0,29 | 0 |
-| T-SK5 Cleric fortune.plunder na Warrior 40 | 0,29 → 0,30 | 0 |
+| T-SK5 Cleric fortune.plunder na Warrior 40 | 0,30 | 0 |
 | T-SK5 Cleric fortune.plunder na guardian.defender 40 | 0,26 | 0 |
 | T-SK5 Cleric inquisitor.solo na Warrior 40 | 0,29 | 0 |
-| T-SK5 Cleric inquisitor.solo na guardian.defender 40 | 0,26 → 0,27 | 0 |
-| T-SK5 Cleric inquisitor.bulwark na Warrior 40 | 0,28 → 0,29 | 0 |
+| T-SK5 Cleric inquisitor.solo na guardian.defender 40 | 0,27 | 0 |
+| T-SK5 Cleric inquisitor.bulwark na Warrior 40 | 0,29 | 0 |
 | T-SK5 Cleric inquisitor.bulwark na guardian.defender 40 | 0,26 | 0 |
 | T-SK4 Mage base 45 | **1,90** | 0 |
 | T-SK4 Mage base.loadout 45 | **1,90** | 0 |
@@ -9888,12 +10278,12 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | T-SK5 Cleric inquisitor.solo na guardian.defender 50 | 0,27 | 0 |
 | T-SK5 Cleric inquisitor.bulwark na Warrior 50 | 0,29 | 0 |
 | T-SK5 Cleric inquisitor.bulwark na guardian.defender 50 | 0,27 | 0 |
-| T-SK4 Mage base 55 | **1,81** | 0 |
-| T-SK4 Mage base.loadout 55 | **1,81** | 0 |
-| T-SK4 Mage destroyer.destroyerExp 55 | 2,42 | 1 |
-| T-SK4 Mage destroyer.destroyerBoss 55 | 2,29 | 0 |
-| T-SK4 Mage arcanist.arcanistBoss 55 | 2,00 | 1 |
-| T-SK4 Mage arcanist.arcanistOverload 55 | **2,54** | 0 |
+| T-SK4 Mage base 55 | **1,81 → 1,87** | 0 |
+| T-SK4 Mage base.loadout 55 | **1,81 → 1,87** | 0 |
+| T-SK4 Mage destroyer.destroyerExp 55 | 2,42 → 2,50 | 1 |
+| T-SK4 Mage destroyer.destroyerBoss 55 | 2,29 → 2,37 | 0 |
+| T-SK4 Mage arcanist.arcanistBoss 55 | 2,00 → 2,06 | 1 |
+| T-SK4 Mage arcanist.arcanistOverload 55 | 2,54 → 2,62 | 0 |
 | T-SK5 Cleric base na Warrior 55 | 0,28 | 0 |
 | T-SK5 Cleric base na guardian.defender 55 | 0,26 | 0 |
 | T-SK5 Cleric healer.dungeon na Warrior 55 | 0,30 | 0 |
@@ -10465,15 +10855,15 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | build · poziom | Elita wygrana | Elita czas s | Elita HP na końcu | Elita II wygrana | Elita II czas s | Elita II HP na końcu |
 | --- | --: | --: | --: | --: | --: | --: |
 | guardian.loner · 20 | 1 | 19,1 | 75% | 1 | 82,3 | 40% |
-| guardian.loner · 45 | 1 | 21,3 | 90% | 1 | 80,3 | 26% |
+| guardian.loner · 45 | 1 | 21,3 | 90% → 92% | 1 | 80,3 | 26% → 42% |
 | guardian.loner · 70 | 1 | 20,1 | 86% | 1 | 70,0 | 57% |
 | guardian.loner · 100 | 1 | 25,3 | 92% | 1 | 76,0 | 43% |
 | standard.commander · 20 | 1 | 18,2 | 76% | 1 | 80,3 | 40% |
-| standard.commander · 45 | 1 | 19,6 | 78% | 0 | 63,1 | 0% |
+| standard.commander · 45 | 1 | 19,6 | 78% → 81% | 0 | 63,0 → 74,0 | 0% |
 | standard.commander · 70 | 1 | 17,4 | 83% | 1 | 59,2 | 26% |
 | standard.commander · 100 | 1 | 14,9 | 84% | 1 | 54,4 | 22% |
 | healer.solo · 20 | 1 | 21,2 | 74% | 1 | 88,1 | 59% |
-| healer.solo · 45 | 1 | 15,8 | 100% | 1 | 60,4 | 99% |
+| healer.solo · 45 | 1 | 15,8 | 100% | 1 | 60,4 | 99% → 100% |
 | healer.solo · 70 | 1 | 15,8 | 100% | 1 | 60,0 | 98% |
 | healer.solo · 100 | 1 | 17,6 | 98% | 1 | 60,4 | 100% |
 | fortune.plunder · 20 | 1 | 21,2 | 97% | 1 | 87,2 | 97% |
@@ -10481,7 +10871,7 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | fortune.plunder · 70 | 1 | 19,2 | 100% | 1 | 64,2 | 100% |
 | fortune.plunder · 100 | 1 | 22,0 | 100% | 1 | 68,2 | 100% |
 | scout.partyHunter · 20 | 1 | 13,2 | 78% | 0 | 44,1 | 0% |
-| scout.partyHunter · 45 | 1 | 13,2 | 83% | 1 | 43,6 | 18% |
+| scout.partyHunter · 45 | 1 | 13,2 | 83% → 85% | 1 | 43,6 | 18% → 30% |
 | scout.partyHunter · 70 | 1 | 12,3 | 85% | 1 | 38,8 | 40% |
 | scout.partyHunter · 100 | 1 | 12,8 | 83% | 1 | 36,9 | 30% |
 
@@ -10492,8 +10882,8 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | boss pasma (poziom) | cios w Maga / HP | z Przechwyceniem | z Przechwyceniem i Osłoną | część Strażnika / jego HP | Mur Tarcz bez limitu | Mur Tarcz z limitem |
 | --- | --: | --: | --: | --: | --: | --: |
 | grimrok (20) | 55% | 55% | 55% | 0% | 27% | 27% |
-| morvane (45) | 107% → 68% | 81% → 51% | 73% → 46% | 12% → 8% | 50% → 63% | 50% → 63% |
-| azgor (70) | 118% | 83% | 75% | 15% | 41% | 41% |
+| morvane (45) | 68% | 51% | 46% | 8% | 63% | 63% |
+| azgor (70) | 118% → 66% | 83% → 46% | 75% → 42% | 15% → 9% | 41% → 23% | 41% → 23% |
 | vaelgrath (100) | 130% | 91% | 82% | 11% | 101% | 73% |
 
 ### Premia Fortuny dla drużyny (B2)
@@ -10846,7 +11236,7 @@ Krzywe liczą się od poziomu końcowego potwora (Elita +2, Elita II +4); 1 do 2
 | 40 | 1,17 | 1,06 | 1,07 | 1,04 | 1,00 | 1,00 | 1,00 | 1,82 | 2,27 |
 | 45 | 1,20 | 1,07 | 1,08 | 1,05 | 1,00 | 1,00 | 1,00 | 1,89 | 2,33 |
 | 50 | 1,23 | 1,08 | 1,09 | 1,05 | 1,00 | 1,00 | 1,00 | 2,04 | 1,44 |
-| 55 | 1,25 | 1,09 | 1,09 | 1,05 | 1,00 | 1,00 | 1,00 | 2,18 | 0,93 |
+| 55 | 1,25 | 1,09 | 1,09 | 1,05 | 1,00 | 1,00 | 1,00 | 2,25 | 0,93 |
 | 60 | 1,28 | 1,10 | 1,10 | 1,06 | 1,00 | 1,00 | 1,00 | 2,32 | 0,63 |
 | 65 | 1,30 | 1,10 | 1,10 | 1,06 | 1,00 | 1,00 | 1,00 | 2,46 | 0,43 |
 | 70 | 1,32 | 1,11 | 1,11 | 1,06 | 1,00 | 1,00 | 1,00 | 2,59 | 0,31 |
@@ -10909,16 +11299,16 @@ G6 (rozrzut czasu 1 na 1, ≤ 2,2): 20: 1,71, 45: 1,95, 70: 2,06, 100: 2,14.
 | morvane f3 shadowBoltFast | 8,8 → 8,5 | 59% → 57% | 35% → 37% |
 | morvane f3 curseField | 8,7 → 5,7 | 94% → 62% | 35% → 37% |
 | morvane f3 deathRing | 0,0 → 2,8 | 0% → 70% | 35% → 37% |
-| azgor f1 fireWave | 5,6 → 5,6 | 65% → 65% | 38% → 38% |
-| azgor f1 flameCleave | 5,6 → 5,6 | 84% → 84% | 38% → 38% |
-| azgor f1 meteor | 5,5 → 5,5 | 92% → 92% | 38% → 38% |
-| azgor f2 fireWave | 5,6 → 5,6 | 65% → 65% | 38% → 38% |
-| azgor f2 flameCleave | 5,6 → 5,6 | 84% → 84% | 38% → 38% |
-| azgor f2 meteor | 5,5 → 5,5 | 92% → 92% | 38% → 38% |
-| azgor f3 fireWave | 5,6 → 4,5 | 65% → 53% | 38% → 40% |
-| azgor f3 flameCleave | 5,6 → 4,4 | 84% → 66% | 38% → 40% |
-| azgor f3 meteor | 5,5 → 4,4 | 92% → 73% | 38% → 40% |
-| azgor f3 inferno | 0,0 → 2,9 | 0% → 68% | 38% → 40% |
+| azgor f1 fireWave | 7,7 → 6,1 | 90% → 71% | 34% → 33% |
+| azgor f1 flameCleave | 5,2 → 6,0 | 78% → 90% | 34% → 33% |
+| azgor f1 meteor | 2,6 → 3,0 | 78% → 90% | 34% → 33% |
+| azgor f2 fireWave | 7,7 → 6,1 | 90% → 71% | 34% → 33% |
+| azgor f2 flameCleave | 5,2 → 6,0 | 78% → 90% | 34% → 33% |
+| azgor f2 meteor | 2,6 → 3,0 | 78% → 90% | 34% → 33% |
+| azgor f3 fireWave | 5,5 → 5,5 | 64% → 64% | 39% → 39% |
+| azgor f3 flameCleave | 5,5 → 5,4 | 83% → 81% | 39% → 39% |
+| azgor f3 meteor | 2,7 → 2,7 | 81% → 81% | 39% → 39% |
+| azgor f3 inferno | 2,7 → 2,8 | 63% → 65% | 39% → 39% |
 | vaelgrath f1 frostBreath | 5,5 → 5,5 | 73% → 73% | 34% → 34% |
 | vaelgrath f1 wingBuffet | 5,4 → 5,4 | 99% → 99% | 34% → 34% |
 | vaelgrath f1 tailSwipe | 5,4 → 5,4 | 81% → 81% | 34% → 34% |
@@ -10947,76 +11337,76 @@ G8: broń dwuręczna (bez drugiej ręki) wobec zestawu domyślnego, MIX moc²; l
 
 | para | 20 | 45 | 70 | 100 |
 | --- | --: | --: | --: | --: |
-| Warrior sword2h common +0 | 1,01 / 0,96 / 0,95 | 1,00 / 0,94 / 0,94 | 1,00 / 0,94 / 0,94 | 1,00 / 0,94 / 0,94 |
-| Warrior sword2h common +9 | 1,01 / 0,97 / 0,96 | 0,99 / 0,95 / 0,95 | 1,00 / 0,96 / 0,95 | 1,00 / 0,95 / 0,95 |
+| Warrior sword2h common +0 | 1,01 / 0,96 / 0,95 | 1,00 / 0,95 / 0,95 | 1,00 / 0,94 / 0,94 | 1,00 / 0,94 / 0,94 |
+| Warrior sword2h common +9 | 1,01 / 0,97 / 0,96 | 0,99 / 0,95 / 0,96 | 1,00 / 0,96 / 0,95 | 1,00 / 0,95 / 0,95 |
 | Warrior sword2h unique +0 | 1,02 / 0,97 / 0,95 | 1,00 / 0,95 / 0,95 | 1,01 / 0,95 / 0,94 | 1,01 / 0,95 / 0,94 |
-| Warrior sword2h unique +9 | 1,01 / 0,97 / 0,96 | 1,00 / 0,96 / 0,95 | 1,01 / 0,96 / 0,95 | 1,01 / 0,96 / 0,95 |
+| Warrior sword2h unique +9 | 1,01 / 0,97 / 0,96 | 1,00 / 0,96 / 0,96 | 1,01 / 0,96 / 0,95 | 1,01 / 0,96 / 0,95 |
 | Warrior sword2h heroic +0 | 1,00 / 0,95 / 0,95 | 1,01 / 0,95 / 0,95 | 1,01 / 0,96 / 0,95 | 1,01 / 0,95 / 0,94 |
-| Warrior sword2h heroic +9 | 1,01 / 0,97 / 0,96 | 1,01 / 0,96 / 0,95 | 1,02 / 0,97 / 0,95 | 1,01 / 0,96 / 0,95 |
+| Warrior sword2h heroic +9 | 1,01 / 0,97 / 0,96 | 1,01 / 0,96 / 0,96 | 1,02 / 0,97 / 0,95 | 1,01 / 0,96 / 0,95 |
 | Warrior sword2h legendary +0 | **1,04** / 1,01 / 0,97 | 1,00 / 0,97 / 0,97 | 1,01 / 0,97 / 0,97 | 1,01 / 0,97 / 0,97 |
-| Warrior sword2h legendary +9 | 1,03 / 1,01 / 0,98 | 1,00 / 0,98 / 0,97 | 1,01 / 0,98 / 0,97 | 1,01 / 0,98 / 0,97 |
+| Warrior sword2h legendary +9 | 1,03 / 1,01 / 0,98 | 1,00 / 0,98 / 0,98 | 1,01 / 0,98 / 0,97 | 1,01 / 0,98 / 0,97 |
 | Warrior sword2h mythic +0 | 1,00 / 1,02 / 1,02 | 0,98 / 1,00 / 1,02 | 0,98 / 1,00 / 1,01 | 0,98 / 1,00 / 1,01 |
 | Warrior sword2h mythic +9 | 1,00 / 1,01 / 1,00 | 0,98 / 0,98 / 1,00 | 0,98 / 0,98 / 1,00 | 0,98 / 0,98 / 1,00 |
-| Warrior axe2h common +0 | 1,00 / 0,95 / 0,95 | 0,99 / 0,93 / 0,94 | 0,99 / 0,94 / 0,94 | 0,99 / 0,94 / 0,94 |
-| Warrior axe2h common +9 | 1,00 / 0,95 / 0,95 | 0,99 / 0,93 / 0,95 | 1,00 / 0,94 / 0,94 | 1,00 / 0,94 / 0,94 |
-| Warrior axe2h unique +0 | 1,00 / 0,95 / 0,96 | 0,99 / 0,94 / 0,95 | 0,99 / 0,94 / 0,95 | 0,99 / 0,94 / 0,95 |
+| Warrior axe2h common +0 | 1,00 / 0,95 / 0,95 | 0,99 / 0,94 / 0,95 | 0,99 / 0,94 / 0,94 | 0,99 / 0,94 / 0,94 |
+| Warrior axe2h common +9 | 1,00 / 0,95 / 0,95 | 0,99 / 0,94 / 0,95 | 1,00 / 0,94 / 0,94 | 1,00 / 0,94 / 0,94 |
+| Warrior axe2h unique +0 | 1,00 / 0,95 / 0,96 | 0,99 / 0,95 / 0,96 | 0,99 / 0,94 / 0,95 | 0,99 / 0,94 / 0,95 |
 | Warrior axe2h unique +9 | 1,00 / 0,96 / 0,96 | 0,99 / 0,95 / 0,96 | 1,00 / 0,95 / 0,95 | 0,99 / 0,95 / 0,95 |
-| Warrior axe2h heroic +0 | 0,98 / 0,94 / 0,96 | 0,99 / 0,94 / 0,96 | 1,00 / 0,95 / 0,96 | 0,99 / 0,95 / 0,96 |
+| Warrior axe2h heroic +0 | 0,98 / 0,94 / 0,96 | 0,99 / 0,95 / 0,96 | 1,00 / 0,95 / 0,96 | 0,99 / 0,95 / 0,96 |
 | Warrior axe2h heroic +9 | 0,99 / 0,96 / 0,96 | 0,99 / 0,95 / 0,96 | 1,00 / 0,95 / 0,96 | 0,99 / 0,95 / 0,95 |
 | Warrior axe2h legendary +0 | 1,01 / 0,97 / 0,96 | 0,98 / 0,94 / 0,96 | 0,99 / 0,95 / 0,96 | 0,99 / 0,94 / 0,96 |
 | Warrior axe2h legendary +9 | 1,00 / 0,96 / 0,96 | 0,98 / 0,94 / 0,96 | 0,99 / 0,94 / 0,96 | 0,99 / 0,94 / 0,95 |
 | Warrior axe2h mythic +0 | **0,97** / 0,93 / 0,96 | **0,95** / 0,91 / 0,96 | **0,96** / 0,91 / 0,96 | **0,96** / 0,91 / 0,95 |
-| Warrior axe2h mythic +9 | 0,97 / 0,92 / 0,95 | **0,95** / 0,90 / 0,94 | **0,95** / 0,90 / 0,94 | **0,96** / 0,90 / 0,94 |
+| Warrior axe2h mythic +9 | 0,97 / 0,92 / 0,95 | **0,95** / 0,90 / 0,95 | **0,95** / 0,90 / 0,94 | **0,96** / 0,90 / 0,94 |
 | Warrior hammer2h common +0 | 1,01 / 0,95 / 0,94 | 1,00 / 0,94 / 0,94 | 1,00 / 0,94 / 0,94 | 1,00 / 0,94 / 0,94 |
-| Warrior hammer2h common +9 | 1,01 / 0,95 / 0,94 | 1,00 / 0,94 / 0,94 | 1,01 / 0,95 / 0,94 | 1,00 / 0,94 / 0,94 |
-| Warrior hammer2h unique +0 | 1,01 / 0,95 / 0,94 | 1,01 / 0,94 / 0,94 | 1,01 / 0,95 / 0,94 | 1,01 / 0,95 / 0,94 |
+| Warrior hammer2h common +9 | 1,01 / 0,95 / 0,94 | 1,00 / 0,94 / 0,95 | 1,01 / 0,95 / 0,94 | 1,00 / 0,94 / 0,94 |
+| Warrior hammer2h unique +0 | 1,01 / 0,95 / 0,94 | 1,01 / 0,95 / 0,94 | 1,01 / 0,95 / 0,94 | 1,01 / 0,95 / 0,94 |
 | Warrior hammer2h unique +9 | 1,02 / 0,95 / 0,94 | 1,01 / 0,95 / 0,94 | 1,02 / 0,95 / 0,94 | 1,01 / 0,95 / 0,94 |
-| Warrior hammer2h heroic +0 | 1,00 / 0,94 / 0,93 | 1,01 / 0,95 / 0,93 | 1,02 / 0,95 / 0,94 | 1,01 / 0,95 / 0,94 |
-| Warrior hammer2h heroic +9 | 1,02 / 0,95 / 0,93 | 1,01 / 0,94 / 0,93 | 1,02 / 0,95 / 0,93 | 1,01 / 0,94 / 0,93 |
+| Warrior hammer2h heroic +0 | 1,00 / 0,94 / 0,93 | 1,01 / 0,95 / 0,94 | 1,02 / 0,95 / 0,94 | 1,01 / 0,95 / 0,94 |
+| Warrior hammer2h heroic +9 | 1,02 / 0,95 / 0,93 | 1,01 / 0,95 / 0,93 | 1,02 / 0,95 / 0,93 | 1,01 / 0,94 / 0,93 |
 | Warrior hammer2h legendary +0 | 1,03 / 0,97 / 0,93 | 1,01 / 0,94 / 0,94 | 1,01 / 0,95 / 0,94 | 1,01 / 0,95 / 0,94 |
 | Warrior hammer2h legendary +9 | 1,03 / 0,96 / 0,93 | 1,01 / 0,94 / 0,93 | 1,01 / 0,94 / 0,93 | 1,01 / 0,94 / 0,93 |
 | Warrior hammer2h mythic +0 | 0,99 / 0,93 / 0,94 | 0,98 / 0,92 / 0,94 | 0,98 / 0,92 / 0,94 | 0,98 / 0,92 / 0,94 |
 | Warrior hammer2h mythic +9 | 1,00 / 0,92 / 0,93 | 0,98 / 0,91 / 0,93 | 0,98 / 0,91 / 0,93 | 0,98 / 0,91 / 0,93 |
 | Warrior spear2h common +0 | 1,00 / 0,95 / 0,94 | 0,99 / 0,93 / 0,94 | 0,99 / 0,93 / 0,94 | 0,99 / 0,93 / 0,94 |
-| Warrior spear2h common +9 | 1,01 / 0,96 / 0,95 | 0,98 / 0,94 / 0,96 | 0,99 / 0,94 / 0,95 | 0,99 / 0,94 / 0,95 |
+| Warrior spear2h common +9 | 1,01 / 0,96 / 0,95 | 0,98 / 0,94 / 0,95 | 0,99 / 0,94 / 0,95 | 0,99 / 0,94 / 0,95 |
 | Warrior spear2h unique +0 | 1,02 / 0,97 / 0,94 | 1,01 / 0,95 / 0,94 | 1,01 / 0,95 / 0,94 | 1,01 / 0,95 / 0,94 |
-| Warrior spear2h unique +9 | 1,02 / 0,97 / 0,96 | 1,01 / 0,97 / 0,96 | 1,01 / 0,97 / 0,95 | 1,01 / 0,96 / 0,95 |
+| Warrior spear2h unique +9 | 1,02 / 0,97 / 0,96 | 1,01 / 0,96 / 0,95 | 1,01 / 0,97 / 0,95 | 1,01 / 0,96 / 0,95 |
 | Warrior spear2h heroic +0 | 1,00 / 0,95 / 0,95 | 1,01 / 0,96 / 0,95 | 1,02 / 0,96 / 0,94 | 1,01 / 0,96 / 0,94 |
 | Warrior spear2h heroic +9 | 1,03 / 0,98 / 0,96 | 1,01 / 0,97 / 0,96 | 1,02 / 0,98 / 0,96 | 1,02 / 0,97 / 0,95 |
 | Warrior spear2h legendary +0 | **1,04** / 0,98 / 0,95 | 1,01 / 0,96 / 0,95 | 1,02 / 0,96 / 0,94 | 1,01 / 0,96 / 0,94 |
 | Warrior spear2h legendary +9 | 1,03 / 0,99 / 0,96 | 1,01 / 0,97 / 0,96 | 1,02 / 0,97 / 0,96 | 1,02 / 0,97 / 0,96 |
 | Warrior spear2h mythic +0 | 1,00 / 0,94 / 0,95 | 0,99 / 0,93 / 0,95 | 0,99 / 0,93 / 0,94 | 0,99 / 0,93 / 0,94 |
-| Warrior spear2h mythic +9 | 1,00 / 0,96 / 0,95 | 0,98 / 0,94 / 0,96 | 0,99 / 0,94 / 0,95 | 0,99 / 0,94 / 0,95 |
-| Mage staff common +0 | 1,00 / 0,93 / 0,94 | 1,00 / 0,93 / 0,93 | 0,99 / 0,93 / 0,93 | 0,98 / 0,92 / 0,94 |
+| Warrior spear2h mythic +9 | 1,00 / 0,96 / 0,95 | 0,98 / 0,93 / 0,95 | 0,99 / 0,94 / 0,95 | 0,99 / 0,94 / 0,95 |
+| Mage staff common +0 | 1,00 / 0,93 / 0,94 | 1,00 / 0,93 / 0,94 | 0,99 / 0,93 / 0,93 | 0,98 / 0,92 / 0,94 |
 | Mage staff common +9 | 0,99 / 0,93 / 0,93 | 0,99 / 0,92 / 0,93 | 0,99 / 0,92 / 0,93 | 0,98 / 0,91 / 0,93 |
 | Mage staff unique +0 | 1,02 / 0,95 / 0,93 | 1,01 / 0,94 / 0,93 | 1,01 / 0,94 / 0,93 | 1,00 / 0,93 / 0,93 |
-| Mage staff unique +9 | 1,02 / 0,95 / 0,93 | 1,01 / 0,94 / 0,93 | 1,00 / 0,94 / 0,93 | 0,99 / 0,93 / 0,93 |
+| Mage staff unique +9 | 1,02 / 0,95 / 0,93 | 1,01 / 0,95 / 0,93 | 1,00 / 0,94 / 0,93 | 0,99 / 0,93 / 0,93 |
 | Mage staff heroic +0 | 1,01 / 0,94 / 0,93 | 1,02 / 0,95 / 0,93 | 1,01 / 0,94 / 0,93 | 1,00 / 0,93 / 0,93 |
-| Mage staff heroic +9 | 1,03 / 0,96 / 0,94 | 1,01 / 0,95 / 0,93 | 1,01 / 0,94 / 0,94 | 0,99 / 0,93 / 0,94 |
+| Mage staff heroic +9 | 1,03 / 0,96 / 0,94 | 1,01 / 0,95 / 0,94 | 1,01 / 0,94 / 0,94 | 0,99 / 0,93 / 0,94 |
 | Mage staff legendary +0 | **1,04** / 0,96 / 0,93 | 1,02 / 0,95 / 0,93 | 1,01 / 0,94 / 0,93 | 1,00 / 0,93 / 0,93 |
 | Mage staff legendary +9 | 1,02 / 0,96 / 0,94 | 1,01 / 0,95 / 0,94 | 1,00 / 0,94 / 0,94 | 0,99 / 0,93 / 0,94 |
 | Mage staff mythic +0 | 1,00 / 0,94 / 0,94 | 1,00 / 0,93 / 0,94 | 0,98 / 0,92 / 0,94 | 0,98 / 0,92 / 0,94 |
-| Mage staff mythic +9 | 0,99 / 0,94 / 0,95 | 0,98 / 0,93 / 0,95 | 0,98 / 0,93 / 0,95 | **0,96** / 0,92 / 0,95 |
+| Mage staff mythic +9 | 0,99 / 0,94 / 0,95 | 0,98 / 0,94 / 0,95 | 0,98 / 0,93 / 0,95 | **0,96** / 0,92 / 0,95 |
 | Mage runestaff common +0 | 1,01 / 0,90 / 0,89 | 1,00 / 0,90 / 0,89 | 1,00 / 0,89 / 0,89 | 0,99 / 0,88 / 0,89 |
-| Mage runestaff common +9 | 1,01 / 0,88 / 0,88 | 1,00 / 0,87 / 0,87 | 0,99 / 0,87 / 0,87 | 0,98 / 0,86 / 0,88 |
+| Mage runestaff common +9 | 1,01 / 0,88 / 0,88 | 1,00 / 0,87 / 0,88 | 0,99 / 0,87 / 0,87 | 0,98 / 0,86 / 0,88 |
 | Mage runestaff unique +0 | 1,03 / 0,91 / 0,89 | 1,02 / 0,90 / 0,89 | 1,01 / 0,90 / 0,89 | 1,00 / 0,89 / 0,89 |
 | Mage runestaff unique +9 | 1,02 / 0,89 / 0,87 | 1,02 / 0,89 / 0,87 | 1,00 / 0,88 / 0,87 | 0,99 / 0,87 / 0,87 |
 | Mage runestaff heroic +0 | 1,02 / 0,90 / 0,88 | 1,02 / 0,90 / 0,88 | 1,02 / 0,90 / 0,88 | 1,01 / 0,89 / 0,88 |
-| Mage runestaff heroic +9 | 1,03 / 0,90 / 0,87 | 1,02 / 0,88 / 0,87 | 1,01 / 0,88 / 0,87 | 1,00 / 0,87 / 0,87 |
+| Mage runestaff heroic +9 | 1,03 / 0,90 / 0,87 | 1,02 / 0,89 / 0,87 | 1,01 / 0,88 / 0,87 | 1,00 / 0,87 / 0,87 |
 | Mage runestaff legendary +0 | **1,04** / 0,92 / 0,88 | 1,02 / 0,90 / 0,88 | 1,01 / 0,89 / 0,88 | 1,00 / 0,88 / 0,88 |
 | Mage runestaff legendary +9 | 1,03 / 0,90 / 0,87 | 1,01 / 0,88 / 0,87 | 1,00 / 0,87 / 0,87 | 0,99 / 0,87 / 0,87 |
-| Mage runestaff mythic +0 | 1,00 / 0,89 / 0,89 | 0,99 / 0,88 / 0,89 | 0,99 / 0,88 / 0,89 | 0,98 / 0,87 / 0,89 |
+| Mage runestaff mythic +0 | 1,00 / 0,89 / 0,89 | 0,99 / 0,89 / 0,89 | 0,99 / 0,88 / 0,89 | 0,98 / 0,87 / 0,89 |
 | Mage runestaff mythic +9 | 1,00 / 0,88 / 0,88 | 0,98 / 0,87 / 0,88 | 0,98 / 0,86 / 0,88 | **0,97** / 0,85 / 0,88 |
-| Cleric holystaff common +0 | 1,00 / 1,04 / 1,04 | 1,00 / 1,18 / 1,18 | 1,00 / 1,38 / 1,37 | 1,00 / 1,78 / 1,77 |
-| Cleric holystaff common +9 | 1,00 / 1,34 / 1,34 | 1,00 / 2,57 / 2,57 | 1,01 / 3,53 / 3,51 | 1,01 / 3,54 / 3,52 |
-| Cleric holystaff unique +0 | 1,01 / 1,17 / 1,15 | 1,02 / 1,52 / 1,50 | 1,02 / 2,29 / 2,25 | 1,02 / 3,65 / 3,58 |
-| Cleric holystaff unique +9 | 1,03 / 1,93 / 1,88 | 1,02 / 3,56 / 3,50 | 1,02 / 3,59 / 3,51 | 1,02 / 3,60 / 3,53 |
-| Cleric holystaff heroic +0 | 1,01 / 1,28 / 1,28 | 1,02 / 2,05 / 2,01 | 1,03 / 3,66 / 3,57 | 1,02 / 3,66 / 3,58 |
-| Cleric holystaff heroic +9 | 1,02 / 3,18 / 3,11 | 1,02 / 3,56 / 3,49 | 1,03 / 3,61 / 3,50 | 1,03 / 3,62 / 3,52 |
-| Cleric holystaff legendary +0 | 1,02 / 1,86 / 1,83 | 1,01 / 3,63 / 3,58 | 1,01 / 3,63 / 3,58 | 1,02 / 3,66 / 3,59 |
-| Cleric holystaff legendary +9 | 1,02 / 3,71 / 3,64 | 1,01 / 3,55 / 3,50 | 1,02 / 3,58 / 3,52 | 1,02 / 3,64 / 3,56 |
-| Cleric holystaff mythic +0 | 0,98 / 3,62 / 3,70 | 0,99 / 3,56 / 3,60 | 0,98 / 3,54 / 3,60 | 0,99 / 3,59 / 3,63 |
-| Cleric holystaff mythic +9 | 0,98 / 3,91 / 3,98 | 0,99 / 3,51 / 3,56 | 0,98 / 3,52 / 3,58 | 0,99 / 3,64 / 3,67 |
+| Cleric holystaff common +0 | 1,00 / 1,04 / 1,04 | 1,00 / 1,19 / 1,20 | 1,00 / 1,38 / 1,37 | 1,00 / 1,78 / 1,77 |
+| Cleric holystaff common +9 | 1,00 / 1,34 / 1,34 | 1,00 / 2,66 / 2,66 | 1,01 / 3,53 / 3,51 | 1,01 / 3,54 / 3,52 |
+| Cleric holystaff unique +0 | 1,01 / 1,17 / 1,15 | 1,02 / 1,56 / 1,54 | 1,02 / 2,29 / 2,25 | 1,02 / 3,65 / 3,58 |
+| Cleric holystaff unique +9 | 1,03 / 1,93 / 1,88 | 1,02 / 3,76 / 3,69 | 1,02 / 3,59 / 3,51 | 1,02 / 3,60 / 3,53 |
+| Cleric holystaff heroic +0 | 1,01 / 1,28 / 1,28 | 1,02 / 2,11 / 2,07 | 1,03 / 3,66 / 3,57 | 1,02 / 3,66 / 3,58 |
+| Cleric holystaff heroic +9 | 1,02 / 3,18 / 3,11 | 1,02 / 3,90 / 3,82 | 1,03 / 3,61 / 3,50 | 1,03 / 3,62 / 3,52 |
+| Cleric holystaff legendary +0 | 1,02 / 1,86 / 1,83 | 1,01 / 3,80 / 3,75 | 1,01 / 3,63 / 3,58 | 1,02 / 3,66 / 3,59 |
+| Cleric holystaff legendary +9 | 1,02 / 3,71 / 3,64 | 1,01 / 4,38 / 4,32 | 1,02 / 3,58 / 3,52 | 1,02 / 3,64 / 3,56 |
+| Cleric holystaff mythic +0 | 0,98 / 3,62 / 3,70 | 0,99 / 4,15 / 4,20 | 0,98 / 3,54 / 3,60 | 0,99 / 3,59 / 3,63 |
+| Cleric holystaff mythic +9 | 0,98 / 3,91 / 3,98 | 0,99 / 4,24 / 4,29 | 0,98 / 3,52 / 3,58 | 0,99 / 3,64 / 3,67 |
 
 G9 (Wojownik, broń domyślna ilvl − 2, Zwykła): +1…+3 / dochód poziomu (0,45–1,05), +1…+9 z ochroną w poziomach dochodu (12–25):
 
@@ -11044,7 +11434,7 @@ Legenda +9: Rdzenie Legendy od +7 → od +8 i zwoje ochrony:
 | pasmo | godzin (Wojownik, z zadaniami) | cel D4 ±25% |
 | --- | --: | --: |
 | 20–45 | 14,9 | 10,5–17,5 |
-| 45–70 | 27,2 | 18,8–31,2 |
+| 45–70 | 26,1 | 18,8–31,2 |
 | 70–100 | 45,2 | 30,8–51,2 |
 
 Krzywa `expToNext` zostaje neutralna (1 / 1 / 1): sama krzywa potworów wydłużyła pasma; 20–45 ponad celem idzie do S92 (kotwica 45 nie może zejść poniżej 1).
@@ -11058,23 +11448,23 @@ Krzywa `expToNext` zostaje neutralna (1 / 1 / 1): sama krzywa potworów wydłuż
 | 35 | 4,18 | 38% | 5,61 | 38% |
 | 40 | 5,02 | 49% | 5,33 | 25% |
 | 45 | 4,64 | 38% | 6,20 | 38% |
-| 50 | 4,94 | 40% | 6,61 | 40% |
-| 55 | 3,72 | 65% | 4,97 | 42% |
-| 60 | 4,92 | 73% | 6,60 | 73% |
-| 65 | 4,42 | 68% | 5,92 | 68% |
-| 70 | 4,75 | 60% | 6,37 | 60% |
-| 75 | 5,11 | 62% | 6,90 | 62% |
-| 80 | 4,82 | 64% | 6,47 | 64% |
-| 85 | 4,09 | 53% | 5,57 | 53% |
-| 90 | 4,91 | 95% | 6,69 | 66% |
-| 95 | 4,41 | 100% | 5,98 | 69% |
-| 100 | 4,40 | 95% | 5,97 | 66% |
+| 50 | 4,94 | 39% | 6,61 | 39% |
+| 55 | 3,72 | 41% | 4,97 | 29% |
+| 60 | 4,92 | 60% | 6,60 | 60% |
+| 65 | 4,42 | 55% | 5,92 | 55% |
+| 70 | 4,75 | 50% | 6,37 | 50% |
+| 75 | 5,11 | 51% | 6,90 | 51% |
+| 80 | 4,82 | 53% | 6,47 | 53% |
+| 85 | 4,09 | 44% | 5,57 | 44% |
+| 90 | 4,91 | 85% | 6,69 | 53% |
+| 95 | 4,41 | 89% | 5,98 | 55% |
+| 100 | 4,40 | 85% | 5,97 | 53% |
 
 Mikstura HP/s tanka wobec obrażeń tanka bossa (drużyna 3):
 
 | boss | mikstura HP/s | obrażenia tanka /s | pokrycie |
 | --- | --: | --: | --: |
-| azgor (45) | 667 | 273 | 245% |
+| azgor (45) | 667 | 115 | 581% |
 | vaelgrath (70) | 1000 | 495 | 202% |
 | vaelgrath (100) | 1000 | 689 | 145% |
 
@@ -11093,8 +11483,8 @@ Mikstura HP/s tanka wobec obrażeń tanka bossa (drużyna 3):
 | T-SK4 Mage destroyer.destroyerExp 50 | 2,49 | 2,00–2,80 | w paśmie |
 | T-SK4 Mage arcanist.arcanistBoss 50 | 2,05 | 2,00–2,40 | w paśmie |
 | T-SK5 Cleric healer.dungeon na guardian.defender 50 | 0,29 | 0,25–0,35 | w paśmie |
-| T-SK4 Mage destroyer.destroyerExp 55 | 2,42 | 2,00–2,80 | w paśmie |
-| T-SK4 Mage arcanist.arcanistBoss 55 | 2,00 | 2,00–2,40 | w paśmie |
+| T-SK4 Mage destroyer.destroyerExp 55 | 2,50 | 2,00–2,80 | w paśmie |
+| T-SK4 Mage arcanist.arcanistBoss 55 | 2,06 | 2,00–2,40 | w paśmie |
 | T-SK5 Cleric healer.dungeon na guardian.defender 55 | 0,28 | 0,25–0,35 | w paśmie |
 | T-SK4 Mage destroyer.destroyerExp 60 | 2,46 | 2,00–2,80 | w paśmie |
 | T-SK4 Mage arcanist.arcanistBoss 60 | 2,19 | 2,00–2,40 | w paśmie |
@@ -11140,7 +11530,7 @@ Mikstura HP/s tanka wobec obrażeń tanka bossa (drużyna 3):
 | cel | wiersze | poza pasmem | sesja | powód |
 | --- | --: | --: | --: | --: |
 | G7 | 16 | 16 | S88 | poza zasięgiem dźwigni S88: Hunter Heroic 0.257-0.273 with traits after the D1 line cuts (owner: exception) |
-| G8 | 260 | 252 | S88 | poza zasięgiem dźwigni S88: one trait against two (Berserker 0.90-0.97, staves 0.85-0.96, Holy Staff 1.15-3.66 with Saving Blow solo); owner: an E6 exception for the Warrior |
+| G8 | 260 | 253 | S88 | poza zasięgiem dźwigni S88: one trait against two (Berserker 0.90-0.97, staves 0.85-0.96, Holy Staff 1.15-3.66 with Saving Blow solo); owner: an E6 exception for the Warrior |
 | G8 | 4 | 4 | S91 | poza zasięgiem dźwigni S91: 1.036-1.039 at 20 (Legendary lines x2.7, Data/Rarities; items are not an S91 lever) |
 | G8 | 9 | 9 | S88 | poza zasięgiem dźwigni S88: axe Mythic 0.953-0.969 (L20 since the class-filtered pools), staves Mythic +9 0.966-0.970 (mythic lines without x2.7, Data/Rarities) |
 | G8 | 1 | 1 | S92 | poza zasięgiem dźwigni S92: 1.040 > 1.035 (Morvane at 20 in the S84 boss situation, atkMul 0.42 for the 7-12 % basic hit) |
@@ -11159,8 +11549,8 @@ Zwykły +0 na 20 / 45 / 70 / 100 (20. tylko raport: S91 nie zmienia przedmiotów
 
 | cecha | build | sytuacje | 20 | 45 | 70 | 100 | Mityczny +9 (45 / 70 / 100) | z węzłami | raport | kto |
 | --- | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: |
-| swordplay | guardian.loner@sword1h + shield | group, elite, boss | 4,3% | 4,8% | 5,0% | 5,1% | 5,4% / 5,7% / 5,9% | – | – | S88 |
-| swordplay | standard.commander@sword1h + shield | group, elite, boss | 4,0% | 4,4% | 4,4% | **3,9%** | 5,0% / 5,0% / 4,5% | – | – | S88; raport → S89 (100) |
+| swordplay | guardian.loner@sword1h + shield | group, elite, boss | 4,3% | 4,1% | 5,0% | 5,1% | 4,7% / 5,7% / 5,9% | – | – | S88 |
+| swordplay | standard.commander@sword1h + shield | group, elite, boss | 4,0% | **3,8%** | 4,4% | **3,9%** | 4,4% / 5,0% / 4,5% | – | – | S88; raport → S93 (45, 100) |
 | twinCut | standard.commander@saber1h + shield | single, elite | 6,0% | 5,7% | 5,3% | 4,8% | 9,1% / 8,9% / 8,0% | – | – | S88 |
 | twinCut | guardian.defender@saber1h + shield | single, elite | 6,4% | **6,1%** | 5,9% | 5,9% | 9,6% / 9,7% / 9,8% | – | – | S88; raport → S89 (45) |
 | reaping | guardian.loner@axe1h + shield | solo | 5,2% | 5,0% | 5,2% | 5,3% | 304,7% / 303,4% / 302,4% | – | boss 0,2% (70) | S88 |
@@ -11205,7 +11595,7 @@ Zwykły +0 na 20 / 45 / 70 / 100 (20. tylko raport: S91 nie zmienia przedmiotów
 
 Powody wierszy w raporcie (H4):
 
-- swordplay: poza zasięgiem dźwigni S89: 0.039 at 100; the Standard-Bearer counters only with the sword's fixed 10 % (no Counterattack node in its rows 4-11), trait values are S88's (owner) → S89.
+- swordplay: poza zasięgiem dźwigni S89: 0.039 at 100; the Standard-Bearer counters only with the sword's fixed 10 % (no Counterattack node in its rows 4-11), trait values are S88's (owner). Poza zasięgiem dźwigni S93: 0.038 at 45 (the S84 boss at 45 is Azgor with the S93 waves 58 / 59; owner: the boss of the situation at 45) → S93.
 - twinCut: poza zasięgiem dźwigni S89: 0.0615 at 45; R1 (S89) raised the basic attack share of every Warrior and the Guardian has no damage lever at 45 (owner: the trait value, S88) → S89.
 - rendingGash: poza zasięgiem dźwigni S89: 0.0400 at 45, 0.039 at 100 (band from 0.04): Mighty Strike 10B and Rend 10A bleeds (R4) take the share of the hits that proc it (owner: the trait value, S88) → S89.
 - runThrough: poza zasięgiem dźwigni S89: 0.063 at 45; R1 (S89) cut the shared area skills, the group at 45 has no Titan's Wrath yet (owner: the trait value, S88) → S89.
@@ -11230,7 +11620,7 @@ Zestawy broni jednej ścieżki w `Balance.MIX` (grupa 0,5, Elita 0,3, boss 0,2) 
 | guardian · 45 | sword1h + shield 1,00, saber1h + shield 1,02, axe1h + shield 0,99, mace1h + shield 0,92 | **11,0%** | raport → S89 |
 | guardian · 70 | sword1h + shield 1,00, saber1h + shield 1,02, axe1h + shield 0,98, mace1h + shield 0,92 | **10,6%** | raport → S89 |
 | guardian · 100 | sword1h + shield 1,00, saber1h + shield 1,02, axe1h + shield 0,99, mace1h + shield 0,92 | **10,7%** | raport → S89 |
-| standard · 45 | sword1h + shield 1,00, saber1h + shield 1,02 | 1,9% | S88 |
+| standard · 45 | sword1h + shield 1,00, saber1h + shield 1,02 | 2,1% | S88 |
 | standard · 70 | sword1h + shield 1,00, saber1h + shield 1,01 | 1,0% | S88 |
 | standard · 100 | sword1h + shield 1,00, saber1h + shield 1,01 | 0,9% | S88 |
 | marksman · 45 | longbow + quiver 1,00, heavycrossbow + quiver 0,99 | 0,6% | S88 |
@@ -11471,14 +11861,14 @@ Wojownik na expowisku swojego poziomu (`Balance.dropsPerHour`): Unikaty dla klas
 
 | profil · poziom | Unikaty / h | Heroiki / h | Legenda / Elita II | szczęście przed limitem | ucięte przez limit | ucięte na Elicie |
 | --- | --: | --: | --: | --: | --: | --: |
-| K0 · 45 | 3,79 | 0,80 | 0,11 | 0 | 0 | 0 |
-| K0 + Fortuna · 45 | 4,93 | 1,04 | 0,13 | 30 | 0 | 0 |
-| K1 · 45 | 4,47 | 0,94 | 0,11 | 18 | 0 | 0 |
-| K1 + Fortuna · 45 | 5,61 | 1,06 | 0,13 | 48 | 0 | 15 |
-| K2 · 45 | 6,10 | 1,06 | 0,11 | 61 | 0 | 28 |
-| K2 + Fortuna · 45 | 7,24 | 1,06 | 0,13 | 91 | 0 | 58 |
-| K3 · 45 | 7,58 | 1,06 | 0,11 | 224 | 124 | 67 |
-| K3 + Fortuna · 45 | 7,58 | 1,06 | 0,13 | 254 | 154 | 67 |
+| K0 · 45 | 3,41 | 0,80 | 0,11 | 0 | 0 | 0 |
+| K0 + Fortuna · 45 | 4,44 | 1,04 | 0,13 | 30 | 0 | 0 |
+| K1 · 45 | 4,02 | 0,95 | 0,11 | 18 | 0 | 0 |
+| K1 + Fortuna · 45 | 5,05 | 1,07 | 0,13 | 48 | 0 | 15 |
+| K2 · 45 | 5,49 | 1,07 | 0,11 | 61 | 0 | 28 |
+| K2 + Fortuna · 45 | 6,52 | 1,07 | 0,13 | 91 | 0 | 58 |
+| K3 · 45 | 6,82 | 1,07 | 0,11 | 224 | 124 | 67 |
+| K3 + Fortuna · 45 | 6,82 | 1,07 | 0,13 | 254 | 154 | 67 |
 | K0 · 70 | 3,80 | 0,83 | 0,11 | 0 | 0 | 0 |
 | K0 + Fortuna · 70 | 4,94 | 1,07 | 0,13 | 30 | 0 | 0 |
 | K1 · 70 | 4,48 | 0,97 | 0,11 | 18 | 0 | 0 |
@@ -11502,12 +11892,12 @@ Pomyślność (relikwia Kapłana Fortuny): +8,0% (Zwykła) do +15,0% (Mityczna +
 
 | cel | wartość | próg | wynik | kto asertuje |
 | --- | --: | --: | --: | --: |
-| T1 · swordplay · guardian.loner@sword1h · L45 | 4,8% | 4,0%–6,0% | w paśmie | S88 (asertowane) |
+| T1 · swordplay · guardian.loner@sword1h · L45 | 4,1% | 4,0%–6,0% | w paśmie | S88 (asertowane) |
 | T1 · swordplay · guardian.loner@sword1h · L70 | 5,0% | 4,0%–6,0% | w paśmie | S88 (asertowane) |
 | T1 · swordplay · guardian.loner@sword1h · L100 | 5,1% | 4,0%–6,0% | w paśmie | S88 (asertowane) |
-| T1 · swordplay · standard.commander@sword1h · L45 | 4,4% | 4,0%–6,0% | w paśmie | S88 (asertowane) |
+| T1 · swordplay · standard.commander@sword1h · L45 | 3,8% | 4,0%–6,0% | **poza** | raport → S93 |
 | T1 · swordplay · standard.commander@sword1h · L70 | 4,4% | 4,0%–6,0% | w paśmie | S88 (asertowane) |
-| T1 · swordplay · standard.commander@sword1h · L100 | 3,9% | 4,0%–6,0% | **poza** | raport → S89 |
+| T1 · swordplay · standard.commander@sword1h · L100 | 3,9% | 4,0%–6,0% | **poza** | raport → S93 |
 | T1 · twinCut · standard.commander@saber1h · L45 | 5,7% | 4,0%–6,0% | w paśmie | S88 (asertowane) |
 | T1 · twinCut · standard.commander@saber1h · L70 | 5,3% | 4,0%–6,0% | w paśmie | S88 (asertowane) |
 | T1 · twinCut · standard.commander@saber1h · L100 | 4,8% | 4,0%–6,0% | w paśmie | S88 (asertowane) |
@@ -11646,7 +12036,7 @@ Pomyślność (relikwia Kapłana Fortuny): +8,0% (Zwykła) do +15,0% (Mityczna +
 | T2 · guardian · L45 | 11,0% | ≤ 5,0% | **poza** | raport → S89 |
 | T2 · guardian · L70 | 10,6% | ≤ 5,0% | **poza** | raport → S89 |
 | T2 · guardian · L100 | 10,7% | ≤ 5,0% | **poza** | raport → S89 |
-| T2 · standard · L45 | 1,9% | ≤ 5,0% | w paśmie | S88 (asertowane) |
+| T2 · standard · L45 | 2,1% | ≤ 5,0% | w paśmie | S88 (asertowane) |
 | T2 · standard · L70 | 1,0% | ≤ 5,0% | w paśmie | S88 (asertowane) |
 | T2 · standard · L100 | 0,9% | ≤ 5,0% | w paśmie | S88 (asertowane) |
 | T2 · marksman · L45 | 0,6% | ≤ 5,0% | w paśmie | S88 (asertowane) |
@@ -12029,7 +12419,7 @@ Pomyślność (relikwia Kapłana Fortuny): +8,0% (Zwykła) do +15,0% (Mityczna +
 - Wariant boss: +0 poz., HP ×1, obrażenia ×6.
 - grimrok (L20): HP ×1.2, atak ×0.32, ciosy sweep ×6, leap ×6, whirlwind ×7.
 - morvane (L45): HP ×1.2, atak ×0.42, ciosy shadowBolt ×4.5, shadowBoltFast ×4.5, curseField ×11.5, deathRing ×5.8.
-- azgor (L70): atak ×1.25, ciosy fireWave ×2.4, flameCleave ×2.2, meteor ×2.6, inferno ×3.4.
+- azgor (L70): HP ×1.25, atak ×0.36, ciosy fireWave ×5.2, flameCleave ×3, meteor ×4, inferno ×6.6.
 - vaelgrath (L100): atak ×1.3, ciosy frostBreath ×2.6, wingBuffet ×2.2, tailSwipe ×2.4, blizzard ×2.6, glacialRing ×3.6.
 - EXP i złoto rodzaju × mnożnik HP^0.75 × (mnożnik ataku × szybkość)^0.25 × rewardMul rodzaju (S92, domyślnie 1).
 - Mikstury (S54): odstęp `Potions.interval` = 1.5 s × krzywa `potionCooldown` (20: 1,5 s, 45: 6,0 s, 70: 10,0 s, 100: 10,0 s).

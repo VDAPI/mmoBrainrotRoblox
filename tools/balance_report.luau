@@ -584,7 +584,12 @@ local function s92Section()
 			)}`,
 			"≤ 1,0",
 		},
-		{ "Morvane bez wsparcia: największy cios / HP członka", "110%", fmtValue(v("morvane.noSupport.3.hit"), "%"), "≤ 100%" },
+		{
+			"Morvane bez wsparcia: największy cios / HP członka",
+			"110%",
+			fmtValue(v("morvane.noSupport.3.hit"), "%"),
+			"≤ 100%",
+		},
 		{ "Morvane: G11 (najmniejsze tempo ataku)", "53%", fmtValue(regionMin("bossCadence"), "%"), "≥ 50%" },
 		{
 			"Elity: spotkanie Wojownik / Mag (najgorsze)",
@@ -599,7 +604,12 @@ local function s92Section()
 		{ "Expowiska na 43–44", "1", `{v("areas.43")} / {v("areas.44")}`, "≥ 2" },
 		{ "Rodzaje: EXP/s ÷ zwykły (najmniej)", "0,80 (rotEnt)", fmtValue(regionMin("kinds"), "2"), "0,85–1,20" },
 		{ "Tempo 20 → 45 (okno): h", "16,07", fmtValue(pace, "2"), "11,9–16,1" },
-		{ "G13: pasmo 20–45 (rodzaje regionu, zadania na swoim poziomie): h", "17,98", fmtValue(B.paceBand("Warrior", 20, 45).hours, "2"), "10,5–17,5" },
+		{
+			"G13: pasmo 20–45 (rodzaje regionu, zadania na swoim poziomie): h",
+			"17,98",
+			fmtValue(B.paceBand("Warrior", 20, 45).hours, "2"),
+			"10,5–17,5",
+		},
 		{
 			"Tempo: h(44) / największy krok h(L) / h(L − 1)",
 			"0,93 / 1,89 (L21)",
@@ -871,6 +881,540 @@ local function s92Section()
 	tableOut({ "krzywa", "45", "55" }, aRows)
 end
 
+-- S93 (L1): the Scorched Wastes section: start S93 -> now, the S93 targets (Balance.targetsS93) and the "Tylko
+-- raport" items of the session file.
+local function s93Section()
+	local S = B.S93
+	local s93Rows = B.targetsS93()
+	local byId: { [string]: B.TargetRow } = {}
+	for _, row in s93Rows do
+		byId[row.id] = row
+	end
+	local function v(id: string): number
+		local row = byId[`R.ashen.{id}`]
+		return if row then row.value else 0 / 0
+	end
+	local function range(prefix: string, fmt: string): string
+		local lo, hi = math.huge, -math.huge
+		for _, row in s93Rows do
+			if string.sub(row.id, 1, #prefix) == prefix then
+				lo, hi = math.min(lo, row.value), math.max(hi, row.value)
+			end
+		end
+		if lo == math.huge then
+			return "–"
+		end
+		return `{fmtValue(lo, fmt)}–{fmtValue(hi, fmt)}`
+	end
+	local function count(prefix: string): string
+		local ok, all = 0, 0
+		for _, row in s93Rows do
+			if string.sub(row.id, 1, #prefix) == prefix then
+				all += 1
+				ok += if B.inBand(row) then 1 else 0
+			end
+		end
+		return `{ok}/{all}`
+	end
+	local function three(prefix: string, suffix: string, fmt: string): string
+		local out = {}
+		for n = 3, 5 do
+			table.insert(out, fmtValue(v(`{prefix}{n}{suffix}`), fmt))
+		end
+		return table.concat(out, " / ")
+	end
+	local regionRows = B.targetsRegion("ashen")
+	local function regionRange(group: string, needle: string?, fmt: string): string
+		local lo, hi = math.huge, -math.huge
+		for _, row in regionRows do
+			if row.group == group and (needle == nil or string.find(row.id, needle, 1, true)) then
+				lo, hi = math.min(lo, row.value), math.max(hi, row.value)
+			end
+		end
+		return `{fmtValue(lo, fmt)}–{fmtValue(hi, fmt)}`
+	end
+	local function regionMax(group: string, classId: string?, needle: string?): number
+		local hi = -math.huge
+		for _, row in regionRows do
+			if
+				row.group == group
+				and (classId == nil or row.classId == classId)
+				and (needle == nil or string.find(row.id, needle, 1, true) ~= nil)
+			then
+				hi = math.max(hi, row.value)
+			end
+		end
+		return hi
+	end
+	local function regionMin(group: string): number
+		local lo = math.huge
+		for _, row in regionRows do
+			if row.group == group then
+				lo = math.min(lo, row.value)
+			end
+		end
+		return lo
+	end
+	add("### S93: Spalone Pustkowia i Azgor (start S93 → teraz)")
+	add()
+	add(
+		"Start = stan po S92 (`15def98`), zmierzony tym samym modelem przed zmianą danych. Cele: `docs/sessions/S93.md` → „Cele tej sesji”; wiersze asertuje blok regionów `balance.spec` (`TUNED.ashen`, `Balance.targetsS93`), wiersze z opisem w kolumnie „kto asertuje” są w raporcie (powody: `docs/DECYZJE.md` → S93)."
+	)
+	add()
+	local pace, h69, step = 0, B.paceWindowAt("Warrior", 69).hours, 0
+	for L = 45, 69 do
+		pace += B.paceWindowAt("Warrior", L).hours
+		step =
+			math.max(step, B.paceWindowAt("Warrior", L).hours / math.max(1e-9, B.paceWindowAt("Warrior", L - 1).hours))
+	end
+	local rows = {
+		{ "Azgor 3 / 4 / 5 graczy L69: min", "5,14 / 5,30 / 5,13", three("azgor.team", "", "2"), "4–6" },
+		{ "Azgor z węzłami 3 / 4 / 5: min", "4,62 / 4,77 / 4,71", three("azgor.team", "@nodes", "2"), "4–6" },
+		{
+			"Azgor: największy cios Maga L70 / L68 (inferno)",
+			"118% / 122%",
+			`{fmtValue(v("azgor.mage70"), "%")} / {fmtValue(v("azgor.mage68"), "%")}`,
+			"≤ 70% / < 100%",
+		},
+		{ "Azgor: zwykły cios Maga L70", "35%", fmtValue(v("azgor.basic70"), "%"), "7–12%" },
+		{ "Azgor: tank HP na minutę (model S32)", "816%", fmtValue(v("azgor.tank"), "%"), "≤ 350%" },
+		{
+			"Azgor: tank HP na minutę (bossFight; 3 / 4 / 5)",
+			"649% / 665% / 678%",
+			three("azgor.tankFight", "", "%"),
+			"raport",
+		},
+		{ "Azgor: meteor na minutę / HP Maga L70", "215%", fmtValue(v("azgor.meteor"), "%"), "≤ 60%" },
+		{ "Azgor: tick lawy / HP Maga L70", "23% (6% po cięciu atkMul)", fmtValue(v("azgor.lava"), "%"), "15–25%" },
+		{
+			"Azgor: fala tarczy, HP na członka (3 / 4 / 5)",
+			"275% / 183% / 179%",
+			three("azgor.wave", "", "%"),
+			"≤ 110%",
+		},
+		{
+			"Azgor: G11 (najmniejsze tempo ataku; inferno w fazie 3)",
+			"53% (inferno 68%)",
+			fmtValue(regionMin("bossCadence"), "%"),
+			"≥ 50%",
+		},
+		{
+			"Azgor: T-SK6 Uzdrowiciela lochowego",
+			"5,23",
+			fmtValue(v("azgor.tsk6"), "2"),
+			`1,0–{fmtValue(S.tsk6[2], "2")}`,
+		},
+		{ "Azgor bez wsparcia 3 / 4 / 5: s", "108 / 107 / 101", three("azgor.noSupport.", ".seconds", "1"), "≤ 480" },
+		{
+			"Azgor bez wsparcia: przyjmowane / podtrzymanie (najgorszy, 3 / 4 / 5)",
+			"0,79 / 0,81 / 0,83",
+			three("azgor.noSupport.", ".sustain", "2"),
+			"≤ 1,0",
+		},
+		{
+			"Azgor bez wsparcia: największy cios / HP członka",
+			"111%",
+			fmtValue(v("azgor.noSupport.3.hit"), "%"),
+			"≤ 100%",
+		},
+		{
+			"Elity: spotkanie Wojownik / Mag (najgorsze)",
+			"158% / 163%",
+			`{fmtValue(regionMax("eliteEncounter", "Warrior"), "%")} / {fmtValue(
+				regionMax("eliteEncounter", "Mage"),
+				"%"
+			)}`,
+			"≤ 110% / ≤ 125%",
+		},
+		{
+			"Elita II solo / 2 / 3 graczy",
+			"2,55–3,45 / 1,11–1,42 / 0,74–0,95",
+			`{regionRange("elite2", ".solo", "2")} / {regionRange("elite2", ".duo", "2")} / {regionRange(
+				"elite2",
+				".trio",
+				"2"
+			)}`,
+			"≥ 1,8 / ≤ 1,5 / 0,6–1,0",
+		},
+		{ "Elity dropią ilvl 46–70", "22/25", count("R.ashen.ilvl.elite"), "każdy" },
+		{ "Expowiska na 68 / 69", "1 / 1", `{v("areas.68")} / {v("areas.69")}`, "≥ 2" },
+		{
+			"Rodzaje: EXP/s ÷ zwykły (najmniej)",
+			"0,69 (magmaGolem)",
+			fmtValue(regionMin("kinds"), "2"),
+			"0,85–1,20",
+		},
+		{
+			"Ognisty Chochlik: HP/EXP ÷ średnia regionu",
+			"1,14",
+			fmtValue(regionMax("kinds", nil, ".casterHp"), "2"),
+			"≤ 1,25",
+		},
+		{ "Tempo 45 → 70 (okno): h", "26,14", fmtValue(pace, "2"), "21,25–28,75" },
+		{
+			"Tempo: h(69) / największy krok h(L) / h(L − 1)",
+			"1,23 / 1,07 (L55)",
+			`{fmtValue(h69, "2")} / {fmtValue(step, "2")}`,
+			"0,98–1,32 / ≤ 1,30",
+		},
+		{ "Plecak 130 (od 50.): poziomy dochodu", "13,2", fmtValue(v("gold.backpack_130.Warrior"), "1"), "3–8" },
+		{ "+1…+3 broni / dochód poziomu (46–69)", "0,56–0,74", range("R.ashen.gold.up3", "2"), "≤ 1,05" },
+		{
+			"Mikstury łańcuchowe / dochód (46–69)",
+			"0,36–1,00",
+			range("R.ashen.gold.chain.", "2"),
+			"0,15–0,30 (górna: raport)",
+		},
+		{ "D5 (K0): Unikaty dla klasy na h expienia", "2,90–4,17", regionRange("d5", ".unique", "2"), "2–4" },
+		{
+			"Części: rodzaje z częścią / części w przepisach 45–70 / eliksir ognia",
+			"8/13 / 0/6 / 30",
+			`{count("R.ashen.parts.kind")} / {count("R.ashen.parts.recipe")} / {fmtValue(v("parts.elixirFire"), "0")}`,
+			"13/13 / 6/6 / 45",
+		},
+		{ "`support.elites` na 55 / 65", "0/10", count("R.ashen.support"), "10/10 (raport)" },
+	}
+	tableOut({ "liczba", "start S93", "teraz", "cel" }, rows)
+	local listed: { B.TargetRow } = {}
+	for _, row in s93Rows do
+		if row.group ~= "guards" and not string.find(row.id, "gold.", 1, true) and row.group ~= "pace" then
+			table.insert(listed, row)
+		end
+	end
+	local ok, all = countIn(s93Rows)
+	add("### Cele S93 (`Balance.targetsS93`)")
+	add()
+	add(
+		`{ok}/{all} w paśmie (z wierszami raportu). Strażniki T-SK, złoto i tempo w tabelach niżej; pozostałe wiersze regionu (Elity, Elity II, rodzaje, harmonogram, D5) w „Cele (45–70)”.`
+	)
+	add()
+	tableOut({ "cel", "wartość", "próg", "wynik", "kto asertuje" }, targetRows(listed, "S93 (asertowane)"))
+	-- guards matrix (G1)
+	add("### Strażniki T-SK w paśmie (S93, G1)")
+	add()
+	add(
+		"T-SK1 / T-SK2 względem własnego L20 (limity 1,15 / 1,25) i T-SK3 / areaCap (≤ 1) na 50 / 55 / 60 / 65 / 69 / 70 (rzędy 7–9 według punktów). Gwiazdka: wiersz w raporcie (na 45 build ma już wartość ponad limitem planu D1, reguła S92, albo powód grupy w `Balance.S93_REPORT`); T-SK4 Maga i T-SK5 Uzdrowiciela lochowego w „Cele S93”."
+	)
+	add()
+	local gRows: { { string } } = {}
+	for _, c in B.CLASSES do
+		for _, build in SkillModel.builds(c) do
+			local cells = { `{c} {build.key}` }
+			for _, L in S.guardLevels do
+				local g = SkillModel.guards(build, L)
+				local mark = ""
+				for _, metric in { "tsk1", "tsk2", "tsk3" } do
+					local row = byId[`R.ashen.guard.{metric}.{c}.{build.key}.{L}`]
+					if row and row.report and not B.inBand(row) then
+						mark = "*"
+					end
+				end
+				table.insert(
+					cells,
+					`{fmtValue(g.tsk1rel, "2")} / {fmtValue(g.tsk2rel, "2")} / {fmtValue(g.tsk3cap, "2")}{mark}`
+				)
+			end
+			table.insert(gRows, cells)
+		end
+	end
+	tableOut({ "build", "50", "55", "60", "65", "69", "70" }, gRows)
+	local baseRows: { { string } } = {}
+	for _, c in B.CLASSES do
+		local build = SkillModel.build("base", c)
+		local cells = { `{c} base: T-SK3{if c == "Mage" then " / T-SK4" else ""}` }
+		for _, L in S.guardLevels do
+			local m = SkillModel.metrics(build, L)
+			table.insert(
+				cells,
+				if c == "Mage" then `{fmtValue(m.tsk3, "2")} / {fmtValue(m.tsk4, "2")}` else fmtValue(m.tsk3, "2")
+			)
+		end
+		table.insert(baseRows, cells)
+	end
+	add("### Podstawy klas: T-SK3 i T-SK4 Maga (tylko raport, S93)")
+	add()
+	tableOut({ "podstawa", "50", "55", "60", "65", "69", "70" }, baseRows)
+	-- Fortune vs the dungeon Healer (ROZWOJ 9.6)
+	local fRows: { { string } } = {}
+	for _, L in S.guardLevels do
+		local healer = SkillModel.oneHeal(SkillModel.build("healer.dungeon", "Cleric"), L, SkillModel.defenderTank(L))
+		local fortune = SkillModel.oneHeal(SkillModel.build("fortune.plunder", "Cleric"), L, SkillModel.defenderTank(L))
+		table.insert(fRows, {
+			tostring(L),
+			fmtValue(healer, "2"),
+			fmtValue(fortune, "2"),
+			fmtValue(1 - fortune / math.max(1e-9, healer), "%"),
+		})
+	end
+	add("### Leczenie Fortuny wobec „Lochowego” (tylko raport, S93; ROZWOJ 9.6: ok. 21% słabiej)")
+	add()
+	tableOut({ "poziom", "T-SK5 Uzdrowiciel lochowy", "T-SK5 Fortuna łupieżcza", "słabiej o" }, fRows)
+	-- pace (F)
+	add("### Tempo 44 → 70 (model okna S91, Wojownik; S93)")
+	add()
+	add(
+		"h = godziny na poziom (rodzaj zwykły, odpoczynek, zadania główne bez bossów w oknach, poboczne 0,5); m = średnia krocząca h(L − 4..L) (raport); „rodzaj regionu” = `kindAtRegion` (opcja `region`, raport); „z Azgorem” = zadanie z bossem w oknie (raport). Okno zadania `deepforge` sięga 71. (do `frostpeak`), więc część jego EXP liczy się w paśmie S94."
+	)
+	add()
+	local pRows: { { string } } = {}
+	for L = 44, 70 do
+		local h = B.paceWindowAt("Warrior", L).hours
+		local prev = B.paceWindowAt("Warrior", L - 1).hours
+		table.insert(pRows, {
+			tostring(L),
+			fmtValue(h, "2"),
+			fmtValue(h / math.max(1e-9, prev), "2"),
+			fmtValue(B.paceWindowMean("Warrior", L), "2"),
+			fmtValue(B.paceWindowAt("Warrior", L, { kind = "region" }).hours, "2"),
+			fmtValue(B.paceWindowAt("Warrior", L, { withBossQuests = true }).hours, "2"),
+		})
+	end
+	tableOut({ "poziom", "h", "h / h(L − 1)", "m", "h rodzaj regionu", "h z Azgorem" }, pRows)
+	local regionSum, bossSum = 0, 0
+	for L = 45, 69 do
+		regionSum += B.paceWindowAt("Warrior", L, { kind = "region" }).hours
+		bossSum += B.paceWindowAt("Warrior", L, { withBossQuests = true }).hours
+	end
+	add(
+		`Suma 45 → 70: {fmtValue(pace, "2")} h (rodzaj regionu {fmtValue(regionSum, "2")} h, z Azgorem {fmtValue(
+			bossSum,
+			"2"
+		)} h); h(70) / h(69) = {fmtValue(B.paceWindowAt("Warrior", 70).hours / math.max(1e-9, h69), "2")} (stosunki 70–99: S94).`
+	)
+	add()
+	-- class premium (ROZWOJ 7.4)
+	local premium: { { string } } = {}
+	for _, L in { 55, 65 } do
+		for _, party in { { "Warrior", "Warrior", "Warrior" }, { "Warrior", "Hunter", "Mage" } } do
+			local p = B.paceAt("Warrior", L, { party = party })
+			table.insert(premium, {
+				`{L}: {table.concat(party, " + ")}`,
+				fmtValue(p.expMul, "2"),
+				fmtValue(p.expPerHour, "g"),
+			})
+		end
+	end
+	add("### Premia za różne klasy (tylko raport, S93)")
+	add()
+	tableOut({ "drużyna 3 osób", "mnożnik EXP", "EXP/h członka" }, premium)
+	-- chain potions (I2)
+	add("### Mikstury łańcuchowe ÷ dochód (S93, I2; górna granica 30% w raporcie, dolna 15% asertowana)")
+	add()
+	local chain: { { string } } = {}
+	for L = 46, 69, 2 do
+		local cells = { tostring(L) }
+		for _, c in B.CLASSES do
+			table.insert(cells, fmtValue(B.economyAt(c, L, { potions = "chain" }).potionShare, "%"))
+		end
+		table.insert(chain, cells)
+	end
+	tableOut({ "poziom", "Wojownik", "Łowca", "Mag", "Kapłan" }, chain)
+	-- protected +9 (B3, I4)
+	add("### Rdzenie Legendy i zwoje ochrony (tylko raport, S93, I4)")
+	add()
+	add(
+		"Chroniony +9 Legendarnej broni Wojownika (`Balance.protectedFlow`): złoto ulepszeń, zwoje ochrony (alchemik 2000 zł; drop: Elita II 0,08, Azgor 0,35) i Rdzenie Legendy (od +8, S87; Azgor 0,2), w poziomach dochodu Wojownika na tym poziomie. Cel kompletu +9 z ochroną (150–300 h) jest S94."
+	)
+	add()
+	local flowRows: { { string } } = {}
+	for _, ilvl in { 50, 60, 70 } do
+		local f = B.protectedFlow(ilvl)
+		table.insert(flowRows, {
+			tostring(ilvl),
+			fmtValue(f.gold, "0"),
+			fmtValue(f.scrolls, "1"),
+			fmtValue(f.cores, "1"),
+			fmtValue(f.scrollGold, "0"),
+			fmtValue(f.levels, "1"),
+		})
+	end
+	tableOut({ "ilvl", "złoto ulepszeń", "zwoje", "Rdzenie Legendy", "złoto zwojów", "poziomy dochodu" }, flowRows)
+	-- D5 with luck (H3)
+	add("### D5 ze szczęściem (tylko raport, S93)")
+	add()
+	add(
+		"Unikaty dla klasy na h expienia / Heroiki na h Elit: K0, K1, K1 z Kapłanem Fortuny, K2 z Kapłanem Fortuny (profile S84 / S88; limit szczęścia `monsterItemCap`)."
+	)
+	add()
+	local d5: { { string } } = {}
+	for _, L in { 50, 55, 60, 65, 69 } do
+		for _, c in { "Warrior", "Cleric" } do
+			local cells = { `{c} {L}` }
+			for _, spec in { { "K0", false }, { "K1", false }, { "K1", "full" }, { "K2", "full" } } do
+				local d = B.dropsPerHour(c, L, spec[1] :: string, spec[2] :: any)
+				table.insert(cells, `{fmtValue(d.unique, "2")} / {fmtValue(d.heroic, "2")}`)
+			end
+			table.insert(d5, cells)
+		end
+	end
+	tableOut({ "klasa · poziom", "K0", "K1", "K1 + Fortuna", "K2 + Fortuna" }, d5)
+	-- casters and Elite pairs (report)
+	add("### Rodzaje rzucające i pary Elit (tylko raport, S93)")
+	add()
+	local kRows: { { string } } = {}
+	for _, k in B.kindRates("ashen") do
+		if k.caster then
+			table.insert(
+				kRows,
+				{ k.kind, tostring(k.level), fmtValue(k.hpPerExp, "2"), fmtValue(k.hpPerExpGeneric, "2") }
+			)
+		end
+	end
+	tableOut(
+		{ "rodzaj rzucający", "poziom", "HP/EXP ÷ średnia regionu", "HP/EXP ÷ zwykły (szkic S55: 1,20)" },
+		kRows
+	)
+	local pairRows: { { string } } = {}
+	for _, cave in B.caveElites("ashen") do
+		for _, kind in cave.kinds do
+			local worst = 0
+			for _, f in kind.fights do
+				worst = math.max(worst, f.pair.hpLost / math.max(1e-9, f.single.hpLost))
+			end
+			table.insert(pairRows, { `{cave.id} {kind.kind}`, fmtValue(cave.pairShare, "%"), fmtValue(worst, "2") })
+		end
+	end
+	tableOut({ "jaskinia · rodzaj", "q par", "para ÷ pojedyncza (najwięcej; cel ≤ 2,6)" }, pairRows)
+	-- Azgor extras (C)
+	add("### Azgor: tylko raport (S93)")
+	add()
+	local def = Bosses.byId.azgor :: any
+	local aRows: { { string } } = {}
+	for n = 3, 5 do
+		local r = B.bossNoSupport("azgor", n)
+		local pots = {}
+		for _, mem in r.members do
+			table.insert(pots, `{mem.key} {fmtValue(mem.potions, "1")}`)
+		end
+		table.insert(aRows, { `bez wsparcia, {n} graczy: mikstury na walkę`, table.concat(pots, ", ") })
+	end
+	do
+		local team = B.team(5, S.bossLevel)
+		team[2] = B.player("Mage", 70)
+		local share1 = B.bossFight("azgor", team, { hazardShare = 1 })
+		local share0 = B.bossFight("azgor", team)
+		table.insert(aRows, {
+			"lawa przy hazardShare = 1: tank HP na minutę w fazie 3 (z lawą / bez)",
+			`{fmtValue(share1.phases[3].tankDps * 60 / team[1].values.maxHp, "%")} / {fmtValue(
+				share0.phases[3].tankDps * 60 / team[1].values.maxHp,
+				"%"
+			)}`,
+		})
+		local consts = B.bossScriptConsts("azgor")
+		local inferno = 0
+		for _, at in def.attacks do
+			if at.id == "inferno" then
+				inferno = at.radius
+			end
+		end
+		local safe = consts.SAFE_START or 0
+		local shrink = (safe - (consts.SAFE_END or 0)) / math.max(1e-9, consts.SHRINK_SECONDS or 1)
+		local seconds = math.max(0, (safe - inferno) / math.max(1e-9, shrink))
+		table.insert(aRows, {
+			"faza 3: sekundy, przez które bezpieczny krąg mieści walczących z dystansu poza inferno (promień ≥ zasięg inferno)",
+			`{fmtValue(seconds, "0")} s z {fmtValue(share0.phases[3].seconds, "0")} s fazy 3 (5 graczy)`,
+		})
+	end
+	local m = B.monster(B.bossKind(def, 4), def.level, "boss")
+	for _, key in { "trapper.poisoner", "inquisitor.solo" } do
+		local sp = SkillModel.player(SkillModel.build(key), S.bossLevel)
+		local d60 = SkillModel.fight(sp, { targets = { m }, seconds = 60 }).dps
+		local d300 = SkillModel.fight(sp, { targets = { m }, seconds = 300 }).dps
+		table.insert(aRows, {
+			`{key} na Azgorze: DPS 300 s ÷ DPS 60 s`,
+			`{fmtValue(d300 / math.max(1e-9, d60), "2")} ({fmtValue(d60, "g")} → {fmtValue(d300, "g")})`,
+		})
+	end
+	local waves = {}
+	for n = 3, 5 do
+		local ws = B.shieldWaves("azgor", B.team(n, S.bossLevel))
+		table.insert(waves, `{n}: {fmtValue(ws[1].seconds, "1")} / {fmtValue(ws[2].seconds, "1")} s`)
+	end
+	table.insert(aRows, { "fale tarczy: czas fali 2 / 3 (drużyna S32)", table.concat(waves, ", ") })
+	for phase = 1, 3 do
+		local cad = B.bossCadence(def, phase)
+		local parts = {}
+		for _, at in def.attacks do
+			if cad.perMinute[at.id] then
+				table.insert(
+					parts,
+					`{at.id} {fmtValue(cad.perMinute[at.id], "1")}/min ({fmtValue(cad.rateShare[at.id], "%")})`
+				)
+			end
+		end
+		table.insert(aRows, { `harmonogram fazy {phase}`, table.concat(parts, ", ") })
+	end
+	tableOut({ "liczba", "wartość" }, aRows)
+	-- R4 in the band (G3, G4)
+	add("### Przełomy A / B osiągane w 46–70 (tylko raport, S93, G3)")
+	add()
+	add(
+		"R4 = zysk opcji w roli umiejętności na poziomie rangi (S89 E1, `SkillModel.optionGain`); pasmo 0,08–0,17 (5) i 0,17–0,28 (10); opcje użytkowe (`R4_UTILITY`) bez liczby. Blok ścieżek asertuje te same opcje na 45 / 70 / 100. Rozpłatanie 10A (G4) w buildzie „Furia” z węzłem „Rozdzierające Cięcia” i bez niego pod tabelą."
+	)
+	add()
+	local r4Rows: { { string } } = {}
+	for _, classId in B.CLASSES do
+		for _, d in SkillData.byClass[classId] do
+			local def2: any = d
+			if def2.type == "passive" or not def2.breakpoints then
+				continue
+			end
+			local key = SkillModel.R4_SUPPORT_BUILDS[def2.id]
+				or (if def2.path then SkillModel.R4_PATH_BUILDS[def2.path] else SkillModel.R4_CLASS_BUILDS[classId])
+			local build = SkillModel.build(key)
+			for _, at in Skills.BREAKPOINT_LEVELS do
+				local rankLevel = Skills.rankLevel(def2, at)
+				if rankLevel > 45 and rankLevel <= 70 and def2.breakpoints[at] then
+					local cells = { `{def2.id} {at} ({key})`, tostring(rankLevel) }
+					for _, choice in { "a", "b" } do
+						local k = `{def2.id}:{at}{choice}`
+						if SkillModel.R4_UTILITY[k] then
+							table.insert(cells, "użyteczność")
+						else
+							local g = SkillModel.optionGain(build, def2.id, at, choice, rankLevel)
+							table.insert(cells, if g then fmtValue(g, "2") else "–")
+						end
+					end
+					table.insert(r4Rows, cells)
+				end
+			end
+		end
+	end
+	tableOut({ "umiejętność · przełom (build)", "poziom", "A", "B" }, r4Rows)
+	do
+		local fury = SkillModel.build("berserker.fury", "Warrior")
+		local bare = SkillModel.withoutNodes(fury, { "berserker_rendingCuts" })
+		local cells = {}
+		for _, L in { 46, 55, 70 } do
+			local a = SkillModel.optionGain(fury, "cleave", 10, "a", L)
+			local b = SkillModel.optionGain(bare, "cleave", 10, "a", L)
+			table.insert(
+				cells,
+				`{L}: {if a then fmtValue(a, "2") else "–"} / {if b then fmtValue(b, "2") else "–"}`
+			)
+		end
+		add(
+			`Rozpłatanie 10A (3 stosy krwawienia) w „Furii” z węzłem / bez węzła „Rozdzierające Cięcia”: {table.concat(
+				cells,
+				"; "
+			)}. 10B (kradzież życia) to opcja użytkowa (\`R4_UTILITY\`).`
+		)
+		add()
+	end
+	-- anchors 70 -> 71-99 (S94)
+	add("### Kotwice 70 a poziomy 71–99 (S93 → S94)")
+	add()
+	add(
+		"S93 nie przestawiło żadnej kotwicy 70 (`monsterHp`, `monsterAtk`, `eliteHp`, `eliteDmg`, `elite2*`, `expToNext`, `manaCost.Mage`, `heal`): wiersze pasma mieszczą się w celach na krzywych S87 / S92, więc 71–99 zostają jak po S87. Na 71+ przechodzą: zakresy Kuźni do 70 (Elity ze spawnerów 69–70 mają poziom 71–72), `rewardMul` golemów, Azgor (sytuacja boss S84 na 70+ to Vaelgrath). Wartości kotwic 70:"
+	)
+	add()
+	local kRows2: { { string } } = {}
+	for _, id in LevelCurves.ids() do
+		table.insert(kRows2, { id, fmtValue(LevelCurves.at(id, 70), "2"), fmtValue(LevelCurves.at(id, 80), "2") })
+	end
+	tableOut({ "krzywa", "70", "80" }, kRows2)
+end
+
 local REGION_SESSION = { "S91", "S92", "S93", "S94" }
 for i, band in B.BANDS do
 	local lo, hi = band[1], band[2]
@@ -933,28 +1477,22 @@ for i, band in B.BANDS do
 		for n = 3, 5 do
 			table.insert(minutes, fmtValue(B.bossFight("grimrok", B.team(n, 19)).seconds / 60, "1"))
 		end
-		table.insert(
-			now,
-			{
-				"Grimrok 3 / 4 / 5 graczy (model S83 / S87): min",
-				"5,0 / 5,3 / 5,2 (model S32)",
-				table.concat(minutes, " / "),
-			}
-		)
+		table.insert(now, {
+			"Grimrok 3 / 4 / 5 graczy (model S83 / S87): min",
+			"5,0 / 5,3 / 5,2 (model S32)",
+			table.concat(minutes, " / "),
+		})
 		local mage = B.boss("grimrok", { B.player("Mage", 20) }).biggest[1].share
 		table.insert(now, { "Grimrok: największy cios / HP Maga L20 (model S32)", "67%", fmtValue(mage, "%") })
 		local hours = 0
 		for L = 1, 19 do
 			hours += B.paceWindowAt("Warrior", L).hours
 		end
-		table.insert(
-			now,
-			{
-				"Tempo 1 → 20 Wojownika: h",
-				"ok. 2,3 (model S32, z Grimrokiem)",
-				`{fmtValue(hours, "2")} (model okna, bez Grimroka)`,
-			}
-		)
+		table.insert(now, {
+			"Tempo 1 → 20 Wojownika: h",
+			"ok. 2,3 (model S32, z Grimrokiem)",
+			`{fmtValue(hours, "2")} (model okna, bez Grimroka)`,
+		})
 		tableOut({ "liczba", "05b859d (S32)", "S91" }, now)
 	end
 	local gRows = globalFor(lo, hi)
@@ -973,6 +1511,8 @@ for i, band in B.BANDS do
 	tableOut({ "cel", "wartość", "próg", "wynik", "kto asertuje" }, cele)
 	if mapId == "duskwood" then
 		s92Section()
+	elseif mapId == "ashen" then
+		s93Section()
 	end
 end
 

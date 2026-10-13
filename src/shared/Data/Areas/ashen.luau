@@ -252,7 +252,7 @@ local data: Types.MapAreas = {
 		{
 			id = "ashen_ashroad",
 			nameKey = "area.ashen_ashroad",
-			lv = { 61, 67 },
+			lv = { 61, 69 }, -- S93: 67 -> 69 (a second hunting ground on 68-69)
 			kinds = { "basilisk", "wyvern" },
 			rect = { 0, -300, 500, -80 },
 			groups = 4,

@@ -43,7 +43,7 @@
 | `duskwood_barrow` | Kurhan Kultystów / Cultist Barrow | 31–38 | **czerwona** | jaskinia |
 | `duskwood_cave` | Krypta Zapomnianych / Crypt of the Forgotten | 38–45 | **czerwona** | jaskinia + wejście do lochu bossa 45 |
 | `ashen` | Spalone Pustkowia / Ashen Wastes | 45–70 | żółta | jw. |
-| `ashen_mine` | Opuszczona Kopalnia / Abandoned Mine | 49–56 | **czerwona** | jaskinia |
+| `ashen_mine` | Opuszczona Kopalnia / Abandoned Mine | 46–56 (S93) | **czerwona** | jaskinia |
 | `ashen_lair` | Leże Wywerny / Wyvern Lair | 56–63 | **czerwona** | jaskinia |
 | `ashen_cave` | Kuźnia Głębin / Deepforge | 63–70 | **czerwona** | jaskinia + wejście do lochu bossa 70 |
 | `frostpeak` | Lodowe Szczyty / Frostpeak | 70–100 | żółta | jw. |
@@ -285,7 +285,7 @@ unik, pech wroga i blok razem najwyżej 40% (S61).
   `expToNext`); kotwice 45 / 70 / 100 = 1 / 1 / 1, bo krzywa potworów S87 sama wydłużyła pasma do 18 / 27 / 45 h
   (cel D4 14 / 25 / 41 h ±25%). S92: 20 → 45 ok. 14,4 h (model okna Wojownika) przez większe nagrody zadań Boru
   (`werewolves` 1,7, `ruins` 1,4, `ents` 1,1, `cult` 1,2, `swamp` 1,3, `crypt` 1,6 poziomu); kotwica 45 zostaje 1, bo
-  krzywa `expToNext` nie maleje.
+  krzywa `expToNext` nie maleje. S93: 45 → 70 ok. 26,1 h (h(69) 1,23 h, krok ≤ ×1,07), kotwica 70 zostaje 1.
 - EXP z potwora: `round(8 + 6 · Lpotwora^1.25)`; Elita ×4, Elita II ×12, boss ×60; od S32 razy wytrzymałość rodzaju
   `hpMul^0.75 × (atkMul × szybkość)^0.25` (niedźwiedź brunatny ×1,26, królik ×0,57, wrona ×0,86; bossy ×1).
 - Różnica poziomów (gracz − potwór = d): d ≤ 5 → 100%; d > 5 → `−15%` za każdy poziom ponad 5, min 5%. Potwór wyżej: `+4%` za poziom, max +20%.
@@ -395,7 +395,9 @@ Każdy przedmiot ma w tooltipie „Rzadkość · Kategoria” (broń jedno-/dwur
   łowcy), kruk → Krucze Pióro (Zwykłe błogosławieństwo fortuny), kobold → Ruda Miedzi (25%). S92 (Mroczny Bór):
   czarny niedźwiedź → Gruba Skóra (także pancerze progu 25), bagienny wąż → Jad Ropuchy, nietoperz → Krucze Pióro,
   ghul i wiedźma mokradeł → Przeklęta Kość (nowa); Rzadkie błogosławieństwa biorą części Boru (§11). Drop Mrocznego
-  Boru: `dropFactor` 0,85 (2–4 Unikaty dla klasy na godzinę expienia, Heroik co ok. godzinę Elit).
+  Boru: `dropFactor` 0,85 (2–4 Unikaty dla klasy na godzinę expienia, Heroik co ok. godzinę Elit). S93 (Spalone
+  Pustkowia): hiena → Gruba Skóra, sęp → Krucze Pióro, chochlik → Odłamek Magmy, bazyliszek → Jad Ropuchy, mumia →
+  Przeklęta Kość; Epickie błogosławieństwa biorą części Pustkowi (§11); `dropFactor` 0,9 (2,6–3,7 Unikatu na godzinę).
 - Materiały/zioła/kamienie z tabel potworów (`Data/Monsters`).
 - Przedmiot ląduje na ziemi jako „worek łupu” widoczny **tylko dla właściciela** (lokalnie po stronie klienta); podniesienie klawiszem/klikiem lub automatycznie z gamepassem Auto-łup. Znika po 120 s.
 - **Drop legendy / mityka**: pomarańczowy (mityk: wyższy czerwony z żarem) słup światła na ziemi, specjalny dźwięk, krótki flash ekranu, komunikat na całym serwerze „⚜ {gracz} zdobył legendarny przedmiot: {nazwa}!” (i między serwerami przez MessagingService). Po podniesieniu: okno odsłonięcia z animacją pojawiania się bonusów jeden po drugim.
@@ -410,7 +412,7 @@ Każdy przedmiot ma w tooltipie „Rzadkość · Kategoria” (broń jedno-/dwur
 ### 5.7 Plecak i depozyt
 
 - Plecak to przedmiot w slocie Plecaka. Pojemność określa ile slotów ma inwentarz.
-- Start: Płócienny Plecak 20 slotów. U Handlarza Plecaków: 30, 45, 60, 80, 100, 130, 160, **200** (ceny rosną, wymagany poziom: 1, 8, 15, 25, 35, 50, 65, 80). Zmiana plecaka możliwa tylko, gdy przedmioty mieszczą się w nowym. S92: 80 miejsc 30 000, 100 miejsc 50 000 (było 80 000): 6,8 i 7,1 poziomu dochodu na 25. i 35.
+- Start: Płócienny Plecak 20 slotów. U Handlarza Plecaków: 30, 45, 60, 80, 100, 130, 160, **200** (ceny rosną, wymagany poziom: 1, 8, 15, 25, 35, 50, 65, 80). Zmiana plecaka możliwa tylko, gdy przedmioty mieszczą się w nowym. S92: 80 miejsc 30 000, 100 miejsc 50 000 (było 80 000): 6,8 i 7,1 poziomu dochodu na 25. i 35. S93: 130 miejsc 76 000 (było 200 000): 5,0 poziomu dochodu na 50.
 - Depozyt w mieście: 60 slotów, **kontowy** (wspólny dla 3 postaci). Gamepass „Skarbiec” +60 slotów.
 - Stackowanie: materiały, mikstury, zwoje do 999 w slocie.
 - Sortowanie inwentarza przyciskiem.
@@ -471,7 +473,7 @@ Każdy przedmiot ma w tooltipie „Rzadkość · Kategoria” (broń jedno-/dwur
 
 ## 9. Mikstury (lekarz)
 
-- Trzy rodzaje: Życie (HP), Mana, Energia. Pięć jakości: Mała, Średnia, Duża, Wielka, Potężna. Przywracają odpowiednio 150 / 500 / 1 500 / 4 000 / 10 000 punktów (energia: 30/60/100/150/250). Ceny: 10 / 60 / 250 / 900 / 3 000 złota.
+- Trzy rodzaje: Życie (HP), Mana, Energia. Pięć jakości: Mała, Średnia, Duża, Wielka, Potężna. Przywracają odpowiednio 150 / 500 / 1 500 / 4 000 / 10 000 punktów (energia: 30/60/100/150/250). Ceny: 10 / 60 / 250 / 700 / 3 000 złota (S93: Wielka 900 → 700, złoto za 1 HP rośnie z jakością: 0,167 / 0,175 / 0,30).
 - Jakości Mała, Średnia i Duża bez wymagań poziomu; Wielka od 45., Potężna od 70. (S87, `Consumables` `level`,
   `Logic/Potions.requiredLevel`; te same progi dla HP, many i energii, także dla mikstur kupionych wcześniej: sklep,
   plecak i opis pokazują próg, picie poniżej progu odmawia).
@@ -486,7 +488,7 @@ Każdy przedmiot ma w tooltipie „Rzadkość · Kategoria” (broń jedno-/dwur
   - Błogosławieństwa (rozdział 11) w stopniach do Legendarnego (Mityczne tylko z dropu bossów).
   - Zwoje Ochrony, Kamienie Teleportu.
   - Przemiana materiałów: 10 Pył → 1 Odłamek, 8 Odłamek → 1 Kryształ (koszt złota, 5 min).
-  - Eliksiry odporności (1 h, +15% odporności na żywioł).
+  - Eliksiry odporności (1 h, +15% odporności na żywioł); od 30., eliksir ognia od 45. (S93: razem z łuską salamandry).
 - Przykładowe receptury i poziomy są w `Data/Recipes.luau` (min. 25 receptur przy starcie).
 
 ## 11. Błogosławieństwa
@@ -500,7 +502,8 @@ Każdy przedmiot ma w tooltipie „Rzadkość · Kategoria” (broń jedno-/dwur
   - Mityczne: +800 HP, +22 SIŁ, +8% szybkości ataku, +5% kryt **+ bonus specjalny** (np. +10% EXP i +10% szansy na drop)
 - Linie: Wojownika (SIŁ), Łowcy (ZRĘ), Mędrca (INT), Strażnika (WIT/obrona), Fortuny (EXP/złoto/drop, słabsze staty).
 - Składnik linii u alchemika: Zwykłe z części wczesnych Łąk (S32), Rzadkie (35.) z części Mrocznego Boru (S92: Pazur
-  Wilkołaka, Jad Ropuchy, Krucze Pióro, Ektoplazma, Przeklęta Kość), pozostałe ze składnika linii.
+  Wilkołaka, Jad Ropuchy, Krucze Pióro, Ektoplazma, Przeklęta Kość), Epickie (60.) z części Spalonych Pustkowi (S93:
+  Odłamek Magmy, Jad Ropuchy, Przeklęta Kość, Gruba Skóra, Krucze Pióro), Unikatowe ze składnika linii.
 - Źródła: drop (Elity, bossy), alchemik, questy dzienne. Ikona z licznikiem w HUD.
 
 ## 12. Zbieractwo
@@ -631,9 +634,10 @@ tylko na niego i członków jego drużyny. Szczegóły: ROZWOJ §9.
   (`Data/LevelCurves`, liczone od poziomu końcowego potwora, dokładnie 1 do 20.; kotwice 45 / 70 / 100 tymczasowe:
   HP 1,20 / 1,32 / 1,47, atak 1,07 / 1,11 / 1,14, Elita 1,08–1,13 / 1,05–1,07, Elita II 1; S92–S94 je przejmują).
   Tabele regionów: szansa pary Elit w jaskini `elitePairChance` (0,5; Łąki 0,3 od S91: w jaskiniach Łąk jedna para na
-  13 grup Elit; Mroczny Bór 0,3 od S92) i `dropFactor` (1: mnoży wagi Unikatu i Heroika potworów regionu, Zwykły
-  przejmuje różnicę; Mroczny Bór 0,85 od S92). S92: rodzaj może mieć `rewardMul` (mnoży EXP i złoto ponad
-  `kindReward`; Ent Zgnilizny 1,25, Bagienny Troll i Szkielet Strażnik 1,1). **Członek grupy** zadaje obrażenia × `1 / 0,85 / 0,72 / 0,62` dla grupy 1 / 2 / 3 / 4 (S32,
+  13 grup Elit; Mroczny Bór 0,3 od S92; Spalone Pustkowia 0,25 od S93) i `dropFactor` (1: mnoży wagi Unikatu i
+  Heroika potworów regionu, Zwykły przejmuje różnicę; Mroczny Bór 0,85 od S92, Pustkowia 0,9 od S93). S92: rodzaj może
+  mieć `rewardMul` (mnoży EXP i złoto ponad `kindReward`; Ent Zgnilizny 1,25, Bagienny Troll i Szkielet Strażnik 1,1;
+  S93: Ognisty i Magmowy Golem 1,45, Ork Popiołu 1,15). **Członek grupy** zadaje obrażenia × `1 / 0,85 / 0,72 / 0,62` dla grupy 1 / 2 / 3 / 4 (S32,
   `Combat.groupDamageMul`): cała grupa bije naraz, więc grupa 4 zadawała ok. 10× tyle co jeden potwór.
 - **Cele balansu** (S32, model `tests/Balance.luau`, sprawdza `balance.spec`, raport `docs/BALANS.md`; gracz używa
   zwykłych ataków + 1–2 umiejętności, bez mikstur, „ekwipunek na poziomie” = broń + druga ręka + 4 części zbroi +
@@ -652,6 +656,8 @@ tylko na niego i członków jego drużyny. Szczegóły: ROZWOJ §9.
   | Grimrok | 3–5 graczy L19, 4–6 min (model S83 / S87), żaden cios > 70% HP Maga L20; leczący 1,0–2,0 obrażeń tanka (T-SK6); do pokonania bez wsparcia (S91) |
   | Mroczny Bór (S92) | Elity jaskiń od 21. na każdym poziomie do 45; spotkanie Elit (pojedyncza albo para) ≤ 110% HP Wojownika, ≤ 125% Maga; rodzaje 0,85–1,20 EXP/s zwykłego; ≥ 2 expowiska na każdym poziomie; tempo 20 → 45 11,9–16,1 h, krok ≤ ×1,3 |
   | Morvane (S92) | 3–5 graczy L44, 4–6 min; największy cios ≤ 70% HP Maga L45, zwykły 7–12%; tank ≤ 350% HP/min (model S32: atak podstawowy i `threat`; z Polem Klątwy ok. 740–790%); fala tarczy ≤ 110% HP na członka; do pokonania bez wsparcia; T-SK6 ≤ 2,7 (cel planu 2,0 poza zasięgiem, DECYZJE S92) |
+  | Spalone Pustkowia (S93) | Elity jaskiń od 46. na każdym poziomie do 70; spotkanie Elit ≤ 110% HP Wojownika, ≤ 125% Maga; Elita II solo ≥ 180%, dwóch ≤ 150%, trzech 60–100%; rodzaje 0,85–1,20 EXP/s zwykłego; ≥ 2 expowiska na każdym poziomie 46–70; tempo 45 → 70 21,25–28,75 h, h(69) 0,98–1,32 h, krok ≤ ×1,3 |
+  | Azgor (S93) | 3–5 graczy L69, 4–6 min; największy cios ≤ 70% HP Maga L70 (inferno), zwykły 7–12%; tank ≤ 350% HP/min (model S32); meteor ≤ 60% HP Maga na minutę; tick lawy 15–25%; fala tarczy ≤ 110% HP na członka; każdy atak ≥ 50% tempa (inferno w fazie 3); do pokonania bez wsparcia; T-SK6 1,0–2,0 (sufit 2,5; dziś 12,8, niedokończone, DECYZJE S93) |
   | tempo 1 → 20 (Wojownik, model okna, bez zadania z bossem) | 1,8–2,8 h, średnia z 5 poziomów rośnie najwyżej o 30% na poziom (S91) |
   | rzadkość (pełny komplet vs Zwykły) | Unikatowy +8–15%, Heroiczny +15–25%, Legendarny +25–40% |
   | broń 2H vs 1H + druga ręka | ±3% DPS × przeżywalność |
@@ -699,9 +705,9 @@ Po testach S17: **więcej rodzajów na każdej mapie (min. 8–10 na mapę teren
 - Wilkołak, Leśna Zjawa, Ent Zgnilizny, Kultysta Mroku, Bagienny Troll (las); Szkielet Strażnik, Upiór, Nekromanta (krypta) — każdy z E i E II.
 - **Boss 45: Morvane, Królowa Krypt**
 
-**Spalone Pustkowia (45–70) / jaskinie 49–70**
-- *nowy* Hiena Pustkowi (46–52), *nowy* Sęp Popiołu (50–56, latający), *nowy* Ognisty Chochlik (55–61), *nowy* Bazyliszek (61–67), *nowy* Mumia Pustyni (66–70)
-- Salamandra, Ork Popiołu, Ognisty Golem, Skorpion Pustyni, Wywerna; Krasnolud Renegat, Golem Magmowy, Kowal Płomieni (jaskinia).
+**Spalone Pustkowia (45–70) / jaskinie 46–70 (S93)**
+- *nowy* Hiena Pustkowi (46–52), *nowy* Sęp Popiołu (50–56, latający), *nowy* Ognisty Chochlik (55–61), *nowy* Bazyliszek (61–69), *nowy* Mumia Pustyni (66–70)
+- Salamandra (45–52), Ork Popiołu (46–56), Ognisty Golem (52–60), Skorpion Pustyni (55–63), Wywerna (56–66); Krasnolud Renegat (60–70), Golem Magmowy (62–70), Kowal Płomieni (63–70) (jaskinia). Elity: Kopalnia ork i hiena (Elita II ork), Leże wywerna i skorpion (Elita II wywerna), Kuźnia krasnolud i golem magmowy (Elita II Kowal Płomieni) na każdym poziomie jaskini.
 - **Boss 70: Azgor, Pan Płomieni**
 
 **Lodowe Szczyty (70–100) / jaskinie 74–100**
@@ -737,6 +743,14 @@ Po testach S17: **więcej rodzajów na każdej mapie (min. 8–10 na mapę teren
   L44 bije go 4,7–5,0 min; drużyna bez wsparcia (Furia, Królobójca, Arkanista; + Inkwizytor; + Niszczyciel) wygrywa
   w ok. 2 min na miksturach (przyjmuje do 99% tego, co podtrzymują mikstury, regeneracja i kradzież życia);
   Uzdrowiciel lochowy leczy 2,68 obrażeń Obrońcy.
+- Przykład Azgor (70, S93): `hpMul` 1,25, zwykły cios słaby (`atkMul` 0,36, ok. 10% HP Maga L70) i szybki (`speed`
+  1,35), Płomienne Cięcie ×3 w tanka, Fala Ognia ×5,2 w losowego (ok. 52% HP Maga), Meteor ×4 pod każdym graczem co 18 s
+  (złagodzony, wariant (a) planu: ok. 54% HP Maga na minutę; wariant „sprawdzian leczenia” czeka na decyzję
+  właściciela), w 3. fazie Piekielny Krąg ×6,6 (66% HP Maga L70 z dystansu; bezpieczny środek przy bossie) i lawa poza
+  kurczącym się kręgiem (tick ok. 20% HP Maga L70, `Data/BossTuning` 2,2). Fale tarczy ognistych golemów na 58 / 59 (było
+  69 / 70): drużyna 3 osób traci na falę 85–98% HP na członka. 3–5 graczy L69 bije go 4,9–5,2 min; drużyna bez wsparcia
+  wygrywa w ok. 1,7 min na miksturach (przyjmuje do 41% tego, co podtrzymują mikstury, regeneracja i kradzież życia);
+  Uzdrowiciel lochowy leczy ok. 12,8 obrażeń Obrońcy (cel 1,0–2,0, sufit 2,5: niedokończone, DECYZJE S93).
 - **Wybór ataku** (S87, `Logic/BossSchedule`, ta sama funkcja w grze i w modelu): spośród gotowych ataków fazy ten
   z największą zaległością względem swojego odnowienia; każdy atak dostaje co najmniej połowę swojego tempa (inferno
   Azgora i pierścień lodu Vaelgratha wchodzą). Odstęp między atakami i obrażenia lawy / burzy w `Data/BossTuning`.
@@ -768,6 +782,9 @@ Po testach S17: **więcej rodzajów na każdej mapie (min. 8–10 na mapę teren
 - **Budżet 20 → 45** (S92, Wojownik): +1…+3 broni kosztuje 0,46–0,68 dochodu poziomu, plecak 80 i 100 po 6,8 i 7,1
   poziomu dochodu; mikstury pijane łańcuchem zamiast odpoczynku zjadają 18–49% dochodu (Kapłan do 77%; ceny i odstęp
   mikstur globalne, decyzja właściciela).
+- **Budżet 45 → 70** (S93, Wojownik): +1…+3 broni kosztuje 0,56–0,73 dochodu poziomu, plecak 130 5,0 poziomu dochodu;
+  mikstury łańcuchowe 28–82% dochodu (Wielka 700 to dół kolejności cen; decyzja właściciela); chroniony +9 Legendarnej
+  broni ok. 18–20 poziomów dochodu, 18 zwojów i 8 Rdzeni Legendy (raport S93, cel kompletu S94).
 - **Ulepszenia 20–100** (S87, `Config.Upgrade.goldHigh` 20): +1…+3 broni kosztuje 0,46–0,84 dochodu poziomu
   (25–100), +1…+9 z ochroną 11–20 poziomów dochodu (cel G9: 0,45–1,05 i 12–25).
 

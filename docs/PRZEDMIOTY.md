@@ -1,7 +1,7 @@
 # Vaelthorn: przedmioty
 
 > Plik generowany: `lune run tools/wikidump.luau` (dane gry, te same co wiki). Nie edytuj ręcznie.
-> Odcisk danych b4b3ce4b (`wiki/src/data/meta.json`).
+> Odcisk danych 01360093 (`wiki/src/data/meta.json`).
 
 ## Rzadkości
 
@@ -1128,15 +1128,15 @@ Cecha: **Iskra żywiołu**: 35%: atak budzi żywioł broni
 | Materiał | Wartość | Skąd | Do czego |
 |---|---|---|---|
 | Kieł Dzika | 7 | — | — |
-| Krucze Pióro | 7 | — | alchemik (2 receptur) |
-| Przeklęta Kość | 26 | — | alchemik (1 receptur) |
+| Krucze Pióro | 7 | — | alchemik (3 receptur) |
+| Przeklęta Kość | 26 | — | alchemik (2 receptur) |
 | Ektoplazma | 30 | — | alchemik (1 receptur) |
 | Kryształ Esencji | 300 | skrzynia rybacka, rozbijanie, alchemik | ulepszanie +7…+9 |
 | Pył Esencji | 8 | zbieractwo, skrzynia rybacka, rozbijanie, sklep | ulepszanie +1…+3, kowal (675 przepisów), alchemik (1 receptur) |
 | Odłamek Esencji | 60 | skrzynia rybacka, rozbijanie, alchemik | ulepszanie +4…+6, alchemik (16 receptur) |
 | Karp | 6 | — | — |
 | Węgorz Bagienny | 24 | — | alchemik (1 receptur) |
-| Złotopłetwy | 300 | — | alchemik (2 receptur) |
+| Złotopłetwy | 300 | — | alchemik (1 receptur) |
 | Lodopłetwy | 110 | — | — |
 | Magmopłetwy | 55 | — | — |
 | Szczupak | 14 | — | alchemik (1 receptur) |
@@ -1145,21 +1145,21 @@ Cecha: **Iskra żywiołu**: 35%: atak budzi żywioł broni
 | Ognik | 28 | zbieractwo | alchemik (6 receptur) |
 | Szronolist | 60 | zbieractwo | alchemik (6 receptur) |
 | Wiązówka | 5 | zbieractwo | alchemik (5 receptur) |
-| Księżycowy Płatek | 120 | zbieractwo | alchemik (5 receptur) |
+| Księżycowy Płatek | 120 | zbieractwo | alchemik (4 receptur) |
 | Psianka | 12 | zbieractwo | alchemik (6 receptur) |
 | Rdzeń Legendy | 2500 | rozbijanie | ulepszanie +8…+9 |
-| Odłamek Magmy | 60 | — | — |
+| Odłamek Magmy | 60 | — | alchemik (1 receptur) |
 | Ruda Adamantytu | 160 | zbieractwo | kowal (135 przepisów) |
 | Ruda Miedzi | 6 | zbieractwo, sklep | kowal (180 przepisów), alchemik (2 receptur) |
-| Ruda Żelaza | 15 | zbieractwo, sklep | kowal (225 przepisów), alchemik (3 receptur) |
+| Ruda Żelaza | 15 | zbieractwo, sklep | kowal (225 przepisów), alchemik (2 receptur) |
 | Ruda Mithrilu | 80 | zbieractwo | kowal (180 przepisów), alchemik (1 receptur) |
 | Ruda Srebra | 35 | zbieractwo, sklep | kowal (225 przepisów), alchemik (1 receptur) |
 | Łuska Salamandry | 45 | — | alchemik (1 receptur) |
-| Pajęczy Jedwab | 12 | — | alchemik (3 receptur) |
-| Gruba Skóra | 6 | — | kowal (36 przepisów), alchemik (1 receptur) |
-| Jad Ropuchy | 6 | — | alchemik (2 receptur) |
+| Pajęczy Jedwab | 12 | — | alchemik (2 receptur) |
+| Gruba Skóra | 6 | — | kowal (36 przepisów), alchemik (2 receptur) |
+| Jad Ropuchy | 6 | — | alchemik (3 receptur) |
 | Pazur Wilkołaka | 22 | — | alchemik (1 receptur) |
-| Wilcza Skóra | 4 | — | alchemik (3 receptur) |
+| Wilcza Skóra | 4 | — | alchemik (2 receptur) |
 | Futro Yeti | 80 | — | alchemik (1 receptur) |
 
 ## Przedmioty użytkowe i plecaki
@@ -1167,7 +1167,7 @@ Cecha: **Iskra żywiołu**: 35%: atak budzi żywioł broni
 | Przedmiot | Rodzaj | Poziom | Działanie | Cena u handlarza | Wartość |
 |---|---|---|---|---|---|
 | Plecak Kupca | Plecak | 35 | 100 miejsc | — | 12500 |
-| Plecak Poszukiwacza Przygód | Plecak | 50 | 130 miejsc | — | 50000 |
+| Plecak Poszukiwacza Przygód | Plecak | 50 | 130 miejsc | — | 19000 |
 | Królewski Plecak | Plecak | 65 | 160 miejsc | — | 125000 |
 | Płócienny Plecak | Plecak | 1 | 20 miejsc | — | 25 |
 | Plecak ze Smoczej Skóry | Plecak | 80 | 200 miejsc | — | 300000 |
@@ -1212,17 +1212,17 @@ Cecha: **Iskra żywiołu**: 35%: atak budzi żywioł broni
 | Mała Mikstura Energii | Mikstura | 1 | — | 10 | 2 |
 | Średnia Mikstura Energii | Mikstura | 1 | — | 60 | 15 |
 | Duża Mikstura Energii | Mikstura | 1 | — | 250 | 62 |
-| Wielka Mikstura Energii | Mikstura | 45 | — | 900 | 225 |
+| Wielka Mikstura Energii | Mikstura | 45 | — | 700 | 175 |
 | Potężna Mikstura Energii | Mikstura | 70 | — | 3000 | 750 |
 | Mała Mikstura Życia | Mikstura | 1 | — | 10 | 2 |
 | Średnia Mikstura Życia | Mikstura | 1 | — | 60 | 15 |
 | Duża Mikstura Życia | Mikstura | 1 | — | 250 | 62 |
-| Wielka Mikstura Życia | Mikstura | 45 | — | 900 | 225 |
+| Wielka Mikstura Życia | Mikstura | 45 | — | 700 | 175 |
 | Potężna Mikstura Życia | Mikstura | 70 | — | 3000 | 750 |
 | Mała Mikstura Many | Mikstura | 1 | — | 10 | 2 |
 | Średnia Mikstura Many | Mikstura | 1 | — | 60 | 15 |
 | Duża Mikstura Many | Mikstura | 1 | — | 250 | 62 |
-| Wielka Mikstura Many | Mikstura | 45 | — | 900 | 225 |
+| Wielka Mikstura Many | Mikstura | 45 | — | 700 | 175 |
 | Potężna Mikstura Many | Mikstura | 70 | — | 3000 | 750 |
 | Zwój Zapomnienia | Zwój | 1 | Resetuje punkty statystyk aktywnego zestawu. | 500 | 100 |
 | Zwój Ochrony | Zwój | 1 | Nieudane ulepszenie nie obniża przedmiotu. | — | 200 |
