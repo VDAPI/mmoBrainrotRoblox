@@ -178,6 +178,9 @@ function Quests.label(o: any, turnIn: string?, lang: string): string
 		return Names.T("quest.obj.upgrade", { up = o.up or 1 }, lang)
 	elseif t == "level" then
 		return Names.T("quest.obj.level", { level = o.level or 1 }, lang)
+	elseif t == "escort" then
+		-- S101b: walk with the leading companion (no quest with it is on the wiki before S109)
+		return Names.T("quest.obj.escort", { npc = npcName(o.npc), place = textOf(o.place, lang) }, lang)
 	end
 	return Names.T(`quest.obj.{t}`, { count = count }, lang)
 end

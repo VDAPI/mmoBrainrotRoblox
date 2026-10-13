@@ -51,6 +51,16 @@ T.describe("Definitions", function()
 		T.expect((ArgCheck.check({}, spec, 0))).toBe(false)
 	end)
 
+	T.it("S101b: QuestSay takes a quest id and an answer id, rate 4", function()
+		local def = Definitions.QuestSay
+		T.expect(def.kind).toBe("function")
+		T.expect(def.dir).toBe("c2s")
+		T.expect(def.rate).toBe(4)
+		T.expect(def.args).toEqual({ "string", "string" })
+		T.expect((ArgCheck.check({ "side_bears", "quiet" }, assert(def.args, "expected a value"), 2))).toBe(true)
+		T.expect((ArgCheck.check({ "side_bears" }, assert(def.args, "expected a value"), 1))).toBe(false)
+	end)
+
 	T.it("every c2s remote has well-formed argument rules", function()
 		local known = { string = true, number = true, integer = true, boolean = true, table = true, any = true }
 		for name, def in Definitions do

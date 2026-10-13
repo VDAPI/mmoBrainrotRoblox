@@ -21,6 +21,8 @@ local QuestService = Context.services.QuestService
 local PlayerStateService = Context.services.PlayerStateService
 local SideQuestService = Context.services.SideQuestService
 local ContractService = Context.services.ContractService
+local CompanionService = Context.services.CompanionService
+local AdminService = Context.services.AdminService
 local TravelService = Context.services.TravelService
 
 local commands: { [string]: (player: Player, args: { string }) -> ...any } = {}
@@ -174,6 +176,42 @@ commands.side = function(player, args)
 			else false
 		reply(player, if ok then "admin.side.done" else "admin.usage.side", { action = action, id = id })
 	end)
+end
+
+-- S101b: /companion info | reset [player]: the quest companion of the caller or of a named player.
+commands.companion = function(player, args)
+	local action = args[1]
+	local target = player
+	if args[2] and args[2] ~= "" then
+		local found = AdminService.FindPlayer(args[2])
+		if not found then
+			reply(player, "admin.player.none")
+			return
+		end
+		target = found
+	end
+	if action == "info" then
+		local info = CompanionService.Info(target)
+		if info then
+			reply(player, "admin.companion.info", {
+				name = target.Name,
+				npc = `@npc.{info.npc}.name`,
+				quest = info.quest,
+				mode = info.mode,
+				phase = info.phase,
+			})
+		else
+			reply(player, "admin.companion.none", { name = target.Name })
+		end
+	elseif action == "reset" then
+		if CompanionService.Reset(target) then
+			reply(player, "admin.companion.reset", { name = target.Name })
+		else
+			reply(player, "admin.companion.none", { name = target.Name })
+		end
+	else
+		reply(player, "admin.usage.companion")
+	end
 end
 
 -- S27: /anchor <id>: teleport next to a quest anchor (no id: the list).

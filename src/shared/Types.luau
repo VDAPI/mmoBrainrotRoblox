@@ -113,6 +113,8 @@ export type CharacterData = {
 			active: { [string]: SideEntry },
 			done: { [string]: boolean },
 		},
+		-- S101b: dialogue answers, kept for good (Logic/Dialogue, recall): quest id -> answer id
+		said: { [string]: string },
 	},
 	guildId: string?,
 	auctions: { [string]: boolean }, -- S13: ids of this character's auction listings
@@ -177,6 +179,7 @@ export type Settings = {
 	keys: { [string]: string }, -- S17: rebound keys, action -> Enum.KeyCode name (Data/Keybinds)
 	devPins: { string }, -- S23: dev panel favourites (admins)
 	mapCloseOnWalk: boolean, -- S25: the world map closes after "Walk"
+	barks: boolean, -- S101b: NPC comments during quests (BarkController)
 }
 
 export type AccountData = {
@@ -245,7 +248,12 @@ export type ClientState = {
 	pvp: PvpState?,
 	-- S101: the running world event (Logic/WorldEvents.Public + `mine = { points, ok }`), WorldEventService
 	worldEvent: { [string]: any }?,
+	-- S101b: the quest companion (CompanionService; never saved): whose figure, for which quest, the phase of
+	-- Logic/Companion ("join" | "follow" | "lead" | "wait" | "arrived" | "back")
+	companion: CompanionState?,
 }
+
+export type CompanionState = { npc: string, quest: string, mode: "follow" | "lead", phase: string }
 
 export type PathKey = string | number
 export type Path = { PathKey }

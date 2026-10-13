@@ -8,8 +8,12 @@
 -- .p1..pN (pages), .progress, .done; arcs quest.arc.<arc>; quest items quest.item.<item>.
 -- S96: the stable arc (levels 21-22, taken from 20 through `minLevel`) ends with a mount (`reward.mount`) instead of
 -- an item choice; S97 publishes it on the wiki and adds a mount skin to its last quest (`reward.cosmetic`).
+-- S101b (DESIGN-15 §3.5): comments during every quest (`barks`), answers with small effects in side_venom, side_bears
+-- and side_den (`choices`, Data/Quests/Talk), side_den's first page answering side_bears (`recall`) and Borys walking
+-- with the player through side_den (`companion`).
 
 local Exp = require("../../Logic/Exp")
+local Talk = require("./Talk")
 local Town = require("../Town")
 local Types = require("./Types")
 
@@ -62,6 +66,11 @@ local function side(
 		minLevel: number?, -- S96
 		wiki: boolean?, -- S96
 		category: Types.Category?, -- S98: "side" when nil (the S96 stable arc too)
+		-- S101b (DESIGN-15 §3.5): answers, page variants by an earlier answer, comments, companion
+		choices: Types.ChoicePage?,
+		recall: { [string]: string }?,
+		barks: Types.BarkSet?,
+		companion: Types.CompanionDef?,
 	}
 )
 	local final = def.final == true
@@ -86,6 +95,10 @@ local function side(
 		minLevel = def.minLevel,
 		wiki = def.wiki,
 		category = def.category or "side",
+		choices = def.choices,
+		recall = def.recall,
+		barks = def.barks,
+		companion = def.companion,
 	})
 end
 
@@ -133,6 +146,7 @@ side({
 	arc = "farm",
 	pages = 3,
 	objectives = { deliver("grainOrder") },
+	barks = { accept = 1, done = 1 },
 })
 side({
 	id = "side_rabbits",
@@ -143,6 +157,7 @@ side({
 	pages = 2,
 	requires = { "side_granary" },
 	objectives = { kill(10, "rabbit", "meadows_rabbitfields") },
+	barks = { accept = 1, half = 1, done = 1 },
 })
 side({
 	id = "side_fence",
@@ -153,6 +168,7 @@ side({
 	pages = 2,
 	requires = { "side_rabbits" },
 	objectives = { use({ "fence_1", "fence_2", "fence_3", "fence_4" }, "quest.use.fence", 2, "plank") },
+	barks = { accept = 1, half = 1, done = 1 },
 })
 side({
 	id = "side_sheep",
@@ -163,6 +179,7 @@ side({
 	pages = 3,
 	requires = { "side_fence" },
 	objectives = { collect(5, "sheepBell", "wolf", 0.4) },
+	barks = { accept = 1, half = 1, done = 1 },
 })
 side({
 	id = "side_grainCart",
@@ -174,6 +191,7 @@ side({
 	requires = { "side_sheep" },
 	objectives = { deliver("grainSack"), kill(6, "wolf") },
 	final = true,
+	barks = { accept = 1, half = 1, done = 1 },
 })
 
 -- B. The shrine under the old oak (2–7) ------------------------------------------------------------------------
@@ -188,6 +206,7 @@ side({
 		use({ "shrine_candles" }, "quest.use.candles", 3, "candles"),
 		{ type = "gather", n = 3, node = "bush_meadowsweet" },
 	},
+	barks = { accept = 1, half = 1, done = 1 },
 })
 side({
 	id = "side_stoneCircle",
@@ -203,6 +222,7 @@ side({
 		kill(8, "lynx", "meadows_wolfhills"),
 	},
 	final = true,
+	barks = { accept = 1, half = 1, done = 1 },
 })
 
 -- C. Toad Pond (4–8) -----------------------------------------------------------------------------------------
@@ -214,6 +234,7 @@ side({
 	arc = "pond",
 	pages = 2,
 	objectives = { deliver("breadBasket") },
+	barks = { accept = 1, done = 1 },
 })
 side({
 	id = "side_toads",
@@ -225,6 +246,7 @@ side({
 	requires = { "side_father" },
 	objectives = { kill(12, "swampToad") },
 	where = { map = "meadows", area = "meadows_toadmire" },
+	barks = { accept = 1, half = 1, done = 1 },
 })
 side({
 	id = "side_venom",
@@ -235,6 +257,13 @@ side({
 	pages = 3,
 	requires = { "side_toads" },
 	objectives = { collect(6, "toadVenom", "swampToad", 0.5) },
+	barks = { accept = 1, half = 1, done = 1, stuck = 1 },
+	-- S101b: Wit marks where the toads croak loudest (a point on dry land in the marsh, checked in docs/SESJE.md S101b)
+	choices = Talk.onPage(2, {
+		Talk.answer("where", Talk.hint("meadows", -630, 430, "area.meadows_toadmire")),
+		Talk.answer("luck"),
+		Talk.answer("jagna"),
+	}),
 })
 side({
 	id = "side_net",
@@ -246,6 +275,7 @@ side({
 	requires = { "side_venom" },
 	objectives = { use({ "net_shore" }, "quest.use.net", 3, "net"), { type = "fish", n = 3 } },
 	final = true,
+	barks = { accept = 1, half = 1, done = 1 },
 })
 
 -- D. The Old Forest (6–11) -----------------------------------------------------------------------------------
@@ -257,6 +287,7 @@ side({
 	arc = "forest",
 	pages = 2,
 	objectives = { collect(6, "boarHaunch", "boar", 0.5) },
+	barks = { accept = 1, half = 1, done = 1 },
 })
 side({
 	id = "side_woodcutter",
@@ -267,6 +298,7 @@ side({
 	pages = 2,
 	requires = { "side_roast" },
 	objectives = { deliver("aleBarrel") },
+	barks = { accept = 1, done = 1 },
 })
 side({
 	id = "side_logs",
@@ -280,6 +312,7 @@ side({
 		use({ "logpile_1", "logpile_2", "logpile_3", "logpile_4", "logpile_5" }, "quest.use.logs", 1.5, "mark"),
 		kill(8, "carrionCrow"),
 	},
+	barks = { accept = 1, half = 1, done = 1 },
 })
 side({
 	id = "side_shiny",
@@ -291,6 +324,7 @@ side({
 	requires = { "side_logs" },
 	objectives = { collect(5, "shinyTrinket", "carrionCrow", 0.4) },
 	final = true,
+	barks = { accept = 1, half = 1, done = 1 },
 })
 
 -- E. The burnt mill (9–13): Crow Field and the Smugglers' Hideout ---------------------------------------------
@@ -307,6 +341,7 @@ side({
 		use({ "mill_ruin" }, "quest.use.ruin", 3, "search"),
 		kill(6, "bandit", "meadows_crowfield"),
 	},
+	barks = { accept = 1, half = 1, done = 1 },
 })
 side({
 	id = "side_smugglers",
@@ -322,6 +357,7 @@ side({
 		collect(1, "ledger", "bandit", 1, nil, "elite"),
 	},
 	final = true,
+	barks = { accept = 1, half = 1, done = 1 },
 })
 
 -- F. The merchant road (10–14) -------------------------------------------------------------------------------
@@ -333,6 +369,7 @@ side({
 	arc = "road",
 	pages = 2,
 	objectives = { { type = "talk", n = 1, npc = "merchant_lucjan" } },
+	barks = { accept = 1, done = 1 },
 })
 side({
 	id = "side_goods",
@@ -346,6 +383,7 @@ side({
 		use({ "wagon_goods" }, "quest.use.wagon", 2, "crate"),
 		collect(8, "clothBale", "bandit", 0.5, "meadows_banditroad"),
 	},
+	barks = { accept = 1, half = 1, done = 1 },
 })
 side({
 	id = "side_wanted",
@@ -357,6 +395,7 @@ side({
 	requires = { "side_goods" },
 	objectives = { kill(15, "bandit", "meadows_banditroad") },
 	final = true,
+	barks = { accept = 1, half = 1, done = 1 },
 })
 
 -- G. The Old Quarry (11–16) ----------------------------------------------------------------------------------
@@ -368,6 +407,7 @@ side({
 	arc = "quarry",
 	pages = 2,
 	objectives = { deliver("smithLetter") },
+	barks = { accept = 1, done = 1 },
 })
 side({
 	id = "side_tools",
@@ -379,6 +419,7 @@ side({
 	requires = { "side_ore" },
 	objectives = { collect(6, "minerPick", "koboldMiner", 0.5) },
 	where = { map = "meadows", area = "meadows_diggings" },
+	barks = { accept = 1, half = 1, done = 1 },
 })
 side({
 	id = "side_tunnels",
@@ -393,6 +434,7 @@ side({
 		{ type = "gather", n = 8, node = "vein_iron" },
 	},
 	final = true,
+	barks = { accept = 1, half = 1, done = 1 },
 })
 
 -- H. The Goblin Camp (14–18) ---------------------------------------------------------------------------------
@@ -407,6 +449,7 @@ side({
 		kill(12, "goblinScout", "meadows_goblincamp"),
 		use({ "totem_goblin" }, "quest.use.totem", 3, "fire"),
 	},
+	barks = { accept = 1, half = 1, done = 1 },
 })
 side({
 	id = "side_foreman",
@@ -421,6 +464,7 @@ side({
 		kill(2, "koboldMiner", nil, "elite"),
 	},
 	final = true,
+	barks = { accept = 1, half = 1, done = 1 },
 })
 
 -- I. Bear Ravine (16–20) -------------------------------------------------------------------------------------
@@ -432,6 +476,7 @@ side({
 	arc = "ravine",
 	pages = 2,
 	objectives = { deliver("hunterSupplies") },
+	barks = { accept = 1, done = 1 },
 })
 side({
 	id = "side_bears",
@@ -443,6 +488,13 @@ side({
 	requires = { "side_hunter" },
 	objectives = { kill(10, "brownBear"), collect(4, "bearClaw", "brownBear", 0.4) },
 	where = { map = "meadows", area = "meadows_bearridge" },
+	barks = { accept = 1, half = 1, done = 1, stuck = 1 },
+	-- S101b: two small healing potions for the asking; side_den remembers the other answers (recall)
+	choices = Talk.onPage(2, {
+		Talk.answer("supplies", Talk.gift("potion_hp_1", 2)),
+		Talk.answer("quiet"),
+		Talk.answer("fire"),
+	}),
 })
 side({
 	id = "side_den",
@@ -457,6 +509,16 @@ side({
 		kill(6, "goblinScout", "meadows_bearridge"),
 	},
 	final = true,
+	barks = { accept = 1, half = 1, near = 1, done = 1, death = 1, stuck = 1 },
+	-- S101b: which objective the tracker leads to first; the first page answers what was said in side_bears; Borys
+	-- walks with the player to the den and through the ravine (no new objective: progress and the ledger unchanged)
+	choices = Talk.onPage(3, {
+		Talk.answer("denFirst", Talk.focus(1)),
+		Talk.answer("goblinsFirst", Talk.focus(2)),
+		Talk.answer("drums"),
+	}),
+	recall = { p1 = "side_bears" },
+	companion = Talk.follow("hunter_borys", "meadows", { 1, 2 }, { join = 2, wait = 1, back = 1 }),
 })
 
 -- J. The Stable (20–22) -------------------------------------------------------------------------------------------
@@ -476,6 +538,7 @@ side({
 	objectives = { collect(3, "harnessPiece", "goblinScout", 0.4, "meadows_goblincamp") },
 	expShare = STABLE_EXP,
 	minLevel = STABLE_MIN,
+	barks = { accept = 1, half = 1, done = 1 },
 })
 side({
 	id = "side_stable_stallion",
@@ -491,6 +554,7 @@ side({
 	},
 	expShare = STABLE_EXP,
 	minLevel = STABLE_MIN,
+	barks = { accept = 1, half = 1, done = 1 },
 })
 side({
 	id = "side_stable_ride",
@@ -508,6 +572,7 @@ side({
 	cosmetic = "mountskin_meadow",
 	expShare = STABLE_EXP,
 	minLevel = STABLE_MIN,
+	barks = { accept = 1, done = 1 },
 })
 
 -- Arcs in journal order (one per Meadows area; S96: the stable last).

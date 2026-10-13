@@ -52,6 +52,7 @@ function AccountSchema.accountTemplate(): AccountData
 			keys = {},
 			devPins = {},
 			mapCloseOnWalk = true,
+			barks = true, -- S101b: NPC comments during quests (reconcile adds it to old accounts)
 		},
 		purchases = {},
 		dailyLimits = { day = 0, protectScrolls = 0 },
@@ -96,6 +97,7 @@ function AccountSchema.characterTemplate(): CharacterData
 			weekly = { week = 0, list = {}, rerolls = 0 }, -- S98 (reconcile adds it to old characters)
 			contract = { done = 0 }, -- S98; S99: hunting contracts (Logic/Contracts), migration 7
 			side = { active = {}, done = {} },
+			said = {}, -- S101b: dialogue answers (reconcile adds it to old characters, no migration)
 		},
 		guildId = nil,
 		auctions = {},

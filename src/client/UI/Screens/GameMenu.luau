@@ -431,6 +431,7 @@ local function GameMenu(scope: Scope, close: () -> ()): Fusion.Child
 			row(scope, 14, "menu.groupRings", toggle(scope, "groupRings", true)),
 			row(scope, 14, "menu.mapCloseOnWalk", toggle(scope, "mapCloseOnWalk", true)),
 			row(scope, 14, "menu.betterItem", toggle(scope, "betterItem", true)),
+			row(scope, 14, "menu.barks", toggle(scope, "barks", true)), -- S101b: NPC comments during quests
 			row(
 				scope,
 				14,

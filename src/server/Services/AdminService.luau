@@ -66,6 +66,7 @@ local AdminService = {
 		"QuestService",
 		"SideQuestService",
 		"ContractService", -- S99: /contract
+		"CompanionService", -- S101b: /companion
 		"GuildService",
 		"MailService",
 		"AuctionService",

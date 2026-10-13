@@ -191,6 +191,60 @@ local Config = {
 		greyGap = 6,
 		contractBacklog = 3, -- S99: levels of backlog an existing character keeps at the first load after S99
 	},
+	-- Quest dialogue (S101b, DESIGN-15 §3.5): the only items an answer may give (`item` effect of Logic/Dialogue),
+	-- id -> at most this many in one gift, once per character and quest. Small consumables only: no equipment, no
+	-- currency (better gear stays in the drops).
+	Dialogue = {
+		gifts = { potion_hp_1 = 3, potion_mana_1 = 3 },
+	},
+	-- NPC comments during quests (S101b, Logic/Barks + BarkController; client only, no effect on play). Seconds
+	-- between any two comments (`gap`) and between the same quest + event (`sameEvent`), at most `perMinute` in a
+	-- 60 s window; "near the objective" within `nearRadius` studs; the hint after `stuckAfter` seconds of play
+	-- without progress (never in town), repeated every `stuckRepeat`; a comment on death at most every
+	-- `deathRepeat`; the bubble over the speaker within `bubbleRange` studs (else the portrait box at the screen's
+	-- edge), shown `bubbleSeconds` / `toastSeconds`; a comment held while the speaker's dialog is open waits at
+	-- most `holdSeconds`.
+	Barks = {
+		gap = 20,
+		sameEvent = 90,
+		perMinute = 3,
+		nearRadius = 35,
+		stuckAfter = 480,
+		stuckRepeat = 900,
+		deathRepeat = 300,
+		bubbleRange = 60,
+		bubbleSeconds = 5,
+		toastSeconds = 5,
+		holdSeconds = 15,
+	},
+	-- Quest companion (S101b, Logic/Companion + CompanionService; studs and seconds): stands `followDist` from the
+	-- player and walks once they are farther than `walkFrom`; teleports next to them past `catchUp` or after
+	-- `stuckSeconds` without moving while walking; a leading companion waits once the player is farther than
+	-- `waitDist` and walks on under `resumeDist` (a following one hurries past `waitDist`); lost = the player farther
+	-- than `failDist` for `failSeconds` (back to the start, rejoined within `rejoin` of it); stays `arriveLinger`
+	-- seconds after arriving; path legs at most `legMax` long; walk speeds `speedFollow` (at least the player's 16
+	-- on foot, at most 2x: riding and sprinting players are caught up by teleport) and `speedLead`; the server loop
+	-- ticks every `tick` seconds; companion lines at most every `lineGap` seconds; a leading companion aims
+	-- `lookAhead` studs ahead along its route; a following one recomputes its path at most every `pathEvery` seconds.
+	Companion = {
+		followDist = 6,
+		walkFrom = 10,
+		catchUp = 90,
+		stuckSeconds = 4,
+		waitDist = 28,
+		resumeDist = 16,
+		failDist = 150,
+		failSeconds = 20,
+		rejoin = 20,
+		arriveLinger = 6,
+		legMax = 220,
+		speedFollow = 18,
+		speedLead = 13,
+		tick = 0.25,
+		lineGap = 30,
+		lookAhead = 8,
+		pathEvery = 1,
+	},
 	-- Skills (S28, DESIGN §14): `breakpoints` turns the rank 5 / 10 breakpoints on (off = numbers only).
 	Skills = {
 		breakpoints = true,

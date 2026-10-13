@@ -9,6 +9,9 @@
 -- the week's boss contract (the highest boss open to the character, `Weekly.bossContract.n` won dungeon runs: only
 -- the "boss" event DungeonService fires after a won run counts, so Config.Boss.dailyRuns always applies), both
 -- collected at the board.
+-- S101b (DESIGN-15 §3.5): answers on quest pages (QuestSay(questId, choiceId), Logic/Dialogue.canSay, saved for good in
+-- character.quests.said; an `item` answer needs the backpack space first) for the story and the side quests, and
+-- CompanionService.Refresh after every change of the active quests (the companion of Logic/Companion).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -18,6 +21,7 @@ local Shared = ReplicatedStorage.Shared
 local Analytics = require(script.Parent.Parent.Analytics)
 
 local Clock = require(Shared.Util.Clock)
+local Dialogue = require(Shared.Logic.Dialogue)
 local ItemRoll = require(Shared.Logic.ItemRoll)
 local Log = require(Shared.Util.Log)
 local Net = require(Shared.Net)
@@ -61,8 +65,17 @@ local ZoneService: any
 local SideQuestService: any
 local ContractService: any
 local CosmeticService: any
+local Registry: any -- S101b: CompanionService during play (it is not in Deps: no cycle with the quest services)
 
 local rng = Rng.new()
+
+-- S101b: the companion follows the active quests (Logic/Companion.want).
+local function refreshCompanion(player: Player)
+	local companions = Registry and Registry.Get("CompanionService")
+	if companions then
+		companions.Refresh(player)
+	end
+end
 
 local function character(player: Player): Types.CharacterData?
 	return PlayerStateService.GetCharacter(player)
@@ -245,6 +258,8 @@ local function handle(player: Player, kind: string, data: { [string]: any })
 	SideQuestService.Handle(player, kind, data)
 	-- S99: the hunting contract (kills of its area)
 	ContractService.Handle(player, kind, data)
+	-- S101b: progress may open or close the companion's objectives
+	refreshCompanion(player)
 end
 
 function QuestService.Handle(player: Player, kind: string, data: { [string]: any }?)
@@ -303,6 +318,7 @@ local function accept(player: Player, npcId: string): (boolean, string?)
 	})
 	handle(player, "talk", { npc = npcId })
 	catchUp(player)
+	refreshCompanion(player)
 	return true, nil
 end
 
@@ -336,6 +352,54 @@ local function turnIn(player: Player, npcId: string): (boolean, string?)
 	give(player, quest.reward)
 	Net.Fire(player, "QuestCompleted", `quest.{quest.id}.title`)
 	log:info("%s completed %s", player.Name, quest.id)
+	refreshCompanion(player)
+	return true, nil
+end
+
+-- S101b: the player's answer on a quest page (story or side). The page's NPC (giver for an offer page, turn-in NPC for
+-- the hand-in page) must be near and the page shown now (Logic/Dialogue.canSay); once per character and quest. An
+-- `item` answer gives a small consumable of Config.Dialogue.gifts; without the backpack space nothing is saved (the
+-- player can answer later, another answer works at once). `hint` and `focus` the client reads from `said`.
+local function say(player: Player, questId: string, choiceId: string): (boolean, string?)
+	local char = character(player)
+	if not char then
+		return false, "error.wrongPhase"
+	end
+	local main = Quests.Main.get(questId)
+	local quest: any = main or Quests.npcQuest(questId)
+	if not quest then
+		return false, "error.badRequest"
+	end
+	local kind: Dialogue.Kind = if main then "main" else "side"
+	local option = Dialogue.option(quest, choiceId)
+	if not option then
+		return false, "quest.say.unknown"
+	end
+	local err: string? = "npc.error.tooFar"
+	local ok = false
+	for _, npcId in { quest.giver, quest.turnIn } do
+		if Npcs.get(npcId) and NpcService.Near(player, npcId) then
+			local allowed, reason = Dialogue.canSay(char.quests, char.level, kind, quest, choiceId, npcId)
+			if allowed then
+				ok = true
+				break
+			end
+			err = reason
+		end
+	end
+	if not ok then
+		return false, err
+	end
+	local effect: any = option.effect
+	if effect and effect.kind == "item" then
+		local items = { { id = effect.id :: string, n = effect.n :: number } }
+		if not canFit(player, items) then
+			return false, "inventory.full"
+		end
+		InventoryService.GiveNew(player, effect.id, effect.n)
+		Net.Fire(player, "Toast", "quest.say.gift", { item = `@item.{effect.id}.name`, n = effect.n }, "success")
+	end
+	PlayerStateService.Set(player, { "character", "quests", "said", questId }, choiceId)
 	return true, nil
 end
 
@@ -436,6 +500,7 @@ function QuestService.SetMain(player: Player, questId: string): boolean
 		progress = QuestLogic.emptyProgress(quest.objectives),
 	})
 	catchUp(player)
+	refreshCompanion(player)
 	return true
 end
 
@@ -452,6 +517,7 @@ function QuestService.CompleteMain(player: Player): boolean
 		progress[i] = objective.n
 	end
 	PlayerStateService.Set(player, { "character", "quests", "main", "progress" }, progress)
+	refreshCompanion(player)
 	return true
 end
 
@@ -523,6 +589,7 @@ function QuestService.Init(registry)
 	SideQuestService = registry.Get("SideQuestService")
 	ContractService = registry.Get("ContractService")
 	CosmeticService = registry.Get("CosmeticService")
+	Registry = registry
 end
 
 function QuestService.Start()
@@ -532,6 +599,7 @@ function QuestService.Start()
 	Net.Handle("DailyClaim", claim)
 	Net.Handle("WeeklyClaim", claimWeekly)
 	Net.Handle("BossContractClaim", claimBossContract)
+	Net.Handle("QuestSay", say)
 
 	QuestEvents.Fired:Connect(function(player: Player, kind: string, data: { [string]: any })
 		handle(player, kind, data)

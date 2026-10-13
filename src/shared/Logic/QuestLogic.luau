@@ -108,6 +108,9 @@ function QuestLogic.amount(objective: Objective, kind: string, data: { [string]:
 		return 1
 	elseif t == "level" then
 		return if kind == "level" and (data.level or 0) >= (objective.level or 1) then objective.n else 0
+	elseif t == "escort" then
+		-- S101b: only CompanionService fires it, when the leading companion arrives with the player
+		return if kind == "escort" and objective.npc ~= nil and data.npc == objective.npc then 1 else 0
 	elseif t == kind then
 		-- fish, loot, stats, learn, potion, duel, event (S98; WorldEventService fires it from S101)
 		return 1

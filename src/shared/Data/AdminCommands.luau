@@ -369,6 +369,8 @@ cmd(
 	{ dangerActions = { "reset" } }
 )
 cmd("quests", "anchor", { str("id", true) })
+-- S101b: the quest companion of the caller (or of a named player): what it is, or send it back to its start
+cmd("quests", "companion", { enum("action", { "info", "reset" }), ref("player", "player", true) })
 -- S99: hunting contracts of the caller's character (`set <level>` = that contract active, the ones before done)
 cmd(
 	"quests",

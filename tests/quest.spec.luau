@@ -29,6 +29,7 @@ local KNOWN_TYPES = {
 	learn = true,
 	potion = true,
 	duel = true,
+	escort = true, -- S101b: walk with the leading companion (CompanionService)
 }
 
 describe("Main quests data", function()

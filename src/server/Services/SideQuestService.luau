@@ -9,6 +9,8 @@
 -- scout of the region, progressed only by the "boss" event of a won dungeon run (no past kills count).
 --   SideAccept(questId) · SideTurnIn(questId, choiceIndex?) · SideAbandon(questId) · QuestUse(anchorId) ·
 --   CancelQuestUse()
+-- S101b: every change of the active side quests refreshes the quest companion (CompanionService.Refresh, taken from
+-- the registry during play: it is not in Deps).
 
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
@@ -56,8 +58,17 @@ local CharacterService: any
 local ZoneService: any
 local MountService: any
 local CosmeticService: any
+local Registry: any
 
 local rng = Rng.new()
+
+-- S101b: the companion follows the active quests (Logic/Companion.want).
+local function refreshCompanion(player: Player)
+	local companions = Registry and Registry.Get("CompanionService")
+	if companions then
+		companions.Refresh(player)
+	end
+end
 
 local ANCHOR_TAG = "QuestAnchor"
 local RANGE_TOLERANCE = 3
@@ -202,6 +213,7 @@ local function accept(player: Player, questId: string): (boolean, string?)
 		end
 	end
 	catchUp(player)
+	refreshCompanion(player)
 	log:info("%s accepted %s", player.Name, quest.id)
 	return true, nil
 end
@@ -275,6 +287,7 @@ local function turnIn(player: Player, questId: string, choiceIndex: number?): (b
 	Net.Fire(player, "CombatFx", { { k = "reward", exp = quest.reward.exp, gold = quest.reward.gold } })
 	Net.Fire(player, "QuestCompleted", `quest.{quest.id}.title`)
 	log:info("%s completed %s", player.Name, quest.id)
+	refreshCompanion(player)
 	return true, nil
 end
 
@@ -284,6 +297,7 @@ local function abandon(player: Player, questId: string): (boolean, string?)
 		return false, "error.badRequest"
 	end
 	setEntry(player, questId, nil)
+	refreshCompanion(player)
 	return true, nil
 end
 
@@ -396,6 +410,7 @@ function SideQuestService.Give(player: Player, questId: string): boolean
 	PlayerStateService.Set(player, { "character", "quests", "side", "done", questId }, nil)
 	setEntry(player, quest.id, SideQuests.newEntry(quest))
 	catchUp(player)
+	refreshCompanion(player)
 	return true
 end
 
@@ -420,6 +435,7 @@ function SideQuestService.Complete(player: Player, questId: string): boolean
 		end
 	end
 	setEntry(player, questId, ensureChoice(player, quest, updated))
+	refreshCompanion(player)
 	return true
 end
 
@@ -434,6 +450,7 @@ function SideQuestService.Reset(player: Player, questId: string?): boolean
 	else
 		PlayerStateService.Set(player, { "character", "quests", "side" }, { active = {}, done = {} })
 	end
+	refreshCompanion(player)
 	return true
 end
 
@@ -477,6 +494,7 @@ function SideQuestService.Init(registry)
 	ZoneService = registry.Get("ZoneService")
 	MountService = registry.Get("MountService")
 	CosmeticService = registry.Get("CosmeticService")
+	Registry = registry
 end
 
 function SideQuestService.Start()

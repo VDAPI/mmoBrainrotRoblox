@@ -76,6 +76,10 @@ local SETTINGS: { [string]: (value: any, player: Player) -> boolean } = {
 	betterItem = function(value)
 		return type(value) == "boolean"
 	end,
+	-- S101b: NPC comments during quests (BarkController).
+	barks = function(value)
+		return type(value) == "boolean"
+	end,
 	-- S30 ladder: hide below Unique (2) or Heroic (3); Legendary+ is always shown.
 	lootHideBelow = function(value)
 		return type(value) == "number" and value == math.floor(value) and value >= 0 and value <= Rarities.HEROIC

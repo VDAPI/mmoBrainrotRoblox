@@ -111,7 +111,10 @@ local function buildBoard(def: Npcs.NpcDef, parent: Instance)
 	positions[def.id] = position
 end
 
-local function build(def: Npcs.NpcDef, parent: Instance)
+-- S101b: shared by CompanionService. The NPC's figure (R15 from a HumanoidDescription in its colours, the hat in the
+-- accent colour welded to the head), unparented and unanchored, without NpcId, plate or placement; nil when Roblox
+-- could not build it.
+function NpcService.Figure(def: Npcs.NpcDef): Model?
 	local description = Instance.new("HumanoidDescription")
 	local body = Color3.fromHex(def.colors.body)
 	local skin = Color3.fromHex("#C9A27E")
@@ -127,7 +130,7 @@ local function build(def: Npcs.NpcDef, parent: Instance)
 	end)
 	if not ok or not model then
 		log:warn("could not build NPC %s: %s", def.id, tostring(model))
-		return
+		return nil
 	end
 	local npc = model :: Model
 	npc.Name = def.id
@@ -135,12 +138,6 @@ local function build(def: Npcs.NpcDef, parent: Instance)
 	if humanoid then
 		humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
 		humanoid.HealthDisplayType = Enum.HumanoidHealthDisplayType.AlwaysOff
-	end
-	local root = npc:FindFirstChild("HumanoidRootPart") :: BasePart?
-	for _, part in npc:GetDescendants() do
-		if part:IsA("BasePart") then
-			part.Anchored = true
-		end
 	end
 	-- Placeholder hat in the accent colour.
 	local head = npc:FindFirstChild("Head") :: BasePart?
@@ -150,10 +147,28 @@ local function build(def: Npcs.NpcDef, parent: Instance)
 		hat.Size = Vector3.new(1.4, 0.5, 1.4)
 		hat.Color = Color3.fromHex(def.colors.accent)
 		hat.Material = Enum.Material.Fabric
-		hat.Anchored = true
 		hat.CanCollide = false
 		hat.CFrame = head.CFrame * CFrame.new(0, head.Size.Y / 2 + 0.2, 0)
+		local weld = Instance.new("WeldConstraint")
+		weld.Part0 = head
+		weld.Part1 = hat
+		weld.Parent = hat
 		hat.Parent = npc
+	end
+	return npc
+end
+
+local function build(def: Npcs.NpcDef, parent: Instance)
+	local npc = NpcService.Figure(def)
+	if not npc then
+		return
+	end
+	local humanoid = npc:FindFirstChildOfClass("Humanoid")
+	local root = npc:FindFirstChild("HumanoidRootPart") :: BasePart?
+	for _, part in npc:GetDescendants() do
+		if part:IsA("BasePart") then
+			part.Anchored = true
+		end
 	end
 	local position = worldPosition(def)
 	local height = if root and humanoid then humanoid.HipHeight + root.Size.Y / 2 else 3

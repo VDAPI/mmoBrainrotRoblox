@@ -2,7 +2,8 @@
 -- Quests on the client (DESIGN §20): the journal (L), the quest conversation with NPCs (story and, S27, side
 -- quests), the contract board, markers above NPCs (gold "!" quest available, S98: grey "!" an offer far below the
 -- level, gold "?" ready to hand in, grey "?" in progress; Logic/NpcMarks, style in UI/NpcMarkState), the HUD tracker with the direction arrow and the target on the minimap for the one
--- tracked quest (the story or a side quest, QuestTrack.Focus), and the completion message.
+-- tracked quest (the story or a side quest, QuestTrack.Focus), and the completion message. S101b: the saved answers
+-- lead the target (QuestText `quests` argument) and a quest companion moves it (refreshed every second meanwhile).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
@@ -117,14 +118,14 @@ local function refreshTarget()
 		local side = Quests.npcQuest(focus.id or "")
 		local entry = SideQuests.activeOf(quests)[focus.id or ""]
 		if side and type(entry) == "table" then
-			QuestTrack.Target:set(QuestText.sideTarget(side, entry, level))
+			QuestTrack.Target:set(QuestText.sideTarget(side, entry, level, quests))
 			return
 		end
 		QuestTrack.Focus:set(nil)
 	end
 	local main = if type(quests) == "table" then quests.main else nil
 	local quest = if type(main) == "table" then Quests.Main.get(main.id) else nil
-	QuestTrack.Target:set(if quest and main then QuestText.target(quest, main.progress or {}, level) else nil)
+	QuestTrack.Target:set(if quest and main then QuestText.target(quest, main.progress or {}, level, quests) else nil)
 end
 
 function QuestController.Init(registry)
@@ -223,7 +224,17 @@ function QuestController.Start()
 	scope:Observer(QuestTrack.Focus):onChange(refreshTarget)
 	-- S99: a done hunting contract points at its scout on the scout's map, else at the board
 	scope:Observer(State.Value({ "character", "location", "map" })):onChange(refreshTarget)
+	-- S101b: the companion's phase and figure move an escort target
+	scope:Observer(State.Value({ "companion" })):onChange(refreshTarget)
 	refreshTarget()
+	task.spawn(function()
+		while true do
+			task.wait(1)
+			if State.Get({ "companion" }) ~= nil then
+				refreshTarget()
+			end
+		end
+	end)
 	-- NPC models stream in and out: refresh the markers regularly.
 	task.spawn(function()
 		while true do

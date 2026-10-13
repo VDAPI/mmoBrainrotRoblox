@@ -14,6 +14,8 @@
 --   duel     { won }                                     (DuelService, both fighters)
 --   event    { eventId, kind, success, map }    (WorldEventService, every rewarded participant; S98 template
 --            "event" counts on the kind alone, S101)
+--   escort   { npc, quest }                               (S101b CompanionService: the leading companion arrived
+--            with the player)
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 

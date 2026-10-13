@@ -3,8 +3,8 @@
 --
 -- Tree: { account = profile.Data (sent without .characters), slots = summaries,
 --         character = profile.Data.characters[slot] (same table!), session = {...},
---         derived/zone/death/pvp/worldEvent = runtime-only branches owned by their services (worldEvent: S101,
---         WorldEventService) }
+--         derived/zone/death/pvp/worldEvent/companion = runtime-only branches owned by their services (worldEvent:
+--         S101, WorldEventService; companion: S101b, CompanionService) }
 -- Writes through Set/Update/ArrayInsert/ArrayRemove mutate profile data directly and queue a diff;
 -- diffs are batched and flushed once per Heartbeat.
 

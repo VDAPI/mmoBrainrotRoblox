@@ -161,6 +161,27 @@ T.describe("AccountSchema", function()
 		T.expect(quests.mainDone).toBe(3)
 	end)
 
+	T.it("S101b: dialogue answers and the comments switch come from the templates, without a migration", function()
+		T.expect(AccountSchema.CURRENT).toBe(7)
+		T.expect(AccountSchema.characterTemplate().quests.said).toEqual({})
+		T.expect(AccountSchema.accountTemplate().settings.barks).toBe(true)
+		local old: any = AccountSchema.accountTemplate()
+		old.settings.barks = nil
+		old.characters["1"] = AccountSchema.characterTemplate()
+		old.characters["1"].quests.said = nil
+		T.expect(AccountSchema.migrate(old)).toEqual({})
+		T.expect(old.settings.barks).toBe(true)
+		T.expect(old.characters["1"].quests.said).toEqual({})
+		-- an answer and a switched-off setting stay
+		local kept: any = AccountSchema.accountTemplate()
+		kept.settings.barks = false
+		kept.characters["1"] = AccountSchema.characterTemplate()
+		kept.characters["1"].quests.said = { side_bears = "quiet" }
+		AccountSchema.migrate(kept)
+		T.expect(kept.settings.barks).toBe(false)
+		T.expect(kept.characters["1"].quests.said).toEqual({ side_bears = "quiet" })
+	end)
+
 	T.it("S100: the login streak comes from the template, without a migration", function()
 		T.expect(AccountSchema.accountTemplate().login).toEqual({ day = 0, last = 0 })
 		local old: any = AccountSchema.accountTemplate()

@@ -149,6 +149,8 @@ local Definitions: { [string]: Definition } = {
 	WeeklyClaim = { kind = "function", dir = "c2s", rate = 2, args = { "integer" } }, -- (weekly contract index)
 	BossContractClaim = { kind = "function", dir = "c2s", rate = 2, args = {} }, -- () the week's boss contract
 	QuestCompleted = { kind = "event", dir = "s2c" }, -- (titleKey, args?) big message + sound
+	-- S101b: (questId, choiceId) the player's answer on a quest page (Logic/Dialogue.canSay, quests.said)
+	QuestSay = { kind = "function", dir = "c2s", rate = 4, args = { "string", "string" } },
 	-- Hunting contracts (S99): (npcId) the contract board or the scout of the contract's region
 	ContractAccept = { kind = "function", dir = "c2s", rate = 2, args = { "string" } },
 	ContractTurnIn = { kind = "function", dir = "c2s", rate = 2, args = { "string" } },

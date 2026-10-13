@@ -74,8 +74,9 @@ return {
 		-- S99: RULES.penalty are the rotation weights of Logic/ContractGen (which area, not how much)
 		{ path = "Data/Quests/Contracts", omit = { "penalty" } },
 		{ path = "Data/Quests/Daily" },
-		{ path = "Data/Quests/Main" },
-		{ path = "Data/Quests/Side" },
+		-- S101b: dialogue fields, not balance (answers, page variants, comment and companion-line counts, routes)
+		{ path = "Data/Quests/Main", omit = { "choices", "recall", "barks", "companion" } },
+		{ path = "Data/Quests/Side", omit = { "choices", "recall", "barks", "companion" } },
 		{ path = "Data/Quests/Weekly" },
 		{ path = "Data/Rarities", omit = LOOKS },
 		{ path = "Data/Recipes" },
@@ -103,6 +104,7 @@ return {
 		["Data/Items/Generate"] = "generator",
 		["Data/Areas/init"] = "sklejka",
 		["Data/Quests/init"] = "sklejka",
+		["Data/Quests/Talk"] = "sklejka", -- S101b: typed constructors of the dialogue fields
 		["Data/Skills/Build"] = "sklejka",
 		["Data/*/Types"] = "typy",
 		["Data/Terrain/*"] = "wygląd",

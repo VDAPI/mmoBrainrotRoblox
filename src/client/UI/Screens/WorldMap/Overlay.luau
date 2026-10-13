@@ -3,7 +3,8 @@
 -- star, the guide target, party members and own marks (buttons, clickable), the pulsing gold ring of the
 -- selection and the hover hint. Everything is created once per window; per frame only positions change
 -- (`step`). Hit areas keep Canvas.HIT pixels at every zoom and the hint is counter-scaled. S101: the world event's
--- glyph (a label, not a button) with its time to the start / end under it.
+-- glyph (a label, not a button) with its time to the start / end under it. S101b: a target with a `place` (the hint
+-- of a dialogue answer) shows the place's name under the star.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -17,6 +18,7 @@ local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local NavTarget = require(script.Parent.Parent.Parent.NavTarget)
 local QuestTrack = require(script.Parent.Parent.Parent.QuestTrack)
 local State = require(script.Parent.Parent.Parent.State)
+local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
 local Time = require(ReplicatedStorage.Shared.Logic.Time)
 local WorldEvents = require(ReplicatedStorage.Shared.Logic.WorldEvents)
@@ -85,6 +87,10 @@ function Overlay.new(scope: Scope): Api
 
 	local player = label(frame, "▲", Theme.Colors.Accent, 20, 12)
 	local quest = label(frame, "★", Theme.Colors.GoldBright, 18, 11)
+	-- S101b: the name of a hinted place under the star
+	local questPlace = label(frame, "", Theme.Colors.Parchment, 12, 11)
+	questPlace.Size = UDim2.fromOffset(160, 16)
+	questPlace.Visible = false
 	local nav = label(frame, "◆", Color3.fromHex("#F2E28A"), 16, 11)
 	-- S101: the world event on this map (warning: faded) and its time to the start / end.
 	local eventMarker = label(frame, "⚔", Theme.Colors.GoldBright, 20, 11)
@@ -246,9 +252,14 @@ function Overlay.new(scope: Scope): Api
 				and target.z ~= nil
 				and Fusion.peek(QuestTrack.Tracked) == true
 			quest.Visible = questOn
+			questPlace.Visible = questOn and target ~= nil and target.place ~= nil
 			if questOn and target and target.x and target.z then
 				local p = Canvas.toPixel(cached, target.x, target.z)
 				quest.Position = UDim2.fromOffset(p.X, p.Y)
+				if target.place then
+					questPlace.Position = UDim2.fromOffset(p.X, p.Y + 16)
+					questPlace.Text = Text.now(target.place)
+				end
 			end
 			local event = State.Get({ "worldEvent" })
 			local eventDef = if type(event) == "table" and event.map == cached.mapId

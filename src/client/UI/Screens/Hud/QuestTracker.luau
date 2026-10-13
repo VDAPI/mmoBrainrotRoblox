@@ -3,7 +3,8 @@
 -- main quest with their objectives and an arrow towards the tracked one's target (an NPC or a place on this map, or the portal leading to the target map), plus the
 -- daily contracts. The header collapses it. Elite II timers moved to Hud/Elite2Timer (FIX 2026-10-09). S99: the hunting
 -- contract between the story and the daily contracts (on top with the arrow when tracked; the next one to take with
--- "From: Contract board"; nothing while waiting for a level or after the 99th).
+-- "From: Contract board"; nothing while waiting for a level or after the 99th). S101b: targets follow the saved
+-- answers (QuestText `quests`), and a quest with a companion shows "<NPC> is waiting for you" / "went back".
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -144,6 +145,26 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 		local function npcName(npcId: string?): string
 			local npc = npcId and Npcs.get(npcId)
 			return if npc then Text.get(use, npc.nameKey) else ""
+		end
+		-- S101b: the quest companion's state under its quest
+		local companion = use(State.Value({ "companion" }))
+		local function companionLine(questId: string)
+			if type(companion) ~= "table" or companion.quest ~= questId then
+				return
+			end
+			local key = if companion.phase == "wait" and companion.mode == "lead"
+				then "companion.waiting"
+				elseif companion.phase == "back" and companion.mode == "lead" then "companion.back"
+				else nil
+			if key then
+				line(
+					Text.get(use, key, { npc = npcName(companion.npc) }),
+					Theme.Colors.GoldBright,
+					14,
+					Theme.Fonts.BodyMedium,
+					6
+				)
+			end
 		end
 
 		-- S29: every objective stays in the list (Logic/QuestRows); finished ones are green with a soft glow and
@@ -291,8 +312,9 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 			objectives(
 				`side:{sideQuest.id}`,
 				QuestText.rows(use, sideQuest.objectives, sideEntry.progress, sideQuest.turnIn),
-				QuestText.sideTarget(sideQuest, sideEntry, level)
+				QuestText.sideTarget(sideQuest, sideEntry, level, q)
 			)
+			companionLine(sideQuest.id)
 			gap()
 		end
 
@@ -309,7 +331,8 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 					Theme.Fonts.Body
 				)
 			end
-			objectives(`main:{quest.id}`, rows, QuestText.target(quest, main.progress or {}, level))
+			objectives(`main:{quest.id}`, rows, QuestText.target(quest, main.progress or {}, level, q))
+			companionLine(quest.id)
 		elseif not quest then
 			local nextQuest, ready = QuestLogic.nextMain(q.mainDone or 0, level)
 			if nextQuest and ready then

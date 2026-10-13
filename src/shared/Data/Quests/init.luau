@@ -12,6 +12,12 @@ export type DailyTemplate = Types.DailyTemplate
 export type SideQuest = Types.SideQuest
 export type Category = Types.Category
 export type ContractQuest = Types.ContractQuest
+-- S101b: dialogue
+export type ChoiceEffect = Types.ChoiceEffect
+export type DialogueChoice = Types.DialogueChoice
+export type ChoicePage = Types.ChoicePage
+export type BarkSet = Types.BarkSet
+export type CompanionDef = Types.CompanionDef
 
 local Main = require("@self/Main")
 local Daily = require("@self/Daily")

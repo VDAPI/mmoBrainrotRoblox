@@ -209,6 +209,18 @@ describe("Side quest data", function()
 		end
 	end)
 
+	it("S101b: side() keeps the dialogue fields (side_den)", function()
+		local den = assert(Quests.Side.get("side_den"))
+		expect(den.choices ~= nil and #(den.choices :: any).options == 3).toBe(true)
+		expect(den.recall).toEqual({ p1 = "side_bears" })
+		expect((den.barks :: any).near).toBe(1)
+		expect((den.companion :: any).npc).toBe("hunter_borys")
+		-- a quest without them has none
+		local granary = assert(Quests.Side.get("side_granary"))
+		expect(granary.choices).toBeNil()
+		expect(granary.companion).toBeNil()
+	end)
+
 	it("new NPCs have role, lines and a place for the innkeeper's gossip", function()
 		for _, npc in Npcs.list do
 			for i = 1, npc.lines or 0 do

@@ -2,6 +2,7 @@
 -- Main story (DESIGN §20): 32 quests from the arrival in Vaelthorn to the Frost Dragon Vaelgrath. The first
 -- ten are the tutorial (talking, potions, the healer, the blacksmith and +1, the portal, fighting, loot,
 -- gear, stat points, skills). Texts: quest.<id>.title / .text / .done (Localization).
+-- S101b (DESIGN-15 §3.5): comments during the quests 1-20 (`barks`, quest.<id>.bark.<event><n>; Logic/Barks).
 
 local Exp = require("../../Logic/Exp")
 local Types = require("./Types")
@@ -32,6 +33,7 @@ q({
 	turnIn = "captain",
 	objectives = { { type = "talk", n = 1, npc = "captain" } },
 	reward = { exp = exp(1, 0.3), gold = 100, items = { { id = "potion_hp_1", n = 5 } } },
+	barks = { accept = 1, done = 1 },
 })
 q({
 	id = "healer",
@@ -40,6 +42,7 @@ q({
 	turnIn = "healer",
 	objectives = { { type = "potion", n = 1 }, { type = "talk", n = 1, npc = "healer" } },
 	reward = { exp = exp(1, 0.4), gold = 300, items = { { id = "essence_dust", n = 6 } } },
+	barks = { accept = 1, half = 1, done = 1 },
 })
 q({
 	id = "smith",
@@ -48,6 +51,7 @@ q({
 	turnIn = "blacksmith",
 	objectives = { { type = "upgrade", n = 1, up = 1 }, { type = "talk", n = 1, npc = "blacksmith" } },
 	reward = { exp = exp(1, 0.5), gold = 150, items = { { id = "potion_mana_1", n = 5 } } },
+	barks = { accept = 1, half = 1, done = 1 },
 })
 q({
 	id = "portal",
@@ -56,6 +60,7 @@ q({
 	turnIn = "scout_meadows",
 	objectives = { { type = "reach", n = 1, map = "meadows" } },
 	reward = { exp = exp(1, 0.4), gold = 100 },
+	barks = { accept = 1, done = 1 },
 })
 q({
 	id = "firstHunt",
@@ -64,6 +69,7 @@ q({
 	turnIn = "scout_meadows",
 	objectives = { { type = "kill", n = 5, monster = "rabbit" }, { type = "loot", n = 1 } },
 	reward = { exp = exp(2, 0.6), gold = gold(2) },
+	barks = { accept = 1, half = 1, done = 1 },
 })
 q({
 	id = "gearUp",
@@ -72,6 +78,7 @@ q({
 	turnIn = "scout_meadows",
 	objectives = { { type = "equip", n = 1 }, { type = "stats", n = 1 } },
 	reward = { exp = exp(2, 0.4), gold = gold(2), items = { { id = "backpack_30", n = 1 } } },
+	barks = { accept = 1, half = 1, done = 1 },
 })
 q({
 	id = "wolves",
@@ -81,6 +88,7 @@ q({
 	-- S56: "learn" = a skill put on the bar
 	objectives = { { type = "kill", n = 8, monster = "wolf" }, { type = "learn", n = 1 } },
 	reward = { exp = exp(3, 0.2), gold = gold(3) },
+	barks = { accept = 1, half = 1, done = 1 },
 })
 q({
 	id = "wolfFangs",
@@ -89,6 +97,7 @@ q({
 	turnIn = "scout_meadows",
 	objectives = { { type = "collect", n = 6, monster = "wolf", item = "wolfFang", chance = 0.5 } },
 	reward = { exp = exp(4, 1), gold = gold(4) * 2, items = { { id = "blessing_hunter_1", n = 1 } } },
+	barks = { accept = 1, half = 1, done = 1 },
 })
 q({
 	id = "boars",
@@ -97,6 +106,7 @@ q({
 	turnIn = "scout_meadows",
 	objectives = { { type = "kill", n = 10, monster = "boar" } },
 	reward = { exp = exp(6, 0.4), gold = gold(6) * 2 },
+	barks = { accept = 1, half = 1, done = 1 },
 })
 q({
 	id = "herbs",
@@ -105,6 +115,7 @@ q({
 	turnIn = "healer",
 	objectives = { { type = "gather", n = 5, node = "bush_meadowsweet" } },
 	reward = { exp = exp(7, 1.55), gold = gold(7) * 2, items = { { id = "potion_hp_2", n = 10 } } },
+	barks = { accept = 1, half = 1, done = 1 },
 })
 
 -- Whispering Meadows and Mosshollow Cave ----------------------------------------------------------------
@@ -115,6 +126,7 @@ q({
 	turnIn = "scout_meadows",
 	objectives = { { type = "kill", n = 12, monster = "bandit" } },
 	reward = { exp = exp(10, 0.88), gold = gold(10) * 2, items = { { id = "backpack_45", n = 1 } } },
+	barks = { accept = 1, half = 1, done = 1 },
 })
 q({
 	id = "banditOrders",
@@ -123,6 +135,7 @@ q({
 	turnIn = "captain",
 	objectives = { { type = "collect", n = 1, monster = "bandit", item = "banditOrders", chance = 0.25 } },
 	reward = { exp = exp(12, 0.87), gold = gold(12) * 2, items = { { id = "stone_map", n = 2 } } },
+	barks = { accept = 1, done = 1 },
 })
 q({
 	id = "goblinCamp",
@@ -131,6 +144,7 @@ q({
 	turnIn = "scout_meadows",
 	objectives = { { type = "kill", n = 15, monster = "goblinScout" } },
 	reward = { exp = exp(14, 0.86), gold = gold(14) * 2 },
+	barks = { accept = 1, half = 1, done = 1 },
 })
 q({
 	id = "mosshollow",
@@ -142,6 +156,7 @@ q({
 		{ type = "kill", n = 3, monster = "goblinScout", variant = "elite" },
 	},
 	reward = { exp = exp(16, 1.9), gold = gold(16) * 2, items = { { id = "blessing_warrior_2", n = 1 } } },
+	barks = { accept = 1, half = 1, done = 1 },
 })
 q({
 	id = "grimrok",
@@ -150,6 +165,7 @@ q({
 	turnIn = "captain",
 	objectives = { { type = "boss", n = 1, boss = "grimrok" } },
 	reward = { exp = exp(20, 0.8), gold = gold(20) * 3, items = { { id = "stone_dungeon_meadows", n = 1 } } },
+	barks = { accept = 1, done = 1 },
 })
 
 -- Duskwood and the Crypt -------------------------------------------------------------------------------

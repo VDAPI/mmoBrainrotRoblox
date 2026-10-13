@@ -1,15 +1,22 @@
 --!strict
 -- Client helpers for quests (S11): objective labels in the player's language, where an objective points to
 -- (for the direction arrow and the minimap) and the marker of an NPC ("!" / "?" / grey "?"). S99: the hunting
--- contract title (one key with arguments) and target.
+-- contract title (one key with arguments) and target. S101b: the saved answer leads the tracker (`focus`: another
+-- objective first, `hint`: an extra point; one helper `withDialogue` for the story and side quests) and the `escort`
+-- objective points at the companion while it is far, else at the goal.
 
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
 
 local AreaAdvice = require(ReplicatedStorage.Shared.Logic.AreaAdvice)
 local AreaProfileText = require(script.Parent.AreaProfileText)
 local AreaProfiles = require(ReplicatedStorage.Shared.Data.AreaProfiles)
 local Areas = require(ReplicatedStorage.Shared.Data.Areas)
 local Bosses = require(ReplicatedStorage.Shared.Data.Bosses)
+local Companion = require(ReplicatedStorage.Shared.Logic.Companion)
+local Config = require(ReplicatedStorage.Shared.Config)
+local Dialogue = require(ReplicatedStorage.Shared.Logic.Dialogue)
 local GatherNodes = require(ReplicatedStorage.Shared.Data.GatherNodes)
 local LevelBand = require(ReplicatedStorage.Shared.Logic.LevelBand)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
@@ -114,6 +121,13 @@ function QuestText.objective(use: any, objective: Objective, have: number, turnI
 		return Text.get(use, "quest.obj.upgrade", { up = objective.up or 1 })
 	elseif t == "level" then
 		return Text.get(use, "quest.obj.level", { level = objective.level or 1 })
+	elseif t == "escort" then
+		-- S101b: walk with the leading companion
+		local npc = Npcs.get(objective.npc or "")
+		return Text.get(use, "quest.obj.escort", {
+			npc = if npc then Text.get(use, npc.nameKey) else "?",
+			place = Text.get(use, objective.place or "quest.tracker"),
+		})
 	end
 	-- fish, equip, loot, stats, learn, potion, duel, event (S98: world events, counted from S101)
 	return Text.get(use, `quest.obj.{t}`, { count = count })
@@ -158,19 +172,125 @@ function QuestText.richRows(use: any, list: QuestRows.List, withReturn: boolean?
 	return lines
 end
 
-export type Target = { map: string, x: number?, z: number?, npc: string? }
+-- S101b: `place` = locale key of a point's name (a dialogue hint), shown under the star on the world map.
+export type Target = { map: string, x: number?, z: number?, npc: string?, place: string? }
+
+-- S101b: the companion figure of the local player (Workspace.World.Companions), if streamed in.
+local function companionFigure(): BasePart?
+	local world = Workspace:FindFirstChild("World")
+	local folder = world and world:FindFirstChild("Companions")
+	if not folder then
+		return nil
+	end
+	for _, model in folder:GetChildren() do
+		if model:GetAttribute("CompanionOf") == Players.LocalPlayer.UserId then
+			return model:FindFirstChild("HumanoidRootPart") :: BasePart?
+		end
+	end
+	return nil
+end
+
+-- S101b: an escort objective points at the companion while it is farther than Config.Companion.waitDist from the
+-- player, else at the goal; when the companion went back, at its start.
+local function escortTarget(quest: any, objective: Objective): Target?
+	local map = Maps.get(objective.map or "")
+	if not map then
+		return nil
+	end
+	local figure = companionFigure()
+	local character = Players.LocalPlayer.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+	if figure and root then
+		local gap = Vector3.new(figure.Position.X - root.Position.X, 0, figure.Position.Z - root.Position.Z)
+		if gap.Magnitude > Config.Companion.waitDist then
+			return {
+				map = map.id,
+				x = figure.Position.X - map.offset.x,
+				z = figure.Position.Z - map.offset.z,
+				npc = objective.npc,
+			}
+		end
+		return { map = map.id, x = objective.x, z = objective.z, place = objective.place }
+	end
+	local def = quest.companion
+	local from = if def then Companion.fromOf(def) else nil
+	if from and State.Get({ "companion", "phase" }) == "back" then
+		return { map = map.id, x = from.x, z = from.z }
+	end
+	return { map = map.id, x = objective.x, z = objective.z, place = objective.place }
+end
+
+-- S101b: the saved answer of a quest leads the tracker. `pick(index)` is where objective `index` points by the
+-- caller's own rules (and whether that point is precise). `focus` starts at that objective while it is open; `hint`
+-- is the point when the first open objective points nowhere better (kill / collect without an area or `where`, talk
+-- to an NPC on another map). S102 moves this into the shared objectiveTarget.
+local function withDialogue(
+	quest: any,
+	quests: any,
+	progress: { number },
+	pick: (index: number) -> (Target?, boolean)
+): Target?
+	if quests == nil then
+		return nil
+	end
+	local focus = Dialogue.focusOf(quest, quests)
+	local focused = if focus then quest.objectives[focus] else nil
+	if focus and focused and (progress[focus] or 0) < focused.n then
+		local target = pick(focus)
+		if target then
+			return target
+		end
+	end
+	local hint: any = Dialogue.hintOf(quest, quests)
+	if hint then
+		local first: number? = nil
+		for i, objective in quest.objectives do
+			if (progress[i] or 0) < objective.n then
+				first = i
+				break
+			end
+		end
+		if first then
+			local target, precise = pick(first)
+			local here = State.Get({ "character", "location", "map" })
+			local vague = target == nil
+				or not precise
+				or (quest.objectives[first].type == "talk" and target.map ~= here)
+			if vague then
+				return { map = hint.map, x = hint.x, z = hint.z, place = hint.place }
+			end
+		end
+	end
+	return nil
+end
 
 -- Where the first unfinished objective of a quest points (NPC, map) or the turn-in NPC when done. S22: kill and
 -- collect objectives point at the middle of the area with that monster at the player's level (or the lowest
--- such area); elite kills at the mouth of the cave with that elite.
-function QuestText.target(quest: Quests.MainQuest, progress: { number }, level: number?): Target?
+-- such area); elite kills at the mouth of the cave with that elite. S101b: `quests` (optional) lets the saved answer
+-- lead (withDialogue).
+function QuestText.target(quest: Quests.MainQuest, progress: { number }, level: number?, quests: any?): Target?
 	if QuestLogic.isComplete(progress, quest.objectives) then
 		local npc = Npcs.get(quest.turnIn)
 		return if npc then { map = npc.map, x = npc.position.x, z = npc.position.z, npc = npc.id } else nil
 	end
+	local led = withDialogue(quest, quests, progress, function(index: number): (Target?, boolean)
+		-- the plain rules for this one objective: every other one counts as done
+		local one: { number } = {}
+		for i, objective in quest.objectives do
+			one[i] = if i == index then (progress[i] or 0) else objective.n
+		end
+		local objective = quest.objectives[index]
+		local precise = not ((objective.type == "kill" or objective.type == "collect") and not objective.area)
+		return QuestText.target(quest, one, level), precise
+	end)
+	if led then
+		return led
+	end
 	for i, objective in quest.objectives do
 		if (progress[i] or 0) < objective.n then
-			if objective.type == "talk" then
+			if objective.type == "escort" then
+				return escortTarget(quest, objective)
+			elseif objective.type == "talk" then
 				local npc = Npcs.get(objectiveNpc(objective.npc) or "")
 				return if npc then { map = npc.map, x = npc.position.x, z = npc.position.z, npc = npc.id } else nil
 			elseif objective.type == "reach" and objective.map then
@@ -221,15 +341,32 @@ end
 
 -- S27: where a side quest points: its turn-in NPC when complete, else the first open objective (an anchor not used
 -- yet, the NPC to talk / deliver to, the objective's area, the place to reach), else the quest's `where` hint.
-function QuestText.sideTarget(quest: Quests.SideQuest, entry: any, level: number?): Target?
+function QuestText.sideTarget(quest: Quests.SideQuest, entry: any, level: number?, quests: any?): Target?
 	if SideQuests.isComplete(entry, quest) then
 		return npcTarget(quest.turnIn)
+	end
+	local progress: { number } = if type(entry) == "table" then entry.progress or {} else {}
+	local led = withDialogue(quest, quests, progress, function(index: number): (Target?, boolean)
+		-- the plain rules for this one objective: every other one counts as done
+		local one = { progress = {} :: { number }, used = if type(entry) == "table" then entry.used or {} else {} }
+		for i, objective in quest.objectives do
+			one.progress[i] = if i == index then (progress[i] or 0) else objective.n
+		end
+		local objective = quest.objectives[index]
+		local t = objective.type
+		local precise = not ((t == "kill" or t == "collect") and not objective.area and not quest.where)
+		return QuestText.sideTarget(quest, one, level), precise
+	end)
+	if led then
+		return led
 	end
 	local index = SideQuests.currentObjective(entry, quest)
 	local objective = if index then quest.objectives[index] else nil
 	if objective then
 		local t = objective.type
-		if t == "use" then
+		if t == "escort" then
+			return escortTarget(quest, objective)
+		elseif t == "use" then
 			local used: { string } = if type(entry) == "table" then entry.used or {} else {}
 			local anchors: { string } = objective.anchors or { objective.anchor :: string }
 			for _, id in anchors do

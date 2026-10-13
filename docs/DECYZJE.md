@@ -2938,3 +2938,44 @@
 - **S101 mapa:** widok świata nie ma węzłów regionów; glif wydarzenia stoi przy mapie i łowisku na liście map.
 - **S101 wiki:** pole `mechanics.worldEvents` z jawnie wybranymi polami (bez wzorów nagrody, wag skrzyni, skali,
   progów w HP, harmonogramu w sekundach) i strona mechaniki PL/EN (`order` 12, temat „world”).
+
+### S101b: Rozmowy w questach (wybory, komentarze NPC, towarzysz)
+
+- **S101b wybory:** najwyżej jedna strona z odpowiedziami na quest: strona oferty (numer `p1..pN`, albo `"text"` w
+  fabule bez stron) albo `"done"`; zapis `quests.said[questId]` na stałe (do `recall`), bez migracji (szablon +
+  `reconcile`). Efekty tylko `hint` / `focus` / `item`; „inna kolejność celów” z §3.5 = `focus` (tracker i strzałka),
+  bez zmiany kolejności liczenia. Konstruktory pól w `Data/Quests/Talk` (luau-lsp nie zawęża unii w literałach).
+- **S101b QuestSay:** serwer sprawdza NPC obok (dający dla strony oferty, oddający dla `"done"`) i to, że strona jest
+  teraz pokazywana (`Logic/Dialogue.canSay`); `item` tylko z `Config.Dialogue.gifts`, najwyżej jeden na quest, przy
+  pełnym plecaku nic się nie zapisuje (inna odpowiedź działa od razu). `/side reset` i `/quest set` nie czyszczą
+  `said`: odpowiedź zostaje na postaci jak upominek.
+- **S101b strona w toku:** poboczny przyjęty bez odpowiedzi (sprzed S101b) pokazuje u dającego stronę z odpowiedziami
+  przed `.progress`; fabuła w toku pokazuje stronę `"text"` u oddającego (tam stoi jej wiersz w rozmowie).
+- **S101b komentarze:** liczy je klient z replikowanego stanu (bez remote'u, bez wpływu na grę); mówca: `by`,
+  towarzysz (gdy jego figura jest w zasięgu dymka), oddający przy `done`, inaczej dający; dymek w `bubbleRange`,
+  inaczej okienko z portretem przy lewej krawędzi; wyłącznik `account.settings.barks`. `half` = suma postępu dochodzi
+  do połowy (≥ 0,5, nie „ponad”): przy Σ n = 2 połowa to jeden cel z dwóch; wymagane tylko przy Σ n ≥ 2.
+- **S101b komentarz u otwartej rozmowy:** linia NPC, z którym gracz właśnie rozmawia (np. `accept` przy przyjęciu), czeka
+  na zamknięcie okna najwyżej `Config.Barks.holdSeconds` (inaczej przyjęcie nigdy nie miałoby komentarza); wyciszenie
+  `SetQuiet` i wyłącznik dalej odrzucają komentarze bez kolejki. Quest, który pojawia się od razu pełny, mówi tylko `done`.
+- **S101b towarzysz:** klon figury NPC z `NpcService.Figure` sterowany przez serwer (`Humanoid:MoveTo`,
+  `PathfindingService` na odcinkach trasy i w stronę gracza, `NavPath.simplify`, `Steer`), bez encji (nie walczy, nie
+  ginie, nikt go nie wybierze), jedna mapa, najwyżej jeden (fabuła przed pobocznymi), stan tylko w gałęzi runtime
+  `companion`; porażka = powrót do punktu startu; brak figury = cel `escort` liczy się po dojściu gracza.
+- **S101b kolizje:** gra nie miała grup kolizji; `CompanionService` rejestruje `Companions` (korzeń figury stoi na
+  ziemi) i `Bodies` (części postaci graczy i potworów, przypisywane przy pojawieniu się), które się nie zderzają.
+- **S101b `follow`:** faza `wait` w trybie `follow` = gracz uciekł dalej niż `waitDist` (Borys go goni, linia
+  `comp.wait`); faza `back` = gracz opuścił mapę (Borys znika z linią `comp.back` i dołącza obok gracza po powrocie);
+  po wypełnieniu celów `during` zostaje `arriveLinger` s i odchodzi w stronę obozu.
+- **S101b animacja:** figura z `HumanoidDescription` nie ma skryptu `Animate`, więc chód i stanie (domyślne animacje
+  R15) gra klient (`CompanionController`) po prędkości korzenia.
+- **S101b treść:** wybory w `side_venom`, `side_bears`, `side_den` (z `recall` ← `side_bears`), Borys jako towarzysz
+  `follow` w `side_den` bez nowego celu (cele istniejących questów bez zmian: postęp w trakcie i księga); pierwszy `lead`
+  + `escort` w danych dopiero S102 (`frostSign`). Punkt `hint` Wita przesunięty z planu (−620, 560) na (−630, 430):
+  pierwotny leżał 144 st. od najbliższej grupy ropuch (limit 120).
+- **S101b komentarze w danych:** 15 questów fabuły 1–20, 28 pobocznych Łąk i 3 stajni (`accept`, `half` przy Σ n ≥ 2,
+  `done`), dodatkowo `stuck` w `side_venom` i `side_bears`, pełny zestaw w `side_den`. Upominek z rozmowy (2 Małe
+  Mikstury Życia raz na postać) poza modelem złota.
+- **S101b księga:** pola `choices`, `recall`, `barks`, `companion` pomijane przez zrzut `Data/Quests/Main` i
+  `Data/Quests/Side` (`omit` w `BALANCE_MODULES`, „dialogue fields, not balance”); `Data/Quests/Talk` w `NOT_BALANCE`;
+  `Config.Dialogue` / `Barks` / `Companion` poza `CONFIG_KEYS` (nie balans), więc bez wpisów w księdze.

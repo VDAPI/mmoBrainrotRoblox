@@ -6850,3 +6850,117 @@ Pliki: `src/shared/Data/WorldEvents.luau` (nowy), `src/shared/Logic/WorldEvents.
 `wiki/src/data/{mechanics,meta}.json`, `wiki/src/data/types.ts`,
 `wiki/src/content/mechanics/{pl/wydarzenia-swiata,en/world-events}.mdx` (nowe), `wiki/src/lib/mechanics.ts`,
 `wiki/src/i18n/{pl,en}.ts`, `docs/{BALANS,DESIGN,DESIGN-15,SWIAT,PRZEDMIOTY,DECYZJE,SESJE,PROGRESS}.md`.
+
+### S101b: Rozmowy w questach (wybory, komentarze NPC, towarzysz)
+
+Start na `cdd2117` (S101): commit i sekcja S101, `docs/DESIGN-15.md`, `Data/Quests/Types`, `tools/balance_reasons.luau`,
+`tests/balance1_20.spec.luau`, `Logic/NavPath`, `Quests.npcQuest` na miejscu; `scripts/check` zielony (6116 testów).
+Bez migracji (`AccountSchema.CURRENT = 7`). `docs/DESIGN-15.md` miał już zdanie o mechanizmach w §3.5 i wiersz S101b w
+§6 (z paczki planu), więc bez zmian.
+
+Co zrobiono:
+- **Dane i zapis (A):** typy `ChoiceEffect`, `DialogueChoice`, `ChoicePage`, `BarkSet`, `CompanionDef` i cel `escort`
+  (`npc`, `map`, `x`, `z`, `radius`, `place`, `via`) w `Data/Quests/Types` (reeksport w `Data/Quests`), pola `choices`,
+  `recall`, `barks`, `companion` w `MainQuest` i `SideQuest` (`side(def)` je kopiuje, `q(def)` przekazuje tabelę);
+  konstruktory w nowym `Data/Quests/Talk` (`hint`, `focus`, `gift`, `answer`, `onPage`, `onText`, `onDone`, `follow`,
+  `lead`, `escort`). Szablony: `character.quests.said = {}`, `account.settings.barks = true`; gałąź runtime
+  `{ "companion" }` (`Types.CompanionState`). `Config.Dialogue` (upominki `potion_hp_1` / `potion_mana_1`, obie istnieją),
+  `Config.Barks` (z `holdSeconds`), `Config.Companion` (z `lookAhead`, `pathEvery`).
+- **Logika (B1, B2, C1, C2):** `Logic/Dialogue` (`choicePage`, `option`, `saidOf`, `pageName`, `pageOf`, `canSay`,
+  `pageKey`, `focusOf`, `hintOf`, `pageKeys`, `allQuests`, `validate`), `Logic/Barks` (`EVENTS`, `events`, `share`,
+  `nearHit`, `isStuck`, `pick`, `pickComp`, `speaker`, `newLimiter`, `allow`, `required`, `validate`),
+  `Logic/Companion` (`want` z opcjonalnym źródłem list dla testów, `openIn`, `duringDone`, `escortOf`, `fromOf`,
+  `route`, `newState`, `spawnPoint`, `toward`, `step`, `validate` z odcinkami trasy ≤ `legMax`); `QuestLogic.amount`
+  liczy `escort` tylko dla NPC towarzysza.
+- **Serwer (B3, C3–C5):** remote `QuestSay` (function, c2s, rate 4, dwa napisy) i `say` w `QuestService` (fabuła i
+  poboczne, NPC obok, `canSay`, upominek z miejscem w plecaku i toastem `quest.say.gift`, zapis `said`);
+  `NpcService.Figure` wydzielone z `build` (kapelusz przyspawany do głowy); nowy `CompanionService` (Refresh, pętla co
+  0,25 s z uzgadnianiem co 1 s, figura bez kolizji z graczami i potworami, ścieżki, teleport doganiający, sprzątanie
+  przy porzuceniu, oddaniu, wypełnieniu celów, zmianie mapy, wyjściu postaci i graczu, `QuestEvents` „escort”);
+  `Refresh` z `QuestService` (`handle`, `accept`, `turnIn`, `SetMain`, `CompleteMain`) i `SideQuestService` (`accept`,
+  `turnIn`, `abandon`, `Give`, `Complete`, `Reset`, `SkipTo` przez `Give`) przez rejestr, bez `Deps`; `CharacterEntered`
+  i `ZoneChanged`. Ustawienie `barks` w `SettingsService`; `/companion info|reset [gracz]`.
+- **Klient (B4–B7, D1, D2):** `QuestDialog`: odpowiedzi pod stroną (przyciski 44 px, „Odpowiedz, zanim pójdziesz
+  dalej”, „Dalej / Przyjmij / Oddaj” nieaktywne do odpowiedzi), potem cytat odpowiedzi i kursywą odpowiedź NPC, warianty
+  stron z `recall`, pełny plecak → toast `quest.say.later`; `QuestText`: pomocnik `withDialogue` (focus, hint), cel
+  `escort` (etykieta, strzałka do towarzysza albo celu, po powrocie do startu), `Target.place`; `QuestController`
+  odświeża cel przy zmianie towarzysza i co 1 s, gdy jest; tracker: „{npc} czeka na ciebie” / „wracam na miejsce”
+  (tylko `lead`); mapa świata: nazwa miejsca pod gwiazdką; nowe `BarkController` (zdarzenia, śmierć, w pobliżu, długo
+  bez postępu, linie towarzysza, dymek `VaelthornBark`, kolejka 2, `SetQuiet`), `Hud/BarkToast` (portret z `Preview`,
+  PC 380 × 76 na 42%, telefon 300 × 68 na 30%), `CompanionController` (tabliczka z dopiskiem „towarzysz” dla
+  właściciela, animacje R15 chodu i stania po stronie klienta); wiersz „Komentarze NPC w trakcie questów” w menu.
+- **Teksty (E):** wszystkie linie PL i EN pisane od nowa według sensu z planu (bez zmian w istniejących `.title`, `.text`,
+  `.p1..pN`, `.progress`, `.done`).
+- **Wiki (F2):** etykieta `escort` w `tools/WikiData/Quests.label` (dziś nieużywana); pola rozmów nie wyciekają
+  (eksport wybiera pola jawnie). `npm run data`: zero zmian w JSON (`meta.json` ze znacznikiem commitu przywrócony),
+  `wiki_keys_diff` pusty.
+- **Księga i budżet (F1):** `lune run tools/quest_budget.luau check` aktualne bez regeneracji, `balance1_20.spec` bez
+  wpisów, `balance_report` bez „BRAK POWODU” (pola rozmów w `omit`, `Data/Quests/Talk` w `NOT_BALANCE`; w
+  `docs/BALANS.md` zmieniły się tylko czasy liczenia, więc plik zostaje bez zmian).
+
+Treść:
+
+| Quest | Wybór (strona: odpowiedzi, efekt) | `recall` | `barks` | Towarzysz |
+|---|---|---|---|---|
+| fabuła 1–20 (15) | — | — | accept, half (Σ n ≥ 2), done | — |
+| poboczne Łąk (28) bez trzech niżej | — | — | accept, half (Σ n ≥ 2), done | — |
+| `side_venom` (Wit) | p2: `where` (hint Żabie Oczko), `luck` ☺, `jagna` | — | accept, half, done, stuck | — |
+| `side_bears` (Borys) | p2: `supplies` (2 × `potion_hp_1`), `quiet` ☺, `fire` | — | accept, half, done, stuck | — |
+| `side_den` (Borys) | p3: `denFirst` (focus 1), `goblinsFirst` (focus 2), `drums` | p1 ← `side_bears` (`quiet`, `fire`) | accept, half, near, done, death, stuck | Borys `follow` (cele 1–2), linie join ×2, wait, back |
+| stajnia (3) | — | — | accept, half (Σ n ≥ 2), done | — |
+
+Sprawdzenie punktów (E4, `build/s101b_points.luau`, `Logic/MeadowsTerrain`, `Data/Spawns`): punkt `hint` z planu
+(−620, 560) leży na lądzie w `meadows_toadmire`, ale 144 st. od najbliższej z 5 grup ropuch (limit 120) i 2 z 8
+punktów wokół (8 st.) są w wodzie; przeniesiony na (−630, 430): ląd (wys. 6,2), 0 z 8 sąsiadów w wodzie, 23 st. od
+grupy `meadows_toadmire_3`, ok. 90 st. na zachód od chaty Wita (odpowiedź Wita mówi „na zachód od mojej chaty, przy
+wodzie”). Trasa Borysa obóz (623, 368) → `bear_den` (700, 470): 128 st., 0 z 65 próbek prostej w wodzie, 7 z 65 za
+stromych (`walkable` = false): ścieżka liczona przez `PathfindingService` i `Steer` je omija, zacięcie → teleport.
+
+Testy: nowe `tests/dialogue.spec.luau` (T1–T5) i `tests/companion.spec.luau` (T6–T8); poprawki `quest.spec`
+(`escort`), `character.spec` (szablony, `CURRENT` 7), `net.spec` (`QuestSay`), `admin.spec` (`companion`),
+`sidequests.spec` (`side(def)` zachowuje pola). `scripts/check` zielony (6168 testów).
+
+Uproszczenia i wybory (bez braków z zakresu): animacja towarzysza po stronie klienta (`CompanionController`); grupy
+kolizji nowe (gra ich nie miała): `Companions` i `Bodies` (gracze, potwory); strzałka celu `escort` bez figury w zasięgu
+streamingu wskazuje cel (po porażce start towarzysza).
+
+Dla S102–S108:
+- typy `ChoiceEffect`, `DialogueChoice`, `ChoicePage` (`page`: numer / `"text"` / `"done"`), `BarkSet`, `CompanionDef`;
+  pola questu `choices`, `recall`, `barks`, `companion`; cel `escort` (`npc`, `map`, `x`, `z`, `radius`, `place`, `via`);
+  konstruktory `Data/Quests/Talk` (`hint`, `focus`, `gift`, `answer`, `onPage`, `onText`, `onDone`, `follow`, `lead`,
+  `escort`);
+- teksty `quest.<id>.say.<choiceId>` i `.say.<choiceId>.reply`, `quest.<id>.<page>.<choiceId>`,
+  `quest.<id>.bark.<event><n>`, `quest.<id>.comp.<join|wait|arrive|back><n>`; długości: komentarz i linia towarzysza
+  ≤ 90, odpowiedź ≤ 60, odpowiedź NPC ≤ 140, wariant strony ≤ 220 (test);
+- `Config.Dialogue.gifts`, `Config.Barks`, `Config.Companion`;
+- `Logic/Dialogue` (`pageOf`, `pageKey`, `canSay`, `focusOf`, `hintOf`, `validate`), `Logic/Barks` (`required`,
+  `validate`), `Logic/Companion` (`want`, `route`, `step`, `validate`), `CompanionService.Refresh`, `NpcService.Figure`,
+  `BarkController.SetQuiet(reason, quiet)` (S102: przerywniki), pomocnik `withDialogue` w `UI/QuestText` (S102 przenosi
+  go do `objectiveTarget`);
+- w `tests/dialogue.spec.luau` dopisujesz `NEW_QUESTS.S10x` i `COMPANION_GROUPS.S10x` (S102–S105 `{ chapter = n }`:
+  questy fabuły w paśmie rozdziału 1–20 / 20–45 / 45–70 / 70–100, S106–S108 `{ map = "duskwood" | "ashen" | "frostpeak" }`:
+  mapa towarzysza), `BARKS_ONLY.S101b` i `RETROFIT` zostają bez zmian (S103–S105 dopisują `BARKS_ONLY.S10x`: obecne
+  questy swojego rozdziału, bez wyborów);
+- minimum na nowy quest: wybór (2–3 odpowiedzi) + zdarzenia `Barks.required`; na rozdział albo region ≥ 2 questy z
+  towarzyszem; `lead` ma dokładnie jeden cel `escort` w `during` z `npc` towarzysza, odcinki trasy (start, `via`, cel)
+  ≤ `Config.Companion.legMax`; trasy `lead` w mieście sprawdzaj `TownPlaces.isFree`, poza miastem terenem regionu
+  (`Logic/MeadowsTerrain`, `RegionTerrain`);
+- S102: gdy `MainQuest` dostaje `pages`, wybór fabuły stawiasz na numerze strony, a `"text"` zostaje dla questów bez
+  stron (walidator to wymusza); `Dialogue.pageOf` czyta `(quest :: any).pages`; S102 w migracji 8 dopisuje ochronę
+  typu `said` (`Dialogue.saidOf` już toleruje nie-tablicę).
+
+Poprawki po przeglądzie: `CompanionService.spawnFigure` po budowie figury (yield) sprawdza wpis i token, inaczej
+niszczy model (porzucenie / wyjście w trakcie nie zostawia sieroty), pętla ruchu iteruje po kopii `entries`;
+`CompanionController` trzyma obserwator języka tabliczki w zakresie figury (sprzątany przy usunięciu); komentarz
+`stuck` milknie, gdy cele questu są wykonane.
+
+Pliki: `src/shared/Data/Quests/{Types,init,Main,Side,Talk}.luau` (`Talk` nowy), `src/shared/Logic/{Dialogue,Barks,Companion}.luau`
+(nowe), `src/shared/Logic/{QuestLogic,AccountSchema}.luau`, `src/shared/{Config,Types}.luau`,
+`src/shared/Net/Definitions.luau`, `src/shared/Data/AdminCommands.luau`, `src/shared/Data/Localization/{pl,en}.luau`,
+`src/server/Services/CompanionService.luau` (nowy), `src/server/Services/{Quest,SideQuest,Npc,Settings,Admin,PlayerState}Service.luau`,
+`src/server/Admin/Quests.luau`, `src/server/QuestEvents.luau`, `src/client/Controllers/{Bark,Companion}Controller.luau`
+(nowe), `src/client/UI/Screens/Hud/BarkToast.luau` (nowy), `src/client/Controllers/QuestController.luau`,
+`src/client/UI/{QuestText,QuestTrack}.luau`, `src/client/UI/Screens/{QuestDialog,GameMenu}.luau`,
+`src/client/UI/Screens/Hud/QuestTracker.luau`, `src/client/UI/Screens/WorldMap/Overlay.luau`,
+`tests/{dialogue,companion}.spec.luau` (nowe), `tests/{quest,character,net,admin,sidequests}.spec.luau`,
+`tools/balance_reasons.luau`, `tools/WikiData/Quests.luau`, `docs/{DECYZJE,SESJE,PROGRESS}.md`, `CLAUDE.md`.

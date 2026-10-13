@@ -7,10 +7,16 @@
 -- equipped item). S98: the quest's category over the title (quest.tab.<category>) and, on an offer far below the
 -- character (NpcMarks.isLow, the grey "!"), a note that it pays less than hunting at the character's level. S99: the
 -- hunting contract at the scout of its region (title and pages with arguments, ContractAccept / ContractTurnIn).
+-- S101b (DESIGN-15 §3.5): a page with 2-3 answers of the player (Logic/Dialogue): "Next" / "Accept" / "Hand in" wait
+-- for an answer there, QuestSay saves it, then the NPC's reply shows under the page (and on every later visit); pages
+-- may pick a variant by an earlier answer (`recall`). A side quest taken before it was answered shows the page again
+-- at its giver while it runs.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Button = require(script.Parent.Parent.Components.Button)
+local Dialogue = require(ReplicatedStorage.Shared.Logic.Dialogue)
+local Locale = require(ReplicatedStorage.Shared.Util.Locale)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Net = require(ReplicatedStorage.Shared.Net)
 local NpcQuests = require(script.Parent.Parent.NpcQuests)
@@ -60,9 +66,42 @@ type View = {
 	reward: Quests.Reward,
 	turnIn: string,
 	choice: { any }?,
+	-- S101b: the page with answers (`say`), its index in `pages` (`sayAt`) and the saved answer (`said`; not `choice`,
+	-- which is the rolled reward items)
+	say: Quests.ChoicePage?,
+	sayAt: number?,
+	said: string?,
 }
 
-local function buildView(row: NpcQuests.Row?, quests: any, npcId: string?): View?
+-- S101b: a page key's text, a variant by an earlier answer when the quest recalls one.
+local function hasText(key: string): boolean
+	return Locale.has(key, "pl") and Locale.has(key, "en")
+end
+
+local function pageKeys(quest: any, ids: { string }, quests: any): { string }
+	local keys: { string } = {}
+	for _, id in ids do
+		table.insert(keys, Dialogue.pageKey(quest, id, quests, hasText))
+	end
+	return keys
+end
+
+-- S101b: where the answers stand among the shown pages (nil = not on this conversation).
+local function answersAt(quest: any, ids: { string }, mode: string): (Quests.ChoicePage?, number?)
+	local page = Dialogue.choicePage(quest)
+	if not page or (mode ~= "offer" and mode ~= "active" and mode ~= "turnIn") then
+		return nil, nil
+	end
+	local name = Dialogue.pageName(page.page)
+	if (name == "done") ~= (mode == "turnIn") then
+		return nil, nil
+	end
+	local at = table.find(ids, name)
+	return if at then page else nil, at
+end
+
+-- `keep` (S101b): a quest answered in this conversation keeps its page with the reply in view.
+local function buildView(row: NpcQuests.Row?, quests: any, npcId: string?, keep: string?): View?
 	if not row or type(quests) ~= "table" then
 		return nil
 	end
@@ -112,15 +151,20 @@ local function buildView(row: NpcQuests.Row?, quests: any, npcId: string?): View
 				then "turnIn"
 				else "active")
 			else (if row.mode == "later" then "later" else "offer")
+		local ids = { Dialogue.pageOf(quest, "main", mode, 1) }
+		local say, sayAt = answersAt(quest, ids, mode)
 		return {
 			row = row,
 			mode = mode,
 			title = `quest.{quest.id}.title`,
-			pages = { if mode == "turnIn" then `quest.{quest.id}.done` else `quest.{quest.id}.text` },
+			pages = pageKeys(quest, ids, quests),
 			objectives = quest.objectives,
 			progress = progress,
 			reward = quest.reward,
 			turnIn = quest.turnIn,
+			say = say,
+			sayAt = sayAt,
+			said = Dialogue.saidOf(quests, quest.id),
 		}
 	end
 	local quest = Quests.npcQuest(row.id)
@@ -129,25 +173,40 @@ local function buildView(row: NpcQuests.Row?, quests: any, npcId: string?): View
 	end
 	local entry = SideQuests.activeOf(quests)[quest.id]
 	local mode: any
-	local pages: { string } = {}
+	local ids: { string } = {}
 	if type(entry) == "table" then
 		if SideQuests.isComplete(entry, quest) then
 			mode = if quest.turnIn == npcId then "turnIn" else "elsewhere"
 		else
 			mode = "active"
 		end
-		pages = { if mode == "turnIn" then `quest.{quest.id}.done` else `quest.{quest.id}.progress` }
+		ids = { if mode == "turnIn" then "done" else "progress" }
+		-- S101b: not answered at the offer: the giver shows that page again before the progress
+		local page = Dialogue.choicePage(quest)
+		if
+			mode == "active"
+			and page
+			and type(page.page) == "number"
+			and npcId == quest.giver
+			and (Dialogue.saidOf(quests, quest.id) == nil or keep == quest.id)
+		then
+			table.insert(ids, 1, Dialogue.pageName(page.page))
+		end
 	else
 		mode = if row.mode == "later" then "later" else "offer"
 		for i = 1, quest.pages do
-			table.insert(pages, `quest.{quest.id}.p{i}`)
+			table.insert(ids, Dialogue.pageOf(quest, "side", "offer", i))
 		end
 	end
+	local say, sayAt = answersAt(quest, ids, mode)
 	return {
 		row = row,
 		mode = mode,
 		title = `quest.{quest.id}.title`,
-		pages = pages,
+		pages = pageKeys(quest, ids, quests),
+		say = say,
+		sayAt = sayAt,
+		said = Dialogue.saidOf(quests, quest.id),
 		objectives = quest.objectives,
 		progress = if type(entry) == "table" then entry.progress or {} else QuestLogic.emptyProgress(quest.objectives),
 		reward = quest.reward,
@@ -189,9 +248,11 @@ local function QuestDialog(scope: Scope, props: Props): Fusion.Child
 	local page = scope:Value(1)
 	local picked = scope:Value(nil :: number?)
 	local busy = scope:Value(false)
+	local saying = scope:Value(false) -- S101b: an answer on its way
+	local answered = scope:Value(nil :: string?) -- S101b: the quest answered in this conversation
 
 	local view = scope:Computed(function(use): View?
-		return buildView(use(props.Row), use(quests), use(props.NpcId))
+		return buildView(use(props.Row), use(quests), use(props.NpcId), use(answered))
 	end)
 	-- A new quest starts on its first page with nothing picked.
 	scope
@@ -202,6 +263,7 @@ local function QuestDialog(scope: Scope, props: Props): Fusion.Child
 		:onChange(function()
 			page:set(1)
 			picked:set(nil)
+			answered:set(nil)
 		end)
 
 	local preview = Preview.new(scope, nil, { portrait = true })
@@ -224,6 +286,37 @@ local function QuestDialog(scope: Scope, props: Props): Fusion.Child
 		local v = use(view)
 		return v == nil or use(page) >= #v.pages
 	end)
+	-- S101b: the shown page has answers (and whether one was given)
+	local onAnswers = scope:Computed(function(use): boolean
+		local v = use(view)
+		return v ~= nil and v.say ~= nil and v.sayAt == math.clamp(use(page), 1, #v.pages)
+	end)
+	local mustAnswer = scope:Computed(function(use): boolean
+		local v = use(view)
+		return use(onAnswers) and v ~= nil and v.said == nil
+	end)
+
+	local function answer(choiceId: string)
+		local v = Fusion.peek(view)
+		if not v or Fusion.peek(saying) then
+			return
+		end
+		saying:set(true)
+		task.spawn(function()
+			local ok, err = Net.Invoke("QuestSay", v.row.id, choiceId)
+			saying:set(false)
+			if ok then
+				answered:set(v.row.id)
+				Sounds.play("click")
+			else
+				Sounds.play("error")
+				Toast.push(
+					Text.now(if err == "inventory.full" then "quest.say.later" else err or "error.internal"),
+					"error"
+				)
+			end
+		end)
+	end
 
 	local function act()
 		local v = Fusion.peek(view)
@@ -306,7 +399,91 @@ local function QuestDialog(scope: Scope, props: Props): Fusion.Child
 		if not v or not use(lastPage) or v.mode == "later" then
 			return nil
 		end
-		return QuestRewards(s, { Id = v.row.id, Reward = v.reward, ShowTitle = true, LayoutOrder = 3 })
+		return QuestRewards(s, { Id = v.row.id, Reward = v.reward, ShowTitle = true, LayoutOrder = 4 })
+	end)
+
+	-- S101b: the answers under the page, or the given answer and the NPC's reply
+	local answers = scope:Computed(function(use, s: Scope): Instance?
+		local v = use(view)
+		if not v or not use(onAnswers) or not v.say then
+			return nil
+		end
+		local id = v.row.id
+		local children: { Instance } = {
+			s:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 8) }) :: any,
+		}
+		if v.said == nil then
+			table.insert(
+				children,
+				s:New("TextLabel")({
+					LayoutOrder = 0,
+					Size = UDim2.new(1, 0, 0, 16),
+					BackgroundTransparency = 1,
+					Text = Text.get(use, "quest.say.pick"),
+					FontFace = Theme.Fonts.BodyMedium,
+					TextSize = Theme.TextSize.Small,
+					TextColor3 = Theme.Colors.TextMuted,
+					TextXAlignment = Enum.TextXAlignment.Left,
+				})
+			)
+			for i, option in v.say.options do
+				table.insert(
+					children,
+					Button(s, {
+						LayoutOrder = i,
+						Size = UDim2.new(1, 0, 0, 44),
+						Variant = "secondary",
+						Text = Text.get(use, `quest.{id}.say.{option.id}`),
+						Disabled = s:Computed(function(use2): boolean
+							return use2(saying)
+						end),
+						OnClick = function()
+							answer(option.id)
+						end,
+					})
+				)
+			end
+		else
+			table.insert(
+				children,
+				s:New("TextLabel")({
+					LayoutOrder = 1,
+					Size = UDim2.fromScale(1, 0),
+					AutomaticSize = Enum.AutomaticSize.Y,
+					BackgroundTransparency = 1,
+					TextWrapped = true,
+					Text = Text.get(use, "quest.say.you", { answer = Text.get(use, `quest.{id}.say.{v.said}`) }),
+					FontFace = Theme.Fonts.Body,
+					TextSize = Theme.TextSize.Small,
+					TextColor3 = Theme.Colors.TextMuted,
+					TextXAlignment = Enum.TextXAlignment.Left,
+				})
+			)
+			table.insert(
+				children,
+				s:New("TextLabel")({
+					LayoutOrder = 2,
+					Size = UDim2.fromScale(1, 0),
+					AutomaticSize = Enum.AutomaticSize.Y,
+					BackgroundTransparency = 1,
+					TextWrapped = true,
+					RichText = true,
+					Text = `<i>{Text.get(use, `quest.{id}.say.{v.said}.reply`)}</i>`,
+					FontFace = Theme.Fonts.Body,
+					TextSize = Theme.TextSize.Body,
+					TextColor3 = Theme.Colors.Parchment,
+					TextXAlignment = Enum.TextXAlignment.Left,
+				})
+			)
+		end
+		return s:New("Frame")({
+			Name = "Answers",
+			LayoutOrder = 2,
+			Size = UDim2.fromScale(1, 0),
+			AutomaticSize = Enum.AutomaticSize.Y,
+			BackgroundTransparency = 1,
+			[Children] = children :: any,
+		})
 	end)
 
 	local choices = scope:Computed(function(use, s: Scope): { Instance }
@@ -448,8 +625,9 @@ local function QuestDialog(scope: Scope, props: Props): Fusion.Child
 					TextXAlignment = Enum.TextXAlignment.Left,
 					TextYAlignment = Enum.TextYAlignment.Top,
 				}),
+				answers :: any,
 				scope:New("TextLabel")({
-					LayoutOrder = 2,
+					LayoutOrder = 3,
 					Size = UDim2.fromScale(1, 0),
 					AutomaticSize = Enum.AutomaticSize.Y,
 					BackgroundTransparency = 1,
@@ -530,12 +708,15 @@ local function QuestDialog(scope: Scope, props: Props): Fusion.Child
 			end),
 			Disabled = scope:Computed(function(use): boolean
 				local v = use(view)
-				if use(busy) then
+				if use(busy) or use(mustAnswer) then
 					return true
 				end
 				return v ~= nil and use(lastPage) and v.mode == "turnIn" and use(hasChoice) and use(picked) == nil
 			end),
 			OnClick = function()
+				if Fusion.peek(mustAnswer) then
+					return
+				end
 				if not Fusion.peek(lastPage) then
 					Sounds.play("click")
 					page:set(Fusion.peek(page) + 1)
