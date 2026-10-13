@@ -470,6 +470,10 @@ export type GearOpts = {
 	-- S84: strength of each trait (trait id -> 0 off .. 1 as in the game); nil = every trait as in the game
 	traitScale: { [string]: number }?,
 	element: string?, -- S84: element of a Mage weapon ("fire" | "ice" | "lightning"); nil = the model averages them
+	-- S91: gracz z węzłami rzędów 1–3 (ROZWOJ 2.4): the key of a reference build ("berserker.fury"); its nodes trimmed
+	-- to the level (SkillModel.character: Paths.pointsAt and Paths.canBuy, the main path from 20) add their
+	-- Paths.passiveTotals (stats and hooks) to the convention player. nil = no nodes (bit for bit as before S91).
+	nodes: string?,
 }
 
 local function tierId(baseType: string, ilvl: number): string
@@ -768,7 +772,83 @@ function Balance.playerFromItems(
 end
 
 function Balance.player(classId: string, level: number, opts: GearOpts?): Player
-	return Balance.playerFromItems(classId, level, Balance.gear(classId, level, opts), opts and opts.traitScale)
+	local items = Balance.gear(classId, level, opts)
+	if opts and opts.nodes then
+		return Balance.playerFromItems(classId, level, items, opts.traitScale, Balance.nodesExtra(classId, level, opts))
+	end
+	return Balance.playerFromItems(classId, level, items, opts and opts.traitScale)
+end
+
+-- S91: gracz z węzłami rzędów 1–3 (ROZWOJ 2.4). The reference build `opts.nodes` trimmed to `level` by
+-- tests/SkillModel.character (required here lazily: SkillModel requires this module), its Paths.passiveTotals with
+-- the convention weapons; the allocated stats stay Balance.statsFor (the convention). Hooks that only act on skills
+-- change nothing in FightSim.
+function Balance.trimmedCharacter(classId: string, level: number, buildKey: string): any
+	local SkillModel = (require :: any)("./SkillModel")
+	local build = SkillModel.build(buildKey, classId)
+	assert(build, `Balance: unknown build {buildKey} of {classId}`)
+	return SkillModel.character(build, level).character
+end
+
+function Balance.nodesExtra(classId: string, level: number, opts: GearOpts): PlayerExtra
+	local loadout = Balance.LOADOUT[classId]
+	local main = opts.weapon or loadout.weapon
+	local twoHanded = (Bases.byType[main] :: any).weapon(1).twoHanded
+	local offhand = if opts.offhand == false or twoHanded then nil else (opts.offhand or loadout.offhand)
+	local character = Balance.trimmedCharacter(classId, level, opts.nodes :: string)
+	local passives = Paths.passiveTotals(character, { main = main, offhand = offhand :: string? })
+	return {
+		sources = { { key = "source.passives", flat = passives.flat, pct = passives.pct } },
+		hooks = passives.hooks,
+	}
+end
+
+export type Variant = { key: string, nodes: string?, set: string }
+
+-- S91: the combat build of each class (SkillModel.R4_CLASS_BUILDS): the nodes of the Elite II teams and of the
+-- Grimrok teams in the variant with nodes.
+Balance.COMBAT_BUILD = {
+	Warrior = "berserker.fury",
+	Hunter = "marksman.kingslayer",
+	Mage = "arcanist.arcanistBoss",
+	Cleric = "inquisitor.solo",
+} :: { [string]: string }
+
+local variantsCache: { [string]: { Variant } } = {}
+-- S91 (B1): the player variants of the convention at `level`: "bez węzłów" first, then every reference build of the
+-- class trimmed to the level; builds that buy the same nodes at this level are counted once (the first key).
+function Balance.buildsAt(classId: string, level: number): { Variant }
+	local cacheKey = `{classId}|{level}`
+	local cached = variantsCache[cacheKey]
+	if cached then
+		return cached
+	end
+	local out: { Variant } = { { key = "bez węzłów", nodes = nil, set = "" } }
+	local seen: { [string]: boolean } = { [""] = true }
+	local SkillModel = (require :: any)("./SkillModel")
+	for _, build in SkillModel.builds(classId) do
+		if build.base then
+			continue
+		end
+		local character = SkillModel.character(build, level).character
+		local ids: { string } = {}
+		for id, rank in character.path.nodes do
+			if rank > 0 then
+				table.insert(ids, `{id}={rank}`)
+			end
+		end
+		table.sort(ids)
+		local set = (character.path.main or "-") .. ":" .. table.concat(ids, ",")
+		if #ids == 0 then
+			set = ""
+		end
+		if not seen[set] then
+			seen[set] = true
+			table.insert(out, { key = build.key, nodes = build.key, set = set })
+		end
+	end
+	variantsCache[cacheKey] = out
+	return out
 end
 
 -- Monsters ------------------------------------------------------------------------------------------------
@@ -1711,6 +1791,114 @@ function Balance.paceBand(
 	return { hours = hours, levels = levels }
 end
 
+-- S91: model okna od 1. poziomu (S92 B1); S92 liczy nim też L19 i L20. Each main quest without a boss objective pays
+-- its EXP over the window from its level to the level before the next main quest (in proportion to Exp.expToNext);
+-- SIDE_SHARE of the side quests is spread over their band (Balance.BANDS: 1-19, 20-44, ...) like questRewards; the
+-- quest EXP above a level's need carries to the next (paceAt's carry). Warrior / rest / GENERIC by default:
+-- opts.kind = a kind (or "kindAt" for the Meadows kind of each level, Balance.kindAt), opts.withBossQuests = the boss
+-- quests count too (report variant: grimrok over 18-19).
+export type PaceWindowOpts = { kind: any?, withBossQuests: boolean? }
+export type PaceWindow = {
+	level: number,
+	hours: number,
+	questExp: number, -- quest EXP of the level (window main + side, without the carry)
+	carryIn: number,
+	carryOut: number,
+	secondsPerKill: number,
+	expPerKill: number,
+}
+
+local windowCache: { [string]: { PaceWindow } } = {}
+
+local function questWindows(withBosses: boolean): { [number]: number }
+	local main: { any } = {}
+	for _, q in Quests.Main.list :: { any } do
+		if withBosses or not hasBoss(q) then
+			table.insert(main, q)
+		end
+	end
+	local starts: { number } = {}
+	for _, q in main do
+		if not table.find(starts, q.level) then
+			table.insert(starts, q.level)
+		end
+	end
+	table.sort(starts)
+	local out: { [number]: number } = {}
+	for _, q in main do
+		local i = table.find(starts, q.level) :: number
+		local last = if starts[i + 1] then starts[i + 1] - 1 else q.level
+		local need = 0
+		for L = q.level, last do
+			need += Exp.expToNext(L)
+		end
+		for L = q.level, last do
+			out[L] = (out[L] or 0) + (q.reward.exp or 0) * Exp.expToNext(L) / need
+		end
+	end
+	for _, q in Quests.Side.list :: { any } do
+		for _, band in Balance.BANDS do
+			if q.level >= band[1] and q.level < band[2] then
+				local need = 0
+				for L = band[1], band[2] - 1 do
+					need += Exp.expToNext(L)
+				end
+				for L = band[1], band[2] - 1 do
+					out[L] = (out[L] or 0) + (q.reward.exp or 0) * Balance.SIDE_SHARE * Exp.expToNext(L) / need
+				end
+				break
+			end
+		end
+	end
+	return out
+end
+
+function Balance.paceWindowAt(classId: string, level: number, opts: PaceWindowOpts?): PaceWindow
+	local o: PaceWindowOpts = opts or {}
+	-- only nil / string kinds are cached: a kind table has no stable key (a second table must not read the first's)
+	local cacheable = o.kind == nil or type(o.kind) == "string"
+	local key = `{classId}|{o.kind or "generic"}|{o.withBossQuests == true}`
+	local list = if cacheable then windowCache[key] else nil
+	if not list or #list < level then
+		list = {}
+		local windows = questWindows(o.withBossQuests == true)
+		local carry = 0
+		local top = math.max(level, 20)
+		for L = 1, top do
+			local kind = if o.kind == "kindAt" then Balance.kindAt(L) else (o.kind or Balance.GENERIC)
+			local pace = Balance.paceAt(classId, L, { kind = kind })
+			local questExp = windows[L] or 0
+			local need = Exp.expToNext(L) - questExp - carry
+			local carryOut = math.max(0, -need)
+			local kills = math.max(0, need) / pace.expPerKill
+			table.insert(list, {
+				level = L,
+				hours = kills * pace.secondsPerKill / 3600,
+				questExp = questExp,
+				carryIn = carry,
+				carryOut = carryOut,
+				secondsPerKill = pace.secondsPerKill,
+				expPerKill = pace.expPerKill,
+			})
+			carry = carryOut
+		end
+		if cacheable then
+			windowCache[key] = list
+		end
+	end
+	return list[level]
+end
+
+-- S91: the moving mean m(L) = mean of h(L - 4 .. L) of the window model (levels below 1 left out).
+function Balance.paceWindowMean(classId: string, level: number, opts: PaceWindowOpts?): number
+	local sum, n = 0, 0
+	for L = math.max(1, level - 4), level do
+		sum += Balance.paceWindowAt(classId, L, opts).hours
+		n += 1
+	end
+	return sum / n
+end
+
 -- Economy -------------------------------------------------------------------------------------------------------
 
 -- Potion gold per kill of the S32 rest model (HP lost above POTION_ABOVE healed with the cheapest fitting potion)
@@ -1782,6 +1970,7 @@ export type EliteFight = {
 	pair: Fight,
 	encounter: number, -- (1 - q) x single + q x pair HP lost
 	pairRatio: number,
+	variant: string?, -- S91: the player variant of Balance.buildsAt (nil = bez węzłów)
 }
 export type EliteKind = { kind: string, min: number, max: number, fights: { EliteFight } }
 export type Elite2Fight = { kind: string, spawner: number, playerLevel: number, byTeam: { Fight } }
@@ -1795,7 +1984,15 @@ export type CaveElites = {
 
 -- The caves of a region from the real spawners (Data/Spawns): single and paired Elites for the four classes at the
 -- spawner's min, middle and max level, Elite II for 1-4 players (Balance.team) at min(100, spawner + 2).
-function Balance.caveElites(mapId: string): { CaveElites }
+-- S91 (B1): `withNodes` = the players with nodes: every variant of Balance.buildsAt but "bez węzłów" (Elites), the
+-- class's combat build of Balance.COMBAT_BUILD (Elite II teams); levels without nodes give no fights.
+local caveCache: { [string]: { CaveElites } } = {}
+function Balance.caveElites(mapId: string, withNodes: boolean?): { CaveElites }
+	local cacheKey = `{mapId}|{withNodes == true}`
+	local cached = caveCache[cacheKey]
+	if cached then
+		return cached
+	end
 	local out: { CaveElites } = {}
 	for _, cave in Areas.caves.list do
 		if cave.region == mapId then
@@ -1823,17 +2020,34 @@ function Balance.caveElites(mapId: string): { CaveElites }
 					for i, L in levels do
 						if i == 1 or L ~= levels[i - 1] then
 							for _, c in Balance.CLASSES do
-								local p = Balance.cachedPlayer(c, math.min(100, L))
-								local single = Balance.elite(p, def, L)
-								local pair = Balance.groupFight(p, FightSim.group(def, L, 2, "elite"))
-								table.insert(fights, {
-									level = L,
-									classId = c,
-									single = single,
-									pair = pair,
-									encounter = (1 - q) * single.hpLost + q * pair.hpLost,
-									pairRatio = pair.hpLost / math.max(1e-9, single.hpLost),
-								})
+								local PL = math.min(100, L)
+								local players: { { p: Player, variant: string? } } = {}
+								if withNodes then
+									for _, v in Balance.buildsAt(c, PL) do
+										if v.nodes then
+											table.insert(
+												players,
+												{ p = Balance.player(c, PL, { nodes = v.nodes }), variant = v.key }
+											)
+										end
+									end
+								else
+									table.insert(players, { p = Balance.cachedPlayer(c, PL) })
+								end
+								for _, entry in players do
+									local p = entry.p
+									local single = Balance.elite(p, def, L)
+									local pair = Balance.groupFight(p, FightSim.group(def, L, 2, "elite"))
+									table.insert(fights, {
+										level = L,
+										classId = c,
+										single = single,
+										pair = pair,
+										encounter = (1 - q) * single.hpLost + q * pair.hpLost,
+										pairRatio = pair.hpLost / math.max(1e-9, single.hpLost),
+										variant = entry.variant,
+									})
+								end
 							end
 						end
 					end
@@ -1845,11 +2059,20 @@ function Balance.caveElites(mapId: string): { CaveElites }
 				for _, kind in elite2Spawner.choices or { elite2Spawner.monster } do
 					for _, L in { elite2Spawner.level.min, elite2Spawner.level.max } do
 						local pl = math.min(100, L + 2)
+						if withNodes and pl < PathData.ROWS[1].level then
+							continue
+						end
 						local byTeam: { Fight } = {}
 						for n = 1, 4 do
 							local team = {}
 							for i = 1, n do
-								table.insert(team, Balance.cachedPlayer(Balance.ORDER[i], pl))
+								local c = Balance.ORDER[i]
+								table.insert(
+									team,
+									if withNodes
+										then Balance.player(c, pl, { nodes = Balance.COMBAT_BUILD[c] })
+										else Balance.cachedPlayer(c, pl)
+								)
 							end
 							byTeam[n] = Balance.elite2(team, kind, L)
 						end
@@ -1860,6 +2083,7 @@ function Balance.caveElites(mapId: string): { CaveElites }
 			table.insert(out, { id = cave.id, levels = cave.levels, pairShare = q, kinds = kinds, elite2 = elite2 })
 		end
 	end
+	caveCache[cacheKey] = out
 	return out
 end
 
@@ -1994,6 +2218,9 @@ export type BossOpts = {
 	cadence: CadenceOpts?,
 	-- S84: the boss at this level (its shield waves move by the same number of levels); nil = Data/Bosses level
 	level: number?,
+	-- S91 (Grimrok bez wsparcia): multiplier of member i's Balance.dps on the boss and on the shield helpers (the
+	-- skill model's DPS on the boss / the convention's); nil = 1
+	dpsMul: { number }?,
 }
 export type BossFight = {
 	hp: number,
@@ -2013,6 +2240,9 @@ export type BossFight = {
 	shieldKills: number,
 	shieldSeconds: number,
 	activeSeconds: number,
+	-- S91: damage per second taken by member i over the whole fight (active phases and shield waves; the shield
+	-- helpers hit the tank)
+	memberDps: { number },
 }
 
 -- Boss fight of `team` (team[1] is the tank): HP and armour as Balance.boss, phases by HP (def.phases), the real
@@ -2039,11 +2269,15 @@ function Balance.bossFight(bossId: string, team: { Player }, opts: BossOpts?): B
 	local n = #team
 	local specialHit = o.specialHit or Balance.SPECIAL_HIT
 	local m = Balance.monster(Balance.bossKind(def, n), def.level, "boss")
+	local function memberDps(i: number, p: Player, target: any): number
+		return Balance.dps(p, target) * (if o.dpsMul then o.dpsMul[i] or 1 else 1)
+	end
 	local dps = 0
-	for _, p in team do
-		dps += Balance.dps(p, m) * Balance.BOSS_UPTIME
+	for i, p in team do
+		dps += memberDps(i, p, m) * Balance.BOSS_UPTIME
 	end
 	local tank = team[1]
+	local taken: { number } = table.create(n, 0)
 	local thresholds = { 1 }
 	for _, t in def.phases do
 		table.insert(thresholds, t)
@@ -2070,8 +2304,8 @@ function Balance.bossFight(bossId: string, team: { Player }, opts: BossOpts?): B
 				local lost, attacks = 0, 0
 				for k, member in members do
 					local teamDps = 0
-					for _, p in team do
-						teamDps += Balance.dps(p, member)
+					for i, p in team do
+						teamDps += memberDps(i, p, member)
 					end
 					local duration = member.maxHp / math.max(1e-6, teamDps)
 					shieldSeconds += duration * waves
@@ -2081,6 +2315,7 @@ function Balance.bossFight(bossId: string, team: { Player }, opts: BossOpts?): B
 					end
 				end
 				shieldTankHp += lost * waves / tank.values.maxHp
+				taken[1] += lost * waves
 				shieldAttacks += attacks * waves
 				shieldKills += count * waves
 			end
@@ -2122,6 +2357,7 @@ function Balance.bossFight(bossId: string, team: { Player }, opts: BossOpts?): B
 					if share > 0 then
 						local hit = Balance.hit(m, p, attack.damage, kind, false)
 						local perSecond = hit * specialHit * share * perMinute / 60
+						taken[i] += perSecond * active * dmgMul
 						if i == 1 then
 							tankPerSecond += perSecond
 						else
@@ -2133,6 +2369,7 @@ function Balance.bossFight(bossId: string, team: { Player }, opts: BossOpts?): B
 				end
 			end
 		end
+		taken[1] += Balance.hit(m, tank) * haste / m.attackInterval * (1 - cad.casting) * active * dmgMul
 		tankPerSecond *= dmgMul
 		raidPerSecond *= dmgMul
 		tankTotal += tankPerSecond * active
@@ -2166,9 +2403,12 @@ function Balance.bossFight(bossId: string, team: { Player }, opts: BossOpts?): B
 			local extra = Balance.hit(m, tank, hazard.damage, hazard.damageKind, false) / hazard.every * share
 			ph.tankDps += extra
 			tankTotal += extra * ph.seconds
+			taken[1] += extra * ph.seconds
 			for i = 2, n do
 				local p = team[i]
-				ph.raidDps += Balance.hit(m, p, hazard.damage, hazard.damageKind, false) / hazard.every * share
+				local hps = Balance.hit(m, p, hazard.damage, hazard.damageKind, false) / hazard.every * share
+				ph.raidDps += hps
+				taken[i] += hps * ph.seconds
 			end
 		end
 	end
@@ -2188,15 +2428,29 @@ function Balance.bossFight(bossId: string, team: { Player }, opts: BossOpts?): B
 		shieldKills = shieldKills,
 		shieldSeconds = shieldTotal,
 		activeSeconds = fightingTotal,
+		memberDps = (function(): { number }
+			local out: { number } = {}
+			for i = 1, n do
+				out[i] = taken[i] / math.max(1e-9, elapsed)
+			end
+			return out
+		end)(),
 	}
 end
 
 -- A party of `n` players of `level` in the order of the S32 Grimrok check (diag_hard `team`).
 Balance.ORDER = { "Warrior", "Mage", "Hunter", "Cleric", "Warrior" }
-function Balance.team(n: number, level: number): { Player }
+-- S91: `withNodes` = each member with the nodes of its class's Balance.COMBAT_BUILD (B1)
+function Balance.team(n: number, level: number, withNodes: boolean?): { Player }
 	local out = {}
 	for i = 1, n do
-		table.insert(out, Balance.player(Balance.ORDER[(i - 1) % #Balance.ORDER + 1], level))
+		local c = Balance.ORDER[(i - 1) % #Balance.ORDER + 1]
+		table.insert(
+			out,
+			if withNodes
+				then Balance.player(c, level, { nodes = Balance.COMBAT_BUILD[c] })
+				else Balance.player(c, level)
+		)
 	end
 	return out
 end
@@ -2266,30 +2520,35 @@ end
 -- The numeric targets of the S32 blocks of balance.spec (thresholds as of the start of S83, incl. S64 / S66).
 function Balance.targets1_20(): { TargetRow }
 	local rows: { TargetRow } = {}
-	-- One monster and groups
+	-- One monster and groups. S91 (B1): every player variant of Balance.buildsAt (bez węzłów, then each reference
+	-- build trimmed to the level: ids and labels with "@<build>")
 	for _, c in Balance.CLASSES do
 		for _, L in Balance.LEVELS_1_20 do
-			local f = Balance.duel(Balance.player(c, L), Balance.monster(Balance.GENERIC, L))
-			local id = `S32.duel.{c}.{L}`
-			if L >= 2 then
-				-- Clerics fight slower but take less damage (S18 band); S66: the Mage's level 2 duel ~5.49 s.
-				local slow = if c == "Cleric" then 11 else 10
-				local low = if c == "Cleric" then 0.09 else 0.1
-				local fast = if c == "Mage" and L == 2 then 5.4 else 5.5
-				target(rows, `{id}.seconds`, "duel", `{c} {L}: 1 na 1 s`, f.seconds, fast, slow, c, L)
-				target(rows, `{id}.hp`, "duel", `{c} {L}: 1 na 1 HP`, f.hpLost, low, 0.25, c, L)
-			else
-				-- Level 1 is a gentle start (S32: below 15 %).
-				target(rows, `{id}.hp`, "duel", `{c} 1: łagodny start HP`, f.hpLost, nil, 0.15 - 1e-9, c, L)
+			for _, v in Balance.buildsAt(c, L) do
+				local p = Balance.player(c, L, if v.nodes then { nodes = v.nodes } else nil)
+				local at = if v.nodes then `@{v.key}` else ""
+				local f = Balance.duel(p, Balance.monster(Balance.GENERIC, L))
+				local id = `S32.duel.{c}.{L}{at}`
+				if L >= 2 then
+					-- Clerics fight slower but take less damage (S18 band); S66: the Mage's level 2 duel ~5.49 s.
+					local slow = if c == "Cleric" then 11 else 10
+					local low = if c == "Cleric" then 0.09 else 0.1
+					local fast = if c == "Mage" and L == 2 then 5.4 else 5.5
+					target(rows, `{id}.seconds`, "duel", `{c} {L}{at}: 1 na 1 s`, f.seconds, fast, slow, c, L)
+					target(rows, `{id}.hp`, "duel", `{c} {L}{at}: 1 na 1 HP`, f.hpLost, low, 0.25, c, L)
+				else
+					-- Level 1 is a gentle start (S32: below 15 %).
+					target(rows, `{id}.hp`, "duel", `{c} 1: łagodny start HP`, f.hpLost, nil, 0.15 - 1e-9, c, L)
+				end
+				local g = Balance.expectedGroup(p, Balance.GENERIC, L)
+				local gid = `S32.group.{c}.{L}{at}`
+				if L >= 5 then
+					local high = if c == "Mage" then 0.7 else 0.6
+					local low = if c == "Cleric" then 0.3 else 0.35
+					target(rows, `{gid}.hp`, "group", `{c} {L}{at}: grupa średnio HP`, g.hpLost, low, high, c, L)
+				end
+				target(rows, `{gid}.size4`, "group", `{c} {L}{at}: grupa 4 HP`, g.bySize[4].hpLost, nil, 1.1, c, L)
 			end
-			local g = Balance.expectedGroup(Balance.player(c, L), Balance.GENERIC, L)
-			local gid = `S32.group.{c}.{L}`
-			if L >= 5 then
-				local high = if c == "Mage" then 0.7 else 0.6
-				local low = if c == "Cleric" then 0.3 else 0.35
-				target(rows, `{gid}.hp`, "group", `{c} {L}: grupa średnio HP`, g.hpLost, low, high, c, L)
-			end
-			target(rows, `{gid}.size4`, "group", `{c} {L}: grupa 4 HP`, g.bySize[4].hpLost, nil, 1.1, c, L)
 		end
 	end
 	do
@@ -2305,22 +2564,39 @@ function Balance.targets1_20(): { TargetRow }
 	end
 	for _, c in Balance.CLASSES do
 		for L = 2, 20 do
-			local p = Balance.player(c, L, { ilvl = Items.generate.tierFor(L), weaponIlvl = Balance.shopTier(L) })
-			local f = Balance.duel(p, Balance.monster(Balance.GENERIC, L))
-			-- Clerics are slow on purpose (and lose the least HP).
-			local slow = if c == "Cleric" then 20 else 15.5
-			target(rows, `S32.shop.{c}.{L}.seconds`, "shop", `{c} {L}: sprzęt ze sklepu s`, f.seconds, nil, slow, c, L)
-			target(rows, `S32.shop.{c}.{L}.hp`, "shop", `{c} {L}: sprzęt ze sklepu HP`, f.hpLost, nil, 0.36, c, L)
+			-- S91 (B1): without nodes and with each reference build's nodes
+			for _, v in Balance.buildsAt(c, L) do
+				local p = Balance.player(
+					c,
+					L,
+					{ ilvl = Items.generate.tierFor(L), weaponIlvl = Balance.shopTier(L), nodes = v.nodes }
+				)
+				local at = if v.nodes then `@{v.key}` else ""
+				local f = Balance.duel(p, Balance.monster(Balance.GENERIC, L))
+				-- Clerics are slow on purpose (and lose the least HP).
+				local slow = if c == "Cleric" then 20 else 15.5
+				local id = `S32.shop.{c}.{L}{at}`
+				target(rows, `{id}.seconds`, "shop", `{c} {L}{at}: sprzęt ze sklepu s`, f.seconds, nil, slow, c, L)
+				target(rows, `{id}.hp`, "shop", `{c} {L}{at}: sprzęt ze sklepu HP`, f.hpLost, nil, 0.36, c, L)
+			end
 		end
 	end
 	-- Elites, Elite II, Grimrok
 	for _, c in Balance.MAIN do
 		for _, L in { 10, 15, 18, 20 } do
-			local f = Balance.elite(Balance.player(c, L), Balance.GENERIC, L)
-			target(rows, `S32.elite.{c}.{L}.seconds`, "elite", `{c} {L}: Elita s`, f.seconds, 20, 36, c, L)
-			target(rows, `S32.elite.{c}.{L}.hp`, "elite", `{c} {L}: Elita HP`, f.hpLost, 0.55, 0.95, c, L)
+			for _, v in Balance.buildsAt(c, L) do
+				local p = Balance.player(c, L, if v.nodes then { nodes = v.nodes } else nil)
+				local at = if v.nodes then `@{v.key}` else ""
+				local f = Balance.elite(p, Balance.GENERIC, L)
+				local id = `S32.elite.{c}.{L}{at}`
+				target(rows, `{id}.seconds`, "elite", `{c} {L}{at}: Elita s`, f.seconds, 20, 36, c, L)
+				target(rows, `{id}.hp`, "elite", `{c} {L}{at}: Elita HP`, f.hpLost, 0.55, 0.95, c, L)
+			end
 		end
 	end
+	-- S91 (C3): Elite II counted as S32 (party at min(20, spawner + 2)), thresholds of the regions
+	-- (REGION_TARGETS.elite2, S83 / S92: solo at least, two at most, three within)
+	local E2 = Balance.REGION_TARGETS.elite2
 	for _, spec in Balance.ELITE2_1_20 do
 		local kind, spawner = spec[1] :: string, spec[2] :: number
 		local L = math.min(20, spawner + 2)
@@ -2333,27 +2609,44 @@ function Balance.targets1_20(): { TargetRow }
 			"elite2",
 			`{label}: solo HP`,
 			Balance.elite2({ w }, kind, spawner).hpLost,
-			1.5 + 1e-9,
+			E2.solo,
 			nil,
 			nil,
 			L
 		)
 		local duo = Balance.elite2({ w, m }, kind, spawner).hpLost
-		target(rows, `{id}.duo`, "elite2", `{label}: 2 graczy HP`, duo, nil, 1.5, nil, L)
+		target(rows, `{id}.duo`, "elite2", `{label}: 2 graczy HP`, duo, nil, E2.duo, nil, L)
 		local trio = Balance.elite2({ w, m, h }, kind, spawner).hpLost
-		target(rows, `{id}.trio`, "elite2", `{label}: 3 graczy HP`, trio, nil, 1.0, nil, L)
+		target(rows, `{id}.trio`, "elite2", `{label}: 3 graczy HP`, trio, E2.trio[1], E2.trio[2], nil, L)
 	end
 	for n = 3, 5 do
 		local minutes = Balance.boss("grimrok", Balance.team(n, 19)).seconds / 60
 		target(rows, `S32.grimrok.team{n}.minutes`, "grimrok", `Grimrok, {n} graczy L19: min`, minutes, 4, 6, nil, 19)
-	end
-	do
-		local mage = Balance.boss("grimrok", { Balance.player("Mage", 20) }).biggest[1].share
+		-- S91 (B1): the team with the nodes of each class's combat build (Balance.COMBAT_BUILD)
+		local nodes = Balance.boss("grimrok", Balance.team(n, 19, true)).seconds / 60
 		target(
 			rows,
-			"S32.grimrok.mage20.biggest",
+			`S32.grimrok.team{n}.minutes@nodes`,
 			"grimrok",
-			"Grimrok: największy cios / HP Maga L20",
+			`Grimrok, {n} graczy L19 z węzłami: min`,
+			nodes,
+			4,
+			6,
+			nil,
+			19
+		)
+	end
+	-- S91 (D1, B1): both player variants (without nodes and with the Mage's combat build)
+	for _, nodes in { false, true } do
+		local at = if nodes then "@nodes" else ""
+		local opts = if nodes then { nodes = Balance.COMBAT_BUILD.Mage } else nil
+		local suffix = if nodes then " z węzłami" else ""
+		local mage = Balance.boss("grimrok", { Balance.player("Mage", 20, opts) }).biggest[1].share
+		target(
+			rows,
+			`S32.grimrok.mage20.biggest{at}`,
+			"grimrok",
+			`Grimrok: największy cios / HP Maga L20{suffix}`,
 			mage,
 			nil,
 			0.7,
@@ -2361,12 +2654,12 @@ function Balance.targets1_20(): { TargetRow }
 			20
 		)
 		-- A level 18 Mage survives one hit too (S32: below 1).
-		local mage18 = Balance.boss("grimrok", { Balance.player("Mage", 18) }).biggest[1].share
+		local mage18 = Balance.boss("grimrok", { Balance.player("Mage", 18, opts) }).biggest[1].share
 		target(
 			rows,
-			"S32.grimrok.mage18.biggest",
+			`S32.grimrok.mage18.biggest{at}`,
 			"grimrok",
-			"Grimrok: największy cios / HP Maga L18",
+			`Grimrok: największy cios / HP Maga L18{suffix}`,
 			mage18,
 			nil,
 			1 - 1e-9,
@@ -2578,8 +2871,316 @@ function Balance.targets1_20(): { TargetRow }
 		local drops = eco.dropGold / eco.killGold
 		target(rows, `S32.economy.{c}.drops`, "economy", `{c}: sprzedaż dropu / złoto z zabić`, drops, 0.3, 0.55, c)
 	end
+	-- S91: the new targets of the 1-20 retune (ids "S91.*"), asserted by the block "Balance 1-20: S91"
+	for _, row in Balance.targetsS91() do
+		table.insert(rows, row)
+	end
 	return rows
 end
+
+-- S91: levels 1-20 retuned and frozen ------------------------------------------------------------------------------
+
+-- Thresholds of the new 1-20 targets (docs/sessions S91 "Cele 1–20"; test data, never game numbers).
+Balance.S91 = {
+	-- tempo (B2, plan D4): m(L) / m(L - 1) <= step for L = from..20, >= mono for L = from..19, h(20) / h(19) <= raw,
+	-- sum h(1..19) within hours (definition S91; 05b859d about 2.3 h)
+	pace = { from = 8, step = 1.30, mono = 0.97, raw = 1.30, hours = { 1.8, 2.8 } },
+	r1Low = 1.6, -- ROZWOJ 0
+	r1Factor = 1.15, -- R1 <= 1.15 x D1 of the class (definition S91)
+	tsk2Factor = 1.25, -- T-SK2 <= 1.25 x D1 (plan D1)
+	gain = 1.03, -- the build's damage / the same build without nodes at L20 (ROZWOJ 2.5)
+	smooth = 1.05, -- R1 at 5 / 10 / 15 <= 1.05 x R1 at 20 (S91)
+	tsk6 = { 1.0, 2.0 }, -- plan D1, ROZWOJ 0
+	-- Grimrok bez wsparcia (owner answer 26, ROZWOJ 7.5; S92 C3 counts Morvane the same): (a) fight <= timeShare x
+	-- enrageAfter, (b) damage taken / (potions + regeneration in combat + life steal) <= sustain, (c) no hit above
+	-- `hit` x the member's max HP
+	noSupport = { timeShare = 0.8, sustain = 1.0, hit = 1.0 },
+	-- the damage builds of R1, T-SK2 and the row gain (the Hunter with each weapon of its measurement, S90)
+	damage = {
+		{ classId = "Warrior", key = "berserker.fury" },
+		{ classId = "Cleric", key = "inquisitor.solo" },
+		{ classId = "Hunter", key = "marksman.kingslayer" },
+		{ classId = "Hunter", key = "marksman.kingslayer", weapon = "longbow" },
+		{ classId = "Hunter", key = "trapper.poacher" },
+		{ classId = "Hunter", key = "trapper.poacher", weapon = "bow" },
+		{ classId = "Mage", key = "destroyer.destroyerExp", area = true },
+		{ classId = "Mage", key = "destroyer.destroyerBoss" },
+		{ classId = "Mage", key = "arcanist.arcanistBoss" },
+	} :: { { classId: string, key: string, weapon: string?, area: boolean? } },
+	-- breakpoints of rank 5 reached by level 20 (ranks 5 at 17 / 19, ROZWOJ 2.5)
+	r4Skills = { "holyStrike", "mightyStrike", "aimedShot", "firebolt", "heal", "charge", "doubleShot", "fireball" },
+	-- PATH_TARGETS ids whose row at 20 is a target of the 1-20 table (E9): T-SK3 and the solo pace of support and
+	-- tank paths; every other row at 20 is printed (bands written for 45-100)
+	pathRows = {
+		["all.tsk3"] = true,
+		["mage.tsk3"] = true,
+		["trapper.r3"] = true,
+		["warrior.solo"] = true,
+		["cleric.solo"] = true,
+		["scout.solo"] = true,
+	} :: { [string]: boolean },
+	-- the Grimrok team without support (L19, from the combat paths trimmed to 19): 3 / 4 / 5 members
+	noSupportTeam = {
+		"berserker.fury",
+		"marksman.kingslayer",
+		"arcanist.arcanistBoss",
+		"inquisitor.solo",
+		"destroyer.destroyerBoss",
+	},
+}
+
+export type NoSupportMember = {
+	key: string,
+	classId: string,
+	maxHp: number,
+	dps: number, -- the skill model's DPS on the boss (x BOSS_UPTIME, as in the fight)
+	taken: number, -- damage taken per second over the fight
+	sustain: number, -- potions (Balance.potionHps) + regeneration in combat + life steal, per second
+	ratio: number,
+	biggest: number, -- the biggest single hit this member's class takes / its max HP
+	potions: number, -- potions drunk over the fight (taken HP beyond regeneration and life steal / the best potion)
+}
+export type NoSupport = { seconds: number, limit: number, members: { NoSupportMember }, fight: BossFight }
+
+local noSupportCache: { [string]: NoSupport } = {}
+-- S91 (D3, odpowiedź 26, ROZWOJ 7.5): `bossId` against the first `n` builds of S91.noSupportTeam trimmed to
+-- `level` (default boss level - 1): no interception, no heals of others, no taunts (own heals and life steal count).
+-- The players' damage is the skill model's (tests/SkillModel.fight on the boss for ASSUMPTIONS.bossSeconds, x the
+-- convention's BOSS_UPTIME in Balance.bossFight through `dpsMul`), the boss's damage from Balance.bossFight.
+function Balance.bossNoSupport(bossId: string, n: number, level: number?): NoSupport
+	local def = Bosses.byId[bossId] :: any
+	local L = level or def.level - 1
+	local key = `{bossId}|{n}|{L}`
+	local cached = noSupportCache[key]
+	if cached then
+		return cached
+	end
+	local SkillModel = (require :: any)("./SkillModel")
+	local m = Balance.monster(Balance.bossKind(def, n), def.level, "boss")
+	local team: { Player } = {}
+	local mul: { number } = {}
+	for i = 1, n do
+		local buildKey = Balance.S91.noSupportTeam[i]
+		local sp = SkillModel.player(SkillModel.build(buildKey), L)
+		local skill = SkillModel.fight(sp, { targets = { m }, seconds = SkillModel.ASSUMPTIONS.bossSeconds }).dps
+		team[i] = sp.p
+		mul[i] = skill / math.max(1e-9, Balance.dps(sp.p, m))
+	end
+	local fight = Balance.bossFight(bossId, team, { dpsMul = mul })
+	local potionHps = Balance.potionHps(L)
+	local best = allowedPotions(L)
+	local potionHeal = if #best > 0 then best[#best].heal else 0
+	local members: { NoSupportMember } = {}
+	for i, p in team do
+		local own = Balance.dps(p, m) * mul[i] * Balance.BOSS_UPTIME
+		local regen = p.values.hpRegenCombat or 0
+		local steal = math.min(p.values.lifesteal or 0, 15) / 100 * own -- mirrors Damage.computeDamage's cap of 15
+		local sustain = potionHps + regen + steal
+		local taken = fight.memberDps[i]
+		table.insert(members, {
+			key = Balance.S91.noSupportTeam[i],
+			classId = p.classId,
+			maxHp = p.values.maxHp,
+			dps = own,
+			taken = taken,
+			sustain = sustain,
+			ratio = taken / math.max(1e-9, sustain),
+			biggest = fight.biggestHit[p.classId] or 0,
+			potions = if potionHeal > 0 then math.max(0, taken - regen - steal) * fight.seconds / potionHeal else 0,
+		})
+	end
+	local out: NoSupport = {
+		seconds = fight.seconds,
+		limit = Balance.S91.noSupport.timeShare * def.enrageAfter,
+		members = members,
+		fight = fight,
+	}
+	noSupportCache[key] = out
+	return out
+end
+
+-- S91 (H1): the new 1-20 targets in one place (ids "S91.<group>..."); balance.spec ("Balance 1-20: S91") asserts
+-- the rows without `report`, the report prints them all. The S32 rows (with the variants with nodes) stay above.
+function Balance.targetsS91(): { TargetRow }
+	local rows: { TargetRow } = {}
+	local S = Balance.S91
+	local SkillModel = (require :: any)("./SkillModel")
+	local D1 = SkillModel.GUARD_D1
+	local function add(
+		id: string,
+		group: string,
+		label: string,
+		value: number,
+		low: number?,
+		high: number?,
+		c: string?,
+		L: number?
+	)
+		target(rows, `S91.{id}`, group, label, value, low, high, c, L)
+	end
+	-- tempo: the window model from level 1 (B2), Warrior, GENERIC, rest, no boss quests
+	do
+		local P = S.pace
+		local sum = 0
+		for L = 1, 19 do
+			sum += Balance.paceWindowAt("Warrior", L).hours
+		end
+		add("pace.sum", "pace", "Tempo 1 → 20 (okno, bez Grimroka): h", sum, P.hours[1], P.hours[2], "Warrior")
+		for L = P.from, 20 do
+			local r = Balance.paceWindowMean("Warrior", L) / math.max(1e-9, Balance.paceWindowMean("Warrior", L - 1))
+			local low = if L <= 19 then P.mono else nil
+			add(`pace.m.{L}`, "pace", `Tempo: m({L}) / m({L - 1})`, r, low, P.step, "Warrior", L)
+		end
+		local raw = Balance.paceWindowAt("Warrior", 20).hours
+			/ math.max(1e-9, Balance.paceWindowAt("Warrior", 19).hours)
+		add("pace.raw.20", "pace", "Tempo: h(20) / h(19)", raw, nil, P.raw, "Warrior", 20)
+	end
+	-- Grimrok in the S83 / S87 model (Balance.bossFight with BossSchedule), both player variants
+	for _, nodes in { false, true } do
+		local at = if nodes then "@nodes" else ""
+		local suffix = if nodes then " z węzłami" else ""
+		for n = 3, 5 do
+			local f = Balance.bossFight("grimrok", Balance.team(n, 19, nodes))
+			local label = `Grimrok (model S83), {n} graczy L19{suffix}: min`
+			add(`grimrok.model.team{n}{at}`, "grimrok", label, f.seconds / 60, 4, 6, nil, 19)
+		end
+		for _, spec in { { 20, 0.7 }, { 18, 1 - 1e-9 } } do
+			local L = spec[1]
+			local team = Balance.team(5, 19, nodes)
+			team[2] = Balance.player("Mage", L, if nodes then { nodes = Balance.COMBAT_BUILD.Mage } else nil)
+			local hit = Balance.bossFight("grimrok", team).biggestHit.Mage or 0
+			local label = `Grimrok (model S83): największy cios / HP Maga L{L}{suffix}`
+			add(`grimrok.model.mage{L}{at}`, "grimrok", label, hit, nil, spec[2], "Mage", L)
+		end
+	end
+	-- T-SK6 (plan D1, S86 F4): the dungeon Healer on the Defender (team S92) at the boss level - 1
+	do
+		local healer = SkillModel.build("healer.dungeon", "Cleric")
+		local r = SkillModel.healerVsBoss(healer, "grimrok", { team = "s92" })
+		local label = "T-SK6 Grimrok: Uzdrowiciel lochowy na Obrońcy"
+		add("grimrok.tsk6", "grimrok", label, r.tsk6, S.tsk6[1], S.tsk6[2], "Cleric", 19)
+	end
+	-- Grimrok bez wsparcia (D3)
+	for n = 3, 5 do
+		local r = Balance.bossNoSupport("grimrok", n)
+		add(
+			`grimrok.noSupport.{n}.seconds`,
+			"noSupport",
+			`Grimrok bez wsparcia, {n} graczy: s`,
+			r.seconds,
+			nil,
+			r.limit,
+			nil,
+			19
+		)
+		local worst, hit = 0, 0
+		for _, mem in r.members do
+			worst = math.max(worst, mem.ratio)
+			hit = math.max(hit, mem.biggest)
+		end
+		local label = `Grimrok bez wsparcia, {n} graczy: przyjmowane / podtrzymanie (najgorszy)`
+		add(`grimrok.noSupport.{n}.sustain`, "noSupport", label, worst, nil, S.noSupport.sustain, nil, 19)
+		local hitLabel = `Grimrok bez wsparcia, {n} graczy: największy cios / HP`
+		add(`grimrok.noSupport.{n}.hit`, "noSupport", hitLabel, hit, nil, S.noSupport.hit, nil, 19)
+	end
+	-- skill layer at L20 (E2): R1, T-SK2, the gain of rows 1-2 of the damage builds, smoothness at 10 / 15
+	for _, spec in S.damage do
+		local build = SkillModel.build(spec.key, spec.classId)
+		if spec.weapon then
+			build = SkillModel.withWeapon(build, spec.weapon, "quiver")
+		end
+		local ids: { string } = {}
+		for _, node in build.nodes do
+			table.insert(ids, node[1])
+		end
+		local bare = SkillModel.withoutNodes(build, ids)
+		local m, m0 = SkillModel.metrics(build, 20), SkillModel.metrics(bare, 20)
+		local c = spec.classId
+		local name = build.key
+		add(`r1.{name}`, "skills", `R1 {name} L20`, m.r1, S.r1Low, S.r1Factor * D1.tsk1[c], c, 20)
+		add(`tsk2.{name}`, "skills", `T-SK2 {name} L20`, m.tsk2, nil, S.tsk2Factor * D1.tsk2[c], c, 20)
+		local gain = if spec.area
+			then m.aoe3burst / math.max(1e-9, m0.aoe3burst)
+			else m.single60 / math.max(1e-9, m0.single60)
+		local what = if spec.area then " (obszar 8 s)" else ""
+		add(`gain.{name}`, "skills", `{name} L20: obrażenia / bez węzłów{what}`, gain, S.gain, nil, c, 20)
+		for _, L in { 10, 15 } do
+			local r = SkillModel.metrics(build, L).r1 / math.max(1e-9, m.r1)
+			add(`smooth.{name}.{L}`, "skills", `R1 {name} L{L} / L20`, r, nil, S.smooth, c, L)
+		end
+	end
+	for _, c in Balance.CLASSES do
+		local base = SkillModel.build("base", c)
+		local r20 = SkillModel.metrics(base, 20).r1
+		for _, L in { 5, 10, 15 } do
+			local r = SkillModel.metrics(base, L).r1 / math.max(1e-9, r20)
+			add(`smooth.base.{c}.{L}`, "skills", `R1 podstawy {c} L{L} / L20`, r, nil, S.smooth, c, L)
+		end
+	end
+	-- R4 of the breakpoints of rank 5 reached by 20 (S89 E1 definition; R4_UTILITY options are printed by the paths
+	-- block)
+	local band = SkillModel.R4_BANDS[5]
+	for _, skillId in S.r4Skills do
+		local def = SkillData.get(skillId) :: any
+		local key = SkillModel.R4_SUPPORT_BUILDS[skillId] or SkillModel.R4_CLASS_BUILDS[def.class]
+		local build = SkillModel.build(key)
+		local values: { [string]: number } = {}
+		for _, choice in { "a", "b" } do
+			if SkillModel.R4_UTILITY[`{skillId}:5{choice}`] then
+				continue
+			end
+			local v = SkillModel.optionGain(build, skillId, 5, choice, 20)
+			if v then
+				local label = `R4 {skillId} 5{string.upper(choice)} L20 ({key})`
+				add(`r4.{skillId}.5{choice}`, "r4", label, v, band[1], band[2], def.class, 20)
+				if SkillModel.R4_REPORT[`{skillId}:5{choice}`] then
+					rows[#rows].report = "właściciel (R4_REPORT)"
+				else
+					values[choice] = v
+				end
+			end
+		end
+		if values.a and values.b then
+			local diff = math.abs(values.a - values.b)
+			add(
+				`r4.{skillId}.5.diff`,
+				"r4",
+				`R4 {skillId} 5: |A − B| L20`,
+				diff,
+				nil,
+				SkillModel.R4_DIFF,
+				def.class,
+				20
+			)
+		end
+	end
+	-- PATH_TARGETS rows at 20 that are 1-20 targets (E9)
+	for _, r in SkillModel.evaluateTargets() do
+		if r.L == 20 and S.pathRows[r.id] then
+			local note = if r.note then ` {r.note}` else ""
+			local id = `path.{r.id}.{r.build}{if r.note then "." .. r.note else ""}`
+			add(id, "paths20", `{r.id} {r.build} L20{note}`, r.value, r.low, r.high, r.classId, 20)
+		end
+	end
+	-- H5: rows out of reach of the S91 levers, printed (the why in Balance.S91_REPORT)
+	for _, row in rows do
+		local why = Balance.S91_REPORT[row.id]
+		if why then
+			row.report = `właściciel: {why}`
+		end
+	end
+	return rows
+end
+
+-- S91 (H5): rows of targetsS91 out of reach of the S91 levers (printed with the reason; docs/DECYZJE.md S91).
+Balance.S91_REPORT = {
+	-- S91: obrażenia rzędów 1-2 Strzelca i Trapera z kuszą poza zasięgiem dźwigni S91: węzły rzędów 1-2 (Pewna Ręka,
+	-- Jad Myśliwski) są globalne, a Pewna Ręka 1,5-4 (+0,5 pkt) psuje trapper.aoe na 45 (1,15 -> 1,146, S90);
+	-- Przebijająca Strzała rzędu 1 ma 2% obrażeń i rangę 3 na 18. (przypięta 4. ranga)
+	["S91.gain.marksman.kingslayer"] = "rzędy 1–2 Strzelca z ciężką kuszą +2,2% (dźwignie globalne psują S90)",
+	["S91.gain.marksman.kingslayer@longbow+quiver"] = "rzędy 1–2 Strzelca z długim łukiem +2,6% (dźwignie globalne psują S90)",
+	["S91.gain.trapper.poacher"] = "rzędy 1–2 Trapera z kuszą +1,4% (dźwignie globalne psują S90)",
+} :: { [string]: string }
 
 -- Targets 20-100 (S83, balance plan 2.5) ------------------------------------------------------------------------
 
@@ -2597,7 +3198,8 @@ local function shopPlayer(classId: string, level: number): Player
 end
 
 -- Rows G1-G6 and G11-G13 in the S32 convention (G7-G9 come with S84, G10 with S85-S86). Asserted by balance.spec
--- from S87 (GLOBAL_ASSERT); rows with `report` stay a report (G12 until S91: balance1_20.spec asserts the fixture).
+-- from S87 (GLOBAL_ASSERT); rows with `report` stay a report. S91: G12 asserted (the new fixture, 0 differences
+-- outside BalanceTables.ALLOWED_1_20_DIFFS).
 function Balance.targetsGlobal(): { TargetRow }
 	local rows: { TargetRow } = {}
 	local function add(id: string, label: string, value: number, low: number?, high: number?, c: string?, L: number?)
@@ -2677,16 +3279,17 @@ function Balance.targetsGlobal(): { TargetRow }
 			end
 		end
 	end
-	-- G12: the 1-20 fixture (report until S91; balance1_20.spec asserts it with its allowed list)
+	-- G12: the 1-20 fixture (S91: asserted; balance1_20.spec asserts it too), allowed differences from
+	-- BalanceTables.ALLOWED_1_20_DIFFS do not count
 	do
-		local fixture = require("./BalanceTables").fixtureDiff()
+		local BalanceTables = require("./BalanceTables")
+		local fixture = BalanceTables.fixtureDiff(BalanceTables.ALLOWED_1_20_DIFFS)
 		table.insert(rows, {
 			id = "G12",
 			group = "G12",
-			label = "1–20: różnice wobec fixture (bez listy dozwolonych)",
-			value = #fixture.diffs + #fixture.missing,
+			label = "1–20: niedozwolone różnice wobec fixture i brakujące klucze",
+			value = fixture.unexpected + #fixture.missing,
 			high = 0,
-			report = "S91",
 		})
 	end
 	-- G13 (preliminary): grind hours per level of the generic kind (without quests: a main quest can pay the whole
@@ -2729,7 +3332,6 @@ end
 -- other row without `report`, that each key matches a row and that each session is above S87. The numbers in `why`
 -- are the S87 values.
 Balance.GLOBAL_REPORT_ONLY = {
-	G12 = { session = "S91", why = "fixture 1-20 re-asserted by S91" },
 	["G13.band|20–45: godzin (cel D4 14 h)"] = {
 		session = "S92",
 		why = "17.98 h > 17.5: the monster curve lengthens 20-45 (15.7 -> 18.0 h); expToNext stays >= 1, the 45 anchor is S92's",
@@ -2751,13 +3353,19 @@ do
 			"poza zasięgiem dźwigni S88: Hunter Heroic 0.257-0.273 with traits after the D1 line cuts (owner: exception)"
 		)
 	end
-	-- G9 (D3): at 20 the 1-20 costs (S91); at 25 +1..+9 protected 10.7 levels of income (band 12-25, S92's band)
+	-- G9 (D3): at 25 +1..+9 protected 10.7 levels of income (band 12-25, S92's band). S91: at 20 poza zasięgiem
+	-- dźwigni S91: the upgrade gold (Config.Upgrade, global) against the income of level 20 (quests and kinds of the
+	-- band 20-45, S92); the 1-20 quests do not count at 20
 	for _, c in Balance.CLASSES do
-		add(`G9.up3|{c} 20: +1…+3 broni / dochód poziomu`, "S91", "0.442 < 0.45: upgrade gold up to ilvl 20 is 1-20")
+		add(
+			`G9.up3|{c} 20: +1…+3 broni / dochód poziomu`,
+			"S91",
+			"poza zasięgiem dźwigni S91: 0.442 < 0.45 (Config.Upgrade global, income of 20 from the band 20-45)"
+		)
 		add(
 			`G9.up9|{c} 20: +1…+9 z ochroną (poziomy dochodu)`,
 			"S91",
-			"10.43 < 12: upgrade gold up to ilvl 20 is 1-20"
+			"poza zasięgiem dźwigni S91: 10.43 < 12 (Config.Upgrade global, income of 20 from the band 20-45)"
 		)
 		add(`G9.up9|{c} 25: +1…+9 z ochroną (poziomy dochodu)`, "S92", "10.74 < 12 at 25 after goldHigh 20")
 	end
@@ -2769,7 +3377,13 @@ do
 	)
 	-- G10 (G2, G3): T-SK5 at 20 / 25 (the heal curve is 1 at 20; 21-44 are S92's anchors). S90: T-SK4 of
 	-- destroyerExp and arcanistBoss asserted (path costs, bands 2.0-2.8 / 2.0-2.4 of SkillModel.TSK4_BANDS)
-	add("G10|T-SK5 Cleric healer.dungeon na guardian.defender 20", "S91", "0.227 < 0.25 at 20 (heal curve = 1)")
+	-- S91: T-SK5 at 20 poza zasięgiem dźwigni S91: Heal's ranks <= 20 can rise at most 1-4 % under the pinned rank 6,
+	-- the heal curve is 1 at 20, Blessed Hands (row 1) is global (T-SK5 of 45-100 in the S87 band)
+	add(
+		"G10|T-SK5 Cleric healer.dungeon na guardian.defender 20",
+		"S91",
+		"poza zasięgiem dźwigni S91: 0.221 < 0.25 (Heal ranks <= 20 under the pinned rank 6, heal curve 1 at 20)"
+	)
 	add("G10|T-SK5 Cleric healer.dungeon na guardian.defender 25", "S92", "0.235 < 0.25 at 25 (anchors 21-44)")
 	-- G8 (D2): "bez cech" rows out of 0.97-1.035 with twoHandedBonusMul 2.7 / 6.6 % per level (the most rows, Legendary
 	-- and Mythic +0 at 45-100 first): legendary and mythic lines get no multiplier. S88 (H4): Data/Rarities is not an
@@ -2782,10 +3396,11 @@ do
 			"Mage runestaff legendary +0 L20",
 		}
 	do
+		-- S91: poza zasięgiem dźwigni S91 (items are not an S91 lever: Data/Rarities, S87 / S88)
 		add(
 			`G8|{label}: bez cech`,
 			"S91",
-			"1.036-1.039 at 20: Legendary lines x2.7 on 1-20 items (S88 cut the new lines; Data/Rarities is fixed)"
+			"poza zasięgiem dźwigni S91: 1.036-1.039 at 20 (Legendary lines x2.7, Data/Rarities; items are not an S91 lever)"
 		)
 	end
 	for _, label in
@@ -2885,7 +3500,15 @@ end
 -- region sessions may tune them with a line in DECYZJE.
 Balance.TUNED = { meadows = true, duskwood = false, ashen = false, frostpeak = false } :: { [string]: boolean }
 Balance.REGION_TARGETS = {
-	eliteSingle = { seconds = { 20, 36 }, hp = { 0.55, 0.95 }, shareInBand = 26 / 36, hpFloor = 0.45, hpCeil = 1.10 },
+	-- S91: `classes` = W / Ł / M (the S32 Elite classes; the Cleric's Elites only printed)
+	eliteSingle = {
+		seconds = { 20, 36 },
+		hp = { 0.55, 0.95 },
+		shareInBand = 26 / 36,
+		hpFloor = 0.45,
+		hpCeil = 1.10,
+		classes = { "Warrior", "Hunter", "Mage" },
+	},
 	eliteEncounter = { Warrior = 1.10, Mage = 1.25 }, -- (1 - q) * single + q * pair, q from caveElites
 	-- solo at least, duo at most, trio within (the S32 reading: solo dies, two struggle, three win)
 	elite2 = { solo = 1.80, duo = 1.50, trio = { 0.60, 1.00 } },
@@ -2897,10 +3520,14 @@ Balance.REGION_TARGETS = {
 }
 
 -- Rows of one region (group = eliteSingle / eliteEncounter / elite2 / kinds / bossCadence). The Meadows use the S32
--- kind set (passive rabbit included) and the S32 band 0.85-1.20.
-function Balance.targetsRegion(mapId: string, targets: any?): { TargetRow }
+-- kind set (passive rabbit included) and the S32 band 0.85-1.20. S91 (B1): `withNodes` = only the cave rows with the
+-- players with nodes (Balance.caveElites(mapId, true)), ids "R.<map>.nodes.*"; Elite rows of the classes in
+-- eliteSingle.classes (W / Ł / M).
+function Balance.targetsRegion(mapId: string, targets: any?, withNodes: boolean?): { TargetRow }
 	local T = targets or Balance.REGION_TARGETS
 	local rows: { TargetRow } = {}
+	local prefix = if withNodes then `R.{mapId}.nodes` else `R.{mapId}`
+	local classes = T.eliteSingle.classes
 	local function add(
 		group: string,
 		id: string,
@@ -2912,7 +3539,7 @@ function Balance.targetsRegion(mapId: string, targets: any?): { TargetRow }
 		L: number?
 	)
 		table.insert(rows, {
-			id = `R.{mapId}.{id}`,
+			id = `{prefix}.{id}`,
 			group = group,
 			label = label,
 			value = value,
@@ -2923,10 +3550,13 @@ function Balance.targetsRegion(mapId: string, targets: any?): { TargetRow }
 		})
 	end
 	local single, inBand = 0, 0
-	for _, cave in Balance.caveElites(mapId) do
+	for _, cave in Balance.caveElites(mapId, withNodes) do
 		for _, kind in cave.kinds do
 			for _, f in kind.fights do
-				local key = `{cave.id}.{kind.kind}.{f.level}.{f.classId}`
+				if classes and not table.find(classes, f.classId) then
+					continue
+				end
+				local key = `{cave.id}.{kind.kind}.{f.level}.{f.classId}{if f.variant then "@" .. f.variant else ""}`
 				local s, hp = T.eliteSingle.seconds, T.eliteSingle.hp
 				single += 1
 				if
@@ -2940,7 +3570,7 @@ function Balance.targetsRegion(mapId: string, targets: any?): { TargetRow }
 				add(
 					"eliteSingle",
 					`eliteSingle.{key}.hp`,
-					`{cave.id} {kind.kind} {f.level} {f.classId}: Elita HP`,
+					`{cave.id} {kind.kind} {f.level} {f.classId}{if f.variant then " " .. f.variant else ""}: Elita HP`,
 					f.single.hpLost,
 					T.eliteSingle.hpFloor,
 					T.eliteSingle.hpCeil,
@@ -2952,7 +3582,7 @@ function Balance.targetsRegion(mapId: string, targets: any?): { TargetRow }
 					add(
 						"eliteEncounter",
 						`eliteEncounter.{key}`,
-						`{cave.id} {kind.kind} {f.level} {f.classId}: spotkanie Elit (q = {string.format(
+						`{cave.id} {kind.kind} {f.level} {f.classId}{if f.variant then " " .. f.variant else ""}: spotkanie Elit (q = {string.format(
 							"%.2f",
 							cave.pairShare
 						)})`,
@@ -3008,6 +3638,9 @@ function Balance.targetsRegion(mapId: string, targets: any?): { TargetRow }
 			inBand / single,
 			T.eliteSingle.shareInBand
 		)
+	end
+	if withNodes then
+		return rows
 	end
 	local meadows = mapId == "meadows"
 	for _, k in Balance.kindRates(mapId, meadows) do

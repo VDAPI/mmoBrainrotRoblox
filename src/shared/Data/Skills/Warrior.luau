@@ -15,7 +15,7 @@ return Build.class("Warrior", "energy", "phys", {
 		cost = 15,
 		cooldown = 4,
 		range = 8,
-		values = { dmg = { 160, 222 } },
+		values = { dmg = { 136, 222 } }, -- S91: rank 1 160 -> 136 (ranks <= 20, Data/SkillCurves)
 		breakpoints = Build.bp2({ a = { knockback = 6 }, b = { execute = 30 } }, {
 			a = { splash = { radius = 6, pct = 50 } },
 			-- no category (ROZWOJ 7.1); every strike renews it (no bleedStacks)
@@ -32,10 +32,10 @@ return Build.class("Warrior", "energy", "phys", {
 		cost = 20,
 		cooldown = 12,
 		range = 25,
-		values = { dmg = { 120, 165 } },
+		values = { dmg = { 102, 165 } }, -- S91: rank 1 120 -> 102 (ranks <= 20, Data/SkillCurves)
 		effects = { { kind = "stun", duration = 0.8 } },
 		breakpoints = Build.bp2(
-			{ a = { add = { range = 7 } }, b = { mul = { cooldown = 0.8 } } },
+			{ a = { add = { range = 7 } }, b = { mul = { cooldown = 0.88 } } }, -- S91: 5B 0.8 -> 0.88 (R4)
 			{ a = { stunNear = { radius = 5, duration = 1 } }, b = { splash = { radius = 6, pct = 60 } } }
 		),
 		glyph = "➹",
@@ -52,7 +52,7 @@ return Build.class("Warrior", "energy", "phys", {
 		-- S28: two turns with three blows (the DESIGN total 110-200% split over the hits)
 		hits = 3,
 		interval = 0.2,
-		values = { dmg = { 37, 52 } },
+		values = { dmg = { 33, 52 } }, -- S91: rank 1 37 -> 33 (ranks <= 20, Data/SkillCurves)
 		breakpoints = Build.bp2(
 			{ a = { castMove = 60 }, b = { lifesteal = 8 } },
 			{ a = { pull = 12 }, b = { add = { hits = 1 }, values = { dmg = -4 } } } -- 4 x 48 % at rank 10

@@ -321,7 +321,7 @@ local inquisitor: Types.PathDef = {
 		row(false, {
 			skill(I, "purify"),
 			node(I, "zeal", "passive", 3, "✦", {
-				values = { zeal = { 4, 10 } },
+				values = { zeal = { 3, 7 } }, -- S91: { 4, 10 } -> { 3, 7 } (Cleric group at 20 with the node >= 30 % HP, S32)
 				passive = { pct = { magAtk = "zeal" } },
 			}),
 		}),

@@ -28,6 +28,8 @@ local Maps = require("../src/shared/Data/Maps")
 local Monsters = require("../src/shared/Data/Monsters")
 local Potions = require("../src/shared/Logic/Potions")
 local Rarities = require("../src/shared/Data/Rarities")
+local SkillData = require("../src/shared/Data/Skills")
+local Skills = require("../src/shared/Logic/Skills")
 local Spawns = require("../src/shared/Data/Spawns")
 
 local BalanceTables = {}
@@ -238,7 +240,8 @@ function BalanceTables.tables1_20(): { Table }
 	for _, c in B.CLASSES do
 		for _, L in { 10, 15, 18, 20 } do
 			local f = B.elite(B.player(c, L), B.GENERIC, L)
-			row(`{c} {L}`, { { f.seconds, "s" }, { f.hpLost, "%" } })
+			-- S91: Elita na 20. ma poziom 22 (krzywe 20-45 S87 / S92), asertowane w balance.spec
+			row(`{c} {L}`, { { f.seconds, "s" }, { f.hpLost, "%" } }, if L == 20 then false else nil)
 		end
 	end
 
@@ -258,6 +261,7 @@ function BalanceTables.tables1_20(): { Table }
 		local solo = B.elite2({ w }, kind, L)
 		local duo = B.elite2({ w, m }, kind, L)
 		local trio = B.elite2({ w, m, h }, kind, L)
+		-- S91: Elita II spawnera 18 ma poziom 22 (krzywe S87 / S92), asertowane w balance.spec
 		row(`{kind} {L}`, {
 			{ solo.seconds, "s" },
 			{ solo.hpLost, "%" },
@@ -265,7 +269,7 @@ function BalanceTables.tables1_20(): { Table }
 			{ duo.hpLost, "%" },
 			{ trio.seconds, "s" },
 			{ trio.hpLost, "%" },
-		})
+		}, if L + 4 > 20 then false else nil)
 	end
 
 	section("Grimrok (poziom 20)", {
@@ -453,6 +457,7 @@ function BalanceTables.tables1_20(): { Table }
 	for _, L in KEY_LEVELS do
 		local pace = B.pace("Warrior", L)
 		local kills = pace.kills + B.questKills(L)
+		-- S91: na 20. Heroiki z Elit poziomu 22 (krzywe S87 / S92), asertowane w balance.spec (wiersz 20 poza fixture)
 		row(tostring(L), {
 			{ B.dropIlvl(L, "normal"), "1" },
 			{ B.wearableShare(L), "%" },
@@ -461,7 +466,7 @@ function BalanceTables.tables1_20(): { Table }
 			{ kills, "1" },
 			{ kills * B.itemsPerKill("normal", Rarities.UNIQUE), "2" },
 			{ 3600 / B.eliteCadence("Warrior", L) * B.itemsPerKill("elite", Rarities.HEROIC), "2" },
-		})
+		}, if L == 20 then false else nil)
 	end
 
 	section("Elita II: przedmioty na zabicie", { "rzadkość", "na zabicie (do klasy)" })
@@ -575,6 +580,291 @@ function BalanceTables.tables1_20(): { Table }
 		row(mapId, {
 			{ count(AreaSpawns.region(plain, (Maps.get(mapId) :: any).size)), "i" },
 			{ count(Spawns.byMap[mapId]), "i" },
+		})
+	end
+
+	-- S91 (H3): the tables of the 1-20 retune. `fixture = false` (-- S91: <why>, asserted in balance.spec) marks the
+	-- rows that depend on S92's data: fights with a monster above level 20 and the window pace at 20 and 21.
+	local SkillModel = (require :: any)("./SkillModel")
+
+	section(
+		"Gracz z węzłami rzędów 1–3 (S91)",
+		{
+			"klasa · poziom · build",
+			"1 na 1 s",
+			"1 na 1 HP",
+			"grupa średnio HP",
+			"grupa 4 HP",
+			"Elita s",
+			"Elita HP",
+		},
+		"Gracz konwencji S32 (Zwykły, ilvl = poziom − 2, `Balance.statsFor`) z pasywkami węzłów buildu wzorcowego przyciętego do poziomu (`Balance.buildsAt`; buildy z tym samym zestawem węzłów raz). Elita tylko Wojownik, Łowca, Mag."
+	)
+	for _, c in B.CLASSES do
+		for _, L in { 10, 15, 18, 20 } do
+			for _, v in B.buildsAt(c, L) do
+				if v.nodes then
+					local p = B.player(c, L, { nodes = v.nodes })
+					local m = B.monster(B.GENERIC, L)
+					local f = B.duel(p, m)
+					local g = B.expectedGroup(p, B.GENERIC, L)
+					local cells: { { any } } = {
+						{ f.seconds, "s" },
+						{ f.hpLost, "%" },
+						{ g.hpLost, "%" },
+						{ g.bySize[4].hpLost, "%" },
+					}
+					local elite = c ~= "Cleric"
+					if elite and L < 20 then
+						local e = B.elite(p, B.GENERIC, L)
+						table.insert(cells, { e.seconds, "s" })
+						table.insert(cells, { e.hpLost, "%" })
+					end
+					row(`{c} {L} {v.key}`, cells)
+					if elite and L == 20 then
+						-- S91: Elita na 20. ma poziom 22 (krzywe 20-45 S87 / S92), asertowane w balance.spec
+						local e = B.elite(p, B.GENERIC, L)
+						local nan = 0 / 0
+						row(`{c} {L} {v.key} (Elita, poziom 22)`, {
+							{ nan, "s" },
+							{ nan, "%" },
+							{ nan, "%" },
+							{ nan, "%" },
+							{ e.seconds, "s" },
+							{ e.hpLost, "%" },
+						}, false)
+					end
+				end
+			end
+		end
+	end
+
+	section(
+		"Tempo: model okna od 1. poziomu (S91)",
+		{
+			"poziom",
+			"h",
+			"m (średnia h z 5 poziomów)",
+			"m / m − 1",
+			"EXP zadań poziomu",
+			"EXP przeniesione",
+			"h / h − 1",
+		},
+		"`Balance.paceWindowAt` (Wojownik, rodzaj zwykły, odpoczynek, bez zadań z bossem): zadanie główne płaci na poziomach od swojego do poziomu przed następnym zadaniem głównym (proporcjonalnie do `Exp.expToNext`), poboczne × `SIDE_SHARE` w swoim paśmie, nadmiar EXP przechodzi dalej. Wiersze 20 i 21 zależą od zadań Boru (S92), poza fixture."
+	)
+	for L = 1, 21 do
+		local w = B.paceWindowAt("Warrior", L)
+		local m = B.paceWindowMean("Warrior", L)
+		local prev = if L > 1 then B.paceWindowMean("Warrior", L - 1) else 0
+		local ratio = if prev > 1e-6 then m / prev else 0 / 0 -- no ratio after levels paid in full by the tutorial
+		local prevH = if L > 1 then B.paceWindowAt("Warrior", L - 1).hours else 0
+		local raw = if prevH > 1e-6 then w.hours / prevH else 0 / 0
+		-- S91: h(20), m(20) i krok 19 -> 20 zależą od `toDuskwood` (S92), asertowane w balance.spec
+		row(
+			tostring(L),
+			{ { w.hours, "2" }, { m, "2" }, { ratio, "2" }, { w.questExp, "i" }, { w.carryIn, "i" }, { raw, "2" } },
+			if L >= 20 then false else nil
+		)
+	end
+	do
+		local sum, sumBoss, sumKind = 0, 0, 0
+		for L = 1, 19 do
+			sum += B.paceWindowAt("Warrior", L).hours
+			sumBoss += B.paceWindowAt("Warrior", L, { withBossQuests = true }).hours
+			sumKind += B.paceWindowAt("Warrior", L, { kind = "kindAt" }).hours
+		end
+		row("suma 1–19", { { sum, "2" }, { 0 / 0, "2" }, { 0 / 0, "2" }, { 0 / 0, "i" }, { 0 / 0, "i" } })
+		row("suma 1–19 z zadaniem Grimroka", { { sumBoss, "2" }, { 0 / 0, "2" } })
+		row("suma 1–19 z rodzajami Łąk (`kindAt`)", { { sumKind, "2" }, { 0 / 0, "2" } })
+	end
+
+	section(
+		"Warstwa umiejętności na 5 / 10 / 15 / 20 (S91)",
+		{ "klasa · build · poziom", "R1", "T-SK2", "T-SK3", "DPS 1 cel 60 s", "grupa 3 × 8 s", "maks. HP", "EHP" },
+		"`tests/SkillModel.luau`: podstawa klasy na rangach z poziomu, buildy wzorcowe przycięte do poziomu (10 punktów na 20.), ekwipunek konwencji. Kotwica L20 w tabeli niżej."
+	)
+	for _, c in B.CLASSES do
+		for _, build in SkillModel.builds(c) do
+			local levels = if build.base then { 5, 10, 15 } else { 10, 15 }
+			for _, L in levels do
+				local m = SkillModel.metrics(build, L)
+				row(`{c} {build.key} {L}`, {
+					{ m.r1, "2" },
+					{ m.tsk2, "2" },
+					{ m.tsk3, "2" },
+					{ m.single60, "i" },
+					{ m.aoe3burst, "i" },
+					{ m.maxHp, "i" },
+					{ m.ehp, "1" },
+				})
+			end
+		end
+	end
+
+	section(
+		"Kotwica L20 (S91)",
+		{
+			"klasa · build",
+			"R1",
+			"T-SK2",
+			"T-SK3",
+			"DPS 1 cel 60 s",
+			"grupa 3 × 8 s",
+			"maks. HP",
+			"EHP",
+			"T-SK4 / T-SK5",
+		},
+		"Stan po przestrojeniu 1–20 (S91): podstawa klasy bez ścieżki głównej i każdy build wzorcowy przycięty do L20 (ścieżka główna świeżo wybrana, 10 punktów). T-SK4 dla Maga, T-SK5 (Leczenie na Obrońcy) dla Kapłana. Od S91 każda zmiana tej tabeli to wpis w `ALLOWED_1_20_DIFFS`; S92–S94 asertują strażniki T-SK względem tych liczb (`SkillModel.guards`)."
+	)
+	for _, c in B.CLASSES do
+		for _, build in SkillModel.builds(c) do
+			local m = SkillModel.metrics(build, 20)
+			local extra = if c == "Mage"
+				then m.tsk4
+				elseif c == "Cleric" then SkillModel.oneHeal(build, 20, SkillModel.defenderTank(20))
+				else 0 / 0
+			row(`{c} {build.key}`, {
+				{ m.r1, "2" },
+				{ m.tsk2, "2" },
+				{ m.tsk3, "2" },
+				{ m.single60, "i" },
+				{ m.aoe3burst, "i" },
+				{ m.maxHp, "i" },
+				{ m.ehp, "1" },
+				{ extra, "2" },
+			})
+		end
+	end
+	do
+		local healer = SkillModel.build("healer.dungeon", "Cleric")
+		local r = SkillModel.healerVsBoss(healer, "grimrok", { team = "s92" })
+		row("T-SK6 Grimrok (Uzdrowiciel lochowy na Obrońcy)", { { r.tsk6, "2" } })
+		for _, c in B.CLASSES do
+			local p = B.player(c, 20)
+			local f = B.duel(p, B.monster(B.GENERIC, 20))
+			local g = B.expectedGroup(p, B.GENERIC, 20)
+			row(`konwencja {c} 20: 1 na 1 s / HP, grupa`, { { f.seconds, "s" }, { f.hpLost, "%" }, { g.hpLost, "%" } })
+		end
+	end
+
+	section(
+		"Elity z prawdziwych spawnerów Łąk (S91)",
+		{
+			"jaskinia · rodzaj · poziom · klasa · wariant",
+			"pojedyncza s",
+			"pojedyncza HP",
+			"para HP",
+			"spotkanie HP",
+		},
+		'`Balance.caveElites("meadows")` (q par z prawdziwych spawnerów po `elitePairChance.meadows`), gracz bez węzłów i z węzłami (`buildsAt`). Wiersze z Elitą powyżej 20. poziomu (spawner 19–20) poza fixture.'
+	)
+	for _, withNodes in { false, true } do
+		for _, cave in B.caveElites("meadows", withNodes) do
+			for _, kind in cave.kinds do
+				for _, f in kind.fights do
+					local label =
+						`{cave.id} {kind.kind} {f.level} {f.classId}{if f.variant then " " .. f.variant else ""}`
+					-- S91: Elita spawnera 19-20 ma poziom 21-22 (krzywe S87 / S92), asertowane w balance.spec
+					row(label, {
+						{ f.single.seconds, "s" },
+						{ f.single.hpLost, "%" },
+						{ f.pair.hpLost, "%" },
+						{ f.encounter, "%" },
+					}, if f.level + 2 > 20 then false else nil)
+				end
+			end
+		end
+	end
+	section(
+		"Elita II jaskiń Łąk (S91)",
+		{ "jaskinia · rodzaj · spawner · wariant", "solo HP", "2 graczy HP", "3 graczy HP", "4 graczy HP" },
+		'`Balance.caveElites("meadows")`: drużyna `Balance.team` (W, M, Ł, K) na poziomie spawnera + 2, Elita II na spawnerze + 4. Cel `REGION_TARGETS.elite2`. Spawner 17–20 poza fixture.'
+	)
+	for _, withNodes in { false, true } do
+		for _, cave in B.caveElites("meadows", withNodes) do
+			for _, e in cave.elite2 do
+				local label = `{cave.id} {e.kind} {e.spawner}{if withNodes then " z węzłami" else ""}`
+				-- S91: Elita II spawnera 17-20 ma poziom 21-24 (krzywe S87 / S92), asertowane w balance.spec
+				row(label, {
+					{ e.byTeam[1].hpLost, "%" },
+					{ e.byTeam[2].hpLost, "%" },
+					{ e.byTeam[3].hpLost, "%" },
+					{ e.byTeam[4].hpLost, "%" },
+				}, if e.spawner + 4 > 20 then false else nil)
+			end
+		end
+	end
+
+	section(
+		"Grimrok w modelu S83 / S87 (S91)",
+		{ "drużyna", "walka min", "tank obrażenia/s", "największy cios Mag", "fazy tarczy s" },
+		"`Balance.bossFight` z harmonogramem `Logic/BossSchedule` (S87), drużyna L19 (W, M, Ł, K, W), bez i z węzłami (`Balance.COMBAT_BUILD`). Bez wsparcia: buildy bojowe przycięte do 19 (Furia, Królobójca, Arkanista boss, Inkwizytor solo, Niszczyciel boss), obrażenia graczy z `tests/SkillModel.luau`."
+	)
+	for _, withNodes in { false, true } do
+		for n = 1, 5 do
+			local f = B.bossFight("grimrok", B.team(n, 19, withNodes))
+			row(`{n}{if withNodes then " z węzłami" else ""}`, {
+				{ f.seconds / 60, "2" },
+				{ f.tankDps, "1" },
+				{ f.biggestHit.Mage or 0 / 0, "%" },
+				{ f.shieldSeconds, "s" },
+			})
+		end
+	end
+	section(
+		"S91: tylko raport (tempo, mikstury, rangi)",
+		{ "pozycja", "wartość" },
+		"Pozycje „tylko raport” z S91 (bez fixture): EXP na godzinę z miksturami łańcuchowymi wobec odpoczynku i udział mikstur w złocie z walki (Wojownik, rodzaj zwykły), tempo 1 → 20 innych klas (model okna), suma rang podstawy klasy na 10 / 15 / 20 (rangi z poziomu, ROZWOJ 2.5). Wartości cech na 20 (lista S88) i Kusza na 20 (S90): tabele przedmiotów i S88.",
+		false
+	)
+	for _, L in { 5, 10, 15, 19 } do
+		local rest = B.paceAt("Warrior", L, { kind = B.GENERIC })
+		local chain = B.paceAt("Warrior", L, { kind = B.GENERIC, potions = "chain" })
+		row(`EXP/h łańcuch / odpoczynek L{L}`, { { chain.expPerHour / math.max(1e-9, rest.expPerHour), "2" } }, false)
+		local income = chain.goldPerKill + chain.dropPerKill
+		row(`mikstury / złoto z walki L{L}`, { { chain.potionGoldPerKill / math.max(1e-9, income), "%" } }, false)
+	end
+	for _, c in B.CLASSES do
+		local sum = 0
+		for L = 1, 19 do
+			sum += B.paceWindowAt(c, L).hours
+		end
+		row(`tempo 1 → 20 {c} (h)`, { { sum, "2" } }, false)
+		for _, L in { 10, 15, 20 } do
+			local ranks = 0
+			for _, def in SkillData.byClass[c] do
+				ranks += Skills.rankFor(c, L, def)
+			end
+			row(`rangi podstawy {c} L{L}`, { { ranks, "i" } }, false)
+		end
+	end
+
+	section(
+		"Grimrok bez wsparcia (S91)",
+		{
+			"drużyna",
+			"walka s",
+			"limit s",
+			"przyjmowane / podtrzymanie (najgorszy)",
+			"największy cios / HP",
+			"mikstury (najwięcej)",
+		},
+		"Odpowiedź 26, ROZWOJ 7.5: bez przechwytu, leczenia innych i prowokacji; mikstury co `Potions.interval(19)`, regeneracja w walce i kradzież życia. Cel: walka ≤ 80% `enrageAfter`, stosunek ≤ 1,0, żaden cios ≥ 100% HP."
+	)
+	for n = 3, 5 do
+		local r = B.bossNoSupport("grimrok", n)
+		local worst, hit, potions = 0, 0, 0
+		for _, mem in r.members do
+			worst = math.max(worst, mem.ratio)
+			hit = math.max(hit, mem.biggest)
+			potions = math.max(potions, mem.potions)
+		end
+		row(tostring(n), {
+			{ r.seconds, "s" },
+			{ r.limit, "s" },
+			{ worst, "2" },
+			{ hit, "%" },
+			{ potions, "1" },
 		})
 	end
 	return tb.tables
@@ -1471,8 +1761,6 @@ end
 -- Classes and paths (S86) -------------------------------------------------------------------------------------------
 
 local ItemTraits = require("../src/shared/Data/ItemTraits")
-local SkillData = require("../src/shared/Data/Skills")
-local Skills = require("../src/shared/Logic/Skills")
 
 -- S86 (G): builds "do celów" of docs/sessions/S86.md (the guards, situations and the model / ROZWOJ table read them).
 BalanceTables.TARGET_BUILDS = {
@@ -1512,7 +1800,7 @@ BalanceTables.PATH_CAUSES = {
 } :: { [string]: string }
 
 local PATHS_INTRO =
-	"S86: mechaniki klas w `tests/SkillModel.luau` (każda z `mirrors`), ekwipunek konwencji S32 z cechami na zdarzeniu; raport, asertują S87 (G10), S89 (Kapłan, Wojownik), S90 (Łowca, Mag), S91 (L20), S92–S94 (regiony i bossy). „Boss bez wsparcia” (ROZWOJ 7.5) nie ma jeszcze metryki w modelu: definicja i asercje w S92–S94."
+	"S86: mechaniki klas w `tests/SkillModel.luau` (każda z `mirrors`), ekwipunek konwencji S32 z cechami na zdarzeniu; raport, asertują S87 (G10), S89 (Kapłan, Wojownik), S90 (Łowca, Mag), S91 (cele 1–20 na L20), S92–S94 (regiony i bossy). „Boss bez wsparcia” (ROZWOJ 7.5): metryka `Balance.bossNoSupport` od S91 (Grimrok), S92–S94 stosują ją do swoich bossów."
 
 -- S86 (G): the tables of the section "Klasy i ścieżki" (band "S86-paths"), in report order; every number comes from
 -- tests/SkillModel.luau. The values are the fixture tests/fixtures/balance_paths.json.
@@ -1569,7 +1857,7 @@ function BalanceTables.tablesPaths(): { Table }
 	section(
 		"Cele ścieżek: podsumowanie",
 		{ "klasa · poziom", "w paśmie", "wierszy" },
-		"Wiersze `SkillModel.PATH_TARGETS` (bez R4–R6) na 20 / 45 / 70 / 100; na 20 tylko druk (S91). Blok „Balance 20-100: paths” w `balance.spec` czyta tę samą `SkillModel.evaluateTargets`. "
+		"Wiersze `SkillModel.PATH_TARGETS` (bez R4–R6) na 20 / 45 / 70 / 100; na 20 cele tabeli 1–20 (T-SK3, tempo solo wsparcia i tanka) asertuje blok „Balance 1-20: S91”, reszta to druk (pasma 45–100). Blok „Balance 20-100: paths” w `balance.spec` czyta tę samą `SkillModel.evaluateTargets`. "
 			.. PATHS_INTRO
 	)
 	for _, c in B.CLASSES do
@@ -1773,7 +2061,7 @@ function BalanceTables.tablesPaths(): { Table }
 	section(
 		"Łąki na L20 w modelu S86 (F4)",
 		{ "wiersz", "wartość", "asertowany" },
-		"`SkillModel.targetsMeadows`: wiersze w paśmie asertuje blok regionów (1), reszta drukowana z powodem w kodzie (`MEADOWS_REPORT`, lista „Dla S91”). "
+		"`SkillModel.targetsMeadows`: wiersze w paśmie asertuje blok regionów (1), reszta drukowana z powodem w kodzie (`MEADOWS_REPORT`, S91: buildy, które nie leczą tanka). "
 			.. PATHS_INTRO
 	)
 	for _, r in SkillModel.targetsMeadows() do
@@ -1992,11 +2280,11 @@ function BalanceTables.tablesPaths(): { Table }
 		end
 	end
 
-	-- S90 (I2): the class base at L20 for S91 (ROZWOJ 2.5)
+	-- S90 (I2): the class base at L20, the input of S91 (ROZWOJ 2.5); S91: the anchor after the retune is "Kotwica L20 (S91)"
 	section(
 		"Baza na L20 dla S91 (S90)",
 		{ "klasa · build", "R1 (T-SK1) na L20", "dziś (2.5)", "projekt przebudowy (2.5)" },
-		"Łowca i Mag bez ścieżki głównej na L20 (podstawa na rangach z L20; Salwa i Meteor od 30., Instynkt Drapieżnika i Burza Piorunów od 45.) i każdy build wzorcowy przycięty do L20 (rzędy 1–2 ścieżki, 10 punktów): obrażenia z umiejętności × atak podstawowy (R1) obok „dziś” i projektu z ROZWOJ 2.5. Bez zmian danych: wejście dla S91 (kotwica L20). "
+		"Łowca i Mag bez ścieżki głównej na L20 (podstawa na rangach z L20; Salwa i Meteor od 30., Instynkt Drapieżnika i Burza Piorunów od 45.) i każdy build wzorcowy przycięty do L20 (rzędy 1–2 ścieżki, 10 punktów): obrażenia z umiejętności × atak podstawowy (R1) obok „dziś” i projektu z ROZWOJ 2.5. Liczone na bieżących danych (S91 przestroiło rangi ≤ 20; kotwica L20 w tabeli „Kotwica L20 (S91)”). "
 			.. PATHS_INTRO
 	)
 	for _, spec in { { "Hunter", 2.12, 1.97 }, { "Mage", 2.37, 2.22 } } :: { { any } } do
@@ -2281,6 +2569,10 @@ end
 
 BalanceTables.FIXTURE_PATH = "tests/fixtures/balance_1_20.json"
 BalanceTables.FIXTURE_TOLERANCE = 0.005
+-- S91: levels 1-20 are frozen. Every future difference is an entry here (key -> before = fixture, after = now, why)
+-- and a DECYZJE line; read by balance1_20.spec and by G12 (Balance.targetsGlobal, tools/balance_report).
+export type AllowedDiff = { before: number, after: number, why: string }
+BalanceTables.ALLOWED_1_20_DIFFS = {} :: { [string]: AllowedDiff }
 
 export type FixtureDiff = { key: string, before: number, after: number, rel: number, allowed: boolean }
 export type FixtureReport = {

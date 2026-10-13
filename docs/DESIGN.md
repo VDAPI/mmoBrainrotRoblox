@@ -622,12 +622,14 @@ tylko na niego i członków jego drużyny. Szczegóły: ROZWOJ §9.
   `monsterHp` / `monsterAtk`, Elita dodatkowo × `eliteHp` / `eliteDmg`, Elita II × `elite2Hp` / `elite2Dmg`
   (`Data/LevelCurves`, liczone od poziomu końcowego potwora, dokładnie 1 do 20.; kotwice 45 / 70 / 100 tymczasowe:
   HP 1,20 / 1,32 / 1,47, atak 1,07 / 1,11 / 1,14, Elita 1,08–1,13 / 1,05–1,07, Elita II 1; S92–S94 je przejmują).
-  Tabele regionów: szansa pary Elit w jaskini `elitePairChance` (0,5) i `dropFactor` (1: mnoży wagi Unikatu i Heroika
-  potworów regionu, Zwykły przejmuje różnicę). **Członek grupy** zadaje obrażenia × `1 / 0,85 / 0,72 / 0,62` dla grupy 1 / 2 / 3 / 4 (S32,
+  Tabele regionów: szansa pary Elit w jaskini `elitePairChance` (0,5; Łąki 0,3 od S91: w jaskiniach Łąk jedna para na
+  13 grup Elit) i `dropFactor` (1: mnoży wagi Unikatu i Heroika potworów regionu, Zwykły przejmuje różnicę). **Członek grupy** zadaje obrażenia × `1 / 0,85 / 0,72 / 0,62` dla grupy 1 / 2 / 3 / 4 (S32,
   `Combat.groupDamageMul`): cała grupa bije naraz, więc grupa 4 zadawała ok. 10× tyle co jeden potwór.
 - **Cele balansu** (S32, model `tests/Balance.luau`, sprawdza `balance.spec`, raport `docs/BALANS.md`; gracz używa
   zwykłych ataków + 1–2 umiejętności, bez mikstur, „ekwipunek na poziomie” = broń + druga ręka + 4 części zbroi +
-  biżuteria, Zwykłe, ilvl = poziom − 2):
+  biżuteria, Zwykłe, ilvl = poziom − 2). S91: model konwencji S32 **bez i z węzłami rzędów 1–3** (build wzorcowy
+  przycięty do poziomu); warstwa prawdziwych umiejętności na L20 („Kotwica L20 (S91)” w `docs/BALANS.md`); poziomy
+  1–20 zamrożone testem (`tests/balance1_20.spec`, tryb ścisły):
 
   | sytuacja | cel |
   |---|---|
@@ -635,9 +637,10 @@ tylko na niego i członków jego drużyny. Szczegóły: ROZWOJ §9.
   | średnia grupa (2,25) na poziomie gracza | strata 35–60% HP (Mag ≤ 70%) |
   | grupa 4 na poziomie gracza | ≤ 110% HP (do przeżycia z jedną miksturą) |
   | ekwipunek ze sklepów (broń do 9 poziomów za nisko) | 1 potwór ≤ 15 s, ≤ 35% HP |
-  | Elita solo (poziom +2) | 20–35 s, 60–90% HP |
-  | Elita II | 2–3 graczy na poziomie (solo ponad 150% HP, trzech poniżej 100%) |
-  | Grimrok | 3–5 graczy L18–20, 4–6 min, żaden cios > 70% HP Maga L20 |
+  | Elita solo (poziom +2) | 20–35 s, 60–90% HP; Elity z prawdziwych spawnerów Łąk: ≥ 26/36 walk w paśmie, żadna ponad 110% HP (S91) |
+  | Elita II | 2–3 graczy na poziomie (S91, jak regiony: solo co najmniej 180% HP, dwóch najwyżej 150%, trzech 60–100%) |
+  | Grimrok | 3–5 graczy L19, 4–6 min (model S83 / S87), żaden cios > 70% HP Maga L20; leczący 1,0–2,0 obrażeń tanka (T-SK6); do pokonania bez wsparcia (S91) |
+  | tempo 1 → 20 (Wojownik, model okna, bez zadania z bossem) | 1,8–2,8 h, średnia z 5 poziomów rośnie najwyżej o 30% na poziom (S91) |
   | rzadkość (pełny komplet vs Zwykły) | Unikatowy +8–15%, Heroiczny +15–25%, Legendarny +25–40% |
   | broń 2H vs 1H + druga ręka | ±3% DPS × przeżywalność |
   | złoto | +1…+3 broni z poziomu mieści się w dochodzie poziomu; mikstury ≤ 15% dochodu |
@@ -705,10 +708,16 @@ Po testach S17: **więcej rodzajów na każdej mapie (min. 8–10 na mapę teren
 - **Tylko jedna grupa naraz** na serwerze. Wchodzi lider grupy z członkami w zasięgu 20 st. (grupa 1–5 osób; projektowany pod 5). Inni czekają.
 - **Do 3 zabić jednego bossa dziennie na postać** (S30, `Config.Boss.dailyRuns`; reset o 00:00 UTC; karta lochu i brama pokazują „Dziś: 1/3” i czas do resetu). Wejście zużywa dzienną próbę dopiero po zabiciu bossa (porażka nie zużywa).
 - Limit czasu walki 15 min; po wybiciu całej grupy lub przekroczeniu czasu: wyrzucenie, boss się resetuje, loch wolny.
-- Boss: HP `30 × HP zwykłego potwora tego poziomu × (1 + 0.6 × (gracze − 1)) × hpMul bossa` (S32, Grimrok 1,4), 2–3 fazy (przejścia przy 70% i 35%), ataki telegrafowane (czerwone strefy na ziemi 1–1.5 s przed uderzeniem), przyzwania, wściekłość po 10 min.
+- Boss: HP `30 × HP zwykłego potwora tego poziomu × (1 + 0.6 × (gracze − 1)) × hpMul bossa` (S32; Grimrok 1,2 od S91), 2–3 fazy (przejścia przy 70% i 35%), ataki telegrafowane (czerwone strefy na ziemi 1–1.5 s przed uderzeniem), przyzwania, wściekłość po 10 min.
 - Przykład Grimrok (20): Faza 1: zamach (stożek), skok na losowego gracza (okrąg). Faza 2 (70%): przyzywa 4 gobliny co 20 s. Faza 3 (35%): wir (okrąg 10 st., trzeba uciec), +25% szybkości.
   S32: zwykłe ciosy słabsze (`atkMul` 1,2 → 0,32), niebezpieczne są ataki z telegrafem (zamach ×4,5, skok ×6, wir ×7
   ataku): wir trafia Maga L20 z ekwipunkiem na poziomie za ok. 67% HP (wcześniej ok. 150% — zabijał jednym ciosem).
+  S91: `hpMul` 1,4 → 1,2 i zamach (tylko w tanka) ×6: 3–5 graczy L19 bije go 5,3–5,6 min w modelu z prawdziwym
+  harmonogramem ataków (S83 / S87), wir dalej ok. 64% HP Maga L20, Uzdrowiciel lochowy leczy 1,8 obrażeń Obrońcy.
+  **Bez wsparcia** (odpowiedź 26): drużyna ze ścieżek bojowych przyciętych do 19 (Furia, Królobójca, Arkanista; +
+  Inkwizytor solo; + Niszczyciel boss), bez przechwytu, leczenia innych i prowokacji, z miksturami co 1,5 s, kończy
+  walkę w ok. 3 min (limit 80% czasu do wściekłości), przyjmuje najwyżej 6% tego, co podtrzymują mikstury, regeneracja
+  i kradzież życia, a żaden cios nie zabiera więcej niż 58% HP członka.
 - **Wybór ataku** (S87, `Logic/BossSchedule`, ta sama funkcja w grze i w modelu): spośród gotowych ataków fazy ten
   z największą zaległością względem swojego odnowienia; każdy atak dostaje co najmniej połowę swojego tempa (inferno
   Azgora i pierścień lodu Vaelgratha wchodzą). Odstęp między atakami i obrażenia lawy / burzy w `Data/BossTuning`.
@@ -734,9 +743,9 @@ Po testach S17: **więcej rodzajów na każdej mapie (min. 8–10 na mapę teren
 - Waluty: **Złoto** (grywalna, per postać), **Smocza Waluta / Dragon Shards** (premium, kontowa, tylko za Robux i rzadkie wydarzenia).
 - **Wartość przedmiotu** (S31, `Logic/ItemValue`, stałe w `Data/ItemValue`): ekwipunek `round(6 × ilvl × sellMul² × slotMul × (1 + 0,1 × ulepszenie))`, `slotMul` broń 1,0 / pancerz i druga ręka 0,8 / biżuteria 0,7; pozostałe `def.price × ilość` (każdy przedmiot ma cenę > 0). Kupiec płaci wartość; zakup u NPC = wartość × `shop.buyMul` (domyślnie 4), chyba że wpis ma stałą cenę (mikstury, kamienie, narzędzia, plecaki, ruda — nie niższą niż wartość). Ta sama funkcja liczy cenę na serwerze i w UI. Zablokowane i `noSell`: „Nie można sprzedać”.
 - Odbiorniki złota: ulepszanie, mikstury, plecaki, alchemik, wytwarzanie, opłaty aukcji, zwoje resetu, gildie.
-- **Budżet 1→20** (S32, `docs/BALANS.md`, Wojownik, fabuła + połowa questów pobocznych): ok. 6 tys. złota z zabić,
-  3 tys. ze sprzedaży dropu (≈ 45% złota z zabić), 11 tys. z questów; mikstury ok. 2% dochodu; +1…+3 broni z poziomu
-  kosztuje 50–100% dochodu poziomu. Plecaki: 30 miejsc 300, 45 miejsc 1500 (poz. 8), 60 miejsc 5000 (poz. 15).
+- **Budżet 1→20** (S32, `docs/BALANS.md`, Wojownik, fabuła + połowa questów pobocznych; S91 po przestrojeniu zadań):
+  ok. 5 tys. złota z zabić, 2,5 tys. ze sprzedaży dropu (≈ 48% złota z zabić), 14 tys. z questów (złoto zadań
+  głównych 4–16 ×2); mikstury ok. 1% dochodu; +1…+3 broni z poziomu kosztuje 47–90% dochodu poziomu. Plecaki: 30 miejsc 300, 45 miejsc 1500 (poz. 8), 60 miejsc 5000 (poz. 15).
 - **Ulepszenia 20–100** (S87, `Config.Upgrade.goldHigh` 20): +1…+3 broni kosztuje 0,46–0,84 dochodu poziomu
   (25–100), +1…+9 z ochroną 11–20 poziomów dochodu (cel G9: 0,45–1,05 i 12–25).
 
@@ -765,8 +774,9 @@ Po testach S17: **więcej rodzajów na każdej mapie (min. 8–10 na mapę teren
   (2–5 questów, `Data/Quests/Side`) z NPC, który tam mieszka; zleceniodawcy stoją w mieście przy swoich budynkach.
   Do 10 aktywnych naraz, przyjęcie od poziomu questa − 2, kolejne questy wątku po kolei (`requires`). Tekst na 2–4
   stronach z imieniem i portretem NPC; linia „w trakcie” i podziękowanie. Nagroda: EXP 0,25 poziomu (koniec wątku
-  0,45; wszystkie poboczne Łąk ≤ 40% EXP na 1→20), połowa złota questa głównego, a na końcu wątku **wybór 1 z 3
-  przedmiotów dla klasy** (Rzadkie, `ilvl` = poziom questa). Poboczne nigdy nie blokują fabuły.
+  0,45; wszystkie poboczne Łąk ≤ 40% EXP na 1→20), połowa bazowego złota questa głównego (`60 + 45·poziom`; główne
+  na 4–16 płacą od S91 ×2, czyli poboczne tam ¼), a na końcu wątku **wybór 1 z 3 przedmiotów dla klasy** (Rzadkie,
+  `ilvl` = poziom questa). Poboczne nigdy nie blokują fabuły.
 - **Typy celów (S27)**: `use` — interakcja z obiektem w świecie (trzymanie 1,5–3 s, przerywa ruch i obrażenia; po
   wykonaniu obiekt zmienia się tylko dla gracza: zapalone świece, nowa deska w płocie, płonący totem); `deliver` —
   zanieś wirtualny przedmiot NPC; `kill` / `collect` z `area` — tylko potwory z danego obszaru; `reach` z punktem

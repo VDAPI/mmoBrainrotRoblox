@@ -138,7 +138,8 @@ SkillModel.BASES = {
 -- the Mage, S92-S94 the regions). `metric` names a function of SkillModel.TARGET_METRICS; `build` is the S85 key, with
 -- `weapon` a variant (SkillModel.withWeapon); `bands` = a band per level; `project` = the number of the ROZWOJ table
 -- for the same build and level (D10); `heavy` rows (R4-R6) only in the report. Levels 45 / 70 / 100 unless the row
--- says otherwise; every row is also computed and printed at 20 (S91).
+-- says otherwise; every row is also computed at 20: S91 asserts the rows that are targets of the 1-20 table
+-- (Balance.S91.pathRows: T-SK3, solo pace of support and tank paths), the rest is printed (bands of 45-100).
 export type PathTarget = {
 	id: string,
 	classId: string,
@@ -394,7 +395,8 @@ SkillModel.PATH_TARGETS = {
 		"ROZWOJ 9.0 pkt 3, 9.4, 9.6",
 		{
 			project = { [45] = 0.21, [70] = 0.21, [100] = 0.21 },
-			-- S89: na 45 poza zasięgiem dźwigni S89: 0.085 (na 45 Uzdrowiciel ma z leczenia tylko rzędy 1-3: S91)
+			-- S89: na 45 poza zasięgiem dźwigni S89: 0.085 (na 45 Uzdrowiciel ma z leczenia tylko rzędy 1-3);
+			-- S91: rzędy 1-3 Uzdrowiciela bez zmian (Błogosławione Dłonie globalne, T-SK5 na 45-100 w paśmie S87)
 			reportAt = { 45 },
 		}
 	),
@@ -752,12 +754,11 @@ SkillModel.PATH_TARGETS = {
 		note = "wariant: Oszczędny Splot",
 		project = { [45] = 1.64, [70] = 2.11, [100] = 1.82 },
 	}),
-	-- S90: Przeciążenie na 45 i 100 poza zasięgiem dźwigni S90: 2.84 / 2.85; węzeł rzędu 3 (≤ 20, S91) daje ×1.30
-	-- arcanistBoss, a ten ma na 50-55 (G10) 2.00-2.05, więc na 45 i 100 nie zejdzie pod 2.15 (DECYZJE S90)
+	-- S90: Przeciążenie na 45 i 100 poza zasięgiem dźwigni S90: 2.84 / 2.85. S91: overloadCost 10/20/30 -> 9/18/27
+	-- (węzeł rzędu 3, lista S90) daje 2.77 / 2.71 / 2.78, więc wiersz asertuje na 45 / 70 / 100
 	target("mage.tsk4", "Mage", "arcanist", "tsk4", "arcanist.arcanistOverload", L45, 2.6, 2.8, "ROZWOJ 12.0, 12.7", {
 		note = "wariant: Przeciążenie",
 		project = { [45] = 2.62, [70] = 2.75, [100] = 2.79 },
-		reportAt = { 45, 100 },
 	}),
 	-- S90 (H1): T-SK3 of the Mage path builds against their areaCap (Destroyer 3.0, Arcanist 2.0; SkillModel.bandOf)
 	target("mage.tsk3", "Mage", "destroyer", "tsk3", "destroyer.destroyerExp", L45, nil, nil, "ROZWOJ 8, 12.7, 15.5.3"),
@@ -792,22 +793,24 @@ SkillModel.PATH_TARGETS = {
 		report = "właściciel (F4)",
 	}),
 	-- S90: all.r1 Strzelca i Trapera z Kuszą poza zasięgiem dźwigni S90: 2.80-2.97 przy górze 2.78-2.86 (R1 bazy Łowcy
-	-- na 20. to 2.42-2.49, a Strzelec x baza >= 1.25 i R7 1.15-1.35 wymagają mocnej bazy; DECYZJE S90, lista S91)
+	-- na 20. to 2.42-2.49, a Strzelec x baza >= 1.25 i R7 1.15-1.35 wymagają mocnej bazy; DECYZJE S90).
+	-- S91: R1 na 45-100 to wartości rang powyżej 20 (S90), poza zasięgiem dźwigni S91; R1 na 20 asertuje blok S91
 	target("all.r1", "Hunter", "marksman", "r1", "marksman.kingslayer", L45, 1.6, 2.0, "ROZWOJ 0", {
-		report = "S91",
+		report = "właściciel (S90, S91)",
 	}),
 	target("all.r1", "Hunter", "marksman", "r1", "marksman.kingslayer", L45, 1.6, 2.0, "ROZWOJ 0", {
 		weapon = { main = "longbow", offhand = QUIVER },
-		report = "S91",
+		report = "właściciel (S90, S91)",
 	}),
 	target("all.r1", "Hunter", "trapper", "r1", "trapper.poacher", L45, 1.6, 2.0, "ROZWOJ 0", {
-		report = "S91",
+		report = "właściciel (S90, S91)",
 	}),
 	target("all.r1", "Hunter", "trapper", "r1", "trapper.poacher", L45, 1.6, 2.0, "ROZWOJ 0", {
 		weapon = { main = "bow", offhand = QUIVER },
 	}),
 	-- S90: all.r1 Maga poza zasięgiem dźwigni S90: 3.3-3.9 (exp), 4.3-5.0 (boss) przy górze 3.37-3.66; R1 buildów Maga na 20.
-	-- to 2.9-3.2, a pasma 12.7 wymagają jej pełnych umiejętności (Pocisk Ognia to ok. połowa obrażeń; DECYZJE S90, S91)
+	-- to 2.9-3.2, a pasma 12.7 wymagają jej pełnych umiejętności (Pocisk Ognia to ok. połowa obrażeń; DECYZJE S90).
+	-- S91: R1 na 45-100 to wartości rang powyżej 20 (S90), poza zasięgiem dźwigni S91; R1 na 20 asertuje blok S91
 	target(
 		"all.r1",
 		"Mage",
@@ -818,7 +821,7 @@ SkillModel.PATH_TARGETS = {
 		1.6,
 		2.0,
 		"ROZWOJ 0",
-		{ report = "S91" }
+		{ report = "właściciel (S90, S91)" }
 	),
 	target(
 		"all.r1",
@@ -830,9 +833,11 @@ SkillModel.PATH_TARGETS = {
 		1.6,
 		2.0,
 		"ROZWOJ 0",
-		{ report = "S91" }
+		{ report = "właściciel (S90, S91)" }
 	),
-	target("all.r1", "Mage", "arcanist", "r1", "arcanist.arcanistBoss", L45, 1.6, 2.0, "ROZWOJ 0", { report = "S91" }),
+	target("all.r1", "Mage", "arcanist", "r1", "arcanist.arcanistBoss", L45, 1.6, 2.0, "ROZWOJ 0", {
+		report = "właściciel (S90, S91)",
+	}),
 	target("support.elites", "Warrior", "guardian", "elites", "guardian.loner", L45, 1, 1, "ROZWOJ 7.5, 10.6", {
 		report = "S92–S94",
 	}),
@@ -931,16 +936,18 @@ end
 -- is max(2.0, 1.15 x R1_L20[build]) (balance plan D1: T-SK1 <= 1.15 x own L20). S90 adds the Hunter and Mage builds.
 -- S90 (H1): the Hunter per weapon of the measurement (key with "@weapon" for a variant), the Mage builds; the S90 start
 -- table at L20 before any S90 change (the crossbow at 1.45).
+-- S91 (E7): rows that only print at 45-100 take R1 at L20 after the 1-20 retune; asserted rows keep the S89 / S90
+-- value (a lower bound there would fail the frozen 45-100 paths).
 SkillModel.R1_L20 = {
-	["berserker.fury"] = 2.27,
-	["inquisitor.solo"] = 2.21,
-	["marksman.kingslayer"] = 2.48, -- heavy crossbow
-	["marksman.kingslayer@longbow+quiver"] = 2.49,
-	["trapper.poacher"] = 2.42, -- crossbow
-	["trapper.poacher@bow+quiver"] = 2.44,
-	["destroyer.destroyerExp"] = 2.93,
-	["destroyer.destroyerBoss"] = 3.18,
-	["arcanist.arcanistBoss"] = 3.07,
+	["berserker.fury"] = 2.27, -- S91: granica R1 z L20 sprzed S91, ścieżki nastrojone na nią w S89 / S90 (S91: 2.14)
+	["inquisitor.solo"] = 2.06, -- S91: R1 na L20 po przestrojeniu 1–20
+	["marksman.kingslayer"] = 2.28, -- heavy crossbow; S91: R1 na L20 po przestrojeniu 1–20
+	["marksman.kingslayer@longbow+quiver"] = 2.29, -- S91: R1 na L20 po przestrojeniu 1–20
+	["trapper.poacher"] = 2.22, -- crossbow; S91: R1 na L20 po przestrojeniu 1–20
+	["trapper.poacher@bow+quiver"] = 2.44, -- S91: granica R1 z L20 sprzed S91, ścieżki nastrojone na nią w S89 / S90 (S91: 2.23)
+	["destroyer.destroyerExp"] = 2.47, -- S91: R1 na L20 po przestrojeniu 1–20
+	["destroyer.destroyerBoss"] = 2.66, -- S91: R1 na L20 po przestrojeniu 1–20
+	["arcanist.arcanistBoss"] = 2.58, -- S91: R1 na L20 po przestrojeniu 1–20
 } :: { [string]: number }
 
 -- S89 (E1, DECYZJE): R4 bands of the test (ROZWOJ 0 "ok. +10-15% / +20-25%"); A and B both with a value: |A - B| <= 0.05.
@@ -1121,6 +1128,11 @@ SkillModel.R4_UTILITY = {
 	["evocation:10a"] = "mana: wartość w dochodzie many Arkanisty (bez metryki w optionGain)",
 	["evocation:10b"] = "mana: wartość w dochodzie many Arkanisty (bez metryki w optionGain)",
 	["arcaneTorrent:5b"] = "ruch w trakcie kanału",
+	-- S91: options of rank 5 reached by 20 (ranks 5 at 17 / 19)
+	["mightyStrike:5a"] = "odrzucenie (kontrola)",
+	["charge:5a"] = "zasięg doskoku (geometria)",
+	["heal:5a"] = "drugi cel (bez metryki na jednym tanku)",
+	["heal:5b"] = "leczenie siebie przy rzucie (bez metryki na tanku)",
 } :: { [string]: string }
 
 -- S89 (F4): measured options a single number cannot bring into the band (printed; DECYZJE S89, list for the owner).
@@ -1131,6 +1143,14 @@ SkillModel.R4_REPORT = {
 	["falcon:5a"] = "z Królewskim Sokołem (od 60.) ptak zostaje do końca walki, więc +4 s czasu nic nie daje (0 na 100)",
 	["frostTrap:10b"] = "druga pułapka łapie 1 z 3 wrogów (groupSpread), a liczba sideł jest całkowita: 0,11–0,12",
 	["arcaneDischarge:5b"] = "Wyładowanie czeka na 4 Ładunki, więc krótsze odnowienie nie zmienia rzutów w rotacji (0)",
+	-- S91 (E5): rank 5 options reached by 20 out of reach of the S91 levers
+	["holyStrike:5a"] = "S91: odprysk 40% na 3 manekinach daje 0,80; 6,5% (0,13) psuje cleric.solo Fortuny na 100 (1,36 → 1,59 > 1,50)",
+	["aimedShot:5a"] = "S91: przebicie 50% daje 0,50; 13% (0,13) psuje trapper.aoe na 45 (1,15 → 1,11), scout.solo na 70 / 100 i r5a na 100",
+	["doubleShot:5a"] = "S91: +1 strzała to +50% (liczba całkowita); zejście do 0,08-0,17 wymaga zmiany kształtu (słabsza trzecia strzała)",
+} :: { [string]: string }
+-- S91 (E5): the |A - B| row of an option pair that one number cannot hold at 20 and at 45-100 (printed)
+SkillModel.R4_DIFF_REPORT = {
+	["firebolt:5"] = "S91: przebicie 17% daje 0,165 na 20 i 0,083 na 45-100 (5B 0,16); 5B 0,88 -> 0,895 obniża T-SK4 Arkanisty na 55 pod 2,0 (G10)",
 } :: { [string]: string }
 
 -- S89 (E1): the build of a skill's R4 rows: path skills on their path's target build, base skills on the class's combat
@@ -1163,8 +1183,8 @@ SkillModel.R4_SUPPORT_BUILDS = {
 	taunt = "guardian.defender",
 } :: { [string]: string }
 
--- S89 (F2): r4.<skillId>.<rank> rows of every active Cleric and Warrior skill (both options; options of a rank level
--- <= 20 only printed for S91), the A - B difference when both have a value, r5 (the weapon spread of the combat paths)
+-- S89 (F2): r4.<skillId>.<rank> rows of every active Cleric and Warrior skill (both options; S91: the options of a rank
+-- level <= 20 asserted too), the A - B difference when both have a value, r5 (the weapon spread of the combat paths)
 -- and r6 (the value of a point in rows 4-11: the weakest and the strongest third against the mean, at 100).
 do
 	for _, classId in { "Warrior", "Cleric", "Hunter", "Mage" } do
@@ -1192,9 +1212,9 @@ do
 				for _, choice in { "a", "b" } do
 					local k = `{d.id}:{at}{choice}`
 					local why = SkillModel.R4_UTILITY[k] or SkillModel.R4_REPORT[k]
-					local report = if rankLevel <= 20
-						then "S91 (ranga z poziomu ≤ 20)"
-						elseif SkillModel.R4_UTILITY[k] then "użyteczność (R4_UTILITY)"
+					-- S91 (E5): the options of a rank level <= 20 are asserted at 45 / 70 / 100 like the others
+					local report = if SkillModel.R4_UTILITY[k]
+						then "użyteczność (R4_UTILITY)"
 						elseif SkillModel.R4_REPORT[k] then "właściciel (F4)"
 						else nil
 					if report == nil then
@@ -1230,6 +1250,7 @@ do
 								at = at,
 								noL20 = true,
 								note = "|A − B|",
+								report = if SkillModel.R4_DIFF_REPORT[`{d.id}:{at}`] then "właściciel (F4)" else nil,
 							}
 						)
 					)
@@ -5684,16 +5705,14 @@ end
 
 -- S85 (J2): the Meadows' rows at L20: T-SK3 of every base and build against its areaCap, T-SK6 of every Cleric
 -- build on Grimrok (default party). S86 (F4): after the mechanics every row that holds is asserted by the region
--- block (no `report`); the rows below stay printed (report = "S91"), each with its value on the data before S91:
+-- block (no `report`). S91: T-SK6 back in band for the healing builds (heal cost 12, Grimrok); the rows below stay
+-- printed with the reason (report = the owner): builds that never heal the tank
 SkillModel.MEADOWS_REPORT = {
-	-- S86: T-SK6 Grimrok out of the band on the data before S91: 0.21 (base), 0.23 (healer.dungeon), 0.25
-	-- (healer.solo), 0.21 (fortune.plunder): at 19 Sanctuary is not there yet and Holy Strike takes the mana
-	["R.meadows.tsk6.base"] = true,
-	["R.meadows.tsk6.healer.dungeon"] = true,
+	-- S91: T-SK6 Grimrok poza zasięgiem dźwigni S91: 0.13 (healer.solo): rotacja „Uzdrowiciela solo” leczy tylko
+	-- siebie poniżej 50% HP, więc tanka nie leczy (definicja T-SK6 jest dla buildów leczących drużynę)
 	["R.meadows.tsk6.healer.solo"] = true,
-	["R.meadows.tsk6.fortune.plunder"] = true,
-	-- S86: T-SK6 Grimrok out of the band on the data before S91: 0.00 (inquisitor.solo, inquisitor.bulwark): the
-	-- Inquisitor's rotation never heals the tank
+	-- S91: T-SK6 Grimrok poza zasięgiem dźwigni S91: 0.00 (inquisitor.solo, inquisitor.bulwark): rotacja Inkwizytora
+	-- nie leczy tanka (definicja T-SK6 jest dla buildów leczących)
 	["R.meadows.tsk6.inquisitor.solo"] = true,
 	["R.meadows.tsk6.inquisitor.bulwark"] = true,
 } :: { [string]: boolean }
@@ -5712,7 +5731,7 @@ function SkillModel.targetsMeadows(): { B.TargetRow }
 					high = build.areaCap,
 					classId = classId,
 					level = 20,
-					report = if SkillModel.MEADOWS_REPORT[id] then "S91" else nil,
+					report = if SkillModel.MEADOWS_REPORT[id] then "właściciel" else nil,
 				} :: any
 			)
 		end
@@ -5730,7 +5749,7 @@ function SkillModel.targetsMeadows(): { B.TargetRow }
 				high = 2.0,
 				classId = "Cleric",
 				level = 20,
-				report = if SkillModel.MEADOWS_REPORT[id] then "S91" else nil,
+				report = if SkillModel.MEADOWS_REPORT[id] then "właściciel" else nil,
 			} :: any
 		)
 	end
@@ -8208,7 +8227,8 @@ function SkillModel.targetsS88(): { B.TargetRow }
 			for _, def in B.defenceAt(c, L) do
 				if string.find(def.id, "agile", 1, true) then
 					local generic = B.defenceAt(c, L)[1]
-					-- the animal trait is shared with the lynx of the Meadows (1-20, S91)
+					-- the animal trait is shared with the lynx of the Meadows (1-20). S91: the trait lives in
+					-- Data/Families (not an S91 lever) and the lynx's EXP/s on the Meadows is in band: the owner decides
 					local lynx = string.find(def.id, "animal", 1, true) ~= nil
 					add(
 						"B5",
@@ -8217,7 +8237,7 @@ function SkillModel.targetsS88(): { B.TargetRow }
 						nil,
 						D.dodgeTime,
 						L,
-						if lynx then "S91" else nil,
+						if lynx then "właściciel" else nil,
 						c
 					)
 				end

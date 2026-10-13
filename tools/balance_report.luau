@@ -325,7 +325,7 @@ end
 add("## Własność pasm umiejętności")
 add()
 add(
-	"Ranga należy do pasma swojego poziomu `Skills.rankLevel` (≤ 20 → strojenie 1–20 w S91; 21–45, 46–70, 71–100 →"
+	"Ranga należy do pasma swojego poziomu `Skills.rankLevel` (≤ 20 → strojenie 1–20 S91, zamrożone; 21–45, 46–70, 71–100 →"
 )
 add(
 	"sesje regionów). Sesja zmienia wartość tylko na rangach swojego pasma (rangę 1 przy odblokowaniu w paśmie, rangę"
@@ -469,23 +469,82 @@ for i, band in B.BANDS do
 	if lo == 1 then
 		local s32 = B.targets1_20()
 		local ok, all = countIn(s32)
-		add("### Cele 1–20 (S32, raport do S91)")
+		add("### Cele 1–20 (S32 i S91)")
 		add()
-		add(`{ok}/{all} w paśmie. Bloki S32 w \`balance.spec\` są do S91 raportem (odpowiedź właściciela 4).`)
-		add()
-		tableOut({ "cel", "wartość", "próg", "wynik", "kto asertuje" }, targetRows(s32, "S91"))
-		local fixture = BalanceTables.fixtureDiff()
-		local tolerance = fmtValue(BalanceTables.FIXTURE_TOLERANCE * 100, "1")
 		add(
-			`G12 (fixture 1–20): {#fixture.diffs} różnic powyżej {tolerance}%, {#fixture.missing} brakujących kluczy `
-				.. "(`tests/balance1_20.spec.luau`, asertuje S91)."
+			`{ok}/{all} w paśmie. S91: poziomy 1–20 przestrojone i zamrożone. Bloki S32 w \`balance.spec\` asertują znowu (gracz konwencji bez węzłów i z węzłami buildów wzorcowych przyciętych do poziomu, wiersze „@<build>”), nowe cele S91 (tempo z modelu okna, Grimrok w modelu S83 / S87, T-SK6, bez wsparcia, warstwa umiejętności na L20, R4 rangi 5, ścieżki na 20) w bloku „Balance 1-20: S91”; wiersze z opisem w kolumnie „kto asertuje” są poza zasięgiem dźwigni S91 (raport). Liczby „przed” (start S91) i porównanie z 05b859d: \`docs/SESJE.md\` → S91.`
 		)
 		add()
+		tableOut({ "cel", "wartość", "próg", "wynik", "kto asertuje" }, targetRows(s32, "S91 (asertowane)"))
+		local fixture = BalanceTables.fixtureDiff(BalanceTables.ALLOWED_1_20_DIFFS)
+		local tolerance = fmtValue(BalanceTables.FIXTURE_TOLERANCE * 100, "1")
+		add(
+			`G12 (fixture 1–20): {#fixture.diffs} różnic powyżej {tolerance}% ({#fixture.diffs - fixture.unexpected} `
+				.. `dozwolonych), {#fixture.missing} brakujących kluczy `
+				.. "(`tests/balance1_20.spec.luau`, tryb ścisły od S91, lista `BalanceTables.ALLOWED_1_20_DIFFS`)."
+		)
+		add()
+		-- S91 (I1): the accepted state before the rebuild (05b859d, docs/BALANS.md of S32) next to now
+		add("### Przed przebudową (05b859d) a S91")
+		add()
+		local now: { { string } } = {}
+		local refs = {
+			{ "1 na 1 L20 Wojownik: s / HP", "7,6 s / 15%", "Warrior" },
+			{ "1 na 1 L20 Łowca: s / HP", "6,1 s / 15%", "Hunter" },
+			{ "1 na 1 L20 Mag: s / HP", "6,1 s / 17%", "Mage" },
+			{ "1 na 1 L20 Kapłan: s / HP", "10,4 s / 12%", "Cleric" },
+		}
+		for _, r in refs do
+			local f = B.duel(B.player(r[3], 20), B.monster(B.GENERIC, 20))
+			table.insert(now, { r[1], r[2], `{fmtValue(f.seconds, "1")} s / {fmtValue(f.hpLost, "%")}` })
+		end
+		local soloLo, soloHi, trioLo, trioHi = math.huge, 0, math.huge, 0
+		for _, row in s32 do
+			if row.group == "elite2" then
+				if string.find(row.id, "solo", 1, true) then
+					soloLo, soloHi = math.min(soloLo, row.value), math.max(soloHi, row.value)
+				elseif string.find(row.id, "trio", 1, true) then
+					trioLo, trioHi = math.min(trioLo, row.value), math.max(trioHi, row.value)
+				end
+			end
+		end
+		table.insert(now, {
+			"Elita II (S32): solo / 3 graczy HP",
+			"238–307% / 72–94%",
+			`{fmtValue(soloLo, "%")}–{fmtValue(soloHi, "%")} / {fmtValue(trioLo, "%")}–{fmtValue(trioHi, "%")}`,
+		})
+		local minutes = {}
+		for n = 3, 5 do
+			table.insert(minutes, fmtValue(B.bossFight("grimrok", B.team(n, 19)).seconds / 60, "1"))
+		end
+		table.insert(
+			now,
+			{
+				"Grimrok 3 / 4 / 5 graczy (model S83 / S87): min",
+				"5,0 / 5,3 / 5,2 (model S32)",
+				table.concat(minutes, " / "),
+			}
+		)
+		local mage = B.boss("grimrok", { B.player("Mage", 20) }).biggest[1].share
+		table.insert(now, { "Grimrok: największy cios / HP Maga L20 (model S32)", "67%", fmtValue(mage, "%") })
+		local hours = 0
+		for L = 1, 19 do
+			hours += B.paceWindowAt("Warrior", L).hours
+		end
+		table.insert(
+			now,
+			{
+				"Tempo 1 → 20 Wojownika: h",
+				"ok. 2,3 (model S32, z Grimrokiem)",
+				`{fmtValue(hours, "2")} (model okna, bez Grimroka)`,
+			}
+		)
+		tableOut({ "liczba", "05b859d (S32)", "S91" }, now)
 	end
 	local gRows = globalFor(lo, hi)
 	local regionRows = B.targetsRegion(mapId)
 	local cele = targetRows(gRows, "S87")
-	local regionWho = if tuned then "S83 (rodzaje, harmonogram) / S91" else REGION_SESSION[i]
+	local regionWho = if tuned then "S91 (asertowane)" else REGION_SESSION[i]
 	for _, r in targetRows(regionRows, regionWho) do
 		table.insert(cele, r)
 	end
@@ -589,7 +648,7 @@ do
 	add("### Łąki na L20: T-SK3 i T-SK6")
 	add()
 	add(
-		`{mOk}/{mAll} w paśmie; S86: blok regionów \`balance.spec\` asertuje wiersze bez \`report\`, reszta drukowana do S91.`
+		`{mOk}/{mAll} w paśmie; blok regionów \`balance.spec\` asertuje wiersze bez \`report\` (S86, S91), reszta drukowana z powodem.`
 	)
 	add()
 	tableOut({ "cel", "wartość", "próg", "wynik", "kto asertuje" }, targetRows(meadows, "S86 (asercja)"))
@@ -603,7 +662,7 @@ do
 	add("## Klasy i ścieżki (S86)")
 	add()
 	add(
-		"Mechaniki klas S69–S81 w silniku `tests/SkillModel.luau` (leczenie i tarcze od maks. HP celu, kości i koło jako wartość oczekiwana, podpalenie, pole leczenia, Furia krok po kroku, blok, przechwyt, pułapki, sokół, celowanie, strumień, Ładunki Arkanów, kumulowanie, próg obszaru; każda z `-- mirrors`), cechy broni na zdarzeniu na ekwipunku konwencji S32 (Zwykły, ilvl = poziom − 2), walka z potworami, które oddają, metryki ścieżek i cele ROZWOJ jako wiersze `PATH_TARGETS`. To tylko raport: G10 asertuje S87, ścieżki Kapłana i Wojownika S89, Łowcy i Maga S90, L20 S91, regiony i bossy S92–S94. Fixture: `tests/fixtures/balance_paths.json` (`lune run tools/balance_report.luau --fixture-paths`)."
+		"Mechaniki klas S69–S81 w silniku `tests/SkillModel.luau` (leczenie i tarcze od maks. HP celu, kości i koło jako wartość oczekiwana, podpalenie, pole leczenia, Furia krok po kroku, blok, przechwyt, pułapki, sokół, celowanie, strumień, Ładunki Arkanów, kumulowanie, próg obszaru; każda z `-- mirrors`), cechy broni na zdarzeniu na ekwipunku konwencji S32 (Zwykły, ilvl = poziom − 2), walka z potworami, które oddają, metryki ścieżek i cele ROZWOJ jako wiersze `PATH_TARGETS`. To tylko raport: G10 asertuje S87, ścieżki Kapłana i Wojownika S89, Łowcy i Maga S90, cele 1–20 na L20 S91 (blok „Balance 1-20: S91”), regiony i bossy S92–S94. Fixture: `tests/fixtures/balance_paths.json` (`lune run tools/balance_report.luau --fixture-paths`)."
 	)
 	add()
 	for _, t in byBand["S86-paths"] or {} do
@@ -832,28 +891,22 @@ do
 		end
 		table.insert(rows, cells)
 	end
-	tableOut(
-		{
-			"poziom",
-			"Wojownik EXP/h łańcuch / odpoczynek",
-			"Wojownik mikstury / dochód",
-			"Mag EXP/h",
-			"Mag mikstury / dochód",
-		},
-		rows
-	)
+	tableOut({
+		"poziom",
+		"Wojownik EXP/h łańcuch / odpoczynek",
+		"Wojownik mikstury / dochód",
+		"Mag EXP/h",
+		"Mag mikstury / dochód",
+	}, rows)
 	rows = {}
 	for _, L in { 45, 70, 100 } do
 		local def, f = B.bossFightAt("Warrior", L)
-		table.insert(
-			rows,
-			{
-				`{def.id} ({L})`,
-				fmtValue(f.potionHps, "i"),
-				fmtValue(f.tankDps, "i"),
-				fmtValue(f.potionHps / math.max(1e-9, f.tankDps), "%"),
-			}
-		)
+		table.insert(rows, {
+			`{def.id} ({L})`,
+			fmtValue(f.potionHps, "i"),
+			fmtValue(f.tankDps, "i"),
+			fmtValue(f.potionHps / math.max(1e-9, f.tankDps), "%"),
+		})
 	end
 	add("Mikstura HP/s tanka wobec obrażeń tanka bossa (drużyna 3):")
 	add()
@@ -973,7 +1026,7 @@ do
 	add("### Cechy broni (S88)")
 	add()
 	add(
-		"Zwykły +0 na 20 / 45 / 70 / 100 (20. tylko raport, dla S91) i Mityczny +9; pasmo 4–6% (dwuręczne Maga i Kapłana po E6 do 9%). „Węzły” = z węzłami wzmacniającymi cechę (≤ 8%), „raport” = sytuacje drukowane (zero strukturalne modelu: fale bossa to grupa, Uzdrowiciel nie traci HP w pojedynku)."
+		"Zwykły +0 na 20 / 45 / 70 / 100 (20. tylko raport: S91 nie zmienia przedmiotów) i Mityczny +9; pasmo 4–6% (dwuręczne Maga i Kapłana po E6 do 9%). „Węzły” = z węzłami wzmacniającymi cechę (≤ 8%), „raport” = sytuacje drukowane (zero strukturalne modelu: fale bossa to grupa, Uzdrowiciel nie traci HP w pojedynku)."
 	)
 	add()
 	local rows = {}
@@ -1042,22 +1095,19 @@ do
 			table.insert(rows, cells)
 		end
 	end
-	tableOut(
-		{
-			"cecha",
-			"build",
-			"sytuacje",
-			"20",
-			"45",
-			"70",
-			"100",
-			"Mityczny +9 (45 / 70 / 100)",
-			"z węzłami",
-			"raport",
-			"kto",
-		},
-		rows
-	)
+	tableOut({
+		"cecha",
+		"build",
+		"sytuacje",
+		"20",
+		"45",
+		"70",
+		"100",
+		"Mityczny +9 (45 / 70 / 100)",
+		"z węzłami",
+		"raport",
+		"kto",
+	}, rows)
 	add("Powody wierszy w raporcie (H4):")
 	add()
 	for _, row in B.TRAIT_TARGETS do
@@ -1160,7 +1210,7 @@ do
 	local beast = Families.defence("beast", "agile") :: any
 	local animal = Families.defence("animal", "agile") :: any
 	add(
-		`Unik: harpia (beast) {beast.dodge}% (S88: 15 → 10), ryś / nietoperz / lampart (animal) {animal.dodge}% (wspólny z rysiem z Łąk; S91). Bossowie bez zmian (S66; życie i ataki S92–S94).`
+		`Unik: harpia (beast) {beast.dodge}% (S88: 15 → 10), ryś / nietoperz / lampart (animal) {animal.dodge}% (wspólny z rysiem z Łąk; S91: decyzja właściciela, Data/Families). Bossowie bez zmian (S66; życie i ataki S92–S94).`
 	)
 	add()
 
@@ -1311,17 +1361,14 @@ do
 		"Strażnik (E1): blok i kontra przed limitem, unik + chybienie + blok przed cięciem w `Damage.avoidance`, wkład obu cech zestawu w EHP (≤ 12%; topór i buława w raporcie → S89), leczenie z bloku w % maks. HP/s."
 	)
 	add()
-	tableOut(
-		{
-			"build, broń · poziom",
-			"blok / limit",
-			"kontra / limit",
-			"unik+blok / limit",
-			"EHP obu cech",
-			"leczenie z bloku / s",
-		},
-		rows
-	)
+	tableOut({
+		"build, broń · poziom",
+		"blok / limit",
+		"kontra / limit",
+		"unik+blok / limit",
+		"EHP obu cech",
+		"leczenie z bloku / s",
+	}, rows)
 	rows = {}
 	for _, L in { 45, 70, 100 } do
 		for _, r in { { Rarities.COMMON, 0 }, { Rarities.MYTHIC, 9 } } do
@@ -1450,18 +1497,15 @@ do
 			end
 		end
 	end
-	tableOut(
-		{
-			"profil · poziom",
-			"Unikaty / h",
-			"Heroiki / h",
-			"Legenda / Elita II",
-			"szczęście przed limitem",
-			"ucięte przez limit",
-			"ucięte na Elicie",
-		},
-		rows
-	)
+	tableOut({
+		"profil · poziom",
+		"Unikaty / h",
+		"Heroiki / h",
+		"Legenda / Elita II",
+		"szczęście przed limitem",
+		"ucięte przez limit",
+		"ucięte na Elicie",
+	}, rows)
 	local relic = function(r: number, up: number): number
 		local item = B.makeItem(B.tierId("relic", 68), 68, r, up, {})
 		return (ItemRoll.trait(item) :: any).value

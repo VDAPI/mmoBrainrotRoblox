@@ -252,7 +252,7 @@ local arcanist: Types.PathDef = {
 				passive = { hooks = { resonance = "resonance" } },
 			}),
 			node(A, "overload", "passive", 3, "⚠", {
-				values = { overloadDmg = { 2, 6 }, overloadCost = { 10, 30 } },
+				values = { overloadDmg = { 2, 6 }, overloadCost = { 9, 27 } }, -- S91: cost 10-30 -> 9-27 (list S90, T-SK4 2.6-2.8)
 				passive = { hooks = { spellDamage = "overloadDmg", spellCost = "overloadCost" } },
 			}),
 		}),

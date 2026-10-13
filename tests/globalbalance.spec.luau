@@ -75,7 +75,7 @@ end)
 T.describe("S87: region tables", function()
 	local cave = Areas.caves.list[1]
 
-	T.it("cave Elite pairs follow pairChance; the default equals the neutral 0.5", function()
+	T.it("cave Elite pairs follow pairChance; the default is the region's chance (S91: Meadows 0.3)", function()
 		local function counts(spawners: { any }): (number, number)
 			local single, pair = 0, 0
 			for _, s in spawners do
@@ -95,8 +95,13 @@ T.describe("S87: region tables", function()
 		local s1, p1 = counts(AreaSpawns.cave(cave, { pairChance = 1 }))
 		T.expect(s1).toBe(0)
 		T.expect(p1 > 0).toBe(true)
-		T.expect(AreaSpawns.cave(cave)).toEqual(AreaSpawns.cave(cave, { pairChance = 0.5 }))
-		T.expect(LevelCurves.elitePairChance(cave.region)).toBe(0.5)
+		-- S91: the Meadows 0.3 (fewer Elite pairs on 1-20); the regions 2-4 stay neutral until S92-S94
+		T.expect(AreaSpawns.cave(cave))
+			.toEqual(AreaSpawns.cave(cave, { pairChance = LevelCurves.elitePairChance(cave.region) }))
+		T.expect(LevelCurves.elitePairChance("meadows")).toBe(0.3)
+		for _, region in { "duskwood", "ashen", "frostpeak" } do
+			T.expect(LevelCurves.elitePairChance(region)).toBe(0.5)
+		end
 	end)
 
 	T.it("dropFactor 1 keeps the table itself; 0.5 halves Unique and Heroic, Common takes the rest", function()

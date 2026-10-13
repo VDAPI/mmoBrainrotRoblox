@@ -1,11 +1,13 @@
 --!strict
 -- Balance targets, checked with the model in tests/Balance.luau (expected values from the game's own modules).
---   * S32 targets of levels 1-20 (Balance.targets1_20): a report until S91 retunes 1-20 (owner answer 4); the
---     structural checks of the S32 blocks stay asserted. The 1-20 numbers themselves: tests/balance1_20.spec.
+--   * S32 targets of levels 1-20 (Balance.targets1_20, rows "S32.*", with the player variants with nodes of S91):
+--     asserted again from S91 (1-20 retuned and frozen); the structural checks of the S32 blocks always. The new
+--     1-20 targets of S91 (rows "S91.*": tempo, Grimrok, the skill layer at L20, R4, paths at 20) in the block
+--     "Balance 1-20: S91". The 1-20 numbers themselves: tests/balance1_20.spec (strict from S91).
 --   * Global targets 20-100 (Balance.targetsGlobal, G1-G9, G11-G13; G7-G9 from S84): asserted from S87
 --     (GLOBAL_ASSERT) except Balance.GLOBAL_REPORT_ONLY.
---   * Regions (Balance.targetsRegion): asserted where Balance.TUNED says so (S83: the Meadows' kinds and Grimrok's
---     schedule only), printed elsewhere.
+--   * Regions (Balance.targetsRegion): asserted where Balance.TUNED says so (S91: the Meadows in full, also with
+--     the players with nodes), printed elsewhere.
 --   * The balance ledger (S83, balance plan 2.6): always asserted.
 --   * S85: G10 (T-SK4, T-SK5 of tests/SkillModel) in the global block, the Meadows' T-SK3 / T-SK6 printed in the
 --     region block, the block "Skill model (S85)" at the end.
@@ -26,7 +28,7 @@ local Loot = require("../src/shared/Logic/Loot")
 local MonsterStats = require("../src/shared/Logic/MonsterStats")
 local T = require("./Test")
 
-local S32_ASSERT = false -- S83: report mode until S91 (owner answer 4)
+local S32_ASSERT = true -- S91: 1-20 retuned and frozen
 -- S87 (J1): rows of the global block left to a later session (the table lives in tests/Balance.luau, the report reads
 -- it too); every other row without `report` is asserted.
 local GLOBAL_REPORT_ONLY = B.GLOBAL_REPORT_ONLY
@@ -60,22 +62,66 @@ local function printReport(title: string, rows: { B.TargetRow }, limit: number)
 	end
 end
 
-T.describe("Balance S32: targets 1-20 (report until S91)", function()
-	local rows = B.targets1_20()
+-- rows of Balance.targets1_20 with an id prefix ("S32." / "S91."), with or without `report`
+local allRows1_20 = B.targets1_20()
+local function rowsOf(prefix: string, reported: boolean?): { B.TargetRow }
+	local out = {}
+	for _, row in allRows1_20 do
+		if string.sub(row.id, 1, #prefix) == prefix and (reported == nil or (row.report ~= nil) == reported) then
+			table.insert(out, row)
+		end
+	end
+	return out
+end
+
+T.describe("Balance S32: targets 1-20 (asserted again from S91)", function()
+	local rows = rowsOf("S32.")
 	if S32_ASSERT then
 		for _, row in rows do
-			T.it(`{row.id}: {row.label}`, function()
-				if not B.inBand(row) then
-					error(describeRow(row), 0)
-				end
-			end)
+			if row.report == nil then
+				T.it(`{row.id}: {row.label}`, function()
+					if not B.inBand(row) then
+						error(`{describeRow(row)} (S32)`, 0)
+					end
+				end)
+			end
 		end
-	else
-		T.it("S32 targets (report until S91)", function()
-			printReport("S32", rows, 40)
-			T.expect(#rows > 400).toBe(true)
+	end
+	T.it("S32 targets (printed)", function()
+		printReport("S32", rows, 40)
+		T.expect(#rows > 400).toBe(true)
+	end)
+end)
+
+-- S91: the new 1-20 targets (Balance.targetsS91; H1, H2): every row without `report` asserted, the message names the
+-- target, class, level, value, band and source; rows with `report` (H5) printed with their reason.
+T.describe("Balance 1-20: S91", function()
+	for _, row in rowsOf("S91.", false) do
+		T.it(`{row.id}: {row.label}`, function()
+			if not B.inBand(row) then
+				local who = if row.classId then `{row.classId} ` else ""
+				local at = if row.level then `L{row.level} ` else ""
+				error(`{who}{at}{describeRow(row)} (S91, docs/sessions S91 "Cele 1–20")`, 0)
+			end
 		end)
 	end
+	T.it("S91 targets (printed, with the rows out of reach of the S91 levers)", function()
+		local rows = rowsOf("S91.")
+		printReport("S91", rows, 20)
+		for _, row in rowsOf("S91.", true) do
+			print(`  raport: {row.id} {fmt(row.value)} ({row.report})`)
+		end
+		T.expect(#rows > 50).toBe(true)
+	end)
+	T.it("paceWindowAt: each kind table gets its own numbers (no shared cache)", function()
+		local Monsters = require("../src/shared/Data/Monsters")
+		for _, id in { "wolf", "boar" } do
+			local byTable = B.paceWindowAt("Warrior", 10, { kind = Monsters.get(id) })
+			local byId = B.paceWindowAt("Warrior", 10, { kind = id })
+			T.expect(byTable.expPerKill).toBe(byId.expPerKill)
+			T.expect(byTable.hours).toBe(byId.hours)
+		end
+	end)
 end)
 
 T.describe("Balance S32: structural checks", function()
@@ -417,17 +463,20 @@ T.describe("Balance 20-100: regions", function()
 	for _, mapId in B.REGION_IDS do
 		local rows = B.targetsRegion(mapId, REGION_TARGETS)
 		if TUNED[mapId] then
-			-- S83: the Meadows assert the kinds and Grimrok's schedule; their Elites, pairs and Elite II belong to the
-			-- 1-20 retune (S91) and are only printed.
-			local asserted = if mapId == "meadows" then { kinds = true, bossCadence = true } else nil
-			for _, row in rows do
-				if asserted == nil or asserted[row.group] then
-					T.it(`{row.id}`, function()
-						if not B.inBand(row) then
-							error(describeRow(row), 0)
-						end
-					end)
+			-- S91: the Meadows in full (S83 asserted only the kinds and Grimrok's schedule), the cave rows also with the
+			-- players with nodes (Balance.caveElites(mapId, true), B1)
+			local all = table.clone(rows)
+			if mapId == "meadows" then
+				for _, row in B.targetsRegion(mapId, REGION_TARGETS, true) do
+					table.insert(all, row)
 				end
+			end
+			for _, row in all do
+				T.it(`{row.id}`, function()
+					if not B.inBand(row) then
+						error(describeRow(row), 0)
+					end
+				end)
 			end
 		end
 		T.it(`{mapId}: region targets (printed{if TUNED[mapId] then "" else ", not tuned"})`, function()
@@ -436,7 +485,7 @@ T.describe("Balance 20-100: regions", function()
 		end)
 		if mapId == "meadows" then
 			-- S85 (J2) / S86 (F4): T-SK3 and T-SK6 at L20; the rows without `report` are asserted (the Meadows are
-			-- tuned), the rest printed until S91 (SkillModel.MEADOWS_REPORT names each with its value)
+			-- tuned), the rest printed (SkillModel.MEADOWS_REPORT names each with the reason, S91)
 			local skillRows = (require :: any)("./SkillModel").targetsMeadows()
 			for _, row in skillRows do
 				if row.report == nil then

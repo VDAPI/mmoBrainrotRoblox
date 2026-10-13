@@ -4,7 +4,7 @@
     "Areas/Caves": "e9053cab",
     "Blessings": "5a984f85",
     "Bonuses": "99063dce",
-    "Bosses": "561807c9",
+    "Bosses": "651ab044",
     "BuffCategories": "221eef21",
     "Combat": "c085b5bc",
     "Config": "64d26b36",
@@ -14,16 +14,16 @@
     "Items/Bases": "3f659ac8",
     "LootTables": "8f30d576",
     "Luck": "27e5b928",
-    "Monsters": "4b57378e",
-    "Paths/Cleric": "004f3838",
+    "Monsters": "baeedeb9",
+    "Paths/Cleric": "56560b7f",
     "Rarities": "f58a151b",
     "Recipes": "543993f0",
     "Shops": "39bf627e",
     "Stats": "94aa09db"
   },
   "meta": {
-    "note": "S84: model przedmiotów, łupu i obrony potworów 20–100 (tests/BalanceTables.tablesItems)",
-    "session": "S84",
+    "note": "S84: model przedmiotów, łupu i obrony potworów 20–100 (tests/BalanceTables.tablesItems); S91: dane 1-20 przestrojone",
+    "session": "S91",
     "tolerance": 0.005
   },
   "values": {

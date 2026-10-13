@@ -5573,3 +5573,167 @@ Pliki: `src/shared/Data/{Items/Bases,Paths/Hunter,Paths/Mage,Skills/Hunter,Skill
 `src/shared/Data/Localization/{pl,en}.luau`, `tests/{SkillModel,Balance,BalanceTables,balance.spec,skills.spec,mage.spec}.luau`,
 `tests/fixtures/{balance_paths,balance_items}.json`, `tools/{balance_reasons.luau,balance_before.json}`,
 `docs/{BALANS,ROZWOJ,STATY,DECYZJE,SESJE,PROGRESS,PRZEDMIOTY}.md`, `wiki/src/data/{skills,items,meta}.json`.
+
+### S91: Balans poziomów 1–20 od nowa (nowy fixture, kotwica L20)
+
+Start na `f1d0c45` (S90): `scripts/check` zielony (98 plików, 1881 testów), migawka księgi `snapshot S91`
+(`tools/balance_before.json`), zrzut „wszystko powyżej 20” (`build/s91_gt20.json`, 7126 liczb), wyniki bloków
+globalnego, ścieżek, S88 i regionów (`build/s91_global_start.txt`), tabela celów na starcie (`build/s91_t120_before.txt`).
+Na starcie wszystkie 474 cele S32 były w paśmie; poza celami: tempo (3,08 h, krok m(8) / m(7) 1,58), Grimrok w modelu
+S83 / S87 (6,15–6,33 min), T-SK6 (0,29), R1 na L20 wszystkich buildów obrażeń (Furia 2,27, Inkwizytor 2,21, Królobójca
+2,48 / 2,49, Niszczyciel 2,93 / 3,18, Arkanista 3,07), R4 rangi 5 (Święte Uderzenie 5A 0,80, Celny 5A 0,50, Podwójny 5A
+/ 5B 0,50, Pocisk 5A 0,39, Kula 5A 0,44, Szarża 5B 0,25), Elity spawnerów Łąk (54% w paśmie, spotkania 1,2–2,4).
+
+Co zrobiono:
+- **Model (B):** gracz konwencji z węzłami (`GearOpts.nodes`, `Balance.buildsAt`, `Balance.trimmedCharacter`,
+  `Balance.COMBAT_BUILD`); model okna od 1. poziomu (`Balance.paceWindowAt`, `paceWindowMean`); `caveElites(map,
+  withNodes)` z pamięcią podręczną i `targetsRegion(map, T, withNodes)` (klasy `eliteSingle.classes`); `bossFight`
+  z `opts.dpsMul` i `memberDps`; `Balance.bossNoSupport`; wszystkie nowe cele w `Balance.targetsS91` (wiersze „S91.*” w
+  `targets1_20`, `Balance.S91`, `Balance.S91_REPORT`). Model a serwer (B5): różnice wobec fixture S83 mają przyczyny z
+  list S84–S90 (cechy, linie, Kusza, krzywe 20–45 S87); błędu odwzorowania nie znaleziono. Kotwic poniżej 20 nie trzeba
+  (B4).
+- **Dane (tylko do 20 albo świadomie globalne):** zadania Łąk (ułamki i złoto ×2 na 4–16, Grimrok 0,8), dzik i szaman,
+  `elitePairChance.meadows` 0,3 (`caveRooms` odświeżony), Grimrok (`hpMul` 1,2, zamach ×6), rangi ≤ 20 dziesięciu
+  umiejętności podstawy z przypięciem w `Data/SkillCurves`, Leczenie `cost` 12, przełomy rangi 5 (Szarża 5B, Podwójny
+  5B, Pocisk 5A, Kula 5A), Gorliwość 3 / 5 / 7, Przeciążenie +9 / 18 / 27% (liczby w DECYZJE). Teksty `skill.*.bp5` /
+  `bp5b` PL i EN.
+- **Testy:** `S32_ASSERT = true`, blok „Balance 1-20: S91” (134 asertowane, 6 drukowanych z powodem), blok regionów
+  asertuje Łąki w całości (146 + 242 wiersze z węzłami), `GLOBAL_REPORT_ONLY` bez `G12` (wpisy S91 z „poza zasięgiem
+  dźwigni S91”), wiersze `r4.<skill>.5` na 45 / 70 / 100 asertowane (bez `report = "S91 …"`), `R4_UTILITY` / `R4_REPORT`
+  / `R4_DIFF_REPORT`, `MEADOWS_REPORT` z powodami, `R1_L20` (E7), `balance1_20.spec` w trybie ścisłym z pustą
+  `BalanceTables.ALLOWED_1_20_DIFFS` (tę samą listę czyta G12); wiersze S32 sklepu (G4) i ciosów Grimroka na Magu L20 /
+  L18 (model `B.boss`) też z węzłami; poprawione liczby kontrolne `skills.spec` (Potężne Uderzenie, Święte Uderzenie,
+  Szarża 10B) i `globalbalance.spec` (szansa pary regionu). Czas `tests/run.luau` bez zmian (ok. 60 s).
+- **Fixture'y:** `tests/fixtures/balance_1_20.json` (S91, 3330 wartości: tabele S32, gracz z węzłami, tempo z modelu
+  okna, warstwa umiejętności na 5–15, „Kotwica L20 (S91)”, Elity spawnerów Łąk, Elita II jaskiń, Grimrok w modelu S83 /
+  S87 i bez wsparcia); `balance_paths.json` i `balance_items.json` wygenerowane od nowa (dane ≤ 20 i przełomy rangi 5:
+  1777 wartości ścieżek, głównie L20 i R4, wartości przedmiotów bez zmian).
+- **Raport:** `docs/BALANS.md` (księga S91, „Cele 1–20 (S32 i S91)”, „Przed przebudową (05b859d) a S91”, nowe tabele
+  pasma 1–20). Dane wiki: `npm run data` (wartości: nagrody zadań, dzik, szaman, Grimrok, rangi ≤ 20, przełomy 5,
+  Leczenie, grupy Elit jaskiń Łąk; `wiki_keys_diff` 0).
+- **Sprawdzenie trybu ścisłego (H4):** `wolves` 0,2 → 0,25 dało 13 różnic i porażkę „no difference outside
+  ALLOWED_1_20_DIFFS” z listą kluczy; po ręcznym powrocie 0 różnic, `git diff` bez śladu.
+- **Zrzut A4:** identyczny na końcu (`diff build/s91_gt20.json build/s91_gt20_end.json` pusty). Powyżej 20 ruszyły się
+  świadomie (globalne dźwignie): wiersze R4 rangi 5 (Szarża 5B, Podwójny 5B, Pocisk 5A, Kula 5A w paśmie), T-SK4 i
+  `destroyer.clear` Maga w raporcie (Pocisk 5A i Kula 5A to też obszar podstawy), `r5a.mage` 0,011 → 0,022 na 70,
+  `cleric.solo` Uzdrowiciela 0,61 → 0,72 na 70 (Leczenie 12), T-SK6 regionów w raporcie (S92–S94), Przeciążenie
+  2,77–2,78 na 45 / 100; wszystkie asertowane wiersze 20–100 dalej w paśmie (G 1272/1272, S88 456/456, ścieżki bez
+  porażek).
+
+Cele 1–20 (przed = start S91, po = koniec; 05b859d tam, gdzie liczba istnieje):
+
+| cel | 05b859d | przed | po | próg |
+|---|---|---|---|---|
+| S32 (wszystkie wiersze, bez i z węzłami) | — | 474/474 (bez węzłów) | 995/995 | S32 |
+| 1 na 1 L20 W / Ł / M / K | 7,6 s 15% / 6,1 s 15% / 6,1 s 17% / 10,4 s 12% | 7,6 s 14% / 6,1 s 15% / 6,0 s 17% / 10,3 s 11% | bez zmian | 5,5–10 s, 10–25% |
+| Kapłan L20 grupa z Gorliwością | — | 29,7% | 30,4% | ≥ 30% |
+| Elita II S32 solo / trzech | 238–307% / 72–94% | 237–298% / 71–90% | 273–298% / 81–90% | ≥ 180% / 60–100% |
+| Elity spawnerów Łąk w paśmie | — | 54% (z Kapłanem) | 98% (W / Ł / M), z węzłami 100% | ≥ 26/36 |
+| spotkanie Elit W / M (najgorsze) | — | 2,26 / 2,43 | 1,04 / 1,18 | ≤ 1,10 / 1,25 |
+| Grimrok 3 / 4 / 5 min (S83 / S87) | 5,0 / 5,3 / 5,2 (S32) | 6,15 / 6,33 / 6,18 | 5,43 / 5,57 / 5,43 | 4–6 |
+| Grimrok największy cios Maga L20 | 67% (S32) | 64% (S32) / 55% | 64% / 55% | ≤ 70% |
+| T-SK6 Grimrok (Obrońca) | 1,11 (plan D1) | 0,29 | 1,83 | 1,0–2,0 |
+| Grimrok bez wsparcia 3 / 4 / 5: s | — | 190 / 198 / 188 | 186 / 194 / 185 | ≤ 480 |
+| tempo 1 → 20 (okno, bez Grimroka) | ok. 2,3 (S32, z Grimrokiem) | 3,08 h | 2,63 h | 1,8–2,8 |
+| największy krok m(L) / m(L − 1), 8–20 | — | 1,58 (L8) | 1,20 (L8) | ≤ 1,30 |
+| R1 L20 Furia / Inkwizytor | 1,90 / 1,83 (D1) | 2,27 / 2,21 | 2,14 / 2,06 | ≤ 2,19 / 2,10 |
+| R1 L20 Królobójca / Kłusownik | 2,12 (D1) | 2,48–2,49 / 2,42–2,44 | 2,28–2,29 / 2,22–2,23 | ≤ 2,44 |
+| R1 L20 Niszczyciel exp / boss, Arkanista | 2,37 (D1) | 2,93 / 3,18 / 3,07 | 2,47 / 2,66 / 2,58 | ≤ 2,73 |
+| T-SK2 L20 Furia / Królobójca długi łuk / Niszczyciel boss | 2,31 / 2,58 / 2,62 (D1) | 3,00 / 3,50 / 3,36 | 2,81 / 3,20 / 2,82 | ≤ 2,89 / 3,23 / 3,28 |
+| rzędy 1–2 / bez węzłów (Królobójca, Kłusownik z kuszą) | — | 1,021 / 1,015 | 1,022 / 1,014 | ≥ 1,03 (raport, H5) |
+| R4 rangi 5 w paśmie (opcje z wartością na L20) | — | 5 z 13 | 10 z 13 (3 w `R4_REPORT`) | 0,08–0,17 |
+| drop: Unikaty na poziom 10 / 15 / 18 | — | 0,66 / 1,04 / 1,45 | 0,61 / 0,98 / 1,27 | 0,5–1,6 |
+| złoto: +1…+3 / dochód poziomu (najgorszy, 4+) | — | 1,00 | 0,90 | ≤ 1,05 |
+
+Model okna (Wojownik, rodzaj zwykły, odpoczynek, bez Grimroka), h na poziom 1–21: 0 / 0 / 0,05 / 0,08 / 0,09 / 0,10 /
+0,12 / 0,13 / 0,14 / 0,15 / 0,16 / 0,17 / 0,18 / 0,19 / 0,20 / 0,21 / 0,22 / 0,22 / 0,23 / 0,23 / 0,44; krok 19 → 20
+surowy 1,01 (m 1,03), 20 → 21 surowy 1,89 (m 1,21). Z zadaniem Grimroka 2,05 h (16–17 opłacone w całości przez Jaskinię
+Mchów, 18–19 przez Grimroka 0,10–0,20 h), z rodzajami Łąk 2,79 h, Łowca / Mag / Kapłan 2,71 / 2,90 / 2,37 h.
+
+Kotwica L20 (R1 / T-SK2 / T-SK3, `docs/BALANS.md` → „Kotwica L20 (S91)”): podstawa W 1,92 / 2,47 / 1,45, Ł 2,20 / 2,82
+/ 1,51, M 2,49 / 2,45 / 1,39, K 1,93 / 2,05 / 1,79 (ROZWOJ 2.5: 1,84 / 1,97 / 2,22 / 1,74, D1: 1,90 / 2,12 / 2,37 / 1,83);
+Furia 2,13 / 2,81 / 1,39, Królobójca 2,28 / 3,13 / 1,38, Kłusownik 2,22 / 2,95 / 1,51, Niszczyciel exp 2,47 / 2,42 /
+1,40, boss 2,66 / 2,82 / 1,25, Arkanista 2,58 / 2,69 / 1,23, Inkwizytor 2,06 / 2,20 / 1,35; T-SK4 podstawy Maga 1,77,
+T-SK5 Uzdrowiciela na Obrońcy 0,22, T-SK6 Grimroka 1,83.
+
+Wejście (listy „Dla S91” S83–S90, `ALLOWED_1_20_DIFFS`, znaczniki w kodzie):
+- S83 spotkania Elit Łąk za drogie, Elita dzika 111–114% HP, szaman Kapłana 44%, 54% w paśmie: **wykonane**
+  (`elitePairChance` 0,3, dzik, szaman; Kapłan poza `eliteSingle.classes`, Elita solo Kapłana tylko w raporcie jak w S32).
+- S85 kotwica „własne L20” i model na każdym L: **wykonane** (tabele 5–20, „Kotwica L20 (S91)”).
+- S86 T-SK6 Grimroka 0,00–0,25 w `MEADOWS_REPORT`, strażniki na danych sprzed S91: **wykonane** (T-SK6 1,83, wiersze S86
+  podstawy, lochowego i Fortuny asertują; Uzdrowiciel solo i Inkwizytor drukowane z powodem); strażniki liczy S92.
+- S87 różnice 1–20 (Elity 21–22, Elita II 22, Heroiki z Elit): **wykonane** (te wiersze bez fixture, asertowane);
+  kadencja Grimroka f3: **przyjęta** (model S83 / S87 wiążący); dwuręczne na 20. (G8 1,036–1,039 Legend): **odrzucone:
+  przedmioty nie są dźwignią S91** (`GLOBAL_REPORT_ONLY` z powodem); mikstury Wielka / Potężna od 45: bez wpływu na 1–20;
+  G9 na 20. (0,44, 10,4): **odrzucone: koszt ulepszeń globalny, dochód 20. z pasma 20–45** (wpis zostaje z powodem);
+  T-SK5 na 20. (0,22): **odrzucone: rangi Leczenia ≤ 20 pod przypiętą 6. rangą** (wpis zostaje z powodem).
+- S88 48 różnic „Moc przedmiotów”: **przyjęte** (nowy fixture); unik rysia / nietoperza / lamparta 12% (cecha `agile`
+  w `Data/Families`): **dla właściciela** (nie dźwignia S91, ryś Łąk 0,94 EXP/s zwykłego w paśmie; wiersz B5 S88 z
+  `report = "właściciel"`); Grimrok bez zmian i linie `vs_humanoid`: **sprawdzone** (czas 5,4–5,6 min z liniami w modelu
+  konwencji); cechy na 20. (Przeszycie 6,4%, Iskra 7,2–8,2% …): **tylko raport** (tabele S88); Mityk topora na 20.
+  (0,969): **odrzucone: przedmioty nie są dźwignią S91** (raport razem z toporem 45–100).
+- S89 plany Strażnika i Inkwizytora: **przyjęte** (mierzone na L20: tempo solo w paśmie); baza na L20 8–13% ponad „dziś”:
+  **wykonane** (rangi ≤ 20 niżej, R1 podstawy W / K 1,92 / 1,93); rzędy 1–3 Berserkera (Głębokie Rany, Bitewny Rytm) i
+  przywrócenie Siły Rozmachu, Kata, Otwartych Ran: **odrzucone: rdzeń Furii przesuwa mianownik R7 S89 / S90, a rzędy
+  4–11 nie są dźwignią S91**; różnica Fortuny na 45 (Błogosławione Dłonie / Szczęśliwe Leczenie): **odrzucone: rząd 1
+  globalny, T-SK5 na 45–100 w paśmie S87** (`fortune.healLess` na 45 dalej `reportAt`); przełomy rangi 5: Potężne
+  Uderzenie 5B 0,12–0,14 **w paśmie**, Szarża 5B **wykonane** (×0,88), Święte Uderzenie 5B **w paśmie**, Leczenie 5A / 5B
+  **R4_UTILITY**.
+- S90 Kusza 1–20: **przyjęta** (fixture); R1 Łowcy i Maga na 20: **wykonane** (rangi ≤ 20); Przeciążenie
+  `overloadCost` 9 / 18 / 27: **wykonane**; R4: Celny 5A **R4_REPORT** (psuje S90), Podwójny 5A **R4_REPORT** (liczba
+  całkowita), Podwójny 5B **wykonane**, Pocisk 5A **wykonane** (różnica na 45–100 w `R4_DIFF_REPORT`), Kula 5A
+  **wykonane**; „Baza na L20 dla S91 (S90)”: tabela zostaje (liczona na bieżących danych).
+- `GLOBAL_REPORT_ONLY` z sesją S91: `G12` **usunięty**; G9 na 20, T-SK5 na 20, G8 Legend na 20: **zostają z „poza zasięgiem
+  dźwigni S91”**. `PATH_TARGETS` z `report = "S91"` (`all.r1` Łowcy i Maga na 45–100): **„właściciel (S90, S91)”**.
+  Wiersze R4 z „S91 (ranga z poziomu ≤ 20)”: **asertowane**. `MEADOWS_REPORT` „sprzed S91”: **rozstrzygnięte**.
+  Powody S90 w `tools/balance_reasons.luau` z dopiskiem „(list S91)” zostają (wpisów starszej sesji się nie edytuje).
+
+Dla S92–S94:
+- Kotwica L20 w fixture: tabela „Kotwica L20 (S91)” (`Kotwica L20 (S91)|<klasa> <build>|R1` …) i wiersze L20 tabel
+  S32; `SkillModel.guards` liczy „własne L20” na żywo, więc zmiana rang ≤ 20 zmieni strażniki i fixture naraz.
+- Skok na 21.–23.: S91 obniżyło rangi ≤ 20 (Pocisk ×0,75, inne ×0,73–0,9), a pierwsza ranga ponad 20 została przypięta
+  do wartości sprzed S91: R1 z L20 do L25 rośnie o ×1,06 (Furia), ×1,10 (Królobójca), ×1,15 (Inkwizytor), ×1,20–1,25
+  (Mag). Strażnik T-SK1 ≤ 1,15 × własnego L20 na 25 dla Maga i Inkwizytora wymaga rang 21–45 (S92).
+- Wiersze 1–20 bez fixture, ale asertowane w `balance.spec`: Elita solo na 20 (poziom 22), Elita II `caveSpider` /
+  `goblinShaman` 18, Elity spawnerów 19–20 i Elity II spawnerów 17–20 jaskiń Łąk, Heroiki z Elit na 20, h(20), h(21) i
+  m(20) modelu okna: kotwice 45 krzywych Elit i zadania Boru mogą je ruszać bez wpisu w `ALLOWED_1_20_DIFFS`.
+- Krok 20 → 21: h(21) / h(20) = 1,89 (m 1,21): `toDuskwood` (0,6) płaci tylko 20., `werewolves` (0,9 poziomu 21) okno
+  21–23; propozycja: `werewolves` w górę albo `toDuskwood` z oknem 20–20 dalej 0,6 (S92 B1 ma te dźwignie).
+- Definicje do powtórzenia: `paceWindowAt` z przeniesieniem nadmiaru i m(L) = średnia h(L − 4..L) (S92 woła ją dla
+  h(19..45)); Grimrok bez wsparcia = `Balance.bossNoSupport` (dla Morvane `bossNoSupport("morvane", n)`, drużyna
+  `Balance.S91.noSupportTeam`); T-SK6 = `healerVsBoss(healer.dungeon, boss, { team = "s92" })`; prawdziwe spawnery =
+  `targetsRegion(map, T, true)` + bez węzłów, klasy `eliteSingle.classes`; Elita II = `REGION_TARGETS.elite2`.
+- `R1_L20`: zaktualizowane dla wierszy drukowanych (Inkwizytor, Królobójca, Kłusownik z kuszą, Mag), Furia 2,27 i
+  Kłusownik z łukiem 2,44 zamrożone sprzed S91 (nowe 2,14 / 2,23 obniżyłyby górę asertowanych wierszy 45–100).
+- Wiersze L20 bloku ścieżek przekazane dalej: `support.elites` (S92–S94), `healer.tsk6` (S92–S94), pasma ROZWOJ
+  45–100 (Strażnik EHP, Chorąży suma, Inkwizytor / Furia, Uzdrowiciel DPS, Traper obszar, Niszczyciel, Arkanista, T-SK4)
+  tylko drukowane na 20.
+- Porażek na odcinku 20–45 krzywych Elit nie ma (Elita na 22 i Elity II na 21–24 w paśmie).
+- Po S91 każda zmiana działająca do 20. poziomu (dane albo model) to wpis w `BalanceTables.ALLOWED_1_20_DIFFS` i linia
+  w DECYZJE.
+
+Dla właściciela:
+- Progi przełączone na raport (H5): obrażenia rzędów 1–2 Strzelca i Trapera z kuszą 1,014–1,026 (cel ≥ 1,03): węzły
+  rzędów 1–2 Łowcy są globalne i nastrojone przez S90 na krawędzi `trapper.aoe` (1,15); propozycja: Pewna Ręka 1,5–4
+  razem ze zmianą `trapper.aoe` na 45 (S90) albo cel 1,02 dla Łowcy z kuszą.
+- R4 rangi 5 poza zasięgiem liczby: Święte Uderzenie 5A (odprysk 40% = 0,80; zejście do 6,5% psuje `cleric.solo` Fortuny
+  na 100), Celny Strzał 5A (przebicie 50% = 0,50; 13% psuje `trapper.aoe`, `scout.solo`, `r5a`), Podwójny Strzał 5A (+1
+  strzała = +50%); do decyzji: zostawić silne A albo zmienić kształt (np. słabsza trzecia strzała, odprysk zależny od
+  rangi). Różnica A − B Pocisku na 45–100 0,077 (5B ×0,88 → ×0,895 obniża T-SK4 Arkanisty na 55 pod 2,0).
+- Pary Elit Łąk są ciężkie: para kosztuje 134–242% HP (Kryjówka: bandyta 176–220%, dzik 195–242%; Nora 159–214%); po S91
+  pary są rzadkie (jedna w Norze na 13 grup), więc spotkanie mieści się w progach.
+- Dźwignie, których nie ruszyłem: rdzeń Furii (Głębokie Rany, Bitewny Rytm), rzędy 1–2 Inkwizytora poza Gorliwością
+  (Ciężka Ręka, Płonąca Wiara), unik zwierząt `agile` (Data/Families), Leczenie rang ≤ 20 (T-SK5 na 20. 0,22 < 0,25),
+  rotacja Uzdrowiciela lochowego (Święte Uderzenie w rotacji; przy koszcie Leczenia > 12 model wraca do 0,3 T-SK6).
+- Co czuć inaczej: lista w `docs/DECYZJE.md` (S91).
+
+Niedokończone: wiersze raportu G5 / G6 na 5–15, R6 rzędów 1–3, rzędy wyboru (dwa węzły rzędu 3), Elita II solo z
+miksturami, D5 na godzinę na 1–20 i gładkość R1 buildów na 5 (zasada 11, do odłożenia).
+
+Pliki: `src/shared/Data/{Bosses,LevelCurves,Monsters,SkillCurves}.luau`, `src/shared/Data/Quests/Main.luau`,
+`src/shared/Data/Skills/{Cleric,Hunter,Mage,Warrior}.luau`, `src/shared/Data/Paths/{Cleric,Mage}.luau`,
+`src/shared/Data/Localization/{pl,en}.luau`, `tests/{Balance,BalanceTables,SkillModel,balance.spec,balance1_20.spec,
+skills.spec,globalbalance.spec}.luau`, `tests/fixtures/{balance_1_20,balance_paths,balance_items}.json`,
+`tests/fixtures/caveRooms.luau`, `tools/{balance_report,balance_reasons}.luau`, `tools/balance_before.json`,
+`docs/{BALANS,DESIGN,ROZWOJ,DECYZJE,SESJE,PROGRESS,PRZEDMIOTY}.md`, `wiki/src/data/{areas,bosses,caves,meta,monsters,
+quests,skills}.json`.

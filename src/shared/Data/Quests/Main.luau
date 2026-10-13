@@ -70,7 +70,7 @@ q({
 	giver = "scout_meadows",
 	turnIn = "scout_meadows",
 	objectives = { { type = "equip", n = 1 }, { type = "stats", n = 1 } },
-	reward = { exp = exp(2, 0.6), gold = gold(2), items = { { id = "backpack_30", n = 1 } } },
+	reward = { exp = exp(2, 0.4), gold = gold(2), items = { { id = "backpack_30", n = 1 } } },
 })
 q({
 	id = "wolves",
@@ -79,7 +79,7 @@ q({
 	turnIn = "scout_meadows",
 	-- S56: "learn" = a skill put on the bar
 	objectives = { { type = "kill", n = 8, monster = "wolf" }, { type = "learn", n = 1 } },
-	reward = { exp = exp(3, 0.7), gold = gold(3) },
+	reward = { exp = exp(3, 0.2), gold = gold(3) },
 })
 q({
 	id = "wolfFangs",
@@ -87,7 +87,7 @@ q({
 	giver = "scout_meadows",
 	turnIn = "scout_meadows",
 	objectives = { { type = "collect", n = 6, monster = "wolf", item = "wolfFang", chance = 0.5 } },
-	reward = { exp = exp(4, 0.8), gold = gold(4), items = { { id = "blessing_hunter_1", n = 1 } } },
+	reward = { exp = exp(4, 1), gold = gold(4) * 2, items = { { id = "blessing_hunter_1", n = 1 } } },
 })
 q({
 	id = "boars",
@@ -95,7 +95,7 @@ q({
 	giver = "scout_meadows",
 	turnIn = "scout_meadows",
 	objectives = { { type = "kill", n = 10, monster = "boar" } },
-	reward = { exp = exp(6, 0.8), gold = gold(6) },
+	reward = { exp = exp(6, 0.4), gold = gold(6) * 2 },
 })
 q({
 	id = "herbs",
@@ -103,7 +103,7 @@ q({
 	giver = "scout_meadows",
 	turnIn = "healer",
 	objectives = { { type = "gather", n = 5, node = "bush_meadowsweet" } },
-	reward = { exp = exp(7, 0.8), gold = gold(7), items = { { id = "potion_hp_2", n = 10 } } },
+	reward = { exp = exp(7, 1.55), gold = gold(7) * 2, items = { { id = "potion_hp_2", n = 10 } } },
 })
 
 -- Whispering Meadows and Mosshollow Cave ----------------------------------------------------------------
@@ -113,7 +113,7 @@ q({
 	giver = "scout_meadows",
 	turnIn = "scout_meadows",
 	objectives = { { type = "kill", n = 12, monster = "bandit" } },
-	reward = { exp = exp(10, 0.8), gold = gold(10), items = { { id = "backpack_45", n = 1 } } },
+	reward = { exp = exp(10, 0.88), gold = gold(10) * 2, items = { { id = "backpack_45", n = 1 } } },
 })
 q({
 	id = "banditOrders",
@@ -121,7 +121,7 @@ q({
 	giver = "scout_meadows",
 	turnIn = "captain",
 	objectives = { { type = "collect", n = 1, monster = "bandit", item = "banditOrders", chance = 0.25 } },
-	reward = { exp = exp(12, 0.9), gold = gold(12), items = { { id = "stone_map", n = 2 } } },
+	reward = { exp = exp(12, 0.87), gold = gold(12) * 2, items = { { id = "stone_map", n = 2 } } },
 })
 q({
 	id = "goblinCamp",
@@ -129,7 +129,7 @@ q({
 	giver = "captain",
 	turnIn = "scout_meadows",
 	objectives = { { type = "kill", n = 15, monster = "goblinScout" } },
-	reward = { exp = exp(14, 0.9), gold = gold(14) },
+	reward = { exp = exp(14, 0.86), gold = gold(14) * 2 },
 })
 q({
 	id = "mosshollow",
@@ -140,7 +140,7 @@ q({
 		{ type = "reach", n = 1, map = "meadows_cave" },
 		{ type = "kill", n = 3, monster = "goblinScout", variant = "elite" },
 	},
-	reward = { exp = exp(16, 1), gold = gold(16), items = { { id = "blessing_warrior_2", n = 1 } } },
+	reward = { exp = exp(16, 1.9), gold = gold(16) * 2, items = { { id = "blessing_warrior_2", n = 1 } } },
 })
 q({
 	id = "grimrok",
@@ -148,7 +148,7 @@ q({
 	giver = "scout_meadows",
 	turnIn = "captain",
 	objectives = { { type = "boss", n = 1, boss = "grimrok" } },
-	reward = { exp = exp(20, 1.2), gold = gold(20) * 3, items = { { id = "stone_dungeon_meadows", n = 1 } } },
+	reward = { exp = exp(20, 0.8), gold = gold(20) * 3, items = { { id = "stone_dungeon_meadows", n = 1 } } },
 })
 
 -- Duskwood and the Crypt -------------------------------------------------------------------------------

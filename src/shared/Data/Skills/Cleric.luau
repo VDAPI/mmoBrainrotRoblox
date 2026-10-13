@@ -47,7 +47,7 @@ return Build.class("Cleric", "mana", "magic", {
 		cooldown = 3,
 		range = 12,
 		holy = true,
-		values = { dmg = { 190, 340 } },
+		values = { dmg = { 167, 340 } }, -- S91: rank 1 190 -> 167 (ranks <= 20, Data/SkillCurves)
 		breakpoints = Build.bp2(
 			{ a = { splash = { radius = 5, pct = 40 } }, b = { execute = 30 } },
 			{ a = { effect = { kind = "stun", duration = 0.8 } }, b = { healWounded = 30 } }
@@ -60,7 +60,7 @@ return Build.class("Cleric", "mana", "magic", {
 		maxLevel = 10,
 		type = "heal",
 		delivery = "ranged",
-		cost = 20,
+		cost = 12, -- S91: 20 -> 12 (T-SK6 Grimrok: at 20 the Holy Strikes at 12 took every mana point of the heals)
 		cooldown = 3,
 		range = 30,
 		values = { healHp = { 16, 18 }, healMag = { 8, 12 } },

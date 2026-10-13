@@ -116,8 +116,8 @@ kind("wolf", 1, false, 2, 6, {
 })
 kind("boar", 1, false, 5, 10, {
 	family = "animal",
-	hpMul = 1.25,
-	defMul = 1.2,
+	hpMul = 1.05,
+	defMul = 1.1,
 	ability = "charge",
 	size = 1.15,
 })
@@ -141,7 +141,7 @@ kind("caveSpider", 1, true, 14, 20, {
 })
 kind("goblinShaman", 1, true, 16, 20, {
 	family = "humanoid",
-	hpMul = 0.8,
+	hpMul = 0.95,
 	attack = "ranged",
 	damageKind = "magic",
 	range = 26,

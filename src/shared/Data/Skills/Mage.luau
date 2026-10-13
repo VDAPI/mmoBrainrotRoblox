@@ -17,9 +17,9 @@ return Build.class("Mage", "mana", "magic", {
 		range = 38,
 		hits = 1, -- S79 (ROZWOJ 14.4): Bolt 10B adds one (add.hits)
 		adaptive = true,
-		values = { dmg = { 170, 255.7 } },
+		values = { dmg = { 128, 255.7 } }, -- S91: rank 1 170 -> 128 (ranks <= 20, Data/SkillCurves)
 		breakpoints = Build.bp2(
-			{ a = { pierce = 40 }, b = { mul = { cooldown = 0.88 } } },
+			{ a = { pierce = 17 }, b = { mul = { cooldown = 0.88 } } }, -- S91: 5A pierce 40 -> 17 (R4)
 			-- 10B: two bolts at 151.7 % each (19 % more in total)
 			{ a = { splash = { radius = 4, pct = 12 } }, b = { add = { hits = 1 }, values = { dmg = -104 } } }
 		),
@@ -37,9 +37,10 @@ return Build.class("Mage", "mana", "magic", {
 		range = 38,
 		radius = 8,
 		element = "fire",
-		values = { dmg = { 150, 221.8 } },
+		values = { dmg = { 128, 221.8 } }, -- S91: rank 1 150 -> 128 (ranks <= 20, Data/SkillCurves)
 		breakpoints = Build.bp2(
-			{ a = { lingering = { pct = 15, duration = 3, kind = "burn" } }, b = { execute = 35 } },
+			-- S91: 5A burn 15 -> 5.5 % (R4)
+			{ a = { lingering = { pct = 5.5, duration = 3, kind = "burn" } }, b = { execute = 35 } },
 			{ a = { split = { count = 3, pct = 40, radius = 7 } }, b = { values = { dmg = 55 } } }
 		),
 		glyph = "☄",
@@ -54,7 +55,7 @@ return Build.class("Mage", "mana", "magic", {
 		cooldown = 5,
 		range = 38,
 		element = "ice",
-		values = { dmg = { 140, 213 }, slow = 30 },
+		values = { dmg = { 119, 213 }, slow = 30 }, -- S91: rank 1 140 -> 119 (Data/SkillCurves)
 		effects = { { kind = "slow", duration = 3, value = "slow", category = "enemySlow" } },
 		breakpoints = Build.bp2(
 			{ a = { effect = { kind = "freeze", duration = 0.8 } }, b = { values = { dmg = 23 } } },
@@ -74,7 +75,7 @@ return Build.class("Mage", "mana", "magic", {
 		range = 35,
 		radius = 12,
 		element = "lightning",
-		values = { dmg = { 130, 163.5 }, jumps = { 3, 6 } },
+		values = { dmg = { 110, 163.5 }, jumps = { 3, 6 } }, -- S91: rank 1 130 -> 110
 		breakpoints = Build.bp2(
 			{ a = { add = { jumps = 2 } }, b = { values = { dmg = 22 } } },
 			{ a = { stunLast = 1 }, b = { mul = { cooldown = 0.83 } } }

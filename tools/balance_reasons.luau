@@ -750,5 +750,305 @@ return {
 		["Paths/Mage:[arcanist].rows[6].nodes[arcanist_coolHead].values.coolHead[2]"] = {
 			{ session = "S90", why = "-12 -> -3.44: the same share (12 / 15) of the S90 surcharge 4.3" },
 		},
+		-- S91: levels 1-20 retuned and frozen (docs/SESJE.md S91; model: tests/Balance.luau, tests/SkillModel.luau)
+		["Bosses:byId.grimrok.hpMul"] = {
+			{
+				session = "S91",
+				why = "1.4 -> 1.2: D1 Grimrok in the S83 / S87 model 6.15-6.33 -> 5.33-5.57 min (band 4-6); S32 model 4.36-4.56 min",
+			},
+		},
+		["Bosses:byId.grimrok.attacks[sweep].damage"] = {
+			{
+				session = "S91",
+				why = "4.5 -> 6: D2 T-SK6 (dungeon Healer on the Defender) 2.04 -> 1.83 with heal cost 12 (band 1.0-2.0); the sweep hits only the tank, the Mage L20 keeps 64 % (S32) / 55 % (S83)",
+			},
+		},
+		["LevelCurves:elitePairChance.meadows"] = {
+			{
+				session = "S91",
+				why = "0.5 -> 0.3: C4 Elite encounters of the real spawners (q 0.75 / 0.5 / 0.2 -> 0 / 0.25 / 0): Warrior 1.49-2.26 -> <= 1.04, Mage 1.69-2.43 -> <= 1.18 (caps 1.10 / 1.25)",
+			},
+		},
+		["Monsters:byId.boar.hpMul"] = {
+			{
+				session = "S91",
+				why = "1.25 -> 1.05: C4 boar Elite 7-10 (W / Ł / M) 92-114 % HP and 40-43 s -> 78-96 % and 26-36 s (eliteSingle, HP <= 110 %); EXP/s / generic 0.92 -> 0.98",
+			},
+		},
+		["Monsters:byId.boar.defMul"] = {
+			{
+				session = "S91",
+				why = "1.2 -> 1.1: C4 with hpMul: boar Elite of the Hunter and the Mage at 7 below 110 % HP (eliteSingle)",
+			},
+		},
+		["Monsters:byId.goblinShaman.hpMul"] = {
+			{
+				session = "S91",
+				why = "0.8 -> 0.95: C4 shaman Elite 16-20 for the Hunter and the Mage 17-19 s and 54-58 % -> 21-22 s and 63-68 % (band 20-36 s, 55-95 %); EXP/s / generic 1.06 -> 1.01",
+			},
+		},
+		["Paths/Cleric:[inquisitor].rows[1].nodes[inquisitor_zeal].values.zeal[1]"] = {
+			{
+				session = "S91",
+				why = "4 -> 3: C1 Cleric with Zeal at 20 (Fortune, Inquisitor) average group 29.7 -> 30.4 % HP (S32 Cleric >= 30 %); S89 Inquisitor rows 45-100 in band",
+			},
+		},
+		["Paths/Cleric:[inquisitor].rows[1].nodes[inquisitor_zeal].values.zeal[2]"] = {
+			{ session = "S91", why = "10 -> 7: the same (Zeal rank 3 magic attack +10 -> +7 %)" },
+		},
+		["Paths/Mage:[arcanist].rows[3].nodes[arcanist_overload].values.overloadCost[1]"] = {
+			{
+				session = "S91",
+				why = "10 -> 9: list S90 (row 3 owned by S91): Przeciążenie T-SK4 2.84 / 2.85 -> 2.77 / 2.78 at 45 / 100 (band 2.6-2.8, ROZWOJ 12.7)",
+			},
+		},
+		["Paths/Mage:[arcanist].rows[3].nodes[arcanist_overload].values.overloadCost[2]"] = {
+			{ session = "S91", why = "30 -> 27: the same (cost +30 -> +27 %)" },
+		},
+		["Quests/Main:byId.gearUp.reward.exp"] = {
+			{
+				session = "S91",
+				why = "125 -> 83: F1 tempo of the window model: gearUp 0.6 -> 0.4 of level 2 (h(3) > 0, m(8) / m(7) 1.58 -> 1.20)",
+			},
+		},
+		["Quests/Main:byId.wolves.reward.exp"] = {
+			{
+				session = "S91",
+				why = "268 -> 76: F1 tempo: wolves 0.7 -> 0.2 of level 3 (the tutorial pays 1.6 levels; h(3) 0 -> 0.05 h, m(8) / m(7) <= 1.30)",
+			},
+		},
+		["Quests/Main:byId.wolfFangs.reward.exp"] = {
+			{
+				session = "S91",
+				why = "493 -> 617: F1 tempo: wolfFangs 0.8 -> 1 of level 4 (quest share of 4-5 about 0.6, as every window from 4)",
+			},
+		},
+		["Quests/Main:byId.boars.reward.exp"] = {
+			{
+				session = "S91",
+				why = "1011 -> 505: F1 tempo: boars 0.8 -> 0.4 of level 6 (level 6 was paid in full, h(6) 0 -> 0.10 h)",
+			},
+		},
+		["Quests/Main:byId.herbs.reward.exp"] = {
+			{
+				session = "S91",
+				why = "1338 -> 2593: F1 tempo: herbs 0.8 -> 1.55 of level 7 (window 7-9, quest share 0.4 -> 0.6)",
+			},
+		},
+		["Quests/Main:byId.banditRoad.reward.exp"] = {
+			{
+				session = "S91",
+				why = "2589 -> 2848: F1 tempo: banditRoad 0.8 -> 0.88 of level 10 (window 10-11, share 0.56 -> 0.6)",
+			},
+		},
+		["Quests/Main:byId.banditOrders.reward.exp"] = {
+			{
+				session = "S91",
+				why = "4097 -> 3961: F1 tempo: banditOrders 0.9 -> 0.87 of level 12 (window 12-13, share 0.61 -> 0.6)",
+			},
+		},
+		["Quests/Main:byId.goblinCamp.reward.exp"] = {
+			{
+				session = "S91",
+				why = "5472 -> 5229: F1 tempo: goblinCamp 0.9 -> 0.86 of level 14 (window 14-15, share 0.62 -> 0.6)",
+			},
+		},
+		["Quests/Main:byId.mosshollow.reward.exp"] = {
+			{
+				session = "S91",
+				why = "7820 -> 14858: F1 tempo: mosshollow 1 -> 1.9 of level 16 (window 16-19 without the boss quest, share 0.41 -> 0.6; h(16..19) 0.30-0.34 -> 0.21-0.23 h)",
+			},
+		},
+		["Quests/Main:byId.grimrok.reward.exp"] = {
+			{
+				session = "S91",
+				why = "14301 -> 9534: F1 report variant with the boss quest: grimrok 1.2 -> 0.8 of level 20 (h(20) / h(19) 6.7 -> 1.2, levels 18-19 not free)",
+			},
+		},
+		["Quests/Main:byId.wolfFangs.reward.gold"] = {
+			{
+				session = "S91",
+				why = "240 -> 480: F4 gold(L) x2 of the quests 4-16 (more quest EXP = fewer kills: +1..+3 / level income at 4-8 1.06-1.19 -> 0.88-0.99, band <= 1.05)",
+			},
+		},
+		["Quests/Main:byId.boars.reward.gold"] = {
+			{
+				session = "S91",
+				why = "330 -> 660: F4 gold(L) x2 of the quests 4-16 (more quest EXP = fewer kills: +1..+3 / level income at 4-8 1.06-1.19 -> 0.88-0.99, band <= 1.05)",
+			},
+		},
+		["Quests/Main:byId.herbs.reward.gold"] = {
+			{
+				session = "S91",
+				why = "375 -> 750: F4 gold(L) x2 of the quests 4-16 (more quest EXP = fewer kills: +1..+3 / level income at 4-8 1.06-1.19 -> 0.88-0.99, band <= 1.05)",
+			},
+		},
+		["Quests/Main:byId.banditRoad.reward.gold"] = {
+			{
+				session = "S91",
+				why = "510 -> 1020: F4 gold(L) x2 of the quests 4-16 (more quest EXP = fewer kills: +1..+3 / level income at 4-8 1.06-1.19 -> 0.88-0.99, band <= 1.05)",
+			},
+		},
+		["Quests/Main:byId.banditOrders.reward.gold"] = {
+			{
+				session = "S91",
+				why = "600 -> 1200: F4 gold(L) x2 of the quests 4-16 (more quest EXP = fewer kills: +1..+3 / level income at 4-8 1.06-1.19 -> 0.88-0.99, band <= 1.05)",
+			},
+		},
+		["Quests/Main:byId.goblinCamp.reward.gold"] = {
+			{
+				session = "S91",
+				why = "690 -> 1380: F4 gold(L) x2 of the quests 4-16 (more quest EXP = fewer kills: +1..+3 / level income at 4-8 1.06-1.19 -> 0.88-0.99, band <= 1.05)",
+			},
+		},
+		["Quests/Main:byId.mosshollow.reward.gold"] = {
+			{
+				session = "S91",
+				why = "780 -> 1560: F4 gold(L) x2 of the quests 4-16 (more quest EXP = fewer kills: +1..+3 / level income at 4-8 1.06-1.19 -> 0.88-0.99, band <= 1.05)",
+			},
+		},
+		["Skills/Cleric:[heal].cost"] = {
+			{
+				session = "S91",
+				why = "20 -> 12: D2 T-SK6 Grimrok 0.29 -> 1.83: at a cost above Holy Strike's 12 the heal never had the mana (10 heals in 448 s)",
+			},
+		},
+		["Skills/Cleric:[holyStrike].values.dmg[1]"] = {
+			{
+				session = "S91",
+				why = "190 -> 167: E2 R1 Inquisitor solo at L20 2.21 -> 2.06 (<= 1.15 x D1 = 2.10); ranks 1-5 x0.88, rank 6 pinned",
+			},
+		},
+		["Skills/Hunter:[aimedShot].values.dmg[1]"] = {
+			{
+				session = "S91",
+				why = "170 -> 144: E2 R1 Kingslayer 2.48 / 2.49 -> 2.28 / 2.29 (<= 2.44), T-SK2 longbow 3.50 -> 3.20 (<= 3.23); ranks 1-5 x0.845, rank 6 pinned",
+			},
+		},
+		["Skills/Hunter:[doubleShot].values.dmg[1]"] = {
+			{
+				session = "S91",
+				why = "85 -> 62: E2 T-SK2 of the Kingslayer (longbow 3.50 -> 3.20, cap 3.23) with Aimed Shot; ranks 1-5 x0.73, rank 6 pinned",
+			},
+		},
+		["Skills/Hunter:[doubleShot].breakpoints[5].b.mul.cooldown"] = {
+			{ session = "S91", why = "0.7 -> 0.87: E5 R4 of 5B 0.50 -> 0.17 at 20 / 45 / 70 / 100 (band 0.08-0.17)" },
+		},
+		["Skills/Mage:[firebolt].values.dmg[1]"] = {
+			{
+				session = "S91",
+				why = "170 -> 128: E2 R1 at L20 destroyerExp 2.93 -> 2.47, destroyerBoss 3.18 -> 2.66, arcanistBoss 3.07 -> 2.58 (<= 1.15 x D1 = 2.73); ranks 1-5 x0.75, rank 6 pinned",
+			},
+		},
+		["Skills/Mage:[firebolt].breakpoints[5].a.pierce"] = {
+			{
+				session = "S91",
+				why = "40 -> 17: E5 R4 of 5A 0.39 -> 0.165 at 20, 0.19 -> 0.083 at 45-100 (band 0.08-0.17)",
+			},
+		},
+		["Skills/Mage:[fireball].values.dmg[1]"] = {
+			{
+				session = "S91",
+				why = "150 -> 128: E2 R1 of the Mage builds at L20 (with Bolt); ranks 1-5 x0.85, rank 6 pinned",
+			},
+		},
+		["Skills/Mage:[fireball].breakpoints[5].a.lingering.pct"] = {
+			{
+				session = "S91",
+				why = "15 -> 5.5: E5 R4 of 5A 0.44 / 0.41 -> 0.16 / 0.15 at 20 / 45-100 (5B 0.16, |A - B| <= 0.05)",
+			},
+		},
+		["Skills/Mage:[iceShard].values.dmg[1]"] = {
+			{
+				session = "S91",
+				why = "140 -> 119: E2 R1 of the Mage builds at L20 (with Bolt); ranks 1-4 x0.85, rank 5 pinned",
+			},
+		},
+		["Skills/Mage:[chainLightning].values.dmg[1]"] = {
+			{
+				session = "S91",
+				why = "130 -> 110: E2 R1 of the Mage builds at L20 (with Bolt); ranks 1-3 x0.85, rank 4 pinned",
+			},
+		},
+		["Skills/Warrior:[mightyStrike].values.dmg[1]"] = {
+			{
+				session = "S91",
+				why = "160 -> 136: E2 R1 Fury at L20 2.27 -> 2.14 (<= 1.15 x D1 = 2.19), T-SK2 3.00 -> 2.81 (<= 2.89); ranks 1-5 x0.85, rank 6 pinned",
+			},
+		},
+		["Skills/Warrior:[charge].values.dmg[1]"] = {
+			{
+				session = "S91",
+				why = "120 -> 102: E2 R1 / T-SK2 of the Fury at L20 (with Mighty Strike); ranks 1-5 x0.85, rank 6 pinned",
+			},
+		},
+		["Skills/Warrior:[charge].breakpoints[5].b.mul.cooldown"] = {
+			{ session = "S91", why = "0.8 -> 0.88: E5 R4 of 5B 0.25 -> 0.17 at 20 / 45 / 70 / 100 (band 0.08-0.17)" },
+		},
+		["Skills/Warrior:[bladeWhirl].values.dmg[1]"] = {
+			{ session = "S91", why = "37 -> 33: E2 R1 / T-SK2 of the Fury at L20; ranks 1-4 x0.9, rank 5 pinned" },
+		},
+		-- S91 (E3): the knots of the ranks reached at <= 20 (x the factor of the rank-1 entry) and the pinned first rank
+		-- above 20 (its value before S91, so the ranks above 20 stay)
+		["SkillCurves:knots.mightyStrike.dmg[5]"] = {
+			{ session = "S91", why = "220 -> 187 (x0.85, R1 Fury at L20)" },
+		},
+		["SkillCurves:knots.mightyStrike.dmg[6]"] = {
+			{ session = "S91", why = "new, 220.4 pinned (rank 6 before S91)" },
+		},
+		["SkillCurves:knots.charge.dmg[5]"] = {
+			{ session = "S91", why = "160 -> 136 (x0.85, R1 Fury at L20)" },
+		},
+		["SkillCurves:knots.charge.dmg[6]"] = {
+			{ session = "S91", why = "new, 161 pinned (rank 6 before S91)" },
+		},
+		["SkillCurves:knots.bladeWhirl.dmg[4]"] = {
+			{ session = "S91", why = "47 -> 42 (x0.9, R1 Fury at L20)" },
+		},
+		["SkillCurves:knots.bladeWhirl.dmg[5]"] = {
+			{ session = "S91", why = "new, 47.83 pinned (rank 5 before S91)" },
+		},
+		["SkillCurves:knots.holyStrike.dmg[5]"] = {
+			{ session = "S91", why = "new, 226 (x0.88 of 256.7, R1 Inquisitor at L20)" },
+		},
+		["SkillCurves:knots.holyStrike.dmg[6]"] = {
+			{ session = "S91", why = "new, 273.33 pinned (rank 6 before S91)" },
+		},
+		["SkillCurves:knots.aimedShot.dmg[5]"] = {
+			{ session = "S91", why = "232.2 -> 196 (x0.845, R1 / T-SK2 Kingslayer at L20)" },
+		},
+		["SkillCurves:knots.aimedShot.dmg[6]"] = {
+			{ session = "S91", why = "new, 232.38 pinned (rank 6 before S91)" },
+		},
+		["SkillCurves:knots.doubleShot.dmg[5]"] = {
+			{ session = "S91", why = "113.9 -> 83 (x0.73, T-SK2 Kingslayer at L20)" },
+		},
+		["SkillCurves:knots.doubleShot.dmg[6]"] = {
+			{ session = "S91", why = "new, 113.91 pinned (rank 6 before S91)" },
+		},
+		["SkillCurves:knots.firebolt.dmg[5]"] = {
+			{ session = "S91", why = "232.2 -> 174 (x0.75, R1 Mage builds at L20)" },
+		},
+		["SkillCurves:knots.firebolt.dmg[6]"] = {
+			{ session = "S91", why = "new, 236.92 pinned (rank 6 before S91)" },
+		},
+		["SkillCurves:knots.fireball.dmg[5]"] = {
+			{ session = "S91", why = "203.3 -> 173 (x0.85, R1 Mage builds at L20)" },
+		},
+		["SkillCurves:knots.fireball.dmg[6]"] = {
+			{ session = "S91", why = "new, 207.03 pinned (rank 6 before S91)" },
+		},
+		["SkillCurves:knots.iceShard.dmg[4]"] = {
+			{ session = "S91", why = "176.7 -> 150 (x0.85, R1 Mage builds at L20)" },
+		},
+		["SkillCurves:knots.iceShard.dmg[5]"] = {
+			{ session = "S91", why = "new, 182.72 pinned (rank 5 before S91)" },
+		},
+		["SkillCurves:knots.chainLightning.dmg[3]"] = {
+			{ session = "S91", why = "152.2 -> 129 (x0.85, R1 Mage builds at L20)" },
+		},
+		["SkillCurves:knots.chainLightning.dmg[4]"] = {
+			{ session = "S91", why = "new, 153.83 pinned (rank 4 before S91)" },
+		},
 	} :: { [string]: { Reason } },
 }

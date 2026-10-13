@@ -1,8 +1,8 @@
 {
   "counts": {"areas":36,"blessings":25,"bonuses":89,"bosses":4,"caves":12,"classes":4,"cosmetics":23,"crafting":189,"elements":4,"fish":4,"gather":14,"icons":91,"items":933,"maps":21,"mapsearch":136,"mechanics":100,"monsters":50,"npcs":31,"portals":46,"premium":8,"progression":100,"quests":32,"rarities":5,"recipes":32,"search":1181,"shops":10,"skills":32,"stats":36,"titles":11,"upgrade":27},
-  "dataCommit": "a2edf5b",
-  "dataDate": "2026-10-13T07:34:36+02:00",
-  "dataHash": "c15c82b8",
+  "dataCommit": "f1d0c45",
+  "dataDate": "2026-10-13T10:43:24+02:00",
+  "dataHash": "4be5a694",
   "features": {"areaProfiles":true,"fightSim":true,"itemIconAtlas":true,"itemIcons":true,"itemValue":true,"sideQuests":true,"skillMotions":true,"tooltipModel":true},
   "rolls": 100000,
   "schemaVersion": 1

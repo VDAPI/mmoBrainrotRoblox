@@ -5,7 +5,7 @@
 
 ## Stan
 
-S01–S90 gotowe (lista i zakres w `docs/SESJE.md`). Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
+S01–S91 gotowe (lista i zakres w `docs/SESJE.md`). Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
 kategorie efektów drużyny i stos efektów (`Logic/EffectStack`), S54 wzory globalne (`Logic/LevelCurves`), S55 rangi
 i przełomy w kształcie A/B (`Build.bp2`, `Skills.effective` §2.7), S56 koniec punktów umiejętności: rangi z poziomu
 postaci (`Skills.rankFor`, drabina przejściowa ROZWOJ 2.6), zapis w schemacie 6 (darmowy reset statystyk, pasek
@@ -82,7 +82,8 @@ limit leczenia za zabicie `Traits.killHeal`, `riposteCap` 34, linie rodzin i kla
 Mitycznych na nowych liniach, model PvP `Balance.pvpDuel`). S89 ścieżki Kapłana i Wojownika nastrojone na 45–100 i
 pilnowane testem (`PATHS_TUNED`, R1 / R4 / R5 / R6, odniesienie „Furia” zamrożone). S90 ścieżki Łowcy i Maga nastrojone
 na 45–100 i pilnowane testem (Kusza `dmgMul` 1,54, Salwa 5A +1 strzała, R5a, limity Zręczności `hunter.dexCaps`, pasma
-T-SK4 z 12.7).
+T-SK4 z 12.7). S91 poziomy 1–20 przestrojone po przebudowie i zamrożone testem (`balance1_20.spec` w trybie ścisłym);
+kotwica L20 w fixture dla S92–S94.
 Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`, `docs/STATY.md`), następne sesje
 balansu; testy i strojenie po nich.
 
@@ -106,7 +107,7 @@ balansu; testy i strojenie po nich.
   teleportów gracza.
 - **Dane**: brak słabości żywiołowych potworów. Jaskinie bez profilu expowiska (`Cave.profile` nieczytane przez
   `AreaSpawns.cave`). Rodzaje S19 regionów 2–4 (np. czarny niedźwiedź, ghul) bez części. Regiony 2–4 niestrojone:
-  cele G i regionów poza pasmem w `docs/BALANS.md` (`GLOBAL_REPORT_ONLY`: 1–20 S91, regiony S92–S94;
+  cele G i regionów poza pasmem w `docs/BALANS.md` (`GLOBAL_REPORT_ONLY`: regiony S92–S94, wpisy S91 poza zasięgiem;
   G7 Heroik Łowcy i G8 „z cechami” zostają z S88 do decyzji właściciela); Morvane, Azgor, Vaelgrath mają stare mnożniki ciosów (największy cios Maga 107–130% po krzywej
   S87), lot Vaelgratha zdejmuje nietykalność mimo żywej tarczy (lista Dla S87 z S83; do osobnej sesji).
 - **Questy**: EXP z nagród dobrany wzorem, do strojenia.
@@ -115,7 +116,7 @@ balansu; testy i strojenie po nich.
 - **Przedmioty (S62–S68)**: krwawienie, trucizna i podpalenie z danych umiejętności przy odświeżeniu kasują resztę
   (`accumulate` ma od S79 tylko podpalenie z żywiołu broni).
 - **Model balansu (S84)**: brak kolumny „z hakami linii” w G7 (`eliteDamage`, `bossDamage`, `lastStand`, `thorns`).
-- **Balans**: propozycje S88 dla 1–20 (S91), regionów (S92–S94) i właściciela w `docs/SESJE.md` → S88; `PathDef.itemWeights`
+- **Balans**: propozycje S88 dla regionów (S92–S94) i właściciela w `docs/SESJE.md` → S88; `PathDef.itemWeights`
   bez strojenia (S88 C10).
 - **Przedmioty (S87)**: wiki pokazuje zakresy linii i krok ulepszenia bez mnożnika broni dwuręcznej (×2,7, 6,6%):
   nowe pole wymaga sesji wiki (decyzja właściciela).
@@ -124,9 +125,12 @@ balansu; testy i strojenie po nich.
   zmian.
 - **Model balansu (S84)**: obrona potworów liczona na rodzaju ogólnym, bez prawdziwych rodzajów regionu (`hpMul`,
   `atkMul`, rodzina).
-- **Balans**: propozycje S89 dla 1–20 (S91) i regionów (S92–S94) w `docs/SESJE.md` → S89; cele S89 w raporcie do decyzji
+- **Balans**: propozycje S89 dla regionów (S92–S94) w `docs/SESJE.md` → S89; cele S89 w raporcie do decyzji
   właściciela (DPS Strażnika, suma Chorążego na 70, R1 Inkwizytora, R6 trzech ścieżek): `docs/SESJE.md` → S89.
-- **Balans**: propozycje S90 dla 1–20 (S91), regionów (S92–S94) i właściciela w `docs/SESJE.md` → S90.
+- **Balans**: propozycje S90 dla regionów (S92–S94) i właściciela w `docs/SESJE.md` → S90.
+- **Balans**: propozycje S91 dla S92–S94 i właściciela w `docs/SESJE.md` → S91.
+- **Model balansu (S91)**: raport bez G5 / G6 na 5–15, R6 rzędów 1–3, rzędów wyboru na 20, Elity II solo z miksturami i
+  D5 na godzinę na 1–20; gładkość R1 buildów bez wiersza na 5.
 - **Model balansu (S86)**: bez utraty celowania i strumienia przy czerwonych strefach bossa (B10.4, B11.3).
 - **Model balansu (S86)**: R6 tylko na 100. dla buildów obrażeń (rzędy 4–11), bez 45 / 70; R4 opcji użytkowych = 0.
 - **Model balansu (S90)**: R4 opcji wzmocnień i obron Łowcy i Maga (Namierzenie, Kamuflaż, Znak, Odskok, Tarcza Many,

@@ -219,6 +219,9 @@ węzła.
   3–7% niżej (× atak podstawowy: Wojownik 1,84 / dziś 1,90, Łowca 1,97 / 2,12, Mag 2,22 / 2,37, Kapłan 1,74 / 1,83);
   resztę oddają węzły z pierwszych rzędów. Krok 3 dawałby 24 rangi na 20. Przestrojenie 1–20 (zgoda właściciela,
   punkt 4) robi sesja balansu na nowym fixture.
+- Pomiar po przestrojeniu 1–20 (S91, model `tests/SkillModel.luau`): `docs/BALANS.md` → „Kotwica L20 (S91)”. S91
+  obniżyło rangi osiągane do 20. poziomu (pierwsza ranga powyżej 20 przypięta w `Data/SkillCurves`), więc na 21.–23.
+  poziomie ranga 6 (5 / 4) robi większy skok niż pozostałe.
 
 ### 2.6 Przeniesiona umiejętność bez swojej ścieżki i stan przejściowy
 
@@ -818,8 +821,8 @@ Berserkera, a Uzdrowiciel i Fortuna expią na tej samej podstawie (punkt 27).
 
 | Poz. (dziś) | Umiejętność | Ranga 5 / 10 | Ranga 1 → 10; koszt / odn. |
 |---|---|---|---|
-| 1 (1) | Święte Uderzenie `holyStrike` | 17 / 37 | 190% → 340% ataku mag., światło; 12 / 3 s |
-| 3 (3) | Leczenie `heal` | 19 / 39 | 16% → 18% maks. HP celu + 8% → 12% ataku mag.; 20 / 3 s |
+| 1 (1) | Święte Uderzenie `holyStrike` | 17 / 37 | 167% → 340% ataku mag. (S91, było 190; ranga 5 = 226, ranga 6 = 273,3), światło; 12 / 3 s |
+| 3 (3) | Leczenie `heal` | 19 / 39 | 16% → 18% maks. HP celu + 8% → 12% ataku mag.; 12 / 3 s (S91, było 20) |
 | 6 (10) | Światłość `radiance` | 22 / 42 | 130% → 240% wokół (10 st.), sojusznicy leczeni 50% obrażeń (jak dziś w `Offense.circleSelf`, nie od HP celu); 35 / 10 s |
 | 10 (14) | Pobożność `devotion` (pasywka) | ranga 3 / 5 na 28 / 46 | leczenie +5% → +25% |
 | 14 (18) | Krąg Światła `circleOfLight` | 30 / 50 | 8% → 12% maks. HP + 6% → 10% ataku mag., 14 st.; 50 / 15 s |
@@ -1048,7 +1051,7 @@ Przeniesione:
 | Rząd · poz. | Węzeł | Rangi 1 / 2 / 3 i działanie |
 |---|---|---|
 | 1 · 10 | Oczyszczenie (`inquisitor_purify`, skill) | przeniesiona A |
-| 1 · 10 | Gorliwość (`inquisitor_zeal`, passive) | atak mag. +4 / 7 / 10% |
+| 1 · 10 | Gorliwość (`inquisitor_zeal`, passive) | atak mag. +3 / 5 / 7% (S91, było 4 / 7 / 10) |
 | 2 · 15 | Płonąca Wiara (`inquisitor_burningFaith`, passive, hak `holyDamage`) | światło +4 / 8 / 12% |
 | 2 · 15 | Ciężka Ręka (`inquisitor_heavyHand`, modify `holyStrike`) | `values.dmg` +14 / 27 / 40 pkt proc. |
 | 3 · 20 albo | Tarcza Inkwizytora (`inquisitor_shield`, passive, `weapon.offhand = { "shield" }`) | pancerz +6 / 12 / 18% i maks. HP +2 / 4 / 6% |
@@ -1182,9 +1185,9 @@ przełomy B. S89 obniżyło rangi powyżej 20. poziomu (R1, ranga osiągana do 2
 
 | Poz. (dziś) | Umiejętność | Ranga 5 / 10 | Ranga 1 → 10; koszt / odn. |
 |---|---|---|---|
-| 1 (1) | Potężne Uderzenie `mightyStrike` (target) | 17 / 37 | 160 → 222% (S89, było 295; ranga 5 = 220); 15 / 4 s |
-| 3 (6) | Szarża `charge` | 19 / 39 | 120 → 165% (S89, było 210; ranga 5 = 160), ogłuszenie 0,8 s; 20 / 12 s |
-| 6 (10) | Wir Ostrzy `bladeWhirl` (circleSelf) | 22 / 42 | 3 × 37 → 52% (S89, było 67; ranga 4 = 47), promień 8; 30 / 8 s |
+| 1 (1) | Potężne Uderzenie `mightyStrike` (target) | 17 / 37 | 136 → 222% (S89, było 295; S91: ranga 1 160 → 136, ranga 5 = 187, ranga 6 = 220,4); 15 / 4 s |
+| 3 (6) | Szarża `charge` | 19 / 39 | 102 → 165% (S89, było 210; S91: ranga 1 120 → 102, ranga 5 = 136, ranga 6 = 161), ogłuszenie 0,8 s; 20 / 12 s |
+| 6 (10) | Wir Ostrzy `bladeWhirl` (circleSelf) | 22 / 42 | 3 × 33 → 52% (S89, było 67; S91: ranga 1 37 → 33, ranga 4 = 42, ranga 5 = 47,8), promień 8; 30 / 8 s |
 | 10 (23) | Prowokacja `taunt` (circleSelf) | 26 / 46 | prowokacja 6 s, pancerz +20 → 40%; 20 / 20 s |
 | 14 (14) | Stalowa Skóra `steelSkin` (pasywka) | rangi na 14/23/32/41/50 | pancerz +5 → 25% |
 | 18 (40) | Krwawy Szał `bloodlust` (buff) | 34 / 54 | szybkość ataku +15 → 20% (S89, było 35), kradzież życia 5%, 12 s; odn. 60 s |
@@ -1202,7 +1205,7 @@ podtrzymanie zamiast kontroli) przy podobnej wartości (R4).
 | Umiejętność | Ranga 5: A / B | Ranga 10: A / B |
 |---|---|---|
 | Potężne Uderzenie | A `knockback = 6` / B `execute = 30` (ok. +11% na jednym celu) | A `splash = { radius = 6, pct = 50 }` / B `effect` krwawienie 45% ataku przez 6 s (S89, było 90; odświeża się przy każdym rzucie, ok. +18%, omija pancerz) |
-| Szarża | A `add.range = 7` / B `mul.cooldown = 0.8` | A `stunNear = { radius = 5, duration = 1 }` / B `splash = { radius = 6, pct = 60 }` |
+| Szarża | A `add.range = 7` / B `mul.cooldown = 0.88` (S91, było 0,8) | A `stunNear = { radius = 5, duration = 1 }` / B `splash = { radius = 6, pct = 60 }` |
 | Wir Ostrzy | A `castMove = 60` / B `lifesteal = 8` | A `pull = 12` / B `add.hits = 1`, `values.dmg = -4` (4 × 48%, ok. +23%; S89, było −7) |
 | Prowokacja | A `add.radius = 5` / B `selfHeal = 8` | A `effect` spowolnienie 30% 4 s (`enemySlow`) / B `add.effectDuration = 3` (prowokacja i pancerz 9 s) |
 | Krwawy Szał | A `values.lifesteal = 3` / B `add.effectDuration = 2` | A `selfEffect` redukcja 15% 12 s / B `values.speed = 4` (20 → 24%; S89, było 8) |
@@ -1546,8 +1549,8 @@ Rangi z 2.5. Wartości (ranga 1 → 10) zostają jak dziś; zmienia się tylko o
 
 | Poz. (dziś) | Umiejętność | Ranga 5 / 10 | Ranga 1 → 10; koszt / odn. |
 |---|---|---|---|
-| 1 (1) | Celny Strzał `aimedShot` (projectile) | 17 / 37 | 170 → 233% (S90, było 310; ranga 5 = 232), zasięg 38; 15 / 4 s |
-| 3 (3) | Podwójny Strzał `doubleShot` (projectile) | 19 / 39 | 2 × 85 → 114% (S90, było 150; ranga 5 = 114); 20 / 6 s |
+| 1 (1) | Celny Strzał `aimedShot` (projectile) | 17 / 37 | 144 → 233% (S90, było 310; S91: ranga 1 170 → 144, ranga 5 = 196, ranga 6 = 232,4), zasięg 38; 15 / 4 s |
+| 3 (3) | Podwójny Strzał `doubleShot` (projectile) | 19 / 39 | 2 × 62 → 114% (S90, było 150; S91: ranga 1 85 → 62, ranga 5 = 83, ranga 6 = 113,9); 20 / 6 s |
 | 6 (6) | Odskok `disengage` (blink) | 22 / 42 | następny strzał +20 → 35% (S90, było 50; ranga 4 = 30) (8 s); 15 / 10 s |
 | 10 (10) | Deszcz Strzał `arrowRain` (circleTarget) | 26 / 46 | 4 fale × 45 → 85%, promień 9; 35 / 10 s |
 | 14 (14) | Sokole Oko `hawkEye` (pasywka) | rangi na 14/23/32/41/50 | krytyk +2 → 4 pkt proc., obrażenia krytyczne +10 → 16 (S90, było 10 i 30; ranga 1 na 14.) |
@@ -1566,7 +1569,7 @@ Przełomy podstawy (A = dzisiejsze dane, B = nowe; w nawiasie zysk na randze 5 a
 | Umiejętność | Ranga 5: A / B | Ranga 10: A / B |
 |---|---|---|
 | Celny Strzał | A `pierce = 50` / B `values.dmg = 30` (ok. +13%) | A `execute = 21` (S90, było 30) / B `lifesteal = 12` (podtrzymanie) |
-| Podwójny Strzał | A `add.hits = 1` / B `mul.cooldown = 0.7` | A `effect` spowolnienie 25% 2 s (`enemySlow`) / B `values.dmg = 28` (S90, było 30) |
+| Podwójny Strzał | A `add.hits = 1` / B `mul.cooldown = 0.87` (S91, było 0,7) | A `effect` spowolnienie 25% 2 s (`enemySlow`) / B `values.dmg = 28` (S90, było 30) |
 | Odskok | A `trap` spowolnienie 40% 8 s (`enemySlow`) / B `mul.cooldown = 0.7` | A `values.bonus = 50`, `add.effectDuration = -5` / B `selfEffect` unik +20 pkt proc. 4 s (`own`) |
 | Deszcz Strzał | A `add.radius = 3` / B `values.dmg = 8` (ok. +13%) | A `effect` spowolnienie 30% 2 s (`enemySlow`) / B `add.hits = 1` (5 fal, +25%) |
 | Zatruta Strzała | A `values.poison = 21` / B `values.dmg = 28` (S90, było 40 i 40) | A `splash = { radius = 5, pct = 19 }` / B `values.poison = 60` (S90, było 40 i 70) |
@@ -1881,10 +1884,10 @@ przez krzywą z 8 (S87: ×1,0 / 1,89 / 2,59 / 3,49 na 20 / 45 / 70 / 100).
 
 | Poz. (dziś) | Umiejętność | Ranga 5 / 10 | Ranga 1 → 10; koszt / odn. |
 |---|---|---|---|
-| 1 (1) | Magiczny Pocisk `firebolt` (projectile, żywioł broni) | 17 / 37 | 170 → 255,7% (S90, było 310; ranga 5 = 232,2); 12 / 2,5 s; nowe pole `hits = 1` |
-| 3 (10) | Kula Ognia `fireball` (circleTarget r 8, ogień) | 19 / 39 | 150 → 221,8% (S90, było 270; ranga 5 = 203,3); 35 / 8 s |
-| 6 (3) | Lodowy Odłamek `iceShard` (projectile, lód) | 22 / 42 | 140 → 213% (S90, było 250; ranga 4 = 176,7), spowolnienie 30% 3 s; 15 / 5 s |
-| 10 (18) | Łańcuch Błyskawic `chainLightning` (chain, błyskawica) | 26 / 46 | 130 → 163,5% (S90, było 230; ranga 3 = 152,2), 3 → 6 skoków; 35 / 9 s |
+| 1 (1) | Magiczny Pocisk `firebolt` (projectile, żywioł broni) | 17 / 37 | 128 → 255,7% (S90, było 310; S91: ranga 1 170 → 128, ranga 5 = 174, ranga 6 = 236,9); 12 / 2,5 s; nowe pole `hits = 1` |
+| 3 (10) | Kula Ognia `fireball` (circleTarget r 8, ogień) | 19 / 39 | 128 → 221,8% (S90, było 270; S91: ranga 1 150 → 128, ranga 5 = 173, ranga 6 = 207); 35 / 8 s |
+| 6 (3) | Lodowy Odłamek `iceShard` (projectile, lód) | 22 / 42 | 119 → 213% (S90, było 250; S91: ranga 1 140 → 119, ranga 4 = 150, ranga 5 = 182,7), spowolnienie 30% 3 s; 15 / 5 s |
+| 10 (18) | Łańcuch Błyskawic `chainLightning` (chain, błyskawica) | 26 / 46 | 110 → 163,5% (S90, było 230; S91: ranga 1 130 → 110, ranga 3 = 129, ranga 4 = 153,8), 3 → 6 skoków; 35 / 9 s |
 | 14 (6) | Błysk `blink` | 30 / 50 | 15 st.; 20 / 12 s |
 | 18 (34) | Lodowa Nova `frostNova` (circleSelf r 10, lód) | 34 / 54 | 120 → 141,3% (S90, było 220), zamrożenie 1,5 → 2,5 s; 45 / 18 s |
 | 30 (40) | Meteor `meteor` (circleTarget r 10, ogień) | 46 / 66 | 98 → 174% po 1 s; 72 / 20 s (S90, było 280 → 480% i koszt 60) |
@@ -1905,8 +1908,8 @@ mieście i przy wejściu do lochu, więc każdy gracz ma przełomy pod exp i pod
 
 | Umiejętność | Ranga 5: A / B | Ranga 10: A / B |
 |---|---|---|
-| Magiczny Pocisk | A `pierce = 40` / B `mul.cooldown = 0.88` (2,5 → 2,2 s) | A `splash = { radius = 4, pct = 12 }` / B `add.hits = 1`, `values.dmg = -104` (2 × 151,7%, +19%; S90, było 50 i −124) |
-| Kula Ognia | A `lingering` podpalenie 15% 3 s / B `execute = 35` | A `split = { count = 3, pct = 40, radius = 7 }` / B `values.dmg = 55` (+20%) |
+| Magiczny Pocisk | A `pierce = 17` (S91, było 40) / B `mul.cooldown = 0.88` (2,5 → 2,2 s) | A `splash = { radius = 4, pct = 12 }` / B `add.hits = 1`, `values.dmg = -104` (2 × 151,7%, +19%; S90, było 50 i −124) |
+| Kula Ognia | A `lingering` podpalenie 5,5% 3 s (S91, było 15%) / B `execute = 35` | A `split = { count = 3, pct = 40, radius = 7 }` / B `values.dmg = 55` (+20%) |
 | Lodowy Odłamek | A `effect` zamrożenie 0,8 s / B `values.dmg = 23` (S90, było 20) | A `pierce = 27` / B `mul.cooldown = 0.84` (S90, było 60 i 0,85) |
 | Łańcuch Błyskawic | A `add.jumps = 2` / B `values.dmg = 22` (S90, było 25) | A `stunLast = 1` / B `mul.cooldown = 0.83` (S90, było 0,8) |
 | Błysk | A `selfEffect` redukcja 30% 2 s / B `add.length = 5` | A `mul.cooldown = 0.6` / B `trap = { radius = 6, duration = 3, slow = 40 }` |
@@ -2060,7 +2063,7 @@ Przeniesione:
 | 2 · 15 | Bystrość (`arcanist_acuity`, passive flat `critChance`) | +1 / 2 / 3 pkt proc. |
 | 2 · 15 | Opanowanie (`arcanist_composure`, dodatkowy, passive, hak `manaShieldCost`) | −10 / 20 / 30% many za pochłonięte obrażenia |
 | 3 · 20 albo | Rezonans (`arcanist_resonance`, passive, hak `resonance`) | +2 / 4 / 6% obrażeń czarów przy manie ≥ 75% |
-| 3 · 20 albo | Przeciążenie (`arcanist_overload`, passive, haki `spellDamage`, `spellCost`) | +2 / 4 / 6% obrażeń, +10 / 20 / 30% kosztu (opłaca się dopiero z Inwokacją; opis musi to mówić) |
+| 3 · 20 albo | Przeciążenie (`arcanist_overload`, passive, haki `spellDamage`, `spellCost`) | +2 / 4 / 6% obrażeń, +9 / 18 / 27% kosztu (S91, było 10 / 20 / 30; opłaca się dopiero z Inwokacją; opis musi to mówić) |
 | 4 · 26 | Wyładowanie Arkanów (`arcanist_arcaneDischarge`, skill → `arcaneDischarge`) | nowa, włącza Ładunki |
 | 4 · 26 | Pełne Wyładowanie (`arcanist_fullDischarge`, modify `arcaneDischarge` `values.perCharge`) | +3 / 6,45 / 9,9 pkt proc. (4,1 → 19% za Ładunek z 5A; S90, było 10 na randze 3) |
 | 5 · 33 | Moc Arkanów (`arcanist_might`, passive pct `magAtk`) | +0,3 / 0,65 / 1% (S90, było 1 / 2 / 3) |

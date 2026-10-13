@@ -11,22 +11,36 @@
 export type Knots = { [string]: { [string]: { [number]: number } } }
 -- S89: each knot is the value the rank had before S89 (the last rank with rankLevel <= 20), so ranks reached at <= 20
 -- keep their numbers while rank max moves (B3, S91 owns the 1-20 band). S90: the same for the Hunter and the Mage.
+-- S91 (E3): the ranks reached at <= 20 lowered (R1 at L20 <= 1.15 x D1, docs/DECYZJE.md S91); the first rank above
+-- 20 keeps its value from before S91 (a knot written as the interpolation that gave it), so ranks above 20 stay.
+local AIMED5 = 170 + 140 * 4 / 9 -- aimedShot rank 5 before S91 (S90 knot)
+local DOUBLE5 = 85 + 65 * 4 / 9
+local BOLT5 = 170 + 140 * 4 / 9
+local BALL5 = 150 + 120 * 4 / 9
+local SHARD4 = 140 + 110 * 3 / 9
+local CHAIN3 = 130 + 100 * 2 / 9
 return table.freeze({
 	knots = table.freeze({
-		mightyStrike = table.freeze({ dmg = table.freeze({ [5] = 220 }) }), -- 160 + 135 * 4 / 9
-		charge = table.freeze({ dmg = table.freeze({ [5] = 160 }) }), -- 120 + 90 * 4 / 9
-		bladeWhirl = table.freeze({ dmg = table.freeze({ [4] = 47 }) }), -- 37 + 30 * 3 / 9
+		-- S91: ranks 1-5 x0.85 (rank 1 160 -> 136), rank 6 pinned (220 + 2 / 5 before S91)
+		mightyStrike = table.freeze({ dmg = table.freeze({ [5] = 187, [6] = 220 + (222 - 220) * 1 / 5 }) }),
+		-- S91: ranks 1-5 x0.85 (rank 1 120 -> 102), rank 6 pinned
+		charge = table.freeze({ dmg = table.freeze({ [5] = 136, [6] = 160 + (165 - 160) * 1 / 5 }) }),
+		-- S91: ranks 1-4 x0.9 (rank 1 37 -> 33), rank 5 pinned
+		bladeWhirl = table.freeze({ dmg = table.freeze({ [4] = 42, [5] = 47 + (52 - 47) * 1 / 6 }) }),
 		cleave = table.freeze({ dmg = table.freeze({ [3] = 140 + 110 * 2 / 9 }) }),
 		battleCry = table.freeze({ atk = table.freeze({ [3] = 14 }) }), -- 10 + 18 * 2 / 9
-		-- S90: the Hunter's base (rank 10 nearly flat above 20, C3)
-		aimedShot = table.freeze({ dmg = table.freeze({ [5] = 170 + 140 * 4 / 9 }) }),
-		doubleShot = table.freeze({ dmg = table.freeze({ [5] = 85 + 65 * 4 / 9 }) }),
+		-- S91: the Cleric's Holy Strike, ranks 1-5 x0.88 (rank 1 190 -> 167), rank 6 pinned
+		holyStrike = table.freeze({ dmg = table.freeze({ [5] = 226, [6] = 190 + (340 - 190) * 5 / 9 }) }),
+		-- S90: the Hunter's base (rank 10 nearly flat above 20, C3). S91: ranks 1-5 x0.845 / x0.73, rank 6 pinned
+		aimedShot = table.freeze({ dmg = table.freeze({ [5] = 196, [6] = AIMED5 + (233 - AIMED5) * 1 / 5 }) }),
+		doubleShot = table.freeze({ dmg = table.freeze({ [5] = 83, [6] = DOUBLE5 + (114 - DOUBLE5) * 1 / 5 }) }),
 		disengage = table.freeze({ bonus = table.freeze({ [4] = 20 + 30 * 3 / 9 }) }),
 		piercingArrow = table.freeze({ dmg = table.freeze({ [3] = 200 + 160 * 2 / 9 }) }),
-		-- S90: the Mage's base (rank 10 lower above 20, F1; Frost Nova reaches only rank 1 by 20)
-		firebolt = table.freeze({ dmg = table.freeze({ [5] = 170 + 140 * 4 / 9 }) }),
-		fireball = table.freeze({ dmg = table.freeze({ [5] = 150 + 120 * 4 / 9 }) }),
-		iceShard = table.freeze({ dmg = table.freeze({ [4] = 140 + 110 * 3 / 9 }) }),
-		chainLightning = table.freeze({ dmg = table.freeze({ [3] = 130 + 100 * 2 / 9 }) }),
+		-- S90: the Mage's base (rank 10 lower above 20, F1; Frost Nova reaches only rank 1 by 20). S91: ranks <= 20
+		-- x0.75 (Bolt) and x0.85 (the rest), the first rank above 20 pinned
+		firebolt = table.freeze({ dmg = table.freeze({ [5] = 174, [6] = BOLT5 + (255.7 - BOLT5) * 1 / 5 }) }),
+		fireball = table.freeze({ dmg = table.freeze({ [5] = 173, [6] = BALL5 + (221.8 - BALL5) * 1 / 5 }) }),
+		iceShard = table.freeze({ dmg = table.freeze({ [4] = 150, [5] = SHARD4 + (213 - SHARD4) * 1 / 6 }) }),
+		chainLightning = table.freeze({ dmg = table.freeze({ [3] = 129, [4] = CHAIN3 + (163.5 - CHAIN3) * 1 / 7 }) }),
 	}) :: Knots,
 })

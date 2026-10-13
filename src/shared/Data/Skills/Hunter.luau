@@ -21,7 +21,7 @@ return Build.class("Hunter", "energy", "phys", {
 		cost = 15,
 		cooldown = 4,
 		range = 38,
-		values = { dmg = { 170, 233 } },
+		values = { dmg = { 144, 233 } }, -- S91: rank 1 170 -> 144 (ranks <= 20, Data/SkillCurves)
 		breakpoints = Build.bp2(
 			{ a = { pierce = 50 }, b = { values = { dmg = 30 } } },
 			{ a = { execute = 21 }, b = { lifesteal = 12 } }
@@ -40,11 +40,14 @@ return Build.class("Hunter", "energy", "phys", {
 		range = 38,
 		hits = 2,
 		interval = 0.15,
-		values = { dmg = { 85, 114 } },
-		breakpoints = Build.bp2({ a = { add = { hits = 1 } }, b = { mul = { cooldown = 0.7 } } }, {
-			a = { effect = { kind = "slow", duration = 2, value = 25, category = "enemySlow" } },
-			b = { values = { dmg = 28 } },
-		}),
+		values = { dmg = { 62, 114 } }, -- S91: rank 1 85 -> 62 (ranks <= 20, Data/SkillCurves)
+		breakpoints = Build.bp2(
+			{ a = { add = { hits = 1 } }, b = { mul = { cooldown = 0.87 } } },
+			{ -- S91: 5B 0.7 -> 0.87 (R4)
+				a = { effect = { kind = "slow", duration = 2, value = 25, category = "enemySlow" } },
+				b = { values = { dmg = 28 } },
+			}
+		),
 		glyph = "⇉",
 		vfx = "arrow",
 	},

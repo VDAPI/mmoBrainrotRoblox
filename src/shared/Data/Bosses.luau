@@ -87,8 +87,9 @@ boss({
 	level = 20,
 	-- S32 (tests/balance.spec): 3-5 players of level 18-20 need 4-6 min; no hit takes more than 70 % of a level 20
 	-- Mage's HP (the whirlwind took ~150 %). Basic attacks are softer (atkMul 1.2 → 0.32), the telegraphed attacks
-	-- carry the danger.
-	hpMul = 1.4,
+	-- carry the danger. S91: 3-5 players of level 19 need 4-6 min in the S83 / S87 model (hpMul 1.4 -> 1.2); the
+	-- sweep at the tank is heavier (4.5 -> 6) so a dungeon Healer heals 1.0-2.0 of the tank's damage (T-SK6).
+	hpMul = 1.2,
 	atkMul = 0.32,
 	defMul = 1.3,
 	speed = 0.9,
@@ -104,7 +105,7 @@ boss({
 			radius = 15,
 			angle = 120,
 			windup = 1.2,
-			damage = 4.5,
+			damage = 6,
 			cooldown = 8,
 			phases = { 1, 2, 3 },
 		},

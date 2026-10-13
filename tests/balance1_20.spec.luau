@@ -1,8 +1,10 @@
 --!strict
 -- Levels 1-20 against the fixture (S83, balance plan): tests/fixtures/balance_1_20.json holds every number of the
--- 1-20 report tables (tests/BalanceTables) from before the S91 retune. Until S91 the differences are only printed
--- (owner answer 4: 1-20 may be retuned); the structure is always checked: the file exists, no fixture key is gone
--- (a renamed table, row or column would hide a change) and no allowed difference is dead.
+-- 1-20 report tables (tests/BalanceTables) after the S91 retune (with the L20 anchor of the skill layer). S91: strict,
+-- every difference above TOLERANCE outside BalanceTables.ALLOWED_1_20_DIFFS fails; the structure is always checked: the file
+-- exists, no fixture key is gone (a renamed table, row or column would hide a change) and no allowed difference is
+-- dead. Rows that depend on S92's data (fights with monsters above level 20, the window pace at 20) are not in the
+-- fixture (`fixture = false`) and are asserted by balance.spec.
 -- New fixture: `lune run tools/balance_report.luau fixture`. Full list of the differences: build/balance1_20_diff.txt.
 -- Can be required from a small runner (no process.exit).
 
@@ -11,117 +13,11 @@ local fs = require("@lune/fs")
 local BalanceTables = require("./BalanceTables")
 local T = require("./Test")
 
-local FIXTURE_ASSERT = false -- S91 re-asserts on its new fixture
+local FIXTURE_ASSERT = true -- S91: strict
 local TOLERANCE = 0.005
--- key -> the expected change (before = fixture, after = now) and why. S87: the Elites of spawners 19-20 (levels
--- 21-22) and Elite II of spawners 17-20 (21-24) get the curves above 20 (balance plan, S91 expects them).
-local ALLOWED_1_20_DIFFS: { [string]: { before: number, after: number, why: string } } = {
-	["Elity solo (poziom spawnera = poziom gracza, +2)|Cleric 20|HP"] = {
-		before = 0.47457807992831935,
-		after = 0.4956716967935514,
-		why = "S87: Elite of spawner 20 is level 22, monster and Elite curves above 20 (C5, C6)",
-	},
-	["Elity solo (poziom spawnera = poziom gracza, +2)|Warrior 20|HP"] = {
-		before = 0.5821320828465699,
-		after = 0.6074625710043656,
-		why = "S87: Elite of spawner 20 is level 22, monster and Elite curves above 20 (C5, C6)",
-	},
-	["Elity solo (poziom spawnera = poziom gracza, +2)|Hunter 20|HP"] = {
-		before = 0.5880018406209372,
-		after = 0.6132204101173754,
-		why = "S87: Elite of spawner 20 is level 22, monster and Elite curves above 20 (C5, C6)",
-	},
-	["Elity solo (poziom spawnera = poziom gracza, +2)|Mage 20|HP"] = {
-		before = 0.6713645470594916,
-		after = 0.7000896371376419,
-		why = "S87: Elite of spawner 20 is level 22, monster and Elite curves above 20 (C5, C6)",
-	},
-	["Drop: poziom przedmiotów i rzadkości|20|Heroiczne do klasy/h (Elity)"] = {
-		before = 1.1460369491691362,
-		after = 1.1027607023237767,
-		why = "S87: longer Elite fights at level 22 (curves C5, C6) give fewer Elites per hour",
-	},
-	["Elity solo (poziom spawnera = poziom gracza, +2)|Mage 20|s"] = {
-		before = 21.09524565727783,
-		after = 21.747805308781963,
-		why = "S87: Elite of spawner 20 is level 22, monster and Elite curves above 20 (C5, C6)",
-	},
-	["Elity solo (poziom spawnera = poziom gracza, +2)|Warrior 20|s"] = {
-		before = 26.765076056459296,
-		after = 27.593026059395577,
-		why = "S87: Elite of spawner 20 is level 22, monster and Elite curves above 20 (C5, C6)",
-	},
-	["Elity solo (poziom spawnera = poziom gracza, +2)|Hunter 20|s"] = {
-		before = 21.46274228724786,
-		after = 22.12667006769812,
-		why = "S87: Elite of spawner 20 is level 22, monster and Elite curves above 20 (C5, C6)",
-	},
-	["Elity solo (poziom spawnera = poziom gracza, +2)|Cleric 20|s"] = {
-		before = 36.059619163959354,
-		after = 37.17508626480759,
-		why = "S87: Elite of spawner 20 is level 22, monster and Elite curves above 20 (C5, C6)",
-	},
-	["Elita II (drużyna Wojownik + Mag + Łowca, obrażenia na Wojownika)|caveSpider 18|solo HP"] = {
-		before = 2.646735393422523,
-		after = 2.7253656689289696,
-		why = "S87: Elite II of spawner 18 is level 22, monster curve above 20 (C5; elite2 curves neutral)",
-	},
-	["Elita II (drużyna Wojownik + Mag + Łowca, obrażenia na Wojownika)|goblinShaman 18|solo HP"] = {
-		before = 2.299272583078755,
-		after = 2.367182099788169,
-		why = "S87: Elite II of spawner 18 is level 22, monster curve above 20 (C5; elite2 curves neutral)",
-	},
-	["Elita II (drużyna Wojownik + Mag + Łowca, obrażenia na Wojownika)|caveSpider 18|2 graczy HP"] = {
-		before = 1.1921630208543212,
-		after = 1.2270247855357401,
-		why = "S87: Elite II of spawner 18 is level 22, monster curve above 20 (C5; elite2 curves neutral)",
-	},
-	["Elita II (drużyna Wojownik + Mag + Łowca, obrażenia na Wojownika)|goblinShaman 18|2 graczy HP"] = {
-		before = 1.0438007219497036,
-		after = 1.073975355669151,
-		why = "S87: Elite II of spawner 18 is level 22, monster curve above 20 (C5; elite2 curves neutral)",
-	},
-	["Elita II (drużyna Wojownik + Mag + Łowca, obrażenia na Wojownika)|caveSpider 18|3 graczy HP"] = {
-		before = 0.7855250483194482,
-		after = 0.8081509567186964,
-		why = "S87: Elite II of spawner 18 is level 22, monster curve above 20 (C5; elite2 curves neutral)",
-	},
-	["Elita II (drużyna Wojownik + Mag + Łowca, obrażenia na Wojownika)|goblinShaman 18|3 graczy HP"] = {
-		before = 0.6928229763166556,
-		after = 0.7124485052942131,
-		why = "S87: Elite II of spawner 18 is level 22, monster curve above 20 (C5; elite2 curves neutral)",
-	},
-	["Elita II (drużyna Wojownik + Mag + Łowca, obrażenia na Wojownika)|caveSpider 18|3 graczy s"] = {
-		before = 22.83674749632847,
-		after = 23.331885860870763,
-		why = "S87: Elite II of spawner 18 is level 22, monster curve above 20 (C5; elite2 curves neutral)",
-	},
-	["Elita II (drużyna Wojownik + Mag + Łowca, obrażenia na Wojownika)|caveSpider 18|solo s"] = {
-		before = 80.28992079756419,
-		after = 82.03073875245586,
-		why = "S87: Elite II of spawner 18 is level 22, monster curve above 20 (C5; elite2 curves neutral)",
-	},
-	["Elita II (drużyna Wojownik + Mag + Łowca, obrażenia na Wojownika)|caveSpider 18|2 graczy s"] = {
-		before = 35.38913952895248,
-		after = 36.15643446321321,
-		why = "S87: Elite II of spawner 18 is level 22, monster curve above 20 (C5; elite2 curves neutral)",
-	},
-	["Elita II (drużyna Wojownik + Mag + Łowca, obrażenia na Wojownika)|goblinShaman 18|2 graczy s"] = {
-		before = 31.456752990866203,
-		after = 32.13749331364021,
-		why = "S87: Elite II of spawner 18 is level 22, monster curve above 20 (C5; elite2 curves neutral)",
-	},
-	["Elita II (drużyna Wojownik + Mag + Łowca, obrażenia na Wojownika)|goblinShaman 18|solo s"] = {
-		before = 71.36822877874442,
-		after = 72.9126739765294,
-		why = "S87: Elite II of spawner 18 is level 22, monster curve above 20 (C5; elite2 curves neutral)",
-	},
-	["Elita II (drużyna Wojownik + Mag + Łowca, obrażenia na Wojownika)|goblinShaman 18|3 graczy s"] = {
-		before = 20.299163378049247,
-		after = 20.738447719762068,
-		why = "S87: Elite II of spawner 18 is level 22, monster curve above 20 (C5; elite2 curves neutral)",
-	},
-}
+-- S91: levels 1-20 frozen; every future difference is an entry in BalanceTables.ALLOWED_1_20_DIFFS and a DECYZJE
+-- line (G12 in balance.spec reads the same list).
+local ALLOWED_1_20_DIFFS = BalanceTables.ALLOWED_1_20_DIFFS
 
 local OUT_DIR = "build"
 local OUT = "build/balance1_20_diff.txt"
@@ -156,7 +52,7 @@ pcall(function()
 	fs.writeFile(OUT, table.concat(lines, "\n") .. "\n")
 end)
 
-T.describe("Balance 1-20 fixture (S83, report until S91)", function()
+T.describe("Balance 1-20 fixture (S83; strict from S91)", function()
 	T.it("the fixture exists and holds at least 1000 values", function()
 		T.expect(report.found).toBe(true)
 		T.expect(report.count >= 1000).toBe(true)
@@ -186,7 +82,19 @@ T.describe("Balance 1-20 fixture (S83, report until S91)", function()
 
 	if FIXTURE_ASSERT then
 		T.it("no difference outside ALLOWED_1_20_DIFFS", function()
-			T.expect(report.unexpected).toBe(0)
+			if report.unexpected > 0 then
+				local shown = {}
+				for _, d in report.diffs do
+					if not d.allowed and #shown < 5 then
+						table.insert(shown, `{d.key}: {d.before} → {d.after}`)
+					end
+				end
+				error(
+					`{report.unexpected} difference(s) against tests/fixtures/balance_1_20.json (1-20 frozen by S91; add `
+						.. `ALLOWED_1_20_DIFFS and a DECYZJE line): {table.concat(shown, "; ")}`,
+					0
+				)
+			end
 		end)
 	end
 end)

@@ -122,9 +122,10 @@ T.describe("Data: Skills", function()
 
 	T.it("DESIGN control values", function()
 		local mighty = SkillData.get("mightyStrike") :: any
-		T.expect(Skills.valueAt(mighty, "dmg", 1)).toBe(160)
+		T.expect(Skills.valueAt(mighty, "dmg", 1)).toBe(136) -- S91: ranks <= 20 x0.85
 		T.expect(Skills.valueAt(mighty, "dmg", 10)).toBe(222) -- S89 (rank 5 pinned by Data/SkillCurves)
-		T.expect(Skills.valueAt(mighty, "dmg", 5)).toBeNear(160 + 135 * 4 / 9)
+		T.expect(Skills.valueAt(mighty, "dmg", 5)).toBeNear(187) -- S91 (rank 6 pinned at 220.4)
+		T.expect(Skills.valueAt(mighty, "dmg", 6)).toBeNear(220.4)
 		local steel = SkillData.get("steelSkin") :: any
 		T.expect(Skills.valueAt(steel, "armor", 5)).toBe(25)
 		local res = SkillData.get("resurrection") :: any
@@ -1179,7 +1180,8 @@ T.describe("S71 Cleric base and paths", function()
 	end)
 
 	T.it("base damage (ROZWOJ 9.2) and the 15.2 defaults", function()
-		for id, pair in { holyStrike = { 190, 340 }, radiance = { 130, 240 }, judgement = { 320, 580 } } do
+		-- S91: Holy Strike rank 1 190 -> 167 (ranks <= 20, rank 6 pinned)
+		for id, pair in { holyStrike = { 167, 340 }, radiance = { 130, 240 }, judgement = { 320, 580 } } do
 			T.expect({ id, Skills.valueAt(skill(id), "dmg", 1), Skills.valueAt(skill(id), "dmg", 10) })
 				.toEqual({ id, pair[1], pair[2] })
 		end
@@ -1439,7 +1441,7 @@ T.describe("S73 Warrior B options and breakpoint kinds", function()
 		local bleed = d.effects[#d.effects]
 		T.expect({ bleed.kind, bleed.value, bleed.duration }).toEqual({ "bleed", 45, 6 }) -- S89 (R1, R4)
 		d, b = at("charge", 10, "b", "b")
-		T.expect(cd(d)).toBeNear(9.6)
+		T.expect(cd(d)).toBeNear(10.56) -- S91: 5B x0.88 (R4)
 		T.expect(b.splash.pct).toBe(60)
 		T.expect(d.range).toBe(25)
 
