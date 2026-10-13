@@ -119,6 +119,33 @@ T.describe("ItemRoll", function()
 		T.expect(item.bonuses).toEqual((Items.get("unique_grimrok_cleaver") :: any).fixedBonuses)
 	end)
 
+	T.it("S88 (D4): named Mythics keep 4 lines within their limits and the base type's trait", function()
+		local B = require("./Balance")
+		local named = 0
+		for _, def in Items.byId do
+			local d: any = def
+			if d.fixedBonuses and d.rarity == Rarities.MYTHIC then
+				named += 1
+				T.expect({ d.id, #d.fixedBonuses }).toEqual({ d.id, 4 })
+				for _, line in d.fixedBonuses do
+					T.expect({ d.id, line.stat, Bonuses.get(line.stat) ~= nil }).toEqual({ d.id, line.stat, true })
+				end
+				for _, line in B.namedLines(d.id) do
+					T.expect({ d.id, line.stat, line.ok }).toEqual({ d.id, line.stat, true })
+				end
+				local item = ItemRoll.rollItem(d.id, d.level, Rarities.MYTHIC, Rng.new(3), uid())
+				local trait = ItemRoll.trait(item)
+				local base = (Items.bases.byType :: any)[d.type]
+				if base.trait then
+					T.expect({ d.id, trait and trait.id, trait and trait.power })
+						.toEqual({ d.id, base.trait, Rarities.get(Rarities.MYTHIC).baseMul })
+				end
+			end
+		end
+		T.expect(named).toBe(12)
+		T.expect(B.NAMED_LINE_MAX).toBe(2.5)
+	end)
+
 	T.it("non-equipment rolls to a single common unit", function()
 		local item = ItemRoll.rollItem("essence_dust", 50, 5, Rng.new(5), uid())
 		T.expect({ item.rarity, #item.bonuses, item.n }).toEqual({ 1, 0, 1 })
@@ -503,11 +530,11 @@ T.describe("S62 traits and weighted pools", function()
 		T.expect(ItemRoll.traitPower(Rarities.MYTHIC, 9)).toBeNear(1.8788, 1e-4)
 		local longbow = plain("longbow_50", Rarities.COMMON)
 		T.expect((ItemRoll.trait(longbow) :: any).id).toBe("criticalForce")
-		T.expect(ItemRoll.itemStats(longbow).flat.critDmg).toBe(25)
+		T.expect(ItemRoll.itemStats(longbow).flat.critDmg).toBe(20) -- S88: 25 -> 20
 		T.expect(ItemRoll.itemStats(plain("heavycrossbow_50", Rarities.COMMON)).flat.pierce).toBe(20)
 		T.expect(ItemRoll.itemStats(plain("tome_50", Rarities.COMMON)).flat.costReduce).toBe(8)
 		T.expect(ItemRoll.itemStats(plain("orb_50", Rarities.COMMON)).flat.skillDmg).toBe(6)
-		T.expect(ItemRoll.itemStats(plain("scepter_50", Rarities.COMMON)).flat.healPower).toBe(8)
+		T.expect(ItemRoll.itemStats(plain("scepter_50", Rarities.COMMON)).flat.healPower).toBe(5) -- S88: 8 -> 5
 		T.expect(ItemRoll.itemStats(plain("relic_50", Rarities.COMMON)).flat.dropBonus).toBe(8)
 		T.expect((ItemRoll.trait(plain("orb_50", Rarities.MYTHIC, 9)) :: any).value).toBeNear(11.27, 0.01)
 		local eye = ItemRoll.rollItem("unique_vaelgrath_eye", 1, Rarities.COMMON, Rng.new(1), uid())
@@ -539,7 +566,7 @@ T.describe("S62 traits and weighted pools", function()
 			end
 		end
 		T.expect(ItemRoll.itemStats(plain("hammer2h_50", Rarities.COMMON)).hooks.traitArmorBreak).toBe(5)
-		T.expect(ItemRoll.itemStats(plain("axe2h_50", Rarities.COMMON)).hooks.traitWound).toBe(30)
+		T.expect(ItemRoll.itemStats(plain("axe2h_50", Rarities.COMMON)).hooks.traitWound).toBe(36) -- S88: 30 -> 36
 		T.expect(ItemRoll.itemStats(plain("mace1h_50", Rarities.COMMON)).hooks.traitWeaken).toBe(6)
 		T.expect(ItemRoll.itemStats(plain("hammer2h_50", Rarities.MYTHIC, 9)).hooks.traitArmorBreak)
 			.toBeNear(9.39, 0.05)
@@ -621,26 +648,26 @@ T.describe("S64 defensive and conditional traits, new lines", function()
 		Rarities.upgradeItem(axe, Items.get(axe.id))
 		local stats = ItemRoll.itemStats(axe)
 		T.expect((stats.trait :: any).id).toBe("reaping")
-		T.expect(stats.hooks.killHeal).toBe(1)
+		T.expect(stats.hooks.killHeal).toBe(0.7) -- S88: 1 -> 0.7
 		local mythic = plain("axe1h_50", Rarities.MYTHIC, 9)
-		T.expect(ItemRoll.itemStats(mythic).hooks.killHeal).toBeNear(1.88, 0.02)
+		T.expect(ItemRoll.itemStats(mythic).hooks.killHeal).toBeNear(1.32, 0.02)
 	end)
 
 	T.it("fixed hooks never grow, the grown value does", function()
 		local sword = ItemRoll.itemStats(plain("sword1h_50", Rarities.COMMON)).hooks
 		T.expect(sword.riposte).toBe(10)
-		T.expect(sword.counterDamage).toBe(25)
+		T.expect(sword.counterDamage).toBe(33) -- S88: 25 -> 33
 		local swordMyth = ItemRoll.itemStats(plain("sword1h_50", Rarities.MYTHIC, 9)).hooks
 		T.expect(swordMyth.riposte).toBe(10)
-		T.expect(swordMyth.counterDamage).toBeNear(47, 0.5)
+		T.expect(swordMyth.counterDamage).toBeNear(62, 0.5)
 		local shield = ItemRoll.itemStats(plain("shield_50", Rarities.COMMON)).hooks
 		T.expect(shield.block).toBe(5)
-		T.expect(shield.blockHeal).toBe(0.5)
+		T.expect(shield.blockHeal).toBe(0.1) -- S88: 0.5 -> 0.1 (one decimal in the tooltip)
 		local shieldMyth = ItemRoll.itemStats(plain("shield_50", Rarities.MYTHIC, 9)).hooks
 		T.expect(shieldMyth.block).toBe(5)
-		T.expect(shieldMyth.blockHeal).toBeNear(0.94, 0.01)
+		T.expect(shieldMyth.blockHeal).toBeNear(0.19, 0.01)
 		T.expect(ItemRoll.itemStats(plain("sword2h_50", Rarities.COMMON)).hooks.traitExecute).toBe(18)
-		T.expect(ItemRoll.itemStats(plain("crossbow_50", Rarities.COMMON)).hooks.controlledDamage).toBe(10)
+		T.expect(ItemRoll.itemStats(plain("crossbow_50", Rarities.COMMON)).hooks.controlledDamage).toBe(9) -- S88: 10 -> 9
 	end)
 
 	T.it("trait params match the code's constants", function()
@@ -672,17 +699,19 @@ T.describe("S65 rhythm and player-state traits", function()
 		}
 	end
 
+	-- S88: Twin Cut 40 -> 58, Run Through 25 -> 55, Full Draw 30 -> 45, Elemental Might 30 -> 39, Runic Seal 8 -> 5.5,
+	-- Saving Blow 4 -> 2.5, the Spark's Frostbite 6 -> 11
 	local GROWN = {
-		{ "saber1h_50", "traitTwinCut", 40 },
-		{ "spear2h_50", "traitRunThrough", 25 },
-		{ "quiver_50", "traitFullDraw", 30 },
+		{ "saber1h_50", "traitTwinCut", 58 },
+		{ "spear2h_50", "traitRunThrough", 55 },
+		{ "quiver_50", "traitFullDraw", 45 },
 		{ "wand_50", "traitSpark", 35 },
-		{ "staff_50", "elementRider", 30 },
-		{ "runestaff_50", "traitRuneSeal", 8 },
-		{ "holystaff_50", "traitSavingBlow", 4 },
+		{ "staff_50", "elementRider", 39 },
+		{ "runestaff_50", "traitRuneSeal", 5.5 },
+		{ "holystaff_50", "traitSavingBlow", 2.5 },
 	}
 	local FIXED = {
-		{ "wand_50", "frostbite", 6 },
+		{ "wand_50", "frostbite", 11 },
 		{ "staff_50", "frostbite", 10 },
 		{ "staff_50", "riderSameTarget", 1 },
 	}
@@ -716,7 +745,7 @@ T.describe("S65 rhythm and player-state traits", function()
 		local stats = ItemRoll.itemStats(wand)
 		T.expect((stats.trait :: any).id).toBe("elementalSpark")
 		T.expect(stats.hooks.traitSpark).toBe(35)
-		T.expect(stats.hooks.frostbite).toBe(6)
+		T.expect(stats.hooks.frostbite).toBe(11) -- S88: 6 -> 11
 	end)
 
 	T.it("new lines sit in their pools", function()

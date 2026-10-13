@@ -5169,3 +5169,164 @@ Upgrade,Potions,FightSim,Skills}.luau`, `src/shared/Data/Localization/{pl,en}.lu
 rarities.spec,smith.spec,skills.spec,itemvalue.spec,exp.spec,tooltip.spec}.luau`, `tests/fixtures/{balance_items,balance_paths}.json`, `tools/{balance_report,balance_reasons}.luau`,
 `tools/balance_before.json`, `wiki/src/data/*`, `docs/{BALANS,DECYZJE,SESJE,PROGRESS,DESIGN,STATY,ROZWOJ,ARCHITECTURE,
 PRZEDMIOTY}.md`, `CLAUDE.md`.
+
+### S88: Balans 1–100, część 6: cechy broni, linie przedmiotów i obrona potworów
+
+Sesja balansu: cechy broni, linie rodzin i klas, nowe linie S62–S64, unik harpii, 12 nazwanych Mitycznych, limit kontry
+i limit leczenia za zabicie; model PvP, cele S88 w `balance.spec` (464 asertowane, 52 w raporcie z sesją dźwigni).
+- **A. Start** na `3a1ee36` (S87): wymagania są (commit S87, sekcja S87, pliki z nagłówka), migawka `lune run
+  tools/balance_report.luau snapshot S88` (`tools/balance_before.json`), `scripts/check` zielony przed zmianami (98 plików,
+  1437 testów, 58 s), lista 1–20 `build/s88_1_20_start.txt` (21 różnic, wszystkie dozwolone). `BALANCE_MODULES` miało już
+  wszystkie moduły sesji. A0: listy „Dla S88” z S84, S86 i S87 przeczytane; wybór źródła i sytuacji w DECYZJE; wpisy
+  `GLOBAL_REPORT_ONLY` z sesją S88 rozstrzygnięte w H4 (niżej).
+- **Model (A4).** `tests/Balance.luau`: dane testu `TRAIT_TARGETS`, `TRAIT_BAND(_2H)`, `TRAIT_NODES_MAX`, `TYPE_SETS`,
+  `NAMED_TARGETS`, `NAMED_BAND`, `NAMED_LINE_MAX`, `LINE_TARGETS`, `DEFENCE_TARGETS`, `GUARD_EHP_MAX`, `PVP_TARGETS`,
+  `FORTUNE_UNIQUES`; `namedPower`, `namedLines`, `pvpDuel`, `pvpTraitValue`; `traitTerms` z gałęzią PvP (`ctx.pvp`, nil =
+  bez zmian) i polami `hitAdd` / `dotAdd`. `tests/SkillModel.luau`: `withoutNodes`, `traitSituation`, `traitTarget`,
+  `typeSets`, `guardLimits`, `executeCheck`, `killHealSums`, `savingSelf`, `pvpPair`, `pvpHalf`, `pvpStun`,
+  `pvpTickRatio`, `targetsS88`; `oneHeal` z opcjonalnym ekwipunkiem. Czas: cele S88 2,6 s, check 1463 testy.
+- **B. Obrona.** Pancerz zwykły 18,4–19,2%, ×1,8 28,8–30,0%, odporność 15,3–16,0% i 24,5–25,5% na 45–100: w pasmach bez
+  zmian (`monsterArmorPerLevel` 10, `monsterMresPerLevel` 8, `monsterHpComp` 0,9; G1–G13 zielone). Unik harpii 15 → 10%
+  (walka +14% → +9%); ryś / nietoperz / lampart 12% (+11%) zostają, bo cecha jest wspólna z rysiem Łąk (S91). Niszczenie
+  pancerza Zwykłe +5,0 / +8,0% (opancerzony), Bełt +3,9 / +6,3%, linia `pierce` Legendarna +1,1 / +1,7% (po cięciu D1).
+- **C. Cechy** (liczby w DECYZJE „S88 cechy”). Wartość w paśmie 4–6% na 45 / 70 / 100: 118/129 wierszy (przed 34/129;
+  każda ścieżka z kolumny STATY 3, pierwszy build ścieżki); w raporcie Wyuczone formuły (mana nie wiąże, S90),
+  błyskawica Mocy żywiołu (8,7–11,8%, S90), Fechtunek Chorążego (3,5–3,9%, S89) i Iskra Arkanisty z księgą (ogień
+  3,1–4,1%, błyskawica 3,6–4,8%, S90). Cechy z węzłami: Rana
+  rąbana 4,0–6,1%, Jadowite groty 5,9–6,6%, Ścięcie z Katem 4,5–4,8% (≤ 8%). Typy w ścieżkach ≤ 5%: Berserker 2,8–4,4%,
+  Chorąży, Strzelec, Zwiadowca, Arkanista (2,7–4,4% po Pieczęci 5,5), Inkwizytor 3,5%, Niszczyciel 4,0–4,2% (na 100.
+  5,4%, raport); poza: Strażnik 9,7–10,3%, Fortuna 6,0–6,3%, Uzdrowiciel 6,5–7,8%, Traper 6,1–7,3% (raport, listy niżej).
+  `Data/ItemWeights` (C10): Przeszycie 5, Nękanie 5, Wyuczone formuły 2, Moc żywiołu 6,5, Namaszczenie 5, Wstrząs 4,5.
+- **D.** Linie rodzin i klas do liczb z odpowiedzi 23 (Zwykły na 100.: `vs_<rodzina>` 5–12, `res_<rodzina>` 5–11, klasy
+  4–9; Mityk 14,4 / 13,2 / 10,8). G7 po podwojeniu linii rodzin wróciło do pasm przez cięcie nowych linii (D1); Heroik
+  Łowcy 25,7–27,3% zostaje w raporcie. 12 nazwanych Mitycznych: nowe linie z tabeli sesji (Oko Vaelgratha `magicPierce`,
+  Kieł bez zmiany id), moc 1,01–1,07 (przed 0,99–1,09, 5 przedmiotów z linią ponad limitem), tasak Grimroka / Legendarny
+  topór na 20. 1,22.
+- **E.** Strażnik: blok 15 / 24 (≤ 25), kontra do 34 (`riposteCap` 30 → 34), unik + blok przed cięciem w `Damage.avoidance`
+  15–24% (≤ 40%), obie cechy miecza lub szabli z tarczą 7,2–9,5% EHP (przed 9,8–15,9%), topór 13,1–17,6% i buława
+  13,0–15,6% (raport → S89). Zastawa 0,1% (nie 0,15: opis cechy ma jedno miejsce po przecinku). Ścięcie + Kat
+  33 (Zwykły) i 48,8 (Mityczny +9) pod limitem 60; z liniami górnymi limit ucina 26–42 pkt. T-SK5 z Namaszczeniem 5%:
+  0,29 / 0,29 / 0,34 (Mityczny +9 0,38 / 0,32 / 0,40); Zbawczy cios na noszącym + wampiryzm 2,5% (Mityczny +9 9,8%) ≤ 15.
+  Leczenie za zabicie: `Traits.killHeal` w `CombatService.reward` (limit 15); sumy 13,3–26% → 13,3–15%
+  (Berserker z węzła Krwiopijca, hak `killHeal`).
+- **F. PvP.** Czas zabicia z cechami / bez cech 0,92–1,03 (≥ 0,90), udział tyknięć PvP − PvE ≤ 0,003, tyknięcie
+  umiejętności ×0,60, cechy warunkowe i obronne 0,44–0,53 PvE, ogłuszenie 1,3% walki. Linie klas (dwa pierścienie i
+  talizman średniego Mitycznego rzutu, 23,4 pkt → limit 20) skracają walkę o ok. 17%.
+- **G. Szczęście.** Bez zmian danych: K1 + Fortuna 48, K2 + Fortuna 91 (≤ 100), K3 254 (ucina 154); Fortuna dla K1 ×1,25
+  Unikatów; Heroiki z Elit przy K1 + Fortunie +13–15% (szansa 0,75 ucina 15 pkt). D5 K0 Wojownik 3,2–3,8 Unikatu i
+  0,64–0,83 Heroika na godzinę (pasmo 2–4 / 0,5–1,5).
+- **H.** Blok `balance.spec` „Balance 20-100: items, traits, defence (S88)” (cele po grupach, sprawdzenie raportu i
+  `Traits.killHeal` w serwerze), `items.spec` (12 nazwanych: 4 linie, id, limity, cecha na sile Mitycznej; przypięte
+  liczby cech S62–S65 poprawione), `traits.spec` (`Traits.killHeal`, limit kontry 34, Iskra 80 / 110 / 55). H4
+  `GLOBAL_REPORT_ONLY`: G7 Heroik Łowcy zostaje (S88, decyzja właściciela); G8 „bez cech” Mityk topora (20–100) i kosturów +9 na
+  100. zostają (S88, `Data/Rarities` poza dźwigniami), Legendy na 20. (Miecz, Włócznia, oba Kostury) → S91; G8 „z
+  cechami”: 20 wierszy w paśmie asertowanych (Miecz Dwuręczny Legenda i Mityk 45–100, Włócznia na 20. i 70., Kostur Święty
+  Zwykły na 20.), reszta S88 (jedna cecha zamiast dwóch); 16 wierszy kostura (S87 w paśmie) przeszło do raportu (Iskra w
+  konwencji S32 z udziałem ataku podstawowego 0,4); T-SK5 na 30. (0,246) → S92.
+- **I–J.** Raport: sekcja „Przedmioty, cechy i obrona (S88)” (cechy na 20 / 45 / 70 / 100 i Mityczny +9, typy w ścieżkach,
+  obrona i EXP/s rodzajów, przebicie, celność, linie, parytet D2, nazwane, kontrole klasowe, macierz PvP, D5 i
+  Pomyślność, cele S88). STATY 3, 4, 5, 7, 8, 9, 10, 14 poprawione; ROZWOJ i DESIGN bez liczb do zmiany. Wiki: `lune run
+  tools/wikidump.luau` (zakresy linii, cechy, unik harpii, nazwane przedmioty, `riposteCap`), `wiki_keys_diff` 0.
+
+Cele „przed → po” (wiersze w paśmie przed S88 → po / wszystkie, asertowane + raport; „przed” = model S88 na danych
+`3a1ee36`):
+
+| grupa | 45 | 70 | 100 |
+|---|---|---|---|
+| T1 cechy | 12 → 42/43 | 11 → 38/43 | 11 → 38/43 |
+| T1 cechy z węzłami | 3 → 3/3 | 3 → 3/3 | 3 → 3/3 |
+| T2 typy w ścieżkach | 8 → 7/11 | 8 → 7/11 | 7 → 6/11 |
+| B5 unik rodzajów | 0 → 4/8 | 0 → 4/8 | 0 → 4/8 |
+| D3 linie | – | – | 4 → 12/12 |
+| D4 nazwane (Grimrok na 20.: 3 → 3/3) | 1 → 3/3 | 3 → 3/3 | 3 → 3/3 |
+| E1 kontra / EHP | 8 → 8/8, 0 → 4/8 | 8 → 8/8, 0 → 4/8 | 7 → 8/8, 0 → 4/8 |
+| razem | 115 → 154/167 | 116 → 150/167 | 118 → 161/179 |
+
+Bez zmian w paśmie: obrona (B1), blok i unik Strażnika (E1), Ścięcie (E3), T-SK5 i Zbawczy cios (E4), leczenie za
+zabicie (E5), PvP (F), szczęście (G). Razem 352 → 468/516.
+
+Model a STATY 14 (A6, różnica ponad 1,5 pkt, wartości przed S88): Nękanie 11,4% (spowolnienie 20% przy utrzymaniu ok.
+50% w pojedynku, STATY 7–8% rzadziej); Siła krytyka 6,1–7,3% (krytyk liczy się też w trafieniach umiejętności, STATY 4,5%
+przy 20% krytyka); Iskra ogień 1,6–1,8%, lód 0–0,5%, błyskawica 1,5–1,7% (udział ataku podstawowego Niszczyciela 20–27%,
+STATY zakładała 35–50%; lód: umiejętności lodu same trzymają spowolnienie 99% walki); Moc żywiołu błyskawica 6,7–9,8%
+(przeskok w ten sam cel na 1 celu); Pieczęć runiczna 7,6–7,8% (Arkanista stoi 97% walki z 1 celem, STATY 60–75%);
+Wyuczone formuły 0,1–5,5% (mana wiąże tylko na 45. w oknie 180 s); Przeszycie 2,0–2,5% w grupie (pas za celem 0,3 z S84).
+
+Fixture: `balance_items.json` 4076 z 10 336 wartości (cechy Zwykłe i Mityczne +9: Wstrząs ×3, Przeszycie ×2, Nękanie
+×0,45, Iskra ×2,5; G7 wszystkich klas −0,5…+2 pkt, G8 kosturów i broni Wojownika, walki z obroną rodzin (harpia), D5
+przy linii szczęścia bez zmian, przebicie i niszczenie z cięcia `pierce`); `balance_paths.json` 1526 z 5782 (tabela
+cech C6, strażniki T-SK z nowymi cechami, cele ścieżek: `fortune.healLess` na 100., `arcanist.vsDestroyer` na 45.,
+`destroyer.clear` na 20. i `all.tsk3` Furii na 100. weszły do pasma, R5 Trapera). `meta.session = "S88"`.
+
+Różnice 1–20 (porównanie z `build/s88_1_20_start.txt`): 21 starych bez zmian, 48 nowych w „Moc przedmiotów” (zysk
+pełnego zestawu rzadkości na 5 / 10 / 20: +1,6…+6,8% względnie, np. Wojownik Legenda na 20. 31,3 → 32,6%, Mityk
+61,8 → 66,0%, Kapłan Unikat na 20. 10,1 → 10,7%): linie rodzin ×2, nowe wartości cech (Fechtunek, Szabla, Zastawa),
+cięcie nowych linii i pule Legend i Mityków z filtrem klasy w modelu (`expectedBonuses`, jak `ItemRoll.legendaryPool`); fixture 1–20
+bez zmian (raport, S91).
+
+Dla S89:
+- Wkład obu cech w EHP Strażnika (tank, z Blokiem i Mistrzem Tarczy): miecz / szabla + tarcza 7,2 / 9,1 / 9,5% na 45 /
+  70 / 100, topór 13,1 / 16,1 / 17,6%, buława 13,0 / 15,1 / 15,6% (cel ≤ 12%); leczenie z bloku 0,01–0,02% maks. HP/s.
+- Fechtunek Chorążego 3,8 / 3,9 / 3,5% (pasmo 4–6%): kontruje tylko stałymi 10% miecza (bez Kontrataku i Odwetu), a
+  wyższa premia kontr wypycha „Samotnika” ponad 6%; dźwignia w węzłach Chorążego. Pozostałe ścieżki dodatkowe w paśmie:
+  Podwójne cięcie Strażnika 5,0–5,3%, Łamanie kości Inkwizytora i Fortuny 5,4%, Zastawa Chorążego, Uzdrowiciela i
+  Inkwizytora 5,4–5,6%, Namaszczenie Fortuny 4,5–4,9%, Wstrząs Fortuny 4,3%.
+- Typy Strażnika w MIX: buława + tarcza 0,92 miecza (rozrzut 9,7–10,3%), Fortuna: cep 1,03, berło 0,97–0,98 buławy
+  (6,0–6,3%), Uzdrowiciel: Kostur Święty 1,07–1,08 berła z tarczą (6,5–7,8%); Inkwizytor buława / cep 3,5% (w paśmie);
+  Berserker 2,8 / 3,3 / 4,4% (Włócznia najniżej 0,97).
+- Koszt relikwii w walce Fortuny: Pomyślność +8–15% Unikatów zamiast cechy walki drugiej ręki (Zastawa 5,4%).
+
+Dla S90:
+- Traper: Łuk 1,06–1,07 Kuszy w MIX (Łatwy cel 4,9–5,5% w paśmie; różnicę robi `dmgMul` Kuszy); Strzelec 0,5–1,7%,
+  Zwiadowca 0,7–1,0% (w paśmie); Naciąg 4,3–5,9% przy każdej broni (Traper z łukiem najniżej 4,3%).
+- Niszczyciel: kostur 0,95 różdżki z kulą na 100. (rozrzut 5,4%; na 45 / 70 4,0–4,2%); Arkanista: różdżka z księgą
+  0,96–0,97 kostura runicznego (Wyuczone formuły 0,4–5,5%: koszty many). Moc żywiołu błyskawica 8,7 / 9,0 / 11,8%.
+- Iskra żywiołu u Arkanisty z księgą: ogień 4,1 / 3,3 / 3,1%, błyskawica 4,8 / 3,9 / 3,6%, lód 4,6–4,9% (u Niszczyciela z
+  kulą 4,2–5,1%): build bossa bije jeden cel, więc podpalenie i przeskok liczą się mniej; jedna liczba Iskry dla obu
+  ścieżek. Jadowite groty Zwiadowcy 4,6–5,9% (w paśmie).
+
+Dla S91:
+- 48 nowych różnic 1–20 w „Moc przedmiotów” (wyżej); unik rysia, nietoperza i lamparta 12% (+11% walki, cecha wspólna z
+  rysiem Łąk: obniżyć do 10% razem z decyzją o rysiu); G8 „bez cech” Legend na 20. 1,036–1,039 (Miecz, Włócznia, Kostury); Mityk topora na 20. 0,969 (po filtrze klasy pul,
+  raport razem z toporem 45–100).
+- Grimrok bez zmian danych: walka 3–5 graczy 5,1–5,3 min (4–6), największy cios w Maga 67% (≤ 70%), solo 8,3 min;
+  propozycja: `defMul` 1,3 i `hpMul` zostają, S91 sprawdza czas walki z liniami `vs_humanoid` (×2 po S88, tasak 12) w
+  drużynie.
+- Cechy na 20. poziomie (raport): Przeszycie 6,4%, Iskra ogień 7,2% i błyskawica 8,2%, Naciąg 6,8–7,3%, Jadowite groty
+  6,1%, Zbawczy cios w lochu 17,6%, Łatwy cel 0,6% i Siła krytyka 2,6% (na 20. bez pułapek i umiejętności Strzelca).
+
+Dla S92–S94:
+- D5 K0 bez szczęścia (Wojownik): 3,79 / 3,80 / 3,24 Unikatu i 0,80 / 0,83 / 0,64 Heroika na godzinę na 45 / 70 / 100
+  (`dropFactor` regionu); EXP na sekundę walki wobec zwykłego: opancerzony humanoid 0,90, nieumarły 0,87, żywiołak 0,84,
+  smok 0,93, zwinni 0,90–0,92, `warded` u Maga i Kapłana 0,89 (kryterium 0,85–1,20; poprawki `hpMul` / `rewardMul`).
+- T-SK5 na 30. 0,246 z Namaszczeniem 5% (kotwice `heal` 21–44); czas walki z bossami bez zmian (obrona bossów
+  nieruszona).
+
+Dla właściciela:
+- Cel bezwzględny czasu zabicia w PvP: dziś 1,6–10,8 s między buildami tego samego poziomu (Strażnik najdłużej), linie
+  klas skracają o ok. 17%; propozycja: pasmo 4–12 s na 45. i 3–8 s na 100.
+- Linie klas osiągają `classLineCap` 20 już przy trzech liniach średniego Mitycznego rzutu (23,4); przy dwóch 15,6.
+- Linie rodzin na wylosowanej broni dwuręcznej ×2,7: `vs_<rodzina>` Zwykły 13,5–32,4% (zamierzony parytet S87).
+- Szansa przedmiotu z Elity 0,75 ucina premię szczęścia ponad +33% (K1 + Fortuna traci 15 pkt, K2 + Fortuna 58).
+- Iskra żywiołu: szansa 35% dochodzi do limitu 40% od Legendy, więc rzadkość nie podnosi Iskry (S88 podniosło jej
+  efekty: podpalenie 80%, przeskok 110%, ten sam cel 55%, Przemarznięcie 11%); alternatywa: szansa 20% i efekty ×1,75.
+- `NAMED_LINE_MAX` 2,5 (linie nazwanych Mityków do 2,5 × górnej granicy Mitycznej, broń dwuręczna × 2,7).
+- Heroik Łowcy z cechami 25,7–27,3% (pasmo 15–25%): wyjątek jak Legenda ≤ 43%?
+- Broń dwuręczna Wojownika z jedną cechą 0,90–0,97 zestawu z tarczą w konwencji S32 (G8 „z cechami”): wyjątek E6 jak
+  dla Maga i Kapłana (×1,3–1,5) czy zostaje?
+- `magicPierce` po cięciu D1 (2–4) ma parytet 0,33–0,37 linii ataku (poniżej 0,5): do przemyślenia z S89–S90.
+- Linie rodzin i klas strojone do liczb z odpowiedzi 23 (Zwykły na 100.: `vs_<rodzina>` 5–12, `res_<rodzina>` 5–11,
+  klasy 4–9), nie do „ok. 2 linie ataku” ze STATY 4: potwierdzić, że STATY 4 idzie za odpowiedzią 23.
+- Kostury Maga z jedną cechą: G8 „z cechami” 0,85–0,96 (16 wierszy kostura z S87 przeszło do raportu; Iskra domyślnej
+  różdżki z kulą w konwencji S32 z udziałem ataku podstawowego 0,4), mimo Mocy żywiołu ×1,3 (E6); Kostur Święty 1,16–3,53
+  (Zbawczy cios solo). Do decyzji: osobne pasmo „z cechami” dla dwuręcznych Maga albo druga cecha.
+- Progi przełączone na raport (H4): wiersze `GLOBAL_REPORT_ONLY` z sesją S88 (G7 Heroik Łowcy, G8 „bez cech” Mityk topora
+  20–100 i kosturów +9 na 100., G8 „z cechami”) oraz wiersze S88 z sesją dźwigni (52, `docs/BALANS.md` → „Cele S88”).
+
+Niedokończone: `PathDef.itemWeights` bez strojenia (C10, niski priorytet; `ItemWeights.traits` zrobione).
+
+Pliki: `src/shared/Data/{ItemTraits,Bonuses,Families,Combat,ItemWeights}.luau`, `src/shared/Data/Items/Uniques.luau`,
+`src/shared/Data/Localization/{pl,en}.luau` (opis Żniwa: limit), `src/shared/Logic/Traits.luau`,
+`src/server/Services/CombatService.luau`, `tests/{Balance,SkillModel,balance.spec,items.spec,traits.spec}.luau`,
+`tests/fixtures/{balance_items,balance_paths}.json`, `tools/{balance_report,balance_reasons}.luau`,
+`tools/balance_before.json`, `docs/{BALANS,DECYZJE,SESJE,PROGRESS,STATY,PRZEDMIOTY}.md`, `wiki/src/data/*`.

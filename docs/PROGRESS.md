@@ -5,7 +5,7 @@
 
 ## Stan
 
-S01–S87 gotowe (lista i zakres w `docs/SESJE.md`). Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
+S01–S88 gotowe (lista i zakres w `docs/SESJE.md`). Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
 kategorie efektów drużyny i stos efektów (`Logic/EffectStack`), S54 wzory globalne (`Logic/LevelCurves`), S55 rangi
 i przełomy w kształcie A/B (`Build.bp2`, `Skills.effective` §2.7), S56 koniec punktów umiejętności: rangi z poziomu
 postaci (`Skills.rankFor`, drabina przejściowa ROZWOJ 2.6), zapis w schemacie 6 (darmowy reset statystyk, pasek
@@ -77,6 +77,9 @@ kotwice 45 / 70 / 100 tymczasowe), tabele regionów `elitePairChance` / `dropFac
 (`Logic/BossSchedule`, `Data/BossTuning`), limit skali linii `pct` na ilvl 20, broń dwuręczna (×2,7 linii, +6,6% na
 ulepszenie), złoto ulepszeń (`goldHigh` 20) i Rdzeń od +8, progi mikstur Wielka 45 / Potężna 70, kotwice `manaCost.Mage`
 i `heal`, Mityk z bossa zawsze dla klasy, `/balance` z G1–G13; blok globalny G1–G13 asertuje (`GLOBAL_REPORT_ONLY`).
+S88 cechy broni, linie, obrona potworów i szczęście nastrojone na 20–100 i pilnowane testem (cele S88 w `balance.spec`,
+limit leczenia za zabicie `Traits.killHeal`, `riposteCap` 34, linie rodzin i klas z odpowiedzi 23, 12 nazwanych
+Mitycznych na nowych liniach, model PvP `Balance.pvpDuel`); ścieżki w S89–S90.
 Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`, `docs/STATY.md`), następne sesje
 balansu; testy i strojenie po nich.
 
@@ -100,8 +103,8 @@ balansu; testy i strojenie po nich.
   teleportów gracza.
 - **Dane**: brak słabości żywiołowych potworów. Jaskinie bez profilu expowiska (`Cave.profile` nieczytane przez
   `AreaSpawns.cave`). Rodzaje S19 regionów 2–4 (np. czarny niedźwiedź, ghul) bez części. Regiony 2–4 niestrojone:
-  cele G i regionów poza pasmem w `docs/BALANS.md` (`GLOBAL_REPORT_ONLY`: przedmioty S88, ścieżki S89–S90, 1–20 S91,
-  regiony S92–S94); Morvane, Azgor, Vaelgrath mają stare mnożniki ciosów (największy cios Maga 107–130% po krzywej
+  cele G i regionów poza pasmem w `docs/BALANS.md` (`GLOBAL_REPORT_ONLY`: ścieżki S89–S90, 1–20 S91, regiony S92–S94;
+  G7 Heroik Łowcy i G8 „z cechami” zostają z S88 do decyzji właściciela); Morvane, Azgor, Vaelgrath mają stare mnożniki ciosów (największy cios Maga 107–130% po krzywej
   S87), lot Vaelgratha zdejmuje nietykalność mimo żywej tarczy (lista Dla S87 z S83; do osobnej sesji).
 - **Questy**: EXP z nagród dobrany wzorem, do strojenia.
 - **Gildie / aukcja / poczta**: brak zaproszeń do gildii między serwerami; aukcja bez podpowiedzi ceny, poczta bez
@@ -109,8 +112,8 @@ balansu; testy i strojenie po nich.
 - **Przedmioty (S62–S68)**: krwawienie, trucizna i podpalenie z danych umiejętności przy odświeżeniu kasują resztę
   (`accumulate` ma od S79 tylko podpalenie z żywiołu broni); `dmgMul` Kuszy 1,45 (S90).
 - **Model balansu (S84)**: brak kolumny „z hakami linii” w G7 (`eliteDamage`, `bossDamage`, `lastStand`, `thorns`).
-- **Model balansu (S84)**: `expectedBonuses` liczy pule legendarną i mityczną bez filtra klasy (linie Legend i
-  Mityków w modelu o 1/15 i 1/11 rzadsze niż w grze; poprawka zmienia 1–20; lista Dla S87 z S84; do S88).
+- **Balans**: propozycje S88 dla 1–20 (S91), regionów (S92–S94) i właściciela w `docs/SESJE.md` → S88; `PathDef.itemWeights`
+  bez strojenia (S88 C10).
 - **Przedmioty (S87)**: wiki pokazuje zakresy linii i krok ulepszenia bez mnożnika broni dwuręcznej (×2,7, 6,6%):
   nowe pole wymaga sesji wiki (decyzja właściciela).
 - **Model balansu (S87)**: sprawdzenie mikstur bez walki Elity II solo z miksturami (E2; S92–S94).

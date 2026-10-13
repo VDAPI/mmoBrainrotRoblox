@@ -71,57 +71,57 @@ end
 unique("unique_grimrok_cleaver", "axe1h", "grimrok", 20, "⚒", {
 	{ stat = "physAtk", v = 7 },
 	{ stat = "str", v = 8 },
-	{ stat = "critDmg", v = 15 },
+	{ stat = "vs_humanoid", v = 12 },
 	{ stat = "leg_executioner", v = 15 },
 })
 unique("unique_grimrok_fang", "ring", "grimrok", 20, "○", {
 	{ stat = "critChance", v = 4 },
 	{ stat = "lifesteal", v = 2 },
 	{ stat = "dex", v = 6 },
-	{ stat = "goldBonus", v = 10 },
+	{ stat = "basicDmg", v = 4 },
 })
 unique("unique_grimrok_totem", "talisman", "grimrok", 20, "✧", {
 	{ stat = "vit", v = 8 },
 	{ stat = "hpPct", v = 6 },
-	{ stat = "resPoison", v = 15 },
+	{ stat = "res_humanoid", v = 8 },
 	{ stat = "leg_killHeal", v = 3 },
 })
 -- Morvane, Queen of the Crypts (45)
 unique("unique_morvane_shroud", "armor_light", "morvane", 45, "♜", {
 	{ stat = "int", v = 14 },
 	{ stat = "mana", v = 120 },
-	{ stat = "resIce", v = 18 },
+	{ stat = "res_undead", v = 10 },
 	{ stat = "leg_lastStand", v = 15 },
 })
 unique("unique_morvane_scepter", "scepter", "morvane", 45, "⚜", {
 	{ stat = "magAtk", v = 8 },
 	{ stat = "int", v = 12 },
-	{ stat = "hpRegen", v = 6 },
+	{ stat = "healPower", v = 8 },
 	{ stat = "leg_manaOnHit", v = 2 },
 })
 unique("unique_morvane_bow", "bow", "morvane", 45, "➶", {
-	{ stat = "physAtk", v = 8 },
-	{ stat = "dex", v = 14 },
-	{ stat = "critChance", v = 6 },
+	{ stat = "physAtk", v = 6 },
+	{ stat = "dex", v = 10 },
+	{ stat = "poisonChance", v = 5 },
 	{ stat = "leg_doubleAttack", v = 5 },
 })
 -- Azgor, Lord of Flames (70)
 unique("unique_azgor_heart", "necklace", "azgor", 70, "◎", {
 	{ stat = "hp", v = 260 },
 	{ stat = "resFire", v = 25 },
-	{ stat = "critDmg", v = 25 },
+	{ stat = "vs_elemental", v = 12 },
 	{ stat = "leg_eliteDamage", v = 12 },
 })
 unique("unique_azgor_staff", "staff", "azgor", 70, "⚕", {
 	{ stat = "magAtk", v = 9 },
 	{ stat = "int", v = 22 },
-	{ stat = "critChance", v = 8 },
+	{ stat = "dotPower", v = 15 },
 	{ stat = "leg_bossDamage", v = 10 },
 })
 unique("unique_azgor_helm", "helmet_heavy", "azgor", 70, "⛑", {
 	{ stat = "vit", v = 20 },
 	{ stat = "armor", v = 90 },
-	{ stat = "resFire", v = 25 },
+	{ stat = "res_elemental", v = 10 },
 	{ stat = "leg_thorns", v = 10 },
 })
 -- Vaelgrath, Frost Dragon (100)
@@ -129,18 +129,18 @@ unique("unique_vaelgrath_fang", "sword2h", "vaelgrath", 100, "⚔", {
 	{ stat = "physAtk", v = 11 },
 	{ stat = "str", v = 35 },
 	{ stat = "critDmg", v = 40 },
-	{ stat = "leg_bossDamage", v = 12 },
+	{ stat = "leg_bossDamage", v = 10 },
 })
 unique("unique_vaelgrath_scale", "shield", "vaelgrath", 100, "⛨", {
 	{ stat = "armor", v = 160 },
-	{ stat = "hpPct", v = 10 },
-	{ stat = "resIce", v = 30 },
+	{ stat = "hpPct", v = 8 },
+	{ stat = "res_dragon", v = 10 },
 	{ stat = "leg_lastStand", v = 18 },
 })
 unique("unique_vaelgrath_eye", "orb", "vaelgrath", 100, "◉", {
-	{ stat = "magAtk", v = 10 },
-	{ stat = "int", v = 35 },
-	{ stat = "manaRegen", v = 12 },
+	{ stat = "magAtk", v = 8.5 },
+	{ stat = "int", v = 32 },
+	{ stat = "magicPierce", v = 10 },
 	{ stat = "leg_executioner", v = 18 },
 })
 

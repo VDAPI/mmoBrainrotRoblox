@@ -95,16 +95,16 @@ bonus("atkSpeed", "atkSpeed", "flat", 1, 2.2, "pct", 1, true)
 bonus("armorPen", "armorPen", "flat", 1, 2.5, "curve", 0, false)
 bonus("lifesteal", "lifesteal", "flat", 0.5, 1.5, "pct", 1, true)
 -- S62 (STATY 4): new regular lines; "pierce" replaces the flat "armorPen".
-bonus("pierce", "pierce", "flat", 3, 6, "pct", 1, true) -- % of the target's armour ignored, after armour break
-bonus("magicPierce", "magicPierce", "flat", 3, 6, "pct", 1, true) -- % of the target's magic resistance ignored
-bonus("skillDmg", "skillDmg", "flat", 1, 2.2, "pct", 1, true) -- +% skill damage (params.isSkill)
-bonus("basicDmg", "basicDmg", "flat", 1.5, 3.3, "pct", 1, true) -- +% basic attack damage (params.basic)
+bonus("pierce", "pierce", "flat", 2.5, 5, "pct", 1, true) -- % of the target's armour ignored, after armour break
+bonus("magicPierce", "magicPierce", "flat", 2, 4, "pct", 1, true) -- % of the target's magic resistance ignored
+bonus("skillDmg", "skillDmg", "flat", 0.8, 1.8, "pct", 1, true) -- +% skill damage (params.isSkill)
+bonus("basicDmg", "basicDmg", "flat", 1, 2.2, "pct", 1, true) -- +% basic attack damage (params.basic)
 bonus("healPower", "healPower", "flat", 1.5, 3.5, "pct", 1, true) -- +% heals and shields you cast
 bonus("critResist", "critResist", "flat", 3, 6, "pct", 1, true) -- % less crit bonus taken
 bonus("costReduce", "costReduce", "flat", 1.5, 3, "none", 1, true) -- % cheaper skills, no scale (STATY 4)
 -- S63 (STATY 4): on-hit lines. Hooks summed by EquipmentService and read by CombatService, not StatCalc stats.
-bonus("woundChance", nil, "flat", 2, 4, "pct", 1, true, "woundChance") -- % chance of a deep wound
-bonus("poisonChance", nil, "flat", 2, 4, "pct", 1, true, "poisonChance") -- % chance to poison
+bonus("woundChance", nil, "flat", 1.2, 2.4, "pct", 1, true, "woundChance") -- % chance of a deep wound
+bonus("poisonChance", nil, "flat", 1.2, 2.4, "pct", 1, true, "poisonChance") -- % chance to poison
 bonus("dotPower", nil, "flat", 4, 8, "pct", 1, true, "dotPower") -- +% damage of your bleeds, poisons and burns
 bonus("resourceOnHit", nil, "flat", 0.2, 0.5, "none", 2, true, "resourceOnHit") -- % max mana / energy per hit
 -- S64 (STATY 4): defensive lines.
@@ -202,11 +202,13 @@ local PARAMS: { [string]: Param } = {
 	["@vsClass"] = { prefix = "vs_", over = "class" },
 	["@resClass"] = { prefix = "res_", over = "class" },
 }
+-- S88 (answer 23, STATY 4): at ilvl 20+ ("pct" scale x4/3) a Common line rolls vs_<family> 5-12, res_<family> 5-11,
+-- vs_/res_<class> 4-9; the Mythic top 14.4 / 13.2 / 10.8 (ItemRoll.bonusRange, balance.spec S88).
 local PARAM_RANGES: { [string]: { number } } = {
-	["@vsFamily"] = { 2, 4.4 },
-	["@resFamily"] = { 2, 4 },
-	["@vsClass"] = { 1.5, 3.5 },
-	["@resClass"] = { 1.5, 3.5 },
+	["@vsFamily"] = { 3.75, 9 },
+	["@resFamily"] = { 3.75, 8.25 },
+	["@vsClass"] = { 3, 6.75 },
+	["@resClass"] = { 3, 6.75 },
 }
 local PARAM_ORDER = { "@vsFamily", "@resFamily", "@vsClass", "@resClass" }
 

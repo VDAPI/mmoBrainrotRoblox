@@ -41,6 +41,7 @@
 --     reduction, invulnerability, mana shield, intercept, kills (poisonSpread, markJump, extendOnKill), defensive hooks.
 
 local B = require("./Balance")
+local Bases = require("../src/shared/Data/Items/Bases")
 local Bonuses = require("../src/shared/Data/Bonuses")
 local BuffCategories = require("../src/shared/Data/BuffCategories")
 local Bosses = require("../src/shared/Data/Bosses")
@@ -50,10 +51,12 @@ local Channel = require("../src/shared/Logic/Channel")
 local Combat = require("../src/shared/Data/Combat")
 local Damage = require("../src/shared/Logic/Damage")
 local EffectStack = require("../src/shared/Logic/EffectStack")
+local Families = require("../src/shared/Data/Families")
 local FightSim = require("../src/shared/Logic/FightSim")
 local Fury = require("../src/shared/Logic/Fury")
 local Intercept = require("../src/shared/Logic/Intercept")
 local ItemTraits = require("../src/shared/Data/ItemTraits")
+local ItemRoll = require("../src/shared/Logic/ItemRoll")
 local Items = require("../src/shared/Data/Items")
 local MonsterAbilities = require("../src/shared/Data/MonsterAbilities")
 local MonsterStats = require("../src/shared/Logic/MonsterStats")
@@ -61,6 +64,7 @@ local Monsters = require("../src/shared/Data/Monsters")
 local PathData = require("../src/shared/Data/Paths")
 local Paths = require("../src/shared/Logic/Paths")
 local Potions = require("../src/shared/Logic/Potions")
+local Rarities = require("../src/shared/Data/Rarities")
 local Roll = require("../src/shared/Logic/Roll")
 local SkillData = require("../src/shared/Data/Skills")
 local SkillGeom = require("../src/shared/Logic/SkillGeom")
@@ -2150,7 +2154,7 @@ end
 -- A kill (non-dummy fights): killHeal (CombatService reward), Carnage resets (SkillService, HOOK_RULES.carnage).
 local function onKill(state: any, _tg: any)
 	state.kills += 1
-	local killHeal = hook(state, "killHeal")
+	local killHeal = Traits.killHeal(hook(state, "killHeal")) -- mirrors CombatService:reward (S88 cap)
 	if killHeal > 0 then
 		giveHeal(state, "self", current(state).values.maxHp * killHeal / 100)
 	end
@@ -4962,8 +4966,8 @@ end
 -- Skills.healAmount("heal") x the heal factor of another player (healPower, healBonus + allyHealBonus, healCrit as
 -- expected value). Default tank: the convention Warrior (ROZWOJ 9.6, diag_skilltable). S86 (B1): the factor is the
 -- fight's healFactor (one path with ctx.heal), the target at ASSUMPTIONS.healTargetFraction (no cut, no low-HP bonus).
-function SkillModel.oneHeal(build: Build, L: number, tank: any?): number
-	local sp = SkillModel.player(build, L)
+function SkillModel.oneHeal(build: Build, L: number, tank: any?, gear: B.GearOpts?): number
+	local sp = SkillModel.player(build, L, if gear then { gear = gear } else nil) -- S88: `gear` (Mythic +9)
 	local tankPlayer = tank or B.player("Warrior", L)
 	local rank = Paths.skillRank(sp.character, "heal")
 	if rank <= 0 then
@@ -6630,6 +6634,736 @@ function SkillModel.trapTiming(build: Build, L: number): (number, number, number
 	local real60 = SkillModel.fight(sp, { targets = one }).dps
 	local inst60 = SkillModel.fight(sp, { targets = one, instantTraps = true }).dps
 	return real8, inst8, real60, inst60
+end
+
+-- S88: trait bands and weapon sets (STATY 14) -----------------------------------------------------------------------
+
+-- S88: `build` without the path nodes `off` (the nodes strengthening a trait, Balance.TRAIT_TARGETS nodesOff).
+function SkillModel.withoutNodes(build: Build, off: { string }?): Build
+	if not off or #off == 0 then
+		return build
+	end
+	local key = `{build.key}~{table.concat(off, "~")}`
+	local cached = variantCache[`{build.classId}|{key}`]
+	if cached then
+		return cached
+	end
+	local copy: any = table.clone(build)
+	copy.key = key
+	local nodes: { { any } } = {}
+	for _, entry in build.nodes do
+		if not table.find(off, entry[1]) then
+			table.insert(nodes, entry)
+		end
+	end
+	copy.nodes = nodes
+	variantCache[`{build.classId}|{key}`] = copy
+	return copy
+end
+
+-- S88: the value of a trait in one situation on `build` (the A0 choice: the skill model on the event; the six traits
+-- of TRAIT_VIA_TERMS through Balance.traitTerms with the situation measured on the build).
+function SkillModel.traitSituation(
+	build: Build,
+	L: number,
+	traitId: string,
+	situation: string,
+	gear: B.GearOpts?
+): number
+	if SkillModel.TRAIT_VIA_TERMS[traitId] then
+		return SkillModel.traitValueMeasured(build, L, traitId, situation, gear)
+	end
+	return SkillModel.traitValue(build, L, traitId, situation, gear)
+end
+
+export type TraitTargetResult = {
+	row: B.TraitTarget,
+	level: number,
+	-- one entry per weapon element (Mage rows) or one entry: the mean over the band situations
+	values: { { element: string?, value: number, by: { [string]: number }, nodes: number? } },
+	report: { [string]: number }, -- report situations (mean over the elements)
+	band: { number },
+}
+
+local traitTargetCache: { [string]: TraitTargetResult } = {}
+
+-- S88 (C1-C2): one row of Balance.TRAIT_TARGETS at L with `rarity` / `up` (default Common +0): the value of the trait
+-- in every band situation (equal weights, nodesOff off), with the nodes on (`nodes`), and the report situations.
+function SkillModel.traitTarget(row: B.TraitTarget, L: number, rarity: number?, up: number?): TraitTargetResult
+	local r, u = rarity or 1, up or 0
+	local key = `{row.trait}|{row.build}|{row.weapon}|{row.offhand}|{L}|{r}|{u}`
+	local cached = traitTargetCache[key]
+	if cached then
+		return cached
+	end
+	local full = SkillModel.withWeapon(byKey(row.build), row.weapon, row.offhand)
+	local off = SkillModel.withoutNodes(full, row.nodesOff)
+	local elements: { any } = if row.elements then A.elements else { false }
+	local values = {}
+	local report: { [string]: number } = {}
+	for _, el in elements do
+		local gear: B.GearOpts = {
+			weapon = row.weapon,
+			offhand = if row.offhand then row.offhand else false,
+			rarity = r,
+			up = u,
+			element = if el then el else nil,
+		}
+		local by: { [string]: number } = {}
+		local sum, withNodes = 0, 0
+		for _, situation in row.situations do
+			local v = SkillModel.traitSituation(off, L, row.trait, situation, gear)
+			by[situation] = v
+			sum += v
+			if row.nodesOff then
+				withNodes += SkillModel.traitSituation(full, L, row.trait, situation, gear)
+			end
+		end
+		for _, situation in row.report or {} do
+			report[situation] = (report[situation] or 0)
+				+ SkillModel.traitSituation(off, L, row.trait, situation, gear) / #elements
+		end
+		table.insert(values, {
+			element = if el then el else nil,
+			value = sum / #row.situations,
+			by = by,
+			nodes = if row.nodesOff then withNodes / #row.situations else nil,
+		})
+	end
+	local result: TraitTargetResult = {
+		row = row,
+		level = L,
+		values = values,
+		report = report,
+		band = if row.twoHanded then B.TRAIT_BAND_2H else B.TRAIT_BAND,
+	}
+	traitTargetCache[key] = result
+	return result
+end
+
+export type TypeSetResult = {
+	entry: B.TypeSet,
+	level: number,
+	-- index in MIX against the first set (1 = the first set), and per MIX situation
+	sets: { { label: string, index: number, by: { [string]: number } } },
+	spread: number, -- max / min - 1
+}
+
+local typeSetCache: { [string]: TypeSetResult } = {}
+
+-- The path measure of one weapon set in one MIX situation (C9): DPS of the fight on the event; `power` paths x the
+-- power² ratio of the TRAIT_VIA_TERMS traits of the set (their EHP and counters), square root; `healer` the mean of
+-- the dungeon heal per s and the one-target DPS (the model's Healer loses no HP in a duel, so its solo power is DPS).
+local function setMeasure(entry: B.TypeSet, build: Build, L: number, situation: string, set: any): number
+	local sp = SkillModel.player(build, L, if build.classId == "Mage" then { element = "fire" } else nil)
+	if entry.measure == "healer" then
+		return situationValue(sp, L, situation)
+	end
+	local dps = situationValue(sp, L, situation)
+	if entry.measure ~= "power" then
+		return dps
+	end
+	local gear: B.GearOpts = { weapon = set.main, offhand = if set.offhand then set.offhand else false }
+	local mul = 1
+	for _, id in { set.main, set.offhand } do
+		local base = Bases.byType[id] :: any
+		local traitId = base and base.trait
+		if traitId and SkillModel.TRAIT_VIA_TERMS[traitId] then
+			mul *= 1 + SkillModel.traitValueMeasured(build, L, traitId, situation, gear)
+		end
+	end
+	return math.sqrt(dps * dps * mul)
+end
+
+-- S88 (C9, E6): the weapon sets of one Balance.TYPE_SETS path at L in Balance.MIX (healer: dungeon and single, equal
+-- weights), each against the first set; spread = max / min - 1.
+function SkillModel.typeSets(entry: B.TypeSet, L: number): TypeSetResult
+	local key = `{entry.path}|{L}`
+	local cached = typeSetCache[key]
+	if cached then
+		return cached
+	end
+	local mix: { [string]: number } = if entry.measure == "healer" then { dungeon = 0.5, single = 0.5 } else B.MIX
+	local names: { string } = {}
+	for name in mix do
+		table.insert(names, name)
+	end
+	table.sort(names)
+	local base = byKey(entry.build)
+	local first: { [string]: number } = {}
+	local sets = {}
+	for i, set in entry.sets do
+		local build = SkillModel.withWeapon(base, set.main, set.offhand)
+		local by: { [string]: number } = {}
+		local index, weights = 0, 0
+		for _, name in names do
+			local v = setMeasure(entry, build, L, name, set)
+			if i == 1 then
+				first[name] = v
+			end
+			by[name] = v / math.max(1e-12, first[name])
+			index += mix[name] * by[name]
+			weights += mix[name]
+		end
+		table.insert(sets, {
+			label = `{set.main}{if set.offhand then " + " .. set.offhand else ""}`,
+			index = index / weights,
+			by = by,
+		})
+	end
+	local lo, hi = math.huge, 0
+	for _, s in sets do
+		lo, hi = math.min(lo, s.index), math.max(hi, s.index)
+	end
+	local result: TypeSetResult = { entry = entry, level = L, sets = sets, spread = hi / math.max(1e-12, lo) - 1 }
+	typeSetCache[key] = result
+	return result
+end
+
+-- S88: class checks (E) -------------------------------------------------------------------------------------------
+
+local function pathNode(pathId: string, nodeId: string): any
+	local path = PathData.byId[pathId] :: any
+	for _, row in path.rows do
+		for _, node in row.nodes do
+			if node.id == nodeId then
+				return node
+			end
+		end
+	end
+	error(`SkillModel: no node {nodeId} in {pathId}`)
+end
+
+export type GuardLimits = {
+	build: string,
+	weapon: string,
+	level: number,
+	block: number, -- block from every source before blockCap (hook "block": Block, Shield Master, Parry, lines)
+	riposte: number, -- counter chance before riposteCap (Counterattack, Retaliation, Swordplay)
+	avoid: number, -- dodge + misfortune + block before Damage.avoidance cuts them (<= dodgeCap + avoidBonus)
+	ehp: number, -- `tank` EHP with both traits of the set / without both - 1
+	blockHealPerSecond: number, -- Parry's heal in % max HP per s (STATY 14: ~0.15 %/s)
+}
+
+-- E1 (STATY 3, 5, 10, 14): the Guardian's caps on a build ("Samotnik", "Obrońca") with `weapon` + shield at L.
+function SkillModel.guardLimits(buildKey: string, weapon: string, L: number): GuardLimits
+	local build = SkillModel.withWeapon(byKey(buildKey), weapon, "shield")
+	local sp = SkillModel.player(build, L)
+	local p = sp.p
+	local hooks = p.hooks
+	local miss = 0 -- misfortune works on the monsters' blows only through party auras (none in the build alone)
+	-- the raw sum: Damage.avoidance clamps each part to the total, so its result could never exceed the cap
+	local avoid = (math.max(0, p.values.dodge or 0) + miss + Traits.blockChance(hooks.block or 0, false)) / 100
+	local measured = SkillModel.measuredFor(build, L, "tank")
+	local baseTrait = (Bases.byType[weapon] :: any).trait
+	local scale = table.clone(B.NO_TRAITS)
+	for id in scale do
+		scale[id] = if id == baseTrait or id == "parry" then 0 else 1
+	end
+	local off = SkillModel.player(build, L, { gear = { traitScale = scale } }).p
+	local ehpWith = measuredMeasure(p, "tank", measured)
+	local ehpWithout = measuredMeasure(off, "tank", measured)
+	local _, _, block = Damage.avoidance(p.values.dodge or 0, 0, 0, Traits.blockChance(hooks.block or 0, false))
+	local rate = (B.SITUATIONS.tankRates[1] + B.SITUATIONS.tankRates[2]) / 2
+	return {
+		build = buildKey,
+		weapon = weapon,
+		level = L,
+		block = hooks.block or 0,
+		riposte = hooks.riposte or 0,
+		avoid = avoid,
+		ehp = ehpWith / math.max(1e-12, ehpWithout) - 1,
+		blockHealPerSecond = rate * block * (hooks.blockHeal or 0),
+	}
+end
+
+export type ExecuteCheck = {
+	gear: string,
+	trait: number, -- Beheading's grown value
+	node: number, -- Executioner (hook "executioner" of the build)
+	cap: number,
+	withLines: number, -- trait + node + top leg_executioner + top myth_executioner
+	cut: number, -- what executionerCap cuts of withLines
+}
+
+-- E3 (STATY 10, 14): Beheading and Executioner on "Furia" with sword2h, Common +0 and Mythic +9.
+function SkillModel.executeCheck(L: number, rarity: number, up: number): ExecuteCheck
+	local build = SkillModel.withWeapon(byKey(SkillModel.FURY), "sword2h", nil)
+	local sp = SkillModel.player(build, L, { gear = { rarity = rarity, up = up } })
+	local hooks = sp.p.hooks
+	local trait = hooks.traitExecute or 0
+	local node = hooks.executioner or 0
+	-- the node's hook only: the expected lines of the S32 set are left out (their top values come next)
+	local itemLines = 0
+	for _, item in sp.items do
+		local stats = B.itemStats(item)
+		itemLines += stats.hooks.executioner or 0
+	end
+	node -= itemLines
+	local legTop = (Bonuses.get("leg_executioner") :: any).max
+	local mythTop = (Bonuses.get("myth_executioner") :: any).max
+	local withLines = trait + node + legTop + mythTop
+	return {
+		gear = `{Rarities.get(rarity).key} +{up}`,
+		trait = trait,
+		node = node,
+		cap = Combat.executionerCap,
+		withLines = withLines,
+		cut = math.max(0, withLines - Combat.executionerCap),
+	}
+end
+
+export type KillHealSum = {
+	label: string,
+	raw: number, -- summed killHeal hook (% max HP per kill)
+	capped: number, -- Traits.killHeal (the lifesteal cap)
+	lossPerKill: number, -- HP lost per kill in G1 (Balance.duel of the S32 player), % max HP
+	waves: number, -- healed by the ~20 kills of two shield waves of the boss, % max HP (capped)
+	inGame: boolean, -- false: the STATY 14 sum, never together in the game (Reaping one-handed, Drinker two-handed)
+}
+
+-- E5 (STATY 5, 10, 14): the kill-heal sums the game allows at L, capped by Traits.killHeal.
+function SkillModel.killHealSums(L: number): { KillHealSum }
+	local reaping = ItemRoll.trait(B.makeItem(B.tierId("axe1h", L), L, Rarities.MYTHIC, 9, {})) :: any
+	local mythTop = (Bonuses.get("myth_killHeal") :: any).max
+	local legTop = (Bonuses.get("leg_killHeal") :: any).max
+	-- Krwiopijca (Drinker): the node whose passive hook is the killHeal CombatService.reward sums
+	local drinkerNode = pathNode("berserker", "berserker_drinker")
+	local drinkerField = drinkerNode.passive.hooks.killHeal
+	local drinker = Paths.nodeValues(drinkerNode, drinkerNode.maxRank)[drinkerField] or 0
+	local out: { KillHealSum } = {}
+	local function add(label: string, classId: string, raw: number, inGame: boolean)
+		local p = B.cachedPlayer(classId, L)
+		local f = B.duel(p, B.monster(B.GENERIC, L))
+		local capped = Traits.killHeal(raw)
+		table.insert(out, {
+			label = label,
+			raw = raw,
+			capped = capped,
+			lossPerKill = f.hpLost * 100,
+			waves = math.min(100, 20 * capped),
+			inGame = inGame,
+		})
+	end
+	add("Strażnik: Żniwo M+9 + myth_killHeal + 1× leg_killHeal", "Warrior", reaping.value + mythTop + legTop, true)
+	add(
+		"Strażnik: Żniwo M+9 + myth_killHeal + 3× leg_killHeal",
+		"Warrior",
+		reaping.value + mythTop + 3 * legTop,
+		true
+	)
+	add(
+		"Berserker „Rzeźnik”: Krwiopijca 3 + myth_killHeal + 1× leg_killHeal",
+		"Warrior",
+		drinker + mythTop + legTop,
+		true
+	)
+	add(
+		"Berserker „Rzeźnik”: Krwiopijca 3 + myth_killHeal + 3× leg_killHeal",
+		"Warrior",
+		drinker + mythTop + 3 * legTop,
+		true
+	)
+	add(
+		"STATY 14: Żniwo M+9 + Krwiopijca 3 + leg + myth (w grze nie występuje)",
+		"Warrior",
+		reaping.value + drinker + legTop + mythTop,
+		false
+	)
+	return out
+end
+
+export type SavingSelf = { level: number, gear: string, lifesteal: number, self: number, total: number, cap: number }
+
+-- E4 (STATY 3, 5): Saving Blow on its bearer with the set's lifesteal lines: the self part (Traits.savingSelfShare)
+-- + lifesteal stays within the lifesteal cap.
+function SkillModel.savingSelf(L: number, rarity: number, up: number): SavingSelf
+	local build = SkillModel.withWeapon(byKey("healer.dungeon"), "holystaff", nil)
+	local sp = SkillModel.player(build, L, { gear = { rarity = rarity, up = up } })
+	local lifesteal = sp.p.values.lifesteal or 0
+	local value = ((sp.p.traits or {}).savingBlow or { value = 0 }).value
+	local self = Traits.savingSelfShare(value, lifesteal)
+	local def = Stats.get("lifesteal") :: any
+	return {
+		level = L,
+		gear = `{Rarities.get(rarity).key} +{up}`,
+		lifesteal = lifesteal,
+		self = self,
+		total = math.min(lifesteal, def.cap) + self,
+		cap = def.cap,
+	}
+end
+
+-- S88: PvP (F) ----------------------------------------------------------------------------------------------------
+
+-- F2: attackers and defenders (the S86 builds of ROZWOJ 10-12 for one target).
+SkillModel.PVP_ATTACKERS = { "berserker.fury", "inquisitor.solo", "marksman.kingslayer", "destroyer.destroyerBoss" }
+SkillModel.PVP_DEFENDERS =
+	{ "berserker.fury", "inquisitor.solo", "marksman.kingslayer", "destroyer.destroyerBoss", "guardian.loner" }
+
+local function pvpPlayer(key: string, L: number, gear: B.GearOpts?): any
+	local build = byKey(key)
+	return SkillModel.player(build, L, if gear then { gear = gear, element = "fire" } else { element = "fire" }).p
+end
+
+-- The attacker's class lines (F2 variant): two rings and the talisman with vs_<defender class> of a middle Mythic roll.
+local function withClassLines(p: any, defenderClass: string, L: number): any
+	local copy = table.clone(p)
+	copy.hooks = table.clone(p.hooks)
+	local id = Bonuses.classLine("vs_", defenderClass)
+	local ilvl = math.max(1, L - B.GEAR_GAP)
+	copy.hooks[id] = (copy.hooks[id] or 0) + 3 * ItemRoll.rollBonusValue(id, ilvl, Rarities.MYTHIC, 0.5)
+	return copy
+end
+
+export type PvpPair = {
+	attacker: string,
+	defender: string,
+	level: number,
+	seconds: number, -- time to kill with traits
+	noTraits: number, -- without any trait (both sides)
+	ratio: number, -- seconds / noTraits (>= 0.90: the traits shorten the fight by at most 10 %)
+	tickShare: number, -- share of trait / line ticks in the PvP damage
+	tickSharePve: number, -- the same exchange with the rules against monsters
+	classLines: number, -- seconds with the attacker's full class lines
+	stun: number, -- share of the fight the defender stands stunned (Concussion)
+}
+
+local pvpCache: { [string]: PvpPair } = {}
+
+-- F1-F3: one pair at L (Common +0, S32 convention).
+function SkillModel.pvpPair(attacker: string, defender: string, L: number): PvpPair
+	local key = `{attacker}|{defender}|{L}`
+	if pvpCache[key] then
+		return pvpCache[key]
+	end
+	local a, b = pvpPlayer(attacker, L), pvpPlayer(defender, L)
+	local a0 = pvpPlayer(attacker, L, { traitScale = B.NO_TRAITS })
+	local b0 = pvpPlayer(defender, L, { traitScale = B.NO_TRAITS })
+	local with = B.pvpDuel(a, b).ab
+	local without = B.pvpDuel(a0, b0).ab
+	local pve = B.pvpDuel(a, b, { pve = true, seconds = with.seconds }).ab
+	local lines = B.pvpDuel(withClassLines(a, b.classId, L), b, { classLines = true }).ab
+	local row: PvpPair = {
+		attacker = attacker,
+		defender = defender,
+		level = L,
+		seconds = with.seconds,
+		noTraits = without.seconds,
+		ratio = with.seconds / math.max(1e-9, without.seconds),
+		tickShare = with.ticks / math.max(1e-9, with.dps),
+		tickSharePve = pve.ticks / math.max(1e-9, pve.dps),
+		classLines = lines.seconds,
+		stun = with.stun,
+	}
+	pvpCache[key] = row
+	return row
+end
+
+-- F3: the conditional and defensive traits of STATY 8 (and Frostbite of the ice weapons) with their row build of
+-- Balance.TRAIT_TARGETS; PvP value / PvE value in a mirror duel (same still / controlled shares).
+SkillModel.PVP_HALF_TRAITS = {
+	"beheading",
+	"easyPrey",
+	"runicSeal",
+	"fullDraw",
+	"bonebreaker",
+	"swordplay",
+	"parry",
+	"savingBlow",
+	"elementalMight",
+} :: { string }
+
+export type PvpHalf = { trait: string, level: number, pvp: number, pve: number, ratio: number }
+
+function SkillModel.pvpHalf(traitId: string, L: number): PvpHalf
+	local row: B.TraitTarget? = nil
+	for _, r in B.TRAIT_TARGETS do
+		if r.trait == traitId then
+			row = r
+			break
+		end
+	end
+	assert(row, `SkillModel: no TRAIT_TARGETS row for {traitId}`)
+	-- the nodes that strengthen the trait stay off as in its band (Executioner counts with Beheading in traitTerms)
+	local build =
+		SkillModel.withoutNodes(SkillModel.withWeapon(byKey(row.build), row.weapon, row.offhand), row.nodesOff)
+	local element = if traitId == "elementalMight" then "ice" else "fire"
+	local gear: B.GearOpts = { weapon = row.weapon, offhand = if row.offhand then row.offhand else false }
+	local p = SkillModel.player(build, L, { gear = gear, element = element }).p
+	local off = SkillModel.player(build, L, { gear = B.withoutTrait(gear, traitId), element = element }).p
+	local S = B.SITUATIONS
+	local opts: B.PvpOpts = { still = S.still, controlled = S.controlled }
+	local pvp = B.pvpTraitValue(p, off, p, traitId, false, opts)
+	local pve = B.pvpTraitValue(p, off, p, traitId, true, opts)
+	return { trait = traitId, level = L, pvp = pvp, pve = pve, ratio = pvp / math.max(1e-12, pve) }
+end
+
+-- F3 (STATY 8): share of a fight the target player stands stunned by Concussion (the Inquisitor with a flail and a
+-- shield, Balance.TRAIT_TARGETS), a mirror duel at L.
+function SkillModel.pvpStun(L: number): number
+	local build = SkillModel.withWeapon(byKey("inquisitor.solo"), "flail1h", "shield")
+	local p = SkillModel.player(build, L, { gear = { weapon = "flail1h", offhand = "shield" } }).p
+	return B.pvpDuel(p, p).ab.stun
+end
+
+-- F3: one tick of a skill's damage over time (Rending, Venom Arrow, the element burn): Damage.computeDamage's
+-- dotBase without and with pvp (the same seed), Traits.pvpTick only in PvP; returns PvP / PvE.
+function SkillModel.pvpTickRatio(L: number): number
+	local a = pvpPlayer("berserker.fury", L)
+	local b = pvpPlayer("guardian.loner", L)
+	local attacker = Damage.fromStats(L, a.values)
+	local _, defender = Damage.fromStats(L, b.values)
+	local Rng = require("../src/shared/Logic/Rng") :: any
+	local pve = Damage.computeDamage(attacker, defender, { kind = "phys", canDodge = false }, Rng.new(7))
+	local pvp = Damage.computeDamage(attacker, defender, { kind = "phys", canDodge = false, pvp = true }, Rng.new(7))
+	local tick = Traits.dotTick(pve.dotBase or 0, 30, 4, 0)
+	local pvpTick = Traits.pvpTick(Traits.dotTick(pvp.dotBase or 0, 30, 4, 0))
+	return pvpTick / math.max(1e-9, tick)
+end
+
+-- S88: the target rows (H) ----------------------------------------------------------------------------------------
+
+local s88Cache: { B.TargetRow }? = nil
+
+-- H1-H2: every S88 target as a TargetRow (balance.spec asserts the rows without `report`; the report prints all of
+-- them). Levels Balance.TRAIT_LEVELS (45 / 70 / 100).
+function SkillModel.targetsS88(): { B.TargetRow }
+	if s88Cache then
+		return s88Cache
+	end
+	local rows: { B.TargetRow } = {}
+	local function add(
+		id: string,
+		label: string,
+		value: number,
+		low: number?,
+		high: number?,
+		L: number?,
+		report: string?,
+		classId: string?
+	)
+		table.insert(rows, {
+			id = id,
+			group = string.match(id, "^([%a%d]+)") or id,
+			label = label,
+			value = value,
+			low = low,
+			high = high,
+			classId = classId,
+			level = L,
+			report = report,
+		})
+	end
+	local levels = B.TRAIT_LEVELS
+	-- C2 / E6: trait bands and the nodes that strengthen a trait
+	for _, row in B.TRAIT_TARGETS do
+		for _, L in levels do
+			local r = SkillModel.traitTarget(row, L)
+			for _, v in r.values do
+				local element = if v.element then ` {v.element}` else ""
+				local label = `{row.trait}{element} · {row.build}@{row.weapon} · L{L}`
+				local reportOnly = row.reportWhy ~= nil
+					and (
+						row.reportElements == nil
+						or (v.element ~= nil and table.find(row.reportElements, v.element) ~= nil)
+					)
+				add(
+					"T1",
+					label,
+					v.value,
+					r.band[1],
+					r.band[2],
+					L,
+					if reportOnly then row.reportSession or "S88" else nil
+				)
+				if v.nodes then
+					add("T1.nodes", `{label} (z węzłami)`, v.nodes, nil, B.TRAIT_NODES_MAX, L)
+				end
+			end
+		end
+	end
+	-- C9: weapon sets of a path
+	for _, entry in B.TYPE_SETS do
+		for _, L in levels do
+			local r = SkillModel.typeSets(entry, L)
+			local reportOnly = entry.reportWhy ~= nil
+				and (entry.reportAt == nil or table.find(entry.reportAt, L) ~= nil)
+			add(
+				"T2",
+				`{entry.path} · L{L}`,
+				r.spread,
+				nil,
+				B.TYPE_SET_MAX,
+				L,
+				if reportOnly then entry.reportSession or "S88" else nil
+			)
+		end
+	end
+	-- B: armour and magic resistance shares, agile kinds
+	local D = B.DEFENCE_TARGETS
+	local undeadArmored = Families.defence("undead", "armored") :: any
+	local undeadWarded = Families.defence("undead", "warded") :: any
+	for _, L in levels do
+		local function kindWith(defMul: number, mresMul: number): any
+			local kind = table.clone(B.GENERIC) :: any
+			kind.defMul, kind.mresMul = defMul, mresMul
+			return B.monster(kind, L)
+		end
+		add("B1", `pancerz zwykły · L{L}`, B.armorShare(kindWith(1, 1), L, false), D.armor[1], D.armor[2], L)
+		add(
+			"B1",
+			`pancerz ×{undeadArmored.defMul} · L{L}`,
+			B.armorShare(kindWith(undeadArmored.defMul, 1), L, false),
+			D.armored[1],
+			D.armored[2],
+			L
+		)
+		add("B1", `odporność zwykła · L{L}`, B.armorShare(kindWith(1, 1), L, true), D.mres[1], D.mres[2], L)
+		add(
+			"B1",
+			`odporność ×{undeadWarded.mresMul} · L{L}`,
+			B.armorShare(kindWith(1, undeadWarded.mresMul), L, true),
+			D.warded[1],
+			D.warded[2],
+			L
+		)
+		for _, c in B.CLASSES do
+			for _, def in B.defenceAt(c, L) do
+				if string.find(def.id, "agile", 1, true) then
+					local generic = B.defenceAt(c, L)[1]
+					-- the animal trait is shared with the lynx of the Meadows (1-20, S91)
+					local lynx = string.find(def.id, "animal", 1, true) ~= nil
+					add(
+						"B5",
+						`{c} {def.id} · L{L}: czas / zwykły`,
+						def.seconds / generic.seconds,
+						nil,
+						D.dodgeTime,
+						L,
+						if lynx then "S91" else nil,
+						c
+					)
+				end
+			end
+		end
+	end
+	-- D3: family and class lines at level 100
+	for _, t in B.LINE_TARGETS do
+		local id = if t.over == "family"
+			then Bonuses.familyLine(t.prefix :: any, Families.ids[1])
+			else Bonuses.classLine(t.prefix :: any, "Warrior")
+		local lo, hi = ItemRoll.bonusRange(id, 100, Rarities.COMMON)
+		local _, top = ItemRoll.bonusRange(id, 100, Rarities.MYTHIC)
+		local name = `{t.prefix}<{if t.over == "family" then "rodzina" else "klasa"}>`
+		add("D3", `{name}: Zwykły min · L100`, lo, t.common[1] - 0.05, t.common[1] + 0.05, 100)
+		add("D3", `{name}: Zwykły max · L100`, hi, t.common[2] - 0.05, t.common[2] + 0.05, 100)
+		add("D3", `{name}: Mityk max · L100`, top, nil, t.mythicTop, 100)
+	end
+	-- D4: named Mythics
+	local named: { string } = {}
+	for id in B.NAMED_TARGETS do
+		table.insert(named, id)
+	end
+	table.sort(named)
+	for _, id in named do
+		local sum = 0
+		for _, c in B.NAMED_TARGETS[id] do
+			sum += B.namedPower(id, c).power
+		end
+		local def = Items.get(id) :: any
+		add("D4", `{id} · L{def.level}`, sum / #B.NAMED_TARGETS[id], B.NAMED_BAND[1], B.NAMED_BAND[2], def.level)
+	end
+	-- E1: the Guardian's caps
+	local avoidCap = (Combat.dodgeCap + Combat.avoidBonus) / 100
+	for _, L in levels do
+		for _, key in { "guardian.loner", "guardian.defender" } do
+			for _, w in { "sword1h", "saber1h", "axe1h", "mace1h" } do
+				local g = SkillModel.guardLimits(key, w, L)
+				local label = `{key}@{w} · L{L}`
+				add("E1.block", label, g.block, nil, Combat.blockCap, L)
+				add("E1.riposte", label, g.riposte, nil, Combat.riposteCap, L)
+				add("E1.avoid", label, g.avoid, nil, avoidCap, L)
+				local ehpReport = if w == "axe1h" or w == "mace1h" then "S89" else nil
+				add("E1.ehp", label, g.ehp, nil, B.GUARD_EHP_MAX, L, ehpReport)
+			end
+		end
+		-- E3: Beheading and Executioner never cut by the cap
+		for _, r in { { Rarities.COMMON, 0 }, { Rarities.MYTHIC, 9 } } do
+			local e = SkillModel.executeCheck(L, r[1], r[2])
+			add("E3", `Ścięcie + Kat · {e.gear} · L{L}`, e.trait + e.node, nil, e.cap, L)
+			local s = SkillModel.savingSelf(L, r[1], r[2])
+			add("E4.self", `Zbawczy cios na noszącym + wampiryzm · {s.gear} · L{L}`, s.total, nil, s.cap, L)
+		end
+		-- E4: T-SK5 with Anointment (Common)
+		local healer = byKey("healer.dungeon")
+		add(
+			"E4.tsk5",
+			`T-SK5 healer.dungeon na guardian.defender · L{L}`,
+			SkillModel.oneHeal(healer, L, SkillModel.defenderTank(L)),
+			SkillModel.TSK5_BAND[1],
+			SkillModel.TSK5_BAND[2],
+			L
+		)
+		-- E5: kill heal sums the game allows, capped
+		local cap = (Stats.get("lifesteal") :: any).cap
+		for _, k in SkillModel.killHealSums(L) do
+			if k.inGame then
+				add("E5", `{k.label} · L{L}`, k.capped, nil, cap, L)
+			end
+		end
+	end
+	-- F: PvP
+	local P = B.PVP_TARGETS
+	for _, L in levels do
+		for _, a in SkillModel.PVP_ATTACKERS do
+			for _, d in SkillModel.PVP_DEFENDERS do
+				local r = SkillModel.pvpPair(a, d, L)
+				add("F.ratio", `{a} → {d} · L{L}`, r.ratio, P.ratio, nil, L)
+				add("F.ticks", `{a} → {d} · L{L}`, math.abs(r.tickShare - r.tickSharePve), nil, P.tickShare, L)
+			end
+		end
+		add(
+			"F.tick",
+			`tyknięcie umiejętności PvP / PvE · L{L}`,
+			SkillModel.pvpTickRatio(L),
+			P.tick[1],
+			P.tick[2],
+			L
+		)
+		for _, t in SkillModel.PVP_HALF_TRAITS do
+			local h = SkillModel.pvpHalf(t, L)
+			add("F.half", `{t} · L{L}`, h.ratio, nil, P.half, L)
+		end
+		add("F.stun", `Wstrząs: ogłuszenie / czas walki · L{L}`, SkillModel.pvpStun(L), nil, P.stun, L)
+	end
+	-- G: luck within the cap, Fortune felt
+	local LuckData = require("../src/shared/Data/Luck") :: any
+	for _, L in levels do
+		for _, k in { "K1", "K2" } do
+			local d = B.dropsPerHour("Warrior", L, k, "full")
+			add(
+				"G.cap",
+				`{k} + Fortuna: szczęście przed limitem · L{L}`,
+				d.beforeCap,
+				nil,
+				LuckData.monsterItemCap,
+				L
+			)
+		end
+		local with = B.dropsPerHour("Warrior", L, "K1", "full")
+		local without = B.dropsPerHour("Warrior", L, "K1", false)
+		add(
+			"G.fortune",
+			`K1: Unikaty z Fortuną / bez · L{L}`,
+			with.unique / math.max(1e-12, without.unique),
+			B.FORTUNE_UNIQUES[1],
+			B.FORTUNE_UNIQUES[2],
+			L
+		)
+	end
+	s88Cache = rows
+	return rows
 end
 
 return SkillModel

@@ -13,7 +13,7 @@ local DEFENCES: { [string]: { [string]: Defence } } = {
 	animal = { agile = { dodge = 12 } }, -- lynx, blood bat, snow leopard (STATY 7: 10-15 %)
 	humanoid = { armored = { defMul = 1.6 } }, -- renegade dwarf, ash orc
 	undead = { armored = { defMul = 1.8 }, warded = { mresMul = 1.8 } }, -- skeleton, knight / wraith, specter
-	beast = { agile = { dodge = 15 } }, -- peak harpy
+	beast = { agile = { dodge = 10 } }, -- peak harpy (S88: 15 -> 10, B5: at most +10 % fight time)
 	elemental = { armored = { defMul = 2.0 } }, -- golems, crystal guardian
 	dragon = { scaled = { defMul = 1.4, mresMul = 1.4 } }, -- every dragon
 }

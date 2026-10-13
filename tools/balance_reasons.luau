@@ -196,5 +196,156 @@ return {
 		["BossTuning:*"] = {
 			{ session = "S87", why = "D3: constants moved from Boss.luau and the scripts without changing their values (new module)" },
 		},
+		-- S88: weapon traits, lines, monster defence and named Mythics 20-100 (docs/SESJE.md S88). Trait values: the
+		-- mean over the trait's situations (equal weights) on its path build, Common +0 at 45 / 70 / 100
+		-- (SkillModel.traitTarget, Balance.TRAIT_TARGETS); band 0.04-0.06 (STATY 14, answer 6).
+		["ItemTraits:byId.swordplay.value"] = {
+			{ session = "S88", why = "C2: counter bonus 25 -> 33 %: Swordplay 0.038-0.041 -> 0.041-0.044 (group, elite, boss on Samotnik)" },
+		},
+		["ItemTraits:byId.twinCut.value"] = {
+			{ session = "S88", why = "C2: 40 -> 58 %: Twin Cut 0.030-0.034 -> 0.043-0.050 (single, elite on Chorąży)" },
+		},
+		["ItemTraits:byId.reaping.value"] = {
+			{ session = "S88", why = "C2: 1 -> 0.7 % max HP per kill: Reaping solo 0.074-0.079 -> 0.050-0.054 (the boss waves only in the report)" },
+		},
+		["ItemTraits:byId.rendingGash.value"] = {
+			{ session = "S88", why = "C2: 30 -> 36 %: Rending Gash 0.038-0.039 -> 0.045-0.046 without the bleed nodes, 0.040-0.061 with them (<= 0.08)" },
+		},
+		["ItemTraits:byId.runThrough.value"] = {
+			{ session = "S88", why = "C2: 25 -> 55 %: Run Through in a group 0.020-0.025 -> 0.044-0.054 (band width untouched; the boss alone 0)" },
+		},
+		["ItemTraits:byId.parry.value"] = {
+			{ session = "S88", why = "C2 / E1: block heal 0.5 -> 0.1 % max HP (one decimal in the tooltip; 0.2 gives 0.126 EHP at 100): Parry tank 0.061 -> 0.054; both traits of sword + shield on Samotnik 0.145-0.159 -> 0.072-0.095 EHP (<= 0.12)" },
+		},
+		["ItemTraits:byId.harrying.value"] = {
+			{ session = "S88", why = "C2: chance 15 -> 6 %: Harrying solo 0.114-0.116 -> 0.050-0.051" },
+		},
+		["ItemTraits:byId.toxicBarbs.value"] = {
+			{ session = "S88", why = "C2: 30 -> 38 %: Toxic Barbs 0.033-0.038 -> 0.043-0.048 without the venoms, 0.059-0.066 with them (<= 0.08)" },
+		},
+		["ItemTraits:byId.criticalForce.value"] = {
+			{ session = "S88", why = "C2: 25 -> 20 crit points: Critical Force 0.061-0.073 -> 0.049-0.058 (Strzelec Wyborowy, single and group)" },
+		},
+		["ItemTraits:byId.easyPrey.value"] = {
+			{ session = "S88", why = "C2: 10 -> 9 %: Easy Prey controlled 0.054-0.061 -> 0.049-0.055 (Traper)" },
+		},
+		["ItemTraits:byId.fullDraw.value"] = {
+			{ session = "S88", why = "C2: 30 -> 45 % x weapon speed: Full Draw 0.028-0.039 -> 0.043-0.059 with every Hunter weapon (Traper bow the lowest)" },
+		},
+		["ItemTraits:byId.elementalSpark.params.burnPct"] = {
+			{ session = "S88", why = "C5: burn 30 -> 80 % of the hit: Spark fire 0.016-0.018 -> 0.043-0.049 (mana, group; the chance 35 sits at onHitChanceCap from Legendary)" },
+		},
+		["ItemTraits:byId.elementalSpark.params.arcPct"] = {
+			{ session = "S88", why = "C5: arc 40 -> 110 %: Spark lightning 0.015-0.017 -> 0.042-0.048" },
+		},
+		["ItemTraits:byId.elementalSpark.params.sameTargetPct"] = {
+			{ session = "S88", why = "C5: same target 20 -> 55 % (with arcPct; mana window on one target)" },
+		},
+		["ItemTraits:byId.elementalSpark.fixedHooks.frostbite"] = {
+			{ session = "S88", why = "C5: Frostbite 6 -> 11 %: Spark ice 0.000-0.005 -> 0.047-0.051 (STATY 14: 10 like the staff was not enough at 100)" },
+		},
+		["ItemTraits:byId.elementalMight.value"] = {
+			{ session = "S88", why = "E6: 30 -> 39 % (x1.3): staff vs wand + orb in MIX was 0.94 at 100; fire 0.053-0.057, ice 0.046-0.048, lightning 0.087-0.118 (band 0.04-0.09, lightning in the report)" },
+		},
+		["ItemTraits:byId.runicSeal.value"] = {
+			{ session = "S88", why = "C2 / C9: 8 -> 5.5 %: Runic Seal 0.076-0.078 -> 0.052-0.053; runestaff vs wand + tome 0.027-0.044 (<= 0.05)" },
+		},
+		["ItemTraits:byId.anointment.value"] = {
+			{ session = "S88", why = "E4: 8 -> 5 %: Anointment in dungeon 0.080-0.083 -> 0.050-0.052; T-SK5 0.29 / 0.29 / 0.34 on 45 / 70 / 100" },
+		},
+		["ItemTraits:byId.savingBlow.value"] = {
+			{ session = "S88", why = "C2: 4 -> 2.5 %: Saving Blow in dungeon 0.078-0.082 -> 0.049-0.051 (the holy staff is above scepter + shield, no x1.3)" },
+		},
+		["ItemTraits:byId.concussion.value"] = {
+			{ session = "S88", why = "C6 / F3: chance 6 -> 7 %: Concussion in a group 0.015 -> 0.045 with delayShare 1; PvP stun 0.013 of the fight (<= 0.02)" },
+		},
+		["ItemTraits:byId.concussion.onHit.delayShare"] = {
+			{ session = "S88", why = "C6 / F3: 0.5 -> 1 interval after the stun (monsters only): chance 12 % with 0.5 s did not reach 0.04 and 1 s broke the PvP stun limit" },
+		},
+		["Combat:riposteCap"] = {
+			{ session = "S88", why = "E1: 30 -> 34 %: Counterattack 12 + Retaliation 12 + Swordplay 10 on Samotnik at 100 (STATY 10)" },
+		},
+		["Families:byId.beast.defences.agile.dodge"] = {
+			{ session = "S88", why = "B5: harpy dodge 15 -> 10 %: every class +14 % -> +9 % fight time against GENERIC (at most +10 %)" },
+		},
+		["Monsters:byId.peakHarpy.dodge"] = {
+			{ session = "S88", why = "B5: the family trait (Families beast agile 15 -> 10)" },
+		},
+		["Bonuses:byId.vs_*"] = {
+			{
+				session = "S88",
+				why = "D3 (answer 23): vs_<family> 2-4.4 -> 3.75-9 (Common 5-12 at ilvl 20+, Mythic top 14.4), vs_<class> 1.5-3.5 -> 3-6.75 (4-9, top 10.8)",
+			},
+		},
+		["Bonuses:byId.res_*"] = {
+			{
+				session = "S88",
+				why = "D3 (answer 23): res_<family> 2-4 -> 3.75-8.25 (Common 5-11 at ilvl 20+, Mythic top 13.2), res_<class> 1.5-3.5 -> 3-6.75 (4-9, top 10.8)",
+			},
+		},
+		["Bonuses:byId.pierce.min"] = { { session = "S88", why = "D1 / G7: pierce 3-6 -> 2.5-5 (family lines x2 raised G7 by 1-2 points)" } },
+		["Bonuses:byId.pierce.max"] = { { session = "S88", why = "D1 / G7: pierce 3-6 -> 2.5-5" } },
+		["Bonuses:byId.magicPierce.min"] = {
+			{ session = "S88", why = "D1 / G7: magicPierce 3-6 -> 2-4: Mage Heroic 0.257 -> 0.250 at 100" },
+		},
+		["Bonuses:byId.magicPierce.max"] = { { session = "S88", why = "D1 / G7: magicPierce 3-6 -> 2-4" } },
+		["Bonuses:byId.skillDmg.min"] = { { session = "S88", why = "D1 / G7: skillDmg 1-2.2 -> 0.8-1.8" } },
+		["Bonuses:byId.skillDmg.max"] = { { session = "S88", why = "D1 / G7: skillDmg 1-2.2 -> 0.8-1.8" } },
+		["Bonuses:byId.basicDmg.min"] = {
+			{ session = "S88", why = "D1 / G7: basicDmg 1.5-3.3 -> 1-2.2 (D2 parity 0.78-0.98 -> 0.51-0.65 of the attack line)" },
+		},
+		["Bonuses:byId.basicDmg.max"] = { { session = "S88", why = "D1 / G7: basicDmg 1.5-3.3 -> 1-2.2" } },
+		["Bonuses:byId.woundChance.min"] = { { session = "S88", why = "D1 / G7: woundChance 2-4 -> 1.2-2.4 (as poisonChance)" } },
+		["Bonuses:byId.woundChance.max"] = { { session = "S88", why = "D1 / G7: woundChance 2-4 -> 1.2-2.4" } },
+		["Bonuses:byId.poisonChance.min"] = {
+			{ session = "S88", why = "D1 / G7: poisonChance 2-4 -> 1.2-2.4 (D2 parity 1.30 -> 0.80 of the Hunter's attack line)" },
+		},
+		["Bonuses:byId.poisonChance.max"] = { { session = "S88", why = "D1 / G7: poisonChance 2-4 -> 1.2-2.4" } },
+		["Items/Uniques:[unique_grimrok_cleaver].fixedBonuses*"] = {
+			{ session = "S88", why = "D4: critDmg 15 -> vs_humanoid 12 (Grimrok's family, STATY 9): power 1.033 -> 1.055 of a rolled Mythic" },
+		},
+		["Items/Uniques:[unique_grimrok_fang].fixedBonuses*"] = {
+			{ session = "S88", why = "D4: goldBonus 10 -> basicDmg 4: power 1.012 -> 1.022" },
+		},
+		["Items/Uniques:[unique_grimrok_totem].fixedBonuses*"] = {
+			{ session = "S88", why = "D4: resPoison 15 -> res_humanoid 8: power 1.052 -> 1.070 (mean of the four classes)" },
+		},
+		["Items/Uniques:[unique_morvane_shroud].fixedBonuses*"] = {
+			{ session = "S88", why = "D4: resIce 18 -> res_undead 10 (Morvane's family): power 0.990 -> 1.011" },
+		},
+		["Items/Uniques:[unique_morvane_scepter].fixedBonuses*"] = {
+			{ session = "S88", why = "D4: hpRegen 6 -> healPower 8 (the scepter's affinity): power 1.070" },
+		},
+		["Items/Uniques:[unique_morvane_bow].fixedBonuses*"] = {
+			{ session = "S88", why = "D4: critChance 6 (over the Mythic top) -> poisonChance 5, physAtk 8 -> 6, dex 14 -> 10: power 1.094 -> 1.073" },
+		},
+		["Items/Uniques:[unique_azgor_heart].fixedBonuses*"] = {
+			{ session = "S88", why = "D4: critDmg 25 (over 2.5 x the Mythic top) -> vs_elemental 12: power 1.019 -> 1.035" },
+		},
+		["Items/Uniques:[unique_azgor_staff].fixedBonuses*"] = {
+			{ session = "S88", why = "D4: critChance 8 (over the Mythic top) -> dotPower 15 (affinity): power 1.050 -> 1.030" },
+		},
+		["Items/Uniques:[unique_azgor_helm].fixedBonuses*"] = {
+			{ session = "S88", why = "D4: resFire 25 -> res_elemental 10 (Azgor's family): power 1.013 -> 1.034" },
+		},
+		["Items/Uniques:[unique_vaelgrath_fang].fixedBonuses*"] = {
+			{ session = "S88", why = "D4: leg_bossDamage 12 -> 10 (the legendary range): power 1.053" },
+		},
+		["Items/Uniques:[unique_vaelgrath_scale].fixedBonuses*"] = {
+			{ session = "S88", why = "D4: hpPct 10 -> 8 (2.5 x the Mythic top), resIce 30 -> res_dragon 10: power 1.027 -> 1.039" },
+		},
+		["Items/Uniques:[unique_vaelgrath_eye].fixedBonuses*"] = {
+			{ session = "S88", why = "D4: magAtk 10 -> 8.5, int 35 -> 32 (2.5 x the Mythic top), manaRegen 12 -> magicPierce 10 (affinity): power 1.045 -> 1.046" },
+		},
+		["ItemWeights:traits.runThrough.pct"] = { { session = "S88", why = "C10: 3 -> 5, measured 4.4-5.4 % (group)" } },
+		["ItemWeights:traits.harrying.pct"] = { { session = "S88", why = "C10: 7 -> 5, measured 5.0-5.1 % (solo)" } },
+		["ItemWeights:traits.learnedFormulae.pct"] = {
+			{ session = "S88", why = "C10: 4 -> 2, measured 0.4-5.4 % (mana binds only at 45; report row)" },
+		},
+		["ItemWeights:traits.elementalMight.pct"] = {
+			{ session = "S88", why = "C10: 5 -> 6.5, measured fire 5.3-5.7, ice 4.6-4.8, lightning 8.7-11.8 % (mean 6.6)" },
+		},
+		["ItemWeights:traits.anointment.pct"] = { { session = "S88", why = "C10: 8 -> 5, measured 5.0-5.2 % (dungeon)" } },
+		["ItemWeights:traits.concussion.pct"] = { { session = "S88", why = "C10: 3 -> 4.5, measured 4.5 % (group)" } },
 	} :: { [string]: { Reason } },
 }

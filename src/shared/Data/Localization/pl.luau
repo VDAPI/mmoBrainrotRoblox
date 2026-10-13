@@ -3844,7 +3844,7 @@ return {
 	-- S68: what each trait does (tooltip details, wiki)
 	["trait.swordplay.info"] = "Po każdym zwykłym ataku w Ciebie (także zablokowanym, chybionym i unikniętym; nigdy po czerwonej strefie) {chance}% szansy na kontrę: natychmiastowy atak podstawowy w napastnika, bez efektów przy trafieniu. Wszystkie Twoje kontry zadają +{v}% obrażeń. Szansa jest stała, rzadkość i ulepszenie podnoszą premię.",
 	["trait.twinCut.info"] = "Co {every}. atak podstawowy tnie drugi raz za {v}% ciosu, bez efektów przy trafieniu. Licznik zeruje się po {reset} s bez ataku.",
-	["trait.reaping.info"] = "Zabicie potwora, za które dostajesz nagrodę (także w drużynie i pomocnika bossa), leczy {v}% maks. HP. Sumuje się z liniami leczenia po zabiciu.",
+	["trait.reaping.info"] = "Zabicie potwora, za które dostajesz nagrodę (także w drużynie i pomocnika bossa), leczy {v}% maks. HP. Sumuje się z liniami leczenia po zabiciu, razem najwyżej tyle co limit wampiryzmu.",
 	["trait.bonebreaker.info"] = "Każde trafienie osłabia cel: zadaje {v}% mniej obrażeń przez {s} s (odświeża się, nie kumuluje; działa też na czerwone strefy).",
 	["trait.beheading.info"] = "+{v}% obrażeń celom poniżej {threshold}% życia.",
 	["trait.rendingGash.info"] = "{chance}% szansy na głęboką ranę: krwawienie zadaje razem {v}% obrażeń ciosu (liczonych po pancerzu) w {s} s, do {stacks} stosów od Ciebie.",

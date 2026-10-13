@@ -116,29 +116,29 @@ i pasek. Pole `tier = "regular" | "legendary" | "mythic"` w `BonusDef` zastępuj
 
 | Typ (`type`) | Klasa, ścieżka | Cecha | Działanie | Częściej w puli (×3) |
 |---|---|---|---|---|
-| Miecz `sword1h` | W: Strażnik (z tarczą), Chorąży | Fechtunek | po każdym zwykłym ataku w Ciebie (także zablokowanym, chybionym i unikniętym; nigdy po czerwonej strefie) 10% szansy na kontrę: natychmiastowy atak podstawowy w napastnika (bez efektów przy trafieniu); Twoje kontry, także z Kontrataku i Odwetu, zadają **+25%**; szansa stała, rzadkość i ulepszenie podnoszą premię; szansa z Kontratakiem, Odwetem i Odpłatą najwyżej 30% | critChance, accuracy, basicDmg |
-| Szabla `saber1h` | W: Chorąży, Strażnik (z tarczą) | Podwójne cięcie | co 5. atak podstawowy tnie drugi raz za **40%** ciosu (licznik zeruje się po 5 s bez ataku; drugie cięcie bez efektów przy trafieniu) | atkSpeed, basicDmg, lifesteal |
-| Topór `axe1h` | W: Strażnik (z tarczą) | Żniwo | zabicie potwora, za które dostajesz nagrodę (także w drużynie i pomocnika bossa, `monster.summoned`), leczy **1%** maks. HP; sumuje się z liniami „Zabicie potwora leczy” | woundChance, lifesteal, atkSpeed |
+| Miecz `sword1h` | W: Strażnik (z tarczą), Chorąży | Fechtunek | po każdym zwykłym ataku w Ciebie (także zablokowanym, chybionym i unikniętym; nigdy po czerwonej strefie) 10% szansy na kontrę: natychmiastowy atak podstawowy w napastnika (bez efektów przy trafieniu); Twoje kontry, także z Kontrataku i Odwetu, zadają **+33%** (S88: 25 → 33); szansa stała, rzadkość i ulepszenie podnoszą premię; szansa z Kontratakiem, Odwetem i Odpłatą najwyżej 34% (S88: 30 → 34) | critChance, accuracy, basicDmg |
+| Szabla `saber1h` | W: Chorąży, Strażnik (z tarczą) | Podwójne cięcie | co 5. atak podstawowy tnie drugi raz za **58%** ciosu (S88: 40 → 58) (licznik zeruje się po 5 s bez ataku; drugie cięcie bez efektów przy trafieniu) | atkSpeed, basicDmg, lifesteal |
+| Topór `axe1h` | W: Strażnik (z tarczą) | Żniwo | zabicie potwora, za które dostajesz nagrodę (także w drużynie i pomocnika bossa, `monster.summoned`), leczy **0,7%** maks. HP (S88: 1 → 0,7); sumuje się z liniami „Zabicie potwora leczy”, razem najwyżej limit kradzieży życia 15% (`Traits.killHeal`, S88) | woundChance, lifesteal, atkSpeed |
 | Buława `mace1h` | W: Strażnik (z tarczą); K: Inkwizytor, Kapłan Fortuny (z relikwią) | Łamanie kości | każde trafienie: cel zadaje **6%** mniej obrażeń przez 4 s (odświeża się, nie kumuluje; działa też na czerwone strefy) | skillDmg, critChance; W: lifesteal, K: healPower |
 | Miecz Dwuręczny `sword2h` | W: Berserker | Ścięcie | **+18%** obrażeń celom poniżej 30% życia | critChance, critDmg, skillDmg |
-| Topór Bojowy `axe2h` | W: Berserker | Rana rąbana | 15% szansy na głęboką ranę: krwawienie zadaje razem **30%** obrażeń ciosu w 4 s (od ciosu po pancerzu; tyknięcia nie tracą drugi raz na pancerzu), do 3 stosów od Ciebie; w PvP cel leczy się 20% słabiej | woundChance, dotPower, lifesteal |
+| Topór Bojowy `axe2h` | W: Berserker | Rana rąbana | 15% szansy na głęboką ranę: krwawienie zadaje razem **36%** obrażeń ciosu w 4 s (S88: 30 → 36) (od ciosu po pancerzu; tyknięcia nie tracą drugi raz na pancerzu), do 3 stosów od Ciebie; w PvP cel leczy się 20% słabiej | woundChance, dotPower, lifesteal |
 | Młot Wojenny `hammer2h` | W: Berserker | Niszczenie pancerza | każde trafienie zdejmuje **5%** pancerza celu, do 5 stosów (**25%**), jeden czas 6 s dla wszystkich stosów; rzadkość i ulepszenie podnoszą stos i limit (Mityczny +9: 9,4% na stos, najwyżej 40%); pomaga całej drużynie | skillDmg, pierce, critDmg |
-| Włócznia `spear2h` | W: Berserker | Przeszycie | atak podstawowy przeszywa cel: najbliższy wróg w pasie 4 st. szerokości do 4 st. za tylną krawędzią celu (na linii od Ciebie) dostaje **25%** obrażeń ciosu, bez efektów przy trafieniu (wymiary po pomiarze grup, 14) | basicDmg, atkSpeed, pierce |
-| Tarcza `shield` | W: Strażnik (wymagana), Chorąży; K: Uzdrowiciel, Inkwizytor (węzeł Tarcza Inkwizytora); nie Kapłan Fortuny | Zastawa | 5% szansy na całkowite zablokowanie zwykłego ataku (nie czerwonej strefy, nie obrażeń w czasie); każdy blok (także z Bloku i Mistrza Tarczy) leczy **0,5%** maks. HP; szansa stała, rzadkość i ulepszenie podnoszą leczenie; z Blokiem i Mistrzem Tarczy najwyżej 25% | critResist, meleeGuard, hpPct (`blockChance` ×1) |
-| Łuk Krótki `shortbow` | Ł: Zwiadowca | Nękanie | **15%** szansy: cel 20% wolniejszy w ruchu (`slow`) i w ataku (nowe `attackSlow`) przez 2 s | atkSpeed, basicDmg, accuracy |
-| Łuk `bow` | Ł: Traper, Zwiadowca | Jadowite groty | 15% szansy na zatrucie: razem **30%** obrażeń strzału w 5 s, do 3 stosów od Ciebie, zatruty cel atakuje 10% wolniej (`attackSlow`); słabnie od odporności na truciznę | poisonChance, dotPower, atkSpeed |
-| Łuk Długi `longbow` | Ł: Strzelec | Siła krytyka | **+25** pkt proc. obrażeń krytycznych (150% → 175%) | critChance, critDmg, skillDmg |
-| Kusza `crossbow` | Ł: Traper | Łatwy cel | **+10%** obrażeń przeciw celom spowolnionym, unieruchomionym, zamrożonym albo ogłuszonym (przez kogokolwiek) | skillDmg, dotPower, poisonChance |
+| Włócznia `spear2h` | W: Berserker | Przeszycie | atak podstawowy przeszywa cel: najbliższy wróg w pasie 4 st. szerokości do 4 st. za tylną krawędzią celu (na linii od Ciebie) dostaje **55%** obrażeń ciosu (S88: 25 → 55), bez efektów przy trafieniu (wymiary po pomiarze grup, 14) | basicDmg, atkSpeed, pierce |
+| Tarcza `shield` | W: Strażnik (wymagana), Chorąży; K: Uzdrowiciel, Inkwizytor (węzeł Tarcza Inkwizytora); nie Kapłan Fortuny | Zastawa | 5% szansy na całkowite zablokowanie zwykłego ataku (nie czerwonej strefy, nie obrażeń w czasie); każdy blok (także z Bloku i Mistrza Tarczy) leczy **0,1%** maks. HP (S88: 0,5 → 0,1); szansa stała, rzadkość i ulepszenie podnoszą leczenie; z Blokiem i Mistrzem Tarczy najwyżej 25% | critResist, meleeGuard, hpPct (`blockChance` ×1) |
+| Łuk Krótki `shortbow` | Ł: Zwiadowca | Nękanie | **6%** szansy (S88: 15 → 6): cel 20% wolniejszy w ruchu (`slow`) i w ataku (nowe `attackSlow`) przez 2 s | atkSpeed, basicDmg, accuracy |
+| Łuk `bow` | Ł: Traper, Zwiadowca | Jadowite groty | 15% szansy na zatrucie: razem **38%** obrażeń strzału w 5 s (S88: 30 → 38), do 3 stosów od Ciebie, zatruty cel atakuje 10% wolniej (`attackSlow`); słabnie od odporności na truciznę | poisonChance, dotPower, atkSpeed |
+| Łuk Długi `longbow` | Ł: Strzelec | Siła krytyka | **+20** pkt proc. obrażeń krytycznych (150% → 170%; S88: 25 → 20) | critChance, critDmg, skillDmg |
+| Kusza `crossbow` | Ł: Traper | Łatwy cel | **+9%** (S88: 10 → 9) obrażeń przeciw celom spowolnionym, unieruchomionym, zamrożonym albo ogłuszonym (przez kogokolwiek) | skillDmg, dotPower, poisonChance |
 | Ciężka Kusza `heavycrossbow` | Ł: Strzelec | Bełt przeciwpancerny | strzały ignorują **20%** pancerza celu (liczone po niszczeniu pancerza; z liniami przebicia najwyżej 50%) | pierce, critChance, skillDmg |
-| Kołczan `quiver` | Ł: Strzelec, Traper, Zwiadowca (żadna ścieżka go nie wymaga) | Naciąg | po użyciu umiejętności ofensywnej następny atak podstawowy w ciągu 4 s zadaje **+30%** × szybkość broni głównej (Łuk Krótki +39%, Łuk +30%, Ciężka Kusza +19%), więc każda broń zyskuje na jednym rzucie tyle samo | atkSpeed, basicDmg, poisonChance |
-| Różdżka `wand` | M: Niszczyciel (z kulą), Arkanista (z księgą) | Iskra żywiołu | atak podstawowy z **35%** szansą wywołuje żywioł broni: ogień podpala (razem 30% ciosu w 2 s, 1 stos, odświeża czas i dolicza niezadaną resztę), lód spowalnia o 20% na 2 s i daje Przemarznięcie, błyskawica przeskakuje na drugiego wroga w 10 st. za 40% (bez niego ten sam cel za 20%) | basicDmg, atkSpeed, critChance |
-| Kostur `staff` | M: Niszczyciel | Moc żywiołu | podpalenia, przeskoki i pola żywiołu broni z Twoich umiejętności są **+30%** silniejsze, a spowolnienia i zamrożenia trwają o tyle dłużej (nie tylko umiejętności adaptacyjne); lód: Przemarznięcie 10% zamiast 6%; błyskawica: przeskok bez drugiego wroga trafia ten sam cel za samą premię (30% z 40%, czyli 12% ciosu) | dotPower, skillDmg, magAtk |
-| Kostur Runiczny `runestaff` | M: Arkanista | Pieczęć runiczna | po 1,5 s bez ruchu pod Magiem świeci pieczęć: wszystkie Twoje obrażenia **+8%**, dopóki się nie ruszysz (gasi ją krok dalej niż 1 st., Błysk, odrzut) | skillDmg, critDmg, magicPierce |
+| Kołczan `quiver` | Ł: Strzelec, Traper, Zwiadowca (żadna ścieżka go nie wymaga) | Naciąg | po użyciu umiejętności ofensywnej następny atak podstawowy w ciągu 4 s zadaje **+45%** × szybkość broni głównej (S88: 30 → 45; Łuk Krótki +58,5%, Łuk +45%, Ciężka Kusza +28%), więc każda broń zyskuje na jednym rzucie tyle samo | atkSpeed, basicDmg, poisonChance |
+| Różdżka `wand` | M: Niszczyciel (z kulą), Arkanista (z księgą) | Iskra żywiołu | atak podstawowy z **35%** szansą wywołuje żywioł broni: ogień podpala (razem 80% ciosu w 2 s, 1 stos, odświeża czas i dolicza niezadaną resztę), lód spowalnia o 20% na 2 s i daje Przemarznięcie 11%, błyskawica przeskakuje na drugiego wroga w 10 st. za 110% (bez niego ten sam cel za 55%); S88: 30 / 6 / 40 / 20 → 80 / 11 / 110 / 55, szansa 35% bez zmian | basicDmg, atkSpeed, critChance |
+| Kostur `staff` | M: Niszczyciel | Moc żywiołu | podpalenia, przeskoki i pola żywiołu broni z Twoich umiejętności są **+39%** silniejsze (S88: 30 → 39, ×1,3 z E6), a spowolnienia i zamrożenia trwają o tyle dłużej (nie tylko umiejętności adaptacyjne); lód: Przemarznięcie 10% zamiast 6%; błyskawica: przeskok bez drugiego wroga trafia ten sam cel za samą premię (39% z 40%, czyli 15,6% ciosu) | dotPower, skillDmg, magAtk |
+| Kostur Runiczny `runestaff` | M: Arkanista | Pieczęć runiczna | po 1,5 s bez ruchu pod Magiem świeci pieczęć: wszystkie Twoje obrażenia **+5,5%** (S88: 8 → 5,5), dopóki się nie ruszysz (gasi ją krok dalej niż 1 st., Błysk, odrzut) | skillDmg, critDmg, magicPierce |
 | Księga `tome` | M: Arkanista (z różdżką) | Wyuczone formuły | umiejętności kosztują **8%** mniej many (z liniami `costReduce` najwyżej 20%) | costReduce, manaRegen, mana |
 | Kula `orb` | M: Niszczyciel (z różdżką) | Soczewka mocy | **+6%** obrażeń umiejętności | skillDmg, critDmg, magicPierce |
-| Berło `scepter` | K: Uzdrowiciel, Kapłan Fortuny (z relikwią) | Namaszczenie | Twoje leczenie i tarcze **+8%** | healPower, magAtk, critChance |
-| Kostur Święty `holystaff` | K: Uzdrowiciel (dwuręczny, bez drugiej ręki) | Zbawczy cios | **4%** obrażeń Twoich ciosów i umiejętności leczy najbardziej rannego sojusznika w 30 st. (albo Ciebie); tyknięcia się nie liczą. Gdy leczy noszącego (brak rannego sojusznika w 30 st. albo noszący jest najbardziej ranny), liczy się do limitu wampiryzmu 15%; poza limitem tylko leczenie sojuszników | healPower, magAtk, skillDmg |
-| Cep `flail1h` | K: Inkwizytor, Kapłan Fortuny (z relikwią) | Wstrząs | **6%** szansy na ogłuszenie celu na 0,5 s, najwyżej raz na 8 s na cel od Ciebie; po ogłuszeniu potwór uderza najwcześniej po połowie swojego odstępu ataku; bossy i Elity II odporne | magicPierce, skillDmg, critChance |
+| Berło `scepter` | K: Uzdrowiciel, Kapłan Fortuny (z relikwią) | Namaszczenie | Twoje leczenie i tarcze **+5%** (S88: 8 → 5) | healPower, magAtk, critChance |
+| Kostur Święty `holystaff` | K: Uzdrowiciel (dwuręczny, bez drugiej ręki) | Zbawczy cios | **2,5%** (S88: 4 → 2,5) obrażeń Twoich ciosów i umiejętności leczy najbardziej rannego sojusznika w 30 st. (albo Ciebie); tyknięcia się nie liczą. Gdy leczy noszącego (brak rannego sojusznika w 30 st. albo noszący jest najbardziej ranny), liczy się do limitu wampiryzmu 15%; poza limitem tylko leczenie sojuszników | healPower, magAtk, skillDmg |
+| Cep `flail1h` | K: Inkwizytor, Kapłan Fortuny (z relikwią) | Wstrząs | **7%** szansy (S88: 6 → 7) na ogłuszenie celu na 0,5 s, najwyżej raz na 8 s na cel od Ciebie; po ogłuszeniu potwór uderza najwcześniej po całym swoim odstępie ataku (S88: połowa → cały); bossy i Elity II odporne | magicPierce, skillDmg, critChance |
 | Relikwia `relic` | K: Kapłan Fortuny (wymagana), Inkwizytor (węzeł Relikwia Gniewu), Uzdrowiciel | Pomyślność | **+8%** szansy na przedmiot z potworów (wspólny limit +100%, nie działa na bossy) | healPower, costReduce, manaRegen |
 
 - Każdy typ ma inny mechanizm (24 kategorie); poza trzema premiami warunkowymi (niżej) żadna cecha nie jest tą samą
@@ -155,7 +155,7 @@ i pasek. Pole `tier = "regular" | "legendary" | "mythic"` w `BonusDef` zastępuj
 - Buława jest wspólna dla Wojownika i Kapłana. Łamanie kości działa tak samo w obu klasach, bo nie zależy od rodzaju
   obrażeń; pula losuje według klasy (W: `lifesteal`, K: `healPower`).
 - Węzły ścieżek wzmacniają cechy swoich broni (odpowiedź 7) przez wspólne haki:
-  - Fechtunek: Kontratak i Odwet Strażnika (hak `riposte`; szansa do limitu 30% razem z Odpłatą Inkwizytora, a
+  - Fechtunek: Kontratak i Odwet Strażnika (hak `riposte`; szansa do limitu 34% razem z Odpłatą Inkwizytora, a
     premia Fechtunku do obrażeń dotyczy też ich kontr, więc miecz zyskuje także przy limicie);
   - Ścięcie: Kat Berserkera (hak `executioner`), limit `Data/Combat.executionerCap`;
   - Rana rąbana: Głębokie Rany i Otwarte Rany Berserkera (`bleedDamage`, do +60%);
@@ -167,9 +167,9 @@ i pasek. Pole `tier = "regular" | "legendary" | "mythic"` w `BonusDef` zastępuj
   - Wstrząs: bez węzła; Sąd Ostateczny (`kaplan.md`) wysadza cel ogłuszony także przez sam Sąd, więc cep nic mu nie
     dodaje, a wartość Wstrząsu to opóźniony atak ogłuszonego potwora.
 - Przemarznięcie (lód): cel spowolniony albo zamrożony przez lód z Twojej broni albo umiejętności dostaje od Ciebie
-  +6% obrażeń (z Kostura +10%), żeby broń lodowa miała wartość obrażeń jak ogień i błyskawice. Działa tylko przy broni
+  +6% obrażeń (z Kostura +10%, z Iskry Różdżki +11%, S88), żeby broń lodowa miała wartość obrażeń jak ogień i błyskawice. Działa tylko przy broni
   lodowej (czyli u Maga: Różdżka, Kostur, Kostur Runiczny; baza `Data/Skills.FROSTBITE`, stały hak `frostbite`
-  Różdżki 6 i Kostura 10 przez `max`); Łowca (Pułapka Lodowa) broni z żywiołem nie ma, więc go nie daje (S65). `adaptiveEffect` wychodzi z
+  Różdżki 11 (S88) i Kostura 10 przez `max`); Łowca (Pułapka Lodowa) broni z żywiołem nie ma, więc go nie daje (S65). `adaptiveEffect` wychodzi z
   `Skills/Context.luau` do wspólnej funkcji (np. `server/Skills/Elements.luau`), którą wołają umiejętności i
   `CombatService` przy ataku podstawowym (Iskra żywiołu). Iskra podaje jej własny czas podpalenia (2 s), więc
   umiejętności zostają przy 4 s. Drabina obrażeń w czasie: podpalenie 2 s (najmocniejsze tyknięcie), rana 4 s
@@ -205,13 +205,13 @@ każda liczba linii podana jest dla 100. poziomu albo z dopiskiem, że rośnie z
 
 | Id | Tekst w grze | Działanie | Zakres × skala | Gdzie | Klasy | Limit |
 |---|---|---|---|---|---|---|
-| `woundChance` | +{v}% szansy na głęboką ranę | rana razem 20% ciosu w 4 s (albo siła Rany rąbanej, gdy nosisz Topór Bojowy) | 2–4 | broń, rękawice, kołczan | W, Ł | szansa 40% |
-| `poisonChance` | +{v}% szansy na zatrucie | trucizna razem 20% ciosu w 5 s (albo siła Jadowitych grotów, gdy nosisz Łuk) | 2–4 | broń, rękawice, kołczan | Ł | szansa 40% |
-| `pierce` | Przebicie pancerza {v}% | ignoruje część pancerza (zastępuje `armorPen`; jak Bełt przeciwpancerny) | 3–6 | broń, kołczan, rękawice, pierścień | W, Ł | 50% |
-| `magicPierce` | Przebicie magii {v}% | ignoruje część odporności magicznej | 3–6 | broń, księga, kula, rękawice | M, K | 50% |
+| `woundChance` | +{v}% szansy na głęboką ranę | rana razem 20% ciosu w 4 s (albo siła Rany rąbanej, gdy nosisz Topór Bojowy) | 1,2–2,4 (S88: 2–4) | broń, rękawice, kołczan | W, Ł | szansa 40% |
+| `poisonChance` | +{v}% szansy na zatrucie | trucizna razem 20% ciosu w 5 s (albo siła Jadowitych grotów, gdy nosisz Łuk) | 1,2–2,4 (S88: 2–4) | broń, rękawice, kołczan | Ł | szansa 40% |
+| `pierce` | Przebicie pancerza {v}% | ignoruje część pancerza (zastępuje `armorPen`; jak Bełt przeciwpancerny) | 2,5–5 (S88: 3–6) | broń, kołczan, rękawice, pierścień | W, Ł | 50% |
+| `magicPierce` | Przebicie magii {v}% | ignoruje część odporności magicznej | 2–4 (S88: 3–6) | broń, księga, kula, rękawice | M, K | 50% |
 | `dotPower` | +{v}% obrażeń ran, trucizn i podpaleń | mnoży tyknięcia | 4–8 | broń, naszyjnik | wszystkie | brak |
-| `skillDmg` | +{v}% obrażeń umiejętności | mnożnik przy `params.isSkill` (jak Soczewka mocy) | 1–2,2 | broń, druga ręka, naszyjnik | wszystkie | brak |
-| `basicDmg` | +{v}% obrażeń ataku podstawowego | mnożnik ataku podstawowego | 1,5–3,3 | broń, kołczan, rękawice, pierścień | wszystkie | brak |
+| `skillDmg` | +{v}% obrażeń umiejętności | mnożnik przy `params.isSkill` (jak Soczewka mocy) | 0,8–1,8 (S88: 1–2,2) | broń, druga ręka, naszyjnik | wszystkie | brak |
+| `basicDmg` | +{v}% obrażeń ataku podstawowego | mnożnik ataku podstawowego | 1–2,2 (S88: 1,5–3,3) | broń, kołczan, rękawice, pierścień | wszystkie | brak |
 | `healPower` | +{v}% mocy leczenia | leczenie i tarcze rzucane (jak Namaszczenie) | 1,5–3,5 | broń, druga ręka, hełm | K | brak |
 | `critResist` | Odporność na krytyki {v}% | mniejsza premia krytyka w Ciebie (część ponad ×1) | 3–6 | tarcza, zbroja, hełm, talizman | wszystkie | 50% |
 | `meleeGuard` | −{v}% obrażeń wręcz | ciosy wręcz potworów i graczy | 1–2,5 | zbroja, tarcza, buty | wszystkie | 30% |
@@ -227,13 +227,15 @@ Linie z parametrem (osobne id w zapisie, jedno miejsce w puli):
 
 | Id | Tekst | Zakres × skala | Gdzie | Jak wybiera wariant | Limit |
 |---|---|---|---|---|---|
-| `vs_<rodzina>` (6) | Silny przeciw nieumarłym +{v}% | 2–4,4 (ok. 2 linie ataku) | broń, naszyjnik | rodzina potwora, który upuścił; boss: jego rodzina; skrzynie (też z łowienia), sklep, wytwarzanie i nagrody z zadań: losowa | brak |
-| `res_<rodzina>` (6) | Odporność na nieumarłych {v}% | 2–4 | zbroja, hełm, tarcza, talizman | jak wyżej | 30% |
-| `vs_<klasa>` (4) | Silny przeciw Magom +{v}% | 1,5–3,5 | pierścień, talizman | losowa klasa | 20% |
-| `res_<klasa>` (4) | Odporność na Wojowników {v}% | 1,5–3,5 | pierścień, talizman | losowa klasa | 20% |
+| `vs_<rodzina>` (6) | Silny przeciw nieumarłym +{v}% | 3,75–9 (S88; było 2–4,4) | broń, naszyjnik | rodzina potwora, który upuścił; boss: jego rodzina; skrzynie (też z łowienia), sklep, wytwarzanie i nagrody z zadań: losowa | brak |
+| `res_<rodzina>` (6) | Odporność na nieumarłych {v}% | 3,75–8,25 (S88; było 2–4) | zbroja, hełm, tarcza, talizman | jak wyżej | 30% |
+| `vs_<klasa>` (4) | Silny przeciw Magom +{v}% | 3–6,75 (S88; było 1,5–3,5) | pierścień, talizman | losowa klasa | 20% |
+| `res_<klasa>` (4) | Odporność na Wojowników {v}% | 3–6,75 (S88; było 1,5–3,5) | pierścień, talizman | losowa klasa | 20% |
 
-Wartości na 100. poziomie (×2,67, Mityczny `rangeMul` ×1,2 dla górnej granicy): `critResist` ok. 8–19% na linię
-(limit 50%), `vs_<klasa>` i `res_<klasa>` ok. 4–9% na linię, `vs_<rodzina>` ok. 5–12%, `res_<rodzina>` ok. 5–11%.
+Wartości od ilvl 20 do 100 (S87: skala `pct` ×1,33; Mityczny `rangeMul` ×1,2 dla górnej granicy): `critResist` ok.
+4–10% na linię (limit 50%). S88 (odpowiedź 23 „na 100. poziomie”, po limicie skali S87, a nie „ok. 2 linie ataku”):
+Zwykły `vs_<rodzina>` 5–12% (Mityk do 14,4), `res_<rodzina>` 5–11% (do 13,2), `vs_<klasa>` i `res_<klasa>` 4–9% (do
+10,8); na ilvl 1 ok. 3/4 tego; na wylosowanej broni dwuręcznej `vs_<rodzina>` ×2,7 (Zwykły 13,5–32,4%).
 `resourceOnHit` i `costReduce` są bez skali, bo ze skalą trzy linie dawałyby ok. 5% maks. many na trafienie albo 25%
 taniej, a to znosi cel global G (rzucanie wszystkiego na odnowieniu kosztuje Maga 2–3 razy regenerację). Cel G
 liczony jest w balansie z oszczędnością na limicie 20%.
@@ -268,7 +270,7 @@ bo w PvP ma połowę, we wspólnym `executionerCap`). Łowca z kołczanem losuje
   `Combat.pvpModifier`; tyknięcie = `trafienie × % / liczba tyknięć`, które efekt naprawdę zada (dziś 4 s → 3, 5 s →
   4, 2 s → 1, bo `tickEntity` usuwa efekt przed ostatnim tyknięciem, 1), więc „30% w 4 s” daje razem 30% ciosu, a nie
   22,5%. W PvP tyknięcie ×0,6 (8). Jedno ×0,6, nigdy dwa (bez tej zasady trafienie po `Damage.computeDamage` ma już
-  ×0,6 i tyknięcia w PvP miałyby 36%). Tak samo podpalenie z Iskry żywiołu (30% w 2 s, czyli jedno tyknięcie 30%).
+  ×0,6 i tyknięcia w PvP miałyby 36%). Tak samo podpalenie z Iskry żywiołu (80% w 2 s, czyli jedno tyknięcie; S88: 30 → 80).
   Linie „szansa na ranę” i „szansa na zatrucie” używają 20%, a gdy broń ma ranę (Topór Bojowy) albo truciznę (Łuk),
   siły tej cechy.
 - **Stosy.** Klucz efektu `(rodzaj, gracz, "item", kategoria)` (global E2), więc rana z Topora Bojowego nie nadpisuje
@@ -301,8 +303,8 @@ bo w PvP ma połowę, we wspólnym `executionerCap`). Łowca z kołczanem losuje
   Działa tylko w PvP, razem z ×0,7 z global E6 (×0,56). W PvE nic nie daje, bo żaden boss ani potwór nie leczy się w
   walce (1), więc balans nie liczy mu wartości PvE.
 - **Kontrola.** Wstrząs: przerwa 8 s na cel od tego samego gracza; po końcu ogłuszenia z Wstrząsu potwór ustawia
-  `nextAttack = max(nextAttack, koniec ogłuszenia + 0,5 × attackInterval)` (wzór `stepCast`, nowe pole potwora), więc
-  traci ok. 0,5 s ataku na każde ogłuszenie (dziś uderza zaraz po końcu, 1); bossy i Elity II odporne na ogłuszenie z
+  `nextAttack = max(nextAttack, koniec ogłuszenia + 1 × attackInterval)` (S88: 0,5 → 1, `delayShare`; wzór `stepCast`, nowe pole potwora), więc
+  traci ok. 1,5 s ataku na każde ogłuszenie (dziś uderza zaraz po końcu, 1); bossy i Elity II odporne na ogłuszenie z
   przedmiotów (pole `notBoss` z Młota Niebios, umiejętności bez zmian). Spowolnienie z przedmiotów najwyżej 20%
   (Nękanie, lód z Iskry; umiejętności adaptacyjne zostają przy 25%). Łatwy cel czyta
   `StatusEffectService.SlowFactor(cel) < 1` (spowolnienie, unieruchomienie, ogłuszenie, zamrożenie), więc liczy też
@@ -312,12 +314,12 @@ bo w PvP ma połowę, we wspólnym `executionerCap`). Łowca z kołczanem losuje
   strefa zmusza do ruchu), przerwy Wstrząsu na cel. Naciąg to jednorazowy efekt `nextBasic` na graczu (wzór
   `nextShot`); zużywa go tylko atak podstawowy, więc umiejętność go nie zjada i nie koliduje z `nextShot` Odskoku.
 - **Limity.** Suma szans jednego efektu do 40%. Blok 25% (Zastawa, Blok, Mistrz Tarczy, `Data/Combat.blockCap`), a
-  unik, chybienie i blok razem najwyżej `dodgeCap + 10` (E6). Kontra 30% (`Data/Combat.riposteCap`: Fechtunek,
+  unik, chybienie i blok razem najwyżej `dodgeCap + 10` (E6). Kontra 34% (S88: 30 → 34; `Data/Combat.riposteCap`: Fechtunek,
   Kontratak, Odwet, Odpłata; dziś hak `riposte` nie ma limitu). Premia poniżej 30% HP: Ścięcie, Kat, `leg_executioner`
   i `myth_executioner` razem najwyżej ok. 60% (`Data/Combat.executionerCap`, dziś bez limitu). Zbawczy cios: gdy leczy
   noszącego (brak rannego sojusznika w 30 st. albo noszący jest najbardziej ranny), liczy się do limitu wampiryzmu
-  15%; poza limitem tylko leczenie sojuszników. Żniwo sumuje się z `leg_killHeal`, `myth_killHeal` i Krwiopijcą (do
-  sprawdzenia w 14).
+  15%; poza limitem tylko leczenie sojuszników. Żniwo sumuje się z `leg_killHeal`, `myth_killHeal` i Krwiopijcą, razem
+  najwyżej limit kradzieży życia 15% (S88, `Traits.killHeal` w `CombatService.reward`).
 - **Odporność na truciznę** (`resPoison`) zaczyna osłabiać tyknięcia trucizny (Jadowite groty, linie i umiejętności;
   dziś tylko ciosy z żywiołem).
 
@@ -362,7 +364,7 @@ Nowe pole `family` w `Data/Monsters.luau` i `Data/Bosses.luau`, lista i nazwy w 
 | Zwierzęta `animal` | królik, wilk, dzik, ryś, ropucha, kruk, 2 niedźwiedzie, pająk, wąż, nietoperz, skorpion, hiena, sęp, lodowy wilk, lampart, mamut (17) | 1–89 | brak | ryś, nietoperz, lampart: unik 12% (S66) |
 | Ludzie i plemiona `humanoid` | bandyta, 2 gobliny, kobold, kultysta, troll, nekromanta, wiedźma, ork, krasnolud, kowal płomieni, olbrzym (12) | 9–88 | Grimrok | krasnolud, ork: pancerz ×1,6 |
 | Nieumarli `undead` | zjawa, szkielet, upiór, ghul, mumia, zamarznięty rycerz (6) | 23–95 | Morvane | szkielet, rycerz: pancerz ×1,8; zjawa, upiór: odporność magiczna ×1,8 |
-| Bestie `beast` | wilkołak, ent, bazyliszek, yeti, harpia (5) | 20–83 | brak | harpia: unik 15% |
+| Bestie `beast` | wilkołak, ent, bazyliszek, yeti, harpia (5) | 20–83 | brak | harpia: unik 10% (S88: 15 → 10, walka najwyżej +10% dłużej) |
 | Żywiołaki i demony `elemental` | salamandra, 2 golemy, chochlik, lodowy żywiołak, kryształowy strażnik (6) | 45–96 | Azgor | golemy, strażnik: pancerz ×2,0 |
 | Smoki `dragon` | wywerna, smoczy pomiot, młody smok, wyrm (4) | 58–100 | Vaelgrath | pancerz i odporność ×1,4 |
 
@@ -403,10 +405,10 @@ Nowe pole `family` w `Data/Monsters.luau` i `Data/Bosses.luau`, lista i nazwy w 
   leczenie i tarcze w walce PvP ×0,7 (E6):
   - jak linie (potem zwykłe ×0,6): Siła krytyka (działa linia odporności na krytyki), Bełt przeciwpancerny (pancerz
     graczy, limit 50%), Soczewka mocy, Wyuczone formuły, Namaszczenie;
-  - połowa: Ścięcie +9%, Łatwy cel +5%, Pieczęć runiczna +4%, Naciąg +15% × szybkość, Łamanie kości 3%, Fechtunek 5%
-    szansy (limit kontry 15%: połowa liczona od sumy po `riposteCap`) i premia kontr +12,5%, Zastawa 2,5% (blok razem
-    najwyżej 12,5%: połowa od sumy po `blockCap`; leczenie z bloku 0,25% maks. HP), Zbawczy cios 2%
-    obrażeń zadanych graczom, Przemarznięcie +3%;
+  - połowa (S88: liczby z cech po strojeniu): Ścięcie +9%, Łatwy cel +4,5%, Pieczęć runiczna +2,75%, Naciąg +22,5% ×
+    szybkość, Łamanie kości 3%, Fechtunek 5% szansy (limit kontry 17%: połowa liczona od sumy po `riposteCap`) i premia
+    kontr +16,5%, Zastawa 2,5% (blok razem najwyżej 12,5%: połowa od sumy po `blockCap`; leczenie z bloku 0,075% maks.
+    HP), Zbawczy cios 1,25% obrażeń zadanych graczom, Przemarznięcie +3% (Iskra +5,5%);
   - zwykły cios ×0,6 bez efektów: kontra Fechtunku, drugie cięcie Szabli, Przeszycie (gracz za celem tylko wtedy, gdy
     `PvpService.CanAttack` pozwala), przeskok błyskawicy z Iskry;
   - obrażenia w czasie ×0,6 raz: Rana rąbana (i osłabienie leczenia 20%, z E6 razem ×0,56), Jadowite groty (odporność
@@ -438,9 +440,12 @@ Nowe pole `family` w `Data/Monsters.luau` i `Data/Bosses.luau`, lista i nazwy w 
   Kapłana 11, tarcza 11, kołczan 10, magiczna druga ręka Maga 11 i Kapłana 12; S63 i S67 dopełniają do 11–14.
 - `affinity` w `Data/ItemTraits.luau` (tabela 3, ostatnia kolumna) dla broni i drugiej ręki; Buława ma część wag
   zależną od klasy (W: `lifesteal`, K: `healPower`). Zbroje i biżuteria bez wag.
-- 12 nazwanych Mitycznych z bossów (`Data/Items/Uniques.luau`) można przestroić na nowe linie, bo czytają wartości z
-  definicji (np. Rozłupywacz Grimroka: Żniwo z cechy topora + `vs_humanoid`; Kieł Vaelgratha: Ścięcie z cechy miecza
-  dwuręcznego).
+- 12 nazwanych Mitycznych z bossów (`Data/Items/Uniques.luau`) czytają wartości z definicji. S88: każdy boss ma linię
+  swojej rodziny (Rozłupywacz `vs_humanoid` 12, Totem `res_humanoid` 8, Całun `res_undead` 10, Serce `vs_elemental` 12,
+  Hełm Azgora `res_elemental` 10, Łuska `res_dragon` 10), broń i druga ręka linię z `affinity` typu (Berło `healPower`
+  8, Łuk `poisonChance` 5, Kostur `dotPower` 15, Oko `magicPierce` 10, Kieł `critDmg` 40, Łuska `hpPct` 8), Kieł Grimroka
+  `basicDmg` 4; linie zwykłe najwyżej 2,5 × górna granica Mityczna na poziomie przedmiotu (broń dwuręczna × 2,7),
+  legendarna w swoim zakresie; moc 1,01–1,07 oczekiwanego wylosowanego Mityka (`docs/BALANS.md` → „Nazwane Mityczne”).
 
 ## 10. Skalowanie, ulepszanie, wartość
 
@@ -450,12 +455,13 @@ Nowe pole `family` w `Data/Monsters.luau` i `Data/Bosses.luau`, lista i nazwy w 
   limit części z przedmiotów (25% → 40%), czas 6 s stały (2A). Pieczęć runiczna: stały czas 1,5 s, rośnie premia.
 - Limity liczone razem z węzłami ścieżki, nie dla samej cechy. Strażnik ma z Kontratakiem (12%) i Odwetem (12%) 24%
   kontry, a z Blokiem (10%) i Mistrzem Tarczy (9%) 19% bloku, więc już Zwykły miecz (10%) i Zwykła tarcza (5%)
-  dochodzą do `riposteCap` 30 i `blockCap` 25. Dlatego ich szanse są stałe, a rzadkość i ulepszenie podnoszą premię
-  kontr (+25% → +47%) i leczenie z bloku (0,5% → 0,94% maks. HP); linia `blockChance` ma na tarczy wagę ×1.
+  dochodzą do `riposteCap` (S88: 34) i `blockCap` 25. Dlatego ich szanse są stałe, a rzadkość i ulepszenie podnoszą
+  premię kontr (+33% → +62%) i leczenie z bloku (0,1% → 0,19% maks. HP); linia `blockChance` ma na tarczy wagę ×1.
   Na Mitycznym +9 (×1,88): Łamanie kości 11% (`enemyDamageDown` 15% z umiejętnością), Bełt przeciwpancerny 38% (50%
   z liniami `pierce`), Wyuczone formuły 15% (20% z liniami `costReduce`), Ścięcie 34% (z Katem 15% razem 49%, z
-  legendą do `executionerCap` ok. 60), Niszczenie pancerza 40% (z Miażdżącym Ciosem razem 50%), Żniwo 1,9% (sumuje
-  się bez limitu z Krwiopijcą 2–6% i liniami `killHeal`, 14).
+  legendą do `executionerCap` ok. 60), Niszczenie pancerza 40% (z Miażdżącym Ciosem razem 50%), Żniwo 1,3% (sumuje
+  się z Krwiopijcą 2–6% i liniami `killHeal`, razem najwyżej 15%, S88), Podwójne cięcie 109%, Przeszycie 103%, Naciąg
+  85%, Moc żywiołu 73%, Pieczęć runiczna 10%, Namaszczenie 9,4%, Zbawczy cios 4,7%, Wstrząs 13% szansy (S88).
 - Linie: wzór z `ItemRoll` bez zmian, ulepszanie ich nie zmienia (dziś też nie). S87: linie zwykłe wylosowanej broni
   dwuręcznej liczą się ×2,7 przy odczycie (`Rarities.twoHandedBonusMul`; legendarne, mityczne i nazwane bez), a baza
   i obrażenia broni dwuręcznej rosną o 6,6% na poziom ulepszenia (`upgradeStatPerLevelTwoHanded`); cecha dalej 6%.
@@ -537,7 +543,7 @@ broni głównej, np. „z Łukiem Krótkim +39%”):
 | `Data/Items/Bases.luau`, `Generate.luau` | pole `trait` w definicji typu; `crossbow` `dmgMul` 1,45 → ok. 1,53 (`lowca.md` ryzyko 1: atak podstawowy Kuszy na sekundę 1,09 zamiast 1,15 Łuku, czyli ok. 5% mniej obrażeń Trapera) |
 | `Data/Bonuses.luau` | nowe linie, `tier`, `wiki`, linie z parametrem, `CLASS_STATS`, pule |
 | `Data/Families.luau` (nowy), `Data/Monsters.luau`, `Data/Bosses.luau` | `family`, `defence` (cecha rodziny; wartości cech `defMul` / `mresMul` / `dodge` tylko w `Data/Families`), `mresMul`, `dodge`, `defMul` |
-| `Data/Combat.luau`, `Data/BuffCategories.luau`, `Data/ItemTraits.luau` | `monsterArmorPerLevel` 10, `monsterMresPerLevel` 8, `monsterHpComp` (S66); stałe cech w `ItemTraits.params` (S65, nie w `Data/Combat`); limity (przebicie 50, niszczenie 50 z częścią z przedmiotów 25 × siła, najwyżej 40, `blockCap = 25`, `riposteCap = 30`, `executionerCap` 60, odporności (limit ochron 30 leży w `Data/Stats` jak `dodge`), `vs_<klasa>`, `cdrCap = 20`), przerwa Wstrząsu 8 s i opóźnienie ataku po nim (0,5 × `attackInterval`), kategorie `enemyAttackSlow` (20%) i `enemyDamageDown` (15%), stałe cech (Podwójne cięcie co 5. i 5 s, Przeszycie: pas 4 st. szerokości do 4 st. za celem, Naciąg 4 s, Pieczęć 1,5 s i 1 st., Zbawczy cios 30 st.), mnożniki PvP |
+| `Data/Combat.luau`, `Data/BuffCategories.luau`, `Data/ItemTraits.luau` | `monsterArmorPerLevel` 10, `monsterMresPerLevel` 8, `monsterHpComp` (S66); stałe cech w `ItemTraits.params` (S65, nie w `Data/Combat`); limity (przebicie 50, niszczenie 50 z częścią z przedmiotów 25 × siła, najwyżej 40, `blockCap = 25`, `riposteCap = 34` (S88: 30 → 34), `executionerCap` 60, odporności (limit ochron 30 leży w `Data/Stats` jak `dodge`), `vs_<klasa>`, `cdrCap = 20`), przerwa Wstrząsu 8 s i opóźnienie ataku po nim (1 × `attackInterval`, `delayShare`; S88: 0,5 → 1), kategorie `enemyAttackSlow` (20%) i `enemyDamageDown` (15%), stałe cech (Podwójne cięcie co 5. i 5 s, Przeszycie: pas 4 st. szerokości do 4 st. za celem, Naciąg 4 s, Pieczęć 1,5 s i 1 st., Zbawczy cios 30 st.), mnożniki PvP |
 | `Data/Skills/*.luau`, `Data/MonsterAbilities.luau` | pole `delivery = "melee" \| "ranged"` umiejętności graczy; rodzaj ciosu zdolności potworów (domyślnie żaden) |
 | `Data/Stats.luau`, `Logic/StatCalc.luau` | nowe statystyki z `finish()` i limitami |
 | `Logic/ItemRoll.luau` | ważone losowanie, `bonusPool` po `forClass ∩ def.classes`, warianty z kontekstu (rodzina potwora), `ItemRoll.trait(item)` z `baseMul` rzadkości także dla nazwanych; cecha-statystyka do `result.flat`, cecha z hakiem do `itemStats(item).hooks` (sumuje `EquipmentService.GetHooks`, czyta `CombatService.Hook`); przeliczenie `armorPen` → `pierce` w `itemStats` |
@@ -549,7 +555,7 @@ broni głównej, np. „z Łukiem Krótkim +39%”):
 | `server/Services/CombatService.luau`: obrona | `monsterHitsPlayer` (:617): hak `block` z `blockCap` (tylko `canDodge ~= false`, liczba „Zablokowano”, leczenie Zastawy), rzut na kontrę z `riposteCap` i `noProc` (:648-650; tylko przy `canDodge ~= false`, także po bloku i uniku, więc poza dzisiejszym warunkiem `taken > 0`; premia Fechtunku do obrażeń kontry; S64: haki `blockHeal`, `counterDamage`, `controlledDamage`, `traitExecute`,
 stałe `block` / `riposte` z `fixedHooks`, kontra tylko w zasięgu ataku podstawowego obrońcy), `amount × (1 − weaken)` napastnika, ochrony, `critResist`; gałąź PvP `DealDamage`: blok, kontra, `armorBreak` (3 stosy), `weaken` atakującego, połowy PvP; `reward` (:332-334): Żniwo przez hak `killHeal` (także za pomocników bossa, `monster.summoned`) |
 | `server/Services/StatusEffectService.luau` | tyknięcia z przedmiotów: `tickAmount = trafienie × % / liczba tyknięć, które efekt zada` (`tickEntity` :373 usuwa efekt przed ostatnim tyknięciem), odświeżenie przez `ApplyOptions.accumulate` (`Logic/EffectStack.accumulate`, `mag.md`: niezadana reszta do nowej sumy, `nextTick` bez przesunięcia); `attackSlow` w `CROWD_CONTROL` (:107); `changed` odświeża szybkość ruchu gracza (`StatService`); efekty z kluczem `"item"` (dziś `sourceKey` tylko gracz, :141), jeden czas dla stosów, stosy mnożą też `value` (dziś tylko `tickAmount`, :154-161), `publish()` tylko przy zmianie liczby stosów (najwyżej co ok. 1 s), nowe rodzaje `attackSlow`, `weaken` (w `DEBUFFS` :50), `nextBasic` (wzór `nextShot`, `Consume` :213) i `runeSeal` (ikona Pieczęci), osłabienie leczenia (PvP), `resPoison`, PvP ×0,6 na tyknięciach z przedmiotów, haki `bleedDamage`, `poisonDamage`, `poisonSlow`, `poisonSpread` |
-| `server/Entities/Monster.luau`, `server/Services/StatService.luau` | `attackSlow`: potwór przy `nextAttack` (:534, :560, `attackInterval / (1 − v)`), gracz jako ujemny `atkSpeed`; `slow` zostaje tylko ruchem; po końcu ogłuszenia z Wstrząsu `nextAttack = max(nextAttack, koniec + 0,5 × attackInterval)` (wzór `stepCast`, nowe pole potwora); `StatService.applyWalkSpeed` mnoży szybkość gracza przez `SlowFactor` (dziś spowolnienie gracza nic nie robi) |
+| `server/Entities/Monster.luau`, `server/Services/StatService.luau` | `attackSlow`: potwór przy `nextAttack` (:534, :560, `attackInterval / (1 − v)`), gracz jako ujemny `atkSpeed`; `slow` zostaje tylko ruchem; po końcu ogłuszenia z Wstrząsu `nextAttack = max(nextAttack, koniec + 1 × attackInterval)` (`delayShare`, S88: 0,5 → 1; wzór `stepCast`, nowe pole potwora); `StatService.applyWalkSpeed` mnoży szybkość gracza przez `SlowFactor` (dziś spowolnienie gracza nic nie robi) |
 | `server/Services/ResourceService.luau`, `server/Skills/Context.luau`, `server/Skills/Elements.luau` (nowy) | osłabienie leczenia (PvP), `healPower` w `Context.heal` (:296-298; dziś czyta tylko `services.PassiveHook`, więc przedmioty przez `CombatService.Hook` albo statystykę ze `StatService`) i w tarczach `Support.shield`, `costReduce` w `Skills.cost` (koszt bazowy i po oszczędności), `adaptiveEffect` (:162) jako wspólna funkcja dla umiejętności i Iskry żywiołu (Iskra podaje własny czas podpalenia 2 s, umiejętności zostają przy 4 s), Moc żywiołu według żywiołu (dłuższe spowolnienia, Przemarznięcie 10%, przeskok bez drugiego wroga w ten sam cel), hak `elementRider` (Moc żywiołu i Żywioł w Żyłach), Przemarznięcie, `ctx.wounded` (:394) jako wspólna funkcja dla Zbawczego ciosu i `healWounded` z `kaplan.md` |
 | `server/Services/SkillService.luau`, `Logic/Skills.luau` | skrócenie odnowienia z limitem 20%, wzmocnienia drużyny i aury nie krócej niż czas działania; `nextBasic` (Naciąg) przy rzucie umiejętności ofensywnej; koszt po oszczędności, moc Arkanisty od kosztu bazowego |
 | `server/Services/LootService.luau` | kontekst rodziny przy łupie z potwora i bossa; `dropBonus` z Pomyślności tylko na potworach, limit +100% |
@@ -589,8 +595,10 @@ stałe `block` / `riposte` z `fixedHooks`, kontra tylko w zasięgu ataku podstaw
 | Soczewka mocy | każda walka | ok. +4,5–5% | |
 | Namaszczenie | loch | +8% leczenia i tarcz | |
 | Zbawczy cios | loch, exp Uzdrowiciela | loch: 4% zadanych obrażeń leczy rannych; solo jak 1–3 linie wampiryzmu w limicie 15% (ok. 6–9% maks. HP na zabicie przy życiu potwora 1,5–2,3 raza większym niż gracza) | utrata HP Uzdrowiciela na potwora z `balance.spec` (12–25%); `kaplan.md` tabela 4 |
-| Wstrząs | grupy, Inkwizytor, fale pomocników bossa | ogłuszony cel traci ok. 0,5 s ataku: ok. 5% mniej ataków przy ogłuszeniu co ok. 10 s | odstęp ogłuszeń na cel: przy 6% i ok. 1 trafieniu/s wychodzi ok. 25 s (wtedy ok. 2%), więc szansa do strojenia |
+| Wstrząs | grupy, Inkwizytor, fale pomocników bossa | ogłuszony cel traci cały odstęp ataku (ok. 1,5 s na ogłuszenie; S88, wcześniej 0,5 s): model S88 ok. 4,5% w grupie | odstęp ogłuszeń na cel: przy 6% i ok. 1 trafieniu/s wychodzi ok. 25 s (wtedy ok. 2%), więc szansa do strojenia |
 | Pomyślność | łup | +8% szansy na przedmiot | cecha łupu, poza celem walki |
+
+Pomiar po strojeniu (S88, model `tests/Balance.luau` i `tests/SkillModel.luau`): `docs/BALANS.md` → »Cechy broni (S88)«.
 
 - Szanse i siła efektów, liczba stosów, przerwy; wpływ umiejętności obszarowych (1/3 szansy).
 - Pancerz, odporność magiczna i unik potworów oraz kompensata ich życia (czas walki i utrata HP z `balance.spec`).
@@ -608,8 +616,8 @@ stałe `block` / `riposte` z `fixedHooks`, kontra tylko w zasięgu ataku podstaw
   bazowym Maga), bo cechy broni dwuręcznych są jeszcze ukryte: stosunek Maga spada o ok. 1 pkt (`runestaff` L5 0,985 →
   0,975).
 - Ścięcie Zwykłego (18%) równa się górnej granicy `leg_executioner` (12–18) i dzieli z nim `executionerCap`, więc
-  legenda na Mieczu Dwuręcznym słabnie. Żniwo Zwykłego (1%) to połowa dolnej granicy `leg_killHeal` (2–4) i sumuje
-  się z nim bez limitu; policzyć Żniwo na Mitycznym +9 z Krwiopijcą i `myth_killHeal`, także na falach bossa.
+  legenda na Mieczu Dwuręcznym słabnie. Żniwo Zwykłego (0,7% od S88) sumuje się z `leg_killHeal` (2–4),
+  `myth_killHeal` i Krwiopijcą, razem najwyżej 15% maks. HP na zabicie (S88, `Traits.killHeal`).
 - Fechtunek wygrywa z Szablą (ok. +4% wszędzie), gdy Strażnik tankuje grupy, Elity i fale bossa, a przegrywa na
   jednym potworze; u Chorążego z Kontratakiem oba są blisko (3–4,5% i 4%).
 - Traper: Kusza (`dmgMul` 1,53, Łatwy cel ok. 6–7%) i Łuk (Jadowite groty z oboma Jadami ok. 7%) różnią się o ok.

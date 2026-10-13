@@ -149,6 +149,7 @@ local PREFIX_HOOKS: { [string]: Weight } = {
 }
 
 -- STATY 14 starting estimates of every trait (Common +0).
+-- S88 (C10): the values measured in the trait bands where they differ from the STATY 14 estimate by over 1 point
 local TRAITS: { [string]: TraitWeight } = {
 	swordplay = trait("dmg", 4),
 	twinCut = trait("dmg", 4),
@@ -157,22 +158,22 @@ local TRAITS: { [string]: TraitWeight } = {
 	beheading = trait("dmg", 4.6),
 	rendingGash = trait("dmg", 4.5),
 	sundering = trait("dmg", 5),
-	runThrough = trait("dmg", 3),
+	runThrough = trait("dmg", 5),
 	parry = trait("surv", 5),
-	harrying = trait("surv", 7),
+	harrying = trait("surv", 5),
 	toxicBarbs = trait("dmg", 4.5),
 	criticalForce = trait("dmg", 4.5),
 	easyPrey = trait("dmg", 6),
 	bodkinBolt = trait("dmg", 5),
 	fullDraw = trait("dmg", 4.5),
 	elementalSpark = trait("dmg", 4.5),
-	elementalMight = trait("dmg", 5),
+	elementalMight = trait("dmg", 6.5),
 	runicSeal = trait("dmg", 5.5),
-	learnedFormulae = trait("dmg", 4),
+	learnedFormulae = trait("dmg", 2),
 	powerLens = trait("dmg", 4.75),
-	anointment = trait("support", 8),
+	anointment = trait("support", 5),
 	savingBlow = trait("support", 4),
-	concussion = trait("surv", 3),
+	concussion = trait("surv", 4.5),
 	prosperity = trait("util", 8),
 }
 

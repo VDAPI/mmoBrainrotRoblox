@@ -202,6 +202,14 @@ function Traits.savingSelfShare(pct: number, lifesteal: number): number
 	return math.clamp(cap - math.clamp(lifesteal, 0, cap), 0, math.max(0, pct))
 end
 
+-- S88 (STATY 5, 14): % of max HP one kill heals from the summed killHeal hook (lines, legends, Reaping, Bloodthirst),
+-- at most the lifesteal cap of Data/Stats (one number for both kinds of self-healing from damage dealt).
+function Traits.killHeal(total: number): number
+	local def = Stats.get("lifesteal")
+	local cap = if def and def.cap then def.cap else 0
+	return math.clamp(total, 0, cap)
+end
+
 -- Weapon-element effect of a hit (adaptive skills, Elemental Spark), strengthened by `rider` % (elementRider):
 -- fire burns longer-lasting damage, ice slows longer, lightning arcs harder. `staffArc`: with no second enemy a
 -- skill arc hits the same target for arcPct x rider % (Elemental Might). nil for other elements.

@@ -99,8 +99,8 @@ T.describe("Traits: block, counter, execute and controlled targets (S64)", funct
 
 	T.it("caps the counter and halves it in PvP", function()
 		T.expect(Traits.counterChance(10, false)).toBe(10)
-		T.expect(Traits.counterChance(45, false)).toBe(30)
-		T.expect(Traits.counterChance(45, true)).toBe(15)
+		T.expect(Traits.counterChance(45, false)).toBe(34) -- S88: riposteCap 30 -> 34
+		T.expect(Traits.counterChance(45, true)).toBe(17)
 		T.expect(Traits.counterChance(10, true)).toBe(5)
 	end)
 
@@ -182,6 +182,13 @@ T.describe("Traits: rhythm and player state (S65)", function()
 		T.expect(Traits.savingSelfShare(2, 14)).toBe(1)
 	end)
 
+	T.it("kill heal sums stay under the lifesteal cap (S88 E5)", function()
+		T.expect(Traits.killHeal(19.9)).toBe(15)
+		T.expect(Traits.killHeal(4)).toBe(4)
+		T.expect(Traits.killHeal(0)).toBe(0)
+		T.expect(Traits.killHeal(-1)).toBe(0)
+	end)
+
 	local ADAPTIVE: Traits.ElementSpec = {
 		burnPct = SkillData.ADAPTIVE.burnPct,
 		burnDuration = SkillData.ADAPTIVE.burnDuration,
@@ -230,15 +237,16 @@ T.describe("Traits: rhythm and player state (S65)", function()
 			arcRadius = p.arcRadius,
 			sameTargetPct = p.sameTargetPct,
 		}
-		T.expect((Traits.elementPlan("fire", spec, 1000, 0, 0, false) :: any).tick).toBeNear(300)
-		T.expect((Traits.elementPlan("fire", spec, 1000, 0, 10, false) :: any).tick).toBeNear(330)
+		-- S88: burn 30 -> 80 %, arc 40 -> 110 %, same target 20 -> 55 %
+		T.expect((Traits.elementPlan("fire", spec, 1000, 0, 0, false) :: any).tick).toBeNear(800)
+		T.expect((Traits.elementPlan("fire", spec, 1000, 0, 10, false) :: any).tick).toBeNear(880)
 		local ice = Traits.elementPlan("ice", spec, 1000, 0, 0, false) :: Traits.ElementPlan
 		T.expect({ ice.pct, ice.duration }).toEqual({ 20, 2 })
 		local arc = Traits.elementPlan("lightning", spec, 1000, 0, 0, false) :: Traits.ElementPlan
-		T.expect({ arc.pct, arc.sameTarget }).toEqual({ 40, 20 })
+		T.expect({ arc.pct, arc.sameTarget }).toEqual({ 110, 55 })
 		local strong = Traits.elementPlan("lightning", spec, 1000, 30, 0, false) :: Traits.ElementPlan
-		T.expect(strong.pct).toBeNear(52)
-		T.expect(strong.sameTarget).toBeNear(26)
+		T.expect(strong.pct).toBeNear(143)
+		T.expect(strong.sameTarget).toBeNear(71.5)
 	end)
 
 	T.it("PvP multipliers come from the data", function()

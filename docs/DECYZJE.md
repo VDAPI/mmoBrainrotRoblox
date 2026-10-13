@@ -2095,3 +2095,64 @@
   25. → S92, T-SK4 Niszczyciela (45, 60–100: 1,43–2,00) i Arkanisty (45, 65, 95, 100: 3,02–3,26) → S90.
 - **S87** Fixture `balance_items.json` i `balance_paths.json` wygenerowane od nowa (`meta.session = "S87"`, trzeci argument
   trybu `--fixture-*`); fixture 1–20 bez zmian (S91), 21 różnic Elit w `ALLOWED_1_20_DIFFS`.
+- **S88** Narzędzie pomiaru cech (A0): model umiejętności na zdarzeniu (`SkillModel.traitValue` na buildzie wzorcowym
+  ścieżki z wiersza STATY 3), sześć cech obronnych i kontr (`TRAIT_VIA_TERMS`) przez `Balance.traitTerms` z sytuacją
+  zmierzoną na buildzie (`SkillModel.traitValueMeasured`); założenia S84 zostają tylko w konwencji S32 (G7, G8).
+- **S88** Wartość cechy = średnia z równą wagą sytuacji jej wiersza (`Balance.TRAIT_TARGETS`), Zwykły +0 na 45 / 70 / 100,
+  węzły wzmacniające cechę (Głębokie i Otwarte Rany, Jady, Kat) wyłączone w paśmie, z nimi ≤ 8%. „Boss (fale)” Żniwa,
+  Przeszycia i Wstrząsu tylko w raporcie (fale to grupa, sam boss 0), `solo` Zbawczego ciosu też (Uzdrowiciel nie traci
+  HP w pojedynku, wartość 0/0).
+- **S88** Typy broni porównane w obrębie ścieżki (`Balance.TYPE_SETS`, `MIX`, `SkillModel.typeSets`): DPS ścieżek
+  bojowych, √(DPS × EHP) Strażnika, Chorążego, Zwiadowcy i Fortuny (cechy obronne przez `traitTerms`), Uzdrowiciel
+  średnia leczenia w lochu i DPS na 1 celu. Poza 5% w raporcie: Strażnik (buława 0,92) i Fortuna (6%) → S89, Uzdrowiciel
+  (Kostur Święty +7–8%) → S89, Traper (Łuk +6–7%: `dmgMul` Kuszy) → S90, Niszczyciel na 100. (5,4%) → S90.
+- **S88 cechy:** Fechtunek 25 → 33, Podwójne cięcie 40 → 58, Żniwo 1 → 0,7, Rana rąbana 30 → 36, Przeszycie 25 → 55,
+  Zastawa (leczenie z bloku) 0,5 → 0,1, Nękanie 15 → 6, Jadowite groty 30 → 38, Siła krytyka 25 → 20, Łatwy cel
+  10 → 9, Naciąg 30 → 45, Pieczęć runiczna 8 → 5,5, Namaszczenie 8 → 5, Zbawczy cios 4 → 2,5, Wstrząs 6 → 7 (z
+  `delayShare` 0,5 → 1); Iskra: podpalenie 30 → 80%, przeskok 40 → 110%, ten sam cel 20 → 55%, Przemarznięcie 6 → 11%
+  (szansa 35 bez zmian); Moc żywiołu 30 → 39 (E6 ×1,3: kostur był 6% pod różdżką z kulą na 100.).
+- **S88** Wstrząs: najpierw szansa (STATY 14), ale 12% przy 0,5 s dawało 2%, a 1 s łamało limit ogłuszenia w PvP (2%
+  walki), więc dźwignią jest opóźnienie ataku potwora po ogłuszeniu (`delayShare` 1, tylko potwory): 4,5% w grupie,
+  PvP 1,3% walki.
+- **S88** Zastawa: leczenie z bloku 0,1% zamiast 0,5%, bo z Blokiem i Mistrzem Tarczy obie cechy miecza i tarczy dawały
+  14–16% EHP Strażnika (cel ≤ 12%); topór i buława z tarczą (13–18%) w raporcie → S89 (węzły Strażnika). Nie 0,15:
+  opis cechy pokazuje jedno miejsce po przecinku (0,1), a 0,2 daje 12,6% EHP na 100.
+- **S88** `riposteCap` 30 → 34: Kontratak 12 + Odwet 12 + Fechtunek 10 na „Samotniku” na 100. (STATY 10); w PvP 17.
+- **S88** Pomyślność zostaje +8% i wyjątkiem od pasma (STATY 2A, odpowiedź 12): +8–15% Unikatów, koszt w walce Fortuny
+  dla S89. Wyuczone formuły w raporcie → S90: mana wiąże w oknie bossa 180 s tylko na 45. (0,4–5,5%).
+- **S88** Moc żywiołu, błyskawica 8,7 / 9,0 / 11,8% (przeskok w ten sam cel na 1 celu) w raporcie → S90: jedna liczba
+  cechy na trzy żywioły; ogień i lód w paśmie 4–9% (E6).
+- **S88 obrona:** pancerz 10·L, odporność 8·L i kompensata życia 0,9 w pasmach (zwykły 18–19%, ×1,8 29–30%, odporność
+  15–16% i 25–26%), bez zmian; unik harpii 15 → 10% (walka +14% → +9%). Unik rysia, nietoperza i lamparta (12%, +11%
+  walki) wspólny z rysiem z Łąk: zostaje, decyzja S91.
+- **S88 linie:** rodziny i klasy strojone do liczb z odpowiedzi 23 na 100. poziomie po limicie skali S87 (nie do „ok. 2
+  linie ataku” z STATY 4): `vs_<rodzina>` 3,75–9 (Zwykły 5–12, Mityk 14,4), `res_<rodzina>` 3,75–8,25 (5–11, 13,2), klasy
+  3–6,75 (4–9, 10,8); limity `familyResCap` 30 i `classLineCap` 20 bez zmian.
+- **S88** G7 po podwojeniu linii rodzin (+1–2 pkt): przycięte nowe linie (D1) `pierce` 2,5–5, `magicPierce` 2–4, `skillDmg`
+  0,8–1,8, `basicDmg` 1–2,2, `woundChance` i `poisonChance` 1,2–2,4; Heroik Łowcy 25,7–27,3% zostaje w raporcie (S88, do
+  decyzji właściciela: wyjątek jak Legenda ≤ 43%).
+- **S88 nazwane Mityczne:** moc 1,00–1,08 oczekiwanego wylosowanego Mityka tego samego typu i ilvl (`Balance.namedPower`,
+  klasa ze statystyki głównej, bez niej średnia klas noszących), linie zwykłe ≤ `NAMED_LINE_MAX` 2,5 × górna granica
+  Mityczna (broń dwuręczna × `twoHandedBonusMul`), legendarna w swoim zakresie; linia rodziny bossa liczy się jak w
+  modelu S67 (połowa na rodzinie potwora modelu). Nowe linie z tabeli sesji, wartości: wynik 1,01–1,07.
+- **S88** Leczenie za zabicie: limit w kodzie (E5 a) `Traits.killHeal(total)` = `min(total, cap)` kradzieży życia z
+  `Data/Stats` (15), wołany w `CombatService.reward` i w modelu (`Balance.traitTerms`, `SkillModel` przy zabiciu); bez
+  nowego klucza danych. Sumy Strażnika i Berserkera 18–26% → 15%.
+- **S88** PvP: brak celu bezwzględnego czasu zabicia; asercje względne (cechy razem skracają walkę ≤ 10%, udział tyknięć
+  PvP = PvE ± 0,02, tyknięcie umiejętności ×0,6, cechy warunkowe i obronne ≤ 0,55 PvE, ogłuszenie ≤ 2% walki). Model
+  (`Balance.pvpDuel`): leczenie z kradzieży życia i Zbawczego ciosu od ciosu po `pvpModifier` (jak `Damage` i
+  `savingBlow`). Połowy STATY 8 bez zmian.
+- **S88** Szczęście bez zmian danych: K1 + Fortuna 48, K2 + Fortuna 91 (≤ 100 przed limitem), Fortuna dla K1 ×1,25
+  Unikatów; `dropBonus`, `leg_dropBonus` i Fortuna 30 zostają.
+- **S88** `GLOBAL_REPORT_ONLY`: G8 „z cechami” w paśmie po S88 asertowane (Miecz Dwuręczny, Włócznia, Kostur Święty na
+  20.), pozostałe zostają z sesją S88 („poza zasięgiem dźwigni S88”: jedna cecha zamiast dwóch; kostury w konwencji S32
+  liczą Iskrę z udziałem ataku podstawowego 0,4); G8 „bez cech” Legendy na 20. → S91; T-SK5 na 30. (0,246 z Namaszczeniem
+  5%) → S92.
+- **S88** `Data/ItemWeights` (C10): zmierzone wartości cech, gdy różnią się o ponad 1 pkt (Przeszycie 5, Nękanie 5,
+  Wyuczone formuły 2, Moc żywiołu 6,5, Namaszczenie 5, Wstrząs 4,5); `PathDef.itemWeights` bez zmian.
+- **S88** Poprawki po przeglądzie: cecha mierzona na każdej ścieżce z kolumny STATY 3 (pierwszy build ścieżki, pierwszy
+  wiersz cechy = ścieżka główna dla PvP); Fechtunek Chorążego i Iskra Arkanisty (ogień, błyskawica) w raporcie → S89 / S90.
+- **S88** Model: `expectedBonuses` losuje linie Legend i Mityków z pul z filtrem klasy (`ItemRoll.legendaryPool` /
+  `mythicPool`, lista S84); Mityk +6–7% na 1–20 (S91), G8 „bez cech” Mityk topora na 20. (0,969) do raportu z toporem.
+- **S88** E1: unik + chybienie + blok mierzone przed cięciem `Damage.avoidance` (po cięciu suma nigdy nie przekracza
+  limitu); E5 liczy Krwiopijcę z węzła `drinker` (hak `killHeal`), nie Żądzę Krwi.

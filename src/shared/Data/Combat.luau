@@ -37,7 +37,7 @@ return table.freeze({
 	}),
 	-- S64 (STATY 3, 5, 6, 8): defensive and conditional item traits.
 	blockCap = 25, -- % block chance from every source (Parry trait, blockChance lines, Block / Shield Master nodes)
-	riposteCap = 30, -- % counter chance (Swordplay trait, riposte passive, Retaliation and Requital nodes); unlimited before S64
+	riposteCap = 34, -- % counter chance (Swordplay trait, riposte passive, Retaliation and Requital nodes); unlimited before S64
 	executionerCap = 60, -- % bonus below lowHpFraction (Beheading, Executioner node, leg_/myth_executioner); unlimited before S64
 	cdrCap = 20, -- % skill cooldown reduction from items (leg_cooldown, myth_cooldown)
 	-- S67 (STATY 4, 8): lines with a parameter.

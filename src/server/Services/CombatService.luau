@@ -645,8 +645,9 @@ local function reward(player: Player, monster: any, share: number, goldShare: nu
 		return current + gold
 	end)
 	Analytics.gold(player, gold, balance, "monster")
-	-- killHeal: lines, legends and Reaping (S64, the axe's trait); monsters only, so never in PvP.
-	local killHeal = hook(player, "killHeal")
+	-- killHeal: lines, legends and Reaping (S64, the axe's trait); monsters only, so never in PvP. S88: capped by
+	-- Traits.killHeal (the lifesteal cap).
+	local killHeal = Traits.killHeal(hook(player, "killHeal"))
 	if killHeal > 0 then
 		local healed = ResourceService.Heal(player, StatService.GetValue(player, "maxHp") * killHeal / 100)
 		local entity = EntityService.GetPlayerEntity(player)

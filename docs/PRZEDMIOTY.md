@@ -1,7 +1,7 @@
 # Vaelthorn: przedmioty
 
 > Plik generowany: `lune run tools/wikidump.luau` (dane gry, te same co wiki). Nie edytuj ręcznie.
-> Odcisk danych 785ce560 (`wiki/src/data/meta.json`).
+> Odcisk danych 5de0784f (`wiki/src/data/meta.json`).
 
 ## Rzadkości
 
@@ -406,7 +406,7 @@ Cecha: **Soczewka mocy**: +6% obrażeń umiejętności
 
 #### Kołczan (`quiver`) · Łowca
 
-Cecha: **Naciąg**: Strzał po umiejętności +30% × szybk.
+Cecha: **Naciąg**: Strzał po umiejętności +45% × szybk.
 
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|
@@ -462,7 +462,7 @@ Cecha: **Pomyślność**: +8% szansy na przedmiot
 
 #### Tarcza (`shield`) · Wojownik, Kapłan
 
-Cecha: **Zastawa**: 5% bloku, blok leczy 0,5% HP
+Cecha: **Zastawa**: 5% bloku, blok leczy 0,1% HP
 
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|
@@ -576,7 +576,7 @@ Cecha: **Wyuczone formuły**: Umiejętności -8% many
 
 #### Topór (`axe1h`) · Wojownik
 
-Cecha: **Żniwo**: Zabicie potwora leczy 1% HP
+Cecha: **Żniwo**: Zabicie potwora leczy 0,7% HP
 
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|
@@ -604,7 +604,7 @@ Cecha: **Żniwo**: Zabicie potwora leczy 1% HP
 
 #### Topór Bojowy (`axe2h`) · Wojownik
 
-Cecha: **Rana rąbana**: 15%: rana 30% ciosu w 4 s
+Cecha: **Rana rąbana**: 15%: rana 36% ciosu w 4 s
 
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|
@@ -632,7 +632,7 @@ Cecha: **Rana rąbana**: 15%: rana 30% ciosu w 4 s
 
 #### Łuk (`bow`) · Łowca
 
-Cecha: **Jadowite groty**: 15%: trucizna 30% w 5 s
+Cecha: **Jadowite groty**: 15%: trucizna 38% w 5 s
 
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|
@@ -660,7 +660,7 @@ Cecha: **Jadowite groty**: 15%: trucizna 30% w 5 s
 
 #### Kusza (`crossbow`) · Łowca
 
-Cecha: **Łatwy cel**: +10% na celach pod kontrolą
+Cecha: **Łatwy cel**: +9% na celach pod kontrolą
 
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|
@@ -688,7 +688,7 @@ Cecha: **Łatwy cel**: +10% na celach pod kontrolą
 
 #### Cep (`flail1h`) · Kapłan
 
-Cecha: **Wstrząs**: 6%: ogłuszenie 0,5 s
+Cecha: **Wstrząs**: 7%: ogłuszenie 0,5 s
 
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|
@@ -772,7 +772,7 @@ Cecha: **Bełt przeciwpancerny**: Ignoruje 20% pancerza
 
 #### Kostur Święty (`holystaff`) · Kapłan
 
-Cecha: **Zbawczy cios**: 4% obrażeń leczy rannego
+Cecha: **Zbawczy cios**: 2,5% obrażeń leczy rannego
 
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|
@@ -800,7 +800,7 @@ Cecha: **Zbawczy cios**: 4% obrażeń leczy rannego
 
 #### Łuk Długi (`longbow`) · Łowca
 
-Cecha: **Siła krytyka**: +25 pkt obrażeń krytycznych
+Cecha: **Siła krytyka**: +20 pkt obrażeń krytycznych
 
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|
@@ -856,7 +856,7 @@ Cecha: **Łamanie kości**: Trafiony zadaje 6% mniej, 4 s
 
 #### Kostur Runiczny (`runestaff`) · Mag
 
-Cecha: **Pieczęć runiczna**: Stoisz 1,5 s: obrażenia +8%
+Cecha: **Pieczęć runiczna**: Stoisz 1,5 s: obrażenia +5,5%
 
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|
@@ -884,7 +884,7 @@ Cecha: **Pieczęć runiczna**: Stoisz 1,5 s: obrażenia +8%
 
 #### Szabla (`saber1h`) · Wojownik
 
-Cecha: **Podwójne cięcie**: Co 5. cios drugie cięcie 40%
+Cecha: **Podwójne cięcie**: Co 5. cios drugie cięcie 58%
 
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|
@@ -912,7 +912,7 @@ Cecha: **Podwójne cięcie**: Co 5. cios drugie cięcie 40%
 
 #### Berło (`scepter`) · Kapłan
 
-Cecha: **Namaszczenie**: Leczenie i tarcze +8%
+Cecha: **Namaszczenie**: Leczenie i tarcze +5%
 
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|
@@ -940,7 +940,7 @@ Cecha: **Namaszczenie**: Leczenie i tarcze +8%
 
 #### Łuk Krótki (`shortbow`) · Łowca
 
-Cecha: **Nękanie**: 15%: cel 20% wolniejszy, 2 s
+Cecha: **Nękanie**: 6%: cel 20% wolniejszy, 2 s
 
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|
@@ -968,7 +968,7 @@ Cecha: **Nękanie**: 15%: cel 20% wolniejszy, 2 s
 
 #### Włócznia (`spear2h`) · Wojownik
 
-Cecha: **Przeszycie**: Wróg za celem dostaje 25%
+Cecha: **Przeszycie**: Wróg za celem dostaje 55%
 
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|
@@ -996,7 +996,7 @@ Cecha: **Przeszycie**: Wróg za celem dostaje 25%
 
 #### Kostur (`staff`) · Mag
 
-Cecha: **Moc żywiołu**: Efekty żywiołu +30%
+Cecha: **Moc żywiołu**: Efekty żywiołu +39%
 
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|
@@ -1024,7 +1024,7 @@ Cecha: **Moc żywiołu**: Efekty żywiołu +30%
 
 #### Miecz (`sword1h`) · Wojownik
 
-Cecha: **Fechtunek**: 10%: kontra po ciosie, kontry +25%
+Cecha: **Fechtunek**: 10%: kontra po ciosie, kontry +33%
 
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|
@@ -1110,18 +1110,18 @@ Cecha: **Iskra żywiołu**: 35%: atak budzi żywioł broni
 
 | Przedmiot | Boss | Poziom | Statystyki | Bonusy stałe |
 |---|---|---|---|---|
-| Płomienne Serce | Azgor, Pan Płomieni | 70 | hp 561,6 | +{v} Życia +260, +{v}% Odporności na ogień +25%, +{v}% Obrażeń krytycznych +25%, +{v}% obrażeń przeciw elitom +12% |
-| Hełm Pana Płomieni | Azgor, Pan Płomieni | 70 | Obrona 133,9, hp 169 | +{v} Witalności +20, +{v} Obrony +90, +{v}% Odporności na ogień +25%, Odbija {v}% otrzymanych obrażeń +10% |
-| Kostur Pożogi | Azgor, Pan Płomieni | 70 | obr. 0, obr. mag. 306, szybkość 0,85 | +{v}% Ataku magicznego +9%, +{v} Intelektu +22, +{v}% Szansy na krytyk +8%, +{v}% obrażeń przeciw bossom +10% |
-| Rozłupywacz Grimroka | Grimrok, Wódz Goblinów | 20 | obr. 74, szybkość 1,05 | +{v}% Ataku fizycznego +7%, +{v} Siły +8, +{v}% Obrażeń krytycznych +15%, +{v}% obrażeń celom poniżej 30% życia +15% |
-| Kieł Wodza | Grimrok, Wódz Goblinów | 20 | Atak magiczny % 5,3, Atak fizyczny % 5,3 | +{v}% Szansy na krytyk +4%, +{v}% Wampiryzmu +2%, +{v} Zręczności +6, +{v}% Złota +10% |
-| Totem Plemienia | Grimrok, Wódz Goblinów | 20 | Obrona 28,6, hp 85,8, Odporność magiczna 28,6 | +{v} Witalności +8, +{v}% Życia +6%, +{v}% Odporności na truciznę +15%, Zabicie potwora leczy {v}% maks. życia +3% |
-| Łuk Zawodzących Cieni | Morvane, Królowa Krypt | 45 | obr. 157, szybkość 1 | +{v}% Ataku fizycznego +8%, +{v} Zręczności +14, +{v}% Szansy na krytyk +6%, {v}% szansy na podwójny atak +5% |
-| Berło Krypt | Morvane, Królowa Krypt | 45 | obr. 55, obr. mag. 151, szybkość 1 | +{v}% Ataku magicznego +8%, +{v} Intelektu +12, +{v} Regeneracji życia +6, Trafienia przywracają {v}% maks. many +2% |
-| Całun Królowej | Morvane, Królowa Krypt | 45 | Obrona 61,1, hp 92,3, mana 153,4, Odporność magiczna 84,5 | +{v} Intelektu +14, +{v} Many +120, +{v}% Odporności na lód +18%, -{v}% otrzymanych obrażeń poniżej 30% życia +15% |
-| Oko Zimy | Vaelgrath, Smok Mrozu | 100 | Atak magiczny % 15,6 | +{v}% Ataku magicznego +10%, +{v} Intelektu +35, +{v} Regeneracji many +12, +{v}% obrażeń celom poniżej 30% życia +18% |
-| Kieł Vaelgratha | Vaelgrath, Smok Mrozu | 100 | obr. 471, szybkość 0,85 | +{v}% Ataku fizycznego +11%, +{v} Siły +35, +{v}% Obrażeń krytycznych +40%, +{v}% obrażeń przeciw bossom +12% |
-| Łuska Smoka Mrozu | Vaelgrath, Smok Mrozu | 100 | Obrona 211,9, hp 533 | +{v} Obrony +160, +{v}% Życia +10%, +{v}% Odporności na lód +30%, -{v}% otrzymanych obrażeń poniżej 30% życia +18% |
+| Płomienne Serce | Azgor, Pan Płomieni | 70 | hp 561,6 | +{v} Życia +260, +{v}% Odporności na ogień +25%, Silny przeciw żywiołakom i demonom +{v}% +12%, +{v}% obrażeń przeciw elitom +12% |
+| Hełm Pana Płomieni | Azgor, Pan Płomieni | 70 | Obrona 133,9, hp 169 | +{v} Witalności +20, +{v} Obrony +90, Odporność na żywiołaki i demony {v}% +10%, Odbija {v}% otrzymanych obrażeń +10% |
+| Kostur Pożogi | Azgor, Pan Płomieni | 70 | obr. 0, obr. mag. 306, szybkość 0,85 | +{v}% Ataku magicznego +9%, +{v} Intelektu +22, +{v}% obrażeń ran, trucizn i podpaleń +15%, +{v}% obrażeń przeciw bossom +10% |
+| Rozłupywacz Grimroka | Grimrok, Wódz Goblinów | 20 | obr. 74, szybkość 1,05 | +{v}% Ataku fizycznego +7%, +{v} Siły +8, Silny przeciw ludziom i plemionom +{v}% +12%, +{v}% obrażeń celom poniżej 30% życia +15% |
+| Kieł Wodza | Grimrok, Wódz Goblinów | 20 | Atak magiczny % 5,3, Atak fizyczny % 5,3 | +{v}% Szansy na krytyk +4%, +{v}% Wampiryzmu +2%, +{v} Zręczności +6, +{v}% obrażeń ataku podstawowego +4% |
+| Totem Plemienia | Grimrok, Wódz Goblinów | 20 | Obrona 28,6, hp 85,8, Odporność magiczna 28,6 | +{v} Witalności +8, +{v}% Życia +6%, Odporność na ludzi i plemiona {v}% +8%, Zabicie potwora leczy {v}% maks. życia +3% |
+| Łuk Zawodzących Cieni | Morvane, Królowa Krypt | 45 | obr. 157, szybkość 1 | +{v}% Ataku fizycznego +6%, +{v} Zręczności +10, +{v}% szansy na zatrucie +5%, {v}% szansy na podwójny atak +5% |
+| Berło Krypt | Morvane, Królowa Krypt | 45 | obr. 55, obr. mag. 151, szybkość 1 | +{v}% Ataku magicznego +8%, +{v} Intelektu +12, +{v}% mocy leczenia +8%, Trafienia przywracają {v}% maks. many +2% |
+| Całun Królowej | Morvane, Królowa Krypt | 45 | Obrona 61,1, hp 92,3, mana 153,4, Odporność magiczna 84,5 | +{v} Intelektu +14, +{v} Many +120, Odporność na nieumarłych {v}% +10%, -{v}% otrzymanych obrażeń poniżej 30% życia +15% |
+| Oko Zimy | Vaelgrath, Smok Mrozu | 100 | Atak magiczny % 15,6 | +{v}% Ataku magicznego +8,5%, +{v} Intelektu +32, Przebicie magii {v}% +10%, +{v}% obrażeń celom poniżej 30% życia +18% |
+| Kieł Vaelgratha | Vaelgrath, Smok Mrozu | 100 | obr. 471, szybkość 0,85 | +{v}% Ataku fizycznego +11%, +{v} Siły +35, +{v}% Obrażeń krytycznych +40%, +{v}% obrażeń przeciw bossom +10% |
+| Łuska Smoka Mrozu | Vaelgrath, Smok Mrozu | 100 | Obrona 211,9, hp 533 | +{v} Obrony +160, +{v}% Życia +8%, Odporność na smoki {v}% +10%, -{v}% otrzymanych obrażeń poniżej 30% życia +18% |
 
 ## Materiały
 

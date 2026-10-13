@@ -14,6 +14,8 @@
 --   * Items, loot and monster defence 20-100 (S84): the tables of BalanceTables.tablesItems against
 --     tests/fixtures/balance_items.json, S32 compatibility and Monte Carlo on the game's functions; D5 rows in the
 --     region block (REGION_TARGETS.d5, under TUNED).
+--   * S88: weapon traits, lines, monster defence, class checks, PvP and luck (SkillModel.targetsS88): asserted except
+--     the rows with `report` (the session with the lever).
 -- Model checks (boss schedule, quests, potions, cave Elites, boss constants): tests/balancemodel.spec.
 local fs = require("@lune/fs")
 local serde = require("@lune/serde")
@@ -341,6 +343,73 @@ T.describe("Balance 20-100: global (asserted from S87)", function()
 			print(`  … i {out - 15} więcej (docs/BALANS.md)`)
 		end
 		T.expect(#rows > 0).toBe(true)
+	end)
+end)
+
+-- S88 (H): weapon traits, lines, monster defence, class checks, PvP and luck. Every row of SkillModel.targetsS88
+-- without `report` is asserted; the targets and bands are the test data of tests/Balance.luau (TRAIT_TARGETS,
+-- TYPE_SETS, NAMED_TARGETS, DEFENCE_TARGETS, PVP_TARGETS, ...), the report prints the same rows.
+T.describe("Balance 20-100: items, traits, defence (S88)", function()
+	local SkillModel = (require :: any)("./SkillModel")
+	local rows = SkillModel.targetsS88()
+	local groups: { [string]: { B.TargetRow } } = {}
+	local order: { string } = {}
+	for _, row in rows do
+		if row.report == nil then
+			if not groups[row.id] then
+				groups[row.id] = {}
+				table.insert(order, row.id)
+			end
+			table.insert(groups[row.id], row)
+		end
+	end
+	for _, id in order do
+		T.it(`{id}: every row in band`, function()
+			local bad = {}
+			for _, row in groups[id] do
+				if not B.inBand(row) then
+					table.insert(bad, describeRow(row))
+				end
+			end
+			if #bad > 0 then
+				error(`{#bad} row(s) out of band: {table.concat(bad, "; ", 1, math.min(#bad, 10))}`, 0)
+			end
+		end)
+	end
+	T.it("report rows name a later session and every trait has a row (printed)", function()
+		local traits: { [string]: boolean } = {}
+		for _, t in B.TRAIT_TARGETS do
+			traits[t.trait] = true
+			if t.reportWhy then
+				T.expect({ t.trait, (B.sessionNumber(t.reportSession or "S88") or 0) >= 88 }).toEqual({ t.trait, true })
+			end
+		end
+		local ItemTraits = require("../src/shared/Data/ItemTraits")
+		for _, def in ItemTraits.list do
+			-- Prosperity is the loot trait outside the band (STATY 2A, answer 12)
+			T.expect({ def.id, traits[def.id] == true or def.id == "prosperity" }).toEqual({ def.id, true })
+		end
+		local inBand, reported = 0, 0
+		for _, row in rows do
+			if row.report then
+				reported += 1
+			elseif B.inBand(row) then
+				inBand += 1
+			end
+		end
+		print(`S88: {inBand}/{#rows - reported} w paśmie, w raporcie: {reported}`)
+	end)
+	T.it("Traits.killHeal is the cap of the model's kill heal (E5)", function()
+		local Traits = require("../src/shared/Logic/Traits")
+		local Stats = require("../src/shared/Data/Stats")
+		local cap = (Stats.get("lifesteal") :: any).cap
+		for _, k in SkillModel.killHealSums(70) do
+			T.expect(k.capped).toBe(Traits.killHeal(k.raw))
+			T.expect(k.capped <= cap).toBe(true)
+		end
+		-- the server calls the same function (text guard: CombatService.reward)
+		local src = fs.readFile("src/server/Services/CombatService.luau")
+		T.expect(string.find(src, 'Traits.killHeal(hook(player, "killHeal"))', 1, true) ~= nil).toBe(true)
 	end)
 end)
 

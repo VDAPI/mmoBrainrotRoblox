@@ -3846,7 +3846,7 @@ return {
 	-- S68: what each trait does (tooltip details, wiki)
 	["trait.swordplay.info"] = "After every regular attack on you (blocked, missed and dodged ones too; never after a red zone) {chance}% chance to counter: an instant basic attack on the attacker, without on-hit effects. All your counters deal +{v}% damage. The chance is fixed; rarity and upgrades raise the bonus.",
 	["trait.twinCut.info"] = "Every {every}th basic attack cuts a second time for {v}% of the hit, without on-hit effects. The count resets after {reset} s without attacking.",
-	["trait.reaping.info"] = "Killing a monster you are rewarded for (in a party and a boss's helper too) heals {v}% of your max HP. Adds up with lines that heal on kill.",
+	["trait.reaping.info"] = "Killing a monster you are rewarded for (in a party and a boss's helper too) heals {v}% of your max HP. Adds up with lines that heal on kill, together at most the lifesteal cap.",
 	["trait.bonebreaker.info"] = "Every hit weakens the target: it deals {v}% less damage for {s} s (refreshes, does not stack; red zones too).",
 	["trait.beheading.info"] = "+{v}% damage to targets below {threshold}% health.",
 	["trait.rendingGash.info"] = "{chance}% chance of a deep wound: the bleed deals {v}% of the hit's damage (after armour) over {s} s, up to {stacks} stacks from you.",

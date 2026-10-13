@@ -169,6 +169,255 @@ Balance.LUCK_PROFILES = {
 	},
 } :: { any }
 
+-- S88 test data (targets of the trait, line and named-item tuning; never game numbers) ----------------------------
+
+-- C1 (STATY 14, answer 6): every combat trait is worth TRAIT_BAND in its situations (equal weights) on the path
+-- build of every path of its STATY 3 row (the first build of the path; the first row of a trait is its main path,
+-- used by the PvP checks), Common +0 at 45 / 70 / 100. `report` situations are printed only (a structural zero of
+-- the model: the boss's shield waves are a group, a Healer loses no HP in a duel); `nodesOff` = the path nodes that
+-- strengthen the trait, off in the band and on in the TRAIT_NODES_MAX row; `elements` = every weapon element on its
+-- own; `twoHanded` = a two-handed Mage / Cleric weapon (E6: up to TRAIT_BAND_2H); `reportWhy` / `reportSession` =
+-- the row is report only (H4: the reason, the session with the lever); `reportElements` = those elements only.
+-- SkillModel.traitTarget measures a row (SkillModel.traitValue on the event; the six traits of
+-- SkillModel.TRAIT_VIA_TERMS through Balance.traitTerms with the situation measured on the build).
+export type TraitTarget = {
+	trait: string,
+	build: string,
+	weapon: string,
+	offhand: string?,
+	situations: { string },
+	report: { string }?,
+	nodesOff: { string }?,
+	elements: boolean?,
+	twoHanded: boolean?,
+	reportWhy: string?,
+	reportSession: string?,
+	reportElements: { string }?,
+}
+Balance.TRAIT_BAND = { 0.04, 0.06 }
+Balance.TRAIT_BAND_2H = { 0.04, 0.09 } -- E6: the two-handed Mage and Cleric weapons after x1.3-1.5
+Balance.TRAIT_NODES_MAX = 0.08 -- STATY 14: Rending Gash with the bleed nodes, Toxic Barbs with the venoms, Beheading with Executioner
+Balance.TRAIT_LEVELS = { 45, 70, 100 }
+local function traitTarget(
+	trait: string,
+	build: string,
+	weapon: string,
+	offhand: string?,
+	situations: { string },
+	extra: { [string]: any }?
+): TraitTarget
+	local row: any = { trait = trait, build = build, weapon = weapon, offhand = offhand, situations = situations }
+	for k, v in extra or {} do
+		row[k] = v
+	end
+	return row :: TraitTarget
+end
+Balance.TRAIT_TARGETS = {
+	traitTarget("swordplay", "guardian.loner", "sword1h", "shield", { "group", "elite", "boss" }),
+	traitTarget("swordplay", "standard.commander", "sword1h", "shield", { "group", "elite", "boss" }, {
+		reportSession = "S89",
+		reportWhy = "Standard-Bearer counters only with the sword's fixed 10 % (no Counterattack / Retaliation): 0.035-0.039; a higher counter bonus pushes Samotnik over 6 %",
+	}),
+	traitTarget("twinCut", "standard.commander", "saber1h", "shield", { "single", "elite" }),
+	traitTarget("twinCut", "guardian.defender", "saber1h", "shield", { "single", "elite" }),
+	traitTarget("reaping", "guardian.loner", "axe1h", "shield", { "solo" }, { report = { "boss" } }),
+	traitTarget("bonebreaker", "guardian.defender", "mace1h", "shield", { "tank" }),
+	traitTarget("bonebreaker", "inquisitor.solo", "mace1h", "shield", { "tank" }),
+	traitTarget("bonebreaker", "fortune.plunder", "mace1h", "relic", { "tank" }),
+	traitTarget("beheading", "berserker.fury", "sword2h", nil, { "single", "group" }, {
+		nodesOff = { "berserker_executioner" },
+	}),
+	traitTarget("rendingGash", "berserker.fury", "axe2h", nil, { "single", "elite" }, {
+		nodesOff = { "berserker_wounds", "berserker_openWounds" },
+	}),
+	traitTarget("sundering", "berserker.fury", "hammer2h", nil, { "single", "armored" }),
+	traitTarget("runThrough", "berserker.fury", "spear2h", nil, { "group" }, { report = { "boss" } }),
+	traitTarget("parry", "guardian.defender", "sword1h", "shield", { "tank" }),
+	traitTarget("parry", "standard.commander", "sword1h", "shield", { "tank" }),
+	traitTarget("parry", "healer.dungeon", "scepter", "shield", { "tank" }),
+	traitTarget("parry", "inquisitor.bulwark", "mace1h", "shield", { "tank" }),
+	traitTarget("harrying", "scout.partyHunter", "shortbow", "quiver", { "solo" }),
+	traitTarget("toxicBarbs", "trapper.poacher", "bow", "quiver", { "single", "elite" }, {
+		nodesOff = { "trapper_venom", "trapper_basilisk" },
+	}),
+	traitTarget("toxicBarbs", "scout.partyHunter", "bow", "quiver", { "single", "elite" }),
+	traitTarget("criticalForce", "marksman.kingslayer", "longbow", "quiver", { "single", "group" }),
+	traitTarget("easyPrey", "trapper.poacher", "crossbow", "quiver", { "controlled" }),
+	traitTarget("bodkinBolt", "marksman.kingslayer", "heavycrossbow", "quiver", { "single", "armored" }),
+	traitTarget("fullDraw", "marksman.kingslayer", "longbow", "quiver", { "single", "group" }),
+	traitTarget("fullDraw", "marksman.kingslayer", "heavycrossbow", "quiver", { "single", "group" }),
+	traitTarget("fullDraw", "trapper.poacher", "bow", "quiver", { "single", "group" }),
+	traitTarget("fullDraw", "scout.partyHunter", "shortbow", "quiver", { "single", "group" }),
+	traitTarget("elementalSpark", "destroyer.destroyerExp", "wand", "orb", { "mana", "group" }, { elements = true }),
+	traitTarget("elementalSpark", "arcanist.arcanistBoss", "wand", "tome", { "mana", "group" }, {
+		elements = true,
+		reportElements = { "fire", "lightning" },
+		reportSession = "S90",
+		reportWhy = "Arcanist with a tome: fire 0.031-0.041, lightning 0.036-0.048 (the boss build hits one target, the burn and the arc count less); one Spark number for both paths",
+	}),
+	traitTarget("elementalMight", "destroyer.destroyerExp", "staff", nil, { "single", "group" }, {
+		elements = true,
+		twoHanded = true,
+		reportElements = { "lightning" },
+		reportSession = "S90",
+		reportWhy = "lightning 0.087-0.118: the arc rider on one target (riderSameTarget); one Might number for three elements",
+	}),
+	traitTarget("runicSeal", "arcanist.arcanistBoss", "runestaff", nil, { "still", "boss" }),
+	traitTarget("learnedFormulae", "arcanist.arcanistBoss", "wand", "tome", { "mana" }, {
+		reportSession = "S90",
+		reportWhy = "mana binds only at 45 in the 180 s boss window (0.4-5.5 %): the mana costs are S90's lever",
+	}),
+	traitTarget("powerLens", "destroyer.destroyerExp", "wand", "orb", { "single", "group" }),
+	traitTarget("anointment", "healer.dungeon", "scepter", "shield", { "dungeon" }),
+	traitTarget("anointment", "fortune.plunder", "scepter", "relic", { "dungeon" }),
+	traitTarget("savingBlow", "healer.dungeon", "holystaff", nil, { "dungeon" }, { report = { "solo" } }),
+	traitTarget("concussion", "inquisitor.solo", "flail1h", "shield", { "group" }, { report = { "boss" } }),
+	traitTarget("concussion", "fortune.plunder", "flail1h", "relic", { "group" }, { report = { "boss" } }),
+} :: { TraitTarget }
+
+-- C9: weapon sets of one path compared in MIX (max / min - 1 <= TYPE_SET_MAX); `measure` "dps" (combat paths),
+-- "power" (sqrt(DPS x EHP): Guardian, Standard-Bearer, Scout, Priest of Fortune) or "healer" (mean of the dungeon
+-- heal and the one-target DPS). The relic only against relics (Prosperity). `reportWhy`: the row is report only (H4).
+export type TypeSet = {
+	path: string,
+	build: string,
+	measure: string,
+	sets: { { main: string, offhand: string? } },
+	reportWhy: string?,
+	reportSession: string?,
+	reportAt: { number }?, -- report only at these levels (all levels when nil and reportWhy is set)
+}
+Balance.TYPE_SET_MAX = 0.05
+Balance.TYPE_SETS = {
+	{
+		path = "berserker",
+		build = "berserker.fury",
+		measure = "dps",
+		sets = { { main = "sword2h" }, { main = "axe2h" }, { main = "hammer2h" }, { main = "spear2h" } },
+	},
+	{
+		path = "guardian",
+		build = "guardian.loner",
+		measure = "power",
+		reportSession = "S89",
+		reportWhy = "mace + shield 0.92 of sword + shield: the mace base and Bonebreaker outside `tank` (band 0.054); S89 nodes",
+		sets = {
+			{ main = "sword1h", offhand = "shield" },
+			{ main = "saber1h", offhand = "shield" },
+			{ main = "axe1h", offhand = "shield" },
+			{ main = "mace1h", offhand = "shield" },
+		},
+	},
+	{
+		path = "standard",
+		build = "standard.commander",
+		measure = "power",
+		sets = { { main = "sword1h", offhand = "shield" }, { main = "saber1h", offhand = "shield" } },
+	},
+	{
+		path = "marksman",
+		build = "marksman.kingslayer",
+		measure = "dps",
+		sets = { { main = "longbow", offhand = "quiver" }, { main = "heavycrossbow", offhand = "quiver" } },
+	},
+	{
+		path = "trapper",
+		build = "trapper.poacher",
+		measure = "dps",
+		reportSession = "S90",
+		reportWhy = "bow 1.06-1.07 of the crossbow: the crossbow's dmgMul (Data/Items/Bases, S90's lever); Easy Prey in band",
+		sets = { { main = "crossbow", offhand = "quiver" }, { main = "bow", offhand = "quiver" } },
+	},
+	{
+		path = "scout",
+		build = "scout.partyHunter",
+		measure = "power",
+		sets = { { main = "shortbow", offhand = "quiver" }, { main = "bow", offhand = "quiver" } },
+	},
+	{
+		path = "destroyer",
+		build = "destroyer.destroyerExp",
+		measure = "dps",
+		reportSession = "S90",
+		reportAt = { 100 },
+		reportWhy = "wand + orb 1.054 of the staff at 100 after Elemental Might x1.3 (the Spark and the Lens grow with the Mage's skills)",
+		sets = { { main = "staff" }, { main = "wand", offhand = "orb" } },
+	},
+	{
+		path = "arcanist",
+		build = "arcanist.arcanistBoss",
+		measure = "dps",
+		sets = { { main = "runestaff" }, { main = "wand", offhand = "tome" } },
+	},
+	{
+		path = "inquisitor",
+		build = "inquisitor.solo",
+		measure = "dps",
+		sets = { { main = "mace1h", offhand = "shield" }, { main = "flail1h", offhand = "shield" } },
+	},
+	{
+		path = "fortune",
+		build = "fortune.plunder",
+		measure = "power",
+		reportSession = "S89",
+		reportWhy = "flail 1.03, scepter 0.97-0.98 of the mace: Anointment heals nobody in MIX, Concussion in band",
+		sets = {
+			{ main = "mace1h", offhand = "relic" },
+			{ main = "flail1h", offhand = "relic" },
+			{ main = "scepter", offhand = "relic" },
+		},
+	},
+	{
+		path = "healer",
+		build = "healer.dungeon",
+		measure = "healer",
+		reportSession = "S89",
+		reportWhy = "holy staff 1.07-1.08 of scepter + shield: the staff's base in dungeon; Saving Blow in band",
+		sets = { { main = "scepter", offhand = "shield" }, { main = "holystaff" } },
+	},
+} :: { TypeSet }
+
+-- D4 (STATY 9): the 12 named Mythics against the expected rolled Mythic of the same base and ilvl (Balance.namedPower,
+-- the S84 F definition): power in MIX of the target classes (the main stat of the item; none: the classes that wear
+-- it) within NAMED_BAND; every regular line at most NAMED_LINE_MAX x the Mythic top of ItemRoll.bonusRange at the
+-- item's level (a named item has 4 lines instead of 6).
+Balance.NAMED_BAND = { 1.00, 1.08 }
+Balance.NAMED_LINE_MAX = 2.5
+Balance.NAMED_TARGETS = {
+	unique_grimrok_cleaver = { "Warrior" },
+	unique_grimrok_fang = { "Hunter" },
+	unique_grimrok_totem = { "Warrior", "Hunter", "Mage", "Cleric" },
+	unique_morvane_shroud = { "Mage" },
+	unique_morvane_scepter = { "Cleric" },
+	unique_morvane_bow = { "Hunter" },
+	unique_azgor_heart = { "Warrior", "Hunter", "Mage", "Cleric" },
+	unique_azgor_staff = { "Mage" },
+	unique_azgor_helm = { "Warrior", "Cleric" },
+	unique_vaelgrath_fang = { "Warrior" },
+	unique_vaelgrath_scale = { "Warrior", "Cleric" },
+	unique_vaelgrath_eye = { "Mage" },
+} :: { [string]: { string } }
+
+-- S88 targets of the defence, the class checks, PvP and luck (STATY 5, 7, 8, 14; ROZWOJ 1 pt 31, 6.1, 6.3).
+Balance.DEFENCE_TARGETS = {
+	armor = { 0.15, 0.21 }, -- defMul 1 (STATY 7)
+	armored = { 0.25, 0.33 }, -- defMul 1.8 (undead armored)
+	mres = { 0.12, 0.17 }, -- mresMul 1 (S66)
+	warded = { 0.21, 0.27 }, -- mresMul 1.8 (undead warded)
+	dodgeTime = 1.10, -- B5: fight time against an agile kind / GENERIC
+}
+Balance.GUARD_EHP_MAX = 0.12 -- E1: both traits of the Guardian's set, EHP with / without both - 1
+Balance.PVP_TARGETS = { ratio = 0.90, tickShare = 0.02, tick = { 0.59, 0.61 }, half = 0.55, stun = 0.02 }
+Balance.FORTUNE_UNIQUES = { 1.20, 1.35 } -- G2: Uniques per hour with / without a full Priest of Fortune, profile K1
+
+-- D3 (answer 23): family and class lines at level 100, ItemRoll.bonusRange: the Common range and the Mythic top.
+Balance.LINE_TARGETS = {
+	{ prefix = "vs_", over = "family", common = { 5, 12 }, mythicTop = 14.5 },
+	{ prefix = "res_", over = "family", common = { 5, 11 }, mythicTop = 13.5 },
+	{ prefix = "vs_", over = "class", common = { 4, 9 }, mythicTop = 11 },
+	{ prefix = "res_", over = "class", common = { 4, 9 }, mythicTop = 11 },
+} :: { { prefix: string, over: string, common: { number }, mythicTop: number } }
+
 -- traitScale with all 24 traits off: the "bez cech" columns of G7, G8 and the trait table.
 Balance.NO_TRAITS = {} :: { [string]: number }
 for _, def in ItemTraits.list do
@@ -263,16 +512,17 @@ expectedBonusesRaw = function(defId: string, ilvl: number, rarity: number, class
 			end
 		end
 	end
-	local legendary = Bonuses.pools.legendary
-	if rarityDef.legendaryLines > 0 then
-		local share = rarityDef.legendaryLines / #legendary
+	-- S88: the class-filtered pools the server draws from (ItemRoll.legendaryPool / mythicPool), not the whole lists
+	local legendary = ItemRoll.legendaryPool(defId, classId)
+	if rarityDef.legendaryLines > 0 and #legendary > 0 then
+		local share = math.min(1, rarityDef.legendaryLines / #legendary)
 		for _, id in legendary do
 			table.insert(out, { stat = id, v = ItemRoll.rollBonusValue(id, ilvl, rarity, 0.5) * share })
 		end
 	end
-	local mythic = Bonuses.pools.mythic
-	if rarityDef.mythicLines > 0 then
-		local share = rarityDef.mythicLines / #mythic
+	local mythic = ItemRoll.mythicPool(defId, classId)
+	if rarityDef.mythicLines > 0 and #mythic > 0 then
+		local share = math.min(1, rarityDef.mythicLines / #mythic)
 		for _, id in mythic do
 			table.insert(out, { stat = id, v = ItemRoll.rollBonusValue(id, ilvl, rarity, 0.5) * share })
 		end
@@ -2458,9 +2708,15 @@ do
 		assert(R[key] == nil, `GLOBAL_REPORT_ONLY: duplicate {key}`)
 		R[key] = { session = session, why = why }
 	end
-	-- G7 (D1): the Hunter's Heroic set 25.1-26.7 % "z cechami" (band 15-25 %) after the pct cap; traits are S88's
+	-- G7 (D1): the Hunter's Heroic set "z cechami" (band 15-25 %). S88 (H4): out of reach of the S88 levers: the new
+	-- lines are cut to the D1 floor and the bow's traits grow with rarity; an owner decision (a Hunter exception like
+	-- the Legendary <= 43 %)
 	for L = 25, 100, 5 do
-		add(`G7|Hunter {L}: heroic (z cechami)`, "S88", "Hunter Heroic 25.1-26.7 % with traits after the pct cap")
+		add(
+			`G7|Hunter {L}: heroic (z cechami)`,
+			"S88",
+			"poza zasięgiem dźwigni S88: Hunter Heroic 0.257-0.273 with traits after the D1 line cuts (owner: exception)"
+		)
 	end
 	-- G9 (D3): at 20 the 1-20 costs (S91); at 25 +1..+9 protected 10.7 levels of income (band 12-25, S92's band)
 	for _, c in Balance.CLASSES do
@@ -2472,6 +2728,12 @@ do
 		)
 		add(`G9.up9|{c} 25: +1…+9 z ochroną (poziomy dochodu)`, "S92", "10.74 < 12 at 25 after goldHigh 20")
 	end
+	-- S88 (E4): T-SK5 at 30 with Anointment 5 % (8 before; band 0.04-0.06 in `dungeon`): the heal anchors 21-44
+	add(
+		"G10|T-SK5 Cleric healer.dungeon na guardian.defender 30",
+		"S92",
+		"0.246 < 0.25 with Anointment 5 % (anchors 21-44)"
+	)
 	-- G10 (G2, G3): T-SK5 at 20 / 25 (the heal curve is 1 at 20; 21-44 are S92's anchors); T-SK4 of the two builds
 	-- apart (manaCost.Mage = geometric mean of what each needs): the path costs are S90's
 	add("G10|T-SK5 Cleric healer.dungeon na guardian.defender 20", "S91", "0.227 < 0.25 at 20 (heal curve = 1)")
@@ -2487,12 +2749,25 @@ do
 		add(`G10|T-SK4 Mage arcanist.arcanistBoss {L}`, "S90", "3.02-3.26 > 3 on the shared mana curve; path costs")
 	end
 	-- G8 (D2): "bez cech" rows out of 0.97-1.035 with twoHandedBonusMul 2.7 / 6.6 % per level (the most rows, Legendary
-	-- and Mythic +0 at 45-100 first): legendary and mythic lines get no multiplier (S88 E6)
+	-- and Mythic +0 at 45-100 first): legendary and mythic lines get no multiplier. S88 (H4): Data/Rarities is not an
+	-- S88 lever; the Legendary rows at 20 go to the 1-20 session
 	for _, label in
 		{
 			"Warrior sword2h legendary +0 L20",
 			"Warrior spear2h legendary +0 L20",
-			"Warrior spear2h legendary +9 L20",
+			"Mage staff legendary +0 L20",
+			"Mage runestaff legendary +0 L20",
+		}
+	do
+		add(
+			`G8|{label}: bez cech`,
+			"S91",
+			"1.036-1.039 at 20: Legendary lines x2.7 on 1-20 items (S88 cut the new lines; Data/Rarities is fixed)"
+		)
+	end
+	for _, label in
+		{
+			"Warrior axe2h mythic +0 L20",
 			"Warrior axe2h mythic +0 L45",
 			"Warrior axe2h mythic +9 L45",
 			"Warrior axe2h mythic +0 L70",
@@ -2506,11 +2781,13 @@ do
 		add(
 			`G8|{label}: bez cech`,
 			"S88",
-			"axe Mythic 0.951-0.957, staves Mythic +9 0.960-0.966, Legendary at 20 1.036-1.043 (S87 levers)"
+			"poza zasięgiem dźwigni S88: axe Mythic 0.953-0.969 (L20 since the class-filtered pools), staves Mythic +9 0.966-0.970 (mythic lines without x2.7, Data/Rarities)"
 		)
 	end
-	-- G8 "z cechami": the missing second trait of a two-handed weapon (0.87-0.98) and the Holy Staff's Saving Blow
-	-- (1.9-3.6); every row but the ones in band on the S87 data (S88 E6)
+	-- G8 "z cechami": the missing second trait of a two-handed weapon (0.87-0.98). S88 (E6, H4): every row but the ones
+	-- in band on the S88 data stays in the report: the Berserker's traits stay in 0.04-0.06 and within 5 % of each other
+	-- (C9), the staves are measured on the skill model (Balance.TYPE_SETS; the S84 convention counts Elemental Spark of
+	-- the default wand + orb with basicShare 0.4, measured 0.14-0.27), the Holy Staff on the Healer's sets
 	local inBand: { [string]: boolean } = {}
 	for _, label in
 		{
@@ -2521,22 +2798,19 @@ do
 			"Warrior sword2h mythic +0 L45",
 			"Warrior sword2h mythic +0 L70",
 			"Warrior sword2h mythic +0 L100",
-			"Mage staff unique +0 L20",
-			"Mage staff unique +9 L20",
-			"Mage staff heroic +0 L20",
-			"Mage staff heroic +9 L20",
-			"Mage staff legendary +0 L20",
-			"Mage staff legendary +9 L20",
-			"Mage staff unique +0 L45",
-			"Mage staff unique +9 L45",
-			"Mage staff heroic +0 L45",
-			"Mage staff heroic +9 L45",
-			"Mage staff legendary +0 L45",
-			"Mage staff legendary +9 L45",
-			"Mage staff unique +0 L70",
-			"Mage staff heroic +0 L70",
-			"Mage staff heroic +9 L70",
-			"Mage staff legendary +0 L70",
+			"Warrior sword2h legendary +9 L45",
+			"Warrior sword2h mythic +9 L45",
+			"Warrior sword2h legendary +0 L70",
+			"Warrior sword2h legendary +9 L70",
+			"Warrior sword2h mythic +9 L70",
+			"Warrior sword2h legendary +0 L100",
+			"Warrior sword2h legendary +9 L100",
+			"Warrior sword2h mythic +9 L100",
+			"Warrior spear2h heroic +9 L20",
+			"Warrior spear2h legendary +0 L20",
+			"Warrior spear2h legendary +9 L20",
+			"Warrior spear2h heroic +9 L70",
+			"Cleric holystaff common +0 L20",
 		}
 	do
 		inBand[label] = true
@@ -2550,7 +2824,7 @@ do
 						add(
 							`G8|{label}: z cechami`,
 							"S88",
-							"one trait against two (0.87-0.98), Holy Staff Saving Blow 1.9-3.6"
+							"poza zasięgiem dźwigni S88: one trait against two (Berserker 0.90-0.97, staves 0.85-0.96, Holy Staff 1.15-3.66 with Saving Blow solo); owner: an E6 exception for the Warrior"
 						)
 					end
 				end
@@ -3068,6 +3342,9 @@ export type SituationCtx = {
 	bossLike: boolean, -- bosses and Elite II: immune to Concussion
 	measure: string, -- "power" (moc²), "ehp" (tank) or "loss" (HP lost per kill, solo)
 	rates: { { attacks: number, targetShare: number } }?, -- tank: the attack rates averaged
+	-- S88 (F1): the target is a player (Balance.pvpDuel): every trait with its PvP rule (STATY 8, mirrors the PvP
+	-- branches of CombatService); nil = against monsters, every number as before
+	pvp: boolean?,
 }
 
 local bossFights: { [string]: BossFight } = {}
@@ -3230,6 +3507,8 @@ export type TraitTerms = {
 	armorMul: number,
 	dps: number, -- FightSim.dps on the changed armour x basicShare x SKILL_DPS x dpsMul
 	baseDps: number, -- the same before dpsMul
+	hitAdd: number, -- S88: the hit part of dpsMul - 1 (counters, extra hits, bonuses)
+	dotAdd: number, -- S88: the tick part (bleed, poison, burn; x Combat.pvp.dot in PvP)
 	byTrait: { [string]: TraitTerm },
 	-- the same mechanisms from lines alone (woundChance, killHeal, lifesteal, executioner, ...): outside the S32
 	-- convention, so not in the totals; with the trait they count in its term (shared cap, B6)
@@ -3315,7 +3594,8 @@ function Balance.traitTerms(p: Player, m: any, situation: string | SituationCtx,
 	local sunder = traits.sundering
 	if sunder and not p.magic then
 		local onHit = sunder.def.onHit :: ItemTraits.OnHit
-		local cap = math.min(onHit.maxStacks or 1, BuffCategories.caps.enemyArmorItem / math.max(1e-9, sunder.value))
+		local stacks = if ctx.pvp then Combat.pvp.armorBreakStacks else onHit.maxStacks or 1
+		local cap = math.min(stacks, BuffCategories.caps.enemyArmorItem / math.max(1e-9, sunder.value))
 		local full = cap / procHits
 		local T = ctx.seconds
 		local mean = if T <= full then procHits * T / 2 else cap - cap * full / (2 * T)
@@ -3346,9 +3626,14 @@ function Balance.traitTerms(p: Player, m: any, situation: string | SituationCtx,
 	-- Swordplay: every regular attack on the player rolls Traits.counterChance(riposte) for an instant basic hit
 	-- x (1 + counterDamage %) (mirrors CombatService tryCounter).
 	local riposte = hooks.riposte or 0
+	local pvp = ctx.pvp == true
+	local pvpBy = ItemTraits.pvpByHook
 	if riposte > 0 then
-		local chance = Traits.counterChance(riposte, false) / 100
+		local chance = Traits.counterChance(riposte, pvp) / 100
 		local bonus = hooks.counterDamage or 0
+		if pvp then -- mirrors CombatService tryCounter (Traits.pvpValue of counterDamage)
+			bonus = Traits.pvpValue(bonus, pvpBy.counterDamage)
+		end
 		local t = termOf(if traits.swordplay then "swordplay" else nil, "riposte")
 		addHit(t, ctx.attacks * chance * (1 + bonus / 100) * swing / baseDps)
 	end
@@ -3370,12 +3655,16 @@ function Balance.traitTerms(p: Player, m: any, situation: string | SituationCtx,
 	local draw = traits.fullDraw
 	if draw then
 		local casts = math.min(swings, 1 / skillInterval)
-		local bonus = Traits.drawBonus(draw.value, p.weaponSpeed)
+		local bonus = Traits.drawBonus(draw.value, p.weaponSpeed, if pvp then pvpBy.traitFullDraw else nil)
 		addHit(termOf("fullDraw", ""), casts * bonus / 100 * swing / baseDps)
 	end
 	-- Beheading + executioner lines: below Combat.lowHpFraction the damage is x (1 + Traits.executeBonus): the fight
 	-- takes (1 - f) / D + f / (D x (1 + b)) of its time (mirrors CombatService:offensiveMultiplier).
-	local execute = Traits.executeBonus(hooks.executioner or 0, hooks.traitExecute or 0) / 100
+	local execute = Traits.executeBonus(
+		hooks.executioner or 0,
+		hooks.traitExecute or 0,
+		if pvp then pvpBy.traitExecute else nil
+	) / 100
 	if execute > 0 then
 		local f = Combat.lowHpFraction
 		local mul = 1 / ((1 - f) + f / (1 + execute))
@@ -3405,6 +3694,7 @@ function Balance.traitTerms(p: Player, m: any, situation: string | SituationCtx,
 					* capped
 					* delivered
 					/ baseDps
+					* (if pvp then Combat.pvp.dot else 1) -- mirrors Traits.pvpTick (once, S63)
 				addDot(termOf(if grown > 0 then entry.trait.id else nil, spec.line or spec.effect), share)
 				if grown > 0 and spec.attackSlow then
 					attackSlow[entry.trait.id] = 1 - (1 - chance) ^ (procHits * spec.duration)
@@ -3440,12 +3730,13 @@ function Balance.traitTerms(p: Player, m: any, situation: string | SituationCtx,
 				local capped = math.min(1, 1 / math.max(1e-9, rate * plan.duration))
 				local delivered = math.clamp(1 - (ticks + 1) / 2 / ctx.seconds, 0, 1)
 				local share = rate / hitShare * plan.pct / 100 * (1 + (hooks.dotPower or 0) / 100)
-				dmg += share * swing * capped * delivered / baseDps
+				dmg += share * swing * capped * delivered / baseDps * (if pvp then Combat.pvp.dot else 1)
 			elseif plan and plan.kind == "slow" then
 				-- Frostbite: +max(FROSTBITE, frostbite hook) % from you on targets your ice slowed
-				local uptime = 1 - (1 - chance) ^ (swings * hitShare * plan.duration)
+				local slowFor = plan.duration * (if pvp then Config.PvpCcMultiplier else 1)
+				local uptime = 1 - (1 - chance) ^ (swings * hitShare * slowFor)
 				local frost = math.max(SkillData.FROSTBITE, hooks.frostbite or 0)
-				hit += uptime * frost / 100
+				hit += uptime * frost * (if pvp then Combat.pvp.frostbite else 1) / 100
 				iceUptime += uptime / #list
 			elseif plan and plan.kind == "arc" then
 				local pct = ctx.othersAlive * plan.pct + (1 - ctx.othersAlive) * plan.sameTarget
@@ -3465,7 +3756,8 @@ function Balance.traitTerms(p: Player, m: any, situation: string | SituationCtx,
 		for _, element in list do
 			if element == "ice" then
 				local frost = math.max(SkillData.FROSTBITE, hooks.frostbite or 0)
-				sum += iceUptimeAssumed * (frost - SkillData.FROSTBITE) / 100
+				local frostMul = if pvp then Combat.pvp.frostbite else 1
+				sum += iceUptimeAssumed * (frost - SkillData.FROSTBITE) * frostMul / 100
 			else
 				sum += elementShare * might.value / 100
 			end
@@ -3479,7 +3771,8 @@ function Balance.traitTerms(p: Player, m: any, situation: string | SituationCtx,
 	if harry then
 		local onHit = harry.def.onHit :: ItemTraits.OnHit
 		local chance = Traits.chance(harry.value, 0, 1) / 100
-		harryUptime = 1 - (1 - chance) ^ (procHits * onHit.duration)
+		local lasts = onHit.duration * (if pvp then Config.PvpCcMultiplier else 1)
+		harryUptime = 1 - (1 - chance) ^ (procHits * lasts)
 		local slow = math.min(onHit.attackSlow or 0, BuffCategories.caps.enemyAttackSlow)
 		termOf("harrying", "").takenMul *= 1 - ctx.targetShare * harryUptime * slow / 100
 	end
@@ -3493,19 +3786,22 @@ function Balance.traitTerms(p: Player, m: any, situation: string | SituationCtx,
 	local prey = traits.easyPrey
 	if prey then
 		local share = math.max(ctx.controlled, harryUptime, iceUptime)
-		addHit(termOf("easyPrey", ""), share * Traits.controlledBonus(prey.value, 0.5) / 100)
+		local preyPvp = if pvp then pvpBy.controlledDamage else nil
+		addHit(termOf("easyPrey", ""), share * Traits.controlledBonus(prey.value, 0.5, preyPvp) / 100)
 	end
 	-- Runic Seal: + value % while the Mage stands still (mirrors CombatService:pollSeal and offensiveMultiplier).
 	local seal = traits.runicSeal
 	if seal then
-		addHit(termOf("runicSeal", ""), ctx.still * seal.value / 100)
+		local sealValue = if pvp then Traits.pvpValue(seal.value, pvpBy.traitRuneSeal) else seal.value
+		addHit(termOf("runicSeal", ""), ctx.still * sealValue / 100)
 	end
 	-- Bonebreaker: every hit weakens the target by value % (cap enemyDamageDown) for the duration.
 	local bone = traits.bonebreaker
 	if bone then
 		local onHit = bone.def.onHit :: ItemTraits.OnHit
 		local uptime = math.min(1, procHits * onHit.duration)
-		local weaken = math.min(bone.value, BuffCategories.caps.enemyDamageDown)
+		local grown = if pvp then Traits.pvpValue(bone.value, pvpBy.traitWeaken) else bone.value
+		local weaken = math.min(grown, BuffCategories.caps.enemyDamageDown)
 		termOf("bonebreaker", "").takenMul *= 1 - ctx.targetShare * uptime * weaken / 100
 	end
 	-- Concussion: stuns every 1 / (gap + 1 / (chance x hits)) s; the next attack moves to stun + delayShare x
@@ -3517,14 +3813,17 @@ function Balance.traitTerms(p: Player, m: any, situation: string | SituationCtx,
 		local interval = m.attackInterval
 		local a = onHit.duration + (onHit.delayShare or 0) * interval
 		local delay = if a <= interval then a * a / (2 * interval) else a - interval / 2
+		if pvp then -- a stunned player loses the stun (x PvpCcMultiplier); Monster.DelayAttack is monsters only
+			delay = onHit.duration * Config.PvpCcMultiplier
+		end
 		local per = 1 / ((onHit.gap or 0) + 1 / math.max(1e-9, chance * procHits))
 		termOf("concussion", "").takenMul *= 1 - ctx.targetShare * math.min(1, per * delay)
 	end
 
 	-- Sustain: Reaping + killHeal lines (on every kill), Parry's heal on every block, lifesteal and Saving Blow on the
 	-- bearer under the lifesteal cap (Traits.savingSelfShare).
-	-- mirrors CombatService:reward (killHeal % of max HP per kill)
-	local killHeal = hooks.killHeal or 0
+	-- mirrors CombatService:reward (killHeal % of max HP per kill, S88: Traits.killHeal caps the sum)
+	local killHeal = if pvp then 0 else Traits.killHeal(hooks.killHeal or 0) -- monsters only
 	local killHealHp = 0
 	if killHeal > 0 then
 		termOf(if traits.reaping then "reaping" else nil, "killHeal").sustain += killHeal * maxHp * ctx.kills / 100
@@ -3532,8 +3831,11 @@ function Balance.traitTerms(p: Player, m: any, situation: string | SituationCtx,
 	end
 	-- mirrors CombatService:onBlock (blockHeal % of max HP per block)
 	local blockHeal = hooks.blockHeal or 0
+	if pvp then -- mirrors CombatService onBlock (Traits.pvpValue of blockHeal)
+		blockHeal = Traits.pvpValue(blockHeal, pvpBy.blockHeal)
+	end
 	if blockHeal > 0 then
-		local _, _, block = Damage.avoidance(v.dodge or 0, 0, 0, Traits.blockChance(hooks.block or 0, false))
+		local _, _, block = Damage.avoidance(v.dodge or 0, 0, 0, Traits.blockChance(hooks.block or 0, pvp))
 		termOf(if traits.parry then "parry" else nil, "blockHeal").sustain += ctx.attacks * block * blockHeal / 100 * maxHp
 	end
 	local hitDps = baseDps * (1 + hitAdd)
@@ -3541,11 +3843,16 @@ function Balance.traitTerms(p: Player, m: any, situation: string | SituationCtx,
 	local lsDef = Stats.get("lifesteal")
 	local lsCap = if lsDef and lsDef.cap then lsDef.cap else 100
 	local saving = traits.savingBlow
+	local stealMul = if pvp then Combat.pvp.lifesteal else 1 -- mirrors Damage.computeDamage (PvP lifesteal)
 	if lifesteal > 0 then
-		termOf(if saving then "savingBlow" else nil, "lifesteal").sustain += math.min(lifesteal, lsCap) / 100 * hitDps
+		-- in PvP the heal comes from the hit after pvpModifier (Damage.computeDamage, CombatService:savingBlow)
+		local steal = math.min(lifesteal, lsCap) / 100 * hitDps * stealMul * (if pvp then Combat.pvpModifier else 1)
+		termOf(if saving then "savingBlow" else nil, "lifesteal").sustain += steal
 	end
 	if saving then -- mirrors CombatService:savingBlow
-		termOf("savingBlow", "").sustain += Traits.savingSelfShare(saving.value, lifesteal) / 100 * hitDps
+		local pct = if pvp then Traits.pvpValue(saving.value, pvpBy.traitSavingBlow) else saving.value
+		local dealt = hitDps * (if pvp then Combat.pvpModifier else 1)
+		termOf("savingBlow", "").sustain += Traits.savingSelfShare(pct, lifesteal) / 100 * dealt
 	end
 
 	local dpsMul, takenMul, sustain = 1 + hitAdd + dotAdd, 1, 0
@@ -3562,6 +3869,8 @@ function Balance.traitTerms(p: Player, m: any, situation: string | SituationCtx,
 		armorMul = armorMul,
 		dps = baseDps * dpsMul,
 		baseDps = baseDps,
+		hitAdd = hitAdd,
+		dotAdd = dotAdd,
 		byTrait = byTrait,
 		lines = lines,
 	}
@@ -4925,6 +5234,242 @@ function Balance.itemTargets(): { TargetRow }
 	end
 	itemTargetCache = rows
 	return rows
+end
+
+-- S88: named Mythics (D4) -------------------------------------------------------------------------------------------
+
+-- Gear options that put a base type in its slot for `classId` (weapon / off-hand; armour and jewellery by default).
+local function namedGear(baseType: string): GearOpts
+	local base = Bases.byType[baseType] :: any
+	if base and base.slot == "weapon" then
+		local twoHanded = base.weapon(1).twoHanded
+		return { weapon = baseType, offhand = if twoHanded then false else nil }
+	elseif base and base.slot == "offhand" then
+		return { offhand = baseType }
+	end
+	return {}
+end
+
+-- The items of the S32 set of `classId` at `level` with `item` in place of the first item of its base type.
+local function withItem(classId: string, level: number, baseType: string, item: any): { any }
+	local items = Balance.gear(classId, level, namedGear(baseType))
+	for i, it in items do
+		local def = Items.get(it.id) :: any
+		if def and def.type == baseType then
+			items[i] = item
+			return items
+		end
+	end
+	error(`Balance: no {baseType} in the {classId} set`)
+end
+
+-- S67 / S84: a family line counts on the model's monster family (GENERIC) with FAMILY_MATCH, as expectedLines
+-- spreads the rolled family lines; the named item's fixed line goes there the same way (extra hooks).
+local function familyHooks(lines: { any }): { [string]: number }
+	local hooks: { [string]: number } = {}
+	for _, line in lines do
+		local def = Bonuses.get(line.stat) :: any
+		if def and def.param and Bonuses.params[def.param].over == "family" then
+			local prefix = Bonuses.params[def.param].prefix
+			local id = Bonuses.familyLine(prefix, Balance.GENERIC.family)
+			hooks[id] = (hooks[id] or 0) + line.v * FAMILY_MATCH
+			if line.stat ~= id then
+				hooks[line.stat] = (hooks[line.stat] or 0) - line.v -- only the spread part counts
+			end
+		end
+	end
+	return hooks
+end
+
+export type NamedPower = { itemId: string, classId: string, power: number }
+
+-- D4 (S84 F definition): powerMix of `classId` at the item's level with the named item in its slot / with the
+-- expected rolled Mythic of the same base and ilvl (expectedBonuses; a rolled two-handed weapon's lines x
+-- twoHandedBonusMul through Balance.itemStats), both Mythic +0.
+function Balance.namedPower(itemId: string, classId: string): NamedPower
+	local def = Items.get(itemId) :: any
+	local L = def.level
+	local named = makeItem(itemId, L, Rarities.MYTHIC, 0, {})
+	local rolledId = tierId(def.type, L)
+	local rolled = makeItem(rolledId, L, Rarities.MYTHIC, 0, expectedBonuses(rolledId, L, Rarities.MYTHIC, classId))
+	local a = Balance.playerFromItems(
+		classId,
+		L,
+		withItem(classId, L, def.type, named),
+		nil,
+		{ hooks = familyHooks(def.fixedBonuses) }
+	)
+	local b = Balance.playerFromItems(classId, L, withItem(classId, L, def.type, rolled))
+	return { itemId = itemId, classId = classId, power = Balance.powerMix(a) / Balance.powerMix(b) }
+end
+
+export type NamedLine = { stat: string, v: number, top: number, limit: number, legendary: boolean, ok: boolean }
+
+-- D4: every line of a named item against its limit: a regular line at most NAMED_LINE_MAX x the Mythic top of
+-- ItemRoll.bonusRange at the item's level, a legendary line within its own range.
+function Balance.namedLines(itemId: string): { NamedLine }
+	local def = Items.get(itemId) :: any
+	local out: { NamedLine } = {}
+	for _, line in def.fixedBonuses do
+		local bonusDef = Bonuses.get(line.stat) :: any
+		local legendary = bonusDef.tier == "legendary"
+		local lo, hi = ItemRoll.bonusRange(line.stat, def.level, Rarities.MYTHIC)
+		-- a rolled two-handed weapon's regular lines are x twoHandedBonusMul (S87); a named one keeps its numbers
+		local twoHanded = def.weapon and def.weapon.twoHanded
+		local mul = if twoHanded and ItemRoll.isRegularLine(line.stat) then Rarities.twoHandedBonusMul else 1
+		local limit = if legendary then hi else hi * mul * Balance.NAMED_LINE_MAX
+		table.insert(out, {
+			stat = line.stat,
+			v = line.v,
+			top = hi,
+			limit = limit,
+			legendary = legendary,
+			ok = line.v <= limit + 1e-9 and (not legendary or line.v >= lo - 1e-9),
+		})
+	end
+	return out
+end
+
+-- S88: PvP (F1) -----------------------------------------------------------------------------------------------------
+
+-- A player seen as the target of another player's hits (the fields FightSim.dps and traitTerms read).
+local function asTarget(p: Player): any
+	local v = p.values
+	return {
+		level = p.level,
+		maxHp = v.maxHp or 1,
+		armor = v.armor or 0,
+		mres = v.mres or 0,
+		dodge = v.dodge or 0,
+		attackInterval = 1 / math.max(0.1, v.atkSpeed or 1),
+		damageKind = if p.magic then "magic" else "phys",
+		family = nil,
+	}
+end
+
+export type PvpSide = {
+	dps: number, -- damage per s of the attacker on the defender (PvP rules)
+	ticks: number, -- the trait / line ticks in it
+	heal: number, -- the defender's healing per s from its own traits and lifesteal
+	seconds: number, -- time to kill the defender
+	stun: number, -- share of the defender's time stunned by the attacker's Concussion
+}
+-- `seconds`: the fight length of both passes (the PvE reference of F3 takes the PvP length: ticks after death)
+export type PvpOpts = { classLines: boolean?, pve: boolean?, still: number?, controlled: number?, seconds: number? }
+
+-- One direction of a duel: `a` hits `b` (both of the same level); `pve` = the same exchange with the rules against
+-- monsters (no pvpModifier, halves, tick multiplier, class lines): the reference of the S88 PvP checks.
+local function pvpSide(a: Player, b: Player, o: PvpOpts, seconds: number): PvpSide
+	local pvp = not o.pve
+	local S = Balance.SITUATIONS
+	local function ctxOf(p: Player, other: Player): SituationCtx
+		local target = asTarget(other)
+		return {
+			name = "pvp",
+			level = p.level,
+			m = target,
+			hit = 0,
+			attacks = math.max(0.1, other.values.atkSpeed or 1), -- the other's regular attacks (counters, block)
+			seconds = seconds,
+			kills = 0,
+			targetShare = 1,
+			othersAlive = 0,
+			behind = 0,
+			controlled = o.controlled or 0,
+			still = o.still or 0,
+			bossLike = false,
+			measure = "power",
+			rates = nil,
+			pvp = pvp,
+		}
+	end
+	local ta = Balance.traitTerms(a, asTarget(b), ctxOf(a, b))
+	local tb = Balance.traitTerms(b, asTarget(a), ctxOf(b, a))
+	local m = asTarget(b)
+	local v = a.values
+	-- block and the crit resistance of the defender on the attacker's hits (FightSim.dps has neither)
+	local bs = S.basicShare[a.classId] or 0.5
+	local hitShare = 1 - Damage.dodgeChance(m.dodge, v.accuracy or 0)
+	local basic = (1 + (v.basicDmg or 0) / 100) * hitShare
+	local skill = (1 / bs - 1) * (1 + (v.skillDmg or 0) / 100)
+	local basicFrac = basic / math.max(1e-9, basic + skill)
+	local _, _, block = Damage.avoidance(0, 0, 0, Traits.blockChance(b.hooks.block or 0, pvp))
+	local c = math.min(v.critChance or 0, 100) / 100
+	local critDmg = v.critDmg or 150
+	local critFix = (1 + c * (Damage.critMultiplier(critDmg, b.values.critResist) - 1)) / (1 + c * (critDmg / 100 - 1))
+	local hitMul = critFix * (1 - basicFrac * block)
+	if pvp then
+		hitMul *= Combat.pvpModifier
+		if o.classLines then
+			hitMul *= Damage.classLineMul(
+				a.hooks[Bonuses.classLine("vs_", b.classId)] or 0,
+				b.hooks[Bonuses.classLine("res_", a.classId)] or 0
+			)
+		end
+	end
+	-- the defender's own traits slow, weaken and stun the attacker (its takenMul)
+	local hits = ta.baseDps * (1 + ta.hitAdd) * hitMul * tb.takenMul
+	local ticks = ta.baseDps * ta.dotAdd * tb.takenMul
+	local heal = tb.sustain + (b.values.hpRegenCombat or 0)
+	local dps = hits + ticks
+	-- Concussion of the attacker: stuns per s x the stun (mirrors the traitTerms formula; x PvpCcMultiplier)
+	local stun = 0
+	local shock = (a.traits or {}).concussion
+	if shock then
+		local onHit = shock.def.onHit :: ItemTraits.OnHit
+		local chance = Traits.chance(shock.value, 0, 1) / 100
+		local procHits = math.max(0.1, v.atkSpeed or 1) * hitShare + 1 / S.skillInterval
+		local per = 1 / ((onHit.gap or 0) + 1 / math.max(1e-9, chance * procHits))
+		stun = per * onHit.duration * (if pvp then Config.PvpCcMultiplier else 1)
+	end
+	return {
+		dps = dps,
+		ticks = ticks,
+		heal = heal,
+		seconds = (b.values.maxHp or 1) / math.max(1e-9, dps - math.min(heal, 0.8 * dps)),
+		stun = stun,
+	}
+end
+
+export type PvpDuel = { ab: PvpSide, ba: PvpSide }
+
+-- F1: a duel of two players of the same level (the S32 convention: basic attacks and skills as SKILL_DPS, no
+-- rotation): time to kill in both directions. Every trait with its PvP rule (traitTerms with ctx.pvp), pvpModifier
+-- once on hits, Combat.pvp.dot once on ticks, block and counter halves, lifesteal half, class lines with
+-- classLineCap (`classLines`).
+function Balance.pvpDuel(a: Player, b: Player, opts: PvpOpts?): PvpDuel
+	local o: PvpOpts = opts or {}
+	if o.seconds then
+		return { ab = pvpSide(a, b, o, o.seconds), ba = pvpSide(b, a, o, o.seconds) }
+	end
+	local ab = pvpSide(a, b, o, 20)
+	local ba = pvpSide(b, a, o, 20)
+	-- once more with the fight's own length (ticks after death, armour break stacks)
+	return { ab = pvpSide(a, b, o, ab.seconds), ba = pvpSide(b, a, o, ba.seconds) }
+end
+
+-- F3: the PvP / PvE ratio of one trait of `p` in a mirror duel against `opp`: an attacking trait shortens the kill
+-- of `opp`, a defending one (Bonebreaker, Parry, Saving Blow, Swordplay's counters on the defender) lengthens the
+-- kill of `p`. `traitScale` turns the trait off. The same situation shares (still, controlled) in both.
+Balance.PVP_DEFENSIVE = { bonebreaker = true, parry = true, savingBlow = true } :: { [string]: boolean }
+function Balance.pvpTraitValue(
+	p: Player,
+	pOff: Player,
+	opp: Player,
+	traitId: string,
+	pve: boolean,
+	opts: PvpOpts?
+): number
+	local o = table.clone(opts or {}) :: PvpOpts
+	o.pve = pve
+	if Balance.PVP_DEFENSIVE[traitId] then
+		local with = Balance.pvpDuel(opp, p, o).ab.seconds
+		local without = Balance.pvpDuel(opp, pOff, o).ab.seconds
+		return with / without - 1
+	end
+	local with = Balance.pvpDuel(p, opp, o).ab.seconds
+	local without = Balance.pvpDuel(pOff, opp, o).ab.seconds
+	return without / with - 1
 end
 
 return Balance
