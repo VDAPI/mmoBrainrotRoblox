@@ -1,0 +1,135 @@
+{
+ "_": "IMPORT-GRAFIK 2026-10-14: owner pictures never uploaded to Roblox (blood, wounds, gore). tools/icons/content_block.py",
+ "files": [
+  {
+   "path": "modele_3d/bronie/unique_grimrok_cleaver/unique_grimrok_cleaver.png",
+   "sha256": "e2af3774ccbd8c08400caa9642a1dd61d1f3f7dc7787806a6e242a0801900bef",
+   "why": "krew na ostrzu i owijkach topora"
+  },
+  {
+   "path": "tylko_2d/unikaty/unique_grimrok_fang.png",
+   "sha256": "d666e42f8f5f910635dac395b61ede37e172374c460d8643ae6fa8f6282bc488",
+   "why": "kieł i bransoleta umazane krwią"
+  },
+  {
+   "path": "tylko_2d/unikaty/unique_grimrok_totem.png",
+   "sha256": "79df1994e5b7987e435759f3734d441f9a936bd29d401dc688e0cc860a8b05ac",
+   "why": "krwawe smugi na totemie i piórach"
+  },
+  {
+   "path": "tylko_2d/materialy/werewolf_claw.png",
+   "sha256": "74feb09a515a675d7d7a4589970d588c808decd187c079dfe686d1e42b3b22f1",
+   "why": "odcięta łapa z krwawym kikutem, krew przy pazurach"
+  },
+  {
+   "path": "tylko_2d/questy/quest_ledger.png",
+   "sha256": "f030cff36ac185dee7955eedf4fdb66895adef4f891071e61fb02af9c555fdc1",
+   "why": "plama krwi na okładce księgi"
+  },
+  {
+   "path": "tylko_2d/questy/quest_boarHaunch.png",
+   "sha256": "b3606940f6e81023d23d943ad1e7919c9d3d056f6e778dd388edf01fd0ee6c39",
+   "why": "surowe mięso: odcięty udziec z widocznymi mięśniami"
+  },
+  {
+   "path": "tylko_2d/bossowie/boss_grimrok.png",
+   "sha256": "600c7197df5a91f31c445da62eb9981c67dfb8a6397c53fc86bcb9581faad999",
+   "why": "krew na toporze, sztandarze i twarzy"
+  },
+  {
+   "path": "tylko_2d/klasy/portrait_warrior.png",
+   "sha256": "0922f1980a06f722710d44db02e265f4f5847b1b58be730084e945b44b3be464",
+   "why": "miecz we krwi"
+  },
+  {
+   "path": "tylko_2d/lochy/dungeon_grimrok.png",
+   "sha256": "221fe24a8a02ae98d91284de98726a709c1bc875d302efb9ce7c810a2045de3d",
+   "why": "kałuże krwi na posadzce, zakrwawiony bęben, czaszki na palach"
+  },
+  {
+   "path": "tylko_2d/mapy/duskwood_den.png",
+   "sha256": "daea8ef25d153f26dcc88e706e8dcf0c2ffb227f3cc2e3b8a88ba00ef6d7d9fb",
+   "why": "czerwone ślady pazurów na podłodze jaskini (wyglądają jak krew)"
+  },
+  {
+   "path": "tylko_2d/efekty/effect_bleed.png",
+   "sha256": "0fae9f062d3ad0a21af9554060439f99af2723a5a7c2c3d1e7eb87e8f0950276",
+   "why": "realistyczne krople krwi"
+  },
+  {
+   "path": "tylko_2d/efekty/effect_vulnerability.png",
+   "sha256": "b4a6dd58d6b290a742fc764f78bc1754b193de54646f571fb7930d5dc53fca3d",
+   "why": "znak na pancerzu ociekający jak krew"
+  },
+  {
+   "path": "tylko_2d/efekty/effect_misfortune.png",
+   "sha256": "74ce31544135ef9fe479c46076db27c5bc7fa29cc52c2addbebca428a8fffa4e",
+   "why": "czerwone kałuże pod kotem (wyglądają jak krew)"
+  },
+  {
+   "path": "tylko_2d/efekty/effect_slow.png",
+   "sha256": "06cf20bb741032d400f849c3067e5dad2074553e17c54e6d128024a8425b043b",
+   "why": "czerwona, mokra ziemia (wygląda jak zakrwawiona)"
+  },
+  {
+   "path": "tylko_2d/klasy/class_warrior.png",
+   "sha256": "6114bded4e737718b36fc40e8a5df6b5154916eea92a2ca9aa8608a78f7adc28",
+   "why": "skrzyżowane miecze z krwią na ostrzach"
+  },
+  {
+   "path": "tylko_2d/tytuly/title_bloodied.png",
+   "sha256": "5aa440076a364f15738f364a8a88d9528b60f725a3231e94e4246ed2b373fd69",
+   "why": "topór z krwią"
+  },
+  {
+   "path": "tylko_2d/tytuly/title_veteran.png",
+   "sha256": "a0ae5d603337b8f4e965d99d5afffc0bc377a0db04c56aed7d644179bfb3c5c4",
+   "why": "czerwone cięcie na hełmie (wygląda jak rana)"
+  },
+  {
+   "path": "tylko_2d/tytuly/title_path_berserker.png",
+   "sha256": "6be64cc93e82f16946d693ed124dcd38e2e4c4577a4a95c83da2f93a3594ed50",
+   "why": "czaszka i topory zachlapane krwią"
+  },
+  {
+   "path": "tylko_2d/umiejetnosci/warrior/skill_bladeWhirl.png",
+   "sha256": "b48ad42705780f39f03e400f4f682c376766540f09de8dd54d1a8c6fa07e97ec",
+   "why": "wir z bryzgami krwi"
+  },
+  {
+   "path": "tylko_2d/umiejetnosci/warrior/skill_bloodlust.png",
+   "sha256": "705715f30aa0b8c380450a0319d6990993923d723533fb2113c384123bfa3aac",
+   "why": "topory ociekające krwią"
+  },
+  {
+   "path": "tylko_2d/umiejetnosci/warrior/skill_cleave.png",
+   "sha256": "2bb9a9df1e18fd0f6fe5f0374875bc779090c068e0a86899fa0c9c0e9ccf86f9",
+   "why": "bryzg krwi za toporem"
+  },
+  {
+   "path": "tylko_2d/umiejetnosci/warrior/skill_crushingBlow.png",
+   "sha256": "6bab6fb97d6abfb42313debfae6af29049c29898f1fdd13013d49131cd236d79",
+   "why": "pancerz zachlapany krwią"
+  },
+  {
+   "path": "tylko_2d/umiejetnosci/warrior/skill_fortitude.png",
+   "sha256": "6c927bc2d903ba3f976171b377b78c92d605e6fd26e5c7dce45acb3cac329ac2",
+   "why": "anatomiczne serce"
+  },
+  {
+   "path": "tylko_2d/umiejetnosci/warrior/skill_steelSkin.png",
+   "sha256": "4b4e15cbdcba2a08614eb11300d25056a840114850a737f179871e6f2c455062",
+   "why": "ramię z rozdartą skórą przy rękawicy"
+  },
+  {
+   "path": "tylko_2d/umiejetnosci/warrior/skill_rend.png",
+   "sha256": "1af369ce33e9881339a91bf967b2533bf3aa9e3216882453f8936929f691b347",
+   "why": "rozdarcie i czerwone strzępy jak rana"
+  },
+  {
+   "path": "tylko_2d/umiejetnosci/warrior/skill_intercept.png",
+   "sha256": "1a655609ad0de69312a5bd9885e149632d81a903b3f5acd3908df54e9058d8a0",
+   "why": "leżące ciało i czerwone bryzgi"
+  }
+ ]
+}

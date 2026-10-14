@@ -3511,3 +3511,13 @@
 - **FIX 2026-10-14** Okno umiejętności, zakładka ścieżki: drzewo kafelków bez tekstu (pień, gałęzie, romb wyboru,
   poziom rzędu); opis, Kup i Zwróć tylko w szczegółach po kliknięciu węzła; opis ścieżki po kliknięciu jej nazwy
   (`Selection.kind = "path"`). Najechanie na PC pokazuje tylko nazwę węzła.
+- **IMPORT-GRAFIK 2026-10-14** Lista blokad treści `tools/icons/content_block.json` (ścieżka w folderze grafik +
+  sha256 pliku + powód): `import_graphics.py` i `import_ui.py` pomijają taki plik i usuwają jego klucz z gry (komórka
+  atlasu czyszczona, obraz pojedynczy kasowany) także bez `--prune`; `npm run art` pomija go na wiki. Plik o innych
+  bajtach (poprawiony przez właściciela) wraca z ostrzeżeniem: obejrzeć przed wgraniem.
+- **IMPORT-GRAFIK 2026-10-14** Zasada treści: przed wgraniem każdy obrazek (także stare komórki wgrywanego od nowa
+  atlasu) jest oglądany; krew, rany, odcięte części, surowe mięso i czerwone plamy wyglądające jak krew idą na listę
+  blokad (ostrożnie: wątpliwy obrazek blokujemy). Szkielety, czaszki, ogień i czerwone tkaniny zostają.
+- **IMPORT-GRAFIK 2026-10-14** Zablokowane obrazki już wgrane w S118–S119: ich atlasy (`items_7`, `items_8`,
+  `ui_skills_01`, `ui_status_01`, `ui_emblems_01`) wgrane od nowa bez nich, pojedyncze (portret Grimroka, portret
+  Wojownika, loch Grimroka) usunięte z rejestru; gra pokazuje zapas (znak, ikona SVG, szkic).

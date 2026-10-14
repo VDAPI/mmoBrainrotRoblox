@@ -1,16 +1,22 @@
 {
  "cells": {
+  "efekty/effect_arcaneCharge": {
+   "atlas": "status",
+   "h": "6a47c3e87a24",
+   "i": 33,
+   "src": "tylko_2d/efekty/effect_arcaneCharge.png"
+  },
   "efekty/effect_armorBreak": {
    "atlas": "status",
    "h": "654ffa85b955",
    "i": 0,
    "src": "tylko_2d/efekty/effect_armorBreak.png"
   },
-  "efekty/effect_bleed": {
+  "efekty/effect_attackSlow": {
    "atlas": "status",
-   "h": "757029cb2047",
-   "i": 1,
-   "src": "tylko_2d/efekty/effect_bleed.png"
+   "h": "57e0c0aa654c",
+   "i": 34,
+   "src": "tylko_2d/efekty/effect_attackSlow.png"
   },
   "efekty/effect_burn": {
    "atlas": "status",
@@ -24,11 +30,23 @@
    "i": 3,
    "src": "tylko_2d/efekty/effect_camouflage.png"
   },
+  "efekty/effect_carnage": {
+   "atlas": "status",
+   "h": "3af1e71a29b2",
+   "i": 35,
+   "src": "tylko_2d/efekty/effect_carnage.png"
+  },
   "efekty/effect_damageReduction": {
    "atlas": "status",
    "h": "c5c2bf291413",
    "i": 4,
    "src": "tylko_2d/efekty/effect_damageReduction.png"
+  },
+  "efekty/effect_empowered": {
+   "atlas": "status",
+   "h": "953c9375c2d1",
+   "i": 36,
+   "src": "tylko_2d/efekty/effect_empowered.png"
   },
   "efekty/effect_freeze": {
    "atlas": "status",
@@ -42,11 +60,23 @@
    "i": 6,
    "src": "tylko_2d/efekty/effect_guaranteedCrit.png"
   },
+  "efekty/effect_guardianAngel": {
+   "atlas": "status",
+   "h": "c802262025e1",
+   "i": 37,
+   "src": "tylko_2d/efekty/effect_guardianAngel.png"
+  },
   "efekty/effect_hot": {
    "atlas": "status",
    "h": "abd5a3b9309a",
    "i": 7,
    "src": "tylko_2d/efekty/effect_hot.png"
+  },
+  "efekty/effect_intercept": {
+   "atlas": "status",
+   "h": "38b9a9f0b186",
+   "i": 38,
+   "src": "tylko_2d/efekty/effect_intercept.png"
   },
   "efekty/effect_invuln": {
    "atlas": "status",
@@ -59,12 +89,6 @@
    "h": "8bf1b99356fa",
    "i": 9,
    "src": "tylko_2d/efekty/effect_manaShield.png"
-  },
-  "efekty/effect_misfortune": {
-   "atlas": "status",
-   "h": "4048faee2211",
-   "i": 10,
-   "src": "tylko_2d/efekty/effect_misfortune.png"
   },
   "efekty/effect_nextShot": {
    "atlas": "status",
@@ -96,11 +120,11 @@
    "i": 15,
    "src": "tylko_2d/efekty/effect_shield.png"
   },
-  "efekty/effect_slow": {
+  "efekty/effect_sighted": {
    "atlas": "status",
-   "h": "dceeace5a2f7",
-   "i": 16,
-   "src": "tylko_2d/efekty/effect_slow.png"
+   "h": "05cae2c56065",
+   "i": 39,
+   "src": "tylko_2d/efekty/effect_sighted.png"
   },
   "efekty/effect_statBuff": {
    "atlas": "status",
@@ -120,11 +144,11 @@
    "i": 19,
    "src": "tylko_2d/efekty/effect_taunt.png"
   },
-  "efekty/effect_vulnerability": {
+  "efekty/effect_weaken": {
    "atlas": "status",
-   "h": "04c2c9469d10",
-   "i": 20,
-   "src": "tylko_2d/efekty/effect_vulnerability.png"
+   "h": "049ef798614e",
+   "i": 40,
+   "src": "tylko_2d/efekty/effect_weaken.png"
   },
   "gildia/guild_expansion": {
    "atlas": "status",
@@ -347,12 +371,6 @@
    "h": "60774bbe2a0b",
    "i": 2,
    "src": "tylko_2d/klasy/class_mage.png"
-  },
-  "klasy/class_warrior": {
-   "atlas": "emblems",
-   "h": "b4564cf43f79",
-   "i": 3,
-   "src": "tylko_2d/klasy/class_warrior.png"
   },
   "kosmetyki/aura_ember": {
    "atlas": "shop",
@@ -786,12 +804,6 @@
    "i": 4,
    "src": "tylko_2d/tytuly/title_adventurer.png"
   },
-  "tytuly/title_bloodied": {
-   "atlas": "emblems",
-   "h": "95d9128769f5",
-   "i": 5,
-   "src": "tylko_2d/tytuly/title_bloodied.png"
-  },
   "tytuly/title_champion": {
    "atlas": "emblems",
    "h": "e0f0bb3cbd90",
@@ -822,17 +834,71 @@
    "i": 10,
    "src": "tylko_2d/tytuly/title_legend.png"
   },
+  "tytuly/title_path_arcanist": {
+   "atlas": "emblems",
+   "h": "0f094f26e840",
+   "i": 23,
+   "src": "tylko_2d/tytuly/title_path_arcanist.png"
+  },
+  "tytuly/title_path_destroyer": {
+   "atlas": "emblems",
+   "h": "734136d729cc",
+   "i": 24,
+   "src": "tylko_2d/tytuly/title_path_destroyer.png"
+  },
+  "tytuly/title_path_fortune": {
+   "atlas": "emblems",
+   "h": "c9f77f1e8774",
+   "i": 15,
+   "src": "tylko_2d/tytuly/title_path_fortune.png"
+  },
+  "tytuly/title_path_guardian": {
+   "atlas": "emblems",
+   "h": "dc5a51392cbd",
+   "i": 16,
+   "src": "tylko_2d/tytuly/title_path_guardian.png"
+  },
+  "tytuly/title_path_healer": {
+   "atlas": "emblems",
+   "h": "8e6423191cd4",
+   "i": 17,
+   "src": "tylko_2d/tytuly/title_path_healer.png"
+  },
+  "tytuly/title_path_inquisitor": {
+   "atlas": "emblems",
+   "h": "7529d71d731c",
+   "i": 18,
+   "src": "tylko_2d/tytuly/title_path_inquisitor.png"
+  },
+  "tytuly/title_path_marksman": {
+   "atlas": "emblems",
+   "h": "2d7aa6197dcc",
+   "i": 19,
+   "src": "tylko_2d/tytuly/title_path_marksman.png"
+  },
+  "tytuly/title_path_scout": {
+   "atlas": "emblems",
+   "h": "873e541777a1",
+   "i": 20,
+   "src": "tylko_2d/tytuly/title_path_scout.png"
+  },
+  "tytuly/title_path_standard": {
+   "atlas": "emblems",
+   "h": "a10654e92c04",
+   "i": 21,
+   "src": "tylko_2d/tytuly/title_path_standard.png"
+  },
+  "tytuly/title_path_trapper": {
+   "atlas": "emblems",
+   "h": "0ffb3ebed0d6",
+   "i": 22,
+   "src": "tylko_2d/tytuly/title_path_trapper.png"
+  },
   "tytuly/title_sentinel": {
    "atlas": "emblems",
    "h": "76b61cc8c99b",
    "i": 11,
    "src": "tylko_2d/tytuly/title_sentinel.png"
-  },
-  "tytuly/title_veteran": {
-   "atlas": "emblems",
-   "h": "551858863a3f",
-   "i": 12,
-   "src": "tylko_2d/tytuly/title_veteran.png"
   },
   "tytuly/title_wanderer": {
    "atlas": "emblems",
@@ -846,6 +912,12 @@
    "i": 14,
    "src": "tylko_2d/tytuly/title_warlord.png"
   },
+  "umiejetnosci/skill_advanceOrder": {
+   "atlas": "skills",
+   "h": "5c07cb1138d0",
+   "i": 56,
+   "src": "tylko_2d/umiejetnosci/warrior/skill_advanceOrder.png"
+  },
   "umiejetnosci/skill_agility": {
    "atlas": "skills",
    "h": "bf33a9b55890",
@@ -858,11 +930,23 @@
    "i": 1,
    "src": "tylko_2d/umiejetnosci/hunter/skill_aimedShot.png"
   },
+  "umiejetnosci/skill_arcaneDischarge": {
+   "atlas": "skills",
+   "h": "eb5baaafe1a4",
+   "i": 57,
+   "src": "tylko_2d/umiejetnosci/mage/skill_arcaneDischarge.png"
+  },
   "umiejetnosci/skill_arcaneMind": {
    "atlas": "skills",
    "h": "bac5c2e4aaf9",
    "i": 2,
    "src": "tylko_2d/umiejetnosci/mage/skill_arcaneMind.png"
+  },
+  "umiejetnosci/skill_arcaneTorrent": {
+   "atlas": "skills",
+   "h": "c2d2b3797093",
+   "i": 58,
+   "src": "tylko_2d/umiejetnosci/mage/skill_arcaneTorrent.png"
   },
   "umiejetnosci/skill_arrowRain": {
    "atlas": "skills",
@@ -882,29 +966,35 @@
    "i": 5,
    "src": "tylko_2d/umiejetnosci/warrior/skill_battleCry.png"
   },
-  "umiejetnosci/skill_bladeWhirl": {
-   "atlas": "skills",
-   "h": "f35c4e4cbfe4",
-   "i": 6,
-   "src": "tylko_2d/umiejetnosci/warrior/skill_bladeWhirl.png"
-  },
   "umiejetnosci/skill_blink": {
    "atlas": "skills",
    "h": "8c4d5d126c2b",
    "i": 7,
    "src": "tylko_2d/umiejetnosci/mage/skill_blink.png"
   },
-  "umiejetnosci/skill_bloodlust": {
+  "umiejetnosci/skill_brandOfLight": {
    "atlas": "skills",
-   "h": "3ce92ee85dfa",
-   "i": 8,
-   "src": "tylko_2d/umiejetnosci/warrior/skill_bloodlust.png"
+   "h": "49ef517d0528",
+   "i": 59,
+   "src": "tylko_2d/umiejetnosci/cleric/skill_brandOfLight.png"
   },
   "umiejetnosci/skill_camouflage": {
    "atlas": "skills",
    "h": "db4b7df543e7",
    "i": 9,
    "src": "tylko_2d/umiejetnosci/hunter/skill_camouflage.png"
+  },
+  "umiejetnosci/skill_carnage": {
+   "atlas": "skills",
+   "h": "0174b56fa269",
+   "i": 60,
+   "src": "tylko_2d/umiejetnosci/warrior/skill_carnage.png"
+  },
+  "umiejetnosci/skill_cataclysm": {
+   "atlas": "skills",
+   "h": "179e7de208a8",
+   "i": 61,
+   "src": "tylko_2d/umiejetnosci/mage/skill_cataclysm.png"
   },
   "umiejetnosci/skill_chainLightning": {
    "atlas": "skills",
@@ -923,18 +1013,6 @@
    "h": "b47c4b9aa27c",
    "i": 12,
    "src": "tylko_2d/umiejetnosci/cleric/skill_circleOfLight.png"
-  },
-  "umiejetnosci/skill_cleave": {
-   "atlas": "skills",
-   "h": "256e865909ba",
-   "i": 13,
-   "src": "tylko_2d/umiejetnosci/warrior/skill_cleave.png"
-  },
-  "umiejetnosci/skill_crushingBlow": {
-   "atlas": "skills",
-   "h": "9813fe609123",
-   "i": 14,
-   "src": "tylko_2d/umiejetnosci/warrior/skill_crushingBlow.png"
   },
   "umiejetnosci/skill_devotion": {
    "atlas": "skills",
@@ -966,11 +1044,29 @@
    "i": 19,
    "src": "tylko_2d/umiejetnosci/hunter/skill_doubleShot.png"
   },
+  "umiejetnosci/skill_drawBead": {
+   "atlas": "skills",
+   "h": "cde367a7bc98",
+   "i": 62,
+   "src": "tylko_2d/umiejetnosci/hunter/skill_drawBead.png"
+  },
+  "umiejetnosci/skill_drive": {
+   "atlas": "skills",
+   "h": "a0263706671e",
+   "i": 63,
+   "src": "tylko_2d/umiejetnosci/hunter/skill_drive.png"
+  },
   "umiejetnosci/skill_earthquake": {
    "atlas": "skills",
    "h": "3cadb381370f",
    "i": 20,
    "src": "tylko_2d/umiejetnosci/warrior/skill_earthquake.png"
+  },
+  "umiejetnosci/skill_elementalVortex": {
+   "atlas": "skills",
+   "h": "74e7d418ebf5",
+   "i": 64,
+   "src": "tylko_2d/umiejetnosci/mage/skill_elementalVortex.png"
   },
   "umiejetnosci/skill_elementalist": {
    "atlas": "skills",
@@ -983,6 +1079,12 @@
    "h": "dfc735b9185d",
    "i": 22,
    "src": "tylko_2d/umiejetnosci/mage/skill_evocation.png"
+  },
+  "umiejetnosci/skill_falcon": {
+   "atlas": "skills",
+   "h": "ece8b19b1193",
+   "i": 65,
+   "src": "tylko_2d/umiejetnosci/hunter/skill_falcon.png"
   },
   "umiejetnosci/skill_fireball": {
    "atlas": "skills",
@@ -1008,11 +1110,11 @@
    "i": 26,
    "src": "tylko_2d/umiejetnosci/mage/skill_focus.png"
   },
-  "umiejetnosci/skill_fortitude": {
+  "umiejetnosci/skill_fortuneDice": {
    "atlas": "skills",
-   "h": "09905f6ca177",
-   "i": 27,
-   "src": "tylko_2d/umiejetnosci/warrior/skill_fortitude.png"
+   "h": "a5100f28c931",
+   "i": 66,
+   "src": "tylko_2d/umiejetnosci/cleric/skill_fortuneDice.png"
   },
   "umiejetnosci/skill_frostNova": {
    "atlas": "skills",
@@ -1026,6 +1128,18 @@
    "i": 29,
    "src": "tylko_2d/umiejetnosci/hunter/skill_frostTrap.png"
   },
+  "umiejetnosci/skill_guardianAngel": {
+   "atlas": "skills",
+   "h": "72d988eb879d",
+   "i": 67,
+   "src": "tylko_2d/umiejetnosci/cleric/skill_guardianAngel.png"
+  },
+  "umiejetnosci/skill_hammerOfHeaven": {
+   "atlas": "skills",
+   "h": "c877d11c7647",
+   "i": 68,
+   "src": "tylko_2d/umiejetnosci/cleric/skill_hammerOfHeaven.png"
+  },
   "umiejetnosci/skill_hawkEye": {
    "atlas": "skills",
    "h": "23e4f890e604",
@@ -1037,6 +1151,12 @@
    "h": "259e0f38481f",
    "i": 31,
    "src": "tylko_2d/umiejetnosci/cleric/skill_heal.png"
+  },
+  "umiejetnosci/skill_heartseeker": {
+   "atlas": "skills",
+   "h": "7e29b8fa6ade",
+   "i": 69,
+   "src": "tylko_2d/umiejetnosci/hunter/skill_heartseeker.png"
   },
   "umiejetnosci/skill_holyStrike": {
    "atlas": "skills",
@@ -1140,17 +1260,29 @@
    "i": 48,
    "src": "tylko_2d/umiejetnosci/warrior/skill_riposte.png"
   },
+  "umiejetnosci/skill_sanctuary": {
+   "atlas": "skills",
+   "h": "054516dd4117",
+   "i": 70,
+   "src": "tylko_2d/umiejetnosci/cleric/skill_sanctuary.png"
+  },
   "umiejetnosci/skill_shieldOfFaith": {
    "atlas": "skills",
    "h": "5ad72c15e07c",
    "i": 49,
    "src": "tylko_2d/umiejetnosci/cleric/skill_shieldOfFaith.png"
   },
-  "umiejetnosci/skill_steelSkin": {
+  "umiejetnosci/skill_shieldWall": {
    "atlas": "skills",
-   "h": "9c8aca6ed822",
-   "i": 50,
-   "src": "tylko_2d/umiejetnosci/warrior/skill_steelSkin.png"
+   "h": "79c51c8b20f6",
+   "i": 71,
+   "src": "tylko_2d/umiejetnosci/warrior/skill_shieldWall.png"
+  },
+  "umiejetnosci/skill_snarefield": {
+   "atlas": "skills",
+   "h": "bbb65ed13126",
+   "i": 72,
+   "src": "tylko_2d/umiejetnosci/hunter/skill_snarefield.png"
   },
   "umiejetnosci/skill_stormArrow": {
    "atlas": "skills",
@@ -1176,11 +1308,29 @@
    "i": 54,
    "src": "tylko_2d/umiejetnosci/hunter/skill_venomArrow.png"
   },
+  "umiejetnosci/skill_venomSnare": {
+   "atlas": "skills",
+   "h": "4270b4c8c557",
+   "i": 73,
+   "src": "tylko_2d/umiejetnosci/hunter/skill_venomSnare.png"
+  },
   "umiejetnosci/skill_volley": {
    "atlas": "skills",
    "h": "d8d1d927aae2",
    "i": 55,
    "src": "tylko_2d/umiejetnosci/hunter/skill_volley.png"
+  },
+  "umiejetnosci/skill_warBanner": {
+   "atlas": "skills",
+   "h": "5dd0d451d559",
+   "i": 74,
+   "src": "tylko_2d/umiejetnosci/warrior/skill_warBanner.png"
+  },
+  "umiejetnosci/skill_wheelOfFortune": {
+   "atlas": "skills",
+   "h": "84454ef0083b",
+   "i": 75,
+   "src": "tylko_2d/umiejetnosci/cleric/skill_wheelOfFortune.png"
   },
   "zywioly/element_fire": {
    "atlas": "status",
@@ -1248,11 +1398,6 @@
    "x0": -320,
    "z0": -320
   },
-  "duskwood_den": {
-   "size": 480,
-   "x0": -240,
-   "z0": -240
-  },
   "frostpeak": {
    "size": 1600,
    "x0": -800,
@@ -1295,12 +1440,13 @@
   }
  },
  "sheets": {
-  "ui_emblems_01.png": "d58a9b4f943f",
+  "ui_emblems_01.png": "b31785e6038c",
   "ui_hud_01.png": "c66de2676c82",
   "ui_map_01.png": "aef364aeb499",
   "ui_shop_01.png": "d198e19d314e",
-  "ui_skills_01.png": "2d2bc7d3d43f",
-  "ui_status_01.png": "0270e9c65174"
+  "ui_skills_01.png": "093ffdd90d5b",
+  "ui_skills_02.png": "b9819f918682",
+  "ui_status_01.png": "3eea950c5778"
  },
  "singles": {
   "bossowie/boss_azgor": {
@@ -1308,13 +1454,6 @@
    "h": 512,
    "hash": "64b3c3819d20",
    "src": "tylko_2d/bossowie/boss_azgor.png",
-   "w": 512
-  },
-  "bossowie/boss_grimrok": {
-   "file": "bossowie__boss_grimrok.jpg",
-   "h": 512,
-   "hash": "c4b451caa581",
-   "src": "tylko_2d/bossowie/boss_grimrok.png",
    "w": 512
   },
   "bossowie/boss_morvane": {
@@ -1352,25 +1491,11 @@
    "src": "tylko_2d/klasy/portrait_mage.png",
    "w": 512
   },
-  "klasy/portrait_warrior": {
-   "file": "klasy__portrait_warrior.jpg",
-   "h": 768,
-   "hash": "dffe4eaaf530",
-   "src": "tylko_2d/klasy/portrait_warrior.png",
-   "w": 512
-  },
   "lochy/dungeon_azgor": {
    "file": "lochy__dungeon_azgor.jpg",
    "h": 512,
    "hash": "d2148b847efe",
    "src": "tylko_2d/lochy/dungeon_azgor.png",
-   "w": 1024
-  },
-  "lochy/dungeon_grimrok": {
-   "file": "lochy__dungeon_grimrok.jpg",
-   "h": 512,
-   "hash": "47854ca47336",
-   "src": "tylko_2d/lochy/dungeon_grimrok.png",
    "w": 1024
   },
   "lochy/dungeon_morvane": {
@@ -1441,13 +1566,6 @@
    "h": 1024,
    "hash": "34dae85849c3",
    "src": "tylko_2d/mapy/duskwood_cave.png",
-   "w": 1024
-  },
-  "mapy/duskwood_den": {
-   "file": "mapy__duskwood_den.jpg",
-   "h": 1024,
-   "hash": "6af7a5f0a9ba",
-   "src": "tylko_2d/mapy/duskwood_den.png",
    "w": 1024
   },
   "mapy/frostpeak": {

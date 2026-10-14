@@ -111,3 +111,12 @@ py -3 tools/icons/import_ui.py --report | --check-ids | --selftest
 - `--selftest`: sztuczny folder w `build/ui/selftest` (mapowanie, odrzucenia, sylwetka, rogi kafelka, mapa niekwadratowa,
   stałe komórki, determinizm, id).
 - Wgranie: `docs/ANIMACJE.md` §10.
+
+## Lista blokad treści (IMPORT-GRAFIK 2026-10-14)
+
+`tools/icons/content_block.json` (`content_block.py`): pliki folderu grafik (ścieżka + sha256 + powód), które nigdy nie
+trafiają do Roblox ani na wiki (krew, rany, odcięte części; konto właściciela było za to moderowane). `import_graphics.py`
+i `import_ui.py` pomijają je (sekcja „Zablokowane” w raporcie) i usuwają ich klucz z gry także bez `--prune`;
+`npm run art` pomija je na wiki. Poprawiony plik (inne bajty) wraca z ostrzeżeniem: obejrzeć przed wgraniem. Przed
+każdym wgraniem obejrzyj atlas lub obraz, który wysyłasz; zły obrazek dopisz do listy (sha256 z
+`content_block.file_hash`).

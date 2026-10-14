@@ -25,14 +25,6 @@
       ],
       "hash": "ee6f857947559410"
     },
-    "class/Warrior": {
-      "file": "class/Warrior",
-      "sizes": [
-        64,
-        128
-      ],
-      "hash": "c3230fbc59984d91"
-    },
     "element/fire": {
       "file": "element/fire",
       "sizes": [
@@ -1358,6 +1350,13 @@
       ],
       "hash": "da288933118cad8f"
     },
+    "item/eq/sword1h@25": {
+      "file": "item/eq-sword1h_25",
+      "sizes": [
+        256
+      ],
+      "hash": "6eba8e96d359c6c0"
+    },
     "item/eq/sword1h@5": {
       "file": "item/eq-sword1h_5",
       "sizes": [
@@ -1519,6 +1518,20 @@
       ],
       "hash": "f95bf73e87a4a585"
     },
+    "item/mat/cursed_bone": {
+      "file": "item/mat-cursed_bone",
+      "sizes": [
+        256
+      ],
+      "hash": "d2bf5b56d3efb9d3"
+    },
+    "item/mat/ectoplasm": {
+      "file": "item/mat-ectoplasm",
+      "sizes": [
+        256
+      ],
+      "hash": "750484967dab612f"
+    },
     "item/mat/essence_crystal": {
       "file": "item/mat-essence_crystal",
       "sizes": [
@@ -1547,6 +1560,13 @@
       ],
       "hash": "abe1361fe3e26ad8"
     },
+    "item/mat/fish_eel": {
+      "file": "item/mat-fish_eel",
+      "sizes": [
+        256
+      ],
+      "hash": "097d2d241fb9236b"
+    },
     "item/mat/fish_goldfin": {
       "file": "item/mat-fish_goldfin",
       "sizes": [
@@ -1554,12 +1574,33 @@
       ],
       "hash": "f4b4dd66abe62f52"
     },
+    "item/mat/fish_icefin": {
+      "file": "item/mat-fish_icefin",
+      "sizes": [
+        256
+      ],
+      "hash": "b0bcddc5d6410ab6"
+    },
+    "item/mat/fish_magmafin": {
+      "file": "item/mat-fish_magmafin",
+      "sizes": [
+        256
+      ],
+      "hash": "cdbf9dd658177d13"
+    },
     "item/mat/fish_pike": {
       "file": "item/mat-fish_pike",
       "sizes": [
         256
       ],
       "hash": "40bd43a44b972c77"
+    },
+    "item/mat/frost_scale": {
+      "file": "item/mat-frost_scale",
+      "sizes": [
+        256
+      ],
+      "hash": "e9f78f249e55fcd2"
     },
     "item/mat/goblin_ear": {
       "file": "item/mat-goblin_ear",
@@ -1575,12 +1616,26 @@
       ],
       "hash": "f2d1d8399c6da8fa"
     },
+    "item/mat/herb_frostleaf": {
+      "file": "item/mat-herb_frostleaf",
+      "sizes": [
+        256
+      ],
+      "hash": "fe897ee2011446a3"
+    },
     "item/mat/herb_meadowsweet": {
       "file": "item/mat-herb_meadowsweet",
       "sizes": [
         256
       ],
       "hash": "ce7f1dbc4cefd3eb"
+    },
+    "item/mat/herb_moonpetal": {
+      "file": "item/mat-herb_moonpetal",
+      "sizes": [
+        256
+      ],
+      "hash": "ff2dea3be7a0d886"
     },
     "item/mat/herb_nightshade": {
       "file": "item/mat-herb_nightshade",
@@ -1595,6 +1650,13 @@
         256
       ],
       "hash": "496ff8433bc568b0"
+    },
+    "item/mat/magma_shard": {
+      "file": "item/mat-magma_shard",
+      "sizes": [
+        256
+      ],
+      "hash": "b72abdc772291420"
     },
     "item/mat/ore_adamantite": {
       "file": "item/mat-ore_adamantite",
@@ -1631,6 +1693,13 @@
       ],
       "hash": "cdde20c2d8c01d14"
     },
+    "item/mat/salamander_scale": {
+      "file": "item/mat-salamander_scale",
+      "sizes": [
+        256
+      ],
+      "hash": "226f986e307c9d3a"
+    },
     "item/mat/spider_silk": {
       "file": "item/mat-spider_silk",
       "sizes": [
@@ -1658,6 +1727,13 @@
         256
       ],
       "hash": "17db4f13e7edf756"
+    },
+    "item/mat/yeti_fur": {
+      "file": "item/mat-yeti_fur",
+      "sizes": [
+        256
+      ],
+      "hash": "3dd63053f6a0703c"
     },
     "item/misc/backpack_100": {
       "file": "item/misc-backpack_100",
@@ -1967,26 +2043,68 @@
       ],
       "hash": "0926d39a3cad8790"
     },
-    "item/uniq/unique_grimrok_cleaver": {
-      "file": "item/uniq-unique_grimrok_cleaver",
+    "item/uniq/unique_azgor_heart": {
+      "file": "item/uniq-unique_azgor_heart",
       "sizes": [
         256
       ],
-      "hash": "b5d5db2c707a0a01"
+      "hash": "a6926bdaac8456e2"
     },
-    "item/uniq/unique_grimrok_fang": {
-      "file": "item/uniq-unique_grimrok_fang",
+    "item/uniq/unique_azgor_helm": {
+      "file": "item/uniq-unique_azgor_helm",
       "sizes": [
         256
       ],
-      "hash": "fce7ee260d51a514"
+      "hash": "9a8181955426800c"
     },
-    "item/uniq/unique_grimrok_totem": {
-      "file": "item/uniq-unique_grimrok_totem",
+    "item/uniq/unique_azgor_staff": {
+      "file": "item/uniq-unique_azgor_staff",
       "sizes": [
         256
       ],
-      "hash": "209d431b723f46bc"
+      "hash": "60c7ad447b7cd88c"
+    },
+    "item/uniq/unique_morvane_bow": {
+      "file": "item/uniq-unique_morvane_bow",
+      "sizes": [
+        256
+      ],
+      "hash": "94e9d3aced641598"
+    },
+    "item/uniq/unique_morvane_scepter": {
+      "file": "item/uniq-unique_morvane_scepter",
+      "sizes": [
+        256
+      ],
+      "hash": "10bb25ccd3ef4128"
+    },
+    "item/uniq/unique_morvane_shroud": {
+      "file": "item/uniq-unique_morvane_shroud",
+      "sizes": [
+        256
+      ],
+      "hash": "79ba99f268597157"
+    },
+    "item/uniq/unique_vaelgrath_eye": {
+      "file": "item/uniq-unique_vaelgrath_eye",
+      "sizes": [
+        256
+      ],
+      "hash": "da5d76607c9be990"
+    },
+    "item/uniq/unique_vaelgrath_fang": {
+      "file": "item/uniq-unique_vaelgrath_fang",
+      "sizes": [
+        256
+      ],
+      "hash": "f197297114e149d3"
+    },
+    "item/uniq/unique_vaelgrath_scale": {
+      "file": "item/uniq-unique_vaelgrath_scale",
+      "sizes": [
+        256
+      ],
+      "hash": "e837c48b7d790a59"
     },
     "keybind/sprint": {
       "file": "keybind/sprint",
@@ -2084,14 +2202,6 @@
       ],
       "hash": "0beb211e94118884"
     },
-    "portrait/Warrior": {
-      "file": "portrait/Warrior",
-      "sizes": [
-        320,
-        640
-      ],
-      "hash": "c5095619c56f8999"
-    },
     "profile/exp": {
       "file": "profile/exp",
       "sizes": [
@@ -2140,14 +2250,6 @@
       ],
       "hash": "8f259b95c7c4107f"
     },
-    "quest/boarHaunch": {
-      "file": "quest/boarHaunch",
-      "sizes": [
-        64,
-        128
-      ],
-      "hash": "e69b0985c61ab257"
-    },
     "quest/breadBasket": {
       "file": "quest/breadBasket",
       "sizes": [
@@ -2195,14 +2297,6 @@
         128
       ],
       "hash": "fc6fda91e18728ee"
-    },
-    "quest/ledger": {
-      "file": "quest/ledger",
-      "sizes": [
-        64,
-        128
-      ],
-      "hash": "d1ec958b2944c880"
     },
     "quest/minerPick": {
       "file": "quest/minerPick",
@@ -2375,14 +2469,6 @@
       ],
       "hash": "d6c76458eee2ccda"
     },
-    "skill/bladeWhirl": {
-      "file": "skill/bladeWhirl",
-      "sizes": [
-        64,
-        128
-      ],
-      "hash": "2e34b8f825995c15"
-    },
     "skill/blink": {
       "file": "skill/blink",
       "sizes": [
@@ -2390,14 +2476,6 @@
         128
       ],
       "hash": "415a1dc18b0c7b19"
-    },
-    "skill/bloodlust": {
-      "file": "skill/bloodlust",
-      "sizes": [
-        64,
-        128
-      ],
-      "hash": "4667e6b4e32e6360"
     },
     "skill/chainLightning": {
       "file": "skill/chainLightning",
@@ -2582,14 +2660,6 @@
         128
       ],
       "hash": "acd3f3604eb6d85b"
-    },
-    "skill/steelSkin": {
-      "file": "skill/steelSkin",
-      "sizes": [
-        64,
-        128
-      ],
-      "hash": "5eeb1749e0c24d00"
     },
     "skill/taunt": {
       "file": "skill/taunt",

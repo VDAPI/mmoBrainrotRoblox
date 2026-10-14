@@ -22,6 +22,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 from PIL import Image, ImageDraw  # noqa: E402
 
+import content_block  # noqa: E402
 import import_png  # noqa: E402
 
 DEFAULT_SRC = "D:/Users/vdapi/Downloads/Graphics"
@@ -69,6 +70,7 @@ class Mapping:
         self.later = []
         self.formats = []
         self.warnings = []
+        self.blocked = []  # (path, key, why): content block list, never imported
 
 
 def run_ids(root):
@@ -327,6 +329,10 @@ def report(res, src, ids, keys, written, pruned, extra, files_by_group):
         out += ["", "## Odrzucone"]
         for path, reason in res.rejected:
             out.append(f"- `{_rel(path, src)}`: {reason}")
+    if res.blocked:
+        out += ["", "## Zablokowane (treść, tools/icons/content_block.json; gra bierze zapas)"]
+        for path, key, why in res.blocked:
+            out.append(f"- `{_rel(path, src)}` (`{key}`): {why}")
     if res.formats:
         out += ["", "## Pominięty format (tylko .png)"]
         out += [f"- `{_rel(p, src)}`" for p in res.formats]
@@ -367,10 +373,17 @@ def _target(out_root, key):
     return os.path.join(out_root, group, f"{name}.png")
 
 
-def run(root, src, ids, dry_run=False, prune=False, key_color=None, quiet=False, report_path=None):
-    """Imports `src` into art/icons/src of `root`. Returns (mapping, written keys, report lines)."""
+def run(root, src, ids, dry_run=False, prune=False, key_color=None, quiet=False, report_path=None, blocks=None):
+    """Imports `src` into art/icons/src of `root`. Returns (mapping, written keys, report lines). `blocks`: content
+    block list (content_block.load(); default: tools/icons/content_block.json)."""
     out_root = os.path.join(root, "art", "icons", "src")
     res = mapping(src, ids)
+    if blocks is None:
+        blocks = content_block.load()
+    res.mapped, blocked, warnings = content_block.split(res.mapped, src, blocks)
+    res.blocked = [(p, k, why) for (p, k), why in blocked]
+    res.warnings += warnings
+    blocked_keys = {k for _, k, _ in res.blocked} - {k for _, k in res.mapped}
     cells = {}
     accepted = []
     failed = set()  # keys whose file is there but was rejected: never "missing", never pruned
@@ -396,6 +409,12 @@ def run(root, src, ids, dry_run=False, prune=False, key_color=None, quiet=False,
             os.makedirs(os.path.dirname(target), exist_ok=True)
             import_png.save_png(img, target)
     present = src_keys(out_root)
+    for k in sorted(blocked_keys):
+        if k in present:
+            written.append(k)
+            if not dry_run:
+                os.remove(present[k])
+            del present[k]
     mapped_keys = {k for _, k in res.mapped}
     extra = sorted(k for k in present if k not in mapped_keys and k not in failed and not k.startswith("ui/"))
     if prune and not dry_run:
@@ -534,7 +553,7 @@ def selftest():
             ok = False
             print("selftest: " + msg)
 
-    res, written, _ = run(repo, src, SELFTEST_IDS, key_color=None, quiet=True,
+    res, written, _ = run(repo, src, SELFTEST_IDS, blocks={}, key_color=None, quiet=True,
                           report_path=os.path.join(work, "r1.md"))
     keys = {k for _, k in res.mapped}
     reasons = {_rel(p, src): r for p, r in res.rejected}
@@ -558,30 +577,42 @@ def selftest():
     px = cleaver.convert("RGBA").getpixel((64, 64))
     check(max(abs(a - b) for a, b in zip(px[:3], (120, 60, 30))) <= 3, f"cleaver nie z tylko_2d ({px})")
     # With --key the magenta picture is accepted.
-    res2, written2, _ = run(repo, src, SELFTEST_IDS, key_color=import_png.parse_key("magenta"), quiet=True,
+    res2, written2, _ = run(repo, src, SELFTEST_IDS, blocks={}, key_color=import_png.parse_key("magenta"), quiet=True,
                             report_path=os.path.join(work, "r2.md"))
     check(written2 == ["mat/ore_copper"], f"--key: zapisane {written2}")
     # Idempotent.
-    _, written3, _ = run(repo, src, SELFTEST_IDS, key_color=import_png.parse_key("magenta"), quiet=True,
+    _, written3, _ = run(repo, src, SELFTEST_IDS, blocks={}, key_color=import_png.parse_key("magenta"), quiet=True,
                          report_path=os.path.join(work, "r3.md"))
     check(written3 == [], f"drugi przebieg zapisał {written3}")
     # Two different pictures for one key in the same tree: error.
     _pic(os.path.join(t, "ekwipunek", "light", "armor_heavy_1.png"), (10, 10, 10))
     try:
-        run(repo, src, SELFTEST_IDS, quiet=True, report_path=os.path.join(work, "r4.md"))
+        run(repo, src, SELFTEST_IDS, blocks={}, quiet=True, report_path=os.path.join(work, "r4.md"))
         check(False, "konflikt w jednym drzewie bez błędu")
     except import_png.PackError:
         pass
     os.remove(os.path.join(t, "ekwipunek", "light", "armor_heavy_1.png"))
     # A removed source stays (report) until --prune.
     os.remove(os.path.join(t, "questy", "quest_aleBarrel.png"))
-    _, _, lines = run(repo, src, SELFTEST_IDS, quiet=True, report_path=os.path.join(work, "r5.md"))
+    _, _, lines = run(repo, src, SELFTEST_IDS, blocks={}, quiet=True, report_path=os.path.join(work, "r5.md"))
     check(any("quest/aleBarrel" in ln for ln in lines), "brak pliku nie zgłoszony")
     check(os.path.exists(os.path.join(repo, "art", "icons", "src", "quest", "aleBarrel.png")), "usunięte bez --prune")
-    run(repo, src, SELFTEST_IDS, prune=True, quiet=True, report_path=os.path.join(work, "r6.md"))
+    run(repo, src, SELFTEST_IDS, blocks={}, prune=True, quiet=True, report_path=os.path.join(work, "r6.md"))
     check(not os.path.exists(os.path.join(repo, "art", "icons", "src", "quest", "aleBarrel.png")), "--prune nie usunął")
     # The magenta ore_copper is there but rejected without --key: --prune keeps its earlier cell.
     check(os.path.exists(os.path.join(repo, "art", "icons", "src", "mat", "ore_copper.png")), "--prune usunął odrzucony")
+    # Content block list: a listed file with the same bytes is skipped and its cell removed even without --prune;
+    # the same path with other bytes (regenerated) is imported again with a warning.
+    sage = os.path.join(t, "blogoslawienstwa", "blessing_sage.png")
+    blocks = {"tylko_2d/blogoslawienstwa/blessing_sage.png": {
+        "path": "tylko_2d/blogoslawienstwa/blessing_sage.png", "sha256": content_block.file_hash(sage), "why": "test"}}
+    res7, _, lines7 = run(repo, src, SELFTEST_IDS, blocks=blocks, quiet=True, report_path=os.path.join(work, "r7.md"))
+    check("bless/sage" not in {k for _, k in res7.mapped}, "zablokowany plik dopasowany")
+    check(not os.path.exists(os.path.join(repo, "art", "icons", "src", "bless", "sage.png")), "zablokowany został")
+    check(any("Zablokowane" in ln for ln in lines7), "brak sekcji Zablokowane w raporcie")
+    _pic(sage, (10, 200, 10))
+    res8, written8, _ = run(repo, src, SELFTEST_IDS, blocks=blocks, quiet=True, report_path=os.path.join(work, "r8.md"))
+    check("bless/sage" in written8 and any("blokad" in w for w in res8.warnings), "zmieniony plik z listy blokad")
     groups, maps = coverage(SELFTEST_IDS, {"eq/sword1h@5", "bless/sage", "pot/potion_hp_4", "quest/sheepBell"})
     check(groups["weapon"] == [2, 1, 1], f"pokrycie broni {groups['weapon']}")
     check(groups["blessing"] == [2, 2, 0], f"pokrycie błogosławieństw {groups['blessing']}")

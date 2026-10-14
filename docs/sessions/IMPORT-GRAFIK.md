@@ -34,6 +34,10 @@ Jesteś Claude Code w repozytorium gry **Vaelthorn** (Roblox, Luau, Rojo). Wła�
    nowe idą na koniec; czyści ID zmienionych atlasów w `ItemIconSheets.luau` i drukuje „Wgraj: …”).
 4. Obejrzyj `build/icons/import_preview.png` (Read na pliku): obcięte, przesunięte ikony, obwódka magenty, szachownica.
    Złych plików nie poprawiasz: wypisz je właścicielowi.
+   **Treść (obowiązkowo):** przed spakowaniem i wgraniem obejrzyj każdy nowy obrazek i każdy atlas, który wysyłasz
+   (także jego stare komórki). Krew, rany, odcięte części, surowe mięso, czerwone plamy jak krew: dopisz plik do
+   `tools/icons/content_block.json` (ścieżka, sha256, powód), uruchom import jeszcze raz i wypisz plik właścicielowi
+   z opisem zmiany (konto było moderowane za takie obrazki). Plik dodany do folderu w trakcie sesji też obejrzyj.
 5. Wgraj atlasy z listy „do wgrania”: MCP (`list_roblox_studios`, kopie atlasów w `build/upload`,
    `python -m http.server 8765 --bind 127.0.0.1` w tle, `upload_image` z `http://127.0.0.1:8765/items_<n>.png`, ID do
    `src/shared/Data/ItemIconSheets.luau` w wiersz `-- items_<n>.png`, serwer zatrzymaj). Bez MCP: właściciel, kroki w

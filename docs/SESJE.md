@@ -8716,3 +8716,79 @@ Pliki: `src/client/UI/{Scale,DragDrop}.luau`, `src/client/UI/Components/{Tooltip
 `src/client/UI/Screens/SkillsWindow/{PathTab,NodeCard,Details,Context,Sheet,init}.luau`,
 `src/server/Services/WorldService.luau`, `src/server/World/Layouts/city.luau`, `src/shared/Logic/{ShopGroups,UiArt,WindowRules}.luau`,
 `src/shared/Data/{Keybinds,UiArt}.luau`, `art/ui/ui_art.json`, lokalizacja, `tests/{shopgroups,data}.spec.luau`, dane i teksty wiki.
+
+### IMPORT-GRAFIK 2026-10-14: dograne grafiki i lista blokad treści
+
+Na prośbę właściciela (blokada konta zdjęta): dokończenie tego, czego S119 nie wgrała, i import nowych plików z folderu
+grafik (`docs/sessions/IMPORT-GRAFIK.md`). Start: `scripts/check` zielony (113 plików, 6447 testów). Zasada właściciela:
+konto było moderowane za krew na obrazkach, więc każdy obrazek obejrzany przed spakowaniem i wgraniem (także stare
+komórki atlasów wgrywanych od nowa i wcześniej wgrane portrety i banery). Pliki dodane do folderu w trakcie sesji
+(`title_path_scout`, `trapper`, `arcanist`, `destroyer`, `sword1h_25`) obejrzane i dołączone; granica: 18:21. Później właściciel dodaje broń krain 2–4 (`sword1h_30`…`45` i
+dalsze): następny przebieg IMPORT-GRAFIK.
+
+- **Lista blokad:** `tools/icons/content_block.py` + `tools/icons/content_block.json` (ścieżka, sha256, powód),
+  podpięta w `import_graphics.py`, `import_ui.py` (sekcja „Zablokowane” w raportach, klucz usuwany bez `--prune`,
+  selftesty obu narzędzi) i `wiki/scripts/art.mjs`.
+- **Przedmioty:** 19 nowych ikon (materiały `cursed_bone`, `ectoplasm`, `fish_eel`, `fish_icefin`, `fish_magmafin`,
+  `frost_scale`, `magma_shard`, `salamander_scale`, `yeti_fur`; unikaty Azgora, Morvane i Vaelgratha (9); `sword1h_25`),
+  5 komórek wyczyszczonych (zablokowane). Podgląd `build/icons/import_preview.png` obejrzany: bez obcięć i obwódek.
+- **Interfejs:** nowe ikony umiejętności (Wojownik `advanceOrder`, `carnage`, `shieldWall`, `warBanner`, umiejętności
+  ścieżek Kapłana, Łowcy i Maga; nowy atlas `ui_skills_02`), 8 efektów (`arcaneCharge`, `attackSlow`, `carnage`,
+  `empowered`, `guardianAngel`, `intercept`, `sighted`, `weaken`), 10 tytułów ścieżek. `hud/menu_character` odrzucony
+  (klucz usunięty w FIX 2026-10-14). Stan: umiejętności 70/78, efekty 25/33, tytuły 19/23, herby i portrety klas 3/4,
+  bossowie i lochy 3/4, mapy malowane 17/22 (`duskwood_den` zablokowana).
+
+Zablokowane (26 plików; gra bierze zapas; właściciel: nowy obrazek bez krwi pod tą samą nazwą, potem ten przebieg):
+
+| Plik | Co jest nie tak | Co zmienić | Był wgrany |
+|---|---|---|---|
+| `modele_3d/bronie/unique_grimrok_cleaver/unique_grimrok_cleaver.png` | krew na ostrzu i owijkach | czyste ostrze, czerwone owijki z materiału | tak (`items_7`) |
+| `tylko_2d/unikaty/unique_grimrok_fang.png` | kieł i bransoleta we krwi | kość bez czerwonych zacieków | tak (`items_7`) |
+| `tylko_2d/unikaty/unique_grimrok_totem.png` | krwawe smugi | malowane wzory ochrą albo bielą | tak (`items_7`) |
+| `tylko_2d/materialy/werewolf_claw.png` | odcięta łapa z krwawym kikutem | sam pazur albo pazury na rzemieniu, bez rany | nie |
+| `tylko_2d/questy/quest_ledger.png` | plama krwi na okładce | księga bez plam (np. pieczęć, rzemień) | tak (`items_8`) |
+| `tylko_2d/questy/quest_boarHaunch.png` | surowe mięso, przekrój mięśni | udziec zawinięty w płótno albo pieczony | tak (`items_8`) |
+| `tylko_2d/bossowie/boss_grimrok.png` | krew na toporze, sztandarze, twarzy | czysty topór, sztandar z herbem bez zacieków | tak (portret) |
+| `tylko_2d/klasy/portrait_warrior.png` | miecz we krwi | czyste ostrze | tak (portret) |
+| `tylko_2d/lochy/dungeon_grimrok.png` | kałuże krwi, zakrwawiony bęben, czaszki na palach | błotnista posadzka, bęben bez plam, mniej czaszek | tak (baner) |
+| `tylko_2d/mapy/duskwood_den.png` | czerwone ślady pazurów na podłodze | szare rysy w skale | nie |
+| `tylko_2d/efekty/effect_bleed.png` | realistyczne krople krwi | stylizowany symbol rany (np. pęknięta czerwona runa) | tak (`ui_status_01`) |
+| `tylko_2d/efekty/effect_vulnerability.png` | znak ociekający jak krew | świecący celownik bez zacieków | tak (`ui_status_01`) |
+| `tylko_2d/efekty/effect_misfortune.png` | czerwone kałuże pod kotem | fioletowe tło, sucha ziemia | tak (`ui_status_01`) |
+| `tylko_2d/efekty/effect_slow.png` | czerwona mokra ziemia | szare albo niebieskie tło | tak (`ui_status_01`) |
+| `tylko_2d/klasy/class_warrior.png` | krew na skrzyżowanych mieczach | czyste ostrza | tak (`ui_emblems_01`) |
+| `tylko_2d/tytuly/title_bloodied.png` | topór z krwią | wyszczerbiony topór bez plam | tak (`ui_emblems_01`) |
+| `tylko_2d/tytuly/title_veteran.png` | czerwone cięcie na hełmie (jak rana) | rysa w metalu bez czerwieni | tak (`ui_emblems_01`) |
+| `tylko_2d/tytuly/title_path_berserker.png` | czaszka i topory zachlapane krwią | czaszka i topory bez plam, czerwień tylko w tle | nie |
+| `tylko_2d/umiejetnosci/warrior/skill_bladeWhirl.png` | wir z bryzgami krwi | wir stali z iskrami | tak (`ui_skills_01`) |
+| `tylko_2d/umiejetnosci/warrior/skill_bloodlust.png` | topory ociekające krwią | czerwona poświata, topory czyste | tak (`ui_skills_01`) |
+| `tylko_2d/umiejetnosci/warrior/skill_cleave.png` | bryzg krwi za toporem | łuk energii za toporem | tak (`ui_skills_01`) |
+| `tylko_2d/umiejetnosci/warrior/skill_crushingBlow.png` | pancerz zachlapany krwią | pękający pancerz, iskry | tak (`ui_skills_01`) |
+| `tylko_2d/umiejetnosci/warrior/skill_fortitude.png` | anatomiczne serce | serce-symbol z metalu albo tarcza | tak (`ui_skills_01`) |
+| `tylko_2d/umiejetnosci/warrior/skill_steelSkin.png` | rozdarta skóra przy rękawicy | skóra przechodząca w stal bez rany | tak (`ui_skills_01`) |
+| `tylko_2d/umiejetnosci/warrior/skill_rend.png` | rozdarcie jak rana | pęknięcie pancerza, iskry | nie |
+| `tylko_2d/umiejetnosci/warrior/skill_intercept.png` | leżące ciało, czerwone bryzgi | wojownik z tarczą przed sojusznikiem, bez ciała | nie |
+
+Obejrzane i zostawione (czerwień bez krwi): portrety Azgora, Morvane, Vaelgratha, banery lochów Azgora, Morvane i
+Vaelgratha (szkielety), mapa `duskwood` (czerwony kanion), efekty `armorBreak`, `carnage`, `taunt`, `burn`, ikony
+Wojownika z czerwoną poświatą, uzbrojenie Grimroka z czerwonymi owijkami w `items_4..6`, czerwone mikstury.
+
+Wgranie (MCP `upload_image`, `python -m http.server 8765 --bind 127.0.0.1`, kopie w `build/upload`; bez błędów 403):
+`items_7` `84392218433501`, `items_8` `95455488074028`, `ui_skills_01` `92037923766416`, `ui_skills_02`
+`115263029666505`, `ui_status_01` `97149632090877`, `ui_emblems_01` `136603127325634`, 17 map malowanych (id w
+`Data/UiArtSheets.luau`). Wgrane i nieużyte (zastąpione w tej sesji po nowych plikach właściciela): `items_8`
+`90606440144439`, `ui_emblems_01` `128765112822669`. `import_png.py --check-ids` 8/8, `import_ui.py --check-ids` 33/33.
+Sprawdzenie wczytania: Studio było w Play właściciela (nie zatrzymywany); tymczasowe `ImageLabel` w kliencie (usunięte)
+nie wczytały ani nowych, ani starych działających id, więc wynik nic nie mówi; przegląd w grze nie zrobiony.
+
+Wiki: `npm run data` (ikony 290 + nowe), `npm run art` (blokady pominięte: herb i portret Wojownika, trzy umiejętności
+i dwa przedmioty questowe zniknęły z wiki; nowe obrazki przedmiotów 256 px), `npm test` (133). `scripts/check` zielony
+z `WIKI_KEYS_ALLOW="items:items.items[].layers[].tint"`: pole `tint` warstw znika z `items.json`, bo trzy ryby (jedyne
+ikony SVG z barwioną warstwą) mają teraz obrazki; typ `tint?` zostaje (po commicie strażnik przechodzi bez wyjątku).
+
+Pliki: `tools/icons/{content_block.py,content_block.json,import_graphics.py,import_ui.py,README.md}`,
+`wiki/scripts/art.mjs`, `art/icons/{items_7,items_8}.png`, `art/icons/src/{mat,uniq,eq}/*` (nowe i usunięte),
+`art/ui/{ui_art.json,ui_skills_01,ui_skills_02,ui_status_01,ui_emblems_01}.png`, `art/ui/single/*` (usunięte),
+`src/shared/Data/{ItemIconAtlas,ItemIconSheets,UiArt,UiArtSheets}.luau`, dane i obrazy wiki, `docs/{PRZEDMIOTY,DECYZJE,
+ASSETS,PROGRESS,SESJE}.md`, `docs/sessions/IMPORT-GRAFIK.md`, `CLAUDE.md`
+(stare id z zablokowanymi obrazkami: ASSETS, „Osierocone”).

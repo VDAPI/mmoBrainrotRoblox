@@ -11,6 +11,6 @@ return table.freeze({
 	"rbxassetid://138699466409669", -- items_4.png
 	"rbxassetid://98316238490036", -- items_5.png
 	"rbxassetid://124843781940021", -- items_6.png
-	"rbxassetid://116647103065980", -- items_7.png
-	"rbxassetid://71572013880956", -- items_8.png
+	"rbxassetid://84392218433501", -- items_7.png
+	"rbxassetid://95455488074028", -- items_8.png
 })

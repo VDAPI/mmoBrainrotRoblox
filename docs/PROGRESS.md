@@ -6,7 +6,8 @@
 ## Stan
 
 S01–S112, S118 i S119 gotowe (lista i zakres w `docs/SESJE.md`), potem FIX 2026-10-14 (duch przeciągania, NPC i
-tablice miasta na planie, sklep ikonami w grupach, bez okna Postaci, drzewka ścieżek); seria DESIGN-15 (sprzedawcy klas, wierzchowce, questy
+tablice miasta na planie, sklep ikonami w grupach, bez okna Postaci, drzewka ścieżek) i IMPORT-GRAFIK 2026-10-14
+(dograne grafiki, lista blokad treści); seria DESIGN-15 (sprzedawcy klas, wierzchowce, questy
 1–100, nagroda za logowanie, wydarzenia świata) zamknięta. Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
 kategorie efektów drużyny i stos efektów (`Logic/EffectStack`), S54 wzory globalne (`Logic/LevelCurves`), S55 rangi
 i przełomy w kształcie A/B (`Build.bp2`, `Skills.effective` §2.7), S56 koniec punktów umiejętności: rangi z poziomu
@@ -181,6 +182,11 @@ S119 grafiki interfejsu: importer `tools/icons/import_ui.py` (atlasy kategorii `
 zapasem; obrazki umiejętności, efektów, żywiołów, profili, gildii, herbów i portretów klas, HUD, pustych slotów, mapy
 świata i minimapy (ikony, usługi NPC, znaczniki, mapy malowane), sklepu, garderoby, tytułów, bossów i lochów; `/icons ui`,
 `/icongrid ui <atlas>`. Seria DESIGN-16 bez S113–S117 (w kolejce).
+IMPORT-GRAFIK 2026-10-14: lista blokad treści `tools/icons/content_block.json` (obrazki z krwią, ranami, odciętymi
+częściami nigdy nie trafiają do atlasów, plików gry ani na wiki; importery usuwają je same), 26 plików zablokowanych
+(w tym 21 już wgranych w S118–S119: ich atlasy wgrane od nowa bez nich), wgrane wszystkie 17 map malowanych, nowe
+ikony umiejętności, efektów i tytułów ścieżek (`ui_skills_02`), 19 obrazków przedmiotów krain 2–4
+(`import_ui.py --check-ids` 33/33, `import_png.py --check-ids` 8/8).
 Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`, `docs/STATY.md`) i łańcuch balansu
 zakończone; testy i decyzje właściciela po nich.
 
@@ -320,18 +326,21 @@ zakończone; testy i decyzje właściciela po nich.
 - **S118: przegląd ikon w Play nie zrobiony:** atlasy `items_7` i `items_8` wgrane i wczytane (`Success`, `IsLoaded`), ale
   Rojo nie był połączony ze Studio, więc `/icons`, `/icongrid art`, klejnot żywiołu na różdżce i obrazki w dzienniku
   questów nie obejrzane w grze.
-- **S118:** bez obrazka (właściciel dorysowuje materiały; nowe pliki: `docs/sessions/IMPORT-GRAFIK.md`): 10 materiałów
-  (S119: +2 zioła), 9 unikatów bossów Azgora, Morvane i Vaelgratha, 50 przedmiotów questowych (krainy 2–4); krainy 2–4
-  ekwipunku biorą obrazek progu 20. Wiki: broń maga z obrazkiem bez klejnotu żywiołu; okno rozmowy questa i śledzik HUD bez obrazków przedmiotów.
-- **S119: wgrywanie przerwane przez moderację konta:** po 19 plikach (6 atlasów interfejsu, `items_8.png`, 12 portretów
-  i banerów) Roblox odpowiada `403 User is moderated` (konto VDaPii). Czeka 18 map malowanych (`import_ui.py --check-ids`:
-  18/36). Wczytania wgranych plików nie dało się sprawdzić (w Play 403 na każdy zasób); przegląd w Studio (D11, też
-  telefon) nie zrobiony. Właściciel: zdjąć blokadę na roblox.com, potem `docs/sessions/IMPORT-GRAFIK.md`.
-- **S119: do importu (dodane w trakcie sesji):** 5 ikon umiejętności Wojownika (`carnage`, `intercept`, `rend`,
-  `shieldWall`, `warBanner`) i 19 obrazków przedmiotów (materiały i unikaty krain 2–4); nie importowane, bo zmieniłyby
-  wgrane atlasy. Bez plików (BRAKI): 17 umiejętności ścieżek, 8 efektów, 11 tytułów ścieżek; bez promptów: efekty
-  `frostbite`, `fury`, `nextBasic`, `runeSeal`, tytuł `thornbearer`, menu i usługa wierzchowców, `vendors`, mapy lochów,
-  skiny wierzchowców.
+- **Przedmioty bez obrazka** (po IMPORT-GRAFIK 2026-10-14): materiał `werewolf_claw` i unikaty Grimroka (`cleaver`,
+  `fang`, `totem`) zablokowane (krew, do poprawy przez właściciela), 52 z 68 przedmiotów questowych (w tym zablokowane
+  `ledger`, `boarHaunch`); ekwipunek krain 2–4 bierze obrazek progu 20 (własny ma tylko `sword1h_25`). Wiki: broń maga z
+  obrazkiem bez klejnotu żywiołu; okno rozmowy questa i śledzik HUD bez obrazków przedmiotów. Dodane do folderu po
+  imporcie (`sword1h_30`…`45`, broń krain 2–4 w toku): następny przebieg `docs/sessions/IMPORT-GRAFIK.md`.
+- **Grafiki zablokowane (krew, IMPORT-GRAFIK 2026-10-14)** zostają zapasem do nowych plików właściciela (lista z opisem
+  zmiany: `docs/SESJE.md` → IMPORT-GRAFIK): portret i loch Grimroka, portret i herb Wojownika, mapa `duskwood_den`,
+  efekty `bleed`, `vulnerability`, `misfortune`, `slow`, tytuły `bloodied`, `veteran`, `path_berserker`, 8 umiejętności
+  Wojownika. Stare zasoby Roblox z tymi obrazkami dalej istnieją na koncie (id: `docs/ASSETS.md`, „Osierocone z
+  zablokowanymi obrazkami”): archiwizacja w Creator Dashboard to decyzja właściciela.
+- **IMPORT-GRAFIK 2026-10-14: wczytania w grze nie sprawdzone:** w Studio trwał Play właściciela (nie zatrzymywany);
+  tymczasowe `ImageLabel` nie wczytały ani nowych, ani starych, działających id (`IsLoaded` false), więc wynik nic nie
+  mówi. `/icons ui`, `/icongrid`, mapa świata i pasek umiejętności nie obejrzane. Bez plików (BRAKI): `menu_character`
+  (klucz usunięty w FIX); bez promptów: efekty `frostbite`, `fury`, `nextBasic`, `runeSeal`, tytuł `thornbearer`, menu
+  i usługa wierzchowców, `vendors`, mapy lochów, skiny wierzchowców.
 - **S119:** `mapy/world` bez miejsca w grze (brak widoku świata); wiki bez obrazków tytułów, efektów i portretów bossów
   (WIKI-GRAFIKA ma resztę); ikona gry, miniatury i ikony przepustek tylko instrukcją (`docs/ASSETS.md`).
 - **FIX 2026-10-14: przegląd w grze nie zrobiony** (konto moderowane, bez Studio): duch przeciągania, NPC i tablice

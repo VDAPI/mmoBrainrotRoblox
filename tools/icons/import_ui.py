@@ -25,6 +25,7 @@ sys.path.insert(0, HERE)
 from PIL import Image, ImageDraw, ImageFilter, ImageStat  # noqa: E402
 
 import atlas_index  # noqa: E402
+import content_block  # noqa: E402
 import import_graphics  # noqa: E402
 import import_png  # noqa: E402
 
@@ -97,6 +98,7 @@ class Mapping:
         self.rejected = []  # (path, reason, group)
         self.warnings = []
         self.files = {}  # group -> files seen
+        self.blocked = []  # (path, key, why): content block list, never imported
 
 
 def _rel(path, src):
@@ -560,8 +562,10 @@ def key_of_braki(path):
 
 # ------------------------------------------------------------------------------------------------ main run
 
-def run(root, src, ids, dry_run=False, prune=False, key_color=None, only=None, quiet=False):
-    """Imports `src` into art/ui of `root`. Returns a dict (changed files, mapping, report lines)."""
+def run(root, src, ids, dry_run=False, prune=False, key_color=None, only=None, quiet=False, blocks=None):
+    """Imports `src` into art/ui of `root`. Returns a dict (changed files, mapping, report lines). `blocks`: content
+    block list (content_block.load(); default: tools/icons/content_block.json): a blocked key is removed even without
+    --prune."""
     out_dir = os.path.join(root, "art", "ui")
     single_dir = os.path.join(out_dir, "single")
     state_path = os.path.join(out_dir, "ui_art.json")
@@ -571,6 +575,12 @@ def run(root, src, ids, dry_run=False, prune=False, key_color=None, only=None, q
     state = load_state(state_path)
     old_state = json.loads(json.dumps(state))
     res = mapping(src, ids, only)
+    if blocks is None:
+        blocks = content_block.load()
+    res.mapped, blocked, block_warnings = content_block.split(res.mapped, src, blocks)
+    res.blocked = [(p, k, why) for (p, k, _), why in blocked]
+    res.warnings += block_warnings
+    blocked_keys = {k for _, k, _ in res.blocked} - {k for _, k, _ in res.mapped}
     report_frames = []
     pics = {}
     accepted = []
@@ -591,7 +601,7 @@ def run(root, src, ids, dry_run=False, prune=False, key_color=None, only=None, q
     freed = {a: set() for a in ATLASES}
     cells = state["cells"]
     for key in list(cells):
-        if in_scope(key) and key not in mapped and key not in failed and prune:
+        if in_scope(key) and key not in mapped and key not in failed and (prune or key in blocked_keys):
             freed[cells[key]["atlas"]].add(cells[key]["i"])
             del cells[key]
     for atlas in ATLASES:
@@ -647,7 +657,7 @@ def run(root, src, ids, dry_run=False, prune=False, key_color=None, only=None, q
     singles = state["singles"]
     changed_singles = {}
     for key in list(singles):
-        if in_scope(key) and key not in mapped and key not in failed and prune:
+        if in_scope(key) and key not in mapped and key not in failed and (prune or key in blocked_keys):
             del singles[key]
     for key, (path, rule) in sorted(mapped.items()):
         style = rule[4]
@@ -756,6 +766,9 @@ def report(res, src, ids, state, changed, frame_notes, wiki_written):
     if res.rejected:
         out += ["", "## Odrzucone"]
         out += [f"- `{_rel(p, src)}`: {r}" for p, r, _ in res.rejected]
+    if res.blocked:
+        out += ["", "## Zablokowane (treść, tools/icons/content_block.json; gra bierze zapas)"]
+        out += [f"- `{_rel(p, src)}` (`{k}`): {why}" for p, k, why in res.blocked]
     if res.warnings:
         out += ["", "## Ostrzeżenia"]
         out += [f"- {w}" for w in res.warnings]
@@ -862,7 +875,7 @@ def selftest():
             ok = False
             print("selftest: " + msg)
 
-    r1 = run(root, src, SELFTEST_IDS, quiet=True)
+    r1 = run(root, src, SELFTEST_IDS, blocks={}, quiet=True)
     res = r1["mapping"]
     keys = {k for _, k, _ in res.mapped}
     reasons = {_rel(p, src): r for p, r, _ in res.rejected}
@@ -893,6 +906,7 @@ def selftest():
     check(sk.getpixel((x, y))[3] == 0 and sk.getpixel((x + 64, y + 2))[3] == 255, "kafelek bez zaokrąglonych rogów")
     check(st["frames"].get("meadows") == {"x0": -800, "z0": -800, "size": 1600}, f"kadr {st['frames']}")
     boss = st["singles"].get("bossowie/boss_grimrok")
+    boss_file = boss["file"] if boss else ""
     check(boss is not None and (boss["w"], boss["h"]) == (512, 512), f"portret bossa {boss}")
     sheets = read_sheet_ids(os.path.join(root, "src", "shared", "Data", "UiArtSheets.luau"))
     check(set(sheets) == set(all_files(st)) and all(v == "" for v in sheets.values()), f"UiArtSheets {sheets}")
@@ -903,12 +917,12 @@ def selftest():
     open(os.path.join(root, "src", "shared", "Data", "UiArtSheets.luau"), "w", encoding="utf-8").write(text)
     before = {f: open(os.path.join(root, "art", "ui", f), "rb").read() for f in os.listdir(os.path.join(root, "art", "ui"))
               if f.endswith(".png")}
-    r2 = run(root, src, SELFTEST_IDS, quiet=True)
+    r2 = run(root, src, SELFTEST_IDS, blocks={}, quiet=True)
     check(r2["changed"] == [], f"drugi przebieg zmienił {r2['changed']}")
     for f, data in before.items():
         check(open(os.path.join(root, "art", "ui", f), "rb").read() == data, f"{f} nie jest deterministyczny")
     _tile(os.path.join(t, "umiejetnosci", "warrior", "skill_charge.png"), (20, 160, 240))  # changed picture
-    r3 = run(root, src, SELFTEST_IDS, quiet=True)
+    r3 = run(root, src, SELFTEST_IDS, blocks={}, quiet=True)
     check(r3["changed"] == ["ui_skills_01.png"], f"zmiana jednej ikony: {r3['changed']}")
     check(r3["state"]["cells"]["umiejetnosci/skill_charge"]["i"] == tile["i"], "zmieniona ikona przesunięta")
     sheets = read_sheet_ids(os.path.join(root, "src", "shared", "Data", "UiArtSheets.luau"))
@@ -916,12 +930,29 @@ def selftest():
     # A removed file stays until --prune, which clears its cell and keeps the others in place.
     os.remove(os.path.join(t, "efekty", "effect_stun.png"))
     _tile(os.path.join(t, "zywioly", "element_fire.png"), (240, 120, 20))
-    r4 = run(root, src, SELFTEST_IDS, quiet=True)
+    r4 = run(root, src, SELFTEST_IDS, blocks={}, quiet=True)
     check("efekty/effect_stun" in r4["state"]["cells"], "usunięte bez --prune")
     stun_i = r4["state"]["cells"]["efekty/effect_stun"]["i"]
-    r5 = run(root, src, SELFTEST_IDS, prune=True, quiet=True)
+    r5 = run(root, src, SELFTEST_IDS, blocks={}, prune=True, quiet=True)
     check("efekty/effect_stun" not in r5["state"]["cells"], "--prune nie usunął")
     check(r5["state"]["cells"]["zywioly/element_fire"]["i"] != stun_i or True, "komórki")
+    # Content block list: a listed file with the same bytes is skipped and its cell / single picture removed without
+    # --prune; the same path with other bytes is imported again with a warning.
+    boss = os.path.join(t, "bossowie", "boss_grimrok.png")
+    charge = os.path.join(t, "umiejetnosci", "warrior", "skill_charge.png")
+    blocks = {rel: {"path": rel, "sha256": content_block.file_hash(p), "why": "test"}
+              for rel, p in (("tylko_2d/bossowie/boss_grimrok.png", boss),
+                             ("tylko_2d/umiejetnosci/warrior/skill_charge.png", charge))}
+    r6 = run(root, src, SELFTEST_IDS, blocks=blocks, quiet=True)
+    check("bossowie/boss_grimrok" not in r6["state"]["singles"], "zablokowany portret został")
+    check(not os.path.exists(os.path.join(root, "art", "ui", "single", boss_file)), "plik zablokowanego portretu został")
+    check("umiejetnosci/skill_charge" not in r6["state"]["cells"], "zablokowana ikona została")
+    check("ui_skills_01.png" in r6["changed"], f"atlas bez zablokowanej ikony niezmieniony: {r6['changed']}")
+    check(any("Zablokowane" in ln for ln in r6["lines"]), "brak sekcji Zablokowane w raporcie")
+    _tile(boss, (40, 40, 120), size=700)
+    r7 = run(root, src, SELFTEST_IDS, blocks=blocks, quiet=True)
+    check("bossowie/boss_grimrok" in r7["state"]["singles"] and any("blokad" in w for w in r7["mapping"].warnings),
+          "zmieniony plik z listy blokad")
     errors, waiting, total = check_ids(root)
     check(not errors, f"check_ids: {errors}")
     print("selftest: OK" if ok else "selftest: BŁĄD")

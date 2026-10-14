@@ -185,6 +185,12 @@ trakcie sesji: plecaki 80–200 i premium, `stone_dungeon_frostpeak`, rudy srebr
 Creator Hub): stare items_7 `72500852503959`, wcześniejsze items_8 `126086041830482`, `71377522475295`,
 `70653203214194`, `136046578378635`.
 
+**Stan (2026-10-14, IMPORT-GRAFIK):** atlasy wgrane od nowa bez zablokowanych obrazków (krew, lista
+`tools/icons/content_block.json`, opis zmian w `docs/SESJE.md` → IMPORT-GRAFIK): items_7 `84392218433501`, items_8
+`95455488074028`. Osierocone z zablokowanymi obrazkami (do archiwizacji w Creator Hub): items_7 `116647103065980`
+(unikaty Grimroka), items_8 `71572013880956` (`quest_ledger`, `quest_boarHaunch`); starsze osierocone items_7 i items_8
+z S118 mogą zawierać te same obrazki. Osierocone wgrane i nieużyte: items_8 `90606440144439`.
+
 ## Grafiki interfejsu (S119)
 
 | Folder (`tylko_2d/`) | Klucz w kodzie (`Logic/UiArt`) | Styl | Atlas |
@@ -212,6 +218,14 @@ Creator Hub): stare items_7 `72500852503959`, wcześniejsze items_8 `12608604183
 `Data/UiArtSheets.luau`) oraz `items_8.png` `71572013880956`. Potem Roblox odpowiadał `403 User is moderated`: 18 map
 malowanych czeka na wgranie, wczytania wgranych nie dało się sprawdzić (Play: 403 na każdy zasób). Osierocone: items_8
 `90447876547035`.
+
+**Stan (2026-10-14, IMPORT-GRAFIK, po zdjęciu blokady konta):** wgrane bez błędów `ui_skills_01` `92037923766416`,
+nowy `ui_skills_02` `115263029666505`, `ui_status_01` `97149632090877`, `ui_emblems_01` `136603127325634` (atlasy bez
+zablokowanych obrazków) i 17 map malowanych (id w `Data/UiArtSheets.luau`; `duskwood_den` zablokowana, zapas). Portret
+i loch Grimroka oraz portret Wojownika wyłączone (bez ID, zapas). Osierocone z zablokowanymi obrazkami (krew, do
+archiwizacji w Creator Hub): `ui_skills_01` `98255153969390`, `ui_status_01` `127300661693271`, `ui_emblems_01`
+`90219814652043`, `boss_grimrok` `75784782133691`, `portrait_warrior` `74869214071320`, `dungeon_grimrok`
+`84950642299826`. Osierocone wgrane i nieużyte: `ui_emblems_01` `128765112822669`.
 
 ## Ikona gry i miniatury
 

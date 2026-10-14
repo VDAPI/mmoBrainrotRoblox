@@ -93,7 +93,8 @@ przedmiotów czyta STATY); odstępstwa idą do `docs/DECYZJE.md`, a kontrakt pop
   `arttiers`. Umowa plików: `docs/GRAFIKA.md`.
 - **Ikona przedmiotu z PNG** (S118): `docs/sessions/IMPORT-GRAFIK.md` (nazwa pliku = id przedmiotu, `quest_<item>` dla
   przedmiotów questowych; `import_graphics.py` sprawdza nazwy z `tools/icons/ids.luau`, wgranie atlasów przez MCP
-  `upload_image`, id w `ItemIconSheets.luau`, `import_png.py --check-ids`).
+  `upload_image`, id w `ItemIconSheets.luau`, `import_png.py --check-ids`). Przed wgraniem każdy obrazek oglądany; krew,
+  rany i podobne na liście blokad `tools/icons/content_block.json` (oba importery i `npm run art` je pomijają).
 - **Grafika interfejsu** (S119): plik według `BRAKI-GRAFIK.md` → `docs/sessions/IMPORT-GRAFIK.md`
   (`tools/icons/import_ui.py`, id w `Data/UiArtSheets.luau`); nowe miejsce w UI: `ArtIcon` (pole `Glyph` = dawny znak,
   test `uiart.spec`) albo `UiArtState.decorate` z kluczem z `Logic/UiArt`.
