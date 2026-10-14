@@ -42,6 +42,7 @@ WorldBuilder.MapBuilt = Signal.new() -- S45: (mapId) after a background build or
 
 -- Work slice of a background build before it yields a frame.
 local SLICE = 0.010
+local STARTUP_SLICE = 0.25 -- the startup build may hog the server longer per frame: nobody is playing yet
 
 local MATERIAL_COLORS: { [Enum.Material]: string } = {
 	[Enum.Material.Grass] = "#5C7A3A",
@@ -223,7 +224,21 @@ local function removeBaseplate()
 	end
 end
 
+-- Pacer of a build: yields a frame once `slice` seconds (default SLICE) of work passed since the last pause.
+local function pacer(slice: number?): () -> ()
+	local limit = slice or SLICE
+	local last = os.clock()
+	return function()
+		if os.clock() - last >= limit then
+			task.wait()
+			last = os.clock()
+		end
+	end
+end
+
 -- Builds every map into Workspace.World (idempotent: rebuilds if already present).
+-- Live servers kill a script that runs without yielding for too long ("Script timeout: exhausted allowed
+-- execution time", first publish 2026-10-14), so the startup build pauses for a frame every STARTUP_SLICE seconds.
 function WorldBuilder.build(): Folder
 	removeBaseplate()
 	local existing = Workspace:FindFirstChild("World")
@@ -243,27 +258,18 @@ function WorldBuilder.build(): Folder
 	end
 	table.sort(ids)
 	table.clear(WorldBuilder.late)
+	local pace = pacer(STARTUP_SLICE)
 	for _, id in ids do
 		local map = Maps.get(id)
 		if map and map.buildLate and layoutModule(id) then
 			table.insert(WorldBuilder.late, id)
 		elseif map then
-			buildMap(map, root, true)
+			buildMap(map, root, true, pace)
+			pace()
 		end
 	end
 	log:info("world built in %.2f s (%d maps left for the background)", os.clock() - started, #WorldBuilder.late)
 	return root
-end
-
--- Pacer of a background build: yields a frame once SLICE seconds of work passed since the last pause.
-local function pacer(): () -> ()
-	local last = os.clock()
-	return function()
-		if os.clock() - last >= SLICE then
-			task.wait()
-			last = os.clock()
-		end
-	end
 end
 
 -- Builds the maps left by `build()` one after another, yielding between slices of work (S45). Called once from

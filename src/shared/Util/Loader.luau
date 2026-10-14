@@ -1,7 +1,8 @@
 --!strict
 -- Minimal service/controller loader (ARCHITECTURE §3).
 -- Requires every ModuleScript in a folder, orders them by Deps, calls Init(registry) on all
--- (must not yield), then Start() on all (each in its own thread). Logs timings.
+-- (should not yield; the loop itself pauses a frame between modules once ~1 s of Init work piled up, because live
+-- servers kill a script that runs too long without yielding), then Start() on all (each in its own thread). Logs timings.
 
 local DepSort = require("../Logic/DepSort")
 local Log = require("./Log")
@@ -54,7 +55,12 @@ function Loader.load(folder: Instance, label: string): Registry
 		end,
 	}
 
+	local sliceStart = os.clock()
 	for _, module in ordered do
+		if os.clock() - sliceStart > 1 then
+			task.wait()
+			sliceStart = os.clock()
+		end
 		local t0 = os.clock()
 		if module.Init then
 			local ok, err = pcall(module.Init :: any, registry)
